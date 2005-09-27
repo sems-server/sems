@@ -1,0 +1,62 @@
+*****************************
+* Voicemail email templates *
+*****************************
+
+Email templates will help you to customize the emails
+sended by Voicemail. Just configure the path where the 
+templates can be found and edit your template files.
+You will find detailed informations in the following 
+sections.
+
+
+Configuration parameters within voicemail section:
+--------------------------------------------------
+
+email_template_path: 
+
+	- sets the directory which will be searched for
+	  email template files (*.template).
+
+	- each template file stands for a different domain:
+	    <domain>.template
+	    Ex: iptel.org.template
+
+	- additionaly, a default template must be present in
+	  the directory configured with that configuration
+	  parameter. It must be named 'default.template'.
+
+If you configured email_template_path well and turned debug informations
+on, you should find in the log file during loading process following lines:
+
+(9834) DEBUG: loadEmailTemplates (AnswerMachine.cpp:102): loading plug-in/voicemail/default.template ...
+(9834) DEBUG: loadEmailTemplates (AnswerMachine.cpp:102): loading plug-in/voicemail/iptel.org.template ...
+(9834) DEBUG: loadEmailTemplates (AnswerMachine.cpp:102): loading plug-in/voicemail/susie.at.template ...
+
+
+
+Email template format:
+----------------------
+
+to: <destination email address>
+from: <source email address>
+subject: <subject line>
+[empty line]
+<body>
+
+Variables:
+----------
+
+If you want to customize the email depending on call datas, 
+please use folowing syntax: %variable%
+
+Following variables are supported:
+
+ - %to% : local URI.
+ - %domain% : local domain.
+ - %user% : local user.
+ - %email% : email address of the local user.
+
+ - %from% : remote URI.
+ - %from_user% : remote user.
+ - %from_domain% : remote domain.
+

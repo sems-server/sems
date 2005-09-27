@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# Startup script for SEMS
+# tested under redhat 7.3
+#
+# chkconfig: 345 85 15
+# description: SEMS is a SIP Media Server.
+#
+# processname: sems
+# pidfile: /var/run/sems.pid
+# config: /etc/sems.conf
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+sems=/usr/sbin/sems
+OPTIONS="-f /etc/sems/sems.conf"
+prog=sems
+RETVAL=0
+
+start() {
+        pidofproc $prog > /dev/null 2>&1 && echo "sems already running" && return 1
+        echo -n $"Starting $prog: "
+        daemon $sems $OPTIONS
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && touch /var/lock/subsys/sems
+        return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping $prog: "
+	killproc $sems 2> /dev/null
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f /var/lock/subsys/sems /var/run/sems.pid
+}
+
+reload() {
+	stop
+	start
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+        status $sems
+	RETVAL=$?
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart)
+	if [ -f /var/run/sems.pid ] ; then
+		stop
+		start
+	fi
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|status|help}"
+	exit 1
+esac
+
+exit $RETVAL

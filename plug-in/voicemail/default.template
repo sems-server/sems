@@ -1,0 +1,15 @@
+subject: Voice message from: %from%
+from: voicemail@%domain%
+to: %email%
+
+Hello %user%@%domain%,
+%from% left a voice message for you.
+
+Thank you for using <your domain>'s Voicemail.
+
+Your voicemail system.
+
+-------------------------------------------------------------
+This message was created by <your domain>'s voicemail system.
+Please review www.<your domain> for more information.
+-------------------------------------------------------------

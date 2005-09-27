@@ -1,0 +1,138 @@
+
+          +------------------------------------+
+          | SIP express media server  - README |
+          +------------------------------------+
+
+
+Introduction:
+
+ Sems is a extensible media server which helps you
+ adding voice services to your VoIP system.
+
+ Each module or plug-in extends your system. Audio
+ plug-ins enable new codecs and file format whereby 
+ application plug-ins implements the service's logic.
+
+ You can easely extend Sems by creating your own plug-ins.
+
+ The following default modules are shipped with Sems stable version:
+
+ * Voicemail: records voice messages and mail them to the callee.
+
+ * ISDN Gateway: support calls from and to the PSTN.
+
+ * Conferencing: enables many people to talk together
+                 at the same time.
+
+ * Announcement: plays an announcement.
+
+ * Number reader: reads the called number.
+
+ * Echo: test module echoing your voice.
+
+Some new services like IVR, Text-To-Speech, MP3 and iLBC support are only
+available in the developement version of Sems.
+
+Sems only support patent free codecs. Which means that we won't support codecs
+like g729. On the other hand, we have support for all important patent free
+(g711u, g711a, GSM06.10 and iLBC).
+
+Requirements:
+
+ 1. Ser version >= 0.8.12: SIP Epress Router (www.iptel.org/ser)
+
+    - Sems requires Ser as its SIP stack. 
+    - Sems & Ser communicate together through FIFO file, which means that a Ser
+      instance is mandatory on every host using Sems.
+
+
+Installation:
+
+ 1. Download Sems through CVS:
+
+    Stable version:
+
+      export CVSROOT=:pserver:anonymous@cvs.berlios.de:/cvsroot/sems
+      cvs co -r ser_rel_0_8_12 answer_machine
+
+    Developement version:
+
+      export CVSROOT=:pserver:anonymous@cvs.berlios.de:/cvsroot/sems
+      cvs co answer_machine
+
+
+ 2. Compile Sems:
+
+      make all
+      make install
+
+    Notice: you don't need to execute 'make install' if you want to run Sems
+            from the source tree.
+
+
+ 3. Look at the default configuration file if it fits your need:
+
+      If you installed Sems with 'make install', the configuration
+      is at '/etc/sems/sems.conf'. Else make your own using sems.conf.sample.
+
+
+ 4. Start Ser: 
+
+      Please read the Ser User's guide if you don't known
+      how to complete this stage.
+
+ 5. Start Sems:
+
+      If you installed Sems with 'make install', sems can be
+      found at '/usr/local/sbin/sems'.
+      If you need help starting 'sems', try 'sems -h'.
+
+
+Troubleshooting:
+
+ * RH thread problem:
+
+  Sems has currently problems being run on Redhat 9. If you cannot wait 
+  until it is fixed, you may want to run ans_machine after running the
+  following command:
+
+  export LD_ASSUME_KERNEL=2.4.1
+
+  This disables the new pthread implementation included in Redhat 9.
+
+
+Installed file using 'make install':
+
+    /etc/sems/sems.conf                  : configuration file.
+    /usr/local/sbin/sems                 : Sems executable.
+    /usr/local/lib/sems/plug-in/*        : plug-ins.
+    /usr/local/lib/sems/audio/*          : default path for audio files.
+    /usr/local/share/doc/sems/README     : this README.
+
+    source_path/scripts/sems[.redhat]    : example start-up scripts.
+    source_path/sems.conf.example        : example configuration file.
+
+
+Bug report & Contact:
+
+  If you have problems configuring Ser&Sems for your needs,
+  look at the support information on the Ser homepage (www.iptel.org/ser).
+
+
+Authors:
+
+  Raphael Coeffic (rco@iptel.org) &
+  Ulrich Abend (ullstar@iptel.org).
+
+
+Thanks goes to:
+
+  * Ulrich Abend (ullstar@iptel.org)
+      for his great debuging work and ISDN gateway.
+
+  * Jiri Kuthan (jiri@iptel.org)
+      for the debuging work and help to implement
+      communicating part between Ser & Sems ('vm' module).
+
+  * All the others who helped during test session :-)
+

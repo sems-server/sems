@@ -1,0 +1,1226 @@
+/*
+ * $Id: IVR_Documentation.txt,v 1.7 2005/01/05 17:18:05 sayer Exp $
+ * Copyright (C) 2002-2003 Fhg Fokus
+ *
+ * This file is part of sems, a free SIP media server.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+SEMS plug-in documentation: 
+ The Interactive Voice Response (IVR) module
+
+ index
+1. Introduction to the new IVR module
+2. Installation
+2.1 Prerequisites
+2.2 adapting the Makefile  
+2.2.1 Script Language
+2.2.2 TTS
+2.2.3 ASTERISK_COMPATIBLE
+2.3 Making the IVR module
+2.4 Run time configuration: sems.conf
+3. General operation
+3.1 How the playlist works
+3.2 Recording
+3.3 How event controlled scripts work
+3.4 Maintaining state in event controlled scripts
+3.5 Text to Speech in the IVR
+3.6 sleep functions
+3.7 redirecting a call (REFER)
+3.8 placing a new call: dialout
+4. Example scripts
+4.1 BeatBox (Python and Perl)
+4.2 Restricted Redirect: ID and PIN verification and redirection 
+4.3 voicemail script: send email from SIP call
+4.4 print call information
+5. IVR Function reference
+6. Troubleshooting & FAQ
+7. Contact the authors
+
+revision history: 
+ 05.01.05 ssa added tw_append in 3.7, asterisk_compatible 2.2.3
+ 25.10.04 ssa added 3.7 refer 
+ 26.10.04 ssa changed 3.7 refer cb parameters
+
+1. Introduction to the new IVR module
+
+The IVR plug-in for SEMS is a general purpose application platform for 
+the Sip Express Media Server SEMS. It can be scripted in either Python 
+or Perl language to control the Media Server, and thus can be used for
+rapid development and deployment of SIP telephony services.
+
+In order to be a platform for the creation of powerful real life 
+applications, the ivr module for SEMS has been rewritten to use a playlist
+and support event controlled operation. For more simple applications,
+sequential script can be used as well.
+
+It is not recommended to mix sequential and event controlled operation 
+though. Especially the sequential functions like ivr.play() may not work 
+as expected.
+
+Perl has been introduced to the IVR module by Richard at Comtel, and can be 
+selected as the scripting language at compile time.
+
+2. Installation
+
+2.1 Prerequisites
+
+ * SEMS source distribution
+    There is no binary distribution of the IVR yet, as script language and
+    text to speech support has to be selected at compile time. The current
+    source code for SEMS can be obtained via CVS with the following command:
+    $ cvs -d:pserver:anonymous@cvs.berlios.de:/cvsroot/sems co answer_machine
+ 
+ * Script interpreter
+   For Python: Python >= ver. 2.2 must be installed. The current release can 
+   be obtained from http://www.python.org , 
+   e.g. http://www.python.org/ftp/python/2.3.4/Python-2.3.4.tar.bz2 .
+   It is recommended to recompile and install Python from the source package.
+   
+   For Perl: The Perl support requires perl version 5.8.0 and above. It's tested 
+   in 5.8.3 in Debian test branch. If you successfully run other configurations, 
+   please give us some feedback so it can be listed here.
+   
+ * Text to Speech (TTS), optional
+   If TTS is to be used, the flite speech synthesizer has to be downloaded and 
+   installed, from http://www.speech.cs.cmu.edu/flite/download.html
+   
+2.2 adapting the Makefile  
+ 
+Before compiling, the Makefile of the IVR plug-in has to be adapted: Script 
+Language, Text To Speech Support and Paths.
+
+The Makefile for the IVR plug-in is located in answer_machine/plug-in/ivr 
+subdirectory of the SEMS source tree.
+
+2.2.1 Script Language
+
+	SCRIPT = <script language>
+	
+	<script language> can one of [Python, Perl, Perl-].
+	
+  For Python:
+  If Python 2.2 is used, change PYTHON_VERSION:
+  PYTHON_VERSION=2.2   
+  If the Python headers and libraries are located somewhere else then in the 
+  default path ( /usr/include/python2.2 and  /usr/lib/python2.2 ), change 
+  PYTHON_PREFIX, e.g. for SuSE:
+  PYTHON_PREFIX=/usr/local
+  Modules that are by default dynamically loaded, i.e. all modules from 
+  lib-dynload, must be linked statically to the ivr module. If you use e.g. the 
+  time module, add to 
+  PYTHON_DYNLOAD_MODULES = $(PYTHON_LIBDIR)/lib-dynload/time.so	
+  For the mysql module, link _mysql as well 
+  PYTHON_DYNLOAD_MODULES = $(PYTHON_LIBDIR)/lib-dynload/time.so,\
+  $(PYTHON_LIBDIR)/lib-dynload/_mysql.so
+  
+  Perl:
+  Modules that are by default dynamically loaded must be linked statically to the
+  ivr module. To facilitate this, there is the option SCRIPT=Perl- which links 
+  commonly used modules.
+
+2.2.2 TTS
+	If Text to speech is to be used, set
+	TTS = y
+	FLITE_DIR should point to the root of the flite source distribution. 
+
+2.2.3 ASTERISK_COMPATIBLE
+
+  Apparently Asterisk uses the incoming RTP packets as timing source for rtp
+  it sends. The ivr can send empty packets (all zeroes) when it is idle (no
+  media to play) so voice can be recorded if e.g. asterisks pstn-gw is used. 
+  
+  In the Makefile set ASTERISK_COMPATIBLE=y if you want to enable that.
+
+2.3 Making the IVR module
+	'make' in plug-in/ivr directory should make the IVR module. If it was 
+	successfully built, there is answer_machine/lib/apps/ivr.so .
+
+2.4 Run time configuration: sems.conf
+
+  The following section is from the sems.conf sample configuration:
+  
+# sample ivr module configuration (inline)
+config.ivr=inline
+#
+#
+# The IVR checks for a script with the named of the callee
+# (<local part in r-uri>.py for python, <local part in r-uri>.pl for perl)
+# in the directory <ivr_script_path><domain>, then for 
+# <ivr_script_path><domain><ivr_script_file>. If this is  not found,
+# <ivr_script_path>/<local part in r-uri>.py if searched, 
+# and if this is not found, <ivr_script_path>/<ivr_script_file> is used.
+#
+# So with a call to sayer@iptel.org and
+#ivr_script_path=/etc/ivr and 
+#ivr_script_file=ivr.py
+# these files are checked:
+#/etc/ivr/iptel.org/sayer.py
+#/etc/ivr/iptel.org/ivr.py
+#/etc/ivr/sayer.py
+#/etc/ivr/ivr.py
+#
+  #parameter: ivr_script_path:
+  # path to ivr scripts.
+  # 
+  ivr_script_path=/etc/ivr/
+  # default script file: this will be executed if <user>.py does not exist.
+  #
+  ivr_script_file=ivr.py
+
+  # parameter : tts_caching
+  # 	y or n
+  #       text will be read from waves already synthesized and 
+  #	cached in cache_path 
+  tts_caching=y
+
+  # parameter : tts_cache_path
+  # 	path to cache waves
+  # 	path must exist! 
+  tts_cache_path=/tmp/wavs
+# end of configuration section for ivr module
+config.ivr=end
+
+3. General operation
+
+The Python or perl interpreter is embedded in the IVR plug-in. Executing the script 
+by its own (e.g. /usr/bin/python ivr.py ) does not make a lot of sense.
+
+If a call is transferred to the IVR plug-in, it will start a new instance of a script
+interpreter, which searches for the appropriate script (see above, 2.4) and executes 
+it. The script can now play back a file to the user, record the voice of the called,
+collect key inputs, refer the call etc. by calling functions of the ivr module.
+
+Example scripts are given in Python here, for example perl scripts have a look at 
+section 4.
+
+In Python, the ivr module has to be imported first, a simple announcement could look
+like this
+-------- simple announcement script
+import ivr
+ivr.play("hello.wav")
+--------
+
+When the script finishes, the call is terminated. A call to this script
+-------- 10 seconds recording
+import ivr
+ivr.startRecording("recorded.wav")
+ivr.sleep(10)
+---------
+will last less then or equal 10 seconds.
+
+3.1 How the playlist works
+
+Files can be added to the playlist, either at the front or at the back, using
+the ivr.enqueueMediaFile(filename, front) function. By default it is assumed 
+that the file should be added to the front of the paylist and played back 
+instantly. If there is a file currently played, its playback is interrupted 
+until the new file is finished, then its playback is continued from the position
+where it was interrupted.
+
+If the playlist should be cleared, e.g. before adding a new file if one doesn't 
+want to have the current file continued after the new file, ivr.emptyMediaQueue() 
+can be called.
+
+3.2 Recording
+
+ivr.startRecording(filename) and ivr.stopRecording() are used to record to a 
+file. If the extension ".mp3" is given and the MP3 file writer plug-in is there, a 
+mp3 file is written. If not, a PCM 16 bit WAV file is written.
+
+3.3 How event controlled scripts work
+In an IVR application, the script programmer often wants the IVR doing 
+something while waiting for e.g. a keypress of the caller. For example a 
+message has to be recorded while the script waits for a keypress by the 
+caller or if the caller did not press "next", "last" or "delete" key within 
+five seconds, the script could play a help message.
+
+The script can register callback functions, which are executed if some event 
+occurs. Namely, these are
+
+onDTMF                key is pressed
+onMediaQueueEmpty     playlist is empty
+onBye                 caller hanged in
+onReferStatus	      status notification of REFER process (see 3.7)
+
+For example these functions can be registered like this:
+  
+  def onDTMF_Func(key):
+  	print "DTMF: ", key
+ 
+  def onMQE_Func():
+  	print "Playlist ran out!"
+  
+  def onBye_Func():
+  	print "onBye!"	
+  
+  ivr.setCallback(onDTMF_Func, "onDTMF")
+  ivr.setCallback(onMQE_Func "onMediaQueueEmpty")
+  ivr.setCallback(onBye_Func, "onBye")
+
+Note that the onDTMF callback is (so far) the only one with a parameter, 
+which holds the key pressed.
+
+A simple script that will record 10 seconds or until a key is pressed could 
+look like this:
+
+-------- record 10 seconds or until key is pressed
+import ivr
+
+def onDTMF_Func(key):
+	print "DTMF: ", key
+	ivr.stopRecording()
+	ivr.wakeUp()
+	
+ivr.setCallback(onDTMF_Func, "onDTMF")
+ivr.enableDTMFDetection()
+ivr.startRecording("recorded.wav")
+ivr.sleep(10)
+---------
+
+Note that indentation (TABs at the beginning of the line) matters in Python language.
+
+If a message should be played at the end, the script could be modified like this:
+
+-------- record 10 seconds or until key is pressed, and then play message
+import ivr
+
+def onDTMF_Func(key):
+	print "DTMF: ", key
+	ivr.stopRecording()
+	ivr.wakeUp()
+
+def onMediaQueueEmpty_Func():
+	ivr.wakeUp()
+	
+ivr.setCallback(onDTMF_Func, "onDTMF")
+ivr.setCallback(onMediaQueueEmpty_Func, "onMediaQueueEmpty")
+ivr.enableDTMFDetection()
+ivr.startRecording("recorded.wav")
+ivr.sleep(10)
+ivr.say("Thank you for your message")
+ivr.sleep(40) 
+# sleep until wakeUp
+---------
+
+3.4 Maintaining state in event controlled scripts
+
+This script illustrates how to use menus by maintaining state.
+
+----- incomplete mailbox script
+import ivr
+
+class IvrState:
+	def __init__(self):
+		self.state = "init_state"
+		
+	def onDTMF(self, key):
+		print "onDTMF, key = ", key
+		if self.state == "init_state":
+			if key == 1:
+				self.state = "next_message"
+				ivr.emptyMediaQueue()
+				ivr.say("the next message:")
+				ivr.enqueueMediaFile(my_message.wav, false)
+				
+			elif key == 2:
+				self.state = "setup_state"
+				ivr.emptyMediaQueue()
+				ivr.say("press one to enter your name, two to leave the setup")
+				
+		if self.state == "setup_state":
+			if key == 1:
+				self.state = "recording_state"
+				ivr.startRecording("myname.wav")
+
+print "IVR"
+print "IVIVI"
+
+s = IvrState()
+
+def onDTMF_m(key):
+	s.onDTMF(key)
+
+ivr.setCallback(onDTMF_m, "onDTMF")
+
+ivr.enableDTMFDetection()
+ivr.say("welcome to your mailbox.");
+ivr.sleep(60)
+---------
+
+
+3.5 Text to Speech in the IVR
+
+If the IVR is compiled with flite-TTS enabled, the function ivr.say(message, front) 
+can be called. For example you could write
+ ivr.say("This is your mailbox")
+To use Text to Speech, you have to download the flite speech synthesizer and uncomment 
+two lines in the Makefile in the IVR directory. For more information about installing 
+the flite speech synthesizer have a look at answer_machine/plug-in/semstalkflite/Readme.txt .
+
+3.6 sleep functions
+
+The ivr.sleep(n) and ivr.usleep(n) functions can be used to wait n seconds or microseconds,
+or until ivr.wakeUp() is called. Do not call the sleep() and usleep() functions in callbacks!
+ivr.wakeUp() can be used safely in callback functions, e.g. to wake up the script if some 
+event has occured.
+
+3.7 redirecting a call (REFER) 
+
+With the ivr function ivr.redirect(string to_uri) the caller can be redirected
+to a SIP URL. The function call returns the cseq number for the REFER which
+can be used in the script to distinguish the response, if several REFERs are
+made. Depending on the caller, this REFER can be accepted or not, and
+while the call transfer is in progress, the caller sends notifications
+about the status of the redirection via NOTIFY. To enable the script to react
+appropriately to this progress, a callback is introduced: 
+
+onReferStatus(type, cseq, code_subscriptionstate, reason_status)
+
+This callback is used to convey the script _both_ the response to the REFER
+_and_ the notifications given by the caller. The first parameter, "type" holds
+the type of the Status update: "Response" or "Notification". The second
+parameter, cseq (type number), holds the sequence number of the corresponding
+REFER; it is needed to distinguish responses if there is more than one REFER
+in one dialog. The third parameter, "code_subscriptionstate", holds either the
+response code to the REFER, if it is a "Response", or the subscription state
+of the implicit subscription to the REFER status. reason_status for "Response"
+holds the reason string (can be empty), and for "Notification" it is the REFER
+status (i.e. the body of the NOTIFY message).
+ 
+Example script (python):
+def onReferStatus(type, cseq, code_subscriptionstate, reason_status):
+	print "onReferStatus... type = " + type
+	if type == "Response":
+		print "cseq = " + str(cseq)
+		print "code = " + str(code_subscriptionstate)
+		print "reason = " + reason
+	else: # assuming "Notification"
+		print "cseq = " + str(cseq)
+		print "SubscriptionState: " + code_subscriptionstate
+		print "Refer Status: " + reason_status + "\n"
+
+ivr.setCallback(onReferStatus, "onReferStatus")
+ivr.say("please wait while your call is being transferred.")
+print "cseq of redirect: "+ str(ivr.redirect("sip:refer2@example.iptel.org"))
+ivr.sleep(20)
+
+Note that the NOTIFY message must be handled correctly in ser routing script
+and sent to sems with t_write_unix (or t_write_req), so SEMS will receive it: 
+
+modparam( "tm", "tw_append",
+   "notify_body:hdr[Event];hdr[Subscription-State];msg[body]")
+
+/* ... */
+// request routing section
+
+	   	if (uri=~"sip:ivr+*@*") {
+                   if (method == "NOTIFY")  {
+                      if(!t_write_unix("/tmp/am_sock","ivr/notify_body")){
+                                log("could not contact ivr\n");
+                                t_reply("500","could not contact ivr");
+                      };
+                   } else {
+                     if(!t_write_unix("/tmp/am_sock","ivr")){
+                        log("could not contact ivr\n");
+                        t_reply("500","could not contact ivr");
+                     };
+                   };
+                   break;
+                };
+
+
+
+3.8 placing a new call: dialout
+
+with the function
+ ivr.dialout(string user, string app_name, string uri, string from_user)
+
+A new call will be placed. app_name is the SEMS application that gets the new
+call. If the app_name is "ivr" the ivr will get the new call. It will be made to uri from from_user. 
+
+4. Example applications
+
+4.1 BeatBox (Python and Perl)
+
+This not very useful application (used to test the playlist ;) will maybe illustrate the 
+concepts of playlist and callbacks. Also how to maintain state information using a dialog 
+class is probably useful to script programmers.
+
+The user is greeted with intro.wav . To every key a wav file is associated (0.wav .. 9.wav). 
+If the user enters two times 0 in a row, a different set of files is used (b0.wav .. b11.wav).
+After a maximum of 60 seconds the script hangs up.
+
+-- bbox.py ------------------------------------
+import ivr
+import time
+
+class BeatBox:
+	def __init__(self):
+		self.number_path = "/home/ssa/ivr/bbox/numbers/"
+		self.bbox_path  = "/home/ssa/ivr/bbox/"
+		self.lastchar = -1
+		self.bbox_mode = 0
+
+	def onDTMF(self, key):
+		print "onDTMF, key = ", key
+		print "lastchar = ", self.lastchar
+		if self.lastchar == 0 and key == 0 :
+			if not self.bbox_mode :
+				ivr.enqueueMediaFile(self.bbox_path+"enter_bbox.wav")
+			else: 
+				ivr.enqueueMediaFile(self.bbox_path+"left_bbox.wav")
+			self.bbox_mode = not self.bbox_mode
+		if self.bbox_mode:
+			ivr.enqueueMediaFile(self.bbox_path + "b"+str(key) +".wav")
+		else: 
+			ivr.enqueueMediaFile(self.number_path + str(key) +".wav")	
+		self.lastchar = key	
+
+	def onMediaQueueEmpty(self):
+		print "media ran out..."
+		#ivr.enqueueMediaFile(self.bbox_path + "numbers/0.wav")
+print "IVR"
+print "IVIVI"
+
+b = BeatBox()
+
+def onDTMF_m(key):
+	b.onDTMF(key)
+def onMQE_m():
+	b.onMediaQueueEmpty()
+
+ivr.setCallback(onDTMF_m, "onDTMF")
+ivr.setCallback(onMQE_m, "onMediaQueueEmpty")
+ivr.startRecording("/home/ssa/ivr/bbox/recorded/" + ivr.getFrom() + " - " + time.ctime() + ".wav")
+ivr.enableDTMFDetection()
+ivr.enqueueMediaFile("/home/ssa/ivr/bbox/intro.wav")
+ivr.sleep(60)
+-- bbox.py - end ------------------------------
+
+Note that in Python every class member function get self as the first parameter,
+and indentation matters (blocks go together with the same amount of tabs).
+
+Also note that a wrapper function (onDTMF_m, onMQE_m) has to be used as 
+callback function, ivr.setCallback(b.onDTMF, "onDTMF") will not work.
+
+Perl demo script:
+-- beatbox.pl script ---------------------------------
+#test.pl
+my @keys=();
+use Sys::Syslog qw(:DEFAULT setlogsock);
+
+syslog('info', 'this is the beginning');
+my $wav_path = '/var/spool/openums/prompts/';
+ivr::enableDTMFDetection();
+syslog('info', 'setting DTMF callback: '. ivr::setCallback('on_DTMF', 'onDTMF') );
+syslog('info', 'filling media queue: '. ivr::enqueueMediaFile($wav_path . 'aloha.wav', 0));
+
+ivr::startRecording('/tmp/record' . ivr::getFrom() . '.wav');
+for ($i=0; $i<10; $i++) {
+	$sleep_time = ivr::msleep(5000);
+	syslog('info', 'wake up after sleep '. $sleep_time . ' msec.\n');
+	if ($sleep_time >= 5000) {
+		# look like normal wakeup, no key pressed
+		syslog('info', 'no key pressed after 5 sec');
+	} else {
+		$key = shift (@keys);
+		syslog('info', 'A new key '. $key . " is pressed after $sleep_time msec");
+		ivr::enqueueMediaFile("$wav_path" . $key . '.wav');
+	}
+}
+
+syslog('info', 'this is the end');
+
+sub on_DTMF {
+	push @keys, @_;
+	syslog('info', "callback says: a key @_ is entered");
+	ivr::wakeUp();
+}
+-------------------------------------------------
+
+4.2 Restricted Redirect: ID and PIN verification and redirection (Python)
+
+This script asks the caller to enter user ID, PIN and a PSTN number. Before the
+call is redirected to that number, the uid and pin is verified against values 
+read from a cvs text file 
+
+-- restricted_redirect.py ----------------------
+#!/usr/bin/env python
+import ivr
+import csv
+
+class IvrDemo:
+	def __init__(self):
+		self.pin = ""
+		self.uid = ""
+		self.pstn_nr = ""
+		self.dialogstate = "enter_uid"
+		self.pinfile = "/usr/local/iptel/conf/pins.csv"
+
+	def onDTMF(self, key):
+		if key < 10:
+			ivr.say(str(key), False)
+		#print("IVR: User DTMF input key = "+str(key))
+		if self.dialogstate == "enter_uid":
+			if key == 11:
+				self.dialogstate = "enter_pin"
+				ivr.say("Now please enter your PIN Number.", False)     
+			else :
+				self.uid += str(key)
+		elif self.dialogstate == "enter_pin":
+			if key == 11:
+				if self.check_pin(self.pin, self.uid):
+					self.dialogstate = "enter_pstn"
+					ivr.say("Your PIN Number is correct. Please enter then number you want to call.", False)
+					print "User entered correct UID/PIN combination "+self.uid+"/"+self.pin
+				else:
+					ivr.say("I am sorry, your PIN is not correct. Please enter you PIN number again.", False)
+					print "User entered wrong UID/PIN combination "+self.uid+"/"+self.pin
+					self.dialogstate = "enter_pin"
+					self.pin = ""
+			else:
+				self.pin += str(key)
+		elif self.dialogstate == "enter_pstn":
+			ivr.emptyMediaQueue()
+			if key == 11:
+				ivr.redirect(self.pstn_nr)
+				self.dialogstate = "waiting_for_redirect"	     
+				ivr.say("You will now be connected to ", False)
+				ivr.say(" " + self.pstn_nr, False)
+				print "Redirecting user to "+self.pstn_nr
+			else :
+				self.pstn_nr += str(key)
+		elif self.dialogstate == "waiting_for_redirect": pass
+			# check if redirect worked
+
+	def check_pin(self, pin, uid):
+		reader = csv.reader(file(self.pinfile))
+		for row in reader:
+			c_uid = ''
+			c_pin = ''
+			for i,v in enumerate(row):
+				if i == 0:
+					c_uid = v
+				elif i == 1:
+					c_pin = v
+			if uid == str(c_uid) and pin == str(c_pin):
+				return True
+		return False
+		
+print "IVR"
+print "IVRIVI - Starting session for "+ ivr.getFrom()
+
+b = IvrDemo()
+
+def onDTMF_m(key):
+	b.onDTMF(key)
+	
+ivr.setCallback(onDTMF_m, "onDTMF")
+ivr.enableDTMFDetection()
+ivr.say("Please enter your User Identification number")
+ivr.sleep(0)
+-- restricted_redirect.py -- end ----------------
+
+4.3 voicemail script: send email from SIP call.
+
+The caller can either enter a buddy and her or his email address, or send a 
+voicemail to one of the buddies. Buddies are stored in a CVS file, 
+autocompletion is done if the name of a buddy is only partly entered.
+This script also illustrates how to send a email message with a recorded file 
+attached.
+
+-- voicemail.py ---------------------------------
+#!/usr/bin/env python
+#/*
+# *
+# * Copyright (C) 2004 Fhg Fokus and Emil Kroymann <kroymann@informatik.hu-berlin.de>
+# *
+# * This file is part of sems, a free SIP media server.
+# *
+# * sems is free software; you can redistribute it and/or modify
+# * it under the terms of the GNU General Public License as published by
+# * the Free Software Foundation; either version 2 of the License, or
+# * (at your option) any later version
+# *
+# * For a license to use the ser software under conditions
+# * other than those described here, or to purchase support for this
+# * software, please contact iptel.org by e-mail at the following addresses:
+# *    info@iptel.org
+# *
+# * sems is distributed in the hope that it will be useful,
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# * GNU General Public License for more details.
+# *
+# * You should have received a copy of the GNU General Public License 
+# * along with this program; if not, write to the Free Software 
+# * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#  for smtplib and time, link these modules (see Makefile in plug-in/ivr directory)
+#
+# # put used Python modules from lib-dynload here, e.g. time, mysql etc.
+#PYTHON_DYNLOAD_MODULES = $(PYTHON_LIBDIR)/lib-dynload/time.so \
+#	$(PYTHON_LIBDIR)/lib-dynload/_csv.so \
+#	$(PYTHON_LIBDIR)/lib-dynload/_socket.so \
+#	$(PYTHON_LIBDIR)/lib-dynload/binascii.so \
+#	$(PYTHON_LIBDIR)/lib-dynload/math.so \
+#	$(PYTHON_LIBDIR)/lib-dynload/_random.so \
+#	$(PYTHON_LIBDIR)/lib-dynload/cStringIO.so \
+#
+# */
+
+
+import ivr
+import time
+import csv
+import string
+import smtplib
+# Here are the email pacakge modules we'll need
+from email.MIMEAudio import MIMEAudio
+from email.MIMEMultipart import MIMEMultipart
+
+
+tel_keys = { 
+	1 : ['.','_'],
+	2 : ['a','b','c'],
+	3 : ['d','e','f'],
+	4 : ['g','h','i'],
+	5 : ['j','k','l'],
+	6 : ['m','n','o'],
+	7 : ['p','q','r','s'],
+	8 : ['t','u','v'],
+	9 : ['w','x','y','z'],
+	0 : ['@'] }
+	
+	
+#d = {'key': 'value', 'key1': 'value1'}
+#l = [1,2,3,4]
+
+class ivr_sm:
+	def __init__(self):
+		self.state = 'main_menu'
+		self.last_key = -1
+		self.key_index = 0
+		self.nickname = ''
+		self.email = ''
+		self.timeoutvalue = 0
+		self.have_typed_key = False
+		self.in_session = True
+		self.buddylist = { 'sanchez' : 'sayer@cs.tu-berlin.de', }
+		self.buddyfile = "buddy.csv"
+		self.main_menu_text = "send a voicemail with 1, add a contact with 2, and with 3 I tell you all buddys I know"
+		self.vm_filename = ''
+		self.auto_enter_key_after = 5
+		self.go_back_to_sleep = False
+		
+##########################
+	def onBye(self):
+		self.in_session = False
+		
+	def onDTMF(self, key):
+		print("voicemail script: DTMF, state = %s" % self.state)
+		
+		if self.state == 'main_menu':
+			if key == 1:
+				self.state = 'send_voicemail'
+				self.nickname = ''
+				ivr.emptyMediaQueue()
+				ivr.say("Please enter the buddy you want to send a voicemail to.")
+				self.timeoutvalue = self.auto_enter_key_after
+				ivr.wakeUp()
+			if key == 2: # add contact
+				self.state = 'add_contact_enter_nickname'
+				self.nickname = ''
+				ivr.emptyMediaQueue()
+				ivr.say("Please tell me the nickname of your new contact")
+				self.timeoutvalue = self.auto_enter_key_after
+				ivr.wakeUp()
+			if key == 3: # tell all contacts
+				self.state = 'tell_all_contacts'
+				ivr.emptyMediaQueue()
+				s = "I know "
+				for nick, mailadr in self.buddylist.iteritems():
+					s = s + nick + " with email address " + mailadr + ", and I know "
+				s = s + " you."
+				ivr.say(s)
+    ##############################################
+		elif self.state == 'add_contact_enter_nickname':
+			self.have_typed_key = True
+			self.reinit_autoenter()
+			if key == 11: # finished
+				ivr.say("The nickname is %s, now give me the email address please." % self.nickname )
+				key = -1
+				self.state = 'add_contact_enter_email'
+      
+			elif key == 10: #backspace
+				self.nickname = self.nickname[0:-1]
+				ivr.say(self.nickname)
+				self.last_key = -1
+      	
+			elif key != self.last_key:				
+				if self.last_key == -1:
+					self.last_key = key
+					self.key_index = 0
+					return
+				self.nickname += tel_keys[self.last_key][self.key_index]
+				ivr.say(self.nickname)
+				self.key_index = 0
+				self.last_key = key
+
+			elif key == self.last_key:
+				self.key_index += 1
+				if self.key_index >= len(tel_keys[self.last_key]):
+					self.key_index = 0
+
+    ##############################################
+		elif self.state == 'add_contact_enter_email':
+			self.reinit_autoenter()			
+			self.have_typed_key = True
+			if key == 11: # finished
+				ivr.emptyMediaQueue()
+				self.buddylist[self.nickname]=self.email;
+				print "writing contacts..."
+				writer = csv.writer(file(self.buddyfile, "w"))
+				for nick, mailadr in self.buddylist.iteritems():
+					writer.writerow((nick, mailadr)) 
+				ivr.say("I have added your buddy %s with email address %s. \
+				Now press 1 if you want to send a voicemail and any other key \
+				if you want to go back to the main menu" % (self.nickname, self.email))
+				self.state = 'finished_enter_contact'
+				self.timeoutvalue = 0 # endless
+				ivr.wakeUp()
+        	
+			elif key != self.last_key:
+				if self.last_key == -1:
+					self.last_key = key
+					self.key_index = 0
+					return
+				self.email += tel_keys[self.last_key][self.key_index]
+				ivr.say(self.email)
+				self.last_key = key
+				self.key_index = 0
+
+			elif key == self.last_key:
+				self.key_index += 1
+				if self.key_index >= len(tel_keys[self.last_key]):
+					self.key_index = 0
+		##############################################
+		elif self.state == 'finished_enter_contact':
+			if key == 1:
+				self.init_voicemail()
+			else:
+				self.state = 'main_menu'
+				self.timeoutvalue = 0
+				ivr.wakeUp()
+				ivr.emptyMediaQueue()
+				ivr.say(self.main_menu_text)
+			
+		##############################################
+		elif self.state == 'tell_all_contacts':
+			ivr.emptyMediaQueue()
+			self.return_to_main()
+
+		##############################################
+		elif self.state == 'send_voicemail':
+			self.have_typed_key = True
+			self.reinit_autoenter()
+			if key == 11: # finished
+				self.nickname = self.find_nick(self.nickname)
+				#ivr.say("The nickname is %s." % self.find_nick(self.nickname) )
+				key = -1
+				self.init_voicemail()
+      
+			elif key == 10: #backspace
+				self.nickname = self.nickname[0:-1]
+				ivr.say(self.nickname)
+				self.last_key = -1
+			elif key == 1:				 
+				if len(self.nickname) == 0:
+					ivr.say("You did not tell me who you want to call.")
+				elif len(self.find_nick(self.nickname)) == 0:
+					ivr.say("You asked me if I knew %s, but I don't do." % self.nickname)
+				else:
+					ivr.say("Do you mean %s ?" % self.find_nick(self.nickname) )
+				
+			elif key != self.last_key:				
+				if self.last_key == -1:
+					self.last_key = key
+					self.key_index = 0
+					return
+				self.nickname += tel_keys[self.last_key][self.key_index]
+				s = self.find_nick(self.nickname)
+				if len(s) != 0:
+					ivr.say(s)
+				else:
+					ivr.say("I don't know anyone who starts with: %s" %self.nickname)
+					
+				self.key_index = 0
+				self.last_key = key
+
+			elif key == self.last_key:
+				self.key_index += 1
+				if self.key_index >= len(tel_keys[self.last_key]):
+					self.key_index = 0
+				
+		##############################################
+		elif self.state == 'before_voicemail':
+			if key == 1:
+				ivr.emptyMediaQueue()
+				ivr.say("beep")
+				self.vm_filename = '/home/ssa/ivr/conf/voicemail/rec/'+\
+				str(int(time.time())) + '.mp3'
+				ivr.startRecording(self.vm_filename) 
+				self.state = 'recording_voicemail'
+				
+			elif key == 0:
+				self.return_to_main()
+		##############################################
+		elif self.state == 'recording_voicemail':
+			ivr.stopRecording()
+			ivr.say(('ok, i am sending your message to %s now. Ok, ' % self.nickname)+self.main_menu_text)
+			#ivr.enqueueMediaFile(self.vm_filename)
+			
+			# Create the container (outer) email message.
+			msg = MIMEMultipart()
+			msg['Subject'] = 'voicemail by '+ ivr.getFrom()
+
+			msg['From'] = 'ssa@fokus.fraunhofer.de'
+			msg['To'] = 'ssa@fokus.fraunhofer.de'
+			msg.preamble = 'Hello, this is a voicemail sent by ' + ivr.getFrom() + '.'
+			# Guarantees the message ends in a newline
+			msg.epilogue = ''
+
+			fp = open(self.vm_filename, 'rb')
+			vm_msg = MIMEAudio(fp.read(), _subtype="mp3")
+			fp.close()
+			msg.add_header('Content-Disposition', 'attachment')
+			msg.attach(vm_msg)
+
+			# Send the email via our own SMTP server.
+			s = smtplib.SMTP()
+			s.connect()
+			print "sending mail to "+ self.buddylist[self.nickname]
+			s.sendmail('ssa@fokus.fraunhofer.de', self.buddylist[self.nickname], msg.as_string())
+			s.close() 
+			
+			self.state = 'main_menu'
+			self.timeoutvalue = 0
+			ivr.wakeUp()
+			
+			self.return_to_main()
+		
+	def init_voicemail(self):
+		ivr.emptyMediaQueue()
+		ivr.say("If you are ready to send a voicemail to %s please press 1" % self.nickname)
+		self.state = 'before_voicemail'
+		self.timeoutvalue = 10
+		ivr.wakeUp()
+
+	def return_to_main(self):
+		self.state = 'main_menu'
+		self.timeoutvalue = 0
+		ivr.say(self.main_menu_text)
+		ivr.wakeUp()
+		
+	def find_nick(self, nickpart):
+		foundnick = ''
+		max_same_chars = 0
+		for nick, mailadr in self.buddylist.iteritems():
+			if string.count(nick, nickpart) > max_same_chars:
+				max_same_chars = string.count(nick, nickpart)
+				foundnick = nick
+		return foundnick
+	
+	def reinit_autoenter(self): 
+		#self.timeoutvalue = self.auto_enter_key_after
+		self.go_back_to_sleep = True
+		ivr.wakeUp()
+		
+###########################
+	def timeoutaction(self):
+		print("voicemail script: timeoutaction, state = %s" % self.state)
+		if self.state == 'add_contact_enter_nickname':
+			if self.last_key == -1:
+				return
+			if self.have_typed_key:
+				self.nickname += tel_keys[self.last_key][self.key_index]
+				self.key_index = 0
+				ivr.say(self.nickname)
+				self.last_key = -1
+				self.have_typed_key = False
+			
+		elif self.state == 'send_voicemail':
+			if self.last_key == -1:
+				return
+			if self.have_typed_key:
+				self.nickname += tel_keys[self.last_key][self.key_index]
+				self.key_index = 0
+				ivr.say(self.find_nick(self.nickname))
+				self.last_key = -1
+				self.have_typed_key = False
+
+		if self.state == 'add_contact_enter_email':
+			if self.last_key == -1:
+				return
+			if self.have_typed_key:
+				self.email += tel_keys[self.last_key][self.key_index]
+				self.key_index = 0
+				ivr.say(self.email)
+				self.last_key = -1
+				self.have_typed_key = False
+		
+		if self.state == 'before_voicemail':
+				ivr.say('send a voicemail to %s with 1.' % self.nickname)
+				
+	def mainloop(self):
+		while self.in_session:
+			ivr.sleep(self.timeoutvalue)
+			if self.go_back_to_sleep:
+				self.go_back_to_sleep = False
+			else:
+				self.timeoutaction()
+
+	def onMediaQueueEmpty(self): pass
+
+	def readbuddies(self):
+		print "reading contacts..."
+		reader = csv.reader(file(self.buddyfile))
+		for row in reader:
+			print(row)
+			nick = ''
+			mail = ''
+			for i, v in enumerate(row):
+				if i == 0:
+					nick = v
+				elif i == 1:
+					mail = v
+			self.buddylist[nick] = mail
+
+sm = ivr_sm()
+
+def onDTMF_m(key):
+		sm.onDTMF(key)
+def onMQE_m():
+		sm.onMediaQueueEmpty()
+def onBye_m():
+		sm.onBye()
+	
+sm.buddyfile = "/home/ssa/ivr/conf/voicemail/buddy.csv"
+sm.readbuddies()
+
+ivr.setCallback(onDTMF_m, "onDTMF")
+ivr.setCallback(onMQE_m, "onMediaQueueEmpty")
+ivr.setCallback(onBye_m, "onBye")
+
+ivr.enableDTMFDetection()
+ivr.say("Hello this is the fantastic voice mailer! " + sm.main_menu_text)
+
+sm.mainloop() # 
+#ivr.sleep(0) # endless
+-- voicemail.py - end ---------------------------
+
+4.4 print call information
+
+an example script that prints out all information:
+-----
+print "IVR"
+print "IVRIVI--------     call to "+ivr.getTo()
+print "ivr.getFrom() : " + ivr.getFrom()
+print "ivr.getFromTag() : " + ivr.getFromTag()
+print "ivr.getFromURI() : " + ivr.getFromURI()
+print ""
+print "ivr.getTo() : " + ivr.getTo()
+print "ivr.getToTag() : " + ivr.getToTag()
+print "ivr.getToURI() : " + ivr.getToURI()
+print ""
+print "ivr.getUser() : " + ivr.getUser()
+print "ivr.getEmail() : " + ivr.getEmail()
+print "ivr.getDstIP() : " + ivr.getDstIP()
+print "ivr.getPort() : " + ivr.getPort()
+print "ivr.getCallID() : " + ivr.getCallID()
+print "ivr.getDomain() : " + ivr.getDomain()
+print "ivr.getTime() : " + str(ivr.getTime())
+-------
+
+5. IVR Function reference
+It is not recommended to mix the sequential IVR operation with event controlled IVR
+operation ( 2. and 3.). Functions for sequential operations will probably not 
+work as expected.
+
+5.1. informational
+
+* ivr.getTime()
+	returns time as int (seconds from epoch)
+* ivr.getFrom()
+	return From as string
+* ivr.getTo()
+	returns To as string
+* ivr.getFromURI()
+	returns From URI as string
+* ivr.getToURI()
+	returns To URI as string
+* ivr.getDomain()
+	returns Domain as string
+* ivr.getUser()
+	returns the User as string
+* ivr.getEmail()
+	returns the email address if found in serweb tables
+* ivr.getCallID()
+	returns the Call ID
+* ivr.getFromTag()
+	return the from Tag
+* ivr.getToTag()
+	return the To Tag
+* ivr.getPort()
+	return the remote port 
+* ivr.getDstIP()
+	return the destination IP
+
+*ivr.getHeader(string header_name)
+        returns the value of the header with given name. Can not be used to
+        get the headers above (From, To, ...) ! 
+	ex. print ivr.getHeader('remote-party-id') 
+
+see 4.4 for an example script that prints out all information.
+
+5.2. sequential functions as from the old IVR module:
+* ivr.play(string filename)
+	play and wait until the end of the file (queue empty)
+* ivr.record(string filename, int max_rec_time)
+	record up to maximum of max_rec_time secs. If max_rec_time = 0, records until 
+	callee hangs up.
+* int ivr.playAndDetect(string filename)
+	play and wait for the end of the file (queue empty) or keypress
+	returns pressed key or -1 if no key pressed	
+* int ivr.detect([int timeout = 0 (unlimited)])
+	detect until timeout occurs.
+	Parameter: timeout = 0 : int. If omitted, no timeout (endless) is assumed
+
+
+5.3. event controlled operation, new IVR functions:
+// setting callbacks
+* ivr.setCallback(Python_function_pointer cb_function, string cb_name)
+
+  example: 
+  
+  def onDTMF_Func(key):
+  	print "DTMF: ", key
+ 
+  def onMQE_Func():
+  	print "Playlist ran out!"
+  
+  def onBye_Func():
+  	print "onBye!"	
+  
+  ivr.setCallback(onDTMF_Func, "onDTMF")
+  ivr.setCallback(onMQE_Func "onMediaQueueEmpty")
+  ivr.setCallback(onBye_Func, "onBye")
+
+
+// Playback and recording 
+* ivr.enqueueMediaFile(string filename [, int front = 1 (default true) ])
+
+Add a file to the playlist.
+examples:
+	ivr.enqueueMediaFile("/tmp/hello.wav")  
+#will be added at the front 
+
+	ivr.enqueueMediaFile("/tmp/hello.wav", 0)  
+# be added to the back of the playlist
+
+* ivr.emptyMediaQueue()
+ clear the playlist.
+ 
+*ivr.startRecording(string filename)
+ start recording to filename. If already recording, record is closed first.
+
+*ivr.stopRecording()
+ stop recording. If not recording, does nothing
+
+*ivr.say (string msg [, int front = 1 (default true)] ) 
+	*only available if compiled with flite-Text-to-Speech support (see Makefile)*
+
+ do Text to Speech and enqueue (= put in playlist) result.
+
+
+// DTMF functions
+* ivr.enableDTMFDetection
+  be sure to call setCallback(onDTMF_FUNC, "onDTMF") first!
+    
+* ivr.disableDTMFDetection()
+ disable DTMF detection permanently (i.e. until the next enableDtmfDetection) 
+
+* ivr. pauseDTMFDetection
+ pause DTMF detection temporarily, can be resumed
+* ivr.resumeDTMFDetection
+ resume DTMF detection
+ 
+
+// bed time
+* ivr.sleep(int n)
+	sleep n seconds or until wakeUp() is called
+* ivr.usleep(int n)
+	sleep n microseconds or until wakeUp() is called
+* ivr.wakeUp()
+	wake sleeping script
+
+// call control
+* int ivr.redirect(string to_uri)
+
+	REFER the caller to to_uri. See section "3.7 redirecting a call
+	(REFER)" for details.
+	return value: cseq of the REFER command.
+
+* ivr.dialout(string user, string app_name, string uri, string from_user)
+
+  	Place a new call, which will be made to uri from from_user. app_name
+	is the SEMS application that gets the new call.
+	
+6. Troubleshooting & FAQ
+
+6.1 Q:"I get unresolved symbol XYZ when I run /usr/bin/python ivr.py"
+    A: the python/perl interpreter is embedded in the ivr plug-in. Read 
+       3. General operation.
+       
+6.2 Q:"I get unresolved symbol XYZ when I do import mysql.so in my script"
+    A:link all modules used from lib-dynload with the ivr modules. if you 
+    use perl, change SCRIPT=Perl to SCRIPT=Perl- , if you use Python, add
+    _mysql.so (and some others) to PYTHON_DYNLOAD_MODULES . See "2.2 
+    Adapting the Makefile".
+    
+6.3 Q:"I do not get the status of a REFER in my script"
+    A:See 3.7 on how to get response and notification of refer method.
+
+6.4 Q:"I cannot record from asterisk pstn-gw when no file is played (media
+       queue empty)."
+    A:see 2.2.3.
+    
+If you encounter any problems or bugs, please write to the sems mailing list ( sems@iptel.org ) 
+or directly me at stefan.sayer@fokus.fraunhofer.de . 
+
+7. Contact the authors
+
+ Stefan Sayer can best be reached at mailto:stefan.sayer@fokus.fraunhofer.de or 
+ sip:sayer@iptel.org.
+ 
+ Fraunhofer Institut FOKUS       Email:stefan.sayer@fokus.fraunhofer.de
+ Kaiserin-Augusta-Allee 31       Phone: +49 30 3463 7137
+ D-10589 Berlin, Germany
+ http://www.fokus.fraunhofer.de/research/cc/mobis
+
+ Richard can be reached at mailto:richard@o-matrix.org
+ 

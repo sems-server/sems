@@ -1,0 +1,604 @@
+
+
+   Internet Draft                                            Alan Duric 
+   draft-ietf-avt-rtp-ilbc-04.txt                   Soren Vang Andersen 
+   November 30th, 2003                                                  
+   Expires: May 30th, 2004                              Global IP Sound 
+ 
+ 
+                    RTP Payload Format for iLBC Speech 
+ 
+ 
+Status of this Memo 
+ 
+   This document is an Internet-Draft and is in full conformance with 
+   all provisions of Section 10 of RFC2026. 
+ 
+   Internet-Drafts are working documents of the Internet Engineering 
+   Task Force (IETF), its areas, and its working groups. Note that 
+   other groups may also distribute working documents as Internet-
+   Drafts. 
+    
+   Internet-Drafts are draft documents valid for a maximum of six 
+   months and may be updated, replaced, or obsoleted by other documents 
+   at any time.  It is inappropriate to use Internet-Drafts as 
+   reference material or to cite them other than as "work in progress." 
+    
+   The list of current Internet-Drafts can be accessed at 
+   http://www.ietf.org/ietf/1id-abstracts.txt 
+   The list of Internet-Draft Shadow Directories can be accessed at 
+   http://www.ietf.org/shadow.html. 
+    
+    
+Copyright Notice 
+    
+   Copyright (C) The Internet Society (2003). All Rights Reserved. 
+    
+Abstract 
+    
+   This document describes the RTP payload format for the internet Low 
+   Bit Rate Coder (iLBC) Speech developed by Global IP Sound (GIPS). 
+   Also, within the document there are included necessary details for 
+   the use of iLBC with MIME and SDP. 
+ 
+ 
+Table of Contents 
+    
+   Status of this Memo................................................1 
+   Abstract...........................................................1 
+   Table of Contents..................................................1 
+   1. INTRODUCTION....................................................2 
+   2. BACKGROUND......................................................2 
+   3. RTP PAYLOAD FORMAT..............................................3 
+   3.1 Bitstream definition...........................................3 
+   3.2 Multiple iLBC frames in a RTP packet...........................6 
+   4. IANA CONSIDERATIONS.............................................6 
+    
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+   4.1 Storage Mode...................................................6 
+   4.2 MIME registration of iLBC......................................7 
+   5. MAPPING TO SDP PARAMETERS.......................................9 
+   6. SECURITY CONSIDERATIONS........................................10 
+   7. REFERENCES.....................................................11 
+   7.1 Normative references..........................................11 
+   7.2 Informative references........................................11 
+   8. ACKNOWLEDGEMENTS...............................................12 
+   9. AUTHOR'S ADDRESSES.............................................12 
+ 
+ 
+1. INTRODUCTION  
+ 
+   This document describes how compressed iLBC speech as produced by 
+   the iLBC codec [1] may be formatted for use as an RTP payload type. 
+   Methods are provided to packetize the codec data frames into RTP 
+   packets. The sender may send one or more codec data frames per 
+   packet, depending on the application scenario or based on the 
+   transport network condition, bandwidth restriction, delay 
+   requirements and packet-loss tolerance. 
+    
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", 
+   "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in 
+   this document are to be interpreted as described in RFC 2119 [2]. 
+ 
+    
+2. BACKGROUND 
+ 
+   Global IP Sound (GIPS) has developed and defines a speech 
+   compression algorithm for use in IP based communications [1]. The 
+   iLBC codec enables graceful speech quality degradation in the case 
+   of lost frames, which occurs in connection with lost or delayed IP 
+   packets. 
+    
+   Some of the applications for which this coder is suitable are: real 
+   time communications such as telephony and videoconferencing, 
+   streaming audio, archival and messaging. 
+    
+   The iLBC codec [1] is an algorithm that compresses each basic frame 
+   (20 ms or 30 ms) of 8000 Hz, 16-bit sampled input speech, into 
+   output frames with rate of 400 bits for 30 ms basic frame size and 
+   304 bits for 20 ms basic frame size. 
+    
+   The codec has support for two basic frame lengths: 30 ms at 13.33 
+   kbit/s and 20 ms at 15.2 kbit/s, using a block independent linear-
+   predictive coding (LPC) algorithm. When the codec operates at block 
+   lengths of 20 ms, it produces 304 bits per block which MUST be 
+   packetized in 38 bytes. Similarly, for block lengths of 30 ms it 
+   produces 400 bits per block which MUST be packetized in 50 bytes. 
+   The described algorithm results in a speech coding system with a 
+   controlled response to packet losses similar to what is known from 
+   pulse code modulation (PCM) with a packet loss concealment (PLC), 
+    
+   Duric, Andersen                                            [Page 2] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+   such as ITU-T G711 standard [10], which operates at a fixed bit rate 
+   of 64 kbit/s. At the same time, the described algorithm enables 
+   fixed bit rate coding with a quality-versus-bit rate tradeoff close 
+   to what is known from code-excited linear prediction (CELP). 
+ 
+    
+3. RTP PAYLOAD FORMAT 
+    
+   The iLBC codec uses 20 or 30 ms frames and a sampling rate clock of 
+   8 kHz, so the RTP timestamp MUST be in units of 1/8000 of a second. 
+   The RTP payload for iLBC has the format shown in the figure bellow. 
+   No addition header specific to this payload format is required. 
+    
+   This format is intended for the situations where the sender and the 
+   receiver send one or more codec data frames per packet. The RTP 
+   packet looks as follows: 
+    
+   0                   1                   2                   3 
+   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
+   |                      RTP Header [4]                           | 
+   +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+ 
+   |                                                               | 
+   +                 one or more frames of iLBC [1]                | 
+   |                                                               | 
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
+ 
+   Figure 1, Packet format diagram 
+    
+   The RTP header of the packetized encoded iLBC speech has the 
+   expected values as described in [4]. The usage of M bit SHOULD be as 
+   specified in the applicable RTP profile, for example, RFC 3551 [5], 
+   where [5] specifies that if the sender does not suppress silence 
+   (i.e., sends a frame on every frame interval), the M bit will always 
+   be zero. When more then one codec data frame is present in a single 
+   RTP packet, the timestamp is, as always, that of the oldest data 
+   frame represented in the RTP packet. 
+    
+   The assignment of an RTP payload type for this new packet format is 
+   outside the scope of this document, and will not be specified here. 
+   It is expected that the RTP profile for a particular class of 
+   applications will assign a payload type for this encoding, or if 
+   that is not done, then a payload type in the dynamic range shall be 
+   chosen by the sender. 
+    
+3.1 Bitstream definition 
+ 
+   The total number of bits used to describe one frame of 20 ms speech 
+   is 304, which fits in 38 bytes and results in a bit rate of 15.20 
+   kbit/s. For the case with a frame length of 30 ms speech the total 
+   number of bits used is 400, which fits in 50 bytes and results in a 
+   bit rate of 13.33 kbit/s. In the bitstream definition, the bits are 
+   distributed into three classes according to their bit error or loss 
+   sensitivity. The most sensitive bits (class 1) are placed first in 
+    
+   Duric, Andersen                                            [Page 3] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+   the bitstream for each frame. The less sensitive bits (class 2) are 
+   placed after the class 1 bits. The least sensitive bits (class 3) 
+   are placed at the end of the bitstream for each frame. 
+    
+   Looking at the 20/30 ms frame length cases for each class: The class 
+   1 bits occupy a total of 6/8 bytes (48/64 bits), the class 2 bits 
+   occupy 8/12 bytes (64/96 bits), and the class 3 bits occupy 24/30 
+   bytes (191/239 bits). This distribution of the bits enables the use 
+   of uneven level protection (ULP). The detailed bit allocation is 
+   shown in the table below. When a quantization index is distributed 
+   between more classes the more significant bits belong to the lowest 
+   class. 
+    
+   Bitstream structure: 
+    
+   ------------------------------------------------------------------+ 
+   Parameter                         |       Bits Class <1,2,3>      | 
+                                     |  20 ms frame  |  30 ms frame  | 
+   ----------------------------------+---------------+---------------+ 
+                            Split 1  |   6 <6,0,0>   |   6 <6,0,0>   | 
+                   LSF 1    Split 2  |   7 <7,0,0>   |   7 <7,0,0>   | 
+   LSF                      Split 3  |   7 <7,0,0>   |   7 <7,0,0>   | 
+                   ------------------+---------------+---------------+ 
+                            Split 1  | NA (Not Appl.)|   6 <6,0,0>   | 
+                   LSF 2    Split 2  |      NA       |   7 <7,0,0>   | 
+                            Split 3  |      NA       |   7 <7,0,0>   | 
+                   ------------------+---------------+---------------+ 
+                   Sum               |  20 <20,0,0>  |  40 <40,0,0>  | 
+   ----------------------------------+---------------+---------------+ 
+   Block Class.                      |   2 <2,0,0>   |   3 <3,0,0>   | 
+   ----------------------------------+---------------+---------------+ 
+   Position 22 sample segment        |   1 <1,0,0>   |   1 <1,0,0>   | 
+   ----------------------------------+---------------+---------------+ 
+   Scale Factor State Coder          |   6 <6,0,0>   |   6 <6,0,0>   | 
+   ----------------------------------+---------------+---------------+ 
+                   Sample 0          |   3 <0,1,2>   |   3 <0,1,2>   | 
+   Quantized       Sample 1          |   3 <0,1,2>   |   3 <0,1,2>   | 
+   Residual           :              |   :    :      |   :    :      | 
+   State              :              |   :    :      |   :    :      | 
+   Samples            :              |   :    :      |   :    :      | 
+                   Sample 56         |   3 <0,1,2>   |   3 <0,1,2>   | 
+                   Sample 57         |      NA       |   3 <0,1,2>   | 
+                   ------------------+---------------+---------------+ 
+                   Sum               | 171 <0,57,114>| 174 <0,58,116>| 
+   ----------------------------------+---------------+---------------+ 
+    
+   Duric, Andersen                                            [Page 4] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+    
+                            Stage 1  |   7 <6,0,1>   |   7 <4,2,1>   | 
+   CB for 22/23             Stage 2  |   7 <0,0,7>   |   7 <0,0,7>   | 
+   sample block             Stage 3  |   7 <0,0,7>   |   7 <0,0,7>   | 
+                   ------------------+---------------+---------------+ 
+                   Sum               |  21 <6,0,15>  |  21 <4,2,15>  | 
+   ----------------------------------+---------------+---------------+ 
+                            Stage 1  |   5 <2,0,3>   |   5 <1,1,3>   | 
+   Gain for 22/23           Stage 2  |   4 <1,1,2>   |   4 <1,1,2>   | 
+   sample block             Stage 3  |   3 <0,0,3>   |   3 <0,0,3>   | 
+                   ------------------+---------------+---------------+ 
+                   Sum               |  12 <3,1,8>   |  12 <2,2,8>   | 
+   ----------------------------------+---------------+---------------+ 
+                            Stage 1  |   8 <7,0,1>   |   8 <6,1,1>   | 
+               sub-block 1  Stage 2  |   7 <0,0,7>   |   7 <0,0,7>   | 
+                            Stage 3  |   7 <0,0,7>   |   7 <0,0,7>   | 
+                   ------------------+---------------+---------------+ 
+                            Stage 1  |   8 <0,0,8>   |   8 <0,7,1>   | 
+               sub-block 2  Stage 2  |   8 <0,0,8>   |   8 <0,0,8>   | 
+   Indices                  Stage 3  |   8 <0,0,8>   |   8 <0,0,8>   | 
+   for CB          ------------------+---------------+---------------+ 
+   sub-blocks               Stage 1  |      NA       |   8 <0,7,1>   | 
+               sub-block 3  Stage 2  |      NA       |   8 <0,0,8>   | 
+                            Stage 3  |      NA       |   8 <0,0,8>   | 
+                   ------------------+---------------+---------------+ 
+                            Stage 1  |      NA       |   8 <0,7,1>   | 
+               sub-block 4  Stage 2  |      NA       |   8 <0,0,8>   | 
+                            Stage 3  |      NA       |   8 <0,0,8>   | 
+                   ------------------+---------------+---------------+ 
+                   Sum               |  46 <7,0,39>  |  94 <6,22,66> | 
+   ----------------------------------+---------------+---------------+ 
+                            Stage 1  |   5 <1,2,2>   |   5 <1,2,2>   | 
+               sub-block 1  Stage 2  |   4 <1,1,2>   |   4 <1,2,1>   | 
+                            Stage 3  |   3 <0,0,3>   |   3 <0,0,3>   | 
+                   ------------------+---------------+---------------+ 
+                            Stage 1  |   5 <1,1,3>   |   5 <0,2,3>   | 
+               sub-block 2  Stage 2  |   4 <0,2,2>   |   4 <0,2,2>   | 
+                            Stage 3  |   3 <0,0,3>   |   3 <0,0,3>   | 
+   Gains for       ------------------+---------------+---------------+ 
+   sub-blocks               Stage 1  |      NA       |   5 <0,1,4>   | 
+               sub-block 3  Stage 2  |      NA       |   4 <0,1,3>   | 
+                            Stage 3  |      NA       |   3 <0,0,3>   | 
+                   ------------------+---------------+---------------+ 
+                            Stage 1  |      NA       |   5 <0,1,4>   | 
+               sub-block 4  Stage 2  |      NA       |   4 <0,1,3>   | 
+                            Stage 3  |      NA       |   3 <0,0,3>   | 
+                   ------------------+---------------+---------------+ 
+                   Sum               |  24 <3,6,15>  |  48 <2,12,34> | 
+   ------------------------------------------------------------------- 
+   Empty frame indicator             |   1 <0,0,1>   |   1 <0,0,1>   | 
+   ------------------------------------------------------------------- 
+   SUM                                 304 <48,64,192> 400 <64,96,240> 
+    
+    
+    
+   Duric, Andersen                                            [Page 5] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+   Table 3.1 The bitstream definition for iLBC. 
+    
+   When packetized into the payload the bits MUST be sorted as: All the 
+   class 1 bits in the order (from top and down) as they were specified 
+   in the table, all the class 2 bits (from top and down) and finally 
+   all the class 3 bits in the same sequential order. 
+    
+ 
+3.2 Multiple iLBC frames in a RTP packet 
+    
+   More than one iLBC frame may be included in a single RTP packet by a 
+   sender. 
+    
+   It is important to observe that senders have the following 
+   additional restrictions: 
+    
+   SHOULD NOT include more iLBC frames in a single RTP packet than will 
+   fit in the MTU of the RTP transport protocol. 
+    
+   Frames MUST NOT be split between RTP packets. 
+    
+   Frames of the different modes (20 ms and 30 ms) MUST NOT be included 
+   within the same packet. 
+    
+   It is RECOMMENDED that the number of frames contained within an RTP 
+   packet is consistent with the application.  For example, in a 
+   telephony and other real time applications where delay is important, 
+   then the fewer frames per packet the lower the delay, whereas for a 
+   bandwidth constrained links or delay insensitive streaming messaging 
+   application, more then one or many frames per packet would be 
+   acceptable. 
+    
+   Information describing the number of frames contained in an RTP 
+   packet is not transmitted as part of the RTP payload.  The way to 
+   determine the number of iLBC frames is to count the total number of 
+   octets within the RTP packet, and divide the octet count by the 
+   number of expected octets per frame (32/50 per frame). 
+    
+    
+4. IANA CONSIDERATIONS 
+    
+   One new MIME sub-type as described in this section is to be 
+   registered. 
+    
+4.1 Storage Mode 
+    
+   The storage mode is used for storing speech frames (e.g. as a file 
+   or e-mail attachment). 
+    
+   Duric, Andersen                                            [Page 6] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+    
+   +------------------+ 
+   | Header           | 
+   +------------------+ 
+   | Speech frame 1   | 
+   +------------------+ 
+   :                  : 
+   +------------------+ 
+   | Speech frame n   | 
+   +------------------+ 
+ 
+   Figure 2, Storage format diagram 
+    
+   The file begins with a header that includes only a magic number to 
+   identify that it is an iLBC file.  
+    
+   The magic number for iLBC file MUST correspond to the ASCII 
+   character string: 
+          
+         o for 30 ms frame size mode:"#!iLBC30\n", or "0x23 0x21 0x69 
+         0x4C 0x42 0x43 0x33 0x30 0x0A" in hexadecimal form, 
+          
+         o for 20 ms frame size mode:"#!iLBC20\n", or "0x23 0x21 0x69 
+         0x4C 0x42 0x43 0x32 0x30 0x0A" in hexadecimal form. 
+    
+    
+   After the header, follow the speech frames in consecutive order. 
+    
+   Speech frames lost in transmission MUST be stored as "empty frames", 
+   as defined in [1]. 
+    
+    
+4.2 MIME registration of iLBC 
+    
+   MIME media type name: audio 
+    
+   MIME subtype: iLBC 
+    
+   Optional parameters: 
+    
+   This parameter applies to RTP transfer only. 
+    
+        maxptime:The maximum amount of media which can be  
+                 encapsulated in each packet, expressed  
+                 as time in milliseconds. The time SHALL be  
+                 calculated as the sum of the time the media  
+                 present in the packet represents. The time SHOULD be 
+                 a multiple of the frame size. This attribute is 
+                 probably only meaningful for audio data, but may be 
+                 used with other media types if it makes sense. It is 
+                 a media attribute, and is not dependent on charset.
+                 Note that this attribute was introduced after RFC
+                 2327, and non updated implementations will ignore 
+                 this attribute. 
+    
+   Duric, Andersen                                            [Page 7] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+    
+         mode:    The iLBC operating frame mode (20 or 30 ms) that will 
+                  be encapsulated in each packet. Values can be 0, 20
+                  and 30 (where 0 is reserved, 20 stands for preferred 
+                  20 ms frame size and 30 stands for preferred 30 ms 
+                  frame size). 
+    
+        ptime:   Defined as usual for RTP audio (see [7]). 
+    
+   Encoding considerations: 
+                  This type is defined for transfer via both RTP (RFC 
+                  3550) and stored-file methods as described in Section 
+                  4.1, of RFC XXXX. Audio data is binary data, and must 
+                  be encoded for non-binary transport; the Base64 
+                  encoding is suitable for Email.  
+    
+   Security considerations: 
+                  See Section 6 of RFC XXXX. 
+    
+   Public specification: 
+                  Please refer to RFC XXXX [1]. 
+    
+   Additional information: 
+                  The following applies to stored-file transfer 
+                  methods: 
+    
+                  Magic number:  
+                  ASCII character string for: 
+                  o 30 ms frame size mode "#!iLBC30\n" (or 0x23 0x21 
+                  0x69 0x4C 0x42 0x43 0x33 0x30 0x0A in hexadecimal) 
+                  o 20 ms frame size mode "#!iLBC20\n" (or 0x23 0x21 
+                  0x69 0x4C 0x42 0x43 0x32 0x30 0x0A in hexadecimal) 
+                   
+    
+                  File extensions: lbc, LBC 
+                  Macintosh file type code: none 
+                  Object identifier or OID: none 
+    
+   Person & email address to contact for further information: 
+                  alan.duric@globalipsound.com 
+    
+   Intended usage: COMMON. 
+                  It is expected that many VoIP applications will use 
+                  this type. 
+    
+   Author/Change controller: 
+                  alan.duric@globalipsound.com 
+                  IETF Audio/Video transport working group 
+    
+   Duric, Andersen                                            [Page 8] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+ 
+5. MAPPING TO SDP PARAMETERS 
+    
+   The information carried in the MIME media type specification has a 
+   specific mapping to fields in the Session Description Protocol (SDP) 
+   [7], which is commonly used to describe RTP sessions.  When SDP is 
+   used to specify sessions employing the iLBC codec, the mapping is as 
+   follows: 
+    
+         o The MIME type ("audio") goes in SDP "m=" as the media name. 
+    
+         o The MIME subtype (payload format name) goes in SDP 
+         "a=rtpmap" as the encoding name. 
+    
+         o The parameters "ptime" and "maxptime" go in the SDP 
+         "a=ptime" and "a=maxptime" attributes, respectively. 
+    
+         o The parameter "mode" goes in the SDP "a=fmtp" attribute by 
+         copying it directly from the MIME media type string as 
+         "mode=value". 
+    
+   When conveying information by SDP, the encoding name SHALL be "iLBC" 
+   (the same as the MIME subtype).  
+    
+   An example of the media representation in SDP for describing iLBC 
+   might be: 
+    
+     m=audio 49120 RTP/AVP 97 
+     a=rtpmap:97 iLBC/8000 
+    
+   If 20 ms frame size mode is used, remote iLBC encoder SHALL receive 
+   "mode" parameter in the SDP "a=fmtp" attribute by copying them 
+   directly from the MIME media type string as a semicolon separated 
+   with parameter=value, where parameter is "mode", and values can be 0 
+   and 20 (where 0 is reserved and 20 stands for preferred 20 ms frame 
+   size). An example of the media representation in SDP for describing 
+   iLBC when 20 ms frame size mode is used might be: 
+    
+     m=audio 49120 RTP/AVP 97 
+     a=rtpmap:97 iLBC/8000 
+     a=fmtp:97 mode=20 
+    
+   It is important to emphasize bi-directional character of the "mode" 
+   parameter, where "mode" would imply that 20 ms frame size mode MUST 
+   be used in both of the directions if negotiated. This is important 
+   for the cases when certain end point will be behind bandwidth 
+   constrained link (e.g. modem 28.8 or bellow), where only 30 ms mode 
+   would be possible to function. 
+    
+   Parameter ptime can not be used for the purpose of specifying iLBC 
+   operating mode, due to fact that for the certain values it will be 
+   impossible to distinguish which mode is about to be used (e.g. when 
+   ptime=60, it would be impossible to distinguish if packet is 
+   carrying 2 frames of 30 ms or 3 frames of 20 ms etc.). 
+    
+   Duric, Andersen                                            [Page 9] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+    
+   Note that the payload format (encoding) names are commonly shown in 
+   upper case. MIME subtypes are commonly shown in lower case.  These 
+   names are case-insensitive in both places.  Similarly, parameter 
+   names are case-insensitive both in MIME types and in the default 
+   mapping to the SDP a=fmtp attribute 
+    
+ 
+6. SECURITY CONSIDERATIONS 
+    
+   RTP packets using the payload format defined in this specification 
+   are subject to the general security considerations discussed in [4] 
+   and any appropriate profile (e.g. [5]). 
+    
+   As this format transports encoded speech, the main security issues 
+   include confidentiality and authentication of the speech itself. The 
+   payload format itself does not have any built-in security 
+   mechanisms. Confidentiality of the media streams is achieved by 
+   encryption, therefore external mechanisms, such as SRTP [9], MAY be 
+   used for that purpose. The data compression used with this payload 
+   format is applied end-to-end; hence encryption may be performed 
+   after compression with no conflict between the two operations. 
+    
+   A potential denial-of-service threat exists for data encoding using 
+   compression techniques that have non-uniform receiver-end 
+   computational load. The attacker can inject pathological datagrams 
+   into the stream which are complex to decode and cause the receiver 
+   to become overloaded. However, the encodings covered in this 
+   document do not exhibit any significant non-uniformity. 
+    
+   Duric, Andersen                                           [Page 10] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+    
+7. REFERENCES 
+    
+7.1 Normative references 
+    
+   [1] Andersen, et al., "Internet Low Bit Rate Codec (iLBC)", IETF 
+      Draft, October 2003. 
+    
+   [2] S. Bradner, "Key words for use in RFCs to Indicate requirement 
+      Levels", BCP 14, RFC 2119, March 1997. 
+    
+   [3] S. Bradner, "The Internet Standards Process -- Revision 3", BCP 
+      9, RFC 2026, October 1996 
+    
+   [4] H. Schulzrinne, S. Casner, R. Frederick, and V. Jacobson, "RTP: 
+      A Transport Protocol for Real-Time Applications", IETF RFC 3550, 
+      July 2003. 
+    
+   [5] H. Schulzrinne, S. Casner, "RTP Profile for Audio and Video 
+      Conferences with Minimal Control" IETF RFC 3551, July 2003. 
+    
+   [6] Handley & Perkins, "Guidelines for Writers of RTP Payload 
+      Formats", BCP 36, RFC 2736, December 1999. 
+    
+   [7] M. Handley and V. Jacobson, "SDP: Session Description Protocol", 
+      IETF RFC 2327, April 1998 
+    
+   [8] N. Freed and N. Borenstein, "Multipurpose Internet Mail 
+      Extensions (MIME) Part One: Format of Internet Message Bodies", 
+      IETF RFC 2045, November 1996. 
+    
+   [9] Baugher, et al., "The Secure Real Time Transport Protocol", IETF 
+      Draft, July 2003. 
+    
+7.2 Informative references 
+    
+   [10] ITU-T Recommendation G.711, available online from the ITU 
+      bookstore at http://www.itu.int. 
+    
+    
+   Duric, Andersen                                           [Page 11] 
+   INTERNET DRAFT RTP Payload format for iLBC Speech     November 2003 
+    
+    
+8. ACKNOWLEDGEMENTS 
+    
+   The authors wish to thank Henry Sinnreich, Patrik Faltstrom and Alan 
+   Johnston for great support of the iLBC initiative and for their 
+   valuable feedback and comments. 
+    
+    
+9. AUTHOR'S ADDRESSES 
+    
+   Alan Duric 
+   Global IP Sound AB 
+   Rosenlundsgatan 54  
+   Stockholm, S-11863 
+   Sweden           
+   Phone:  +46 8 54553040 
+   Email:  alan.duric@globalipsound.com 
+    
+   Soren Vang Andersen 
+   Department of Communication Technology 
+   Aalborg University 
+   Fredrik Bajers Vej 7A 
+   9200 Aalborg 
+   Denmark 
+   Phone:  ++45 9 6358627 
+   Email:  sva@kom.auc.dk 
+    
+    
+   Duric, Andersen                                           [Page 12] 

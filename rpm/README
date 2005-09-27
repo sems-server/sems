@@ -1,0 +1,24 @@
+$Id: README,v 1.2 2003/09/06 11:04:41 ullstar Exp $
+
+creating sems rpm packages
+
+- get a clean checkout
+- run "make dist"
+- cp the created sems-X.X.X.tar.gz to /usr/src/redhat/SOURCES (redhat)  or
+- cp the created sems-X.X.X.tar.gz to /usr/src/packages/SOURCES (suse)
+- run rpmbuild -ba rpm/spec.redhat (redhat)  or 
+- run rpmbuild -ba rpm/spec.suse (suse)
+
+You will find src.rpm under /usr/src/[redhat|packages]/SRPMS
+and binary rpm under /usr/src/[redhat|packages]/RPMS/i386
+
+To rebuild a source RPM do either
+
+- install the src.rpm with rpm -i
+- run rpmbuild -bb /usr/src/[redhat|packages]/SPECS/sems.spec
+
+or (easier)
+
+- run rpmbuild --rebuild sems-X.X.X-src.rpm
+
+Binary rpm will in both cases be in /usr/src/[redhat|packages]/RPMS/i386.

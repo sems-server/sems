@@ -1,0 +1,105 @@
+CPP_FLAGS = -Wall -Wno-reorder -fPIC -g \
+	  -D_DEBUG \
+	  -D_THREAD_SAFE -D_REENTRANT \
+#	  -DSUPPORT_IPV6
+
+LD_FLAGS = -lm
+
+OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
+TARGET =
+
+ifeq ($(OS), linux)
+	LD_FLAGS +=  -ldl -rdynamic -lpthread
+else
+ifeq ($(OS), freebsd)
+	LD_FLAGS += -rdynamic -pthread
+else
+ifeq ($(OS), openbsd)
+	LD_FLAGS += -rdynamic -pthread
+else
+ifeq ($(OS), netbsd)
+	LD_FLAGS += -rdynamic -pthread
+else
+	LD_FLAGS+=  -ldl -lsocket -lnsl -lpthread
+	TARGET=solaris
+endif
+endif
+endif
+endif
+
+LIB_LD_FLAGS = $(LD_FLAGS) -shared
+
+# install path is $(basedir) $(prefix) 
+# example:
+#  creating a bin. archive in /tmp, which unpacks in /usr/local
+#  basedir=/tmp
+#  prefix=/usr/local
+
+DESTDIR ?= /usr/local
+PREFIX ?= $(DESTDIR)
+LOCALBASE ?= /usr/local
+prefix = $(PREFIX)
+BASEDIR ?=
+basedir = $(BASEDIR)
+
+# Redhat users should use sems.redhat instead of sems
+# the file will be to $(bin-prefix)/$(bin-dir)/sems copied.
+start-script = sems.redhat
+
+# install prefixes for various stuff
+cfg-prefix = $(basedir)$(prefix)
+bin-prefix = $(basedir)$(prefix)
+modules-prefix = $(basedir)$(prefix)
+doc-prefix = $(basedir)$(prefix)
+audio-prefix = $(basedir)$(prefix)
+
+# dirs
+cfg-dir = etc/sems/
+bin-dir = sbin/
+modules-dir = lib/sems/plug-in/
+audio-dir = lib/sems/audio/
+
+ifeq ($(OS), linux)
+	doc-dir = share/doc/sems/
+	man-dir = share/man/
+else
+ifeq ($(OS), freebsd)
+	doc-dir = share/doc/sems/
+	man-dir = man/
+else
+ifeq ($(OS), openbsd)
+	doc-dir = share/doc/sems/
+	man-dir = man/
+else
+ifeq ($(OS), netbsd)
+	doc-dir = share/doc/sems
+	man-dir = man/
+else
+	doc-dir = doc/sems/
+	man-dir = man/
+endif
+endif
+endif
+endif
+# target dirs for various stuff
+bin-target = $(prefix)/$(bin-dir)
+cfg-target = $(prefix)/$(cfg-dir)
+modules-target = $(prefix)/$(modules-dir)
+audio-target = $(prefix)/$(audio-dir)
+
+ifeq ($(OS), solaris)
+#use GNU versions
+INSTALL ?= ginstall
+TAR ?= gtar
+else
+INSTALL ?= install 
+TAR ?= tar
+endif
+
+INSTALL-TOUCH = touch          # used to create the file first (good to 
+                               #  make solaris install work)
+INSTALL-CFG = $(INSTALL) -m 644
+INSTALL-BIN = $(INSTALL) -m 755
+INSTALL-MODULES = $(INSTALL) -m 755
+INSTALL-DOC = $(INSTALL) -m 644
+INSTALL-AUDIO = $(INSTALL) -m 644
