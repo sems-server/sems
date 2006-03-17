@@ -1,0 +1,4 @@
+removed dh_shlibdeps.
+--This line, and those below, will be ignored--
+
+M    debian/rules

@@ -1,7 +1,12 @@
+COREPATH ?= ../core
+include $(COREPATH)/Makefile.defs
 
-modules = $(filter-out $(wildcard Makefile*), \
-			$(wildcard *) )
-			
+exclude_modules = 
+modules = $(filter-out $(exclude_modules) \
+		$(wildcard Makefile*) CVS, \
+		$(wildcard *) )
+#modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
+
 .PHONY: all
 all: modules
 
@@ -12,7 +17,7 @@ clean:
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
-			$(MAKE) -C $$r clean ; \
+			COREPATH=../$(COREPATH) $(MAKE) -C $$r clean ; \
 		fi ; \
 	done
 
@@ -22,7 +27,7 @@ modules:
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
 			echo  "" ; \
-			$(MAKE) -C $$r all; \
+			COREPATH=../$(COREPATH) $(MAKE) -C $$r all; \
 		fi ; \
 	done 
 
@@ -32,6 +37,6 @@ install:
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
-			$(MAKE) -C $$r install; \
+			COREPATH=../$(COREPATH) $(MAKE) -C $$r install; \
 		fi ; \
 	done

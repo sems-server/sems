@@ -1,0 +1,72 @@
+# $Id: sems.conf.sample,v 1.21 2005/01/05 16:48:04 sayer Exp $
+#
+# sems.conf.sample
+#
+# Sip Express Media Server (sems)
+# 
+# sample configuration file
+# 
+#
+# whitespaces (spaces and tabs) are ignored
+# comments start with a "#" and may be used inline
+# 
+# example: option=value # i like this option
+#
+
+plugin_config_path=etc/
+
+# optional parameter: fork={yes|no}
+# 
+# - specifies if sems should run in daemon mode (background)
+#   (fork=no is the same as -E)
+fork=no
+
+# optional parameter: stderr={yes|no}
+#
+# - debug mode: do not fork and log to stderr
+#   (stderr=yes is the same as -E)
+stderr=yes
+
+# optional parameter: loglevel={0|1|2|3}
+#
+# - sets log level (error=0, warning=1, info=2, debug=3)
+#   (same as -D)
+loglevel=3
+
+# optional parameter: socket_name=<filename>
+#
+# - path and file name of our unix socket
+socket_name=/tmp/sems_sock
+
+reply_socket_name=/tmp/sems_rsp_sock
+
+# optional parameter: ser_socket_name=<filename>
+#
+# - path and file name of Ser's unix socket
+ser_socket_name=/tmp/ser_sock
+
+# optional parameter: plugin_path=<path>
+# 
+# - sets the path to the plug-ins
+# - may be absolute or relative to CWD
+plugin_path=lib
+
+# optional parameter: smtp_server=<hostname>
+#
+# - sets address of smtp server
+smtp_server=safekeeper
+
+# optional parameter: smtp_port=<port>
+#
+# - sets port of smtp server
+smtp_port=25
+
+# optional parameter: rtp_low_port=<port>
+#
+# - sets port of rtp lowest server
+rtp_low_port=10000
+
+# optional parameter: rtp_high_port=<port>
+#
+# - sets port of rtp highest server
+rtp_high_port=60000

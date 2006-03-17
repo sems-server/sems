@@ -1,0 +1,19 @@
+*****************************
+* Statistics plug-in README *
+*****************************
+
+Description:
+
+This module enables you to monitor Sems. It offers its 
+informations through UDP. At the moment, only the number  
+of active calls is available.
+
+
+Using sample program:
+
+1. compile query_stats.c with: 
+     gcc -o query_stats query_stats.c
+
+2. use:
+     ./query_stats m.y.i.p port
+

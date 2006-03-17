@@ -1,0 +1,56 @@
+COREPATH ?=../..
+include $(COREPATH)/Makefile.defs
+
+ldflags = $(LIB_LD_FLAGS) $(module_ldflags)
+cflags = -I $(COREPATH) $(CPP_FLAGS) $(module_cflags)
+
+app_module_dir = $(COREPATH)/lib
+
+lib_name = $(plug_in_name).so
+lib_full_name = $(app_module_dir)/$(lib_name)
+
+srcs     = $(wildcard *.cpp)
+hrds     = $(wildcard *.h)
+objs     = $(srcs:.cpp=.o) 
+depends  = $(srcs:.cpp=.d)
+
+.PHONY: all
+all: $(extra_target)
+	-@$(MAKE) deps    && \
+	  $(MAKE) $(lib_full_name)
+
+.PHONY: module_package
+module_package: $(extra_target)
+	-@$(MAKE) deps    && \
+	  $(MAKE) $(lib_name)
+
+
+.PHONY: clean
+clean:
+	-@rm -f $(objs) $(depends) $(lib_name)
+
+.PHONY: deps
+deps: $(depends)
+
+.PHONY: install
+install: $(lib_name) $(extra_install)
+	mkdir -p $(modules-prefix)/$(modules-dir)
+	$(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$(lib_name) ; \
+	$(INSTALL-MODULES) $(lib_name) $(modules-prefix)/$(modules-dir)
+
+%.d: %.cpp Makefile $(COREPATH)/plug-in/Makefile.app_module
+	g++ -MM $< $(cflags) > $@
+
+%.o: %.cpp %.d
+	g++ $(cflags) -c $< -o $@
+
+$(lib_full_name): $(lib_name)
+	cp $(lib_name) $(lib_full_name)
+
+$(lib_name): $(objs)  Makefile
+	g++ -o $(lib_name)  $(objs) $(module_extra_objs) $(ldflags) 
+
+ifeq ($(lib_full_name),$(MAKECMDGOALS))
+include $(depends)
+endif
+

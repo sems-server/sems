@@ -1,0 +1,49 @@
+include ../../Makefile.defs
+
+ldflags = -shared $(module_ldflags)
+cflags  = -fPIC -I ../../amci -Wall $(module_cflags)
+
+audio_mod_dir = ../../lib
+
+lib_name = $(plug_in_name).so
+lib_full_name = $(audio_mod_dir)/$(lib_name)
+
+srcs     = $(wildcard *.c)
+hrds     = $(wildcard *.h)
+objs     = $(srcs:.c=.o) $(module_extra_objs)
+depends  = $(srcs:.c=.d)
+
+.PHONY: all
+all:
+	-@$(MAKE) deps    && \
+	  $(MAKE) $(lib_full_name)
+
+.PHONY: clean
+clean: $(extra_clean)
+	@rm -f $(objs) $(depends) $(lib_name)
+
+.PHONY: deps
+deps: $(depends)
+
+.PHONY: install
+install: $(lib_name) $(extra_install)
+	mkdir -p $(modules-prefix)/$(modules-dir)
+	$(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$(lib_name) ; \
+	$(INSTALL-MODULES) $(lib_name) $(modules-prefix)/$(modules-dir)
+
+%.d: %.c Makefile ../Makefile.audio_module
+	gcc -MM $< $(cflags) > $@
+
+%.o: %.c %.d
+	gcc $(cflags) -c $< -o $@
+
+$(lib_full_name): $(lib_name)
+	cp $(lib_name) $(lib_full_name)
+
+$(lib_name): $(objs)  Makefile
+	gcc -o $(lib_name) $(objs) $(ldflags)  
+
+ifeq ($(lib_full_name),$(MAKECMDGOALS))
+include $(depends)
+endif
+
