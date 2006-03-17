@@ -31,7 +31,7 @@ compile:
 	/usr/bin/python${PYTHON_VERSION} /usr/lib/python${PYTHON_VERSION}/compileall.py -q ${LIBDIR}
 
 install: all
-	install -d ${BASEDIR}/${LIB_INSTALLDIR} 
+	install -d ${BASEDIR}/${LIB_INSTALLDIR}
 	install -m ${LIB_PERMISSIONS} -o ${OWNER} -g ${GROUP} ${LIBDIR}/*.pyc ${BASEDIR}/${LIB_INSTALLDIR}
 
 uninstall: 

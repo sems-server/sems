@@ -1,7 +1,5 @@
 import ivr
-import sys,logging
-
-from com.iptel.log.Logger import *
+import sys
 
 # These are the same as in log.h
 L_ERR  = 0
@@ -9,42 +7,27 @@ L_WARN = 1
 L_INFO = 2
 L_DBG  = 3
 
-def fromPyLogLevel(py_level):
+def log(level, msg, args):
 
-	level = 0
-	if py_level >= logging.ERROR:
-		level = L_ERR
-	elif py_level >= logging.WARN:
-		level = L_WARN
-	elif py_level >= logging.INFO:
-		level = L_INFO
+	if args != None:
+		tmp_msg = msg % args
 	else:
-		level = L_DBG
+		tmp_msg = msg
+		
+	ivr.log(level,"Ivr-Python: " + tmp_msg + "\n")
 
-	return level
+
+def error(msg, args=None):
+	log(L_ERR, msg, args)
+
+def warn(msg, args=None):
+	log(L_WARN, msg, args)
+
+def info(msg, args=None):
+	log(L_INFO, msg, args)
 	
-
-def toPyLogLevel(level):
-
-	py_level = 0
-	if level >= L_DBG:
-		py_level = logging.DEBUG
-	elif level >= L_INFO:
-		py_level = logging.INFO
-	elif level >= L_WARN:
-		py_level = logging.WARN
-	else:
-		py_level = logging.ERROR
-
-	return py_level
-
-
-class SemsLogHandler(logging.Handler):
-
-	def emit(self, record):
-
-		msg = self.format(record)
-		ivr.log(fromPyLogLevel(record.levelno),msg + '\n')
+def debug(msg, args=None):
+	log(L_DBG, msg, args)
 
 
 def stacktrace(tb):
@@ -72,9 +55,5 @@ def log_excepthook(exception, value, tb):
 
 
 # init code
-if not hasattr(Logger,"logger"):
-	initLogger("sems",toPyLogLevel(ivr.SEMS_LOG_LEVEL))
-	getLogger().addLogHandler(SemsLogHandler())
-
 sys.excepthook = log_excepthook
 debug("Python-Ivr logging started")

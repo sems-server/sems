@@ -3,8 +3,7 @@ import base64,time
 from log import *
 from ivr import *
 
-from com.iptel.log.Logger    import *
-from com.iptel.imap.imap4ext import *
+from imap_mailbox.imap4ext import *
 
 
 class IvrDialog(IvrDialogBase):
