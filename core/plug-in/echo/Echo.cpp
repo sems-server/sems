@@ -56,8 +56,6 @@ int EchoFactory::onLoad()
 
 AmSession* EchoFactory::onInvite(const AmSipRequest& req)
 {
-//     if()
-
     AmSession* s = new EchoDialog();
     s->addHandler(session_timer_f->getHandler(s));
 

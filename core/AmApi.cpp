@@ -29,6 +29,19 @@
 #include "log.h"
 #include "AmSession.h"
 
+AmDynInvoke::AmDynInvoke() {}
+AmDynInvoke::~AmDynInvoke() {}
+
+void AmDynInvoke::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
+{
+    throw NotImplemented(method);
+}
+
+AmDynInvokeFactory::AmDynInvokeFactory(const string& name)
+    : AmPluginFactory(name) 
+{
+}
+
 AmSessionFactory::AmSessionFactory(const string& name)
   : AmPluginFactory(name), mod_conf(AmConfig::defaultSessionTimerConfig)
 {

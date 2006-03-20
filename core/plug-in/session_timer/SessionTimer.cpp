@@ -1,6 +1,6 @@
 #include "SessionTimer.h"
 #include "AmUtils.h"
-#include "AmSessionTimer.h"
+#include "UserTimer.h"
 
 EXPORT_SESSION_EVENT_HANDLER_FACTORY(SessionTimerFactory, MOD_NAME);
 
@@ -34,7 +34,7 @@ bool SessionTimer::process(AmEvent* ev)
     /* Session Timer: -ssa */
     AmTimeoutEvent* timeout_ev = dynamic_cast<AmTimeoutEvent*>(ev);
     if (timeout_ev) {
-	DBG("received timeout Event with ID %d\n", ev->event_id);
+	DBG("received timeout Event with ID %d\n", timeout_ev->data.get(0).asInt());
 	onTimeoutEvent(timeout_ev);
 	return true;
     }
@@ -264,23 +264,23 @@ void SessionTimer::setTimers(AmSession* s)
     DBG("Setting session interval timer: %ds, tag '%s'\n", session_interval, 
 	s->getLocalTag().c_str());
 
-    AmSessionTimer::instance()->
+    UserTimer::instance()->
       setTimer(ID_SESSION_INTERVAL_TIMER, session_interval, s->getLocalTag());
     
     // set session refresh action timer, after half the expiration
     if (session_refresher == refresh_local) {
-    DBG("Setting session refresh timer: %ds, tag '%s'\n", session_interval/2, 
-	s->getLocalTag().c_str());
-      AmSessionTimer::instance()->
-	setTimer(ID_SESSION_REFRESH_TIMER, session_interval/2, s->getLocalTag());
+	DBG("Setting session refresh timer: %ds, tag '%s'\n", session_interval/2, 
+	    s->getLocalTag().c_str());
+	UserTimer::instance()->
+	    setTimer(ID_SESSION_REFRESH_TIMER, session_interval/2, s->getLocalTag());
     }
 }
 
 void SessionTimer::removeTimers(AmSession* s) 
 {
-  AmSessionTimer::instance()->
+  UserTimer::instance()->
     removeTimer(ID_SESSION_REFRESH_TIMER, s->getLocalTag());
-  AmSessionTimer::instance()->
+  UserTimer::instance()->
     removeTimer(ID_SESSION_INTERVAL_TIMER, s->getLocalTag());
 }
 
@@ -288,13 +288,14 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
 {
 //   if (!session_timer_conf.getEnableSessionTimer())
 //     return;
-  
-    if (timeout_ev->event_id == ID_SESSION_REFRESH_TIMER) {
+    int timer_id = timeout_ev->data.get(0).asInt();
+
+    if (timer_id == ID_SESSION_REFRESH_TIMER) {
 	if (session_refresher == refresh_local)
 	    s->sendReinvite();
 	else
 	    WARN("need session refresh but remote session is refresher\n");
-    } else if (timeout_ev->event_id == ID_SESSION_INTERVAL_TIMER) {
+    } else if (timer_id == ID_SESSION_INTERVAL_TIMER) {
 //     // let the session know it got timeout
 //     onTimeout();
 	

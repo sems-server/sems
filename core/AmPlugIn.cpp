@@ -123,6 +123,13 @@ int AmPlugIn::load(const string& directory)
 	if(err)
 	    break;
     }
+
+    for(map<string,AmDynInvokeFactory*>::iterator it = name2di.begin();
+	it != name2di.end(); it++){
+	err = it->second->onLoad();
+	if(err)
+	    break;
+    }
     
     map<string,AmSessionFactory*> apps(name2app);
     for(map<string,AmSessionFactory*>::iterator it = apps.begin();
@@ -149,6 +156,7 @@ int AmPlugIn::loadPlugIn(const string& file)
     FactoryCreate fc = NULL;
     amci_exports_t* exports = (amci_exports_t*)dlsym(h_dl,"amci_exports");
 
+    bool has_sym=false;
     if(exports){
  	if(loadAudioPlugIn(exports))
 	    goto error;
@@ -158,12 +166,20 @@ int AmPlugIn::loadPlugIn(const string& file)
     if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EXPORT_STR)) != NULL){
 	if(loadAppPlugIn((AmPluginFactory*)fc()))
 	    goto error;
+	has_sym=true;
     }
-    else if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EVENT_HANDLER_EXPORT_STR)) != NULL){
+    if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EVENT_HANDLER_EXPORT_STR)) != NULL){
 	if(loadSehPlugIn((AmPluginFactory*)fc()))
 	    goto error;
+	has_sym=true;
     }
-    else {
+    if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_PLUGIN_CLASS_EXPORT_STR)) != NULL){
+	if(loadDiPlugIn((AmPluginFactory*)fc()))
+	    goto error;
+	has_sym=true;
+    }
+
+    if(!has_sym){
 	ERROR("Plugin type could not be detected (%s)(%s)\n",file.c_str(),dlerror());
 	goto error;
     }
@@ -251,6 +267,14 @@ AmSessionEventHandlerFactory* AmPlugIn::getFactory4Seh(const string& name)
   return 0;
 }
 
+AmDynInvokeFactory* AmPlugIn::getFactory4Di(const string& name)
+{
+  map<string,AmDynInvokeFactory*>::iterator it = name2di.find(name);
+  if(it != name2di.end())
+    return it->second;
+  return 0;
+}
+
 int AmPlugIn::loadAudioPlugIn(amci_exports_t* exports)
 {
     if(!exports){
@@ -299,13 +323,8 @@ int AmPlugIn::loadAppPlugIn(AmPluginFactory* f)
         goto error;
     }
       
-    //if(!sf->onLoad()){
-	name2app.insert(std::make_pair(sf->getName(),sf));
-	DBG("application '%s' loaded.\n",sf->getName().c_str());
-//     }
-//     else {
-// 	goto error;
-//     }
+    name2app.insert(std::make_pair(sf->getName(),sf));
+    DBG("application '%s' loaded.\n",sf->getName().c_str());
 
     return 0;
 
@@ -326,13 +345,30 @@ int AmPlugIn::loadSehPlugIn(AmPluginFactory* f)
         goto error;
     }
       
-//     if(!sf->onLoad()){
-	name2seh.insert(std::make_pair(sf->getName(),sf));
-	DBG("session component '%s' loaded.\n",sf->getName().c_str());
-//     }
-//     else {
-// 	goto error;
-//     }
+    name2seh.insert(std::make_pair(sf->getName(),sf));
+    DBG("session component '%s' loaded.\n",sf->getName().c_str());
+
+    return 0;
+
+ error:
+    return -1;
+}
+
+int AmPlugIn::loadDiPlugIn(AmPluginFactory* f)
+{
+    AmDynInvokeFactory* sf = dynamic_cast<AmDynInvokeFactory*>(f);
+    if(!sf){
+        ERROR("invalid component plug-in!\n");
+        goto error;
+    }
+
+    if(name2di.find(sf->getName()) != name2di.end()){
+        ERROR("component '%s' already loaded !\n",sf->getName().c_str());
+        goto error;
+    }
+      
+    name2di.insert(std::make_pair(sf->getName(),sf));
+    DBG("component '%s' loaded.\n",sf->getName().c_str());
 
     return 0;
 

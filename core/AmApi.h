@@ -27,19 +27,36 @@
 #ifndef _AmApi_h_
 #define _AmApi_h_
 
-//#include "AmRequest.h"
 #include "AmThread.h"
 #include "AmSipRequest.h"
 #include "AmConfig.h"
+#include "AmArg.h"
 
 #include <string>
 #include <map>
 using std::map;
 using std::string;
 
-class AmSession;
-class AmSessionEventHandler;
+/**
+ * Multi-purpose plugin class
+ */
+class AmDynInvoke
+{
+public:
+    struct NotImplemented {
+	string what;
+	NotImplemented(const string& w)
+	    : what(w) {}
+    };
 
+    AmDynInvoke();
+    virtual ~AmDynInvoke();
+    virtual void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+};
+
+/**
+ * Base class for plugin factories
+ */
 class AmPluginFactory
 {
     string plugin_name;
@@ -61,6 +78,33 @@ public:
     virtual int onLoad()=0;
 };
 
+/**
+ * Factory for multi-purpose plugin classes
+ */
+class AmDynInvokeFactory: public AmPluginFactory
+{
+public:
+    AmDynInvokeFactory(const string& name);
+    virtual AmDynInvoke* getInstance()=0;
+};
+
+
+class AmSession;
+class AmSessionEventHandler;
+
+class AmSessionEventHandlerFactory: public AmPluginFactory
+{
+public:
+    AmSessionEventHandlerFactory(const string& name);
+
+    virtual AmSessionEventHandler* getHandler(AmSession*)=0;
+
+    /**
+     * @return true if session creation should be stopped
+     */
+    virtual bool onInvite(const AmSipRequest& req)=0;
+};
+
 
 class AmSessionFactory: public AmPluginFactory
 {
@@ -68,11 +112,11 @@ class AmSessionFactory: public AmPluginFactory
   AmSessionTimerConfig mod_conf;
 
 protected:
-  /**
-   * This reads the module configuration from 
-   * cfg into the modules mod_conf.
-   */
-  int configureModule(AmConfigReader& cfg);
+    /**
+     * This reads the module configuration from 
+     * cfg into the modules mod_conf.
+     */
+    int configureModule(AmConfigReader& cfg);
 
 public:
     /**
@@ -93,18 +137,6 @@ public:
     virtual AmSession* onInvite(const AmSipRequest& req)=0;
 };
 
-class AmSessionEventHandlerFactory: public AmPluginFactory
-{
-public:
-    AmSessionEventHandlerFactory(const string& name);
-
-    virtual AmSessionEventHandler* getHandler(AmSession*)=0;
-
-    /**
-     * @return true if session creation should be stopped
-     */
-    virtual bool onInvite(const AmSipRequest& req)=0;
-};
 
 #define EXPORT_FACTORY(fctname,class_name,...) \
             extern "C" void* fctname()\
@@ -128,6 +160,12 @@ typedef void* (*FactoryCreate)();
 
 #define EXPORT_SESSION_EVENT_HANDLER_FACTORY(class_name,app_name) \
             EXPORT_FACTORY(FACTORY_SESSION_EVENT_HANDLER_EXPORT,class_name,app_name)
+
+#define FACTORY_PLUGIN_CLASS_EXPORT     plugin_class_create
+#define FACTORY_PLUGIN_CLASS_EXPORT_STR XSTR(FACTORY_PLUGIN_CLASS_EXPORT)
+
+#define EXPORT_PLUGIN_CLASS_FACTORY(class_name,app_name) \
+            EXPORT_FACTORY(FACTORY_PLUGIN_CLASS_EXPORT,class_name,app_name)
 
 #endif
 // Local Variables:

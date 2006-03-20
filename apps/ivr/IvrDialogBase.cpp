@@ -4,7 +4,7 @@
 
 #include "IvrSipDialog.h"
 
-#include "AmSessionTimer.h"
+//#include "AmSessionTimer.h"
 
 // Data definition
 typedef struct {
@@ -290,8 +290,13 @@ static PyObject* IvrDialogBase_setTimer(IvrDialogBase* self, PyObject* args)
       return NULL;
     }
 
-    AmSessionTimer::instance()->
-      setTimer(id, interval, self->p_dlg->getLocalTag());
+    AmArgArray di_args,ret;
+    di_args.push(id);
+    di_args.push(interval);
+    di_args.push(self->p_dlg->getLocalTag().c_str());
+
+    self->p_dlg->user_timer->
+	invoke("setTimer", di_args, ret);
     
     Py_INCREF(Py_None);
     return Py_None;
@@ -310,8 +315,12 @@ static PyObject* IvrDialogBase_removeTimer(IvrDialogBase* self, PyObject* args)
       return NULL;
     }
 
-    AmSessionTimer::instance()->
-      removeTimer(id, self->p_dlg->getLocalTag());
+    AmArgArray di_args,ret;
+    di_args.push(id);
+    di_args.push(self->p_dlg->getLocalTag().c_str());
+
+    self->p_dlg->user_timer->
+      invoke("removeTimer",di_args,ret);
     
     Py_INCREF(Py_None);
     return Py_None;
@@ -322,8 +331,11 @@ static PyObject* IvrDialogBase_removeTimers(IvrDialogBase* self, PyObject* args)
 {
     assert(self->p_dlg);
     
-    AmSessionTimer::instance()->
-      removeUserTimers(self->p_dlg->getLocalTag());
+    AmArgArray di_args,ret;
+    di_args.push(self->p_dlg->getLocalTag().c_str());
+
+    self->p_dlg->user_timer->
+      invoke("removeUserTimers",di_args,ret);
     
     Py_INCREF(Py_None);
     return Py_None;

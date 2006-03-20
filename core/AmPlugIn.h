@@ -38,6 +38,7 @@ using std::vector;
 class AmPluginFactory;
 class AmSessionFactory;
 class AmSessionEventHandlerFactory;
+class AmDynInvokeFactory;
 
 struct amci_exports_t;
 struct amci_codec_t;
@@ -67,6 +68,7 @@ private:
     map<string,AmSessionFactory*>  name2app;
 
     map<string,AmSessionEventHandlerFactory*> name2seh;
+    map<string,AmDynInvokeFactory*> name2di;
 
     int dynamic_pl; // range: 96->127, see RFC 1890
     
@@ -78,6 +80,7 @@ private:
     int loadAudioPlugIn(amci_exports_t* exports);
     int loadAppPlugIn(AmPluginFactory* cb);
     int loadSehPlugIn(AmPluginFactory* cb);
+    int loadDiPlugIn(AmPluginFactory* cb);
 
     int addCodec(amci_codec_t* c);
     int addPayload(amci_payload_t* p);
@@ -135,6 +138,11 @@ private:
      * @return NULL if failed (-> handler not found).
      */
     AmSessionEventHandlerFactory* getFactory4Seh(const string& name);
+
+    /**
+     * Dynamic invokation component
+     */
+    AmDynInvokeFactory* getFactory4Di(const string& name);
 
     /** @return true if this record has been inserted. */
     bool registerFactory4App(const string& app_name, AmSessionFactory* f);

@@ -44,27 +44,21 @@ struct IvrScriptDesc
 {
     PyObject* mod;
     PyObject* dlg_class;
-    // PyObject* config;
 
     IvrScriptDesc()
 	: mod(0), 
-	  dlg_class(0)// ,
-// 	  config(0)
+	  dlg_class(0)
     {}
 
     IvrScriptDesc(const IvrScriptDesc& d)
 	: mod(d.mod), 
-	  dlg_class(d.dlg_class)// ,
-// 	  config(d.config)
+	  dlg_class(d.dlg_class)
     {}
 
     IvrScriptDesc(PyObject* mod, 
-		  PyObject* dlg_class// ,
-// 		  PyObject* config
-		  )
+		  PyObject* dlg_class)
 	: mod(mod),
-	  dlg_class(dlg_class)// ,
-// 	  config(config)
+	  dlg_class(dlg_class)
     {}
 };
 
@@ -76,6 +70,8 @@ class IvrFactory: public AmSessionFactory
     string default_script;
 
     map<string,IvrScriptDesc> mod_reg;
+
+    AmDynInvokeFactory* user_timer_fact;
 
     void init_python_interpreter();
     void import_ivr_builtins();
@@ -112,9 +108,10 @@ class IvrDialog : public AmB2BCallerSession
     void process(AmEvent* event);
 
 public:
+    AmDynInvoke* user_timer;
     AmPlaylist playlist;
 
-    IvrDialog();
+    IvrDialog(AmDynInvoke* user_timer);
     ~IvrDialog();
 
     // must be called before everything else.

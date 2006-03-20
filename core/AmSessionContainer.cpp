@@ -185,10 +185,10 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	    //throw AmSession::Exception(500,"internal error");
 	}
     } 
-    catch(const AmSession::SessionTimerException& e){
- 	ERROR("%i %s\n",e.code,e.reason.c_str());
-	AmSipDialog::reply_error(req,e.code,e.reason,e.getErrorHeaders());
-    }
+//     catch(const AmSession::SessionTimerException& e){
+//  	ERROR("%i %s\n",e.code,e.reason.c_str());
+// 	AmSipDialog::reply_error(req,e.code,e.reason,e.getErrorHeaders());
+//     }
     catch(const AmSession::Exception& e){
  	ERROR("%i %s\n",e.code,e.reason.c_str());
 	AmSipDialog::reply_error(req,e.code,e.reason);

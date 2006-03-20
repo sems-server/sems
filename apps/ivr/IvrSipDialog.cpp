@@ -1,6 +1,7 @@
 #include "IvrSipDialog.h"
-#include "AmSessionTimer.h"
+//#include "AmSessionTimer.h"
 #include "AmSipDialog.h"
+#include "log.h"
 
 // Data definition
 typedef struct {

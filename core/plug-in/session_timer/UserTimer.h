@@ -1,4 +1,3 @@
-
 /*
  * Timer class with seconds granularity 
  */
@@ -19,12 +18,24 @@
 
 #include <set>
 
-class AmTimeoutEvent : public AmEvent {
+/**
+ * Timer Event: Name
+ */
+#define TIMEOUTEVENT_NAME "timer_timeout"
+
+/**
+ * Timer Event: class
+ * data[0]: int timer_id
+ */
+class AmTimeoutEvent : public AmPluginEvent 
+{
  public:
-  AmTimeoutEvent(int timer_id)
-    : AmEvent(timer_id) { }
+    AmTimeoutEvent(int timer_id);
 };
 
+/**
+ * Timer struct containing the alarm time.
+ */
 struct AmTimer
 {
   int id;
@@ -46,22 +57,22 @@ bool operator == (const AmTimer& l, const AmTimer& r);
  * Implements a timer with session granularity.
  * On timeout an AmTimeoutEvent with the ID is posted.
  */
-class AmSessionTimer 
+class UserTimer: public AmDynInvoke
 #ifdef SESSION_TIMER_THREAD
-: public AmThread
+,public AmThread
 #endif
 {
-  static AmSessionTimer* _instance;
+  static UserTimer* _instance;
 
   std::set<AmTimer> timers;
   AmMutex         timers_mut;
 
   void unsafe_removeTimer(int id, const string& session_id);
  public:
-  AmSessionTimer();
-  ~AmSessionTimer();
+  UserTimer();
+  ~UserTimer();
 
-  static AmSessionTimer* instance();
+  static UserTimer* instance();
 
   /** set timer with ID id, fire after s seconds event in 
       session session_id  */
@@ -84,6 +95,8 @@ class AmSessionTimer
   void run();
   void on_stop();
 #endif
+
+  void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
 };
 
 #endif //AM_SESSION_TIMER_H

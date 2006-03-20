@@ -1,37 +1,64 @@
 
-#include "AmSessionTimer.h"
+#include "UserTimer.h"
 
 #include <sys/time.h>
 
 #define SESSION_TIMER_GRANULARITY 100 // check every 100 millisec
 
+class UserTimerFactory: public AmDynInvokeFactory
+{
+public:
+    UserTimerFactory(const string& name)
+	: AmDynInvokeFactory(name) {}
 
-AmSessionTimer::AmSessionTimer()
+    AmDynInvoke* getInstance(){
+	return UserTimer::instance();
+    }
+
+    int onLoad(){
+#ifdef SESSION_TIMER_THREAD
+	UserTimer::instance()->start();
+#endif
+	return 0;
+    }
+};
+
+
+EXPORT_PLUGIN_CLASS_FACTORY(UserTimerFactory,"user_timer");
+
+AmTimeoutEvent::AmTimeoutEvent(int timer_id)
+    : AmPluginEvent(TIMEOUTEVENT_NAME)
+{
+    data.push(AmArg(timer_id));
+}
+
+
+UserTimer::UserTimer()
 {
 }
 
-AmSessionTimer::~AmSessionTimer()
+UserTimer::~UserTimer()
 {
 }
 
-AmSessionTimer* AmSessionTimer::_instance=0;
+UserTimer* UserTimer::_instance=0;
 
-AmSessionTimer* AmSessionTimer::instance()
+UserTimer* UserTimer::instance()
 {
     if(!_instance)
-	_instance = new AmSessionTimer();
+	_instance = new UserTimer();
     return _instance;
 }
 
 #ifdef SESSION_TIMER_THREAD
-void AmSessionTimer::run() {
+void UserTimer::run() {
     while(1){
 	usleep(SESSION_TIMER_GRANULARITY * 1000);
         checkTimers();
     }
 }
 
-void AmSessionTimer::on_stop() {
+void UserTimer::on_stop() {
 }
 #endif // SESSION_TIMER_THREAD
 
@@ -45,7 +72,7 @@ bool operator == (const AmTimer& l, const AmTimer& r)
   return l.id == r.id;
 }
 
-void AmSessionTimer::checkTimers() {
+void UserTimer::checkTimers() {
   timers_mut.lock();
   if(timers.empty()){
     timers_mut.unlock();
@@ -68,7 +95,9 @@ void AmSessionTimer::checkTimers() {
 						   new AmTimeoutEvent(id))) {
       DBG("Timeout Event could not be posted, session does not exist any more.\n");
     }
-    
+    else {
+	DBG("Timeout Event could be posted.\n");
+    }
     
     if(timers.empty()) break;
     it = timers.begin();
@@ -76,7 +105,7 @@ void AmSessionTimer::checkTimers() {
   timers_mut.unlock();
 }
 
-void AmSessionTimer::setTimer(int id, int seconds, const string& session_id) {
+void UserTimer::setTimer(int id, int seconds, const string& session_id) {
     struct timeval tval;
     gettimeofday(&tval,NULL);
 
@@ -84,7 +113,7 @@ void AmSessionTimer::setTimer(int id, int seconds, const string& session_id) {
     setTimer(id, &tval, session_id);
 }
 
-void AmSessionTimer::setTimer(int id, struct timeval* t, 
+void UserTimer::setTimer(int id, struct timeval* t, 
 			      const string& session_id) 
 {
   timers_mut.lock();
@@ -99,13 +128,13 @@ void AmSessionTimer::setTimer(int id, struct timeval* t,
 }
 
 
-void AmSessionTimer::removeTimer(int id, const string& session_id) {
+void UserTimer::removeTimer(int id, const string& session_id) {
   timers_mut.lock();
   unsafe_removeTimer(id, session_id);
   timers_mut.unlock();
 }
 
-void AmSessionTimer::unsafe_removeTimer(int id, const string& session_id) 
+void UserTimer::unsafe_removeTimer(int id, const string& session_id) 
 {
   // erase old timer if exists
   set<AmTimer>::iterator it = timers.begin(); 
@@ -118,7 +147,7 @@ void AmSessionTimer::unsafe_removeTimer(int id, const string& session_id)
   }
 }
 
-void AmSessionTimer::removeTimers(const string& session_id) {
+void UserTimer::removeTimers(const string& session_id) {
   //  DBG("removing timers for <%s>\n", session_id.c_str());
   timers_mut.lock();
   for (set<AmTimer>::iterator it = timers.begin(); 
@@ -131,7 +160,7 @@ void AmSessionTimer::removeTimers(const string& session_id) {
   timers_mut.unlock();
 }
 
-void AmSessionTimer::removeUserTimers(const string& session_id) {
+void UserTimer::removeUserTimers(const string& session_id) {
   //  DBG("removing User timers for <%s>\n", session_id.c_str());
   timers_mut.lock();
   for (set<AmTimer>::iterator it = timers.begin(); 
@@ -142,4 +171,22 @@ void AmSessionTimer::removeUserTimers(const string& session_id) {
     }
   }
   timers_mut.unlock();
+}
+
+void UserTimer::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
+{
+    if(method == "setTimer"){
+	setTimer(args.get(0).asInt(),
+		 args.get(1).asInt(),
+		 args.get(2).asCStr());
+    }
+    else if(method == "removeTimer"){
+	removeTimer(args.get(0).asInt(),
+		    args.get(1).asCStr());
+    }
+    else if(method == "removeUserTimers"){
+	removeUserTimers(args.get(0).asCStr());
+    }
+    else
+	throw AmDynInvoke::NotImplemented(method);
 }

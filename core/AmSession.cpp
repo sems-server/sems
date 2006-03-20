@@ -38,7 +38,7 @@
 #include "AmSessionScheduler.h"
 #include "AmDtmfDetector.h"
 /* Session Timer: -ssa */
-#include "AmSessionTimer.h"
+//#include "AmSessionTimer.h"
 
 #include "log.h"
 
@@ -315,7 +315,7 @@ void AmSession::run()
 		}
 	    }
 	    // remove pending timers
-	    AmSessionTimer::instance()->removeTimers(getLocalTag());
+	    //AmSessionTimer::instance()->removeTimers(getLocalTag());
 	}
 	catch(const AmSession::Exception& e){ throw e; }
 	catch(const string& str){
@@ -555,10 +555,10 @@ int AmSession::acceptAudio(const AmSipRequest& req)
     return -1;
 }
 
-string AmSession::SessionTimerException::getErrorHeaders() const {
-  return "Min-SE:" + int2str(minSE) + "\n"
-    + "Supported: timer\n";
-}
+// string AmSession::SessionTimerException::getErrorHeaders() const {
+//   return "Min-SE:" + int2str(minSE) + "\n"
+//     + "Supported: timer\n";
+// }
 
 void AmSession::onSendRequest(const string& method, const string& content_type,
 			      const string& body, string& hdrs)

@@ -53,13 +53,6 @@ class AmSessionFactory;
 //class AmDialogState;
 class AmDtmfEvent;
 
-/* Session Timer: -ssa */
-class AmTimeoutEvent;
-// these are the timer IDs for session timer
-// Caution: do not use these for other purposes
-#define ID_SESSION_INTERVAL_TIMER -1
-#define ID_SESSION_REFRESH_TIMER  -2
-
 
 /**
  *  Signaling plugins must inherite from this class.
@@ -153,15 +146,15 @@ public:
 	Exception(int c, string r) : code(c), reason(r) {}
     };
 
-    struct SessionTimerException : Exception {
-      unsigned int minSE;
+//     struct SessionTimerException : Exception {
+//       unsigned int minSE;
 
-      SessionTimerException(unsigned int min_SE) 
-	: Exception(422, "Session Interval Too Small"), 
-	  minSE(min_SE) { }
+//       SessionTimerException(unsigned int min_SE) 
+// 	: Exception(422, "Session Interval Too Small"), 
+// 	  minSE(min_SE) { }
 
-      string getErrorHeaders() const;
-    };
+//       string getErrorHeaders() const;
+//     };
 
     /** 
      * Session constructor.

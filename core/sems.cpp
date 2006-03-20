@@ -38,7 +38,7 @@
 #include "AmSessionScheduler.h"
 #include "AmIcmpWatcher.h"
 #include "AmRtpReceiver.h"
-#include "AmSessionTimer.h"
+//#include "AmSessionTimer.h"
 
 #include "log.h"
 
@@ -412,8 +412,8 @@ int main(int argc, char* argv[])
     DBG("Starting RTP receiver\n");
     AmRtpReceiver::instance()->start();
 
-    DBG("Starting Session Timer\n");
-    AmSessionTimer::instance()->start();
+    //DBG("Starting Session Timer\n");
+    //AmSessionTimer::instance()->start();
 
     //DBG("Starting ICMP watcher\n");
     //AmIcmpWatcher::instance()->start();
