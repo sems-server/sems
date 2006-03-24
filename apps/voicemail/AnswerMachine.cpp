@@ -273,12 +273,12 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
        a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),AmAudioFile::Read))
 	throw string("AnswerMachine: could not open annoucement files\n");
 
-    msg_filename = "/tmp/" + req.callid + "."
+    msg_filename = "/tmp/" + getLocalTag() + "."
 	+ AnswerMachineFactory::RecFileExt;
     
     if(a_msg.open(msg_filename,AmAudioFile::Write))
 	throw string("AnswerMachine: couldn't open ") + 
-	    msg_filename + string("for writing");
+	    msg_filename + string(" for writing");
 
     a_msg.setRecordTime(AnswerMachineFactory::MaxRecordTime*1000);
     
