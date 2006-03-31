@@ -394,7 +394,7 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
     open_mode = mode;
 
     if(!is_tmp){
-	fp = fopen(filename.c_str(),mode == AmAudioFile::Read ? "rb" : "rwb");
+	fp = fopen(filename.c_str(),mode == AmAudioFile::Read ? "r" : "w+");
 	if(!fp){
 	    if(mode == AmAudioFile::Read)
 		ERROR("file not found: %s\n",filename.c_str());
