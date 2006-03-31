@@ -44,6 +44,15 @@ AmMail::AmMail(const string& _from, const string& _subject,
 {
 }
 
+AmMail::~AmMail()
+{
+    for(Attachements::iterator it = attachements.begin();
+	it != attachements.end(); it++){
+
+	fclose(it->fp);
+    }
+};
+
 AmMailDeamon* AmMailDeamon::_instance=0;
 
 AmMailDeamon* AmMailDeamon::instance()
@@ -64,17 +73,17 @@ int AmMailDeamon::sendQueued(AmMail* mail)
 	return -1;
     }
 
-    FILE* tst_fp;
-    for( Attachements::const_iterator att_it = mail->attachements.begin();
-	 att_it != mail->attachements.end(); ++att_it ){
+//     FILE* tst_fp;
+//     for( Attachements::const_iterator att_it = mail->attachements.begin();
+// 	 att_it != mail->attachements.end(); ++att_it ){
 	
-	if(!(tst_fp = fopen(att_it->fullname.c_str(),"r"))){
-	    ERROR("%s\n",strerror(errno));
-	    return -1;
-	}
-	else
-	    fclose(tst_fp);
-    }
+// 	if(!(tst_fp = fopen(att_it->fullname.c_str(),"r"))){
+// 	    ERROR("%s\n",strerror(errno));
+// 	    return -1;
+// 	}
+// 	else
+// 	    fclose(tst_fp);
+//     }
 
     event_fifo_mut.lock();
     event_fifo.push(mail);

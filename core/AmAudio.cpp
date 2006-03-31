@@ -392,6 +392,7 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
     fmt.reset(f_fmt);
 
     open_mode = mode;
+    this->close_on_exit = close_on_exit;
 
     if(!is_tmp){
 	fp = fopen(filename.c_str(),mode == AmAudioFile::Read ? "r" : "w+");
@@ -529,7 +530,8 @@ int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
 AmAudioFile::AmAudioFile()
     : AmAudio(), data_size(0), 
       fp(0), begin(0), loop(false),
-      on_close_done(false)
+      on_close_done(false),
+      close_on_exit(true)
 {
 }
 
@@ -583,7 +585,8 @@ void AmAudioFile::close()
     if(fp){
 	on_close();
 
-	fclose(fp);
+	if(close_on_exit)
+	    fclose(fp);
 	fp = 0;
     }
 }

@@ -43,15 +43,19 @@ using std::queue;
 struct Attachement
 {
     /** Local file name */
-    string fullname;
+    //string fullname;
+    FILE* fp;
     
     /** Proposed remote file name */
     string filename; 
     /** Declared content type */
     string content_type;
 
-    Attachement(const string& _full, const string& _file="", const string& _ct="")
-	: fullname(_full), filename(_file), content_type(_ct) {}
+//     Attachement(const string& _full, const string& _file="", const string& _ct="")
+// 	: fullname(_full), filename(_file), content_type(_ct) {}
+
+    Attachement(FILE* _fp, const string& _file="", const string& _ct="")
+	: fp(_fp), filename(_file), content_type(_ct) {}
 };
 
 typedef vector<Attachement> Attachements;
@@ -88,6 +92,8 @@ public:
 
     AmMail(const string& _from, const string& _subject,
 	   const string& _to, const string& _body = "");
+
+    ~AmMail();
 };
 
 /**

@@ -347,6 +347,7 @@ protected:
     int data_size;
 
     bool on_close_done;
+    bool close_on_exit;
 
     /** @see AmAudio::read */
     int read(unsigned int user_ts, unsigned int size);
@@ -378,7 +379,8 @@ public:
      * @return 0 if everything's OK
      * @see OpenMode
      */
-    int open(const string& filename, OpenMode mode, bool is_tmp=false);
+    int open(const string& filename, OpenMode mode, 
+	     bool is_tmp=false);
 
     int fpopen(const string& filename, OpenMode mode, FILE* n_fp);
 
@@ -405,6 +407,10 @@ public:
      * @return MIME type corresponding to the audio file.
      */
     string getMimeType();
+
+    void setCloseOnDestroy(bool cod){
+	close_on_exit = cod;
+    }
 };
 
 #endif

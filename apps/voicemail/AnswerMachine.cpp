@@ -276,7 +276,7 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
     msg_filename = "/tmp/" + getLocalTag() + "."
 	+ AnswerMachineFactory::RecFileExt;
     
-    if(a_msg.open(msg_filename,AmAudioFile::Write))
+    if(a_msg.open(msg_filename,AmAudioFile::Write,true))
 	throw string("AnswerMachine: couldn't open ") + 
 	    msg_filename + string(" for writing");
 
@@ -307,13 +307,16 @@ void AnswerMachineDialog::sendMailNotification()
     }
     else {
 	try {
-	    
+	    // avoid tmp file to be closed
+	    // ~AmMail will do that...
+	    a_msg.setCloseOnDestroy(false);
+
 	    AmMail* mail = new AmMail(tmpl->getEmail(email_dict));
-	    mail->attachements.push_back(Attachement(msg_filename,
+	    mail->attachements.push_back(Attachement(a_msg.getfp(),
 						     "message."
 						     + AnswerMachineFactory::RecFileExt,
 						     a_msg.getMimeType()));
-	    mail->clean_up = clean_up_mail;
+	    //mail->clean_up = clean_up_mail;
 	    AmMailDeamon::instance()->sendQueued(mail);
 	}
 	catch(const string& err){
@@ -324,10 +327,10 @@ void AnswerMachineDialog::sendMailNotification()
 
 void AnswerMachineDialog::clean_up_mail(AmMail* mail)
 {
-    for( Attachements::const_iterator att_it = mail->attachements.begin();
-	 att_it != mail->attachements.end(); ++att_it )
+//     for( Attachements::const_iterator att_it = mail->attachements.begin();
+// 	 att_it != mail->attachements.end(); ++att_it )
 	
-	unlink(att_it->fullname.c_str());
+// 	unlink(att_it->fullname.c_str());
 }
 
 void AnswerMachineDialog::request2dict(const AmSipRequest& req)

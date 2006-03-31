@@ -223,7 +223,7 @@ bool AmSmtpClient::send_body(const vector<string>& hdrs, const AmMail& mail)
 }
 
 static void base64_encode(unsigned char* in, unsigned char* out, unsigned int in_size);
-static int base64_encode_file(const char* filename, int out);
+static int base64_encode_file(FILE* in, int out);
 
 bool AmSmtpClient::send_data(const vector<string>& hdrs, const AmMail& mail)
 {
@@ -276,7 +276,7 @@ bool AmSmtpClient::send_data(const vector<string>& hdrs, const AmMail& mail)
 	}
 	SEND_LINE(""); // EoH
 
-	base64_encode_file(att_it->fullname.c_str(),sd);
+	base64_encode_file(att_it->fp,sd);
 	SEND_LINE(""); // base64_encode_file() doesn't generate any EoL
     }
 
@@ -332,7 +332,7 @@ static void base64_encode(unsigned char* in, unsigned char* out, unsigned int in
 	out[i] = '=';
 }
 
-static int base64_encode_file(const char* filename, int out_fd)
+static int base64_encode_file(FILE* in, int out_fd)
 {
     unsigned char ibuf[B64_INPUT_BUFFER_SIZE];
     unsigned char obuf[B64_OUTPUT_BUFFER_SIZE]={' '};
@@ -345,11 +345,11 @@ static int base64_encode_file(const char* filename, int out_fd)
 	return -1;
     }
 
-    FILE* in  = fopen(filename,"rb");
-    if(!in){
-	ERROR("%s\n",strerror(errno));
-	return -1;
-    }
+//     FILE* in  = fopen(filename,"rb");
+//     if(!in){
+// 	ERROR("%s\n",strerror(errno));
+// 	return -1;
+//     }
 
     int bytes_written=0;
     while((s = fread(ibuf,1,B64_INPUT_BUFFER_SIZE,in))){
