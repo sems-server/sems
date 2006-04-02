@@ -272,7 +272,8 @@ public:
     bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
     void setDtmfDetectionEnabled(bool e) { m_dtmfDetectionEnabled = e; }
     void putDtmfAudio(const unsigned char *buf, int size, int user_ts);
-    void onDtmf(int event, int duration);
+
+    virtual void onDtmf(int event, int duration);
 
 
     /**
