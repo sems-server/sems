@@ -310,6 +310,7 @@ void AnswerMachineDialog::sendMailNotification()
 	    // avoid tmp file to be closed
 	    // ~AmMail will do that...
 	    a_msg.setCloseOnDestroy(false);
+	    a_msg.on_close();
 
 	    AmMail* mail = new AmMail(tmpl->getEmail(email_dict));
 	    mail->attachements.push_back(Attachement(a_msg.getfp(),

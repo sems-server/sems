@@ -304,7 +304,7 @@ public:
     /**
      * @see AmDialogState
      */
-    void onBye(const AmSipRequest& req);
+    virtual void onBye(const AmSipRequest& req);
 
     /**
      * Entry point for SIP events
