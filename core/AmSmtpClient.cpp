@@ -345,6 +345,7 @@ static int base64_encode_file(FILE* in, int out_fd)
 	return -1;
     }
 
+    rewind(in);
 //     FILE* in  = fopen(filename,"rb");
 //     if(!in){
 // 	ERROR("%s\n",strerror(errno));
@@ -383,7 +384,7 @@ static int base64_encode_file(FILE* in, int out_fd)
     };
     
     fflush(out);
-    fclose(in);
+    //fclose(in);
     DBG("%i bytes written\n",bytes_written);
     return 0;
 }
