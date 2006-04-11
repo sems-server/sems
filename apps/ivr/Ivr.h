@@ -120,17 +120,6 @@ public:
     void onSessionStart(const AmSipRequest& req);
     void onBye(const AmSipRequest& req);
     void onDtmf(int event, int duration_msec);
-
-
-    // TODO:
-    void onBeforeCallAccept(const AmSipRequest& req, 
-			    unsigned int& reply_code, 
-			    std::string& reply_reason);
-
-    //int  onOther(AmSessionEvent* event);
-
-    //int  onUACRequestStatus(AmRequestUACStatusEvent* event);
-
 };
 
 #endif

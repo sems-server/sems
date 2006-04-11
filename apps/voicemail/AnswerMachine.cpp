@@ -54,7 +54,7 @@ AnswerMachineFactory::AnswerMachineFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
 {}
 
-string AnswerMachineFactory::RecFileExt = "wav";
+string AnswerMachineFactory::RecFileExt = "mp3";
 string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
 int    AnswerMachineFactory::MaxRecordTime;
@@ -249,22 +249,6 @@ void AnswerMachineDialog::process(AmEvent* event)
     }
     else
 	AmSession::process(event);
-}
-
-void AnswerMachineDialog::onBeforeCallAccept(const AmSipRequest& req)
-{
-//     if (AnswerMachineFactory::AcceptDelay != 0) {
-
-// 	dlg.reply(req,180, "ringing");
-	
-// 	DBG("waiting %i seconds before accepting the call\n", 
-// 	    AnswerMachineFactory::AcceptDelay);
-
-// 	sleep(AnswerMachineFactory::AcceptDelay);
-//     }
-
-//     if (getStopped())
-// 	throw AmSession::Exception(487, "Request Terminated");
 }
 
 void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)

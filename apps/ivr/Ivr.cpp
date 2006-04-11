@@ -474,14 +474,6 @@ void IvrDialog::callPyEventHandler(char* name, const string& str)
 	PyErr_Print();
 }
 
-void IvrDialog::onBeforeCallAccept(const AmSipRequest& req, 
-				   unsigned int& reply_code, 
-				   string& reply_reason) 
-{
-//   ivrPython->pCmd = &(req->cmd);
-//   ivrPython->onBeforeCallAccept(reply_code, reply_reason);
-}
-
 void IvrDialog::onSessionStart(const AmSipRequest& req)
 {
     PYLOCK;
