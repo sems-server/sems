@@ -1,9 +1,11 @@
-include ../../Makefile.defs
+COREPATH ?=../..
+include $(COREPATH)/Makefile.defs
 
 ldflags = -shared $(module_ldflags)
-cflags  = -fPIC -I ../../amci -Wall $(module_cflags)
+cflags  = -I $(COREPATH) -I $(COREPATH)/amci -Wall $(module_cflags)
+#-fPIC 
 
-audio_mod_dir = ../../lib
+audio_mod_dir = $(COREPATH)/lib
 
 lib_name = $(plug_in_name).so
 lib_full_name = $(audio_mod_dir)/$(lib_name)
@@ -31,7 +33,7 @@ install: $(lib_name) $(extra_install)
 	$(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$(lib_name) ; \
 	$(INSTALL-MODULES) $(lib_name) $(modules-prefix)/$(modules-dir)
 
-%.d: %.c Makefile ../Makefile.audio_module
+%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module
 	gcc -MM $< $(cflags) > $@
 
 %.o: %.c %.d
