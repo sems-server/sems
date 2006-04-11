@@ -204,7 +204,7 @@ IvrDialog* IvrFactory::newDlg(const string& name)
 
     map<string,IvrScriptDesc>::iterator mod_it = mod_reg.find(name);
     if(mod_it == mod_reg.end()){
-	ERROR("Unknown script name\n");
+	ERROR("Unknown script name '%s'\n", name.c_str());
 	throw AmSession::Exception(500,"Unknown Application");
     }
 

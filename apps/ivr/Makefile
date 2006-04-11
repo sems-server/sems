@@ -3,7 +3,7 @@ plug_in_name = ivr
 COREPATH ?=../../core
 
 SCRIPT = Python
-TTS = n
+TTS = y
 
 #
 # Python specific
