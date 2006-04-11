@@ -260,14 +260,14 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
  	ts = rp.timestamp - recv_offset + jitter_delay;
 	
 	// resync
-// 	if( ts_less()(ts, audio_buffer_ts) || 
-// 	    !ts_less()(ts, audio_buffer_ts + max_delay) ){
+ 	if( ts_less()(ts, audio_buffer_ts) || 
+ 	    !ts_less()(ts, audio_buffer_ts + max_delay) ){
 
-// 	    DBG("resync needed: reference ts = %u; write ts = %u\n",
-// 		audio_buffer_ts,ts);
-// 	    recv_offset = rp.timestamp - audio_buffer_ts;
-// 	    ts = audio_buffer_ts + jitter_delay;
-// 	}
+ 	    DBG("resync needed: reference ts = %u; write ts = %u\n",
+ 		audio_buffer_ts,ts);
+ 	    recv_offset = rp.timestamp - audio_buffer_ts;
+ 	    ts = audio_buffer_ts + jitter_delay;
+ 	}
     }
 
     assert(rp.getData());
