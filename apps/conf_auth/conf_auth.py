@@ -1,19 +1,23 @@
 from log import *
 from ivr import *
-import xmlrpc
+import xmlrpclib
 
+
+XMLRPC_PROTOCOL = 'http'         # could e.g. be https
 XMLRPC_SERVER   = 'localhost'
 XMLRPC_PORT	= 23456
-XMLRPC_DIR      = '/blah'
-XMLRPC_LOGLEVEL	= 3		# this is the default log level
+XMLRPC_DIR      = '/conf_auth'
+
+HINT_TIMEOUT    = 10              # seconds until hint msg is played
+
+server_path = XMLRPC_PROTOCOL + '://' +  XMLRPC_SERVER + \
+		':' +  str(XMLRPC_PORT) +   XMLRPC_DIR
 
 collect    = 0
 connect    = 1
 connected  = 2
 
 HINT_TIMER   = 1
-HINT_TIMEOUT = 10 # seconds until hint msg is played
-
 CONF_TIMER   = 2
 
 def loopedTTS(str):
@@ -53,7 +57,7 @@ class IvrDialog(IvrDialogBase):
 		print " next_hop:     ", self.dialog.next_hop
 		print " cseq:        ", self.dialog.cseq
 
-	def onSessionStart(self):
+	def onSessionStart(self, hdrs):
 		self.sessionInfo()
 		self.setNoRelayonly()
 		self.welcome_msg = IvrAudioFile.tts("Welcome to the conferencing server. "+ \
@@ -64,7 +68,6 @@ class IvrDialog(IvrDialogBase):
 		self.hint_msg = IvrAudioFile.tts("Please enter your PIN number, followed by the star key.")
 
 		self.enqueue(self.welcome_msg,None)
-		xmlrpc.setLogLevel(XMLRPC_LOGLEVEL)
 
 	def onBye(self):		
 		self.stopSession()
@@ -72,11 +75,12 @@ class IvrDialog(IvrDialogBase):
 	def onDtmf(self,key,duration):
 		if self.state == collect:
 			if key == 10:
-				c = xmlrpc.client(XMLRPC_SERVER, XMLRPC_PORT, XMLRPC_DIR)
-				erg = c.execute('AuthorizeConference', [self.dialog.remote_uri, \
-									self.dialog.local_party, self.keys ])
-				print 'result of auth call: ' 
-				print erg
+	
+				c = xmlrpclib.ServerProxy(server_path )
+				erg = c.AuthorizeConference(self.dialog.remote_uri, 
+									self.dialog.local_party, self.keys)
+
+				debug('result of authentication: '+ str(erg))
 				if erg[0] == 'OK':
 					self.flush()
 					self.enqueue(self.auth_ok_msg, None)				
@@ -92,15 +96,15 @@ class IvrDialog(IvrDialogBase):
 					self.flush()
 					self.enqueue(self.auth_fail_msg, None)
 					self.keys = ''
-					self.setTimer(HINT_TIMER, HINT_TIMEOUT)
+					self.setTimer(HINT_TIMER,  HINT_TIMEOUT)
 			else: 
 				self.keys += str(key)
-				print "added key, PIN = " + self.keys
-				self.setTimer(HINT_TIMER, HINT_TIMEOUT)
+				debug("added key, PIN = " + self.keys)
+				self.setTimer(HINT_TIMER,  HINT_TIMEOUT)
 
 	def onEmptyQueue(self):
 		if self.state == connect:
-			print "connecting to " + self.conf_to + "uri: " + self.conf_uri
+			debug("connecting to " + self.conf_to + "uri: " + self.conf_uri)
 			self.mute()
 			self.setRelayonly()
 			self.connectCallee(self.conf_to, self.conf_uri)
@@ -108,7 +112,7 @@ class IvrDialog(IvrDialogBase):
 			self.setTimer(CONF_TIMER, self.conf_duration)
 
 		elif self.state == collect:
-			self.setTimer(HINT_TIMER, HINT_TIMEOUT)
+			self.setTimer(HINT_TIMER,  HINT_TIMEOUT)
 
 	def onTimer(self, id):
 		if id == HINT_TIMER and self.state == collect:
