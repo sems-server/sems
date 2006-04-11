@@ -142,7 +142,7 @@ AmSession* AmSessionContainer::getSession(const string& callid, const string& re
 	return NULL;
     }
 
-    return getSession(it->first);
+    return getSession(it->second);
 }
 
 AmSession* AmSessionContainer::getSession(const string& local_tag)
@@ -209,8 +209,8 @@ bool AmSessionContainer::postEvent(const string& callid,
 				   const string& remote_tag,
 				   AmEvent* event)
 {
-    DBG("postEvent: callid = %s; remote_tag = %s\n",
-	callid.c_str(),remote_tag.c_str());
+//     DBG("postEvent: callid = %s; remote_tag = %s\n",
+// 	callid.c_str(),remote_tag.c_str());
 
     as_mut.lock();
     AmSession* s = getSession(callid,remote_tag);
@@ -228,7 +228,7 @@ bool AmSessionContainer::postEvent(const string& callid,
 bool AmSessionContainer::postEvent(const string& local_tag,
 				   AmEvent* event) 
 {
-    DBG("postEvent: local_tag = %s\n",local_tag.c_str());
+//     DBG("postEvent: local_tag = %s\n",local_tag.c_str());
 
     as_mut.lock();
     AmSession* s = getSession(local_tag);
@@ -239,7 +239,7 @@ bool AmSessionContainer::postEvent(const string& local_tag,
 	return false;
     }
     
-    DBG("posting...\n");
+//     DBG("posting...\n");
     s->postEvent(event);
     return true;
 }

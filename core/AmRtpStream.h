@@ -179,7 +179,16 @@ public:
      * @return remote RTP port.
      */
     int getRPort();
+    
+    /**
+     * Gets remote host IP.
+     * @return remote host IP.
+     */
+    string getRHost();
 
+    /**
+     * Set remote IP & port.
+     */
     void setRAddr(const string& addr, unsigned short port);
 
     /** Symmetric RTP: passive mode ? */

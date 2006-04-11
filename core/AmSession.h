@@ -182,7 +182,8 @@ public:
      * Accept the INVITE proposal
      * thus setting up audio stream
      */
-    int acceptAudio(const AmSipRequest& req);
+    int acceptAudio(const AmSipRequest& req,
+		    string& sdp_reply);
 
     /**
      * Lock and unlock audio input & output
@@ -233,7 +234,9 @@ public:
     int getRPort();
 
     /** handle SDP negotiation: only for INVITEs & re-INVITEs */
-    virtual void negotiate(const AmSipRequest& request);
+    virtual void negotiate(const string& sdp_body,
+			   bool force_symmetric_rtp,
+			   string& sdp_reply);
 
     void sendUpdate();
     void sendReinvite();
@@ -282,13 +285,24 @@ public:
     virtual void onStart(){}
 
     /**
-     * onBeforeCallAccept will be called on incoming 
-     * request before the call gets definitely established.
-     * 
-     * Throw AmSession::Exception if you want to 
-     * signal any error.
+     * onInvite will be called if an INVITE or re-INVITE
+     * has been received for the session.
      */
-    virtual void onBeforeCallAccept(const AmSipRequest& req){}
+    virtual void onInvite(const AmSipRequest& req);
+
+    /**
+     * onCancel will be called if a CANCEL for a running
+     * dialog has been received. At this point, the CANCEL
+     * transaction has been replied with 200.
+     *
+     * A normal plug-in does not have to do anything special, 
+     * as normal dialogs are immediatly replied with 200 
+     * or error code. 
+     *
+     * Note: You are still responsible for responding the 
+     *       initial transaction.
+     */
+    virtual void onCancel(){}
 
     /**
      * onSessionStart will be called after call setup.

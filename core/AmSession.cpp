@@ -198,12 +198,14 @@ int AmSession::getRPort()
     return rtp_str.getRPort();
 }
 
-void AmSession::negotiate(const AmSipRequest& request)
+void AmSession::negotiate(const string& sdp_body,
+			  bool force_symmetric_rtp,
+			  string& sdp_reply)
 {
     string r_host = "";
     int    r_port = 0;
 
-    sdp.setBody(request.body.c_str());
+    sdp.setBody(sdp_body.c_str());
 
     if(sdp.parse())
 	throw AmSession::Exception(400,"session description parsing failed");
@@ -240,46 +242,22 @@ void AmSession::negotiate(const AmSipRequest& request)
 	DBG("remote party doesn't support telephone events\n");
     }
 
-    string str_msg_flags = getHeader(request.hdrs,"P-MsgFlags");
-    unsigned int msg_flags = 0;
-    if(reverse_hex2int(str_msg_flags,msg_flags)){
-	ERROR("while parsing 'P-MsgFlags' header\n");
-	msg_flags = 0;
-    }
-    DBG("msg_flags=%u\n",msg_flags);
-    
     bool passive_mode = false;
-    if( sdp.remote_active
-	|| (msg_flags & FL_FORCE_ACTIVE) ) {
+    if( sdp.remote_active || force_symmetric_rtp) {
 	DBG("The other UA is NATed: switched to passive mode.\n");
-	DBG("remote_active = %i; msg_flags = %i\n",
-	    sdp.remote_active,msg_flags);
+	DBG("remote_active = %i; force_symmetric_rtp = %i\n",
+	    sdp.remote_active,force_symmetric_rtp);
+
 	passive_mode = true;
     }
-    
-    //TODO: if dialog started
-    if(first_negotiation)
- 	onBeforeCallAccept(request);
+
+    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_reply);
 
     lockAudio();
     rtp_str.setLocalIP(AmConfig::LocalIP);
-    unlockAudio();
-
-    string sdp_body;
-    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-
-    if( dlg.reply(request,200,"OK",
-		  "application/sdp",sdp_body//, getReplyHeaders(request)
-		  ) != 0 )
-	throw AmSession::Exception(500,"could not send response.");
-
-    lockAudio();
     rtp_str.setPassiveMode(passive_mode);
     rtp_str.setRAddr(r_host, r_port);
     unlockAudio();
-
-    DBG("Sending Rtp data to %s/%i\n",r_host.c_str(),r_port);
-    first_negotiation = false;
 }
 
 void AmSession::run()
@@ -476,7 +454,18 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     DBG("onSipRequest: method = %s\n",req.method.c_str());
     if(req.method == "INVITE"){
 	
-	acceptAudio(req);
+	onInvite(req);
+
+	if(detached.get()){
+	
+	    onSessionStart(req);
+	    
+	    if(input || output)
+		AmSessionScheduler::instance()->addSession(this, callgroup);
+	    else {
+		ERROR("missing audio input and/or ouput.\n");
+	    }
+	}
     }
     else if( req.method == "BYE" ){
 	
@@ -486,7 +475,10 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     else if( req.method == "CANCEL" ){
 
 	dlg.reply(req,200,"OK");
+	onCancel();
+
     } else if( req.method == "INFO" ){
+
       if ((strip_header_params(getHeader(req.hdrs, "Content-Type"))
 	   =="application/dtmf-relay")|| 
 	  (strip_header_params(getHeader(req.hdrs, "c"))
@@ -504,35 +496,50 @@ void AmSession::onSipReply(const AmSipReply& reply)
     dlg.updateStatus(reply);
 }
 
+void AmSession::onInvite(const AmSipRequest& req)
+{
+    string sdp_reply;
+    if(acceptAudio(req,sdp_reply)!=0)
+	return;
+
+    if(dlg.reply(req,200,"OK",
+		 "application/sdp",sdp_reply) != 0){
+
+	//throw AmSession::Exception(500,"error while sending response");
+	setStopped();
+    }
+}
+
 void AmSession::onBye(const AmSipRequest& req)
 {
     setStopped();
 }
 
-int AmSession::acceptAudio(const AmSipRequest& req)
+int AmSession::acceptAudio(const AmSipRequest& req,
+			   string& sdp_reply)
 {
     try {
 	try {
 	    // handle codec and send reply
-	    negotiate(req);
+	    string str_msg_flags = getHeader(req.hdrs,"P-MsgFlags");
+	    unsigned int msg_flags = 0;
+	    if(reverse_hex2int(str_msg_flags,msg_flags)){
+		ERROR("while parsing 'P-MsgFlags' header\n");
+		msg_flags = 0;
+	    }
+	    
+	    negotiate( req.body,
+		       msg_flags & FL_FORCE_ACTIVE,
+		       sdp_reply);
 	    
 	    // enable RTP stream
 	    lockAudio();
 	    rtp_str.init(&payload);
 	    unlockAudio();
 	    
-	    if(detached.get()){
-		
-		onSessionStart(req);
-		
-		if(input || output)
-		  AmSessionScheduler::instance()->addSession(this, callgroup);
-		else {
-		    ERROR("missing audio input and/or ouput.\n");
-		    return -1;
-		}
-	    }
-	    
+	    DBG("Sending Rtp data to %s/%i\n",
+		rtp_str.getRHost().c_str(),rtp_str.getRPort());
+
 	    return 0;
 	}
 	catch(const AmSession::Exception& e){ throw e; }
@@ -585,5 +592,4 @@ void AmSession::sendReinvite()
   sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
   dlg.reinvite("", "application/sdp", sdp_body);
 }
-
 

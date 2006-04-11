@@ -335,6 +335,11 @@ int AmRtpStream::getRPort()
     return r_port;
 }
 
+string AmRtpStream::getRHost()
+{
+    return r_host;
+}
+
 void AmRtpStream::setRAddr(const string& addr, unsigned short port)
 {
     DBG("RTP remote address set to %s:%u\n",addr.c_str(),port);
