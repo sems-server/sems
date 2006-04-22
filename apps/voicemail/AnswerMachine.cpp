@@ -54,7 +54,7 @@ AnswerMachineFactory::AnswerMachineFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
 {}
 
-string AnswerMachineFactory::RecFileExt = "mp3";
+string AnswerMachineFactory::RecFileExt;
 string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
 int    AnswerMachineFactory::MaxRecordTime;
@@ -124,6 +124,7 @@ int AnswerMachineFactory::onLoad()
     AnnouncePath    = cfg.getParameter("announce_path",ANNOUNCE_PATH);
     DefaultAnnounce = cfg.getParameter("default_announce",DEFAULT_ANNOUNCE);
     MaxRecordTime   = cfg.getParameterInt("max_record_time",DEFAULT_RECORD_TIME);
+    RecFileExt      = cfg.getParameter("rec_file_ext",DEFAULT_AUDIO_EXT);
 
     if(loadEmailTemplates(cfg.getParameter("email_template_path",DEFAULT_MAIL_TMPL_PATH))){
 	ERROR("while loading email templates\n");
