@@ -32,6 +32,7 @@
 
 #include <stdlib.h>
 
+
 static int pcm16_2_gsm(unsigned char* out_buf, unsigned char* in_buf, unsigned int size, 
 		       unsigned int channels, unsigned int rate, long h_codec );
 
@@ -40,11 +41,13 @@ static int gsm_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned i
 
 static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* format_description); 
 
+static void gsm_destroy_if(long h_codec);
+
 BEGIN_EXPORTS( "gsm" )
 
     BEGIN_CODECS
       CODEC( CODEC_GSM0610, 1, pcm16_2_gsm, gsm_2_pcm16, NULL,
-	     (amci_codec_init_t)gsm_create_if, (amci_codec_destroy_t)gsm_destroy )
+	     (amci_codec_init_t)gsm_create_if, (amci_codec_destroy_t)gsm_destroy_if )
     END_CODECS
     
     BEGIN_PAYLOADS
@@ -60,7 +63,10 @@ static int pcm16_2_gsm(unsigned char* out_buf, unsigned char* in_buf, unsigned i
 		       unsigned int channels, unsigned int rate, long h_codec )
 {
     int i;
+    gsm* h_arr;
     div_t blocks;
+
+    h_arr = (gsm*)h_codec;
     blocks = div(size,320);
 
     if(blocks.rem){
@@ -69,7 +75,7 @@ static int pcm16_2_gsm(unsigned char* out_buf, unsigned char* in_buf, unsigned i
     }
 
     for (i=0;i<blocks.quot;i++)
-	gsm_encode((gsm)h_codec,(gsm_signal*)(in_buf + i*320),out_buf + i*33);
+	gsm_encode(h_arr[0],(gsm_signal*)(in_buf + i*320),out_buf + i*33);
 
     return blocks.quot * 33;
 }
@@ -78,9 +84,11 @@ static int gsm_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned i
 		       unsigned int channels, unsigned int rate, long h_codec )
 {
     int i;
+    gsm* h_arr;
     div_t blocks;
     unsigned int out_size;
 
+    h_arr = (gsm*)h_codec;
     blocks = div(size,33);
 
     if(blocks.rem){
@@ -99,23 +107,44 @@ static int gsm_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned i
     }
 
     for (i=0;i<blocks.quot;i++) 
-	gsm_decode((gsm)h_codec,in_buf + i*33,(gsm_signal*)(out_buf + i*320));
+	gsm_decode(h_arr[1],in_buf + i*33,(gsm_signal*)(out_buf + i*320));
 
     return out_size;
 }
 
 
-long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* format_description) { 
-  format_description[0].id = AMCI_FMT_FRAME_LENGTH ;
-  format_description[0].value = 20;
-  format_description[1].id = AMCI_FMT_FRAME_SIZE;
-  format_description[1].value = 160;
-  format_description[2].id =  AMCI_FMT_ENCODED_FRAME_SIZE;
-  format_description[2].value = 33;
-  format_description[3].id = 0;
+static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* format_description) 
+{ 
+    gsm* h_codec=0;
+    
+    h_codec = malloc(sizeof(gsm)*2);
+    if(!h_codec){
+	ERROR("gsm.c: could not create handle array\n");
+	return 0;
+    }
 
-  return (long)gsm_create();
+    h_codec[0] = gsm_create();
+    h_codec[1] = gsm_create();
+
+    format_description[0].id = AMCI_FMT_FRAME_LENGTH ;
+    format_description[0].value = 20;
+    format_description[1].id = AMCI_FMT_FRAME_SIZE;
+    format_description[1].value = 160;
+    format_description[2].id =  AMCI_FMT_ENCODED_FRAME_SIZE;
+    format_description[2].value = 33;
+    format_description[3].id = 0;
+
+    
+    return (long)h_codec;
 }
 
+static void gsm_destroy_if(long h_codec)
+{
+    gsm* h_arr = (gsm*)h_codec;
 
+    gsm_destroy(h_arr[0]);
+    gsm_destroy(h_arr[1]);
+
+    free(h_arr);
+}
 
