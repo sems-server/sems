@@ -171,14 +171,6 @@ void AmSessionSchedulerThread::run()
     while(true){
 
 	gettimeofday(&now,NULL);
-//  	DBG("now: %i.%.6i; next_tick: %i.%.6i\n",
-//  	    now.tv_sec,now.tv_usec,next_tick.tv_sec,next_tick.tv_usec);
-
-// 	struct timeval elaps; 
-// 	timersub(&now, &elaps, &elaps);
-//  	DBG("jitter: %i.%.6i; \n",
-//  	    elaps.tv_sec,elaps.tv_usec - tick.tv_usec);
-// 	elaps = now;
 
 	if(timercmp(&now,&next_tick,<)){
 
@@ -238,7 +230,7 @@ void AmSessionSchedulerThread::processAudio(unsigned int ts)
 		    case RTP_BUFFER_SIZE:
 		    default:
 			ERROR("AmRtpAudio::receive() returned %i\n",ret);
-			postRequest(new SchedRequest(AmSessionScheduler::RemoveSession,s)); //removeSession(s);
+			postRequest(new SchedRequest(AmSessionScheduler::RemoveSession,s));
 			break;
 		}
 	    }
@@ -248,9 +240,9 @@ void AmSessionSchedulerThread::processAudio(unsigned int ts)
 		if (input) {
 		    
 		    int ret = input->put(ts,buffer,size);
-		    if(ret <= 0){
+		    if(ret < 0){
 			DBG("input->put() returned: %i\n",ret);
-			postRequest(new SchedRequest(AmSessionScheduler::RemoveSession,s)); //removeSession(s);
+			postRequest(new SchedRequest(AmSessionScheduler::RemoveSession,s));
 		    }
 		}
                 if (s->isDtmfDetectionEnabled())

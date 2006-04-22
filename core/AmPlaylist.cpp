@@ -67,7 +67,7 @@ int AmPlaylist::put(unsigned int user_ts, unsigned char* buffer, unsigned int si
     updateCurrentItem();
     while(cur_item && 
 	  cur_item->record &&
-	  (ret = cur_item->record->put(user_ts,buffer,size)) <= 0){
+	  (ret = cur_item->record->put(user_ts,buffer,size)) < 0){
 
 	DBG("put: gotoNextItem\n");
 	gotoNextItem();
