@@ -1,0 +1,32 @@
+Lame MP3 file writing plug-in for SEMS Readme
+
+Description
+-----------
+This mp3 plug-in enables MP3 file writing for SEMS. In order to use
+it, you must get the lame library sources first. Files recorded with
+the extension "MP3" or "mp3" are recorded as mp3 if possible. 
+
+Quickstart
+----------
+cd plug-in/mp3 ; wget http://switch.dl.sourceforge.net/sourceforge/lame/lame-3.96.1.tar.gz ;
+tar xzvf lame-3.96.tar.gz ; make
+
+Installation
+------------
+1) Get lame from lame.sourceforge.net (
+http://sourceforge.net/project/showfiles.php?group_id=290)
+2) Unpack the archive
+3) edit LAME_DIR in mp3 plug-in Makefile to point to the location of
+the unpacked lame source archive
+4) make in plug-in/mp3 directory
+
+Important Note:
+--------------
+Using the LAME encoding engine (or other mp3 encoding technology) in
+your software may require a patent license in some countries.
+See http://www.mp3licensing.com/ or
+http://lame.sourceforge.net/links.html#patents for further information.
+
+
+
+
