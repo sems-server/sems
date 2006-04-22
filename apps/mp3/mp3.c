@@ -103,7 +103,7 @@ long MP3_create(const char* format_parameters, amci_codec_fmt_info_t* format_des
     lame_set_in_samplerate(gfp,8000);
     lame_set_brate(gfp,16);
     lame_set_mode(gfp,3); // mono
-    lame_set_quality(gfp,7);   /* 2=high  5 = medium  7=low */ 
+    lame_set_quality(gfp,2);   /* 2=high  5 = medium  7=low */ 
 
     id3tag_init(gfp);
     id3tag_set_title(gfp, "mp3 voicemail by iptel.org");
