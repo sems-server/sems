@@ -1,5 +1,5 @@
 /*
- * $Id: Announcement.cpp,v 1.7.8.4 2005/08/31 13:54:29 rco Exp $
+ * $Id: EarlyAnnounce.cpp,v 1.7.8.4 2005/08/31 13:54:29 rco Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -25,7 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Announcement.h"
+#include "EarlyAnnounce.h"
 #include "AmConfig.h"
 #include "AmUtils.h"
 #include "AmSessionScheduler.h"
@@ -35,17 +35,17 @@
 
 #define MOD_NAME "early_announce"
 
-EXPORT_SESSION_FACTORY(AnnouncementFactory,MOD_NAME);
+EXPORT_SESSION_FACTORY(EarlyAnnounceFactory,MOD_NAME);
 
-string AnnouncementFactory::AnnouncePath;
-string AnnouncementFactory::AnnounceFile;
+string EarlyAnnounceFactory::AnnouncePath;
+string EarlyAnnounceFactory::AnnounceFile;
 
-AnnouncementFactory::AnnouncementFactory(const string& _app_name)
+EarlyAnnounceFactory::EarlyAnnounceFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
 {
 }
 
-int AnnouncementFactory::onLoad()
+int EarlyAnnounceFactory::onLoad()
 {
     AmConfigReader cfg;
     if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
@@ -72,7 +72,7 @@ int AnnouncementFactory::onLoad()
 }
 
 
-void AnnouncementDialog::onInvite(const AmSipRequest& req) 
+void EarlyAnnounceDialog::onInvite(const AmSipRequest& req) 
 {
     string sdp_reply;
     if(acceptAudio(req,sdp_reply)!=0)
@@ -95,7 +95,7 @@ void AnnouncementDialog::onInvite(const AmSipRequest& req)
 }
 
 
-AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req)
+AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req)
 {
     string announce_path = AnnouncePath;
     string announce_file = announce_path + req.domain 
@@ -113,40 +113,40 @@ AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req)
     announce_file = AnnouncePath + AnnounceFile;
     
 end:
-    return new AnnouncementDialog(announce_file);
+    return new EarlyAnnounceDialog(announce_file);
 }
 
-AnnouncementDialog::AnnouncementDialog(const string& filename)
+EarlyAnnounceDialog::EarlyAnnounceDialog(const string& filename)
     : filename(filename)
 {
 }
 
-AnnouncementDialog::~AnnouncementDialog()
+EarlyAnnounceDialog::~EarlyAnnounceDialog()
 {
 }
 
-void AnnouncementDialog::onSessionStart(const AmSipRequest& req)
+void EarlyAnnounceDialog::onSessionStart(const AmSipRequest& req)
 {
-    DBG("AnnouncementDialog::onSessionStart\n");
+    DBG("EarlyAnnounceDialog::onSessionStart\n");
     if(wav_file.open(filename,AmAudioFile::Read))
-	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
+	throw string("EarlyAnnounceDialog::onSessionStart: Cannot open file\n");
     
     setOutput(&wav_file);
 }
 
-void AnnouncementDialog::onBye(const AmSipRequest& req)
+void EarlyAnnounceDialog::onBye(const AmSipRequest& req)
 {
     DBG("onBye: stopSession\n");
     setStopped();
 }
 
-void AnnouncementDialog::onCancel()
+void EarlyAnnounceDialog::onCancel()
 {
     dlg.reply(localreq,487,"Call terminated");
     setStopped();
 }
 
-void AnnouncementDialog::process(AmEvent* event)
+void EarlyAnnounceDialog::process(AmEvent* event)
 {
 
     AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);

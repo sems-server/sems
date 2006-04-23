@@ -1,7 +1,7 @@
 /*
- * $Id: Announcement.h,v 1.6.8.1 2005/06/01 12:00:24 rco Exp $
+ * $Id: EarlyAnnounce.h,v 1.6.8.1 2005/06/01 12:00:24 rco Exp $
  *
- * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2006 iptel.org GmbH
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -25,8 +25,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _ANNOUNCEMENT_H_
-#define _ANNOUNCEMENT_H_
+#ifndef _EarlyAnnounce_h_
+#define _EarlyAnnounce_h_
 
 #include "AmSession.h"
 #include "AmConfigReader.h"
@@ -34,27 +34,27 @@
 #include <string>
 using std::string;
 
-class AnnouncementFactory: public AmSessionFactory
+class EarlyAnnounceFactory: public AmSessionFactory
 {
 public:
     static string AnnouncePath;
     static string AnnounceFile;
 
-    AnnouncementFactory(const string& _app_name);
+    EarlyAnnounceFactory(const string& _app_name);
 
     int onLoad();
     AmSession* onInvite(const AmSipRequest& req);
 };
 
-class AnnouncementDialog : public AmSession
+class EarlyAnnounceDialog : public AmSession
 {
     AmAudioFile wav_file;
     string filename;
     AmSipRequest localreq;
     
  public:
-    AnnouncementDialog(const string& filename);
-    ~AnnouncementDialog();
+    EarlyAnnounceDialog(const string& filename);
+    ~EarlyAnnounceDialog();
 
     void onInvite(const AmSipRequest& req);
     void onSessionStart(const AmSipRequest& req);
