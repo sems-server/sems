@@ -185,6 +185,7 @@ const string& AmSession::getLocalTag() const
 
 void AmSession::setLocalTag(const string& tag)
 {
+    DBG("AmSession::setLocalTag(%s)\n",tag.c_str());
     dlg.local_tag = tag;
 }
 
@@ -456,7 +457,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 	
 	onInvite(req);
 
-	if(detached.get()){
+	if(detached.get() && !getStopped()){
 	
 	    onSessionStart(req);
 	    
