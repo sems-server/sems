@@ -81,16 +81,12 @@ void EarlyAnnounceDialog::onInvite(const AmSipRequest& req)
     if(dlg.reply(req,183,"Session Progress",
 		 "application/sdp",sdp_reply) != 0){
 
-	//throw AmSession::Exception(500,"error while sending response");
 	setStopped();
     }
     else {
 
 	localreq = req;
     }
-
-// reply_code = 183;                 // early dialog
-// reply_reason = "Session Progress";
 
 }
 
@@ -150,35 +146,25 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 {
 
     AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event)
+    if(audio_event && 
+       (audio_event->event_id == AmAudioEvent::cleared))
     {
-          switch(audio_event->event_id)
-          {
+	DBG("AmAudioEvent::cleared\n");
+	unsigned int code_i;
+	string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
+	string reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
+	
+	if (code.length() && reason.length() && !str2i(code, code_i) ) {
+	    DBG("Replying with code %d %s\n", code_i, reason.c_str());
+	    dlg.reply(localreq, code_i, reason);
+	} else {
+	    DBG("Replying with std code 404 Not found\n");
+	    dlg.reply(localreq, 404, "Not Found");
+	}
 
-              case AmAudioEvent::cleared:
-                    DBG("AmAudioEvent::cleared\n");
-                    //dlg.bye();
-                    setStopped();
-                    return;
-                    break;
+	setStopped();
 
-              case AmAudioEvent::noAudio:
-                    DBG("AmAudioEvent::noAudio\n");
-                    unsigned int code_i;
-  		    string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
-		    string reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
-
-                    if (code.length() && reason.length() && !str2i(code, code_i) ) {
-                        DBG("Replying with code %d %s\n", code_i, reason.c_str());
-                        dlg.reply(localreq, code_i, reason);
-                    } else {
-                        DBG("Replying with std code 404 Not found\n");
-                        dlg.reply(localreq, 404, "Not Found");
-                    }
-                    setStopped();
-                    return;
-                    break;
-          }
+	return;
     }
 
     AmSession::process(event);
