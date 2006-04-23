@@ -97,8 +97,8 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
     }
 
     if(code >= 200){
-	DBG("req.method = %s; t.method = %s\n",
-	    req.method.c_str(),t.method.c_str());
+	DBG("req.method = %s; t.method = %s; status = %i\n",
+	    req.method.c_str(),t.method.c_str(),status);
 
 	uas_trans.erase(t_it);
     }
@@ -223,7 +223,7 @@ int AmSipDialog::reply(const AmSipRequest& req,
 	code_str + "\n" + 
 	reason + "\n" + 
 	req.key + "\n" + 
-	local_tag + "\n";
+ 	local_tag + "\n";
 
     if(!m_hdrs.empty())
 	msg += m_hdrs;
@@ -240,10 +240,16 @@ int AmSipDialog::reply(const AmSipRequest& req,
 
     msg += ".\n\n";
 
-    if(updateStatusReply(req,code))
+    if(send_reply(msg,reply_sock) < 0){
+	ERROR("send_reply: could not send: "
+	      "Ser reported an error\n");
+	return -1;
+    }
+
+    if(updateStatusReply(req,code) < 0)
 	return -1;
 
-    return send_reply(msg,reply_sock);
+    return 0;
 }
 
 /* static */
@@ -317,7 +323,12 @@ int AmSipDialog::bye()
 	return sendRequest("BYE");
     case Pending:
 	status = Disconnecting;
-	return cancel();
+	if(getUACTransPending())
+	    return cancel();
+	else {
+	    ERROR("bye(): Dialog should have"
+		  " been terminated by the app !!!\n");
+	}
     default:
 	DBG("bye(): we are not connected "
 	    "(status=%i). do nothing!\n",status);
