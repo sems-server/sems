@@ -138,11 +138,19 @@ public:
 };
 
 
-#define EXPORT_FACTORY(fctname,class_name,...) \
+#if  __GNUC__ < 3
+#define EXPORT_FACTORY(fctname,class_name,args...) \
+            extern "C" void* fctname()\
+            {\
+		return new class_name(##args);\
+	    }
+#else
+#define EXPORT_FACTORY(fctname,class_name...) \
             extern "C" void* fctname()\
             {\
 		return new class_name(__VA_ARGS__);\
 	    }
+#endif
 
 typedef void* (*FactoryCreate)();
 

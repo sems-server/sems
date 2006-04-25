@@ -29,6 +29,7 @@
 #define _AmMail_h_
 
 #include "AmThread.h"
+#include <stdio.h>
 
 #include <string>
 #include <vector>

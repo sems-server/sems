@@ -16,7 +16,12 @@ AmB2BSession::~AmB2BSession()
 
 void AmB2BSession::clear_other()
 {
+#if __GNUC__ < 3
+    string cleared ("");
+    other_id.assign (cleared, 0, 0);
+#else
     other_id.clear();
+#endif
 }
 
 void AmB2BSession::process(AmEvent* event)

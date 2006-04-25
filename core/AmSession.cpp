@@ -93,7 +93,20 @@ bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
 // AmSession methods
 
 
-#define CALL_EVENT_H(method, ...) \
+#if __GNUC__ < 3
+#define CALL_EVENT_H(method,args...) \
+            do{\
+                vector<AmSessionEventHandler*>::iterator evh = ev_handlers.begin(); \
+                bool stop = false; \
+                while((evh != ev_handlers.end()) && !stop){ \
+                    stop = (*evh)->method( ##args ); \
+                    evh++; \
+		} \
+		if(stop) \
+                    return; \
+            }while(0)
+#else
+#define CALL_EVENT_H(method,...) \
             do{\
                 vector<AmSessionEventHandler*>::iterator evh = ev_handlers.begin(); \
                 bool stop = false; \
@@ -104,6 +117,7 @@ bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
 		if(stop) \
                     return; \
             }while(0)
+#endif
 
 
 
@@ -343,7 +357,7 @@ string AmSession::getNewId()
     _m.unlock();
 
     id += int2hex(t.tv_sec) + int2hex(t.tv_usec) + "-";
-    id += int2hex(pthread_self());
+    id += int2hex((unsigned int) pthread_self());
 
     return id;
 }

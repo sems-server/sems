@@ -27,6 +27,7 @@
 #ifndef _AmRtpPacket_h_
 #define _AmRtpPacket_h_
 
+#include <sys/time.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 

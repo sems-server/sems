@@ -4,6 +4,8 @@
 #include "AmConfig.h"
 #include "AmUtils.h"
 #include <assert.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "sems.h"
 
 // AmSessionContainer methods

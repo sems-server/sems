@@ -38,6 +38,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 using std::string;
 using std::map;
 using std::auto_ptr;

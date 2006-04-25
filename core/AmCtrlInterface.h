@@ -2,11 +2,12 @@
 #define AmCtrlInterface_h
 
 #ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX 108
+#define UNIX_PATH_MAX 104
 #endif
 
 #include <string>
 #include <memory>
+#include <stdio.h>
 
 using std::string;
 using std::auto_ptr;

@@ -30,6 +30,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <stdio.h>
 #include "AmConfig.h"
 #include "sems.h"
 #include "log.h"
@@ -144,6 +145,7 @@ int AmConfig::readConfiguration()
 
     // local_ip
     LocalIP = cfg.getParameter("listen");
+DBG("RvR :- Local IP set to %s\n", LocalIP.c_str());
 
     // socket_name
     SocketName = cfg.getParameter("socket_name");

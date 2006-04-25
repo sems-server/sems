@@ -60,6 +60,9 @@ void log_print (int level, char* fmt, ...);
 #define LOG_PRINT(level, args... ) log_print( level , ##args )
 #endif
 
+#if  __GNUC__ < 3
+#define _LOG(level,fmt...) LOG_PRINT(level,##fmt)
+#else
 #define _LOG(level, fmt, args...) \
           do{\
               if((level)<=log_level) {\
@@ -83,6 +86,7 @@ void log_print (int level, char* fmt, ...);
 		  }\
               }\
 	  }while(0)
+#endif
 
 
 #define DBG(args...) _LOG(L_DBG, ##args)

@@ -64,7 +64,7 @@ AmThread::AmThread()
 void * AmThread::_start(void * _t)
 {
     AmThread* _this = (AmThread*)_t;
-    _this->_pid = _this->_td;
+    _this->_pid = (pid_t) _this->_td;
     DBG("Thread %ld is starting.\n", (unsigned long int) _this->_pid);
     _this->_stopped.set(false);
     _this->run();

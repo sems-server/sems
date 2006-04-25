@@ -2,6 +2,7 @@
 #include "UserTimer.h"
 
 #include <sys/time.h>
+#include <unistd.h>
 
 #define SESSION_TIMER_GRANULARITY 100 // check every 100 millisec
 

@@ -346,6 +346,7 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
 
 #ifdef SUPPORT_IPV6
     struct sockaddr_storage ss;
+    memset (&ss, 0, sizeof (ss));
     if(!inet_aton_v6(addr.c_str(),&ss)){
  	ERROR("address not valid (host: %s)\n",addr.c_str());
  	throw string("invalid address");
@@ -355,6 +356,7 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
     set_port_v6(&r_saddr,port);
 #else
     struct sockaddr_in sa;
+    memset (&sa, 0, sizeof (sa));
     sa.sin_family = AF_INET;
     sa.sin_port = htons(port);
     

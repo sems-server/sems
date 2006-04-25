@@ -347,13 +347,11 @@ int IvrFactory::onLoad()
     DBG("** IVR compile time configuration:\n");
     DBG("**     built with PYTHON support.\n");
 
-    DBG("**     Text-To-Speech "
 #ifdef IVR_WITH_TTS
-	"enabled"
+    DBG("**     Text-To-Speech enabled\n");
 #else
-	"disabled"
+    DBG("**     Text-To-Speech disabled\n");
 #endif
-	"\n");
 
     DBG("** IVR run time configuration:\n");
     DBG("**     script path:         \'%s\'\n", script_path.c_str());

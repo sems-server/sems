@@ -13,6 +13,8 @@ using std::string;
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <unistd.h>
+#include <netinet/in_systm.h>
 #include <netinet/ip.h>
 
 #define CTRL_MSGBUF_SIZE 2048

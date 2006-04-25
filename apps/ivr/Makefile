@@ -9,7 +9,7 @@ TTS = y
 # Python specific
 #  (no need to change this if you want to use perl)
 #
-# PYTHON_VERSION might also be 2.2
+# PYTHON_VERSION might also be 2.2 -- except for the use of GIL
 # do a ls /usr/include/python2.3/Python.h to see if it's there
 PY_VER = 2.3
 # adjust to point to python include path
@@ -17,7 +17,7 @@ PY_VER = 2.3
 # look for Python.h in the specified path
 # Python prefix is what you configured python with 
 # if you built from source (e.g. ./configure --with-prefix=/usr/local)
-# on debian it's often /usr, on SuSE /usr/local
+# on debian it's often /usr, on SuSE and FreeBSD /usr/local
 PYTHON_PREFIX = /usr
 PYTHON_DIR = $(PYTHON_PREFIX)/include/python$(PY_VER)
 PYTHON_LIBDIR = $(PYTHON_PREFIX)/lib/python$(PY_VER)
@@ -45,6 +45,7 @@ endif
 
 LOCAL_INCLUDES = -I$(FLITE_DIR)/lang/usenglish
 
+# On FreeBSD, remove the following flags: -ldl -lpthread 
 module_ldflags = -ldl -lpthread -lutil -lm \
 	$(PYTHON_module_ldflags) \
 	$(IVR_TTS_module_ldflags)
@@ -68,7 +69,8 @@ py_obj = $(py_src:.py=.pyc)
 ifeq (all,$(MAKECMDGOALS))
 .PHONY: python_files
 python_files: 
-	python$(PY_VER) py_comp -l -q py &&\
+	# python$(PY_VER) py_comp -l -q py &&\
+	python$(PY_VER) py_comp -l &&\
 	cp py/*.pyc $(COREPATH)/lib
 
 endif

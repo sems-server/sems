@@ -46,7 +46,7 @@
 #include <sys/un.h>
 
 #ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX 108
+#define UNIX_PATH_MAX 104
 #endif
 
 // timeout in us (ms/1000)
@@ -581,6 +581,7 @@ int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int 
     }
 
     struct sockaddr_un ser_addr;
+    memset (&ser_addr, 0, sizeof (ser_addr));
     ser_addr.sun_family = AF_UNIX;
     strncpy(ser_addr.sun_path,to_addr,UNIX_PATH_MAX);
 
