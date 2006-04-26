@@ -145,7 +145,7 @@ public:
 		return new class_name(##args);\
 	    }
 #else
-#define EXPORT_FACTORY(fctname,class_name...) \
+#define EXPORT_FACTORY(fctname,class_name,...) \
             extern "C" void* fctname()\
             {\
 		return new class_name(__VA_ARGS__);\
