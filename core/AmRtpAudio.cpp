@@ -67,9 +67,9 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
 	    int l_size = conceal_loss(ts - last_ts);
  	    if(l_size>0){
 
-  		timed_buffer.put(last_ts,
-  				 (ShortSample*)samples.back_buffer(),
-  				 PCM16_B2S(l_size));
+  		playout_buffer.direct_write(last_ts,
+					    (ShortSample*)samples.back_buffer(),
+					    PCM16_B2S(l_size));
  	    }
 	}
 
@@ -82,9 +82,9 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
 	if(use_default_plc)
 	    add_to_history(size);
 
-	timed_buffer.put(ts,
-			 (ShortSample*)((unsigned char*)samples),
-			 PCM16_B2S(size));
+	playout_buffer.write(audio_buffer_ts, ts,
+			     (ShortSample*)((unsigned char*)samples),
+			     PCM16_B2S(size));
 	
 	last_ts = ts + PCM16_B2S(size);
     }
@@ -101,7 +101,7 @@ int AmRtpAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb
 
 int AmRtpAudio::read(unsigned int user_ts, unsigned int size)
 {
-    timed_buffer.get(user_ts,(ShortSample*)((unsigned char*)samples),PCM16_B2S(size));
+    playout_buffer.read(user_ts,(ShortSample*)((unsigned char*)samples),PCM16_B2S(size));
     return size;
 }
 

@@ -30,7 +30,8 @@
 
 #include "AmAudio.h"
 #include "AmRtpStream.h"
-#include "SampleArray.h"
+#include "AmPlayoutBuffer.h"
+//#include "SampleArray.h"
 #include "LowcFE.h"
 
 // Maximum value: AUDIO_BUFFER_SIZE / 2
@@ -39,7 +40,8 @@
 
 class AmRtpAudio: public AmRtpStream, public AmAudio
 {
-    SampleArrayShort timed_buffer;
+    //SampleArrayShort timed_buffer;
+    AmPlayoutBuffer playout_buffer;
 
     LowcFE       fec;
     bool         use_default_plc;

@@ -53,6 +53,7 @@
 #include <set>
 using std::set;
 
+#define MAX_DELAY 8000 /* 1 second */
 
 /*
  * This function must be called before setLocalPort, because
@@ -254,19 +255,19 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
  	recv_offset_i = true;
 	DBG("initialized recv_offset with %i (%i - %i)\n", 
 	    recv_offset,audio_buffer_ts,rp.timestamp);
-	ts = audio_buffer_ts + jitter_delay;
+	ts = audio_buffer_ts;// + jitter_delay;
     }
     else {
- 	ts = rp.timestamp - recv_offset + jitter_delay;
+ 	ts = rp.timestamp - recv_offset;// + jitter_delay;
 	
 	// resync
- 	if( ts_less()(ts, audio_buffer_ts) || 
- 	    !ts_less()(ts, audio_buffer_ts + max_delay) ){
+ 	if( ts_less()(ts, audio_buffer_ts - MAX_DELAY/2) || 
+ 	    !ts_less()(ts, audio_buffer_ts + MAX_DELAY) ){
 
  	    DBG("resync needed: reference ts = %u; write ts = %u\n",
  		audio_buffer_ts,ts);
  	    recv_offset = rp.timestamp - audio_buffer_ts;
- 	    ts = audio_buffer_ts + jitter_delay;
+ 	    ts = audio_buffer_ts;// + jitter_delay;
  	}
     }
 
@@ -309,8 +310,8 @@ AmRtpStream::AmRtpStream(AmSession* _s)
     l_saddr.sin_addr.s_addr = INADDR_ANY;
 #endif
 
-    jitter_delay = 80/*ms*/  * 8;
-    max_delay    = 120/*ms*/ * 8;
+    //jitter_delay = 80/*ms*/  * 8;
+    //max_delay    = 120/*ms*/ * 8;
 }
 
 AmRtpStream::~AmRtpStream()

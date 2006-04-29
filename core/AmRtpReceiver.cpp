@@ -95,7 +95,7 @@ void AmRtpReceiver::run()
 		    DBG("error while parsing RTP packet.\n");
 		    continue;
 		}
-		
+
 		gettimeofday(&p.recv_time,NULL);
 		
 		streams_mut.lock();
@@ -138,8 +138,9 @@ void AmRtpReceiver::removeStream(int sd)
 
 	if(fds[i].fd == sd){
 
-	    if(--nfds && (i < nfds))
-		fds[i] = fds[nfds-1];
+	    if(--nfds && (i < nfds)){
+		fds[i] = fds[nfds];
+	    }
 
 	    break;
 	}
