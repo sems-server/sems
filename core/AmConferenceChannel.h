@@ -27,6 +27,7 @@ public:
 
     ~AmConferenceChannel();
 
+    string getConfID() { return conf_id; }
 };
 
 

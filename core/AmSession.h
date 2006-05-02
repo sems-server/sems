@@ -177,13 +177,15 @@ public:
      * the session to the scheduler!
      */
     void setCallgroup(const string& cg);
+    string getCallgroup() { return callgroup; }
 
     /**
-     * Accept the INVITE proposal
+     * Accept the SDP proposal
      * thus setting up audio stream
      */
-    int acceptAudio(const AmSipRequest& req,
-		    string& sdp_reply);
+    int acceptAudio(const string& body,
+		    const string& hdrs = "",
+		    string*       sdp_reply=0);
 
     /**
      * Lock and unlock audio input & output
@@ -236,7 +238,7 @@ public:
     /** handle SDP negotiation: only for INVITEs & re-INVITEs */
     virtual void negotiate(const string& sdp_body,
 			   bool force_symmetric_rtp,
-			   string& sdp_reply);
+			   string* sdp_reply);
 
     void sendUpdate();
     void sendReinvite();
@@ -260,6 +262,8 @@ public:
      * Has the session already been stopped ?
      */
     bool getStopped() { return sess_stopped.get(); }
+
+    bool getDetached() { return detached.get(); }
 
     /**
      * Creates a new Id which can be used within sessions.

@@ -46,10 +46,14 @@ enum { ConfNewParticipant = 1,
 struct ConferenceEvent: public AmEvent
 {
     unsigned int participants;
+    string       conf_id;
 
-    ConferenceEvent(int event_id, unsigned int participants)
+    ConferenceEvent(int event_id, 
+		    unsigned int participants,
+		    const string& conf_id)
 	: AmEvent(event_id),
-	  participants(participants)
+	  participants(participants),
+	  conf_id(conf_id)
     {}
 };
 

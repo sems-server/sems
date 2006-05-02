@@ -174,7 +174,7 @@ class AmSdp
      * Generate an SDP offer. 
      * @return !=0 if error encountered.
      */
-    int genRequest(const string& dstip,int localport, string& out_buf);
+    int genRequest(const string& localip,int localport, string& out_buf);
 
     /** 
      * Get a compatible payload from SDP offer/response. 

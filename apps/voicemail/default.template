@@ -1,5 +1,5 @@
 subject: Voice message from: %from%
-from: voicemail@%domain%
+from:raf@samson
 to: %email%
 
 Hello %user%@%domain%,

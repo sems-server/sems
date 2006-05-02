@@ -75,7 +75,7 @@ int EarlyAnnounceFactory::onLoad()
 void EarlyAnnounceDialog::onInvite(const AmSipRequest& req) 
 {
     string sdp_reply;
-    if(acceptAudio(req,sdp_reply)!=0)
+    if(acceptAudio(req.body,req.hdrs,&sdp_reply)!=0)
 	return;
 
     if(dlg.reply(req,183,"Session Progress",

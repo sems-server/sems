@@ -215,7 +215,7 @@ int AmSession::getRPort()
 
 void AmSession::negotiate(const string& sdp_body,
 			  bool force_symmetric_rtp,
-			  string& sdp_reply)
+			  string* sdp_reply)
 {
     string r_host = "";
     int    r_port = 0;
@@ -266,7 +266,8 @@ void AmSession::negotiate(const string& sdp_body,
 	passive_mode = true;
     }
 
-    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_reply);
+    if(sdp_reply)
+	sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),*sdp_reply);
 
     lockAudio();
     rtp_str.setLocalIP(AmConfig::LocalIP);
@@ -514,7 +515,7 @@ void AmSession::onSipReply(const AmSipReply& reply)
 void AmSession::onInvite(const AmSipRequest& req)
 {
     string sdp_reply;
-    if(acceptAudio(req,sdp_reply)!=0)
+    if(acceptAudio(req.body,req.hdrs,&sdp_reply)!=0)
 	return;
 
     if(dlg.reply(req,200,"OK",
@@ -530,20 +531,21 @@ void AmSession::onBye(const AmSipRequest& req)
     setStopped();
 }
 
-int AmSession::acceptAudio(const AmSipRequest& req,
-			   string& sdp_reply)
+int AmSession::acceptAudio(const string& body,
+			   const string& hdrs,
+			   string*       sdp_reply)
 {
     try {
 	try {
 	    // handle codec and send reply
-	    string str_msg_flags = getHeader(req.hdrs,"P-MsgFlags");
+	    string str_msg_flags = getHeader(hdrs,"P-MsgFlags");
 	    unsigned int msg_flags = 0;
 	    if(reverse_hex2int(str_msg_flags,msg_flags)){
 		ERROR("while parsing 'P-MsgFlags' header\n");
 		msg_flags = 0;
 	    }
 	    
-	    negotiate( req.body,
+	    negotiate( body,
 		       msg_flags & FL_FORCE_ACTIVE,
 		       sdp_reply);
 	    
@@ -568,9 +570,9 @@ int AmSession::acceptAudio(const AmSipRequest& req,
     }
     catch(const AmSession::Exception& e){
 	ERROR("%i %s\n",e.code,e.reason.c_str());
-	if(dlg.reply(req,e.code,e.reason, "")){
-	    dlg.bye();
-	}
+// 	if(dlg.reply(req,e.code,e.reason, "")){
+// 	    dlg.bye();
+// 	}
 	setStopped();
     }
 

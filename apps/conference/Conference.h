@@ -42,12 +42,33 @@ using std::string;
 class ConferenceStatus;
 class ConferenceStatusContainer;
 
+ 
+enum { CS_normal=0,
+       CS_dialing_out,
+       CS_dialed_out,
+       CS_dialout_connected };
+
+enum { DoConfConnect = 100,
+       DoConfDisconnect };
+
+struct DialoutConfEvent : public AmEvent {
+
+    string conf_id;
+    
+    DialoutConfEvent(int event_id,
+		     const string& conf_id)
+	: AmEvent(event_id),
+	  conf_id(conf_id)
+    {}
+};
+ 
 class ConferenceFactory : public AmSessionFactory
 {
 public:
     static string LonelyUserFile;
     static string JoinSound;
     static string DropSound;
+    static string DialoutSuffix;
 
     ConferenceFactory(const string& _app_name);
     virtual AmSession* onInvite(const AmSipRequest&);
@@ -62,17 +83,37 @@ class ConferenceDialog : public AmSession
     auto_ptr<AmAudioFile> JoinSound;
     auto_ptr<AmAudioFile> DropSound;
 
+
     string                        conf_id;
     auto_ptr<AmConferenceChannel> channel;
 
+    int                           state;
+    string                        dtmf_seq;
+    bool                          dialedout;
+    string                        dialout_id;
+    auto_ptr<AmConferenceChannel> dialout_channel;
+
+
+    void createDialoutParticipant(const string& uri);
+    void disconnectDialout();
+    void connectMainChannel();
+    void closeChannels();
+    void setupAudio();
+
 public:
-    ConferenceDialog(const string& conf_id);
+    ConferenceDialog(const string& conf_id,
+		     AmConferenceChannel* dialout_channel=0);
+
     ~ConferenceDialog();
 
     void process(AmEvent* ev);
     void onStart();
+    void onDtmf(int event, int duration);
+    void onSessionStart(const AmSipReply& reply);
     void onSessionStart(const AmSipRequest& req);
     void onBye(const AmSipRequest& req);
+
+    void onSipReply(const AmSipReply& reply);
 };
 
 #endif

@@ -97,6 +97,7 @@ AmConferenceStatus::AmConferenceStatus(const string& conference_id)
 
 AmConferenceStatus::~AmConferenceStatus()
 {
+    DBG("AmConferenceStatus::~AmConferenceStatus(): conf_id = %s\n",conf_id.c_str());
 }
 
 AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
@@ -119,14 +120,15 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
 		AmSessionContainer::instance()->postEvent(
 		    it->first,
 		    new ConferenceEvent(ConfNewParticipant,
-					participants)
+					participants,conf_id)
 		    );
 	    }
 	}
 	else {
 	    // The First participant gets its own NewParticipant message
 	    AmSessionContainer::instance()->postEvent(
-		 sess_id, new ConferenceEvent(ConfNewParticipant,1));
+		 sess_id, new ConferenceEvent(ConfNewParticipant,1,
+					      conf_id));
 	}
 
 	unsigned int ch_id = mixer.addChannel();
@@ -165,7 +167,8 @@ int AmConferenceStatus::releaseChannel(unsigned int ch_id)
 	    AmSessionContainer::instance()->postEvent(
 	        s_it->first,
 		new ConferenceEvent(ConfParticipantLeft,
-				    participants));
+				    participants,
+				    conf_id));
 	}
 	
     }

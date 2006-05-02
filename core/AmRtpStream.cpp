@@ -197,6 +197,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 {
     AmRtpPacket rp;
     int err = nextPacket(rp);
+    
     if(err <= 0)
 	return err;
 
@@ -318,7 +319,6 @@ AmRtpStream::~AmRtpStream()
 {
     if(l_sd){
 	AmRtpReceiver::instance()->removeStream(l_sd);
-	//AmIcmpWatcher::instance()->removeStream(l_port);
 	close(l_sd);
     }
 }
