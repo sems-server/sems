@@ -29,14 +29,32 @@
 #include "../../log.h"
 
 #include <string.h>
+#include <sys/types.h>
 
 #define SAFE_READ(buf,s,fp,sr) \
     sr = fread(buf,s,1,fp);\
     if((sr != 1) || ferror(fp)) return -1;
 
-#define SAFE_WRITE(buf,s,fp) \
-    fwrite(buf,s,1,fp);\
-    if(ferror(fp)) return -1;
+/* The file header of RIFF-WAVE files (*.wav).  Files are always in
+   little-endian byte-order.  */
+
+struct wav_header
+{
+  char      magic[4];
+  u_int32_t length;
+  char	    chunk_type[4];
+  char      chunk_format[4];
+  u_int32_t chunk_length;
+  u_int16_t format;
+  u_int16_t channels;
+  u_int32_t sample_rate;
+  u_int32_t bytes_per_second;
+  u_int16_t sample_size;
+  u_int16_t precision;
+  char      chunk_data[4];
+  u_int32_t data_length;
+};
+
 
 static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
 {
@@ -143,50 +161,29 @@ int wav_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_co
 
 int wav_write_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
 {
-    unsigned int file_size;
-    unsigned int chunk_size;
-    unsigned short fmt;
-    unsigned short channels;
-    unsigned int rate;
-    unsigned short block_align;
-    unsigned int bytes_per_sec;
-    unsigned short bits_per_sample;
+    struct wav_header hdr;
 
-    SAFE_WRITE("RIFF",4,fp);
+    memcpy(hdr.magic, "RIFF",4);
+    hdr.length = fmt_desc->data_size + 36;
+    memcpy(hdr.chunk_type, "WAVE",4);
+    memcpy(hdr.chunk_format, "fmt ",4);
+    hdr.chunk_length = 16;
+    hdr.format = fmt_desc->subtype;
+    hdr.channels = (unsigned short)fmt_desc->channels;
+    hdr.sample_rate = (unsigned int)fmt_desc->rate;
+    hdr.sample_size = hdr.channels * fmt_desc->sample;
+    hdr.bytes_per_second = hdr.sample_rate * (unsigned int)hdr.sample_size;
+    hdr.precision = (unsigned short)(fmt_desc->sample * 8);
+    memcpy(hdr.chunk_data,"data",4);
+    hdr.data_length=fmt_desc->data_size;
 
-    file_size = fmt_desc->data_size + 36;
-    SAFE_WRITE(&file_size,4,fp);
+    fwrite(&hdr,sizeof(hdr),1,fp);
+    if(ferror(fp)) return -1;
 
-    SAFE_WRITE("WAVE",4,fp);
-
-    SAFE_WRITE("fmt ",4,fp);
-
-    chunk_size = 16;
-    SAFE_WRITE(&chunk_size,4,fp);
-
-    fmt = fmt_desc->subtype;
-    SAFE_WRITE(&fmt,2,fp);
-    DBG("(wav_hdr.c) fmt = <%i>\n",fmt);
-
-    channels = (unsigned short)fmt_desc->channels;
-    SAFE_WRITE(&channels,2,fp);
-    DBG("(wav_hdr.c) channels = <%i>\n",channels);
-
-    rate = (unsigned int)fmt_desc->rate;
-    SAFE_WRITE(&rate,4,fp);
-    DBG("(wav_hdr.c) rate = <%i>\n",rate);
-
-    block_align = channels * fmt_desc->sample;
-    bytes_per_sec = rate * (unsigned int)block_align;
-    SAFE_WRITE(&bytes_per_sec,4,fp);
-    SAFE_WRITE(&block_align,2,fp);
-
-    bits_per_sample = (unsigned short)(fmt_desc->sample * 8);
-    SAFE_WRITE(&bits_per_sample,2,fp);
-
-    SAFE_WRITE("data",4,fp);
-    SAFE_WRITE(&fmt_desc->data_size,4,fp);
-    DBG("(wav_hdr.c) data_size = <%i>\n",fmt_desc->data_size);
+    DBG("fmt = <%i>\n",hdr.format);
+    DBG("channels = <%i>\n",hdr.channels);
+    DBG("rate = <%i>\n",hdr.sample_rate);
+    DBG("data_size = <%i>\n",hdr.data_length);
 
     return 0;
 }
