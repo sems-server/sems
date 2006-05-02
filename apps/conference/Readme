@@ -1,0 +1,43 @@
+
+*******************************
+* Conferencing plug-in README *
+*******************************
+
+
+Description:
+------------
+
+The 'conference' plug-in works very easy: 
+every call having the same request URI will 
+be in the same conference room.
+
+Dialout feature:
+----------------
+
+Dialout is supported through AVT tones. Somebody
+who has been 'dialed out' cannot use this functionnality
+due to billing issues. If you still want that, you can 
+turn it out in the code (search for 'if(dialedout)').
+
+keys:
+ - '#*' to trigger dialout. Then type in the number and finish with '*'.
+ - you be first connected to the callee only
+ - press '*' to connect the callee to the conference.
+ - press '#' to drop the call.
+
+
+Configuration:
+--------------
+
+default_announce: announcement to be played to the 
+		  first participant as he enters the 
+                  conference room.
+
+join_sound: sound to be played to all the participants
+            when a new one joins the conference. (optional)
+
+drop_sound: sound to be played to all the participants
+            when a participant leaves the conference. (optional)
+
+dialout_suffix: suffix to be append to the numbered entered by
+                the user. Example: @iptel.org
