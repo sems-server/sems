@@ -190,11 +190,11 @@ int AmSdp::genResponse(const string& localip, int localport,
 #endif
 
     out_buf = 
-	"v=0\n"
-	"o=username 0 0 IN " + l_ip + "\n"
-	"s=session\n"
-	"c=IN " + l_ip + "\n"
-	"t=0 0\n"
+	"v=0\r\n"
+	"o=username 0 0 IN " + l_ip + "\r\n"
+	"s=session\r\n"
+	"c=IN " + l_ip + "\r\n"
+	"t=0 0\r\n"
 	"m=audio " + int2str(localport) + " RTP/AVP";
 
     string payloads;
@@ -207,28 +207,28 @@ int AmSdp::genResponse(const string& localip, int localport,
 
 	if ((*it)->payload_type >= 96) // dynamic payload 
 	    options += "a=rtpmap:" + int2str((*it)->payload_type) + " " 
-		+ (*it)->encoding_name + "/" + int2str((*it)->clock_rate) + "\n";
+		+ (*it)->encoding_name + "/" + int2str((*it)->clock_rate) + "\r\n";
 
 	if ((*it)->sdp_format_parameters.size()) { 
 	    // return format parameters as sent in the invite
 	    //  (we have initialized our codec with those)
 	    options += "a=fmtp:" + int2str((*it)->payload_type) + " " 
-		+ (*it)->sdp_format_parameters + "\n";
+		+ (*it)->sdp_format_parameters + "\r\n";
 	}
     }
     
-    out_buf += payloads + "\n"
+    out_buf += payloads + "\r\n"
 	+ options;
     if (hasTelephoneEvent())
     {
         out_buf += "a=rtmap:" + int2str(telephone_event_pt->payload_type) + " " + 
                             telephone_event_pt->encoding_name + "/" +
-                            int2str(telephone_event_pt->clock_rate) + "\n"
-                   "a=fmtp:" + int2str(telephone_event_pt->payload_type) + " 0-15\n";
+                            int2str(telephone_event_pt->clock_rate) + "\r\n"
+                   "a=fmtp:" + int2str(telephone_event_pt->payload_type) + " 0-15\r\n";
     }
 
     if(remote_active /* dir == SdpMedia::DirActive */)
-	out_buf += "a=direction:passive\n";
+	out_buf += "a=direction:passive\r\n";
 
     return 0;
 }
@@ -251,11 +251,11 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
 #endif
 
     out_buf = 
-	"v=0\n"
-	"o=username 0 0 IN " + l_ip + "\n"
-	"s=session\n"
-	"c=IN " + l_ip + "\n"
-	"t=0 0\n"
+	"v=0\r\n"
+	"o=username 0 0 IN " + l_ip + "\r\n"
+	"s=session\r\n"
+	"c=IN " + l_ip + "\r\n"
+	"t=0 0\r\n"
 	"m=audio " + int2str(localport) + " RTP/AVP ";
     
     map<int,amci_payload_t*>::const_iterator it = payloads.begin();
@@ -264,7 +264,7 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
     for(;it != payloads.end();++it)
 	out_buf += string(" ") + int2str(it->first);
 
-    out_buf += "\n";
+    out_buf += "\r\n";
 
     for(it = payloads.begin();it != payloads.end();++it) {
 
@@ -272,7 +272,7 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
 	    out_buf += "a=rtpmap:" + int2str(it->first) 
 		+ " " + string(it->second->name) 
 		+ "/" + int2str(it->second->sample_rate) 
-		+ "\n";
+		+ "\r\n";
 	}
     }
 
