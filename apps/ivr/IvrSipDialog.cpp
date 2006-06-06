@@ -64,7 +64,7 @@ def_IvrSipDialog_GETTER(IvrSipDialog_getremote_tag,   remote_tag)
 def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_tag,    local_tag)
 def_IvrSipDialog_GETTER(IvrSipDialog_getremote_party, remote_party)
 def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_party,  local_party)
-def_IvrSipDialog_GETTER(IvrSipDialog_getroute,        route)
+def_IvrSipDialog_GETTER(IvrSipDialog_getroute,        getRoute())
 def_IvrSipDialog_GETTER(IvrSipDialog_getnext_hop,     next_hop)
 
 // static PyObject*
