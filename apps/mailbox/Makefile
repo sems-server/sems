@@ -28,7 +28,7 @@ clean:
 	rm -f ${TARBALL_PREFIX}*.tar.gz
 
 compile: 
-	python${PYTHON_VERSION} /usr/local/lib/python${PYTHON_VERSION}/compileall.py -q .
+	python${PYTHON_VERSION} py_comp -l -q .
 
 install: all
 	install -d ${BASEDIR}/${LIB_INSTALLDIR}
