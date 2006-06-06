@@ -216,7 +216,10 @@ int AmSdp::genResponse(const string& localip, int localport,
 		+ (*it)->sdp_format_parameters + "\r\n";
 	}
     }
-    
+
+    if (hasTelephoneEvent())
+	payloads += " " + int2str(telephone_event_pt->payload_type);
+
     out_buf += payloads + "\r\n"
 	+ options;
     if (hasTelephoneEvent())
