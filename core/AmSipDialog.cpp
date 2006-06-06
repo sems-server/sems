@@ -33,9 +33,6 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 	uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq);
 
     remote_uri = req.from_uri;
-    sip_ip     = req.dstip;
-    sip_port   = req.port;
-
     if(callid.empty()){
 	callid       = req.callid;
 	remote_tag   = req.from_tag;
@@ -44,7 +41,11 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 	local_uri    = req.r_uri;
 	remote_party = req.from;
 	local_party  = req.to;
-	route      = req.route;
+
+	sip_ip       = req.dstip;
+	sip_port     = req.port;
+
+	setRoute(req.route);
 	next_hop   = req.next_hop;
     }
 }
@@ -97,8 +98,8 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
     }
 
     if(code >= 200){
-	DBG("req.method = %s; t.method = %s; status = %i\n",
-	    req.method.c_str(),t.method.c_str(),status);
+	DBG("req.method = %s; t.method = %s\n",
+	    req.method.c_str(),t.method.c_str());
 
 	uas_trans.erase(t_it);
     }
@@ -123,10 +124,15 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 	remote_tag = reply.remote_tag;
 
     // allow route overwritting
-    if(!reply.route.empty()) {
-	route    = reply.route;
+    if(status < Connected) {
+
+	if(!reply.route.empty())
+	    setRoute(reply.route);
+
 	next_hop = reply.next_hop;
     }
+
+    remote_uri = reply.next_request_uri;
 
     switch(status){
     case Disconnecting:
@@ -165,8 +171,8 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
 string AmSipDialog::getContactHdr()
 {
-//     if(!contact_uri.empty())
-// 	return contact_uri;
+    if(!contact_uri.empty())
+	 return contact_uri;
 
     contact_uri = "Contact: <sip:";
     
@@ -240,16 +246,10 @@ int AmSipDialog::reply(const AmSipRequest& req,
 
     msg += ".\n\n";
 
-    if(send_reply(msg,reply_sock) < 0){
-	ERROR("send_reply: could not send: "
-	      "Ser reported an error\n");
-	return -1;
-    }
-
-    if(updateStatusReply(req,code) < 0)
+    if(updateStatusReply(req,code))
 	return -1;
 
-    return 0;
+    return send_reply(msg,reply_sock);
 }
 
 /* static */
@@ -472,28 +472,14 @@ int AmSipDialog::sendRequest(const string& method,
     
     msg += getContactHdr();
     
-    if(!m_hdrs.empty()){
-	msg += m_hdrs;
-	if(m_hdrs[m_hdrs.length()-1] != '\n')
+    if(!hdrs.empty()){
+	msg += hdrs;
+	if(hdrs[hdrs.length()-1] != '\n')
 	    msg += "\n";
     }
-    
-    string m_route = route;
-    if(!m_route.empty() && (m_route.find("Route: ")!=string::npos))
-	m_route = m_route.substr(7/*sizeof("Route: ")*/);
-    
-    while(!m_route.empty()){
-	
-	string::size_type comma_pos;
-	
-	comma_pos = m_route.find(',');
-	msg += "Route: " + m_route.substr(0,comma_pos) + "\n";
-	
-	if(comma_pos != string::npos)
-	    m_route = m_route.substr(comma_pos+1);
-	else
-	    m_route = "";
-    }
+
+    if(!route.empty())
+	msg += getRoute();
     
     if(!body.empty())
 	msg += "Content-Type: " + content_type + "\n";
@@ -527,4 +513,38 @@ bool AmSipDialog::match_cancel(const AmSipRequest& cancel_req)
 	return true;
 
     return false;
+}
+
+string AmSipDialog::getRoute()
+{
+    string r_set("");
+    for(vector<string>::iterator it = route.begin();
+	it != route.end(); it++) {
+
+	r_set += "Route: " + *it + "\n";
+    }
+
+    return r_set;
+}
+
+void AmSipDialog::setRoute(const string& n_route)
+{
+    string m_route = n_route;
+    if(!m_route.empty() && (m_route.find("Route: ")!=string::npos))
+	m_route = m_route.substr(7/*sizeof("Route: ")*/);
+    
+    route.clear();
+    while(!m_route.empty()){
+	
+	string::size_type comma_pos;
+	
+	comma_pos = m_route.find(',');
+	//route += "Route: " + m_route.substr(0,comma_pos) + "\n";
+	route.push_back(m_route.substr(0,comma_pos));
+	
+	if(comma_pos != string::npos)
+	    m_route = m_route.substr(comma_pos+1);
+	else
+	    m_route = "";
+    }
 }

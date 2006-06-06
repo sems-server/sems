@@ -5,8 +5,10 @@
 #include "AmSipReply.h"
 
 #include <string>
+#include <vector>
 #include <map>
 using std::string;
+using std::vector;
 using std::map;
 
 #define CONTACT_USER_PREFIX "sems"
@@ -57,6 +59,7 @@ class AmSipDialog
     TransMap uac_trans;
 
     AmSipDialogEventHandler* hdl;
+    vector<string> route;        // record routing
 
     static int send_reply(const string& msg, 
 			  const string& reply_sock);
@@ -90,7 +93,9 @@ public:
     string remote_party; // To/From
     string local_party;  // To/From
 
-    string route;        // record routing
+    string getRoute(); // record routing
+    void   setRoute(const string& n_route);
+
     string next_hop;     // next_hop for t_uac_dlg
 
     int cseq;            // CSeq for next request
