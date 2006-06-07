@@ -1,4 +1,6 @@
 #include "AmPlayoutBuffer.h"
+#include "AmAudio.h"
+
 
 #define PACKET_SAMPLES 160
 #define PACKET_SIZE    (PACKET_SAMPLES<<1)
@@ -16,7 +18,41 @@
 #define PI 3.14 
 
 
+
 AmPlayoutBuffer::AmPlayoutBuffer()
+    : r_ts(0),w_ts(0)
+{
+}
+
+void AmPlayoutBuffer::direct_write(unsigned int ts, ShortSample* buf, unsigned int len)
+{
+    buffer_put(w_ts,buf,len);
+}
+
+void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len)
+{
+    buffer_put(w_ts,buf,len);
+}
+
+u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
+{
+    if(ts_less()(r_ts,w_ts)){
+
+	u_int32_t rlen=0;
+	if(ts_less()(r_ts+PCM16_B2S(AUDIO_BUFFER_SIZE),w_ts))
+	    rlen = PCM16_B2S(AUDIO_BUFFER_SIZE);
+	else
+	    rlen = w_ts - r_ts;
+
+	buffer_get(r_ts,buf,rlen);
+	return rlen;
+    }
+
+    return 0;
+}
+
+
+AmAdaptivePlayout::AmAdaptivePlayout()
     : idx(0),
       loss_rate(ORDER_STAT_LOSS_RATE),
       wsola_off(WSOLA_START_OFF),
@@ -27,7 +63,7 @@ AmPlayoutBuffer::AmPlayoutBuffer()
     memset(n_stat,0,sizeof(int32_t)*ORDER_STAT_WIN_SIZE);
 }
 
-u_int32_t AmPlayoutBuffer::next_delay(u_int32_t ref_ts, u_int32_t ts)
+u_int32_t AmAdaptivePlayout::next_delay(u_int32_t ref_ts, u_int32_t ts)
 {
     int32_t n = (int32_t)(ref_ts - ts);
     
@@ -84,8 +120,8 @@ u_int32_t AmPlayoutBuffer::next_delay(u_int32_t ref_ts, u_int32_t ts)
     return D;
 }
 
-void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t ts, 
-			    int16_t* buf, u_int32_t len)
+void AmAdaptivePlayout::write(u_int32_t ref_ts, u_int32_t ts, 
+			      int16_t* buf, u_int32_t len)
 {
     u_int32_t p_delay = next_delay(ref_ts,ts);
 
@@ -152,7 +188,7 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t ts,
     short_scaled.push(100.0);
 }
 
-u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
+u_int32_t AmAdaptivePlayout::read(u_int32_t ts, int16_t* buf, u_int32_t len)
 {
     bool do_plc=false;
 
@@ -190,7 +226,7 @@ u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
     return len;
 }
 
-void AmPlayoutBuffer::direct_write(unsigned int ts, ShortSample* buf, unsigned int len)
+void AmAdaptivePlayout::direct_write(unsigned int ts, ShortSample* buf, unsigned int len)
 {
     buffer_put(ts+wsola_off,buf,len);
 }
@@ -234,7 +270,7 @@ short* find_best_corr(short *ts, short *sr_beg,short* sr_end)
     return best_sr;
 }
 
-unsigned int AmPlayoutBuffer::time_scale(unsigned int ts, float factor)
+unsigned int AmAdaptivePlayout::time_scale(unsigned int ts, float factor)
 {
     short p_buf[PACKET_SAMPLES*4];
     short merge_buf[TEMPLATE_SEG];

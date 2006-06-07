@@ -215,8 +215,9 @@ void AmSessionSchedulerThread::processAudio(unsigned int ts)
 	s->lockAudio();
 	AmAudio* input = s->getInput();
 
-	if(!(ts % s->rtp_str.getFrameSize())){
+	if(s->rtp_str.checkInterval(ts)){
 
+	    DBG("ts = %u\n",ts);
 	    int ret = s->rtp_str.receive(ts);
 	    if(ret < 0){
 		switch(ret){
@@ -259,7 +260,7 @@ void AmSessionSchedulerThread::processAudio(unsigned int ts)
 	s->lockAudio();
 	AmAudio* output = s->getOutput();
 	    
-	if(output && !(ts % s->rtp_str.getFrameSize())){
+	if(s->rtp_str.sendIntReached()){
 		
 	    int size = output->get(ts,buffer,s->rtp_str.getFrameSize());
 	    if(size <= 0){

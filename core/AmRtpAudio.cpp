@@ -32,8 +32,34 @@
 AmRtpAudio::AmRtpAudio(AmSession* _s)
     : AmRtpStream(_s), AmAudio(0), 
       last_ts_i(false), use_default_plc(true),
-      send_only(false)
+      send_only(false), playout_buffer(new AmPlayoutBuffer()),
+      last_check(0),last_check_i(false),send_int(false)
 {
+}
+
+bool AmRtpAudio::checkInterval(unsigned int ts)
+{
+    if(!last_check_i){
+	send_int     = true;
+	last_check_i = true;
+	last_check   = ts;
+    }
+    else {
+	if((ts - last_check) >= getFrameSize()){
+	    send_int = true;
+	    last_check = ts;
+	}
+	else {
+	    send_int = false;
+	}
+    }
+
+    return send_int;
+}
+
+bool AmRtpAudio::sendIntReached()
+{
+    return send_int;
 }
 
 /* 
@@ -67,9 +93,9 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
 	    int l_size = conceal_loss(ts - last_ts);
  	    if(l_size>0){
 
-  		playout_buffer.direct_write(last_ts,
-					    (ShortSample*)samples.back_buffer(),
-					    PCM16_B2S(l_size));
+  		playout_buffer->direct_write(last_ts,
+					     (ShortSample*)samples.back_buffer(),
+					     PCM16_B2S(l_size));
  	    }
 	}
 
@@ -82,9 +108,9 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
 	if(use_default_plc)
 	    add_to_history(size);
 
-	playout_buffer.write(audio_buffer_ts, ts,
-			     (ShortSample*)((unsigned char*)samples),
-			     PCM16_B2S(size));
+	playout_buffer->write(audio_buffer_ts, ts,
+			      (ShortSample*)((unsigned char*)samples),
+			      PCM16_B2S(size));
 	
 	last_ts = ts + PCM16_B2S(size);
     }
@@ -101,8 +127,13 @@ int AmRtpAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb
 
 int AmRtpAudio::read(unsigned int user_ts, unsigned int size)
 {
-    playout_buffer.read(user_ts,(ShortSample*)((unsigned char*)samples),PCM16_B2S(size));
-    return size;
+    u_int32_t rlen = 
+	playout_buffer
+	->read(user_ts,
+	       (ShortSample*)((unsigned char*)samples),
+	       PCM16_B2S(size));
+
+    return PCM16_S2B(rlen);
 }
 
 int AmRtpAudio::write(unsigned int user_ts, unsigned int size)
@@ -168,5 +199,24 @@ void AmRtpAudio::add_to_history(unsigned int size)
 
 	fec.addtohistory(buf_offset);
 	buf_offset += FRAMESZ;
+    }
+}
+
+void AmRtpAudio::setAdaptivePlayout(bool on)
+{
+    bool is_adaptive = 
+	dynamic_cast<AmAdaptivePlayout*>
+	(playout_buffer.get()) != 0;
+
+    if(on == !is_adaptive){
+
+	if(is_adaptive){
+	    playout_buffer.reset(new AmAdaptivePlayout());
+	    DBG("Adaptive playout buffer activated\n");
+	}
+	else{
+	    playout_buffer.reset(new AmPlayoutBuffer());
+	    DBG("Adaptive playout buffer deactivated\n");
+	}
     }
 }

@@ -31,7 +31,6 @@
 #include "AmAudio.h"
 #include "AmRtpStream.h"
 #include "AmPlayoutBuffer.h"
-//#include "SampleArray.h"
 #include "LowcFE.h"
 
 // Maximum value: AUDIO_BUFFER_SIZE / 2
@@ -40,11 +39,14 @@
 
 class AmRtpAudio: public AmRtpStream, public AmAudio
 {
-    //SampleArrayShort timed_buffer;
-    AmPlayoutBuffer playout_buffer;
+    auto_ptr<AmPlayoutBuffer> playout_buffer;
 
     LowcFE       fec;
     bool         use_default_plc;
+
+    unsigned int last_check;
+    bool         last_check_i;
+    bool         send_int;
 
     unsigned int last_ts;
     bool         last_ts_i;
@@ -67,6 +69,10 @@ class AmRtpAudio: public AmRtpStream, public AmAudio
 
 public:
     AmRtpAudio(AmSession* _s=0);
+
+    bool checkInterval(unsigned int ts);
+    bool sendIntReached();
+
     int receive(unsigned int audio_buffer_ts);
 
     void setSendOnly(bool so){
@@ -82,6 +88,8 @@ public:
 
     // AmRtpStream interface
     void init(const SdpPayload* sdp_payload);
+
+    void setAdaptivePlayout(bool on);
 };
 
 #endif
