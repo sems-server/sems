@@ -28,7 +28,7 @@ clean:
 	rm -f ${TARBALL_PREFIX}*.tar.gz
 
 compile: 
-	python${PYTHON_VERSION} py_comp -l -q .
+	python${PYTHON_VERSION} py_comp -q .
 
 install: all
 	install -d ${BASEDIR}/${LIB_INSTALLDIR}
@@ -51,6 +51,8 @@ doccheck:
 dist: all
 	tar -cvzf ${TARBALL} . --exclude=*.tar.gz \
 				--exclude=.svn \
-				--exclude=*~
+				--exclude=*~ \
+				--exclude=*.pyc
+
 
 
