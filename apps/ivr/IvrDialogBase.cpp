@@ -66,49 +66,72 @@ IvrDialogBase_dealloc(IvrDialogBase* self)
 //
 // Event handlers
 //
-static PyObject* IvrDialogBase_onSessionStart(IvrDialogBase* self, PyObject*)
-{
-    DBG("no script implementation for onSessionStart(self,hdrs) !!!\n");
+// static PyObject* IvrDialogBase_onSessionStart(IvrDialogBase* self, PyObject*)
+// {
+//     DBG("no script implementation for onSessionStart(self,hdrs) !!!\n");
 
-    PyErr_SetNone(PyExc_NotImplementedError);
-    return NULL; // no return value
-}
+//     PyErr_SetNone(PyExc_NotImplementedError);
+//     return NULL; // no return value
+// }
 
-static PyObject* IvrDialogBase_onBye(IvrDialogBase* self, PyObject*)
-{
-    DBG("no script implementation for onBye(self) !!!\n");
+// static PyObject* IvrDialogBase_onBye(IvrDialogBase* self, PyObject*)
+// {
+//     DBG("no script implementation for onBye(self) !!!\n");
 
-    PyErr_SetNone(PyExc_NotImplementedError);
-    return NULL; // no return value
-}
+//     PyErr_SetNone(PyExc_NotImplementedError);
+//     return NULL; // no return value
+// }
 
-static PyObject* IvrDialogBase_onEmptyQueue(IvrDialogBase* self, PyObject*)
-{
-    DBG("no script implementation for onEmptyQueue(self) !!!\n");
+// static PyObject* IvrDialogBase_onEmptyQueue(IvrDialogBase* self, PyObject*)
+// {
+//     DBG("no script implementation for onEmptyQueue(self) !!!\n");
 
-    PyErr_SetNone(PyExc_NotImplementedError);
-    return NULL; // no return value
-}
+//     PyErr_SetNone(PyExc_NotImplementedError);
+//     return NULL; // no return value
+// }
 
-static PyObject* IvrDialogBase_onDtmf(IvrDialogBase* self, PyObject* args)
-{
-    int key, duration;
-    if(!PyArg_ParseTuple(args,"ii",&key,&duration))
-	return NULL;
+// static PyObject* IvrDialogBase_onDtmf(IvrDialogBase* self, PyObject* args)
+// {
+//     int key, duration;
+//     if(!PyArg_ParseTuple(args,"ii",&key,&duration))
+// 	return NULL;
 
-    DBG("IvrDialogBase_onDtmf(%i,%i)\n",key,duration);
+//     DBG("IvrDialogBase_onDtmf(%i,%i)\n",key,duration);
 
-    Py_INCREF(Py_None);
-    return Py_None;
-}
+//     Py_INCREF(Py_None);
+//     return Py_None;
+// }
 
-static PyObject* IvrDialogBase_onTimer(IvrDialogBase* self, PyObject* args)
-{
-    DBG("IvrDialog::onTimer: no script implementation!!!\n");
+// static PyObject* IvrDialogBase_onTimer(IvrDialogBase* self, PyObject* args)
+// {
+//     DBG("IvrDialog::onTimer: no script implementation!!!\n");
 
-    PyErr_SetNone(PyExc_NotImplementedError);
-    return NULL; // no return value
-}
+//     PyErr_SetNone(PyExc_NotImplementedError);
+//     return NULL; // no return value
+// }
+
+// static PyObject* IvrDialogBase_onOtherBye(IvrDialogBase* self, PyObject*)
+// {
+//     DBG("IvrDialogBase_onOtherBye()\n");
+
+//     Py_INCREF(Py_None);
+//     return Py_None;
+// }
+
+// static PyObject* IvrDialogBase_onOtherReply(IvrDialogBase* self, PyObject* args)
+// {
+//     DBG("IvrDialogBase_onOtherReply()\n");
+
+//     int code;
+//     char* reason;
+
+//     if(!PyArg_ParseTuple(args,"is",&code,&reason))
+// 	return NULL;
+    
+
+//     Py_INCREF(Py_None);
+//     return Py_None;
+// }
 
 //
 // Call control
@@ -366,21 +389,21 @@ IvrDialogBase_getdialog(IvrDialogBase *self, void *closure)
 static PyMethodDef IvrDialogBase_methods[] = {
     
     // Event handlers
-    {"onSessionStart", (PyCFunction)IvrDialogBase_onSessionStart, METH_VARARGS,
-     "Gets called on session start"
-    },
-    {"onBye", (PyCFunction)IvrDialogBase_onBye, METH_NOARGS,
-     "Gets called if we received a BYE"
-    },
-    {"onEmptyQueue", (PyCFunction)IvrDialogBase_onEmptyQueue, METH_NOARGS,
-     "Gets called when the audio queue runs out of items"
-    },
-    {"onDtmf", (PyCFunction)IvrDialogBase_onDtmf, METH_VARARGS,
-     "Gets called when dtmf have been received"
-    },
-    {"onTimer", (PyCFunction)IvrDialogBase_onTimer, METH_VARARGS,
-     "Gets called when a timer is fired"
-    },
+//     {"onSessionStart", (PyCFunction)IvrDialogBase_onSessionStart, METH_VARARGS,
+//      "Gets called on session start"
+//     },
+//     {"onBye", (PyCFunction)IvrDialogBase_onBye, METH_NOARGS,
+//      "Gets called if we received a BYE"
+//     },
+//     {"onEmptyQueue", (PyCFunction)IvrDialogBase_onEmptyQueue, METH_NOARGS,
+//      "Gets called when the audio queue runs out of items"
+//     },
+//     {"onDtmf", (PyCFunction)IvrDialogBase_onDtmf, METH_VARARGS,
+//      "Gets called when dtmf have been received"
+//     },
+//     {"onTimer", (PyCFunction)IvrDialogBase_onTimer, METH_VARARGS,
+//      "Gets called when a timer is fired"
+//     },
     
     // Call control
     {"stopSession", (PyCFunction)IvrDialogBase_stopSession, METH_NOARGS,

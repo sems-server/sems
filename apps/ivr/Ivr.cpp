@@ -440,60 +440,130 @@ void IvrDialog::setPyPtrs(PyObject *mod, PyObject *dlg)
     Py_INCREF(py_dlg);
 }
 
-void IvrDialog::callPyEventHandler(char* name)
+static PyObject *
+type_error(const char *msg)
 {
-
-    PyObject* o = PyObject_CallMethod(py_dlg,name,NULL);
-    Py_XDECREF(o);
-    
-    if(!o) 
-	PyErr_Print();
+        PyErr_SetString(PyExc_TypeError, msg);
+        return NULL;
 }
 
-void IvrDialog::callPyEventHandler(char* name, int id)
+static PyObject *
+null_error(void)
 {
-
-    PYLOCK;
-    PyObject* o = PyObject_CallMethod(py_dlg,name, "i",id);
-    Py_XDECREF(o);
-    
-    if(!o) 
-	PyErr_Print();
+        if (!PyErr_Occurred())
+                PyErr_SetString(PyExc_SystemError,
+                                "null argument to internal routine");
+        return NULL;
 }
 
-void IvrDialog::callPyEventHandler(char* name, const string& str)
+PyObject *
+PyObject_VaCallMethod(PyObject *o, char *name, char *format, va_list va)
 {
+        PyObject *args, *func = 0, *retval;
+
+        if (o == NULL || name == NULL)
+                return null_error();
+
+        func = PyObject_GetAttrString(o, name);
+        if (func == NULL) {
+                PyErr_SetString(PyExc_AttributeError, name);
+                return 0;
+        }
+
+        if (!PyCallable_Check(func))
+                return type_error("call of non-callable attribute");
+
+        if (format && *format) {
+                args = Py_VaBuildValue(format, va);
+        }
+        else
+                args = PyTuple_New(0);
+
+        if (!args)
+                return NULL;
+
+        if (!PyTuple_Check(args)) {
+                PyObject *a;
+
+                a = PyTuple_New(1);
+                if (a == NULL)
+                        return NULL;
+                if (PyTuple_SetItem(a, 0, args) < 0)
+                        return NULL;
+                args = a;
+        }
+
+        retval = PyObject_Call(func, args, NULL);
+
+        Py_DECREF(args);
+        Py_DECREF(func);
+
+        return retval;
+}
+
+bool IvrDialog::callPyEventHandler(char* name, char* fmt, ...)
+{
+    bool ret=false;
+    va_list va;
 
     PYLOCK;
-    PyObject* o = PyObject_CallMethod(py_dlg,name, "s",str.c_str());
-    Py_XDECREF(o);
-    
-    if(!o) 
+
+    va_start(va, fmt);
+    PyObject* o = PyObject_VaCallMethod(py_dlg,name,fmt,va);
+    va_end(va);
+
+    if(!o) {
+
+	if(PyErr_ExceptionMatches(PyExc_AttributeError)){
+
+	    DBG("method %s is not implemented, trying default one\n",name);
+	    return true;
+	}
+
 	PyErr_Print();
+    }
+    else {
+        if(o && PyBool_Check(o) && (o == Py_True)) {
+
+	    ret = true;
+        }
+
+	Py_DECREF(o);
+    }
+    
+    return ret;
 }
 
 void IvrDialog::onSessionStart(const AmSipRequest& req)
 {
-    PYLOCK;
-    callPyEventHandler("onSessionStart",req.hdrs);
+    callPyEventHandler("onSessionStart","s",req.hdrs.c_str());
     setInOut(&playlist,&playlist);
     AmB2BCallerSession::onSessionStart(req);
 }
 
 void IvrDialog::onBye(const AmSipRequest& req)
 {
-    PYLOCK;
-    callPyEventHandler("onBye");
+    if(callPyEventHandler("onBye",NULL))
+	AmB2BSession::onBye(req);
 }
 
 void IvrDialog::onDtmf(int event, int duration_msec)
 {
-    PYLOCK;
-    PyObject* o = PyObject_CallMethod(py_dlg,"onDtmf","ii",event,duration_msec);
-    Py_XDECREF(o);
-    
-    if(!o) 
-	PyErr_Print();
+    if(callPyEventHandler("onDtmf","ii",event,duration_msec))
+	AmB2BSession::onDtmf(event,duration_msec);
+}
+
+void IvrDialog::onOtherBye(const AmSipRequest& req)
+{
+    if(callPyEventHandler("onOtherBye",NULL))
+	AmB2BSession::onOtherBye(req);
+}
+
+void IvrDialog::onOtherReply(const AmSipReply& r)
+{
+    if(callPyEventHandler("onOtherReply","is",
+			  r.code,r.reason.c_str()))
+	AmB2BSession::onOtherReply(r);
 }
 
 void IvrDialog::process(AmEvent* event) 
@@ -502,15 +572,15 @@ void IvrDialog::process(AmEvent* event)
 
     AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
     if(audio_event && audio_event->event_id == AmAudioEvent::noAudio){
-	PYLOCK;
-	callPyEventHandler("onEmptyQueue");
+
+	callPyEventHandler("onEmptyQueue", NULL);
 	event->processed = true;
     }
     
     AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
     if(plugin_event && plugin_event->name == "timer_timeout") {
-	PYLOCK;
-	callPyEventHandler("onTimer", plugin_event->data.get(0).asInt());
+
+	callPyEventHandler("onTimer", "i", plugin_event->data.get(0).asInt());
 	event->processed = true;
     }
 

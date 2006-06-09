@@ -101,9 +101,7 @@ class IvrDialog : public AmB2BCallerSession
     PyObject  *py_mod;
     PyObject  *py_dlg;
 
-    void callPyEventHandler(char* name);
-    void callPyEventHandler(char* name, int id);
-    void callPyEventHandler(char* name, const string& str);
+    bool callPyEventHandler(char* name, char* fmt, ...);
     
     void process(AmEvent* event);
 
@@ -120,6 +118,9 @@ public:
     void onSessionStart(const AmSipRequest& req);
     void onBye(const AmSipRequest& req);
     void onDtmf(int event, int duration_msec);
+
+    void onOtherBye(const AmSipRequest& req);
+    void onOtherReply(const AmSipReply& r);
 };
 
 #endif

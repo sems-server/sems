@@ -69,8 +69,7 @@ py_obj = $(py_src:.py=.pyc)
 ifeq (all,$(MAKECMDGOALS))
 .PHONY: python_files
 python_files: 
-	# python$(PY_VER) py_comp -l -q py &&\
-	python$(PY_VER) py_comp -l &&\
+	python$(PY_VER) py_comp -l -q py &&\
 	cp py/*.pyc $(COREPATH)/lib
 
 endif
