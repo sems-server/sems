@@ -395,9 +395,7 @@ void AmSession::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
 
 void AmSession::onDtmf(int event, int duration_msec)
 {
-//     if (dialog_st.get())
-//         dialog_st->onDtmf(event, duration_msec);
-//     AmDialogState::onDtmf(event, duration_msec);
+    DBG("AmSession::onDtmf(%i,%i)\n",event,duration_msec);
 }
 
 void AmSession::clearAudio()

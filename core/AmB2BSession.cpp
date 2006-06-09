@@ -146,14 +146,14 @@ void AmB2BSession::onOtherBye(const AmSipRequest& req)
     terminateLeg();
 }
 
-void AmB2BSession::onOtherError(const AmSipReply& reply)
+void AmB2BSession::onOtherReply(const AmSipReply& reply)
 {
-    terminateLeg();
+    if(reply.code >= 300)
+	terminateLeg();
 }
 
 void AmB2BSession::terminateLeg()
 {
-    //clear_other();
     setStopped();
     dlg.bye();
 }
@@ -221,9 +221,10 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 		reinviteCaller(reply);
 	    }
 	    else {
-		
-		onOtherError(reply);
+		terminateOtherLeg();
 	    }
+		
+	    onOtherReply(reply);
 	    break;
 
 	default:

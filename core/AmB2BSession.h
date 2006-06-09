@@ -109,8 +109,8 @@ protected:
     // Other leg received a BYE
     virtual void onOtherBye(const AmSipRequest& req);
 
-    // INVITE from other leg failed
-    virtual void onOtherError(const AmSipReply& reply);
+    // INVITE from other leg has been replied
+    virtual void onOtherReply(const AmSipReply& reply);
 
     AmB2BSession()
 	: sip_relay_only(true)

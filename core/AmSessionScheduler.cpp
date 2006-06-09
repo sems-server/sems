@@ -217,7 +217,7 @@ void AmSessionSchedulerThread::processAudio(unsigned int ts)
 
 	if(s->rtp_str.checkInterval(ts)){
 
-	    DBG("ts = %u\n",ts);
+	    //DBG("ts = %u\n",ts);
 	    int ret = s->rtp_str.receive(ts);
 	    if(ret < 0){
 		switch(ret){
