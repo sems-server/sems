@@ -93,6 +93,7 @@ ConferenceDialog::ConferenceDialog(const string& conf_id,
       state(CS_normal)
 {
     dialedout = this->dialout_channel.get() != 0;
+    rtp_str.setAdaptivePlayout(true);
 }
 
 ConferenceDialog::~ConferenceDialog()
@@ -102,7 +103,6 @@ ConferenceDialog::~ConferenceDialog()
 
 void ConferenceDialog::onStart() 
 {
-  //  setUseSessionTimer(false);
 }
 
 void ConferenceDialog::onSessionStart(const AmSipRequest& req)
