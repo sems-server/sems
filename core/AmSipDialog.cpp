@@ -326,12 +326,18 @@ int AmSipDialog::bye()
 	if(getUACTransPending())
 	    return cancel();
 	else {
+	    // missing AmSipRequest to be able
+	    // to send the reply on behalf of the app.
 	    ERROR("bye(): Dialog should have"
 		  " been terminated by the app !!!\n");
 	}
     default:
-	DBG("bye(): we are not connected "
-	    "(status=%i). do nothing!\n",status);
+	if(getUACTransPending())
+	    return cancel();
+	else {
+	    DBG("bye(): we are not connected "
+		"(status=%i). do nothing!\n",status);
+	}
 	return 0;
     }	
 }
