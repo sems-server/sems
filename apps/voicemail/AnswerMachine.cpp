@@ -34,6 +34,7 @@
 #include "AmPlugIn.h"
 #include "AmPlaylist.h"
 #include "AmSessionScheduler.h"
+#include "AmSessionTimer.h"
 
 #include "sems.h"
 #include "log.h"
@@ -47,6 +48,8 @@
 #define DEFAULT_MAIL_TMPL_PATH string("/usr/local/etc/sems")
 #define DEFAULT_MAIL_TMPL      string("default")
 #define DEFAULT_MAIL_TMPL_EXT  string("template")
+
+#define RECORD_TIMER 99
 
 EXPORT_SESSION_FACTORY(AnswerMachineFactory,MOD_NAME);
 
@@ -225,12 +228,20 @@ void AnswerMachineDialog::process(AmEvent* event)
 	    switch(status){
 
 	    case 0:
-		a_beep.rewind();
-		playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
+		playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
+		AmSessionTimer::instance()->
+		    setTimer(RECORD_TIMER,AnswerMachineFactory::MaxRecordTime,
+			     getLocalTag());
 		status = 1;
 		break;
 
 	    case 1:
+		a_beep.rewind();
+		playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
+		status = 2;
+		break;
+
+	    case 2:
 		dlg.bye();
 		sendMailNotification();
 		setStopped();
@@ -247,6 +258,15 @@ void AnswerMachineDialog::process(AmEvent* event)
 	    DBG("Unknown event id %i\n",ae->event_id);
 	    break;
 	}
+
+	return;
+    }
+
+    AmTimeoutEvent* to = dynamic_cast<AmTimeoutEvent*>(event);
+    if(to && to->event_id == RECORD_TIMER){
+	
+	// clear list
+	playlist.close();
     }
     else
 	AmSession::process(event);
@@ -265,11 +285,11 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
 	throw string("AnswerMachine: couldn't open ") + 
 	    msg_filename + string(" for writing");
 
-    a_msg.setRecordTime(AnswerMachineFactory::MaxRecordTime*1000);
+    //a_msg.setRecordTime(AnswerMachineFactory::MaxRecordTime*1000);
     
     playlist.addToPlaylist(new AmPlaylistItem(&a_greeting,NULL));
     playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
-    playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
+    //playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
 
     setInOut(&playlist,&playlist);
 
