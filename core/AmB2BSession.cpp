@@ -203,6 +203,11 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 
 	AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
 
+	if(other_id != reply.local_tag){
+	    DBG("Dialog missmatch!!\n");
+	    return;
+	}
+
 	DBG("reply received from other leg\n");
 
 	switch(callee_status){
@@ -221,6 +226,8 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 		reinviteCaller(reply);
 	    }
 	    else {
+		//DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
+		//    reply.code,other_id.c_str(),reply.local_tag.c_str());
 		terminateOtherLeg();
 	    }
 		
