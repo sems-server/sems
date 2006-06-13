@@ -34,7 +34,6 @@
 #include "AmPlugIn.h"
 #include "AmPlaylist.h"
 #include "AmSessionScheduler.h"
-#include "AmSessionTimer.h"
 
 #include "sems.h"
 #include "log.h"
@@ -62,6 +61,7 @@ string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
 int    AnswerMachineFactory::MaxRecordTime;
 int    AnswerMachineFactory::AcceptDelay;
+AmDynInvokeFactory* AnswerMachineFactory::UserTimer=0;
 
 int AnswerMachineFactory::loadEmailTemplates(const string& path)
 {
@@ -135,6 +135,13 @@ int AnswerMachineFactory::onLoad()
     }
 
     AcceptDelay = DEFAULT_ACCEPT_DELAY;
+
+    UserTimer = AmPlugIn::instance()->getFactory4Di("user_timer");
+    if(!UserTimer){
+	
+	ERROR("could not load user_timer from session_timer plug-in\n");
+	return -1;
+    }
 
     return 0;
 }
@@ -210,6 +217,11 @@ AnswerMachineDialog::AnswerMachineDialog(const string& email,
       status(0)
 {
     email_dict["email"] = email;
+    user_timer = AnswerMachineFactory::UserTimer->getInstance();
+    if(!user_timer){
+	ERROR("could not get a user timer reference\n");
+	throw AmSession::Exception(500,"could not get a user timer reference");
+    }
 }
 
 AnswerMachineDialog::~AnswerMachineDialog()
@@ -229,9 +241,13 @@ void AnswerMachineDialog::process(AmEvent* event)
 
 	    case 0:
 		playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
-		AmSessionTimer::instance()->
-		    setTimer(RECORD_TIMER,AnswerMachineFactory::MaxRecordTime,
-			     getLocalTag());
+		
+		{AmArgArray di_args,ret;
+		di_args.push(RECORD_TIMER);
+		di_args.push(AnswerMachineFactory::MaxRecordTime);
+		di_args.push(getLocalTag().c_str());
+
+		user_timer->invoke("setTimer",di_args,ret);}
 		status = 1;
 		break;
 
@@ -262,11 +278,12 @@ void AnswerMachineDialog::process(AmEvent* event)
 	return;
     }
 
-    AmTimeoutEvent* to = dynamic_cast<AmTimeoutEvent*>(event);
-    if(to && to->event_id == RECORD_TIMER){
-	
-	// clear list
-	playlist.close();
+    AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
+    if(plugin_event && plugin_event->name == "timer_timeout" &&
+       plugin_event->data.get(0).asInt() == RECORD_TIMER) {
+
+	    // clear list
+	    playlist.close();
     }
     else
 	AmSession::process(event);

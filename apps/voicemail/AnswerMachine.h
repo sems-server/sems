@@ -55,6 +55,8 @@ public:
     static string DefaultAnnounce;
     static int    MaxRecordTime;
     static int    AcceptDelay;
+    static AmDynInvokeFactory* UserTimer;
+
 
     AnswerMachineFactory(const string& _app_name);
 
@@ -73,6 +75,8 @@ class AnswerMachineDialog : public AmSession
 
     const EmailTemplate* tmpl;
     EmailTmplDict  email_dict;
+
+    AmDynInvoke* user_timer;
 
     int status;
 
