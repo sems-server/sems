@@ -237,6 +237,7 @@ IvrDialog* IvrFactory::newDlg(const string& name)
     }    
 
     dlg->setPyPtrs(mod_desc.mod,dlg_inst);
+    Py_DECREF(dlg_inst);
 
     return dlg;
 }
@@ -427,6 +428,8 @@ IvrDialog::IvrDialog(AmDynInvoke* user_timer)
 
 IvrDialog::~IvrDialog()
 {
+    DBG("----------- IvrDialog::~IvrDialog() ------------- \n");
+
     PYLOCK;
     Py_XDECREF(py_mod);
     Py_XDECREF(py_dlg);
