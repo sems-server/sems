@@ -260,7 +260,7 @@ void AmSessionSchedulerThread::processAudio(unsigned int ts)
 	s->lockAudio();
 	AmAudio* output = s->getOutput();
 	    
-	if(s->rtp_str.sendIntReached()){
+	if(output && s->rtp_str.sendIntReached()){
 		
 	    int size = output->get(ts,buffer,s->rtp_str.getFrameSize());
 	    if(size <= 0){
