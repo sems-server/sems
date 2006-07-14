@@ -523,7 +523,7 @@ string add2path( const string& path, int n_suffix, ...)
 
 	const char* s = va_arg(ap,const char*);
 
-	if(!path.empty() && (path[path.length()-1] != '/'))
+	if(!outpath.empty() && (outpath[outpath.length()-1] != '/'))
 	    outpath += '/';
 
 	outpath += s;
