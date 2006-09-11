@@ -40,6 +40,17 @@ using std::map;
 
 class IvrDialog;
 
+class PythonScriptThread : public AmThread {
+  PyObject* py_thread_object;
+ protected:
+  void run();
+  void on_stop();
+ public:
+  PythonScriptThread(PyObject* py_thread_object_) 
+    : py_thread_object(py_thread_object_) { }
+};
+
+
 struct IvrScriptDesc
 {
     PyObject* mod;

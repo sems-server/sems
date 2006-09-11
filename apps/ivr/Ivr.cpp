@@ -22,6 +22,7 @@
 #include "IvrDialogBase.h"
 #include "IvrSipDialog.h"
 #include "IvrAudio.h"
+#include "IvrUAC.h"
 #include "Ivr.h"
 
 #include "AmConfigReader.h"
@@ -109,12 +110,40 @@ extern "C" {
 	return PyString_FromString(res.c_str());
     }
 
+    static PyObject* ivr_createThread(PyObject*, PyObject* args)
+    {
+      PyObject* py_thread_object = NULL;
+
+      if(!PyArg_ParseTuple(args,"O",&py_thread_object))
+	return NULL;
+
+      PythonScriptThread* t = new PythonScriptThread(py_thread_object);
+      t->start();
+      AmThreadWatcher::instance()->add(t);
+
+      return Py_None;
+    }
 
     static PyMethodDef ivr_methods[] = {
  	{"log", (PyCFunction)ivr_log, METH_VARARGS,"Log a message using Sems' logging system"},
 	{"getHeader", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeader wrapper"},
+	{"createThread", (PyCFunction)ivr_createThread, METH_VARARGS, "Create another interpreter thread"},
 	{NULL}  /* Sentinel */
     };
+}
+
+void PythonScriptThread::run() {
+  // PYLOCK;
+  //  PyEval_AcquireLock();
+  DBG("PythonScriptThread::run - calling python function.\n");
+
+  PyObject_CallObject(py_thread_object, NULL);
+  DBG("PythonScriptThread::run - thread finished..\n");
+  // PyEval_ReleaseLock();
+}
+
+void PythonScriptThread::on_stop() {
+  DBG("PythonScriptThread::on_stop.\n");
 }
 
 IvrFactory::IvrFactory(const string& _app_name)
@@ -171,9 +200,11 @@ void IvrFactory::import_ivr_builtins()
     // IvrAudioFile
     import_object(ivr_module,"IvrAudioFile",&IvrAudioFileType);
 
+    // IvrUAC
+    import_object(ivr_module,"IvrUAC",&IvrUACType);
+
     PyModule_AddIntConstant(ivr_module, "AUDIO_READ",AUDIO_READ);
     PyModule_AddIntConstant(ivr_module, "AUDIO_WRITE",AUDIO_WRITE);
-    // ivr module - end
 
     // add log level for the log module
     PyModule_AddIntConstant(ivr_module, "SEMS_LOG_LEVEL",log_level);
