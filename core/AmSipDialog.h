@@ -112,6 +112,8 @@ public:
 
     void updateStatus(const AmSipRequest& req);
     void updateStatus(const AmSipReply& reply);
+    /** update Status from locally originated request (e.g. INVITE) */
+    void updateStatusFromLocalRequest(const AmSipRequest& req);
 
     int reply(const AmSipRequest& req, // Ser's transaction key
 	      unsigned int  code, 
@@ -131,12 +133,19 @@ public:
     int reinvite(const string& hdrs,  
 		 const string& content_type,
 		 const string& body);
-
+    int invite(const string& hdrs,  
+	       const string& content_type,
+	       const string& body);
     /**
      * @return true if a transaction could be found that
      *              matches the CANCEL's one.
      */
     bool match_cancel(const AmSipRequest& cancel_req);
+
+    /**
+     * @return the method of the corresponding uac request
+     */
+    string get_uac_trans_method(unsigned int cseq);
 
     static int reply_error(const AmSipRequest& req,
 			   unsigned int  code, 

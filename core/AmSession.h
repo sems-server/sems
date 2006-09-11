@@ -242,6 +242,7 @@ public:
 
     void sendUpdate();
     void sendReinvite();
+    void sendInvite();
 
     /**
      * Destroy the session.
@@ -315,10 +316,21 @@ public:
      * signal any error.
      * 
      * Warning:
-     *   The session ends with this method. 
      *   Sems will NOT send any BYE on his own.
      */
     virtual void onSessionStart(const AmSipRequest& req){}
+
+    /**
+     * onSessionStart method for calls originating 
+     * from SEMS.
+     *
+     * Throw AmSession::Exception if you want to 
+     * signal any error.
+     * 
+     * Warning:
+     *   Sems will NOT send any BYE on his own.
+     */
+    virtual void onSessionStart(const AmSipReply& reply){}
 
     /**
      * @see AmDialogState

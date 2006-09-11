@@ -434,8 +434,6 @@ void AmSession::process(AmEvent* ev)
 	setStopped();
 	return;
     }
-
-    //AmDialogState::process(ev);
 }
 
 
@@ -464,7 +462,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     CALL_EVENT_H(onSipRequest,req);
 
     dlg.updateStatus(req);
-
+    
     DBG("onSipRequest: method = %s\n",req.method.c_str());
     if(req.method == "INVITE"){
 	
@@ -507,6 +505,23 @@ void AmSession::onSipReply(const AmSipReply& reply)
 {
     CALL_EVENT_H(onSipReply,reply);
 
+    if (dlg.get_uac_trans_method(reply.cseq) == "INVITE") {
+      if ((reply.code == 200) || (reply.code == 183)) {
+	DBG("Got 200 or 183 reply to INVITE.\n");
+	string sdp_reply;
+	if(acceptAudio(reply.body,reply.hdrs,&sdp_reply)!=0) {
+	  DBG("acceptAudio failed.\n");
+	  return;
+	}
+      
+	if(detached.get() && !getStopped()){
+	  onSessionStart(reply); 
+	    
+	  if(input || output)
+	    AmSessionScheduler::instance()->addSession(this, callgroup);
+	}
+      }
+    }
     dlg.updateStatus(reply);
 }
 
@@ -608,3 +623,9 @@ void AmSession::sendReinvite()
   dlg.reinvite("", "application/sdp", sdp_body);
 }
 
+void AmSession::sendInvite() 
+{
+  string sdp_body;
+  sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
+  dlg.invite("", "application/sdp", sdp_body);
+}

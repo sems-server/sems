@@ -50,6 +50,31 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     }
 }
 
+/**
+ *
+ * update dialog status from UAC Request that we send (e.g. INVITE)
+ */
+void AmSipDialog::updateStatusFromLocalRequest(const AmSipRequest& req)
+{
+    remote_uri = req.r_uri;
+    if(callid.empty()){
+      DBG("dialog callid is empty, updating from UACRequest\n");
+	callid       = req.callid;
+	local_tag    = req.from_tag;
+	user         = req.user;
+	domain       = req.domain;
+	local_uri    = req.from_uri;
+	remote_party = req.to;
+	local_party  = req.from;
+
+// 	sip_ip       = AmConfig::req.dstip;
+// 	sip_port     = req.port;
+
+// 	setRoute(req.route);
+	next_hop   = req.next_hop;
+    }
+}
+
 int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
 {
     TransMap::iterator t_it = uas_trans.find(req.cseq);
@@ -362,6 +387,28 @@ int AmSipDialog::reinvite(const string& hdrs,
     }	
 }
 
+int AmSipDialog::invite(const string& hdrs,  
+			const string& content_type,
+			const string& body)
+{
+    switch(status){
+    case Disconnected: {
+      int res = sendRequest("INVITE", content_type, body, hdrs);
+      status = Pending;
+      return res;
+    }; break;
+
+    case Disconnecting:
+    case Connected:
+    case Pending:
+    default:
+      DBG("invite(): we are already connected."
+	    "(status=%i). do nothing!\n",status);
+
+      return 0;
+    }	
+}
+
 int AmSipDialog::update(const string& hdrs)
 {
     switch(status){
@@ -519,6 +566,16 @@ bool AmSipDialog::match_cancel(const AmSipRequest& cancel_req)
 	return true;
 
     return false;
+}
+
+string AmSipDialog::get_uac_trans_method(unsigned int cseq)
+{
+    TransMap::iterator t = uac_trans.find(cseq);
+
+    if (t != uac_trans.end())
+      return t->second.method;
+
+    return "";
 }
 
 string AmSipDialog::getRoute()

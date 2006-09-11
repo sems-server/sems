@@ -133,11 +133,15 @@ class AmSessionContainer : public AmThread
 
     /** 
      * Constructs a new session and adds it to the active session container. 
-     * @param hash_str Call-ID + remote-tag
-     * @param sess_key local-tag
      * @param req client's request
      */
     void startSessionUAS(AmSipRequest& req);
+
+    /** 
+     * Constructs a new session and adds it to the active session container. 
+     * @param req client's request
+     */
+    AmSession* startSessionUAC(AmSipRequest& req);
 
     /**
      * Detroys a session.

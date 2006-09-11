@@ -158,6 +158,38 @@ AmSession* AmSessionContainer::getSession(const string& local_tag)
     return it->second;
 }
 
+AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req) {
+  AmSession* session = NULL;
+  as_mut.lock();
+  try {
+    if((session = createSession(req)) != 0){
+      session->dlg.updateStatusFromLocalRequest(req); // sets local tag as well
+      session->setCallgroup(req.from_tag);
+
+      session->sendInvite();
+      session->start();
+
+      addSession_unsafe(req.callid,req.from_tag,req.from_tag,session);
+      // session does not get its own INVITE
+      //      session->postEvent(new AmSipRequestEvent(req)); 
+    }
+  } 
+  catch(const AmSession::Exception& e){
+    ERROR("%i %s\n",e.code,e.reason.c_str());
+    AmSipDialog::reply_error(req,e.code,e.reason);
+  }
+  catch(const string& err){
+    ERROR("startSession: %s\n",err.c_str());
+    AmSipDialog::reply_error(req,500,err);
+  }
+  catch(...){
+    ERROR("unexpected exception\n");
+    AmSipDialog::reply_error(req,500,"unexpected exception");
+  }
+  as_mut.unlock();
+  return session;
+}
+
 void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 {
     as_mut.lock();
