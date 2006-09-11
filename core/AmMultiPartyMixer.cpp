@@ -35,6 +35,10 @@
 // PCM16 range: [-32767:32768]
 #define MAX_LINEAR_SAMPLE 32737
 
+// the internal delay of the mixer (between put and get)
+#define MIXER_DELAY_MS 20
+#define MIXER_DELAY    MIXER_DELAY_MS*8  // 8000/1000
+
 AmMultiPartyMixer::AmMultiPartyMixer()
     : channels(),
       cur_channel_id(0),
@@ -87,12 +91,13 @@ void AmMultiPartyMixer::PutChannelPacket(unsigned int   channel_id,
     if((channel = get_channel(channel_id)) != 0){
 
 	unsigned samples = PCM16_B2S(size);
-	
-	channel->put(ts,(short*)buffer,samples);
-	mixed_channel.get(ts,tmp_buffer,samples);
+	unsigned int put_ts = ts + MIXER_DELAY;
+
+	channel->put(put_ts,(short*)buffer,samples);
+	mixed_channel.get(put_ts,tmp_buffer,samples);
 	
 	mix_add(tmp_buffer,tmp_buffer,(short*)buffer,samples);
-	mixed_channel.put(ts,tmp_buffer,samples);
+	mixed_channel.put(put_ts,tmp_buffer,samples);
     }
     else {
 	ERROR("MultiPartyMixer::PutChannelPacket: "
