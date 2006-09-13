@@ -106,7 +106,7 @@ class AmSession : public AmThread,
     AmAudio*     output;
 
     SdpPayload   payload;
-    bool         first_negotiation;
+    bool         negotiate_onreply;
 
     AmDtmfDetector   m_dtmfDetector;
     AmDtmfEventQueue m_dtmfEventQueue;
@@ -234,6 +234,10 @@ public:
 
     /** Gets the port number of the remote part of the session */
     int getRPort();
+
+  
+    /** Set whether on positive reply session should be negotiated */
+    void setNegotiateOnReply(bool n) { negotiate_onreply = n; }
 
     /** handle SDP negotiation: only for INVITEs & re-INVITEs */
     virtual void negotiate(const string& sdp_body,

@@ -125,7 +125,7 @@ AmSession::AmSession()
     : AmEventQueue(this), // AmDialogState(),
       dlg(this),
       detached(true),
-      sess_stopped(false),rtp_str(this),first_negotiation(true),
+      sess_stopped(false),rtp_str(this),negotiate_onreply(false),
       input(0), output(0), payload(0),
       m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
       m_dtmfHandler(this), m_dtmfOutputQueue(&m_dtmfHandler),
@@ -503,26 +503,49 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 
 void AmSession::onSipReply(const AmSipReply& reply)
 {
-    CALL_EVENT_H(onSipReply,reply);
+  CALL_EVENT_H(onSipReply,reply);
 
-    if (dlg.get_uac_trans_method(reply.cseq) == "INVITE") {
-      if ((reply.code == 200) || (reply.code == 183)) {
-	DBG("Got 200 or 183 reply to INVITE.\n");
-	string sdp_reply;
-	if(acceptAudio(reply.body,reply.hdrs,&sdp_reply)!=0) {
-	  DBG("acceptAudio failed.\n");
-	  return;
-	}
+  int status = dlg.getStatus();
+  dlg.updateStatus(reply);
+  
+  if (negotiate_onreply) {    
+    if(status < AmSipDialog::Connected){
       
-	if(detached.get() && !getStopped()){
-	  onSessionStart(reply); 
+      switch(dlg.getStatus()){
+	
+      case AmSipDialog::Connected:
+	
+	    // connected!
+	if(acceptAudio(reply.body,reply.hdrs)){
+	  ERROR("could not connect audio!!!\n");
+	  dlg.bye();
+	  setStopped();
+	}
+	else {
+	  if(detached.get() && !getStopped()){
 	    
-	  if(input || output)
-	    AmSessionScheduler::instance()->addSession(this, callgroup);
+	    onSessionStart(reply);
+	    
+	    if(input || output)
+	      AmSessionScheduler::instance()->addSession(this,
+							 callgroup); 
+	    else { 
+	      ERROR("missing audio input and/or ouput.\n"); 
+	    }
+	  } 
+	}
+	break;
+	
+      case AmSipDialog::Pending:
+	
+	switch(reply.code){
+	case 180: break;//TODO: local ring tone.
+	case 183: break;//TODO: remote ring tone.
+	default:  break;// continue waiting.
 	}
       }
     }
-    dlg.updateStatus(reply);
+  }
 }
 
 void AmSession::onInvite(const AmSipRequest& req)
