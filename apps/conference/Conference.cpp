@@ -269,10 +269,9 @@ string dtmf2str(int event)
     }
 }
 
-
 void ConferenceDialog::onDtmf(int event, int duration)
 {
-    DBG("ConferenceDialog::onDtmf\n");
+    DBG("ConferenceDialog::onDtmf, state = %d\n", state);
     if(dialedout)
 	return;
 
@@ -319,12 +318,20 @@ void ConferenceDialog::onDtmf(int event, int duration)
 						 getLocalTag()));
 
 	    connectMainChannel();
+	    state = CS_normal;
+
+	} else 	if(event == 11){ // '#'
+
+	    disconnectDialout();
+	    state = CS_normal;
 	}
 	break;
 
     case CS_dialed_out:
 	if(event == 11){ // '#'
+
 	    disconnectDialout();
+	    state = CS_normal;
 	}
 	break;
 	
@@ -385,7 +392,6 @@ void ConferenceDialog::disconnectDialout()
 	    ->postEvent(dialout_id,
 			new DialoutConfEvent(DoConfDisconnect,
 					     getLocalTag()));
-    
 	connectMainChannel();
     }
 }
