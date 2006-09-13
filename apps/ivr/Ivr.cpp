@@ -117,9 +117,20 @@ extern "C" {
       if(!PyArg_ParseTuple(args,"O",&py_thread_object))
 	return NULL;
 
-      PythonScriptThread* t = new PythonScriptThread(py_thread_object);
-      t->start();
-      AmThreadWatcher::instance()->add(t);
+      IvrFactory* pIvrFactory = NULL;
+      PyObject *module = PyImport_ImportModule(MOD_NAME);
+      if (module != NULL) {
+	PyObject *ivrFactory = PyObject_GetAttrString(module, "__c_ivrFactory");
+	if (ivrFactory != NULL){
+	  if (PyCObject_Check(ivrFactory))
+	    pIvrFactory = (IvrFactory*)PyCObject_AsVoidPtr(ivrFactory);
+	  Py_DECREF(ivrFactory);
+	}
+      }
+      if (pIvrFactory) 
+	pIvrFactory->addDeferredThread(py_thread_object);
+      else 
+	ERROR("Could not find __c_ivrFactory in Python state.\n");
 
       return Py_None;
     }
@@ -133,13 +144,10 @@ extern "C" {
 }
 
 void PythonScriptThread::run() {
-  // PYLOCK;
-  //  PyEval_AcquireLock();
-  DBG("PythonScriptThread::run - calling python function.\n");
-
+  PYLOCK;
+  DBG("PythonScriptThread - calling python function.\n");
   PyObject_CallObject(py_thread_object, NULL);
-  DBG("PythonScriptThread::run - thread finished..\n");
-  // PyEval_ReleaseLock();
+  DBG("PythonScriptThread - thread finished..\n");
 }
 
 void PythonScriptThread::on_stop() {
@@ -189,6 +197,10 @@ void IvrFactory::import_ivr_builtins()
     // ivr module - start
     PyImport_AddModule("ivr");
     ivr_module = Py_InitModule("ivr",ivr_methods);
+
+    PyObject* pIvrFactory = PyCObject_FromVoidPtr((void*)this,NULL);
+    if (pIvrFactory != NULL)
+      PyModule_AddObject(ivr_module, "__c_ivrFactory", pIvrFactory);
 
     // IvrSipDialog (= AmSipDialog)
     import_object(ivr_module, "IvrSipDialog", &IvrSipDialogType);
@@ -433,8 +445,26 @@ int IvrFactory::onLoad()
 	}
     }
 
+    start_deferred_threads();
+
     return 0; // don't stop sems from starting up
 }
+
+void IvrFactory::addDeferredThread(PyObject* pyCallable) {
+  deferred_threads.push(pyCallable);
+}
+
+void IvrFactory::start_deferred_threads() {
+  if (!deferred_threads.empty()) {
+    while (!deferred_threads.empty()) {
+      PythonScriptThread* t = new PythonScriptThread(deferred_threads.front());
+      deferred_threads.pop();
+      t->start();
+      AmThreadWatcher::instance()->add(t);
+    }
+  }
+}
+
 
 /**
  * Load a script using user name from URI.

@@ -98,12 +98,17 @@ class IvrFactory: public AmSessionFactory
     bool checkCfg();
 
     IvrDialog* newDlg(const string& name);
-    
+
+    queue<PyObject*> deferred_threads;
+    void start_deferred_threads();
+   
  public:
     IvrFactory(const string& _app_name);
 
     int onLoad();
     AmSession* onInvite(const AmSipRequest& req);
+
+    void addDeferredThread(PyObject* pyCallable);
 };
 
 
