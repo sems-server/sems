@@ -35,6 +35,7 @@ class AmEventHandler
 {
 public:
     virtual void process(AmEvent*)=0;
+    virtual ~AmEventHandler() { };
 };
 
 #endif

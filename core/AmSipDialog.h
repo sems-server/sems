@@ -48,6 +48,8 @@ public:
 			     const string& content_type,
 			     const string& body,
 			     string& hdrs)=0;
+
+    virtual ~AmSipDialogEventHandler() {};
 };
 
 

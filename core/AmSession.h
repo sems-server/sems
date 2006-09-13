@@ -66,6 +66,7 @@ public:
     AmSessionEventHandler(AmSession* s)
 	: destroy(true),s(s) {}
 
+    virtual ~AmSessionEventHandler() {}
     /* 
      * All the methods return true if event processing 
      * should stopped after calling them.
