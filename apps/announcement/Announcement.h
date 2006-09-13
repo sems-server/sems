@@ -56,6 +56,8 @@ class AnnouncementDialog : public AmSession
     ~AnnouncementDialog();
 
     void onSessionStart(const AmSipRequest& req);
+    void onSessionStart(const AmSipReply& rep);
+    void startSession();
     void onBye(const AmSipRequest& req);
     void onDtmf(int event, int duration_msec) {}
 

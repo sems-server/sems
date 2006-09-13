@@ -104,6 +104,16 @@ AnnouncementDialog::~AnnouncementDialog()
 void AnnouncementDialog::onSessionStart(const AmSipRequest& req)
 {
     DBG("AnnouncementDialog::onSessionStart\n");
+    startSession();
+}
+
+void AnnouncementDialog::onSessionStart(const AmSipReply& rep)
+{
+    DBG("AnnouncementDialog::onSessionStart (SEMS originator mode)\n");
+    startSession();
+}
+
+void AnnouncementDialog::startSession(){
     if(wav_file.open(filename,AmAudioFile::Read))
 	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
     
