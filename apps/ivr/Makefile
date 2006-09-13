@@ -25,7 +25,7 @@ PYTHON_LIBDIR = $(PYTHON_PREFIX)/lib/python$(PY_VER)
 # put used Python modules from lib-dynload here, e.g. time, mysql, _cvs.so etc.
 PYTHON_DYNLOAD_MODULES = $(wildcard $(PYTHON_LIBDIR)/lib-dynload/*.so) \
 	$(wildcard $(PYTHON_LIBDIR)/site-packages/*.so)
-PYTHON_module_cflags = -I$(PYTHON_DIR)
+PYTHON_module_cflags = -I$(PYTHON_DIR) -fno-strict-aliasing
 PYTHON_module_ldflags = -Xlinker --export-dynamic \
 			-L$(PYTHON_LIBDIR)/config \
 			-lpython$(PY_VER) \
