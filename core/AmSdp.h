@@ -76,7 +76,10 @@ struct SdpOrigin
     unsigned int sessV;
     SdpConnection conn;
 };
-
+/** 
+ * \brief sdp payload
+ * this binds together pt, name, rate and parameters
+ */
 struct SdpPayload
 {
     int    int_pt; // internal payload type

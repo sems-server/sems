@@ -6,7 +6,7 @@
 #include <string>
 using std::string;
 
-
+/** \brief represents a SIP request */
 class AmSipRequest
 {
 public:

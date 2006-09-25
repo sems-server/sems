@@ -38,11 +38,12 @@ using std::map;
 using std::string;
 
 /**
- * Multi-purpose plugin class
+ * \brief interface of the DynInvoke API
  */
 class AmDynInvoke
 {
 public:
+    /** \brief NotImplemented result for DI API calls */
     struct NotImplemented {
 	string what;
 	NotImplemented(const string& w)
@@ -55,7 +56,7 @@ public:
 };
 
 /**
- * Base class for plugin factories
+ * \brief Base interface for plugin factories
  */
 class AmPluginFactory
 {
@@ -79,7 +80,10 @@ public:
 };
 
 /**
- * Factory for multi-purpose plugin classes
+ * \brief Interface of factory for plugins that provide a DI API
+ * 
+ * Factory for multi-purpose plugin classes,
+ * classes that provide a DynInvoke (DI) API
  */
 class AmDynInvokeFactory: public AmPluginFactory
 {
@@ -91,7 +95,9 @@ public:
 
 class AmSession;
 class AmSessionEventHandler;
-
+/**
+ * \brief Interface for PluginFactories that can handle events in sessions
+ */
 class AmSessionEventHandlerFactory: public AmPluginFactory
 {
 public:
@@ -105,7 +111,7 @@ public:
     virtual bool onInvite(const AmSipRequest& req)=0;
 };
 
-
+/** \brief Interface for plugins to create sessions */
 class AmSessionFactory: public AmPluginFactory
 {
 

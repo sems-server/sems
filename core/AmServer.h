@@ -64,7 +64,12 @@ struct IfaceDesc
     {}
 };
 
-
+/**
+ * \brief singleton, serve requests from ctrl interface
+ *
+ * The Server polls requests from the control interface and feeds 
+ * them to registered handlers.
+ */
 class AmServer
 {
  private:

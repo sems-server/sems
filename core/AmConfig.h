@@ -101,7 +101,7 @@ struct AmConfig
 };
 
 class AmConfigReader;
-
+/** \brief config for the session timer */
 class AmSessionTimerConfig {
   /** Session Timer: enable? */
   int EnableSessionTimer;

@@ -39,6 +39,13 @@ using std::multimap;
 
 struct SchedRequest;
 
+/**
+ * \brief Media processing thread
+ * 
+ * This class implements a media processing thread.
+ * It processes the media and triggers the sending of RTP
+ * of all sessions added to it.
+ */
 class AmSessionSchedulerThread :
   public AmThread,
   public AmEventHandler
@@ -68,10 +75,15 @@ public:
   unsigned int getLoad();
 };
 
+/**
+ * \brief Media processing thread manager
+ * 
+ * This class implements the manager that assigns and removes 
+ * the Sessions to the various \ref SessionSchedulerThreads, 
+ * according to their call group. This class contains the API 
+ * for the SessionScheduler.
+ */
 class AmSessionScheduler
-/*: 
-    public AmThread,
-    public AmEventHandler */
 {
   static AmSessionScheduler* _instance;
 

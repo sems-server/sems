@@ -41,6 +41,12 @@
 #include <map>
 using std::map;
 
+/**
+ * \brief Mixer for one conference.
+ * 
+ * AmMultiPartyMixer mixes the audio from all channels,
+ * and returns the audio of all other channels. 
+ */
 class AmMultiPartyMixer
 {
     typedef map<int,SampleArrayShort*> ChannelMap;

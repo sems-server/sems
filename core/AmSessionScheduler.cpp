@@ -32,6 +32,7 @@
 #include <sys/time.h>
 #include <signal.h>
 
+/** \brief Request event to the SessionScheduler (remove,...) */
 struct SchedRequest :
     public AmEvent
 {

@@ -270,7 +270,7 @@ short* find_best_corr(short *ts, short *sr_beg,short* sr_end)
     return best_sr;
 }
 
-unsigned int AmAdaptivePlayout::time_scale(unsigned int ts, float factor)
+u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor)
 {
     short p_buf[PACKET_SAMPLES*4];
     short merge_buf[TEMPLATE_SEG];

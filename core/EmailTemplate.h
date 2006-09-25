@@ -37,6 +37,7 @@ class AmMail;
 
 typedef map<string,string> EmailTmplDict;
 
+/** \brief loads, processes and outputs an email template file */
 class EmailTemplate
 {
  public:

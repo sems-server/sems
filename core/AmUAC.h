@@ -34,6 +34,7 @@
 #include <string>
 using std::string; 
 
+/** \brief API for UAC support */
 class AmUAC {
  public:
   static AmSession* dialout(const string& user,

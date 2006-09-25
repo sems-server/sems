@@ -8,6 +8,7 @@ using std::string;
 
 #define E_PLUGIN 100
 
+/** \brief base event class */
 struct AmEvent
 {
     int event_id;
@@ -17,6 +18,11 @@ struct AmEvent
     virtual ~AmEvent();
 };
 
+/** 
+ * \brief named event for inter-plugin-API 
+ *
+ * Optionally the AmPluginEvent also holds a dynamic argument array.
+ */
 struct AmPluginEvent: public AmEvent
 {
     string      name;
@@ -30,7 +36,7 @@ struct AmPluginEvent: public AmEvent
 };
 
 
-
+/** \brief event handler interface */
 class AmEventHandler
 {
 public:

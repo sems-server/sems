@@ -17,6 +17,7 @@ using std::multiset;
 #define WSOLA_START_OFF  80
 #define WSOLA_SCALED_WIN 50
 
+/** \brief base class for Playout buffer */
 class AmPlayoutBuffer
 {
     // Playout buffer
@@ -37,6 +38,7 @@ public:
     virtual u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
 };
 
+/** \brief adaptive playout buffer */
 class AmAdaptivePlayout: public AmPlayoutBuffer
 {
     // Order statistics delay estimation

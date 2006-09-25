@@ -33,6 +33,14 @@
 #include <queue>
 using std::queue;
 
+/** 
+ * \brief Asynchronous event queue implementation 
+ * 
+ * This class implements an event queue; a queue into which
+ * \ref AmEvent can safely be posted at any time from any 
+ * thread, which are then processed by the registered event
+ *  handler.
+ */
 class AmEventQueue
 {
 protected:

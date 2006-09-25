@@ -13,7 +13,7 @@ using std::map;
 
 #define CONTACT_USER_PREFIX "sems"
 
-
+/** \brief SIP transaction representation */
 struct AmSipTransaction
 {
     string       method;
@@ -34,6 +34,9 @@ struct AmSipTransaction
 
 typedef map<int,AmSipTransaction> TransMap;
 
+/**
+ * \brief base class for SIP request/reply event handler 
+ */
 class AmSipDialogEventHandler 
 {
 public:
@@ -52,7 +55,9 @@ public:
     virtual ~AmSipDialogEventHandler() {};
 };
 
-
+/**
+ * \brief implements the dialog state machine
+ */
 class AmSipDialog
 {
     int status;

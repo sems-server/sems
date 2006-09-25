@@ -8,6 +8,13 @@ using std::map;
 
 
 #define MAX_CONFIG_LINE 512
+/**
+ * \brief configuration file reader
+ * 
+ * Reads configuration file into internal map, 
+ * which subsequently can be queried for the value of
+ * specific configuration values.
+ */
 
 class AmConfigReader
 {

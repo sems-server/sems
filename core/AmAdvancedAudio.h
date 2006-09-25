@@ -36,6 +36,9 @@
 using namespace std;
 #include "SampleArray.h"
 
+/**
+ * \brief Entry in an AudioQueue
+ */
 struct AudioQueueEntry {
     AmAudio* audio;
     bool put;
@@ -45,8 +48,9 @@ struct AudioQueueEntry {
 };
 
 /**
- * AmAudioQueue can hold AmAudios in input and output queue.
+ * \brief Holds AmAudios and reads/writes through all
  * 
+ * AmAudioQueue can hold AmAudios in input and output queue.
  * Audio will be read through the whole output queue,
  * and written through the whole input queue.
  */

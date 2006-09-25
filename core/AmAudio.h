@@ -42,6 +42,7 @@ using std::string;
 #define PCM16_B2S(b) ((b) >> 1)
 #define PCM16_S2B(s) ((s) << 1)
 
+/** \brief Audio Event */
 class AmAudioEvent: public AmEvent
 {
 public:
@@ -88,7 +89,7 @@ struct amci_subtype_t;
 class AmAudio;
 
 /**
- * Audio format structure.
+ * \brief Audio format structure.
  * Holds a description of the format.
  * @todo Create two child class:
  * <ul>
@@ -146,6 +147,7 @@ private:
     void operator = (const AmAudioFormat& r);
 };
 
+/** \brief simple audio format */
 class AmAudioSimpleFormat: public AmAudioFormat
 {
     int codec_id;
@@ -157,6 +159,7 @@ public:
     AmAudioSimpleFormat(int codec_id);
 };
 
+/** \brief file audio format */
 class AmAudioFileFormat: public AmAudioFormat
 {
     /** == "" if not yet initialized. */
@@ -203,6 +206,7 @@ public:
     }
 };
 
+/** \brief RTP audio format */
 class AmAudioRtpFormat: public AmAudioFormat
 {
   /** ==-1 if not yet initialized. */
@@ -326,7 +330,9 @@ public:
     int  incRecordTime(unsigned int samples);
 };
 
-
+/**
+ * \brief AmAudio implementation for file access
+ */
 class AmAudioFile: public AmAudio
 {
 public:

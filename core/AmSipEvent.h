@@ -5,6 +5,7 @@
 #include "AmSipReply.h"
 #include "AmSipRequest.h"
 
+/** \brief SIP event */
 class AmSipEvent: public AmEvent
 {
 public:
@@ -13,6 +14,7 @@ public:
     {}
 };
 
+/** \brief SIP request event */
 class AmSipRequestEvent: public AmSipEvent
 {
 public:
@@ -23,6 +25,7 @@ public:
     {}
 };
 
+/** \brief SIP reply event */
 class AmSipReplyEvent: public AmSipEvent
 {
 public:

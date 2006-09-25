@@ -43,6 +43,7 @@ class AmConferenceChannel;
 enum { ConfNewParticipant = 1,
        ConfParticipantLeft };
 
+/** \brief event in a conference*/
 struct ConferenceEvent: public AmEvent
 {
     unsigned int participants;
@@ -57,7 +58,11 @@ struct ConferenceEvent: public AmEvent
     {}
 };
 
-
+/**
+ * \brief One conference (room).
+ * 
+ * The ConferenceStatus manages one conference.
+ */
 class AmConferenceStatus
 {
     static map<string,AmConferenceStatus*> cid2status;

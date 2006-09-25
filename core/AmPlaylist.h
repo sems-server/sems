@@ -7,7 +7,7 @@
 
 #include <deque>
 using std::deque;
-
+/** \brief entry in an \ref AmPlaylist */
 struct AmPlaylistItem
 {
 
@@ -19,7 +19,14 @@ struct AmPlaylistItem
 	: play(play), record(record) {}
 };
 
-
+/**
+ * \brief AmAudio component that plays entries serially 
+ * 
+ * This class can be plugged to the Input or Output of a 
+ * session. Entries can be added or removed from the playlist,
+ * and the current entry is played until it is finished,
+ * then the next entry is played.
+ */
 class AmPlaylist: public AmAudio
 {
     

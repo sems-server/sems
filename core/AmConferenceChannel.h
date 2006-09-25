@@ -4,6 +4,12 @@
 #include "AmAudio.h"
 #include "AmConferenceStatus.h"
 
+/** 
+ * \brief one channel of a conference
+ * 
+ * A ConferenceChannel is one channel, i.e. to/from one 
+ * participant, in a conference. 
+ */
 class AmConferenceChannel: public AmAudio
 {
     bool                own_channel;
@@ -29,7 +35,5 @@ public:
 
     string getConfID() { return conf_id; }
 };
-
-
 
 #endif

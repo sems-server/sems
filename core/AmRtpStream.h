@@ -235,7 +235,7 @@ public:
      */
     void bufferPacket(const AmRtpPacket* p);
 };
-
+/** \brief represents info about an \ref AmRtpStream */
 struct AmRtpStreamInfo
 {
     enum StreamType { 

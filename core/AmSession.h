@@ -52,6 +52,11 @@ using std::pair;
 class AmSessionFactory;
 class AmDtmfEvent;
 
+/** 
+ * \brief DTMF Event in Session 
+ * This is a DTMF event that should be processed 
+ * by the Session.
+ */
 class AmSessionDtmfEvent : public AmEvent {
   int duration_msec;
 public:
@@ -100,15 +105,14 @@ public:
 
 
 /**
- * The session class.
- * It implements the behavior.
+ * \brief Implements the behavior of one session
+ * 
  * The session is identified by Call-ID, From-Tag and To-Tag.
  */
 class AmSession : public AmThread,
 		  public AmEventQueue, 
 		  public AmEventHandler,
 		  public AmSipDialogEventHandler
-// 		  public AmDialogState
 {
     AmMutex      audio_mut;
     AmAudio*     input;
@@ -149,6 +153,11 @@ protected:
 public:
     AmSipDialog         dlg;
 
+    /** 
+     * \brief Exception occured in a Session
+     * 
+     * Session (creation) should be aborted and replied with code/reason.
+     */
     struct Exception {
 	int code;
 	string reason;

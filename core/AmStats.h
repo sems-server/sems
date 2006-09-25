@@ -4,6 +4,11 @@
 #include <sys/types.h>
 #include <math.h>
 
+/** 
+ * \brief math mean implementation 
+ *
+ * The mean of all previously stored values is calculated (no reset).
+ */
 class MeanValue
 {
 protected:
@@ -27,6 +32,12 @@ public:
     }
 };
 
+/** 
+ * \brief math stddev implementation 
+ *
+ * The standard deviation of previously stored 
+ * values is calculated.
+ */
 class StddevValue
 {
  protected:
@@ -54,6 +65,11 @@ class StddevValue
     }
 };
 
+/** 
+ * \brief math mean implementation (n values)
+ *
+ * The mean of n previously stored values is calculated
+ */
 class MeanArray: public MeanValue
 {
     double *buffer;

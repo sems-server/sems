@@ -10,6 +10,7 @@ enum { B2BTerminateLeg,
        B2BSipRequest, 
        B2BSipReply };
 
+/** \brief base class for event in B2B session */
 struct B2BEvent: public AmEvent
 {
     B2BEvent(int ev_id) 
@@ -17,6 +18,7 @@ struct B2BEvent: public AmEvent
     {}
 };
 
+/** \brief base class for SIP event in B2B session */
 struct B2BSipEvent: public B2BEvent
 {
     bool forward;
@@ -27,6 +29,7 @@ struct B2BSipEvent: public B2BEvent
     {}
 };
 
+/** \brief SIP request in B2B session */
 struct B2BSipRequestEvent: public B2BSipEvent
 {
     AmSipRequest req;
@@ -37,6 +40,7 @@ struct B2BSipRequestEvent: public B2BSipEvent
     {}
 };
 
+/** \brief SIP reply in B2B session */
 struct B2BSipReplyEvent: public B2BSipEvent
 {
     AmSipReply reply;
@@ -47,6 +51,7 @@ struct B2BSipReplyEvent: public B2BSipEvent
     {}
 };
 
+/** \brief trigger connecting the callee leg in B2B session */
 struct B2BConnectEvent: public B2BEvent
 {
     string remote_party;
@@ -64,6 +69,11 @@ struct B2BConnectEvent: public B2BEvent
     {}
 };
 
+/**
+ * \brief Base class for Sessions in B2BUA mode.
+ * 
+ * It has two legs: Callee- and caller-leg.
+ */
 class AmB2BSession: public AmSession
 {
 protected:
@@ -125,6 +135,7 @@ protected:
 
 class AmB2BCalleeSession;
 
+/** \brief Caller leg of a B2B session */
 class AmB2BCallerSession: public AmB2BSession
 {
 public:
@@ -167,6 +178,7 @@ public:
     void set_sip_relay_only(bool r) { sip_relay_only = r; }
 };
 
+/** \brief Callee leg of a B2B session */
 class AmB2BCalleeSession: public AmB2BSession
 {
 public:

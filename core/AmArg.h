@@ -6,6 +6,7 @@
 #include <vector>
 using std::vector;
 
+/** \brief variable type argument for DynInvoke APIs */
 class AmArg
 {
 public:
@@ -64,6 +65,7 @@ public:
     const char* asCStr()   const { return v_cstr; }
 };
 
+/** \brief array of variable args for DI APIs*/
 class AmArgArray
 {
     vector<AmArg> v;

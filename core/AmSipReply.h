@@ -7,7 +7,7 @@
 #include <string>
 using std::string;
 
-
+/** \brief represents a SIP reply */
 struct AmSipReply
 {
     unsigned int code;

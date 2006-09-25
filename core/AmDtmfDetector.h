@@ -329,6 +329,10 @@ public:
     void putDtmfAudio(const unsigned char *, int size, int user_ts);
 };
 
+/** 
+ * \brief DTMF Event handler (aggregated output)
+ * posts DTMF events to session
+ */
 class AmDtmfHandler : public AmEventHandler
 {
 private:

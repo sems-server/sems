@@ -11,7 +11,7 @@ using std::string;
 using std::map;
 
 class AmCtrlInterface;
-
+/** \brief interface of an InterfaceHandler */
 class AmInterfaceHandler
 {
 public:
@@ -24,7 +24,9 @@ public:
 };
 
 /**
- * Derive your class from AmServerFct if you want
+ * \brief interface of a Server function
+ *
+ * Derive your class from this if you want
  * to implement a request handler.
  */
 class AmRequestHandlerFct
@@ -34,6 +36,11 @@ public:
     virtual ~AmRequestHandlerFct(){}
 };
 
+/**
+ * \brief SIP request handler
+ *
+ * Handles SIP requests that are received by the Server
+ */
 class AmRequestHandler: public AmInterfaceHandler, 
 			public AmRequestHandlerFct
 {
@@ -51,6 +58,11 @@ public:
     void registerFct(const string& name, AmRequestHandlerFct* fct);
 };
 
+/**
+ * \brief SIP reply handler
+ *
+ * Handles SIP replys that are received by the Server
+ */
 class AmReplyHandler: public AmInterfaceHandler
 {
     static AmReplyHandler* _instance;

@@ -38,6 +38,12 @@ using std::greater;
 
 class AmRtpStream;
 
+/**
+ * \brief receiver for RTP for all streams
+ * The RtpReceiver receives RTP packets for all streams 
+ * that are registered to it. It places the received packets in 
+ * the stream's buffer. 
+ */
 class AmRtpReceiver: public AmThread {
 
     typedef map<int, AmRtpStream*, greater<int> > Streams;

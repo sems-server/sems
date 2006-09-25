@@ -30,13 +30,14 @@
 
 /* MUST be a power of 2 */
 #define SIZE_MIX_BUFFER   (1<<14)
-
+/** \brief comparator for timestamps */
 struct ts_less
 {
     bool operator()(const unsigned int& l, 
 		    const unsigned int& r) const;
 };
 
+/** \brief timed array of samples */
 template <typename T>
 class SampleArray
 {

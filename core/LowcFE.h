@@ -45,7 +45,7 @@ typedef float Float;
 #define ATTENFAC      ((Float).2)                   /* attenu. factor per 10 ms frame */
 #define ATTENINCR     (ATTENFAC/FRAMESZ)            /* attenuation per sample */
 
-
+/** \brief LowcFE erased frame generator for fec (plc) */
 class LowcFE {
 
 public:

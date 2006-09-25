@@ -10,6 +10,7 @@ using std::map;
 
 class AmRtpStream;
 
+/** \brief thread that watches ICMP reports  */
 class AmIcmpWatcher: public AmThread
 {
     static AmIcmpWatcher* _instance;
@@ -36,6 +37,7 @@ public:
     void removeStream(int localport);
 };
 
+/** \brief one-shot thread: report an ICMP error to the rtp stream */
 class IcmpReporter: public AmThread
 {
     AmRtpStream* rtp_str;

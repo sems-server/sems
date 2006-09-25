@@ -37,6 +37,10 @@
 // Note: plc result get stored in our back buffer
 #define PLC_MAX_SAMPLES (160*4) 
 
+/** 
+ * \brief binds together a \ref AmRtpStream and an \ref AmAudio for a session 
+ */
+
 class AmRtpAudio: public AmRtpStream, public AmAudio
 {
     auto_ptr<AmPlayoutBuffer> playout_buffer;

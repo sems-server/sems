@@ -33,6 +33,7 @@
 
 class AmRtpPacketTracer;
 
+/** RTP packet implementation */
 class AmRtpPacket {
 
     unsigned char  buffer[4096];

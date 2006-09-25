@@ -49,6 +49,12 @@ public:
     virtual ~AmCtrlUserData(){}
 };
 
+/**
+ * \brief Base class for the control interfaces.
+ * 
+ * The AmCtrlInterface defines the interface for 
+ * SER-SEMS communication interface (unix socket/fifo). 
+ */
 
 class AmCtrlInterface
 {
@@ -117,7 +123,7 @@ public:
     virtual void close();
 };
 
-
+/** \brief control interface through FIFO */
 class AmFifoCtrlInterface: public AmCtrlInterface
 {
     FILE*  fp_fifo;
@@ -144,6 +150,7 @@ public:
 
 };
 
+/** \brief UNIX socket control interface  */
 class AmUnixCtrlInterface: public AmCtrlInterface
 {
     char   msg_buf[CTRL_MSGBUF_SIZE];
