@@ -15,7 +15,8 @@ using std::queue;
 using std::map;
 
 /**
- * Centralized session container.
+ * \brief Centralized session container.
+ *
  * This is the register for all active and dead sessions.
  * If has a deamon which wakes up only if it has work. 
  * Then, it kills all dead sessions and try to go to bed 

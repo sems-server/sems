@@ -35,7 +35,8 @@ using std::string;
 #define FL_FORCE_ACTIVE 2
 
 /**
- * Structure to store the FIFO parameters.
+ * \brief represents a command received from \ref AmCtrlInterface
+ * Structure to store the parameters.
  */
 struct AmCmd 
 {

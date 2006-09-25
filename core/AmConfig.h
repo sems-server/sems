@@ -38,6 +38,8 @@ using std::map;
 class AmSessionTimerConfig;
 
 /**
+ * \brief holds the current configuration.
+ *
  * This Structure holds the current configuration.
  */
 struct AmConfig

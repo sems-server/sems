@@ -68,6 +68,8 @@ public:
 
 
 /**
+ * \brief Interface for SIP events signaling plugins implement
+ *
  *  Signaling plugins must inherite from this class.
  */
 class AmSessionEventHandler

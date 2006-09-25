@@ -55,7 +55,7 @@ enum MediaType { MT_NONE=0, MT_AUDIO, MT_VIDEO, MT_APPLICATION, MT_DATA };
 /** transport protocol */
 enum TransProt { TP_NONE=0, TP_RTPAVP, TP_UDP };
 
-/** c=... line */
+/** \brief c=... line in SDP*/
 struct SdpConnection
 {
     /** @see NetworkType */
@@ -68,7 +68,7 @@ struct SdpConnection
     SdpConnection() : address() {}
 };
 
-/** o=... line */
+/** \brief o=... line in SDP */
 struct SdpOrigin
 {
     string user;
@@ -78,6 +78,7 @@ struct SdpOrigin
 };
 /** 
  * \brief sdp payload
+ *
  * this binds together pt, name, rate and parameters
  */
 struct SdpPayload
@@ -99,7 +100,7 @@ struct SdpPayload
 };
 
 
-/** m=... line */
+/** \brief m=... line in SDP */
 struct SdpMedia
 {
     enum Direction {
@@ -120,7 +121,7 @@ struct SdpMedia
 };
 
 /**
- * The SDP parser class.
+ * \brief The SDP parser class.
  */
 class AmSdp
 {

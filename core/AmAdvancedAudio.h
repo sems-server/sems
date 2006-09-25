@@ -85,6 +85,8 @@ protected:
 };
 
 /**
+ * \brief \ref AmAudio that directly connects input and output
+ *
  *  AmAudioBridge simply connects input and output
  *  This is useful e.g. at the end of a AudioQueue
  */
@@ -99,6 +101,7 @@ protected:
 };
 
 /**
+ * \brief \ref AmAudio that delays output from input
  * delays delay_sec seconds (up to ~2)
  */
 class AmAudioDelay : public AmAudio {

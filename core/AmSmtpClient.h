@@ -42,7 +42,7 @@ using std::vector;
 #define SMTP_LINE_BUFFER  512
 
 /**
- * SMTP client implementation class
+ * \brief SMTP client implementation
  * 
  */
 class AmSmtpClient

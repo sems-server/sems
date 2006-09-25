@@ -18,7 +18,20 @@ using std::auto_ptr;
 #define CTRL_MSGBUF_SIZE 2048
 #define MAX_MSG_ERR         5
 
+/** \brief user data in a \ref AmCtrlInterface */
+class AmCtrlUserData
+{
+public:
+    virtual ~AmCtrlUserData(){}
+};
+
 /**
+ * \brief Base class for the control interfaces.
+ * 
+ * The AmCtrlInterface defines the interface for 
+ * SER-SEMS communication interface (unix socket/fifo). 
+ *
+ *
  * The FIFO / Unix socket Server.
  * 
  * Enables Ser to send request throught FIFO file.
@@ -41,19 +54,6 @@ using std::auto_ptr;
  *   .EOL
  *   EOL
  *   </pre>
- */
-
-class AmCtrlUserData
-{
-public:
-    virtual ~AmCtrlUserData(){}
-};
-
-/**
- * \brief Base class for the control interfaces.
- * 
- * The AmCtrlInterface defines the interface for 
- * SER-SEMS communication interface (unix socket/fifo). 
  */
 
 class AmCtrlInterface

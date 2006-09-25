@@ -46,6 +46,8 @@ namespace Dtmf
     enum EventSource { SOURCE_RTP, SOURCE_SIP, SOURCE_INBAND, SOURCE_DETECTOR };
 };
 /**
+ * \brief sink for audio to be processed by the inband DTMF detector 
+ * 
  * This class adds processing of timeouts for DTMF detection
  */
 class AmDtmfEventQueue : public AmEventQueue
@@ -63,7 +65,7 @@ public:
 };
 
 /**
- * Base class for DTMF events
+ * \brief Base class for DTMF events
  */
 class AmDtmfEvent : public AmEvent
 {
@@ -101,7 +103,7 @@ public:
 };
 
 /**
- * DTMF received via RTP
+ * \brief DTMF received via RTP
  */
 class AmRtpDtmfEvent : public AmDtmfEvent
 {
@@ -134,7 +136,7 @@ public:
 };
 
 /**
- * DTMF received via SIP INFO request
+ * \brief DTMF received via SIP INFO request
  */
 class AmSipDtmfEvent : public AmDtmfEvent
 {

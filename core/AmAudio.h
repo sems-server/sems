@@ -60,6 +60,7 @@ public:
 
 
 /**
+ * \brief double buffer with back and front
  * Implements double buffering.
  */
 
@@ -147,7 +148,7 @@ private:
     void operator = (const AmAudioFormat& r);
 };
 
-/** \brief simple audio format */
+/** \brief simple \ref AmAudioFormat audio format */
 class AmAudioSimpleFormat: public AmAudioFormat
 {
     int codec_id;
@@ -159,7 +160,7 @@ public:
     AmAudioSimpleFormat(int codec_id);
 };
 
-/** \brief file audio format */
+/** \brief \ref AmAudioFormat for file */
 class AmAudioFileFormat: public AmAudioFormat
 {
     /** == "" if not yet initialized. */
@@ -231,9 +232,9 @@ public:
 };
 
 /**
- * AmAudio binds an input and an output format together.
- * It converts also the samples if needed, 
- * depending on the input/output formats.<br>
+ * \brief base for classes that input or output audio.
+ *
+ * AmAudio binds a format and converts the samples if needed.
  * <br>Internal Format: PCM signed 16 bit (mono | stereo).
  */
 

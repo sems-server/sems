@@ -34,7 +34,7 @@
 using std::queue;
 
 /**
- * C++ Wrapper class for pthread mutex
+ * \brief C++ Wrapper class for pthread mutex
  */
 class AmMutex
 {
@@ -48,7 +48,7 @@ public:
 };
 
 /**
- * Simple lock class
+ * \brief  Simple lock class
  */
 class AmLock
 {
@@ -63,7 +63,8 @@ public:
 };
 
 /**
- * Shared variable.
+ * \brief Shared variable.
+ *
  * Include a variable and its mutex.
  * @warning Don't use safe functions (set,get)
  * within a {lock(); ... unlock();} block. Use 
@@ -100,7 +101,7 @@ public:
 };
 
 /**
- * C++ Wrapper class for pthread condition
+ * \brief C++ Wrapper class for pthread condition
  */
 template<class T>
 class AmCondition
@@ -154,7 +155,7 @@ public:
 };
 
 /**
- * C++ Wrapper class for pthread
+ * \brief C++ Wrapper class for pthread
  */
 class AmThread
 {
@@ -191,6 +192,8 @@ class AmThread
 };
 
 /**
+ * \brief Container/garbage collector for threads. 
+ * 
  * AmThreadWatcher waits for threads to stop
  * and delete them.
  * It gets started automatically when needed.

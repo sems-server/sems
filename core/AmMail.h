@@ -39,7 +39,7 @@ using std::vector;
 using std::queue;
 
 /**
- * Email file attachement
+ * \brief Email file attachement
  */
 struct Attachement
 {
@@ -70,7 +70,7 @@ class AmMail;
 typedef void (*MailCleanUpFunction)(AmMail* mail);
 
 /**
- * Email structure.
+ * \brief Email structure.
  * Supports basic email functions such as attachements.
  */
 struct AmMail
@@ -98,7 +98,7 @@ public:
 };
 
 /**
- * Email Deamon.
+ * \brief Email Deamon (singleton).
  * It is designed as a singleton using a queue to get his work.
  * It wakes up only if there is anything to do.
  */

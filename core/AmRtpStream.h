@@ -63,6 +63,8 @@ class SdpPayload;
 typedef map<unsigned int, AmRtpPacket, ts_less> JitterBuffer;
 
 /**
+ * \brief RTP implementation
+ *
  * Rtp stream high level interface.
  */
 class AmRtpStream 

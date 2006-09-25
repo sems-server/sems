@@ -47,7 +47,7 @@ struct amci_inoutfmt_t;
 struct amci_subtype_t;
 
 /**
- * Container for loaded Plug-ins.
+ * \brief Container for loaded Plug-ins.
  */
 class AmPlugIn
 {
