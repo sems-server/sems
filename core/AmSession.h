@@ -50,8 +50,16 @@ using std::map;
 using std::pair;
 
 class AmSessionFactory;
-//class AmDialogState;
 class AmDtmfEvent;
+
+class AmSessionDtmfEvent : public AmEvent {
+  int duration_msec;
+public:
+  AmSessionDtmfEvent(int key, int duration_msec) 
+    : AmEvent(key), duration_msec(duration_msec)
+  { }
+  int getDuration() { return duration_msec; }
+};
 
 
 /**
@@ -285,9 +293,10 @@ public:
     bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
     void setDtmfDetectionEnabled(bool e) { m_dtmfDetectionEnabled = e; }
     void putDtmfAudio(const unsigned char *buf, int size, int user_ts);
-
+    /** the dtmf detector posts events using this method*/  
+    void doDtmf(int event, int duration_msec);
+    /** event handler for apps to use*/
     virtual void onDtmf(int event, int duration);
-
 
     /**
      * onStart will be called before everything else.

@@ -393,6 +393,10 @@ void AmSession::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
     m_dtmfEventQueue.putDtmfAudio(buf, size, user_ts);
 }
 
+void AmSession::doDtmf(int event, int duration_msec) {
+  postEvent(new AmSessionDtmfEvent(event, duration_msec));
+}
+
 void AmSession::onDtmf(int event, int duration_msec)
 {
     DBG("AmSession::onDtmf(%i,%i)\n",event,duration_msec);
@@ -433,6 +437,12 @@ void AmSession::process(AmEvent* ev)
     if(audio_ev && (audio_ev->event_id == AmAudioEvent::cleared)){
 	setStopped();
 	return;
+    }
+
+    AmSessionDtmfEvent* sess_dtmf_ev = dynamic_cast<AmSessionDtmfEvent*>(ev);
+    if (sess_dtmf_ev) {
+      onDtmf(sess_dtmf_ev->event_id, sess_dtmf_ev->getDuration());
+      return;
     }
 }
 

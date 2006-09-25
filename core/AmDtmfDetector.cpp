@@ -616,7 +616,7 @@ void AmDtmfHandler::process(AmEvent *evt)
     if (event)
     {
         DBG("++++ DTMF %d\n", event->event());
-        m_session->onDtmf(event->event(), event->duration());
+        m_session->doDtmf(event->event(), event->duration());
     }
     evt->processed = true;
 }
