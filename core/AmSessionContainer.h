@@ -171,11 +171,6 @@ class AmSessionContainer : public AmThread
      * @return false if session doesn't exist 
      */
     bool postEvent(const string& local_tag, AmEvent* event);
-
-    /** register a daemon to receive events. 
-     *  note: there is no de-registering!!! daemons are to be always there! */
-    void registerDaemon(const string& daemon_name, AmEventQueue* event_queue);
-
 };
 
 #endif
