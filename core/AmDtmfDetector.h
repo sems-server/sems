@@ -330,21 +330,4 @@ public:
     void checkTimeout();
     void putDtmfAudio(const unsigned char *, int size, int user_ts);
 };
-
-/** 
- * \brief DTMF Event handler (aggregated output)
- * posts DTMF events to session
- */
-class AmDtmfHandler : public AmEventHandler
-{
-private:
-    AmSession *m_session;
-
-    void process(AmEvent *);
-
-public:
-    AmDtmfHandler(AmSession *session) : m_session(session) {}
-    virtual ~AmDtmfHandler() {}
-};
-
 #endif // _AmDtmfDetector_h_

@@ -37,8 +37,6 @@
 #include "AmSessionContainer.h"
 #include "AmSessionScheduler.h"
 #include "AmDtmfDetector.h"
-/* Session Timer: -ssa */
-//#include "AmSessionTimer.h"
 
 #include "log.h"
 
@@ -128,7 +126,6 @@ AmSession::AmSession()
       sess_stopped(false),rtp_str(this),negotiate_onreply(false),
       input(0), output(0), payload(0),
       m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
-      m_dtmfHandler(this), m_dtmfOutputQueue(&m_dtmfHandler),
       m_dtmfDetectionEnabled(true)
 {
 }
@@ -369,12 +366,15 @@ void AmSession::postDtmfEvent(AmDtmfEvent *evt)
     {
         if (dynamic_cast<AmSipDtmfEvent *>(evt) ||
             dynamic_cast<AmRtpDtmfEvent *>(evt))
-        {
+        {   
+	  // this is a raw event from sip info or rtp
             m_dtmfEventQueue.postEvent(evt);
         }
-        else
+        else 
         {
-            m_dtmfOutputQueue.postEvent(evt);
+	  // this is an aggregated event, 
+	  // post it into our event queue
+	  postEvent(evt);
         }
     }
 }
@@ -384,17 +384,12 @@ void AmSession::processDtmfEvents()
     if (m_dtmfDetectionEnabled)
     {
         m_dtmfEventQueue.processEvents();
-        m_dtmfOutputQueue.processEvents();
     }
 }
 
 void AmSession::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
 {
     m_dtmfEventQueue.putDtmfAudio(buf, size, user_ts);
-}
-
-void AmSession::doDtmf(int event, int duration_msec) {
-  postEvent(new AmSessionDtmfEvent(event, duration_msec));
 }
 
 void AmSession::onDtmf(int event, int duration_msec)
@@ -426,9 +421,8 @@ void AmSession::process(AmEvent* ev)
     DBG("AmSession::process\n");
 
     AmSipEvent* sip_ev = dynamic_cast<AmSipEvent*>(ev);
-    if(sip_ev){
-	
-	DBG("received SIP Event\n");
+    if(sip_ev){	
+	DBG("Session received SIP Event\n");
 	onSipEvent(sip_ev);
 	return;
     }
@@ -439,9 +433,11 @@ void AmSession::process(AmEvent* ev)
 	return;
     }
 
-    AmSessionDtmfEvent* sess_dtmf_ev = dynamic_cast<AmSessionDtmfEvent*>(ev);
-    if (sess_dtmf_ev) {
-      onDtmf(sess_dtmf_ev->event_id, sess_dtmf_ev->getDuration());
+    AmDtmfEvent* dtmf_ev = dynamic_cast<AmDtmfEvent*>(ev);
+    if (dtmf_ev) {
+      DBG("Session received DTMF, event = %d, duration = %d\n", 
+	  dtmf_ev->event(), dtmf_ev->duration());
+      onDtmf(dtmf_ev->event(), dtmf_ev->duration());
       return;
     }
 }

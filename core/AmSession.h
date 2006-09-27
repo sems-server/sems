@@ -52,21 +52,6 @@ using std::pair;
 class AmSessionFactory;
 class AmDtmfEvent;
 
-/** 
- * \brief DTMF Event in Session 
- * This is a DTMF event that should be processed 
- * by the Session.
- */
-class AmSessionDtmfEvent : public AmEvent {
-  int duration_msec;
-public:
-  AmSessionDtmfEvent(int key, int duration_msec) 
-    : AmEvent(key), duration_msec(duration_msec)
-  { }
-  int getDuration() { return duration_msec; }
-};
-
-
 /**
  * \brief Interface for SIP events signaling plugins implement
  *
@@ -125,8 +110,6 @@ class AmSession : public AmThread,
 
     AmDtmfDetector   m_dtmfDetector;
     AmDtmfEventQueue m_dtmfEventQueue;
-    AmDtmfHandler    m_dtmfHandler;
-    AmEventQueue     m_dtmfOutputQueue;
     bool m_dtmfDetectionEnabled;
 
     vector<AmSessionEventHandler*> ev_handlers;
@@ -304,8 +287,6 @@ public:
     bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
     void setDtmfDetectionEnabled(bool e) { m_dtmfDetectionEnabled = e; }
     void putDtmfAudio(const unsigned char *buf, int size, int user_ts);
-    /** the dtmf detector posts events using this method*/  
-    void doDtmf(int event, int duration_msec);
     /** event handler for apps to use*/
     virtual void onDtmf(int event, int duration);
 

@@ -606,17 +606,3 @@ int AmInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int s
     isdn_audio_calc_dtmf((const signed short *)samples, size / 2);
     return size;
 }
-
-//
-// AmDtmfHandler methods
-//
-void AmDtmfHandler::process(AmEvent *evt)
-{
-    AmDtmfEvent *event = dynamic_cast<AmDtmfEvent *>(evt);
-    if (event)
-    {
-        DBG("++++ DTMF %d\n", event->event());
-        m_session->doDtmf(event->event(), event->duration());
-    }
-    evt->processed = true;
-}
