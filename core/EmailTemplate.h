@@ -46,6 +46,7 @@ class EmailTemplate
     string to;
     string from;
     string body;
+    string header;
 
     int parse(char* buffer);
     string replaceVars(const string& str,const EmailTmplDict& dict) const;

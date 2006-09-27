@@ -80,6 +80,7 @@ public:
     string subject;
     string body;
     string to;
+    string header;
 
     /** Char set */
     string charset;
@@ -92,7 +93,8 @@ public:
     int error_count;
 
     AmMail(const string& _from, const string& _subject,
-	   const string& _to, const string& _body = "");
+	   const string& _to, const string& _body = "",
+	   const string& _header = "");
 
     ~AmMail();
 };

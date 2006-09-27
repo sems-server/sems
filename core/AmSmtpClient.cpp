@@ -108,6 +108,8 @@ bool AmSmtpClient::send(const AmMail& mail)
     string rcpt_to = "rcpt to: <" + mail.to + ">";
 
     vector<string> headers;
+
+    if (!mail.header.empty()) headers.push_back(mail.header);
     headers.push_back("From: " + mail.from);
     headers.push_back("To: " + mail.to);
     headers.push_back("Subject: " + mail.subject);

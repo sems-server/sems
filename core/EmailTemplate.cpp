@@ -72,6 +72,7 @@ int EmailTemplate::load(const string& filename)
 #define P_SUBJECT 1
 #define P_TO      2
 #define P_FROM    3
+#define P_HEADER  4
 
 int EmailTemplate::parse(char* buffer)
 {
@@ -103,6 +104,9 @@ int EmailTemplate::parse(char* buffer)
 	else if(!strncmp(begin,"from",4)){
 	    state = P_FROM;
 	}
+	else if(!strncmp(begin,"header",4)){
+	    state = P_HEADER;
+	}
 	else
 	    state = 0;
 
@@ -124,6 +128,9 @@ int EmailTemplate::parse(char* buffer)
 	    break;
 	case P_FROM:
 	    from = begin;
+	    break;
+	case P_HEADER:
+	    header = begin;
 	    break;
 	}
 	begin = ++s;
@@ -149,7 +156,6 @@ int EmailTemplate::parse(char* buffer)
 	ERROR("EmailTemplate: invalid template: empty body\n");
 	return -1;
     }
-
     return 0;
 }
 
@@ -227,7 +233,8 @@ AmMail EmailTemplate::getEmail(const EmailTmplDict& dict) const
 	return AmMail(replaceVars(from,dict),
 		      replaceVars(subject,dict),
 		      replaceVars(to,dict),
-		      replaceVars(body,dict));
+		      replaceVars(body,dict),
+		      replaceVars(header,dict));
     }
     catch(const string& err){
 	throw string("EmailTemplate: error in template '" + tmpl_file + "': " + err);

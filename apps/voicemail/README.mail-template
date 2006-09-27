@@ -40,8 +40,16 @@ Email template format:
 to: <destination email address>
 from: <source email address>
 subject: <subject line>
-[empty line]
+[header: <additional header>]
+<empty line>
 <body>
+
+The optional header line adds a freely configurable 
+header to the mail. For example, the voicemail can be 
+securely filtered for the header X-Content if the following 
+is used in the voicemail template:
+header: X-Content: Voicemail
+This line is optional. 
 
 Variables:
 ----------
