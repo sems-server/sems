@@ -304,7 +304,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 int AmSipDialog::send_reply(const string& msg, const string& reply_sock)
 {
     auto_ptr<AmCtrlInterface> ctrl;
-    ctrl.reset(AmCtrlInterface::getNewCtrl(NULL));
+    ctrl.reset(AmCtrlInterface::getNewCtrl());
 
     if(ctrl->init(reply_sock) || 
        ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){
@@ -452,7 +452,7 @@ int AmSipDialog::cancel()
  	+ int2str(cancel_cseq) + "\n\n";
 
     auto_ptr<AmCtrlInterface> ctrl;
-    ctrl.reset(AmCtrlInterface::getNewCtrl(NULL));
+    ctrl.reset(AmCtrlInterface::getNewCtrl());
 
     if(ctrl->init(reply_sock) || 
        ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){

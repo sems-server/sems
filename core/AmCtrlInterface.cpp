@@ -15,7 +15,7 @@
 #include <assert.h>
 
 
-AmCtrlInterface* AmCtrlInterface::getNewCtrl(AmCtrlUserData* p)
+AmCtrlInterface* AmCtrlInterface::getNewCtrl()
 {
 //     if(AmConfig::SendMethod == "fifo"){
 // 	return new AmFifoCtrlInterface(p);
@@ -26,7 +26,7 @@ AmCtrlInterface* AmCtrlInterface::getNewCtrl(AmCtrlUserData* p)
 //     ERROR("unknown send method\n");
 //     return 0;
 
-    return new AmUnixCtrlInterface(p);
+    return new AmUnixCtrlInterface();
 }
 
 int AmCtrlInterface::getLine(string& line)
@@ -84,8 +84,8 @@ int AmFifoCtrlInterface::get_param(string& p, char* lb, unsigned int lbs)
 }
 
 
-AmFifoCtrlInterface::AmFifoCtrlInterface(AmCtrlUserData* p)
-    : AmCtrlInterface(p), fp_fifo(NULL)
+AmFifoCtrlInterface::AmFifoCtrlInterface()
+    : AmCtrlInterface(), fp_fifo(NULL)
 {
 }
 
@@ -206,8 +206,8 @@ int AmUnixCtrlInterface::get_param(string& p, char* lb, unsigned int lbs)
     return msg_get_param(msg_c,p,lb,lbs);
 }
 
-AmUnixCtrlInterface::AmUnixCtrlInterface(AmCtrlUserData* p)
-    : AmCtrlInterface(p),msg_c(NULL),msg_sz(0)
+AmUnixCtrlInterface::AmUnixCtrlInterface()
+    : AmCtrlInterface(),msg_c(NULL),msg_sz(0)
 {
     memset(sock_name,0,UNIX_PATH_MAX);
 }

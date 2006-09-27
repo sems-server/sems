@@ -203,7 +203,7 @@ static int use_args(char* progname, map<char,string>& args)
 
 AmFifoCtrlInterface* init_fifo(const string& path)
 {
-    AmFifoCtrlInterface* ctrl = new AmFifoCtrlInterface(NULL);
+    AmFifoCtrlInterface* ctrl = new AmFifoCtrlInterface();
     
     if(ctrl->createFifo(path))
 	goto fifo_error;
@@ -420,7 +420,7 @@ int main(int argc, char* argv[])
 
     AmUnixCtrlInterface* un_ctrl=0;
     if(!AmConfig::SocketName.empty()){
-	un_ctrl = new AmUnixCtrlInterface(NULL);
+	un_ctrl = new AmUnixCtrlInterface();
 	if(un_ctrl->init(AmConfig::SocketName.c_str())){
 	    delete un_ctrl;
 	    un_ctrl = 0;
@@ -444,8 +444,8 @@ int main(int argc, char* argv[])
     }
     else {
 	ERROR("Sems cannot start without a working link to Ser.\n"
-	      "Please set in the config file 'fifo_name' and/or\n"
-	      " 'socket_name' parameter and check the log file"
+	      "Please set in the config file 'socket_name' \n"
+	      " parameter and check the log file"
 	      " for errors or warnings.\nExiting.\n");
 	return -1;
     }

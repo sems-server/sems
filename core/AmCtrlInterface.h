@@ -18,13 +18,6 @@ using std::auto_ptr;
 #define CTRL_MSGBUF_SIZE 2048
 #define MAX_MSG_ERR         5
 
-/** \brief user data in a \ref AmCtrlInterface */
-class AmCtrlUserData
-{
-public:
-    virtual ~AmCtrlUserData(){}
-};
-
 /**
  * \brief Base class for the control interfaces.
  * 
@@ -58,8 +51,6 @@ public:
 
 class AmCtrlInterface
 {
-    auto_ptr<AmCtrlUserData> u_data;
-
 protected:
     int  fd;
     bool close_fd;
@@ -70,13 +61,13 @@ protected:
     virtual int get_lines(char* lb, unsigned int lbs)=0;
     virtual int get_param(string& p, char* lb, unsigned int lbs)=0;
 
-    AmCtrlInterface(AmCtrlUserData* p): u_data(p),fd(-1),close_fd(true) {}
-    AmCtrlInterface(int fd,AmCtrlUserData* p): u_data(p),fd(fd),close_fd(true) {}
+    AmCtrlInterface(): fd(-1),close_fd(true) {}
+    AmCtrlInterface(int fd): fd(fd),close_fd(true) {}
 
 
 public:
 
-    static AmCtrlInterface* getNewCtrl(AmCtrlUserData* p);
+    static AmCtrlInterface* getNewCtrl();
 
     virtual ~AmCtrlInterface(){}
 
@@ -110,9 +101,6 @@ public:
     int getFd() const 
     { return fd; }
 
-    const AmCtrlUserData* getUserData() const 
-    { return u_data.get(); }
-
     /** @return -1 on error, 0 if success */
     virtual int cacheMsg()=0;
     int getLine(string& line);
@@ -134,7 +122,7 @@ class AmFifoCtrlInterface: public AmCtrlInterface
     int get_param(string& p, char* lb, unsigned int lbs);
 
 public:
-    AmFifoCtrlInterface(AmCtrlUserData* p);
+    AmFifoCtrlInterface();
     ~AmFifoCtrlInterface();
 
     int createFifo(const string& addr);
@@ -163,7 +151,7 @@ class AmUnixCtrlInterface: public AmCtrlInterface
     int get_param(string& p, char* lb, unsigned int lbs);
 
 public:
-    AmUnixCtrlInterface(AmCtrlUserData* p);
+    AmUnixCtrlInterface();
     ~AmUnixCtrlInterface();
 
     int  init(const string& addr);

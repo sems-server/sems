@@ -163,7 +163,7 @@ AmReplyHandler::AmReplyHandler(AmCtrlInterface* ctrl)
 AmReplyHandler* AmReplyHandler::get()
 {
     if(!_instance){
-	AmCtrlInterface* ctrl = AmCtrlInterface::getNewCtrl(NULL);
+	AmCtrlInterface* ctrl = AmCtrlInterface::getNewCtrl();
 	if(ctrl->init(AmConfig::ReplySocketName)){
 	    ERROR("could not initialize the reply socket '%s'\n",
 		  AmConfig::ReplySocketName.c_str());
