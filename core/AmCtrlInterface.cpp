@@ -228,7 +228,7 @@ int AmUnixCtrlInterface::init(const string& addr)
 	return -1;
     }
 
-    DBG("AmUnixCtrlInterface::init\n");
+    DBG("AmUnixCtrlInterface::init @ %s\n", sock_name);
     close_fd = true;
     return 0;
 }
