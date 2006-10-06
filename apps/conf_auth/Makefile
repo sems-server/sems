@@ -4,7 +4,7 @@ VERSION=2.2.0-1
 
 PYTHON_VERSION=2.3
 
-LIB_INSTALLDIR="/usr/lib/sems/ivr"
+LIB_INSTALLDIR="/usr/local/lib/sems/ivr"
 TARBALL_PREFIX=sems-app-${NAME}
 TARBALL="${TARBALL_PREFIX}-${VERSION}.tar.gz"
 
