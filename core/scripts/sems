@@ -23,11 +23,11 @@
 PATH=/sbin:$PATH
 
 # Check for missing binaries (stale symlinks should not happen)
-SEMS_BIN=/usr/local/bin/sems
+SEMS_BIN=/usr/local/sbin/sems
 test -x $SEMS_BIN || exit 5
 
 # Check for existence of needed config file and read it
-SEMS_CONFIG=/etc/sems.conf
+SEMS_CONFIG=/usr/local/etc/sems/sems.conf
 test -r $SEMS_CONFIG || exit 6
 #. $FOO_CONFIG
 
