@@ -11,14 +11,14 @@ TTS = y
 #
 # PYTHON_VERSION might also be 2.2 -- except for the use of GIL
 # do a ls /usr/include/python2.3/Python.h to see if it's there
-PY_VER = 2.3
+PY_VER = 2.4
 # adjust to point to python include path
 # can also be /usr/include/python$(PY_VER)
 # look for Python.h in the specified path
 # Python prefix is what you configured python with 
 # if you built from source (e.g. ./configure --with-prefix=/usr/local)
 # on debian it's often /usr, on SuSE and FreeBSD /usr/local
-PYTHON_PREFIX = /usr
+PYTHON_PREFIX = /usr/local
 PYTHON_DIR = $(PYTHON_PREFIX)/include/python$(PY_VER)
 PYTHON_LIBDIR = $(PYTHON_PREFIX)/lib/python$(PY_VER)
 

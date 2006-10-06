@@ -33,7 +33,6 @@
 #include "AmUtils.h"
 #include "AmPlugIn.h"
 #include "AmPlaylist.h"
-#include "AmSessionScheduler.h"
 
 #include "sems.h"
 #include "log.h"

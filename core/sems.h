@@ -50,7 +50,7 @@
 #define SESSION_EXPIRES              10 // seconds
 #define MINIMUM_TIMER                5   //seconds
 
-#define NUM_SESSION_SCHEDULERS 1
+#define NUM_MEDIA_PROCESSORS 1
 
 #define MAX_NET_DEVICES     32
 

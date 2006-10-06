@@ -35,7 +35,7 @@
 #include "AmPlugIn.h"
 #include "AmApi.h"
 #include "AmSessionContainer.h"
-#include "AmSessionScheduler.h"
+#include "AmMediaProcessor.h"
 #include "AmDtmfDetector.h"
 
 #include "log.h"
@@ -324,7 +324,7 @@ void AmSession::run()
     destroy();
     
     // wait at least until session is out of RtpScheduler
-    DBG("session is stopped, waiting for detach from SessionScheduler.\n");
+    DBG("session is stopped, waiting for detach from MediaProcessor.\n");
     //detached.wait_for();
 }
 
@@ -332,7 +332,7 @@ void AmSession::on_stop()
 {
     //sess_stopped.set(true);
     DBG("AmSession::on_stop()\n");
-    AmSessionScheduler::instance()->removeSession(this);
+    AmMediaProcessor::instance()->removeSession(this);
 }
 
 void AmSession::destroy()
@@ -479,7 +479,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 	    onSessionStart(req);
 	    
 	    if(input || output)
-		AmSessionScheduler::instance()->addSession(this, callgroup);
+		AmMediaProcessor::instance()->addSession(this, callgroup);
 	    else {
 		ERROR("missing audio input and/or ouput.\n");
 	    }
@@ -533,8 +533,8 @@ void AmSession::onSipReply(const AmSipReply& reply)
 	    onSessionStart(reply);
 	    
 	    if(input || output)
-	      AmSessionScheduler::instance()->addSession(this,
-							 callgroup); 
+	      AmMediaProcessor::instance()->addSession(this,
+						       callgroup); 
 	    else { 
 	      ERROR("missing audio input and/or ouput.\n"); 
 	    }

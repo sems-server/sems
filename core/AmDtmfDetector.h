@@ -294,7 +294,8 @@ private:
     AmMutex m_reportLock;
 
     /**
-     * Implementation of AmEventHandler::process(). Processes events from AmSessionScheduler.
+     * Implementation of AmEventHandler::process(). 
+     * Processes events from AmMediaProcessor.
      * @see AmEventHandler
      */
     virtual void process(AmEvent *);

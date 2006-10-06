@@ -123,8 +123,8 @@ class AmSession : public AmThread,
     AmCondition<bool> sess_stopped;
     AmCondition<bool> detached;
 
-    friend class AmSessionScheduler;
-    friend class AmSessionSchedulerThread;
+    friend class AmMediaProcessor;
+    friend class AmMediaProcessorThread;
     friend class AmSessionContainer;
     friend class AmSessionFactory;
 

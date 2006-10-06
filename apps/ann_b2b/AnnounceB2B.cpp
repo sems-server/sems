@@ -26,7 +26,6 @@
  */
 
 #include "AnnounceB2B.h"
-#include "AmSessionScheduler.h"
 #include "AmSessionContainer.h"
 #include "AmConfig.h"
 #include "AmUtils.h"

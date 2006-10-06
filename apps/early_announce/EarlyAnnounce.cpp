@@ -28,7 +28,6 @@
 #include "EarlyAnnounce.h"
 #include "AmConfig.h"
 #include "AmUtils.h"
-#include "AmSessionScheduler.h"
 
 #include "sems.h"
 #include "log.h"

@@ -76,7 +76,7 @@ struct AmConfig
     /* Session Timer: -ssa */
     static AmSessionTimerConfig defaultSessionTimerConfig;
     /** number of session scheduler threads */
-    static int SessionSchedulerThreads;
+    static int MediaProcessorThreads;
 
     /** Init function. Resolves SMTP server address. */
     static int init();
@@ -98,8 +98,8 @@ struct AmConfig
     static int setFork(const string& fork);
     /** Setter for parameter stderr, returns 0 on invalid value */
     static int setStderr(const string& s);
-    /** Setter for parameter SessionSchedulerThreads, returns 0 on invalid value */
-    static int setSessionSchedulerThreads(const string& th);
+    /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */
+    static int setMediaProcessorThreads(const string& th);
 };
 
 class AmConfigReader;

@@ -50,7 +50,7 @@ string       AmConfig::LocalIP                 = "";
 string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
 int          AmConfig::RtpLowPort              = RTP_LOWPORT;
 int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
-int          AmConfig::SessionSchedulerThreads = NUM_SESSION_SCHEDULERS;
+int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
 
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 
@@ -109,8 +109,8 @@ int AmConfig::setStderr(const string& s) {
 	return 1;
 }		
 
-int AmConfig::setSessionSchedulerThreads(const string& th) {
-    if(sscanf(th.c_str(),"%u",&SessionSchedulerThreads) != 1) {
+int AmConfig::setMediaProcessorThreads(const string& th) {
+    if(sscanf(th.c_str(),"%u",&MediaProcessorThreads) != 1) {
 	return 0;
     }
     return 1;
@@ -204,9 +204,9 @@ DBG("RvR :- Local IP set to %s\n", LocalIP.c_str());
 	}
     }
 
-    if(cfg.hasParameter("session_scheduler_threads")){
-	if(!setSessionSchedulerThreads(cfg.getParameter("session_scheduler_threads"))){
-	    ERROR("invalid session_scheduler_threads value specified");
+    if(cfg.hasParameter("media_processor_threads")){
+	if(!setMediaProcessorThreads(cfg.getParameter("media_processor_threads"))){
+	    ERROR("invalid media_processor_threads value specified");
 	    return -1;
 	}
     }

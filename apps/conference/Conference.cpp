@@ -32,7 +32,7 @@
 #include "AmConfig.h"
 
 #include "AmSessionContainer.h"
-#include "AmSessionScheduler.h"
+#include "AmMediaProcessor.h"
 
 #include "sems.h"
 #include "log.h"
@@ -443,7 +443,7 @@ void ConferenceDialog::onSipReply(const AmSipReply& reply)
 		    onSessionStart(reply);
  	    
 		    if(getInput() || getOutput())
-			AmSessionScheduler::instance()->addSession(this,
+			AmMediaProcessor::instance()->addSession(this,
 								   getCallgroup()); 
 		    else { 
 			ERROR("missing audio input and/or ouput.\n"); 

@@ -70,3 +70,11 @@ rtp_low_port=10000
 #
 # - sets port of rtp highest server
 rtp_high_port=60000
+
+# optional parameter: media_processor_threads=<num_value>
+# 
+# - controls how many threads should be created that
+#   process media - on single-processor systems set this 
+#   parameter to 1 (default), on MP systems to a higher
+#   value
+media_processor_threads=1

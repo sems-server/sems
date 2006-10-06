@@ -30,8 +30,6 @@
 #include "log.h"
 #include "AmApi.h"
 #include "AmUtils.h"
-#include "AmSessionScheduler.h"
-//#include "AmSessionTimer.h"
 #include "AmPlugIn.h"
 
 #include <unistd.h>

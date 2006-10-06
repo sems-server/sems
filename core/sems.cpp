@@ -35,7 +35,7 @@
 #include "AmServer.h"
 #include "AmCtrlInterface.h"
 #include "AmInterfaceHandler.h"
-#include "AmSessionScheduler.h"
+#include "AmMediaProcessor.h"
 #include "AmIcmpWatcher.h"
 #include "AmRtpReceiver.h"
 //#include "AmSessionTimer.h"
@@ -402,9 +402,8 @@ int main(int argc, char* argv[])
     DBG("Starting session container\n");
     AmSessionContainer::instance()->start();
 
-    DBG("Starting session scheduler\n");
-    AmSessionScheduler::instance()->init();
-    //  AmSessionScheduler::instance()->start(true);
+    DBG("Starting media processor\n");
+    AmMediaProcessor::instance()->init();
 
     DBG("Starting mailer\n");
     AmMailDeamon::instance()->start();
