@@ -1,5 +1,5 @@
 /*
- * $Id: AmSessionScheduler.h,v 1.1.2.4 2005/06/01 12:00:24 rco Exp $
+ * $Id: AmMediaProcessor.h,v 1.1.2.4 2005/06/01 12:00:24 rco Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -25,8 +25,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _AmSessionScheduler_h_
-#define _AmSessionScheduler_h_
+#ifndef _AmMediaProcessor_h_
+#define _AmMediaProcessor_h_
 
 #include "AmSession.h"
 #include "AmEventQueue.h"
@@ -46,7 +46,7 @@ struct SchedRequest;
  * It processes the media and triggers the sending of RTP
  * of all sessions added to it.
  */
-class AmSessionSchedulerThread :
+class AmMediaProcessorThread :
   public AmThread,
   public AmEventHandler
 {
@@ -67,8 +67,8 @@ class AmSessionSchedulerThread :
     // AmEventHandler interface
     void process(AmEvent* e);
 public:
-  AmSessionSchedulerThread();
-  ~AmSessionSchedulerThread();
+  AmMediaProcessorThread();
+  ~AmMediaProcessorThread();
 
   inline void postRequest(SchedRequest* sr);
   
@@ -79,29 +79,29 @@ public:
  * \brief Media processing thread manager
  * 
  * This class implements the manager that assigns and removes 
- * the Sessions to the various \ref SessionSchedulerThreads, 
+ * the Sessions to the various \ref MediaProcessorThreads, 
  * according to their call group. This class contains the API 
- * for the SessionScheduler.
+ * for the MediaProcessor.
  */
-class AmSessionScheduler
+class AmMediaProcessor
 {
-  static AmSessionScheduler* _instance;
+  static AmMediaProcessor* _instance;
 
   unsigned int num_threads; 
-  AmSessionSchedulerThread**  threads;
+  AmMediaProcessorThread**  threads;
   
   map<string, unsigned int> callgroup2thread;
   multimap<string, AmSession*> callgroupmembers;
   map<AmSession*, string> session2callgroup;
   AmMutex group_mut;
 
-  AmSessionScheduler();
-  ~AmSessionScheduler();
+  AmMediaProcessor();
+  ~AmMediaProcessor();
 
 public:
   enum { InsertSession, RemoveSession };
 
-  static AmSessionScheduler* instance();
+  static AmMediaProcessor* instance();
 
   void init();
   void addSession(AmSession* s, const string& callgroup);
