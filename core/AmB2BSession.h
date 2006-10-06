@@ -77,49 +77,51 @@ struct B2BConnectEvent: public B2BEvent
 class AmB2BSession: public AmSession
 {
 protected:
-    // local tag of the other leg
+    /** local tag of the other leg */
     string other_id;
 
-    // Tell if the session should
-    // process SIP request itself
-    // or only relay them.
+    /** Tell if the session should
+     *  process SIP request itself
+     * or only relay them.
+     */
     bool sip_relay_only;
 
-    // Requests which
-    // have been relayed (sent)
+    /** Requests which
+     * have been relayed (sent)
+     */
     TransMap relayed_req;
 
-    // Requests received for relaying
+    /** Requests received for relaying */
     map<int,AmSipRequest> recvd_req;
 
     void clear_other();
 
-    // Relay one event to the other side.
+    /** Relay one event to the other side. */
     virtual void relayEvent(AmEvent* ev);
 
     void relaySip(const AmSipRequest& req);
     void relaySip(const AmSipRequest& orig, const AmSipReply& reply);
 
-    // Terminate our leg and forget the other.
+    /** Terminate our leg and forget the other. */
     void terminateLeg();
 
-    // Terminate the other leg and forget it.
+    /** Terminate the other leg and forget it.*/
     virtual void terminateOtherLeg();
 
-    // @see AmSession
+    /** @see AmSession */
     void onSipRequest(const AmSipRequest& req);
     void onSipReply(const AmSipReply& reply);
 
-    // @see AmEventQueue
+    /** @see AmEventQueue */
     void process(AmEvent* event);
 
-    // B2BEvent handler
+    /** B2BEvent handler */
     virtual void onB2BEvent(B2BEvent* ev);
 
     // Other leg received a BYE
     virtual void onOtherBye(const AmSipRequest& req);
 
-    // INVITE from other leg has been replied
+    /** INVITE from other leg has been replied */
     virtual void onOtherReply(const AmSipReply& reply);
 
     AmB2BSession()
