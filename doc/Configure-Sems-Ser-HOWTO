@@ -1,0 +1,264 @@
+***************************
+*  Sems + Ser mini-HOWTO  *
+***************************
+
+
+1. Introduction:
+
+This document describes the configuration of a typical Sems installation. In 
+this document, it will be asserted that the reader has a basic understanding 
+of Linux and SIP (Session Initiation Protocol, RFC 3261). If you don't, 
+please try to get more familiar to Linux before continuing reading this
+document. If need more information on SIP, consider downloading iptel.org's
+SIP tutorial (www.iptel.org/sip).
+
+
+2. Getting Ser and Sems to communicate together:
+
+To work properly, Sems needs a working Ser instance, which will be used as
+Sems' SIP stack. They communicate together through unix socket servers. 
+Each side implements a server, enabling communication in both ways.You 
+will need to configure Ser to use Sems's server, and Sems to use Ser's 
+server. If you plan to run more than one Ser instance on the same host, 
+be sure to know wich Ser instance you want to connect to Sems (!).
+
+Some people have only one Ser instance. Other users have a dedicated instance
+for Sems. If you don't know what you need, try first with a dedicated
+instance, as the configuration of that instance will be much easier. A sample
+configuration with a single ser instance is given in 3.2. 
+
+
+2.1 Configure Sems to use Ser's Unix socket server
+
+
+    - edit Ser's configuration file (default location:
+      /usr/local/etc/ser/ser.cfg) and look for the 'unix_sock=' 
+      configuration parameter. It should look like:
+	 unix_sock="/tmp/ser_sock"
+
+      If the 'unix_sock' parameter does not exist, add it to the global 
+      section. If you have another value for that parameter, you don't need to
+      change it, just remember it.
+
+    - open Sems's configuration file (default location:
+      /usr/local/etc/sems/sems.conf) 
+      - look for the 'ser_socket_name=' parameter. It must have the 
+        same value as 'unix_sock=' in Ser's configuration file, 
+        but without quotes. In our example:
+
+         ser_socket_name=/tmp/ser_sock
+
+      - configure the socket on which sems will get responses from ser:
+
+         reply_socket_name=/tmp/sems_resp_sock
+
+      - then configure SEMS' socket itself, useing the 
+        'socket_name=' parameter in sems.conf. Default value:
+
+	 socket_name=/tmp/sems_sock
+
+
+2.2 How to redirect a call to sems?
+
+2.2.1 How it works:
+
+So that a caller gets connected to Sems, Ser has to pass every SIP message
+concerning that call to Sems through unix socket. Basically, Sems 
+needs to get an INVITE message to begin a call, and a BYE message to terminate 
+that call. Sems must also be aware of CANCELs. ACKs should be absorbed by Ser, 
+as Sems does not need them. If you want SEMS to be aware of DTMF tones sent
+via SIP INFO messagees, they must be passed to SEMS as well. 
+Redirecting the messages is a very simple operation. You just have to 
+call the t_write_unix() function from the 'tm' module, which you have to 
+load. As ser needs to be aware about the transaction of the request, you #
+need to call t_newtran() before writing the request to the socket using 
+t_write_unix.
+
+2.2.2 Load Ser's tm module 
+
+    - add following line to your ser.cfg in the 'module loading' section:
+
+    loadmodule "/usr/local/lib/ser/modules/tm.so"
+
+    configure tm to also pass provisional replies to sems:
+    modparam("tm", "pass_provisional_replies", 1)
+
+2.2.3 Redirecting SIP messages to Sems:
+
+    - add following lines to your ser.cfg where you need to redirect the call:
+
+      # select messages to redirect:
+      if ( method=="ACK" || method=="INVITE" || method=="BYE" ||
+           method=="CANCEL" ){
+
+	   # switch to stateful mode:
+	   if (!t_newtran()){
+		sl_send_reply("500","could not create transaction");
+		break;
+	   };
+
+	   # prevent timeout on the other side:
+	   t_reply("100","Trying - just wait a minute !");
+	   
+	   if (method=="INVITE"){
+
+		# redirect the call to the 'conference' plug-in
+		# if the URI begin with 100
+		if (uri=~"sip:100.*@") {
+
+		   # assumes that Sems configuration parameter 'socket_name='
+		   # has been set to /tmp/am_sock
+		   if(!t_write_unix("/tmp/am_sock","conference")) {
+		      t_reply("500","error contacting sems");
+		   };
+		   break;
+		};
+
+		# redirect the call to the 'announcement' plug-in
+		# if the URI begin with 200
+		if (uri=~"sip:200.*@") {
+
+		   if(!t_write_unix("/tmp/am_sock","announcement")) {
+		      t_reply("500","error contacting sems");
+		   };
+		   break;
+		};
+
+		# no service number, redirect to voicemail.
+		# do not forget to load AVPs so that voicemail gets the
+		# callee's email address.
+		load_avp("ruri","email",0);
+		if(!t_write_unix("/tmp/am_sock","voicemail")) {
+		    t_reply("500","error contacting sems");
+		};
+		break;
+	   } 
+	   else if (method=="BYE" || method="CANCEL") {
+
+		# Sems should already know which plug-in is handling that
+                # call. "bye" is no plug-in name. It is a reserved name which
+		# tells Sems to terminate the call.
+
+		if(!t_write_unix("/tmp/am_sock","bye")) {
+		    t_reply("500","error contacting sems");
+		};
+	   } 
+	   else if (method=="ACK") {
+		# absorb ACKs
+		t_relay();
+	   }
+ 
+      };
+
+In more complicated scenario, you could also redirect REFERs to Sems which
+would enable you for example to implement a click-to-dial, or invite other
+users to take part to conference.
+
+2.3 Passing additional parameters to SEMS: email address for voicemail
+
+Arbitrary AVPs (attribute value pairs) can be appended to a request when it is
+written to sems with t_write_req/t_write_unix using tw_append. The AVPs can
+e.g. be loaded from a database before, modified with avpops etc. 
+
+This is a flexible method, e.g. the language of a user can be stored in the
+database, and the greeting and voicemail template will be selected according
+to the language.
+
+For the voicemail plug-in to work properly, sems has to get the email address
+of the callee. As email adresses are usually stored in a database and ser
+usually already has a db connection, the email address is looked up when the 
+INVITE request is processed and added as extra header 'P-Email-Address' to 
+the request. Then SEMS gets the address from this header.
+
+The relevant parts of the ser configuration then look like this:
+
+# load db module
+loadmodule "/usr/local/lib/ser/modules/mysql.so"
+
+# load avp modules
+loadmodule "modules/avp/avp.so"
+loadmodule "modules/avpops/avpops.so"
+
+# configure avpops db connection
+modparam( "avpops", "avp_url", "mysql://ser:heslo@localhost/ser" )
+modparam( "avpops", "avp_table", "subscriber" )
+modparam( "avpops", "uuid_column", "id" )
+
+# configure aliases, the number doesn't matter as long as there are no collisions)
+modparam( "avpops", "avp_aliases", "email=i:67 ; language=i:68" )
+
+# scheme to access the database
+modparam( "avpops", "db_scheme", 
+	  "email_scheme:table=subscriber;value_col=email_address;value_type=string")
+modparam( "avpops", "db_scheme", 
+	  "language_scheme:table=subscriber;value_col=language;value_type=string")
+
+# configure tm to append this when tw_appent voicemail_headers is used
+modparam("tm", "tw_append",
+	       "voicemail_headers:P-Email-Address=avp[$email];P-Language=avp[$language]")
+
+# ...
+
+# in route section:
+                        # no service number, redirect to voicemail.
+
+			avp_db_load( "$ruri", "$email/$email_scheme");
+			avp_db_load( "$ruri", "$language/$language_scheme");
+
+			if(!t_write_unix("/tmp/sems_sock","voicemail/voicemail_headers")) {
+			   t_reply("500","error contacting sems");
+			};
+			break;
+
+
+This assumes that there is a column 'id', a column 'username', a column 'email_address' and a
+column 'language' in the table named 'subscriber'. dbtext sample file:
+----- subscriber  --------------------------------
+id(int,auto) username(str,null) domain(str,null) email_address(str,null) language(str,null)
+1:Alice:iptel.org:alice@mymail.org:english
+2:rco:iptel.org:rco@iptel.org:french
+3:Alex:iptel.org:alex@iptel.org:german
+----- subsciber end ------------------------------
+
+2.4 Passing SIP INFO messages to SEMS for DTMF 
+
+The same mechanism using tw_append is used to pass the headers content-type, content-length
+and the body of an INFO message to SEMS:
+
+modparam( "tm", "tw_append",
+   "info_append:hdr[Content-Length];hdr[Content-Type];msg[body]")
+...
+
+if (method=="INFO") {
+        if(!t_write_unix("/tmp/sems_sock","sems/info_append")){
+            log("could not contact sems\n");
+            t_reply("500","could not contact media server");
+        };
+} 
+
+2.5 Passing arbitrary parameters to SEMS
+
+For early media announcements (early_announce app) the final reply code
+can be configured from the ser configuration. 
+
+modparam( "avpops", "avp_aliases", "early_code=i:66 ; early_reason=i:67" )
+
+# this is to be appended to the invite
+modparam("tm", "tw_append",
+               "early_headers:P-Final-Reply-Code=avp[$early_code];P-Final-Reply-Reason=avp[$early_reason]")
+
+...
+
+   avp_write("405", "$early_code");
+   avp_write("Prohiboted", "$early_reason");
+
+   if(!t_write_unix("/tmp/sems_sock","early_announce/early_headers")){
+             log("could not contact early_announce\n");
+             t_reply("404","not found");
+   };
+   break;
+
+
+3. Configuration files used in this HOWTO
+
+<tbd>
