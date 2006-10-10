@@ -1,5 +1,9 @@
 # generic Makefile for ivr applications
 
+# adjust python version here: 2.5, 2.4 or 2.3
+PYTHON_VERSION=2.4
+
+# 
 LIB_INSTALLDIR="/usr/local/lib/sems/ivr"
 TARBALL_PREFIX=sems-app-${NAME}
 TARBALL="${TARBALL_PREFIX}-${VERSION}.tar.gz"
@@ -23,7 +27,7 @@ clean:
 	rm -f ${TARBALL_PREFIX}*.tar.gz
 
 compile: 
-	python${PYTHON_VERSION} py_comp -q .
+	python${PYTHON_VERSION} ../ivr/py_comp -q .
 
 install: all
 	install -d ${BASEDIR}/${LIB_INSTALLDIR}
