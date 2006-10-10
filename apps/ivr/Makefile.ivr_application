@@ -1,7 +1,6 @@
 # generic Makefile for ivr applications
 
-# adjust python version here: 2.5, 2.4 or 2.3
-PYTHON_VERSION=2.4
+include ../ivr/Makefile.defs
 
 # 
 LIB_INSTALLDIR="/usr/local/lib/sems/ivr"

@@ -1,24 +1,11 @@
+
 plug_in_name = ivr
+
+include Makefile.defs
+PY_VER = $(PYTHON_VERSION)
 
 COREPATH ?=../../core
 
-SCRIPT = Python
-TTS = y
-
-#
-# Python specific
-#  (no need to change this if you want to use perl)
-#
-# PYTHON_VERSION might also be 2.2 -- except for the use of GIL
-# do a ls /usr/include/python2.3/Python.h to see if it's there
-PY_VER = 2.4
-# adjust to point to python include path
-# can also be /usr/include/python$(PY_VER)
-# look for Python.h in the specified path
-# Python prefix is what you configured python with 
-# if you built from source (e.g. ./configure --with-prefix=/usr/local)
-# on debian it's often /usr, on SuSE and FreeBSD /usr/local
-PYTHON_PREFIX = /usr/local
 PYTHON_DIR = $(PYTHON_PREFIX)/include/python$(PY_VER)
 PYTHON_LIBDIR = $(PYTHON_PREFIX)/lib/python$(PY_VER)
 
@@ -35,12 +22,12 @@ ifeq ($(TTS), y)
 #
 #   flite text to speech
 #
-# uncomment the next lines if you want to have flite text-to-speech (ivr.say("Hello there"); ) 
-FLITE_DIR = /usr/src/flite-1.2-release
-ALT_FLITE_DIR = /usr/include/flite
 IVR_TTS_module_ldflags =  -L$(FLITE_DIR)/lib -lm  -lflite_cmu_us_kal  -lflite_usenglish \
 	-lflite_cmulex -lflite
 IVR_TTS_module_cflags = -I$(FLITE_DIR)/include  -I$(ALT_FLITE_DIR) -DIVR_WITH_TTS
+else
+FLITE_DIR = 
+ALT_FLITE_DIR =
 endif
 
 LOCAL_INCLUDES = -I$(FLITE_DIR)/lang/usenglish
