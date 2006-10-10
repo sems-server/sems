@@ -71,7 +71,7 @@ Installation:
     Notice: you don't need to execute 'make install' if you want to run Sems
             from the source tree.
      
-    For detailed instructions, have a look at COMPILING as well.
+    For detailed instructions, have a look at doc/COMPILING as well.
 
  3. Look at the default configuration file whether it fits your need:
 

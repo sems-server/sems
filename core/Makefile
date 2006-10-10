@@ -39,8 +39,8 @@ deps: $(DEPS)
 
 .PHONY: doc
 doc:
-	rm -Rf doxygen_output; rm -rf docs/doxygen_output ; \
-	doxygen doxygen_proj ; mv doxygen_output docs
+	rm -Rf doxygen_output; rm -rf ../doc/doxygen_doc ; \
+	doxygen doxygen_proj ; mv doxygen_output ../doc/doxygen_doc
 
 include Makefile.defs
 
@@ -101,7 +101,7 @@ install-audio: $(audio-prefix)/$(audio-dir)
 
 install-doc: $(doc-prefix)/$(doc-dir)
 	$(INSTALL-TOUCH) $(doc-prefix)/$(doc-dir)README
-	$(INSTALL-DOC) README $(doc-prefix)/$(doc-dir)
+	$(INSTALL-DOC) ../README $(doc-prefix)/$(doc-dir)
 
 dist: tar
 
