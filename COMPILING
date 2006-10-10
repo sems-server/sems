@@ -1,0 +1,57 @@
+compilation instructions for SEMS
+---------------------------------
+
+make
+
+IVR
+---
+Edit apps/ivr/Makefile.defs:
+
+1. Python version and path
+ set the python version (2.3, 2.4, 2.5) 
+ PYTHON_VERSION = 2.4
+ and the python path, usually /usr/local or /usr:
+ PYTHON_PREFIX = /usr/local
+
+2. TTS with flite speech synthesizer
+ To disable text-to-speech, set
+ TTS = n
+ To enable text-to-speech, set
+ TTS = y
+ and get the flite speech synthesizer from 
+ http://cmuflite.org/
+ e.g. with 
+  cd /usr/src ; 
+  wget http://www.speech.cs.cmu.edu/flite/packed/flite-1.3/flite-1.3-release.tar.gz ; 
+  tar xzvf flite-1.3-release.tar.gz ; cd flite-1.3-release ; 
+  ./configure ; make ; make install
+ If you do not want to do make install for flite, set
+  FLITE_DIR  = /path/to/flite/source
+ in apps/ivr/Makefile
+
+MP3 file writer
+---------------
+short: cd plug-in/mp3 ; 
+       wget http://switch.dl.sourceforge.net/sourceforge/lame/lame-3.96.1.tar.gz ;
+       tar xzvf lame-3.96.1.tar.gz ; make
+
+ 1) Get lame from lame.sourceforge.net (
+    http://sourceforge.net/project/showfiles.php?group_id=290)
+ 2) Unpack the archive
+ 3) edit LAME_DIR in mp3 plug-in Makefile to point to the location of
+    the unpacked lame source archive
+ 4) make in plug-in/mp3 directory
+
+ Note: Using the LAME encoding engine (or other mp3 encoding technology) in
+ your software may require a patent license in some countries.
+ See http://www.mp3licensing.com/ or
+ http://lame.sourceforge.net/links.html#patents for further information.
+ (Get seated before looking at the license prices).
+
+Excluding some modules from builing
+-----------------------------------
+
+Set exclude_modules in apps/Makefile to a list of the modules you 
+don't want to be built, e.g. if you are not using mp3 and conf_auth: 
+exclude_modules = mp3 conf_auth
+

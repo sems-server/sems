@@ -15,51 +15,53 @@ Introduction:
 
  You can easely extend Sems by creating your own plug-ins.
 
- The following default modules are shipped with Sems stable version:
+ The following default applications are shipped with Sems :
 
- * Voicemail: records voice messages and mail them to the callee.
+ * voicemail: records voice messages and mail them to the callee.
 
- * ISDN Gateway: support calls from and to the PSTN.
-
- * Conferencing: enables many people to talk together
+ * conferencing: enables many people to talk together
                  at the same time.
 
- * Announcement: plays an announcement.
+ * announcement: plays an announcement.
 
- * Number reader: reads the called number.
+ * echo: test module echoing your voice.
+ 
+ * mailbox: saves voicemails into an IMAP server. Users 
+            can dial in to check their messages
 
- * Echo: test module echoing your voice.
+ * ann_b2b: plays ann announcement before connecting the callee
+            in b2bua mode
 
-Some new services like IVR, Text-To-Speech, MP3 and iLBC support are only
-available in the developement version of Sems.
+ * conf_auth: collect a PIN number, verify it against an 
+              XMLRPC authentication server and connect in b2bua mode
 
-Sems only support patent free codecs. Which means that we won't support codecs
-like g729. On the other hand, we have support for all important patent free
-(g711u, g711a, GSM06.10 and iLBC).
+ * early_announce: announcement for early media (183)
+
+
+ Sems only support patent free codecs. Which means that we won't support codecs
+ like g729. On the other hand, we have support for all important patent free
+ (g711u, g711a, GSM06.10 and iLBC).
 
 Requirements:
 
- 1. Ser version >= 0.8.12: SIP Epress Router (www.iptel.org/ser)
+ 1. Ser version 0.9.6: SIP Epress Router (www.iptel.org/ser)
 
     - Sems requires Ser as its SIP stack. 
-    - Sems & Ser communicate together through FIFO file, which means that a Ser
+    - Sems & Ser communicate together through socket, which means that a Ser
       instance is mandatory on every host using Sems.
 
+ 2. Python version >= 2.3 for the ivr (embedded python interpreter), optional
+
+ 3. flite speech synthesizer for TTS in the ivr, optional
+
+ 4. lame >= 3.95 for mp3 file output, optional
 
 Installation:
 
- 1. Download Sems through CVS:
-
-    Stable version:
-
-      export CVSROOT=:pserver:anonymous@cvs.berlios.de:/cvsroot/sems
-      cvs co -r ser_rel_0_8_12 answer_machine
-
-    Developement version:
-
-      export CVSROOT=:pserver:anonymous@cvs.berlios.de:/cvsroot/sems
-      cvs co answer_machine
-
+ 1. Download Sems through svn:
+    svn checkout svn://svn.berlios.de/sems/trunk
+      -or-
+    svn checkout http://svn.berlios.de/svnroot/repos/sems/trunk 
 
  2. Compile Sems:
 
@@ -68,13 +70,14 @@ Installation:
 
     Notice: you don't need to execute 'make install' if you want to run Sems
             from the source tree.
+     
+    For detailed instructions, have a look at COMPILING as well.
 
-
- 3. Look at the default configuration file if it fits your need:
+ 3. Look at the default configuration file whether it fits your need:
 
       If you installed Sems with 'make install', the configuration
-      is at '/etc/sems/sems.conf'. Else make your own using sems.conf.sample.
-
+      is at '/usr/local/etc/sems/sems.conf'. 
+      Else make your own using sems.conf.sample.
 
  4. Start Ser: 
 
@@ -103,10 +106,11 @@ Troubleshooting:
 
 Installed file using 'make install':
 
-    /etc/sems/sems.conf                  : configuration file.
+    /usr/local/etc/sems/sems.conf                  : configuration file.
     /usr/local/sbin/sems                 : Sems executable.
     /usr/local/lib/sems/plug-in/*        : plug-ins.
     /usr/local/lib/sems/audio/*          : default path for audio files.
+    /usr/local/lib/sems/ivr/*            : precompiled IVR scripts
     /usr/local/share/doc/sems/README     : this README.
 
     source_path/scripts/sems[.redhat]    : example start-up scripts.
@@ -116,14 +120,18 @@ Installed file using 'make install':
 Bug report & Contact:
 
   If you have problems configuring Ser&Sems for your needs,
-  look at the support information on the Ser homepage (www.iptel.org/ser).
-
+  look at the support information on the Ser homepage (www.iptel.org/ser)
+  and the SEMS hoempage (www.iptel.org/sems).
+  The mailing lists (http://lists.iptel.org) for SEMS are the first 
+  address to ask for help, report bugs and improvements.
 
 Authors:
 
-  Raphael Coeffic (rco@iptel.org) &
-  Ulrich Abend (ullstar@iptel.org).
+  Raphael Coeffic (rco@iptel.org), 
+  Ulrich Abend (ullstar@iptel.org) &
+  Stefan Sayer (stefan.sayer@iptego.de)
 
+  and all contributors.
 
 Thanks goes to:
 
