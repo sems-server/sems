@@ -1,0 +1,39 @@
+What is new in SEMS version 0.10.0
+
+Between 0.9.0 (CVS) versions and 0.10.0, quite a lot has changed.
+Almost 50% of the code has been rewritten: the design has been
+simplified a lot, and to make a slim, clean core a lot of 
+functionality has been dropped. Instead, for the core we just
+focus on the essentials: basic signalling, session and media 
+handling, and loading plugins.
+
+An inter-plugin API ("DI-API") has been introduced, such that 
+functionality can be added using plugins, everybody can implement
+their favorite functionality as a reusable plug-in, and applications
+can be built in a modular manner.
+
+A new kind of modules, session component plugins, can even modify the 
+basic signaling behaviour, the session timer plugin is the first one to
+use this. 
+
+Major additional changes:
+ * Interface to Ser has been rewritten.
+
+ * Application plug-in interface has been partially rewritten. 
+   Applications are now exclusively event driven and asynchronous.
+ 
+ * Media is processed by one thread for all sessions, improving
+   the performance extremely due to less task-switching
+
+ * Back-to-back User Agent (B2BUA) functionality has been added.
+
+ * IVR python code has been completely rewritten: Applications are
+   now developed in the IVR like their C++ counterparts
+
+ * Session-Timer has been added (as module), replacing the ICMP 
+   watcher
+
+ * Adaptive playout buffer has been added
+
+ * Audio processing simplified
+
