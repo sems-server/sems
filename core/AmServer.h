@@ -101,6 +101,24 @@ public:
      * WARNING: only before the server starts up.
      */
     void regIface(const IfaceDesc& i);
+
+    /**
+     * send a message through socket, wait max 
+     * timeout for result and process return 
+     * code. reply socket specified with 
+     * reply_sock. @returns < 0 on error
+     *
+     */
+    static int send_msg(const string& msg, const string& reply_sock,
+			int timeout);
+    /**
+     * send a message through socket, using the 
+     * replyhandler. @returns < 0 on error
+     *
+     */
+    static int send_msg_replyhandler(const string& msg);
+
+
 };
 
 #endif

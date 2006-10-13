@@ -2,9 +2,7 @@
 #include "AmConfig.h"
 #include "AmSession.h"
 #include "AmUtils.h"
-#include "AmCtrlInterface.h"
 #include "AmServer.h"
-#include "AmInterfaceHandler.h"
 
 AmSipDialog::~AmSipDialog()
 {
@@ -274,7 +272,7 @@ int AmSipDialog::reply(const AmSipRequest& req,
     if(updateStatusReply(req,code))
 	return -1;
 
-    return send_reply(msg,reply_sock);
+    return AmServer::send_msg(msg,reply_sock, 500);
 }
 
 /* static */
@@ -297,47 +295,8 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 
       msg += ".\n.\n\n";
     
-    return send_reply(msg,reply_sock);
+    return AmServer::send_msg(msg,reply_sock, 500);
 }
-
-/* static */
-int AmSipDialog::send_reply(const string& msg, const string& reply_sock)
-{
-    auto_ptr<AmCtrlInterface> ctrl;
-    ctrl.reset(AmCtrlInterface::getNewCtrl());
-
-    if(ctrl->init(reply_sock) || 
-       ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){
-	
-	ERROR("while sending reply to Ser\n");
-	return -1;
-    }
-
-    if(ctrl->wait4data(500) < 1){ // 100 ms
-	ERROR("while waiting for Ser's response\n");
-	return -1;
-    }
-
-    string status_line;
-    if(ctrl->cacheMsg() || 
-       ctrl->getParam(status_line)) 
-	return -1;
-
-    unsigned int res_code;
-    string res_reason;
-    if(parse_return_code(status_line.c_str(),res_code,res_reason))
-	return -1;
-    
-    if( (res_code < 200) ||
-	(res_code >= 300) ) {
-	
-	ERROR("AmSipDialog::reply: ser answered: %i %s\n",res_code,res_reason.c_str());
-	return -1;
-    }
-
-    return 0;
-}
-
 
 int AmSipDialog::bye()
 {
@@ -451,39 +410,7 @@ int AmSipDialog::cancel()
 	+ callid + "\n"
  	+ int2str(cancel_cseq) + "\n\n";
 
-    auto_ptr<AmCtrlInterface> ctrl;
-    ctrl.reset(AmCtrlInterface::getNewCtrl());
-
-    if(ctrl->init(reply_sock) || 
-       ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){
-	
-	ERROR("while sending reply to Ser\n");
-	return -1;
-    }
-
-    if(ctrl->wait4data(50000) < 1){ // 50 ms
-	ERROR("while waiting for Ser's response: %s\n",strerror(errno));
-	return -1;
-    }
-
-    string status_line;
-    if(ctrl->cacheMsg() || 
-       ctrl->getParam(status_line)) 
-	return -1;
-
-    unsigned int res_code;
-    string res_reason;
-    if(parse_return_code(status_line.c_str(),res_code,res_reason))
-	return -1;
-    
-    if( (res_code < 200) ||
-	(res_code >= 300) ) {
-	
-	ERROR("AmSipDialog::cancel: ser answered: %i %s\n",res_code,res_reason.c_str());
-	return -1;
-    }
-
-    return 0;
+    return AmServer::send_msg(msg, reply_sock, 50000);
 }
 
 int AmSipDialog::sendRequest(const string& method, 
@@ -540,16 +467,9 @@ int AmSipDialog::sendRequest(const string& method,
     msg += ".\n" // EoH
 	+ body + ".\n\n";
 
-    AmReplyHandler* rh = AmReplyHandler::get(); // singleton
-    AmCtrlInterface* ctrl = rh->getCtrl();
-
-
-    if(ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){
-	
-	ERROR("while sending request to Ser\n");
-	return -1;
-    }
-
+    if (AmServer::send_msg_replyhandler(msg)) 
+	    return -1;
+    
     uac_trans[cseq] = AmSipTransaction(method,cseq);
 
     // increment for next request

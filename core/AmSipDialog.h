@@ -68,9 +68,6 @@ class AmSipDialog
     AmSipDialogEventHandler* hdl;
     vector<string> route;        // record routing
 
-    static int send_reply(const string& msg, 
-			  const string& reply_sock);
-
     int updateStatusReply(const AmSipRequest& req, 
 			  unsigned int code);
 

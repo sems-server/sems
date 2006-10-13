@@ -117,3 +117,53 @@ void AmServer::regIface(const IfaceDesc& i)
 {
     ifaces_map[i.ctrl->getFd()] = i;
 }
+
+
+int AmServer::send_msg(const string& msg, const string& reply_sock,
+			   int timeout) 
+{
+    auto_ptr<AmCtrlInterface> ctrl;
+    ctrl.reset(AmCtrlInterface::getNewCtrl());
+
+    if(ctrl->init(reply_sock) || 
+       ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){
+		ERROR("while sending request to Ser\n");
+		return -1;
+    }
+
+    if(ctrl->wait4data(timeout) < 1){ 
+		ERROR("while waiting for Ser's response\n");
+		return -1;
+    }
+
+    string status_line;
+    if(ctrl->cacheMsg() || 
+       ctrl->getParam(status_line)) 
+	return -1;
+
+    unsigned int res_code;
+    string res_reason;
+    if(parse_return_code(status_line.c_str(),res_code,res_reason))
+		return -1;
+    
+    if( (res_code < 200) ||
+	(res_code >= 300) ) {
+		ERROR("AmServer::send_request: ser answered: %i %s\n",
+			  res_code,res_reason.c_str());
+		return -1;
+    }
+
+    return 0;	
+}
+
+int AmServer::send_msg_replyhandler(const string& msg)
+{
+    AmReplyHandler* rh = AmReplyHandler::get(); // singleton
+    AmCtrlInterface* ctrl = rh->getCtrl();
+
+    if(ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){
+	ERROR("while sending request to Ser\n");
+	return -1;
+    }
+    return 0;
+}
