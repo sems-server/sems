@@ -174,6 +174,7 @@ int AmSdp::parse()
     }
 
     telephone_event_pt = findPayload("telephone-event");
+    //DBG("telephone_event_pt = %i\n",telephone_event_pt);
 
     return ret;
 }
@@ -224,7 +225,7 @@ int AmSdp::genResponse(const string& localip, int localport,
 	+ options;
     if (hasTelephoneEvent())
     {
-        out_buf += "a=rtmap:" + int2str(telephone_event_pt->payload_type) + " " + 
+        out_buf += "a=rtpmap:" + int2str(telephone_event_pt->payload_type) + " " + 
                             telephone_event_pt->encoding_name + "/" +
                             int2str(telephone_event_pt->clock_rate) + "\r\n"
                    "a=fmtp:" + int2str(telephone_event_pt->payload_type) + " 0-15\r\n";
@@ -615,13 +616,14 @@ static bool parse_sdp_media(AmSdp* sdp_msg, char*& s, char*& next_line)
     sdp_msg->media.push_back(m);
 
     s = next_line;
+    DBG("next_line=<%s>\n",next_line);
     ret = ret
 	// Media title
 	|| parse_sdp_line(sdp_msg,s,'i',true,NULL)
 	// connection information - optional if included at session-level
 	|| parse_sdp_line(sdp_msg,s,'c',true,parse_sdp_connection)
 	// bandwidth information
-	|| parse_sdp_line(sdp_msg,s,'b',true,NULL)
+	|| parse_sdp_line(sdp_msg,s,'b',true,NULL,false)
 	// encryption key
 	|| parse_sdp_line(sdp_msg,s,'k',true,NULL)
 	// zero or more media attribute lines
@@ -633,12 +635,14 @@ static bool parse_sdp_media(AmSdp* sdp_msg, char*& s, char*& next_line)
     }
 
     next_line = get_next_line(s);
+    DBG("ret=%i; next_line=<%s>\n",ret,next_line);
 
     return ret;
 }
 
 static bool parse_sdp_attribute(AmSdp* sdp_msg, char*& s, char*& next_line)
 {
+    DBG("parse_sdp_attribute: s=%s\n",s);
     if(sdp_msg->media.empty()){
 	ERROR("While parsing media options: no actual media !\n");
 	return true;
@@ -672,6 +676,8 @@ static bool parse_sdp_attribute(AmSdp* sdp_msg, char*& s, char*& next_line)
 	    }
 
 	    parse_string_tok(s,params,'\0');
+	    DBG("sdp attribute: pt=%u; enc=%s; cr=%u\n",
+		payload_type,encoding_name.c_str(),clock_rate);
 
 	    vector<SdpPayload>::iterator pl_it;
 
