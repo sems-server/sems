@@ -521,26 +521,29 @@ void AmSession::onSipReply(const AmSipReply& reply)
 	
       case AmSipDialog::Connected:
 	
-	    // connected!
-	if(acceptAudio(reply.body,reply.hdrs)){
-	  ERROR("could not connect audio!!!\n");
-	  dlg.bye();
-	  setStopped();
-	}
-	else {
-	  if(detached.get() && !getStopped()){
+	  try {
+	      acceptAudio(reply.body,reply.hdrs);
+
+	      if(detached.get() && !getStopped()){
 	    
-	    onSessionStart(reply);
-	    
-	    if(input || output)
-	      AmMediaProcessor::instance()->addSession(this,
-						       callgroup); 
-	    else { 
-	      ERROR("missing audio input and/or ouput.\n"); 
-	    }
-	  } 
-	}
-	break;
+		  onSessionStart(reply);
+		  
+		  if(input || output)
+		      AmMediaProcessor::instance()->addSession(this,
+							       callgroup); 
+		  else { 
+		      ERROR("missing audio input and/or ouput.\n"); 
+		  }
+	      }
+
+	  }catch(const AmSession::Exception& e){
+	      ERROR("could not connect audio!!!\n");
+	      ERROR("%i %s\n",e.code,e.reason.c_str());
+	      dlg.bye();
+	      setStopped();
+	      break;
+	  }
+	  break;
 	
       case AmSipDialog::Pending:
 	
@@ -556,15 +559,19 @@ void AmSession::onSipReply(const AmSipReply& reply)
 
 void AmSession::onInvite(const AmSipRequest& req)
 {
-    string sdp_reply;
-    if(acceptAudio(req.body,req.hdrs,&sdp_reply)!=0)
-	return;
+    try {
+	string sdp_reply;
 
-    if(dlg.reply(req,200,"OK",
-		 "application/sdp",sdp_reply) != 0){
+	acceptAudio(req.body,req.hdrs,&sdp_reply);
+	if(dlg.reply(req,200,"OK",
+		     "application/sdp",sdp_reply) != 0)
+	    throw AmSession::Exception(500,"could not send response");
+	
+    }catch(const AmSession::Exception& e){
 
-	//throw AmSession::Exception(500,"error while sending response");
+	ERROR("%i %s\n",e.code,e.reason.c_str());
 	setStopped();
+	AmSipDialog::reply_error(req,e.code,e.reason);
     }
 }
 
@@ -612,10 +619,12 @@ int AmSession::acceptAudio(const string& body,
     }
     catch(const AmSession::Exception& e){
 	ERROR("%i %s\n",e.code,e.reason.c_str());
-// 	if(dlg.reply(req,e.code,e.reason, "")){
-// 	    dlg.bye();
-// 	}
-	setStopped();
+	throw;
+
+//  	if(dlg.reply(req,e.code,e.reason, "")){
+//  	    dlg.bye();
+//  	}
+//	setStopped();
     }
 
     return -1;
