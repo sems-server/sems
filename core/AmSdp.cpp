@@ -206,7 +206,7 @@ int AmSdp::genResponse(const string& localip, int localport,
 
 	payloads += " " + int2str((*it)->payload_type);
 
-	if ((*it)->payload_type >= 96) // dynamic payload 
+	//if ((*it)->payload_type >= 96) // dynamic payload 
 	    options += "a=rtpmap:" + int2str((*it)->payload_type) + " " 
 		+ (*it)->encoding_name + "/" + int2str((*it)->clock_rate) + "\r\n";
 
@@ -272,12 +272,12 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
 
     for(it = payloads.begin();it != payloads.end();++it) {
 
-	if(it->first >= 96) {
+	//if(it->first >= 96) {
 	    out_buf += "a=rtpmap:" + int2str(it->first) 
 		+ " " + string(it->second->name) 
 		+ "/" + int2str(it->second->sample_rate) 
 		+ "\r\n";
-	}
+	    //}
     }
 
     return 0;
@@ -297,17 +297,26 @@ SdpPayload* AmSdp::getCompatiblePayload(int media_type, string& addr, int& port)
 
 	vector<SdpPayload>::iterator it = m_it->payloads.begin();
 	for(; it != m_it->payloads.end(); ++it ) {
-	    
-	    if(it->payload_type < 96){ // static payload
-		
-		if( pi->payload(it->payload_type) ) {
-		    
-		    payload = &(*it);
-		    payload->int_pt = payload->payload_type;
-		    goto end;
-		}
+
+	    amci_payload_t* a_pl = NULL;
+	    if(it->payload_type < 96){
+		// try static payloads
+		a_pl = pi->payload(it->payload_type);
 	    }
-	    else { // dynamic payload
+
+	    if( a_pl ) {
+		    
+		payload = &(*it);
+		payload->int_pt = a_pl->payload_id;
+		payload->encoding_name = a_pl->name;
+		payload->clock_rate = a_pl->sample_rate;
+		goto end;
+	    }
+	    else { 
+		// Try dynamic payloads
+		// and give a chance to broken 
+		// implementation using a static payload number
+		// for dynamic ones.
 		
 		int int_pt = getDynPayload(it->encoding_name,
 					   it->clock_rate);
