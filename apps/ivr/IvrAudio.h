@@ -3,7 +3,7 @@
 
 // Python stuff
 #include <Python.h>
-#include "structmember.h"
+#include <structmember.h>
 
 #include "AmAudio.h"
 

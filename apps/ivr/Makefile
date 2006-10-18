@@ -1,22 +1,19 @@
-
 plug_in_name = ivr
 
 include Makefile.defs
 PY_VER = $(PYTHON_VERSION)
+PY_EXE = python$(PY_VER)
 
 COREPATH ?=../../core
 
-PYTHON_DIR = $(PYTHON_PREFIX)/include/python$(PY_VER)
-PYTHON_LIBDIR = $(PYTHON_PREFIX)/lib/python$(PY_VER)
+PYTHON_DIR = $(shell $(PY_EXE) ./python_inc.py)
+PYTHON_LIBDIR = $(shell $(PY_EXE) ./python_lib.py)
 
 # put used Python modules from lib-dynload here, e.g. time, mysql, _cvs.so etc.
-PYTHON_DYNLOAD_MODULES = $(wildcard $(PYTHON_LIBDIR)/lib-dynload/*.so) \
-	$(wildcard $(PYTHON_LIBDIR)/site-packages/*.so)
 PYTHON_module_cflags = -I$(PYTHON_DIR) -fno-strict-aliasing
 PYTHON_module_ldflags = -Xlinker --export-dynamic \
 			-L$(PYTHON_LIBDIR)/config \
-			-lpython$(PY_VER) \
-			#$(PYTHON_DYNLOAD_MODULES)
+			-lpython$(PY_VER)
 
 ifeq ($(TTS), y)
 #
