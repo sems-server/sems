@@ -33,6 +33,7 @@
 #include "AmSession.h"
 #include "AmConferenceChannel.h"
 #include "AmPlaylist.h"
+#include "AmRingTone.h"
 
 #include <map>
 #include <string>
@@ -42,14 +43,17 @@ using std::string;
 class ConferenceStatus;
 class ConferenceStatusContainer;
 
- 
+
 enum { CS_normal=0,
        CS_dialing_out,
        CS_dialed_out,
        CS_dialout_connected };
 
 enum { DoConfConnect = 100,
-       DoConfDisconnect };
+       DoConfDisconnect,
+       DoConfRinging,
+       DoConfError
+};
 
 struct DialoutConfEvent : public AmEvent {
 
@@ -61,7 +65,7 @@ struct DialoutConfEvent : public AmEvent {
 	  conf_id(conf_id)
     {}
 };
- 
+
 class ConferenceFactory : public AmSessionFactory
 {
 public:
@@ -69,9 +73,11 @@ public:
     static string JoinSound;
     static string DropSound;
     static string DialoutSuffix;
+    //static string RingTone;
 
     ConferenceFactory(const string& _app_name);
     virtual AmSession* onInvite(const AmSipRequest&);
+    virtual AmSession* onRefer(const AmSipRequest& req);
     virtual int onLoad();
 };
 
@@ -82,6 +88,8 @@ class ConferenceDialog : public AmSession
     auto_ptr<AmAudioFile> LonelyUserFile;
     auto_ptr<AmAudioFile> JoinSound;
     auto_ptr<AmAudioFile> DropSound;
+    auto_ptr<AmRingTone>  RingTone;
+    auto_ptr<AmRingTone>  ErrorTone;
 
 
     string                        conf_id;
@@ -92,6 +100,10 @@ class ConferenceDialog : public AmSession
     bool                          dialedout;
     string                        dialout_id;
     auto_ptr<AmConferenceChannel> dialout_channel;
+
+    bool                          allow_dialout;
+
+    auto_ptr<AmSipRequest>        transfer_req;
 
 
     void createDialoutParticipant(const string& uri);
@@ -109,10 +121,10 @@ public:
     void process(AmEvent* ev);
     void onStart();
     void onDtmf(int event, int duration);
-    void onSessionStart(const AmSipReply& reply);
     void onSessionStart(const AmSipRequest& req);
     void onBye(const AmSipRequest& req);
 
+    void onSipRequest(const AmSipRequest& req);
     void onSipReply(const AmSipReply& reply);
 };
 

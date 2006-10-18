@@ -73,20 +73,27 @@ int EarlyAnnounceFactory::onLoad()
 
 void EarlyAnnounceDialog::onInvite(const AmSipRequest& req) 
 {
-    string sdp_reply;
-    if(acceptAudio(req.body,req.hdrs,&sdp_reply)!=0)
-	return;
+    try {
 
-    if(dlg.reply(req,183,"Session Progress",
-		 "application/sdp",sdp_reply) != 0){
+	string sdp_reply;
+	acceptAudio(req.body,req.hdrs,&sdp_reply);
 
+	if(dlg.reply(req,183,"Session Progress",
+		     "application/sdp",sdp_reply) != 0){
+
+	    throw AmSession::Exception(500,"could not reply");
+	}
+	else {
+	    
+	    localreq = req;
+	}
+
+    } catch(const AmSession::Exception& e) {
+
+	ERROR("%i %s\n",e.code,e.reason.c_str());
 	setStopped();
+	AmSipDialog::reply_error(req,e.code,e.reason);
     }
-    else {
-
-	localreq = req;
-    }
-
 }
 
 

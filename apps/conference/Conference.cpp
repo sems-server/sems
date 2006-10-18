@@ -70,11 +70,13 @@ int ConferenceFactory::onLoad()
     JoinSound = cfg.getParameter("join_sound");
     DropSound = cfg.getParameter("drop_sound");
 
-    DialoutSuffix = cfg.getParameter("dialout_suffix");
-    if(DialoutSuffix.empty()){
-	WARN("No dialout_suffix has been configured in the conference plug-in:\n");
-	WARN("\t -> dial out will not be available\n");
-    }
+    //RingTone = cfg.getParameter("ring_tone");
+
+//     DialoutSuffix = cfg.getParameter("dialout_suffix");
+//     if(DialoutSuffix.empty()){
+// 	WARN("No dialout_suffix has been configured in the conference plug-in:\n");
+// 	WARN("\t -> dial out will not be available\n");
+//     }
 
     return 0;
 }
@@ -84,13 +86,28 @@ AmSession* ConferenceFactory::onInvite(const AmSipRequest& req)
     return new ConferenceDialog(req.user);
 }
 
+AmSession* ConferenceFactory::onRefer(const AmSipRequest& req)
+{
+    if(req.to_tag.empty())
+	throw AmSession::Exception(488,"Not accepted here");
+
+    AmSession* s = new ConferenceDialog(req.user);
+    s->dlg.local_tag  = req.from_tag;
+    
+
+    DBG("ConferenceFactory::onRefer: local_tag = %s\n",s->dlg.local_tag.c_str());
+
+    return s;
+}
+
 ConferenceDialog::ConferenceDialog(const string& conf_id,
 				   AmConferenceChannel* dialout_channel)
     : conf_id(conf_id), 
       channel(0),
       play_list(this),
       dialout_channel(dialout_channel),
-      state(CS_normal)
+      state(CS_normal),
+      allow_dialout(false)
 {
     dialedout = this->dialout_channel.get() != 0;
     rtp_str.setAdaptivePlayout(true);
@@ -107,13 +124,15 @@ void ConferenceDialog::onStart()
 
 void ConferenceDialog::onSessionStart(const AmSipRequest& req)
 {
+    allow_dialout = (getHeader(req.hdrs,"P-Dialout") == "yes");
+
     setupAudio();
 }
 
-void ConferenceDialog::onSessionStart(const AmSipReply& reply)
-{
-    setupAudio();
-}
+// void ConferenceDialog::onSessionStart(const AmSipReply& reply)
+// {
+//     setupAudio();
+// }
 
 void ConferenceDialog::setupAudio()
 {
@@ -133,10 +152,19 @@ void ConferenceDialog::setupAudio()
 	    DropSound.reset(0);
     }
 
+//     if(!ConferenceFactory::RingTone.empty()) {
+// 	RingTone.reset(new AmAudioFile());
+// 	if(RingTone->open(ConferenceFactory::RingTone,
+// 			  AmAudioFile::Read))
+// 	    RingTone.reset(0);
+//     }
+
+
     play_list.close();// !!!
 
     if(dialout_channel.get()){
 
+	DBG("adding dialout_channel to the playlist (dialedout = %i)\n",dialedout);
 	play_list.addToPlaylist(new AmPlaylistItem(dialout_channel.get(),
 						   dialout_channel.get()));
     }
@@ -238,13 +266,41 @@ void ConferenceDialog::process(AmEvent* ev)
 
 	    case DoConfDisconnect:
 
+		DBG("****** Caller received DoConfDisconnect *******\n");
 		connectMainChannel();
+		state = CS_normal;
 		break;
 
 	    case DoConfConnect:
 
 		state = CS_dialout_connected;
+
+		play_list.close(); // !!!
+		play_list.addToPlaylist(new AmPlaylistItem(dialout_channel.get(),
+							   dialout_channel.get()));
 		break;
+
+	    case DoConfRinging:
+		
+		if(!RingTone.get())
+		    RingTone.reset(new AmRingTone(0,2000,4000,440,480)); // US
+
+		DBG("adding ring tone to the playlist (dialedout = %i)\n",dialedout);
+		play_list.close();
+		play_list.addToPlaylist(new AmPlaylistItem(RingTone.get(),NULL));
+		break;
+
+	    case DoConfError:
+		
+		DBG("****** Caller received DoConfError *******\n");
+		if(!ErrorTone.get())
+		    ErrorTone.reset(new AmRingTone(2000,250,250,440,480));
+
+		DBG("adding error tone to the playlist (dialedout = %i)\n",dialedout);
+		//play_list.close();
+		play_list.addToPlayListFront(new AmPlaylistItem(ErrorTone.get(),NULL));
+		break;
+		
 	    }
 	}
 
@@ -269,15 +325,17 @@ string dtmf2str(int event)
     }
 }
 
+
 void ConferenceDialog::onDtmf(int event, int duration)
 {
-    DBG("ConferenceDialog::onDtmf, state = %d\n", state);
-    if(dialedout)
+    DBG("ConferenceDialog::onDtmf\n");
+    if(dialedout || !allow_dialout)
 	return;
 
     switch(state){
 	
     case CS_normal:
+	DBG("CS_normal\n");
 	dtmf_seq += dtmf2str(event);
 
 	if(dtmf_seq.length() == 2){
@@ -288,16 +346,17 @@ void ConferenceDialog::onDtmf(int event, int duration)
 	break;
 
     case CS_dialing_out:{
+	DBG("CS_dialing_out\n");
 	string digit = dtmf2str(event);
 
 	if(digit == "*"){
 	    
 	    if(!dtmf_seq.empty()){
-		createDialoutParticipant("sip:" + dtmf_seq + 
-					 ConferenceFactory::DialoutSuffix);
+		createDialoutParticipant(dtmf_seq);
 		state = CS_dialed_out;
 	    }
 	    else {
+		DBG("state = CS_normal; ????????\n");
 		state = CS_normal;
 	    }
 
@@ -310,6 +369,7 @@ void ConferenceDialog::onDtmf(int event, int duration)
 
 
     case CS_dialout_connected:
+	DBG("CS_dialout_connected\n");
 	if(event == 10){ // '*'
 
 	    AmSessionContainer::instance()
@@ -319,17 +379,11 @@ void ConferenceDialog::onDtmf(int event, int duration)
 
 	    connectMainChannel();
 	    state = CS_normal;
-
-	} else 	if(event == 11){ // '#'
-
-	    disconnectDialout();
-	    state = CS_normal;
 	}
-	break;
 
     case CS_dialed_out:
+	DBG("CS_dialed_out\n");
 	if(event == 11){ // '#'
-
 	    disconnectDialout();
 	    state = CS_normal;
 	}
@@ -338,8 +392,10 @@ void ConferenceDialog::onDtmf(int event, int duration)
     }
 }
 
-void ConferenceDialog::createDialoutParticipant(const string& uri)
+void ConferenceDialog::createDialoutParticipant(const string& uri_user)
 {
+    string uri = "sip:" + uri_user + "@" + dlg.domain;
+
     dialout_channel.reset(AmConferenceStatus::getChannel(getLocalTag(),getLocalTag()));
 
     dialout_id = AmSession::getNewId();
@@ -362,11 +418,6 @@ void ConferenceDialog::createDialoutParticipant(const string& uri)
     int local_port = dialout_session->rtp_str.getLocalPort();
     dialout_session->sdp.genRequest(AmConfig::LocalIP,local_port,body);
     dialout_dlg.sendRequest("INVITE","application/sdp",body,"");
-
-
-    play_list.close(); // !!!
-    play_list.addToPlaylist(new AmPlaylistItem(dialout_channel.get(),
-					       dialout_channel.get()));
 
     dialout_session->start();
 
@@ -392,6 +443,7 @@ void ConferenceDialog::disconnectDialout()
 	    ->postEvent(dialout_id,
 			new DialoutConfEvent(DoConfDisconnect,
 					     getLocalTag()));
+    
 	connectMainChannel();
     }
 }
@@ -399,6 +451,7 @@ void ConferenceDialog::disconnectDialout()
 void ConferenceDialog::connectMainChannel()
 {
     dialout_id = "";
+    dialedout = false;
     dialout_channel.reset(NULL);
     
     play_list.close();
@@ -420,11 +473,46 @@ void ConferenceDialog::closeChannels()
     dialout_channel.reset(NULL);
 }
 
+void ConferenceDialog::onSipRequest(const AmSipRequest& req)
+{
+    AmSession::onSipRequest(req);
+    if((dlg.getStatus() >= AmSipDialog::Connected) ||
+       (req.method != "REFER"))
+	return;
+
+    std::swap(dlg.local_party,dlg.remote_party);
+    dlg.remote_tag = "";
+
+    dlg.setRoute(getHeader(req.hdrs,"P-Transfer-RR"));
+    dlg.next_hop = getHeader(req.hdrs,"P-Transfer-NH");
+
+    DBG("ConferenceDialog::onSipRequest: local_party = %s\n",dlg.local_party.c_str());
+    DBG("ConferenceDialog::onSipRequest: local_tag = %s\n",dlg.local_tag.c_str());
+    DBG("ConferenceDialog::onSipRequest: remote_party = %s\n",dlg.remote_party.c_str());
+    DBG("ConferenceDialog::onSipRequest: remote_tag = %s\n",dlg.remote_tag.c_str());
+
+    string body;
+    int local_port = rtp_str.getLocalPort();
+    sdp.genRequest(AmConfig::LocalIP,local_port,body);
+    dlg.sendRequest("INVITE","application/sdp",body,"");
+
+    transfer_req.reset(new AmSipRequest(req));
+
+    return;
+}
+
 void ConferenceDialog::onSipReply(const AmSipReply& reply)
 {
     int status = dlg.getStatus();
     AmSession::onSipReply(reply);
+
+    DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i",
+	reply.code,reply.reason.c_str(),dlg.getStatus());
     
+    if(!dialedout && 
+       !transfer_req.get())
+	return;
+
     if(status < AmSipDialog::Connected){
 
 	switch(dlg.getStatus()){
@@ -432,40 +520,90 @@ void ConferenceDialog::onSipReply(const AmSipReply& reply)
 	case AmSipDialog::Connected:
 
 	    // connected!
-	    if(acceptAudio(reply.body,reply.hdrs)){
-		ERROR("could not connect audio!!!\n");
-		dlg.bye();
-		setStopped();
-	    }
-	    else {
+	    try {
+
+		acceptAudio(reply.body,reply.hdrs);
+
 		if(getDetached() && !getStopped()){
- 	
-		    onSessionStart(reply);
- 	    
+		    
+		    setupAudio();
+		    
 		    if(getInput() || getOutput())
 			AmMediaProcessor::instance()->addSession(this,
-								   getCallgroup()); 
+							   getCallgroup()); 
 		    else { 
-			ERROR("missing audio input and/or ouput.\n"); 
+			ERROR("missing audio input and/or ouput.\n");
+			return;
 		    }
-		    
-		    // send connect event
-		    AmSessionContainer::instance()
-			->postEvent(dialout_channel->getConfID(),
-				    new DialoutConfEvent(DoConfConnect,
-							 dialout_channel->getConfID()));
+
+		    if(!transfer_req.get()){
+
+			// send connect event
+			AmSessionContainer::instance()
+			    ->postEvent(dialout_channel->getConfID(),
+					new DialoutConfEvent(DoConfConnect,
+							     dialout_channel->getConfID()));
+		    }
+		    else {
+			dlg.reply(*(transfer_req.get()),202,"Accepted");
+			transfer_req.reset(0);
+			connectMainChannel();
+		    }
 		} 
+	
+	    }
+	    catch(const AmSession::Exception& e){
+		ERROR("%i %s\n",e.code,e.reason.c_str());
+		dlg.bye();
+		setStopped();
 	    }
 	    break;
 
 	case AmSipDialog::Pending:
 
 	    switch(reply.code){
-	    case 180: break;//TODO: local ring tone.
+	    case 180:
+
+		// send ringing event
+		AmSessionContainer::instance()
+		    ->postEvent(dialout_channel->getConfID(),
+				new DialoutConfEvent(DoConfRinging,
+						     dialout_channel->getConfID()));
+		
+		break;
 	    case 183: break;//TODO: remote ring tone.
 	    default:  break;// continue waiting.
 	    }
+	    break;
+
+	case AmSipDialog::Disconnected:
+
+	    if(!transfer_req.get()){
+
+		disconnectDialout();
+		//switch(reply.code){
+		//default:
+	    
+		AmSessionContainer::instance()
+		    ->postEvent(dialout_channel->getConfID(),
+				new DialoutConfEvent(DoConfError,
+						     dialout_channel->getConfID()));
+		//}
+	    }
+	    else {
+		
+		dlg.reply(*(transfer_req.get()),reply.code,reply.reason);
+		transfer_req.reset(0);
+		setStopped();
+	    }
+	    break;
+
+	    
+
+	default: break;
 	}
+
+
     }
 }
 
