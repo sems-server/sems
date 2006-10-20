@@ -74,6 +74,7 @@ class IvrDialog(IvrDialogBase):
 
 	def onDtmf(self,key,duration):
 		if self.state == collect:
+			self.flush()
 			if key == 10:
 	
 				c = xmlrpclib.ServerProxy(server_path )
@@ -91,11 +92,12 @@ class IvrDialog(IvrDialogBase):
 					self.state = connect
 					self.removeTimer(HINT_TIMER)
 				else:
+					self.keys = ''
 					self.auth_fail_msg = IvrAudioFile()
 					self.auth_fail_msg.open(erg[1], ivr.AUDIO_READ)
-					self.flush()
+					#self.flush()
 					self.enqueue(self.auth_fail_msg, None)
-					self.keys = ''
+					
 					self.setTimer(HINT_TIMER,  HINT_TIMEOUT)
 			else: 
 				self.keys += str(key)
@@ -109,7 +111,8 @@ class IvrDialog(IvrDialogBase):
 			self.setRelayonly()
 			self.connectCallee(self.conf_to, self.conf_uri)
 			self.state = connected
-			self.setTimer(CONF_TIMER, self.conf_duration)
+			if (self.conf_duration > 0):
+				self.setTimer(CONF_TIMER, self.conf_duration)
 
 		elif self.state == collect:
 			self.setTimer(HINT_TIMER,  HINT_TIMEOUT)
@@ -118,6 +121,7 @@ class IvrDialog(IvrDialogBase):
 		if id == HINT_TIMER and self.state == collect:
 			self.enqueue(self.hint_msg, None)
 		elif id == CONF_TIMER and self.state == connected:
+			debug("conference timer timeout. disconnecting " + self.conf_to + " uri: " + self.conf_uri)
 			self.terminateOtherLeg()
 			self.bye()
 			self.stopSession()
