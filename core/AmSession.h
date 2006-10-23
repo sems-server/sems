@@ -149,16 +149,6 @@ public:
 	Exception(int c, string r) : code(c), reason(r) {}
     };
 
-//     struct SessionTimerException : Exception {
-//       unsigned int minSE;
-
-//       SessionTimerException(unsigned int min_SE) 
-// 	: Exception(422, "Session Interval Too Small"), 
-// 	  minSE(min_SE) { }
-
-//       string getErrorHeaders() const;
-//     };
-
     /** 
      * Session constructor.
      */

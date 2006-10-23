@@ -1,7 +1,7 @@
 COREPATH ?= ../core
 include $(COREPATH)/Makefile.defs
 
-exclude_modules = 
+exclude_modules = mp3 
 modules = $(filter-out $(exclude_modules) \
 		$(wildcard Makefile*) CVS, \
 		$(wildcard *) )

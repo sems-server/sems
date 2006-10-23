@@ -174,6 +174,7 @@ int AmSdp::parse()
     }
 
     telephone_event_pt = findPayload("telephone-event");
+    //DBG("telephone_event_pt = %i\n",telephone_event_pt);
 
     return ret;
 }
@@ -205,7 +206,7 @@ int AmSdp::genResponse(const string& localip, int localport,
 
 	payloads += " " + int2str((*it)->payload_type);
 
-	if ((*it)->payload_type >= 96) // dynamic payload 
+	//if ((*it)->payload_type >= 96) // dynamic payload 
 	    options += "a=rtpmap:" + int2str((*it)->payload_type) + " " 
 		+ (*it)->encoding_name + "/" + int2str((*it)->clock_rate) + "\r\n";
 
@@ -224,7 +225,7 @@ int AmSdp::genResponse(const string& localip, int localport,
 	+ options;
     if (hasTelephoneEvent())
     {
-        out_buf += "a=rtmap:" + int2str(telephone_event_pt->payload_type) + " " + 
+        out_buf += "a=rtpmap:" + int2str(telephone_event_pt->payload_type) + " " + 
                             telephone_event_pt->encoding_name + "/" +
                             int2str(telephone_event_pt->clock_rate) + "\r\n"
                    "a=fmtp:" + int2str(telephone_event_pt->payload_type) + " 0-15\r\n";
@@ -271,12 +272,12 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
 
     for(it = payloads.begin();it != payloads.end();++it) {
 
-	if(it->first >= 96) {
+	//if(it->first >= 96) {
 	    out_buf += "a=rtpmap:" + int2str(it->first) 
 		+ " " + string(it->second->name) 
 		+ "/" + int2str(it->second->sample_rate) 
 		+ "\r\n";
-	}
+	    //}
     }
 
     return 0;
@@ -296,17 +297,26 @@ SdpPayload* AmSdp::getCompatiblePayload(int media_type, string& addr, int& port)
 
 	vector<SdpPayload>::iterator it = m_it->payloads.begin();
 	for(; it != m_it->payloads.end(); ++it ) {
-	    
-	    if(it->payload_type < 96){ // static payload
-		
-		if( pi->payload(it->payload_type) ) {
-		    
-		    payload = &(*it);
-		    payload->int_pt = payload->payload_type;
-		    goto end;
-		}
+
+	    amci_payload_t* a_pl = NULL;
+	    if(it->payload_type < 96){
+		// try static payloads
+		a_pl = pi->payload(it->payload_type);
 	    }
-	    else { // dynamic payload
+
+	    if( a_pl ) {
+		    
+		payload = &(*it);
+		payload->int_pt = a_pl->payload_id;
+		payload->encoding_name = a_pl->name;
+		payload->clock_rate = a_pl->sample_rate;
+		goto end;
+	    }
+	    else { 
+		// Try dynamic payloads
+		// and give a chance to broken 
+		// implementation using a static payload number
+		// for dynamic ones.
 		
 		int int_pt = getDynPayload(it->encoding_name,
 					   it->clock_rate);
@@ -615,13 +625,14 @@ static bool parse_sdp_media(AmSdp* sdp_msg, char*& s, char*& next_line)
     sdp_msg->media.push_back(m);
 
     s = next_line;
+    DBG("next_line=<%s>\n",next_line);
     ret = ret
 	// Media title
 	|| parse_sdp_line(sdp_msg,s,'i',true,NULL)
 	// connection information - optional if included at session-level
 	|| parse_sdp_line(sdp_msg,s,'c',true,parse_sdp_connection)
 	// bandwidth information
-	|| parse_sdp_line(sdp_msg,s,'b',true,NULL)
+	|| parse_sdp_line(sdp_msg,s,'b',true,NULL,false)
 	// encryption key
 	|| parse_sdp_line(sdp_msg,s,'k',true,NULL)
 	// zero or more media attribute lines
@@ -633,12 +644,14 @@ static bool parse_sdp_media(AmSdp* sdp_msg, char*& s, char*& next_line)
     }
 
     next_line = get_next_line(s);
+    DBG("ret=%i; next_line=<%s>\n",ret,next_line);
 
     return ret;
 }
 
 static bool parse_sdp_attribute(AmSdp* sdp_msg, char*& s, char*& next_line)
 {
+    DBG("parse_sdp_attribute: s=%s\n",s);
     if(sdp_msg->media.empty()){
 	ERROR("While parsing media options: no actual media !\n");
 	return true;
@@ -672,6 +685,8 @@ static bool parse_sdp_attribute(AmSdp* sdp_msg, char*& s, char*& next_line)
 	    }
 
 	    parse_string_tok(s,params,'\0');
+	    DBG("sdp attribute: pt=%u; enc=%s; cr=%u\n",
+		payload_type,encoding_name.c_str(),clock_rate);
 
 	    vector<SdpPayload>::iterator pl_it;
 

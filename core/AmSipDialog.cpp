@@ -31,6 +31,9 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 	uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq);
 
     remote_uri = req.from_uri;
+    sip_ip       = req.dstip;
+    sip_port     = req.port;
+
     if(callid.empty()){
 	callid       = req.callid;
 	remote_tag   = req.from_tag;
@@ -39,9 +42,6 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 	local_uri    = req.r_uri;
 	remote_party = req.from;
 	local_party  = req.to;
-
-	sip_ip       = req.dstip;
-	sip_port     = req.port;
 
 	setRoute(req.route);
 	next_hop   = req.next_hop;
@@ -200,14 +200,14 @@ string AmSipDialog::getContactHdr()
     contact_uri = "Contact: <sip:";
     
     if(user.empty() || !AmConfig::PrefixSep.empty())
-	contact_uri += CONTACT_USER_PREFIX;
-
+  	contact_uri += CONTACT_USER_PREFIX;
+    
     if(!AmConfig::PrefixSep.empty())
-	contact_uri += AmConfig::PrefixSep;
-
+  	contact_uri += AmConfig::PrefixSep;
+    
     if(!user.empty())
-	contact_uri += user;
-
+  	contact_uri += user;
+    
     contact_uri += "@";
     
     if(sip_ip.empty())
