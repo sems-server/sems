@@ -3,7 +3,7 @@
 include ../ivr/Makefile.defs
 
 # 
-LIB_INSTALLDIR="/usr/local/lib/sems/ivr"
+LIB_INSTALLDIR?="/usr/local/lib/sems/ivr"
 TARBALL_PREFIX=sems-app-${NAME}
 TARBALL="${TARBALL_PREFIX}-${VERSION}.tar.gz"
 
