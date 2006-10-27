@@ -120,7 +120,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
 		AmSessionContainer::instance()->postEvent(
 		    it->first,
 		    new ConferenceEvent(ConfNewParticipant,
-					participants,conf_id)
+					participants,conf_id,sess_id)
 		    );
 	    }
 	}
@@ -128,7 +128,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
 	    // The First participant gets its own NewParticipant message
 	    AmSessionContainer::instance()->postEvent(
 		 sess_id, new ConferenceEvent(ConfNewParticipant,1,
-					      conf_id));
+					      conf_id,sess_id));
 	}
 
 	unsigned int ch_id = mixer.addChannel();
@@ -156,7 +156,6 @@ int AmConferenceStatus::releaseChannel(unsigned int ch_id)
 	SessInfo* si = it->second;
 	channels.erase(it);
 	sessions.erase(si->sess_id);
-	delete si;
 
 	mixer.removeChannel(ch_id);
 
@@ -168,8 +167,9 @@ int AmConferenceStatus::releaseChannel(unsigned int ch_id)
 	        s_it->first,
 		new ConferenceEvent(ConfParticipantLeft,
 				    participants,
-				    conf_id));
+				    conf_id, si->sess_id));
 	}
+	delete si;
 	
     }
     else {

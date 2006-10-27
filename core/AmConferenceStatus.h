@@ -48,13 +48,16 @@ struct ConferenceEvent: public AmEvent
 {
     unsigned int participants;
     string       conf_id;
+    string       sess_id;
 
     ConferenceEvent(int event_id, 
 		    unsigned int participants,
-		    const string& conf_id)
+		    const string& conf_id,
+		    const string& sess_id)
 	: AmEvent(event_id),
 	  participants(participants),
-	  conf_id(conf_id)
+	  conf_id(conf_id),
+	  sess_id(sess_id)
     {}
 };
 
