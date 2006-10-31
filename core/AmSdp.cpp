@@ -174,7 +174,6 @@ int AmSdp::parse()
     }
 
     telephone_event_pt = findPayload("telephone-event");
-    //DBG("telephone_event_pt = %i\n",telephone_event_pt);
 
     return ret;
 }
@@ -205,10 +204,8 @@ int AmSdp::genResponse(const string& localip, int localport,
 	it !=  sup_pl.end(); ++it){
 
 	payloads += " " + int2str((*it)->payload_type);
-
-	//if ((*it)->payload_type >= 96) // dynamic payload 
-	    options += "a=rtpmap:" + int2str((*it)->payload_type) + " " 
-		+ (*it)->encoding_name + "/" + int2str((*it)->clock_rate) + "\r\n";
+	options += "a=rtpmap:" + int2str((*it)->payload_type) + " " 
+	    + (*it)->encoding_name + "/" + int2str((*it)->clock_rate) + "\r\n";
 
 	if ((*it)->sdp_format_parameters.size()) { 
 	    // return format parameters as sent in the invite
@@ -219,18 +216,19 @@ int AmSdp::genResponse(const string& localip, int localport,
     }
 
     if (hasTelephoneEvent())
-	payloads += " " + int2str(telephone_event_pt->payload_type);
+ 	payloads += " " + int2str(telephone_event_pt->payload_type);
 
     out_buf += payloads + "\r\n"
-	+ options;
+ 	+ options;
+
     if (hasTelephoneEvent())
     {
-        out_buf += "a=rtpmap:" + int2str(telephone_event_pt->payload_type) + " " + 
-                            telephone_event_pt->encoding_name + "/" +
-                            int2str(telephone_event_pt->clock_rate) + "\r\n"
-                   "a=fmtp:" + int2str(telephone_event_pt->payload_type) + " 0-15\r\n";
+	out_buf += "a=rtpmap:" + int2str(telephone_event_pt->payload_type) + " " + 
+	    telephone_event_pt->encoding_name + "/" +
+	    int2str(telephone_event_pt->clock_rate) + "\r\n"
+	    "a=fmtp:" + int2str(telephone_event_pt->payload_type) + " 0-15\r\n";
     }
-
+    
     if(remote_active /* dir == SdpMedia::DirActive */)
 	out_buf += "a=direction:passive\r\n";
 
@@ -318,6 +316,9 @@ SdpPayload* AmSdp::getCompatiblePayload(int media_type, string& addr, int& port)
 		// implementation using a static payload number
 		// for dynamic ones.
 		
+		if(it->encoding_name == "telephone-event")
+		    continue;
+
 		int int_pt = getDynPayload(it->encoding_name,
 					   it->clock_rate);
 		
@@ -336,6 +337,9 @@ SdpPayload* AmSdp::getCompatiblePayload(int media_type, string& addr, int& port)
 
     if(payload){
 	
+	DBG("payload found: %i/%s/%i\n",
+	    payload->int_pt,payload->encoding_name.c_str(),payload->clock_rate);
+
 	if(m_it->conn.address.empty()){
 	    DBG("using global address: %s\n",conn.address.c_str());
 	    addr = conn.address;
