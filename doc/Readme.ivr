@@ -1,0 +1,90 @@
+
+*******************************
+* IVR plug-in README *
+*******************************
+
+
+Description:
+------------
+
+The 'ivr' plug-in enables SEMS to execute Python scripts 
+implementing some application. If you need more information
+concerning the developement of your own applications, have a
+look at the HOWTO under following link:
+http://www.iptel.org/howto/sems_application_development_tutorial
+
+Configuration file ivr.conf:
+----------------------------
+
+script_path: path to the script repository. All the scripts 
+             included in this path will be pre-loaded at startup.
+
+Note: Pre-loaded IVR scripts are registered and thus reachable
+      just like every other SEMS application plug-in.
+
+Warning: For security reasons, only pre-loaded scripts can 
+         be executed.
+
+
+How to select which Python script will be executed:
+---------------------------------------------------
+
+
+there are quite a few possibilities to call a certain script:
+
+* based on username:
+
+  - in ser.cfg:
+    t_write_unix("/tmp/sems_sock","ivr")
+
+  - in this case, the script is determined by the username 
+    found in the request URI.
+
+  - Ex: R-URI 123@sems.iptel.org starts <script_path>/123.py
+
+
+* based on the plugin name parameter:
+
+  - in ser.cfg:
+    t_write_unix("/tmp/sems_sock","whatEverScriptYouWantToUse")
+
+  - this will start <script_path>/whatEverScriptYouWantToUse.py, 
+    no matter which URI has been dialed.
+
+
+* based on the "P-Iptel-App" header:
+
+  - in ser.cfg:
+    t_write_unix("/tmp/sems_sock","sems")
+
+  - the SIP message should contain following header:
+    P-Iptel-App: whatEverScriptYouWantToUse
+
+  - this form will start the application/script mentioned in the header value.
+
+
+Troubleshooting:
+----------------
+
+- How to i know which scripts have been pre-loaded:
+
+  Look at the log file when running with full debug infos.
+  You will see at the beginning some similar entries:
+
+(25110) DEBUG: Ivr-Python: Python-Ivr logging started
+(25110) DEBUG: onLoad (Ivr.cpp:348): ** IVR compile time configuration:
+(25110) DEBUG: onLoad (Ivr.cpp:349): **     built with PYTHON support.
+(25110) DEBUG: onLoad (Ivr.cpp:352): **     Text-To-Speech enabled
+(25110) DEBUG: onLoad (Ivr.cpp:357): ** IVR run time configuration:
+(25110) DEBUG: onLoad (Ivr.cpp:358): **     script path:         '../apps/test_ivr'
+(25110) DEBUG: onLoad (Ivr.cpp:374): directory '../apps/test_ivr' opened
+(25110) INFO: onLoad (Ivr.cpp:401): Application script registered: test_ivr.
+
+  This means that the script 'test_ivr.py' has been loaded successfully.
+
+
+- My script won't load:
+
+  Look at the debug information present at start time, some libraries 
+  may be missing in which case you should set the proper PYTHONPATH
+  before starting SEMS.
