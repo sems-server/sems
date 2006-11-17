@@ -422,7 +422,7 @@ int AmSipDialog::sendRequest(const string& method,
     string m_hdrs = hdrs;
 
     if(hdl)
-	hdl->onSendRequest(method,content_type,body,m_hdrs);
+	hdl->onSendRequest(method,content_type,body,m_hdrs,cseq);
 
     msg = ":t_uac_dlg:" + AmConfig::ReplySocketName + "\n"
 	+ method + "\n"

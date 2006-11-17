@@ -79,7 +79,8 @@ public:
     virtual bool onSendRequest(const string& method, 
 			       const string& content_type,
 			       const string& body,
-			       string& hdrs);
+			       string& hdrs,
+				   unsigned int cseq);
 
     virtual bool onSendReply(const AmSipRequest& req,
 			     unsigned int  code,
@@ -344,7 +345,8 @@ public:
     virtual void onSendRequest(const string& method,
 			       const string& content_type,
 			       const string& body,
-			       string& hdrs);
+			       string& hdrs,
+				   unsigned int cseq);
 
     virtual void onSendReply(const AmSipRequest& req,
 			     unsigned int  code,

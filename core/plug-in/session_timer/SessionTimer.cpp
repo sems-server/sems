@@ -62,7 +62,8 @@ bool SessionTimer::onSipReply(const AmSipReply& reply)
 bool SessionTimer::onSendRequest(const string& method, 
 				 const string& content_type,
 				 const string& body,
-				 string& hdrs)
+				 string& hdrs,
+				 unsigned int cseq)
 {
 //   if (!session_timer_conf.getEnableSessionTimer())
 //     return "";

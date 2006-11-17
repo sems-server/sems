@@ -72,7 +72,8 @@ bool AmSessionEventHandler::onSipReply(const AmSipReply& reply)
 bool AmSessionEventHandler::onSendRequest(const string& method, 
 					  const string& content_type,
 					  const string& body,
-					  string& hdrs)
+					  string& hdrs,
+					  unsigned int cseq)
 {
     return false;
 }
@@ -144,7 +145,8 @@ void AmSession::setCallgroup(const string& cg) {
 
 void AmSession::addHandler(AmSessionEventHandler* sess_evh)
 {
-    ev_handlers.push_back(sess_evh);
+	if (sess_evh != NULL)
+		ev_handlers.push_back(sess_evh);
 }
 
 void AmSession::setInput(AmAudio* in)
@@ -636,9 +638,9 @@ int AmSession::acceptAudio(const string& body,
 // }
 
 void AmSession::onSendRequest(const string& method, const string& content_type,
-			      const string& body, string& hdrs)
+			      const string& body, string& hdrs, unsigned int cseq)
 {
-    CALL_EVENT_H(onSendRequest,method,content_type,body,hdrs);
+    CALL_EVENT_H(onSendRequest,method,content_type,body,hdrs,cseq);
 }
 
 void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code, 

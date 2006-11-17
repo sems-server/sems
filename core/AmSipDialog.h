@@ -43,7 +43,8 @@ public:
     virtual void onSendRequest(const string& method,
 			       const string& content_type,
 			       const string& body,
-			       string& hdrs)=0;
+			       string& hdrs,
+				   unsigned int cseq)=0;
 
     virtual void onSendReply(const AmSipRequest& req,
 			     unsigned int  code,
