@@ -20,6 +20,10 @@ http://sourceforge.net/project/showfiles.php?group_id=290)
 the unpacked lame source archive
 4) make in plug-in/mp3 directory
 
+By default, the mp3 module is not built (as you need to get lame first).
+If you want to build the mp3 module by default as well, remove mp3 
+from exclude_modules in apps/Makefile 
+
 Important Note:
 --------------
 Using the LAME encoding engine (or other mp3 encoding technology) in
