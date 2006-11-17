@@ -143,7 +143,12 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
     //t->reply_code = reply.code;
 
-    if(remote_tag.empty() && !reply.remote_tag.empty())
+	// rfc3261 12.1
+	// && method==INVITE
+	// Dialog established only by 101-199 or 2xx 
+	// responses to INVITE
+	if ((reply.code >= 101) && (reply.code < 300) &&  
+		(remote_tag.empty() && !reply.remote_tag.empty()))
 	remote_tag = reply.remote_tag;
 
     // allow route overwritting
