@@ -1,0 +1,11 @@
+announce_auth
+
+This is a sample application demonstrating how to place calls
+as UAC with authentication. realm, username and password as well as 
+number to dial from/to is configured in config file (see 
+etc/announce_auth.conf)
+
+After 5 seconds it calls a number and plays an announcement to it.
+It does that again every 10 minutes. 
+
+Please don't use SEMS for SPIT. Thanks.
