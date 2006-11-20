@@ -25,7 +25,7 @@ keys:
  - press '*' to connect the callee to the conference.
  - press '#' to drop the call.
 
-
+Dialout is only enabled if dialout_suffix is defined (see below).
 Configuration:
 --------------
 
