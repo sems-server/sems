@@ -72,11 +72,11 @@ int ConferenceFactory::onLoad()
 
     //RingTone = cfg.getParameter("ring_tone");
 
-//     DialoutSuffix = cfg.getParameter("dialout_suffix");
-//     if(DialoutSuffix.empty()){
-// 	WARN("No dialout_suffix has been configured in the conference plug-in:\n");
-// 	WARN("\t -> dial out will not be available\n");
-//     }
+	DialoutSuffix = cfg.getParameter("dialout_suffix");
+	if(DialoutSuffix.empty()){
+		WARN("No dialout_suffix has been configured in the conference plug-in:\n");
+		WARN("\t -> dial out will not be available\n");
+	}
 
     return 0;
 }
@@ -124,7 +124,7 @@ void ConferenceDialog::onStart()
 
 void ConferenceDialog::onSessionStart(const AmSipRequest& req)
 {
-    allow_dialout = (getHeader(req.hdrs,"P-Dialout") == "yes");
+    allow_dialout = !ConferenceFactory::DialoutSuffix.empty(); 
 
     setupAudio();
 }
@@ -394,7 +394,7 @@ void ConferenceDialog::onDtmf(int event, int duration)
 
 void ConferenceDialog::createDialoutParticipant(const string& uri_user)
 {
-    string uri = "sip:" + uri_user + "@" + dlg.domain;
+    string uri = "sip:" + uri_user + ConferenceFactory::DialoutSuffix;
 
     dialout_channel.reset(AmConferenceStatus::getChannel(getLocalTag(),getLocalTag()));
 
