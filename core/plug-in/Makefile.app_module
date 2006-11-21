@@ -47,7 +47,7 @@ install: $(lib_name) $(extra_install)
 $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
 
-$(lib_name): $(objs)  Makefile
+$(lib_name): $(objs) $(module_extra_objs) Makefile
 	g++ -o $(lib_name)  $(objs) $(module_extra_objs) $(ldflags) 
 
 ifeq ($(lib_full_name),$(MAKECMDGOALS))
