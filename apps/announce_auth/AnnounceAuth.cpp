@@ -26,7 +26,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Announcement.h"
+#include "AnnounceAuth.h"
 #include "AmConfig.h"
 #include "AmUtils.h"
 
@@ -108,7 +108,7 @@ AmSession* AnnounceAuthFactory::onInvite(const AmSipRequest& req)
     announce_file = AnnouncePath + AnnounceFile;
     
 end:
-	AnnouncementDialog* dlg = new AnnouncementDialog(announce_file,
+	AnnounceAuthDialog* dlg = new AnnounceAuthDialog(announce_file,
 													 auth_realm, 
 													 auth_user,
 													 auth_pwd);
@@ -123,7 +123,7 @@ end:
     return dlg;
 }
 
-AnnouncementDialog::AnnouncementDialog(const string& filename,
+AnnounceAuthDialog::AnnounceAuthDialog(const string& filename,
 									   const string& auth_realm, 
 									   const string& auth_user,
 									   const string& auth_pwd)
@@ -133,37 +133,37 @@ AnnouncementDialog::AnnouncementDialog(const string& filename,
 
 }
 
-AnnouncementDialog::~AnnouncementDialog()
+AnnounceAuthDialog::~AnnounceAuthDialog()
 {
 }
 
-void AnnouncementDialog::onSessionStart(const AmSipRequest& req)
+void AnnounceAuthDialog::onSessionStart(const AmSipRequest& req)
 {
-    DBG("AnnouncementDialog::onSessionStart\n");
+    DBG("AnnounceAuthDialog::onSessionStart\n");
     startSession();
 }
 
-void AnnouncementDialog::onSessionStart(const AmSipReply& rep)
+void AnnounceAuthDialog::onSessionStart(const AmSipReply& rep)
 {
-    DBG("AnnouncementDialog::onSessionStart (SEMS originator mode)\n");
+    DBG("AnnounceAuthDialog::onSessionStart (SEMS originator mode)\n");
     startSession();
 }
 
-void AnnouncementDialog::startSession(){
+void AnnounceAuthDialog::startSession(){
     if(wav_file.open(filename,AmAudioFile::Read))
-	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
+	throw string("AnnounceAuthDialog::onSessionStart: Cannot open file\n");
     
     setOutput(&wav_file);
 }
 
-void AnnouncementDialog::onBye(const AmSipRequest& req)
+void AnnounceAuthDialog::onBye(const AmSipRequest& req)
 {
     DBG("onBye: stopSession\n");
     setStopped();
 }
 
 
-void AnnouncementDialog::process(AmEvent* event)
+void AnnounceAuthDialog::process(AmEvent* event)
 {
 
     AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
@@ -191,7 +191,7 @@ void DialerThread::run() {
 		AmUAC::dialout("blibla", "announce_auth", 
 					   r_uri, from, from_uri, to);
 		// every 10 minutes
-		sleep(600);
+		sleep(100);
 
 	} 
 }

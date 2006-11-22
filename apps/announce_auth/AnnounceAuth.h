@@ -71,18 +71,18 @@ public:
     AmSession* onInvite(const AmSipRequest& req);
 };
 
-class AnnouncementDialog : public AmSession,
+class AnnounceAuthDialog : public AmSession,
 						   public CredentialHolder
 {
     AmAudioFile wav_file;
     string filename;
     
  public:
-	AnnouncementDialog(const string& filename,
+	AnnounceAuthDialog(const string& filename,
 					   const string& auth_realm, 
 					   const string& auth_user,
 					   const string& auth_pwd);
-    ~AnnouncementDialog();
+    ~AnnounceAuthDialog();
 
     void onSessionStart(const AmSipRequest& req);
     void onSessionStart(const AmSipReply& rep);
