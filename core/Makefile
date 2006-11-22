@@ -27,7 +27,7 @@ all:
 .PHONY: clean
 clean:
 	rm -f $(OBJS) $(DEPS) $(NAME) $(NAME).o
-	rm -f lib/apps/*.so lib/audio/*.so
+	rm -f lib/*.so
 	$(MAKE) -C $(PLUGIN_DIR) clean
 
 .PHONY: modules
