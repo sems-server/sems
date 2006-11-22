@@ -1,7 +1,7 @@
 plug_in_name = ilbc
-ILBC_DIR = ./iLBC_04
+ILBC_DIR = ./iLBC_rfc3951
 
-module_ldflags = -lm 
+module_ldflags = -lm -fPIC 
 module_extra_objs = $(ILBC_DIR)/libilbc.a
 # module_extra_objs =  $(ILBC_DIR)/anaFilter.o \
 # 			$(ILBC_DIR)/constants.o \
@@ -27,7 +27,7 @@ module_extra_objs = $(ILBC_DIR)/libilbc.a
 # 			$(ILBC_DIR)/StateSearchW.o \
 # 			$(ILBC_DIR)/syntFilter.o
 
-module_cflags  = -I$(ILBC_DIR)
+module_cflags  = -I$(ILBC_DIR) 
 
 extra_clean = clean_ilbclib
 
