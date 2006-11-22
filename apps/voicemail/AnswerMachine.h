@@ -37,9 +37,6 @@
 #include <string>
 using std::string;
 
-/* how many seconds to wait until call is accepted with 200 */
-#define DEFAULT_ACCEPT_DELAY 0
-
 class AmMail;
 
 class AnswerMachineFactory: public AmSessionFactory
@@ -54,7 +51,6 @@ public:
     static string AnnouncePath;
     static string DefaultAnnounce;
     static int    MaxRecordTime;
-    static int    AcceptDelay;
     static AmDynInvokeFactory* UserTimer;
 
 

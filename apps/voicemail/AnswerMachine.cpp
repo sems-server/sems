@@ -59,7 +59,6 @@ string AnswerMachineFactory::RecFileExt;
 string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
 int    AnswerMachineFactory::MaxRecordTime;
-int    AnswerMachineFactory::AcceptDelay;
 AmDynInvokeFactory* AnswerMachineFactory::UserTimer=0;
 
 int AnswerMachineFactory::loadEmailTemplates(const string& path)
@@ -132,8 +131,6 @@ int AnswerMachineFactory::onLoad()
 	ERROR("while loading email templates\n");
 	return -1;
     }
-
-    AcceptDelay = DEFAULT_ACCEPT_DELAY;
 
     UserTimer = AmPlugIn::instance()->getFactory4Di("user_timer");
     if(!UserTimer){
