@@ -8,6 +8,7 @@ modules = $(filter-out $(exclude_modules) \
 		$(wildcard *) )
 #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
 
+.DEFAULT_GOAL := all
 .PHONY: all
 all: modules
 
