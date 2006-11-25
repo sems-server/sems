@@ -152,13 +152,6 @@ void ConferenceDialog::setupAudio()
 	    DropSound.reset(0);
     }
 
-//     if(!ConferenceFactory::RingTone.empty()) {
-// 	RingTone.reset(new AmAudioFile());
-// 	if(RingTone->open(ConferenceFactory::RingTone,
-// 			  AmAudioFile::Read))
-// 	    RingTone.reset(0);
-//     }
-
 
     play_list.close();// !!!
 
