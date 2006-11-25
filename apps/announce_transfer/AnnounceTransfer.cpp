@@ -2,6 +2,7 @@
  * $Id: Announcement.cpp,v 1.7.8.4 2005/08/31 13:54:29 rco Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2006 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
  *
