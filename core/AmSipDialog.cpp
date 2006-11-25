@@ -398,6 +398,25 @@ int AmSipDialog::update(const string& hdrs)
     }	
 }
 
+int AmSipDialog::refer(const string& refer_to)
+{
+    switch(status){
+    case Connected:
+	return sendRequest("REFER", "", "", "Refer-To: "+refer_to);
+    case Disconnecting:
+    case Pending:
+      DBG("refer(): we are not yet connected."
+	    "(status=%i). do nothing!\n",status);
+
+      return 0;
+    default:
+      DBG("refer(): we are not connected "
+	  "(status=%i). do nothing!\n",status);
+      return 0;
+    }	
+
+}
+
 int AmSipDialog::cancel()
 {
     int cancel_cseq = -1;

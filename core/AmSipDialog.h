@@ -141,6 +141,7 @@ public:
     int invite(const string& hdrs,  
 	       const string& content_type,
 	       const string& body);
+	int refer(const string& refer_to);
     /**
      * @return true if a transaction could be found that
      *              matches the CANCEL's one.
