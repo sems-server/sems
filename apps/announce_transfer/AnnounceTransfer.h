@@ -1,5 +1,5 @@
 /*
- * $Id: Announcement.h,v 1.6.8.1 2005/06/01 12:00:24 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  * Copyright (C) 2006 iptego GmbH
@@ -26,8 +26,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _ANNOUNCEMENT_H_
-#define _ANNOUNCEMENT_H_
+#ifndef _ANNOUNCETRANSFER_H_
+#define _ANNOUNCETRANSFER_H_
 
 #include "AmSession.h"
 #include "AmConfigReader.h"

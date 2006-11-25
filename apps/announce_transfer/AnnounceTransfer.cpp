@@ -1,5 +1,5 @@
 /*
- * $Id: Announcement.cpp,v 1.7.8.4 2005/08/31 13:54:29 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  * Copyright (C) 2006 iptego GmbH
@@ -25,7 +25,6 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #include "AnnounceTransfer.h"
 #include "AmConfig.h"
 #include "AmUtils.h"
