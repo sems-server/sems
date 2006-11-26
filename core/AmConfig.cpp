@@ -1,5 +1,5 @@
 /*
- * $Id: AmConfig.cpp,v 1.18 2004/08/13 13:50:38 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

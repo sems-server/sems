@@ -1,5 +1,5 @@
 /*
- * $Id: AmAudio.h,v 1.16.2.5 2005/08/31 13:54:29 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

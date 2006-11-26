@@ -1,5 +1,5 @@
 /*
- * $Id: log.h,v 1.8 2004/09/28 10:56:26 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

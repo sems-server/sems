@@ -1,5 +1,5 @@
 /*
- * $Id: codecs.h,v 1.7.2.1 2005/03/01 17:24:44 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

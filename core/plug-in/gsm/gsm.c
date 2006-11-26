@@ -1,5 +1,5 @@
 /*
- * $Id: gsm.c,v 1.9.2.1 2005/08/25 06:55:13 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

@@ -1,5 +1,5 @@
 /*
- * $Id: LowcFE.h,v 1.2 2004/06/29 09:45:54 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

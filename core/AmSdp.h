@@ -1,5 +1,5 @@
 /*
- * $Id: AmSdp.h,v 1.11.2.2 2005/06/01 12:00:24 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

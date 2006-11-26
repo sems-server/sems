@@ -1,5 +1,5 @@
 /*
- * $Id: AmRtpReceiver.cpp,v 1.1.2.1 2005/03/01 17:20:08 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

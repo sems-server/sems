@@ -1,5 +1,5 @@
 /*
- * $Id: AmMultiPartyMixer.h,v 1.1.2.2 2005/03/10 15:22:55 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

@@ -1,5 +1,5 @@
 /*
- * $Id: AmSmtpClient.cpp,v 1.14 2005/01/19 13:15:45 sayer Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

@@ -1,5 +1,5 @@
 /*
- * $Id: Ivr.h,v 1.15.2.1 2005/09/02 13:47:46 rco Exp $
+ * $Id$
  * Copyright (C) 2002-2003 Fhg Fokus
  *
  * This file is part of sems, a free SIP media server.

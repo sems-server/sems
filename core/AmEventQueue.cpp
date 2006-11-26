@@ -1,5 +1,5 @@
 /*
- * $Id: AmEventQueue.cpp,v 1.4 2004/09/28 10:56:26 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

@@ -1,5 +1,5 @@
 /*
- * $Id: AmSession.cpp,v 1.42.2.10 2005/09/02 13:47:46 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2006 Stefan Sayer
  *

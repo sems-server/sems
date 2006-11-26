@@ -1,5 +1,5 @@
 /*
- * $Id: AmThread.h,v 1.9.2.1 2005/03/09 18:57:01 sayer Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

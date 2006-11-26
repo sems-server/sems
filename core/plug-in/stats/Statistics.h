@@ -1,5 +1,5 @@
 /*
- * $Id: Statistics.h,v 1.3 2005/06/17 10:41:10 sayer Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2005 Fhg Fokus
  *

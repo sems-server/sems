@@ -1,5 +1,5 @@
 /*
- * $Id: StatsUDPServer.h,v 1.1.2.2 2005/06/07 13:05:21 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2005 Fhg Fokus
  *

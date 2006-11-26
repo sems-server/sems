@@ -1,5 +1,5 @@
 /*
- * $Id: mp3.c,v 1.2 2004/06/16 12:30:46 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

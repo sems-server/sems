@@ -1,5 +1,5 @@
 /*
- * $Id: AmCmd.cpp,v 1.7.8.2 2005/08/25 06:55:12 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

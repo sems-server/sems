@@ -1,6 +1,6 @@
 /* 
 
-$Id: md5.c,v 1.1 2005/07/13 16:45:42 sayer Exp $
+$Id$
 
 MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
 

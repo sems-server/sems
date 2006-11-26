@@ -1,5 +1,5 @@
 /*
- * $Id: AmAdvancedAudio.h,v 1.1.2.2 2005/03/14 20:58:23 sayer Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

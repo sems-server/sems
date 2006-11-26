@@ -1,5 +1,5 @@
 /*
- * $Id: AnswerMachine.h,v 1.11.2.1 2005/08/31 13:54:30 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

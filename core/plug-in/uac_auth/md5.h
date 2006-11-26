@@ -1,5 +1,5 @@
 /* MD5.H - header file for MD5C.C
- * $Id: md5.h,v 1.1 2005/07/13 16:45:42 sayer Exp $
+ * $Id$
  */
 
 

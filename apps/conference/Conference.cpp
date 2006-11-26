@@ -1,5 +1,5 @@
 /*
- * $Id: Conference.cpp,v 1.7 2004/06/29 09:45:54 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

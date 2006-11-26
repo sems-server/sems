@@ -1,5 +1,5 @@
 /*
- * $Id: AmDtmfDetector.cpp,v 1.1.2.1 2005/06/01 12:00:24 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2005 Andriy I Pylypenko
  *

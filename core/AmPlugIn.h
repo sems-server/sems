@@ -1,5 +1,5 @@
 /*
- * $Id: AmPlugIn.h,v 1.9.2.2 2005/04/20 11:56:28 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

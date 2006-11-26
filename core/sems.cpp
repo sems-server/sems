@@ -1,5 +1,5 @@
 /*
- * $Id: sems.cpp,v 1.6.2.4 2005/04/13 10:57:09 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

@@ -1,5 +1,5 @@
 /*
- * $Id: AmSmtpClient.h,v 1.5 2004/08/16 11:11:30 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

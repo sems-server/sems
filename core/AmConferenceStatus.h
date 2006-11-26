@@ -1,5 +1,5 @@
 /*
- * $Id: AmConferenceStatus.h,v 1.1.2.1 2005/03/07 21:34:45 sayer Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

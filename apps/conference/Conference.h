@@ -1,5 +1,5 @@
 /*
- * $Id: Conference.h,v 1.6 2005/06/17 10:41:06 sayer Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

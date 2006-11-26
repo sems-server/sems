@@ -1,5 +1,5 @@
 /*
- * $Id: AmCmd.h,v 1.11.8.2 2005/08/03 21:00:30 sayer Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

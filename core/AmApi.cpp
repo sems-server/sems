@@ -1,5 +1,5 @@
 /*
- * $Id: AmApi.cpp,v 1.9.2.1 2005/08/03 21:00:30 sayer Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

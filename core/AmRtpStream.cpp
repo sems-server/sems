@@ -1,5 +1,5 @@
 /*
- * $Id: AmRtpStream.cpp,v 1.59.2.7 2005/09/02 13:47:46 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

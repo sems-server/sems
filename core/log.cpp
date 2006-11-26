@@ -1,5 +1,5 @@
 /*
- * $Id: log.cpp,v 1.3 2003/11/25 16:01:39 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

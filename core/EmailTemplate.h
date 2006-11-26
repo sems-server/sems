@@ -1,5 +1,5 @@
 /*
- * $Id: EmailTemplate.h,v 1.2 2004/05/11 09:53:41 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

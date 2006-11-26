@@ -1,5 +1,5 @@
 /*
- * $Id: AnnounceB2B.h,v 1.6 2003/11/25 16:19:18 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

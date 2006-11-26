@@ -1,5 +1,5 @@
 /*
- * $Id: AmPlugIn.cpp,v 1.10.2.4 2005/08/31 13:54:29 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
