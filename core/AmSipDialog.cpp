@@ -302,8 +302,6 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
       AmSession::getNewId() + "\n";
       if(!hdrs.empty())
 	msg += hdrs;
-      else 
-	msg +=  "\n";
 
       msg += ".\n.\n\n";
     
