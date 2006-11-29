@@ -1,3 +1,5 @@
+COREPATH =../..
+
 plug_in_name = session_timer
 
 module_ldflags = 

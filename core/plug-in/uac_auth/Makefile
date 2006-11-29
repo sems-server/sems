@@ -1,3 +1,4 @@
+COREPATH =../..
 plug_in_name = uac_auth
 
 module_extra_objs = md5.o

@@ -9,6 +9,9 @@ app_module_dir = $(COREPATH)/lib
 lib_name = $(plug_in_name).so
 lib_full_name = $(app_module_dir)/$(lib_name)
 
+module_conf_files =  $(wildcard etc/*.conf)
+AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
+
 srcs     = $(wildcard *.cpp)
 hrds     = $(wildcard *.h)
 objs     = $(srcs:.cpp=.o) 
@@ -27,17 +30,37 @@ module_package: $(extra_target)
 
 
 .PHONY: clean
-clean:
+clean: $(extra_clean)
 	-@rm -f $(objs) $(depends) $(lib_name)
 
 .PHONY: deps
 deps: $(depends)
 
 .PHONY: install
-install: $(lib_name) $(extra_install)
+install: all $(extra_install)
 	mkdir -p $(modules-prefix)/$(modules-dir)
 	$(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$(lib_name) ; \
 	$(INSTALL-MODULES) $(lib_name) $(modules-prefix)/$(modules-dir)
+
+.PHONY: install-cfg
+install-cfg: 
+	mkdir -p $(cfg-prefix)/$(cfg-dir)etc
+	-@for r in $(module_conf_files); do \
+			echo installing $$r ;  \
+			$(INSTALL-TOUCH) $(cfg-prefix)/$(cfg-dir)$$r ; \
+			$(INSTALL-CFG) $$r $(cfg-prefix)/$(cfg-dir)$$r; \
+	done
+
+.PHONY: $(plug_in_name)_audio
+$(plug_in_name)_audio: $(audio-prefix)/$(audio-dir)
+	mkdir -p $(audio-prefix)/$(audio-dir)$(plug_in_name)
+	-@for f in $(AUDIO_FILES) ; do \
+		if [ -n "wav/$$f" ]; then \
+			$(INSTALL-TOUCH) $(audio-prefix)/$(audio-dir)$(plug_in_name)/$$f; \
+			$(INSTALL-AUDIO) wav/$$f $(audio-prefix)/$(audio-dir)$(plug_in_name)/$$f; \
+		fi ; \
+	done
+
 
 %.d: %.cpp Makefile $(COREPATH)/plug-in/Makefile.app_module
 	g++ -MM $< $(cflags) > $@

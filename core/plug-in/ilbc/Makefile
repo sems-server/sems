@@ -1,3 +1,5 @@
+COREPATH =../..
+
 plug_in_name = ilbc
 ILBC_DIR = ./iLBC_rfc3951
 

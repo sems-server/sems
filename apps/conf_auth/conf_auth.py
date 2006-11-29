@@ -117,7 +117,7 @@ class IvrDialog(IvrDialogBase):
 		elif self.state == collect:
 			self.setTimer(HINT_TIMER,  HINT_TIMEOUT)
 
-	def onTimer(self, id):
+ 	def onTimer(self, id):
 		if id == HINT_TIMER and self.state == collect:
 			self.enqueue(self.hint_msg, None)
 		elif id == CONF_TIMER and self.state == connected:

@@ -68,8 +68,9 @@ install: all mk-install-dirs \
 	install-cfg \
 	install-bin \
 	install-modules \
-	install-doc
-	#install-audio \
+	install-doc \
+	install-modules-cfg \
+	install-audio \
 
 # note: on solaris 8 sed: ? or \(...\)* (a.s.o) do not work
 install-cfg: $(cfg-prefix)/$(cfg-dir)
@@ -87,9 +88,11 @@ install-bin: $(bin-prefix)/$(bin-dir)
 		$(INSTALL-TOUCH) $(bin-prefix)/$(bin-dir)$(NAME)
 		$(INSTALL-BIN) $(NAME) $(bin-prefix)/$(bin-dir)
 
-install-modules: $(PLUGIN_DIR) $(modules-prefix)/$(modules-dir)audio \
-		 $(modules-prefix)/$(modules-dir)apps
+install-modules: $(PLUGIN_DIR) $(modules-prefix)/$(modules-dir)
 	$(MAKE) -C $(PLUGIN_DIR) install
+
+install-modules-cfg: $(PLUGIN_DIR) $(modules-prefix)/$(modules-dir)
+	$(MAKE) -C $(PLUGIN_DIR) install-cfg
 
 install-audio: $(audio-prefix)/$(audio-dir)
 	-@for f in $(AUDIO_FILES) ; do \

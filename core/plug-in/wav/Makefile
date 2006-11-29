@@ -1,3 +1,4 @@
+COREPATH =../..
 plug_in_name = wav
 
 module_ldflags =

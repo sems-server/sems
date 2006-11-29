@@ -33,6 +33,9 @@ install: $(lib_name) $(extra_install)
 	$(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$(lib_name) ; \
 	$(INSTALL-MODULES) $(lib_name) $(modules-prefix)/$(modules-dir)
 
+.PHONY: install-cfg
+install-cfg : $(extra_install_cfg)
+
 %.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module
 	gcc -MM $< $(cflags) > $@
 

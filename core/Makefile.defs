@@ -56,6 +56,7 @@ audio-prefix = $(basedir)$(prefix)
 
 # dirs
 cfg-dir = etc/sems/
+
 bin-dir = sbin/
 modules-dir = lib/sems/plug-in/
 audio-dir = lib/sems/audio/

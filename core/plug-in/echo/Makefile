@@ -1,3 +1,4 @@
+COREPATH =../..
 plug_in_name = echo
 
 module_ldflags =

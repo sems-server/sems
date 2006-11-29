@@ -3,7 +3,7 @@ plug_in_name = mp3
 COREPATH ?=../../core
 LAME_DIR = ./lame-3.96.1
 
-module_extra_objs =  -lmp3lame 
+module_ldflags =  -lmp3lame 
 module_cflags  = -I/usr/include/lame
 
 # if you want to build lame from source use these 

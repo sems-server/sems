@@ -1,5 +1,6 @@
 # generic Makefile for ivr applications
 
+include ../../core/Makefile.defs
 include ../ivr/Makefile.defs
 
 # 
@@ -18,21 +19,36 @@ LIB_PERMISSIONS="644"
 PYCHECKERARGS = --stdlib
 PYCHECKERDOCARGS = --classdoc --funcdoc
 
+module_conf_files =  $(wildcard etc/*)
+
 .PHONY: all
 all: clean compile
 
+.PHONY: clean
 clean:
 	find . -iname "*\.pyc" -o -iname "*\.py~" | xargs rm -f
 	rm -f ${TARBALL_PREFIX}*.tar.gz
 
+.PHONY: compile
 compile: 
 	python${PYTHON_VERSION} ../ivr/py_comp -q .
 
+.PHONY: install
 install: all
 	install -d ${BASEDIR}/${LIB_INSTALLDIR}
 	install -m ${LIB_PERMISSIONS} -o ${OWNER} -g ${GROUP} *.pyc ${BASEDIR}/${LIB_INSTALLDIR}
 	install -d ${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
 	install -m ${LIB_PERMISSIONS} -o ${OWNER} -g ${GROUP} ${LIBDIR}/*.pyc ${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
+
+.PHONY: install-cfg
+install-cfg: 
+	mkdir -p $(cfg-prefix)/$(cfg-dir)etc
+	-@for r in $(module_conf_files); do \
+			echo installing $$r ;  \
+			$(INSTALL-TOUCH) $(cfg-prefix)/$(cfg-dir)$$r ; \
+			$(INSTALL-CFG) $$r $(cfg-prefix)/$(cfg-dir)$$r; \
+	done
+
 
 uninstall: 
 	@echo "please remove the files from ${LIB_INSTALLDIR} manually."

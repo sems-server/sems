@@ -1,3 +1,5 @@
+COREPATH =../..
+
 plug_in_name = stats
 
 module_ldflags = 

@@ -42,3 +42,13 @@ install:
 			$(MAKE) -C $$r install; \
 		fi ; \
 	done
+
+.PHONY: install-cfg
+install-cfg: $(cfg-prefix)/$(cfg-dir)
+	-@for r in $(modules) "" ; do \
+		if [ -n "$$r" ]; then \
+			echo "" ; \
+			echo "" ; \
+			COREPATH=../$(COREPATH) $(MAKE) -C $$r install-cfg; \
+		fi ; \
+	done

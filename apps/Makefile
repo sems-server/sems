@@ -32,11 +32,24 @@ modules:
 	done 
 
 .PHONY: install
-install:
+install: install-bin install-cfg
+
+.PHONY: install-bin
+install-bin:
 	-@for r in $(modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
 			COREPATH=../$(COREPATH) $(MAKE) -C $$r install; \
+		fi ; \
+	done
+
+.PHONY: install-cfg
+install-cfg: $(cfg-prefix)/$(cfg-dir)
+	-@for r in $(modules) "" ; do \
+		if [ -n "$$r" ]; then \
+			echo "" ; \
+			echo "" ; \
+			COREPATH=../$(COREPATH) $(MAKE) -C $$r install-cfg; \
 		fi ; \
 	done

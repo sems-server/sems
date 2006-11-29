@@ -13,7 +13,7 @@
 # example: option=value # i like this option
 #
 
-plugin_config_path=etc/
+plugin_config_path=/usr/local/etc/sems/etc/
 
 # optional parameter: fork={yes|no}
 # 

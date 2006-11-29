@@ -44,12 +44,21 @@ module_cflags  = \
 
 extra_target  = python_files
 extra_install = install_python_files
+extra_clean = clean_python_files
 
 py_src = $(notdir $(wildcard py/*.py))
 py_obj = $(py_src:.py=.pyc)
 
 
 ifeq (all,$(MAKECMDGOALS))
+.PHONY: python_files
+python_files: 
+	python$(PY_VER) py_comp -l -q py &&\
+	cp py/*.pyc $(COREPATH)/lib
+
+endif
+
+ifeq (install,$(MAKECMDGOALS))
 .PHONY: python_files
 python_files: 
 	python$(PY_VER) py_comp -l -q py &&\
@@ -75,3 +84,7 @@ install_python_files: $(modules-prefix)/$(modules-dir)
 		fi ; \
 	done
 
+.PHONY: clean_python_files
+clean_python_files:
+	rm -f py/*.pyc
+	rm -f $(COREPATH)/lib/*.pyc

@@ -62,7 +62,7 @@ int EarlyAnnounceFactory::onLoad()
 
     string announce_file = AnnouncePath + AnnounceFile;
     if(!file_exists(announce_file)){
-	ERROR("default file for ann_b2b module does not exist ('%s').\n",
+	ERROR("default file for " MOD_NAME " module does not exist ('%s').\n",
 	      announce_file.c_str());
 	return -1;
     }
