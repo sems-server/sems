@@ -234,7 +234,7 @@ static int MP3_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, l
 {
     int final_samples;
 
-    char  mp3buffer[7200];    
+    unsigned char  mp3buffer[7200];    
     DBG("MP3: close. \n");
     if(options == AMCI_WRONLY) {
 	if ((final_samples = lame_encode_flush((lame_global_flags *)h_codec,mp3buffer, 7200))) {
