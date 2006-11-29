@@ -8,17 +8,19 @@ the extension "MP3" or "mp3" are recorded as mp3 if possible.
 
 Quickstart
 ----------
-cd plug-in/mp3 ; wget http://switch.dl.sourceforge.net/sourceforge/lame/lame-3.96.1.tar.gz ;
-tar xzvf lame-3.96.tar.gz ; make
+* install lame (e.g. emerge lame) 
+* cd apps/mp3 ; make
 
 Installation
 ------------
 1) Get lame from lame.sourceforge.net (
 http://sourceforge.net/project/showfiles.php?group_id=290)
-2) Unpack the archive
-3) edit LAME_DIR in mp3 plug-in Makefile to point to the location of
-the unpacked lame source archive
-4) make in plug-in/mp3 directory
+2) Unpack the archive; make ; make install 
+3) make in plug-in/mp3 directory
+
+If it complains about not being able to find lame.h, 
+edit LAME_DIR in mp3 plug-in Makefile to point to the location of
+the unpacked lame source archive and re-make
 
 By default, the mp3 module is not built (as you need to get lame first).
 If you want to build the mp3 module by default as well, remove mp3 
