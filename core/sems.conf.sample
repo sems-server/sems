@@ -49,7 +49,7 @@ ser_socket_name=/tmp/ser_sock
 # 
 # - sets the path to the plug-ins
 # - may be absolute or relative to CWD
-plugin_path=lib
+plugin_path=/usr/local/lib/sems/plug-in
 
 # optional parameter: smtp_server=<hostname>
 #
@@ -78,3 +78,4 @@ rtp_high_port=60000
 #   parameter to 1 (default), on MP systems to a higher
 #   value
 media_processor_threads=1
+
