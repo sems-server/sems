@@ -450,7 +450,26 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = 
+INPUT                  = amci etc lib plug-in rpm rtp scripts . \
+				plug-in/echo \
+				plug-in/gsm \
+				plug-in/ilbc \
+				plug-in/session_timer \
+				plug-in/stats \
+				plug-in/uac_auth \
+				plug-in/wav \
+				../apps/ann_b2b \
+				../apps/announce_auth \
+				../apps/announce_transfer \
+				../apps/announcement \
+				../apps/conf_auth \
+				../apps/conference \
+				../apps/early_announce \
+				../apps/ivr \
+				../apps/mailbox \
+				../apps/mp3 \
+				../apps/voicemail
+
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
