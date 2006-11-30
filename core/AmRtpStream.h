@@ -59,8 +59,7 @@ struct amci_payload_t;
 class AmAudio;
 class AmSession;
 class SdpPayload;
-
-typedef map<unsigned int, AmRtpPacket, ts_less> JitterBuffer;
+class AmJitterBuffer;
 
 /**
  * \brief RTP implementation
@@ -123,10 +122,6 @@ protected:
     unsigned int   r_ssrc;
     bool           r_ssrc_i;
 
-    unsigned int   jitter_delay;
-    unsigned int   max_delay;
-    
-
     /** symmetric RTP */
     bool              passive;      // passive mode ?
     AmSharedVar<bool> first_recved; // first packet received ?
@@ -134,9 +129,8 @@ protected:
     /** Payload type for telephone event */
     auto_ptr<const SdpPayload> telephone_event_pt;
 
-
-    JitterBuffer    jitter_buf;
-    AmMutex         jitter_mut;
+    AmJitterBuffer	*m_main_jb;
+    AmJitterBuffer	*m_telephone_event_jb;
 
     AmSession*         session;
 
@@ -144,7 +138,8 @@ protected:
     void setLocalPort();
 
     /* get next packet in buffer */
-    int nextPacket(AmRtpPacket& p);
+    int nextAudioPacket(AmRtpPacket& p, unsigned int ts);
+    void initJitterBuffer(unsigned int frame_size);
 
 public:
 
@@ -157,7 +152,7 @@ public:
 	      unsigned int   size );
 
     int receive( unsigned char* buffer, unsigned int size,
-		 unsigned int& ts, unsigned int audio_buffer_ts);
+		 unsigned int audio_buffer_ts);
     
     /** Allocates resources for future use of RTP. */
     AmRtpStream(AmSession* _s=0);

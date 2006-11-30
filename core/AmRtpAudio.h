@@ -52,7 +52,7 @@ class AmRtpAudio: public AmRtpStream, public AmAudio
     bool         last_check_i;
     bool         send_int;
 
-    unsigned int last_ts;
+    unsigned int m_audio_last_ts;
     bool         last_ts_i;
 
     bool         send_only;

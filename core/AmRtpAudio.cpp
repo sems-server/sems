@@ -68,39 +68,41 @@ bool AmRtpAudio::sendIntReached()
 int AmRtpAudio::receive(unsigned int audio_buffer_ts) 
 {
     int size;
-    unsigned int ts;
 
-    while(true) {
-	size = AmRtpStream::receive((unsigned char*)samples, 
-				    (unsigned int)AUDIO_BUFFER_SIZE,ts,
-				    audio_buffer_ts);
-	if(size <= 0)
-	    break;
-	
-	if(send_only){
-	    last_ts_i = false;
-	    continue;
+    size = AmRtpStream::receive((unsigned char*)samples, 
+				(unsigned int)AUDIO_BUFFER_SIZE,/*ts,*/
+				audio_buffer_ts);
+    if (size < 0)
+	return size;
+    
+    if(send_only){
+	last_ts_i = false;
+	return 0;
+    }
+
+    if (size == 0)
+    {
+	if (last_ts_i)
+	{
+	    int size = conceal_loss(audio_buffer_ts - m_audio_last_ts);
+	    if (size > 0)
+	    {
+		playout_buffer->direct_write(audio_buffer_ts,
+					     (ShortSample*)samples.back_buffer(),
+					     PCM16_B2S(size));
+	    }
 	}
-
-	if(!last_ts_i){
-	    last_ts = ts;
+	else
+	    return 0;
+    }
+    else
+    {
+	if (!last_ts_i) {
 	    last_ts_i = true;
 	}
 
-	if(ts_less()(last_ts,ts) && !begin_talk
-	   && (ts-last_ts <= PLC_MAX_SAMPLES)) {
-	    
-	    int l_size = conceal_loss(ts - last_ts);
- 	    if(l_size>0){
-
-  		playout_buffer->direct_write(last_ts,
-					     (ShortSample*)samples.back_buffer(),
-					     PCM16_B2S(l_size));
- 	    }
-	}
-
 	size = decode(size);
-	if(size <= 0){
+	if (size <= 0) {
 	    ERROR("decode() returned %i\n",size);
 	    return -1;
 	}
@@ -108,12 +110,11 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
 	if(use_default_plc)
 	    add_to_history(size);
 
-	playout_buffer->write(audio_buffer_ts, ts,
+	playout_buffer->direct_write(audio_buffer_ts, /*ts,*/
 			      (ShortSample*)((unsigned char*)samples),
 			      PCM16_B2S(size));
-	
-	last_ts = ts + PCM16_B2S(size);
     }
+    m_audio_last_ts = audio_buffer_ts;
     
     return size;
 }
@@ -146,6 +147,7 @@ void AmRtpAudio::init(const SdpPayload* sdp_payload)
     DBG("AmRtpAudio::init(...)\n");
     AmRtpStream::init(sdp_payload);
     fmt.reset(new AmAudioRtpFormat(int_payload, format_parameters));
+    initJitterBuffer(getFrameSize());
 
     amci_codec_t* codec = fmt->getCodec();
     use_default_plc = !(codec && codec->plc);
