@@ -42,12 +42,6 @@ RingBuffer<T>::RingBuffer(unsigned int size)
 }
 
 template <typename T>
-RingBuffer<T>::~RingBuffer()
-{
-    delete [] m_buffer;
-}
-
-template <typename T>
 void RingBuffer<T>::get(unsigned int idx, T *dest)
 {
     memcpy(dest, &m_buffer[idx % m_size], sizeof(T));

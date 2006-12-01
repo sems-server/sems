@@ -67,4 +67,11 @@ public:
     bool get(AmRtpPacket &, unsigned int ts);
 };
 
+template <typename T>
+RingBuffer<T>::~RingBuffer()
+{
+    delete [] m_buffer;
+}
+
+
 #endif // _AmJitterBuffer_h_
