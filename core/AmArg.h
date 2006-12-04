@@ -6,6 +6,13 @@
 #include <vector>
 using std::vector;
 
+/** base for Objects as @see AmArg parameter*/
+class ArgObject {
+ public:
+	ArgObject() { }
+	virtual ~ArgObject() { }
+};
+
 /** \brief variable type argument for DynInvoke APIs */
 class AmArg
 {
@@ -16,7 +23,8 @@ public:
 
 	Int,
 	Double,
-	CStr
+	CStr,
+	AObject
     };
 
 private:
@@ -29,6 +37,7 @@ private:
 	int         v_int;
 	double      v_double;
 	const char* v_cstr;
+	ArgObject* v_obj;
     };
 
 public:
@@ -39,6 +48,7 @@ public:
 	case Int: v_int = v.v_int; break;
 	case Double: v_double = v.v_double; break;
 	case CStr: v_cstr = v.v_cstr; break;
+	case AObject: v_obj = v.v_obj; break;
 	default: assert(0);
 	}
     }
@@ -58,11 +68,18 @@ public:
 	  v_cstr(v)
     {}
 
+    AmArg(ArgObject* v)
+	: type(AObject),
+	  v_obj(v)
+    {}
+
+
     short getType() const { return type; }
 
     int         asInt()    const { return v_int; }
     double      asDouble() const { return v_double; }
     const char* asCStr()   const { return v_cstr; }
+	ArgObject*  asObject() const { return v_obj; }
 };
 
 /** \brief array of variable args for DI APIs*/
