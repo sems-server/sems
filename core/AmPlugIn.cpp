@@ -2,6 +2,7 @@
  * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2006 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -28,6 +29,7 @@
 #include "AmPlugIn.h"
 #include "AmConfig.h"
 #include "AmApi.h"
+#include "AmInterfaceHandler.h"
 
 #include "amci/amci.h"
 #include "amci/codecs.h"
@@ -130,6 +132,17 @@ int AmPlugIn::load(const string& directory)
 	if(err)
 	    break;
     }
+
+	// load SIPEventHandlers 
+    for(map<string,AmSIPEventHandler*>::iterator it = name2sipeh.begin();
+	it != name2sipeh.end(); it++){
+	err = it->second->onLoad();
+	if(err)
+	    break;
+	// register for receiving replys 
+	AmReplyHandler::get()->registerReplyHandler(it->second);
+    }
+
     
     map<string,AmSessionFactory*> apps(name2app);
     for(map<string,AmSessionFactory*>::iterator it = apps.begin();
@@ -275,6 +288,14 @@ AmDynInvokeFactory* AmPlugIn::getFactory4Di(const string& name)
   return 0;
 }
 
+AmSIPEventHandler* AmPlugIn::getFactory4SIPeh(const string& name)
+{
+  map<string,AmSIPEventHandler*>::iterator it = name2sipeh.find(name);
+  if(it != name2sipeh.end())
+    return it->second;
+  return 0;
+}
+
 int AmPlugIn::loadAudioPlugIn(amci_exports_t* exports)
 {
     if(!exports){
@@ -376,6 +397,28 @@ int AmPlugIn::loadDiPlugIn(AmPluginFactory* f)
     return -1;
 }
 
+int AmPlugIn::loadSIPehPlugIn(AmPluginFactory* f)
+{
+    AmSIPEventHandler* sf = dynamic_cast<AmSIPEventHandler*>(f);
+    if(!sf){
+        ERROR("invalid SIP event handler plug-in!\n");
+        goto error;
+    }
+
+    if(name2sipeh.find(sf->getName()) != name2sipeh.end()){
+        ERROR("sip event handler component '%s' already loaded !\n",
+			  sf->getName().c_str());
+        goto error;
+    }
+      
+    name2sipeh.insert(std::make_pair(sf->getName(),sf));
+    DBG("sip event handler component '%s' loaded.\n",sf->getName().c_str());
+
+    return 0;
+
+ error:
+    return -1;
+}
 
 int AmPlugIn::addCodec(amci_codec_t* c)
 {

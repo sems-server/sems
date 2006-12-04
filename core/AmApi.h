@@ -2,6 +2,7 @@
  * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2006 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -29,6 +30,7 @@
 
 #include "AmThread.h"
 #include "AmSipRequest.h"
+#include "AmSipReply.h"
 #include "AmConfig.h"
 #include "AmArg.h"
 
@@ -141,8 +143,40 @@ public:
      *   processing as it would block the server.
      */
     virtual AmSession* onInvite(const AmSipRequest& req)=0;
+
+    /**
+     * method to receive an Event that is posted
+	 * to  the factory
+	 *
+     * Warning:
+     *   This method should not make any expensive
+     *   processing as it would block the thread 
+	 *   posting the event!
+     */
+    virtual void postEvent(AmEvent* ev);	
+
 };
 
+/** \brief Interface for plugins that implement session-less 
+ *     UA behaviour (e.g. registrar client, event notification 
+ *     client)
+ */
+class AmSIPEventHandler : public AmPluginFactory 
+{
+
+public:
+	AmSIPEventHandler(const string& name);
+	virtual ~AmSIPEventHandler() { }
+
+	/** will be called on incoming replies which do 
+	 *  not belong to a dialog of a session in the 
+	 *  SessionContainer.
+	 *
+	 *  @return true if reply was handled by plugin, false 
+	 *          otherwise
+	 */
+	virtual bool onSipReply(const AmSipReply& rep) = 0;
+};
 
 #if  __GNUC__ < 3
 #define EXPORT_FACTORY(fctname,class_name,args...) \
@@ -180,6 +214,12 @@ typedef void* (*FactoryCreate)();
 
 #define EXPORT_PLUGIN_CLASS_FACTORY(class_name,app_name) \
             EXPORT_FACTORY(FACTORY_PLUGIN_CLASS_EXPORT,class_name,app_name)
+
+#define FACTORY_SIP_EVENT_HANDLER_EXPORT     sip_evh_factory_create
+#define FACTORY_SIP_EVENT_HANDLER_EXPORT_STR XSTR(FACTORY_SIP_EVENT_HANDLER_EXPORT)
+
+#define EXPORT_SIP_EVENT_HANDLER_FACTORY(class_name,app_name) \
+            EXPORT_FACTORY(FACTORY_SIP_EVENT_HANDLER_EXPORT,class_name,app_name)
 
 #endif
 // Local Variables:

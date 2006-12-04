@@ -2,6 +2,7 @@
  * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2006 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -55,7 +56,18 @@ void AmSessionFactory::configureSession(AmSession* sess) {
     //SessionTimer::sess->configureSessionTimer(mod_conf);
 }
 
+void AmSessionFactory::postEvent(AmEvent* ev) {
+	ERROR("unhandled Event in %s module\n", getName().c_str());
+	delete ev;
+}
+
 AmSessionEventHandlerFactory::AmSessionEventHandlerFactory(const string& name)
 	: AmPluginFactory(name) 
 {
 }
+
+AmSIPEventHandler::AmSIPEventHandler(const string& name) 
+    : AmPluginFactory(name) 
+{
+}
+

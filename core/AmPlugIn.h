@@ -2,6 +2,7 @@
  * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2006 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -39,6 +40,7 @@ class AmPluginFactory;
 class AmSessionFactory;
 class AmSessionEventHandlerFactory;
 class AmDynInvokeFactory;
+class AmSIPEventHandler;
 
 struct amci_exports_t;
 struct amci_codec_t;
@@ -69,6 +71,7 @@ private:
 
     map<string,AmSessionEventHandlerFactory*> name2seh;
     map<string,AmDynInvokeFactory*> name2di;
+    map<string,AmSIPEventHandler*> name2sipeh;
 
     int dynamic_pl; // range: 96->127, see RFC 1890
     
@@ -81,6 +84,7 @@ private:
     int loadAppPlugIn(AmPluginFactory* cb);
     int loadSehPlugIn(AmPluginFactory* cb);
     int loadDiPlugIn(AmPluginFactory* cb);
+	int loadSIPehPlugIn(AmPluginFactory* f);
 
     int addCodec(amci_codec_t* c);
     int addPayload(amci_payload_t* p);
@@ -144,13 +148,15 @@ private:
      */
     AmDynInvokeFactory* getFactory4Di(const string& name);
 
+    /**
+     * SIP event handler lookup function
+     * @param name application name
+     * @return NULL if failed (-> handler not found).
+     */
+    AmSIPEventHandler* getFactory4SIPeh(const string& name);
+
     /** @return true if this record has been inserted. */
     bool registerFactory4App(const string& app_name, AmSessionFactory* f);
 };
 
 #endif
-
-// Local Variables:
-// mode:C++
-// End:
-
