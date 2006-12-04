@@ -33,7 +33,7 @@
 #include "sems.h"
 #include "log.h"
 
-#include "../../core/plug-in/uac_auth/UACAuth.h"
+#include "ampi/UACAuthAPI.h"
 #include "AmUAC.h"
 #include "AmPlugIn.h"
 
@@ -128,9 +128,13 @@ AnnounceAuthDialog::AnnounceAuthDialog(const string& filename,
 									   const string& auth_user,
 									   const string& auth_pwd)
     : filename(filename), 
-	  CredentialHolder(auth_realm, auth_user, auth_pwd)
+	  credentials(auth_realm, auth_user, auth_pwd)
 {
 
+}
+
+UACAuthCred* AnnounceAuthDialog::getCredentials() {
+	return &credentials;
 }
 
 AnnounceAuthDialog::~AnnounceAuthDialog()

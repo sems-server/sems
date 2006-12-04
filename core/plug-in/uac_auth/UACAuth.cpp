@@ -28,12 +28,40 @@
 
 #include "UACAuth.h"
 #include "AmSipRequest.h"
+#include "AmUtils.h"
+
 #include <map>
 using std::map;
 
 #define MOD_NAME "uac_auth"
 
 EXPORT_SESSION_EVENT_HANDLER_FACTORY(UACAuthFactory, MOD_NAME);
+EXPORT_PLUGIN_CLASS_FACTORY(UACAuthFactory, MOD_NAME);
+
+UACAuthFactory* UACAuthFactory::_instance=0;
+
+UACAuthFactory* UACAuthFactory::instance()
+{
+    if(!_instance)
+	_instance = new UACAuthFactory(MOD_NAME);
+    return _instance;
+}
+
+void UACAuthFactory::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
+{
+    if(method == "getHandler"){
+		CredentialHolder* c = dynamic_cast<CredentialHolder*>(args.get(0).asObject());
+		DialogControl* cc = dynamic_cast<DialogControl*>(args.get(1).asObject());
+
+		if ((c!=NULL)&&(cc!=NULL)) {
+			ret.push(getHandler(cc->getDlg(), c));
+		} else {
+		}
+    }
+    else
+	throw AmDynInvoke::NotImplemented(method);
+}
+
 
 int UACAuthFactory::onLoad()
 {
@@ -47,24 +75,25 @@ bool UACAuthFactory::onInvite(const AmSipRequest& req)
 
 AmSessionEventHandler* UACAuthFactory::getHandler(AmSession* s)
 {
-	AmSessionEventHandler* res = NULL;
-
-	
 	CredentialHolder* c = dynamic_cast<CredentialHolder*>(s);
 	if (c != NULL) {
-		res = new UACAuth(s, c->getCredentials());
+		return getHandler(&s->dlg, c);
 	} else {
 		DBG("no credentials for new session. not enabling auth session handler.\n");
 	}
 
-	return res;
+	return NULL;
 }
 
+AmSessionEventHandler* UACAuthFactory::getHandler(AmSipDialog* dlg, CredentialHolder* c) {
+	return new UACAuth(dlg, c->getCredentials());
+}
 
-UACAuth::UACAuth(AmSession* s, 
+UACAuth::UACAuth(AmSipDialog* dlg, 
 				 UACAuthCred* cred)
-    : AmSessionEventHandler(s),
-	  credential(cred)
+    : dlg(dlg),
+	  credential(cred),
+	  AmSessionEventHandler()
 { 	  
 }
 
@@ -85,7 +114,6 @@ bool UACAuth::onSipRequest(const AmSipRequest& req)
 
 bool UACAuth::onSipReply(const AmSipReply& reply)
 {
-	DBG("on sip reply --------------------------\n");
 	bool processed = false;
 	if (reply.code==407 || reply.code==401) {
 	DBG("SIP reply with code %d cseq %d .\n", reply.code, reply.cseq);
@@ -95,25 +123,38 @@ bool UACAuth::onSipReply(const AmSipReply& reply)
 		if (ri!= sent_requests.end())
 		{
 			DBG(" UACAuth - processing with reply code %d \n", reply.code);
+// 			DBG("realm %s user %s pwd %s ----------------\n", 
+// 				credential->realm.c_str(),
+// 				credential->user.c_str(),
+// 				credential->pwd.c_str());
+			if (((reply.code == 401) && 
+				  getHeader(ri->second.hdrs, "Authorization").length()) ||
+				((reply.code == 407) && 
+				  getHeader(ri->second.hdrs, "Proxy-Authorization").length())) {
+				DBG("Authorization failed!\n");
+			} else {
+				string auth_hdr = (reply.code==407) ? getHeader(reply.hdrs, "Proxy-Authenticate") : 
+					getHeader(reply.hdrs, "WWW-Authenticate");
+				string result; 
 			
-			string auth_hdr = (reply.code==407) ? getHeader(reply.hdrs, "Proxy-Authenticate") : 
-				getHeader(reply.hdrs, "WWW-Authenticate");
-			string result; 
-			
-			if (do_auth(reply.code, auth_hdr,  
-						ri->second.method,
-						s->dlg.remote_uri, result)) {
-				string hdrs = ri->second.hdrs; 
-				// TODO: strip headers 
-				// ((code==401) ? stripHeader(ri->second.hdrs, "Authorization")  :
-				//	 		    stripHeader(ri->second.hdrs, "Proxy-Authorization"));
-				hdrs += result;
-				// resend request 
-				if (s->dlg.sendRequest(ri->second.method,
-									   ri->second.content_type,
-									   ri->second.body, 
-									   hdrs) != 0) 			
-					processed = true;
+				string auth_uri; 
+  				auth_uri = dlg->remote_uri;
+				
+				if (do_auth(reply.code, auth_hdr,  
+							ri->second.method,
+							auth_uri, result)) {
+					string hdrs = ri->second.hdrs; 
+					// TODO: strip headers 
+					// ((code==401) ? stripHeader(ri->second.hdrs, "Authorization")  :
+					//	 		    stripHeader(ri->second.hdrs, "Proxy-Authorization"));
+					hdrs += result;
+					// resend request 
+					if (dlg->sendRequest(ri->second.method,
+										 ri->second.content_type,
+										 ri->second.body, 
+										 hdrs) == 0) 			
+						processed = true;
+				}
 			} 
 		}
 	}
@@ -200,7 +241,6 @@ bool UACAuth::parse_header(const string& auth_hdr, UACAuthDigestChallenge& chall
 
   // inefficient parsing...TODO: optimize this
   challenge.realm = find_attribute("realm", auth_hdr);
-  challenge.domain = find_attribute("domain", auth_hdr);
   challenge.nonce = find_attribute("nonce", auth_hdr);
   challenge.opaque = find_attribute("opaque", auth_hdr);
   challenge.algorithm = find_attribute("algorithm", auth_hdr);
@@ -226,8 +266,8 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
     return false;
   }
 
-  DBG("realm='%s', domain='%s', nonce='%s'\n", challenge.realm.c_str(), 
-      challenge.domain.c_str(), challenge.nonce.c_str());
+  DBG("realm='%s', nonce='%s'\n", challenge.realm.c_str(), 
+      challenge.nonce.c_str());
 
   if (credential->realm.length() 
 	  && (credential->realm != challenge.realm)) {

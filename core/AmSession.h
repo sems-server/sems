@@ -58,6 +58,7 @@ class AmDtmfEvent;
  *  Signaling plugins must inherite from this class.
  */
 class AmSessionEventHandler
+	: public ArgObject
 {
 public:
     bool destroy;

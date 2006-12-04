@@ -76,7 +76,8 @@ class AnnounceAuthDialog : public AmSession,
 {
     AmAudioFile wav_file;
     string filename;
-    
+    UACAuthCred credentials;
+
  public:
 	AnnounceAuthDialog(const string& filename,
 					   const string& auth_realm, 
@@ -91,6 +92,7 @@ class AnnounceAuthDialog : public AmSession,
     void onDtmf(int event, int duration_msec) {}
 
     void process(AmEvent* event);
+	inline UACAuthCred* getCredentials();
 };
 
 
