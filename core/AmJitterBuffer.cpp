@@ -69,7 +69,7 @@ void AmJitterBuffer::put(const AmRtpPacket *p)
 {
     m_mutex.lock();
     //m_inputBuffer[p->timestamp].copy(p);
-    DBG("Putting pkt at %u me = %ld\n", p->timestamp / m_frameSize, (long) this);
+	//    DBG("Putting pkt at %u me = %ld\n", p->timestamp / m_frameSize, (long) this);
     if (m_tsInited && ts_less()(p->timestamp + m_jitter * m_frameSize, m_lastTs)) {
 	unsigned int delay = p->timestamp - m_lastTs;
 	if (delay > m_jitter * m_frameSize && m_jitter < MAX_JITTER) {
@@ -138,7 +138,7 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts)
     }
     unsigned int get_ts = ts + m_tsDelta - m_jitter * m_frameSize;
     m_ringBuffer.get(get_ts / m_frameSize, &p);
-    DBG("Getting pkt at %u, res ts = %u\n", get_ts / m_frameSize, p.timestamp);
+	//    DBG("Getting pkt at %u, res ts = %u\n", get_ts / m_frameSize, p.timestamp);
     m_ringBuffer.clear(get_ts / m_frameSize);
     if (!p.timestamp) 
 	retval = false;
