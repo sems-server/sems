@@ -118,8 +118,10 @@ inline bool parse_sdp_line( AmSdp* sdp_msg, char*& s, char discr,
 //
 // class AmSdp: Methods
 //
-
 AmSdp::AmSdp() 
+	: remote_active(false),
+    telephone_event_pt(NULL)
+
 { 
 }
 
