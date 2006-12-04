@@ -1,3 +1,30 @@
+/*
+ * $Id$
+ *
+ * Copyright (C) 2002-2003 Fhg Fokus
+ *
+ * This file is part of sems, a free SIP media server.
+ *
+ * sems is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version
+ *
+ * For a license to use the ser software under conditions
+ * other than those described here, or to purchase support for this
+ * software, please contact iptel.org by e-mail at the following addresses:
+ *    info@iptel.org
+ *
+ * sems is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include "SessionTimer.h"
 #include "AmUtils.h"
 #include "UserTimer.h"
@@ -24,14 +51,14 @@ AmSessionEventHandler* SessionTimerFactory::getHandler(AmSession* s)
 
 
 SessionTimer::SessionTimer(AmSession* s)
-    :AmSessionEventHandler(s),
+    :AmSessionEventHandler(),
+	 s(s),
      session_interval(0), 
      session_refresher(refresh_remote)
 {}
 
 bool SessionTimer::process(AmEvent* ev)
 {
-    /* Session Timer: -ssa */
     AmTimeoutEvent* timeout_ev = dynamic_cast<AmTimeoutEvent*>(ev);
     if (timeout_ev) {
 	DBG("received timeout Event with ID %d\n", timeout_ev->data.get(0).asInt());
@@ -65,9 +92,6 @@ bool SessionTimer::onSendRequest(const string& method,
 				 string& hdrs,
 				 unsigned int cseq)
 {
-//   if (!session_timer_conf.getEnableSessionTimer())
-//     return "";
-  
   string m_hdrs = "Supported: timer\n";
   if  ((method != "INVITE") && (method != "UPDATE"))
       goto end;
@@ -117,12 +141,12 @@ void SessionTimer::configureSessionTimer(const AmSessionTimerConfig& conf)
       session_timer_conf.getMinimumTimer()
       );
 }
+
 /** 
  * check if UAC requests too low Session-Expires 
  *   (<locally configured Min-SE)                  
  * Throws SessionIntervalTooSmallException if too low
  */
-
 bool SessionTimerFactory::checkSessionExpires(const AmSipRequest& req) 
 {
     //if (session_timer_conf.getEnableSessionTimer()) {
@@ -144,9 +168,6 @@ bool SessionTimerFactory::checkSessionExpires(const AmSipRequest& req)
 }
 
 void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
-
-//   if (!session_timer_conf.getEnableSessionTimer())
-//     return;
 
   if((req.method == "INVITE")||(req.method == "UPDATE")){
     
@@ -287,8 +308,6 @@ void SessionTimer::removeTimers(AmSession* s)
 
 void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev) 
 {
-//   if (!session_timer_conf.getEnableSessionTimer())
-//     return;
     int timer_id = timeout_ev->data.get(0).asInt();
 
     if (timer_id == ID_SESSION_REFRESH_TIMER) {
@@ -310,8 +329,3 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
     return;
 }
 
-// void AmSession::onTimeout() 
-// {
-//   DBG("Session %s timed out, stopping.\n", getLocalTag().c_str());
-//   setStopped();
-// }

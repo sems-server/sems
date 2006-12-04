@@ -60,11 +60,10 @@ class AmDtmfEvent;
 class AmSessionEventHandler
 {
 public:
-    AmSession* s;
     bool destroy;
 
-    AmSessionEventHandler(AmSession* s)
-	: destroy(true),s(s) {}
+    AmSessionEventHandler()
+	: destroy(true) {}
 
     virtual ~AmSessionEventHandler() {}
     /* 
