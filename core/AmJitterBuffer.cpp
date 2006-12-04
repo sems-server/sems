@@ -115,16 +115,16 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts)
 	     * New packet arrived earlier than expected -
 	     *  immediate resync required 
 	     */
-	    DBG("Jitter buffer resynced forward\n");
 	    m_ringBuffer.clear((ts + m_tsDelta - m_jitter * m_frameSize) / m_frameSize);
 	    ++m_tsDelta;
+		//		DBG("Jitter buffer resynced forward (-> %u)\n", m_tsDelta);
 	    m_delayCount = 0;
 	}
 	else if (ts_less()(new_delta, m_tsDelta)) {
 	    /* New packet hasn't arrived yet */
 	    if (m_delayCount > RESYNC_THRESHOLD) {
-		DBG("Jitter buffer resynced backward\n");
 		--m_tsDelta;
+		//		DBG("Jitter buffer resynced backward (-> %u)\n", m_tsDelta);
 //		m_tsDelta = new_delta;
 //		m_delayCount = 0;
 	    }
