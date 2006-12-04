@@ -275,8 +275,9 @@ int main(int argc, char* argv[])
 	return -1;
     }
 
-    //if(AmConfig::LocalIP.empty())
     AmConfig::LocalIP = getLocalIP(AmConfig::LocalIP);
+    AmConfig::LocalSIPIP = AmConfig::LocalIP;
+
 
     printf( "\n\nConfiguration:\n"
 	    "       configuration file:  %s\n"

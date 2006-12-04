@@ -192,6 +192,12 @@ int AmPlugIn::loadPlugIn(const string& file)
 	has_sym=true;
     }
 
+    if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SIP_EVENT_HANDLER_EXPORT_STR)) != NULL){
+	if(loadSIPehPlugIn((AmPluginFactory*)fc()))
+	    goto error;
+	has_sym=true;
+    }
+
     if(!has_sym){
 	ERROR("Plugin type could not be detected (%s)(%s)\n",file.c_str(),dlerror());
 	goto error;

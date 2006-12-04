@@ -189,7 +189,7 @@ void DialerThread::set_dial(const string& r, const string& f,
 }
 
 void DialerThread::run() {
-	sleep(5); // wait for sems to completely start up
+	sleep(15); // wait for sems to completely start up
 	while (!is_stopped()) {		
 		DBG("dialing...");
 		AmUAC::dialout("blibla", "announce_auth", 

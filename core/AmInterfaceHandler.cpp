@@ -260,7 +260,7 @@ int AmReplyHandler::handleRequest(AmCtrlInterface* ctrl)
 		   reply.local_tag,
 		   new AmSipReplyEvent(reply))) {
 		for (vector<AmSIPEventHandler*>::iterator it = 
-				 reply_handlers.begin(); it != reply_handlers.end(); it++)
+				 reply_handlers.begin(); it != reply_handlers.end(); it++) 
 			if ((*it)->onSipReply(reply))
 				break;			
 	}

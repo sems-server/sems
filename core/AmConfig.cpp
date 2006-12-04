@@ -51,8 +51,18 @@ string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
 int          AmConfig::RtpLowPort              = RTP_LOWPORT;
 int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
 int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
+int          AmConfig::LocalSIPPort            = 5060;
+string       AmConfig::LocalSIPIP              = "";
 
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
+
+int AmConfig::setSIPPort(const string& port) 
+{
+    if(sscanf(port.c_str(),"%u",&AmConfig::LocalSIPPort) != 1) {
+	return 0;
+    }
+    return 1;
+}
 
 int AmConfig::setSmtpPort(const string& port) 
 {
@@ -145,7 +155,13 @@ int AmConfig::readConfiguration()
 
     // local_ip
     LocalIP = cfg.getParameter("listen");
-DBG("RvR :- Local IP set to %s\n", LocalIP.c_str());
+
+    if(cfg.hasParameter("sip_port")){
+		if(!setSIPPort(cfg.getParameter("sip_port").c_str())){
+			ERROR("invalid sip port specified\n");
+			return -1;
+		}		
+    }
 
     // socket_name
     SocketName = cfg.getParameter("socket_name");

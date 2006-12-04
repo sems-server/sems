@@ -77,6 +77,10 @@ struct AmConfig
     static AmSessionTimerConfig defaultSessionTimerConfig;
     /** number of session scheduler threads */
     static int MediaProcessorThreads;
+	/** the interface SIP requests are sent from - needed for registrar_client */
+	static string LocalSIPIP;
+	/** the port SIP requests are sent from - optional (default 5060) */
+	static int LocalSIPPort;
 
     /** Init function. Resolves SMTP server address. */
     static int init();
@@ -85,7 +89,10 @@ struct AmConfig
      * command line arguments */
     static int readConfiguration();
 
-    /* following setters are used to fill config from config file */    
+    /* following setters are used to fill config from config file */  
+	
+    /** Setter for SIP Port, returns 0 on invalid value */
+	static int setSIPPort(const string& port);  
     /** Setter for SmtpServer Port, returns 0 on invalid value */
     static int setSmtpPort(const string& port);
     /** Setter for RtpLowPort, returns 0 on invalid value */
