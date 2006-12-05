@@ -266,7 +266,7 @@ bool SIPRegistration::registerSendTimeout(time_t now_sec) {
 bool SIPRegistration::timeToReregister(time_t now_sec) {
 //   	if (active) 
 //   		DBG("compare %lu with %lu\n",(reg_begin+reg_expires), (unsigned long)now_sec);
-	return ((reg_begin+reg_expires/20) < (unsigned long)now_sec);	
+	return ((reg_begin+reg_expires/2) < (unsigned long)now_sec);	
 }
 
 bool SIPRegistration::registerExpired(time_t now_sec) {
