@@ -36,7 +36,8 @@ AmSession* AmUAC::dialout(const string& user,
 			    const string& r_uri, 
 			    const string& from,
 			    const string& from_uri,
-			    const string& to) {
+			    const string& to,
+				const string& local_tag) {
  
     AmSipRequest req;
 
@@ -47,7 +48,10 @@ AmSession* AmUAC::dialout(const string& user,
     req.r_uri    = r_uri;
     req.from     = from;
     req.from_uri = from_uri;
-    req.from_tag   = AmSession::getNewId();
+	if (!local_tag.length())
+		req.from_tag   = AmSession::getNewId();
+	else 
+		req.from_tag   = local_tag;
     req.to       = to;
     req.to_tag   = "";
     req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
