@@ -176,7 +176,7 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
     rp.marker = false;
     rp.sequence = sequence++;
     rp.timestamp = ts;   
-    rp.ssrc = l_ssrc;
+    rp.ssrc = 0; //l_ssrc;
     rp.compile((unsigned char*)buffer,size);
 
     rp.setAddr(&r_saddr);

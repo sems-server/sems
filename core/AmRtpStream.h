@@ -88,6 +88,7 @@ protected:
        int_payload if using dynamic payloads)
      */
     int         payload;
+    unsigned int   sequence;
 
     /**
        Payload of last received packet.
@@ -117,8 +118,7 @@ protected:
     /** the recv_offset initialized ?  */ 
     bool           recv_offset_i;
 
-    unsigned int   sequence;
-    unsigned int   l_ssrc;
+	//    unsigned int   l_ssrc;
     unsigned int   r_ssrc;
     bool           r_ssrc_i;
 
