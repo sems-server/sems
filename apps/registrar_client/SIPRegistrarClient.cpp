@@ -49,7 +49,8 @@ SIPRegistration::SIPRegistration(const string& handle,
 	  reg_expires(0),
 	  remove(false),
 	  sess_link(sess_link),
-	  reg_send_begin(0)
+	  reg_send_begin(0),
+	  waiting_result(false)
 {
     req.cmd      = "sems";
     req.user     = info.user;
@@ -78,6 +79,7 @@ void SIPRegistration::setSessionEventHandler(AmSessionEventHandler* new_seh) {
 }
  
 void SIPRegistration::doRegistration() {
+	waiting_result = true;
     req.to_tag     = "";
 	dlg.remote_tag = "";
     req.r_uri    = "sip:"+info.domain;
@@ -92,6 +94,7 @@ void SIPRegistration::doRegistration() {
 }
 
 void SIPRegistration::doUnregister() {
+	waiting_result = true;
     req.to_tag     = "";
 	dlg.remote_tag = "";
     req.r_uri    = "sip:"+info.domain;
@@ -205,7 +208,8 @@ void SIPRegistrarClient::checkTimeouts() {
 			if (it->second->registerExpired(now.tv_sec)) {
 				SIPRegistration* reg = it->second;
 				reg->onRegisterExpired();
-			} else if (it->second->timeToReregister(now.tv_sec)) {
+			} else if (!it->second->waiting_result && 
+					   it->second->timeToReregister(now.tv_sec)) {
 				it->second->doRegistration();
 			} 
 		} else if (it->second->remove) {
@@ -213,7 +217,8 @@ void SIPRegistrarClient::checkTimeouts() {
 				SIPRegistration* reg = it->second;
 				registrations.erase(it);
 			delete reg;
-		} else if (it->second->registerSendTimeout(now.tv_sec)) {
+		} else if (it->second->waiting_result && 
+				   it->second->registerSendTimeout(now.tv_sec)) {
 			SIPRegistration* reg = it->second;
 			reg->onRegisterSendTimeout();
 		}
@@ -261,7 +266,7 @@ bool SIPRegistration::registerSendTimeout(time_t now_sec) {
 bool SIPRegistration::timeToReregister(time_t now_sec) {
 //   	if (active) 
 //   		DBG("compare %lu with %lu\n",(reg_begin+reg_expires), (unsigned long)now_sec);
-	return ((reg_begin+reg_expires/2) < (unsigned long)now_sec);	
+	return ((reg_begin+reg_expires/20) < (unsigned long)now_sec);	
 }
 
 bool SIPRegistration::registerExpired(time_t now_sec) {
@@ -271,6 +276,8 @@ bool SIPRegistration::registerExpired(time_t now_sec) {
 void SIPRegistration::onSipReply(AmSipReply& reply) {
 	if ((seh!=NULL) && seh->onSipReply(reply)) 
 		return;
+
+	waiting_result = false;
 
 	dlg.updateStatus(reply);
 

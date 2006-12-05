@@ -82,6 +82,7 @@ class SIPRegistration : public AmSipDialogEventHandler,
 	time_t reg_begin;	
 	unsigned int reg_expires;
 	time_t reg_send_begin; 
+
  public:
 	SIPRegistration(const string& handle,
 					const SIPRegistrationInfo& info,
@@ -121,7 +122,8 @@ class SIPRegistration : public AmSipDialogEventHandler,
 	bool active; 
 	/** should this registration be removed from container? */
 	bool remove;
-
+	/** are we waiting for the response to a register? */
+	bool waiting_result;
 };
 
 class SIPNewRegistrationEvent;
