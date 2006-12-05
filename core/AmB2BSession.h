@@ -154,7 +154,7 @@ private:
     AmSipRequest invite_req;
 
     void relayEvent(AmEvent* ev);
-    void createCalleeSession();
+    virtual void createCalleeSession();
     int  reinviteCaller(const AmSipReply& callee_reply);
 
 public:

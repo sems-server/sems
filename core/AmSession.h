@@ -129,12 +129,14 @@ class AmSession : public AmThread,
     friend class AmSessionContainer;
     friend class AmSessionFactory;
 
-    // this is the call group - by default local tag
-    string callgroup;
   
 protected:
     AmSdp               sdp;
     AmRtpAudio          rtp_str;
+
+    /** this is the group the media is processed with 
+		- by default local tag */
+    string callgroup;
 
 public:
     AmSipDialog         dlg;
@@ -160,7 +162,7 @@ public:
     /**
      * @see AmEventHandler
      */
-    void process(AmEvent*);
+    virtual void process(AmEvent*);
 
     void addHandler(AmSessionEventHandler*);
 
