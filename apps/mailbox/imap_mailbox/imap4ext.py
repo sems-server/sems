@@ -174,7 +174,7 @@ class IMAP4_Mailbox:
 		for i in d[0].split():
 			body = IMAP4_MsgBODY(self.imap,i)
 			for p in range(len(body.parts)):
-				if body.part_ct(p) == 'AUDIO/X-WAV':
+				if body.part_ct(p).upper() == 'AUDIO/X-WAV':
 					msg_list.append(body.uid)
 
 		IMAPCALL(self.imap.close())
@@ -189,7 +189,7 @@ class IMAP4_Mailbox:
 
 		fp = None
 		for p in range(len(body.parts)):
-			if body.part_ct(p) == 'AUDIO/X-WAV':
+			if body.part_ct(p).upper() == 'AUDIO/X-WAV':
 				fp = body.fetch2file(self.imap,p)
 				break
 
@@ -212,7 +212,7 @@ class IMAP4_Mailbox:
 		
 			for p in range(len(body.parts)):
 			
-				if body.part_ct(p) == 'AUDIO/X-WAV':
+				if body.part_ct(p).upper() == 'AUDIO/X-WAV':
 					
 					filename = file_prefix + '-' + body.uid + '.wav'
 					msg_list.append(filename)
