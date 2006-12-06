@@ -1,13 +1,9 @@
 
 import re
 
-class InvalidMailboxURL(Exception):
-
-	value = ""
-	
+class InvalidMailboxURL(Exception):	
 	def __init__(self,value):
 		self.value = value
-		Exception.__init__(value)
 
 	def __str__(self):
 		return repr(self.value)
