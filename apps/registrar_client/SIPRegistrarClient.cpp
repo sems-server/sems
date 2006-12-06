@@ -129,6 +129,26 @@ void SIPRegistration::onSendReply(const AmSipRequest& req,
 						 content_type,body,hdrs);
 }
 
+SIPRegistration::RegistrationState SIPRegistration::getState() {
+	if (active) 
+		return RegisterActive;
+	if (waiting_result)
+		return RegisterPending;
+	
+	return RegisterExpired;
+}
+
+unsigned int SIPRegistration::getExpiresLeft() {
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	
+	int diff = reg_begin + reg_expires  - now.tv_sec;
+	if (diff < 0) 
+		return 0;
+	else 
+		return diff;
+}
+
 //-----------------------------------------------------------
 SIPRegistrarClient* SIPRegistrarClient::_instance=0;
 
@@ -417,6 +437,19 @@ get_reg(const string& reg_id)
 }
 
 SIPRegistration* SIPRegistrarClient::
+get_reg_unsafe(const string& reg_id) 
+{
+	DBG("get registration_unsafe '%s'\n", reg_id.c_str());
+	SIPRegistration* res = NULL;
+	map<string, SIPRegistration*>::iterator it = 
+		registrations.find(reg_id);
+	if (it!=registrations.end())
+		res = it->second;
+	DBG("get registration_unsafe : res = '%ld' (this = %ld)\n", (long)res, (long)this);
+	return res;
+}
+
+SIPRegistration* SIPRegistrarClient::
 remove_reg(const string& reg_id) {
 	reg_mut.lock();
 	SIPRegistration* reg = remove_reg_unsafe(reg_id);
@@ -480,6 +513,23 @@ void SIPRegistrarClient::removeRegistration(const string& handle) {
 
 }
 
+bool SIPRegistrarClient::getRegistrationState(const string& handle, 
+											  unsigned int& state, 
+											  unsigned int& expires_left) {
+	bool res = false;
+	reg_mut.lock();
+
+	SIPRegistration* reg = get_reg_unsafe(handle);
+	if (reg) {
+		res = true;
+		state = reg->getState();
+		expires_left = reg->getExpiresLeft();
+	}
+		
+	reg_mut.unlock();
+	return res;
+}
+
 void SIPRegistrarClient::invoke(const string& method, const AmArgArray& args, 
 								AmArgArray& ret)
 {
@@ -494,8 +544,19 @@ void SIPRegistrarClient::invoke(const string& method, const AmArgArray& args,
     }
     else if(method == "removeRegistration"){
 		removeRegistration(args.get(0).asCStr());
-    }
-    else
+    } 
+    else if(method == "getRegistrationState"){
+		unsigned int state;
+		unsigned int expires;
+		if (instance()->getRegistrationState(args.get(0).asCStr(), 
+											 state, expires)){
+			ret.push(1);
+			ret.push((int)state);
+			ret.push((int)expires);
+		} else {
+			ret.push(AmArg((int)0));
+		}
+    } else
 	throw AmDynInvoke::NotImplemented(method);
 }
 

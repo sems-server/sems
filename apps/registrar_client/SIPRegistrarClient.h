@@ -124,6 +124,16 @@ class SIPRegistration : public AmSipDialogEventHandler,
 	bool remove;
 	/** are we waiting for the response to a register? */
 	bool waiting_result;
+
+	enum RegistrationState {
+		RegisterPending = 0,
+		RegisterActive,
+		RegisterExpired
+	};
+	/** return the state of the registration */
+	RegistrationState getState(); 
+	/** return the expires left for the registration */
+	unsigned int getExpiresLeft(); 
 };
 
 class SIPNewRegistrationEvent;
@@ -145,6 +155,7 @@ class SIPRegistrarClient  : public AmSIPEventHandler,
 	SIPRegistration* remove_reg(const string& reg_id);
 	SIPRegistration* remove_reg_unsafe(const string& reg_id);
 	SIPRegistration* get_reg(const string& reg_id);
+	SIPRegistration* get_reg_unsafe(const string& reg_id);
 
 	void onSipReplyEvent(AmSipReplyEvent* ev);	
 	void onNewRegistration(SIPNewRegistrationEvent* new_reg);
@@ -183,6 +194,9 @@ public:
 	void removeRegistration(const string& handle);
 
 	bool hasRegistration(const string& handle);
+
+	bool getRegistrationState(const string& handle, unsigned int& state, 
+							  unsigned int& expires_left);
 
 	enum {
 		AddRegistration,
