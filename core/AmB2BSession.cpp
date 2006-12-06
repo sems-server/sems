@@ -137,7 +137,9 @@ void AmB2BSession::relayEvent(AmEvent* ev)
 	other_id.c_str());
 
     if(!other_id.empty())
-	AmSessionContainer::instance()->postEvent(other_id,ev);
+		AmSessionContainer::instance()->postEvent(other_id,ev);
+	else 
+		delete ev;
 }
 
 void AmB2BSession::onOtherBye(const AmSipRequest& req)
