@@ -294,7 +294,7 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
   if (challenge.opaque.length())
     result+="opaque=\""+challenge.opaque+"\", ";
   
-  result+="response=\""+string((char*)response)+"\", algorithm=\"MD5\"\n";
+  result+="response=\""+string((char*)response)+"\", algorithm=MD5\n";
 
   DBG("Auth req hdr: '%s'\n", result.c_str());
   

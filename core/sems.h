@@ -44,10 +44,15 @@
 #define PREFIX_SEPARATOR    ""
 #define RTP_LOWPORT         1024
 #define RTP_HIGHPORT        0xffff
+#define MAX_FORWARDS        "70"
 
-/* Session Timer: -ssa */
+#define DEFAULT_SIGNATURE "Sip Express Media Server " \
+		"(" VERSION " (" ARCH "/" OS"))"
+
+
+/* Session Timer defaul configuration: */
 #define DEFAULT_ENABLE_SESSION_TIMER 1
-#define SESSION_EXPIRES              10 // seconds
+#define SESSION_EXPIRES              60 // seconds
 #define MINIMUM_TIMER                5   //seconds
 
 #define NUM_MEDIA_PROCESSORS 1

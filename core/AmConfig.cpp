@@ -53,6 +53,7 @@ int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
 int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
 int          AmConfig::LocalSIPPort            = 5060;
 string       AmConfig::LocalSIPIP              = "";
+string       AmConfig::Signature               = "";
 
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 
@@ -174,6 +175,12 @@ int AmConfig::readConfiguration()
 
     // plugin_path
     PlugInPath = cfg.getParameter("plugin_path");
+
+	// user_agent
+	if (cfg.getParameter("use_default_signature")=="yes")
+		Signature = DEFAULT_SIGNATURE;
+	else 
+		Signature = cfg.getParameter("signature");
 
     // log_level
     if(cfg.hasParameter("loglevel")){

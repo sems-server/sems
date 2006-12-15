@@ -81,6 +81,8 @@ struct AmConfig
 	static string LocalSIPIP;
 	/** the port SIP requests are sent from - optional (default 5060) */
 	static int LocalSIPPort;
+	/** Server/User-Agent header (optional) */
+	static string Signature;
 
     /** Init function. Resolves SMTP server address. */
     static int init();

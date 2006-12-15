@@ -1,14 +1,42 @@
-CPP_FLAGS = -Wall -Wno-reorder -fPIC -g \
-	  -O2 \
-	  -D_DEBUG \
-	  -D_THREAD_SAFE -D_REENTRANT \
-#	  -DSUPPORT_IPV6
+
+#version number
+VERSION = 0
+PATCHLEVEL = 10
+SUBLEVEL = 0
+EXTRAVERSION = -rc2
+
+RELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
 LD_FLAGS = -lm
 
 OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
-TARGET =
 
+ifeq ($(OS),solaris)
+	GETARCH=uname -p
+else
+	GETARCH=uname -m
+endif
+
+ARCH := $(shell $(GETARCH) |sed -e s/i.86/i386/ -e s/sun4u/sparc64/  \
+			-e s/armv4l/arm/ -e "s/Power Macintosh/ppc/" \
+			-e "s/cobalt/mips2/" \
+			-e s/amd64/x86_64/ )
+# fix sparc -> sparc64
+ifeq ($(ARCH),sparc)
+	ifeq ($(shell uname -m),sun4u)
+		ARCH := sparc64
+	endif
+endif
+
+CPP_FLAGS = -Wall -Wno-reorder -fPIC -g \
+	  -O2 \
+	  -D_DEBUG \
+	  -D_THREAD_SAFE -D_REENTRANT \
+	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
+	  -DOS='"$(OS)"' 	\
+#	  -DSUPPORT_IPV6
+
+TARGET =
 ifeq ($(OS), linux)
 	LD_FLAGS +=  -ldl -rdynamic -lpthread
 else

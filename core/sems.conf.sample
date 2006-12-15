@@ -54,7 +54,7 @@ plugin_path=/usr/local/lib/sems/plug-in
 # optional parameter: smtp_server=<hostname>
 #
 # - sets address of smtp server
-smtp_server=safekeeper
+smtp_server=mail
 
 # optional parameter: smtp_port=<port>
 #
@@ -79,3 +79,50 @@ rtp_high_port=60000
 #   value
 media_processor_threads=1
 
+# optional parameter: listen=<ip_address>
+# 
+# - this informs SEMS about the interface where its SER is 
+#   bound to. SEMS needs this information to correctly set 
+#   the contact header in outgoing calls and registrations. 
+#   Should be set to equal the 'listen' configuration option
+#   in ser_sems.cfg.
+#   This does not need to be set if outgoing calls and 
+#   registrations from SEMS are not used.
+#   If not set, this defaults to the interface SEMS binds to.
+#
+# listen=10.0.0.34
+
+# optional parameter: sip_port=<port_number>
+#
+# - this informs SEMS about the port where its SER is 
+#   bound to. SEMS needs this information to correctly set 
+#   the contact header in outgoing calls and registrations. 
+#   Should be set to equal the 'port' configuration option
+#   in ser_sems.cfg.
+#   This does not need to be set if outgoing calls and 
+#   registrations from SEMS are not used.
+#  
+#   default: 5060
+#
+#sip_port=5060
+
+# optional parameter: use_default_signature={yes|no}
+#
+# - use a Server/User-Agent header with the SEMS server 
+#   signature and version.
+#   Set server_signature=0 in ser_sems.cfg if you use it.   
+#
+#   default=no
+#
+# use_default_signature=no
+
+# optional parameter: signature=<signature string>
+#
+# - use a Server/User-Agent header with a custom user agent
+#   signature.
+#   Overridden by default signature if 
+#   use_default_signature is set.
+#   Set server_signature=0 in ser_sems.cfg if you use it.   
+#
+#
+# signature="SEMS media server 1.0"

@@ -97,9 +97,8 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
     }
     else
     {
-	if (!last_ts_i) {
-	    last_ts_i = true;
-	}
+	last_ts_i = true;
+	
 
 	size = decode(size);
 	if (size <= 0) {

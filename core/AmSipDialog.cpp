@@ -3,6 +3,7 @@
 #include "AmSession.h"
 #include "AmUtils.h"
 #include "AmServer.h"
+#include "sems.h"
 
 AmSipDialog::~AmSipDialog()
 {
@@ -273,6 +274,8 @@ int AmSipDialog::reply(const AmSipRequest& req,
 
     if(!body.empty())
 	msg += "Content-Type: " + content_type + "\n";
+	if (AmConfig::Signature.length()) 
+	msg += "Server: " + AmConfig::Signature + "\n";
 
     msg += ".\n";
 
@@ -302,6 +305,9 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
       AmSession::getNewId() + "\n";
       if(!hdrs.empty())
 	msg += hdrs;
+
+	if (AmConfig::Signature.length()) 
+	msg += "Server: " + AmConfig::Signature + "\n";
 
       msg += ".\n.\n\n";
     
@@ -494,6 +500,11 @@ int AmSipDialog::sendRequest(const string& method,
     if(!body.empty())
 	msg += "Content-Type: " + content_type + "\n";
     
+	msg += "Max-Forwards: "  MAX_FORWARDS "\n";
+
+	if (AmConfig::Signature.length()) 
+		msg += "User-Agent: " + AmConfig::Signature + "\n";
+
     msg += ".\n" // EoH
 	+ body + ".\n\n";
 
