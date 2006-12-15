@@ -1,5 +1,5 @@
 COREPATH ?=../..
-include $(COREPATH)/Makefile.defs
+include $(COREPATH)/../Makefile.defs
 
 ldflags = $(LIB_LD_FLAGS) $(module_ldflags)
 cflags = -I $(COREPATH) $(CPP_FLAGS) $(module_cflags)

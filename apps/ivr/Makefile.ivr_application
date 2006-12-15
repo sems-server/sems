@@ -1,6 +1,6 @@
 # generic Makefile for ivr applications
 
-include ../../core/Makefile.defs
+include ../../Makefile.defs
 include ../ivr/Makefile.defs
 
 # 

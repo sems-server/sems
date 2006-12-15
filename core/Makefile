@@ -42,7 +42,7 @@ doc:
 	rm -Rf doxygen_output; rm -rf ../doc/doxygen_doc ; \
 	doxygen doxygen_proj ; mv doxygen_output ../doc/doxygen_doc
 
-include Makefile.defs
+include ../Makefile.defs
 
 # implicit rules
 %.o : %.cpp %.d
@@ -112,7 +112,7 @@ tar:
 	$(TAR) -C .. \
 		--exclude=$(notdir $(CURDIR))/ivr \
 		--exclude=$(notdir $(CURDIR))/tmp \
-		--exclude=CVS* \
+		--exclude=.svn* \
 		--exclude=.\#* \
 		--exclude=*.[do] \
 		--exclude=*.la \
@@ -126,15 +126,37 @@ tar:
 		--exclude=*.gz \
 		--exclude=*.bz2 \
 		--exclude=*.tar \
+		--exclude=*~ \
 		-cf - $(notdir $(CURDIR)) | \
 			(mkdir -p tmp/_tar1; mkdir -p tmp/_tar2 ; \
 			    cd tmp/_tar1; $(TAR) -xf - ) && \
 			    mv tmp/_tar1/$(notdir $(CURDIR)) \
 			       tmp/_tar2/"$(NAME)-$(RELEASE)" && \
 			    (cd tmp/_tar2 && $(TAR) \
-			                    -zcf ../../"$(NAME)-$(RELEASE)".tar.gz \
+			                    -zcf ../../"$(NAME)-$(notdir $(CURDIR))-$(RELEASE)".tar.gz \
 			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp/_tar1; rm -rf tmp/_tar2
+
+
+mk-install-dirs: $(cfg-prefix)/$(cfg-dir) $(bin-prefix)/$(bin-dir) \
+			$(modules-prefix)/$(modules-dir) \
+			$(audio-prefix)/$(audio-dir) \
+			$(doc-prefix)/$(doc-dir)
+
+$(cfg-prefix)/$(cfg-dir): 
+	mkdir -p $(cfg-prefix)/$(cfg-dir)
+
+$(bin-prefix)/$(bin-dir):
+	mkdir -p $(bin-prefix)/$(bin-dir)
+
+$(modules-prefix)/$(modules-dir):
+	mkdir -p $(modules-prefix)/$(modules-dir)
+
+$(audio-prefix)/$(audio-dir):
+	mkdir -p $(audio-prefix)/$(audio-dir)
+
+$(doc-prefix)/$(doc-dir):
+	mkdir -p $(doc-prefix)/$(doc-dir)
 
 
 ifeq '$(NAME)' '$(MAKECMDGOALS)'

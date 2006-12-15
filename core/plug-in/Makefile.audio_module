@@ -1,5 +1,5 @@
 COREPATH ?=../..
-include $(COREPATH)/Makefile.defs
+include $(COREPATH)/../Makefile.defs
 
 ldflags = -shared $(module_ldflags)
 cflags  = -fPIC -I $(COREPATH) -I $(COREPATH)/amci -Wall $(module_cflags)

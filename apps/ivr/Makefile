@@ -49,6 +49,13 @@ extra_clean = clean_python_files
 py_src = $(notdir $(wildcard py/*.py))
 py_obj = $(py_src:.py=.pyc)
 
+ifeq (,$(MAKECMDGOALS))
+.PHONY: python_files
+python_files: 
+	python$(PY_VER) py_comp -l -q py &&\
+	cp py/*.pyc $(COREPATH)/lib
+
+endif
 
 ifeq (all,$(MAKECMDGOALS))
 .PHONY: python_files
