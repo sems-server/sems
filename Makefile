@@ -65,4 +65,5 @@ tar:
 			    (cd tmp/_tar2 && $(TAR) \
 			                    -zcf ../../"$(NAME)-$(RELEASE)".tar.gz \
 			                               "$(NAME)-$(RELEASE)" ) ; \
-			    rm -rf tmp/_tar1; rm -rf tmp/_tar2
+			    rm -rf tmp
+
