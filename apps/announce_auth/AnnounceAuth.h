@@ -32,7 +32,7 @@
 #include "AmSession.h"
 #include "AmConfigReader.h"
 
-#include "../../core/plug-in/uac_auth/UACAuth.h"
+#include "ampi/UACAuthAPI.h"
 
 #include <string>
 using std::string;
