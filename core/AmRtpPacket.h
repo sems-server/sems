@@ -39,7 +39,7 @@ class AmRtpPacket {
     unsigned char  buffer[4096];
     unsigned int   b_size;
 
-    unsigned char* data;
+    unsigned int   data_offset;
     unsigned int   d_size;
 
 public:
@@ -76,8 +76,8 @@ public:
 
     int parse();
 
-    unsigned int   getDataSize() { return d_size; }
-    unsigned char* getData() { return data; }
+    unsigned int   getDataSize() const { return d_size; }
+    unsigned char* getData();
 
     void copy(const AmRtpPacket* p);
 

@@ -67,6 +67,7 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     unsigned short channels=0;
     unsigned int rate=0;
     unsigned short bits_per_sample=0;
+    unsigned short sample_size=0;
 
     if(!fp)
 	return -1;
@@ -117,11 +118,11 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     DBG("bits/sample = <%i>\n",bits_per_sample);
 
     fmt_desc->subtype = fmt;
-    fmt_desc->sample = bits_per_sample>>3;
+    sample_size = bits_per_sample>>3;
     fmt_desc->rate = rate;
     fmt_desc->channels = channels;
 
-    if( (fmt == 0x01) && (fmt_desc->sample == 1)){
+    if( (fmt == 0x01) && (sample_size == 1)){
 	ERROR("Sorry, we don't support PCM 8 bit\n");
 	return -1;
     }
@@ -159,10 +160,17 @@ int wav_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_co
     }
 }
 
-int wav_write_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
+int wav_write_header(FILE* fp, struct amci_file_desc_t* fmt_desc, long h_codec, struct amci_codec_t *codec)
 {
     struct wav_header hdr;
+    int sample_size;
 
+    if (codec && codec->samples2bytes)
+	sample_size = codec->samples2bytes(h_codec, 1);
+    else {
+	ERROR("Cannot determine sample size\n");
+	sample_size = 2;
+    }
     memcpy(hdr.magic, "RIFF",4);
     hdr.length = fmt_desc->data_size + 36;
     memcpy(hdr.chunk_type, "WAVE",4);
@@ -171,9 +179,9 @@ int wav_write_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     hdr.format = fmt_desc->subtype;
     hdr.channels = (unsigned short)fmt_desc->channels;
     hdr.sample_rate = (unsigned int)fmt_desc->rate;
-    hdr.sample_size = hdr.channels * fmt_desc->sample;
+    hdr.sample_size = hdr.channels * sample_size;
     hdr.bytes_per_second = hdr.sample_rate * (unsigned int)hdr.sample_size;
-    hdr.precision = (unsigned short)(fmt_desc->sample * 8);
+    hdr.precision = (unsigned short)(sample_size * 8);
     memcpy(hdr.chunk_data,"data",4);
     hdr.data_length=fmt_desc->data_size;
 
@@ -189,11 +197,11 @@ int wav_write_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
 }
 
 
-int wav_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec)
+int wav_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec, struct amci_codec_t *codec)
 {
     if(options == AMCI_WRONLY){
 	rewind(fp);
-	return wav_write_header(fp,fmt_desc);
+	return wav_write_header(fp, fmt_desc, h_codec, codec);
     }
     return 0;
 }

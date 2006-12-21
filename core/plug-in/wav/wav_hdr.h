@@ -31,7 +31,7 @@
 #include "amci.h"
 
 int wav_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec);
-int wav_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec);
+int wav_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec, struct amci_codec_t *codec);
 
 
 #endif

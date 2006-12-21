@@ -110,7 +110,7 @@ ConferenceDialog::ConferenceDialog(const string& conf_id,
       allow_dialout(false)
 {
     dialedout = this->dialout_channel.get() != 0;
-    rtp_str.setAdaptivePlayout(true);
+//    rtp_str.setAdaptivePlayout(true);
 }
 
 ConferenceDialog::~ConferenceDialog()

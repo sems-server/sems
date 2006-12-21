@@ -193,28 +193,25 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
 //                              in audio buffer relative time
 // @param audio_buffer_ts [in]  current ts at the audio_buffer 
 
-int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
-			  /*unsigned int& ts,*/ unsigned int audio_buffer_ts)
+int AmRtpStream::receive( unsigned char* buffer, unsigned int buf_size,
+			  unsigned int *ts,
+			  unsigned int audio_buffer_ts, unsigned int ms)
 {
     AmRtpPacket rp;
     AmRtpPacket dtmf_pkt;
-    int err = nextAudioPacket(rp, audio_buffer_ts);
 
-    if (m_telephone_event_jb->get(dtmf_pkt, audio_buffer_ts))
+    while (m_telephone_event_jb->get(dtmf_pkt, audio_buffer_ts, ms))
     {
-	if (dtmf_pkt.parse() != -1)
-       	{
-	    dtmf_payload_t* dpl = (dtmf_payload_t*)dtmf_pkt.getData();
+	dtmf_payload_t* dpl = (dtmf_payload_t*)dtmf_pkt.getData();
 
-	    DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i\n",
-		dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration));
-            session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate()));
-	}
+	DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i\n",
+	    dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration));
+	session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate()));
     }
     
+    int err = nextAudioPacket(rp, audio_buffer_ts, ms);
     if(err <= 0)
 	return err;
-
 #ifdef SUPPORT_IPV6
     struct sockaddr_storage recv_addr;
 #else
@@ -237,11 +234,6 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
     }
 #endif
 
-    if(rp.parse() == -1){
-	ERROR("while parsing RTP packet.\n");
-	return RTP_PARSE_ERROR;
-    }
-
     /* do we have a new talk spurt? */
     begin_talk = ((last_payload == 13) || rp.marker);
     last_payload = rp.payload;
@@ -250,11 +242,12 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 	return RTP_EMPTY;
 
     assert(rp.getData());
-    if(rp.getDataSize() > size){
+    if(rp.getDataSize() > buf_size){
 	ERROR("received too big RTP packet\n");
 	return RTP_BUFFER_SIZE;
     }
     memcpy(buffer,rp.getData(),rp.getDataSize());
+    *ts = rp.timestamp;
 
     return rp.getDataSize();    
 }
@@ -271,10 +264,11 @@ AmRtpStream::AmRtpStream(AmSession* _s)
       first_recved(false),
       telephone_event_pt(NULL),
       mute(false),
-      m_main_jb(NULL),
-      m_telephone_event_jb(new AmJitterBuffer(160))
+      m_main_jb(NULL)
 {
     //assert(session);
+    m_telephone_event_jb = new AmJitterBuffer(this);
+    m_main_jb = new AmJitterBuffer(this);
 #ifdef SUPPORT_IPV6
     memset(&r_saddr,0,sizeof(struct sockaddr_storage));
     memset(&l_saddr,0,sizeof(struct sockaddr_storage));
@@ -388,13 +382,6 @@ void AmRtpStream::icmpError()
     }
 }
 
-void AmRtpStream::initJitterBuffer(unsigned int frame_size)
-{
-    if (m_main_jb)
-	return;
-    m_main_jb = new AmJitterBuffer(frame_size);
-}
-
 void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 {
     gettimeofday(&last_recv_time,NULL);
@@ -404,9 +391,9 @@ void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 	m_telephone_event_jb->put(p);
 }
 
-int AmRtpStream::nextAudioPacket(AmRtpPacket& p, unsigned int ts)
+int AmRtpStream::nextAudioPacket(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 {
-    if (m_main_jb && m_main_jb->get(p, ts))
+    if (m_main_jb && m_main_jb->get(p, ts, ms))
 	return 1;
 
     struct timeval now;

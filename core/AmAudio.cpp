@@ -46,7 +46,6 @@ AmAudioRtpFormat::AmAudioRtpFormat(int payload, string format_parameters)
  
   amci_payload_t* pl = getPayloadP();
   if(pl && codec){
-    sample = codec->sample_size;
     channels = pl->channels;
     rate = pl->sample_rate;
   } else {
@@ -55,7 +54,7 @@ AmAudioRtpFormat::AmAudioRtpFormat(int payload, string format_parameters)
 }
 
 AmAudioFormat::AmAudioFormat()
-  : sample(-1), channels(-1), rate(-1), codec(0),
+  : channels(-1), rate(-1), codec(0),
     frame_length(20), frame_size(160), frame_encoded_size(320)
 {
 
@@ -65,7 +64,6 @@ AmAudioSimpleFormat::AmAudioSimpleFormat(int codec_id)
     : AmAudioFormat(), codec_id(codec_id)
 {
     codec = getCodec();
-    sample = codec->sample_size;
     rate = 8000;
     channels = 1;
 }
@@ -77,7 +75,6 @@ AmAudioFileFormat::AmAudioFileFormat(const string& name, int subtype)
     codec = getCodec();
     
     if(p_subtype && codec){
-	sample = codec->sample_size;
 	rate = p_subtype->sample_rate;
 	channels = p_subtype->channels;
 	subtype = p_subtype->type;
@@ -89,11 +86,27 @@ AmAudioFormat::~AmAudioFormat()
     destroyCodec();
 }
 
+unsigned int AmAudioFormat::samples2bytes(unsigned int nb_samples) const
+{
+    if (codec && codec->samples2bytes)
+	return codec->samples2bytes(h_codec, nb_samples) * channels;
+    WARN("Cannot convert samples to bytes\n");
+    return nb_samples * channels;
+}
+
+unsigned int AmAudioFormat::bytes2samples(unsigned int bytes) const
+{
+    if (codec && codec->samples2bytes)
+	return codec->bytes2samples(h_codec, bytes) / channels;
+    WARN("Cannot convert bytes to samples\n");
+    return bytes / channels;
+}
+
 bool AmAudioFormat::operator == (const AmAudioFormat& r) const
 {
     return ( codec && r.codec
 	     && (r.codec->id == codec->id) 
-	     && (r.sample == sample)
+	     && (r.bytes2samples(1024) == bytes2samples(1024))
 	     && (r.channels == channels)
 	     && (r.rate == rate));
 }
@@ -211,7 +224,7 @@ void AmAudio::close()
 // returns bytes read, else -1 if error (0 is OK)
 int AmAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples)
 {
-    int size = nb_samples * fmt->sample * fmt->channels;
+    int size = samples2bytes(nb_samples);
 
     size = read(user_ts,size);
     //DBG("size = %d\n",size);
@@ -337,14 +350,14 @@ unsigned int AmAudio::getFrameSize()
     return fmt->frame_size;
 }
 
-unsigned int AmAudio::samples2bytes(unsigned int nb_samples)
+unsigned int AmAudio::samples2bytes(unsigned int nb_samples) const
 {
-    return nb_samples * fmt->sample * fmt->channels;
+    return fmt->samples2bytes(nb_samples);
 }
 
-unsigned int AmAudio::bytes2samples(unsigned int bytes)
+unsigned int AmAudio::bytes2samples(unsigned int bytes) const
 {
-    return bytes / (fmt->sample * fmt->channels);
+    return fmt->bytes2samples(bytes);
 }
 
 void AmAudio::setRecordTime(unsigned int ms)
@@ -427,14 +440,12 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
     }
 
     fd.subtype = f_fmt->getSubtypeId();
-    fd.sample = f_fmt->sample;
     fd.channels = f_fmt->channels;
     fd.rate = f_fmt->rate;
 
     if( iofmt->open && !(ret = (*iofmt->open)(fp,&fd,mode, f_fmt->getHCodecNoInit())) ) {
 	if (mode == AmAudioFile::Read) {
 	    f_fmt->setSubtypeId(fd.subtype);
-	    f_fmt->sample = fd.sample;
 	    f_fmt->channels = fd.channels;
 	    f_fmt->rate = fd.rate;
 	}
@@ -492,14 +503,12 @@ int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
     }
 
     fd.subtype = f_fmt->getSubtypeId();
-    fd.sample = f_fmt->sample;
     fd.channels = f_fmt->channels;
     fd.rate = f_fmt->rate;
 
     if( iofmt->open && !(ret = (*iofmt->open)(fp,&fd,mode, f_fmt->getHCodecNoInit())) ) {
 	if (mode == AmAudioFile::Read) {
 	    f_fmt->setSubtypeId(fd.subtype);
-	    f_fmt->sample = fd.sample;
 	    f_fmt->channels = fd.channels;
 	    f_fmt->rate = fd.rate;
 	}
@@ -518,7 +527,6 @@ int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
 
 // 	DBG("After open:\n");
 // 	DBG("fmt::subtype = %i\n",f_fmt->getSubtypeId());
-// 	DBG("fmt::sample = %i\n",f_fmt->sample);
 // 	DBG("fmt::channels = %i\n",f_fmt->channels);
 // 	DBG("fmt::rate = %i\n",f_fmt->rate);
 //     }
@@ -554,7 +562,6 @@ void AmAudioFile::on_close()
 
 	if(f_fmt){
 	    amci_file_desc_t fmt_desc = { f_fmt->getSubtypeId(), 
-					  f_fmt->sample, 
 					  f_fmt->rate, 
 					  f_fmt->channels, 
 					  data_size };
@@ -563,14 +570,13 @@ void AmAudioFile::on_close()
 		ERROR("file format pointer not initialized: on_close will not be called\n");
 	    }
 	    else if(iofmt->on_close)
-		(*iofmt->on_close)(fp,&fmt_desc,open_mode, fmt->getHCodecNoInit());
+		(*iofmt->on_close)(fp,&fmt_desc,open_mode, fmt->getHCodecNoInit(), fmt->getCodec());
 	}
 
 	if(open_mode == AmAudioFile::Write){
 
 	    DBG("After close:\n");
 	    DBG("fmt::subtype = %i\n",f_fmt->getSubtypeId());
-	    DBG("fmt::sample = %i\n",f_fmt->sample);
 	    DBG("fmt::channels = %i\n",f_fmt->channels);
 	    DBG("fmt::rate = %i\n",f_fmt->rate);
 	}

@@ -25,65 +25,106 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "AmRtpStream.h"
 #include "AmJitterBuffer.h"
 #include "AmRtpPacket.h"
 #include "log.h"
 #include "SampleArray.h"
 
-#define INITIAL_JITTER	    2
-#define MAX_JITTER	    200 // 2 seconds
-#define RESYNC_THRESHOLD    10
-
-template <typename T>
-RingBuffer<T>::RingBuffer(unsigned int size)
-    : m_buffer(new T[size]), m_size(size)
+bool Packet::operator < (const Packet& p) const
 {
-    memset(m_buffer, 0, sizeof(T)*size);
+    return ts_less()(m_packet.timestamp, p.m_packet.timestamp);
 }
 
-template <typename T>
-void RingBuffer<T>::get(unsigned int idx, T *dest)
+PacketAllocator::PacketAllocator()
 {
-    memcpy(dest, &m_buffer[idx % m_size], sizeof(T));
+    m_mutex.lock();
+    m_free_packets = m_packets;
+    for (int i = 1; i < MAX_JITTER / 80; ++i) {
+	m_packets[i - 1].m_next = &m_packets[i];
+    }
+    m_packets[MAX_JITTER / 80 - 1].m_next = NULL;
+    m_mutex.unlock();
 }
 
-template <typename T>
-void RingBuffer<T>::put(unsigned int idx, const T *src)
+Packet *PacketAllocator::alloc(const AmRtpPacket *p)
 {
-    memcpy(&m_buffer[idx % m_size], src, sizeof(T));
+    if (m_free_packets == NULL)
+	return NULL;
+    m_mutex.lock();
+    Packet *retval = m_free_packets;
+    m_free_packets = retval->m_next;
+    memcpy(&retval->m_packet, p, sizeof(*p));
+    retval->m_next = retval->m_prev = NULL;
+    m_mutex.unlock();
+    return retval;
 }
 
-template <typename T>
-void RingBuffer<T>::clear(unsigned int idx)
+void PacketAllocator::free(Packet *p)
 {
-    memset(&m_buffer[idx % m_size], 0, sizeof(T));
+    m_mutex.lock();
+    p->m_prev = NULL;
+    p->m_next = m_free_packets;
+    m_free_packets = p;
+    m_mutex.unlock();
 }
 
-AmJitterBuffer::AmJitterBuffer(unsigned int frame_size)
-    : m_tsInited(false), m_tsDeltaInited(false), m_ringBuffer(MAX_JITTER),
-      m_delayCount(0), m_jitter(INITIAL_JITTER), m_frameSize(frame_size)
+AmJitterBuffer::AmJitterBuffer(AmRtpStream *owner)
+    : m_tsInited(false), m_tsDeltaInited(false), m_delayCount(0),
+      m_jitter(INITIAL_JITTER), m_owner(owner)
 {
 }
 
 void AmJitterBuffer::put(const AmRtpPacket *p)
 {
     m_mutex.lock();
-    //m_inputBuffer[p->timestamp].copy(p);
-	//    DBG("Putting pkt at %u me = %ld\n", p->timestamp / m_frameSize, (long) this);
-    if (m_tsInited && ts_less()(p->timestamp + m_jitter * m_frameSize, m_lastTs)) {
+    if (m_tsInited && ts_less()(m_lastTs + m_jitter, p->timestamp)) {
 	unsigned int delay = p->timestamp - m_lastTs;
-	if (delay > m_jitter * m_frameSize && m_jitter < MAX_JITTER) {
-	    m_jitter += (delay / m_frameSize - m_jitter) / 2 + 1;
+	if (delay > m_jitter && m_jitter < MAX_JITTER)
+       	{
+	    m_jitter += (delay - m_jitter) / 2;
 	    if (m_jitter > MAX_JITTER)
 		m_jitter = MAX_JITTER;
+	    // DBG("Jitter buffer delay increased to %u\n", m_jitter);
 	}
 	// Packet arrived too late to be put into buffer
-	if (ts_less()(p->timestamp + m_jitter * m_frameSize, m_lastTs)) {
+	if (ts_less()(p->timestamp + m_jitter, m_lastTs)) {
 	    m_mutex.unlock();
 	    return;
 	}
     }
-    m_ringBuffer.put(p->timestamp / m_frameSize, p);
+    Packet *elem = m_allocator.alloc(p);
+    if (elem == NULL) {
+	elem = m_head;
+	m_head = m_head->m_next;
+	m_head->m_prev = NULL;
+	memcpy(&elem->m_packet, p, sizeof(*p));
+    }
+    if (m_tail == NULL)
+    {
+	m_tail = m_head = elem;
+	elem->m_next = elem->m_prev = NULL;
+    }
+    else {
+	if (*m_tail < *elem) // elem is later than tail - put it in tail
+       	{
+	    m_tail->m_next = elem;
+	    elem->m_prev = m_tail;
+	    m_tail = elem;
+	    elem->m_next = NULL;
+	}
+	else { // elem is out of order - place it properly
+	    Packet *i;
+	    for (i = m_tail; i->m_prev && *elem < *(i->m_prev); i = i->m_prev);
+	    elem->m_prev = i->m_prev;
+	    if (i->m_prev)
+		i->m_prev->m_next = elem;
+	    else
+		m_head = elem;
+	    i->m_prev = elem;
+	    elem->m_next = i;
+	}
+    }
     if (!m_tsInited) {
 	m_lastTs = p->timestamp;
 	m_tsInited = true;
@@ -95,7 +136,12 @@ void AmJitterBuffer::put(const AmRtpPacket *p)
     m_mutex.unlock();
 }
 
-bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts)
+/**
+ * This method will return from zero to several packets.
+ * To get all the packets for the single ts the caller must call this
+ * method with the same ts till the return value will become false.
+ */
+bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 {
     bool retval = true;
 
@@ -105,28 +151,25 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts)
 	return false;
     }
     if (!m_tsDeltaInited) {
-	m_tsDelta = m_lastTs - ts;
+	m_tsDelta = m_lastTs - ts + ms;
 	m_tsDeltaInited = true;
+	m_lastAudioTs = ts;
     }
-    else {
-	unsigned int new_delta = m_lastTs - ts;
-	if (ts_less()(m_tsDelta, new_delta)) {
+    else if (m_lastAudioTs != ts && m_lastResyncTs != m_lastTs) {
+	if (ts_less()(ts + m_tsDelta, m_lastTs)) {
 	    /* 
 	     * New packet arrived earlier than expected -
 	     *  immediate resync required 
 	     */
-	    m_ringBuffer.clear((ts + m_tsDelta - m_jitter * m_frameSize) / m_frameSize);
-	    ++m_tsDelta;
+	    m_tsDelta += ms;
 		//		DBG("Jitter buffer resynced forward (-> %u)\n", m_tsDelta);
 	    m_delayCount = 0;
 	}
-	else if (ts_less()(new_delta, m_tsDelta)) {
+	else if (ts_less()(m_lastTs, ts + m_tsDelta - m_jitter / 2)) {
 	    /* New packet hasn't arrived yet */
 	    if (m_delayCount > RESYNC_THRESHOLD) {
-		--m_tsDelta;
+		m_tsDelta -= 80; // 10ms
 		//		DBG("Jitter buffer resynced backward (-> %u)\n", m_tsDelta);
-//		m_tsDelta = new_delta;
-//		m_delayCount = 0;
 	    }
 	    else
 		++m_delayCount;
@@ -135,12 +178,38 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts)
 	    /* New packet arrived at proper time */
 	    m_delayCount = 0;
 	}
+	m_lastResyncTs = m_lastTs;
     }
-    unsigned int get_ts = ts + m_tsDelta - m_jitter * m_frameSize;
-    m_ringBuffer.get(get_ts / m_frameSize, &p);
+    m_lastAudioTs = ts;
+    unsigned int get_ts = ts + m_tsDelta - m_jitter;
 	//    DBG("Getting pkt at %u, res ts = %u\n", get_ts / m_frameSize, p.timestamp);
-    m_ringBuffer.clear(get_ts / m_frameSize);
-    if (!p.timestamp) 
+    // First of all throw away all too old packets from the head
+    Packet *tmp;
+    for (tmp = m_head; tmp && ts_less()(tmp->m_packet.timestamp + m_owner->bytes2samples(tmp->m_packet.getDataSize()), get_ts); )
+    {
+	m_head = tmp->m_next;
+	if (m_head == NULL)
+	    m_tail = NULL;
+	else
+	    m_head->m_prev = NULL;
+	m_allocator.free(tmp);
+	tmp = m_head;
+    }
+    // Get the packet from the head
+    if (m_head && ts_less()(m_head->m_packet.timestamp, get_ts + ms))
+    {
+	tmp = m_head;
+	m_head = tmp->m_next;
+	if (m_head == NULL)
+	    m_tail = NULL;
+	else
+	    m_head->m_prev = NULL;
+	memcpy(&p, &tmp->m_packet, sizeof(p));
+	// Map RTP timestamp to internal audio timestamp
+	p.timestamp -= m_tsDelta - m_jitter;
+	m_allocator.free(tmp);
+    }
+    else
 	retval = false;
 
     m_mutex.unlock();

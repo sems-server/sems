@@ -72,14 +72,18 @@ static int Pcm16_2_iLBC( unsigned char* out_buf, unsigned char* in_buf, unsigned
 static long iLBC_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
 static void iLBC_destroy(long h_inst);
 static int iLBC_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec);
-static int iLBC_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec);
+static int iLBC_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec, struct amci_codec_t *codec);
+
+static unsigned int ilbc_bytes2samples(long, unsigned int);
+static unsigned int ilbc_samples2bytes(long, unsigned int);
 
 BEGIN_EXPORTS( "ilbc" )
 
     BEGIN_CODECS
-      CODEC( CODEC_ILBC,  1, Pcm16_2_iLBC, iLBC_2_Pcm16, iLBC_PLC,
-	     (amci_codec_init_t)iLBC_create, 
-	     (amci_codec_destroy_t)iLBC_destroy )
+      CODEC( CODEC_ILBC, Pcm16_2_iLBC, iLBC_2_Pcm16, iLBC_PLC,
+	     iLBC_create, 
+	     iLBC_destroy,
+	     ilbc_bytes2samples, ilbc_samples2bytes )
     END_CODECS
     
     BEGIN_PAYLOADS
@@ -100,8 +104,26 @@ END_EXPORTS
 typedef struct {
   iLBC_Enc_Inst_t iLBC_Enc_Inst;
   iLBC_Dec_Inst_t iLBC_Dec_Inst;
+  int mode;
 } iLBC_Codec_Inst_t;
 
+static unsigned int ilbc_bytes2samples(long h_codec, unsigned int num_bytes)
+{
+    iLBC_Codec_Inst_t* codec_inst = (iLBC_Codec_Inst_t*) h_codec;
+    if (codec_inst->mode == 30)
+	return 240 * (num_bytes / 50);
+    else
+	return 160 * (num_bytes / 38);
+}
+
+static unsigned int ilbc_samples2bytes(long h_codec, unsigned int num_samples)
+{
+    iLBC_Codec_Inst_t* codec_inst = (iLBC_Codec_Inst_t*) h_codec;
+    if (codec_inst->mode == 30)
+	return (num_samples / 240) * 50;
+    else
+	return (num_samples / 160) * 38;
+}
 
 long iLBC_create(const char* format_parameters, amci_codec_fmt_info_t* format_description) {
 
@@ -140,6 +162,7 @@ long iLBC_create(const char* format_parameters, amci_codec_fmt_info_t* format_de
   }
 
   codec_inst = (iLBC_Codec_Inst_t*)malloc(sizeof(iLBC_Codec_Inst_t));
+  codec_inst->mode = mode;
 
   if (!codec_inst) 
     return -1;
@@ -282,7 +305,6 @@ static int ilbc_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
       DBG("wrong format !");
       return -1;
     }
-    fmt_desc->sample = 2;
     fmt_desc->rate = 8000;
     fmt_desc->channels = 1;
 
@@ -313,7 +335,7 @@ int iLBC_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_c
     }
 }
 
-int iLBC_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec)
+int iLBC_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec, struct amci_codec_t *codec)
 {
   DBG("iLBC_close.\n");
   return 0;

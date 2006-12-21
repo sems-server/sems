@@ -31,47 +31,55 @@
 #include "AmThread.h"
 #include "AmRtpPacket.h"
 
-#include <map>
-using std::map;
+class AmRtpStream;
 
-template <typename T> class RingBuffer
+#define INITIAL_JITTER	    640 // 80 miliseconds
+#define MAX_JITTER	    16000 // 2 seconds
+#define RESYNC_THRESHOLD    10
+
+class Packet {
+public:
+    AmRtpPacket m_packet;
+    Packet *m_next;
+    Packet *m_prev;
+
+    bool operator < (const Packet&) const;
+};
+
+class PacketAllocator
 {
 private:
-    T *m_buffer;
-    unsigned int m_size;
+    Packet m_packets[MAX_JITTER / 80];
+    Packet *m_free_packets;
+    AmMutex m_mutex;
 
 public:
-    RingBuffer(unsigned int size);
-    ~RingBuffer();
-    void put(unsigned int idx, const T*);
-    void get(unsigned int idx, T*);
-    void clear(unsigned int idx);
+    PacketAllocator();
+    Packet *alloc(const AmRtpPacket *);
+    void free(Packet *p);
 };
 
 class AmJitterBuffer
 {
 private:
     AmMutex m_mutex;
-    RingBuffer<AmRtpPacket> m_ringBuffer;
+    PacketAllocator m_allocator;
+    Packet *m_head;
+    Packet *m_tail;
     bool m_tsInited;
     unsigned int m_lastTs;
+    unsigned int m_lastResyncTs;
+    unsigned int m_lastAudioTs;
     unsigned int m_tsDelta;
     bool m_tsDeltaInited;
     int m_delayCount;
     unsigned int m_jitter;
-    unsigned int m_frameSize;
+    AmRtpStream *m_owner;
 
 public:
-    AmJitterBuffer(unsigned int frame_size);
+    AmJitterBuffer(AmRtpStream *owner);
     void put(const AmRtpPacket *);
-    bool get(AmRtpPacket &, unsigned int ts);
+    bool get(AmRtpPacket &, unsigned int ts, unsigned int ms);
 };
-
-template <typename T>
-RingBuffer<T>::~RingBuffer()
-{
-    delete [] m_buffer;
-}
-
 
 #endif // _AmJitterBuffer_h_

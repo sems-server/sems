@@ -74,6 +74,7 @@ extern "C" {
   /** @def AMCI_FMT_ENCODED_FRAME_SIZE encoded frame size in bytes */
 #define AMCI_FMT_ENCODED_FRAME_SIZE 3
 
+struct amci_codec_t;
 
 /** 
  * File format declaration 
@@ -83,9 +84,6 @@ struct amci_file_desc_t {
 
     /** subtype from current file format */
     int     subtype;
-
-    /** sample size */
-    int     sample;
 
     /** sampling rate */
     int     rate;
@@ -142,19 +140,35 @@ typedef int (*amci_plc_t)( unsigned char* out,
 			   long           h_codec );
 
 /**
- * File format handler
+ * File format handler's open function
  * @param fptr     [in] fresh opened file pointer
  * @param fmt_desc [out] file description
  * @param options  [in] options (see amci_inoutfmt_t)
  * @param h_codec  [in] handle of the codec
  * @return if failure -1, else 0.
  * @see amci_inoutfmt_t::open
- * @see amci_inoutfmt_t::on_close
  */
-typedef int (*amci_file_handler_t)( FILE* fptr,
+typedef int (*amci_file_open_t)( FILE* fptr,
 				    struct amci_file_desc_t* fmt_desc,
 				    int  options,
 				    long h_codec
+                                  );
+
+/**
+ * File format handler's close function
+ * @param fptr     [in] fresh opened file pointer
+ * @param fmt_desc [out] file description
+ * @param options  [in] options (see amci_inoutfmt_t)
+ * @param h_codec  [in] handle of the codec
+ * @param codec    [in] codec structure
+ * @return if failure -1, else 0.
+ * @see amci_inoutfmt_t::on_close
+ */
+typedef int (*amci_file_close_t)( FILE* fptr,
+				    struct amci_file_desc_t* fmt_desc,
+				    int  options,
+				    long h_codec,
+				    struct amci_codec_t *codec
                                   );
 
 /**
@@ -184,6 +198,16 @@ typedef long (*amci_codec_init_t)(const char* format_parameters, amci_codec_fmt_
 typedef void (*amci_codec_destroy_t)(long h_codec);
 
 /**
+ * Codec's function for calculating the number of samples from bytes
+ */
+typedef unsigned int (*amci_codec_bytes2samples_t)(long h_codec, unsigned int num_bytes);
+
+/**
+ * Codec's function for calculating the number of bytes from samples
+ */
+typedef unsigned int (*amci_codec_samples2bytes_t)(long h_codec, unsigned int num_samples);
+
+/**
  * Codec description
  */
 struct amci_codec_t {
@@ -191,9 +215,6 @@ struct amci_codec_t {
     /** internal codec id (the ones from codecs.h) */
     int id;
 
-    /** Size in bytes (!TODO: have bits in place of bytes) */
-    int sample_size;
-    
     /** 
      * Converts the input buffer (internal format: Pcm16)
      * to the format described in this structure. 
@@ -210,6 +231,12 @@ struct amci_codec_t {
     amci_codec_init_t    init;
     /** Destroy function. can be NULL. */
     amci_codec_destroy_t destroy;
+
+    /** Function for calculating the number of bytes from samples. */
+    amci_codec_bytes2samples_t bytes2samples;
+
+    /** Function for calculating the number of samples from bytes. */
+    amci_codec_samples2bytes_t samples2bytes;
 };
 
 struct amci_subtype_t {
@@ -253,10 +280,10 @@ struct amci_inoutfmt_t {
     char* email_content_type; 
 
     /** options: AMCI_RDONLY, AMCI_WRONLY. */
-    amci_file_handler_t open;
+    amci_file_open_t open;
 
     /** no options at the moment. */
-    amci_file_handler_t on_close;
+    amci_file_close_t on_close;
 
     /** NULL terminated subtype array. */
     struct amci_subtype_t*  subtypes; 
@@ -351,7 +378,7 @@ struct amci_exports_t {
  * @hideinitializer
  */
 #define END_CODECS \
-                    { -1, 0, 0, 0, 0, 0, 0 } \
+                    { -1, 0, 0, 0, 0, 0, 0, 0 } \
                 },
 
 /**
@@ -359,8 +386,8 @@ struct amci_exports_t {
  * see example media plug-in 'wav' (plug-in/wav/wav.c).
  * @hideinitializer
  */
-#define CODEC(id,sample_size,intern2type,type2intern,plc,init,destroy) \
-                    { id, sample_size, intern2type, type2intern, plc, init, destroy },
+#define CODEC(id,intern2type,type2intern,plc,init,destroy,bytes2samples,samples2bytes) \
+                    { id, intern2type, type2intern, plc, init, destroy, bytes2samples, samples2bytes },
 
 /**
  * Portable export definition macro

@@ -138,8 +138,7 @@ protected:
     void setLocalPort();
 
     /* get next packet in buffer */
-    int nextAudioPacket(AmRtpPacket& p, unsigned int ts);
-    void initJitterBuffer(unsigned int frame_size);
+    int nextAudioPacket(AmRtpPacket& p, unsigned int ts, unsigned int ms);
 
 public:
 
@@ -151,8 +150,8 @@ public:
 	      unsigned char* buffer,
 	      unsigned int   size );
 
-    int receive( unsigned char* buffer, unsigned int size,
-		 unsigned int audio_buffer_ts);
+    int receive( unsigned char* buffer, unsigned int size, unsigned int *ts,
+		 unsigned int audio_buffer_ts, unsigned int ms);
     
     /** Allocates resources for future use of RTP. */
     AmRtpStream(AmSession* _s=0);
@@ -231,6 +230,8 @@ public:
      * Note: memory is owned by this instance.
      */
     void bufferPacket(const AmRtpPacket* p);
+
+    virtual unsigned int bytes2samples(unsigned int) const = 0;
 };
 /** \brief represents info about an \ref AmRtpStream */
 struct AmRtpStreamInfo

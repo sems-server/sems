@@ -62,60 +62,76 @@ bool AmRtpAudio::sendIntReached()
     return send_int;
 }
 
+unsigned int AmRtpAudio::bytes2samples(unsigned int bytes) const
+{
+    return AmAudio::bytes2samples(bytes);
+}
 /* 
    @param audio_buffer_ts [in]    the current ts in the audio buffer 
  */
 int AmRtpAudio::receive(unsigned int audio_buffer_ts) 
 {
-    int size;
+    int rtp_size;
+    int audio_size;
+    unsigned int ts;
 
-    size = AmRtpStream::receive((unsigned char*)samples, 
-				(unsigned int)AUDIO_BUFFER_SIZE,/*ts,*/
-				audio_buffer_ts);
-    if (size < 0)
-	return size;
-    
-    if(send_only){
+    if (send_only) {
 	last_ts_i = false;
 	return 0;
     }
-
-    if (size == 0)
+    /**
+     * Receive all RTP packets that correspond to the required interval,
+     * decode them and put into playout buffer.
+     */
+    while (true)
     {
-	if (last_ts_i)
-	{
-	    int size = conceal_loss(audio_buffer_ts - m_audio_last_ts);
-	    if (size > 0)
-	    {
-		playout_buffer->direct_write(audio_buffer_ts,
-					     (ShortSample*)samples.back_buffer(),
-					     PCM16_B2S(size));
-	    }
+	rtp_size = AmRtpStream::receive((unsigned char*)samples, 
+				    (unsigned int)AUDIO_BUFFER_SIZE, &ts,
+				    audio_buffer_ts, getFrameSize());
+	if (rtp_size < 0) {
+	    return rtp_size;
 	}
-	else
-	    return 0;
-    }
-    else
-    {
-	last_ts_i = true;
-	
-
-	size = decode(size);
-	if (size <= 0) {
-	    ERROR("decode() returned %i\n",size);
+	if (rtp_size == 0) { // No more RTP packets for this interval
+	    break;
+	}
+	audio_size = decode(rtp_size);
+	if (audio_size <= 0) {
+	    ERROR("decode() returned %i\n", audio_size);
 	    return -1;
 	}
-
-	if(use_default_plc)
-	    add_to_history(size);
-
-	playout_buffer->direct_write(audio_buffer_ts, /*ts,*/
-			      (ShortSample*)((unsigned char*)samples),
-			      PCM16_B2S(size));
+	playout_buffer->direct_write(ts,
+				     (ShortSample*)((unsigned char*)samples),
+				     PCM16_B2S(audio_size));
+	/* Conceal the gap between previous and current RTP packets */
+	if (last_ts_i && ts_less()(m_last_rtp_endts, ts))
+       	{
+	    int concealed_size = conceal_loss(ts - m_last_rtp_endts);
+	    if (concealed_size > 0)
+		playout_buffer->direct_write(m_last_rtp_endts,
+		     (ShortSample*)((unsigned char*)samples.back_buffer()),
+		     PCM16_B2S(concealed_size));
+	}
+	m_last_rtp_endts = ts + bytes2samples(rtp_size);
+	last_ts_i = true;
+	if(use_default_plc) {
+	    add_to_history(audio_size);
+	}
     }
-    m_audio_last_ts = audio_buffer_ts;
+    if (!last_ts_i) {
+	return 0;
+    }
+    if (ts_less()(m_last_rtp_endts, audio_buffer_ts + getFrameSize()))
+    {
+	/* Last packets have been lost. Conceal them */
+	int concealed_size = conceal_loss(audio_buffer_ts + getFrameSize() - m_last_rtp_endts);
+	if (concealed_size > 0)
+	    playout_buffer->direct_write(m_last_rtp_endts,
+		    (ShortSample*)((unsigned char*)samples.back_buffer()),
+		    PCM16_B2S(concealed_size));
+	m_last_rtp_endts = audio_buffer_ts + getFrameSize();
+    }
     
-    return size;
+    return PCM16_S2B(getFrameSize());
 }
 
 int AmRtpAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples)
@@ -146,7 +162,6 @@ void AmRtpAudio::init(const SdpPayload* sdp_payload)
     DBG("AmRtpAudio::init(...)\n");
     AmRtpStream::init(sdp_payload);
     fmt.reset(new AmAudioRtpFormat(int_payload, format_parameters));
-    initJitterBuffer(getFrameSize());
 
     amci_codec_t* codec = fmt->getCodec();
     use_default_plc = !(codec && codec->plc);

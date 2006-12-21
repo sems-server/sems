@@ -38,19 +38,12 @@ u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
 {
     if(ts_less()(r_ts,w_ts)){
 
-	u_int32_t rlen=0;
-	if(ts_less()(r_ts+PCM16_B2S(AUDIO_BUFFER_SIZE),w_ts))
-	    rlen = PCM16_B2S(AUDIO_BUFFER_SIZE);
-	else
-	    rlen = w_ts - r_ts;
-
-	buffer_get(r_ts,buf,rlen);
-	return rlen;
+	buffer_get(r_ts,buf,len);
+	return len;
     }
 
     return 0;
 }
-
 
 AmAdaptivePlayout::AmAdaptivePlayout()
     : idx(0),

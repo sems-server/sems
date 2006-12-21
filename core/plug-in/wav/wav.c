@@ -89,11 +89,14 @@ static int Pcm16_2_ULaw( unsigned char* out_buf, unsigned char* in_buf, unsigned
 static int Pcm16_2_ALaw( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			 unsigned int channels, unsigned int rate, long h_codec );
 
+static unsigned int g711_bytes2samples(long, unsigned int);
+static unsigned int g711_samples2bytes(long, unsigned int);
+
 BEGIN_EXPORTS( "wav" )
 
     BEGIN_CODECS
-      CODEC( CODEC_ULAW,  1, Pcm16_2_ULaw, ULaw_2_Pcm16, NULL, NULL, NULL )
-      CODEC( CODEC_ALAW,  1, Pcm16_2_ALaw, ALaw_2_Pcm16, NULL, NULL, NULL )
+      CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, NULL, NULL, NULL, g711_bytes2samples, g711_samples2bytes )
+      CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, NULL, NULL, NULL, g711_bytes2samples, g711_samples2bytes )
     END_CODECS
     
     BEGIN_PAYLOADS
@@ -112,6 +115,18 @@ BEGIN_EXPORTS( "wav" )
     END_FILE_FORMATS
 
 END_EXPORTS
+
+static unsigned int g711_bytes2samples(long h_codec, unsigned int num_bytes)
+{
+    /* ALAW and ULAW formats has one sample per byte */
+    return num_bytes;
+}
+
+static unsigned int g711_samples2bytes(long h_codec, unsigned int num_samples)
+{
+    /* ALAW and ULAW formats has one sample per byte */
+    return num_samples;
+}
 
 static int ULaw_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			 unsigned int channels, unsigned int rate, long h_codec )

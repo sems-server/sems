@@ -41,22 +41,46 @@
 #include <string.h>
 #include <errno.h>
 
+static unsigned int pcm16_bytes2samples(long h_codec, unsigned int num_bytes)
+{
+    return num_bytes / 2;
+}
+
+static unsigned int pcm16_samples2bytes(long h_codec, unsigned int num_samples)
+{
+    return num_samples * 2;
+}
+
+static unsigned int tevent_bytes2samples(long h_codec, unsigned int num_bytes)
+{
+    return num_bytes;
+}
+
+static unsigned int tevent_samples2bytes(long h_codec, unsigned int num_samples)
+{
+    return num_samples;
+}
+
 amci_codec_t _codec_pcm16 = { 
     CODEC_PCM16,
-    2,
     NULL,
     NULL,
     NULL,
-    NULL 
+    NULL,
+    NULL,
+    pcm16_bytes2samples,
+    pcm16_samples2bytes
 };
 
 amci_codec_t _codec_tevent = { 
     CODEC_TELEPHONE_EVENT,
-    1,
     NULL,
     NULL,
     NULL,
-    NULL 
+    NULL,
+    NULL,
+    tevent_bytes2samples,
+    tevent_samples2bytes
 };
 
 amci_payload_t _payload_tevent = { 

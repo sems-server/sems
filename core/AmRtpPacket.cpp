@@ -38,7 +38,7 @@
 #include <arpa/inet.h>
 
 AmRtpPacket::AmRtpPacket()
-    : data(0)
+    : data_offset(0)
 {
     memset(buffer,0,4096);
 }
@@ -98,14 +98,19 @@ int AmRtpPacket::parse()
     timestamp = ntohl(hdr->ts);
     ssrc = ntohl(hdr->ssrc);
 
-    data = buffer + sizeof(rtp_hdr_t) + (hdr->cc*4);
-    d_size = b_size - (data - buffer);
+    data_offset = sizeof(rtp_hdr_t) + (hdr->cc*4);
+    d_size = b_size - data_offset;
 
     if(hdr->p){
-	d_size -= data[d_size-1];
+	d_size -= buffer[data_offset+d_size-1];
     }
 
     return 0;
+}
+
+unsigned char *AmRtpPacket::getData()
+{
+    return &buffer[data_offset];
 }
 
 int AmRtpPacket::compile(unsigned char* data_buf, unsigned int size)
@@ -133,8 +138,8 @@ int AmRtpPacket::compile(unsigned char* data_buf, unsigned int size)
     hdr->ts = htonl(timestamp);
     hdr->ssrc = htonl(ssrc);
     
-    data = buffer + sizeof(rtp_hdr_t);
-    memcpy(data,data_buf,d_size);
+    data_offset = sizeof(rtp_hdr_t);
+    memcpy(&buffer[data_offset],data_buf,d_size);
 
     return 0;
 }

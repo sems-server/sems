@@ -52,7 +52,7 @@ class AmRtpAudio: public AmRtpStream, public AmAudio
     bool         last_check_i;
     bool         send_int;
 
-    unsigned int m_audio_last_ts;
+    unsigned int m_last_rtp_endts;
     bool         last_ts_i;
 
     bool         send_only;
@@ -94,6 +94,8 @@ public:
     void init(const SdpPayload* sdp_payload);
 
     void setAdaptivePlayout(bool on);
+
+    virtual unsigned int bytes2samples(unsigned int) const;
 };
 
 #endif

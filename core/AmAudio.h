@@ -82,11 +82,6 @@ public:
     void swap();
 };
 
-struct amci_codec_t;
-struct amci_inoutfmt_t;
-struct amci_file_desc_t;
-struct amci_subtype_t;
-
 class AmAudio;
 
 /**
@@ -102,8 +97,6 @@ class AmAudio;
 class AmAudioFormat
 {
 public:
-    /** Sampling size (in bytes). */
-    int sample;
     /** Number of channels. */
     int channels;
     /** Sampling rate. */
@@ -125,6 +118,9 @@ public:
     /** @return Handler returned by the codec's init function.*/
     long             getHCodec();
     long             getHCodecNoInit() { return h_codec; } // do not initialize
+
+    unsigned int samples2bytes(unsigned int) const;
+    unsigned int bytes2samples(unsigned int) const;
 
     /** @return true if same format. */
     bool operator == (const AmAudioFormat& r) const;
@@ -292,12 +288,12 @@ protected:
     /**
      * Convert the size from samples to bytes, depending on the format.
      */
-    unsigned int samples2bytes(unsigned int nb_samples);
+    unsigned int samples2bytes(unsigned int nb_samples) const;
 
     /**
      * Convert the size from bytes to samples, depending on the format.
      */
-    unsigned int bytes2samples(unsigned int bytes);
+    unsigned int bytes2samples(unsigned int bytes) const;
 
 public:
     //bool begin_talk;

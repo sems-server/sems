@@ -43,11 +43,14 @@ static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* 
 
 static void gsm_destroy_if(long h_codec);
 
+static unsigned int gsm_bytes2samples(long, unsigned int);
+static unsigned int gsm_samples2bytes(long, unsigned int);
+
 BEGIN_EXPORTS( "gsm" )
 
     BEGIN_CODECS
-      CODEC( CODEC_GSM0610, 1, pcm16_2_gsm, gsm_2_pcm16, NULL,
-	     (amci_codec_init_t)gsm_create_if, (amci_codec_destroy_t)gsm_destroy_if )
+      CODEC( CODEC_GSM0610, pcm16_2_gsm, gsm_2_pcm16, NULL,
+	     gsm_create_if, (amci_codec_destroy_t)gsm_destroy_if, gsm_bytes2samples, gsm_samples2bytes )
     END_CODECS
     
     BEGIN_PAYLOADS
@@ -58,6 +61,16 @@ BEGIN_EXPORTS( "gsm" )
     END_FILE_FORMATS
 
 END_EXPORTS
+
+static unsigned int gsm_bytes2samples(long h_codec, unsigned int num_bytes)
+{
+    return 160 * (num_bytes / 33);
+}
+
+static unsigned int gsm_samples2bytes(long h_codec, unsigned int num_samples)
+{
+    return 33 * (num_samples / 160);
+}
 
 static int pcm16_2_gsm(unsigned char* out_buf, unsigned char* in_buf, unsigned int size, 
 		       unsigned int channels, unsigned int rate, long h_codec )
@@ -113,7 +126,7 @@ static int gsm_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned i
 }
 
 
-static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* format_description) 
+static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* format_description)
 { 
     gsm* h_codec=0;
     
