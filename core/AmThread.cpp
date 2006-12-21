@@ -141,7 +141,7 @@ void AmThread::stop()
 
     // gives the thread a chance to clean up
     DBG("Thread %ld (%ld) calling on_stop, give it a chance to clean up.\n", 
-	(unsigned long int) _pid, _td);
+	(unsigned long int) _pid, (unsigned long int) _td);
 
     try { on_stop(); } catch(...) {}
 
@@ -156,7 +156,7 @@ void AmThread::stop()
 		}
 	}
 
-    DBG("Thread %ld (%ld) finished detach.\n", (unsigned long int) _pid, _td);
+    DBG("Thread %ld (%ld) finished detach.\n", (unsigned long int) _pid, (unsigned long int) _td);
 
     //pthread_cancel(_td);
 
