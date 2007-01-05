@@ -51,6 +51,9 @@ install-cfg:
 			$(INSTALL-CFG) $$r $(cfg-prefix)/$(cfg-dir)$$r; \
 	done
 
+(audio-prefix)/$(audio-dir):
+	mkdir -p $(audio-prefix)/$(audio-dir)
+
 .PHONY: $(plug_in_name)_audio
 $(plug_in_name)_audio: $(audio-prefix)/$(audio-dir)
 	mkdir -p $(audio-prefix)/$(audio-dir)$(plug_in_name)
