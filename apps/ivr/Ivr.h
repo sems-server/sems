@@ -130,6 +130,8 @@ public:
 
     // must be called before everything else.
     void setPyPtrs(PyObject *mod, PyObject *dlg);
+
+    int transfer(const string& target);
     
     void onSessionStart(const AmSipRequest& req);
     void onBye(const AmSipRequest& req);

@@ -421,6 +421,49 @@ int AmSipDialog::refer(const string& refer_to)
 
 }
 
+int AmSipDialog::transfer(const string& target)
+{
+    if(status == Connected){
+
+		status = Disconnecting;
+		
+		string      hdrs;
+		AmSipDialog tmp_d(*this);
+		
+		tmp_d.setRoute("");
+		tmp_d.contact_uri = "Contact: <" + tmp_d.remote_uri + ">\n";
+		tmp_d.remote_uri = target;
+		
+		if(!route.empty()){
+			
+			vector<string>::iterator it = route.begin();
+			string r_set = "P-Transfer-RR: " + *it;
+			
+			for(it++; it != route.end(); it++)
+				r_set += "," + *it;
+			
+			hdrs += r_set + "\n";
+		}
+		
+		if(!next_hop.empty())
+			hdrs += "P-Transfer-NH: " + next_hop + "\n";
+		
+		int ret = tmp_d.sendRequest("REFER","","",hdrs);
+		if(!ret){
+			uac_trans.insert(tmp_d.uac_trans.begin(),
+							 tmp_d.uac_trans.end());
+			cseq = tmp_d.cseq;
+		}
+		
+		return ret;
+    }
+	
+    DBG("transfer(): we are not connected "
+	"(status=%i). do nothing!\n",status);
+    
+    return 0;
+}
+
 int AmSipDialog::cancel()
 {
     int cancel_cseq = -1;

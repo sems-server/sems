@@ -140,6 +140,7 @@ static PyObject* IvrDialogBase_stopSession(IvrDialogBase* self, PyObject*)
 {
     assert(self->p_dlg);
     self->p_dlg->setStopped();
+	self->p_dlg->postEvent(0);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -385,6 +386,24 @@ IvrDialogBase_getdialog(IvrDialogBase *self, void *closure)
   return self->dialog;
 }
 
+static PyObject*
+IvrDialogBase_redirect(IvrDialogBase *self, PyObject* args)
+{
+    assert(self->p_dlg);
+    
+    char* refer_to=0;
+    if(!PyArg_ParseTuple(args,"s",&refer_to))
+		return NULL;
+    
+    if(self->p_dlg->transfer(refer_to)){
+		ERROR("redirect failed\n");
+		return NULL;
+    }
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+    
+}
 
 static PyMethodDef IvrDialogBase_methods[] = {
     
@@ -412,7 +431,9 @@ static PyMethodDef IvrDialogBase_methods[] = {
     {"bye", (PyCFunction)IvrDialogBase_bye, METH_NOARGS,
      "Send a BYE"
     },
-    
+    {"redirect", (PyCFunction)IvrDialogBase_redirect, METH_VARARGS,
+     "Refers the remote party to some third party."
+    },   
     // Media control
     {"enqueue", (PyCFunction)IvrDialogBase_enqueue, METH_VARARGS,
      "Add some audio to the queue (mostly IvrAudioFile)"

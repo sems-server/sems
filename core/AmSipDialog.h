@@ -142,6 +142,8 @@ public:
 	       const string& content_type,
 	       const string& body);
 	int refer(const string& refer_to);
+	int transfer(const string& target);
+
     /**
      * @return true if a transaction could be found that
      *              matches the CANCEL's one.

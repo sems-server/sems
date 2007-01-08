@@ -464,6 +464,11 @@ void IvrFactory::start_deferred_threads() {
 }
 
 
+int IvrDialog::transfer(const string& target)
+{
+    return dlg.transfer(target);
+}
+
 /**
  * Load a script using user name from URI.
  * Note: there is no default script.
