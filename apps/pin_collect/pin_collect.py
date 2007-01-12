@@ -1,38 +1,32 @@
 from log import *
 from ivr import *
+import xmlrpclib
 
+#states
 collect         = 0
 connect         = 1
 connect_failed  = 2
 
-
 HINT_TIMER   = 1
 HINT_TIMEOUT = 10 # seconds until hint msg is played
 
-CONF_TIMER   = 2
-
-# def loopedTTS(str):
-# 	af = IvrAudioFile.tts(str)
-# 	af.loop = True
-# 	return af
-
 class IvrDialog(IvrDialogBase):
-
+    # messages to be played to the caller
 	welcome_msg   = None
-	auth_ok_msg   = None
-	auth_fail_msg = None
 	pin_msg       = None
+	auth_fail_msg = None
+	fail_msg	  = None
 
-	transfer_cseq    = None
-	dlg_remote_uri   = None	
-
+	# initial state
 	state = collect
+	# entered keys
 	keys = ''
 
-	conf_to = ''
-	conf_uri = ''
-	conf_duration = 0
-	conf_participants = 0
+	# cseq of transfer request
+	transfer_cseq    = None
+	# remote_uri of dialog
+	dlg_remote_uri   = None	
+
 		
 	def sessionInfo(self):
 		debug("IVR Session info:")
@@ -75,13 +69,27 @@ class IvrDialog(IvrDialogBase):
 				debug("added key, PIN = " + self.keys)
 				self.setTimer(HINT_TIMER, HINT_TIMEOUT)
 			elif key == 10:
-				self.state = connect
-				self.removeTimer(HINT_TIMER)
-				self.dlg_remote_uri	= self.dialog.remote_uri
-				debug("saved remote_uri "+ self.dlg_remote_uri)
-				self.transfer_cseq = self.dialog.cseq
-				self.redirect("sip:" + self.dialog.user + "@" + \
-					      self.dialog.domain)
+
+				c = xmlrpclib.ServerProxy(config['auth_xmlrpc_url'])
+				erg = c.authorize(self.dialog.user, self.keys)
+
+				debug('result of authentication: '+ str(erg))
+				if erg == 'OK':
+					self.state = connect
+					self.removeTimer(HINT_TIMER)
+					self.dlg_remote_uri	= self.dialog.remote_uri
+					debug("saved remote_uri "+ self.dlg_remote_uri)
+					self.transfer_cseq = self.dialog.cseq
+					self.redirect("sip:" + self.dialog.user + "@" + \
+						      self.dialog.domain)
+				else:
+					self.flush()
+					self.keys = ''
+					if self.auth_fail_msg == None:
+						self.auth_fail_msg = IvrAudioFile()
+						self.auth_fail_msg.open(config['auth_fail_msg'],AUDIO_READ)
+					self.enqueue(self.auth_fail_msg,None)
+
 
 	def onEmptyQueue(self):
 		if self.state == collect:
