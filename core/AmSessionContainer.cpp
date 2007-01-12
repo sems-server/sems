@@ -334,7 +334,14 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req)
 	throw string("application '" + plugin_name + "' not found !");
     }
 	    
-    AmSession* session = state_factory->onInvite(req);
+    AmSession* session = 0;
+       if (req.method == "INVITE")
+               session = state_factory->onInvite(req);
+    else if (req.method == "REFER")
+               session = state_factory->onRefer(req);
+
+
+
     if(!session) {
 	//  State creation failed:
 	//   application denied session creation

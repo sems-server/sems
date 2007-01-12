@@ -145,6 +145,15 @@ static PyObject* IvrDialogBase_stopSession(IvrDialogBase* self, PyObject*)
     return Py_None;
 }
 
+static PyObject* IvrDialogBase_dropSession(IvrDialogBase* self, PyObject*)
+{
+    assert(self->p_dlg);
+	self->p_dlg->drop();
+	self->p_dlg->postEvent(0);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyObject* IvrDialogBase_bye(IvrDialogBase* self, PyObject*)
 {
     assert(self->p_dlg);
@@ -434,6 +443,9 @@ static PyMethodDef IvrDialogBase_methods[] = {
     {"redirect", (PyCFunction)IvrDialogBase_redirect, METH_VARARGS,
      "Refers the remote party to some third party."
     },   
+    {"dropSession", (PyCFunction)IvrDialogBase_dropSession, METH_NOARGS,
+     "Drop the session and forget it without replying"
+    },
     // Media control
     {"enqueue", (PyCFunction)IvrDialogBase_enqueue, METH_VARARGS,
      "Add some audio to the queue (mostly IvrAudioFile)"

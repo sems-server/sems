@@ -132,6 +132,7 @@ public:
     void setPyPtrs(PyObject *mod, PyObject *dlg);
 
     int transfer(const string& target);
+	int drop();
     
     void onSessionStart(const AmSipRequest& req);
     void onBye(const AmSipRequest& req);
@@ -139,6 +140,10 @@ public:
 
     void onOtherBye(const AmSipRequest& req);
     void onOtherReply(const AmSipReply& r);
+
+    void onSipReply(const AmSipReply& r);
+    void onSipRequest(const AmSipRequest& r);
+
 };
 
 #endif

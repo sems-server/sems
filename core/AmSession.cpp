@@ -286,7 +286,7 @@ void AmSession::run()
 		   (dlg.getStatus() == AmSipDialog::Disconnecting)//  ||
 		   // (dlg.getUACTransPending())
 		   ){
-		
+
 		waitForEvent();
 		processEvents();
 

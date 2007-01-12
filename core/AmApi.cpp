@@ -48,6 +48,11 @@ AmSessionFactory::AmSessionFactory(const string& name)
 {
 }
 
+AmSession* AmSessionFactory::onRefer(const AmSipRequest& req)
+{
+    throw AmSession::Exception(488,"Not accepted here");
+}
+
 int AmSessionFactory::configureModule(AmConfigReader& cfg) {
   return mod_conf.readFromConfig(cfg);
 }

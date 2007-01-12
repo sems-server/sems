@@ -101,7 +101,7 @@ AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req)
 {
     string announce_path = AnnouncePath;
     string announce_file = announce_path + req.domain 
-	+ "/" + req.user + ".wav";
+	+ "/" + get_header_param(req.r_uri, "play") + ".wav";
 
     DBG("trying '%s'\n",announce_file.c_str());
     if(file_exists(announce_file))

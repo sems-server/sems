@@ -21,6 +21,8 @@
 
 #include "IvrDialogBase.h"
 #include "IvrSipDialog.h"
+#include "IvrSipRequest.h"
+#include "IvrSipReply.h"
 #include "IvrAudio.h"
 #include "IvrUAC.h"
 #include "Ivr.h"
@@ -206,6 +208,11 @@ void IvrFactory::import_ivr_builtins()
     // IvrDialogBase
     import_object(ivr_module,"IvrDialogBase",&IvrDialogBaseType);
 
+    // IvrSipRequest
+    import_object(ivr_module,"IvrSipRequest",&IvrSipRequestType);
+
+    // IvrSipReply
+    import_object(ivr_module,"IvrSipReply",&IvrSipReplyType);
 
     // IvrAudioFile
     import_object(ivr_module,"IvrAudioFile",&IvrAudioFileType);
@@ -469,6 +476,15 @@ int IvrDialog::transfer(const string& target)
     return dlg.transfer(target);
 }
 
+int IvrDialog::drop()
+{
+	int res = dlg.drop();
+    if (res) 
+		setStopped();
+	
+	return res;
+}
+
 /**
  * Load a script using user name from URI.
  * Note: there is no default script.
@@ -631,6 +647,18 @@ void IvrDialog::onOtherReply(const AmSipReply& r)
     if(callPyEventHandler("onOtherReply","is",
 			  r.code,r.reason.c_str()))
 	AmB2BSession::onOtherReply(r);
+}
+
+void IvrDialog::onSipReply(const AmSipReply& r) {
+    AmSipReply* rep_cpy = new AmSipReply(r);
+    callPyEventHandler("onSipReply","O",IvrSipReply_FromPtr(rep_cpy));
+    AmB2BSession::onSipReply(r);
+}
+
+void IvrDialog::onSipRequest(const AmSipRequest& r){
+    AmSipRequest* req_cpy = new AmSipRequest(r);
+    callPyEventHandler("onSipRequest","O", IvrSipRequest_FromPtr(req_cpy));
+    AmB2BSession::onSipRequest(r);
 }
 
 void IvrDialog::process(AmEvent* event) 

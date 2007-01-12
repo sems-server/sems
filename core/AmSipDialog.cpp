@@ -180,8 +180,9 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
     case Pending:
     case Disconnected:
-	if(t.method != "BYE"){
-
+		// only change status of dialog if reply 
+		// to INVITE received
+		if(t.method == "INVITE"){ 
 	    if(reply.code < 200)
 		status = Pending;
 	    else if(reply.code >= 300)
@@ -614,4 +615,10 @@ void AmSipDialog::setRoute(const string& n_route)
 	else
 	    m_route = "";
     }
+}
+
+int AmSipDialog::drop()
+{	
+    status = Disconnected;
+	return 1;
 }

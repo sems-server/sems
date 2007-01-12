@@ -1,8 +1,29 @@
-#include "IvrSipRequest.h"
-//#include "AmSessionTimer.h"
-#include "AmSipRequest.h"
+/*
+ * $Id$
+ * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2007 iptego GmbH
+ *
+ * This file is part of sems, a free SIP media server.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
-#if 0
+#include "IvrSipRequest.h"
+#include "AmSipRequest.h"
+#include "log.h"
+
 // Data definition
 typedef struct {
     
@@ -53,20 +74,26 @@ getter_name(IvrSipRequest *self, void *closure) \
   return PyString_FromString(self->p_req->attr.c_str()); \
 } \
 
+def_IvrSipRequest_GETTER(IvrSipRequest_getmethod,       method)
 def_IvrSipRequest_GETTER(IvrSipRequest_getuser,         user)
 def_IvrSipRequest_GETTER(IvrSipRequest_getdomain,       domain)
-def_IvrSipRequest_GETTER(IvrSipRequest_getsip_ip,       sip_ip)
-def_IvrSipRequest_GETTER(IvrSipRequest_getsip_port,     sip_port)
-def_IvrSipRequest_GETTER(IvrSipRequest_getlocal_uri,    local_uri)
-def_IvrSipRequest_GETTER(IvrSipRequest_getremote_uri,   remote_uri)
-def_IvrSipRequest_GETTER(IvrSipRequest_getcontact_uri,  contact_uri)
+def_IvrSipRequest_GETTER(IvrSipRequest_getdstip,        dstip)
+def_IvrSipRequest_GETTER(IvrSipRequest_getport,         port)
+def_IvrSipRequest_GETTER(IvrSipRequest_getr_uri,        r_uri)
+def_IvrSipRequest_GETTER(IvrSipRequest_getfrom_uri,     from_uri)
+def_IvrSipRequest_GETTER(IvrSipRequest_getfrom,         from)
+def_IvrSipRequest_GETTER(IvrSipRequest_getto,           to)
 def_IvrSipRequest_GETTER(IvrSipRequest_getcallid,       callid)
-def_IvrSipRequest_GETTER(IvrSipRequest_getremote_tag,   remote_tag)
-def_IvrSipRequest_GETTER(IvrSipRequest_getlocal_tag,    local_tag)
-def_IvrSipRequest_GETTER(IvrSipRequest_getremote_party, remote_party)
-def_IvrSipRequest_GETTER(IvrSipRequest_getlocal_party,  local_party)
+def_IvrSipRequest_GETTER(IvrSipRequest_getfrom_tag,     from_tag)
+def_IvrSipRequest_GETTER(IvrSipRequest_getto_tag,       to_tag)
+
 def_IvrSipRequest_GETTER(IvrSipRequest_getroute,        route)
 def_IvrSipRequest_GETTER(IvrSipRequest_getnext_hop,     next_hop)
+
+def_IvrSipRequest_GETTER(IvrSipRequest_getkey,          key)
+
+def_IvrSipRequest_GETTER(IvrSipRequest_getbody,         body)
+
 
 // static PyObject*
 // IvrSipRequest_getuser(IvrSipRequest *self, void *closure)
@@ -81,21 +108,26 @@ IvrSipRequest_getcseq(IvrSipRequest *self, void *closure)
 }
 
 static PyGetSetDef IvrSipRequest_getset[] = {
-    {"user",        (getter)IvrSipRequest_getuser, NULL, "local user", NULL},
-    {"domain",      (getter)IvrSipRequest_getdomain, NULL, "local domain", NULL},
-    {"sip_ip",      (getter)IvrSipRequest_getsip_ip, NULL, "destination IP of first received message", NULL},
-    {"sip_port",    (getter)IvrSipRequest_getsip_port, NULL, "optional: SIP port", NULL},
-    {"local_uri",   (getter)IvrSipRequest_getlocal_uri, NULL, "local uri", NULL},
-    {"remote_uri",  (getter)IvrSipRequest_getremote_uri, NULL, "remote uri", NULL},
-    {"contact_uri", (getter)IvrSipRequest_getcontact_uri, NULL, "pre-calculated contact uri", NULL},
-    {"callid",      (getter)IvrSipRequest_getcallid, NULL, "call id", NULL},
-    {"remote_tag",  (getter)IvrSipRequest_getremote_tag, NULL, "remote tag", NULL},
-    {"local_tag",   (getter)IvrSipRequest_getlocal_tag, NULL, "local tag", NULL},
-    {"remote_party",(getter)IvrSipRequest_getremote_party, NULL, "To/From", NULL},
-    {"local_party", (getter)IvrSipRequest_getlocal_party, NULL, "To/From", NULL},
+    {"method",        (getter)IvrSipRequest_getmethod, NULL, "method", NULL},
+    {"user",          (getter)IvrSipRequest_getuser, NULL, "local user", NULL},
+    {"domain",        (getter)IvrSipRequest_getdomain, NULL, "local domain", NULL},
+    {"dstip",         (getter)IvrSipRequest_getdstip, NULL, "dstip", NULL},
+    {"port",          (getter)IvrSipRequest_getport, NULL, "port", NULL},
+
+    {"r_uri",         (getter)IvrSipRequest_getr_uri, NULL, "port", NULL},
+    {"from_uri",      (getter)IvrSipRequest_getfrom_uri, NULL, "port", NULL},
+    {"from",          (getter)IvrSipRequest_getfrom, NULL, "port", NULL},
+    {"to",            (getter)IvrSipRequest_getto, NULL, "port", NULL},
+
+
+    {"callid",        (getter)IvrSipRequest_getcallid, NULL, "call id", NULL},
+    {"from_tag",      (getter)IvrSipRequest_getfrom_tag, NULL, "remote tag", NULL},
+    {"to_tag",        (getter)IvrSipRequest_getto_tag, NULL, "local tag", NULL},
     {"route",       (getter)IvrSipRequest_getroute, NULL, "record routing", NULL},
     {"next_hop",    (getter)IvrSipRequest_getnext_hop, NULL, "next_hop for t_uac_dlg", NULL},
     {"cseq",    (getter)IvrSipRequest_getcseq, NULL, "CSeq for next request", NULL},
+    {"key",    (getter)IvrSipRequest_getkey, NULL, "CSeq for next request", NULL},
+    {"body",    (getter)IvrSipRequest_getbody, NULL, "CSeq for next request", NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -142,4 +174,16 @@ PyTypeObject IvrSipRequestType = {
     IvrSipRequest_new,          /* tp_new */
 };
 
-#endif
+
+PyObject* IvrSipRequest_FromPtr(AmSipRequest* req)
+{
+    PyObject* c_req = PyCObject_FromVoidPtr(req,NULL);
+    PyObject* args = Py_BuildValue("(O)",c_req);
+    
+    PyObject* py_req = IvrSipRequest_new(&IvrSipRequestType,args,NULL);
+    
+    Py_DECREF(args);
+    Py_DECREF(c_req);
+
+    return py_req;
+}

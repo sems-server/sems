@@ -1,6 +1,5 @@
 /*
- * $Id$
- * Copyright (C) 2002-2003 Fhg Fokus
+ * $Id: IvrSipReply.cpp,v 1.15.2.1 2005/09/02 13:47:46 sayer Exp $
  * Copyright (C) 2007 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
@@ -20,16 +19,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef IvrSipRequest_h
-#define IvrSipRequest_h
+#ifndef IvrSipReply_h
+#define IvrSipReply_h
 
 // Python stuff
 #include <Python.h>
 #include "structmember.h"
 
-#include "AmSipRequest.h"
+#include "AmSipReply.h"
 
-extern PyTypeObject IvrSipRequestType;
-PyObject* IvrSipRequest_FromPtr(AmSipRequest* req);
+extern PyTypeObject IvrSipReplyType;
+PyObject* IvrSipReply_FromPtr(AmSipReply* req);
 
 #endif

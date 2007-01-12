@@ -145,6 +145,16 @@ public:
     virtual AmSession* onInvite(const AmSipRequest& req)=0;
 
     /**
+     * Creates a dialog state on new REFER with local-tag.
+     * @return 0 if the request is not acceptable.
+     *
+     * Warning:
+     *   This method should not make any expensive
+     *   processing as it would block the server.
+     */
+    virtual AmSession* onRefer(const AmSipRequest& req);
+
+    /**
      * method to receive an Event that is posted
 	 * to  the factory
 	 *

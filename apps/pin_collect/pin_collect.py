@@ -1,9 +1,10 @@
 from log import *
 from ivr import *
 
-collect    = 0
-connect    = 1
-connected  = 2
+collect         = 0
+connect         = 1
+connect_failed  = 2
+
 
 HINT_TIMER   = 1
 HINT_TIMEOUT = 10 # seconds until hint msg is played
@@ -21,6 +22,9 @@ class IvrDialog(IvrDialogBase):
 	auth_ok_msg   = None
 	auth_fail_msg = None
 	pin_msg       = None
+
+	transfer_cseq    = None
+	dlg_remote_uri   = None	
 
 	state = collect
 	keys = ''
@@ -73,15 +77,35 @@ class IvrDialog(IvrDialogBase):
 			elif key == 10:
 				self.state = connect
 				self.removeTimer(HINT_TIMER)
-				self.redirect("sip:" + self.dialog.user + \
-					      self.keys + "@" + \
+				self.dlg_remote_uri	= self.dialog.remote_uri
+				debug("saved remote_uri "+ self.dlg_remote_uri)
+				self.transfer_cseq = self.dialog.cseq
+				self.redirect("sip:" + self.dialog.user + "@" + \
 					      self.dialog.domain)
-				self.stopSession()
 
 	def onEmptyQueue(self):
 		if self.state == collect:
 			self.setTimer(HINT_TIMER, HINT_TIMEOUT)
+		elif self.state == connect_failed:
+			debug("transfer failed. stopping session.")
+			debug("restoring  remote_uri to " + self.dlg_remote_uri)
+			self.dialog.remote_uri = self.dlg_remote_uri
+			self.bye()
+			self.stopSession()
 
 	def onTimer(self, id):
 		if id == HINT_TIMER and self.state == collect:
 			self.enqueue(self.pin_msg, None)
+
+	def onSipReply(self, reply):
+		if reply.cseq == self.transfer_cseq:
+			# restore remote uri of dialog
+			if reply.code >= 200 and reply.code < 300:
+				debug("received positive reply to transfer request. dropping session.")
+				self.dropSession()
+			elif reply.code >= 300:
+				debug("transfer failed. notifying user")
+				self.state = connect_failed		
+				self.fail_msg = IvrAudioFile()
+				self.fail_msg.open(config['fail_msg'],AUDIO_READ)
+				self.enqueue(self.fail_msg,None)
