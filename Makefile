@@ -67,3 +67,6 @@ tar:
 			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp
 
+.PHONY: doc
+doc:
+	make -C core/ doc
