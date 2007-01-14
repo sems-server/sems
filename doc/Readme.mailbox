@@ -1,0 +1,54 @@
+Documentation for SEMS mailbox application
+
+The mailbox application is a mailbox where callers can leave messages 
+for offline or unavailable users and the users can dial in to check their
+messages. It uses an IMAP server as backend to store the voice messages.
+
+The mailbox comes with two applications which run in the ivr:
+
+mailbox        -  the application to leave a message
+mailbox_query  -  the application to listen to the messages
+
+
+Configuration Parameters
+========================
+mailbox.conf:
+   annoucement_file     -    prompt to be played to caller before 
+                             message is recorded
+   beep_file            -    beep to be played after prompt
+
+mailbox_query.conf:
+   wav_dir              -    directory which contains wav files for
+                             menu
+
+Invocation Parameters (Headers of the INVITE)
+============================================
+
+mailbox:
+
+ P-Mailbox-URL      -  IMAP URL to the mailbox
+
+mailbox_query:
+
+ P-Mailbox-URL      -  IMAP URL to the mailbox
+
+
+
+Example for ser.cfg
+===================
+
+# appends for INVITE to mailbox
+modparam("tm", "tw_append", "mailbox_headers:P-Mailbox-URL=avp[$mailbox_url]")
+
+
+...
+        # replace this with a function that loads imap url e.g. from DB
+        # into $mailbox_url AVP
+		avp_write("imap://user:password@imapserver:143/INBOX",
+                      "$mailbox_url");
+
+		if (!t_write_unix("/tmp/sems_sock","mailbox/mailbox_headers")){
+			log("could not contact mailbox\n");
+			t_reply("500","could not contact media server");	
+		}
+		break;
