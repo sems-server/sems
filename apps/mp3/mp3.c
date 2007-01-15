@@ -57,11 +57,14 @@ static int Pcm16_2_MP3( unsigned char* out_buf, unsigned char* in_buf, unsigned 
 static long MP3_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
 static void MP3_destroy(long h_inst);
 static int MP3_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec);
-static int MP3_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec);
+static int MP3_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec,
+					 struct amci_codec_t *codec);
+static unsigned int mp3_bytes2samples(long h_codec, unsigned int num_bytes);
+static unsigned int mp3_samples2bytes(long h_codec, unsigned int num_samples);
 
 BEGIN_EXPORTS( "mp3" )
     BEGIN_CODECS
-      CODEC( CODEC_MP3,  1, Pcm16_2_MP3, MP3_2_Pcm16, (amci_plc_t)0, (amci_codec_init_t)MP3_create, (amci_codec_destroy_t)MP3_destroy )
+      CODEC( CODEC_MP3, Pcm16_2_MP3, MP3_2_Pcm16, (amci_plc_t)0, (amci_codec_init_t)MP3_create, (amci_codec_destroy_t)MP3_destroy, mp3_bytes2samples, mp3_samples2bytes)
     END_CODECS
     
     BEGIN_PAYLOADS
@@ -230,7 +233,8 @@ static int MP3_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, lo
     return 0;
 }
 
-static int MP3_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec)
+static int MP3_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec,
+				    struct amci_codec_t *codec)
 {
     int final_samples;
 
@@ -247,5 +251,24 @@ static int MP3_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, l
 }
 
 
+static unsigned int mp3_bytes2samples(long h_codec, unsigned int num_bytes)
+{
+    // even though we are using CBR (16kbps) and encoding 
+    // 128kbps to 16kbps would give num_samples/8 (or num_bytes*8)
+    // as MP3 is not used as payload calculating this would make no 
+    // sense. The whole frame is encoded anyway.
+
+	//	WARN("size calculation not possible with MP3 codec.\n");
+    return num_bytes;
+}
+
+static unsigned int mp3_samples2bytes(long h_codec, unsigned int num_samples)
+{
+	// we don't support MP3 file reading so this is not needed 
+	// (would be maybe num_samples*8)
+
+	//	WARN("size calculation not possible with MP3 codec.\n");
+    return num_samples;
+}
 
 
