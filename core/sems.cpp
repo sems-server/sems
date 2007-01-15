@@ -81,6 +81,7 @@ static int parse_args(int argc, char* argv[], const string& flags,
 		      const string& options, map<char,string>& args);
 
 static void print_usage(char* progname);
+static void print_version();
 
 static string getLocalIP(const string& dev_name);
 
@@ -165,6 +166,11 @@ static int use_args(char* progname, map<char,string>& args)
 	     exit(0);
 	     break;
 
+	 case 'v':
+	     print_version();
+	     exit(0);
+	     break;
+
 	 case 'E':
 	     AmConfig::setStderr("yes");
 	     continue;
@@ -245,13 +251,18 @@ int main(int argc, char* argv[])
 {
     map<char,string> args;
 
-    if(parse_args(argc, argv, "hE","ugPfiodxD", args)){
+    if(parse_args(argc, argv, "hvE","ugPfiodxD", args)){
 	print_usage(argv[0]);
 	return -1;
     }
 
     if(args.find('h') != args.end()){
 	print_usage(argv[0]);
+	return 0;
+    }
+
+    if(args.find('v') != args.end()){
+	print_version();
 	return 0;
     }
 
@@ -278,7 +289,7 @@ int main(int argc, char* argv[])
     AmConfig::LocalIP = getLocalIP(AmConfig::LocalIP);
     AmConfig::LocalSIPIP = AmConfig::LocalIP;
 
-
+    print_version();
     printf( "\n\nConfiguration:\n"
 	    "       configuration file:  %s\n"
 	    "       Ser's unix socket:   %s\n"
@@ -468,12 +479,18 @@ static void print_usage(char* progname)
 	   "       -x plugin_path:      root path for plugins\n"
 	   "       -D log_level:        sets log level (error=0, warning=1, info=2, debug=3).\n"
 	   "       -E :                 debug mode: do not fork and log to stderr.\n"
+	   "       -v :                 version.\n"
 	   "       -h :                 this help screen.\n"
 	   "\n"
 	   "   Notes:\n"
 	   "       * plug-ins are searched in plugin_path/{apps,audio}/*.so.\n",
 	   progname
 	   );
+}
+
+static void print_version()
+{
+    printf("%s\n", DEFAULT_SIGNATURE);
 }
 
 static void getInterfaceList(int sd, vector<pair<string,string> >& if_list)
