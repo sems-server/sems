@@ -51,6 +51,14 @@ ser_socket_name=/tmp/ser_sock
 # - may be absolute or relative to CWD
 plugin_path=/usr/local/lib/sems/plug-in
 
+# optional parameter: load_plugins=<modules list>
+# 
+# semicolon-separated list of modules to load
+# If empty, all modules in plugin_path are loaded.
+#
+# example for announcement with g711 and ilbc codecs only 
+# load_plugins=wav;ilbc;announcement
+
 # optional parameter: smtp_server=<hostname>
 #
 # - sets address of smtp server

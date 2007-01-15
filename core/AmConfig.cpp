@@ -45,6 +45,7 @@ string       AmConfig::SendMethod              = SEND_METHOD;
 string       AmConfig::SmtpServerAddress       = SMTP_ADDRESS_IP;
 unsigned int AmConfig::SmtpServerPort          = SMTP_PORT;
 string       AmConfig::PlugInPath              = PLUG_IN_PATH;
+string       AmConfig::LoadPlugins             = "";
 int          AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
 string       AmConfig::LocalIP                 = "";
 string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
@@ -175,6 +176,9 @@ int AmConfig::readConfiguration()
 
     // plugin_path
     PlugInPath = cfg.getParameter("plugin_path");
+
+    // load_plugins
+    LoadPlugins = cfg.getParameter("load_plugins");
 
 	// user_agent
 	if (cfg.getParameter("use_default_signature")=="yes")

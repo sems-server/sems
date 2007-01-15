@@ -62,6 +62,8 @@ struct AmConfig
     static unsigned int SmtpServerPort;
     /** Path where the plug-ins are. */
     static string PlugInPath;
+	/** semicolon separated list of plugins to load */
+	static string LoadPlugins;
     //static unsigned int MaxRecordTime;
     /** run the programm in daemon mode? */
     static int DaemonMode;

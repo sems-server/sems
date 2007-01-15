@@ -408,7 +408,7 @@ int main(int argc, char* argv[])
 	return -1;
 
     DBG("Loading plug-ins\n");
-    if(AmPlugIn::instance()->load(AmConfig::PlugInPath))
+    if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
 	return -1;
 
     DBG("Starting session container\n");

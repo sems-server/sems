@@ -118,7 +118,7 @@ AmPlugIn* AmPlugIn::instance()
 }
 
 
-int AmPlugIn::load(const string& directory)
+int AmPlugIn::load(const string& directory, const string& plugins)
 {
     int err=0;
     struct dirent* entry;
@@ -130,18 +130,53 @@ int AmPlugIn::load(const string& directory)
     }
 
 
-    while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
+	if (!plugins.length()) {
+		DBG("AmPlugIn: loading modules in directory '%s':\n", directory.c_str());
 
-	string plugin_file = directory + "/" + string(entry->d_name);
+		while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
 
-	if( plugin_file.find(".so",plugin_file.length()-3) == string::npos ){
-	    continue;
+			string plugin_file = directory + "/" + string(entry->d_name);
+
+			if( plugin_file.find(".so",plugin_file.length()-3) == string::npos ){
+				continue;
+			}
+
+			DBG("loading %s ...\n",plugin_file.c_str());
+			if( (err = loadPlugIn(plugin_file)) < 0 )
+				ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
+		}
+	} else {
+		DBG("AmPlugIn: loading modules '%s':\n", plugins.c_str());
+
+		size_t pos = 0;
+		
+		while (pos < plugins.length()) {
+			size_t pos2 = plugins.find(";", pos);
+			if (pos2 == string::npos) 
+				pos2 = plugins.length();
+			string plugin_file = plugins.substr(pos, pos2-pos);
+			if( plugin_file.find(".so",plugin_file.length()-3) == string::npos )
+				plugin_file+=".so";
+			
+			plugin_file = directory + "/"  + plugin_file;
+			DBG("loading %s...\n",plugin_file.c_str());
+			if( (err = loadPlugIn(plugin_file)) < 0 ) {
+				ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
+				// be strict here: if plugin not loaded, stop!
+				return err; 
+			}
+			if (plugins[pos2]==';')
+				pos = pos2+1;
+			else 
+				break;
+			
+		}
 	}
+    closedir(dir);
 
-	DBG("loading %s ...\n",plugin_file.c_str());
-	if( (err = loadPlugIn(plugin_file)) < 0 )
-	    ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
-    }
+	DBG("AmPlugIn: modules loaded.\n");
+
+	DBG("AmPlugIn: Initializing plugins...\n");
 
     for(map<string,AmSessionEventHandlerFactory*>::iterator it = name2seh.begin();
 	it != name2seh.end(); it++){
@@ -177,7 +212,10 @@ int AmPlugIn::load(const string& directory)
 	    break;
     }
 
-    closedir(dir);
+	if (!err) {
+		DBG("AmPlugIn: Initialized plugins.\n");
+	}
+
     return err;
 }
 
