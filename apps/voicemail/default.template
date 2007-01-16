@@ -1,6 +1,6 @@
 subject: Voice message from: %from%
 from:voicemail@%domain%
-to: %email%
+to:%email%
 header:X-Content: Voicemail
 
 Hello %user%@%domain%,
