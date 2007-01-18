@@ -19,13 +19,13 @@ clean:
 .PHONY: deps
 deps: $(depends)
 
-%.d: %.c Makefile 
+%.d: %.c %.h Makefile 
 	gcc -MM $< $(cflags) > $@
 
 %.o: %.c %.d
 	gcc $(cflags) -c $< -o $@ -fPIC
 
-$(lib_name): $(objs)  Makefile
+$(lib_name): deps $(objs)  Makefile
 		if [ -f $(lib_name) ]; then rm $(RMFLAGS) $(lib_name) ; fi
 		$(AR) $(ARFLAGS) $(lib_name) $(objs)
 		$(RANLIB) $(lib_name)
