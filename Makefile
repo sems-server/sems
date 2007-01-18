@@ -1,4 +1,5 @@
 NAME=sems
+.DEFAULT_GOAL:=all
 include Makefile.defs
 
 modules = $(filter-out $(wildcard Makefile* README doc), \
