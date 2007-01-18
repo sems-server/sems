@@ -1,8 +1,11 @@
 COREPATH ?=../..
+.DEFAULT_GOAL := all
+
 include $(COREPATH)/../Makefile.defs
 
 ldflags = $(LIB_LD_FLAGS) $(module_ldflags)
-cflags = -I $(COREPATH) $(CPP_FLAGS) $(module_cflags)
+cflags = -I $(COREPATH) $(C_FLAGS) $(module_cflags)
+cxxflags = -I $(COREPATH) $(CXX_FLAGS) $(module_cflags)
 
 app_module_dir = $(COREPATH)/lib
 
@@ -17,7 +20,6 @@ hrds     = $(wildcard *.h)
 objs     = $(srcs:.cpp=.o) 
 depends  = $(srcs:.cpp=.d)
 
-.DEFAULT_GOAL := all
 .PHONY: all
 all: $(extra_target)
 	-@$(MAKE) deps    && \
@@ -30,11 +32,11 @@ module_package: $(extra_target)
 
 
 .PHONY: clean
-clean: $(extra_clean)
-	-@rm -f $(objs) $(depends) $(lib_name)
+clean: 
+	-@rm -f $(objs) $(depends) $(lib_name) $(extra_clean)
 
 .PHONY: deps
-deps: $(depends)
+deps: $(depends) $(extra_depends)
 
 .PHONY: install
 install: all $(extra_install)
@@ -66,10 +68,10 @@ $(plug_in_name)_audio: $(audio-prefix)/$(audio-dir)
 
 
 %.d: %.cpp Makefile $(COREPATH)/plug-in/Makefile.app_module
-	g++ -MM $< $(cflags) > $@
+	g++ -MM $< $(cxxflags) > $@
 
 %.o: %.cpp %.d
-	g++ $(cflags) -c $< -o $@
+	g++ $(cxxflags) -c $< -o $@
 
 $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
@@ -81,3 +83,6 @@ ifeq ($(lib_full_name),$(MAKECMDGOALS))
 include $(depends)
 endif
 
+ifeq (,$(MAKECMDGOALS))
+include $(depends)
+endif

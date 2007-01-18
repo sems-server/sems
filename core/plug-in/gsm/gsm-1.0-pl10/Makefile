@@ -300,7 +300,7 @@ install:	toastinstall gsminstall
 # The basic API: libgsm
 
 $(LIBGSM):	$(LIB) $(GSM_OBJECTS)
-		-rm $(RMFLAGS) $(LIBGSM)
+		-rm -f $(RMFLAGS) $(LIBGSM)
 		$(AR) $(ARFLAGS) $(LIBGSM) $(GSM_OBJECTS)
 		$(RANLIB) $(LIBGSM)
 

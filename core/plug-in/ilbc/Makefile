@@ -40,4 +40,4 @@ $(ILBC_DIR)/libilbc.a::
 
 .PHONY: clean_ilbclib
 clean_ilbclib:
-	cd $(ILBC_DIR); $(MAKE) clean
+	$(MAKE) -C $(ILBC_DIR) clean

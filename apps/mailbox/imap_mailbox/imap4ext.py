@@ -143,7 +143,6 @@ class IMAP4_Mailbox:
 
 
 	def uploadMsg(self,msg):
-
 		self._login()
 		IMAPCALL(self.imap.append(self.url.path,None,time.gmtime(),msg))
 

@@ -46,20 +46,10 @@ include ../Makefile.defs
 
 # implicit rules
 %.o : %.cpp %.d
-	g++ -c -o $@ $< $(CPP_FLAGS)
+	g++ -c -o $@ $< $(CXX_FLAGS)
 
 %.d : %.cpp %.h Makefile
-	g++ -MM $< $(CPP_FLAGS) > $@
-
-# md5.o: md5.c md5.d
-# 	$(CC) $(cflags) -c $< -o $@
-
-# md5.d: md5.c md5.h Makefile
-# 	$(CC) -MM $< $(cflags) > $@
-
-# explicit rules
-#$(LIBNAME): $(OBJS)
-#	g++ -o $(LIBNAME) $(OBJS) $(LIB_LD_FLAGS)
+	g++ -MM $< $(CXX_FLAGS) > $@
 
 $(NAME): $(NAME).o $(OBJS)
 	g++ -o $(NAME) $(NAME).o $(OBJS) $(LD_FLAGS)
@@ -136,28 +126,6 @@ tar:
 			                    -zcf ../../"$(NAME)-$(notdir $(CURDIR))-$(RELEASE)".tar.gz \
 			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp/_tar1; rm -rf tmp/_tar2
-
-
-mk-install-dirs: $(cfg-prefix)/$(cfg-dir) $(bin-prefix)/$(bin-dir) \
-			$(modules-prefix)/$(modules-dir) \
-			$(audio-prefix)/$(audio-dir) \
-			$(doc-prefix)/$(doc-dir)
-
-$(cfg-prefix)/$(cfg-dir): 
-	mkdir -p $(cfg-prefix)/$(cfg-dir)
-
-$(bin-prefix)/$(bin-dir):
-	mkdir -p $(bin-prefix)/$(bin-dir)
-
-$(modules-prefix)/$(modules-dir):
-	mkdir -p $(modules-prefix)/$(modules-dir)
-
-$(audio-prefix)/$(audio-dir):
-	mkdir -p $(audio-prefix)/$(audio-dir)
-
-$(doc-prefix)/$(doc-dir):
-	mkdir -p $(doc-prefix)/$(doc-dir)
-
 
 ifeq '$(NAME)' '$(MAKECMDGOALS)'
 include $(DEPS)
