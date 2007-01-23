@@ -46,13 +46,13 @@ include ../Makefile.defs
 
 # implicit rules
 %.o : %.cpp %.d
-	g++ -c -o $@ $< $(CXX_FLAGS)
+	$(GPP) -c -o $@ $< $(CXX_FLAGS)
 
 %.d : %.cpp %.h Makefile
-	g++ -MM $< $(CXX_FLAGS) > $@
+	$(GPP) -MM $< $(CXX_FLAGS) > $@
 
 $(NAME): $(NAME).o $(OBJS)
-	g++ -o $(NAME) $(NAME).o $(OBJS) $(LD_FLAGS)
+	$(GPP) -o $(NAME) $(NAME).o $(OBJS) $(LD_FLAGS)
 
 install: all mk-install-dirs \
 	install-cfg \

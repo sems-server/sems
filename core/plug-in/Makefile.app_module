@@ -68,16 +68,23 @@ $(plug_in_name)_audio: $(audio-prefix)/$(audio-dir)
 
 
 %.d: %.cpp Makefile $(COREPATH)/plug-in/Makefile.app_module
-	g++ -MM $< $(cxxflags) > $@
+	$(GPP) -MM $< $(cxxflags) > $@
+
+%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.app_module
+	$(GCC) -MM $< $(cflags) > $@
 
 %.o: %.cpp %.d
-	g++ $(cxxflags) -c $< -o $@
+	$(GPP) $(cxxflags) -c $< -o $@
+
+%.o: %.c %.d
+	$(GCC) $(cflags) -c $< -o $@
+
 
 $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
 
 $(lib_name): $(objs) $(module_extra_objs) Makefile
-	g++ -o $(lib_name)  $(objs) $(module_extra_objs) $(ldflags) 
+	$(GPP) -o $(lib_name)  $(objs) $(module_extra_objs) $(ldflags) 
 
 ifeq ($(lib_full_name),$(MAKECMDGOALS))
 include $(depends)

@@ -28,6 +28,10 @@ ifeq ($(ARCH),sparc)
 	endif
 endif
 
+# need OS specific for this ?
+GPP ?= g++
+GCC ?= gcc
+
 CXX_FLAGS = -Wall -Wno-reorder -fPIC -g \
 	  -O2 \
 	  -D_DEBUG \

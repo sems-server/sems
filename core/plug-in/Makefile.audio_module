@@ -37,16 +37,16 @@ install: $(lib_name) $(extra_install)
 install-cfg : $(extra_install_cfg)
 
 %.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module
-	gcc -MM $< $(cflags) > $@
+	$(GCC) -MM $< $(cflags) > $@
 
 %.o: %.c %.d
-	gcc $(cflags) -c $< -o $@
+	$(GCC) $(cflags) -c $< -o $@
 
 $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
 
 $(lib_name): $(objs)  Makefile
-	gcc -o $(lib_name) $(objs) $(ldflags)  
+	$(GCC) -o $(lib_name) $(objs) $(ldflags)  
 
 ifeq ($(lib_full_name),$(MAKECMDGOALS))
 include $(depends)
