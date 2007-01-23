@@ -38,35 +38,29 @@ bool Packet::operator < (const Packet& p) const
 
 PacketAllocator::PacketAllocator()
 {
-    m_mutex.lock();
     m_free_packets = m_packets;
     for (int i = 1; i < MAX_JITTER / 80; ++i) {
 	m_packets[i - 1].m_next = &m_packets[i];
     }
     m_packets[MAX_JITTER / 80 - 1].m_next = NULL;
-    m_mutex.unlock();
 }
 
 Packet *PacketAllocator::alloc(const AmRtpPacket *p)
 {
     if (m_free_packets == NULL)
 	return NULL;
-    m_mutex.lock();
     Packet *retval = m_free_packets;
     m_free_packets = retval->m_next;
     memcpy(&retval->m_packet, p, sizeof(*p));
     retval->m_next = retval->m_prev = NULL;
-    m_mutex.unlock();
     return retval;
 }
 
 void PacketAllocator::free(Packet *p)
 {
-    m_mutex.lock();
     p->m_prev = NULL;
     p->m_next = m_free_packets;
     m_free_packets = p;
-    m_mutex.unlock();
 }
 
 AmJitterBuffer::AmJitterBuffer(AmRtpStream *owner)

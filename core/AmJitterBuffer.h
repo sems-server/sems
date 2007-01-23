@@ -51,7 +51,6 @@ class PacketAllocator
 private:
     Packet m_packets[MAX_JITTER / 80];
     Packet *m_free_packets;
-    AmMutex m_mutex;
 
 public:
     PacketAllocator();
