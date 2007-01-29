@@ -337,9 +337,13 @@ void ConferenceDialog::onDtmf(int event, int duration)
 	dtmf_seq += dtmf2str(event);
 
 	if(dtmf_seq.length() == 2){
-	    if(dtmf_seq == "#*")
-		state = CS_dialing_out;
-	    dtmf_seq = "";
+	    if(dtmf_seq == "#*") {
+			state = CS_dialing_out;
+			dtmf_seq = "";
+		} else {
+			// keep last digit
+			dtmf_seq = dtmf_seq[1]; 
+		}
 	}
 	break;
 
