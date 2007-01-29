@@ -172,6 +172,11 @@ void ConferenceDialog::setupAudio()
     setInOut(&play_list,&play_list);
     
     setCallgroup(conf_id);
+	
+	if(dialedout || !allow_dialout) {
+		DBG("Dialout not enabled or dialout channel. Disabling DTMF detection.\n");
+		setDtmfDetectionEnabled(false);
+	}
 }
 
 void ConferenceDialog::onBye(const AmSipRequest& req)
@@ -499,7 +504,7 @@ void ConferenceDialog::onSipReply(const AmSipReply& reply)
     int status = dlg.getStatus();
     AmSession::onSipReply(reply);
 
-    DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i",
+    DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i\n",
 	reply.code,reply.reason.c_str(),dlg.getStatus());
     
     if(!dialedout && 
