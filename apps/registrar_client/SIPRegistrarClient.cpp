@@ -50,7 +50,8 @@ SIPRegistration::SIPRegistration(const string& handle,
 	  remove(false),
 	  sess_link(sess_link),
 	  reg_send_begin(0),
-	  waiting_result(false)
+	  waiting_result(false),
+	  seh(NULL)
 {
     req.cmd      = "sems";
     req.user     = info.user;
@@ -74,7 +75,13 @@ SIPRegistration::SIPRegistration(const string& handle,
 	dlg.cseq = 50;
 }
 
+SIPRegistration::~SIPRegistration() {
+	setSessionEventHandler(NULL);
+}
+
 void SIPRegistration::setSessionEventHandler(AmSessionEventHandler* new_seh) {
+	if (seh)
+		delete seh;
 	seh = new_seh;
 }
  
@@ -222,6 +229,8 @@ void SIPRegistrarClient::checkTimeouts() {
 	struct timeval now;
 	gettimeofday(&now, NULL);
 	reg_mut.lock();
+	vector<string> remove_regs;
+
 	for (map<string, SIPRegistration*>::iterator it = registrations.begin();
 		 it != registrations.end(); it++) {
 		if (it->second->active) {
@@ -233,16 +242,22 @@ void SIPRegistrarClient::checkTimeouts() {
 				it->second->doRegistration();
 			} 
 		} else if (it->second->remove) {
-			DBG("removing registration\n");
-				SIPRegistration* reg = it->second;
-				registrations.erase(it);
-			delete reg;
+			remove_regs.push_back(it->first);
 		} else if (it->second->waiting_result && 
 				   it->second->registerSendTimeout(now.tv_sec)) {
 			SIPRegistration* reg = it->second;
 			reg->onRegisterSendTimeout();
 		}
 	}
+	for (vector<string>::iterator it = remove_regs.begin(); 
+	     it != remove_regs.end(); it++) {
+		DBG("removing registration\n");
+		SIPRegistration* reg = registrations[*it];
+		registrations.erase(*it);
+		if (reg)
+			delete reg;
+	}
+
 	reg_mut.unlock();
 }
 
@@ -377,11 +392,11 @@ void SIPRegistrarClient::onNewRegistration(SIPNewRegistrationEvent* new_reg) {
 	SIPRegistration* reg = new SIPRegistration(new_reg->handle, new_reg->info, 
 											   new_reg->sess_link);
 
-    if (uac_auth_i != NULL) {
+	if (uac_auth_i != NULL) {
 		DBG("enabling UAC Auth for new registration.\n");
 
 		// get a sessionEventHandler from uac_auth
-      	AmArgArray di_args,ret;
+		AmArgArray di_args,ret;
 		di_args.push(reg);
 		di_args.push(reg);
 		uac_auth_i->invoke("getHandler", di_args, ret);

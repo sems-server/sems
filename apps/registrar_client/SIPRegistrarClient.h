@@ -87,6 +87,7 @@ class SIPRegistration : public AmSipDialogEventHandler,
 	SIPRegistration(const string& handle,
 					const SIPRegistrationInfo& info,
 					const string& sess_link);
+	~SIPRegistration();
 
 	void setSessionEventHandler(AmSessionEventHandler* new_seh);
 
