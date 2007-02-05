@@ -113,6 +113,8 @@ void AnnouncementDialog::onSessionStart(const AmSipReply& rep)
 }
 
 void AnnouncementDialog::startSession(){
+    setDtmfDetectionEnabled(false);
+
     if(wav_file.open(filename,AmAudioFile::Read))
 	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
     
