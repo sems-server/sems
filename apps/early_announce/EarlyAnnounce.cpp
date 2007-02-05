@@ -129,6 +129,9 @@ EarlyAnnounceDialog::~EarlyAnnounceDialog()
 
 void EarlyAnnounceDialog::onSessionStart(const AmSipRequest& req)
 {
+    // disable DTMF detection - don't use DTMF here
+    setDtmfDetectionEnabled(false);
+
     DBG("EarlyAnnounceDialog::onSessionStart\n");
     if(wav_file.open(filename,AmAudioFile::Read))
 	throw string("EarlyAnnounceDialog::onSessionStart: Cannot open file\n");

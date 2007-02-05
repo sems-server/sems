@@ -287,6 +287,9 @@ void AnswerMachineDialog::process(AmEvent* event)
 
 void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
 {
+    // disable DTMF detection - don't use DTMF here
+    setDtmfDetectionEnabled(false);
+
     if(a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
        a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),AmAudioFile::Read))
 	throw string("AnswerMachine: could not open annoucement files\n");

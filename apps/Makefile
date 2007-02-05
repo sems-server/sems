@@ -1,4 +1,6 @@
 COREPATH ?= ../core
+.DEFAULT_GOAL := all
+
 include $(COREPATH)/../Makefile.defs
 
 exclude_modules = mp3 announce_auth

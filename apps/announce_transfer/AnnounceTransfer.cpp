@@ -103,6 +103,9 @@ AnnounceTransferDialog::~AnnounceTransferDialog()
 
 void AnnounceTransferDialog::onSessionStart(const AmSipRequest& req)
 {
+	// disable DTMF detection - don't use DTMF here
+	setDtmfDetectionEnabled(false);
+
 	DBG("AnnounceTransferDialog::onSessionStart\n");
 	if (status == Disconnected) {
 		status = Announcing;

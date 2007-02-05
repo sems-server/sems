@@ -154,6 +154,9 @@ void AnnounceAuthDialog::onSessionStart(const AmSipReply& rep)
 }
 
 void AnnounceAuthDialog::startSession(){
+    // disable DTMF detection - don't use DTMF here
+    setDtmfDetectionEnabled(false);
+
     if(wav_file.open(filename,AmAudioFile::Read))
 	throw string("AnnounceAuthDialog::onSessionStart: Cannot open file\n");
     

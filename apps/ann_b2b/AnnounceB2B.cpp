@@ -103,6 +103,8 @@ AnnounceCallerDialog::AnnounceCallerDialog(const string& filename)
 
 void AnnounceCallerDialog::onSessionStart(const AmSipRequest& req)
 {
+    setDtmfDetectionEnabled(false);
+
     callee_addr = req.to;
     callee_uri  = req.r_uri;
 
