@@ -343,6 +343,10 @@ public:
     virtual void onSipRequest(const AmSipRequest& req);
     virtual void onSipReply(const AmSipReply& reply);
 
+
+    /** This callback is called if RTP timeout encountered */
+    virtual void onRtpTimeout();
+
     /* only called by AmSipDialog */
     virtual void onSendRequest(const string& method,
 			       const string& content_type,
@@ -357,7 +361,6 @@ public:
 			     const string& body,
 			     string& hdrs);
 };
-
 
 #endif
 

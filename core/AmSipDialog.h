@@ -81,6 +81,8 @@ public:
 	Disconnecting
     };
 
+    static char* status2str[4];
+
     string user;         // local user
     string domain;       // local domain
     string sip_ip;       // destination IP of first received message

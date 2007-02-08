@@ -26,6 +26,7 @@
  */
 
 #include "AmMediaProcessor.h"
+#include "AmRtpStream.h"
 
 #include <assert.h>
 #include <sys/time.h>
@@ -112,8 +113,16 @@ void AmMediaProcessor::addSession(AmSession* s,
       postRequest(new SchedRequest(InsertSession,s));
 }
 
-void AmMediaProcessor::removeSession(AmSession* s)
-{
+void AmMediaProcessor::clearSession(AmSession* s) {
+    removeFromProcessor(s, ClearSession);
+}
+
+void AmMediaProcessor::removeSession(AmSession* s) {
+    removeFromProcessor(s, RemoveSession);
+}
+
+void AmMediaProcessor::removeFromProcessor(AmSession* s, 
+					   unsigned int r_type) {
   DBG("AmMediaProcessor::removeSession\n");
   group_mut.lock();
   // get scheduler
@@ -140,7 +149,7 @@ void AmMediaProcessor::removeSession(AmSession* s)
   session2callgroup.erase(s);
   group_mut.unlock();    
 
-  threads[sched_thread]->postRequest(new SchedRequest(RemoveSession,s));
+  threads[sched_thread]->postRequest(new SchedRequest(r_type,s));
 }
 
 /* the actual session scheduler thread */
@@ -228,10 +237,14 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 			break;
 
 		    case RTP_TIMEOUT:
+			    postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
+			    s->postEvent(new AmRtpTimeoutEvent());
+			    break;
+
 		    case RTP_BUFFER_SIZE:
 		    default:
 			ERROR("AmRtpAudio::receive() returned %i\n",ret);
-			postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
+			postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
 			break;
 		}
 	    }
@@ -298,12 +311,24 @@ void AmMediaProcessorThread::process(AmEvent* e)
 	    set<AmSession*>::iterator s_it = sessions.find(s);
 	    if(s_it != sessions.end()){
 		sessions.erase(s_it);
+		s->detached.set(true);
+		DBG("Session removed from the scheduler\n");
+	    }
+	}
+	    break;
+
+	case AmMediaProcessor::ClearSession:{
+	    AmSession* s = sr->s;
+	    set<AmSession*>::iterator s_it = sessions.find(s);
+	    if(s_it != sessions.end()){
+		sessions.erase(s_it);
 		s->clearAudio();
 		s->detached.set(true);
 		DBG("Session removed from the scheduler\n");
 	    }
 	}
 	    break;
+
 
 	default:
 	    ERROR("AmMediaProcessorThread::process: unknown event id.");

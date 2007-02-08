@@ -402,7 +402,7 @@ int AmRtpStream::nextAudioPacket(AmRtpPacket& p, unsigned int ts, unsigned int m
 
     timersub(&now,&last_recv_time,&diff);
     if(diff.tv_sec > DEAD_RTP_TIME){
- 	WARN("Last received packet is too old.\n");
+ 	WARN("RTP Timeout detected. Last received packet is too old.\n");
 	DBG("diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
  	return RTP_TIMEOUT;
     }

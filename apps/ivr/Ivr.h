@@ -144,6 +144,7 @@ public:
     void onSipReply(const AmSipReply& r);
     void onSipRequest(const AmSipRequest& r);
 
+    void onRtpTimeout();
 };
 
 #endif

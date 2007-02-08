@@ -107,6 +107,7 @@ class IvrDialog(IvrDialogBase):
 	def onEmptyQueue(self):
 		if self.state == connect:
 			debug("connecting to " + self.conf_to + "uri: " + self.conf_uri)
+			self.disconnectMedia()
 			self.mute()
 			self.setRelayonly()
 			self.connectCallee(self.conf_to, self.conf_uri)
