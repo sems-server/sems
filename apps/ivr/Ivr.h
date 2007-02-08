@@ -137,6 +137,8 @@ public:
 
     void onOtherBye(const AmSipRequest& req);
     void onOtherReply(const AmSipReply& r);
+
+    void onRtpTimeout();
 };
 
 #endif

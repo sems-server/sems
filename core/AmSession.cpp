@@ -332,7 +332,11 @@ void AmSession::on_stop()
 {
     //sess_stopped.set(true);
     DBG("AmSession::on_stop()\n");
-    AmMediaProcessor::instance()->removeSession(this);
+
+    if (!getDetached())
+	    AmMediaProcessor::instance()->clearSession(this);
+    else
+	    clearAudio();
 }
 
 void AmSession::destroy()
@@ -440,6 +444,12 @@ void AmSession::process(AmEvent* ev)
       onDtmf(dtmf_ev->event(), dtmf_ev->duration());
       return;
     }
+
+    AmRtpTimeoutEvent* timeout_ev = dynamic_cast<AmRtpTimeoutEvent*>(ev);
+    if(timeout_ev){
+	onRtpTimeout();
+	return;
+    }
 }
 
 
@@ -507,13 +517,24 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     } 
 }
 
+
 void AmSession::onSipReply(const AmSipReply& reply)
 {
   CALL_EVENT_H(onSipReply,reply);
 
   int status = dlg.getStatus();
   dlg.updateStatus(reply);
-  
+
+  if (status != dlg.getStatus())
+	  DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
+	      AmSipDialog::status2str[status], 
+	      AmSipDialog::status2str[dlg.getStatus()],
+	      sess_stopped.get() ? "true" : "false");
+  else 
+	  DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[status], 
+	      sess_stopped.get() ? "true" : "false");
+
+
   if (negotiate_onreply) {    
     if(status < AmSipDialog::Connected){
       
@@ -646,6 +667,12 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
 			    const string& body, string& hdrs)
 {
     CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs);
+}
+
+void AmSession::onRtpTimeout()
+{
+  DBG("stopping Session.\n");
+  setStopped();
 }
 
 void AmSession::sendUpdate() 

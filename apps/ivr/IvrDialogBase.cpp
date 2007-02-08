@@ -3,6 +3,7 @@
 #include "Ivr.h"
 
 #include "IvrSipDialog.h"
+#include "AmMediaProcessor.h"
 
 //#include "AmSessionTimer.h"
 
@@ -66,6 +67,18 @@ IvrDialogBase_dealloc(IvrDialogBase* self)
 //
 // Event handlers
 //
+static PyObject* IvrDialogBase_onRtpTimeout(IvrDialogBase* self, PyObject*)
+{
+    DBG("no script implementation for onRtpTimeout(). Stopping session. \n");
+
+    assert(self->p_dlg);
+    self->p_dlg->setStopped();
+    self->p_dlg->postEvent(0);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 // static PyObject* IvrDialogBase_onSessionStart(IvrDialogBase* self, PyObject*)
 // {
 //     DBG("no script implementation for onSessionStart(self,hdrs) !!!\n");
@@ -219,6 +232,29 @@ static PyObject* IvrDialogBase_unmute(IvrDialogBase* self, PyObject* args)
     assert(self->p_dlg);
 
     self->p_dlg->setMute(false);
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* IvrDialogBase_remove_mediaprocessor(IvrDialogBase* self, 
+						     PyObject* args)
+{
+    assert(self->p_dlg);
+
+    AmMediaProcessor::instance()->removeSession(self->p_dlg);
+    
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* IvrDialogBase_add_mediaprocessor(IvrDialogBase* self, 
+						  PyObject* args)
+{
+    assert(self->p_dlg);
+
+    AmMediaProcessor::instance()->addSession(self->p_dlg, 
+					     self->p_dlg->getCallgroup());
     
     Py_INCREF(Py_None);
     return Py_None;
@@ -388,7 +424,13 @@ IvrDialogBase_getdialog(IvrDialogBase *self, void *closure)
 
 static PyMethodDef IvrDialogBase_methods[] = {
     
+
     // Event handlers
+
+     {"onRtpTimeout", (PyCFunction)IvrDialogBase_onRtpTimeout, METH_NOARGS,
+      "Gets called on RTP timeout"
+     },
+
 //     {"onSessionStart", (PyCFunction)IvrDialogBase_onSessionStart, METH_VARARGS,
 //      "Gets called on session start"
 //     },
@@ -424,9 +466,14 @@ static PyMethodDef IvrDialogBase_methods[] = {
      "mute the RTP stream (don't send packets)"
     },
     {"unmute", (PyCFunction)IvrDialogBase_unmute, METH_NOARGS,
-     "unmute the RTP stream (do send packets)"
+     "unmute the RTP stream (send packets)"
     },
-
+    {"connectMedia", (PyCFunction)IvrDialogBase_add_mediaprocessor, METH_NOARGS,
+     "enable the processing of audio and RTP"
+    },
+    {"disconnectMedia", (PyCFunction)IvrDialogBase_remove_mediaprocessor, METH_NOARGS,
+     "disable the processing of audio and RTP"
+    },
     // DTMF
     {"enableDTMFDetection", (PyCFunction)IvrDialogBase_enableDTMFDetection, METH_NOARGS,
      "enable the dtmf detection"
@@ -434,7 +481,6 @@ static PyMethodDef IvrDialogBase_methods[] = {
     {"disableDTMFDetection", (PyCFunction)IvrDialogBase_disableDTMFDetection, METH_NOARGS,
      "disable the dtmf detection"
     },    
-
     // B2B
     {"connectCallee", (PyCFunction)IvrDialogBase_b2b_connectCallee, METH_VARARGS,
      "call given party as (new) callee,"

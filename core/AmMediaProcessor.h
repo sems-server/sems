@@ -97,15 +97,26 @@ class AmMediaProcessor
 
   AmMediaProcessor();
   ~AmMediaProcessor();
-
+	
+  void removeFromProcessor(AmSession* s, unsigned int r_type);
 public:
-  enum { InsertSession, RemoveSession };
+  /** 
+   * InsertSession : inserts the session to the processor
+   * RemoveSession : remove the session from the processor
+   * ClearSession  : remove the session from processor and clear audio
+   */
+  enum { InsertSession, RemoveSession, ClearSession };
 
   static AmMediaProcessor* instance();
 
   void init();
+	/** Add session s to processor */
   void addSession(AmSession* s, const string& callgroup);
+	/** Remove session s from processor */
   void removeSession(AmSession* s);
+	/** Remove session s from processor and clear its audio */
+  void clearSession(AmSession* s);
+
 };
 
 

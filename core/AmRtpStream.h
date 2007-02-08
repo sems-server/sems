@@ -33,6 +33,7 @@
 #include "AmThread.h"
 #include "SampleArray.h"
 #include "AmRtpPacket.h"
+#include "AmEvent.h"
 
 #include <netinet/in.h>
 
@@ -255,6 +256,16 @@ struct AmRtpStreamInfo
     AmRtpStreamInfo(StreamType type, 
 		    AmAudio* audio_play = NULL, 
 		    AmAudio* audio_rec = NULL);
+};
+
+class AmRtpTimeoutEvent
+	: public AmEvent
+{
+	
+public:
+	AmRtpTimeoutEvent() 
+		: AmEvent(0) { }
+	~AmRtpTimeoutEvent() { }
 };
 
 #endif

@@ -628,6 +628,10 @@ void IvrDialog::onOtherReply(const AmSipReply& r)
 	AmB2BSession::onOtherReply(r);
 }
 
+void IvrDialog::onRtpTimeout() {
+    callPyEventHandler("onRtpTimeout",NULL);
+}
+
 void IvrDialog::process(AmEvent* event) 
 {
     DBG("IvrDialog::process\n");

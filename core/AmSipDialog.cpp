@@ -4,6 +4,13 @@
 #include "AmUtils.h"
 #include "AmServer.h"
 
+char* AmSipDialog::status2str[4]  = { 	
+	"Disconnected",
+	"Pending",
+	"Connected",
+	"Disconnecting" };
+
+
 AmSipDialog::~AmSipDialog()
 {
     DBG("callid = %s\n",callid.c_str());

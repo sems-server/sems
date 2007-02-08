@@ -31,6 +31,8 @@
 #include "AmUtils.h"
 #include "AmApi.h"
 
+#include "AmMediaProcessor.h"
+
 #include "sems.h"
 #include "log.h"
 
@@ -123,6 +125,10 @@ void AnnounceCallerDialog::process(AmEvent* event)
  	if (getCalleeStatus() != None)
  	    return;
 	
+	// detach this session from the media
+	// because we will stay in signaling only
+	AmMediaProcessor::instance()->removeSession(this);
+
 	connectCallee(callee_addr, callee_uri);
  	return;
     }
