@@ -256,7 +256,7 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 		    int ret = input->put(ts,buffer,size);
 		    if(ret < 0){
 			DBG("input->put() returned: %i\n",ret);
-			postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
+			postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
 		    }
 		}
                 if (s->isDtmfDetectionEnabled())
@@ -278,12 +278,12 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 	    int size = output->get(ts,buffer,s->rtp_str.getFrameSize());
 	    if(size <= 0){
 		DBG("output->get() returned: %i\n",size);
-		postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s)); //removeSession(s);
+		postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s)); //removeSession(s);
 	    }
 	    else if(!s->rtp_str.mute){
 		
 		if(s->rtp_str.put(ts,buffer,size)<0)
-		  postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
+		  postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
 		//		    removeSession(s);
 	    }
 	}
