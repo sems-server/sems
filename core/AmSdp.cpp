@@ -34,6 +34,7 @@
 #include "AmCmd.h"
 #include "AmUtils.h"
 #include "AmPlugIn.h"
+#include "AmSession.h"
 
 #include "amci/amci.h"
 #include "log.h"
@@ -137,7 +138,10 @@ AmSdp::AmSdp(const AmSdp& p_sdp_msg)
 
 void AmSdp::setBody(const char* _sdp_msg)
 {
-    strcpy(r_buf,_sdp_msg);
+    if (!memchr(_sdp_msg, '\0', BUFFER_SIZE)) {
+	    throw AmSession::Exception(513, "Message too big");
+    }
+    strcpy(r_buf, _sdp_msg);
 }
 
 

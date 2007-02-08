@@ -44,7 +44,7 @@ using std::vector;
  */
 
 /** Scratch buffer size. */
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2048
 
 /** network type */
 enum NetworkType { NT_OTHER=0, NT_IN };
