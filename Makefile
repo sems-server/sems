@@ -1,5 +1,5 @@
 
-modules = $(filter-out $(wildcard Makefile*), \
+modules = $(filter-out $(wildcard Makefile* README doc), \
 			$(wildcard *) )
 
 TAR ?= tar
