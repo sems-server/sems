@@ -1,0 +1,47 @@
+TARGET = py_sems.so
+OFILES = sippy_semscmodule.o sippy_semsPySemsDialog.o sippy_semsAmSipDialog.o sippy_semsAmSipReply.o sippy_semsAmSipRequest.o sippy_semsstring.o
+HFILES = sipAPIpy_sems.h sippy_semsPySemsDialog.h sippy_semsAmSipDialog.h sippy_semsAmSipReply.h sippy_semsAmSipRequest.h sippy_semsstring.h 
+
+CC = gcc
+CXX = g++
+LINK = g++
+CPPFLAGS = -I. -I$(COREPATH) -I/usr/include/python2.3
+CFLAGS = -pipe -fPIC -O2 -w
+CXXFLAGS = -Wall -Wno-reorder -pipe -fPIC -O2 -w
+LFLAGS = -shared
+LIBS = 
+.SUFFIXES: .c .o .cpp .cc .cxx .C
+
+
+.cpp.o:
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+.cc.o:
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+.cxx.o:
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+.C.o:
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
+
+$(TARGET): $(OFILES)
+	$(LINK) $(LFLAGS) -o $(TARGET) $(OFILES) $(LIBS)
+
+$(OFILES): $(HFILES)
+
+install: $(TARGET)
+	@test -d $(DESTDIR)/usr/lib/python2.3/site-packages || mkdir -p $(DESTDIR)/usr/lib/python2.3/site-packages
+	cp -f $(TARGET) $(DESTDIR)/usr/lib/python2.3/site-packages/$(TARGET)
+
+clean:
+	-rm -f $(TARGET)
+	-rm -f sippy_semscmodule.o
+	-rm -f sippy_semsPySemsDialog.o
+	-rm -f sippy_semsAmSipDialog.o
+	-rm -f sippy_semsAmSipReply.o
+	-rm -f sippy_semsAmSipRequest.o
+	-rm -f sippy_semsstring.o
