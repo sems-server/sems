@@ -99,9 +99,17 @@ int AmRtpPacket::parse()
     ssrc = ntohl(hdr->ssrc);
 
     data_offset = sizeof(rtp_hdr_t) + (hdr->cc*4);
+    if (data_offset >= (long)b_size) {
+ 	ERROR("bad rtp packet (header size too big) !\n");
+ 	return -1;
+    }
     d_size = b_size - data_offset;
 
     if(hdr->p){
+ 	if (data[d_size-1]>=d_size){
+ 		ERROR("bad rtp packet (invalid padding size) !\n");
+ 		return -1;
+ 	}
 	d_size -= buffer[data_offset+d_size-1];
     }
 
@@ -121,13 +129,13 @@ int AmRtpPacket::compile(unsigned char* data_buf, unsigned int size)
     d_size = size;
     b_size = d_size + sizeof(rtp_hdr_t);
     assert(b_size <= 4096);
-//     buffer = new unsigned char [b_size];
     rtp_hdr_t* hdr = (rtp_hdr_t*)buffer;
 
-//     if(!buffer){
-// 	ERROR("not enough memory !\n");
-// 	return -1;
-//     }
+    if(b_size>sizeof(buffer)){
+ 	ERROR("builtin buffer size (%d) exceeded: %d\n",
+	      (int)sizeof(buffer), b_size);
+  	return -1;
+    }
 
     memset(hdr,0,sizeof(rtp_hdr_t));
     hdr->version = RTP_VERSION;
@@ -174,23 +182,16 @@ int AmRtpPacket::recv(int sd)
     socklen_t recv_addr_len = sizeof(struct sockaddr_in);
 #endif
 
-    int ret = recvfrom(sd,buffer,4096,
-		       MSG_TRUNC | MSG_DONTWAIT,
+    int ret = recvfrom(sd,buffer,sizeof(buffer),0,
 		       (struct sockaddr*)&addr,
 		       &recv_addr_len);
 
     if(ret > 0){
 
-// 	buffer = new unsigned char [ret];
-// 	if(!buffer){
-// 	    ERROR("not enough memory !\n");
-// 	    return -1;
-// 	}
         if(ret > 4096)
 	    return -1;
 
 	b_size = ret;
-// 	memcpy(buffer,recv_buffer,b_size);
     }
     
     return ret;
@@ -199,14 +200,5 @@ int AmRtpPacket::recv(int sd)
 void AmRtpPacket::copy(const AmRtpPacket* p)
 {
     memcpy(this,p,sizeof(AmRtpPacket));
-
-//     buffer = new unsigned char [b_size];
-//     if(!buffer){
-// 	ERROR("not enough memory !\n");
-// 	data = 0;
-// 	b_size = d_size = 0;
-// 	return;
-//     }
-
     memcpy(buffer,p->buffer,b_size);
 }
