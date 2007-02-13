@@ -1,19 +1,16 @@
 #include "AmPlayoutBuffer.h"
 #include "AmAudio.h"
 
-
-#define PACKET_SAMPLES 160
-#define PACKET_SIZE    (PACKET_SAMPLES<<1)
-#define BUFFER_SIZE    (5*PACKET_SIZE)
-
 #define SEARCH_OFFSET  140
 
 #define SEARCH_REGION  110
-#define TEMPLATE_SEG   80
 #define DELTA          5
 
 #define TSM_MAX_SCALE  2.0
 #define TSM_MIN_SCALE  0.5
+
+// only scale if 0.9 < f < 1.1
+#define SCALE_FACTOR_START 0.1
 
 #define PI 3.14 
 
@@ -123,6 +120,7 @@ u_int32_t AmAdaptivePlayout::next_delay(u_int32_t ref_ts, u_int32_t ts)
 void AmAdaptivePlayout::write(u_int32_t ref_ts, u_int32_t ts, 
 			      int16_t* buf, u_int32_t len)
 {
+    // predict next delay
     u_int32_t p_delay = next_delay(ref_ts,ts);
 
     u_int32_t old_off = wsola_off;
@@ -137,6 +135,7 @@ void AmAdaptivePlayout::write(u_int32_t ref_ts, u_int32_t ts,
 	    shr_threshold -= 2;
     }
 
+    // need to scale?
     if( ts_less()(wsola_off+EXP_THRESHOLD,p_delay) ||   // expand packet
         ts_less()(p_delay+shr_threshold,wsola_off) )  { // shrink packet
 
@@ -176,7 +175,7 @@ void AmAdaptivePlayout::write(u_int32_t ref_ts, u_int32_t ts,
     u_int32_t old_wts = w_ts;
     buffer_put(ts,buf,len);
 
-    n_len = time_scale(ts,f);
+    n_len = time_scale(ts,f,len);
     wsola_off = old_off + n_len - len;
     
     //ts += n_len - len;
@@ -195,7 +194,7 @@ u_int32_t AmAdaptivePlayout::read(u_int32_t ts, int16_t* buf, u_int32_t len)
     if(ts_less()(w_ts,ts+len) && (plc_cnt < 6)){
 	
 	if(!plc_cnt){
-	    time_scale(w_ts-len,2.0);
+	    time_scale(w_ts-len,2.0, len);
  	}
 	else {
 	    do_plc = true;
@@ -207,7 +206,7 @@ u_int32_t AmAdaptivePlayout::read(u_int32_t ts, int16_t* buf, u_int32_t len)
 
 	short plc_buf[FRAMESZ];
 
-	for(unsigned int i=0; i<2; i++){
+	for(unsigned int i=0; i<len/FRAMESZ; i++){
 	    
 	    fec.dofe(plc_buf);
 	    buffer_put(w_ts,plc_buf,FRAMESZ);
@@ -219,7 +218,7 @@ u_int32_t AmAdaptivePlayout::read(u_int32_t ts, int16_t* buf, u_int32_t len)
 
 	buffer_get(ts,buf,len);
 
-	for(unsigned int i=0; i<2; i++)
+	for(unsigned int i=0; i<len/FRAMESZ; i++)
 	    fec.addtohistory(buf + i*FRAMESZ);
     }
 
@@ -247,12 +246,18 @@ void AmPlayoutBuffer::buffer_get(unsigned int ts, ShortSample* buf, unsigned int
 	r_ts = ts + len;
 }
 
-
-short* find_best_corr(short *ts, short *sr_beg,short* sr_end)
+/** 
+ * find best cross correlation of a TEMPLATE_SEG samples
+ * long frame 
+ *  * starting between sr_beg ... sr_end
+ *  * to TEMPLATE_SEG samples frame starting from ts
+ * 
+ */
+short* find_best_corr(short *ts, short *sr_beg, short* sr_end)
 {
     // find best correlation
     float corr=0.f,best_corr=0.f;
-    short *best_sr=0;
+    short *best_sr=ts;
     short *sr;
 
     for(sr = sr_beg; sr != sr_end; sr++){
@@ -270,24 +275,33 @@ short* find_best_corr(short *ts, short *sr_beg,short* sr_end)
     return best_sr;
 }
 
-u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor)
+u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor, 
+					u_int32_t packet_len)
 {
-    short p_buf[PACKET_SAMPLES*4];
-    short merge_buf[TEMPLATE_SEG];
-
-    short *tmpl      = p_buf + PACKET_SAMPLES;
+    // current position in strech buffer 
+    short *tmpl      = p_buf + packet_len;
+    // begin and end of strech buffer
     short *p_buf_beg = p_buf;
     short *p_buf_end;
 
-    unsigned int s     = PACKET_SAMPLES;
-    unsigned int s_all = s + PACKET_SAMPLES;
+    // initially size is packet_len
+    unsigned int s     = packet_len;
 
+    // we start from beginning of frame
     unsigned int cur_ts   = ts;
-    unsigned int begin_ts = cur_ts-PACKET_SAMPLES;
 
-    if(factor == 1.0)
+    // safety
+    if (packet_len > MAX_PACKET_SAMPLES)
+	    return s;
+
+    if (fabs(factor - 1.0) <= SCALE_FACTOR_START) {
+#ifdef DEBUG_PLAYOUTBUF
+	DBG("not scaling - too little f difference \n");
+#endif
 	return s;
+    }
 
+    // boundaries of scaling 
     if(factor > TSM_MAX_SCALE)
 	factor = TSM_MAX_SCALE;
     else if(factor < TSM_MIN_SCALE)
@@ -296,12 +310,14 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor)
     short *srch_beg, *srch_end, *srch;
 
     while(true){
+	// get previous packet_len frame + scaled frame 
+	// (with size s) into p_buf
+	buffer_get(ts - packet_len, p_buf_beg, s + packet_len);
+	p_buf_end = p_buf_beg + s + packet_len;
 
-	buffer_get(begin_ts,p_buf_beg,s_all);
-	p_buf_end = p_buf_beg + s_all;
-
+	// determine search region for template seg
+	// as srch_beg ... srch_end
 	if (factor > 1.0){
-
 	    // expansion
 	    srch_beg = tmpl - (int)((float)TEMPLATE_SEG * (factor - 1.0)) - SEARCH_REGION/2; 
 	    srch_end = srch_beg + SEARCH_REGION;
@@ -311,10 +327,8 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor)
 
 	    if(srch_end + DELTA >= tmpl)
 		srch_end = tmpl - DELTA;
-
 	}
 	else {
-	    
 	    // compression
 	    srch_end = tmpl + (int)((float)TEMPLATE_SEG * (1.0 - factor)) + SEARCH_REGION/2;
 	    srch_beg = srch_end - SEARCH_REGION;
@@ -325,18 +339,20 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor)
 	    if(srch_beg - DELTA < tmpl)
 		srch_beg = tmpl + DELTA;
 	}
-
+	// stop if search region size < 0
 	if (srch_beg >= srch_end)
 	    break;
 
+	// find best correlation to tmpl in srch_beg..srch_end
 	srch = find_best_corr(tmpl,srch_beg,srch_end);
-	memcpy(merge_buf,tmpl,TEMPLATE_SEG<<1);
 
+	// merge original segment (starting from tmpl) and 
+	// best correlation (starting from srch) into merge_buf 
 	float f,v;
 	for(int k=0; k<TEMPLATE_SEG; k++){
 
 	    f = 0.5 - 0.5 * cos( PI*float(k) / float(TEMPLATE_SEG) );
-	    v = (float)srch[k] * f + (float)merge_buf[k] * (1.0 - f);
+	    v = (float)srch[k] * f + (float)tmpl[k] * (1.0 - f);
 
 	    if(v > 32767.)
 		v = 32767.;
@@ -346,28 +362,35 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor)
 	    merge_buf[k] = (short)v;
 	}
 
+	// put merged segment into buffer
 	buffer_put( cur_ts, merge_buf, TEMPLATE_SEG);
+	// add after merged segment audio from after srch 
 	buffer_put( cur_ts + TEMPLATE_SEG, srch + TEMPLATE_SEG, 
 		    p_buf_end - srch - TEMPLATE_SEG );
-
+	// size s has changed
 	s      += tmpl - srch;
-	s_all  += tmpl - srch;
 
+	// go to next segment
 	cur_ts += TEMPLATE_SEG/2;
 	tmpl   += TEMPLATE_SEG/2;
 
+	// calculate current factor
+	float act_fact = s / (float)packet_len;
+
+#ifdef DEBUG_PLAYOUTBUF
+	DBG("at ts %u: new size = %u, ratio = %f, requested = %f\n", ts, s, act_fact, factor);
+#endif
+	// break condition: coming to the end of the frame (with safety margin)
 	if(p_buf_end - tmpl < TEMPLATE_SEG + DELTA)
 	    break;
 
-	float act_fact = s / (float)PACKET_SAMPLES;
-
-	//DBG("new size = %u, ratio = %f, factor = %f\n",s, act_fact, factor);
+	// streched enough?
 	if((factor > 1.0) && (act_fact >= factor))
 	    break;
-
 	else if((factor < 1.0) && (act_fact <= factor))
 	    break;
 
+	// streched over maximum already?
 	else if(act_fact >= TSM_MAX_SCALE || f <= TSM_MIN_SCALE)
 	    break;
 
