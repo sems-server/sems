@@ -89,7 +89,7 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
 
 	if(ts_less()(last_ts,ts) && !begin_talk
 	   && (ts-last_ts <= PLC_MAX_SAMPLES)) {
-	    
+	
 	    int l_size = conceal_loss(ts - last_ts);
  	    if(l_size>0){
 
@@ -111,8 +111,10 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
 	playout_buffer->write(audio_buffer_ts, ts,
 			      (ShortSample*)((unsigned char*)samples),
 			      PCM16_B2S(size));
-	
-	last_ts = ts + PCM16_B2S(size);
+	// update last_ts to end of received packet 
+	// if not out-of-sequence
+	if (ts_less()(last_ts,ts) || last_ts == ts)
+		last_ts = ts + PCM16_B2S(size);
     }
     
     return size;
