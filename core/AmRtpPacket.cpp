@@ -99,14 +99,14 @@ int AmRtpPacket::parse()
     ssrc = ntohl(hdr->ssrc);
 
     data_offset = sizeof(rtp_hdr_t) + (hdr->cc*4);
-    if (data_offset >= (long)b_size) {
+    if (data_offset >= b_size) {
  	ERROR("bad rtp packet (header size too big) !\n");
  	return -1;
     }
     d_size = b_size - data_offset;
 
     if(hdr->p){
- 	if (data[d_size-1]>=d_size){
+ 	if (buffer[d_size-1]>=d_size){
  		ERROR("bad rtp packet (invalid padding size) !\n");
  		return -1;
  	}
