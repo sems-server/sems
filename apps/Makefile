@@ -3,7 +3,7 @@ COREPATH ?= ../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_modules = mp3 announce_auth
+exclude_modules = mp3 examples
 modules = $(filter-out $(exclude_modules) \
 		$(wildcard Makefile*) CVS, \
 		$(wildcard *) )
