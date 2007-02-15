@@ -48,6 +48,11 @@ C_FLAGS = -Wall -fPIC -g \
 	  -DOS='"$(OS)"' 	\
 #	  -DSUPPORT_IPV6
 
+ifeq ($(WITH_ADAPTIVE_JITTERBUFFER), yes)
+CXX_FLAGS +=  -DUSE_ADAPTIVE_JB
+endif
+
+
 TARGET =
 ifeq ($(OS), linux)
 	LD_FLAGS +=  -ldl -rdynamic -lpthread
