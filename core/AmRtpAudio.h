@@ -52,7 +52,11 @@ class AmRtpAudio: public AmRtpStream, public AmAudio
     bool         last_check_i;
     bool         send_int;
 
+#ifndef USE_ADAPTIVE_JB
+    unsigned int last_ts;
+#else
     unsigned int m_last_rtp_endts;
+#endif
     bool         last_ts_i;
 
     bool         send_only;

@@ -28,6 +28,7 @@
 #include "AmRtpAudio.h"
 #include <sys/time.h>
 #include <assert.h>
+#include "AmSession.h"
 
 AmRtpAudio::AmRtpAudio(AmSession* _s)
     : AmRtpStream(_s), AmAudio(0), 
@@ -71,6 +72,60 @@ unsigned int AmRtpAudio::bytes2samples(unsigned int bytes) const
  */
 int AmRtpAudio::receive(unsigned int audio_buffer_ts) 
 {
+#ifndef USE_ADAPTIVE_JB  
+// using fifo or adaptive playout buffer
+    int size;
+    unsigned int ts;
+
+    while(true) {
+	size = AmRtpStream::receive((unsigned char*)samples, 
+				    (unsigned int)AUDIO_BUFFER_SIZE,ts,
+				    audio_buffer_ts);
+	if(size <= 0)
+	    break;
+	
+	if(send_only){
+	    last_ts_i = false;
+	    continue;
+	}
+
+	if(!last_ts_i){
+	    last_ts = ts;
+	    last_ts_i = true;
+	}
+
+	if(ts_less()(last_ts,ts) && !begin_talk
+	   && (ts-last_ts <= PLC_MAX_SAMPLES)) {
+	
+	    int l_size = conceal_loss(ts - last_ts);
+ 	    if(l_size>0){
+
+  		playout_buffer->direct_write(last_ts,
+					     (ShortSample*)samples.back_buffer(),
+					     PCM16_B2S(l_size));
+ 	    }
+	}
+
+	size = decode(size);
+	if(size <= 0){
+	    ERROR("decode() returned %i\n",size);
+	    return -1;
+	}
+
+	if(use_default_plc)
+	    add_to_history(size);
+
+	playout_buffer->write(audio_buffer_ts, ts,
+			      (ShortSample*)((unsigned char*)samples),
+			      PCM16_B2S(size));
+	// update last_ts to end of received packet 
+	// if not out-of-sequence
+	if (ts_less()(last_ts,ts) || last_ts == ts)
+		last_ts = ts + PCM16_B2S(size);
+    }
+    
+    return size;
+#else // using adaptive JB
     int rtp_size;
     int audio_size;
     unsigned int ts;
@@ -132,6 +187,7 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
     }
     
     return PCM16_S2B(getFrameSize());
+#endif
 }
 
 int AmRtpAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples)
@@ -226,12 +282,16 @@ void AmRtpAudio::setAdaptivePlayout(bool on)
 
     if(on == !is_adaptive){
 
-	if(is_adaptive){
+	if(!is_adaptive){
+ 	    session->lockAudio();
 	    playout_buffer.reset(new AmAdaptivePlayout());
+	    session->unlockAudio();
 	    DBG("Adaptive playout buffer activated\n");
 	}
 	else{
+ 	    session->lockAudio();
 	    playout_buffer.reset(new AmPlayoutBuffer());
+	    session->unlockAudio();
 	    DBG("Adaptive playout buffer deactivated\n");
 	}
     }

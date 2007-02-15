@@ -35,12 +35,11 @@
 #include "Echo.h"
 #include "AmAudioEcho.h"
 
-//#include "AmSessionTimer.h"
 #include "AmPlugIn.h"
-
 
 EXPORT_SESSION_FACTORY(EchoFactory,"echo");
 
+#define STAR_SWITCHES_PLAYOUTBUFFER
 
 EchoFactory::EchoFactory(const string& _app_name)
     : AmSessionFactory(_app_name),
@@ -63,7 +62,9 @@ AmSession* EchoFactory::onInvite(const AmSipRequest& req)
 }
 
 EchoDialog::EchoDialog() 
+	: adaptive_playout(false)
 {
+	
 }
 
 EchoDialog::~EchoDialog()
@@ -78,4 +79,16 @@ void EchoDialog::onSessionStart(const AmSipRequest& req)
 void EchoDialog::onBye(const AmSipRequest& req)
 {
     setStopped();
+}
+
+void EchoDialog::onDtmf(int event, int duration)
+{
+#ifdef STAR_SWITCHES_PLAYOUTBUFFER
+    if (event == 10) {   
+       	adaptive_playout = !adaptive_playout;
+	DBG("received *. set adaptive playout to %s.\n", adaptive_playout ? "true":"false");
+	
+	rtp_str.setAdaptivePlayout(adaptive_playout);
+    }
+#endif
 }

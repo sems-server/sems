@@ -188,6 +188,102 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
     return size;
 }
 
+#ifndef USE_ADAPTIVE_JB
+// returns 
+// @param ts              [out] timestamp of the received packet, 
+//                              in audio buffer relative time
+// @param audio_buffer_ts [in]  current ts at the audio_buffer 
+
+int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
+			  unsigned int& ts, unsigned int audio_buffer_ts)
+{
+    AmRtpPacket rp;
+    int err = nextPacket(rp);
+    
+    if(err <= 0)
+	return err;
+
+#ifdef SUPPORT_IPV6
+    struct sockaddr_storage recv_addr;
+#else
+    struct sockaddr_in recv_addr;
+#endif
+    rp.getAddr(&recv_addr);
+
+#ifndef SUPPORT_IPV6
+    // symmetric RTP
+    if( passive && ((recv_addr.sin_port != r_saddr.sin_port)
+		    || (recv_addr.sin_addr.s_addr 
+			!= r_saddr.sin_addr.s_addr)) ) {
+	
+	string addr_str = get_addr_str(recv_addr.sin_addr);
+	int port = ntohs(recv_addr.sin_port);
+	setRAddr(addr_str,port);
+	DBG("Symmetric RTP: setting new remote address: %s:%i\n",addr_str.c_str(),port);
+	// avoid comparing each time sender address
+	passive = false;
+    }
+#endif
+
+    if(rp.parse() == -1){
+	ERROR("while parsing RTP packet.\n");
+	return RTP_PARSE_ERROR;
+    }
+
+    /* do we have a new talk spurt? */
+    begin_talk = ((last_payload == 13) || rp.marker);
+    last_payload = rp.payload;
+    
+    if(!rp.getDataSize())
+	return RTP_EMPTY;
+    
+    if(payload != rp.payload){
+	
+        if (telephone_event_pt.get() && rp.payload == telephone_event_pt->payload_type)
+        {
+	    dtmf_payload_t* dpl = (dtmf_payload_t*)rp.getData();
+
+	    DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i\n",
+		dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration));
+            session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate()));
+            return RTP_DTMF;
+	}
+	else
+	    return RTP_UNKNOWN_PL;
+    }
+    
+    if(!recv_offset_i){
+
+ 	recv_offset = rp.timestamp - audio_buffer_ts;
+ 	recv_offset_i = true;
+	DBG("initialized recv_offset with %i (%i - %i)\n", 
+	    recv_offset,audio_buffer_ts,rp.timestamp);
+	ts = audio_buffer_ts;// + jitter_delay;
+    }
+    else {
+ 	ts = rp.timestamp - recv_offset;// + jitter_delay;
+	
+	// resync
+ 	if( ts_less()(ts, audio_buffer_ts - MAX_DELAY/2) || 
+ 	    !ts_less()(ts, audio_buffer_ts + MAX_DELAY) ){
+
+ 	    DBG("resync needed: reference ts = %u; write ts = %u\n",
+ 		audio_buffer_ts,ts);
+ 	    recv_offset = rp.timestamp - audio_buffer_ts;
+ 	    ts = audio_buffer_ts;// + jitter_delay;
+ 	}
+    }
+
+    assert(rp.getData());
+    if(rp.getDataSize() > size){
+	ERROR("received too big RTP packet\n");
+	return RTP_BUFFER_SIZE;
+    }
+    memcpy(buffer,rp.getData(),rp.getDataSize());
+
+    return rp.getDataSize();    
+}
+#else
 // returns 
 // @param ts              [out] timestamp of the received packet, 
 //                              in audio buffer relative time
@@ -251,6 +347,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int buf_size,
 
     return rp.getDataSize();    
 }
+#endif // USE_ADAPTIVE_JB
 
 AmRtpStream::AmRtpStream(AmSession* _s) 
     : runcond(0), 
@@ -263,12 +360,15 @@ AmRtpStream::AmRtpStream(AmSession* _s)
       passive(false),
       first_recved(false),
       telephone_event_pt(NULL),
-      mute(false),
-      m_main_jb(NULL)
+      mute(false)
+#ifdef USE_ADAPTIVE_JB
+      , 
+      m_main_jb(new AmJitterBuffer(this)),
+      m_telephone_event_jb(new AmJitterBuffer(this))
+#endif
 {
-    //assert(session);
-    m_telephone_event_jb = new AmJitterBuffer(this);
-    m_main_jb = new AmJitterBuffer(this);
+
+
 #ifdef SUPPORT_IPV6
     memset(&r_saddr,0,sizeof(struct sockaddr_storage));
     memset(&l_saddr,0,sizeof(struct sockaddr_storage));
@@ -292,8 +392,11 @@ AmRtpStream::~AmRtpStream()
 	AmRtpReceiver::instance()->removeStream(l_sd);
 	close(l_sd);
     }
+#ifdef USE_ADAPTIVE_JB
     if (m_main_jb) delete(m_main_jb);
-    delete (m_telephone_event_jb);
+    if (m_telephone_event_jb)
+        delete (m_telephone_event_jb);
+#endif
 }
 
 int AmRtpStream::getLocalPort()
@@ -382,6 +485,43 @@ void AmRtpStream::icmpError()
     }
 }
 
+#ifndef USE_ADAPTIVE_JB
+void AmRtpStream::bufferPacket(const AmRtpPacket* p)
+{
+    jitter_mut.lock();
+    gettimeofday(&last_recv_time,NULL);
+    jitter_buf[p->timestamp].copy(p);
+    jitter_mut.unlock();
+}
+
+int AmRtpStream::nextPacket(AmRtpPacket& p)
+{
+    struct timeval now;
+    struct timeval diff;
+    gettimeofday(&now,NULL);
+
+    jitter_mut.lock();
+    timersub(&now,&last_recv_time,&diff);
+    if(diff.tv_sec > DEAD_RTP_TIME){
+ 	WARN("RTP Timeout detected. Last received packet is too old.\n");
+	DBG("diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
+	jitter_mut.unlock();
+ 	return RTP_TIMEOUT;
+    }
+
+    if(jitter_buf.empty()){
+	jitter_mut.unlock();
+	return RTP_EMPTY;
+    }
+
+    AmRtpPacket& pp = jitter_buf.begin()->second;
+    p.copy(&pp);
+    jitter_buf.erase(jitter_buf.begin());
+    jitter_mut.unlock();
+
+    return 1;
+}
+#else
 void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 {
     gettimeofday(&last_recv_time,NULL);
@@ -408,6 +548,7 @@ int AmRtpStream::nextAudioPacket(AmRtpPacket& p, unsigned int ts, unsigned int m
     }
     return RTP_EMPTY;
 }
+#endif
 
 int AmRtpStream::getTelephoneEventRate()
 {

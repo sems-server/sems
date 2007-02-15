@@ -17,6 +17,12 @@ using std::multiset;
 #define WSOLA_START_OFF  80
 #define WSOLA_SCALED_WIN 50
 
+// the maximum packet size that will be processed
+//   640 is 80ms @ 8khz
+#define MAX_PACKET_SAMPLES 640
+// search segments of size TEMPLATE_SEG samples 
+#define TEMPLATE_SEG   80
+
 /** \brief base class for Playout buffer */
 class AmPlayoutBuffer
 {
@@ -56,17 +62,27 @@ class AmAdaptivePlayout: public AmPlayoutBuffer
     int       plc_cnt;
     LowcFE    fec;
 
-    u_int32_t time_scale(u_int32_t ts, float factor);
+    // buffers
+    // strech buffer
+    short p_buf[MAX_PACKET_SAMPLES*4];
+    // merging buffer (merge segment from strech + original seg)
+    short merge_buf[TEMPLATE_SEG];
+
+    u_int32_t time_scale(u_int32_t ts, float factor, u_int32_t packet_len);
     u_int32_t next_delay(u_int32_t ref_ts, u_int32_t ts);
 
 public:
 
     AmAdaptivePlayout();
 
+    /** write len samples beginning from timestamp ts from buf */
     void direct_write(unsigned int ts, ShortSample* buf, unsigned int len);
 
+    /** write len samples which beginn from timestamp ts from buf
+	reference ts of buffer (monotonic increasing buffer ts) is ref_ts */
     void write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
 
+    /** read len samples beginn from timestamp ts into buf */
     u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
 };
 
