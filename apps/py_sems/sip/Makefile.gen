@@ -1,6 +1,6 @@
-TARGET = py_sems.so
-OFILES = sippy_semscmodule.o sippy_semsPySemsDialog.o sippy_semsAmSipDialog.o sippy_semsAmSipReply.o sippy_semsAmSipRequest.o sippy_semsstring.o
-HFILES = sipAPIpy_sems.h sippy_semsPySemsDialog.h sippy_semsAmSipDialog.h sippy_semsAmSipReply.h sippy_semsAmSipRequest.h sippy_semsstring.h 
+TARGET = py_sems_lib.so
+OFILES = sippy_sems_libcmodule.o sippy_sems_libPySemsDialog.o sippy_sems_libAmSipDialog.o sippy_sems_libAmSipReply.o sippy_sems_libAmSipRequest.o sippy_sems_libstring.o
+HFILES = sipAPIpy_sems_lib.h sippy_sems_libPySemsDialog.h sippy_sems_libAmSipDialog.h sippy_sems_libAmSipReply.h sippy_sems_libAmSipRequest.h sippy_sems_libstring.h 
 
 CC = gcc
 CXX = g++
@@ -39,9 +39,9 @@ install: $(TARGET)
 
 clean:
 	-rm -f $(TARGET)
-	-rm -f sippy_semscmodule.o
-	-rm -f sippy_semsPySemsDialog.o
-	-rm -f sippy_semsAmSipDialog.o
-	-rm -f sippy_semsAmSipReply.o
-	-rm -f sippy_semsAmSipRequest.o
-	-rm -f sippy_semsstring.o
+	-rm -f sippy_sems_libcmodule.o
+	-rm -f sippy_sems_libPySemsDialog.o
+	-rm -f sippy_sems_libAmSipDialog.o
+	-rm -f sippy_sems_libAmSipReply.o
+	-rm -f sippy_sems_libAmSipRequest.o
+	-rm -f sippy_sems_libstring.o

@@ -1,3 +1,3 @@
-target = py_sems
-sources = sippy_semscmodule.cpp sippy_semsPySemsDialog.cpp sippy_semsAmSipDialog.cpp sippy_semsAmSipReply.cpp sippy_semsAmSipRequest.cpp sippy_semsstring.cpp
-headers = sipAPIpy_sems.h sippy_semsPySemsDialog.h sippy_semsAmSipDialog.h sippy_semsAmSipReply.h sippy_semsAmSipRequest.h sippy_semsstring.h
+target = py_sems_lib
+sources = sippy_sems_libcmodule.cpp sippy_sems_libPySemsDialog.cpp sippy_sems_libAmSipDialog.cpp sippy_sems_libAmSipReply.cpp sippy_sems_libAmSipRequest.cpp sippy_sems_libstring.cpp
+headers = sipAPIpy_sems_lib.h sippy_sems_libPySemsDialog.h sippy_sems_libAmSipDialog.h sippy_sems_libAmSipReply.h sippy_sems_libAmSipRequest.h sippy_sems_libstring.h

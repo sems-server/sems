@@ -27,11 +27,11 @@
 #include "log.h"
 #include "AmApi.h"
 #include "AmUtils.h"
-#include "AmSessionScheduler.h"
+#include "AmMediaProcessor.h"
 #include "AmPlugIn.h"
 
-#include "sip/sipAPIpy_sems.h"
-#include "sip/sippy_semsPySemsDialog.h"
+#include "sip/sipAPIpy_sems_lib.h"
+#include "sip/sippy_sems_libPySemsDialog.h"
 
 #include <unistd.h>
 #include <pthread.h>
@@ -66,7 +66,7 @@ struct PythonGIL
 
 extern "C" {
 
-    static PyObject* ivr_log(PyObject*, PyObject* args)
+    static PyObject* py_sems_log(PyObject*, PyObject* args)
     {
 	int level;
 	char *msg;
@@ -103,7 +103,7 @@ extern "C" {
 	return Py_None;
     }
 
-    static PyObject* ivr_getHeader(PyObject*, PyObject* args)
+    static PyObject* py_sems_getHeader(PyObject*, PyObject* args)
     {
 	char* headers;
 	char* header_name;
@@ -115,9 +115,9 @@ extern "C" {
     }
 
 
-    static PyMethodDef ivr_methods[] = {
- 	{"log", (PyCFunction)ivr_log, METH_VARARGS,"Log a message using Sems' logging system"},
-	{"getHeader", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeader wrapper"},
+    static PyMethodDef py_sems_methods[] = {
+ 	{"log", (PyCFunction)py_sems_log, METH_VARARGS,"Log a message using Sems' logging system"},
+	{"getHeader", (PyCFunction)py_sems_getHeader, METH_VARARGS,"Python getHeader wrapper"},
 	{NULL}  /* Sentinel */
     };
 }
@@ -160,28 +160,28 @@ void PySemsFactory::import_object(PyObject* m, char* name, PyTypeObject* type)
     PyModule_AddObject(m, name, (PyObject *)type);
 }
 
-void PySemsFactory::import_ivr_builtins()
+void PySemsFactory::import_py_sems_builtins()
 {
-    // ivr module - start
-    PyImport_AddModule("ivr");
-    ivr_module = Py_InitModule("ivr",ivr_methods);
+    // py_sems module - start
+    PyImport_AddModule("py_sems");
+    py_sems_module = Py_InitModule("py_sems",py_sems_methods);
 
     // PySemsSipDialog (= AmSipDialog)
-    //import_object(ivr_module, "PySemsSipDialog", &PySemsSipDialogType);
+    //import_object(py_sems_module, "PySemsSipDialog", &PySemsSipDialogType);
 
     // PySemsDialogBase
-    //import_object(ivr_module,"PySemsDialogBase",&PySemsDialogBaseType);
+    //import_object(py_sems_module,"PySemsDialogBase",&PySemsDialogBaseType);
 
 
     // PySemsAudioFile
-    import_object(ivr_module,"PySemsAudioFile",&PySemsAudioFileType);
+    import_object(py_sems_module,"PySemsAudioFile",&PySemsAudioFileType);
 
-    PyModule_AddIntConstant(ivr_module, "AUDIO_READ",AUDIO_READ);
-    PyModule_AddIntConstant(ivr_module, "AUDIO_WRITE",AUDIO_WRITE);
-    // ivr module - end
+    PyModule_AddIntConstant(py_sems_module, "AUDIO_READ",AUDIO_READ);
+    PyModule_AddIntConstant(py_sems_module, "AUDIO_WRITE",AUDIO_WRITE);
+    // py_sems module - end
 
     // add log level for the log module
-    PyModule_AddIntConstant(ivr_module, "SEMS_LOG_LEVEL",log_level);
+    PyModule_AddIntConstant(py_sems_module, "SEMS_LOG_LEVEL",log_level);
 
     import_module("log");
     initpy_sems();
@@ -205,7 +205,7 @@ void PySemsFactory::init_python_interpreter()
 {
     Py_Initialize();
     PyEval_InitThreads();
-    import_ivr_builtins();
+    import_py_sems_builtins();
     PyEval_ReleaseLock();
 }
 
@@ -233,7 +233,7 @@ PySemsDialog* PySemsFactory::newDlg(const string& name)
 	PyErr_Print();
 	ERROR("PySemsFactory: while loading \"%s\": could not create instance\n",
 	      name.c_str());
-	throw AmSession::Exception(500,"Internal error in IVR plug-in.");
+	throw AmSession::Exception(500,"Internal error in PY_SEMS plug-in.");
 	
 	return NULL;
     }
@@ -245,7 +245,7 @@ PySemsDialog* PySemsFactory::newDlg(const string& name)
 	PyErr_Print();
 	ERROR("PySemsFactory: while loading \"%s\": could not retrieve PySemsDialog ptr.\n",
 	      name.c_str());
-	throw AmSession::Exception(500,"Internal error in IVR plug-in.");
+	throw AmSession::Exception(500,"Internal error in PY_SEMS plug-in.");
 	Py_DECREF(dlg_inst);
 
 	return NULL;
@@ -361,16 +361,16 @@ int PySemsFactory::onLoad()
     setScriptPath(cfg.getParameter("script_path"));
     init_python_interpreter();
 
-    DBG("** IVR compile time configuration:\n");
+    DBG("** PY_SEMS compile time configuration:\n");
     DBG("**     built with PYTHON support.\n");
 
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
     DBG("**     Text-To-Speech enabled\n");
 #else
     DBG("**     Text-To-Speech disabled\n");
 #endif
 
-    DBG("** IVR run time configuration:\n");
+    DBG("** PY_SEMS run time configuration:\n");
     DBG("**     script path:         \'%s\'\n", script_path.c_str());
 
     regex_t reg;

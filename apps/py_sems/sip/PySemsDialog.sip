@@ -21,13 +21,13 @@ public:
 
     virtual void onInvite(const AmSipRequest& /* req */);
     virtual void onSessionStart(const AmSipRequest& /* req */);
-    virtual void onBye(const AmSipRequest& /* req */);
     virtual void onCancel();
 
+    virtual void onBye(const AmSipRequest& /* req */);
     virtual void onDtmf(int /* event */, int /* duration_msec */);
 
-    virtual void onOtherBye(const AmSipRequest& /* req */);
-    virtual void onOtherReply(const AmSipReply& /* r */);
+//    virtual void onOtherBye(const AmSipRequest& /* req */);
+//    virtual void onOtherReply(const AmSipReply& /* r */);
 
 private:
     PySemsDialog(const PySemsDialog&);

@@ -19,17 +19,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _IVR_H_
-#define _IVR_H_
+#ifndef _PY_SEMS_H_
+#define _PY_SEMS_H_
 
-#define MOD_NAME "ivr"
+#define MOD_NAME "py_sems"
 
 #include <Python.h>
 
 #include "AmB2BSession.h"
 #include "AmPlaylist.h"
 
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
 #include "flite.h"
 #endif
 
@@ -65,7 +65,7 @@ struct PySemsScriptDesc
 
 class PySemsFactory: public AmSessionFactory
 {
-    PyObject* ivr_module;
+    PyObject* py_sems_module;
     string script_path;
     string default_script;
 
@@ -74,7 +74,7 @@ class PySemsFactory: public AmSessionFactory
     AmDynInvokeFactory* user_timer_fact;
 
     void init_python_interpreter();
-    void import_ivr_builtins();
+    void import_py_sems_builtins();
 
     void import_module(const char* modname);
     void import_object(PyObject* m, 
