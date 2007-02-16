@@ -27,7 +27,6 @@
 #include "log.h"
 #include "AmApi.h"
 #include "AmUtils.h"
-#include "AmMediaProcessor.h"
 #include "AmPlugIn.h"
 
 #include "sip/sipAPIpy_sems_lib.h"
