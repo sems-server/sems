@@ -20,13 +20,30 @@ Sems' SIP stack. They communicate together through unix socket servers.
 Each side implements a server, enabling communication in both ways.You 
 will need to configure Ser to use Sems's server, and Sems to use Ser's 
 server. If you plan to run more than one Ser instance on the same host, 
-be sure to know wich Ser instance you want to connect to Sems (!).
+be sure to know wich Ser instance you want to connect to SEMS.
 
-Some people have only one Ser instance. Other users have a dedicated instance
-for Sems. If you don't know what you need, try first with a dedicated
-instance, as the configuration of that instance will be much easier. A sample
-configuration with a single ser instance is given in 3.2. 
+Usually the best is to have one SER instance which acts only as SIP stack
+for Sems. This SER could e.g. be listening on port 5070 for SIP messages.
+If in the home proxy (or any other place) a new INVITE should be sent to Sems, 
+e.g. into a conference, the home proxy just relays the INVITE to the media server 
+on port 5070.
 
+For each version of Sems there is a recommended version of SER to run it with. Thus 
+it might be necessary to run two different versions of SER on the same machine. The 
+best method to do this is to install the SER for Sems in a special location, e.g. 
+in /opt/ser-sems/.
+
+For sems 0.10.0, for which the recommended ser version is ser-0.9.6-sems, Do : 
+
+ mkdir -p /opt/ser-sems/src 
+ cd  /opt/ser-sems/src
+ wget http://ftp.iptel.org/pub/sems/ser-0.9.6-sems_src.tar.gz
+ tar -vxzf ser-0.9.6-sems_src.tar.gz
+ cd ser-0.9.6-sems
+ make install PREFIX=/opt/ser-sems
+
+This way, you have your own ser-sems installation in a compleatly
+seperate dir, and you can simply continue to play with it as you want  :)  
 
 2.1 Configure Sems to use Ser's Unix socket server
 
@@ -259,6 +276,3 @@ modparam("tm", "tw_append",
    break;
 
 
-3. Configuration files used in this HOWTO
-
-<tbd>
