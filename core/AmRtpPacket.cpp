@@ -106,11 +106,11 @@ int AmRtpPacket::parse()
     d_size = b_size - data_offset;
 
     if(hdr->p){
- 	if (buffer[d_size-1]>=d_size){
+ 	if (buffer[b_size-1]>=d_size){
  		ERROR("bad rtp packet (invalid padding size) !\n");
  		return -1;
  	}
-	d_size -= buffer[data_offset+d_size-1];
+	d_size -= buffer[b_size-1];
     }
 
     return 0;

@@ -171,7 +171,7 @@ class SIPRegistrarClient  : public AmSIPEventHandler,
 public:
     SIPRegistrarClient(const string& name);
 	// DI factory
-	SIPRegistrarClient* getInstance() { return instance(); }
+	AmDynInvoke* getInstance() { return instance(); }
 	// DI API
     static SIPRegistrarClient* instance();
 	void invoke(const string& method, 

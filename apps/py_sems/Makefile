@@ -39,9 +39,9 @@ ifeq ($(TTS), y)
 # uncomment the next lines if you want to have flite text-to-speech (ivr.say("Hello there"); ) 
 FLITE_DIR = /usr/src/flite-1.2-release
 ALT_FLITE_DIR = /usr/include/flite
-IVR_TTS_module_ldflags =  -L$(FLITE_DIR)/lib -lm  -lflite_cmu_us_kal  -lflite_usenglish \
+PY_SEMS_TTS_module_ldflags =  -L$(FLITE_DIR)/lib -lm  -lflite_cmu_us_kal  -lflite_usenglish \
 	-lflite_cmulex -lflite
-IVR_TTS_module_cflags = -I$(FLITE_DIR)/include  -I$(ALT_FLITE_DIR) -DIVR_WITH_TTS
+PY_SEMS_TTS_module_cflags = -I$(FLITE_DIR)/include  -I$(ALT_FLITE_DIR) -DPY_SEMS_WITH_TTS
 endif
 
 LOCAL_INCLUDES = -I$(FLITE_DIR)/lang/usenglish
@@ -49,15 +49,11 @@ LOCAL_INCLUDES = -I$(FLITE_DIR)/lang/usenglish
 # On FreeBSD, remove the following flags: -ldl -lpthread 
 module_ldflags = -ldl -lpthread -lutil -lm \
 	$(PYTHON_module_ldflags) \
-	$(IVR_TTS_module_ldflags)
+	$(PY_SEMS_TTS_module_ldflags)
 
-# for perl support:
-# -DIVR_PERL  `perl -MExtUtils::Embed -e ccopts `
-# for flite text-to-speech support -DIVR_WITH_TTS
 module_cflags  = \
 	$(PYTHON_module_cflags) \
-	$(IVR_TTS_module_cflags) \
-	$(PERL_module_cflags) \
+	$(PY_SEMS_TTS_module_cflags) \
 	$(module_additional_cflags)
 
 extra_target  = python_files
@@ -81,6 +77,8 @@ python_files:
 
 endif
 
+extra_clean = clean_py_sems_lib
+
 include $(COREPATH)/plug-in/Makefile.app_module
 
 .PHONY: install_python_files
@@ -93,3 +91,6 @@ install_python_files: $(modules-prefix)/$(modules-dir)
 		fi ; \
 	done
 
+.PHONY: clean_py_sems_lib
+clean_py_sems_lib:
+	cd sip; $(MAKE) clean

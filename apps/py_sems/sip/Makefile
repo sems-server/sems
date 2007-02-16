@@ -10,7 +10,11 @@ all: py_sems.so
 
 .PHONY: clean
 clean:
-	$(MAKE) -f Makefile.gen clean; \
+	$(MAKE) -f Makefile.gen clean
+
+
+.PHONY: cleaner
+cleaner: clean
 	rm -f *.cpp *.h *.sbf *~
 
 Makefile.gen: configure.py $(SIP_FILES)

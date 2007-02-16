@@ -32,8 +32,8 @@ module_package: $(extra_target)
 
 
 .PHONY: clean
-clean: 
-	-@rm -f $(objs) $(depends) $(lib_name) $(extra_clean)
+clean: $(extra_clean)
+	-@rm -f $(objs) $(depends) $(lib_name)
 
 .PHONY: deps
 deps: $(depends) $(extra_depends)

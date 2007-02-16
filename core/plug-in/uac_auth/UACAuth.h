@@ -74,7 +74,7 @@ public:
     bool onInvite(const AmSipRequest&);
 
 	static UACAuthFactory* instance();
-	UACAuthFactory* getInstance() { return instance(); }
+	AmDynInvoke* getInstance() { return instance(); }
 	void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
 };
 
