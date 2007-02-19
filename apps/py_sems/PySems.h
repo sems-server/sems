@@ -103,8 +103,6 @@ class PySemsDialog : public AmB2BCallerSession
     PyObject  *py_dlg;
 
     bool callPyEventHandler(char* name, char* fmt, ...);
-    
-    void process(AmEvent* event);
 
 public:
     AmDynInvoke* user_timer;
@@ -123,6 +121,9 @@ public:
 
 /*     void onOtherBye(const AmSipRequest& req); */
 /*     void onOtherReply(const AmSipReply& r); */
+
+    void process(AmEvent* event);
+
 };
 
 #endif

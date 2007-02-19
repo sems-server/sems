@@ -26,8 +26,13 @@ public:
     virtual void onBye(const AmSipRequest& /* req */);
     virtual void onDtmf(int /* event */, int /* duration_msec */);
 
-//    virtual void onOtherBye(const AmSipRequest& /* req */);
-//    virtual void onOtherReply(const AmSipReply& /* r */);
+
+    void setInput(AmAudioFile* /In/ /*in*/);
+    void setOutput(AmAudioFile* /In/ /*out*/);
+    void setInOut(AmAudioFile* /In/ /*in*/, AmAudioFile* /*out*/);
+
+    virtual void process(AmEvent* /*In,Out*/);
+
 
 private:
     PySemsDialog(const PySemsDialog&);

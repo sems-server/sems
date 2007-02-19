@@ -67,6 +67,7 @@ void AmSipDialog::updateStatusFromLocalRequest(const AmSipRequest& req)
       DBG("dialog callid is empty, updating from UACRequest\n");
 	callid       = req.callid;
 	local_tag    = req.from_tag;
+	DBG("local_tag = %s\n",local_tag.c_str());
 	user         = req.user;
 	domain       = req.domain;
 	local_uri    = req.from_uri;
@@ -266,12 +267,22 @@ int AmSipDialog::reply(const AmSipRequest& req,
     string reply_sock = "/tmp/" + AmSession::getNewId();
     string code_str = int2str(code);
 
-    string msg = 
-	":t_reply:" + reply_sock + "\n" +
-	code_str + "\n" + 
-	reason + "\n" + 
-	req.key + "\n" + 
- 	local_tag + "\n";
+    string msg = ":t_reply:";
+
+    msg += reply_sock;
+    msg += "\n";
+
+    msg += code_str;
+    msg += "\n";
+
+    msg += reason;
+    msg += "\n";
+
+    msg += req.key;
+    msg += "\n";
+
+    msg += local_tag;
+    msg += "\n";
 
     if(!m_hdrs.empty())
 	msg += m_hdrs;

@@ -31,6 +31,9 @@ public:
     string next_hop;  // next_hop for t_uac_dlg
     
     string key; // transaction key to be used in t_reply
+
+    
 };
 
 string getHeader(const string& /* hdrs */,const string& /* hdr_name */);
+string getHeader(const string& /*hdrs*/, const string& /*hdr_name*/, const string& /*compact_hdr_name*/);

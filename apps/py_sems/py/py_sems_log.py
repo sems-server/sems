@@ -14,7 +14,7 @@ def log(level, msg, args):
 	else:
 		tmp_msg = msg
 		
-	ivr.log(level,"Ivr-Python: " + tmp_msg + "\n")
+	py_sems.log(level,"PySems: " + tmp_msg + "\n")
 
 
 def error(msg, args=None):
@@ -47,13 +47,13 @@ def stacktrace(tb):
 
 def log_excepthook(exception, value, tb):
 
-	error('********** Ivr-Python exception report ****************')
+	error('********** PySems exception report ****************')
 	error(str(exception) + ' raised: ' + str(value))
 	stacktrace(tb)
-	error('********** end of Ivr-Python exception report *********')
+	error('********** end of PySems exception report *********')
 
 
 
 # init code
 sys.excepthook = log_excepthook
-debug("Python-Ivr logging started")
+debug("PySems logging started")

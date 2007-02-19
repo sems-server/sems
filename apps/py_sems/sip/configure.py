@@ -14,8 +14,9 @@ os.system(" ".join([config.sip_bin, "-c", ".", "-b", build_file, "py_sems.sip"])
 # Create the Makefile.
 makefile = sipconfig.SIPModuleMakefile(config, build_file, makefile="Makefile.gen")
 
-makefile.extra_cxxflags = ["-Wall -Wno-reorder"]
+makefile.extra_cxxflags = ["-Wall -Wno-reorder -g"]
 makefile.extra_include_dirs = ["$(COREPATH)"]
+makefile.extra_lflags = ["-g"]
 makefile._warnings = 0
 
 # Generate the Makefile itself.

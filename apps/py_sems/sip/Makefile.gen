@@ -1,14 +1,14 @@
 TARGET = py_sems_lib.so
-OFILES = sippy_sems_libcmodule.o sippy_sems_libPySemsDialog.o sippy_sems_libAmSipDialog.o sippy_sems_libAmSipReply.o sippy_sems_libAmSipRequest.o sippy_sems_libstring.o
-HFILES = sipAPIpy_sems_lib.h sippy_sems_libPySemsDialog.h sippy_sems_libAmSipDialog.h sippy_sems_libAmSipReply.h sippy_sems_libAmSipRequest.h sippy_sems_libstring.h 
+OFILES = sippy_sems_libcmodule.o sippy_sems_libPySemsDialog.o sippy_sems_libAmAudioFile.o sippy_sems_libAmAudioEvent.o sippy_sems_libAmEvent.o sippy_sems_libAmSipDialog.o sippy_sems_libAmSipReply.o sippy_sems_libAmSipRequest.o sippy_sems_libstring.o
+HFILES = sipAPIpy_sems_lib.h sippy_sems_libPySemsDialog.h sippy_sems_libAmAudioFile.h sippy_sems_libAmAudioEvent.h sippy_sems_libAmEvent.h sippy_sems_libAmSipDialog.h sippy_sems_libAmSipReply.h sippy_sems_libAmSipRequest.h sippy_sems_libstring.h 
 
 CC = gcc
 CXX = g++
 LINK = g++
 CPPFLAGS = -I. -I$(COREPATH) -I/usr/include/python2.3
 CFLAGS = -pipe -fPIC -O2 -w
-CXXFLAGS = -Wall -Wno-reorder -pipe -fPIC -O2 -w
-LFLAGS = -shared
+CXXFLAGS = -Wall -Wno-reorder -g -pipe -fPIC -O2 -w
+LFLAGS = -g -shared
 LIBS = 
 .SUFFIXES: .c .o .cpp .cc .cxx .C
 
@@ -41,6 +41,9 @@ clean:
 	-rm -f $(TARGET)
 	-rm -f sippy_sems_libcmodule.o
 	-rm -f sippy_sems_libPySemsDialog.o
+	-rm -f sippy_sems_libAmAudioFile.o
+	-rm -f sippy_sems_libAmAudioEvent.o
+	-rm -f sippy_sems_libAmEvent.o
 	-rm -f sippy_sems_libAmSipDialog.o
 	-rm -f sippy_sems_libAmSipReply.o
 	-rm -f sippy_sems_libAmSipRequest.o

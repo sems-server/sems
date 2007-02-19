@@ -46,7 +46,7 @@ using std::set;
 
 EXPORT_SESSION_FACTORY(PySemsFactory,MOD_NAME);
 
-PyMODINIT_FUNC initpy_sems();
+PyMODINIT_FUNC initpy_sems_lib();
 
 struct PythonGIL
 {
@@ -182,8 +182,8 @@ void PySemsFactory::import_py_sems_builtins()
     // add log level for the log module
     PyModule_AddIntConstant(py_sems_module, "SEMS_LOG_LEVEL",log_level);
 
-    import_module("log");
-    initpy_sems();
+    import_module("py_sems_log");
+    initpy_sems_lib();
 }
 
 void PySemsFactory::import_module(const char* modname)
