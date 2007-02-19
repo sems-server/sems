@@ -66,14 +66,17 @@ void PacketAllocator::free(Packet *p)
 AmJitterBuffer::AmJitterBuffer(AmRtpStream *owner)
     : m_tsInited(false), m_tsDeltaInited(false), m_delayCount(0),
       m_jitter(INITIAL_JITTER), m_owner(owner),
-	  m_tail(NULL), m_head(NULL)
+	  m_tail(NULL), m_head(NULL), m_forceResync(false)
 {
 }
 
 void AmJitterBuffer::put(const AmRtpPacket *p)
 {
     m_mutex.lock();
-    if (m_tsInited && ts_less()(m_lastTs + m_jitter, p->timestamp)) {
+    if (p->marker)
+	m_forceResync = true;
+    if (m_tsInited && !m_forceResync && ts_less()(m_lastTs + m_jitter, p->timestamp))
+    {
 	unsigned int delay = p->timestamp - m_lastTs;
 	if (delay > m_jitter && m_jitter < MAX_JITTER)
        	{
@@ -124,7 +127,7 @@ void AmJitterBuffer::put(const AmRtpPacket *p)
 	m_lastTs = p->timestamp;
 	m_tsInited = true;
     }
-    else if (ts_less()(m_lastTs, p->timestamp)) {
+    else if (ts_less()(m_lastTs, p->timestamp) || m_forceResync) {
 	m_lastTs = p->timestamp;
     }
 
@@ -145,10 +148,11 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 	m_mutex.unlock();
 	return false;
     }
-    if (!m_tsDeltaInited) {
+    if (!m_tsDeltaInited || m_forceResync) {
 	m_tsDelta = m_lastTs - ts + ms;
 	m_tsDeltaInited = true;
 	m_lastAudioTs = ts;
+	m_forceResync = true;
     }
     else if (m_lastAudioTs != ts && m_lastResyncTs != m_lastTs) {
 	if (ts_less()(ts + m_tsDelta, m_lastTs)) {
@@ -156,14 +160,15 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 	     * New packet arrived earlier than expected -
 	     *  immediate resync required 
 	     */
-	    m_tsDelta += ms;
+	    m_tsDelta += m_lastTs - ts + ms;
 		//		DBG("Jitter buffer resynced forward (-> %u)\n", m_tsDelta);
 	    m_delayCount = 0;
 	}
 	else if (ts_less()(m_lastTs, ts + m_tsDelta - m_jitter / 2)) {
 	    /* New packet hasn't arrived yet */
 	    if (m_delayCount > RESYNC_THRESHOLD) {
-		m_tsDelta -= 80; // 10ms
+		unsigned int d = m_tsDelta -(m_lastTs - ts + ms);
+		m_tsDelta -= d / 2;
 		//		DBG("Jitter buffer resynced backward (-> %u)\n", m_tsDelta);
 	    }
 	    else

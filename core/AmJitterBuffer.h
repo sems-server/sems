@@ -35,7 +35,7 @@ class AmRtpStream;
 
 #define INITIAL_JITTER	    640 // 80 miliseconds
 #define MAX_JITTER	    16000 // 2 seconds
-#define RESYNC_THRESHOLD    10
+#define RESYNC_THRESHOLD    2
 
 class Packet {
 public:
@@ -74,6 +74,7 @@ private:
     int m_delayCount;
     unsigned int m_jitter;
     AmRtpStream *m_owner;
+    bool m_forceResync;
 
 public:
     AmJitterBuffer(AmRtpStream *owner);

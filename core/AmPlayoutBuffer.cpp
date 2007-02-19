@@ -23,7 +23,11 @@ AmPlayoutBuffer::AmPlayoutBuffer()
 
 void AmPlayoutBuffer::direct_write(unsigned int ts, ShortSample* buf, unsigned int len)
 {
+#ifndef USE_ADAPTIVE_JB
     buffer_put(w_ts,buf,len);
+#else
+    buffer_put(ts, buf, len);
+#endif // USE_ADAPTIVE_JB
 }
 
 void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len)
@@ -33,6 +37,7 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int3
 
 u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
 {
+#ifndef USE_ADAPTIVE_JB
     if(ts_less()(r_ts,w_ts)){
 
 	u_int32_t rlen=0;
@@ -46,6 +51,10 @@ u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
     }
 
     return 0;
+#else
+    buffer_get(ts, buf, len);
+    return len;
+#endif // USE_ADAPTIVE_JB
 }
 
 
