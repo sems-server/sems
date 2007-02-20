@@ -1,4 +1,4 @@
-import base64,time,os
+import base64,time,os,sip
 
 from py_sems_log import *
 from py_sems import *
@@ -12,9 +12,12 @@ class PySemsScript(PySemsDialog):
 		PySemsDialog.__init__(self)
 		self.initial_req = None
 		self.ann = None
+		sip.settracemask(0xFFFF)
 
 	def onInvite(self,req):
 
+
+		print "----------------- %s ----------------" % self.__class__
 		
 		ann_file = self.getAnnounceFile(req)
 		self.ann = AmAudioFile()

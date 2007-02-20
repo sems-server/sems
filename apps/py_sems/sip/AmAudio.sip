@@ -53,7 +53,7 @@ class AmAudioFile
 
 public:
     AmAudioFile();
-
+    ~AmAudioFile();
 
     enum OpenMode { 
 	Read=1, 

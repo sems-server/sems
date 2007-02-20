@@ -9,7 +9,7 @@ build_file = "py_sems.sbf"
 config = sipconfig.Configuration()
 
 # Run SIP to generate the code.
-os.system(" ".join([config.sip_bin, "-c", ".", "-b", build_file, "py_sems.sip"]))
+os.system(" ".join([config.sip_bin, "-c", ".", "-b", build_file, "-r", "py_sems.sip"]))
 
 # Create the Makefile.
 makefile = sipconfig.SIPModuleMakefile(config, build_file, makefile="Makefile.gen")

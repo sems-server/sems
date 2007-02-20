@@ -165,13 +165,6 @@ void PySemsFactory::import_py_sems_builtins()
     PyImport_AddModule("py_sems");
     py_sems_module = Py_InitModule("py_sems",py_sems_methods);
 
-    // PySemsSipDialog (= AmSipDialog)
-    //import_object(py_sems_module, "PySemsSipDialog", &PySemsSipDialogType);
-
-    // PySemsDialogBase
-    //import_object(py_sems_module,"PySemsDialogBase",&PySemsDialogBaseType);
-
-
     // PySemsAudioFile
     import_object(py_sems_module,"PySemsAudioFile",&PySemsAudioFileType);
 
@@ -252,7 +245,8 @@ PySemsDialog* PySemsFactory::newDlg(const string& name)
 
     // take the ownership over dlg
     sipTransfer(dlg_inst,1);
-
+    dlg->setPyPtrs(NULL,dlg_inst);
+    
     return dlg;
 }
 
@@ -450,21 +444,18 @@ PySemsDialog::PySemsDialog(AmDynInvoke* user_timer)
     sip_relay_only = false;
 }
 
+
 PySemsDialog::~PySemsDialog()
 {
-    DBG("PySemsDialog::~PySemsDialog()\n");
-
     PYLOCK;
-    Py_XDECREF(py_mod);
     Py_XDECREF(py_dlg);
 }
 
 void PySemsDialog::setPyPtrs(PyObject *mod, PyObject *dlg)
 {
-    assert(py_mod = mod);
-    assert(py_dlg = dlg);
-    Py_INCREF(py_mod);
-    Py_INCREF(py_dlg);
+    PYLOCK;
+    Py_XDECREF(py_dlg);
+    py_dlg = dlg;
 }
 
 static PyObject *

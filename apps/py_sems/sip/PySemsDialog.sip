@@ -11,7 +11,11 @@ public:
     AmSipDialog dlg;
 
     PySemsDialog();
-    ~PySemsDialog();
+
+    virtual ~PySemsDialog();
+%MethodCode
+    fprintf(stderr,"------------- dealloc_PySemsDialog ----------\n");
+%End
 
     int acceptAudio(const string& /* body */,
 		    const string& /* hdrs */,
