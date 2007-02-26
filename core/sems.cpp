@@ -207,46 +207,6 @@ static int use_args(char* progname, map<char,string>& args)
      return 0;
 }
 
-AmFifoCtrlInterface* init_fifo(const string& path)
-{
-    AmFifoCtrlInterface* ctrl = new AmFifoCtrlInterface();
-    
-    if(ctrl->createFifo(path))
-	goto fifo_error;
-
-    // avoid the FIFO reaches EOF...
-    if((child_pid=fork())>0){
-	int fifo_write=0;
-        if((fifo_write=open(path.c_str(), O_WRONLY)) == -1){
-	    ERROR("while opening fifo `%s': %s\n",
-		  path.c_str(),strerror(errno));
-	    kill(child_pid,SIGTERM);
-	}
-	waitpid(child_pid,0,0);
-	if(fifo_write != -1)
-	    ::close(fifo_write);
-
-	exit(0);
-    }
-    // the main process is waiting 
-    // for that child to terminate
-    is_main = 0; 
-	
-    if(ctrl->init(path))
-	goto fifo_error;
-
-    goto fifo_end;
-
- fifo_error:
-    delete ctrl;
-    ctrl = 0;
-
- fifo_end:
-    return ctrl;
-}
-
-
-
 int main(int argc, char* argv[])
 {
     map<char,string> args;
@@ -470,20 +430,16 @@ static void print_usage(char* progname)
 	   "USAGE: %s [options]\n"
 	   "   Options:\n"
 	   "       -f config_filename:  sets configuration file to use\n"
-	   "       -i fifo_name:        path and file name of our fifo file.\n"
-	   "       -o ser_fifo_name:    path and file name of Ser's fifo file.\n"
 	   "       -d device:           sets network device for media advertising\n"
 	   "       -P pid_file:         write a pid file.\n"
 	   "       -u uid:              set user id.\n"
 	   "       -g gid:              set group id.\n"
-	   "       -x plugin_path:      root path for plugins\n"
+	   "       -x plugin_path:      path for plugins\n"
 	   "       -D log_level:        sets log level (error=0, warning=1, info=2, debug=3).\n"
 	   "       -E :                 debug mode: do not fork and log to stderr.\n"
 	   "       -v :                 version.\n"
 	   "       -h :                 this help screen.\n"
-	   "\n"
-	   "   Notes:\n"
-	   "       * plug-ins are searched in plugin_path/{apps,audio}/*.so.\n",
+	   "\n",
 	   progname
 	   );
 }
