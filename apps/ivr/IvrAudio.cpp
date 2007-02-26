@@ -27,6 +27,8 @@ static PyObject* IvrAudioFile_new(PyTypeObject *type, PyObject *args, PyObject *
 	    return NULL;
 	}
 
+	self->py_file = NULL;
+
 #ifdef IVR_WITH_TTS
 	flite_init();
 	self->tts_voice = register_cmu_us_kal();
@@ -43,6 +45,10 @@ static void IvrAudioFile_dealloc(IvrAudioFile* self)
     DBG("---------- IvrAudioFile_dealloc -----------\n");
     delete self->af;
     self->af = NULL;
+
+    // release eventual bound Python file.
+    Py_XDECREF(self->py_file);
+
 
 #ifdef IVR_WITH_TTS
     if(self->del_file && !self->filename->empty())
@@ -128,6 +134,11 @@ static PyObject* IvrAudioFile_fpopen(IvrAudioFile* self, PyObject* args)
 	PyErr_SetString(PyExc_IOError,"Could not open file");
 	return NULL;
     }
+    // remember, we do not own the file pointer.
+    // we just want to delay its destruction
+    self->af->setCloseOnDestroy(false);
+    self->py_file = py_file;
+    Py_INCREF(self->py_file);
 
     Py_INCREF(Py_None);
     return Py_None;

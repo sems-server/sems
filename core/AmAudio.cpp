@@ -405,7 +405,7 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
     fmt.reset(f_fmt);
 
     open_mode = mode;
-    this->close_on_exit = close_on_exit;
+    this->close_on_exit = true;
 
     if(!is_tmp){
 	fp = fopen(filename.c_str(),mode == AmAudioFile::Read ? "r" : "w+");
