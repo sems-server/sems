@@ -25,6 +25,8 @@ typedef struct {
     string*    filename;
     bool       del_file;
 #endif
+
+    PyObject* py_file;
     
 } IvrAudioFile;
 
