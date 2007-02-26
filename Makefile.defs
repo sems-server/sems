@@ -32,7 +32,7 @@ endif
 GPP ?= g++
 GCC ?= gcc
 
-CXX_FLAGS = -Wall -Wno-reorder -fPIC -g \
+CXX_FLAGS ?= -Wall -Wno-reorder -fPIC -g \
 	  -O2 \
 	  -D_DEBUG \
 	  -D_THREAD_SAFE -D_REENTRANT \
@@ -40,7 +40,7 @@ CXX_FLAGS = -Wall -Wno-reorder -fPIC -g \
 	  -DOS='"$(OS)"' 	\
 #	  -DSUPPORT_IPV6
 
-C_FLAGS = -Wall -fPIC -g \
+C_FLAGS ?= -Wall -fPIC -g \
 	  -O2 \
 	  -D_DEBUG \
 	  -D_THREAD_SAFE -D_REENTRANT \

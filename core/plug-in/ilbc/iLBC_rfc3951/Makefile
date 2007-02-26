@@ -1,3 +1,5 @@
+COREPATH ?=../../..
+include $(COREPATH)/../Makefile.defs
 
 lib_name = libilbc.a
 
@@ -5,6 +7,8 @@ srcs     = $(wildcard *.c)
 hrds     = $(wildcard *.h)
 objs     = $(srcs:.c=.o) 
 depends  = $(srcs:.c=.d)
+
+cflags ?= $(C_FLAGS)
 
 AR		= ar
 RANLIB		= ranlib

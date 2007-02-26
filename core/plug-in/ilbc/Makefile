@@ -35,8 +35,9 @@ extra_clean = clean_ilbclib
 
 include ../Makefile.audio_module
 
-$(ILBC_DIR)/libilbc.a::
-	-@cd $(ILBC_DIR); $(MAKE) all
+$(ILBC_DIR)/libilbc.a:
+#	-@cd $(ILBC_DIR); $(MAKE) all
+	$(MAKE) -C $(ILBC_DIR) libilbc.a
 
 .PHONY: clean_ilbclib
 clean_ilbclib:
