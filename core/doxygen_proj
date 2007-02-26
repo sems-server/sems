@@ -459,13 +459,13 @@ INPUT                  = amci etc lib plug-in rpm rtp scripts . \
 				plug-in/uac_auth \
 				plug-in/wav \
 				../apps/ann_b2b \
-				../apps/announce_auth \
 				../apps/announce_transfer \
 				../apps/announcement \
 				../apps/conf_auth \
 				../apps/conference \
 				../apps/early_announce \
 				../apps/ivr \
+				../apps/py_sems \
 				../apps/mailbox \
 				../apps/mp3 \
 				../apps/voicemail \
