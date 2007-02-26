@@ -11,6 +11,7 @@
  *  \arg \ref Readme 
  * 
  *  \section userdoc User's documentation
+ *  \arg \ref sems.conf.sample
  *  \arg \ref Compiling 
  *  \arg \ref Configure-Sems-Ser-HOWTO
  *  \arg \ref AppDoc
@@ -63,6 +64,13 @@
  * very quickly.
  *
  * \verbinclude Configure-Sems-Ser-HOWTO
+ * 
+ */
+
+/*! \page sems.conf.sample SEMS core configuration parameters
+ * core/sems.conf.sample
+ * 
+ * \verbinclude sems.conf.sample
  * 
  */
 

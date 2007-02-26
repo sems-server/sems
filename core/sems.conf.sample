@@ -13,6 +13,10 @@
 # example: option=value # i like this option
 #
 
+# parameter: plugin_config_path=<path>
+#
+# - in this path configuration files of the applications 
+#   (e.g. announcement.conf) are searched
 plugin_config_path=/usr/local/etc/sems/etc/
 
 # optional parameter: fork={yes|no}
@@ -36,13 +40,19 @@ loglevel=3
 # optional parameter: socket_name=<filename>
 #
 # - path and file name of our unix socket
+#   (where ser writes messages to)
 socket_name=/tmp/sems_sock
 
+# optional parameter: reply_socket_name=<filename>
+#
+# - path and file name of the unix socket where we 
+#   get replies from ser
 reply_socket_name=/tmp/sems_rsp_sock
 
 # optional parameter: ser_socket_name=<filename>
 #
 # - path and file name of Ser's unix socket
+#   (where we write messages to)
 ser_socket_name=/tmp/ser_sock
 
 # optional parameter: plugin_path=<path>
