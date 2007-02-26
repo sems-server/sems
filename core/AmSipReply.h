@@ -1,7 +1,6 @@
 #ifndef _AmReply_h_
 #define _AmReply_h_
 
-#include "AmCmd.h"
 #include "AmEventQueue.h"
 
 #include <string>

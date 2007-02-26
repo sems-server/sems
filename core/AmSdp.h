@@ -35,7 +35,6 @@ using std::string;
 using std::map;
 using std::vector;
 
-#include "AmCmd.h"
 
 /**
  * @file AmSdp.h

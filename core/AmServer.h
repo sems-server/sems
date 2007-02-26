@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "AmCmd.h"
 #include "AmThread.h"
 #include "AmSipReply.h"
 

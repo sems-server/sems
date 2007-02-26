@@ -52,6 +52,9 @@ using std::pair;
 class AmSessionFactory;
 class AmDtmfEvent;
 
+/* definition imported from Ser parser/msg_parser.h */
+#define FL_FORCE_ACTIVE 2
+
 /**
  * \brief Interface for SIP events signaling plugins implement
  *

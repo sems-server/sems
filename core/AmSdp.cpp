@@ -31,7 +31,6 @@
 
 #include "AmConfig.h"
 #include "AmSdp.h"
-#include "AmCmd.h"
 #include "AmUtils.h"
 #include "AmPlugIn.h"
 #include "AmSession.h"

@@ -27,7 +27,6 @@
 
 #include "EmailTemplate.h"
 #include "AmMail.h"
-#include "AmCmd.h"
 #include "log.h"
 
 
