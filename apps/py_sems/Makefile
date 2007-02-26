@@ -71,6 +71,14 @@ python_files:
 
 endif
 
+ifeq (,$(MAKECMDGOALS))
+.PHONY: python_files
+python_files: 
+	python$(PY_VER) py_comp -l -q py &&\
+	cp py/*.pyc $(COREPATH)/lib
+
+endif
+
 ifeq (module_package,$(MAKECMDGOALS))
 python_files:
 	python$(PY_VER) py_comp -l -q py
