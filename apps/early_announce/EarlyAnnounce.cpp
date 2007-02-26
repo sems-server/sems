@@ -129,8 +129,9 @@ EarlyAnnounceDialog::~EarlyAnnounceDialog()
 
 void EarlyAnnounceDialog::onSessionStart(const AmSipRequest& req)
 {
-    // disable DTMF detection - don't use DTMF here
-    setDtmfDetectionEnabled(false);
+	// we can drop all received packets
+	// this disables DTMF detection as well
+	setReceiving(false);
 
     DBG("EarlyAnnounceDialog::onSessionStart\n");
     if(wav_file.open(filename,AmAudioFile::Read))

@@ -113,7 +113,9 @@ void AnnouncementDialog::onSessionStart(const AmSipReply& rep)
 }
 
 void AnnouncementDialog::startSession(){
-    setDtmfDetectionEnabled(false);
+    // we can drop all received packets
+    // this disables DTMF detection as well
+    setReceiving(false);
 
     if(wav_file.open(filename,AmAudioFile::Read))
 	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");

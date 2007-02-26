@@ -105,7 +105,9 @@ AnnounceCallerDialog::AnnounceCallerDialog(const string& filename)
 
 void AnnounceCallerDialog::onSessionStart(const AmSipRequest& req)
 {
-    setDtmfDetectionEnabled(false);
+    // we can drop all received packets
+    // this disables DTMF detection as well
+    setReceiving(false);
 
     callee_addr = req.to;
     callee_uri  = req.r_uri;

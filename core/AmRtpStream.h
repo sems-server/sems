@@ -129,7 +129,6 @@ protected:
 
     /** symmetric RTP */
     bool              passive;      // passive mode ?
-    AmSharedVar<bool> first_recved; // first packet received ?
 
     /** Payload type for telephone event */
     auto_ptr<const SdpPayload> telephone_event_pt;
@@ -160,6 +159,9 @@ public:
     /** Mute */
     bool mute;
     bool begin_talk;
+
+    /** should we receive packets? if not -> drop */
+    bool receiving;
 
     int send( unsigned int ts,
 	      unsigned char* buffer,
@@ -211,6 +213,7 @@ public:
 
     /** Symmetric RTP: passive mode ? */
     void setPassiveMode(bool p) { passive = p; }
+    bool getPassiveMode() { return passive; }
 
     /** 
      * Set remote telephone event 

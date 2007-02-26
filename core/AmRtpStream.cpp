@@ -203,26 +203,28 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
     if(err <= 0)
 	return err;
 
-#ifdef SUPPORT_IPV6
-    struct sockaddr_storage recv_addr;
-#else
-    struct sockaddr_in recv_addr;
-#endif
-    rp.getAddr(&recv_addr);
-
 #ifndef SUPPORT_IPV6
-    // symmetric RTP
-    if( passive && ((recv_addr.sin_port != r_saddr.sin_port)
+	if(passive) {
+// #ifdef SUPPORT_IPV6
+//     struct sockaddr_storage recv_addr;
+// #else
+		struct sockaddr_in recv_addr;
+		rp.getAddr(&recv_addr);
+
+		// symmetric RTP
+		if ((recv_addr.sin_port != r_saddr.sin_port)
 		    || (recv_addr.sin_addr.s_addr 
-			!= r_saddr.sin_addr.s_addr)) ) {
-	
-	string addr_str = get_addr_str(recv_addr.sin_addr);
-	int port = ntohs(recv_addr.sin_port);
-	setRAddr(addr_str,port);
-	DBG("Symmetric RTP: setting new remote address: %s:%i\n",addr_str.c_str(),port);
-	// avoid comparing each time sender address
-	passive = false;
-    }
+				!= r_saddr.sin_addr.s_addr)) {
+		
+			string addr_str = get_addr_str(recv_addr.sin_addr);
+			int port = ntohs(recv_addr.sin_port);
+			setRAddr(addr_str,port);
+			DBG("Symmetric RTP: setting new remote address: %s:%i\n",
+				addr_str.c_str(),port);
+			// avoid comparing each time sender address
+			passive = false;
+		}
+	}
 #endif
 
     if(rp.parse() == -1){
@@ -358,9 +360,9 @@ AmRtpStream::AmRtpStream(AmSession* _s)
       r_ssrc_i(false),
       session(_s),
       passive(false),
-      first_recved(false),
       telephone_event_pt(NULL),
-      mute(false)
+      mute(false),
+      receiving(true)
 #ifdef USE_ADAPTIVE_JB
       , 
       m_main_jb(new AmJitterBuffer(this)),
@@ -478,7 +480,7 @@ void AmRtpStream::resume()
 
 void AmRtpStream::icmpError()
 {
-    if(!passive || first_recved.get()){
+    if(!passive){
 	AmIcmpWatcher::instance()->removeStream(l_port);
 	if(session)
 	    session->stop();
@@ -488,6 +490,9 @@ void AmRtpStream::icmpError()
 #ifndef USE_ADAPTIVE_JB
 void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 {
+	if (!receiving && !passive)
+		return;
+
     jitter_mut.lock();
     gettimeofday(&last_recv_time,NULL);
     jitter_buf[p->timestamp].copy(p);
@@ -496,6 +501,9 @@ void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 
 int AmRtpStream::nextPacket(AmRtpPacket& p)
 {
+	if (!receiving && !passive)
+		return RTP_EMPTY;
+
     struct timeval now;
     struct timeval diff;
     gettimeofday(&now,NULL);
@@ -524,6 +532,9 @@ int AmRtpStream::nextPacket(AmRtpPacket& p)
 #else
 void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 {
+	if (!receiving && !passive)
+		return;
+
     gettimeofday(&last_recv_time,NULL);
     if (p->payload == payload && m_main_jb)
 	m_main_jb->put(p);
@@ -533,6 +544,9 @@ void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 
 int AmRtpStream::nextAudioPacket(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 {
+	if (!receiving && !passive)
+		return RTP_EMPTY;
+
     if (m_main_jb && m_main_jb->get(p, ts, ms))
 	return 1;
 

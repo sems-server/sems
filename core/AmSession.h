@@ -216,6 +216,9 @@ public:
     /** setter for rtp_str->mute */
     void setMute(bool mute) { rtp_str.mute = mute; }
 
+    /** setter for rtp_str->receiving */
+    void setReceiving(bool receive) { rtp_str.receiving = receive; }
+
     /** Gets the Session's call ID */
     const string& getCallID() const;
 

@@ -217,57 +217,57 @@ void AmMediaProcessorThread::processDtmfEvents()
 
 void AmMediaProcessorThread::processAudio(unsigned int ts)
 {
+	// receiving
     for(set<AmSession*>::iterator it = sessions.begin();
 	it != sessions.end(); it++){
 
-	AmSession* s = (*it);
-	s->lockAudio();
-	AmAudio* input = s->getInput();
+		AmSession* s = (*it);
+		if (s->rtp_str.checkInterval(ts) &&
+			(s->rtp_str.receiving || s->rtp_str.getPassiveMode())) {
+			s->lockAudio();
+			AmAudio* input = s->getInput();
+			int ret = s->rtp_str.receive(ts);
+			if(ret < 0){
+				switch(ret){
+					
+				case RTP_DTMF:
+				case RTP_UNKNOWN_PL:
+				case RTP_PARSE_ERROR:
+					break;
+					
+				case RTP_TIMEOUT:
+					postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
+					s->postEvent(new AmRtpTimeoutEvent());
+					break;
+					
+				case RTP_BUFFER_SIZE:
+				default:
+					ERROR("AmRtpAudio::receive() returned %i\n",ret);
+					postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
+					break;
+				}
+			}
+			else {
+				unsigned int f_size = s->rtp_str.getFrameSize();
+				int size = s->rtp_str.get(ts,buffer,f_size);
 
-	if(s->rtp_str.checkInterval(ts)){
-
-	    //DBG("ts = %u\n",ts);
-	    int ret = s->rtp_str.receive(ts);
-	    if(ret < 0){
-		switch(ret){
-
-		    case RTP_DTMF:
-		    case RTP_UNKNOWN_PL:
-		    case RTP_PARSE_ERROR:
-			break;
-
-		    case RTP_TIMEOUT:
-			    postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
-			    s->postEvent(new AmRtpTimeoutEvent());
-			    break;
-
-		    case RTP_BUFFER_SIZE:
-		    default:
-			ERROR("AmRtpAudio::receive() returned %i\n",ret);
-			postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-			break;
+				if (input) {
+					int ret = input->put(ts,buffer,size);
+					if(ret < 0){
+						DBG("input->put() returned: %i\n",ret);
+						postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
+					}
+				}
+				if (s->isDtmfDetectionEnabled())
+					s->putDtmfAudio(buffer, size, ts);
+			}
+			s->unlockAudio();
 		}
-	    }
-	    else {
-		unsigned int f_size = s->rtp_str.getFrameSize();
-		int size = s->rtp_str.get(ts,buffer,f_size);
-		if (input) {
-		    
-		    int ret = input->put(ts,buffer,size);
-		    if(ret < 0){
-			DBG("input->put() returned: %i\n",ret);
-			postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-		    }
-		}
-                if (s->isDtmfDetectionEnabled())
-                    s->putDtmfAudio(buffer, size, ts);
-            }
-	}
-	s->unlockAudio();
     }
 
+	// sending
     for(set<AmSession*>::iterator it = sessions.begin();
-	it != sessions.end(); it++){
+		it != sessions.end(); it++){
 
 	AmSession* s = (*it);
 	s->lockAudio();
@@ -278,13 +278,12 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 	    int size = output->get(ts,buffer,s->rtp_str.getFrameSize());
 	    if(size <= 0){
 		DBG("output->get() returned: %i\n",size);
-		postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s)); //removeSession(s);
+		postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s)); 
 	    }
 	    else if(!s->rtp_str.mute){
 		
 		if(s->rtp_str.put(ts,buffer,size)<0)
 		  postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-		//		    removeSession(s);
 	    }
 	}
 	s->unlockAudio();
