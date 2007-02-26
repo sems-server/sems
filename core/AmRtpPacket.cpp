@@ -40,12 +40,13 @@
 AmRtpPacket::AmRtpPacket()
     : data_offset(0)
 {
-    memset(buffer,0,4096);
+    // buffer will be overwritten by received packet 
+    // of hdr+data - does not need to be set to 0s
+    //    memset(buffer,0,4096);
 }
 
 AmRtpPacket::~AmRtpPacket()
 {
-  //delete [] buffer;
 }
 
 #ifdef SUPPORT_IPV6
