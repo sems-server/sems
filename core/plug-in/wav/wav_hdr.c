@@ -206,7 +206,110 @@ int wav_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_c
     return 0;
 }
 
+#define SAFE_MEM_READ(buf,s,mptr,pos,size) \
+    if (*pos+s>size) return -1; \
+    memcpy(buf,mptr+*pos,s); \
+    *pos+=s; 
 
+int wav_mem_open(unsigned char* mptr, unsigned long size, unsigned long* pos, 
+				 struct amci_file_desc_t* fmt_desc, int options, long h_codec) {
+	if(options == AMCI_RDONLY){
+		
+		char tag[4]={'\0'};
+		unsigned int file_size=0;
+		unsigned int chunk_size=0;
+		unsigned short fmt=0;
+		unsigned short channels=0;
+		unsigned int rate=0;
+		unsigned short bits_per_sample=0;
+		unsigned short sample_size=0;
+
+		if(!mptr)
+			return -1;
+		*pos=0;
+
+		DBG("trying to read WAV file from memory\n");
+
+		SAFE_MEM_READ(tag,4,mptr,pos,size);
+		DBG("tag = <%.4s>\n",tag);
+		if(strncmp(tag,"RIFF",4)){
+			DBG("wrong format !");
+			return -1;
+		}
+
+		SAFE_MEM_READ(&file_size,4,mptr,pos,size);
+		DBG("file size = <%u>\n",file_size);
+
+		SAFE_MEM_READ(tag,4,mptr,pos,size);
+		DBG("tag = <%.4s>\n",tag);
+		if(strncmp(tag,"WAVE",4)){
+			DBG("wrong format !");
+			return -1;
+		}
+
+		SAFE_MEM_READ(tag,4,mptr,pos,size);
+		DBG("tag = <%.4s>\n",tag);
+		if(strncmp(tag,"fmt ",4)){
+			DBG("wrong format !");
+			return -1;
+		}
+    
+		SAFE_MEM_READ(&chunk_size,4,mptr,pos,size);
+		DBG("chunk_size = <%u>\n",chunk_size);
+    
+		SAFE_MEM_READ(&fmt,2,mptr,pos,size);
+		DBG("fmt = <%.2x>\n",fmt);
+
+		SAFE_MEM_READ(&channels,2,mptr,pos,size);
+		DBG("channels = <%i>\n",channels);
+
+		SAFE_MEM_READ(&rate,4,mptr,pos,size);
+		DBG("rate = <%i>\n",rate);
+
+		/* do not read bytes/sec and block align */
+		*pos +=6;
+
+		SAFE_MEM_READ(&bits_per_sample,2,mptr,pos,size);
+		DBG("bits/sample = <%i>\n",bits_per_sample);
+
+		fmt_desc->subtype = fmt;
+		sample_size = bits_per_sample>>3;
+		fmt_desc->rate = rate;
+		fmt_desc->channels = channels;
+
+		if( (fmt == 0x01) && (sample_size == 1)){
+			ERROR("Sorry, we don't support PCM 8 bit\n");
+			return -1;
+		}
+
+		*pos+=chunk_size-16;
+
+		for(;;) {
+
+			SAFE_MEM_READ(tag,4,mptr,pos,size);
+			DBG("tag = <%.4s>\n",tag);
+	
+			SAFE_MEM_READ(&chunk_size,4,mptr,pos,size);
+			DBG("chunk size = <%i>\n",chunk_size);
+	
+			if(!strncmp(tag,"data",4))
+				break;
+
+			*pos += chunk_size;
+		}
+
+		return 0;
+
+    } else {
+		ERROR("write support for in-memory file not implemented!\n");
+		return -1;
+	}
+}
+
+int wav_mem_close(unsigned char* mptr, unsigned long* pos,
+				  struct amci_file_desc_t* fmt_desc, int options, long h_codec, struct amci_codec_t *codec) {
+	return 0;
+}
 
 
 

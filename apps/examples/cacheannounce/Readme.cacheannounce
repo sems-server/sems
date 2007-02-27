@@ -1,0 +1,13 @@
+cacheannounce always plays the default announce to the caller.
+
+This is a example of how to use the mem cached versions of AmAudioFile: 
+AmFileCache/AmCachedAudioFile.
+
+The AmFileCache class can load a file once (AmFileCache::load), 
+and the AmCachedAudioFile then uses the file from memory. AmFileCache 
+objects can e.g. be created at startup and passed to the session object
+which creates AmCachedAudioFile objects to play back the files. 
+
+Measurements with 100 calls playing back default_en.wav encoded as PCMU
+have shown a 4-5% performance increase (192,607,161 Ir's vs. 201,569,407 Ir's) 
+over the normal not cached announcement application.

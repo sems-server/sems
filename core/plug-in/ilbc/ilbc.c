@@ -91,7 +91,7 @@ BEGIN_EXPORTS( "ilbc" )
     END_PAYLOADS
 
     BEGIN_FILE_FORMATS
-      BEGIN_FILE_FORMAT( "iLBC", "ilbc", "audio/iLBC", iLBC_open, iLBC_close)
+      BEGIN_FILE_FORMAT( "iLBC", "ilbc", "audio/iLBC", iLBC_open, iLBC_close, 0, 0)
         BEGIN_SUBTYPES
           SUBTYPE( ILBC30,  "iLBC30",  8000, 1, CODEC_ILBC )
           SUBTYPE( ILBC20,  "iLBC20",  8000, 1, CODEC_ILBC )

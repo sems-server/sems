@@ -172,6 +172,44 @@ typedef int (*amci_file_close_t)( FILE* fptr,
                                   );
 
 /**
+ * File format handler's open function from memory area
+ * @param fptr     [in]  pointer to memory where file is loaded 
+ * @param size     [in]  length of file in mem  
+ * @param pos      [out] position after open
+ * @param fmt_desc [out] file description
+ * @param options  [in]  options (see amci_inoutfmt_t)
+ * @param h_codec  [in]  handle of the codec
+ * @return if failure -1, else 0.
+ * @see amci_inoutfmt_t::open
+ */
+typedef int (*amci_file_mem_open_t)(unsigned char* mptr,
+				    unsigned long size,
+				    unsigned long* pos,
+				    struct amci_file_desc_t* fmt_desc,
+				    int  options,
+				    long h_codec
+                                  );
+
+/**
+ * File format handler's mem close function (usually no-op)
+ * @param fptr     [in]  pointer to memory where file is loaded
+ * @param pos      [in,out]  position in memory 
+ * @param fmt_desc [out] file description
+ * @param options  [in]  options (see amci_inoutfmt_t)
+ * @param h_codec  [in]  handle of the codec
+ * @param codec    [in]  codec structure
+ * @return if failure -1, else 0.
+ * @see amci_inoutfmt_t::on_close
+ */
+typedef int (*amci_file_mem_close_t)( unsigned char* mptr,
+				    unsigned long* pos,
+				    struct amci_file_desc_t* fmt_desc,
+				    int  options,
+				    long h_codec,
+				    struct amci_codec_t *codec
+                                  );
+
+/**
  * Codec's init function pointer.
  * @param format_parameters  [in] parameters as passed by fmtp tag, 0 if none 
  * @param format_description [out] pointer to describing block, with amci_codec_fmt_info_t array; zero-terminated. 0 if none
@@ -284,6 +322,12 @@ struct amci_inoutfmt_t {
 
     /** no options at the moment. */
     amci_file_close_t on_close;
+
+    /** options: AMCI_RDONLY, AMCI_WRONLY. */
+    amci_file_mem_open_t mem_open;
+
+    /** no options at the moment. */
+    amci_file_mem_close_t mem_close;
 
     /** NULL terminated subtype array. */
     struct amci_subtype_t*  subtypes; 
@@ -428,7 +472,7 @@ struct amci_exports_t {
  * @hideinitializer
  */
 #define END_FILE_FORMATS \
-                    { 0,0,0,0,0, \
+                    { 0,0,0,0,0,0,0, \
                       (struct amci_subtype_t[]) { {-1, 0, -1, -1, -1} } \
                     } \
                 }
@@ -438,8 +482,8 @@ struct amci_exports_t {
  * see example media plug-in 'wav' (plug-in/wav/wav.c).
  * @hideinitializer
  */
-#define BEGIN_FILE_FORMAT(name,ext,email_content_type,open,on_close) \
-                    { name,ext,email_content_type,open,on_close,
+#define BEGIN_FILE_FORMAT(name,ext,email_content_type,open,on_close,mem_open,mem_close) \
+                    { name,ext,email_content_type,open,on_close,mem_open,mem_close,
 
 /**
  * Portable export definition macro
