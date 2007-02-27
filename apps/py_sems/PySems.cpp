@@ -244,7 +244,8 @@ PySemsDialog* PySemsFactory::newDlg(const string& name)
     }
 
     // take the ownership over dlg
-    sipTransfer(dlg_inst,1);
+    sipTransferTo(dlg_inst,dlg_inst);
+    Py_DECREF(dlg_inst);
     dlg->setPyPtrs(NULL,dlg_inst);
     
     return dlg;

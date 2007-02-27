@@ -116,12 +116,8 @@ public:
     void setPyPtrs(PyObject *mod, PyObject *dlg);
     
     void onSessionStart(const AmSipRequest& req);
-/*     void onBye(const AmSipRequest& req); */
-/*     void onDtmf(int event, int duration_msec); */
 
-/*     void onOtherBye(const AmSipRequest& req); */
-/*     void onOtherReply(const AmSipReply& r); */
-
+    // @see AmEventHandler
     void process(AmEvent* event);
 
 };
