@@ -54,6 +54,8 @@ class AmPlaylist: public AmAudio
     AmPlaylist(AmEventQueue* q);
     ~AmPlaylist();
     
+    bool isEmpty();
+
     void addToPlaylist(AmPlaylistItem* item);
     void addToPlayListFront(AmPlaylistItem* item);
     void close();
