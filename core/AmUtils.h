@@ -250,6 +250,11 @@ string strip_header_params(const string& hdr_string);
   // get a header parameter value
 string get_header_param(const string& hdr_string, const string& param_name);
 
+// support for thread-safe pseudo-random numbers
+void init_random();
+unsigned int get_random();
+
+
 #endif
 
 // Local Variables:

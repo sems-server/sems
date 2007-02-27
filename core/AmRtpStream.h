@@ -123,7 +123,7 @@ protected:
     /** the recv_offset initialized ?  */ 
     bool           recv_offset_i;
 
-	//    unsigned int   l_ssrc;
+    unsigned int   l_ssrc;
     unsigned int   r_ssrc;
     bool           r_ssrc_i;
 

@@ -701,3 +701,30 @@ string get_header_param(const string& hdr_string,
   }
   return "";
 }
+
+
+// support for thread-safe pseudo-random numbers
+static unsigned int _s_rand=0;
+static AmMutex _s_rand_mut;
+
+void init_random()
+{
+    int seed=0;
+    FILE* fp_rand = fopen("/dev/random","r");
+    if(fp_rand){
+	fread(&seed,sizeof(int),1,fp_rand);
+	fclose(fp_rand);
+    }
+    seed += getpid();
+    seed += time(0);
+    _s_rand = seed;
+}
+
+unsigned int get_random()
+{
+    _s_rand_mut.lock();
+    unsigned int r = rand_r(&_s_rand);
+    _s_rand_mut.unlock();
+    
+    return r;
+}

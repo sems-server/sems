@@ -59,15 +59,6 @@ void AmSessionContainer::on_stop()
 
 void AmSessionContainer::run()
 {
-    int seed=0;
-    FILE* fp_rand = fopen("/dev/random","r");
-    if(fp_rand){
-	fread(&seed,sizeof(int),1,fp_rand);
-	fclose(fp_rand);
-    }
-    seed += getpid();
-    seed += time(0);
-    srand(seed);
 
     while(1){
 

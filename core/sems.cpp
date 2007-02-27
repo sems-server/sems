@@ -371,6 +371,8 @@ int main(int argc, char* argv[])
     if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
 	return -1;
 
+    init_random();
+
     DBG("Starting session container\n");
     AmSessionContainer::instance()->start();
 

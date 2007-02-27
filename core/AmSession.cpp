@@ -349,17 +349,12 @@ void AmSession::destroy()
 
 string AmSession::getNewId()
 {
-    static AmMutex _m;
-    
     struct timeval t;
     gettimeofday(&t,NULL);
 
     string id = "";
 
-    _m.lock();
-    id += int2hex(rand()) + "-";
-    _m.unlock();
-
+    id += int2hex(get_random()) + "-";
     id += int2hex(t.tv_sec) + int2hex(t.tv_usec) + "-";
     id += int2hex((unsigned int) pthread_self());
 
