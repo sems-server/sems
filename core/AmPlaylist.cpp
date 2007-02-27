@@ -31,8 +31,10 @@ void AmPlaylist::gotoNextItem()
     }
 
     updateCurrentItem();
-    if(had_item && !cur_item)
+    if(had_item && !cur_item){
+	DBG("posting AmAudioEvent::noAudio event!\n");
 	ev_q->postEvent(new AmAudioEvent(AmAudioEvent::noAudio));
+    }
 }
 
 int AmPlaylist::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples)
@@ -119,4 +121,19 @@ void AmPlaylist::close()
     while(cur_item)
 	gotoNextItem();
     cur_mut.unlock();
+}
+
+bool AmPlaylist::isEmpty()
+{
+    bool res(true);
+
+    cur_mut.lock();
+    items_mut.lock();
+
+    res = (!cur_item) && items.empty();
+    
+    items_mut.unlock();
+    cur_mut.unlock();
+
+    return res;
 }

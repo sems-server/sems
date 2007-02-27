@@ -227,6 +227,13 @@ static PyObject* IvrDialogBase_flush(IvrDialogBase* self, PyObject* args)
     return Py_None;
 }
 
+static PyObject* IvrDialogBase_queueIsEmpty(IvrDialogBase* self, PyObject* args)
+{
+    assert(self->p_dlg);
+
+    return PyBool_FromLong(self->p_dlg->playlist.isEmpty());
+}
+
 static PyObject* IvrDialogBase_mute(IvrDialogBase* self, PyObject* args)
 {
     assert(self->p_dlg);
@@ -491,6 +498,9 @@ static PyMethodDef IvrDialogBase_methods[] = {
     // Media control
     {"enqueue", (PyCFunction)IvrDialogBase_enqueue, METH_VARARGS,
      "Add some audio to the queue (mostly IvrAudioFile)"
+    },
+    {"queueIsEmpty", (PyCFunction)IvrDialogBase_queueIsEmpty, METH_NOARGS,
+     "Is the audio queue empty?"
     },
     {"flush", (PyCFunction)IvrDialogBase_flush, METH_NOARGS,
      "Flush the queue"

@@ -152,8 +152,9 @@ class IvrDialog(IvrDialogBase):
 	def onEmptyQueue(self):
 
 		if self.exit:
-			self.bye()
-			self.stopSession()
+			if self.queueIsEmpty():
+				self.bye()
+				self.stopSession()
 
 
 	def onDtmf(self,key,duration):
