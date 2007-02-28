@@ -88,6 +88,10 @@ class AmArgArray
     vector<AmArg> v;
 
 public:
+	struct OutOfBoundsException {
+		OutOfBoundsException() { }
+	};
+
     AmArgArray() : v() {}
     AmArgArray(const AmArgArray& a) : v(a.v) {}
     
@@ -97,7 +101,9 @@ public:
 
     const AmArg& get(size_t idx) const {
 	
-	assert(idx < v.size());
+	if (idx >= v.size())
+		throw OutOfBoundsException();
+	//	assert(idx < v.size());
 	return v[idx];
     }
 

@@ -1,20 +1,39 @@
+
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
+#include <map>
+using std::map;
+#include <string>
+using std::string;
 
-#define MSG_BUF_SIZE 256
+#define MSG_BUF_SIZE 2048
 
 void print_usage(const char * progname)
 {
     fprintf(stderr,
-	    "Syntax: %s ip_address port\n",
-	    progname
+	    "Syntax: %s [<options>]\n"
+	    "\n"
+	    "where <options>: \n"
+	    " -s <server>  : server name|ip (default: 127.0.0.1)\n"
+	    " -p <port>    : server port (default: 50040)\n"
+	    " -c <cmd>     : command (default: calls)\n"
+	    "\n"
+	    "Tips: \n"
+        " o quote the command if it has arguments (e.g. %s -c \"set_loglevel 1\")\n"
+        " o \"which\" prints available commands\n"
+			,
+			progname, progname
 	);
 }
+
+static int parse_args(int argc, char* argv[], const string& flags,
+		      const string& options, map<char,string>& args);
 
 
 /* returns non-zero if error occured */
@@ -47,44 +66,60 @@ error_char:
 	return -1;
 }
 
-char* append_str(const char* buf, const char* str, unsigned int str_s)
-{
-    memcpy(buf,str,str_s);
-    buf += str_s;
-}
-
 int main(int argc, char** argv)
 {
-    char msg_buf[MSG_BUF_SIZE];
-    char *p_buf;
-    int msg_size=10, sd, err;
+	char rcv_buf[MSG_BUF_SIZE];
+	string  msg_buf;
+    int sd, err;
     struct sockaddr_in addr;
-
-    if(argc != 3){
-	print_usage(argv[0]);
-	return -1;
-    }
     
-    if(!inet_aton(argv[1],&addr.sin_addr)){
-	fprintf(stderr,"'%s' is an invalid IP address\n",argv[1]);
-	return -1;
+    map<char,string> args;
+
+    if(parse_args(argc, argv, "h","spc", args)){
+		print_usage(argv[0]);
+		return -1;
     }
 
-    if(str2i(argv[2],&addr.sin_port) == -1){
-	fprintf(stderr,"'%s' is not a valid integer\n",argv[2]);
-	return -1;
+	string server="127.0.0.1";
+	string port="50040";
+	string cmd="calls";
+
+	for(map<char,string>::iterator it = args.begin(); 
+		it != args.end(); ++it){
+		
+		if(it->second.empty())
+			continue;
+		
+		switch( it->first ){
+		case 'h': { print_usage(argv[0]); exit(1); } break;
+		case 's': { server=it->second; } break;
+		case 'p': { port=it->second; } break;
+		case 'c': { cmd=it->second; } break;
+		}
+	}
+
+	if(!inet_aton(server.c_str(),&addr.sin_addr)){
+		fprintf(stderr,"server '%s' is an invalid IP address\n",server.c_str());
+		return -1;
     }
+
+    if(str2i(port.c_str(),&addr.sin_port) == -1){
+		fprintf(stderr,"port '%s' is not a valid integer\n",port.c_str());
+		return -1;
+    }
+
 
     addr.sin_family = AF_INET;
     addr.sin_port = htons(addr.sin_port);
 
-    /*TODO: build msg to send */
-    p_buf = msg_buf;
-    p_buf = append_str(p_buf,"calls\n",6);
+	msg_buf = cmd;    
+	printf("sending '%s\\n' to %s:%s\n", msg_buf.c_str(), 
+		   server.c_str(), port.c_str());
 
-    
+	msg_buf += "\n";
+
     sd = socket(PF_INET,SOCK_DGRAM,0);
-    err = sendto(sd,msg_buf,msg_size,0,
+    err = sendto(sd,msg_buf.c_str(),msg_buf.length(),0,
 		 (const struct sockaddr*)&addr,
 		 sizeof(struct sockaddr_in));
     
@@ -92,13 +127,49 @@ int main(int argc, char** argv)
 	fprintf(stderr,"sendto: %s\n",strerror(errno));
     }
     else {
-	msg_size = recv(sd,msg_buf,MSG_BUF_SIZE,0);
+	int msg_size = recv(sd,rcv_buf,MSG_BUF_SIZE,0);
 	if(msg_size == -1)
 	    fprintf(stderr,"recv: %s\n",strerror(errno));
 	else
-	    printf("received:\n%.*s",msg_size-1,msg_buf);
+	    printf("received:\n%.*s",msg_size-1,rcv_buf);
     }
     
     close(sd);
+    return 0;
+}
+
+
+static int parse_args(int argc, char* argv[],
+		      const string& flags,
+		      const string& options,
+		      map<char,string>& args)
+{
+    for(int i=1; i<argc; i++){
+
+	char* arg = argv[i];
+
+	if( (*arg != '-') || !*(++arg) ) { 
+	    fprintf(stderr,"%s: invalid parameter: '%s'\n",argv[0],argv[i]);
+	    return -1;
+	}    
+
+	if( flags.find(*arg) != string::npos ) {
+	    
+	    args[*arg] = "yes";
+	}
+	else if(options.find(*arg) != string::npos) {
+
+	    if(!argv[++i]){
+		fprintf(stderr,"%s: missing argument for parameter '-%c'\n",argv[0],*arg);
+		return -1;
+	    }
+	    
+	    args[*arg] = argv[i];
+	}
+	else {
+	    fprintf(stderr,"%s: unknown parameter '-%c'\n",argv[0],arg[1]);
+	    return -1;
+	}
+    }
     return 0;
 }

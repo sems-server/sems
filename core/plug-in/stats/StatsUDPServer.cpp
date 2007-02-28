@@ -1,3 +1,31 @@
+/*
+ * $Id$
+ *
+ * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2007 iptego GmbH
+ *
+ * This file is part of sems, a free SIP media server.
+ *
+ * sems is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version
+ *
+ * For a license to use the ser software under conditions
+ * other than those described here, or to purchase support for this
+ * software, please contact iptel.org by e-mail at the following addresses:
+ *    info@iptel.org
+ *
+ * sems is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include "StatsUDPServer.h"
 #include "Statistics.h"
 #include "AmConfigReader.h"
@@ -5,6 +33,8 @@
 #include "AmUtils.h"
 #include "AmConfig.h"
 #include "log.h"
+#include "AmPlugIn.h"
+#include "AmApi.h"
 
 #include <string>
 using std::string;
@@ -212,8 +242,117 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
 
     if(cmd_str == "calls")
 	reply = "Active calls: " + int2str(sc->getSize()) + "\n";
-    else
-	reply = "Unknown command: '" + cmd_str + "'\n";
+	else if (cmd_str == "which") {
+		reply = 
+			"calls                              -  number of active calls (Session Container size)\n"
+			"which                              -  print available commands\n"
+			"set_loglevel <loglevel>            -  set log level\n"
+			"get_loglevel                       -  get log level\n"
+			"\n"
+			"DI <factory> <function> (<args>)*  -  invoke DI command\n"
+			;
+	}
+    else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "set_") {
+		// setters 
+		if (cmd_str.substr(4, 8) == "loglevel") {
+			if (!AmConfig::setLoglevel(&cmd_str.c_str()[13])) 
+				reply= "invalid loglevel value.\n";
+			else 
+				reply= "loglevel set to "+int2str(log_level)+".\n";
+		}
+
+		else 	reply = "Unknown command: '" + cmd_str + "'\n";
+	}
+    else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "get_") {
+		// setters 
+		if (cmd_str.substr(4, 8) == "loglevel") {
+			reply= "loglevel is "+int2str(log_level)+".\n";
+		}
+
+		else 	reply = "Unknown command: '" + cmd_str + "'\n";
+	}
+    else if (cmd_str.length() > 4 && cmd_str.substr(0, 3) == "DI ") {
+		// Dynamic Invocation
+		size_t p = cmd_str.find(' ', 4);
+		string fact_name = cmd_str.substr(3, p-3);
+		if (!fact_name.length()) {
+			reply = "could not parse DI factory name.\n";
+			return 0;
+		}
+
+		size_t p2 = cmd_str.find(' ', p+1);
+		if (p2 == string::npos)
+			p2 = cmd_str.length();
+		string fct_name = cmd_str.substr(p+1, p2-p-1);
+		p=p2+1;
+		if (!fct_name.length()) {
+			reply = "could not parse function name.\n";
+			return 0;
+		}
+		try {
+
+			AmArgArray args;
+			while (p<cmd_str.length()) {
+				p2 = cmd_str.find(' ', p);
+				if (p2 == string::npos) {
+					if (p+1<cmd_str.length())
+						p2=cmd_str.length();
+					else 
+						break;
+				}
+				args.push(cmd_str.substr(p, p2-p).c_str());	
+				// 			DBG("mod '%s' added arg '%s'\n", 
+				// 				fact_name.c_str(),
+				// 				cmd_str.substr(p, p2-p).c_str());
+				p=p2+1;
+			}
+			AmDynInvokeFactory* di_f = AmPlugIn::instance()->getFactory4Di(fact_name);
+			if(!di_f){
+				reply = "could not get '" + fact_name + "' factory\n";
+				return 0;
+			}
+			AmDynInvoke* di = di_f->getInstance();
+			if(!di){
+				reply = "could not get DI instance from factory\n";
+				return 0;
+			}
+			AmArgArray ret;
+			di->invoke(fct_name, args, ret);
+			
+			if (ret.size()) {
+				reply="[";
+				for (unsigned int i=0;i<ret.size();i++) {
+					const AmArg& r = ret.get(i);
+					switch (r.getType()) {
+					case AmArg::CStr:  
+						reply=reply + r.asCStr(); break;
+					case AmArg::Int:  
+						reply=reply + int2str(r.asInt()); break;
+					case AmArg::Double: {
+						char res[10];
+						snprintf(res, 10, "%e", r.asDouble());
+						reply=reply + res; 
+					} break;
+					default: break;
+					}
+					if (i<ret.size()-1) reply = reply + ",";
+				}
+				reply+="]\n";
+			} else 
+				reply = "(none)\n";
+
+		} catch (const AmDynInvoke::NotImplemented& e) {
+			reply = "Exception occured: AmDynInvoke::NotImplemented '"+
+				e.what+"'\n";
+			return 0;
+		} catch (...) {
+			reply = "Exception occured.\n";
+			return 0;
+		}
+			
+	}
+	else
+		reply = "Unknown command: '" + cmd_str + "'\n";
 
     return 0;
 }
