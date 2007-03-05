@@ -294,15 +294,42 @@ bool IvrFactory::loadScript(const string& path)
 {
     PYLOCK;
     
-    PyObject *modName,*mod,*dict, *dlg_class, *config=NULL;
+    PyObject *modName=NULL,*mod=NULL,*dict=NULL,*dlg_class=NULL,*config=NULL;
 
-    modName = PyString_FromString(path.c_str());
-    mod     = PyImport_Import(modName);
-
+	// load module configuration
     AmConfigReader cfg;
     string cfg_file = add2path(AmConfig::ModConfigPath,1,(path + ".conf").c_str());
+    if(cfg.loadFile(cfg_file)){
+	ERROR("could not load config file at %s\n",cfg_file.c_str());
+	goto error2;
+    }
 
+    config = PyDict_New();
+    if(!config){
+	ERROR("could not allocate new dict for config\n");
+	goto error2;
+    }
+
+    for(map<string,string>::const_iterator it = cfg.begin();
+	it != cfg.end(); it++){
+	PyDict_SetItem(config, 
+		       PyString_FromString(it->first.c_str()),
+		       PyString_FromString(it->second.c_str()));
+    }
+
+	// set config ivr ivr_module while loading
+	Py_INCREF(config);
+    PyObject_SetAttrString(ivr_module,"config",config);
+
+	// load module
+    modName = PyString_FromString(path.c_str());
+
+    mod     = PyImport_Import(modName);
     Py_DECREF(modName);
+
+	// remove config ivr ivr_module while loading
+	PyObject_DelAttrString(ivr_module, "config");
+	Py_DECREF(config);
 
     if(!mod){
         PyErr_Print();
@@ -333,25 +360,6 @@ bool IvrFactory::loadScript(const string& path)
 	WARN("IvrFactory: in \"%s\": IvrDialog is not a subtype of IvrDialogBase\n",
 	      path.c_str());
 	goto error2;
-    }
-
-    if(cfg.loadFile(cfg_file)){
-	ERROR("could not load config file at %s\n",cfg_file.c_str());
-	goto error2;
-    }
-
-    config = PyDict_New();
-    if(!config){
-	ERROR("could not allocate new dict for config\n");
-	goto error2;
-    }
-
-    for(map<string,string>::const_iterator it = cfg.begin();
-	it != cfg.end(); it++){
-	
-	PyDict_SetItem(config, 
-		       PyString_FromString(it->first.c_str()),
-		       PyString_FromString(it->second.c_str()));
     }
 
     PyObject_SetAttrString(mod,"config",config);

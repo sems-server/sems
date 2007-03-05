@@ -41,3 +41,34 @@ drop_sound: sound to be played to all the participants
 
 dialout_suffix: suffix to be append to the numbered entered by
                 the user. Example: @iptel.org
+
+Adding participants with "Transfer" REFER:
+------------------------------------------
+ The "Transfer REFER" is a proprietary REFER call flow which transfers a 
+ SIP dialog and session to another user agent ('taker'). If the transfer 
+ REFER is  accepted, the one transfering the call just "forgets" the dialog 
+ and associated session, while the taker can send a re-Invite, thus overtaking
+ the dialog and session. For this to work, both transferer and taker must
+ be behind the same record routing proxy, and the callers user agent must 
+ properly support re-Invite (updating of contact, and session, as specified 
+ in RFC3261).
+
+ The transfer request sent out has two headers, which are needed by the 
+ entity taking the call: 
+  P-Transfer-RR  : route set of the call
+  P-Transfer-NH  : next hop 
+
+ These headers must be configured in ser.cfg to be passed to the conference 
+ application, for example using the following tw_append: 
+
+ # appends for REFER
+ modparam( "tm", "tw_append",
+   "refer_append:hdr[P-Transfer-NH];hdr[P-Transfer-RR]")
+
+ ...
+ 
+ t_write_unix("/tmp/msp_conference_sock","conference/refer_append");
+
+ Note that while this request has the method 'REFER', it does not follow rfc3515,
+ for example the Refer-To header is not used.
+

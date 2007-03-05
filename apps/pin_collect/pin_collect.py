@@ -1,6 +1,8 @@
 from log import *
 from ivr import *
-import xmlrpclib
+
+if (config['auth_mode'] == 'XMLRPC'):
+	import xmlrpclib
 
 #states
 collect         = 0
@@ -64,31 +66,50 @@ class IvrDialog(IvrDialogBase):
 
 	def onDtmf(self,key,duration):
 		if self.state == collect:
+			self.flush()
 			if key < 10:
 				self.keys += str(key)
 				debug("added key, PIN = " + self.keys)
 				self.setTimer(HINT_TIMER, HINT_TIMEOUT)
 			elif key == 10:
-
-				c = xmlrpclib.ServerProxy(config['auth_xmlrpc_url'])
-				erg = c.authorize(self.dialog.user, self.keys)
-
-				debug('result of authentication: '+ str(erg))
-				if erg == 'OK':
+				# XMLRPC authentication mode
+				if (config['auth_mode'] == 'XMLRPC'):
+					try:
+						c = xmlrpclib.ServerProxy(config['auth_xmlrpc_url'])
+						erg = c.authorize(self.dialog.user, self.keys)
+	
+						debug('result of authentication: '+ str(erg))
+						if erg == 'OK':
+							self.state = connect
+							self.removeTimer(HINT_TIMER)
+							self.dlg_remote_uri	= self.dialog.remote_uri
+							debug("saved remote_uri "+ self.dlg_remote_uri)
+							self.transfer_cseq = self.dialog.cseq
+							self.redirect("sip:" + self.dialog.user + "@" + \
+								      self.dialog.domain)
+						else:
+							self.flush()
+							self.keys = ''
+							if self.auth_fail_msg == None:
+								self.auth_fail_msg = IvrAudioFile()
+								self.auth_fail_msg.open(config['auth_fail_msg'],AUDIO_READ)
+							self.enqueue(self.auth_fail_msg,None)
+					except:
+						self.dlg_remote_uri = self.dialog.remote_uri
+						self.state = connect_failed		
+						self.fail_msg = IvrAudioFile()
+						self.fail_msg.open(config['fail_msg'],AUDIO_READ)
+						self.enqueue(self.fail_msg,None)
+						
+				else:
 					self.state = connect
 					self.removeTimer(HINT_TIMER)
-					self.dlg_remote_uri	= self.dialog.remote_uri
+					self.dlg_remote_uri     = self.dialog.remote_uri
 					debug("saved remote_uri "+ self.dlg_remote_uri)
 					self.transfer_cseq = self.dialog.cseq
-					self.redirect("sip:" + self.dialog.user + "@" + \
-						      self.dialog.domain)
-				else:
-					self.flush()
-					self.keys = ''
-					if self.auth_fail_msg == None:
-						self.auth_fail_msg = IvrAudioFile()
-						self.auth_fail_msg.open(config['auth_fail_msg'],AUDIO_READ)
-					self.enqueue(self.auth_fail_msg,None)
+					self.redirect("sip:" + self.dialog.user + "+" + self.keys + "@" + \
+						self.dialog.domain)
+
 
 
 	def onEmptyQueue(self):
