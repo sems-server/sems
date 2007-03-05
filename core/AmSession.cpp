@@ -266,14 +266,14 @@ void AmSession::negotiate(const string& sdp_body,
 	passive_mode = true;
     }
 
-    if(sdp_reply)
-	sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),*sdp_reply);
-
     lockAudio();
     rtp_str.setLocalIP(AmConfig::LocalIP);
     rtp_str.setPassiveMode(passive_mode);
     rtp_str.setRAddr(r_host, r_port);
     unlockAudio();
+
+    if(sdp_reply)
+	sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),*sdp_reply);
 }
 
 void AmSession::run()
@@ -681,14 +681,19 @@ void AmSession::sendUpdate()
 
 void AmSession::sendReinvite() 
 {
-  string sdp_body;
-  sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-  dlg.reinvite("", "application/sdp", sdp_body);
+	rtp_str.setLocalIP(AmConfig::LocalIP);
+	string sdp_body;
+	sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
+	dlg.reinvite("", "application/sdp", sdp_body);
 }
 
 void AmSession::sendInvite() 
 {
-  string sdp_body;
-  sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-  dlg.invite("", "application/sdp", sdp_body);
+	// set local IP first, so that IP is set when 
+	// getLocalPort/setLocalPort may bind 
+	rtp_str.setLocalIP(AmConfig::LocalIP);
+	// generate SDP
+	string sdp_body;
+	sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
+	dlg.invite("", "application/sdp", sdp_body);
 }
