@@ -24,16 +24,25 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#include "AmRtpStream.h"
+ 
+#include "AmAudio.h"
 #include "AmJitterBuffer.h"
-#include "AmRtpPacket.h"
 #include "log.h"
 #include "SampleArray.h"
 
 bool Packet::operator < (const Packet& p) const
 {
-    return ts_less()(m_packet.timestamp, p.m_packet.timestamp);
+    return ts_less()(m_ts, p.m_ts);
+}
+
+void Packet::init(const ShortSample *data, unsigned int size, unsigned int ts)
+{
+    size = PCM16_S2B(size);
+    if (size > sizeof(m_data))
+        size = sizeof(m_data);
+    m_size = PCM16_B2S(size);
+    memcpy(m_data, data, size);
+    m_ts = ts;
 }
 
 PacketAllocator::PacketAllocator()
@@ -45,13 +54,15 @@ PacketAllocator::PacketAllocator()
     m_packets[MAX_JITTER / 80 - 1].m_next = NULL;
 }
 
-Packet *PacketAllocator::alloc(const AmRtpPacket *p)
+Packet *PacketAllocator::alloc(const ShortSample *data, unsigned int size, unsigned int ts)
 {
     if (m_free_packets == NULL)
 	return NULL;
     Packet *retval = m_free_packets;
     m_free_packets = retval->m_next;
-    memcpy(&retval->m_packet, p, sizeof(*p));
+
+    retval->init(data, size, ts);
+
     retval->m_next = retval->m_prev = NULL;
     return retval;
 }
@@ -63,40 +74,42 @@ void PacketAllocator::free(Packet *p)
     m_free_packets = p;
 }
 
-AmJitterBuffer::AmJitterBuffer(AmRtpStream *owner)
+AmJitterBuffer::AmJitterBuffer()
     : m_tsInited(false), m_tsDeltaInited(false), m_delayCount(0),
-      m_jitter(INITIAL_JITTER), m_owner(owner),
+      m_jitter(INITIAL_JITTER),
 	  m_tail(NULL), m_head(NULL), m_forceResync(false)
 {
 }
 
-void AmJitterBuffer::put(const AmRtpPacket *p)
+void AmJitterBuffer::put(const ShortSample *data, unsigned int size, unsigned int ts, bool begin_talk)
 {
     m_mutex.lock();
-    if (p->marker)
+    if (begin_talk)
 	m_forceResync = true;
-    if (m_tsInited && !m_forceResync && ts_less()(m_lastTs + m_jitter, p->timestamp))
+    if (m_tsInited && !m_forceResync && ts_less()(m_lastTs + m_jitter, ts))
     {
-	unsigned int delay = p->timestamp - m_lastTs;
+	unsigned int delay = ts - m_lastTs;
 	if (delay > m_jitter && m_jitter < MAX_JITTER)
        	{
 	    m_jitter += (delay - m_jitter) / 2;
 	    if (m_jitter > MAX_JITTER)
 		m_jitter = MAX_JITTER;
-	    // DBG("Jitter buffer delay increased to %u\n", m_jitter);
+#ifdef DEBUG_PLAYOUTBUF
+	    DBG("Jitter buffer delay increased to %u\n", m_jitter);
+#endif
 	}
 	// Packet arrived too late to be put into buffer
-	if (ts_less()(p->timestamp + m_jitter, m_lastTs)) {
+	if (ts_less()(ts + m_jitter, m_lastTs)) {
 	    m_mutex.unlock();
 	    return;
 	}
     }
-    Packet *elem = m_allocator.alloc(p);
+    Packet *elem = m_allocator.alloc(data, size, ts);
     if (elem == NULL) {
 	elem = m_head;
 	m_head = m_head->m_next;
 	m_head->m_prev = NULL;
-	memcpy(&elem->m_packet, p, sizeof(*p));
+	elem->init(data, size, ts);
     }
     if (m_tail == NULL)
     {
@@ -124,11 +137,11 @@ void AmJitterBuffer::put(const AmRtpPacket *p)
 	}
     }
     if (!m_tsInited) {
-	m_lastTs = p->timestamp;
+	m_lastTs = ts;
 	m_tsInited = true;
     }
-    else if (ts_less()(m_lastTs, p->timestamp) || m_forceResync) {
-	m_lastTs = p->timestamp;
+    else if (ts_less()(m_lastTs, ts) || m_forceResync) {
+	m_lastTs = ts;
     }
 
     m_mutex.unlock();
@@ -139,7 +152,8 @@ void AmJitterBuffer::put(const AmRtpPacket *p)
  * To get all the packets for the single ts the caller must call this
  * method with the same ts till the return value will become false.
  */
-bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
+bool AmJitterBuffer::get(unsigned int ts, unsigned int ms, ShortSample *out_buf, 
+						 unsigned int *out_size, unsigned int *out_ts)
 {
     bool retval = true;
 
@@ -152,7 +166,11 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 	m_tsDelta = m_lastTs - ts + ms;
 	m_tsDeltaInited = true;
 	m_lastAudioTs = ts;
-	m_forceResync = true;
+	m_forceResync = false;
+#ifdef DEBUG_PLAYOUTBUF
+	DBG("Jitter buffer: initialized tsDelta with %u\n", m_tsDelta);
+	m_tsDeltaStart = m_tsDelta;
+#endif
     }
     else if (m_lastAudioTs != ts && m_lastResyncTs != m_lastTs) {
 	if (ts_less()(ts + m_tsDelta, m_lastTs)) {
@@ -161,15 +179,20 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 	     *  immediate resync required 
 	     */
 	    m_tsDelta += m_lastTs - ts + ms;
-		//		DBG("Jitter buffer resynced forward (-> %u)\n", m_tsDelta);
+#ifdef DEBUG_PLAYOUTBUF
+	    DBG("Jitter buffer resynced forward (-> %d rel)\n", 
+		m_tsDelta - m_tsDeltaStart);
+#endif
 	    m_delayCount = 0;
-	}
-	else if (ts_less()(m_lastTs, ts + m_tsDelta - m_jitter / 2)) {
+	} else if (ts_less()(m_lastTs, ts + m_tsDelta - m_jitter / 2)) {
 	    /* New packet hasn't arrived yet */
 	    if (m_delayCount > RESYNC_THRESHOLD) {
 		unsigned int d = m_tsDelta -(m_lastTs - ts + ms);
 		m_tsDelta -= d / 2;
-		//		DBG("Jitter buffer resynced backward (-> %u)\n", m_tsDelta);
+#ifdef DEBUG_PLAYOUTBUF
+		DBG("Jitter buffer resynced backward (-> %d rel)\n", 
+		    m_tsDelta - m_tsDeltaStart);
+#endif
 	    }
 	    else
 		++m_delayCount;
@@ -185,7 +208,7 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 	//    DBG("Getting pkt at %u, res ts = %u\n", get_ts / m_frameSize, p.timestamp);
     // First of all throw away all too old packets from the head
     Packet *tmp;
-    for (tmp = m_head; tmp && ts_less()(tmp->m_packet.timestamp + m_owner->bytes2samples(tmp->m_packet.getDataSize()), get_ts); )
+    for (tmp = m_head; tmp && ts_less()(tmp->ts() + tmp->size(), get_ts); )
     {
 	m_head = tmp->m_next;
 	if (m_head == NULL)
@@ -196,7 +219,7 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 	tmp = m_head;
     }
     // Get the packet from the head
-    if (m_head && ts_less()(m_head->m_packet.timestamp, get_ts + ms))
+    if (m_head && ts_less()(m_head->ts(), get_ts + ms))
     {
 	tmp = m_head;
 	m_head = tmp->m_next;
@@ -204,9 +227,10 @@ bool AmJitterBuffer::get(AmRtpPacket& p, unsigned int ts, unsigned int ms)
 	    m_tail = NULL;
 	else
 	    m_head->m_prev = NULL;
-	memcpy(&p, &tmp->m_packet, sizeof(p));
+	memcpy(out_buf, tmp->data(), PCM16_S2B(tmp->size()));
 	// Map RTP timestamp to internal audio timestamp
-	p.timestamp -= m_tsDelta - m_jitter;
+	*out_ts = tmp->ts() - m_tsDelta + m_jitter;
+        *out_size = tmp->size();
 	m_allocator.free(tmp);
     }
     else

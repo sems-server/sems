@@ -48,7 +48,7 @@ public:
 class EchoDialog : public AmSession
 {
     AmAudioEcho echo;
-    bool adaptive_playout;
+    PlayoutType playout_type;
  public:
     EchoDialog();
     ~EchoDialog();

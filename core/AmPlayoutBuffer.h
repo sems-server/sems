@@ -4,6 +4,7 @@
 #include "SampleArray.h"
 #include "AmStats.h"
 #include "LowcFE.h"
+#include "AmJitterBuffer.h"
 #include <set>
 using std::multiset;
 
@@ -23,6 +24,12 @@ using std::multiset;
 // search segments of size TEMPLATE_SEG samples 
 #define TEMPLATE_SEG   80
 
+// Maximum value: AUDIO_BUFFER_SIZE / 2
+// Note: plc result get stored in our back buffer
+#define PLC_MAX_SAMPLES (160*4) 
+
+class AmRtpAudio;
+
 /** \brief base class for Playout buffer */
 class AmPlayoutBuffer
 {
@@ -31,17 +38,29 @@ class AmPlayoutBuffer
 
 protected:
     u_int32_t r_ts,w_ts;
+    AmRtpAudio *m_owner;
+
+    unsigned int last_ts;
+    bool         last_ts_i;
+
+    /** the offset RTP receive TS <-> audio_buffer TS */ 
+    unsigned int   recv_offset;
+    /** the recv_offset initialized ?  */ 
+    bool           recv_offset_i;
 
     void buffer_put(unsigned int ts, ShortSample* buf, unsigned int len);
     void buffer_get(unsigned int ts, ShortSample* buf, unsigned int len);
-    
+
+    virtual void write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
+    virtual void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
 public:
-    AmPlayoutBuffer();
+    AmPlayoutBuffer(AmRtpAudio *owner);
     virtual ~AmPlayoutBuffer() {}
 
-    virtual void direct_write(unsigned int ts, ShortSample* buf, unsigned int len);
-    virtual void write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
+    virtual void write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len, bool begin_talk);
     virtual u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
+
+    void clearLastTs() { last_ts_i = false; }
 };
 
 /** \brief adaptive playout buffer */
@@ -73,17 +92,36 @@ class AmAdaptivePlayout: public AmPlayoutBuffer
 
 public:
 
-    AmAdaptivePlayout();
+    AmAdaptivePlayout(AmRtpAudio *);
 
     /** write len samples beginning from timestamp ts from buf */
-    void direct_write(unsigned int ts, ShortSample* buf, unsigned int len);
+    void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
 
     /** write len samples which beginn from timestamp ts from buf
 	reference ts of buffer (monotonic increasing buffer ts) is ref_ts */
-    void write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
+    void write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
 
     /** read len samples beginn from timestamp ts into buf */
     u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
+
+};
+
+/** \brief adaptive jitter buffer */
+class AmJbPlayout : public AmPlayoutBuffer
+{
+private:
+    AmJitterBuffer m_jb;
+    unsigned int m_last_rtp_endts;
+
+protected:
+    void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
+    void prepare_buffer(unsigned int ts, unsigned int ms);
+
+public:
+    AmJbPlayout(AmRtpAudio *owner);
+
+    u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
+    void write(u_int32_t ref_ts, u_int32_t rtp_ts, int16_t* buf, u_int32_t len, bool begin_talk);
 };
 
 

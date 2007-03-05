@@ -73,7 +73,7 @@ public:
     static string JoinSound;
     static string DropSound;
     static string DialoutSuffix;
-    //static string RingTone;
+	static PlayoutType m_PlayoutType;
 
     ConferenceFactory(const string& _app_name);
     virtual AmSession* onInvite(const AmSipRequest&);

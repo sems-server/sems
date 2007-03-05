@@ -30,13 +30,15 @@
 
 #include "AmAudio.h"
 #include "AmRtpStream.h"
-#include "AmPlayoutBuffer.h"
 #include "LowcFE.h"
 
-// Maximum value: AUDIO_BUFFER_SIZE / 2
-// Note: plc result get stored in our back buffer
-#define PLC_MAX_SAMPLES (160*4) 
+class AmPlayoutBuffer;
 
+enum PlayoutType {
+    ADAPTIVE_PLAYOUT,
+    JB_PLAYOUT,
+    SIMPLE_PLAYOUT
+};
 /** 
  * \brief binds together a \ref AmRtpStream and an \ref AmAudio for a session 
  */
@@ -52,18 +54,7 @@ class AmRtpAudio: public AmRtpStream, public AmAudio
     bool         last_check_i;
     bool         send_int;
 
-#ifndef USE_ADAPTIVE_JB
-    unsigned int last_ts;
-#else
-    unsigned int m_last_rtp_endts;
-#endif
-    bool         last_ts_i;
-
     bool         send_only;
-
-    // Conceals packet loss into the back buffer
-    // @return length in bytes of the recivered segment
-    unsigned int conceal_loss(unsigned int ts_diff);
 
     //
     // Default packet loss concealment functions
@@ -72,8 +63,6 @@ class AmRtpAudio: public AmRtpStream, public AmAudio
 			     unsigned int   size,
 			     unsigned int   channels,
 			     unsigned int   rate);
-
-    void add_to_history(unsigned int size);
 
 public:
     AmRtpAudio(AmSession* _s=0);
@@ -97,9 +86,15 @@ public:
     // AmRtpStream interface
     void init(const SdpPayload* sdp_payload);
 
-    void setAdaptivePlayout(bool on);
+    void setPlayoutType(PlayoutType type);
 
     virtual unsigned int bytes2samples(unsigned int) const;
+
+    void add_to_history(int16_t *buffer, unsigned int size);
+
+    // Conceals packet loss into the out_buffer
+    // @return length in bytes of the recivered segment
+    unsigned int conceal_loss(unsigned int ts_diff, unsigned char *out_buffer);
 };
 
 #endif

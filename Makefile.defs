@@ -48,10 +48,9 @@ C_FLAGS ?= -Wall -fPIC -g \
 	  -DOS='"$(OS)"' 	\
 #	  -DSUPPORT_IPV6
 
-ifeq ($(WITH_ADAPTIVE_JITTERBUFFER), yes)
-CXX_FLAGS +=  -DUSE_ADAPTIVE_JB
+ifeq ($(DEBUG_PLAYOUT), yes)
+CXX_FLAGS +=  -DDEBUG_PLAYOUTBUF
 endif
-
 
 TARGET =
 ifeq ($(OS), linux)

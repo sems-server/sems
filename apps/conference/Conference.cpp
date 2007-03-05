@@ -50,6 +50,7 @@ string ConferenceFactory::LonelyUserFile;
 string ConferenceFactory::JoinSound;
 string ConferenceFactory::DropSound;
 string ConferenceFactory::DialoutSuffix;
+PlayoutType ConferenceFactory::m_PlayoutType = ADAPTIVE_PLAYOUT;
 
 int ConferenceFactory::onLoad()
 {
@@ -70,12 +71,21 @@ int ConferenceFactory::onLoad()
     JoinSound = cfg.getParameter("join_sound");
     DropSound = cfg.getParameter("drop_sound");
 
-    //RingTone = cfg.getParameter("ring_tone");
-
 	DialoutSuffix = cfg.getParameter("dialout_suffix");
 	if(DialoutSuffix.empty()){
 		WARN("No dialout_suffix has been configured in the conference plug-in:\n");
 		WARN("\t -> dial out will not be available\n");
+	}
+
+	string playout_type = cfg.getParameter("playout_type");
+	if (playout_type == "simple") {
+		m_PlayoutType = SIMPLE_PLAYOUT;
+		DBG("Using simple (fifo) buffer as playout technique.\n");
+	} else 	if (playout_type == "adaptive_jb") {
+		m_PlayoutType = JB_PLAYOUT;
+		DBG("Using adaptive jitter buffer as playout technique.\n");
+	} else {
+		DBG("Using adaptive playout buffer as playout technique.\n");
 	}
 
     return 0;
@@ -110,7 +120,7 @@ ConferenceDialog::ConferenceDialog(const string& conf_id,
       allow_dialout(false)
 {
     dialedout = this->dialout_channel.get() != 0;
-//    rtp_str.setAdaptivePlayout(true);
+    rtp_str.setPlayoutType(ConferenceFactory::m_PlayoutType);
 }
 
 ConferenceDialog::~ConferenceDialog()

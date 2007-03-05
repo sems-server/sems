@@ -28,20 +28,26 @@
 #ifndef _AmJitterBuffer_h_
 #define _AmJitterBuffer_h_
 
+#include "amci/amci.h"
 #include "AmThread.h"
-#include "AmRtpPacket.h"
-
-class AmRtpStream;
+#include "SampleArray.h"
 
 #define INITIAL_JITTER	    640 // 80 miliseconds
 #define MAX_JITTER	    16000 // 2 seconds
 #define RESYNC_THRESHOLD    2
 
 class Packet {
+    ShortSample m_data[AUDIO_BUFFER_SIZE * 2];
+    unsigned int m_size;
+    unsigned int m_ts;
 public:
-    AmRtpPacket m_packet;
     Packet *m_next;
     Packet *m_prev;
+    void init(const ShortSample *data, unsigned int size, unsigned int ts);
+
+    unsigned int size() const { return m_size; }
+    unsigned int ts() const { return m_ts; }
+    ShortSample *data() { return m_data; }
 
     bool operator < (const Packet&) const;
 };
@@ -54,7 +60,7 @@ private:
 
 public:
     PacketAllocator();
-    Packet *alloc(const AmRtpPacket *);
+    Packet *alloc(const ShortSample *data, unsigned int size, unsigned int ts);
     void free(Packet *p);
 };
 
@@ -73,13 +79,17 @@ private:
     bool m_tsDeltaInited;
     int m_delayCount;
     unsigned int m_jitter;
-    AmRtpStream *m_owner;
+//    AmRtpStream *m_owner;
     bool m_forceResync;
 
+#ifdef DEBUG_PLAYOUTBUF
+    unsigned int m_tsDeltaStart;
+#endif
+
 public:
-    AmJitterBuffer(AmRtpStream *owner);
-    void put(const AmRtpPacket *);
-    bool get(AmRtpPacket &, unsigned int ts, unsigned int ms);
+    AmJitterBuffer();
+    void put(const ShortSample *data, unsigned int size, unsigned int ts, bool begin_talk);
+    bool get(unsigned int ts, unsigned int ms, ShortSample *out, unsigned int *size, unsigned int *out_ts);
 };
 
 #endif // _AmJitterBuffer_h_

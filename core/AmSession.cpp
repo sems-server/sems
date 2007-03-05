@@ -37,6 +37,7 @@
 #include "AmSessionContainer.h"
 #include "AmMediaProcessor.h"
 #include "AmDtmfDetector.h"
+#include "AmPlayoutBuffer.h"
 
 #include "log.h"
 

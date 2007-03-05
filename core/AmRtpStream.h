@@ -62,10 +62,6 @@ class AmSession;
 class SdpPayload;
 typedef map<unsigned int, AmRtpPacket, ts_less> JitterBuffer;
 
-#ifdef USE_ADAPTIVE_JB
-class AmJitterBuffer;
-#endif
-
 /**
  * \brief RTP implementation
  *
@@ -118,11 +114,6 @@ protected:
 
     struct timeval last_recv_time;
 
-    /** the offset RTP receive TS <-> audio_buffer TS */ 
-    unsigned int   recv_offset;
-    /** the recv_offset initialized ?  */ 
-    bool           recv_offset_i;
-
     unsigned int   l_ssrc;
     unsigned int   r_ssrc;
     bool           r_ssrc_i;
@@ -134,19 +125,11 @@ protected:
     auto_ptr<const SdpPayload> telephone_event_pt;
 
 
-#ifndef USE_ADAPTIVE_JB
     JitterBuffer    jitter_buf;
     AmMutex         jitter_mut;
 
     /* get next packet in buffer */
     int nextPacket(AmRtpPacket& p);
-#else
-    AmJitterBuffer	*m_main_jb;
-    AmJitterBuffer	*m_telephone_event_jb;
-
-    /* get next packet in buffer */
-    int nextAudioPacket(AmRtpPacket& p, unsigned int ts, unsigned int ms);
-#endif
 
     AmSession*         session;
 
@@ -167,14 +150,9 @@ public:
 	      unsigned char* buffer,
 	      unsigned int   size );
 
-#ifndef USE_ADAPTIVE_JB
 
     int receive( unsigned char* buffer, unsigned int size,
-		 unsigned int& ts, unsigned int audio_buffer_ts);
-#else
-    int receive( unsigned char* buffer, unsigned int size, unsigned int *ts,
-		 unsigned int audio_buffer_ts, unsigned int ms);
-#endif
+		 unsigned int& ts);
     
     /** Allocates resources for future use of RTP. */
     AmRtpStream(AmSession* _s=0);

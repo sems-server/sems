@@ -62,7 +62,7 @@ AmSession* EchoFactory::onInvite(const AmSipRequest& req)
 }
 
 EchoDialog::EchoDialog() 
-	: adaptive_playout(false)
+	: playout_type(SIMPLE_PLAYOUT)
 {
 	
 }
@@ -85,10 +85,18 @@ void EchoDialog::onDtmf(int event, int duration)
 {
 #ifdef STAR_SWITCHES_PLAYOUTBUFFER
     if (event == 10) {   
-       	adaptive_playout = !adaptive_playout;
-	DBG("received *. set adaptive playout to %s.\n", adaptive_playout ? "true":"false");
-	
-	rtp_str.setAdaptivePlayout(adaptive_playout);
+		char* pt = "simple (fifo) playout buffer";
+       	if (playout_type == SIMPLE_PLAYOUT) {
+			playout_type = ADAPTIVE_PLAYOUT;
+			pt = "adaptive playout buffer";
+		} else if (playout_type == ADAPTIVE_PLAYOUT) {
+			pt = "adaptive jitter buffer";
+			playout_type = JB_PLAYOUT;
+		} else
+			playout_type = SIMPLE_PLAYOUT;
+		DBG("received *. set playout technique to %s.\n", pt);
+		
+		rtp_str.setPlayoutType(playout_type);
     }
 #endif
 }

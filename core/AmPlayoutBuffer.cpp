@@ -1,5 +1,6 @@
 #include "AmPlayoutBuffer.h"
 #include "AmAudio.h"
+#include "AmRtpAudio.h"
 
 #define SEARCH_OFFSET  140
 
@@ -14,30 +15,79 @@
 
 #define PI 3.14 
 
-#define DEBUG_PLAYOUTBUF
+#define MAX_DELAY 8000 /* 1 second */
 
-AmPlayoutBuffer::AmPlayoutBuffer()
-    : r_ts(0),w_ts(0)
+
+AmPlayoutBuffer::AmPlayoutBuffer(AmRtpAudio *owner)
+    : r_ts(0),w_ts(0), last_ts_i(false), m_owner(owner)
 {
 }
 
-void AmPlayoutBuffer::direct_write(unsigned int ts, ShortSample* buf, unsigned int len)
+void AmPlayoutBuffer::direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len)
 {
-#ifndef USE_ADAPTIVE_JB
     buffer_put(w_ts,buf,len);
-#else
-    buffer_put(ts, buf, len);
-#endif // USE_ADAPTIVE_JB
 }
 
-void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len)
+void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts, 
+			    int16_t* buf, u_int32_t len, bool begin_talk)
+{
+    unsigned int mapped_ts;
+    if(!recv_offset_i)
+    {
+        recv_offset = rtp_ts - ref_ts;
+        recv_offset_i = true;
+        DBG("initialized recv_offset with %i (%i - %i)\n",
+            recv_offset, ref_ts, rtp_ts);
+        mapped_ts = ref_ts;// + jitter_delay;
+    }
+    else {
+        mapped_ts = rtp_ts - recv_offset;// + jitter_delay;
+
+        // resync
+        if( ts_less()(mapped_ts, ref_ts - MAX_DELAY/2) || 
+            !ts_less()(mapped_ts, ref_ts + MAX_DELAY) ){
+
+            DBG("resync needed: reference ts = %u; write ts = %u\n",
+                ref_ts, mapped_ts);
+            recv_offset = rtp_ts - ref_ts;
+            mapped_ts = ref_ts;// + jitter_delay;
+        }
+    }
+
+    if(!last_ts_i)
+    {
+        last_ts = mapped_ts;
+        last_ts_i = true;
+    }
+
+    if(ts_less()(last_ts, mapped_ts) && !begin_talk
+        && (mapped_ts - last_ts <= PLC_MAX_SAMPLES))
+    {
+        unsigned char tmp[AUDIO_BUFFER_SIZE * 2];
+        int l_size = m_owner->conceal_loss(mapped_ts - last_ts, tmp);
+        if (l_size>0)
+        {
+            direct_write_buffer(last_ts, (ShortSample*)tmp, PCM16_B2S(l_size));
+        }
+    }
+    write_buffer(ref_ts, mapped_ts, buf, len);
+
+    m_owner->add_to_history(buf, PCM16_S2B(len));
+
+    // update last_ts to end of received packet 
+    // if not out-of-sequence
+    if (ts_less()(last_ts, mapped_ts) || last_ts == mapped_ts)
+            last_ts = mapped_ts + len;
+}
+
+
+void AmPlayoutBuffer::write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len)
 {
     buffer_put(w_ts,buf,len);
 }
 
 u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
 {
-#ifndef USE_ADAPTIVE_JB
     if(ts_less()(r_ts,w_ts)){
 
 	u_int32_t rlen=0;
@@ -51,15 +101,28 @@ u_int32_t AmPlayoutBuffer::read(u_int32_t ts, int16_t* buf, u_int32_t len)
     }
 
     return 0;
-#else
-    buffer_get(ts, buf, len);
-    return len;
-#endif // USE_ADAPTIVE_JB
 }
 
 
-AmAdaptivePlayout::AmAdaptivePlayout()
-    : idx(0),
+void AmPlayoutBuffer::buffer_put(unsigned int ts, ShortSample* buf, unsigned int len)
+{
+    buffer.put(ts,buf,len);
+
+    if(ts_less()(w_ts,ts+len))
+	w_ts = ts + len;
+}
+
+void AmPlayoutBuffer::buffer_get(unsigned int ts, ShortSample* buf, unsigned int len)
+{
+    buffer.get(ts,buf,len);
+
+    if(ts_less()(r_ts,ts+len))
+	r_ts = ts + len;
+}
+
+AmAdaptivePlayout::AmAdaptivePlayout(AmRtpAudio *owner)
+    : AmPlayoutBuffer(owner),
+      idx(0),
       loss_rate(ORDER_STAT_LOSS_RATE),
       wsola_off(WSOLA_START_OFF),
       shr_threshold(SHR_THRESHOLD),
@@ -126,7 +189,7 @@ u_int32_t AmAdaptivePlayout::next_delay(u_int32_t ref_ts, u_int32_t ts)
     return D;
 }
 
-void AmAdaptivePlayout::write(u_int32_t ref_ts, u_int32_t ts, 
+void AmAdaptivePlayout::write_buffer(u_int32_t ref_ts, u_int32_t ts, 
 			      int16_t* buf, u_int32_t len)
 {
     // predict next delay
@@ -234,25 +297,9 @@ u_int32_t AmAdaptivePlayout::read(u_int32_t ts, int16_t* buf, u_int32_t len)
     return len;
 }
 
-void AmAdaptivePlayout::direct_write(unsigned int ts, ShortSample* buf, unsigned int len)
+void AmAdaptivePlayout::direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len)
 {
     buffer_put(ts+wsola_off,buf,len);
-}
-
-void AmPlayoutBuffer::buffer_put(unsigned int ts, ShortSample* buf, unsigned int len)
-{
-    buffer.put(ts,buf,len);
-
-    if(ts_less()(w_ts,ts+len))
-	w_ts = ts + len;
-}
-
-void AmPlayoutBuffer::buffer_get(unsigned int ts, ShortSample* buf, unsigned int len)
-{
-    buffer.get(ts,buf,len);
-
-    if(ts_less()(r_ts,ts+len))
-	r_ts = ts + len;
 }
 
 /** 
@@ -387,7 +434,8 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
 	float act_fact = s / (float)packet_len;
 
 #ifdef DEBUG_PLAYOUTBUF
-	DBG("at ts %u: new size = %u, ratio = %f, requested = %f\n", ts, s, act_fact, factor);
+	DBG("at ts %u: new size = %u, ratio = %f, requested = %f (wsola_off = %ld)\n", 
+	    ts, s, act_fact, factor, (long)wsola_off);
 #endif
 	// break condition: coming to the end of the frame (with safety margin)
 	if(p_buf_end - tmpl < TEMPLATE_SEG + DELTA)
@@ -406,4 +454,68 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
     }
 
     return s;
+}
+
+/*****************************************************************
+ *
+ *  AmJbPlayout class methods
+ *
+ *****************************************************************/
+
+AmJbPlayout::AmJbPlayout(AmRtpAudio *owner)
+    : AmPlayoutBuffer(owner)
+{
+}
+
+u_int32_t AmJbPlayout::read(u_int32_t ts, int16_t* buf, u_int32_t len)
+{
+    prepare_buffer(ts, len);
+    buffer_get(ts, buf, len);
+    return len;
+}
+
+void AmJbPlayout::direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len)
+{
+    buffer_put(ts, buf, len);
+}
+
+void AmJbPlayout::prepare_buffer(unsigned int audio_buffer_ts, unsigned int ms)
+{
+    ShortSample buf[AUDIO_BUFFER_SIZE];
+    unsigned int ts;
+    unsigned int nb_samples;
+    /**
+     * Get all RTP packets that correspond to the required interval,
+     * decode them and put into playout buffer.
+     */
+    while (m_jb.get(audio_buffer_ts, ms, buf, &nb_samples, &ts))
+    {
+	direct_write_buffer(ts, buf, nb_samples);
+        m_owner->add_to_history(buf, PCM16_S2B(nb_samples));
+	/* Conceal the gap between previous and current RTP packets */
+	if (last_ts_i && ts_less()(m_last_rtp_endts, ts))
+       	{
+	    int concealed_size = m_owner->conceal_loss(ts - m_last_rtp_endts, (unsigned char *)buf);
+	    if (concealed_size > 0)
+		direct_write_buffer(m_last_rtp_endts, buf, PCM16_B2S(concealed_size));
+	}
+	m_last_rtp_endts = ts + nb_samples;
+	last_ts_i = true;
+    }
+    if (!last_ts_i) {
+	return;
+    }
+    if (ts_less()(m_last_rtp_endts, audio_buffer_ts + ms))
+    {
+	/* Last packets have been lost. Conceal them */
+	int concealed_size = m_owner->conceal_loss(audio_buffer_ts + ms - m_last_rtp_endts, (unsigned char *)buf);
+	if (concealed_size > 0)
+	    direct_write_buffer(m_last_rtp_endts, buf, PCM16_B2S(concealed_size));
+	m_last_rtp_endts = audio_buffer_ts + ms;
+    }
+}
+
+void AmJbPlayout::write(u_int32_t ref_ts, u_int32_t rtp_ts, int16_t* buf, u_int32_t len, bool begin_talk)
+{
+    m_jb.put(buf, len, rtp_ts, begin_talk);
 }

@@ -54,8 +54,6 @@
 #include <set>
 using std::set;
 
-#define MAX_DELAY 8000 /* 1 second */
-
 /*
  * This function must be called before setLocalPort, because
  * setLocalPort will bind the socket and it will be not
@@ -188,14 +186,13 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
     return size;
 }
 
-#ifndef USE_ADAPTIVE_JB
 // returns 
 // @param ts              [out] timestamp of the received packet, 
 //                              in audio buffer relative time
 // @param audio_buffer_ts [in]  current ts at the audio_buffer 
 
 int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
-			  unsigned int& ts, unsigned int audio_buffer_ts)
+			  unsigned int& ts)
 {
     AmRtpPacket rp;
     int err = nextPacket(rp);
@@ -235,45 +232,22 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
     /* do we have a new talk spurt? */
     begin_talk = ((last_payload == 13) || rp.marker);
     last_payload = rp.payload;
-    
+
     if(!rp.getDataSize())
 	return RTP_EMPTY;
-    
-    if(payload != rp.payload){
-	
-        if (telephone_event_pt.get() && rp.payload == telephone_event_pt->payload_type)
-        {
-	    dtmf_payload_t* dpl = (dtmf_payload_t*)rp.getData();
 
-	    DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i\n",
-		dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration));
-            session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate()));
-            return RTP_DTMF;
-	}
-	else
+    if (telephone_event_pt.get() && rp.payload == telephone_event_pt->payload_type)
+    {
+        dtmf_payload_t* dpl = (dtmf_payload_t*)rp.getData();
+
+        DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i\n",
+            dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration));
+        session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate()));
+        return RTP_DTMF;
+    }
+
+    if (payload != rp.payload){
 	    return RTP_UNKNOWN_PL;
-    }
-    
-    if(!recv_offset_i){
-
- 	recv_offset = rp.timestamp - audio_buffer_ts;
- 	recv_offset_i = true;
-	DBG("initialized recv_offset with %i (%i - %i)\n", 
-	    recv_offset,audio_buffer_ts,rp.timestamp);
-	ts = audio_buffer_ts;// + jitter_delay;
-    }
-    else {
- 	ts = rp.timestamp - recv_offset;// + jitter_delay;
-	
-	// resync
- 	if( ts_less()(ts, audio_buffer_ts - MAX_DELAY/2) || 
- 	    !ts_less()(ts, audio_buffer_ts + MAX_DELAY) ){
-
- 	    DBG("resync needed: reference ts = %u; write ts = %u\n",
- 		audio_buffer_ts,ts);
- 	    recv_offset = rp.timestamp - audio_buffer_ts;
- 	    ts = audio_buffer_ts;// + jitter_delay;
- 	}
     }
 
     assert(rp.getData());
@@ -282,92 +256,23 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 	return RTP_BUFFER_SIZE;
     }
     memcpy(buffer,rp.getData(),rp.getDataSize());
+    ts = rp.timestamp;
 
-    return rp.getDataSize();    
+    return rp.getDataSize();
 }
-#else
-// returns 
-// @param ts              [out] timestamp of the received packet, 
-//                              in audio buffer relative time
-// @param audio_buffer_ts [in]  current ts at the audio_buffer 
-
-int AmRtpStream::receive( unsigned char* buffer, unsigned int buf_size,
-			  unsigned int *ts,
-			  unsigned int audio_buffer_ts, unsigned int ms)
-{
-    AmRtpPacket rp;
-    AmRtpPacket dtmf_pkt;
-
-    while (m_telephone_event_jb->get(dtmf_pkt, audio_buffer_ts, ms))
-    {
-	dtmf_payload_t* dpl = (dtmf_payload_t*)dtmf_pkt.getData();
-
-	DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i\n",
-	    dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration));
-	session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate()));
-    }
-    
-    int err = nextAudioPacket(rp, audio_buffer_ts, ms);
-    if(err <= 0)
-	return err;
-#ifdef SUPPORT_IPV6
-    struct sockaddr_storage recv_addr;
-#else
-    struct sockaddr_in recv_addr;
-#endif
-    rp.getAddr(&recv_addr);
-
-#ifndef SUPPORT_IPV6
-    // symmetric RTP
-    if( passive && ((recv_addr.sin_port != r_saddr.sin_port)
-		    || (recv_addr.sin_addr.s_addr 
-			!= r_saddr.sin_addr.s_addr)) ) {
-	
-	string addr_str = get_addr_str(recv_addr.sin_addr);
-	int port = ntohs(recv_addr.sin_port);
-	setRAddr(addr_str,port);
-	DBG("Symmetric RTP: setting new remote address: %s:%i\n",addr_str.c_str(),port);
-	// avoid comparing each time sender address
-	passive = false;
-    }
-#endif
-
-    /* do we have a new talk spurt? */
-    begin_talk = ((last_payload == 13) || rp.marker);
-    last_payload = rp.payload;
-    
-    if(!rp.getDataSize())
-	return RTP_EMPTY;
-
-    assert(rp.getData());
-    if(rp.getDataSize() > buf_size){
-	ERROR("received too big RTP packet\n");
-	return RTP_BUFFER_SIZE;
-    }
-    memcpy(buffer,rp.getData(),rp.getDataSize());
-    *ts = rp.timestamp;
-
-    return rp.getDataSize();    
-}
-#endif // USE_ADAPTIVE_JB
 
 AmRtpStream::AmRtpStream(AmSession* _s) 
     : runcond(0), 
       r_port(0),
       l_port(0),
       l_sd(0), 
-      recv_offset_i(false), 
+//      recv_offset_i(false), 
       r_ssrc_i(false),
       session(_s),
       passive(false),
       telephone_event_pt(NULL),
       mute(false),
       receiving(true)
-#ifdef USE_ADAPTIVE_JB
-      , 
-      m_main_jb(new AmJitterBuffer(this)),
-      m_telephone_event_jb(new AmJitterBuffer(this))
-#endif
 {
 
 
@@ -395,11 +300,6 @@ AmRtpStream::~AmRtpStream()
 	AmRtpReceiver::instance()->removeStream(l_sd);
 	close(l_sd);
     }
-#ifdef USE_ADAPTIVE_JB
-    if (m_main_jb) delete(m_main_jb);
-    if (m_telephone_event_jb)
-        delete (m_telephone_event_jb);
-#endif
 }
 
 int AmRtpStream::getLocalPort()
@@ -488,7 +388,6 @@ void AmRtpStream::icmpError()
     }
 }
 
-#ifndef USE_ADAPTIVE_JB
 void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 {
 	if (!receiving && !passive)
@@ -530,40 +429,6 @@ int AmRtpStream::nextPacket(AmRtpPacket& p)
 
     return 1;
 }
-#else
-void AmRtpStream::bufferPacket(const AmRtpPacket* p)
-{
-	if (!receiving && !passive)
-		return;
-
-    gettimeofday(&last_recv_time,NULL);
-    if (p->payload == payload && m_main_jb)
-	m_main_jb->put(p);
-    else if (telephone_event_pt.get() && p->payload == telephone_event_pt->payload_type)
-	m_telephone_event_jb->put(p);
-}
-
-int AmRtpStream::nextAudioPacket(AmRtpPacket& p, unsigned int ts, unsigned int ms)
-{
-	if (!receiving && !passive)
-		return RTP_EMPTY;
-
-    if (m_main_jb && m_main_jb->get(p, ts, ms))
-	return 1;
-
-    struct timeval now;
-    struct timeval diff;
-    gettimeofday(&now,NULL);
-
-    timersub(&now,&last_recv_time,&diff);
-    if(diff.tv_sec > DEAD_RTP_TIME){
- 	WARN("RTP Timeout detected. Last received packet is too old.\n");
-	DBG("diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
- 	return RTP_TIMEOUT;
-    }
-    return RTP_EMPTY;
-}
-#endif
 
 int AmRtpStream::getTelephoneEventRate()
 {
