@@ -42,6 +42,15 @@ drop_sound: sound to be played to all the participants
 dialout_suffix: suffix to be append to the numbered entered by
                 the user. Example: @iptel.org
 
+playout_type:  adaptive_playout, adaptive_jb, or simple:
+   		select playout mechanism. 
+                adaptive_playout : Adaptive Playout buffer 
+                  (default, recommended)
+                adaptive_jb      : Adaptive Jitter buffer
+                simple           : simple (fifo) playout buffer
+	      See sems core documentation for an explanation of the 
+              methods.
+
 Adding participants with "Transfer" REFER:
 ------------------------------------------
  The "Transfer REFER" is a proprietary REFER call flow which transfers a 

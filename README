@@ -12,8 +12,14 @@ Introduction:
  Each module or plug-in extends your system. Audio
  plug-ins enable new codecs and file format whereby 
  application plug-ins implement the service's logic.
+ Some modules called component modules provide 
+ functionality for other modules to use.
 
  You can easely extend Sems by creating your own plug-ins.
+
+ Applications can be written using the Sems framework API 
+ in C++, or in Python using an embedded python interpreter 
+ of the ivr or py_sems plugins.
 
  The following default applications are shipped with Sems :
 
@@ -33,15 +39,14 @@ Introduction:
 		    connecting the callee in b2bua mode
 
  * announce_transfer: pre-call-announcement, plays an announcement 
-            and then transfers the caller
-            to the callee using REFER
+            and then transfers the caller to the callee using REFER
 
  * early_announce: pre-call announcement using early media (183)
 
  * conf_auth: collect a PIN number, verify it against an 
               XMLRPC authentication server and connect in b2bua mode
 
- * announce_auth: authenticated announcement
+ * pin_collect: collect a PIN, optionally verify it, and transfer the call
 
  Sems only support patent free codecs. Which means that we won't support codecs
  like g729. On the other hand, we have support for all important patent free
@@ -133,8 +138,7 @@ Bug report & Contact:
 
 Authors:
 
-  Raphael Coeffic (rco@iptel.org), 
-  Ulrich Abend (ullstar@iptel.org) &
+  Raphael Coeffic (rco@iptel.org),
   Stefan Sayer (stefan.sayer@iptego.de)
 
   and all contributors.
