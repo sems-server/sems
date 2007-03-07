@@ -1,0 +1,33 @@
+Changelog for SEMS (from 0.10.0 rc1)
+
+ - new Adaptive jitter buffer as alternative playout method
+   Contributed by Andriy Pylypenko/Sippy Software
+
+ - new PIN collect application with transfer to e.g. 
+   separate conference bridge
+
+ - new SIP registrar client for registration at a 
+   SIP registrar
+
+ - new UAC authentication component
+
+ - new faster announcement application with memory caching for 
+   audio files
+
+ - new pre call announcement method using REFER 
+
+ - stats server can be used for monitoring custom modules/applications
+
+ - session specific parameters by default taken from unified 
+   session parameters header 
+
+ - signature configurable 
+
+ - install and make system updated
+
+ - added documentation 
+
+ - some security bugfixes (namely fixing possible 
+   buffer overflows)
+
+ - ...and a lot of other bug fixes
