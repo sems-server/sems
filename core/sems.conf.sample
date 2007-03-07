@@ -29,13 +29,13 @@ fork=no
 #
 # - debug mode: do not fork and log to stderr
 #   (stderr=yes is the same as -E)
-stderr=yes
+stderr=no
 
 # optional parameter: loglevel={0|1|2|3}
 #
 # - sets log level (error=0, warning=1, info=2, debug=3)
 #   (same as -D)
-loglevel=3
+loglevel=2
 
 # optional parameter: socket_name=<filename>
 #
