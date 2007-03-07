@@ -70,7 +70,7 @@ install-cfg: $(cfg-prefix)/$(cfg-dir)
 			< sems.conf.sample > $(cfg-prefix)/$(cfg-dir)sems.conf.default
 		chmod 644 $(cfg-prefix)/$(cfg-dir)sems.conf.default
 		if [ ! -f $(cfg-prefix)/$(cfg-dir)sems.conf ]; then \
-			mv -f $(cfg-prefix)/$(cfg-dir)sems.conf.default \
+			cp -f $(cfg-prefix)/$(cfg-dir)sems.conf.default \
 				$(cfg-prefix)/$(cfg-dir)sems.conf; \
 		fi
 
