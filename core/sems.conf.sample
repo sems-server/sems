@@ -23,7 +23,7 @@ plugin_config_path=/usr/local/etc/sems/etc/
 # 
 # - specifies if sems should run in daemon mode (background)
 #   (fork=no is the same as -E)
-fork=no
+fork=yes
 
 # optional parameter: stderr={yes|no}
 #
