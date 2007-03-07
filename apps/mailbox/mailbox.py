@@ -16,7 +16,7 @@ class IvrDialog(IvrDialogBase):
 	def onSessionStart(self,hdrs):
 
 		debug("config: %s" % repr(config))
-		self.mailbox = IMAP4_Mailbox(getHeader(hdrs,"P-Mailbox-URL"))
+		self.mailbox = IMAP4_Mailbox(getSessionParam(hdrs,"Mailbox-URL"));
 		debug("***** Mailbox Url: ******\n" + str(self.mailbox.url))
 
 		self.announcement = IvrAudioFile()

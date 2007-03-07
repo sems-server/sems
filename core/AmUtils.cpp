@@ -30,7 +30,7 @@
 #include "AmConfig.h"
 #include "log.h"
 #include "AmServer.h"
-//#include "SerClient.h"
+#include "AmSipRequest.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -700,6 +700,117 @@ string get_header_param(const string& hdr_string,
     pos +=param_name.length();
   }
   return "";
+}
+
+/** 
+ * get value from parameter header with the name @param name 
+ * while skipping escaped values
+ */
+string get_header_keyvalue(const string& param_hdr, const string& name) {
+// ugly, but we need escaping
+#define ST_FINDKEY  0
+#define ST_FK_ESC   1
+#define ST_CMPKEY   2
+#define ST_SRCHEND  3
+#define ST_SE_VAL   4
+#define ST_SE_ESC   5
+
+  size_t p=0, s_begin=0, corr=0, 
+    v_begin=0, v_end=0;
+
+  unsigned int st = ST_FINDKEY;
+  
+  while (p<param_hdr.length()) {
+    char curr = param_hdr[p];
+
+    switch(st) {
+    default:
+    case ST_FINDKEY: {
+      if (curr=='"') {
+	st = ST_FK_ESC;
+      } else if (curr==name[0]) {
+	  st = ST_CMPKEY;
+	  s_begin = p;
+	  corr = 1;
+      }
+      p++;
+    }; break;
+
+    case ST_FK_ESC: {
+      if (curr=='"')
+	st = ST_FINDKEY;
+      p++;
+    }; break;
+
+    case ST_CMPKEY: {
+	if (corr==name.length()) {
+	  if (curr=='=') {
+	    st = ST_SRCHEND;
+	    v_begin=++p;
+	  } else {
+	    p=s_begin+1;
+	    st = ST_FINDKEY;
+	    corr=0;
+	  }
+	} else {
+	  if (curr==name[corr]) {
+	    p++;
+	    corr++;
+	  } else {
+	    st = ST_FINDKEY;
+	    corr=0;
+	    p=s_begin+1;	  
+	  }
+	}
+    }; break;
+
+    case ST_SRCHEND: {
+      if (curr=='"') {
+	v_begin++;
+	st = ST_SE_ESC;
+      } else 
+	st = ST_SE_VAL;
+      p++;
+      v_end = p;
+    }; break;
+
+    case ST_SE_VAL: {
+      if (curr==';')
+	p = param_hdr.length();
+      else {
+	v_end = p;
+	p++;
+      }
+    }; break;
+
+    case ST_SE_ESC: {
+      if (curr=='"')
+	p = param_hdr.length();
+      else {
+	v_end = p;
+	p++;
+      }
+    }; break;
+
+    }
+  }
+
+  if (v_begin && v_end)
+    return param_hdr.substr(v_begin, v_end-v_begin+1);
+  else 
+    return "";
+}
+
+/** get the value of key @param name from P-Iptel-Param header in hdrs */
+string get_session_param(const string& hdrs, const string& name) {
+  string iptel_app_param = getHeader(hdrs, "P-Iptel-Param");
+  if (!iptel_app_param.length()) {
+//      DBG("call parameters header P-Iptel-Param not found "
+// 	 "(need to configure ser's tw_append?).\n");
+    return "";
+  }
+
+  return get_header_keyvalue(iptel_app_param, name);
 }
 
 

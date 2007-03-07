@@ -110,8 +110,8 @@ class IvrDialog(IvrDialogBase):
 
 		self.__init__()
 		self.loadVoiceLib()
-		
-		self.mailbox = IMAP4_Mailbox(getHeader(hdrs,"P-Mailbox-URL"))
+
+		self.mailbox = IMAP4_Mailbox(getSessionParam(hdrs,"Mailbox-URL"));
 		debug("***** Mailbox Url: ******\n" + str(self.mailbox.url))
 
 		self.new_msgs = self.loadMsgList('UNSEEN')

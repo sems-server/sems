@@ -446,27 +446,33 @@ int AmSipDialog::transfer(const string& target)
 
 		status = Disconnecting;
 		
-		string      hdrs;
+		string      hdrs = "";
 		AmSipDialog tmp_d(*this);
 		
 		tmp_d.setRoute("");
 		tmp_d.contact_uri = "Contact: <" + tmp_d.remote_uri + ">\n";
 		tmp_d.remote_uri = target;
 		
+		string r_set;
 		if(!route.empty()){
 			
 			vector<string>::iterator it = route.begin();
-			string r_set = "P-Transfer-RR: " + *it;
+			r_set ="Transfer-RR=\"" + *it;
 			
 			for(it++; it != route.end(); it++)
 				r_set += "," + *it;
 			
-			hdrs += r_set + "\n";
+			r_set += "\"";
 		}
-		
-		if(!next_hop.empty())
-			hdrs += "P-Transfer-NH: " + next_hop + "\n";
-		
+				
+		if (!(next_hop.empty() && route.empty())) {
+		  hdrs = "P-Iptel-Param: ";
+		  if (!next_hop.empty()) 
+		    hdrs+="Transfer-NH=\"" + next_hop +"\";";
+		  
+		  if (!r_set.empty()) 
+		    hdrs+=r_set;
+		}
 		int ret = tmp_d.sendRequest("REFER","","",hdrs);
 		if(!ret){
 			uac_trans.insert(tmp_d.uac_trans.begin(),

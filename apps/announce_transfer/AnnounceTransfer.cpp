@@ -110,7 +110,14 @@ void AnnounceTransferDialog::onSessionStart(const AmSipRequest& req)
 	DBG("AnnounceTransferDialog::onSessionStart\n");
 	if (status == Disconnected) {
 		status = Announcing;
-		callee_uri = getHeader(req.hdrs, "P-Refer-To");
+		callee_uri = get_session_param(req.hdrs, "Refer-To");
+		if (!callee_uri.length()) {
+		  callee_uri = getHeader(req.hdrs, "P-Refer-To");
+		  if (callee_uri.length()) {
+		    INFO("Use of P-Refer-To header is deprecated. "
+			 "Use 'P-Iptel-Param: Refer-To=<uri>' instead.\n");
+		  }
+		}
 		if (!callee_uri.length())
 		  callee_uri = req.r_uri;
 		DBG("transfer uri set to '%s'\n", callee_uri.c_str());

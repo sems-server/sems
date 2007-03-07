@@ -30,7 +30,6 @@
 
 #include "AmRtpStream.h"
 #include "AmThread.h"
-//#include "AmRequest.h"
 #include "AmEventQueue.h"
 #include "AmRtpAudio.h"
 #include "AmDtmfDetector.h"
@@ -131,8 +130,7 @@ class AmSession : public AmThread,
     friend class AmMediaProcessorThread;
     friend class AmSessionContainer;
     friend class AmSessionFactory;
-
-  
+	
 protected:
     AmSdp               sdp;
     AmRtpAudio          rtp_str;
@@ -167,6 +165,12 @@ public:
      */
     virtual void process(AmEvent*);
 
+    /**
+     * add a handler which will be called 
+     * for all events in session
+     * 
+     * @see AmSessionEventHandler
+     */
     void addHandler(AmSessionEventHandler*);
 
     /**
@@ -187,17 +191,25 @@ public:
 		    string*       sdp_reply=0);
 
     /**
-     * Lock and unlock audio input & output
+     * Lock audio input & output
      * (inclusive RTP stream)
      */
     void lockAudio();
+    /**
+     * Unlock audio input & output
+     * (inclusive RTP stream)
+     */
     void unlockAudio();
 
     /**
-     * Audio input & output get methods.
-     * Note: audio must be locked.
+     * Audio input getter .
+     * Note: audio must be locked!
      */
     AmAudio* getInput() { return input; }
+    /**
+     * Audio output getter.
+     * Note: audio must be locked!
+     */
     AmAudio* getOutput(){ return output;}
 
     /**
@@ -227,9 +239,8 @@ public:
 
     /** Gets the Session's local tag */
     const string& getLocalTag() const;
+    /** Sets the Session's local tag */
     void setLocalTag(const string& tag);
-
-//     AmSipDialog& getDialog() { return dlg; }
 
     /** Gets the current RTP payload */
     const SdpPayload* getPayload();
@@ -237,7 +248,6 @@ public:
     /** Gets the port number of the remote part of the session */
     int getRPort();
 
-  
     /** Set whether on positive reply session should be negotiated */
     void setNegotiateOnReply(bool n) { negotiate_onreply = n; }
 
@@ -246,8 +256,11 @@ public:
 			   bool force_symmetric_rtp,
 			   string* sdp_reply);
 
+    /** send an UPDATE in the session */
     void sendUpdate();
+    /** send a Re-INVITE (if connected) */
     void sendReinvite();
+    /** send an INVITE */
     void sendInvite();
 
     /**
@@ -270,6 +283,7 @@ public:
      */
     bool getStopped() { return sess_stopped.get(); }
 
+    /** Is the session detached from media processor? */
     bool getDetached() { return detached.get(); }
 
     /**
@@ -358,7 +372,7 @@ public:
 			       const string& content_type,
 			       const string& body,
 			       string& hdrs,
-				   unsigned int cseq);
+			       unsigned int cseq);
 
     virtual void onSendReply(const AmSipRequest& req,
 			     unsigned int  code,

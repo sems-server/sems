@@ -144,8 +144,29 @@ int AnswerMachineFactory::onLoad()
 
 AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 {
-    string language = getHeader(req.hdrs,"P-Language"); // local user's language
+    string language;
+    string email;
 
+    string iptel_app_param = getHeader(req.hdrs, "P-Iptel-Param");
+
+    if (iptel_app_param.length()) {
+	  language = get_header_keyvalue(iptel_app_param,"Language");
+	  email = get_header_keyvalue(iptel_app_param,"Email-Address");
+    } else {      
+      email = getHeader(req.hdrs,"P-Email-Address");
+      language = getHeader(req.hdrs,"P-Language"); // local user's language
+
+      if (email.length()) {
+	INFO("Use of P-Email-Address/P-Language is deprecated. \n");
+	INFO("Use 'P-Iptel-Param: Email-Address=<addr>;"
+	     "Language=<lang>' instead.\n");
+      }
+    }
+
+    DBG("email address for user '%s': <%s> \n",
+	req.user.c_str(),email.c_str());
+    DBG("language: <%s> \n", language.c_str());
+  
     string announce_file = add2path(AnnouncePath,2, req.domain.c_str(), (req.user + ".wav").c_str());
     if (file_exists(announce_file)) goto announce_found;
 
@@ -169,10 +190,6 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 announce_found:
     if(announce_file.empty())
 	throw AmSession::Exception(500,"voicemail: no greeting file found");
-
-    string email = getHeader(req.hdrs,"P-Email-Address");
-    DBG("email address for user '%s': <%s> (from P-Email-Address)\n",
-	req.user.c_str(),email.c_str());
 
     if(email.empty())
 	throw AmSession::Exception(404,"missing email address");

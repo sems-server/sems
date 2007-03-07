@@ -308,8 +308,6 @@ void AmSession::run()
 		    WARN("failed to terminate call properly\n");
 		}
 	    }
-	    // remove pending timers
-	    //AmSessionTimer::instance()->removeTimers(getLocalTag());
 	}
 	catch(const AmSession::Exception& e){ throw e; }
 	catch(const string& str){
@@ -327,7 +325,7 @@ void AmSession::run()
     destroy();
     
     // wait at least until session is out of RtpScheduler
-    DBG("session is stopped, waiting for detach from MediaProcessor.\n");
+    DBG("session is stopped.\n");
     //detached.wait_for();
 }
 
@@ -412,7 +410,6 @@ void AmSession::clearAudio()
     }
     unlockAudio();
     DBG("Audio cleared !!!\n");
-    // dialog_st->
     postEvent(new AmAudioEvent(AmAudioEvent::cleared));
 }
 
@@ -648,11 +645,6 @@ int AmSession::acceptAudio(const string& body,
 
     return -1;
 }
-
-// string AmSession::SessionTimerException::getErrorHeaders() const {
-//   return "Min-SE:" + int2str(minSE) + "\n"
-//     + "Supported: timer\n";
-// }
 
 void AmSession::onSendRequest(const string& method, const string& content_type,
 			      const string& body, string& hdrs, unsigned int cseq)

@@ -160,20 +160,36 @@ void EarlyAnnounceDialog::process(AmEvent* event)
        (audio_event->event_id == AmAudioEvent::cleared))
     {
 	DBG("AmAudioEvent::cleared\n");
-	unsigned int code_i;
-	string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
-	string reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
-	
-	if (code.length() && reason.length() && !str2i(code, code_i) ) {
-	    DBG("Replying with code %d %s\n", code_i, reason.c_str());
-	    dlg.reply(localreq, code_i, reason);
+	unsigned int code_i = 404;
+	string reason = "Not Found";
+
+	string iptel_app_param = getHeader(localreq.hdrs, "P-Iptel-Param");
+	if (iptel_app_param.length()) {
+	  string code = get_header_keyvalue(iptel_app_param,"Final-Reply-Code");
+	  if (code.length() && str2i(code, code_i)) {
+	    ERROR("while parsing Final-Reply-Code parameter\n");
+	  }
+	  reason = get_header_keyvalue(iptel_app_param,"Final-Reply-Reason");
 	} else {
-	    DBG("Replying with std code 404 Not found\n");
-	    dlg.reply(localreq, 404, "Not Found");
+	  string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
+	  if (code.length() && str2i(code, code_i)) {
+	    ERROR("while parsing P-Final-Reply-Code\n");
+	  }
+
+	  string h_reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
+	  if (h_reason.length()) {
+	    INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
+	    INFO("Use 'P-Iptel-Param: Final-Reply-Code=<code>;"
+		 "Final-Reply-Reason=<rs>' instead.\n");
+	    reason = h_reason;
+	  }
 	}
 
+	DBG("Replying with code %d %s\n", code_i, reason.c_str());
+	dlg.reply(localreq, code_i, reason);
+	
 	setStopped();
-
+	
 	return;
     }
 

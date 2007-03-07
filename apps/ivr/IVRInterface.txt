@@ -1,3 +1,17 @@
+#
+# globals: getHeader(String headers, String name)
+#             get header with name from headers
+#
+#          getSessionParam(String headers, String name)
+#            get session parameter with name from headers
+#            (parameter from P-Iptel-Param)
+#
+#          log(String str)
+#              log using sems' log facility
+#
+#          createThread(Callable thread)
+#              create a thread
+#
 
 
 class IvrDialogBase:
