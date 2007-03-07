@@ -71,7 +71,7 @@ BEGIN_EXPORTS( "mp3" )
     END_PAYLOADS
 
     BEGIN_FILE_FORMATS
-      BEGIN_FILE_FORMAT( "MP3", "mp3", "audio/x-mp3", MP3_open, MP3_close)
+      BEGIN_FILE_FORMAT( "MP3", "mp3", "audio/x-mp3", MP3_open, MP3_close, 0, 0)
         BEGIN_SUBTYPES
           SUBTYPE( MP3_phone,  "MP3",  8000, 1, CODEC_MP3 )
         END_SUBTYPES
