@@ -1,5 +1,5 @@
 /* \file This file generates Doxygen pages from files in the /doc
- directory 
+ *  directory 
  */
 
 /*! \page index SEMS Documentation 
@@ -38,7 +38,7 @@
  */
 
 /*! \page changelog Changelog (from 0.10.0-rc1 onwards)
- * CHANGELOG for SEMS which is from 0.10.0-rc1 onwards 
+ * CHANGELOG for SEMS from 0.10.0-rc1 onwards 
  * \verbinclude CHANGELOG
  * 
  */
@@ -68,7 +68,10 @@
  */
 
 /*! \page sems.conf.sample SEMS core configuration parameters
- * core/sems.conf.sample
+ * <p>The sample configuration file core/sems.conf.sample 
+ * explains all core configuration parameters. </p><p>If there is no 
+ * configuration file present, 'make install' installs this file
+ * into the default location.</p>
  * 
  * \verbinclude sems.conf.sample
  * 
@@ -134,8 +137,11 @@
  * <ul><li>  \ref ModuleDoc_pin_collect </li></ul>
  *
  * 
- * \section IVR: Python Scripting application 
+ * \section Scripting SEMS with Python 
  *
+ * There are two application modules which embed a python interpreted into 
+ * SEMS: the <i>ivr</i> module and the <i>py_sems</i> module.
+ * 
  * The <i>ivr</i> module plugin embeds a python interpreter into SEMS. In it, 
  * applications written in python can be run (<i>mailbox</i>, <i>conf_auth</i>,
  * <i>pin_collect</i> for example) and new applications can be prototyped and 
@@ -143,77 +149,144 @@
  *
  * <ul><li> \ref ModuleDoc_ivr  </li></ul>
  * 
+ * The <i>ivr</i> module has a simple to use, yet limited API, which uses 
+ * hand-written wrappers for the python bindings.
+ *
+ * <i>py_sems</i> uses a binding generator to make python classes from the
+ * SEMS core C++ classes, thus exposing a lot more functionality natively 
+ * to python:
+ *
+ * <ul><li> \ref ModuleDoc_py_sems  </li></ul>
+ * 
  */
 
 /*! \page ModuleDoc_ann_b2b Module Documentation: ann_b2b Application 
  *  \section Readme_ann_b2b Readme file
  *  \verbinclude Readme.ann_b2b
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_announce_auth Module Documentation: announce_auth Application 
  *  \section Readme_announce_auth Readme file
  *  \verbinclude Readme.announce_auth
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_announce_transfer Module Documentation: announce_transfer Application 
  *  \section Readme_announce_transfer Readme file
  *  \verbinclude Readme.announce_transfer
- */
-/*! \page ModuleDoc_ann_b2b Module Documentation: ann_b2b Application 
- *  \section Readme_ann_b2b Readme file
- *  \verbinclude Readme.ann_b2b
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_announcement Module Documentation: announcement Application 
  *  \section Readme_announcement Readme file
  *  \verbinclude Readme.announcement
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_conference Module Documentation: conference Application 
  *  \section Readme_conference Readme file
  *  \verbinclude Readme.conference
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_early_announce Module Documentation: early_announce Application 
  *  \section Readme_early_announce Readme file
  *  \verbinclude Readme.early_announce
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_voicemail Module Documentation: voicemail Application 
  *  \section Readme_voicemail Readme file
  *  \verbinclude Readme.voicemail
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_mailbox Module Documentation: mailbox Application 
  *  \section Readme_mailbox Readme file
  *  \verbinclude Readme.mailbox
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_ivr Module Documentation: ivr Application 
  *  \section Readme_ivr Readme file
  *  \verbinclude Readme.ivr
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
+ */
+
+/*! \page ModuleDoc_py_sems Module Documentation: py_sems Application 
+ *  \section Readme_py_sems Readme file
+ *  \verbinclude Readme.py_sems
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_uac_auth Module Documentation: uac_auth component 
  *  \section Readme_uac_auth Readme file
  *  \verbinclude Readme.uac_auth
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_registrar_client Module Documentation: registrar_client component 
  *  \section Readme_registrar_client Readme file
  *  \verbinclude Readme.registrar_client
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_mp3plugin Module Documentation: mp3 file writer audio plugin
  *  \section Readme_mp3plugin Readme file
  *  \verbinclude Readme.mp3plugin
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
 /*! \page ModuleDoc_iLBC Module Documentation: iLBC codec plugin
  *  \section Readme_iLBC Readme file
  *  \verbinclude Readme.iLBC
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
  */
 
+/*! \page ModuleDoc_conf_auth Module Documentation: conf_auth Application
+ *  \section Readme_conf_auth Readme file
+ *  \verbinclude Readme.conf_auth
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
+ */
+
+/*! \page ModuleDoc_pin_collect Module Documentation: pin_collect Application 
+ *  \section Readme_pin_collect Readme file
+ *  \verbinclude Readme.pin_collect
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc
+ */
 
 
 /*! \page ComponentDoc Component Modules Documentation

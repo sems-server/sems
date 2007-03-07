@@ -11,9 +11,10 @@ in an early session: it replies to an invite with
 and finally replies the request with a response (by default
 404 Not found ).
 
-Additional Headers:
-   P-Final-Reply-Code     integer (ex. P-Final-Reply-Code:405 )
-   P-Final-Reply-Reason   string (e.g. P-Final-Reply-Reason:Prohibited)
+Session Parameters:
+   Final-Reply-Code     integer (e.g. Final-Reply-Code=405 )
+   Final-Reply-Reason   string  (e.g. Final-Reply-Reason=Prohibited)
+
 
 
 It searches for files to play following these rules:
@@ -61,10 +62,10 @@ loadmodule "modules/avpops/avpops.so"
 # add value to ;lr param to make some broken UAs happy
 modparam("rr", "enable_full_lr", 1)
 
-modparam( "avpops", "avp_aliases", "early_code=i:66 ; early_reason=i:67" )
+modparam( "avpops", "avp_aliases", "sess_params=i:66" )
 
 # this is to be appended to the invite
-modparam("tm", "tw_append","early_headers:P-Final-Reply-Code=avp[$early_code];P-Final-Reply-Reason=avp[$early_reason]")
+modparam("tm", "tw_append","early_headers:P-Iptel-Param=avp[$sess_params]")
 
 # -------------------------  request routing logic -------------------
 # main routing logic
@@ -112,8 +113,8 @@ route{
 
            	if (method == "INVITE") {
 
-           		avp_write("405", "$early_code");
-           		avp_write("Prohiboted", "$early_reason");
+           		avp_write("Final-Reply-Code=405;Final-Reply-Reason=Prohiboted", 
+                                  "$sess_param");
 
             		if(!t_write_unix("/tmp/sems_sock","early_announce/early_headers")){
                 		log("could not contact early_announce\n");

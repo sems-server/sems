@@ -26,8 +26,8 @@ Authentication Modes:
  properly support re-Invite (updating of contact, and session, as specified 
  in RFC3261).
 
- The transfer request sent out has two headers, which are needed by the 
- entity taking the call: 
-  P-Transfer-RR  : route set of the call
-  P-Transfer-NH  : next hop 
+ The transfer request sent out has two session parameters (set in
+ P-Iptel-Param header), which are needed by the entity taking the call: 
 
+  Transfer-RR  : route set of the call
+  Transfer-NH  : next hop 

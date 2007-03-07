@@ -88,3 +88,99 @@ Troubleshooting:
   Look at the debug information present at start time, some libraries 
   may be missing in which case you should set the proper PYTHONPATH
   before starting SEMS.
+
+
+IVR API quickref:
+-----------------
+
+
+ globals: getHeader(String headers, String name)
+             get header with name from headers
+
+          getSessionParam(String headers, String name)
+            get session parameter with name from headers
+            (parameter from P-Iptel-Param)
+
+          log(String str)
+              log using sems' log facility
+
+          createThread(Callable thread)
+              create a thread. Only to be used on module 
+              initialization code!
+
+class IvrDialogBase:
+
+    # Event handlers
+    def onStart(self): # SIP dialog start
+        pass
+
+    def onBye(self): # SIP dialog is BYEd
+        pass
+    
+    def onSessionStart(self): # audio session start
+        pass
+
+    def onEmptyQueue(self): # audio queue is empty
+        pass
+    
+    def onDtmf(self,key,duration): # received DTMF
+        pass
+
+
+    # Session control
+    def stopSession(self): # stop everything
+        pass
+
+    def bye(self): # BYEs (or CANCELs) the SIP dialog
+        pass
+
+
+    # Media control
+    def enqueue(self,audio_play,audio_rec): # add something to the playlist
+        pass
+
+    def flush(self): # flushes playlist
+        pass
+
+    # Call datas / control
+
+    # get only property wrapping AmSipDialog AmSession::dlg.
+    # only its properties should be exposed.
+    dialog
+
+    # B2BUA
+
+    # if true, traffic will be relayed
+    # transaprently to the other side
+    # if this is 'True' at the beginning 
+    # of the session, the Caller's INVITE
+    # will be relayed to the callee, without
+    # having to use connectCallee()
+    B2BMode = False
+
+    # call given party as (new) callee
+    # if remote_party and remote_uri are empty (None),
+    # we will connect to the callee of the initial caller request
+    def connectCallee(self,remote_party,remote_uri):
+        pass
+
+    # terminate the callee's call
+    def terminateOtherLeg(self):
+        pass
+
+    # terminate our call
+    def terminateLeg(self):
+        pass
+
+    # start a new audio session with the caller
+    # sends a re-INVITE if needed.
+    def connectAudio(self):
+        pass
+
+    # end the audio session
+    # sends a re-INVITE if needed to reconnect to the current callee
+    def disconnectAudio(self):
+    	pass
+
+    # B2BUA Event handlers
+    # some other handlers...

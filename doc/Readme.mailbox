@@ -21,16 +21,16 @@ mailbox_query.conf:
    wav_dir              -    directory which contains wav files for
                              menu
 
-Invocation Parameters (Headers of the INVITE)
-============================================
+Session Parameters (In P-Iptel-Param headers)
+=============================================
 
 mailbox:
 
- P-Mailbox-URL      -  IMAP URL to the mailbox
+ Mailbox-URL      -  IMAP URL to the mailbox
 
 mailbox_query:
 
- P-Mailbox-URL      -  IMAP URL to the mailbox
+ Mailbox-URL      -  IMAP URL to the mailbox
 
 
 
@@ -38,13 +38,13 @@ Example for ser.cfg
 ===================
 
 # appends for INVITE to mailbox
-modparam("tm", "tw_append", "mailbox_headers:P-Mailbox-URL=avp[$mailbox_url]")
+modparam("tm", "tw_append", "mailbox_headers:P-Iptel-Param=avp[$mailbox_url]")
 
 
 ...
         # replace this with a function that loads imap url e.g. from DB
         # into $mailbox_url AVP
-		avp_write("imap://user:password@imapserver:143/INBOX",
+		avp_write("Mailbox-URL=imap://user:password@imapserver:143/INBOX",
                       "$mailbox_url");
 
 		if (!t_write_unix("/tmp/sems_sock","mailbox/mailbox_headers")){
