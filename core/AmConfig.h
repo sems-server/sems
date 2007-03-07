@@ -44,73 +44,73 @@ class AmSessionTimerConfig;
  */
 struct AmConfig
 {
-    /** Name of the main configuration file. */
-    static string ConfigurationFile;
-    /** Path to the plug-in configuration files. */
-    static string ModConfigPath;
-    /** Name of our unix socket file for requests. */
-    static string SocketName;
-    /** Name of our unix socket file for replies. */
-    static string ReplySocketName;
-    /** Name of the Ser unix socket file. */
-    static string SerSocketName;
-    /** Send method: 'fifo' or 'unix_socket' */
-    static string SendMethod;
-    /** After server start, IP of the SMTP server. */
-    static string SmtpServerAddress;
-    /** SMTP server port. */
-    static unsigned int SmtpServerPort;
-    /** Path where the plug-ins are. */
-    static string PlugInPath;
-	/** semicolon separated list of plugins to load */
-	static string LoadPlugins;
-    //static unsigned int MaxRecordTime;
-    /** run the programm in daemon mode? */
-    static int DaemonMode;
-    /** local IP for SDP media advertising */
-    static string LocalIP;
-    /** Separator character for uri application prefix (ex: voicemail+jiri@iptel.org) */
-    static string PrefixSep;
-    /** Lowest local RTP port */
-    static int RtpLowPort;
-    /** Highest local RTP port */
-    static int RtpHighPort;
-    /* Session Timer: -ssa */
-    static AmSessionTimerConfig defaultSessionTimerConfig;
-    /** number of session scheduler threads */
-    static int MediaProcessorThreads;
-	/** the interface SIP requests are sent from - needed for registrar_client */
-	static string LocalSIPIP;
-	/** the port SIP requests are sent from - optional (default 5060) */
-	static int LocalSIPPort;
-	/** Server/User-Agent header (optional) */
-	static string Signature;
+  /** Name of the main configuration file. */
+  static string ConfigurationFile;
+  /** Path to the plug-in configuration files. */
+  static string ModConfigPath;
+  /** Name of our unix socket file for requests. */
+  static string SocketName;
+  /** Name of our unix socket file for replies. */
+  static string ReplySocketName;
+  /** Name of the Ser unix socket file. */
+  static string SerSocketName;
+  /** Send method: 'fifo' or 'unix_socket' */
+  static string SendMethod;
+  /** After server start, IP of the SMTP server. */
+  static string SmtpServerAddress;
+  /** SMTP server port. */
+  static unsigned int SmtpServerPort;
+  /** Path where the plug-ins are. */
+  static string PlugInPath;
+  /** semicolon separated list of plugins to load */
+  static string LoadPlugins;
+  //static unsigned int MaxRecordTime;
+  /** run the programm in daemon mode? */
+  static int DaemonMode;
+  /** local IP for SDP media advertising */
+  static string LocalIP;
+  /** Separator character for uri application prefix (ex: voicemail+jiri@iptel.org) */
+  static string PrefixSep;
+  /** Lowest local RTP port */
+  static int RtpLowPort;
+  /** Highest local RTP port */
+  static int RtpHighPort;
+  /* Session Timer: -ssa */
+  static AmSessionTimerConfig defaultSessionTimerConfig;
+  /** number of session scheduler threads */
+  static int MediaProcessorThreads;
+  /** the interface SIP requests are sent from - needed for registrar_client */
+  static string LocalSIPIP;
+  /** the port SIP requests are sent from - optional (default 5060) */
+  static int LocalSIPPort;
+  /** Server/User-Agent header (optional) */
+  static string Signature;
 
-    /** Init function. Resolves SMTP server address. */
-    static int init();
+  /** Init function. Resolves SMTP server address. */
+  static int init();
 
-    /** Read global configuration file and insert values. Maybe overwritten by
-     * command line arguments */
-    static int readConfiguration();
+  /** Read global configuration file and insert values. Maybe overwritten by
+   * command line arguments */
+  static int readConfiguration();
 
-    /* following setters are used to fill config from config file */  
+  /* following setters are used to fill config from config file */  
 	
-    /** Setter for SIP Port, returns 0 on invalid value */
-	static int setSIPPort(const string& port);  
-    /** Setter for SmtpServer Port, returns 0 on invalid value */
-    static int setSmtpPort(const string& port);
-    /** Setter for RtpLowPort, returns 0 on invalid value */
-    static int setRtpLowPort(const string& port);
-    /** Setter for RtpHighPort, returns 0 on invalid value */
-    static int setRtpHighPort(const string& port);
-    /** Setter for Loglevel, returns 0 on invalid value */
-    static int setLoglevel(const string& level);
-    /** Setter for parameter fork, returns 0 on invalid value */
-    static int setFork(const string& fork);
-    /** Setter for parameter stderr, returns 0 on invalid value */
-    static int setStderr(const string& s);
-    /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */
-    static int setMediaProcessorThreads(const string& th);
+  /** Setter for SIP Port, returns 0 on invalid value */
+  static int setSIPPort(const string& port);  
+  /** Setter for SmtpServer Port, returns 0 on invalid value */
+  static int setSmtpPort(const string& port);
+  /** Setter for RtpLowPort, returns 0 on invalid value */
+  static int setRtpLowPort(const string& port);
+  /** Setter for RtpHighPort, returns 0 on invalid value */
+  static int setRtpHighPort(const string& port);
+  /** Setter for Loglevel, returns 0 on invalid value */
+  static int setLoglevel(const string& level);
+  /** Setter for parameter fork, returns 0 on invalid value */
+  static int setFork(const string& fork);
+  /** Setter for parameter stderr, returns 0 on invalid value */
+  static int setStderr(const string& s);
+  /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */
+  static int setMediaProcessorThreads(const string& th);
 };
 
 class AmConfigReader;

@@ -49,44 +49,41 @@ using std::map;
  */
 class AmMultiPartyMixer
 {
-    typedef map<int,SampleArrayShort*> ChannelMap;
-    //typedef map<int,unsigned int>      ChannelOff;
+  typedef map<int,SampleArrayShort*> ChannelMap;
+  //typedef map<int,unsigned int>      ChannelOff;
 
-    ChannelMap       channels;
-    //ChannelOff       ch_offsets;
-    //ChannelOff       ch_last_ts;
-    unsigned int     cur_channel_id;
+  ChannelMap       channels;
+  //ChannelOff       ch_offsets;
+  //ChannelOff       ch_last_ts;
+  unsigned int     cur_channel_id;
 
-    SampleArrayInt   mixed_channel;
-    int              scaling_factor; 
-    int              tmp_buffer[AUDIO_BUFFER_SIZE/2];
+  SampleArrayInt   mixed_channel;
+  int              scaling_factor; 
+  int              tmp_buffer[AUDIO_BUFFER_SIZE/2];
 
-    SampleArrayShort* get_channel(unsigned int channel_id);
+  SampleArrayShort* get_channel(unsigned int channel_id);
 
-    void mix_add(int* dest,int* src1,short* src2,unsigned int size);
-    void mix_sub(int* dest,int* src1,short* src2,unsigned int size);
-    void scale(short* buffer,int* tmp_buf,unsigned int size);
+  void mix_add(int* dest,int* src1,short* src2,unsigned int size);
+  void mix_sub(int* dest,int* src1,short* src2,unsigned int size);
+  void scale(short* buffer,int* tmp_buf,unsigned int size);
 
 public:
-    AmMultiPartyMixer();
-    ~AmMultiPartyMixer();
+  AmMultiPartyMixer();
+  ~AmMultiPartyMixer();
     
-    unsigned int addChannel();
-    void removeChannel(unsigned int channel_id);
+  unsigned int addChannel();
+  void removeChannel(unsigned int channel_id);
 
-    void PutChannelPacket(unsigned int   channel_id,
-			  unsigned int   ts, 
-			  unsigned char* buffer, 
-			  unsigned int   size);
+  void PutChannelPacket(unsigned int   channel_id,
+			unsigned int   ts, 
+			unsigned char* buffer, 
+			unsigned int   size);
 
-    void GetChannelPacket(unsigned int   channel,
-			  unsigned int   ts,
-			  unsigned char* buffer, 
- 			  unsigned int   size);
+  void GetChannelPacket(unsigned int   channel,
+			unsigned int   ts,
+			unsigned char* buffer, 
+			unsigned int   size);
 };
 
 #endif
-// Local Variables:
-// mode:C++
-// End:
 

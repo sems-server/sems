@@ -38,13 +38,13 @@ using std::queue;
  */
 class AmMutex
 {
-    pthread_mutex_t m;
+  pthread_mutex_t m;
 
 public:
-    AmMutex();
-    ~AmMutex();
-    void lock();
-    void unlock();
+  AmMutex();
+  ~AmMutex();
+  void lock();
+  void unlock();
 };
 
 /**
@@ -52,14 +52,14 @@ public:
  */
 class AmLock
 {
-    AmMutex& m;
+  AmMutex& m;
 public:
-    AmLock(AmMutex& _m) : m(_m) {
-	m.lock();
-    }
-    ~AmLock(){
-	m.unlock();
-    }
+  AmLock(AmMutex& _m) : m(_m) {
+    m.lock();
+  }
+  ~AmLock(){
+    m.unlock();
+  }
 };
 
 /**
@@ -73,31 +73,31 @@ public:
 template<class T>
 class AmSharedVar
 {
-    T       t;
-    AmMutex m;
+  T       t;
+  AmMutex m;
 
 public:
-    AmSharedVar(const T& _t) : t(_t) {}
-    AmSharedVar() {}
+  AmSharedVar(const T& _t) : t(_t) {}
+  AmSharedVar() {}
 
-    T get() {
-	lock();
-	T res = unsafe_get();
-	unlock();
-	return res;
-    }
+  T get() {
+    lock();
+    T res = unsafe_get();
+    unlock();
+    return res;
+  }
 
-    void set(const T& new_val) {
-	lock();
-	unsafe_set(new_val);
-	unlock();
-    }
+  void set(const T& new_val) {
+    lock();
+    unsafe_set(new_val);
+    unlock();
+  }
 
-    void lock() { m.lock(); }
-    void unlock() { m.unlock(); }
+  void lock() { m.lock(); }
+  void unlock() { m.unlock(); }
 
-    const T& unsafe_get() { return t; }
-    void unsafe_set(const T& new_val) { t = new_val; }
+  const T& unsafe_get() { return t; }
+  void unsafe_set(const T& new_val) { t = new_val; }
 };
 
 /**
@@ -106,52 +106,52 @@ public:
 template<class T>
 class AmCondition
 {
-    T               t;
-    pthread_mutex_t m;
-    pthread_cond_t  cond;
+  T               t;
+  pthread_mutex_t m;
+  pthread_cond_t  cond;
 
 public:
-    AmCondition(const T& _t) 
-	: t(_t)
-    {
-	pthread_mutex_init(&m,NULL);
-	pthread_cond_init(&cond,NULL);
-    }
+  AmCondition(const T& _t) 
+    : t(_t)
+  {
+    pthread_mutex_init(&m,NULL);
+    pthread_cond_init(&cond,NULL);
+  }
     
-    ~AmCondition()
-    {
-	pthread_cond_destroy(&cond);
-	pthread_mutex_destroy(&m);
-    }
+  ~AmCondition()
+  {
+    pthread_cond_destroy(&cond);
+    pthread_mutex_destroy(&m);
+  }
     
-    /** Change the condition's value. */
-    void set(const T& newval)
-    {
-	pthread_mutex_lock(&m);
-	t = newval;
-	if(t)
-	    pthread_cond_broadcast(&cond);
-	pthread_mutex_unlock(&m);
-    }
+  /** Change the condition's value. */
+  void set(const T& newval)
+  {
+    pthread_mutex_lock(&m);
+    t = newval;
+    if(t)
+      pthread_cond_broadcast(&cond);
+    pthread_mutex_unlock(&m);
+  }
     
-    T get()
-    {
-	T val;
-	pthread_mutex_lock(&m);
-	val = t;
-	pthread_mutex_unlock(&m);
-	return val;
-    }
+  T get()
+  {
+    T val;
+    pthread_mutex_lock(&m);
+    val = t;
+    pthread_mutex_unlock(&m);
+    return val;
+  }
     
-    /** Waits for the condition to be true. */
-    void wait_for()
-    {
-	pthread_mutex_lock(&m);
-	while(!t){
-	    pthread_cond_wait(&cond,&m);
-	}
-	pthread_mutex_unlock(&m);
+  /** Waits for the condition to be true. */
+  void wait_for()
+  {
+    pthread_mutex_lock(&m);
+    while(!t){
+      pthread_cond_wait(&cond,&m);
     }
+    pthread_mutex_unlock(&m);
+  }
 };
 
 /**
@@ -159,36 +159,36 @@ public:
  */
 class AmThread
 {
-    pthread_t _td;
-    AmMutex   _m_td;
+  pthread_t _td;
+  AmMutex   _m_td;
 
-    AmSharedVar<bool> _stopped;
+  AmSharedVar<bool> _stopped;
 
-    static void* _start(void*);
+  static void* _start(void*);
 
- protected:
-    virtual void run()=0;
-    virtual void on_stop()=0;
+protected:
+  virtual void run()=0;
+  virtual void on_stop()=0;
 
- public:
-	pid_t     _pid;
-    AmThread();
-    virtual ~AmThread() {}
+public:
+  pid_t     _pid;
+  AmThread();
+  virtual ~AmThread() {}
 
-    virtual void onIdle() {}
+  virtual void onIdle() {}
 
-    /** Start it ! */
-    void start(bool realtime = false);
-    /** Stop it ! */
-    void stop();
-    /** @return true if this thread doesn't run. */
-    bool is_stopped() { return _stopped.get(); }
-    /** Wait for this thread to finish */
-    void join();
-    /** kill the thread (if pthread_setcancelstate(PTHREAD_CANCEL_ENABLED) has been set) **/ 
-    void cancel();
+  /** Start it ! */
+  void start(bool realtime = false);
+  /** Stop it ! */
+  void stop();
+  /** @return true if this thread doesn't run. */
+  bool is_stopped() { return _stopped.get(); }
+  /** Wait for this thread to finish */
+  void join();
+  /** kill the thread (if pthread_setcancelstate(PTHREAD_CANCEL_ENABLED) has been set) **/ 
+  void cancel();
 
-    int setRealtime();
+  int setRealtime();
 };
 
 /**
@@ -202,22 +202,22 @@ class AmThread
  */
 class AmThreadWatcher: public AmThread
 {
-    static AmThreadWatcher* _instance;
-    static AmMutex          _inst_mut;
+  static AmThreadWatcher* _instance;
+  static AmMutex          _inst_mut;
 
-    queue<AmThread*> thread_queue;
-    AmMutex          q_mut;
+  queue<AmThread*> thread_queue;
+  AmMutex          q_mut;
 
-    /** the daemon only runs if this is true */
-    AmCondition<bool> _run_cond;
+  /** the daemon only runs if this is true */
+  AmCondition<bool> _run_cond;
     
-    AmThreadWatcher();
-    void run();
-    void on_stop();
+  AmThreadWatcher();
+  void run();
+  void on_stop();
 
 public:
-    static AmThreadWatcher* instance();
-    void add(AmThread*);
+  static AmThreadWatcher* instance();
+  void add(AmThread*);
 };
 
 #endif

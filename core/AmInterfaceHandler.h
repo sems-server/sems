@@ -46,13 +46,13 @@ class AmSIPEventHandler;
 /** \brief interface of an InterfaceHandler */
 class AmInterfaceHandler
 {
-public:
-    virtual ~AmInterfaceHandler();
+ public:
+  virtual ~AmInterfaceHandler();
 
-    /** @return -1 on parsing error, 0 on success. 
-     *  Throws string on other error cases.
-     */
-    virtual int handleRequest(AmCtrlInterface* ctrl)=0;
+  /** @return -1 on parsing error, 0 on success. 
+   *  Throws string on other error cases.
+   */
+  virtual int handleRequest(AmCtrlInterface* ctrl)=0;
 };
 
 /**
@@ -63,9 +63,9 @@ public:
  */
 class AmRequestHandlerFct
 {
-public:
-    virtual int execute(AmCtrlInterface* ctrl, const string& cmd)=0;
-    virtual ~AmRequestHandlerFct(){}
+ public:
+  virtual int execute(AmCtrlInterface* ctrl, const string& cmd)=0;
+  virtual ~AmRequestHandlerFct(){}
 };
 
 /**
@@ -76,18 +76,18 @@ public:
 class AmRequestHandler: public AmInterfaceHandler, 
 			public AmRequestHandlerFct
 {
-    AmMutex                          fct_map_mut;
-    map<string,AmRequestHandlerFct*> fct_map;
+  AmMutex                          fct_map_mut;
+  map<string,AmRequestHandlerFct*> fct_map;
 
-public:
-    static AmRequestHandler* get();
+ public:
+  static AmRequestHandler* get();
 
-    int  handleRequest(AmCtrlInterface* ctrl);
-    int  execute(AmCtrlInterface* ctrl, const string& cmd);
-    void dispatch(AmSipRequest& req);
+  int  handleRequest(AmCtrlInterface* ctrl);
+  int  execute(AmCtrlInterface* ctrl, const string& cmd);
+  void dispatch(AmSipRequest& req);
     
-    AmRequestHandlerFct* getFct(const string& name);
-    void registerFct(const string& name, AmRequestHandlerFct* fct);
+  AmRequestHandlerFct* getFct(const string& name);
+  void registerFct(const string& name, AmRequestHandlerFct* fct);
 };
 
 /**
@@ -97,22 +97,22 @@ public:
  */
 class AmReplyHandler: public AmInterfaceHandler
 {
-    static AmReplyHandler* _instance;
-    AmCtrlInterface* m_ctrl;
+  static AmReplyHandler* _instance;
+  AmCtrlInterface* m_ctrl;
 
-    AmReplyHandler(AmCtrlInterface* ctrl);
-	vector<AmSIPEventHandler*> reply_handlers;
+  AmReplyHandler(AmCtrlInterface* ctrl);
+  vector<AmSIPEventHandler*> reply_handlers;
 
-public:
-    static AmReplyHandler* get();
+ public:
+  static AmReplyHandler* get();
 
-    AmCtrlInterface* getCtrl() { return m_ctrl; }
+  AmCtrlInterface* getCtrl() { return m_ctrl; }
     
-    int handleRequest(AmCtrlInterface* ctrl);
+  int handleRequest(AmCtrlInterface* ctrl);
 
-	/** register a reply handler for incoming replies pertaining 
-	 * to a dialog without a session (not in SessionContainer) */
-	void registerReplyHandler(AmSIPEventHandler* eh);
+  /** register a reply handler for incoming replies pertaining 
+   * to a dialog without a session (not in SessionContainer) */
+  void registerReplyHandler(AmSIPEventHandler* eh);
 };
 
 #endif

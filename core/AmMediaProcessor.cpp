@@ -34,12 +34,12 @@
 
 /** \brief Request event to the MediaProcessor (remove,...) */
 struct SchedRequest :
-    public AmEvent
+  public AmEvent
 {
-    AmSession* s;
+  AmSession* s;
 
-    SchedRequest(int id, AmSession* s)
-        : AmEvent(id), s(s) {}
+  SchedRequest(int id, AmSession* s)
+    : AmEvent(id), s(s) {}
 };
 
 /*         session scheduler              */
@@ -68,57 +68,57 @@ void AmMediaProcessor::init() {
 
 AmMediaProcessor* AmMediaProcessor::instance()
 {
-    if(!_instance)
-	_instance = new AmMediaProcessor();
+  if(!_instance)
+    _instance = new AmMediaProcessor();
 
-    return _instance;
+  return _instance;
 }
 
 void AmMediaProcessor::addSession(AmSession* s, 
-				    const string& callgroup)
+				  const string& callgroup)
 {
-    s->detached.set(false);
+  s->detached.set(false);
  
-   // evaluate correct scheduler
-    unsigned int sched_thread = 0;
-    group_mut.lock();
+  // evaluate correct scheduler
+  unsigned int sched_thread = 0;
+  group_mut.lock();
     
-    // callgroup already in a thread? 
-    map<string, unsigned int>::iterator it =
-      callgroup2thread.find(callgroup);
-    if (it != callgroup2thread.end()) {
-      // yes, use it
-      sched_thread = it->second; 
-    } else {
-      // no, find the thread with lowest load
-      unsigned int lowest_load = threads[0]->getLoad();
-      for (unsigned int i=1;i<num_threads;i++) {
-	unsigned int lower = threads[i]->getLoad();
-	if (lower < lowest_load) {
-	  lowest_load = lower; sched_thread = i;
-	}
+  // callgroup already in a thread? 
+  map<string, unsigned int>::iterator it =
+    callgroup2thread.find(callgroup);
+  if (it != callgroup2thread.end()) {
+    // yes, use it
+    sched_thread = it->second; 
+  } else {
+    // no, find the thread with lowest load
+    unsigned int lowest_load = threads[0]->getLoad();
+    for (unsigned int i=1;i<num_threads;i++) {
+      unsigned int lower = threads[i]->getLoad();
+      if (lower < lowest_load) {
+	lowest_load = lower; sched_thread = i;
       }
-      // create callgroup->thread mapping
-      callgroup2thread[callgroup] = sched_thread;
     }
+    // create callgroup->thread mapping
+    callgroup2thread[callgroup] = sched_thread;
+  }
     
-    // join the callgroup
-    callgroupmembers.insert(make_pair(callgroup, s));
-    session2callgroup[s]=callgroup;
+  // join the callgroup
+  callgroupmembers.insert(make_pair(callgroup, s));
+  session2callgroup[s]=callgroup;
     
-    group_mut.unlock();
+  group_mut.unlock();
     
-    // add the session to selected thread
-    threads[sched_thread]->
-      postRequest(new SchedRequest(InsertSession,s));
+  // add the session to selected thread
+  threads[sched_thread]->
+    postRequest(new SchedRequest(InsertSession,s));
 }
 
 void AmMediaProcessor::clearSession(AmSession* s) {
-    removeFromProcessor(s, ClearSession);
+  removeFromProcessor(s, ClearSession);
 }
 
 void AmMediaProcessor::removeSession(AmSession* s) {
-    removeFromProcessor(s, RemoveSession);
+  removeFromProcessor(s, RemoveSession);
 }
 
 void AmMediaProcessor::removeFromProcessor(AmSession* s, 
@@ -155,7 +155,7 @@ void AmMediaProcessor::removeFromProcessor(AmSession* s,
 /* the actual session scheduler thread */
 
 AmMediaProcessorThread::AmMediaProcessorThread()
-    : events(this)
+  : events(this)
 {
 }
 AmMediaProcessorThread::~AmMediaProcessorThread()
@@ -168,38 +168,38 @@ void AmMediaProcessorThread::on_stop()
 
 void AmMediaProcessorThread::run()
 {
-    struct timeval now,next_tick,diff,tick;
-    unsigned int ts = 0;
+  struct timeval now,next_tick,diff,tick;
+  unsigned int ts = 0;
 
-    tick.tv_sec  = 0;
-    tick.tv_usec = 10000; // 10 ms
+  tick.tv_sec  = 0;
+  tick.tv_usec = 10000; // 10 ms
+
+  gettimeofday(&now,NULL);
+  timeradd(&tick,&now,&next_tick);
+    
+  while(true){
 
     gettimeofday(&now,NULL);
-    timeradd(&tick,&now,&next_tick);
-    
-    while(true){
 
-	gettimeofday(&now,NULL);
+    if(timercmp(&now,&next_tick,<)){
 
-	if(timercmp(&now,&next_tick,<)){
+      struct timespec sdiff,rem;
+      timersub(&next_tick,&now,&diff);
 
-	    struct timespec sdiff,rem;
-	    timersub(&next_tick,&now,&diff);
+      sdiff.tv_sec  = diff.tv_sec;
+      sdiff.tv_nsec = diff.tv_usec * 1000;
 
-	    sdiff.tv_sec  = diff.tv_sec;
-	    sdiff.tv_nsec = diff.tv_usec * 1000;
-
-	    if(sdiff.tv_nsec > 2000) // 2 ms
-		nanosleep(&sdiff,&rem);
-	}
-
-	processAudio(ts);
-	events.processEvents();
-        processDtmfEvents();
-
-	ts += 80; // 10 ms
-	timeradd(&tick,&next_tick,&next_tick);
+      if(sdiff.tv_nsec > 2000) // 2 ms
+	nanosleep(&sdiff,&rem);
     }
+
+    processAudio(ts);
+    events.processEvents();
+    processDtmfEvents();
+
+    ts += 80; // 10 ms
+    timeradd(&tick,&next_tick,&next_tick);
+  }
 }
 
 /**
@@ -207,132 +207,132 @@ void AmMediaProcessorThread::run()
  */
 void AmMediaProcessorThread::processDtmfEvents()
 {
-    for(set<AmSession*>::iterator it = sessions.begin();
-        it != sessions.end(); it++)
+  for(set<AmSession*>::iterator it = sessions.begin();
+      it != sessions.end(); it++)
     {
-        AmSession* s = (*it);
-        s->processDtmfEvents();
+      AmSession* s = (*it);
+      s->processDtmfEvents();
     }
 }
 
 void AmMediaProcessorThread::processAudio(unsigned int ts)
 {
-	// receiving
-    for(set<AmSession*>::iterator it = sessions.begin();
-	it != sessions.end(); it++){
+  // receiving
+  for(set<AmSession*>::iterator it = sessions.begin();
+      it != sessions.end(); it++){
 
-		AmSession* s = (*it);
-		if (s->rtp_str.checkInterval(ts) &&
-			(s->rtp_str.receiving || s->rtp_str.getPassiveMode())) {
-			s->lockAudio();
-			AmAudio* input = s->getInput();
-			int ret = s->rtp_str.receive(ts);
-			if(ret < 0){
-				switch(ret){
+    AmSession* s = (*it);
+    if (s->rtp_str.checkInterval(ts) &&
+	(s->rtp_str.receiving || s->rtp_str.getPassiveMode())) {
+      s->lockAudio();
+      AmAudio* input = s->getInput();
+      int ret = s->rtp_str.receive(ts);
+      if(ret < 0){
+	switch(ret){
 					
-				case RTP_DTMF:
-				case RTP_UNKNOWN_PL:
-				case RTP_PARSE_ERROR:
-					break;
+	case RTP_DTMF:
+	case RTP_UNKNOWN_PL:
+	case RTP_PARSE_ERROR:
+	  break;
 					
-				case RTP_TIMEOUT:
-					postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
-					s->postEvent(new AmRtpTimeoutEvent());
-					break;
+	case RTP_TIMEOUT:
+	  postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
+	  s->postEvent(new AmRtpTimeoutEvent());
+	  break;
 					
-				case RTP_BUFFER_SIZE:
-				default:
-					ERROR("AmRtpAudio::receive() returned %i\n",ret);
-					postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-					break;
-				}
-			}
-			else {
-				unsigned int f_size = s->rtp_str.getFrameSize();
-				int size = s->rtp_str.get(ts,buffer,f_size);
-
-				if (input) {
-					int ret = input->put(ts,buffer,size);
-					if(ret < 0){
-						DBG("input->put() returned: %i\n",ret);
-						postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-					}
-				}
-				if (s->isDtmfDetectionEnabled())
-					s->putDtmfAudio(buffer, size, ts);
-			}
-			s->unlockAudio();
-		}
-    }
-
-	// sending
-    for(set<AmSession*>::iterator it = sessions.begin();
-		it != sessions.end(); it++){
-
-	AmSession* s = (*it);
-	s->lockAudio();
-	AmAudio* output = s->getOutput();
-	    
-	if(output && s->rtp_str.sendIntReached()){
-		
-	    int size = output->get(ts,buffer,s->rtp_str.getFrameSize());
-	    if(size <= 0){
-		DBG("output->get() returned: %i\n",size);
-		postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s)); 
-	    }
-	    else if(!s->rtp_str.mute){
-		
-		if(s->rtp_str.put(ts,buffer,size)<0)
-		  postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-	    }
+	case RTP_BUFFER_SIZE:
+	default:
+	  ERROR("AmRtpAudio::receive() returned %i\n",ret);
+	  postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
+	  break;
 	}
-	s->unlockAudio();
-    }	
+      }
+      else {
+	unsigned int f_size = s->rtp_str.getFrameSize();
+	int size = s->rtp_str.get(ts,buffer,f_size);
+
+	if (input) {
+	  int ret = input->put(ts,buffer,size);
+	  if(ret < 0){
+	    DBG("input->put() returned: %i\n",ret);
+	    postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
+	  }
+	}
+	if (s->isDtmfDetectionEnabled())
+	  s->putDtmfAudio(buffer, size, ts);
+      }
+      s->unlockAudio();
+    }
+  }
+
+  // sending
+  for(set<AmSession*>::iterator it = sessions.begin();
+      it != sessions.end(); it++){
+
+    AmSession* s = (*it);
+    s->lockAudio();
+    AmAudio* output = s->getOutput();
+	    
+    if(output && s->rtp_str.sendIntReached()){
+		
+      int size = output->get(ts,buffer,s->rtp_str.getFrameSize());
+      if(size <= 0){
+	DBG("output->get() returned: %i\n",size);
+	postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s)); 
+      }
+      else if(!s->rtp_str.mute){
+		
+	if(s->rtp_str.put(ts,buffer,size)<0)
+	  postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
+      }
+    }
+    s->unlockAudio();
+  }	
 }
 
 void AmMediaProcessorThread::process(AmEvent* e)
 {
-    SchedRequest* sr = dynamic_cast<SchedRequest*>(e);
-    if(!sr){
-	ERROR("AmMediaProcessorThread::process: wrong event type\n");
-	return;
+  SchedRequest* sr = dynamic_cast<SchedRequest*>(e);
+  if(!sr){
+    ERROR("AmMediaProcessorThread::process: wrong event type\n");
+    return;
+  }
+
+  switch(sr->event_id){
+
+  case AmMediaProcessor::InsertSession:
+    DBG("Session inserted to the scheduler\n");
+    sessions.insert(sr->s);
+    break;
+
+  case AmMediaProcessor::RemoveSession:{
+    AmSession* s = sr->s;
+    set<AmSession*>::iterator s_it = sessions.find(s);
+    if(s_it != sessions.end()){
+      sessions.erase(s_it);
+      s->detached.set(true);
+      DBG("Session removed from the scheduler\n");
     }
+  }
+    break;
 
-    switch(sr->event_id){
-
-	case AmMediaProcessor::InsertSession:
-	    DBG("Session inserted to the scheduler\n");
-	    sessions.insert(sr->s);
-	    break;
-
-	case AmMediaProcessor::RemoveSession:{
-	    AmSession* s = sr->s;
-	    set<AmSession*>::iterator s_it = sessions.find(s);
-	    if(s_it != sessions.end()){
-		sessions.erase(s_it);
-		s->detached.set(true);
-		DBG("Session removed from the scheduler\n");
-	    }
-	}
-	    break;
-
-	case AmMediaProcessor::ClearSession:{
-	    AmSession* s = sr->s;
-	    set<AmSession*>::iterator s_it = sessions.find(s);
-	    if(s_it != sessions.end()){
-		sessions.erase(s_it);
-		s->clearAudio();
-		s->detached.set(true);
-		DBG("Session removed from the scheduler\n");
-	    }
-	}
-	    break;
-
-
-	default:
-	    ERROR("AmMediaProcessorThread::process: unknown event id.");
-	    break;
+  case AmMediaProcessor::ClearSession:{
+    AmSession* s = sr->s;
+    set<AmSession*>::iterator s_it = sessions.find(s);
+    if(s_it != sessions.end()){
+      sessions.erase(s_it);
+      s->clearAudio();
+      s->detached.set(true);
+      DBG("Session removed from the scheduler\n");
     }
+  }
+    break;
+
+
+  default:
+    ERROR("AmMediaProcessorThread::process: unknown event id.");
+    break;
+  }
 }
 
 unsigned int AmMediaProcessorThread::getLoad() {

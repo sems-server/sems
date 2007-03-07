@@ -38,26 +38,26 @@
  */
 class AmFileCache 
 {
-	void* data;
-	size_t data_size;
-	std::string name;
+  void* data;
+  size_t data_size;
+  std::string name;
 
  public:
-	AmFileCache();
-	~AmFileCache();
+  AmFileCache();
+  ~AmFileCache();
 
-	/** load filename into memory 
-	 * @return 0 if everything's OK 
-	 */
-	int load(const std::string& filename);
-	/** get the size of the file */
-	size_t getSize();
-	/** read size bytes from pos into buf */
-    int read(void* buf, size_t* pos, size_t size);
-	/** get the filename */
-	const string& getFilename();
-	/** get a pointer to the file's data - use with caution! */
-	void* getData() { return data; }
+  /** load filename into memory 
+   * @return 0 if everything's OK 
+   */
+  int load(const std::string& filename);
+  /** get the size of the file */
+  size_t getSize();
+  /** read size bytes from pos into buf */
+  int read(void* buf, size_t* pos, size_t size);
+  /** get the filename */
+  const string& getFilename();
+  /** get a pointer to the file's data - use with caution! */
+  void* getData() { return data; }
 };
 
 /**
@@ -69,41 +69,41 @@ class AmFileCache
 class AmCachedAudioFile 
 : public AmAudio
 {
-	AmFileCache* cache;
-	/** current position */
-	size_t fpos;
-	/** beginning of data in file */
-	size_t begin; 
-	bool good;
+  AmFileCache* cache;
+  /** current position */
+  size_t fpos;
+  /** beginning of data in file */
+  size_t begin; 
+  bool good;
 
-    /** @see AmAudio::read */
-    int read(unsigned int user_ts, unsigned int size);
+  /** @see AmAudio::read */
+  int read(unsigned int user_ts, unsigned int size);
 
-    /** @see AmAudio::write */
-    int write(unsigned int user_ts, unsigned int size);
+  /** @see AmAudio::write */
+  int write(unsigned int user_ts, unsigned int size);
 
-    /** get the file format from the file name */
-	AmAudioFileFormat* fileName2Fmt(const string& name);
+  /** get the file format from the file name */
+  AmAudioFileFormat* fileName2Fmt(const string& name);
 
-    /** Format of that file. @see fp, open(). */
-    amci_inoutfmt_t* iofmt;
+  /** Format of that file. @see fp, open(). */
+  amci_inoutfmt_t* iofmt;
 
  public:
-	AmCachedAudioFile(AmFileCache* cache);
-	~AmCachedAudioFile();
+  AmCachedAudioFile(AmFileCache* cache);
+  ~AmCachedAudioFile();
 
-    /** loop the file? */
-    AmSharedVar<bool> loop;
+  /** loop the file? */
+  AmSharedVar<bool> loop;
 
-    /**
-     * Rewind the file.
-     */
-    void rewind();
+  /**
+   * Rewind the file.
+   */
+  void rewind();
 
-    /** Closes the file. */
-    void close();
+  /** Closes the file. */
+  void close();
 
-    /** everything ok? */	
-	bool is_good() { return good; }
+  /** everything ok? */	
+  bool is_good() { return good; }
 };
 #endif //_AMFILECACHE_H

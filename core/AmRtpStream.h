@@ -70,199 +70,199 @@ typedef map<unsigned int, AmRtpPacket, ts_less> JitterBuffer;
 class AmRtpStream 
 {
 protected:
-    static int next_port;
-    static AmMutex port_mut;
+  static int next_port;
+  static AmMutex port_mut;
 
-    static int getNextPort();
+  static int getNextPort();
 
-    AmSharedVar<bool> runcond;
-    AmMutex           runmutex;
+  AmSharedVar<bool> runcond;
+  AmMutex           runmutex;
 
-    /** 
-	Internal payload (only different from 
-	payload if using dynamic payloads).
-    */
-    int         int_payload;
+  /** 
+      Internal payload (only different from 
+      payload if using dynamic payloads).
+  */
+  int         int_payload;
 
-    /**
-       Remote payload (only different from 
-       int_payload if using dynamic payloads)
-     */
-    int         payload;
-    unsigned int   sequence;
+  /**
+     Remote payload (only different from 
+     int_payload if using dynamic payloads)
+  */
+  int         payload;
+  unsigned int   sequence;
 
-    /**
-       Payload of last received packet.
-       Usefull to detect talk spurt, looking 
-       for comfort noise packets.
-     */
-    int         last_payload;
+  /**
+     Payload of last received packet.
+     Usefull to detect talk spurt, looking 
+     for comfort noise packets.
+  */
+  int         last_payload;
 
-    string      format_parameters;
+  string      format_parameters;
 
-    string             r_host;
-    unsigned short     r_port;
+  string             r_host;
+  unsigned short     r_port;
 #ifdef SUPPORT_IPV6
-    struct sockaddr_storage r_saddr;
-    struct sockaddr_storage l_saddr;
+  struct sockaddr_storage r_saddr;
+  struct sockaddr_storage l_saddr;
 #else
-    struct sockaddr_in r_saddr;
-    struct sockaddr_in l_saddr;
+  struct sockaddr_in r_saddr;
+  struct sockaddr_in l_saddr;
 #endif
-    unsigned short     l_port;
-    int                l_sd;
+  unsigned short     l_port;
+  int                l_sd;
 
-    struct timeval last_recv_time;
+  struct timeval last_recv_time;
 
-    unsigned int   l_ssrc;
-    unsigned int   r_ssrc;
-    bool           r_ssrc_i;
+  unsigned int   l_ssrc;
+  unsigned int   r_ssrc;
+  bool           r_ssrc_i;
 
-    /** symmetric RTP */
-    bool              passive;      // passive mode ?
+  /** symmetric RTP */
+  bool              passive;      // passive mode ?
 
-    /** Payload type for telephone event */
-    auto_ptr<const SdpPayload> telephone_event_pt;
+  /** Payload type for telephone event */
+  auto_ptr<const SdpPayload> telephone_event_pt;
 
 
-    JitterBuffer    jitter_buf;
-    AmMutex         jitter_mut;
+  JitterBuffer    jitter_buf;
+  AmMutex         jitter_mut;
 
-    /* get next packet in buffer */
-    int nextPacket(AmRtpPacket& p);
+  /* get next packet in buffer */
+  int nextPacket(AmRtpPacket& p);
 
-    AmSession*         session;
+  AmSession*         session;
 
-    /** Initializes a new random local port, and sets own attributes properly. */
-    void setLocalPort();
+  /** Initializes a new random local port, and sets own attributes properly. */
+  void setLocalPort();
 
 
 public:
 
-    /** Mute */
-    bool mute;
-    bool begin_talk;
+  /** Mute */
+  bool mute;
+  bool begin_talk;
 
-    /** should we receive packets? if not -> drop */
-    bool receiving;
+  /** should we receive packets? if not -> drop */
+  bool receiving;
 
-    int send( unsigned int ts,
-	      unsigned char* buffer,
-	      unsigned int   size );
+  int send( unsigned int ts,
+	    unsigned char* buffer,
+	    unsigned int   size );
 
 
-    int receive( unsigned char* buffer, unsigned int size,
-		 unsigned int& ts);
+  int receive( unsigned char* buffer, unsigned int size,
+	       unsigned int& ts);
     
-    /** Allocates resources for future use of RTP. */
-    AmRtpStream(AmSession* _s=0);
-    /** Stops the stream and frees all resources. */
-    virtual ~AmRtpStream();
+  /** Allocates resources for future use of RTP. */
+  AmRtpStream(AmSession* _s=0);
+  /** Stops the stream and frees all resources. */
+  virtual ~AmRtpStream();
 
-    /**
-     * This function must be called before setLocalPort, because
-     * setLocalPort will bind the socket and it will be not
-     * possible to change the IP later
-     */
-    void setLocalIP(const string& ip);
+  /**
+   * This function must be called before setLocalPort, because
+   * setLocalPort will bind the socket and it will be not
+   * possible to change the IP later
+   */
+  void setLocalIP(const string& ip);
 	    
-    /** 
-     * Gets RTP port number. If no RTP port in assigned, assigns a new one.
-     * @return local RTP port. 
-     */
-    int getLocalPort();
+  /** 
+   * Gets RTP port number. If no RTP port in assigned, assigns a new one.
+   * @return local RTP port. 
+   */
+  int getLocalPort();
 
-    /** 
-     * Gets remote RTP port.
-     * @return remote RTP port.
-     */
-    int getRPort();
+  /** 
+   * Gets remote RTP port.
+   * @return remote RTP port.
+   */
+  int getRPort();
     
-    /**
-     * Gets remote host IP.
-     * @return remote host IP.
-     */
-    string getRHost();
+  /**
+   * Gets remote host IP.
+   * @return remote host IP.
+   */
+  string getRHost();
 
-    /**
-     * Set remote IP & port.
-     */
-    void setRAddr(const string& addr, unsigned short port);
+  /**
+   * Set remote IP & port.
+   */
+  void setRAddr(const string& addr, unsigned short port);
 
-    /** Symmetric RTP: passive mode ? */
-    void setPassiveMode(bool p) { passive = p; }
-    bool getPassiveMode() { return passive; }
+  /** Symmetric RTP: passive mode ? */
+  void setPassiveMode(bool p) { passive = p; }
+  bool getPassiveMode() { return passive; }
 
-    /** 
-     * Set remote telephone event 
-     * payload type 
-     */
-    void setTelephoneEventPT(const SdpPayload *pt) {
-        telephone_event_pt.reset(pt);
-    }
+  /** 
+   * Set remote telephone event 
+   * payload type 
+   */
+  void setTelephoneEventPT(const SdpPayload *pt) {
+    telephone_event_pt.reset(pt);
+  }
 
-    int getTelephoneEventRate();
+  int getTelephoneEventRate();
 
-    /**
-     * Enables RTP stream.
-     * @param sdp_payload payload from the SDP message.
-     * @warning start() must have been called so that play and record work.
-     * @warning It should be called only if the stream has been completly initialized,
-     * @warning and only once per session. Use resume() then.
-     */
-    virtual void init(const SdpPayload* sdp_payload);
+  /**
+   * Enables RTP stream.
+   * @param sdp_payload payload from the SDP message.
+   * @warning start() must have been called so that play and record work.
+   * @warning It should be called only if the stream has been completly initialized,
+   * @warning and only once per session. Use resume() then.
+   */
+  virtual void init(const SdpPayload* sdp_payload);
 
-    /**
-     * Stops RTP stream.
-     */
-    void pause();
+  /**
+   * Stops RTP stream.
+   */
+  void pause();
 
-    /**
-     * Resume a paused RTP stream.
-     */
-    void resume();
+  /**
+   * Resume a paused RTP stream.
+   */
+  void resume();
 
-    /**
-     * Report an ICMP error.
-     */
-    void icmpError();
+  /**
+   * Report an ICMP error.
+   */
+  void icmpError();
 
-    /**
-     * Insert an RTP packet to the buffer.
-     * Note: memory is owned by this instance.
-     */
-    void bufferPacket(const AmRtpPacket* p);
+  /**
+   * Insert an RTP packet to the buffer.
+   * Note: memory is owned by this instance.
+   */
+  void bufferPacket(const AmRtpPacket* p);
 
-    virtual unsigned int bytes2samples(unsigned int) const = 0;
+  virtual unsigned int bytes2samples(unsigned int) const = 0;
 };
 /** \brief represents info about an \ref AmRtpStream */
 struct AmRtpStreamInfo
 {
-    enum StreamType { 
-	ST_Receive=1, 
-	ST_Send=2,
-	ST_Duplex=3
-    };
+  enum StreamType { 
+    ST_Receive=1, 
+    ST_Send=2,
+    ST_Duplex=3
+  };
 
-    StreamType   type;
-    AmAudio*     audio_play;
-    AmAudio*     audio_rec;
-    bool         ts_offset_i;
-    unsigned int ts_offset;
+  StreamType   type;
+  AmAudio*     audio_play;
+  AmAudio*     audio_rec;
+  bool         ts_offset_i;
+  unsigned int ts_offset;
 
-    AmRtpStreamInfo(StreamType type, 
-		    AmAudio* audio_play = NULL, 
-		    AmAudio* audio_rec = NULL);
+  AmRtpStreamInfo(StreamType type, 
+		  AmAudio* audio_play = NULL, 
+		  AmAudio* audio_rec = NULL);
 };
 
 class AmRtpTimeoutEvent
-	: public AmEvent
+  : public AmEvent
 {
 	
 public:
-	AmRtpTimeoutEvent() 
-		: AmEvent(0) { }
-	~AmRtpTimeoutEvent() { }
+  AmRtpTimeoutEvent() 
+    : AmEvent(0) { }
+  ~AmRtpTimeoutEvent() { }
 };
 
 #endif

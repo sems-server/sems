@@ -9,28 +9,28 @@
 class UserTimerFactory: public AmDynInvokeFactory
 {
 public:
-    UserTimerFactory(const string& name)
-	: AmDynInvokeFactory(name) {}
+  UserTimerFactory(const string& name)
+    : AmDynInvokeFactory(name) {}
 
-    AmDynInvoke* getInstance(){
-	return UserTimer::instance();
-    }
+  AmDynInvoke* getInstance(){
+    return UserTimer::instance();
+  }
 
-    int onLoad(){
+  int onLoad(){
 #ifdef SESSION_TIMER_THREAD
-	UserTimer::instance()->start();
+    UserTimer::instance()->start();
 #endif
-	return 0;
-    }
+    return 0;
+  }
 };
 
 
 EXPORT_PLUGIN_CLASS_FACTORY(UserTimerFactory,"user_timer");
 
 AmTimeoutEvent::AmTimeoutEvent(int timer_id)
-    : AmPluginEvent(TIMEOUTEVENT_NAME)
+  : AmPluginEvent(TIMEOUTEVENT_NAME)
 {
-    data.push(AmArg(timer_id));
+  data.push(AmArg(timer_id));
 }
 
 
@@ -46,17 +46,17 @@ UserTimer* UserTimer::_instance=0;
 
 UserTimer* UserTimer::instance()
 {
-    if(!_instance)
-	_instance = new UserTimer();
-    return _instance;
+  if(!_instance)
+    _instance = new UserTimer();
+  return _instance;
 }
 
 #ifdef SESSION_TIMER_THREAD
 void UserTimer::run() {
-    while(1){
-	usleep(SESSION_TIMER_GRANULARITY * 1000);
-        checkTimers();
-    }
+  while(1){
+    usleep(SESSION_TIMER_GRANULARITY * 1000);
+    checkTimers();
+  }
 }
 
 void UserTimer::on_stop() {
@@ -97,7 +97,7 @@ void UserTimer::checkTimers() {
       DBG("Timeout Event could not be posted, session does not exist any more.\n");
     }
     else {
-	DBG("Timeout Event could be posted.\n");
+      DBG("Timeout Event could be posted.\n");
     }
     
     if(timers.empty()) break;
@@ -107,15 +107,15 @@ void UserTimer::checkTimers() {
 }
 
 void UserTimer::setTimer(int id, int seconds, const string& session_id) {
-    struct timeval tval;
-    gettimeofday(&tval,NULL);
+  struct timeval tval;
+  gettimeofday(&tval,NULL);
 
-    tval.tv_sec += seconds;
-    setTimer(id, &tval, session_id);
+  tval.tv_sec += seconds;
+  setTimer(id, &tval, session_id);
 }
 
 void UserTimer::setTimer(int id, struct timeval* t, 
-			      const string& session_id) 
+			 const string& session_id) 
 {
   timers_mut.lock();
   
@@ -176,18 +176,18 @@ void UserTimer::removeUserTimers(const string& session_id) {
 
 void UserTimer::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
 {
-    if(method == "setTimer"){
-	setTimer(args.get(0).asInt(),
-		 args.get(1).asInt(),
-		 args.get(2).asCStr());
-    }
-    else if(method == "removeTimer"){
-	removeTimer(args.get(0).asInt(),
-		    args.get(1).asCStr());
-    }
-    else if(method == "removeUserTimers"){
-	removeUserTimers(args.get(0).asCStr());
-    }
-    else
-	throw AmDynInvoke::NotImplemented(method);
+  if(method == "setTimer"){
+    setTimer(args.get(0).asInt(),
+	     args.get(1).asInt(),
+	     args.get(2).asCStr());
+  }
+  else if(method == "removeTimer"){
+    removeTimer(args.get(0).asInt(),
+		args.get(1).asCStr());
+  }
+  else if(method == "removeUserTimers"){
+    removeUserTimers(args.get(0).asCStr());
+  }
+  else
+    throw AmDynInvoke::NotImplemented(method);
 }

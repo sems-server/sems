@@ -33,57 +33,57 @@ EXPORT_SESSION_EVENT_HANDLER_FACTORY(SessionTimerFactory, MOD_NAME);
 
 int SessionTimerFactory::onLoad()
 {
-    return 0;
+  return 0;
 }
 
 bool SessionTimerFactory::onInvite(const AmSipRequest& req)
 {
-    if(!checkSessionExpires(req))
-	return true;
-    return false;
+  if(!checkSessionExpires(req))
+    return true;
+  return false;
 }
 
 
 AmSessionEventHandler* SessionTimerFactory::getHandler(AmSession* s)
 {
-    return new SessionTimer(s);
+  return new SessionTimer(s);
 }
 
 
 SessionTimer::SessionTimer(AmSession* s)
-    :AmSessionEventHandler(),
-	 s(s),
-     session_interval(0), 
-     session_refresher(refresh_remote)
+  :AmSessionEventHandler(),
+   s(s),
+   session_interval(0), 
+   session_refresher(refresh_remote)
 {}
 
 bool SessionTimer::process(AmEvent* ev)
 {
-    AmTimeoutEvent* timeout_ev = dynamic_cast<AmTimeoutEvent*>(ev);
-    if (timeout_ev) {
-	DBG("received timeout Event with ID %d\n", timeout_ev->data.get(0).asInt());
-	onTimeoutEvent(timeout_ev);
-	return true;
-    }
+  AmTimeoutEvent* timeout_ev = dynamic_cast<AmTimeoutEvent*>(ev);
+  if (timeout_ev) {
+    DBG("received timeout Event with ID %d\n", timeout_ev->data.get(0).asInt());
+    onTimeoutEvent(timeout_ev);
+    return true;
+  }
 
-    return false;
+  return false;
 }
 
 bool SessionTimer::onSipEvent(AmSipEvent* ev)
 {
-    return false;
+  return false;
 }
 
 bool SessionTimer::onSipRequest(const AmSipRequest& req)
 {
-    updateTimer(s,req);
-    return false;
+  updateTimer(s,req);
+  return false;
 }
 
 bool SessionTimer::onSipReply(const AmSipReply& reply)
 {
-    updateTimer(s,reply);
-    return false;
+  updateTimer(s,reply);
+  return false;
 }
 
 bool SessionTimer::onSendRequest(const string& method, 
@@ -94,10 +94,10 @@ bool SessionTimer::onSendRequest(const string& method,
 {
   string m_hdrs = "Supported: timer\n";
   if  ((method != "INVITE") && (method != "UPDATE"))
-      goto end;
+    goto end;
   
   m_hdrs += "Session-Expires: "+ int2str(session_timer_conf.getSessionExpires()) +"\n"
-      + "Min-SE: " + int2str(session_timer_conf.getMinimumTimer()) + "\n";
+    + "Min-SE: " + int2str(session_timer_conf.getMinimumTimer()) + "\n";
 
  end:
   hdrs += m_hdrs;
@@ -110,24 +110,24 @@ bool SessionTimer::onSendReply(const AmSipRequest& req,
 			       const string& content_type,const string& body,
 			       string& hdrs)
 {
-    //if (!session_timer_conf.getEnableSessionTimer())
-    // 	return "";
+  //if (!session_timer_conf.getEnableSessionTimer())
+  // 	return "";
 
-    string m_hdrs = "Supported: timer\n";
-    if  ((req.method != "INVITE") && (req.method != "UPDATE")) 
-	return false;
-    
-    // only in 2xx responses to INV/UPD
-    m_hdrs  += "Session-Expires: " + int2str(session_interval) + ";refresher="+
-	(session_refresher_role==UAC ? "uac":"uas")+"\n";
-    
-    if (((session_refresher_role==UAC) && (session_refresher==refresh_remote)) 
-	|| ((session_refresher_role==UAS) && remote_timer_aware))
-	m_hdrs += "Required: timer\n";
-    
-    hdrs += m_hdrs;
-
+  string m_hdrs = "Supported: timer\n";
+  if  ((req.method != "INVITE") && (req.method != "UPDATE")) 
     return false;
+    
+  // only in 2xx responses to INV/UPD
+  m_hdrs  += "Session-Expires: " + int2str(session_interval) + ";refresher="+
+    (session_refresher_role==UAC ? "uac":"uas")+"\n";
+    
+  if (((session_refresher_role==UAC) && (session_refresher==refresh_remote)) 
+      || ((session_refresher_role==UAS) && remote_timer_aware))
+    m_hdrs += "Required: timer\n";
+    
+  hdrs += m_hdrs;
+
+  return false;
 }
 
 
@@ -149,22 +149,22 @@ void SessionTimer::configureSessionTimer(const AmSessionTimerConfig& conf)
  */
 bool SessionTimerFactory::checkSessionExpires(const AmSipRequest& req) 
 {
-    //if (session_timer_conf.getEnableSessionTimer()) {
-    string session_expires = getHeader(req.hdrs, "Session-Expires", "x");
+  //if (session_timer_conf.getEnableSessionTimer()) {
+  string session_expires = getHeader(req.hdrs, "Session-Expires", "x");
 
-    if (session_expires.length()) {
-      unsigned int i_se;
-      if (!str2i(strip_header_params(session_expires), i_se)) {
-	  //if (i_se < session_timer_conf.getMinimumTimer()) {
-	  //TODO: reply_error...
-	  //throw SessionTimerException(session_timer_conf.getMinimumTimer());
-	  //}
-      } else
-	throw AmSession::Exception(500,"internal error"); // malformed request?
-    }
-    //}
+  if (session_expires.length()) {
+    unsigned int i_se;
+    if (!str2i(strip_header_params(session_expires), i_se)) {
+      //if (i_se < session_timer_conf.getMinimumTimer()) {
+      //TODO: reply_error...
+      //throw SessionTimerException(session_timer_conf.getMinimumTimer());
+      //}
+    } else
+      throw AmSession::Exception(500,"internal error"); // malformed request?
+  }
+  //}
 
-    return true;
+  return true;
 }
 
 void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
@@ -282,20 +282,20 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipReply& reply)
 
 void SessionTimer::setTimers(AmSession* s) 
 {
-    // set session timer
-    DBG("Setting session interval timer: %ds, tag '%s'\n", session_interval, 
-	s->getLocalTag().c_str());
+  // set session timer
+  DBG("Setting session interval timer: %ds, tag '%s'\n", session_interval, 
+      s->getLocalTag().c_str());
 
-    UserTimer::instance()->
-      setTimer(ID_SESSION_INTERVAL_TIMER, session_interval, s->getLocalTag());
+  UserTimer::instance()->
+    setTimer(ID_SESSION_INTERVAL_TIMER, session_interval, s->getLocalTag());
     
-    // set session refresh action timer, after half the expiration
-    if (session_refresher == refresh_local) {
-	DBG("Setting session refresh timer: %ds, tag '%s'\n", session_interval/2, 
-	    s->getLocalTag().c_str());
-	UserTimer::instance()->
-	    setTimer(ID_SESSION_REFRESH_TIMER, session_interval/2, s->getLocalTag());
-    }
+  // set session refresh action timer, after half the expiration
+  if (session_refresher == refresh_local) {
+    DBG("Setting session refresh timer: %ds, tag '%s'\n", session_interval/2, 
+	s->getLocalTag().c_str());
+    UserTimer::instance()->
+      setTimer(ID_SESSION_REFRESH_TIMER, session_interval/2, s->getLocalTag());
+  }
 }
 
 void SessionTimer::removeTimers(AmSession* s) 
@@ -308,24 +308,24 @@ void SessionTimer::removeTimers(AmSession* s)
 
 void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev) 
 {
-    int timer_id = timeout_ev->data.get(0).asInt();
+  int timer_id = timeout_ev->data.get(0).asInt();
 
-    if (timer_id == ID_SESSION_REFRESH_TIMER) {
-	if (session_refresher == refresh_local)
-	    s->sendReinvite();
-	else
-	    WARN("need session refresh but remote session is refresher\n");
-    } else if (timer_id == ID_SESSION_INTERVAL_TIMER) {
-//     // let the session know it got timeout
-//     onTimeout();
+  if (timer_id == ID_SESSION_REFRESH_TIMER) {
+    if (session_refresher == refresh_local)
+      s->sendReinvite();
+    else
+      WARN("need session refresh but remote session is refresher\n");
+  } else if (timer_id == ID_SESSION_INTERVAL_TIMER) {
+    //     // let the session know it got timeout
+    //     onTimeout();
 	
-	s->dlg.bye();
-	s->setStopped();
+    s->dlg.bye();
+    s->setStopped();
 
-    } else {
-	DBG("unknown timeout event received.\n");
-    }
+  } else {
+    DBG("unknown timeout event received.\n");
+  }
 
-    return;
+  return;
 }
 

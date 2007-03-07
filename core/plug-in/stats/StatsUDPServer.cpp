@@ -98,134 +98,134 @@ StatsUDPServer* StatsUDPServer::_instance=0;
 
 StatsUDPServer* StatsUDPServer::instance()
 {
-    if(!_instance) {
-	_instance = new StatsUDPServer();
-	if(_instance->init() != 0){
-	    delete _instance;
-	    _instance = 0;
-	}
-	else {
-	    _instance->start();
-	}
+  if(!_instance) {
+    _instance = new StatsUDPServer();
+    if(_instance->init() != 0){
+      delete _instance;
+      _instance = 0;
     }
-    return _instance;
+    else {
+      _instance->start();
+    }
+  }
+  return _instance;
 }
 
 StatsUDPServer::StatsUDPServer()
-    : sd(0)
+  : sd(0)
 {
-    sc = AmSessionContainer::instance();
+  sc = AmSessionContainer::instance();
 }
 
 StatsUDPServer::~StatsUDPServer()
 {
-    if(sd)
-	close(sd);
+  if(sd)
+    close(sd);
 }
 
 int StatsUDPServer::init()
 {
-    string udp_addr;
-    int    udp_port = 0;
-    int    optval;
+  string udp_addr;
+  int    udp_port = 0;
+  int    optval;
 
-    AmConfigReader cfg;
-    if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1, MOD_NAME ".conf")))
-	return -1;
+  AmConfigReader cfg;
+  if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1, MOD_NAME ".conf")))
+    return -1;
 
-    udp_port = (int)cfg.getParameterInt("monit_udp_port",(unsigned int)-1);
-    if(udp_port == -1){
-	ERROR("invalid port number in the monit_udp_port parameter\n ");
-	return -1;
-    }
-    if(!udp_port)
-	udp_port = DEFAULT_MONIT_UDP_PORT;
+  udp_port = (int)cfg.getParameterInt("monit_udp_port",(unsigned int)-1);
+  if(udp_port == -1){
+    ERROR("invalid port number in the monit_udp_port parameter\n ");
+    return -1;
+  }
+  if(!udp_port)
+    udp_port = DEFAULT_MONIT_UDP_PORT;
 
-    DBG("udp_port = %i\n",udp_port);
-    udp_addr = cfg.getParameter("monit_udp_ip","");
+  DBG("udp_port = %i\n",udp_port);
+  udp_addr = cfg.getParameter("monit_udp_ip","");
 
-    sd = socket(PF_INET,SOCK_DGRAM,0);
-    if(sd == -1){
-	ERROR("could not open socket: %s\n",strerror(errno));
-	return -1;
-    }
+  sd = socket(PF_INET,SOCK_DGRAM,0);
+  if(sd == -1){
+    ERROR("could not open socket: %s\n",strerror(errno));
+    return -1;
+  }
 
-    /* set sock opts? */
-    optval=1;
-    if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof(optval)) ==-1){
-        ERROR("ERROR: setsockopt(reuseaddr): %s\n", strerror(errno));
-	return -1;	
-    }
-    /* tos */
-    optval=IPTOS_LOWDELAY;
-    if (setsockopt(sd, IPPROTO_IP, IP_TOS, (void*)&optval, sizeof(optval)) ==-1){
-        ERROR("WARNING: setsockopt(tos): %s\n", strerror(errno));
-	/* continue since this is not critical */
-    }
+  /* set sock opts? */
+  optval=1;
+  if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof(optval)) ==-1){
+    ERROR("ERROR: setsockopt(reuseaddr): %s\n", strerror(errno));
+    return -1;	
+  }
+  /* tos */
+  optval=IPTOS_LOWDELAY;
+  if (setsockopt(sd, IPPROTO_IP, IP_TOS, (void*)&optval, sizeof(optval)) ==-1){
+    ERROR("WARNING: setsockopt(tos): %s\n", strerror(errno));
+    /* continue since this is not critical */
+  }
 
-    struct sockaddr_in sa;
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons(udp_port);
+  struct sockaddr_in sa;
+  sa.sin_family = AF_INET;
+  sa.sin_port = htons(udp_port);
     
-    if(!inet_aton(udp_addr.c_str(),(in_addr*)&sa.sin_addr.s_addr)){
-	// non valid address
-	ERROR("invalid IP in the monit_udp_ip parameter\n");
-	return -1;
-    }
+  if(!inet_aton(udp_addr.c_str(),(in_addr*)&sa.sin_addr.s_addr)){
+    // non valid address
+    ERROR("invalid IP in the monit_udp_ip parameter\n");
+    return -1;
+  }
 
-    //bool socket_bound = false;
-    //while(!socket_bound){
-	if( bind(sd,(sockaddr*)&sa,sizeof(struct sockaddr_in)) == -1 ){
-	    ERROR("could not bind socket at port %i: %s\n",udp_port,strerror(errno));
-	    //udp_port += 1;
-	    //sa.sin_port = htons(udp_port);
+  //bool socket_bound = false;
+  //while(!socket_bound){
+  if( bind(sd,(sockaddr*)&sa,sizeof(struct sockaddr_in)) == -1 ){
+    ERROR("could not bind socket at port %i: %s\n",udp_port,strerror(errno));
+    //udp_port += 1;
+    //sa.sin_port = htons(udp_port);
 
-	    return -1;
-	}
-	else{
-	    DBG("socket bound at port %i\n",udp_port);
-	    //socket_bound = true;
-	}
-	//}
+    return -1;
+  }
+  else{
+    DBG("socket bound at port %i\n",udp_port);
+    //socket_bound = true;
+  }
+  //}
 
-	return 0;
+  return 0;
 }
 
 void StatsUDPServer::run()
 {
-    struct sockaddr_in addr;
-    socklen_t addrlen = sizeof(struct sockaddr_in);
+  struct sockaddr_in addr;
+  socklen_t addrlen = sizeof(struct sockaddr_in);
 
-    char msg_buf[MSG_BUF_SIZE];
-    int  msg_buf_s;
+  char msg_buf[MSG_BUF_SIZE];
+  int  msg_buf_s;
 
-    while(true){
+  while(true){
 
-	msg_buf_s = recvfrom(sd,msg_buf,MSG_BUF_SIZE,0,(sockaddr*)&addr,&addrlen);
-	if(msg_buf_s == -1){
+    msg_buf_s = recvfrom(sd,msg_buf,MSG_BUF_SIZE,0,(sockaddr*)&addr,&addrlen);
+    if(msg_buf_s == -1){
 
-	    switch(errno){
-		case EINTR:
-		case EAGAIN:
-		    continue;
-		default: break;
-	    };
+      switch(errno){
+      case EINTR:
+      case EAGAIN:
+	continue;
+      default: break;
+      };
 
-	    ERROR("recvfrom: %s\n",strerror(errno));
-	    break;
-	}
-
-	//printf("received packet from: %s:%i\n",
-	//       inet_ntoa(addr.sin_addr),ntohs(addr.sin_port));
-
-	string             reply;
-	struct sockaddr_in reply_addr;
-
-	if(execute(msg_buf,reply,reply_addr) == -1)
-	    continue;
-
-	send_reply(reply,addr);
+      ERROR("recvfrom: %s\n",strerror(errno));
+      break;
     }
+
+    //printf("received packet from: %s:%i\n",
+    //       inet_ntoa(addr.sin_addr),ntohs(addr.sin_port));
+
+    string             reply;
+    struct sockaddr_in reply_addr;
+
+    if(execute(msg_buf,reply,reply_addr) == -1)
+      continue;
+
+    send_reply(reply,addr);
+  }
     
 }
 
@@ -234,135 +234,135 @@ void StatsUDPServer::run()
 int StatsUDPServer::execute(char* msg_buf, string& reply, 
 			    struct sockaddr_in& addr)
 {
-    char buffer[CTRL_MSGBUF_SIZE];
-    string cmd_str,reply_addr,reply_port;
-    char *msg_c = msg_buf;
+  char buffer[CTRL_MSGBUF_SIZE];
+  string cmd_str,reply_addr,reply_port;
+  char *msg_c = msg_buf;
 
-    msg_get_param(msg_c,cmd_str,buffer,CTRL_MSGBUF_SIZE);
+  msg_get_param(msg_c,cmd_str,buffer,CTRL_MSGBUF_SIZE);
 
-    if(cmd_str == "calls")
-	reply = "Active calls: " + int2str(sc->getSize()) + "\n";
-	else if (cmd_str == "which") {
-		reply = 
-			"calls                              -  number of active calls (Session Container size)\n"
-			"which                              -  print available commands\n"
-			"set_loglevel <loglevel>            -  set log level\n"
-			"get_loglevel                       -  get log level\n"
-			"\n"
-			"DI <factory> <function> (<args>)*  -  invoke DI command\n"
-			;
+  if(cmd_str == "calls")
+    reply = "Active calls: " + int2str(sc->getSize()) + "\n";
+  else if (cmd_str == "which") {
+    reply = 
+      "calls                              -  number of active calls (Session Container size)\n"
+      "which                              -  print available commands\n"
+      "set_loglevel <loglevel>            -  set log level\n"
+      "get_loglevel                       -  get log level\n"
+      "\n"
+      "DI <factory> <function> (<args>)*  -  invoke DI command\n"
+      ;
+  }
+  else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "set_") {
+    // setters 
+    if (cmd_str.substr(4, 8) == "loglevel") {
+      if (!AmConfig::setLoglevel(&cmd_str.c_str()[13])) 
+	reply= "invalid loglevel value.\n";
+      else 
+	reply= "loglevel set to "+int2str(log_level)+".\n";
+    }
+
+    else 	reply = "Unknown command: '" + cmd_str + "'\n";
+  }
+  else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "get_") {
+    // setters 
+    if (cmd_str.substr(4, 8) == "loglevel") {
+      reply= "loglevel is "+int2str(log_level)+".\n";
+    }
+
+    else 	reply = "Unknown command: '" + cmd_str + "'\n";
+  }
+  else if (cmd_str.length() > 4 && cmd_str.substr(0, 3) == "DI ") {
+    // Dynamic Invocation
+    size_t p = cmd_str.find(' ', 4);
+    string fact_name = cmd_str.substr(3, p-3);
+    if (!fact_name.length()) {
+      reply = "could not parse DI factory name.\n";
+      return 0;
+    }
+
+    size_t p2 = cmd_str.find(' ', p+1);
+    if (p2 == string::npos)
+      p2 = cmd_str.length();
+    string fct_name = cmd_str.substr(p+1, p2-p-1);
+    p=p2+1;
+    if (!fct_name.length()) {
+      reply = "could not parse function name.\n";
+      return 0;
+    }
+    try {
+
+      AmArgArray args;
+      while (p<cmd_str.length()) {
+	p2 = cmd_str.find(' ', p);
+	if (p2 == string::npos) {
+	  if (p+1<cmd_str.length())
+	    p2=cmd_str.length();
+	  else 
+	    break;
 	}
-    else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "set_") {
-		// setters 
-		if (cmd_str.substr(4, 8) == "loglevel") {
-			if (!AmConfig::setLoglevel(&cmd_str.c_str()[13])) 
-				reply= "invalid loglevel value.\n";
-			else 
-				reply= "loglevel set to "+int2str(log_level)+".\n";
-		}
-
-		else 	reply = "Unknown command: '" + cmd_str + "'\n";
-	}
-    else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "get_") {
-		// setters 
-		if (cmd_str.substr(4, 8) == "loglevel") {
-			reply= "loglevel is "+int2str(log_level)+".\n";
-		}
-
-		else 	reply = "Unknown command: '" + cmd_str + "'\n";
-	}
-    else if (cmd_str.length() > 4 && cmd_str.substr(0, 3) == "DI ") {
-		// Dynamic Invocation
-		size_t p = cmd_str.find(' ', 4);
-		string fact_name = cmd_str.substr(3, p-3);
-		if (!fact_name.length()) {
-			reply = "could not parse DI factory name.\n";
-			return 0;
-		}
-
-		size_t p2 = cmd_str.find(' ', p+1);
-		if (p2 == string::npos)
-			p2 = cmd_str.length();
-		string fct_name = cmd_str.substr(p+1, p2-p-1);
-		p=p2+1;
-		if (!fct_name.length()) {
-			reply = "could not parse function name.\n";
-			return 0;
-		}
-		try {
-
-			AmArgArray args;
-			while (p<cmd_str.length()) {
-				p2 = cmd_str.find(' ', p);
-				if (p2 == string::npos) {
-					if (p+1<cmd_str.length())
-						p2=cmd_str.length();
-					else 
-						break;
-				}
-				args.push(cmd_str.substr(p, p2-p).c_str());	
-				// 			DBG("mod '%s' added arg '%s'\n", 
-				// 				fact_name.c_str(),
-				// 				cmd_str.substr(p, p2-p).c_str());
-				p=p2+1;
-			}
-			AmDynInvokeFactory* di_f = AmPlugIn::instance()->getFactory4Di(fact_name);
-			if(!di_f){
-				reply = "could not get '" + fact_name + "' factory\n";
-				return 0;
-			}
-			AmDynInvoke* di = di_f->getInstance();
-			if(!di){
-				reply = "could not get DI instance from factory\n";
-				return 0;
-			}
-			AmArgArray ret;
-			di->invoke(fct_name, args, ret);
+	args.push(cmd_str.substr(p, p2-p).c_str());	
+	// 			DBG("mod '%s' added arg '%s'\n", 
+	// 				fact_name.c_str(),
+	// 				cmd_str.substr(p, p2-p).c_str());
+	p=p2+1;
+      }
+      AmDynInvokeFactory* di_f = AmPlugIn::instance()->getFactory4Di(fact_name);
+      if(!di_f){
+	reply = "could not get '" + fact_name + "' factory\n";
+	return 0;
+      }
+      AmDynInvoke* di = di_f->getInstance();
+      if(!di){
+	reply = "could not get DI instance from factory\n";
+	return 0;
+      }
+      AmArgArray ret;
+      di->invoke(fct_name, args, ret);
 			
-			if (ret.size()) {
-				reply="[";
-				for (unsigned int i=0;i<ret.size();i++) {
-					const AmArg& r = ret.get(i);
-					switch (r.getType()) {
-					case AmArg::CStr:  
-						reply=reply + r.asCStr(); break;
-					case AmArg::Int:  
-						reply=reply + int2str(r.asInt()); break;
-					case AmArg::Double: {
-						char res[10];
-						snprintf(res, 10, "%e", r.asDouble());
-						reply=reply + res; 
-					} break;
-					default: break;
-					}
-					if (i<ret.size()-1) reply = reply + ",";
-				}
-				reply+="]\n";
-			} else 
-				reply = "(none)\n";
-
-		} catch (const AmDynInvoke::NotImplemented& e) {
-			reply = "Exception occured: AmDynInvoke::NotImplemented '"+
-				e.what+"'\n";
-			return 0;
-		} catch (...) {
-			reply = "Exception occured.\n";
-			return 0;
-		}
-			
+      if (ret.size()) {
+	reply="[";
+	for (unsigned int i=0;i<ret.size();i++) {
+	  const AmArg& r = ret.get(i);
+	  switch (r.getType()) {
+	  case AmArg::CStr:  
+	    reply=reply + r.asCStr(); break;
+	  case AmArg::Int:  
+	    reply=reply + int2str(r.asInt()); break;
+	  case AmArg::Double: {
+	    char res[10];
+	    snprintf(res, 10, "%e", r.asDouble());
+	    reply=reply + res; 
+	  } break;
+	  default: break;
+	  }
+	  if (i<ret.size()-1) reply = reply + ",";
 	}
-	else
-		reply = "Unknown command: '" + cmd_str + "'\n";
+	reply+="]\n";
+      } else 
+	reply = "(none)\n";
 
-    return 0;
+    } catch (const AmDynInvoke::NotImplemented& e) {
+      reply = "Exception occured: AmDynInvoke::NotImplemented '"+
+	e.what+"'\n";
+      return 0;
+    } catch (...) {
+      reply = "Exception occured.\n";
+      return 0;
+    }
+			
+  }
+  else
+    reply = "Unknown command: '" + cmd_str + "'\n";
+
+  return 0;
 }
 
 int StatsUDPServer::send_reply(const string& reply,
 			       const struct sockaddr_in& reply_addr)
 {
-    int err = sendto(sd,reply.c_str(),reply.length()+1,0,
-		     (const sockaddr*)&reply_addr,
-		     sizeof(struct sockaddr_in));
+  int err = sendto(sd,reply.c_str(),reply.length()+1,0,
+		   (const sockaddr*)&reply_addr,
+		   sizeof(struct sockaddr_in));
 
-    return (err <= 0) ? -1 : 0;
+  return (err <= 0) ? -1 : 0;
 }

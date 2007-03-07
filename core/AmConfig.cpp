@@ -60,196 +60,196 @@ AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 
 int AmConfig::setSIPPort(const string& port) 
 {
-    if(sscanf(port.c_str(),"%u",&AmConfig::LocalSIPPort) != 1) {
-	return 0;
-    }
-    return 1;
+  if(sscanf(port.c_str(),"%u",&AmConfig::LocalSIPPort) != 1) {
+    return 0;
+  }
+  return 1;
 }
 
 int AmConfig::setSmtpPort(const string& port) 
 {
-    if(sscanf(port.c_str(),"%u",&AmConfig::SmtpServerPort) != 1) {
-	return 0;
-    }
-    return 1;
+  if(sscanf(port.c_str(),"%u",&AmConfig::SmtpServerPort) != 1) {
+    return 0;
+  }
+  return 1;
 }
 
 int AmConfig::setRtpLowPort(const string& port)
 {
-    if(sscanf(port.c_str(),"%i",&AmConfig::RtpLowPort) != 1) {
-	return 0;
-    }
-    return 1;
+  if(sscanf(port.c_str(),"%i",&AmConfig::RtpLowPort) != 1) {
+    return 0;
+  }
+  return 1;
 }
 
 int AmConfig::setRtpHighPort(const string& port)
 {
-    if(sscanf(port.c_str(),"%i",&AmConfig::RtpHighPort) != 1) {
-	return 0;
-    }
-    return 1;
+  if(sscanf(port.c_str(),"%i",&AmConfig::RtpHighPort) != 1) {
+    return 0;
+  }
+  return 1;
 }
 
 int AmConfig::setLoglevel(const string& ll) {
     
-    if(sscanf(ll.c_str(),"%u",&log_level) != 1) {
-	return 0;
-    }
-    return 1;
+  if(sscanf(ll.c_str(),"%u",&log_level) != 1) {
+    return 0;
+  }
+  return 1;
 }
 
 int AmConfig::setFork(const string& fork) {
-	if ( strcasecmp(fork.c_str(), "yes") == 0 ) {
-		DaemonMode = 1;
-	} else if ( strcasecmp(fork.c_str(), "no") == 0 ) {
-		DaemonMode = 0;
-	} else {
-		return 0;
-	}	
-	return 1;
+  if ( strcasecmp(fork.c_str(), "yes") == 0 ) {
+    DaemonMode = 1;
+  } else if ( strcasecmp(fork.c_str(), "no") == 0 ) {
+    DaemonMode = 0;
+  } else {
+    return 0;
+  }	
+  return 1;
 }		
 
 int AmConfig::setStderr(const string& s) {
-	if ( strcasecmp(s.c_str(), "yes") == 0 ) {
-		log_stderr = 1;
-		AmConfig::DaemonMode = 0;
-	} else if ( strcasecmp(s.c_str(), "no") == 0 ) {
-		log_stderr = 0;
-	} else {
-		return 0;
-	}	
-	return 1;
+  if ( strcasecmp(s.c_str(), "yes") == 0 ) {
+    log_stderr = 1;
+    AmConfig::DaemonMode = 0;
+  } else if ( strcasecmp(s.c_str(), "no") == 0 ) {
+    log_stderr = 0;
+  } else {
+    return 0;
+  }	
+  return 1;
 }		
 
 int AmConfig::setMediaProcessorThreads(const string& th) {
-    if(sscanf(th.c_str(),"%u",&MediaProcessorThreads) != 1) {
-	return 0;
-    }
-    return 1;
+  if(sscanf(th.c_str(),"%u",&MediaProcessorThreads) != 1) {
+    return 0;
+  }
+  return 1;
 }
 
 int AmConfig::readConfiguration()
 {
-    AmConfigReader cfg;
+  AmConfigReader cfg;
 
-    if(cfg.loadFile(ConfigurationFile.c_str())){
-	ERROR("while loading main configuration file\n");
-	return -1;
-    }
+  if(cfg.loadFile(ConfigurationFile.c_str())){
+    ERROR("while loading main configuration file\n");
+    return -1;
+  }
        
-    // take values from global configuration file
-    // they will be overwritten by command line args
+  // take values from global configuration file
+  // they will be overwritten by command line args
 
-    // plugin_config_path
-    ModConfigPath = cfg.getParameter("plugin_config_path",ModConfigPath);
+  // plugin_config_path
+  ModConfigPath = cfg.getParameter("plugin_config_path",ModConfigPath);
 
 
-    // smtp_server
-    SmtpServerAddress = cfg.getParameter("smtp_server",SmtpServerAddress);
+  // smtp_server
+  SmtpServerAddress = cfg.getParameter("smtp_server",SmtpServerAddress);
 
-    // smtp_port
-    if(cfg.hasParameter("smtp_port")){
-	if(!setSmtpPort(cfg.getParameter("smtp_port").c_str())){
-	    ERROR("invalid smtp port specified\n");
-	    return -1;
-	}
+  // smtp_port
+  if(cfg.hasParameter("smtp_port")){
+    if(!setSmtpPort(cfg.getParameter("smtp_port").c_str())){
+      ERROR("invalid smtp port specified\n");
+      return -1;
     }
+  }
 
-    // local_ip
-    LocalIP = cfg.getParameter("listen");
+  // local_ip
+  LocalIP = cfg.getParameter("listen");
 
-    if(cfg.hasParameter("sip_port")){
-		if(!setSIPPort(cfg.getParameter("sip_port").c_str())){
-			ERROR("invalid sip port specified\n");
-			return -1;
-		}		
+  if(cfg.hasParameter("sip_port")){
+    if(!setSIPPort(cfg.getParameter("sip_port").c_str())){
+      ERROR("invalid sip port specified\n");
+      return -1;
+    }		
+  }
+
+  // socket_name
+  SocketName = cfg.getParameter("socket_name");
+
+  // reply socket_name
+  ReplySocketName = cfg.getParameter("reply_socket_name");
+
+  // ser_fifo_name
+  SerSocketName = cfg.getParameter("ser_socket_name");
+
+  // plugin_path
+  PlugInPath = cfg.getParameter("plugin_path");
+
+  // load_plugins
+  LoadPlugins = cfg.getParameter("load_plugins");
+
+  // user_agent
+  if (cfg.getParameter("use_default_signature")=="yes")
+    Signature = DEFAULT_SIGNATURE;
+  else 
+    Signature = cfg.getParameter("signature");
+
+  // log_level
+  if(cfg.hasParameter("loglevel")){
+    if(!setLoglevel(cfg.getParameter("loglevel"))){
+      ERROR("invalid log level specified\n");
+      return -1;
     }
+  }
 
-    // socket_name
-    SocketName = cfg.getParameter("socket_name");
-
-    // reply socket_name
-    ReplySocketName = cfg.getParameter("reply_socket_name");
-
-    // ser_fifo_name
-    SerSocketName = cfg.getParameter("ser_socket_name");
-
-    // plugin_path
-    PlugInPath = cfg.getParameter("plugin_path");
-
-    // load_plugins
-    LoadPlugins = cfg.getParameter("load_plugins");
-
-	// user_agent
-	if (cfg.getParameter("use_default_signature")=="yes")
-		Signature = DEFAULT_SIGNATURE;
-	else 
-		Signature = cfg.getParameter("signature");
-
-    // log_level
-    if(cfg.hasParameter("loglevel")){
-	if(!setLoglevel(cfg.getParameter("loglevel"))){
-	    ERROR("invalid log level specified\n");
-	    return -1;
-	}
+  // fork 
+  if(cfg.hasParameter("fork")){
+    if(!setFork(cfg.getParameter("fork"))){
+      ERROR("invalid fork value specified,"
+	    " valid are only yes or no\n");
+      return -1;
     }
+  }
 
-    // fork 
-    if(cfg.hasParameter("fork")){
-	if(!setFork(cfg.getParameter("fork"))){
-	    ERROR("invalid fork value specified,"
-		  " valid are only yes or no\n");
-	    return -1;
-	}
+  // stderr 
+  if(cfg.hasParameter("stderr")){
+    if(!setStderr(cfg.getParameter("stderr"))){
+      ERROR("invalid stderr value specified,"
+	    " valid are only yes or no\n");
+      return -1;
     }
+  }
 
-    // stderr 
-    if(cfg.hasParameter("stderr")){
-	if(!setStderr(cfg.getParameter("stderr"))){
-	    ERROR("invalid stderr value specified,"
-		  " valid are only yes or no\n");
-	    return -1;
-	}
+  // user_prefix_separator
+  PrefixSep = cfg.getParameter("user_prefix_separator",PrefixSep);
+
+  // rtp_low_port
+  if(cfg.hasParameter("rtp_low_port")){
+    if(!setRtpLowPort(cfg.getParameter("rtp_low_port"))){
+      ERROR("invalid rtp low port specified\n");
+      return -1;
     }
+  }
 
-    // user_prefix_separator
-    PrefixSep = cfg.getParameter("user_prefix_separator",PrefixSep);
-
-    // rtp_low_port
-    if(cfg.hasParameter("rtp_low_port")){
-	if(!setRtpLowPort(cfg.getParameter("rtp_low_port"))){
-	    ERROR("invalid rtp low port specified\n");
-	    return -1;
-	}
+  // rtp_high_port
+  if(cfg.hasParameter("rtp_high_port")){
+    if(!setRtpHighPort(cfg.getParameter("rtp_high_port"))){
+      ERROR("invalid rtp high port specified\n");
+      return -1;
     }
+  }
 
-    // rtp_high_port
-    if(cfg.hasParameter("rtp_high_port")){
-	if(!setRtpHighPort(cfg.getParameter("rtp_high_port"))){
-	    ERROR("invalid rtp high port specified\n");
-	    return -1;
-	}
+  if(cfg.hasParameter("media_processor_threads")){
+    if(!setMediaProcessorThreads(cfg.getParameter("media_processor_threads"))){
+      ERROR("invalid media_processor_threads value specified");
+      return -1;
     }
+  }
 
-    if(cfg.hasParameter("media_processor_threads")){
-	if(!setMediaProcessorThreads(cfg.getParameter("media_processor_threads"))){
-	    ERROR("invalid media_processor_threads value specified");
-	    return -1;
-	}
-    }
-
-    return defaultSessionTimerConfig.readFromConfig(cfg);
+  return defaultSessionTimerConfig.readFromConfig(cfg);
 }	
 
 int AmConfig::init()
 {
-    return 0;
+  return 0;
 }
 
 AmSessionTimerConfig::AmSessionTimerConfig()
-: EnableSessionTimer(DEFAULT_ENABLE_SESSION_TIMER), 
-  SessionExpires(SESSION_EXPIRES), 
-  MinimumTimer(MINIMUM_TIMER)
+  : EnableSessionTimer(DEFAULT_ENABLE_SESSION_TIMER), 
+    SessionExpires(SESSION_EXPIRES), 
+    MinimumTimer(MINIMUM_TIMER)
 {
 
 }
@@ -259,43 +259,43 @@ AmSessionTimerConfig::~AmSessionTimerConfig()
 
 int AmSessionTimerConfig::readFromConfig(AmConfigReader& cfg)
 {
-    /* Session Timer: -ssa */
-    // enable_session_timer
-    if(cfg.hasParameter("enable_session_timer")){
-	if(!setEnableSessionTimer(cfg.getParameter("enable_session_timer"))){
-	    ERROR("invalid enable_session_timer specified\n");
-	    return -1;
-	}
+  /* Session Timer: -ssa */
+  // enable_session_timer
+  if(cfg.hasParameter("enable_session_timer")){
+    if(!setEnableSessionTimer(cfg.getParameter("enable_session_timer"))){
+      ERROR("invalid enable_session_timer specified\n");
+      return -1;
     }
+  }
 
-    // session_expires
-    if(cfg.hasParameter("session_expires")){
-	if(!setSessionExpires(cfg.getParameter("session_expires"))){
-	    ERROR("invalid session_expires specified\n");
-	    return -1;
-	}
+  // session_expires
+  if(cfg.hasParameter("session_expires")){
+    if(!setSessionExpires(cfg.getParameter("session_expires"))){
+      ERROR("invalid session_expires specified\n");
+      return -1;
     }
+  }
 
-    // minimum_timer
-    if(cfg.hasParameter("minimum_timer")){
-	if(!setMinimumTimer(cfg.getParameter("minimum_timer"))){
-	    ERROR("invalid minimum_timer specified\n");
-	    return -1;
-	}
+  // minimum_timer
+  if(cfg.hasParameter("minimum_timer")){
+    if(!setMinimumTimer(cfg.getParameter("minimum_timer"))){
+      ERROR("invalid minimum_timer specified\n");
+      return -1;
     }
-    /* end Session Timer */
-    return 0;
+  }
+  /* end Session Timer */
+  return 0;
 }
 
 int AmSessionTimerConfig::setEnableSessionTimer(const string& enable) {
-	if ( strcasecmp(enable.c_str(), "yes") == 0 ) {
-		EnableSessionTimer = 1;
-	} else if ( strcasecmp(enable.c_str(), "no") == 0 ) {
-		EnableSessionTimer = 0;
-	} else {
-		return 0;
-	}	
-	return 1;
+  if ( strcasecmp(enable.c_str(), "yes") == 0 ) {
+    EnableSessionTimer = 1;
+  } else if ( strcasecmp(enable.c_str(), "no") == 0 ) {
+    EnableSessionTimer = 0;
+  } else {
+    return 0;
+  }	
+  return 1;
 }		
 
 int AmSessionTimerConfig::setSessionExpires(const string& se) {

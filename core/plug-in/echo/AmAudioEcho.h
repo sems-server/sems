@@ -33,18 +33,15 @@
 
 class AmAudioEcho : public AmAudio
 {
-    SampleArrayShort timed_buffer;
+  SampleArrayShort timed_buffer;
 
-    int read(unsigned int user_ts, unsigned int size);
-    int write(unsigned int user_ts, unsigned int size);
+  int read(unsigned int user_ts, unsigned int size);
+  int write(unsigned int user_ts, unsigned int size);
 
 public:
-    AmAudioEcho();
-    ~AmAudioEcho();
+  AmAudioEcho();
+  ~AmAudioEcho();
 };
 
 #endif
-// Local Variables:
-// mode:C++
-// End:
 

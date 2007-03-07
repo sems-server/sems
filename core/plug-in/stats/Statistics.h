@@ -38,17 +38,17 @@ class AmSessionContainer;
 class StatsFactory: public AmSessionFactory,
 		    public AmInterfaceHandler
 {
-    AmSessionContainer* sc;
+  AmSessionContainer* sc;
 
 public:
-    StatsFactory(const std::string& _app_name);
+  StatsFactory(const std::string& _app_name);
     
-    // AmSessionFactory interface
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+  // AmSessionFactory interface
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req);
     
-    // AmInterfaceHandler interface
-    int handleRequest(AmCtrlInterface* ctrl);
+  // AmInterfaceHandler interface
+  int handleRequest(AmCtrlInterface* ctrl);
 };
 
 // template<class T> 
@@ -76,6 +76,3 @@ public:
 
 
 #endif
-// Local Variables:
-// mode:C++
-// End:

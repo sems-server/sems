@@ -35,11 +35,11 @@ AmDynInvoke::~AmDynInvoke() {}
 
 void AmDynInvoke::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
 {
-    throw NotImplemented(method);
+  throw NotImplemented(method);
 }
 
 AmDynInvokeFactory::AmDynInvokeFactory(const string& name)
-    : AmPluginFactory(name) 
+  : AmPluginFactory(name) 
 {
 }
 
@@ -50,7 +50,7 @@ AmSessionFactory::AmSessionFactory(const string& name)
 
 AmSession* AmSessionFactory::onRefer(const AmSipRequest& req)
 {
-    throw AmSession::Exception(488,"Not accepted here");
+  throw AmSession::Exception(488,"Not accepted here");
 }
 
 int AmSessionFactory::configureModule(AmConfigReader& cfg) {
@@ -58,21 +58,21 @@ int AmSessionFactory::configureModule(AmConfigReader& cfg) {
 }
 
 void AmSessionFactory::configureSession(AmSession* sess) {
-    //SessionTimer::sess->configureSessionTimer(mod_conf);
+  //SessionTimer::sess->configureSessionTimer(mod_conf);
 }
 
 void AmSessionFactory::postEvent(AmEvent* ev) {
-	ERROR("unhandled Event in %s module\n", getName().c_str());
-	delete ev;
+  ERROR("unhandled Event in %s module\n", getName().c_str());
+  delete ev;
 }
 
 AmSessionEventHandlerFactory::AmSessionEventHandlerFactory(const string& name)
-	: AmPluginFactory(name) 
+  : AmPluginFactory(name) 
 {
 }
 
 AmSIPEventHandler::AmSIPEventHandler(const string& name) 
-    : AmPluginFactory(name) 
+  : AmPluginFactory(name) 
 {
 }
 

@@ -11,25 +11,25 @@
  */
 class MeanValue
 {
-protected:
-    double cum_val;
-    size_t n_val;
+ protected:
+  double cum_val;
+  size_t n_val;
 
-public:
-    MeanValue()
-	: cum_val(0.0),
-	  n_val(0)
+ public:
+  MeanValue()
+    : cum_val(0.0),
+    n_val(0)
     {}
 
-    void push(double val){
-	cum_val += val;
-	n_val++;
-    }
+  void push(double val){
+    cum_val += val;
+    n_val++;
+  }
 
-    double mean(){
-	if(!n_val) return 0.0;
-	return cum_val / float(n_val);
-    }
+  double mean(){
+    if(!n_val) return 0.0;
+    return cum_val / float(n_val);
+  }
 };
 
 /** 
@@ -41,28 +41,28 @@ public:
 class StddevValue
 {
  protected:
-    double cum_val;
-    double sq_cum_val;
-    size_t n_val;
+  double cum_val;
+  double sq_cum_val;
+  size_t n_val;
 
  public:
-    StddevValue()
-	: cum_val(0.0),
-	  sq_cum_val(0.0),
-	  n_val(0)
+  StddevValue()
+    : cum_val(0.0),
+    sq_cum_val(0.0),
+    n_val(0)
     {}
 
-    void push(double val){
+  void push(double val){
 	
-	cum_val += val;
-	sq_cum_val += val*val;
-	n_val++;
-    }
+    cum_val += val;
+    sq_cum_val += val*val;
+    n_val++;
+  }
 
-    double stddev(){
-	if(!n_val) return 0.0;
-	return sqrt((n_val*sq_cum_val - cum_val*cum_val)/(n_val*(n_val-1)));
-    }
+  double stddev(){
+    if(!n_val) return 0.0;
+    return sqrt((n_val*sq_cum_val - cum_val*cum_val)/(n_val*(n_val-1)));
+  }
 };
 
 /** 
@@ -72,37 +72,37 @@ class StddevValue
  */
 class MeanArray: public MeanValue
 {
-    double *buffer;
-    size_t  buf_size;
+  double *buffer;
+  size_t  buf_size;
 
-    double  cum_val;
-    size_t  n_val;
+  double  cum_val;
+  size_t  n_val;
 
  public:
-    MeanArray(size_t size)
-	: buf_size(size),
-	  MeanValue()
+  MeanArray(size_t size)
+    : buf_size(size),
+    MeanValue()
     {
-	buffer = new double[size];
+      buffer = new double[size];
     }
 
-    ~MeanArray(){
-	delete [] buffer;
-    }
+  ~MeanArray(){
+    delete [] buffer;
+  }
 
-    void push(double val){
+  void push(double val){
 
-	cum_val -= buffer[n_val % buf_size];
-	buffer[n_val % buf_size] = val;
+    cum_val -= buffer[n_val % buf_size];
+    buffer[n_val % buf_size] = val;
 
-	cum_val += val;
-	n_val++;
-    }
+    cum_val += val;
+    n_val++;
+  }
 
-    double mean(){
-	if(!n_val) return 0.0;
-	return cum_val / double(n_val > buf_size ? buf_size : n_val);
-    }
+  double mean(){
+    if(!n_val) return 0.0;
+    return cum_val / double(n_val > buf_size ? buf_size : n_val);
+  }
 };
 
 #endif

@@ -42,27 +42,27 @@ EXPORT_SESSION_FACTORY(EchoFactory,"echo");
 #define STAR_SWITCHES_PLAYOUTBUFFER
 
 EchoFactory::EchoFactory(const string& _app_name)
-    : AmSessionFactory(_app_name),
-      session_timer_f(0)
+  : AmSessionFactory(_app_name),
+    session_timer_f(0)
 {}
 
 int EchoFactory::onLoad()
 {
-    session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
-    DBG("session_timer_f == 0x%.16lX\n",(unsigned long)session_timer_f);
-    return (session_timer_f == NULL);
+  session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
+  DBG("session_timer_f == 0x%.16lX\n",(unsigned long)session_timer_f);
+  return (session_timer_f == NULL);
 }
 
 AmSession* EchoFactory::onInvite(const AmSipRequest& req)
 {
-    AmSession* s = new EchoDialog();
-    s->addHandler(session_timer_f->getHandler(s));
+  AmSession* s = new EchoDialog();
+  s->addHandler(session_timer_f->getHandler(s));
 
-    return s;
+  return s;
 }
 
 EchoDialog::EchoDialog() 
-	: playout_type(SIMPLE_PLAYOUT)
+  : playout_type(SIMPLE_PLAYOUT)
 {
 	
 }
@@ -73,30 +73,30 @@ EchoDialog::~EchoDialog()
 
 void EchoDialog::onSessionStart(const AmSipRequest& req)
 {
-    setInOut(&echo,&echo);
+  setInOut(&echo,&echo);
 }
 
 void EchoDialog::onBye(const AmSipRequest& req)
 {
-    setStopped();
+  setStopped();
 }
 
 void EchoDialog::onDtmf(int event, int duration)
 {
 #ifdef STAR_SWITCHES_PLAYOUTBUFFER
-    if (event == 10) {   
-		char* pt = "simple (fifo) playout buffer";
-       	if (playout_type == SIMPLE_PLAYOUT) {
-			playout_type = ADAPTIVE_PLAYOUT;
-			pt = "adaptive playout buffer";
-		} else if (playout_type == ADAPTIVE_PLAYOUT) {
-			pt = "adaptive jitter buffer";
-			playout_type = JB_PLAYOUT;
-		} else
-			playout_type = SIMPLE_PLAYOUT;
-		DBG("received *. set playout technique to %s.\n", pt);
+  if (event == 10) {   
+    char* pt = "simple (fifo) playout buffer";
+    if (playout_type == SIMPLE_PLAYOUT) {
+      playout_type = ADAPTIVE_PLAYOUT;
+      pt = "adaptive playout buffer";
+    } else if (playout_type == ADAPTIVE_PLAYOUT) {
+      pt = "adaptive jitter buffer";
+      playout_type = JB_PLAYOUT;
+    } else
+      playout_type = SIMPLE_PLAYOUT;
+    DBG("received *. set playout technique to %s.\n", pt);
 		
-		rtp_str.setPlayoutType(playout_type);
-    }
+    rtp_str.setPlayoutType(playout_type);
+  }
 #endif
 }

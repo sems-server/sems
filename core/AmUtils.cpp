@@ -65,51 +65,51 @@ static char _int2str_lookup[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', 
 
 string int2str(int val)
 {
-    char buffer[64] = {0};
-    int i=62;
-    div_t d;
+  char buffer[64] = {0};
+  int i=62;
+  div_t d;
 
-    d.quot = val;
-    do{
-	d = div(d.quot,10);
-	buffer[i] = _int2str_lookup[d.rem];
-    }while(--i && d.quot);
+  d.quot = val;
+  do{
+    d = div(d.quot,10);
+    buffer[i] = _int2str_lookup[d.rem];
+  }while(--i && d.quot);
 
-    return string((char*)(buffer+i+1));
+  return string((char*)(buffer+i+1));
 }
 
 static char _int2hex_lookup[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', '9','A','B','C','D','E','F' };
 
 string int2hex(unsigned int val)
 {
-    unsigned int digit=0;
+  unsigned int digit=0;
 
-    char buffer[2*sizeof(int)+1] = {0};
-    int i,j=0;
+  char buffer[2*sizeof(int)+1] = {0};
+  int i,j=0;
 
-    for(i=0; i<int(2*sizeof(int)); i++){
-	digit = val >> 4*(2*sizeof(int)-1);
-	val = val << 4;
-	buffer[j++] = _int2hex_lookup[(unsigned char)digit];
-    }
+  for(i=0; i<int(2*sizeof(int)); i++){
+    digit = val >> 4*(2*sizeof(int)-1);
+    val = val << 4;
+    buffer[j++] = _int2hex_lookup[(unsigned char)digit];
+  }
 
-    return string((char*)buffer);
+  return string((char*)buffer);
 }
 
 string long2hex(unsigned long val)
 {
-    unsigned int digit=0;
+  unsigned int digit=0;
 
-    char buffer[2*sizeof(long)+1] = {0};
-    int i,j=0;
+  char buffer[2*sizeof(long)+1] = {0};
+  int i,j=0;
 
-    for(i=0; i<int(2*sizeof(long)); i++){
-	digit = val >> 4*(2*sizeof(long)-1);
-	val = val << 4;
-	buffer[j++] = _int2hex_lookup[(unsigned char)digit];
-    }
+  for(i=0; i<int(2*sizeof(long)); i++){
+    digit = val >> 4*(2*sizeof(long)-1);
+    val = val << 4;
+    buffer[j++] = _int2hex_lookup[(unsigned char)digit];
+  }
 
-    return string((char*)buffer);
+  return string((char*)buffer);
 }
 
 /**
@@ -130,13 +130,13 @@ bool reverse_hex2int(const string& str, unsigned int& result)
     mychar=*pc;
 
     if ( mychar >='0' && mychar <='9') 
-        result += mychar -'0';
+      result += mychar -'0';
     else if (mychar >='a' && mychar <='f') 
-        result += mychar -'a'+10;
+      result += mychar -'a'+10;
     else if (mychar  >='A' && mychar <='F') 
-        result += mychar -'A'+10;
+      result += mychar -'A'+10;
     else 
-        return true;
+      return true;
   }
 
   return false;
@@ -144,269 +144,269 @@ bool reverse_hex2int(const string& str, unsigned int& result)
 
 bool str2i(const string& str, unsigned int& result)
 {
-    char* s = (char*)str.c_str();
-    return str2i(s,result);
+  char* s = (char*)str.c_str();
+  return str2i(s,result);
 }
 
 bool str2i(char*& str, unsigned int& result, char sep)
 {
-	unsigned int ret=0;
-	int i=0;
-	char* init = str;
+  unsigned int ret=0;
+  int i=0;
+  char* init = str;
 
-	for(; (*str != '\0') && (*str == ' '); str++);
+  for(; (*str != '\0') && (*str == ' '); str++);
 
-	for(; *str != '\0';str++){
-	    if ( (*str <= '9' ) && (*str >= '0') ){
-		ret=ret*10+*str-'0';
-		i++;
-		if (i>10) goto error_digits;
-	    } else if( *str == sep )
-		    break;
-	    else
-		goto error_char;
-	}
+  for(; *str != '\0';str++){
+    if ( (*str <= '9' ) && (*str >= '0') ){
+      ret=ret*10+*str-'0';
+      i++;
+      if (i>10) goto error_digits;
+    } else if( *str == sep )
+      break;
+    else
+      goto error_char;
+  }
 
-	result = ret;
-	return false;
+  result = ret;
+  return false;
 
-error_digits:
-	DBG("str2i: too many letters in [%s]\n", init);
-	return true;
-error_char:
-	DBG("str2i: unexpected char %c in %s\n", *str, init);
-	return true;
+ error_digits:
+  DBG("str2i: too many letters in [%s]\n", init);
+  return true;
+ error_char:
+  DBG("str2i: unexpected char %c in %s\n", *str, init);
+  return true;
 }
 
 int parse_return_code(const char* lbuf, unsigned int& res_code, string& res_msg )
 {
-    char res_code_str[4] = {'\0'};
-    const char* cur=lbuf;
+  char res_code_str[4] = {'\0'};
+  const char* cur=lbuf;
 
-    // parse xxx code
-    for( int i=0; i<3; i++ ){
-	if( (*cur >= '0') && (*cur <= '9') )
-	    res_code_str[i] = *cur;
-	else
-	    goto error;
-	cur++;
-    }
+  // parse xxx code
+  for( int i=0; i<3; i++ ){
+    if( (*cur >= '0') && (*cur <= '9') )
+      res_code_str[i] = *cur;
+    else
+      goto error;
+    cur++;
+  }
 
-    if( (*cur != ' ') && (*cur != '\t') && (*cur !='-') ){
-	ERROR("expected 0x%x or 0x%x or 0x%x, found 0x%x\n",' ','\t','-',*cur);
-	goto error;
-    }
+  if( (*cur != ' ') && (*cur != '\t') && (*cur !='-') ){
+    ERROR("expected 0x%x or 0x%x or 0x%x, found 0x%x\n",' ','\t','-',*cur);
+    goto error;
+  }
 
-    if(sscanf(res_code_str,"%u",&res_code) != 1){
-	ERROR("wrong code (%s)\n",res_code_str);
-	goto error;
-    }
+  if(sscanf(res_code_str,"%u",&res_code) != 1){
+    ERROR("wrong code (%s)\n",res_code_str);
+    goto error;
+  }
 
-    // wrap spaces and tabs
-    while( (*cur == ' ') || (*cur == '\t') || (*cur =='-')) 
-	cur++;
+  // wrap spaces and tabs
+  while( (*cur == ' ') || (*cur == '\t') || (*cur =='-')) 
+    cur++;
 
-    res_msg = cur;
-    return 0;
+  res_msg = cur;
+  return 0;
 
  error:
-    ERROR("while parsing response\n");
-    return -1;
+  ERROR("while parsing response\n");
+  return -1;
 }
 
 int fifo_get_line(FILE* fifo_stream, char* str, size_t len)
 {
-    char   c;
-    size_t l;
-    char*  s=str;
+  char   c;
+  size_t l;
+  char*  s=str;
 
-    if(!len)
-	return 0;
+  if(!len)
+    return 0;
     
-    l=len; 
+  l=len; 
 
-    while( l && (c=fgetc(fifo_stream)) && !ferror(fifo_stream) && c!=EOF && c!='\n' ){
-	if(c!='\r'){
-	    *(s++) = c;
-	    l--;
-	}
+  while( l && (c=fgetc(fifo_stream)) && !ferror(fifo_stream) && c!=EOF && c!='\n' ){
+    if(c!='\r'){
+      *(s++) = c;
+      l--;
     }
+  }
 
 
-    if(l>0){
-	// We need one more character
-	// for trailing '\0'.
-	*s='\0';
+  if(l>0){
+    // We need one more character
+    // for trailing '\0'.
+    *s='\0';
 
-	return int(s-str);
-    }
-    else
-	// buffer overran.
-	return -1;
+    return int(s-str);
+  }
+  else
+    // buffer overran.
+    return -1;
 }
 
 int fifo_get_lines(FILE* fifo_stream, char* str, size_t len)
 {
-    int l=0,max=len;
-    char* s=str;
+  int l=0,max=len;
+  char* s=str;
 
-    if(!len) 
-	return 0;
+  if(!len) 
+    return 0;
 
-    while( max>0 && (l=fifo_get_line(fifo_stream,s,max)) && l!=-1 ) {
-	if(!strcmp(".",s)) 
-	    break;
-	s+=l;
-	*(s++)='\n';
-	max-=l+1;
-    }
+  while( max>0 && (l=fifo_get_line(fifo_stream,s,max)) && l!=-1 ) {
+    if(!strcmp(".",s)) 
+      break;
+    s+=l;
+    *(s++)='\n';
+    max-=l+1;
+  }
 
-    s[0]='\0';
+  s[0]='\0';
 
-    return (l!=-1 ? s-str : -1);
+  return (l!=-1 ? s-str : -1);
 }
 
 int fifo_get_param(FILE* fp, string& p, char* line_buf, unsigned int size)
 {
-    if( fifo_get_line(fp,line_buf,size) !=-1 ){
-	if(!strcmp(".",line_buf))
-	    line_buf[0]='\0';
+  if( fifo_get_line(fp,line_buf,size) !=-1 ){
+    if(!strcmp(".",line_buf))
+      line_buf[0]='\0';
 
-	p = line_buf;
-    }
-    else {
-	ERROR("could not read from FIFO: %s\n",strerror(errno));
-	return -1;
-    } 
+    p = line_buf;
+  }
+  else {
+    ERROR("could not read from FIFO: %s\n",strerror(errno));
+    return -1;
+  } 
 
-    return 0;
+  return 0;
 } 
 
 int msg_get_line(char*& msg_c, char* str, size_t len)
 {
-    size_t l;
-    char*  s=str;
+  size_t l;
+  char*  s=str;
 
-    if(!len)
-	return 0;
+  if(!len)
+    return 0;
     
-    for(l=len; l && (*msg_c) && (*msg_c !='\n'); msg_c++ ){
-	if(*msg_c!='\r'){
-	    *(s++) = *msg_c;
-	    l--;
-	}
+  for(l=len; l && (*msg_c) && (*msg_c !='\n'); msg_c++ ){
+    if(*msg_c!='\r'){
+      *(s++) = *msg_c;
+      l--;
     }
+  }
 
-    if(*msg_c)
-	msg_c++;
+  if(*msg_c)
+    msg_c++;
 
-    if(l>0){
-	// We need one more character
-	// for trailing '\0'.
-	*s='\0';
+  if(l>0){
+    // We need one more character
+    // for trailing '\0'.
+    *s='\0';
 
-	return int(s-str);
-    }
-    else {
-	ERROR("buffer too small (size=%u)\n",(unsigned int)len);
-	// buffer overran.
-	return -1;
-    }
+    return int(s-str);
+  }
+  else {
+    ERROR("buffer too small (size=%u)\n",(unsigned int)len);
+    // buffer overran.
+    return -1;
+  }
 }
 
 int msg_get_lines(char*& msg_c, char* str, size_t len)
 {
-    int l=0,max=len;
-    char* s=str;
+  int l=0,max=len;
+  char* s=str;
 
-    if(!len) 
-	return 0;
+  if(!len) 
+    return 0;
 
-    while( max>0 && (l=msg_get_line(msg_c,s,max)) && l!=-1 ) {
-	if(!strcmp(".",s)) 
-	    break;
-	s+=l;
-	*(s++)='\n';
-	max-=l+1;
-    }
+  while( max>0 && (l=msg_get_line(msg_c,s,max)) && l!=-1 ) {
+    if(!strcmp(".",s)) 
+      break;
+    s+=l;
+    *(s++)='\n';
+    max-=l+1;
+  }
 
-    s[0]='\0';
+  s[0]='\0';
 
-    return (l!=-1 ? s-str : -1);
+  return (l!=-1 ? s-str : -1);
 }
 
 int msg_get_param(char*& msg_c, string& p, char* line_buf, unsigned int size)
 {
-    if( msg_get_line(msg_c,line_buf,size) != -1 ){
+  if( msg_get_line(msg_c,line_buf,size) != -1 ){
 
-	if(!strcmp(".",line_buf))
-	    line_buf[0]='\0';
+    if(!strcmp(".",line_buf))
+      line_buf[0]='\0';
 
-	p = line_buf;
-    }
-    else {
-	ERROR("msg_get_line failed\n");
-	return -1;
-    }
+    p = line_buf;
+  }
+  else {
+    ERROR("msg_get_line failed\n");
+    return -1;
+  }
 
-    return 0;
+  return 0;
 }
 
 bool file_exists(const string& name)
 {
-    FILE* test_fp = fopen(name.c_str(),"r");
-    if(test_fp){
-	fclose(test_fp);
-	return true;
-    }
-    return false;
+  FILE* test_fp = fopen(name.c_str(),"r");
+  if(test_fp){
+    fclose(test_fp);
+    return true;
+  }
+  return false;
 }
 
 string filename_from_fullpath(const string& path)
 {
-    string::size_type pos = path.rfind('/');
-    if(pos != string::npos)
-	return path.substr(pos+1);
-    return "";
+  string::size_type pos = path.rfind('/');
+  if(pos != string::npos)
+    return path.substr(pos+1);
+  return "";
 }
 
 AmMutex inet_ntoa_mut;
 string get_addr_str(struct in_addr in)
 {
-    inet_ntoa_mut.lock();
-    string addr = inet_ntoa(in);
-    inet_ntoa_mut.unlock();
-    return addr;
+  inet_ntoa_mut.lock();
+  string addr = inet_ntoa(in);
+  inet_ntoa_mut.unlock();
+  return addr;
 }
 
 AmMutex inet_gethostbyname;
 string get_ip_from_name(const string& name)
 {
-    inet_gethostbyname.lock();
-    struct hostent *he = gethostbyname(name.c_str());
-    if(!he){
-	inet_gethostbyname.unlock();
-	return "";
-    }
-    struct in_addr a;
-    bcopy(he->h_addr, (char *) &a, sizeof(a));
+  inet_gethostbyname.lock();
+  struct hostent *he = gethostbyname(name.c_str());
+  if(!he){
     inet_gethostbyname.unlock();
-    return get_addr_str(a);
+    return "";
+  }
+  struct in_addr a;
+  bcopy(he->h_addr, (char *) &a, sizeof(a));
+  inet_gethostbyname.unlock();
+  return get_addr_str(a);
 }
 
 string uri_from_name_addr(const string& name_addr)
 {
-    string uri = name_addr;
-    string::size_type pos = uri.find('<');
+  string uri = name_addr;
+  string::size_type pos = uri.find('<');
     
-    if(pos != string::npos)
-	uri.erase(0,pos+1);
+  if(pos != string::npos)
+    uri.erase(0,pos+1);
     
-    pos = uri.find('>');
-    if(pos != string::npos)
-	uri.erase(pos,uri.length()-pos);
+  pos = uri.find('>');
+  if(pos != string::npos)
+    uri.erase(pos,uri.length()-pos);
     
-    return uri;
+  return uri;
 }
 
 #ifdef SUPPORT_IPV6
@@ -414,228 +414,228 @@ string uri_from_name_addr(const string& name_addr)
 
 int inet_aton_v6(const char* name, struct sockaddr_storage* ss)
 {
-    int error;
-    //struct sockaddr *sa;
-    struct addrinfo hints;
-    struct addrinfo *res;
+  int error;
+  //struct sockaddr *sa;
+  struct addrinfo hints;
+  struct addrinfo *res;
 
-    memset(&hints, 0, sizeof(hints));
-    /* set-up hints structure */
-    hints.ai_family = PF_UNSPEC;
-    error = getaddrinfo(name, NULL, &hints, &res);
-    if (error)
-	ERROR("%s\n",gai_strerror(error));
-    else if (res) {
-	assert( (res->ai_family == PF_INET) || 
-		(res->ai_family == PF_INET6) );
-	memset(ss,0,sizeof(struct sockaddr_storage));
-	memcpy(ss,res->ai_addr,res->ai_addrlen);
-	freeaddrinfo(res);
-	return 1;
-    }
+  memset(&hints, 0, sizeof(hints));
+  /* set-up hints structure */
+  hints.ai_family = PF_UNSPEC;
+  error = getaddrinfo(name, NULL, &hints, &res);
+  if (error)
+    ERROR("%s\n",gai_strerror(error));
+  else if (res) {
+    assert( (res->ai_family == PF_INET) || 
+	    (res->ai_family == PF_INET6) );
+    memset(ss,0,sizeof(struct sockaddr_storage));
+    memcpy(ss,res->ai_addr,res->ai_addrlen);
+    freeaddrinfo(res);
+    return 1;
+  }
 
-    return 0;
+  return 0;
 }
 
 void set_port_v6(struct sockaddr_storage* ss, short port)
 {
-    switch(ss->ss_family){
-	case PF_INET:
-	    ((struct sockaddr_in*)ss)->sin_port = htons(port);
-	    break;
-	case PF_INET6:
-	    ((struct sockaddr_in6*)ss)->sin6_port = htons(port);
-	    break;
-	default:
-	    ERROR("unknown address family\n");
-	    assert(0);
-	    break;
-    }
+  switch(ss->ss_family){
+  case PF_INET:
+    ((struct sockaddr_in*)ss)->sin_port = htons(port);
+    break;
+  case PF_INET6:
+    ((struct sockaddr_in6*)ss)->sin6_port = htons(port);
+    break;
+  default:
+    ERROR("unknown address family\n");
+    assert(0);
+    break;
+  }
 }
 
 short get_port_v6(struct sockaddr_storage* ss)
 {
-    switch(ss->ss_family){
-	case PF_INET:
-	    return ntohs(((struct sockaddr_in*)ss)->sin_port);
-	case PF_INET6:
-	    return ntohs(((struct sockaddr_in6*)ss)->sin6_port);
-	default:
-	    ERROR("unknown address family\n");
-	    assert(0);
-	    break;
-    }
+  switch(ss->ss_family){
+  case PF_INET:
+    return ntohs(((struct sockaddr_in*)ss)->sin_port);
+  case PF_INET6:
+    return ntohs(((struct sockaddr_in6*)ss)->sin6_port);
+  default:
+    ERROR("unknown address family\n");
+    assert(0);
+    break;
+  }
 }
 
 #endif
 
 int create_unix_socket(const string& path)
 {
-    if(path.empty()){
-	ERROR("parameter path is empty\n");
-	return -1;
-    }
+  if(path.empty()){
+    ERROR("parameter path is empty\n");
+    return -1;
+  }
 
-    int sd = socket(PF_UNIX,SOCK_DGRAM,0);
-    if(sd == -1){
-	ERROR("could not create unix socket: %s\n",strerror(errno));
-	return -1;
-    }
+  int sd = socket(PF_UNIX,SOCK_DGRAM,0);
+  if(sd == -1){
+    ERROR("could not create unix socket: %s\n",strerror(errno));
+    return -1;
+  }
 
-    if(path.size() > UNIX_PATH_MAX-1){
-	ERROR("could not create unix socket: unix socket path is too long\n");
-	close(sd);
-	return -1;
-    }
+  if(path.size() > UNIX_PATH_MAX-1){
+    ERROR("could not create unix socket: unix socket path is too long\n");
+    close(sd);
+    return -1;
+  }
 	
-    struct sockaddr_un sock_addr;
-    sock_addr.sun_family = AF_UNIX;
-    strcpy(sock_addr.sun_path,path.c_str());
+  struct sockaddr_un sock_addr;
+  sock_addr.sun_family = AF_UNIX;
+  strcpy(sock_addr.sun_path,path.c_str());
 	
-    if(bind(sd,(struct sockaddr *)&sock_addr,
-	    sizeof(struct sockaddr_un)) == -1) {
-	ERROR("could not bind unix socket (path=%s): %s\n",path.c_str(),strerror(errno));
-	close(sd);
-	return -1;
-    }
+  if(bind(sd,(struct sockaddr *)&sock_addr,
+	  sizeof(struct sockaddr_un)) == -1) {
+    ERROR("could not bind unix socket (path=%s): %s\n",path.c_str(),strerror(errno));
+    close(sd);
+    return -1;
+  }
 
-    return sd;
+  return sd;
 }
 
 
 string file_extension(const string& path)
 {
-    string::size_type pos = path.rfind('.');
-    if(pos == string::npos)
-	return "";
+  string::size_type pos = path.rfind('.');
+  if(pos == string::npos)
+    return "";
 
-    return path.substr(pos+1,string::npos);
+  return path.substr(pos+1,string::npos);
 }
 
 string add2path( const string& path, int n_suffix, ...)
 {
-    va_list ap;
-    string outpath = path;
+  va_list ap;
+  string outpath = path;
     
-    va_start(ap,n_suffix);
+  va_start(ap,n_suffix);
 
-    for(int i=0; i<n_suffix; i++){
+  for(int i=0; i<n_suffix; i++){
 
-	const char* s = va_arg(ap,const char*);
+    const char* s = va_arg(ap,const char*);
 
-	if(!outpath.empty() && (outpath[outpath.length()-1] != '/'))
-	    outpath += '/';
+    if(!outpath.empty() && (outpath[outpath.length()-1] != '/'))
+      outpath += '/';
 
-	outpath += s;
-    }
+    outpath += s;
+  }
 
-    va_end(ap);
+  va_end(ap);
 
-    return outpath;
+  return outpath;
 }
 
 
 int write_to_fifo(const string& fifo, const char * buf, unsigned int len)
 {
-    int fd_fifo;
-    int retry = SER_WRITE_TIMEOUT / SER_WRITE_INTERVAL;
+  int fd_fifo;
+  int retry = SER_WRITE_TIMEOUT / SER_WRITE_INTERVAL;
 
-    for(;retry>0; retry--){
+  for(;retry>0; retry--){
 	
-	if((fd_fifo = open(fifo.c_str(),
-			   O_WRONLY | O_NONBLOCK)) == -1) {
-	    ERROR("while opening %s: %s\n",
-		  fifo.c_str(),strerror(errno));
+    if((fd_fifo = open(fifo.c_str(),
+		       O_WRONLY | O_NONBLOCK)) == -1) {
+      ERROR("while opening %s: %s\n",
+	    fifo.c_str(),strerror(errno));
 
-	    if(retry)
-		sleep_us(50000);
-	}
-	else {
-	    break;
-	}
+      if(retry)
+	sleep_us(50000);
     }
+    else {
+      break;
+    }
+  }
 
-    if(!retry)
-	return -1;
+  if(!retry)
+    return -1;
 
-    DBG("write_to_fifo: <%s>\n",buf);
-    int l = write(fd_fifo,buf,len);
-    close(fd_fifo);
+  DBG("write_to_fifo: <%s>\n",buf);
+  int l = write(fd_fifo,buf,len);
+  close(fd_fifo);
 
-    if(l==-1)
-	ERROR("while writing: %s\n",strerror(errno));
-    else
-	DBG("Write to fifo: completed\n");
+  if(l==-1)
+    ERROR("while writing: %s\n",strerror(errno));
+  else
+    DBG("Write to fifo: completed\n");
 
-    return l;
+  return l;
 }
 
 
 int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int len)
 {
-    int retry = SER_WRITE_TIMEOUT / SER_WRITE_INTERVAL;
-    int ret=-1;
-    if(AmConfig::SerSocketName.empty()){
-	ERROR("config parameter 'ser_socket_name' has not been configured !!!\n");
-	goto error;
-    }
+  int retry = SER_WRITE_TIMEOUT / SER_WRITE_INTERVAL;
+  int ret=-1;
+  if(AmConfig::SerSocketName.empty()){
+    ERROR("config parameter 'ser_socket_name' has not been configured !!!\n");
+    goto error;
+  }
 
-    struct sockaddr_un ser_addr;
-    memset (&ser_addr, 0, sizeof (ser_addr));
-    ser_addr.sun_family = AF_UNIX;
-    strncpy(ser_addr.sun_path,to_addr,UNIX_PATH_MAX);
+  struct sockaddr_un ser_addr;
+  memset (&ser_addr, 0, sizeof (ser_addr));
+  ser_addr.sun_family = AF_UNIX;
+  strncpy(ser_addr.sun_path,to_addr,UNIX_PATH_MAX);
 
-    DBG("sending: <%.*s>\n",len,buf);
+  DBG("sending: <%.*s>\n",len,buf);
 
-    for(;retry>0;retry--){
+  for(;retry>0;retry--){
 	
-	if( (sendto(sd,buf,len,MSG_DONTWAIT, 
-		   (struct sockaddr*)&ser_addr,
-		   sizeof(struct sockaddr_un)) == -1) ) {
+    if( (sendto(sd,buf,len,MSG_DONTWAIT, 
+		(struct sockaddr*)&ser_addr,
+		sizeof(struct sockaddr_un)) == -1) ) {
 
-	    if(errno == EAGAIN){
-		if(retry)
-		    sleep_us(SER_WRITE_INTERVAL);
-		continue;
-	    }
+      if(errno == EAGAIN){
+	if(retry)
+	  sleep_us(SER_WRITE_INTERVAL);
+	continue;
+      }
 
-	    ERROR("while sending request to %s: %s\n",
-		  ser_addr.sun_path,strerror(errno));
-	    goto error;
-	}
-	break;
+      ERROR("while sending request to %s: %s\n",
+	    ser_addr.sun_path,strerror(errno));
+      goto error;
     }
+    break;
+  }
 
-    if(!retry){
-	ERROR("timeout while sending request to %s\n",ser_addr.sun_path);
-	goto error;
-    }
+  if(!retry){
+    ERROR("timeout while sending request to %s\n",ser_addr.sun_path);
+    goto error;
+  }
 
-    DBG("write to unix socket: completed\n");
-    ret = 0;
+  DBG("write to unix socket: completed\n");
+  ret = 0;
 
  error:
-//     close(sd);
-//    return (ret == -1 ? ret : len);
-    return ret;
+  //     close(sd);
+  //    return (ret == -1 ? ret : len);
+  return ret;
 }
 
 
 string extract_tag(const string& addr)
 {
-    string::size_type p = addr.find(";tag=");
-    if(p == string::npos)
-	return "";
+  string::size_type p = addr.find(";tag=");
+  if(p == string::npos)
+    return "";
 
-    p += 5/*sizeof(";tag=")*/;
-    string::size_type p_end = p;
-    while(p_end < addr.length()){
-	if( addr[p_end] == '>'
-	    || addr[p_end] == ';' )
-	    break;
-	p_end++;
-    }
-    return addr.substr(p,p_end-p);
+  p += 5/*sizeof(";tag=")*/;
+  string::size_type p_end = p;
+  while(p_end < addr.length()){
+    if( addr[p_end] == '>'
+	|| addr[p_end] == ';' )
+      break;
+    p_end++;
+  }
+  return addr.substr(p,p_end-p);
 }
 
 bool key_in_list(const string& s_list, const string& key, 
@@ -650,7 +650,7 @@ bool key_in_list(const string& s_list, const string& key,
       pos2 = s_list.length()-1;
     while ((pos2>0)&&
 	   ((s_list[pos2] == ' ')||(s_list[pos2] == list_delim)
-	   ||(s_list[pos2] == '\n')))
+	    ||(s_list[pos2] == '\n')))
       pos2--;
     if (s_list.substr(pos, pos2-pos+1)==key)
       return true;
@@ -707,7 +707,7 @@ string get_header_param(const string& hdr_string,
  * while skipping escaped values
  */
 string get_header_keyvalue(const string& param_hdr, const string& name) {
-// ugly, but we need escaping
+  // ugly, but we need escaping
 #define ST_FINDKEY  0
 #define ST_FK_ESC   1
 #define ST_CMPKEY   2
@@ -729,9 +729,9 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
       if (curr=='"') {
 	st = ST_FK_ESC;
       } else if (curr==name[0]) {
-	  st = ST_CMPKEY;
-	  s_begin = p;
-	  corr = 1;
+	st = ST_CMPKEY;
+	s_begin = p;
+	corr = 1;
       }
       p++;
     }; break;
@@ -743,25 +743,25 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
     }; break;
 
     case ST_CMPKEY: {
-	if (corr==name.length()) {
-	  if (curr=='=') {
-	    st = ST_SRCHEND;
-	    v_begin=++p;
-	  } else {
-	    p=s_begin+1;
-	    st = ST_FINDKEY;
-	    corr=0;
-	  }
+      if (corr==name.length()) {
+	if (curr=='=') {
+	  st = ST_SRCHEND;
+	  v_begin=++p;
 	} else {
-	  if (curr==name[corr]) {
-	    p++;
-	    corr++;
-	  } else {
-	    st = ST_FINDKEY;
-	    corr=0;
-	    p=s_begin+1;	  
-	  }
+	  p=s_begin+1;
+	  st = ST_FINDKEY;
+	  corr=0;
 	}
+      } else {
+	if (curr==name[corr]) {
+	  p++;
+	  corr++;
+	} else {
+	  st = ST_FINDKEY;
+	  corr=0;
+	  p=s_begin+1;	  
+	}
+      }
     }; break;
 
     case ST_SRCHEND: {
@@ -805,8 +805,8 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
 string get_session_param(const string& hdrs, const string& name) {
   string iptel_app_param = getHeader(hdrs, "P-Iptel-Param");
   if (!iptel_app_param.length()) {
-//      DBG("call parameters header P-Iptel-Param not found "
-// 	 "(need to configure ser's tw_append?).\n");
+    //      DBG("call parameters header P-Iptel-Param not found "
+    // 	 "(need to configure ser's tw_append?).\n");
     return "";
   }
 
@@ -820,22 +820,22 @@ static AmMutex _s_rand_mut;
 
 void init_random()
 {
-    int seed=0;
-    FILE* fp_rand = fopen("/dev/random","r");
-    if(fp_rand){
-	fread(&seed,sizeof(int),1,fp_rand);
-	fclose(fp_rand);
-    }
-    seed += getpid();
-    seed += time(0);
-    _s_rand = seed;
+  int seed=0;
+  FILE* fp_rand = fopen("/dev/random","r");
+  if(fp_rand){
+    fread(&seed,sizeof(int),1,fp_rand);
+    fclose(fp_rand);
+  }
+  seed += getpid();
+  seed += time(0);
+  _s_rand = seed;
 }
 
 unsigned int get_random()
 {
-    _s_rand_mut.lock();
-    unsigned int r = rand_r(&_s_rand);
-    _s_rand_mut.unlock();
+  _s_rand_mut.lock();
+  unsigned int r = rand_r(&_s_rand);
+  _s_rand_mut.unlock();
     
-    return r;
+  return r;
 }

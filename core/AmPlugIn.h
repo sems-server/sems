@@ -54,109 +54,109 @@ struct amci_subtype_t;
 class AmPlugIn
 {
  public:
-//     enum PlugInType {
-//       Audio,
-//       App
-//     };
+  //     enum PlugInType {
+  //       Audio,
+  //       App
+  //     };
 
-private:
-    static AmPlugIn* _instance;
+ private:
+  static AmPlugIn* _instance;
 
-    vector<void*> dlls;
+  vector<void*> dlls;
 
-    map<int,amci_codec_t*>       codecs;
-    map<int,amci_payload_t*>     payloads;
-    map<string,amci_inoutfmt_t*> file_formats;
-    map<string,AmSessionFactory*>  name2app;
+  map<int,amci_codec_t*>       codecs;
+  map<int,amci_payload_t*>     payloads;
+  map<string,amci_inoutfmt_t*> file_formats;
+  map<string,AmSessionFactory*>  name2app;
 
-    map<string,AmSessionEventHandlerFactory*> name2seh;
-    map<string,AmDynInvokeFactory*> name2di;
-    map<string,AmSIPEventHandler*> name2sipeh;
+  map<string,AmSessionEventHandlerFactory*> name2seh;
+  map<string,AmDynInvokeFactory*> name2di;
+  map<string,AmSIPEventHandler*> name2sipeh;
 
-    int dynamic_pl; // range: 96->127, see RFC 1890
+  int dynamic_pl; // range: 96->127, see RFC 1890
     
-    AmPlugIn();
-    ~AmPlugIn();
+  AmPlugIn();
+  ~AmPlugIn();
 
-    /** @return -1 if failed, else 0. */
-    int loadPlugIn(const string& file);
-    int loadAudioPlugIn(amci_exports_t* exports);
-    int loadAppPlugIn(AmPluginFactory* cb);
-    int loadSehPlugIn(AmPluginFactory* cb);
-    int loadDiPlugIn(AmPluginFactory* cb);
-	int loadSIPehPlugIn(AmPluginFactory* f);
+  /** @return -1 if failed, else 0. */
+  int loadPlugIn(const string& file);
+  int loadAudioPlugIn(amci_exports_t* exports);
+  int loadAppPlugIn(AmPluginFactory* cb);
+  int loadSehPlugIn(AmPluginFactory* cb);
+  int loadDiPlugIn(AmPluginFactory* cb);
+  int loadSIPehPlugIn(AmPluginFactory* f);
 
-    int addCodec(amci_codec_t* c);
-    int addPayload(amci_payload_t* p);
-    int addFileFormat(amci_inoutfmt_t* f);
+  int addCodec(amci_codec_t* c);
+  int addPayload(amci_payload_t* p);
+  int addFileFormat(amci_inoutfmt_t* f);
 
  public:
 
-    static AmPlugIn* instance();
+  static AmPlugIn* instance();
 
-    /** 
-     * Loads all plug-ins from the directory given as parameter. 
-     * @return -1 if failed, else 0.
-     */
-    int load(const string& directory, const string& plugins);
+  /** 
+   * Loads all plug-ins from the directory given as parameter. 
+   * @return -1 if failed, else 0.
+   */
+  int load(const string& directory, const string& plugins);
 
-    /** 
-     * Payload lookup function.
-     * @param payload_id Payload ID.
-     * @return NULL if failed .
-     */
-    amci_payload_t*  payload(int payload_id);
-    /** @return the suported payloads. */
-    const map<int,amci_payload_t*>& getPayloads() { return payloads; }
-    /** 
-     * File format lookup according to the 
-     * format name and/or file extension.
-     * @param fmt_name Format name.
-     * @param ext File extension.
-     * @return NULL if failed.
-     */
-    amci_inoutfmt_t* fileFormat(const string& fmt_name, const string& ext = "");
-    /** 
-     * File format's subtype lookup function.
-     * @param iofmt The file format.
-     * @param subtype Subtype ID (see plug-in declaration for values).
-     * @return NULL if failed.
-     */
-    amci_subtype_t*  subtype(amci_inoutfmt_t* iofmt, int subtype);
-    /** 
-     * Codec lookup function.
-     * @param id Codec ID (see amci/codecs.h).
-     * @return NULL if failed.
-     */
-    amci_codec_t*    codec(int id);
-    /**
-     * Application lookup function
-     * @param app_name application name
-     * @return NULL if failed (-> application not found).
-     */
-    AmSessionFactory* getFactory4App(const string& app_name);
+  /** 
+   * Payload lookup function.
+   * @param payload_id Payload ID.
+   * @return NULL if failed .
+   */
+  amci_payload_t*  payload(int payload_id);
+  /** @return the suported payloads. */
+  const map<int,amci_payload_t*>& getPayloads() { return payloads; }
+  /** 
+   * File format lookup according to the 
+   * format name and/or file extension.
+   * @param fmt_name Format name.
+   * @param ext File extension.
+   * @return NULL if failed.
+   */
+  amci_inoutfmt_t* fileFormat(const string& fmt_name, const string& ext = "");
+  /** 
+   * File format's subtype lookup function.
+   * @param iofmt The file format.
+   * @param subtype Subtype ID (see plug-in declaration for values).
+   * @return NULL if failed.
+   */
+  amci_subtype_t*  subtype(amci_inoutfmt_t* iofmt, int subtype);
+  /** 
+   * Codec lookup function.
+   * @param id Codec ID (see amci/codecs.h).
+   * @return NULL if failed.
+   */
+  amci_codec_t*    codec(int id);
+  /**
+   * Application lookup function
+   * @param app_name application name
+   * @return NULL if failed (-> application not found).
+   */
+  AmSessionFactory* getFactory4App(const string& app_name);
 
-    /**
-     * Session event handler lookup function
-     * @param name application name
-     * @return NULL if failed (-> handler not found).
-     */
-    AmSessionEventHandlerFactory* getFactory4Seh(const string& name);
+  /**
+   * Session event handler lookup function
+   * @param name application name
+   * @return NULL if failed (-> handler not found).
+   */
+  AmSessionEventHandlerFactory* getFactory4Seh(const string& name);
 
-    /**
-     * Dynamic invokation component
-     */
-    AmDynInvokeFactory* getFactory4Di(const string& name);
+  /**
+   * Dynamic invokation component
+   */
+  AmDynInvokeFactory* getFactory4Di(const string& name);
 
-    /**
-     * SIP event handler lookup function
-     * @param name application name
-     * @return NULL if failed (-> handler not found).
-     */
-    AmSIPEventHandler* getFactory4SIPeh(const string& name);
+  /**
+   * SIP event handler lookup function
+   * @param name application name
+   * @return NULL if failed (-> handler not found).
+   */
+  AmSIPEventHandler* getFactory4SIPeh(const string& name);
 
-    /** @return true if this record has been inserted. */
-    bool registerFactory4App(const string& app_name, AmSessionFactory* f);
+  /** @return true if this record has been inserted. */
+  bool registerFactory4App(const string& app_name, AmSessionFactory* f);
 };
 
 #endif

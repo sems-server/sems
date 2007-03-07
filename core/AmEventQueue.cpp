@@ -29,7 +29,7 @@
 #include "log.h"
 
 AmEventQueue::AmEventQueue(AmEventHandler* handler)
-    : handler(handler),ev_pending(false)
+  : handler(handler),ev_pending(false)
 {
 }
 
@@ -37,71 +37,71 @@ AmEventQueue::~AmEventQueue()
 {
   m_queue.lock();
   while(!ev_queue.empty()){
-	delete ev_queue.front();
-	ev_queue.pop();
+    delete ev_queue.front();
+    ev_queue.pop();
   }
   m_queue.unlock();
 }
 
 void AmEventQueue::postEvent(AmEvent* event)
 {
-    DBG("AmEventQueue: trying to post event\n");
+  DBG("AmEventQueue: trying to post event\n");
 
-    m_queue.lock();
-    if(event)
-	ev_queue.push(event);
-    ev_pending.set(true);
-    m_queue.unlock();
+  m_queue.lock();
+  if(event)
+    ev_queue.push(event);
+  ev_pending.set(true);
+  m_queue.unlock();
 
-    DBG("AmEventQueue: event posted\n");
+  DBG("AmEventQueue: event posted\n");
 }
 
 void AmEventQueue::processEvents()
 {
-    m_queue.lock();
+  m_queue.lock();
 
-    while(!ev_queue.empty()) {
+  while(!ev_queue.empty()) {
 	
-	AmEvent* event = ev_queue.front();
-	ev_queue.pop();
-	m_queue.unlock();
-
-	DBG("before processing event\n");
-	handler->process(event);
-	DBG("event processed\n");
-	delete event;
-	m_queue.lock();
-    }
-    
-    ev_pending.set(false);
+    AmEvent* event = ev_queue.front();
+    ev_queue.pop();
     m_queue.unlock();
+
+    DBG("before processing event\n");
+    handler->process(event);
+    DBG("event processed\n");
+    delete event;
+    m_queue.lock();
+  }
+    
+  ev_pending.set(false);
+  m_queue.unlock();
 }
 
 void AmEventQueue::waitForEvent()
 {
-    ev_pending.wait_for();
+  ev_pending.wait_for();
 }
 
 void AmEventQueue::processSingleEvent()
 {
-    m_queue.lock();
+  m_queue.lock();
 
-    if (!ev_queue.empty()) {
+  if (!ev_queue.empty()) {
 
-	AmEvent* event = ev_queue.front();
-	ev_queue.pop();
-	m_queue.unlock();
-
-	DBG("before processing event\n");
-	handler->process(event);
-	DBG("event processed\n");
-	delete event;
-
-	m_queue.lock();
-	if (ev_queue.empty())
-	    ev_pending.set(false);
-    }
-
+    AmEvent* event = ev_queue.front();
+    ev_queue.pop();
     m_queue.unlock();
+
+    DBG("before processing event\n");
+    handler->process(event);
+    DBG("event processed\n");
+    delete event;
+
+    m_queue.lock();
+    if (ev_queue.empty())
+      ev_pending.set(false);
+  }
+
+  m_queue.unlock();
 }
 

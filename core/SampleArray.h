@@ -33,8 +33,8 @@
 /** \brief comparator for timestamps */
 struct ts_less
 {
-    bool operator()(const unsigned int& l, 
-		    const unsigned int& r) const;
+  bool operator()(const unsigned int& l, 
+		  const unsigned int& r) const;
 };
 
 /** \brief timed array of samples */
@@ -42,29 +42,29 @@ template <typename T>
 class SampleArray
 {
 public:
-    //protected:
+  //protected:
 
-    T samples[SIZE_MIX_BUFFER];
-    unsigned int last_ts;
-    bool         init;
+  T samples[SIZE_MIX_BUFFER];
+  unsigned int last_ts;
+  bool         init;
 
-    void clear_all();
-    void clear(unsigned int start_ts,unsigned int end_ts);
-    void write(unsigned int ts, T* buffer, unsigned int size);
-    void read(unsigned int ts, T* buffer, unsigned int size);
+  void clear_all();
+  void clear(unsigned int start_ts,unsigned int end_ts);
+  void write(unsigned int ts, T* buffer, unsigned int size);
+  void read(unsigned int ts, T* buffer, unsigned int size);
 
-    //public:
-    SampleArray();
+  //public:
+  SampleArray();
 
-    /**
-     * @param size buffer size in [samples].
-     */
-    void put(unsigned int ts, T* buffer, unsigned int size);
+  /**
+   * @param size buffer size in [samples].
+   */
+  void put(unsigned int ts, T* buffer, unsigned int size);
 
-    /**
-     * @param buf_size buffer size in [samples].
-     */
-    void get(unsigned int ts, T* buffer, unsigned int buf_size);
+  /**
+   * @param buf_size buffer size in [samples].
+   */
+  void get(unsigned int ts, T* buffer, unsigned int buf_size);
 };
 
 // 32 bit sample

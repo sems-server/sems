@@ -32,30 +32,30 @@
 #include "AmConfig.h"
 
 AmSession* AmUAC::dialout(const string& user,
-			    const string& app_name,
-			    const string& r_uri, 
-			    const string& from,
-			    const string& from_uri,
-			    const string& to,
-				const string& local_tag) {
+			  const string& app_name,
+			  const string& r_uri, 
+			  const string& from,
+			  const string& from_uri,
+			  const string& to,
+			  const string& local_tag) {
  
-    AmSipRequest req;
+  AmSipRequest req;
 
-    req.cmd      = app_name;
-    req.user     = user;
-    req.method   = "INVITE";
-    req.dstip    = AmConfig::LocalIP;
-    req.r_uri    = r_uri;
-    req.from     = from;
-    req.from_uri = from_uri;
-	if (!local_tag.length())
-		req.from_tag   = AmSession::getNewId();
-	else 
-		req.from_tag   = local_tag;
-    req.to       = to;
-    req.to_tag   = "";
-    req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
+  req.cmd      = app_name;
+  req.user     = user;
+  req.method   = "INVITE";
+  req.dstip    = AmConfig::LocalIP;
+  req.r_uri    = r_uri;
+  req.from     = from;
+  req.from_uri = from_uri;
+  if (!local_tag.length())
+    req.from_tag   = AmSession::getNewId();
+  else 
+    req.from_tag   = local_tag;
+  req.to       = to;
+  req.to_tag   = "";
+  req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
     
-    return AmSessionContainer::instance()->startSessionUAC(req);
+  return AmSessionContainer::instance()->startSessionUAC(req);
 }
 

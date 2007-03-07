@@ -27,7 +27,6 @@
 
 #include "AmServer.h"
 #include "AmSession.h"
-//#include "AmRequest.h"
 #include "AmSdp.h"
 #include "AmMail.h"
 #include "AmConfig.h"
@@ -52,22 +51,22 @@
 
 bool AmSessionEventHandler::process(AmEvent*)
 {
-    return false;
+  return false;
 }
 
 bool AmSessionEventHandler::onSipEvent(AmSipEvent*)
 {
-    return false;
+  return false;
 }
 
 bool AmSessionEventHandler::onSipRequest(const AmSipRequest&)
 {
-    return false;
+  return false;
 }
 
 bool AmSessionEventHandler::onSipReply(const AmSipReply& reply)
 {
-    return false;
+  return false;
 }
 
 bool AmSessionEventHandler::onSendRequest(const string& method, 
@@ -76,7 +75,7 @@ bool AmSessionEventHandler::onSendRequest(const string& method,
 					  string& hdrs,
 					  unsigned int cseq)
 {
-    return false;
+  return false;
 }
 
 bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
@@ -86,7 +85,7 @@ bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
 					const string& body,
 					string& hdrs)
 {
-    return false;
+  return false;
 }
 
 
@@ -122,22 +121,22 @@ bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
 
 
 AmSession::AmSession()
-    : AmEventQueue(this), // AmDialogState(),
-      dlg(this),
-      detached(true),
-      sess_stopped(false),rtp_str(this),negotiate_onreply(false),
-      input(0), output(0), payload(0),
-      m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
-      m_dtmfDetectionEnabled(true)
+  : AmEventQueue(this), // AmDialogState(),
+    dlg(this),
+    detached(true),
+    sess_stopped(false),rtp_str(this),negotiate_onreply(false),
+    input(0), output(0), payload(0),
+    m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
+    m_dtmfDetectionEnabled(true)
 {
 }
 
 AmSession::~AmSession()
 {
-    for(vector<AmSessionEventHandler*>::iterator evh = ev_handlers.begin();
-	evh != ev_handlers.end(); evh++)
-	if((*evh)->destroy)
-	    delete *evh;
+  for(vector<AmSessionEventHandler*>::iterator evh = ev_handlers.begin();
+      evh != ev_handlers.end(); evh++)
+    if((*evh)->destroy)
+      delete *evh;
 }
 
 void AmSession::setCallgroup(const string& cg) {
@@ -146,231 +145,231 @@ void AmSession::setCallgroup(const string& cg) {
 
 void AmSession::addHandler(AmSessionEventHandler* sess_evh)
 {
-	if (sess_evh != NULL)
-		ev_handlers.push_back(sess_evh);
+  if (sess_evh != NULL)
+    ev_handlers.push_back(sess_evh);
 }
 
 void AmSession::setInput(AmAudio* in)
 {
-    lockAudio();
-    input = in;
-    unlockAudio();
+  lockAudio();
+  input = in;
+  unlockAudio();
 }
 
 void AmSession::setOutput(AmAudio* out)
 {
-    lockAudio();
-    output = out;
-    unlockAudio();
+  lockAudio();
+  output = out;
+  unlockAudio();
 }
 
 void AmSession::setInOut(AmAudio* in,AmAudio* out)
 {
-    lockAudio();
-    input = in;
-    output = out;
-    unlockAudio();
+  lockAudio();
+  input = in;
+  output = out;
+  unlockAudio();
 }
 
 void AmSession::lockAudio()
 { 
-    audio_mut.lock();
+  audio_mut.lock();
 }
 
 void AmSession::unlockAudio()
 {
-    audio_mut.unlock();
+  audio_mut.unlock();
 }
 
 const string& AmSession::getCallID() const
 { 
-    return dlg.callid;
+  return dlg.callid;
 }
 
 const string& AmSession::getRemoteTag() const
 { 
-    return dlg.remote_tag;
+  return dlg.remote_tag;
 }
 
 const string& AmSession::getLocalTag() const
 {
-    return dlg.local_tag;
+  return dlg.local_tag;
 }
 
 void AmSession::setLocalTag(const string& tag)
 {
-    DBG("AmSession::setLocalTag(%s)\n",tag.c_str());
-    dlg.local_tag = tag;
+  DBG("AmSession::setLocalTag(%s)\n",tag.c_str());
+  dlg.local_tag = tag;
 }
 
 const SdpPayload* AmSession::getPayload()
 {
-    return &payload;
+  return &payload;
 }
 
 int AmSession::getRPort()
 {
-    return rtp_str.getRPort();
+  return rtp_str.getRPort();
 }
 
 void AmSession::negotiate(const string& sdp_body,
 			  bool force_symmetric_rtp,
 			  string* sdp_reply)
 {
-    string r_host = "";
-    int    r_port = 0;
+  string r_host = "";
+  int    r_port = 0;
 
-    sdp.setBody(sdp_body.c_str());
+  sdp.setBody(sdp_body.c_str());
 
-    if(sdp.parse())
-	throw AmSession::Exception(400,"session description parsing failed");
+  if(sdp.parse())
+    throw AmSession::Exception(400,"session description parsing failed");
 
-    if(sdp.media.empty())
-	throw AmSession::Exception(400,"no media line found in SDP message");
+  if(sdp.media.empty())
+    throw AmSession::Exception(400,"no media line found in SDP message");
     
-    SdpPayload* tmp_pl = sdp.getCompatiblePayload(MT_AUDIO,r_host,r_port);
+  SdpPayload* tmp_pl = sdp.getCompatiblePayload(MT_AUDIO,r_host,r_port);
 
-    if(!tmp_pl)
-	throw AmSession::Exception(606,"could not find compatible payload");
+  if(!tmp_pl)
+    throw AmSession::Exception(606,"could not find compatible payload");
     
-    if(payload.int_pt == -1){
+  if(payload.int_pt == -1){
 
-	payload = *tmp_pl;
-	DBG("new payload: %i\n",payload.int_pt);
-    }
-    else if(payload.int_pt != tmp_pl->int_pt){
-	DBG("old payload: %i; new payload: %i\n",payload.int_pt,tmp_pl->int_pt);
-	throw AmSession::Exception(400,"do not accept payload changes");
-    }
+    payload = *tmp_pl;
+    DBG("new payload: %i\n",payload.int_pt);
+  }
+  else if(payload.int_pt != tmp_pl->int_pt){
+    DBG("old payload: %i; new payload: %i\n",payload.int_pt,tmp_pl->int_pt);
+    throw AmSession::Exception(400,"do not accept payload changes");
+  }
 
-    const SdpPayload *telephone_event_payload = sdp.telephoneEventPayload();
-    if(telephone_event_payload)
+  const SdpPayload *telephone_event_payload = sdp.telephoneEventPayload();
+  if(telephone_event_payload)
     {
-	DBG("remote party supports telephone events (pt=%i)\n",
-	    telephone_event_payload->payload_type);
+      DBG("remote party supports telephone events (pt=%i)\n",
+	  telephone_event_payload->payload_type);
 	
-	lockAudio();
-	rtp_str.setTelephoneEventPT(telephone_event_payload);
-	unlockAudio();
+      lockAudio();
+      rtp_str.setTelephoneEventPT(telephone_event_payload);
+      unlockAudio();
     }
-    else {
-	DBG("remote party doesn't support telephone events\n");
-    }
+  else {
+    DBG("remote party doesn't support telephone events\n");
+  }
 
-    bool passive_mode = false;
-    if( sdp.remote_active || force_symmetric_rtp) {
-	DBG("The other UA is NATed: switched to passive mode.\n");
-	DBG("remote_active = %i; force_symmetric_rtp = %i\n",
-	    sdp.remote_active,force_symmetric_rtp);
+  bool passive_mode = false;
+  if( sdp.remote_active || force_symmetric_rtp) {
+    DBG("The other UA is NATed: switched to passive mode.\n");
+    DBG("remote_active = %i; force_symmetric_rtp = %i\n",
+	sdp.remote_active,force_symmetric_rtp);
 
-	passive_mode = true;
-    }
+    passive_mode = true;
+  }
 
-    lockAudio();
-    rtp_str.setLocalIP(AmConfig::LocalIP);
-    rtp_str.setPassiveMode(passive_mode);
-    rtp_str.setRAddr(r_host, r_port);
-    unlockAudio();
+  lockAudio();
+  rtp_str.setLocalIP(AmConfig::LocalIP);
+  rtp_str.setPassiveMode(passive_mode);
+  rtp_str.setRAddr(r_host, r_port);
+  unlockAudio();
 
-    if(sdp_reply)
-	sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),*sdp_reply);
+  if(sdp_reply)
+    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),*sdp_reply);
 }
 
 void AmSession::run()
 {
+  try {
     try {
-	try {
 
-	    onStart();
+      onStart();
 
-	    while (!sess_stopped.get() || 
-		   (dlg.getStatus() == AmSipDialog::Disconnecting)//  ||
-		   // (dlg.getUACTransPending())
-		   ){
+      while (!sess_stopped.get() || 
+	     (dlg.getStatus() == AmSipDialog::Disconnecting)//  ||
+	     // (dlg.getUACTransPending())
+	     ){
 
-		waitForEvent();
-		processEvents();
+	waitForEvent();
+	processEvents();
 
-		DBG("%s dlg.getUACTransPending() = %i\n",
-		    dlg.callid.c_str(),dlg.getUACTransPending());
-	    }
+	DBG("%s dlg.getUACTransPending() = %i\n",
+	    dlg.callid.c_str(),dlg.getUACTransPending());
+      }
 	    
-	    if ( dlg.getStatus() != AmSipDialog::Disconnected ) {
+      if ( dlg.getStatus() != AmSipDialog::Disconnected ) {
 		
-		DBG("dlg '%s' not terminated: sending bye\n",dlg.callid.c_str());
-		if(dlg.bye() == 0){
-		    while ( dlg.getStatus() != AmSipDialog::Disconnected ){
-			waitForEvent();
-			processEvents();
-		    }
-		}
-		else {
-		    WARN("failed to terminate call properly\n");
-		}
-	    }
+	DBG("dlg '%s' not terminated: sending bye\n",dlg.callid.c_str());
+	if(dlg.bye() == 0){
+	  while ( dlg.getStatus() != AmSipDialog::Disconnected ){
+	    waitForEvent();
+	    processEvents();
+	  }
 	}
-	catch(const AmSession::Exception& e){ throw e; }
-	catch(const string& str){
-	    ERROR("%s\n",str.c_str());
-	    throw AmSession::Exception(500,"unexpected exception.");
+	else {
+	  WARN("failed to terminate call properly\n");
 	}
-	catch(...){
-	    throw AmSession::Exception(500,"unexpected exception.");
-	}
+      }
     }
-    catch(const AmSession::Exception& e){
-	ERROR("%i %s\n",e.code,e.reason.c_str());
+    catch(const AmSession::Exception& e){ throw e; }
+    catch(const string& str){
+      ERROR("%s\n",str.c_str());
+      throw AmSession::Exception(500,"unexpected exception.");
     }
+    catch(...){
+      throw AmSession::Exception(500,"unexpected exception.");
+    }
+  }
+  catch(const AmSession::Exception& e){
+    ERROR("%i %s\n",e.code,e.reason.c_str());
+  }
 	
-    destroy();
+  destroy();
     
-    // wait at least until session is out of RtpScheduler
-    DBG("session is stopped.\n");
-    //detached.wait_for();
+  // wait at least until session is out of RtpScheduler
+  DBG("session is stopped.\n");
+  //detached.wait_for();
 }
 
 void AmSession::on_stop()
 {
-    //sess_stopped.set(true);
-    DBG("AmSession::on_stop()\n");
+  //sess_stopped.set(true);
+  DBG("AmSession::on_stop()\n");
 
-    if (!getDetached())
-	    AmMediaProcessor::instance()->clearSession(this);
-    else
-	    clearAudio();
+  if (!getDetached())
+    AmMediaProcessor::instance()->clearSession(this);
+  else
+    clearAudio();
 }
 
 void AmSession::destroy()
 {
-    DBG("AmSession::destroy()\n");
-    AmSessionContainer::instance()->destroySession(this);
+  DBG("AmSession::destroy()\n");
+  AmSessionContainer::instance()->destroySession(this);
 }
 
 string AmSession::getNewId()
 {
-    struct timeval t;
-    gettimeofday(&t,NULL);
+  struct timeval t;
+  gettimeofday(&t,NULL);
 
-    string id = "";
+  string id = "";
 
-    id += int2hex(get_random()) + "-";
-    id += int2hex(t.tv_sec) + int2hex(t.tv_usec) + "-";
-    id += int2hex((unsigned int) pthread_self());
+  id += int2hex(get_random()) + "-";
+  id += int2hex(t.tv_sec) + int2hex(t.tv_usec) + "-";
+  id += int2hex((unsigned int) pthread_self());
 
-    return id;
+  return id;
 }
 
 void AmSession::postDtmfEvent(AmDtmfEvent *evt)
 {
-    if (m_dtmfDetectionEnabled)
+  if (m_dtmfDetectionEnabled)
     {
-        if (dynamic_cast<AmSipDtmfEvent *>(evt) ||
-            dynamic_cast<AmRtpDtmfEvent *>(evt))
+      if (dynamic_cast<AmSipDtmfEvent *>(evt) ||
+	  dynamic_cast<AmRtpDtmfEvent *>(evt))
         {   
 	  // this is a raw event from sip info or rtp
-            m_dtmfEventQueue.postEvent(evt);
+	  m_dtmfEventQueue.postEvent(evt);
         }
-        else 
+      else 
         {
 	  // this is an aggregated event, 
 	  // post it into our event queue
@@ -381,135 +380,135 @@ void AmSession::postDtmfEvent(AmDtmfEvent *evt)
 
 void AmSession::processDtmfEvents()
 {
-    if (m_dtmfDetectionEnabled)
+  if (m_dtmfDetectionEnabled)
     {
-        m_dtmfEventQueue.processEvents();
+      m_dtmfEventQueue.processEvents();
     }
 }
 
 void AmSession::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
 {
-    m_dtmfEventQueue.putDtmfAudio(buf, size, user_ts);
+  m_dtmfEventQueue.putDtmfAudio(buf, size, user_ts);
 }
 
 void AmSession::onDtmf(int event, int duration_msec)
 {
-    DBG("AmSession::onDtmf(%i,%i)\n",event,duration_msec);
+  DBG("AmSession::onDtmf(%i,%i)\n",event,duration_msec);
 }
 
 void AmSession::clearAudio()
 {
-    lockAudio();
-    if(input){
-	input->close();
-	input = 0;
-    }
-    if(output){
-	output->close();
-	output = 0;
-    }
-    unlockAudio();
-    DBG("Audio cleared !!!\n");
-    postEvent(new AmAudioEvent(AmAudioEvent::cleared));
+  lockAudio();
+  if(input){
+    input->close();
+    input = 0;
+  }
+  if(output){
+    output->close();
+    output = 0;
+  }
+  unlockAudio();
+  DBG("Audio cleared !!!\n");
+  postEvent(new AmAudioEvent(AmAudioEvent::cleared));
 }
 
 void AmSession::process(AmEvent* ev)
 {
-    CALL_EVENT_H(process,ev);
+  CALL_EVENT_H(process,ev);
 
-    DBG("AmSession::process\n");
+  DBG("AmSession::process\n");
 
-    AmSipEvent* sip_ev = dynamic_cast<AmSipEvent*>(ev);
-    if(sip_ev){	
-	DBG("Session received SIP Event\n");
-	onSipEvent(sip_ev);
-	return;
-    }
+  AmSipEvent* sip_ev = dynamic_cast<AmSipEvent*>(ev);
+  if(sip_ev){	
+    DBG("Session received SIP Event\n");
+    onSipEvent(sip_ev);
+    return;
+  }
 
-    AmAudioEvent* audio_ev = dynamic_cast<AmAudioEvent*>(ev);
-    if(audio_ev && (audio_ev->event_id == AmAudioEvent::cleared)){
-	setStopped();
-	return;
-    }
+  AmAudioEvent* audio_ev = dynamic_cast<AmAudioEvent*>(ev);
+  if(audio_ev && (audio_ev->event_id == AmAudioEvent::cleared)){
+    setStopped();
+    return;
+  }
 
-    AmDtmfEvent* dtmf_ev = dynamic_cast<AmDtmfEvent*>(ev);
-    if (dtmf_ev) {
-      DBG("Session received DTMF, event = %d, duration = %d\n", 
-	  dtmf_ev->event(), dtmf_ev->duration());
-      onDtmf(dtmf_ev->event(), dtmf_ev->duration());
-      return;
-    }
+  AmDtmfEvent* dtmf_ev = dynamic_cast<AmDtmfEvent*>(ev);
+  if (dtmf_ev) {
+    DBG("Session received DTMF, event = %d, duration = %d\n", 
+	dtmf_ev->event(), dtmf_ev->duration());
+    onDtmf(dtmf_ev->event(), dtmf_ev->duration());
+    return;
+  }
 
-    AmRtpTimeoutEvent* timeout_ev = dynamic_cast<AmRtpTimeoutEvent*>(ev);
-    if(timeout_ev){
-	onRtpTimeout();
-	return;
-    }
+  AmRtpTimeoutEvent* timeout_ev = dynamic_cast<AmRtpTimeoutEvent*>(ev);
+  if(timeout_ev){
+    onRtpTimeout();
+    return;
+  }
 }
 
 
 void AmSession::onSipEvent(AmSipEvent* sip_ev)
 {
-    CALL_EVENT_H(onSipEvent,sip_ev);
+  CALL_EVENT_H(onSipEvent,sip_ev);
 
-    AmSipRequestEvent* req_ev = dynamic_cast<AmSipRequestEvent*>(sip_ev);
-    if(req_ev) {
-	onSipRequest(req_ev->req);
-	return;
-    }
+  AmSipRequestEvent* req_ev = dynamic_cast<AmSipRequestEvent*>(sip_ev);
+  if(req_ev) {
+    onSipRequest(req_ev->req);
+    return;
+  }
     
 
-    AmSipReplyEvent* reply_ev = dynamic_cast<AmSipReplyEvent*>(sip_ev);
-    if(reply_ev) {
-	onSipReply(reply_ev->reply);
-	return;
-    }
+  AmSipReplyEvent* reply_ev = dynamic_cast<AmSipReplyEvent*>(sip_ev);
+  if(reply_ev) {
+    onSipReply(reply_ev->reply);
+    return;
+  }
 
-    ERROR("Unknown SIP Event");
+  ERROR("Unknown SIP Event");
 }
 
 void AmSession::onSipRequest(const AmSipRequest& req)
 {
-    CALL_EVENT_H(onSipRequest,req);
+  CALL_EVENT_H(onSipRequest,req);
 
-    dlg.updateStatus(req);
+  dlg.updateStatus(req);
     
-    DBG("onSipRequest: method = %s\n",req.method.c_str());
-    if(req.method == "INVITE"){
+  DBG("onSipRequest: method = %s\n",req.method.c_str());
+  if(req.method == "INVITE"){
 	
-	onInvite(req);
+    onInvite(req);
 
-	if(detached.get() && !getStopped()){
+    if(detached.get() && !getStopped()){
 	
-	    onSessionStart(req);
+      onSessionStart(req);
 	    
-	    if(input || output)
-		AmMediaProcessor::instance()->addSession(this, callgroup);
-	    else {
-		ERROR("missing audio input and/or ouput.\n");
-	    }
-	}
-    }
-    else if( req.method == "BYE" ){
-	
-	dlg.reply(req,200,"OK");
-	onBye(req);
-    }
-    else if( req.method == "CANCEL" ){
-
-	dlg.reply(req,200,"OK");
-	onCancel();
-
-    } else if( req.method == "INFO" ){
-
-      if ((strip_header_params(getHeader(req.hdrs, "Content-Type"))
-	   =="application/dtmf-relay")|| 
-	  (strip_header_params(getHeader(req.hdrs, "c"))
-	   =="application/dtmf-relay")){
-	postDtmfEvent(new AmSipDtmfEvent(req.body));
-	dlg.reply(req, 200, "OK");
+      if(input || output)
+	AmMediaProcessor::instance()->addSession(this, callgroup);
+      else {
+	ERROR("missing audio input and/or ouput.\n");
       }
-    } 
+    }
+  }
+  else if( req.method == "BYE" ){
+	
+    dlg.reply(req,200,"OK");
+    onBye(req);
+  }
+  else if( req.method == "CANCEL" ){
+
+    dlg.reply(req,200,"OK");
+    onCancel();
+
+  } else if( req.method == "INFO" ){
+
+    if ((strip_header_params(getHeader(req.hdrs, "Content-Type"))
+	 =="application/dtmf-relay")|| 
+	(strip_header_params(getHeader(req.hdrs, "c"))
+	 =="application/dtmf-relay")){
+      postDtmfEvent(new AmSipDtmfEvent(req.body));
+      dlg.reply(req, 200, "OK");
+    }
+  } 
 }
 
 
@@ -521,13 +520,13 @@ void AmSession::onSipReply(const AmSipReply& reply)
   dlg.updateStatus(reply);
 
   if (status != dlg.getStatus())
-	  DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
-	      AmSipDialog::status2str[status], 
-	      AmSipDialog::status2str[dlg.getStatus()],
-	      sess_stopped.get() ? "true" : "false");
+    DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
+	AmSipDialog::status2str[status], 
+	AmSipDialog::status2str[dlg.getStatus()],
+	sess_stopped.get() ? "true" : "false");
   else 
-	  DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[status], 
-	      sess_stopped.get() ? "true" : "false");
+    DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[status], 
+	sess_stopped.get() ? "true" : "false");
 
 
   if (negotiate_onreply) {    
@@ -537,29 +536,29 @@ void AmSession::onSipReply(const AmSipReply& reply)
 	
       case AmSipDialog::Connected:
 	
-	  try {
-	      acceptAudio(reply.body,reply.hdrs);
+	try {
+	  acceptAudio(reply.body,reply.hdrs);
 
-	      if(detached.get() && !getStopped()){
+	  if(detached.get() && !getStopped()){
 	    
-		  onSessionStart(reply);
+	    onSessionStart(reply);
 		  
-		  if(input || output)
-		      AmMediaProcessor::instance()->addSession(this,
-							       callgroup); 
-		  else { 
-		      ERROR("missing audio input and/or ouput.\n"); 
-		  }
-	      }
-
-	  }catch(const AmSession::Exception& e){
-	      ERROR("could not connect audio!!!\n");
-	      ERROR("%i %s\n",e.code,e.reason.c_str());
-	      dlg.bye();
-	      setStopped();
-	      break;
+	    if(input || output)
+	      AmMediaProcessor::instance()->addSession(this,
+						       callgroup); 
+	    else { 
+	      ERROR("missing audio input and/or ouput.\n"); 
+	    }
 	  }
+
+	}catch(const AmSession::Exception& e){
+	  ERROR("could not connect audio!!!\n");
+	  ERROR("%i %s\n",e.code,e.reason.c_str());
+	  dlg.bye();
+	  setStopped();
 	  break;
+	}
+	break;
 	
       case AmSipDialog::Pending:
 	
@@ -575,88 +574,88 @@ void AmSession::onSipReply(const AmSipReply& reply)
 
 void AmSession::onInvite(const AmSipRequest& req)
 {
-    try {
-	string sdp_reply;
+  try {
+    string sdp_reply;
 
-	acceptAudio(req.body,req.hdrs,&sdp_reply);
-	if(dlg.reply(req,200,"OK",
-		     "application/sdp",sdp_reply) != 0)
-	    throw AmSession::Exception(500,"could not send response");
+    acceptAudio(req.body,req.hdrs,&sdp_reply);
+    if(dlg.reply(req,200,"OK",
+		 "application/sdp",sdp_reply) != 0)
+      throw AmSession::Exception(500,"could not send response");
 	
-    }catch(const AmSession::Exception& e){
+  }catch(const AmSession::Exception& e){
 
-	ERROR("%i %s\n",e.code,e.reason.c_str());
-	setStopped();
-	AmSipDialog::reply_error(req,e.code,e.reason);
-    }
+    ERROR("%i %s\n",e.code,e.reason.c_str());
+    setStopped();
+    AmSipDialog::reply_error(req,e.code,e.reason);
+  }
 }
 
 void AmSession::onBye(const AmSipRequest& req)
 {
-    setStopped();
+  setStopped();
 }
 
 int AmSession::acceptAudio(const string& body,
 			   const string& hdrs,
 			   string*       sdp_reply)
 {
+  try {
     try {
-	try {
-	    // handle codec and send reply
-	    string str_msg_flags = getHeader(hdrs,"P-MsgFlags");
-	    unsigned int msg_flags = 0;
-	    if(reverse_hex2int(str_msg_flags,msg_flags)){
-		ERROR("while parsing 'P-MsgFlags' header\n");
-		msg_flags = 0;
-	    }
+      // handle codec and send reply
+      string str_msg_flags = getHeader(hdrs,"P-MsgFlags");
+      unsigned int msg_flags = 0;
+      if(reverse_hex2int(str_msg_flags,msg_flags)){
+	ERROR("while parsing 'P-MsgFlags' header\n");
+	msg_flags = 0;
+      }
 	    
-	    negotiate( body,
-		       msg_flags & FL_FORCE_ACTIVE,
-		       sdp_reply);
+      negotiate( body,
+		 msg_flags & FL_FORCE_ACTIVE,
+		 sdp_reply);
 	    
-	    // enable RTP stream
-	    lockAudio();
-	    rtp_str.init(&payload);
-	    unlockAudio();
+      // enable RTP stream
+      lockAudio();
+      rtp_str.init(&payload);
+      unlockAudio();
 	    
-	    DBG("Sending Rtp data to %s/%i\n",
-		rtp_str.getRHost().c_str(),rtp_str.getRPort());
+      DBG("Sending Rtp data to %s/%i\n",
+	  rtp_str.getRHost().c_str(),rtp_str.getRPort());
 
-	    return 0;
-	}
-	catch(const AmSession::Exception& e){ throw e; }
-	catch(const string& str){
-	    ERROR("%s\n",str.c_str());
-	    throw AmSession::Exception(500,str);
-	}
-	catch(...){
-	    throw AmSession::Exception(500,"unexpected exception.");
-	}
+      return 0;
     }
-    catch(const AmSession::Exception& e){
-	ERROR("%i %s\n",e.code,e.reason.c_str());
-	throw;
-
-//  	if(dlg.reply(req,e.code,e.reason, "")){
-//  	    dlg.bye();
-//  	}
-//	setStopped();
+    catch(const AmSession::Exception& e){ throw e; }
+    catch(const string& str){
+      ERROR("%s\n",str.c_str());
+      throw AmSession::Exception(500,str);
     }
+    catch(...){
+      throw AmSession::Exception(500,"unexpected exception.");
+    }
+  }
+  catch(const AmSession::Exception& e){
+    ERROR("%i %s\n",e.code,e.reason.c_str());
+    throw;
 
-    return -1;
+    //  	if(dlg.reply(req,e.code,e.reason, "")){
+    //  	    dlg.bye();
+    //  	}
+    //	setStopped();
+  }
+
+  return -1;
 }
 
 void AmSession::onSendRequest(const string& method, const string& content_type,
 			      const string& body, string& hdrs, unsigned int cseq)
 {
-    CALL_EVENT_H(onSendRequest,method,content_type,body,hdrs,cseq);
+  CALL_EVENT_H(onSendRequest,method,content_type,body,hdrs,cseq);
 }
 
 void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code, 
 			    const string& reason, const string& content_type,
 			    const string& body, string& hdrs)
 {
-    CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs);
+  CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs);
 }
 
 void AmSession::onRtpTimeout()
@@ -667,25 +666,24 @@ void AmSession::onRtpTimeout()
 
 void AmSession::sendUpdate() 
 {
-  dlg.update(""// getRequestHeaders("UPDATE")
-	     );
+  dlg.update("");
 }
 
 void AmSession::sendReinvite() 
 {
-	rtp_str.setLocalIP(AmConfig::LocalIP);
-	string sdp_body;
-	sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-	dlg.reinvite("", "application/sdp", sdp_body);
+  rtp_str.setLocalIP(AmConfig::LocalIP);
+  string sdp_body;
+  sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
+  dlg.reinvite("", "application/sdp", sdp_body);
 }
 
 void AmSession::sendInvite() 
 {
-	// set local IP first, so that IP is set when 
-	// getLocalPort/setLocalPort may bind 
-	rtp_str.setLocalIP(AmConfig::LocalIP);
-	// generate SDP
-	string sdp_body;
-	sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-	dlg.invite("", "application/sdp", sdp_body);
+  // set local IP first, so that IP is set when 
+  // getLocalPort/setLocalPort may bind 
+  rtp_str.setLocalIP(AmConfig::LocalIP);
+  // generate SDP
+  string sdp_body;
+  sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
+  dlg.invite("", "application/sdp", sdp_body);
 }

@@ -30,14 +30,14 @@
 
 int AmAudioEcho::read(unsigned int user_ts, unsigned int size)
 {
-    timed_buffer.get(user_ts,(ShortSample*)((unsigned char*)samples),size);
-    return size;
+  timed_buffer.get(user_ts,(ShortSample*)((unsigned char*)samples),size);
+  return size;
 }
 
 int AmAudioEcho::write(unsigned int user_ts, unsigned int size)
 {
-    timed_buffer.put(user_ts,(ShortSample*)((unsigned char*)samples),size);
-    return size;
+  timed_buffer.put(user_ts,(ShortSample*)((unsigned char*)samples),size);
+  return size;
 }
 
 AmAudioEcho::AmAudioEcho()

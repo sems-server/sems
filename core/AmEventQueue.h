@@ -44,23 +44,20 @@ using std::queue;
 class AmEventQueue
 {
 protected:
-    AmEventHandler*   handler;
-    queue<AmEvent*>   ev_queue;
-    AmMutex           m_queue;
-    AmCondition<bool> ev_pending;
+  AmEventHandler*   handler;
+  queue<AmEvent*>   ev_queue;
+  AmMutex           m_queue;
+  AmCondition<bool> ev_pending;
 
- public:
-    AmEventQueue(AmEventHandler*);
-    ~AmEventQueue();
+public:
+  AmEventQueue(AmEventHandler*);
+  ~AmEventQueue();
 
-    void postEvent(AmEvent*);
-    void processEvents();
-    void waitForEvent();
-    void processSingleEvent();
+  void postEvent(AmEvent*);
+  void processEvents();
+  void waitForEvent();
+  void processSingleEvent();
 };
 
 #endif
-// Local Variables:
-// mode:C++
-// End:
 

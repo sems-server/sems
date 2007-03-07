@@ -43,7 +43,7 @@ class AmUAC {
 			    const string& from,
 			    const string& from_uri,
 			    const string& to,
-				const string& local_tag = "");
+			    const string& local_tag = "");
 };
 
 #endif

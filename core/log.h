@@ -39,20 +39,20 @@ extern "C" {
 #define L_INFO   2
 #define L_DBG    3
 
-/* log facility (see syslog(3)) */
+  /* log facility (see syslog(3)) */
 #define L_FAC  LOG_DAEMON
-/* priority at which we log */
+  /* priority at which we log */
 #define DPRINT_PRIO LOG_DEBUG
 
 #define LOG_NAME "Sems"
 
-extern int log_level;
-extern int log_stderr;
+  extern int log_level;
+  extern int log_stderr;
 
-void init_log();
+  void init_log();
 
-void dprint (int level, const char* fct, char* file, int line, char* fmt, ...);
-void log_print (int level, char* fmt, ...);
+  void dprint (int level, const char* fct, char* file, int line, char* fmt, ...);
+  void log_print (int level, char* fmt, ...);
 
 #ifdef _DEBUG
 #define LOG_PRINT(level, args... ) dprint( level, __FUNCTION__, __FILE__, __LINE__, ##args )

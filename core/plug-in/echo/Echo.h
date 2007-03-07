@@ -37,25 +37,25 @@ using std::string;
 
 class EchoFactory: public AmSessionFactory
 {
-    AmSessionEventHandlerFactory* session_timer_f;
+  AmSessionEventHandlerFactory* session_timer_f;
 
 public:
-    EchoFactory(const string& _app_name);
-    virtual int onLoad();
-    virtual AmSession* onInvite(const AmSipRequest& req);
+  EchoFactory(const string& _app_name);
+  virtual int onLoad();
+  virtual AmSession* onInvite(const AmSipRequest& req);
 };
 
 class EchoDialog : public AmSession
 {
-    AmAudioEcho echo;
-    PlayoutType playout_type;
- public:
-    EchoDialog();
-    ~EchoDialog();
+  AmAudioEcho echo;
+  PlayoutType playout_type;
+public:
+  EchoDialog();
+  ~EchoDialog();
 
-    void onSessionStart(const AmSipRequest& req);
-    void onBye(const AmSipRequest& req);
-    void onDtmf(int event, int duration);
+  void onSessionStart(const AmSipRequest& req);
+  void onBye(const AmSipRequest& req);
+  void onDtmf(int event, int duration);
 };
 
 #endif

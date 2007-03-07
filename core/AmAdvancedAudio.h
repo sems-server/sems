@@ -40,11 +40,11 @@ using namespace std;
  * \brief Entry in an AudioQueue
  */
 struct AudioQueueEntry {
-    AmAudio* audio;
-    bool put;
-    bool get;
-    AudioQueueEntry(AmAudio* _audio, bool _put, bool _get) 
-	: audio(_audio), put(_put), get(_get) { }
+  AmAudio* audio;
+  bool put;
+  bool get;
+  AudioQueueEntry(AmAudio* _audio, bool _put, bool _get) 
+    : audio(_audio), put(_put), get(_get) { }
 };
 
 /**
@@ -56,32 +56,32 @@ struct AudioQueueEntry {
  */
 
 class AmAudioQueue : public AmAudio {
-    SampleArrayShort sarr;
+  SampleArrayShort sarr;
 
-    AmMutex inputQueue_mut;
-    list<AudioQueueEntry> inputQueue;
-    AmMutex outputQueue_mut;
-    list<AudioQueueEntry> outputQueue;
-public:
-    AmAudioQueue();
-    ~AmAudioQueue();
+  AmMutex inputQueue_mut;
+  list<AudioQueueEntry> inputQueue;
+  AmMutex outputQueue_mut;
+  list<AudioQueueEntry> outputQueue;
+ public:
+  AmAudioQueue();
+  ~AmAudioQueue();
 
-    enum QueueType { OutputQueue, InputQueue };
-    enum Pos { Front, Back };
+  enum QueueType { OutputQueue, InputQueue };
+  enum Pos { Front, Back };
 
-    /** add an audio to a queue */
-    void pushAudio(AmAudio* audio, QueueType type, Pos pos, bool write, bool read); 
-    /** pop an audio from queue and delete it @return 0 on success, -1 on failure */
-    int popAudio(QueueType type, Pos pos); 
-    /** pop an audio from queue @return pointer to the audio */
-    AmAudio* popAndGetAudio(QueueType type, Pos pos); 
-    /** this removes the audio if it is in on of the queues and does not
-        delete them */
-    int removeAudio(AmAudio* audio);
+  /** add an audio to a queue */
+  void pushAudio(AmAudio* audio, QueueType type, Pos pos, bool write, bool read); 
+  /** pop an audio from queue and delete it @return 0 on success, -1 on failure */
+  int popAudio(QueueType type, Pos pos); 
+  /** pop an audio from queue @return pointer to the audio */
+  AmAudio* popAndGetAudio(QueueType type, Pos pos); 
+  /** this removes the audio if it is in on of the queues and does not
+      delete them */
+  int removeAudio(AmAudio* audio);
 
-protected:
-    int write(unsigned int user_ts, unsigned int size);
-    int read(unsigned int user_ts, unsigned int size);
+ protected:
+  int write(unsigned int user_ts, unsigned int size);
+  int read(unsigned int user_ts, unsigned int size);
 };
 
 /**
@@ -91,13 +91,13 @@ protected:
  *  This is useful e.g. at the end of a AudioQueue
  */
 class AmAudioBridge : public AmAudio {
-    SampleArrayShort sarr;
-public:
-    AmAudioBridge();
-    ~AmAudioBridge();
-protected:
-    int write(unsigned int user_ts, unsigned int size);
-    int read(unsigned int user_ts, unsigned int size);
+  SampleArrayShort sarr;
+ public:
+  AmAudioBridge();
+  ~AmAudioBridge();
+ protected:
+  int write(unsigned int user_ts, unsigned int size);
+  int read(unsigned int user_ts, unsigned int size);
 };
 
 /**
@@ -105,15 +105,15 @@ protected:
  * delays delay_sec seconds (up to ~2)
  */
 class AmAudioDelay : public AmAudio {
-    SampleArrayShort sarr;
-    float delay;
-public:
-    AmAudioDelay(float delay_sec);
-    ~AmAudioDelay();
-protected:
+  SampleArrayShort sarr;
+  float delay;
+ public:
+  AmAudioDelay(float delay_sec);
+  ~AmAudioDelay();
+ protected:
 
-    int write(unsigned int user_ts, unsigned int size);
-    int read(unsigned int user_ts, unsigned int size);
+  int write(unsigned int user_ts, unsigned int size);
+  int read(unsigned int user_ts, unsigned int size);
 };
 
 #endif // _AmAdvancedAudio_h_

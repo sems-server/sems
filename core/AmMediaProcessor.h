@@ -50,22 +50,22 @@ class AmMediaProcessorThread :
   public AmThread,
   public AmEventHandler
 {
-    AmEventQueue    events;
-    unsigned char   buffer[AUDIO_BUFFER_SIZE];
-    set<AmSession*> sessions;
+  AmEventQueue    events;
+  unsigned char   buffer[AUDIO_BUFFER_SIZE];
+  set<AmSession*> sessions;
   
-    void processAudio(unsigned int ts);
-    /**
-     * Process pending DTMF events
-     */
-    void processDtmfEvents();
+  void processAudio(unsigned int ts);
+  /**
+   * Process pending DTMF events
+   */
+  void processDtmfEvents();
 
-    // AmThread interface
-    void run();
-    void on_stop();
+  // AmThread interface
+  void run();
+  void on_stop();
     
-    // AmEventHandler interface
-    void process(AmEvent* e);
+  // AmEventHandler interface
+  void process(AmEvent* e);
 public:
   AmMediaProcessorThread();
   ~AmMediaProcessorThread();
@@ -110,11 +110,11 @@ public:
   static AmMediaProcessor* instance();
 
   void init();
-	/** Add session s to processor */
+  /** Add session s to processor */
   void addSession(AmSession* s, const string& callgroup);
-	/** Remove session s from processor */
+  /** Remove session s from processor */
   void removeSession(AmSession* s);
-	/** Remove session s from processor and clear its audio */
+  /** Remove session s from processor and clear its audio */
   void clearSession(AmSession* s);
 
 };
@@ -122,9 +122,6 @@ public:
 
 #endif
 
-// Local Variables:
-// mode:C++
-// End:
 
 
 

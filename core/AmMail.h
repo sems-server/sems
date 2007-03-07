@@ -43,20 +43,20 @@ using std::queue;
  */
 struct Attachement
 {
-    /** Local file name */
-    //string fullname;
-    FILE* fp;
+  /** Local file name */
+  //string fullname;
+  FILE* fp;
     
-    /** Proposed remote file name */
-    string filename; 
-    /** Declared content type */
-    string content_type;
+  /** Proposed remote file name */
+  string filename; 
+  /** Declared content type */
+  string content_type;
 
-//     Attachement(const string& _full, const string& _file="", const string& _ct="")
-// 	: fullname(_full), filename(_file), content_type(_ct) {}
+  //     Attachement(const string& _full, const string& _file="", const string& _ct="")
+  // 	: fullname(_full), filename(_file), content_type(_ct) {}
 
-    Attachement(FILE* _fp, const string& _file="", const string& _ct="")
-	: fp(_fp), filename(_file), content_type(_ct) {}
+  Attachement(FILE* _fp, const string& _file="", const string& _ct="")
+    : fp(_fp), filename(_file), content_type(_ct) {}
 };
 
 typedef vector<Attachement> Attachements;
@@ -76,27 +76,27 @@ typedef void (*MailCleanUpFunction)(AmMail* mail);
 struct AmMail
 {
 public:
-    string from;
-    string subject;
-    string body;
-    string to;
-    string header;
+  string from;
+  string subject;
+  string body;
+  string to;
+  string header;
 
-    /** Char set */
-    string charset;
+  /** Char set */
+  string charset;
 
-    Attachements attachements;
+  Attachements attachements;
 
-    /** @see MailCleanUpFunction. */
-    MailCleanUpFunction clean_up;
+  /** @see MailCleanUpFunction. */
+  MailCleanUpFunction clean_up;
 
-    int error_count;
+  int error_count;
 
-    AmMail(const string& _from, const string& _subject,
-	   const string& _to, const string& _body = "",
-	   const string& _header = "");
+  AmMail(const string& _from, const string& _subject,
+	 const string& _to, const string& _body = "",
+	 const string& _header = "");
 
-    ~AmMail();
+  ~AmMail();
 };
 
 /**
@@ -106,34 +106,31 @@ public:
  */
 class AmMailDeamon: public AmThread
 {
-    static AmMailDeamon* _instance;
+  static AmMailDeamon* _instance;
 
-    AmMutex      event_fifo_mut;
-    queue<AmMail*>   event_fifo;
-    AmCondition<bool> _run_cond;
+  AmMutex      event_fifo_mut;
+  queue<AmMail*>   event_fifo;
+  AmCondition<bool> _run_cond;
 
-    AmMailDeamon() : _run_cond(false) {}
-    AmMailDeamon(const AmMailDeamon&) : _run_cond(false) {}
-    ~AmMailDeamon() {}
+  AmMailDeamon() : _run_cond(false) {}
+  AmMailDeamon(const AmMailDeamon&) : _run_cond(false) {}
+  ~AmMailDeamon() {}
 
-    void run();
-    void on_stop();
+  void run();
+  void on_stop();
 
 public:
-    static AmMailDeamon* instance();
+  static AmMailDeamon* instance();
 
-    /**
-     * Sends an email asynchronously.
-     * @return <ul>
-     *         <li>0 if succeded
-     *         <li>-1 if failed
-     *         </ul>
-     */
-    int sendQueued(AmMail* mail);
+  /**
+   * Sends an email asynchronously.
+   * @return <ul>
+   *         <li>0 if succeded
+   *         <li>-1 if failed
+   *         </ul>
+   */
+  int sendQueued(AmMail* mail);
 };
 
 #endif
 
-// Local Variables:
-// mode:C++
-// End:

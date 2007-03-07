@@ -46,19 +46,19 @@ enum { ConfNewParticipant = 1,
 /** \brief event in a conference*/
 struct ConferenceEvent: public AmEvent
 {
-    unsigned int participants;
-    string       conf_id;
-    string       sess_id;
+  unsigned int participants;
+  string       conf_id;
+  string       sess_id;
 
-    ConferenceEvent(int event_id, 
-		    unsigned int participants,
-		    const string& conf_id,
-		    const string& sess_id)
-	: AmEvent(event_id),
-	  participants(participants),
-	  conf_id(conf_id),
-	  sess_id(sess_id)
-    {}
+  ConferenceEvent(int event_id, 
+		  unsigned int participants,
+		  const string& conf_id,
+		  const string& sess_id)
+    : AmEvent(event_id),
+      participants(participants),
+      conf_id(conf_id),
+      sess_id(sess_id)
+  {}
 };
 
 /**
@@ -68,47 +68,47 @@ struct ConferenceEvent: public AmEvent
  */
 class AmConferenceStatus
 {
-    static map<string,AmConferenceStatus*> cid2status;
-    static AmMutex                         cid2s_mut;
+  static map<string,AmConferenceStatus*> cid2status;
+  static AmMutex                         cid2s_mut;
 
-    struct SessInfo {
+  struct SessInfo {
 
-	string       sess_id;
-	unsigned int ch_id;
+    string       sess_id;
+    unsigned int ch_id;
 
-	SessInfo(const string& local_tag,
-		 unsigned int  ch_id)
-	    : sess_id(local_tag),
-	      ch_id(ch_id)
-	{}
-    };
+    SessInfo(const string& local_tag,
+	     unsigned int  ch_id)
+      : sess_id(local_tag),
+	ch_id(ch_id)
+    {}
+  };
 
-    string                 conf_id;
-    AmMultiPartyMixer      mixer;
+  string                 conf_id;
+  AmMultiPartyMixer      mixer;
     
-    // sess_id -> ch_id
-    map<string, unsigned int> sessions;
+  // sess_id -> ch_id
+  map<string, unsigned int> sessions;
 
-    // ch_id -> sess_id
-    map<unsigned int, SessInfo*> channels;
+  // ch_id -> sess_id
+  map<unsigned int, SessInfo*> channels;
 
-    AmMutex                      sessions_mut;
+  AmMutex                      sessions_mut;
 
-    AmConferenceStatus(const string& conference_id);
-    ~AmConferenceStatus();
+  AmConferenceStatus(const string& conference_id);
+  ~AmConferenceStatus();
 
-    AmConferenceChannel* getChannel(const string& sess_id);
+  AmConferenceChannel* getChannel(const string& sess_id);
 
-    int releaseChannel(unsigned int ch_id);
+  int releaseChannel(unsigned int ch_id);
 
- public:
-    const string&      getConfID() { return conf_id; }
-    AmMultiPartyMixer* getMixer()  { return &mixer; }
+public:
+  const string&      getConfID() { return conf_id; }
+  AmMultiPartyMixer* getMixer()  { return &mixer; }
 
-    static AmConferenceChannel* getChannel(const string& cid, 
-					   const string& local_tag);
+  static AmConferenceChannel* getChannel(const string& cid, 
+					 const string& local_tag);
 
-    static void releaseChannel(const string& cid, unsigned int ch_id);
+  static void releaseChannel(const string& cid, unsigned int ch_id);
 };
 
 #endif

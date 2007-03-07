@@ -1,3 +1,30 @@
+/*
+ * $Id$
+ *
+ * Copyright (C) 2005-2006 iptelorg GmbH
+ *
+ * This file is part of sems, a free SIP media server.
+ *
+ * sems is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version
+ *
+ * For a license to use the ser software under conditions
+ * other than those described here, or to purchase support for this
+ * software, please contact iptel.org by e-mail at the following addresses:
+ *    info@iptel.org
+ *
+ * sems is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #ifndef _AmPlayoutBuffer_h_
 #define _AmPlayoutBuffer_h_
 
@@ -33,95 +60,95 @@ class AmRtpAudio;
 /** \brief base class for Playout buffer */
 class AmPlayoutBuffer
 {
-    // Playout buffer
-    SampleArrayShort buffer;
+  // Playout buffer
+  SampleArrayShort buffer;
 
-protected:
-    u_int32_t r_ts,w_ts;
-    AmRtpAudio *m_owner;
+ protected:
+  u_int32_t r_ts,w_ts;
+  AmRtpAudio *m_owner;
 
-    unsigned int last_ts;
-    bool         last_ts_i;
+  unsigned int last_ts;
+  bool         last_ts_i;
 
-    /** the offset RTP receive TS <-> audio_buffer TS */ 
-    unsigned int   recv_offset;
-    /** the recv_offset initialized ?  */ 
-    bool           recv_offset_i;
+  /** the offset RTP receive TS <-> audio_buffer TS */ 
+  unsigned int   recv_offset;
+  /** the recv_offset initialized ?  */ 
+  bool           recv_offset_i;
 
-    void buffer_put(unsigned int ts, ShortSample* buf, unsigned int len);
-    void buffer_get(unsigned int ts, ShortSample* buf, unsigned int len);
+  void buffer_put(unsigned int ts, ShortSample* buf, unsigned int len);
+  void buffer_get(unsigned int ts, ShortSample* buf, unsigned int len);
 
-    virtual void write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
-    virtual void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
-public:
-    AmPlayoutBuffer(AmRtpAudio *owner);
-    virtual ~AmPlayoutBuffer() {}
+  virtual void write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
+  virtual void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
+ public:
+  AmPlayoutBuffer(AmRtpAudio *owner);
+  virtual ~AmPlayoutBuffer() {}
 
-    virtual void write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len, bool begin_talk);
-    virtual u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
+  virtual void write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len, bool begin_talk);
+  virtual u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
 
-    void clearLastTs() { last_ts_i = false; }
+  void clearLastTs() { last_ts_i = false; }
 };
 
 /** \brief adaptive playout buffer */
 class AmAdaptivePlayout: public AmPlayoutBuffer
 {
-    // Order statistics delay estimation
-    multiset<int32_t> o_stat;
-    int32_t n_stat[ORDER_STAT_WIN_SIZE];
-    int     idx;
-    double  loss_rate;
+  // Order statistics delay estimation
+  multiset<int32_t> o_stat;
+  int32_t n_stat[ORDER_STAT_WIN_SIZE];
+  int     idx;
+  double  loss_rate;
 
-    // adaptive WSOLA
-    u_int32_t wsola_off;
-    int       shr_threshold;
-    MeanArray short_scaled;
+  // adaptive WSOLA
+  u_int32_t wsola_off;
+  int       shr_threshold;
+  MeanArray short_scaled;
 
-    // second stage PLC
-    int       plc_cnt;
-    LowcFE    fec;
+  // second stage PLC
+  int       plc_cnt;
+  LowcFE    fec;
 
-    // buffers
-    // strech buffer
-    short p_buf[MAX_PACKET_SAMPLES*4];
-    // merging buffer (merge segment from strech + original seg)
-    short merge_buf[TEMPLATE_SEG];
+  // buffers
+  // strech buffer
+  short p_buf[MAX_PACKET_SAMPLES*4];
+  // merging buffer (merge segment from strech + original seg)
+  short merge_buf[TEMPLATE_SEG];
 
-    u_int32_t time_scale(u_int32_t ts, float factor, u_int32_t packet_len);
-    u_int32_t next_delay(u_int32_t ref_ts, u_int32_t ts);
+  u_int32_t time_scale(u_int32_t ts, float factor, u_int32_t packet_len);
+  u_int32_t next_delay(u_int32_t ref_ts, u_int32_t ts);
 
-public:
+ public:
 
-    AmAdaptivePlayout(AmRtpAudio *);
+  AmAdaptivePlayout(AmRtpAudio *);
 
-    /** write len samples beginning from timestamp ts from buf */
-    void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
+  /** write len samples beginning from timestamp ts from buf */
+  void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
 
-    /** write len samples which beginn from timestamp ts from buf
-	reference ts of buffer (monotonic increasing buffer ts) is ref_ts */
-    void write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
+  /** write len samples which beginn from timestamp ts from buf
+      reference ts of buffer (monotonic increasing buffer ts) is ref_ts */
+  void write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
 
-    /** read len samples beginn from timestamp ts into buf */
-    u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
+  /** read len samples beginn from timestamp ts into buf */
+  u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
 
 };
 
 /** \brief adaptive jitter buffer */
 class AmJbPlayout : public AmPlayoutBuffer
 {
-private:
-    AmJitterBuffer m_jb;
-    unsigned int m_last_rtp_endts;
+ private:
+  AmJitterBuffer m_jb;
+  unsigned int m_last_rtp_endts;
 
-protected:
-    void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
-    void prepare_buffer(unsigned int ts, unsigned int ms);
+ protected:
+  void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
+  void prepare_buffer(unsigned int ts, unsigned int ms);
 
-public:
-    AmJbPlayout(AmRtpAudio *owner);
+ public:
+  AmJbPlayout(AmRtpAudio *owner);
 
-    u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
-    void write(u_int32_t ref_ts, u_int32_t rtp_ts, int16_t* buf, u_int32_t len, bool begin_talk);
+  u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
+  void write(u_int32_t ref_ts, u_int32_t rtp_ts, int16_t* buf, u_int32_t len, bool begin_talk);
 };
 
 

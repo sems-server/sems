@@ -67,7 +67,7 @@ bool reverse_hex2int(const string& str, unsigned int& result);
  * @param str    [in]  string to convert.
  * @param result [out] result integer.
  * @return true if failed. 
-*/
+ */
 bool str2i(const string& str, unsigned int& result);
 
 /** 
@@ -75,7 +75,7 @@ bool str2i(const string& str, unsigned int& result);
  * @param str    [in,out] gets incremented until sep char or error occurs
  * @param result [out] result of the function
  * @param sep    [in] character seprating the number to convert and the next token
-*/
+ */
 bool str2i(char*& str, unsigned int& result, char sep = ' ');
 
 /**
@@ -247,7 +247,7 @@ string extract_tag(const string& addr);
 bool key_in_list(const string& s_list, const string& key, char list_delim = ',');
 // return string with trailing spaces and everything after ; including ; itself removed
 string strip_header_params(const string& hdr_string);
-  // get a header parameter value
+// get a header parameter value
 string get_header_param(const string& hdr_string, const string& param_name);
 
 /** get the value of key @param name from the list param_hdr*/

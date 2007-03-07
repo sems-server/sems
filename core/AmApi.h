@@ -45,16 +45,16 @@ using std::string;
 class AmDynInvoke
 {
 public:
-    /** \brief NotImplemented result for DI API calls */
-    struct NotImplemented {
-	string what;
-	NotImplemented(const string& w)
-	    : what(w) {}
-    };
+  /** \brief NotImplemented result for DI API calls */
+  struct NotImplemented {
+    string what;
+    NotImplemented(const string& w)
+      : what(w) {}
+  };
 
-    AmDynInvoke();
-    virtual ~AmDynInvoke();
-    virtual void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+  AmDynInvoke();
+  virtual ~AmDynInvoke();
+  virtual void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
 };
 
 /**
@@ -62,23 +62,23 @@ public:
  */
 class AmPluginFactory
 {
-    string plugin_name;
+  string plugin_name;
 
 public:
-    AmPluginFactory(const string& name)
-	: plugin_name(name) {}
+  AmPluginFactory(const string& name)
+    : plugin_name(name) {}
 
-    virtual ~AmPluginFactory() {}
+  virtual ~AmPluginFactory() {}
 
-    const string& getName() { return plugin_name; } 
+  const string& getName() { return plugin_name; } 
 
-    /**
-     * Enables the plug-in to initialize whatever it needs.
-     * Ex. load the configuration.
-     * @return 0 everything was ok.
-     * @return 1 on error.
-     */
-    virtual int onLoad()=0;
+  /**
+   * Enables the plug-in to initialize whatever it needs.
+   * Ex. load the configuration.
+   * @return 0 everything was ok.
+   * @return 1 on error.
+   */
+  virtual int onLoad()=0;
 };
 
 /**
@@ -90,8 +90,8 @@ public:
 class AmDynInvokeFactory: public AmPluginFactory
 {
 public:
-    AmDynInvokeFactory(const string& name);
-    virtual AmDynInvoke* getInstance()=0;
+  AmDynInvokeFactory(const string& name);
+  virtual AmDynInvoke* getInstance()=0;
 };
 
 
@@ -103,14 +103,14 @@ class AmSessionEventHandler;
 class AmSessionEventHandlerFactory: public AmPluginFactory
 {
 public:
-    AmSessionEventHandlerFactory(const string& name);
+  AmSessionEventHandlerFactory(const string& name);
 
-    virtual AmSessionEventHandler* getHandler(AmSession*)=0;
+  virtual AmSessionEventHandler* getHandler(AmSession*)=0;
 
-    /**
-     * @return true if session creation should be stopped
-     */
-    virtual bool onInvite(const AmSipRequest& req)=0;
+  /**
+   * @return true if session creation should be stopped
+   */
+  virtual bool onInvite(const AmSipRequest& req)=0;
 };
 
 /** \brief Interface for plugins to create sessions */
@@ -120,50 +120,50 @@ class AmSessionFactory: public AmPluginFactory
   AmSessionTimerConfig mod_conf;
 
 protected:
-    /**
-     * This reads the module configuration from 
-     * cfg into the modules mod_conf.
-     */
-    int configureModule(AmConfigReader& cfg);
+  /**
+   * This reads the module configuration from 
+   * cfg into the modules mod_conf.
+   */
+  int configureModule(AmConfigReader& cfg);
 
 public:
-    /**
-     * This function applys the module configuration 
-     */
-    void configureSession(AmSession* sess);
+  /**
+   * This function applys the module configuration 
+   */
+  void configureSession(AmSession* sess);
 
-    AmSessionFactory(const string& name);
+  AmSessionFactory(const string& name);
 
-    /**
-     * Creates a dialog state on new request.
-     * @return 0 if the request is not acceptable.
-     *
-     * Warning:
-     *   This method should not make any expensive
-     *   processing as it would block the server.
-     */
-    virtual AmSession* onInvite(const AmSipRequest& req)=0;
+  /**
+   * Creates a dialog state on new request.
+   * @return 0 if the request is not acceptable.
+   *
+   * Warning:
+   *   This method should not make any expensive
+   *   processing as it would block the server.
+   */
+  virtual AmSession* onInvite(const AmSipRequest& req)=0;
 
-    /**
-     * Creates a dialog state on new REFER with local-tag.
-     * @return 0 if the request is not acceptable.
-     *
-     * Warning:
-     *   This method should not make any expensive
-     *   processing as it would block the server.
-     */
-    virtual AmSession* onRefer(const AmSipRequest& req);
+  /**
+   * Creates a dialog state on new REFER with local-tag.
+   * @return 0 if the request is not acceptable.
+   *
+   * Warning:
+   *   This method should not make any expensive
+   *   processing as it would block the server.
+   */
+  virtual AmSession* onRefer(const AmSipRequest& req);
 
-    /**
-     * method to receive an Event that is posted
-	 * to  the factory
-	 *
-     * Warning:
-     *   This method should not make any expensive
-     *   processing as it would block the thread 
-	 *   posting the event!
-     */
-    virtual void postEvent(AmEvent* ev);	
+  /**
+   * method to receive an Event that is posted
+   * to  the factory
+   *
+   * Warning:
+   *   This method should not make any expensive
+   *   processing as it would block the thread 
+   *   posting the event!
+   */
+  virtual void postEvent(AmEvent* ev);	
 
 };
 
@@ -175,17 +175,17 @@ class AmSIPEventHandler : public AmPluginFactory
 {
 
 public:
-	AmSIPEventHandler(const string& name);
-	virtual ~AmSIPEventHandler() { }
+  AmSIPEventHandler(const string& name);
+  virtual ~AmSIPEventHandler() { }
 
-	/** will be called on incoming replies which do 
-	 *  not belong to a dialog of a session in the 
-	 *  SessionContainer.
-	 *
-	 *  @return true if reply was handled by plugin, false 
-	 *          otherwise
-	 */
-	virtual bool onSipReply(const AmSipReply& rep) = 0;
+  /** will be called on incoming replies which do 
+   *  not belong to a dialog of a session in the 
+   *  SessionContainer.
+   *
+   *  @return true if reply was handled by plugin, false 
+   *          otherwise
+   */
+  virtual bool onSipReply(const AmSipReply& rep) = 0;
 };
 
 #if  __GNUC__ < 3
@@ -232,6 +232,3 @@ typedef void* (*FactoryCreate)();
             EXPORT_FACTORY(FACTORY_SIP_EVENT_HANDLER_EXPORT,class_name,app_name)
 
 #endif
-// Local Variables:
-// mode:C++
-// End:

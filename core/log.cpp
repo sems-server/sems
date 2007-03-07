@@ -36,40 +36,40 @@ int log_stderr=0;
 
 inline const char* level2txt(int level)
 {
-    switch(level){
-    case L_ERR:  return "ERROR";
-    case L_WARN: return "WARNING";
-    case L_INFO: return "INFO";
-    case L_DBG:  return "DEBUG";
-    }
-    return "";
+  switch(level){
+  case L_ERR:  return "ERROR";
+  case L_WARN: return "WARNING";
+  case L_INFO: return "INFO";
+  case L_DBG:  return "DEBUG";
+  }
+  return "";
 }
 
 void init_log()
 {
-    openlog(LOG_NAME, LOG_PID|LOG_CONS,L_FAC);
-    setlogmask( -1 );
+  openlog(LOG_NAME, LOG_PID|LOG_CONS,L_FAC);
+  setlogmask( -1 );
 }
 
 void dprint(int level, const char* fct, char* file, int line, char* fmt, ...)
 {
-    va_list ap;
+  va_list ap;
     
-    fprintf(stderr, "(%i) %s: %s (%s:%i): ",(int)getpid(), level2txt(level), fct, file, line);
-    va_start(ap, fmt);
-    vfprintf(stderr,fmt,ap);
-    fflush(stderr);
-    va_end(ap);
+  fprintf(stderr, "(%i) %s: %s (%s:%i): ",(int)getpid(), level2txt(level), fct, file, line);
+  va_start(ap, fmt);
+  vfprintf(stderr,fmt,ap);
+  fflush(stderr);
+  va_end(ap);
 }
 
 void log_print (int level, char* fmt, ...)
 {
-    va_list ap;
+  va_list ap;
     
-    fprintf(stderr, "(%i) %s: ",(int)getpid(),level2txt(level));
-    va_start(ap, fmt);
-    vfprintf(stderr,fmt,ap);
-    fflush(stderr);
-    va_end(ap);
+  fprintf(stderr, "(%i) %s: ",(int)getpid(),level2txt(level));
+  va_start(ap, fmt);
+  vfprintf(stderr,fmt,ap);
+  fflush(stderr);
+  va_end(ap);
 }
 

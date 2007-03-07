@@ -35,9 +35,9 @@
 class AmPlayoutBuffer;
 
 enum PlayoutType {
-    ADAPTIVE_PLAYOUT,
-    JB_PLAYOUT,
-    SIMPLE_PLAYOUT
+  ADAPTIVE_PLAYOUT,
+  JB_PLAYOUT,
+  SIMPLE_PLAYOUT
 };
 /** 
  * \brief binds together a \ref AmRtpStream and an \ref AmAudio for a session 
@@ -45,63 +45,60 @@ enum PlayoutType {
 
 class AmRtpAudio: public AmRtpStream, public AmAudio
 {
-    auto_ptr<AmPlayoutBuffer> playout_buffer;
+  auto_ptr<AmPlayoutBuffer> playout_buffer;
 
-    LowcFE       fec;
-    bool         use_default_plc;
+  LowcFE       fec;
+  bool         use_default_plc;
 
-    unsigned int last_check;
-    bool         last_check_i;
-    bool         send_int;
+  unsigned int last_check;
+  bool         last_check_i;
+  bool         send_int;
 
-    bool         send_only;
+  bool         send_only;
 
-    //
-    // Default packet loss concealment functions
-    //
-    unsigned int default_plc(unsigned char* out_buf,
-			     unsigned int   size,
-			     unsigned int   channels,
-			     unsigned int   rate);
+  //
+  // Default packet loss concealment functions
+  //
+  unsigned int default_plc(unsigned char* out_buf,
+			   unsigned int   size,
+			   unsigned int   channels,
+			   unsigned int   rate);
 
 public:
-    AmRtpAudio(AmSession* _s=0);
+  AmRtpAudio(AmSession* _s=0);
 
-    bool checkInterval(unsigned int ts);
-    bool sendIntReached();
+  bool checkInterval(unsigned int ts);
+  bool sendIntReached();
 
-    int receive(unsigned int audio_buffer_ts);
+  int receive(unsigned int audio_buffer_ts);
 
-    void setSendOnly(bool so){
-	send_only = so;
-    }
+  void setSendOnly(bool so){
+    send_only = so;
+  }
 
-    // AmAudio interface
-    int read(unsigned int user_ts, unsigned int size);
-    int write(unsigned int user_ts, unsigned int size);
+  // AmAudio interface
+  int read(unsigned int user_ts, unsigned int size);
+  int write(unsigned int user_ts, unsigned int size);
 
-    int get(unsigned int user_ts, unsigned char* buffer, 
-	    unsigned int nb_samples);
+  int get(unsigned int user_ts, unsigned char* buffer, 
+	  unsigned int nb_samples);
 
-    // AmRtpStream interface
-    void init(const SdpPayload* sdp_payload);
+  // AmRtpStream interface
+  void init(const SdpPayload* sdp_payload);
 
-    void setPlayoutType(PlayoutType type);
+  void setPlayoutType(PlayoutType type);
 
-    virtual unsigned int bytes2samples(unsigned int) const;
+  virtual unsigned int bytes2samples(unsigned int) const;
 
-    void add_to_history(int16_t *buffer, unsigned int size);
+  void add_to_history(int16_t *buffer, unsigned int size);
 
-    // Conceals packet loss into the out_buffer
-    // @return length in bytes of the recivered segment
-    unsigned int conceal_loss(unsigned int ts_diff, unsigned char *out_buffer);
+  // Conceals packet loss into the out_buffer
+  // @return length in bytes of the recivered segment
+  unsigned int conceal_loss(unsigned int ts_diff, unsigned char *out_buffer);
 };
 
 #endif
 
-// Local Variables:
-// mode:C++
-// End:
 
 
 

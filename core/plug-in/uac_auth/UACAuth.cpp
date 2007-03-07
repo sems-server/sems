@@ -42,150 +42,150 @@ UACAuthFactory* UACAuthFactory::_instance=0;
 
 UACAuthFactory* UACAuthFactory::instance()
 {
-    if(!_instance)
-	_instance = new UACAuthFactory(MOD_NAME);
-    return _instance;
+  if(!_instance)
+    _instance = new UACAuthFactory(MOD_NAME);
+  return _instance;
 }
 
 void UACAuthFactory::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
 {
-    if(method == "getHandler"){
-		CredentialHolder* c = dynamic_cast<CredentialHolder*>(args.get(0).asObject());
-		DialogControl* cc = dynamic_cast<DialogControl*>(args.get(1).asObject());
+  if(method == "getHandler"){
+    CredentialHolder* c = dynamic_cast<CredentialHolder*>(args.get(0).asObject());
+    DialogControl* cc = dynamic_cast<DialogControl*>(args.get(1).asObject());
 
-		if ((c!=NULL)&&(cc!=NULL)) {
-			ret.push(getHandler(cc->getDlg(), c));
-		} else {
-		}
+    if ((c!=NULL)&&(cc!=NULL)) {
+      ret.push(getHandler(cc->getDlg(), c));
+    } else {
     }
-    else
-	throw AmDynInvoke::NotImplemented(method);
+  }
+  else
+    throw AmDynInvoke::NotImplemented(method);
 }
 
 
 int UACAuthFactory::onLoad()
 {
-    return 0;
+  return 0;
 }
 
 bool UACAuthFactory::onInvite(const AmSipRequest& req)
 {
-    return false;
+  return false;
 }
 
 AmSessionEventHandler* UACAuthFactory::getHandler(AmSession* s)
 {
-	CredentialHolder* c = dynamic_cast<CredentialHolder*>(s);
-	if (c != NULL) {
-		return getHandler(&s->dlg, c);
-	} else {
-		DBG("no credentials for new session. not enabling auth session handler.\n");
-	}
+  CredentialHolder* c = dynamic_cast<CredentialHolder*>(s);
+  if (c != NULL) {
+    return getHandler(&s->dlg, c);
+  } else {
+    DBG("no credentials for new session. not enabling auth session handler.\n");
+  }
 
-	return NULL;
+  return NULL;
 }
 
 AmSessionEventHandler* UACAuthFactory::getHandler(AmSipDialog* dlg, CredentialHolder* c) {
-	return new UACAuth(dlg, c->getCredentials());
+  return new UACAuth(dlg, c->getCredentials());
 }
 
 UACAuth::UACAuth(AmSipDialog* dlg, 
-				 UACAuthCred* cred)
-    : dlg(dlg),
-	  credential(cred),
-	  AmSessionEventHandler()
+		 UACAuthCred* cred)
+  : dlg(dlg),
+    credential(cred),
+    AmSessionEventHandler()
 { 	  
 }
 
 bool UACAuth::process(AmEvent* ev)
 {
-    return false;
+  return false;
 }
 
 bool UACAuth::onSipEvent(AmSipEvent* ev)
 {
-    return false;
+  return false;
 }
 
 bool UACAuth::onSipRequest(const AmSipRequest& req)
 {   
-	return false;
+  return false;
 }
 
 bool UACAuth::onSipReply(const AmSipReply& reply)
 {
-	bool processed = false;
-	if (reply.code==407 || reply.code==401) {
-	DBG("SIP reply with code %d cseq %d .\n", reply.code, reply.cseq);
+  bool processed = false;
+  if (reply.code==407 || reply.code==401) {
+    DBG("SIP reply with code %d cseq %d .\n", reply.code, reply.cseq);
 		
-		map<unsigned int, SIPRequestInfo >::iterator ri = 
-			sent_requests.find(reply.cseq);
-		if (ri!= sent_requests.end())
-		{
-			DBG(" UACAuth - processing with reply code %d \n", reply.code);
-// 			DBG("realm %s user %s pwd %s ----------------\n", 
-// 				credential->realm.c_str(),
-// 				credential->user.c_str(),
-// 				credential->pwd.c_str());
-			if (((reply.code == 401) && 
-				  getHeader(ri->second.hdrs, "Authorization").length()) ||
-				((reply.code == 407) && 
-				  getHeader(ri->second.hdrs, "Proxy-Authorization").length())) {
-				DBG("Authorization failed!\n");
-			} else {
-				string auth_hdr = (reply.code==407) ? getHeader(reply.hdrs, "Proxy-Authenticate") : 
-					getHeader(reply.hdrs, "WWW-Authenticate");
-				string result; 
+    map<unsigned int, SIPRequestInfo >::iterator ri = 
+      sent_requests.find(reply.cseq);
+    if (ri!= sent_requests.end())
+      {
+	DBG(" UACAuth - processing with reply code %d \n", reply.code);
+	// 			DBG("realm %s user %s pwd %s ----------------\n", 
+	// 				credential->realm.c_str(),
+	// 				credential->user.c_str(),
+	// 				credential->pwd.c_str());
+	if (((reply.code == 401) && 
+	     getHeader(ri->second.hdrs, "Authorization").length()) ||
+	    ((reply.code == 407) && 
+	     getHeader(ri->second.hdrs, "Proxy-Authorization").length())) {
+	  DBG("Authorization failed!\n");
+	} else {
+	  string auth_hdr = (reply.code==407) ? getHeader(reply.hdrs, "Proxy-Authenticate") : 
+	    getHeader(reply.hdrs, "WWW-Authenticate");
+	  string result; 
 			
-				string auth_uri; 
-  				auth_uri = dlg->remote_uri;
+	  string auth_uri; 
+	  auth_uri = dlg->remote_uri;
 				
-				if (do_auth(reply.code, auth_hdr,  
-							ri->second.method,
-							auth_uri, result)) {
-					string hdrs = ri->second.hdrs; 
-					// TODO: strip headers 
-					// ((code==401) ? stripHeader(ri->second.hdrs, "Authorization")  :
-					//	 		    stripHeader(ri->second.hdrs, "Proxy-Authorization"));
-					hdrs += result;
-					// resend request 
-					if (dlg->sendRequest(ri->second.method,
-										 ri->second.content_type,
-										 ri->second.body, 
-										 hdrs) == 0) 			
-						processed = true;
-				}
-			} 
-		}
-	}
+	  if (do_auth(reply.code, auth_hdr,  
+		      ri->second.method,
+		      auth_uri, result)) {
+	    string hdrs = ri->second.hdrs; 
+	    // TODO: strip headers 
+	    // ((code==401) ? stripHeader(ri->second.hdrs, "Authorization")  :
+	    //	 		    stripHeader(ri->second.hdrs, "Proxy-Authorization"));
+	    hdrs += result;
+	    // resend request 
+	    if (dlg->sendRequest(ri->second.method,
+				 ri->second.content_type,
+				 ri->second.body, 
+				 hdrs) == 0) 			
+	      processed = true;
+	  }
+	} 
+      }
+  }
 	
-	if (reply.code >= 200)
-		sent_requests.erase(reply.cseq); // now we dont need it any more
+  if (reply.code >= 200)
+    sent_requests.erase(reply.cseq); // now we dont need it any more
 	
-    return processed;
+  return processed;
 }
 
 bool UACAuth::onSendRequest(const string& method, 
-				 const string& content_type,
-				 const string& body,
-				 string& hdrs,
-				 unsigned int cseq)
+			    const string& content_type,
+			    const string& body,
+			    string& hdrs,
+			    unsigned int cseq)
 {
-	DBG("adding %d to list of sent requests.\n", cseq);
-	sent_requests[cseq] = SIPRequestInfo(method, 
-										 content_type,
-										 body,
-										 hdrs);
-	return false;
+  DBG("adding %d to list of sent requests.\n", cseq);
+  sent_requests[cseq] = SIPRequestInfo(method, 
+				       content_type,
+				       body,
+				       hdrs);
+  return false;
 }
 
 
 bool UACAuth::onSendReply(const AmSipRequest& req,
-			       unsigned int  code,const string& reason,
-			       const string& content_type,const string& body,
-			       string& hdrs)
+			  unsigned int  code,const string& reason,
+			  const string& content_type,const string& body,
+			  string& hdrs)
 {
-	return false;
+  return false;
 }
 
 
@@ -249,7 +249,7 @@ bool UACAuth::parse_header(const string& auth_hdr, UACAuthDigestChallenge& chall
 }
 
 bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,  
-					  const string& method, const string& uri, string& result) {
+		      const string& method, const string& uri, string& result) {
   if (!auth_hdr.length()) {
     ERROR("empty auth header.\n");
     return false;
@@ -270,9 +270,9 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
       challenge.nonce.c_str());
 
   if (credential->realm.length() 
-	  && (credential->realm != challenge.realm)) {
+      && (credential->realm != challenge.realm)) {
     DBG("realm mismatch ('%s' vs '%s'). auth failed.\n", 
-		credential->realm.c_str(),challenge.realm.c_str());
+	credential->realm.c_str(),challenge.realm.c_str());
     return false;
   }
  
@@ -288,9 +288,9 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
 
   // compile auth response
   result = ((code==401) ? "Authorization: Digest username=\"" : 
-			"Proxy-Authorization: Digest username=\"")
-	  + credential->user + "\", realm=\"" + challenge.realm + "\", nonce=\""+challenge.nonce + 
-	  "\", uri=\""+uri+"\", ";
+	    "Proxy-Authorization: Digest username=\"")
+    + credential->user + "\", realm=\"" + challenge.realm + "\", nonce=\""+challenge.nonce + 
+    "\", uri=\""+uri+"\", ";
   if (challenge.opaque.length())
     result+="opaque=\""+challenge.opaque+"\", ";
   
@@ -304,30 +304,30 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
 // These functions come basically from ser's uac module 
 static inline void cvt_hex(HASH bin, HASHHEX hex)
 {
-	unsigned short i;
-	unsigned char j;
+  unsigned short i;
+  unsigned char j;
 
-	for (i = 0; i<HASHLEN; i++)
+  for (i = 0; i<HASHLEN; i++)
+    {
+      j = (bin[i] >> 4) & 0xf;
+      if (j <= 9)
 	{
-		j = (bin[i] >> 4) & 0xf;
-		if (j <= 9)
-		{
-			hex[i * 2] = (j + '0');
-		} else {
-			hex[i * 2] = (j + 'a' - 10);
-		}
+	  hex[i * 2] = (j + '0');
+	} else {
+	  hex[i * 2] = (j + 'a' - 10);
+	}
 
-		j = bin[i] & 0xf;
+      j = bin[i] & 0xf;
 
-		if (j <= 9)
-		{
-			hex[i * 2 + 1] = (j + '0');
-		} else {
-			hex[i * 2 + 1] = (j + 'a' - 10);
-		}
-	};
+      if (j <= 9)
+	{
+	  hex[i * 2 + 1] = (j + '0');
+	} else {
+	  hex[i * 2 + 1] = (j + 'a' - 10);
+	}
+    };
 
-	hex[HASHHEXLEN] = '\0';
+  hex[HASHHEXLEN] = '\0';
 }
 
 
@@ -335,34 +335,34 @@ static inline void cvt_hex(HASH bin, HASHHEX hex)
  * calculate H(A1)
  */
 void UACAuth::uac_calc_HA1(UACAuthDigestChallenge& challenge,
-				     string cnonce,
-				     HASHHEX sess_key)
+			   string cnonce,
+			   HASHHEX sess_key)
 {
-	MD5_CTX Md5Ctx;
-	HASH HA1;
+  MD5_CTX Md5Ctx;
+  HASH HA1;
 
-	MD5Init(&Md5Ctx);
-	w_MD5Update(&Md5Ctx, credential->user);
-	w_MD5Update(&Md5Ctx, ":");
-	// use realm from challenge in case of 
-	// empty credential realm  (ignore realm)
-	w_MD5Update(&Md5Ctx, challenge.realm); 
-	w_MD5Update(&Md5Ctx, ":");
-	w_MD5Update(&Md5Ctx, credential->pwd);
-	MD5Final(HA1, &Md5Ctx);
+  MD5Init(&Md5Ctx);
+  w_MD5Update(&Md5Ctx, credential->user);
+  w_MD5Update(&Md5Ctx, ":");
+  // use realm from challenge in case of 
+  // empty credential realm  (ignore realm)
+  w_MD5Update(&Md5Ctx, challenge.realm); 
+  w_MD5Update(&Md5Ctx, ":");
+  w_MD5Update(&Md5Ctx, credential->pwd);
+  MD5Final(HA1, &Md5Ctx);
 
-	// MD5sess ...not supported
-// 	if ( flags & AUTHENTICATE_MD5SESS )
-// 	  {
-// 		MD5Init(&Md5Ctx);
-// 		MD5Update(&Md5Ctx, HA1, HASHLEN);
-// 		MD5Update(&Md5Ctx, ":", 1);
-// 		MD5Update(&Md5Ctx, challenge.nonce.c_str(), challenge.nonce.length());
-// 		MD5Update(&Md5Ctx, ":", 1);
-// 		MD5Update(&Md5Ctx, cnonce.c_str(), cnonce.length());
-// 		MD5Final(HA1, &Md5Ctx);
-// 	  }; 
-	cvt_hex(HA1, sess_key);
+  // MD5sess ...not supported
+  // 	if ( flags & AUTHENTICATE_MD5SESS )
+  // 	  {
+  // 		MD5Init(&Md5Ctx);
+  // 		MD5Update(&Md5Ctx, HA1, HASHLEN);
+  // 		MD5Update(&Md5Ctx, ":", 1);
+  // 		MD5Update(&Md5Ctx, challenge.nonce.c_str(), challenge.nonce.length());
+  // 		MD5Update(&Md5Ctx, ":", 1);
+  // 		MD5Update(&Md5Ctx, cnonce.c_str(), cnonce.length());
+  // 		MD5Final(HA1, &Md5Ctx);
+  // 	  }; 
+  cvt_hex(HA1, sess_key);
 }
 
 
@@ -370,9 +370,9 @@ void UACAuth::uac_calc_HA1(UACAuthDigestChallenge& challenge,
  * calculate H(A2)
  */
 void UACAuth::uac_calc_HA2( const string& method, const string& uri,
-		   UACAuthDigestChallenge& challenge,
-		   HASHHEX hentity,
-		   HASHHEX HA2Hex )
+			    UACAuthDigestChallenge& challenge,
+			    HASHHEX hentity,
+			    HASHHEX HA2Hex )
 {
   unsigned char hc[1]; hc[0]=':';
   MD5_CTX Md5Ctx;
@@ -399,9 +399,9 @@ void UACAuth::uac_calc_HA2( const string& method, const string& uri,
  * calculate request-digest/response-digest as per HTTP Digest spec 
  */
 void UACAuth::uac_calc_response( HASHHEX ha1, HASHHEX ha2,
-			UACAuthDigestChallenge& challenge,
-			const string& nc, const string& cnonce,
-			HASHHEX response)
+				 UACAuthDigestChallenge& challenge,
+				 const string& nc, const string& cnonce,
+				 HASHHEX response)
 {
   unsigned char hc[1]; hc[0]=':';
   MD5_CTX Md5Ctx;

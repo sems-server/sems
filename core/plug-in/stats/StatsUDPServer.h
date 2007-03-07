@@ -40,26 +40,26 @@ class AmSessionContainer;
 
 class StatsUDPServer: public AmThread
 {
-    static StatsUDPServer* _instance;
-    AmSessionContainer*    sc;
-    int sd;
+  static StatsUDPServer* _instance;
+  AmSessionContainer*    sc;
+  int sd;
     
-    StatsUDPServer();
-    ~StatsUDPServer();
+  StatsUDPServer();
+  ~StatsUDPServer();
 
-    int init();
+  int init();
 
-    int execute(char* msg_buf, string& reply, 
-		struct sockaddr_in& addr);
+  int execute(char* msg_buf, string& reply, 
+	      struct sockaddr_in& addr);
 
-    int send_reply(const string& reply,
-		   const struct sockaddr_in& reply_addr);
+  int send_reply(const string& reply,
+		 const struct sockaddr_in& reply_addr);
 	
-    void run();
-    void on_stop(){}
+  void run();
+  void on_stop(){}
 
 public:
-    static StatsUDPServer* instance();
+  static StatsUDPServer* instance();
 };
 
 #endif

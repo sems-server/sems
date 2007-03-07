@@ -37,59 +37,59 @@
 #define RESYNC_THRESHOLD    2
 
 class Packet {
-    ShortSample m_data[AUDIO_BUFFER_SIZE * 2];
-    unsigned int m_size;
-    unsigned int m_ts;
-public:
-    Packet *m_next;
-    Packet *m_prev;
-    void init(const ShortSample *data, unsigned int size, unsigned int ts);
+  ShortSample m_data[AUDIO_BUFFER_SIZE * 2];
+  unsigned int m_size;
+  unsigned int m_ts;
+ public:
+  Packet *m_next;
+  Packet *m_prev;
+  void init(const ShortSample *data, unsigned int size, unsigned int ts);
 
-    unsigned int size() const { return m_size; }
-    unsigned int ts() const { return m_ts; }
-    ShortSample *data() { return m_data; }
+  unsigned int size() const { return m_size; }
+  unsigned int ts() const { return m_ts; }
+  ShortSample *data() { return m_data; }
 
-    bool operator < (const Packet&) const;
+  bool operator < (const Packet&) const;
 };
 
 class PacketAllocator
 {
-private:
-    Packet m_packets[MAX_JITTER / 80];
-    Packet *m_free_packets;
+ private:
+  Packet m_packets[MAX_JITTER / 80];
+  Packet *m_free_packets;
 
-public:
-    PacketAllocator();
-    Packet *alloc(const ShortSample *data, unsigned int size, unsigned int ts);
-    void free(Packet *p);
+ public:
+  PacketAllocator();
+  Packet *alloc(const ShortSample *data, unsigned int size, unsigned int ts);
+  void free(Packet *p);
 };
 
 class AmJitterBuffer
 {
-private:
-    AmMutex m_mutex;
-    PacketAllocator m_allocator;
-    Packet *m_head;
-    Packet *m_tail;
-    bool m_tsInited;
-    unsigned int m_lastTs;
-    unsigned int m_lastResyncTs;
-    unsigned int m_lastAudioTs;
-    unsigned int m_tsDelta;
-    bool m_tsDeltaInited;
-    int m_delayCount;
-    unsigned int m_jitter;
-//    AmRtpStream *m_owner;
-    bool m_forceResync;
+ private:
+  AmMutex m_mutex;
+  PacketAllocator m_allocator;
+  Packet *m_head;
+  Packet *m_tail;
+  bool m_tsInited;
+  unsigned int m_lastTs;
+  unsigned int m_lastResyncTs;
+  unsigned int m_lastAudioTs;
+  unsigned int m_tsDelta;
+  bool m_tsDeltaInited;
+  int m_delayCount;
+  unsigned int m_jitter;
+  //    AmRtpStream *m_owner;
+  bool m_forceResync;
 
 #ifdef DEBUG_PLAYOUTBUF
-    unsigned int m_tsDeltaStart;
+  unsigned int m_tsDeltaStart;
 #endif
 
-public:
-    AmJitterBuffer();
-    void put(const ShortSample *data, unsigned int size, unsigned int ts, bool begin_talk);
-    bool get(unsigned int ts, unsigned int ms, ShortSample *out, unsigned int *size, unsigned int *out_ts);
+ public:
+  AmJitterBuffer();
+  void put(const ShortSample *data, unsigned int size, unsigned int ts, bool begin_talk);
+  bool get(unsigned int ts, unsigned int ms, ShortSample *out, unsigned int *size, unsigned int *out_ts);
 };
 
 #endif // _AmJitterBuffer_h_

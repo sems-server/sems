@@ -48,116 +48,116 @@ static unsigned int gsm_samples2bytes(long, unsigned int);
 
 BEGIN_EXPORTS( "gsm" )
 
-    BEGIN_CODECS
-      CODEC( CODEC_GSM0610, pcm16_2_gsm, gsm_2_pcm16, NULL,
-	     gsm_create_if, (amci_codec_destroy_t)gsm_destroy_if, gsm_bytes2samples, gsm_samples2bytes )
-    END_CODECS
+     BEGIN_CODECS
+CODEC( CODEC_GSM0610, pcm16_2_gsm, gsm_2_pcm16, NULL,
+       gsm_create_if, (amci_codec_destroy_t)gsm_destroy_if, gsm_bytes2samples, gsm_samples2bytes )
+     END_CODECS
     
-    BEGIN_PAYLOADS
-      PAYLOAD( 3, "GSM", 8000, 1, CODEC_GSM0610, AMCI_PT_AUDIO_FRAME )
-    END_PAYLOADS
+BEGIN_PAYLOADS
+PAYLOAD( 3, "GSM", 8000, 1, CODEC_GSM0610, AMCI_PT_AUDIO_FRAME )
+     END_PAYLOADS
 
-    BEGIN_FILE_FORMATS
-    END_FILE_FORMATS
+BEGIN_FILE_FORMATS
+END_FILE_FORMATS
 
 END_EXPORTS
 
 static unsigned int gsm_bytes2samples(long h_codec, unsigned int num_bytes)
 {
-    return 160 * (num_bytes / 33);
+  return 160 * (num_bytes / 33);
 }
 
 static unsigned int gsm_samples2bytes(long h_codec, unsigned int num_samples)
 {
-    return 33 * (num_samples / 160);
+  return 33 * (num_samples / 160);
 }
 
 static int pcm16_2_gsm(unsigned char* out_buf, unsigned char* in_buf, unsigned int size, 
 		       unsigned int channels, unsigned int rate, long h_codec )
 {
-    int i;
-    gsm* h_arr;
-    div_t blocks;
+  int i;
+  gsm* h_arr;
+  div_t blocks;
 
-    h_arr = (gsm*)h_codec;
-    blocks = div(size,320);
+  h_arr = (gsm*)h_codec;
+  blocks = div(size,320);
 
-    if(blocks.rem){
-	ERROR("pcm16_2_gsm: number of blocks should be integral (block size = 320)\n");
-	return -1;
-    }
+  if(blocks.rem){
+    ERROR("pcm16_2_gsm: number of blocks should be integral (block size = 320)\n");
+    return -1;
+  }
 
-    for (i=0;i<blocks.quot;i++)
-	gsm_encode(h_arr[0],(gsm_signal*)(in_buf + i*320),out_buf + i*33);
+  for (i=0;i<blocks.quot;i++)
+    gsm_encode(h_arr[0],(gsm_signal*)(in_buf + i*320),out_buf + i*33);
 
-    return blocks.quot * 33;
+  return blocks.quot * 33;
 }
 
 static int gsm_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size, 
 		       unsigned int channels, unsigned int rate, long h_codec )
 {
-    int i;
-    gsm* h_arr;
-    div_t blocks;
-    unsigned int out_size;
+  int i;
+  gsm* h_arr;
+  div_t blocks;
+  unsigned int out_size;
 
-    h_arr = (gsm*)h_codec;
-    blocks = div(size,33);
+  h_arr = (gsm*)h_codec;
+  blocks = div(size,33);
 
-    if(blocks.rem){
-	ERROR("gsm_2_pcm16: number of blocks should be integral (block size = 33)\n");
-	return -1;
-    }
+  if(blocks.rem){
+    ERROR("gsm_2_pcm16: number of blocks should be integral (block size = 33)\n");
+    return -1;
+  }
 
-    out_size = blocks.quot * 320;
+  out_size = blocks.quot * 320;
 
-    if(out_size > AUDIO_BUFFER_SIZE){
+  if(out_size > AUDIO_BUFFER_SIZE){
 
-	ERROR("gsm_2_pcm16: converting buffer would lead to buffer overrun:\n");
-	ERROR("gsm_2_pcm16: input size=%u; needed output size=%u; buffer size=%u\n",
-	      size,out_size,AUDIO_BUFFER_SIZE);
-	return -1;
-    }
+    ERROR("gsm_2_pcm16: converting buffer would lead to buffer overrun:\n");
+    ERROR("gsm_2_pcm16: input size=%u; needed output size=%u; buffer size=%u\n",
+	  size,out_size,AUDIO_BUFFER_SIZE);
+    return -1;
+  }
 
-    for (i=0;i<blocks.quot;i++) 
-	gsm_decode(h_arr[1],in_buf + i*33,(gsm_signal*)(out_buf + i*320));
+  for (i=0;i<blocks.quot;i++) 
+    gsm_decode(h_arr[1],in_buf + i*33,(gsm_signal*)(out_buf + i*320));
 
-    return out_size;
+  return out_size;
 }
 
 
 static long gsm_create_if(const char* format_parameters, amci_codec_fmt_info_t* format_description)
 { 
-    gsm* h_codec=0;
+  gsm* h_codec=0;
     
-    h_codec = malloc(sizeof(gsm)*2);
-    if(!h_codec){
-	ERROR("gsm.c: could not create handle array\n");
-	return 0;
-    }
+  h_codec = malloc(sizeof(gsm)*2);
+  if(!h_codec){
+    ERROR("gsm.c: could not create handle array\n");
+    return 0;
+  }
 
-    h_codec[0] = gsm_create();
-    h_codec[1] = gsm_create();
+  h_codec[0] = gsm_create();
+  h_codec[1] = gsm_create();
 
-    format_description[0].id = AMCI_FMT_FRAME_LENGTH ;
-    format_description[0].value = 20;
-    format_description[1].id = AMCI_FMT_FRAME_SIZE;
-    format_description[1].value = 160;
-    format_description[2].id =  AMCI_FMT_ENCODED_FRAME_SIZE;
-    format_description[2].value = 33;
-    format_description[3].id = 0;
+  format_description[0].id = AMCI_FMT_FRAME_LENGTH ;
+  format_description[0].value = 20;
+  format_description[1].id = AMCI_FMT_FRAME_SIZE;
+  format_description[1].value = 160;
+  format_description[2].id =  AMCI_FMT_ENCODED_FRAME_SIZE;
+  format_description[2].value = 33;
+  format_description[3].id = 0;
 
     
-    return (long)h_codec;
+  return (long)h_codec;
 }
 
 static void gsm_destroy_if(long h_codec)
 {
-    gsm* h_arr = (gsm*)h_codec;
+  gsm* h_arr = (gsm*)h_codec;
 
-    gsm_destroy(h_arr[0]);
-    gsm_destroy(h_arr[1]);
+  gsm_destroy(h_arr[0]);
+  gsm_destroy(h_arr[1]);
 
-    free(h_arr);
+  free(h_arr);
 }
 

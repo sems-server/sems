@@ -1,3 +1,30 @@
+/*
+ * $Id$
+ *
+ * Copyright (C) 2002-2003 Fhg Fokus
+ *
+ * This file is part of sems, a free SIP media server.
+ *
+ * sems is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version
+ *
+ * For a license to use the ser software under conditions
+ * other than those described here, or to purchase support for this
+ * software, please contact iptel.org by e-mail at the following addresses:
+ *    info@iptel.org
+ *
+ * sems is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #ifndef _AmArg_h_
 #define _AmArg_h_
 
@@ -9,105 +36,105 @@ using std::vector;
 /** base for Objects as @see AmArg parameter*/
 class ArgObject {
  public:
-	ArgObject() { }
-	virtual ~ArgObject() { }
+  ArgObject() { }
+  virtual ~ArgObject() { }
 };
 
 /** \brief variable type argument for DynInvoke APIs */
 class AmArg
 {
-public:
-    // type enum
-    enum {
-	Undef=0,
+ public:
+  // type enum
+  enum {
+    Undef=0,
 
-	Int,
-	Double,
-	CStr,
-	AObject
-    };
+    Int,
+    Double,
+    CStr,
+    AObject
+  };
 
-private:
-    // type
-    short type;
+ private:
+  // type
+  short type;
     
-    // value
-    union {
+  // value
+  union {
 	
-	int         v_int;
-	double      v_double;
-	const char* v_cstr;
-	ArgObject* v_obj;
-    };
+    int         v_int;
+    double      v_double;
+    const char* v_cstr;
+    ArgObject* v_obj;
+  };
 
-public:
-    AmArg(const AmArg& v)
-	: type(v.type){
+ public:
+  AmArg(const AmArg& v)
+    : type(v.type){
 	
-	switch(type){
-	case Int: v_int = v.v_int; break;
-	case Double: v_double = v.v_double; break;
-	case CStr: v_cstr = v.v_cstr; break;
-	case AObject: v_obj = v.v_obj; break;
-	default: assert(0);
-	}
+    switch(type){
+    case Int: v_int = v.v_int; break;
+    case Double: v_double = v.v_double; break;
+    case CStr: v_cstr = v.v_cstr; break;
+    case AObject: v_obj = v.v_obj; break;
+    default: assert(0);
     }
+  }
 
-    AmArg(const int& v)
-	: type(Int),
-	  v_int(v)
+  AmArg(const int& v)
+    : type(Int),
+    v_int(v)
     {}
 
-    AmArg(const double& v)
-	: type(Double),
-	  v_double(v)
+  AmArg(const double& v)
+    : type(Double),
+    v_double(v)
     {}
 
-    AmArg(const char* v)
-	: type(CStr),
-	  v_cstr(v)
+  AmArg(const char* v)
+    : type(CStr),
+    v_cstr(v)
     {}
 
-    AmArg(ArgObject* v)
-	: type(AObject),
-	  v_obj(v)
+  AmArg(ArgObject* v)
+    : type(AObject),
+    v_obj(v)
     {}
 
 
-    short getType() const { return type; }
+  short getType() const { return type; }
 
-    int         asInt()    const { return v_int; }
-    double      asDouble() const { return v_double; }
-    const char* asCStr()   const { return v_cstr; }
-	ArgObject*  asObject() const { return v_obj; }
+  int         asInt()    const { return v_int; }
+  double      asDouble() const { return v_double; }
+  const char* asCStr()   const { return v_cstr; }
+  ArgObject*  asObject() const { return v_obj; }
 };
 
 /** \brief array of variable args for DI APIs*/
 class AmArgArray
 {
-    vector<AmArg> v;
+  vector<AmArg> v;
 
-public:
-	struct OutOfBoundsException {
-		OutOfBoundsException() { }
-	};
+ public:
+  struct OutOfBoundsException {
+    OutOfBoundsException() { }
+  };
 
-    AmArgArray() : v() {}
-    AmArgArray(const AmArgArray& a) : v(a.v) {}
+  AmArgArray() : v() {}
+  AmArgArray(const AmArgArray& a) : v(a.v) {}
     
-    void push(const AmArg& a){
-	v.push_back(a);
-    }
+  void push(const AmArg& a){
+    v.push_back(a);
+  }
 
-    const AmArg& get(size_t idx) const {
+  const AmArg& get(size_t idx) const {
 	
-	if (idx >= v.size())
-		throw OutOfBoundsException();
-	//	assert(idx < v.size());
-	return v[idx];
-    }
+    if (idx >= v.size())
+      throw OutOfBoundsException();
+    //	assert(idx < v.size());
+    return v[idx];
+  }
 
-    size_t size() { return v.size(); }
+  size_t size() { return v.size(); }
 };
 
 #endif

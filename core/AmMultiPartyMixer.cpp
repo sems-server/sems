@@ -40,9 +40,9 @@
 #define MIXER_DELAY    MIXER_DELAY_MS*8  // 8000/1000
 
 AmMultiPartyMixer::AmMultiPartyMixer()
-    : channels(),
-      cur_channel_id(0),
-      scaling_factor(16)
+  : channels(),
+    cur_channel_id(0),
+    scaling_factor(16)
 {
 }
 
@@ -52,31 +52,31 @@ AmMultiPartyMixer::~AmMultiPartyMixer()
 
 unsigned int AmMultiPartyMixer::addChannel()
 {
-    for(;channels.find(cur_channel_id) != channels.end();cur_channel_id++)
-	DBG("trying to add channel: #%i\n",cur_channel_id);
+  for(;channels.find(cur_channel_id) != channels.end();cur_channel_id++)
+    DBG("trying to add channel: #%i\n",cur_channel_id);
 
-    DBG("added channel: #%i\n",cur_channel_id);
-    channels.insert(std::make_pair(cur_channel_id,new SampleArrayShort()));
+  DBG("added channel: #%i\n",cur_channel_id);
+  channels.insert(std::make_pair(cur_channel_id,new SampleArrayShort()));
 
-    return cur_channel_id++;
+  return cur_channel_id++;
 }
 
 void AmMultiPartyMixer::removeChannel(unsigned int channel_id)
 {
-    delete get_channel(channel_id);
-    channels.erase(channel_id);
-    DBG("removed channel: #%i\n",channel_id);
+  delete get_channel(channel_id);
+  channels.erase(channel_id);
+  DBG("removed channel: #%i\n",channel_id);
 }
 
 SampleArrayShort* AmMultiPartyMixer::get_channel(unsigned int channel_id)
 {
-    ChannelMap::iterator channel_it = channels.find(channel_id);
-    if(channel_it == channels.end()){
-	ERROR("channel #%i does not exist\n",channel_id);
-	return NULL;
-    }
+  ChannelMap::iterator channel_it = channels.find(channel_id);
+  if(channel_it == channels.end()){
+    ERROR("channel #%i does not exist\n",channel_id);
+    return NULL;
+  }
     
-    return channel_it->second;
+  return channel_it->second;
 }
 
 void AmMultiPartyMixer::PutChannelPacket(unsigned int   channel_id,
@@ -84,25 +84,25 @@ void AmMultiPartyMixer::PutChannelPacket(unsigned int   channel_id,
 					 unsigned char* buffer, 
 					 unsigned int   size)
 {
-    if(!size) return;
-    assert(size <= AUDIO_BUFFER_SIZE);
+  if(!size) return;
+  assert(size <= AUDIO_BUFFER_SIZE);
     
-    SampleArrayShort* channel = 0;
-    if((channel = get_channel(channel_id)) != 0){
+  SampleArrayShort* channel = 0;
+  if((channel = get_channel(channel_id)) != 0){
 
-	unsigned samples = PCM16_B2S(size);
-	unsigned int put_ts = ts + MIXER_DELAY;
+    unsigned samples = PCM16_B2S(size);
+    unsigned int put_ts = ts + MIXER_DELAY;
 
-	channel->put(put_ts,(short*)buffer,samples);
-	mixed_channel.get(put_ts,tmp_buffer,samples);
+    channel->put(put_ts,(short*)buffer,samples);
+    mixed_channel.get(put_ts,tmp_buffer,samples);
 	
-	mix_add(tmp_buffer,tmp_buffer,(short*)buffer,samples);
-	mixed_channel.put(put_ts,tmp_buffer,samples);
-    }
-    else {
-	ERROR("MultiPartyMixer::PutChannelPacket: "
-	      "channel #%i doesn't exist\n",channel_id);
-    }
+    mix_add(tmp_buffer,tmp_buffer,(short*)buffer,samples);
+    mixed_channel.put(put_ts,tmp_buffer,samples);
+  }
+  else {
+    ERROR("MultiPartyMixer::PutChannelPacket: "
+	  "channel #%i doesn't exist\n",channel_id);
+  }
 
 }
 
@@ -111,24 +111,24 @@ void AmMultiPartyMixer::GetChannelPacket(unsigned int   channel_id,
 					 unsigned char* buffer, 
 					 unsigned int   size)
 {
-    if(!size) return;
-    assert(size <= AUDIO_BUFFER_SIZE);
+  if(!size) return;
+  assert(size <= AUDIO_BUFFER_SIZE);
 
-    SampleArrayShort* channel = 0;
-    if((channel = get_channel(channel_id)) != 0){
+  SampleArrayShort* channel = 0;
+  if((channel = get_channel(channel_id)) != 0){
 
-	unsigned int samples = PCM16_B2S(size);
+    unsigned int samples = PCM16_B2S(size);
 
-	mixed_channel.get(ts,tmp_buffer,samples);
-	channel->get(ts,(short*)buffer,samples);
+    mixed_channel.get(ts,tmp_buffer,samples);
+    channel->get(ts,(short*)buffer,samples);
 
-	mix_sub(tmp_buffer,tmp_buffer,(short*)buffer,samples);
-	scale((short*)buffer,tmp_buffer,samples);
-    }
-    else {
-	ERROR("MultiPartyMixer::GetChannelPacket: "
-	      "channel #%i doesn't exist\n",channel_id);
-    }
+    mix_sub(tmp_buffer,tmp_buffer,(short*)buffer,samples);
+    scale((short*)buffer,tmp_buffer,samples);
+  }
+  else {
+    ERROR("MultiPartyMixer::GetChannelPacket: "
+	  "channel #%i doesn't exist\n",channel_id);
+  }
 }
 
 // int   dest[size/2]
@@ -137,38 +137,38 @@ void AmMultiPartyMixer::GetChannelPacket(unsigned int   channel_id,
 //
 void AmMultiPartyMixer::mix_add(int* dest,int* src1,short* src2,unsigned int size)
 {
-     int* end_dest = dest + size;
+  int* end_dest = dest + size;
 
-     while(dest != end_dest)
- 	*(dest++) = *(src1++) + int(*(src2++));
+  while(dest != end_dest)
+    *(dest++) = *(src1++) + int(*(src2++));
 }
 
 void AmMultiPartyMixer::mix_sub(int* dest,int* src1,short* src2,unsigned int size)
 {
-     int* end_dest = dest + size;
+  int* end_dest = dest + size;
 
-     while(dest != end_dest)
- 	*(dest++) = *(src1++) - int(*(src2++));
+  while(dest != end_dest)
+    *(dest++) = *(src1++) - int(*(src2++));
 }
 
 void AmMultiPartyMixer::scale(short* buffer,int* tmp_buf,unsigned int size)
 {
-    short* end_dest = buffer + size;
+  short* end_dest = buffer + size;
     
-    if(scaling_factor<64)
-	scaling_factor++;
+  if(scaling_factor<64)
+    scaling_factor++;
     
-    while(buffer != end_dest){
+  while(buffer != end_dest){
 	
-	int s = (*tmp_buf * scaling_factor) >> 6;
-	if(abs(s) > MAX_LINEAR_SAMPLE){
-	    scaling_factor = abs( (MAX_LINEAR_SAMPLE<<6) / (*tmp_buf) );
-	    if(s < 0)
-		s = -MAX_LINEAR_SAMPLE;
-	    else
-		s = MAX_LINEAR_SAMPLE;
-	}
-	*(buffer++) = short(s);
- 	tmp_buf++;
+    int s = (*tmp_buf * scaling_factor) >> 6;
+    if(abs(s) > MAX_LINEAR_SAMPLE){
+      scaling_factor = abs( (MAX_LINEAR_SAMPLE<<6) / (*tmp_buf) );
+      if(s < 0)
+	s = -MAX_LINEAR_SAMPLE;
+      else
+	s = MAX_LINEAR_SAMPLE;
     }
+    *(buffer++) = short(s);
+    tmp_buf++;
+  }
 }

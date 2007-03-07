@@ -43,293 +43,293 @@
 
 static unsigned int pcm16_bytes2samples(long h_codec, unsigned int num_bytes)
 {
-    return num_bytes / 2;
+  return num_bytes / 2;
 }
 
 static unsigned int pcm16_samples2bytes(long h_codec, unsigned int num_samples)
 {
-    return num_samples * 2;
+  return num_samples * 2;
 }
 
 static unsigned int tevent_bytes2samples(long h_codec, unsigned int num_bytes)
 {
-    return num_bytes;
+  return num_bytes;
 }
 
 static unsigned int tevent_samples2bytes(long h_codec, unsigned int num_samples)
 {
-    return num_samples;
+  return num_samples;
 }
 
 amci_codec_t _codec_pcm16 = { 
-    CODEC_PCM16,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    pcm16_bytes2samples,
-    pcm16_samples2bytes
+  CODEC_PCM16,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  pcm16_bytes2samples,
+  pcm16_samples2bytes
 };
 
 amci_codec_t _codec_tevent = { 
-    CODEC_TELEPHONE_EVENT,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    tevent_bytes2samples,
-    tevent_samples2bytes
+  CODEC_TELEPHONE_EVENT,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  tevent_bytes2samples,
+  tevent_samples2bytes
 };
 
 amci_payload_t _payload_tevent = { 
-    -1,
-    "telephone-event",
-    8000,
-    -1,
-    CODEC_TELEPHONE_EVENT,
-    -1 
+  -1,
+  "telephone-event",
+  8000,
+  -1,
+  CODEC_TELEPHONE_EVENT,
+  -1 
 };
 
 AmPlugIn* AmPlugIn::_instance=0;
 
 AmPlugIn::AmPlugIn()
-    : dynamic_pl(96) // range: 96->127, see RFC 1890
+  : dynamic_pl(96) // range: 96->127, see RFC 1890
 {
-    DBG("adding built-in codecs...\n");
-    addCodec(&_codec_pcm16);
-    addCodec(&_codec_tevent);
-    addPayload(&_payload_tevent);
+  DBG("adding built-in codecs...\n");
+  addCodec(&_codec_pcm16);
+  addCodec(&_codec_tevent);
+  addPayload(&_payload_tevent);
 }
 
 AmPlugIn::~AmPlugIn()
 {
-    for(vector<void*>::iterator it=dlls.begin();it!=dlls.end();++it)
-	dlclose(*it);
+  for(vector<void*>::iterator it=dlls.begin();it!=dlls.end();++it)
+    dlclose(*it);
 }
 
 AmPlugIn* AmPlugIn::instance()
 {
-    if(!_instance)
-	_instance = new AmPlugIn();
+  if(!_instance)
+    _instance = new AmPlugIn();
 
-    return _instance;
+  return _instance;
 }
 
 
 int AmPlugIn::load(const string& directory, const string& plugins)
 {
-    int err=0;
-    struct dirent* entry;
-    DIR* dir = opendir(directory.c_str());
+  int err=0;
+  struct dirent* entry;
+  DIR* dir = opendir(directory.c_str());
 
-    if(!dir){
-	ERROR("plug-ins loader (%s): %s\n",directory.c_str(),strerror(errno));
-	return -1;
+  if(!dir){
+    ERROR("plug-ins loader (%s): %s\n",directory.c_str(),strerror(errno));
+    return -1;
+  }
+
+
+  if (!plugins.length()) {
+    DBG("AmPlugIn: loading modules in directory '%s':\n", directory.c_str());
+
+    while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
+
+      string plugin_file = directory + "/" + string(entry->d_name);
+
+      if( plugin_file.find(".so",plugin_file.length()-3) == string::npos ){
+	continue;
+      }
+
+      DBG("loading %s ...\n",plugin_file.c_str());
+      if( (err = loadPlugIn(plugin_file)) < 0 )
+	ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
     }
+  } else {
+    DBG("AmPlugIn: loading modules '%s':\n", plugins.c_str());
 
-
-	if (!plugins.length()) {
-		DBG("AmPlugIn: loading modules in directory '%s':\n", directory.c_str());
-
-		while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
-
-			string plugin_file = directory + "/" + string(entry->d_name);
-
-			if( plugin_file.find(".so",plugin_file.length()-3) == string::npos ){
-				continue;
-			}
-
-			DBG("loading %s ...\n",plugin_file.c_str());
-			if( (err = loadPlugIn(plugin_file)) < 0 )
-				ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
-		}
-	} else {
-		DBG("AmPlugIn: loading modules '%s':\n", plugins.c_str());
-
-		size_t pos = 0;
+    size_t pos = 0;
 		
-		while (pos < plugins.length()) {
-			size_t pos2 = plugins.find(";", pos);
-			if (pos2 == string::npos) 
-				pos2 = plugins.length();
-			string plugin_file = plugins.substr(pos, pos2-pos);
-			if( plugin_file.find(".so",plugin_file.length()-3) == string::npos )
-				plugin_file+=".so";
+    while (pos < plugins.length()) {
+      size_t pos2 = plugins.find(";", pos);
+      if (pos2 == string::npos) 
+	pos2 = plugins.length();
+      string plugin_file = plugins.substr(pos, pos2-pos);
+      if( plugin_file.find(".so",plugin_file.length()-3) == string::npos )
+	plugin_file+=".so";
 			
-			plugin_file = directory + "/"  + plugin_file;
-			DBG("loading %s...\n",plugin_file.c_str());
-			if( (err = loadPlugIn(plugin_file)) < 0 ) {
-				ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
-				// be strict here: if plugin not loaded, stop!
-				return err; 
-			}
-			if (plugins[pos2]==';')
-				pos = pos2+1;
-			else 
-				break;
+      plugin_file = directory + "/"  + plugin_file;
+      DBG("loading %s...\n",plugin_file.c_str());
+      if( (err = loadPlugIn(plugin_file)) < 0 ) {
+	ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
+	// be strict here: if plugin not loaded, stop!
+	return err; 
+      }
+      if (plugins[pos2]==';')
+	pos = pos2+1;
+      else 
+	break;
 			
-		}
-	}
-    closedir(dir);
-
-	DBG("AmPlugIn: modules loaded.\n");
-
-	DBG("AmPlugIn: Initializing plugins...\n");
-
-    for(map<string,AmSessionEventHandlerFactory*>::iterator it = name2seh.begin();
-	it != name2seh.end(); it++){
-	err = it->second->onLoad();
-	if(err)
-	    break;
     }
+  }
+  closedir(dir);
 
-    for(map<string,AmDynInvokeFactory*>::iterator it = name2di.begin();
-	it != name2di.end(); it++){
-	err = it->second->onLoad();
-	if(err)
-	    break;
-    }
+  DBG("AmPlugIn: modules loaded.\n");
 
-	// load SIPEventHandlers 
-    for(map<string,AmSIPEventHandler*>::iterator it = name2sipeh.begin();
-	it != name2sipeh.end(); it++){
-	err = it->second->onLoad();
-	if(err)
-	    break;
-	// register for receiving replys 
-	AmReplyHandler::get()->registerReplyHandler(it->second);
-    }
+  DBG("AmPlugIn: Initializing plugins...\n");
+
+  for(map<string,AmSessionEventHandlerFactory*>::iterator it = name2seh.begin();
+      it != name2seh.end(); it++){
+    err = it->second->onLoad();
+    if(err)
+      break;
+  }
+
+  for(map<string,AmDynInvokeFactory*>::iterator it = name2di.begin();
+      it != name2di.end(); it++){
+    err = it->second->onLoad();
+    if(err)
+      break;
+  }
+
+  // load SIPEventHandlers 
+  for(map<string,AmSIPEventHandler*>::iterator it = name2sipeh.begin();
+      it != name2sipeh.end(); it++){
+    err = it->second->onLoad();
+    if(err)
+      break;
+    // register for receiving replys 
+    AmReplyHandler::get()->registerReplyHandler(it->second);
+  }
 
     
-    map<string,AmSessionFactory*> apps(name2app);
-    for(map<string,AmSessionFactory*>::iterator it = apps.begin();
-	it != apps.end(); it++){
+  map<string,AmSessionFactory*> apps(name2app);
+  for(map<string,AmSessionFactory*>::iterator it = apps.begin();
+      it != apps.end(); it++){
 
-	err = it->second->onLoad();
-	if(err)
-	    break;
-    }
+    err = it->second->onLoad();
+    if(err)
+      break;
+  }
 
-	if (!err) {
-		DBG("AmPlugIn: Initialized plugins.\n");
-	}
+  if (!err) {
+    DBG("AmPlugIn: Initialized plugins.\n");
+  }
 
-    return err;
+  return err;
 }
 
 int AmPlugIn::loadPlugIn(const string& file)
 {
-    void* h_dl = dlopen(file.c_str(),RTLD_NOW | RTLD_GLOBAL);
+  void* h_dl = dlopen(file.c_str(),RTLD_NOW | RTLD_GLOBAL);
 
-    if(!h_dl){
-	ERROR("AmPlugIn::loadPlugIn: %s: %s\n",file.c_str(),dlerror());
-	return -1;
-    }
+  if(!h_dl){
+    ERROR("AmPlugIn::loadPlugIn: %s: %s\n",file.c_str(),dlerror());
+    return -1;
+  }
 
-    FactoryCreate fc = NULL;
-    amci_exports_t* exports = (amci_exports_t*)dlsym(h_dl,"amci_exports");
+  FactoryCreate fc = NULL;
+  amci_exports_t* exports = (amci_exports_t*)dlsym(h_dl,"amci_exports");
 
-    bool has_sym=false;
-    if(exports){
- 	if(loadAudioPlugIn(exports))
-	    goto error;
-	goto end;
-    }
+  bool has_sym=false;
+  if(exports){
+    if(loadAudioPlugIn(exports))
+      goto error;
+    goto end;
+  }
 
-    if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EXPORT_STR)) != NULL){
-	if(loadAppPlugIn((AmPluginFactory*)fc()))
-	    goto error;
-	has_sym=true;
-    }
-    if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EVENT_HANDLER_EXPORT_STR)) != NULL){
-	if(loadSehPlugIn((AmPluginFactory*)fc()))
-	    goto error;
-	has_sym=true;
-    }
-    if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_PLUGIN_CLASS_EXPORT_STR)) != NULL){
-	if(loadDiPlugIn((AmPluginFactory*)fc()))
-	    goto error;
-	has_sym=true;
-    }
+  if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EXPORT_STR)) != NULL){
+    if(loadAppPlugIn((AmPluginFactory*)fc()))
+      goto error;
+    has_sym=true;
+  }
+  if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EVENT_HANDLER_EXPORT_STR)) != NULL){
+    if(loadSehPlugIn((AmPluginFactory*)fc()))
+      goto error;
+    has_sym=true;
+  }
+  if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_PLUGIN_CLASS_EXPORT_STR)) != NULL){
+    if(loadDiPlugIn((AmPluginFactory*)fc()))
+      goto error;
+    has_sym=true;
+  }
 
-    if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SIP_EVENT_HANDLER_EXPORT_STR)) != NULL){
-	if(loadSIPehPlugIn((AmPluginFactory*)fc()))
-	    goto error;
-	has_sym=true;
-    }
+  if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SIP_EVENT_HANDLER_EXPORT_STR)) != NULL){
+    if(loadSIPehPlugIn((AmPluginFactory*)fc()))
+      goto error;
+    has_sym=true;
+  }
 
-    if(!has_sym){
-	ERROR("Plugin type could not be detected (%s)(%s)\n",file.c_str(),dlerror());
-	goto error;
-    }
+  if(!has_sym){
+    ERROR("Plugin type could not be detected (%s)(%s)\n",file.c_str(),dlerror());
+    goto error;
+  }
 
  end:
-    dlls.push_back(h_dl);
-    return 0;
+  dlls.push_back(h_dl);
+  return 0;
 
  error:
-    dlclose(h_dl);
-    return -1;
+  dlclose(h_dl);
+  return -1;
 }
 
 
 amci_inoutfmt_t* AmPlugIn::fileFormat(const string& fmt_name, const string& ext)
 {
-    if(!fmt_name.empty()){
+  if(!fmt_name.empty()){
 
-	map<string,amci_inoutfmt_t*>::iterator it = file_formats.find(fmt_name);
-	if ((it != file_formats.end()) &&
-	    (ext.empty() || (ext == it->second->ext)))
-	    return it->second;
-    }
-    else if(!ext.empty()){
+    map<string,amci_inoutfmt_t*>::iterator it = file_formats.find(fmt_name);
+    if ((it != file_formats.end()) &&
+	(ext.empty() || (ext == it->second->ext)))
+      return it->second;
+  }
+  else if(!ext.empty()){
 	
-	map<string,amci_inoutfmt_t*>::iterator it = file_formats.begin();
-	for(;it != file_formats.end();++it){
-	    if(ext == it->second->ext)
-		return it->second;
-	}
+    map<string,amci_inoutfmt_t*>::iterator it = file_formats.begin();
+    for(;it != file_formats.end();++it){
+      if(ext == it->second->ext)
+	return it->second;
     }
+  }
 
-    return 0;
+  return 0;
 }
 
 amci_codec_t* AmPlugIn::codec(int id)
 {
-    map<int,amci_codec_t*>::iterator it = codecs.find(id);
-    if(it != codecs.end())
-	return it->second;
+  map<int,amci_codec_t*>::iterator it = codecs.find(id);
+  if(it != codecs.end())
+    return it->second;
 
-    return 0;
+  return 0;
 }
 
 amci_payload_t*  AmPlugIn::payload(int payload_id)
 {
-    map<int,amci_payload_t*>::iterator it = payloads.find(payload_id);
-    if(it != payloads.end())
-	return it->second;
+  map<int,amci_payload_t*>::iterator it = payloads.find(payload_id);
+  if(it != payloads.end())
+    return it->second;
 
-    return 0;
+  return 0;
 }
 
 amci_subtype_t* AmPlugIn::subtype(amci_inoutfmt_t* iofmt, int subtype)
 {
-    if(!iofmt)
-	return 0;
-    
-    amci_subtype_t* st = iofmt->subtypes;
-    if(subtype<0) // default subtype wanted
-	return st;
-
-    for(;;st++){
-	if(!st || st->type<0) break;
-	if(st->type == subtype)
-	    return st;
-    }
-
+  if(!iofmt)
     return 0;
+    
+  amci_subtype_t* st = iofmt->subtypes;
+  if(subtype<0) // default subtype wanted
+    return st;
+
+  for(;;st++){
+    if(!st || st->type<0) break;
+    if(st->type == subtype)
+      return st;
+  }
+
+  return 0;
 }
 
 AmSessionFactory* AmPlugIn::getFactory4App(const string& app_name)
@@ -366,204 +366,204 @@ AmSIPEventHandler* AmPlugIn::getFactory4SIPeh(const string& name)
 
 int AmPlugIn::loadAudioPlugIn(amci_exports_t* exports)
 {
-    if(!exports){
-        ERROR("audio plug-in doesn't contain any exports !\n");
-        return -1;
-    }
+  if(!exports){
+    ERROR("audio plug-in doesn't contain any exports !\n");
+    return -1;
+  }
 
-    for( amci_codec_t* c=exports->codecs; 
-	 c->id>=0; c++ ){
+  for( amci_codec_t* c=exports->codecs; 
+       c->id>=0; c++ ){
 
-	if(addCodec(c))
-	    goto error;
-    }
+    if(addCodec(c))
+      goto error;
+  }
 
-    for( amci_payload_t* p=exports->payloads; 
-	 p->name; p++ ){
+  for( amci_payload_t* p=exports->payloads; 
+       p->name; p++ ){
 
-	if(addPayload(p))
-	    goto error;
-    }
+    if(addPayload(p))
+      goto error;
+  }
 
-    for(amci_inoutfmt_t* f = exports->file_formats; 
-	f->name; f++ ){
+  for(amci_inoutfmt_t* f = exports->file_formats; 
+      f->name; f++ ){
 
-	if(addFileFormat(f))
-	    goto error;
-    }
+    if(addFileFormat(f))
+      goto error;
+  }
     
-    return 0;
+  return 0;
 
  error:
-    return -1;
+  return -1;
 }
 
 
 int AmPlugIn::loadAppPlugIn(AmPluginFactory* f)
 {
-    AmSessionFactory* sf = dynamic_cast<AmSessionFactory*>(f);
-    if(!sf){
-        ERROR("invalid application plug-in!\n");
-        goto error;
-    }
+  AmSessionFactory* sf = dynamic_cast<AmSessionFactory*>(f);
+  if(!sf){
+    ERROR("invalid application plug-in!\n");
+    goto error;
+  }
 
-    if(name2app.find(sf->getName()) != name2app.end()){
-        ERROR("application '%s' already loaded !\n",sf->getName().c_str());
-        goto error;
-    }
+  if(name2app.find(sf->getName()) != name2app.end()){
+    ERROR("application '%s' already loaded !\n",sf->getName().c_str());
+    goto error;
+  }
       
-    name2app.insert(std::make_pair(sf->getName(),sf));
-    DBG("application '%s' loaded.\n",sf->getName().c_str());
+  name2app.insert(std::make_pair(sf->getName(),sf));
+  DBG("application '%s' loaded.\n",sf->getName().c_str());
 
-    return 0;
+  return 0;
 
  error:
-    return -1;
+  return -1;
 }
 
 int AmPlugIn::loadSehPlugIn(AmPluginFactory* f)
 {
-    AmSessionEventHandlerFactory* sf = dynamic_cast<AmSessionEventHandlerFactory*>(f);
-    if(!sf){
-        ERROR("invalid session component plug-in!\n");
-        goto error;
-    }
+  AmSessionEventHandlerFactory* sf = dynamic_cast<AmSessionEventHandlerFactory*>(f);
+  if(!sf){
+    ERROR("invalid session component plug-in!\n");
+    goto error;
+  }
 
-    if(name2seh.find(sf->getName()) != name2seh.end()){
-        ERROR("session component '%s' already loaded !\n",sf->getName().c_str());
-        goto error;
-    }
+  if(name2seh.find(sf->getName()) != name2seh.end()){
+    ERROR("session component '%s' already loaded !\n",sf->getName().c_str());
+    goto error;
+  }
       
-    name2seh.insert(std::make_pair(sf->getName(),sf));
-    DBG("session component '%s' loaded.\n",sf->getName().c_str());
+  name2seh.insert(std::make_pair(sf->getName(),sf));
+  DBG("session component '%s' loaded.\n",sf->getName().c_str());
 
-    return 0;
+  return 0;
 
  error:
-    return -1;
+  return -1;
 }
 
 int AmPlugIn::loadDiPlugIn(AmPluginFactory* f)
 {
-    AmDynInvokeFactory* sf = dynamic_cast<AmDynInvokeFactory*>(f);
-    if(!sf){
-        ERROR("invalid component plug-in!\n");
-        goto error;
-    }
+  AmDynInvokeFactory* sf = dynamic_cast<AmDynInvokeFactory*>(f);
+  if(!sf){
+    ERROR("invalid component plug-in!\n");
+    goto error;
+  }
 
-    if(name2di.find(sf->getName()) != name2di.end()){
-        ERROR("component '%s' already loaded !\n",sf->getName().c_str());
-        goto error;
-    }
+  if(name2di.find(sf->getName()) != name2di.end()){
+    ERROR("component '%s' already loaded !\n",sf->getName().c_str());
+    goto error;
+  }
       
-    name2di.insert(std::make_pair(sf->getName(),sf));
-    DBG("component '%s' loaded.\n",sf->getName().c_str());
+  name2di.insert(std::make_pair(sf->getName(),sf));
+  DBG("component '%s' loaded.\n",sf->getName().c_str());
 
-    return 0;
+  return 0;
 
  error:
-    return -1;
+  return -1;
 }
 
 int AmPlugIn::loadSIPehPlugIn(AmPluginFactory* f)
 {
-    AmSIPEventHandler* sf = dynamic_cast<AmSIPEventHandler*>(f);
-    if(!sf){
-        ERROR("invalid SIP event handler plug-in!\n");
-        goto error;
-    }
+  AmSIPEventHandler* sf = dynamic_cast<AmSIPEventHandler*>(f);
+  if(!sf){
+    ERROR("invalid SIP event handler plug-in!\n");
+    goto error;
+  }
 
-    if(name2sipeh.find(sf->getName()) != name2sipeh.end()){
-        ERROR("sip event handler component '%s' already loaded !\n",
-			  sf->getName().c_str());
-        goto error;
-    }
+  if(name2sipeh.find(sf->getName()) != name2sipeh.end()){
+    ERROR("sip event handler component '%s' already loaded !\n",
+	  sf->getName().c_str());
+    goto error;
+  }
       
-    name2sipeh.insert(std::make_pair(sf->getName(),sf));
-    DBG("sip event handler component '%s' loaded.\n",sf->getName().c_str());
+  name2sipeh.insert(std::make_pair(sf->getName(),sf));
+  DBG("sip event handler component '%s' loaded.\n",sf->getName().c_str());
 
-    return 0;
+  return 0;
 
  error:
-    return -1;
+  return -1;
 }
 
 int AmPlugIn::addCodec(amci_codec_t* c)
 {
-    if(codecs.find(c->id) != codecs.end()){
-	ERROR("codec id (%i) already supported\n",c->id);
-	return -1;
-    }
-    codecs.insert(std::make_pair(c->id,c));
-    DBG("codec id %i inserted\n",c->id);
-    return 0;
+  if(codecs.find(c->id) != codecs.end()){
+    ERROR("codec id (%i) already supported\n",c->id);
+    return -1;
+  }
+  codecs.insert(std::make_pair(c->id,c));
+  DBG("codec id %i inserted\n",c->id);
+  return 0;
 }
 
 int AmPlugIn::addPayload(amci_payload_t* p)
 {
-    amci_codec_t* c;
-    if( !(c = codec(p->codec_id)) ){
-	ERROR("in payload '%s': codec id (%i) not supported\n",p->name,p->codec_id);
-	return -1;
+  amci_codec_t* c;
+  if( !(c = codec(p->codec_id)) ){
+    ERROR("in payload '%s': codec id (%i) not supported\n",p->name,p->codec_id);
+    return -1;
+  }
+  if(p->payload_id != -1){
+    if(payloads.find(p->payload_id) != payloads.end()){
+      ERROR("payload id (%i) already supported\n",p->payload_id);
+      return -1;
     }
-    if(p->payload_id != -1){
-	if(payloads.find(p->payload_id) != payloads.end()){
-	    ERROR("payload id (%i) already supported\n",p->payload_id);
-	    return -1;
-	}
-	payloads.insert(std::make_pair(p->payload_id,p));
-	DBG("payload '%s'inserted with id %i \n",p->name,p->payload_id);
-    }
-    else {
-	payloads.insert(std::make_pair(dynamic_pl,p));
-	DBG("payload '%s'inserted with id %i \n",p->name,dynamic_pl);
-	dynamic_pl++;
-    }
+    payloads.insert(std::make_pair(p->payload_id,p));
+    DBG("payload '%s'inserted with id %i \n",p->name,p->payload_id);
+  }
+  else {
+    payloads.insert(std::make_pair(dynamic_pl,p));
+    DBG("payload '%s'inserted with id %i \n",p->name,dynamic_pl);
+    dynamic_pl++;
+  }
 
-    return 0;
+  return 0;
 }
 
 int AmPlugIn::addFileFormat(amci_inoutfmt_t* f)
 {
-    if(file_formats.find(f->name) != file_formats.end()){
-	ERROR("file format '%s' already supported\n",f->name);
-	return -1;
+  if(file_formats.find(f->name) != file_formats.end()){
+    ERROR("file format '%s' already supported\n",f->name);
+    return -1;
+  }
+
+  amci_subtype_t* st = f->subtypes;
+  for(; st->type >= 0; st++ ){
+
+    if( !codec(st->codec_id) ){
+      ERROR("in '%s' subtype %i: codec id (%i) not supported\n",
+	    f->name,st->type,st->codec_id);
+      return -1;
     }
 
-    amci_subtype_t* st = f->subtypes;
-    for(; st->type >= 0; st++ ){
-
-	if( !codec(st->codec_id) ){
-	    ERROR("in '%s' subtype %i: codec id (%i) not supported\n",
-		  f->name,st->type,st->codec_id);
-	    return -1;
-	}
-
-	if (st->sample_rate < 0) {
-	    ERROR("in '%s' subtype %i: rate must be specified!"
-		  " (ubr no longer supported)\n", f->name,st->type);
-	    return -1;
-	}
-	if (st->channels < 0) {
-	    ERROR("in '%s' subtype %i: channels must be specified!"
-		  "(unspecified channel count no longer supported)\n", f->name,st->type);
-	    return -1;
-	}
-
+    if (st->sample_rate < 0) {
+      ERROR("in '%s' subtype %i: rate must be specified!"
+	    " (ubr no longer supported)\n", f->name,st->type);
+      return -1;
     }
-    DBG("file format %s inserted\n",f->name);
-    file_formats.insert(std::make_pair(f->name,f));
+    if (st->channels < 0) {
+      ERROR("in '%s' subtype %i: channels must be specified!"
+	    "(unspecified channel count no longer supported)\n", f->name,st->type);
+      return -1;
+    }
 
-    return 0;
+  }
+  DBG("file format %s inserted\n",f->name);
+  file_formats.insert(std::make_pair(f->name,f));
+
+  return 0;
 }
 
 bool AmPlugIn::registerFactory4App(const string& app_name, AmSessionFactory* f)
 {
   map<string,AmSessionFactory*>::iterator it = name2app.find(app_name);
   if(it != name2app.end()){
-      WARN("Application '%s' has already been registered and cannot be registered a second time\n",
-	   app_name.c_str());
-      return false;
+    WARN("Application '%s' has already been registered and cannot be registered a second time\n",
+	 app_name.c_str());
+    return false;
   }
   
   name2app.insert(make_pair(app_name,f));

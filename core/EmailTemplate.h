@@ -41,22 +41,22 @@ typedef map<string,string> EmailTmplDict;
 class EmailTemplate
 {
  public:
-    string tmpl_file;
-    string subject;
-    string to;
-    string from;
-    string body;
-    string header;
+  string tmpl_file;
+  string subject;
+  string to;
+  string from;
+  string body;
+  string header;
 
-    int parse(char* buffer);
-    string replaceVars(const string& str,const EmailTmplDict& dict) const;
+  int parse(char* buffer);
+  string replaceVars(const string& str,const EmailTmplDict& dict) const;
 
-public:
-    /* return 0 if success */
-    int load(const string& filename);
+ public:
+  /* return 0 if success */
+  int load(const string& filename);
 
-    // throws error string.
-    AmMail getEmail(const EmailTmplDict& dict) const;
+  // throws error string.
+  AmMail getEmail(const EmailTmplDict& dict) const;
 };
 
 #endif

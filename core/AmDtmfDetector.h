@@ -43,7 +43,7 @@ class AmRequest;
 
 namespace Dtmf
 {
-    enum EventSource { SOURCE_RTP, SOURCE_SIP, SOURCE_INBAND, SOURCE_DETECTOR };
+  enum EventSource { SOURCE_RTP, SOURCE_SIP, SOURCE_INBAND, SOURCE_DETECTOR };
 };
 /**
  * \brief sink for audio to be processed by the inband DTMF detector 
@@ -52,16 +52,16 @@ namespace Dtmf
  */
 class AmDtmfEventQueue : public AmEventQueue
 {
-private:
-    AmDtmfDetector *m_detector;
+ private:
+  AmDtmfDetector *m_detector;
 
-public:
-    AmDtmfEventQueue(AmDtmfDetector *);
-    /**
-     * Reimplemented abstract method from AmEventQueue
-     */
-    void processEvents();
-    void putDtmfAudio(const unsigned char *, int size, int user_ts);
+ public:
+  AmDtmfEventQueue(AmDtmfDetector *);
+  /**
+   * Reimplemented abstract method from AmEventQueue
+   */
+  void processEvents();
+  void putDtmfAudio(const unsigned char *, int size, int user_ts);
 };
 
 /**
@@ -69,37 +69,37 @@ public:
  */
 class AmDtmfEvent : public AmEvent
 {
-protected:
-    /**
-     * Code of the key
-     */
-    int m_event;
-    /**
-     * Duration of keypress in miliseconds
-     */
-    int m_duration_msec;
+ protected:
+  /**
+   * Code of the key
+   */
+  int m_event;
+  /**
+   * Duration of keypress in miliseconds
+   */
+  int m_duration_msec;
 
-    /**
-     * Constructor
-     */
-    AmDtmfEvent(int id)
-        : AmEvent(id)
+  /**
+   * Constructor
+   */
+  AmDtmfEvent(int id)
+    : AmEvent(id)
     {
     }
 
-public:
-    AmDtmfEvent(int event, int duration)
-        : AmEvent(Dtmf::SOURCE_DETECTOR), m_event(event), m_duration_msec(duration)
+ public:
+  AmDtmfEvent(int event, int duration)
+    : AmEvent(Dtmf::SOURCE_DETECTOR), m_event(event), m_duration_msec(duration)
     {
     }
-    /**
-     * Code of the key
-     */
-    int event() const { return m_event; }
-    /**
-     * Duration of keypress in miliseconds
-     */
-    int duration() const { return m_duration_msec; }
+  /**
+   * Code of the key
+   */
+  int event() const { return m_event; }
+  /**
+   * Duration of keypress in miliseconds
+   */
+  int duration() const { return m_duration_msec; }
 };
 
 /**
@@ -107,32 +107,32 @@ public:
  */
 class AmRtpDtmfEvent : public AmDtmfEvent
 {
-private:
-    /**
-     * E flag from RTP packet
-     */
-    int m_e;
-    /**
-     * Volume value from RTP packet
-     */
-    int m_volume;
+ private:
+  /**
+   * E flag from RTP packet
+   */
+  int m_e;
+  /**
+   * Volume value from RTP packet
+   */
+  int m_volume;
 
-public:
-    /**
-     * Constructor
-     * @param payload data from rtp packet of payload type telephone-event
-     * @param sample_rate sampling rate (from SDP payload description)
-     */
-    AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate);
+ public:
+  /**
+   * Constructor
+   * @param payload data from rtp packet of payload type telephone-event
+   * @param sample_rate sampling rate (from SDP payload description)
+   */
+  AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate);
 
-    /**
-     * Volume value from RTP packet
-     */
-    int volume() { return m_volume; }
-    /**
-     * E flag from RTP packet
-     */
-    int e() { return m_e; }
+  /**
+   * Volume value from RTP packet
+   */
+  int volume() { return m_volume; }
+  /**
+   * E flag from RTP packet
+   */
+  int e() { return m_e; }
 };
 
 /**
@@ -140,21 +140,21 @@ public:
  */
 class AmSipDtmfEvent : public AmDtmfEvent
 {
-private:
-    /**
-     * Parser for application/dtmf-relay
-     */
-    void parseRequestBody(const string&);
-    /**
-     * Parser for application/dtmf-relay
-     */
-    void parseLine(const string&);
+ private:
+  /**
+   * Parser for application/dtmf-relay
+   */
+  void parseRequestBody(const string&);
+  /**
+   * Parser for application/dtmf-relay
+   */
+  void parseLine(const string&);
 
-public:
-    /**
-     * Constructor
-     */
-    AmSipDtmfEvent(const string& request_body);
+ public:
+  /**
+   * Constructor
+   */
+  AmSipDtmfEvent(const string& request_body);
 };
 
 /**
@@ -164,43 +164,43 @@ public:
  */
 class AmInbandDtmfDetector
 {
-private:
-    /**
-     * Owner of this class instance
-     */
-    AmDtmfDetector *m_owner;
-    /**
-     * Time when first audio packet containing current DTMF tone was detected
-     */
-    struct timeval m_startTime;
+ private:
+  /**
+   * Owner of this class instance
+   */
+  AmDtmfDetector *m_owner;
+  /**
+   * Time when first audio packet containing current DTMF tone was detected
+   */
+  struct timeval m_startTime;
 
-    static const int DTMF_NPOINTS = 205;        /* Number of samples for DTMF recognition */
-    static const int REL_DTMF_NPOINTS = 205;    /* Number of samples for DTMF recognition */
-    static const int SAMPLERATE = 8000;
-    /**
-     * DTMF recognition successfull only if no less than DTMF_INTERVAL
-     * audio packets were processed and all gave the same result
-     */
-    static const int DTMF_INTERVAL = 3;
+  static const int DTMF_NPOINTS = 205;        /* Number of samples for DTMF recognition */
+  static const int REL_DTMF_NPOINTS = 205;    /* Number of samples for DTMF recognition */
+  static const int SAMPLERATE = 8000;
+  /**
+   * DTMF recognition successfull only if no less than DTMF_INTERVAL
+   * audio packets were processed and all gave the same result
+   */
+  static const int DTMF_INTERVAL = 3;
 
-    int m_buf[DTMF_NPOINTS];
-    char m_last;
-    int m_idx;
-    int m_result[16];
-    int m_lastCode;
+  int m_buf[DTMF_NPOINTS];
+  char m_last;
+  int m_idx;
+  int m_result[16];
+  int m_lastCode;
 
-    int m_count;
+  int m_count;
 
-    void isdn_audio_goertzel_relative();
-    void isdn_audio_eval_dtmf_relative();
-    void isdn_audio_calc_dtmf(const signed short* buf, int len);
+  void isdn_audio_goertzel_relative();
+  void isdn_audio_eval_dtmf_relative();
+  void isdn_audio_calc_dtmf(const signed short* buf, int len);
 
-public:
-    AmInbandDtmfDetector(AmDtmfDetector *owner);
-    /**
-     * Entry point for audio stream
-     */
-    int streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts);
+ public:
+  AmInbandDtmfDetector(AmDtmfDetector *owner);
+  /**
+   * Entry point for audio stream
+   */
+  int streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts);
 };
 
 
@@ -211,12 +211,12 @@ public:
  */
 class AmSipDtmfDetector
 {
-private:
-    AmDtmfDetector *m_owner;
+ private:
+  AmDtmfDetector *m_owner;
 
-public:
-    AmSipDtmfDetector(AmDtmfDetector *owner);
-    void process(AmSipDtmfEvent *event);
+ public:
+  AmSipDtmfDetector(AmDtmfDetector *owner);
+  void process(AmSipDtmfEvent *event);
 };
 
 /**
@@ -226,40 +226,40 @@ public:
  */
 class AmRtpDtmfDetector
 {
-private:
-    /**
-     * Owner of this class instance
-     */
-    AmDtmfDetector *m_owner;
-    /**
-     * Is there event pending?
-     */
-    bool m_eventPending;
-    int m_currentEvent;
-    int m_packetCount;
+ private:
+  /**
+   * Owner of this class instance
+   */
+  AmDtmfDetector *m_owner;
+  /**
+   * Is there event pending?
+   */
+  bool m_eventPending;
+  int m_currentEvent;
+  int m_packetCount;
 
-    static const int MAX_PACKET_WAIT = 3;
-    /**
-     * Time when first packet for current event was received
-     */
-    struct timeval m_startTime;
+  static const int MAX_PACKET_WAIT = 3;
+  /**
+   * Time when first packet for current event was received
+   */
+  struct timeval m_startTime;
 
-    /**
-     * Send out pending event
-     */
-    void sendPending();
+  /**
+   * Send out pending event
+   */
+  void sendPending();
 
-public:
-    /**
-     * Constructor
-     * @param owner is the owner of this class instance
-     */
-    AmRtpDtmfDetector(AmDtmfDetector *owner);
-    /**
-     * Process RTP DTMF event
-     */
-    void process(AmRtpDtmfEvent *event);
-    void checkTimeout();
+ public:
+  /**
+   * Constructor
+   * @param owner is the owner of this class instance
+   */
+  AmRtpDtmfDetector(AmDtmfDetector *owner);
+  /**
+   * Process RTP DTMF event
+   */
+  void process(AmRtpDtmfEvent *event);
+  void checkTimeout();
 };
 
 /**
@@ -272,63 +272,63 @@ public:
  */
 class AmDtmfDetector : public AmEventHandler
 {
-private:
-    static const int WAIT_TIMEOUT = 100; // miliseconds
-    /**
-     * Session this class belongs to.
-     */
-    AmSession *m_session;
-    AmRtpDtmfDetector m_rtpDetector;
-    AmSipDtmfDetector m_sipDetector;
-    AmInbandDtmfDetector m_inbandDetector;
+ private:
+  static const int WAIT_TIMEOUT = 100; // miliseconds
+  /**
+   * Session this class belongs to.
+   */
+  AmSession *m_session;
+  AmRtpDtmfDetector m_rtpDetector;
+  AmSipDtmfDetector m_sipDetector;
+  AmInbandDtmfDetector m_inbandDetector;
 
-    struct timeval m_startTime;
-    struct timeval m_lastReportTime;
-    int m_currentEvent;
-    bool m_eventPending;
+  struct timeval m_startTime;
+  struct timeval m_lastReportTime;
+  int m_currentEvent;
+  bool m_eventPending;
 
-    bool m_sipEventReceived;
-    bool m_inbandEventReceived;
-    bool m_rtpEventReceived;
+  bool m_sipEventReceived;
+  bool m_inbandEventReceived;
+  bool m_rtpEventReceived;
 
-    AmMutex m_reportLock;
+  AmMutex m_reportLock;
 
-    /**
-     * Implementation of AmEventHandler::process(). 
-     * Processes events from AmMediaProcessor.
-     * @see AmEventHandler
-     */
-    virtual void process(AmEvent *);
+  /**
+   * Implementation of AmEventHandler::process(). 
+   * Processes events from AmMediaProcessor.
+   * @see AmEventHandler
+   */
+  virtual void process(AmEvent *);
 
-    void reportEvent();
+  void reportEvent();
 
-public:
-    /**
-     * Constructor
-     * @param session is the owner of this class instance
-     */
-    AmDtmfDetector(AmSession *session);
-    virtual ~AmDtmfDetector() {}
+ public:
+  /**
+   * Constructor
+   * @param session is the owner of this class instance
+   */
+  AmDtmfDetector(AmSession *session);
+  virtual ~AmDtmfDetector() {}
 
-    /**
-     * Through this method the AmDtmfDetector receives events that was
-     * detected by specific detectors.
-     * @param event code of key pressed
-     * @param source which detector posted this event
-     * @param start time when key was pressed
-     * @param stop time when key was released
-     */
-    void registerKeyReleased(int event, Dtmf::EventSource source,
-                             const struct timeval& start, const struct timeval& stop);
-    /**
-     * Through this method the AmDtmfDetector receives events that was
-     * detected by specific detectors.
-     * @param event code of key released
-     * @param source which detector posted this event
-     */
-    void registerKeyPressed(int event, Dtmf::EventSource source);
+  /**
+   * Through this method the AmDtmfDetector receives events that was
+   * detected by specific detectors.
+   * @param event code of key pressed
+   * @param source which detector posted this event
+   * @param start time when key was pressed
+   * @param stop time when key was released
+   */
+  void registerKeyReleased(int event, Dtmf::EventSource source,
+			   const struct timeval& start, const struct timeval& stop);
+  /**
+   * Through this method the AmDtmfDetector receives events that was
+   * detected by specific detectors.
+   * @param event code of key released
+   * @param source which detector posted this event
+   */
+  void registerKeyPressed(int event, Dtmf::EventSource source);
 
-    void checkTimeout();
-    void putDtmfAudio(const unsigned char *, int size, int user_ts);
+  void checkTimeout();
+  void putDtmfAudio(const unsigned char *, int size, int user_ts);
 };
 #endif // _AmDtmfDetector_h_

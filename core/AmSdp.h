@@ -57,23 +57,23 @@ enum TransProt { TP_NONE=0, TP_RTPAVP, TP_UDP };
 /** \brief c=... line in SDP*/
 struct SdpConnection
 {
-    /** @see NetworkType */
-    int network;
-    /** @see AddressType */
-    int addrType;
-    /** IP address */
-    string address;
+  /** @see NetworkType */
+  int network;
+  /** @see AddressType */
+  int addrType;
+  /** IP address */
+  string address;
 
-    SdpConnection() : address() {}
+  SdpConnection() : address() {}
 };
 
 /** \brief o=... line in SDP */
 struct SdpOrigin
 {
-    string user;
-    unsigned int sessId;
-    unsigned int sessV;
-    SdpConnection conn;
+  string user;
+  unsigned int sessId;
+  unsigned int sessV;
+  SdpConnection conn;
 };
 /** 
  * \brief sdp payload
@@ -82,41 +82,41 @@ struct SdpOrigin
  */
 struct SdpPayload
 {
-    int    int_pt; // internal payload type
-    int    payload_type; // SDP payload type
-    string encoding_name;
-    int    clock_rate; // sample rate (Hz)
-    string sdp_format_parameters;
+  int    int_pt; // internal payload type
+  int    payload_type; // SDP payload type
+  string encoding_name;
+  int    clock_rate; // sample rate (Hz)
+  string sdp_format_parameters;
   
-    SdpPayload() : int_pt(-1), payload_type(-1), clock_rate(-1) {}
+  SdpPayload() : int_pt(-1), payload_type(-1), clock_rate(-1) {}
 
-    SdpPayload(int pt) : int_pt(-1), payload_type(pt), clock_rate(-1) {}
+  SdpPayload(int pt) : int_pt(-1), payload_type(pt), clock_rate(-1) {}
 
-    SdpPayload(int pt, const string& name, int rate) 
-	: int_pt(-1), payload_type(pt), encoding_name(name), clock_rate(rate) {}
+  SdpPayload(int pt, const string& name, int rate) 
+    : int_pt(-1), payload_type(pt), encoding_name(name), clock_rate(rate) {}
 
-    bool operator == (int r);
+  bool operator == (int r);
 };
 
 
 /** \brief m=... line in SDP */
 struct SdpMedia
 {
-    enum Direction {
-	DirBoth=0,
-	DirActive=1,
-	DirPassive=2
-    };
+  enum Direction {
+    DirBoth=0,
+    DirActive=1,
+    DirPassive=2
+  };
 
-    int           type;
-    unsigned int  port;
-    int           transport;
-    SdpConnection conn; // c=
-    Direction     dir;  // a=direction
+  int           type;
+  unsigned int  port;
+  int           transport;
+  SdpConnection conn; // c=
+  Direction     dir;  // a=direction
 
-    vector<SdpPayload> payloads;
+  vector<SdpPayload> payloads;
 
-    SdpMedia() : conn() {}
+  SdpMedia() : conn() {}
 };
 
 /**
@@ -124,73 +124,73 @@ struct SdpMedia
  */
 class AmSdp
 {
-    /** scratch buffer */
-    char r_buf[BUFFER_SIZE];
+  /** scratch buffer */
+  char r_buf[BUFFER_SIZE];
 
-    // Remote payload type for 
-    // 'telephone-event'
-    const SdpPayload *telephone_event_pt;
+  // Remote payload type for 
+  // 'telephone-event'
+  const SdpPayload *telephone_event_pt;
 
-    /** 
-     * Do we have that payload ? 
-     * @return our payload type.
-     */
-    int getDynPayload(const string& name, int rate);
+  /** 
+   * Do we have that payload ? 
+   * @return our payload type.
+   */
+  int getDynPayload(const string& name, int rate);
 
-    /**
-     * Find payload by name
-     */
-    const SdpPayload *findPayload(const string& name);
+  /**
+   * Find payload by name
+   */
+  const SdpPayload *findPayload(const string& name);
 
- public:
-    // parsed SDP definition
-    unsigned int     version;     // v=
-    SdpOrigin        origin;      // o=
-    string           sessionName; // s= 
-    SdpConnection    conn;        // c=
-    vector<SdpMedia> media;       // m= ... [a=rtpmap:...]+
+public:
+  // parsed SDP definition
+  unsigned int     version;     // v=
+  SdpOrigin        origin;      // o=
+  string           sessionName; // s= 
+  SdpConnection    conn;        // c=
+  vector<SdpMedia> media;       // m= ... [a=rtpmap:...]+
 
-    // Supported payloads
-    vector<SdpPayload*> sup_pl; 
-    // Is remote host requesting 
-    // us to do passive RTP ?
-    bool remote_active;
+  // Supported payloads
+  vector<SdpPayload*> sup_pl; 
+  // Is remote host requesting 
+  // us to do passive RTP ?
+  bool remote_active;
     
-    AmSdp();
-    AmSdp(const AmSdp& p_sdp_msg);
+  AmSdp();
+  AmSdp(const AmSdp& p_sdp_msg);
 
-    /** Sets the SDP offer to be parsed. */
-    void setBody(const char* _sdp_msg);
-    /** Parse the invitation 
-     * @return !=0 if error encountered.
-     */
-    int parse();
+  /** Sets the SDP offer to be parsed. */
+  void setBody(const char* _sdp_msg);
+  /** Parse the invitation 
+   * @return !=0 if error encountered.
+   */
+  int parse();
 
-    /** 
-     * Generate an SDP answer to the offer parsed previously. 
-     * @return !=0 if error encountered.
-     */
-    int genResponse(const string& localip, int localport, 
-		    string& out_buf);
+  /** 
+   * Generate an SDP answer to the offer parsed previously. 
+   * @return !=0 if error encountered.
+   */
+  int genResponse(const string& localip, int localport, 
+		  string& out_buf);
 
-    /** 
-     * Generate an SDP offer. 
-     * @return !=0 if error encountered.
-     */
-    int genRequest(const string& localip,int localport, string& out_buf);
+  /** 
+   * Generate an SDP offer. 
+   * @return !=0 if error encountered.
+   */
+  int genRequest(const string& localip,int localport, string& out_buf);
 
-    /** 
-     * Get a compatible payload from SDP offer/response. 
-     * @return NULL if error encountered.
-     */
-     SdpPayload* getCompatiblePayload(int media_type, string& addr, int& port);
+  /** 
+   * Get a compatible payload from SDP offer/response. 
+   * @return NULL if error encountered.
+   */
+  SdpPayload* getCompatiblePayload(int media_type, string& addr, int& port);
 
-    /**
-     * Test if remote UA supports 'telefone_event'.
-     */
-    bool hasTelephoneEvent();
+  /**
+   * Test if remote UA supports 'telefone_event'.
+   */
+  bool hasTelephoneEvent();
 
-    const SdpPayload *telephoneEventPayload() const { return telephone_event_pt; }
+  const SdpPayload *telephoneEventPayload() const { return telephone_event_pt; }
 };
 
 #endif

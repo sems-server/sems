@@ -30,7 +30,7 @@
 class AmTimeoutEvent : public AmPluginEvent 
 {
  public:
-    AmTimeoutEvent(int timer_id);
+  AmTimeoutEvent(int timer_id);
 };
 
 /**
@@ -44,7 +44,7 @@ struct AmTimer
   struct timeval time;
     
   AmTimer(int id, const string& session_id, struct timeval* tval)
-      : id(id), session_id(session_id), time(*tval) {}
+    : id(id), session_id(session_id), time(*tval) {}
 };
 
 

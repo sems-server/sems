@@ -32,128 +32,128 @@
 #include "AmPlayoutBuffer.h"
 
 AmRtpAudio::AmRtpAudio(AmSession* _s)
-    : AmRtpStream(_s), AmAudio(0), 
-      /*last_ts_i(false),*/ use_default_plc(true),
-      send_only(false), playout_buffer(new AmPlayoutBuffer(this)),
-      last_check(0),last_check_i(false),send_int(false)
+  : AmRtpStream(_s), AmAudio(0), 
+    /*last_ts_i(false),*/ use_default_plc(true),
+    send_only(false), playout_buffer(new AmPlayoutBuffer(this)),
+    last_check(0),last_check_i(false),send_int(false)
 {
 }
 
 bool AmRtpAudio::checkInterval(unsigned int ts)
 {
-    if(!last_check_i){
-	send_int     = true;
-	last_check_i = true;
-	last_check   = ts;
+  if(!last_check_i){
+    send_int     = true;
+    last_check_i = true;
+    last_check   = ts;
+  }
+  else {
+    if((ts - last_check) >= getFrameSize()){
+      send_int = true;
+      last_check = ts;
     }
     else {
-	if((ts - last_check) >= getFrameSize()){
-	    send_int = true;
-	    last_check = ts;
-	}
-	else {
-	    send_int = false;
-	}
+      send_int = false;
     }
+  }
 
-    return send_int;
+  return send_int;
 }
 
 bool AmRtpAudio::sendIntReached()
 {
-    return send_int;
+  return send_int;
 }
 
 unsigned int AmRtpAudio::bytes2samples(unsigned int bytes) const
 {
-    return AmAudio::bytes2samples(bytes);
+  return AmAudio::bytes2samples(bytes);
 }
 /* 
    @param audio_buffer_ts [in]    the current ts in the audio buffer 
- */
+*/
 int AmRtpAudio::receive(unsigned int audio_buffer_ts) 
 {
-    int size;
-    unsigned int rtp_ts;
+  int size;
+  unsigned int rtp_ts;
 
-    while(true) {
-	size = AmRtpStream::receive((unsigned char*)samples,
-				    (unsigned int)AUDIO_BUFFER_SIZE, rtp_ts);
-	if(size <= 0)
-	    break;
+  while(true) {
+    size = AmRtpStream::receive((unsigned char*)samples,
+				(unsigned int)AUDIO_BUFFER_SIZE, rtp_ts);
+    if(size <= 0)
+      break;
 	
-	if(send_only){
-            playout_buffer->clearLastTs();
-	    continue;
-	}
-
-	size = decode(size);
-	if(size <= 0){
-	    ERROR("decode() returned %i\n",size);
-	    return -1;
-	}
-
-        playout_buffer->write(audio_buffer_ts, rtp_ts, (ShortSample*)((unsigned char *)samples), 
-			      PCM16_B2S(size), begin_talk);
+    if(send_only){
+      playout_buffer->clearLastTs();
+      continue;
     }
-    return size;
+
+    size = decode(size);
+    if(size <= 0){
+      ERROR("decode() returned %i\n",size);
+      return -1;
+    }
+
+    playout_buffer->write(audio_buffer_ts, rtp_ts, (ShortSample*)((unsigned char *)samples), 
+			  PCM16_B2S(size), begin_talk);
+  }
+  return size;
 }
 
 int AmRtpAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples)
 {
-    int size = read(user_ts,PCM16_S2B(nb_samples));
-    memcpy(buffer,(unsigned char*)samples,size);
-    return size;
+  int size = read(user_ts,PCM16_S2B(nb_samples));
+  memcpy(buffer,(unsigned char*)samples,size);
+  return size;
 }
 
 int AmRtpAudio::read(unsigned int user_ts, unsigned int size)
 {
-    u_int32_t rlen = 
-	playout_buffer
-	->read(user_ts,
-	       (ShortSample*)((unsigned char*)samples),
-	       PCM16_B2S(size));
+  u_int32_t rlen = 
+    playout_buffer
+    ->read(user_ts,
+	   (ShortSample*)((unsigned char*)samples),
+	   PCM16_B2S(size));
 
-    return PCM16_S2B(rlen);
+  return PCM16_S2B(rlen);
 }
 
 int AmRtpAudio::write(unsigned int user_ts, unsigned int size)
 {
-    return send(user_ts,(unsigned char*)samples,size);
+  return send(user_ts,(unsigned char*)samples,size);
 }
 
 void AmRtpAudio::init(const SdpPayload* sdp_payload)
 {
-    DBG("AmRtpAudio::init(...)\n");
-    AmRtpStream::init(sdp_payload);
-    fmt.reset(new AmAudioRtpFormat(int_payload, format_parameters));
+  DBG("AmRtpAudio::init(...)\n");
+  AmRtpStream::init(sdp_payload);
+  fmt.reset(new AmAudioRtpFormat(int_payload, format_parameters));
 
-    amci_codec_t* codec = fmt->getCodec();
-    use_default_plc = !(codec && codec->plc);
+  amci_codec_t* codec = fmt->getCodec();
+  use_default_plc = !(codec && codec->plc);
 }
 
 unsigned int AmRtpAudio::conceal_loss(unsigned int ts_diff, unsigned char *buffer)
 {
-    int s=0;
-    if(!use_default_plc){
+  int s=0;
+  if(!use_default_plc){
 
-	amci_codec_t* codec = fmt->getCodec();
-	long h_codec = fmt->getHCodec();
+    amci_codec_t* codec = fmt->getCodec();
+    long h_codec = fmt->getHCodec();
 
-	assert(codec && codec->plc);
- 	s = (*codec->plc)(buffer, PCM16_S2B(ts_diff),
- 			  fmt->channels,fmt->rate,h_codec);
+    assert(codec && codec->plc);
+    s = (*codec->plc)(buffer, PCM16_S2B(ts_diff),
+		      fmt->channels,fmt->rate,h_codec);
 
-	DBG("codec specific PLC (ts_diff = %i; s = %i)\n",ts_diff,s);
-    }
-    else {
-	s = default_plc(buffer, PCM16_S2B(ts_diff),
- 			fmt->channels,fmt->rate);
+    DBG("codec specific PLC (ts_diff = %i; s = %i)\n",ts_diff,s);
+  }
+  else {
+    s = default_plc(buffer, PCM16_S2B(ts_diff),
+		    fmt->channels,fmt->rate);
 
-	DBG("default PLC (ts_diff = %i; s = %i)\n",ts_diff,s);
-    }
+    DBG("default PLC (ts_diff = %i; s = %i)\n",ts_diff,s);
+  }
     
-    return s;
+  return s;
 }
 
 unsigned int AmRtpAudio::default_plc(unsigned char* out_buf,
@@ -161,58 +161,58 @@ unsigned int AmRtpAudio::default_plc(unsigned char* out_buf,
 				     unsigned int   channels,
 				     unsigned int   rate)
 {
-    short* buf_offset = (short*)out_buf;
+  short* buf_offset = (short*)out_buf;
 
-    for(unsigned int i=0; i<(PCM16_B2S(size)/FRAMESZ); i++){
+  for(unsigned int i=0; i<(PCM16_B2S(size)/FRAMESZ); i++){
 
-	fec.dofe(buf_offset);
-	buf_offset += FRAMESZ;
-    }
+    fec.dofe(buf_offset);
+    buf_offset += FRAMESZ;
+  }
 
-    return PCM16_S2B(buf_offset - (short*)out_buf);
+  return PCM16_S2B(buf_offset - (short*)out_buf);
 }
 
 void AmRtpAudio::add_to_history(int16_t *buffer, unsigned int size)
 {
-    int16_t* buf_offset = buffer;
+  int16_t* buf_offset = buffer;
 
-    if (!use_default_plc)
-        return;
+  if (!use_default_plc)
+    return;
 
-    for(unsigned int i=0; i<(PCM16_B2S(size)/FRAMESZ); i++){
+  for(unsigned int i=0; i<(PCM16_B2S(size)/FRAMESZ); i++){
 
-	fec.addtohistory(buf_offset);
-	buf_offset += FRAMESZ;
-    }
+    fec.addtohistory(buf_offset);
+    buf_offset += FRAMESZ;
+  }
 }
 
 void AmRtpAudio::setPlayoutType(PlayoutType type)
 {
-    PlayoutType curr_type = SIMPLE_PLAYOUT;
-    if (dynamic_cast<AmAdaptivePlayout *>(playout_buffer.get()))
-        curr_type = ADAPTIVE_PLAYOUT;
-    else if (dynamic_cast<AmJbPlayout *>(playout_buffer.get()))
-        curr_type = JB_PLAYOUT;
+  PlayoutType curr_type = SIMPLE_PLAYOUT;
+  if (dynamic_cast<AmAdaptivePlayout *>(playout_buffer.get()))
+    curr_type = ADAPTIVE_PLAYOUT;
+  else if (dynamic_cast<AmJbPlayout *>(playout_buffer.get()))
+    curr_type = JB_PLAYOUT;
 
-    if (curr_type != type)
+  if (curr_type != type)
     {
-	if (type == ADAPTIVE_PLAYOUT) {
-	    session->lockAudio();
-	    playout_buffer.reset(new AmAdaptivePlayout(this));
-	    session->unlockAudio();
-	    DBG("Adaptive playout buffer activated\n");
-	}
-	else if (type == JB_PLAYOUT) {
-	    session->lockAudio();
-	    playout_buffer.reset(new AmJbPlayout(this));
-	    session->unlockAudio();
-	    DBG("Adaptive jitter buffer activated\n");
-	}
-	else {
- 	    session->lockAudio();
-	    playout_buffer.reset(new AmPlayoutBuffer(this));
-	    session->unlockAudio();
-	    DBG("Simple playout buffer activated\n");
-	}
+      if (type == ADAPTIVE_PLAYOUT) {
+	session->lockAudio();
+	playout_buffer.reset(new AmAdaptivePlayout(this));
+	session->unlockAudio();
+	DBG("Adaptive playout buffer activated\n");
+      }
+      else if (type == JB_PLAYOUT) {
+	session->lockAudio();
+	playout_buffer.reset(new AmJbPlayout(this));
+	session->unlockAudio();
+	DBG("Adaptive jitter buffer activated\n");
+      }
+      else {
+	session->lockAudio();
+	playout_buffer.reset(new AmPlayoutBuffer(this));
+	session->unlockAudio();
+	DBG("Simple playout buffer activated\n");
+      }
     }
 }

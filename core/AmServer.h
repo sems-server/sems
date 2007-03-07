@@ -47,20 +47,20 @@ class AmInterfaceHandler;
 
 struct IfaceDesc
 {
-    AmCtrlInterface*    ctrl;
-    AmInterfaceHandler* handler;
+  AmCtrlInterface*    ctrl;
+  AmInterfaceHandler* handler;
 
-    IfaceDesc(AmCtrlInterface* ctrl, AmInterfaceHandler* handler)
-	: ctrl(ctrl),handler(handler)
-    {}
+  IfaceDesc(AmCtrlInterface* ctrl, AmInterfaceHandler* handler)
+    : ctrl(ctrl),handler(handler)
+  {}
 
-    IfaceDesc(const IfaceDesc& i)
-	: ctrl(i.ctrl), handler(i.handler)
-    {}
+  IfaceDesc(const IfaceDesc& i)
+    : ctrl(i.ctrl), handler(i.handler)
+  {}
 
-    IfaceDesc()
-	: ctrl(0),handler(0)
-    {}
+  IfaceDesc()
+    : ctrl(0),handler(0)
+  {}
 };
 
 /**
@@ -71,51 +71,51 @@ struct IfaceDesc
  */
 class AmServer
 {
- private:
-    /** 
-     * Singleton pointer.
-     * @see instance()
-     */
-    static AmServer* _instance;
+private:
+  /** 
+   * Singleton pointer.
+   * @see instance()
+   */
+  static AmServer* _instance;
 
 
-    typedef map<int,IfaceDesc,greater<int> > CtrlInterfaces;
+  typedef map<int,IfaceDesc,greater<int> > CtrlInterfaces;
 
-    CtrlInterfaces          ifaces_map;
+  CtrlInterfaces          ifaces_map;
 
-    /** Avoid external instantiation. @see instance(). */
-    AmServer(){}
-    /** Avoid external instantiation. @see instance(). */
-    ~AmServer(){}
+  /** Avoid external instantiation. @see instance(). */
+  AmServer(){}
+  /** Avoid external instantiation. @see instance(). */
+  ~AmServer(){}
 
 public:
-    /** Get a fifo server instance. */
-    static AmServer* instance();
+  /** Get a fifo server instance. */
+  static AmServer* instance();
 
-    /** Runs the fifo server. */
-    void run();
+  /** Runs the fifo server. */
+  void run();
 
-    /** 
-     * Register an interface.
-     * WARNING: only before the server starts up.
-     */
-    void regIface(const IfaceDesc& i);
+  /** 
+   * Register an interface.
+   * WARNING: only before the server starts up.
+   */
+  void regIface(const IfaceDesc& i);
 
-    /**
-     * send a message through socket, wait max 
-     * timeout for result and process return 
-     * code. reply socket specified with 
-     * reply_sock. @returns < 0 on error
-     *
-     */
-    static int send_msg(const string& msg, const string& reply_sock,
-			int timeout);
-    /**
-     * send a message through socket, using the 
-     * replyhandler. @returns < 0 on error
-     *
-     */
-    static int send_msg_replyhandler(const string& msg);
+  /**
+   * send a message through socket, wait max 
+   * timeout for result and process return 
+   * code. reply socket specified with 
+   * reply_sock. @returns < 0 on error
+   *
+   */
+  static int send_msg(const string& msg, const string& reply_sock,
+		      int timeout);
+  /**
+   * send a message through socket, using the 
+   * replyhandler. @returns < 0 on error
+   *
+   */
+  static int send_msg_replyhandler(const string& msg);
 
 
 };

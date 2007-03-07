@@ -46,29 +46,29 @@
  @code
  BEGIN_EXPORTS( "wav" )
 
-    BEGIN_CODECS
-      CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, 0, 0 )
-      CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, 0, 0 )
-    END_CODECS
+ BEGIN_CODECS
+ CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, 0, 0 )
+ CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, 0, 0 )
+ END_CODECS
     
-    BEGIN_PAYLOADS
-      PAYLOAD( 0, "ulaw", 1, 8000, 1, CODEC_ULAW )
-      PAYLOAD( 8, "alaw", 1, 8000, 1, CODEC_ALAW )
-    END_PAYLOADS
+ BEGIN_PAYLOADS
+ PAYLOAD( 0, "ulaw", 1, 8000, 1, CODEC_ULAW )
+ PAYLOAD( 8, "alaw", 1, 8000, 1, CODEC_ALAW )
+ END_PAYLOADS
 
-    BEGIN_FILE_FORMATS
-      BEGIN_FILE_FORMAT( "Wav", "wav", "application/x-wav", wav_open, wav_close, 0, 0)
-        BEGIN_SUBTYPES
-          SUBTYPE( WAV_PCM,  "Pcm16",  2, -1, -1, CODEC_PCM16 )
-          SUBTYPE( WAV_ALAW, "A-Law",  1, -1, -1, CODEC_ALAW )
-          SUBTYPE( WAV_ULAW, "Mu-Law", 1, -1, -1, CODEC_ULAW )
-        END_SUBTYPES
-      END_FILE_FORMAT
-    END_FILE_FORMATS
+ BEGIN_FILE_FORMATS
+ BEGIN_FILE_FORMAT( "Wav", "wav", "application/x-wav", wav_open, wav_close, 0, 0)
+ BEGIN_SUBTYPES
+ SUBTYPE( WAV_PCM,  "Pcm16",  2, -1, -1, CODEC_PCM16 )
+ SUBTYPE( WAV_ALAW, "A-Law",  1, -1, -1, CODEC_ALAW )
+ SUBTYPE( WAV_ULAW, "Mu-Law", 1, -1, -1, CODEC_ULAW )
+ END_SUBTYPES
+ END_FILE_FORMAT
+ END_FILE_FORMATS
 
  END_EXPORTS
  @endcode
- */
+*/
 
 /** @def WAV_PCM subtype declaration. */
 #define WAV_PCM  1 
@@ -94,106 +94,97 @@ static unsigned int g711_samples2bytes(long, unsigned int);
 
 BEGIN_EXPORTS( "wav" )
 
-    BEGIN_CODECS
-      CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, NULL, NULL, NULL, g711_bytes2samples, g711_samples2bytes )
-      CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, NULL, NULL, NULL, g711_bytes2samples, g711_samples2bytes )
-    END_CODECS
+     BEGIN_CODECS
+CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, NULL, NULL, NULL, g711_bytes2samples, g711_samples2bytes )
+     CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, NULL, NULL, NULL, g711_bytes2samples, g711_samples2bytes )
+     END_CODECS
     
-    BEGIN_PAYLOADS
-      PAYLOAD( 0, "PCMU", 8000, 1, CODEC_ULAW, AMCI_PT_AUDIO_LINEAR )
-      PAYLOAD( 8, "PCMA", 8000, 1, CODEC_ALAW, AMCI_PT_AUDIO_LINEAR )
-    END_PAYLOADS
+BEGIN_PAYLOADS
+PAYLOAD( 0, "PCMU", 8000, 1, CODEC_ULAW, AMCI_PT_AUDIO_LINEAR )
+     PAYLOAD( 8, "PCMA", 8000, 1, CODEC_ALAW, AMCI_PT_AUDIO_LINEAR )
+     END_PAYLOADS
 
-    BEGIN_FILE_FORMATS
-      BEGIN_FILE_FORMAT( "Wav", "wav", "audio/x-wav", wav_open, wav_close, wav_mem_open, wav_mem_close)
-        BEGIN_SUBTYPES
-          SUBTYPE( WAV_PCM,  "Pcm16",  8000, 1, CODEC_PCM16 ) // we only support 8000/1 channel !
-          SUBTYPE( WAV_ALAW, "A-Law",  8000, 1, CODEC_ALAW )
-          SUBTYPE( WAV_ULAW, "Mu-Law", 8000, 1, CODEC_ULAW )
-        END_SUBTYPES
-      END_FILE_FORMAT
-    END_FILE_FORMATS
+BEGIN_FILE_FORMATS
+BEGIN_FILE_FORMAT( "Wav", "wav", "audio/x-wav", wav_open, wav_close, wav_mem_open, wav_mem_close)
+     BEGIN_SUBTYPES
+SUBTYPE( WAV_PCM,  "Pcm16",  8000, 1, CODEC_PCM16 ) // we only support 8000/1 channel !
+     SUBTYPE( WAV_ALAW, "A-Law",  8000, 1, CODEC_ALAW )
+     SUBTYPE( WAV_ULAW, "Mu-Law", 8000, 1, CODEC_ULAW )
+     END_SUBTYPES
+END_FILE_FORMAT
+END_FILE_FORMATS
 
 END_EXPORTS
 
 static unsigned int g711_bytes2samples(long h_codec, unsigned int num_bytes)
 {
-    /* ALAW and ULAW formats has one sample per byte */
-    return num_bytes;
+  /* ALAW and ULAW formats has one sample per byte */
+  return num_bytes;
 }
 
 static unsigned int g711_samples2bytes(long h_codec, unsigned int num_samples)
 {
-    /* ALAW and ULAW formats has one sample per byte */
-    return num_samples;
+  /* ALAW and ULAW formats has one sample per byte */
+  return num_samples;
 }
 
 static int ULaw_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			 unsigned int channels, unsigned int rate, long h_codec )
 {
-    unsigned short* out_b = (unsigned short*)out_buf;
-    unsigned char*  in_b  = in_buf;
-    unsigned char*  end   = in_b + size;
+  unsigned short* out_b = (unsigned short*)out_buf;
+  unsigned char*  in_b  = in_buf;
+  unsigned char*  end   = in_b + size;
 
-    while(in_b != end){
-//	int i = st_ulaw2linear16(*(in_b++));
-//	*(out_b++) = i;
-	*(out_b++) = st_ulaw2linear16(*(in_b++));
-	}
-    return size*2;
+  while(in_b != end){
+    //	int i = st_ulaw2linear16(*(in_b++));
+    //	*(out_b++) = i;
+    *(out_b++) = st_ulaw2linear16(*(in_b++));
+  }
+  return size*2;
 }
 
 static int ALaw_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			 unsigned int channels, unsigned int rate, long h_codec )
 {
-    unsigned short* out_b = (unsigned short*)out_buf;
-    unsigned char*  in_b  = in_buf;
-    unsigned char*  end   = in_b + size;
+  unsigned short* out_b = (unsigned short*)out_buf;
+  unsigned char*  in_b  = in_buf;
+  unsigned char*  end   = in_b + size;
 
-    while(in_b != end){
-//	int i = st_alaw2linear16(*(in_b++));
-//	*(out_b++) = i;
-	*(out_b++) = st_alaw2linear16(*(in_b++));
-    }
-    return size*2;
+  while(in_b != end){
+    //	int i = st_alaw2linear16(*(in_b++));
+    //	*(out_b++) = i;
+    *(out_b++) = st_alaw2linear16(*(in_b++));
+  }
+  return size*2;
 }
 
 int Pcm16_2_ULaw( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-			 unsigned int channels, unsigned int rate, long h_codec )
+		  unsigned int channels, unsigned int rate, long h_codec )
 {
-    unsigned char* out_b = out_buf;
-    short* in_b          = (short*)(in_buf);
-    short* end           = (short*)((unsigned char*)in_buf + size);
+  unsigned char* out_b = out_buf;
+  short* in_b          = (short*)(in_buf);
+  short* end           = (short*)((unsigned char*)in_buf + size);
 
-    while(in_b != end){
-	short s = *(in_b++) >> 2;
-	*(out_b++) = st_14linear2ulaw(s);
-    }
-    return size/2;
+  while(in_b != end){
+    short s = *(in_b++) >> 2;
+    *(out_b++) = st_14linear2ulaw(s);
+  }
+  return size/2;
 }
 
 int Pcm16_2_ALaw( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-			 unsigned int channels, unsigned int rate, long h_codec )
+		  unsigned int channels, unsigned int rate, long h_codec )
 {
-    unsigned char* out_b = out_buf;
-    short* in_b          = (short*)(in_buf);
-    short* end           = (short*)((unsigned char*)in_buf + size);
+  unsigned char* out_b = out_buf;
+  short* in_b          = (short*)(in_buf);
+  short* end           = (short*)((unsigned char*)in_buf + size);
 
-    while(in_b != end){
-	short s = (*(in_b++)) >> 3;
-	*(out_b++) = st_13linear2alaw(s);
-    }
+  while(in_b != end){
+    short s = (*(in_b++)) >> 3;
+    *(out_b++) = st_13linear2alaw(s);
+  }
 
-    return size/2;
+  return size/2;
 }
-
-
-
-
-
-
-
-
-
 
 

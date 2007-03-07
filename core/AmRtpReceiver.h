@@ -47,29 +47,29 @@ class AmRtpStream;
  */
 class AmRtpReceiver: public AmThread {
 
-    typedef map<int, AmRtpStream*, greater<int> > Streams;
+  typedef map<int, AmRtpStream*, greater<int> > Streams;
 
-    static AmRtpReceiver* _instance;
+  static AmRtpReceiver* _instance;
 
     
-    Streams  streams;
-    AmMutex  streams_mut;
+  Streams  streams;
+  AmMutex  streams_mut;
 
-    //fd_set   fds;
-    struct pollfd* fds;
-    unsigned int   nfds;
-    AmMutex        fds_mut;
+  //fd_set   fds;
+  struct pollfd* fds;
+  unsigned int   nfds;
+  AmMutex        fds_mut;
     
-    AmRtpReceiver();
-    ~AmRtpReceiver();
+  AmRtpReceiver();
+  ~AmRtpReceiver();
     
-    void run();
-    void on_stop();
+  void run();
+  void on_stop();
     
 public:
-    static AmRtpReceiver* instance();
-    void addStream(int sd, AmRtpStream* stream);
-    void removeStream(int sd);
+  static AmRtpReceiver* instance();
+  void addStream(int sd, AmRtpStream* stream);
+  void removeStream(int sd);
 };
 
 #endif

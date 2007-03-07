@@ -36,57 +36,54 @@ class AmRtpPacketTracer;
 /** \brief RTP packet implementation */
 class AmRtpPacket {
 
-    unsigned char  buffer[4096];
-    unsigned int   b_size;
+  unsigned char  buffer[4096];
+  unsigned int   b_size;
 
-    unsigned int   data_offset;
-    unsigned int   d_size;
+  unsigned int   data_offset;
+  unsigned int   d_size;
 
 public:
-    unsigned char  payload;
-    bool           marker;
-    unsigned short sequence;    
-    unsigned int   timestamp;   
-    unsigned int   ssrc;
+  unsigned char  payload;
+  bool           marker;
+  unsigned short sequence;    
+  unsigned int   timestamp;   
+  unsigned int   ssrc;
 
-    struct timeval recv_time;
+  struct timeval recv_time;
 
 #ifdef SUPPORT_IPV6
-    struct sockaddr_storage addr;
+  struct sockaddr_storage addr;
 #else
-    struct sockaddr_in addr;
+  struct sockaddr_in addr;
 #endif
     
 
-    AmRtpPacket();
-    ~AmRtpPacket();
+  AmRtpPacket();
+  ~AmRtpPacket();
 
 #ifdef SUPPORT_IPV6
-    void setAddr(struct sockaddr_storage* a);
-    void getAddr(struct sockaddr_storage* a);
+  void setAddr(struct sockaddr_storage* a);
+  void getAddr(struct sockaddr_storage* a);
 #else
-    void setAddr(struct sockaddr_in* a);
-    void getAddr(struct sockaddr_in* a);
+  void setAddr(struct sockaddr_in* a);
+  void getAddr(struct sockaddr_in* a);
 #endif
 
-    // returns -1 if error, else 0
-    int compile(unsigned char* data_buf, unsigned int size);
-    int send(int sd);
-    int recv(int sd);
+  // returns -1 if error, else 0
+  int compile(unsigned char* data_buf, unsigned int size);
+  int send(int sd);
+  int recv(int sd);
 
-    int parse();
+  int parse();
 
-    unsigned int   getDataSize() const { return d_size; }
-    unsigned char* getData();
+  unsigned int   getDataSize() const { return d_size; }
+  unsigned char* getData();
 
-    void copy(const AmRtpPacket* p);
+  void copy(const AmRtpPacket* p);
 
-    friend class AmRtpPacketTracer;
+  friend class AmRtpPacketTracer;
 };
 
 #endif
 
-// Local Variables:
-// mode:C++
-// End:
 

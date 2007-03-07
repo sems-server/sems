@@ -41,33 +41,33 @@ using std::string;
 EXPORT_SESSION_FACTORY(StatsFactory,MOD_NAME);
 
 StatsFactory::StatsFactory(const string& _app_name)
-    : AmSessionFactory(_app_name)
+  : AmSessionFactory(_app_name)
 {
 }
 
 AmSession* StatsFactory::onInvite(const AmSipRequest& req)
 {
-    return NULL;
+  return NULL;
 }
 
 int StatsFactory::onLoad()
 {
-    //sc = AmSessionContainer::instance();
+  //sc = AmSessionContainer::instance();
 
-    StatsUDPServer* stat_srv = StatsUDPServer::instance();
-    if(!stat_srv){
-    }
-    StatsUDPServer::instance()->start();
+  StatsUDPServer* stat_srv = StatsUDPServer::instance();
+  if(!stat_srv){
+  }
+  StatsUDPServer::instance()->start();
 
-    //AmUDPCtrlInterface* udp_ctrl = new AmUDPCtrlInterface(NULL);
-    //if(udp_ctrl->init("10.36.2.69:8000")){
-    //delete udp_ctrl;
-    //udp_ctrl = 0;
-    //return -1;
-    //}
-    //AmServer::instance()->regIface(IfaceDesc(udp_ctrl,this));
+  //AmUDPCtrlInterface* udp_ctrl = new AmUDPCtrlInterface(NULL);
+  //if(udp_ctrl->init("10.36.2.69:8000")){
+  //delete udp_ctrl;
+  //udp_ctrl = 0;
+  //return -1;
+  //}
+  //AmServer::instance()->regIface(IfaceDesc(udp_ctrl,this));
 
-    return 0;
+  return 0;
 }
 
 
@@ -96,30 +96,30 @@ int StatsFactory::onLoad()
 int StatsFactory::handleRequest(AmCtrlInterface* ctrl)
 {
 
-    string cmd;
-    string reply;
-    string reply_fifo;
+  string cmd;
+  string reply;
+  string reply_fifo;
 
-    READ_PARAMETER(cmd);
-    READ_PARAMETER(reply_fifo);
-    if(reply_fifo.empty())
-	throw string("reply fifo parameter is empty");
+  READ_PARAMETER(cmd);
+  READ_PARAMETER(reply_fifo);
+  if(reply_fifo.empty())
+    throw string("reply fifo parameter is empty");
 
-    try {
-	if(cmd == "calls")
-	    reply = "Active calls: " + int2str(sc->getSize()) + "\n";
-	else
-	    throw string("unknown command: '" + cmd + "'");
+  try {
+    if(cmd == "calls")
+      reply = "Active calls: " + int2str(sc->getSize()) + "\n";
+    else
+      throw string("unknown command: '" + cmd + "'");
 
-	ctrl->sendto(reply_fifo,reply.c_str(),reply.length());
-    }
-    catch(const string& err){
-	string msg = err + "\n";
-	ctrl->sendto(reply_fifo,msg.c_str(),msg.length());
-	return -1;
-    }
+    ctrl->sendto(reply_fifo,reply.c_str(),reply.length());
+  }
+  catch(const string& err){
+    string msg = err + "\n";
+    ctrl->sendto(reply_fifo,msg.c_str(),msg.length());
+    return -1;
+  }
 
-    return 0;
+  return 0;
 }
 
 
