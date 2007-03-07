@@ -1,5 +1,9 @@
 Changelog for SEMS (from 0.10.0 rc1)
 
+ - new Python scripting platform with generated bindings, offering 
+   a broader range of the SEMS functionality to applications 
+   developed in Python
+
  - new Adaptive jitter buffer as alternative playout method
    Contributed by Andriy Pylypenko/Sippy Software
 
