@@ -6,7 +6,7 @@
 
 Introduction:
 
- Sems is a extensible media server which helps you
+ SEMS is a extensible media server which helps you
  adding voice services to your VoIP system.
 
  Each module or plug-in extends your system. Audio
@@ -15,13 +15,13 @@ Introduction:
  Some modules called component modules provide 
  functionality for other modules to use.
 
- You can easely extend Sems by creating your own plug-ins.
+ You can easely extend SEMS by creating your own plug-ins.
 
- Applications can be written using the Sems framework API 
+ Applications can be written using the SEMS framework API 
  in C++, or in Python using an embedded python interpreter 
  of the ivr or py_sems plugins.
 
- The following default applications are shipped with Sems :
+ The following default applications are shipped with SEMS :
 
  * voicemail: records voice messages and mails them as email
 
@@ -48,7 +48,7 @@ Introduction:
 
  * pin_collect: collect a PIN, optionally verify it, and transfer the call
 
- Sems only support patent free codecs. Which means that we won't support codecs
+ SEMS only support patent free codecs. Which means that we won't support codecs
  like g729. On the other hand, we have support for all important patent free
  (g711u, g711a, GSM06.10 and iLBC).
 
@@ -56,9 +56,9 @@ Requirements:
 
  1. Ser version 0.9.6: SIP Epress Router (www.iptel.org/ser)
 
-    - Sems requires Ser as its SIP stack. 
-    - Sems & Ser communicate together through socket, which means that a Ser
-      instance is mandatory on every host using Sems.
+    - SEMS requires Ser as its SIP stack. 
+    - SEMS & Ser communicate together through socket, which means that a Ser
+      instance is mandatory on every host using SEMS.
 
  2. Python version >= 2.3 for the ivr (embedded python interpreter), optional
 
@@ -66,37 +66,50 @@ Requirements:
 
  4. lame >= 3.95 for mp3 file output, optional
 
+How to get started with SEMS:
+
+  To try out SEMS, the easiest is to follow one of the tutorials linked from
+  the SEMS homepage (e.g. http://www.iptel.org/howto_sems_voicemail). The
+  Application Modules Documentation page then gives an overview of the 
+  application modules that come with SEMS 
+  (http://ftp.iptel.org/pub/sems/doc/current/AppDoc.html).
+  
+  If you are interested in writing your own applications, the application 
+  development tutorial is a good start 
+  (http://www.iptel.org/howto/sems_application_development_tutorial), together
+  with the design overview (http://www.iptel.org/files/semsng-designoverview.pdf).
+  
 Installation:
 
- 1. Download Sems through svn:
+ 1. Download SEMS through svn:
     svn checkout svn://svn.berlios.de/sems/trunk
       -or-
     svn checkout http://svn.berlios.de/svnroot/repos/sems/trunk 
 
- 2. Compile Sems:
+ 2. Compile SEMS:
 
       make all
       make install
 
-    Notice: you don't need to execute 'make install' if you want to run Sems
+    Notice: you don't need to execute 'make install' if you want to run SEMS
             from the source tree.
      
     For detailed instructions, have a look at doc/COMPILING as well.
 
  3. Look at the default configuration file whether it fits your need:
 
-      If you installed Sems with 'make install', the configuration
+      If you installed SEMS with 'make install', the configuration
       is at '/usr/local/etc/sems/sems.conf'. 
       Else make your own using sems.conf.sample.
 
  4. Start Ser: 
 
-      Please read the Ser User's guide and doc/Configure-Sems-Ser-HOWTO
+      Please read the Ser User's guide and doc/Configure-SEMS-Ser-HOWTO
       if you don't known how to complete this stage, 
 
- 5. Start Sems:
+ 5. Start SEMS:
 
-      If you installed Sems with 'make install', sems can be
+      If you installed SEMS with 'make install', sems can be
       found at '/usr/local/sbin/sems'.
       If you need help starting 'sems', try 'sems -h'.
 
@@ -105,7 +118,7 @@ Troubleshooting:
 
  * RH thread problem:
 
-  Sems has currently problems being run on Redhat 9. If you cannot wait 
+  SEMS has currently problems being run on Redhat 9. If you cannot wait 
   until it is fixed, you may want to run ans_machine after running the
   following command:
 
@@ -127,14 +140,25 @@ Installed file using 'make install':
     source_path/scripts/sems[.redhat]    : example start-up scripts.
     source_path/sems.conf.example        : example configuration file.
 
+Documentation:
+
+  In the doc/ directory there is a set of files describing the applications
+  shipped with SEMS, alongside some more documentation. With 'make doc' you 
+  can generate the doxygen documentation in doc/doxygen_doc, which contains 
+  these files as well.
+
+  All documentation is available online linked from the SEMS homepage: 
+  www.iptel.org/sems.
+  
 
 Bug report & Contact:
 
-  If you have problems configuring Ser&Sems for your needs,
+  If you have problems configuring Ser&SEMS for your needs,
   look at the support information on the Ser homepage (www.iptel.org/ser)
   and the SEMS homepage (www.iptel.org/sems).
   The mailing lists (http://lists.iptel.org) for SEMS are the first 
-  address to ask for help, report bugs and improvements.
+  address to ask for help, report bugs and improvements. You need to be 
+  subscribed to be able to post to the lists.
 
 Authors:
 
@@ -151,7 +175,7 @@ Thanks goes to:
 
   * Jiri Kuthan (jiri@iptel.org)
       for the debuging work and help to implement
-      communicating part between Ser & Sems ('vm' module).
+      communicating part between Ser & SEMS ('vm' module).
 
   * All the others who helped during test session :-)
 
