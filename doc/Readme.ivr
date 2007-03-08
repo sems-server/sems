@@ -52,13 +52,13 @@ there are quite a few possibilities to call a certain script:
     no matter which URI has been dialed.
 
 
-* based on the "P-Iptel-App" header:
+* based on the "P-App-Name" header:
 
   - in ser.cfg:
     t_write_unix("/tmp/sems_sock","sems")
 
   - the SIP message should contain following header:
-    P-Iptel-App: whatEverScriptYouWantToUse
+    P-App-Name: whatEverScriptYouWantToUse
 
   - this form will start the application/script mentioned in the header value.
 

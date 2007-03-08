@@ -163,7 +163,7 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	unsigned int code_i = 404;
 	string reason = "Not Found";
 
-	string iptel_app_param = getHeader(localreq.hdrs, "P-Iptel-Param");
+	string iptel_app_param = getHeader(localreq.hdrs, PARAM_HDR);
 	if (iptel_app_param.length()) {
 	  string code = get_header_keyvalue(iptel_app_param,"Final-Reply-Code");
 	  if (code.length() && str2i(code, code_i)) {
@@ -179,8 +179,8 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	  string h_reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
 	  if (h_reason.length()) {
 	    INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
-	    INFO("Use 'P-Iptel-Param: Final-Reply-Code=<code>;"
-		 "Final-Reply-Reason=<rs>' instead.\n");
+	    INFO("Use '%s: Final-Reply-Code=<code>;"
+		 "Final-Reply-Reason=<rs>' instead.\n",PARAM_HDR);
 	    reason = h_reason;
 	  }
 	}

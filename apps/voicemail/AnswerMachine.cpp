@@ -147,7 +147,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
     string language;
     string email;
 
-    string iptel_app_param = getHeader(req.hdrs, "P-Iptel-Param");
+    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
 
     if (iptel_app_param.length()) {
 	  language = get_header_keyvalue(iptel_app_param,"Language");
@@ -158,8 +158,8 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 
       if (email.length()) {
 	INFO("Use of P-Email-Address/P-Language is deprecated. \n");
-	INFO("Use 'P-Iptel-Param: Email-Address=<addr>;"
-	     "Language=<lang>' instead.\n");
+	INFO("Use '%s: Email-Address=<addr>;"
+	     "Language=<lang>' instead.\n",PARAM_HDR);
       }
     }
 

@@ -115,7 +115,7 @@ void AnnounceTransferDialog::onSessionStart(const AmSipRequest& req)
 		  callee_uri = getHeader(req.hdrs, "P-Refer-To");
 		  if (callee_uri.length()) {
 		    INFO("Use of P-Refer-To header is deprecated. "
-			 "Use 'P-Iptel-Param: Refer-To=<uri>' instead.\n");
+			 "Use '%s: Refer-To=<uri>' instead.\n",PARAM_HDR);
 		  }
 		}
 		if (!callee_uri.length())

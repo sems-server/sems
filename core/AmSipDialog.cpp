@@ -493,7 +493,7 @@ int AmSipDialog::transfer(const string& target)
     }
 				
     if (!(next_hop.empty() && route.empty())) {
-      hdrs = "P-Iptel-Param: ";
+      hdrs = PARAM_HDR ": ";
       if (!next_hop.empty()) 
 	hdrs+="Transfer-NH=\"" + next_hop +"\";";
 		  
