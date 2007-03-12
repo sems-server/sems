@@ -313,9 +313,9 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req)
   } 
   else if(plugin_name == "sems"){
 
-    plugin_name = getHeader(req.hdrs,"P-Iptel-App");
+    plugin_name = getHeader(req.hdrs,APPNAME_HDR);
     if(plugin_name.empty())
-      throw string("AmSessionContainer::createSession: missing 'P-Iptel-App' header.\n");
+      throw string("AmSessionContainer::createSession: missing '%s' header.\n",APPNAME_HDR);
   }
 
   AmSessionFactory* state_factory = AmPlugIn::instance()->getFactory4App(plugin_name);

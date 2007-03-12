@@ -118,12 +118,12 @@ extern "C" {
 	    return NULL;
 
 	string res;
-	string iptel_app_param = getHeader(headers, "P-Iptel-Param");
+	string iptel_app_param = getHeader(headers, PARAM_HDR);
 	if (iptel_app_param.length()) {
 	  res = get_header_keyvalue(iptel_app_param,header_name);
 	} else {
 	  INFO("Use of P-%s is deprecated. \n", header_name);
-	  INFO("Use 'P-Iptel-Param: %s=<addr>' instead.\n", header_name);
+	  INFO("Use '%s: %s=<addr>' instead.\n", PARAM_HDR, header_name);
 
 	  res = getHeader(headers,string("P-") + header_name);
 	}

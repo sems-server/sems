@@ -37,6 +37,9 @@ using std::string;
 
 #define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
 
+#define PARAM_HDR "P-App-Param"
+#define APPNAME_HDR "P-App-Name"
+
 /** @file AmUtils.h */
 
 /** 
