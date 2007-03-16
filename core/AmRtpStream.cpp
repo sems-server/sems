@@ -164,6 +164,9 @@ void AmRtpStream::setLocalPort()
 
 int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size )
 {
+  if ((mute) || (hold))
+    return 0;
+
   if(!size)
     return -1;
 
@@ -270,6 +273,7 @@ AmRtpStream::AmRtpStream(AmSession* _s)
     passive(false),
     telephone_event_pt(NULL),
     mute(false),
+    hold(false),
     receiving(true)
 {
 
@@ -302,6 +306,9 @@ AmRtpStream::~AmRtpStream()
 
 int AmRtpStream::getLocalPort()
 {
+  if (hold)
+    return 0;
+
   if(!l_port)
     setLocalPort();
 
@@ -375,6 +382,14 @@ void AmRtpStream::resume()
 {
   gettimeofday(&last_recv_time,NULL);
   runcond.set(true);
+}
+
+void AmRtpStream::setOnHold(bool on_hold) {
+	mute = hold = on_hold;
+}
+
+bool AmRtpStream::getOnHold() {
+	return hold;
 }
 
 void AmRtpStream::icmpError()

@@ -687,3 +687,13 @@ void AmSession::sendInvite()
   sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
   dlg.invite("", "application/sdp", sdp_body);
 }
+
+void AmSession::setOnHold(bool hold)
+{
+  lockAudio();
+  bool old_hold = rtp_str.getOnHold();
+  rtp_str.setOnHold(hold);
+  if (hold != old_hold) 
+    sendReinvite();
+  unlockAudio();
+}

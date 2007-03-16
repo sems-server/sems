@@ -263,6 +263,9 @@ public:
   /** send an INVITE */
   void sendInvite();
 
+  /** set the session on/off hold */
+  void setOnHold(bool hold);
+
   /**
    * Destroy the session.
    * It causes the session to be erased from the active session list
