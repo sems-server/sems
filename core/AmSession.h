@@ -182,6 +182,11 @@ public:
   void setCallgroup(const string& cg);
   string getCallgroup() { return callgroup; }
 
+  /** This function removes the session from 
+   *  the media processor and adds it again. 
+   */
+  void changeCallgroup(const string& cg);
+
   /**
    * Accept the SDP proposal
    * thus setting up audio stream
