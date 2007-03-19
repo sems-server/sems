@@ -86,6 +86,9 @@ LOCALBASE ?= /usr/local
 prefix = $(PREFIX)
 BASEDIR ?=
 basedir = $(BASEDIR)
+# for install-ser-cfg
+SERPREFIX ?= /opt/ser-sems
+ser-prefix = $(SERPREFIX)
 
 # Redhat users should use sems.redhat instead of sems
 # the file will be to $(bin-prefix)/$(bin-dir)/sems copied.
@@ -104,6 +107,8 @@ cfg-dir = etc/sems/
 bin-dir = sbin/
 modules-dir = lib/sems/plug-in/
 audio-dir = lib/sems/audio/
+
+ser-cfg-dir = etc/ser/
 
 ifeq ($(OS), linux)
 	doc-dir = share/doc/sems/
@@ -132,6 +137,7 @@ bin-target = $(prefix)/$(bin-dir)
 cfg-target = $(prefix)/$(cfg-dir)
 modules-target = $(prefix)/$(modules-dir)
 audio-target = $(prefix)/$(audio-dir)
+ser-cfg-target =$(ser-prefix)/$(ser-cfg-dir)
 
 ifeq ($(OS), solaris)
 #use GNU versions

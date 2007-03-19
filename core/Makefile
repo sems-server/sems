@@ -1,14 +1,6 @@
 NAME=sems
 LIBNAME=sems.so
 
-# version number
-VERSION = 2
-PATCHLEVEL = 0
-SUBLEVEL =   1
-EXTRAVERSION = -iptelorg
-
-RELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
-
 PLUGIN_DIR=plug-in
 SRCS=$(filter-out $(NAME).cpp, $(wildcard *.cpp))
 HDRS=$(SRCS:.cpp=.h)
@@ -83,6 +75,17 @@ install-modules: $(PLUGIN_DIR) $(modules-prefix)/$(modules-dir)
 
 install-modules-cfg: $(PLUGIN_DIR) $(modules-prefix)/$(modules-dir)
 	$(MAKE) -C $(PLUGIN_DIR) install-cfg
+
+install-ser-cfg: etc/ser-sems.cfg
+	mkdir -p $(ser-cfg-target)
+
+	if [ ! -f  $(ser-cfg-target)/ser-sems.cfg ]; then \
+		$(INSTALL-CFG) etc/ser-sems.cfg $(ser-cfg-target) ; \
+	fi
+	$(INSTALL-CFG) etc/ser-sems.cfg $(ser-cfg-target)ser-sems.cfg.default
+	@echo \*\*\* installed ser-sems.cfg at $(ser-cfg-target)ser-sems.cfg
+	@echo \*\*\* run $(ser-prefix)/sbin/ser -f $(ser-cfg-target)ser-sems.cfg
+	@echo \*\*\* to start ser for sems.
 
 install-audio: $(audio-prefix)/$(audio-dir)
 	-@for f in $(AUDIO_FILES) ; do \

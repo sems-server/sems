@@ -71,3 +71,9 @@ tar:
 .PHONY: doc
 doc:
 	make -C core/ doc
+
+.PHONY: install-ser-cfg
+install-ser-cfg:
+	make -C core/ install-ser-cfg
+
+
