@@ -143,6 +143,11 @@ void AmSession::setCallgroup(const string& cg) {
   callgroup = cg;
 }
 
+void AmSession::changeCallgroup(const string& cg) {
+  callgroup = cg;
+  AmMediaProcessor::instance()->changeCallgroup(this, cg);
+}
+
 void AmSession::addHandler(AmSessionEventHandler* sess_evh)
 {
   if (sess_evh != NULL)
@@ -686,4 +691,14 @@ void AmSession::sendInvite()
   string sdp_body;
   sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
   dlg.invite("", "application/sdp", sdp_body);
+}
+
+void AmSession::setOnHold(bool hold)
+{
+  lockAudio();
+  bool old_hold = rtp_str.getOnHold();
+  rtp_str.setOnHold(hold);
+  if (hold != old_hold) 
+    sendReinvite();
+  unlockAudio();
 }
