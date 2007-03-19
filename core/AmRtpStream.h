@@ -141,7 +141,6 @@ public:
 
   /** Mute */
   bool mute;
-  bool hold;
   bool begin_talk;
 
   /** should we receive packets? if not -> drop */
@@ -222,12 +221,6 @@ public:
    * Resume a paused RTP stream.
    */
   void resume();
-
-  /** set the RTP stream on hold (mute && port = 0) */
-  void setOnHold(bool on_hold);
-  
-  /** get the RTP stream on hold  */
-  bool getOnHold();
 
   /**
    * Report an ICMP error.

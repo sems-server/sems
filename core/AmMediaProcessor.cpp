@@ -121,15 +121,6 @@ void AmMediaProcessor::removeSession(AmSession* s) {
   removeFromProcessor(s, RemoveSession);
 }
 
-/* FIXME: implement Call Group ts offsets for soft changing of 
-	call groups 
-*/
-void AmMediaProcessor::changeCallgroup(AmSession* s, 
-				       const string& new_callgroup) {
-  removeFromProcessor(s, SoftRemoveSession);
-  addSession(s, new_callgroup);
-}
-
 void AmMediaProcessor::removeFromProcessor(AmSession* s, 
 					   unsigned int r_type) {
   DBG("AmMediaProcessor::removeSession\n");
@@ -337,16 +328,6 @@ void AmMediaProcessorThread::process(AmEvent* e)
   }
     break;
 
-
-  case AmMediaProcessor::SoftRemoveSession:{
-    AmSession* s = sr->s;
-    set<AmSession*>::iterator s_it = sessions.find(s);
-    if(s_it != sessions.end()){
-      sessions.erase(s_it);
-      DBG("Session removed softly from the scheduler\n");
-    }
-  }
-    break;
 
   default:
     ERROR("AmMediaProcessorThread::process: unknown event id.");
