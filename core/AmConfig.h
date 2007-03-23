@@ -85,6 +85,8 @@ struct AmConfig
   static int LocalSIPPort;
   /** Server/User-Agent header (optional) */
   static string Signature;
+  /** If 200 OK reply should be limited to preferred codec only */
+  static bool SingleCodecInOK;
 
   /** Init function. Resolves SMTP server address. */
   static int init();

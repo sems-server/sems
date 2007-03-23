@@ -193,7 +193,7 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
 // @param audio_buffer_ts [in]  current ts at the audio_buffer 
 
 int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
-			  unsigned int& ts)
+			  unsigned int& ts, int &out_payload)
 {
   AmRtpPacket rp;
   int err = nextPacket(rp);
@@ -247,9 +247,11 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
       return RTP_DTMF;
     }
 
+/*
   if (payload != rp.payload){
     return RTP_UNKNOWN_PL;
   }
+*/
 
   assert(rp.getData());
   if(rp.getDataSize() > size){
@@ -258,6 +260,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   }
   memcpy(buffer,rp.getData(),rp.getDataSize());
   ts = rp.timestamp;
+  out_payload = rp.payload;
 
   return rp.getDataSize();
 }
@@ -361,15 +364,12 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
 #endif
 }
 
-void AmRtpStream::init(const SdpPayload* sdp_payload)
+void AmRtpStream::init(const vector<SdpPayload*>& sdp_payloads)
 {
+  SdpPayload *sdp_payload = sdp_payloads[0];
   payload = sdp_payload->payload_type;
   int_payload = sdp_payload->int_pt;
   last_payload = payload;
-  if(!sdp_payload->sdp_format_parameters.empty())
-    format_parameters = sdp_payload->sdp_format_parameters;
-  else
-    format_parameters = "";
   resume();
 }
 

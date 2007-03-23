@@ -55,6 +55,7 @@ int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
 int          AmConfig::LocalSIPPort            = 5060;
 string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::Signature               = "";
+bool	     AmConfig::SingleCodecInOK	       = false;
 
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 
@@ -236,6 +237,10 @@ int AmConfig::readConfiguration()
       ERROR("invalid media_processor_threads value specified");
       return -1;
     }
+  }
+  // single codec in 200 OK
+  if(cfg.hasParameter("single_codec_in_ok")){
+    SingleCodecInOK = (cfg.getParameter("single_codec_in_ok") == "yes");
   }
 
   return defaultSessionTimerConfig.readFromConfig(cfg);

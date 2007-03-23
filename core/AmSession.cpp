@@ -125,7 +125,7 @@ AmSession::AmSession()
     dlg(this),
     detached(true),
     sess_stopped(false),rtp_str(this),negotiate_onreply(false),
-    input(0), output(0), payload(0),
+    input(0), output(0),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true)
 {
@@ -207,9 +207,9 @@ void AmSession::setLocalTag(const string& tag)
   dlg.local_tag = tag;
 }
 
-const SdpPayload* AmSession::getPayload()
+const vector<SdpPayload*>& AmSession::getPayloads()
 {
-  return &payload;
+  return m_payloads;
 }
 
 int AmSession::getRPort()
@@ -232,11 +232,12 @@ void AmSession::negotiate(const string& sdp_body,
   if(sdp.media.empty())
     throw AmSession::Exception(400,"no media line found in SDP message");
     
-  SdpPayload* tmp_pl = sdp.getCompatiblePayload(MT_AUDIO,r_host,r_port);
+  m_payloads = sdp.getCompatiblePayloads(MT_AUDIO, r_host, r_port);
 
-  if(!tmp_pl)
+  if (m_payloads.size() == 0)
     throw AmSession::Exception(606,"could not find compatible payload");
     
+/*
   if(payload.int_pt == -1){
 
     payload = *tmp_pl;
@@ -246,6 +247,7 @@ void AmSession::negotiate(const string& sdp_body,
     DBG("old payload: %i; new payload: %i\n",payload.int_pt,tmp_pl->int_pt);
     throw AmSession::Exception(400,"do not accept payload changes");
   }
+*/
 
   const SdpPayload *telephone_event_payload = sdp.telephoneEventPayload();
   if(telephone_event_payload)
@@ -277,7 +279,7 @@ void AmSession::negotiate(const string& sdp_body,
   unlockAudio();
 
   if(sdp_reply)
-    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),*sdp_reply);
+    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),*sdp_reply, AmConfig::SingleCodecInOK);
 }
 
 void AmSession::run()
@@ -620,7 +622,7 @@ int AmSession::acceptAudio(const string& body,
 	    
       // enable RTP stream
       lockAudio();
-      rtp_str.init(&payload);
+      rtp_str.init(m_payloads);
       unlockAudio();
 	    
       DBG("Sending Rtp data to %s/%i\n",

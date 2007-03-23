@@ -77,10 +77,14 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
   unsigned int rtp_ts;
 
   while(true) {
+    int payload;
     size = AmRtpStream::receive((unsigned char*)samples,
-				(unsigned int)AUDIO_BUFFER_SIZE, rtp_ts);
+				(unsigned int)AUDIO_BUFFER_SIZE, rtp_ts,
+				payload);
     if(size <= 0)
       break;
+
+    setCurrentPayload(payload);
 	
     if(send_only){
       playout_buffer->clearLastTs();
@@ -122,12 +126,16 @@ int AmRtpAudio::write(unsigned int user_ts, unsigned int size)
   return send(user_ts,(unsigned char*)samples,size);
 }
 
-void AmRtpAudio::init(const SdpPayload* sdp_payload)
+void AmRtpAudio::init(const vector<SdpPayload*>& sdp_payloads)
 {
   DBG("AmRtpAudio::init(...)\n");
-  AmRtpStream::init(sdp_payload);
-  fmt.reset(new AmAudioRtpFormat(int_payload, format_parameters));
+  AmRtpStream::init(sdp_payloads);
+  fmt.reset(new AmAudioRtpFormat(sdp_payloads));
+}
 
+void AmRtpAudio::setCurrentPayload(int payload)
+{
+  ((AmAudioRtpFormat *) fmt.get())->setCurrentPayload(payload);
   amci_codec_t* codec = fmt->getCodec();
   use_default_plc = !(codec && codec->plc);
 }

@@ -38,9 +38,14 @@
 using std::auto_ptr;
 #include <string>
 using std::string;
+#include <map>
+using std::map;
 
 #define PCM16_B2S(b) ((b) >> 1)
 #define PCM16_S2B(s) ((s) << 1)
+
+class SdpPayload;
+class CodecContainer;
 
 /** \brief Audio Event */
 class AmAudioEvent: public AmEvent
@@ -206,14 +211,15 @@ public:
 /** \brief RTP audio format */
 class AmAudioRtpFormat: public AmAudioFormat
 {
-  /** ==-1 if not yet initialized. */
-  int             payload;
-  /** == 0 if not yet initialized. */
-  amci_payload_t* amci_pl;
+  vector<SdpPayload *> m_payloads;
+  int m_currentPayload;
+  amci_payload_t *m_currentPayloadP;
+  map<int, SdpPayload *> m_sdpPayloadByPayload;
+  map<int, amci_payload_t *> m_payloadPByPayload;
+  map<int, CodecContainer *> m_codecContainerByPayload;
 
 protected:
   int getCodecId();
-  amci_payload_t* getPayloadP();
 
 public:
   /**
@@ -221,10 +227,10 @@ public:
    * All the information are taken from the 
    * payload description in the originating plug-in.
    */
-  AmAudioRtpFormat(int payload, string format_parameters);
+  AmAudioRtpFormat(const vector<SdpPayload *>& payloads);
+  ~AmAudioRtpFormat();
 
-  /** @return Payload ID. */
-  int           getPayload() { return payload; }
+  void setCurrentPayload(int payload);
 };
 
 /**

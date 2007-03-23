@@ -143,3 +143,11 @@ media_processor_threads=1
 #
 #
 # signature="SEMS media server 1.0"
+
+# optional parameter: single_codec_in_ok={yes|no}
+#
+# - use single codec in 200 OK response
+#
+#   default=no
+#
+# single_codec_in_ok=no

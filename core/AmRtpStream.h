@@ -98,8 +98,6 @@ protected:
   */
   int         last_payload;
 
-  string      format_parameters;
-
   string             r_host;
   unsigned short     r_port;
 #ifdef SUPPORT_IPV6
@@ -153,7 +151,7 @@ public:
 
 
   int receive( unsigned char* buffer, unsigned int size,
-	       unsigned int& ts);
+	       unsigned int& ts, int& payload);
     
   /** Allocates resources for future use of RTP. */
   AmRtpStream(AmSession* _s=0);
@@ -211,7 +209,7 @@ public:
    * @warning It should be called only if the stream has been completly initialized,
    * @warning and only once per session. Use resume() then.
    */
-  virtual void init(const SdpPayload* sdp_payload);
+  virtual void init(const vector<SdpPayload*>& sdp_payloads);
 
   /**
    * Stops RTP stream.

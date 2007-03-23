@@ -108,7 +108,7 @@ class AmSession : public AmThread,
   AmAudio*     input;
   AmAudio*     output;
 
-  SdpPayload   payload;
+  vector<SdpPayload *>  m_payloads;
   bool         negotiate_onreply;
 
   AmDtmfDetector   m_dtmfDetector;
@@ -248,7 +248,7 @@ public:
   void setLocalTag(const string& tag);
 
   /** Gets the current RTP payload */
-  const SdpPayload* getPayload();
+  const vector<SdpPayload*>& getPayloads();
 
   /** Gets the port number of the remote part of the session */
   int getRPort();

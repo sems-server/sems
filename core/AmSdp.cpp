@@ -185,7 +185,7 @@ int AmSdp::parse()
 
 
 int AmSdp::genResponse(const string& localip, int localport, 
-		       string& out_buf)
+		       string& out_buf, bool single_codec)
 {
   string l_ip = "IP4 " + localip;
 
@@ -218,6 +218,7 @@ int AmSdp::genResponse(const string& localip, int localport,
       options += "a=fmtp:" + int2str((*it)->payload_type) + " " 
 	+ (*it)->sdp_format_parameters + "\r\n";
     }
+    if (single_codec) break;
   }
 
   if (hasTelephoneEvent())
@@ -286,10 +287,11 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
   return 0;
 }
 
-SdpPayload* AmSdp::getCompatiblePayload(int media_type, string& addr, int& port)
+const vector<SdpPayload *>& AmSdp::getCompatiblePayloads(int media_type, string& addr, int& port)
 {
   vector<SdpMedia>::iterator   m_it;
-  SdpPayload*                  payload=0;
+  SdpPayload *payload;
+  sup_pl.clear();
 
   AmPlugIn* pi = AmPlugIn::instance();
 
@@ -313,7 +315,7 @@ SdpPayload* AmSdp::getCompatiblePayload(int media_type, string& addr, int& port)
 	payload->int_pt = a_pl->payload_id;
 	payload->encoding_name = a_pl->name;
 	payload->clock_rate = a_pl->sample_rate;
-	goto end;
+	sup_pl.push_back(payload);
       }
       else { 
 	// Try dynamic payloads
@@ -331,37 +333,30 @@ SdpPayload* AmSdp::getCompatiblePayload(int media_type, string& addr, int& port)
 		    
 	  payload = &(*it);
 	  payload->int_pt = int_pt;
-	  goto end;
+	  sup_pl.push_back(payload);
 	}
       }
     }
-  }
-
- end:
-  sup_pl.clear();
-
-  if(payload){
-	
-    DBG("payload found: %i/%s/%i\n",
-	payload->int_pt,payload->encoding_name.c_str(),payload->clock_rate);
-
-    if(m_it->conn.address.empty()){
-      DBG("using global address: %s\n",conn.address.c_str());
-      addr = conn.address;
+    if (sup_pl.size() > 0)
+    {
+      if (m_it->conn.address.empty())
+      {
+	DBG("using global address: %s\n",conn.address.c_str());
+	addr = conn.address;
+      }
+      else {
+	DBG("using media specific address: %s\n",m_it->conn.address.c_str());
+	addr = m_it->conn.address;
+      }
+      
+      if(m_it->dir == SdpMedia::DirActive)
+	remote_active = true;
+      
+      port = (int)m_it->port;
     }
-    else {
-      DBG("using media specific address: %s\n",m_it->conn.address.c_str());
-      addr = m_it->conn.address;
-    }
-	
-    if(m_it->dir == SdpMedia::DirActive)
-      remote_active = true;
-	
-    sup_pl.push_back(payload);
-    port = (int)m_it->port;
+    break;
   }
-
-  return payload;
+  return sup_pl;
 }
 
 bool AmSdp::hasTelephoneEvent()

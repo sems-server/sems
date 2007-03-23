@@ -171,7 +171,7 @@ public:
    * @return !=0 if error encountered.
    */
   int genResponse(const string& localip, int localport, 
-		  string& out_buf);
+		  string& out_buf, bool single_codec = false);
 
   /** 
    * Generate an SDP offer. 
@@ -181,9 +181,9 @@ public:
 
   /** 
    * Get a compatible payload from SDP offer/response. 
-   * @return NULL if error encountered.
+   * @return empty vector if error encountered.
    */
-  SdpPayload* getCompatiblePayload(int media_type, string& addr, int& port);
+  const vector<SdpPayload*>& getCompatiblePayloads(int media_type, string& addr, int& port);
 
   /**
    * Test if remote UA supports 'telefone_event'.

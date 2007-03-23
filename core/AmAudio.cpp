@@ -28,6 +28,7 @@
 #include "AmAudio.h"
 #include "AmPlugIn.h"
 #include "AmUtils.h"
+#include "AmSdp.h"
 #include "amci/codecs.h"
 #include "log.h"
 
@@ -38,19 +39,89 @@
 
 #include <typeinfo>
 
-AmAudioRtpFormat::AmAudioRtpFormat(int payload, string format_parameters)
-  : AmAudioFormat(), payload(payload), amci_pl(0)
+struct CodecContainer
 {
-  sdp_format_parameters = format_parameters;
-  codec = getCodec();
- 
-  amci_payload_t* pl = getPayloadP();
-  if(pl && codec){
-    channels = pl->channels;
-    rate = pl->sample_rate;
-  } else {
-    ERROR("Could not find payload <%i>\n",payload);
-  } 
+  amci_codec_t *codec;
+  int frame_size;
+  int frame_length;
+  int frame_encoded_size;
+  long h_codec;
+};
+
+AmAudioRtpFormat::AmAudioRtpFormat(const vector<SdpPayload *>& payloads)
+  : AmAudioFormat(), m_payloads(payloads), m_currentPayload(-1)
+{
+  for (vector<SdpPayload *>::iterator it = m_payloads.begin();
+	  it != m_payloads.end(); ++it)
+  {
+    m_sdpPayloadByPayload[(*it)->payload_type] = *it;
+  }
+  setCurrentPayload(m_payloads[0]->payload_type);
+}
+
+void AmAudioRtpFormat::setCurrentPayload(int payload)
+{
+  if (m_currentPayload != payload)
+  {
+    map<int, SdpPayload *>::iterator p = m_sdpPayloadByPayload.find(payload);
+    if (p == m_sdpPayloadByPayload.end())
+    {
+      ERROR("Could not find payload <%i>\n", payload);
+      return;
+    }
+    map<int, amci_payload_t *>::iterator pp = m_payloadPByPayload.find(payload);
+    if (pp == m_payloadPByPayload.end())
+    {
+      m_currentPayloadP = AmPlugIn::instance()->payload(p->second->int_pt);
+      if (m_currentPayloadP == NULL)
+      {
+	ERROR("Could not find payload <%i>\n", payload);
+	return;
+      }
+      m_payloadPByPayload[payload] = m_currentPayloadP;
+    }
+    else
+      m_currentPayloadP = pp->second;
+    m_currentPayload = payload;
+    sdp_format_parameters = p->second->sdp_format_parameters;
+
+    map<int, CodecContainer *>::iterator c = m_codecContainerByPayload.find(payload);
+    if (c == m_codecContainerByPayload.end())
+    {
+      codec = NULL;
+      getCodec();
+      if (codec)
+      {
+	CodecContainer *cc = new CodecContainer();
+	cc->codec = codec;
+	cc->frame_size = frame_size;
+	cc->frame_length = frame_length;
+	cc->frame_encoded_size = frame_encoded_size;
+	cc->h_codec = h_codec;
+	m_codecContainerByPayload[payload] = cc;
+      }
+    }
+    else
+    {
+      codec = c->second->codec;
+      frame_size = c->second->frame_size;
+      frame_length = c->second->frame_length;
+      frame_encoded_size = c->second->frame_encoded_size;
+      h_codec = c->second->h_codec;
+    }
+    if (m_currentPayloadP && codec) {
+      channels = m_currentPayloadP->channels;
+      rate = m_currentPayloadP->sample_rate;
+    } else {
+      ERROR("Could not find payload <%i>\n", payload);
+    }
+  }
+}
+
+AmAudioRtpFormat::~AmAudioRtpFormat()
+{
+  for (map<int, CodecContainer *>::iterator it = m_codecContainerByPayload.begin(); it != m_codecContainerByPayload.end(); ++it)
+    delete it->second;
 }
 
 AmAudioFormat::AmAudioFormat()
@@ -677,22 +748,12 @@ int AmAudioFileFormat::getCodecId()
 }
 
 
-amci_payload_t* AmAudioRtpFormat::getPayloadP()
-{
-  if(!amci_pl)
-    amci_pl = AmPlugIn::instance()->payload(payload);
-
-  return amci_pl;
-}
-
 int AmAudioRtpFormat::getCodecId()
 {
-  amci_payload_t* pl = getPayloadP();
-  if(!pl){
-    ERROR("AmAudioRtpFormat::getCodecId: could not find payload %i\n",payload);
+  if(!m_currentPayloadP){
+    ERROR("AmAudioRtpFormat::getCodecId: could not find payload %i\n", m_currentPayload);
     return -1;
   }
   else 
-    return pl->codec_id;
+    return m_currentPayloadP->codec_id;
 }
-

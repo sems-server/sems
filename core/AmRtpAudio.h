@@ -70,6 +70,8 @@ public:
   bool checkInterval(unsigned int ts);
   bool sendIntReached();
 
+  void setCurrentPayload(int payload);
+
   int receive(unsigned int audio_buffer_ts);
 
   void setSendOnly(bool so){
@@ -84,7 +86,7 @@ public:
 	  unsigned int nb_samples);
 
   // AmRtpStream interface
-  void init(const SdpPayload* sdp_payload);
+  void init(const vector<SdpPayload*>& sdp_payloads);
 
   void setPlayoutType(PlayoutType type);
 
