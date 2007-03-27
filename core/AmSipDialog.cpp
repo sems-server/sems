@@ -583,9 +583,9 @@ int AmSipDialog::sendRequest(const string& method,
   if((method!="BYE")&&(method!="CANCEL"))
     msg += getContactHdr();
     
-  if(!hdrs.empty()){
-    msg += hdrs;
-    if(hdrs[hdrs.length()-1] != '\n')
+  if(!m_hdrs.empty()){
+    msg += m_hdrs;
+    if(m_hdrs[m_hdrs.length()-1] != '\n')
       msg += "\n";
   }
 

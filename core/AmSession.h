@@ -264,7 +264,7 @@ public:
   /** send an UPDATE in the session */
   void sendUpdate();
   /** send a Re-INVITE (if connected) */
-  void sendReinvite();
+  void sendReinvite(bool updateSDP = true);
   /** send an INVITE */
   void sendInvite();
 

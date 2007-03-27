@@ -311,8 +311,9 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
   int timer_id = timeout_ev->data.get(0).asInt();
 
   if (timer_id == ID_SESSION_REFRESH_TIMER) {
-    if (session_refresher == refresh_local)
-      s->sendReinvite();
+    if (session_refresher == refresh_local) 
+      // send reinvite with SDP
+      s->sendReinvite(true);
     else
       WARN("need session refresh but remote session is refresher\n");
   } else if (timer_id == ID_SESSION_INTERVAL_TIMER) {

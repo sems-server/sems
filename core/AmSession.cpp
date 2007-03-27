@@ -676,12 +676,16 @@ void AmSession::sendUpdate()
   dlg.update("");
 }
 
-void AmSession::sendReinvite() 
+void AmSession::sendReinvite(bool updateSDP) 
 {
-  rtp_str.setLocalIP(AmConfig::LocalIP);
-  string sdp_body;
-  sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-  dlg.reinvite("", "application/sdp", sdp_body);
+  if (updateSDP) {
+    rtp_str.setLocalIP(AmConfig::LocalIP);
+    string sdp_body;
+    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
+    dlg.reinvite("", "application/sdp", sdp_body);
+  } else {
+    dlg.reinvite("", "", "");
+  }
 }
 
 void AmSession::sendInvite() 
