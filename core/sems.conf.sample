@@ -123,6 +123,20 @@ media_processor_threads=1
 #
 #sip_port=5060
 
+# optional parameter: dead_rtp_time=<unsigned int>
+#
+# - if != 0, after this time (in seconds) of no RTP
+#   a session is considered dead and stopped. If set
+#   to 0 no check is done for rtp timeout.
+#
+#   default=300 (5 minutes)
+#
+# Examples:
+#    # disable RTP timeout
+#    dead_rtp_time=0  
+#    # RTP timeout after 10 seconds
+#    dead_rtp_time=10  
+
 # optional parameter: use_default_signature={yes|no}
 #
 # - use a Server/User-Agent header with the SEMS server 

@@ -49,6 +49,8 @@
 #define DEFAULT_SIGNATURE "Sip Express Media Server " \
 		"(" VERSION " (" ARCH "/" OS"))"
 
+// session considered dead after 5 minutes no RTP
+#define DEAD_RTP_TIME       5*60  
 
 /* Session Timer defaul configuration: */
 #define DEFAULT_ENABLE_SESSION_TIMER 1

@@ -56,6 +56,7 @@ int          AmConfig::LocalSIPPort            = 5060;
 string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::Signature               = "";
 bool	     AmConfig::SingleCodecInOK	       = false;
+unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
 
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 
@@ -124,6 +125,14 @@ int AmConfig::setStderr(const string& s) {
 
 int AmConfig::setMediaProcessorThreads(const string& th) {
   if(sscanf(th.c_str(),"%u",&MediaProcessorThreads) != 1) {
+    return 0;
+  }
+  return 1;
+}
+
+int AmConfig::setDeadRtpTime(const string& drt)
+{
+  if(sscanf(drt.c_str(),"%u",&AmConfig::DeadRtpTime) != 1) {
     return 0;
   }
   return 1;
@@ -241,6 +250,15 @@ int AmConfig::readConfiguration()
   // single codec in 200 OK
   if(cfg.hasParameter("single_codec_in_ok")){
     SingleCodecInOK = (cfg.getParameter("single_codec_in_ok") == "yes");
+  }
+
+
+  // dead_rtp_time
+  if(cfg.hasParameter("dead_rtp_time")){
+    if(!setDeadRtpTime(cfg.getParameter("dead_rtp_time"))){
+      ERROR("invalid dead_rtp_time value specified");
+      return -1;
+    }
   }
 
   return defaultSessionTimerConfig.readFromConfig(cfg);

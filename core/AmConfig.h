@@ -88,6 +88,9 @@ struct AmConfig
   /** If 200 OK reply should be limited to preferred codec only */
   static bool SingleCodecInOK;
 
+  /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
+   static unsigned int DeadRtpTime;
+
   /** Init function. Resolves SMTP server address. */
   static int init();
 
@@ -113,6 +116,8 @@ struct AmConfig
   static int setStderr(const string& s);
   /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */
   static int setMediaProcessorThreads(const string& th);
+  /** Setter for parameter DeadRtpTime, returns 0 on invalid value */
+  static int setDeadRtpTime(const string& drt);
 };
 
 class AmConfigReader;

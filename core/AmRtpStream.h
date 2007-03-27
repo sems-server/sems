@@ -44,8 +44,6 @@ using std::string;
 using std::map;
 using std::auto_ptr;
 
-#define DEAD_RTP_TIME (5*60) /* 5 minutes */
-
 // return values of AmRtpStream::receive
 #define RTP_EMPTY        0 // no rtp packet available
 #define RTP_PARSE_ERROR -1 // error while parsing rtp packet
