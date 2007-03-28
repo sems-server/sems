@@ -108,6 +108,7 @@ install_python_files: $(modules-prefix)/$(modules-dir)
 clean_py_sems_lib:
 	$(MAKE) -C sip/ clean
 	rm -f sip/py_sems_lib.a
+	rm -f py/*.pyc
 
 sip/py_sems_lib.a: 
 	$(MAKE) -C sip/ py_sems_lib.a

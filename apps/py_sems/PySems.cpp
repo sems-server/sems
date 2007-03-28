@@ -1,5 +1,6 @@
 /*
  * $Id: PySems.cpp,v 1.26.2.1 2005/09/02 13:47:46 rco Exp $
+ * 
  * Copyright (C) 2002-2003 Fhg Fokus
  *
  * This file is part of sems, a free SIP media server.
@@ -29,8 +30,14 @@
 #include "AmUtils.h"
 #include "AmPlugIn.h"
 
+#include "PySemsDialog.h"
+#include "PySemsB2BDialog.h"
+#include "PySemsUtils.h"
+
 #include "sip/sipAPIpy_sems_lib.h"
 #include "sip/sippy_sems_libPySemsDialog.h"
+#include "sip/sippy_sems_libPySemsB2BDialog.h"
+#include "sip/sippy_sems_libPySemsB2ABDialog.h"
 
 #include <unistd.h>
 #include <pthread.h>
@@ -201,7 +208,7 @@ void PySemsFactory::init_python_interpreter()
     PyEval_ReleaseLock();
 }
 
-PySemsDialog* PySemsFactory::newDlg(const string& name)
+AmSession* PySemsFactory::newDlg(const string& name)
 {
     PYLOCK;
 
@@ -231,24 +238,90 @@ PySemsDialog* PySemsFactory::newDlg(const string& name)
     }
 
     int err=0;
-    PySemsDialog* dlg = (PySemsDialog*)sipForceConvertTo_PySemsDialog(dlg_inst,&err);
-    if(!dlg || err){
-	
-	PyErr_Print();
-	ERROR("PySemsFactory: while loading \"%s\": could not retrieve PySemsDialog ptr.\n",
-	      name.c_str());
-	throw AmSession::Exception(500,"Internal error in PY_SEMS plug-in.");
-	Py_DECREF(dlg_inst);
 
-	return NULL;
+    AmSession* sess = NULL;
+    PySemsDialogBase* dlg_base  = NULL;
+
+    switch(mod_desc.dt) {
+    case PySemsScriptDesc::None: {
+      ERROR("wrong script type: None.\n");
+    }; break;
+    case PySemsScriptDesc::Dialog: {
+      PySemsDialog* dlg = (PySemsDialog*)
+	sipForceConvertTo_PySemsDialog(dlg_inst,&err);
+      sess = dlg;
+      dlg_base = dlg;
+    }; break;
+
+    case PySemsScriptDesc::B2BDialog: {
+      PySemsB2BDialog* b2b_dlg = (PySemsB2BDialog*)
+	sipForceConvertTo_PySemsB2BDialog(dlg_inst,&err);
+      sess = b2b_dlg;
+      dlg_base = b2b_dlg;
+    }; break;
+
+    case PySemsScriptDesc::B2ABDialog: {
+	PySemsB2ABDialog* b2ab_dlg = (PySemsB2ABDialog*)
+	  sipForceConvertTo_PySemsB2ABDialog(dlg_inst,&err);      
+	sess = b2ab_dlg;
+	dlg_base = b2ab_dlg;
+
+    }; break;
     }
+
+    if (err || !dlg_base) {
+	  // no luck
+	  PyErr_Print();
+	  ERROR("PySemsFactory: while loading \"%s\": could not retrieve a PySems*Dialog ptr.\n",
+		name.c_str());
+	  throw AmSession::Exception(500,"Internal error in PY_SEMS plug-in.");
+	  Py_DECREF(dlg_inst);
+	  return NULL;
+    }
+
+
+//     // TODO: find some way to guess the type without trying... 
+//     // try Dialog...
+//     PySemsDialog* dlg = (PySemsDialog*)sipForceConvertTo_PySemsDialog(dlg_inst,&err);
+//     if (dlg && (!err)) {
+//       DBG("OK, got PySemsDialog.\n");
+//       sess = dlg;
+//       dlg_base = dlg;
+//     } else {
+//       // try B2BDialog...
+//       err = 0;
+//       PySemsB2BDialog* b2b_dlg = (PySemsB2BDialog*)sipForceConvertTo_PySemsB2BDialog(dlg_inst,&err);
+//       if (b2b_dlg && (!err)) {
+// 	DBG("OK, got PySemsB2BDialog.\n");      
+// 	sess = b2b_dlg;
+// 	dlg_base = b2b_dlg;
+//       }  else {
+
+// 	// try B2ABDialog...
+// 	err=0;
+// 	PySemsB2ABDialog* b2ab_dlg = (PySemsB2ABDialog*)sipForceConvertTo_PySemsB2ABDialog(dlg_inst,&err);
+
+// // 	if (b2ab_dlg && (!err)) {
+// // 	  DBG("OK, got PySemsB2ABDialog.\n");      
+// // 	  sess = b2ab_dlg;
+// // 	  dlg_base = b2ab_dlg;
+// // 	}  else {
+// 	  // no luck
+// 	  PyErr_Print();
+// 	  ERROR("PySemsFactory: while loading \"%s\": could not retrieve a PySems*Dialog ptr.\n",
+// 		name.c_str());
+// 	  throw AmSession::Exception(500,"Internal error in PY_SEMS plug-in.");
+// 	  Py_DECREF(dlg_inst);
+// 	  return NULL;
+// 	}
+//       }
+//     }
 
     // take the ownership over dlg
     sipTransferTo(dlg_inst,dlg_inst);
     Py_DECREF(dlg_inst);
-    dlg->setPyPtrs(NULL,dlg_inst);
-    
-    return dlg;
+    dlg_base->setPyPtrs(NULL,dlg_inst);
+    return sess;
 }
 
 bool PySemsFactory::loadScript(const string& path)
@@ -256,6 +329,8 @@ bool PySemsFactory::loadScript(const string& path)
     PYLOCK;
     
     PyObject *modName,*mod,*dict, *dlg_class, *config=NULL;
+    PySemsScriptDesc::DialogType dt = PySemsScriptDesc::None;
+
 
     modName = PyString_FromString(path.c_str());
     mod     = PyImport_Import(modName);
@@ -288,9 +363,17 @@ bool PySemsFactory::loadScript(const string& path)
     }
 
     Py_INCREF(dlg_class);
-
-    if(!PyObject_IsSubclass(dlg_class,(PyObject *)sipClass_PySemsDialog)){
-
+    
+    if(PyObject_IsSubclass(dlg_class,(PyObject *)sipClass_PySemsDialog)) {
+      dt = PySemsScriptDesc::Dialog;
+      DBG("Loaded a Dialog Script.\n");
+    } else if (PyObject_IsSubclass(dlg_class,(PyObject *)sipClass_PySemsB2BDialog)) {
+      DBG("Loaded a B2BDialog Script.\n");
+      dt = PySemsScriptDesc::B2BDialog;
+    } else if (PyObject_IsSubclass(dlg_class,(PyObject *)sipClass_PySemsB2ABDialog)) {
+      DBG("Loaded a B2ABDialog Script.\n");
+      dt = PySemsScriptDesc::B2ABDialog;
+    } else {
 	WARN("PySemsFactory: in \"%s\": PySemsScript is not a "
 	     "subtype of PySemsDialog\n", path.c_str());
 
@@ -319,7 +402,7 @@ bool PySemsFactory::loadScript(const string& path)
     PyObject_SetAttrString(mod,"config",config);
 
     mod_reg.insert(make_pair(path,
-			     PySemsScriptDesc(mod,dlg_class)));
+			     PySemsScriptDesc(mod,dlg_class, dt)));
 
     return true;
 
@@ -427,100 +510,26 @@ AmSession* PySemsFactory::onInvite(const AmSipRequest& req)
 	return newDlg(req.user);
 }
 
-PySemsDialog::PySemsDialog()
-    : py_mod(NULL),
-      py_dlg(NULL),
-      playlist(this),
-      user_timer(NULL)
+// PySemsDialogBase - base class for all possible PySemsDialog classes
+PySemsDialogBase::PySemsDialogBase() 
+  :  py_mod(NULL), 
+     py_dlg(NULL)
 {
-    sip_relay_only = false;
 }
 
-PySemsDialog::PySemsDialog(AmDynInvoke* user_timer)
-    : py_mod(NULL), 
-      py_dlg(NULL),
-      playlist(this),
-      user_timer(user_timer)
-{
-    sip_relay_only = false;
-}
-
-
-PySemsDialog::~PySemsDialog()
-{
+PySemsDialogBase::~PySemsDialogBase() {
     PYLOCK;
     Py_XDECREF(py_dlg);
 }
 
-void PySemsDialog::setPyPtrs(PyObject *mod, PyObject *dlg)
+void PySemsDialogBase::setPyPtrs(PyObject *mod, PyObject *dlg)
 {
     PYLOCK;
     Py_XDECREF(py_dlg);
     py_dlg = dlg;
 }
 
-static PyObject *
-type_error(const char *msg)
-{
-        PyErr_SetString(PyExc_TypeError, msg);
-        return NULL;
-}
-
-static PyObject *
-null_error(void)
-{
-        if (!PyErr_Occurred())
-                PyErr_SetString(PyExc_SystemError,
-                                "null argument to internal routine");
-        return NULL;
-}
-
-PyObject *
-PyObject_VaCallMethod(PyObject *o, char *name, char *format, va_list va)
-{
-        PyObject *args, *func = 0, *retval;
-
-        if (o == NULL || name == NULL)
-                return null_error();
-
-        func = PyObject_GetAttrString(o, name);
-        if (func == NULL) {
-                PyErr_SetString(PyExc_AttributeError, name);
-                return 0;
-        }
-
-        if (!PyCallable_Check(func))
-                return type_error("call of non-callable attribute");
-
-        if (format && *format) {
-                args = Py_VaBuildValue(format, va);
-        }
-        else
-                args = PyTuple_New(0);
-
-        if (!args)
-                return NULL;
-
-        if (!PyTuple_Check(args)) {
-                PyObject *a;
-
-                a = PyTuple_New(1);
-                if (a == NULL)
-                        return NULL;
-                if (PyTuple_SetItem(a, 0, args) < 0)
-                        return NULL;
-                args = a;
-        }
-
-        retval = PyObject_Call(func, args, NULL);
-
-        Py_DECREF(args);
-        Py_DECREF(func);
-
-        return retval;
-}
-
-bool PySemsDialog::callPyEventHandler(char* name, char* fmt, ...)
+bool PySemsDialogBase::callPyEventHandler(char* name, char* fmt, ...)
 {
     bool ret=false;
     va_list va;
@@ -552,35 +561,3 @@ bool PySemsDialog::callPyEventHandler(char* name, char* fmt, ...)
     
     return ret;
 }
-
-void PySemsDialog::onSessionStart(const AmSipRequest& req)
-{
-    DBG("PySemsDialog::onSessionStart\n");
-    setInOut(&playlist,&playlist);
-    AmB2BCallerSession::onSessionStart(req);
-}
-
-void PySemsDialog::process(AmEvent* event) 
-{
-    DBG("PySemsDialog::process\n");
-
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event && audio_event->event_id == AmAudioEvent::noAudio){
-
-	callPyEventHandler("onEmptyQueue", NULL);
-	event->processed = true;
-    }
-    
-    AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
-    if(plugin_event && plugin_event->name == "timer_timeout") {
-
-	callPyEventHandler("onTimer", "i", plugin_event->data.get(0).asInt());
-	event->processed = true;
-    }
-
-    if (!event->processed)
-      AmB2BCallerSession::process(event);
-
-    return;
-}
-

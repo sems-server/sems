@@ -1,20 +1,20 @@
 
 
-class PySemsDialog
+class PySemsB2ABDialog
 {
 %TypeHeaderCode
-#include "../PySemsDialog.h"
+#include "../PySemsB2ABDialog.h"
 %End
 
 public:
 
     AmSipDialog dlg;
 
-    PySemsDialog();
+    PySemsB2ABDialog();
 
-    virtual ~PySemsDialog();
+    virtual ~PySemsB2ABDialog();
 %MethodCode
-    fprintf(stderr,"------------- dealloc_PySemsDialog ----------\n");
+    fprintf(stderr,"------------- dealloc_PySemsB2ABDialog ----------\n");
 %End
 
     int acceptAudio(const string& /* body */,
@@ -39,5 +39,5 @@ public:
 
 
 private:
-    PySemsDialog(const PySemsDialog&);
+    PySemsB2ABDialog(const PySemsB2ABDialog&);
 };

@@ -1,5 +1,6 @@
 /*
  * $Id: PySems.h,v 1.15.2.1 2005/09/02 13:47:46 rco Exp $
+ * 
  * Copyright (C) 2002-2003 Fhg Fokus
  *
  * This file is part of sems, a free SIP media server.
@@ -38,27 +39,39 @@
 using std::string;
 using std::map;
 
-class PySemsDialog;
+class PySemsDialogBase;
 
 struct PySemsScriptDesc
 {
+    enum DialogType {
+      None = 0,
+      Dialog,
+      B2BDialog,
+      B2ABDialog
+    };
+
     PyObject* mod;
     PyObject* dlg_class;
+    DialogType dt;
 
     PySemsScriptDesc()
 	: mod(0), 
-	  dlg_class(0)
+          dlg_class(0),
+          dt(None)
     {}
 
     PySemsScriptDesc(const PySemsScriptDesc& d)
 	: mod(d.mod), 
-	  dlg_class(d.dlg_class)
+       dlg_class(d.dlg_class),
+       dt(d.dt)
     {}
 
     PySemsScriptDesc(PyObject* mod, 
-		  PyObject* dlg_class)
+		     PyObject* dlg_class,
+		     DialogType dt)
 	: mod(mod),
-	  dlg_class(dlg_class)
+          dlg_class(dlg_class),
+          dt(dt)
     {}
 };
 
@@ -87,7 +100,7 @@ class PySemsFactory: public AmSessionFactory
     void setScriptPath(const string& path);
     bool checkCfg();
 
-    PySemsDialog* newDlg(const string& name);
+    AmSession* newDlg(const string& name);
     
  public:
     PySemsFactory(const string& _app_name);
@@ -96,30 +109,19 @@ class PySemsFactory: public AmSessionFactory
     AmSession* onInvite(const AmSipRequest& req);
 };
 
-
-class PySemsDialog : public AmB2BCallerSession
-{
+class PySemsDialogBase {
     PyObject  *py_mod;
     PyObject  *py_dlg;
 
+ protected:
     bool callPyEventHandler(char* name, char* fmt, ...);
 
-public:
-    AmDynInvoke* user_timer;
-    AmPlaylist playlist;
-
-    PySemsDialog();
-    PySemsDialog(AmDynInvoke* user_timer);
-    ~PySemsDialog();
+ public:
+    PySemsDialogBase();
+    ~PySemsDialogBase();
 
     // must be called before everything else.
     void setPyPtrs(PyObject *mod, PyObject *dlg);
-    
-    void onSessionStart(const AmSipRequest& req);
-
-    // @see AmEventHandler
-    void process(AmEvent* event);
-
 };
 
 #endif
