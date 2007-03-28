@@ -291,7 +291,10 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
     }
     try {
 
-      AmArgArray args;
+      // args need to be stored in string vector, 
+      // because stl copyconstructor does not copy 
+      // underlying c_str
+      vector<string> s_args;
       while (p<cmd_str.length()) {
 	p2 = cmd_str.find(' ', p);
 	if (p2 == string::npos) {
@@ -300,12 +303,18 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
 	  else 
 	    break;
 	}
-	args.push(cmd_str.substr(p, p2-p).c_str());	
-	// 			DBG("mod '%s' added arg '%s'\n", 
-	// 				fact_name.c_str(),
-	// 				cmd_str.substr(p, p2-p).c_str());
+	s_args.push_back(string(cmd_str.substr(p, p2-p)));
 	p=p2+1;
       }
+      AmArgArray args;
+      for (vector<string>::iterator it = s_args.begin(); 
+	   it != s_args.end(); it++) {
+	args.push(it->c_str());
+// 	DBG("mod '%s' added arg a '%s'\n", 
+// 	    fact_name.c_str(),
+// 	    it->c_str());
+      }
+
       AmDynInvokeFactory* di_f = AmPlugIn::instance()->getFactory4Di(fact_name);
       if(!di_f){
 	reply = "could not get '" + fact_name + "' factory\n";
