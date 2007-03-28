@@ -1,0 +1,8 @@
+
+This directory contains examples that illustrate how to 
+make use certain aspects of the SEMS framework rather than 
+be complete ready-to-use applications. The examples given 
+here can be a good start for further development, though.
+
+In each directory you will find a separate Readme file describing 
+the purpose of the example.

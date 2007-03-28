@@ -1,0 +1,53 @@
+Jukecall
+
+This is an example of how to use the B2ABSession - a kind of 
+b2bua where SEMS stays in the media path, or media relay. 
+
+Because SEMS stays in the path, its possible to react e.g. 
+on DTMF while in the call - and the jukecall example does 
+just this:
+First it plays a welcome message to the caller, then it 
+connects to the originally dialled number stripped by the
+first three digits. When the two parties are connected, 
+the first one can play some files into the call by pressing
+the keys on the phone.
+
+for example:
+
+123@example.org    SEMS jukecall       456@example.org
+
+|  INVITE sip:500456    |                       |
++---------------------->|                       |
+|  200 OK               |                       |
+|<----------------------|                       |
+|                       |                       |
+| play greeting.wav     |                       |
+|<======================|                       |
+|                       |                       |
+|                       |                       |
+|                       | INVITE sip:456        |
+|                       +---------------------->|
+|                       | 200 OK                |
+|                       |<----------------------|
+|                       |                       |
+|                       |                       |
+|          connected through relay              |
+|<=====================>|<=====================>|
+|                       |                       |
+|  DTMF 1               |                       |
+|-=-=-=-=-=-=-=-=-=-=-=>|                       |
+|                       |                       |
+|        play 1.wav     |   play 1.wav          |
+|<======================|======================>|
+|                       |                       |
+|          connected through relay              |
+|<=====================>|<=====================>|
+|                       |                       |
+|  DTMF 3               |                       |
+|-=-=-=-=-=-=-=-=-=-=-=>|                       |
+|                       |                       |
+|        play 3.wav     |   play 3.wav          |
+|<======================|======================>|
+|                       |                       |
+
+aso.
