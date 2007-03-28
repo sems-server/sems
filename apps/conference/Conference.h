@@ -73,7 +73,7 @@ public:
     static string JoinSound;
     static string DropSound;
     static string DialoutSuffix;
-	static PlayoutType m_PlayoutType;
+    static PlayoutType m_PlayoutType;
 
     ConferenceFactory(const string& _app_name);
     virtual AmSession* onInvite(const AmSipRequest&);
@@ -98,10 +98,14 @@ class ConferenceDialog : public AmSession
     int                           state;
     string                        dtmf_seq;
     bool                          dialedout;
+    string                        dialout_suffix;
     string                        dialout_id;
     auto_ptr<AmConferenceChannel> dialout_channel;
 
     bool                          allow_dialout;
+
+    string                        from_header;
+    string                        extra_headers;
 
     auto_ptr<AmSipRequest>        transfer_req;
 

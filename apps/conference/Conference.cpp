@@ -71,22 +71,23 @@ int ConferenceFactory::onLoad()
     JoinSound = cfg.getParameter("join_sound");
     DropSound = cfg.getParameter("drop_sound");
 
-	DialoutSuffix = cfg.getParameter("dialout_suffix");
-	if(DialoutSuffix.empty()){
-		WARN("No dialout_suffix has been configured in the conference plug-in:\n");
-		WARN("\t -> dial out will not be available\n");
-	}
-
-	string playout_type = cfg.getParameter("playout_type");
-	if (playout_type == "simple") {
-		m_PlayoutType = SIMPLE_PLAYOUT;
-		DBG("Using simple (fifo) buffer as playout technique.\n");
-	} else 	if (playout_type == "adaptive_jb") {
-		m_PlayoutType = JB_PLAYOUT;
-		DBG("Using adaptive jitter buffer as playout technique.\n");
-	} else {
-		DBG("Using adaptive playout buffer as playout technique.\n");
-	}
+    DialoutSuffix = cfg.getParameter("dialout_suffix");
+    if(DialoutSuffix.empty()){
+      WARN("No dialout_suffix has been configured in the conference plug-in:\n");
+      WARN("\t -> dial out will not be available unless P-Dialout-Suffix\n");
+      WARN("\t -> header parameter is passed to conference plug-in\n");
+    }
+    
+    string playout_type = cfg.getParameter("playout_type");
+    if (playout_type == "simple") {
+      m_PlayoutType = SIMPLE_PLAYOUT;
+      DBG("Using simple (fifo) buffer as playout technique.\n");
+    } else 	if (playout_type == "adaptive_jb") {
+      m_PlayoutType = JB_PLAYOUT;
+      DBG("Using adaptive jitter buffer as playout technique.\n");
+    } else {
+      DBG("Using adaptive playout buffer as playout technique.\n");
+    }
 
     return 0;
 }
@@ -134,8 +135,36 @@ void ConferenceDialog::onStart()
 
 void ConferenceDialog::onSessionStart(const AmSipRequest& req)
 {
-    allow_dialout = !ConferenceFactory::DialoutSuffix.empty(); 
+    int i, len;
 
+    string app_param_hdr = getHeader(req.hdrs, PARAM_HDR);
+    if (app_param_hdr.length()) {
+        from_header = get_header_keyvalue(app_param_hdr, "Dialout-From");
+	extra_headers = get_header_keyvalue(app_param_hdr, "Dialout-Extra");
+	dialout_suffix = get_header_keyvalue(app_param_hdr, "Dialout-Suffix");      
+    } else {
+        DBG("Warning: P-Dialout- style headers are deprecated."
+	    " Please use P-App-Param header instead.\n");
+        from_header = getHeader(req.hdrs, "P-Dialout-From");
+	extra_headers = getHeader(req.hdrs, "P-Dialout-Extra");
+	dialout_suffix = getHeader(req.hdrs, "P-Dialout-Suffix");
+    }
+
+    len = extra_headers.length();
+    for (i = 0; i < len; i++) {
+        if (extra_headers[i] == '|') extra_headers[i] = '\n';
+    }
+
+    if (dialout_suffix.length() == 0) {
+        if (!ConferenceFactory::DialoutSuffix.empty()) {
+	    dialout_suffix = ConferenceFactory::DialoutSuffix;
+	} else {
+	    dialout_suffix = "";
+	}
+    }
+    
+    allow_dialout = dialout_suffix.length() > 0;
+    
     setupAudio();
 }
 
@@ -406,7 +435,9 @@ void ConferenceDialog::onDtmf(int event, int duration)
 
 void ConferenceDialog::createDialoutParticipant(const string& uri_user)
 {
-    string uri = "sip:" + uri_user + ConferenceFactory::DialoutSuffix;
+    string uri;
+
+    uri = "sip:" + uri_user + dialout_suffix;
 
     dialout_channel.reset(AmConferenceStatus::getChannel(getLocalTag(),getLocalTag()));
 
@@ -422,14 +453,23 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
     dialout_dlg.local_tag    = dialout_id;
     dialout_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
 
-    dialout_dlg.local_party  = dlg.local_party;
+    if (from_header.length() > 0) {
+	dialout_dlg.local_party  = from_header;
+    } else {
+	dialout_dlg.local_party  = dlg.local_party;
+    }
     dialout_dlg.remote_party = uri;
     dialout_dlg.remote_uri   = uri;
 
     string body;
     int local_port = dialout_session->rtp_str.getLocalPort();
     dialout_session->sdp.genRequest(AmConfig::LocalIP,local_port,body);
-    dialout_dlg.sendRequest("INVITE","application/sdp",body,"");
+
+    if (extra_headers.length() == 0) {
+	extra_headers = "";
+    }
+
+    dialout_dlg.sendRequest("INVITE","application/sdp",body,extra_headers);
 
     dialout_session->start();
 
