@@ -314,14 +314,16 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req)
   else if(plugin_name == "sems"){
 
     plugin_name = getHeader(req.hdrs,APPNAME_HDR);
-    if(plugin_name.empty())
-      throw string("AmSessionContainer::createSession: missing '%s' header.\n",APPNAME_HDR);
+    if(plugin_name.empty()) {
+      string ex = "AmSessionContainer::createSession: missing '"  APPNAME_HDR   "' header.\n";
+      throw ex; 
+    }
   }
 
   AmSessionFactory* state_factory = AmPlugIn::instance()->getFactory4App(plugin_name);
   if(!state_factory) {
 
-    ERROR("application '%s' not found !", plugin_name.c_str());
+    ERROR("application '%s' not found !\n", plugin_name.c_str());
     throw string("application '" + plugin_name + "' not found !");
   }
 	    
