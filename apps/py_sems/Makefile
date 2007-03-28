@@ -30,7 +30,8 @@ PYTHON_DYNLOAD_MODULES = $(wildcard $(PYTHON_LIBDIR)/lib-dynload/*.so) \
 PYTHON_module_cflags = -I$(PYTHON_DIR) -Isip/
 PYTHON_module_ldflags = -Xlinker --export-dynamic \
 			-L$(PYTHON_LIBDIR)/config \
-			-lpython$(PY_VER) $(wildcard sip/*.o)
+			-lpython$(PY_VER) 
+
 #\
 #$(PYTHON_DYNLOAD_MODULES)
 
@@ -87,6 +88,8 @@ python_files:
 
 endif
 
+module_extra_objs = sip/py_sems_lib.a
+
 extra_clean = clean_py_sems_lib
 
 include $(COREPATH)/plug-in/Makefile.app_module
@@ -103,4 +106,8 @@ install_python_files: $(modules-prefix)/$(modules-dir)
 
 .PHONY: clean_py_sems_lib
 clean_py_sems_lib:
-	cd sip; $(MAKE) clean
+	$(MAKE) -C sip/ clean
+	rm -f sip/py_sems_lib.a
+
+sip/py_sems_lib.a: 
+	$(MAKE) -C sip/ py_sems_lib.a

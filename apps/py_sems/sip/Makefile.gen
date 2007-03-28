@@ -5,7 +5,7 @@ HFILES = sipAPIpy_sems_lib.h sippy_sems_libPySemsDialog.h sippy_sems_libAmAudioF
 CC = gcc
 CXX = g++
 LINK = g++
-CPPFLAGS = -I. -I$(COREPATH) -I/usr/include/python2.3
+CPPFLAGS = -I. -I$(COREPATH) -I/usr/include/python2.4
 CFLAGS = -pipe -fPIC -O2 -w
 CXXFLAGS = -Wall -Wno-reorder -g -pipe -fPIC -O2 -w
 LFLAGS = -g -shared -Wl,--version-script=py_sems_lib.exp
@@ -35,9 +35,9 @@ $(TARGET): $(OFILES)
 $(OFILES): $(HFILES)
 
 install: $(TARGET)
-	@test -d $(DESTDIR)/usr/lib/python2.3/site-packages || mkdir -p $(DESTDIR)/usr/lib/python2.3/site-packages
-	cp -f $(TARGET) $(DESTDIR)/usr/lib/python2.3/site-packages/$(TARGET)
-	strip $(DESTDIR)/usr/lib/python2.3/site-packages/$(TARGET)
+	@test -d $(DESTDIR)/usr/lib/python2.4/site-packages || mkdir -p $(DESTDIR)/usr/lib/python2.4/site-packages
+	cp -f $(TARGET) $(DESTDIR)/usr/lib/python2.4/site-packages/$(TARGET)
+	strip $(DESTDIR)/usr/lib/python2.4/site-packages/$(TARGET)
 
 clean:
 	-rm -f $(TARGET)

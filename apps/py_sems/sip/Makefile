@@ -1,17 +1,16 @@
 
 COREPATH ?=../../../core
 
-PY_VER = 2.3
+AR		?= ar
+RANLIB		?= ranlib
+
+PYTHON_VERSION ?= 2.4
+PY_VER = $(PYTHON_VERSION)
+
 SIP_FILES = $(wildcard *.sip)
+lib_name = py_sems_lib.a
 
-.PHONY: all
-all: py_sems.so
-
-
-.PHONY: clean
-clean:
-	$(MAKE) -f Makefile.gen clean
-
+include Makefile.gen
 
 .PHONY: cleaner
 cleaner: clean
@@ -20,5 +19,8 @@ cleaner: clean
 Makefile.gen: configure.py $(SIP_FILES)
 	python$(VER) configure.py
 
-py_sems.so: Makefile.gen $(SIP_FILES)
-	$(MAKE) -f Makefile.gen COREPATH=$(COREPATH)
+$(lib_name): $(OFILES)  Makefile.gen
+	if [ -f $(lib_name) ]; then rm $(RMFLAGS) $(lib_name) ; fi
+	$(AR) $(ARFLAGS) $(lib_name) $(OFILES)
+	$(RANLIB) $(lib_name)
+
