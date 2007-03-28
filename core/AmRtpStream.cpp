@@ -424,7 +424,8 @@ int AmRtpStream::nextPacket(AmRtpPacket& p)
   jitter_mut.lock();
   timersub(&now,&last_recv_time,&diff);
   if(AmConfig::DeadRtpTime && 
-     (diff.tv_sec > AmConfig::DeadRtpTime)){
+     (diff.tv_sec > 0) &&
+     ((unsigned int)diff.tv_sec > AmConfig::DeadRtpTime)){
     WARN("RTP Timeout detected. Last received packet is too old.\n");
     DBG("diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
     jitter_mut.unlock();
