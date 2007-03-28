@@ -1,9 +1,9 @@
 
-
 class PySemsB2ABDialog
 {
 %TypeHeaderCode
 #include "../PySemsB2ABDialog.h"
+#include "../../../core/AmB2ABSession.h"
 %End
 
 public:
@@ -30,14 +30,50 @@ public:
     virtual void onBye(const AmSipRequest& /* req */);
     virtual void onDtmf(int /* event */, int /* duration_msec */);
 
-
     void setInput(AmAudioFile* /In/ /*in*/);
     void setOutput(AmAudioFile* /In/ /*out*/);
     void setInOut(AmAudioFile* /In/ /*in*/, AmAudioFile* /*out*/);
 
     virtual void process(AmEvent* /*In,Out*/);
+    
+    void connectCallee(const string& /*remote_party*/,
+	 	       const string& /*remote_uri*/,
+		       const string& /*local_party*/,
+		       const string& /*local_uri*/);
+    void reconnectAudio(); 
 
+    int getCalleeStatus();
 
+protected:
+  virtual AmB2ABCalleeSession* createCalleeSession();
+
+  virtual void onB2ABEvent(B2ABEvent* /*In,Out*/);
+
+  virtual void relayEvent(AmEvent* ev);	
 private:
-    PySemsB2ABDialog(const PySemsB2ABDialog&);
+  PySemsB2ABDialog(const PySemsB2ABDialog&);
 };
+
+class AmB2ABCalleeSession
+{
+%TypeHeaderCode
+#include "../../../core/AmB2ABSession.h"
+%End
+public:
+  AmB2ABCalleeSession(const string& /*other_local_tag*/);
+
+  void onB2ABEvent(B2ABEvent* /*In,Out*/);
+  void reconnectAudio();
+private:
+  AmB2ABCalleeSession(const AmB2ABCalleeSession& /* other_s*/);
+
+};
+
+class B2ABEvent
+{
+%TypeHeaderCode
+#include "../../../core/AmB2ABSession.h"
+%End
+  B2ABEvent(int /* ev_id */);
+};
+
