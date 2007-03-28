@@ -226,3 +226,57 @@ int AmAudioDelay::read(unsigned int user_ts, unsigned int size) {
   sarr.read((unsigned int) (user_ts  - delay*8000.0), (short*)  ((unsigned char*) samples), size >> 1); 
   return size;
 }
+
+AmAudioFrontlist::AmAudioFrontlist(AmEventQueue* q) 
+  : AmPlaylist(q), back_audio(NULL)
+{
+}
+
+AmAudioFrontlist::AmAudioFrontlist(AmEventQueue* q, AmAudio* back_audio) 
+  : AmPlaylist(q), back_audio(back_audio)
+{
+}
+
+AmAudioFrontlist::~AmAudioFrontlist() {
+//   ba_mut.lock();
+//   if (back_audio)
+//     back_audio->close();
+//   ba_mut.unlock();
+}
+
+void AmAudioFrontlist::setBackAudio(AmAudio* new_ba) {
+  ba_mut.lock();
+  back_audio = new_ba;
+  ba_mut.unlock();
+}
+
+int AmAudioFrontlist::put(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
+  // stay consistent with Playlist - if empty return size
+  int res = size; 
+  ba_mut.lock();
+
+  if (isEmpty()) {
+    if (back_audio) 
+      res = back_audio->put(user_ts, buffer, size);
+  } else {
+    res = AmPlaylist::put(user_ts, buffer, size);
+  }
+
+  ba_mut.unlock();
+  return res;
+}
+
+int AmAudioFrontlist::get(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
+  // stay consistent with Playlist - if empty return size
+  int res = size; 
+
+  ba_mut.lock();
+  if (isEmpty()) {
+    if (back_audio) 
+      res = back_audio->get(user_ts, buffer, size);
+  } else {
+    res = AmPlaylist::get(user_ts, buffer, size);
+  }
+  ba_mut.unlock();
+  return res;
+}

@@ -29,6 +29,8 @@
 #define _AmAdvancedAudio_h_
 
 #include "AmAudio.h"
+#include "AmPlaylist.h"
+
 #include "AmThread.h"
 #include "amci/codecs.h"
 
@@ -85,6 +87,31 @@ class AmAudioQueue : public AmAudio {
 };
 
 /**
+ * AmAudioFrontlist is an AmAudio device, that has a playlist
+ * in front of a AmAudio entry, the 'back' device. The back device
+ * is only used if the playlist is empty. - This can be useful when 
+ * for example announcements should be played to the participant 
+ * while in a conference.
+ *
+ */
+class AmAudioFrontlist : public AmPlaylist {
+  AmMutex ba_mut;
+  AmAudio* back_audio;
+ public:
+
+  AmAudioFrontlist(AmEventQueue* q);
+  AmAudioFrontlist(AmEventQueue* q, AmAudio* back_audio);
+  ~AmAudioFrontlist();
+
+  void setBackAudio(AmAudio* new_ba);
+
+ protected:
+  int put(unsigned int user_ts, unsigned char* buffer, unsigned int size);
+  int get(unsigned int user_ts, unsigned char* buffer, unsigned int size);
+};
+
+
+/**
  * \brief \ref AmAudio that directly connects input and output
  *
  *  AmAudioBridge simply connects input and output
@@ -111,7 +138,6 @@ class AmAudioDelay : public AmAudio {
   AmAudioDelay(float delay_sec);
   ~AmAudioDelay();
  protected:
-
   int write(unsigned int user_ts, unsigned int size);
   int read(unsigned int user_ts, unsigned int size);
 };
