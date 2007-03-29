@@ -1,0 +1,22 @@
+simple_conference - simple example of conference mixer
+
+Due to the dialout function in the 'conference' application 
+plugin, the source code of the conference plugin is somewhat
+obfuscated. Therefore this simple shows how simple it 
+actually is to use the conference mixer provided by the core:
+The Session only needs to get a conference "channel" (a 
+connection to the mixer) from the conference "status" (which 
+is one conference room), and set it as input and output. 
+
+It could actually be made even simpler, but one interesting 
+feature is left in here: if someone enters or leaves the 
+conference room, a sound is played to everyone. This shows how
+useful the playlist is: We can have the conference channel, 
+our connector to the conference, always in the playlist, and 
+if we want to play a file, we can simply put it in front of the 
+playlist. When the file later is finished, the playlist 
+automatically selects the next item, which is again out 
+conference channel.
+
+Hopefully this example will be a good start for further custom
+conference application development.
