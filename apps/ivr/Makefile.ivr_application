@@ -1,8 +1,11 @@
 # generic Makefile for ivr applications
 .DEFAULT_GOAL := all
 
-include ../../Makefile.defs
-include ../ivr/Makefile.defs
+COREPATH ?= ../../core
+IVRPATH ?= ../ivr
+
+include $(COREPATH)/../Makefile.defs
+include $(IVRPATH)/Makefile.defs
 
 # 
 LIB_INSTALLDIR?="/usr/local/lib/sems/ivr"
@@ -32,7 +35,7 @@ clean:
 
 .PHONY: compile
 compile: 
-	python${PYTHON_VERSION} ../ivr/py_comp -q .
+	python${PYTHON_VERSION} $(IVRPATH)/py_comp -q .
 
 .PHONY: install
 install: all
@@ -58,7 +61,7 @@ fulltest:
 	find | grep /Test | grep -v ".svn" | grep \\.py$$ | sed -e "s#^./##g" | bash -e - 
 
 check: 
-	find ${LIBDIR}/ | grep \\.py$$ | grep -v Test | PYTHONPATH=$(PYTHONPATH):../ivr/moc xargs pychecker ${PYCHECKERARGS} 
+	find ${LIBDIR}/ | grep \\.py$$ | grep -v Test | PYTHONPATH=$(PYTHONPATH):$(IVRPATH)/moc xargs pychecker ${PYCHECKERARGS} 
 
 doccheck: 
 	find ${LIBDIR}/  | grep \\.py$$ | grep -v Test | xargs pychecker ${PYCHECKERARGS} ${PYCHECKERDOCARGS}
