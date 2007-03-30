@@ -1,0 +1,11 @@
+
+MyCC
+
+This is a calling card application.
+Caller is asked for a PIN which
+is verified against an accounting
+function provided by a cc_acc interface.
+If PIN is correct, the caller
+may enter a number to call, and is 
+connected to it in b2bua mode.
+

@@ -1,0 +1,22 @@
+SEMS application development tutorial examples
+
+These are the examples from the application development tutorial 
+which is available from the SEMS website: 
+http://www.iptel.org/sems/sems_application_development_tutorial
+
+The examples here compile fine with 'make' in their respective 
+directories. Depending on your python version, you may want to use
+e.g. 'make PYTHON_VERSION=2.4' for the python examples.
+
+The tutorial consists of the PDF document 
+(http://www.iptel.org/files/semsng-app_module_tutorial.pdf) and  
+the examples, and there are installation instructions on the 
+website.
+
+A sample configuration set is available at
+http://www.iptel.org/files/sems-tutorial-config.tgz
+
+For the calling card example, you may want to download some sample
+wav files from http://www.iptel.org/files/ccard_wav.tgz
+
+

@@ -1,0 +1,7 @@
+
+MyAnnouceapp
+
+This app plays a file back to the 
+caller. The file is configured
+with the annoucement_file config 
+option.

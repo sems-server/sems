@@ -1,0 +1,7 @@
+
+MyConfigurableApp
+
+This is a template for a SEMS 0.10.0
+application plug-in written in C++. 
+If can be configured with its own
+configuration file.

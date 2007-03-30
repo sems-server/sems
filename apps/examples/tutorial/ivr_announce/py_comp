@@ -1,0 +1,2 @@
+import compileall
+compileall.main()
