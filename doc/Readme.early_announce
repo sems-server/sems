@@ -65,7 +65,7 @@ modparam("rr", "enable_full_lr", 1)
 modparam( "avpops", "avp_aliases", "sess_params=i:66" )
 
 # this is to be appended to the invite
-modparam("tm", "tw_append","early_headers:P-Iptel-Param=avp[$sess_params]")
+modparam("tm", "tw_append","early_headers:P-App-Name=avp[$sess_params]")
 
 # -------------------------  request routing logic -------------------
 # main routing logic

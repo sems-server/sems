@@ -10,7 +10,7 @@ Example ser configuration appends:
 
 #appends: parameter for announce_transfer
 modparam( "tm", "tw_append",
-   "announce_transfer_headers:P-Iptel-Param=avp[$refer_to]")
+   "announce_transfer_headers:P-App-Param=avp[$refer_to]")
 
 # appends for REFER NOTIFYs
 modparam( "tm", "tw_append",

@@ -27,7 +27,7 @@ Authentication Modes:
  in RFC3261).
 
  The transfer request sent out has two session parameters (set in
- P-Iptel-Param header), which are needed by the entity taking the call: 
+ P-App-Param header), which are needed by the entity taking the call: 
 
   Transfer-RR  : route set of the call
   Transfer-NH  : next hop 
