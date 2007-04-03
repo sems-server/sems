@@ -32,7 +32,7 @@ public:
 
     void setInput(AmAudioFile* /In/ /*in*/);
     void setOutput(AmAudioFile* /In/ /*out*/);
-    void setInOut(AmAudioFile* /In/ /*in*/, AmAudioFile* /*out*/);
+    void setInOut(AmAudioFile* /In/ /*in*/, AmAudioFile* /In/ /*out*/);
 
     virtual void process(AmEvent* /*In,Out*/);
     
@@ -40,14 +40,16 @@ public:
 	 	       const string& /*remote_uri*/,
 		       const string& /*local_party*/,
 		       const string& /*local_uri*/);
-    void reconnectAudio(); 
+
+    void connectSession();
+    void disconnectSession();
 
     int getCalleeStatus();
 
 protected:
-  virtual AmB2ABCalleeSession* createCalleeSession();
+  virtual AmB2ABCalleeSession* createCalleeSession() /Factory/;
 
-  virtual void onB2ABEvent(B2ABEvent* /*In,Out*/);
+  virtual void onB2ABEvent(B2ABEvent* /In,Out/);
 
   virtual void relayEvent(AmEvent* ev);	
 private:
@@ -63,7 +65,10 @@ public:
   AmB2ABCalleeSession(const string& /*other_local_tag*/);
 
   void onB2ABEvent(B2ABEvent* /*In,Out*/);
-  void reconnectAudio();
+
+  void connectSession();
+  void disconnectSession();
+
 private:
   AmB2ABCalleeSession(const AmB2ABCalleeSession& /* other_s*/);
 
