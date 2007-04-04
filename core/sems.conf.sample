@@ -59,7 +59,7 @@ ser_socket_name=/tmp/ser_sock
 # 
 # - sets the path to the plug-ins
 # - may be absolute or relative to CWD
-plugin_path=/usr/local/lib/sems/plug-in
+plugin_path=/usr/local/lib/sems/plug-in/
 
 # optional parameter: load_plugins=<modules list>
 # 
