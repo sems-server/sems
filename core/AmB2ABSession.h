@@ -66,11 +66,9 @@ struct B2ABConnectAudioEvent: public B2ABEvent
   AmSessionAudioConnector* connector;
   bool first;
 
-  B2ABConnectAudioEvent(AmSessionAudioConnector* connector,
-			bool first)
+  B2ABConnectAudioEvent(AmSessionAudioConnector* connector)
     : B2ABEvent(B2ABConnectAudio),
-       connector(connector),
-       first(first)
+       connector(connector)
   {}
 };
 
@@ -163,9 +161,6 @@ class AmB2ABSession: public AmSession
   /** reference to the audio connector - caution: you may not delete this! */
   AmSessionAudioConnector* connector;
 
-
-  /** set in&out to NULL and release connector */
-  void releaseAudio();
  public:
 
   AmB2ABSession();
@@ -173,6 +168,13 @@ class AmB2ABSession: public AmSession
   ~AmB2ABSession();
 
   void onBye(const AmSipRequest& req);
+
+  /** connect audio stream to the other session */
+  void connectSession();
+
+  /** reverse operation of connectSession */
+  void disconnectSession();
+
 };
 
 class AmB2ABCalleeSession;
@@ -210,10 +212,9 @@ class AmB2ABCallerSession: public AmB2ABSession
 		     const string& local_party,
 		     const string& local_uri);
 
-  void reconnectAudio(); 
-
   // @see AmB2ABSession
   void terminateOtherLeg();
+
  protected:
   void onB2ABEvent(B2ABEvent* ev);
 };
@@ -228,8 +229,6 @@ class AmB2ABCalleeSession: public AmB2ABSession
   void onB2ABEvent(B2ABEvent* ev);
   void onSessionStart(const AmSipReply& rep);
   void onSipReply(const AmSipReply& rep);	
-
-  void reconnectAudio(); 
 };
 
 /**
@@ -252,19 +251,21 @@ class AmAudioDelayBridge : public AmAudio {
  * \brief connects the audio of two sessions together
  */
 class AmSessionAudioConnector {
+
  private:
   AmAudioDelayBridge audio_connectors[2];
-  int refcnt;
-  ~AmSessionAudioConnector();
-  string tag_sess1;
-  string tag_sess2;
+  string tag_sess[2];
+
  public:
   /** create a connector, connect audio to sess */
-  AmSessionAudioConnector(AmSession* sess, bool first);
+  AmSessionAudioConnector() {}
+  ~AmSessionAudioConnector() {}
+
   /** connect audio to sess */
-  void connectSession(AmSession* sess, bool first);
+  void connectSession(AmSession* sess);
+
   /** disconnect session */
-  void disconnectSession(AmSession* sess);
+  bool disconnectSession(AmSession* sess);
 };
 
 

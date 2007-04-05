@@ -88,23 +88,36 @@ void AmB2ABSession::relayEvent(AmEvent* ev)
     AmSessionContainer::instance()->postEvent(other_id,ev);
 }
 
-void AmB2ABSession::releaseAudio() {
-  if (connector) 
-    connector->disconnectSession(this);
+void AmB2ABSession::connectSession()
+{
+    if (!connector)
+	return;
 
-  connector=NULL;
+    connector->connectSession(this);
+    AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void AmB2ABSession::disconnectSession()
+{
+    if (!connector)
+	return;
+
+    if (connector->disconnectSession(this)){
+	delete connector;
+	connector = NULL;
+    }
 }
 
 void AmB2ABSession::onBye(const AmSipRequest& req) {
   terminateOtherLeg();
-  releaseAudio();
+  disconnectSession();
   setStopped();
 }
 
 void AmB2ABSession::terminateLeg()
 {
   dlg.bye();
-  releaseAudio();
+  disconnectSession();
   setStopped();
 }
 
@@ -141,8 +154,7 @@ void AmB2ABCallerSession::onB2ABEvent(B2ABEvent* ev)
     assert(ca);
 		
     connector = ca->connector;
-    connector->connectSession(this, ca->first);
-    AmMediaProcessor::instance()->addSession(this, callgroup);
+    connectSession();
 
     return;
   } break;
@@ -263,29 +275,29 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
 void AmB2ABCalleeSession::onSessionStart(const AmSipReply& rep) {
   DBG("onSessionStart of callee session\n");
   // connect our audio
-  connector = new AmSessionAudioConnector(this, true);
+  connector = new AmSessionAudioConnector();
   // acc to mediaprocessor
   AmMediaProcessor::instance()->addSession(this, callgroup);
-  relayEvent(new B2ABConnectAudioEvent(connector, false));
+  relayEvent(new B2ABConnectAudioEvent(connector));
 }
 
-void AmB2ABCalleeSession::reconnectAudio() {
-  if (connector) {
-    connector->connectSession(this, true);
-    AmMediaProcessor::instance()->addSession(this, callgroup);
-  } else {
-    ERROR("can not connect audio of not connected session.\n");
-  }
-}
+// void AmB2ABCalleeSession::reconnectAudio() {
+//   if (connector) {
+//     connector->connectSession(this, true);
+//     AmMediaProcessor::instance()->addSession(this, callgroup);
+//   } else {
+//     ERROR("can not connect audio of not connected session.\n");
+//   }
+// }
 
-void AmB2ABCallerSession::reconnectAudio() {
-  if (connector) {
-    connector->connectSession(this, false);
-    AmMediaProcessor::instance()->addSession(this, callgroup);
-  } else {
-    ERROR("can not connect audio of not connected session.\n");
-  }
-}
+// void AmB2ABCallerSession::reconnectAudio() {
+//   if (connector) {
+//     connector->connectSession(this, false);
+//     AmMediaProcessor::instance()->addSession(this, callgroup);
+//   } else {
+//     ERROR("can not connect audio of not connected session.\n");
+//   }
+// }
 
 void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep) {
   int status_before = dlg.getStatus();
@@ -305,39 +317,43 @@ void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep) {
 
 
 // ----------------------- SessionAudioConnector -----------------
-AmSessionAudioConnector::AmSessionAudioConnector(AmSession* sess, bool first) {
-  connectSession(sess, first);
+
+void AmSessionAudioConnector::connectSession(AmSession* sess) 
+{
+    const string& tag = sess->getLocalTag();
+
+    if(!tag_sess[0].length()){
+	tag_sess[0] = tag;
+	sess->setInOut(&audio_connectors[0],&audio_connectors[1]);
+    }
+    else if(!tag_sess[1].length()){
+	tag_sess[1] = tag;
+	sess->setInOut(&audio_connectors[1],&audio_connectors[0]);
+    }
+    else {
+	ERROR("connector full!\n");
+    }
 }
 
-AmSessionAudioConnector::~AmSessionAudioConnector() {
-}
+bool AmSessionAudioConnector::disconnectSession(AmSession* sess) 
+{
+    const string& tag = sess->getLocalTag();
 
-void AmSessionAudioConnector::connectSession(AmSession* sess, bool first) {
-  if (first) {
-    tag_sess1 = sess->getLocalTag();
-    sess->setInOut(&audio_connectors[0],&audio_connectors[1]);
-  } else {
-    tag_sess2 = sess->getLocalTag();
-    sess->setInOut(&audio_connectors[1],&audio_connectors[0]);		
-  }
-}
-
-void AmSessionAudioConnector::disconnectSession(AmSession* sess) {
-  if (tag_sess1 == sess->getLocalTag()) {
-    tag_sess1.clear();
-    sess->setInOut(NULL, NULL);
-    if ((!tag_sess1.length())&& (!tag_sess2.length())) {
-      delete this; // both are disconnected -> destroy self
-    } 
-  } else if (tag_sess2 == sess->getLocalTag()) {
-    tag_sess2.clear();
-    sess->setInOut(NULL, NULL);
-    if ((!tag_sess1.length())&& (!tag_sess2.length())){
-      delete this; // both are disconnected -> destroy self
-    } 
-  } else {
-    ERROR("disconnecting from wrong AmSessionAudioConnector\n");
-  }
+    if (tag_sess[0] == tag) {
+	tag_sess[0].clear();
+	sess->setInOut(NULL, NULL);
+	return tag_sess[1].length();
+    }
+    else if (tag_sess[1] == tag) {
+	tag_sess[1].clear();
+	sess->setInOut(NULL, NULL);
+	return tag_sess[0].length();
+    }
+    else {
+	ERROR("disconnecting from wrong AmSessionAudioConnector\n");
+    }
+    
+    return false;
 }
 
 // ----------------------- AudioDelayBridge -----------------

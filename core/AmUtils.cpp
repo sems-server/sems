@@ -801,11 +801,11 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
     return "";
 }
 
-/** get the value of key @param name from P-Iptel-Param header in hdrs */
+/** get the value of key @param name from \ref PARAM_HDR header in hdrs */
 string get_session_param(const string& hdrs, const string& name) {
   string iptel_app_param = getHeader(hdrs, PARAM_HDR);
   if (!iptel_app_param.length()) {
-    //      DBG("call parameters header P-Iptel-Param not found "
+    //      DBG("call parameters header PARAM_HDR not found "
     // 	 "(need to configure ser's tw_append?).\n");
     return "";
   }
