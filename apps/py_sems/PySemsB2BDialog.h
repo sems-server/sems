@@ -23,10 +23,10 @@
 #ifndef PY_SEMSB2BDIALOG_H
 #define PY_SEMSB2BDIALOG_H
 
+#include "PySems.h"
 #include "AmApi.h"
 #include "AmB2BSession.h"
 #include "AmPlaylist.h"
-#include "PySems.h"
 
 class PySemsB2BDialog : public AmB2BCallerSession, 
   public PySemsDialogBase

@@ -105,9 +105,9 @@ install_python_files: $(modules-prefix)/$(modules-dir)
 
 .PHONY: clean_py_sems_lib
 clean_py_sems_lib:
-	$(MAKE) -C sip/ cleaner
+	COREPATH=../$(COREPATH) $(MAKE) -C sip/ cleaner
 	rm -f py/*.pyc
 
 sip/py_sems_lib.a:
-	$(MAKE) -C sip/ Makefile.gen
-	$(MAKE) -C sip/ py_sems_lib.a
+	COREPATH=../$(COREPATH) $(MAKE) -C sip/ Makefile.gen
+	COREPATH=../$(COREPATH) $(MAKE) -C sip/ py_sems_lib.a
