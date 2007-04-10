@@ -1,1 +1,0 @@
-{ global: initpy_sems_lib; local: *; };

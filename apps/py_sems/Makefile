@@ -59,7 +59,8 @@ module_cflags  = \
 	$(PY_SEMS_TTS_module_cflags) \
 	$(module_additional_cflags)
 
-extra_target  = python_files
+module_extra_objs = sip/py_sems_lib.a
+extra_target  = sip/py_sems_lib.a python_files
 extra_install = install_python_files
 
 py_src = $(notdir $(wildcard py/*.py))
@@ -88,8 +89,6 @@ python_files:
 
 endif
 
-module_extra_objs = sip/py_sems_lib.a
-
 extra_clean = clean_py_sems_lib
 
 include $(COREPATH)/plug-in/Makefile.app_module
@@ -106,9 +105,9 @@ install_python_files: $(modules-prefix)/$(modules-dir)
 
 .PHONY: clean_py_sems_lib
 clean_py_sems_lib:
-	$(MAKE) -C sip/ clean
-	rm -f sip/py_sems_lib.a
+	$(MAKE) -C sip/ cleaner
 	rm -f py/*.pyc
 
-sip/py_sems_lib.a: 
+sip/py_sems_lib.a:
+	$(MAKE) -C sip/ Makefile.gen
 	$(MAKE) -C sip/ py_sems_lib.a
