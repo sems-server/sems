@@ -207,8 +207,11 @@ void AmB2ABCallerSession::relayEvent(AmEvent* ev)
 }
 
 void AmB2ABCallerSession::setupCalleeSession(AmB2ABCalleeSession* callee_session,
-					     B2ABConnectLegEvent* ev) {
+					     B2ABConnectLegEvent* ev) 
+{
   other_id = AmSession::getNewId();
+  //  return;
+  assert(callee_session);
 
   AmSipDialog& callee_dlg = callee_session->dlg;
   callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
