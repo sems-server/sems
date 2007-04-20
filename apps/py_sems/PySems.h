@@ -79,18 +79,19 @@ struct PySemsScriptDesc
 class PySemsFactory: public AmSessionFactory
 {
     PyObject* py_sems_module;
-    string script_path;
+/*     string script_path; */
     string default_script;
 
     map<string,PySemsScriptDesc> mod_reg;
 
     AmDynInvokeFactory* user_timer_fact;
 
-    void init_python_interpreter();
+    void init_python_interpreter(const string& script_path);
+    void set_sys_path(const string& script_path);
     void import_py_sems_builtins();
 
-    void import_module(const char* modname);
-    void import_object(PyObject* m, 
+    PyObject* import_module(const char* modname);
+    void import_object(PyObject* m,
 		       char* name, 
 		       PyTypeObject* type);
 

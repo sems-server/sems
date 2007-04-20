@@ -263,6 +263,9 @@ string get_session_param(const string& hdrs, const string& name);
 void init_random();
 unsigned int get_random();
 
+// add a directory to an environement variable
+void add_env_path(const char* name, const string& path);
+
 #endif
 
 // Local Variables:

@@ -45,6 +45,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include <regex.h>
+
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX 104
 #endif
@@ -838,4 +840,37 @@ unsigned int get_random()
   _s_rand_mut.unlock();
     
   return r;
+}
+
+
+// Warning: static var is not mutexed
+// Call this func only in init code.
+//
+void add_env_path(const char* name, const string& path)
+{
+    string var(path);
+    char*  old_path=0;
+
+    regex_t path_reg;
+
+    assert(name);
+    if((old_path = getenv(name)) != 0) {
+	if(strlen(old_path)){
+	    
+	    if(regcomp(&path_reg,("[:|^]" + path + "[:|$]").c_str(),REG_NOSUB)){
+		ERROR("could not compile regex\n");
+		return;
+	    }
+	    
+	    if(!regexec(&path_reg,old_path,0,0,0)) { // match
+
+		return; // do nothing
+	    }
+
+	    var += ":" + string(old_path);
+	}
+    }
+
+    DBG("setting %s to: '%s'\n",name,var.c_str());
+    setenv("PYTHONPATH",var.c_str(),1);
 }

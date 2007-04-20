@@ -77,14 +77,15 @@ struct IvrScriptDesc
 class IvrFactory: public AmSessionFactory
 {
     PyObject* ivr_module;
-    string script_path;
+    //string script_path;
     string default_script;
 
     map<string,IvrScriptDesc> mod_reg;
 
     AmDynInvokeFactory* user_timer_fact;
 
-    void init_python_interpreter();
+    void init_python_interpreter(const string& script_path);
+    void set_sys_path(const string& script_path);
     void import_ivr_builtins();
 
     void import_object(PyObject* m, 
@@ -94,7 +95,7 @@ class IvrFactory: public AmSessionFactory
     /** @return true if everything ok */
     bool loadScript(const string& path);
 
-    void setScriptPath(const string& path);
+    //void setScriptPath(const string& path);
     bool checkCfg();
 
     IvrDialog* newDlg(const string& name);

@@ -183,27 +183,27 @@ IvrFactory::IvrFactory(const string& _app_name)
 {
 }
 
-void IvrFactory::setScriptPath(const string& path)
-{
-    string python_path = script_path = path;
+// void IvrFactory::setScriptPath(const string& path)
+// {
+//     string python_path = script_path = path;
 
     
-    if(python_path.length()){
+//     if(python_path.length()){
 
-	python_path = AmConfig::PlugInPath + ":" + python_path;
-    }
-    else
-	python_path = AmConfig::PlugInPath;
+// 	python_path = AmConfig::PlugInPath + ":" + python_path;
+//     }
+//     else
+// 	python_path = AmConfig::PlugInPath;
 
-    char* old_path=0;
-    if((old_path = getenv("PYTHONPATH")) != 0)
-	if(strlen(old_path))
-	    python_path += ":" + string(old_path);
+//     char* old_path=0;
+//     if((old_path = getenv("PYTHONPATH")) != 0)
+// 	if(strlen(old_path))
+// 	    python_path += ":" + string(old_path);
 
-    DBG("setting PYTHONPATH to: '%s'\n",python_path.c_str());
-    setenv("PYTHONPATH",python_path.c_str(),1);
+//     DBG("setting PYTHONPATH to: '%s'\n",python_path.c_str());
+//     setenv("PYTHONPATH",python_path.c_str(),1);
 
-}
+// }
 
 void IvrFactory::import_object(PyObject* m, char* name, PyTypeObject* type)
 {
@@ -261,12 +261,47 @@ void IvrFactory::import_ivr_builtins()
     }
 }
 
-void IvrFactory::init_python_interpreter()
+void IvrFactory::init_python_interpreter(const string& script_path)
 {
-    Py_Initialize();
+    if(!Py_IsInitialized()){
+
+	add_env_path("PYTHONPATH",AmConfig::PlugInPath);
+	Py_Initialize();
+    }
+
     PyEval_InitThreads();
+    set_sys_path(script_path);
     import_ivr_builtins();
     PyEval_ReleaseLock();
+}
+
+void IvrFactory::set_sys_path(const string& script_path)
+{
+
+    PyObject* py_mod_name = PyString_FromString("sys");
+    PyObject* py_mod = PyImport_Import(py_mod_name);
+    Py_DECREF(py_mod_name);
+    
+    if(!py_mod){
+	PyErr_Print();
+	ERROR("IvrFactory: could not import 'sys' module.\n");
+	ERROR("IvrFactory: please check your installation.\n");
+	return;
+    }
+
+    PyObject* sys_path_str = PyString_FromString("path");
+    PyObject* sys_path = PyObject_GetAttr(py_mod,sys_path_str);
+    Py_DECREF(sys_path_str);
+
+    if(!sys_path){
+	PyErr_Print();
+	Py_DECREF(py_mod);
+	return;
+    }
+
+    if(!PyList_Insert(sys_path,0,PyString_FromString(script_path.c_str()))){
+	PyErr_Print();
+    }
 }
 
 IvrDialog* IvrFactory::newDlg(const string& name)
@@ -421,8 +456,9 @@ int IvrFactory::onLoad()
     // get application specific global parameters
     configureModule(cfg);
 
-    setScriptPath(cfg.getParameter("script_path"));
-    init_python_interpreter();
+    //setScriptPath(cfg.getParameter("script_path"));
+    string script_path = cfg.getParameter("script_path");
+    init_python_interpreter(script_path);
 
     DBG("** IVR compile time configuration:\n");
     DBG("**     built with PYTHON support.\n");

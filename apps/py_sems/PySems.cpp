@@ -82,9 +82,6 @@ extern "C" {
 
 	if((level)<=log_level) {
 
-	    //if(level == L_ERR)
-	    //assert(0);
-
 	    if(log_stderr)
 		log_print( level, msg );
 	    else {
@@ -134,27 +131,16 @@ PySemsFactory::PySemsFactory(const string& _app_name)
 {
 }
 
-void PySemsFactory::setScriptPath(const string& path)
-{
-    string python_path = script_path = path;
+// void PySemsFactory::setScriptPath(const string& path)
+// {
+//     string python_path = script_path = path;
 
-    
-    if(python_path.length()){
+//     if(python_path.length()){
+// 	add_env_path("PYTHONPATH", python_path);
+//     }
 
-	python_path = AmConfig::PlugInPath + ":" + python_path;
-    }
-    else
-	python_path = AmConfig::PlugInPath;
-
-    char* old_path=0;
-    if((old_path = getenv("PYTHONPATH")) != 0)
-	if(strlen(old_path))
-	    python_path += ":" + string(old_path);
-
-    DBG("setting PYTHONPATH to: '%s'\n",python_path.c_str());
-    setenv("PYTHONPATH",python_path.c_str(),1);
-
-}
+//     add_env_path("PYTHONPATH",AmConfig::PlugInPath);
+// }
 
 void PySemsFactory::import_object(PyObject* m, char* name, PyTypeObject* type)
 {
@@ -186,7 +172,27 @@ void PySemsFactory::import_py_sems_builtins()
     initpy_sems_lib();
 }
 
-void PySemsFactory::import_module(const char* modname)
+void PySemsFactory::set_sys_path(const string& script_path)
+{
+    PyObject* py_mod = import_module("sys");
+    if(!py_mod)	return;
+
+    PyObject* sys_path_str = PyString_FromString("path");
+    PyObject* sys_path = PyObject_GetAttr(py_mod,sys_path_str);
+    Py_DECREF(sys_path_str);
+
+    if(!sys_path){
+	PyErr_Print();
+	Py_DECREF(py_mod);
+	return;
+    }
+
+    if(!PyList_Insert(sys_path,0,PyString_FromString(script_path.c_str()))){
+	PyErr_Print();
+    }
+}
+
+PyObject* PySemsFactory::import_module(const char* modname)
 {
     PyObject* py_mod_name = PyString_FromString(modname);
     PyObject* py_mod = PyImport_Import(py_mod_name);
@@ -196,14 +202,22 @@ void PySemsFactory::import_module(const char* modname)
 	PyErr_Print();
 	ERROR("PySemsFactory: could not find python module '%s'.\n",modname);
 	ERROR("PySemsFactory: please check your installation.\n");
-	return;
+	return NULL;
     }
+    
+    return py_mod;
 }
 
-void PySemsFactory::init_python_interpreter()
+void PySemsFactory::init_python_interpreter(const string& script_path)
 {
-    Py_Initialize();
+    if(!Py_IsInitialized()){
+
+	add_env_path("PYTHONPATH",AmConfig::PlugInPath);
+	Py_Initialize();
+    }
+
     PyEval_InitThreads();
+    set_sys_path(script_path);
     import_py_sems_builtins();
     PyEval_ReleaseLock();
 }
@@ -279,43 +293,6 @@ AmSession* PySemsFactory::newDlg(const string& name)
 	  return NULL;
     }
 
-
-//     // TODO: find some way to guess the type without trying... 
-//     // try Dialog...
-//     PySemsDialog* dlg = (PySemsDialog*)sipForceConvertTo_PySemsDialog(dlg_inst,&err);
-//     if (dlg && (!err)) {
-//       DBG("OK, got PySemsDialog.\n");
-//       sess = dlg;
-//       dlg_base = dlg;
-//     } else {
-//       // try B2BDialog...
-//       err = 0;
-//       PySemsB2BDialog* b2b_dlg = (PySemsB2BDialog*)sipForceConvertTo_PySemsB2BDialog(dlg_inst,&err);
-//       if (b2b_dlg && (!err)) {
-// 	DBG("OK, got PySemsB2BDialog.\n");      
-// 	sess = b2b_dlg;
-// 	dlg_base = b2b_dlg;
-//       }  else {
-
-// 	// try B2ABDialog...
-// 	err=0;
-// 	PySemsB2ABDialog* b2ab_dlg = (PySemsB2ABDialog*)sipForceConvertTo_PySemsB2ABDialog(dlg_inst,&err);
-
-// // 	if (b2ab_dlg && (!err)) {
-// // 	  DBG("OK, got PySemsB2ABDialog.\n");      
-// // 	  sess = b2ab_dlg;
-// // 	  dlg_base = b2ab_dlg;
-// // 	}  else {
-// 	  // no luck
-// 	  PyErr_Print();
-// 	  ERROR("PySemsFactory: while loading \"%s\": could not retrieve a PySems*Dialog ptr.\n",
-// 		name.c_str());
-// 	  throw AmSession::Exception(500,"Internal error in PY_SEMS plug-in.");
-// 	  Py_DECREF(dlg_inst);
-// 	  return NULL;
-// 	}
-//       }
-//     }
 
     // take the ownership over dlg
     sipTransferTo(dlg_inst,dlg_inst);
@@ -426,7 +403,6 @@ int PySemsFactory::onLoad()
 	return -1;
     }
 
-
     AmConfigReader cfg;
 
     if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1,MOD_NAME ".conf")))
@@ -435,20 +411,16 @@ int PySemsFactory::onLoad()
     // get application specific global parameters
     configureModule(cfg);
 
-    setScriptPath(cfg.getParameter("script_path"));
-    init_python_interpreter();
-
-    DBG("** PY_SEMS compile time configuration:\n");
-    DBG("**     built with PYTHON support.\n");
+    string script_path = cfg.getParameter("script_path");
+    init_python_interpreter(script_path);
 
 #ifdef PY_SEMS_WITH_TTS
-    DBG("**     Text-To-Speech enabled\n");
+    DBG("** PY_SEMS Text-To-Speech enabled\n");
 #else
-    DBG("**     Text-To-Speech disabled\n");
+    DBG("** PY_SEMS Text-To-Speech disabled\n");
 #endif
 
-    DBG("** PY_SEMS run time configuration:\n");
-    DBG("**     script path:         \'%s\'\n", script_path.c_str());
+    DBG("** PY_SEMS script path: \'%s\'\n", script_path.c_str());
 
     regex_t reg;
     if(regcomp(&reg,PYFILE_REGEX,REG_EXTENDED)){
