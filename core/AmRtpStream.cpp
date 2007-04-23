@@ -225,11 +225,6 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   }
 #endif
 
-  if(rp.parse() == -1){
-    ERROR("while parsing RTP packet.\n");
-    return RTP_PARSE_ERROR;
-  }
-
   /* do we have a new talk spurt? */
   begin_talk = ((last_payload == 13) || rp.marker);
   last_payload = rp.payload;
