@@ -403,15 +403,20 @@ void AmRtpStream::icmpError()
 
 void AmRtpStream::bufferPacket(const AmRtpPacket* p)
 {
+  memcpy(&last_recv_time, &p->recv_time, sizeof(struct timeval));
+
   if (!receiving && !passive)
     return;
 
   jitter_mut.lock();
-  gettimeofday(&last_recv_time,NULL);
   jitter_buf[p->timestamp].copy(p);
   jitter_mut.unlock();
 }
 
+void AmRtpStream::clearRTPTimeout(struct timeval* recv_time) {
+ memcpy(&last_recv_time, recv_time, sizeof(struct timeval));
+}
+ 
 int AmRtpStream::nextPacket(AmRtpPacket& p)
 {
   if (!receiving && !passive)

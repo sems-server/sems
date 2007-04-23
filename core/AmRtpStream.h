@@ -126,7 +126,7 @@ protected:
 
   /* get next packet in buffer */
   int nextPacket(AmRtpPacket& p);
-
+  
   AmSession*         session;
 
   /** Initializes a new random local port, and sets own attributes properly. */
@@ -235,6 +235,11 @@ public:
    * Note: memory is owned by this instance.
    */
   void bufferPacket(const AmRtpPacket* p);
+
+  /*
+   * clear RTP timeout at time recv_time 
+   */
+  void clearRTPTimeout(struct timeval* recv_time);
 
   virtual unsigned int bytes2samples(unsigned int) const = 0;
 };

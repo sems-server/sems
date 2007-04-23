@@ -18,7 +18,6 @@
 
 #define MAX_DELAY 8000 /* 1 second */
 
-
 AmPlayoutBuffer::AmPlayoutBuffer(AmRtpAudio *owner)
   : r_ts(0),w_ts(0), last_ts_i(false), m_owner(owner)
 {
@@ -31,7 +30,7 @@ void AmPlayoutBuffer::direct_write_buffer(unsigned int ts, ShortSample* buf, uns
 
 void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts, 
 			    int16_t* buf, u_int32_t len, bool begin_talk)
-{
+{  
   unsigned int mapped_ts;
   if(!recv_offset_i)
     {

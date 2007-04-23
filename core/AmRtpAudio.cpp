@@ -103,18 +103,18 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
   return size;
 }
 
-int AmRtpAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples)
+int AmRtpAudio::get(unsigned int ref_ts, unsigned char* buffer, unsigned int nb_samples)
 {
-  int size = read(user_ts,PCM16_S2B(nb_samples));
+  int size = read(ref_ts,PCM16_S2B(nb_samples));
   memcpy(buffer,(unsigned char*)samples,size);
   return size;
 }
 
-int AmRtpAudio::read(unsigned int user_ts, unsigned int size)
+int AmRtpAudio::read(unsigned int ref_ts, unsigned int size)
 {
   u_int32_t rlen = 
     playout_buffer
-    ->read(user_ts,
+    ->read(ref_ts,
 	   (ShortSample*)((unsigned char*)samples),
 	   PCM16_B2S(size));
 

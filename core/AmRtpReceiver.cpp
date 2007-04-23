@@ -91,12 +91,19 @@ void AmRtpReceiver::run()
 
       if(p.recv(tmp_fds[i].fd) > 0){
 		
+	int parse_res = p.parse();
 	gettimeofday(&p.recv_time,NULL);
 		
 	streams_mut.lock();
 	Streams::iterator it = streams.find(tmp_fds[i].fd);
-	if(it != streams.end())
-	  it->second->bufferPacket(&p);
+	if(it != streams.end()) {
+	  if (parse_res == -1) {
+	    DBG("error while parsing RTP packet.\n");
+	    it->second->clearRTPTimeout(&p.recv_time);
+	  } else {
+	    it->second->bufferPacket(&p);
+	  }
+	}
 	streams_mut.unlock();
       }
     }
