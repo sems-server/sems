@@ -69,9 +69,9 @@ unsigned int AmRtpAudio::bytes2samples(unsigned int bytes) const
   return AmAudio::bytes2samples(bytes);
 }
 /* 
-   @param audio_buffer_ts [in]    the current ts in the audio buffer 
+   @param wallclock_ts [in]    the current ts in the audio buffer 
 */
-int AmRtpAudio::receive(unsigned int audio_buffer_ts) 
+int AmRtpAudio::receive(unsigned int wallclock_ts) 
 {
   int size;
   unsigned int rtp_ts;
@@ -97,7 +97,7 @@ int AmRtpAudio::receive(unsigned int audio_buffer_ts)
       return -1;
     }
 
-    playout_buffer->write(audio_buffer_ts, rtp_ts, (ShortSample*)((unsigned char *)samples), 
+    playout_buffer->write(wallclock_ts, rtp_ts, (ShortSample*)((unsigned char *)samples), 
 			  PCM16_B2S(size), begin_talk);
   }
   return size;

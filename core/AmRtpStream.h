@@ -58,7 +58,7 @@ struct amci_payload_t;
 class AmAudio;
 class AmSession;
 class SdpPayload;
-typedef map<unsigned int, AmRtpPacket, ts_less> JitterBuffer;
+typedef map<unsigned int, AmRtpPacket, ts_less> ReceiveBuffer;
 
 /**
  * \brief RTP implementation
@@ -121,8 +121,8 @@ protected:
   auto_ptr<const SdpPayload> telephone_event_pt;
 
 
-  JitterBuffer    jitter_buf;
-  AmMutex         jitter_mut;
+  ReceiveBuffer   receive_buf;
+  AmMutex         receive_mut;
 
   /* get next packet in buffer */
   int nextPacket(AmRtpPacket& p);

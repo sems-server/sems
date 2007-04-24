@@ -178,6 +178,7 @@ void AmMediaProcessorThread::on_stop()
 void AmMediaProcessorThread::run()
 {
   struct timeval now,next_tick,diff,tick;
+  // wallclock time
   unsigned int ts = 0;
 
   tick.tv_sec  = 0;

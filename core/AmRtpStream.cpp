@@ -403,9 +403,9 @@ void AmRtpStream::bufferPacket(const AmRtpPacket* p)
   if (!receiving && !passive)
     return;
 
-  jitter_mut.lock();
-  jitter_buf[p->timestamp].copy(p);
-  jitter_mut.unlock();
+  receive_mut.lock();
+  receive_buf[p->timestamp].copy(p);
+  receive_mut.unlock();
 }
 
 void AmRtpStream::clearRTPTimeout(struct timeval* recv_time) {
@@ -421,26 +421,26 @@ int AmRtpStream::nextPacket(AmRtpPacket& p)
   struct timeval diff;
   gettimeofday(&now,NULL);
 
-  jitter_mut.lock();
+  receive_mut.lock();
   timersub(&now,&last_recv_time,&diff);
   if(AmConfig::DeadRtpTime && 
      (diff.tv_sec > 0) &&
      ((unsigned int)diff.tv_sec > AmConfig::DeadRtpTime)){
     WARN("RTP Timeout detected. Last received packet is too old.\n");
     DBG("diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
-    jitter_mut.unlock();
+    receive_mut.unlock();
     return RTP_TIMEOUT;
   }
 
-  if(jitter_buf.empty()){
-    jitter_mut.unlock();
+  if(receive_buf.empty()){
+    receive_mut.unlock();
     return RTP_EMPTY;
   }
 
-  AmRtpPacket& pp = jitter_buf.begin()->second;
+  AmRtpPacket& pp = receive_buf.begin()->second;
   p.copy(&pp);
-  jitter_buf.erase(jitter_buf.begin());
-  jitter_mut.unlock();
+  receive_buf.erase(receive_buf.begin());
+  receive_mut.unlock();
 
   return 1;
 }

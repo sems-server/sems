@@ -72,7 +72,7 @@ public:
 
   void setCurrentPayload(int payload);
 
-  int receive(unsigned int audio_buffer_ts);
+  int receive(unsigned int wallclock_ts);
 
   void setSendOnly(bool so){
     send_only = so;
