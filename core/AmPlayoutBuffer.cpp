@@ -38,7 +38,7 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts,
       recv_offset_i = true;
       DBG("initialized recv_offset with %i (%i - %i)\n",
 	  recv_offset, ref_ts, rtp_ts);
-      mapped_ts = ref_ts;// + jitter_delay;
+      mapped_ts = r_ts = w_ts = ref_ts;// + jitter_delay;
     }
   else {
     mapped_ts = rtp_ts - recv_offset;// + jitter_delay;
