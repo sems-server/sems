@@ -19,7 +19,7 @@ cleaner: clean
 	rm -f *.cpp *.h *.sbf Makefile.gen $(lib_name) *~
 
 Makefile.gen: Makefile configure.py $(SIP_FILES)
-	python$(VER) configure.py
+	python$(PY_VER) configure.py
 
 ifneq 'Makefile.gen' '$(MAKECMDGOALS)'
 $(lib_name): $(OFILES)  Makefile.gen
