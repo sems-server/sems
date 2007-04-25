@@ -492,7 +492,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
       if(input || output)
 	AmMediaProcessor::instance()->addSession(this, callgroup);
       else {
-	DBG("missing audio input and/or ouput. "
+	DBG("no audio input and output set. "
 	    "Session will not be attached to MediaProcessor.\n");
       }
     }
@@ -555,7 +555,8 @@ void AmSession::onSipReply(const AmSipReply& reply)
 	      AmMediaProcessor::instance()->addSession(this,
 						       callgroup); 
 	    else { 
-	      ERROR("missing audio input and/or ouput.\n"); 
+	      DBG("no audio input and output set. "
+		  "Session will not be attached to MediaProcessor.\n");
 	    }
 	  }
 
