@@ -1,7 +1,9 @@
 
 COREPATH ?=../../../core
 
-PY_VER = 2.3
+PYTHON_VERSION ?= 2.4
+PY_VER = $(PYTHON_VERSION)
+
 SIP_FILES = $(wildcard *.sip)
 
 .PHONY: all
@@ -18,7 +20,7 @@ cleaner: clean
 	rm -f *.cpp *.h *.sbf *~
 
 Makefile.gen: configure.py $(SIP_FILES)
-	python$(VER) configure.py
+	python$(PY_VER) configure.py
 
 py_sems.so: Makefile.gen $(SIP_FILES)
 	$(MAKE) -f Makefile.gen COREPATH=$(COREPATH)
