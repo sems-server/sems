@@ -245,7 +245,8 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
 {
   AmPlugIn* plugin = AmPlugIn::instance();
   const map<int,amci_payload_t*>& payloads = plugin->getPayloads();
-    
+  const map<int,int>& payload_order = plugin->getPayloadOrder();
+
   if(payloads.empty()){
     ERROR("no payload plugin loaded.\n");
     return -1;
@@ -266,22 +267,25 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
     "t=0 0\r\n"
     "m=audio " + int2str(localport) + " RTP/AVP ";
     
-  map<int,amci_payload_t*>::const_iterator it = payloads.begin();
-  out_buf += int2str((it++)->first);
+  map<int,int>::const_iterator it = payload_order.begin();
+  out_buf += int2str((it++)->second);
 
-  for(;it != payloads.end();++it)
-    out_buf += string(" ") + int2str(it->first);
+  for(; it != payload_order.end(); ++it)
+      out_buf += string(" ") + int2str(it->second);
 
   out_buf += "\r\n";
 
-  for(it = payloads.begin();it != payloads.end();++it) {
-
-    //if(it->first >= 96) {
-    out_buf += "a=rtpmap:" + int2str(it->first) 
-      + " " + string(it->second->name) 
-      + "/" + int2str(it->second->sample_rate) 
-      + "\r\n";
-    //}
+  for (it = payload_order.begin(); it != payload_order.end(); ++it) {
+      map<int,amci_payload_t*>::const_iterator it2 = payloads.find(it->second);
+      if (it2 != payloads.end()) {
+	  out_buf += "a=rtpmap:" + int2str(it2->first) 
+	      + " " + string(it2->second->name) 
+	      + "/" + int2str(it2->second->sample_rate) 
+	      + "\r\n";
+      } else {
+	  ERROR("Payload %d was not found in payloads map!\n", it->second);
+	  return -1;
+      }
   }
 
   return 0;

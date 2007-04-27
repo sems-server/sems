@@ -87,6 +87,7 @@ struct AmConfig
   static string Signature;
   /** If 200 OK reply should be limited to preferred codec only */
   static bool SingleCodecInOK;
+  static vector <string> CodecOrder;
 
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
    static unsigned int DeadRtpTime;

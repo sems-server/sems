@@ -66,6 +66,7 @@ class AmPlugIn
 
   map<int,amci_codec_t*>       codecs;
   map<int,amci_payload_t*>     payloads;
+  map<int,int>                 payload_order;
   map<string,amci_inoutfmt_t*> file_formats;
   map<string,AmSessionFactory*>  name2app;
 
@@ -108,6 +109,8 @@ class AmPlugIn
   amci_payload_t*  payload(int payload_id);
   /** @return the suported payloads. */
   const map<int,amci_payload_t*>& getPayloads() { return payloads; }
+  /** @return the order of payloads. */
+  const map<int,int>& getPayloadOrder() { return payload_order; }
   /** 
    * File format lookup according to the 
    * format name and/or file extension.

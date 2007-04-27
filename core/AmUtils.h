@@ -35,6 +35,8 @@
 #include <string>
 using std::string;
 
+#include <vector>
+
 #define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
 
 #define PARAM_HDR "P-App-Param"
@@ -262,6 +264,9 @@ string get_session_param(const string& hdrs, const string& name);
 // support for thread-safe pseudo-random numbers
 void init_random();
 unsigned int get_random();
+
+// Explode string by a separator to a vector
+std::vector <string> explode(string s, string e);
 
 // add a directory to an environement variable
 void add_env_path(const char* name, const string& path);

@@ -35,6 +35,7 @@
 #include "sems.h"
 #include "log.h"
 #include "AmConfigReader.h"
+#include "AmUtils.h"
 
 string       AmConfig::ConfigurationFile       = CONFIG_FILE;
 string       AmConfig::ModConfigPath           = MOD_CFG_PATH;
@@ -57,6 +58,7 @@ string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::Signature               = "";
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
+vector <string> AmConfig::CodecOrder;
 
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 
@@ -247,11 +249,14 @@ int AmConfig::readConfiguration()
       return -1;
     }
   }
+
   // single codec in 200 OK
   if(cfg.hasParameter("single_codec_in_ok")){
     SingleCodecInOK = (cfg.getParameter("single_codec_in_ok") == "yes");
   }
 
+  // codec_order
+  CodecOrder = explode(cfg.getParameter("codec_order"), ",");
 
   // dead_rtp_time
   if(cfg.hasParameter("dead_rtp_time")){
@@ -337,5 +342,3 @@ int AmSessionTimerConfig::setMinimumTimer(const string& minse) {
   return 1;
 }
 /* end Session Timer: -ssa */
-
-

@@ -502,6 +502,7 @@ int AmPlugIn::addCodec(amci_codec_t* c)
 int AmPlugIn::addPayload(amci_payload_t* p)
 {
   amci_codec_t* c;
+  unsigned int i, id;
   if( !(c = codec(p->codec_id)) ){
     ERROR("in payload '%s': codec id (%i) not supported\n",p->name,p->codec_id);
     return -1;
@@ -512,12 +513,25 @@ int AmPlugIn::addPayload(amci_payload_t* p)
       return -1;
     }
     payloads.insert(std::make_pair(p->payload_id,p));
-    DBG("payload '%s'inserted with id %i \n",p->name,p->payload_id);
+    id = p->payload_id;
   }
   else {
     payloads.insert(std::make_pair(dynamic_pl,p));
-    DBG("payload '%s'inserted with id %i \n",p->name,dynamic_pl);
+    id = dynamic_pl;
     dynamic_pl++;
+  }
+
+  for (i = 0; i < AmConfig::CodecOrder.size(); i++) {
+      if (p->name == AmConfig::CodecOrder[i]) break;
+  }
+  if (i >= AmConfig::CodecOrder.size()) {
+      payload_order.insert(std::make_pair(id + 100, id));
+      DBG("payload '%s' inserted with id %i and order %i\n",
+	  p->name, id, id + 100);
+  } else {
+      payload_order.insert(std::make_pair(i, id));
+      DBG("payload '%s' inserted with id %i and order %i\n",
+	  p->name, id, i);
   }
 
   return 0;

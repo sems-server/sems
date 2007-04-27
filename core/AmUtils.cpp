@@ -841,6 +841,21 @@ unsigned int get_random()
     
   return r;
 }
+// Explode string by a separator to a vector
+vector <string> explode(string s, string e) {
+  vector <string> ret;
+  int iPos = s.find(e, 0);
+  int iLen = e.length();
+  while (iPos > -1) {
+    if (iPos != 0)
+      ret.push_back(s.substr(0, iPos));
+    s.erase(0, iPos+iLen);
+    iPos = s.find(e, 0);
+  }
+  if (s != "")
+    ret.push_back(s);
+  return ret;
+}
 
 
 // Warning: static var is not mutexed
@@ -848,29 +863,29 @@ unsigned int get_random()
 //
 void add_env_path(const char* name, const string& path)
 {
-    string var(path);
-    char*  old_path=0;
+  string var(path);
+  char*  old_path=0;
 
-    regex_t path_reg;
+  regex_t path_reg;
 
-    assert(name);
-    if((old_path = getenv(name)) != 0) {
-	if(strlen(old_path)){
+  assert(name);
+  if((old_path = getenv(name)) != 0) {
+    if(strlen(old_path)){
 	    
-	    if(regcomp(&path_reg,("[:|^]" + path + "[:|$]").c_str(),REG_NOSUB)){
-		ERROR("could not compile regex\n");
-		return;
-	    }
+      if(regcomp(&path_reg,("[:|^]" + path + "[:|$]").c_str(),REG_NOSUB)){
+	ERROR("could not compile regex\n");
+	return;
+      }
 	    
-	    if(!regexec(&path_reg,old_path,0,0,0)) { // match
+      if(!regexec(&path_reg,old_path,0,0,0)) { // match
 
-		return; // do nothing
-	    }
+	return; // do nothing
+      }
 
-	    var += ":" + string(old_path);
-	}
+      var += ":" + string(old_path);
     }
+  }
 
-    DBG("setting %s to: '%s'\n",name,var.c_str());
-    setenv("PYTHONPATH",var.c_str(),1);
+  DBG("setting %s to: '%s'\n",name,var.c_str());
+  setenv("PYTHONPATH",var.c_str(),1);
 }
