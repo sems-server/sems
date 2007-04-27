@@ -89,6 +89,12 @@ python_files:
 
 endif
 
+ifeq (install,$(MAKECMDGOALS))
+python_files:
+	python$(PY_VER) py_comp -l -q py
+
+endif
+
 extra_clean = clean_py_sems_lib
 
 include $(COREPATH)/plug-in/Makefile.app_module
