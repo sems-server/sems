@@ -1,0 +1,1 @@
+while true; do ./query_stats -c DI di_dial dial announcement 123 sip:ann@10.0.0.45 sip:123@83.246.121.43; sleep 1; done 
