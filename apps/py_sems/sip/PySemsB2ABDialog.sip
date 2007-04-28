@@ -79,6 +79,7 @@ class B2ABEvent
 %TypeHeaderCode
 #include "../../../core/AmB2ABSession.h"
 %End
+public:
   B2ABEvent(int /* ev_id */);
 };
 
