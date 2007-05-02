@@ -141,8 +141,8 @@ AmRtpDtmfEvent::AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate)
 //
 // AmSipDtmfDetector methods
 //
-AmSipDtmfDetector::AmSipDtmfDetector(AmDtmfDetector *owner)
-  : m_owner(owner)
+AmSipDtmfDetector::AmSipDtmfDetector(AmKeyPressSink *keysink)
+  : m_keysink(keysink)
 {
 }
 
@@ -159,7 +159,7 @@ void AmSipDtmfDetector::process(AmSipDtmfEvent *evt)
       ++stop.tv_sec;
       stop.tv_usec -= 1000000;
     }
-  m_owner->registerKeyReleased(evt->event(), Dtmf::SOURCE_SIP, start, stop);
+  m_keysink->registerKeyReleased(evt->event(), Dtmf::SOURCE_SIP, start, stop);
 }
 
 //
@@ -290,8 +290,8 @@ void AmDtmfDetector::putDtmfAudio(const unsigned char *buf, int size, int user_t
 }
 
 // AmRtpDtmfDetector methods
-AmRtpDtmfDetector::AmRtpDtmfDetector(AmDtmfDetector *owner)
-  : m_owner(owner), m_eventPending(false), m_packetCount(0)
+AmRtpDtmfDetector::AmRtpDtmfDetector(AmKeyPressSink *keysink)
+  : m_keysink(keysink), m_eventPending(false), m_packetCount(0)
 {
 }
 
@@ -328,7 +328,7 @@ void AmRtpDtmfDetector::process(AmRtpDtmfEvent *evt)
         }
       if (m_eventPending)
         {
-	  m_owner->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP);
+	  m_keysink->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP);
         }
     }
 }
@@ -339,7 +339,7 @@ void AmRtpDtmfDetector::sendPending()
     {
       struct timeval end_time;
       gettimeofday(&end_time, NULL);
-      m_owner->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time);
+      m_keysink->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time);
       m_eventPending = false;
     }
 }
@@ -409,8 +409,8 @@ static char dtmf_matrix[4][4] =
     {'*', '0', '#', 'D'}
   };
 
-AmInbandDtmfDetector::AmInbandDtmfDetector(AmDtmfDetector *owner)
-  : m_owner(owner),
+AmInbandDtmfDetector::AmInbandDtmfDetector(AmKeyPressSink *keysink)
+  : m_keysink(keysink),
     m_last(' '),
     m_idx(0),
     m_count(0),
@@ -422,6 +422,8 @@ AmInbandDtmfDetector::AmInbandDtmfDetector(AmDtmfDetector *owner)
     int k = (int)((double)dtmf_tones[i].freq * REL_DTMF_NPOINTS / SAMPLERATE + 0.5);
     rel_cos2pik[i] = (int)(2 * 32768 * cos(2 * PI * k / REL_DTMF_NPOINTS));
   }
+}
+AmInbandDtmfDetector::~AmInbandDtmfDetector() {
 }
 
 /*
@@ -533,7 +535,7 @@ void AmInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
     {
       if (++m_count >= DTMF_INTERVAL)
         {
-	  m_owner->registerKeyPressed(m_lastCode, Dtmf::SOURCE_INBAND);
+	  m_keysink->registerKeyPressed(m_lastCode, Dtmf::SOURCE_INBAND);
         }
     }
   else
@@ -543,7 +545,7 @@ void AmInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
 	  struct timeval stop;
 	  stop.tv_sec = m_last_ts / SAMPLERATE;
 	  stop.tv_usec = (m_last_ts * 1000 / SAMPLERATE) % 1000;
-	  m_owner->registerKeyReleased(m_lastCode, Dtmf::SOURCE_INBAND, m_startTime, stop);
+	  m_keysink->registerKeyReleased(m_lastCode, Dtmf::SOURCE_INBAND, m_startTime, stop);
         }
       m_count = 0;
     }

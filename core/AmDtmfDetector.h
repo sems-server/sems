@@ -101,6 +101,32 @@ class AmDtmfEvent : public AmEvent
    */
   int duration() const { return m_duration_msec; }
 };
+/**
+ * this is the Interface for a sink for KeyPresses.
+ */
+class AmKeyPressSink {
+ public:
+  AmKeyPressSink() { }
+  virtual ~AmKeyPressSink() { }
+
+  /**
+   * Through this method the AmDtmfDetector receives events that was
+   * detected by specific detectors.
+   * @param event code of key pressed
+   * @param source which detector posted this event
+   * @param start time when key was pressed
+   * @param stop time when key was released
+   */
+  virtual void registerKeyReleased(int event, Dtmf::EventSource source,
+				   const struct timeval& start, const struct timeval& stop) = 0;
+  /**
+   * Through this method the AmDtmfDetector receives events that was
+   * detected by specific detectors.
+   * @param event code of key released
+   * @param source which detector posted this event
+   */
+  virtual void registerKeyPressed(int event, Dtmf::EventSource source) = 0;
+};
 
 /**
  * \brief DTMF received via RTP
@@ -168,7 +194,7 @@ class AmInbandDtmfDetector
   /**
    * Owner of this class instance
    */
-  AmDtmfDetector *m_owner;
+  AmKeyPressSink *m_keysink;
   /**
    * Time when first audio packet containing current DTMF tone was detected
    */
@@ -203,7 +229,8 @@ class AmInbandDtmfDetector
   void isdn_audio_calc_dtmf(const signed short* buf, int len, unsigned int ts);
 
  public:
-  AmInbandDtmfDetector(AmDtmfDetector *owner);
+  AmInbandDtmfDetector(AmKeyPressSink *keysink);
+  ~AmInbandDtmfDetector();
   /**
    * Entry point for audio stream
    */
@@ -219,10 +246,10 @@ class AmInbandDtmfDetector
 class AmSipDtmfDetector
 {
  private:
-  AmDtmfDetector *m_owner;
+  AmKeyPressSink *m_keysink;
 
  public:
-  AmSipDtmfDetector(AmDtmfDetector *owner);
+  AmSipDtmfDetector(AmKeyPressSink *keysink);
   void process(AmSipDtmfEvent *event);
 };
 
@@ -235,9 +262,9 @@ class AmRtpDtmfDetector
 {
  private:
   /**
-   * Owner of this class instance
+   *  sink for detected keys 
    */
-  AmDtmfDetector *m_owner;
+  AmKeyPressSink *m_keysink;
   /**
    * Is there event pending?
    */
@@ -259,9 +286,9 @@ class AmRtpDtmfDetector
  public:
   /**
    * Constructor
-   * @param owner is the owner of this class instance
+   * @param keysink is the sink for detected keys 
    */
-  AmRtpDtmfDetector(AmDtmfDetector *owner);
+  AmRtpDtmfDetector(AmKeyPressSink *keysink);
   /**
    * Process RTP DTMF event
    */
@@ -277,7 +304,9 @@ class AmRtpDtmfDetector
  * Received DTMF events are further reported to SEMS application via 
  * DialogState::onDtmf() call.
  */
-class AmDtmfDetector : public AmEventHandler
+class AmDtmfDetector 
+: public AmEventHandler,
+  public AmKeyPressSink
 {
  private:
   static const int WAIT_TIMEOUT = 100; // miliseconds
