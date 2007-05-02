@@ -41,6 +41,7 @@ class AmSessionFactory;
 class AmSessionEventHandlerFactory;
 class AmDynInvokeFactory;
 class AmSIPEventHandler;
+class AmLoggingFacility;
 
 struct amci_exports_t;
 struct amci_codec_t;
@@ -73,6 +74,7 @@ class AmPlugIn
   map<string,AmSessionEventHandlerFactory*> name2seh;
   map<string,AmDynInvokeFactory*> name2di;
   map<string,AmSIPEventHandler*> name2sipeh;
+  map<string,AmLoggingFacility*> name2logfac;
 
   int dynamic_pl; // range: 96->127, see RFC 1890
     
@@ -86,6 +88,7 @@ class AmPlugIn
   int loadSehPlugIn(AmPluginFactory* cb);
   int loadDiPlugIn(AmPluginFactory* cb);
   int loadSIPehPlugIn(AmPluginFactory* f);
+  int loadLogFacPlugIn(AmPluginFactory* f);
 
   int addCodec(amci_codec_t* c);
   int addPayload(amci_payload_t* p);
@@ -157,6 +160,13 @@ class AmPlugIn
    * @return NULL if failed (-> handler not found).
    */
   AmSIPEventHandler* getFactory4SIPeh(const string& name);
+
+  /**
+   * logging facility lookup function
+   * @param name application name
+   * @return NULL if failed (-> handler not found).
+   */
+  AmLoggingFacility* getFactory4LogFaclty(const string& name);
 
   /** @return true if this record has been inserted. */
   bool registerFactory4App(const string& app_name, AmSessionFactory* f);

@@ -34,6 +34,8 @@
 #include "AmConfig.h"
 #include "AmArg.h"
 
+#include <stdarg.h>
+
 #include <string>
 #include <map>
 using std::map;
@@ -44,7 +46,7 @@ using std::string;
  */
 class AmDynInvoke
 {
-public:
+ public:
   /** \brief NotImplemented result for DI API calls */
   struct NotImplemented {
     string what;
@@ -64,7 +66,7 @@ class AmPluginFactory
 {
   string plugin_name;
 
-public:
+ public:
   AmPluginFactory(const string& name)
     : plugin_name(name) {}
 
@@ -89,7 +91,7 @@ public:
  */
 class AmDynInvokeFactory: public AmPluginFactory
 {
-public:
+ public:
   AmDynInvokeFactory(const string& name);
   virtual AmDynInvoke* getInstance()=0;
 };
@@ -102,7 +104,7 @@ class AmSessionEventHandler;
  */
 class AmSessionEventHandlerFactory: public AmPluginFactory
 {
-public:
+ public:
   AmSessionEventHandlerFactory(const string& name);
 
   virtual AmSessionEventHandler* getHandler(AmSession*)=0;
@@ -119,14 +121,14 @@ class AmSessionFactory: public AmPluginFactory
 
   AmSessionTimerConfig mod_conf;
 
-protected:
+ protected:
   /**
    * This reads the module configuration from 
    * cfg into the modules mod_conf.
    */
   int configureModule(AmConfigReader& cfg);
 
-public:
+ public:
   /**
    * This function applys the module configuration 
    */
@@ -174,7 +176,7 @@ public:
 class AmSIPEventHandler : public AmPluginFactory 
 {
 
-public:
+ public:
   AmSIPEventHandler(const string& name);
   virtual ~AmSIPEventHandler() { }
 
@@ -186,6 +188,21 @@ public:
    *          otherwise
    */
   virtual bool onSipReply(const AmSipReply& rep) = 0;
+};
+
+/** \brief Interface for plugins that implement a
+ *     logging facility
+ */
+class AmLoggingFacility : public AmPluginFactory
+{
+
+ public:
+  AmLoggingFacility(const string& name);
+  virtual ~AmLoggingFacility() { }
+
+  /** will be called on logging messages
+   */
+  virtual void log(int level, const char* fmt, va_list ap) = 0;
 };
 
 #if  __GNUC__ < 3
@@ -231,4 +248,9 @@ typedef void* (*FactoryCreate)();
 #define EXPORT_SIP_EVENT_HANDLER_FACTORY(class_name,app_name) \
             EXPORT_FACTORY(FACTORY_SIP_EVENT_HANDLER_EXPORT,class_name,app_name)
 
+#define FACTORY_LOG_FACILITY_EXPORT     log_facilty_factory_create
+#define FACTORY_LOG_FACILITY_EXPORT_STR XSTR(FACTORY_LOG_FACILITY_EXPORT)
+
+#define EXPORT_LOG_FACILITY_FACTORY(class_name,app_name) \
+            EXPORT_FACTORY(FACTORY_LOG_FACILITY_EXPORT,class_name,app_name)
 #endif

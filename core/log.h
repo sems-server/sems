@@ -53,12 +53,15 @@ extern "C" {
 
   void dprint (int level, const char* fct, char* file, int line, char* fmt, ...);
   void log_print (int level, char* fmt, ...);
+  void register_logging_fac(void*);
+  void log_fac_print(int level, const char* fct, char* file, int line, char* fmt, ...);
 
 #ifdef _DEBUG
 #define LOG_PRINT(level, args... ) dprint( level, __FUNCTION__, __FILE__, __LINE__, ##args )
 #else
 #define LOG_PRINT(level, args... ) log_print( level , ##args )
 #endif
+#define LOG_FAC_PRINT(level, args... ) log_fac_print( level, __FUNCTION__, __FILE__, __LINE__, ##args )
 
 #if  __GNUC__ < 3
 #define _LOG(level,fmt...) LOG_PRINT(level,##fmt)
@@ -85,6 +88,7 @@ extern "C" {
 		      }\
 		  }\
               }\
+              LOG_FAC_PRINT( level, fmt, ##args );\
 	  }while(0)
 #endif
 

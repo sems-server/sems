@@ -29,6 +29,7 @@
 #define _AmArg_h_
 
 #include <assert.h>
+#include <string.h>
 
 #include <vector>
 using std::vector;
@@ -37,6 +38,7 @@ using std::vector;
 class ArgObject {
  public:
   ArgObject() { }
+  virtual ArgObject* clone() { return new ArgObject(*this); }
   virtual ~ArgObject() { }
 };
 
@@ -51,7 +53,8 @@ class AmArg
     Int,
     Double,
     CStr,
-    AObject
+    AObject,
+    APointer		// for passing pointers that are not owned by AmArg
   };
 
  private:
@@ -65,6 +68,7 @@ class AmArg
     double      v_double;
     const char* v_cstr;
     ArgObject* v_obj;
+    void*		v_ptr;
   };
 
  public:
@@ -74,8 +78,9 @@ class AmArg
     switch(type){
     case Int: v_int = v.v_int; break;
     case Double: v_double = v.v_double; break;
-    case CStr: v_cstr = v.v_cstr; break;
-    case AObject: v_obj = v.v_obj; break;
+    case CStr: v_cstr = strdup(v.v_cstr); break;
+    case AObject: v_obj = v.v_obj->clone(); break;
+    case APointer: v_ptr = v.v_ptr; break;
     default: assert(0);
     }
   }
@@ -91,15 +96,26 @@ class AmArg
     {}
 
   AmArg(const char* v)
-    : type(CStr),
-    v_cstr(v)
-    {}
+    : type(CStr)
+    {
+      v_cstr = strdup(v);
+    }
 
   AmArg(ArgObject* v)
-    : type(AObject),
-    v_obj(v)
-    {}
+    : type(AObject)
+    {
+      v_obj = v->clone();
+    }
 
+  AmArg(void* v)
+    : type(APointer),
+    v_ptr(v)
+    { }
+
+  ~AmArg() {
+    if(type == CStr) free((void*)v_cstr);
+    else if(type == AObject) delete v_obj;
+  }
 
   short getType() const { return type; }
 
@@ -107,6 +123,7 @@ class AmArg
   double      asDouble() const { return v_double; }
   const char* asCStr()   const { return v_cstr; }
   ArgObject*  asObject() const { return v_obj; }
+  void*       asPointer() const { return v_ptr; }
 };
 
 /** \brief array of variable args for DI APIs*/

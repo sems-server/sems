@@ -202,6 +202,16 @@ int AmPlugIn::load(const string& directory, const string& plugins)
     AmReplyHandler::get()->registerReplyHandler(it->second);
   }
 
+  // init logging facilities
+  for(map<string,AmLoggingFacility*>::iterator it = name2logfac.begin();
+      it != name2logfac.end(); it++){
+    err = it->second->onLoad();
+    if(err)
+      break;
+    // register for receiving logging messages
+    register_logging_fac(it->second);
+  }
+
     
   map<string,AmSessionFactory*> apps(name2app);
   for(map<string,AmSessionFactory*>::iterator it = apps.begin();
@@ -256,6 +266,12 @@ int AmPlugIn::loadPlugIn(const string& file)
 
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SIP_EVENT_HANDLER_EXPORT_STR)) != NULL){
     if(loadSIPehPlugIn((AmPluginFactory*)fc()))
+      goto error;
+    has_sym=true;
+  }
+
+  if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_LOG_FACILITY_EXPORT_STR)) != NULL){
+    if(loadLogFacPlugIn((AmPluginFactory*)fc()))
       goto error;
     has_sym=true;
   }
@@ -360,6 +376,14 @@ AmSIPEventHandler* AmPlugIn::getFactory4SIPeh(const string& name)
 {
   map<string,AmSIPEventHandler*>::iterator it = name2sipeh.find(name);
   if(it != name2sipeh.end())
+    return it->second;
+  return 0;
+}
+
+AmLoggingFacility* AmPlugIn::getFactory4LogFaclty(const string& name)
+{
+  map<string,AmLoggingFacility*>::iterator it = name2logfac.find(name);
+  if(it != name2logfac.end())
     return it->second;
   return 0;
 }
@@ -481,6 +505,29 @@ int AmPlugIn::loadSIPehPlugIn(AmPluginFactory* f)
       
   name2sipeh.insert(std::make_pair(sf->getName(),sf));
   DBG("sip event handler component '%s' loaded.\n",sf->getName().c_str());
+
+  return 0;
+
+ error:
+  return -1;
+}
+
+int AmPlugIn::loadLogFacPlugIn(AmPluginFactory* f)
+{
+  AmLoggingFacility* sf = dynamic_cast<AmLoggingFacility*>(f);
+  if(!sf){
+    ERROR("invalid logging facility plug-in!\n");
+    goto error;
+  }
+
+  if(name2logfac.find(sf->getName()) != name2logfac.end()){
+    ERROR("logging facility '%s' already loaded !\n",
+	  sf->getName().c_str());
+    goto error;
+  }
+      
+  name2logfac.insert(std::make_pair(sf->getName(),sf));
+  DBG("logging facility component '%s' loaded.\n",sf->getName().c_str());
 
   return 0;
 

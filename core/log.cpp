@@ -30,9 +30,15 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <assert.h>
+
+#include <vector>
+#include "AmApi.h"
 
 int log_level=L_INFO;
 int log_stderr=0;
+vector<AmLoggingFacility*> log_hooks;
+
 
 inline const char* level2txt(int level)
 {
@@ -65,7 +71,7 @@ void dprint(int level, const char* fct, char* file, int line, char* fmt, ...)
 void log_print (int level, char* fmt, ...)
 {
   va_list ap;
-    
+
   fprintf(stderr, "(%i) %s: ",(int)getpid(),level2txt(level));
   va_start(ap, fmt);
   vfprintf(stderr,fmt,ap);
@@ -73,3 +79,26 @@ void log_print (int level, char* fmt, ...)
   va_end(ap);
 }
 
+void log_fac_print(int level, const char* fct, char* file, int line, char* fmt, ...)
+{
+  va_list ap;
+  char logline[512];
+
+  if(log_hooks.empty()) return;
+
+  snprintf(logline, sizeof(logline), "(%i) %s: %s (%s:%i): ",(int)getpid(), level2txt(level), fct, file, line);
+  strncat(logline, fmt, sizeof(logline));
+
+  va_start(ap, fmt);
+  for(unsigned i=0; i<log_hooks.size(); i++) log_hooks[i]->log(logline, ap);
+  va_end(ap);
+}
+
+void register_logging_fac(void* vp)
+{
+  AmLoggingFacility* lf = static_cast<AmLoggingFacility*>(vp);
+#ifdef _DEBUG
+  assert(lf != NULL);
+#endif
+  log_hooks.push_back(lf);
+}

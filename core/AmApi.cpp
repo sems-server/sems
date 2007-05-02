@@ -76,3 +76,7 @@ AmSIPEventHandler::AmSIPEventHandler(const string& name)
 {
 }
 
+AmLoggingFacility::AmLoggingFacility(const string& name) 
+  : AmPluginFactory(name) 
+{
+}
