@@ -34,17 +34,30 @@ about performance
 
 snprintf'ing and vsnprintf'ing all debug messages does consume 
 quite some CPU power, especially on call setup and tear down as 
-there are a lot of debug messages print out.
+there are a lot of debug messages print out. for high cps with G711,
+this can hinder good performance. some numbers: 
  
 for G711 announcement (from file) over loopback interface, the 
 following was measured over 2000 calls using sipp and valgrind:
-
  call length        CPU consumed by logging (log_fac_print, incl) 
    5s                  34%
    1s                  58%
 
-for 50 participants G711 conference, 30s/ call, logging 
-used 16%. 
+for GSM announcement cpu usage of encoding relativates the one of logging :
+   5s                   9%
+   1s                  14%
+
+for iLBC announcement even more: 
+   5s                   1%
+   1s			4%
+
+
+for participants conference, 30s/ call, logging 
+used 
+participants  codec                 logging CPU 
+   50         G711                   16%
+   10         GSM                     0.8%
+    5         iLBC                    0.4%
 
 valgrind command:
  valgrind --tool=callgrind --instr-atstart=no ./sems -f sems.conf -D 1 -E
