@@ -202,7 +202,7 @@ class AmLoggingFacility : public AmPluginFactory
 
   /** will be called on logging messages
    */
-  virtual void log(int level, const char* fmt, va_list ap) = 0;
+  virtual void log(int level, const char* msg) = 0;
 };
 
 #if  __GNUC__ < 3

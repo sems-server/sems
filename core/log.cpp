@@ -83,15 +83,19 @@ void log_fac_print(int level, const char* fct, char* file, int line, char* fmt, 
 {
   va_list ap;
   char logline[512];
+  int len;
 
   if(log_hooks.empty()) return;
 
-  snprintf(logline, sizeof(logline), "(%i) %s: %s (%s:%i): ",(int)getpid(), level2txt(level), fct, file, line);
-  strncat(logline, fmt, sizeof(logline));
-
+  // file, line etc
+  len = snprintf(logline, sizeof(logline), "(%i) %s: %s (%s:%i): ",
+                    (int)getpid(), level2txt(level), fct, file, line);
+  // dbg msg
   va_start(ap, fmt);
-  for(unsigned i=0; i<log_hooks.size(); i++) log_hooks[i]->log(level, logline, ap);
+  vsnprintf(logline+len, sizeof(logline)-len, fmt, ap);
   va_end(ap);
+
+  for(unsigned i=0; i<log_hooks.size(); i++) log_hooks[i]->log(level, logline);
 }
 
 void register_logging_fac(void* vp)
