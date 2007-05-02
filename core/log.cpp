@@ -90,7 +90,7 @@ void log_fac_print(int level, const char* fct, char* file, int line, char* fmt, 
   strncat(logline, fmt, sizeof(logline));
 
   va_start(ap, fmt);
-  for(unsigned i=0; i<log_hooks.size(); i++) log_hooks[i]->log(logline, ap);
+  for(unsigned i=0; i<log_hooks.size(); i++) log_hooks[i]->log(level, logline, ap);
   va_end(ap);
 }
 
