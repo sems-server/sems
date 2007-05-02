@@ -174,26 +174,33 @@ class AmInbandDtmfDetector
    */
   struct timeval m_startTime;
 
-  static const int DTMF_NPOINTS = 205;        /* Number of samples for DTMF recognition */
   static const int REL_DTMF_NPOINTS = 205;    /* Number of samples for DTMF recognition */
-  static const int SAMPLERATE = 8000;
+  static const int REL_NCOEFF = 8;            /* number of frequencies to be analyzed   */
+
+  const int SAMPLERATE;
   /**
    * DTMF recognition successfull only if no less than DTMF_INTERVAL
    * audio packets were processed and all gave the same result
    */
   static const int DTMF_INTERVAL = 3;
 
-  int m_buf[DTMF_NPOINTS];
+  /* For DTMF recognition:
+   * 2 * cos(2 * PI * k / N) precalculated for all k
+   */
+  int rel_cos2pik[REL_NCOEFF];
+
+  int m_buf[REL_DTMF_NPOINTS];
   char m_last;
   int m_idx;
   int m_result[16];
   int m_lastCode;
+  int m_last_ts;	// timestamp representative for the currently analysed filter block
 
   int m_count;
 
   void isdn_audio_goertzel_relative();
   void isdn_audio_eval_dtmf_relative();
-  void isdn_audio_calc_dtmf(const signed short* buf, int len);
+  void isdn_audio_calc_dtmf(const signed short* buf, int len, unsigned int ts);
 
  public:
   AmInbandDtmfDetector(AmDtmfDetector *owner);

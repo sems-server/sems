@@ -374,54 +374,31 @@ static int IVR_dtmf_matrix[4][4] =
   };
 
 
-#define DTMF_TRESH   100000     /* above this is dtmf                         */
-#define SILENCE_TRESH   100     /* below this is silence                      */
-#define H2_TRESH      35000	/* 2nd harmonic                               */
-#define DTMF_DUR         25	/* nr of samples to detect a DTMF tone        */
-#define AMP_BITS          9     /* bits per sample, reduced to avoid overflow */
-#define NCOEFF           16     /* number of frequencies to be analyzed       */
 #define LOGRP             0
 #define HIGRP             1
 
-#define REL_NCOEFF            8     /* number of frequencies to be analyzed       */
 #define REL_DTMF_TRESH     4000     /* above this is dtmf                         */
 #define REL_SILENCE_TRESH   200     /* below this is silence                      */
 #define REL_AMP_BITS          9     /* bits per sample, reduced to avoid overflow */
 #define PI              3.1415926
+#define NELEMSOF(x) (sizeof(x)/sizeof(*x))
 
 
 typedef struct {
   int freq;			/* frequency */
   int grp;			/* low/high group */
-  int k;			/* k */
-  int k2;			/* k for 1st harmonic */
 } dtmf_t;
-
-
-static int cos2pik[NCOEFF] = {		/* 2 * cos(2 * PI * k / N), precalculated */
-  55812,      29528,      53603,      24032,
-  51193,      14443,      48590,       6517
-}; // high group missing...
-
-/* For DTMF recognition:
- * 2 * cos(2 * PI * k / N) precalculated for all k
- */
-static int rel_cos2pik[REL_NCOEFF] =
-  {
-    55813, 53604, 51193, 48591,      // low group
-    38114, 33057, 25889, 18332       // high group
-  };
 
 static dtmf_t dtmf_tones[8] = 
   {
-    { 697, LOGRP,  0,  1 },
-    { 770, LOGRP,  2,  3 },
-    { 852, LOGRP,  4,  5 },
-    { 941, LOGRP,  6,  7 },
-    {1209, HIGRP,  8,  9 },
-    {1336, HIGRP, 10, 11 },
-    {1477, HIGRP, 12, 13 },
-    {1633, HIGRP, 14, 15 }
+    { 697, LOGRP},
+    { 770, LOGRP},
+    { 852, LOGRP},
+    { 941, LOGRP},
+    {1209, HIGRP},
+    {1336, HIGRP},
+    {1477, HIGRP},
+    {1633, HIGRP}
   };
 
 static char dtmf_matrix[4][4] =
@@ -436,21 +413,15 @@ AmInbandDtmfDetector::AmInbandDtmfDetector(AmDtmfDetector *owner)
   : m_owner(owner),
     m_last(' '),
     m_idx(0),
-    m_count(0)
+    m_count(0),
+    SAMPLERATE(8000)
 {
   /* precalculate 2 * cos (2 PI k / N) */
-  int i, kp, k;
-  kp = 0;
-  for(i = 0; i < 8; i++) 
-    {
-      k = (int)rint((double)dtmf_tones[i].freq * DTMF_NPOINTS / SAMPLERATE);
-      cos2pik[kp] = (int)(2 * 32768 * cos(2 * PI * k / DTMF_NPOINTS));
-      dtmf_tones[i].k = kp++;
-
-      k = (int)rint((double)dtmf_tones[i].freq * 2 * DTMF_NPOINTS / SAMPLERATE);
-      cos2pik[kp] = (int)(2 * 32768 * cos(2 * PI * k / DTMF_NPOINTS));
-      dtmf_tones[i].k2 = kp++;
-    }
+  for(unsigned i = 0; i < NELEMSOF(rel_cos2pik); i++) {
+    // FIXME: fixed samplerate. won't work for wideband
+    int k = (int)((double)dtmf_tones[i].freq * REL_DTMF_NPOINTS / SAMPLERATE + 0.5);
+    rel_cos2pik[i] = (int)(2 * 32768 * cos(2 * PI * k / REL_DTMF_NPOINTS));
+  }
 }
 
 /*
@@ -463,32 +434,32 @@ void AmInbandDtmfDetector::isdn_audio_goertzel_relative()
 {
   int sk, sk1, sk2;
 
-  for (int k = 0; k < REL_NCOEFF; k++) 
-    {
-      sk = sk1 = sk2 = 0;
-      for (int n = 0; n < REL_DTMF_NPOINTS; n++) 
-        {
-	  sk = m_buf[n] + ((rel_cos2pik[k] * sk1) >> 15) - sk2;
-	  sk2 = sk1;
-	  sk1 = sk;
-        }
-      /* Avoid overflows */
-      sk >>= 1;
-      sk2 >>= 1;
-      /* compute |X(k)|**2 */
-      /* report overflows. This should not happen. */
-      /* Comment this out if desired */
-      /*if (sk < -32768 || sk > 32767)
-        DBG("isdn_audio: dtmf goertzel overflow, sk=%d\n", sk);
-        if (sk2 < -32768 || sk2 > 32767)
-        DBG("isdn_audio: dtmf goertzel overflow, sk2=%d\n", sk2);
-      */
-
-      m_result[k] =
-	((sk * sk) >> REL_AMP_BITS) -
-	((((rel_cos2pik[k] * sk) >> 15) * sk2) >> REL_AMP_BITS) +
-	((sk2 * sk2) >> REL_AMP_BITS);
+  for (int k = 0; k < REL_NCOEFF; k++) {
+    // like m_buf, sk..sk2 are in (32-REL_AMP_BITS).REL_AMP_BITS fixed-point format
+    sk = sk1 = sk2 = 0;
+    for (int n = 0; n < REL_DTMF_NPOINTS; n++) {
+      sk = m_buf[n] + ((rel_cos2pik[k] * sk1) >> 15) - sk2;
+      sk2 = sk1;
+      sk1 = sk;
     }
+    /* Avoid overflows */
+    sk >>= 1;
+    sk2 >>= 1;
+    /* compute |X(k)|**2 */
+    /* report overflows. This should not happen. */
+    /* Comment this out if desired */
+    /*if (sk < -32768 || sk > 32767)
+      DBG("isdn_audio: dtmf goertzel overflow, sk=%d\n", sk);
+      if (sk2 < -32768 || sk2 > 32767)
+      DBG("isdn_audio: dtmf goertzel overflow, sk2=%d\n", sk2);
+    */
+
+    // note that the result still is in (32-REL_AMP_BITS).REL_AMP_BITS format
+    m_result[k] =
+      ((sk * sk) >> REL_AMP_BITS) -
+      ((((rel_cos2pik[k] * sk) >> 15) * sk2) >> REL_AMP_BITS) +
+      ((sk2 * sk2) >> REL_AMP_BITS);
+  }
 }
 
 
@@ -549,7 +520,8 @@ void AmInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
 		
 	if (what != m_last)
 	  {
-	    gettimeofday(&m_startTime, NULL);
+	    m_startTime.tv_sec = m_last_ts / SAMPLERATE;
+	    m_startTime.tv_usec = (m_last_ts * 1000 / SAMPLERATE) % 1000;
 	  }
       } else
 	what = '.';
@@ -559,7 +531,7 @@ void AmInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
   }
   if (what != ' ' && what != '.')
     {
-      if (m_count++ >= DTMF_INTERVAL)
+      if (++m_count >= DTMF_INTERVAL)
         {
 	  m_owner->registerKeyPressed(m_lastCode, Dtmf::SOURCE_INBAND);
         }
@@ -569,7 +541,8 @@ void AmInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
       if (m_last != ' ' && m_last != '.' && m_count >= DTMF_INTERVAL)
         {
 	  struct timeval stop;
-	  gettimeofday(&stop, NULL);
+	  stop.tv_sec = m_last_ts / SAMPLERATE;
+	  stop.tv_usec = (m_last_ts * 1000 / SAMPLERATE) % 1000;
 	  m_owner->registerKeyReleased(m_lastCode, Dtmf::SOURCE_INBAND, m_startTime, stop);
         }
       m_count = 0;
@@ -577,32 +550,36 @@ void AmInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
   m_last = what;
 }
 
-void AmInbandDtmfDetector::isdn_audio_calc_dtmf(const signed short* buf, int len)
+void AmInbandDtmfDetector::isdn_audio_calc_dtmf(const signed short* buf, int len, unsigned int ts)
 {
   int c;
 
-  while (len)
-    {
-      c = (len < (DTMF_NPOINTS - m_idx)) ? len : (DTMF_NPOINTS - m_idx);
+  if(m_idx == 0) m_last_ts = ts;
 
-      if (c <= 0)
-	break;
+  while (len) {
+    c = (len < ((int)NELEMSOF(m_buf) - m_idx)) ? len : (NELEMSOF(m_buf) - m_idx);
 
-      for (int i = 0; i < c; i++) {
-	m_buf[m_idx++] = (*buf++) >> (15 - AMP_BITS);
-      }
-      if (m_idx == DTMF_NPOINTS) 
-        {
-	  isdn_audio_goertzel_relative();
-	  isdn_audio_eval_dtmf_relative();
-	  m_idx = 0;
-        }
-      len -= c;
+    if (c <= 0) break;
+
+    for (int i = 0; i < c; i++) {
+      // m_buf is in (32-REL_AMP_BITS).REL_AMP_BITS fixed-point format, the samples
+      // itself are in the last REL_AMP_BITS bits, i.e. they go from -1.0 to +1.0
+      // (or more exactly from -1.0 to ~+0.996)
+      m_buf[m_idx++] = (*buf++) >> (15 - REL_AMP_BITS);
     }
+    if (m_idx == NELEMSOF(m_buf)) {
+      isdn_audio_goertzel_relative();
+      isdn_audio_eval_dtmf_relative();
+      m_idx = 0;
+      m_last_ts = ts + c;
+    }
+    len -= c;
+    ts += c;
+  }
 }
 
-int AmInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned int)
+int AmInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts)
 {
-  isdn_audio_calc_dtmf((const signed short *)samples, size / 2);
+  isdn_audio_calc_dtmf((const signed short *)samples, size / 2, user_ts);
   return size;
 }
