@@ -39,11 +39,29 @@ enum PlayoutType {
   JB_PLAYOUT,
   SIMPLE_PLAYOUT
 };
+
+
+
+/** 
+ * \brief interface for PLC buffer
+ */
+
+class AmPLCBuffer {
+ public: 
+
+  virtual void add_to_history(int16_t *buffer, unsigned int size) = 0;
+
+  // Conceals packet loss into the out_buffer
+  // @return length in bytes of the recivered segment
+  virtual unsigned int conceal_loss(unsigned int ts_diff, unsigned char *out_buffer) = 0;
+  AmPLCBuffer() { }
+  virtual ~AmPLCBuffer() { }
+};
+
 /** 
  * \brief binds together a \ref AmRtpStream and an \ref AmAudio for a session 
  */
-
-class AmRtpAudio: public AmRtpStream, public AmAudio
+class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
 {
   auto_ptr<AmPlayoutBuffer> playout_buffer;
 

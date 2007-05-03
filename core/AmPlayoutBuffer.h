@@ -55,7 +55,7 @@ using std::multiset;
 // Note: plc result get stored in our back buffer
 #define PLC_MAX_SAMPLES (160*4) 
 
-class AmRtpAudio;
+class AmPLCBuffer;
 
 /** \brief base class for Playout buffer */
 class AmPlayoutBuffer
@@ -65,7 +65,7 @@ class AmPlayoutBuffer
 
  protected:
   u_int32_t r_ts,w_ts;
-  AmRtpAudio *m_owner;
+  AmPLCBuffer *m_plcbuffer;
 
   unsigned int last_ts;
   bool         last_ts_i;
@@ -81,7 +81,7 @@ class AmPlayoutBuffer
   virtual void write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
   virtual void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
  public:
-  AmPlayoutBuffer(AmRtpAudio *owner);
+  AmPlayoutBuffer(AmPLCBuffer *plcbuffer);
   virtual ~AmPlayoutBuffer() {}
 
   virtual void write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len, bool begin_talk);
@@ -119,7 +119,7 @@ class AmAdaptivePlayout: public AmPlayoutBuffer
 
  public:
 
-  AmAdaptivePlayout(AmRtpAudio *);
+  AmAdaptivePlayout(AmPLCBuffer *);
 
   /** write len samples beginning from timestamp ts from buf */
   void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
@@ -145,7 +145,7 @@ class AmJbPlayout : public AmPlayoutBuffer
   void prepare_buffer(unsigned int ts, unsigned int ms);
 
  public:
-  AmJbPlayout(AmRtpAudio *owner);
+  AmJbPlayout(AmPLCBuffer *plcbuffer);
 
   u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
   void write(u_int32_t ref_ts, u_int32_t rtp_ts, int16_t* buf, u_int32_t len, bool begin_talk);

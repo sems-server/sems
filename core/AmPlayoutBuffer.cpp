@@ -18,8 +18,8 @@
 
 #define MAX_DELAY 8000 /* 1 second */
 
-AmPlayoutBuffer::AmPlayoutBuffer(AmRtpAudio *owner)
-  : r_ts(0),w_ts(0), last_ts_i(false), m_owner(owner)
+AmPlayoutBuffer::AmPlayoutBuffer(AmPLCBuffer *plcbuffer)
+  : r_ts(0),w_ts(0), last_ts_i(false), m_plcbuffer(plcbuffer)
 {
 }
 
@@ -64,7 +64,7 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts,
      && (mapped_ts - last_ts <= PLC_MAX_SAMPLES))
     {
       unsigned char tmp[AUDIO_BUFFER_SIZE * 2];
-      int l_size = m_owner->conceal_loss(mapped_ts - last_ts, tmp);
+      int l_size = m_plcbuffer->conceal_loss(mapped_ts - last_ts, tmp);
       if (l_size>0)
         {
 	  direct_write_buffer(last_ts, (ShortSample*)tmp, PCM16_B2S(l_size));
@@ -72,7 +72,7 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts,
     }
   write_buffer(ref_ts, mapped_ts, buf, len);
 
-  m_owner->add_to_history(buf, PCM16_S2B(len));
+  m_plcbuffer->add_to_history(buf, PCM16_S2B(len));
 
   // update last_ts to end of received packet 
   // if not out-of-sequence
@@ -120,8 +120,8 @@ void AmPlayoutBuffer::buffer_get(unsigned int ts, ShortSample* buf, unsigned int
     r_ts = ts + len;
 }
 
-AmAdaptivePlayout::AmAdaptivePlayout(AmRtpAudio *owner)
-  : AmPlayoutBuffer(owner),
+AmAdaptivePlayout::AmAdaptivePlayout(AmPLCBuffer *plcbuffer)
+  : AmPlayoutBuffer(plcbuffer),
     idx(0),
     loss_rate(ORDER_STAT_LOSS_RATE),
     wsola_off(WSOLA_START_OFF),
@@ -281,6 +281,7 @@ u_int32_t AmAdaptivePlayout::read(u_int32_t ts, int16_t* buf, u_int32_t len)
     for(unsigned int i=0; i<len/FRAMESZ; i++){
 	    
       fec.dofe(plc_buf);
+
       buffer_put(w_ts,plc_buf,FRAMESZ);
     }
 
@@ -462,8 +463,8 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
  *
  *****************************************************************/
 
-AmJbPlayout::AmJbPlayout(AmRtpAudio *owner)
-  : AmPlayoutBuffer(owner)
+AmJbPlayout::AmJbPlayout(AmPLCBuffer *plcbuffer)
+  : AmPlayoutBuffer(plcbuffer)
 {
 }
 
@@ -491,11 +492,11 @@ void AmJbPlayout::prepare_buffer(unsigned int audio_buffer_ts, unsigned int ms)
   while (m_jb.get(audio_buffer_ts, ms, buf, &nb_samples, &ts))
     {
       direct_write_buffer(ts, buf, nb_samples);
-      m_owner->add_to_history(buf, PCM16_S2B(nb_samples));
+      m_plcbuffer->add_to_history(buf, PCM16_S2B(nb_samples));
       /* Conceal the gap between previous and current RTP packets */
       if (last_ts_i && ts_less()(m_last_rtp_endts, ts))
        	{
-	  int concealed_size = m_owner->conceal_loss(ts - m_last_rtp_endts, (unsigned char *)buf);
+	  int concealed_size = m_plcbuffer->conceal_loss(ts - m_last_rtp_endts, (unsigned char *)buf);
 	  if (concealed_size > 0)
 	    direct_write_buffer(m_last_rtp_endts, buf, PCM16_B2S(concealed_size));
 	}
@@ -508,7 +509,7 @@ void AmJbPlayout::prepare_buffer(unsigned int audio_buffer_ts, unsigned int ms)
   if (ts_less()(m_last_rtp_endts, audio_buffer_ts + ms))
     {
       /* Last packets have been lost. Conceal them */
-      int concealed_size = m_owner->conceal_loss(audio_buffer_ts + ms - m_last_rtp_endts, (unsigned char *)buf);
+      int concealed_size = m_plcbuffer->conceal_loss(audio_buffer_ts + ms - m_last_rtp_endts, (unsigned char *)buf);
       if (concealed_size > 0)
 	direct_write_buffer(m_last_rtp_endts, buf, PCM16_B2S(concealed_size));
       m_last_rtp_endts = audio_buffer_ts + ms;
