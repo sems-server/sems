@@ -389,27 +389,35 @@ void SIPRegistration::onSipReply(AmSipReply& reply) {
 
 void SIPRegistrarClient::onNewRegistration(SIPNewRegistrationEvent* new_reg) {
 
-	SIPRegistration* reg = new SIPRegistration(new_reg->handle, new_reg->info, 
-											   new_reg->sess_link);
+  SIPRegistration* reg = new SIPRegistration(new_reg->handle, new_reg->info, 
+					     new_reg->sess_link);
+  
+  if (uac_auth_i != NULL) {
+    DBG("enabling UAC Auth for new registration.\n");
+    
+    // get a sessionEventHandler from uac_auth
+    AmArgArray di_args,ret;
+    AmArg a;
+    a.setBorrowedPointer(reg);
+    di_args.push(a);
+    di_args.push(a);
+    DBG("arg type is %d\n", a.getType());
 
-	if (uac_auth_i != NULL) {
-		DBG("enabling UAC Auth for new registration.\n");
-
-		// get a sessionEventHandler from uac_auth
-		AmArgArray di_args,ret;
-		di_args.push(reg);
-		di_args.push(reg);
-		uac_auth_i->invoke("getHandler", di_args, ret);
-		ArgObject* p = ret.get(0).asObject();
-		if (p != NULL) {
-			AmSessionEventHandler* h = dynamic_cast<AmSessionEventHandler*>(p);	
-			if (h != NULL)
-				reg->setSessionEventHandler(h);
-		}
-	}
-
-	add_reg(new_reg->handle, reg);
-	reg->doRegistration();
+    uac_auth_i->invoke("getHandler", di_args, ret);
+    if (!ret.size()) {
+      ERROR("Can not add auth handler to new registration!\n");
+    } else {
+      ArgObject* p = ret.get(0).asObject();
+      if (p != NULL) {
+	AmSessionEventHandler* h = dynamic_cast<AmSessionEventHandler*>(p);	
+	if (h != NULL)
+	  reg->setSessionEventHandler(h);
+      }
+    }
+  }
+  
+  add_reg(new_reg->handle, reg);
+  reg->doRegistration();
 }
 
 void SIPRegistrarClient::onRemoveRegistration(SIPRemoveRegistrationEvent* new_reg) {

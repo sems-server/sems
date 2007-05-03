@@ -56,6 +56,8 @@ void UACAuthFactory::invoke(const string& method, const AmArgArray& args, AmArgA
     if ((c!=NULL)&&(cc!=NULL)) {
       ret.push(getHandler(cc->getDlg(), c));
     } else {
+      ERROR("wrong types in call to getHandler.  (c=%ld, cc= %ld)\n", 
+	    (unsigned long)c, (unsigned long)cc);
     }
   }
   else

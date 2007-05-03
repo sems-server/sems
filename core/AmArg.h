@@ -38,7 +38,6 @@ using std::vector;
 class ArgObject {
  public:
   ArgObject() { }
-  virtual ArgObject* clone() { return new ArgObject(*this); }
   virtual ~ArgObject() { }
 };
 
@@ -63,12 +62,11 @@ class AmArg
     
   // value
   union {
-	
     int         v_int;
     double      v_double;
     const char* v_cstr;
-    ArgObject* v_obj;
-    void*		v_ptr;
+    ArgObject*  v_obj;
+    void*	v_ptr;
   };
 
  public:
@@ -79,11 +77,15 @@ class AmArg
     case Int: v_int = v.v_int; break;
     case Double: v_double = v.v_double; break;
     case CStr: v_cstr = strdup(v.v_cstr); break;
-    case AObject: v_obj = v.v_obj->clone(); break;
+    case AObject: v_obj = v.v_obj; break;
     case APointer: v_ptr = v.v_ptr; break;
     default: assert(0);
     }
   }
+
+  AmArg() 
+    : type(Undef) 
+    {}
 
   AmArg(const int& v)
     : type(Int),
@@ -101,12 +103,6 @@ class AmArg
       v_cstr = strdup(v);
     }
 
-  AmArg(ArgObject* v)
-    : type(AObject)
-    {
-      v_obj = v->clone();
-    }
-
   AmArg(void* v)
     : type(APointer),
     v_ptr(v)
@@ -114,10 +110,15 @@ class AmArg
 
   ~AmArg() {
     if(type == CStr) free((void*)v_cstr);
-    else if(type == AObject) delete v_obj;
   }
 
   short getType() const { return type; }
+
+  void setBorrowedPointer(ArgObject* v) {
+    type = AObject;
+    v_obj = v;
+  }
+    
 
   int         asInt()    const { return v_int; }
   double      asDouble() const { return v_double; }
