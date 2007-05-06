@@ -29,15 +29,29 @@ Dialout is only enabled if dialout_suffix is defined (see below).
 Configuration:
 --------------
 
-default_announce: announcement to be played to the 
-		  first participant as he enters the 
-                  conference room.
+audio_path: directory where conference audio files are kept (optional,
+	    defaults to /usr/local/lib/sems/audio)
+
+default_announce: Announcement to be played to the first participant as
+		  he enters the conference room.  If default_announce
+		  does not start with '/' char, default_announce is
+		  appended to audio_path. (optional, defaults to
+		  audio_path/default.wav)  If P-Language header or
+		  Language P-App-Param header parameter exists,
+		  announcement file
+		  audio_path/lonely_user_msg/r-uri-host/default_<language>.wav, 
+		  or audio_path/lonely_user_msg/default_<language>.wav
+		  (if exists) is used instead of default_announce file.
 
 join_sound: sound to be played to all the participants
-            when a new one joins the conference. (optional)
+            when a new one joins the conference. If join_sound does not
+            start with '/', join_sound is appended to audio_path.
+	    (optional)
 
 drop_sound: sound to be played to all the participants
-            when a participant leaves the conference. (optional)
+            when a participant leaves the conference.
+	    If drop_sound does not start with '/', drop_sound is
+            appended to audio_path. (optional)
 
 dialout_suffix: suffix to be append to the numbered entered by
                 the user. Example: @iptel.org

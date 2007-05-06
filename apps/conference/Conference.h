@@ -69,6 +69,7 @@ struct DialoutConfEvent : public AmEvent {
 class ConferenceFactory : public AmSessionFactory
 {
 public:
+    static string AudioPath;
     static string LonelyUserFile;
     static string JoinSound;
     static string DropSound;
@@ -106,6 +107,7 @@ class ConferenceDialog : public AmSession
 
     string                        from_header;
     string                        extra_headers;
+    string                        language;
 
     auto_ptr<AmSipRequest>        transfer_req;
 

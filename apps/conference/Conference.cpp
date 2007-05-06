@@ -46,6 +46,7 @@ ConferenceFactory::ConferenceFactory(const string& _app_name)
 {
 }
 
+string ConferenceFactory::AudioPath;
 string ConferenceFactory::LonelyUserFile;
 string ConferenceFactory::JoinSound;
 string ConferenceFactory::DropSound;
@@ -61,7 +62,16 @@ int ConferenceFactory::onLoad()
     // get application specific global parameters
     configureModule(cfg);
 
-    LonelyUserFile = cfg.getParameter("default_announce",ANNOUNCE_PATH "/" ANNOUNCE_FILE);
+    AudioPath = cfg.getParameter("audio_path", ANNOUNCE_PATH);
+
+    LonelyUserFile = cfg.getParameter("default_announce");
+    if (LonelyUserFile.empty()) {
+	LonelyUserFile = AudioPath + "/" ANNOUNCE_FILE;
+    } else {
+	if (LonelyUserFile[0] != '/') {
+	    LonelyUserFile = AudioPath + "/" + LonelyUserFile;
+	}
+    }
     if(!file_exists(LonelyUserFile)){
 	ERROR("default announce '%s' \n",LonelyUserFile.c_str());
 	ERROR("for module conference does not exist.\n");
@@ -69,7 +79,18 @@ int ConferenceFactory::onLoad()
     }
 
     JoinSound = cfg.getParameter("join_sound");
+    if (!JoinSound.empty()) {
+	if (JoinSound[0] != '/') {
+	    JoinSound = AudioPath + "/" + JoinSound;
+	}
+    }
+
     DropSound = cfg.getParameter("drop_sound");
+    if (!DropSound.empty()) {
+	if (DropSound[0] != '/') {
+	    DropSound = AudioPath + "/" + DropSound;
+	}
+    }
 
     DialoutSuffix = cfg.getParameter("dialout_suffix");
     if(DialoutSuffix.empty()){
@@ -136,18 +157,21 @@ void ConferenceDialog::onStart()
 void ConferenceDialog::onSessionStart(const AmSipRequest& req)
 {
     int i, len;
+    string lonely_user_file;
 
     string app_param_hdr = getHeader(req.hdrs, PARAM_HDR);
     if (app_param_hdr.length()) {
         from_header = get_header_keyvalue(app_param_hdr, "Dialout-From");
 	extra_headers = get_header_keyvalue(app_param_hdr, "Dialout-Extra");
 	dialout_suffix = get_header_keyvalue(app_param_hdr, "Dialout-Suffix");      
+	language = get_header_keyvalue(app_param_hdr, "Language");      
     } else {
         DBG("Warning: P-Dialout- style headers are deprecated."
 	    " Please use P-App-Param header instead.\n");
         from_header = getHeader(req.hdrs, "P-Dialout-From");
 	extra_headers = getHeader(req.hdrs, "P-Dialout-Extra");
 	dialout_suffix = getHeader(req.hdrs, "P-Dialout-Suffix");
+	language = getHeader(req.hdrs, "P-Language");
     }
 
     len = extra_headers.length();
@@ -164,7 +188,23 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
     }
     
     allow_dialout = dialout_suffix.length() > 0;
-    
+
+    if (!language.empty()) {
+	lonely_user_file = ConferenceFactory::AudioPath + "/lonely_user_msg/" +
+	    req.domain + "/" + "default_" + language + ".wav";
+	if(file_exists(lonely_user_file)) {
+	    ConferenceFactory::LonelyUserFile = lonely_user_file;
+	} else {
+	    lonely_user_file = ConferenceFactory::AudioPath +
+		"/lonely_user_msg/default_" + language + ".wav";
+	    if(file_exists(lonely_user_file)) {
+		ConferenceFactory::LonelyUserFile = lonely_user_file;
+	    }
+	}
+    }
+    DBG("Using LonelyUserFile <%s>\n",
+	ConferenceFactory::LonelyUserFile.c_str());
+	
     setupAudio();
 }
 
