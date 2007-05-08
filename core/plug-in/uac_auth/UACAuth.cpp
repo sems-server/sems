@@ -54,7 +54,9 @@ void UACAuthFactory::invoke(const string& method, const AmArgArray& args, AmArgA
     DialogControl* cc = dynamic_cast<DialogControl*>(args.get(1).asObject());
 
     if ((c!=NULL)&&(cc!=NULL)) {
-      ret.push(getHandler(cc->getDlg(), c));
+      AmArg handler;
+      handler.setBorrowedPointer(getHandler(cc->getDlg(), c));
+      ret.push(handler);
     } else {
       ERROR("wrong types in call to getHandler.  (c=%ld, cc= %ld)\n", 
 	    (unsigned long)c, (unsigned long)cc);
