@@ -159,7 +159,7 @@ int AmRtpPacket::send(int sd)
 #ifdef SUPPORT_IPV6
   if(addr.ss_family != PF_INET)
     err = sendto(sd,buffer,b_size,0,
-		 (const struct sockaddr *)saddr,
+		 (const struct sockaddr *)&addr,
 		 sizeof(struct sockaddr_in6));
   else 
 #endif

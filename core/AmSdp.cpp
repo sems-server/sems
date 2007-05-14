@@ -190,7 +190,7 @@ int AmSdp::genResponse(const string& localip, int localport,
   string l_ip = "IP4 " + localip;
 
 #ifdef SUPPORT_IPV6
-  if(localip.find('.') = string::npos)
+  if(localip.find('.') == string::npos)
     l_ip = "IP6 " + localip;
 #endif
 
