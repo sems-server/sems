@@ -75,6 +75,7 @@ private:
 };
 
 class B2ABEvent
+: AmEvent 
 {
 %TypeHeaderCode
 #include "../../../core/AmB2ABSession.h"
