@@ -132,7 +132,7 @@ void JukecallSession::process(AmEvent* event)
 
 		case JC_juke: {
 			DBG("reconnecting audio\n");
-			reconnectAudio();
+			connectSession();
 			state = JC_connect;
 			return;
 		}; break;
@@ -175,7 +175,7 @@ void JukecalleeSession::process(AmEvent* event) {
     AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
     if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
 		DBG("reconnecting audio\n");
-		reconnectAudio();
+		connectSession();
 		return;
 	}
 	
