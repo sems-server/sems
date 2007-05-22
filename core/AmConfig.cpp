@@ -155,6 +155,8 @@ int AmConfig::readConfiguration()
   // plugin_config_path
   ModConfigPath = cfg.getParameter("plugin_config_path",ModConfigPath);
 
+  if(!ModConfigPath.empty() && (ModConfigPath[ModConfigPath.length()-1] != '/'))
+    ModConfigPath += '/';
 
   // smtp_server
   SmtpServerAddress = cfg.getParameter("smtp_server",SmtpServerAddress);
