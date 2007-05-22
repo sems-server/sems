@@ -19,7 +19,7 @@
  *  \section developerdoc Developer's documentation
  *   \arg <a href="http://www.iptel.org/files/semsng-designoverview.pdf">
  *         SEMS Design Overview</a>
- *  \arg <a href="http://www.iptel.org/howto/sems_application_development_tutorial"> 
+ *  \arg <a href="http://www.iptel.org/sems/sems_application_development_tutorial"> 
  *    Application Development Tutorial </a>
  *  \arg \ref ComponentDoc
  *
@@ -58,7 +58,7 @@
 /*! \page Configure-Sems-Ser-HOWTO mini-Howto on how to configure SER and SEMS to work together
  *
  * Be sure to also check the instructions that are on the page with the 
- * <a href="http://www.iptel.org/howto/sems_application_development_tutorial">
+ * <a href="http://www.iptel.org/sems/sems_application_development_tutorial">
  * application development tutorial</a>, there is step by step instructions including 
  * a complete set of configuration files that should get you started with SEMS 
  * very quickly.
