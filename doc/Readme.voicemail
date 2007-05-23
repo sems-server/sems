@@ -1,15 +1,71 @@
-*****************************
-* Voicemail email templates *
-*****************************
+voicemail (voicemail2email) application 
+
+This application plays a greeting message to the caller, records a 
+voicemail and sends it out as email via SMTP.
+
+The voicemail application looks in various paths for the greeting 
+message to be played, the first file found will be played:
+
+ <announce_path><domain><user>'.wav'
+ <announce_path><domain><language><default_announce>
+ <announce_path><domain><default_announce>
+ <announce_path><language><default_announce>
+ <announce_path><default_announce>
+
+where <announce_path> and <default_announce> is set in voicemail.conf,
+<domain> is the host part of the request URI, <user> the user part of 
+the request URI, and <language> is the App-Param 'Language' (see below).
+
+If you have a small application record or copy the greeting to
+<announce_path><domain><user>'.wav' it will be played back instead of the
+default announcement.
+
+The format of the email can be configured using email templates 
+(see below).
+
+The mail server to send the email with is configured in the main
+sems.conf in smtp_server/smtp_port.
+
+
+further configuration items (voicemail.conf):
+
+max_record_time - voicemail records voicemail up to the number of 
+                  seconds set here
+
+rec_file_ext - extension of recorded voicemail file. this defines the 
+               format of the recorded message: default is .wav, .mp3 
+	       will record a voicemail as MP3 file (the mp3 plugin needs
+	       to be loaded so that mp3 encoding is possible)
+
+
+App-Params
+----------
+
+These must be passed as headers with the INVITE request to SEMS, so that 
+SEMS knows at least the email address to send the email to.
+
+   Email-Address   - mandatory (!): the email address to send the mail to
+   Language        - optional: language for announcement file
+
+  Example:
+    P-Iptel-App: voicemail
+    P-App-Param: Email-Address=user@maildomain.net;Language=Latvian
+
+  old deprecated header format:
+    P-Email-Address: user@maildomain.net
+    P-Language: Latvian
+
+Voicemail email templates 
+-------------------------
 
 Email templates will help you to customize the emails
-sended by Voicemail. Just configure the path where the 
+sent by Voicemail. Just configure the path where the 
 templates can be found and edit your template files.
 You will find detailed informations in the following 
 sections.
 
 
-Configuration parameters within voicemail section:
+Configuration parameters within voicemail.conf:
 --------------------------------------------------
 
 email_template_path: 
