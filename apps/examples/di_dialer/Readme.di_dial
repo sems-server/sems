@@ -5,7 +5,8 @@ the DI interface. With the DI interface exportde to UDP
 in the stats module, you can for example make a simple load 
 generator test tool.
 
-DI Interface is like this
+DI Interface:
+-------------
 	method: "dial"
 	params:
           	0 - string application
@@ -13,11 +14,32 @@ DI Interface is like this
 		2 - string from
 		3 - string to
 
+	method: "dial_auth"
+          place a call with uac authentication
+	params:
+          	0 - string application
+		1 - string user
+		2 - string from
+		3 - string to
+		4 - string auth_realm
+		5 - string auth_user
+		6 - string auth_pwd
+
+	method: "dial_pin"
+          place a call with uac authentication from dialout PIN (see below)
+	params:
+          	0 - string application
+	        1 - string dialout pin
+		1 - string local user
+		2 - string to user
+
 	method: "help"
 	params: none
 	  return help string 
 	  e.g. get help with query_stats -c DI di_dial help
 
+Example
+-------
 The following line would for example place a call every 
 second using announcement app from local user 123 to sip:ann@10.0.0.45
 
@@ -27,4 +49,35 @@ while true; do \
  sleep 1; \
 done
 
-Please dont use SEMS for SPIT.
+
+Dialout PINs
+------------
+
+in di_dial.conf you can set dialout pins for accounts which you then can 
+use to place authenticated calls in that domain. The format is:
+dialout_pin<id>=<pin>;<user>;<auth_user>;<domain>;<password>;
+This makes it easier and more secure to use authenticated call because 
+you don't need to specify the domain every time and you don't need to send
+the password every time over DI.
+
+If you for example have the account named "sems_account" with 
+the extension 1551 on siptelephony.net, and set the pin 
+ dialout_pin0=1234;1551;sems_account;siptelephony.net;verysecret;
+
+if you use the pin 1234 the call will be placed 
+
+ From: 1551@siptelephony.net
+ To: <to_user>@siptelephony.net
+
+with UAC authentication for the account
+
+ realm: siptelephony.net
+ user:  sems_account
+ pwd:   verysecret
+ 
+you can set several dialout pins, e.g.
+ dialout_pin0=<pin>;<user>;<auth_user>;<domain>;<password>;
+ dialout_pin1=<anotherpin>;<anotheruser>;<otherauth_user>;<otherdomain>;<otherpassword>;
+
+Please dont use SEMS for SPIT.        
+(http://www.google.com/search?q=voip+spit)
