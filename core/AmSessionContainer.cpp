@@ -177,11 +177,11 @@ AmSession* AmSessionContainer::getSession(const string& local_tag)
   return it->second;
 }
 
-AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req) {
+AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session_params) {
   AmSession* session = NULL;
   as_mut.lock();
   try {
-    if((session = createSession(req)) != 0){
+    if((session = createSession(req, session_params)) != 0){
       session->dlg.updateStatusFromLocalRequest(req); // sets local tag as well
       session->setCallgroup(req.from_tag);
 
@@ -303,7 +303,8 @@ bool AmSessionContainer::postEvent(const string& local_tag,
   return false;
 }
 
-AmSession* AmSessionContainer::createSession(AmSipRequest& req)
+AmSession* AmSessionContainer::createSession(AmSipRequest& req, 
+					     AmArg* session_params)
 {
   string& plugin_name = req.cmd;
 
@@ -328,12 +329,17 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req)
   }
 	    
   AmSession* session = 0;
-  if (req.method == "INVITE")
-    session = state_factory->onInvite(req);
-  else if (req.method == "REFER")
-    session = state_factory->onRefer(req);
-
-
+  if (req.method == "INVITE") {
+    if (NULL != session_params) 
+      session = state_factory->onInvite(req, *session_params);
+    else 
+      session = state_factory->onInvite(req);
+  }  else if (req.method == "REFER") {
+    if (NULL != session_params) 
+      session = state_factory->onRefer(req, *session_params);
+    else 
+      session = state_factory->onRefer(req);
+  }
 
   if(!session) {
     //  State creation failed:

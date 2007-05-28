@@ -30,6 +30,7 @@
 
 #include "AmThread.h"
 #include "AmSession.h"
+#include "AmArg.h"
 
 #include <string>
 using std::string; 
@@ -43,7 +44,9 @@ class AmUAC {
 			    const string& from,
 			    const string& from_uri,
 			    const string& to,
-			    const string& local_tag = "");
+			    const string& local_tag = "",
+			    AmArg*  session_params = NULL);
+
 };
 
 #endif

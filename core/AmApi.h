@@ -113,6 +113,7 @@ class AmSessionEventHandlerFactory: public AmPluginFactory
    * @return true if session creation should be stopped
    */
   virtual bool onInvite(const AmSipRequest& req)=0;
+  virtual bool onInvite(const AmSipRequest& req, AmArg& session_params);
 };
 
 /** \brief Interface for plugins to create sessions */
@@ -147,6 +148,19 @@ class AmSessionFactory: public AmPluginFactory
   virtual AmSession* onInvite(const AmSipRequest& req)=0;
 
   /**
+   * Creates a dialog state on new request. Passes with 
+   * parameters to the new session.
+   * 
+   * @return 0 if the request is not acceptable.
+   *
+   * Warning:
+   *   This method should not make any expensive
+   *   processing as it would block the server.
+   */
+  virtual AmSession* onInvite(const AmSipRequest& req, 
+			      AmArg& session_params);
+
+  /**
    * Creates a dialog state on new REFER with local-tag.
    * @return 0 if the request is not acceptable.
    *
@@ -155,6 +169,18 @@ class AmSessionFactory: public AmPluginFactory
    *   processing as it would block the server.
    */
   virtual AmSession* onRefer(const AmSipRequest& req);
+
+  /**
+   * Creates a dialog state on new REFER with local-tag.
+   * Passes session_params to the new session.
+   * @return 0 if the request is not acceptable.
+   *
+   * Warning:
+   *   This method should not make any expensive
+   *   processing as it would block the server.
+   */
+  virtual AmSession* onRefer(const AmSipRequest& req, 
+			     AmArg& session_params);
 
   /**
    * method to receive an Event that is posted

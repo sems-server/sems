@@ -48,9 +48,22 @@ AmSessionFactory::AmSessionFactory(const string& name)
 {
 }
 
+AmSession* AmSessionFactory::onInvite(const AmSipRequest& req, 
+				      AmArg& session_params) {
+  WARN(" discarding session parameters to new session.\n");
+  return onInvite(req);
+}
+
 AmSession* AmSessionFactory::onRefer(const AmSipRequest& req)
 {
   throw AmSession::Exception(488,"Not accepted here");
+}
+
+AmSession* AmSessionFactory::onRefer(const AmSipRequest& req, 
+				     AmArg& session_params)
+{
+  WARN(" discarding session parameters to new session.\n");
+  return onRefer(req);
 }
 
 int AmSessionFactory::configureModule(AmConfigReader& cfg) {
@@ -69,6 +82,12 @@ void AmSessionFactory::postEvent(AmEvent* ev) {
 AmSessionEventHandlerFactory::AmSessionEventHandlerFactory(const string& name)
   : AmPluginFactory(name) 
 {
+}
+
+bool AmSessionEventHandlerFactory::onInvite(const AmSipRequest& req, 
+						  AmArg& session_params) {
+  WARN("discarding session parameters for new session.\n");
+  return onInvite(req);
 }
 
 AmSIPEventHandler::AmSIPEventHandler(const string& name) 

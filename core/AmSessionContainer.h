@@ -141,7 +141,8 @@ class AmSessionContainer : public AmThread
    * @param req local request
    * @return a new session or NULL on error.
    */
-  AmSession* createSession(AmSipRequest& req);
+  AmSession* createSession(AmSipRequest& req, 
+			   AmArg* session_params = NULL);
 
   /**
    * Adds a session to the container (UAS only).
@@ -169,7 +170,8 @@ class AmSessionContainer : public AmThread
    * Constructs a new session and adds it to the active session container. 
    * @param req client's request
    */
-  AmSession* startSessionUAC(AmSipRequest& req);
+  AmSession* startSessionUAC(AmSipRequest& req, 
+			     AmArg* session_params = NULL);
 
   /**
    * Detroys a session.
