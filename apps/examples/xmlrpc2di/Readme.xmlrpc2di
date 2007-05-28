@@ -1,0 +1,42 @@
+xmlrpc2di: DI call via XMLRPC
+
+This module makes the Dynamic Invocation (DI) Interfaces exported 
+by component modules accessible from XMLRPC. Additionaly the methods 
+calls, get_loglevel and set_loglevel are implemented (like in the 
+stats UDP server). 
+
+This module uses the XmlRpc++ library (http://xmlrpcpp.sourceforge.net/).
+In order to compile it, the xmlrpc library is needed:
+cd apps/examples/xmlrpc2di 
+wget http://switch.dl.sourceforge.net/sourceforge/xmlrpcpp/xmlrpc++0.7.tar.gz && tar xzvf xmlrpc++0.7.tar.gz
+If xmlrpcpp is extracted to a different directory, the path in
+the Makefile needs to be adapted.
+
+The first parameter to 'di' is alway the factory name, the second the
+function name. Further parameters to XMLRPC calls are converted to DI 
+ArgArray structure, and result of DI calls are converted back to XMLRPC 
+parameters. At the moment only string, int and double types are implemented
+(no DateTime, struct, binary, ...).
+
+
+Examples (that hopefully trigger some creativity in the reader ;) 
+-----------------------------------------------------------------
+
+Register fritz at iptel.org using registrar client over XMLRPC 
+from python:
+
+import xmlrpclib
+server = ServerProxy("http://127.0.0.1:8090")
+server.di('registrar_client', 'createRegistration', 
+    'iptel.org',  'fritz', 'Frotz', 
+    'fritz', 'secretpass', '')
+
+To call someone into conference over an account at sparvoip.de
+using di_dial:
+
+import xmlrpclib
+server = ServerProxy("http://127.0.0.1:8090")
+server.di('di_dial', 'dial_auth','conference', 'roomname',
+ 'sip:myuser@sparvoip.de', 'sip:0049301234567@sparvoip.de',
+ 'sparvoip.de','myuser','passwd')
+
