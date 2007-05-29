@@ -72,16 +72,18 @@ int cache_audio_file(string message, string domain, string language,
 {
     if (language.empty()) {
 	if (domain.empty()) {
-	    *audio_file = "/tmp/" + message + ".wav";
+	    *audio_file = string("/tmp/") + APP_NAME + "_" + message + ".wav";
 	} else {
-	    *audio_file = "/tmp/" + domain + "_" + message + ".wav";
+	    *audio_file = "/tmp/" + domain + "_" + APP_NAME + "_" + 
+		message + ".wav";
 	}
     } else {
 	if (domain.empty()) {
-	    *audio_file = "/tmp/" + message + "_" + language + ".wav";
-	} else {
-	    *audio_file = "/tmp/" + domain + "_" + message + "_" +
+	    *audio_file = string("/tmp/") + APP_NAME + "_" + message + "_" +
 		language + ".wav";
+	} else {
+	    *audio_file = "/tmp/" + domain + "_" + APP_NAME + "_" +
+		message + "_" +	language + ".wav";
 	}
     }
     
