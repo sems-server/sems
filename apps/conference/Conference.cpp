@@ -37,8 +37,18 @@
 #include "sems.h"
 #include "log.h"
 
-#define APP_NAME "conference"
+#ifdef USE_MYSQL
+#include <mysql++/mysql++.h>
+#include <stdio.h>
+#define DEFAULT_AUDIO_TABLE "default_audio"
+#define DOMAIN_AUDIO_TABLE "domain_audio"
+#define LONELY_USER_MSG "first_participant_msg"
+#define JOIN_SOUND "join_sound"
+#define DROP_SOUND "drop_sound"
+#endif
 
+#define APP_NAME "conference"
+	
 EXPORT_SESSION_FACTORY(ConferenceFactory,APP_NAME);
 
 ConferenceFactory::ConferenceFactory(const string& _app_name)
@@ -53,6 +63,83 @@ string ConferenceFactory::DropSound;
 string ConferenceFactory::DialoutSuffix;
 PlayoutType ConferenceFactory::m_PlayoutType = ADAPTIVE_PLAYOUT;
 
+#ifdef USE_MYSQL
+mysqlpp::Connection ConferenceFactory::Connection(mysqlpp::use_exceptions);
+#endif
+
+int cache_audio_file(string message, string domain, string language,
+		     string *audio_file)
+{
+    if (language.empty()) {
+	if (domain.empty()) {
+	    *audio_file = "/tmp/" + message + ".wav";
+	} else {
+	    *audio_file = "/tmp/" + domain + "_" + message + ".wav";
+	}
+    } else {
+	if (domain.empty()) {
+	    *audio_file = "/tmp/" + message + "_" + language + ".wav";
+	} else {
+	    *audio_file = "/tmp/" + domain + "_" + message + "_" +
+		language + ".wav";
+	}
+    }
+    
+    if (file_exists(*audio_file)) {
+
+	return 1;
+
+    } else {
+
+	try {
+
+	    mysqlpp::Query query = ConferenceFactory::Connection.query();
+	    
+	    string query_string, table;
+	    if (domain.empty()) {
+		table = DEFAULT_AUDIO_TABLE;
+	    } else {
+		table = DOMAIN_AUDIO_TABLE;
+	    }
+	    if (language.empty()) {
+		query_string = "select audio from " + table + " where application='conference' and message='" + message + "' and language is null";
+	    } else {
+		query_string = "select audio from " + table + " where application='conference' and message='" + message + "' and language='" + language + "'";
+	    }
+
+	    DBG("Query string <%s>\n", query_string.c_str());
+
+	    query << query_string;
+	    mysqlpp::Result res = query.store();
+
+	    mysqlpp::Row row;
+
+	    if (res) {
+		if ((res.num_rows() > 0) && (row = res.at(0))) {
+		    FILE *file;
+		    unsigned long length = row.raw_string(0).size();
+		    file = fopen((*audio_file).c_str(), "wb"); 
+		    fwrite(row.at(0).data(), 1, length, file);
+		    fclose(file);
+		    return 1;
+		} else {
+		    *audio_file = "";
+		    return 1;
+		}
+	    } else {
+		ERROR("Database query error\n");
+		return 0;
+	    }
+	}
+
+	catch (const mysqlpp::Exception& er) {
+	    // Catch-all for any MySQL++ exceptions
+	    ERROR("MySQL++ error: %s\n", er.what());
+	    return 0;
+	}
+    }
+}
+
 int ConferenceFactory::onLoad()
 {
     AmConfigReader cfg;
@@ -61,6 +148,72 @@ int ConferenceFactory::onLoad()
 
     // get application specific global parameters
     configureModule(cfg);
+
+#ifdef USE_MYSQL
+
+    /* Get default audio from MySQL */
+
+    string mysql_server, mysql_user, mysql_passwd, mysql_db;
+
+    mysql_server = cfg.getParameter("mysql_server");
+    if (mysql_server.empty()) {
+	mysql_server = "localhost";
+    }
+
+    mysql_user = cfg.getParameter("mysql_user");
+    if (mysql_user.empty()) {
+	ERROR("conference.conf paramater 'mysql_user' is missing.\n");
+	return -1;
+    }
+
+    mysql_passwd = cfg.getParameter("mysql_passwd");
+    if (mysql_passwd.empty()) {
+	ERROR("conference.conf paramater 'mysql_passwd' is missing.\n");
+	return -1;
+    }
+
+    mysql_db = cfg.getParameter("mysql_db");
+    if (mysql_db.empty()) {
+	mysql_db = "sems";
+    }
+
+    try {
+
+	Connection.connect(mysql_db.c_str(), mysql_server.c_str(),
+			   mysql_user.c_str(), mysql_passwd.c_str());
+	if (!Connection) {
+	    ERROR("Database connection failed: %s\n", Connection.error());
+	    return -1;
+	}
+    }
+	
+    catch (const mysqlpp::Exception& er) {
+	// Catch-all for any MySQL++ exceptions
+	ERROR("MySQL++ error: %s\n", er.what());
+	return -1;
+    }
+
+    if (!cache_audio_file(LONELY_USER_MSG, "", "", &LonelyUserFile)) {
+	return -1;
+    }
+
+    if (LonelyUserFile.empty()) {
+	ERROR("default announce 'first_participant_msg'\n");
+	ERROR("for module conference does not exist.\n");
+	return -1;
+    }
+
+    if (!cache_audio_file(JOIN_SOUND, "", "", &JoinSound)) {
+	return -1;
+    }
+
+    if (!cache_audio_file(DROP_SOUND, "", "", &DropSound)) {
+	return -1;
+    }
+
+#else 
+
+    /* Get default audio from file system */
 
     AudioPath = cfg.getParameter("audio_path", ANNOUNCE_PATH);
 
@@ -92,6 +245,8 @@ int ConferenceFactory::onLoad()
 	}
     }
 
+#endif
+	
     DialoutSuffix = cfg.getParameter("dialout_suffix");
     if(DialoutSuffix.empty()){
       WARN("No dialout_suffix has been configured in the conference plug-in:\n");
@@ -190,6 +345,22 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
     allow_dialout = dialout_suffix.length() > 0;
 
     if (!language.empty()) {
+
+#ifdef USE_MYSQL
+	/* Get domain/language specific lonely user file from MySQL */
+	if (cache_audio_file(LONELY_USER_MSG, req.domain, language,
+			     &lonely_user_file) &&
+	    !lonely_user_file.empty()) {
+	    ConferenceFactory::LonelyUserFile = lonely_user_file;
+	} else {
+	    if (cache_audio_file(LONELY_USER_MSG, "", language,
+				 &lonely_user_file) &&
+		!lonely_user_file.empty()) {
+		ConferenceFactory::LonelyUserFile = lonely_user_file;
+	    }
+	}
+#else
+	/* Get domain/language specific lonely user file from file system */
 	lonely_user_file = ConferenceFactory::AudioPath + "/lonely_user_msg/" +
 	    req.domain + "/" + "default_" + language + ".wav";
 	if(file_exists(lonely_user_file)) {
@@ -201,7 +372,9 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
 		ConferenceFactory::LonelyUserFile = lonely_user_file;
 	    }
 	}
+#endif
     }
+
     DBG("Using LonelyUserFile <%s>\n",
 	ConferenceFactory::LonelyUserFile.c_str());
 	

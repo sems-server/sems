@@ -28,6 +28,10 @@
 #ifndef _CONFERENCE_H_
 #define _CONFERENCE_H_
 
+#ifdef USE_MYSQL
+#include <mysql++/mysql++.h>
+#endif
+
 #include "AmApi.h"
 #include "AmThread.h"
 #include "AmSession.h"
@@ -75,6 +79,10 @@ public:
     static string DropSound;
     static string DialoutSuffix;
     static PlayoutType m_PlayoutType;
+
+#ifdef USE_MYSQL
+    static mysqlpp::Connection Connection;
+#endif
 
     ConferenceFactory(const string& _app_name);
     virtual AmSession* onInvite(const AmSipRequest&);

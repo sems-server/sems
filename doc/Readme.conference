@@ -26,8 +26,11 @@ keys:
  - press '#' to drop the call.
 
 Dialout is only enabled if dialout_suffix is defined (see below).
+
 Configuration:
 --------------
+
+These are needed if you store audio files in file system:
 
 audio_path: directory where conference audio files are kept (optional,
 	    defaults to /usr/local/lib/sems/audio)
@@ -52,6 +55,49 @@ drop_sound: sound to be played to all the participants
             when a participant leaves the conference.
 	    If drop_sound does not start with '/', drop_sound is
             appended to audio_path. (optional)
+
+These are needed if you store audio files in MySQL database:
+
+mysql_host:	 host where MySQL server is running (optional, defaults
+		 to 'localhost')
+
+mysql_user:	 MySQL username (mandatory, no default)
+
+mysql_passwd:	 MySQL password (mandatory, no default)
+
+mysql_db:	 database where audio is stored
+
+mysql_db must contain two tables as follows:
+
+CREATE TABLE default_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  `language` char(2) default NULL,
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,`language`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+CREATE TABLE domain_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  domain varchar(128) NOT NULL,
+  `language` char(2) default NULL,
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,domain,`language`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+The first one stores default audio files and the latter domain specific
+audio files.  Application value must be 'conference' and message values
+are 'first_participant_msg', 'join_sound', and 'drop_sound'.
+
+When an audio file is fetched from database, it is cached in /tmp
+directory and later on fetched from there.
+
+These are independent of audio storage:
 
 dialout_suffix: suffix to be append to the numbered entered by
                 the user. Example: @iptel.org
