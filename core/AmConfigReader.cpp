@@ -25,6 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include "AmConfigReader.h"
+#include "AmConfig.h"
 #include "log.h"
 #include "AmUtils.h"
 
@@ -52,9 +53,9 @@ int  AmConfigReader::loadFile(const string& path)
   int  ls = 0;
   char lb[MAX_CONFIG_LINE] = {'\0'};
 
-  char *c,*key_beg,*key_end,*val_beg,*val_end;
+  char *c,*key_beg,*key_end,*val_beg,*val_end,*inc_beg,*inc_end;
 
-  c=key_beg=key_end=val_beg=val_end=0;
+  c=key_beg=key_end=val_beg=val_end=inc_beg=inc_end=0;
   while(!feof(fp) && ((ls = fifo_get_line(fp, lb, MAX_CONFIG_LINE)) != -1)){
 	
     c=key_beg=key_end=val_beg=val_end=0;
@@ -65,9 +66,21 @@ int  AmConfigReader::loadFile(const string& path)
 
     if(IS_EOL(*c)) continue;
 
+    if (*c == '@') { /* process included config file */
+	c++;
+	TRIM(c);
+	inc_beg = c++;
+	while( !IS_EOL(*c) && !IS_SPACE(*c) ) c++;
+	inc_end = c;
+	if(loadFile(AmConfig::ModConfigPath +
+		    string(inc_beg,inc_end-inc_beg) ))
+	    return -1;
+	continue;
+    }
+
     key_beg = c;
     while( (*c != '=') && !IS_SPACE(*c) ) c++;
-	
+    
     key_end = c;
     if(IS_SPACE(*c))
       TRIM(c);
