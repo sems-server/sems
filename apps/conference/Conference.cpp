@@ -43,8 +43,8 @@
 #define DEFAULT_AUDIO_TABLE "default_audio"
 #define DOMAIN_AUDIO_TABLE "domain_audio"
 #define LONELY_USER_MSG "first_participant_msg"
-#define JOIN_SOUND "join_sound"
-#define DROP_SOUND "drop_sound"
+#define JOIN_SOUND "join_snd"
+#define DROP_SOUND "drop_snd"
 #endif
 
 #define APP_NAME "conference"
@@ -67,78 +67,67 @@ PlayoutType ConferenceFactory::m_PlayoutType = ADAPTIVE_PLAYOUT;
 mysqlpp::Connection ConferenceFactory::Connection(mysqlpp::use_exceptions);
 #endif
 
-int cache_audio_file(string message, string domain, string language,
+int get_audio_file(string message, string domain, string language,
 		     string *audio_file)
 {
+    string query_string;
+
     if (language.empty()) {
 	if (domain.empty()) {
 	    *audio_file = string("/tmp/") + APP_NAME + "_" + message + ".wav";
+	    query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + APP_NAME + "' and message='" + message + "' and language is null";
 	} else {
 	    *audio_file = "/tmp/" + domain + "_" + APP_NAME + "_" + 
 		message + ".wav";
+	    query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + APP_NAME + "' and message='" + message + "' and domain='" + domain + "' and language is null";
 	}
     } else {
 	if (domain.empty()) {
 	    *audio_file = string("/tmp/") + APP_NAME + "_" + message + "_" +
 		language + ".wav";
+	    query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + APP_NAME + "' and message='" + message + "' and language='" + language + "'";
 	} else {
 	    *audio_file = "/tmp/" + domain + "_" + APP_NAME + "_" +
 		message + "_" +	language + ".wav";
+	    query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + APP_NAME + "' and message='" + message + "' and domain='" + domain + "' and language='" + language + "'";
 	}
     }
-    
-    if (file_exists(*audio_file)) {
 
-	return 1;
+    try {
 
-    } else {
-
-	try {
-
-	    mysqlpp::Query query = ConferenceFactory::Connection.query();
+	mysqlpp::Query query = ConferenceFactory::Connection.query();
 	    
-	    string query_string, table;
-	    if (domain.empty()) {
-		table = DEFAULT_AUDIO_TABLE;
+	DBG("Query string <%s>\n", query_string.c_str());
+
+	query << query_string;
+	mysqlpp::Result res = query.store();
+
+	mysqlpp::Row row;
+
+	if (res) {
+	    if ((res.num_rows() > 0) && (row = res.at(0))) {
+		FILE *file;
+		unsigned long length = row.raw_string(0).size();
+		file = fopen((*audio_file).c_str(), "wb");
+		fwrite(row.at(0).data(), 1, length, file);
+		fclose(file);
+		return 1;
 	    } else {
-		table = DOMAIN_AUDIO_TABLE;
+		*audio_file = "";
+		return 1;
 	    }
-	    if (language.empty()) {
-		query_string = "select audio from " + table + " where application='conference' and message='" + message + "' and language is null";
-	    } else {
-		query_string = "select audio from " + table + " where application='conference' and message='" + message + "' and language='" + language + "'";
-	    }
-
-	    DBG("Query string <%s>\n", query_string.c_str());
-
-	    query << query_string;
-	    mysqlpp::Result res = query.store();
-
-	    mysqlpp::Row row;
-
-	    if (res) {
-		if ((res.num_rows() > 0) && (row = res.at(0))) {
-		    FILE *file;
-		    unsigned long length = row.raw_string(0).size();
-		    file = fopen((*audio_file).c_str(), "wb"); 
-		    fwrite(row.at(0).data(), 1, length, file);
-		    fclose(file);
-		    return 1;
-		} else {
-		    *audio_file = "";
-		    return 1;
-		}
-	    } else {
-		ERROR("Database query error\n");
-		return 0;
-	    }
-	}
-
-	catch (const mysqlpp::Exception& er) {
-	    // Catch-all for any MySQL++ exceptions
-	    ERROR("MySQL++ error: %s\n", er.what());
+	} else {
+	    ERROR("Database query error\n");
+	    *audio_file = "";
 	    return 0;
 	}
+    }
+
+    catch (const mysqlpp::Exception& er) {
+	// Catch-all for any MySQL++ exceptions
+	ERROR("MySQL++ error: %s\n", er.what());
+	*audio_file = "";
+	return 0;
     }
 }
 
@@ -195,7 +184,7 @@ int ConferenceFactory::onLoad()
 	return -1;
     }
 
-    if (!cache_audio_file(LONELY_USER_MSG, "", "", &LonelyUserFile)) {
+    if (!get_audio_file(LONELY_USER_MSG, "", "", &LonelyUserFile)) {
 	return -1;
     }
 
@@ -205,11 +194,11 @@ int ConferenceFactory::onLoad()
 	return -1;
     }
 
-    if (!cache_audio_file(JOIN_SOUND, "", "", &JoinSound)) {
+    if (!get_audio_file(JOIN_SOUND, "", "", &JoinSound)) {
 	return -1;
     }
 
-    if (!cache_audio_file(DROP_SOUND, "", "", &DropSound)) {
+    if (!get_audio_file(DROP_SOUND, "", "", &DropSound)) {
 	return -1;
     }
 
@@ -350,13 +339,13 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
 
 #ifdef USE_MYSQL
 	/* Get domain/language specific lonely user file from MySQL */
-	if (cache_audio_file(LONELY_USER_MSG, req.domain, language,
-			     &lonely_user_file) &&
+	if (get_audio_file(LONELY_USER_MSG, req.domain, language,
+			   &lonely_user_file) &&
 	    !lonely_user_file.empty()) {
 	    ConferenceFactory::LonelyUserFile = lonely_user_file;
 	} else {
-	    if (cache_audio_file(LONELY_USER_MSG, "", language,
-				 &lonely_user_file) &&
+	    if (get_audio_file(LONELY_USER_MSG, "", language,
+			       &lonely_user_file) &&
 		!lonely_user_file.empty()) {
 		ConferenceFactory::LonelyUserFile = lonely_user_file;
 	    }

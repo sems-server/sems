@@ -3,8 +3,14 @@ voicemail (voicemail2email) application
 This application plays a greeting message to the caller, records a 
 voicemail and sends it out as email via SMTP.
 
-The voicemail application looks in various paths for the greeting 
-message to be played, the first file found will be played:
+Audio Files
+-----------
+
+The voicemail application looks in various file system paths or database
+tables for announce and beep messages to be played.
+
+If file system is used to store audio files, the announcement file to be
+played is looked for in the following order:
 
  <announce_path><domain><user>'.wav'
  <announce_path><domain><language><default_announce>
@@ -16,18 +22,41 @@ where <announce_path> and <default_announce> is set in voicemail.conf,
 <domain> is the host part of the request URI, <user> the user part of 
 the request URI, and <language> is the App-Param 'Language' (see below).
 
-If you have a small application record or copy the greeting to
-<announce_path><domain><user>'.wav' it will be played back instead of the
-default announcement.
+If MySQL database is used to store audio files, the announcement to be
+played is looked for first from user_audio table, then from domain_audio
+table, and last from default_audio table.  The last two tables are
+defined as described in Readme.conference.  user_audio table is defined
+as follows:
 
-The format of the email can be configured using email templates 
-(see below).
+CREATE TABLE user_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  domain varchar(128) NOT NULL,
+  userid varchar(64) NOT NULL,
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,domain,userid)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+Beep sound to be played is looked for only from default_audio table.
+
+Application value is 'voicemail' and message values are 'greeting_msg'
+and 'beep_snd'.
+
+When an audio file is fetched from database, it is stored in /tmp
+directory.
+
+Mail Server
+-----------
 
 The mail server to send the email with is configured in the main
 sems.conf in smtp_server/smtp_port.
 
+Other Items
+-----------
 
-further configuration items (voicemail.conf):
+Further configuration items (voicemail.conf):
 
 max_record_time - voicemail records voicemail up to the number of 
                   seconds set here
@@ -58,15 +87,16 @@ SEMS knows at least the email address to send the email to.
 Voicemail email templates 
 -------------------------
 
-Email templates will help you to customize the emails
-sent by Voicemail. Just configure the path where the 
-templates can be found and edit your template files.
-You will find detailed informations in the following 
+The format of the email can be configured using email templates.  Email
+templates will help you to customize the emails sent by Voicemail. Just
+configure the path where the templates can be found and edit your
+template files.  You will find detailed informations in the following
 sections.
 
-
 Configuration parameters within voicemail.conf:
---------------------------------------------------
+----------------------------------------------
+
+This is needed in template files are kept in file system:
 
 email_template_path: 
 
@@ -88,7 +118,33 @@ on, you should find in the log file during loading process following lines:
 (9834) DEBUG: loadEmailTemplates (AnswerMachine.cpp:102): loading plug-in/voicemail/iptel.org.template ...
 (9834) DEBUG: loadEmailTemplates (AnswerMachine.cpp:102): loading plug-in/voicemail/susie.at.template ...
 
+If template files are kept in MySQL database, they are looked for first
+from domain_template table and then from default_template table, which
+are defined as follows:
 
+CREATE TABLE domain_template (
+  id int(10) unsigned NOT NULL,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  domain varchar(128) NOT NULL,
+  `language` char(2) default NULL,
+  template text NOT NULL,
+  PRIMARY KEY  (id)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+CREATE TABLE default_template (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  `language` char(2) default NULL,
+  template text NOT NULL,
+  PRIMARY KEY  (id)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+Application value is 'voicemail' and message value is 'email_tmpl'.
+
+When an audio file is fetched from database, it is stored in /tmp
+directory.
 
 Email template format:
 ----------------------
@@ -123,4 +179,3 @@ Following variables are supported:
  - %from% : remote URI.
  - %from_user% : remote user.
  - %from_domain% : remote domain.
-

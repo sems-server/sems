@@ -28,6 +28,10 @@
 #ifndef _ANSWERMACHINE_H_
 #define _ANSWERMACHINE_H_
 
+#ifdef USE_MYSQL
+#include <mysql++/mysql++.h>
+#endif
+
 #include "AmSession.h"
 #include "AmConfigReader.h"
 #include "EmailTemplate.h"
@@ -44,7 +48,12 @@ class AnswerMachineFactory: public AmSessionFactory
     map<string, EmailTemplate> email_tmpl;
 
     int getEmailAddress();
+
+#ifdef USE_MYSQL
+    int loadEmailTemplatesFromMySQL();
+#else
     int loadEmailTemplates(const string& path);
+#endif
 
 public:
     static string RecFileExt;
@@ -53,6 +62,9 @@ public:
     static int    MaxRecordTime;
     static AmDynInvokeFactory* UserTimer;
 
+#ifdef USE_MYSQL
+    static mysqlpp::Connection Connection;
+#endif
 
     AnswerMachineFactory(const string& _app_name);
 

@@ -37,6 +37,21 @@
 #include "sems.h"
 #include "log.h"
 
+#ifdef USE_MYSQL
+#include <mysql++/mysql++.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <time.h>
+#define DEFAULT_TEMPLATE_TABLE "default_template"
+#define DOMAIN_TEMPLATE_TABLE "domain_template"
+#define DEFAULT_AUDIO_TABLE "default_audio"
+#define DOMAIN_AUDIO_TABLE "domain_audio"
+#define USER_AUDIO_TABLE "user_audio"
+#define GREETING_MSG "greeting_msg"
+#define BEEP_SOUND "beep_snd"
+#define EMAIL_TMPL "email_tmpl"
+#endif
+
 #include <unistd.h>
 #include <dirent.h>
 
@@ -60,6 +75,184 @@ string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
 int    AnswerMachineFactory::MaxRecordTime;
 AmDynInvokeFactory* AnswerMachineFactory::UserTimer=0;
+
+#ifdef USE_MYSQL
+mysqlpp::Connection AnswerMachineFactory::Connection(mysqlpp::use_exceptions);
+    
+int get_audio_file(string message, string domain, string user,
+		   string language, string *audio_file)
+{
+    string query_string;
+
+    if (!user.empty()) {
+	*audio_file = string("/tmp/") + domain + "_" + user + "_" +
+	    MOD_NAME + "_" + message + ".wav";
+	query_string = "select audio from " + string(USER_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and domain='" + domain + "' and userid='" + user + "'";
+    } else {
+	if (language.empty()) {
+	    if (domain.empty()) {
+		*audio_file = string("/tmp/") + MOD_NAME + "_" + message +
+		    ".wav";
+		query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and language is null";
+	    } else {
+		*audio_file = string("/tmp/") + domain + "_" + MOD_NAME +
+		    "_" + message + ".wav";
+		query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and domain='" + domain + "' and language is null";
+	    }
+	} else {
+	    if (domain.empty()) {
+		*audio_file = string("/tmp/") + MOD_NAME + "_" + message +
+		    "_" + language + ".wav";
+		query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and language='" + language + "'";
+	    } else {
+		*audio_file = string("/tmp/") + domain + "_" + MOD_NAME + "_" +
+		    message + "_" + language + ".wav";
+		query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and domain='" + domain + "' and language='" + language + "'";
+	    }
+	}
+    }
+
+    try {
+	
+	mysqlpp::Query query = AnswerMachineFactory::Connection.query();
+	
+	DBG("Query string <%s>\n", query_string.c_str());
+
+	query << query_string;
+	mysqlpp::Result res = query.store();
+	
+	mysqlpp::Row row;
+
+	if (res) {
+	    if ((res.num_rows() > 0) && (row = res.at(0))) {
+		FILE *file;
+		unsigned long length = row.raw_string(0).size();
+		file = fopen((*audio_file).c_str(), "wb");
+		fwrite(row.at(0).data(), 1, length, file);
+		fclose(file);
+		return 1;
+	    } else {
+		*audio_file = "";
+		return 1;
+	    }
+	} else {
+	    ERROR("Database query error\n");
+	    *audio_file = "";
+	    return 0;
+	}
+    }
+
+    catch (const mysqlpp::Exception& er) {
+	// Catch-all for any MySQL++ exceptions
+	ERROR("MySQL++ error: %s\n", er.what());
+	*audio_file = "";
+	return 0;
+    }
+}
+
+int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
+{
+
+    try {
+
+	mysqlpp::Query query = AnswerMachineFactory::Connection.query();
+	    
+	string query_string, table;
+	query_string = "select replace(template, '\r', '') as template, language from " + string(DEFAULT_TEMPLATE_TABLE) + " where application='" + MOD_NAME + "' and message='" + EMAIL_TMPL + "'";
+
+	DBG("Query string <%s>\n", query_string.c_str());
+
+	query << query_string;
+	mysqlpp::Result res = query.store();
+
+	mysqlpp::Row::size_type i;
+	mysqlpp::Row::size_type row_count = res.num_rows();
+	mysqlpp::Row row;
+
+	for (i = 0; i < row_count; i++) {
+	    row = res.at(i);
+	    FILE *file;
+	    unsigned long length = row["template"].size();
+	    string tmp_file, tmpl_name;
+	    row = res.at(i);
+	    if (string(row["language"]) == "NULL") {
+		tmp_file = "/tmp/voicemail_email.template";
+		tmpl_name = DEFAULT_MAIL_TMPL;
+	    } else {
+		tmp_file = string("/tmp/voicemail_email_") +
+		    string(row["language"]) + ".template";
+		tmpl_name = DEFAULT_MAIL_TMPL + "_" + 
+		    string(row["language"]);
+	    }
+	    file = fopen(tmp_file.c_str(), "wb"); 
+	    fwrite(row["template"], 1, length, file);
+	    fclose(file);
+	    DBG("loading %s as %s ...\n", tmp_file.c_str(), tmpl_name.c_str());
+	    EmailTemplate tmp_tmpl;
+	    if (tmp_tmpl.load(tmp_file)) {
+		ERROR("Voicemail: could not load default"
+		      " email template: '%s'\n", tmp_file.c_str());
+		return -1;
+	    } else {
+		email_tmpl[tmpl_name] = tmp_tmpl;
+	    }
+	}
+	if (email_tmpl.count(DEFAULT_MAIL_TMPL) == 0) {
+	    ERROR("Voicemail: default email template does not exist\n");
+	    return -1;
+	}
+
+	query_string = "select domain, replace(template, '\r', '') as template, language from " + string(DOMAIN_TEMPLATE_TABLE) + " where application='" + MOD_NAME +"' and message='" + EMAIL_TMPL + "'";
+
+	DBG("Query string <%s>\n", query_string.c_str());
+
+	query << query_string;
+	res = query.store();
+
+	row_count = res.num_rows();
+
+	for (i = 0; i < row_count; i++) {
+	    row = res.at(i);
+	    FILE *file;
+	    unsigned long length = row["template"].size();
+	    string tmp_file, tmpl_name;
+	    row = res.at(i);
+	    if (string(row["language"]) == "NULL") {
+		tmp_file = "/tmp/" + string(row["domain"]) +
+		    "_voicemail_email.template";
+		tmpl_name = string(row["domain"]);
+	    } else {
+		tmp_file = string("/tmp/") + string(row["domain"]) +
+		    "_voicemail_email_" + string(row["language"]) +
+		    ".template";
+		tmpl_name = string(row["domain"]) + "_" +
+		    string(row["language"]);
+	    }
+	    file = fopen(tmp_file.c_str(), "wb"); 
+	    fwrite(row["template"], 1, length, file);
+	    fclose(file);
+	    DBG("loading %s as %s ...\n",tmp_file.c_str(), tmpl_name.c_str());
+	    EmailTemplate tmp_tmpl;
+	    if (tmp_tmpl.load(tmp_file) < 0) {
+		ERROR("Voicemail: could not load default"
+		      " email template: '%s'\n", tmp_file.c_str());
+		return -1;
+	    } else {
+		email_tmpl[tmpl_name] = tmp_tmpl;
+	    }
+	}
+    }
+
+    catch (const mysqlpp::Exception& er) {
+	// Catch-all for any MySQL++ exceptions
+	ERROR("MySQL++ error: %s\n", er.what());
+	return -1;
+    }
+
+    return 0;
+}
+
+#else 
 
 int AnswerMachineFactory::loadEmailTemplates(const string& path)
 {
@@ -113,6 +306,8 @@ int AnswerMachineFactory::loadEmailTemplates(const string& path)
     return err;
 }
 
+#endif
+
 int AnswerMachineFactory::onLoad()
 {
     AmConfigReader cfg;
@@ -122,15 +317,71 @@ int AnswerMachineFactory::onLoad()
     // get application specific global parameters
     configureModule(cfg);
 
-    AnnouncePath    = cfg.getParameter("announce_path",ANNOUNCE_PATH);
-    DefaultAnnounce = cfg.getParameter("default_announce",DEFAULT_ANNOUNCE);
-    MaxRecordTime   = cfg.getParameterInt("max_record_time",DEFAULT_RECORD_TIME);
-    RecFileExt      = cfg.getParameter("rec_file_ext",DEFAULT_AUDIO_EXT);
+#ifdef USE_MYSQL
+
+    /* Get email templates from MySQL */
+
+    string mysql_server, mysql_user, mysql_passwd, mysql_db;
+
+    mysql_server = cfg.getParameter("mysql_server");
+    if (mysql_server.empty()) {
+	mysql_server = "localhost";
+    }
+
+    mysql_user = cfg.getParameter("mysql_user");
+    if (mysql_user.empty()) {
+	ERROR("voicemail.conf paramater 'mysql_user' is missing.\n");
+	return -1;
+    }
+
+    mysql_passwd = cfg.getParameter("mysql_passwd");
+    if (mysql_passwd.empty()) {
+	ERROR("voicemail.conf paramater 'mysql_passwd' is missing.\n");
+	return -1;
+    }
+
+    mysql_db = cfg.getParameter("mysql_db");
+    if (mysql_db.empty()) {
+	mysql_db = "sems";
+    }
+
+    try {
+
+	Connection.connect(mysql_db.c_str(), mysql_server.c_str(),
+			   mysql_user.c_str(), mysql_passwd.c_str());
+	if (!Connection) {
+	    ERROR("Database connection failed: %s\n", Connection.error());
+	    return -1;
+	}
+    }
+	
+    catch (const mysqlpp::Exception& er) {
+	// Catch-all for any MySQL++ exceptions
+	ERROR("MySQL++ error: %s\n", er.what());
+	return -1;
+    }
+
+    if(loadEmailTemplatesFromMySQL()){
+	ERROR("while loading email templates from MySQL\n");
+	return -1;
+    }
+
+#else 
+
+    /* Get email templates from file system */
 
     if(loadEmailTemplates(cfg.getParameter("email_template_path",DEFAULT_MAIL_TMPL_PATH))){
 	ERROR("while loading email templates\n");
 	return -1;
     }
+
+    AnnouncePath    = cfg.getParameter("announce_path",ANNOUNCE_PATH);
+    DefaultAnnounce = cfg.getParameter("default_announce",DEFAULT_ANNOUNCE);
+
+#endif
+
+    MaxRecordTime   = cfg.getParameterInt("max_record_time",DEFAULT_RECORD_TIME);
+    RecFileExt      = cfg.getParameter("rec_file_ext",DEFAULT_AUDIO_EXT);
 
     UserTimer = AmPlugIn::instance()->getFactory4Di("user_timer");
     if(!UserTimer){
@@ -166,7 +417,34 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
     DBG("email address for user '%s': <%s> \n",
 	req.user.c_str(),email.c_str());
     DBG("language: <%s> \n", language.c_str());
-  
+
+#ifdef USE_MYSQL
+
+    string announce_file;
+
+    if (get_audio_file(GREETING_MSG, req.domain, req.user, "",
+		       &announce_file) && !announce_file.empty())
+	goto announce_found;
+
+    if (!language.empty()) {
+	if (get_audio_file(GREETING_MSG, req.domain, "", language,
+			   &announce_file) && !announce_file.empty())
+	    goto announce_found;
+    } else {
+	if (get_audio_file(GREETING_MSG, req.domain, "", "",
+			   &announce_file) && !announce_file.empty())
+	    goto announce_found;
+    }
+    
+    if (!language.empty())
+	if (get_audio_file(GREETING_MSG, "", "", language,
+			   &announce_file) && !announce_file.empty())
+	    goto announce_found;
+    
+    get_audio_file(GREETING_MSG, "", "", "", &announce_file);
+    
+#else
+
     string announce_file = add2path(AnnouncePath,2, req.domain.c_str(), (req.user + ".wav").c_str());
     if (file_exists(announce_file)) goto announce_found;
 
@@ -186,6 +464,8 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
     announce_file = add2path(AnnouncePath,1, DefaultAnnounce.c_str());
     if (!file_exists(announce_file)) 
 	announce_file = "";
+
+#endif
 
 announce_found:
     if(announce_file.empty())
@@ -307,9 +587,19 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
     // disable DTMF detection - don't use DTMF here
     setDtmfDetectionEnabled(false);
 
-    if(a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
+#ifdef USE_MYSQL
+    string beep_file;
+    if (!get_audio_file(BEEP_SOUND, "", "", "", &beep_file) ||
+	beep_file.empty())
+	throw string("AnswerMachine: could not find beep file\n");
+    if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
+	a_beep.open(beep_file,AmAudioFile::Read))
+	throw string("AnswerMachine: could not open greeting or beep file\n");
+#else
+    if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
        a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),AmAudioFile::Read))
 	throw string("AnswerMachine: could not open annoucement files\n");
+#endif
 
     msg_filename = "/tmp/" + getLocalTag() + "."
 	+ AnswerMachineFactory::RecFileExt;

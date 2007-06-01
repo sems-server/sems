@@ -92,10 +92,10 @@ CREATE TABLE domain_audio (
 
 The first one stores default audio files and the latter domain specific
 audio files.  Application value must be 'conference' and message values
-are 'first_participant_msg', 'join_sound', and 'drop_sound'.
+are 'first_participant_msg', 'join_snd', and 'drop_snd'.
 
-When an audio file is fetched from database, it is cached in /tmp
-directory and later on fetched from there.
+When an audio file is fetched from database, it is stored in /tmp
+directory.
 
 These are independent of audio storage:
 

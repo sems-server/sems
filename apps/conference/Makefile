@@ -3,7 +3,7 @@ plug_in_name = conference
 module_ldflags =
 module_cflags  =
 
-# Uncomment following lines if you want to keep audio in MySQL database.
+# Uncomment last two lines if you want to keep audio in MySQL database.
 # You must also install MySQL++ development files and libraries
 # (http://www.tangentsoft.net/mysql++/).  If your MySQL++ version is older
 # than 2.2, you must insert
