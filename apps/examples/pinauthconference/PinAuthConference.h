@@ -49,7 +49,6 @@ class ConferenceStatusContainer;
 #define DROP_SOUND          "drop_sound"
 #define ENTER_PIN           "enter_pin"
 #define WRONG_PIN           "wrong_pin"
-#define ENTERING_CONFERENCE "entering_conference"
 
 // default path for files
 #define ANNOUNCE_PATH "../apps/examples/pinauthconference/wav/"

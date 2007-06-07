@@ -1,0 +1,19 @@
+pinauthconference example application
+-------------------------------------
+
+This application example does collect the PIN=conference
+room number via DTMF, plays the room number and then
+connects the caller to the conference room. 
+
+It uses AmPromptCollection to load a set of needed prompts:
+ "entering_conference"
+ "first_participant"
+ "join_sound"
+ "drop_sound"
+ "enter_pin"
+ "wrong_pin"
+
+and 0.wav, 1.wav, 2.wav, ... 9.wav in digits_dir.
+
+These need to be set in the configuration.
+
