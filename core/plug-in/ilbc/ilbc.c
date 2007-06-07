@@ -236,11 +236,11 @@ static int iLBC_2_Pcm16_Ext( unsigned char* out_buf, unsigned char* in_buf, unsi
 			     unsigned int channels, unsigned int rate, long h_codec, int mode )
 {
   short* out_b = (short*)out_buf;
-  int i,k;
+  int i,k,noframes;
   float decblock[BLOCKL_MAX];
   float dtmp;
   iLBC_Codec_Inst_t* codec_inst;
-
+  
   short out_buf_offset=0;
 
   if (!h_codec){
@@ -253,12 +253,18 @@ static int iLBC_2_Pcm16_Ext( unsigned char* out_buf, unsigned char* in_buf, unsi
   }
 
   codec_inst = (iLBC_Codec_Inst_t*)h_codec;
+  
+  noframes = size / codec_inst->iLBC_Dec_Inst.no_of_bytes;
+  if (noframes*codec_inst->iLBC_Dec_Inst.no_of_bytes != size) {
+    WARN("Dropping extra %d bytes from iLBC packet.\n",
+	 size - noframes*codec_inst->iLBC_Dec_Inst.no_of_bytes);
+  }
 
-  for (i=0;i< size / codec_inst->iLBC_Dec_Inst.no_of_bytes;i++) {
+  for (i=0;i<noframes;i++) {
     /* do actual decoding of block */
       
-    iLBC_decode(decblock,in_buf,&codec_inst->iLBC_Dec_Inst,
-		mode/* mode 0=PL, 1=Normal */);
+    iLBC_decode(decblock,in_buf+i*codec_inst->iLBC_Dec_Inst.no_of_bytes,
+		&codec_inst->iLBC_Dec_Inst, mode/* mode 0=PL, 1=Normal */);
 
     for (k=0; k<codec_inst->iLBC_Dec_Inst.blockl; k++){
       dtmp=decblock[k];
