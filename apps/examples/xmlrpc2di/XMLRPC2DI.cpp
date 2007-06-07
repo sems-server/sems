@@ -31,14 +31,15 @@
 #include "log.h"
 #include "AmConfigReader.h"
 #include "AmUtils.h"
+#include "AmArg.h"
 
 #define MOD_NAME "xmlrpc2di"
 
 #define XMLRPC_PORT   "8090" // default port
 EXPORT_PLUGIN_CLASS_FACTORY(XMLRPC2DI, MOD_NAME)
 
-XMLRPC2DI::XMLRPC2DI(string mod_name) 
- : AmDynInvokeFactory(mod_name)
+  XMLRPC2DI::XMLRPC2DI(string mod_name) 
+    : AmDynInvokeFactory(mod_name)
 {
 }
 
@@ -107,57 +108,68 @@ void XMLRPC2DIServerSetLoglevelMethod::execute(XmlRpcValue& params, XmlRpcValue&
 
 
 void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
-  if (params.size() < 2) {
-    DBG("XMLRPC2DI: ERROR: need at least factory name and function name to call\n");
-    throw XmlRpcException("need at least factory name and function name to call", 400);
-  }
+  try {
+    if (params.size() < 2) {
+      DBG("XMLRPC2DI: ERROR: need at least factory name and function name to call\n");
+      throw XmlRpcException("need at least factory name and function name to call", 400);
+    }
     
-  string fact_name = params[0];
-  string fct_name = params[1];
+    string fact_name = params[0];
+    string fct_name = params[1];
 
-  DBG("XMLRPC2DI: factory '%s' function '%s'\n", 
-      fact_name.c_str(), fct_name.c_str());
+    DBG("XMLRPC2DI: factory '%s' function '%s'\n", 
+	fact_name.c_str(), fct_name.c_str());
 
-  // get args
-  AmArgArray args;
-  for (int i=2; i<params.size();i++) {
-    switch (params[i].getType()) {
-    case XmlRpcValue::TypeInt:   { args.push(AmArg((int)params[i]));    }  break;
-    case XmlRpcValue::TypeDouble:{ args.push(AmArg((double)params[i])); }  break;
-    case XmlRpcValue::TypeString:{ args.push(AmArg(((string)params[i]).c_str())); }  break;
-    // TODO: support more types (datetime, struct, ...)
-    default:     throw XmlRpcException("unsupported parameter type", 400);
-    };
-  }
+    // get args
+    AmArgArray args;
+    for (int i=2; i<params.size();i++) {
+      switch (params[i].getType()) {
+      case XmlRpcValue::TypeInt:   { args.push(AmArg((int)params[i]));    }  break;
+      case XmlRpcValue::TypeDouble:{ args.push(AmArg((double)params[i])); }  break;
+      case XmlRpcValue::TypeString:{ args.push(AmArg(((string)params[i]).c_str())); }  break;
+	// TODO: support more types (datetime, struct, ...)
+      default:     throw XmlRpcException("unsupported parameter type", 400);
+      };
+    }
   
-  AmDynInvokeFactory* di_f = AmPlugIn::instance()->getFactory4Di(fact_name);
-  if(!di_f){
-    throw XmlRpcException("could not get factory", 500);
-  }
-  AmDynInvoke* di = di_f->getInstance();
-  if(!di){
-    throw XmlRpcException("could not get instance from factory", 500);
-  }
-  AmArgArray ret;
-  di->invoke(fct_name, args, ret);
+    AmDynInvokeFactory* di_f = AmPlugIn::instance()->getFactory4Di(fact_name);
+    if(!di_f){
+      throw XmlRpcException("could not get factory", 500);
+    }
+    AmDynInvoke* di = di_f->getInstance();
+    if(!di){
+      throw XmlRpcException("could not get instance from factory", 500);
+    }
+    AmArgArray ret;
+    di->invoke(fct_name, args, ret);
   
-  if (ret.size()) {
-    result.setSize(ret.size());
+    if (ret.size()) {
+      result.setSize(ret.size());
     
-    for (unsigned int i=0;i<ret.size();i++) {
-      const AmArg& r = ret.get(i);
-      switch (r.getType()) {
-      case AmArg::CStr:  
-	result[i]= string(r.asCStr()); break;
-      case AmArg::Int:  
-	result[i]=r.asInt(); break;
-      case AmArg::Double: 
-	result[i]=r.asDouble(); break;
-      default: break;
-	// TODO: do sth with the data here
+      for (unsigned int i=0;i<ret.size();i++) {
+	const AmArg& r = ret.get(i);
+	switch (r.getType()) {
+	case AmArg::CStr:  
+	  result[i]= string(r.asCStr()); break;
+	case AmArg::Int:  
+	  result[i]=r.asInt(); break;
+	case AmArg::Double: 
+	  result[i]=r.asDouble(); break;
+	default: break;
+	  // TODO: do sth with the data here
+	}
       }
     }
+  } catch (const XmlRpcException& e) {
+    throw;
+  } catch (const AmDynInvoke::NotImplemented& e) {
+    throw XmlRpcException("Exception: AmDynInvoke::NotImplemented: "
+			  + e.what, 504);
+  } catch (const AmArgArray::OutOfBoundsException& e) {
+    throw XmlRpcException("Exception: AmArgArray out of bounds - paramter number mismatch.", 300);
+  } catch (const string& e) {
+    throw XmlRpcException("Exception: "+e, 500);
+  } catch (...) {
+    throw XmlRpcException("Exception occured.", 500);
   }
-
-
 }
