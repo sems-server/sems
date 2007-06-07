@@ -65,7 +65,6 @@ PlayoutType ConferenceFactory::m_PlayoutType = ADAPTIVE_PLAYOUT;
 
 #ifdef USE_MYSQL
 mysqlpp::Connection ConferenceFactory::Connection(mysqlpp::use_exceptions);
-#endif
 
 int get_audio_file(string message, string domain, string language,
 		     string *audio_file)
@@ -130,6 +129,8 @@ int get_audio_file(string message, string domain, string language,
 	return 0;
     }
 }
+
+#endif
 
 int ConferenceFactory::onLoad()
 {
