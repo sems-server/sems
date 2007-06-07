@@ -37,24 +37,26 @@ class DialogControl
 : public ArgObject 
 {
  public:
-	virtual AmSipDialog* getDlg()=0;
+  virtual AmSipDialog* getDlg()=0;
 };
 
-struct UACAuthCred {
-	string realm;
-	string user;
-	string pwd;
-	UACAuthCred() { }
-	UACAuthCred(const string& realm,
-				const string& user,
-				const string& pwd)
-		: realm(realm), user(user), pwd(pwd) { }
+class UACAuthCred 
+: public ArgObject {
+ public:
+  string realm;
+  string user;
+  string pwd;
+  UACAuthCred() { }
+  UACAuthCred(const string& realm,
+	      const string& user,
+	      const string& pwd)
+    : realm(realm), user(user), pwd(pwd) { }
 };
 
 class CredentialHolder {
  public:
-	virtual UACAuthCred* getCredentials() = 0;
-	virtual ~CredentialHolder() { }
+  virtual UACAuthCred* getCredentials() = 0;
+  virtual ~CredentialHolder() { }
 };
 
 #endif
