@@ -11,3 +11,4 @@ STAR_SWITCHES_PLAYOUTBUFFER option (enabled by default), the
 star key pressed on the phone switches between adaptive playout 
 buffer and fifo playout buffer. Thus the effect of the adaptive 
 playout buffering can easily be verified.
+
