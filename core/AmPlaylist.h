@@ -88,6 +88,43 @@ class AmPlaylist: public AmAudio
   void close();
 };
 
+/**
+ * \brief event fired by the AmPlaylistSeparator
+ */
+class AmPlaylistSeparatorEvent : 
+  public AmEvent {
+public:
+  AmPlaylistSeparatorEvent(int id)
+    : AmEvent(id) { }
+};
+
+/**
+ * null-playlist element which notifies session that this position in 
+ * playlist is reached. It fies a AmPlaylistSeparatorEvent if it is 
+ * read or written.
+ */
+class AmPlaylistSeparator 
+  : public AmAudio {
+  bool notified;
+  AmEventQueue* ev_q;
+  int id;
+public:  
+  AmPlaylistSeparator(AmEventQueue* q, int id)
+    : ev_q(q), notified(false), id(id) { }
+  ~AmPlaylistSeparator() { }
+
+  int read(unsigned int user_ts, unsigned int size){
+    if (!notified) 
+      ev_q->postEvent(new AmPlaylistSeparatorEvent(id)); 
+    notified = true; 
+    return 0; 
+  }
+  int write(unsigned int user_ts, unsigned int size){
+    return read(user_ts, size);
+  }
+};
+
+
 
 
 #endif
