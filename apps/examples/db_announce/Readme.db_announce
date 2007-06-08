@@ -1,0 +1,48 @@
+This is IVR/Python based version of announcement application that keeps
+greeting messages in MySQL database.
+
+It assumes the following database schema:
+
+CREATE TABLE default_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  `language` char(2) NOT NULL default '',
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,`language`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+
+CREATE TABLE domain_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  domain varchar(128) NOT NULL,
+  `language` char(2) NOT NULL default '',
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,domain,`language`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+CREATE TABLE user_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  domain varchar(128) NOT NULL,
+  userid varchar(64) NOT NULL,
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,domain,userid)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+Greeting message is first looked for in user_audio table, then in
+domain_audio table, and finally in default_audio table.  Application
+field value needs to be 'announcement' and message field value
+'greeting_msg'.  If language is not available, language field value
+needs to be ''.
+
+If you want to use this example application as replacement of
+apps/announcement application, you must (in order to avoid conflict) add
+announcement as an excluded module in apps/Makefile and then copy this
+directory to apps directory under name 'announcement'.
