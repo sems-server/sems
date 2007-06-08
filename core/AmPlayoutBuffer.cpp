@@ -249,8 +249,12 @@ void AmAdaptivePlayout::write_buffer(u_int32_t ref_ts, u_int32_t ts,
 
   n_len = time_scale(ts,f,len);
   wsola_off = old_off + n_len - len;
-    
-  //ts += n_len - len;
+   
+  // if we have shrinked the voice, set back w_ts 
+  // in order to have correct start point for possible
+  // PLC
+  if (n_len < (int32_t) len)
+    w_ts += n_len - len;
 
   if(w_ts != old_wts)
     plc_cnt = 0;
@@ -266,7 +270,8 @@ u_int32_t AmAdaptivePlayout::read(u_int32_t ts, int16_t* buf, u_int32_t len)
   if(ts_less()(w_ts,ts+len) && (plc_cnt < 6)){
 	
     if(!plc_cnt){
-      time_scale(w_ts-len,2.0, len);
+      int nlen = time_scale(w_ts-len,2.0, len);
+      wsola_off += nlen-len;
     }
     else {
       do_plc = true;
