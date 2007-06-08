@@ -93,11 +93,11 @@ int get_audio_file(string message, string domain, string user,
 	    if (domain.empty()) {
 		*audio_file = string("/tmp/") + MOD_NAME + "_" + message +
 		    ".wav";
-		query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and language is null";
+		query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and language=''";
 	    } else {
 		*audio_file = string("/tmp/") + domain + "_" + MOD_NAME +
 		    "_" + message + ".wav";
-		query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and domain='" + domain + "' and language is null";
+		query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and domain='" + domain + "' and language=''";
 	    }
 	} else {
 	    if (domain.empty()) {
@@ -175,7 +175,7 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
 	    unsigned long length = row["template"].size();
 	    string tmp_file, tmpl_name;
 	    row = res.at(i);
-	    if (string(row["language"]) == "NULL") {
+	    if (string(row["language"]) == "") {
 		tmp_file = "/tmp/voicemail_email.template";
 		tmpl_name = DEFAULT_MAIL_TMPL;
 	    } else {
@@ -217,7 +217,7 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
 	    unsigned long length = row["template"].size();
 	    string tmp_file, tmpl_name;
 	    row = res.at(i);
-	    if (string(row["language"]) == "NULL") {
+	    if (string(row["language"]) == "") {
 		tmp_file = "/tmp/" + string(row["domain"]) +
 		    "_voicemail_email.template";
 		tmpl_name = string(row["domain"]);

@@ -127,7 +127,7 @@ CREATE TABLE domain_template (
   application varchar(32) NOT NULL,
   message varchar(32) NOT NULL,
   domain varchar(128) NOT NULL,
-  `language` char(2) default NULL,
+  `language` char(2) NOT NULL default '',
   template text NOT NULL,
   PRIMARY KEY  (id)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
@@ -136,12 +136,14 @@ CREATE TABLE default_template (
   id int(10) unsigned NOT NULL auto_increment,
   application varchar(32) NOT NULL,
   message varchar(32) NOT NULL,
-  `language` char(2) default NULL,
+  `language` char(2) NOT NULL default '',
   template text NOT NULL,
   PRIMARY KEY  (id)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
 
 Application value is 'voicemail' and message value is 'email_tmpl'.
+Language value is a two letter code of a language or '' if language is
+unknown.
 
 When an audio file is fetched from database, it is stored in /tmp
 directory.

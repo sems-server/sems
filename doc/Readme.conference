@@ -73,7 +73,7 @@ CREATE TABLE default_audio (
   id int(10) unsigned NOT NULL auto_increment,
   application varchar(32) NOT NULL,
   message varchar(32) NOT NULL,
-  `language` char(2) default NULL,
+  `language` char(2) NOT NULL default '',
   audio mediumblob NOT NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY application (application,message,`language`)
@@ -84,7 +84,7 @@ CREATE TABLE domain_audio (
   application varchar(32) NOT NULL,
   message varchar(32) NOT NULL,
   domain varchar(128) NOT NULL,
-  `language` char(2) default NULL,
+  `language` char(2) NOT NULL default '',
   audio mediumblob NOT NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY application (application,message,domain,`language`)
@@ -92,7 +92,8 @@ CREATE TABLE domain_audio (
 
 The first one stores default audio files and the latter domain specific
 audio files.  Application value must be 'conference' and message values
-are 'first_participant_msg', 'join_snd', and 'drop_snd'.
+are 'first_participant_msg', 'join_snd', and 'drop_snd'.  Language value
+is a two letter code of a language or '' if language is unknown.
 
 When an audio file is fetched from database, it is stored in /tmp
 directory.

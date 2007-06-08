@@ -2,6 +2,7 @@
  * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2007 Juha Heinanen (USE_MYSQL parts)
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -74,11 +75,11 @@ int get_audio_file(string message, string domain, string language,
     if (language.empty()) {
 	if (domain.empty()) {
 	    *audio_file = string("/tmp/") + APP_NAME + "_" + message + ".wav";
-	    query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + APP_NAME + "' and message='" + message + "' and language is null";
+	    query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + APP_NAME + "' and message='" + message + "' and language=''";
 	} else {
 	    *audio_file = "/tmp/" + domain + "_" + APP_NAME + "_" + 
 		message + ".wav";
-	    query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + APP_NAME + "' and message='" + message + "' and domain='" + domain + "' and language is null";
+	    query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + APP_NAME + "' and message='" + message + "' and domain='" + domain + "' and language=''";
 	}
     } else {
 	if (domain.empty()) {
