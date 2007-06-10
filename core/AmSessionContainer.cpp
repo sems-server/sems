@@ -315,7 +315,7 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req)
 
     plugin_name = getHeader(req.hdrs,APPNAME_HDR);
     if(plugin_name.empty())
-      throw string("AmSessionContainer::createSession: missing '" APPNAME_HDR "' header.\n");
+      throw string("AmSessionContainer::createSession: missing '" APPNAME_HDR "' header.");
   }
 
   AmSessionFactory* state_factory = AmPlugIn::instance()->getFactory4App(plugin_name);
