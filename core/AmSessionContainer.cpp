@@ -316,7 +316,7 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
 
     plugin_name = getHeader(req.hdrs,APPNAME_HDR);
     if(plugin_name.empty()) {
-      string ex = "AmSessionContainer::createSession: missing '"  APPNAME_HDR   "' header.\n";
+      string ex = "AmSessionContainer::createSession: missing '"  APPNAME_HDR   "' header.";
       throw ex; 
     }
   }
