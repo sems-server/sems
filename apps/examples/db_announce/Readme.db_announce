@@ -45,4 +45,7 @@ needs to be ''.
 If you want to use this example application as replacement of
 apps/announcement application, you must (in order to avoid conflict) add
 announcement as an excluded module in apps/Makefile and then copy this
-directory to apps directory under name 'announcement'.
+directory to apps directory under name 'announcement'. If you move this 
+directory somewhere else relative to SEMS core and apps directory, adapt 
+COREPATH and IVRPATH in Makefile.
+
