@@ -27,6 +27,8 @@
 #include "AmB2ABSession.h"
 #include "AmPlaylist.h"
 
+class PySemsB2ABCalleeDialog;
+
 class PySemsB2ABDialog : public AmB2ABCallerSession, 
   public PySemsDialogBase
 {
@@ -42,6 +44,28 @@ public:
 
     // @see AmEventHandler
     void process(AmEvent* event);
+
+    AmB2ABCalleeSession* createCalleeSession();
 };
 
+/** \brief base class for events in Py-B2AB sessions */
+struct PySemsB2ABEvent: public B2ABEvent
+{
+  public:
+  PySemsB2ABEvent(int ev_id) 
+    : B2ABEvent(ev_id)
+  {}
+};
+
+class PySemsB2ABCalleeDialog : public AmB2ABCalleeSession
+{
+ public:
+  PySemsB2ABCalleeDialog(const string& other_local_tag)
+    : AmB2ABCalleeSession(other_local_tag) { }
+
+ protected:
+  void onB2ABEvent(B2ABEvent* ev);
+
+  virtual void onPyB2ABEvent(PySemsB2ABEvent* py_ev);
+};
 #endif

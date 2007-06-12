@@ -49,22 +49,20 @@ public:
 protected:
   virtual AmB2ABCalleeSession* createCalleeSession() /Factory/;
 
-  virtual void onB2ABEvent(B2ABEvent* /In,Out/);
+  virtual void onB2ABEvent(PySemsB2ABEvent* /TransferBack/);
 
-  virtual void relayEvent(AmEvent* ev);	
+  virtual void relayEvent(PySemsB2ABEvent* ev /Transfer/);	
 private:
   PySemsB2ABDialog(const PySemsB2ABDialog&);
 };
 
-class AmB2ABCalleeSession
+class AmB2ABCalleeSession 
 {
 %TypeHeaderCode
 #include "../../../core/AmB2ABSession.h"
 %End
 public:
   AmB2ABCalleeSession(const string& /*other_local_tag*/);
-
-  void onB2ABEvent(B2ABEvent* /*In,Out*/);
 
   void connectSession();
   void disconnectSession();
@@ -74,13 +72,28 @@ private:
 
 };
 
-class B2ABEvent
-: AmEvent 
+class PySemsB2ABCalleeDialog : AmB2ABCalleeSession
 {
 %TypeHeaderCode
+#include "../PySemsB2ABDialog.h"
 #include "../../../core/AmB2ABSession.h"
 %End
 public:
-  B2ABEvent(int /* ev_id */);
+  PySemsB2ABCalleeDialog(const string& /*other_local_tag*/);
+
+protected:
+  virtual void onPyB2ABEvent(PySemsB2ABEvent* /TransferBack/);
+
+private:
+  PySemsB2ABCalleeDialog(const PySemsB2ABCalleeDialog& /* other_s*/);
+};
+
+class PySemsB2ABEvent
+{
+%TypeHeaderCode
+#include "../PySemsB2ABDialog.h"
+%End
+public:
+  PySemsB2ABEvent(int /* ev_id */);
 };
 

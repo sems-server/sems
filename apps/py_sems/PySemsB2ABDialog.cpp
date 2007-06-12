@@ -44,6 +44,11 @@ void PySemsB2ABDialog::onSessionStart(const AmSipRequest& req)
     AmB2ABCallerSession::onSessionStart(req);
 }
 
+AmB2ABCalleeSession* PySemsB2ABDialog::createCalleeSession() {
+  return new PySemsB2ABCalleeDialog(getLocalTag());
+
+}
+
 void PySemsB2ABDialog::process(AmEvent* event) 
 {
     DBG("PySemsB2ABDialog::process\n");
@@ -68,3 +73,18 @@ void PySemsB2ABDialog::process(AmEvent* event)
     return;
 }
 
+void PySemsB2ABCalleeDialog::onB2ABEvent(B2ABEvent* ev) {
+  PySemsB2ABEvent* py_ev = dynamic_cast<PySemsB2ABEvent*>(ev);
+  if (NULL != py_ev) {
+    DBG("calling onPyB2AB...\n");
+    onPyB2ABEvent(py_ev);
+  } else {
+    AmB2ABCalleeSession::onB2ABEvent(ev);
+  }
+}
+
+
+void PySemsB2ABCalleeDialog::onPyB2ABEvent(PySemsB2ABEvent* py_ev) {
+  DBG("ignoring PySemsB2ABEvent\n");
+  delete py_ev; //-- don't delete, ownership already been transfered to python?
+}
