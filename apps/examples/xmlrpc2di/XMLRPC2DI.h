@@ -48,7 +48,18 @@ public: \
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerCallsMethod,       "calls") 
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerSetLoglevelMethod, "set_loglevel") 
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetLoglevelMethod, "get_loglevel") 
-DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerDIMethod,          "di") 
+
+class XMLRPC2DIServerDIMethod 
+       :  public XmlRpcServerMethod { 
+
+public: 
+	XMLRPC2DIServerDIMethod(XmlRpcServer* s) : 
+		XmlRpcServerMethod("di", s) { } 
+
+	void execute(XmlRpcValue& params, XmlRpcValue& result); 
+	void add2result(const AmArg& a, XmlRpcValue& result, unsigned int pos);
+};
+
 
 
      class XMLRPC2DIServer : public AmThread {

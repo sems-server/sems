@@ -106,7 +106,6 @@ void XMLRPC2DIServerSetLoglevelMethod::execute(XmlRpcValue& params, XmlRpcValue&
   result = "200 OK";
 }
 
-
 void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
   try {
     if (params.size() < 2) {
@@ -148,16 +147,7 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
     
       for (unsigned int i=0;i<ret.size();i++) {
 	const AmArg& r = ret.get(i);
-	switch (r.getType()) {
-	case AmArg::CStr:  
-	  result[i]= string(r.asCStr()); break;
-	case AmArg::Int:  
-	  result[i]=r.asInt(); break;
-	case AmArg::Double: 
-	  result[i]=r.asDouble(); break;
-	default: break;
-	  // TODO: do sth with the data here
-	}
+	add2result(r, result, i);
       }
     }
   } catch (const XmlRpcException& e) {
@@ -171,5 +161,36 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
     throw XmlRpcException("Exception: "+e, 500);
   } catch (...) {
     throw XmlRpcException("Exception occured.", 500);
+  }
+}
+
+// WARNING: AmArgArrays are deleted by this function!
+void XMLRPC2DIServerDIMethod::add2result(const AmArg& a, XmlRpcValue& result, unsigned int pos) {
+  switch (a.getType()) {
+  case AmArg::CStr:  
+    result[pos]= string(a.asCStr()); break;
+
+  case AmArg::Int:  
+    result[pos]=a.asInt(); break;
+
+  case AmArg::Double: 
+    result[pos]=a.asDouble(); break;
+
+  case AmArg::AObject: {
+    AmArgArray* arr = dynamic_cast<AmArgArray*>(a.asObject());
+    if (NULL != arr) {
+      result[pos].setSize(arr->size());
+    
+      for (unsigned int i=0;i<arr->size();i++) {
+	const AmArg& r = arr->get(i);
+	add2result(r, result[pos], i);
+      }
+      delete arr; 
+    } else {
+      WARN("unsupported return value type of parameter %d (not AmArgArray)\n", pos);
+    }
+  } break;
+  default: { WARN("unsupported return value type %d\n", a.getType()); } break;
+    // TODO: do sth with the data here ?
   }
 }
