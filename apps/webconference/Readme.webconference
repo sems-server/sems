@@ -8,6 +8,16 @@ the conference rooms can be controlled via XMLRPC.
 It implements conference rooms with dial-in and conference room entry
 via DTMF, and authenticated dial-out.
 
+
+For dial-in, usually the user is asked to enter the conference room 
+number via keypad, followed by the star key.
+
+In the configuration, a regular expression can be defined (direct_room_re),
+which, if matched to the user part of the request uri, connects the caller 
+directly to the conference room. direct_room_strip sets how many characters
+should be stripped from the user part in order to obtain the conference room 
+number.
+
 Participants can be listed, kicked out, muted and unmuted over DI 
 (using xmlrpc2di over XMLRPC).
 
