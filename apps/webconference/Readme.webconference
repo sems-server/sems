@@ -1,0 +1,78 @@
+webconference : conference with dial-in and dial-out over DI (xmlrpc)
+
+This conference module can do dial-in, dial-out and mixed 
+dial-in/dial-out conferences.  It can be controlled over DI functions 
+from other modules, and, for example, using the xmlrpc2di module, 
+the conference rooms can be controlled via XMLRPC.
+
+It implements conference rooms with dial-in and conference room entry
+via DTMF, and authenticated dial-out.
+
+Participants can be listed, kicked out, muted and unmuted over DI 
+(using xmlrpc2di over XMLRPC).
+
+implemented DI functions:
+
+----
+roomCreate(string room):
+   int code, string result, string adminpin
+
+  code/result:
+         0    OK
+         1    room already open
+----
+roomInfo(string room, string adminpin):
+   int code, string result, list<participant> participants
+   participant: string call_tag, string number, int status, string reason, int muted
+
+  status:
+         0    Disconnected
+         1    Connecting
+         2    Ringing
+         3    Connected
+         4    Disconnecting
+   reason: e.g. "200 OK", "606 Declined", ...
+
+  code/result:
+         0    OK
+         1    wrong adminpin
+----
+dialout(string room, string adminpin, string callee,
+        string from_user, string domain,
+        string auth_user, string auth_realm, string auth_pwd) :
+     int code, string result, string callid
+
+   code/result:
+          0     OK
+          1     wrong adminpin
+	  2     failed
+----
+kickout(string room, string adminpin, string call_tag) :
+     int code, string result
+
+   code/result:
+          0     OK
+          1     wrong adminpin
+	  2     call does not exist in room
+----
+mute(string room, string adminpin, string call_tag) :
+     int code, string result
+
+   code/result:
+          0     OK
+          1     wrong adminpin
+	  2     call does not exist in room
+----
+unmute(string room, string adminpin, string call_tag) :
+     int code, string result
+
+   code/result:
+          0     OK
+          1     wrong adminpin
+	  2     call does not exist in room
+----
+serverInfo():
+      string name,
+      int load,
+      int cpu
+----
