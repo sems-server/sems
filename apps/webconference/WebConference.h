@@ -42,6 +42,9 @@
 using std::map;
 using std::string;
 
+#include <sys/types.h>
+#include <regex.h>
+
 class ConferenceStatus;
 class ConferenceStatusContainer;
 
@@ -86,6 +89,11 @@ class WebConferenceFactory
 			  const string& adminpin);
   void postConfEvent(const AmArgArray& args, AmArgArray& ret,
 		     int id, int mute);
+
+  regex_t direct_room_re;
+  bool use_direct_room;
+  unsigned int direct_room_strip;
+ 
 public:
   static string DigitsDir;
   static PlayoutType m_PlayoutType;
@@ -156,6 +164,9 @@ public:
   WebConferenceDialog(AmPromptCollection& prompts,
 		      WebConferenceFactory* my_f, 
 		      UACAuthCred* cred);
+  WebConferenceDialog(AmPromptCollection& prompts,
+		      WebConferenceFactory* my_f, 
+		      const string& room);
   ~WebConferenceDialog();
 
   void process(AmEvent* ev);
