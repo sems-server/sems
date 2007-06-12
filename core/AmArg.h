@@ -128,7 +128,8 @@ class AmArg
 };
 
 /** \brief array of variable args for DI APIs*/
-class AmArgArray
+class AmArgArray 
+: public ArgObject
 {
   vector<AmArg> v;
 
