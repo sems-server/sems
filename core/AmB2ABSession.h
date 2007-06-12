@@ -226,9 +226,11 @@ class AmB2ABCalleeSession: public AmB2ABSession
   AmB2ABCalleeSession(const string& other_local_tag);
   ~AmB2ABCalleeSession();
 
-  void onB2ABEvent(B2ABEvent* ev);
   void onSessionStart(const AmSipReply& rep);
   void onSipReply(const AmSipReply& rep);	
+
+ protected:
+  void onB2ABEvent(B2ABEvent* ev);
 };
 
 /**
