@@ -67,6 +67,10 @@ public:
   void connectSession();
   void disconnectSession();
 
+  void setInput(AmAudioFile* /In/ /*in*/);
+  void setOutput(AmAudioFile* /In/ /*out*/);
+  void setInOut(AmAudioFile* /In/ /*in*/, AmAudioFile* /In/ /*out*/);
+
 private:
   AmB2ABCalleeSession(const AmB2ABCalleeSession& /* other_s*/);
 
