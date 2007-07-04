@@ -42,38 +42,62 @@ public: \
 		XmlRpcServerMethod(func_name, s) { } \
 \
 	void execute(XmlRpcValue& params, XmlRpcValue& result); \
-};
+}
 
 
-DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerCallsMethod,       "calls") 
-DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerSetLoglevelMethod, "set_loglevel") 
-DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetLoglevelMethod, "get_loglevel") 
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerCallsMethod,       "calls");
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerSetLoglevelMethod, "set_loglevel");
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetLoglevelMethod, "get_loglevel");
 
 class XMLRPC2DIServerDIMethod 
-       :  public XmlRpcServerMethod { 
+:  public XmlRpcServerMethod { 
+  
+ public: 
+  XMLRPC2DIServerDIMethod(XmlRpcServer* s) : 
+    XmlRpcServerMethod("di", s) { } 
 
-public: 
-	XMLRPC2DIServerDIMethod(XmlRpcServer* s) : 
-		XmlRpcServerMethod("di", s) { } 
-
-	void execute(XmlRpcValue& params, XmlRpcValue& result); 
-	void add2result(const AmArg& a, XmlRpcValue& result, unsigned int pos);
+  void execute(XmlRpcValue& params, XmlRpcValue& result); 
 };
 
+struct DIMethodProxy : public XmlRpcServerMethod
+{
+  std::string di_method_name;
+  std::string server_method_name;
 
+  AmDynInvokeFactory* di_factory;
 
-     class XMLRPC2DIServer : public AmThread {
+  DIMethodProxy(std::string const &server_method_name, 
+		std::string const &di_method_name,
+		AmDynInvokeFactory* di_factory);
+  
+  void execute(XmlRpcValue& params, XmlRpcValue& result);
+};
+
+class XMLRPC2DIServer : public AmThread {
   XmlRpcServer s;
   unsigned int port; 
   XMLRPC2DIServerCallsMethod       calls_method;
   XMLRPC2DIServerSetLoglevelMethod setloglevel_method;
   XMLRPC2DIServerGetLoglevelMethod getloglevel_method;
-  XMLRPC2DIServerDIMethod          di_method;
+  XMLRPC2DIServerDIMethod*         di_method;
+  void registerMethods(const std::string& iface);
 
-public: 
-  XMLRPC2DIServer(unsigned int port);
+ public: 
+  XMLRPC2DIServer(unsigned int port, 
+		  bool di_export, 
+		  string direct_export);
   void run();
   void on_stop();
+  
+  static void xmlrpcval2amarg(XmlRpcValue& v, AmArgArray& a, 
+			      unsigned int start_index = 0);
+
+  /** convert all args in a into result*/
+  static void amarg2xmlrpcval(AmArgArray& a, XmlRpcValue& result);
+
+  /** convert arg a result[pos] */
+  static void amarg2xmlrpcval(const AmArg& a, XmlRpcValue& result, 
+			      unsigned int pos);
 };
 
 

@@ -1,22 +1,101 @@
 xmlrpc2di: DI call via XMLRPC
 
 This module makes the Dynamic Invocation (DI) Interfaces exported 
-by component modules accessible from XMLRPC. Additionaly the methods 
-calls, get_loglevel and set_loglevel are implemented (like in the 
+by component modules accessible from XMLRPC. Additionaly the builtin 
+methods calls, get_loglevel and set_loglevel are implemented (like in the 
 stats UDP server). 
 
 This module uses the XmlRpc++ library (http://xmlrpcpp.sourceforge.net/).
 In order to compile it, the xmlrpc library is needed:
 cd apps/examples/xmlrpc2di 
-wget http://switch.dl.sourceforge.net/sourceforge/xmlrpcpp/xmlrpc++0.7.tar.gz && tar xzvf xmlrpc++0.7.tar.gz
+wget http://switch.dl.sourceforge.net/sourceforge/xmlrpcpp/xmlrpc++0.7.tar.gz 
+&& tar xzvf xmlrpc++0.7.tar.gz
+
 If xmlrpcpp is extracted to a different directory, the path in
 the Makefile needs to be adapted.
 
+
+Configuration parameters
+------------------------
+
+  function         default    description
+ +---------------------------------------
+  xmlrpc_port      8090       port to bind XMLRPC server to
+
+  export_di        yes        enable 'di' function (see below)
+
+  direct_export    none       search these interfaces for methods 
+                              to export
+
+Exporting functions from a DI interface
+---------------------------------------
+The xmlrpc2di module searches the interfaces configured by the 
+'direct_export' configuration variable for functions to export
+via XMLRPC. The interface must provide a function '_list' which 
+should return a list of methods to export. These methods are 
+exported as XMLRPC functions in two ways:
+ <method name>
+and
+ <interface name>.<method name>
+
+If the function <method name> already exists, only 
+<interface name>.<method name> is exported.
+
+As an example, lets set 
+ direct_export=di_dial
+in xmlrpc2di.conf, and have a look at 
+examples/di_dial/DIDial.cpp:
+...
+    } else if(method == "_list"){ 
+      ret.push(AmArg("dial"));
+      ret.push(AmArg("dial_auth"));
+      ret.push(AmArg("dial_pin"));
+      ret.push(AmArg("help"));
+    } else 
+...
+
+When SEMS starts and loads the xmlrpc2di module, the _list 
+method of the di_dial interface is called, and the functions 
+are exported: 
+(23386) DEBUG: onLoad (XMLRPC2DI.cpp:67): direct_export interfaces: di_dial
+(23386) DEBUG: onLoad (XMLRPC2DI.cpp:77): XMLRPC Server: Enabling builtin method 'di'.
+(23386) DEBUG: XMLRPC2DIServer (XMLRPC2DI.cpp:99):  XMLRPC Server: enabled builtin method 'calls'
+(23386) DEBUG: XMLRPC2DIServer (XMLRPC2DI.cpp:100): XMLRPC Server: enabled builtin method 'get_loglevel'
+(23386) DEBUG: XMLRPC2DIServer (XMLRPC2DI.cpp:101): XMLRPC Server: enabled builtin method 'set_loglevel'
+(23386) DEBUG: registerMethods (XMLRPC2DI.cpp:154): XMLRPC Server: adding method 'dial'
+(23386) DEBUG: registerMethods (XMLRPC2DI.cpp:160): XMLRPC Server: adding method 'di_dial.dial'
+(23386) DEBUG: registerMethods (XMLRPC2DI.cpp:154): XMLRPC Server: adding method 'dial_auth'
+(23386) DEBUG: registerMethods (XMLRPC2DI.cpp:160): XMLRPC Server: adding method 'di_dial.dial_auth'
+(23386) DEBUG: registerMethods (XMLRPC2DI.cpp:154): XMLRPC Server: adding method 'dial_pin'
+(23386) DEBUG: registerMethods (XMLRPC2DI.cpp:160): XMLRPC Server: adding method 'di_dial.dial_pin'
+(23386) DEBUG: registerMethods (XMLRPC2DI.cpp:154): XMLRPC Server: adding method 'help'
+(23386) DEBUG: registerMethods (XMLRPC2DI.cpp:160): XMLRPC Server: adding method 'di_dial.help'
+(23386) DEBUG: XMLRPC2DIServer (XMLRPC2DI.cpp:115): Initialized XMLRPC2DIServer with:
+(23386) DEBUG: XMLRPC2DIServer (XMLRPC2DI.cpp:116):                           port = 8090
+
+Now from e.g. python we can do the following:
+ >>> from xmlrpclib import *
+ >>> s = ServerProxy("http://127.0.0.1:8090")
+ >>> s.help()
+ ['dial <application> <user> <from> <to>', 'dial_auth <application> <user> <from> <to> <realm> <auth_user> <auth_pwd>', 'dial_pin <application> <dialout pin> <local_user> <to_user>']
+ >>> s.di_dial.help()
+ ['dial <application> <user> <from> <to>', 'dial_auth <application> <user> <from> <to> <realm> <auth_user> <auth_pwd>', 'dial_pin <application> <dialout pin> <local_user> <to_user>']
+
+a.s.o.
+
+XMLRPC server function 'di'
+--------------------------
+Using the function 'di' all methods of all interfaces can be executed 
+without the interfaces needing to list the methods in the '_list' call.
 The first parameter to 'di' is alway the factory name, the second the
 function name. Further parameters to XMLRPC calls are converted to DI 
 ArgArray structure, and result of DI calls are converted back to XMLRPC 
 parameters. At the moment only string, int and double types are implemented
 (no DateTime, struct, binary, ...).
+
+The 'di' function can be disabled on the XMLRPC server by setting 
+ export_di=no
+in xmlrpc2di.conf. By default it is enabled.
 
 
 Examples (that hopefully trigger some creativity in the reader ;) 
@@ -25,11 +104,20 @@ Examples (that hopefully trigger some creativity in the reader ;)
 Register fritz at iptel.org using registrar client over XMLRPC 
 from python:
 
-import xmlrpclib
-server = ServerProxy("http://127.0.0.1:8090")
-server.di('registrar_client', 'createRegistration', 
-    'iptel.org',  'fritz', 'Frotz', 
-    'fritz', 'secretpass', '')
+ import xmlrpclib
+ server = ServerProxy("http://127.0.0.1:8090")
+ server.di('registrar_client', 'createRegistration', 
+     'iptel.org',  'fritz', 'Frotz', 
+     'fritz', 'secretpass', '')
+
+or, having set 
+ direct_export=registrar_client
+directly:
+ import xmlrpclib
+ server = ServerProxy("http://127.0.0.1:8090")
+ server.createRegistration('iptel.org',  'fritz', 'Frotz', 
+     'fritz', 'secretpass', '')
+
 
 To call someone into conference over an account at sparvoip.de
 using di_dial:
