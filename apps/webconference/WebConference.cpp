@@ -232,6 +232,14 @@ void WebConferenceFactory::invoke(const string& method,
     serverInfo(args, ret);		    
   } else if(method == "help"){
     ret.push("help text goes here");
+  } else if(method == "_list"){
+    ret.push("roomCreate");
+    ret.push("roomInfo");
+    ret.push("dialout");
+    ret.push("mute");
+    ret.push("unmute");
+    ret.push("kickout");
+    ret.push("serverInfo");
   } else 
     throw AmDynInvoke::NotImplemented(method);
 }
