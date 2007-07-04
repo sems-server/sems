@@ -118,11 +118,15 @@ void DIDial::invoke(const string& method, const AmArgArray& args, AmArgArray& re
 			    args.get(3).asCStr()
 			).c_str());
     } else if(method == "help"){
-       ret.push("dial <application> <user> <from> <to>\n"
-		"dial_auth <application> <user> <from> <to> <realm> <auth_user> <auth_pwd>\n"
-		"dial_pin <application> <dialout pin> <local_user> <to_user>\n"
-		);
-    } else
+      ret.push("dial <application> <user> <from> <to>");
+      ret.push("dial_auth <application> <user> <from> <to> <realm> <auth_user> <auth_pwd>");
+      ret.push("dial_pin <application> <dialout pin> <local_user> <to_user>");
+    } else if(method == "_list"){ 
+      ret.push(AmArg("dial"));
+      ret.push(AmArg("dial_auth"));
+      ret.push(AmArg("dial_pin"));
+      ret.push(AmArg("help"));
+    } else 
 	throw AmDynInvoke::NotImplemented(method);
 }
 
