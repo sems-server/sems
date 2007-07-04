@@ -173,7 +173,7 @@ ConferenceRoom* WebConferenceFactory::getRoom(const string& room,
 AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req)
 {
   if (use_direct_room) {
-    if (!regexec(&direct_room_re, req.user.c_str(), 0,0,0)) {
+    if (!regexec(&direct_room_re, req.to.c_str(), 0,0,0)) {
       string room = req.user;
       if (room.length() > direct_room_strip) 
 	room = room.substr(direct_room_strip);
