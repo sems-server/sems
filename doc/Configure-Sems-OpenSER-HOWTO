@@ -1,0 +1,35 @@
+*******************************
+*  Sems + OpenSER mini-HOWTO  *
+*******************************
+
+1. Introduction
+
+This document applies to OpenSER version 1.3 or higher.  For earlier
+versions, refer to Sems + Ser mini-HOWTO.
+
+2. Compilation
+
+Before compiling Sems for OpenSER, uncomment
+
+#          -DOpenSER
+
+lines in Makefile.defs.
+
+3. OpenSER Configuration
+
+In openser.cfg, load module mi_datafgram.so, for example:
+
+mpath="/usr/lib/openser/modules"
+loadmodule "mi_datagram.so"
+
+Define mi_datagram module parameters, for example:
+
+# -- mi_datagram params
+modparam("mi_datagram", "socket_name", "/tmp/sems_openser_sock")
+modparam("mi_datagram", "unix_socket_mode", 0600)
+modparam("mi_datagram", "unix_socket_user", "root")
+modparam("mi_datagram", "unix_socket_group", "root")
+
+4. Other Instructions
+
+Refer to Sems + Ser mini-HOWTO.

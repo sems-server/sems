@@ -278,6 +278,103 @@ string AmSipDialog::getContactHdr()
   return res;
 }
 
+#ifdef OpenSER
+
+/* Escape " chars of argument and return escaped string */
+string escape(string s)
+{
+    string::size_type pos;
+
+    pos = 0;
+    while ((pos = s.find("\"", pos)) != string::npos) {
+	s.insert(pos, "\\");
+	pos = pos + 2;
+    }
+    return s;
+}
+
+int AmSipDialog::reply(const AmSipRequest& req,
+		       unsigned int  code,
+		       const string& reason,
+		       const string& content_type,
+		       const string& body,
+		       const string& hdrs)
+{
+  string m_hdrs = hdrs;
+  int headers;
+
+  if(hdl)
+    hdl->onSendReply(req,code,reason,
+		     content_type,body,m_hdrs);
+
+  string reply_sock = "/tmp/" + AmSession::getNewId();
+  string code_str = int2str(code);
+
+  string msg = ":t_reply:\n";
+
+  msg += code_str;
+  msg += "\n";
+
+  msg += reason;
+  msg += "\n";
+
+  msg += req.key;
+  msg += "\n";
+
+  msg += local_tag;
+  msg += "\n";
+
+  headers = 0;
+
+  if(!m_hdrs.empty()) {
+      msg += "\"" + escape(m_hdrs);
+      headers = 1;
+  }
+
+  if ((req.method!="CANCEL")&&
+      !((req.method=="BYE")&&(code<300))) {
+      if (headers == 1) {
+	  msg += escape(getContactHdr());
+      } else {
+	  msg += "\"" + escape(getContactHdr());
+	  headers = 1;
+      }
+  }
+	  
+  if(!body.empty()) {
+      if (headers == 1) {  
+	  msg += "Content-Type: " + content_type + "\n";
+      } else {
+	  msg += "\"Content-Type: " + content_type + "\n";
+	  headers = 1;
+      }
+  }
+
+  if (AmConfig::Signature.length()) {
+      if (headers == 1) {
+	  msg += "Server: " + AmConfig::Signature + "\n";
+      } else {
+	  msg += "\"Server: " + AmConfig::Signature + "\n";
+      }
+  }
+
+  if (headers == 1) {
+      msg += "\"\n";
+  } else {
+      msg += ".\n";
+  }
+
+  if(!body.empty())
+      msg += "\"" + body + "\"\n";
+
+  if(updateStatusReply(req,code))
+    return -1;
+
+  return AmServer::send_msg(msg,reply_sock, 500);
+}
+
+#else /* Ser */
+
 int AmSipDialog::reply(const AmSipRequest& req,
 		       unsigned int  code,
 		       const string& reason,
@@ -335,6 +432,8 @@ int AmSipDialog::reply(const AmSipRequest& req,
 
   return AmServer::send_msg(msg,reply_sock, 500);
 }
+
+#endif
 
 /* static */
 int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
@@ -543,6 +642,85 @@ int AmSipDialog::cancel()
   return AmServer::send_msg(msg, reply_sock, 50000);
 }
 
+#ifdef OpenSER
+
+int AmSipDialog::sendRequest(const string& method, 
+			     const string& content_type,
+			     const string& body,
+			     const string& hdrs)
+{
+  string msg,ser_cmd;
+  string m_hdrs = hdrs;
+
+  if(hdl)
+    hdl->onSendRequest(method,content_type,body,m_hdrs,cseq);
+
+  msg = ":t_uac_dlg:\n"
+    + method + "\n"
+    + remote_uri + "\n";
+    
+  if(next_hop.empty())
+    msg += ".";
+  else
+    msg += next_hop;
+    
+  msg += "\n";
+    
+  msg += ".\n"; /* socket */
+
+  msg += "\"From: " + escape(local_party);
+  if(!local_tag.empty())
+    msg += ";tag=" + local_tag;
+    
+  msg += "\n";
+  
+  msg += "To: " + escape(remote_party);
+  if(!remote_tag.empty()) 
+    msg += ";tag=" + remote_tag;
+    
+  msg += "\n";
+    
+  msg += "CSeq: " + int2str(cseq) + " " + method + "\n"
+    + "Call-ID: " + callid + "\n";
+    
+  if((method!="BYE")&&(method!="CANCEL"))
+    msg += escape(getContactHdr());
+    
+  if(!m_hdrs.empty()){
+    msg += escape(m_hdrs);
+    if(m_hdrs[m_hdrs.length()-1] != '\n')
+      msg += "\n";
+  }
+
+  if(!route.empty())
+    msg += getRoute();
+    
+  if(!body.empty())
+    msg += "Content-Type: " + content_type + "\n";
+    
+  msg += "Max-Forwards: "  MAX_FORWARDS "\n";
+
+  if (AmConfig::Signature.length()) 
+    msg += "User-Agent: " + AmConfig::Signature + "\n";
+
+  msg += "\"\n";
+
+  if (!body.empty())
+    + "\"" + body + "\"\n";
+
+  if (AmServer::send_msg_replyhandler(msg)) 
+    return -1;
+    
+  uac_trans[cseq] = AmSipTransaction(method,cseq);
+
+  // increment for next request
+  cseq++;
+    
+  return 0;
+}
+
+#else /* Ser */
+
 int AmSipDialog::sendRequest(const string& method, 
 			     const string& content_type,
 			     const string& body,
@@ -613,6 +791,8 @@ int AmSipDialog::sendRequest(const string& method,
     
   return 0;
 }
+
+#endif
 
 bool AmSipDialog::match_cancel(const AmSipRequest& cancel_req)
 {

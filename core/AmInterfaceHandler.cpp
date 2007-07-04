@@ -210,6 +210,35 @@ int AmReplyHandler::handleRequest(AmCtrlInterface* ctrl)
   AmSipReply reply;
 
   string tmp_str;
+
+#ifdef OpenSER
+  unsigned int mi_res_code;
+  string mi_res_msg;
+
+  SAFECTRLCALL1(getParam,tmp_str);
+    
+  DBG("MI response from OpenSER: %s\n",tmp_str.c_str());
+  if( parse_return_code(tmp_str.c_str(),// res_code_str,
+			mi_res_code, mi_res_msg) == -1 ){
+    ERROR("while parsing MI return code from OpenSER.\n");
+    //cleanup(ctrl);
+    return -1;
+  }
+
+  if (mi_res_code != 200) {
+      ERROR("MI response from OpenSER\n");
+      return -1;
+  }
+
+  SAFECTRLCALL1(getParam,tmp_str);
+  DBG("SIP response from OpenSER: %s\n",tmp_str.c_str());
+  if( parse_return_code(tmp_str.c_str(),// res_code_str,
+			reply.code, reply.reason) == -1 ){
+    ERROR("while parsing return code from Ser.\n");
+    //cleanup(ctrl);
+    return -1;
+  }
+#else
   SAFECTRLCALL1(getParam,tmp_str);
     
   DBG("response from Ser: %s\n",tmp_str.c_str());
@@ -219,6 +248,7 @@ int AmReplyHandler::handleRequest(AmCtrlInterface* ctrl)
     //cleanup(ctrl);
     return -1;
   }
+#endif
 
   /* Parse complete response:
    *

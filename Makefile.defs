@@ -38,6 +38,7 @@ CXX_FLAGS ?= -Wall -Wno-reorder -fPIC -g \
 	  -D_THREAD_SAFE -D_REENTRANT \
 	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
 	  -DOS='"$(OS)"' 	\
+#         -DOpenSER \
 #	  -DSUPPORT_IPV6
 
 C_FLAGS ?= -Wall -fPIC -g \
@@ -46,6 +47,7 @@ C_FLAGS ?= -Wall -fPIC -g \
 	  -D_THREAD_SAFE -D_REENTRANT \
 	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
 	  -DOS='"$(OS)"' 	\
+#         -DOpenSER \
 #	  -DSUPPORT_IPV6
 
 ifeq ($(DEBUG_PLAYOUT), yes)
