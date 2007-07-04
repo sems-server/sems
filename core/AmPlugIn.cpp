@@ -30,6 +30,7 @@
 #include "AmConfig.h"
 #include "AmApi.h"
 #include "AmInterfaceHandler.h"
+#include "AmUtils.h"
 
 #include "amci/amci.h"
 #include "amci/codecs.h"
@@ -148,14 +149,12 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   } else {
     DBG("AmPlugIn: loading modules '%s':\n", plugins.c_str());
 
-    size_t pos = 0;
-		
-    while (pos < plugins.length()) {
-      size_t pos2 = plugins.find(";", pos);
-      if (pos2 == string::npos) 
-	pos2 = plugins.length();
-      string plugin_file = plugins.substr(pos, pos2-pos);
-      if( plugin_file.find(".so",plugin_file.length()-3) == string::npos )
+    vector<string> plugins_list = explode(plugins, ";");
+    for (vector<string>::iterator it = plugins_list.begin(); 
+	 it != plugins_list.end(); it++) {
+      string plugin_file = *it;
+      if(plugin_file.find(".so",plugin_file.length()-3) 
+	 == string::npos )
 	plugin_file+=".so";
 			
       plugin_file = directory + "/"  + plugin_file;
@@ -165,11 +164,6 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 	// be strict here: if plugin not loaded, stop!
 	return err; 
       }
-      if (plugins[pos2]==';')
-	pos = pos2+1;
-      else 
-	break;
-			
     }
   }
   closedir(dir);
