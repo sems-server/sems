@@ -579,7 +579,11 @@ void SIPRegistrarClient::invoke(const string& method, const AmArgArray& args,
 		} else {
 			ret.push(AmArg((int)0));
 		}
-    } else
+    } else if(method == "_list"){ 
+      ret.push(AmArg("createRegistration"));
+      ret.push(AmArg("removeRegistration"));
+      ret.push(AmArg("getRegistrationState"));
+    }  else
 	throw AmDynInvoke::NotImplemented(method);
 }
 
