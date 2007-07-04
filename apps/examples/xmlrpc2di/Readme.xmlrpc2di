@@ -11,6 +11,9 @@ cd apps/examples/xmlrpc2di
 wget http://switch.dl.sourceforge.net/sourceforge/xmlrpcpp/xmlrpc++0.7.tar.gz 
 && tar xzvf xmlrpc++0.7.tar.gz
 
+A small patch set needs to be applied as well:
+patch -p0 < xmlrpcpp07_sems.patch
+
 If xmlrpcpp is extracted to a different directory, the path in
 the Makefile needs to be adapted.
 

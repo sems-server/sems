@@ -1,0 +1,54 @@
+diff -c -r original/xmlrpc++0.7/Makefile xmlrpc++0.7/Makefile
+*** original/xmlrpc++0.7/Makefile	Thu Mar  6 18:25:38 2003
+--- xmlrpc++0.7/Makefile	Wed Jul  4 16:36:43 2007
+***************
+*** 1,10 ****
+  # makefile written for gnu make
+  CXX		= g++
+  SRC		= ./src
+! CPPFLAGS	= -I$(SRC)
+  DEBUG		= -g
+  OPTIMIZE	= -O2
+! GCCWARN		= -Wall -Wstrict-prototypes
+  CXXFLAGS	= $(DEBUG) $(GCCWARN) $(OPTIMIZE) $(INCLUDES)
+  
+  LIB		= ./libXmlRpc.a
+--- 1,10 ----
+  # makefile written for gnu make
+  CXX		= g++
+  SRC		= ./src
+! CPPFLAGS	= -I$(SRC) -fPIC
+  DEBUG		= -g
+  OPTIMIZE	= -O2
+! GCCWARN		= -Wall #-Wstrict-prototypes
+  CXXFLAGS	= $(DEBUG) $(GCCWARN) $(OPTIMIZE) $(INCLUDES)
+  
+  LIB		= ./libXmlRpc.a
+Only in xmlrpc++0.7: Makefile~
+diff -c -r original/xmlrpc++0.7/src/XmlRpc.h xmlrpc++0.7/src/XmlRpc.h
+*** original/xmlrpc++0.7/src/XmlRpc.h	Thu Mar  6 18:25:37 2003
+--- xmlrpc++0.7/src/XmlRpc.h	Wed Jul  4 16:40:26 2007
+***************
+*** 38,43 ****
+--- 38,46 ----
+    //! An interface allowing custom handling of error message reporting.
+    class XmlRpcErrorHandler {
+    public:
++     // make destructor virtual in virtual class
++     virtual ~XmlRpcErrorHandler() { }
++ 
+      //! Returns a pointer to the currently installed error handling object.
+      static XmlRpcErrorHandler* getErrorHandler() 
+      { return _errorHandler; }
+***************
+*** 56,61 ****
+--- 59,67 ----
+    //! An interface allowing custom handling of informational message reporting.
+    class XmlRpcLogHandler {
+    public:
++     // make destructor virtual in virtual class
++     virtual ~XmlRpcLogHandler() { }
++ 
+      //! Returns a pointer to the currently installed message reporting object.
+      static XmlRpcLogHandler* getLogHandler() 
+      { return _logHandler; }
