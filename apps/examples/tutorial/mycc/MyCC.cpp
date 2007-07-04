@@ -123,7 +123,7 @@ void MyCCDialog::onDtmf(int event, int duration) {
       pin +=int2str(event);
       DBG("pin is now '%s'\n", pin.c_str());
     } else {
-      	AmArgArray di_args,ret;
+      	AmArg di_args,ret;
 	di_args.push(pin.c_str());
 	cc_acc->invoke("getCredit", di_args, ret);
 	credit = ret.get(0).asInt();
@@ -195,7 +195,7 @@ void MyCCDialog::onOtherReply(const AmSipReply& reply) {
 	startAccounting();
 	setInOut(NULL, NULL);
 	// set the call timer
-	AmArgArray di_args,ret;
+	AmArg di_args,ret;
 	di_args.push(TIMERID_CREDIT_TIMEOUT);
 	di_args.push(credit); // in seconds
 	di_args.push(dlg.local_tag.c_str());
@@ -244,7 +244,7 @@ void MyCCDialog::stopAccounting() {
     if (now.tv_usec>500000) now.tv_sec++;
     DBG("Call lasted %ld seconds\n", now.tv_sec);
 
-    AmArgArray di_args,ret;
+    AmArg di_args,ret;
     di_args.push(pin.c_str());
     di_args.push((int)now.tv_sec);
     cc_acc->invoke("subtractCredit", di_args, ret);

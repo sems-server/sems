@@ -56,7 +56,7 @@ class AmDynInvoke
 
   AmDynInvoke();
   virtual ~AmDynInvoke();
-  virtual void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+  virtual void invoke(const string& method, const AmArg& args, AmArg& ret);
 };
 
 /**

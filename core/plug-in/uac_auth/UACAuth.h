@@ -75,7 +75,7 @@ class UACAuthFactory
 
   static UACAuthFactory* instance();
   AmDynInvoke* getInstance() { return instance(); }
-  void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+  void invoke(const string& method, const AmArg& args, AmArg& ret);
 };
 
 struct SIPRequestInfo {

@@ -306,7 +306,7 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
 	s_args.push_back(string(cmd_str.substr(p, p2-p)));
 	p=p2+1;
       }
-      AmArgArray args;
+      AmArg args;
       for (vector<string>::iterator it = s_args.begin(); 
 	   it != s_args.end(); it++) {
 	args.push(it->c_str());
@@ -325,7 +325,7 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
 	reply = "could not get DI instance from factory\n";
 	return 0;
       }
-      AmArgArray ret;
+      AmArg ret;
       di->invoke(fct_name, args, ret);
 			
       if (ret.size()) {

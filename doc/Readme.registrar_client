@@ -50,7 +50,7 @@ example code
 	        AmDynInvokeFactory* di_f = AmPlugIn::instance()->
                  getFactory4Di("registrar_client");
 
-			AmArgArray di_args,ret;
+			AmArg di_args,ret;
 			di_args.push(domain.c_str());
 			di_args.push(user.c_str());
 			di_args.push(display_name.c_str()); // display name

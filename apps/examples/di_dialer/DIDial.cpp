@@ -95,7 +95,7 @@ DIDial::DIDial() {
 
 DIDial::~DIDial() { }
 
-void DIDial::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
+void DIDial::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
     if(method == "dial"){
        ret.push(dialout(args.get(0).asCStr(), 

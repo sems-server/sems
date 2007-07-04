@@ -37,7 +37,7 @@ CCAcc::CCAcc() {
 
 CCAcc::~CCAcc() { }
 
-void CCAcc::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
+void CCAcc::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
     if(method == "getCredit"){
       ret.push(getCredit(args.get(0).asCStr()));

@@ -22,7 +22,7 @@ class DILog : public AmLoggingFacility, public AmDynInvoke, public AmDynInvokeFa
   AmDynInvoke* getInstance() { return instance(); }
   // DI API
   static DILog* instance();
-  void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+  void invoke(const string& method, const AmArg& args, AmArg& ret);
 
   int onLoad();
 

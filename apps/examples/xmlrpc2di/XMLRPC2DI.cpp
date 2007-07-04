@@ -134,9 +134,9 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
 	    iface.c_str());
       return;
     } 
-    AmArgArray dummy, fct_list;
+    AmArg dummy, fct_list;
     di->invoke("_list", dummy, fct_list);
-    
+
     for (unsigned int i=0;i<fct_list.size();i++) {
       string method = fct_list.get(i).asCStr();
       // see whether method already registered
@@ -165,7 +165,7 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
   } catch (AmDynInvoke::NotImplemented& e) {
     ERROR("Not implemented in interface '%s': '%s'\n", 
 	  iface.c_str(), e.what.c_str());
-  } catch (const AmArgArray::OutOfBoundsException& e) {
+  } catch (const AmArg::OutOfBoundsException& e) {
     ERROR("Out of bounds exception occured while exporting interface '%s'\n", 
 	  iface.c_str());
   } catch (...) {
@@ -218,7 +218,7 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
 	fact_name.c_str(), fct_name.c_str());
 
     // get args
-    AmArgArray args;
+    AmArg args;
     XMLRPC2DIServer::xmlrpcval2amarg(params, args, 2);
   
     AmDynInvokeFactory* di_f = AmPlugIn::instance()->getFactory4Di(fact_name);
@@ -229,7 +229,7 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
     if(!di){
       throw XmlRpcException("could not get instance from factory", 500);
     }
-    AmArgArray ret;
+    AmArg ret;
     di->invoke(fct_name, args, ret);
   
     XMLRPC2DIServer::amarg2xmlrpcval(ret, result);
@@ -240,8 +240,8 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
   } catch (const AmDynInvoke::NotImplemented& e) {
     throw XmlRpcException("Exception: AmDynInvoke::NotImplemented: "
 			  + e.what, 504);
-  } catch (const AmArgArray::OutOfBoundsException& e) {
-    throw XmlRpcException("Exception: AmArgArray out of bounds - paramter number mismatch.", 300);
+  } catch (const AmArg::OutOfBoundsException& e) {
+    throw XmlRpcException("Exception: AmArg out of bounds - paramter number mismatch.", 300);
   } catch (const string& e) {
     throw XmlRpcException("Exception: "+e, 500);
   } catch (...) {
@@ -249,7 +249,7 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
   }
 }
 
-void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArgArray& a, 
+void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a, 
 				      unsigned int start_index) {
   if (v.valid()) {
     for (int i=start_index; i<v.size();i++) {
@@ -264,45 +264,25 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArgArray& a,
   } 
 }
 
-void XMLRPC2DIServer::amarg2xmlrpcval(AmArgArray& a, 
+void XMLRPC2DIServer::amarg2xmlrpcval(AmArg& a, 
 				      XmlRpcValue& result) {
-  if (a.size()) {
-    result.setSize(a.size());
-    
-    for (unsigned int i=0;i<a.size();i++) {
-	const AmArg& r = a.get(i);
-	amarg2xmlrpcval(r, result, i);
-    }
-  }
-}
-
-// WARNING: AmArgArrays are deleted by this function!
-void XMLRPC2DIServer::amarg2xmlrpcval(const AmArg& a, XmlRpcValue& result, 
-				      unsigned int pos) {
   switch (a.getType()) {
   case AmArg::CStr:  
-    result[pos]= string(a.asCStr()); break;
+    result = string(a.asCStr()); break;
 
   case AmArg::Int:  
-    result[pos]=a.asInt(); break;
+    result=a.asInt(); break;
 
   case AmArg::Double: 
-    result[pos]=a.asDouble(); break;
+    result=a.asDouble(); break;
 
-  case AmArg::AObject: {
-    AmArgArray* arr = dynamic_cast<AmArgArray*>(a.asObject());
-    if (NULL != arr) {
-      result[pos].setSize(arr->size());
-    
-      for (unsigned int i=0;i<arr->size();i++) {
-	const AmArg& r = arr->get(i);
-	amarg2xmlrpcval(r, result[pos], i);
-      }
-      delete arr; 
-    } else {
-      WARN("unsupported return value type of parameter %d (not AmArgArray)\n", pos);
+  case AmArg::Array:
+    result.setSize(a.size());
+    for (size_t i=0;i<a.size();i++) {
+      // duh... recursion...
+      amarg2xmlrpcval(a.get(i), result[i]);
     }
-  } break;
+    break;
   default: { WARN("unsupported return value type %d\n", a.getType()); } break;
     // TODO: do sth with the data here ?
   }
@@ -330,7 +310,7 @@ void DIMethodProxy::execute(XmlRpcValue& params,
       throw XmlRpcException("could not get instance from factory", 500);
     }
     
-    AmArgArray args, ret;
+    AmArg args, ret;
     XMLRPC2DIServer::xmlrpcval2amarg(params, args);
     
     DBG("XMLRPC2DI '%s': function '%s'\n", 
@@ -346,8 +326,8 @@ void DIMethodProxy::execute(XmlRpcValue& params,
   } catch (const AmDynInvoke::NotImplemented& e) {
     throw XmlRpcException("Exception: AmDynInvoke::NotImplemented: "
 			  + e.what, 504);
-  } catch (const AmArgArray::OutOfBoundsException& e) {
-    throw XmlRpcException("Exception: AmArgArray out of bounds - paramter number mismatch.", 300);
+  } catch (const AmArg::OutOfBoundsException& e) {
+    throw XmlRpcException("Exception: AmArg out of bounds - paramter number mismatch.", 300);
   } catch (const string& e) {
     throw XmlRpcException("Exception: "+e, 500);
   } catch (...) {

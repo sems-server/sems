@@ -48,7 +48,7 @@ struct ConferenceRoomParticipant {
 
   inline void setMuted(int mute);
   
-  AmArgArray* asArgArray();
+  AmArg asArgArray();
 };
 
 struct ConferenceRoom {
@@ -61,7 +61,7 @@ struct ConferenceRoom {
 
   void cleanExpired();
 
-  AmArgArray* asArgArray();
+  AmArg asArgArray();
 
   void newParticipant(const string& localtag, const string& number);
 

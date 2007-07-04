@@ -89,15 +89,11 @@ class XMLRPC2DIServer : public AmThread {
   void run();
   void on_stop();
   
-  static void xmlrpcval2amarg(XmlRpcValue& v, AmArgArray& a, 
+  static void xmlrpcval2amarg(XmlRpcValue& v, AmArg& a, 
 			      unsigned int start_index = 0);
 
   /** convert all args in a into result*/
-  static void amarg2xmlrpcval(AmArgArray& a, XmlRpcValue& result);
-
-  /** convert arg a result[pos] */
-  static void amarg2xmlrpcval(const AmArg& a, XmlRpcValue& result, 
-			      unsigned int pos);
+  static void amarg2xmlrpcval(AmArg& a, XmlRpcValue& result);
 };
 
 

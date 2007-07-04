@@ -213,8 +213,8 @@ AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req,
 }
 
 void WebConferenceFactory::invoke(const string& method, 
-				  const AmArgArray& args, 
-				  AmArgArray& ret)
+				  const AmArg& args, 
+				  AmArg& ret)
 {
   if(method == "roomCreate"){
     roomCreate(args, ret);
@@ -251,7 +251,7 @@ string WebConferenceFactory::getRandomPin() {
   return res;
 }
 
-void WebConferenceFactory::roomCreate(const AmArgArray& args, AmArgArray& ret) {
+void WebConferenceFactory::roomCreate(const AmArg& args, AmArg& ret) {
   string room = args.get(0).asCStr();
   rooms_mut.lock();
   map<string, ConferenceRoom>::iterator it = rooms.find(room);
@@ -268,7 +268,7 @@ void WebConferenceFactory::roomCreate(const AmArgArray& args, AmArgArray& ret) {
   rooms_mut.unlock();
 }
 
-void WebConferenceFactory::roomInfo(const AmArgArray& args, AmArgArray& ret) {
+void WebConferenceFactory::roomInfo(const AmArg& args, AmArg& ret) {
   string room = args.get(0).asCStr();
   string adminpin = args.get(1).asCStr();;
 
@@ -278,21 +278,16 @@ void WebConferenceFactory::roomInfo(const AmArgArray& args, AmArgArray& ret) {
     ret.push(1);
     ret.push("wrong adminpin");
     // for consistency, add an empty array
-    AmArgArray* a = new AmArgArray();
-    AmArg res;
-    res.setBorrowedPointer(a);
-    ret.push(res);
+    ret.push(AmArg());
    } else {
      ret.push(0);
      ret.push("OK");
-     AmArg res;
-     res.setBorrowedPointer(r->asArgArray());
-     ret.push(res);
+     ret.push(r->asArgArray());
    }
    rooms_mut.unlock();
 }
 
-void WebConferenceFactory::dialout(const AmArgArray& args, AmArgArray& ret) {
+void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   string room        = args.get(0).asCStr();
   string adminpin    = args.get(1).asCStr();
   string callee      = args.get(2).asCStr();
@@ -343,7 +338,7 @@ void WebConferenceFactory::dialout(const AmArgArray& args, AmArgArray& ret) {
   }
 }
 
-void WebConferenceFactory::postConfEvent(const AmArgArray& args, AmArgArray& ret,
+void WebConferenceFactory::postConfEvent(const AmArg& args, AmArg& ret,
 					 int id, int mute) {
   string room        = args.get(0).asCStr();
   string adminpin    = args.get(1).asCStr();
@@ -376,19 +371,19 @@ void WebConferenceFactory::postConfEvent(const AmArgArray& args, AmArgArray& ret
   }
 }
 
-void WebConferenceFactory::kickout(const AmArgArray& args, AmArgArray& ret) {
+void WebConferenceFactory::kickout(const AmArg& args, AmArg& ret) {
   postConfEvent(args, ret, WebConferenceEvent::Kick, -1);
 }
 
-void WebConferenceFactory::mute(const AmArgArray& args, AmArgArray& ret) {
+void WebConferenceFactory::mute(const AmArg& args, AmArg& ret) {
   postConfEvent(args, ret, WebConferenceEvent::Mute, 1);
 }
 
-void WebConferenceFactory::unmute(const AmArgArray& args, AmArgArray& ret) {
+void WebConferenceFactory::unmute(const AmArg& args, AmArg& ret) {
   postConfEvent(args, ret, WebConferenceEvent::Unmute, 0);
 }
 
-void WebConferenceFactory::serverInfo(const AmArgArray& args, AmArgArray& ret) {
+void WebConferenceFactory::serverInfo(const AmArg& args, AmArg& ret) {
   ret.push("Not yet implemented");
 }
 

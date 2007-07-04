@@ -380,7 +380,7 @@ static PyObject* IvrDialogBase_setTimer(IvrDialogBase* self, PyObject* args)
       return NULL;
     }
 
-    AmArgArray di_args,ret;
+    AmArg di_args,ret;
     di_args.push(id);
     di_args.push(interval);
     di_args.push(self->p_dlg->getLocalTag().c_str());
@@ -405,7 +405,7 @@ static PyObject* IvrDialogBase_removeTimer(IvrDialogBase* self, PyObject* args)
       return NULL;
     }
 
-    AmArgArray di_args,ret;
+    AmArg di_args,ret;
     di_args.push(id);
     di_args.push(self->p_dlg->getLocalTag().c_str());
 
@@ -421,7 +421,7 @@ static PyObject* IvrDialogBase_removeTimers(IvrDialogBase* self, PyObject* args)
 {
     assert(self->p_dlg);
     
-    AmArgArray di_args,ret;
+    AmArg di_args,ret;
     di_args.push(self->p_dlg->getLocalTag().c_str());
 
     self->p_dlg->user_timer->

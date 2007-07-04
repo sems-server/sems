@@ -33,7 +33,7 @@
 AmDynInvoke::AmDynInvoke() {}
 AmDynInvoke::~AmDynInvoke() {}
 
-void AmDynInvoke::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
+void AmDynInvoke::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
   throw NotImplemented(method);
 }

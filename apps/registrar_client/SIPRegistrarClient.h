@@ -175,7 +175,7 @@ public:
 	// DI API
     static SIPRegistrarClient* instance();
 	void invoke(const string& method, 
-				const AmArgArray& args, AmArgArray& ret);
+				const AmArg& args, AmArg& ret);
 	
     bool onSipReply(const AmSipReply& rep);
 	int onLoad();

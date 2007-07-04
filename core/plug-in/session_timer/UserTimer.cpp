@@ -174,7 +174,7 @@ void UserTimer::removeUserTimers(const string& session_id) {
   timers_mut.unlock();
 }
 
-void UserTimer::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
+void UserTimer::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
   if(method == "setTimer"){
     setTimer(args.get(0).asInt(),

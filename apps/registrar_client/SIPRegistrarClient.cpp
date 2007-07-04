@@ -396,7 +396,7 @@ void SIPRegistrarClient::onNewRegistration(SIPNewRegistrationEvent* new_reg) {
     DBG("enabling UAC Auth for new registration.\n");
     
     // get a sessionEventHandler from uac_auth
-    AmArgArray di_args,ret;
+    AmArg di_args,ret;
     AmArg a;
     a.setBorrowedPointer(reg);
     di_args.push(a);
@@ -553,8 +553,8 @@ bool SIPRegistrarClient::getRegistrationState(const string& handle,
 	return res;
 }
 
-void SIPRegistrarClient::invoke(const string& method, const AmArgArray& args, 
-								AmArgArray& ret)
+void SIPRegistrarClient::invoke(const string& method, const AmArg& args, 
+								AmArg& ret)
 {
     if(method == "createRegistration"){
 		ret.push(createRegistration(args.get(0).asCStr(),

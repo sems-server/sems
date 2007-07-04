@@ -38,7 +38,7 @@ int DILog::onLoad() {
 
 DILog::~DILog() { }
 
-void DILog::invoke(const string& method, const AmArgArray& args, AmArgArray& ret) {
+void DILog::invoke(const string& method, const AmArg& args, AmArg& ret) {
   if(method == "dumplog") {
     ret.push(dumpLog().c_str());
   } else if(method == "dumplogtodisk") {

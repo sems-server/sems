@@ -23,5 +23,5 @@ class CCAcc : public AmDynInvoke
   CCAcc();
   ~CCAcc();
   static CCAcc* instance();
-  void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+  void invoke(const string& method, const AmArg& args, AmArg& ret);
 };

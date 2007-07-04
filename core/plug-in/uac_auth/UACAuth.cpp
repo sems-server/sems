@@ -47,7 +47,7 @@ UACAuthFactory* UACAuthFactory::instance()
   return _instance;
 }
 
-void UACAuthFactory::invoke(const string& method, const AmArgArray& args, AmArgArray& ret)
+void UACAuthFactory::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
   if(method == "getHandler"){
     CredentialHolder* c = dynamic_cast<CredentialHolder*>(args.get(0).asObject());

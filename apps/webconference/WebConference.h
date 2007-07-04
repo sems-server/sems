@@ -87,7 +87,7 @@ class WebConferenceFactory
   /** returns NULL if adminpin wrong */
   ConferenceRoom* getRoom(const string& room, 
 			  const string& adminpin);
-  void postConfEvent(const AmArgArray& args, AmArgArray& ret,
+  void postConfEvent(const AmArg& args, AmArg& ret,
 		     int id, int mute);
 
   regex_t direct_room_re;
@@ -116,16 +116,16 @@ public:
   WebConferenceFactory* getInstance(){
     return _instance;
   }
-  void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+  void invoke(const string& method, const AmArg& args, AmArg& ret);
 
   // DI functions
-  void roomCreate(const AmArgArray& args, AmArgArray& ret);
-  void roomInfo(const AmArgArray& args, AmArgArray& ret);
-  void dialout(const AmArgArray& args, AmArgArray& ret);
-  void kickout(const AmArgArray& args, AmArgArray& ret);
-  void mute(const AmArgArray& args, AmArgArray& ret);
-  void unmute(const AmArgArray& args, AmArgArray& ret);
-  void serverInfo(const AmArgArray& args, AmArgArray& ret);
+  void roomCreate(const AmArg& args, AmArg& ret);
+  void roomInfo(const AmArg& args, AmArg& ret);
+  void dialout(const AmArg& args, AmArg& ret);
+  void kickout(const AmArg& args, AmArg& ret);
+  void mute(const AmArg& args, AmArg& ret);
+  void unmute(const AmArg& args, AmArg& ret);
+  void serverInfo(const AmArg& args, AmArg& ret);
 };
 
 class WebConferenceDialog 

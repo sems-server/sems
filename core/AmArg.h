@@ -34,7 +34,7 @@
 #include <vector>
 using std::vector;
 
-/** base for Objects as @see AmArg parameter*/
+/** base for Objects as @see AmArg parameter, not owned by AmArg (!) */
 class ArgObject {
  public:
   ArgObject() { }
@@ -52,9 +52,20 @@ class AmArg
     Int,
     Double,
     CStr,
-    AObject,
-    APointer		// for passing pointers that are not owned by AmArg
+    AObject,		// for passing pointers to objects not owned by AmArg
+    
+    Array
   };
+
+  struct OutOfBoundsException {
+    OutOfBoundsException() { }
+  };
+
+  struct TypeMismatchException {
+    TypeMismatchException() { }
+  };
+  
+  typedef std::vector<AmArg> ValueArray;
 
  private:
   // type
@@ -62,40 +73,37 @@ class AmArg
     
   // value
   union {
-    int         v_int;
-    double      v_double;
-    const char* v_cstr;
-    ArgObject*  v_obj;
-    void*	v_ptr;
+    int            v_int;
+    double         v_double;
+    const char*    v_cstr;
+    ArgObject*     v_obj;
+
+    ValueArray*    v_array;
   };
 
- public:
-  AmArg(const AmArg& v)
-    : type(v.type){
-	
-    switch(type){
-    case Int: v_int = v.v_int; break;
-    case Double: v_double = v.v_double; break;
-    case CStr: v_cstr = strdup(v.v_cstr); break;
-    case AObject: v_obj = v.v_obj; break;
-    case APointer: v_ptr = v.v_ptr; break;
-    default: assert(0);
-    }
-  }
 
+  void assertArray();
+  void assertArray() const;
+
+  void assertArray(size_t s);
+  void invalidate();
+
+ public:
   AmArg() 
     : type(Undef) 
-    {}
+    { }
 
+  AmArg(const AmArg& v);
+  
   AmArg(const int& v)
     : type(Int),
     v_int(v)
-    {}
+    { }
 
   AmArg(const double& v)
     : type(Double),
     v_double(v)
-    {}
+    { }
 
   AmArg(const char* v)
     : type(CStr)
@@ -103,57 +111,39 @@ class AmArg
       v_cstr = strdup(v);
     }
 
-  AmArg(void* v)
-    : type(APointer),
-    v_ptr(v)
-    { }
-
-  ~AmArg() {
-    if(type == CStr) free((void*)v_cstr);
-  }
+  ~AmArg() { invalidate(); }
 
   short getType() const { return type; }
+
+#define isArgArray(a) (AmArg::Array == a.getType())
+#define isArgDouble(a) (AmArg::Array == a.getType())
+#define isArgInt(a) (AmArg::Int == a.getType())
+#define isArgCStr(a) (AmArg::CStr == a.getType())
+#define isArgAObject(a) (AmArg::AObject == a.getType())
 
   void setBorrowedPointer(ArgObject* v) {
     type = AObject;
     v_obj = v;
   }
-    
 
   int         asInt()    const { return v_int; }
   double      asDouble() const { return v_double; }
   const char* asCStr()   const { return v_cstr; }
   ArgObject*  asObject() const { return v_obj; }
-  void*       asPointer() const { return v_ptr; }
-};
 
-/** \brief array of variable args for DI APIs*/
-class AmArgArray 
-: public ArgObject
-{
-  vector<AmArg> v;
+  // operations on arrays
+  void push(const AmArg& a);
+  
+  const size_t size();
 
- public:
-  struct OutOfBoundsException {
-    OutOfBoundsException() { }
-  };
+  /** throws OutOfBoundsException if array too small */
+  AmArg& get(size_t idx);
 
-  AmArgArray() : v() {}
-  AmArgArray(const AmArgArray& a) : v(a.v) {}
-    
-  void push(const AmArg& a){
-    v.push_back(a);
-  }
+  /** throws OutOfBoundsException if array too small */
+  AmArg& get(size_t idx) const;
 
-  const AmArg& get(size_t idx) const {
-	
-    if (idx >= v.size())
-      throw OutOfBoundsException();
-    //	assert(idx < v.size());
-    return v[idx];
-  }
-
-  size_t size() { return v.size(); }
+  /** resizes array if too small */
+  AmArg& operator[](size_t idx);
 };
 
 #endif

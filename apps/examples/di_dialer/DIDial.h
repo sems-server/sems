@@ -43,5 +43,5 @@ class DIDial : public AmDynInvoke
   DIDial();
   ~DIDial();
   static DIDial* instance();
-  void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+  void invoke(const string& method, const AmArg& args, AmArg& ret);
 };

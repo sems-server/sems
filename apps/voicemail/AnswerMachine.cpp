@@ -535,7 +535,7 @@ void AnswerMachineDialog::process(AmEvent* event)
 	    case 0:
 		playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
 		
-		{AmArgArray di_args,ret;
+		{AmArg di_args,ret;
 		di_args.push(RECORD_TIMER);
 		di_args.push(AnswerMachineFactory::MaxRecordTime);
 		di_args.push(getLocalTag().c_str());

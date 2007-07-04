@@ -52,12 +52,12 @@ struct AmEvent
 struct AmPluginEvent: public AmEvent
 {
   string      name;
-  AmArgArray  data;
+  AmArg       data;
 
   AmPluginEvent(const string& n)
     : AmEvent(E_PLUGIN), name(n), data() {}
 
-  AmPluginEvent(const string& n, const AmArgArray& d)
+  AmPluginEvent(const string& n, const AmArg& d)
     : AmEvent(E_PLUGIN), name(n), data(d) {}
 };
 

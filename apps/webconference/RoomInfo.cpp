@@ -17,13 +17,13 @@ bool ConferenceRoomParticipant::expired(const struct timeval& now) {
     (unsigned int)diff.tv_sec > PARTICIPANT_EXPIRED_DELAY;
 }
 
-AmArgArray* ConferenceRoomParticipant::asArgArray() {
-  AmArgArray* res = new AmArgArray();
-  res->push(AmArg(localtag.c_str()));
-  res->push(AmArg(number.c_str()));
-  res->push(AmArg((int)status));
-  res->push(AmArg(last_reason.c_str()));
-  res->push(AmArg((int)muted));
+AmArg ConferenceRoomParticipant::asArgArray() {
+  AmArg res;
+  res.push(AmArg(localtag.c_str()));
+  res.push(AmArg(number.c_str()));
+  res.push(AmArg((int)status));
+  res.push(AmArg(last_reason.c_str()));
+  res.push(AmArg((int)muted));
   return res;
 }
 
@@ -55,14 +55,12 @@ void ConferenceRoom::cleanExpired() {
   }
 }
 
-AmArgArray* ConferenceRoom::asArgArray() {
+AmArg ConferenceRoom::asArgArray() {
   cleanExpired();
-  AmArgArray* res = new AmArgArray();
+  AmArg res;
   for (list<ConferenceRoomParticipant>::iterator it=participants.begin(); 
        it != participants.end(); it++) {
-    AmArg r;
-    r.setBorrowedPointer(it->asArgArray());
-    res->push(r);
+    res.push(it->asArgArray());
   }
   return res;
 }

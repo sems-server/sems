@@ -96,7 +96,7 @@ class UserTimer: public AmDynInvoke
   void on_stop();
 #endif
 
-  void invoke(const string& method, const AmArgArray& args, AmArgArray& ret);
+  void invoke(const string& method, const AmArg& args, AmArg& ret);
 };
 
 #endif //AM_SESSION_TIMER_H
