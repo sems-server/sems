@@ -462,13 +462,13 @@ get_reg(const string& reg_id)
 SIPRegistration* SIPRegistrarClient::
 get_reg_unsafe(const string& reg_id) 
 {
-	DBG("get registration_unsafe '%s'\n", reg_id.c_str());
+  //	DBG("get registration_unsafe '%s'\n", reg_id.c_str());
 	SIPRegistration* res = NULL;
 	map<string, SIPRegistration*>::iterator it = 
 		registrations.find(reg_id);
 	if (it!=registrations.end())
 		res = it->second;
-	DBG("get registration_unsafe : res = '%ld' (this = %ld)\n", (long)res, (long)this);
+ //     DBG("get registration_unsafe : res = '%ld' (this = %ld)\n", (long)res, (long)this);
 	return res;
 }
 
