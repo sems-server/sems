@@ -268,13 +268,16 @@ bool ContactInfo::parse_uri() {
 bool ContactInfo::parse_params(string& line, int& pos) {
 	size_t p1=pos, p2=pos;
 	int st = 0; int quoted = false;
+	bool hit_comma=false;
 	char last_c = ' ';
 	params.clear();
 	while((size_t)pos < line.length()) {
 		char c = line[pos];
 		if (!quoted) {
-			if (c == ',')
-				break;
+		      if (c == ',') {
+			hit_comma=true;
+			break;
+		      }
 			if (c == '\"') {
 				quoted = 1;
 			} else if (c == '=') {
@@ -299,8 +302,12 @@ bool ContactInfo::parse_params(string& line, int& pos) {
 		pos++;
 	}
 	
-	if (st == pS2) 
+	if (st == pS2) {
+	  if (hit_comma)
+	        params[line.substr(p1, p2-p1)] = line.substr(p2+1, pos-p2 - 1);	
+	  else 
 		params[line.substr(p1, p2-p1)] = line.substr(p2+1, pos-p2);	
+	}
 
 	return true;
 }
