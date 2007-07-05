@@ -31,20 +31,20 @@ using std::map;
 using std::string;
 
 struct ContactInfo {
-	string display_name;
-	string uri;
+  string display_name;
+  string uri;
 	
-	string uri_user; 
-	string uri_host; 
-	string uri_port; 
-	string uri_param;
+  string uri_user; 
+  string uri_host; 
+  string uri_port; 
+  string uri_param;
 
-	map<string, string> params;
+  map<string, string> params;
 
-	bool isEqual(const ContactInfo& c) const;
-	bool parse_contact(string& line, size_t pos, size_t& end);
-	bool parse_uri();
-	bool parse_params(string& line, int& pos);
-	void dump();
-	ContactInfo() { }
+  bool isEqual(const ContactInfo& c) const;
+  bool parse_contact(string& line, size_t pos, size_t& end);
+  bool parse_uri();
+  bool parse_params(string& line, int& pos);
+  void dump();
+  ContactInfo() { }
 };
