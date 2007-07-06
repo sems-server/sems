@@ -87,7 +87,7 @@ void AmArg::push(const AmArg& a) {
   v_array->push_back(a);
 }
 
-const size_t AmArg::size() {
+const size_t AmArg::size() const {
   assertArray();  
   return v_array->size(); 
 }

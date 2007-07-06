@@ -134,7 +134,7 @@ class AmArg
   // operations on arrays
   void push(const AmArg& a);
   
-  const size_t size();
+  const size_t size() const;
 
   /** throws OutOfBoundsException if array too small */
   AmArg& get(size_t idx);
