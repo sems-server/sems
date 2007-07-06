@@ -279,8 +279,7 @@ void AmB2ABCalleeSession::onSessionStart(const AmSipReply& rep) {
   DBG("onSessionStart of callee session\n");
   // connect our audio
   connector = new AmSessionAudioConnector();
-  // acc to mediaprocessor
-  AmMediaProcessor::instance()->addSession(this, callgroup);
+  connectSession();
   relayEvent(new B2ABConnectAudioEvent(connector));
 }
 
@@ -345,12 +344,12 @@ bool AmSessionAudioConnector::disconnectSession(AmSession* sess)
     if (tag_sess[0] == tag) {
 	tag_sess[0].clear();
 	sess->setInOut(NULL, NULL);
-	return tag_sess[1].length();
+	return !tag_sess[1].length();
     }
     else if (tag_sess[1] == tag) {
 	tag_sess[1].clear();
 	sess->setInOut(NULL, NULL);
-	return tag_sess[0].length();
+	return !tag_sess[0].length();
     }
     else {
 	ERROR("disconnecting from wrong AmSessionAudioConnector\n");
