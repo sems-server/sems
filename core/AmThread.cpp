@@ -65,7 +65,7 @@ void * AmThread::_start(void * _t)
 {
   AmThread* _this = (AmThread*)_t;
   _this->_pid = (pid_t) _this->_td;
-  DBG("Thread %ld is starting.\n", (unsigned long int) _this->_pid);
+  DBG("Thread %lu is starting.\n", (unsigned long int) _this->_pid);
   _this->_stopped.set(false);
   _this->run();
   _this->_stopped.set(true);
@@ -74,7 +74,7 @@ void * AmThread::_start(void * _t)
   //INFO("threads = %i\n",--thread_nr);
   //thread_nr_mut.unlock();
 
-  DBG("Thread %ld is ending.\n", (unsigned long int) _this->_pid);
+  DBG("Thread %lu is ending.\n", (unsigned long int) _this->_pid);
   return NULL;
 }
 
@@ -132,7 +132,7 @@ void AmThread::start(bool realtime)
   //     thread_nr_mut.lock();
   //     INFO("threads = %i\n",++thread_nr);
   //     thread_nr_mut.unlock();
-  DBG("Thread %ld is just created.\n", (unsigned long int) _pid);
+  DBG("Thread %lu is just created.\n", (unsigned long int) _pid);
 }
 
 void AmThread::stop()
@@ -140,7 +140,7 @@ void AmThread::stop()
   _m_td.lock();
 
   // gives the thread a chance to clean up
-  DBG("Thread %ld (%ld) calling on_stop, give it a chance to clean up.\n", 
+  DBG("Thread %lu (%lu) calling on_stop, give it a chance to clean up.\n", 
       (unsigned long int) _pid, (unsigned long int) _td);
 
   try { on_stop(); } catch(...) {}
@@ -156,7 +156,7 @@ void AmThread::stop()
     }
   }
 
-  DBG("Thread %ld (%ld) finished detach.\n", (unsigned long int) _pid, (unsigned long int) _td);
+  DBG("Thread %lu (%lu) finished detach.\n", (unsigned long int) _pid, (unsigned long int) _td);
 
   //pthread_cancel(_td);
 
@@ -170,7 +170,7 @@ void AmThread::cancel() {
   if ((res = pthread_cancel(_td)) != 0) {
     ERROR("pthread_cancel failed with code %i\n", res);
   } else {
-    DBG("Thread %ld is canceled.\n", (unsigned long int) _pid);
+    DBG("Thread %lu is canceled.\n", (unsigned long int) _pid);
     _stopped.set(true);
   }
 
@@ -233,12 +233,12 @@ AmThreadWatcher* AmThreadWatcher::instance()
 
 void AmThreadWatcher::add(AmThread* t)
 {
-  DBG("trying to add thread %ld to thread watcher.\n", (unsigned long int) t->_pid);
+  DBG("trying to add thread %lu to thread watcher.\n", (unsigned long int) t->_pid);
   q_mut.lock();
   thread_queue.push(t);
   _run_cond.set(true);
   q_mut.unlock();
-  DBG("added thread %ld to thread watcher.\n", (unsigned long int) t->_pid);
+  DBG("added thread %lu to thread watcher.\n", (unsigned long int) t->_pid);
 }
 
 void AmThreadWatcher::on_stop()
@@ -266,13 +266,13 @@ void AmThreadWatcher::run()
 	thread_queue.pop();
 
 	q_mut.unlock();
-	DBG("thread %ld is to be processed in thread watcher.\n", (unsigned long int) cur_thread->_pid);
+	DBG("thread %lu is to be processed in thread watcher.\n", (unsigned long int) cur_thread->_pid);
 	if(cur_thread->is_stopped()){
-	  DBG("thread %ld has been destroyed.\n", (unsigned long int) cur_thread->_pid);
+	  DBG("thread %lu has been destroyed.\n", (unsigned long int) cur_thread->_pid);
 	  delete cur_thread;
 	}
 	else {
-	  DBG("thread %ld still running.\n", (unsigned long int) cur_thread->_pid);
+	  DBG("thread %lu still running.\n", (unsigned long int) cur_thread->_pid);
 	  n_thread_queue.push(cur_thread);
 	}
 
