@@ -329,7 +329,7 @@ void AmSessionAudioConnector::connectSession(AmSession* sess)
 
 bool AmSessionAudioConnector::disconnectSession(AmSession* sess) 
 {
-  bool res = false;
+  bool res = true;
 
   const string& tag = sess->getLocalTag();
 

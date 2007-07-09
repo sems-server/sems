@@ -272,7 +272,9 @@ class AmSessionAudioConnector {
   /** connect audio to sess */
   void connectSession(AmSession* sess);
 
-  /** disconnect session */
+  /** disconnect session 
+   * @return whether connector is still connected after disconnect 
+   */
   bool disconnectSession(AmSession* sess);
 };
 
