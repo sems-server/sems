@@ -257,10 +257,16 @@ class AmSessionAudioConnector {
  private:
   AmAudioDelayBridge audio_connectors[2];
   string tag_sess[2];
-
+  bool connected[2];
+  AmMutex tag_mut;
+  
  public:
   /** create a connector, connect audio to sess */
-  AmSessionAudioConnector() {}
+  AmSessionAudioConnector() { 
+    connected[0] = false; 
+    connected[1] = false;
+  }
+
   ~AmSessionAudioConnector() {}
 
   /** connect audio to sess */
