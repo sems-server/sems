@@ -197,7 +197,7 @@ static PyObject* IvrDialogBase_enqueue(IvrDialogBase* self, PyObject* args)
 	  ((IvrAudioFile*)o_play)->af->rewind();
 	  a_play = ((IvrAudioFile*)o_play)->af;
 
-	} if(PyObject_TypeCheck(o_play,&IvrAudioMixInType)){
+	} else if(PyObject_TypeCheck(o_play,&IvrAudioMixInType)){
 
 	  a_play = ((IvrAudioMixIn*)o_play)->mix;
 
