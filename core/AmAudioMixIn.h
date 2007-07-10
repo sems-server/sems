@@ -50,6 +50,7 @@ class AmAudioMixIn : public AmAudio {
   AmAudioFile* B;
   unsigned int s;
   double l;
+  bool finish_b_while_mixing;
 
   bool mixing;
 
@@ -58,9 +59,11 @@ class AmAudioMixIn : public AmAudio {
 
   short mix_buf[MAX_BUF_SAMPLES];  // 240
 
+
  public:
   AmAudioMixIn(AmAudio* A, AmAudioFile* B, 
-		unsigned int s, double l);
+	       unsigned int s, double l, 
+	       bool finish_b_while_mixing = false);
   ~AmAudioMixIn();
  protected:
   // not used

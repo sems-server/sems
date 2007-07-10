@@ -128,7 +128,7 @@ void AnnouncementDialog::startSession(){
 	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
     }
 
-    AmAudioMixIn* s = new AmAudioMixIn(&wav_file, f, 4, 0.0);
+    AmAudioMixIn* s = new AmAudioMixIn(&wav_file, f, 4, 0.1, true);
     setOutput(s);
 }
 

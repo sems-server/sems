@@ -29,8 +29,11 @@
 #include "SampleArray.h"
 
 AmAudioMixIn::AmAudioMixIn(AmAudio* A, AmAudioFile* B, 
-			     unsigned int s, double l) 
-  :   A(A),B(B), s(s), l(l), mixing(false), next_start_ts_i(false)
+			   unsigned int s, double l,
+			   bool finish_b_while_mixing) 
+  :   A(A),B(B), s(s), l(l), 
+      mixing(false), next_start_ts_i(false),
+      finish_b_while_mixing(finish_b_while_mixing)
 {
 }
 AmAudioMixIn::~AmAudioMixIn() { }
@@ -68,7 +71,7 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
       // get audio from A
       int len = A->get(user_ts, (unsigned char*)mix_buf, nb_samples);
 
-      if (len<0) { // A finished
+      if ((len<0) && !finish_b_while_mixing) { // A finished
 	return len;
       }
       for (int i=0;i<len;i++) {
@@ -78,8 +81,13 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
       res = len;
 
       // clear the rest
-      if (nb_samples<<1 != (unsigned int)len)
-	memset((void*)pdest[len], 0, nb_samples<<1 - (unsigned int)len);
+      unsigned int len_from_a = 0;
+      if (res>0)
+	len_from_a=(unsigned int)res;
+      
+      if (nb_samples<<1 != len_from_a)
+	memset((void*)&pdest[len_from_a>>1], 0, 
+	       nb_samples<<1 - len_from_a);
 
       // add audio from B
       len = B->get(user_ts, (unsigned char*)mix_buf, nb_samples);
