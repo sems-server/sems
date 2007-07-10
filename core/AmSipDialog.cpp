@@ -449,6 +449,50 @@ int AmSipDialog::reply(const AmSipRequest& req,
 
 #endif
 
+#ifdef OpenSER
+
+/* static */
+int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
+			     const string& reason, const string& hdrs)
+{
+  string reply_sock = "/tmp/" + AmSession::getNewId();
+  string code_str = int2str(code);
+  int headers;
+
+  string msg = 
+    ":t_reply:\n" +
+    code_str + "\n" + 
+    reason + "\n" + 
+    req.key + "\n" + 
+    AmSession::getNewId() + "\n";
+
+  headers = 0;
+
+  if(!hdrs.empty()) {
+    msg += "\"" + lf2crlf(escape(hdrs));
+    headers = 1;
+  }
+
+  if (AmConfig::Signature.length()) {
+    if (headers == 1) {
+      msg += "Server: " + AmConfig::Signature + "\r\n";
+    } else {
+	msg += "\"Server: " + AmConfig::Signature + "\r\n";
+	headers = 1;
+    }
+  }
+
+  if (headers == 1) {
+      msg += "\"\n";
+  } else {
+      msg += ".\n";
+  }
+
+  return AmServer::send_msg(msg,reply_sock, 500);
+}
+
+#else /* Ser */
+
 /* static */
 int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
 			     const string& reason, const string& hdrs)
@@ -472,6 +516,8 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
     
   return AmServer::send_msg(msg,reply_sock, 500);
 }
+
+#endif
 
 int AmSipDialog::bye()
 {
