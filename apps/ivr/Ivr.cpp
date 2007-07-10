@@ -24,6 +24,7 @@
 #include "IvrSipRequest.h"
 #include "IvrSipReply.h"
 #include "IvrAudio.h"
+#include "IvrAudioMixIn.h"
 #include "IvrUAC.h"
 #include "Ivr.h"
 
@@ -239,6 +240,9 @@ void IvrFactory::import_ivr_builtins()
 
     // IvrAudioFile
     import_object(ivr_module,"IvrAudioFile",&IvrAudioFileType);
+
+    // IvrAudioMixIn
+    import_object(ivr_module,"IvrAudioMixIn",&IvrAudioMixInType);
 
     // IvrUAC
     import_object(ivr_module,"IvrUAC",&IvrUACType);

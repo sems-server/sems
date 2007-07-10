@@ -29,6 +29,8 @@
 #include "AmConfig.h"
 #include "AmUtils.h"
 
+#include "AmAudioMixIn.h"
+
 #include "sems.h"
 #include "log.h"
 
@@ -119,8 +121,15 @@ void AnnouncementDialog::startSession(){
 
     if(wav_file.open(filename,AmAudioFile::Read))
 	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
-    
-    setOutput(&wav_file);
+
+    DBG("*************************asdasdasdasd*********\n");
+    AmAudioFile* f = new AmAudioFile();
+    if (f->open("/tmp/beep.wav", AmAudioFile::Read)) {
+	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
+    }
+
+    AmAudioMixIn* s = new AmAudioMixIn(&wav_file, f, 4, 0.0);
+    setOutput(s);
 }
 
 void AnnouncementDialog::onBye(const AmSipRequest& req)

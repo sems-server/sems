@@ -1,5 +1,7 @@
 #include "IvrDialogBase.h"
 #include "IvrAudio.h"
+#include "IvrAudioMixIn.h"
+#
 #include "Ivr.h"
 
 #include "IvrSipDialog.h"
@@ -183,21 +185,27 @@ static PyObject* IvrDialogBase_enqueue(IvrDialogBase* self, PyObject* args)
     assert(self->p_dlg);
     
     PyObject *o_play, *o_rec;
-    AmAudioFile *a_play=NULL, *a_rec=NULL;
+    AmAudio *a_play=NULL;
+    AmAudioFile *a_rec=NULL;
     
     if(!PyArg_ParseTuple(args,"OO",&o_play,&o_rec))
 	return NULL;
     
     if (o_play != Py_None){
 	
-	if(!PyObject_TypeCheck(o_play,&IvrAudioFileType)){
-	    
+	if(PyObject_TypeCheck(o_play,&IvrAudioFileType)){
+	  ((IvrAudioFile*)o_play)->af->rewind();
+	  a_play = ((IvrAudioFile*)o_play)->af;
+
+	} if(PyObject_TypeCheck(o_play,&IvrAudioMixInType)){
+
+	  a_play = ((IvrAudioMixIn*)o_play)->mix;
+
+	} else { 
 	    PyErr_SetString(PyExc_TypeError,"Argument 1 is no IvrAudioFile");
 	    return NULL;
 	}
 	
-	a_play = ((IvrAudioFile*)o_play)->af;
-	a_play->rewind();
     }
     
     if (o_rec != Py_None){
