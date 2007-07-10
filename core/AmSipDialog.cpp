@@ -293,6 +293,19 @@ string escape(string s)
     return s;
 }
 
+/* Add CR before each LF */
+string lf2crlf(string s)
+{
+    string::size_type pos;
+
+    pos = 0;
+    while ((pos = s.find("\n", pos)) != string::npos) {
+	s.insert(pos, "\r");
+	pos = pos + 2;
+    }
+    return s;
+}
+
 int AmSipDialog::reply(const AmSipRequest& req,
 		       unsigned int  code,
 		       const string& reason,
@@ -327,34 +340,35 @@ int AmSipDialog::reply(const AmSipRequest& req,
   headers = 0;
 
   if(!m_hdrs.empty()) {
-      msg += "\"" + escape(m_hdrs);
+      msg += "\"" + lf2crlf(escape(m_hdrs));
       headers = 1;
   }
 
   if ((req.method!="CANCEL")&&
       !((req.method=="BYE")&&(code<300))) {
       if (headers == 1) {
-	  msg += escape(getContactHdr());
+	  msg += lf2crlf(escape(getContactHdr()));
       } else {
-	  msg += "\"" + escape(getContactHdr());
+	  msg += "\"" + lf2crlf(escape(getContactHdr()));
 	  headers = 1;
       }
   }
 	  
   if(!body.empty()) {
       if (headers == 1) {  
-	  msg += "Content-Type: " + content_type + "\n";
+	  msg += "Content-Type: " + content_type + "\r\n";
       } else {
-	  msg += "\"Content-Type: " + content_type + "\n";
+	  msg += "\"Content-Type: " + content_type + "\r\n";
 	  headers = 1;
       }
   }
 
   if (AmConfig::Signature.length()) {
       if (headers == 1) {
-	  msg += "Server: " + AmConfig::Signature + "\n";
+	  msg += "Server: " + AmConfig::Signature + "\r\n";
       } else {
-	  msg += "\"Server: " + AmConfig::Signature + "\n";
+	  msg += "\"Server: " + AmConfig::Signature + "\r\n";
+	  headers = 1;
       }
   }
 
@@ -684,29 +698,29 @@ int AmSipDialog::sendRequest(const string& method,
     + "Call-ID: " + callid + "\n";
     
   if((method!="BYE")&&(method!="CANCEL"))
-    msg += escape(getContactHdr());
+    msg += lf2crlf(escape(getContactHdr()));
     
   if(!m_hdrs.empty()){
-    msg += escape(m_hdrs);
+    msg += lf2crlf(escape(m_hdrs));
     if(m_hdrs[m_hdrs.length()-1] != '\n')
-      msg += "\n";
+      msg += "\r\n";
   }
 
   if(!route.empty())
-    msg += getRoute();
+    msg += lf2crlf(getRoute());
     
   if(!body.empty())
-    msg += "Content-Type: " + content_type + "\n";
+    msg += "Content-Type: " + content_type + "\r\n";
     
-  msg += "Max-Forwards: "  MAX_FORWARDS "\n";
+  msg += "Max-Forwards: "  MAX_FORWARDS "\r\n";
 
   if (AmConfig::Signature.length()) 
-    msg += "User-Agent: " + AmConfig::Signature + "\n";
+    msg += "User-Agent: " + AmConfig::Signature + "\r\n";
 
   msg += "\"\n";
 
   if (!body.empty())
-    + "\"" + body + "\"\n";
+    msg += "\"" + lf2crlf(body) + "\"\n";
 
   if (AmServer::send_msg_replyhandler(msg)) 
     return -1;
