@@ -266,7 +266,7 @@ public:
   /** send a Re-INVITE (if connected) */
   void sendReinvite(bool updateSDP = true);
   /** send an INVITE */
-  void sendInvite();
+  int sendInvite();
 
   /** set the session on/off hold */
   void setOnHold(bool hold);

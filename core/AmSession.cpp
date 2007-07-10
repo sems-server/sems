@@ -690,7 +690,7 @@ void AmSession::sendReinvite(bool updateSDP)
   }
 }
 
-void AmSession::sendInvite() 
+int AmSession::sendInvite() 
 {
   // set local IP first, so that IP is set when 
   // getLocalPort/setLocalPort may bind 
@@ -698,7 +698,7 @@ void AmSession::sendInvite()
   // generate SDP
   string sdp_body;
   sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-  dlg.invite("", "application/sdp", sdp_body);
+  return dlg.invite("", "application/sdp", sdp_body);
 }
 
 void AmSession::setOnHold(bool hold)

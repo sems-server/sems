@@ -186,7 +186,13 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
       session->setCallgroup(req.from_tag);
 
       session->setNegotiateOnReply(true);
-      session->sendInvite();
+      if (int err = session->sendInvite()) {
+	ERROR("INVITE could not be sent: error code = %d.\n", 
+	      err);
+	delete session;
+	as_mut.unlock();
+	return NULL;
+      }
       session->start();
 
       addSession_unsafe(req.callid,req.from_tag,req.from_tag,session);
