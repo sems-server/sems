@@ -124,8 +124,8 @@ t_write_unix.
 		if (uri=~"sip:100.*@") {
 
 		   # assumes that Sems configuration parameter 'socket_name='
-		   # has been set to /tmp/am_sock
-		   if(!t_write_unix("/tmp/am_sock","conference")) {
+		   # has been set to /tmp/sems_sock
+		   if(!t_write_unix("/tmp/sems_sock","conference")) {
 		      t_reply("500","error contacting sems");
 		   };
 		   break;
@@ -135,7 +135,7 @@ t_write_unix.
 		# if the URI begin with 200
 		if (uri=~"sip:200.*@") {
 
-		   if(!t_write_unix("/tmp/am_sock","announcement")) {
+		   if(!t_write_unix("/tmp/sems_sock","announcement")) {
 		      t_reply("500","error contacting sems");
 		   };
 		   break;
@@ -145,7 +145,7 @@ t_write_unix.
 		# do not forget to load AVPs so that voicemail gets the
 		# callee's email address.
 		load_avp("ruri","email",0);
-		if(!t_write_unix("/tmp/am_sock","voicemail")) {
+		if(!t_write_unix("/tmp/sems_sock","voicemail")) {
 		    t_reply("500","error contacting sems");
 		};
 		break;
@@ -156,7 +156,7 @@ t_write_unix.
                 # call. "bye" is no plug-in name. It is a reserved name which
 		# tells Sems to terminate the call.
 
-		if(!t_write_unix("/tmp/am_sock","bye")) {
+		if(!t_write_unix("/tmp/sems_sock","bye")) {
 		    t_reply("500","error contacting sems");
 		};
 	   } 
