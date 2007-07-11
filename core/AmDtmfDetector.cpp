@@ -87,7 +87,8 @@ void AmSipDtmfEvent::parseLine(const string& line)
       line.substr(0, KeySignal.length()) == KeySignal)
     {
       string event(line.substr(KeySignal.length(), string::npos));
-      switch (event.c_str()[0])
+
+      switch (event.c_str()[event.find_first_not_of(" \t")])
         {
         case '*':
 	  m_event = 10;
