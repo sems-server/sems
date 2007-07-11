@@ -276,8 +276,7 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
   if (credential->realm.length() 
       && (credential->realm != challenge.realm)) {
     DBG("realm mismatch ('%s' vs '%s'). auth failed.\n", 
-	credential->realm.c_str(),challenge.realm.c_str());
-    return false;
+ 	credential->realm.c_str(),challenge.realm.c_str());
   }
  
   HASHHEX ha1;
@@ -348,8 +347,7 @@ void UACAuth::uac_calc_HA1(UACAuthDigestChallenge& challenge,
   MD5Init(&Md5Ctx);
   w_MD5Update(&Md5Ctx, credential->user);
   w_MD5Update(&Md5Ctx, ":");
-  // use realm from challenge in case of 
-  // empty credential realm  (ignore realm)
+  // use realm from challenge 
   w_MD5Update(&Md5Ctx, challenge.realm); 
   w_MD5Update(&Md5Ctx, ":");
   w_MD5Update(&Md5Ctx, credential->pwd);
@@ -417,16 +415,18 @@ void UACAuth::uac_calc_response( HASHHEX ha1, HASHHEX ha2,
   w_MD5Update(&Md5Ctx, challenge.nonce);
   MD5Update(&Md5Ctx, hc, 1);
 
-  if (challenge.qop.length())
+  if (challenge.qop.length()
+      && challenge.qop == "auth_int")
     {
       
       w_MD5Update(&Md5Ctx, nc);
       MD5Update(&Md5Ctx, hc, 1);
       w_MD5Update(&Md5Ctx, cnonce);
       MD5Update(&Md5Ctx, hc, 1);
-      w_MD5Update(&Md5Ctx, challenge.qop);
+      w_MD5Update(&Md5Ctx, "" /*challenge.qop*/);
       MD5Update(&Md5Ctx, hc, 1);
     };
+
   MD5Update(&Md5Ctx, ha2, HASHHEXLEN);
   MD5Final(RespHash, &Md5Ctx);
   cvt_hex(RespHash, response);
