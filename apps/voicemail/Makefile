@@ -7,15 +7,8 @@ module_cflags  =
 # in MySQL database.
 #
 # You must also install MySQL++ development files and libraries
-# (http://www.tangentsoft.net/mysql++/).  If your MySQL++ version is older
-# than 2.2, you must insert
-#
-#	const std::string & raw_string(int i) const
-#	{
-#		return data_[i];
-#	}
-#
-# in /usr/include/mysql++/row.h.
+# (http://www.tangentsoft.net/mysql++/).  Your MySQL++ version must be
+# at least 2.2.
 #
 # You must manually install default.template.sample to default_template
 # database table.

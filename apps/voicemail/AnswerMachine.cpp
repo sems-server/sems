@@ -353,6 +353,7 @@ int AnswerMachineFactory::onLoad()
 	    ERROR("Database connection failed: %s\n", Connection.error());
 	    return -1;
 	}
+	Connection.set_option(mysqlpp::Connection::opt_reconnect, true);
     }
 	
     catch (const mysqlpp::Exception& er) {
