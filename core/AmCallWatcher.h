@@ -51,11 +51,11 @@ using std::pair;
 #include "AmEvent.h"
 #include "AmThread.h"
 
+class CallStatus;
+
 /** 
  * event that carries out call status update
  */
-class CallStatus;
-
 class CallStatusUpdateEvent : public AmEvent {
   string call_id;
 
