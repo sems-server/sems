@@ -31,11 +31,16 @@
 #include "AmSession.h"
 #include "AmConfigReader.h"
 
+#include "ampi/UACAuthAPI.h"
+
 #include <string>
 using std::string;
 
+#include <memory>
+
 class AnnouncementFactory: public AmSessionFactory
 {
+  inline string getAnnounceFile(const AmSipRequest& req);
 public:
   static string AnnouncePath;
   static string AnnounceFile;
@@ -44,15 +49,21 @@ public:
 
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);
+  AmSession* onInvite(const AmSipRequest& req,
+		      AmArg& session_params);
+
 };
 
-class AnnouncementDialog : public AmSession
+class AnnouncementDialog : public AmSession,
+			   public CredentialHolder
 {
   AmAudioFile wav_file;
   string filename;
-    
+
+  std::auto_ptr<UACAuthCred> cred;
 public:
-  AnnouncementDialog(const string& filename);
+  AnnouncementDialog(const string& filename, 
+		     UACAuthCred* credentials = NULL);
   ~AnnouncementDialog();
 
   void onSessionStart(const AmSipRequest& req);
@@ -62,6 +73,8 @@ public:
   void onDtmf(int event, int duration_msec) {}
 
   void process(AmEvent* event);
+
+  UACAuthCred* getCredentials();
 };
 
 #endif

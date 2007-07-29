@@ -28,6 +28,7 @@
 #include "Announcement.h"
 #include "AmConfig.h"
 #include "AmUtils.h"
+#include "AmPlugIn.h"
 
 #include "sems.h"
 #include "log.h"
@@ -70,8 +71,7 @@ int AnnouncementFactory::onLoad()
   return 0;
 }
 
-AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req)
-{
+string AnnouncementFactory::getAnnounceFile(const AmSipRequest& req) {
   string announce_path = AnnouncePath;
   string announce_file = announce_path + req.domain 
     + "/" + req.user + ".wav";
@@ -88,11 +88,48 @@ AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req)
   announce_file = AnnouncePath + AnnounceFile;
     
  end:
-  return new AnnouncementDialog(announce_file);
+  return announce_file;
 }
 
-AnnouncementDialog::AnnouncementDialog(const string& filename)
-  : filename(filename)
+AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req)
+{
+  return new AnnouncementDialog(getAnnounceFile(req), NULL);
+}
+
+AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req,
+					 AmArg& session_params)
+{
+  UACAuthCred* cred = NULL;
+  if (session_params.getType() == AmArg::AObject) {
+    ArgObject* cred_obj = session_params.asObject();
+    if (cred_obj)
+      cred = dynamic_cast<UACAuthCred*>(cred_obj);
+  }
+
+  AmSession* s = new AnnouncementDialog(getAnnounceFile(req), cred); 
+  
+  if (NULL == cred) {
+    WARN("discarding unknown session parameters.\n");
+  } else {
+    AmSessionEventHandlerFactory* uac_auth_f = 
+      AmPlugIn::instance()->getFactory4Seh("uac_auth");
+    if (uac_auth_f != NULL) {
+      DBG("UAC Auth enabled for new announcement session.\n");
+      AmSessionEventHandler* h = uac_auth_f->getHandler(s);
+      if (h != NULL )
+	s->addHandler(h);
+    } else {
+      ERROR("uac_auth interface not accessible. "
+	    "Load uac_auth for authenticated dialout.\n");
+    }		
+  }
+
+  return s;
+}
+
+AnnouncementDialog::AnnouncementDialog(const string& filename, 
+				       UACAuthCred* credentials)
+  : filename(filename), cred(credentials)
 {
 }
 
@@ -141,4 +178,8 @@ void AnnouncementDialog::process(AmEvent* event)
   }
 
   AmSession::process(event);
+}
+
+inline UACAuthCred* AnnouncementDialog::getCredentials() {
+  return cred.get();
 }
