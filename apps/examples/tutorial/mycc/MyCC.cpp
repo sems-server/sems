@@ -146,7 +146,7 @@ void MyCCDialog::onDtmf(int event, int duration) {
     } else {
       if (getCalleeStatus() == None) {
 	state = CC_Dialing;
-	connectCallee(number+MyCCFactory::ConnectSuffix, 
+	connectCallee(number + " <sip:" + number+ MyCCFactory::ConnectSuffix + ">", 
 		      "sip:"+number+MyCCFactory::ConnectSuffix);
 	addToPlaylist(MyCCFactory::Dialing);
       }
