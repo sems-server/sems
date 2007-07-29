@@ -37,31 +37,31 @@ using std::string;
 class AnnouncementFactory: public AmSessionFactory
 {
 public:
-    static string AnnouncePath;
-    static string AnnounceFile;
+  static string AnnouncePath;
+  static string AnnounceFile;
 
-    AnnouncementFactory(const string& _app_name);
+  AnnouncementFactory(const string& _app_name);
 
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req);
 };
 
 class AnnouncementDialog : public AmSession
 {
-    AmAudioFile wav_file;
-    string filename;
+  AmAudioFile wav_file;
+  string filename;
     
- public:
-    AnnouncementDialog(const string& filename);
-    ~AnnouncementDialog();
+public:
+  AnnouncementDialog(const string& filename);
+  ~AnnouncementDialog();
 
-    void onSessionStart(const AmSipRequest& req);
-    void onSessionStart(const AmSipReply& rep);
-    void startSession();
-    void onBye(const AmSipRequest& req);
-    void onDtmf(int event, int duration_msec) {}
+  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart(const AmSipReply& rep);
+  void startSession();
+  void onBye(const AmSipRequest& req);
+  void onDtmf(int event, int duration_msec) {}
 
-    void process(AmEvent* event);
+  void process(AmEvent* event);
 };
 
 #endif

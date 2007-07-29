@@ -46,53 +46,53 @@ AnnouncementFactory::AnnouncementFactory(const string& _app_name)
 
 int AnnouncementFactory::onLoad()
 {
-    AmConfigReader cfg;
-    if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
-	return -1;
+  AmConfigReader cfg;
+  if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
+    return -1;
 
-    // get application specific global parameters
-    configureModule(cfg);
+  // get application specific global parameters
+  configureModule(cfg);
 
-    AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
-    if( !AnnouncePath.empty() 
-	&& AnnouncePath[AnnouncePath.length()-1] != '/' )
-	AnnouncePath += "/";
+  AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
+  if( !AnnouncePath.empty() 
+      && AnnouncePath[AnnouncePath.length()-1] != '/' )
+    AnnouncePath += "/";
 
-    AnnounceFile = cfg.getParameter("default_announce",ANNOUNCE_FILE);
+  AnnounceFile = cfg.getParameter("default_announce",ANNOUNCE_FILE);
 
-    string announce_file = AnnouncePath + AnnounceFile;
-    if(!file_exists(announce_file)){
-	ERROR("default file for announcement module does not exist ('%s').\n",
-	      announce_file.c_str());
-	return -1;
-    }
+  string announce_file = AnnouncePath + AnnounceFile;
+  if(!file_exists(announce_file)){
+    ERROR("default file for announcement module does not exist ('%s').\n",
+	  announce_file.c_str());
+    return -1;
+  }
 
-    return 0;
+  return 0;
 }
 
 AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req)
 {
-    string announce_path = AnnouncePath;
-    string announce_file = announce_path + req.domain 
-	+ "/" + req.user + ".wav";
+  string announce_path = AnnouncePath;
+  string announce_file = announce_path + req.domain 
+    + "/" + req.user + ".wav";
 
-    DBG("trying '%s'\n",announce_file.c_str());
-    if(file_exists(announce_file))
-	goto end;
+  DBG("trying '%s'\n",announce_file.c_str());
+  if(file_exists(announce_file))
+    goto end;
 
-    announce_file = announce_path + req.user + ".wav";
-    DBG("trying '%s'\n",announce_file.c_str());
-    if(file_exists(announce_file))
-	goto end;
+  announce_file = announce_path + req.user + ".wav";
+  DBG("trying '%s'\n",announce_file.c_str());
+  if(file_exists(announce_file))
+    goto end;
 
-    announce_file = AnnouncePath + AnnounceFile;
+  announce_file = AnnouncePath + AnnounceFile;
     
-end:
-    return new AnnouncementDialog(announce_file);
+ end:
+  return new AnnouncementDialog(announce_file);
 }
 
 AnnouncementDialog::AnnouncementDialog(const string& filename)
-    : filename(filename)
+  : filename(filename)
 {
 }
 
@@ -102,43 +102,43 @@ AnnouncementDialog::~AnnouncementDialog()
 
 void AnnouncementDialog::onSessionStart(const AmSipRequest& req)
 {
-    DBG("AnnouncementDialog::onSessionStart\n");
-    startSession();
+  DBG("AnnouncementDialog::onSessionStart\n");
+  startSession();
 }
 
 void AnnouncementDialog::onSessionStart(const AmSipReply& rep)
 {
-    DBG("AnnouncementDialog::onSessionStart (SEMS originator mode)\n");
-    startSession();
+  DBG("AnnouncementDialog::onSessionStart (SEMS originator mode)\n");
+  startSession();
 }
 
 void AnnouncementDialog::startSession(){
-    // we can drop all received packets
-    // this disables DTMF detection as well
-    setReceiving(false);
+  // we can drop all received packets
+  // this disables DTMF detection as well
+  setReceiving(false);
 
-    if(wav_file.open(filename,AmAudioFile::Read))
-	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
+  if(wav_file.open(filename,AmAudioFile::Read))
+    throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
     
-    setOutput(&wav_file);
+  setOutput(&wav_file);
 }
 
 void AnnouncementDialog::onBye(const AmSipRequest& req)
 {
-    DBG("onBye: stopSession\n");
-    setStopped();
+  DBG("onBye: stopSession\n");
+  setStopped();
 }
 
 
 void AnnouncementDialog::process(AmEvent* event)
 {
 
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
-	dlg.bye();
-	setStopped();
-	return;
-    }
+  AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
+  if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
+    dlg.bye();
+    setStopped();
+    return;
+  }
 
-    AmSession::process(event);
+  AmSession::process(event);
 }
