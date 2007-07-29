@@ -15,7 +15,7 @@ DI Interface:
 		3 - string to
 
 	method: "dial_auth"
-          place a call with uac authentication
+          place a call with uac authentication (see below) 
 	params:
           	0 - string application
 		1 - string user
@@ -26,7 +26,8 @@ DI Interface:
 		6 - string auth_pwd
 
 	method: "dial_pin"
-          place a call with uac authentication from dialout PIN (see below)
+          place a call with uac authentication, 
+          credentials from pre-configured dialout PIN (see below) 
 	params:
           	0 - string application
 	        1 - string dialout pin
@@ -49,6 +50,18 @@ while true; do \
  sleep 1; \
 done
 
+
+Outgoing calls with SIP authentication
+--------------------------------------
+
+Outgoing calls can be authenticated with SIP authentication. In order for this
+to work
+ o uac_auth module must be loaded
+ o the application must add the uac_auth session handler to the session and
+ o the application must somehow know the credentials (user, realm, password).
+
+For example of adding the uac_auth session handler function to the session, 
+have a look at the announcement or the webconference application.
 
 Dialout PINs
 ------------

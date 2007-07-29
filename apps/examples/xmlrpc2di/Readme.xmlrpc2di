@@ -122,12 +122,13 @@ directly:
      'fritz', 'secretpass', '')
 
 
-To call someone into conference over an account at sparvoip.de
-using di_dial:
+To call someone into webconference (supports authenticated dial-out) 
+over an account at sparvoip.de using di_dial:
 
 import xmlrpclib
 server = ServerProxy("http://127.0.0.1:8090")
-server.di('di_dial', 'dial_auth','conference', 'roomname',
+server.di('di_dial', 'dial_auth','webconference', 'roomname',
  'sip:myuser@sparvoip.de', 'sip:0049301234567@sparvoip.de',
  'sparvoip.de','myuser','passwd')
+
 
