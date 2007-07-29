@@ -107,7 +107,7 @@ Examples (that hopefully trigger some creativity in the reader ;)
 Register fritz at iptel.org using registrar client over XMLRPC 
 from python:
 
- import xmlrpclib
+ from xmlrpclib import *
  server = ServerProxy("http://127.0.0.1:8090")
  server.di('registrar_client', 'createRegistration', 
      'iptel.org',  'fritz', 'Frotz', 
@@ -116,7 +116,7 @@ from python:
 or, having set 
  direct_export=registrar_client
 directly:
- import xmlrpclib
+ from xmlrpclib import *
  server = ServerProxy("http://127.0.0.1:8090")
  server.createRegistration('iptel.org',  'fritz', 'Frotz', 
      'fritz', 'secretpass', '')
