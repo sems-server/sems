@@ -314,12 +314,19 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
 	dialout_suffix = get_header_keyvalue(app_param_hdr, "Dialout-Suffix");      
 	language = get_header_keyvalue(app_param_hdr, "Language");      
     } else {
-        DBG("Warning: P-Dialout- style headers are deprecated."
-	    " Please use P-App-Param header instead.\n");
         from_header = getHeader(req.hdrs, "P-Dialout-From");
 	extra_headers = getHeader(req.hdrs, "P-Dialout-Extra");
 	dialout_suffix = getHeader(req.hdrs, "P-Dialout-Suffix");
+	if (from_header.length() || extra_headers.length() 
+	    || dialout_suffix.length()) {
+	  DBG("Warning: P-Dialout- style headers are deprecated."
+	      " Please use P-App-Param header instead.\n");
+	}
 	language = getHeader(req.hdrs, "P-Language");
+	if (language.length()) {
+	  DBG("Warning: P-Language header is deprecated."
+	      " Please use P-App-Param header instead.\n");
+	}
     }
 
     len = extra_headers.length();
