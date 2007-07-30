@@ -19,7 +19,9 @@
 #define MAX_DELAY 8000 /* 1 second */
 
 AmPlayoutBuffer::AmPlayoutBuffer(AmPLCBuffer *plcbuffer)
-  : r_ts(0),w_ts(0), last_ts_i(false), m_plcbuffer(plcbuffer)
+  : r_ts(0),w_ts(0), 
+    last_ts_i(false), recv_offset_i(false), 
+    m_plcbuffer(plcbuffer)
 {
 }
 
@@ -36,12 +38,12 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts,
     {
       recv_offset = rtp_ts - ref_ts;
       recv_offset_i = true;
-      DBG("initialized recv_offset with %i (%i - %i)\n",
+      DBG("initialized recv_offset with %u (%u - %u)\n",
 	  recv_offset, ref_ts, rtp_ts);
-      mapped_ts = r_ts = w_ts = ref_ts;// + jitter_delay;
+      mapped_ts = r_ts = w_ts = ref_ts;
     }
   else {
-    mapped_ts = rtp_ts - recv_offset;// + jitter_delay;
+    mapped_ts = rtp_ts - recv_offset;
 
     // resync
     if( ts_less()(mapped_ts, ref_ts - MAX_DELAY/2) || 
@@ -50,7 +52,7 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts,
       DBG("resync needed: reference ts = %u; write ts = %u\n",
 	  ref_ts, mapped_ts);
       recv_offset = rtp_ts - ref_ts;
-      mapped_ts = ref_ts;// + jitter_delay;
+      mapped_ts = r_ts = w_ts = ref_ts;
     }
   }
 
