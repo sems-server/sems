@@ -264,7 +264,6 @@ AmRtpStream::AmRtpStream(AmSession* _s)
     r_port(0),
     l_port(0),
     l_sd(0), 
-    //      recv_offset_i(false), 
     r_ssrc_i(false),
     session(_s),
     passive(false),
