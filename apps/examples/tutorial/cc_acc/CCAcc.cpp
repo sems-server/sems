@@ -31,8 +31,8 @@ CCAcc* CCAcc::instance()
 }
 
 CCAcc::CCAcc() {
-  // add some sample credits
-  credits["12345"] = 100;
+  // add some sample credits...
+  // credits["12345"] = 100;
 }
 
 CCAcc::~CCAcc() { }
@@ -41,10 +41,20 @@ void CCAcc::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
     if(method == "getCredit"){
       ret.push(getCredit(args.get(0).asCStr()));
-    }
-    else if(method == "subtractCredit"){
+    } else if(method == "subtractCredit"){
       ret.push(subtractCredit(args.get(0).asCStr(),
 			      args.get(1).asInt()));	
+    } else if(method == "addCredit"){
+      ret.push(addCredit(args.get(0).asCStr(),
+			 args.get(1).asInt()));	
+    } else if(method == "setCredit"){
+      ret.push(setCredit(args.get(0).asCStr(),
+			 args.get(1).asInt()));	
+    } else if(method == "_list"){
+      ret.push("getCredit");
+      ret.push("subtractCredit");
+      ret.push("setCredit");
+      ret.push("addCredit");
     }
     else
 	throw AmDynInvoke::NotImplemented(method);
@@ -60,6 +70,20 @@ int CCAcc::getCredit(string pin) {
     return -1;
   }
   unsigned int res = it->second;
+  credits_mut.unlock();
+  return res;
+}
+
+int CCAcc::setCredit(string pin, int amount) {
+  credits_mut.lock();
+  credits[pin] = amount;
+  credits_mut.unlock();
+  return amount;
+}
+
+int CCAcc::addCredit(string pin, int amount) {
+  credits_mut.lock();
+  int res = (credits[pin] += amount);
   credits_mut.unlock();
   return res;
 }

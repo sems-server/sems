@@ -12,6 +12,11 @@ class CCAcc : public AmDynInvoke
   int getCredit(string pin);
   /** returns remaining credit */
   int subtractCredit(string pin, int amount);
+
+  /** adds some amount */
+  int addCredit(string pin, int amount);
+  /** sets the value to some amount */
+  int setCredit(string pin, int amount);
   
   map<string, unsigned int> credits;
   // as this is used from various sessions,
