@@ -230,7 +230,10 @@ public:
   AmAudioRtpFormat(const vector<SdpPayload *>& payloads);
   ~AmAudioRtpFormat();
 
-  void setCurrentPayload(int payload);
+  /**
+   * changes payload. returns != 0 on error.
+   */
+  int setCurrentPayload(int payload);
 };
 
 /**

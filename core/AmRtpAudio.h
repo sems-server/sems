@@ -88,7 +88,7 @@ public:
   bool checkInterval(unsigned int ts);
   bool sendIntReached();
 
-  void setCurrentPayload(int payload);
+  int setCurrentPayload(int payload);
 
   int receive(unsigned int wallclock_ts);
 

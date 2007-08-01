@@ -70,4 +70,9 @@ typedef struct {
     u_int32 ssrc;        /* synchronization source */
 } rtp_hdr_t;
 
+typedef struct {
+    u_int16 profile;     /* xhdr type */
+    u_int16 len;         /* xhdr length */
+} rtp_xhdr_t;
+
 #endif

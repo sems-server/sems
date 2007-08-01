@@ -308,7 +308,7 @@ const vector<SdpPayload *>& AmSdp::getCompatiblePayloads(int media_type, string&
     for(; it != m_it->payloads.end(); ++it ) {
 
       amci_payload_t* a_pl = NULL;
-      if(it->payload_type < 96){
+      if(it->payload_type < DYNAMIC_PAYLOAD_TYPE_START){
 	// try static payloads
 	a_pl = pi->payload(it->payload_type);
       }

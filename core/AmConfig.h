@@ -92,6 +92,9 @@ struct AmConfig
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
    static unsigned int DeadRtpTime;
 
+  /** Ignore RTP Extension headers? */
+  static bool IgnoreRTPXHdrs;
+
   /** Init function. Resolves SMTP server address. */
   static int init();
 

@@ -58,6 +58,8 @@ string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::Signature               = "";
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
+bool         AmConfig::IgnoreRTPXHdrs          = false;
+
 vector <string> AmConfig::CodecOrder;
 
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
@@ -255,6 +257,11 @@ int AmConfig::readConfiguration()
   // single codec in 200 OK
   if(cfg.hasParameter("single_codec_in_ok")){
     SingleCodecInOK = (cfg.getParameter("single_codec_in_ok") == "yes");
+  }
+
+  // single codec in 200 OK
+  if(cfg.hasParameter("ignore_rtpxheaders")){
+    IgnoreRTPXHdrs = (cfg.getParameter("ignore_rtpxheaders") == "yes");
   }
 
   // codec_order

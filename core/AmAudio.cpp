@@ -59,7 +59,7 @@ AmAudioRtpFormat::AmAudioRtpFormat(const vector<SdpPayload *>& payloads)
   setCurrentPayload(m_payloads[0]->payload_type);
 }
 
-void AmAudioRtpFormat::setCurrentPayload(int payload)
+int AmAudioRtpFormat::setCurrentPayload(int payload)
 {
   if (m_currentPayload != payload)
   {
@@ -67,7 +67,7 @@ void AmAudioRtpFormat::setCurrentPayload(int payload)
     if (p == m_sdpPayloadByPayload.end())
     {
       ERROR("Could not find payload <%i>\n", payload);
-      return;
+      return -1;
     }
     map<int, amci_payload_t *>::iterator pp = m_payloadPByPayload.find(payload);
     if (pp == m_payloadPByPayload.end())
@@ -76,7 +76,7 @@ void AmAudioRtpFormat::setCurrentPayload(int payload)
       if (m_currentPayloadP == NULL)
       {
 	ERROR("Could not find payload <%i>\n", payload);
-	return;
+	return -1;
       }
       m_payloadPByPayload[payload] = m_currentPayloadP;
     }
@@ -114,8 +114,10 @@ void AmAudioRtpFormat::setCurrentPayload(int payload)
       rate = m_currentPayloadP->sample_rate;
     } else {
       ERROR("Could not find payload <%i>\n", payload);
+      return -1;
     }
   }
+  return 0;
 }
 
 AmAudioRtpFormat::~AmAudioRtpFormat()

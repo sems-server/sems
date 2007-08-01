@@ -28,6 +28,7 @@
 #include "AmRtpPacket.h"
 #include "rtp/rtp.h"
 #include "log.h"
+#include "AmConfig.h"
 
 #include <assert.h>
 #include <string.h>
@@ -88,9 +89,19 @@ int AmRtpPacket::parse()
     return -1;
   }
 
+  data_offset = sizeof(rtp_hdr_t) + (hdr->cc*4);
+
   if(hdr->x != 0){
-    DBG("RTP extension headers not supported.\n");
-    return -1;
+    if (AmConfig::IgnoreRTPXHdrs) {
+      // skip the extension header
+      if (b_size >= data_offset + 4) {
+	data_offset +=
+	  ntohs(((rtp_xhdr_t*) (buffer + data_offset))->len)*4;
+      }
+    } else {
+      DBG("RTP extension headers not supported.\n");
+      return -1;
+    }
   }
 
   payload = hdr->pt;
@@ -99,7 +110,6 @@ int AmRtpPacket::parse()
   timestamp = ntohl(hdr->ts);
   ssrc = ntohl(hdr->ssrc);
 
-  data_offset = sizeof(rtp_hdr_t) + (hdr->cc*4);
   if (data_offset >= b_size) {
     ERROR("bad rtp packet (header size too big) !\n");
     return -1;

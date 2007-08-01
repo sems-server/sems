@@ -81,12 +81,12 @@ smtp_port=25
 
 # optional parameter: rtp_low_port=<port>
 #
-# - sets port of rtp lowest server
+# - sets lowest for RTP used port
 rtp_low_port=10000
 
 # optional parameter: rtp_high_port=<port>
 #
-# - sets port of rtp highest server
+# - sets highest for RTP used port 
 rtp_high_port=60000
 
 # optional parameter: media_processor_threads=<num_value>
@@ -174,4 +174,16 @@ media_processor_threads=1
 #
 #   default=empty
 #
-#  codec_order=iLBC,GSM
+# codec_order=iLBC,GSM
+
+# optional parameter: ignore_rtpxheaders={yes|no}
+#
+# - if this is set to yes, RTP extension headers (e.g. when using ZRTP)
+#   are ignored. If set to no, the whole RTP packets with extension 
+#   headers will be ignored and a debug message is printed on every 
+#   received packet.
+#
+#   default=no
+#
+# ignore_rtpxheaders=yes
+

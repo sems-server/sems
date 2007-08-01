@@ -84,9 +84,13 @@ int AmRtpAudio::receive(unsigned int wallclock_ts)
     if(size <= 0)
       break;
 
-    setCurrentPayload(payload);
-	
-    if(send_only){
+    if (// don't process if we don't need to 
+	send_only || 
+	// ignore CN
+	COMFORT_NOISE_PAYLOAD_TYPE == payload  || 
+	// ignore packet if payload not found
+	setCurrentPayload(payload)
+	){
       playout_buffer->clearLastTs();
       continue;
     }
@@ -133,11 +137,15 @@ void AmRtpAudio::init(const vector<SdpPayload*>& sdp_payloads)
   fmt.reset(new AmAudioRtpFormat(sdp_payloads));
 }
 
-void AmRtpAudio::setCurrentPayload(int payload)
+int AmRtpAudio::setCurrentPayload(int payload)
 {
-  ((AmAudioRtpFormat *) fmt.get())->setCurrentPayload(payload);
-  amci_codec_t* codec = fmt->getCodec();
-  use_default_plc = !(codec && codec->plc);
+  int res = 
+    ((AmAudioRtpFormat *) fmt.get())->setCurrentPayload(payload);
+  if (!res) {
+    amci_codec_t* codec = fmt->getCodec();
+    use_default_plc = !(codec && codec->plc);
+  }
+  return res;
 }
 
 unsigned int AmRtpAudio::conceal_loss(unsigned int ts_diff, unsigned char *buffer)

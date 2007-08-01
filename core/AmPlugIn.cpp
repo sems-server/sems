@@ -31,6 +31,7 @@
 #include "AmApi.h"
 #include "AmInterfaceHandler.h"
 #include "AmUtils.h"
+#include "AmSdp.h"
 
 #include "amci/amci.h"
 #include "amci/codecs.h"
@@ -96,7 +97,7 @@ amci_payload_t _payload_tevent = {
 AmPlugIn* AmPlugIn::_instance=0;
 
 AmPlugIn::AmPlugIn()
-  : dynamic_pl(96) // range: 96->127, see RFC 1890
+  : dynamic_pl(DYNAMIC_PAYLOAD_TYPE_START) 
 {
   DBG("adding built-in codecs...\n");
   addCodec(&_codec_pcm16);
