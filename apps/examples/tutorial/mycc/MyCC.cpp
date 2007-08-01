@@ -118,7 +118,11 @@ void MyCCDialog::onDtmf(int event, int duration) {
   DBG("MyCCDialog::onDtmf, got event %d, duration %d.\n", event, duration);
 
   switch (state) {
-  case CC_Collecting_PIN: 
+  case CC_Collecting_PIN: {
+    // flush the playlist (stop playing) 
+    // if a key is entered
+    playlist.close(); 
+    
     if(event <10) {
       pin +=int2str(event);
       DBG("pin is now '%s'\n", pin.c_str());
@@ -138,8 +142,12 @@ void MyCCDialog::onDtmf(int event, int duration) {
 	state = CC_Collecting_Number;
 	addToPlaylist(MyCCFactory::EnterNumber);
       }
-    } break;
-  case CC_Collecting_Number: 
+    } 
+  } break;
+  case CC_Collecting_Number: {
+    // flush the playlist (stop playing) 
+    // if a key is entered
+    playlist.close(); 
     if(event <10) {
       number +=int2str(event);
       DBG("number is now '%s'\n", number.c_str());
@@ -150,7 +158,9 @@ void MyCCDialog::onDtmf(int event, int duration) {
 		      "sip:"+number+MyCCFactory::ConnectSuffix);
 	addToPlaylist(MyCCFactory::Dialing);
       }
-    }   break;
+    }   
+  }
+    break;
     case CC_Dialing: 
     case CC_Connected: 
   default: break;
