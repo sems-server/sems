@@ -85,7 +85,6 @@ class AmArg
   void assertArray();
   void assertArray() const;
 
-  void assertArray(size_t s);
   void invalidate();
 
  public:
@@ -132,6 +131,8 @@ class AmArg
   ArgObject*  asObject() const { return v_obj; }
 
   // operations on arrays
+  void assertArray(size_t s);
+
   void push(const AmArg& a);
   
   const size_t size() const;
