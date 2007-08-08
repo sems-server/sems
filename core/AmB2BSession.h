@@ -178,12 +178,13 @@ class AmB2BCallerSession: public AmB2BSession
  private:
   // Callee Status
   CalleeStatus callee_status;
-  AmSipRequest invite_req;
 
   void relayEvent(AmEvent* ev);
   virtual void createCalleeSession();
   int  reinviteCaller(const AmSipReply& callee_reply);
 
+ protected:
+  AmSipRequest invite_req;
  public:
   AmB2BCallerSession();
     
