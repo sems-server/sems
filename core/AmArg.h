@@ -120,6 +120,23 @@ class AmArg
 #define isArgCStr(a) (AmArg::CStr == a.getType())
 #define isArgAObject(a) (AmArg::AObject == a.getType())
 
+#define assertArgArray(a) \
+  if (!isArgArray(a)) \
+    throw AmArg::TypeMismatchException();
+#define assertArgDouble(a) \
+  if (!isArgDouble(a)) \
+    throw AmArg::TypeMismatchException();
+#define assertArgInt(a) \
+  if (!isArgInt(a)) \
+    throw AmArg::TypeMismatchException();
+#define assertArgCStr(a) \
+  if (!isArgCStr(a)) \
+    throw AmArg::TypeMismatchException();
+#define assertArgAObject(a) \
+  if (!isArgAObject(a)) \
+    throw AmArg::TypeMismatchException();
+   
+
   void setBorrowedPointer(ArgObject* v) {
     type = AObject;
     v_obj = v;
