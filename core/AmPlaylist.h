@@ -66,7 +66,7 @@ class AmPlaylist: public AmAudio
   AmEventQueue*          ev_q;
 
   void updateCurrentItem();
-  void gotoNextItem();
+  void gotoNextItem(bool notify = true);
     
  protected:
   // Fake implement AmAudio's pure virtual methods
@@ -85,7 +85,7 @@ class AmPlaylist: public AmAudio
 
   void addToPlaylist(AmPlaylistItem* item);
   void addToPlayListFront(AmPlaylistItem* item);
-  void close();
+  void close(bool notify = true);
 };
 
 /**

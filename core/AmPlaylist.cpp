@@ -41,7 +41,7 @@ void AmPlaylist::updateCurrentItem()
   }
 }
 
-void AmPlaylist::gotoNextItem()
+void AmPlaylist::gotoNextItem(bool notify)
 {
   bool had_item = false;
   if(cur_item){
@@ -58,7 +58,7 @@ void AmPlaylist::gotoNextItem()
   }
 
   updateCurrentItem();
-  if(had_item && !cur_item){
+  if(notify && had_item && !cur_item){
     DBG("posting AmAudioEvent::noAudio event!\n");
     ev_q->postEvent(new AmAudioEvent(AmAudioEvent::noAudio));
   }
@@ -142,11 +142,11 @@ void AmPlaylist::addToPlayListFront(AmPlaylistItem* item)
   cur_mut.unlock();
 }
 
-void AmPlaylist::close()
+void AmPlaylist::close(bool notify)
 {
   cur_mut.lock();
   while(cur_item)
-    gotoNextItem();
+    gotoNextItem(notify);
   cur_mut.unlock();
 }
 
