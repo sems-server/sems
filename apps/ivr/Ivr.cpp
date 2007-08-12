@@ -583,6 +583,8 @@ IvrDialog::~IvrDialog()
 {
     DBG("----------- IvrDialog::~IvrDialog() ------------- \n");
 
+    playlist.close(false);
+  
     PYLOCK;
     Py_XDECREF(py_mod);
     Py_XDECREF(py_dlg);

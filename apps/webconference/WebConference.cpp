@@ -414,6 +414,7 @@ WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
 WebConferenceDialog::~WebConferenceDialog()
 {
   prompts.cleanup((long)this);
+  play_list.close(false);
   if (InConference == state) {
     factory->updateStatus(conf_id, 
 			  getLocalTag(), 

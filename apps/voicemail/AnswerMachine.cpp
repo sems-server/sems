@@ -520,6 +520,7 @@ AnswerMachineDialog::AnswerMachineDialog(const string& email,
 
 AnswerMachineDialog::~AnswerMachineDialog()
 {
+  playlist.close(false);
 }
 
 void AnswerMachineDialog::process(AmEvent* event)

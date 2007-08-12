@@ -65,6 +65,8 @@ SimpleConferenceDialog::SimpleConferenceDialog()
 
 SimpleConferenceDialog::~SimpleConferenceDialog()
 {
+  // clean playlist items
+  play_list.close(false);
 }
 
 void SimpleConferenceDialog::onSessionStart(const AmSipRequest& req)

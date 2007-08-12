@@ -43,6 +43,8 @@ MyJukeboxDialog::MyJukeboxDialog()
 
 MyJukeboxDialog::~MyJukeboxDialog()
 {
+  // clean playlist items
+  playlist.close(false);
 }
 
 void MyJukeboxDialog::onSessionStart(const AmSipRequest& req)

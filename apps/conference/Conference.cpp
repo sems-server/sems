@@ -296,6 +296,9 @@ ConferenceDialog::ConferenceDialog(const string& conf_id,
 ConferenceDialog::~ConferenceDialog()
 {
     DBG("ConferenceDialog::~ConferenceDialog()\n");
+
+    // clean playlist items
+    play_list.close(false);
 }
 
 void ConferenceDialog::onStart() 

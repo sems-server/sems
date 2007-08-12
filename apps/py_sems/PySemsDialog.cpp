@@ -38,6 +38,7 @@ PySemsDialog::PySemsDialog(AmDynInvoke* user_timer)
 
 PySemsDialog::~PySemsDialog()
 {
+  playlist.close(false);
 }
 
 

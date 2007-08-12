@@ -106,6 +106,7 @@ PinAuthConferenceDialog::PinAuthConferenceDialog(AmPromptCollection& prompts)
 
 PinAuthConferenceDialog::~PinAuthConferenceDialog()
 {
+  play_list.close(false);
   prompts.cleanup((long)this);
 }
 
@@ -125,7 +126,7 @@ void PinAuthConferenceDialog::connectConference(const string& room) {
   channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag()));
 
   // clear the playlist
-  play_list.close();
+  play_list.close(false);
 
   // add the channel to our playlist
   play_list.addToPlaylist(new AmPlaylistItem(channel.get(),
