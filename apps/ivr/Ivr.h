@@ -122,6 +122,10 @@ class IvrDialog : public AmB2BCallerSession
     
     void process(AmEvent* event);
 
+    string b2b_callee_from_party;
+    string b2b_callee_from_uri;
+
+    void createCalleeSession();
 public:
     AmDynInvoke* user_timer;
     AmPlaylist playlist;
@@ -146,6 +150,10 @@ public:
     void onSipRequest(const AmSipRequest& r);
 
     void onRtpTimeout();
+    
+    void connectCallee(const string& remote_party, const string& remote_uri,
+		       const string& from_party, const string& from_uri);
+
 };
 
 #endif

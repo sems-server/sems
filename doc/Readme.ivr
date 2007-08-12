@@ -159,9 +159,26 @@ class IvrDialogBase:
     B2BMode = False
 
     # call given party as (new) callee
-    # if remote_party and remote_uri are empty (None),
-    # we will connect to the callee of the initial caller request
-    def connectCallee(self,remote_party,remote_uri):
+    # local_party and local_uri are optional:
+    #  if not present, the From of caller leg will be used 
+    #  for the From of the callee leg.
+    # Another options is connectCallee(None), then the callee 
+    # of the initial caller request is connected
+    # 
+    # remote_party and local_party will be used as To/From headers.
+    # remote_uri and local_uri is only provided for the application.
+    #
+    # Examples: 
+    #  self.connectCallee(None)
+    #   # connect To of caller leg with From of caller leg
+    #  
+    #  self.connectCallee('<sip:conference@serverip>', 'sip:conference@serverip')
+    #   # connect conference@serverip with From of caller leg
+    #  
+    #  self.connectCallee('<sip:otheruser@domain>', 'sip:otheruser@domain',\
+    #                     'FunkyApp <sip:funkyapp@domain>', 'sip:funkyapp@domain')
+    #   # connect otheruser@domain from funkyapp.
+    def connectCallee(self,remote_party,remote_uri,local_party,local_uri):
         pass
 
     # terminate the callee's call

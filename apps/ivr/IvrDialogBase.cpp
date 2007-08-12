@@ -312,7 +312,7 @@ static PyObject* IvrDialogBase_b2b_connectCallee(IvrDialogBase* self, PyObject* 
 {
     assert(self->p_dlg);
     
-    string remote_party, remote_uri;
+    string remote_party, remote_uri, local_party, local_uri;
 
     PyObject* py_o;
 
@@ -322,16 +322,20 @@ static PyObject* IvrDialogBase_b2b_connectCallee(IvrDialogBase* self, PyObject* 
       remote_uri = self->p_dlg->getOriginalRequest().r_uri;
     } else {
       DBG("args != Py_None\n");
-      char* rp = 0; char* ru = 0;
-      if(!PyArg_ParseTuple(args,"ss",&rp, &ru))
+      char* rp = 0; char* ru = 0; char* lp = 0; char* lu = 0;
+      if(!PyArg_ParseTuple(args,"ss|ss",&rp, &ru, &lp, &lu))
 	return NULL;
       else {
 	remote_party = string(rp);
 	remote_uri = string(ru);
+	if (lp && lu) {
+	  local_party = string(lp);
+	  local_uri = string(lu);
+	}
       } 
     }
     
-    self->p_dlg->connectCallee(remote_party, remote_uri);
+    self->p_dlg->connectCallee(remote_party, remote_uri, local_party, local_uri);
     
     Py_INCREF(Py_None);
     return Py_None;

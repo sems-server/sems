@@ -28,6 +28,8 @@
 #include "IvrUAC.h"
 #include "Ivr.h"
 
+#include "AmSessionContainer.h"
+
 #include "AmConfigReader.h"
 #include "AmConfig.h"
 #include "log.h"
@@ -760,3 +762,43 @@ void IvrDialog::process(AmEvent* event)
     return;
 }
 
+
+void IvrDialog::connectCallee(const string& remote_party, const string& remote_uri,
+			      const string& from_party, const string& from_uri) {
+  b2b_callee_from_party = from_party;
+  b2b_callee_from_uri  = from_uri;
+  AmB2BCallerSession::connectCallee(remote_party, remote_uri);
+}
+
+void IvrDialog::createCalleeSession()
+{
+  AmB2BCalleeSession* callee_session = new AmB2BCalleeSession(this);
+  AmSipDialog& callee_dlg = callee_session->dlg;
+  
+  other_id = AmSession::getNewId();
+  
+  callee_dlg.local_tag    = other_id;
+  callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
+  
+  // this will be overwritten by ConnectLeg event 
+  callee_dlg.remote_party = dlg.local_party;
+  callee_dlg.remote_uri   = dlg.local_uri;
+
+  if (b2b_callee_from_party.empty() && b2b_callee_from_uri.empty()) {
+    // default: use the original To as From in the callee leg
+    callee_dlg.local_party  = dlg.remote_party;
+    callee_dlg.local_uri  = dlg.remote_uri;
+  } else {
+    // if given as parameters, use these
+    callee_dlg.local_party  = b2b_callee_from_party;
+    callee_dlg.local_uri  = b2b_callee_from_uri;
+  }
+  
+  DBG("Created B2BUA callee leg, From: %s\n",
+      callee_dlg.local_party.c_str());
+
+  callee_session->start();
+  
+  AmSessionContainer* sess_cont = AmSessionContainer::instance();
+  sess_cont->addSession(other_id,callee_session);
+}
