@@ -291,6 +291,7 @@ AmRtpStream::AmRtpStream(AmSession* _s)
 #endif
 
   l_ssrc = get_random();
+  sequence = get_random();
 }
 
 AmRtpStream::~AmRtpStream()
