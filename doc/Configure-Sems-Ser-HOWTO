@@ -142,9 +142,10 @@ t_write_unix.
 		};
 
 		# no service number, redirect to voicemail.
-		# do not forget to load AVPs so that voicemail gets the
-		# callee's email address.
-		load_avp("ruri","email",0);
+		# load email address into AVP so that voicemail gets the
+		# callee's email address. (see below for avpops modparams)
+                #   
+		avp_db_load( "$ruri", "$email/$email_scheme");
 		if(!t_write_unix("/tmp/sems_sock","voicemail")) {
 		    t_reply("500","error contacting sems");
 		};
