@@ -675,6 +675,37 @@ int AmSipDialog::transfer(const string& target)
   return 0;
 }
 
+#ifdef OpenSER
+
+int AmSipDialog::cancel()
+{
+  int cancel_cseq = -1;
+  TransMap::reverse_iterator t;
+
+  for(t = uac_trans.rbegin();
+      t != uac_trans.rend(); t++) {
+
+    if(t->second.method == "INVITE"){
+      cancel_cseq = t->second.cseq;
+      break;
+    }
+  }
+    
+  if(t == uac_trans.rend()){
+    ERROR("could not find INVITE transaction to cancel\n");
+    return -1;
+  }
+    
+  string reply_sock = "/tmp/" + AmSession::getNewId();
+  string msg = ":t_uac_cancel:\n"
+    + callid + "\n"
+    + int2str(cancel_cseq) + "\n";
+
+  return AmServer::send_msg(msg, reply_sock, 50000);
+}
+
+#else /* Ser */
+
 int AmSipDialog::cancel()
 {
   int cancel_cseq = -1;
@@ -701,6 +732,8 @@ int AmSipDialog::cancel()
 
   return AmServer::send_msg(msg, reply_sock, 50000);
 }
+
+#endif
 
 #ifdef OpenSER
 
