@@ -50,7 +50,10 @@ install-cfg:
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
 			$(INSTALL-TOUCH) $(cfg-prefix)/$(cfg-dir)$$r ; \
-			$(INSTALL-CFG) $$r $(cfg-prefix)/$(cfg-dir)$$r; \
+			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
+			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
+			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
+			< $$r > $(cfg-prefix)/$(cfg-dir)$$r; \
 	done
 
 (audio-prefix)/$(audio-dir):
