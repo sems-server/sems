@@ -242,6 +242,8 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
 			  + e.what, 504);
   } catch (const AmArg::OutOfBoundsException& e) {
     throw XmlRpcException("Exception: AmArg out of bounds - paramter number mismatch.", 300);
+  } catch (const AmArg::TypeMismatchException& e) {
+    throw XmlRpcException("Exception: Type mismatch in arguments.", 300);
   } catch (const string& e) {
     throw XmlRpcException("Exception: "+e, 500);
   } catch (...) {
@@ -328,6 +330,8 @@ void DIMethodProxy::execute(XmlRpcValue& params,
 			  + e.what, 504);
   } catch (const AmArg::OutOfBoundsException& e) {
     throw XmlRpcException("Exception: AmArg out of bounds - paramter number mismatch.", 300);
+  } catch (const AmArg::TypeMismatchException& e) {
+    throw XmlRpcException("Exception: Type mismatch in arguments.", 300);
   } catch (const string& e) {
     throw XmlRpcException("Exception: "+e, 500);
   } catch (...) {
