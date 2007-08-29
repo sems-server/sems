@@ -80,9 +80,12 @@ install-ser-cfg: etc/ser-sems.cfg
 	mkdir -p $(ser-cfg-target)
 
 	if [ ! -f  $(ser-cfg-target)/ser-sems.cfg ]; then \
-		$(INSTALL-CFG) etc/ser-sems.cfg $(ser-cfg-target) ; \
+		sed -e "s#/opt/ser-sems#$(ser-prefix)#g" \
+			< etc/ser-sems.cfg > $(ser-cfg-target)ser-sems.cfg; \
 	fi
+
 	$(INSTALL-CFG) etc/ser-sems.cfg $(ser-cfg-target)ser-sems.cfg.default
+
 	@echo \*\*\* installed ser-sems.cfg at $(ser-cfg-target)ser-sems.cfg
 	@echo \*\*\* run $(ser-prefix)/sbin/ser -f $(ser-cfg-target)ser-sems.cfg
 	@echo \*\*\* to start ser for sems.
