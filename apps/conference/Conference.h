@@ -61,85 +61,85 @@ enum { DoConfConnect = 100,
 
 struct DialoutConfEvent : public AmEvent {
 
-    string conf_id;
+  string conf_id;
     
-    DialoutConfEvent(int event_id,
-		     const string& conf_id)
-	: AmEvent(event_id),
-	  conf_id(conf_id)
-    {}
+  DialoutConfEvent(int event_id,
+		   const string& conf_id)
+    : AmEvent(event_id),
+      conf_id(conf_id)
+  {}
 };
 
 class ConferenceFactory : public AmSessionFactory
 {
 public:
-    static string AudioPath;
-    static string LonelyUserFile;
-    static string JoinSound;
-    static string DropSound;
-    static string DialoutSuffix;
-    static PlayoutType m_PlayoutType;
+  static string AudioPath;
+  static string LonelyUserFile;
+  static string JoinSound;
+  static string DropSound;
+  static string DialoutSuffix;
+  static PlayoutType m_PlayoutType;
 
 #ifdef USE_MYSQL
-    static mysqlpp::Connection Connection;
+  static mysqlpp::Connection Connection;
 #endif
 
-    ConferenceFactory(const string& _app_name);
-    virtual AmSession* onInvite(const AmSipRequest&);
-    virtual AmSession* onRefer(const AmSipRequest& req);
-    virtual int onLoad();
+  ConferenceFactory(const string& _app_name);
+  virtual AmSession* onInvite(const AmSipRequest&);
+  virtual AmSession* onRefer(const AmSipRequest& req);
+  virtual int onLoad();
 };
 
 class ConferenceDialog : public AmSession
 {
-    AmPlaylist  play_list;
+  AmPlaylist  play_list;
 
-    auto_ptr<AmAudioFile> LonelyUserFile;
-    auto_ptr<AmAudioFile> JoinSound;
-    auto_ptr<AmAudioFile> DropSound;
-    auto_ptr<AmRingTone>  RingTone;
-    auto_ptr<AmRingTone>  ErrorTone;
-
-
-    string                        conf_id;
-    auto_ptr<AmConferenceChannel> channel;
-
-    int                           state;
-    string                        dtmf_seq;
-    bool                          dialedout;
-    string                        dialout_suffix;
-    string                        dialout_id;
-    auto_ptr<AmConferenceChannel> dialout_channel;
-
-    bool                          allow_dialout;
-
-    string                        from_header;
-    string                        extra_headers;
-    string                        language;
-
-    auto_ptr<AmSipRequest>        transfer_req;
+  auto_ptr<AmAudioFile> LonelyUserFile;
+  auto_ptr<AmAudioFile> JoinSound;
+  auto_ptr<AmAudioFile> DropSound;
+  auto_ptr<AmRingTone>  RingTone;
+  auto_ptr<AmRingTone>  ErrorTone;
 
 
-    void createDialoutParticipant(const string& uri);
-    void disconnectDialout();
-    void connectMainChannel();
-    void closeChannels();
-    void setupAudio();
+  string                        conf_id;
+  auto_ptr<AmConferenceChannel> channel;
+
+  int                           state;
+  string                        dtmf_seq;
+  bool                          dialedout;
+  string                        dialout_suffix;
+  string                        dialout_id;
+  auto_ptr<AmConferenceChannel> dialout_channel;
+
+  bool                          allow_dialout;
+
+  string                        from_header;
+  string                        extra_headers;
+  string                        language;
+
+  auto_ptr<AmSipRequest>        transfer_req;
+
+
+  void createDialoutParticipant(const string& uri);
+  void disconnectDialout();
+  void connectMainChannel();
+  void closeChannels();
+  void setupAudio();
 
 public:
-    ConferenceDialog(const string& conf_id,
-		     AmConferenceChannel* dialout_channel=0);
+  ConferenceDialog(const string& conf_id,
+		   AmConferenceChannel* dialout_channel=0);
 
-    ~ConferenceDialog();
+  ~ConferenceDialog();
 
-    void process(AmEvent* ev);
-    void onStart();
-    void onDtmf(int event, int duration);
-    void onSessionStart(const AmSipRequest& req);
-    void onBye(const AmSipRequest& req);
+  void process(AmEvent* ev);
+  void onStart();
+  void onDtmf(int event, int duration);
+  void onSessionStart(const AmSipRequest& req);
+  void onBye(const AmSipRequest& req);
 
-    void onSipRequest(const AmSipRequest& req);
-    void onSipReply(const AmSipReply& reply);
+  void onSipRequest(const AmSipRequest& req);
+  void onSipReply(const AmSipReply& reply);
 };
 
 #endif

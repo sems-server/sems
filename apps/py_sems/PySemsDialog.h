@@ -31,21 +31,21 @@
 #include "PySems.h"
 
 class PySemsDialog  :  public AmSession, 
-		       public PySemsDialogBase
+  public PySemsDialogBase
 {
 
-public:
-    AmDynInvoke* user_timer;
-    AmPlaylist playlist;
+ public:
+  AmDynInvoke* user_timer;
+  AmPlaylist playlist;
 
-    PySemsDialog();
-    PySemsDialog(AmDynInvoke* user_timer);
-    ~PySemsDialog();
+  PySemsDialog();
+  PySemsDialog(AmDynInvoke* user_timer);
+  ~PySemsDialog();
 
-    void onSessionStart(const AmSipRequest& req);
+  void onSessionStart(const AmSipRequest& req);
 
-    // @see AmEventHandler
-    void process(AmEvent* event);
+  // @see AmEventHandler
+  void process(AmEvent* event);
 
 };
 

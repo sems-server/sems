@@ -25,60 +25,60 @@
 PyObject *
 type_error(const char *msg)
 {
-        PyErr_SetString(PyExc_TypeError, msg);
-        return NULL;
+  PyErr_SetString(PyExc_TypeError, msg);
+  return NULL;
 }
 
 PyObject *
 null_error(void)
 {
-        if (!PyErr_Occurred())
-                PyErr_SetString(PyExc_SystemError,
-                                "null argument to internal routine");
-        return NULL;
+  if (!PyErr_Occurred())
+    PyErr_SetString(PyExc_SystemError,
+		    "null argument to internal routine");
+  return NULL;
 }
 
 PyObject *
 PyObject_VaCallMethod(PyObject *o, char *name, char *format, va_list va)
 {
-        PyObject *args, *func = 0, *retval;
+  PyObject *args, *func = 0, *retval;
 
-        if (o == NULL || name == NULL)
-                return null_error();
+  if (o == NULL || name == NULL)
+    return null_error();
 
-        func = PyObject_GetAttrString(o, name);
-        if (func == NULL) {
-                PyErr_SetString(PyExc_AttributeError, name);
-                return 0;
-        }
+  func = PyObject_GetAttrString(o, name);
+  if (func == NULL) {
+    PyErr_SetString(PyExc_AttributeError, name);
+    return 0;
+  }
 
-        if (!PyCallable_Check(func))
-                return type_error("call of non-callable attribute");
+  if (!PyCallable_Check(func))
+    return type_error("call of non-callable attribute");
 
-        if (format && *format) {
-                args = Py_VaBuildValue(format, va);
-        }
-        else
-                args = PyTuple_New(0);
+  if (format && *format) {
+    args = Py_VaBuildValue(format, va);
+  }
+  else
+    args = PyTuple_New(0);
 
-        if (!args)
-                return NULL;
+  if (!args)
+    return NULL;
 
-        if (!PyTuple_Check(args)) {
-                PyObject *a;
+  if (!PyTuple_Check(args)) {
+    PyObject *a;
 
-                a = PyTuple_New(1);
-                if (a == NULL)
-                        return NULL;
-                if (PyTuple_SetItem(a, 0, args) < 0)
-                        return NULL;
-                args = a;
-        }
+    a = PyTuple_New(1);
+    if (a == NULL)
+      return NULL;
+    if (PyTuple_SetItem(a, 0, args) < 0)
+      return NULL;
+    args = a;
+  }
 
-        retval = PyObject_Call(func, args, NULL);
+  retval = PyObject_Call(func, args, NULL);
 
-        Py_DECREF(args);
-        Py_DECREF(func);
+  Py_DECREF(args);
+  Py_DECREF(func);
 
-        return retval;
+  return retval;
 }

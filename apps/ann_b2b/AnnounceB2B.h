@@ -40,28 +40,28 @@ using std::string;
 class AnnounceB2BFactory: public AmSessionFactory
 {
 public:
-    static string AnnouncePath;
-    static string AnnounceFile;
+  static string AnnouncePath;
+  static string AnnounceFile;
 
-    AnnounceB2BFactory(const string& _app_name);
+  AnnounceB2BFactory(const string& _app_name);
 
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req);
 };
 
 class AnnounceCallerDialog: public AmB2BCallerSession
 {
-    AmAudioFile wav_file;
-    string filename;
+  AmAudioFile wav_file;
+  string filename;
 
-    string callee_addr;
-    string callee_uri;
+  string callee_addr;
+  string callee_uri;
     
 public:
-    AnnounceCallerDialog(const string& filename);
+  AnnounceCallerDialog(const string& filename);
     
-    void process(AmEvent* event);
-    void onSessionStart(const AmSipRequest& req);
+  void process(AmEvent* event);
+  void onSessionStart(const AmSipRequest& req);
 };
 
 #endif

@@ -45,68 +45,68 @@ class AmMail;
 
 class AnswerMachineFactory: public AmSessionFactory
 {
-    map<string, EmailTemplate> email_tmpl;
+  map<string, EmailTemplate> email_tmpl;
 
-    int getEmailAddress();
+  int getEmailAddress();
 
 #ifdef USE_MYSQL
-    int loadEmailTemplatesFromMySQL();
+  int loadEmailTemplatesFromMySQL();
 #else
-    int loadEmailTemplates(const string& path);
+  int loadEmailTemplates(const string& path);
 #endif
 
 public:
-    static string RecFileExt;
-    static string AnnouncePath;
-    static string DefaultAnnounce;
-    static int    MaxRecordTime;
-    static AmDynInvokeFactory* UserTimer;
+  static string RecFileExt;
+  static string AnnouncePath;
+  static string DefaultAnnounce;
+  static int    MaxRecordTime;
+  static AmDynInvokeFactory* UserTimer;
 
 #ifdef USE_MYSQL
-    static mysqlpp::Connection Connection;
+  static mysqlpp::Connection Connection;
 #endif
 
-    AnswerMachineFactory(const string& _app_name);
+  AnswerMachineFactory(const string& _app_name);
 
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req);
 };
 
 class AnswerMachineDialog : public AmSession
 {
-    AmAudioFile a_greeting,a_beep;
-    AmAudioFile a_msg;
-    AmPlaylist playlist;
+  AmAudioFile a_greeting,a_beep;
+  AmAudioFile a_msg;
+  AmPlaylist playlist;
 
-    string announce_file;
-    string msg_filename;
+  string announce_file;
+  string msg_filename;
 
-    const EmailTemplate* tmpl;
-    EmailTmplDict  email_dict;
+  const EmailTemplate* tmpl;
+  EmailTmplDict  email_dict;
 
-    AmDynInvoke* user_timer;
+  AmDynInvoke* user_timer;
 
-    int status;
+  int status;
 
-    void request2dict(const AmSipRequest& req);
-    void sendMailNotification();
+  void request2dict(const AmSipRequest& req);
+  void sendMailNotification();
 
- public:
-    AnswerMachineDialog(const string& email, 
-			const string& announce_file, 
-			const EmailTemplate* tmpl);
+public:
+  AnswerMachineDialog(const string& email, 
+		      const string& announce_file, 
+		      const EmailTemplate* tmpl);
 
-    ~AnswerMachineDialog();
+  ~AnswerMachineDialog();
 
-    void process(AmEvent* event);
+  void process(AmEvent* event);
 
-    void onSessionStart(const AmSipRequest& req);
-    void onBye(const AmSipRequest& req);
-    void onDtmf(int event, int duration_msec) {}
+  void onSessionStart(const AmSipRequest& req);
+  void onBye(const AmSipRequest& req);
+  void onDtmf(int event, int duration_msec) {}
 
-    static void clean_up_mail(AmMail* mail);
+  static void clean_up_mail(AmMail* mail);
 
-    friend class AnswerMachineFactory;
+  friend class AnswerMachineFactory;
 };
 
 #endif

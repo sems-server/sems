@@ -43,86 +43,86 @@ class PySemsDialogBase;
 
 struct PySemsScriptDesc
 {
-    enum DialogType {
-      None = 0,
-      Dialog,
-      B2BDialog,
-      B2ABDialog
-    };
+  enum DialogType {
+    None = 0,
+    Dialog,
+    B2BDialog,
+    B2ABDialog
+  };
 
-    PyObject* mod;
-    PyObject* dlg_class;
-    DialogType dt;
+  PyObject* mod;
+  PyObject* dlg_class;
+  DialogType dt;
 
-    PySemsScriptDesc()
-	: mod(0), 
-          dlg_class(0),
-          dt(None)
-    {}
+PySemsScriptDesc()
+: mod(0), 
+    dlg_class(0),
+    dt(None)
+  {}
 
-    PySemsScriptDesc(const PySemsScriptDesc& d)
-	: mod(d.mod), 
-       dlg_class(d.dlg_class),
-       dt(d.dt)
-    {}
+PySemsScriptDesc(const PySemsScriptDesc& d)
+: mod(d.mod), 
+    dlg_class(d.dlg_class),
+    dt(d.dt)
+  {}
 
-    PySemsScriptDesc(PyObject* mod, 
-		     PyObject* dlg_class,
-		     DialogType dt)
-	: mod(mod),
-          dlg_class(dlg_class),
-          dt(dt)
-    {}
+PySemsScriptDesc(PyObject* mod, 
+		 PyObject* dlg_class,
+		 DialogType dt)
+: mod(mod),
+    dlg_class(dlg_class),
+    dt(dt)
+  {}
 };
 
 
 class PySemsFactory: public AmSessionFactory
 {
-    PyObject* py_sems_module;
-/*     string script_path; */
-    string default_script;
+  PyObject* py_sems_module;
+  /*     string script_path; */
+  string default_script;
 
-    map<string,PySemsScriptDesc> mod_reg;
+  map<string,PySemsScriptDesc> mod_reg;
 
-    AmDynInvokeFactory* user_timer_fact;
+  AmDynInvokeFactory* user_timer_fact;
 
-    void init_python_interpreter(const string& script_path);
-    void set_sys_path(const string& script_path);
-    void import_py_sems_builtins();
+  void init_python_interpreter(const string& script_path);
+  void set_sys_path(const string& script_path);
+  void import_py_sems_builtins();
 
-    PyObject* import_module(const char* modname);
-    void import_object(PyObject* m,
-		       char* name, 
-		       PyTypeObject* type);
+  PyObject* import_module(const char* modname);
+  void import_object(PyObject* m,
+		     char* name, 
+		     PyTypeObject* type);
 
-    /** @return true if everything ok */
-    bool loadScript(const string& path);
+  /** @return true if everything ok */
+  bool loadScript(const string& path);
 
-    void setScriptPath(const string& path);
-    bool checkCfg();
+  void setScriptPath(const string& path);
+  bool checkCfg();
 
-    AmSession* newDlg(const string& name);
+  AmSession* newDlg(const string& name);
     
  public:
-    PySemsFactory(const string& _app_name);
+  PySemsFactory(const string& _app_name);
 
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req);
 };
 
 class PySemsDialogBase {
-    PyObject  *py_mod;
-    PyObject  *py_dlg;
+  PyObject  *py_mod;
+  PyObject  *py_dlg;
 
  protected:
-    bool callPyEventHandler(char* name, char* fmt, ...);
+  bool callPyEventHandler(char* name, char* fmt, ...);
 
  public:
-    PySemsDialogBase();
-    ~PySemsDialogBase();
+  PySemsDialogBase();
+  ~PySemsDialogBase();
 
-    // must be called before everything else.
-    void setPyPtrs(PyObject *mod, PyObject *dlg);
+  // must be called before everything else.
+  void setPyPtrs(PyObject *mod, PyObject *dlg);
 };
 
 #endif

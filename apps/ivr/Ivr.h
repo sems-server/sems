@@ -46,113 +46,113 @@ class PythonScriptThread : public AmThread {
   void run();
   void on_stop();
  public:
-  PythonScriptThread(PyObject* py_thread_object_) 
-    : py_thread_object(py_thread_object_) { }
+ PythonScriptThread(PyObject* py_thread_object_) 
+   : py_thread_object(py_thread_object_) { }
 };
 
 
 struct IvrScriptDesc
 {
-    PyObject* mod;
-    PyObject* dlg_class;
+  PyObject* mod;
+  PyObject* dlg_class;
 
-    IvrScriptDesc()
-	: mod(0), 
-	  dlg_class(0)
-    {}
+IvrScriptDesc()
+: mod(0), 
+    dlg_class(0)
+  {}
 
-    IvrScriptDesc(const IvrScriptDesc& d)
-	: mod(d.mod), 
-	  dlg_class(d.dlg_class)
-    {}
+IvrScriptDesc(const IvrScriptDesc& d)
+: mod(d.mod), 
+    dlg_class(d.dlg_class)
+  {}
 
-    IvrScriptDesc(PyObject* mod, 
-		  PyObject* dlg_class)
-	: mod(mod),
-	  dlg_class(dlg_class)
-    {}
+IvrScriptDesc(PyObject* mod, 
+	      PyObject* dlg_class)
+: mod(mod),
+    dlg_class(dlg_class)
+  {}
 };
 
 
 class IvrFactory: public AmSessionFactory
 {
-    PyObject* ivr_module;
-    //string script_path;
-    string default_script;
+  PyObject* ivr_module;
+  //string script_path;
+  string default_script;
 
-    map<string,IvrScriptDesc> mod_reg;
+  map<string,IvrScriptDesc> mod_reg;
 
-    AmDynInvokeFactory* user_timer_fact;
+  AmDynInvokeFactory* user_timer_fact;
 
-    void init_python_interpreter(const string& script_path);
-    void set_sys_path(const string& script_path);
-    void import_ivr_builtins();
+  void init_python_interpreter(const string& script_path);
+  void set_sys_path(const string& script_path);
+  void import_ivr_builtins();
 
-    void import_object(PyObject* m, 
-		       char* name, 
-		       PyTypeObject* type);
+  void import_object(PyObject* m, 
+		     char* name, 
+		     PyTypeObject* type);
 
-    /** @return true if everything ok */
-    bool loadScript(const string& path);
+  /** @return true if everything ok */
+  bool loadScript(const string& path);
 
-    //void setScriptPath(const string& path);
-    bool checkCfg();
+  //void setScriptPath(const string& path);
+  bool checkCfg();
 
-    IvrDialog* newDlg(const string& name);
+  IvrDialog* newDlg(const string& name);
 
-    queue<PyObject*> deferred_threads;
-    void start_deferred_threads();
+  queue<PyObject*> deferred_threads;
+  void start_deferred_threads();
    
  public:
-    IvrFactory(const string& _app_name);
+  IvrFactory(const string& _app_name);
 
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req);
 
-    void addDeferredThread(PyObject* pyCallable);
+  void addDeferredThread(PyObject* pyCallable);
 };
 
 
 class IvrDialog : public AmB2BCallerSession
 {
-    PyObject  *py_mod;
-    PyObject  *py_dlg;
+  PyObject  *py_mod;
+  PyObject  *py_dlg;
 
-    bool callPyEventHandler(char* name, char* fmt, ...);
+  bool callPyEventHandler(char* name, char* fmt, ...);
     
-    void process(AmEvent* event);
+  void process(AmEvent* event);
 
-    string b2b_callee_from_party;
-    string b2b_callee_from_uri;
+  string b2b_callee_from_party;
+  string b2b_callee_from_uri;
 
-    void createCalleeSession();
-public:
-    AmDynInvoke* user_timer;
-    AmPlaylist playlist;
+  void createCalleeSession();
+ public:
+  AmDynInvoke* user_timer;
+  AmPlaylist playlist;
 
-    IvrDialog(AmDynInvoke* user_timer);
-    ~IvrDialog();
+  IvrDialog(AmDynInvoke* user_timer);
+  ~IvrDialog();
 
-    // must be called before everything else.
-    void setPyPtrs(PyObject *mod, PyObject *dlg);
+  // must be called before everything else.
+  void setPyPtrs(PyObject *mod, PyObject *dlg);
 
-    int transfer(const string& target);
-	int drop();
+  int transfer(const string& target);
+  int drop();
     
-    void onSessionStart(const AmSipRequest& req);
-    void onBye(const AmSipRequest& req);
-    void onDtmf(int event, int duration_msec);
+  void onSessionStart(const AmSipRequest& req);
+  void onBye(const AmSipRequest& req);
+  void onDtmf(int event, int duration_msec);
 
-    void onOtherBye(const AmSipRequest& req);
-    void onOtherReply(const AmSipReply& r);
+  void onOtherBye(const AmSipRequest& req);
+  void onOtherReply(const AmSipReply& r);
 
-    void onSipReply(const AmSipReply& r);
-    void onSipRequest(const AmSipRequest& r);
+  void onSipReply(const AmSipReply& r);
+  void onSipRequest(const AmSipRequest& r);
 
-    void onRtpTimeout();
+  void onRtpTimeout();
     
-    void connectCallee(const string& remote_party, const string& remote_uri,
-		       const string& from_party, const string& from_uri);
+  void connectCallee(const string& remote_party, const string& remote_uri,
+		     const string& from_party, const string& from_uri);
 
 };
 

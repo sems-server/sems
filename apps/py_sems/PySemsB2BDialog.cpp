@@ -23,17 +23,17 @@
 #include "PySemsB2BDialog.h"
 #include "PySemsUtils.h"
 PySemsB2BDialog::PySemsB2BDialog()
-    : playlist(this),
-      user_timer(NULL)
+  : playlist(this),
+    user_timer(NULL)
 {
-    sip_relay_only = false;
+  sip_relay_only = false;
 }
 
 PySemsB2BDialog::PySemsB2BDialog(AmDynInvoke* user_timer)
-    : playlist(this),
-      user_timer(user_timer)
+  : playlist(this),
+    user_timer(user_timer)
 {
-    sip_relay_only = false;
+  sip_relay_only = false;
 }
 
 PySemsB2BDialog::~PySemsB2BDialog()
@@ -42,32 +42,32 @@ PySemsB2BDialog::~PySemsB2BDialog()
 
 void PySemsB2BDialog::onSessionStart(const AmSipRequest& req)
 {
-    DBG("PySemsB2BDialog::onSessionStart\n");
-    setInOut(&playlist,&playlist);
-    AmB2BCallerSession::onSessionStart(req);
+  DBG("PySemsB2BDialog::onSessionStart\n");
+  setInOut(&playlist,&playlist);
+  AmB2BCallerSession::onSessionStart(req);
 }
 
 void PySemsB2BDialog::process(AmEvent* event) 
 {
-    DBG("PySemsB2BDialog::process\n");
+  DBG("PySemsB2BDialog::process\n");
 
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event && audio_event->event_id == AmAudioEvent::noAudio){
+  AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
+  if(audio_event && audio_event->event_id == AmAudioEvent::noAudio){
 
-	callPyEventHandler("onEmptyQueue", NULL);
-	event->processed = true;
-    }
+    callPyEventHandler("onEmptyQueue", NULL);
+    event->processed = true;
+  }
     
-    AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
-    if(plugin_event && plugin_event->name == "timer_timeout") {
+  AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
+  if(plugin_event && plugin_event->name == "timer_timeout") {
 
-	callPyEventHandler("onTimer", "i", plugin_event->data.get(0).asInt());
-	event->processed = true;
-    }
+    callPyEventHandler("onTimer", "i", plugin_event->data.get(0).asInt());
+    event->processed = true;
+  }
 
-    if (!event->processed)
-      AmB2BCallerSession::process(event);
+  if (!event->processed)
+    AmB2BCallerSession::process(event);
 
-    return;
+  return;
 }
 

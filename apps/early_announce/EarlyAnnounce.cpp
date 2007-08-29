@@ -46,80 +46,80 @@ EarlyAnnounceFactory::EarlyAnnounceFactory(const string& _app_name)
 
 int EarlyAnnounceFactory::onLoad()
 {
-    AmConfigReader cfg;
-    if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
-	return -1;
+  AmConfigReader cfg;
+  if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
+    return -1;
 
-    // get application specific global parameters
-    configureModule(cfg);
+  // get application specific global parameters
+  configureModule(cfg);
 
-    AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
-    if( !AnnouncePath.empty() 
-	&& AnnouncePath[AnnouncePath.length()-1] != '/' )
-	AnnouncePath += "/";
+  AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
+  if( !AnnouncePath.empty() 
+      && AnnouncePath[AnnouncePath.length()-1] != '/' )
+    AnnouncePath += "/";
 
-    AnnounceFile = cfg.getParameter("default_announce",ANNOUNCE_FILE);
+  AnnounceFile = cfg.getParameter("default_announce",ANNOUNCE_FILE);
 
-    string announce_file = AnnouncePath + AnnounceFile;
-    if(!file_exists(announce_file)){
-	ERROR("default file for " MOD_NAME " module does not exist ('%s').\n",
-	      announce_file.c_str());
-	return -1;
-    }
+  string announce_file = AnnouncePath + AnnounceFile;
+  if(!file_exists(announce_file)){
+    ERROR("default file for " MOD_NAME " module does not exist ('%s').\n",
+	  announce_file.c_str());
+    return -1;
+  }
 
-    return 0;
+  return 0;
 }
 
 
 void EarlyAnnounceDialog::onInvite(const AmSipRequest& req) 
 {
-    try {
+  try {
 
-	string sdp_reply;
-	acceptAudio(req.body,req.hdrs,&sdp_reply);
+    string sdp_reply;
+    acceptAudio(req.body,req.hdrs,&sdp_reply);
 
-	if(dlg.reply(req,183,"Session Progress",
-		     "application/sdp",sdp_reply) != 0){
+    if(dlg.reply(req,183,"Session Progress",
+		 "application/sdp",sdp_reply) != 0){
 
-	    throw AmSession::Exception(500,"could not reply");
-	}
-	else {
-	    
-	    localreq = req;
-	}
-
-    } catch(const AmSession::Exception& e) {
-
-	ERROR("%i %s\n",e.code,e.reason.c_str());
-	setStopped();
-	AmSipDialog::reply_error(req,e.code,e.reason);
+      throw AmSession::Exception(500,"could not reply");
     }
+    else {
+	    
+      localreq = req;
+    }
+
+  } catch(const AmSession::Exception& e) {
+
+    ERROR("%i %s\n",e.code,e.reason.c_str());
+    setStopped();
+    AmSipDialog::reply_error(req,e.code,e.reason);
+  }
 }
 
 
 AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req)
 {
-    string announce_path = AnnouncePath;
-    string announce_file = announce_path + req.domain 
-	+ "/" + get_header_param(req.r_uri, "play") + ".wav";
+  string announce_path = AnnouncePath;
+  string announce_file = announce_path + req.domain 
+    + "/" + get_header_param(req.r_uri, "play") + ".wav";
 
-    DBG("trying '%s'\n",announce_file.c_str());
-    if(file_exists(announce_file))
-	goto end;
+  DBG("trying '%s'\n",announce_file.c_str());
+  if(file_exists(announce_file))
+    goto end;
 
-    announce_file = announce_path + req.user + ".wav";
-    DBG("trying '%s'\n",announce_file.c_str());
-    if(file_exists(announce_file))
-	goto end;
+  announce_file = announce_path + req.user + ".wav";
+  DBG("trying '%s'\n",announce_file.c_str());
+  if(file_exists(announce_file))
+    goto end;
 
-    announce_file = AnnouncePath + AnnounceFile;
+  announce_file = AnnouncePath + AnnounceFile;
     
-end:
-    return new EarlyAnnounceDialog(announce_file);
+ end:
+  return new EarlyAnnounceDialog(announce_file);
 }
 
 EarlyAnnounceDialog::EarlyAnnounceDialog(const string& filename)
-    : filename(filename)
+  : filename(filename)
 {
 }
 
@@ -129,70 +129,70 @@ EarlyAnnounceDialog::~EarlyAnnounceDialog()
 
 void EarlyAnnounceDialog::onSessionStart(const AmSipRequest& req)
 {
-	// we can drop all received packets
-	// this disables DTMF detection as well
-	setReceiving(false);
+  // we can drop all received packets
+  // this disables DTMF detection as well
+  setReceiving(false);
 
-    DBG("EarlyAnnounceDialog::onSessionStart\n");
-    if(wav_file.open(filename,AmAudioFile::Read))
-	throw string("EarlyAnnounceDialog::onSessionStart: Cannot open file\n");
+  DBG("EarlyAnnounceDialog::onSessionStart\n");
+  if(wav_file.open(filename,AmAudioFile::Read))
+    throw string("EarlyAnnounceDialog::onSessionStart: Cannot open file\n");
     
-    setOutput(&wav_file);
+  setOutput(&wav_file);
 }
 
 void EarlyAnnounceDialog::onBye(const AmSipRequest& req)
 {
-    DBG("onBye: stopSession\n");
-    setStopped();
+  DBG("onBye: stopSession\n");
+  setStopped();
 }
 
 void EarlyAnnounceDialog::onCancel()
 {
-    dlg.reply(localreq,487,"Call terminated");
-    setStopped();
+  dlg.reply(localreq,487,"Call terminated");
+  setStopped();
 }
 
 void EarlyAnnounceDialog::process(AmEvent* event)
 {
 
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event && 
-       (audio_event->event_id == AmAudioEvent::cleared))
+  AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
+  if(audio_event && 
+     (audio_event->event_id == AmAudioEvent::cleared))
     {
-	DBG("AmAudioEvent::cleared\n");
-	unsigned int code_i = 404;
-	string reason = "Not Found";
+      DBG("AmAudioEvent::cleared\n");
+      unsigned int code_i = 404;
+      string reason = "Not Found";
 
-	string iptel_app_param = getHeader(localreq.hdrs, PARAM_HDR);
-	if (iptel_app_param.length()) {
-	  string code = get_header_keyvalue(iptel_app_param,"Final-Reply-Code");
-	  if (code.length() && str2i(code, code_i)) {
-	    ERROR("while parsing Final-Reply-Code parameter\n");
-	  }
-	  reason = get_header_keyvalue(iptel_app_param,"Final-Reply-Reason");
-	} else {
-	  string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
-	  if (code.length() && str2i(code, code_i)) {
-	    ERROR("while parsing P-Final-Reply-Code\n");
-	  }
-
-	  string h_reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
-	  if (h_reason.length()) {
-	    INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
-	    INFO("Use '%s: Final-Reply-Code=<code>;"
-		 "Final-Reply-Reason=<rs>' instead.\n",PARAM_HDR);
-	    reason = h_reason;
-	  }
+      string iptel_app_param = getHeader(localreq.hdrs, PARAM_HDR);
+      if (iptel_app_param.length()) {
+	string code = get_header_keyvalue(iptel_app_param,"Final-Reply-Code");
+	if (code.length() && str2i(code, code_i)) {
+	  ERROR("while parsing Final-Reply-Code parameter\n");
+	}
+	reason = get_header_keyvalue(iptel_app_param,"Final-Reply-Reason");
+      } else {
+	string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
+	if (code.length() && str2i(code, code_i)) {
+	  ERROR("while parsing P-Final-Reply-Code\n");
 	}
 
-	DBG("Replying with code %d %s\n", code_i, reason.c_str());
-	dlg.reply(localreq, code_i, reason);
+	string h_reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
+	if (h_reason.length()) {
+	  INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
+	  INFO("Use '%s: Final-Reply-Code=<code>;"
+	       "Final-Reply-Reason=<rs>' instead.\n",PARAM_HDR);
+	  reason = h_reason;
+	}
+      }
+
+      DBG("Replying with code %d %s\n", code_i, reason.c_str());
+      dlg.reply(localreq, code_i, reason);
 	
-	setStopped();
+      setStopped();
 	
-	return;
+      return;
     }
 
-    AmSession::process(event);
+  AmSession::process(event);
 }
 

@@ -32,36 +32,36 @@ class PySemsB2ABCalleeDialog;
 class PySemsB2ABDialog : public AmB2ABCallerSession, 
   public PySemsDialogBase
 {
-public:
-    AmDynInvoke* user_timer;
-    AmPlaylist playlist;
+ public:
+  AmDynInvoke* user_timer;
+  AmPlaylist playlist;
 
-    PySemsB2ABDialog();
-    PySemsB2ABDialog(AmDynInvoke* user_timer);
-    ~PySemsB2ABDialog();
+  PySemsB2ABDialog();
+  PySemsB2ABDialog(AmDynInvoke* user_timer);
+  ~PySemsB2ABDialog();
 
-    void onSessionStart(const AmSipRequest& req);
+  void onSessionStart(const AmSipRequest& req);
 
-    // @see AmEventHandler
-    void process(AmEvent* event);
+  // @see AmEventHandler
+  void process(AmEvent* event);
 
-    AmB2ABCalleeSession* createCalleeSession();
+  AmB2ABCalleeSession* createCalleeSession();
 };
 
 /** \brief base class for events in Py-B2AB sessions */
 struct PySemsB2ABEvent: public B2ABEvent
 {
-  public:
-  PySemsB2ABEvent(int ev_id) 
-    : B2ABEvent(ev_id)
+ public:
+ PySemsB2ABEvent(int ev_id) 
+   : B2ABEvent(ev_id)
   {}
 };
 
 class PySemsB2ABCalleeDialog : public AmB2ABCalleeSession
 {
  public:
-  PySemsB2ABCalleeDialog(const string& other_local_tag)
-    : AmB2ABCalleeSession(other_local_tag) { }
+ PySemsB2ABCalleeDialog(const string& other_local_tag)
+   : AmB2ABCalleeSession(other_local_tag) { }
 
  protected:
   void onB2ABEvent(B2ABEvent* ev);

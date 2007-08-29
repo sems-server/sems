@@ -10,8 +10,8 @@
 // Data definition
 typedef struct {
     
-    PyObject_HEAD
-    AmAudioMixIn* mix;
+  PyObject_HEAD
+  AmAudioMixIn* mix;
     
 } IvrAudioMixIn;
 

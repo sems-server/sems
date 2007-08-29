@@ -38,40 +38,40 @@ using std::string;
 class AnnounceTransferFactory: public AmSessionFactory
 {
 public:
-    static string AnnouncePath;
-    static string AnnounceFile;
+  static string AnnouncePath;
+  static string AnnounceFile;
 
-    AnnounceTransferFactory(const string& _app_name);
+  AnnounceTransferFactory(const string& _app_name);
 
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req);
 };
 
 class AnnounceTransferDialog : public AmSession
 {
-	string callee_uri;
+  string callee_uri;
 
-    AmAudioFile wav_file;
-    string filename;
+  AmAudioFile wav_file;
+  string filename;
 
-    unsigned int status;
+  unsigned int status;
 
-	enum  { Disconnected = 0,
-			Announcing,
-			Transfering,
-			Hangup } AnnounceStatus; 
- public:
-    AnnounceTransferDialog(const string& filename);
-    ~AnnounceTransferDialog();
+  enum  { Disconnected = 0,
+	  Announcing,
+	  Transfering,
+	  Hangup } AnnounceStatus; 
+public:
+  AnnounceTransferDialog(const string& filename);
+  ~AnnounceTransferDialog();
 
-    void onSessionStart(const AmSipRequest& req);
-    void startSession();
-    void onBye(const AmSipRequest& req);
-	void onSipRequest(const AmSipRequest& req);
-	void onSipReply(const AmSipReply& rep);
-    void onDtmf(int event, int duration_msec) {}
+  void onSessionStart(const AmSipRequest& req);
+  void startSession();
+  void onBye(const AmSipRequest& req);
+  void onSipRequest(const AmSipRequest& req);
+  void onSipReply(const AmSipReply& rep);
+  void onDtmf(int event, int duration_msec) {}
 
-    void process(AmEvent* event);
+  void process(AmEvent* event);
 };
 
 #endif

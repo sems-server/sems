@@ -50,92 +50,92 @@ AnnounceB2BFactory::AnnounceB2BFactory(const string& _app_name)
 
 int AnnounceB2BFactory::onLoad()
 {
-    AmConfigReader cfg;
-    if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
-	return -1;
+  AmConfigReader cfg;
+  if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
+    return -1;
 
-    // get application specific global parameters
-    configureModule(cfg);
+  // get application specific global parameters
+  configureModule(cfg);
 
-    AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
-    if( !AnnouncePath.empty() 
-	&& AnnouncePath[AnnouncePath.length()-1] != '/' )
-	AnnouncePath += "/";
+  AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
+  if( !AnnouncePath.empty() 
+      && AnnouncePath[AnnouncePath.length()-1] != '/' )
+    AnnouncePath += "/";
 
-    AnnounceFile = cfg.getParameter("default_announce",ANNOUNCE_FILE);
-    DBG("AnnounceFile = %s\n",AnnounceFile.c_str());
+  AnnounceFile = cfg.getParameter("default_announce",ANNOUNCE_FILE);
+  DBG("AnnounceFile = %s\n",AnnounceFile.c_str());
 
-    string announce_file = AnnouncePath + AnnounceFile;
-    if(!file_exists(announce_file)){
-	ERROR("default file for ann_b2b module does not exist ('%s').\n",
-	      announce_file.c_str());
-	return -1;
-    }
+  string announce_file = AnnouncePath + AnnounceFile;
+  if(!file_exists(announce_file)){
+    ERROR("default file for ann_b2b module does not exist ('%s').\n",
+	  announce_file.c_str());
+    return -1;
+  }
 
-    return 0;
+  return 0;
 }
 
 AmSession* AnnounceB2BFactory::onInvite(const AmSipRequest& req)
 {
-    string announce_path = AnnouncePath;
-    string announce_file = announce_path + req.domain
-	+ "/" + req.user + ".wav";
+  string announce_path = AnnouncePath;
+  string announce_file = announce_path + req.domain
+    + "/" + req.user + ".wav";
     
-    DBG("trying '%s'\n",announce_file.c_str());
-    if(file_exists(announce_file))
-	new AnnounceCallerDialog(announce_file);
+  DBG("trying '%s'\n",announce_file.c_str());
+  if(file_exists(announce_file))
+    new AnnounceCallerDialog(announce_file);
     
-    announce_file = announce_path + req.user + ".wav";
-    DBG("trying '%s'\n",announce_file.c_str());
-    if(file_exists(announce_file))
-	new AnnounceCallerDialog(announce_file);
+  announce_file = announce_path + req.user + ".wav";
+  DBG("trying '%s'\n",announce_file.c_str());
+  if(file_exists(announce_file))
+    new AnnounceCallerDialog(announce_file);
     
-    announce_file = AnnouncePath + AnnounceFile;
-    return new AnnounceCallerDialog(announce_file);
+  announce_file = AnnouncePath + AnnounceFile;
+  return new AnnounceCallerDialog(announce_file);
 }
 
 AnnounceCallerDialog::AnnounceCallerDialog(const string& filename)
-    : filename(filename), 
-      AmB2BCallerSession()
+  : filename(filename), 
+    AmB2BCallerSession()
 {
-    // we want to answer
-    //  the call ourself
-    sip_relay_only = false;
+  // we want to answer
+  //  the call ourself
+  sip_relay_only = false;
 }
 
 void AnnounceCallerDialog::onSessionStart(const AmSipRequest& req)
 {
-    // we can drop all received packets
-    // this disables DTMF detection as well
-    setReceiving(false);
+  // we can drop all received packets
+  // this disables DTMF detection as well
+  setReceiving(false);
 
-    callee_addr = req.to;
-    callee_uri  = req.r_uri;
+  callee_addr = req.to;
+  callee_uri  = req.r_uri;
 
-    AmB2BCallerSession::onSessionStart(req);
+  AmB2BCallerSession::onSessionStart(req);
 
-    if(wav_file.open(filename,AmAudioFile::Read))
-	throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
+  if(wav_file.open(filename,AmAudioFile::Read))
+    throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
     
-    setOutput(&wav_file);
+  setOutput(&wav_file);
 }
 
 void AnnounceCallerDialog::process(AmEvent* event)
 {
 
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
+  AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
+  if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
 
- 	if (getCalleeStatus() != None)
- 	    return;
+    if (getCalleeStatus() != None)
+      return;
 	
-	// detach this session from the media
-	// because we will stay in signaling only
-	AmMediaProcessor::instance()->removeSession(this);
+    // detach this session from the media
+    // because we will stay in signaling only
+    AmMediaProcessor::instance()->removeSession(this);
 
-	connectCallee(callee_addr, callee_uri);
- 	return;
-    }
+    connectCallee(callee_addr, callee_uri);
+    return;
+  }
     
-    AmB2BCallerSession::process(event);
+  AmB2BCallerSession::process(event);
 }

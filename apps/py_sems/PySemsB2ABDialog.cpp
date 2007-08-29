@@ -22,14 +22,14 @@
 #include "PySemsB2ABDialog.h"
 #include "PySemsUtils.h"
 PySemsB2ABDialog::PySemsB2ABDialog()
-    : playlist(this),
-      user_timer(NULL)
+  : playlist(this),
+    user_timer(NULL)
 {
 }
 
 PySemsB2ABDialog::PySemsB2ABDialog(AmDynInvoke* user_timer)
-    : playlist(this),
-      user_timer(user_timer)
+  : playlist(this),
+    user_timer(user_timer)
 {
 }
 
@@ -39,9 +39,9 @@ PySemsB2ABDialog::~PySemsB2ABDialog()
 
 void PySemsB2ABDialog::onSessionStart(const AmSipRequest& req)
 {
-    DBG("PySemsB2ABDialog::onSessionStart\n");
-    setInOut(&playlist,&playlist);
-    AmB2ABCallerSession::onSessionStart(req);
+  DBG("PySemsB2ABDialog::onSessionStart\n");
+  setInOut(&playlist,&playlist);
+  AmB2ABCallerSession::onSessionStart(req);
 }
 
 AmB2ABCalleeSession* PySemsB2ABDialog::createCalleeSession() {
@@ -51,26 +51,26 @@ AmB2ABCalleeSession* PySemsB2ABDialog::createCalleeSession() {
 
 void PySemsB2ABDialog::process(AmEvent* event) 
 {
-    DBG("PySemsB2ABDialog::process\n");
+  DBG("PySemsB2ABDialog::process\n");
 
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event && audio_event->event_id == AmAudioEvent::noAudio){
+  AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
+  if(audio_event && audio_event->event_id == AmAudioEvent::noAudio){
 
-	callPyEventHandler("onEmptyQueue", NULL);
-	event->processed = true;
-    }
+    callPyEventHandler("onEmptyQueue", NULL);
+    event->processed = true;
+  }
     
-    AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
-    if(plugin_event && plugin_event->name == "timer_timeout") {
+  AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
+  if(plugin_event && plugin_event->name == "timer_timeout") {
 
-	callPyEventHandler("onTimer", "i", plugin_event->data.get(0).asInt());
-	event->processed = true;
-    }
+    callPyEventHandler("onTimer", "i", plugin_event->data.get(0).asInt());
+    event->processed = true;
+  }
 
-    if (!event->processed)
-      AmB2ABCallerSession::process(event);
+  if (!event->processed)
+    AmB2ABCallerSession::process(event);
 
-    return;
+  return;
 }
 
 void PySemsB2ABCalleeDialog::onB2ABEvent(B2ABEvent* ev) {

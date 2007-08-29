@@ -30,8 +30,8 @@
 // Data definition
 typedef struct {
     
-    PyObject_HEAD
-    //    AmSession* session;
+  PyObject_HEAD
+  //    AmSession* session;
 
 } IvrUAC;
 
