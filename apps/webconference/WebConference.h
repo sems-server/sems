@@ -42,6 +42,9 @@
 using std::map;
 using std::string;
 
+#include <fstream>
+using std::ofstream;
+
 #include <sys/types.h>
 #include <regex.h>
 
@@ -57,7 +60,7 @@ class ConferenceStatusContainer;
 #define WRONG_PIN           "wrong_pin"
 
 // default path for files
-#define ANNOUNCE_PATH "../apps/examples/webconference/"
+#define WEBCONF_ANNOUNCE_PATH "/usr/local/lib/sems/audio/"
 
 class WebConferenceEvent : public AmEvent 
 {
@@ -83,6 +86,7 @@ class WebConferenceFactory
   static WebConferenceFactory* _instance;
   bool configured;
 
+  string getServerInfoString();
   string getRandomPin();
   /** returns NULL if adminpin wrong */
   ConferenceRoom* getRoom(const string& room, 
@@ -93,7 +97,10 @@ class WebConferenceFactory
   regex_t direct_room_re;
   bool use_direct_room;
   unsigned int direct_room_strip;
- 
+
+  ofstream feedback_file;
+  void saveFeedback(const string& s);
+
 public:
   static string DigitsDir;
   static PlayoutType m_PlayoutType;
@@ -126,6 +133,11 @@ public:
   void mute(const AmArg& args, AmArg& ret);
   void unmute(const AmArg& args, AmArg& ret);
   void serverInfo(const AmArg& args, AmArg& ret);
+  void vqRoomFeedback(const AmArg& args, AmArg& ret);
+  void vqCallFeedback(const AmArg& args, AmArg& ret);
+  void vqConferenceFeedback(const AmArg& args, AmArg& ret);
+  void resetFeedback(const AmArg& args, AmArg& ret);
+  void flushFeedback(const AmArg& args, AmArg& ret);
 };
 
 class WebConferenceDialog 

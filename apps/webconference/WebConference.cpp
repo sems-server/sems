@@ -33,6 +33,8 @@
 #include "AmPlugIn.h"
 #include "AmSessionContainer.h"
 
+#include "sems.h" // DEFAULT_SIGNATURE
+
 #include <stdlib.h>
 
 #define APP_NAME "webconference"
@@ -73,12 +75,12 @@ int WebConferenceFactory::onLoad()
 
   // get prompts
   AM_PROMPT_START;
-  AM_PROMPT_ADD(FIRST_PARTICIPANT, ANNOUNCE_PATH "first_paricipant.wav");
-  AM_PROMPT_ADD(JOIN_SOUND,        ANNOUNCE_PATH "beep.wav");
-  AM_PROMPT_ADD(DROP_SOUND,        ANNOUNCE_PATH "beep.wav");
-  AM_PROMPT_ADD(ENTER_PIN,         ANNOUNCE_PATH "enter_pin.wav");
-  AM_PROMPT_ADD(WRONG_PIN,         ANNOUNCE_PATH "wrong_pin.wav");
-  AM_PROMPT_ADD(ENTERING_CONFERENCE, ANNOUNCE_PATH "entering_conference.wav");
+  AM_PROMPT_ADD(FIRST_PARTICIPANT, WEBCONF_ANNOUNCE_PATH "first_paricipant.wav");
+  AM_PROMPT_ADD(JOIN_SOUND,        WEBCONF_ANNOUNCE_PATH "beep.wav");
+  AM_PROMPT_ADD(DROP_SOUND,        WEBCONF_ANNOUNCE_PATH "beep.wav");
+  AM_PROMPT_ADD(ENTER_PIN,         WEBCONF_ANNOUNCE_PATH "enter_pin.wav");
+  AM_PROMPT_ADD(WRONG_PIN,         WEBCONF_ANNOUNCE_PATH "wrong_pin.wav");
+  AM_PROMPT_ADD(ENTERING_CONFERENCE, WEBCONF_ANNOUNCE_PATH "entering_conference.wav");
   AM_PROMPT_END(prompts, cfg, APP_NAME);
 
   DigitsDir = cfg.getParameter("digits_dir");
@@ -123,6 +125,18 @@ int WebConferenceFactory::onLoad()
     DBG("Webconference will strip %d leading characters from "
 	"direct room access usernames\n",
 	direct_room_strip);
+  }
+
+  string feedback_filename = cfg.getParameter("feedback_file");
+  if (!feedback_filename.empty()) {
+    feedback_file.open(feedback_filename.c_str(), ios::out);
+    if (!feedback_file.good()) {
+      ERROR("opening feedback file '%s'\n", 
+	    feedback_filename.c_str());
+    } else {
+      DBG("successfully opened feedback file '%s'\n", 
+	    feedback_filename.c_str());
+    }
   }
 
   return 0;
@@ -176,7 +190,7 @@ AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req)
     if (!regexec(&direct_room_re, req.to.c_str(), 0,0,0)) {
       string room = req.user;
       if (room.length() > direct_room_strip) 
-	room = room.substr(direct_room_strip);
+ 	room = room.substr(direct_room_strip);
       DBG("direct room access match. connecting to room '%s'\n", 
 	  room.c_str());
       return new WebConferenceDialog(prompts, getInstance(), room);
@@ -216,22 +230,47 @@ void WebConferenceFactory::invoke(const string& method,
 				  const AmArg& args, 
 				  AmArg& ret)
 {
+  
+
   if(method == "roomCreate"){
     roomCreate(args, ret);
+    ret.push(getServerInfoString().c_str());
   } else if(method == "roomInfo"){
     roomInfo(args, ret);
+    ret.push(getServerInfoString().c_str());
   } else if(method == "dialout"){
     dialout(args, ret);
+    ret.push(getServerInfoString().c_str());
   } else if(method == "mute"){
     mute(args, ret);
+    ret.push(getServerInfoString().c_str());
   } else if(method == "unmute"){
     unmute(args, ret);
+    ret.push(getServerInfoString().c_str());
   } else if(method == "kickout"){
     kickout(args, ret);
+    ret.push(getServerInfoString().c_str());
   } else if(method == "serverInfo"){
-    serverInfo(args, ret);		    
+    serverInfo(args, ret);		
+    ret.push(getServerInfoString().c_str());    
+  } else if(method == "vqRoomFeedback"){
+    vqRoomFeedback(args, ret);		
+    ret.push(getServerInfoString().c_str());    
+  } else if(method == "vqCallFeedback"){
+    vqCallFeedback(args, ret);		
+    ret.push(getServerInfoString().c_str());    
+  } else if(method == "vqConferenceFeedback"){
+    vqConferenceFeedback(args, ret);		
+    ret.push(getServerInfoString().c_str());    
   } else if(method == "help"){
     ret.push("help text goes here");
+    ret.push(getServerInfoString().c_str());
+  } else if(method == "resetFeedback"){
+    resetFeedback(args, ret);		
+    ret.push(getServerInfoString().c_str());    
+  } else if(method == "flushFeedback"){
+    flushFeedback(args, ret);		
+    ret.push(getServerInfoString().c_str());    
   } else if(method == "_list"){
     ret.push("roomCreate");
     ret.push("roomInfo");
@@ -240,9 +279,18 @@ void WebConferenceFactory::invoke(const string& method,
     ret.push("unmute");
     ret.push("kickout");
     ret.push("serverInfo");
-  } else 
+    ret.push("vqConferenceFeedback");
+    ret.push("vqCallFeedback");
+    ret.push("vqRoomFeedback");
+  } else
     throw AmDynInvoke::NotImplemented(method);
 }
+
+string WebConferenceFactory::getServerInfoString() {
+  return DEFAULT_SIGNATURE  " calls: " + 
+    int2str(AmSessionContainer::instance()->getSize()); 
+}
+
 
 string WebConferenceFactory::getRandomPin() {
   string res;
@@ -252,6 +300,7 @@ string WebConferenceFactory::getRandomPin() {
 }
 
 void WebConferenceFactory::roomCreate(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args.get(0));
   string room = args.get(0).asCStr();
   rooms_mut.lock();
   map<string, ConferenceRoom>::iterator it = rooms.find(room);
@@ -262,13 +311,23 @@ void WebConferenceFactory::roomCreate(const AmArg& args, AmArg& ret) {
     ret.push("OK");
     ret.push(rooms[room].adminpin.c_str());
   } else {
-    ret.push(1);
-    ret.push("room already opened");
+    if (rooms[room].adminpin.empty()) {
+      rooms[room].adminpin = getRandomPin();
+      ret.push(0);
+      ret.push("OK");
+      ret.push(rooms[room].adminpin.c_str());
+    } else {
+      ret.push(1);
+      ret.push("room already opened");
+      ret.push("");
+    }
   }
   rooms_mut.unlock();
 }
 
 void WebConferenceFactory::roomInfo(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args.get(0));
+  assertArgCStr(args.get(1));
   string room = args.get(0).asCStr();
   string adminpin = args.get(1).asCStr();;
 
@@ -278,7 +337,9 @@ void WebConferenceFactory::roomInfo(const AmArg& args, AmArg& ret) {
     ret.push(1);
     ret.push("wrong adminpin");
     // for consistency, add an empty array
-    ret.push(AmArg());
+    AmArg a;
+    a.assertArray(0);
+    ret.push(a);
    } else {
      ret.push(0);
      ret.push("OK");
@@ -288,14 +349,16 @@ void WebConferenceFactory::roomInfo(const AmArg& args, AmArg& ret) {
 }
 
 void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
+  for (int i=0;i<6;i++)
+    assertArgCStr(args.get(1));
+
   string room        = args.get(0).asCStr();
   string adminpin    = args.get(1).asCStr();
   string callee      = args.get(2).asCStr();
   string from_user   = args.get(3).asCStr();
   string domain      = args.get(4).asCStr();
   string auth_user   = args.get(5).asCStr();
-  string auth_realm   = args.get(6).asCStr();
-  string auth_pwd    = args.get(7).asCStr();
+  string auth_pwd    = args.get(6).asCStr();
 
   string from = "sip:" + from_user + "@" + domain;
   string to   = "sip:" + callee + "@" + domain;
@@ -315,7 +378,7 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
       room.c_str(), from.c_str(), to.c_str());
 
   AmArg* a = new AmArg();
-  a->setBorrowedPointer(new UACAuthCred(auth_realm, auth_user, auth_pwd));
+  a->setBorrowedPointer(new UACAuthCred("", auth_user, auth_pwd));
 
   AmSession* s = AmUAC::dialout(room.c_str(), APP_NAME,  to,  
 				"<" + from +  ">", from, "<" + to + ">", 
@@ -340,9 +403,11 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
 
 void WebConferenceFactory::postConfEvent(const AmArg& args, AmArg& ret,
 					 int id, int mute) {
+  for (int i=0;i<2;i++)
+    assertArgCStr(args.get(1));
   string room        = args.get(0).asCStr();
   string adminpin    = args.get(1).asCStr();
-  string call_tag  = args.get(2).asCStr();
+  string call_tag    = args.get(2).asCStr();
 
   // check adminpin
   
@@ -384,7 +449,97 @@ void WebConferenceFactory::unmute(const AmArg& args, AmArg& ret) {
 }
 
 void WebConferenceFactory::serverInfo(const AmArg& args, AmArg& ret) {
-  ret.push("Not yet implemented");
+  ret.push(getServerInfoString().c_str());
+}
+
+void WebConferenceFactory::vqRoomFeedback(const AmArg& args, AmArg& ret) {
+  
+  assertArgCStr(args.get(0));
+  assertArgCStr(args.get(1));
+  assertArgInt(args.get(2));
+
+  string room = args.get(0).asCStr();
+  string adminpin = args.get(1).asCStr();
+  int opinion = args.get(2).asInt();
+
+  saveFeedback(string("RO "+ room + "|||" + adminpin + "|||" + 
+	       int2str(opinion) + "|||" + int2str(time(NULL)) + "|||\n"));
+
+  ret.push(0);
+  ret.push("OK");
+}
+
+void WebConferenceFactory::vqCallFeedback(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args.get(0));
+  assertArgCStr(args.get(1));
+  assertArgCStr(args.get(2));
+  assertArgInt(args.get(3));
+
+  string room = args.get(0).asCStr();
+  string adminpin = args.get(1).asCStr();
+  string tag = args.get(2).asCStr();
+  int opinion = args.get(3).asInt();
+
+  saveFeedback("CA|||"+ room + "|||" + adminpin + "|||" + tag + "|||" + 
+	       int2str(opinion) + "|||" + int2str(time(NULL)) + "|||\n");
+
+  ret.push(0);
+  ret.push("OK");
+}
+
+void WebConferenceFactory::vqConferenceFeedback(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args.get(0));
+  assertArgCStr(args.get(1));
+  assertArgCStr(args.get(2));
+  assertArgCStr(args.get(3));
+  assertArgInt(args.get(4));
+
+  string room = args.get(0).asCStr();
+  string adminpin = args.get(1).asCStr();
+  string sender = args.get(2).asCStr();
+  string comment = args.get(3).asCStr();
+  int opinion = args.get(4).asInt();
+
+  saveFeedback("CO|||"+ room + "|||" + adminpin + "|||" + int2str(opinion) + "|||" + 
+	       sender + "|||" + comment +"|||" + int2str(time(NULL)) + "|||\n");
+
+  ret.push(0);
+  ret.push("OK");
+}
+
+void WebConferenceFactory::resetFeedback(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args.get(0));
+  string feedback_filename = args.get(0).asCStr();
+
+  feedback_file.close();
+  if (!feedback_filename.empty()) {
+    feedback_file.open(feedback_filename.c_str(), ios::out);
+    if (!feedback_file.good()) {
+      ERROR("opening new feedback file '%s'\n", 
+	    feedback_filename.c_str());
+      ret.push(-1);
+      ret.push("error opening new feedback file");
+
+    } else {
+      DBG("successfully opened new feedback file '%s'\n", 
+	  feedback_filename.c_str());
+      ret.push(0);
+      ret.push("OK");
+    }
+  } else {
+    ret.push(-2);
+    ret.push("no filename given");
+  }
+}
+
+void WebConferenceFactory::saveFeedback(const string& s) {
+  if (feedback_file.good()){
+    feedback_file << s;
+  }
+}
+
+void WebConferenceFactory::flushFeedback(const AmArg& args, AmArg& ret) {
+  feedback_file.flush();
 }
 
 WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
@@ -415,11 +570,11 @@ WebConferenceDialog::~WebConferenceDialog()
 {
   prompts.cleanup((long)this);
   play_list.close(false);
-  if (InConference == state) {
-    factory->updateStatus(conf_id, 
+  if (is_dialout || (InConference == state)) {
+    factory->updateStatus(is_dialout?dlg.user:conf_id, 
 			  getLocalTag(), 
 			  ConferenceRoomParticipant::Finished,
-			  "out");
+			  "");
   }
 }
 
@@ -573,7 +728,21 @@ void WebConferenceDialog::process(AmEvent* ev)
 
   WebConferenceEvent* webconf_ev = dynamic_cast<WebConferenceEvent*>(ev);
   if (NULL != webconf_ev) {
-    if (InConference == state) {
+
+    if (InConference != state) {
+
+      if (webconf_ev->event_id == WebConferenceEvent::Kick) {
+	DBG("########## WebConferenceEvent::Kick #########\n");
+	dlg.bye(); 
+	setInOut(NULL, NULL);
+	setStopped();
+	factory->updateStatus(conf_id, 
+			      getLocalTag(), 
+			      ConferenceRoomParticipant::Disconnecting,
+			      "disconnect");
+      }
+    } else {
+      
       switch(webconf_ev->event_id) {
       case WebConferenceEvent::Kick:  { 
 	DBG("########## WebConferenceEvent::Kick #########\n");
@@ -588,16 +757,17 @@ void WebConferenceDialog::process(AmEvent* ev)
 	DBG("########## WebConferenceEvent::Mute #########\n"); 
 	setInOut(NULL, &play_list);  
       } break;
-      case WebConferenceEvent::Unmute:{  
+      case WebConferenceEvent::Unmute: {  
 	DBG("########## WebConferenceEvent::Unmute #########\n"); 
 	setInOut(&play_list, &play_list);  
       } break;
-      default: { WARN("ignoring unknown webconference event %d\n", webconf_ev->event_id); } break;	
+      default: { WARN("ignoring unknown webconference event %d\n", webconf_ev->event_id); 
+      } break;	
       }
     }
     return;
   }
-
+  
   AmSession::process(ev);
 }
 
@@ -639,4 +809,5 @@ void WebConferenceDialog::onDtmf(int event, int duration)
     }
   }
 }
+
 

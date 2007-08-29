@@ -58,6 +58,8 @@ void ConferenceRoom::cleanExpired() {
 AmArg ConferenceRoom::asArgArray() {
   cleanExpired();
   AmArg res;
+  res.assertArray(0); // make array from it
+
   for (list<ConferenceRoomParticipant>::iterator it=participants.begin(); 
        it != participants.end(); it++) {
     res.push(it->asArgArray());
@@ -96,17 +98,17 @@ void ConferenceRoom::setMuted(const string& localtag, int mute) {
 bool ConferenceRoom::updateStatus(const string& part_tag, 
 				  ConferenceRoomParticipant::ParticipantStatus newstatus, 
 				  const string& reason) {
-  cleanExpired();
-  
   bool res = false;
-  list<ConferenceRoomParticipant>::iterator it=participants.begin(); 
-  while (it != participants.end()) {
+  for (list<ConferenceRoomParticipant>::iterator it=participants.begin(); 
+       it != participants.end(); it++) {
     if (it->localtag == part_tag) {
       it->updateStatus(newstatus, reason);
       res = true;
+      break;
     }
-    it++;     
   }
+
+  cleanExpired();
   return res;
 }
 
