@@ -1,7 +1,23 @@
 compilation instructions for SEMS
 ---------------------------------
 
-make
+make targets
+------------
+ $ make all
+makes the core and all applications. If only the core and specific 
+modules are needed, e.g. the conference module: 
+ $ make -C core && make -C apps/conference
+(alternative to exclude_modules - below)
+
+ $ make install 
+accepts the usual BASEDIR (default "") and PREFIX (default "/usr/local")
+variables.
+
+ $ make install-ser-config 
+accepts SERPREFIX variable (default /opt/ser-sems), which should be the 
+installation path of the used ser-sems.
+
+
 
 IVR
 ---
