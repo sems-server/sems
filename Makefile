@@ -2,8 +2,9 @@ NAME=sems
 .DEFAULT_GOAL:=all
 include Makefile.defs
 
-modules = $(filter-out $(wildcard Makefile* README doc), \
+modules = $(filter-out $(wildcard Makefile* README doc *gz), \
 			$(wildcard *) )
+imodules = $(filter-out ser-0.9.6-sems, $(modules))
 
 .PHONY: all
 all: modules
@@ -31,13 +32,37 @@ modules:
 
 .PHONY: install
 install:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(imodules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
 			$(MAKE) -C $$r install; \
 		fi ; \
 	done
+	-@if [ -d ser-0.9.6-sems ]; then \
+			echo "" ;\
+			echo "making install in ser-0.9.6" ;\
+			echo "using PREFIX=$(SERPREFIX)" ;\
+			echo "" ;\
+			$(MAKE) -C ser-0.9.6-sems install PREFIX=$(SERPREFIX) ;\
+			echo "" ;\
+			echo "installing ser-sems.cfg" ;\
+			$(MAKE) -C . install-ser-cfg ;\
+	fi
+	@echo ""
+	@echo "*** install complete. Run SEMS with "
+	@echo "*** "
+	@echo "***   $(bin-target)sems -f $(cfg-target)sems.conf"
+
+	-@if [ -d ser-0.9.6-sems ]; then \
+		echo "*** "; \
+		echo "*** and"; \
+		echo "***"; \
+		echo "***   $(ser-prefix)/sbin/ser -f $(ser-cfg-target)ser-sems.cfg" ;\
+		echo "***"; \
+	fi
+
+
 
 .PHONY: dist
 dist: tar
@@ -68,6 +93,15 @@ tar:
 			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp
 
+ser-0.9.6-sems_src.tar.gz:
+	wget http://ftp.iptel.org/pub/sems/ser-0.9.6-sems_src.tar.gz
+
+ser-0.9.6-sems:	ser-0.9.6-sems_src.tar.gz
+	tar xzvf ser-0.9.6-sems_src.tar.gz
+
+.PHONY: bundle
+bundle: ser-0.9.6-sems tar
+
 .PHONY: doc
 doc:
 	make -C core/ doc
@@ -75,5 +109,3 @@ doc:
 .PHONY: install-ser-cfg
 install-ser-cfg:
 	make -C core/ install-ser-cfg
-
-
