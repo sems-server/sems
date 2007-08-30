@@ -84,7 +84,6 @@ LIB_LD_FLAGS = $(LD_FLAGS) -shared
 
 DESTDIR ?= /usr/local
 PREFIX ?= $(DESTDIR)
-LOCALBASE ?= /usr/local
 prefix = $(PREFIX)
 BASEDIR ?=
 basedir = $(BASEDIR)
