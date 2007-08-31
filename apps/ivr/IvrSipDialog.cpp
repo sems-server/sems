@@ -51,7 +51,7 @@ static PyObject* IvrSipDialog_new(PyTypeObject *type, PyObject *args, PyObject *
   {								\
     return PyString_FromString(self->p_dlg->attr.c_str());	\
   }								\
-								\
+								
 def_IvrSipDialog_GETTER(IvrSipDialog_getuser,         user)
 def_IvrSipDialog_GETTER(IvrSipDialog_getdomain,       domain)
 def_IvrSipDialog_GETTER(IvrSipDialog_getsip_ip,       sip_ip)

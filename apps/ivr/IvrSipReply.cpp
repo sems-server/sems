@@ -72,9 +72,9 @@ static PyObject* IvrSipReply_new(PyTypeObject *type, PyObject *args, PyObject *k
   getter_name(IvrSipReply *self, void *closure)			\
   {								\
     return PyString_FromString(self->p_req->attr.c_str());	\
-  }								\
-								\
-								\
+  }								
+								
+								
 def_IvrSipReply_GETTER(IvrSipReply_getreason,     reason)
 def_IvrSipReply_GETTER(IvrSipReply_getnext_request_uri,         next_request_uri)
 def_IvrSipReply_GETTER(IvrSipReply_gethdrs,         hdrs)

@@ -72,8 +72,8 @@ static PyObject* IvrSipRequest_new(PyTypeObject *type, PyObject *args, PyObject 
   getter_name(IvrSipRequest *self, void *closure)		\
   {								\
     return PyString_FromString(self->p_req->attr.c_str());	\
-  }								\
-								\
+  }					  
+								
 def_IvrSipRequest_GETTER(IvrSipRequest_getmethod,       method)
 def_IvrSipRequest_GETTER(IvrSipRequest_getuser,         user)
 def_IvrSipRequest_GETTER(IvrSipRequest_getdomain,       domain)
