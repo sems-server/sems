@@ -22,6 +22,24 @@ args:
 
 returns: CStr handle  : used to remove the registration or correlate events
 
+getRegistrationState
+--------------------
+
+return the state of a registration.
+
+ args:
+          CStr handle     : handle of the registration (as returned by createRegistration)
+
+ returns: 
+          int result      : 1 - OK
+                            0 - registration does not exist 
+
+       if result == 1: 
+          int state       : state:     RegisterPending:  0 
+                                       RegisterActive:   1
+                                       RegisterActive:   2
+          int expires     : expires left (seconds)
+
 removeRegistration
 ------------------
 args:  CStr handle    
