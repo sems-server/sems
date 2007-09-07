@@ -1,0 +1,76 @@
+
+cc_acc_xmlrpc                contributed by Todd Lewis 
+
+This module implements the accounting functions for the calling
+card example, specifically the cc_acc interface. It can be loaded 
+as an alternative to the cc_acc module.
+
+Instead of maintaining a local in memory map of credits, as the 
+cc_acc module does, it executes the getCredit and subtractCredit
+functions via XMLRPC to an accounting server:
+
+acc system components using cc_acc_xmlrpc
+
+ +------------------------+
+ |       SEMS             |
+ |                        |
+ |    +-------------+     |
+ |    | mycc        |     | 
+ |    +-------------+     | 
+ |    |             |     |
+ |    |             |     |
+ |    +-------------+     | 
+ |       |                |
+ |       |DI getCredit    |
+ |       |   subtractCredit
+ |       v                |
+ |    +-------------+     |             +--------------------+
+ |    |cc_acc_xmlrpc|     |             |XMLRPC              |
+ |    +-------------+     | XMLRPC      |  accounting server |
+ |    | credits     | ----------------> |                    |
+ |    |   (map)     | ----------------> |                    |
+ |    +-------------+     | getCredit   +--------------------+
+ |                        | subtractCredit
+ |                        |
+ |                        |
+ +------------------------+
+ 
+acc system components using cc_acc
+
+ +------------------------+
+ |       SEMS             |
+ |                        |
+ |    +-------------+     |
+ |    | mycc        |     | 
+ |    +-------------+     | 
+ |    |             |     |
+ |    |             |     |
+ |    +-------------+     | 
+ |       |                |
+ |       |DI getCredit    |
+ |       |   subtractCredit
+ |       v                |
+ |    +-------------+     |
+ |    |  cc_acc     |     | 
+ |    +-------------+     | 
+ |    | credits     |     |
+ |    |   (map)     |     |
+ |    +-------------+     | 
+ |        ^               |
+ |        |DI addCredit   |       
+ |        |   setCredit   |
+ |        |               |
+ |    +-------------+     |
+ |    |  xmlrpc2di  |     | 
+ |    +-------------+     | 
+ |    |             |<---------- XMLRPC addCredit
+ |    |             |<---------- XMLRPC setCredit
+ |    +-------------+     | 
+ |                        |
+ |                        |
+ +------------------------+
+ 
+a python example XMLRPC server can be found in server/xmlrpcserver.py.
+
+This module needs the xmlrpcpp library (see apps/examples/xmlrpc2di module
+for details). 
