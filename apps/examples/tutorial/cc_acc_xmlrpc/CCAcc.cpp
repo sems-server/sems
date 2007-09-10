@@ -88,10 +88,10 @@ int CCAcc::subtractCredit(string pin, int amount) {
    xmlArg[0][0]["methodName"] = "subtractCredit";
    xmlArg[0][0]["pin"] = pin;
    xmlArg[0][0]["amount"] = amount;	
-   DBG("substractCredit pin# '%s', Seconds '%u'.\n", pin.c_str(),  
+   DBG("subtractCredit pin# '%s', Seconds '%u'.\n", pin.c_str(),  
 amount );
    xmlrpccall.execute("subtractCredit", xmlArg, result);
-   int res = result[0];
+   int res = result;
    DBG("Credit Left '%u' .\n", res);
    return res;
 }
