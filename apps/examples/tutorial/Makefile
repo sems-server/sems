@@ -1,4 +1,4 @@
-COREPATH ?= ../../core
+COREPATH ?= ../../../core
 .DEFAULT_GOAL := all
 
 include $(COREPATH)/../Makefile.defs
