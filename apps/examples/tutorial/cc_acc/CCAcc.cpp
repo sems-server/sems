@@ -40,14 +40,21 @@ CCAcc::~CCAcc() { }
 void CCAcc::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
     if(method == "getCredit"){
+      assertArgCStr(args.get(0));
       ret.push(getCredit(args.get(0).asCStr()));
     } else if(method == "subtractCredit"){
+      assertArgCStr(args.get(0));
+      assertArgInt(args.get(1));
       ret.push(subtractCredit(args.get(0).asCStr(),
 			      args.get(1).asInt()));	
     } else if(method == "addCredit"){
+      assertArgCStr(args.get(0));
+      assertArgInt(args.get(1));
       ret.push(addCredit(args.get(0).asCStr(),
 			 args.get(1).asInt()));	
     } else if(method == "setCredit"){
+      assertArgCStr(args.get(0));
+      assertArgInt(args.get(1));
       ret.push(setCredit(args.get(0).asCStr(),
 			 args.get(1).asInt()));	
     } else if(method == "_list"){
@@ -65,7 +72,7 @@ int CCAcc::getCredit(string pin) {
   credits_mut.lock();
   map<string, unsigned int>::iterator it =  credits.find(pin);
   if (it == credits.end()) {
-    DBG("PIN '%s' dies not exist.", pin.c_str());
+    DBG("PIN '%s' does not exist.\n", pin.c_str());
     credits_mut.unlock();
     return -1;
   }
