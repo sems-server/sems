@@ -6,6 +6,7 @@
 #include "AmUtils.h"
 #include "AmAudio.h"
 #include "AmPlugIn.h"
+#include "AmMediaProcessor.h"
 
 #include <sys/time.h>
 #include <time.h>
@@ -94,7 +95,7 @@ MyCCDialog::~MyCCDialog()
 void MyCCDialog::addToPlaylist(string fname) {
   AmAudioFile* wav_file = new AmAudioFile();
   if(wav_file->open(fname,AmAudioFile::Read)) {
-    ERROR("MyCCDialog::onSessionStart: Cannot open file\n");
+    ERROR("MyCCDialog::addToPlaylist: Cannot open file\n");
     delete wav_file; 
   } else {
     AmPlaylistItem*  item = new AmPlaylistItem(wav_file, NULL);
@@ -203,7 +204,10 @@ void MyCCDialog::onOtherReply(const AmSipReply& reply) {
       if (getCalleeStatus()  == Connected) {
 	state = CC_Connected;
 	startAccounting();
+	// clear audio input and output
 	setInOut(NULL, NULL);
+	// detach from media processor (not in RTP path any more)
+	AmMediaProcessor::instance()->removeSession(this);
 	// set the call timer
 	AmArg di_args,ret;
 	di_args.push(TIMERID_CREDIT_TIMEOUT);
