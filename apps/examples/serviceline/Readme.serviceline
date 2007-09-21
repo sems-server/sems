@@ -1,0 +1,19 @@
+serviceline application
+
+This application could serve for something like a service line: 
+The caller calls the service number, and gets an ivr menu, from where
+she can be connected to various numbers - by pressing 0 she is connected 
+to one number, by pressing 1 to another number etc.
+
+The outgoing call is connected in B2BUA mode with media relay ('b2abua'),
+so technically the two legs are independent sip dialogs and media sessions.
+
+The outgoing calls (B leg) are optionally SIP authenticated, so for example,
+normal gateways can be used. The uac_auth module must be loaded for this 
+to work. If the uac_auth module is not loaded, the outgoing calls are not
+authenticated.
+
+To extend this module with so useful things like prompt on failed call,
+leave message fwdd via email on failed call etc is left as an exercise
+to the reader. Improvements are of course welcome as svn diff to the 
+semsdev mailing list.
