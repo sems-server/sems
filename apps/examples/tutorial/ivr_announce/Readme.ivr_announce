@@ -1,0 +1,4 @@
+ivr_announce
+
+this simple python IVR example is the Hello World of the ivr module
+- it just plays an announcement to the caller and then hangs up.
