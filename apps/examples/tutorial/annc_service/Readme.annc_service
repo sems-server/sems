@@ -1,0 +1,6 @@
+Simple IVR implementation of (a part) of RFC4240
+announcement service.
+
+supported parameters:
+ play, repeat, duration, delay
+
