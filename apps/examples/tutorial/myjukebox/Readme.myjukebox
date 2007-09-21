@@ -1,7 +1,5 @@
 myjukebox
 
-This application demonstrates how to use the B2BUA with media relay.
-After calling the B leg party, the audio of both legs are connected.
-Whenever the caller presses a key, the file with the corresponding 
-name (0.wav, 1.wav, ...) is played to both caller and callee, so the
-caller can play jukebox or use funny pre-recorded comments and sounds.
+This application demonstrates how to do simple IVR by reacting on DTMF
+input. It plays the file with the corresponding name (0.wav, 1.wav, ...)
+if a key on the phone is pressed. 
