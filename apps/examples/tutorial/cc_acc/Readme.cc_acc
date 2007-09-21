@@ -1,0 +1,12 @@
+cc_acc
+
+This module implements the accounting functions for the calling
+card example, specifically the cc_acc interface. 
+
+It maintains a local in memory map of credits. These can for example
+be set using the xmlrpc2di module from XMLRPC, or any other module 
+by invoking the DI functions setCredit, getCredit, addCredit,
+subtractCredit.
+
+See the cc_acc_xmlrpc module and its Readme for another implementation
+of the cc_acc interface.
