@@ -98,7 +98,14 @@ Requirements:
 
 How to get started with SEMS:
 
-  To try out SEMS, the easiest is to follow one of the tutorials
+  To try out SEMS, the easiest is to get the bundle and install it: 
+    wget http://ftp.iptel.org/pub/sems/sems-0.10.0-bundle.tar.gz
+    tar xzvf sems-0.10.0-bundle.tar.gz ; cd sems-0.10.0-bundle
+    make install PREFIX=~/sems-0.10.0-install SERPREFIX=~/sems-0.10.0-install
+  This gets you the default set of applications installed in that
+  directory, and in the end prints the commands to start it. 
+
+  You can also follow one of the tutorials
   linked from the SEMS homepage
   (e.g. http://www.iptel.org/howto_sems_voicemail).The Application
   Modules Documentation page then gives an overview of the application
@@ -109,7 +116,8 @@ How to get started with SEMS:
   application development tutorial is a good start 
   (http://www.iptel.org/sems/sems_application_development_tutorial),
   together  with the design overview 
-  (http://www.iptel.org/files/semsng-designoverview.pdf).
+  (http://www.iptel.org/files/semsng-designoverview.pdf) and the example
+  applications (apps/examples/).
   
 Installation:
 
@@ -127,7 +135,9 @@ Installation:
 
     Notice: you don't need to execute 'make install' if you want to 
             run SEMS from the source tree, but in this case some paths 
-            in the config fiels will need to be adapted.
+            in the config files will need to be adapted.
+            If you want to install to a different prefix than /usr/local,
+            use PREFIX=/some/other/prefix 
      
     For detailed instructions for some modules, have a look at
     doc/COMPILING as well.
@@ -183,7 +193,7 @@ Installation:
     A sample ser.cfg with which many applications can be tried is available
     at http://ftp.iptel.org/pub/sems/ser_test_sems.cfg
    
-    Alternatively, the SIP stack SER can be configured in ser-sems.cfg
+    Alternatively, the SIP-stack-SER can be configured in ser-sems.cfg
     to send all calls directly to one application, in that case the line
      if(!t_write_unix("/tmp/sems_sock","sems/app_headers"))
     in ser-sems.cfg could be changed to e.g.
@@ -194,7 +204,7 @@ Installation:
     For more information please refer to doc/Configure-SEMS-Ser-HOWTO and
     the SER User's guide. 
 
-Installed file using 'make install':
+Installed files using 'make install':
 
     /usr/local/sbin/sems                 : SEMS executable
     /usr/local/lib/sems/plug-in/*        : plug-ins
@@ -211,8 +221,8 @@ Documentation:
 
   In the doc/ directory there is a set of files describing the
   applications shipped with SEMS, alongside some more documentation.
-  With 'make doc' you can generate the doxygen documentation in 
-  doc/doxygen_doc, which contains these files as well.
+  Generate the doxygen documentation with 'make doc' in doc/doxygen_doc,
+  that contains all these files as well.
 
   All this and more documentation is available online linked from 
   the SEMS homepage: 
@@ -260,5 +270,9 @@ Special thanks goes to:
       for the debuging work and help to implement
       the first communicating part between Ser & SEMS ('vm' module).
 
-  * All the others who helped during test session :-)
+  * iptego GmbH and iptelorg for sponsoring development and improvement
+    of SEMS.
+ 
+  * All the others who helped during test session and reported bugs :-)
 
+SEMS - the media-S in the SLAMP.
