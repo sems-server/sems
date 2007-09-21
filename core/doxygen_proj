@@ -509,7 +509,30 @@ EXCLUDE_PATTERNS       =
 # directories that contain example code fragments that are included (see 
 # the \include command).
 
-EXAMPLE_PATH           = ../doc ../ .
+EXAMPLE_PATH           = ../doc ../ . ../apps/examples/announce_auth \
+		        ../apps/examples/di_dialer   \
+			../apps/examples/mixin_announce     \
+			../apps/examples/py_sems_ex         \
+			../apps/examples/tutorial \
+			../apps/examples/cacheannounce \
+			../apps/examples/db_announce   \
+			../apps/examples/di_log     \
+			../apps/examples/jukecall  \
+			../apps/examples/pinauthconference \
+			../apps/examples/simple_conference \
+			../apps/examples/xmlrpc2di/ \
+			../apps/examples/serviceline/ \
+			../apps/examples/tutorial/ \
+			../apps/examples/tutorial/annc_service \
+			../apps/examples/tutorial/cc_acc	\	   
+			../apps/examples/tutorial/cc_acc_xmlrpc \
+			../apps/examples/tutorial/ivr_announce \
+			../apps/examples/tutorial/myannounceapp \
+			../apps/examples/tutorial/myapp \
+			../apps/examples/tutorial/mycc \
+			../apps/examples/tutorial/myconfigurableapp \
+			../apps/examples/tutorial/myjukebox
+
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

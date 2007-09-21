@@ -37,7 +37,7 @@
 #include "lame.h"
 
 /**
- * @file plug-in/mp3/mp3.c
+ * @file apps/mp3/mp3.c
  * lame-MP3 support 
  * This plug-in writes MP3 files using lame encoder. 
  *
