@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+/** @file AmServer.h */
 #ifndef _AmServer_h_
 #define _AmServer_h_
 
@@ -45,6 +45,7 @@ using std::greater;
 class AmCtrlInterface;
 class AmInterfaceHandler;
 
+/** \brief binds a AmCtrlInterface and an AmInterfaceHandler*/
 struct IfaceDesc
 {
   AmCtrlInterface*    ctrl;

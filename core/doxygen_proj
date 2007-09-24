@@ -17,7 +17,7 @@
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = Sems
+PROJECT_NAME           = SEMS
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
@@ -450,27 +450,9 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = amci etc lib plug-in rpm rtp scripts . \
-				plug-in/echo \
-				plug-in/gsm \
-				plug-in/ilbc \
-				plug-in/session_timer \
-				plug-in/stats \
-				plug-in/uac_auth \
-				plug-in/wav \
-				../apps/ann_b2b \
-				../apps/announce_transfer \
-				../apps/announcement \
-				../apps/conf_auth \
-				../apps/conference \
-				../apps/early_announce \
-				../apps/ivr \
-				../apps/py_sems \
-				../apps/mailbox \
-				../apps/mp3 \
-				../apps/voicemail \
-				../doc/doxyref.h 
-
+INPUT                  = ../core \
+		       ../apps \
+                       ../doc
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -485,13 +467,13 @@ FILE_PATTERNS          =
 # should be searched for input files as well. Possible values are YES and NO. 
 # If left blank NO is used.
 
-RECURSIVE              = NO
+RECURSIVE              = YES 
 
 # The EXCLUDE tag can be used to specify files and/or directories that should 
 # excluded from the INPUT source files. This way you can easily exclude a 
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = 
+EXCLUDE                = .svn
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or 
 # directories that are symbolic links (a Unix filesystem feature) are excluded 
@@ -509,30 +491,7 @@ EXCLUDE_PATTERNS       =
 # directories that contain example code fragments that are included (see 
 # the \include command).
 
-EXAMPLE_PATH           = ../doc ../ . ../apps/examples/announce_auth \
-		        ../apps/examples/di_dialer   \
-			../apps/examples/mixin_announce     \
-			../apps/examples/py_sems_ex         \
-			../apps/examples/tutorial \
-			../apps/examples/cacheannounce \
-			../apps/examples/db_announce   \
-			../apps/examples/di_log     \
-			../apps/examples/jukecall  \
-			../apps/examples/pinauthconference \
-			../apps/examples/simple_conference \
-			../apps/examples/xmlrpc2di/ \
-			../apps/examples/serviceline/ \
-			../apps/examples/tutorial/ \
-			../apps/examples/tutorial/annc_service \
-			../apps/examples/tutorial/cc_acc	\	   
-			../apps/examples/tutorial/cc_acc_xmlrpc \
-			../apps/examples/tutorial/ivr_announce \
-			../apps/examples/tutorial/myannounceapp \
-			../apps/examples/tutorial/myapp \
-			../apps/examples/tutorial/mycc \
-			../apps/examples/tutorial/myconfigurableapp \
-			../apps/examples/tutorial/myjukebox
-
+EXAMPLE_PATH           = ../doc ../apps ../core 
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -546,13 +505,13 @@ EXAMPLE_PATTERNS       =
 # commands irrespective of the value of the RECURSIVE tag. 
 # Possible values are YES and NO. If left blank NO is used.
 
-EXAMPLE_RECURSIVE      = NO
+EXAMPLE_RECURSIVE      = YES
 
 # The IMAGE_PATH tag can be used to specify one or more files or 
 # directories that contain image that are included in the documentation (see 
 # the \image command).
 
-IMAGE_PATH             = 
+IMAGE_PATH             = ../doc/figures/png
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should 
 # invoke to filter for each input file. Doxygen will invoke the filter program 

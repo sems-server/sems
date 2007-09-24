@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+/** @file AmAudioMixIn.h */
 #ifndef _AM_AUDIO_MIX_IN_H
 #define _AM_AUDIO_MIX_IN_H
 

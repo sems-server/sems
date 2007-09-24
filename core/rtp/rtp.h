@@ -45,8 +45,8 @@ typedef unsigned int   u_int32;
  */
 #define RTP_VERSION    2
 
-/*
- * RTP data header
+/**
+ * \brief RTP data header type
  */
 typedef struct {
 
@@ -70,6 +70,7 @@ typedef struct {
     u_int32 ssrc;        /* synchronization source */
 } rtp_hdr_t;
 
+/** \brief RTP extension header type */
 typedef struct {
     u_int16 profile;     /* xhdr type */
     u_int16 len;         /* xhdr length */

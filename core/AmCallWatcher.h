@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+/** @file AmCallWatcher.h */
 #ifndef _AM_CALL_WATCHER_H
 #define _AM_CALL_WATCHER_H
 
@@ -54,7 +54,7 @@ using std::pair;
 class CallStatus;
 
 /** 
- * event that carries out call status update
+ * \brief event that carries out call status update
  */
 class CallStatusUpdateEvent : public AmEvent {
   string call_id;
@@ -82,7 +82,7 @@ class CallStatusUpdateEvent : public AmEvent {
 };
 
 /** 
- * interface for an update-able call status
+ * \brief interface for an update-able call status (AmCallWatcher)
  */
 class CallStatus
 {
@@ -100,6 +100,7 @@ class CallStatus
 
 class AmCallWatcherGarbageCollector;
 /**
+ * \brief manages call status to be queried by external processes 
  * call watcher is an entity for managing call status
  * via events that change status. Events are executed in a 
  * separate thread serially by processing the event queue, 
@@ -142,6 +143,8 @@ class AmCallWatcher
 };
 
 /** 
+ * \brief garbage collector for the AmCallWatcher
+ * 
  * checks garbage every two seconds. 
  * A bit inefficient with two threads, but AmCallWatcher
  * shouldn't be blocked by event.

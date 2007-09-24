@@ -29,6 +29,7 @@
 
 class PySemsB2ABCalleeDialog;
 
+/** \brief pySems wrapper for base of pySems dialog classes */
 class PySemsB2ABDialog : public AmB2ABCallerSession, 
   public PySemsDialogBase
 {
@@ -57,6 +58,7 @@ struct PySemsB2ABEvent: public B2ABEvent
   {}
 };
 
+/** \brief pySems wrapper for B leg in pysems B2AB session */
 class PySemsB2ABCalleeDialog : public AmB2ABCalleeSession
 {
  public:

@@ -38,6 +38,7 @@ using std::string;
 
 class AmSessionContainer;
 
+/** \brief UDP server running to provide statistics via simple UDP queries */
 class StatsUDPServer: public AmThread
 {
   static StatsUDPServer* _instance;

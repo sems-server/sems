@@ -25,6 +25,7 @@
 #include "log.h"
 
 // Data definition
+/** \brief IVR wrapper of AmSipRequest */
 typedef struct {
     
   PyObject_HEAD

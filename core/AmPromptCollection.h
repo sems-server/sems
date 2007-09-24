@@ -25,10 +25,9 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+/** @file AmPromptCollection.h */
 #ifndef AM_PROMPT_COLLECTION_H
 #define AM_PROMPT_COLLECTION_H
-
 
 /**
  *
@@ -108,7 +107,7 @@ class AmPromptCollection {
 };
 
 /** 
- *  AudioFile with filename 
+ *  \brief AmAudioFile with filename and open flag 
  */
 
 class AudioFileEntry : public AmAudioFile {

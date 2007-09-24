@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+/** @file AmRtpStream.h */
 #ifndef _RtpStream_h_
 #define _RtpStream_h_
 
@@ -243,6 +243,7 @@ public:
 
   virtual unsigned int bytes2samples(unsigned int) const = 0;
 };
+
 /** \brief represents info about an \ref AmRtpStream */
 struct AmRtpStreamInfo
 {
@@ -263,6 +264,7 @@ struct AmRtpStreamInfo
 		  AmAudio* audio_rec = NULL);
 };
 
+/** \brief event fired on RTP timeout */
 class AmRtpTimeoutEvent
   : public AmEvent
 {

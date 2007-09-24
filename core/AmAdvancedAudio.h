@@ -24,6 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+/** @file AmAdvancedAudio.h */
 
 #ifndef _AmAdvancedAudio_h_
 #define _AmAdvancedAudio_h_
@@ -87,6 +88,8 @@ class AmAudioQueue : public AmAudio {
 };
 
 /**
+ * \brief AmAudio device with a playlist and a background AmAudio
+ *
  * AmAudioFrontlist is an AmAudio device, that has a playlist
  * in front of a AmAudio entry, the 'back' device. The back device
  * is only used if the playlist is empty. - This can be useful when 

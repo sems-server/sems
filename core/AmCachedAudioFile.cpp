@@ -52,7 +52,7 @@ AmFileCache::~AmFileCache() {
   }
 }
 
-int AmFileCache::load(const string& filename) {
+int AmFileCache::load(const std::string& filename) {
   int fd; 
   struct stat sbuf;
 

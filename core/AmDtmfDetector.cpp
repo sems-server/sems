@@ -383,7 +383,7 @@ static int IVR_dtmf_matrix[4][4] =
 #define PI              3.1415926
 #define NELEMSOF(x) (sizeof(x)/sizeof(*x))
 
-
+/** \brief DTMF tone filter type */
 typedef struct {
   int freq;			/* frequency */
   int grp;			/* low/high group */

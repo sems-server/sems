@@ -51,7 +51,7 @@
  * 
  */
 
-/*! \page Compiling Additional compiling instructions (ivr and mp3)
+/*! \page Compiling Compilation instructions
  * \verbinclude COMPILING
  * 
  */
@@ -83,7 +83,7 @@
  *  can be found in the apps/ directory and are installed by default if they do not
  *  depend on special libraries (eg. liblame). 
  *  A set of \ref AppDocExample that illustrate how to
- *  make use certain aspects of the SEMS framework rather than can be found in the
+ *  make use certain aspects of the SEMS framework can be found in the
  *  apps/examples directory. These are not installed by default. 
  *  
  * \section announcementappdoc Announcement  Applications

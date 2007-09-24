@@ -14,7 +14,7 @@
 #include "flite.h"
 #endif
 
-// Data definition
+/** \brief pySems wrapper for AmAudioFile  */
 typedef struct {
     
   PyObject_HEAD

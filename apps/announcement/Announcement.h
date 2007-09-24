@@ -38,6 +38,7 @@ using std::string;
 
 #include <memory>
 
+/** \brief Factory for announcement sessions */
 class AnnouncementFactory: public AmSessionFactory
 {
   inline string getAnnounceFile(const AmSipRequest& req);
@@ -54,6 +55,7 @@ public:
 
 };
 
+/**\brief  announcement session logic implementation */
 class AnnouncementDialog : public AmSession,
 			   public CredentialHolder
 {

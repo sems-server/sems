@@ -119,7 +119,6 @@ bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
 #endif
 
 
-
 AmSession::AmSession()
   : AmEventQueue(this), // AmDialogState(),
     dlg(this),

@@ -59,6 +59,7 @@ enum { DoConfConnect = 100,
        DoConfError
 };
 
+/** \brief Event to trigger connecting/disconnecting between dialout session and main conference session */
 struct DialoutConfEvent : public AmEvent {
 
   string conf_id;
@@ -70,6 +71,7 @@ struct DialoutConfEvent : public AmEvent {
   {}
 };
 
+/** \brief Factory for conference sessions */
 class ConferenceFactory : public AmSessionFactory
 {
 public:
@@ -90,6 +92,7 @@ public:
   virtual int onLoad();
 };
 
+/** \brief session logic implementation of conference sessions */
 class ConferenceDialog : public AmSession
 {
   AmPlaylist  play_list;

@@ -37,6 +37,7 @@
 #include <string>
 using std::string;
 
+/** \brief Factory for AnnounceB2B sessions */
 class AnnounceB2BFactory: public AmSessionFactory
 {
 public:
@@ -49,6 +50,7 @@ public:
   AmSession* onInvite(const AmSipRequest& req);
 };
 
+/** \brief Session logic implementation of A leg in announce_b2b sessions */
 class AnnounceCallerDialog: public AmB2BCallerSession
 {
   AmAudioFile wav_file;

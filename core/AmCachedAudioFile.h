@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+/** @file AmCachedAudioFile.h */
 #ifndef _AMFILECACHE_H
 #define _AMFILECACHE_H
 
@@ -33,6 +33,8 @@
 #include <string>
 
 /**
+ * \brief memory cache for AmAudioFile 
+ * 
  * The AmFileCache class loads a file once into memory 
  * to be used e.g. by AmCachedAudioFile.
  */

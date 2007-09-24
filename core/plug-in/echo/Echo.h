@@ -34,7 +34,7 @@
 #include <string>
 using std::string;
 
-
+/** \brief Factory for echo sessions */
 class EchoFactory: public AmSessionFactory
 {
   AmSessionEventHandlerFactory* session_timer_f;
@@ -45,6 +45,7 @@ public:
   virtual AmSession* onInvite(const AmSipRequest& req);
 };
 
+/** \brief echo session logic implementation */
 class EchoDialog : public AmSession
 {
   AmAudioEcho echo;

@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+/** @file AmPlayoutBuffer.h */
 #ifndef _AmPlayoutBuffer_h_
 #define _AmPlayoutBuffer_h_
 

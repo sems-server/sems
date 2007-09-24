@@ -106,6 +106,10 @@ bundle: ser-0.9.6-sems tar
 doc:
 	make -C core/ doc
 
+.PHONY: fulldoc
+fulldoc:
+	make -C core/ fulldoc
+
 .PHONY: install-ser-cfg
 install-ser-cfg:
 	make -C core/ install-ser-cfg

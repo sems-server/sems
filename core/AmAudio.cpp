@@ -39,6 +39,7 @@
 
 #include <typeinfo>
 
+/** \brief structure to hold loaded codec instances */
 struct CodecContainer
 {
   amci_codec_t *codec;

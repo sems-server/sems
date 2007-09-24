@@ -24,6 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+/** @file AmDtmfDetector.h */
 #ifndef _AmDtmfDetector_h_
 #define _AmDtmfDetector_h_
 
@@ -102,7 +103,7 @@ class AmDtmfEvent : public AmEvent
   int duration() const { return m_duration_msec; }
 };
 /**
- * this is the Interface for a sink for KeyPresses.
+ * \brief Interface for a sink for KeyPresses.
  */
 class AmKeyPressSink {
  public:

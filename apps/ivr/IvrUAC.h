@@ -27,7 +27,7 @@
 #include <Python.h>
 #include "structmember.h"
 
-// Data definition
+/** \brief python IVR wrapper for AmUAC functions */
 typedef struct {
     
   PyObject_HEAD

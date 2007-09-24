@@ -40,6 +40,7 @@ using std::map;
 
 class IvrDialog;
 
+/** \brief C++ wrapper for extra thread created by Python IVR script */
 class PythonScriptThread : public AmThread {
   PyObject* py_thread_object;
  protected:
@@ -50,7 +51,7 @@ class PythonScriptThread : public AmThread {
    : py_thread_object(py_thread_object_) { }
 };
 
-
+/** \brief binds a script module and the python dialog class */
 struct IvrScriptDesc
 {
   PyObject* mod;
@@ -73,7 +74,7 @@ IvrScriptDesc(PyObject* mod,
   {}
 };
 
-
+/** \brief session factory for python IVR sessions */
 class IvrFactory: public AmSessionFactory
 {
   PyObject* ivr_module;
@@ -112,7 +113,7 @@ class IvrFactory: public AmSessionFactory
   void addDeferredThread(PyObject* pyCallable);
 };
 
-
+/** \brief python IVR wrapper for session base implementation */
 class IvrDialog : public AmB2BCallerSession
 {
   PyObject  *py_mod;

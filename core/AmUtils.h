@@ -233,6 +233,7 @@ short get_port_v6(struct sockaddr_storage* ss);
  */
 int create_unix_socket(const string& path);
 
+/** \brief microseconds sleep using select */
 #define sleep_us(nusecs) \
 	{ \
 	struct timeval tval; \
@@ -247,12 +248,14 @@ int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int 
 
 string extract_tag(const string& addr);
 
-// returns true if key is in s_list, a list of items delimited by list_delim
-// skips whitespaces, too
+/** returns true if key is in s_list, a list of items delimited by list_delim
+ *skips whitespaces, too */
 bool key_in_list(const string& s_list, const string& key, char list_delim = ',');
-// return string with trailing spaces and everything after ; including ; itself removed
+
+/** return string with trailing spaces and everything after ; including ; itself removed */
 string strip_header_params(const string& hdr_string);
-// get a header parameter value
+
+/** get a header parameter value */
 string get_header_param(const string& hdr_string, const string& param_name);
 
 /** get the value of key @param name from the list param_hdr*/
@@ -261,14 +264,15 @@ string get_header_keyvalue(const string& param_hdr, const string& name);
 /** get the value of key @param name from P-Iptel-Param header in hdrs */
 string get_session_param(const string& hdrs, const string& name);
 
-// support for thread-safe pseudo-random numbers
+/** support for thread-safe pseudo-random numbers  - init function */
 void init_random();
+/** support for thread-safe pseudo-random numbers  - make a random number function */
 unsigned int get_random();
 
-// Explode string by a separator to a vector
+/** Explode string by a separator to a vector */
 std::vector <string> explode(string s, string e);
 
-// add a directory to an environement variable
+/** add a directory to an environement variable */
 void add_env_path(const char* name, const string& path);
 
 #endif

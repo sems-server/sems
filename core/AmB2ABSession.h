@@ -24,6 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+/** @file AmB2ABSession.h */
 #ifndef B2ABSession_H
 #define B2ABSession_H
 
@@ -53,6 +54,7 @@ struct B2ABEvent: public AmEvent
   {}
 };
 
+/** \brief event fired if B leg is ringing in b2ab session */
 struct B2ABOtherLegRingingEvent: public B2ABEvent
 {
   B2ABOtherLegRingingEvent()
@@ -95,6 +97,7 @@ struct B2ABConnectLegEvent: public B2ABEvent
   {}
 };
 
+/** \brief event fired if an exception occured while creating B leg */
 struct B2ABConnectOtherLegExceptionEvent: public B2ABEvent {
 	
   unsigned int code;
@@ -107,6 +110,7 @@ struct B2ABConnectOtherLegExceptionEvent: public B2ABEvent {
   {}
 };
 
+/** \brief event fired if the B leg could not be connected (e.g. busy) */
 struct B2ABConnectOtherLegFailedEvent: public B2ABEvent {
 	
   unsigned int code;

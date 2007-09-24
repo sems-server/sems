@@ -24,6 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+/** @file AmArg.h */
 
 #ifndef _AmArg_h_
 #define _AmArg_h_
@@ -34,7 +35,10 @@
 #include <vector>
 using std::vector;
 
-/** base for Objects as @see AmArg parameter, not owned by AmArg (!) */
+/** \brief base for Objects as @see AmArg parameter
+ * 
+ * not owned by AmArg (!) 
+ */
 class ArgObject {
  public:
   ArgObject() { }
@@ -57,10 +61,12 @@ class AmArg
     Array
   };
 
+  /** \brief exception thrown on access beyond array limits */
   struct OutOfBoundsException {
     OutOfBoundsException() { }
   };
 
+  /** \brief exception thrown if the on argument type mismatch */
   struct TypeMismatchException {
     TypeMismatchException() { }
   };

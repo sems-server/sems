@@ -43,6 +43,7 @@ typedef unsigned char HASH[HASHLEN];
 #define HASHHEXLEN 32
 typedef unsigned char HASHHEX[HASHHEXLEN+1];
 
+/** \brief Challenge in uac auth */
 struct UACAuthDigestChallenge {
   std::string realm;
   std::string qop;
@@ -53,6 +54,7 @@ struct UACAuthDigestChallenge {
   std::string algorithm;
 };
 
+/** \brief factory for uac_auth session event handlers */
 class UACAuthFactory
 : public AmSessionEventHandlerFactory,
   public AmDynInvokeFactory,
@@ -78,6 +80,7 @@ class UACAuthFactory
   void invoke(const string& method, const AmArg& args, AmArg& ret);
 };
 
+/** \brief contains necessary information for UAC auth of a SIP request */
 struct SIPRequestInfo {
   string method;
   string content_type;
@@ -95,6 +98,7 @@ struct SIPRequestInfo {
 
 };
 
+/** \brief SessionEventHandler for implementing uac authentication */
 class UACAuth : public AmSessionEventHandler
 {
   map<unsigned int, SIPRequestInfo> sent_requests;

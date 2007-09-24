@@ -35,6 +35,7 @@
 
 class AmSessionContainer;
 
+/** \brief starts the stats UDP server */
 class StatsFactory: public AmSessionFactory,
 		    public AmInterfaceHandler
 {

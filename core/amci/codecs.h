@@ -32,6 +32,7 @@
  * @file codecs.h
  * Centralized definition of all codec IDs.
  * Look at the source file for declarations.
+ * they just need to be different from each other.
  */
 
 #define CODEC_PCM16   0

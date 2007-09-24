@@ -6,6 +6,7 @@
 
 #define SESSION_TIMER_GRANULARITY 100 // check every 100 millisec
 
+/** \brief component for providing user_timer DI interface */
 class UserTimerFactory: public AmDynInvokeFactory
 {
 public:

@@ -1,3 +1,4 @@
+/** @file AmCtrlInterface.h */
 #ifndef AmCtrlInterface_h
 #define AmCtrlInterface_h
 

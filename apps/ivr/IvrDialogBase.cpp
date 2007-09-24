@@ -1,15 +1,14 @@
 #include "IvrDialogBase.h"
 #include "IvrAudio.h"
 #include "IvrAudioMixIn.h"
-#
+
 #include "Ivr.h"
 
 #include "IvrSipDialog.h"
 #include "AmMediaProcessor.h"
 
-//#include "AmSessionTimer.h"
 
-// Data definition
+/** \brief python wrapper of IvrDialog, the base class for python IVR sessions */
 typedef struct {
     
   PyObject_HEAD

@@ -24,7 +24,7 @@
 #define TIMEOUTEVENT_NAME "timer_timeout"
 
 /**
- * Timer Event: class
+ * \brief User Timer Event
  * data[0]: int timer_id
  */
 class AmTimeoutEvent : public AmPluginEvent 
@@ -34,7 +34,7 @@ class AmTimeoutEvent : public AmPluginEvent
 };
 
 /**
- * Timer struct containing the alarm time.
+ * \brief Timer struct containing the alarm time.
  */
 struct AmTimer
 {
@@ -53,7 +53,8 @@ bool operator < (const AmTimer& l, const AmTimer& r);
 bool operator == (const AmTimer& l, const AmTimer& r);
 
 /**
- * session timer class.
+ * \brief user timer class.
+ * 
  * Implements a timer with session granularity.
  * On timeout an AmTimeoutEvent with the ID is posted.
  */
@@ -96,6 +97,7 @@ class UserTimer: public AmDynInvoke
   void on_stop();
 #endif
 
+  /** DI API */
   void invoke(const string& method, const AmArg& args, AmArg& ret);
 };
 

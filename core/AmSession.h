@@ -51,6 +51,8 @@ using std::pair;
 class AmSessionFactory;
 class AmDtmfEvent;
 
+/** @file AmSession.h */
+
 /* definition imported from Ser parser/msg_parser.h */
 #define FL_FORCE_ACTIVE 2
 

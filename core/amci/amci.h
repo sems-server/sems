@@ -77,9 +77,8 @@ extern "C" {
 struct amci_codec_t;
 
 /** 
- * File format declaration 
+ * \brief File format declaration 
  */
-
 struct amci_file_desc_t {
 
     /** subtype from current file format */
@@ -96,7 +95,7 @@ struct amci_file_desc_t {
 };
 
 /**
- * Sound converter function pointer.
+ * \brief Sound converter function pointer.
  * @param out      [out] output buffer
  * @param in       [in] input buffer
  * @param size     [in] size of input buffer
@@ -120,7 +119,7 @@ typedef int (*amci_converter_t)( unsigned char* out,
                                );
 
 /**
- * Codec specific packet loss concealment function pointer.
+ * \brief Codec specific packet loss concealment function pointer.
  * @param out      [out] output buffer
  * @param size     [in] required size of output
  * @param channels [in] number of channels
@@ -140,7 +139,7 @@ typedef int (*amci_plc_t)( unsigned char* out,
 			   long           h_codec );
 
 /**
- * File format handler's open function
+ * \brief File format handler's open function
  * @param fptr     [in] fresh opened file pointer
  * @param fmt_desc [out] file description
  * @param options  [in] options (see amci_inoutfmt_t)
@@ -210,7 +209,8 @@ typedef int (*amci_file_mem_close_t)( unsigned char* mptr,
                                   );
 
 /**
- * Codec's init function pointer.
+ * \brief Codec's init function pointer.
+ *
  * @param format_parameters  [in] parameters as passed by fmtp tag, 0 if none 
  * @param format_description [out] pointer to describing block, with amci_codec_fmt_info_t array; zero-terminated. 0 if none
  *   <table><tr><td><b>key</b></td><td><b>value</b></td></tr>
@@ -230,23 +230,23 @@ typedef int (*amci_file_mem_close_t)( unsigned char* mptr,
 typedef long (*amci_codec_init_t)(const char* format_parameters, amci_codec_fmt_info_t* format_description);
 
 /**
- * Codec's destroy function pointer.
+ * \brief Codec's destroy function pointer.
  * @param h_codec Codec handle (from init function).
  */
 typedef void (*amci_codec_destroy_t)(long h_codec);
 
 /**
- * Codec's function for calculating the number of samples from bytes
+ * \brief Codec's function for calculating the number of samples from bytes
  */
 typedef unsigned int (*amci_codec_bytes2samples_t)(long h_codec, unsigned int num_bytes);
 
 /**
- * Codec's function for calculating the number of bytes from samples
+ * \brief Codec's function for calculating the number of bytes from samples
  */
 typedef unsigned int (*amci_codec_samples2bytes_t)(long h_codec, unsigned int num_samples);
 
 /**
- * Codec description
+ * \brief Codec description
  */
 struct amci_codec_t {
 
@@ -276,7 +276,8 @@ struct amci_codec_t {
     /** Function for calculating the number of samples from bytes. */
     amci_codec_samples2bytes_t samples2bytes;
 };
-
+  
+  /** \brief supported subtypes for a file */
 struct amci_subtype_t {
 
     /** ex. 0x06 for Wav's Mu-Law */
@@ -304,7 +305,7 @@ struct amci_subtype_t {
 };
 
 /**
- * File format declaration.
+ * \brief File format declaration.
  */
 struct amci_inoutfmt_t {
 
@@ -340,7 +341,7 @@ struct amci_inoutfmt_t {
 #define AMCI_PT_AUDIO_FRAME 1
 
 /**
- * Payload declaration
+ * \brief ayload declaration
  */
 struct amci_payload_t {
 
@@ -374,7 +375,7 @@ struct amci_payload_t {
 
 
 /**
- * Complete plug-in declaration.
+ * \brief Complete plug-in declaration.
  */
 struct amci_exports_t {
 

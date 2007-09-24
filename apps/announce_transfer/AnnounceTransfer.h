@@ -35,6 +35,7 @@
 #include <string>
 using std::string;
 
+/** \brief session factory for announce_transfer sessions */
 class AnnounceTransferFactory: public AmSessionFactory
 {
 public:
@@ -47,6 +48,7 @@ public:
   AmSession* onInvite(const AmSipRequest& req);
 };
 
+/** \brief session logic implementation for announce_transfer sessions */
 class AnnounceTransferDialog : public AmSession
 {
   string callee_uri;

@@ -25,6 +25,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/** @file AmUtils.cpp */
+
 #include "AmUtils.h"
 #include "AmThread.h"
 #include "AmConfig.h"

@@ -28,12 +28,14 @@
 #include "AmAudioEcho.h"
 #include "log.h"
 
+/** read audio from echo device*/
 int AmAudioEcho::read(unsigned int user_ts, unsigned int size)
 {
   timed_buffer.get(user_ts,(ShortSample*)((unsigned char*)samples),size);
   return size;
 }
 
+/** write audio to echo device */
 int AmAudioEcho::write(unsigned int user_ts, unsigned int size)
 {
   timed_buffer.put(user_ts,(ShortSample*)((unsigned char*)samples),size);

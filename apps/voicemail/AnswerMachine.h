@@ -43,6 +43,7 @@ using std::string;
 
 class AmMail;
 
+/** \brief Factory for voicemail sessions */
 class AnswerMachineFactory: public AmSessionFactory
 {
   map<string, EmailTemplate> email_tmpl;
@@ -72,6 +73,7 @@ public:
   AmSession* onInvite(const AmSipRequest& req);
 };
 
+/** \brief implementation of voicemail session logic */
 class AnswerMachineDialog : public AmSession
 {
   AmAudioFile a_greeting,a_beep;

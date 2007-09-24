@@ -14,7 +14,7 @@
 #include "flite.h"
 #endif
 
-// Data definition
+/** \brief IVR wrapper of AmAudioFile */
 typedef struct {
     
   PyObject_HEAD

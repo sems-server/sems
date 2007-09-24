@@ -220,7 +220,7 @@ void w_MD5Update(MD5_CTX *ctx, const string& s) {
 }
 
 
-string UACAuth::find_attribute(const string& name, const string& header) {
+string UACAuth::find_attribute(const std::string& name, const std::string& header) {
   string res;
   size_t pos1 = header.find(name);
   if (pos1!=string::npos) {
@@ -236,7 +236,7 @@ string UACAuth::find_attribute(const string& name, const string& header) {
   return res;
 }
 
-bool UACAuth::parse_header(const string& auth_hdr, UACAuthDigestChallenge& challenge) {
+bool UACAuth::parse_header(const std::string& auth_hdr, UACAuthDigestChallenge& challenge) {
   size_t p = auth_hdr.find_first_not_of(' ');
   if (auth_hdr.substr(p, 6) != "Digest") {
     ERROR("only Digest auth supported\n");
@@ -338,7 +338,7 @@ static inline void cvt_hex(HASH bin, HASHHEX hex)
  * calculate H(A1)
  */
 void UACAuth::uac_calc_HA1(UACAuthDigestChallenge& challenge,
-			   string cnonce,
+			   std::string cnonce,
 			   HASHHEX sess_key)
 {
   MD5_CTX Md5Ctx;
@@ -371,7 +371,7 @@ void UACAuth::uac_calc_HA1(UACAuthDigestChallenge& challenge,
 /* 
  * calculate H(A2)
  */
-void UACAuth::uac_calc_HA2( const string& method, const string& uri,
+void UACAuth::uac_calc_HA2( const std::string& method, const std::string& uri,
 			    UACAuthDigestChallenge& challenge,
 			    HASHHEX hentity,
 			    HASHHEX HA2Hex )
@@ -402,7 +402,7 @@ void UACAuth::uac_calc_HA2( const string& method, const string& uri,
  */
 void UACAuth::uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 				 UACAuthDigestChallenge& challenge,
-				 const string& nc, const string& cnonce,
+				 const std::string& nc, const std::string& cnonce,
 				 HASHHEX response)
 {
   unsigned char hc[1]; hc[0]=':';

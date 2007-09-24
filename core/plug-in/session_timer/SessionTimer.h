@@ -40,7 +40,7 @@ class AmTimeoutEvent;
 #define ID_SESSION_INTERVAL_TIMER -1
 #define ID_SESSION_REFRESH_TIMER  -2
 
-
+/** \brief Factory of the session timer event handler */
 class SessionTimerFactory: public AmSessionEventHandlerFactory
 {
   bool checkSessionExpires(const AmSipRequest& req);
@@ -55,6 +55,7 @@ class SessionTimerFactory: public AmSessionEventHandlerFactory
   AmSessionEventHandler* getHandler(AmSession* s);
 };
 
+/** \brief SessionEventHandler for implementing session timer logic for a session */
 class SessionTimer: public AmSessionEventHandler
 {
   AmSession* s;

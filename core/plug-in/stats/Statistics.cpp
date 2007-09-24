@@ -40,7 +40,7 @@ using std::string;
 
 EXPORT_SESSION_FACTORY(StatsFactory,MOD_NAME);
 
-StatsFactory::StatsFactory(const string& _app_name)
+StatsFactory::StatsFactory(const std::string& _app_name)
   : AmSessionFactory(_app_name)
 {
 }

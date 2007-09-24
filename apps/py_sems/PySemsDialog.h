@@ -30,6 +30,7 @@
 #include "AmPlaylist.h"
 #include "PySems.h"
 
+/** \brief implementation of session logic/script execution in pySems */
 class PySemsDialog  :  public AmSession, 
   public PySemsDialogBase
 {

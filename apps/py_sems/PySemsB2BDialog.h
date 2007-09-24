@@ -28,6 +28,7 @@
 #include "AmB2BSession.h"
 #include "AmPlaylist.h"
 
+/** \brief IVR wrapper of AmB2BSession */
 class PySemsB2BDialog : public AmB2BCallerSession, 
   public PySemsDialogBase
 {

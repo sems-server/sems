@@ -76,6 +76,7 @@ PySemsScriptDesc(PyObject* mod,
 };
 
 
+/** \brief Factory for PySems sessions */
 class PySemsFactory: public AmSessionFactory
 {
   PyObject* py_sems_module;
@@ -110,6 +111,7 @@ class PySemsFactory: public AmSessionFactory
   AmSession* onInvite(const AmSipRequest& req);
 };
 
+/** \brief wrapper for pySems dialog bas class */
 class PySemsDialogBase {
   PyObject  *py_mod;
   PyObject  *py_dlg;

@@ -17,6 +17,44 @@ variables.
 accepts SERPREFIX variable (default /opt/ser-sems), which should be the 
 installation path of the used ser-sems.
 
+ $ make tar
+make a source tarball (.tar.gz) 
+
+ $ make bundle
+make a source tarball bundle  (.tar.gz), a combination of SEMS and SER
+for SEMS.
+
+ $ make doc
+make doxygen documentation (output in doc/doxygen_doc)
+
+ $ make fulldoc
+make doxygen documentation (output in doc/doxygen_doc) will full 
+xreff'd source
+
+Defines and Variables
+---------------------
+
++-------------+-------------+---------------------------------------+
+|  Variable   |  Default    | Comment                               |     
++-------------+-------------+---------------------------------------+
+ GPP             g++           C++ compiler 
+ GCC             gcc           C compiler 
+ INSTALL         install       
+ TAR             tar           
+
+ CXX_FLAGS       ...           C++ compiler  
+ C_FLAGS         ...           C compiler 
+
+ BASEDIR         <empty>       destination base 
+ DESTDIR/PREFIX  /usr/local    destination prefix 
+                               (installs to /basedir/prefix)
+
+ PYTHON_VERSION  2.4           ivr and py_sems modules
+ TTS             n             flite tts in ivr and py_sems modules 
+                               (y or n)
+
+ USE_MYSQL       not set       use anouncements from mysql db
+                               in conference and voicemail apps
 
 
 IVR

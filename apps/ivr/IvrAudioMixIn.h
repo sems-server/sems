@@ -7,7 +7,7 @@
 
 #include "AmAudioMixIn.h"
 
-// Data definition
+/** \brief python IVR wrapper for AmAudioMixIn */ 
 typedef struct {
     
   PyObject_HEAD

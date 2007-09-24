@@ -34,6 +34,7 @@
 #include <string>
 using std::string;
 
+/** \brief Factory for early_announce sessions */
 class EarlyAnnounceFactory: public AmSessionFactory
 {
 public:
@@ -46,6 +47,7 @@ public:
   AmSession* onInvite(const AmSipRequest& req);
 };
 
+/** \brief session logic implementation for early_announce sessions */
 class EarlyAnnounceDialog : public AmSession
 {
   AmAudioFile wav_file;

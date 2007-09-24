@@ -55,6 +55,12 @@ EXPORT_SESSION_FACTORY(PySemsFactory,MOD_NAME);
 
 PyMODINIT_FUNC initpy_sems_lib();
 
+/** 
+ * \brief gets python global interpreter lock (GIL)
+ * 
+ * structure to acquire the python global interpreter lock (GIL) 
+ * while the structure is allocated.
+ */
 struct PythonGIL
 {
   PyGILState_STATE gst;

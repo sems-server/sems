@@ -3,7 +3,7 @@
 #include "AmSipDialog.h"
 #include "log.h"
 
-// Data definition
+/** \brief IVR wrapper class of AmSipDialog */
 typedef struct {
     
   PyObject_HEAD

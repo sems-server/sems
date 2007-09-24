@@ -31,6 +31,7 @@
 #include "AmAudio.h"
 #include "SampleArray.h"
 
+/** \brief audio device that echos audio from input to output */
 class AmAudioEcho : public AmAudio
 {
   SampleArrayShort timed_buffer;

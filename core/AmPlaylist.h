@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+/** @file AmPlaylist.h */
 #ifndef AmPlaylist_h
 #define AmPlaylist_h
 
@@ -99,6 +99,8 @@ public:
 };
 
 /**
+ * \brief playlistelement to notify session about the playlist progress
+ *
  * null-playlist element which notifies session that this position in 
  * playlist is reached. It fies a AmPlaylistSeparatorEvent if it is 
  * read or written.

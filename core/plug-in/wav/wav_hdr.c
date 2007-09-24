@@ -35,8 +35,10 @@
     sr = fread(buf,s,1,fp);\
     if((sr != 1) || ferror(fp)) return -1;
 
-/* The file header of RIFF-WAVE files (*.wav).  Files are always in
-   little-endian byte-order.  */
+/** \brief The file header of RIFF-WAVE files (*.wav). 
+ * Files are always in
+ * little-endian byte-order.  
+ */
 
 struct wav_header
 {
