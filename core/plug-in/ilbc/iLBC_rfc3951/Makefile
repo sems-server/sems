@@ -8,8 +8,6 @@ hrds     = $(wildcard *.h)
 objs     = $(srcs:.c=.o) 
 depends  = $(srcs:.c=.d)
 
-#cflags ?= $(C_FLAGS)
-
 AR		= ar
 RANLIB		= ranlib
 
@@ -24,10 +22,10 @@ clean:
 deps: $(depends)
 
 %.d: %.c %.h Makefile 
-	$(CC) -MM $< $(CFLAGS) > $@
+	$(CC) -MM $< $(CFLAGS) $(CPPFLAGS) > $@
 
 %.o: %.c %.d
-	$(CC) $(CFLAGS) -c $< -o $@ -fPIC
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 $(lib_name): deps $(objs)  Makefile
 		if [ -f $(lib_name) ]; then rm $(RMFLAGS) $(lib_name) ; fi
