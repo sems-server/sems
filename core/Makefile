@@ -41,15 +41,17 @@ fulldoc:
 
 include ../Makefile.defs
 
+LDFLAGS += -lstdc++
+
 # implicit rules
 %.o : %.cpp %.d
-	$(GPP) -c -o $@ $< $(CXX_FLAGS)
+	$(CXX) -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS)
 
 %.d : %.cpp %.h Makefile
-	$(GPP) -MM $< $(CXX_FLAGS) > $@
+	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
 $(NAME): $(NAME).o $(OBJS)
-	$(GPP) -o $(NAME) $(NAME).o $(OBJS) $(LD_FLAGS)
+	$(LD) -o $(NAME) $(NAME).o $(OBJS) $(LDFLAGS)
 
 install: all mk-install-dirs \
 	install-cfg \

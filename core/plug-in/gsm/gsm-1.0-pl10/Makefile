@@ -130,7 +130,7 @@ INC	= $(ROOT)/inc
 ######### Remove -DNDEBUG to enable assertions.
 
 CFLAGS	= $(CCFLAGS) $(SASR) $(DEBUG) $(MULHACK) $(FAST) $(LTP_CUT) \
-	$(WAV49) $(CCINC) -I$(INC)
+	$(WAV49) $(CCINC) -I$(INC) $(EXTRA_CFLAGS)
 ######### It's $(CC) $(CFLAGS)
 
 LFLAGS	= $(LDFLAGS) $(LDINC)

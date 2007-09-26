@@ -3,9 +3,10 @@ COREPATH ?=../..
 
 include $(COREPATH)/../Makefile.defs
 
-ldflags = $(LIB_LD_FLAGS) $(module_ldflags)
-cflags = -I $(COREPATH) $(C_FLAGS) $(module_cflags)
-cxxflags = -I $(COREPATH) $(CXX_FLAGS) $(module_cflags)
+LDFLAGS  += $(module_ldflags)
+CPPFLAGS += -I $(COREPATH)
+CFLAGS   += $(module_cflags)
+CXXFLAGS += $(module_cflags)
 
 app_module_dir = $(COREPATH)/lib
 
@@ -72,23 +73,23 @@ $(plug_in_name)_audio: $(audio-prefix)/$(audio-dir)
 
 
 %.d: %.cpp Makefile $(COREPATH)/plug-in/Makefile.app_module
-	$(GPP) -MM $< $(cxxflags) > $@
+	$(CXX) -MM $< $(CXXFLAGS) $(CPPFLAGS) > $@
 
 %.d: %.c Makefile $(COREPATH)/plug-in/Makefile.app_module
-	$(GCC) -MM $< $(cflags) > $@
+	$(CC) -MM $< $(CFLAGS) $(CPPFLAGS) > $@
 
 %.o: %.cpp %.d
-	$(GPP) $(cxxflags) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 %.o: %.c %.d
-	$(GCC) $(cflags) -c $< -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 
 $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
 
 $(lib_name): $(objs) $(module_extra_objs) Makefile
-	$(GPP) -o $(lib_name)  $(objs) $(module_extra_objs) $(ldflags) 
+	$(LD) -o $(lib_name) $(objs) $(module_extra_objs) $(LIB_LDFLAGS)
 
 ifeq ($(lib_full_name),$(MAKECMDGOALS))
 include $(depends)

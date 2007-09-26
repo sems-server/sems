@@ -1,8 +1,9 @@
 COREPATH ?=../..
 include $(COREPATH)/../Makefile.defs
 
-ldflags = -shared $(module_ldflags)
-cflags  = $(C_FLAGS) -I $(COREPATH) -I $(COREPATH)/amci -Wall $(module_cflags)
+LDFLAGS  += -shared $(module_ldflags)
+CPPFLAGS += -I $(COREPATH) -I $(COREPATH)/amci 
+CFLAGS   += -Wall $(module_cflags)
 
 audio_mod_dir = $(COREPATH)/lib
 
@@ -37,16 +38,16 @@ install: $(lib_name) $(extra_install)
 install-cfg : $(extra_install_cfg)
 
 %.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module
-	$(GCC) -MM $< $(cflags) > $@
+	$(CC) -MM $< $(CPPFLAGS) $(CFLAGS) > $@
 
 %.o: %.c %.d
-	$(GCC) $(cflags) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
 
 $(lib_name): $(objs)  Makefile
-	$(GCC) -o $(lib_name) $(objs) $(ldflags)  
+	$(LD) -o $(lib_name) $(objs) $(LDFLAGS)
 
 ifeq ($(lib_full_name),$(MAKECMDGOALS))
 include $(depends)

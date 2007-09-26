@@ -825,7 +825,7 @@ static AmMutex _s_rand_mut;
 void init_random()
 {
   int seed=0;
-  FILE* fp_rand = fopen("/dev/random","r");
+  FILE* fp_rand = fopen("/dev/urandom","r");
   if(fp_rand){
     fread(&seed,sizeof(int),1,fp_rand);
     fclose(fp_rand);

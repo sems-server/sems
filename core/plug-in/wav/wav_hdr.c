@@ -31,6 +31,28 @@
 #include <string.h>
 #include <sys/types.h>
 
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define bswap_16(A)  ((((u_int16_t)(A) & 0xff00) >> 8) | \
+                   (((u_int16_t)(A) & 0x00ff) << 8))
+#define bswap_32(A)  ((((u_int32_t)(A) & 0xff000000) >> 24) | \
+                   (((u_int32_t)(A) & 0x00ff0000) >> 8)  | \
+                   (((u_int32_t)(A) & 0x0000ff00) << 8)  | \
+                   (((u_int32_t)(A) & 0x000000ff) << 24))
+#define cpu_to_le16(x) bswap_16(x)
+#define le_to_cpu16(x) bswap_16(x)
+#define cpu_to_le32(x) bswap_32(x)
+#define le_to_cpu32(x) bswap_32(x)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define cpu_to_le16(x) (x)
+#define cpu_to_le32(x) (x)
+#define le_to_cpu16(x) (x)
+#define le_to_cpu32(x) (x)
+#else
+#error unknown endianness!
+#endif
+
+
 #define SAFE_READ(buf,s,fp,sr) \
     sr = fread(buf,s,1,fp);\
     if((sr != 1) || ferror(fp)) return -1;
@@ -85,6 +107,7 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
   }
 
   SAFE_READ(&file_size,4,fp,s);
+  file_size=le_to_cpu32(file_size);
   DBG("file size = <%u>\n",file_size);
 
   SAFE_READ(tag,4,fp,s);
@@ -102,21 +125,26 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
   }
     
   SAFE_READ(&chunk_size,4,fp,s);
+  chunk_size=le_to_cpu32(chunk_size);
   DBG("chunk_size = <%u>\n",chunk_size);
     
   SAFE_READ(&fmt,2,fp,s);
+  fmt=le_to_cpu16(fmt);
   DBG("fmt = <%.2x>\n",fmt);
 
   SAFE_READ(&channels,2,fp,s);
+  channels=le_to_cpu16(channels);
   DBG("channels = <%i>\n",channels);
 
   SAFE_READ(&rate,4,fp,s);
+  rate=le_to_cpu32(rate);
   DBG("rate = <%i>\n",rate);
 
   /* do not read bytes/sec and block align */
   fseek(fp,6,SEEK_CUR);
 
   SAFE_READ(&bits_per_sample,2,fp,s);
+  bits_per_sample=le_to_cpu16(bits_per_sample);
   DBG("bits/sample = <%i>\n",bits_per_sample);
 
   fmt_desc->subtype = fmt;
@@ -137,6 +165,7 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     DBG("tag = <%.4s>\n",tag);
 	
     SAFE_READ(&chunk_size,4,fp,s);
+    chunk_size=le_to_cpu32(chunk_size);
     DBG("chunk size = <%i>\n",chunk_size);
 	
     if(!strncmp(tag,"data",4))
@@ -174,26 +203,26 @@ int wav_write_header(FILE* fp, struct amci_file_desc_t* fmt_desc, long h_codec, 
     sample_size = 2;
   }
   memcpy(hdr.magic, "RIFF",4);
-  hdr.length = fmt_desc->data_size + 36;
+  hdr.length = cpu_to_le32(fmt_desc->data_size + 36);
   memcpy(hdr.chunk_type, "WAVE",4);
   memcpy(hdr.chunk_format, "fmt ",4);
-  hdr.chunk_length = 16;
-  hdr.format = fmt_desc->subtype;
-  hdr.channels = (unsigned short)fmt_desc->channels;
-  hdr.sample_rate = (unsigned int)fmt_desc->rate;
-  hdr.sample_size = hdr.channels * sample_size;
-  hdr.bytes_per_second = hdr.sample_rate * (unsigned int)hdr.sample_size;
-  hdr.precision = (unsigned short)(sample_size * 8);
+  hdr.chunk_length = cpu_to_le32(16);
+  hdr.format = cpu_to_le16(fmt_desc->subtype);
+  hdr.channels = cpu_to_le16((unsigned short)fmt_desc->channels);
+  hdr.sample_rate = cpu_to_le32((unsigned int)fmt_desc->rate);
+  hdr.sample_size = cpu_to_le16(hdr.channels * sample_size);
+  hdr.bytes_per_second = cpu_to_le32(hdr.sample_rate * (unsigned int)hdr.sample_size);
+  hdr.precision = cpu_to_le16((unsigned short)(sample_size * 8));
   memcpy(hdr.chunk_data,"data",4);
-  hdr.data_length=fmt_desc->data_size;
+  hdr.data_length=cpu_to_le32(fmt_desc->data_size);
 
   fwrite(&hdr,sizeof(hdr),1,fp);
   if(ferror(fp)) return -1;
 
-  DBG("fmt = <%i>\n",hdr.format);
-  DBG("channels = <%i>\n",hdr.channels);
-  DBG("rate = <%i>\n",hdr.sample_rate);
-  DBG("data_size = <%i>\n",hdr.data_length);
+  DBG("fmt = <%i>\n",le_to_cpu16(hdr.format));
+  DBG("channels = <%i>\n",le_to_cpu16(hdr.channels));
+  DBG("rate = <%i>\n",le_to_cpu32(hdr.sample_rate));
+  DBG("data_size = <%i>\n",le_to_cpu32(hdr.data_length));
 
   return 0;
 }

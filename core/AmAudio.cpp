@@ -690,6 +690,17 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
   int s = fread((void*)((unsigned char*)samples),1,size,fp);
   int ret = (!ferror(fp) ? s : -1);
 
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define bswap_16(A)  ((((u_int16_t)(A) & 0xff00) >> 8) | \
+                   (((u_int16_t)(A) & 0x00ff) << 8))
+  unsigned int i;
+  for(i=0;i<=size/2;i++) {
+      u_int16_t *tmp;
+      ((u_int16_t *)((unsigned char*)samples))[i]=bswap_16(((u_int16_t *)((unsigned char*)samples))[i]);
+  }
+
+#endif
+
   //DBG("s = %i; ret = %i\n",s,ret);
   if(loop.get() && (ret <= 0) && feof(fp)){
 
