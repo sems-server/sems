@@ -7,7 +7,7 @@ EXTRAVERSION =
 
 RELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
-LD_FLAGS = -lm
+LDFLAGS = -lm
 
 OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
 
@@ -21,6 +21,7 @@ ARCH := $(shell $(GETARCH) |sed -e s/i.86/i386/ -e s/sun4u/sparc64/  \
 			-e s/armv4l/arm/ -e "s/Power Macintosh/ppc/" \
 			-e "s/cobalt/mips2/" \
 			-e s/amd64/x86_64/ )
+
 # fix sparc -> sparc64
 ifeq ($(ARCH),sparc)
 	ifeq ($(shell uname -m),sun4u)
@@ -29,52 +30,48 @@ ifeq ($(ARCH),sparc)
 endif
 
 # need OS specific for this ?
-GPP ?= g++
-GCC ?= gcc
+CXX = g++
+CC = gcc
+LD = $(CC)
 
-CXX_FLAGS ?= -Wall -Wno-reorder -fPIC -g \
-	  -O2 \
-	  -D_DEBUG \
+
+CXXFLAGS := -Wall -Wno-reorder -fPIC -g \
+	    -O2 $(EXTRA_CXXFLAGS)
+
+CPPFLAGS += -D_DEBUG \
 	  -D_THREAD_SAFE -D_REENTRANT \
 	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
 	  -DOS='"$(OS)"' 	\
 #         -DOpenSER \
 #	  -DSUPPORT_IPV6
 
-C_FLAGS ?= -Wall -fPIC -g \
-	  -O2 \
-	  -D_DEBUG \
-	  -D_THREAD_SAFE -D_REENTRANT \
-	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
-	  -DOS='"$(OS)"' 	\
-#         -DOpenSER \
-#	  -DSUPPORT_IPV6
+CFLAGS := -Wall -fPIC -g -O2 $(EXTRA_CFLAGS)
 
 ifeq ($(DEBUG_PLAYOUT), yes)
-CXX_FLAGS +=  -DDEBUG_PLAYOUTBUF
+CPPFLAGS +=  -DDEBUG_PLAYOUTBUF
 endif
 
 TARGET =
 ifeq ($(OS), linux)
-	LD_FLAGS +=  -ldl -rdynamic -lpthread
+	LDFLAGS +=  -ldl -rdynamic -lpthread
 else
 ifeq ($(OS), freebsd)
-	LD_FLAGS += -rdynamic -pthread
+	LDFLAGS += -rdynamic -pthread
 else
 ifeq ($(OS), openbsd)
-	LD_FLAGS += -rdynamic -pthread
+	LDFLAGS += -rdynamic -pthread
 else
 ifeq ($(OS), netbsd)
-	LD_FLAGS += -rdynamic -pthread
+	LDFLAGS += -rdynamic -pthread
 else
-	LD_FLAGS+=  -ldl -lsocket -lnsl -lpthread
+	LDFLAGS+= -ldl -lsocket -lnsl -lpthread
 	TARGET=solaris
 endif
 endif
 endif
 endif
 
-LIB_LD_FLAGS = $(LD_FLAGS) -shared
+LIB_LDFLAGS = $(LDFLAGS) -shared
 
 # install path is $(basedir) $(prefix) 
 # example:
