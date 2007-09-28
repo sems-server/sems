@@ -101,6 +101,7 @@ ser-0.9.6-sems:	ser-0.9.6-sems_src.tar.gz
 
 .PHONY: bundle
 bundle: ser-0.9.6-sems tar
+	mv "$(NAME)-$(RELEASE)".tar.gz "$(NAME)-$(RELEASE)"-bundle.tar.gz
 
 .PHONY: doc
 doc:
