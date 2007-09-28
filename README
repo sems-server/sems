@@ -177,7 +177,10 @@ Installation:
  6. Using SEMS
     
     SEMS needs to be told from the many possible applications that are
-    loaded which one to run. One method is to append a header 
+    loaded which one to run. You can simply set default_application 
+    in sems.conf.
+
+    Another method is to append a header 
      P-App-Name: <app name>
     to the INVITE, for example 
      P-App-Name: conference
