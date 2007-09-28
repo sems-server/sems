@@ -34,6 +34,8 @@
 
 #define REGISTER_SEND_TIMEOUT 60 
 
+#include <unistd.h>
+
 EXPORT_SIP_EVENT_HANDLER_FACTORY(SIPRegistrarClient, MOD_NAME);
 EXPORT_PLUGIN_CLASS_FACTORY(SIPRegistrarClient, MOD_NAME);
 
