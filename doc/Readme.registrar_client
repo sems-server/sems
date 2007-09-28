@@ -4,7 +4,7 @@ This component registers on behalf of some application at a
 SIP registrar. Registrations are refreshed until they are 
 explicitely removed via "removeRegistration". 
 
-It is invoked via DI API.
+It is invoked via DI API, or used by the reg_agent module.
 
 API functions: 
 =============

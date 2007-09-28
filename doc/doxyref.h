@@ -164,6 +164,13 @@
  *
  * <ul><li> \ref ModuleDoc_py_sems  </li></ul>
  * 
+ * \section Registering SEMS at a SIP registrar
+ * 
+ * The <i>reg_agent</i> module together with the <i>registar_client</i> module
+ * can be used to register at a SIP registrar.
+ * 
+ * <ul><li> \ref ModuleDoc_reg_agent  </li></ul>
+ * <ul><li> \ref ModuleDoc_registrar_client  </li></ul>
  */
 
 /*! \page AppDocExample Example Applications
@@ -317,6 +324,22 @@
 /*! \page ModuleDoc_py_sems Module Documentation: py_sems Application 
  *  \section Readme_py_sems Readme file
  *  \verbinclude Readme.py_sems
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_reg_agent Module Documentation: reg_agent Application 
+ *  \section Readme_reg_agent Readme file
+ *  \verbinclude Readme.reg_agent
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_registrar_client Module Documentation: registrar_client Application 
+ *  \section Readme_registrar_client Readme file
+ *  \verbinclude Readme.registrar_client
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
