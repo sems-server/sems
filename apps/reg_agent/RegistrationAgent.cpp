@@ -28,11 +28,12 @@
 #include "RegistrationAgent.h"
 #include "AmConfig.h"
 #include "AmUtils.h"
+#include "AmPlugIn.h"
 
 #include "sems.h"
 #include "log.h"
 
-#include "AmPlugIn.h"
+#include <unistd.h>
 
 #define MOD_NAME "reg_agent"
 
