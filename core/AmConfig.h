@@ -88,6 +88,10 @@ struct AmConfig
   /** If 200 OK reply should be limited to preferred codec only */
   static bool SingleCodecInOK;
   static vector <string> CodecOrder;
+  
+  /** this application is executed on incoming calls if there is no 
+   * app/P-App-Name header present */ 
+  static string DefaultApplication;
 
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
    static unsigned int DeadRtpTime;

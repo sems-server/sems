@@ -37,6 +37,14 @@ stderr=no
 #   (same as -D)
 loglevel=2
 
+# optional parameter: default_application
+# - this application is executed if the application is 
+#   not explicitely set with P-App-Name header/appname 
+#   parameter of unix command.
+#   
+# example:
+# default_application = conference
+
 # optional parameter: socket_name=<filename>
 #
 # - path and file name of our unix socket

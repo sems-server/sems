@@ -256,6 +256,7 @@ int main(int argc, char* argv[])
 	  "       plug-in path:        %s\n"
 	  "       daemon mode:         %i\n"
 	  "       local IP:            %s\n"
+	  "       default application: %s\n"
 	  "\n",
 	  AmConfig::ConfigurationFile.c_str(),
 	  AmConfig::SerSocketName.c_str(),
@@ -263,7 +264,9 @@ int main(int argc, char* argv[])
 	  AmConfig::ReplySocketName.c_str(),
 	  AmConfig::PlugInPath.c_str(),
 	  AmConfig::DaemonMode,
-	  AmConfig::LocalIP.c_str()
+	  AmConfig::LocalIP.c_str(),
+	  AmConfig::DefaultApplication.empty()?
+	  "<not set>":AmConfig::DefaultApplication.c_str()
 	  );
 
   if(AmConfig::DaemonMode){

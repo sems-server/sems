@@ -59,6 +59,7 @@ string       AmConfig::Signature               = "";
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
 bool         AmConfig::IgnoreRTPXHdrs          = false;
+string       AmConfig::DefaultApplication      = "";
 
 vector <string> AmConfig::CodecOrder;
 
@@ -209,6 +210,8 @@ int AmConfig::readConfiguration()
       return -1;
     }
   }
+
+  DefaultApplication  = cfg.getParameter("default_application");
 
   // fork 
   if(cfg.hasParameter("fork")){
