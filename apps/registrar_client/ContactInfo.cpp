@@ -67,12 +67,11 @@ static inline int skip_name(string& s, unsigned int pos)
   }
 
   if (quoted) {
-    cout << "ERROR" << "skip_name(): Closing quote missing in name part of Contact\n";
-  } else {
-    cout << "ERROR" << "skip_name(): Error in contact, scheme separator not found\n";
-  }
+    ERROR("skip_name(): Closing quote missing in name part of Contact\n");
+    return -1;
+  } 
 
-  return -1;
+  return pos; // no name to skip
 }
 
 #define ST1 1 /* Basic state */
@@ -115,7 +114,7 @@ static inline int skip_uri(string& s, unsigned int pos)
       switch(st) {
       case ST1: st = ST3; break;
       case ST3: 
-	cout << "ERROR" << "skip_uri(): Second < found\n";
+	DBG("ERROR skip_uri(): Second < found\n");
 	return -1;
       case ST5: st = ST2; break;
       case ST6: st = ST4; break;
@@ -125,7 +124,7 @@ static inline int skip_uri(string& s, unsigned int pos)
     case '>':
       switch(st) {
       case ST1: 
-	cout << "ERROR" << "skip_uri(): > is first\n";
+	DBG("ERROR skip_uri(): > is first\n");
 	return -2;
 
       case ST3: st = ST1; break;
@@ -152,19 +151,22 @@ static inline int skip_uri(string& s, unsigned int pos)
   }
 
   if (st != ST1) {
-    cout << "ERROR" << "skip_uri(): < or \" not closed\n"; 
+    DBG("ERROR skip_uri(): < or \" not closed\n"); 
     return -3;
   }
   return p;
 }
 
-#define    uS0 0 // start
-#define	   uS1 1 // protocol
-#define	   uS2 2 // user / host
-#define	   uS3 3 // host
-#define	   uS4 4 // port
-#define    uS5 5 // params 
-#define    uS6 6 // end
+#define    uS0 0    // start
+#define	   uS1 1    // protocol
+#define	   uS2 2    // user / host
+#define	   uS3 3    // host
+#define    uS3WSP 4 // wsp after host
+#define	   uS4 5    // port
+#define    uS4WSP 6 // wsp after port
+#define    uS5 7    // params 
+#define    uS5WSP 8 // wsp after params
+#define    uS6 9    // end
 /**
  * parse uri into user, host, port, param
  *
@@ -178,6 +180,7 @@ bool ContactInfo::parse_uri() {
 	
   while (pos<uri.length()) {
     char c = uri[pos];
+    //    DBG("(1) c = %c, st = %d\n", c, st);
     switch(st) {
     case uS0: {
       switch (c) {
@@ -185,7 +188,7 @@ bool ContactInfo::parse_uri() {
       default: { 
 	if ((eq<=4)&&(toupper(c) ==sip_prot[eq])) 
 	  eq++; 
-	if (eq==5) { // found sip:
+	if (eq==4) { // found sip:
 	  st = uS2; p1 = pos;
 	};
       } break;
@@ -217,23 +220,49 @@ bool ContactInfo::parse_uri() {
     case uS3: {
       switch (c) {
       case ':': { uri_host = uri.substr(p1+1, pos-p1-1); 
-      st = uS4; p1 = pos; } 
+	  st = uS4; p1 = pos; } 
 	break;
       case ';': { uri_host = uri.substr(p1+1, pos-p1-1);
-      st = uS5; p1 = pos; } 
+	  st = uS5; p1 = pos; } 
 	break;
       case '>': { uri_host = uri.substr(p1+1, pos-p1-1); 
-      st = uS6; p1 = pos; } 
+	  st = uS6; p1 = pos; } 
+	break;
+      case ' ': 
+      case '\t': { uri_host = uri.substr(p1+1, pos-p1-1); 
+	  st = uS3WSP; p1 = pos; } 
 	break;
       };
     } break;
+    case uS3WSP: {
+      switch (c) {
+      case ':': { st = uS4; p1 = pos; } 
+	break;
+      case ';': { st = uS5; p1 = pos; } 
+	break;
+      case '>': { st = uS6; p1 = pos; } 
+    }
     case uS4: {
       switch (c) {
       case ';': { uri_port = uri.substr(p1+1, pos-p1-1); 
-      st = uS5; p1 = pos; } 
+	  st = uS5; p1 = pos; } 
 	break;
       case '>': { uri_port = uri.substr(p1+1, pos-p1-1); 
-      st = uS6; p1 = pos; } 
+	  st = uS6; p1 = pos; } 
+	break;
+      };
+      case ' ': 
+      case '\t': 
+	{ uri_port = uri.substr(p1+1, pos-p1-1); 
+	  st = uS4WSP; p1 = pos; } 
+	break;
+      };
+    } break;
+    case uS4WSP: {
+      switch (c) {
+      case ';': { st = uS5; p1 = pos; } 
+	break;
+      case '>': { st = uS6; p1 = pos; } 
 	break;
       };
     } break;
@@ -242,9 +271,18 @@ bool ContactInfo::parse_uri() {
       case '>': { uri_param = uri.substr(p1+1, pos-p1-1);
       st = uS6; p1 = pos; } 
 	break;
+      case ' ': { uri_param = uri.substr(p1+1, pos-p1-1);
+      st = uS5WSP; p1 = pos; } 
+	break;      };
+    } break; 
+    case uS5WSP: {
+      switch (c) {
+      case '>': { st = uS6; p1 = pos; } 
+	break;
       };
     } break; 
     };
+    //    DBG("(2) c = %c, st = %d\n", c, st);
     pos++;
   }
   switch(st) {
@@ -253,7 +291,7 @@ bool ContactInfo::parse_uri() {
   case uS4: uri_port = uri.substr(p1+1, pos-p1-1); break;
   case uS5: uri_param = uri.substr(p1+1, pos-p1-1); break;
   case uS0:
-  case uS1: { cout << "ERROR while parsing uri"; return false; } break;
+  case uS1: { DBG("ERROR while parsing uri"); return false; } break;
   };
   return true;
 }
@@ -314,11 +352,12 @@ bool ContactInfo::parse_params(string& line, int& pos) {
 
 bool ContactInfo::parse_contact(string& line, size_t pos, size_t& end) {
   int p0 = skip_name(line, pos);
-  if (p0 < 0) return false;
+  if (p0 < 0) { return false; }
   int p1 = skip_uri(line, p0);
-  if (p1 < 0) return false;
+  if (p1 < 0) { return false; }
+  //  if (p1 < 0) return false;
   uri = line.substr(p0, p1-p0);
-  if (!parse_uri()) return false;
+  if (!parse_uri()) { return false; }
   parse_params(line, p1);
   end = p1;
   return true;

@@ -48,19 +48,19 @@ struct SIPRegistrationInfo {
   string name;
   string auth_user;
   string pwd;
-SIPRegistrationInfo(const string& domain,
-		    const string& user,
-		    const string& name,
-		    const string& auth_user,
-		    const string& pwd)
-: domain(domain),user(user),name(name),
-    auth_user(auth_user),pwd(pwd)
+  SIPRegistrationInfo(const string& domain,
+		      const string& user,
+		      const string& name,
+		      const string& auth_user,
+		      const string& pwd)
+    : domain(domain),user(user),name(name),
+       auth_user(auth_user),pwd(pwd)
   { }
 };
 
 class SIPRegistration : public AmSipDialogEventHandler,
-  public DialogControl,
-  public CredentialHolder
+			public DialogControl,
+			public CredentialHolder
 	
 {
 	
@@ -141,11 +141,11 @@ class SIPNewRegistrationEvent;
 class SIPRemoveRegistrationEvent;
 
 class SIPRegistrarClient  : public AmSIPEventHandler,
-  public AmThread,
-  public AmEventQueue,
-  public AmEventHandler,
-  public AmDynInvoke,
-  public AmDynInvokeFactory
+			    public AmThread,
+			    public AmEventQueue,
+			    public AmEventHandler,
+			    public AmDynInvoke,
+			    public AmDynInvokeFactory
 {
   // registrations container
   AmMutex                       reg_mut;
@@ -208,11 +208,11 @@ class SIPRegistrarClient  : public AmSIPEventHandler,
 
 struct SIPNewRegistrationEvent : public AmEvent {
  
- SIPNewRegistrationEvent(const SIPRegistrationInfo& info,
-			 const string& handle, 
-			 const string& sess_link)
-   : info(info), handle(handle), sess_link(sess_link), 
-    AmEvent(SIPRegistrarClient::AddRegistration) { }
+  SIPNewRegistrationEvent(const SIPRegistrationInfo& info,
+			  const string& handle, 
+			  const string& sess_link)
+    : info(info), handle(handle), sess_link(sess_link), 
+       AmEvent(SIPRegistrarClient::AddRegistration) { }
 
 
   string handle;
@@ -223,8 +223,8 @@ struct SIPNewRegistrationEvent : public AmEvent {
 class SIPRemoveRegistrationEvent : public AmEvent {
  public:
   string handle;
- SIPRemoveRegistrationEvent(const string& handle) 
-   : handle(handle), 
+  SIPRemoveRegistrationEvent(const string& handle) 
+    : handle(handle), 
     AmEvent(SIPRegistrarClient::RemoveRegistration) { }
 };
 

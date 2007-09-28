@@ -91,8 +91,13 @@ void SIPRegistration::doRegistration() {
   dlg.remote_tag = "";
   req.r_uri    = "sip:"+info.domain;
   dlg.remote_uri = req.r_uri;
-  dlg.next_hop = "";
-  dlg.sendRequest(req.method, "", "", "Expires: 1000\n");
+  // set outbound proxy as next hop 
+//   if (!AmConfig::OutboundProxy.empty()) 
+//     dlg.next_hop = AmConfig::OutboundProxy;
+//   else 
+//     dlg.next_hop = "";
+
+  dlg.sendRequest(req.method, "", "", "Expires: 240\n");
 
   // save TS
   struct timeval now;
@@ -106,7 +111,11 @@ void SIPRegistration::doUnregister() {
   dlg.remote_tag = "";
   req.r_uri    = "sip:"+info.domain;
   dlg.remote_uri = req.r_uri;
-  dlg.next_hop = "";
+  // set outbound proxy as next hop 
+//   if (!AmConfig::OutboundProxy.empty()) 
+//     dlg.next_hop = AmConfig::OutboundProxy;
+//   else 
+//     dlg.next_hop = "";
   dlg.sendRequest(req.method, "", "", "Expires: 0\n");
 
   // save TS
@@ -208,6 +217,7 @@ void SIPRegistration::onRegisterExpired() {
 								       req.from_tag));
   }
   DBG("Registration '%s' expired.\n", (info.user+"@"+info.domain).c_str());
+  active = false;
   remove = true;
 }
 
@@ -219,6 +229,7 @@ void SIPRegistration::onRegisterSendTimeout() {
   }
   DBG("Registration '%s' REGISTER request timeout.\n", 
       (info.user+"@"+info.domain).c_str());
+  active = false;
   remove = true;
 }
 
@@ -301,7 +312,7 @@ bool SIPRegistration::registerSendTimeout(time_t now_sec) {
 bool SIPRegistration::timeToReregister(time_t now_sec) {
   //   	if (active) 
   //   		DBG("compare %lu with %lu\n",(reg_begin+reg_expires), (unsigned long)now_sec);
-  return (((unsigned long)reg_begin+reg_expires/2) < (unsigned long)now_sec);	
+  return (((unsigned long)reg_begin+ reg_expires/2) < (unsigned long)now_sec);	
 }
 
 bool SIPRegistration::registerExpired(time_t now_sec) {
