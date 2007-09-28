@@ -14,7 +14,21 @@ COREPATH ?=../../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 $(XMLRPCPP_DIR)/libXmlRpc.a: 
-		$(MAKE) -C $(XMLRPCPP_DIR) libXmlRpc.a
+	$(MAKE) -C $(XMLRPCPP_DIR) libXmlRpc.a
 
 clean_libxmlrpc: 
-		$(MAKE) -C $(XMLRPCPP_DIR) clean
+	@if [ -d $(XMLRPCPP_DIR) ]; \
+		then $(MAKE) -C $(XMLRPCPP_DIR) clean; \
+	fi
+
+install-xmlrpcpp: xmlrpc++0.7 xmlrpc++0.7/.sems_patched
+
+xmlrpc++0.7/.sems_patched: xmlrpc++0.7
+	patch -p0 < xmlrpcpp07_sems.patch
+
+xmlrpc++0.7: xmlrpc++0.7.tar.gz
+	$(TAR) xzvf xmlrpc++0.7.tar.gz
+
+xmlrpc++0.7.tar.gz:
+	wget http://switch.dl.sourceforge.net/sourceforge/xmlrpcpp/xmlrpc++0.7.tar.gz
+
