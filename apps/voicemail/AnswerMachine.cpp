@@ -70,6 +70,7 @@ AnswerMachineFactory::AnswerMachineFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
 {}
 
+string AnswerMachineFactory::EmailAddress;
 string AnswerMachineFactory::RecFileExt;
 string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
@@ -391,6 +392,7 @@ int AnswerMachineFactory::onLoad()
     return -1;
   }
 
+  EmailAddress = cfg.getParameter("email_address");
   return 0;
 }
 
@@ -401,18 +403,22 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 
   string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
 
-  if (iptel_app_param.length()) {
-    language = get_header_keyvalue(iptel_app_param,"Language");
-    email = get_header_keyvalue(iptel_app_param,"Email-Address");
-  } else {      
-    email = getHeader(req.hdrs,"P-Email-Address");
-    language = getHeader(req.hdrs,"P-Language"); // local user's language
-
-    if (email.length()) {
-      INFO("Use of P-Email-Address/P-Language is deprecated. \n");
-      INFO("Use '%s: Email-Address=<addr>;"
-	   "Language=<lang>' instead.\n",PARAM_HDR);
+  if (!EmailAddress.length()) {
+    if (iptel_app_param.length()) {
+      language = get_header_keyvalue(iptel_app_param,"Language");
+      email = get_header_keyvalue(iptel_app_param,"Email-Address");
+    } else {      
+      email = getHeader(req.hdrs,"P-Email-Address");
+      language = getHeader(req.hdrs,"P-Language"); // local user's language
+      
+      if (email.length()) {
+	INFO("Use of P-Email-Address/P-Language is deprecated. \n");
+	INFO("Use '%s: Email-Address=<addr>;"
+	     "Language=<lang>' instead.\n",PARAM_HDR);
+      }
     }
+  } else {
+    email = EmailAddress;
   }
 
   DBG("email address for user '%s': <%s> \n",

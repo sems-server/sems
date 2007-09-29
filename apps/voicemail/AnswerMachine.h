@@ -57,6 +57,7 @@ class AnswerMachineFactory: public AmSessionFactory
 #endif
 
 public:
+  static string EmailAddress;
   static string RecFileExt;
   static string AnnouncePath;
   static string DefaultAnnounce;
