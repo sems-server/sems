@@ -24,7 +24,9 @@ clean_libxmlrpc:
 install-xmlrpcpp: xmlrpc++0.7 xmlrpc++0.7/.sems_patched
 
 xmlrpc++0.7/.sems_patched: xmlrpc++0.7
-	patch -p0 < xmlrpcpp07_sems.patch
+	if ![ -f xmlrpc++0.7/.sems_patched ]; \
+	 then  patch -p0 < xmlrpcpp07_sems.patch; \
+	fi
 	touch xmlrpc++0.7/.sems_patched
 
 xmlrpc++0.7: xmlrpc++0.7.tar.gz
