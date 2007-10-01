@@ -26,7 +26,8 @@ Usually the best is to have one SER instance which acts only as SIP stack
 for Sems. This SER could e.g. be listening on port 5070 for SIP messages.
 If in the home proxy (or any other place) a new INVITE should be sent to Sems, 
 e.g. into a conference, the home proxy just relays the INVITE to the media server 
-on port 5070.
+on port 5070. An example ser-sems.cfg file for this type of configuration
+can be found in core/etc/ser-sems.cfg.
 
 For each version of Sems there is a recommended version of SER to run it with. Thus 
 it might be necessary to run two different versions of SER on the same machine. The 
@@ -101,6 +102,10 @@ t_write_unix.
     modparam("tm", "pass_provisional_replies", 1)
 
 2.2.3 Redirecting SIP messages to Sems:
+
+In this example it is assumed that different applications should be executed
+when different LHS part of the URI are called, for example, 100 should be 
+redirected to conference, 200 to announcement etc.
 
     - add following lines to your ser.cfg where you need to redirect the call:
 
@@ -230,13 +235,15 @@ modparam("tm", "tw_append",
 
 
 This assumes that there is a column 'id', a column 'username', a column 'email_address' and a
-column 'language' in the table named 'subscriber'. dbtext sample file:
+column 'language' in the table named 'subscriber'. dbtext sample file would be:
 ----- subscriber  --------------------------------
 id(int,auto) username(str,null) domain(str,null) email_address(str,null) language(str,null)
 1:Alice:iptel.org:alice@mymail.org:english
 2:rco:iptel.org:rco@iptel.org:french
 3:Alex:iptel.org:alex@iptel.org:german
 ----- subsciber end ------------------------------
+
+AVPs for email and language may also be loaded from e.g. raduis.
 
 2.4 Passing SIP INFO messages to SEMS for DTMF 
 
@@ -276,4 +283,103 @@ modparam("tm", "tw_append",
    };
    break;
 
+
+3. Example real-life voicemail config
+
+This would be a real-life config example for voicemail with email address and 
+language loading from radius, and NAT handling. 
+
+
+modparam("tm", "tw_append", "vm_avps:P-Email-Address=$avp(CALLEE_EMAIL_AVP);P-Language=$avp(CALLEE_LANGUAGE_AVP)")
+
+...
+
+if (method == "INVITE") {
+	if (!t_newtran()) {
+		xlog("L_ERR", "Could not create new transaction for <$rm> to <$ru>\n");
+		sl_send_reply("500","Could not create new transaction");
+		exit;
+	};
+	t_reply("100", "Trying -- just wait a minute!");
+	if (isflagset(FROM_NATED)) {
+		fix_nated_contact();
+		fix_nated_sdp("1");  # add direction=active
+	};
+	if (isflagset(VOICEMAIL)) {
+		avp_load_radius("callee");
+		if (!is_avp_set("$avp(CALLEE_EMAIL_AVP)")) {
+			xlog("L_ERR", "Callee <$ru> email address not found\n");
+			t_reply("404", "Not found");
+			exit;
+		};
+		if(!t_write_unix("/tmp/sems_sock","voicemail/vm_avps")) {
+	        	xlog("L_ERR", "Could not contact Voicemail Server for <$ru>\n");
+			t_reply("500","Could not contact Voicemail Server");
+			exit;
+		};
+		xlog("L_INFO", "Relayed $rm <$ru> by <$fu> to Voicemail Server\n");
+		exit;
+	};
+};
+
+...
+
+# In-dialog requests
+if (has_totag()) {
+	loose_route();
+	if (isflagset(FROM_NATED)) {
+		fix_nated_contact();
+	};
+	if ((method == "ACK") && (uri != myself)) {
+		route(FIND_SERVICE);
+		switch ($retcode) {
+		    case -1:
+			xlog("L_ALERT", "Transit is not allowed to <$ru>\n");
+			sl_send_reply("403", "Forbidden - Transit is not allowed");
+			exit;
+		    default:
+		};
+		if (!is_uri_host_local()) {
+			xlog("L_ALERT", "Transit is not allowed to <$ru>\n");
+			sl_send_reply("403", "Forbidden - Transit is not allowed");
+			exit;
+		};
+		# negative ack
+		t_relay();
+		exit;
+	};
+	if (uri != myself) {
+		xlog("L_ALERT", "Transit is not allowed to <$ru>\n");
+		sl_send_reply("403", "Forbidden - Transit is not allowed");
+		exit;
+	};
+	# Relay in-dialog request
+	if (method =~ "(ACK|INVITE|BYE)") {
+		if (!t_newtran()) {
+			xlog("L_ERR", "Could not create new transaction\n");
+			sl_send_reply("500","Could not create new transaction");
+			exit;
+		};
+		if (method == "INVITE") {
+			if (isflagset(FROM_NATED)) fix_nated_sdp("1");
+			if(!t_write_unix("/tmp/sems_sock","invite")) {
+		    	    	xlog("L_ERR", "Could not contact answer machine\n");
+				t_reply("500","Could not contact Answer Machine");
+			};
+			exit;
+		};
+		if (method == "ACK") {
+			t_relay();
+			xlog("L_INFO", "Relayed in-dialog ACK to <$ru>\n");
+			exit;
+		};
+		if (method=="BYE") {
+			if(!t_write_unix("/tmp/sems_sock","bye")) {
+        		xlog("L_ERR", "Could not contact answer machine\n");
+				t_reply("500","Could not contact Answer Machine");
+			};	
+			xlog("L_INFO", "Relayed in-dialog BYE to <$ru>\n");
+			exit;
+		};
+	};
 
