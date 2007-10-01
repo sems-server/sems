@@ -20,7 +20,7 @@ Introduction:
  blocks of more complex applications, or, using its powerful 
  framework for application development including back-to-back 
  user agent (B2BUA) functionality, complex VoIP services
- can be realized completely in SEMS.
+ can be realized completely in SEMS. 
  
  The following applications are shipped with SEMS :
 
@@ -80,6 +80,14 @@ Introduction:
  all important patent free codecs out of the box (g711u, g711a, 
  GSM06.10 and iLBC). Integrating other codecs in SEMS
  is very simple.
+
+ SEMS shows very good performance on current standard
+ PC architecture based server systems. It has sucessfully
+ been run with 1200 G.711 conference channels on a quad-core
+ Intel(R) Xeon at 2GHz (700 GSM, 280 iLBC channels). On the 
+ other hand it also runs on very small devices - for example 
+ small embedded systems like routers running OpenWRT, for which 
+ of course the achievable channel count is not that high.
 
 Requirements:
 

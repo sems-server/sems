@@ -12,7 +12,7 @@ Version 0.10.0 (final)
    interfacing to external applications 
 
  - many examples for quick start of custom service development, 
-   for example new serviceline application
+   for example new serviceline (auto-attendant) application
 
  - b2bua implementation with media relay
  
@@ -41,6 +41,8 @@ Version 0.10.0 (final)
  - substantially improved documentation 
 
  - 'bundle' install method for easy installation
+
+ - support for OpenWRT package build
 
  ... and many bugfixes
 
