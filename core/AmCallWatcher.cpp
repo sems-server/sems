@@ -128,7 +128,7 @@ void AmCallWatcher::process(AmEvent* ev) {
       soft_states_mut.unlock();
       
       DBG("moved call state '%s' to soft-state map (%u states, %u soft-states)\n", 
-	  csu->get_call_id().c_str(), s_size, soft_size);      
+	  csu->get_call_id().c_str(), (unsigned int) s_size, (unsigned int)soft_size);      
       
     } else {      
       DBG("received obsolete event for inexistent call '%s'\n", 
@@ -169,7 +169,7 @@ CallStatus* AmCallWatcher::getStatus(const string& call_id) {
       res = it->second.first;
       soft_states.erase(it);
       DBG("erased call state '%s' (%u in list).\n",
-	  call_id.c_str(), soft_states.size());
+	  call_id.c_str(), (unsigned int)soft_states.size());
     } else {
       DBG("state for call '%s' not found.\n",
 	  call_id.c_str());
@@ -198,7 +198,7 @@ void AmCallWatcherGarbageCollector::run() {
     }
     if (erased){
       DBG("cleared old soft-states (%u soft-states remaining)\n", 
-	  garbage.size());      
+	  (unsigned int)garbage.size());      
     }
     mut.unlock();
   }
