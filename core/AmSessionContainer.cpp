@@ -195,7 +195,7 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
       }
       session->start();
 
-      addSession_unsafe(req.callid,req.from_tag,req.from_tag,session);
+      addSession_unsafe(req.callid,"",req.from_tag,session);
       // session does not get its own INVITE
       //      session->postEvent(new AmSipRequestEvent(req)); 
     }
@@ -376,7 +376,9 @@ bool AmSessionContainer::addSession_unsafe(const string& callid,
   if(getSession(callid,remote_tag))
     return false;
 
-  as_id_lookup[callid+remote_tag] = local_tag;
+  if (!remote_tag.empty())
+    as_id_lookup[callid+remote_tag] = local_tag;
+
   return addSession_unsafe(local_tag,session);
 }
 
