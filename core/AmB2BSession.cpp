@@ -94,16 +94,21 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
       if(reply_ev->forward){
 
 	map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply_ev->reply.cseq);
-	relaySip(t_req->second,reply_ev->reply);
+	if (t_req != recvd_req.end()) {
+	  relaySip(t_req->second,reply_ev->reply);
 		
-	if(reply_ev->reply.code >= 200){
+	  if(reply_ev->reply.code >= 200){
 
-	  if( (t_req->second.method == "INVITE") &&
-	      (reply_ev->reply.code == 487)){
-
-	    terminateLeg();
-	  }
-	  recvd_req.erase(t_req);
+	    if( (t_req->second.method == "INVITE") &&
+		(reply_ev->reply.code == 487)){
+	      
+	      terminateLeg();
+	    }
+	    recvd_req.erase(t_req);
+	  } 
+	} else {
+	  ERROR("Request with CSeq %u not found in recvd_req.\n",
+	      reply_ev->reply.cseq);
 	}
       }
     }
@@ -140,7 +145,6 @@ void AmB2BSession::onSipReply(const AmSipReply& reply)
 
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   if(fwd) {
-
     AmSipReply n_reply = reply;
     n_reply.cseq = t->second.cseq;
     
@@ -249,9 +253,11 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
       else if(reply.code < 300){
 
 	callee_status  = Connected;
-	sip_relay_only = true;
-		
-	reinviteCaller(reply);
+
+	if (!sip_relay_only) {
+	  sip_relay_only = true;		
+	  reinviteCaller(reply);
+	}
       }
       else {
 	//DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
@@ -295,7 +301,8 @@ void AmB2BCallerSession::onSessionStart(const AmSipRequest& req)
 }
 
 void AmB2BCallerSession::connectCallee(const string& remote_party,
-				       const string& remote_uri)
+				       const string& remote_uri,
+				       bool relayed_invite)
 {
   if(callee_status != None)
     terminateOtherLeg();
@@ -305,6 +312,8 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
   ev->content_type = "application/sdp"; // FIXME
   ev->body         = invite_req.body;
   ev->hdrs         = invite_req.hdrs;
+  ev->relayed_invite = relayed_invite;
+  ev->r_cseq       = invite_req.cseq;
 
   relayEvent(ev);
   callee_status = NoReply;
@@ -349,6 +358,10 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 
     dlg.remote_party = co_ev->remote_party;
     dlg.remote_uri   = co_ev->remote_uri;
+
+    if (co_ev->relayed_invite) {
+      relayed_req[dlg.cseq] = AmSipTransaction("INVITE", co_ev->r_cseq);
+    }
 
     dlg.sendRequest("INVITE",co_ev->content_type,co_ev->body,co_ev->hdrs);
 

@@ -87,6 +87,9 @@ struct B2BConnectEvent: public B2BEvent
   string content_type;
   string body;
   string hdrs;
+  
+  bool relayed_invite;
+  unsigned int r_cseq;
 
   B2BConnectEvent(const string& remote_party,
 		  const string& remote_uri)
@@ -179,12 +182,15 @@ class AmB2BCallerSession: public AmB2BSession
   // Callee Status
   CalleeStatus callee_status;
 
-  void relayEvent(AmEvent* ev);
-  virtual void createCalleeSession();
+  
+  
   int  reinviteCaller(const AmSipReply& callee_reply);
 
  protected:
   AmSipRequest invite_req;
+  virtual void createCalleeSession();
+  void relayEvent(AmEvent* ev);
+
  public:
   AmB2BCallerSession();
     
@@ -193,7 +199,8 @@ class AmB2BCallerSession: public AmB2BSession
   virtual AmB2BCalleeSession* newCalleeSession();
 
   void connectCallee(const string& remote_party,
-		     const string& remote_uri);
+		     const string& remote_uri,
+		     bool relayed_invite = false);
 
   const AmSipRequest& getOriginalRequest() { return invite_req; }
 
