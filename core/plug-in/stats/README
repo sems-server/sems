@@ -12,8 +12,9 @@ of active calls is available.
 Using sample program:
 
 1. compile query_stats.c with: 
-     gcc -o query_stats query_stats.c
+     g++ -o query_stats query_stats.c
 
 2. use:
-     ./query_stats m.y.i.p port
+     ./query_stats -s m.y.i.p -p port
+
 

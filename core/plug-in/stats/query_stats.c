@@ -21,7 +21,7 @@ void print_usage(const char * progname)
 	  "\n"
 	  "where <options>: \n"
 	  " -s <server>  : server name|ip (default: 127.0.0.1)\n"
-	  " -p <port>    : server port (default: 50040)\n"
+	  " -p <port>    : server port (default: 5040)\n"
 	  " -c <cmd>     : command (default: calls)\n"
 	  "\n"
 	  "Tips: \n"
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
   }
 
   string server="127.0.0.1";
-  string port="50040";
+  string port="5040";
   string cmd="calls";
 
   for(map<char,string>::iterator it = args.begin(); 
