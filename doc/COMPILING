@@ -37,13 +37,13 @@ Defines and Variables
 +-------------+-------------+---------------------------------------+
 |  Variable   |  Default    | Comment                               |     
 +-------------+-------------+---------------------------------------+
- GPP             g++           C++ compiler 
- GCC             gcc           C compiler 
+ CXX             g++           C++ compiler 
+ CC              gcc           C compiler 
  INSTALL         install       
  TAR             tar           
 
- CXX_FLAGS       ...           C++ compiler  
- C_FLAGS         ...           C compiler 
+ CXXFLAGS        ...           C++ compiler  flags
+ C FLAGS         ...           C compiler flags
 
  BASEDIR         <empty>       destination base 
  DESTDIR/PREFIX  /usr/local    destination prefix 
