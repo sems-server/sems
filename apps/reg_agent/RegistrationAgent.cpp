@@ -180,7 +180,7 @@ void RegThread::run() {
 	 it != registrations.end(); it++) {
       if (!check_registration(*it)) {
 	DBG("Registration %d does not exist or timeout. Creating registration.\n",
-	    it - registrations.begin());
+	    (int)(it - registrations.begin()));
 	create_registration(*it);
       }
     }

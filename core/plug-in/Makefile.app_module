@@ -42,8 +42,10 @@ deps: $(depends) $(extra_depends)
 .PHONY: install
 install: all $(extra_install)
 	mkdir -p $(modules-prefix)/$(modules-dir)
-	$(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$(lib_name) ; \
-	$(INSTALL-MODULES) $(lib_name) $(modules-prefix)/$(modules-dir)
+	if [ -f "$(lib_name)" ]; then \
+	 $(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$(lib_name) ; \
+	 $(INSTALL-MODULES) $(lib_name) $(modules-prefix)/$(modules-dir); \
+	fi
 
 .PHONY: install-cfg
 install-cfg: 
