@@ -1,5 +1,7 @@
 
 Changelog for SEMS 
+ - support for extra headers in dialout sessions
+
  - support for setting the URI of a session in SDP
 
  - early media receiving example

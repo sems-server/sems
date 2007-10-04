@@ -38,6 +38,7 @@ AmSession* AmUAC::dialout(const string& user,
 			  const string& from_uri,
 			  const string& to,
 			  const string& local_tag,
+			  const string& hdrs,
 			  AmArg*  session_params) {
  
   AmSipRequest req;
@@ -56,6 +57,7 @@ AmSession* AmUAC::dialout(const string& user,
   req.to       = to;
   req.to_tag   = "";
   req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
+  req.hdrs     = hdrs;
     
   // set outbound proxy as next hop 
   if (!AmConfig::OutboundProxy.empty()) 

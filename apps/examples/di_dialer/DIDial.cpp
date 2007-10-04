@@ -162,6 +162,7 @@ string DIDial::dialout_auth(const string& application,
   AmSession* s = AmUAC::dialout(user.c_str(), application,  to,  
 				"<" + from +  ">", from, "<" + to + ">", 
 				string(""), // callid
+				string(""), // xtra hdrs
 				a);
   if (s)
     return s->getLocalTag();
@@ -191,6 +192,7 @@ string DIDial::dialout_pin(const string& application,
 				  "sip:"+it->second.user+"@"+it->second.realm, 
 				  "<sip:" + to_user+"@"+it->second.realm + ">", 
 				  string(""), // callid
+				  string(""), // xtra hdrs
 				  a);
     if (s)
       return s->getLocalTag();

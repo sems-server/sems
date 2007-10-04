@@ -45,6 +45,7 @@ class AmUAC {
 			    const string& from_uri,
 			    const string& to,
 			    const string& local_tag = "",
+			    const string& hdrs = "",
 			    AmArg*  session_params = NULL);
 
 };

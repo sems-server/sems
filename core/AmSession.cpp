@@ -751,19 +751,19 @@ void AmSession::sendUpdate()
   dlg.update("");
 }
 
-void AmSession::sendReinvite(bool updateSDP) 
+void AmSession::sendReinvite(bool updateSDP, const string& headers) 
 {
   if (updateSDP) {
     rtp_str.setLocalIP(AmConfig::LocalIP);
     string sdp_body;
     sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-    dlg.reinvite("", "application/sdp", sdp_body);
+    dlg.reinvite(headers, "application/sdp", sdp_body);
   } else {
-    dlg.reinvite("", "", "");
+    dlg.reinvite(headers, "", "");
   }
 }
 
-int AmSession::sendInvite() 
+int AmSession::sendInvite(const string& headers) 
 {
   // set local IP first, so that IP is set when 
   // getLocalPort/setLocalPort may bind 
@@ -771,7 +771,7 @@ int AmSession::sendInvite()
   // generate SDP
   string sdp_body;
   sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
-  return dlg.invite("", "application/sdp", sdp_body);
+  return dlg.invite(headers, "application/sdp", sdp_body);
 }
 
 void AmSession::setOnHold(bool hold)

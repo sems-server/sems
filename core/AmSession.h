@@ -309,9 +309,9 @@ public:
   /** send an UPDATE in the session */
   void sendUpdate();
   /** send a Re-INVITE (if connected) */
-  void sendReinvite(bool updateSDP = true);
+  void sendReinvite(bool updateSDP = true, const string& headers = "");
   /** send an INVITE */
-  int sendInvite();
+  int sendInvite(const string& headers = "");
 
   /** set the session on/off hold */
   void setOnHold(bool hold);

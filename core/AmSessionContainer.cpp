@@ -186,7 +186,7 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
       session->setCallgroup(req.from_tag);
 
       session->setNegotiateOnReply(true);
-      if (int err = session->sendInvite()) {
+      if (int err = session->sendInvite(req.hdrs)) {
 	ERROR("INVITE could not be sent: error code = %d.\n", 
 	      err);
 	delete session;
