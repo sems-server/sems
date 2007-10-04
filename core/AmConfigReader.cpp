@@ -112,7 +112,7 @@ int  AmConfigReader::loadFile(const string& path)
       val_end = c;
     }
 
-    if((key_beg < key_end) && (val_beg < val_end))
+    if((key_beg < key_end) && (val_beg <= val_end))
       keys[string(key_beg,key_end-key_beg)] = 
 	string(val_beg,val_end-val_beg);
     else
