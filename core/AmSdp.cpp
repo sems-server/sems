@@ -196,8 +196,11 @@ int AmSdp::genResponse(const string& localip, int localport,
 
   out_buf = 
     "v=0\r\n"
-    "o=username 0 0 IN " + l_ip + "\r\n"
-    "s=session\r\n"
+    "o=- 0 0 IN " + l_ip + "\r\n"
+    "s=session\r\n";
+  if (!uri.empty())
+    out_buf+="u="+uri+"\r\n";
+  out_buf+=
     "c=IN " + l_ip + "\r\n"
     "t=0 0\r\n"
     "m=audio " + int2str(localport) + " RTP/AVP";
@@ -261,8 +264,11 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
 
   out_buf = 
     "v=0\r\n"
-    "o=username 0 0 IN " + l_ip + "\r\n"
-    "s=session\r\n"
+    "o=- 0 0 IN " + l_ip + "\r\n"
+    "s=session\r\n";
+  if (!uri.empty())
+    out_buf+="u="+uri+"\r\n";
+  out_buf+=
     "c=IN " + l_ip + "\r\n"
     "t=0 0\r\n"
     "m=audio " + int2str(localport) + " RTP/AVP ";

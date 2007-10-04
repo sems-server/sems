@@ -285,8 +285,12 @@ public:
 
   /** Gets the Session's local tag */
   const string& getLocalTag() const;
+
   /** Sets the Session's local tag */
   void setLocalTag(const string& tag);
+
+  /** Sets the URI for the session */
+  void setUri(const string& uri);
 
   /** Gets the current RTP payload */
   const vector<SdpPayload*>& getPayloads();

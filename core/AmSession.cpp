@@ -235,6 +235,12 @@ const string& AmSession::getLocalTag() const
   return dlg.local_tag;
 }
 
+void AmSession::setUri(const string& uri)
+{
+  DBG("AmSession::setUri(%s)\n",uri.c_str());
+  sdp.uri = uri;
+}
+
 void AmSession::setLocalTag(const string& tag)
 {
   DBG("AmSession::setLocalTag(%s)\n",tag.c_str());

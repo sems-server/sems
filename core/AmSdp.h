@@ -149,6 +149,7 @@ public:
   unsigned int     version;     // v=
   SdpOrigin        origin;      // o=
   string           sessionName; // s= 
+  string           uri;         // u=
   SdpConnection    conn;        // c=
   vector<SdpMedia> media;       // m= ... [a=rtpmap:...]+
 
