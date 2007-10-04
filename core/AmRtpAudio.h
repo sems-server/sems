@@ -85,7 +85,7 @@ class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
 public:
   AmRtpAudio(AmSession* _s=0);
 
-  bool checkInterval(unsigned int ts);
+  bool checkInterval(unsigned int ts, unsigned int frame_size);
   bool sendIntReached();
 
   int setCurrentPayload(int payload);

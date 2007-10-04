@@ -96,8 +96,11 @@ public:
 
 
 
+#define AM_AUDIO_IN  0
+#define AM_AUDIO_OUT 1
+
 /**
- * \brief Implements the behavior of one session
+ * \brief Implements the default behavior of one session
  * 
  * The session is identified by Call-ID, From-Tag and To-Tag.
  */
@@ -107,8 +110,15 @@ class AmSession : public AmThread,
 		  public AmSipDialogEventHandler
 {
   AmMutex      audio_mut;
+  // remote (to/from RTP) audio inout
   AmAudio*     input;
   AmAudio*     output;
+
+  // local (to/from audio dev) audio inout
+  AmAudio*     local_input;
+  AmAudio*     local_output;
+
+  bool use_local_audio[2];
 
   vector<SdpPayload *>  m_payloads;
   bool         negotiate_onreply;
@@ -140,6 +150,9 @@ protected:
   /** this is the group the media is processed with 
       - by default local tag */
   string callgroup;
+
+  /** do accept early session? */
+  bool accept_early_session;
 
 public:
   AmSipDialog         dlg;
@@ -226,6 +239,32 @@ public:
   void setInput(AmAudio* in);
   void setOutput(AmAudio* out);
   void setInOut(AmAudio* in, AmAudio* out);
+
+
+  /**
+   * Local audio input getter .
+   * Note: audio must be locked!
+   */
+  AmAudio* getLocalInput() { return local_input; }
+  /**
+   * Local audio output getter.
+   * Note: audio must be locked!
+   */
+  AmAudio* getLocalOutput(){ return local_output;}
+
+  /**
+   * Local audio input & output set methods.
+   * Note: audio will be locked by the methods.
+   */
+  void setLocalInput(AmAudio* in);
+  void setLocalOutput(AmAudio* out);
+  void setLocalInOut(AmAudio* in, AmAudio* out);
+
+  /** this switches between local and remote 
+   * audio inout 
+   */
+  void setAudioLocal(unsigned int dir, bool local);
+  bool getAudioLocal(unsigned int dir);
 
   /**
    * Clears input & ouput (no need to lock)
@@ -360,6 +399,20 @@ public:
    *   Sems will NOT send any BYE on his own.
    */
   virtual void onSessionStart(const AmSipReply& reply){}
+
+
+  /**
+   * onEarlySessionStart will be called after 
+   * 183 early media reply is received and early session 
+   * is setup, if accept_early_session is set.
+   */
+  virtual void onEarlySessionStart(const AmSipReply& reply){}
+
+  /**
+   * onRinging will be called after 180 is received. 
+   * If local audio is set up, session is added to scheduler. 
+   */
+  virtual void onRinging(const AmSipReply& reply){}
 
   /**
    * @see AmDialogState

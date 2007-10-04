@@ -39,7 +39,7 @@ AmRtpAudio::AmRtpAudio(AmSession* _s)
 {
 }
 
-bool AmRtpAudio::checkInterval(unsigned int ts)
+bool AmRtpAudio::checkInterval(unsigned int ts, unsigned int frame_size)
 {
   if(!last_check_i){
     send_int     = true;
@@ -47,7 +47,7 @@ bool AmRtpAudio::checkInterval(unsigned int ts)
     last_check   = ts;
   }
   else {
-    if((ts - last_check) >= getFrameSize()){
+    if((ts - last_check) >= frame_size){
       send_int = true;
       last_check = ts;
     }

@@ -420,7 +420,10 @@ unsigned int AmAudio::downMix(unsigned int size)
 
 unsigned int AmAudio::getFrameSize()
 {
-  assert(fmt.get());
+
+  if (!fmt.get())
+    fmt.reset(new AmAudioSimpleFormat(CODEC_PCM16));
+
   return fmt->frame_size;
 }
 

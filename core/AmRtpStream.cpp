@@ -271,7 +271,8 @@ AmRtpStream::AmRtpStream(AmSession* _s)
     telephone_event_pt(NULL),
     mute(false),
     hold(false),
-    receiving(true)
+    receiving(true),
+    monitor_rtp_timeout(true)
 {
 
 
@@ -423,7 +424,8 @@ int AmRtpStream::nextPacket(AmRtpPacket& p)
 
   receive_mut.lock();
   timersub(&now,&last_recv_time,&diff);
-  if(AmConfig::DeadRtpTime && 
+  if(monitor_rtp_timeout &&
+     AmConfig::DeadRtpTime && 
      (diff.tv_sec > 0) &&
      ((unsigned int)diff.tv_sec > AmConfig::DeadRtpTime)){
     WARN("RTP Timeout detected. Last received packet is too old.\n");

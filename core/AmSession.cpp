@@ -46,7 +46,6 @@
 #include <assert.h>
 #include <sys/time.h>
 
-
 // AmSessionEventHandler methods
 
 bool AmSessionEventHandler::process(AmEvent*)
@@ -124,10 +123,13 @@ AmSession::AmSession()
     dlg(this),
     detached(true),
     sess_stopped(false),rtp_str(this),negotiate_onreply(false),
-    input(0), output(0),
+    input(0), output(0), local_input(0), local_output(0),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
-    m_dtmfDetectionEnabled(true)
+    m_dtmfDetectionEnabled(true),
+    accept_early_session(false)
 {
+  use_local_audio[AM_AUDIO_IN] = false;
+  use_local_audio[AM_AUDIO_OUT] = false;
 }
 
 AmSession::~AmSession()
@@ -173,6 +175,39 @@ void AmSession::setInOut(AmAudio* in,AmAudio* out)
   input = in;
   output = out;
   unlockAudio();
+}
+
+void AmSession::setLocalInput(AmAudio* in)
+{
+  lockAudio();
+  local_input = in;
+  unlockAudio();
+}
+
+void AmSession::setLocalOutput(AmAudio* out)
+{
+  lockAudio();
+  local_output = out;
+  unlockAudio();
+}
+
+void AmSession::setLocalInOut(AmAudio* in,AmAudio* out)
+{
+  lockAudio();
+  local_input = in;
+  local_output = out;
+  unlockAudio();
+}
+
+void AmSession::setAudioLocal(unsigned int dir, 
+				     bool local) {
+  assert(dir<2);
+  use_local_audio[dir] = local;
+}
+
+bool AmSession::getAudioLocal(unsigned int dir) { 
+  assert(dir<2); 
+  return use_local_audio[dir]; 
 }
 
 void AmSession::lockAudio()
@@ -413,6 +448,14 @@ void AmSession::clearAudio()
     output->close();
     output = 0;
   }
+  if(local_input){
+    local_input->close();
+    local_input = 0;
+  }
+  if(local_output){
+    local_output->close();
+    local_output = 0;
+  }
   unlockAudio();
   DBG("Audio cleared !!!\n");
   postEvent(new AmAudioEvent(AmAudioEvent::cleared));
@@ -488,7 +531,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 	
       onSessionStart(req);
 	    
-      if(input || output)
+      if(input || output || local_input || local_output)
 	AmMediaProcessor::instance()->addSession(this, callgroup);
       else {
 	DBG("no audio input and output set. "
@@ -544,13 +587,15 @@ void AmSession::onSipReply(const AmSipReply& reply)
       case AmSipDialog::Connected:
 	
 	try {
+	  rtp_str.setMonitorRTPTimeout(true);
+
 	  acceptAudio(reply.body,reply.hdrs);
 
-	  if(detached.get() && !getStopped()){
+	  if(!getStopped()){
 	    
 	    onSessionStart(reply);
 		  
-	    if(input || output)
+	    if(input || output || local_input || local_output)
 	      AmMediaProcessor::instance()->addSession(this,
 						       callgroup); 
 	    else { 
@@ -571,8 +616,36 @@ void AmSession::onSipReply(const AmSipReply& reply)
       case AmSipDialog::Pending:
 	
 	switch(reply.code){
-	case 180: break;//TODO: local ring tone.
-	case 183: break;//TODO: remote ring tone.
+	case 180: { 
+
+	  onRinging(reply);
+
+	  rtp_str.setMonitorRTPTimeout(false);
+
+	  if(input || output || local_input || local_output)
+	    AmMediaProcessor::instance()->addSession(this,
+						     callgroup); 
+	} break;
+	case 183: {
+	  if (accept_early_session) {
+	    try {
+
+	      setMute(true);
+
+	      acceptAudio(reply.body,reply.hdrs);
+	    
+	      onEarlySessionStart(reply);
+
+	      rtp_str.setMonitorRTPTimeout(false);
+
+	      if(input || output || local_input || local_output)
+		AmMediaProcessor::instance()->addSession(this,
+							 callgroup); 
+	    } catch(const AmSession::Exception& e){
+	      ERROR("%i %s\n",e.code,e.reason.c_str());
+	    } // exceptions are not critical here
+	  }
+	} break;
 	default:  break;// continue waiting.
 	}
       }
@@ -643,11 +716,6 @@ int AmSession::acceptAudio(const string& body,
   catch(const AmSession::Exception& e){
     ERROR("%i %s\n",e.code,e.reason.c_str());
     throw;
-
-    //  	if(dlg.reply(req,e.code,e.reason, "")){
-    //  	    dlg.bye();
-    //  	}
-    //	setStopped();
   }
 
   return -1;

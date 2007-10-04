@@ -101,6 +101,8 @@ class AmConferenceStatus
 
   int releaseChannel(unsigned int ch_id);
 
+  void postConferenceEvent(int event_id, const string& sess_id);
+
 public:
   const string&      getConfID() { return conf_id; }
   AmMultiPartyMixer* getMixer()  { return &mixer; }
@@ -109,6 +111,9 @@ public:
 					 const string& local_tag);
 
   static void releaseChannel(const string& cid, unsigned int ch_id);
+
+  static void postConferenceEvent(const string& cid, int event_id, 
+				  const string& sess_id);
 };
 
 #endif

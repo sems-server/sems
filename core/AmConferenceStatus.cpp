@@ -67,6 +67,27 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& cid,
   return ch;
 }
 
+void AmConferenceStatus::postConferenceEvent(const string& cid, 
+					     int event_id, const string& sess_id) {
+  AmConferenceStatus*  st = 0;
+
+  cid2s_mut.lock();
+  map<string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
+
+  if(it != cid2status.end()){
+
+    st = it->second;
+  }
+  else {
+	
+    st = new AmConferenceStatus(cid);
+    cid2status[cid] = st;
+  }
+
+  st->postConferenceEvent(event_id, sess_id);
+  cid2s_mut.unlock();
+}
+
 void AmConferenceStatus::releaseChannel(const string& cid, unsigned int ch_id)
 {
   cid2s_mut.lock();
@@ -100,6 +121,21 @@ AmConferenceStatus::~AmConferenceStatus()
   DBG("AmConferenceStatus::~AmConferenceStatus(): conf_id = %s\n",conf_id.c_str());
 }
 
+void AmConferenceStatus::postConferenceEvent(int event_id, const string& sess_id)
+{
+  sessions_mut.lock();
+  int participants = sessions.size();
+  for(map<string, unsigned int>::iterator it = sessions.begin(); 
+      it != sessions.end(); it++){
+    AmSessionContainer::instance()->postEvent(
+					      it->first,
+					      new ConferenceEvent(event_id,
+								  participants,conf_id,sess_id)
+					      );
+  }
+  sessions_mut.unlock();
+}
+
 AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
 {
   AmConferenceChannel* ch = 0;
@@ -107,24 +143,18 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
   sessions_mut.lock();
   map<string, unsigned int>::iterator it = sessions.find(sess_id);
   if(it != sessions.end()){
-    ch = new AmConferenceChannel(this,it->second,false);
-  }
-  else {
-
+    ch = new AmConferenceChannel(this,it->second,false);    
+  } else {
     if(!sessions.empty()){
-
       int participants = sessions.size()+1;
-
       for(it = sessions.begin(); it != sessions.end(); it++){
-	    
 	AmSessionContainer::instance()->postEvent(
 						  it->first,
 						  new ConferenceEvent(ConfNewParticipant,
 								      participants,conf_id,sess_id)
 						  );
       }
-    }
-    else {
+    } else {
       // The First participant gets its own NewParticipant message
       AmSessionContainer::instance()->postEvent(
 						sess_id, new ConferenceEvent(ConfNewParticipant,1,

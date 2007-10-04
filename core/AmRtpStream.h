@@ -137,8 +137,13 @@ public:
 
   /** Mute */
   bool mute;
+  /** mute && port == 0 */
   bool hold;
+  /** marker flag */
   bool begin_talk;
+  /** do check rtp timeout */
+  bool monitor_rtp_timeout;
+
 
   /** should we receive packets? if not -> drop */
   bool receiving;
@@ -224,6 +229,11 @@ public:
   
   /** get the RTP stream on hold  */
   bool getOnHold();
+
+  /** setter for monitor_rtp_timeout */
+  void setMonitorRTPTimeout(bool m) { monitor_rtp_timeout = m; }
+  /** getter for monitor_rtp_timeout */
+  bool getMonitorRTPTimeout() { return monitor_rtp_timeout; }
 
   /**
    * Report an ICMP error.

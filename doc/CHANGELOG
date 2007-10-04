@@ -1,4 +1,11 @@
+
 Changelog for SEMS 
+ - support for posting events into conferences
+
+ - support for receiving early media
+
+ - support for local audio as audio sources into audio engine 
+   on the same channel as RTP 
 
  - outbound_proxy option sets next hop on outgoing dialogs and 
    registrations
