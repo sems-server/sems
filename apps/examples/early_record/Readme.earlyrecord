@@ -1,0 +1,6 @@
+EarlyRecord
+
+This example demonstrates how to use the early media 
+receiving mode. It records received early media of an 
+authenticated call in a file in /tmp folder, and when 
+the callee picks up, it plays the recorded file.
