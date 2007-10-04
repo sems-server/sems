@@ -193,10 +193,15 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     if(!reply.route.empty())
       setRoute(reply.route);
 
-    next_hop = reply.next_hop;
+    if (!reply.next_hop.empty())
+      next_hop = reply.next_hop;
   }
 
-  remote_uri = reply.next_request_uri;
+  if (!reply.next_request_uri.empty()) {
+    DBG("updating remote Contact: %s -> %s\n", 
+	remote_uri.c_str(), reply.next_request_uri.c_str());
+    remote_uri = reply.next_request_uri;
+  }
 
   switch(status){
   case Disconnecting:
