@@ -1,5 +1,10 @@
 Changelog for SEMS 
 
+ - outbound_proxy option sets next hop on outgoing dialogs and 
+   registrations
+
+ - b/f: don't reuse dialog for SIp authenticated re-sending of INVITE
+
 Version 0.10.0 (final)
  - new module for exposing internal DI APIs via XMLRPC 
 
