@@ -131,6 +131,27 @@ media_processor_threads=1
 #
 #sip_port=5060
 
+# optional parameter: outbound_proxy=uri
+#
+# - this sets a next hop for calls and registrations outgoing 
+#   from SEMS. This does not apply to requests in a dialog that 
+#   is initiated by someone else and incoming to SEMS, as in 
+#   this case the next_hop is taken by SEMS from the incoming 
+#   request that established the dialog.
+#   If this is not set (default setting), then for dialogs 
+#   initiated by SEMS the r-uri is resolved and the request 
+#   is sent there directly.
+#   This is resolved by the SIP stack with DNS if a name is given.
+#   Warning: If the value set here can not be resolved, no 
+#            requests will be sent out at all!
+#  
+#   default: empty
+#
+#   example:
+#   outbound_proxy=sip:proxy.mydomain.net
+#
+#outbound_proxy=sip:192.168.0.1
+
 # optional parameter: dead_rtp_time=<unsigned int>
 #
 # - if != 0, after this time (in seconds) of no RTP

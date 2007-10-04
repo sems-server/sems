@@ -57,6 +57,10 @@ AmSession* AmUAC::dialout(const string& user,
   req.to_tag   = "";
   req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
     
+  // set outbound proxy as next hop 
+  if (!AmConfig::OutboundProxy.empty()) 
+    req.next_hop = AmConfig::OutboundProxy;
+
   return AmSessionContainer::instance()->startSessionUAC(req, session_params);
 }
 

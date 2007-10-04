@@ -94,12 +94,12 @@ void SIPRegistration::doRegistration() {
   req.r_uri    = "sip:"+info.domain;
   dlg.remote_uri = req.r_uri;
   // set outbound proxy as next hop 
-//   if (!AmConfig::OutboundProxy.empty()) 
-//     dlg.next_hop = AmConfig::OutboundProxy;
-//   else 
-//     dlg.next_hop = "";
-
-  dlg.sendRequest(req.method, "", "", "Expires: 240\n");
+  if (!AmConfig::OutboundProxy.empty()) 
+    dlg.next_hop = AmConfig::OutboundProxy;
+  else 
+    dlg.next_hop = "";
+  
+  dlg.sendRequest(req.method, "", "", "Expires: 1000\n");
 
   // save TS
   struct timeval now;
@@ -113,11 +113,13 @@ void SIPRegistration::doUnregister() {
   dlg.remote_tag = "";
   req.r_uri    = "sip:"+info.domain;
   dlg.remote_uri = req.r_uri;
+
   // set outbound proxy as next hop 
-//   if (!AmConfig::OutboundProxy.empty()) 
-//     dlg.next_hop = AmConfig::OutboundProxy;
-//   else 
-//     dlg.next_hop = "";
+  if (!AmConfig::OutboundProxy.empty()) 
+    dlg.next_hop = AmConfig::OutboundProxy;
+  else 
+    dlg.next_hop = "";
+
   dlg.sendRequest(req.method, "", "", "Expires: 0\n");
 
   // save TS

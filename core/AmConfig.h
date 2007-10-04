@@ -83,6 +83,8 @@ struct AmConfig
   static string LocalSIPIP;
   /** the port SIP requests are sent from - optional (default 5060) */
   static int LocalSIPPort;
+  /** Outbound Proxy (optional, outgoing calls only) */
+  static string OutboundProxy;
   /** Server/User-Agent header (optional) */
   static string Signature;
   /** If 200 OK reply should be limited to preferred codec only */

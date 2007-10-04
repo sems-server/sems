@@ -55,6 +55,7 @@ int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
 int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
 int          AmConfig::LocalSIPPort            = 5060;
 string       AmConfig::LocalSIPIP              = "";
+string       AmConfig::OutboundProxy           = "";
 string       AmConfig::Signature               = "";
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
@@ -182,6 +183,9 @@ int AmConfig::readConfiguration()
     }		
   }
 
+  // outbound_proxy
+  OutboundProxy = cfg.getParameter("outbound_proxy");
+  
   // socket_name
   SocketName = cfg.getParameter("socket_name");
 
