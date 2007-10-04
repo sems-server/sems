@@ -246,6 +246,8 @@
  * line (press one to get to A, two for B, ...) with ivr, b2bua and SIP auth.
  * 
  * The py_sems_ex directory contains some example for the py_sems embedded Python interpreter.
+ *
+ * The early_record (\ref ModuleDoc_early_record) is an example on how to receive and use early media. 
  * 
  */
 
@@ -454,6 +456,14 @@
 /*! \page ModuleDoc_serviceline Module Documentation: serviceline example Application 
  *  \section Readme_serviceline Readme file
  *  \verbinclude Readme.serviceline
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_early_record Module Documentation: early_record example Application 
+ *  \section Readme_early_record Readme file
+ *  \verbinclude Readme.earlyrecord
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
