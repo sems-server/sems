@@ -313,9 +313,14 @@ void AmSession::negotiate(const string& sdp_body,
   }
 
   lockAudio();
-  rtp_str.setLocalIP(AmConfig::LocalIP);
-  rtp_str.setPassiveMode(passive_mode);
-  rtp_str.setRAddr(r_host, r_port);
+  try {
+    rtp_str.setLocalIP(AmConfig::LocalIP);
+    rtp_str.setPassiveMode(passive_mode);
+    rtp_str.setRAddr(r_host, r_port);
+  } catch (...) {
+    unlockAudio();
+    throw;
+  }
   unlockAudio();
 
   if(sdp_reply)
