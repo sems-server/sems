@@ -162,6 +162,30 @@ void AmRtpStream::setLocalPort()
   DBG("local rtp port set to %i\n",l_port);
 }
 
+int AmRtpStream::ping()
+{
+  unsigned char ping_chr[2];
+
+  ping_chr[0] = 0;
+  ping_chr[1] = 0;
+
+  AmRtpPacket rp;
+  rp.payload = payload;
+  rp.marker = true;
+  rp.sequence = sequence++;
+  rp.timestamp = 0;   
+  rp.ssrc = l_ssrc;
+  rp.compile((unsigned char*)ping_chr,2);
+
+  rp.setAddr(&r_saddr);
+  if(rp.send(l_sd) < 0){
+    ERROR("while sending RTP packet.\n");
+    return -1;
+  }
+ 
+  return 2;
+}
+
 int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size )
 {
   if ((mute) || (hold))

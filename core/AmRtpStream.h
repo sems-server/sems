@@ -155,7 +155,10 @@ public:
 
   int receive( unsigned char* buffer, unsigned int size,
 	       unsigned int& ts, int& payload);
-    
+
+  /** ping the remote side, to open NATs and enable symmetric RTP */
+  int ping();
+
   /** Allocates resources for future use of RTP. */
   AmRtpStream(AmSession* _s=0);
   /** Stops the stream and frees all resources. */

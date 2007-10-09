@@ -648,6 +648,9 @@ void AmSession::onSipReply(const AmSipReply& reply)
 	      onEarlySessionStart(reply);
 
 	      rtp_str.setMonitorRTPTimeout(false);
+	      
+	      // ping the other side to open fw/NAT/symmetric RTP
+	      rtp_str.ping();
 
 	      if(input || output || local_input || local_output)
 		AmMediaProcessor::instance()->addSession(this,
