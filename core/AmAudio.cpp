@@ -735,6 +735,16 @@ int AmAudioFile::write(unsigned int user_ts, unsigned int size)
   return (!ferror(fp) ? s : -1);
 }
 
+int AmAudioFile::getLength() 
+{ 
+  if (!data_size || !fmt.get())
+    return 0;
+
+  return 
+    fmt->bytes2samples(data_size) /
+    (fmt->rate/1000); 
+}
+
 AmAudioFileFormat* AmAudioFile::fileName2Fmt(const string& name)
 {
   string ext = file_extension(name);

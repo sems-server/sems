@@ -58,10 +58,10 @@
 #define MOD_NAME               "voicemail"
 #define DEFAULT_AUDIO_EXT      "wav"
 
-#define DEFAULT_MAIL_TMPL_PATH string("/usr/local/etc/sems")
-#define DEFAULT_MAIL_TMPL      string("default")
-#define DEFAULT_MAIL_TMPL_EXT  string("template")
-
+#define DEFAULT_MAIL_TMPL_PATH  string("/usr/local/etc/sems")
+#define DEFAULT_MAIL_TMPL       string("default")
+#define DEFAULT_MAIL_TMPL_EXT   string("template")
+#define DEFAULT_MIN_RECORD_TIME 0
 #define RECORD_TIMER 99
 
 EXPORT_SESSION_FACTORY(AnswerMachineFactory,MOD_NAME);
@@ -75,6 +75,7 @@ string AnswerMachineFactory::RecFileExt;
 string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
 int    AnswerMachineFactory::MaxRecordTime;
+int    AnswerMachineFactory::MinRecordTime = 0;
 AmDynInvokeFactory* AnswerMachineFactory::UserTimer=0;
 
 #ifdef USE_MYSQL
@@ -383,6 +384,7 @@ int AnswerMachineFactory::onLoad()
 #endif
 
   MaxRecordTime   = cfg.getParameterInt("max_record_time",DEFAULT_RECORD_TIME);
+  MinRecordTime   = cfg.getParameterInt("min_record_time",DEFAULT_MIN_RECORD_TIME);
   RecFileExt      = cfg.getParameter("rec_file_ext",DEFAULT_AUDIO_EXT);
 
   UserTimer = AmPlugIn::instance()->getFactory4Di("user_timer");
@@ -635,10 +637,11 @@ void AnswerMachineDialog::onBye(const AmSipRequest& req)
 
 void AnswerMachineDialog::sendMailNotification()
 {
-  unsigned int rec_size = a_msg.getDataSize();
-  DBG("recorded data size: %i\n",rec_size);
-    
-  if(!rec_size){
+  int rec_length = a_msg.getLength();
+  DBG("recorded file length: %i ms\n",rec_length);
+
+  if(rec_length <= AnswerMachineFactory::MinRecordTime){
+    DBG("recorded file too small. Not sending voicemail.\n");
     unlink(msg_filename.c_str());
   }
   else {

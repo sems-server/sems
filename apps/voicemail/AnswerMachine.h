@@ -62,6 +62,7 @@ public:
   static string AnnouncePath;
   static string DefaultAnnounce;
   static int    MaxRecordTime;
+  static int    MinRecordTime;
   static AmDynInvokeFactory* UserTimer;
 
 #ifdef USE_MYSQL

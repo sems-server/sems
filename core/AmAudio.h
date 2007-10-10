@@ -415,6 +415,9 @@ public:
   /** Gets data size in the current file */
   int getDataSize() { return data_size; }
 
+  /** Gets length of the current file in ms */
+  int getLength();
+
   /**
    * @return MIME type corresponding to the audio file.
    */
