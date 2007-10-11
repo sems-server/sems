@@ -286,6 +286,9 @@ public:
   /** Gets the Session's local tag */
   const string& getLocalTag() const;
 
+  /** Sets the Session's local tag if not set already */
+  void setLocalTag();
+
   /** Sets the Session's local tag */
   void setLocalTag(const string& tag);
 

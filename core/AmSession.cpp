@@ -241,6 +241,15 @@ void AmSession::setUri(const string& uri)
   sdp.uri = uri;
 }
 
+void AmSession::setLocalTag()
+{
+  if (dlg.local_tag.empty()) {
+    dlg.local_tag = getNewId();
+    DBG("AmSession::setLocalTag() - session id set to %s\n", 
+	dlg.local_tag.c_str());
+  }
+}
+
 void AmSession::setLocalTag(const string& tag)
 {
   DBG("AmSession::setLocalTag(%s)\n",tag.c_str());

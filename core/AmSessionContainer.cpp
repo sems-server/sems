@@ -233,22 +233,18 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
       AmSession* session;
       if((session = createSession(req)) != 0){
 
-	string local_tag = AmSession::getNewId();
-	session->setLocalTag(local_tag);
+	// update session's local tag (ID) if not already set
+	session->setLocalTag();
+	const string& local_tag = session->getLocalTag();
+	// by default each session is in its own callgroup
 	session->setCallgroup(local_tag);
 	session->start();
 
 	addSession_unsafe(req.callid,req.from_tag,local_tag,session);
 	session->postEvent(new AmSipRequestEvent(req));
       }
-      //else
-      //throw AmSession::Exception(500,"internal error");
     }
   } 
-  //     catch(const AmSession::SessionTimerException& e){
-  //  	ERROR("%i %s\n",e.code,e.reason.c_str());
-  // 	AmSipDialog::reply_error(req,e.code,e.reason,e.getErrorHeaders());
-  //     }
   catch(const AmSession::Exception& e){
     ERROR("%i %s\n",e.code,e.reason.c_str());
     AmSipDialog::reply_error(req,e.code,e.reason);
