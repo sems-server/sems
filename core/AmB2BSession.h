@@ -181,8 +181,6 @@ class AmB2BCallerSession: public AmB2BSession
  private:
   // Callee Status
   CalleeStatus callee_status;
-
-  
   
   int  reinviteCaller(const AmSipReply& callee_reply);
 
@@ -204,7 +202,7 @@ class AmB2BCallerSession: public AmB2BSession
 
   const AmSipRequest& getOriginalRequest() { return invite_req; }
 
-  // @see AmDialogState
+  // @see AmSession
   void onSessionStart(const AmSipRequest& req);
 
   // @see AmB2BSession

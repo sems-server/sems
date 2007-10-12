@@ -187,7 +187,9 @@ void AmB2BSession::onOtherReply(const AmSipReply& reply)
 void AmB2BSession::terminateLeg()
 {
   setStopped();
-  dlg.bye();
+  if ((dlg.getStatus() == AmSipDialog::Pending) 
+      || (dlg.getStatus() == AmSipDialog::Connected))
+    dlg.bye();
 }
 
 void AmB2BSession::terminateOtherLeg()
@@ -260,8 +262,9 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	}
       }
       else {
-	//DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
-	//    reply.code,other_id.c_str(),reply.local_tag.c_str());
+// 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
+// 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
+	
 	terminateOtherLeg();
       }
 		
