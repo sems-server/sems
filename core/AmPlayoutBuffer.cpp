@@ -122,6 +122,14 @@ void AmPlayoutBuffer::buffer_get(unsigned int ts, ShortSample* buf, unsigned int
     r_ts = ts + len;
 }
 
+//
+// See: Y. J. Liang, N. Farber, and B. Girod. Adaptive playout scheduling 
+// and loss concealment for voice communication over IP networks. Submitted 
+// to IEEE Transactions on Multimedia, Feb. 2001. 
+// Online at: 
+//  http://www-ise.stanford.edu/yiliang/publications/ 
+//  http://citeseer.ist.psu.edu/liang02adaptive.html 
+// 
 AmAdaptivePlayout::AmAdaptivePlayout(AmPLCBuffer *plcbuffer)
   : AmPlayoutBuffer(plcbuffer),
     idx(0),

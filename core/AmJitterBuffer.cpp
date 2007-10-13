@@ -30,6 +30,15 @@
 #include "log.h"
 #include "SampleArray.h"
 
+//
+// Warning: 
+// This jitter buffer seems to increase the buffer size, if jitter (delay variation) is 
+// present in the stream, or for example a temporary delay spike is detected, 
+// but it does not adapt the buffer to shrink again if the situation has improved. 
+// The adaptive playout buffer method usually shows much better results
+// in minimizing the total playout delay (using more processing power though).
+//
+
 bool Packet::operator < (const Packet& p) const
 {
   return ts_less()(m_ts, p.m_ts);
