@@ -11,7 +11,7 @@ TTS ?= y
 #
 # PYTHON_VERSION might also be 2.2 -- except for the use of GIL
 # do a ls /usr/include/python2.3/Python.h to see if it's there
-PYTHON_VERSION ?= 2.4
+PYTHON_VERSION ?= `python -c 'import sys;print sys.version[0:3]';`
 PY_VER = $(PYTHON_VERSION)
 PY_EXE = python$(PY_VER)
 # adjust to point to python include path
