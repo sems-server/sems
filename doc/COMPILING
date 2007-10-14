@@ -59,7 +59,15 @@ Defines and Variables
 
 IVR
 ---
-Edit apps/ivr/Makefile.defs:
+You need python development support - locate structmember.h should 
+give you something like: 
+  $ locate structmember.h
+  /usr/include/python2.4/structmember.h
+If structmember.h is not found, you may have to install python 
+development package (e.g. in debian python-dev).
+
+Set PYTHON_VERSION when compiling, or edit apps/ivr/Makefile.defs,
+if you don't want to use the default python version on your system:
 
 1. Python version and path
  set the python version (2.3, 2.4, 2.5) 
