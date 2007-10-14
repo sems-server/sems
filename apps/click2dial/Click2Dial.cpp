@@ -105,7 +105,8 @@ AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, AmArg& session_p
   string callee_uri, a_realm, a_user, a_pwd;
 
   if(session_params.size() != 4) {
-    ERROR("Need 4 parameters, got %d\n", session_params.size());
+    ERROR("Need 4 parameters, got %lu\n", 
+	  (long unsigned int)session_params.size());
     return NULL;
   }
 
