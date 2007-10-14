@@ -382,7 +382,8 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
 
   AmSession* s = AmUAC::dialout(room.c_str(), APP_NAME,  to,  
 				"<" + from +  ">", from, "<" + to + ">", 
-				string(""), // callid
+				string(""), // local tag
+				string(""), // hdrs
 				a);
   if (s) {
     string localtag = s->getLocalTag();
