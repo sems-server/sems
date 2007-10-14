@@ -195,7 +195,7 @@ void MyCCDialog::process(AmEvent* ev)
     AmB2BCallerSession::process(ev);
 }
 
-void MyCCDialog::onOtherReply(const AmSipReply& reply) {
+bool MyCCDialog::onOtherReply(const AmSipReply& reply) {
   DBG("OnOtherReply \n");
   if (state == CC_Dialing) {
     if (reply.code < 200) {
@@ -226,6 +226,7 @@ void MyCCDialog::onOtherReply(const AmSipReply& reply) {
   //  AmB2BCallerSession::onOtherReply(reply);
   // as it tears down the call if callee could
   // not be reached
+  return false;
 }
 
 void MyCCDialog::onOtherBye(const AmSipRequest& req) {

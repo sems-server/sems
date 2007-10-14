@@ -145,7 +145,7 @@ class IvrDialog : public AmB2BCallerSession
   void onDtmf(int event, int duration_msec);
 
   void onOtherBye(const AmSipRequest& req);
-  void onOtherReply(const AmSipReply& r);
+  bool onOtherReply(const AmSipReply& r);
 
   void onSipReply(const AmSipReply& r);
   void onSipRequest(const AmSipRequest& r);

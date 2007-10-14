@@ -151,8 +151,12 @@ class AmB2BSession: public AmSession
   // Other leg received a BYE
   virtual void onOtherBye(const AmSipRequest& req);
 
-  /** INVITE from other leg has been replied */
-  virtual void onOtherReply(const AmSipReply& reply);
+  /** 
+   * Reply received from other leg has been replied 
+   * @return true if reply was processed (should be absorbed)
+   * @return false if reply was not processed
+   */
+  virtual bool onOtherReply(const AmSipReply& reply);
 
   AmB2BSession()
     : sip_relay_only(true)

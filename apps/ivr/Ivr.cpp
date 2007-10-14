@@ -717,11 +717,12 @@ void IvrDialog::onOtherBye(const AmSipRequest& req)
     AmB2BSession::onOtherBye(req);
 }
 
-void IvrDialog::onOtherReply(const AmSipReply& r)
+bool IvrDialog::onOtherReply(const AmSipReply& r)
 {
   if(callPyEventHandler("onOtherReply","is",
 			r.code,r.reason.c_str()))
     AmB2BSession::onOtherReply(r);
+  return false;
 }
 
 void IvrDialog::onSipReply(const AmSipReply& r) {

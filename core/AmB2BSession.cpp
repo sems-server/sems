@@ -178,10 +178,11 @@ void AmB2BSession::onOtherBye(const AmSipRequest& req)
   terminateLeg();
 }
 
-void AmB2BSession::onOtherReply(const AmSipReply& reply)
+bool AmB2BSession::onOtherReply(const AmSipReply& reply)
 {
   if(reply.code >= 300)
     terminateLeg();
+  return false;
 }
 
 void AmB2BSession::terminateLeg()
@@ -233,6 +234,8 @@ void AmB2BCallerSession::terminateOtherLeg()
 
 void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 {
+  bool processed = false;
+
   if(ev->event_id == B2BSipReply){
 
     AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
@@ -268,7 +271,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	terminateOtherLeg();
       }
 		
-      onOtherReply(reply);
+      processed = onOtherReply(reply);
       break;
 
     default:
@@ -277,7 +280,8 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
     }
   }
    
-  AmB2BSession::onB2BEvent(ev);
+  if (!processed)
+    AmB2BSession::onB2BEvent(ev);
 }
 
 void AmB2BCallerSession::relayEvent(AmEvent* ev)
