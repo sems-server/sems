@@ -111,6 +111,17 @@ void DIDial::invoke(const string& method, const AmArg& args, AmArg& ret)
 			args.get(5).asCStr(), 
 			args.get(6).asCStr()
 			).c_str());
+    } else if(method == "dial_auth_b2b"){
+       ret.push(dialout_auth_b2b(args.get(0).asCStr(), 
+      args.get(1).asCStr(), 
+      args.get(2).asCStr(), 
+      args.get(3).asCStr(),
+      args.get(4).asCStr(), 
+      args.get(5).asCStr(), 
+      args.get(6).asCStr(),
+      args.get(7).asCStr(),
+      args.get(8).asCStr()
+      ).c_str());
     } else if(method == "dial_pin"){
        ret.push(dialout_pin(args.get(0).asCStr(), 
 			    args.get(1).asCStr(), 
@@ -120,10 +131,12 @@ void DIDial::invoke(const string& method, const AmArg& args, AmArg& ret)
     } else if(method == "help"){
       ret.push("dial <application> <user> <from> <to>");
       ret.push("dial_auth <application> <user> <from> <to> <realm> <auth_user> <auth_pwd>");
+      ret.push("dial_auth_b2b <application> <announcement> <from> <to> <caller_ruri> <callee_ruri> <realm> <auth_user> <auth_pwd>");
       ret.push("dial_pin <application> <dialout pin> <local_user> <to_user>");
     } else if(method == "_list"){ 
       ret.push(AmArg("dial"));
       ret.push(AmArg("dial_auth"));
+      ret.push(AmArg("dial_auth_b2b"));
       ret.push(AmArg("dial_pin"));
       ret.push(AmArg("help"));
     } else 
@@ -153,8 +166,8 @@ string DIDial::dialout_auth(const string& application,
 		       const string& a_user, 
 		       const string& a_pwd
 		       ) {
-  DBG("dialout application '%s', user '%s', from '%s', to '%s'", 
-      application.c_str(), user.c_str(), from.c_str(), to.c_str());
+  DBG("dialout application '%s', user '%s', from '%s', to '%s', authrealm '%s', authuser '%s', authpass '%s'", 
+      application.c_str(), user.c_str(), from.c_str(), to.c_str(), a_realm.c_str(), a_user.c_str(), a_pwd.c_str());
 
   AmArg* a = new AmArg();
   a->setBorrowedPointer(new UACAuthCred(a_realm, a_user, a_pwd));
@@ -164,6 +177,39 @@ string DIDial::dialout_auth(const string& application,
 				string(""), // callid
 				string(""), // xtra hdrs
 				a);
+  if (s)
+    return s->getLocalTag();
+  else 
+    return "<failed>\n";
+}
+
+string DIDial::dialout_auth_b2b(const string& application, 
+          const string& announcement, 
+          const string& from, 
+          const string& to,
+          const string& caller_ruri, 
+          const string& callee_ruri,
+          const string& a_realm, 
+          const string& a_user, 
+          const string& a_pwd
+) {
+
+  DBG("authenticated b2b dialout application '%s', from '%s', to '%s', caller '%s', callee '%s'\n",
+    application.c_str(), from.c_str(), to.c_str(), caller_ruri.c_str(), callee_ruri.c_str());
+
+  AmArg a;
+
+  a.push(a_realm.c_str());
+  a.push(a_user.c_str());
+  a.push(a_pwd.c_str());
+  a.push(callee_ruri.c_str());
+
+  AmSession* s = AmUAC::dialout(
+      announcement.c_str(), application,  caller_ruri,
+      "<" + from +  ">", from, "<" + to + ">", 
+      string(""), // callid
+      string(""), //xtra hdrs
+      &a);
   if (s)
     return s->getLocalTag();
   else 

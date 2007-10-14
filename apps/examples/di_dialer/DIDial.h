@@ -33,6 +33,16 @@ class DIDial : public AmDynInvoke
 		      const string& a_user,
 		      const string& pwd);
 
+  string dialout_auth_b2b(const string& application, 
+		       const string& announcement, 
+		       const string& from, 
+		       const string& to,
+		       const string& caller_ruri, 
+		       const string& callee_ruri,
+		       const string& a_realm, 
+		       const string& a_user, 
+		       const string& a_pwd);
+
   string dialout_pin(const string& application, 
 		     const string& user,
 		     const string& to_user,
