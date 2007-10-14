@@ -1,0 +1,4 @@
+2007-10-13 agranig:
+	Add a mechanism to kind of poll for the status
+	of the current call (e.g. to be used to visualize
+	the progress on a web site).
