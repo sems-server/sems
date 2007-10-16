@@ -695,11 +695,11 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
   int s = size;
 
  read_block:
+  long fpos  = ftell(fp);
+  if(fpos - begin < data_size){
 
-  if(ftell(fp) - begin < data_size){
-
-      if(ftell(fp) - begin + size > data_size){
-	  s = data_size - ftell(fp) + begin;
+    if(fpos - begin + (int)size > data_size){
+	  s = data_size - fpos + begin;
       }
 
       s = fread((void*)((unsigned char*)samples),1,s,fp);
