@@ -193,15 +193,10 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     if(!reply.route.empty())
       setRoute(reply.route);
 
-    if (!reply.next_hop.empty())
-      next_hop = reply.next_hop;
+    next_hop = reply.next_hop;
   }
 
-  if (!reply.next_request_uri.empty()) {
-    DBG("updating remote Contact: %s -> %s\n", 
-	remote_uri.c_str(), reply.next_request_uri.c_str());
-    remote_uri = reply.next_request_uri;
-  }
+  remote_uri = reply.next_request_uri;
 
   switch(status){
   case Disconnecting:
@@ -298,15 +293,19 @@ string escape(string s)
     return s;
 }
 
-/* Add CR before each LF */
+/* Add CR before each LF if not already there */
 string lf2crlf(string s)
 {
     string::size_type pos;
 
     pos = 0;
     while ((pos = s.find("\n", pos)) != string::npos) {
-	s.insert(pos, "\r");
-	pos = pos + 2;
+	if ((pos > 0) && (s[pos - 1] == 13)) {
+	    pos = pos + 1;
+	} else {
+	    s.insert(pos, "\r");
+	    pos = pos + 2;
+	}
     }
     return s;
 }
