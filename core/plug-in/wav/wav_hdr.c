@@ -174,6 +174,8 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     fseek(fp,chunk_size,SEEK_CUR);
   }
 
+  fmt_desc->data_size = chunk_size;
+
   return 0;
 }
 

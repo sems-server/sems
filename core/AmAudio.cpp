@@ -525,6 +525,7 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
       f_fmt->setSubtypeId(fd.subtype);
       f_fmt->channels = fd.channels;
       f_fmt->rate = fd.rate;
+      data_size = fd.data_size;
     }
     begin = ftell(fp);
   }
@@ -690,27 +691,40 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
     return -1;
   }
 
-  int s = fread((void*)((unsigned char*)samples),1,size,fp);
-  int ret = (!ferror(fp) ? s : -1);
+  int ret;
+  int s = size;
+
+ read_block:
+
+  if(ftell(fp) - begin < data_size){
+
+      if(ftell(fp) - begin + size > data_size){
+	  s = data_size - ftell(fp) + begin;
+      }
+
+      s = fread((void*)((unsigned char*)samples),1,s,fp);
+      ret = (!ferror(fp) ? s : -1);
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define bswap_16(A)  ((((u_int16_t)(A) & 0xff00) >> 8) | \
                    (((u_int16_t)(A) & 0x00ff) << 8))
-  unsigned int i;
-  for(i=0;i<=size/2;i++) {
-      u_int16_t *tmp;
-      ((u_int16_t *)((unsigned char*)samples))[i]=bswap_16(((u_int16_t *)((unsigned char*)samples))[i]);
-  }
+
+      unsigned int i;
+      for(i=0;i<=size/2;i++) {
+	  u_int16_t *tmp;
+	  ((u_int16_t *)((unsigned char*)samples))[i]=bswap_16(((u_int16_t *)((unsigned char*)samples))[i]);
+      }
 
 #endif
-
-  //DBG("s = %i; ret = %i\n",s,ret);
-  if(loop.get() && (ret <= 0) && feof(fp)){
-
-    DBG("rewinding audio file...\n");
-    rewind();
-    s = fread((void*)((unsigned char*)samples),1,size,fp);
-    ret = (!ferror(fp) ? s : -1);
+  }
+  else {
+      if(loop.get() && data_size>0){
+	  DBG("rewinding audio file...\n");
+	  rewind();
+	  goto read_block;
+      }
+      
+      ret = -2; // eof
   }
 
   if(ret > 0 && s > 0 && (unsigned int)s < size){
@@ -719,7 +733,7 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
     return size;
   }
 
-  return (feof(fp) && !loop.get() ? -2 : ret);
+  return ret;
 }
 
 int AmAudioFile::write(unsigned int user_ts, unsigned int size)
