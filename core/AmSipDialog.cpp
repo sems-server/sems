@@ -293,15 +293,19 @@ string escape(string s)
     return s;
 }
 
-/* Add CR before each LF */
+/* Add CR before each LF if not already there */
 string lf2crlf(string s)
 {
     string::size_type pos;
 
     pos = 0;
     while ((pos = s.find("\n", pos)) != string::npos) {
-	s.insert(pos, "\r");
-	pos = pos + 2;
+	if ((pos > 0) && (s[pos - 1] == 13)) {
+	    pos = pos + 1;
+	} else {
+	    s.insert(pos, "\r");
+	    pos = pos + 2;
+	}
     }
     return s;
 }
