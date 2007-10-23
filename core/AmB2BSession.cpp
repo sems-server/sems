@@ -260,7 +260,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	callee_status  = Connected;
 
 	if (!sip_relay_only) {
-	  sip_relay_only = true;		
+	  sip_relay_only = true;
 	  reinviteCaller(reply);
 	}
       }
@@ -334,7 +334,7 @@ int AmB2BCallerSession::reinviteCaller(const AmSipReply& callee_reply)
 
 void AmB2BCallerSession::createCalleeSession()
 {
-  AmB2BCalleeSession* callee_session = new AmB2BCalleeSession(this);
+  AmB2BCalleeSession* callee_session = newCalleeSession();
   AmSipDialog& callee_dlg = callee_session->dlg;
 
   other_id = AmSession::getNewId();
