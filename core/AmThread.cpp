@@ -68,13 +68,14 @@ void * AmThread::_start(void * _t)
   DBG("Thread %lu is starting.\n", (unsigned long int) _this->_pid);
   _this->_stopped.set(false);
   _this->run();
+
+  DBG("Thread %lu is ending.\n", (unsigned long int) _this->_pid);
   _this->_stopped.set(true);
     
   //thread_nr_mut.lock();
   //INFO("threads = %i\n",--thread_nr);
   //thread_nr_mut.unlock();
 
-  DBG("Thread %lu is ending.\n", (unsigned long int) _this->_pid);
   return NULL;
 }
 
