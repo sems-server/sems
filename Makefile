@@ -7,10 +7,13 @@ all: modules
 
 include Makefile.defs
 
-modules = $(filter-out $(wildcard Makefile* README doc *gz), \
-			$(wildcard *) )
-imodules = $(filter-out ser-0.9.6-sems, $(modules))
+modules = core apps $(wildcard ser-0.9.6-sems*)  
+imodules = core apps
 
+# or, if you want to build all that is there:
+# modules = $(filter-out $(wildcard Makefile* README doc *gz), \
+#			$(wildcard *) ) 
+# imodules = $(filter-out ser-0.9.6-sems, $(modules))
 
 .PHONY: clean
 clean:
