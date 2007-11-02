@@ -26,6 +26,7 @@
  */
 
 #include "AmArg.h"
+#include "log.h"
 
 AmArg::AmArg(const AmArg& v)
 {  
@@ -41,6 +42,9 @@ AmArg::AmArg(const AmArg& v)
     case CStr: { v_cstr = strdup(v.v_cstr); } break;
     case AObject:{  v_obj = v.v_obj; } break;
     case Array:  { v_array = new ValueArray(*v.v_array); } break;
+    case Blob: {       
+      v_blob = new ArgBlob(*v.v_blob);
+    } break;
     case Undef: break;
     default: assert(0);
     }
@@ -77,8 +81,8 @@ void AmArg::assertArray(size_t s) {
 
 void AmArg::invalidate() {
   if(type == CStr) { free((void*)v_cstr); }
-  if(type == Array) { delete v_array; }
-    
+  else if(type == Array) { delete v_array; }
+  else if(type == Blob) { delete v_blob; }
   type = Undef;
 }
 
@@ -113,3 +117,18 @@ AmArg& AmArg::operator[](size_t idx) {
   return (*v_array)[idx];
 }
 
+void AmArg::assertArrayFmt(const char* format) const {
+  size_t fmt_len = strlen(format);
+  for (size_t i=0;i<fmt_len;i++) {
+    switch (format[i]) {
+    case 'i': assertArgInt(get(i)); break;
+    case 'f': assertArgDouble(get(i)); break;
+    case 's': assertArgCStr(get(i)); break;
+    case 'o': assertArgAObject(get(i)); break;
+    case 'a': assertArgArray(get(i)); break;
+    case 'b': assertArgBlob(get(i)); break;
+    default: ERROR("ignoring unknown format type '%c'\n", 
+		   format[i]); break;
+    }
+  }
+}

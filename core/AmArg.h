@@ -24,7 +24,6 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-/** @file AmArg.h */
 
 #ifndef _AmArg_h_
 #define _AmArg_h_
@@ -35,9 +34,12 @@
 #include <vector>
 using std::vector;
 
-/** \brief base for Objects as @see AmArg parameter
- * 
- * not owned by AmArg (!) 
+#include "log.h"
+
+/** 
+ * base for Objects as @see AmArg parameter, which are _not_owned_ by the AmArg object (!)
+ *  
+ * this may e.g. used to pass an AmSession through DI API
  */
 class ArgObject {
  public:
@@ -45,7 +47,47 @@ class ArgObject {
   virtual ~ArgObject() { }
 };
 
-/** \brief variable type argument for DynInvoke APIs */
+/**
+ * ArgBlob is a structure which holds and owns a binary data 'blob'.
+ */
+
+struct ArgBlob {
+  char* data;
+  int   len;
+  
+  ArgBlob() 
+  : data(NULL),len(0)
+  {  
+  }
+
+  ArgBlob(const ArgBlob& a) {
+    len = a.len;
+    data = (char*)malloc(len);
+    if (data)
+      memcpy(data, a.data, len);
+  }
+  
+  ArgBlob(const char* _data, int _len) {
+    len = _len;
+    data = (char*)malloc(len);
+    if (data)
+      memcpy(data, _data, len);
+  }
+
+  ~ArgBlob() { if (data) free(data); }
+};
+
+/** \brief variable type argument for DynInvoke APIs. 
+ * 
+ *  This variant can have the following types: 
+ *  check type   getter 
+ *   i  - int    asInt() 
+ *   f  - double asDouble() 
+ *   s  - cstr   asCStr()
+ *   o  - object asObject      - object not owned by the Arg
+ *   b  - blob   asBlob        - data (ArgBlob) owned by the Arg
+ *   a  - array  get()/operator [] 
+ */
 class AmArg
 {
  public:
@@ -56,25 +98,23 @@ class AmArg
     Int,
     Double,
     CStr,
-    AObject,		// for passing pointers to objects not owned by AmArg
+    AObject,   // for passing pointers to objects not owned by AmArg
+    Blob,
     
     Array
   };
 
-  /** \brief exception thrown on access beyond array limits */
   struct OutOfBoundsException {
     OutOfBoundsException() { }
   };
 
-  /** \brief exception thrown if the on argument type mismatch */
   struct TypeMismatchException {
     TypeMismatchException() { }
   };
   
   typedef std::vector<AmArg> ValueArray;
 
- private:
-  // type
+ private:  // type
   short type;
     
   // value
@@ -83,7 +123,7 @@ class AmArg
     double         v_double;
     const char*    v_cstr;
     ArgObject*     v_obj;
-
+    ArgBlob*       v_blob;
     ValueArray*    v_array;
   };
 
@@ -116,6 +156,12 @@ class AmArg
       v_cstr = strdup(v);
     }
 
+  AmArg(const ArgBlob v)
+    : type(Blob)
+    {
+      v_blob = new ArgBlob(v);
+    }
+
   ~AmArg() { invalidate(); }
 
   short getType() const { return type; }
@@ -125,6 +171,7 @@ class AmArg
 #define isArgInt(a) (AmArg::Int == a.getType())
 #define isArgCStr(a) (AmArg::CStr == a.getType())
 #define isArgAObject(a) (AmArg::AObject == a.getType())
+#define isArgBlob(a) (AmArg::Blob == a.getType())
 
 #define assertArgArray(a) \
   if (!isArgArray(a)) \
@@ -140,8 +187,10 @@ class AmArg
     throw AmArg::TypeMismatchException();
 #define assertArgAObject(a) \
   if (!isArgAObject(a)) \
+    throw AmArg::TypeMismatchException();   
+#define assertArgBlob(a) \
+  if (!isArgBlob(a)) \
     throw AmArg::TypeMismatchException();
-   
 
   void setBorrowedPointer(ArgObject* v) {
     type = AObject;
@@ -152,6 +201,7 @@ class AmArg
   double      asDouble() const { return v_double; }
   const char* asCStr()   const { return v_cstr; }
   ArgObject*  asObject() const { return v_obj; }
+  ArgBlob*    asBlob()   const { return v_blob; }
 
   // operations on arrays
   void assertArray(size_t s);
@@ -168,6 +218,21 @@ class AmArg
 
   /** resizes array if too small */
   AmArg& operator[](size_t idx);
+
+  /** 
+   * check ArgArray for type correctness of the elements
+   * 
+   * throws exception if arg array does not conform to spec 
+   *   i  - int 
+   *   f  - double
+   *   s  - cstr
+   *   o  - object
+   *   b  - blob
+   *   a  - array
+   *
+   *   e.g. "ssif" -> [cstr, cstr, int, double]
+   */
+  void assertArrayFmt(const char* format) const;
 };
 
 #endif
