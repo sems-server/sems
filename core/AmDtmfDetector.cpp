@@ -1,7 +1,9 @@
 /*
  * $Id$
  *
+ * Copyright (C) 2002-2003 Fhg Fokus (inband detector code)
  * Copyright (C) 2005 Andriy I Pylypenko
+ * Copyright (C) 2007 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -175,11 +177,35 @@ void AmSipDtmfDetector::process(AmSipDtmfEvent *evt)
 //
 AmDtmfDetector::AmDtmfDetector(AmSession *session)
   : m_session(session), m_rtpDetector(this),
-    m_inbandDetector(this), m_sipDetector(this),
+    m_sipDetector(this),
     m_eventPending(false), m_sipEventReceived(false),
     m_inbandEventReceived(false), m_rtpEventReceived(false)
 {
+  m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this));
+  m_inband_type = Dtmf::SEMSInternal;
+
 }
+
+void AmDtmfDetector::setInbandDetector(Dtmf::InbandDetectorType t) {
+#ifndef USE_SPANDSP
+  if (t == Dtmf::SpanDSP) {
+    ERROR("trying to use spandsp DTMF detector without support for it"
+	  "recompile with -D USE_SPANDSP\n");
+  }
+  return;
+#else
+
+  if (t != m_inband_type) {
+    if (t == Dtmf::SEMSInternal) {
+      m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this));
+    } else { // if t == SpanDSP
+      m_inbandDetector.reset(new AmSpanDSPInbandDtmfDetector(this));
+    }
+    m_inband_type = t;
+  }
+#endif
+}
+
 
 void AmDtmfDetector::process(AmEvent *evt)
 {
@@ -294,7 +320,7 @@ void AmDtmfDetector::reportEvent()
 
 void AmDtmfDetector::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
 {
-  m_inbandDetector.streamPut(buf, size, user_ts);
+  m_inbandDetector->streamPut(buf, size, user_ts);
 }
 
 // AmRtpDtmfDetector methods
@@ -362,6 +388,12 @@ void AmRtpDtmfDetector::checkTimeout()
 
 //
 // AmInbandDtmfDetector methods
+
+AmInbandDtmfDetector::AmInbandDtmfDetector(AmKeyPressSink *keysink) 
+ : m_keysink(keysink)
+{
+}
+
 //
 // -------------------------------------------------------------------------------------------
 #define IVR_DTMF_ASTERISK 10
@@ -417,8 +449,8 @@ static char dtmf_matrix[4][4] =
     {'*', '0', '#', 'D'}
   };
 
-AmInbandDtmfDetector::AmInbandDtmfDetector(AmKeyPressSink *keysink)
-  : m_keysink(keysink),
+AmSemsInbandDtmfDetector::AmSemsInbandDtmfDetector(AmKeyPressSink *keysink)
+  : AmInbandDtmfDetector(keysink),
     m_last(' '),
     m_idx(0),
     m_count(0),
@@ -431,7 +463,7 @@ AmInbandDtmfDetector::AmInbandDtmfDetector(AmKeyPressSink *keysink)
     rel_cos2pik[i] = (int)(2 * 32768 * cos(2 * PI * k / REL_DTMF_NPOINTS));
   }
 }
-AmInbandDtmfDetector::~AmInbandDtmfDetector() {
+AmSemsInbandDtmfDetector::~AmSemsInbandDtmfDetector() {
 }
 
 /*
@@ -440,7 +472,7 @@ AmInbandDtmfDetector::~AmInbandDtmfDetector() {
  * for more info.
  */
 
-void AmInbandDtmfDetector::isdn_audio_goertzel_relative()
+void AmSemsInbandDtmfDetector::isdn_audio_goertzel_relative()
 {
   int sk, sk1, sk2;
 
@@ -473,7 +505,7 @@ void AmInbandDtmfDetector::isdn_audio_goertzel_relative()
 }
 
 
-void AmInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
+void AmSemsInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
 {
   int silence;
   int grp[2];
@@ -560,7 +592,7 @@ void AmInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
   m_last = what;
 }
 
-void AmInbandDtmfDetector::isdn_audio_calc_dtmf(const signed short* buf, int len, unsigned int ts)
+void AmSemsInbandDtmfDetector::isdn_audio_calc_dtmf(const signed short* buf, int len, unsigned int ts)
 {
   int c;
 
@@ -588,8 +620,72 @@ void AmInbandDtmfDetector::isdn_audio_calc_dtmf(const signed short* buf, int len
   }
 }
 
-int AmInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts)
+int AmSemsInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts)
 {
   isdn_audio_calc_dtmf((const signed short *)samples, size / 2, user_ts);
   return size;
 }
+
+#ifdef USE_SPANDSP
+
+AmSpanDSPInbandDtmfDetector::AmSpanDSPInbandDtmfDetector(AmKeyPressSink *keysink)
+  : AmInbandDtmfDetector(keysink) 
+{
+  dtmf_rx_init(&rx_state, NULL /* dtmf_rx_callback */, (void*)this); 
+  dtmf_rx_set_realtime_callback(&rx_state, tone_report_func, (void*)this); 
+}
+
+AmSpanDSPInbandDtmfDetector::~AmSpanDSPInbandDtmfDetector() {
+}
+
+int AmSpanDSPInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts) {
+  dtmf_rx(&rx_state, (const int16_t*) samples, size/2);
+  return size;
+}
+
+void AmSpanDSPInbandDtmfDetector::tone_report_func(void *user_data, int code, int level, int delay) {
+  AmSpanDSPInbandDtmfDetector* o = (AmSpanDSPInbandDtmfDetector*)user_data;
+  o->tone_report_f(code, level, delay);
+}
+
+void AmSpanDSPInbandDtmfDetector::tone_report_f(int code, int level, int delay) {
+  //  DBG("tone report %c, %d, %d\n", code, level, delay);
+  if (code) { // key pressed
+    gettimeofday(&key_start, NULL);
+    m_lastCode = code;
+    // don't report key press - otherwise reported twice
+    //    m_keysink->registerKeyPressed(char2int(code), Dtmf::SOURCE_INBAND);
+  } else { // released
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    m_keysink->registerKeyReleased(char2int(m_lastCode), Dtmf::SOURCE_INBAND, key_start, now);    
+  }
+}
+
+// uh, ugly
+int AmSpanDSPInbandDtmfDetector::char2int(char code) {
+  if (code>='0' && code<='9') 
+    return code-'0';
+  if (code == '#') 
+    return IVR_DTMF_HASH;
+  if (code == '*') 
+    return IVR_DTMF_HASH;
+
+  if (code >= 'A' && code <= 'D')
+    return code-'A';
+  return code;
+}
+
+// unused - we use realtime reporting functions instead
+// void AmSpanDSPInbandDtmfDetector::dtmf_rx_callback(void* user_data, const char* digits, int len) {
+//   AmSpanDSPInbandDtmfDetector* o = (AmSpanDSPInbandDtmfDetector*)user_data;
+//   o->dtmf_rx_f(digits, len);
+// }
+
+// void AmSpanDSPInbandDtmfDetector::dtmf_rx_f(const char* digits, int len) {
+//   DBG("dtmf_rx_callback len=%d\n", len);
+
+//   for (int i=0;i<len;i++)
+//     DBG("char %c\n", digits[i]);
+// }
+#endif // USE_SPANDSP

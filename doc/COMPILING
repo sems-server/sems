@@ -56,6 +56,22 @@ Defines and Variables
  USE_MYSQL       not set       use anouncements from mysql db
                                in conference and voicemail apps
 
+ USE_SPANDSP     not set       use inband DTMF detection from spandsp?
+ LIBSPANDSP_STATIC  not set    statically link libspandsp?
+ LIBSPANDSP_LDIR not set       lib directory of libspandsp
+			     
+
+inband DTMF detector
+--------------------
+
+Two different inband DTMF detectors can be used. The SEMS' own one
+is always available, and additionally, the inband DTMF detector from 
+spandsp library (www.soft-switch.org) can be used. To compile with 
+spandsp support, set USE_SPANDSP, and if needed LIBSPANDSP_STATIC 
+and LIBSPANDSP_LDIR in Makefile.defs.
+A fairly recent (?) version of spandsp is needed, at least >= 0.0.3.
+Tested with 0.0.4pre11 version. Current stable Debian packages and 
+gentoo ebuilds seem to be quite outdated (0.0.2 - won't work).
 
 IVR
 ---

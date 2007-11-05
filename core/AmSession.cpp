@@ -420,6 +420,11 @@ string AmSession::getNewId()
   return id;
 }
 
+void AmSession::setInbandDetector(Dtmf::InbandDetectorType t)
+{ 
+  m_dtmfDetector.setInbandDetector(t); 
+}
+
 void AmSession::postDtmfEvent(AmDtmfEvent *evt)
 {
   if (m_dtmfDetectionEnabled)

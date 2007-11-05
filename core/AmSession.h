@@ -353,6 +353,8 @@ public:
   void postDtmfEvent(AmDtmfEvent *);
 
   void processDtmfEvents();
+
+  void setInbandDetector(Dtmf::InbandDetectorType t);
   bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
   void setDtmfDetectionEnabled(bool e) { m_dtmfDetectionEnabled = e; }
   void putDtmfAudio(const unsigned char *buf, int size, int user_ts);

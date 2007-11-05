@@ -10,7 +10,7 @@ AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
 
 
 .PHONY: all
-all:
+all: ../Makefile.defs
 	-@$(MAKE) deps    && \
 	  $(MAKE) $(NAME) && \
 	  $(MAKE) modules
@@ -41,7 +41,21 @@ fulldoc:
 
 include ../Makefile.defs
 
-LDFLAGS += -lstdc++
+LDFLAGS += -lstdc++ 
+
+ifdef USE_SPANDSP
+ifdef LIBSPANDSP_STATIC
+LDFLAGS += $(LIBSPANDSP_LDIR)libspandsp.a
+else
+LDFLAGS += -lspandsp
+endif
+endif
+
+
+ifdef USE_SPANDSP
+CPPFLAGS += -DUSE_SPANDSP
+endif
+
 
 # implicit rules
 %.o : %.cpp %.d

@@ -8,6 +8,24 @@ EXTRAVERSION ?= -$(SVN_REV)
 
 RELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
+CPPFLAGS += -D_DEBUG \
+	  -D_THREAD_SAFE -D_REENTRANT \
+	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
+	  -DOS='"$(OS)"' 	\
+#         -DOpenSER \
+#	  -DSUPPORT_IPV6
+
+# compile with spandsp DTMF detection? see soft-switch.org
+#   this needs a fairly new version of spandsp - tested with 0.0.4pre11
+#   will not work with spandsp 0.0.2 .
+#   (which means that current debian and gentoo packages don't work)
+#   
+#USE_SPANDSP    = yes
+# statically link spandsp library? 
+#   (might need adjusting spandsp lib path LIBSPANDSP_LDIR - may be /usr/lib)
+#LIBSPANDSP_STATIC = yes
+#LIBSPANDSP_LDIR = /usr/local/lib/
+
 LDFLAGS = -lm
 
 OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
@@ -38,14 +56,7 @@ LD = $(CC)
 
 CXXFLAGS := -Wall -Wno-reorder -fPIC -g \
 	    -O2 $(EXTRA_CXXFLAGS)
-
-CPPFLAGS += -D_DEBUG \
-	  -D_THREAD_SAFE -D_REENTRANT \
-	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
-	  -DOS='"$(OS)"' 	\
-#         -DOpenSER \
-#	  -DSUPPORT_IPV6
-
+         
 CFLAGS := -Wall -fPIC -g -O2 $(EXTRA_CFLAGS)
 
 ifeq ($(DEBUG_PLAYOUT), yes)
