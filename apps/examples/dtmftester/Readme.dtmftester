@@ -1,0 +1,8 @@
+dtmf detection tester
+
+this app records the file to /tmp/dtmftest_<localtag>.wav, and
+plays all detected digits in a playlist.
+
+this comes in handy to tune/check the dtmf detection.
+
+ 
