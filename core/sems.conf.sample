@@ -216,3 +216,12 @@ media_processor_threads=1
 #
 # ignore_rtpxheaders=yes
 
+# optional parameter: dtmf_detector={spandsp|internal}
+#
+# sets inband DTMF detector to use. spandsp support must be compiled in
+# for this to have effect if dtmf_detector=spandsp.
+#  
+# default: internal
+#
+#dtmf_detector=spandsp
+

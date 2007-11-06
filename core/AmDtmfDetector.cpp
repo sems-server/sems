@@ -181,9 +181,11 @@ AmDtmfDetector::AmDtmfDetector(AmSession *session)
     m_eventPending(false), m_sipEventReceived(false),
     m_inbandEventReceived(false), m_rtpEventReceived(false)
 {
-  m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this));
-  m_inband_type = Dtmf::SEMSInternal;
-
+#ifndef USE_SPANDSP
+  setInbandDetector(Dtmf::SEMSInternal);
+#else
+  setInbandDetector(AmConfig::DefaultDTMFDetector);
+#endif
 }
 
 void AmDtmfDetector::setInbandDetector(Dtmf::InbandDetectorType t) {
@@ -649,7 +651,7 @@ void AmSpanDSPInbandDtmfDetector::tone_report_func(void *user_data, int code, in
 }
 
 void AmSpanDSPInbandDtmfDetector::tone_report_f(int code, int level, int delay) {
-  //  DBG("tone report %c, %d, %d\n", code, level, delay);
+  //  DBG("spandsp reports tone %c, %d, %d\n", code, level, delay);
   if (code) { // key pressed
     gettimeofday(&key_start, NULL);
     m_lastCode = code;

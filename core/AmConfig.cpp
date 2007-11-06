@@ -61,6 +61,8 @@ bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
 bool         AmConfig::IgnoreRTPXHdrs          = false;
 string       AmConfig::DefaultApplication      = "";
+Dtmf::InbandDetectorType 
+AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
 
 vector <string> AmConfig::CodecOrder;
 
@@ -279,6 +281,15 @@ int AmConfig::readConfiguration()
     if(!setDeadRtpTime(cfg.getParameter("dead_rtp_time"))){
       ERROR("invalid dead_rtp_time value specified");
       return -1;
+    }
+  }
+
+  if(cfg.hasParameter("dtmf_detector")){
+    if (cfg.getParameter("dtmf_detector") == "spandsp") {
+#ifndef USE_SPANDSP
+      WARN("spandsp support not compiled in.\n");
+#endif
+      DefaultDTMFDetector = Dtmf::SpanDSP;
     }
   }
 

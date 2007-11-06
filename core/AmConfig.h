@@ -29,6 +29,7 @@
 #define _AmConfig_h_
 
 #include "AmSdp.h"
+#include "AmDtmfDetector.h"
 
 #include <string>
 #include <map>
@@ -100,6 +101,8 @@ struct AmConfig
 
   /** Ignore RTP Extension headers? */
   static bool IgnoreRTPXHdrs;
+
+  static Dtmf::InbandDetectorType DefaultDTMFDetector;
 
   /** Init function. Resolves SMTP server address. */
   static int init();
