@@ -194,13 +194,18 @@ void AmDtmfDetector::setInbandDetector(Dtmf::InbandDetectorType t) {
     ERROR("trying to use spandsp DTMF detector without support for it"
 	  "recompile with -D USE_SPANDSP\n");
   }
+  if (!m_inbandDetector.get())
+    m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this));
+
   return;
 #else
 
-  if (t != m_inband_type) {
+  if ((t != m_inband_type) || (!m_inbandDetector.get())) {
     if (t == Dtmf::SEMSInternal) {
+      DBG("Setting internal DTMF detector\n");
       m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this));
     } else { // if t == SpanDSP
+      DBG("Setting spandsp DTMF detector\n");
       m_inbandDetector.reset(new AmSpanDSPInbandDtmfDetector(this));
     }
     m_inband_type = t;
