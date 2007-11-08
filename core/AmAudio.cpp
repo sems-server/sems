@@ -589,6 +589,7 @@ int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
       f_fmt->setSubtypeId(fd.subtype);
       f_fmt->channels = fd.channels;
       f_fmt->rate = fd.rate;
+      data_size = fd.data_size;
     }
     begin = ftell(fp);
   }
