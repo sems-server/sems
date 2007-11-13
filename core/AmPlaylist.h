@@ -44,6 +44,8 @@ struct AmPlaylistItem
   AmPlaylistItem(AmAudio* play,
 		 AmAudio* record)
     : play(play), record(record) {}
+
+  virtual ~AmPlaylistItem() { }
 };
 
 /**
