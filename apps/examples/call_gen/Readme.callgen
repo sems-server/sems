@@ -1,0 +1,53 @@
+CallGen - call generator with SEMS
+
+intro
+-----
+CallGen is a call generator. Its intention is to have a load generator 
+for (web)conference application. On the beginning of a call, it can 
+play some random DTMF digits. After that, it loops a file (set in config).
+
+The time it waits between calls, and the call duration may be specified, 
+both with two parameters: base and rand, in seconds (total = base + rand).  
+
+r-uri user and host can be specified, and random digits may be appended
+to ruri user.
+
+usage
+-----
+run the on-line help function for up2date help:
+>>> print s.help()[0]
+callgen - simple call generator
+ method: createCalls - create calls (online - takes its time to return)
+ method: scheduleCalls - schedule calls
+ method: setTarget - set call count target
+
+ parameters for these functions are always:
+  int    ncalls           - number of calls to [make, schedule, set target]
+  int    wait_time_base   - wait time btw calls, base value
+  int    wait_time_rand   - wait time btw calls, random add (total = base + rand)
+  string ruri_user        - user part of ruri
+  string ruri_host        - host part of ruri
+  int    ruri_rand_digits - no of random digits to add to ruri user
+  int    play_rand_digits - no of random digits to play at the beginning
+  int    call_time_base   - call timer, base value
+  int    call_time_rand   - call timer, random add (total = base + rand)
+
+ method: callGenStats - return some statistics
+
+
+why not sipp for load gen? 
+-------------------------
+sipp, which is obviously the sip stress test tool to use, is of course much 
+better. 
+
+there are some issues with sipp though: DTMF output with sipp pcapplay can 
+not be combined with rtp echo, and with rtp echo mode its not possible 
+to test dial-in conference bridge with pin (room) entry via dtmf. 
+
+rtp echo for media overload stress testing has the problem that an 
+overloaded conference bridge will maybe not send packets due to 
+overloading, thus on echo the overload is down-regulating itself. 
+sems as load generator always sends packets.
+
+for analysis of the received audio, its also nice to have the call already
+in sems.
