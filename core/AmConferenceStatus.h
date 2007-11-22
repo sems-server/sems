@@ -114,6 +114,8 @@ public:
 
   static void postConferenceEvent(const string& cid, int event_id, 
 				  const string& sess_id);
+
+  static size_t getConferenceSize(const string& cid);
 };
 
 #endif

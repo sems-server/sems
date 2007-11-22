@@ -67,6 +67,20 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& cid,
   return ch;
 }
 
+size_t AmConferenceStatus::getConferenceSize(const string& cid) {
+
+  cid2s_mut.lock();
+  map<string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
+
+  size_t res = 0;
+  if(it != cid2status.end())
+    res = it->second->channels.size();
+
+  cid2s_mut.unlock();
+
+  return res;
+}
+
 void AmConferenceStatus::postConferenceEvent(const string& cid, 
 					     int event_id, const string& sess_id) {
   AmConferenceStatus*  st = 0;
