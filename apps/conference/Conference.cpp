@@ -63,6 +63,7 @@ string ConferenceFactory::JoinSound;
 string ConferenceFactory::DropSound;
 string ConferenceFactory::DialoutSuffix;
 PlayoutType ConferenceFactory::m_PlayoutType = ADAPTIVE_PLAYOUT;
+unsigned int ConferenceFactory::MaxParticipants;
 
 #ifdef USE_MYSQL
 mysqlpp::Connection ConferenceFactory::Connection(mysqlpp::use_exceptions);
@@ -258,11 +259,23 @@ int ConferenceFactory::onLoad()
     DBG("Using adaptive playout buffer as playout technique.\n");
   }
 
+  MaxParticipants = 0;
+  string max_participants = cfg.getParameter("max_participants");
+  if (max_participants.length() && str2i(max_participants, MaxParticipants)) {
+    ERROR("while parsing max_participants parameter\n"); 
+  }
+
   return 0;
 }
 
 AmSession* ConferenceFactory::onInvite(const AmSipRequest& req)
 {
+  if ((ConferenceFactory::MaxParticipants > 0) &&
+      (AmConferenceStatus::getConferenceSize(req.user) >=
+      ConferenceFactory::MaxParticipants)) {
+    DBG("Conference is full.\n");
+    throw AmSession::Exception(486, "Busy Here");
+  }
   return new ConferenceDialog(req.user);
 }
 
@@ -582,7 +595,10 @@ string dtmf2str(int event)
 void ConferenceDialog::onDtmf(int event, int duration)
 {
   DBG("ConferenceDialog::onDtmf\n");
-  if(dialedout || !allow_dialout)
+  if (dialedout || !allow_dialout ||
+      ((ConferenceFactory::MaxParticipants > 0) &&
+       (AmConferenceStatus::getConferenceSize(dlg.user) >= 
+	ConferenceFactory::MaxParticipants)))
     return;
 
   switch(state){

@@ -112,6 +112,9 @@ playout_type:  adaptive_playout, adaptive_jb, or simple:
 	      See sems core documentation for an explanation of the 
               methods.
 
+max_participants: Maximum number of participants in a conference.
+		  Default = 0 (unlimited)
+
 Adding participants with "Transfer" REFER:
 ------------------------------------------
  The "Transfer REFER" is a proprietary REFER call flow which transfers a 

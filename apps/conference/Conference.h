@@ -81,6 +81,7 @@ public:
   static string DropSound;
   static string DialoutSuffix;
   static PlayoutType m_PlayoutType;
+  static unsigned int MaxParticipants;
 
 #ifdef USE_MYSQL
   static mysqlpp::Connection Connection;
