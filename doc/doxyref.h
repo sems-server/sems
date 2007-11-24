@@ -143,6 +143,18 @@
  * <ul><li>  \ref ModuleDoc_pin_collect </li></ul>
  *
  * 
+ * \section Prepaid 
+ *
+ * This is a signalling-only prepaid engine.
+ *
+ *   <ul><li> \ref ModuleDoc_sw_prepaid_sip </li></ul>
+ *
+ * \section Click2Dial 
+ *
+ * An xmlrpc-enabled way to initiate authenticated calls: 
+ *
+ *   <ul><li> \ref ModuleDoc_click2dial </li></ul>
+ *
  * \section Scripting SEMS with Python 
  *
  * There are two application modules which embed a python interpreted into 
@@ -171,6 +183,10 @@
  * 
  * <ul><li> \ref ModuleDoc_reg_agent  </li></ul>
  * <ul><li> \ref ModuleDoc_registrar_client  </li></ul>
+ *
+ * \section Various applications
+ * 
+ *  <ul><li> \ref ModuleDoc_callback </li></ul>
  */
 
 /*! \page AppDocExample Example Applications
@@ -378,6 +394,31 @@
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
+
+/*! \page ModuleDoc_callback Module Documentation: callback application plugin
+ *  \section Readme_callback Readme file
+ *  \verbinclude Readme.callback
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_sw_prepaid_sip Module Documentation: prepaid_sip application plugin
+ *  \section Readme_prepaid_sip Readme file
+ *  \verbinclude Readme.sw_prepaid_sip
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_click2dial Module Documentation: click2dial application plugin
+ *  \section Readme_click2dial Readme file
+ *  \verbinclude Readme.click2dial
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
 
 // -------------------- example apps
 

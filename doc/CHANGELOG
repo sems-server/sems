@@ -1,5 +1,15 @@
 
 Changelog for SEMS 
+ - simple call generator application 
+
+ - fixed artifacts on wav files with extra chunks
+
+ - support for spandsp DTMF detection 
+
+ - callback application
+
+ - prepaid and click2dial applications
+
  - support for extra headers in dialout sessions
 
  - support for setting the URI of a session in SDP
@@ -16,7 +26,7 @@ Changelog for SEMS
  - outbound_proxy option sets next hop on outgoing dialogs and 
    registrations
 
- - b/f: don't reuse dialog for SIp authenticated re-sending of INVITE
+ - b/f: don't reuse dialog for SIP authenticated re-sending of INVITE
 
 Version 0.10.0 (final)
  - new module for exposing internal DI APIs via XMLRPC 
