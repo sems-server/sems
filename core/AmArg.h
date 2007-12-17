@@ -34,29 +34,27 @@
 #include <vector>
 using std::vector;
 
+#include <string>
+using std::string;
+
+#include <map>
+using std::map;
+
 #include "log.h"
 
-/** 
- * base for Objects as @see AmArg parameter, which are _not_owned_ by the AmArg object (!)
- *  
- * this may e.g. used to pass an AmSession through DI API
- */
+/** base for Objects as @see AmArg parameter, not owned by AmArg (!) */
 class ArgObject {
  public:
   ArgObject() { }
   virtual ~ArgObject() { }
 };
 
-/**
- * ArgBlob is a structure which holds and owns a binary data 'blob'.
- */
-
 struct ArgBlob {
   char* data;
   int   len;
   
-  ArgBlob() 
-  : data(NULL),len(0)
+ArgBlob() 
+: data(NULL),len(0)
   {  
   }
 
@@ -73,21 +71,11 @@ struct ArgBlob {
     if (data)
       memcpy(data, _data, len);
   }
-
+  
   ~ArgBlob() { if (data) free(data); }
 };
 
-/** \brief variable type argument for DynInvoke APIs. 
- * 
- *  This variant can have the following types: 
- *  check type   getter 
- *   i  - int    asInt() 
- *   f  - double asDouble() 
- *   s  - cstr   asCStr()
- *   o  - object asObject      - object not owned by the Arg
- *   b  - blob   asBlob        - data (ArgBlob) owned by the Arg
- *   a  - array  get()/operator [] 
- */
+/** \brief variable type argument for DynInvoke APIs */
 class AmArg
 {
  public:
@@ -98,10 +86,11 @@ class AmArg
     Int,
     Double,
     CStr,
-    AObject,   // for passing pointers to objects not owned by AmArg
+    AObject,		// for passing pointers to objects not owned by AmArg
     Blob,
     
-    Array
+    Array,
+    Struct
   };
 
   struct OutOfBoundsException {
@@ -113,8 +102,10 @@ class AmArg
   };
   
   typedef std::vector<AmArg> ValueArray;
+  typedef std::map<std::string, AmArg> ValueStruct; 
 
- private:  // type
+ private:
+  // type
   short type;
     
   // value
@@ -125,71 +116,88 @@ class AmArg
     ArgObject*     v_obj;
     ArgBlob*       v_blob;
     ValueArray*    v_array;
+    ValueStruct*   v_struct;
   };
 
 
   void assertArray();
   void assertArray() const;
 
+  void assertStruct();
+  void assertStruct() const;
+
   void invalidate();
 
  public:
-  AmArg() 
-    : type(Undef) 
-    { }
-
+ AmArg() 
+   : type(Undef) 
+  { }
+  
   AmArg(const AmArg& v);
   
-  AmArg(const int& v)
-    : type(Int),
+ AmArg(const int& v)
+   : type(Int),
     v_int(v)
     { }
-
-  AmArg(const double& v)
-    : type(Double),
+  
+ AmArg(const double& v)
+   : type(Double),
     v_double(v)
     { }
+  
+ AmArg(const char* v)
+   : type(CStr)
+  {
+    v_cstr = strdup(v);
+  }
+  
+ AmArg(const ArgBlob v)
+   : type(Blob)
+  {
+    v_blob = new ArgBlob(v);
+  }
 
-  AmArg(const char* v)
-    : type(CStr)
-    {
-      v_cstr = strdup(v);
-    }
-
-  AmArg(const ArgBlob v)
-    : type(Blob)
-    {
-      v_blob = new ArgBlob(v);
-    }
-
+  // convenience constructors
+  AmArg(vector<std::string>& v);
+  AmArg(const vector<int>& v );
+  AmArg(const vector<double>& v);
+  AmArg(std::map<std::string, std::string>& v);
+  AmArg(std::map<std::string, AmArg>& v);
+  
   ~AmArg() { invalidate(); }
 
   short getType() const { return type; }
 
+  AmArg& operator=(const AmArg& rhs);
+
 #define isArgArray(a) (AmArg::Array == a.getType())
+#define isArgStruct(a)(AmArg::Struct == a.getType())
 #define isArgDouble(a) (AmArg::Array == a.getType())
 #define isArgInt(a) (AmArg::Int == a.getType())
 #define isArgCStr(a) (AmArg::CStr == a.getType())
 #define isArgAObject(a) (AmArg::AObject == a.getType())
 #define isArgBlob(a) (AmArg::Blob == a.getType())
 
-#define assertArgArray(a) \
-  if (!isArgArray(a)) \
+#define assertArgArray(a)			\
+  if (!isArgArray(a))				\
     throw AmArg::TypeMismatchException();
-#define assertArgDouble(a) \
-  if (!isArgDouble(a)) \
+#define assertArgDouble(a)			\
+  if (!isArgDouble(a))				\
     throw AmArg::TypeMismatchException();
-#define assertArgInt(a) \
-  if (!isArgInt(a)) \
+#define assertArgInt(a)				\
+  if (!isArgInt(a))				\
     throw AmArg::TypeMismatchException();
-#define assertArgCStr(a) \
-  if (!isArgCStr(a)) \
+#define assertArgCStr(a)			\
+  if (!isArgCStr(a))				\
     throw AmArg::TypeMismatchException();
-#define assertArgAObject(a) \
-  if (!isArgAObject(a)) \
+#define assertArgAObject(a)			\
+  if (!isArgAObject(a))				\
     throw AmArg::TypeMismatchException();   
-#define assertArgBlob(a) \
-  if (!isArgBlob(a)) \
+#define assertArgBlob(a)			\
+  if (!isArgBlob(a))				\
+    throw AmArg::TypeMismatchException();
+#define assertArgStruct(a)			\
+  if (!isArgStruct(a))				\
     throw AmArg::TypeMismatchException();
 
   void setBorrowedPointer(ArgObject* v) {
@@ -203,10 +211,18 @@ class AmArg
   ArgObject*  asObject() const { return v_obj; }
   ArgBlob*    asBlob()   const { return v_blob; }
 
+  vector<string>     asStringVector()    const; 
+  vector<int>        asIntVector()       const; 
+  vector<double>     asDoubleVector()    const; 
+  vector<ArgObject*> asArgObjectVector() const; 
+  vector<ArgBlob>    asArgBlobVector()   const; 
+
   // operations on arrays
   void assertArray(size_t s);
 
   void push(const AmArg& a);
+
+  void concat(const AmArg& a);
   
   const size_t size() const;
 
@@ -218,10 +234,28 @@ class AmArg
 
   /** resizes array if too small */
   AmArg& operator[](size_t idx);
+  /** throws OutOfBoundsException if array too small */
+  AmArg& operator[](size_t idx) const;
+
+  /** resizes array if too small */
+  AmArg& operator[](int idx);
+  /** throws OutOfBoundsException if array too small */
+  AmArg& operator[](int idx) const;
+
+  AmArg& operator[](std::string key);
+  AmArg& operator[](std::string key) const;
+  AmArg& operator[](const char* key);
+  AmArg& operator[](const char* key) const;
+
+  /** Check for the existence of a struct member by name. */
+  bool hasMember(const std::string& name) const;
+  bool hasMember(const char* name) const;
+
+  std::vector<std::string> enumerateKeys() const;
+  ValueStruct::const_iterator begin() const;
+  ValueStruct::const_iterator end() const;
 
   /** 
-   * check ArgArray for type correctness of the elements
-   * 
    * throws exception if arg array does not conform to spec 
    *   i  - int 
    *   f  - double
@@ -229,6 +263,7 @@ class AmArg
    *   o  - object
    *   b  - blob
    *   a  - array
+   *   u  - struct
    *
    *   e.g. "ssif" -> [cstr, cstr, int, double]
    */
@@ -236,3 +271,4 @@ class AmArg
 };
 
 #endif
+
