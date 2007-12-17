@@ -5,6 +5,12 @@ by component modules accessible from XMLRPC. Additionaly the builtin
 methods calls, get_loglevel and set_loglevel are implemented (like in the 
 stats UDP server). 
 
+Additionally, it can be used as client to access XMLRPC servers. Applications
+can use the DI function newConnection to add a new server entry, and sendRequest
+to send a request. If sendRequest is executed, an active server is selected from 
+the list and used to send the request. If sending the request failes, the server
+is put inactive for a (configurable) while, and only then retried.
+
 This module uses the XmlRpc++ library (http://xmlrpcpp.sourceforge.net/).
 In order to compile it, the xmlrpc library is needed; install it by 
 make install-xmlrpcpp, or by hand:
@@ -31,8 +37,55 @@ Configuration parameters
   direct_export    none       search these interfaces for methods 
                               to export
 
-Exporting functions from a DI interface
----------------------------------------
+  run_server       yes        start an XMLRPC server
+
+  server_retry_after 10       retry a failed server after n seconds
+
+Using XMLRPC2DI client over DI
+------------------------------
+
+DI method "newConnection"
+ arguments: 
+    "ssis":   app_name, server, port, uri
+ example: 
+ -- snip --
+  AmDynInvoke* xmlrpc2di;
+  AmDynInvokeFactory* xfFactory = AmPlugIn::instance()->getFactory4Di("xmlrpc2di");
+  if (NULL == xfFactory || 
+      NULL == (xmlrpc2di = xfFactory->getInstance())){
+    ERROR("could not get xmlrpc2di. please load the xmlrpc2di module\n");
+    return;
+  }
+
+  AmArg cargs, cret;    
+  cargs.push("conf_auth");
+  cargs.push("192.168.0.1");
+  cargs.push(8102);
+  cargs.push("");
+  xmlrpc2di->invoke("newConnection", cargs, cret);
+ -- snip --
+             
+DI method "sendRequest"
+ arguments: 
+    "ssa":    app_name, method, args
+ example: 
+ -- snip --
+    AmArg args, ret;    
+    args.push("conf_auth");
+    args.push("authPin");  // method name
+    args.assertArray(3);
+    args[2].push("fancy_parameter"); // some parameters
+    args[2].push("1234");
+    xmlrpc2di->invoke("sendRequest", args, ret);
+    if (ret[0].asInt() == 0) {
+     DBG("status %d, description %s, uri %s", 
+	ret[2][0].asInt(), ret[2][1].asCStr(), ret[2][3].asCStr());
+    }
+ -- snip --
+
+
+Exporting functions from a DI interface to XMLRPC
+-------------------------------------------------
 The xmlrpc2di module searches the interfaces configured by the 
 'direct_export' configuration variable for functions to export
 via XMLRPC. The interface must provide a function '_list' which 

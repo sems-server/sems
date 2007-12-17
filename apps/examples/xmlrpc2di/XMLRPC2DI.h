@@ -33,16 +33,24 @@ using namespace XmlRpc;
 #include "AmThread.h"
 #include "AmApi.h"
 
-#define DEF_XMLRPCSERVERMETHOD(cls_name, func_name) \
-class cls_name \
-	:  public XmlRpcServerMethod { \
-\
-public: \
-	cls_name(XmlRpcServer* s) : \
-		XmlRpcServerMethod(func_name, s) { } \
-\
+#include <map>
+using std::map;
+
+#include <string>
+using std::string;
+
+#include <time.h>
+
+#define DEF_XMLRPCSERVERMETHOD(cls_name, func_name)		\
+  class cls_name						\
+  :  public XmlRpcServerMethod {				\
+								\
+  public:							\
+  cls_name(XmlRpcServer* s) :					\
+    XmlRpcServerMethod(func_name, s) { }			\
+								\
 	void execute(XmlRpcValue& params, XmlRpcValue& result); \
-}
+  }
 
 
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerCallsMethod,       "calls");
@@ -93,19 +101,57 @@ class XMLRPC2DIServer : public AmThread {
 			      unsigned int start_index = 0);
 
   /** convert all args in a into result*/
-  static void amarg2xmlrpcval(AmArg& a, XmlRpcValue& result);
+  static void amarg2xmlrpcval(const AmArg& a, XmlRpcValue& result);
 };
 
+class  XMLRPCServerEntry {
+  bool active;
+  time_t last_try;
 
-class XMLRPC2DI : public AmDynInvokeFactory {
+ public: 
+  XMLRPCServerEntry(string s, int p, string u);
+  ~XMLRPCServerEntry();
+
+  bool is_active();
+  void set_failed();
+
+  string server;
+  int port;
+  string uri;
+};
+
+class XMLRPC2DI 
+: public AmDynInvokeFactory, 
+  public AmDynInvoke {
+
   XMLRPC2DIServer* server;
   unsigned int XMLRPCPort;
+
+  static XMLRPC2DI* _instance;
+  bool configured;
+  int load();
+
+  //  app           server
+  multimap<string, XMLRPCServerEntry*> servers;
+  AmMutex server_mut;
+  XMLRPCServerEntry* getServer(const string& app_name);
+
+  void newConnection(const AmArg& args, AmArg& ret);
+  void sendRequest(const AmArg& args, AmArg& ret);
  public:
-  XMLRPC2DI(string mod_name);
+  XMLRPC2DI(const string& mod_name);
   ~XMLRPC2DI() { }
   int onLoad();
-  AmDynInvoke* getInstance() { return NULL; }
 
+  // DI factory
+  AmDynInvoke* getInstance() { return instance(); }
+
+  // DI API
+  static XMLRPC2DI* instance();
+  void invoke(const string& method, 
+	      const AmArg& args, AmArg& ret);
+
+  static unsigned int ServerRetryAfter;
 };
 
 #endif

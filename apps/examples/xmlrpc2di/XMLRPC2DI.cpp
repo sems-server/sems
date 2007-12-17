@@ -38,16 +38,45 @@
 #define XMLRPC_PORT   "8090" // default port
 EXPORT_PLUGIN_CLASS_FACTORY(XMLRPC2DI, MOD_NAME)
 
-  XMLRPC2DI::XMLRPC2DI(string mod_name) 
-    : AmDynInvokeFactory(mod_name)
+XMLRPC2DI* XMLRPC2DI::_instance=0;
+
+// retry a failed server after 10 seconds
+unsigned int XMLRPC2DI::ServerRetryAfter = 10; 
+
+XMLRPC2DI* XMLRPC2DI::instance()
+{
+  if(_instance == NULL){
+    _instance = new XMLRPC2DI(MOD_NAME);
+  }
+  return _instance;
+}
+
+XMLRPC2DI::XMLRPC2DI(const string& mod_name) 
+  : AmDynInvokeFactory(mod_name), configured(false)
 {
 }
 
 int XMLRPC2DI::onLoad() {
+  return instance()->load();
+}
+
+int XMLRPC2DI::load() {
+  if (configured)    // load only once
+    return 0;
+  configured = true;
 
   AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
     return -1;
+
+  ServerRetryAfter = cfg.getParameterInt("server_retry_after", 10);
+  DBG("retrying failed server after %u seconds\n", ServerRetryAfter);
+
+  string run_server = cfg.getParameter("run_server","yes");
+  if (run_server != "yes") {
+    DBG("XMLRPC server will not be started.\n");
+    return 0;
+  }
 
   string conf_xmlrpc_port = cfg.getParameter("xmlrpc_port",XMLRPC_PORT);
   if (conf_xmlrpc_port.empty()) {
@@ -83,6 +112,114 @@ int XMLRPC2DI::onLoad() {
   return 0;
 }
 
+XMLRPCServerEntry::XMLRPCServerEntry(string s, int p, string u)
+  : last_try(0), active(true), server(s), port(p), uri(u) 
+{ }
+
+XMLRPCServerEntry::~XMLRPCServerEntry() 
+{ }
+
+bool XMLRPCServerEntry::is_active() {
+  if (!active && 
+      ((unsigned int)(last_try + XMLRPC2DI::ServerRetryAfter) 
+       < (unsigned int)time(NULL)))
+      active = true;
+  
+  return active;
+}
+
+void XMLRPCServerEntry::set_failed() {
+  active = false;
+  time(&last_try);
+}
+
+void XMLRPC2DI::newConnection(const AmArg& args, AmArg& ret) {
+  string app_name     = args.get(0).asCStr();
+  string server_name  = args.get(1).asCStr();
+  int port            = args.get(2).asInt();
+  string uri          = args.get(3).asCStr();
+  DBG("adding XMLRPC server http://%s:%d%s for application '%s'\n",
+      server_name.c_str(), port, uri.c_str(), app_name.c_str());
+
+  XMLRPCServerEntry* sc = new XMLRPCServerEntry(server_name, port, uri);
+
+  server_mut.lock();
+  servers.insert(make_pair(app_name, sc));
+  server_mut.unlock();
+}
+
+XMLRPCServerEntry* XMLRPC2DI::getServer(const string& app_name) {
+  vector<XMLRPCServerEntry*> scs;    
+  server_mut.lock();
+  for (multimap<string, XMLRPCServerEntry*>::iterator it=
+	 servers.lower_bound(app_name);
+       it != servers.upper_bound(app_name); it++) {
+    if (it->second->is_active())
+      scs.push_back(it->second);
+  }
+  server_mut.unlock();
+
+  DBG("found %d active connections for application %s\n", 
+      scs.size(), app_name.c_str());  
+  if (scs.empty()) {
+    // no connections found
+    return NULL;
+  }
+
+  // select one connection randomly 
+  return scs[random() % scs.size()];
+}
+
+void XMLRPC2DI::sendRequest(const AmArg& args, AmArg& ret) {
+  string app_name     = args.get(0).asCStr();
+  string method       = args.get(1).asCStr();
+  AmArg& params       = args.get(2);
+
+  while (true) {
+    XMLRPCServerEntry* srv = getServer(app_name);
+    if (NULL == srv) {
+      ret.push(-1);
+      ret.push("no active connections");
+      return;
+    }
+    XmlRpcClient c(srv->server.c_str(), srv->port, 
+		   srv->uri.empty()?NULL:srv->uri.c_str());
+
+    XmlRpcValue x_args, x_result;
+    XMLRPC2DIServer::amarg2xmlrpcval(params, x_args);
+    if (c.execute(method.c_str(), x_args, x_result) &&  !c.isFault()) {
+      DBG("successfully executed method %s on server %s:%d\n",
+	  method.c_str(), srv->server.c_str(), srv->port);
+      ret.push(0);
+      ret.push("OK");
+      ret.assertArray(3);
+      XMLRPC2DIServer::xmlrpcval2amarg(x_result, ret[2]);
+      return;      
+    } else {
+      DBG("executing method %s failed on server %s:%d\n",
+	  method.c_str(), srv->server.c_str(), srv->port);
+      srv->set_failed();
+    }
+  }
+}
+
+void XMLRPC2DI::invoke(const string& method, 
+		       const AmArg& args, AmArg& ret) {
+
+  if(method == "newConnection"){
+    args.assertArrayFmt("ssis"); // app, server, port, uri
+    newConnection(args, ret);
+  } else if(method == "sendRequest"){
+    args.assertArrayFmt("ssa");   // app, method, args
+    sendRequest(args, ret);
+  } else if(method == "_list"){ 
+    ret.push(AmArg("newConnection"));
+    ret.push(AmArg("sendRequest"));
+  }  else
+    throw AmDynInvoke::NotImplemented(method);
+  
+}
+
 // XMLRPC server functions
 
 XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port, 
@@ -96,7 +233,7 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
     // register method 'set_loglevel'
     getloglevel_method(&s)
 {	
-  DBG(" XMLRPC Server: enabled builtin method 'calls'\n");
+  DBG("XMLRPC Server: enabled builtin method 'calls'\n");
   DBG("XMLRPC Server: enabled builtin method 'get_loglevel'\n");
   DBG("XMLRPC Server: enabled builtin method 'set_loglevel'\n");
 
@@ -256,9 +393,16 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a,
   if (v.valid()) {
     for (int i=start_index; i<v.size();i++) {
       switch (v[i].getType()) {
-      case XmlRpcValue::TypeInt:   { a.push(AmArg((int)v[i]));    }  break;
-      case XmlRpcValue::TypeDouble:{ a.push(AmArg((double)v[i])); }  break;
-      case XmlRpcValue::TypeString:{ a.push(AmArg(((string)v[i]).c_str())); }  break;
+      case XmlRpcValue::TypeInt:   { /* DBG("X->A INT\n");*/ a.push(AmArg((int)v[i]));    }  break;
+      case XmlRpcValue::TypeDouble:{ /* DBG("X->A DBL\n");*/ a.push(AmArg((double)v[i])); }  break;
+      case XmlRpcValue::TypeString:{ /* DBG("X->A STR\n");*/ a.push(AmArg(((string)v[i]).c_str())); }  break;
+      case XmlRpcValue::TypeArray: { 
+	// DBG("X->A ARR\n"); 
+	a.push(AmArg());
+	a[a.size()-1].assertArray(0);
+	AmArg arr; 
+	xmlrpcval2amarg(v[i], a[a.size()-1], 0);
+      } break;
 	// TODO: support more types (datetime, struct, ...)
       default:     throw XmlRpcException("unsupported parameter type", 400);
       };
@@ -266,25 +410,39 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a,
   } 
 }
 
-void XMLRPC2DIServer::amarg2xmlrpcval(AmArg& a, 
+void XMLRPC2DIServer::amarg2xmlrpcval(const AmArg& a, 
 				      XmlRpcValue& result) {
   switch (a.getType()) {
   case AmArg::CStr:  
+    //    DBG("a->X CSTR\n");
     result = string(a.asCStr()); break;
 
-  case AmArg::Int:  
+  case AmArg::Int:
+    //    DBG("a->X INT\n");  
     result=a.asInt(); break;
 
   case AmArg::Double: 
+    //    DBG("a->X DOUBLE\n");  
     result=a.asDouble(); break;
 
   case AmArg::Array:
+    //    DBG("a->X ARRAY size %u\n", a.size());  
     result.setSize(a.size());
     for (size_t i=0;i<a.size();i++) {
       // duh... recursion...
       amarg2xmlrpcval(a.get(i), result[i]);
     }
     break;
+
+  case AmArg::Struct:
+    //    DBG("a->X STRUCT size %u\n", a.size());  
+    for (AmArg::ValueStruct::const_iterator it = 
+	   a.begin(); it != a.end(); it++) {
+      // duh... recursion...
+      amarg2xmlrpcval(it->second, result[it->first]);
+    }
+    break;
+
   default: { WARN("unsupported return value type %d\n", a.getType()); } break;
     // TODO: do sth with the data here ?
   }
