@@ -1,0 +1,20 @@
+#
+# SEMS startup options:
+# INSTRUCTIONS:
+#  - copy this file to /etc/default/sems
+#
+
+# Set to yes to enable openser, once configured properly.
+RUN_SEMS=no
+
+# User to run as
+USER=openser
+#USER=ser
+
+# Group to run as
+GROUP=openser
+#GROUP=ser
+
+# Enable the server to leave a core file when it crashes.
+DUMP_CORE=no 
+
