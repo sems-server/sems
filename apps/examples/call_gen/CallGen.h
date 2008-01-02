@@ -39,6 +39,8 @@ using std::map;
 using std::multimap;
 using std::string;
 
+#include <time.h>
+
 enum CallGenEvent {
   CGCreate = 0,
   CGConnect,
