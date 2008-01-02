@@ -7,9 +7,12 @@ plug_in_name = binrpcctrl
 # Remember to fetch the lib before compiling
 # using: 'make libbinrpc'
 #
-LIBBINRPC_INC?=libbinrpc/include
-LIBBINRPC_LIB?=libbinrpc/src
-module_ldflags = $(LIBBINRPC_LIB)/libbinrpc.a
+LIBBINRPC_DIR?=libbinrpc/
+LIBBINRPC_INC?=$(LIBBINRPC_DIR)include
+LIBBINRPC_LIB?=$(LIBBINRPC_DIR)src
+
+module_extra_objs = $(LIBBINRPC_LIB)/libbinrpc.a
+extra_clean = libbinrpc_clean
 
 # Use following definitions if you installed libbinrpc
 #
@@ -19,16 +22,22 @@ module_ldflags = $(LIBBINRPC_LIB)/libbinrpc.a
 
 module_cflags  = -DMOD_NAME=\"$(plug_in_name)\" -I$(LIBBINRPC_INC)
 
-%.o : %.c %.d
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-
-%.d : %.c %.h Makefile
-	$(CC) -MM $< $(CFLAGS) $(CPPFLAGS) > $@
+#%.o : %.c %.d
+#	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+#
+#%.d : %.c %.h Makefile
+#	$(CC) -MM $< $(CFLAGS) $(CPPFLAGS) > $@
 
 libbinrpc:
 	svn co http://svn.berlios.de/svnroot/repos/libbinrpc/trunk/ && \
 	mv trunk libbinrpc && \
 	cd libbinrpc && \
 	$(MAKE) all
+
+$(LIBBINRPC_LIB)/libbinrpc.a: 
+	$(MAKE) -C $(LIBBINRPC_DIR) all
+
+libbinrpc_clean:
+	$(MAKE) -C $(LIBBINRPC_DIR) clean
 
 include ../Makefile.app_module 
