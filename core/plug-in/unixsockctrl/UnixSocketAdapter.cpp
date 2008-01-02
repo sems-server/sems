@@ -293,13 +293,15 @@ bool UnixSocketAdapter::receive(AmSipReply &reply)
   string tmp_str;
   string cseq_str;
 
+#ifdef OpenSER
+  unsigned int mi_res_code;
+  string mi_res_msg;
+#endif
+
   if (cacheMsg() < 0)
     goto failure;
 
 #ifdef OpenSER
-  unsigned int mi_res_code;
-  string mi_res_msg;
-
   SAFECTRLCALL1(getParam,tmp_str);
     
   DBG("MI response from OpenSER: %s\n",tmp_str.c_str());
@@ -434,9 +436,9 @@ string UnixSocketAdapter::serialize(const AmSipReply &reply,
 {
   string msg;
 
-  msg = ":t_reply:" +
+  msg = ":t_reply:" 
 #ifndef OpenSER
-    rplAddr +
+    + rplAddr +
 #endif
     "\n";
 
@@ -563,9 +565,9 @@ string UnixSocketAdapter::serialize(const AmSipRequest& req,
 {
   string msg;
 
-  msg = ":t_uac_dlg:" + 
+  msg = ":t_uac_dlg:" 
 #ifndef OpenSER
-    rplAddr + 
+    + rplAddr + 
 #endif
     "\n"
     + req.method + "\n"
@@ -623,7 +625,7 @@ string UnixSocketAdapter::serialize(const AmSipRequest& req,
     + req.body + ".\n\n";
 #else
   // is lf2crlf() needed?! (see function for replies)
-  bodyFrame = "\n" + "\"" + lf2crlf(body) + "\"";
+  bodyFrame = "\n"  "\"" + lf2crlf(req.body) + "\"";
 #endif
 
   msg += extraHdrs + bodyFrame;
@@ -636,15 +638,15 @@ string UnixSocketAdapter::serialize_cancel(const AmSipRequest& req,
 {
   string msg;
 
-  msg = ":t_uac_cancel:" + 
+  msg = ":t_uac_cancel:" 
 #ifndef OpenSER
-    rplAddr + 
+    + rplAddr + 
 #endif
     "\n" +
     req.callid + "\n" +
     int2str(req.cseq) + "\n"
 #ifndef OpenSER
-    + "\n"
+    "\n"
 #endif
     ;
   return msg;
