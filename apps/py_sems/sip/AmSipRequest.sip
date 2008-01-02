@@ -3,7 +3,7 @@ class AmSipRequest
 {
 
 %TypeHeaderCode
-#include "../../../core/AmSipRequest.h"
+#include "../../../core/AmSipMsg.h"
 %End
 
 public:
@@ -29,9 +29,6 @@ public:
 
     string route;     // record routing
     string next_hop;  // next_hop for t_uac_dlg
-    
-    string key; // transaction key to be used in t_reply
-
     
 };
 

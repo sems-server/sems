@@ -3,7 +3,7 @@ struct AmSipReply
 {
 private:
 %TypeHeaderCode
-#include "../../../core/AmSipReply.h"
+#include "../../../core/AmSipMsg.h"
 %End
 
 
