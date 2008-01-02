@@ -77,6 +77,14 @@ plugin_path=/usr/local/lib/sems/plug-in/
 # example for announcement with g711 and ilbc codecs only 
 # load_plugins=wav;ilbc;announcement
 
+# optional parameter: exclude_plugins=<modules list>
+#
+# semicolon-separated list of modules to exclude from loading
+# ('blacklist'). This has only effect it load_plugins is empty.
+# If empty, all modules in plugin_path are loaded.
+#
+exclude_plugins=binrpcctrl;
+
 # optional parameter: smtp_server=<hostname>
 #
 # - sets address of smtp server

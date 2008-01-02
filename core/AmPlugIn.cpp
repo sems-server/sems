@@ -44,6 +44,9 @@
 #include <string.h>
 #include <errno.h>
 
+#include <set>
+using std::set;
+
 static unsigned int pcm16_bytes2samples(long h_codec, unsigned int num_bytes)
 {
   return num_bytes / 2;
@@ -137,13 +140,26 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   if (!plugins.length()) {
     DBG("AmPlugIn: loading modules in directory '%s':\n", directory.c_str());
 
+    vector<string> excluded_plugins = explode(AmConfig::ExcludePlugins, ";");
+    set<string> excluded_plugins_s; 
+    for (vector<string>::iterator it = excluded_plugins.begin(); 
+	 it != excluded_plugins.end();it++)
+      excluded_plugins_s.insert(*it);
+
     while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
+      string plugin_name = string(entry->d_name);
 
-      string plugin_file = directory + "/" + string(entry->d_name);
-
-      if( plugin_file.find(".so",plugin_file.length()-3) == string::npos ){
+      if(plugin_name.find(".so",plugin_name.length()-3) == string::npos ){
         continue;
       }
+      
+      if (excluded_plugins_s.find(plugin_name.substr(0, plugin_name.length()-3)) 
+	  != excluded_plugins_s.end()) {
+	DBG("skipping excluded plugin %s\n", plugin_name.c_str());
+	continue;
+      }
+      
+      string plugin_file = directory + "/" + plugin_name;
 
       DBG("loading %s ...\n",plugin_file.c_str());
       if( (err = loadPlugIn(plugin_file)) < 0 ) {
@@ -578,7 +594,7 @@ int AmPlugIn::loadCtrlFacPlugIn(AmPluginFactory* f)
     return -1;
   }
   if (ctrlIface) {
-    ERROR("once control interface already loaded (`%s'): can not load a "
+    ERROR("one control interface already loaded (`%s'): can not load a "
       "second one (`%s').\n", (ctrlIface->getName()).c_str(), 
       (_ctrlIface->getName()).c_str());
     return -1;

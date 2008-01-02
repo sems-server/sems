@@ -56,6 +56,8 @@ struct AmConfig
   static string PlugInPath;
   /** semicolon separated list of plugins to load */
   static string LoadPlugins;
+  /** semicolon separated list of plugins to exclude from loading */
+  static string ExcludePlugins;
   //static unsigned int MaxRecordTime;
   /** run the programm in daemon mode? */
   static int DaemonMode;

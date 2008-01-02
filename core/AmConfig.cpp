@@ -43,6 +43,7 @@ string       AmConfig::SmtpServerAddress       = SMTP_ADDRESS_IP;
 unsigned int AmConfig::SmtpServerPort          = SMTP_PORT;
 string       AmConfig::PlugInPath              = PLUG_IN_PATH;
 string       AmConfig::LoadPlugins             = "";
+string       AmConfig::ExcludePlugins          = "";
 int          AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
 string       AmConfig::LocalIP                 = "";
 string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
@@ -187,6 +188,9 @@ int AmConfig::readConfiguration()
 
   // load_plugins
   LoadPlugins = cfg.getParameter("load_plugins");
+
+  // exclude_plugins
+  ExcludePlugins = cfg.getParameter("exclude_plugins");
 
   // user_agent
   if (cfg.getParameter("use_default_signature")=="yes")
