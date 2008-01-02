@@ -27,7 +27,7 @@
 #include <Python.h>
 #include "structmember.h"
 
-#include "AmSipRequest.h"
+#include "AmSipMsg.h"
 
 extern PyTypeObject IvrSipRequestType;
 PyObject* IvrSipRequest_FromPtr(AmSipRequest* req);

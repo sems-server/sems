@@ -21,7 +21,7 @@
  */
 
 #include "IvrSipRequest.h"
-#include "AmSipRequest.h"
+
 #include "log.h"
 
 // Data definition
@@ -91,8 +91,6 @@ def_IvrSipRequest_GETTER(IvrSipRequest_getto_tag,       to_tag)
 def_IvrSipRequest_GETTER(IvrSipRequest_getroute,        route)
 def_IvrSipRequest_GETTER(IvrSipRequest_getnext_hop,     next_hop)
 
-def_IvrSipRequest_GETTER(IvrSipRequest_getkey,          key)
-
 def_IvrSipRequest_GETTER(IvrSipRequest_getbody,         body)
 
 
@@ -127,7 +125,6 @@ static PyGetSetDef IvrSipRequest_getset[] = {
   {"route",       (getter)IvrSipRequest_getroute, NULL, "record routing", NULL},
   {"next_hop",    (getter)IvrSipRequest_getnext_hop, NULL, "next_hop for t_uac_dlg", NULL},
   {"cseq",    (getter)IvrSipRequest_getcseq, NULL, "CSeq for next request", NULL},
-  {"key",    (getter)IvrSipRequest_getkey, NULL, "CSeq for next request", NULL},
   {"body",    (getter)IvrSipRequest_getbody, NULL, "CSeq for next request", NULL},
   {NULL}  /* Sentinel */
 };
