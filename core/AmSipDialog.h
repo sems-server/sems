@@ -28,8 +28,7 @@
 #ifndef AmSipDialog_h
 #define AmSipDialog_h
 
-#include "AmSipRequest.h"
-#include "AmSipReply.h"
+#include "AmSipMsg.h"
 
 #include <string>
 #include <vector>
@@ -133,6 +132,8 @@ class AmSipDialog
   string next_hop;     // next_hop for t_uac_dlg
 
   int cseq;            // CSeq for next request
+
+  string serKey;      // opaque string returned by SER, when staring a T
 
   AmSipDialog(AmSipDialogEventHandler* h=0)
     : status(Disconnected),cseq(10),hdl(h)

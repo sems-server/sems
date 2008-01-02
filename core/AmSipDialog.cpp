@@ -29,6 +29,7 @@
 #include "AmConfig.h"
 #include "AmSession.h"
 #include "AmUtils.h"
+#include "AmSipHeaders.h"
 #include "AmServer.h"
 #include "sems.h"
 
@@ -239,6 +240,50 @@ string AmSipDialog::getContactHdr()
   if(!contact_uri.empty())
     return contact_uri;
 
+  string userName;
+  if(user.empty() || !AmConfig::PrefixSep.empty())
+    userName += CONTACT_USER_PREFIX;
+    
+  if(!AmConfig::PrefixSep.empty())
+    userName += AmConfig::PrefixSep;
+    
+  if(!user.empty())
+    userName += user;
+
+  string hostName;
+  if (! sip_ip.empty()) {
+#ifdef SUPPORT_IPV6
+    if(sip_ip.find('.') != string::npos)
+      hostName += sip_ip;
+    else
+      hostName += "[" + sip_ip + "]";
+#else
+    hostName += sip_ip;
+#endif
+
+    if(! sip_port.empty())
+      hostName += ":" + sip_port;
+  }
+
+  string uri = AmServer::localURI(/*display name*/"", userName, hostName, 
+      /*uri params*/"", /*hdrs params*/"");
+
+  string res = SIP_HDR_COLSP(SIP_HDR_CONTACT) + uri + CRLF;
+
+  // save contact_uri for subsequent contact header
+  // only if sip_ip is known
+  if (!sip_ip.empty())
+    contact_uri  = res;
+
+  return res;
+}
+
+#if 0
+string AmSipDialog::getContactHdr()
+{
+  if(!contact_uri.empty())
+    return contact_uri;
+
   string res = "Contact: <sip:";
     
   if(user.empty() || !AmConfig::PrefixSep.empty())
@@ -277,121 +322,7 @@ string AmSipDialog::getContactHdr()
 
   return res;
 }
-
-#ifdef OpenSER
-
-/* Escape " chars of argument and return escaped string */
-string escape(string s)
-{
-    string::size_type pos;
-
-    pos = 0;
-    while ((pos = s.find("\"", pos)) != string::npos) {
-	s.insert(pos, "\\");
-	pos = pos + 2;
-    }
-    return s;
-}
-
-/* Add CR before each LF if not already there */
-string lf2crlf(string s)
-{
-    string::size_type pos;
-
-    pos = 0;
-    while ((pos = s.find("\n", pos)) != string::npos) {
-	if ((pos > 0) && (s[pos - 1] == 13)) {
-	    pos = pos + 1;
-	} else {
-	    s.insert(pos, "\r");
-	    pos = pos + 2;
-	}
-    }
-    return s;
-}
-
-int AmSipDialog::reply(const AmSipRequest& req,
-		       unsigned int  code,
-		       const string& reason,
-		       const string& content_type,
-		       const string& body,
-		       const string& hdrs)
-{
-  string m_hdrs = hdrs;
-  int headers;
-
-  if(hdl)
-    hdl->onSendReply(req,code,reason,
-		     content_type,body,m_hdrs);
-
-  string reply_sock = "/tmp/" + AmSession::getNewId();
-  string code_str = int2str(code);
-
-  string msg = ":t_reply:\n";
-
-  msg += code_str;
-  msg += "\n";
-
-  msg += reason;
-  msg += "\n";
-
-  msg += req.key;
-  msg += "\n";
-
-  msg += local_tag;
-  msg += "\n";
-
-  headers = 0;
-
-  if(!m_hdrs.empty()) {
-      msg += "\"" + lf2crlf(escape(m_hdrs));
-      headers = 1;
-  }
-
-  if ((req.method!="CANCEL")&&
-      !((req.method=="BYE")&&(code<300))) {
-      if (headers == 1) {
-	  msg += lf2crlf(escape(getContactHdr()));
-      } else {
-	  msg += "\"" + lf2crlf(escape(getContactHdr()));
-	  headers = 1;
-      }
-  }
-	  
-  if(!body.empty()) {
-      if (headers == 1) {  
-	  msg += "Content-Type: " + content_type + "\r\n";
-      } else {
-	  msg += "\"Content-Type: " + content_type + "\r\n";
-	  headers = 1;
-      }
-  }
-
-  if (AmConfig::Signature.length()) {
-      if (headers == 1) {
-	  msg += "Server: " + AmConfig::Signature + "\r\n";
-      } else {
-	  msg += "\"Server: " + AmConfig::Signature + "\r\n";
-	  headers = 1;
-      }
-  }
-
-  if (headers == 1) {
-      msg += "\"\n";
-  } else {
-      msg += ".\n";
-  }
-
-  if(!body.empty())
-      msg += "\"" + body + "\"\n";
-
-  if(updateStatusReply(req,code))
-    return -1;
-
-  return AmServer::send_msg(msg,reply_sock, 500);
-}
-
-#else /* Ser */
+#endif
 
 int AmSipDialog::reply(const AmSipRequest& req,
 		       unsigned int  code,
@@ -406,122 +337,41 @@ int AmSipDialog::reply(const AmSipRequest& req,
     hdl->onSendReply(req,code,reason,
 		     content_type,body,m_hdrs);
 
-  string reply_sock = "/tmp/" + AmSession::getNewId();
-  string code_str = int2str(code);
+  AmSipReply reply;
 
-  string msg = ":t_reply:";
-
-  msg += reply_sock;
-  msg += "\n";
-
-  msg += code_str;
-  msg += "\n";
-
-  msg += reason;
-  msg += "\n";
-
-  msg += req.key;
-  msg += "\n";
-
-  msg += local_tag;
-  msg += "\n";
-
-  if(!m_hdrs.empty())
-    msg += m_hdrs;
-
+  reply.method = req.method;
+  reply.code = code;
+  reply.reason = reason;
+  reply.serKey = req.serKey;
+  reply.local_tag = local_tag;
+  reply.hdrs = hdrs;
   if ((req.method!="CANCEL")&&
       !((req.method=="BYE")&&(code<300)))
-    msg += getContactHdr();
-
-  if(!body.empty())
-    msg += "Content-Type: " + content_type + "\n";
-  if (AmConfig::Signature.length()) 
-    msg += "Server: " + AmConfig::Signature + "\n";
-
-  msg += ".\n";
-
-  if(!body.empty())
-    msg += body;
-
-  msg += ".\n\n";
+    reply.contact = getContactHdr();
+  reply.content_type = content_type;
+  reply.body = body;
 
   if(updateStatusReply(req,code))
     return -1;
 
-  return AmServer::send_msg(msg,reply_sock, 500);
+  return AmServer::sendReply(reply);
 }
-
-#endif
-
-#ifdef OpenSER
 
 /* static */
 int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
 			     const string& reason, const string& hdrs)
 {
-  string reply_sock = "/tmp/" + AmSession::getNewId();
-  string code_str = int2str(code);
-  int headers;
+  AmSipReply reply;
 
-  string msg = 
-    ":t_reply:\n" +
-    code_str + "\n" + 
-    reason + "\n" + 
-    req.key + "\n" + 
-    AmSession::getNewId() + "\n";
+  reply.method = req.method;
+  reply.code = code;
+  reply.reason = reason;
+  reply.serKey = req.serKey;
+  reply.hdrs = hdrs;
 
-  headers = 0;
-
-  if(!hdrs.empty()) {
-    msg += "\"" + lf2crlf(escape(hdrs));
-    headers = 1;
-  }
-
-  if (AmConfig::Signature.length()) {
-    if (headers == 1) {
-      msg += "Server: " + AmConfig::Signature + "\r\n";
-    } else {
-	msg += "\"Server: " + AmConfig::Signature + "\r\n";
-	headers = 1;
-    }
-  }
-
-  if (headers == 1) {
-      msg += "\"\n";
-  } else {
-      msg += ".\n";
-  }
-
-  return AmServer::send_msg(msg,reply_sock, 500);
+  return AmServer::sendReply(reply);
 }
 
-#else /* Ser */
-
-/* static */
-int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
-			     const string& reason, const string& hdrs)
-{
-  string reply_sock = "/tmp/" + AmSession::getNewId();
-  string code_str = int2str(code);
-
-  string msg = 
-    ":t_reply:" + reply_sock + "\n" +
-    code_str + "\n" + 
-    reason + "\n" + 
-    req.key + "\n" + 
-    AmSession::getNewId() + "\n";
-  if(!hdrs.empty())
-    msg += hdrs;
-
-  if (AmConfig::Signature.length()) 
-    msg += "Server: " + AmConfig::Signature + "\n";
-
-  msg += ".\n.\n\n";
-    
-  return AmServer::send_msg(msg,reply_sock, 500);
-}
-
-#endif
 
 int AmSipDialog::bye()
 {
@@ -679,8 +529,6 @@ int AmSipDialog::transfer(const string& target)
   return 0;
 }
 
-#ifdef OpenSER
-
 int AmSipDialog::cancel()
 {
   int cancel_cseq = -1;
@@ -700,46 +548,16 @@ int AmSipDialog::cancel()
     return -1;
   }
     
-  string reply_sock = "/tmp/" + AmSession::getNewId();
-  string msg = ":t_uac_cancel:\n"
-    + callid + "\n"
-    + int2str(cancel_cseq) + "\n";
-
-  return AmServer::send_msg(msg, reply_sock, 50000);
+  AmSipRequest req;
+  req.method = "CANCEL";
+  //usefull for SER-0.9.6/Open~
+  req.callid = callid;
+  req.cseq = cseq;
+  //usefull for SER-2.0.0
+  req.serKey = serKey;
+  string empty;
+  return AmServer::sendRequest(req, empty) ? 0 : -1;
 }
-
-#else /* Ser */
-
-int AmSipDialog::cancel()
-{
-  int cancel_cseq = -1;
-  TransMap::reverse_iterator t;
-
-  for(t = uac_trans.rbegin();
-      t != uac_trans.rend(); t++) {
-
-    if(t->second.method == "INVITE"){
-      cancel_cseq = t->second.cseq;
-      break;
-    }
-  }
-    
-  if(t == uac_trans.rend()){
-    ERROR("could not find INVITE transaction to cancel\n");
-    return -1;
-  }
-    
-  string reply_sock = "/tmp/" + AmSession::getNewId();
-  string msg = ":t_uac_cancel:" + reply_sock + "\n"
-    + callid + "\n"
-    + int2str(cancel_cseq) + "\n\n";
-
-  return AmServer::send_msg(msg, reply_sock, 50000);
-}
-
-#endif
-
-#ifdef OpenSER
 
 int AmSipDialog::sendRequest(const string& method, 
 			     const string& content_type,
@@ -752,60 +570,38 @@ int AmSipDialog::sendRequest(const string& method,
   if(hdl)
     hdl->onSendRequest(method,content_type,body,m_hdrs,cseq);
 
-  msg = ":t_uac_dlg:\n"
-    + method + "\n"
-    + remote_uri + "\n";
-    
-  if(next_hop.empty())
-    msg += ".";
-  else
-    msg += next_hop;
-    
-  msg += "\n";
-    
-  msg += ".\n"; /* socket */
+  AmSipRequest req;
 
-  msg += "\"From: " + escape(local_party);
+  req.method = method;
+  req.r_uri = remote_uri;
+  req.next_hop = next_hop;
+
+  req.from = "From: " + local_party;
   if(!local_tag.empty())
-    msg += ";tag=" + local_tag;
+    req.from += ";tag=" + local_tag;
     
-  msg += "\n";
-  
-  msg += "To: " + escape(remote_party);
+  req.to = "To: " + remote_party;
   if(!remote_tag.empty()) 
-    msg += ";tag=" + remote_tag;
+    req.to += ";tag=" + remote_tag;
     
-  msg += "\n";
-    
-  msg += "CSeq: " + int2str(cseq) + " " + method + "\n"
-    + "Call-ID: " + callid + "\n";
+  req.cseq = cseq;
+  req.callid = callid;
     
   if((method!="BYE")&&(method!="CANCEL"))
-    msg += lf2crlf(escape(getContactHdr()));
+    req.contact = getContactHdr();
     
-  if(!m_hdrs.empty()){
-    msg += lf2crlf(escape(m_hdrs));
-    if(m_hdrs[m_hdrs.length()-1] != '\n')
-      msg += "\r\n";
-  }
+  if(!m_hdrs.empty())
+    req.hdrs = m_hdrs;
 
   if(!route.empty())
-    msg += lf2crlf(getRoute());
+    req.route = getRoute();
     
-  if(!body.empty())
-    msg += "Content-Type: " + content_type + "\r\n";
-    
-  msg += "Max-Forwards: "  MAX_FORWARDS "\r\n";
+  if(!body.empty()) {
+    req.content_type = content_type;
+    req.body = body;
+  }
 
-  if (AmConfig::Signature.length()) 
-    msg += "User-Agent: " + AmConfig::Signature + "\r\n";
-
-  msg += "\"\n";
-
-  if (!body.empty())
-    msg += "\"" + lf2crlf(body) + "\"\n";
-
-  if (AmServer::send_msg_replyhandler(msg)) 
+  if (AmServer::sendRequest(req, serKey)) 
     return -1;
     
   uac_trans[cseq] = AmSipTransaction(method,cseq);
@@ -816,80 +612,6 @@ int AmSipDialog::sendRequest(const string& method,
   return 0;
 }
 
-#else /* Ser */
-
-int AmSipDialog::sendRequest(const string& method, 
-			     const string& content_type,
-			     const string& body,
-			     const string& hdrs)
-{
-  string msg,ser_cmd;
-  string m_hdrs = hdrs;
-
-  if(hdl)
-    hdl->onSendRequest(method,content_type,body,m_hdrs,cseq);
-
-  msg = ":t_uac_dlg:" + AmConfig::ReplySocketName + "\n"
-    + method + "\n"
-    + remote_uri + "\n";
-    
-  if(next_hop.empty())
-    msg += ".";
-  else
-    msg += next_hop;
-    
-  msg += "\n";
-    
-  msg += "From: " + local_party;
-  if(!local_tag.empty())
-    msg += ";tag=" + local_tag;
-    
-  msg += "\n";
-    
-  msg += "To: " + remote_party;
-  if(!remote_tag.empty()) 
-    msg += ";tag=" + remote_tag;
-    
-  msg += "\n";
-    
-  msg += "CSeq: " + int2str(cseq) + " " + method + "\n"
-    + "Call-ID: " + callid + "\n";
-    
-  if((method!="BYE")&&(method!="CANCEL"))
-    msg += getContactHdr();
-    
-  if(!m_hdrs.empty()){
-    msg += m_hdrs;
-    if(m_hdrs[m_hdrs.length()-1] != '\n')
-      msg += "\n";
-  }
-
-  if(!route.empty())
-    msg += getRoute();
-    
-  if(!body.empty())
-    msg += "Content-Type: " + content_type + "\n";
-    
-  msg += "Max-Forwards: "  MAX_FORWARDS "\n";
-
-  if (AmConfig::Signature.length()) 
-    msg += "User-Agent: " + AmConfig::Signature + "\n";
-
-  msg += ".\n" // EoH
-    + body + ".\n\n";
-
-  if (AmServer::send_msg_replyhandler(msg)) 
-    return -1;
-    
-  uac_trans[cseq] = AmSipTransaction(method,cseq);
-
-  // increment for next request
-  cseq++;
-    
-  return 0;
-}
-
-#endif
 
 bool AmSipDialog::match_cancel(const AmSipRequest& cancel_req)
 {

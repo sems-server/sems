@@ -29,27 +29,17 @@
 #define _Statistics_h_
 
 #include "AmApi.h"
-#include "AmInterfaceHandler.h"
 
 #define MOD_NAME "stats"
 
-class AmSessionContainer;
-
 /** \brief starts the stats UDP server */
-class StatsFactory: public AmSessionFactory,
-		    public AmInterfaceHandler
+class StatsFactory: public AmPluginFactory
 {
-  AmSessionContainer* sc;
-
 public:
   StatsFactory(const std::string& _app_name);
     
-  // AmSessionFactory interface
+  // AmPluginFactory interface
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req);
-    
-  // AmInterfaceHandler interface
-  int handleRequest(AmCtrlInterface* ctrl);
 };
 
 // template<class T> 

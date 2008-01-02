@@ -1,0 +1,20 @@
+Source: libbinrpc
+Section: net
+Priority: extra
+Maintainer: Bogdan Pintea <bogdan.pintea@iptego.de>
+Build-Depends: debhelper (>= 4.0.0), gcc, libc-dev
+Standards-Version: 3.6.0
+
+Package: libbinrpc
+Architecture: any
+Depends: 
+Description: C library for binary RPC
+ BinRPC library is an implementation of the binary RPC protocol.
+
+Package: libbinrpc-dev
+Architecture: any
+Depends: 
+Description: C library for binary RPC - Developement files
+ BinRPC library is an implementation of the binary RPC protocol.
+ .
+ This package contains development libraries and header files.

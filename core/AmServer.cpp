@@ -25,145 +25,52 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "AmServer.h"
 #include "log.h"
-#include "AmUtils.h"
-#include "AmConfig.h"
-#include "AmCtrlInterface.h"
-#include "AmInterfaceHandler.h"
+#include "AmServer.h"
 
-#include <errno.h>
-#include <string.h>
-#include <assert.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <signal.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/poll.h>
-
-#define SIP_POLL_TIMEOUT 50 /*50 ms*/
 
 //
 // AmServer methods
 //
 
 AmServer* AmServer::_instance;
+AmCtrlInterface* AmServer::ctrlIface;
 
-AmServer* AmServer::instance()
+AmServer*  AmServer::instance() 
 {
-  if(!_instance)
-    _instance = new AmServer();
-  return _instance;
+  return _instance ? _instance : ((_instance = new AmServer()));
 }
-
 
 void AmServer::run()
 {
-  struct pollfd* ufds=0;
-  int            nfds=ifaces_map.size();
-    
-  ufds = new struct pollfd [nfds];
-  assert(ufds);
-
-  struct pollfd* ufds_it = ufds;
-  for(CtrlInterfaces::iterator it = ifaces_map.begin();
-      it != ifaces_map.end(); it++) {
-
-    ufds_it->fd = it->first;
-    ufds_it->events  = POLLIN;
-    ufds_it->revents = 0;
-    ufds_it++;
-  }
-
-  while(true){
-
-    int ret = poll(ufds,nfds,SIP_POLL_TIMEOUT);
-    if(ret < 0){
-      ERROR("AmServer: poll: %s\n",strerror(errno));
-      continue;
-    }
-
-    if(ret < 1)
-      continue;
-
-    for(int i=0; i<nfds; i++) {
-
-      DBG("revents = %i\n",ufds[i].revents);
-      if(!(ufds[i].revents & POLLIN))
-	continue;
-	    
-      CtrlInterfaces::iterator it = ifaces_map.find(ufds[i].fd);
-      if(it == ifaces_map.end()){
-	ERROR("bad fd %i\n",ufds[i].fd);
-	continue;
-      }
-	    
-      IfaceDesc& iface = it->second;// ifaces_map[ufds[i].fd];
-      try {
-	if(iface.ctrl->cacheMsg() ||
-	   (iface.handler->handleRequest(iface.ctrl) == -1))
-	  iface.ctrl->consume();
-		
-      } catch(const string& err) {
-	ERROR("%s\n",err.c_str());
-      }
-    }
-  }
+  ctrlIface->start();
+  ctrlIface->join();
 }
 
-void AmServer::regIface(const IfaceDesc& i)
+void AmServer::regIface(const AmCtrlInterface *i)
 {
-  ifaces_map[i.ctrl->getFd()] = i;
+  if (ctrlIface) {
+    ERROR("control interface already registered; aborting second attempt.\n");
+    return;
+  }
+  ctrlIface = const_cast<AmCtrlInterface *>(i);
 }
 
-
-int AmServer::send_msg(const string& msg, const string& reply_sock,
-		       int timeout) 
+bool AmServer::sendReply(const AmSipReply &reply) 
 {
-  auto_ptr<AmCtrlInterface> ctrl;
-  ctrl.reset(AmCtrlInterface::getNewCtrl());
-
-  if(ctrl->init(reply_sock) || 
-     ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){
-    ERROR("while sending request to Ser\n");
-    return -1;
-  }
-
-  if(ctrl->wait4data(timeout) < 1){ 
-    ERROR("while waiting for Ser's response\n");
-    return -1;
-  }
-
-  string status_line;
-  if(ctrl->cacheMsg() || 
-     ctrl->getParam(status_line)) 
-    return -1;
-
-  unsigned int res_code;
-  string res_reason;
-  if(parse_return_code(status_line.c_str(),res_code,res_reason))
-    return -1;
-    
-  if( (res_code < 200) ||
-      (res_code >= 300) ) {
-    ERROR("AmServer::send_request: ser answered: %i %s\n",
-	  res_code,res_reason.c_str());
-    return -1;
-  }
-
-  return 0;	
+  return ctrlIface->send(reply);
 }
 
-int AmServer::send_msg_replyhandler(const string& msg)
+bool AmServer::sendRequest(const AmSipRequest &req, string &serKey)
 {
-  AmReplyHandler* rh = AmReplyHandler::get(); // singleton
-  AmCtrlInterface* ctrl = rh->getCtrl();
+  return ctrlIface->send(req, serKey);
+}
 
-  if(ctrl->sendto(AmConfig::SerSocketName,msg.c_str(),msg.length())){
-    ERROR("while sending request to Ser\n");
-    return -1;
-  }
-  return 0;
+string AmServer::localURI(const string &displayName, 
+    const string &userName, const string &hostName, 
+    const string &uriParams, const string &hdrParams)
+{
+  return ctrlIface->localURI(displayName, userName, hostName, uriParams,
+      hdrParams);
 }

@@ -29,8 +29,7 @@
 #define AmSipEvent_h
 
 #include "AmEvent.h"
-#include "AmSipReply.h"
-#include "AmSipRequest.h"
+#include "AmSipMsg.h"
 
 /** \brief SIP event */
 class AmSipEvent: public AmEvent

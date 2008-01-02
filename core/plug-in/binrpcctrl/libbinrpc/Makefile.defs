@@ -1,0 +1,81 @@
+
+
+NAME?=binrpc
+
+CC?=gcc
+AR?=ar
+LD?=ld
+CFLAGS?=-fPIC -Wall -g
+LDFLAGS+=-shared
+LDLIBS?=
+ARFLAGS=rcsv
+
+SRC=$(wildcard *.c)
+DEP=$(SRC:.c=.d)
+OBJ=$(SRC:.c=.o)
+
+EXTRA_DEPS=Makefile*
+ifeq (1,$(MAKELEVEL))
+EXTRA_DEPS+=../Makefile*
+endif
+
+
+%.d: %.c $(EXTRA_DEPS)
+	$(CC) -MM $(CFLAGS) $< -o $@
+
+%.o: %.c %.d $(EXTRA_DEPS)
+	$(CC) $(CFLAGS) $(LIBFLAGS) -c $<
+
+INSTALL_PREFIX?=/usr
+INSTALL_INCLUDE?=/include
+INSTALL_LIB?=/lib
+
+# versioning numbers
+MAJOR?=1
+MINOR?=0
+TAG?=1
+
+
+###
+# Used flags
+#
+# NDEBUG				:	release build
+# INT_AS_ID				:	allow integer records as attribute identifes 
+# 							(besides str)
+# DFIX_FALSE_GCC_WARNS	:	initialize some vars falsely signaled by GCC
+# 							(4.1.1) as potentially used without.
+# 							(some may be triggered by pointer usage without
+# 							'const' or 'restrict' keyword)
+# BINRPC_REENTRANT		:	enable thread local storage variables (set them 
+# 							global)
+# NOP_DFL_LOCKS			:	hollow locking; if not set and reentrant,
+# 							realtime's locking system will be used
+# BINRPC_VER1_COMPAT	:	compatibility with version 1 (TODO: :) )
+# USE_DEFAULT_SYSLOG	:	use syslog as default logger, instead of black
+# 							hole
+#
+
+ifeq ($(mode),release)
+	CFLAGS+=-O3 -DNDEBUG
+else
+	CFLAGS+=-Werror
+endif
+
+CFLAGS+=-DBINRPC_LIB_VER=\"$(MAJOR).$(MINOR)-$(TAG)\"
+
+CFLAGS += \
+	-DINT_AS_ID \
+	#-DFIX_FALSE_GCC_WARNS \
+	#-DBINRPC_REENTRANT \
+
+ifeq (,$(findstring BINRPC_REENTRANT,$(CFLAGS)))
+	CFLAGS+=-DNOP_DFL_LOCKS
+else # BINRPC_REENTRANT
+ifeq (,$(findstring NOP_DFL_LOCKS,$(CFLAGS)))
+	LDLIBS+=-lrt
+endif # NOP_DFL_LOCKS
+endif # BINRPC_REENTRANT
+
+
+.PHONY: distclean tags
+

@@ -30,10 +30,10 @@
 #define _AmApi_h_
 
 #include "AmThread.h"
-#include "AmSipRequest.h"
-#include "AmSipReply.h"
+#include "AmSipMsg.h"
 #include "AmConfig.h"
 #include "AmArg.h"
+#include "AmEventQueue.h"
 
 #include <stdarg.h>
 
@@ -232,6 +232,38 @@ class AmLoggingFacility : public AmPluginFactory
   virtual void log(int level, const char* msg) = 0;
 };
 
+class AmInterfaceHandler;
+/**
+ * \brief Interface for plugins that implement a control interface.
+ * 
+ * The AmCtrlInterface defines the interface for 
+ * SER-SEMS communication interface (unix socket/fifo).
+ *
+ * For sending messages, appropriate methods are exposed (the send()s).
+ * The interface defines a thread that runs, polling on the two listening unix
+ * sockets (one for requests, one for replies). After receiving a message,
+ * a registered 'AmInterfaceHandler' is used to handle the incomming SIP
+ * events (that end up either opening/updating a UAC session or posting to a
+ * SIP event queue).
+ *
+ */
+class AmCtrlInterface : public AmPluginFactory, public AmThread
+{
+  public:
+    AmCtrlInterface(const string& name) : AmPluginFactory(name){}
+    //virtual ~AmCtrlInterface() = 0;
+
+    //@param serKey An out parameter
+    virtual int send(const AmSipRequest &, string &serKey) = 0;
+    virtual int send(const AmSipReply &) = 0;
+    virtual string localURI(const string &displayName, 
+        const string &userName, const string &hostName, 
+        const string &uriParams, const string &hdrParams) = 0;
+
+    virtual void registerInterfaceHandler(AmInterfaceHandler *handler) = 0;
+    virtual AmCtrlInterface* instance() = 0;
+};
+
 #if  __GNUC__ < 3
 #define EXPORT_FACTORY(fctname,class_name,args...) \
             extern "C" void* fctname()\
@@ -263,6 +295,12 @@ typedef void* (*FactoryCreate)();
 #define EXPORT_SESSION_EVENT_HANDLER_FACTORY(class_name,app_name) \
             EXPORT_FACTORY(FACTORY_SESSION_EVENT_HANDLER_EXPORT,class_name,app_name)
 
+#define FACTORY_PLUGIN_EXPORT     base_plugin_create
+#define FACTORY_PLUGIN_EXPORT_STR XSTR(FACTORY_PLUGIN_EXPORT)
+
+#define EXPORT_PLUGIN_FACTORY(class_name,app_name) \
+            EXPORT_FACTORY(FACTORY_PLUGIN_EXPORT,class_name,app_name)
+
 #define FACTORY_PLUGIN_CLASS_EXPORT     plugin_class_create
 #define FACTORY_PLUGIN_CLASS_EXPORT_STR XSTR(FACTORY_PLUGIN_CLASS_EXPORT)
 
@@ -280,4 +318,13 @@ typedef void* (*FactoryCreate)();
 
 #define EXPORT_LOG_FACILITY_FACTORY(class_name,app_name) \
             EXPORT_FACTORY(FACTORY_LOG_FACILITY_EXPORT,class_name,app_name)
+
+/* 
+ * defines for exporting a control interface plugin 
+ */
+#define FACTORY_CONTROL_INTERFACE_EXPORT  control_interface_factory_create
+#define FACTORY_CONTROL_INTERFACE_EXPORT_STR  \
+    XSTR(FACTORY_CONTROL_INTERFACE_EXPORT)
+#define EXPORT_CONTROL_INTERFACE_FACTORY(class_name, app_name)  \
+    EXPORT_FACTORY(FACTORY_CONTROL_INTERFACE_EXPORT, class_name, app_name)
 #endif

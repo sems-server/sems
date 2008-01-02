@@ -32,7 +32,7 @@
 #include "AmConfig.h"
 #include "log.h"
 #include "AmServer.h"
-#include "AmSipRequest.h"
+#include "AmSipMsg.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -579,10 +579,6 @@ int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int 
 {
   int retry = SER_WRITE_TIMEOUT / SER_WRITE_INTERVAL;
   int ret=-1;
-  if(AmConfig::SerSocketName.empty()){
-    ERROR("config parameter 'ser_socket_name' has not been configured !!!\n");
-    goto error;
-  }
 
   struct sockaddr_un ser_addr;
   memset (&ser_addr, 0, sizeof (ser_addr));

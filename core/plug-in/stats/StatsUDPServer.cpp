@@ -193,6 +193,7 @@ int StatsUDPServer::init()
 
 void StatsUDPServer::run()
 {
+  DBG("running StatsUDPServer...\n");
   struct sockaddr_in addr;
   socklen_t addrlen = sizeof(struct sockaddr_in);
 

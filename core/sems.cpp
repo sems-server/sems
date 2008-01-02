@@ -32,8 +32,6 @@
 #include "AmSessionContainer.h"
 #include "AmMail.h"
 #include "AmServer.h"
-#include "AmCtrlInterface.h"
-#include "AmInterfaceHandler.h"
 #include "AmMediaProcessor.h"
 #include "AmIcmpWatcher.h"
 #include "AmRtpReceiver.h"
@@ -250,18 +248,12 @@ int main(int argc, char* argv[])
   print_version();
   printf( "\n\nConfiguration:\n"
 	  "       configuration file:  %s\n"
-	  "       Ser's unix socket:   %s\n"
-	  "       our unix socket:     %s\n"
-	  "       reply unix socket:   %s\n"
 	  "       plug-in path:        %s\n"
 	  "       daemon mode:         %i\n"
 	  "       local IP:            %s\n"
 	  "       default application: %s\n"
 	  "\n",
 	  AmConfig::ConfigurationFile.c_str(),
-	  AmConfig::SerSocketName.c_str(),
-	  AmConfig::SocketName.c_str(),
-	  AmConfig::ReplySocketName.c_str(),
 	  AmConfig::PlugInPath.c_str(),
 	  AmConfig::DaemonMode,
 	  AmConfig::LocalIP.c_str(),
@@ -392,31 +384,9 @@ int main(int argc, char* argv[])
   //DBG("Starting ICMP watcher\n");
   //AmIcmpWatcher::instance()->start();
 
-  AmUnixCtrlInterface* un_ctrl=0;
-  if(!AmConfig::SocketName.empty()){
-    un_ctrl = new AmUnixCtrlInterface();
-    if(un_ctrl->init(AmConfig::SocketName.c_str())){
-      delete un_ctrl;
-      un_ctrl = 0;
-    }
-    else {
-      AmServer::instance()->regIface(IfaceDesc(un_ctrl,
-					       AmRequestHandler::get()
-					       ));
-
-      AmReplyHandler* rh = AmReplyHandler::get();
-      if(!rh) return -1;
-	    
-      AmServer::instance()->regIface(IfaceDesc(rh->getCtrl(),rh));
-    }
-  }
-
-  if(// fifo_ctrl || 
-     un_ctrl){
-
+  if (AmServer::instance()->hasIface()) {
     AmServer::instance()->run();
-  }
-  else {
+  } else {
     ERROR("Sems cannot start without a working link to Ser.\n"
 	  "Please set in the config file 'socket_name' \n"
 	  " parameter and check the log file"

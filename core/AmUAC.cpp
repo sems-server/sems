@@ -26,7 +26,7 @@
  */
 
 #include "AmUAC.h"
-#include "AmSipRequest.h"
+#include "AmSipMsg.h"
 #include "AmSession.h"
 #include "AmSessionContainer.h"
 #include "AmConfig.h"

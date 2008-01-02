@@ -33,7 +33,7 @@
 #include "AmEventQueue.h"
 #include "AmRtpAudio.h"
 #include "AmDtmfDetector.h"
-#include "AmSipRequest.h"
+#include "AmSipMsg.h"
 #include "AmSipDialog.h"
 #include "AmSipEvent.h"
 #include "AmApi.h"

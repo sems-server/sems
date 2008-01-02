@@ -27,7 +27,7 @@
  */
 
 #include "UACAuth.h"
-#include "AmSipRequest.h"
+#include "AmSipMsg.h"
 #include "AmUtils.h"
 
 #include <map>

@@ -1,0 +1,44 @@
+
+include Makefile.defs
+
+prefix?=${INSTALL_PREFIX}
+
+.PHONY: install
+install: install-lib install-include
+uninstall: uninstall-lib uninstall-include
+
+.PHONY: install-lib
+install-lib: install-lib-a install-lib-so
+
+.PHONY: install-lib-a
+install-lib-a: install-lib-a
+	install -d ${prefix}/${INSTALL_LIB}
+	install src/lib${NAME}.a ${prefix}/${INSTALL_LIB}
+
+.PHONY: install-lib-so
+install-lib-so: install-lib-so
+	install -d ${prefix}/${INSTALL_LIB}
+	install src/lib${NAME}.so \
+			${prefix}/${INSTALL_LIB}/lib${NAME}.so.${MAJOR}.${MINOR}
+	cd ${prefix}/${INSTALL_LIB}/ && \
+		ln -fs lib${NAME}.so.${MAJOR}.${MINOR} lib${NAME}.so
+
+.PHONY: install-include
+install-include:
+	install -d ${prefix}/${INSTALL_INCLUDE}
+	install include/${NAME}.h ${prefix}/${INSTALL_INCLUDE}/
+	install -d ${prefix}/${INSTALL_INCLUDE}/${NAME}
+	install include/${NAME}/* ${prefix}/${INSTALL_INCLUDE}/${NAME}
+
+.PHONY: uninstall-lib
+uninstall-lib:
+	rm -rf ${prefix}/${INSTALL_LIB}/lib${NAME}.a
+	rm -rf ${prefix}/${INSTALL_LIB}/lib${NAME}.so
+	rm -rf ${prefix}/${INSTALL_LIB}/lib${NAME}.so.${MAJOR}.${MINOR}
+
+.PHONY: uninstall-include
+uninstall-include:
+	rm -rf ${prefix}/${INSTALL_INCLUDE}/${NAME}.h
+	rm -rf ${prefix}/${INSTALL_INCLUDE}/${NAME}/*.h
+	-rmdir ${prefix}/${INSTALL_INCLUDE}/${NAME}
+

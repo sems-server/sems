@@ -124,6 +124,9 @@ void AmThread::start(bool realtime)
 
   int res;
   _pid = 0;
+  // unless placed here, a call seq like run(); join(); will not wait to join
+  // b/c creating the thread can take too long
+  this->_stopped.set(false);
   res = pthread_create(&_td,&attr,_start,this);
   pthread_attr_destroy(&attr);
   if (res != 0) {

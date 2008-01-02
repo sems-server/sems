@@ -28,41 +28,9 @@
 #ifndef _AmServer_h_
 #define _AmServer_h_
 
-#include <stdio.h>
-#include <sys/stat.h>
+#include "AmSipMsg.h"
+#include "AmApi.h"
 
-#include "AmThread.h"
-#include "AmSipReply.h"
-
-#include <algorithm>
-#include <deque>
-#include <map>
-
-using std::map;
-using std::deque;
-using std::greater;
-
-class AmCtrlInterface;
-class AmInterfaceHandler;
-
-/** \brief binds a AmCtrlInterface and an AmInterfaceHandler*/
-struct IfaceDesc
-{
-  AmCtrlInterface*    ctrl;
-  AmInterfaceHandler* handler;
-
-  IfaceDesc(AmCtrlInterface* ctrl, AmInterfaceHandler* handler)
-    : ctrl(ctrl),handler(handler)
-  {}
-
-  IfaceDesc(const IfaceDesc& i)
-    : ctrl(i.ctrl), handler(i.handler)
-  {}
-
-  IfaceDesc()
-    : ctrl(0),handler(0)
-  {}
-};
 
 /**
  * \brief singleton, serve requests from ctrl interface
@@ -79,13 +47,8 @@ private:
    */
   static AmServer* _instance;
 
+  static AmCtrlInterface *ctrlIface;
 
-  typedef map<int,IfaceDesc,greater<int> > CtrlInterfaces;
-
-  CtrlInterfaces          ifaces_map;
-
-  /** Avoid external instantiation. @see instance(). */
-  AmServer(){}
   /** Avoid external instantiation. @see instance(). */
   ~AmServer(){}
 
@@ -97,28 +60,17 @@ public:
   void run();
 
   /** 
-   * Register an interface.
+   * Register THE interface.
    * WARNING: only before the server starts up.
    */
-  void regIface(const IfaceDesc& i);
+  void regIface(const AmCtrlInterface *i);
+  bool hasIface() { return ctrlIface != NULL; };
 
-  /**
-   * send a message through socket, wait max 
-   * timeout for result and process return 
-   * code. reply socket specified with 
-   * reply_sock. @returns < 0 on error
-   *
-   */
-  static int send_msg(const string& msg, const string& reply_sock,
-		      int timeout);
-  /**
-   * send a message through socket, using the 
-   * replyhandler. @returns < 0 on error
-   *
-   */
-  static int send_msg_replyhandler(const string& msg);
-
-
+  static bool sendRequest(const AmSipRequest &, string &);
+  static bool sendReply(const AmSipReply &);
+  static string localURI(const string &displayName, 
+      const string &userName, const string &hostName, 
+      const string &uriParams, const string &hdrParams);
 };
 
 #endif
