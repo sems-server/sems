@@ -35,6 +35,7 @@ using namespace XmlRpc;
 
 #include <map>
 using std::map;
+using std::multimap;
 
 #include <string>
 using std::string;
