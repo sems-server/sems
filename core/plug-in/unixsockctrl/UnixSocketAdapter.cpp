@@ -476,15 +476,16 @@ string UnixSocketAdapter::serialize(const AmSipReply &reply,
 #else
     if (! reply.body.empty()) {
       if (extraHdrs.empty())
-        bodyFrame += ".";
+        bodyFrame += ".\n";
       // TODO: body already CRLF'ed?
-      bodyFrame += "\"" + reply.body + "\"";
+      bodyFrame += "\"" + reply.body + "\"\n";
     }
 #endif
   }
 
 #ifdef OpenSER
-  extraHdrs = lf2crlf(escape(extraHdrs));
+  if (! extraHdrs.empty())
+      extraHdrs = "\"" + lf2crlf(escape(extraHdrs)) + "\"\n";
 #endif
 
   msg += extraHdrs + bodyFrame;
@@ -616,7 +617,7 @@ string UnixSocketAdapter::serialize(const AmSipRequest& req,
     extraHdrs += "User-Agent: " + AmConfig::Signature + "\n";
 
 #ifdef OpenSER
-  extraHdrs = "\"" + lf2crlf(escape(extraHdrs)) + "\"";
+  extraHdrs = "\"" + lf2crlf(escape(extraHdrs)) + "\"\n";
 #endif
 
   string bodyFrame;
@@ -625,7 +626,8 @@ string UnixSocketAdapter::serialize(const AmSipRequest& req,
     + req.body + ".\n\n";
 #else
   // is lf2crlf() needed?! (see function for replies)
-  bodyFrame = "\n"  "\"" + lf2crlf(req.body) + "\"";
+  if (!req.body.empty())
+      bodyFrame = "\"" + lf2crlf(req.body) + "\"\n";
 #endif
 
   msg += extraHdrs + bodyFrame;
