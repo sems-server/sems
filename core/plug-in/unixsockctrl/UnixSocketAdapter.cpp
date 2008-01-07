@@ -475,8 +475,6 @@ string UnixSocketAdapter::serialize(const AmSipReply &reply,
     bodyFrame += ".\n\n";
 #else
     if (! reply.body.empty()) {
-      if (extraHdrs.empty())
-        bodyFrame += ".\n";
       // TODO: body already CRLF'ed?
       bodyFrame += "\"" + reply.body + "\"\n";
     }
@@ -484,8 +482,11 @@ string UnixSocketAdapter::serialize(const AmSipReply &reply,
   }
 
 #ifdef OpenSER
-  if (! extraHdrs.empty())
+  if (extraHdrs.empty()) {
+      extraHdrs = ".\n";
+  } else {
       extraHdrs = "\"" + lf2crlf(escape(extraHdrs)) + "\"\n";
+  }
 #endif
 
   msg += extraHdrs + bodyFrame;
