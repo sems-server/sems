@@ -21,7 +21,8 @@ class _AmSipMsgInDlg
 
     string       serKey;
 
-    _AmSipMsgInDlg() : cseq(0) {}
+    _AmSipMsgInDlg() : cseq(0) { }
+    ~_AmSipMsgInDlg() { }
 };
 
 /** \brief represents a SIP reply */
@@ -34,7 +35,8 @@ struct AmSipReply : public _AmSipMsgInDlg
   string       remote_tag;
   string       local_tag;
 
-  AmSipReply() : code(0), _AmSipMsgInDlg() {}
+  AmSipReply() : code(0), _AmSipMsgInDlg() { }
+  ~AmSipReply() { }
 };
 
 
@@ -56,7 +58,8 @@ class AmSipRequest : public _AmSipMsgInDlg
   string from_tag;
   string to_tag;
 
-  AmSipRequest() : _AmSipMsgInDlg() {}
+  AmSipRequest() : _AmSipMsgInDlg() { }
+  ~AmSipRequest() { }
 };
 
 string getHeader(const string& hdrs,const string& hdr_name);

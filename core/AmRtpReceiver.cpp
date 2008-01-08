@@ -35,7 +35,10 @@
 #include <sys/time.h>
 #include <sys/poll.h>
 
+#ifndef MAX_RTP_SESSIONS
 #define MAX_RTP_SESSIONS 2048
+#endif 
+
 #define RTP_POLL_TIMEOUT 50 /*50 ms*/
 
 

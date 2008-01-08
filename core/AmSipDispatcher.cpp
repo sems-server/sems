@@ -42,7 +42,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
   if(!sess_exists){
 		
     DBG("method: `%s' [%zd].\n", req.method.c_str(), req.method.length());
-    DBG("method: `%s' [%zd].\n", string("INVITE").c_str(), string("INVITE").length());
+    
     if((req.method == "INVITE")||
        ((req.method == "REFER") && !local_tag.empty())){
       sess_cont->startSessionUAS(req);
