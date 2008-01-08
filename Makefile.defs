@@ -12,8 +12,9 @@ CPPFLAGS += -D_DEBUG \
 	  -D_THREAD_SAFE -D_REENTRANT \
 	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
 	  -DOS='"$(OS)"' 	\
+#         -DMAX_RTP_SESSIONS=8192 \
 #         -DOpenSER \
-#	  -DSUPPORT_IPV6
+#	  -DSUPPORT_IPV6 \
 
 # compile with spandsp DTMF detection? see soft-switch.org
 #   this needs a fairly new version of spandsp - tested with 0.0.4pre11
