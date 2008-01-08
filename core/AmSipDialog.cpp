@@ -368,6 +368,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   reply.reason = reason;
   reply.serKey = req.serKey;
   reply.hdrs = hdrs;
+  reply.local_tag = AmSession::getNewId();
 
   return AmServer::sendReply(reply);
 }

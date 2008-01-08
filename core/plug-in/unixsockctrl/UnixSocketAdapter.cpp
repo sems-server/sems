@@ -470,7 +470,6 @@ string UnixSocketAdapter::serialize(const AmSipReply &reply,
       extraHdrs += "Content-Type: " + reply.content_type + "\n";
 
 #ifndef OpenSER
-    bodyFrame += ".\n";
     bodyFrame += reply.body;
     bodyFrame += ".\n\n";
 #else
@@ -479,7 +478,14 @@ string UnixSocketAdapter::serialize(const AmSipReply &reply,
       bodyFrame += "\"" + reply.body + "\"\n";
     }
 #endif
+  } 
+
+#ifndef OpenSER
+  else {
+    bodyFrame = ".\n\n";
   }
+  extraHdrs += ".\n";
+#endif
 
 #ifdef OpenSER
   if (extraHdrs.empty()) {
