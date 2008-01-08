@@ -38,6 +38,8 @@
 #include "amci/amci.h"
 #include "log.h"
 
+#include "strings.h"
+
 inline char* get_next_line(char* s);
 inline bool parse_string_tok(char*& s, string& res, char sep_char = ' ');
 inline bool parse_type(char*& s, int& v, char** ref, const char* name);
@@ -381,7 +383,7 @@ int AmSdp::getDynPayload(const string& name, int rate)
 
   for(map<int, amci_payload_t*>::const_iterator pl_it = ref_payloads.begin();
       pl_it != ref_payloads.end(); ++pl_it)
-    if( (name == pl_it->second->name) 
+    if( !strcasecmp(name.c_str(), pl_it->second->name)
 	&&  (rate == pl_it->second->sample_rate) )
       return pl_it->first;
     
