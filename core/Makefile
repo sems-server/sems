@@ -80,7 +80,7 @@ install-cfg: $(cfg-prefix)/$(cfg-dir)
 		sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
 			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
-			< sems.conf.sample > $(cfg-prefix)/$(cfg-dir)sems.conf.default
+			< etc/sems.conf.sample > $(cfg-prefix)/$(cfg-dir)sems.conf.default
 		chmod 644 $(cfg-prefix)/$(cfg-dir)sems.conf.default
 		if [ ! -f $(cfg-prefix)/$(cfg-dir)sems.conf ]; then \
 			cp -f $(cfg-prefix)/$(cfg-dir)sems.conf.default \

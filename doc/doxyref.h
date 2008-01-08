@@ -69,7 +69,7 @@
  */
 
 /*! \page sems.conf.sample SEMS core configuration parameters
- * <p>The sample configuration file core/sems.conf.sample 
+ * <p>The sample configuration file core/etc/sems.conf.sample 
  * explains all core configuration parameters. </p><p>If there is no 
  * configuration file present, 'make install' installs this file
  * into the default location.</p>
