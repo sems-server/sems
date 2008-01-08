@@ -70,41 +70,6 @@ static void *init_AmSipRequest(sipWrapper *,PyObject *sipArgs,sipWrapper **,int 
     return sipCpp;
 }
 
-
-extern "C" {static PyObject *var_AmSipRequest_key(PyObject *, PyObject *);}
-static PyObject *var_AmSipRequest_key(PyObject *sipSelf,PyObject *sipPy)
-{
-    int sipIsErr = 0;
-    int sipValState;
-   string *sipVal;
-    AmSipRequest *sipCpp = reinterpret_cast<AmSipRequest *>(sipGetCppPtr((sipWrapper *)sipSelf,sipClass_AmSipRequest));
-
-    if (!sipCpp)
-        return NULL;
-
-    if (sipPy == NULL)
-    {
-        sipVal = &sipCpp->key;
-
-        sipPy = sipConvertFromMappedType(sipVal,sipMappedType_string,NULL);
-
-        return sipPy;
-    }
-
-    sipVal = reinterpret_cast<string *>(sipForceConvertToMappedType(sipPy,sipMappedType_string,NULL,SIP_NOT_NONE,&sipValState,&sipIsErr));
-
-    if (sipIsErr)
-        return NULL;
-
-    sipCpp->key = *sipVal;
-
-    sipReleaseMappedType(sipVal,sipMappedType_string,sipValState);
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
 extern "C" {static PyObject *var_AmSipRequest_next_hop(PyObject *, PyObject *);}
 static PyObject *var_AmSipRequest_next_hop(PyObject *sipSelf,PyObject *sipPy)
 {
@@ -716,7 +681,6 @@ static PyObject *var_AmSipRequest_cmd(PyObject *sipSelf,PyObject *sipPy)
 }
 
 PyMethodDef variables_AmSipRequest[] = {
-    {sipNm_py_sems_lib_key, var_AmSipRequest_key, 0, NULL},
     {sipNm_py_sems_lib_next_hop, var_AmSipRequest_next_hop, 0, NULL},
     {sipNm_py_sems_lib_route, var_AmSipRequest_route, 0, NULL},
     {sipNm_py_sems_lib_body, var_AmSipRequest_body, 0, NULL},

@@ -8,7 +8,7 @@
 #define _py_sems_libAmSipReply_h
 
 #line 6 "AmSipReply.sip"
-#include "../../../core/AmSipReply.h"
+#include "../../../core/AmSipMsg.h"
 #line 13 "sippy_sems_libAmSipReply.h"
 
 #define sipClass_AmSipReply             sipModuleAPI_py_sems_lib.em_types[10]
