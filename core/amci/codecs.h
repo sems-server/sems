@@ -45,4 +45,5 @@
 
 #define CODEC_TELEPHONE_EVENT 6
 
+#define CODEC_SPEEX_NB 7
 #endif
