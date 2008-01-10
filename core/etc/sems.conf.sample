@@ -74,11 +74,11 @@ exclude_plugins=binrpcctrl;
 # ('blacklist'). 
 # 
 # For example, to only use low bandwidth codecs:
-#  exclude_payloads=PCMU;PCMA;G726-40;G726-32;G721;
+#  exclude_payloads=PCMU;PCMA;G726-40;G726-32;G721;L16
 # or, to use only codecs which are not CPU-intensive:
 #  exclude_payloads=iLBC;speex;
 # only use G711 (exclude everything else):
-#  exclude_payloads=iLBC;speex;G726-40;G726-32;G721;G726-24;G726-16;GSM
+#  exclude_payloads=iLBC;speex;G726-40;G726-32;G721;G726-24;G726-16;GSM;L16
 
 # optional parameter: smtp_server=<hostname>
 #
