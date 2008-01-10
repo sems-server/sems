@@ -46,4 +46,10 @@
 #define CODEC_TELEPHONE_EVENT 6
 
 #define CODEC_SPEEX_NB 7
+
+#define CODEC_G726_16 8
+#define CODEC_G726_24 9
+#define CODEC_G726_32 10
+#define CODEC_G726_40 11
+
 #endif

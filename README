@@ -78,7 +78,7 @@ Introduction:
  SEMS only supports patent free codecs. That means that codecs
  like g729 won't be supported. On the other hand, SEMS supports 
  all important patent free codecs out of the box (g711u, g711a, 
- GSM06.10 and iLBC). Integrating other codecs in SEMS
+ GSM06.10, speex, G726 and iLBC). Integrating other codecs in SEMS
  is very simple.
 
  SEMS shows very good performance on current standard
