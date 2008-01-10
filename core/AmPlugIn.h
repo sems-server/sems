@@ -32,9 +32,11 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <set>
 using std::string;
 using std::map;
 using std::vector;
+using std::set;
 
 class AmPluginFactory;
 class AmSessionFactory;
@@ -80,6 +82,7 @@ class AmPlugIn
   AmCtrlInterface *ctrlIface;
 
   int dynamic_pl; // range: 96->127, see RFC 1890
+  set<string> excluded_payloads;  // don't load these payloads (named)
     
   AmPlugIn();
   ~AmPlugIn();
@@ -103,6 +106,8 @@ class AmPlugIn
  public:
 
   static AmPlugIn* instance();
+
+  void init();
 
   /** 
    * Loads all plug-ins from the directory given as parameter. 

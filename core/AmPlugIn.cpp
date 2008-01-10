@@ -101,13 +101,9 @@ amci_payload_t _payload_tevent = {
 AmPlugIn* AmPlugIn::_instance=0;
 
 AmPlugIn::AmPlugIn()
-  : dynamic_pl(DYNAMIC_PAYLOAD_TYPE_START) 
+  : dynamic_pl(DYNAMIC_PAYLOAD_TYPE_START),   
+    ctrlIface(NULL)
 {
-  DBG("adding built-in codecs...\n");
-  addCodec(&_codec_pcm16);
-  addCodec(&_codec_tevent);
-  addPayload(&_payload_tevent);
-  ctrlIface = NULL;
 }
 
 AmPlugIn::~AmPlugIn()
@@ -122,6 +118,20 @@ AmPlugIn* AmPlugIn::instance()
     _instance = new AmPlugIn();
 
   return _instance;
+}
+
+void AmPlugIn::init() {
+  vector<string> excluded_payloads_v = 
+    explode(AmConfig::ExcludePayloads, ";");
+  for (vector<string>::iterator it = 
+	 excluded_payloads_v.begin(); 
+       it != excluded_payloads_v.end();it++)
+    excluded_payloads.insert(*it);
+
+  DBG("adding built-in codecs...\n");
+  addCodec(&_codec_pcm16);
+  addCodec(&_codec_tevent);
+  addPayload(&_payload_tevent);
 }
 
 
@@ -621,10 +631,18 @@ int AmPlugIn::addCodec(amci_codec_t* c)
 
 int AmPlugIn::addPayload(amci_payload_t* p)
 {
+  if (excluded_payloads.find(p->name) != 
+      excluded_payloads.end()) {
+    DBG("Not enabling excluded payload '%s'\n", 
+	p->name);
+    return 0;
+  }
+
   amci_codec_t* c;
   unsigned int i, id;
   if( !(c = codec(p->codec_id)) ){
-    ERROR("in payload '%s': codec id (%i) not supported\n",p->name,p->codec_id);
+    ERROR("in payload '%s': codec id (%i) not supported\n",
+	  p->name, p->codec_id);
     return -1;
   }
   if(p->payload_id != -1){

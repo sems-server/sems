@@ -58,6 +58,8 @@ struct AmConfig
   static string LoadPlugins;
   /** semicolon separated list of plugins to exclude from loading */
   static string ExcludePlugins;
+  /** semicolon separated list of payloads to exclude from loading */
+  static string ExcludePayloads;  
   //static unsigned int MaxRecordTime;
   /** run the programm in daemon mode? */
   static int DaemonMode;

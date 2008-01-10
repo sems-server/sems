@@ -361,6 +361,7 @@ int main(int argc, char* argv[])
     return -1;
 
   DBG("Loading plug-ins\n");
+  AmPlugIn::instance()->init();
   if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
     return -1;
 
