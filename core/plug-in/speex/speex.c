@@ -282,7 +282,7 @@ int Pcm16_2_SpeexNB( unsigned char* out_buf, unsigned char* in_buf, unsigned int
 {
   SpeexState* ss;
   OneWay *encoder;
-  const short* pcm = (const short*) in_buf;
+  short* pcm = (short*) in_buf;
   char* buffer = (char*)out_buf;
   div_t blocks;
     
