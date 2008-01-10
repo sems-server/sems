@@ -62,6 +62,9 @@ string       AmConfig::DefaultApplication      = "";
 
 vector <string> AmConfig::CodecOrder;
 
+Dtmf::InbandDetectorType 
+AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
+
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 
 int AmConfig::setSIPPort(const string& port) 
@@ -274,6 +277,15 @@ int AmConfig::readConfiguration()
     if(!setDeadRtpTime(cfg.getParameter("dead_rtp_time"))){
       ERROR("invalid dead_rtp_time value specified");
       return -1;
+    }
+  }
+
+  if(cfg.hasParameter("dtmf_detector")){
+    if (cfg.getParameter("dtmf_detector") == "spandsp") {
+#ifndef USE_SPANDSP
+      WARN("spandsp support not compiled in.\n");
+#endif
+      DefaultDTMFDetector = Dtmf::SpanDSP;
     }
   }
 

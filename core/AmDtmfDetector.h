@@ -36,8 +36,6 @@
 using namespace std;
 
 #ifdef USE_SPANDSP
-#define INT16_MAX 0x7fff
-#define INT16_MIN (-INT16_MAX - 1)
 #include <math.h>
 #include "spandsp.h"
 #endif
