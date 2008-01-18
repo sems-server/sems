@@ -2,8 +2,6 @@
 NAME=annc_service
 VERSION=0.0.1
 
-PYTHON_VERSION=2.3
-
 LIBDIR=
 
 COREPATH=../../../../core
