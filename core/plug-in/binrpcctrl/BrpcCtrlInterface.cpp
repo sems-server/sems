@@ -646,8 +646,16 @@ brpc_t *BrpcCtrlInterface::rpcExecute(brpc_t *req)
     brpc_finish(req);
     req = NULL;
   }
-
-  if (! (rpl = brpc_recvfrom(serFd, &from, RX_TIMEOUT))) {
+  
+  /* receive from queue until empty, if IDs do not match */
+  while ((rpl = brpc_recvfrom(serFd, &from, RX_TIMEOUT))) {
+    if (req->id == rpl->id)
+      break;
+    ERROR("received reply's ID (#%d) doesn't match request's - discarded (%d)",
+        brpc_id(rpl), brpc_id(req));
+    brpc_finish(rpl);
+  }
+  if (! rpl) {
     ERROR("failed to get reply: %s [%d].\n", brpc_strerror(), brpc_errno);
     closeSock(&serFd, &sndAddr);
     goto end;
