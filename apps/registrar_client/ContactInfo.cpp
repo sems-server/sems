@@ -177,7 +177,10 @@ bool ContactInfo::parse_uri() {
   size_t p1 = 0; 
   int eq = 0; const char* sip_prot = "SIP:";
   uri_user = ""; 	uri_host = ""; uri_port = ""; uri_param = ""; 
-	
+
+  if (uri.empty())
+    return false;
+
   while (pos<uri.length()) {
     char c = uri[pos];
     //    DBG("(1) c = %c, st = %d\n", c, st);
@@ -291,7 +294,7 @@ bool ContactInfo::parse_uri() {
   case uS4: uri_port = uri.substr(p1+1, pos-p1-1); break;
   case uS5: uri_param = uri.substr(p1+1, pos-p1-1); break;
   case uS0:
-  case uS1: { DBG("ERROR while parsing uri"); return false; } break;
+  case uS1: { DBG("ERROR while parsing uri\n"); return false; } break;
   };
   return true;
 }

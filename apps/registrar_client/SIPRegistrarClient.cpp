@@ -343,10 +343,14 @@ void SIPRegistration::onSipReply(AmSipReply& reply) {
 
     if (!contacts.length()) {
       DBG("received positive reply to de-Register \n");
+      active = false;
       remove = true;
     } else {
       end = 0;
       while (!found) {
+	if (contacts.length() == end)
+	  break;
+
 	if (!server_contact.parse_contact(contacts, end, end)) {
 	  ERROR("while parsing contact\n");
 	  break;
@@ -386,7 +390,9 @@ void SIPRegistration::onSipReply(AmSipReply& reply) {
 									   req.from_tag,
 									   reply.code, reply.reason));
       }
+      DBG("no matching Contact - deregistered.\n");
       active = false;
+      remove = true;
     }
 		
   } else if (reply.code >= 300) {
