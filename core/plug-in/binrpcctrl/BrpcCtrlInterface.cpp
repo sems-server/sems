@@ -630,6 +630,7 @@ brpc_t *BrpcCtrlInterface::rpcExecute(brpc_t *req)
   brpc_str_t *reason;
   brpc_int_t *code;
   brpc_addr_t from = serAddr; //avoid a syscall to find out socket type
+  brpc_id_t req_id;
 
   if (getSerFd() < 0) {
     ERROR("no connection to SER available.\n");
@@ -643,13 +644,14 @@ brpc_t *BrpcCtrlInterface::rpcExecute(brpc_t *req)
     closeSock(&serFd, &sndAddr);
     goto end;
   } else {
+    req_id = req->id;
     brpc_finish(req);
     req = NULL;
   }
   
   /* receive from queue until empty, if IDs do not match */
   while ((rpl = brpc_recvfrom(serFd, &from, RX_TIMEOUT))) {
-    if (req->id == rpl->id)
+    if (req_id == rpl->id)
       break;
     ERROR("received reply's ID (#%d) doesn't match request's - discarded (%d)",
         brpc_id(rpl), brpc_id(req));
