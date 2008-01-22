@@ -223,7 +223,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       it != name2di.end(); it++){
     err = it->second->onLoad();
     if(err)
-      break;
+      return err;
   }
 
   // load SIPEventHandlers 

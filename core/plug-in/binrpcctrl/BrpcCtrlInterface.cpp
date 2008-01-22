@@ -1163,7 +1163,12 @@ int BrpcCtrlInterface::send(const AmSipReply &amRpl)
   brpc_t *req, *rpl = NULL;
   brpc_int_t *retcode;
   brpc_str_t *ser_opaque;
-  
+
+
+  if (amRpl.method == "CANCEL") {
+    DBG("skipping replying to CANCEL, no longer needed with SER2.\n");
+    return 0;
+  }
 
   if (! (req = brpc_req(SER_REPLY, random()))) {
     ERROR("failed to build RPC context: %s [%d].\n", brpc_strerror(), 
