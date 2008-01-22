@@ -654,7 +654,7 @@ brpc_t *BrpcCtrlInterface::rpcExecute(brpc_t *req)
     if (req_id == rpl->id)
       break;
     ERROR("received reply's ID (#%d) doesn't match request's - discarded (%d)",
-        brpc_id(rpl), brpc_id(req));
+        brpc_id(rpl), req_id);
     brpc_finish(rpl);
   }
   if (! rpl) {
