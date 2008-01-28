@@ -302,7 +302,7 @@ void CallGenFactory::scheduleCalls(const AmArg& args, AmArg& ret) {
   time(&now);
   actions_mut.lock();
   for (int i=0;i<ncalls;i++) {
-    actions.insert(make_pair(now, args));
+    actions.insert(std::make_pair(now, args));
     
     int wait_nsec = wait_time_base;
     if (wait_time_rand>0)

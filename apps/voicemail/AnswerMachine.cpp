@@ -258,7 +258,7 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
 
 int AnswerMachineFactory::loadEmailTemplates(const string& path)
 {
-  string email_tmpl_file = add2path(path, 1, 
+  std::string email_tmpl_file = add2path(path, 1, 
 				    (DEFAULT_MAIL_TMPL + "."
 				     + DEFAULT_MAIL_TMPL_EXT).c_str());
     

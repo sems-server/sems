@@ -36,7 +36,6 @@
 
 #include <map>
 #include <string>
-using std::map;
 using std::string;
 
 #include <sys/types.h>

@@ -384,8 +384,8 @@ bool PySemsFactory::loadScript(const string& path)
 
   PyObject_SetAttrString(mod,"config",config);
 
-  mod_reg.insert(make_pair(path,
-			   PySemsScriptDesc(mod,dlg_class, dt)));
+  mod_reg.insert(std::make_pair(path,
+			        PySemsScriptDesc(mod,dlg_class, dt)));
 
   return true;
 

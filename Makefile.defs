@@ -41,7 +41,7 @@ ifeq ($(OS),solaris)
         # For inet_aton.
         LDFLAGS += -lresolv
 
-	exclude_modules += adpcm binrpcctrl gsm ilbc speex
+	exclude_modules += adpcm gsm ilbc speex
 else
 	GETARCH=uname -m
 endif

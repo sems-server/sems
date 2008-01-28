@@ -82,7 +82,7 @@ void DiameterClient::newConnection(const AmArg& args,
   sc->start();
   DBG("registering connection...\n");
   conn_mut.lock();
-  connections.insert(make_pair(app_name, sc));
+  connections.insert(std::make_pair(app_name, sc));
   conn_mut.unlock();
 
   ret.push(0);

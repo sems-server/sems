@@ -428,8 +428,8 @@ bool IvrFactory::loadScript(const string& path)
 
   PyObject_SetAttrString(mod,"config",config);
 
-  mod_reg.insert(make_pair(path,
-			   IvrScriptDesc(mod,dlg_class)));
+  mod_reg.insert(std::make_pair(path,
+			        IvrScriptDesc(mod,dlg_class)));
 
   return true;
 

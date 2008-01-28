@@ -144,7 +144,7 @@ void XMLRPC2DI::newConnection(const AmArg& args, AmArg& ret) {
   XMLRPCServerEntry* sc = new XMLRPCServerEntry(server_name, port, uri);
 
   server_mut.lock();
-  servers.insert(make_pair(app_name, sc));
+  servers.insert(std::make_pair(app_name, sc));
   server_mut.unlock();
 }
 

@@ -92,7 +92,7 @@ void ServerConnection::process(AmEvent* ev) {
   gettimeofday(&now, NULL);
 
   req_map_mut.lock();
-  req_map[exe] = make_pair(re->sess_link, now);
+  req_map[exe] = std::make_pair(re->sess_link, now);
   req_map_mut.unlock();
 }
 

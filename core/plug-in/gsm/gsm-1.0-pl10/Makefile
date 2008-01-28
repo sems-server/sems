@@ -45,6 +45,7 @@ WAV49	=
 
 CC		= gcc -ansi -pedantic
 CCFLAGS 	= -c -O2 -DNeedFunctionPrototypes=1 -fPIC
+MODULE_CFLAGS  = -I inc -DHAS_STDLIB_H
 
 LD 		= $(CC)
 

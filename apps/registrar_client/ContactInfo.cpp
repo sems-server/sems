@@ -28,7 +28,11 @@
 #include "ContactInfo.h"
 #include "log.h"
 
+// Not on Solaris!
+#if !defined (__SVR4) && !defined (__sun)
 #include <strings.h>
+#endif
+
 #include <iostream>
 using namespace std;
 
