@@ -129,7 +129,7 @@ int WebConferenceFactory::onLoad()
 
   string feedback_filename = cfg.getParameter("feedback_file");
   if (!feedback_filename.empty()) {
-    feedback_file.open(feedback_filename.c_str(), ios::out);
+    feedback_file.open(feedback_filename.c_str(), std::ios::out);
     if (!feedback_file.good()) {
       ERROR("opening feedback file '%s'\n", 
 	    feedback_filename.c_str());
@@ -514,7 +514,7 @@ void WebConferenceFactory::resetFeedback(const AmArg& args, AmArg& ret) {
 
   feedback_file.close();
   if (!feedback_filename.empty()) {
-    feedback_file.open(feedback_filename.c_str(), ios::out);
+    feedback_file.open(feedback_filename.c_str(), std::ios::out);
     if (!feedback_file.good()) {
       ERROR("opening new feedback file '%s'\n", 
 	    feedback_filename.c_str());

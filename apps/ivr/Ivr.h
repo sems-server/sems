@@ -101,7 +101,7 @@ class IvrFactory: public AmSessionFactory
 
   IvrDialog* newDlg(const string& name);
 
-  queue<PyObject*> deferred_threads;
+  std::queue<PyObject*> deferred_threads;
   void start_deferred_threads();
    
  public:

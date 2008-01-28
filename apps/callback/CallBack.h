@@ -57,7 +57,7 @@ class CallBackFactory
 
   regex_t accept_caller_re;
 
-  multimap<time_t, string> scheduled_calls;
+  std::multimap<time_t, string> scheduled_calls;
   AmMutex scheduled_calls_mut;
   // seconds to wait before calling back
   int cb_wait;

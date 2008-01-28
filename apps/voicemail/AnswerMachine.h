@@ -46,7 +46,7 @@ class AmMail;
 /** \brief Factory for voicemail sessions */
 class AnswerMachineFactory: public AmSessionFactory
 {
-  map<string, EmailTemplate> email_tmpl;
+  std::map<string, EmailTemplate> email_tmpl;
 
   int getEmailAddress();
 

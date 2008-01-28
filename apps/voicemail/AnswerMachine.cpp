@@ -483,7 +483,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   if(email.empty())
     throw AmSession::Exception(404,"missing email address");
 
-  map<string,EmailTemplate>::iterator tmpl_it;
+  std::map<string,EmailTemplate>::iterator tmpl_it;
   if (!language.empty()) {
     tmpl_it = email_tmpl.find(req.domain + "_" + language);
     if(tmpl_it == email_tmpl.end()) {

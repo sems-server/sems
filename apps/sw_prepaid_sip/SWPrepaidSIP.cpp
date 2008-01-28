@@ -184,7 +184,7 @@ void SWPrepaidSIPDialog::onInvite(const AmSipRequest& req)
 
     invite_req = req;
     dlg.updateStatus(req);
-    recvd_req.insert(make_pair(req.cseq,req));
+    recvd_req.insert(std::make_pair(req.cseq,req));
 
     connectCallee("<" + m_ruri + ">", m_proxy + ";sw_prepaid", true);
     sip_relay_only = true;

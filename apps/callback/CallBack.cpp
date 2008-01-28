@@ -181,7 +181,7 @@ void CallBackFactory::run() {
     vector<string> todo;
     time_t now;
     time(&now);
-    multimap<time_t, string>::iterator it = 
+    std::multimap<time_t, string>::iterator it = 
       scheduled_calls.begin();
     while (it != scheduled_calls.end()) {
       if (it->first > now)
