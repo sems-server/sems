@@ -30,12 +30,11 @@
 
 #include <map>
 #include <string>
-using std::map;
 using std::string;
 
 class AmMail;
 
-typedef map<string,string> EmailTmplDict;
+typedef std::map<std::string,std::string> EmailTmplDict;
 
 /** \brief loads, processes and outputs an email template file */
 class EmailTemplate

@@ -31,7 +31,6 @@
 #include "AmThread.h"
 
 #include <map>
-using std::map;
 
 #define ICMP_BUF_SIZE 512
 
@@ -46,7 +45,7 @@ class AmIcmpWatcher: public AmThread
   int raw_sd;
 
   /* RTP Stream map */
-  map<int,AmRtpStream*> stream_map;
+  std::map<int,AmRtpStream*> stream_map;
   AmMutex               stream_map_m;
 
   /* constructor & destructor are

@@ -135,7 +135,7 @@ bool AmConfigReader::hasParameter(const string& param)
 
 const string& AmConfigReader::getParameter(const string& param, const string& defval)
 {
-  map<string,string>::iterator it = keys.find(param);
+  std::map<std::string,std::string>::iterator it = keys.find(param);
   if(it == keys.end())
     return defval;
   else

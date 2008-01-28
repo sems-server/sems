@@ -9,6 +9,11 @@ extra_clean = clean_md5
 module_ldflags = 
 module_cflags  = 
 
+ifeq ($(OS),solaris)
+	module_ldflags += -shared
+	module_cflags += -shared
+endif
+
 %.o : %.c %.d
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 

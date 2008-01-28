@@ -35,7 +35,6 @@
 #include <string>
 using std::string;
 #include <map>
-using std::map;
 
 #define HASHLEN 16
 typedef unsigned char HASH[HASHLEN];
@@ -101,7 +100,7 @@ struct SIPRequestInfo {
 /** \brief SessionEventHandler for implementing uac authentication */
 class UACAuth : public AmSessionEventHandler
 {
-  map<unsigned int, SIPRequestInfo> sent_requests;
+  std::map<unsigned int, SIPRequestInfo> sent_requests;
 
   UACAuthCred* credential;
   AmSipDialog* dlg;

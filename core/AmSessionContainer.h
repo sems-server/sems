@@ -32,14 +32,10 @@
 #include "AmSession.h"
 
 #include <string>
-#include <vector>
 #include <queue>
 #include <map>
 
 using std::string;
-using std::vector;
-using std::queue;
-using std::map;
 
 /**
  * \brief Centralized session container.
@@ -54,13 +50,13 @@ class AmSessionContainer : public AmThread
   static AmSessionContainer* _SessionContainer;
 
   // some typedefs ...
-  typedef map<string,AmSession*> SessionMap;
+  typedef std::map<string,AmSession*> SessionMap;
   typedef SessionMap::iterator SessionMapIter;
 
-  typedef map<string,string>     Dictionnary;
+  typedef std::map<string,string>     Dictionnary;
   typedef Dictionnary::iterator  DictIter;
 
-  typedef queue<AmSession*>      SessionQueue;
+  typedef std::queue<AmSession*>      SessionQueue;
 
   /** 
    * Container for active sessions 

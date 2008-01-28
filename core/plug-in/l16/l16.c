@@ -29,6 +29,14 @@
    byte order, otherwise CODEC_PCM16 could be used right away
 */
 
+// For ntohs() on Solaris.
+#if defined (__SVR4) && defined (__sun)
+#include <sys/byteorder.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <inttypes.h>
+#endif
+
 #include <arpa/inet.h>
 
 #include "amci.h"

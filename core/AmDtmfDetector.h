@@ -33,7 +33,6 @@
 
 #include <string>
 #include <memory>
-using namespace std;
 
 #ifdef USE_SPANDSP
 #include <math.h>
@@ -366,7 +365,7 @@ class AmDtmfDetector
   AmSession *m_session;
   AmRtpDtmfDetector m_rtpDetector;
   AmSipDtmfDetector m_sipDetector;
-  auto_ptr<AmInbandDtmfDetector> m_inbandDetector;
+  std::auto_ptr<AmInbandDtmfDetector> m_inbandDetector;
   Dtmf::InbandDetectorType m_inband_type;
 
   struct timeval m_startTime;

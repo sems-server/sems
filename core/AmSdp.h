@@ -32,8 +32,6 @@
 #include <map>
 #include <vector>
 using std::string;
-using std::map;
-using std::vector;
 
 
 #define COMFORT_NOISE_PAYLOAD_TYPE 13 // RFC 3389
@@ -116,7 +114,7 @@ struct SdpMedia
   SdpConnection conn; // c=
   Direction     dir;  // a=direction
 
-  vector<SdpPayload> payloads;
+  std::vector<SdpPayload> payloads;
 
   SdpMedia() : conn() {}
 };
@@ -151,10 +149,10 @@ public:
   string           sessionName; // s= 
   string           uri;         // u=
   SdpConnection    conn;        // c=
-  vector<SdpMedia> media;       // m= ... [a=rtpmap:...]+
+  std::vector<SdpMedia> media;  // m= ... [a=rtpmap:...]+
 
   // Supported payloads
-  vector<SdpPayload*> sup_pl; 
+  std::vector<SdpPayload*> sup_pl; 
   // Is remote host requesting 
   // us to do passive RTP ?
   bool remote_active;
@@ -186,7 +184,7 @@ public:
    * Get a compatible payload from SDP offer/response. 
    * @return empty vector if error encountered.
    */
-  const vector<SdpPayload*>& getCompatiblePayloads(int media_type, string& addr, int& port);
+  const std::vector<SdpPayload*>& getCompatiblePayloads(int media_type, string& addr, int& port);
 
   /**
    * Test if remote UA supports 'telefone_event'.

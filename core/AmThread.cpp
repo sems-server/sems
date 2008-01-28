@@ -262,7 +262,7 @@ void AmThreadWatcher::run()
     DBG("Thread watcher starting its work\n");
 
     try {
-      queue<AmThread*> n_thread_queue;
+      std::queue<AmThread*> n_thread_queue;
 
       while(!thread_queue.empty()){
 

@@ -36,7 +36,6 @@
 #include "amci/codecs.h"
 
 #include <list>
-using namespace std;
 #include "SampleArray.h"
 
 /**
@@ -62,9 +61,9 @@ class AmAudioQueue : public AmAudio {
   SampleArrayShort sarr;
 
   AmMutex inputQueue_mut;
-  list<AudioQueueEntry> inputQueue;
+  std::list<AudioQueueEntry> inputQueue;
   AmMutex outputQueue_mut;
-  list<AudioQueueEntry> outputQueue;
+  std::list<AudioQueueEntry> outputQueue;
  public:
   AmAudioQueue();
   ~AmAudioQueue();

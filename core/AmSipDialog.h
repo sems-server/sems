@@ -34,8 +34,6 @@
 #include <vector>
 #include <map>
 using std::string;
-using std::vector;
-using std::map;
 
 #define CONTACT_USER_PREFIX "sems"
 
@@ -58,7 +56,7 @@ struct AmSipTransaction
   {}
 };
 
-typedef map<int,AmSipTransaction> TransMap;
+typedef std::map<int,AmSipTransaction> TransMap;
 
 /**
  * \brief base class for SIP request/reply event handler 
@@ -93,7 +91,7 @@ class AmSipDialog
   TransMap uac_trans;
 
   AmSipDialogEventHandler* hdl;
-  vector<string> route;        // record routing
+  std::vector<string> route;        // record routing
 
   int updateStatusReply(const AmSipRequest& req, 
 			unsigned int code);

@@ -41,14 +41,14 @@ AmAudioQueue::AmAudioQueue()
 
 AmAudioQueue::~AmAudioQueue() { 
   set<AmAudio*> deleted_audios; // don't delete them twice
-  for (list<AudioQueueEntry>::iterator it = inputQueue.begin();it != inputQueue.end(); it++) {
+  for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin();it != inputQueue.end(); it++) {
     if (deleted_audios.find(it->audio) == deleted_audios.end()) {
       deleted_audios.insert(it->audio);
       delete it->audio;
     }
   }
 	
-  for (list<AudioQueueEntry>::iterator it = outputQueue.begin();it != outputQueue.end(); it++) {
+  for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin();it != outputQueue.end(); it++) {
     if (deleted_audios.find(it->audio) == deleted_audios.end()) {
       deleted_audios.insert(it->audio);
       delete it->audio;
@@ -59,7 +59,7 @@ AmAudioQueue::~AmAudioQueue() {
 int AmAudioQueue::write(unsigned int user_ts, unsigned int size) {
   inputQueue_mut.lock();
   unsigned int size_trav = size;
-  for (list<AudioQueueEntry>::iterator it = inputQueue.begin(); it != inputQueue.end(); it++) {
+  for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin(); it != inputQueue.end(); it++) {
     if (it->put) {
       if ((size_trav = it->audio->put(user_ts, samples, size_trav)) < 0)
 	break;
@@ -76,7 +76,7 @@ int AmAudioQueue::write(unsigned int user_ts, unsigned int size) {
 int AmAudioQueue::read(unsigned int user_ts, unsigned int size) {
   outputQueue_mut.lock();
   unsigned int size_trav = size;
-  for (list<AudioQueueEntry>::iterator it = outputQueue.begin(); it != outputQueue.end(); it++) {
+  for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin(); it != outputQueue.end(); it++) {
     if (it->put) {
       if ((size_trav = it->audio->put(user_ts, samples, size_trav)) < 0)
 	break;
@@ -92,7 +92,7 @@ int AmAudioQueue::read(unsigned int user_ts, unsigned int size) {
 
 void AmAudioQueue::pushAudio(AmAudio* audio, QueueType type, Pos pos, bool write, bool read) {
   AmMutex* q_mut; 
-  list<AudioQueueEntry>* q; 
+  std::list<AudioQueueEntry>* q; 
   switch (type) {
   case OutputQueue: 
     q_mut = &outputQueue_mut;
@@ -122,7 +122,7 @@ int AmAudioQueue::popAudio(QueueType type, Pos pos) {
 
 AmAudio* AmAudioQueue::popAndGetAudio(QueueType type, Pos pos) {
   AmMutex* q_mut; 
-  list<AudioQueueEntry>* q; 
+  std::list<AudioQueueEntry>* q; 
   switch (type) {
   case OutputQueue: 
     q_mut = &outputQueue_mut;
@@ -154,7 +154,7 @@ AmAudio* AmAudioQueue::popAndGetAudio(QueueType type, Pos pos) {
 int AmAudioQueue::removeAudio(AmAudio* audio) {
   bool found = false;
   outputQueue_mut.lock();
-  for (list<AudioQueueEntry>::iterator it = outputQueue.begin(); 
+  for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin(); 
        it != outputQueue.end(); it++) {
     if (it->audio == audio) {
       found = true;
@@ -167,7 +167,7 @@ int AmAudioQueue::removeAudio(AmAudio* audio) {
   if (found)
     return 0;
   inputQueue_mut.lock();
-  for (list<AudioQueueEntry>::iterator it = inputQueue.begin(); 
+  for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin(); 
        it != inputQueue.end(); it++) {
     if (it->audio == audio) {
       found = true;

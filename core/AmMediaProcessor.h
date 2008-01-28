@@ -34,8 +34,6 @@
 #include <set>
 using std::set;
 #include <map>
-using std::map;
-using std::multimap;
 
 struct SchedRequest;
 
@@ -90,9 +88,9 @@ class AmMediaProcessor
   unsigned int num_threads; 
   AmMediaProcessorThread**  threads;
   
-  map<string, unsigned int> callgroup2thread;
-  multimap<string, AmSession*> callgroupmembers;
-  map<AmSession*, string> session2callgroup;
+  std::map<string, unsigned int> callgroup2thread;
+  std::multimap<string, AmSession*> callgroupmembers;
+  std::map<AmSession*, string> session2callgroup;
   AmMutex group_mut;
 
   AmMediaProcessor();

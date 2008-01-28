@@ -35,7 +35,6 @@
 
 #include <map>
 #include <string>
-using std::map;
 using std::string;
 
 class AmConferenceChannel;
@@ -68,7 +67,7 @@ struct ConferenceEvent: public AmEvent
  */
 class AmConferenceStatus
 {
-  static map<string,AmConferenceStatus*> cid2status;
+  static std::map<string,AmConferenceStatus*> cid2status;
   static AmMutex                         cid2s_mut;
 
   struct SessInfo {
@@ -87,10 +86,10 @@ class AmConferenceStatus
   AmMultiPartyMixer      mixer;
     
   // sess_id -> ch_id
-  map<string, unsigned int> sessions;
+  std::map<string, unsigned int> sessions;
 
   // ch_id -> sess_id
-  map<unsigned int, SessInfo*> channels;
+  std::map<unsigned int, SessInfo*> channels;
 
   AmMutex                      sessions_mut;
 

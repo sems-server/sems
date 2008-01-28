@@ -93,7 +93,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 
       if(reply_ev->forward){
 
-	map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply_ev->reply.cseq);
+        std::map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply_ev->reply.cseq);
 	if (t_req != recvd_req.end()) {
 	  relaySip(t_req->second,reply_ev->reply);
 		
@@ -132,7 +132,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
     AmSession::onSipRequest(req);
   else {
     dlg.updateStatus(req);
-    recvd_req.insert(make_pair(req.cseq,req));
+    recvd_req.insert(std::make_pair(req.cseq,req));
   }
 
   relayEvent(new B2BSipRequestEvent(req,fwd));

@@ -3,7 +3,6 @@
 #include "log.h"
 
 #include <string>
-using std::string;
 
 #include <unistd.h>
 #include <string.h>
@@ -61,7 +60,7 @@ void AmIcmpWatcher::run()
 
   struct icmp*       icmp_hdr;
   size_t             icmp_len;
-  string             icmp_type_str;
+  std::string        icmp_type_str;
 
   char               src_str[INET_ADDRSTRLEN];
   char               dst_str[INET_ADDRSTRLEN];
@@ -124,7 +123,7 @@ void AmIcmpWatcher::run()
       int dstport = ntohs(udp_hdr->uh_dport);
 	    
       stream_map_m.lock();
-      map<int,AmRtpStream*>::iterator str_it = stream_map.find(srcport);
+      std::map<int,AmRtpStream*>::iterator str_it = stream_map.find(srcport);
 
       if(str_it != stream_map.end()){
 

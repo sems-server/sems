@@ -31,8 +31,17 @@ LDFLAGS = -lm
 
 OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
 
+# Additions for Solaris support.
 ifeq ($(OS),solaris)
 	GETARCH=uname -p
+	CPPFLAGS += -DHAVE_SYS_SOCKIO_H -DBSD_COMP -include compat/solaris.h -fPIC
+        CFLAGS += -DHAVE_SYS_SOCKIO_H -DBSD_COMP -fPIC
+        # For nanosleep.
+        LDFLAGS += -lrt
+        # For inet_aton.
+        LDFLAGS += -lresolv
+
+	exclude_modules += adpcm binrpcctrl gsm ilbc speex
 else
 	GETARCH=uname -m
 endif
@@ -52,6 +61,7 @@ endif
 # need OS specific for this ?
 CXX = g++
 CC = gcc
+
 LD = $(CC)
 
 
@@ -77,7 +87,7 @@ else
 ifeq ($(OS), netbsd)
 	LDFLAGS += -rdynamic -pthread
 else
-	LDFLAGS+= -ldl -lsocket -lnsl -lpthread
+	LDFLAGS+= -fPIC -ldl -lsocket -lnsl -lpthread
 	TARGET=solaris
 endif
 endif

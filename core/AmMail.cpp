@@ -95,7 +95,7 @@ int AmMailDeamon::sendQueued(AmMail* mail)
 
 void AmMailDeamon::run()
 {
-  queue<AmMail*> n_event_fifo;
+  std::queue<AmMail*> n_event_fifo;
   while(1){
 
     _run_cond.wait_for();

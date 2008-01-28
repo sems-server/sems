@@ -33,7 +33,6 @@
 #include <sys/select.h>
 
 #include <map>
-using std::map;
 using std::greater;
 
 class AmRtpStream;
@@ -47,7 +46,7 @@ class AmRtpStream;
  */
 class AmRtpReceiver: public AmThread {
 
-  typedef map<int, AmRtpStream*, greater<int> > Streams;
+  typedef std::map<int, AmRtpStream*, greater<int> > Streams;
 
   static AmRtpReceiver* _instance;
 

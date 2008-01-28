@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <unistd.h>
 
-map<string,AmConferenceStatus*> AmConferenceStatus::cid2status;
+std::map<std::string,AmConferenceStatus*> AmConferenceStatus::cid2status;
 AmMutex                         AmConferenceStatus::cid2s_mut;
 
 //
@@ -49,7 +49,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& cid,
   AmConferenceChannel* ch = 0;
 
   cid2s_mut.lock();
-  map<string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
+  std::map<std::string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
 
   if(it != cid2status.end()){
 
@@ -70,7 +70,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& cid,
 size_t AmConferenceStatus::getConferenceSize(const string& cid) {
 
   cid2s_mut.lock();
-  map<string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
+  std::map<std::string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
 
   size_t res = 0;
   if(it != cid2status.end())
@@ -86,7 +86,7 @@ void AmConferenceStatus::postConferenceEvent(const string& cid,
   AmConferenceStatus*  st = 0;
 
   cid2s_mut.lock();
-  map<string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
+  std::map<std::string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
 
   if(it != cid2status.end()){
 
@@ -105,7 +105,7 @@ void AmConferenceStatus::postConferenceEvent(const string& cid,
 void AmConferenceStatus::releaseChannel(const string& cid, unsigned int ch_id)
 {
   cid2s_mut.lock();
-  map<string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
+  std::map<std::string,AmConferenceStatus*>::iterator it = cid2status.find(cid);
 
   if(it != cid2status.end()){
 
@@ -139,7 +139,7 @@ void AmConferenceStatus::postConferenceEvent(int event_id, const string& sess_id
 {
   sessions_mut.lock();
   int participants = sessions.size();
-  for(map<string, unsigned int>::iterator it = sessions.begin(); 
+  for(std::map<std::string, unsigned int>::iterator it = sessions.begin(); 
       it != sessions.end(); it++){
     AmSessionContainer::instance()->postEvent(
 					      it->first,
@@ -155,7 +155,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
   AmConferenceChannel* ch = 0;
 
   sessions_mut.lock();
-  map<string, unsigned int>::iterator it = sessions.find(sess_id);
+  std::map<std::string, unsigned int>::iterator it = sessions.find(sess_id);
   if(it != sessions.end()){
     ch = new AmConferenceChannel(this,it->second,false);    
   } else {
@@ -194,7 +194,7 @@ int AmConferenceStatus::releaseChannel(unsigned int ch_id)
   unsigned int participants=0;
 
   sessions_mut.lock();
-  map<unsigned int, SessInfo*>::iterator it = channels.find(ch_id);
+  std::map<unsigned int, SessInfo*>::iterator it = channels.find(ch_id);
   if(it != channels.end()){
 	
     SessInfo* si = it->second;
@@ -204,7 +204,7 @@ int AmConferenceStatus::releaseChannel(unsigned int ch_id)
     mixer.removeChannel(ch_id);
 
     participants = channels.size();
-    map<string, unsigned int>::iterator s_it;
+    std::map<std::string, unsigned int>::iterator s_it;
     for(s_it = sessions.begin(); s_it != sessions.end(); s_it++){
 	    
       AmSessionContainer::instance()->postEvent(

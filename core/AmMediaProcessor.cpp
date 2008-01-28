@@ -32,6 +32,11 @@
 #include <sys/time.h>
 #include <signal.h>
 
+// Solaris seems to need this for nanosleep().
+#if defined (__SVR4) && defined (__sun)
+#include <time.h>
+#endif
+
 /** \brief Request event to the MediaProcessor (remove,...) */
 struct SchedRequest :
   public AmEvent
@@ -84,7 +89,7 @@ void AmMediaProcessor::addSession(AmSession* s,
   group_mut.lock();
     
   // callgroup already in a thread? 
-  map<string, unsigned int>::iterator it =
+  std::map<std::string, unsigned int>::iterator it =
     callgroup2thread.find(callgroup);
   if (it != callgroup2thread.end()) {
     // yes, use it
@@ -139,7 +144,7 @@ void AmMediaProcessor::removeFromProcessor(AmSession* s,
   unsigned int sched_thread = callgroup2thread[callgroup];
   DBG("  callgroup is '%s', thread %u\n", callgroup.c_str(), sched_thread);
   // erase callgroup membership entry
-  multimap<string, AmSession*>::iterator it = 
+  std::multimap<std::string, AmSession*>::iterator it = 
     callgroupmembers.lower_bound(callgroup);
   while ((it != callgroupmembers.end()) &&
          (it != callgroupmembers.upper_bound(callgroup))) {

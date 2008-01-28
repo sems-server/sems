@@ -69,18 +69,18 @@ AmArg& AmArg::operator=(const AmArg& v) {
   return *this;
 }
 
-AmArg::AmArg(map<std::string, std::string>& v) 
+AmArg::AmArg(std::map<std::string, std::string>& v) 
   : type(Undef) {
   assertStruct();
-  for (map<std::string, std::string>::iterator it=
+  for (std::map<std::string, std::string>::iterator it=
 	 v.begin();it!= v.end();it++)
     (*v_struct)[it->first] = AmArg(it->second.c_str());
 }
 
-AmArg::AmArg(map<std::string, AmArg>& v) 
+AmArg::AmArg(std::map<std::string, AmArg>& v) 
   : type(Undef) {
   assertStruct();
-  for (map<std::string, AmArg>::iterator it=
+  for (std::map<std::string, AmArg>::iterator it=
 	 v.begin();it!= v.end();it++)
     (*v_struct)[it->first] = it->second;
 }

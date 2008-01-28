@@ -203,7 +203,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   DBG("AmPlugIn: Initializing plugins...\n");
 
   // initialize base components
-  for(map<string,AmPluginFactory*>::iterator it = name2base.begin();
+  for(std::map<std::string,AmPluginFactory*>::iterator it = name2base.begin();
       it != name2base.end(); it++){
     err = it->second->onLoad();
     if(err)
@@ -211,7 +211,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   }
 
   // initialize session event handlers
-  for(map<string,AmSessionEventHandlerFactory*>::iterator it = name2seh.begin();
+  for(std::map<std::string,AmSessionEventHandlerFactory*>::iterator it = name2seh.begin();
       it != name2seh.end(); it++){
     err = it->second->onLoad();
     if(err)
@@ -219,7 +219,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   }
 
   // initialize DI component plugins
-  for(map<string,AmDynInvokeFactory*>::iterator it = name2di.begin();
+  for(std::map<std::string,AmDynInvokeFactory*>::iterator it = name2di.begin();
       it != name2di.end(); it++){
     err = it->second->onLoad();
     if(err)
@@ -227,7 +227,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   }
 
   // load SIPEventHandlers 
-  for(map<string,AmSIPEventHandler*>::iterator it = name2sipeh.begin();
+  for(std::map<std::string,AmSIPEventHandler*>::iterator it = name2sipeh.begin();
       it != name2sipeh.end(); it++){
     err = it->second->onLoad();
     if(err)
@@ -238,7 +238,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   }
 
   // init logging facilities
-  for(map<string,AmLoggingFacility*>::iterator it = name2logfac.begin();
+  for(std::map<std::string,AmLoggingFacility*>::iterator it = name2logfac.begin();
       it != name2logfac.end(); it++){
     err = it->second->onLoad();
     if(err)
@@ -248,8 +248,8 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   }
 
     
-  map<string,AmSessionFactory*> apps(name2app);
-  for(map<string,AmSessionFactory*>::iterator it = apps.begin();
+  std::map<std::string,AmSessionFactory*> apps(name2app);
+  for(std::map<std::string,AmSessionFactory*>::iterator it = apps.begin();
       it != apps.end(); it++){
 
     err = it->second->onLoad();
@@ -350,14 +350,14 @@ amci_inoutfmt_t* AmPlugIn::fileFormat(const string& fmt_name, const string& ext)
 {
   if(!fmt_name.empty()){
 
-    map<string,amci_inoutfmt_t*>::iterator it = file_formats.find(fmt_name);
+    std::map<std::string,amci_inoutfmt_t*>::iterator it = file_formats.find(fmt_name);
     if ((it != file_formats.end()) &&
 	(ext.empty() || (ext == it->second->ext)))
       return it->second;
   }
   else if(!ext.empty()){
 	
-    map<string,amci_inoutfmt_t*>::iterator it = file_formats.begin();
+    std::map<std::string,amci_inoutfmt_t*>::iterator it = file_formats.begin();
     for(;it != file_formats.end();++it){
       if(ext == it->second->ext)
 	return it->second;
@@ -369,7 +369,7 @@ amci_inoutfmt_t* AmPlugIn::fileFormat(const string& fmt_name, const string& ext)
 
 amci_codec_t* AmPlugIn::codec(int id)
 {
-  map<int,amci_codec_t*>::iterator it = codecs.find(id);
+  std::map<int,amci_codec_t*>::iterator it = codecs.find(id);
   if(it != codecs.end())
     return it->second;
 
@@ -378,7 +378,7 @@ amci_codec_t* AmPlugIn::codec(int id)
 
 amci_payload_t*  AmPlugIn::payload(int payload_id)
 {
-  map<int,amci_payload_t*>::iterator it = payloads.find(payload_id);
+  std::map<int,amci_payload_t*>::iterator it = payloads.find(payload_id);
   if(it != payloads.end())
     return it->second;
 
@@ -405,7 +405,7 @@ amci_subtype_t* AmPlugIn::subtype(amci_inoutfmt_t* iofmt, int subtype)
 
 AmSessionFactory* AmPlugIn::getFactory4App(const string& app_name)
 {
-  map<string,AmSessionFactory*>::iterator it = name2app.find(app_name);
+  std::map<std::string,AmSessionFactory*>::iterator it = name2app.find(app_name);
   if(it != name2app.end())
     return it->second;
   return 0;
@@ -413,7 +413,7 @@ AmSessionFactory* AmPlugIn::getFactory4App(const string& app_name)
 
 AmSessionEventHandlerFactory* AmPlugIn::getFactory4Seh(const string& name)
 {
-  map<string,AmSessionEventHandlerFactory*>::iterator it = name2seh.find(name);
+  std::map<std::string,AmSessionEventHandlerFactory*>::iterator it = name2seh.find(name);
   if(it != name2seh.end())
     return it->second;
   return 0;
@@ -421,7 +421,7 @@ AmSessionEventHandlerFactory* AmPlugIn::getFactory4Seh(const string& name)
 
 AmDynInvokeFactory* AmPlugIn::getFactory4Di(const string& name)
 {
-  map<string,AmDynInvokeFactory*>::iterator it = name2di.find(name);
+  std::map<std::string,AmDynInvokeFactory*>::iterator it = name2di.find(name);
   if(it != name2di.end())
     return it->second;
   return 0;
@@ -429,7 +429,7 @@ AmDynInvokeFactory* AmPlugIn::getFactory4Di(const string& name)
 
 AmSIPEventHandler* AmPlugIn::getFactory4SIPeh(const string& name)
 {
-  map<string,AmSIPEventHandler*>::iterator it = name2sipeh.find(name);
+  std::map<std::string,AmSIPEventHandler*>::iterator it = name2sipeh.find(name);
   if(it != name2sipeh.end())
     return it->second;
   return 0;
@@ -437,7 +437,7 @@ AmSIPEventHandler* AmPlugIn::getFactory4SIPeh(const string& name)
 
 AmLoggingFacility* AmPlugIn::getFactory4LogFaclty(const string& name)
 {
-  map<string,AmLoggingFacility*>::iterator it = name2logfac.find(name);
+  std::map<std::string,AmLoggingFacility*>::iterator it = name2logfac.find(name);
   if(it != name2logfac.end())
     return it->second;
   return 0;
@@ -711,7 +711,7 @@ int AmPlugIn::addFileFormat(amci_inoutfmt_t* f)
 
 bool AmPlugIn::registerFactory4App(const string& app_name, AmSessionFactory* f)
 {
-  map<string,AmSessionFactory*>::iterator it = name2app.find(app_name);
+  std::map<std::string,AmSessionFactory*>::iterator it = name2app.find(app_name);
   if(it != name2app.end()){
     WARN("Application '%s' has already been registered and cannot be registered a second time\n",
 	 app_name.c_str());

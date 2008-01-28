@@ -84,7 +84,7 @@ void UserTimer::checkTimers() {
   struct timeval cur_time;
   gettimeofday(&cur_time,NULL);
   
-  set<AmTimer>::iterator it = timers.begin();
+  std::set<AmTimer>::iterator it = timers.begin();
   
   while( timercmp(&it->time,&cur_time,<) 
 	 || timercmp(&it->time,&cur_time,==) ){
@@ -139,7 +139,7 @@ void UserTimer::removeTimer(int id, const string& session_id) {
 void UserTimer::unsafe_removeTimer(int id, const string& session_id) 
 {
   // erase old timer if exists
-  set<AmTimer>::iterator it = timers.begin(); 
+  std::set<AmTimer>::iterator it = timers.begin(); 
   while (it != timers.end()) {
     if ((it->id == id)&&(it->session_id == session_id)) {
       timers.erase(it);
@@ -152,7 +152,7 @@ void UserTimer::unsafe_removeTimer(int id, const string& session_id)
 void UserTimer::removeTimers(const string& session_id) {
   //  DBG("removing timers for <%s>\n", session_id.c_str());
   timers_mut.lock();
-  for (set<AmTimer>::iterator it = timers.begin(); 
+  for (std::set<AmTimer>::iterator it = timers.begin(); 
        it != timers.end(); it++) {
     if (it->session_id == session_id) {
       timers.erase(it);
@@ -165,7 +165,7 @@ void UserTimer::removeTimers(const string& session_id) {
 void UserTimer::removeUserTimers(const string& session_id) {
   //  DBG("removing User timers for <%s>\n", session_id.c_str());
   timers_mut.lock();
-  for (set<AmTimer>::iterator it = timers.begin(); 
+  for (std::set<AmTimer>::iterator it = timers.begin(); 
        it != timers.end(); it++) {
     if ((it->id > 0)&&(it->session_id == session_id)) {
       timers.erase(it);

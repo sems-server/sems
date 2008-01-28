@@ -44,9 +44,6 @@
 #include <map>
 using std::string;
 using std::vector;
-using std::queue;
-using std::map;
-using std::pair;
 
 class AmSessionFactory;
 class AmDtmfEvent;

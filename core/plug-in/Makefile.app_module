@@ -5,7 +5,9 @@ include $(COREPATH)/../Makefile.defs
 
 LDFLAGS  += $(module_ldflags)
 CPPFLAGS += -I $(COREPATH)
+CFLAGS   += -I $(COREPATH)
 CFLAGS   += $(module_cflags)
+CPPFLAGS += $(module_cflags)
 CXXFLAGS += $(module_cflags)
 
 app_module_dir = $(COREPATH)/lib

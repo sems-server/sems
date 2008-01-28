@@ -34,9 +34,7 @@
 #include <vector>
 #include <set>
 using std::string;
-using std::map;
 using std::vector;
-using std::set;
 
 class AmPluginFactory;
 class AmSessionFactory;
@@ -68,21 +66,21 @@ class AmPlugIn
 
   vector<void*> dlls;
 
-  map<int,amci_codec_t*>       codecs;
-  map<int,amci_payload_t*>     payloads;
-  map<int,int>                 payload_order;
-  map<string,amci_inoutfmt_t*> file_formats;
-  map<string,AmSessionFactory*>  name2app;
+  std::map<int,amci_codec_t*>       codecs;
+  std::map<int,amci_payload_t*>     payloads;
+  std::map<int,int>                 payload_order;
+  std::map<string,amci_inoutfmt_t*> file_formats;
+  std::map<string,AmSessionFactory*>  name2app;
 
-  map<string,AmSessionEventHandlerFactory*> name2seh;
-  map<string,AmPluginFactory*> name2base;
-  map<string,AmDynInvokeFactory*> name2di;
-  map<string,AmSIPEventHandler*> name2sipeh;
-  map<string,AmLoggingFacility*> name2logfac;
+  std::map<string,AmSessionEventHandlerFactory*> name2seh;
+  std::map<string,AmPluginFactory*> name2base;
+  std::map<string,AmDynInvokeFactory*> name2di;
+  std::map<string,AmSIPEventHandler*> name2sipeh;
+  std::map<string,AmLoggingFacility*> name2logfac;
   AmCtrlInterface *ctrlIface;
 
   int dynamic_pl; // range: 96->127, see RFC 1890
-  set<string> excluded_payloads;  // don't load these payloads (named)
+  std::set<string> excluded_payloads;  // don't load these payloads (named)
     
   AmPlugIn();
   ~AmPlugIn();
@@ -122,9 +120,9 @@ class AmPlugIn
    */
   amci_payload_t*  payload(int payload_id);
   /** @return the suported payloads. */
-  const map<int,amci_payload_t*>& getPayloads() { return payloads; }
+  const std::map<int,amci_payload_t*>& getPayloads() { return payloads; }
   /** @return the order of payloads. */
-  const map<int,int>& getPayloadOrder() { return payload_order; }
+  const std::map<int,int>& getPayloadOrder() { return payload_order; }
   /** 
    * File format lookup according to the 
    * format name and/or file extension.

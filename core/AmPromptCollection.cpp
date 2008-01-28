@@ -36,16 +36,16 @@ AmPromptCollection::AmPromptCollection()
 AmPromptCollection::~AmPromptCollection() 
 {
   // clean up
-  for (map<string, AudioFileEntry*>::iterator it=
+  for (std::map<std::string, AudioFileEntry*>::iterator it=
 	 store.begin(); it != store.end();it++)
     delete it->second;
 }
 
 int AmPromptCollection::configureModule(AmConfigReader& cfg, 
-					vector<pair<string, string> >& announcements,
+					std::vector<std::pair<std::string, std::string> >& announcements,
 					const char* mod_name) {
   int res = 0;
-  for (vector<pair<string, string> >::iterator it=
+  for (std::vector<std::pair<std::string, std::string> >::iterator it=
 	 announcements.begin(); it != announcements.end(); it++) {
     string fname = cfg.getParameter(it->first, "");
     if (fname.empty()){
@@ -61,8 +61,8 @@ int AmPromptCollection::configureModule(AmConfigReader& cfg,
   return res;
 }
 
-int AmPromptCollection::setPrompt(const string& name, 
-				  const string& filename,
+int AmPromptCollection::setPrompt(const std::string& name, 
+				  const std::string& filename,
 				  const char* mod_name) {
   if (!file_exists(filename)) {
     ERROR("'%s' prompt for module %s does not exist at '%s'.\n", 
@@ -105,10 +105,10 @@ AmCachedAudioFile* AudioFileEntry::getAudio(){
   return new AmCachedAudioFile(&cache);
 }
 
-int AmPromptCollection::addToPlaylist(const string& name, long sess_id, 
+int AmPromptCollection::addToPlaylist(const std::string& name, long sess_id, 
 				      AmPlaylist& list, bool front) {
   string s = name;
-  map<string, AudioFileEntry*>::iterator it=store.begin();
+  std::map<std::string, AudioFileEntry*>::iterator it=store.begin();
 
   while (it != store.end()) {
     if (!strcmp(it->first.c_str(), s.c_str()))
@@ -143,7 +143,7 @@ int AmPromptCollection::addToPlaylist(const string& name, long sess_id,
 
 void AmPromptCollection::cleanup(long sess_id) {
   items_mut.lock();
-  for (vector<AmCachedAudioFile*>::iterator it = 
+  for (std::vector<AmCachedAudioFile*>::iterator it = 
 	 items[sess_id].begin(); it!=items[sess_id].end(); it++)
     delete *it;
   items.erase(sess_id);

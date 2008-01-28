@@ -39,7 +39,6 @@ using std::auto_ptr;
 #include <string>
 using std::string;
 #include <map>
-using std::map;
 
 #define PCM16_B2S(b) ((b) >> 1)
 #define PCM16_S2B(s) ((s) << 1)
@@ -214,9 +213,9 @@ class AmAudioRtpFormat: public AmAudioFormat
   vector<SdpPayload *> m_payloads;
   int m_currentPayload;
   amci_payload_t *m_currentPayloadP;
-  map<int, SdpPayload *> m_sdpPayloadByPayload;
-  map<int, amci_payload_t *> m_payloadPByPayload;
-  map<int, CodecContainer *> m_codecContainerByPayload;
+  std::map<int, SdpPayload *> m_sdpPayloadByPayload;
+  std::map<int, amci_payload_t *> m_payloadPByPayload;
+  std::map<int, CodecContainer *> m_codecContainerByPayload;
 
 protected:
   int getCodecId();

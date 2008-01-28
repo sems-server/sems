@@ -31,7 +31,6 @@
 #include <pthread.h>
 
 #include <queue>
-using std::queue;
 
 /**
  * \brief C++ Wrapper class for pthread mutex
@@ -205,7 +204,7 @@ class AmThreadWatcher: public AmThread
   static AmThreadWatcher* _instance;
   static AmMutex          _inst_mut;
 
-  queue<AmThread*> thread_queue;
+  std::queue<AmThread*> thread_queue;
   AmMutex          q_mut;
 
   /** the daemon only runs if this is true */

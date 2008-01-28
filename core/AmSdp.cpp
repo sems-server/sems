@@ -38,7 +38,10 @@
 #include "amci/amci.h"
 #include "log.h"
 
+// Not on Solaris!
+#if !defined (__SVR4) && !defined (__sun)
 #include "strings.h"
+#endif
 
 inline char* get_next_line(char* s);
 inline bool parse_string_tok(char*& s, string& res, char sep_char = ' ');
@@ -249,8 +252,8 @@ int AmSdp::genResponse(const string& localip, int localport,
 int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
 {
   AmPlugIn* plugin = AmPlugIn::instance();
-  const map<int,amci_payload_t*>& payloads = plugin->getPayloads();
-  const map<int,int>& payload_order = plugin->getPayloadOrder();
+  const std::map<int,amci_payload_t*>& payloads = plugin->getPayloads();
+  const std::map<int,int>& payload_order = plugin->getPayloadOrder();
 
   if(payloads.empty()){
     ERROR("no payload plugin loaded.\n");
@@ -275,7 +278,7 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
     "t=0 0\r\n"
     "m=audio " + int2str(localport) + " RTP/AVP ";
     
-  map<int,int>::const_iterator it = payload_order.begin();
+  std::map<int,int>::const_iterator it = payload_order.begin();
   out_buf += int2str((it++)->second);
 
   for(; it != payload_order.end(); ++it)
@@ -284,7 +287,7 @@ int AmSdp::genRequest(const string& localip,int localport, string& out_buf)
   out_buf += "\r\n";
 
   for (it = payload_order.begin(); it != payload_order.end(); ++it) {
-      map<int,amci_payload_t*>::const_iterator it2 = payloads.find(it->second);
+      std::map<int,amci_payload_t*>::const_iterator it2 = payloads.find(it->second);
       if (it2 != payloads.end()) {
 	  out_buf += "a=rtpmap:" + int2str(it2->first) 
 	      + " " + string(it2->second->name) 
@@ -379,9 +382,9 @@ bool AmSdp::hasTelephoneEvent()
 int AmSdp::getDynPayload(const string& name, int rate)
 {
   AmPlugIn* pi = AmPlugIn::instance();
-  const map<int, amci_payload_t*>& ref_payloads = pi->getPayloads();
+  const std::map<int, amci_payload_t*>& ref_payloads = pi->getPayloads();
 
-  for(map<int, amci_payload_t*>::const_iterator pl_it = ref_payloads.begin();
+  for(std::map<int, amci_payload_t*>::const_iterator pl_it = ref_payloads.begin();
       pl_it != ref_payloads.end(); ++pl_it)
     if( !strcasecmp(name.c_str(), pl_it->second->name)
 	&&  (rate == pl_it->second->sample_rate) )

@@ -122,7 +122,7 @@ class AmB2BSession: public AmSession
   TransMap relayed_req;
 
   /** Requests received for relaying */
-  map<int,AmSipRequest> recvd_req;
+  std::map<int,AmSipRequest> recvd_req;
 
   void clear_other();
 

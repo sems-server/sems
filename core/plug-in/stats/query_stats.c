@@ -8,7 +8,6 @@
 #include <arpa/inet.h>
 
 #include <map>
-using std::map;
 #include <string>
 using std::string;
 
@@ -33,7 +32,7 @@ void print_usage(const char * progname)
 }
 
 static int parse_args(int argc, char* argv[], const string& flags,
-		      const string& options, map<char,string>& args);
+		      const string& options, std::map<char,string>& args);
 
 
 /* returns non-zero if error occured */
@@ -73,7 +72,7 @@ int main(int argc, char** argv)
   int sd, err;
   struct sockaddr_in addr;
     
-  map<char,string> args;
+  std::map<char,string> args;
 
   if(parse_args(argc, argv, "h","spc", args)){
     print_usage(argv[0]);
@@ -84,7 +83,7 @@ int main(int argc, char** argv)
   string port="5040";
   string cmd="calls";
 
-  for(map<char,string>::iterator it = args.begin(); 
+  for(std::map<char,string>::iterator it = args.begin(); 
       it != args.end(); ++it){
 		
     if(it->second.empty())
@@ -142,7 +141,7 @@ int main(int argc, char** argv)
 static int parse_args(int argc, char* argv[],
 		      const string& flags,
 		      const string& options,
-		      map<char,string>& args)
+		      std::map<char,string>& args)
 {
   for(int i=1; i<argc; i++){
 

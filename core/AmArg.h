@@ -38,7 +38,6 @@ using std::vector;
 using std::string;
 
 #include <map>
-using std::map;
 
 #include "log.h"
 

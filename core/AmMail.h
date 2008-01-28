@@ -35,8 +35,6 @@
 #include <vector>
 #include <queue>
 using std::string;
-using std::vector;
-using std::queue;
 
 /**
  * \brief Email file attachement
@@ -59,7 +57,7 @@ struct Attachement
     : fp(_fp), filename(_file), content_type(_ct) {}
 };
 
-typedef vector<Attachement> Attachements;
+typedef std::vector<Attachement> Attachements;
 
 class AmMail;
 
@@ -109,7 +107,7 @@ class AmMailDeamon: public AmThread
   static AmMailDeamon* _instance;
 
   AmMutex      event_fifo_mut;
-  queue<AmMail*>   event_fifo;
+  std::queue<AmMail*>   event_fifo;
   AmCondition<bool> _run_cond;
 
   AmMailDeamon() : _run_cond(false) {}

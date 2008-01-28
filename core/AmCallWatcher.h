@@ -42,7 +42,6 @@
 using std::string;
 
 #include <map>
-using std::map;
 
 #include <utility>
 using std::pair;
@@ -113,8 +112,8 @@ class AmCallWatcher
   public AmEventHandler
 {
  public:
-  typedef map<string, CallStatus*> CallStatusMap;
-  typedef map<string, pair<CallStatus*, time_t> > CallStatusTimedMap;
+  typedef std::map<string, CallStatus*> CallStatusMap;
+  typedef std::map<string, pair<CallStatus*, time_t> > CallStatusTimedMap;
 
  private:
   CallStatusMap states;

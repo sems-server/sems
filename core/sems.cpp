@@ -59,7 +59,6 @@
 
 #include <string>
 using std::string;
-using std::pair;
 using std::make_pair;
 
 #ifndef sighandler_t
@@ -74,7 +73,7 @@ int    is_main=1;
 
 
 static int parse_args(int argc, char* argv[], const string& flags,
-		      const string& options, map<char,string>& args);
+		      const string& options, std::map<char,string>& args);
 
 static void print_usage(char* progname);
 static void print_version();
@@ -147,9 +146,9 @@ int write_pid_file()
 }
 
 // returns 0 if OK
-static int use_args(char* progname, map<char,string>& args)
+static int use_args(char* progname, std::map<char,string>& args)
 {
-  for(map<char,string>::iterator it = args.begin(); 
+  for(std::map<char,string>::iterator it = args.begin(); 
       it != args.end(); ++it){
 	 
     if(it->second.empty())
@@ -205,7 +204,7 @@ static int use_args(char* progname, map<char,string>& args)
 
 int main(int argc, char* argv[])
 {
-  map<char,string> args;
+  std::map<char,string> args;
 
   if(parse_args(argc, argv, "hvE","ugPfiodxD", args)){
     print_usage(argv[0]);
@@ -227,7 +226,7 @@ int main(int argc, char* argv[])
   AmConfig::setStderr("yes");
   AmConfig::setLoglevel("1");
 
-  map<char,string>::iterator cfg_arg;
+  std::map<char,string>::iterator cfg_arg;
   if( (cfg_arg = args.find('f')) != args.end() )
     AmConfig::ConfigurationFile = cfg_arg->second;
 
@@ -423,7 +422,7 @@ static void print_version()
   printf("%s\n", DEFAULT_SIGNATURE);
 }
 
-static void getInterfaceList(int sd, vector<pair<string,string> >& if_list)
+static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_list)
 {
   struct ifconf ifc;
   struct ifreq ifrs[MAX_NET_DEVICES];
@@ -469,7 +468,7 @@ static string getLocalIP(const string& dev_name)
   }	
 
   struct ifreq ifr;
-  vector<pair<string,string> > if_list;
+  std::vector<std::pair<string,string> > if_list;
 
   if(dev_name.empty())
     getInterfaceList(sd,if_list);
@@ -490,7 +489,7 @@ static string getLocalIP(const string& dev_name)
   }
 
   string local_ip;
-  for( vector<pair<string,string> >::iterator it = if_list.begin();
+  for( std::vector<std::pair<string,string> >::iterator it = if_list.begin();
        it != if_list.end(); ++it) {
 
     memset(&ifr,0,sizeof(struct ifreq));
@@ -530,7 +529,7 @@ static string getLocalIP(const string& dev_name)
 static int parse_args(int argc, char* argv[],
 		      const string& flags,
 		      const string& options,
-		      map<char,string>& args)
+		      std::map<char,string>& args)
 {
   for(int i=1; i<argc; i++){
 

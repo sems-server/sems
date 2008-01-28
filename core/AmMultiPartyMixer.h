@@ -39,7 +39,6 @@
 #endif
 
 #include <map>
-using std::map;
 
 /**
  * \brief Mixer for one conference.
@@ -49,8 +48,8 @@ using std::map;
  */
 class AmMultiPartyMixer
 {
-  typedef map<int,SampleArrayShort*> ChannelMap;
-  //typedef map<int,unsigned int>      ChannelOff;
+  typedef std::map<int,SampleArrayShort*> ChannelMap;
+  //typedef std::map<int,unsigned int>    ChannelOff;
 
   ChannelMap       channels;
   //ChannelOff       ch_offsets;

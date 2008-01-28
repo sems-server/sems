@@ -32,7 +32,6 @@
 #include "AmEvent.h"
 
 #include <queue>
-using std::queue;
 
 /** 
  * \brief Asynchronous event queue implementation 
@@ -46,7 +45,7 @@ class AmEventQueue
 {
 protected:
   AmEventHandler*   handler;
-  queue<AmEvent*>   ev_queue;
+  std::queue<AmEvent*>   ev_queue;
   AmMutex           m_queue;
   AmCondition<bool> ev_pending;
 

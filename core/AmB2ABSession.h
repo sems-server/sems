@@ -136,7 +136,7 @@ class AmB2ABSession: public AmSession
   string other_id;
  
   /** Requests received for relaying */
-  map<int,AmSipRequest> recvd_req;
+  std::map<int,AmSipRequest> recvd_req;
 
   void clear_other();
 

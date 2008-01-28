@@ -31,7 +31,6 @@
 #include "AmUtils.h"
 
 #include <map>
-using std::map;
 
 #define MOD_NAME "uac_auth"
 
@@ -122,7 +121,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply)
   if (reply.code==407 || reply.code==401) {
     DBG("SIP reply with code %d cseq %d .\n", reply.code, reply.cseq);
 		
-    map<unsigned int, SIPRequestInfo >::iterator ri = 
+    std::map<unsigned int, SIPRequestInfo >::iterator ri = 
       sent_requests.find(reply.cseq);
     if (ri!= sent_requests.end())
       {

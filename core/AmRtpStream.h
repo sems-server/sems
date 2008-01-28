@@ -41,7 +41,6 @@
 #include <map>
 #include <memory>
 using std::string;
-using std::map;
 using std::auto_ptr;
 
 // return values of AmRtpStream::receive
@@ -58,7 +57,7 @@ struct amci_payload_t;
 class AmAudio;
 class AmSession;
 class SdpPayload;
-typedef map<unsigned int, AmRtpPacket, ts_less> ReceiveBuffer;
+typedef std::map<unsigned int, AmRtpPacket, ts_less> ReceiveBuffer;
 
 /**
  * \brief RTP implementation
