@@ -1,0 +1,78 @@
+# generic Makefile for py_sems applications
+.DEFAULT_GOAL := all
+
+COREPATH ?= ../../core
+PYSEMSPATH ?= ../py_sems
+
+include $(COREPATH)/../Makefile.defs
+include $(PYSEMSPATH)/Makefile.defs
+
+# 
+py-sems-modules-dir?=lib/sems/py_sems
+
+LIB_INSTALLDIR?=$(modules-prefix)/$(py-sems-modules-dir)
+TARBALL_PREFIX=sems-app-${NAME}
+TARBALL="${TARBALL_PREFIX}-${VERSION}.tar.gz"
+
+BASEDIR?=${basedir}
+
+BIN_PERMISSIONS="755"
+LIB_PERMISSIONS="644"
+
+PYCHECKERARGS = --stdlib
+PYCHECKERDOCARGS = --classdoc --funcdoc
+
+module_conf_files =  $(wildcard etc/*)
+
+.PHONY: all
+all: clean compile
+
+.PHONY: clean
+clean:
+	find . -iname "*\.pyc" -o -iname "*\.py~" | xargs rm -f
+	rm -f ${TARBALL_PREFIX}*.tar.gz
+
+.PHONY: compile
+compile: 
+	python${PYTHON_VERSION} $(PYSEMSPATH)/py_comp -q .
+
+.PHONY: install
+install: all
+	install -d ${BASEDIR}/${LIB_INSTALLDIR}
+	install -m ${LIB_PERMISSIONS}  *.pyc ${BASEDIR}/${LIB_INSTALLDIR}
+	install -d ${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
+	install -m ${LIB_PERMISSIONS}  ${LIBDIR}/*.pyc ${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
+
+.PHONY: install-cfg
+install-cfg: 
+	mkdir -p $(cfg-prefix)/$(cfg-dir)etc
+	-@for r in $(module_conf_files); do \
+			echo installing $$r ;  \
+			$(INSTALL-TOUCH) $(cfg-prefix)/$(cfg-dir)$$r ; \
+			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
+			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
+			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
+			< $$r > $(cfg-prefix)/$(cfg-dir)$$r; \
+	done
+
+
+uninstall: 
+	@echo "please remove the files from ${LIB_INSTALLDIR} manually."
+
+fulltest: 
+	find | grep /Test | grep -v ".svn" | grep \\.py$$ | sed -e "s#^./##g" | bash -e - 
+
+check: 
+	find ${LIBDIR}/ | grep \\.py$$ | grep -v Test | PYTHONPATH=$(PYTHONPATH):$(PYSEMSPATH)/moc xargs pychecker ${PYCHECKERARGS} 
+
+doccheck: 
+	find ${LIBDIR}/  | grep \\.py$$ | grep -v Test | xargs pychecker ${PYCHECKERARGS} ${PYCHECKERDOCARGS}
+
+dist: all
+	tar -cvzf ${TARBALL} . --exclude=*.tar.gz \
+				--exclude=.svn \
+				--exclude=*~ \
+				--exclude=*.pyc
+
+
+
