@@ -1,28 +1,9 @@
 plug_in_name = py_sems
+include Makefile.defs
 
 COREPATH ?=../../core
 
-SCRIPT = Python
 TTS ?= y
-
-#
-# Python specific
-#  (no need to change this if you want to use perl)
-#
-# PYTHON_VERSION might also be 2.2 -- except for the use of GIL
-# do a ls /usr/include/python2.3/Python.h to see if it's there
-PYTHON_VERSION ?= `python -c 'import sys;print sys.version[0:3]';`
-PY_VER = $(PYTHON_VERSION)
-PY_EXE = python$(PY_VER)
-# adjust to point to python include path
-# can also be /usr/include/python$(PY_VER)
-# look for Python.h in the specified path
-# Python prefix is what you configured python with 
-# if you built from source (e.g. ./configure --with-prefix=/usr/local)
-# on debian it's often /usr, on SuSE and FreeBSD /usr/local
-PYTHON_PREFIX = /usr
-PYTHON_DIR = $(PYTHON_PREFIX)/include/python$(PY_VER)
-PYTHON_LIBDIR = $(PYTHON_PREFIX)/lib/python$(PY_VER)
 
 # put used Python modules from lib-dynload here, e.g. time, mysql, _cvs.so etc.
 PYTHON_DYNLOAD_MODULES = $(wildcard $(PYTHON_LIBDIR)/lib-dynload/*.so) \
