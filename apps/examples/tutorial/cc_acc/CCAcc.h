@@ -1,4 +1,9 @@
+#ifndef _CC_ACC_H
+#define _CC_ACC_H
+
 #include "AmApi.h"
+
+#include <map>
 
 /**
  * accounting class for calling card.
@@ -18,7 +23,7 @@ class CCAcc : public AmDynInvoke
   /** sets the value to some amount */
   int setCredit(string pin, int amount);
   
-  map<string, unsigned int> credits;
+  std::map<string, unsigned int> credits;
   // as this is used from various sessions,
   // it must be protected by a mutex
   AmMutex credits_mut;
@@ -30,3 +35,5 @@ class CCAcc : public AmDynInvoke
   static CCAcc* instance();
   void invoke(const string& method, const AmArg& args, AmArg& ret);
 };
+
+#endif 

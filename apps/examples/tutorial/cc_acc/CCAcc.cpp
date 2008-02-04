@@ -70,7 +70,7 @@ void CCAcc::invoke(const string& method, const AmArg& args, AmArg& ret)
 /* accounting functions... */
 int CCAcc::getCredit(string pin) {
   credits_mut.lock();
-  map<string, unsigned int>::iterator it =  credits.find(pin);
+  std::map<string, unsigned int>::iterator it =  credits.find(pin);
   if (it == credits.end()) {
     DBG("PIN '%s' does not exist.\n", pin.c_str());
     credits_mut.unlock();
@@ -97,7 +97,7 @@ int CCAcc::addCredit(string pin, int amount) {
 
 int CCAcc::subtractCredit(string pin, int amount) {
   credits_mut.lock();
-  map<string, unsigned int>::iterator it =  credits.find(pin);
+  std::map<string, unsigned int>::iterator it =  credits.find(pin);
   if (it == credits.end()) {
     ERROR("PIN '%s' dies not exist.", pin.c_str());
     credits_mut.unlock();

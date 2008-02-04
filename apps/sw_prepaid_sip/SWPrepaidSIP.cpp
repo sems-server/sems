@@ -66,7 +66,7 @@ int SWPrepaidSIPFactory::onLoad()
     return -1;
   }
 
-  DBG("use acc plugin '%s'", acc_plugin.c_str());
+  DBG("using acc plugin '%s'\n", acc_plugin.c_str());
   cc_acc_fact = AmPlugIn::instance()->getFactory4Di(acc_plugin);
   if(!cc_acc_fact) {
     ERROR("could not load accounting plugin '%s', please provide a valid module name\n",
