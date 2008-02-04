@@ -90,6 +90,9 @@ install_python_files: $(modules-prefix)/$(modules-dir)
 		fi ; \
 	done
 
+	echo "Installing py_sems script path..."
+	$(INSTALL-MODULES) -d $(modules-prefix)/$(py-sems-modules-dir)
+
 .PHONY: clean_py_sems_lib
 clean_py_sems_lib:
 	COREPATH=../$(COREPATH) $(MAKE) -C sip/ clean

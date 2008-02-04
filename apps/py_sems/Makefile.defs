@@ -13,3 +13,6 @@ PY_EXE = python$(PY_VER)
 PYTHON_PREFIX = /usr
 PYTHON_DIR = $(PYTHON_PREFIX)/include/python$(PY_VER)
 PYTHON_LIBDIR = $(PYTHON_PREFIX)/lib/python$(PY_VER)
+
+# 
+py-sems-modules-dir?=lib/sems/py_sems
