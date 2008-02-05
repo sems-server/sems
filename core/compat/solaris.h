@@ -57,4 +57,9 @@
 #define PF_LOCAL PF_UNIX
 #define MSG_NOSIGNAL 0
 
+// No u_int64_t on Solaris.
+#ifndef u_int64_t
+#define u_int64_t unsigned long long int
+#endif
+
 #endif

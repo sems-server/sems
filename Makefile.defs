@@ -41,7 +41,9 @@ ifeq ($(OS),solaris)
         # For inet_aton.
         LDFLAGS += -lresolv
 
-	exclude_modules += adpcm gsm ilbc speex
+	# I don't have libspeex installed.
+	# binrpcctrl does some really weird header stuff that doesn't work.
+	exclude_modules += binrpcctrl ilbc speex
 else
 	GETARCH=uname -m
 endif
