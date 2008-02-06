@@ -266,7 +266,7 @@ string AmSipDialog::getContactHdr()
       hostName += ":" + sip_port;
   }
 
-  string uri = AmServer::localURI(/*display name*/"", userName, hostName, 
+  string uri = AmServer::getContact(/*display name*/"", userName, hostName, 
       /*uri params*/"", /*hdrs params*/"");
 
   string res = SIP_HDR_COLSP(SIP_HDR_CONTACT) + uri + CRLF;
