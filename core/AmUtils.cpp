@@ -885,5 +885,5 @@ void add_env_path(const char* name, const string& path)
   }
 
   DBG("setting %s to: '%s'\n",name,var.c_str());
-  setenv(name.c_str(),var.c_str(),1);
+  setenv(name,var.c_str(),1);
 }
