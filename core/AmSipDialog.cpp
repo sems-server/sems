@@ -43,6 +43,7 @@ char* AmSipDialog::status2str[4]  = {
 AmSipDialog::~AmSipDialog()
 {
   DBG("callid = %s\n",callid.c_str());
+  DBG("local_tag = %s\n",local_tag.c_str());
   DBG("uac_trans.size() = %u\n",(unsigned int)uac_trans.size());
   if(uac_trans.size()){
     for(TransMap::iterator it = uac_trans.begin();

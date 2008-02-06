@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: AmThread.cpp 390 2007-07-06 23:57:00Z sayer $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -66,16 +66,14 @@ void * AmThread::_start(void * _t)
   AmThread* _this = (AmThread*)_t;
   _this->_pid = (pid_t) _this->_td;
   DBG("Thread %lu is starting.\n", (unsigned long int) _this->_pid);
-  _this->_stopped.set(false);
   _this->run();
-
-  DBG("Thread %lu is ending.\n", (unsigned long int) _this->_pid);
   _this->_stopped.set(true);
     
   //thread_nr_mut.lock();
   //INFO("threads = %i\n",--thread_nr);
   //thread_nr_mut.unlock();
 
+  DBG("Thread %lu is ending.\n", (unsigned long int) _this->_pid);
   return NULL;
 }
 
@@ -124,9 +122,6 @@ void AmThread::start(bool realtime)
 
   int res;
   _pid = 0;
-  // unless placed here, a call seq like run(); join(); will not wait to join
-  // b/c creating the thread can take too long
-  this->_stopped.set(false);
   res = pthread_create(&_td,&attr,_start,this);
   pthread_attr_destroy(&attr);
   if (res != 0) {
@@ -136,6 +131,9 @@ void AmThread::start(bool realtime)
   //     thread_nr_mut.lock();
   //     INFO("threads = %i\n",++thread_nr);
   //     thread_nr_mut.unlock();
+
+  _stopped.set(false);
+
   //DBG("Thread %lu is just created.\n", (unsigned long int) _pid);
 }
 
@@ -262,7 +260,7 @@ void AmThreadWatcher::run()
     DBG("Thread watcher starting its work\n");
 
     try {
-      std::queue<AmThread*> n_thread_queue;
+      queue<AmThread*> n_thread_queue;
 
       while(!thread_queue.empty()){
 

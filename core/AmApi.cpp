@@ -99,3 +99,8 @@ AmLoggingFacility::AmLoggingFacility(const string& name)
   : AmPluginFactory(name) 
 {
 }
+
+AmCtrlInterfaceFactory::AmCtrlInterfaceFactory(const string& name) 
+  : AmPluginFactory(name) 
+{
+}

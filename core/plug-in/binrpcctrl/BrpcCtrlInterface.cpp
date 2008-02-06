@@ -12,7 +12,7 @@
 #define MOD_NAME  "binrpcctrl"
 
 
-EXPORT_CONTROL_INTERFACE_FACTORY(BrpcCtrlInterface, MOD_NAME);
+EXPORT_CONTROL_INTERFACE_FACTORY(BrpcCtrlInterfaceFactory, MOD_NAME);
 
 
 #define LISTEN_ADDR_PARAM   "sems_address"
@@ -183,27 +183,45 @@ const static char CANCEL_FMT_REQ[] = "s";
 
 #define CONFIRM_RECEPTION 0
 
-BrpcCtrlInterface *BrpcCtrlInterface::_instance = NULL;
-time_t BrpcCtrlInterface::serial = -1;
-brpc_int_t BrpcCtrlInterface::as_id = -1;
+// time_t BrpcCtrlInterface::serial = -1;
+// brpc_int_t BrpcCtrlInterface::as_id = -1;
 
-BrpcCtrlInterface::BrpcCtrlInterface(const string &name) : 
-  AmCtrlInterface(name),
-  semsFd(-1),
-  serFd(-1),
-  sipDispatcher(NULL),
-  loaded(1)
+BrpcCtrlInterfaceFactory::BrpcCtrlInterfaceFactory(const string &name) 
+    : AmCtrlInterfaceFactory(name)
 {
-  if (! _instance)
-    _instance = this;
-  memset(&sndAddr, 0, sizeof(sndAddr));
 }
 
+BrpcCtrlInterfaceFactory::~BrpcCtrlInterfaceFactory()
+{
+}
+
+AmCtrlInterface* BrpcCtrlInterfaceFactory::instance()
+{
+    BrpcCtrlInterface* ctrl = new BrpcCtrlInterface();
+    
+    if(ctrl->init(semsUri,serUri) < 0){
+	delete ctrl;
+	return NULL;
+    }
+
+    return ctrl;
+}
+
+
+BrpcCtrlInterface::BrpcCtrlInterface()
+    : semsFd(-1),
+      serFd(-1),
+      serial(-1),
+      as_id(-1)
+{
+    memset(&sndAddr, 0, sizeof(sndAddr));
+}
 BrpcCtrlInterface::~BrpcCtrlInterface()
 {
-  closeSock(&serFd, &sndAddr);
-  closeSock(&semsFd, &semsAddr);
+    closeSock(&serFd, &sndAddr);
+    closeSock(&semsFd, &semsAddr);
 }
+
 
 static int init_listener(const string &semsUri, brpc_addr_t *semsAddr)
 {
@@ -231,26 +249,9 @@ static int init_listener(const string &semsUri, brpc_addr_t *semsAddr)
   return sockfd;
 }
 
-int BrpcCtrlInterface::load()
+int BrpcCtrlInterface::init(const string& semsUri, const string& serUri)
 {
-  AmConfigReader cfg;
-  string semsUri, serUri;
   brpc_addr_t *addr;
-
-  if (loaded < 1)
-    return loaded;
-
-  if (cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
-    WARN("failed to read/parse config file `%s' - assuming defaults\n",
-      (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str());
-    semsUri = string(LISTEN_ADDR_DEFAULT);
-    serUri = string(SER_ADDR_DEFAULT);
-  } else {
-    semsUri = cfg.getParameter(LISTEN_ADDR_PARAM, LISTEN_ADDR_DEFAULT);
-    serUri = cfg.getParameter(SER_ADDR_PARAM, SER_ADDR_DEFAULT);
-  }
-  INFO(LISTEN_ADDR_PARAM ": %s.\n", semsUri.c_str());
-  INFO(SER_ADDR_PARAM ": %s.\n", serUri.c_str());
 
   if ((semsFd = init_listener(semsUri, &semsAddr)) < 0) {
     ERROR("failed to initialize BINRPC listening socket.\n");
@@ -265,15 +266,28 @@ int BrpcCtrlInterface::load()
     serAddr = *addr;
   }
 
+  sipDispatcher = AmSipDispatcher::instance();
+
   return 0;
 }
 
-int BrpcCtrlInterface::onLoad()
+int BrpcCtrlInterfaceFactory::onLoad()
 {
-  //load() will only be called once; the result is saved in 'loaded'
-  if (0 < loaded) //not yet init'ed
-    loaded = _instance->load();
-  return loaded;
+  AmConfigReader cfg;
+
+  if (cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
+    WARN("failed to read/parse config file `%s' - assuming defaults\n",
+      (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str());
+    semsUri = string(LISTEN_ADDR_DEFAULT);
+    serUri = string(SER_ADDR_DEFAULT);
+  } else {
+    semsUri = cfg.getParameter(LISTEN_ADDR_PARAM, LISTEN_ADDR_DEFAULT);
+    serUri = cfg.getParameter(SER_ADDR_PARAM, SER_ADDR_DEFAULT);
+  }
+  INFO(LISTEN_ADDR_PARAM ": %s.\n", semsUri.c_str());
+  INFO(SER_ADDR_PARAM ": %s.\n", serUri.c_str());
+
+  return 0;
 }
 
 
@@ -1229,7 +1243,7 @@ end:
   return ret;
 }
 
-string BrpcCtrlInterface::localURI(const string &displayName, 
+string BrpcCtrlInterface::getContact(const string &displayName, 
     const string &userName, const string &hostName, 
     const string &uriParams, const string &hdrParams)
 {
@@ -1282,5 +1296,6 @@ string BrpcCtrlInterface::localURI(const string &displayName,
     localUri += hdrParams;
   }
 
-  return localUri;
+  return SIP_HDR_COLSP(SIP_HDR_CONTACT) + localUri + CRLF;
 }
+

@@ -68,7 +68,7 @@ public:
 
   static bool sendRequest(const AmSipRequest &, string &);
   static bool sendReply(const AmSipReply &);
-  static string localURI(const string &displayName, 
+  static string getContact(const string &displayName, 
       const string &userName, const string &hostName, 
       const string &uriParams, const string &hdrParams);
 };

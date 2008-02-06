@@ -44,11 +44,11 @@ int  AmConfigReader::loadFile(const string& path)
 {
   FILE* fp = fopen(path.c_str(),"r");
   if(!fp){
-    ERROR("could not open configuration file '%s': %s\n",
-	  path.c_str(),strerror(errno));
-    return -1;
+      WARN("could not open configuration file '%s': %s\n",
+	   path.c_str(),strerror(errno));
+      return -1;
   }
-
+  
   int  lc = 0;
   int  ls = 0;
   char lb[MAX_CONFIG_LINE] = {'\0'};

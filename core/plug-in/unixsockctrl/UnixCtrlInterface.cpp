@@ -17,7 +17,7 @@
 #define MOD_NAME  "unixsockctrl"
 #endif
 
-EXPORT_CONTROL_INTERFACE_FACTORY(UnixCtrlInterface, MOD_NAME);
+EXPORT_CONTROL_INTERFACE_FACTORY(UnixCtrlInterfaceFactory, MOD_NAME);
 
 /*
  * Config paramters names.
@@ -36,50 +36,23 @@ EXPORT_CONTROL_INTERFACE_FACTORY(UnixCtrlInterface, MOD_NAME);
 #define MAX_MSG_ERR         5
 #define SND_USOCK_TEMPLATE  "/tmp/sems_send_sock_XXXXXX" //TODO: configurable
 
-UnixCtrlInterface* UnixCtrlInterface::_instance = 0;
+//UnixCtrlInterface* UnixCtrlInterface::_instance = 0;
 
-UnixCtrlInterface::~UnixCtrlInterface()
+AmCtrlInterface* UnixCtrlInterfaceFactory::instance()
 {
-  reqAdapt.close();
-  rplAdapt.close();
-  sndAdapt.close();
-}
+    UnixCtrlInterface* ctrl = new UnixCtrlInterface(reply_socket_name,ser_socket_name);
 
-UnixCtrlInterface::UnixCtrlInterface(const string &name) : 
-  AmCtrlInterface(name), loaded(false)
-{
-  if (!_instance)
-    _instance = this;
-  int errcnt = -1;
-  char buff[sizeof(SND_USOCK_TEMPLATE)];
-  do {
-    if (MAX_MSG_ERR < ++errcnt)
-      throw string("failed to create a unix socket as a temproary file with "
-          "template `" SND_USOCK_TEMPLATE "'.\n");
-    //buff will hold the string for a temporary file that we'll than bind the
-    //sending unix socket to. 
-    //Bind is needed so that replies can be received from SER.
-    memcpy(buff, SND_USOCK_TEMPLATE, sizeof(SND_USOCK_TEMPLATE));
-    int fd = mkstemp(buff);
-    if (0 <= fd) {
-      close(fd);
-      //by unlinking (here or in init(), there's a race created [the one
-      //mkstemp tries to fix :-) ) => try a bunch of times
-      unlink(buff);
+    if(ctrl->init(socket_name) < 0){
+
+	delete ctrl;
+	return NULL;
     }
-  } while (! sndAdapt.init(string(buff)));
+
+    return ctrl;
 }
 
-int UnixCtrlInterface::onLoad()
+int UnixCtrlInterfaceFactory::onLoad()
 {
-  return _instance->load();
-}
-
-int UnixCtrlInterface::load() {
-  if (loaded)
-    return 0;
-  loaded = true;
-
   AmConfigReader cfg;
   
   if (cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
@@ -100,16 +73,61 @@ int UnixCtrlInterface::load() {
   INFO(REPLY_SOCKET_NAME_PARAM ": `%s'.\n", reply_socket_name.c_str());
   INFO(SER_SOCKET_NAME_PARAM ": `%s'.\n", ser_socket_name.c_str());
 
-  //initialize the listening adapters
-  if (! reqAdapt.init(socket_name)) {
-    ERROR("failed to initialize requests listner.\n");
-    return -1;
-  }
-  if (! rplAdapt.init(reply_socket_name)) {
-    ERROR("failed to initialize replies listner.\n");
-    return -1;
-  }
   return 0;
+}
+
+
+UnixCtrlInterface::~UnixCtrlInterface()
+{
+  reqAdapt.close();
+  rplAdapt.close();
+  sndAdapt.close();
+}
+
+UnixCtrlInterface::UnixCtrlInterface(const string& reply_socket_name, const string& ser_socket_name) 
+    : reply_socket_name(reply_socket_name), ser_socket_name(ser_socket_name)
+{
+    sipDispatcher = AmSipDispatcher::instance();
+
+}
+
+int UnixCtrlInterface::init(const string& socket_name)
+{
+    //initialize the listening adapters
+    if (! reqAdapt.init(socket_name)) {
+	ERROR("failed to initialize requests listner.\n");
+	return -1;
+    }
+
+    if (! rplAdapt.init(reply_socket_name)) {
+	ERROR("failed to initialize replies listner.\n");
+	return -1;
+    }
+
+    int errcnt = -1;
+    char buff[sizeof(SND_USOCK_TEMPLATE)];
+    do {
+	if (MAX_MSG_ERR < ++errcnt) {
+	    ERROR("failed to create a unix socket as a temproary file with "
+		  "template `%s'.\n",SND_USOCK_TEMPLATE);
+
+	    return -1;
+	}
+
+	//buff will hold the string for a temporary file that we'll than bind the
+	//sending unix socket to. 
+	//Bind is needed so that replies can be received from SER.
+	memcpy(buff, SND_USOCK_TEMPLATE, sizeof(SND_USOCK_TEMPLATE));
+	int fd = mkstemp(buff);
+	if (0 <= fd) {
+	    close(fd);
+	    //by unlinking (here or in init(), there's a race created [the one
+	    //mkstemp tries to fix :-) ) => try a bunch of times
+	    unlink(buff);
+	}
+    } while (! sndAdapt.init(string(buff)));
+
+    return 0;
 }
 
 int UnixCtrlInterface::send(const AmSipRequest &req, string &_)
@@ -183,7 +201,7 @@ void UnixCtrlInterface::run()
 #undef POS_RPL
 }
 
-string UnixCtrlInterface::localURI(const string &displayName, 
+string UnixCtrlInterface::getContact(const string &displayName, 
     const string &userName, const string &hostName, 
     const string &uriParams, const string &hdrParams)
 {
@@ -228,5 +246,5 @@ string UnixCtrlInterface::localURI(const string &displayName,
     localUri += hdrParams;
   }
 
-  return localUri;
+  return SIP_HDR_COLSP(SIP_HDR_CONTACT) + localUri + CRLF;
 }

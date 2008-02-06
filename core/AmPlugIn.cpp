@@ -262,7 +262,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       ERROR("failed to initialize control interface.\n");
       return err;
     } else {
-      AmServer::instance()->regIface(ctrlIface);
+	AmServer::instance()->regIface(ctrlIface->instance());
     }
   }
 
@@ -598,7 +598,7 @@ int AmPlugIn::loadLogFacPlugIn(AmPluginFactory* f)
 
 int AmPlugIn::loadCtrlFacPlugIn(AmPluginFactory* f)
 {
-  AmCtrlInterface *_ctrlIface = dynamic_cast<AmCtrlInterface *>(f);
+  AmCtrlInterfaceFactory *_ctrlIface = dynamic_cast<AmCtrlInterfaceFactory *>(f);
   if (! _ctrlIface) {
     ERROR("invalid control interface plugin.\n");
     return -1;
@@ -609,12 +609,12 @@ int AmPlugIn::loadCtrlFacPlugIn(AmPluginFactory* f)
       (_ctrlIface->getName()).c_str());
     return -1;
   }
-  ctrlIface = _ctrlIface->instance();
+  ctrlIface = _ctrlIface;//->instance();
   if (! ctrlIface) {
     ERROR("BUG: failed to retrieve a control interface instance.\n");
     return -1;
   }
-  ctrlIface->registerInterfaceHandler(AmSipDispatcher::instance());
+
   return 0;
 }
 

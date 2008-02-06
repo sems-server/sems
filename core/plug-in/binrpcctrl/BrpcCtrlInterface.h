@@ -8,10 +8,28 @@
 #include "AmApi.h"
 #include "AmSipDispatcher.h"
 
-class BrpcCtrlInterface : public AmCtrlInterface
+class BrpcCtrlInterfaceFactory : public AmCtrlInterfaceFactory
 {
-  private:
-    static BrpcCtrlInterface *_instance;
+    string semsUri, serUri;
+
+  public:
+    BrpcCtrlInterfaceFactory(const string &name);
+    ~BrpcCtrlInterfaceFactory();
+
+    AmCtrlInterface *instance();
+
+    // AmPluginFactory
+    int onLoad();
+};
+
+class BrpcCtrlInterface: public AmCtrlInterface
+{
+    /* static */ time_t serial;
+    /* static */ brpc_int_t as_id;
+
+    // handler of requests (SIP request | reply) received from SER
+    AmSipDispatcher *sipDispatcher;
+
     //addresses for:
     //- SEMS listening for SER requests
     //- SER listening for SEMS requests
@@ -19,18 +37,15 @@ class BrpcCtrlInterface : public AmCtrlInterface
     //be used) 
     brpc_addr_t semsAddr, serAddr, sndAddr;
     int semsFd, serFd;
-    // handler of requests (SIP request | reply) received from SER
-    AmInterfaceHandler *sipDispatcher;
-    //what load returned; if strictly positive, load() hadn't been called, yet
-    int loaded;
 
     inline void handleSipMsg(AmSipRequest &req)
     {
-      sipDispatcher->handleSipMsg(req);
+	AmSipDispatcher::instance()->handleSipMsg(req);
     }
+
     inline void handleSipMsg(AmSipReply &rpl)
     {
-      sipDispatcher->handleSipMsg(rpl);
+	AmSipDispatcher::instance()->handleSipMsg(rpl);
     }
 
     brpc_t *rpcExecute(brpc_t *req);
@@ -48,34 +63,26 @@ class BrpcCtrlInterface : public AmCtrlInterface
 
     bool initCallbacks();
     void _run();
-    int load();
 
-  public:
-    static time_t serial;
-    static brpc_int_t as_id;
-
-    BrpcCtrlInterface(const string &name);
+ public:
+    BrpcCtrlInterface();
     ~BrpcCtrlInterface();
 
-    AmCtrlInterface *instance() { return _instance; }
+    int init(const string& semsUri, const string& serUri);
 
     // AmThread
     void run();
     void on_stop() {}
-    // AmPluginFactory
-    int onLoad();
+
     // AmCtrlInterface
     int send(const AmSipRequest &, string &);
     int send(const AmSipReply &);
 
-    string localURI(const string &displayName, 
+    string getContact(const string &displayName, 
         const string &userName, const string &hostName, 
         const string &uriParams, const string &hdrParams);
 
-    void registerInterfaceHandler(AmInterfaceHandler *handler)
-    {
-      sipDispatcher = handler;
-    }
+
 };
 
 #endif /* __BRPCCTRLINTERFACE_H__ */

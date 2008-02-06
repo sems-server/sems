@@ -35,6 +35,8 @@ struct AmSipReply : public _AmSipMsgInDlg
   string       remote_tag;
   string       local_tag;
 
+  string       callid;
+
   AmSipReply() : code(0), _AmSipMsgInDlg() { }
   ~AmSipReply() { }
 };

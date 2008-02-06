@@ -67,10 +67,10 @@ bool AmServer::sendRequest(const AmSipRequest &req, string &serKey)
   return ctrlIface->send(req, serKey);
 }
 
-string AmServer::localURI(const string &displayName, 
+string AmServer::getContact(const string &displayName, 
     const string &userName, const string &hostName, 
     const string &uriParams, const string &hdrParams)
 {
-  return ctrlIface->localURI(displayName, userName, hostName, uriParams,
+  return ctrlIface->getContact(displayName, userName, hostName, uriParams,
       hdrParams);
 }

@@ -387,10 +387,9 @@ int main(int argc, char* argv[])
   if (AmServer::instance()->hasIface()) {
     AmServer::instance()->run();
   } else {
-    ERROR("Sems cannot start without a working link to Ser.\n"
-	  "Please set in the config file 'socket_name' \n"
-	  " parameter and check the log file"
-	  " for errors or warnings.\nExiting.\n");
+    ERROR("Sems cannot start without a control interface plug-in.\n"
+	  "Following plug-ins can be used: unixsockctrl, binrpcctrl and sipctrl\n"
+	  "If SEMS should use its own SIP stack instead of SER's, please load the sipctrl plug.in\n");
     return -1;
   }
 
