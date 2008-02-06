@@ -640,8 +640,7 @@ string AmSipDialog::getRoute()
   string r_set("");
   for(vector<string>::iterator it = route.begin();
       it != route.end(); it++) {
-
-    r_set += "Route: " + *it + "\n";
+    r_set += SIP_HDR_COLSP(SIP_HDR_ROUTE) + *it + CRLF;
   }
 
   return r_set;

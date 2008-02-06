@@ -28,6 +28,7 @@
 #include "SessionTimer.h"
 #include "AmUtils.h"
 #include "UserTimer.h"
+#include "AmSipHeaders.h"
 
 EXPORT_SESSION_EVENT_HANDLER_FACTORY(SessionTimerFactory, MOD_NAME);
 
@@ -92,12 +93,12 @@ bool SessionTimer::onSendRequest(const string& method,
 				 string& hdrs,
 				 unsigned int cseq)
 {
-  string m_hdrs = "Supported: timer\n";
+  string m_hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED)  "timer"  CRLF;
   if  ((method != "INVITE") && (method != "UPDATE"))
     goto end;
   
-  m_hdrs += "Session-Expires: "+ int2str(session_timer_conf.getSessionExpires()) +"\n"
-    + "Min-SE: " + int2str(session_timer_conf.getMinimumTimer()) + "\n";
+  m_hdrs += "Session-Expires: "+ int2str(session_timer_conf.getSessionExpires()) +CRLF
+    + "Min-SE: " + int2str(session_timer_conf.getMinimumTimer()) + CRLF;
 
  end:
   hdrs += m_hdrs;
@@ -113,17 +114,17 @@ bool SessionTimer::onSendReply(const AmSipRequest& req,
   //if (!session_timer_conf.getEnableSessionTimer())
   // 	return "";
 
-  string m_hdrs = "Supported: timer\n";
+  string m_hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED)  "timer"  CRLF;
   if  ((req.method != "INVITE") && (req.method != "UPDATE")) 
     return false;
     
   // only in 2xx responses to INV/UPD
   m_hdrs  += "Session-Expires: " + int2str(session_interval) + ";refresher="+
-    (session_refresher_role==UAC ? "uac":"uas")+"\n";
+    (session_refresher_role==UAC ? "uac":"uas")+CRLF;
     
   if (((session_refresher_role==UAC) && (session_refresher==refresh_remote)) 
       || ((session_refresher_role==UAS) && remote_timer_aware))
-    m_hdrs += "Required: timer\n";
+    m_hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRED)  "timer"  CRLF;
     
   hdrs += m_hdrs;
 
@@ -172,7 +173,7 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
   if((req.method == "INVITE")||(req.method == "UPDATE")){
     
     remote_timer_aware = 
-      key_in_list(getHeader(req.hdrs, "Supported"),"timer");
+      key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED),"timer");
     
     // determine session interval
     string sess_expires_hdr = getHeader(req.hdrs, "Session-Expires", "x");
