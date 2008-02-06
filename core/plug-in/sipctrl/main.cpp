@@ -35,7 +35,7 @@
 
 #include "SipCtrlInterface.h"
 
-#include "../../AmSipMsg.h"
+#include "AmSipMsg.h"
 #include "AmUtils.h"
 
 #define SERVER

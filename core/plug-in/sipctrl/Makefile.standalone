@@ -20,14 +20,17 @@ SRCS = main.cpp \
 	resolver.cpp \
 	wheeltimer.cpp \
 	sip_trans.cpp \
-	AmThread.cpp \
-	AmUtils.cpp \
-	SipCtrlInterface.cpp
+	SipCtrlInterface.cpp \
+	../../AmThread.cpp \
+	../../AmUtils.cpp \
+	../../AmSipMsg.cpp
+
+CORE_PATH ?= ../..
 
 OBJS = $(SRCS:.cpp=.o)
 DEPS = $(SRCS:.cpp=.d)
 
-CXXFLAGS += -g
+CXXFLAGS += -g -I $(CORE_PATH)
 LDFLAGS  += -lpthread -g
 CPPFLAGS += -D_DEBUG -D_STANDALONE
 

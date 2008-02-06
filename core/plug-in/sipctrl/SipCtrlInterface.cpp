@@ -1,7 +1,7 @@
 #include "SipCtrlInterface.h"
 
 #include "AmUtils.h"
-#include "../../AmSipMsg.h"
+#include "AmSipMsg.h"
 
 #include "trans_layer.h"
 #include "sip_parser.h"

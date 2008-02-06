@@ -16,7 +16,7 @@
 
 #include "SipCtrlInterface.h"
 #include "AmUtils.h"
-#include "../../AmSipMsg.h"
+#include "AmSipMsg.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
