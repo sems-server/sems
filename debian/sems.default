@@ -1,0 +1,39 @@
+# configuration for SEMS - SIP Express Media Server
+#
+# this file is sourced by SEMS init script /etc/init.d/sems
+
+# Note: the #DEBCONF-xxx-START and DEBCONF-xxx-END lines are used for
+# debconf configuration, please don't remove or alter them.
+
+# ser configuration file
+#DEBCONF-CFG_FILE-START
+SEMS_CFG_FILE="/etc/sems/sems.conf"
+#DEBCONF-CFG_FILE-END
+
+# user to run ser as
+#DEBCONF-USER-START
+SEMS_USER="sems"
+#DEBCONF-USER-END
+
+# group to run ser as
+#DEBCONF-GROUP-START
+SEMS_GROUP="sems"
+#DEBCONF-GROUP-END
+
+# ser pidfile
+SEMS_PIDFILE="/var/run/sems/sems.pid"
+
+# working dir (cores will be placed there in case of sems crash)
+#DEBCONF-WORKDIR-START
+#SEMS_WORKDIR="/var/cores"
+#DEBCONF-WORKDIR-END
+
+# set if you want kernel flag to use pid for core files
+#DEBCONF-KERNEL_CORE_PID-START
+#SEMS_KERNEL_CORE_PID="yes"
+#DEBCONF-KERNEL_CORE_PID-END
+
+
+
+
+

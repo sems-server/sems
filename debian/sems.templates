@@ -1,0 +1,41 @@
+Template: sems/config
+Type: boolean
+Default: false
+Description: Change config file now ?
+ You have now opportunity to modify basic configuration values in '/etc/default/sems'
+ config file for SEMS Sip Express Media Server, installed from 'sems' package. Settings from this
+ file are used by SEMS init script when it is started - e.g. size of shared memory used,
+ usems and group to run as, working directory.
+ .
+ If you do not want to modify the config file now you can modify it manually later,
+ or repeat this configuartion by running "dpkg-reconfigure sems".
+ .
+ Note: if you choose 'yes' here then the values you enter will be automatically applied
+ each time the sems package is upgraded (or installed without purging previous installation).
+
+Template: sems/USER
+Type: string
+Default: sems
+Description: User to run SEMS as
+ Set the user which SEMS should run as. Default is 'sems' user.
+ .
+ Note: if you want sems to be able to dump a core file in case of crash, you have to run it as root user.
+ .
+ Enter "!" to not modify this option.
+
+Template: sems/GROUP
+Type: string
+Default: sems
+Description: Group to run SEMS as
+ Set the group which SEMS should run as. Default is 'sems' group.
+ .
+ Enter "!" to not modify this option.
+
+Template: sems/KERNEL_CORE_PID
+Type: boolean
+Default: false
+Description: Set kernel to use pid for core files
+ If enabled the '/proc/sys/kernel/core_uses_pid' will be set to '1' before starting SEMS,
+ to enable using of pid for core files creation. If disabled nothing will be set.
+ For debugging purposes it is recommended to enable this option.
+

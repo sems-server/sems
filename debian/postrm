@@ -1,0 +1,13 @@
+#!/bin/sh
+
+#DEBHELPER#
+
+if [ "$1" = "purge" ] ; then
+  # remove user/group on purge
+  deluser --quiet --remove-home sems &>/dev/null || true
+  # remove /etc/ser if empty
+  rmdir /etc/sems || true
+fi
+
+exit 0
+

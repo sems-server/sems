@@ -1,0 +1,19 @@
+This package was debianized by Stefan Sayer
+<sayer@iptel.org> on Wed Feb  6 20:46:22 CET 2008.
+
+All debian stuff was stolen and adapted from SER 
+(http://iptel.org/ser).
+
+It was downloaded from http://iptel.org/sems.
+
+Upstream Authors: Raphael Coeffic <raphael.coeffic@tekelec.com>,
+Stefan Sayer <stefan.sayer@iptego.com>, Juha Heinanen, Maxim
+Sobolev, Andreas Granig  (see AUTHORS file for details)
+
+This software is copyright (c) 2002-2005 by FhG Fokus
+
+You are free to distribute this software under the terms of
+the GNU General Public License.
+
+On Debian systems, the complete text of the GNU General Public
+License can be found in the file `/usr/share/common-licenses/GPL.

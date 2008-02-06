@@ -1,0 +1,26 @@
+Source: sems
+Section: net
+Priority: optional
+Maintainer: Stefan Sayer <sayer@iptel.org>
+Build-Depends: debhelper (>= 4), libspeex-dev, flite-dev 
+Standards-Version: 3.5.2
+
+Package: sems
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Suggests: sems-python-modules
+Conflicts: sems-python-modules (<< ${Source-Version})
+Description: SIP Express Media Server, very fast and flexible SIP media server
+ SEMS, the SIP Express Media Server, is a free, high performance, extensible media
+ server for SIP (RFC3261) based VoIP  services. It features voicemail, conferencing,
+ announcements, pre-call announcements, prepaid service, calling card service etc.
+
+Package: sems-python-modules
+Architecture: any
+Depends: ${shlibs:Depends}, sems (= ${Source-Version})
+Description: contains the python modules for SEMS
+ This has been split out of the main SEMS package, so that SEMS will not
+ depend upon python. This module will enable you to use the applications using the embedded
+ python interpreter and script new applications in python.
+
+
