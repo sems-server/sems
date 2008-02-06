@@ -145,20 +145,9 @@ int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
     // Max-Forwards
 
     
-    //string from = req.from;
-    //if(!req.from_tag.empty())
-    //  from += ";tag=" + req.from_tag;
-
-    //msg->from = new sip_header(0,"From",stl2cstr(from));
-    //msg->hdrs.push_back(msg->from);
-
     char* c = (char*)req.from.c_str();
     int err = parse_headers(msg,&c);
 
-    //msg->to = new sip_header(0,"To",stl2cstr(req.to));
-    //msg->hdrs.push_back(msg->to);
-
-    DBG("req.to == '%s'\n",req.to.c_str());
     c = (char*)req.to.c_str();
     err = err || parse_headers(msg,&c);
 
@@ -180,7 +169,6 @@ int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
 
     if(!req.contact.empty()){
 
-	DBG("req.contact == '%s'\n",req.contact.c_str());
 	c = (char*)req.contact.c_str();
 	err = parse_headers(msg,&c);
 	if(err){
@@ -188,9 +176,6 @@ int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
 	    delete msg;
 	    return -1;
 	}
-
-	//msg->contact = new sip_header(0,"Contact",stl2cstr(req.contact));
-	//msg->hdrs.push_back(msg->contact);
     }
     
     msg->hdrs.push_back(new sip_header(0,"Max-Forwards","10")); // FIXME
@@ -223,6 +208,33 @@ int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
 	    
 	    msg->hdrs.pop_back();
  	}
+    }
+
+    if(!req.hdrs.empty()) {
+	
+ 	char *c = (char*)req.hdrs.c_str();
+	
+ 	err = parse_headers(msg,&c);
+	
+	if(err){
+	    ERROR("Additional headers parsing failed\n");
+	    ERROR("Faulty headers were: <%s>\n",req.hdrs.c_str());
+	    delete msg;
+	    return -1;
+	}
+    }
+
+    if(!req.body.empty()){
+
+	if(req.content_type.empty()){
+	    ERROR("Body in request without content type\n");
+	}
+	else {
+	    msg->content_type = new sip_header(0,"Content-Type",stl2cstr(req.content_type));
+	    msg->hdrs.push_back(msg->content_type);
+
+	    msg->body = stl2cstr(req.body);
+	}
     }
     
     tl->send_request(msg);
@@ -259,13 +271,21 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	return -1;
     }
     
-    string hdrs = rep.hdrs;
-    hdrs += "Content-Type: " + rep.content_type + "\r\n";
+    string hdrs = rep.hdrs + rep.contact;
+
+    if(!rep.body.empty()) {
+	if(rep.content_type.empty()){
+	    ERROR("Reply does not contain a Content-Type whereby body is not empty\n");
+	    return -1;
+	}
+
+	hdrs += "Content-Type: " + rep.content_type + "\r\n";
+    }
 
     return tl->send_reply(get_trans_bucket(h),(sip_trans*)t,
 			  rep.code,stl2cstr(rep.reason),
-			  stl2cstr(rep.local_tag), stl2cstr(rep.contact),
-			  stl2cstr(rep.hdrs), stl2cstr(rep.body));
+			  stl2cstr(rep.local_tag),
+			  stl2cstr(hdrs), stl2cstr(rep.body));
 }
 
 #define DBG_PARAM(p)\

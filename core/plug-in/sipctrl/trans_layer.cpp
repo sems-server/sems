@@ -64,8 +64,8 @@ void trans_layer::register_transport(udp_trsp* trsp)
 
 int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 			    int reply_code, const cstring& reason,
-			    const cstring& to_tag, const cstring& contact,
-			    const cstring& hdrs, const cstring& body)
+			    const cstring& to_tag, const cstring& hdrs, 
+			    const cstring& body)
 {
     // Ref.: RFC 3261 8.2.6, 12.1.1
     //
@@ -132,11 +132,11 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     // We do not send Contact for
     // 100 provisional replies
     //
-    if((reply_code > 100) && contact.len){
+    //if((reply_code > 100) && contact.len){
 	
-	reply_len += contact_len(contact);
-	add_contact = true;
-    }
+    //reply_len += contact_len(contact);
+    //add_contact = true;
+    //}
 
     reply_len += hdrs.len;
 
@@ -198,9 +198,9 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 	}
     }
 
-    if(add_contact){
-	contact_wr(&c,contact);
-    }
+    //if(add_contact){
+    //contact_wr(&c,contact);
+    //}
 
     memcpy(c,hdrs.s,hdrs.len);
     c += hdrs.len;

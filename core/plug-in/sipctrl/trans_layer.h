@@ -101,8 +101,8 @@ class trans_layer
      */
     int send_reply(trans_bucket* bucket, sip_trans* t,
 		   int reply_code, const cstring& reason,
-		   const cstring& to_tag, const cstring& contact,
-		   const cstring& hdrs, const cstring& body);
+		   const cstring& to_tag, const cstring& hdrs, 
+		   const cstring& body);
 
     /**
      * Sends a UAC request.

@@ -279,52 +279,6 @@ string AmSipDialog::getContactHdr()
   return res;
 }
 
-#if 0
-string AmSipDialog::getContactHdr()
-{
-  if(!contact_uri.empty())
-    return contact_uri;
-
-  string res = "Contact: <sip:";
-    
-  if(user.empty() || !AmConfig::PrefixSep.empty())
-    res += CONTACT_USER_PREFIX;
-    
-  if(!AmConfig::PrefixSep.empty())
-    res += AmConfig::PrefixSep;
-    
-  if(!user.empty())
-    res += user;
-    
-  res += "@";
-    
-  if(sip_ip.empty())
-    res += "!!"; // Ser will replace that...
-  else {
-#ifdef SUPPORT_IPV6
-    if(sip_ip.find('.') != string::npos)
-      res += sip_ip;
-    else
-      res += "[" + sip_ip + "]";
-#else
-    res += sip_ip;
-#endif
-  }
-
-  if(!sip_port.empty())
-    res += ":" + sip_port;
-
-  res += ">\n";
-    
-  // save contact_uri for subsequent contact header
-  // only if sip_ip is known
-  if (!sip_ip.empty())
-    contact_uri  = res;
-
-  return res;
-}
-#endif
-
 int AmSipDialog::reply(const AmSipRequest& req,
 		       unsigned int  code,
 		       const string& reason,
@@ -345,7 +299,7 @@ int AmSipDialog::reply(const AmSipRequest& req,
   reply.reason = reason;
   reply.serKey = req.serKey;
   reply.local_tag = local_tag;
-  reply.hdrs = hdrs;
+  reply.hdrs = m_hdrs;
   if ((req.method!="CANCEL")&&
       !((req.method=="BYE")&&(code<300)))
     reply.contact = getContactHdr();
