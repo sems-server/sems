@@ -876,14 +876,14 @@ void add_env_path(const char* name, const string& path)
       }
 	    
       if(!regexec(&path_reg,old_path,0,0,0)) { // match
-
+	regfree(&path_reg);
 	return; // do nothing
       }
-
+      regfree(&path_reg);
       var += ":" + string(old_path);
     }
   }
 
   DBG("setting %s to: '%s'\n",name,var.c_str());
-  setenv("PYTHONPATH",var.c_str(),1);
+  setenv(name.c_str(),var.c_str(),1);
 }
