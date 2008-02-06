@@ -59,7 +59,7 @@
 
 // No u_int64_t on Solaris.
 #ifndef u_int64_t
-#define u_int64_t unsigned long long int
+typedef unsigned long long int u_int64_t;
 #endif
 
 #endif
