@@ -415,7 +415,7 @@ bool AmRtpStream::getOnHold() {
 void AmRtpStream::icmpError()
 {
   if(!passive){
-    AmIcmpWatcher::instance()->removeStream(l_port);
+    // AmIcmpWatcher::instance()->removeStream(l_port);
     if(session)
       session->stop();
   }
