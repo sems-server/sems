@@ -184,6 +184,9 @@ int AmConfig::readConfiguration()
     }		
   }
 
+  if(cfg.hasParameter("sip_ip"))
+    LocalSIPIP = cfg.getParameter("sip_ip");
+  
   // outbound_proxy
   OutboundProxy = cfg.getParameter("outbound_proxy");
   

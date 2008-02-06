@@ -44,24 +44,11 @@ AmCtrlInterface* SipCtrlInterfaceFactory::instance()
 int SipCtrlInterfaceFactory::onLoad()
 {
     
-    AmConfigReader cfg;
+    bind_addr = AmConfig::LocalSIPIP;
+    bind_port = AmConfig::LocalSIPPort;
   
-    if (cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
-	
-	WARN("failed to read/parse config file `%s' - assuming defaults\n",
-	     (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str());
-	
-	bind_addr = AmConfig::LocalIP;
-	bind_port = AmConfig::LocalSIPPort;
-    } 
-    else {
-
-	bind_addr = cfg.getParameter("bind_addr", AmConfig::LocalIP);
-	bind_port = cfg.getParameterInt("bind_port", AmConfig::LocalSIPPort);
-    }
-
-    INFO("bind_addr: `%s'.\n", bind_addr.c_str());
-    INFO("bind_port: `%i'.\n", bind_port);
+    INFO("SIP bind_addr: `%s'.\n", bind_addr.c_str());
+    INFO("SIP bind_port: `%i'.\n", bind_port);
 
     return 0;
     

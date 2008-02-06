@@ -242,19 +242,25 @@ int main(int argc, char* argv[])
   }
 
   AmConfig::LocalIP = getLocalIP(AmConfig::LocalIP);
-  AmConfig::LocalSIPIP = AmConfig::LocalIP;
+  if (AmConfig::LocalSIPIP.empty()) {
+    AmConfig::LocalSIPIP = AmConfig::LocalIP;
+  }
 
   print_version();
   printf( "\n\nConfiguration:\n"
 	  "       configuration file:  %s\n"
 	  "       plug-in path:        %s\n"
 	  "       daemon mode:         %i\n"
-	  "       local IP:            %s\n"
+	  "       local SIP IP:        %s\n"
+	  "       local SIP port:      %i\n"
+	  "       local media IP:      %s\n"
 	  "       default application: %s\n"
 	  "\n",
 	  AmConfig::ConfigurationFile.c_str(),
 	  AmConfig::PlugInPath.c_str(),
 	  AmConfig::DaemonMode,
+	  AmConfig::LocalSIPIP.c_str(),
+	  AmConfig::LocalSIPPort,
 	  AmConfig::LocalIP.c_str(),
 	  AmConfig::DefaultApplication.empty()?
 	  "<not set>":AmConfig::DefaultApplication.c_str()

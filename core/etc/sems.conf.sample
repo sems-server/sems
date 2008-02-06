@@ -65,8 +65,7 @@ plugin_path=/usr/local/lib/sems/plug-in/
 # ('blacklist'). This has only effect it load_plugins is empty.
 # If empty, all modules in plugin_path are loaded.
 #
-exclude_plugins=binrpcctrl;
-
+exclude_plugins=binrpcctrl;sipctrl;
 
 # optional parameter: exclude_payloads=<payload list>
 #
@@ -120,15 +119,31 @@ media_processor_threads=1
 #  listen=10.0.0.34
 #  listen=eth0
 
+# optional parameter: sip_ip=<ip_address>
+#
+# - this informs SEMS about the SIP IP where its SIP stack is 
+#   bound to or should be bound to. If 'sipctrl' SIP stack is used,
+#   the SIP stack will bind to this address. This also sets 
+#   the value used for contact header in outgoing calls and 
+#   registrations. 
+#   It defaults to the value of 'listen' (see above).
+#
+# Example :
+#  sip_ip=10.0.0.34
+#
+# default: <listen ip address>
+#
+#sip_ip=10.0.0.34
+
 # optional parameter: sip_port=<port_number>
 #
-# - this informs SEMS about the port where its SER is 
-#   bound to. SEMS needs this information to correctly set 
-#   the contact header in outgoing calls and registrations. 
-#   Should be set to equal the 'port' configuration option
-#   in ser_sems.cfg.
-#   This does not need to be set if outgoing calls and 
-#   registrations from SEMS are not used.
+# - this informs SEMS about the port where its SIP stack is 
+#   bound to or should be bound to. SEMS needs this information
+#   to correctly set the contact header in outgoing calls 
+#   and registrations. Should be set to equal the 'port' 
+#   configuration option in ser_sems.cfg.
+#   This does not need to be set if sipctrl SIP stack, outgoing 
+#   calls and registrations from SEMS are not used.
 #  
 #   default: 5060
 #
