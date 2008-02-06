@@ -246,5 +246,5 @@ string UnixCtrlInterface::getContact(const string &displayName,
     localUri += hdrParams;
   }
 
-  return SIP_HDR_COLSP(SIP_HDR_CONTACT) + localUri + CRLF;
+  return localUri;
 }
