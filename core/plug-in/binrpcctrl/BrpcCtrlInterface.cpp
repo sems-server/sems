@@ -1047,13 +1047,13 @@ static inline brpc_t *build_cancel(const AmSipRequest &amReq)
   return req;
 }
 
-#define XTRA_HDRS(_xhdrs, _msg) \
-  string _xhdrs;  \
-  if (_msg.route.length()) \
-    _xhdrs += SIP_HDR_COLSP(SIP_HDR_ROUTE) + _msg.route + CRLF;  \
-  if (_msg.contact.length()) \
-    _xhdrs += _msg.contact; \
-  if (_msg.content_type.length()) \
+#define XTRA_HDRS(_xhdrs, _msg)						\
+  string _xhdrs;							\
+  if (_msg.route.length())						\
+    _xhdrs += _msg.route;						\
+  if (_msg.contact.length())						\
+    _xhdrs += _msg.contact;						\
+  if (_msg.content_type.length())					\
     _xhdrs += SIP_HDR_COLSP(SIP_HDR_CONTENT_TYPE) + _msg.content_type + CRLF;\
   _xhdrs += _msg.hdrs;
 
