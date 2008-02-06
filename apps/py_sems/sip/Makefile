@@ -4,7 +4,8 @@ COREPATH ?=../../../core
 AR		?= ar
 RANLIB		?= ranlib
 
-PYTHON_VERSION ?= 2.4
+include ../Makefile.defs
+
 PY_VER = $(PYTHON_VERSION)
 
 SIP_FILES = $(wildcard *.sip)
