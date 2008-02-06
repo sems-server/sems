@@ -28,7 +28,6 @@
 #include "AmApi.h"
 #include "AmSession.h"
 #include "AmConfig.h"
-#include "AmMail.h"
 #include "AmAudio.h"
 #include "log.h"
 
