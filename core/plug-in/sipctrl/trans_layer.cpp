@@ -98,7 +98,6 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     sip_msg* req = t->msg;
 
     bool have_to_tag = false;
-    bool add_contact = false;
     int  reply_len   = status_line_len(reason);
 
     for(list<sip_header*>::iterator it = req->hdrs.begin();

@@ -401,6 +401,14 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
 
     prepare_routes(msg->record_route, req.route);
 	
+    for (list<sip_header*>::iterator it = msg->hdrs.begin(); 
+	 it != msg->hdrs.end(); ++it) {
+	if((*it)->type == sip_header::H_OTHER){
+	    req.hdrs += c2stlstr((*it)->name) + ": " 
+		+ c2stlstr((*it)->value) + "\r\n";
+	}
+    }
+
     handleSipMsg(req);
 }
 
@@ -457,6 +465,14 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     // reply.next_hop;
 
     prepare_routes(msg->record_route, reply.route);
+
+    for (list<sip_header*>::iterator it = msg->hdrs.begin(); 
+	 it != msg->hdrs.end(); ++it) {
+	if((*it)->type == sip_header::H_OTHER){
+	    reply.hdrs += c2stlstr((*it)->name) + ": " 
+		+ c2stlstr((*it)->value) + "\r\n";
+	}
+    }
     
     handleSipMsg(reply);
 }
