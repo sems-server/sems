@@ -77,6 +77,7 @@ python_files:
 endif
 
 extra_clean = clean_py_sems_lib
+LD=gcc
 
 include $(COREPATH)/plug-in/Makefile.app_module
 
