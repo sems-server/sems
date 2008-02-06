@@ -172,7 +172,7 @@ bool AmSmtpClient::send_line(const string& cmd)
     return true;
   }
 
-  DBG("SENDED: %.*s",(int)snd_buf.length(),snd_buf.c_str());
+  DBG("SENT: %.*s",(int)snd_buf.length(),snd_buf.c_str());
 
   return false;
 }
