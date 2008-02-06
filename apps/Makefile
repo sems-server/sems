@@ -3,14 +3,14 @@ COREPATH ?= ../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_modules = mp3 examples
-modules = $(filter-out $(exclude_modules) \
+exclude_modules ?= mp3 examples
+modules ?= $(filter-out $(exclude_modules) \
 		$(wildcard Makefile*) CVS, \
 		$(wildcard *) ) examples/tutorial/cc_acc
 #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
 
 ifeq ($(OS),solaris)
-	# These don't build on Solaris because of missing Python, invalid make args, or other.
+# These don't build on Solaris because of missing Python, invalid make args, or other.
 	exclude_modules += py_sems py_comp pin_collect mailbox ivr diameter_client conf_auth
 endif
 
