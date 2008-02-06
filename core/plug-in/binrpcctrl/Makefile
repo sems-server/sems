@@ -35,7 +35,7 @@ libbinrpc:
 	$(MAKE) all
 
 $(LIBBINRPC_LIB)/libbinrpc.a: 
-	$(MAKE) -C $(LIBBINRPC_DIR) all
+	$(MAKE) -C $(LIBBINRPC_DIR) all CC=$(CC) CXX=$(CXX) LD=$(LD)
 
 libbinrpc_clean:
 	$(MAKE) -C $(LIBBINRPC_DIR) clean
