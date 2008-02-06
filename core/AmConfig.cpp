@@ -39,8 +39,6 @@
 
 string       AmConfig::ConfigurationFile       = CONFIG_FILE;
 string       AmConfig::ModConfigPath           = MOD_CFG_PATH;
-string       AmConfig::SmtpServerAddress       = SMTP_ADDRESS_IP;
-unsigned int AmConfig::SmtpServerPort          = SMTP_PORT;
 string       AmConfig::PlugInPath              = PLUG_IN_PATH;
 string       AmConfig::LoadPlugins             = "";
 string       AmConfig::ExcludePlugins          = "";
@@ -70,14 +68,6 @@ AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 int AmConfig::setSIPPort(const string& port) 
 {
   if(sscanf(port.c_str(),"%u",&AmConfig::LocalSIPPort) != 1) {
-    return 0;
-  }
-  return 1;
-}
-
-int AmConfig::setSmtpPort(const string& port) 
-{
-  if(sscanf(port.c_str(),"%u",&AmConfig::SmtpServerPort) != 1) {
     return 0;
   }
   return 1;
@@ -162,17 +152,6 @@ int AmConfig::readConfiguration()
 
   if(!ModConfigPath.empty() && (ModConfigPath[ModConfigPath.length()-1] != '/'))
     ModConfigPath += '/';
-
-  // smtp_server
-  SmtpServerAddress = cfg.getParameter("smtp_server",SmtpServerAddress);
-
-  // smtp_port
-  if(cfg.hasParameter("smtp_port")){
-    if(!setSmtpPort(cfg.getParameter("smtp_port").c_str())){
-      ERROR("invalid smtp port specified\n");
-      return -1;
-    }
-  }
 
   // local_ip
   LocalIP = cfg.getParameter("listen");

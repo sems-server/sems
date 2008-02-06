@@ -30,7 +30,6 @@
 #include "AmConfig.h"
 #include "AmPlugIn.h"
 #include "AmSessionContainer.h"
-#include "AmMail.h"
 #include "AmServer.h"
 #include "AmMediaProcessor.h"
 #include "AmIcmpWatcher.h"
@@ -378,24 +377,18 @@ int main(int argc, char* argv[])
   DBG("Starting media processor\n");
   AmMediaProcessor::instance()->init();
 
-  DBG("Starting mailer\n");
-  AmMailDeamon::instance()->start();
+//   DBG("Starting mailer\n");
+//   AmMailDeamon::instance()->start();
 
   DBG("Starting RTP receiver\n");
   AmRtpReceiver::instance()->start();
-
-  //DBG("Starting Session Timer\n");
-  //AmSessionTimer::instance()->start();
-
-  //DBG("Starting ICMP watcher\n");
-  //AmIcmpWatcher::instance()->start();
 
   if (AmServer::instance()->hasIface()) {
     AmServer::instance()->run();
   } else {
     ERROR("Sems cannot start without a control interface plug-in.\n"
 	  "Following plug-ins can be used: unixsockctrl, binrpcctrl and sipctrl\n"
-	  "If SEMS should use its own SIP stack instead of SER's, please load the sipctrl plug.in\n");
+	  "If SEMS should use its own SIP stack instead of SER's, please load the sipctrl plug-in\n");
     return -1;
   }
 

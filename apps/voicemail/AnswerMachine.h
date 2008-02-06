@@ -35,11 +35,14 @@
 #include "AmSession.h"
 #include "AmConfigReader.h"
 #include "EmailTemplate.h"
-#include "AmMail.h"
 #include "AmPlaylist.h"
 
 #include <string>
 using std::string;
+
+// defaults for config options
+#define SMTP_ADDRESS_IP     "localhost"
+#define SMTP_PORT           25
 
 class AmMail;
 
@@ -64,6 +67,11 @@ public:
   static int    MaxRecordTime;
   static int    MinRecordTime;
   static AmDynInvokeFactory* UserTimer;
+
+  /** After server start, IP of the SMTP server. */
+  static string SmtpServerAddress;
+  /** SMTP server port. */
+  static unsigned int SmtpServerPort;
 
 #ifdef USE_MYSQL
   static mysqlpp::Connection Connection;

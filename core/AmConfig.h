@@ -47,10 +47,6 @@ struct AmConfig
   static string ConfigurationFile;
   /** Path to the plug-in configuration files. */
   static string ModConfigPath;
-  /** After server start, IP of the SMTP server. */
-  static string SmtpServerAddress;
-  /** SMTP server port. */
-  static unsigned int SmtpServerPort;
   /** Path where the plug-ins are. */
   static string PlugInPath;
   /** semicolon separated list of plugins to load */

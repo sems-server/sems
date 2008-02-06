@@ -79,16 +79,6 @@ exclude_plugins=binrpcctrl;sipctrl;
 # only use G711 (exclude everything else):
 #  exclude_payloads=iLBC;speex;G726-40;G726-32;G721;G726-24;G726-16;GSM;L16
 
-# optional parameter: smtp_server=<hostname>
-#
-# - sets address of smtp server
-smtp_server=mail
-
-# optional parameter: smtp_port=<port>
-#
-# - sets port of smtp server
-smtp_port=25
-
 # optional parameter: rtp_low_port=<port>
 #
 # - sets lowest for RTP used port

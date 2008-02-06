@@ -28,7 +28,6 @@
 #include "AmServer.h"
 #include "AmSession.h"
 #include "AmSdp.h"
-#include "AmMail.h"
 #include "AmConfig.h"
 #include "AmUtils.h"
 #include "AmPlugIn.h"

@@ -37,8 +37,6 @@
 #define ANNOUNCE_FILE       "default.wav"
 #define PLUG_IN_PATH        "/usr/local/lib/sems/plug-in"
 #define DEFAULT_ANNOUNCE    "default.wav"
-#define SMTP_ADDRESS_IP     "localhost"
-#define SMTP_PORT           25
 #define DEFAULT_RECORD_TIME 30
 #define DEFAULT_DAEMON_MODE 1
 #define PREFIX_SEPARATOR    ""

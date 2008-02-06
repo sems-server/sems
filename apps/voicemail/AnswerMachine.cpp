@@ -33,6 +33,7 @@
 #include "AmUtils.h"
 #include "AmPlugIn.h"
 #include "AmPlaylist.h"
+#include "AmMail.h"
 
 #include "sems.h"
 #include "log.h"
@@ -77,6 +78,10 @@ string AnswerMachineFactory::DefaultAnnounce;
 int    AnswerMachineFactory::MaxRecordTime;
 int    AnswerMachineFactory::MinRecordTime = 0;
 AmDynInvokeFactory* AnswerMachineFactory::UserTimer=0;
+
+
+string       AnswerMachineFactory::SmtpServerAddress       = SMTP_ADDRESS_IP;
+unsigned int AnswerMachineFactory::SmtpServerPort          = SMTP_PORT;
 
 #ifdef USE_MYSQL
 mysqlpp::Connection AnswerMachineFactory::Connection(mysqlpp::use_exceptions);
@@ -315,9 +320,23 @@ int AnswerMachineFactory::onLoad()
   AmConfigReader cfg;
   if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1, MOD_NAME ".conf")))
     return -1;
-
   // get application specific global parameters
   configureModule(cfg);
+
+  // smtp_server
+  SmtpServerAddress = cfg.getParameter("smtp_server",SmtpServerAddress);
+
+  // smtp_port
+  if(cfg.hasParameter("smtp_port")){
+    if(sscanf(cfg.getParameter("smtp_port").c_str(),
+	      "%u",&SmtpServerPort) != 1) {
+      ERROR("invalid smtp_port specified\n");
+      return -1;
+    }
+  }
+
+  DBG("SMTP server set to %s:%u\n", 
+      SmtpServerAddress.c_str(), SmtpServerPort);
 
 #ifdef USE_MYSQL
 
@@ -395,6 +414,10 @@ int AnswerMachineFactory::onLoad()
   }
 
   EmailAddress = cfg.getParameter("email_address");
+
+  DBG("Starting SMTP daemon\n");
+  AmMailDeamon::instance()->start();
+
   return 0;
 }
 
