@@ -458,3 +458,29 @@ trans_bucket* get_trans_bucket(unsigned int h)
     assert(h < H_TABLE_ENTRIES);
     return &_trans_table[h];
 }
+
+void dumps_transactions()
+{
+    for(int i=0; i<H_TABLE_ENTRIES; i++){
+
+	trans_bucket* bucket = get_trans_bucket(i);
+
+	bucket->lock();
+	bucket->dump();
+	bucket->unlock();
+    }
+}
+
+void trans_bucket::dump()
+{
+    if(elmts.empty())
+	return;
+
+    DBG("*** Bucket ID: %i ***\n",get_id());
+
+    for(trans_list::iterator it = elmts.begin(); it != elmts.end(); ++it) {
+
+	DBG("type=0x%x; msg=%p; to_tag=%.*s; reply_status=%i; state=%i; retr_buf=%p\n",
+	    (*it)->type,(*it)->msg,(*it)->to_tag.len,(*it)->to_tag.s,(*it)->reply_status,(*it)->state,(*it)->retr_buf);
+    }
+}

@@ -30,6 +30,7 @@
 
 #include "sip_parser.h"
 #include "parse_header.h"
+#include "hash_table.h"
 
 #include "log.h"
 
@@ -38,7 +39,19 @@
 #include "AmSipMsg.h"
 #include "AmUtils.h"
 
+#include <signal.h>
+
 #define SERVER
+
+static void sig_usr(int signo)
+{
+  WARN("signal %d received\n", signo);
+    
+  dumps_transactions();
+  exit(0);
+
+  return;
+}
 
 int main()
 {
@@ -67,16 +80,16 @@ int main()
 
     char* hdr = "Route: <sip:10.36.2.24;ftag=qvj9pp5vw7;lr=on>\r\n";
 
- 	char *c = hdr;
-	
-	sip_msg* msg = new sip_msg();
- 	int err = parse_headers(msg,&c);
-	
-	if(err){
-	    ERROR("Route headers parsing failed\n");
-	    ERROR("Faulty headers were: <%s>\n",hdr);
-	    return -1;
-	}
+    char *c = hdr;
+    
+    sip_msg* msg = new sip_msg();
+    int err = parse_headers(msg,&c);
+    
+    if(err){
+	ERROR("Route headers parsing failed\n");
+	ERROR("Faulty headers were: <%s>\n",hdr);
+	return -1;
+    }
     
 
 //     char* buf = 
@@ -111,6 +124,11 @@ int main()
     //delete msg;
 
 #else
+
+    if (signal(SIGINT, sig_usr) == SIG_ERR ) {
+	ERROR("no SIGINT signal handler can be installed\n");
+	return -1;
+    }
     
     ctrl->start();
     

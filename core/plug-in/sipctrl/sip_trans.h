@@ -80,7 +80,8 @@ enum sip_timer_type {
     STIMER_I,  // Confirmed: -> Terminated
 
     // non-INVITE server transaction
-    STIMER_J,  // Completed: -> Terminated
+    STIMER_J   // Completed: -> Terminated
+
 };
 
 

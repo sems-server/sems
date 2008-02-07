@@ -580,13 +580,12 @@ void trans_layer::received_msg(sip_msg* msg)
 		    // Anyway, there is nothing we can do...
 		}
 		else if(err == TS_TERMINATED){
-		    
-		}
 		
-		// do not touch the transaction anymore:
-		// it could have been deleted !!!
-
-		// should we forward the ACK to SEMS-App upstream? Yes
+		    // do not touch the transaction anymore:
+		    // it could have been deleted !!!
+		       
+		    // should we forward the ACK to SEMS-App upstream? Yes
+		}
 	    }
 	    else {
 		DBG("Found retransmission\n");
@@ -809,8 +808,14 @@ int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_
 	if(t->msg->u.request->method == sip_request::INVITE){
 
 	    // final reply
+
 	    //bucket->remove_trans(t);
+	    //return TS_TERMINATED;
+
 	    t->state = TS_TERMINATED_200;
+	    t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
+	    t->reset_timer(STIMER_H,H_TIMER,bucket->get_id());
+
 	}
 	else {
 	    t->state = TS_COMPLETED;
@@ -1067,7 +1072,18 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
     case STIMER_G:  // Completed: (re-)send response
 
 	n++;
-	retransmit(tr->msg);
+	
+	if(tr->state == TS_TERMINATED_200){
+	    
+	    // Retransmit reply to INV
+	    retransmit(tr);
+	}
+	else {
+
+	    // Retransmit request
+	    retransmit(tr->msg);
+	}
+
 	if(T1_TIMER<<n > T2_TIMER) {
 	    tr->reset_timer((n<<16) | type, T2_TIMER, bucket->get_id());
 	}
@@ -1081,3 +1097,5 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	break;
     }
 }
+
+

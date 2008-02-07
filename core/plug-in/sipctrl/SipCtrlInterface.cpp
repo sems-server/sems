@@ -258,7 +258,11 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	return -1;
     }
     
-    string hdrs = rep.hdrs + rep.contact;
+    string hdrs = rep.hdrs;
+
+    if(!rep.contact.empty()){
+	hdrs += "Contact: " + rep.contact + "\r\n";
+    }
 
     if(!rep.body.empty()) {
 	if(rep.content_type.empty()){
@@ -314,7 +318,7 @@ void SipCtrlInterface::handleSipMsg(AmSipRequest &req)
     reply.reason    = "OK";
     reply.serKey    = req.serKey;
     reply.local_tag = "12345";
-    reply.contact   = "sip:" + req.dstip + ":" + req.port;
+    reply.contact   = "Contact: sip:" + req.dstip + ":" + req.port;
     
     int err = send(reply);
     if(err < 0){

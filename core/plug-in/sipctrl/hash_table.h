@@ -115,6 +115,10 @@ public:
     unsigned long get_id() {
 	return id;
     }
+
+
+    // debug method
+    void dump();
 };
 
 trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num);
@@ -127,5 +131,7 @@ unsigned int hash(const cstring& ci, const cstring& cs);
 
 // char branch[BRANCH_BUF_LEN]
 void compute_branch(char* branch, const cstring& callid, const cstring& cseq);
+
+void dumps_transactions();
 
 #endif
