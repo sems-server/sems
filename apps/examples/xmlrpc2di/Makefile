@@ -21,16 +21,11 @@ clean_libxmlrpc:
 		then $(MAKE) -C $(XMLRPCPP_DIR) clean; \
 	fi
 
-install-xmlrpcpp: xmlrpc++0.7 xmlrpc++0.7/.sems_patched
-
-xmlrpc++0.7/.sems_patched: xmlrpc++0.7
-	if ![ -f xmlrpc++0.7/.sems_patched ]; \
-	 then  patch -p0 < xmlrpcpp07_sems.patch; \
-	fi
-	touch xmlrpc++0.7/.sems_patched
+install-xmlrpcpp: xmlrpc++0.7
 
 xmlrpc++0.7: xmlrpc++0.7.tar.gz
 	$(TAR) xzvf xmlrpc++0.7.tar.gz
+	patch -p0 < xmlrpcpp07_sems.patch
 
 xmlrpc++0.7.tar.gz:
 	wget http://switch.dl.sourceforge.net/sourceforge/xmlrpcpp/xmlrpc++0.7.tar.gz
