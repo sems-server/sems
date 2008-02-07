@@ -27,7 +27,7 @@ CPPFLAGS += -D_DEBUG \
 #LIBSPANDSP_STATIC = yes
 #LIBSPANDSP_LDIR = /usr/local/lib/
 
-LDFLAGS = -lm
+LDFLAGS += -lm
 
 OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
 
@@ -48,7 +48,7 @@ else
 	GETARCH=uname -m
 endif
 
-ARCH := $(shell $(GETARCH) |sed -e s/i.86/i386/ -e s/sun4u/sparc64/  \
+ARCH ?= $(shell $(GETARCH) |sed -e s/i.86/i386/ -e s/sun4u/sparc64/  \
 			-e s/armv4l/arm/ -e "s/Power Macintosh/ppc/" \
 			-e "s/cobalt/mips2/" \
 			-e s/amd64/x86_64/ )
@@ -61,16 +61,15 @@ ifeq ($(ARCH),sparc)
 endif
 
 # need OS specific for this ?
-CXX = g++
-CC = gcc
+CXX ?= g++
+CC ?= gcc
+LD ?= $(CC)
 
-LD = $(CC)
 
-
-CXXFLAGS := -Wall -Wno-reorder -fPIC -g \
+CXXFLAGS += -Wall -Wno-reorder -fPIC -g \
 	    -O2 $(EXTRA_CXXFLAGS)
          
-CFLAGS := -Wall -fPIC -g -O2 $(EXTRA_CFLAGS)
+CFLAGS += -Wall -fPIC -g -O2 $(EXTRA_CFLAGS)
 
 ifeq ($(DEBUG_PLAYOUT), yes)
 CPPFLAGS +=  -DDEBUG_PLAYOUTBUF
