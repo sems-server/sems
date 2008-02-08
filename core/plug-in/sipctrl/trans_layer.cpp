@@ -192,8 +192,10 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     //contact_wr(&c,contact);
     //}
 
-    memcpy(c,hdrs.s,hdrs.len);
-    c += hdrs.len;
+    if (hdrs.len) {
+      memcpy(c,hdrs.s,hdrs.len);
+      c += hdrs.len;
+    }
 
     content_length_wr(&c,(char*)c_len.c_str());
 
