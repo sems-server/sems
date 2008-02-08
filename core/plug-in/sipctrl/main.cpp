@@ -142,7 +142,7 @@ int main()
 //     req.to       = "To: SIPP <sip:sipp@tinytop:5070>";
 //     req.cseq     = 10;
 //     req.callid   = int2str(getpid()) + "@tinytop";
-//     req.contact  = "sip:tinytop";
+//     req.contact  = "Contact: sip:tinytop";
 //     //req.route    = "Route: <sip:localhost:5070;lr=on>;blabla=abc"; 
 
 //     int send_err = ctrl->send(req, req.serKey);

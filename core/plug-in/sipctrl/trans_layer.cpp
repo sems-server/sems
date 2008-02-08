@@ -128,15 +128,6 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 	}
     }
 
-    // We do not send Contact for
-    // 100 provisional replies
-    //
-    //if((reply_code > 100) && contact.len){
-	
-    //reply_len += contact_len(contact);
-    //add_contact = true;
-    //}
-
     reply_len += hdrs.len;
 
     string c_len = int2str(body.len);

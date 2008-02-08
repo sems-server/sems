@@ -11,6 +11,7 @@
 #include "hash_table.h"
 #include "sip_trans.h"
 #include "wheeltimer.h"
+#include "msg_hdrs.h"
 
 #include "udp_trsp.h"
 
@@ -258,10 +259,26 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	return -1;
     }
     
-    string hdrs = rep.hdrs;
+    sip_msg msg;
+
+    if(!rep.hdrs.empty()) {
+
+	char* c = (char*)rep.hdrs.c_str();
+	int err = parse_headers(&msg,&c);
+	if(err){
+	    ERROR("Malformed additional header\n");
+	    return -1;
+	}
+    }
 
     if(!rep.contact.empty()){
-	hdrs += rep.contact;
+
+	char* c = (char*)rep.contact.c_str();
+	int err = parse_headers(&msg,&c);
+	if(err){
+	    ERROR("Malformed Contact header\n");
+	    return -1;
+	}
     }
 
     if(!rep.body.empty()) {
@@ -269,9 +286,22 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	    ERROR("Reply does not contain a Content-Type whereby body is not empty\n");
 	    return -1;
 	}
-
-	hdrs += "Content-Type: " + rep.content_type + "\r\n";
     }
+
+    
+    unsigned int hdrs_len = copy_hdrs_len(msg.hdrs);
+
+    if(!rep.body.empty()) {
+	hdrs_len += content_type_len(stl2cstr(rep.content_type));
+    }
+
+    char* hdrs_buf = new char[hdrs_len];
+    char* c = hdrs_buf;
+
+    copy_hdrs_wr(&c,msg.hdrs);
+    content_type_wr(&c,stl2cstr(rep.content_type));
+
+    string hdrs(hdrs_buf,hdrs_len);
 
     return tl->send_reply(get_trans_bucket(h),(sip_trans*)t,
 			  rep.code,stl2cstr(rep.reason),

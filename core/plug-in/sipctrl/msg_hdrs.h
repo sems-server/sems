@@ -138,6 +138,24 @@ inline void content_length_wr(char** c, const cstring& len)
     *((*c)++) = LF;
 }
 
+inline int content_type_len(const cstring& len)
+{
+    return 16/*'Content-Type: ' + CRLF*/
+	+ len.len;
+}
+
+inline void content_type_wr(char** c, const cstring& len)
+{
+    memcpy(*c,"Content-Type: ",14);
+    *c += 14/*'Content-Type: '*/;
+
+    memcpy(*c,len.s,len.len);
+    *c += len.len;
+
+    *((*c)++) = CR;
+    *((*c)++) = LF;
+}
+
 #include <list>
 using std::list;
 
