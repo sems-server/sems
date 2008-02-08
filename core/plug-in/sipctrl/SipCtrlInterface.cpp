@@ -261,7 +261,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
     string hdrs = rep.hdrs;
 
     if(!rep.contact.empty()){
-	hdrs += "Contact: " + rep.contact + "\r\n";
+	hdrs += rep.contact;
     }
 
     if(!rep.body.empty()) {
