@@ -65,7 +65,7 @@ endif
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
 $(NAME): $(NAME).o $(OBJS)
-	$(CC) -o $(NAME) $(NAME).o $(OBJS) $(LDFLAGS)
+	$(LD) -o $(NAME) $(NAME).o $(OBJS) $(LDFLAGS)
 
 install: all mk-install-dirs \
 	install-cfg \

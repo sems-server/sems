@@ -705,7 +705,7 @@ bool BrpcCtrlInterface::rpcCheck()
 
   if (! (req = brpc_req(METH_CORE_VER, random()))) {
     ERROR("failed to build '%.*s' RPC context: %s [%d].\n", 
-      METH_CORE_VER.len, METH_CORE_VER.val, brpc_strerror(), brpc_errno);
+      (int)METH_CORE_VER.len, METH_CORE_VER.val, brpc_strerror(), brpc_errno);
     return false;
   }
   if (! (rpl = rpcExecute(req)))
@@ -739,7 +739,7 @@ void BrpcCtrlInterface::serResync()
   if (! ((req = brpc_req(METH_SER_RESYNC, random())) && 
       brpc_asm(req, "dsd", ASI_VERSION, &listen, serial))) {
     ERROR("failed to build '%.*s' RPC context: %s [%d].\n", 
-        METH_SER_RESYNC.len, METH_SER_RESYNC.val, brpc_strerror(), brpc_errno);
+	  (int)METH_SER_RESYNC.len, METH_SER_RESYNC.val, brpc_strerror(), brpc_errno);
     goto err;
   }
 
@@ -950,7 +950,7 @@ static enum RPC_ERR_CODE sip_fin_handler(brpc_t *brpc_req, AmSipReply &amRpl)
   for (unsigned i = 0; i < sizeof(strRef)/sizeof(string *); i ++) {
     if (cstr_refs[i])
       strRef[i]->assign(cstr_refs[i]->val, cstr_refs[i]->len - /*no 0-term*/1);
-    DBG("#%u: `%.*s'\n", i, strRef[i]->length(), strRef[i]->c_str());
+    DBG("#%u: `%.*s'\n", i, (int)strRef[i]->length(), strRef[i]->c_str());
   }
 
   enum RPC_ERR_CODE errcode;
