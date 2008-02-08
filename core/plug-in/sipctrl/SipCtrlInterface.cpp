@@ -301,12 +301,14 @@ int SipCtrlInterface::send(const AmSipReply &rep)
     copy_hdrs_wr(&c,msg.hdrs);
     content_type_wr(&c,stl2cstr(rep.content_type));
 
-    string hdrs(hdrs_buf,hdrs_len);
+    int ret = tl->send_reply(get_trans_bucket(h),(sip_trans*)t,
+			     rep.code,stl2cstr(rep.reason),
+			     stl2cstr(rep.local_tag),
+			     cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body));
 
-    return tl->send_reply(get_trans_bucket(h),(sip_trans*)t,
-			  rep.code,stl2cstr(rep.reason),
-			  stl2cstr(rep.local_tag),
-			  stl2cstr(hdrs), stl2cstr(rep.body));
+    delete [] hdrs_buf;
+
+    return ret;
 }
 
 #define DBG_PARAM(p)\
