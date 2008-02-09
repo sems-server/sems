@@ -476,7 +476,7 @@ void trans_bucket::dump()
     if(elmts.empty())
 	return;
 
-    DBG("*** Bucket ID: %i ***\n",get_id());
+    DBG("*** Bucket ID: %i ***\n",(int)get_id());
 
     for(trans_list::iterator it = elmts.begin(); it != elmts.end(); ++it) {
 
