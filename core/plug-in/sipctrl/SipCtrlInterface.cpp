@@ -296,12 +296,16 @@ int SipCtrlInterface::send(const AmSipReply &rep)
     }
 
     char* hdrs_buf = NULL;
+    char* c = hdrs_buf;
+
     if (hdrs_len) {
-      hdrs_buf = new char[hdrs_len];
-      char* c = hdrs_buf;
+      c = hdrs_buf = new char[hdrs_len];
       
       copy_hdrs_wr(&c,msg.hdrs);
-      content_type_wr(&c,stl2cstr(rep.content_type));
+
+      if(!rep.body.empty()) {
+	  content_type_wr(&c,stl2cstr(rep.content_type));
+      }
     }
 
     int ret = tl->send_reply(get_trans_bucket(h),(sip_trans*)t,
