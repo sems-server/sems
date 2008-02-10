@@ -29,6 +29,7 @@
 #define _AmAudioFile_h_
 
 #include "AmAudio.h"
+#include "AmBufferedAudio.h"
 
 /** \brief \ref AmAudioFormat for file */
 class AmAudioFileFormat: public AmAudioFormat
@@ -74,7 +75,7 @@ public:
 /**
  * \brief AmAudio implementation for file access
  */
-class AmAudioFile: public AmAudio
+class AmAudioFile: public AmBufferedAudio
 {
 public:
   /** Open mode. */

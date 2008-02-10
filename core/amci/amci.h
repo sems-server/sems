@@ -92,6 +92,15 @@ struct amci_file_desc_t {
 
     /** size of the data. -1 for unknown/unlimited */
     int data_size;
+
+    /** output buffer size. 0 for no buffering */
+    int buffer_size;
+
+    /** output buffer refill threshold */
+    int buffer_thresh;
+
+    /** output buffer refill threshold */
+    int buffer_full_thresh;
 };
 
 /**

@@ -182,8 +182,12 @@ long MP3_create(const char* format_parameters, amci_codec_fmt_info_t* format_des
     ERROR("initializing mpg123 decoder instance\n");
     return -1;
   }
-/*   decoded_pos = 0; */
-/*   coded_pos = 0; */
+
+  /* suppress output */
+  mpg123_param(coder_state->mpg123_h, MPG123_FLAGS, MPG123_QUIET /* | MPG123_FORCE_MONO */,0);
+
+/*   mpg123_param(coder_state->mpg123_h, MPG123_VERBOSE, 0, 0); */
+
 #endif
 
   return (long)coder_state;
@@ -196,6 +200,8 @@ void MP3_destroy(long h_inst) {
 #ifdef WITH_MPG123DECODER
     mpg123_delete(((mp3_coder_state*)h_inst)->mpg123_h);
 #endif
+
+    free((mp3_coder_state*)h_inst);
   }
 }
 
@@ -242,15 +248,22 @@ static unsigned int mp3_samples2bytes(long h_codec, unsigned int num_samples)
 #ifndef WITH_MPG123DECODER
   return num_samples;
 #else
-  // requets a full frame
-  // we don't know bitrate - so use 128000 as max bitrate
-  //  144 * BitRate / (SampleRate + Padding)
-  
-  unsigned int res =  144 * 128000 / (((mp3_coder_state*)h_codec)->rate + 1);
-  if (res > AUDIO_BUFFER_SIZE)
-    res = AUDIO_BUFFER_SIZE;
 
-  return res;
+  /* 
+   * 150 bytes is about one frame as produced by the mp3 writer.
+   * for higher bitrate files this will only introduce the small performance 
+   * penalty of multiple read() calls per frame-decode.
+   */
+  return 150;
+
+/*   or a full frame? */
+/*    we don't know bitrate - so use 128000 as max bitrate */
+/*     144 * BitRate / (SampleRate + Padding) */  
+/*   unsigned int res =  144 * 128000 / (((mp3_coder_state*)h_codec)->rate + 1); */
+/*   if (res > AUDIO_BUFFER_SIZE) */
+/*     res = AUDIO_BUFFER_SIZE; */
+/*   return res; */
+
 #endif
 }
 
@@ -277,13 +290,14 @@ static int MP3_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned 
 			out_buf, AUDIO_BUFFER_SIZE, &decoded_size);
     
     if (res == MPG123_NEW_FORMAT) {
-      WARN("mp3 file format change!\n");
+      WARN("intermediate mp3 file format change!\n");
     }
     if (res == MPG123_ERR) {
-      ERROR("decoding mp3!\n");
+      ERROR("decoding mp3: '%s'\n", 
+	    mpg123_strerror(coder_state->mpg123_h));
       return -1;
     }
-
+/*     DBG("mp3: decoded %d\n", decoded_size); */
     return decoded_size;
 #endif
 }
@@ -321,18 +335,20 @@ static int MP3_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, lo
      DBG("Initializing mpg123 codec state.\n");
      res = mpg123_open_feed(coder_state->mpg123_h);
      if (MPG123_ERR == res) {
-       ERROR("mpg123_open_feed returned mpg123 error.\n");
+       ERROR("mpg123_open_feed returned mpg123 error '%s'\n", 
+	     mpg123_strerror(coder_state->mpg123_h));
        return -1;
      }
 
+     /* read until we know the format */
      while (res!= MPG123_NEW_FORMAT) {
-       DBG("safe_read 20 of fp %ld\n", (long)fp);
        SAFE_READ(mp_rd_buf, 20, fp, sr);
 
        res = mpg123_decode(coder_state->mpg123_h, mp_rd_buf, 20, 
 			   mp_rd_buf, 0, &decoded_size);
        if (res == MPG123_ERR) {
-	 ERROR("trying to determine MP3 file format.\n");
+	 ERROR("trying to determine MP3 file format: '%s'\n", 
+	       mpg123_strerror(coder_state->mpg123_h));
 	 return -1;
        }
      }
@@ -347,6 +363,11 @@ static int MP3_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, lo
      fmt_desc->rate      = coder_state->rate;
      fmt_desc->channels  = coder_state->channels;
      fmt_desc->data_size = -1;
+
+     /* set buffering parameters */
+     fmt_desc->buffer_size   = MP3_FRAMESAMPLES * 8;
+     fmt_desc->buffer_thresh = MP3_FRAMESAMPLES;
+     fmt_desc->buffer_full_thresh = MP3_FRAMESAMPLES * 3; 
 
      return 0;
 #endif

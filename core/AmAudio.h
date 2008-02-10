@@ -206,7 +206,7 @@ private:
 protected:
   /** Sample buffer. */
   DblBuffer samples;
-
+  
   /** Audio format. @see AmAudioFormat */
   auto_ptr<AmAudioFormat> fmt;
 
@@ -287,6 +287,8 @@ public:
 
   void setRecordTime(unsigned int ms);
   int  incRecordTime(unsigned int samples);
+
+  void setBufferedOutput(unsigned int buffer_size);
 };
 
 

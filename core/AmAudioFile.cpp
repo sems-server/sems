@@ -132,8 +132,7 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
 	ERROR("could not create/overwrite file: %s\n",filename.c_str());
       return -1;
     }
-  } else {
-	
+  } else {	
     fp = tmpfile();
     if(!fp){
       ERROR("could not create temporary file: %s\n",strerror(errno));
@@ -141,6 +140,8 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
   }
 
   amci_file_desc_t fd;
+  memset(&fd, 0, sizeof(amci_file_desc_t));
+
   int ret = -1;
 
   if(open_mode == AmAudioFile::Write){
@@ -159,13 +160,16 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
   fd.channels = f_fmt->channels;
   fd.rate = f_fmt->rate;
 
-  if( iofmt->open && !(ret = (*iofmt->open)(fp, &fd, mode, f_fmt->getHCodecNoInit())) ) {
+  if( iofmt->open && 
+      !(ret = (*iofmt->open)(fp, &fd, mode, f_fmt->getHCodecNoInit())) ) {
 
     if (mode == AmAudioFile::Read) {
       f_fmt->setSubtypeId(fd.subtype);
       f_fmt->channels = fd.channels;
       f_fmt->rate = fd.rate;
       data_size = fd.data_size;
+
+      setBufferSize(fd.buffer_size, fd.buffer_thresh, fd.buffer_full_thresh);
     }
     begin = ftell(fp);
   }
@@ -255,7 +259,7 @@ int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
 
 
 AmAudioFile::AmAudioFile()
-  : AmAudio(), data_size(0), 
+  : AmBufferedAudio(0, 0, 0), data_size(0), 
     fp(0), begin(0), loop(false),
     on_close_done(false),
     close_on_exit(true)
@@ -270,6 +274,7 @@ AmAudioFile::~AmAudioFile()
 void AmAudioFile::rewind()
 {
   fseek(fp,begin,SEEK_SET);
+  clearBufferEOF();
 }
 
 void AmAudioFile::on_close()
