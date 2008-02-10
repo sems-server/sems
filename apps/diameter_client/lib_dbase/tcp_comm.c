@@ -76,6 +76,7 @@ int init_mytcp(const char* host, int port)
   server = gethostbyname(host);
   if (server == NULL) 
     {
+      close(sockfd);
       ERROR( M_NAME":init_mytcp(): error finding the host\n");
       return -1;
     }
@@ -89,6 +90,7 @@ int init_mytcp(const char* host, int port)
   if (connect(sockfd, (const struct sockaddr *)&serv_addr, 
 	      sizeof(serv_addr)) < 0) 
     {
+      close(sockfd);
       ERROR( M_NAME":init_mytcp(): error connecting to the "
 	  "DIAMETER peer\n");
       return -1;
