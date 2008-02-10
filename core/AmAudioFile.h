@@ -106,6 +106,9 @@ protected:
   /** @return a file format from file name. (ex: '1234.wav') */
   AmAudioFileFormat* fileName2Fmt(const string& name);
 
+  /** internal function for opening the file */
+  int fpopen_int(const string& filename, OpenMode mode, FILE* n_fp);
+
 public:
   AmSharedVar<bool> loop;
 
