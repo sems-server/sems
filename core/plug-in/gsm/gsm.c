@@ -46,10 +46,10 @@ static void gsm_destroy_if(long h_codec);
 static unsigned int gsm_bytes2samples(long, unsigned int);
 static unsigned int gsm_samples2bytes(long, unsigned int);
 
-BEGIN_EXPORTS( "gsm" )
+BEGIN_EXPORTS( "gsm", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
      BEGIN_CODECS
-CODEC( CODEC_GSM0610, pcm16_2_gsm, gsm_2_pcm16, NULL,
+CODEC( CODEC_GSM0610, pcm16_2_gsm, gsm_2_pcm16, AMCI_NO_CODEC_PLC,
        gsm_create_if, (amci_codec_destroy_t)gsm_destroy_if, gsm_bytes2samples, gsm_samples2bytes )
      END_CODECS
     

@@ -28,7 +28,7 @@
 #ifndef _AMFILECACHE_H
 #define _AMFILECACHE_H
 
-#include "AmAudio.h"
+#include "AmAudioFile.h"
 
 #include <string>
 

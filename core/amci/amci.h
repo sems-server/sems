@@ -90,7 +90,7 @@ struct amci_file_desc_t {
     /** # channels */
     int     channels;
 
-    /** size of the data */
+    /** size of the data. -1 for unknown/unlimited */
     int data_size;
 };
 
@@ -98,7 +98,7 @@ struct amci_file_desc_t {
  * \brief Sound converter function pointer.
  * @param out      [out] output buffer
  * @param in       [in] input buffer
- * @param size     [in] size of input buffer
+ * @param size       [in] size of input buffer
  * @param channels [in] number of channels
  * @param rate     [in] sampling rate
  * @param h_codec  [in] codec handle
@@ -209,6 +209,19 @@ typedef int (*amci_file_mem_close_t)( unsigned char* mptr,
                                   );
 
 /**
+ * \brief Codec module 's init function pointer.
+ * this function initializes the codec module.
+ * @return 0 on success, <0 on error
+ */
+typedef int (*amci_codec_module_load_t)(void);
+
+/**
+ * \brief Codec's module's destroy function pointer.
+ */
+typedef void (*amci_codec_module_destroy_t)(void);
+
+
+/**
  * \brief Codec's init function pointer.
  *
  * @param format_parameters  [in] parameters as passed by fmtp tag, 0 if none 
@@ -217,7 +230,7 @@ typedef int (*amci_file_mem_close_t)( unsigned char* mptr,
  *     <tr><td>AMCI_FMT_FRAME_LENGTH (1)</td><td>  frame length in ms (for framed codecs; must be multiple of 10)</td></tr>
  *     <tr><td>AMCI_FMT_FRAME_SIZE (2)</td><td>  frame size in samples</td></tr>
  *     <tr><td>AMCI_FMT_ENCODED_FRAME_SIZE (3)</td><td>  encoded frame size</td></tr></table>
- * @return -1 if failed, else some handler which will be 
+ * @return -1 if failed, else some handle which will be 
  *         passed by each further call (0 is legal).
  *
  */
@@ -262,7 +275,7 @@ struct amci_codec_t {
     /** Does the opposite of encode. */
     amci_converter_t decode;
 
-    /** Codec specific packet loss concealment. */
+    /** Codec specific packet loss concealment. can be NULL */
     amci_plc_t plc;
 
     /** Init function. can be NULL. */
@@ -382,6 +395,11 @@ struct amci_exports_t {
     /** Module name */
     char* name;
 
+    /** Codec module load function. can be NULL */
+    amci_codec_module_load_t module_load;
+    /** Codec module destroy function. can be NULL */
+    amci_codec_module_destroy_t module_destroy;
+
     /** NULL terminated array of amci_codec_t */
     struct amci_codec_t*    codecs;       
     /** NULL terminated array of amci_payload_t */
@@ -397,9 +415,12 @@ struct amci_exports_t {
  * see example media plug-in 'wav' (plug-in/wav/wav.c).
  * @hideinitializer
  */
-#define BEGIN_EXPORTS(name) \
+#define BEGIN_EXPORTS(name, module_load, module_destroy)	   \
             struct amci_exports_t amci_exports = { \
-                name,
+                name,\
+                module_load,\
+		module_destroy,
+
 
 /**
  * Portable export definition macro
@@ -431,7 +452,7 @@ struct amci_exports_t {
  * see example media plug-in 'wav' (plug-in/wav/wav.c).
  * @hideinitializer
  */
-#define CODEC(id,intern2type,type2intern,plc,init,destroy,bytes2samples,samples2bytes) \
+#define CODEC(id, intern2type,type2intern,plc,init,destroy,bytes2samples,samples2bytes) \
                     { id, intern2type, type2intern, plc, init, destroy, bytes2samples, samples2bytes },
 
 /**
@@ -519,6 +540,13 @@ struct amci_exports_t {
 #define SUBTYPE(type,name,rate,channels,codec_id) \
                         { type, name, rate, channels, codec_id },
 
+
+  /* defines to make definitions more expressive */
+#define AMCI_NO_MODULEINIT    NULL
+#define AMCI_NO_MODULEDESTROY NULL
+#define AMCI_NO_CODEC_PLC     NULL
+#define AMCI_NO_CODECCREATE   NULL
+#define AMCI_NO_CODECDESTROY  NULL
 
 #ifdef __cplusplus
 }

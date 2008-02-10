@@ -29,6 +29,7 @@
 #define _AM_AUDIO_MIX_IN_H
 
 #include "AmAudio.h"
+#include "AmAudioFile.h"
 
 
 #define MAX_PACKETLENGTH_MS   30

@@ -80,7 +80,7 @@ int AmPlaylist::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb
   }
 
   if(!cur_item || !cur_item->play) {
-    ret = samples2bytes(nb_samples);
+    ret = calcBytesToRead(nb_samples);
     memset(buffer,0,ret);
   }
 

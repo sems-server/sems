@@ -52,10 +52,12 @@ static int L16_2_Pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned i
 static unsigned int L16_bytes2samples(long, unsigned int);
 static unsigned int L16_samples2bytes(long, unsigned int);
 
-BEGIN_EXPORTS( "l16" )
+BEGIN_EXPORTS( "l16" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
 BEGIN_CODECS
-CODEC( CODEC_L16, Pcm16_2_L16, L16_2_Pcm16, NULL, NULL, NULL, L16_bytes2samples, L16_samples2bytes )
+CODEC( CODEC_L16, Pcm16_2_L16, L16_2_Pcm16, 
+       AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY, 
+       L16_bytes2samples, L16_samples2bytes )
 END_CODECS
     
 BEGIN_PAYLOADS

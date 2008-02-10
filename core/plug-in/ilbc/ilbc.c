@@ -77,7 +77,7 @@ static int iLBC_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, 
 static unsigned int ilbc_bytes2samples(long, unsigned int);
 static unsigned int ilbc_samples2bytes(long, unsigned int);
 
-BEGIN_EXPORTS( "ilbc" )
+BEGIN_EXPORTS( "ilbc" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
      BEGIN_CODECS
 CODEC( CODEC_ILBC, Pcm16_2_iLBC, iLBC_2_Pcm16, iLBC_PLC,

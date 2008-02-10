@@ -450,6 +450,13 @@ int AmPlugIn::loadAudioPlugIn(amci_exports_t* exports)
     return -1;
   }
 
+  if (exports->module_load) {
+    if (exports->module_load() < 0) {
+      ERROR("initializing audio plug-in!\n");
+      return -1;
+    }
+  }
+
   for( amci_codec_t* c=exports->codecs; 
        c->id>=0; c++ ){
 

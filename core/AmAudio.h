@@ -123,7 +123,7 @@ public:
   long             getHCodec();
   long             getHCodecNoInit() { return h_codec; } // do not initialize
 
-  unsigned int samples2bytes(unsigned int) const;
+  unsigned int calcBytesToRead(unsigned int needed_samples) const;
   unsigned int bytes2samples(unsigned int) const;
 
   /** @return true if same format. */
@@ -160,52 +160,6 @@ public:
   AmAudioSimpleFormat(int codec_id);
 };
 
-/** \brief \ref AmAudioFormat for file */
-class AmAudioFileFormat: public AmAudioFormat
-{
-  /** == "" if not yet initialized. */
-  string          name;
-    
-  /** == -1 if not yet initialized. */
-  int             subtype;
-
-  /** ==  0 if not yet initialized. */
-  amci_subtype_t* p_subtype;
-
-protected:
-  int getCodecId();
-
-public:
-  /**
-   * Constructor for file based formats.
-   * All information are taken from the plug-in description.
-   * @param name The file format name (ex. "Wav").
-   * @param subtype Subtype for the file format (see amci.h).
-   */
-  AmAudioFileFormat(const string& name, int subtype = -1);
-  /**
-   * Constructor for file based formats.
-   * All information are taken from the file descriptor.
-   * @param name The file format name (ex. "Wav").
-   * @param fd A file descriptor filled by the a plug-in's open function.
-   */
-  AmAudioFileFormat(const string& name, const amci_file_desc_t* fd);
-
-  /** @return Format name. */
-  string        getName() { return name; }
-  /** @return Format subtype. */
-  int           getSubtypeId() { return subtype; }
-  /** @return Subtype pointer. */
-  amci_subtype_t*  getSubtype();
-
-  void setSubtypeId(int subtype_id) 
-  { 
-    destroyCodec();
-    subtype = subtype_id; 
-    p_subtype = 0;
-    codec = getCodec();
-  }
-};
 
 /** \brief RTP audio format */
 class AmAudioRtpFormat: public AmAudioFormat
@@ -294,9 +248,9 @@ protected:
   unsigned int downMix(unsigned int size);
 
   /**
-   * Convert the size from samples to bytes, depending on the format.
+   * Get the number of bytes to read from encoded, depending on the format.
    */
-  unsigned int samples2bytes(unsigned int nb_samples) const;
+  unsigned int calcBytesToRead(unsigned int needed_samples) const;
 
   /**
    * Convert the size from bytes to samples, depending on the format.
@@ -335,97 +289,6 @@ public:
   int  incRecordTime(unsigned int samples);
 };
 
-/**
- * \brief AmAudio implementation for file access
- */
-class AmAudioFile: public AmAudio
-{
-public:
-  /** Open mode. */
-  enum OpenMode { Read=1, Write=2 };
-
-protected:
-  /** Pointer to the file opened as last. */
-  FILE* fp;
-  long begin;
-
-  /** Format of that file. @see fp, open(). */
-  amci_inoutfmt_t* iofmt;
-  /** Open mode. */
-  int open_mode;
-
-  /** Size of datas having been read/written until now. */
-  int data_size;
-
-  bool on_close_done;
-  bool close_on_exit;
-
-  /** @see AmAudio::read */
-  int read(unsigned int user_ts, unsigned int size);
-
-  /** @see AmAudio::write */
-  int write(unsigned int user_ts, unsigned int size);
-
-  /** @return a file format from file name. (ex: '1234.wav') */
-  AmAudioFileFormat* fileName2Fmt(const string& name);
-
-public:
-  AmSharedVar<bool> loop;
-
-  AmAudioFile();
-  ~AmAudioFile();
-
-  /**
-   * Opens a file.
-   * <ul>
-   * <li>In read mode: sets input format.
-   * <li>In write mode: <ol>
-   *                    <li>needs output format set. 
-   *                    <li>If file name already exists, 
-   *                        the file will be overwritten.
-   *                    </ol>
-   * </ul>
-   * @param filename Name of the file.
-   * @param mode Open mode.
-   * @return 0 if everything's OK
-   * @see OpenMode
-   */
-  int open(const string& filename, OpenMode mode, 
-	   bool is_tmp=false);
-
-  int fpopen(const string& filename, OpenMode mode, FILE* n_fp);
-
-  /**
-   * Rewind the file.
-   */
-  void rewind();
-
-  /** Closes the file. */
-  void close();
-
-  /** Executes the handler's on_close. */
-  void on_close();
-
-  /** be carefull with this one ;-) */ 
-  FILE* getfp() { return fp; }
-
-  OpenMode getMode() { return (OpenMode)open_mode; }
-
-  /** Gets data size in the current file */
-  int getDataSize() { return data_size; }
-
-  /** Gets length of the current file in ms */
-  int getLength();
-
-  /**
-   * @return MIME type corresponding to the audio file.
-   */
-  string getMimeType();
-
-  void setCloseOnDestroy(bool cod){
-    close_on_exit = cod;
-  }
-};
 
 #endif
 

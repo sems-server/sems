@@ -44,11 +44,11 @@
  *
  * Example declaration:
  @code
- BEGIN_EXPORTS( "wav" )
+ BEGIN_EXPORTS( "wav", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY)
 
  BEGIN_CODECS
- CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, 0, 0 )
- CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, 0, 0 )
+ CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, 0, 0, 0, 0, 0 )
+ CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, 0, 0, 0, 0, 0 )
  END_CODECS
     
  BEGIN_PAYLOADS
@@ -92,11 +92,15 @@ static int Pcm16_2_ALaw( unsigned char* out_buf, unsigned char* in_buf, unsigned
 static unsigned int g711_bytes2samples(long, unsigned int);
 static unsigned int g711_samples2bytes(long, unsigned int);
 
-BEGIN_EXPORTS( "wav" )
+BEGIN_EXPORTS( "wav" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
      BEGIN_CODECS
-CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, NULL, NULL, NULL, g711_bytes2samples, g711_samples2bytes )
-     CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, NULL, NULL, NULL, g711_bytes2samples, g711_samples2bytes )
+CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, 
+       AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY, 
+       g711_bytes2samples, g711_samples2bytes )
+     CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, 
+	    AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY, 
+	    g711_bytes2samples, g711_samples2bytes )
      END_CODECS
     
 BEGIN_PAYLOADS

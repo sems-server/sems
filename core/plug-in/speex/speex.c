@@ -80,10 +80,11 @@ void speexNB_destroy(long handle);
 static unsigned int speexNB_bytes2samples(long, unsigned int);
 static unsigned int speexNB_samples2bytes(long, unsigned int);
 
-BEGIN_EXPORTS("speex")
+BEGIN_EXPORTS("speex", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY)
 
 BEGIN_CODECS
-CODEC(CODEC_SPEEX_NB, Pcm16_2_SpeexNB, SpeexNB_2_Pcm16, NULL, speexNB_create, speexNB_destroy, 
+CODEC(CODEC_SPEEX_NB, Pcm16_2_SpeexNB, SpeexNB_2_Pcm16, AMCI_NO_CODEC_PLC, 
+      speexNB_create, speexNB_destroy, 
       speexNB_bytes2samples, speexNB_samples2bytes)
 END_CODECS
   

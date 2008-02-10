@@ -77,16 +77,16 @@ static unsigned int g726_40_bytes2samples(long, unsigned int);
 static unsigned int g726_40_samples2bytes(long, unsigned int);
 
 
-BEGIN_EXPORTS( "adpcm" )
+BEGIN_EXPORTS( "adpcm", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY)
 
 BEGIN_CODECS
-CODEC( CODEC_G726_16, Pcm16_2_G726_16, G726_16_2_Pcm16, NULL, 
+CODEC( CODEC_G726_16, Pcm16_2_G726_16, G726_16_2_Pcm16, AMCI_NO_CODEC_PLC, 
        G726_create, G726_destroy, g726_16_bytes2samples, g726_16_samples2bytes )
-CODEC( CODEC_G726_24, Pcm16_2_G726_24, G726_24_2_Pcm16, NULL, 
+CODEC( CODEC_G726_24, Pcm16_2_G726_24, G726_24_2_Pcm16, AMCI_NO_CODEC_PLC, 
        G726_create, G726_destroy, g726_24_bytes2samples, g726_24_samples2bytes )
-CODEC( CODEC_G726_32, Pcm16_2_G726_32, G726_32_2_Pcm16, NULL, 
+CODEC( CODEC_G726_32, Pcm16_2_G726_32, G726_32_2_Pcm16, AMCI_NO_CODEC_PLC, 
        G726_create, G726_destroy, g726_32_bytes2samples, g726_32_samples2bytes )
-CODEC( CODEC_G726_40, Pcm16_2_G726_40, G726_40_2_Pcm16, NULL, 
+CODEC( CODEC_G726_40, Pcm16_2_G726_40, G726_40_2_Pcm16, AMCI_NO_CODEC_PLC, 
        G726_create, G726_destroy, g726_40_bytes2samples, g726_40_samples2bytes )
 END_CODECS
     
