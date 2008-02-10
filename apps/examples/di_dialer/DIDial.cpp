@@ -7,6 +7,8 @@
 #include "AmConfigReader.h"
 #include "AmUtils.h"
 
+#include <map>
+
 #define APP_NAME "di_dial"
 
 class DIDialFactory : public AmDynInvokeFactory
@@ -19,13 +21,13 @@ public:
     return DIDial::instance();
   }
 
-  static map<string, DIDialoutInfo> dialout_pins;
+  static std::map<string, DIDialoutInfo> dialout_pins;
   int onLoad();
 };
 
 
 // note its not really safe to store plaintext passwords in memory
-map<string, DIDialoutInfo> DIDialFactory::dialout_pins;
+std::map<string, DIDialoutInfo> DIDialFactory::dialout_pins;
 
 int DIDialFactory::onLoad(){
   
@@ -225,7 +227,7 @@ string DIDial::dialout_pin(const string& application,
       application.c_str(), user.c_str(), to_user.c_str(), pin.c_str());
 
     // find pin
-  map<string, DIDialoutInfo>::iterator it = DIDialFactory::dialout_pins.find(pin);
+  std::map<string, DIDialoutInfo>::iterator it = DIDialFactory::dialout_pins.find(pin);
   if (it != DIDialFactory::dialout_pins.end()) {
     AmArg* a = new AmArg();
     a->setBorrowedPointer(new UACAuthCred(it->second.realm, 

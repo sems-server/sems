@@ -29,6 +29,7 @@
 #define _ANNOUNCEMENT_H_
 
 #include "AmSession.h"
+#include "AmAudioFile.h"
 #include "AmConfigReader.h"
 
 #include "ampi/UACAuthAPI.h"

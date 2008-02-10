@@ -4,7 +4,7 @@
 #include "log.h"
 #include "AmConfigReader.h"
 #include "AmUtils.h"
-#include "AmAudio.h"
+#include "AmAudioFile.h"
 #include "AmPlugIn.h"
 #include "AmMediaProcessor.h"
 

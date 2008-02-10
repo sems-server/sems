@@ -48,7 +48,7 @@ class AmAudioFile
 {
 
 %TypeHeaderCode
-#include "../../../core/AmAudio.h"
+#include "../../../core/AmAudioFile.h"
 %End
 
 public:

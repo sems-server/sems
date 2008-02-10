@@ -35,6 +35,7 @@
 #include "AmApi.h"
 #include "AmThread.h"
 #include "AmSession.h"
+#include "AmAudioFile.h"
 #include "AmConferenceChannel.h"
 #include "AmPlaylist.h"
 #include "AmRingTone.h"

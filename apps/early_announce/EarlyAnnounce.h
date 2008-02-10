@@ -29,6 +29,7 @@
 #define _EarlyAnnounce_h_
 
 #include "AmSession.h"
+#include "AmAudioFile.h"
 #include "AmConfigReader.h"
 
 #include <string>

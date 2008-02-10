@@ -2,7 +2,7 @@
 #define _EARLY_RECORD_H_
 
 #include "AmSession.h"
-#include "AmAudio.h"
+#include "AmAudioFile.h"
 #include "ampi/UACAuthAPI.h"
 
 #include <string>

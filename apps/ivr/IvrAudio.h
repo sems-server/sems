@@ -6,6 +6,7 @@
 #include <structmember.h>
 
 #include "AmAudio.h"
+#include "AmAudioFile.h"
 
 #define AUDIO_READ  1
 #define AUDIO_WRITE 2

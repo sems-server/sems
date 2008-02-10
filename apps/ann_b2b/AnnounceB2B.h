@@ -30,7 +30,7 @@
 
 #include "AmSession.h"
 #include "AmConfigReader.h"
-#include "AmAudio.h"
+#include "AmAudioFile.h"
 #include "AmB2BSession.h"
 
 #include <string>

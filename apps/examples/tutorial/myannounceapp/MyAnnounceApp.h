@@ -2,7 +2,7 @@
 #define _MYANNOUNCEAPP_H_
 
 #include "AmSession.h"
-#include "AmAudio.h"
+#include "AmAudioFile.h"
 
 #include <string>
 using std::string;

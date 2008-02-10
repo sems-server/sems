@@ -29,6 +29,7 @@
 
 #include "AmApi.h"
 #include "AmSession.h"
+#include "AmAudioFile.h"
 #include "AmConferenceChannel.h"
 #include "AmPlaylist.h"
 

@@ -30,7 +30,7 @@
 
 #include "AmApi.h"
 #include "AmConfigReader.h"
-#include "AmAudio.h"
+#include "AmAudioFile.h"
 #include "AmB2ABSession.h"
 #include "ampi/UACAuthAPI.h"
 

@@ -30,6 +30,7 @@
 #define _ANNOUNCETRANSFER_H_
 
 #include "AmSession.h"
+#include "AmAudioFile.h"
 #include "AmConfigReader.h"
 
 #include <string>
