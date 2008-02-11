@@ -77,16 +77,16 @@ $(plug_in_name)_audio: $(audio-prefix)/$(audio-dir)
 	done
 
 
-%.d: %.cpp Makefile $(COREPATH)/plug-in/Makefile.app_module
+%.d: %.cpp Makefile $(COREPATH)/plug-in/Makefile.app_module $(COREPATH)/../Makefile.defs
 	$(CXX) -MM $< $(CXXFLAGS) $(CPPFLAGS) > $@
 
-%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.app_module
+%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.app_module $(COREPATH)/../Makefile.defs
 	$(CC) -MM $< $(CFLAGS) $(CPPFLAGS) > $@
 
-%.o: %.cpp %.d
+%.o: %.cpp %.d $(COREPATH)/../Makefile.defs
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
-%.o: %.c %.d
+%.o: %.c %.d $(COREPATH)/../Makefile.defs
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 

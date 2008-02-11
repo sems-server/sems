@@ -62,13 +62,13 @@ LDFLAGS +=-lsamplerate
 endif
 
 # implicit rules
-%.o : %.cpp %.d
+%.o : %.cpp %.d ../Makefile.defs
 	$(CXX) -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS)
 
-%.d : %.cpp %.h Makefile
+%.d : %.cpp %.h Makefile ../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
-$(NAME): $(NAME).o $(OBJS)
+$(NAME): $(NAME).o $(OBJS) ../Makefile.defs
 	$(LD) -o $(NAME) $(NAME).o $(OBJS) $(LDFLAGS)
 
 install: all mk-install-dirs \

@@ -37,10 +37,10 @@ install: $(lib_name) $(extra_install)
 .PHONY: install-cfg
 install-cfg : $(extra_install_cfg)
 
-%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module
+%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module $(COREPATH)/../Makefile.defs
 	$(CC) -MM $< $(CPPFLAGS) $(CFLAGS) > $@
 
-%.o: %.c %.d
+%.o: %.c %.d $(COREPATH)/../Makefile.defs
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(lib_full_name): $(lib_name)
