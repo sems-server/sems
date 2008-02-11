@@ -40,6 +40,10 @@ using std::auto_ptr;
 using std::string;
 #include <map>
 
+#ifdef USE_LIBSAMPLERATE 
+#include <samplerate.h>
+#endif
+
 #define PCM16_B2S(b) ((b) >> 1)
 #define PCM16_S2B(s) ((s) << 1)
 
@@ -202,6 +206,13 @@ private:
   AmMutex fmt_mut;
   int rec_time; // in samples
   int max_rec_time;
+
+#ifdef USE_LIBSAMPLERATE 
+  SRC_STATE* resample_state;
+  float resample_in[PCM16_B2S(AUDIO_BUFFER_SIZE)*2];
+  float resample_out[PCM16_B2S(AUDIO_BUFFER_SIZE)];
+  size_t resample_buf_samples;
+#endif
 
 protected:
   /** Sample buffer. */

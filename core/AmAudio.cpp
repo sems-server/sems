@@ -39,6 +39,8 @@
 
 #include <typeinfo>
 
+#define SYSTEM_SAMPLERATE 8000 // fixme: sr per session
+
 /** \brief structure to hold loaded codec instances */
 struct CodecContainer
 {
@@ -246,6 +248,10 @@ AmAudio::AmAudio()
   : fmt(new AmAudioSimpleFormat(CODEC_PCM16)),
     max_rec_time(-1),
     rec_time(0)
+#ifdef USE_LIBSAMPLERATE 
+  , resample_state(NULL),
+    resample_buf_samples(0)
+#endif
 {
 }
 
@@ -258,6 +264,10 @@ AmAudio::AmAudio(AmAudioFormat *_fmt)
 
 AmAudio::~AmAudio()
 {
+#ifdef USE_LIBSAMPLERATE 
+  if (NULL != resample_state) 
+    src_delete(resample_state);
+#endif
 }
 
 void AmAudio::close()
@@ -383,6 +393,54 @@ unsigned int AmAudio::downMix(unsigned int size)
     stereo2mono(samples.back_buffer(),(unsigned char*)samples,s);
     samples.swap();
   }
+
+#ifdef USE_LIBSAMPLERATE 
+  if (fmt->rate != SYSTEM_SAMPLERATE) {
+    if (!resample_state) {
+      int src_error;
+      // for better quality but more CPU usage, use SRC_SINC_ converters
+      resample_state = src_new(SRC_LINEAR, 1, &src_error);
+      if (!resample_state) {
+	ERROR("samplerate initialization error: ");
+      }
+    }
+
+    if (resample_state) {
+      if (resample_buf_samples + PCM16_B2S(s) > PCM16_B2S(AUDIO_BUFFER_SIZE) * 2) {
+	WARN("resample input buffer overflow! (%d)\n",
+	     resample_buf_samples + PCM16_B2S(s));
+      } else {
+	signed short* samples_s = (signed short*)(unsigned char*)samples;
+	src_short_to_float_array(samples_s, &resample_in[resample_buf_samples], PCM16_B2S(s));
+	resample_buf_samples += PCM16_B2S(s);
+      }
+      
+      SRC_DATA src_data;
+      src_data.data_in = resample_in;
+      src_data.input_frames = resample_buf_samples;
+      src_data.data_out = resample_out;
+      src_data.output_frames = PCM16_B2S(AUDIO_BUFFER_SIZE);
+      src_data.src_ratio = (double)SYSTEM_SAMPLERATE / (double)fmt->rate;
+      src_data.end_of_input = 0;
+
+      int src_err = src_process(resample_state, &src_data);
+      if (src_err) {
+	DBG("resample error: '%s'\n", src_strerror(src_err));
+      }else {
+	signed short* samples_s = (signed short*)(unsigned char*)samples;
+	src_float_to_short_array(resample_out, samples_s, src_data.output_frames_gen);
+	s = PCM16_S2B(src_data.output_frames_gen);
+
+	if (resample_buf_samples !=  (unsigned int)src_data.input_frames_used) {
+	  memmove(resample_in, &resample_in[src_data.input_frames_used], 
+		  (resample_buf_samples - src_data.input_frames_used) * sizeof(float));
+	}
+	resample_buf_samples = resample_buf_samples - src_data.input_frames_used;
+      }
+    }
+  }
+#endif
+ 
 
   return s;
 }

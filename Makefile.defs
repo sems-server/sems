@@ -27,6 +27,12 @@ CPPFLAGS += -D_DEBUG \
 #LIBSPANDSP_STATIC = yes
 #LIBSPANDSP_LDIR = /usr/local/lib/
 
+
+# compile with sample rate conversion from secret rabbit code? 
+# (see http://www.mega-nerd.com/SRC/)
+#
+#USE_LIBSAMPLERATE = yes
+
 LDFLAGS += -lm
 
 OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")

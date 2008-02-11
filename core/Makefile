@@ -56,6 +56,10 @@ ifdef USE_SPANDSP
 CPPFLAGS += -DUSE_SPANDSP -D__STDC_LIMIT_MACROS
 endif
 
+ifdef USE_LIBSAMPLERATE
+CPPFLAGS += -DUSE_LIBSAMPLERATE
+LDFLAGS +=-lsamplerate
+endif
 
 # implicit rules
 %.o : %.cpp %.d
