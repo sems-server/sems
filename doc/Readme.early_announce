@@ -15,20 +15,89 @@ Session Parameters:
    Final-Reply-Code     integer (e.g. Final-Reply-Code=405 )
    Final-Reply-Reason   string  (e.g. Final-Reply-Reason=Prohibited)
 
-
-
-It searches for files to play following these rules:
+If early_announce application was compiled WITHOUT -DUSE_MYSQL option,
+it searches for files to play following these rules:
 
  1) [AnnouncePath]/[Domain]/[User].wav
  2) [AnnouncePath]/[User].wav
 
-example sems (early_announce.conf) configuration:
+Example sems (early_announce.conf) configuration for file system audio:
 
 announce_path=wav/
 default_announce=default_en.wav
 
+If early_announce application was compiled with -DUSE_MYSQL option, it
+support third Session Parameter
 
-example ser configuration:
+   Language	      two letter string or empty string (e.g. en)
+  
+It searches files to play first from user_audio, then from domain_audio,
+and finally from default_audio tables (described below).  When an audio
+file is fetched from database, it is stored in /tmp directory.
+
+Example sems (early_announce.conf) configuration for MySQL audio:
+
+# Host where MySQL server is running (optional, defaults to 'localhost')
+mysql_host=localhost
+
+# MySQL username (mandatory, no default)
+mysql_user=sems
+
+# MySQL password (mandatory, no default)
+mysql_passwd=secret
+
+# Database where audio is stored (optional, defaults to 'sems') 
+mysql_db=sems
+
+# Value of 'application' field in early_announce audio records (optional,
+# defaults to 'early_announce')
+application=early_announce
+
+# Value of 'message' field in early_announce audio records (optional,
+# defaults to 'greeting_msg')
+message=greeting_msg
+
+# Default language if Language Session Parameter does not exist
+# (optional, defaults to 'en')
+default_language=en
+
+Database tables:
+
+CREATE TABLE default_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  `language` char(2) NOT NULL default 'en',
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,`language`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+CREATE TABLE domain_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  domain varchar(128) NOT NULL,
+  `language` char(2) NOT NULL default 'en',
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,domain,`language`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+CREATE TABLE user_audio (
+  id int(10) unsigned NOT NULL auto_increment,
+  application varchar(32) NOT NULL,
+  message varchar(32) NOT NULL,
+  domain varchar(128) NOT NULL,
+  userid varchar(64) NOT NULL,
+  audio mediumblob NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY application (application,message,domain,userid)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+
+Example ser configuration:
+-------------------------
 
 #
 # simple single instance Ser config script with early media

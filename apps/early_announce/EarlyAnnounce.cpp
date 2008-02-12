@@ -2,6 +2,7 @@
  * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2008 Juha Heinanen (USE_MYSQL parts)
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -34,15 +35,99 @@
 
 #define MOD_NAME "early_announce"
 
+#ifdef USE_MYSQL
+#include <mysql++/mysql++.h>
+#include <stdio.h>
+#define DEFAULT_AUDIO_TABLE "default_audio"
+#define DOMAIN_AUDIO_TABLE "domain_audio"
+#define USER_AUDIO_TABLE "user_audio"
+#endif
+
 EXPORT_SESSION_FACTORY(EarlyAnnounceFactory,MOD_NAME);
 
+#ifdef USE_MYSQL
+string EarlyAnnounceFactory::AnnounceApplication;
+string EarlyAnnounceFactory::AnnounceMessage;
+string EarlyAnnounceFactory::DefaultLanguage;
+#else
 string EarlyAnnounceFactory::AnnouncePath;
 string EarlyAnnounceFactory::AnnounceFile;
+#endif
 
 EarlyAnnounceFactory::EarlyAnnounceFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
 {
 }
+
+#ifdef USE_MYSQL
+mysqlpp::Connection EarlyAnnounceFactory::Connection(mysqlpp::use_exceptions);
+
+int get_announce_msg(string application, string message, string user,
+		     string domain, string language, string *audio_file)
+{
+    string query_string;
+
+    if (!user.empty()) {
+	*audio_file = string("/tmp/") +  application + "_" + 
+	    message + "_" + domain + "_" + user + ".wav";
+	query_string = "select audio from " + string(USER_AUDIO_TABLE) +
+	    " where application='" + application + "' and message='" +
+	    message + "' and userid='" + user + "' and domain='" +
+	    domain + "'";
+    } else if (!domain.empty()) {
+	*audio_file = string("/tmp/") +  application + "_" +
+	    message + "_" + domain + "_" + language + ".wav";
+	query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) +
+	    " where application='" + application + "' and message='" +
+	    message + "' and domain='" + domain + "' and language='" +
+	    language + "'";
+    } else {
+	*audio_file = string("/tmp/") +  application  + "_" +
+	    message + "_" + language + ".wav";
+	query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) +
+	    " where application='" + application + "' and message='" +
+	    message + "' and language='" + language + "'";
+    }
+
+    try {
+
+	mysqlpp::Query query = EarlyAnnounceFactory::Connection.query();
+	    
+	DBG("Query string <%s>\n", query_string.c_str());
+
+	query << query_string;
+	mysqlpp::Result res = query.store();
+
+	mysqlpp::Row row;
+
+	if (res) {
+	    if ((res.num_rows() > 0) && (row = res.at(0))) {
+		FILE *file;
+		unsigned long length = row.raw_string(0).size();
+		file = fopen((*audio_file).c_str(), "wb");
+		fwrite(row.at(0).data(), 1, length, file);
+		fclose(file);
+		return 1;
+	    } else {
+		*audio_file = "";
+		return 1;
+	    }
+	} else {
+	    ERROR("Database query error\n");
+	    *audio_file = "";
+	    return 0;
+	}
+    }
+
+    catch (const mysqlpp::Exception& er) {
+	// Catch-all for any MySQL++ exceptions
+	ERROR("MySQL++ error: %s\n", er.what());
+	*audio_file = "";
+	return 0;
+    }
+}
+
+#endif
 
 int EarlyAnnounceFactory::onLoad()
 {
@@ -52,6 +137,79 @@ int EarlyAnnounceFactory::onLoad()
 
   // get application specific global parameters
   configureModule(cfg);
+
+#ifdef USE_MYSQL
+
+  /* Get default audio from MySQL */
+
+  string mysql_server, mysql_user, mysql_passwd, mysql_db;
+
+  mysql_server = cfg.getParameter("mysql_server");
+  if (mysql_server.empty()) {
+    mysql_server = "localhost";
+  }
+
+  mysql_user = cfg.getParameter("mysql_user");
+  if (mysql_user.empty()) {
+    ERROR("conference.conf paramater 'mysql_user' is missing.\n");
+    return -1;
+  }
+
+  mysql_passwd = cfg.getParameter("mysql_passwd");
+  if (mysql_passwd.empty()) {
+    ERROR("conference.conf paramater 'mysql_passwd' is missing.\n");
+    return -1;
+  }
+
+  mysql_db = cfg.getParameter("mysql_db");
+  if (mysql_db.empty()) {
+    mysql_db = "sems";
+  }
+
+  AnnounceApplication = cfg.getParameter("application");
+  if (AnnounceApplication.empty()) {
+    AnnounceApplication = MOD_NAME;
+  }
+
+  AnnounceMessage = cfg.getParameter("message");
+  if (AnnounceMessage.empty()) {
+    AnnounceMessage = "greeting_msg";
+  }
+
+  DefaultLanguage = cfg.getParameter("default_language");
+  if (DefaultLanguage.empty()) {
+    DefaultLanguage = "en";
+  }
+
+  try {
+
+    Connection.connect(mysql_db.c_str(), mysql_server.c_str(),
+		       mysql_user.c_str(), mysql_passwd.c_str());
+    if (!Connection) {
+      ERROR("Database connection failed: %s\n", Connection.error());
+      return -1;
+    }
+  }
+	
+  catch (const mysqlpp::Exception& er) {
+    // Catch-all for any MySQL++ exceptions
+    ERROR("MySQL++ error: %s\n", er.what());
+    return -1;
+  }
+
+  string announce_file;
+  if (!get_announce_msg(AnnounceApplication, AnnounceMessage, "", "",
+			DefaultLanguage, &announce_file)) {
+    return -1;
+  }
+  if (announce_file.empty()) {
+    ERROR("default announce for " MOD_NAME " module does not exist.\n");
+    return -1;
+  }
+
+#else 
+
+  /* Get default audio from file system */
 
   AnnouncePath = cfg.getParameter("announce_path",ANNOUNCE_PATH);
   if( !AnnouncePath.empty() 
@@ -66,6 +224,8 @@ int EarlyAnnounceFactory::onLoad()
 	  announce_file.c_str());
     return -1;
   }
+
+#endif
 
   return 0;
 }
@@ -99,6 +259,26 @@ void EarlyAnnounceDialog::onInvite(const AmSipRequest& req)
 
 AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req)
 {
+
+#ifdef USE_MYSQL
+
+    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+    string language = get_header_keyvalue(iptel_app_param,"Language");
+    string announce_file = "";
+
+    if (language.empty()) language = DefaultLanguage;
+
+    get_announce_msg(AnnounceApplication, AnnounceMessage, req.user,
+		     req.domain, "", &announce_file);
+    if (!announce_file.empty()) goto end;
+    get_announce_msg(AnnounceApplication, AnnounceMessage, "", req.domain,
+		     language, &announce_file);
+    if (!announce_file.empty()) goto end;
+    get_announce_msg(AnnounceApplication, AnnounceMessage, "", "", language,
+		     &announce_file);
+
+#else
+
   string announce_path = AnnouncePath;
   string announce_file = announce_path + req.domain 
     + "/" + req.user + ".wav";
@@ -113,7 +293,9 @@ AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req)
     goto end;
 
   announce_file = AnnouncePath + AnnounceFile;
-    
+
+#endif
+
  end:
   return new EarlyAnnounceDialog(announce_file);
 }
@@ -175,7 +357,6 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	if (code.length() && str2i(code, code_i)) {
 	  ERROR("while parsing P-Final-Reply-Code\n");
 	}
-
 	string h_reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
 	if (h_reason.length()) {
 	  INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
@@ -195,4 +376,3 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 
   AmSession::process(event);
 }
-
