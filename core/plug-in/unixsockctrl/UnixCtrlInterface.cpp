@@ -169,7 +169,14 @@ void UnixCtrlInterface::run()
       ERROR("failed to fetch %s.\n", #_msg);  \
   } while (0)
 
+#ifdef OpenSER
+  DBG("Unix socket control interface built for OpenSER.\n");
+#else
+  DBG("Unix socket control interface built for SER.\n");
+#endif
+
   DBG("Running UnixCtrlInterface thread.\n");
+
   while (!is_stopped()) {
     int ret = poll(ufds,2,/*FIXME: configurable*/SIP_POLL_TIMEOUT);
     switch (ret) {

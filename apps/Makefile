@@ -11,7 +11,7 @@ modules ?= $(filter-out $(exclude_modules) \
 
 ifeq ($(OS),solaris)
 # These don't build on Solaris because of missing Python, invalid make args, or other.
-	exclude_modules += py_sems py_comp pin_collect mailbox ivr diameter_client conf_auth
+	exclude_modules += py_sems py_comp pin_collect mailbox ivr diameter_client conf_auth mp3 cc_acc_xmlrpc xmlrpc2di
 endif
 
 .PHONY: all

@@ -192,7 +192,7 @@ int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp)
     if(!iofmt->open)
       ERROR("no open function\n");
     else
-      ERROR("open returned %d\n",ret);
+      ERROR("open returned %d: %s\n", ret, strerror(errno));
     close();
     return ret;
   }
@@ -303,7 +303,7 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
     
     ret = (!ferror(fp) ? s : -1);
     
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN)
 #define bswap_16(A)  ((((u_int16_t)(A) & 0xff00) >> 8) | \
 		      (((u_int16_t)(A) & 0x00ff) << 8))
     

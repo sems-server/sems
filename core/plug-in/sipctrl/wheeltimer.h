@@ -12,7 +12,6 @@
 #include "AmThread.h"
 
 #include <queue>
-using std::queue;
 
 #define BITS_PER_WHEEL 8
 #define ELMTS_PER_WHEEL (1 << BITS_PER_WHEEL)
@@ -72,11 +71,11 @@ class wheeltimer: public AmThread
     base_timer wheels[WHEELS][ELMTS_PER_WHEEL];
 
     //list with timer insertions requests
-    queue<timer*> utimer_add;
+    std::queue<timer*> utimer_add;
     AmMutex    utimer_add_m;
 
     //list with timer deletions requests
-    queue<timer*> utimer_rem;
+    std::queue<timer*> utimer_rem;
     AmMutex    utimer_rem_m;
 
     //list with expired timers

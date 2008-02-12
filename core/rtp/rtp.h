@@ -50,7 +50,7 @@ typedef unsigned int   u_int32;
  */
 typedef struct {
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN)
     u_int16 version:2;   /* protocol version */
     u_int16 p:1;         /* padding flag */
     u_int16 x:1;         /* header extension flag */

@@ -154,8 +154,10 @@ void AnnouncementDialog::startSession(){
   // this disables DTMF detection as well
   setReceiving(false);
 
-  if(wav_file.open(filename,AmAudioFile::Read))
+  if(wav_file.open(filename,AmAudioFile::Read)) {
+    ERROR("Couldn't open file %s.\n", filename.c_str());
     throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
+  }
     
   setOutput(&wav_file);
 }

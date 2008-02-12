@@ -49,7 +49,7 @@ typedef struct {
     
     u_int8  event;
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN)
     u_int8  e:1;
     u_int8  r:1;
     u_int8  volume:6;
