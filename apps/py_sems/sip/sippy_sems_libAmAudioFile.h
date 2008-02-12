@@ -8,7 +8,7 @@
 #define _py_sems_libAmAudioFile_h
 
 #line 51 "AmAudio.sip"
-#include "../../../core/AmAudio.h"
+#include "../../../core/AmAudioFile.h"
 #line 13 "sippy_sems_libAmAudioFile.h"
 
 #define sipClass_AmAudioFile             sipModuleAPI_py_sems_lib.em_types[6]

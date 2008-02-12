@@ -33,6 +33,7 @@
 #endif
 
 #include "AmSession.h"
+#include "AmAudioFile.h"
 #include "AmConfigReader.h"
 
 #include <string>
