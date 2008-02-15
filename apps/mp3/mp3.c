@@ -196,7 +196,7 @@ long MP3_create(const char* format_parameters, amci_codec_fmt_info_t* format_des
 void MP3_destroy(long h_inst) {
   if (h_inst){
     if (((mp3_coder_state*)h_inst)->gfp)
-      free(((mp3_coder_state*)h_inst)->gfp);
+      lame_close(((mp3_coder_state*)h_inst)->gfp);
 #ifdef WITH_MPG123DECODER
     mpg123_delete(((mp3_coder_state*)h_inst)->mpg123_h);
 #endif
@@ -383,11 +383,16 @@ static int MP3_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, l
     unsigned char  mp3buffer[7200];    
     DBG("MP3: close. \n");
     if(options == AMCI_WRONLY) {
-	if ((final_samples = lame_encode_flush((lame_global_flags *)h_codec,mp3buffer, 7200))) {
+      if (!h_codec || !((mp3_coder_state*)h_codec)->gfp) {
+	ERROR("no valid codec handle!\n");
+	return -1;
+      }
+
+      if ((final_samples = lame_encode_flush(((mp3_coder_state*)h_codec)->gfp,mp3buffer, 7200))) {
 	    fwrite(mp3buffer, 1, final_samples, fp);
 	    DBG("MP3: flushing %d bytes from MP3 encoder.\n", final_samples);
 	}
-	lame_mp3_tags_fid((lame_global_flags *)h_codec,fp);
+	lame_mp3_tags_fid(((mp3_coder_state*)h_codec)->gfp,fp);
     }
     return 0;
 }
