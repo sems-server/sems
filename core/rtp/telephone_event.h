@@ -33,6 +33,7 @@
 #define _telephone_event_h_
 
 #include <sys/types.h>
+#include "../compat/solaris.h"
 
 /*
  * The type definitions below are valid for 32-bit architectures and
@@ -49,7 +50,7 @@ typedef struct {
     
     u_int8  event;
 
-#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN)
+#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN))
     u_int8  e:1;
     u_int8  r:1;
     u_int8  volume:6;

@@ -1,5 +1,7 @@
 #ifndef __SOLARIS_H__
 #define __SOLARIS_H__
+
+#ifdef SOLARIS
 /*
  * New compatibility code for Solaris.
  */
@@ -62,4 +64,17 @@
 typedef unsigned long long int u_int64_t;
 #endif
 
+
+#if defined(sun)
+#include <sys/byteorder.h>
+#if defined(_BIG_ENDIAN)
+#define BYTE_ORDER BIG_ENDIAN
+#else
+#define BYTE_ORDER LITTLE_ENDIAN
+#endif
+#else
+#include <endian.h>
+#endif
+
+#endif /* SOLARIS */
 #endif
