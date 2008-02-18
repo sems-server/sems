@@ -80,7 +80,8 @@ bool findHeader(const string& hdrs,const string& hdr_name,
       p = hdrs_c - hdrs.c_str();
 	    
       string::size_type p_end;
-      if((p_end = hdrs.find('\n',p)) != string::npos){
+      if( ((p_end = hdrs.find('\r',p)) != string::npos)
+	  || ((p_end = hdrs.find('\n',p)) != string::npos) ){
 		
 	free(hdr);
 	// return hdrs.substr(p,p_end-p);

@@ -691,11 +691,23 @@ string get_header_param(const string& hdr_string,
 	&& hdr_string.substr(++pos, param_name.length())==param_name 
 	&& hdr_string[pos+param_name.length()] == '=') {
       size_t pos2 = pos+param_name.length()+1;
-      while(pos2<hdr_string.length() && hdr_string[pos2] != ';'
-	    && hdr_string[pos2] != '\n')
-	pos2++;
-      return hdr_string.substr(pos + param_name.length()+1, 
-			       pos2 - pos + - param_name.length() -1);
+      while(pos2<hdr_string.length()){
+
+	  switch(hdr_string[pos2]) {
+	  case ';':
+	  case '\n':
+	  case '\r':
+	      break;
+
+	  default:
+	      pos2++;
+	      continue;
+	  }
+
+	  break;
+      }
+      return hdr_string.substr(pos + param_name.length() + 1, // skip 'param=' 
+			       pos2 - pos - param_name.length() - 1);
     }
     pos +=param_name.length();
   }
