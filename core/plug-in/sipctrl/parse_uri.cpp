@@ -155,8 +155,12 @@ static int parse_sip_uri(sip_uri* uri, char* beg, int len)
 		break; 
 
 	    case URI_PNAME:
-		DBG("Empty URI parameter\n");
-		return MALFORMED_URI;
+		//DBG("Empty URI parameter\n");
+		//return MALFORMED_URI;
+		tmp1.len = c - tmp1.s;
+		uri->params.push_back(new sip_avp(tmp1,cstring(0,0)));
+		tmp1.s = c+1;
+		break;
 
 	    case URI_PVALUE:
 		tmp2.len = c - tmp2.s;
@@ -188,8 +192,12 @@ static int parse_sip_uri(sip_uri* uri, char* beg, int len)
 		break;
 
 	    case URI_PNAME:
-		DBG("Empty URI parameter\n");
-		return MALFORMED_URI;
+// 		DBG("Empty URI parameter\n");
+// 		return MALFORMED_URI;
+		tmp1.len = c - tmp1.s;
+		uri->params.push_back(new sip_avp(tmp1,cstring(0,0)));
+		tmp1.s = c+1;
+		break;
 
 	    case URI_PVALUE:
 		tmp2.len = c - tmp2.s;
@@ -262,8 +270,12 @@ static int parse_sip_uri(sip_uri* uri, char* beg, int len)
 	break;
 
     case URI_PNAME:
-	DBG("Empty URI parameter\n");
-	return MALFORMED_URI;
+	//DBG("Empty URI parameter\n");
+	//return MALFORMED_URI;
+
+	tmp1.len = c - tmp1.s;
+	uri->params.push_back(new sip_avp(tmp1,cstring(0,0)));
+	break;
 
     case URI_PVALUE:
 	tmp2.len = c - tmp2.s;
