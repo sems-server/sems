@@ -91,6 +91,8 @@ install-cfg: $(cfg-prefix)/$(cfg-dir)
 				$(cfg-prefix)/$(cfg-dir)sems.conf; \
 		fi
 
+		$(INSTALL-CFG) etc/app_mapping.conf $(cfg-prefix)/$(cfg-dir)etc
+
 install-bin: $(bin-prefix)/$(bin-dir)
 		$(INSTALL-TOUCH) $(bin-prefix)/$(bin-dir)$(NAME)
 		$(INSTALL-BIN) $(NAME) $(bin-prefix)/$(bin-dir)

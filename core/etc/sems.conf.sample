@@ -37,13 +37,28 @@ stderr=no
 #   (same as -D)
 loglevel=2
 
-# optional parameter: default_application
-# - this application is executed if the application is 
-#   not explicitely set with P-App-Name header/appname 
-#   parameter of unix command.
+# optional parameter: application
+# 
+# This config value controls which application is to be 
+# executed if there is no explicit application requested
+# from the SIP stack (i.e. unixsockctrl and second parameter 
+# of t_write_unix).
+#
+# This can be one of 
+#    $(ruri.user)       - user part of ruri is taken as application,
+#                         e.g. sip:announcement@host
+#    $(ruri.param)      - uri parameter "app", e.g. 
+#                         sip:joe@host.net;app=announcement
+#    $(mapping)         - regex=>application mapping is read from
+#                         app_mapping.conf (see app_mapping.conf)
+#    <application name> - application name configured here, e.g.
+#                         application=announcement
 #   
-# example:
-# default_application = conference
+# examples:
+# application = conference
+# application = $(mapping)
+# application = $(ruri.user)
+# application = $(ruri.param)
 
 # optional parameter: plugin_path=<path>
 # 

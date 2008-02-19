@@ -311,29 +311,45 @@ bool AmSessionContainer::postEvent(const string& local_tag,
 AmSession* AmSessionContainer::createSession(AmSipRequest& req, 
 					     AmArg* session_params)
 {
-  string& plugin_name = req.cmd;
-
-  if(plugin_name.empty()){
-
+  if(req.cmd.empty()){
     throw string("AmSessionContainer::createSession: req.cmd is empty!\n");
   } 
-  else if(plugin_name == "sems"){
-
-    plugin_name = getHeader(req.hdrs,APPNAME_HDR);
-    if(plugin_name.empty()) {
-      plugin_name = AmConfig::DefaultApplication;
+  else if(req.cmd == "sems"){
+    switch (AmConfig::AppSelect) {
+    case AmConfig::App_RURIUSER:
+      req.cmd = req.user; 
+      break;
+    case AmConfig::App_RURIPARAM: 
+      req.cmd = get_header_param(req.r_uri, "app");
+      break;
+    case AmConfig::App_MAPPING: 
+      {
+	req.cmd = "";	
+	for (AmConfig::AppMappingVector::iterator it = 
+	       AmConfig::AppMapping.begin(); 
+	     it != AmConfig::AppMapping.end(); it++){
+	  if (!regexec(&it->first, req.r_uri.c_str(), 0, NULL, 0)) {
+	    DBG("match of r_uri '%s' to application %s\n", 
+	      req.r_uri.c_str(), it->second.c_str());
+	    req.cmd = it->second;
+	    break;
+	  }
+	}
+      } break;
+    case AmConfig::App_SPECIFIED: 
+      req.cmd = AmConfig::Application; 
+      break;
     }
-    if (plugin_name.empty()) {
+    if (req.cmd.empty()) {
       string ex = "Unknown Application";
       throw ex; 
-    } 
+    }
   }
 
-  AmSessionFactory* state_factory = AmPlugIn::instance()->getFactory4App(plugin_name);
+  AmSessionFactory* state_factory = AmPlugIn::instance()->getFactory4App(req.cmd);
   if(!state_factory) {
-
-    ERROR("application '%s' not found !\n", plugin_name.c_str());
-    throw string("application '" + plugin_name + "' not found !");
+    ERROR("application '%s' not found !\n", req.cmd.c_str());
+    throw string("application '" + req.cmd + "' not found !");
   }
 	    
   AmSession* session = 0;

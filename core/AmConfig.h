@@ -33,6 +33,10 @@
 
 #include <string>
 using std::string;
+#include <utility>
+
+#include <sys/types.h>
+#include <regex.h>
 
 class AmSessionTimerConfig;
 
@@ -66,7 +70,7 @@ struct AmConfig
   static int RtpLowPort;
   /** Highest local RTP port */
   static int RtpHighPort;
-  /* Session Timer: -ssa */
+  /* Session Timer: */
   static AmSessionTimerConfig defaultSessionTimerConfig;
   /** number of session scheduler threads */
   static int MediaProcessorThreads;
@@ -82,12 +86,24 @@ struct AmConfig
   static bool SingleCodecInOK;
   static vector <string> CodecOrder;
   
-  /** this application is executed on incoming calls if there is no 
-   * app/P-App-Name header present */ 
-  static string DefaultApplication;
+  enum ApplicationSelector {
+    App_RURIUSER,
+    App_RURIPARAM,
+    App_MAPPING,
+    App_SPECIFIED
+  };
+  
+  /** "application" config value */ 
+  static string Application;
+  /** type of application selection (parsed from Application) */
+  static ApplicationSelector AppSelect;
+
+  /* this is regex->application mapping is used if  App_MAPPING */
+  typedef vector<std::pair<regex_t, string> > AppMappingVector;
+  static AppMappingVector AppMapping; 
 
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
-   static unsigned int DeadRtpTime;
+  static unsigned int DeadRtpTime;
 
   /** Ignore RTP Extension headers? */
   static bool IgnoreRTPXHdrs;

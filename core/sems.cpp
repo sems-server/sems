@@ -253,7 +253,7 @@ int main(int argc, char* argv[])
 	  "       local SIP IP:        %s\n"
 	  "       local SIP port:      %i\n"
 	  "       local media IP:      %s\n"
-	  "       default application: %s\n"
+	  "       application:         %s\n"
 	  "\n",
 	  AmConfig::ConfigurationFile.c_str(),
 	  AmConfig::PlugInPath.c_str(),
@@ -261,8 +261,8 @@ int main(int argc, char* argv[])
 	  AmConfig::LocalSIPIP.c_str(),
 	  AmConfig::LocalSIPPort,
 	  AmConfig::LocalIP.c_str(),
-	  AmConfig::DefaultApplication.empty()?
-	  "<not set>":AmConfig::DefaultApplication.c_str()
+	  AmConfig::Application.empty()?
+	  "<not set>":AmConfig::Application.c_str()
 	  );
 
   if(AmConfig::DaemonMode){

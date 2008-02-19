@@ -37,6 +37,8 @@
 #include "AmConfigReader.h"
 #include "AmUtils.h"
 
+#include <fstream>
+
 string       AmConfig::ConfigurationFile       = CONFIG_FILE;
 string       AmConfig::ModConfigPath           = MOD_CFG_PATH;
 string       AmConfig::PlugInPath              = PLUG_IN_PATH;
@@ -56,7 +58,9 @@ string       AmConfig::Signature               = "";
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
 bool         AmConfig::IgnoreRTPXHdrs          = false;
-string       AmConfig::DefaultApplication      = "";
+string       AmConfig::Application             = "";
+AmConfig::ApplicationSelector AmConfig::AppSelect        = AmConfig::App_SPECIFIED;
+AmConfig::AppMappingVector AmConfig::AppMapping;
 
 vector <string> AmConfig::CodecOrder;
 
@@ -195,7 +199,47 @@ int AmConfig::readConfiguration()
     }
   }
 
-  DefaultApplication  = cfg.getParameter("default_application");
+  Application  = cfg.getParameter("application");
+
+  if (Application == "$(ruri.user)") {
+    AppSelect = App_RURIUSER;
+  } else if (Application == "$(ruri.param)") {
+    AppSelect = App_RURIPARAM;
+  } else if (Application == "$(mapping)") {
+    AppSelect = App_MAPPING;  
+    string appcfg_fname = ModConfigPath + "app_mapping.conf"; 
+    DBG("Loading application mapping...\n");
+    std::ifstream appcfg(appcfg_fname.c_str());
+    if (!appcfg.good()) {
+      ERROR("could not load application mapping  file at '%s'\n",
+	    appcfg_fname.c_str());
+      return -1;
+    }
+
+    while (!appcfg.eof()) {
+      string entry;
+      getline (appcfg,entry);
+      if (!entry.length() || entry[0] == '#')
+	continue;
+      vector<string> re_v = explode(entry, "=>");
+      if (re_v.size() != 2) {
+	ERROR("Incorrect line '%s' in %s: expected format 'regexp=>app_name'\n",
+	      entry.c_str(), appcfg_fname.c_str());
+	return -1;
+      }
+      regex_t app_re;
+      if (regcomp(&app_re, re_v[0].c_str(), REG_NOSUB)) {
+	ERROR("compiling regex '%s' in %s.\n", 
+	      re_v[0].c_str(), appcfg_fname.c_str());
+	return -1;
+      }
+      DBG("adding application mapping '%s' => '%s'\n",
+	  re_v[0].c_str(),re_v[1].c_str());
+      AppMapping.push_back(make_pair(app_re, re_v[1]));
+    }
+  } else {
+    AppSelect = App_SPECIFIED;
+  }
 
   // fork 
   if(cfg.hasParameter("fork")){
@@ -292,7 +336,6 @@ AmSessionTimerConfig::~AmSessionTimerConfig()
 
 int AmSessionTimerConfig::readFromConfig(AmConfigReader& cfg)
 {
-  /* Session Timer: -ssa */
   // enable_session_timer
   if(cfg.hasParameter("enable_session_timer")){
     if(!setEnableSessionTimer(cfg.getParameter("enable_session_timer"))){
@@ -316,7 +359,6 @@ int AmSessionTimerConfig::readFromConfig(AmConfigReader& cfg)
       return -1;
     }
   }
-  /* end Session Timer */
   return 0;
 }
 
@@ -346,4 +388,3 @@ int AmSessionTimerConfig::setMinimumTimer(const string& minse) {
   DBG("setMinimumTimer(%i)\n",MinimumTimer);
   return 1;
 }
-/* end Session Timer: -ssa */
