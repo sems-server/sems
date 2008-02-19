@@ -205,6 +205,8 @@ int AmConfig::readConfiguration()
     AppSelect = App_RURIUSER;
   } else if (Application == "$(ruri.param)") {
     AppSelect = App_RURIPARAM;
+  } else if (Application == "$(apphdr)") {
+    AppSelect = App_APPHDR;
   } else if (Application == "$(mapping)") {
     AppSelect = App_MAPPING;  
     string appcfg_fname = ModConfigPath + "app_mapping.conf"; 

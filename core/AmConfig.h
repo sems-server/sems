@@ -89,6 +89,7 @@ struct AmConfig
   enum ApplicationSelector {
     App_RURIUSER,
     App_RURIPARAM,
+    App_APPHDR,
     App_MAPPING,
     App_SPECIFIED
   };
