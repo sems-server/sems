@@ -58,6 +58,10 @@ Introduction:
   * pin_collect:   collect a PIN, optionally verify it, and transfer
                    the call into a conference
 
+  * callback:      reject the call, call back caller later and have 
+                   her enter a number to call in b2bua with media relay
+                   mode
+
  alongside a set of example applications intended to help 
  development of custom services, including a calling card 
  application, a traffic generator, a component to control the 
@@ -102,7 +106,10 @@ Requirements:
 
  3. flite speech synthesizer for TTS in the ivr, optional
 
- 4. lame >= 3.95 for mp3 file output, optional
+ 4. lame >= 3.95 for mp3 file output, optional. mpg123 for mp3 playback,
+    optional
+
+ 5. xmlrpcpp for XMLRPC control, optional
 
 How to get started with SEMS:
 
@@ -185,24 +192,11 @@ Installation:
  6. Using SEMS
     
     SEMS needs to be told from the many possible applications that are
-    loaded which one to run. You can simply set default_application 
-    in sems.conf.
-
-    Another method is to append a header 
-     P-App-Name: <app name>
-    to the INVITE, for example 
-     P-App-Name: conference
-    or
-     P-App-Name: echo
-    In a typical SER-setup where an incoming INVITE should be 
-    sent off to conference, the following lines can be executed in
-    the proxy's (!) ser.cfg (assuming the media server runs on the
-    same host with its SIP stack SER on port 5070):
-      append_hf("P-App-Name: conference\r\n");
-      t_relay_to_udp("127.0.0.1","5070");
-      break;
-    A sample ser.cfg with which many applications can be tried is available
-    at http://ftp.iptel.org/pub/sems/ser_test_sems.cfg
+    loaded which one to run. You can simply set the application 
+    in sems.conf, e.g. application=conference. You can also define an
+    application mapping, i.e. numbers (R-URIs) that will be mapped to
+    applications, see the explanation of 'application' parameter in 
+    sems.conf.
    
     Alternatively, the SIP-stack-SER can be configured in ser-sems.cfg
     to send all calls directly to one application, in that case the line
