@@ -40,8 +40,8 @@ OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
 # Additions for Solaris support.
 ifeq ($(OS),solaris)
 	GETARCH=uname -p
-	CPPFLAGS += -DHAVE_SYS_SOCKIO_H -DBSD_COMP -include compat/solaris.h -fPIC
-        CFLAGS += -DHAVE_SYS_SOCKIO_H -DBSD_COMP -fPIC
+	CPPFLAGS += -DHAVE_SYS_SOCKIO_H -DBSD_COMP -fPIC -include compat/solaris.h
+        CFLAGS += -DHAVE_SYS_SOCKIO_H -DBSD_COMP -fPIC -include compat/solaris.h
         # For nanosleep.
         LDFLAGS += -lrt
         # For inet_aton.

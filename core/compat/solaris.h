@@ -1,9 +1,10 @@
 #ifndef __SOLARIS_H__
 #define __SOLARIS_H__
 
-#ifdef SOLARIS
 /*
  * New compatibility code for Solaris.
+ * This is conditionally included *in the Makefile.defs*, so it doesn't
+ * need to be conditionalized here.
  */
 
 #ifndef timeradd 
@@ -65,16 +66,15 @@ typedef unsigned long long int u_int64_t;
 #endif
 
 
-#if defined(sun)
 #include <sys/byteorder.h>
-#if defined(_BIG_ENDIAN)
+
+/* Which of these applies depends on which compiler suite is used! */
+#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN)
 #define BYTE_ORDER BIG_ENDIAN
-#else
+#elif (defined(__BYTE_ORDER) && (__BYTE_ORDER == __LITTLE_ENDIAN)) || defined(_LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN)
 #define BYTE_ORDER LITTLE_ENDIAN
-#endif
 #else
-#include <endian.h>
+#error "No endianness found for Solaris build."
 #endif
 
-#endif /* SOLARIS */
 #endif
