@@ -111,6 +111,8 @@ struct AmConfig
 
   static Dtmf::InbandDetectorType DefaultDTMFDetector;
 
+  static bool IgnoreSIGCHLD;
+
   /** Init function. Resolves SMTP server address. */
   static int init();
 

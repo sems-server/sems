@@ -84,6 +84,9 @@ int deamon_mode=1;
 
 static void sig_usr_un(int signo)
 {
+  if (signo == SIGCHLD && AmConfig::IgnoreSIGCHLD)
+    return;
+
   WARN("signal %d received\n", signo);
     
   if(!main_pid || (main_pid == getpid())){

@@ -113,6 +113,19 @@ extern "C" {
     return PyString_FromString(res.c_str());
   }
 
+
+  static PyObject* ivr_ignoreSigchld(PyObject*, PyObject* args)
+  {
+    int* ignore;
+    if(!PyArg_ParseTuple(args,"i",&ignore))
+      return NULL;
+
+    AmConfig::IgnoreSIGCHLD = ignore;
+    DBG("%sgnoring SIGCHLD.\n", ignore?"I":"Not i");
+
+    return Py_None;
+  }
+
   static PyObject* ivr_getSessionParam(PyObject*, PyObject* args)
   {
     char* headers;
@@ -165,6 +178,7 @@ extern "C" {
     {"getHeader", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeader wrapper"},
     {"getSessionParam", (PyCFunction)ivr_getSessionParam, METH_VARARGS,"Python getSessionParam wrapper"},
     {"createThread", (PyCFunction)ivr_createThread, METH_VARARGS, "Create another interpreter thread"},
+    {"setIgnoreSigchld", (PyCFunction)ivr_ignoreSigchld, METH_VARARGS, "ignore SIGCHLD signal"},
     {NULL}  /* Sentinel */
   };
 }
