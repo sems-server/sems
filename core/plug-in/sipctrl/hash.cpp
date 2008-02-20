@@ -40,8 +40,6 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 # include <endian.h>    /* attempt to define endianness */
 #endif
 
-#include "compat/solaris.h"
-
 /*
  * My best guess at if you are big-endian or little-endian.  This may
  * need adjustment.
@@ -49,10 +47,10 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
  * code elsewhere in SEMS, which started off using just __BYTE_ORDER. I
  * extended it to work on Solaris, too.
  */
-#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __LITTLE_ENDIAN)) || defined(_LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN)
+#if (defined(BYTE_ORDER) && (BYTE_ORDER == LITTLE_ENDIAN))
 # define HASH_LITTLE_ENDIAN 1
 # define HASH_BIG_ENDIAN 0
-#elif (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN)
+#elif (defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN))
 # define HASH_LITTLE_ENDIAN 0
 # define HASH_BIG_ENDIAN 1
 #else
