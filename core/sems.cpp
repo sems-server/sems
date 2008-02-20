@@ -87,12 +87,11 @@ static void sig_usr_un(int signo)
   if (signo == SIGCHLD && AmConfig::IgnoreSIGCHLD)
     return;
 
-  WARN("signal %d received\n", signo);
+  WARN("Signal %d received.\n", signo);
     
-  if(!main_pid || (main_pid == getpid())){
-
+  if (!main_pid || (main_pid == getpid())) {
     unlink(pid_file.c_str());
-    INFO("finished\n");
+    INFO("Finished.\n");
     exit(0);
   }
 
@@ -102,27 +101,27 @@ static void sig_usr_un(int signo)
 int set_sighandler(sighandler_t sig_usr)
 {
   if (signal(SIGINT, sig_usr) == SIG_ERR ) {
-    ERROR("no SIGINT signal handler can be installed\n");
+    ERROR("No SIGINT signal handler can be installed.\n");
     return -1;
   }
     
   if (signal(SIGPIPE, sig_usr) == SIG_ERR ) {
-    ERROR("no SIGPIPE signal handler can be installed\n");
+    ERROR("No SIGPIPE signal handler can be installed.\n");
     return -1;
   }
 
   if (signal(SIGCHLD , sig_usr)  == SIG_ERR ) {
-    ERROR("no SIGCHLD signal handler can be installed\n");
+    ERROR("No SIGCHLD signal handler can be installed.\n");
     return -1;
   }
 
   if (signal(SIGTERM , sig_usr)  == SIG_ERR ) {
-    ERROR("no SIGTERM signal handler can be installed\n");
+    ERROR("No SIGTERM signal handler can be installed.\n");
     return -1;
   }
 
   if (signal(SIGHUP , sig_usr)  == SIG_ERR ) {
-    ERROR("no SIGHUP signal handler can be installed\n");
+    ERROR("No SIGHUP signal handler can be installed.\n");
     return -1;
   }
 
@@ -131,17 +130,17 @@ int set_sighandler(sighandler_t sig_usr)
 
 int write_pid_file()
 {
-  FILE* fpid = fopen(pid_file.c_str(),"w");
+  FILE* fpid = fopen(pid_file.c_str(), "w");
 
-  if(fpid){
+  if (fpid) {
     string spid = int2str((int)getpid());
-    fwrite(spid.c_str(),spid.length(),1,fpid);
+    fwrite(spid.c_str(), spid.length(), 1, fpid);
     fclose(fpid);
     return 0;
   }
   else {
-    ERROR("could not write pid file '%s': %s\n",
-	  pid_file.c_str(),strerror(errno));
+    ERROR("Could not write pid file '%s': %s.\n",
+	  pid_file.c_str(), strerror(errno));
   }
 
   return -1;
@@ -183,8 +182,8 @@ static int use_args(char* progname, std::map<char,string>& args)
       break;
 	     
     case 'D':
-      if(sscanf(it->second.c_str(),"%u",&log_level) != 1){
-	fprintf(stderr,"%s: bad log level number: %s\n",progname,it->second.c_str());
+      if(sscanf(it->second.c_str(), "%u", &log_level) != 1){
+	fprintf(stderr, "%s: bad log level number: %s.\n", progname, it->second.c_str());
 	return -1;
       }
       break;
@@ -197,7 +196,7 @@ static int use_args(char* progname, std::map<char,string>& args)
       break;
 	     
     default:
-      ERROR("%s: bad parameter '-%c'\n",progname,it->first);
+      ERROR("%s: bad parameter '-%c'.\n", progname, it->first);
       return -1;
     }
   }
@@ -208,7 +207,7 @@ int main(int argc, char* argv[])
 {
   std::map<char,string> args;
 
-  if(parse_args(argc, argv, "hvE","ugPfiodxD", args)){
+  if(parse_args(argc, argv, "hvE", "ugPfiodxD", args)){
     print_usage(argv[0]);
     return -1;
   }
@@ -238,7 +237,7 @@ int main(int argc, char* argv[])
   AmConfig::readConfiguration();
   //     semsConfig.warnUnknownParams();
     
-  if(use_args(argv[0],args)){
+  if(use_args(argv[0], args)){
     print_usage(argv[0]);
     return -1;
   }
@@ -272,19 +271,19 @@ int main(int argc, char* argv[])
 
     if( (cfg_arg = args.find('g')) != args.end() ){
       unsigned int gid;
-      if(str2i(cfg_arg->second,gid)){
+      if(str2i(cfg_arg->second, gid)){
 	struct group* grnam = getgrnam(cfg_arg->second.c_str());
 	if(grnam != NULL){
 	  gid = grnam->gr_gid;
 	}
 	else{
-	  ERROR("could not find group '%s' in the group database\n",
+	  ERROR("Could not find group '%s' in the group database.\n",
 		cfg_arg->second.c_str());
 	  return -1;
 	}
       }
       if(setgid(gid)<0){
-	ERROR("cannot change gid to %i: %s",
+	ERROR("Cannot change gid to %i: %s.",
 	      gid,
 	      strerror(errno));
 	return -1;
@@ -293,19 +292,19 @@ int main(int argc, char* argv[])
 
     if( (cfg_arg = args.find('u')) != args.end() ){
       unsigned int uid;
-      if(str2i(cfg_arg->second,uid)){
+      if(str2i(cfg_arg->second, uid)){
 	struct passwd* pwnam = getpwnam(cfg_arg->second.c_str());
 	if(pwnam != NULL){
 	  uid = pwnam->pw_uid;
 	}
 	else{
-	  ERROR("could not find user '%s' in the user database.\n",
+	  ERROR("Could not find user '%s' in the user database.\n",
 		cfg_arg->second.c_str());
 	  return -1;
 	}
       }
       if(setuid(uid)<0){
-	ERROR("cannot change uid to %i: %s",
+	ERROR("Cannot change uid to %i: %s.",
 	      uid,
 	      strerror(errno));
 	return -1;
@@ -315,7 +314,7 @@ int main(int argc, char* argv[])
     /* fork to become!= group leader*/
     int pid;
     if ((pid=fork())<0){
-      ERROR("Cannot fork:%s\n", strerror(errno));
+      ERROR("Cannot fork: %s.\n", strerror(errno));
       return -1;
     }else if (pid!=0){
       /* parent process => exit*/
@@ -323,11 +322,11 @@ int main(int argc, char* argv[])
     }
     /* become session leader to drop the ctrl. terminal */
     if (setsid()<0){
-      ERROR("setsid failed: %s\n",strerror(errno));
+      ERROR("setsid failed: %s.\n", strerror(errno));
     }
     /* fork again to drop group  leadership */
     if ((pid=fork())<0){
-      ERROR("Cannot  fork:%s\n", strerror(errno));
+      ERROR("Cannot fork: %s.\n", strerror(errno));
       return -1;
     }else if (pid!=0){
       /*parent process => exit */
@@ -342,18 +341,18 @@ int main(int argc, char* argv[])
 
     /* try to replace stdin, stdout & stderr with /dev/null */
     if (freopen("/dev/null", "r", stdin)==0){
-      ERROR("unable to replace stdin with /dev/null: %s\n",
+      ERROR("Unable to replace stdin with /dev/null: %s.\n",
 	    strerror(errno));
       /* continue, leave it open */
     };
     if (freopen("/dev/null", "w", stdout)==0){
-      ERROR("unable to replace stdout with /dev/null: %s\n",
+      ERROR("Unable to replace stdout with /dev/null: %s.\n",
 	    strerror(errno));
       /* continue, leave it open */
     };
     /* close stderr only if log_stderr=0 */
     if ((!log_stderr) &&(freopen("/dev/null", "w", stderr)==0)){
-      ERROR("unable to replace stderr with /dev/null: %s\n",
+      ERROR("Unable to replace stderr with /dev/null: %s.\n",
 	    strerror(errno));
       /* continue, leave it open */
     };
@@ -389,9 +388,9 @@ int main(int argc, char* argv[])
   if (AmServer::instance()->hasIface()) {
     AmServer::instance()->run();
   } else {
-    ERROR("Sems cannot start without a control interface plug-in.\n"
-	  "Following plug-ins can be used: unixsockctrl, binrpcctrl and sipctrl\n"
-	  "If SEMS should use its own SIP stack instead of SER's, please load the sipctrl plug-in\n");
+    ERROR("SEMS cannot start without a control interface plug-in.\n"
+	  "The following plug-ins can be used: unixsockctrl, binrpcctrl, and sipctrl.\n"
+	  "If SEMS should use its own SIP stack instead of SER's, please load the sipctrl plug-in.\n");
     return -1;
   }
 
@@ -430,10 +429,10 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
 
   ifc.ifc_len = sizeof(struct ifreq) * MAX_NET_DEVICES;
   ifc.ifc_req = ifrs;
-  memset(ifrs,0,ifc.ifc_len);
+  memset(ifrs, 0, ifc.ifc_len);
     
-  if(ioctl(sd,SIOCGIFCONF,&ifc)!=0){
-    ERROR("getInterfaceList: ioctl: %s",strerror(errno));
+  if(ioctl(sd, SIOCGIFCONF, &ifc)!=0){
+    ERROR("getInterfaceList: ioctl: %s.\n", strerror(errno));
     exit(-1);
   }
 
@@ -449,22 +448,22 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
 
 static string getLocalIP(const string& dev_name)
 {
-  //DBG("getLocalIP(%s)\n",dev_name.c_str());
+  //DBG("getLocalIP(%s)\n", dev_name.c_str());
 
 #ifdef SUPPORT_IPV6
   struct sockaddr_storage ss;
-  if(inet_aton_v6(dev_name.c_str(),&ss))
+  if(inet_aton_v6(dev_name.c_str(), &ss))
 #else
     struct in_addr inp;
-  if(inet_aton(dev_name.c_str(),&inp))
+  if(inet_aton(dev_name.c_str(), &inp))
 #endif    
     {
       return dev_name;
     }
 
-  int sd = socket(PF_INET,SOCK_DGRAM,0);
+  int sd = socket(PF_INET, SOCK_DGRAM, 0);
   if(sd == -1){
-    ERROR("setLocalIP: socket: %s\n",strerror(errno));
+    ERROR("setLocalIP: socket: %s.\n", strerror(errno));
     exit(-1);
   }	
 
@@ -472,13 +471,13 @@ static string getLocalIP(const string& dev_name)
   std::vector<std::pair<string,string> > if_list;
 
   if(dev_name.empty())
-    getInterfaceList(sd,if_list);
+    getInterfaceList(sd, if_list);
   else {
-    memset(&ifr,0,sizeof(struct ifreq));
-    strncpy(ifr.ifr_name,dev_name.c_str(),IFNAMSIZ-1);
+    memset(&ifr, 0, sizeof(struct ifreq));
+    strncpy(ifr.ifr_name, dev_name.c_str(), IFNAMSIZ-1);
 	
-    if(ioctl(sd,SIOCGIFADDR,&ifr)!=0){
-      ERROR("setLocalIP: ioctl: %s\n",strerror(errno));
+    if(ioctl(sd, SIOCGIFADDR, &ifr)!=0){
+      ERROR("setLocalIP: ioctl: %s.\n", strerror(errno));
       exit(-1);
     }
 
@@ -493,11 +492,11 @@ static string getLocalIP(const string& dev_name)
   for( std::vector<std::pair<string,string> >::iterator it = if_list.begin();
        it != if_list.end(); ++it) {
 
-    memset(&ifr,0,sizeof(struct ifreq));
-    strncpy(ifr.ifr_name,it->first.c_str(),IFNAMSIZ-1);
+    memset(&ifr, 0, sizeof(struct ifreq));
+    strncpy(ifr.ifr_name, it->first.c_str(), IFNAMSIZ-1);
 
-    if(ioctl(sd,SIOCGIFFLAGS,&ifr)!=0){
-      ERROR("setLocalIP: ioctl: %s\n",strerror(errno));
+    if(ioctl(sd, SIOCGIFFLAGS, &ifr)!=0){
+      ERROR("setLocalIP: ioctl: %s.\n", strerror(errno));
       exit(-1);
     }
 
@@ -512,15 +511,15 @@ static string getLocalIP(const string& dev_name)
   close(sd);
 
   if(local_ip.empty()){
-    ERROR("Could not determine proper local address for media advertising !\n");
+    ERROR("Could not determine proper local address for media advertising!\n");
     ERROR("Try using 'ifconfig -a' to find a proper interface and configure\n");
-    ERROR("Sems to use it.\n");
+    ERROR("SEMS to use it.\n");
     exit(-1);
   }
 
   if(ifr.ifr_flags & IFF_LOOPBACK){
-    WARN("Media advertising using loopback address !\n");
-    WARN("Try to use another network interface if your Sems\n");
+    WARN("Media advertising using loopback address!\n");
+    WARN("Try to use another network interface if your SEMS\n");
     WARN("should be joinable from the rest of the world.\n");
   }
 
@@ -537,7 +536,7 @@ static int parse_args(int argc, char* argv[],
     char* arg = argv[i];
 
     if( (*arg != '-') || !*(++arg) ) { 
-      fprintf(stderr,"%s: invalid parameter: '%s'\n",argv[0],argv[i]);
+      fprintf(stderr, "%s: invalid parameter: '%s'.\n", argv[0], argv[i]);
       return -1;
     }    
 
@@ -548,14 +547,14 @@ static int parse_args(int argc, char* argv[],
     else if(options.find(*arg) != string::npos) {
 
       if(!argv[++i]){
-	fprintf(stderr,"%s: missing argument for parameter '-%c'\n",argv[0],*arg);
+	fprintf(stderr, "%s: missing argument for parameter '-%c'.\n", argv[0], *arg);
 	return -1;
       }
 	    
       args[*arg] = argv[i];
     }
     else {
-      fprintf(stderr,"%s: unknown parameter '-%c'\n",argv[0],arg[1]);
+      fprintf(stderr, "%s: unknown parameter '-%c'.\n", argv[0], arg[1]);
       return -1;
     }
   }
