@@ -28,7 +28,6 @@
 #include "AmAudioFile.h"
 #include "AmPlugIn.h"
 #include "AmUtils.h"
-#include "compat/solaris.h"
 
 #include <string.h>
 

@@ -33,7 +33,6 @@
 #define _telephone_event_h_
 
 #include <sys/types.h>
-#include "../compat/solaris.h"
 
 /*
  * The type definitions below are valid for 32-bit architectures and
