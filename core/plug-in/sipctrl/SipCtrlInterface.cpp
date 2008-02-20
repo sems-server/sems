@@ -198,6 +198,9 @@ int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
  	}
     }
 
+    msg->hdrs.push_back(new sip_header(0,"User-Agent",
+				       stl2cstr(AmConfig::Signature)));
+
     if(!req.hdrs.empty()) {
 	
  	char *c = (char*)req.hdrs.c_str();
@@ -295,17 +298,36 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	hdrs_len += content_type_len(stl2cstr(rep.content_type));
     }
 
+    if(!AmConfig::Signature.empty()) {
+	
+ 	hdrs_len += 10 /* "Server: " + CRLF */
+ 	    + AmConfig::Signature.length();
+    }
+
     char* hdrs_buf = NULL;
     char* c = hdrs_buf;
 
     if (hdrs_len) {
-      c = hdrs_buf = new char[hdrs_len];
-      
-      copy_hdrs_wr(&c,msg.hdrs);
-
-      if(!rep.body.empty()) {
-	  content_type_wr(&c,stl2cstr(rep.content_type));
-      }
+	
+	c = hdrs_buf = new char[hdrs_len];
+	
+	copy_hdrs_wr(&c,msg.hdrs);
+	
+	if(!AmConfig::Signature.empty()) {
+	    
+	    memcpy(c,"Server: ",8);
+	    c += 8;
+	    
+	    memcpy(c,AmConfig::Signature.c_str(),AmConfig::Signature.length());
+	    c += AmConfig::Signature.length();
+	    
+	    *(c++) = CR;
+	    *(c++) = LF;
+	}
+	
+	if(!rep.body.empty()) {
+	    content_type_wr(&c,stl2cstr(rep.content_type));
+	}
     }
 
     int ret = tl->send_reply(get_trans_bucket(h),(sip_trans*)t,
