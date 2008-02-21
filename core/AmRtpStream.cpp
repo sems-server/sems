@@ -368,8 +368,12 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
   sa.sin_family = AF_INET;
   sa.sin_port = htons(port);
     
-  if(!inet_aton(addr.c_str(),&sa.sin_addr)){
-    ERROR("address not valid (host: %s)\n",addr.c_str());
+  /* inet_aton only supports dot-notation IP address strings... but an RFC
+   * 4566 unicast-address, as found in c=, can be an FQDN (or other!).
+   * We need to do more sophisticated parsing -- hence p_s_i_f_n().
+   */
+  if (!populate_sockaddr_in_from_name(addr, &sa)) {
+    ERROR("Address not valid (host: %s).\n", addr.c_str());
     throw string("invalid address");
   }
 

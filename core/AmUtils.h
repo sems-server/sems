@@ -221,6 +221,14 @@ string get_addr_str(struct in_addr in);
 string uri_from_name_addr(const string& name_addr);
 string get_ip_from_name(const string& name);
 
+/* Generalized hostname/IP address handling -- wherever you would use
+ *   inet_aton(addr.c_str(), &sa.sin_addr)
+ * instead use
+ *   populate_sockaddr_in_from_name(addr, &sa)
+ */
+int populate_sockaddr_in_from_name(const string& name,
+                                               struct sockaddr_in *sa);
+
 #ifdef SUPPORT_IPV6
 int inet_aton_v6(const char* name, struct sockaddr_storage* ss);
 void set_port_v6(struct sockaddr_storage* ss, short port);

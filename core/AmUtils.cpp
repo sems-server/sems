@@ -398,6 +398,51 @@ string get_ip_from_name(const string& name)
   return get_addr_str(a);
 }
 
+/* Takes a string representation of an IP address, or an FQDN,
+ * and populates the provided struct sockaddr_in (similar to
+ * inet_aton).
+ * Returns the hostent for the input, or NULL on failure.
+ * Almost certainly won't work with IPv6 addresses.
+ */
+int populate_sockaddr_in_from_name(const string& name, struct sockaddr_in *sa) {
+
+  if (NULL == sa) {
+    return 0; 
+  }
+
+  int res = 0;
+  struct addrinfo hints;
+  struct addrinfo *result, *rp;
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family   = AF_INET;       // AF_UNSPEC for IPv4 or IPv6
+  hints.ai_socktype = SOCK_DGRAM;    // Datagram socket.
+  hints.ai_flags    = AI_ADDRCONFIG;
+  hints.ai_protocol = 0;             // Any protocol.
+
+  int s = getaddrinfo(name.c_str(), NULL, &hints, &result);
+  if (s != 0) {
+    WARN("getaddrinfo failed on %s: %s.\n",
+         name.c_str(),
+         gai_strerror(s));
+    return res;
+  }
+
+  for (rp = result; rp != NULL; rp = rp->ai_next) {
+    if ((rp->ai_addrlen  != sizeof(struct sockaddr_in)) ||   // Should not happen.
+        (rp->ai_socktype != SOCK_DGRAM) ||
+        (rp->ai_family   != AF_INET))                   // TODO: Won't behave with IPv6.
+      continue;
+    memcpy(&(sa->sin_addr),
+           &((struct sockaddr_in *)rp->ai_addr)->sin_addr,
+           sizeof(sa->sin_addr));
+    res = 1;
+    break;
+  }
+
+  freeaddrinfo(result);
+  return res;
+}
+
 string uri_from_name_addr(const string& name_addr)
 {
   string uri = name_addr;
