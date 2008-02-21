@@ -504,7 +504,7 @@ int trans_layer::send_request(sip_msg* msg)
     }
     else {
 	trans_bucket* bucket = get_trans_bucket(p_msg->callid->value,
-						get_cseq(p_msg)->str);
+						get_cseq(p_msg)->num_str);
 	bucket->lock();
 	sip_trans* t = bucket->add_trans(p_msg,TT_UAC);
 	if(p_msg->u.request->method == sip_request::INVITE){
@@ -552,7 +552,7 @@ void trans_layer::received_msg(sip_msg* msg)
 	DROP_MSG;
     }
 
-    unsigned int  h = hash(msg->callid->value, get_cseq(msg)->str);
+    unsigned int  h = hash(msg->callid->value, get_cseq(msg)->num_str);
     trans_bucket* bucket = get_trans_bucket(h);
     sip_trans* t = NULL;
 
@@ -750,6 +750,7 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 	    
 	    t->state = TS_COMPLETED;
 	
+	    t->clear_timer(STIMER_E);
 	    // TODO: timer should be 0 if reliable transport
 	    t->reset_timer(STIMER_K, K_TIMER, bucket->get_id());
 	    
@@ -877,7 +878,7 @@ void trans_layer::send_non_200_ack(sip_trans* t, sip_msg* reply)
 	+ copy_hdr_len(reply->to)
 	+ copy_hdr_len(inv->callid);
     
-    ack_len += cseq_len(get_cseq(inv)->str,method);
+    ack_len += cseq_len(get_cseq(inv)->num_str,method);
     ack_len += 2/* EoH CRLF */;
 
     if(!inv->route.empty())
@@ -897,7 +898,7 @@ void trans_layer::send_non_200_ack(sip_trans* t, sip_msg* reply)
     copy_hdr_wr(&c,reply->to);
     copy_hdr_wr(&c,inv->callid);
     
-    cseq_wr(&c,get_cseq(inv)->str,method);
+    cseq_wr(&c,get_cseq(inv)->num_str,method);
     
     *c++ = CR;
     *c++ = LF;
@@ -961,7 +962,7 @@ void trans_layer::send_200_ack(sip_msg* reply)
     request_len += copy_hdr_len(reply->from);
     request_len += copy_hdr_len(reply->callid);
     request_len += copy_hdr_len(max_forward);
-    request_len += cseq_len(get_cseq(reply)->str,cstring("ACK",3));
+    request_len += cseq_len(get_cseq(reply)->num_str,cstring("ACK",3));
     request_len += 2/* CRLF end-of-headers*/;
 
     // Allocate new message
@@ -979,7 +980,7 @@ void trans_layer::send_200_ack(sip_msg* reply)
     copy_hdr_wr(&c,reply->to);
     copy_hdr_wr(&c,reply->callid);
     copy_hdr_wr(&c,max_forward);
-    cseq_wr(&c,get_cseq(reply)->str,cstring("ACK",3));
+    cseq_wr(&c,get_cseq(reply)->num_str,cstring("ACK",3));
 
     *c++ = CR;
     *c++ = LF;

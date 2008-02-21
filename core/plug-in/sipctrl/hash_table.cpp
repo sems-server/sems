@@ -197,13 +197,13 @@ sip_trans* trans_bucket::match_request(sip_msg* msg)
 		continue;
 
 	    sip_cseq* it_cseq = dynamic_cast<sip_cseq*>((*it)->msg->cseq->p);
-	    if(cseq->str.len != it_cseq->str.len)
+	    if(cseq->num_str.len != it_cseq->num_str.len)
 		continue;
 
 	    if(memcmp(from->tag.s,it_from->tag.s,from->tag.len))
 		continue;
 
-	    if(memcmp(cseq->str.s,it_cseq->str.s,cseq->str.len))
+	    if(memcmp(cseq->num_str.s,it_cseq->num_str.s,cseq->num_str.len))
 		continue;
 
 	    
@@ -288,22 +288,22 @@ sip_trans* trans_bucket::match_reply(sip_msg* msg)
 	if((*it)->msg->via_p1->branch.len != msg->via_p1->branch.len)
 	    continue;
 	
-	if(get_cseq((*it)->msg)->str.len != get_cseq(msg)->str.len)
+	if(get_cseq((*it)->msg)->num_str.len != get_cseq(msg)->num_str.len)
 	    continue;
 
-	if(get_cseq((*it)->msg)->method.len != get_cseq(msg)->method.len)
+	if(get_cseq((*it)->msg)->method_str.len != get_cseq(msg)->method_str.len)
 	    continue;
 
 	if(memcmp(msg->via_p1->branch.s+MAGIC_BRANCH_LEN,
 		  branch,len))
 	    continue;
 
-	if(memcmp(get_cseq((*it)->msg)->str.s,get_cseq(msg)->str.s,
-		  get_cseq(msg)->str.len))
+	if(memcmp(get_cseq((*it)->msg)->num_str.s,get_cseq(msg)->num_str.s,
+		  get_cseq(msg)->num_str.len))
 	    continue;
 
-	if(memcmp(get_cseq((*it)->msg)->method.s,get_cseq(msg)->method.s,
-		  get_cseq(msg)->method.len))
+	if(memcmp(get_cseq((*it)->msg)->method_str.s,get_cseq(msg)->method_str.s,
+		  get_cseq(msg)->method_str.len))
 	    continue;
 
 	// found matching transaction

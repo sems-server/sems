@@ -500,14 +500,10 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     reply.remote_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
     reply.local_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
 
-    // Should i fill this one with anything
-    // i do not understand??? -> H_OTHER ?
-    //
-    // reply.hdrs;
-    
-    if( (msg->u.reply->code >= 200 ) &&
-	(msg->u.reply->code < 300 )){
-
+    if( (get_cseq(msg)->method == sip_request::INVITE) 
+	&& (msg->u.reply->code >= 200) 
+	&& (msg->u.reply->code < 300) ){
+	
 	tl->send_200_ack(msg);
     }
 

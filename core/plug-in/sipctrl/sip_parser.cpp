@@ -445,8 +445,8 @@ int parse_sip_msg(sip_msg* msg)
     if(!parse_cseq(cseq.get(),
 		   msg->cseq->value.s,
 		   msg->cseq->value.len) &&
-       cseq->str.len &&
-       cseq->method.len ) {
+       cseq->num_str.len &&
+       cseq->method_str.len ) {
 	
 // 	DBG("Cseq header: '%.*s' '%.*s'\n",
 // 	    cseq->str.len,cseq->str.s,

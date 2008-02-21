@@ -34,9 +34,10 @@
 
 struct sip_cseq: public sip_parsed_hdr
 {
-    cstring      str;
+    cstring      num_str;
     unsigned int num;
-    cstring      method;
+    cstring      method_str;
+    int          method;
 
     sip_cseq()
 	: sip_parsed_hdr(),

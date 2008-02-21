@@ -56,7 +56,7 @@ int parse_cseq(sip_cseq* cseq, char* beg, int len)
 	    case SP:
 	    case HTAB:
 		st = C_NUM_SWS;
-		cseq->str.set(beg, c-beg);
+		cseq->num_str.set(beg, c-beg);
 		break;
 		
 	    default:
@@ -91,7 +91,7 @@ int parse_cseq(sip_cseq* cseq, char* beg, int len)
 
 	    case SP:
 	    case HTAB:
-		cseq->method.set(beg,c-beg);
+		cseq->method_str.set(beg,c-beg);
 		return 0;
 	    }
 	    break;
@@ -102,10 +102,10 @@ int parse_cseq(sip_cseq* cseq, char* beg, int len)
 	case ST_CRLF:
 	    switch(saved_st){
 	    case C_NUM:
-		cseq->str.set(beg,c-(st==ST_CRLF?2:1)-beg);
+		cseq->num_str.set(beg,c-(st==ST_CRLF?2:1)-beg);
 		break;
 	    case C_METHOD:
-		cseq->method.set(beg,c-beg);
+		cseq->method_str.set(beg,c-beg);
 		return 0;
 	    }
 	    st = saved_st;
@@ -117,6 +117,12 @@ int parse_cseq(sip_cseq* cseq, char* beg, int len)
 	return MALFORMED_SIP_MSG;
     }
 
-    cseq->method.set(beg,c-beg);
+    cseq->method_str.set(beg,c-beg);
+    if(parse_method(&cseq->method, cseq->method_str.s, cseq->method_str.len) < 0){
+	
+	DBG("Cseq method parsing failed\n");
+	return MALFORMED_SIP_MSG;
+    }
+
     return 0;
 }
