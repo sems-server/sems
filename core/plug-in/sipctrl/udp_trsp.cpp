@@ -201,15 +201,26 @@ int udp_trsp::bind(const string& address, unsigned short port)
 /** @see transport */
 int udp_trsp::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
 {
-    int err = sendto(sd,msg,msg_len,0,(const struct sockaddr*)sa,sizeof(sockaddr_storage));
-    if(err < 0){
-	ERROR("sendto: %s\n",strerror(errno));
-	return err;
-    }
-    else if(err != msg_len){
-	ERROR("sendto: sent %i instead of %i bytes\n",err,msg_len);
-	return -1;
-    }
+  int err;
+#ifdef SUPPORT_IPV6
+  if (sa->ss_family == AF_INET6) {
+    err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, sizeof(sockaddr_in6));
+  }
+  else {
+#endif
+    err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, sizeof(sockaddr_in));
+#ifdef SUPPORT_IPV6
+  }
+#endif
 
-    return 0;
+  if (err < 0) {
+    ERROR("sendto: %s\n",strerror(errno));
+    return err;
+  }
+  else if (err != msg_len) {
+    ERROR("sendto: sent %i instead of %i bytes\n", err, msg_len);
+    return -1;
+  }
+
+  return 0;
 }
