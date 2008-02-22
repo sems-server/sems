@@ -66,7 +66,7 @@ vector <string> AmConfig::CodecOrder;
 
 Dtmf::InbandDetectorType 
 AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
-bool AmConfig::IgnoreSIGCHLD  = false;
+bool AmConfig::IgnoreSIGCHLD      = true;
 
 AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
 
