@@ -430,6 +430,7 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
 	}
 	else {
 	    req.from_uri = c2stlstr(na.addr);
+	    req.contact  = c2stlstr(msg->contact->value);
 	}
     }
     
@@ -493,6 +494,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 	
 	// 'Contact' header?
 	reply.next_request_uri = c2stlstr(na.addr); 
+	reply.contact = c2stlstr(msg->contact->value);
     }
 
     reply.callid = c2stlstr(msg->callid->value);
