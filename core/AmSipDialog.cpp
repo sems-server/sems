@@ -200,6 +200,11 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
   remote_uri = reply.next_request_uri;
 
+  if(!reply.dstip.empty()){
+      sip_ip     = reply.dstip;
+      sip_port   = reply.port;
+  }
+
   switch(status){
   case Disconnecting:
     if( t.method == "INVITE" ){

@@ -94,8 +94,9 @@ string SipCtrlInterface::getContact(const string &displayName,
   if (hostName.length())
     localUri += hostName;
   else {
-      localUri += AmConfig::LocalSIPIP; // Ser will replace that...
-      localUri += ":" + AmConfig::LocalSIPPort;
+
+      localUri += AmConfig::LocalSIPIP;
+      localUri += ":" + int2str(AmConfig::LocalSIPPort);
   }
 
   if (uriParams.length()) {
@@ -501,6 +502,9 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     
     reply.remote_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
     reply.local_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
+
+    reply.dstip = get_addr_str(((sockaddr_in*)(&msg->local_ip))->sin_addr); //FIXME: IPv6
+    reply.port  = int2str(ntohs(((sockaddr_in*)(&msg->local_ip))->sin_port));
 
     if( (get_cseq(msg)->method == sip_request::INVITE) 
 	&& (msg->u.reply->code >= 200) 

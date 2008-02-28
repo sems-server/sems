@@ -19,6 +19,9 @@ class _AmSipMsgInDlg
     string       body;
     unsigned int cseq;
 
+    string dstip; // IP where Ser received the message
+    string port;  // Ser's SIP port
+
     string       serKey;
 
     _AmSipMsgInDlg() : cseq(0) { }
@@ -50,8 +53,6 @@ class AmSipRequest : public _AmSipMsgInDlg
 
   string user;
   string domain;
-  string dstip; // IP where Ser received the message
-  string port;  // Ser's SIP port
   string r_uri;
   string from_uri;
   string from;
