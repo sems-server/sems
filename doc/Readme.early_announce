@@ -18,16 +18,16 @@ Session Parameters:
 If early_announce application was compiled WITHOUT -DUSE_MYSQL option,
 it searches for files to play following these rules:
 
- 1) [AnnouncePath]/[Domain]/[User].wav
- 2) [AnnouncePath]/[User].wav
+ 1) <announce_path>/[RURI-Domain]/[RURI-User].wav
+ 2) <announce_path>/[RURI-User].wav
+ 3) <announce_path>/<default_announce>
 
 Example sems (early_announce.conf) configuration for file system audio:
-
 announce_path=wav/
 default_announce=default_en.wav
 
 If early_announce application was compiled with -DUSE_MYSQL option, it
-support third Session Parameter
+supports third Session Parameter
 
    Language	      two letter string or empty string (e.g. en)
   
