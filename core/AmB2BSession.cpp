@@ -328,7 +328,10 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
 
 int AmB2BCallerSession::reinviteCaller(const AmSipReply& callee_reply)
 {
-  string content_type = getHeader(callee_reply.hdrs,"Content-Type");
+  string content_type = callee_reply.content_type;
+  if (!content_type.length())
+    content_type = getHeader(callee_reply.hdrs,"Content-Type");
+
   return dlg.sendRequest("INVITE",content_type,callee_reply.body);
 }
 
