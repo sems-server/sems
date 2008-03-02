@@ -44,7 +44,7 @@ extern "C" {
   /* priority at which we log */
 #define DPRINT_PRIO LOG_DEBUG
 
-#define LOG_NAME "Sems"
+#define LOG_NAME "sems"
 
   extern int log_level;
   extern int log_stderr;
