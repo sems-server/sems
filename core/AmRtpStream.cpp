@@ -244,8 +244,10 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
       DBG("Symmetric RTP: setting new remote address: %s:%i\n",
 	  addr_str.c_str(),port);
       // avoid comparing each time sender address
-      passive = false;
+    } else {
+      DBG("Symmetric RTP: remote end sends RTP from advertised address. Leaving passive mode.\n");
     }
+    passive = false;
   }
 #endif
 
