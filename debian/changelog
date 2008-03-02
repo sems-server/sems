@@ -1,6 +1,6 @@
-sems (1.1.0-1) unstable; urgency=low
+sems (1.0.0-0pre1) unstable; urgency=low
 
-  * Initial Debian Release.
+  * Debian Release Candidate 1 for 1.0.
 
- -- Stefan Sayer <sayer@iptel.org>  Thu, 7 Feb 2002 15:41:31 +0200
+ -- Stefan Sayer <sayer@iptel.org>  Sun, 2 Mar 2002 23:41:31 +0200
 
