@@ -199,8 +199,9 @@ int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
  	}
     }
 
-    msg->hdrs.push_back(new sip_header(0,"User-Agent",
-				       stl2cstr(AmConfig::Signature)));
+    if (AmConfig::Signature.length())
+      msg->hdrs.push_back(new sip_header(0,"User-Agent",
+					 stl2cstr(AmConfig::Signature)));
 
     if(!req.hdrs.empty()) {
 	
