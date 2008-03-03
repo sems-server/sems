@@ -215,6 +215,9 @@ class AmB2BCallerSession: public AmB2BSession
   void onB2BEvent(B2BEvent* ev);
 
   void set_sip_relay_only(bool r) { sip_relay_only = r; }
+
+  AmSipRequest* getInviteReq() { return &invite_req; }
+
 };
 
 /** \brief Callee leg of a B2B session */
