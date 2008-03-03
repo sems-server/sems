@@ -626,7 +626,7 @@ string UnixSocketAdapter::serialize(const AmSipRequest& req,
 #else
   // is lf2crlf() needed?! (see function for replies)
   if (!req.body.empty())
-      bodyFrame = "\"" + lf2crlf(req.body) + "\"\n";
+      bodyFrame = "\"" + req.body + "\"\n";
 #endif
 
   msg += extraHdrs + bodyFrame;

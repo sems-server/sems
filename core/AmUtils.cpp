@@ -295,10 +295,8 @@ int msg_get_line(char*& msg_c, char* str, size_t len)
     return 0;
     
   for(l=len; l && (*msg_c) && (*msg_c !='\n'); msg_c++ ){
-    if(*msg_c!='\r'){
-      *(s++) = *msg_c;
-      l--;
-    }
+    *(s++) = *msg_c;
+    l--;
   }
 
   if(*msg_c)
