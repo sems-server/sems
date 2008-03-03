@@ -178,6 +178,7 @@ bool UACAuth::onSendRequest(const string& method,
 			    const string& content_type,
 			    const string& body,
 			    string& hdrs,
+			    int flags,
 			    unsigned int cseq)
 {
   DBG("adding %d to list of sent requests.\n", cseq);
@@ -192,7 +193,8 @@ bool UACAuth::onSendRequest(const string& method,
 bool UACAuth::onSendReply(const AmSipRequest& req,
 			  unsigned int  code,const string& reason,
 			  const string& content_type,const string& body,
-			  string& hdrs)
+			  string& hdrs,
+			  int flags)
 {
   return false;
 }
