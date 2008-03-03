@@ -5,6 +5,7 @@
 #include "Ivr.h"
 
 #include "IvrSipDialog.h"
+#include "IvrSipRequest.h"
 #include "AmMediaProcessor.h"
 
 
@@ -13,6 +14,7 @@ typedef struct {
     
   PyObject_HEAD
   PyObject* dialog;
+  PyObject* invite_req;
   IvrDialog* p_dlg;
     
 } IvrDialogBase;
@@ -44,13 +46,22 @@ static PyObject* IvrDialogBase_new(PyTypeObject *type, PyObject *args, PyObject 
 	
     // initialize self.dialog
     self->dialog = IvrSipDialog_FromPtr(&self->p_dlg->dlg);
-
     if(!self->dialog){
       PyErr_Print();
       ERROR("IvrDialogBase: while creating IvrSipDialog instance\n");
       Py_DECREF(self);
       return NULL;
     }
+
+    // initialize self.invite_req
+    self->invite_req = IvrSipRequest_FromPtr(self->p_dlg->getInviteReq());
+    if(!self->invite_req){
+      PyErr_Print();
+      ERROR("IvrDialogBase: while creating IvrSipRequest instance for invite_req\n");
+      Py_DECREF(self);
+      return NULL;
+    }
+
   }
 
   DBG("IvrDialogBase_new\n");
@@ -443,6 +454,13 @@ static PyObject* IvrDialogBase_removeTimers(IvrDialogBase* self, PyObject* args)
 }
 
 static PyObject*
+IvrDialogBase_getinvite_req(IvrDialogBase *self, void *closure)
+{
+  Py_INCREF(self->invite_req);
+  return self->invite_req;
+}
+
+static PyObject*
 IvrDialogBase_getdialog(IvrDialogBase *self, void *closure)
 {
   Py_INCREF(self->dialog);
@@ -570,7 +588,11 @@ static PyMethodDef IvrDialogBase_methods[] = {
 static PyGetSetDef IvrDialogBase_getset[] = {
   {"dialog", 
    (getter)IvrDialogBase_getdialog, NULL,
-   "the dialog class",
+   "the dialog property",
+   NULL},
+  {"invite_req", 
+   (getter)IvrDialogBase_getinvite_req, NULL,
+   "the initial invite request",
    NULL},
   {NULL}  /* Sentinel */
 };
