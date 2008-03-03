@@ -37,6 +37,10 @@ using std::string;
 
 #define CONTACT_USER_PREFIX "sems"
 
+// flags which may be used when sending request/reply
+#define SIP_FLAGS_VERBATIM     1 // send request verbatim, 
+                                 // i.e. modify as little as possible
+
 /** \brief SIP transaction representation */
 struct AmSipTransaction
 {
@@ -68,6 +72,7 @@ class AmSipDialogEventHandler
 			     const string& content_type,
 			     const string& body,
 			     string& hdrs,
+			     int flags,
 			     unsigned int cseq)=0;
 
   virtual void onSendReply(const AmSipRequest& req,
@@ -75,7 +80,8 @@ class AmSipDialogEventHandler
 			   const string& reason,
 			   const string& content_type,
 			   const string& body,
-			   string& hdrs)=0;
+			   string& hdrs,
+			   int flags)=0;
 
   virtual ~AmSipDialogEventHandler() {};
 };
@@ -153,12 +159,14 @@ class AmSipDialog
 	    const string& reason,
 	    const string& content_type = "",
 	    const string& body = "",
-	    const string& hdrs = "");
+	    const string& hdrs = "",
+	    int flags = 0);
 
   int sendRequest(const string& method, 
 		  const string& content_type = "",
 		  const string& body = "",
-		  const string& hdrs = "");
+		  const string& hdrs = "",
+		  int flags = 0);
     
   int bye();
   int cancel();

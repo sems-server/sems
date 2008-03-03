@@ -71,6 +71,7 @@ bool AmSessionEventHandler::onSendRequest(const string& method,
 					  const string& content_type,
 					  const string& body,
 					  string& hdrs,
+					  int flags,
 					  unsigned int cseq)
 {
   return false;
@@ -81,7 +82,8 @@ bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
 					const string& reason,
 					const string& content_type,
 					const string& body,
-					string& hdrs)
+					string& hdrs,
+					int flags)
 {
   return false;
 }
@@ -749,16 +751,16 @@ int AmSession::acceptAudio(const string& body,
 }
 
 void AmSession::onSendRequest(const string& method, const string& content_type,
-			      const string& body, string& hdrs, unsigned int cseq)
+			      const string& body, string& hdrs, int flags, unsigned int cseq)
 {
-  CALL_EVENT_H(onSendRequest,method,content_type,body,hdrs,cseq);
+  CALL_EVENT_H(onSendRequest,method,content_type,body,hdrs,flags,cseq);
 }
 
 void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code, 
 			    const string& reason, const string& content_type,
-			    const string& body, string& hdrs)
+			    const string& body, string& hdrs, int flags)
 {
-  CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs);
+  CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs,flags);
 }
 
 void AmSession::onRtpTimeout()

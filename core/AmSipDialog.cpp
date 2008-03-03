@@ -289,13 +289,14 @@ int AmSipDialog::reply(const AmSipRequest& req,
 		       const string& reason,
 		       const string& content_type,
 		       const string& body,
-		       const string& hdrs)
+		       const string& hdrs,
+		       int flags)
 {
   string m_hdrs = hdrs;
 
   if(hdl)
     hdl->onSendReply(req,code,reason,
-		     content_type,body,m_hdrs);
+		     content_type,body,m_hdrs,flags);
 
   AmSipReply reply;
 
@@ -305,6 +306,13 @@ int AmSipDialog::reply(const AmSipRequest& req,
   reply.serKey = req.serKey;
   reply.local_tag = local_tag;
   reply.hdrs = m_hdrs;
+
+  if (!flags&SIP_FLAGS_VERBATIM) {
+    // add Signature
+    if (AmConfig::Signature.length())
+      reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
+  }
+
   if ((req.method!="CANCEL")&&
       !((req.method=="BYE")&&(code<300)))
     reply.contact = getContactHdr();
@@ -523,13 +531,14 @@ int AmSipDialog::cancel()
 int AmSipDialog::sendRequest(const string& method, 
 			     const string& content_type,
 			     const string& body,
-			     const string& hdrs)
+			     const string& hdrs,
+			     int flags)
 {
   string msg,ser_cmd;
   string m_hdrs = hdrs;
 
   if(hdl)
-    hdl->onSendRequest(method,content_type,body,m_hdrs,cseq);
+    hdl->onSendRequest(method,content_type,body,m_hdrs,flags,cseq);
 
   AmSipRequest req;
 
@@ -553,6 +562,15 @@ int AmSipDialog::sendRequest(const string& method,
     
   if(!m_hdrs.empty())
     req.hdrs = m_hdrs;
+  
+  if (!(flags&SIP_FLAGS_VERBATIM)) {
+    // add Signature
+    if (AmConfig::Signature.length())
+      req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
+    
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) /*TODO: configurable?!*/MAX_FORWARDS CRLF;
+
+  }
 
   if(!route.empty())
     req.route = getRoute();

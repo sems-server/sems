@@ -456,9 +456,6 @@ string UnixSocketAdapter::serialize(const AmSipReply &reply,
 
   string extraHdrs, bodyFrame;
 
-  if (AmConfig::Signature.length())
-    extraHdrs += "Server: " + AmConfig::Signature + "\n";
-
   if (! reply.hdrs.empty())
     extraHdrs += reply.hdrs;
 
@@ -618,11 +615,6 @@ string UnixSocketAdapter::serialize(const AmSipRequest& req,
   if(!req.body.empty())
     extraHdrs += "Content-Type: " + req.content_type + "\n";
     
-  extraHdrs += "Max-Forwards: " /*TODO: configurable?!*/MAX_FORWARDS "\n";
-
-  if (AmConfig::Signature.length()) 
-    extraHdrs += "User-Agent: " + AmConfig::Signature + "\n";
-
 #ifdef OpenSER
   extraHdrs = "\"" + lf2crlf(escape(extraHdrs)) + "\"\n";
 #endif

@@ -81,6 +81,7 @@ public:
 			     const string& content_type,
 			     const string& body,
 			     string& hdrs,
+			     int flags,
 			     unsigned int cseq);
 
   virtual bool onSendReply(const AmSipRequest& req,
@@ -88,7 +89,8 @@ public:
 			   const string& reason,
 			   const string& content_type,
 			   const string& body,
-			   string& hdrs);
+			   string& hdrs,
+			   int flags);
 };
 
 
@@ -441,6 +443,7 @@ public:
 			     const string& content_type,
 			     const string& body,
 			     string& hdrs,
+			     int flags,
 			     unsigned int cseq);
 
   virtual void onSendReply(const AmSipRequest& req,
@@ -448,7 +451,8 @@ public:
 			   const string& reason,
 			   const string& content_type,
 			   const string& body,
-			   string& hdrs);
+			   string& hdrs,
+			   int flags);
 };
 
 #endif

@@ -11,6 +11,9 @@
 #define SIP_HDR_CONTACT         "Contact"
 #define SIP_HDR_SUPPORTED       "Supported"
 #define SIP_HDR_REQUIRED        "Required"
+#define SIP_HDR_SERVER          "Server"
+#define SIP_HDR_USER_AGENT      "User-Agent"
+#define SIP_HDR_MAX_FORWARDS    "Max-Forwards"
 
 #define SIP_HDR_COL(_hdr)       _hdr ":"
 #define SIP_HDR_COLSP(_hdr)     SIP_HDR_COL(_hdr) " "

@@ -105,6 +105,7 @@ class SIPRegistration : public AmSipDialogEventHandler,
 		     const string& content_type,
 		     const string& body,
 		     string& hdrs,
+		     int flags,
 		     unsigned int cseq);
 	
   void onSendReply(const AmSipRequest& req,
@@ -112,7 +113,8 @@ class SIPRegistration : public AmSipDialogEventHandler,
 		   const string& reason,
 		   const string& content_type,
 		   const string& body,
-		   string& hdrs);
+		   string& hdrs,
+		   int flags);
   // DialogControl if
   AmSipDialog* getDlg() { return &dlg; }
   // CredentialHolder	

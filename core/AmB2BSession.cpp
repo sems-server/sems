@@ -202,13 +202,13 @@ void AmB2BSession::terminateOtherLeg()
 void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq);
-  dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs);
+  dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs,SIP_FLAGS_VERBATIM);
 }
 
 void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 {
   string content_type = getHeader(reply.hdrs,"Content-Type");
-  dlg.reply(orig,reply.code,reply.reason,content_type,reply.body);
+  dlg.reply(orig,reply.code,reply.reason,content_type,reply.body,"",SIP_FLAGS_VERBATIM);
 }
 
 // 
@@ -332,7 +332,7 @@ int AmB2BCallerSession::reinviteCaller(const AmSipReply& callee_reply)
   if (!content_type.length())
     content_type = getHeader(callee_reply.hdrs,"Content-Type");
 
-  return dlg.sendRequest("INVITE",content_type,callee_reply.body);
+  return dlg.sendRequest("INVITE",content_type,callee_reply.body, "", SIP_FLAGS_VERBATIM);
 }
 
 void AmB2BCallerSession::createCalleeSession()
@@ -373,7 +373,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
       relayed_req[dlg.cseq] = AmSipTransaction("INVITE", co_ev->r_cseq);
     }
 
-    dlg.sendRequest("INVITE",co_ev->content_type,co_ev->body,co_ev->hdrs);
+    dlg.sendRequest("INVITE",co_ev->content_type,co_ev->body,co_ev->hdrs,SIP_FLAGS_VERBATIM);
 
     return;
   }    
