@@ -325,7 +325,7 @@ int msg_get_lines(char*& msg_c, char* str, size_t len)
     return 0;
 
   while( max>0 && (l=msg_get_line(msg_c,s,max)) && l!=-1 ) {
-    if(!strcmp(".",s)) 
+    if(!strcmp(".",s) || !strcmp("\r",s)) 
       break;
     s+=l;
     *(s++)='\n';
