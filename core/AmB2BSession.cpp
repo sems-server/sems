@@ -90,6 +90,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 
       DBG("B2BSipReply: %i %s (fwd=%i)\n",reply_ev->reply.code,
 	  reply_ev->reply.reason.c_str(),reply_ev->forward);
+      DBG("B2BSipReply: content-type = %s\n",reply_ev->reply.content_type.c_str());
 
       if(reply_ev->forward){
 
@@ -144,6 +145,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply)
   bool fwd = t != relayed_req.end();
 
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
+  DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if(fwd) {
     AmSipReply n_reply = reply;
     n_reply.cseq = t->second.cseq;
@@ -207,8 +209,10 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 
 void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 {
-  string content_type = getHeader(reply.hdrs,"Content-Type");
-  dlg.reply(orig,reply.code,reply.reason,content_type,reply.body,"",SIP_FLAGS_VERBATIM);
+    //string content_type = getHeader(reply.hdrs,"Content-Type");
+    dlg.reply(orig,reply.code,reply.reason,
+	      reply.content_type,
+	      reply.body,"",SIP_FLAGS_VERBATIM);
 }
 
 // 

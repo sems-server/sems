@@ -369,6 +369,8 @@ bool UnixSocketAdapter::receive(AmSipReply &reply)
     goto failure;
   }
 
+  reply.content_type = getHeader(reply.hdrs,"Content-Type");
+
   return true;
 failure:
   //cleanup(ctrl);
