@@ -35,7 +35,9 @@
 #include "AmPromptCollection.h"
 #include "ampi/UACAuthAPI.h"
 
+#include "AmRingTone.h"
 #include "RoomInfo.h"
+#include "CallStats.h"
 
 #include <map>
 #include <string>
@@ -47,6 +49,7 @@ using std::ofstream;
 
 #include <sys/types.h>
 #include <regex.h>
+#include <time.h>
 
 class ConferenceStatus;
 class ConferenceStatusContainer;
@@ -60,7 +63,7 @@ class ConferenceStatusContainer;
 #define WRONG_PIN           "wrong_pin"
 
 // default path for files
-#define WEBCONF_ANNOUNCE_PATH "/usr/local/lib/sems/audio/"
+#define WEBCONF_ANNOUNCE_PATH "../apps/examples/webconference/"
 
 class WebConferenceEvent : public AmEvent 
 {
@@ -101,9 +104,17 @@ class WebConferenceFactory
   ofstream feedback_file;
   void saveFeedback(const string& s);
 
+  WCCCallStats* stats;
+
+  string getAccessUri(const string& room);
+  // for access of dialog to its url
+  string getAdminpin(const string& room);
+
 public:
   static string DigitsDir;
   static PlayoutType m_PlayoutType;
+  static string urlbase;
+  static string MasterPassword;
 
   WebConferenceFactory(const string& _app_name);
   AmSession* onInvite(const AmSipRequest&);
@@ -119,6 +130,8 @@ public:
 			   ConferenceRoomParticipant::ParticipantStatus status,
 			   const string& reason);
 
+  inline void callStats(bool success, unsigned int connect_t);
+  
   // DI API
   WebConferenceFactory* getInstance(){
     return _instance;
@@ -138,6 +151,7 @@ public:
   void vqConferenceFeedback(const AmArg& args, AmArg& ret);
   void resetFeedback(const AmArg& args, AmArg& ret);
   void flushFeedback(const AmArg& args, AmArg& ret);
+  void getRoomPassword(const AmArg& args, AmArg& ret);
 };
 
 class WebConferenceDialog 
@@ -149,7 +163,9 @@ public:
     None,
     EnteringPin,
     EnteringConference,
-    InConference
+    InConference,
+    InConferenceRinging,
+    InConferenceEarly
   }; 
 
 private:
@@ -157,6 +173,9 @@ private:
   AmPlaylistSeparator separator;
 
   AmPromptCollection& prompts;
+
+  // our ring tone
+  auto_ptr<AmRingTone> RingTone;
 
   // our connection to the conference
   auto_ptr<AmConferenceChannel> channel;
@@ -166,11 +185,19 @@ private:
   void connectConference(const string& room);
   void disconnectConference();
 
+  void onKicked();
+  void onMuted(bool mute);
+
   WebConferenceState state;
 
   WebConferenceFactory* factory;
   bool is_dialout; 
   UACAuthCred* cred;
+
+  bool muted;
+
+  time_t connect_ts;
+  time_t disconnect_ts;
 
 public:
   WebConferenceDialog(AmPromptCollection& prompts,
@@ -185,6 +212,9 @@ public:
   void onSipReply(const AmSipReply& reply);
   void onSessionStart(const AmSipRequest& req);
   void onSessionStart(const AmSipReply& rep);
+  void onEarlySessionStart(const AmSipReply& rep);
+  void onRinging(const AmSipReply& rep);
+
   void onDtmf(int event, int duration);
   void onBye(const AmSipRequest& req);
 

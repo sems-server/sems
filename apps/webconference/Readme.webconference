@@ -8,7 +8,6 @@ the conference rooms can be controlled via XMLRPC.
 It implements conference rooms with dial-in and conference room entry
 via DTMF, and authenticated dial-out.
 
-
 For dial-in, usually the user is asked to enter the conference room 
 number via keypad, followed by the star key.
 
@@ -21,7 +20,18 @@ number.
 Participants can be listed, kicked out, muted and unmuted over DI 
 (using xmlrpc2di over XMLRPC).
 
+You will probably want to load uac_auth and xmlrpc2di modules. 
+
+There is some very simple feedback and call statistics functionality, which 
+will save its results to a log file.
+
+An admin PIN can be set, which serves to retrieve room PINs (for site administrator
+or the like).
+
 implemented DI functions:
+
+All functions return as extra parameter the serverInfo, a status line showing the 
+SEMS version, and current call statistics.
 
 ----
 roomCreate(string room):
@@ -86,3 +96,9 @@ serverInfo():
       int load,
       int cpu
 ----
+
+additionally there is feedback functions to save call quality reports 
+from users: vqRoomFeedback, vqCallFeedback, vqConferenceFeedback.
+resetFeedback, flushFeedback can be used to manipulate the feedback files.
+
+getRoomPassword retrieves the room password with the master password.
