@@ -519,10 +519,10 @@ int AmSipDialog::cancel()
     
   AmSipRequest req;
   req.method = "CANCEL";
-  //usefull for SER-0.9.6/Open~
+  //useful for SER-0.9.6/Open~
   req.callid = callid;
   req.cseq = cseq;
-  //usefull for SER-2.0.0
+  //useful for SER-2.0.0
   req.serKey = serKey;
   string empty;
   return AmServer::sendRequest(req, empty) ? 0 : -1;
@@ -580,7 +580,7 @@ int AmSipDialog::sendRequest(const string& method,
     req.body = body;
   }
 
-  if (AmServer::sendRequest(req, serKey)) 
+  if (AmServer::sendRequest(req, serKey))
     return -1;
     
   uac_trans[cseq] = AmSipTransaction(method,cseq);
