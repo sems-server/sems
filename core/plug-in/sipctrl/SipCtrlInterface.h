@@ -61,6 +61,7 @@ class SipCtrlInterface:
 
 
     void prepare_routes(const list<sip_header*>& routes, string& route_field);
+    int cancel(const AmSipRequest& req);
 
 protected:
     void run();

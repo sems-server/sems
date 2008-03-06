@@ -188,10 +188,6 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 	}
     }
 
-    //if(add_contact){
-    //contact_wr(&c,contact);
-    //}
-
     if (hdrs.len) {
       memcpy(c,hdrs.s,hdrs.len);
       c += hdrs.len;
@@ -297,13 +293,12 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 
 	if(!is_lr){
 	    
-	    // TODO: detect beginning of next route
-	    //
+	    // detect beginning of next route
 
 	    enum {
 		RR_PARAMS=0,
 		RR_QUOTED,
-		RR_SEP_SWS,       // space(s) after ','
+		RR_SEP_SWS,  // space(s) after ','
 		RR_NXT_ROUTE
 	    };
 
@@ -374,11 +369,10 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 	    }
 
 	    
-	    // TODO: - copy r_uri at the end of 
-	    //         the route set.
-	    //
+	    // copy r_uri at the end of 
+	    // the route set.
 	    route_hdrs.push_back(new sip_header(0,"Route",r_uri));
-	    DBG("route_hdrs.push_back(0x%p)\n",route_hdrs.back());
+
 	    r_uri = na.addr;
 	}
 	
@@ -408,7 +402,7 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
     return 0;
 }
 
-int trans_layer::send_request(sip_msg* msg)
+int trans_layer::send_request(sip_msg* msg, char* tid)
 {
     // Request-URI
     // To
@@ -423,7 +417,8 @@ int trans_layer::send_request(sip_msg* msg)
     
     assert(transport);
 
-    if(set_next_hop(msg->route,msg->u.request->ruri_str,&msg->remote_ip) < 0){
+    if(set_next_hop(msg->route,msg->u.request->ruri_str,
+		    &msg->remote_ip) < 0){
 	// TODO: error handling
 	DBG("set_next_hop failed\n");
 	//delete msg;
@@ -516,19 +511,149 @@ int trans_layer::send_request(sip_msg* msg)
 	}
 	else {
 	    
-	    // TODO: which timer is suitable?
-
 	    // if transport == UDP
 	    t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
 	    // for any transport type
 	    t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
 
 	}
+
+	string t_id = int2hex(bucket->get_id()).substr(5,string::npos) 
+	    + ":" + long2hex((unsigned long)t);
+	memcpy(tid,t_id.c_str(),12);
+	
 	bucket->unlock();
     }
     
     return send_err;
 }
+
+int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
+{
+    bucket->lock();
+    if(!bucket->exist(t)){
+	DBG("No transaction to cancel: wrong key or finally replied\n");
+	bucket->unlock();
+	return 0;
+    }
+
+    sip_msg* req = t->msg;
+    
+    // RFC 3261 says: SHOULD NOT be sent for other request
+    // than INVITE.
+    if(req->u.request->method != sip_request::INVITE){
+	bucket->unlock();
+	ERROR("Trying to cancel a non-INVITE request (we SHOULD NOT do that)\n");
+	return -1;
+    }
+    
+    switch(t->state){
+    case TS_CALLING:
+	// do not send a request:
+	// just remove the transaction
+	bucket->remove_trans(t);
+	bucket->unlock();
+	return 0;
+
+    case TS_COMPLETED:
+	// final reply has been sent:
+	// do nothing!!!
+	bucket->unlock();
+	return 0;
+	
+    case TS_PROCEEDING:
+	// continue with CANCEL request
+	break;
+    }
+
+    cstring cancel_str("CANCEL");
+
+    int request_len = request_line_len(cancel_str,
+				       req->u.request->ruri_str);
+
+    char branch_buf[BRANCH_BUF_LEN];
+    cstring branch(branch_buf,BRANCH_BUF_LEN);
+    compute_branch(branch.s,req->callid->value,get_cseq(req)->num_str);
+    
+    string via(transport->get_local_ip());
+    if(transport->get_local_port() != 5060)
+	via += ":" + int2str(transport->get_local_port());
+
+    //request_len += via_len(stl2cstr(via),branch);
+    request_len += copy_hdr_len(req->via1);
+
+    request_len += copy_hdr_len(req->to)
+	+ copy_hdr_len(req->from)
+	+ copy_hdr_len(req->callid)
+	+ cseq_len(get_cseq(req)->num_str,cancel_str)
+	+ copy_hdrs_len(req->route)
+	+ copy_hdr_len(req->contact);
+
+    request_len += 2/* CRLF end-of-headers*/;
+
+    // Allocate new message
+    sip_msg* p_msg = new sip_msg();
+    p_msg->buf = new char[request_len];
+    p_msg->len = request_len;
+
+    // generate it
+    char* c = p_msg->buf;
+    request_line_wr(&c,cancel_str,
+		    req->u.request->ruri_str);
+
+    copy_hdr_wr(&c,req->via1);
+    copy_hdr_wr(&c,req->to);
+    copy_hdr_wr(&c,req->from);
+    copy_hdr_wr(&c,req->callid);
+    cseq_wr(&c,get_cseq(req)->num_str,cancel_str);
+    copy_hdrs_wr(&c,req->route);
+    copy_hdr_wr(&c,req->contact);
+
+    *c++ = CR;
+    *c++ = LF;
+
+    // and parse it
+    if(parse_sip_msg(p_msg)){
+	ERROR("Parser failed on generated request\n");
+	ERROR("Message was: <%.*s>\n",p_msg->len,p_msg->buf);
+	delete p_msg;
+	return MALFORMED_SIP_MSG;
+    }
+
+    memcpy(&p_msg->remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
+
+    DBG("Sending to %s:%i <%.*s>\n",
+	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
+	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
+	p_msg->len,p_msg->buf);
+
+    int send_err = transport->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
+    if(send_err < 0){
+	ERROR("Error from transport layer\n");
+	delete p_msg;
+    }
+    else {
+	trans_bucket* n_bucket = get_trans_bucket(p_msg->callid->value,
+						  get_cseq(p_msg)->num_str);
+
+	if(bucket != n_bucket)
+	    n_bucket->lock();
+
+	sip_trans* t = n_bucket->add_trans(p_msg,TT_UAC);
+	    
+	// if transport == UDP
+	t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
+	// for any transport type
+	t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
+
+	if(bucket != n_bucket)
+	    n_bucket->unlock();
+    }
+    
+    bucket->unlock();
+    return send_err;
+}
+
 
 void trans_layer::received_msg(sip_msg* msg)
 {
@@ -689,7 +814,7 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
     }
     
     to_tag = ((sip_from_to*)msg->to->p)->tag;
-    if(!to_tag.len){
+    if((t->msg->u.request->method != sip_request::CANCEL) && !to_tag.len){
 	DBG("To-tag missing in final reply\n");
 	return -1;
     }
@@ -754,7 +879,10 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 	    // TODO: timer should be 0 if reliable transport
 	    t->reset_timer(STIMER_K, K_TIMER, bucket->get_id());
 	    
-	    goto pass_reply;
+	    if(t->msg->u.request->method != sip_request::CANCEL)
+		goto pass_reply;
+	    else
+		goto end;
 
 	case TS_COMPLETED:
 	    // Absorb reply retransmission (only if UDP)

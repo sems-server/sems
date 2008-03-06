@@ -63,6 +63,20 @@ SipCtrlInterface::SipCtrlInterface(const string& bind_addr, unsigned short bind_
     tl = trans_layer::instance();
 }
 
+int SipCtrlInterface::cancel(const AmSipRequest& req)
+{
+    unsigned int  h=0;
+    unsigned long t=0;
+
+    if((sscanf(req.serKey.c_str(),"%x:%lx",&h,&t) != 2) ||
+       (h >= H_TABLE_ENTRIES)){
+	ERROR("Invalid transaction key: invalid bucket ID (key=%s)\n",req.serKey.c_str());
+	return -1;
+    }
+
+    return tl->cancel(get_trans_bucket(h),(sip_trans*)t);
+}
+
 #ifndef _STANDALONE
 
 string SipCtrlInterface::getContact(const string &displayName, 
@@ -118,6 +132,9 @@ string SipCtrlInterface::getContact(const string &displayName,
 
 int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
 {
+    if(req.method == "CANCEL")
+	return cancel(req);
+
     sip_msg* msg = new sip_msg();
     
     msg->type = SIP_REQUEST;
@@ -223,10 +240,13 @@ int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
 	    msg->body = stl2cstr(req.body);
 	}
     }
-    
-    tl->send_request(msg);
+
+    char tid[12];
+
+    tl->send_request(msg,tid);
     delete msg;
 
+    serKey = string(tid,12);
     return 0;
 }
 

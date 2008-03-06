@@ -109,8 +109,18 @@ class trans_layer
      * Caution: Route headers should not be added to the
      * general header list (msg->hdrs).
      * @param msg Pre-built message.
+     * @param tid buffer for the transaction key (char[12])
      */
-    int send_request(sip_msg* msg);
+    int send_request(sip_msg* msg, char* tid);
+
+    /**
+     * Cancels a request. 
+     * A CANCEL request is sent if necessary.
+     * @param bucket bucket of the original request.
+     * @param t transaction of the original request.
+     */
+    int cancel(trans_bucket* bucket, sip_trans* t);
+    
 
     /**
      * Called by the transport layer
