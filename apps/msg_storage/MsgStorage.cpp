@@ -1,0 +1,221 @@
+
+#include "AmPlugIn.h"
+#include "log.h"
+
+#include "MsgStorageAPI.h"
+#include "MsgStorage.h"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <utime.h>
+#include <errno.h>
+#include <dirent.h>
+#include <unistd.h>
+
+#define MSG_DIR "/var/lib/voicebox/" // TODO:  configurabel...
+
+MsgStorage* MsgStorage::_instance = 0;
+
+EXPORT_PLUGIN_CLASS_FACTORY(MsgStorage,"msg_storage");
+
+MsgStorage::MsgStorage(const string& name)
+    : AmDynInvokeFactory(name) { 
+      _instance = this; 
+}
+
+MsgStorage::~MsgStorage() { }
+
+int MsgStorage::onLoad() {
+  DBG("MsgStorage loaded.\n");
+  return 0;
+}
+
+void MsgStorage::invoke(const string& method, 
+			const AmArg& args, AmArg& ret) {
+  if(method == "msg_new"){
+    MessageDataFile* f = 
+      dynamic_cast<MessageDataFile*>(args.get(3).asObject());
+    if (NULL == f) {
+      throw(string("message data is not a file ptr."));
+    }
+    ret.push(msg_new(args.get(0).asCStr(),
+		     args.get(1).asCStr(),
+		     args.get(2).asCStr(),
+		     f->fp));
+  } else if(method == "msg_get"){
+    msg_get(args.get(0).asCStr(),
+	    args.get(1).asCStr(),
+	    args.get(2).asCStr(),
+	    ret);
+  } else if(method == "msg_markread"){
+    ret.push(msg_markread(args.get(0).asCStr(),
+			  args.get(1).asCStr(),
+			  args.get(2).asCStr()));
+  } else if(method == "msg_delete"){
+    ret.push(msg_delete(args.get(0).asCStr(),
+			args.get(1).asCStr(),
+			args.get(2).asCStr()));
+  } else if(method == "userdir_open"){
+    userdir_open(args.get(0).asCStr(),	      
+      args.get(1).asCStr(),
+      ret);
+  } else if(method == "userdir_close"){
+    ret.push(userdir_close(args.get(0).asCStr(),
+      args.get(1).asCStr()));
+  } else if(method == "userdir_getcount"){
+    userdir_getcount(args.get(0).asCStr(),
+      args.get(1).asCStr(),
+      ret);
+  } else if(method == "_list"){
+    ret.push("msg_new");
+    ret.push("msg_get");
+    ret.push("msg_markread");
+    ret.push("msg_delete");
+    
+    ret.push("userdir_open");
+    ret.push("userdir_close");
+    ret.push("userdir_getcount");
+  }
+  else
+    throw AmDynInvoke::NotImplemented(method); 
+}
+
+
+int MsgStorage::msg_new(string domain, string user, 
+  string msg_name, FILE* data) {
+
+  string path = MSG_DIR "/" + domain + "/" + user + "/";
+  int status = mkdir(path.c_str(), 
+		     S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  if (status && (errno != EEXIST)) {
+    ERROR("creating '%s': %s\n", 
+	  path.c_str(),strerror(errno));
+    return MSG_EUSRNOTFOUND;
+  }
+
+  FILE* fp = fopen((path + msg_name).c_str(), "wb");
+  if (!fp) {
+    ERROR("creating '%s': %s\n", 
+	  (path + msg_name).c_str(),strerror(errno));
+    return MSG_ESTORAGE;
+  }
+
+  if (data)
+    filecopy(data, fp);
+  fclose(fp);
+  return MSG_OK;
+}
+
+void MsgStorage::msg_get(string domain, string user, 
+  string msg_name, AmArg& ret) { 
+  string fname = MSG_DIR "/" + domain + "/" + user + "/"+ msg_name;
+  FILE* fp = fopen(fname.c_str(), "r");
+  if (!fp) 
+    ret.push(MSG_EMSGNOTFOUND);    
+  else 
+    ret.push(MSG_OK);    
+
+  AmArg af;
+  af.setBorrowedPointer(new MessageDataFile(fp));
+  ret.push(af);
+}
+
+int MsgStorage::msg_markread(string domain, string user, string msg_name) { 
+  string path = MSG_DIR "/" +  domain + "/" + user + "/" + msg_name;
+
+  struct stat e_stat;
+  if (stat(path.c_str(), &e_stat)) {
+    ERROR("cannot stat '%s': %s\n", 
+	  path.c_str(),strerror(errno));
+    return MSG_EMSGNOTFOUND;
+  }
+
+  struct utimbuf buf;
+  buf.actime = e_stat.st_mtime+1;
+  buf.modtime = e_stat.st_mtime;
+
+  if (utime(path.c_str(), &buf)) {
+    ERROR("cannot utime '%s': %s\n", 
+	  path.c_str(),strerror(errno));
+    return MSG_EREADERROR;
+  }
+
+  return MSG_OK;
+}
+
+int MsgStorage::msg_delete(string domain, string user, string msg_name) { 
+  string path = MSG_DIR "/" + domain + "/" + user + "/" + msg_name;
+  if (unlink(path.c_str())) {
+      ERROR("cannot unlink '%s': %s\n", 
+	    path.c_str(),strerror(errno));
+      return MSG_EMSGNOTFOUND;
+  }
+  return MSG_OK;
+}
+
+void MsgStorage::userdir_open(string domain, string user, AmArg& ret) { 
+  string path = MSG_DIR "/" +  domain + "/" + user + "/";
+  DBG("trying to list '%s'\n", path.c_str());
+  DIR* dir = opendir(path.c_str());
+  if (!dir) {
+    ret.push(MSG_EUSRNOTFOUND);
+    ret.push(AmArg()); // empty lis
+    return;
+  }
+
+  int err=0;
+  struct dirent* entry;
+  AmArg msglist;
+  msglist.assertArray(0); // make it an array
+  while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
+    string msgname(entry->d_name);
+      if(!msgname.length() ||
+	 msgname[0] == '.'){
+	continue;
+      }
+    struct stat e_stat;
+    if (stat((path+msgname).c_str(), &e_stat)) {
+      ERROR("cannot stat '%s': %s\n", 
+	    (path+msgname).c_str(),strerror(errno));
+      continue;
+    }
+    AmArg msg;
+    msg.push(msgname.c_str());
+    // TODO: change the system here, st_atime/mtime/... 
+    // is not really safe for saving read status!
+
+    if (e_stat.st_atime != e_stat.st_mtime) {
+      msg.push(0);      
+    } else {      
+      msg.push(1);      
+    }
+    msg.push((int)e_stat.st_size);      
+
+    msglist.push(msg);
+  }
+  closedir(dir);
+  // uh, this is really inefficient...
+  ret.push(MSG_OK);
+  ret.push(msglist);
+}
+
+int MsgStorage::userdir_close(string domain, string user) { return 0; }
+void MsgStorage::userdir_getcount(string domain, string user, AmArg& ret) { }
+
+// copies ifp to ofp, blockwise
+void MsgStorage::filecopy(FILE* ifp, FILE* ofp) {
+  size_t nread;
+  char buf[1024];
+  
+  rewind(ifp);
+  while (!feof(ifp)) {
+    nread = fread(buf, 1, 1024, ifp);
+    if (fwrite(buf, 1, nread, ofp) != nread)
+      break;
+  }
+}
+
+
+
+
+

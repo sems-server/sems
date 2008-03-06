@@ -33,13 +33,16 @@
 #endif
 
 #include "AmSession.h"
-#include "AmAudioFile.h"
 #include "AmConfigReader.h"
 #include "EmailTemplate.h"
+#include "AmMail.h"
 #include "AmPlaylist.h"
+#include "AmAudioFile.h"
 
 #include <string>
+#include <map>
 using std::string;
+using std::map;
 
 // defaults for config options
 #define SMTP_ADDRESS_IP     "localhost"
@@ -47,79 +50,88 @@ using std::string;
 
 class AmMail;
 
-/** \brief Factory for voicemail sessions */
+#define MODE_VOICEMAIL 0
+#define MODE_BOX       1
+#define MODE_BOTH      2
+
+#define MSG_SEPARATOR "+" // separates values in message name
+
 class AnswerMachineFactory: public AmSessionFactory
 {
-  std::map<string, EmailTemplate> email_tmpl;
+    map<string, EmailTemplate> email_tmpl;
 
-  int getEmailAddress();
+    int getEmailAddress();
 
 #ifdef USE_MYSQL
-  int loadEmailTemplatesFromMySQL();
+    int loadEmailTemplatesFromMySQL();
 #else
-  int loadEmailTemplates(const string& path);
+    int loadEmailTemplates(const string& path);
 #endif
 
 public:
-  static string EmailAddress;
-  static string RecFileExt;
-  static string AnnouncePath;
-  static string DefaultAnnounce;
-  static int    MaxRecordTime;
-  static int    MinRecordTime;
-  static AmDynInvokeFactory* UserTimer;
+    static string RecFileExt;
+    static string AnnouncePath;
+    static string DefaultAnnounce;
+    static int    MaxRecordTime;
+    static AmDynInvokeFactory* UserTimer;
+    static AmDynInvokeFactory* MessageStorage;
+    static bool SaveEmptyMsg;
 
-  /** After server start, IP of the SMTP server. */
-  static string SmtpServerAddress;
-  /** SMTP server port. */
-  static unsigned int SmtpServerPort;
+    /** After server start, IP of the SMTP server. */
+    static string SmtpServerAddress;
+    /** SMTP server port. */
+    static unsigned int SmtpServerPort;
 
 #ifdef USE_MYSQL
-  static mysqlpp::Connection Connection;
+    static mysqlpp::Connection Connection;
 #endif
 
-  AnswerMachineFactory(const string& _app_name);
+    AnswerMachineFactory(const string& _app_name);
 
-  int onLoad();
-  AmSession* onInvite(const AmSipRequest& req);
+    int onLoad();
+    AmSession* onInvite(const AmSipRequest& req);
 };
 
-/** \brief implementation of voicemail session logic */
 class AnswerMachineDialog : public AmSession
 {
-  AmAudioFile a_greeting,a_beep;
-  AmAudioFile a_msg;
-  AmPlaylist playlist;
+    AmAudioFile a_greeting,a_beep;
+    AmAudioFile a_msg;
+    AmPlaylist playlist;
 
-  string announce_file;
-  string msg_filename;
+    string announce_file;
+    string msg_filename;
 
-  const EmailTemplate* tmpl;
-  EmailTmplDict  email_dict;
+    const EmailTemplate* tmpl;
+    EmailTmplDict  email_dict;
 
-  AmDynInvoke* user_timer;
+    AmDynInvoke* user_timer;
+    AmDynInvoke* msg_storage;
 
-  int status;
+    int status;
+    int vm_mode; // MODE_*
 
-  void request2dict(const AmSipRequest& req);
-  void sendMailNotification();
+    //void sendMailNotification();
+    void saveMessage();
+    void saveBox(FILE* fp);
 
-public:
-  AnswerMachineDialog(const string& email, 
+ public:
+  AnswerMachineDialog(const string& user, 
+		      const string& sender, 
+		      const string& domain,
+		      const string& email, 
 		      const string& announce_file, 
+		      int vm_mode,
 		      const EmailTemplate* tmpl);
 
-  ~AnswerMachineDialog();
+    ~AnswerMachineDialog();
 
-  void process(AmEvent* event);
+    void process(AmEvent* event);
 
-  void onSessionStart(const AmSipRequest& req);
-  void onBye(const AmSipRequest& req);
-  void onDtmf(int event, int duration_msec) {}
+    void onSessionStart(const AmSipRequest& req);
+    void onBye(const AmSipRequest& req);
+    void onDtmf(int event, int duration_msec) {}
 
-  static void clean_up_mail(AmMail* mail);
-
-  friend class AnswerMachineFactory;
+    friend class AnswerMachineFactory;
 };
 
 #endif
