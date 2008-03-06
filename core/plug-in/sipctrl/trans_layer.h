@@ -74,6 +74,11 @@ class trans_layer
     int set_next_hop(list<sip_header*>& route_hdrs, cstring& r_uri, 
 		     sockaddr_storage* remote_ip);
 
+    /**
+     * Transaction timeout
+     */
+    void timeout(trans_bucket* bucket, sip_trans* t);
+
  public:
 
     /**

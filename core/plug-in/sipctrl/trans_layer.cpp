@@ -402,6 +402,31 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
     return 0;
 }
 
+void trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
+{
+    t->reset_all_timers();
+    t->state = TS_TERMINATED;
+
+    // send 408 to 'ua'
+    sip_msg  msg;
+    sip_msg* req = t->msg;
+
+    msg.type = SIP_REPLY;
+    msg.u.reply = new sip_reply();
+
+    msg.u.reply->code = 408;
+    msg.u.reply->reason = cstring("Timeout");
+
+    msg.from = req->from;
+    msg.to = req->to;
+    msg.cseq = req->cseq;
+    msg.callid = req->callid;
+
+    ua->handle_sip_reply(&msg);
+
+    bucket->remove_trans(t);
+}
+
 int trans_layer::send_request(sip_msg* msg, char* tid)
 {
     // Request-URI
@@ -1166,20 +1191,10 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	switch(tr->state) {
 
 	case TS_CALLING:
-	    tr->clear_timer(STIMER_A);
-	    tr->state = TS_TERMINATED;
-	    bucket->remove_trans(tr);
-	    // TODO: send 408 to 'ua'
-	    DBG("Transaction timeout (INV)\n");
-	    break;
-
 	case TS_TRYING:
 	case TS_PROCEEDING:
-	    tr->clear_timer(STIMER_E);
-	    tr->state = TS_TERMINATED;
-	    bucket->remove_trans(tr);
-	    // TODO: send 408 to 'ua'
-	    DBG("Transaction timeout (!INV)\n");
+	    DBG("Transaction timeout!\n");
+	    timeout(bucket,tr);
 	    break;
 	}
 	break;
