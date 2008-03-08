@@ -34,6 +34,9 @@ using std::stack;
 
 EXPORT_CONTROL_INTERFACE_FACTORY(SipCtrlInterfaceFactory,MOD_NAME);
 
+string SipCtrlInterfaceFactory::outbound_host = "";
+unsigned int SipCtrlInterfaceFactory::outbound_port = 0;
+
 AmCtrlInterface* SipCtrlInterfaceFactory::instance()
 {
     SipCtrlInterface* ctrl = new SipCtrlInterface(bind_addr,bind_port);
@@ -50,6 +53,19 @@ int SipCtrlInterfaceFactory::onLoad()
   
     INFO("SIP bind_addr: `%s'.\n", bind_addr.c_str());
     INFO("SIP bind_port: `%i'.\n", bind_port);
+
+    if (!AmConfig::OutboundProxy.empty()) {
+	sip_uri parsed_uri;
+	if (parse_uri(&parsed_uri, (char *)AmConfig::OutboundProxy.c_str(),
+		      AmConfig::OutboundProxy.length()) < 0) {
+	    ERROR("invalid outbound_proxy specified\n");
+	    return -1;
+	}
+	SipCtrlInterfaceFactory::outbound_host = c2stlstr(parsed_uri.host);
+	if (parsed_uri.port) {
+	    SipCtrlInterfaceFactory::outbound_port = parsed_uri.port;
+	}
+    }
 
     return 0;
     

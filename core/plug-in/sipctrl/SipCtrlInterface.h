@@ -27,6 +27,10 @@ class SipCtrlInterfaceFactory: public AmCtrlInterfaceFactory
     unsigned short bind_port;
 
 public:
+
+    static string         outbound_host;
+    static unsigned int   outbound_port;
+
     SipCtrlInterfaceFactory(const string& name): AmCtrlInterfaceFactory(name) {}
     ~SipCtrlInterfaceFactory() {}
 

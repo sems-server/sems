@@ -17,6 +17,7 @@
 #include "SipCtrlInterface.h"
 #include "AmUtils.h"
 #include "AmSipMsg.h"
+#include "AmConfig.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -287,9 +288,14 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 	    }
 
 	}
-	
-	next_hop  = c2stlstr(na.uri.host);
-	next_port = na.uri.port;
+
+	if (SipCtrlInterfaceFactory::outbound_host.empty()) {
+	    next_hop  = c2stlstr(na.uri.host);
+	    next_port = na.uri.port;
+	} else {
+	    next_hop = SipCtrlInterfaceFactory::outbound_host;
+	    next_port = SipCtrlInterfaceFactory::outbound_port;
+	}	    
 
 	if(!is_lr){
 	    
@@ -379,17 +385,23 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
     }
     else {
 
-	sip_uri parsed_r_uri;
-	err = parse_uri(&parsed_r_uri,r_uri.s,r_uri.len);
-	if(err < 0){
-	    ERROR("Invalid Request URI\n");
-	    return -1;
+	if (SipCtrlInterfaceFactory::outbound_host.empty()) {
+	    sip_uri parsed_r_uri;
+	    err = parse_uri(&parsed_r_uri,r_uri.s,r_uri.len);
+	    if(err < 0){
+		ERROR("Invalid Request URI\n");
+		return -1;
+	    }
+	    next_hop  = c2stlstr(parsed_r_uri.host);
+	    next_port = parsed_r_uri.port;
+	} else {
+	    next_hop = SipCtrlInterfaceFactory::outbound_host;
+	    next_port = SipCtrlInterfaceFactory::outbound_port;
 	}
-
-	next_hop  = c2stlstr(parsed_r_uri.host);
-	next_port = parsed_r_uri.port;
     }
 
+    DBG("next_hop:next_port is <%s:%u>\n", next_hop.c_str(), next_port);
+    
     err = resolver::instance()->resolve_name(next_hop.c_str(),
 					     remote_ip,IPv4,UDP);
     if(err < 0){
