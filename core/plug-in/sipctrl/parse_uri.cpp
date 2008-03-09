@@ -339,7 +339,7 @@ int parse_uri(sip_uri* uri, char* beg, int len)
 		continue;
 	    default:
 		DBG("Unknown URI scheme\n");
-		return 0;
+		return MALFORMED_URI;
 	    }
 	    break;
 	case SIP_S:
@@ -350,7 +350,7 @@ int parse_uri(sip_uri* uri, char* beg, int len)
 		continue;
 	    default:
 		DBG("Unknown URI scheme\n");
-		return 0;
+		return MALFORMED_URI;
 	    }
 	    break;
 	case SIP_I:
@@ -361,7 +361,7 @@ int parse_uri(sip_uri* uri, char* beg, int len)
 		continue;
 	    default:
 		DBG("Unknown URI scheme\n");
-		return 0;
+		return MALFORMED_URI;
 	    }
 	    break;
 	case SIP_P:
@@ -376,7 +376,7 @@ int parse_uri(sip_uri* uri, char* beg, int len)
 		continue;
 	    default:
 		DBG("Unknown URI scheme\n");
-		return 0;
+		return MALFORMED_URI;
 	    }
 	    break;
 	case SIPS_S:
@@ -387,12 +387,12 @@ int parse_uri(sip_uri* uri, char* beg, int len)
 		return parse_sip_uri(uri,c+1,len-(c+1-beg));
 	    default:
 		DBG("Unknown URI scheme\n");
-		return 0;
+		return MALFORMED_URI;
 	    }
 	    break;
 	default:
 	    DBG("bug: unknown state\n");
-	    return 1;
+	    return UNDEFINED_ERR;
 	}
     }
 
