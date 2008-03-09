@@ -349,6 +349,9 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
   for (i = 0; i < len; i++) {
     if (extra_headers[i] == '|') extra_headers[i] = '\n';
   }
+  if (extra_headers[len - 1] != '\n') {
+      extra_headers += '\n';
+  }
 
   if (dialout_suffix.length() == 0) {
     if (!ConferenceFactory::DialoutSuffix.empty()) {
