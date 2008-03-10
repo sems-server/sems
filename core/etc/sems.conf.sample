@@ -83,7 +83,7 @@ plugin_path=/usr/local/lib/sems/plug-in/
 # ('blacklist'). This has only effect it load_plugins is empty.
 # If empty, all modules in plugin_path are loaded.
 #
-exclude_plugins=binrpcctrl;sipctrl;
+exclude_plugins=binrpcctrl;unxisockctrl;voicebox
 
 # optional parameter: exclude_payloads=<payload list>
 #
@@ -155,7 +155,7 @@ media_processor_threads=1
 #  
 #   default: 5060
 #
-#sip_port=5060
+sip_port=5080
 
 # optional parameter: outbound_proxy=uri
 #
