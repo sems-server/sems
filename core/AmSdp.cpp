@@ -167,6 +167,7 @@ int AmSdp::parse()
     parse_sdp_line(this,s,'p',true,NULL,false) ||
     parse_sdp_line(this,s,'c',true,parse_sdp_connection) ||
     parse_sdp_line(this,s,'b',true,NULL,false) ||
+    parse_sdp_line(this,s,'a',true,NULL,false) ||
     parse_sdp_line(this,s,'t',true,NULL,false) ||
     parse_sdp_line(this,s,'k',true,NULL) ||
     parse_sdp_line(this,s,'a',true,NULL,false) ||
