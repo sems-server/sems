@@ -35,9 +35,9 @@ libbinrpc:
 	$(MAKE) all
 
 $(LIBBINRPC_LIB)/libbinrpc.a: 
-	$(MAKE) -C $(LIBBINRPC_DIR) all CC=$(CC) CXX=$(CXX) LD=$(LD)
+	cd $(LIBBINRPC_DIR) && $(MAKE) all
 
 libbinrpc_clean:
-	$(MAKE) -C $(LIBBINRPC_DIR) clean
+	cd $(LIBBINRPC_DIR) && $(MAKE) clean
 
 include ../Makefile.app_module 
