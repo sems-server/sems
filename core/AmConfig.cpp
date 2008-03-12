@@ -62,6 +62,10 @@ string       AmConfig::Application             = "";
 AmConfig::ApplicationSelector AmConfig::AppSelect        = AmConfig::App_SPECIFIED;
 AmConfig::AppMappingVector AmConfig::AppMapping;
 
+unsigned int AmConfig::SessionLimit            = 0;
+unsigned int AmConfig::SessionLimitErrCode     = 500;
+string       AmConfig::SessionLimitErrReason   = "Server overload";
+
 vector <string> AmConfig::CodecOrder;
 
 Dtmf::InbandDetectorType 
@@ -315,6 +319,18 @@ int AmConfig::readConfiguration()
       WARN("spandsp support not compiled in.\n");
 #endif
       DefaultDTMFDetector = Dtmf::SpanDSP;
+    }
+  }
+
+  if(cfg.hasParameter("session_limit")){ 
+    vector<string> limit = explode(cfg.getParameter("session_limit"), ";");
+    if (limit.size() != 3) {
+      ERROR("invalid session_limit specified.\n");
+    } else {
+      if (str2i(limit[0], SessionLimit) || str2i(limit[1], SessionLimitErrCode)) {
+	ERROR("invalid session_limit specified.\n");
+      }
+      SessionLimitErrReason = limit[2];
     }
   }
 

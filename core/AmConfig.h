@@ -103,6 +103,10 @@ struct AmConfig
   typedef vector<std::pair<regex_t, string> > AppMappingVector;
   static AppMappingVector AppMapping; 
 
+  static unsigned int SessionLimit;
+  static unsigned int SessionLimitErrCode;
+  static string SessionLimitErrReason;
+
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
   static unsigned int DeadRtpTime;
 

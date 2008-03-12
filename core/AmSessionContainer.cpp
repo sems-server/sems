@@ -311,6 +311,14 @@ bool AmSessionContainer::postEvent(const string& local_tag,
 AmSession* AmSessionContainer::createSession(AmSipRequest& req, 
 					     AmArg* session_params)
 {
+  
+  if (AmConfig::SessionLimit &&                   
+      AmConfig::SessionLimit <= a_sessions.size()) {
+    DBG("session_limit %d reached. Not creating session.\n", 
+	AmConfig::SessionLimit);
+    throw AmSession::Exception(AmConfig::SessionLimitErrCode, AmConfig::SessionLimitErrReason);
+  }
+
   if(req.cmd.empty()){
     throw string("AmSessionContainer::createSession: req.cmd is empty!\n");
   } 

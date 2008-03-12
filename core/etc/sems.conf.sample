@@ -115,6 +115,18 @@ rtp_high_port=60000
 #   value
 media_processor_threads=1
 
+
+# optional parameter: session_limit=<limit>;<err code>;<err reason>
+# 
+# - this sets a maximum active session limit. If that limit is 
+#   reached, no further calls are accepted, but the error reply 
+#   with err code/err reason is sent out.
+# 
+# Default: 0 (None)
+#
+# Example:
+#  session_limit="1000;500;Server overloaded"
+
 # optional parameter: listen=<ip_address>|<device>
 # 
 # - this informs SEMS about the interface where its SER is 
