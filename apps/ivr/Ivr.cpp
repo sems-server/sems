@@ -377,28 +377,27 @@ bool IvrFactory::loadScript(const string& path)
   // load module configuration
   AmConfigReader cfg;
   string cfg_file = add2path(AmConfig::ModConfigPath,1,(path + ".conf").c_str());
+  config = PyDict_New();
+  if(!config){
+    ERROR("could not allocate new dict for config\n");
+    goto error2;
+  }
+
   if(cfg.loadFile(cfg_file)){
     WARN("could not load config file at %s\n",cfg_file.c_str());
   } else {
-
-    config = PyDict_New();
-    if(!config){
-      ERROR("could not allocate new dict for config\n");
-      goto error2;
-    }
-
     for(map<string,string>::const_iterator it = cfg.begin();
 	it != cfg.end(); it++){
       PyDict_SetItem(config, 
 		     PyString_FromString(it->first.c_str()),
 		     PyString_FromString(it->second.c_str()));
     }
-
-    // set config ivr ivr_module while loading
-    Py_INCREF(config);
-    PyObject_SetAttrString(ivr_module,"config",config);
   }
 
+  // set config ivr ivr_module while loading
+  Py_INCREF(config);
+  PyObject_SetAttrString(ivr_module,"config",config);
+  
   // load module
   modName = PyString_FromString(path.c_str());
   
