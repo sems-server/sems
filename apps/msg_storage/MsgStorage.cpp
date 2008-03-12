@@ -5,6 +5,8 @@
 #include "MsgStorageAPI.h"
 #include "MsgStorage.h"
 
+#include "AmConfigReader.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <utime.h>
@@ -12,11 +14,11 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#define MSG_DIR "/var/lib/voicebox/" // TODO:  configurabel...
+#define MSG_DIR "/var/spool/voicebox/" // default
 
 MsgStorage* MsgStorage::_instance = 0;
 
-EXPORT_PLUGIN_CLASS_FACTORY(MsgStorage,"msg_storage");
+EXPORT_PLUGIN_CLASS_FACTORY(MsgStorage, MOD_NAME);
 
 MsgStorage::MsgStorage(const string& name)
     : AmDynInvokeFactory(name) { 
@@ -26,6 +28,27 @@ MsgStorage::MsgStorage(const string& name)
 MsgStorage::~MsgStorage() { }
 
 int MsgStorage::onLoad() {
+
+  msg_dir = MSG_DIR;
+  
+  AmConfigReader cfg;
+  if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
+    DBG("no configuration could be loaded, assuming defaults.\n");
+  } else {
+      msg_dir = cfg.getParameter("storage_dir",MSG_DIR);
+      DBG("storage_dir set to '%s'.\n", msg_dir.c_str());
+  }
+
+  string path = msg_dir + "/_test_dir_";
+  int status = mkdir(path.c_str(), 
+		     S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  if (status && (errno != EEXIST)) {
+    ERROR("creating test path in storage '%s': %s\n", 
+	  path.c_str(),strerror(errno));
+    return -1;
+  }
+  rmdir(path.c_str());
+
   DBG("MsgStorage loaded.\n");
   return 0;
 }
@@ -82,9 +105,9 @@ void MsgStorage::invoke(const string& method,
 
 
 int MsgStorage::msg_new(string domain, string user, 
-  string msg_name, FILE* data) {
+			string msg_name, FILE* data) {
 
-  string path = MSG_DIR "/" + domain + "/" + user + "/";
+  string path = msg_dir+ "/" + domain + "/" + user + "/";
   int status = mkdir(path.c_str(), 
 		     S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   if (status && (errno != EEXIST)) {
@@ -108,7 +131,7 @@ int MsgStorage::msg_new(string domain, string user,
 
 void MsgStorage::msg_get(string domain, string user, 
   string msg_name, AmArg& ret) { 
-  string fname = MSG_DIR "/" + domain + "/" + user + "/"+ msg_name;
+  string fname = msg_dir + "/" + domain + "/" + user + "/"+ msg_name;
   FILE* fp = fopen(fname.c_str(), "r");
   if (!fp) 
     ret.push(MSG_EMSGNOTFOUND);    
@@ -121,7 +144,7 @@ void MsgStorage::msg_get(string domain, string user,
 }
 
 int MsgStorage::msg_markread(string domain, string user, string msg_name) { 
-  string path = MSG_DIR "/" +  domain + "/" + user + "/" + msg_name;
+  string path = msg_dir + "/" +  domain + "/" + user + "/" + msg_name;
 
   struct stat e_stat;
   if (stat(path.c_str(), &e_stat)) {
@@ -144,7 +167,8 @@ int MsgStorage::msg_markread(string domain, string user, string msg_name) {
 }
 
 int MsgStorage::msg_delete(string domain, string user, string msg_name) { 
-  string path = MSG_DIR "/" + domain + "/" + user + "/" + msg_name;
+  // TODO: check the directory lock
+  string path = msg_dir + "/" + domain + "/" + user + "/" + msg_name;
   if (unlink(path.c_str())) {
       ERROR("cannot unlink '%s': %s\n", 
 	    path.c_str(),strerror(errno));
@@ -154,12 +178,13 @@ int MsgStorage::msg_delete(string domain, string user, string msg_name) {
 }
 
 void MsgStorage::userdir_open(string domain, string user, AmArg& ret) { 
-  string path = MSG_DIR "/" +  domain + "/" + user + "/";
+  // TODO: block the directory from delete (increase lock)
+  string path = msg_dir + "/" +  domain + "/" + user + "/";
   DBG("trying to list '%s'\n", path.c_str());
   DIR* dir = opendir(path.c_str());
   if (!dir) {
     ret.push(MSG_EUSRNOTFOUND);
-    ret.push(AmArg()); // empty lis
+    ret.push(AmArg()); // empty list
     return;
   }
 
@@ -199,7 +224,11 @@ void MsgStorage::userdir_open(string domain, string user, AmArg& ret) {
   ret.push(msglist);
 }
 
-int MsgStorage::userdir_close(string domain, string user) { return 0; }
+int MsgStorage::userdir_close(string domain, string user) {   
+  // TODO: unblock the directory from delete (decrease lock)
+  return 0; 
+}
+
 void MsgStorage::userdir_getcount(string domain, string user, AmArg& ret) { }
 
 // copies ifp to ofp, blockwise

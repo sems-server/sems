@@ -9,6 +9,8 @@ class MsgStorage : public AmDynInvokeFactory,
 
   static MsgStorage* _instance;
 
+  string msg_dir;
+
   int msg_new(string domain, string user, string msg_name, FILE* data);
   void msg_get(string domain, string user, string msg_name, AmArg& ret);
   int msg_markread(string domain, string user, string msg_name);

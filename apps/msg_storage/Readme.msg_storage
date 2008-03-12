@@ -1,0 +1,12 @@
+
+This is an example module for file system based storage for 
+messages. It uses the file atime vs. mtime to determine whether a 
+messagee is new.
+
+This module lacks delete-locking of an open message 
+directory, which means that its possible to delete a message in
+one call and on a parallel call not be able to listen to that 
+deleted message any more (even if it was in the list before). This 
+should be very rare usage though.
+
+
