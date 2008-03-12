@@ -57,7 +57,24 @@ struct amci_payload_t;
 class AmAudio;
 class AmSession;
 class SdpPayload;
-typedef std::map<unsigned int, AmRtpPacket, ts_less> ReceiveBuffer;
+typedef std::map<unsigned int, AmRtpPacket*, ts_less> ReceiveBuffer;
+
+
+/**
+ * This provides the memory for the receive buffer.
+ */
+struct PacketMem {
+#define MAX_PACKETS 32
+
+  AmRtpPacket packets[MAX_PACKETS];
+  bool        used[MAX_PACKETS];
+
+  PacketMem();
+
+  inline AmRtpPacket* newPacket();
+  inline void freePacket(AmRtpPacket* p);
+};
+
 
 /**
  * \brief RTP implementation
@@ -120,11 +137,13 @@ protected:
   auto_ptr<const SdpPayload> telephone_event_pt;
 
 
+  PacketMem       mem;
   ReceiveBuffer   receive_buf;
   AmMutex         receive_mut;
 
+
   /* get next packet in buffer */
-  int nextPacket(AmRtpPacket& p);
+  int nextPacket(AmRtpPacket*& p);
   
   AmSession*         session;
 
@@ -134,6 +153,9 @@ protected:
 
 public:
 
+  AmRtpPacket* newPacket();
+  void freePacket(AmRtpPacket* p);
+  
   /** Mute */
   bool mute;
   /** mute && port == 0 */
@@ -246,7 +268,7 @@ public:
    * Insert an RTP packet to the buffer.
    * Note: memory is owned by this instance.
    */
-  void bufferPacket(const AmRtpPacket* p);
+  void bufferPacket(AmRtpPacket* p);
 
   /*
    * clear RTP timeout at time recv_time 

@@ -219,9 +219,12 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
 int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 			  unsigned int& ts, int &out_payload)
 {
-  AmRtpPacket rp;
+  AmRtpPacket* rp = NULL;
   int err = nextPacket(rp);
     
+  if (!rp)
+    return 0;
+
   if(err <= 0)
     return err;
 
@@ -231,7 +234,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
     //     struct sockaddr_storage recv_addr;
     // #else
     struct sockaddr_in recv_addr;
-    rp.getAddr(&recv_addr);
+    rp->getAddr(&recv_addr);
 
     // symmetric RTP
     if ((recv_addr.sin_port != r_saddr.sin_port)
@@ -252,38 +255,39 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 #endif
 
   /* do we have a new talk spurt? */
-  begin_talk = ((last_payload == 13) || rp.marker);
-  last_payload = rp.payload;
+  begin_talk = ((last_payload == 13) || rp->marker);
+  last_payload = rp->payload;
 
-  if(!rp.getDataSize())
+  if(!rp->getDataSize()) {
+    mem.freePacket(rp);
     return RTP_EMPTY;
+  }
 
-  if (telephone_event_pt.get() && rp.payload == telephone_event_pt->payload_type)
+  if (telephone_event_pt.get() && rp->payload == telephone_event_pt->payload_type)
     {
-      dtmf_payload_t* dpl = (dtmf_payload_t*)rp.getData();
+      dtmf_payload_t* dpl = (dtmf_payload_t*)rp->getData();
 
       DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i\n",
 	  dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration));
       session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate()));
+      mem.freePacket(rp);
       return RTP_DTMF;
     }
 
-/*
-  if (payload != rp.payload){
-    return RTP_UNKNOWN_PL;
-  }
-*/
-
-  assert(rp.getData());
-  if(rp.getDataSize() > size){
+  assert(rp->getData());
+  if(rp->getDataSize() > size){
     ERROR("received too big RTP packet\n");
+    mem.freePacket(rp);
     return RTP_BUFFER_SIZE;
   }
-  memcpy(buffer,rp.getData(),rp.getDataSize());
-  ts = rp.timestamp;
-  out_payload = rp.payload;
 
-  return rp.getDataSize();
+  memcpy(buffer,rp->getData(),rp->getDataSize());
+  ts = rp->timestamp;
+  out_payload = rp->payload;
+
+  int res = rp->getDataSize();
+  mem.freePacket(rp);
+  return res;
 }
 
 AmRtpStream::AmRtpStream(AmSession* _s) 
@@ -427,15 +431,29 @@ void AmRtpStream::icmpError()
   }
 }
 
-void AmRtpStream::bufferPacket(const AmRtpPacket* p)
+AmRtpPacket* AmRtpStream::newPacket() {
+  return mem.newPacket();
+}
+
+void AmRtpStream::freePacket(AmRtpPacket* p) {
+  return mem.freePacket(p);
+}
+
+void AmRtpStream::bufferPacket(AmRtpPacket* p)
 {
   memcpy(&last_recv_time, &p->recv_time, sizeof(struct timeval));
 
-  if (!receiving && !passive)
+  if (!receiving && !passive) {
+    mem.freePacket(p);
     return;
+  }
 
   receive_mut.lock();
-  receive_buf[p->timestamp].copy(p);
+  // free packet on double packet for TS received
+  if (receive_buf.find(p->timestamp) != receive_buf.end())
+    mem.freePacket(receive_buf[p->timestamp]);
+
+  receive_buf[p->timestamp] = p;
   receive_mut.unlock();
 }
 
@@ -443,7 +461,7 @@ void AmRtpStream::clearRTPTimeout(struct timeval* recv_time) {
  memcpy(&last_recv_time, recv_time, sizeof(struct timeval));
 }
  
-int AmRtpStream::nextPacket(AmRtpPacket& p)
+int AmRtpStream::nextPacket(AmRtpPacket*& p)
 {
   if (!receiving && !passive)
     return RTP_EMPTY;
@@ -469,8 +487,7 @@ int AmRtpStream::nextPacket(AmRtpPacket& p)
     return RTP_EMPTY;
   }
 
-  AmRtpPacket& pp = receive_buf.begin()->second;
-  p.copy(&pp);
+  p = receive_buf.begin()->second;
   receive_buf.erase(receive_buf.begin());
   receive_mut.unlock();
 
@@ -483,4 +500,24 @@ int AmRtpStream::getTelephoneEventRate()
   if (telephone_event_pt.get())
     retval = telephone_event_pt->clock_rate;
   return retval;
+}
+
+PacketMem::PacketMem() {
+  memset(used, 0, sizeof(used));
+}
+
+inline AmRtpPacket* PacketMem::newPacket() {
+  for (int i=0;i<MAX_PACKETS;i++)
+    if (!used[i]) {
+      used[i]=true;
+      return &packets[i];
+    }
+  
+  return NULL;
+}
+
+inline void PacketMem::freePacket(AmRtpPacket* p) {
+  if (!p)  return;
+
+  used[p-packets] = false;
 }

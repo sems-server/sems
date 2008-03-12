@@ -76,7 +76,6 @@ void AmRtpReceiver::run()
 {
   unsigned int   tmp_nfds = 0;
   struct pollfd* tmp_fds  = new struct pollfd[MAX_RTP_SESSIONS];
-  AmRtpPacket    p;
 
   while(true){
 	
@@ -97,23 +96,29 @@ void AmRtpReceiver::run()
       if(!(tmp_fds[i].revents & POLLIN))
 	continue;
 
-      if(p.recv(tmp_fds[i].fd) > 0){
+      streams_mut.lock();
+      Streams::iterator it = streams.find(tmp_fds[i].fd);
+      if(it != streams.end()) {
+	AmRtpPacket* p = it->second->newPacket();
+	if (!p)
+	  continue;
+
+	if(p->recv(tmp_fds[i].fd) > 0){
+	  int parse_res = p->parse();
+	  gettimeofday(&p->recv_time,NULL);
 		
-	int parse_res = p.parse();
-	gettimeofday(&p.recv_time,NULL);
-		
-	streams_mut.lock();
-	Streams::iterator it = streams.find(tmp_fds[i].fd);
-	if(it != streams.end()) {
 	  if (parse_res == -1) {
 	    DBG("error while parsing RTP packet.\n");
-	    it->second->clearRTPTimeout(&p.recv_time);
+	    it->second->clearRTPTimeout(&p->recv_time);
+	    it->second->freePacket(p);	  
 	  } else {
-	    it->second->bufferPacket(&p);
+	    it->second->bufferPacket(p);
 	  }
+	} else {
+	  it->second->freePacket(p);
 	}
-	streams_mut.unlock();
       }
+      streams_mut.unlock();      
     }
   }
 }
