@@ -340,7 +340,9 @@ void SIPRegistration::onSipReply(AmSipReply& reply) {
     local_contact.parse_contact(local_contact_hdr, (size_t)0, end);
     local_contact.dump();
 
-    string contacts = getHeader(reply.hdrs, "Contact", "m");
+    string contacts = reply.contact;
+    if (contacts.empty()) 
+      contacts = getHeader(reply.hdrs, "Contact", "m");
     bool found = false;
 
     if (!contacts.length()) {
