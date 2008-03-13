@@ -125,7 +125,7 @@ media_processor_threads=1
 # Default: 0 (None)
 #
 # Example:
-#  session_limit="1000;500;Server overloaded"
+#  session_limit="1000;503;Server overload"
 
 # optional parameter: listen=<ip_address>|<device>
 # 

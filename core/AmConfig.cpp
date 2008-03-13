@@ -63,7 +63,7 @@ AmConfig::ApplicationSelector AmConfig::AppSelect        = AmConfig::App_SPECIFI
 AmConfig::AppMappingVector AmConfig::AppMapping;
 
 unsigned int AmConfig::SessionLimit            = 0;
-unsigned int AmConfig::SessionLimitErrCode     = 500;
+unsigned int AmConfig::SessionLimitErrCode     = 503;
 string       AmConfig::SessionLimitErrReason   = "Server overload";
 
 vector <string> AmConfig::CodecOrder;
