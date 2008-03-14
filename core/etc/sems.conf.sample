@@ -37,6 +37,18 @@ stderr=no
 #   (same as -D)
 loglevel=2
 
+# optional parameter: syslog_facility={DAEMON|USER|LOCAL[0-7]}
+#
+# - sets the log facility that is used for syslog. Using this,
+#   the log can for example be filtered into a special file 
+#   by the syslog daemon.
+#
+# Default: DAEMON
+#
+# Example:
+# syslog_facility=LOCAL0
+
+
 # optional parameter: application
 # 
 # This config value controls which application is to be 

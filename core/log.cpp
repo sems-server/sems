@@ -37,6 +37,10 @@
 
 int log_level=L_INFO;
 int log_stderr=0;
+
+/* log facility (see syslog(3)) */
+int log_facility=LOG_DAEMON;
+
 vector<AmLoggingFacility*> log_hooks;
 
 
@@ -53,8 +57,40 @@ inline const char* level2txt(int level)
 
 void init_log()
 {
-  openlog(LOG_NAME, LOG_PID|LOG_CONS,L_FAC);
+  openlog(LOG_NAME, LOG_PID|LOG_CONS,log_facility);
   setlogmask( -1 );
+}
+
+void set_log_facility(const char* facility) {
+  int new_facility = -1;
+  if (!strcmp(facility, "DAEMON")){
+    new_facility = LOG_DAEMON;
+  } else if (!strcmp(facility, "USER")) {
+    new_facility = LOG_USER;
+  } else if (strlen(facility)==6 && 
+	     !strncmp(facility, "LOCAL", 5) &&
+	     facility[5]-'0' < 8) {
+    switch (facility[5]) {
+    case '0': new_facility = LOG_LOCAL0; break;
+    case '1': new_facility = LOG_LOCAL1; break;
+    case '2': new_facility = LOG_LOCAL2; break;
+    case '3': new_facility = LOG_LOCAL3; break;
+    case '4': new_facility = LOG_LOCAL4; break;
+    case '5': new_facility = LOG_LOCAL5; break;
+    case '6': new_facility = LOG_LOCAL6; break;
+    case '7': new_facility = LOG_LOCAL7; break;
+    }
+  } else {
+    ERROR("unknown syslog facility '%s'\n", 
+	  facility);
+    return;
+  }
+
+  if (new_facility != log_facility) {
+    log_facility = new_facility;
+    closelog();
+    init_log();
+  }
 }
 
 void dprint(int level, const char* fct, char* file, int line, char* fmt, ...)

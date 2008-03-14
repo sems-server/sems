@@ -39,8 +39,6 @@ extern "C" {
 #define L_INFO   2
 #define L_DBG    3
 
-  /* log facility (see syslog(3)) */
-#define L_FAC  LOG_DAEMON
   /* priority at which we log */
 #define DPRINT_PRIO LOG_DEBUG
 
@@ -49,7 +47,10 @@ extern "C" {
   extern int log_level;
   extern int log_stderr;
 
+  extern int log_facility;
+
   void init_log();
+  void set_log_facility(const char* facility);
 
   void dprint (int level, const char* fct, char* file, int line, char* fmt, ...);
   void log_print (int level, char* fmt, ...);
@@ -74,16 +75,16 @@ extern "C" {
 		  else {\
 		      switch(level){\
 		      case L_ERR:\
-			  syslog(LOG_ERR | L_FAC, "Error: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
+			  syslog(LOG_ERR, "Error: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
 			  break;\
 		      case L_WARN:\
-			  syslog(LOG_WARNING | L_FAC, "Warning: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
+			  syslog(LOG_WARNING, "Warning: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
 			  break;\
 		      case L_INFO:\
-			  syslog(LOG_INFO | L_FAC, "Info: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
+			  syslog(LOG_INFO, "Info: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
 			  break;\
 		      case L_DBG:\
-			  syslog(LOG_DEBUG | L_FAC, "Debug: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
+			  syslog(LOG_DEBUG, "Debug: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
 			  break;\
 		      }\
 		  }\

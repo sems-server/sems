@@ -156,6 +156,11 @@ int AmConfig::readConfiguration()
   // take values from global configuration file
   // they will be overwritten by command line args
 
+
+  if (cfg.hasParameter("syslog_facility")) {
+    set_log_facility(cfg.getParameter("syslog_facility").c_str());
+  }
+
   // plugin_config_path
   ModConfigPath = cfg.getParameter("plugin_config_path",ModConfigPath);
 
