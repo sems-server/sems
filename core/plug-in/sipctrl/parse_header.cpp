@@ -40,6 +40,8 @@ using std::auto_ptr;
 // Header length
 //
 
+#define COMPACT_len        1
+
 #define TO_len             2
 #define VIA_len            3
 #define FROM_len           4
@@ -101,6 +103,48 @@ static int parse_header_type(sip_msg* msg, sip_header* h)
     h->type = sip_header::H_UNPARSED;
 
     switch(h->name.len){
+
+    case COMPACT_len:{
+      switch (LOWER_B(h->name.s[0])) {
+      case 'i': { // Call-ID 	
+	h->type = sip_header::H_CALL_ID;
+	msg->callid = h;
+      } break;
+      case 'm': { // Contact      
+	h->type = sip_header::H_CONTACT;
+	msg->contact = h;
+      } break;
+	//       case 'e': // Content-Encoding
+	// 	{} break;
+      case 'l': { // Content-Length
+	h->type = sip_header::H_CONTENT_LENGTH;
+	msg->content_length = h;
+      } break;
+      case 'c': { // Content-Type	
+	h->type = sip_header::H_CONTENT_TYPE;
+	msg->content_type = h;
+      } break;
+      case 'f': { // From
+	h->type = sip_header::H_FROM;
+	msg->from = h;
+      } break;
+	//       case 's': // Subject
+	// 	{} break;
+	//       case 'k': // Supported
+	// 	{} break;
+      case 't': { // To
+	h->type = sip_header::H_TO;
+	msg->to = h;
+      } break;
+      case 'v': {// Via	
+	h->type = sip_header::H_VIA;
+	if(!msg->via1)
+	  msg->via1 = h;
+      } break;
+      default:
+	h->type = sip_header::H_OTHER;
+      } break;
+    } break;
 
     case TO_len:
 	if(!lower_cmp(h->name.s,TO_lc,TO_len)){
