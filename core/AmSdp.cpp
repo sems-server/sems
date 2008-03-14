@@ -420,7 +420,7 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
       case 'b':
       case 't':
       case 'k':
-	DBG("parse_sdp_line_ex: found some random characters\n");
+	DBG("parse_sdp_line_ex: found unknown line '%c'\n", *s);
 	s = is_eql_next(s);
 	next = get_next_line(s);
 	s = next;
@@ -499,7 +499,8 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
 	{
 	  next = get_next_line(s);
 	  string line(s, int(next-s)-1);
-	  DBG("parse_sdp_line: skipping unknown Media description %s=\n", (char*)line.c_str());
+	  DBG("parse_sdp_line: skipping unknown Media description '%s'\n", 
+	      (char*)line.c_str());
 	  s = next;
 	  break;
 	}
@@ -713,7 +714,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 {
  
-  DBG("parse_sdp_line_ex: parse_sdp_attr.......\n");
+  //  DBG("parse_sdp_line_ex: parse_sdp_attr.......\n");
   if(sdp_msg->media.empty()){
     ERROR("While parsing media options: no actual media !\n");
     return;
@@ -881,7 +882,7 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 
   media.payloads.push_back(payload);
 
-  DBG("parse_sdp_line_ex: parse_sdp_attr: done parsing sdp attributes\n");
+  //  DBG("parse_sdp_line_ex: parse_sdp_attr: done parsing sdp attributes\n");
   return;
 }
 
@@ -1012,7 +1013,7 @@ static bool contains(char* s, char* next_line, char c)
 static char* parse_until(char* s, char end)
 {
   char* line=s;
-  while(*line != end ){
+  while(*line && *line != end ){
     line++;
   }
   line++;
