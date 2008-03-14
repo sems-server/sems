@@ -165,10 +165,21 @@ bool str2i(char*& str, unsigned int& result, char sep)
       ret=ret*10+*str-'0';
       i++;
       if (i>10) goto error_digits;
-    } else if( *str == sep )
+    } else {
+
+      bool eol = false;
+      switch(*str){
+      case 0xd:
+      case 0xa:
+      case 0x0:
+	eol = true;
+      }
+
+      if( (*str != sep) && !eol )
+	goto error_char;
+
       break;
-    else
-      goto error_char;
+    }
   }
 
   result = ret;
@@ -178,7 +189,7 @@ bool str2i(char*& str, unsigned int& result, char sep)
   DBG("str2i: too many letters in [%s]\n", init);
   return true;
  error_char:
-  DBG("str2i: unexpected char %c in %s\n", *str, init);
+  DBG("str2i: unexpected char 0x%x in %s\n", *str, init);
   return true;
 }
 

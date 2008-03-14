@@ -31,6 +31,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <netinet/in.h>
 using std::string;
 
 
@@ -50,9 +51,9 @@ enum NetworkType { NT_OTHER=0, NT_IN };
 /** address type */
 enum AddressType { AT_NONE=0, AT_V4, AT_V6 }; 
 /** media type */
-enum MediaType { MT_NONE=0, MT_AUDIO, MT_VIDEO, MT_APPLICATION, MT_DATA };
+enum MediaType { MT_NONE=0, MT_AUDIO, MT_VIDEO, MT_APPLICATION, MT_TEXT, MT_MESSAGE };
 /** transport protocol */
-enum TransProt { TP_NONE=0, TP_RTPAVP, TP_UDP };
+enum TransProt { TP_NONE=0, TP_RTPAVP, TP_UDP, TP_RTPSAVP };
 
 /** \brief c=... line in SDP*/
 struct SdpConnection
@@ -61,6 +62,9 @@ struct SdpConnection
   int network;
   /** @see AddressType */
   int addrType;
+
+  struct sockaddr_in ipv4;
+  struct sockaddr_in6 ipv6;
   /** IP address */
   string address;
 
@@ -82,18 +86,21 @@ struct SdpOrigin
  */
 struct SdpPayload
 {
+  int type;
   int    int_pt; // internal payload type
   int    payload_type; // SDP payload type
   string encoding_name;
   int    clock_rate; // sample rate (Hz)
+  string format;
   string sdp_format_parameters;
+  int    encoding_param;
   
-  SdpPayload() : int_pt(-1), payload_type(-1), clock_rate(-1) {}
+  SdpPayload() : int_pt(-1), payload_type(-1), clock_rate(-1), encoding_param(-1) {}
 
-  SdpPayload(int pt) : int_pt(-1), payload_type(pt), clock_rate(-1) {}
+  SdpPayload(int pt) : int_pt(-1), payload_type(pt), clock_rate(-1), encoding_param(-1) {}
 
-  SdpPayload(int pt, const string& name, int rate) 
-    : int_pt(-1), payload_type(pt), encoding_name(name), clock_rate(rate) {}
+  SdpPayload(int pt, const string& name, int rate, int param) 
+    : int_pt(-1), payload_type(pt), encoding_name(name), clock_rate(rate), encoding_param(param) {}
 
   bool operator == (int r);
 };
@@ -110,6 +117,7 @@ struct SdpMedia
 
   int           type;
   unsigned int  port;
+  unsigned int  nports;
   int           transport;
   SdpConnection conn; // c=
   Direction     dir;  // a=direction
@@ -147,7 +155,7 @@ public:
   unsigned int     version;     // v=
   SdpOrigin        origin;      // o=
   string           sessionName; // s= 
-  string           uri;         // u=
+  string           uri;          // u=
   SdpConnection    conn;        // c=
   std::vector<SdpMedia> media;  // m= ... [a=rtpmap:...]+
 
