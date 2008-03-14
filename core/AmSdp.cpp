@@ -14,7 +14,6 @@
 #include "AmUtils.h"
 #include "AmPlugIn.h"
 #include "AmSession.h"
-#include "ErrorSdp.h"
 
 #include "amci/amci.h"
 #include "log.h"
@@ -39,6 +38,10 @@ inline char* get_next_line(char* s);
 static char* is_eql_next(char* s);
 static char* parse_until(char* s, char end);
 static bool contains(char* s, char* next_line, char c);
+
+static int media_type(std::string media);
+static int transport_type(std::string transport);
+static bool attr_check(std::string attr);
 
 enum parse_st {SDP_DESCR, SDP_MEDIA};
 enum sdp_connection_st {NET_TYPE, ADDR_TYPE, IP4, IP6};
@@ -1053,3 +1056,78 @@ inline char* get_next_line(char* s)
 }
 
 
+/*
+ *Check if known media type is used
+ */
+static int media_type(std::string media)
+{
+  if(media == "audio")
+    return 1;
+  else if(media == "video")
+    return 2;
+  else if(media == "application")
+    return 3;
+  else if(media == "text")
+    return 4;
+  else if(media == "message")
+    return 5;
+  else 
+    return -1;
+}
+
+static int transport_type(std::string transport)
+{
+  if(transport == "RTP/AVP")
+    return 1;
+  else if(transport == "UDP")
+    return 2;
+  else if(transport == "RTP/SAVP")
+    return 3;
+  else 
+    return -1;
+}
+
+/*
+*Check if known attribute name is used
+*/
+static bool attr_check(std::string attr)
+{
+  if(attr == "cat")
+    return true;
+  else if(attr == "keywds")
+    return true;
+  else if(attr == "tool")
+    return true;
+  else if(attr == "ptime")
+    return true;
+  else if(attr == "maxptime")
+    return true;
+  else if(attr == "recvonly")
+    return true;
+  else if(attr == "sendrecv")
+    return true;
+  else if(attr == "sendonly")
+    return true;
+  else if(attr == "inactive")
+    return true;
+  else if(attr == "orient")
+    return true;
+  else if(attr == "type")
+    return true;
+  else if(attr == "charset")
+    return true;
+  else if(attr == "sdplang")
+    return true;
+  else if(attr == "lang")
+    return true;
+  else if(attr == "framerate")
+    return true;
+  else if(attr == "quality")
+    return true;
+  else
+    {
+    DBG("sdp_parse_attr: Unknow attribute name used: %s, plz see RFC4566\n", 
+	(char*)attr.c_str());
+    return false;
+    }
+}
