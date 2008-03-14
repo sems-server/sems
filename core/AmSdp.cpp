@@ -305,7 +305,8 @@ const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(int media_type, string& 
 	  continue;
 
 	int int_pt = getDynPayload(it->encoding_name,
-				   it->clock_rate);
+				   it->clock_rate,
+				   it->encoding_param);
 	if(int_pt != -1){
 	  payload = &(*it);
 	  payload->int_pt = int_pt;
@@ -340,7 +341,7 @@ bool AmSdp::hasTelephoneEvent()
   return telephone_event_pt != NULL;
 }
 
-int AmSdp::getDynPayload(const string& name, int rate)
+int AmSdp::getDynPayload(const string& name, int rate, int encoding_param)
 {
   AmPlugIn* pi = AmPlugIn::instance();
   const std::map<int, amci_payload_t*>& ref_payloads = pi->getPayloads();
@@ -348,8 +349,13 @@ int AmSdp::getDynPayload(const string& name, int rate)
   for(std::map<int, amci_payload_t*>::const_iterator pl_it = ref_payloads.begin();
       pl_it != ref_payloads.end(); ++pl_it)
     if( (name == pl_it->second->name)
-	&& (rate == pl_it->second->sample_rate) )
+	&& (rate == pl_it->second->sample_rate) ) {
+      if ((encoding_param > 0) && (pl_it->second->channels >0) && 
+	  (encoding_param != pl_it->second->channels))
+	continue;
+	  
       return pl_it->first;
+    }
 
   return -1;
 }

@@ -143,7 +143,7 @@ class AmSdp
    * Do we have that payload ? 
    * @return our payload type.
    */
-  int getDynPayload(const string& name, int rate);
+  int getDynPayload(const string& name, int rate, int encoding_param);
 
   /**
    * Find payload by name
