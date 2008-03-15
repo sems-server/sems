@@ -43,41 +43,52 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 		
     DBG("method: `%s' [%zd].\n", req.method.c_str(), req.method.length());
     
-    if((req.method == "INVITE")||
-       ((req.method == "REFER") && !local_tag.empty())){
+    if((req.method == "INVITE") || (req.method == "REFER")){
+
       sess_cont->startSessionUAS(req);
+    }
+//     else if(req.method == "REFER") {
+//       // Out-of-dialog REFER
+//       AmSipRequest n_req;
+//       n_req.method   = "INVITE";
+//       n_req.dstip    = AmConfig::LocalIP;
 			
-    } else if(req.method == "REFER"){
-      // Out-of-dialog REFER
-      AmSipRequest n_req;
-      n_req.method   = "INVITE";
-      n_req.dstip    = AmConfig::LocalIP;
+//       n_req.from     = req.to;
+//       n_req.from_uri = req.r_uri;
+//       n_req.from_tag = AmSession::getNewId();
+//       n_req.user     = req.user;
 			
-      n_req.from     = req.to;
-      n_req.from_uri = req.r_uri;
-      n_req.from_tag = AmSession::getNewId();
-      n_req.user     = req.user;
+//       n_req.r_uri    = uri_from_name_addr(getHeader(req.hdrs, "Refer-To"));
+//       n_req.to       = getHeader(req.hdrs, "Refer-To");
+//       n_req.to_tag   = "";
+//       n_req.cmd      = req.cmd; // application from REFER
 			
-      n_req.r_uri    = uri_from_name_addr(getHeader(req.hdrs, "Refer-To"));
-      n_req.to       = getHeader(req.hdrs, "Refer-To");
-      n_req.to_tag   = "";
-      n_req.cmd      = req.cmd; // application from REFER
+//       n_req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
 			
-      n_req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
-			
-      if (AmSessionContainer::instance()->startSessionUAC(n_req) != NULL)
-        AmSipDialog::reply_error(req,202,"Accepted");
-      else 
-        AmSipDialog::reply_error(req,500,"Not supported here");
-    } else {
+//       if (AmSessionContainer::instance()->startSessionUAC(n_req) != NULL)
+//         AmSipDialog::reply_error(req,202,"Accepted");
+//       else 
+//         AmSipDialog::reply_error(req,500,"Not supported here");
+//     } 
+    else if(req.method == "OPTIONS"){
+	
+	// Basic OPTIONS support
+	AmSipDialog::reply_error(req,200,"OK");
+	return;
+    }
+    else {
+
       if(!local_tag.empty() || req.method == "CANCEL"){
+
         AmSipDialog::reply_error(req,481,
           "Call leg/Transaction does not exist");
+
       } else {
-        //TODO: reply some 4xx.
+
         ERROR("sorry, we don't support beginning a new session with "
           "a '%s' message\n", req.method.c_str());
-        AmSipDialog::reply_error(req,500,"Not supported here");
+
+        AmSipDialog::reply_error(req,501,"Not Implemented");
         return;
       }
     }

@@ -363,13 +363,13 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
     throw string("application '" + req.cmd + "' not found !");
   }
 	    
-  AmSession* session = 0;
+  AmSession* session = NULL;
   if (req.method == "INVITE") {
     if (NULL != session_params) 
       session = state_factory->onInvite(req, *session_params);
     else 
       session = state_factory->onInvite(req);
-  }  else if (req.method == "REFER") {
+  } else if (req.method == "REFER") {
     if (NULL != session_params) 
       session = state_factory->onRefer(req, *session_params);
     else 
