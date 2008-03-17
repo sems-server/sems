@@ -521,7 +521,7 @@ int AmSipDialog::cancel()
   req.method = "CANCEL";
   //useful for SER-0.9.6/Open~
   req.callid = callid;
-  req.cseq = cseq;
+  req.cseq = cancel_cseq;
   //useful for SER-2.0.0
   req.serKey = serKey;
   string empty;
