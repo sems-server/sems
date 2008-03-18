@@ -105,11 +105,15 @@ AmSdp::AmSdp()
   : remote_active(false),
     telephone_event_pt(NULL)
 {
+  l_origin.user = "sems";
+  l_origin.sessId = get_random();
+  l_origin.sessV = get_random();
 }
 
 AmSdp::AmSdp(const AmSdp& p_sdp_msg)
   : version(p_sdp_msg.version),
     origin(p_sdp_msg.origin),
+    l_origin(p_sdp_msg.l_origin),
     sessionName(p_sdp_msg.sessionName),
     conn(p_sdp_msg.conn),
     media(p_sdp_msg.media),
@@ -155,15 +159,16 @@ int AmSdp::parse()
 int AmSdp::genResponse(const string& localip, int localport, string& out_buf, bool single_codec)
 {
   string l_ip = "IP4 " + localip;
-  
+  l_origin.sessV++; 
+
 #ifdef SUPPORT_IPV6
-  if(localip.find('.') == string::npos)
+  if(l_ip.find('.') == string::npos)
     l_ip = "IP6" + localip;
 #endif
   
   out_buf =
   "v=0\r\n"
-  "o=username 0 0 IN " + l_ip + "\r\n"
+  "o="+l_origin.user+" "+int2str(l_origin.sessId)+" "+int2str(l_origin.sessV)+" IN " + l_ip + "\r\n"
   "s=session\r\n"
   "c=IN " + l_ip + "\r\n"
   "t=0 0\r\n"
@@ -222,16 +227,18 @@ int AmSdp::genRequest(const string& localip, int localport, string& out_buf)
     return -1;
   }
 
+  l_origin.sessV++; 
+
   string l_ip = "IP4 " + localip;
 
 #ifdef SUPPORT_IPV4
-  if(localip.find('.') == string::npos)
-    l_ip= "IP6 " + localip;
+  if(l_ip.find('.') == string::npos)
+    l_ip = "IP6" + localip;
 #endif
 
   out_buf = 
     "v=0\r\n"
-    "o=username 0 0 IN " + l_ip + "\r\n"
+    "o="+l_origin.user+" "+int2str(l_origin.sessId)+" "+int2str(l_origin.sessV)+" IN " + l_ip + "\r\n"
     "s=session\r\n"
     "c=IN " + l_ip + "\r\n"
     "t=0 0\r\n"

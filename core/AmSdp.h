@@ -164,6 +164,8 @@ public:
   // Is remote host requesting 
   // us to do passive RTP ?
   bool remote_active;
+
+  SdpOrigin        l_origin;      // local origin (o= )
     
   AmSdp();
   AmSdp(const AmSdp& p_sdp_msg);
