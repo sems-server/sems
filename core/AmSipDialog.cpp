@@ -338,6 +338,9 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   reply.hdrs = hdrs;
   reply.local_tag = AmSession::getNewId();
 
+  if (AmConfig::Signature.length())
+    reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
+
   return AmServer::sendReply(reply);
 }
 
