@@ -179,7 +179,8 @@ AmDtmfDetector::AmDtmfDetector(AmSession *session)
   : m_session(session), m_rtpDetector(this),
     m_sipDetector(this),
     m_eventPending(false), m_sipEventReceived(false),
-    m_inbandEventReceived(false), m_rtpEventReceived(false)
+    m_inbandEventReceived(false), m_rtpEventReceived(false),
+    m_inband_type(Dtmf::SEMSInternal)
 {
 #ifndef USE_SPANDSP
   setInbandDetector(Dtmf::SEMSInternal);
