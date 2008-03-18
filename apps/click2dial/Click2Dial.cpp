@@ -188,7 +188,7 @@ const string& filename, const string& c_uri, UACAuthCred* credentials)
 : filename(filename), callee_uri(c_uri), cred(credentials),
 AmB2BCallerSession()
 {
-  sip_relay_only = false;
+  set_sip_relay_only(false);
 }
 
 

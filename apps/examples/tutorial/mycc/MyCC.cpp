@@ -83,7 +83,7 @@ MyCCDialog::MyCCDialog(AmDynInvoke* cc_acc, AmDynInvoke* user_timer)
     AmB2BCallerSession()
     
 {
-  sip_relay_only = false;
+  set_sip_relay_only(false);
   memset(&acc_start, 0, sizeof(struct timeval));
 }
 

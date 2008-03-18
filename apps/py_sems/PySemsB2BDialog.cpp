@@ -26,14 +26,14 @@ PySemsB2BDialog::PySemsB2BDialog()
   : playlist(this),
     user_timer(NULL)
 {
-  sip_relay_only = false;
+  set_sip_relay_only(false);
 }
 
 PySemsB2BDialog::PySemsB2BDialog(AmDynInvoke* user_timer)
   : playlist(this),
     user_timer(user_timer)
 {
-  sip_relay_only = false;
+  set_sip_relay_only(false);
 }
 
 PySemsB2BDialog::~PySemsB2BDialog()

@@ -102,7 +102,7 @@ m_cc_acc(cc_acc), m_user_timer(user_timer),
 AmB2BCallerSession()
 
 {
-  sip_relay_only = false;
+  set_sip_relay_only(false);
   memset(&m_acc_start, 0, sizeof(struct timeval));
 }
 
@@ -187,7 +187,7 @@ void SWPrepaidSIPDialog::onInvite(const AmSipRequest& req)
     recvd_req.insert(std::make_pair(req.cseq,req));
 
     connectCallee("<" + m_ruri + ">", m_proxy + ";sw_prepaid", true);
-    sip_relay_only = true;
+    set_sip_relay_only(true);
   }
 }
 
