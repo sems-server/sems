@@ -93,16 +93,16 @@ extern "C" {
       else {
 	switch(level){
 	case L_ERR:
-	  syslog(LOG_ERR | L_FAC, "Error: %s", msg);
+	  syslog(LOG_ERR , "Error: %s", msg);
 	  break;
 	case L_WARN:
-	  syslog(LOG_WARNING | L_FAC, "Warning: %s", msg);
+	  syslog(LOG_WARNING , "Warning: %s", msg);
 	  break;
 	case L_INFO:
-	  syslog(LOG_INFO | L_FAC, "Info: %s", msg);
+	  syslog(LOG_INFO , "Info: %s", msg);
 	  break;
 	case L_DBG:
-	  syslog(LOG_DEBUG | L_FAC, "Debug: %s", msg);
+	  syslog(LOG_DEBUG , "Debug: %s", msg);
 	  break;
 	}
       }
