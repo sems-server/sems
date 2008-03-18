@@ -84,7 +84,7 @@ void EchoDialog::onDtmf(int event, int duration)
 {
 #ifdef STAR_SWITCHES_PLAYOUTBUFFER
   if (event == 10) {   
-    char* pt = "simple (fifo) playout buffer";
+    const char* pt = "simple (fifo) playout buffer";
     if (playout_type == SIMPLE_PLAYOUT) {
       playout_type = ADAPTIVE_PLAYOUT;
       pt = "adaptive playout buffer";
