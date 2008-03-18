@@ -54,6 +54,8 @@ string EarlyAnnounceFactory::AnnouncePath;
 string EarlyAnnounceFactory::AnnounceFile;
 #endif
 
+bool EarlyAnnounceFactory::ContinueB2B = false;
+
 EarlyAnnounceFactory::EarlyAnnounceFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
 {
@@ -137,6 +139,12 @@ int EarlyAnnounceFactory::onLoad()
 
   // get application specific global parameters
   configureModule(cfg);
+
+  if (cfg.hasParameter("continue_b2b") &&
+      cfg.getParameter("continue_b2b") == "yes") {
+    ContinueB2B = true;
+    DBG("early_announce in b2bua mode.\n");
+  }
 
 #ifdef USE_MYSQL
 
@@ -303,6 +311,7 @@ AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req)
 EarlyAnnounceDialog::EarlyAnnounceDialog(const string& filename)
   : filename(filename)
 {
+  set_sip_relay_only(false);
 }
 
 EarlyAnnounceDialog::~EarlyAnnounceDialog()
@@ -342,37 +351,45 @@ void EarlyAnnounceDialog::process(AmEvent* event)
      (audio_event->event_id == AmAudioEvent::cleared))
     {
       DBG("AmAudioEvent::cleared\n");
-      unsigned int code_i = 404;
-      string reason = "Not Found";
 
-      string iptel_app_param = getHeader(localreq.hdrs, PARAM_HDR);
-      if (iptel_app_param.length()) {
-	string code = get_header_keyvalue(iptel_app_param,"Final-Reply-Code");
-	if (code.length() && str2i(code, code_i)) {
-	  ERROR("while parsing Final-Reply-Code parameter\n");
-	}
-	reason = get_header_keyvalue(iptel_app_param,"Final-Reply-Reason");
-      } else {
-	string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
-	if (code.length() && str2i(code, code_i)) {
-	  ERROR("while parsing P-Final-Reply-Code\n");
-	}
-	string h_reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
-	if (h_reason.length()) {
-	  INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
-	  INFO("Use '%s: Final-Reply-Code=<code>;"
-	       "Final-Reply-Reason=<rs>' instead.\n",PARAM_HDR);
-	  reason = h_reason;
-	}
-      }
-
-      DBG("Replying with code %d %s\n", code_i, reason.c_str());
-      dlg.reply(localreq, code_i, reason);
+      if (!EarlyAnnounceFactory::ContinueB2B) {
+	unsigned int code_i = 404;
+	string reason = "Not Found";
 	
-      setStopped();
+	string iptel_app_param = getHeader(localreq.hdrs, PARAM_HDR);
+	if (iptel_app_param.length()) {
+	  string code = get_header_keyvalue(iptel_app_param,"Final-Reply-Code");
+	  if (code.length() && str2i(code, code_i)) {
+	    ERROR("while parsing Final-Reply-Code parameter\n");
+	  }
+	  reason = get_header_keyvalue(iptel_app_param,"Final-Reply-Reason");
+	} else {
+	  string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
+	  if (code.length() && str2i(code, code_i)) {
+	    ERROR("while parsing P-Final-Reply-Code\n");
+	  }
+	  string h_reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
+	  if (h_reason.length()) {
+	    INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
+	    INFO("Use '%s: Final-Reply-Code=<code>;"
+		 "Final-Reply-Reason=<rs>' instead.\n",PARAM_HDR);
+	    reason = h_reason;
+	  }
+	}
+
+	DBG("Replying with code %d %s\n", code_i, reason.c_str());
+	dlg.reply(localreq, code_i, reason);
+	
+	setStopped();
+      } else {
+	set_sip_relay_only(true);
+	recvd_req.insert(std::make_pair(localreq.cseq,localreq));
+	
+	relayEvent(new B2BSipRequestEvent(localreq,true));
+      }
 	
       return;
     }
 
-  AmSession::process(event);
+  AmB2BCallerSession::process(event);
 }

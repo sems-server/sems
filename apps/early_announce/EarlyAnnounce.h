@@ -32,7 +32,7 @@
 #include <mysql++/mysql++.h>
 #endif
 
-#include "AmSession.h"
+#include "AmB2BSession.h"
 #include "AmAudioFile.h"
 #include "AmConfigReader.h"
 
@@ -54,6 +54,8 @@ public:
   static string AnnounceFile;
 #endif
 
+  static bool ContinueB2B;
+
   EarlyAnnounceFactory(const string& _app_name);
 
   int onLoad();
@@ -61,7 +63,7 @@ public:
 };
 
 /** \brief session logic implementation for early_announce sessions */
-class EarlyAnnounceDialog : public AmSession
+class EarlyAnnounceDialog : public AmB2BCallerSession
 {
   AmAudioFile wav_file;
   string filename;

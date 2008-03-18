@@ -9,12 +9,27 @@ The annoucement server plays a wav file to the caller
 in an early session: it replies to an invite with
 183 Session Progress (with SDP), then sends the announcement
 and finally replies the request with a response (by default
-404 Not found ).
+404 Not found ), or, if b2bua mode is set, continues the call
+to request-URI in b2bua more.
 
-Session Parameters:
+No b2bua mode: Final Reply sent
+-------------------------------
+Session Parameters (no b2bua mode):
    Final-Reply-Code     integer (e.g. Final-Reply-Code=405 )
    Final-Reply-Reason   string  (e.g. Final-Reply-Reason=Prohibited)
 
+e.g. 
+ append_hf("P-App-Param: Final-Reply-Code=405;Final-Reply-Reason=Prohibited;\r\n");
+
+b2bua mode
+----------
+If continue_b2b=yes is set in early_announce.conf, then the INVITE 
+is sent in a b2bua session to the original request-URI. From then on, 
+the call is continued as normal b2bua call, i.e. all requests and replies 
+are relayed into the other leg.
+
+Announcement file played from file system
+-----------------------------------------
 If early_announce application was compiled WITHOUT -DUSE_MYSQL option,
 it searches for files to play following these rules:
 
@@ -26,6 +41,8 @@ Example sems (early_announce.conf) configuration for file system audio:
 announce_path=wav/
 default_announce=default_en.wav
 
+Announcement file from MySQL DB
+-------------------------------
 If early_announce application was compiled with -DUSE_MYSQL option, it
 supports third Session Parameter
 
