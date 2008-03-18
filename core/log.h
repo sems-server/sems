@@ -52,10 +52,10 @@ extern "C" {
   void init_log();
   void set_log_facility(const char* facility);
 
-  void dprint (int level, const char* fct, char* file, int line, char* fmt, ...);
-  void log_print (int level, char* fmt, ...);
+  void dprint (int level, const char* fct, const char* file, int line, const char* fmt, ...);
+  void log_print (int level, const char* fmt, ...);
   void register_logging_fac(void*);
-  void log_fac_print(int level, const char* fct, char* file, int line, char* fmt, ...);
+  void log_fac_print(int level, const char* fct, const char* file, int line, const char* fmt, ...);
 
 #ifdef _DEBUG
 #define LOG_PRINT(level, args... ) dprint( level, __FUNCTION__, __FILE__, __LINE__, ##args )
@@ -67,30 +67,30 @@ extern "C" {
 #if  __GNUC__ < 3
 #define _LOG(level,fmt...) LOG_PRINT(level,##fmt)
 #else
-#define _LOG(level, fmt, args...) \
-          do{\
-              if((level)<=log_level) {\
-		  if(log_stderr)\
-		      LOG_PRINT( level, fmt, ##args );\
-		  else {\
-		      switch(level){\
-		      case L_ERR:\
-			  syslog(LOG_ERR, "Error: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
-			  break;\
-		      case L_WARN:\
-			  syslog(LOG_WARNING, "Warning: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
-			  break;\
-		      case L_INFO:\
-			  syslog(LOG_INFO, "Info: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
-			  break;\
-		      case L_DBG:\
-			  syslog(LOG_DEBUG, "Debug: (%s)(%s)(%i): " fmt, __FILE__, __FUNCTION__, __LINE__, ##args);\
-			  break;\
-		      }\
-		  }\
-              }\
-              LOG_FAC_PRINT( level, fmt, ##args );\
-	  }while(0)
+#define _LOG(level, fmt, args...)					\
+  do{									\
+    if((level)<=log_level) {						\
+      if(log_stderr)							\
+	LOG_PRINT( level, fmt, ##args );				\
+      else {								\
+	switch(level){							\
+	case L_ERR:							\
+	  syslog(LOG_ERR, (char*)("Error: (%s)(%s)(%i): " fmt), __FILE__, __FUNCTION__, __LINE__, ##args); \
+	  break;							\
+	case L_WARN:							\
+	  syslog(LOG_WARNING, (char*)("Warning: (%s)(%s)(%i): " fmt), __FILE__, __FUNCTION__, __LINE__, ##args); \
+	  break;							\
+	case L_INFO:							\
+	  syslog(LOG_INFO, (char*)("Info: (%s)(%s)(%i): " fmt), __FILE__, __FUNCTION__, __LINE__, ##args); \
+	  break;							\
+	case L_DBG:							\
+	  syslog(LOG_DEBUG, (char*)("Debug: (%s)(%s)(%i): " fmt), __FILE__, __FUNCTION__, __LINE__, ##args); \
+	  break;							\
+	}								\
+      }									\
+    }									\
+    LOG_FAC_PRINT( level, fmt, ##args );				\
+  }while(0)
 #endif
 
 

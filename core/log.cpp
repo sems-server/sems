@@ -93,7 +93,7 @@ void set_log_facility(const char* facility) {
   }
 }
 
-void dprint(int level, const char* fct, char* file, int line, char* fmt, ...)
+void dprint(int level, const char* fct, const char* file, int line, const char* fmt, ...)
 {
   va_list ap;
     
@@ -104,7 +104,7 @@ void dprint(int level, const char* fct, char* file, int line, char* fmt, ...)
   va_end(ap);
 }
 
-void log_print (int level, char* fmt, ...)
+void log_print (int level, const char* fmt, ...)
 {
   va_list ap;
 
@@ -115,7 +115,7 @@ void log_print (int level, char* fmt, ...)
   va_end(ap);
 }
 
-void log_fac_print(int level, const char* fct, char* file, int line, char* fmt, ...)
+void log_fac_print(int level, const char* fct, const char* file, int line, const char* fmt, ...)
 {
   va_list ap;
   char logline[512];
