@@ -56,8 +56,8 @@ struct sip_from_to: public sip_parsed_hdr
     ~sip_from_to();
 };
 
-int parse_nameaddr(sip_nameaddr* na, char** c, int len);
-int parse_from_to(sip_from_to* ft, char* beg, int len);
+int parse_nameaddr(sip_nameaddr* na, const char** c, int len);
+int parse_from_to(sip_from_to* ft, const char* beg, int len);
 
 inline sip_from_to* get_from(sip_msg* msg)
 {

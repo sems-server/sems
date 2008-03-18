@@ -51,7 +51,7 @@ sip_via::~sip_via()
     }
 }
 
-static int parse_transport(sip_transport* t, char** c, int len)
+static int parse_transport(sip_transport* t, const char** c, int len)
 {
     enum {
 
@@ -85,7 +85,7 @@ static int parse_transport(sip_transport* t, char** c, int len)
     t->val.s = *c;
 
     len -= SIPVER_len+1;
-    char* end = *c + len;
+    const char* end = *c + len;
 
     for(;**c && (*c!=end);(*c)++){
 
@@ -189,7 +189,7 @@ static int parse_transport(sip_transport* t, char** c, int len)
     return 0;
 }
 
-static int parse_by(cstring* host, cstring* port, char** c, int len)
+static int parse_by(cstring* host, cstring* port, const char** c, int len)
 {
     enum {
 	BY_HOST=0,
@@ -201,8 +201,8 @@ static int parse_by(cstring* host, cstring* port, char** c, int len)
 
     int saved_st=0, st=BY_HOST;
 
-    char* beg = *c;
-    char* end = beg+len;
+    const char* beg = *c;
+    const char* end = beg+len;
 
     for(;*c!=end;(*c)++){
 
@@ -347,7 +347,7 @@ static int parse_by(cstring* host, cstring* port, char** c, int len)
     return 0;
 }
 
-inline int parse_via_params(sip_via_parm* parm, char** c, int len)
+inline int parse_via_params(sip_via_parm* parm, const char** c, int len)
 {
     enum {
 	VP_BEG=0,
@@ -368,8 +368,8 @@ inline int parse_via_params(sip_via_parm* parm, char** c, int len)
     list<sip_avp*>::iterator it = parm->params.begin();
     for(;it != parm->params.end();++it){
 	
-	char* c   = (*it)->name.s;
-	char* end = c + (*it)->name.len;
+	const char* c   = (*it)->name.s;
+	const char* end = c + (*it)->name.len;
 	int   st  = VP_BEG;
 
 	for(;c!=end;c++){
@@ -413,7 +413,7 @@ inline int parse_via_params(sip_via_parm* parm, char** c, int len)
 }
 
 
-int parse_via(sip_via* via, char* beg, int len)
+int parse_via(sip_via* via, const char* beg, int len)
 {
     enum {
 	
@@ -424,8 +424,8 @@ int parse_via(sip_via* via, char* beg, int len)
     };
 
 
-    char* c   = beg;
-    char* end = beg+len;
+    const char* c   = beg;
+    const char* end = beg+len;
 
     int saved_st=0, st=V_TRANS;
 

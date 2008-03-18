@@ -58,16 +58,16 @@ using std::auto_ptr;
 // Low case headers 
 //
 
-char* TO_lc = "to";
-char* VIA_lc = "via";
-char* FROM_lc = "from";
-char* CSEQ_lc = "cseq";
-char* ROUTE_lc = "route";
-char* CALL_ID_lc = "call-id";
-char* CONTACT_lc = "contact";
-char* CONTENT_TYPE_lc = "content-type";
-char* RECORD_ROUTE_lc = "record-route";
-char* CONTENT_LENGTH_lc = "content-length";
+const char* TO_lc = "to";
+const char* VIA_lc = "via";
+const char* FROM_lc = "from";
+const char* CSEQ_lc = "cseq";
+const char* ROUTE_lc = "route";
+const char* CALL_ID_lc = "call-id";
+const char* CONTACT_lc = "contact";
+const char* CONTENT_TYPE_lc = "content-type";
+const char* RECORD_ROUTE_lc = "record-route";
+const char* CONTENT_LENGTH_lc = "content-length";
 
 
 sip_header::sip_header()

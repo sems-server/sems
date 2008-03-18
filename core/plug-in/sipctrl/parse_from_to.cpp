@@ -38,7 +38,7 @@ sip_from_to::~sip_from_to()
     }
 }
 
-int parse_nameaddr(sip_nameaddr* na, char** c, int len)
+int parse_nameaddr(sip_nameaddr* na, const char** c, int len)
 {
     enum {
 
@@ -52,10 +52,10 @@ int parse_nameaddr(sip_nameaddr* na, char** c, int len)
     };
 
 
-    char* beg = *c;
-    char* end = *c + len;
+    const char* beg = *c;
+    const char* end = *c + len;
     
-    char* uri_end=0;
+    const char* uri_end=0;
 
     int saved_st=0, st=NA_SWS;
     //int ret=0;
@@ -232,7 +232,7 @@ int parse_nameaddr(sip_nameaddr* na, char** c, int len)
 }
 
 
-int parse_from_to(sip_from_to* ft, char* beg, int len)
+int parse_from_to(sip_from_to* ft, const char* beg, int len)
 {
     enum {
 	FTP_BEG,
@@ -244,8 +244,8 @@ int parse_from_to(sip_from_to* ft, char* beg, int len)
 	FTP_OTHER
     };
 
-    char* c = beg;
-    char* end = c+len;
+    const char* c = beg;
+    const char* end = c+len;
 
     int ret = parse_nameaddr(&ft->nameaddr,&c,len);
     if(ret) return ret;
@@ -257,8 +257,8 @@ int parse_from_to(sip_from_to* ft, char* beg, int len)
 	list<sip_avp*>::iterator it = ft->params.begin();
 	for(;it!=ft->params.end();++it){
 
-	    char* c = (*it)->name.s;
-	    char* end = c + (*it)->name.len;
+	    const char* c = (*it)->name.s;
+	    const char* end = c + (*it)->name.len;
 	    int st = FTP_BEG;
 	    
 	    for(;c!=end;c++){

@@ -101,7 +101,7 @@ sip_trans* trans_bucket::match_request(sip_msg* msg)
     DBG("do_3261_match = %i\n",do_3261_match);
     if(do_3261_match){
 	
-	char* branch = msg->via_p1->branch.s + MAGIC_BRANCH_LEN;
+	const char* branch = msg->via_p1->branch.s + MAGIC_BRANCH_LEN;
 	int   len = msg->via_p1->branch.len - MAGIC_BRANCH_LEN;
 	
 	trans_list::iterator it = elmts.begin();
@@ -273,7 +273,7 @@ sip_trans* trans_bucket::match_reply(sip_msg* msg)
     
     sip_trans* t = NULL;
 
-    char* branch = msg->via_p1->branch.s + MAGIC_BRANCH_LEN;
+    const char* branch = msg->via_p1->branch.s + MAGIC_BRANCH_LEN;
     int   len = msg->via_p1->branch.len - MAGIC_BRANCH_LEN;
     
     assert(get_cseq(msg));

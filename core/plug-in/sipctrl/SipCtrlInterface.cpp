@@ -438,7 +438,7 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
     if(msg->contact){
 
 	sip_nameaddr na;
-	char* c = msg->contact->value.s;
+	const char* c = msg->contact->value.s;
 	if(parse_nameaddr(&na,&c,msg->contact->value.len) < 0){
 	    DBG("Contact parsing failed\n");
 	}
@@ -496,7 +496,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 
     if(msg->contact){
 
-	char* c = msg->contact->value.s;
+	const char* c = msg->contact->value.s;
 	sip_nameaddr na;
 	
 	int err = parse_nameaddr(&na,&c,msg->contact->value.len);

@@ -45,7 +45,7 @@ struct sip_cseq: public sip_parsed_hdr
     {}
 };
 
-int parse_cseq(sip_cseq* cseq, char* beg, int len);
+int parse_cseq(sip_cseq* cseq, const char* beg, int len);
 
 inline sip_cseq* get_cseq(sip_msg* msg)
 {

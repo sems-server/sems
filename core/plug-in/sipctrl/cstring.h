@@ -32,7 +32,7 @@
 
 struct cstring 
 {
-    char*  s;
+    const char*  s;
     int  len;
 
     cstring()
@@ -43,11 +43,15 @@ struct cstring
 	: s(s), len(strlen(s))
     {}
 
-    cstring(char* s, int l)
-	: s(s), len(l)
+     cstring(const char* s) 
+     : s(s), len(strlen(s)) 
+     {} 
+
+    cstring(const char* s, int l)
+    : s(s), len(l)
     {}
 
-    void set(char* _s, int _len){
+    void set(const char* _s, int _len){
 	s = _s;
 	len = _len;
     }
@@ -56,6 +60,7 @@ struct cstring
 	s = 0;
 	len = 0;
     }
+  
 };
 
 #define c2stlstr(str) \

@@ -30,7 +30,7 @@
 
 #include "log.h"
 
-int parse_cseq(sip_cseq* cseq, char* beg, int len)
+int parse_cseq(sip_cseq* cseq, const char* beg, int len)
 {
     enum {
 	C_NUM=0,
@@ -39,8 +39,8 @@ int parse_cseq(sip_cseq* cseq, char* beg, int len)
     };
 
 
-    char* c = beg;
-    char* end = c+len;
+    const char* c = beg;
+    const char* end = c+len;
 
     int saved_st=0, st=C_NUM;
 

@@ -112,29 +112,29 @@ sip_msg::~sip_msg()
 }
 
 
-char* INVITEm = "INVITE";
+const char* INVITEm = "INVITE";
 #define INVITE_len 6
 
-char* ACKm = "ACK";
+const char* ACKm = "ACK";
 #define ACK_len 3
 
-char* OPTIONSm = "OPTIONS";
+const char* OPTIONSm = "OPTIONS";
 #define OPTIONS_len 7
 
-char* BYEm = "BYE";
+const char* BYEm = "BYE";
 #define BYE_len 3
 
-char* CANCELm = "CANCEL";
+const char* CANCELm = "CANCEL";
 #define CANCEL_len 6
 
-char* REGISTERm = "REGISTER";
+const char* REGISTERm = "REGISTER";
 #define REGISTER_len 8
 
 
-int parse_method(int* method, char* beg, int len)
+int parse_method(int* method, const char* beg, int len)
 {
-    char* c = beg;
-    char* end = c+len;
+    const char* c = beg;
+    const char* end = c+len;
 
     *method = sip_request::OTHER_METHOD;
 

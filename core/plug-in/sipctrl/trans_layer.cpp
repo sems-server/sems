@@ -260,7 +260,7 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 	sip_header* fr = route_hdrs.front();
 	
 	sip_nameaddr na;
-	char* c = fr->value.s;
+	const char* c = fr->value.s;
 	if(parse_nameaddr(&na, &c, fr->value.len)<0) {
 	    
 	    DBG("Parsing name-addr failed\n");
@@ -309,7 +309,7 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 	    };
 
 	    int st = RR_PARAMS;
-	    char* end = fr->value.s + fr->value.len;
+	    const char* end = fr->value.s + fr->value.len;
 	    for(;c<end;c++){
 		
 		switch(st){
@@ -469,8 +469,8 @@ int trans_layer::send_request(sip_msg* msg, char* tid)
 				       msg->u.request->ruri_str);
 
     char branch_buf[BRANCH_BUF_LEN];
+    compute_branch(branch_buf,msg->callid->value,msg->cseq->value);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
-    compute_branch(branch.s,msg->callid->value,msg->cseq->value);
     
     string via(transport->get_local_ip());
     if(transport->get_local_port() != 5060)
@@ -609,8 +609,8 @@ int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
 				       req->u.request->ruri_str);
 
     char branch_buf[BRANCH_BUF_LEN];
+    compute_branch(branch_buf,req->callid->value,get_cseq(req)->num_str);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
-    compute_branch(branch.s,req->callid->value,get_cseq(req)->num_str);
     
     string via(transport->get_local_ip());
     if(transport->get_local_port() != 5060)
@@ -1091,7 +1091,7 @@ void trans_layer::send_200_ack(sip_msg* reply)
     }
     
     sip_nameaddr na;
-    char* c = reply->contact->value.s;
+    const char* c = reply->contact->value.s;
     if(parse_nameaddr(&na,&c,reply->contact->value.len) < 0){
 	DBG("Sorry, reply's Contact parsing failed: could not send ACK\n");
 	return;
@@ -1112,8 +1112,8 @@ void trans_layer::send_200_ack(sip_msg* reply)
     int request_len = request_line_len(cstring("ACK",3),r_uri);
    
     char branch_buf[BRANCH_BUF_LEN];
+    compute_branch(branch_buf,reply->callid->value,reply->cseq->value);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
-    compute_branch(branch.s,reply->callid->value,reply->cseq->value);
 
     sip_header* max_forward = new sip_header(0,cstring("Max-Forwards"),cstring("10"));
 
@@ -1134,21 +1134,21 @@ void trans_layer::send_200_ack(sip_msg* reply)
     char* ack_buf = new char[request_len];
 
     // generate it
-    c = ack_buf;
+    char* msg = ack_buf;
 
-    request_line_wr(&c,cstring("ACK",3),r_uri);
-    via_wr(&c,via,branch);
+    request_line_wr(&msg,cstring("ACK",3),r_uri);
+    via_wr(&msg,via,branch);
 
-    copy_hdrs_wr(&c,route_hdrs);
+    copy_hdrs_wr(&msg,route_hdrs);
 
-    copy_hdr_wr(&c,reply->from);
-    copy_hdr_wr(&c,reply->to);
-    copy_hdr_wr(&c,reply->callid);
-    copy_hdr_wr(&c,max_forward);
-    cseq_wr(&c,get_cseq(reply)->num_str,cstring("ACK",3));
+    copy_hdr_wr(&msg,reply->from);
+    copy_hdr_wr(&msg,reply->to);
+    copy_hdr_wr(&msg,reply->callid);
+    copy_hdr_wr(&msg,max_forward);
+    cseq_wr(&msg,get_cseq(reply)->num_str,cstring("ACK",3));
 
-    *c++ = CR;
-    *c++ = LF;
+    *msg++ = CR;
+    *msg++ = LF;
 
     DBG("About to send 200 ACK: \n<%.*s>\n",request_len,ack_buf);
 

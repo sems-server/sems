@@ -127,7 +127,7 @@ struct sip_msg
     ~sip_msg();
 };
 
-int parse_method(int* method, char* beg, int len);
+int parse_method(int* method, const char* beg, int len);
 int parse_sip_msg(sip_msg* msg);
 
 #endif

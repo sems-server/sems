@@ -38,16 +38,16 @@ using std::auto_ptr;
 // SIP version constants
 //
 
-char* SIP = "SIP";
+const char* SIP = "SIP";
 #define SIP_len 3
 
-char* SUP_SIPVER = "2.0";
+const char* SUP_SIPVER = "2.0";
 #define SUP_SIPVER_len 3
 
 
-int parse_sip_version(char* beg, int len)
+int parse_sip_version(const char* beg, int len)
 {
-    char* c = beg;
+    const char* c = beg;
     //char* end = c+len;
 
     if(len!=7){
@@ -76,7 +76,7 @@ int parse_sip_version(char* beg, int len)
 }
 
 
-int parse_gen_params(list<sip_avp*>* params, char** c, int len, char stop_char)
+int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_char)
 {
     enum {
 	VP_PARAM_SEP=0,
@@ -88,8 +88,8 @@ int parse_gen_params(list<sip_avp*>* params, char** c, int len, char stop_char)
 	VP_PVALUE_QUOTED
     };
 
-    char* beg = *c;
-    char* end = beg+len;
+    const char* beg = *c;
+    const char* end = beg+len;
     int saved_st=0,st=VP_PARAM_SEP;
 
     auto_ptr<sip_avp> avp(new sip_avp());

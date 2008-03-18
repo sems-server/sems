@@ -48,7 +48,7 @@ sip_uri::~sip_uri()
 }
 
 
-static int parse_sip_uri(sip_uri* uri, char* beg, int len)
+static int parse_sip_uri(sip_uri* uri, const char* beg, int len)
 {
     enum {
 	URI_USER=0, 
@@ -62,7 +62,7 @@ static int parse_sip_uri(sip_uri* uri, char* beg, int len)
     };
 
     int st  = URI_HOST;
-    char* c = beg;
+    const char* c = beg;
     //int escaped = 0;
 
     cstring tmp1, tmp2;
@@ -316,7 +316,7 @@ static int parse_sip_uri(sip_uri* uri, char* beg, int len)
     return 0;
 }
 
-int parse_uri(sip_uri* uri, char* beg, int len)
+int parse_uri(sip_uri* uri, const char* beg, int len)
 {
     enum {
 	URI_BEG=0,
@@ -327,7 +327,7 @@ int parse_uri(sip_uri* uri, char* beg, int len)
     };
 
     int st = URI_BEG;
-    char* c = beg;
+    const char* c = beg;
 
     for(;c!=beg+len;c++){
 	switch(st){

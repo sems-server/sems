@@ -144,9 +144,9 @@ struct sip_avp
 // Functions
 //
 
-inline int lower_cmp(char* l, char* r, int len)
+inline int lower_cmp(const char* l, const char* r, int len)
 {
-    char* end = l+len;
+    const char* end = l+len;
 
     while(l!=end){
 	if( LOWER_B(*l) != *r ){
@@ -158,8 +158,8 @@ inline int lower_cmp(char* l, char* r, int len)
     return 0;
 }
 
-int parse_sip_version(char* beg, int len);
+int parse_sip_version(const char* beg, int len);
 
-int parse_gen_params(list<sip_avp*>* params, char** c, int len, char stop_char);
+int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_char);
 
 #endif
