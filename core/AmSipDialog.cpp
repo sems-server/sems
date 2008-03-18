@@ -33,7 +33,7 @@
 #include "AmServer.h"
 #include "sems.h"
 
-char* AmSipDialog::status2str[4]  = { 	
+const char* AmSipDialog::status2str[4]  = { 	
   "Disconnected",
   "Pending",
   "Connected",

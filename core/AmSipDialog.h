@@ -111,7 +111,7 @@ class AmSipDialog
     Disconnecting
   };
 
-  static char* status2str[4];
+  static const char* status2str[4];
 
   string user;         // local user
   string domain;       // local domain
