@@ -34,10 +34,26 @@
 // AmB2BSession methods
 //
 
+AmB2BSession::AmB2BSession()
+  : sip_relay_only(true)
+{
+}
+
+AmB2BSession::AmB2BSession(const string& other_local_tag)
+  : other_id(other_local_tag),
+    sip_relay_only(true)
+{
+}
+
+
 AmB2BSession::~AmB2BSession()
 {
   DBG("relayed_req.size() = %u\n",(unsigned int)relayed_req.size());
   DBG("recvd_req.size() = %u\n",(unsigned int)recvd_req.size());
+}
+
+void AmB2BSession::set_sip_relay_only(bool r) { 
+  sip_relay_only = r; 
 }
 
 void AmB2BSession::clear_other()
@@ -225,6 +241,10 @@ AmB2BCallerSession::AmB2BCallerSession()
 {
 }
 
+AmB2BCallerSession::~AmB2BCallerSession()
+{
+}
+
 void AmB2BCallerSession::terminateLeg()
 {
   AmB2BSession::terminateLeg();
@@ -362,6 +382,19 @@ void AmB2BCallerSession::createCalleeSession()
 AmB2BCalleeSession* AmB2BCallerSession::newCalleeSession()
 {
   return new AmB2BCalleeSession(this);
+}
+
+AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
+  : AmB2BSession(other_local_tag)
+{
+}
+
+AmB2BCalleeSession::AmB2BCalleeSession(const AmB2BCallerSession* caller)
+  : AmB2BSession(caller->getLocalTag())
+{
+}
+
+AmB2BCalleeSession::~AmB2BCalleeSession() {
 }
 
 void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)

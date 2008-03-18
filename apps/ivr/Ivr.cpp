@@ -590,7 +590,7 @@ IvrDialog::IvrDialog(AmDynInvoke* user_timer)
     playlist(this),
     user_timer(user_timer)
 {
-  sip_relay_only = false;
+  set_sip_relay_only(false);
 }
 
 IvrDialog::~IvrDialog()

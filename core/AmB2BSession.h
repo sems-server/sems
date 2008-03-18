@@ -158,15 +158,13 @@ class AmB2BSession: public AmSession
    */
   virtual bool onOtherReply(const AmSipReply& reply);
 
-  AmB2BSession()
-    : sip_relay_only(true)
-    {}
-  AmB2BSession(const string& other_local_tag)
-    : other_id(other_local_tag),
-    sip_relay_only(true)
-    {}
+  AmB2BSession();
+  AmB2BSession(const string& other_local_tag);
 
   virtual ~AmB2BSession();
+
+ public:
+  void set_sip_relay_only(bool r);
 };
 
 class AmB2BCalleeSession;
@@ -195,6 +193,7 @@ class AmB2BCallerSession: public AmB2BSession
 
  public:
   AmB2BCallerSession();
+  virtual ~AmB2BCallerSession();
     
   CalleeStatus getCalleeStatus() { return callee_status; }
 
@@ -214,8 +213,6 @@ class AmB2BCallerSession: public AmB2BSession
   void terminateOtherLeg();
   void onB2BEvent(B2BEvent* ev);
 
-  void set_sip_relay_only(bool r) { sip_relay_only = r; }
-
   AmSipRequest* getInviteReq() { return &invite_req; }
 
 };
@@ -224,13 +221,10 @@ class AmB2BCallerSession: public AmB2BSession
 class AmB2BCalleeSession: public AmB2BSession
 {
  public:
-  AmB2BCalleeSession(const string& other_local_tag)
-    : AmB2BSession(other_local_tag)
-    {}
+  AmB2BCalleeSession(const string& other_local_tag);
+  AmB2BCalleeSession(const AmB2BCallerSession* caller);
 
-  AmB2BCalleeSession(const AmB2BCallerSession* caller)
-    : AmB2BSession(caller->getLocalTag())
-    {}
+  virtual ~AmB2BCalleeSession();
 
   void onB2BEvent(B2BEvent* ev);
 };

@@ -100,7 +100,7 @@ AnnounceCallerDialog::AnnounceCallerDialog(const string& filename)
 {
   // we want to answer
   //  the call ourself
-  sip_relay_only = false;
+  set_sip_relay_only(false);
 }
 
 void AnnounceCallerDialog::onSessionStart(const AmSipRequest& req)
