@@ -371,7 +371,7 @@ struct amci_payload_t {
     int   payload_id;
 
     /** example: "PCMU" (see RFC 1890)*/
-    char* name;
+    const char* name;
 
     /** 
      * example: 8000 (Hz).
