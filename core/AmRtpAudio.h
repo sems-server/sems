@@ -32,6 +32,11 @@
 #include "AmRtpStream.h"
 #include "LowcFE.h"
 
+#ifdef USE_SPANDSP_PLC
+#include <math.h>
+#include "spandsp/plc.h"
+#endif
+
 class AmPlayoutBuffer;
 
 enum PlayoutType {
@@ -65,7 +70,12 @@ class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
 {
   auto_ptr<AmPlayoutBuffer> playout_buffer;
 
-  LowcFE       fec;
+#ifdef USE_SPANDSP_PLC
+    plc_state_t* plc_state;
+#else 
+    LowcFE       fec;
+#endif
+
   bool         use_default_plc;
 
   unsigned int last_check;
@@ -84,6 +94,7 @@ class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
 
 public:
   AmRtpAudio(AmSession* _s=0);
+  ~AmRtpAudio();
 
   bool checkInterval(unsigned int ts, unsigned int frame_size);
   bool sendIntReached();

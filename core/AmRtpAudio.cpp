@@ -37,6 +37,15 @@ AmRtpAudio::AmRtpAudio(AmSession* _s)
     send_only(false), playout_buffer(new AmPlayoutBuffer(this)),
     last_check(0),last_check_i(false),send_int(false)
 {
+#ifdef USE_SPANDSP_PLC
+  plc_state = plc_init(NULL);
+#endif // USE_SPANDSP_PLC
+}
+
+AmRtpAudio::~AmRtpAudio() {
+#ifdef USE_SPANDSP_PLC
+  plc_release(plc_state);
+#endif // USE_SPANDSP_PLC
 }
 
 bool AmRtpAudio::checkInterval(unsigned int ts, unsigned int frame_size)
@@ -179,27 +188,34 @@ unsigned int AmRtpAudio::default_plc(unsigned char* out_buf,
 {
   short* buf_offset = (short*)out_buf;
 
+#ifdef USE_SPANDSP_PLC
+  plc_fillin(plc_state, buf_offset, PCM16_B2S(size));
+#else
   for(unsigned int i=0; i<(PCM16_B2S(size)/FRAMESZ); i++){
 
     fec.dofe(buf_offset);
     buf_offset += FRAMESZ;
   }
+#endif // USE_SPANDSP_PLC
 
   return PCM16_S2B(buf_offset - (short*)out_buf);
 }
 
 void AmRtpAudio::add_to_history(int16_t *buffer, unsigned int size)
 {
-  int16_t* buf_offset = buffer;
-
   if (!use_default_plc)
     return;
 
-  for(unsigned int i=0; i<(PCM16_B2S(size)/FRAMESZ); i++){
+#ifdef USE_SPANDSP_PLC
+  plc_rx(plc_state, buffer, PCM16_B2S(size));
+#else // USE_SPANDSP_PLC
+  int16_t* buf_offset = buffer;
 
+  for(unsigned int i=0; i<(PCM16_B2S(size)/FRAMESZ); i++){
     fec.addtohistory(buf_offset);
     buf_offset += FRAMESZ;
   }
+#endif // USE_SPANDSP_PLC
 }
 
 void AmRtpAudio::setPlayoutType(PlayoutType type)
