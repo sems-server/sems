@@ -98,9 +98,9 @@ void AmPlayoutBuffer::write(u_int32_t ref_ts, u_int32_t rtp_ts,
 	  direct_write_buffer(last_ts, (ShortSample*)tmp, PCM16_B2S(l_size));
         }
     }
-  write_buffer(ref_ts, mapped_ts, buf, len);
-
   m_plcbuffer->add_to_history(buf, PCM16_S2B(len));
+
+  write_buffer(ref_ts, mapped_ts, buf, len);
 
   // update last_ts to end of received packet 
   // if not out-of-sequence
