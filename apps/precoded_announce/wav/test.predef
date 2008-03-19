@@ -1,0 +1,11 @@
+# format: 
+# codec id;payload name;samplerate;channels;format parameters;frame milliseconds;frame bytes;filename (full path)
+#
+#
+0;PCMU;8000;1;<none>;20;160;test8k.pcmu;
+8;PCMA;8000;1;<none>;20;160;test8k.pcma;
+96;iLBC;8000;1;<none>;30;50;test8k.ilbc30;
+97;iLBC;8000;1;mode=30;30;50;test8k.ilbc30;
+98;iLBC;8000;1;mode=20;20;33;test8k.ilbc20;
+
+
