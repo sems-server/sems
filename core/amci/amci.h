@@ -306,7 +306,7 @@ struct amci_subtype_t {
     int   type;
 
     /** ex. "Mu-Law" */
-    char* name;
+    const char* name;
 
     /**
      * This must be initialized.<br> 
