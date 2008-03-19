@@ -118,10 +118,11 @@ class AmSession : public AmThread,
   AmAudio*     local_output;
 
   bool use_local_audio[2];
-
+protected:
   vector<SdpPayload *>  m_payloads;
   bool         negotiate_onreply;
 
+private:
   AmDtmfDetector   m_dtmfDetector;
   AmDtmfEventQueue m_dtmfEventQueue;
   bool m_dtmfDetectionEnabled;
@@ -302,6 +303,9 @@ public:
 
   /** Set whether on positive reply session should be negotiated */
   void setNegotiateOnReply(bool n) { negotiate_onreply = n; }
+
+  /** get the payload provider for the session */
+  virtual AmPayloadProviderInterface* getPayloadProvider();
 
   /** handle SDP negotiation: only for INVITEs & re-INVITEs */
   virtual void negotiate(const string& sdp_body,

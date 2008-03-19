@@ -268,13 +268,13 @@ int AmSdp::genRequest(const string& localip, int localport, string& out_buf)
 
 }
 
-const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(int media_type, string& addr, int& port)
+const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(AmPayloadProviderInterface* payload_provider, 
+							int media_type, string& addr, int& port)
 {
   vector<SdpMedia>::iterator m_it;
   SdpPayload *payload;
   sup_pl.clear();
 
-  AmPlugIn* pi = AmPlugIn::instance();
   for(m_it = media.begin(); m_it != media.end(); ++m_it){
     //DBG("type found: %d\n", m_it->type);
     //DBG("media port: %d\n", m_it->port);
@@ -293,7 +293,7 @@ const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(int media_type, string& 
            amci_payload_t* a_pl = NULL;
       if(it->payload_type < DYNAMIC_PAYLOAD_TYPE_START) {
 	// try static payloads
-	a_pl = pi->payload(it->payload_type);
+	a_pl = payload_provider->payload(it->payload_type);
       }
 
       if( a_pl) {
@@ -311,9 +311,10 @@ const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(int media_type, string& 
 	if(it->encoding_name == "telephone-event")
 	  continue;
 
-	int int_pt = getDynPayload(it->encoding_name,
-				   it->clock_rate,
-				   it->encoding_param);
+	int int_pt = payload_provider->
+	  getDynPayload(it->encoding_name,
+			it->clock_rate,
+			it->encoding_param);
 	if(int_pt != -1){
 	  payload = &(*it);
 	  payload->int_pt = int_pt;
@@ -346,25 +347,6 @@ const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(int media_type, string& 
 bool AmSdp::hasTelephoneEvent()
 {
   return telephone_event_pt != NULL;
-}
-
-int AmSdp::getDynPayload(const string& name, int rate, int encoding_param)
-{
-  AmPlugIn* pi = AmPlugIn::instance();
-  const std::map<int, amci_payload_t*>& ref_payloads = pi->getPayloads();
-
-  for(std::map<int, amci_payload_t*>::const_iterator pl_it = ref_payloads.begin();
-      pl_it != ref_payloads.end(); ++pl_it)
-    if( (name == pl_it->second->name)
-	&& (rate == pl_it->second->sample_rate) ) {
-      if ((encoding_param > 0) && (pl_it->second->channels >0) && 
-	  (encoding_param != pl_it->second->channels))
-	continue;
-	  
-      return pl_it->first;
-    }
-
-  return -1;
 }
 
 const SdpPayload *AmSdp::findPayload(const string& name)

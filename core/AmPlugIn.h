@@ -50,10 +50,31 @@ struct amci_payload_t;
 struct amci_inoutfmt_t;
 struct amci_subtype_t;
 
+/** Interface that a payload provider needs to implement */
+class AmPayloadProviderInterface {
+ public: 
+  AmPayloadProviderInterface() { }
+  virtual ~AmPayloadProviderInterface() { }
+  
+  /** 
+   * Payload lookup function.
+   * @param payload_id Payload ID.
+   * @return NULL if failed .
+   */
+  virtual amci_payload_t*  payload(int payload_id) = 0;
+
+  /** 
+   * Payload lookup function by name & rate
+   * @param name Payload ID.
+   * @return -1 if failed, else the internal payload id.
+   */
+  virtual int getDynPayload(const string& name, int rate, int encoding_param) = 0;
+};
+
 /**
  * \brief Container for loaded Plug-ins.
  */
-class AmPlugIn
+class AmPlugIn : public AmPayloadProviderInterface
 {
  public:
   //     enum PlugInType {
@@ -83,7 +104,7 @@ class AmPlugIn
   std::set<string> excluded_payloads;  // don't load these payloads (named)
     
   AmPlugIn();
-  ~AmPlugIn();
+  virtual ~AmPlugIn();
 
   /** @return -1 if failed, else 0. */
   int loadPlugIn(const string& file);
@@ -97,11 +118,11 @@ class AmPlugIn
   int loadLogFacPlugIn(AmPluginFactory* f);
   int loadCtrlFacPlugIn(AmPluginFactory* f);
 
+ public:
+
   int addCodec(amci_codec_t* c);
   int addPayload(amci_payload_t* p);
   int addFileFormat(amci_inoutfmt_t* f);
-
- public:
 
   static AmPlugIn* instance();
 
@@ -119,6 +140,14 @@ class AmPlugIn
    * @return NULL if failed .
    */
   amci_payload_t*  payload(int payload_id);
+
+  /** 
+   * Payload lookup function by name & rate
+   * @param name Payload ID.
+   * @return -1 if failed, else the internal payload id.
+   */
+  int getDynPayload(const string& name, int rate, int encoding_param);
+
   /** @return the suported payloads. */
   const std::map<int,amci_payload_t*>& getPayloads() { return payloads; }
   /** @return the order of payloads. */

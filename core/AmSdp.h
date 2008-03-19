@@ -32,6 +32,7 @@
 #include <map>
 #include <vector>
 #include <netinet/in.h>
+#include "AmPlugIn.h"
 using std::string;
 
 
@@ -139,12 +140,6 @@ class AmSdp
   // 'telephone-event'
   const SdpPayload *telephone_event_pt;
 
-  /** 
-   * Do we have that payload ? 
-   * @return our payload type.
-   */
-  int getDynPayload(const string& name, int rate, int encoding_param);
-
   /**
    * Find payload by name
    */
@@ -194,7 +189,8 @@ public:
    * Get a compatible payload from SDP offer/response. 
    * @return empty vector if error encountered.
    */
-  const std::vector<SdpPayload*>& getCompatiblePayloads(int media_type, string& addr, int& port);
+  const std::vector<SdpPayload*>& getCompatiblePayloads(AmPayloadProviderInterface* payload_provider,
+							int media_type, string& addr, int& port);
 
   /**
    * Test if remote UA supports 'telefone_event'.

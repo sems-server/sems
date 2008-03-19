@@ -267,6 +267,11 @@ int AmSession::getRPort()
   return rtp_str.getRPort();
 }
 
+AmPayloadProviderInterface* AmSession::getPayloadProvider() {
+  // by default the system codecs
+  return AmPlugIn::instance();
+}
+
 void AmSession::negotiate(const string& sdp_body,
 			  bool force_symmetric_rtp,
 			  string* sdp_reply)
@@ -282,7 +287,7 @@ void AmSession::negotiate(const string& sdp_body,
   if(sdp.media.empty())
     throw AmSession::Exception(400,"no media line found in SDP message");
     
-  m_payloads = sdp.getCompatiblePayloads(MT_AUDIO, r_host, r_port);
+  m_payloads = sdp.getCompatiblePayloads(getPayloadProvider(), MT_AUDIO, r_host, r_port);
 
   if (m_payloads.size() == 0)
     throw AmSession::Exception(606,"could not find compatible payload");
