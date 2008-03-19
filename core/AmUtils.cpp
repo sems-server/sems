@@ -792,19 +792,28 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
     switch(st) {
     default:
     case ST_FINDKEY: {
-      if (curr=='"') {
-	st = ST_FK_ESC;
-      } else if (curr==name[0]) {
-	st = ST_CMPKEY;
-	s_begin = p;
-	corr = 1;
-      }
-      p++;
+	switch(curr){
+	case '"':
+	case '\'':
+	    st = ST_FK_ESC;
+	    break;
+	default:
+	    st = ST_CMPKEY;
+	    s_begin = p;
+	    corr = 1;
+	}
+	p++;
     }; break;
 
     case ST_FK_ESC: {
-      if (curr=='"')
-	st = ST_FINDKEY;
+	switch(curr){
+	case '"':
+	case '\'':
+	    st = ST_FINDKEY;
+	    break;
+	default:
+	    break;
+	}
       p++;
     }; break;
 
@@ -831,13 +840,17 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
     }; break;
 
     case ST_SRCHEND: {
-      if (curr=='"') {
-	v_begin++;
-	st = ST_SE_ESC;
-      } else 
-	st = ST_SE_VAL;
-      p++;
-      v_end = p;
+	switch(curr){
+	case '"':
+	case '\'':
+	    v_begin++;
+	    st = ST_SE_ESC;
+	    break;
+	default:
+	    st = ST_SE_VAL;
+	}
+	p++;
+	v_end = p;
     }; break;
 
     case ST_SE_VAL: {
@@ -850,12 +863,15 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
     }; break;
 
     case ST_SE_ESC: {
-      if (curr=='"')
-	p = param_hdr.length();
-      else {
-	v_end = p;
-	p++;
-      }
+	switch(curr){
+	case '"':
+	case '\'':
+	    p = param_hdr.length();
+	    break;
+	default:
+	    v_end = p;
+	    p++;
+	}
     }; break;
 
     }
