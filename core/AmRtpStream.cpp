@@ -291,8 +291,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 }
 
 AmRtpStream::AmRtpStream(AmSession* _s) 
-  : runcond(0), 
-    r_port(0),
+  : r_port(0),
     l_port(0),
     l_sd(0), 
     r_ssrc_i(false),
@@ -398,20 +397,17 @@ void AmRtpStream::init(const vector<SdpPayload*>& sdp_payloads)
 {
   SdpPayload *sdp_payload = sdp_payloads[0];
   payload = sdp_payload->payload_type;
-  int_payload = sdp_payload->int_pt;
   last_payload = payload;
   resume();
 }
 
 void AmRtpStream::pause()
 {
-  runcond.set(false);
 }
 
 void AmRtpStream::resume()
 {
   gettimeofday(&last_recv_time,NULL);
-  runcond.set(true);
 }
 
 void AmRtpStream::setOnHold(bool on_hold) {

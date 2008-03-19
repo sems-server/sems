@@ -89,15 +89,6 @@ protected:
 
   static int getNextPort();
 
-  AmSharedVar<bool> runcond;
-  AmMutex           runmutex;
-
-  /** 
-      Internal payload (only different from 
-      payload if using dynamic payloads).
-  */
-  int         int_payload;
-
   /**
      Remote payload (only different from 
      int_payload if using dynamic payloads)
@@ -276,26 +267,6 @@ public:
   void clearRTPTimeout(struct timeval* recv_time);
 
   virtual unsigned int bytes2samples(unsigned int) const = 0;
-};
-
-/** \brief represents info about an \ref AmRtpStream */
-struct AmRtpStreamInfo
-{
-  enum StreamType { 
-    ST_Receive=1, 
-    ST_Send=2,
-    ST_Duplex=3
-  };
-
-  StreamType   type;
-  AmAudio*     audio_play;
-  AmAudio*     audio_rec;
-  bool         ts_offset_i;
-  unsigned int ts_offset;
-
-  AmRtpStreamInfo(StreamType type, 
-		  AmAudio* audio_play = NULL, 
-		  AmAudio* audio_rec = NULL);
 };
 
 /** \brief event fired on RTP timeout */
