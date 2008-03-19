@@ -100,6 +100,7 @@ public:
   bool sendIntReached();
 
   int setCurrentPayload(int payload);
+  int getCurrentPayload();
 
   int receive(unsigned int wallclock_ts);
 

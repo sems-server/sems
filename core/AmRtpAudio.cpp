@@ -157,6 +157,10 @@ int AmRtpAudio::setCurrentPayload(int payload)
   return res;
 }
 
+int AmRtpAudio::getCurrentPayload() {
+  return ((AmAudioRtpFormat *) fmt.get())->getCurrentPayload();
+}
+
 unsigned int AmRtpAudio::conceal_loss(unsigned int ts_diff, unsigned char *buffer)
 {
   int s=0;

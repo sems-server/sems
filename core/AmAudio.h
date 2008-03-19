@@ -109,11 +109,11 @@ public:
   int channels;
   /** Sampling rate. */
   int rate;
-  /* frame length in samples (frame based codecs) */
+  /* frame length in ms (frame based codecs) - unused */
   int frame_length;
-  /* frame size in bytes */
+  /* frame size in samples */
   int frame_size;
-  /* encoded frame size in bytes */
+  /* encoded frame size in bytes - unused */
   int frame_encoded_size;
 
   string sdp_format_parameters;
@@ -122,7 +122,9 @@ public:
   virtual ~AmAudioFormat();
 
   /** @return The format's codec pointer. */
-  amci_codec_t*    getCodec();
+  virtual amci_codec_t*    getCodec();
+  void resetCodec();
+
   /** @return Handler returned by the codec's init function.*/
   long             getHCodec();
   long             getHCodecNoInit() { return h_codec; } // do not initialize
@@ -158,7 +160,7 @@ class AmAudioSimpleFormat: public AmAudioFormat
   int codec_id;
 
 protected:
-  int getCodecId() { return codec_id; }
+  virtual int getCodecId() { return codec_id; }
 
 public:
   AmAudioSimpleFormat(int codec_id);
@@ -176,7 +178,7 @@ class AmAudioRtpFormat: public AmAudioFormat
   std::map<int, CodecContainer *> m_codecContainerByPayload;
 
 protected:
-  int getCodecId();
+  virtual int getCodecId();
 
 public:
   /**
@@ -191,6 +193,8 @@ public:
    * changes payload. returns != 0 on error.
    */
   int setCurrentPayload(int payload);
+
+  int getCurrentPayload() { return m_currentPayload; };
 };
 
 /**
@@ -299,6 +303,8 @@ public:
   int  incRecordTime(unsigned int samples);
 
   void setBufferedOutput(unsigned int buffer_size);
+
+  void setFormat(AmAudioFormat* new_fmt);
 };
 
 

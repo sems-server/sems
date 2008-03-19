@@ -223,6 +223,10 @@ void AmAudioFormat::destroyCodec()
   codec = NULL;
 }
 
+void AmAudioFormat::resetCodec() {
+  codec = NULL;
+  getCodec();
+}
 
 amci_codec_t* AmAudioFormat::getCodec()
 {
@@ -268,6 +272,11 @@ AmAudio::~AmAudio()
   if (NULL != resample_state) 
     src_delete(resample_state);
 #endif
+}
+
+void AmAudio::setFormat(AmAudioFormat* new_fmt) {
+  fmt.reset(new_fmt);
+  fmt->resetCodec();
 }
 
 void AmAudio::close()
@@ -494,8 +503,6 @@ void DblBuffer::swap()
 {
   active_buf = !active_buf;
 }
-
-
 
 int AmAudioRtpFormat::getCodecId()
 {
