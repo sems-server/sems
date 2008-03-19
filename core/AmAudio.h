@@ -203,7 +203,6 @@ public:
 class AmAudio
 {
 private:
-  AmMutex fmt_mut;
   int rec_time; // in samples
   int max_rec_time;
 
