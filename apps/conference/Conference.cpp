@@ -173,6 +173,7 @@ int ConferenceFactory::onLoad()
 
   try {
 
+    Connection.set_option(Connection.opt_reconnect, true);
     Connection.connect(mysql_db.c_str(), mysql_server.c_str(),
 		       mysql_user.c_str(), mysql_passwd.c_str());
     if (!Connection) {
@@ -180,7 +181,12 @@ int ConferenceFactory::onLoad()
       return -1;
     }
   }
-	
+
+  catch (const mysqlpp::BadOption& er) {
+    ERROR("MySQL++ set_option error: %s\n", er.what());
+    return -1;
+  }
+
   catch (const mysqlpp::Exception& er) {
     // Catch-all for any MySQL++ exceptions
     ERROR("MySQL++ error: %s\n", er.what());
