@@ -101,7 +101,11 @@ void AmRtpReceiver::run()
       if(it != streams.end()) {
 	AmRtpPacket* p = it->second->newPacket();
 	if (!p) {
-	  WARN("RTP packet receive buffer full.\n");
+	  WARN("RTP packet receive buffer full, dropping packet.\n");
+	  // drop received data
+ 	  AmRtpPacket dummy;
+ 	  dummy.recv(tmp_fds[i].fd);
+	  streams_mut.unlock();
 	  continue;
 	}
 

@@ -408,6 +408,7 @@ void AmRtpStream::pause()
 void AmRtpStream::resume()
 {
   gettimeofday(&last_recv_time,NULL);
+  mem.clear();
 }
 
 void AmRtpStream::setOnHold(bool on_hold) {
@@ -517,3 +518,8 @@ inline void PacketMem::freePacket(AmRtpPacket* p) {
 
   used[p-packets] = false;
 }
+
+inline void PacketMem::clear() {
+  memset(used, 0, sizeof(used));
+}
+ 
