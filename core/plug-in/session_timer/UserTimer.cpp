@@ -152,11 +152,15 @@ void UserTimer::unsafe_removeTimer(int id, const string& session_id)
 void UserTimer::removeTimers(const string& session_id) {
   //  DBG("removing timers for <%s>\n", session_id.c_str());
   timers_mut.lock();
-  for (std::set<AmTimer>::iterator it = timers.begin(); 
-       it != timers.end(); it++) {
+  std::set<AmTimer>::iterator it = timers.begin(); 
+  while (it != timers.end()) {
     if (it->session_id == session_id) {
-      timers.erase(it);
+      std::set<AmTimer>::iterator d_it = it;
+      it++;
+      timers.erase(d_it);
       //  DBG("    o timer removed.\n");
+    } else {
+      it++;
     }
   }
   timers_mut.unlock();
@@ -165,11 +169,15 @@ void UserTimer::removeTimers(const string& session_id) {
 void UserTimer::removeUserTimers(const string& session_id) {
   //  DBG("removing User timers for <%s>\n", session_id.c_str());
   timers_mut.lock();
-  for (std::set<AmTimer>::iterator it = timers.begin(); 
-       it != timers.end(); it++) {
+  std::set<AmTimer>::iterator it = timers.begin(); 
+  while (it != timers.end()) {
     if ((it->id > 0)&&(it->session_id == session_id)) {
-      timers.erase(it);
+      std::set<AmTimer>::iterator d_it = it;
+      it++;
+      timers.erase(d_it);
       //  DBG("    o timer removed.\n");
+    } else {
+      it++;
     }
   }
   timers_mut.unlock();
