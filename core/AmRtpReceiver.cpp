@@ -100,8 +100,10 @@ void AmRtpReceiver::run()
       Streams::iterator it = streams.find(tmp_fds[i].fd);
       if(it != streams.end()) {
 	AmRtpPacket* p = it->second->newPacket();
-	if (!p)
+	if (!p) {
+	  WARN("RTP packet receive buffer full.\n");
 	  continue;
+	}
 
 	if(p->recv(tmp_fds[i].fd) > 0){
 	  int parse_res = p->parse();
