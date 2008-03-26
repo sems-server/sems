@@ -73,6 +73,7 @@ struct PacketMem {
 
   inline AmRtpPacket* newPacket();
   inline void freePacket(AmRtpPacket* p);
+  inline void clear();
 };
 
 
@@ -285,8 +286,4 @@ public:
 // Local Variables:
 // mode:C++
 // End:
-
-
-
-
 
