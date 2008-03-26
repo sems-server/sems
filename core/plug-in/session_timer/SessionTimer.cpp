@@ -91,6 +91,7 @@ bool SessionTimer::onSendRequest(const string& method,
 				 const string& content_type,
 				 const string& body,
 				 string& hdrs,
+				 int flags,
 				 unsigned int cseq)
 {
   string m_hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED)  "timer"  CRLF;
@@ -109,7 +110,8 @@ bool SessionTimer::onSendRequest(const string& method,
 bool SessionTimer::onSendReply(const AmSipRequest& req,
 			       unsigned int  code,const string& reason,
 			       const string& content_type,const string& body,
-			       string& hdrs)
+			       string& hdrs,
+			       int flags)
 {
   //if (!session_timer_conf.getEnableSessionTimer())
   // 	return "";

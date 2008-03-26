@@ -106,6 +106,7 @@ class SessionTimer: public AmSessionEventHandler
 			     const string& content_type,
 			     const string& body,
 			     string& hdrs,
+			     int flags,
 			     unsigned int cseq);
 
   virtual bool onSendReply(const AmSipRequest& req,
@@ -113,7 +114,8 @@ class SessionTimer: public AmSessionEventHandler
 			   const string& reason,
 			   const string& content_type,
 			   const string& body,
-			   string& hdrs);
+			   string& hdrs,
+			   int flags);
 };
 
 
