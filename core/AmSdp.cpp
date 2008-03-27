@@ -856,9 +856,6 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	  break;
 	}
       }
-      //  payload.type = media.type;
-      //payload.payload_type = payload_type;
-      //payload.sdp_format_parameters = params;
 
       
     }else{
@@ -871,11 +868,26 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
       
     }
   }else{
-    string attr(attr_line, int(line_end-attr_line)-1);
-    attr_check(attr);
-    //payload.type = media.type;
-    //payload.encoding_name = attr;
+    if(contains(attr_line, line_end, '=')){
+      next = parse_until(attr_line, '=');
+      //string attr(attr_line, int(next-attr_line)-1);
+      attr_line = next;
+      //}
+      string attr(attr_line, int(line_end-attr_line)-3);
     
+    // attr_check(attr);
+      if(attr == "active"){
+	media.dir=SdpMedia::DirActive;
+	DBG("found attribute 'direction': '%s'\n", (char*)attr.c_str());
+      }else if(attr == "passive"){
+	media.dir=SdpMedia::DirPassive;
+	DBG("found attribute 'direction': '%s'\n", (char*)attr.c_str());
+      }else if(attr == "both"){
+	media.dir=SdpMedia::DirBoth;
+	DBG("found attribute 'direction': '%s'\n", (char*)attr.c_str());
+      }else
+	DBG("unknown attribute 'direction': '%s'\n", (char*)attr.c_str());
+    }
   }
 
   media.payloads.push_back(payload);
@@ -1119,9 +1131,15 @@ static bool attr_check(std::string attr)
     return true;
   else if(attr == "quality")
     return true;
+  else if(attr == "both")
+    return true;
+  else if(attr == "active")
+    return true;
+  else if(attr == "passive")
+    return true;
   else
     {
-    DBG("sdp_parse_attr: Unknow attribute name used: %s, plz see RFC4566\n", 
+    DBG("sdp_parse_attr: Unknow attribute name used:%s, plz see RFC4566\n", 
 	(char*)attr.c_str());
     return false;
     }
