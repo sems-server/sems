@@ -868,8 +868,8 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
       
     }
   }else{
-    if(contains(attr_line, line_end, '=')){
-      next = parse_until(attr_line, '=');
+    if(contains(attr_line, line_end, ':')){
+      next = parse_until(attr_line, ':');
       //string attr(attr_line, int(next-attr_line)-1);
       attr_line = next;
       //}
