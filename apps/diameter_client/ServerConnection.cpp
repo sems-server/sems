@@ -223,6 +223,8 @@ void ServerConnection::openConnection() {
     return;
   }
   
+  AAAFreeMessage(&cer);
+
   AAAMessage* cea = NULL;
   res = tcp_recv_reply(conn.sockfd, &conn.rb, &cea, 
 		       CONNECT_CEA_REPLY_TIMEOUT, 0);
@@ -238,6 +240,8 @@ void ServerConnection::openConnection() {
   if (cea != NULL)
     AAAPrintMessage(cea);
 #endif
+
+  AAAFreeMessage(&cea);
   
   DBG("Connection opened.\n");
   open = true;
