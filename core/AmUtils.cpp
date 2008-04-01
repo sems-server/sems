@@ -798,9 +798,11 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
 	    st = ST_FK_ESC;
 	    break;
 	default:
+	  if (curr==name[0]) {
 	    st = ST_CMPKEY;
 	    s_begin = p;
 	    corr = 1;
+	  }
 	}
 	p++;
     }; break;
