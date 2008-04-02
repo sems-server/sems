@@ -286,7 +286,8 @@ void AuthB2BDialog::createCalleeSession()
 
 AuthB2BCalleeSession::AuthB2BCalleeSession(const AmB2BCallerSession* caller,
 					   const string& user, const string& pwd) 
-  : credentials("", user, pwd), // domain (realm) is unused in credentials 
+  : auth(NULL), 
+    credentials("", user, pwd), // domain (realm) is unused in credentials 
     AmB2BCalleeSession(caller) {
 }
 
@@ -298,6 +299,11 @@ inline UACAuthCred* AuthB2BCalleeSession::getCredentials() {
 }
 
 void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply) {
+  if (NULL == auth) {    
+    AmB2BCalleeSession::onSipReply(reply);
+    return;
+  }
+  
   int cseq_before = dlg.cseq;
   if (!auth->onSipReply(reply)) {
     AmB2BCalleeSession::onSipReply(reply);
@@ -318,10 +324,11 @@ void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply) {
 void AuthB2BCalleeSession::onSendRequest(const string& method, const string& content_type,
 			      const string& body, string& hdrs, int flags, unsigned int cseq)
 {
-  DBG("auth->onSendRequest cseq = %d\n", cseq);
-
-  auth->onSendRequest(method, content_type,
-		      body, hdrs, flags, cseq);
+  if (NULL != auth) {
+    DBG("auth->onSendRequest cseq = %d\n", cseq);
+    auth->onSendRequest(method, content_type,
+			body, hdrs, flags, cseq);
+  }
   
   AmB2BCalleeSession::onSendRequest(method, content_type,
 				     body, hdrs, flags, cseq);

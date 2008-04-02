@@ -1,7 +1,8 @@
 /*
  * $Id: $
  *
- * Copyright (C) 2007 Sipwise GmbH
+ * Copyright (C) 2008 iptego GmbH
+ * Based on the concept of sw_prepaid_sip, Copyright (C) 2007 Sipwise GmbH
  * Based on the concept of mycc, Copyright (C) 2002-2003 Fhg Fokus
  *
  * This file is part of sems, a free SIP media server.
