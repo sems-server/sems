@@ -92,6 +92,7 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
   unsigned int rate=0;
   unsigned short bits_per_sample=0;
   unsigned short sample_size=0;
+  char dummy[6]={'\0'};
 
   if(!fp)
     return -1;
@@ -141,7 +142,7 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
   DBG("rate = <%i>\n",rate);
 
   /* do not read bytes/sec and block align */
-  fseek(fp,6,SEEK_CUR);
+  SAFE_READ(&dummy,6,fp,s); // skip by reading into dummy buffer
 
   SAFE_READ(&bits_per_sample,2,fp,s);
   bits_per_sample=le_to_cpu16(bits_per_sample);
