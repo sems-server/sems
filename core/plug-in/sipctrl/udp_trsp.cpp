@@ -25,11 +25,10 @@
 # error "can't determine socket option (IP_RECVDSTADDR or IP_PKTINFO)"
 #endif
 
-union control_data {
-    struct cmsghdr  cmsg;
-    u_char          data[DSTADDR_DATASIZE];
-
-};
+// union control_data {
+//     struct cmsghdr  cmsg;
+//     u_char          data[DSTADDR_DATASIZE];
+// };
 
 
 udp_trsp::udp_trsp(trans_layer* tl)
@@ -65,7 +64,7 @@ void udp_trsp::run()
     int buf_len;
 
     msghdr           msg;
-    control_data     cmsg;
+    //control_data     cmsg;
     cmsghdr*         cmsgptr; 
     sockaddr_storage from_addr;
     iovec            iov[1];
@@ -78,8 +77,8 @@ void udp_trsp::run()
     msg.msg_namelen    = sizeof(sockaddr_storage);
     msg.msg_iov        = iov;
     msg.msg_iovlen     = 1;
-    msg.msg_control    = &cmsg;
-    msg.msg_controllen = sizeof(cmsg);
+    msg.msg_control    = new u_char[DSTADDR_DATASIZE];
+    msg.msg_controllen = DSTADDR_DATASIZE;
 
     if(sd<=0){
 	ERROR("Transport instance not bound\n");

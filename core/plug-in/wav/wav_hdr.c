@@ -32,7 +32,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN))
+#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || (defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN))
 #define bswap_16(A)  ((((u_int16_t)(A) & 0xff00) >> 8) | \
                    (((u_int16_t)(A) & 0x00ff) << 8))
 #define bswap_32(A)  ((((u_int32_t)(A) & 0xff000000) >> 24) | \
@@ -43,7 +43,7 @@
 #define le_to_cpu16(x) bswap_16(x)
 #define cpu_to_le32(x) bswap_32(x)
 #define le_to_cpu32(x) bswap_32(x)
-#elif (defined(__BYTE_ORDER) && (__BYTE_ORDER == __LITTLE_ENDIAN)) || defined(_LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN)
+#elif (defined(__BYTE_ORDER) && (__BYTE_ORDER == __LITTLE_ENDIAN)) || defined(_LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN) || (defined(BYTE_ORDER) && (BYTE_ORDER == LITTLE_ENDIAN))
 #define cpu_to_le16(x) (x)
 #define cpu_to_le32(x) (x)
 #define le_to_cpu16(x) (x)

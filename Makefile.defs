@@ -82,6 +82,8 @@ CPPFLAGS +=  -DDEBUG_PLAYOUTBUF
 endif
 
 TARGET =
+LIB_LDFLAGS = -shared
+
 ifeq ($(OS), linux)
 	LDFLAGS +=  -ldl -rdynamic -lpthread
 else
@@ -94,14 +96,28 @@ else
 ifeq ($(OS), netbsd)
 	LDFLAGS += -rdynamic -pthread
 else
+ifeq ($(OS), darwin)
+	LDFLAGS += -rdynamic -pthread
+	LIB_LDFLAGS = -flat_namespace -undefined suppress -bundle
+	CXXFLAGS += -fno-common
+	CFLAGS += -fno-common
+
+	# add the DarwinPorts directory
+	CPPFLAGS += -I /opt/local/include
+	LDFLAGS += -L/opt/local/lib
+
+	# those modules do not compile by now
+	exclude_modules += binrpcctrl ilbc
+else
 	LDFLAGS+= -fPIC -ldl -lsocket -lnsl -lpthread
 	TARGET=solaris
 endif
 endif
 endif
 endif
+endif
 
-LIB_LDFLAGS = $(LDFLAGS) -shared
+LIB_LDFLAGS += $(LDFLAGS)
 
 # install path is $(basedir) $(prefix) 
 # example:

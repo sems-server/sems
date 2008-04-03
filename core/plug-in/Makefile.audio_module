@@ -1,7 +1,7 @@
 COREPATH ?=../..
 include $(COREPATH)/../Makefile.defs
 
-LDFLAGS  += -shared $(module_ldflags)
+LDFLAGS  += $(module_ldflags)
 CPPFLAGS += -I $(COREPATH) -I $(COREPATH)/amci 
 CFLAGS   += -Wall $(module_cflags)
 
@@ -47,7 +47,7 @@ $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
 
 $(lib_name): $(objs)  Makefile
-	$(LD) -o $(lib_name) $(objs) $(LDFLAGS)
+	$(LD) -o $(lib_name) $(objs) $(LIB_LDFLAGS)
 
 ifeq ($(lib_full_name),$(MAKECMDGOALS))
 include $(depends)

@@ -1,18 +1,19 @@
 plug_in_name = speex
 
-SPEEX_INC=/usr/include/
-SPEEX_LIB=-lspeex
+SPEEX_INC=
+#/usr/include/
+SPEEX_LIB = -lspeex
 
 # or: 
-# SPEEXDIR?=speex_src
-# SPEEX_INC?=$(SPEEXDIR)
-# SPEEX_LIB?=$(SPEEXDIR)/libspeex/.libs/libspeex.a
+# SPEEXDIR  ?= speex_src
+# SPEEX_INC ?= -I $(SPEEXDIR)
+# SPEEX_LIB ?= $(SPEEXDIR)/libspeex/.libs/libspeex.a
 #
 # CONFIGURE_FLAG=--with-pic
 
 
 module_ldflags = $(SPEEX_LIB)
-module_cflags  = -I $(SPEEX_INC) -ansi # -DNOFPU
+module_cflags  = -ansi # -DNOFPU
 
 ifdef NOFPU
 	module_cflags += -DNOFPU
