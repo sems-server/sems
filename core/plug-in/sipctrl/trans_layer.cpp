@@ -1100,8 +1100,8 @@ void trans_layer::send_200_ack(sip_msg* reply)
     cstring r_uri = na.addr;
     list<sip_header*> route_hdrs;
 
-    for(list<sip_header*>::iterator it = reply->record_route.begin();
-	it != reply->record_route.end(); ++it) {
+    for(list<sip_header*>::reverse_iterator it = reply->record_route.rbegin();
+	it != reply->record_route.rend(); ++it) {
 	
 	route_hdrs.push_back(new sip_header(0,"Route",(*it)->value));
     }

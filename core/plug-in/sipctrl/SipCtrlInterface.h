@@ -74,7 +74,7 @@ protected:
 public:
     SipCtrlInterface(const string& bind_addr, unsigned short bind_port);
     ~SipCtrlInterface(){}
-
+    
     /**
      * From AmCtrlInterface
      */
@@ -102,3 +102,10 @@ public:
 
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

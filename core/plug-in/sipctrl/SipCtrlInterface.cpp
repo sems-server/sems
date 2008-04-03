@@ -548,14 +548,21 @@ void SipCtrlInterface::prepare_routes(const list<sip_header*>& routes, string& r
 {
     if(!routes.empty()){
 	
-	list<sip_header*>::const_iterator it = routes.begin();
+	list<sip_header*>::const_reverse_iterator it = routes.rbegin();
 
 	route_field = c2stlstr((*it)->value);
 	++it;
 
-	for(; it != routes.end(); ++it) {
+	for(; it != routes.rend(); ++it) {
 		
 	    route_field += ", " + c2stlstr((*it)->value);
 	}
     }
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */
