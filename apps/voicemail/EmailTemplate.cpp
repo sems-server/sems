@@ -155,6 +155,11 @@ int EmailTemplate::parse(char* buffer)
     ERROR("EmailTemplate: invalid template: empty body\n");
     return -1;
   }
+
+  // multiple headers  
+  while (header.find("\\n") != string::npos) 
+    header.replace(header.find("\\n"), 2, "\n");  
+
   return 0;
 }
 

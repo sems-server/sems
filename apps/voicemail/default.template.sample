@@ -1,6 +1,7 @@
 subject: Voice message from: %from%
 from:voicemail@%domain%
 to:%email%
+header:X-Content: Voicemail\nX-Voicemail-Sender: %from%
 
 Hello %user%@%domain%,
 %from% left a voice message for you.
