@@ -451,9 +451,10 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
     AmSession::Exception(500, "voicemail: parameters not found");
   }
 
-  language = get_header_keyvalue(iptel_app_param,"Language");
-  email = get_header_keyvalue(iptel_app_param,"Email-Address");
-  string mode = get_header_keyvalue(iptel_app_param,"Mode");
+  language = get_header_keyvalue(iptel_app_param, "lng", "Language");
+  email = get_header_keyvalue(iptel_app_param, "eml", "Email-Address");
+
+  string mode = get_header_keyvalue(iptel_app_param,"mod", "Mode");
   if (!mode.empty()) {
     if (mode == "box")
       vm_mode = MODE_BOX;
@@ -461,9 +462,17 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
       vm_mode = MODE_BOTH;
   }
 
-  user = get_header_keyvalue(iptel_app_param,"User");
-  sender = get_header_keyvalue(iptel_app_param,"Sender");
-  domain = get_header_keyvalue(iptel_app_param,"Domain");
+  user = get_header_keyvalue(iptel_app_param,"usr", "User");
+  if (!user.length())
+    user = req.user;
+  
+  sender = get_header_keyvalue(iptel_app_param, "snd", "Sender");
+  if (!sender.length()) 
+    sender = req.from;  
+  
+  domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
+  if (!domain.length())
+    domain = req.domain;
 
   // checks
   if (user.empty()) 
@@ -480,6 +489,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 
   DBG("voicemail invocation parameters: \n");
   DBG(" Mode:     <%s> \n", mode.c_str());
+  DBG(" Email:    <%s> \n", email.c_str());
   DBG(" User:     <%s> \n", user.c_str());
   DBG(" Sender:   <%s> \n", sender.c_str());
   DBG(" Domain:   <%s> \n", domain.c_str());
@@ -588,6 +598,7 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
 {
   email_dict["user"] = user;
   email_dict["sender"] = sender;
+  email_dict["from"] = sender;
   email_dict["domain"] = domain;
   email_dict["email"] = email;
 
@@ -724,7 +735,18 @@ void AnswerMachineDialog::saveMessage()
   char buf[1024];
   unsigned int rec_size = a_msg.getDataSize();
   DBG("recorded data size: %i\n",rec_size);
-          
+
+  int rec_length = a_msg.getLength();
+  char rec_len_str[10];
+  snprintf(rec_len_str, sizeof(rec_len_str), 
+	   "%.2f", float(rec_length)/1000.0);
+  string rec_len_s = rec_len_str;
+
+  DBG("recorded file length: %i ms (%s sec)\n",
+      rec_length, rec_len_s.c_str());
+
+  email_dict["vmsg_length"] = rec_len_s;
+
   if(!rec_size){
     unlink(msg_filename.c_str());
 
