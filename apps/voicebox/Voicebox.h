@@ -49,6 +49,12 @@ class VoiceboxFactory
 
   AmPromptCollection* getPrompts(const string& domain, const string& language,
 				 PromptOptions& po);
+
+  /** finds prompts from specific to default prompts */
+  AmPromptCollection* findPrompts(const string& domain, 
+				  const string& language,
+				  PromptOptions& po);
+
   AmPromptCollection* loadPrompts(string prompt_base_path, 
 				  string domain, string language,
 				  bool load_digits); 

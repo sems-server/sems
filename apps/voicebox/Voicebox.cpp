@@ -69,7 +69,7 @@ AmPromptCollection* VoiceboxFactory::getPrompts(const string& domain,
     map<string, AmPromptCollection*>::iterator l_it = d_it->second.find(language);
     if (l_it != d_it->second.end()) {
 
-      // get the optios to the dom/lang combination
+      // get the options to the dom/lang combination
       po = PromptOptions(false, false);
       map<string, map<string, PromptOptions> >::iterator d_oit = 
 	prompt_options.find(domain);
@@ -83,6 +83,21 @@ AmPromptCollection* VoiceboxFactory::getPrompts(const string& domain,
     }
   }
   return NULL;
+}
+
+AmPromptCollection* VoiceboxFactory::findPrompts(const string& domain, 
+						 const string& language,
+						 PromptOptions& po) {
+  AmPromptCollection* res = getPrompts(domain, language, po);
+  if (res) return res;
+
+  // best hit:
+  if ((res = getPrompts(domain, default_language, po))!=NULL) return res;
+  if ((res = getPrompts(domain, "",               po))!=NULL) return res;
+
+  if ((res = getPrompts("",     language,         po))!=NULL) return res;
+  if ((res = getPrompts("",     default_language, po))!=NULL) return res;
+  return     getPrompts("",     "",               po);  
 }
 
 AmPromptCollection* VoiceboxFactory::loadPrompts(string prompt_base_path, 
@@ -301,7 +316,7 @@ AmSession* VoiceboxFactory::onInvite(const AmSipRequest& req)
     language = default_language;
   
   PromptOptions po(false, false);
-  AmPromptCollection* pc = getPrompts(domain, language, po);
+  AmPromptCollection* pc = findPrompts(domain, language, po);
   if (NULL == pc)  
     throw AmSession::Exception(500, APP_NAME ": no menu for domain/language");
 
