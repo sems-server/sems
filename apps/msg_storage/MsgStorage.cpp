@@ -39,8 +39,17 @@ int MsgStorage::onLoad() {
       DBG("storage_dir set to '%s'.\n", msg_dir.c_str());
   }
 
-  string path = msg_dir + "/_test_dir_";
+  string path = msg_dir;
   int status = mkdir(path.c_str(), 
+		     S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  if (status && (errno != EEXIST)) {
+    ERROR("creating storage path '%s': %s\n", 
+	  path.c_str(),strerror(errno));
+    return -1;
+  }
+
+  path = msg_dir + "/_test_dir_";
+  status = mkdir(path.c_str(), 
 		     S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   if (status && (errno != EEXIST)) {
     ERROR("creating test path in storage '%s': %s\n", 
@@ -107,8 +116,17 @@ void MsgStorage::invoke(const string& method,
 int MsgStorage::msg_new(string domain, string user, 
 			string msg_name, FILE* data) {
 
-  string path = msg_dir+ "/" + domain + "/" + user + "/";
+  string path = msg_dir+ "/" + domain + "/" ;
   int status = mkdir(path.c_str(), 
+		     S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  if (status && (errno != EEXIST)) {
+    ERROR("creating '%s': %s\n", 
+	  path.c_str(),strerror(errno));
+    return MSG_EUSRNOTFOUND;
+  }
+
+  path = msg_dir+ "/" + domain + "/" + user + "/";
+  status = mkdir(path.c_str(), 
 		     S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   if (status && (errno != EEXIST)) {
     ERROR("creating '%s': %s\n", 
