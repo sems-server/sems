@@ -768,6 +768,15 @@ string get_header_param(const string& hdr_string,
   return "";
 }
 
+/** get the value of key @param short_name or @param name or from the list param_hdr*/
+string get_header_keyvalue(const string& param_hdr, const string& short_name, const string& name) {
+  string res = get_header_keyvalue(param_hdr, short_name);
+  if (res.length())
+    return res;
+
+  return get_header_keyvalue(param_hdr, name);
+}
+
 /** 
  * get value from parameter header with the name @param name 
  * while skipping escaped values

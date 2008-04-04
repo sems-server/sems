@@ -269,6 +269,9 @@ string get_header_param(const string& hdr_string, const string& param_name);
 /** get the value of key @param name from the list param_hdr*/
 string get_header_keyvalue(const string& param_hdr, const string& name);
 
+/** get the value of key @param short_name or @param name or from the list param_hdr*/
+string get_header_keyvalue(const string& param_hdr, const string& short_name, const string& name);
+
 /** get the value of key @param name from P-Iptel-Param header in hdrs */
 string get_session_param(const string& hdrs, const string& name);
 
