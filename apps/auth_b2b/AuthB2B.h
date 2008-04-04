@@ -56,7 +56,6 @@ class AuthB2BDialog : public AmB2BCallerSession
   } CallerState;
 
   int m_state;
-  AmSipRequest m_localreq;
 
   string domain;
   string user;

@@ -121,8 +121,8 @@ void AuthB2BDialog::onInvite(const AmSipRequest& req)
 
   m_state = BB_Dialing;
 
-  if(dlg.reply(req, 101, "Connecting") != 0) {
-    throw AmSession::Exception(500,"Failed to reply 101");
+  if(dlg.reply(req, 100, "Connecting") != 0) {
+    throw AmSession::Exception(500,"Failed to reply 100");
   }
 
   invite_req = req;
@@ -195,8 +195,8 @@ bool AuthB2BDialog::onOtherReply(const AmSipReply& reply)
       }
     }
     else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {
-      DBG("Canceling leg A on 487 from B");
-      dlg.reply(m_localreq, 487, "Call terminated");
+      DBG("Stopping leg A on 487 from B with 487\n");
+      dlg.reply(invite_req, 487, "Request terminated");
       setStopped();
       ret = true;
     }
@@ -237,7 +237,7 @@ void AuthB2BDialog::onCancel()
   }
   else {
     DBG("Canceling leg A on CANCEL since dialog is not pending");
-    dlg.reply(m_localreq, 487, "Call terminated");
+    dlg.reply(invite_req, 487, "Request terminated");
     setStopped();
   }
 }
