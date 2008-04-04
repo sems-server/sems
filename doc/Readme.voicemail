@@ -50,8 +50,8 @@ directory.
 Mail Server
 -----------
 
-The mail server to send the email with is configured in the main
-sems.conf in smtp_server/smtp_port.
+The mail server to send the email with is configured in voicemail.conf 
+in smtp_server/smtp_port (use e.g. postfix).
 
 Other Items
 -----------
@@ -66,23 +66,45 @@ rec_file_ext - extension of recorded voicemail file. this defines the
 	       will record a voicemail as MP3 file (the mp3 plugin needs
 	       to be loaded so that mp3 encoding is possible)
 
-
 App-Params
 ----------
 
 These must be passed as headers with the INVITE request to SEMS, so that 
 SEMS knows at least the email address to send the email to.
 
-   Email-Address   - mandatory (!): the email address to send the mail to
-   Language        - optional: language for announcement file
+There is a short and a long form. The short form may be preferred to 
+avoid packet fragmentation (UDP).
+
+  long            short       content
+  -----------------------------------------------------------------------
+  Email-Address   eml         - mandatory (!): the email address to send the mail to
+  Mode            mod         - message leave mode: 
+                                  voicemail  : send email (default)
+                                  box        : leave in voicebox (store in msg_storage)
+                                  both       : send email and leave in voicebox
+  Sender          snd         - sender. If empty, From will be used
+  Domain          dom         - domain specific announcement files/email template. 
+                                defaults to RURI domain.
+  Language        lng         - optional: language for announcement file/email template
+  
 
   Example:
-    P-Iptel-App: voicemail
+    P-App-name: voicemail
     P-App-Param: Email-Address=user@maildomain.net;Language=Latvian
 
-  old deprecated header format:
-    P-Email-Address: user@maildomain.net
-    P-Language: Latvian
+  or 
+
+    P-App-name: voicemail
+    P-App-Param: eml=user@maildomain.net;mod=both;lng=english;snd=someone@iptel.org;dom=iptel.org;
+
+
+Voicebox mode
+-------------
+
+This mode uses a msg_storage plugin to save the message to disk. This way it can be 
+saved so that users can call in to listen to the messages. If no msg_storage module 
+is loaded, Mode=box and Mode=both is not available. See documentation of msg_storage 
+voicebox plug-ins for more details.
 
 Voicemail email templates 
 -------------------------
@@ -165,6 +187,9 @@ is used in the voicemail template:
 header: X-Content: Voicemail
 This line is optional. 
 
+Multiple headers can be set by inserting  a \n, for example
+header: X-Content: Voicemail\nX-Anotherheader: %domain%
+
 Variables:
 ----------
 
@@ -178,6 +203,6 @@ Following variables are supported:
  - %user% : local user.
  - %email% : email address of the local user.
 
- - %from% : remote URI.
+ - %from%/%sender% : Sender or remote URI.
  - %from_user% : remote user.
  - %from_domain% : remote domain.
