@@ -221,7 +221,9 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 	delete [] reply_buf;
     }
     else if(err != TS_TERMINATED) {
-	
+	if (t->retr_buf) 
+		delete [] t->retr_buf;
+
 	t->retr_buf = reply_buf;
 	t->retr_len = reply_len;
 	memcpy(&t->retr_addr,&req->remote_ip,sizeof(sockaddr_storage));
@@ -1076,6 +1078,9 @@ void trans_layer::send_non_200_ack(sip_trans* t, sip_msg* reply)
 	ERROR("Error from transport layer\n");
 	delete ack_buf;
     }
+    
+    if (t->retr_buf)
+      delete [] t->retr_buf;
 
     t->retr_buf = ack_buf;
     t->retr_len = ack_len;
@@ -1259,3 +1264,9 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 }
 
 
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */
