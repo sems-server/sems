@@ -135,3 +135,11 @@ void compute_branch(char* branch, const cstring& callid, const cstring& cseq);
 void dumps_transactions();
 
 #endif
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

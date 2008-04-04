@@ -45,3 +45,10 @@ class transport: public AmThread
 };
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

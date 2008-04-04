@@ -502,3 +502,10 @@ int parse_sip_msg(sip_msg* msg)
 
     return err_fl || err_hdrs;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

@@ -455,3 +455,10 @@ int parse_headers(sip_msg* msg, char** c)
     DBG("Incomplete header (st=%i;saved_st=%i)\n",st,saved_st);
     return UNEXPECTED_EOT;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

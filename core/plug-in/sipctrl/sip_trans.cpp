@@ -141,3 +141,10 @@ void sip_trans::reset_all_timers()
 	}
     }
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

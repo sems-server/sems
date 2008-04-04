@@ -70,3 +70,10 @@ inline sip_from_to* get_to(sip_msg* msg)
 }
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

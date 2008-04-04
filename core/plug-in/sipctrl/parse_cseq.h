@@ -53,3 +53,10 @@ inline sip_cseq* get_cseq(sip_msg* msg)
 }
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

@@ -79,3 +79,11 @@ void request_line_wr(char** c,
     *((*c)++) = CR;
     *((*c)++) = LF;
 }
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

@@ -298,3 +298,10 @@ int parse_from_to(sip_from_to* ft, const char* beg, int len)
     
     return ret;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

@@ -131,3 +131,10 @@ int parse_method(int* method, const char* beg, int len);
 int parse_sip_msg(sip_msg* msg);
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

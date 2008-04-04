@@ -62,3 +62,10 @@ int resolver::resolve_name(const char* name, sockaddr_storage* sa,
     }
     return err;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

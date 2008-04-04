@@ -51,3 +51,10 @@ class udp_trsp: public transport
 };
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

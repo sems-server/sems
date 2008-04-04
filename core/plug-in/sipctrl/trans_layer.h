@@ -151,3 +151,11 @@ class trans_layer
 
 
 #endif // _trans_layer_h_
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

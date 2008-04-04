@@ -254,3 +254,10 @@ void wheeltimer::delete_timer(timer* t)
     delete t;
 }
 
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

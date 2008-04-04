@@ -60,3 +60,10 @@ struct sip_uri
 int parse_uri(sip_uri* uri, const char* beg, int len);
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

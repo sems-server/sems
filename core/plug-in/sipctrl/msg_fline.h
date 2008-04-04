@@ -63,3 +63,11 @@ void status_line_wr(char** c, int status_code,
 
 
 #endif
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

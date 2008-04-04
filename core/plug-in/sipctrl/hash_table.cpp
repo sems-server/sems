@@ -484,3 +484,11 @@ void trans_bucket::dump()
 	    (*it)->type,(*it)->msg,(*it)->to_tag.len,(*it)->to_tag.s,(*it)->reply_status,(*it)->state,(*it)->retr_buf);
     }
 }
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

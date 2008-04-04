@@ -126,3 +126,10 @@ int parse_cseq(sip_cseq* cseq, const char* beg, int len)
 
     return 0;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

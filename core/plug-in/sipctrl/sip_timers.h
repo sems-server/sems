@@ -34,3 +34,11 @@
 #define J_TIMER  64*T1_TIMER
 
 #endif
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

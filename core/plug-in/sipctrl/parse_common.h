@@ -163,3 +163,10 @@ int parse_sip_version(const char* beg, int len);
 int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_char);
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

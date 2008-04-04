@@ -311,3 +311,10 @@ int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_
 
     return 0;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

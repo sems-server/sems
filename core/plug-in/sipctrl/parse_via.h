@@ -73,3 +73,10 @@ int parse_via(sip_via* via, const char* beg, int len);
 #define MAGIC_BRANCH_LEN    7
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

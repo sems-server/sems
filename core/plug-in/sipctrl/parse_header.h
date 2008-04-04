@@ -79,3 +79,10 @@ struct sip_msg;
 int parse_headers(sip_msg* msg, char** c);
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

@@ -514,3 +514,10 @@ int parse_via(sip_via* via, const char* beg, int len)
 
     return 0;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

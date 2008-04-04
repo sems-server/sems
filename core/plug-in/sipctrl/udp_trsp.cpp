@@ -225,3 +225,10 @@ int udp_trsp::send(const sockaddr_storage* sa, const char* msg, const int msg_le
 
   return 0;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */
