@@ -47,8 +47,8 @@ class VoiceboxFactory
   map<string, map<string, AmPromptCollection*> > prompts;
   map<string, map<string, PromptOptions> > prompt_options;
 
-  AmPromptCollection* getPrompts(const string& domain, const string& language);
-  PromptOptions getPromptOptions(const string& domain, const string& language);
+  AmPromptCollection* getPrompts(const string& domain, const string& language,
+				 PromptOptions& po);
   AmPromptCollection* loadPrompts(string prompt_base_path, 
 				  string domain, string language,
 				  bool load_digits); 
@@ -57,6 +57,7 @@ class VoiceboxFactory
   static unsigned int save_key;
   static unsigned int delete_key;
   static unsigned int startover_key;
+  static string default_language;
 
 public:
 

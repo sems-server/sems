@@ -43,8 +43,6 @@ using std::vector;
 
 #define APP_NAME "voicebox"
 
-
-
 EXPORT_SESSION_FACTORY(VoiceboxFactory,APP_NAME);
 
 VoiceboxFactory::VoiceboxFactory(const string& _app_name)
@@ -60,29 +58,31 @@ unsigned int VoiceboxFactory::save_key = 2;
 unsigned int VoiceboxFactory::delete_key = 3;
 unsigned int VoiceboxFactory::startover_key = 4;
 
+string VoiceboxFactory::default_language = "";
+
 AmPromptCollection* VoiceboxFactory::getPrompts(const string& domain, 
-						const string& language) {
+						const string& language,
+						PromptOptions& po) {
   map<string, map<string, AmPromptCollection*> >::iterator d_it = 
     prompts.find(domain);
   if (d_it != prompts.end()) {
     map<string, AmPromptCollection*>::iterator l_it = d_it->second.find(language);
-    if (l_it != d_it->second.end())
+    if (l_it != d_it->second.end()) {
+
+      // get the optios to the dom/lang combination
+      po = PromptOptions(false, false);
+      map<string, map<string, PromptOptions> >::iterator d_oit = 
+	prompt_options.find(domain);
+      if (d_oit != prompt_options.end()) {
+	map<string, PromptOptions>::iterator l_oit = d_oit->second.find(language);
+	if (l_oit != d_oit->second.end())
+	  po = l_oit->second;
+      }
+      
       return l_it->second;
+    }
   }
   return NULL;
-}
-
-// todo: combine options and promptcollection into struct
-PromptOptions VoiceboxFactory::getPromptOptions(const string& domain, 
-						const string& language) {
-  map<string, map<string, PromptOptions> >::iterator d_it = 
-    prompt_options.find(domain);
-  if (d_it != prompt_options.end()) {
-    map<string, PromptOptions>::iterator l_it = d_it->second.find(language);
-    if (l_it != d_it->second.end())
-      return l_it->second;
-  }
-  return PromptOptions(false, false);
 }
 
 AmPromptCollection* VoiceboxFactory::loadPrompts(string prompt_base_path, 
@@ -173,6 +173,11 @@ int VoiceboxFactory::onLoad()
 
   // get application specific global parameters
   configureModule(cfg);
+
+  default_language = cfg.getParameter("default_language");
+  if (default_language.length()) {
+    DBG("set default language '%s'\n", default_language.c_str());
+  }
 
   vector<string> domains = explode(cfg.getParameter("domains"), ";");
   domains.push_back(""); // add default (empty) domain
@@ -283,20 +288,22 @@ AmSession* VoiceboxFactory::onInvite(const AmSipRequest& req)
     AmSession::Exception(500, APP_NAME ": parameters not found");
   }
   
-  user = get_header_keyvalue(iptel_app_param,"User");
-  pin = get_header_keyvalue(iptel_app_param,"PIN");
-  domain = get_header_keyvalue(iptel_app_param,"Domain");
-  language = get_header_keyvalue(iptel_app_param,"Language");
+  user = get_header_keyvalue(iptel_app_param, "usr", "User");
+  pin = get_header_keyvalue(iptel_app_param, "pin", "PIN");
+  domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
+  language = get_header_keyvalue(iptel_app_param,"lng", "Language");
 
   // checks
   if (user.empty()) 
     throw AmSession::Exception(500, APP_NAME ": user missing");
+
+  if (language.empty())
+    language = default_language;
   
-  AmPromptCollection* pc = getPrompts(domain, language);
+  PromptOptions po(false, false);
+  AmPromptCollection* pc = getPrompts(domain, language, po);
   if (NULL == pc)  
     throw AmSession::Exception(500, APP_NAME ": no menu for domain/language");
-
-  PromptOptions po = getPromptOptions(domain, language);
 
   return new VoiceboxDialog(user, domain, pin, pc, po);
 }
