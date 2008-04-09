@@ -159,7 +159,7 @@ XMLRPCServerEntry* XMLRPC2DI::getServer(const string& app_name) {
   }
   server_mut.unlock();
 
-  DBG("found %d active connections for application %s\n", 
+  DBG("found %zd active connections for application %s\n", 
       scs.size(), app_name.c_str());  
   if (scs.empty()) {
     // no connections found
