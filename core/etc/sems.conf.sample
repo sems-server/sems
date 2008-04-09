@@ -95,7 +95,9 @@ plugin_path=/usr/local/lib/sems/plug-in/
 # ('blacklist'). This has only effect it load_plugins is empty.
 # If empty, all modules in plugin_path are loaded.
 #
-exclude_plugins=binrpcctrl;unixsockctrl;voicebox
+# o binrpcctrl and unixsockctrl: excluded as sipctrl is default ctrl
+# o precoded_announce: no precoded sample files present
+exclude_plugins=binrpcctrl;unixsockctrl;precoded_announce
 
 # optional parameter: exclude_payloads=<payload list>
 #
