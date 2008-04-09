@@ -447,7 +447,7 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
       default:
 	{
 	  next = get_next_line(s);
-	  string line(s, int(next-s)-1);
+	  string line(s, int(next-s)-2);
 	  DBG("parse_sdp_line: skipping unknown Session description %s=\n", (char*)line.c_str());
 	  s = next;
 	  break;
@@ -496,7 +496,7 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
       default :
 	{
 	  next = get_next_line(s);
-	  string line(s, int(next-s)-1);
+	  string line(s, int(next-s)-2);
 	  DBG("parse_sdp_line: skipping unknown Media description '%s'\n", 
 	      (char*)line.c_str());
 	  s = next;
@@ -553,38 +553,26 @@ static void parse_sdp_connection(AmSdp* sdp_msg, char* s, char t)
       }
     case IP4:
       {
-	if(contains(connection_line, line_end, '/')){
-	  next = parse_until(s, '/');
-	  string ip4(connection_line,int(next-connection_line)-1);
-	  c.address = ip4;
-	  char* s = (char*)ip4.c_str();
-	  inet_aton(s, &c.ipv4.sin_addr);
-	}else{
-	  string ip4(connection_line, int(line_end-connection_line)-1);
-	  c.address = ip4;
-	  char* s = (char*)ip4.c_str();
-	  inet_aton(s, &c.ipv4.sin_addr);
-	}
-	parsing = 0;
-	break;
+	  if(contains(connection_line, line_end, '/')){
+	      next = parse_until(s, '/');
+	      c.address = string(connection_line,int(next-connection_line)-2);
+	  }else{
+	      c.address = string(connection_line, int(line_end-connection_line)-2);
+	  }
+	  parsing = 0;
+	  break;
       }
       
     case IP6:
       { 
-	if(contains(connection_line, line_end, '/')){
-	  next = parse_until(s, '/');
-	  string ip6(connection_line, int(next-connection_line)-1);
-	  c.address = ip6;
-	  char* s = (char*)ip6.c_str();
-	  inet_pton(AF_INET6, s, &c.ipv6.sin6_addr);
-	}else{
-	  string ip6(connection_line, int(line_end-connection_line)-1);
-	  c.address = ip6;
-	  char* s = (char*)ip6.c_str();
-	  inet_pton(AF_INET6, s, &c.ipv6.sin6_addr);
-	}
-	parsing = 0;
-	break;
+	  if(contains(connection_line, line_end, '/')){
+	      next = parse_until(s, '/');
+	      c.address = string(connection_line, int(next-connection_line)-2);
+	  }else{
+	      c.address = string(connection_line, int(line_end-connection_line)-2);
+	  }
+	  parsing = 0;
+	  break;
       }
     }
   }
@@ -691,7 +679,6 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 	  parsing = 0;
 	  //if not
 	}else{
-	  //check if it should be -1 or -2
 	  string last_value(media_line, int(line_end-media_line)-1);
 	  payload.type = m.type;
 	  str2i(last_value, payload_type);
