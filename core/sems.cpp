@@ -426,7 +426,6 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
 {
   struct ifconf ifc;
   struct ifreq ifrs[MAX_NET_DEVICES];
-  struct ifreq* p_ifr;
 
   ifc.ifc_len = sizeof(struct ifreq) * MAX_NET_DEVICES;
   ifc.ifc_req = ifrs;
@@ -437,16 +436,17 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
     exit(-1);
   }
 
-//   int n_dev = ifc.ifc_len / sizeof(struct ifreq);
-//   for(int i=0; i<n_dev; i++){
-//     if(ifrs[i].ifr_addr.sa_family==PF_INET){
-//       struct sockaddr_in* sa = (struct sockaddr_in*)&ifrs[i].ifr_addr;
-//       if_list.push_back(make_pair((char*)ifrs[i].ifr_name,
-// 				  inet_ntoa(sa->sin_addr)));
-//     }
-//   }
-  
-  p_ifr = ifc.ifc_req;
+#ifdef __linux__
+  int n_dev = ifc.ifc_len / sizeof(struct ifreq);
+  for(int i=0; i<n_dev; i++){
+    if(ifrs[i].ifr_addr.sa_family==PF_INET){
+      struct sockaddr_in* sa = (struct sockaddr_in*)&ifrs[i].ifr_addr;
+      if_list.push_back(make_pair((char*)ifrs[i].ifr_name,
+ 				  inet_ntoa(sa->sin_addr)));
+    }
+  }
+#else
+  struct ifreq* p_ifr = ifc.ifc_req;
   while((char*)p_ifr - (char*)ifc.ifc_req < ifc.ifc_len){
 
     if(p_ifr->ifr_addr.sa_family == PF_INET){
@@ -457,7 +457,7 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
 
     p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + SOCKADDR_LEN(p_ifr->ifr_addr)); 
   }
-  
+#endif
 }
 
 static string getLocalIP(const string& dev_name)
