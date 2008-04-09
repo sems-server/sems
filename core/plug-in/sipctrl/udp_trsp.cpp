@@ -146,7 +146,9 @@ int udp_trsp::bind(const string& address, unsigned short port)
     
     memset(&local_addr,0,sizeof(local_addr));
     local_addr.ss_family = AF_INET;
+#if !defined(__linux__)
     local_addr.ss_len = sizeof(struct sockaddr_in);
+#endif
     SAv4(&local_addr)->sin_port = htons(port);
 
     if(inet_aton(address.c_str(),&SAv4(&local_addr)->sin_addr)<0){
