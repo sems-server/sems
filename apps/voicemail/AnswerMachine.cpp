@@ -821,6 +821,7 @@ void AnswerMachineDialog::saveBox(FILE* fp) {
   di_args.push(df);  
   msg_storage->invoke("msg_new",di_args,ret);  
   // TODO: evaluate ret return value
-  fclose(fp);
+  if (fp)
+    fclose(fp);
 }
 
