@@ -23,17 +23,12 @@ SEMS_GROUP="sems"
 # ser pidfile
 SEMS_PIDFILE="/var/run/sems/sems.pid"
 
-# working dir (cores will be placed there in case of sems crash)
-#DEBCONF-WORKDIR-START
-#SEMS_WORKDIR="/var/cores"
-#DEBCONF-WORKDIR-END
+# set if you want to create core files
+#DEBCONF-CREATE_CORE-START
+SEMS_CREATE_CORE="yes"
+#DEBCONF-CREATE_CORE-END
 
-# set if you want kernel flag to use pid for core files
-#DEBCONF-KERNEL_CORE_PID-START
-#SEMS_KERNEL_CORE_PID="yes"
-#DEBCONF-KERNEL_CORE_PID-END
-
-
-
-
+#DEBCONF-COREDIR-START
+SEMS_COREDIR="/var/cores"
+#DEBCONF-COREDIR-END
 

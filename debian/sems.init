@@ -41,15 +41,12 @@ if test "$SEMS_CFG_FILE" ; then
   CFGPARAMS="-f $SEMS_CFG_FILE"
 fi
 
-#if test "$SEMS_WORKDIR" ; then
-#  PARAMS="$PARAMS -w $SEMS_WORKDIR"
-#  # try to create the working dir
-#  mkdir -p $SEMS_WORKDIR || echo "Warning: error creating SEMS working dir $SEMS_WORKDIR"
-#fi
-
-if test "$SEMS_KERNEL_CORE_PID" = "true" ; then
-  # enable using pid for cores
-  echo 1 > /proc/sys/kernel/core_uses_pid || echo "Warning: error when enabling /proc/sys/kernel/core_uses_pid"
+if test "$SEMS_CREATE_CORE" = "true" ; then
+	# directory for the core dump files
+	[ -d $SEMS_COREDIR ] || mkdir $SEMS_COREDIR
+	chmod 777 $SEMS_COREDIR
+	echo "$SEMS_COREDIR/core.%e.sig%s.%p" > /proc/sys/kernel/core_pattern
+	ulimit -c unlimited
 fi
 
 if ! test -f $DAEMON ; then

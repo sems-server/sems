@@ -139,10 +139,17 @@ fi
 #+++
 #fi
 
-db_get sems/KERNEL_CORE_PID
+db_get sems/CREATE_CORE
 if test "$RET" != "!" ; then
-  fn_config_replace $DEFAULTFILE KERNEL_CORE_PID <<+++
-SEMS_KERNEL_CORE_PID="$RET"
+  fn_config_replace $DEFAULTFILE CREATE_CORE <<+++
+SEMS_CREATE_CORE="$RET"
++++
+fi
+
+db_get sems/COREDIR
+if test "$RET" != "!" ; then
+  fn_config_replace $DEFAULTFILE COREDIR <<+++
+SEMS_COREDIR="$RET"
 +++
 fi
 

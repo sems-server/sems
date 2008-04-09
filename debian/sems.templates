@@ -31,11 +31,14 @@ Description: Group to run SEMS as
  .
  Enter "!" to not modify this option.
 
-Template: sems/KERNEL_CORE_PID
+Template: sems/CREATE_CORE
 Type: boolean
 Default: false
-Description: Set kernel to use pid for core files
- If enabled the '/proc/sys/kernel/core_uses_pid' will be set to '1' before starting SEMS,
- to enable using of pid for core files creation. If disabled nothing will be set.
- For debugging purposes it is recommended to enable this option.
+Description: Create core files
+ If enabled, core files will be created in the event of a crash. 
 
+Template: sems/COREDIR
+Type: string
+Default: /var/cores
+Description: Set directory for core files
+ This is the directory where core files will be created. 
