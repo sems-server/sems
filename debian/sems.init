@@ -64,7 +64,7 @@ set -e
 
 case "$1" in
   start)
-	echo -n "Starting $DESC: $NAME"
+	echo "Starting $DESC: $NAME"
 	start-stop-daemon --start --quiet --pidfile $SEMS_PIDFILE \
 		--exec $DAEMON -- $PARAMS
 	echo "."
@@ -102,7 +102,7 @@ case "$1" in
 	#    exit 0
 	#fi
 	
-	echo -n "Restarting $DESC: $NAME"
+	echo "Restarting $DESC: $NAME"
 	start-stop-daemon --oknodo --stop --quiet --pidfile \
 		$SEMS_PIDFILE --exec $DAEMON
 	sleep 1
