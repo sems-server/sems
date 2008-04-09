@@ -164,9 +164,9 @@ echo "Setting sems to start automatically"
 
 if [ -x "/etc/init.d/sems" ]; then
   if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
-    invoke-rc.d sems restart || exit 0
+    invoke-rc.d sems restart 3>/dev/null || exit 0
   else
-    /etc/init.d/sems restart || exit 0
+    /etc/init.d/sems restart 3>/dev/null || exit 0
   fi
 fi
                                                                 
