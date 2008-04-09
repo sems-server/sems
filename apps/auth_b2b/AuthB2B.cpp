@@ -292,6 +292,8 @@ AuthB2BCalleeSession::AuthB2BCalleeSession(const AmB2BCallerSession* caller,
 }
 
 AuthB2BCalleeSession::~AuthB2BCalleeSession() {
+  if (auth) 
+    delete auth;
 }
 
 inline UACAuthCred* AuthB2BCalleeSession::getCredentials() {
