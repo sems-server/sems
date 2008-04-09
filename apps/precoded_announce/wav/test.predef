@@ -2,6 +2,8 @@
 # codec id;payload name;samplerate;channels;format parameters;frame milliseconds;frame bytes;filename (full path)
 #
 #
+#101;L16;8000;1;<none>;20;320;test16k.l16
+100;L16;16000;1;<none>;20;640;test16k.l16
 0;PCMU;8000;1;<none>;20;160;test8k.pcmu;
 8;PCMA;8000;1;<none>;20;160;test8k.pcma;
 96;iLBC;8000;1;<none>;30;50;test8k.ilbc30;
