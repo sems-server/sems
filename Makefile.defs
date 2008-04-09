@@ -107,12 +107,16 @@ ifeq ($(OS), darwin)
 	CXXFLAGS += -fno-common
 	CFLAGS += -fno-common
 
+	#necessary for sa_len|ss_len|sin_len
+	# may be needed on other *BSD
+	CPPFLAGS += -DBSD44SOCKETS
+
 	# add the DarwinPorts directory
 	CPPFLAGS += -I /opt/local/include
 	LDFLAGS += -L/opt/local/lib
 
 	# those modules do not compile by now
-	exclude_modules += binrpcctrl ilbc
+	exclude_modules += binrpcctrl
 else
 	LDFLAGS+= -fPIC -ldl -lsocket -lnsl -lpthread
 	TARGET=solaris
