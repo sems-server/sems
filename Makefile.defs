@@ -33,6 +33,11 @@ CPPFLAGS += -D_DEBUG \
 #
 #USE_LIBSAMPLERATE = yes
 
+#
+# exclude some modules from compilation?
+# e.g. python modules:
+#exclude_modules ?= py_sems ivr mailbox pin_collect conf_auth mp3 examples
+
 LDFLAGS += -lm
 
 OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
