@@ -32,6 +32,9 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || (defined(BYTE_ORDER) && (BYTE_ORDER == BIG_ENDIAN))
 #define bswap_16(A)  ((((u_int16_t)(A) & 0xff00) >> 8) | \
                    (((u_int16_t)(A) & 0x00ff) << 8))
@@ -79,6 +82,23 @@ struct wav_header
   u_int32_t data_length;
 };
 
+//If wav_dummyread() had a problem, return code -1
+int wav_dummyread(FILE *fp, unsigned int size)
+{
+  unsigned int s;
+  char *dummybuf;
+  
+  DBG("Skip chunk by reading dummy bytes from stream\n");
+  dummybuf = (char*) malloc (size);
+  if(dummybuf==NULL) {
+      ERROR("Can't alloc memory for dummyread!\n");
+      return -1;
+  }
+
+  SAFE_READ(dummybuf,size,fp,s);
+  free(dummybuf);
+  return 0;
+} 
 
 static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
 {
@@ -93,6 +113,7 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
   unsigned short bits_per_sample=0;
   unsigned short sample_size=0;
   char dummy[6]={'\0'};
+  int is_seekable = 1;
 
   if(!fp)
     return -1;
@@ -158,7 +179,11 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     return -1;
   }
 
-  fseek(fp,chunk_size-16,SEEK_CUR);
+  if ((fseek(fp,chunk_size-16,SEEK_CUR) < 0) 
+      && errno == EBADF) {
+    is_seekable = 0;
+    wav_dummyread(fp,chunk_size-16);
+  }
 
   for(;;) {
 
@@ -172,7 +197,10 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
     if(!strncmp(tag,"data",4))
       break;
 
-    fseek(fp,chunk_size,SEEK_CUR);
+    if (is_seekable)
+      fseek(fp,chunk_size,SEEK_CUR);
+    else 
+      wav_dummyread(fp,chunk_size);
   }
   fmt_desc->data_size = chunk_size;
 
