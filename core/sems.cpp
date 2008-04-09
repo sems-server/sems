@@ -455,7 +455,7 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
  				  inet_ntoa(sa->sin_addr)));
     }
 
-    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + p_ifr->ifr_addr.sa_len); 
+    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + SOCKADDR_LEN(p_ifr->ifr_addr)); 
   }
   
 }
