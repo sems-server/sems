@@ -198,7 +198,8 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     next_hop = reply.next_hop;
   }
 
-  remote_uri = reply.next_request_uri;
+  if (reply.next_request_uri.length())
+    remote_uri = reply.next_request_uri;
 
   if(!reply.dstip.empty()){
       sip_ip     = reply.dstip;
