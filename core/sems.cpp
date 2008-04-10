@@ -436,7 +436,7 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
     exit(-1);
   }
 
-#ifdef __linux__
+#if !defined(BSD44SOCKETS)
   int n_dev = ifc.ifc_len / sizeof(struct ifreq);
   for(int i=0; i<n_dev; i++){
     if(ifrs[i].ifr_addr.sa_family==PF_INET){
@@ -445,7 +445,7 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
  				  inet_ntoa(sa->sin_addr)));
     }
   }
-#else
+#else // defined(BSD44SOCKETS)
   struct ifreq* p_ifr = ifc.ifc_req;
   while((char*)p_ifr - (char*)ifc.ifc_req < ifc.ifc_len){
 
@@ -455,7 +455,7 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
  				  inet_ntoa(sa->sin_addr)));
     }
 
-    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + SOCKADDR_LEN(p_ifr->ifr_addr)); 
+    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + p_ifr->ifr_addr.sa_len);
   }
 #endif
 }

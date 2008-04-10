@@ -367,9 +367,14 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
     
   memcpy(&r_saddr,&ss,sizeof(struct sockaddr_storage));
   set_port_v6(&r_saddr,port);
+
 #else
   struct sockaddr_in sa;
   memset (&sa, 0, sizeof (sa));
+
+#ifdef BSD44SOCKETS
+  sa.sin_len = sizeof(sockaddr_in);
+#endif
   sa.sin_family = AF_INET;
   sa.sin_port = htons(port);
     

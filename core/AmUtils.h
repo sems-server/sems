@@ -286,20 +286,6 @@ std::vector <string> explode(string s, string e);
 /** add a directory to an environement variable */
 void add_env_path(const char* name, const string& path);
 
-#ifdef SUPPORT_IPV6
-#ifdef SIN6_LEN
-#define SOCKADDR_LEN(soc_address) ((struct sockaddr *)&soc_address)->sa_len
-#else
-#ifndef SA_LEN
-#define SA_LEN(x) (((x)->sa_family == AF_INET6)?sizeof(struct sockaddr_in6): \
-       (((x)->sa_family == AF_INET)?sizeof(struct sockaddr_in):sizeof(struct sockaddr)))
-#endif
-#define SOCKADDR_LEN(soc_address) SA_LEN((struct sockaddr *)&soc_address)
-#endif /* SIN6_LEN */
-#else
-#define SOCKADDR_LEN(soc_address) sizeof(soc_address)
-#endif /* SUPPORT_IPV6 */
-
 #endif
 
 // Local Variables:
