@@ -11,9 +11,15 @@ PYTHON_LIBDIR = $(shell $(PY_EXE) ./python_lib.py)
 
 # put used Python modules from lib-dynload here, e.g. time, mysql, _cvs.so etc.
 PYTHON_module_cflags = -I$(PYTHON_DIR) -fno-strict-aliasing
-PYTHON_module_ldflags = -Xlinker --export-dynamic \
-			-L$(PYTHON_LIBDIR)/config \
+
+PYTHON_module_ldflags = -L$(PYTHON_LIBDIR)/config \
 			-lpython$(PY_VER)
+
+#PYTHON_module_ldflags = -Xlinker --export-dynamic \
+#			-L$(PYTHON_LIBDIR)/config \
+#			-lpython$(PY_VER)
+
+
 
 ifeq ($(TTS), y)
 #
@@ -80,6 +86,10 @@ python_files:
 endif
 
 include $(COREPATH)/plug-in/Makefile.app_module
+
+ifneq ($(OS),darwin)
+PYTHON_module_ldflags += -Xlinker --export-dynamic
+endif
 
 .PHONY: install_python_files
 install_python_files: $(modules-prefix)/$(modules-dir)

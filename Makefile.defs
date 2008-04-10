@@ -115,8 +115,7 @@ ifeq ($(OS), darwin)
 	CPPFLAGS += -I /opt/local/include
 	LDFLAGS += -L/opt/local/lib
 
-	# those modules do not compile by now
-	exclude_modules += binrpcctrl
+	override exclude_modules += binrpcctrl mp3 examples py_sems
 else
 	LDFLAGS+= -fPIC -ldl -lsocket -lnsl -lpthread
 	TARGET=solaris
