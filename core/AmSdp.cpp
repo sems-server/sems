@@ -487,7 +487,6 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
 	break;
       case 'a':
 	s = is_eql_next(s);
-	DBG("parse_sdp_line: found media attr\n");
 	parse_sdp_attr(sdp_msg, s);
 	s = get_next_line(s);
 	state = SDP_MEDIA;
@@ -797,6 +796,8 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	}
       }
       
+      DBG("found media attr 'rtpmap' type '%d'\n", payload_type);
+      
       vector<SdpPayload>::iterator pl_it;
       
       for( pl_it=media.payloads.begin();
@@ -844,37 +845,60 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	}
       }
 
-      
+      DBG("found media attr 'fmtp' type '%d'\n", payload_type);
+
+    } else if (attr == "direction") {
+	next = parse_until(attr_line, '\r');
+	if(next < line_end){
+	    string value(attr_line, int(next-attr_line)-1);
+	    if (value == "active") {
+		media.dir=SdpMedia::DirActive;
+		DBG("found media attr 'direction' value '%s'\n",
+		    (char*)value.c_str());
+	    } else if (value == "passive") {
+		media.dir=SdpMedia::DirPassive;
+		DBG("found media attr 'direction' value '%s'\n",
+		    (char*)value.c_str());
+	    } else if (attr == "both") {
+		media.dir=SdpMedia::DirBoth;
+		DBG("found media attr 'direction' value '%s'\n",
+		    (char*)value.c_str());
+	    } else
+		DBG("found media attr 'direction' with unknown value '%s'\n",
+		    (char*)value.c_str());
+	} else {
+	    DBG("found media attr 'direction', but value is not"
+		" followed by cr\n");
+	}
+
+
     }else{
       attr_check(attr);
-      attr_line = next;
-      string value(attr_line, int(line_end-attr_line)-1);
+      next = parse_until(attr_line, '\r');
+      if(next < line_end){
+	  string value(attr_line, int(next-attr_line)-1);
+	  DBG("found media attr '%s' value '%s'\n",
+	      (char*)attr.c_str(), (char*)value.c_str());
+      } else {
+	  DBG("found media attr '%s', but value is not followed by cr\n",
+	      (char *)attr.c_str());
+      }
       //payload.type = media.type;
       //payload.encoding_name = attr;
       //payload.sdp_format_parameters = value;
-      
     }
-  }else{
-    if(contains(attr_line, line_end, ':')){
-      next = parse_until(attr_line, ':');
-      //string attr(attr_line, int(next-attr_line)-1);
-      attr_line = next;
-      //}
-      string attr(attr_line, int(line_end-attr_line)-3);
-    
-    // attr_check(attr);
-      if(attr == "active"){
-	media.dir=SdpMedia::DirActive;
-	DBG("found attribute 'direction': '%s'\n", (char*)attr.c_str());
-      }else if(attr == "passive"){
-	media.dir=SdpMedia::DirPassive;
-	DBG("found attribute 'direction': '%s'\n", (char*)attr.c_str());
-      }else if(attr == "both"){
-	media.dir=SdpMedia::DirBoth;
-	DBG("found attribute 'direction': '%s'\n", (char*)attr.c_str());
-      }else
-	DBG("unknown attribute 'direction': '%s'\n", (char*)attr.c_str());
-    }
+
+
+  } else {
+      next = parse_until(attr_line, '\r');
+      if(next < line_end){
+	  string attr(attr_line, int(next-attr_line)-1);
+	  attr_check(attr);
+	  DBG("found media attr '%s'\n", (char*)attr.c_str());
+      } else {
+	  DBG("found media attr line '%s', which is not followed by cr\n",
+	      attr_line);
+      }
   }
 
   media.payloads.push_back(payload);
