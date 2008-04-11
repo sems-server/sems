@@ -1066,9 +1066,7 @@ inline char* get_next_line(char* s)
       break;
     }  
     next_line++;
-  }
-  if(*next_line == '\0')
-  next_line +=1;
+ }
 
   return next_line; 
 }
