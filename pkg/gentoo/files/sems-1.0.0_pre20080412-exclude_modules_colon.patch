@@ -1,0 +1,26 @@
+Index: apps/Makefile
+===================================================================
+--- apps/Makefile	(revision 885)
++++ apps/Makefile	(working copy)
+@@ -4,7 +4,7 @@
+ include $(COREPATH)/../Makefile.defs
+ 
+ exclude_modules ?= mp3 examples py_sems
+-modules ?= $(filter-out $(exclude_modules) \
++modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
+ 		$(wildcard Makefile*) CVS, \
+ 		$(wildcard *) ) examples/tutorial/cc_acc
+ #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
+Index: core/plug-in/Makefile
+===================================================================
+--- core/plug-in/Makefile	(revision 884)
++++ core/plug-in/Makefile	(working copy)
+@@ -3,7 +3,7 @@
+ exclude_modules ?= 
+ #echo
+ 
+-modules = $(filter-out $(exclude_modules) \
++modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
+ 		$(wildcard Makefile*) CVS, \
+ 		$(wildcard *) )
+ #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
