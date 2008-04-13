@@ -4,7 +4,7 @@ COREPATH ?= ../../core
 include $(COREPATH)/../Makefile.defs
 
 exclude_modules ?= 
-modules = $(filter-out $(exclude_modules) \
+modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
 		$(wildcard Makefile*) $(wildcard Readme*) CVS, \
 		$(wildcard *) )
 

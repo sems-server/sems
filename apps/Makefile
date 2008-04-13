@@ -4,7 +4,7 @@ COREPATH ?= ../core
 include $(COREPATH)/../Makefile.defs
 
 exclude_modules ?= mp3 examples py_sems
-modules ?= $(filter-out $(exclude_modules) \
+modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
 		$(wildcard Makefile*) CVS, \
 		$(wildcard *) ) examples/tutorial/cc_acc
 #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
