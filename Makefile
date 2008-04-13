@@ -93,10 +93,10 @@ tar:
 			(mkdir -p tmp/_tar1; mkdir -p tmp/_tar2 ; \
 			    cd tmp/_tar1; $(TAR) -xf - ) && \
 			    mv tmp/_tar1/$(notdir $(CURDIR)) \
-			       tmp/_tar2/"$(NAME)-$(RELEASE)" && \
+			       tmp/_tar2/"$(NAME)-$(REL_VERSION)" && \
 			    (cd tmp/_tar2 && $(TAR) \
 			                    -zcf ../../"$(NAME)-$(RELEASE)".tar.gz \
-			                               "$(NAME)-$(RELEASE)" ) ; \
+			                               "$(NAME)-$(REL_VERSION)" ) ; \
 			    rm -rf tmp
 
 ser-0.9.6-sems_src.tar.gz:

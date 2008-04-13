@@ -52,7 +52,7 @@ install-bin:
 	done
 
 .PHONY: install-cfg
-install-cfg: $(cfg-prefix)/$(cfg-dir)
+install-cfg: $(DESTDIR)$(cfg-target)
 	-@for r in $(modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \

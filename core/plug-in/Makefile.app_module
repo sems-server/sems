@@ -43,36 +43,36 @@ deps: $(depends) $(extra_depends)
 
 .PHONY: install
 install: all $(extra_install)
-	mkdir -p $(modules-prefix)/$(modules-dir)
+	mkdir -p $(DESTDIR)$(modules-prefix)/$(modules-dir)
 	if [ -f "$(lib_name)" ]; then \
-	 $(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$(lib_name) ; \
-	 $(INSTALL-MODULES) $(lib_name) $(modules-prefix)/$(modules-dir); \
+	 $(INSTALL-TOUCH) $(DESTDIR)$(modules-prefix)/$(modules-dir)/$(lib_name) ; \
+	 $(INSTALL-MODULES) $(lib_name) $(DESTDIR)$(modules-prefix)/$(modules-dir); \
 	fi
 
 .PHONY: install-cfg
 install-cfg: 
-	mkdir -p $(cfg-prefix)/$(cfg-dir)etc
+	mkdir -p $(DESTDIR)$(cfg-target)etc
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
-			$(INSTALL-TOUCH) $(cfg-prefix)/$(cfg-dir)$$r ; \
+			$(INSTALL-TOUCH) $(DESTDIR)$(cfg-target)$$r ; \
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
 			-e "s#/usr/.*lib/sems/ivr/#$(lib-target)ivr/#g" \
 			-e "s#/usr/.*lib/sems/py_sems/#$(lib-target)py_sems/#g" \
 			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
-			< $$r > $(cfg-prefix)/$(cfg-dir)$$r; \
+			< $$r > $(DESTDIR)$(cfg-target)$$r; \
 	done
 
-(audio-prefix)/$(audio-dir):
-	mkdir -p $(audio-prefix)/$(audio-dir)
+$(DESTDIR)(audio-prefix)/$(audio-dir):
+	mkdir -p $(DESTDIR)$(audio-prefix)/$(audio-dir)
 
 .PHONY: $(plug_in_name)_audio
-$(plug_in_name)_audio: $(audio-prefix)/$(audio-dir)
-	mkdir -p $(audio-prefix)/$(audio-dir)$(plug_in_name)
+$(plug_in_name)_audio: $(DESTDIR)$(audio-prefix)/$(audio-dir)
+	mkdir -p $(DESTDIR)$(audio-prefix)/$(audio-dir)$(plug_in_name)
 	-@for f in $(AUDIO_FILES) ; do \
 		if [ -n "wav/$$f" ]; then \
-			$(INSTALL-TOUCH) $(audio-prefix)/$(audio-dir)$(plug_in_name)/$$f; \
-			$(INSTALL-AUDIO) wav/$$f $(audio-prefix)/$(audio-dir)$(plug_in_name)/$$f; \
+			$(INSTALL-TOUCH) $(DESTDIR)$(audio-prefix)/$(audio-dir)$(plug_in_name)/$$f; \
+			$(INSTALL-AUDIO) wav/$$f $(DESTDIR)$(audio-prefix)/$(audio-dir)$(plug_in_name)/$$f; \
 		fi ; \
 	done
 

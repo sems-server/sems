@@ -72,64 +72,66 @@ $(NAME): $(NAME).o $(OBJS) ../Makefile.defs
 	$(LD) -o $(NAME) $(NAME).o $(OBJS) $(LDFLAGS)
 
 install: all mk-install-dirs \
+	install-audio \
+	install-doc \
+	install-modules-cfg \
 	install-cfg \
 	install-bin \
 	install-modules \
-	install-doc \
-	install-modules-cfg \
-	install-audio \
+
+
 
 # note: on solaris 8 sed: ? or \(...\)* (a.s.o) do not work
-install-cfg: $(cfg-prefix)/$(cfg-dir)
+install-cfg: $(DESTDIR)$(cfg-target)
 		sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
 			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
-			< etc/sems.conf.sample > $(cfg-prefix)/$(cfg-dir)sems.conf.default
-		chmod 644 $(cfg-prefix)/$(cfg-dir)sems.conf.default
-		if [ ! -f $(cfg-prefix)/$(cfg-dir)sems.conf ]; then \
-			cp -f $(cfg-prefix)/$(cfg-dir)sems.conf.default \
-				$(cfg-prefix)/$(cfg-dir)sems.conf; \
+			< etc/sems.conf.sample > $(DESTDIR)$(cfg-target)sems.conf.default
+		chmod 644 $(DESTDIR)$(cfg-target)sems.conf.default
+		if [ ! -f $(DESTDIR)$(cfg-target)sems.conf ]; then \
+			cp -f $(DESTDIR)$(cfg-target)sems.conf.default \
+				$(DESTDIR)$(cfg-target)sems.conf; \
 		fi
 
-		# Make sure the destination exists and is a directory!
-		mkdir -p $(cfg-prefix)/$(cfg-dir)etc
-		$(INSTALL-CFG) etc/app_mapping.conf $(cfg-prefix)/$(cfg-dir)etc/
+# Make sure the destination exists and is a directory!
+		mkdir -p $(DESTDIR)$(cfg-target)etc
+		$(INSTALL-CFG) etc/app_mapping.conf $(DESTDIR)$(cfg-target)etc/
 
-install-bin: $(bin-prefix)/$(bin-dir)
-		$(INSTALL-TOUCH) $(bin-prefix)/$(bin-dir)$(NAME)
-		$(INSTALL-BIN) $(NAME) $(bin-prefix)/$(bin-dir)
+install-bin: $(DESTDIR)$(bin-prefix)/$(bin-dir)
+		$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(NAME)
+		$(INSTALL-BIN) $(NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)
 
-install-modules: $(PLUGIN_DIR) $(modules-prefix)/$(modules-dir)
+install-modules: $(PLUGIN_DIR) $(DESTDIR)$(modules-prefix)/$(modules-dir)
 	$(MAKE) -C $(PLUGIN_DIR) install
 
-install-modules-cfg: $(PLUGIN_DIR) $(modules-prefix)/$(modules-dir)
+install-modules-cfg: $(PLUGIN_DIR) 
 	$(MAKE) -C $(PLUGIN_DIR) install-cfg
 
 install-ser-cfg: etc/ser-sems.cfg
-	mkdir -p $(ser-cfg-target)
+	mkdir -p $(DESTDIR)$(ser-cfg-target)
 
-	if [ ! -f  $(ser-cfg-target)/ser-sems.cfg ]; then \
+	if [ ! -f  $(DESTDIR)$(ser-cfg-target)/ser-sems.cfg ]; then \
 		sed -e "s#/opt/ser-sems#$(ser-prefix)#g" \
-			< etc/ser-sems.cfg > $(ser-cfg-target)ser-sems.cfg; \
+			< etc/ser-sems.cfg > $(DESTDIR)$(ser-cfg-target)ser-sems.cfg; \
 	fi
 
-	$(INSTALL-CFG) etc/ser-sems.cfg $(ser-cfg-target)ser-sems.cfg.default
+	$(INSTALL-CFG) etc/ser-sems.cfg $(DESTDIR)$(ser-cfg-target)ser-sems.cfg.default
 
-	@echo \*\*\* installed ser-sems.cfg at $(ser-cfg-target)ser-sems.cfg
-	@echo \*\*\* run $(ser-prefix)/sbin/ser -f $(ser-cfg-target)ser-sems.cfg
+	@echo \*\*\* installed ser-sems.cfg at $(DESTDIR)$(ser-cfg-target)ser-sems.cfg
+	@echo \*\*\* run $(DESTDIR)$(ser-prefix)/sbin/ser -f $(DESTDIR)$(ser-cfg-target)ser-sems.cfg
 	@echo \*\*\* to start ser for sems.
 
-install-audio: $(audio-prefix)/$(audio-dir)
-	-@for f in $(AUDIO_FILES) ; do \
+install-audio: $(DESTDIR)$(audio-prefix)/$(audio-dir)
+	for f in $(AUDIO_FILES) ; do \
 		if [ -n "wav/$$f" ]; then \
-			$(INSTALL-TOUCH) $(audio-prefix)/$(audio-dir)$$f; \
-			$(INSTALL-AUDIO) wav/$$f $(audio-prefix)/$(audio-dir)$$f; \
+			$(INSTALL-TOUCH) $(DESTDIR)$(audio-prefix)/$(audio-dir)$$f; \
+			$(INSTALL-AUDIO) wav/$$f $(DESTDIR)$(audio-prefix)/$(audio-dir)$$f; \
 		fi ; \
 	done
 
-install-doc: $(doc-prefix)/$(doc-dir)
-	$(INSTALL-TOUCH) $(doc-prefix)/$(doc-dir)README
-	$(INSTALL-DOC) ../README $(doc-prefix)/$(doc-dir)
+install-doc: $(DESTDIR)$(doc-prefix)/$(doc-dir)
+	$(INSTALL-TOUCH) $(DESTDIR)$(doc-prefix)/$(doc-dir)README
+	$(INSTALL-DOC) ../README $(DESTDIR)$(doc-prefix)/$(doc-dir)
 
 dist: tar
 

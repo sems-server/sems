@@ -29,7 +29,7 @@
 #define _ans_machine_h_
 
 #define CONFIG_FILE         "/usr/local/etc/sems/sems.conf"
-#define MOD_CFG_PATH        "/usr/local/etc/sems/"
+#define MOD_CFG_PATH        "/usr/local/etc/sems/etc"
 #define SER_FIFO            "/tmp/ser_fifo"
 #define FIFO_NAME           "/tmp/am_fifo"
 #define SEND_METHOD         "unix"

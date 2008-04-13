@@ -35,26 +35,26 @@ compile:
 
 .PHONY: install
 install: all
-	install -d ${BASEDIR}/${LIB_INSTALLDIR}
-	install -m ${LIB_PERMISSIONS}  *.pyc ${BASEDIR}/${LIB_INSTALLDIR}
-	install -d ${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
-	install -m ${LIB_PERMISSIONS}  ${LIBDIR}/*.pyc ${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
+	install -d $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}
+	install -m ${LIB_PERMISSIONS}  *.pyc $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}
+	install -d $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
+	install -m ${LIB_PERMISSIONS}  ${LIBDIR}/*.pyc $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
 
 .PHONY: install-cfg
 install-cfg: 
-	mkdir -p $(cfg-prefix)/$(cfg-dir)etc
+	mkdir -p $(cfg-target)etc
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
-			$(INSTALL-TOUCH) $(cfg-prefix)/$(cfg-dir)$$r ; \
+			$(INSTALL-TOUCH) $(cfg-target)$$r ; \
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
 			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
-			< $$r > $(cfg-prefix)/$(cfg-dir)$$r; \
+			< $$r > $(DESTDIR)$(cfg-target)$$r; \
 	done
 
 
 uninstall: 
-	@echo "please remove the files from ${LIB_INSTALLDIR} manually."
+	@echo "please remove the files from $(DESTDIR)${LIB_INSTALLDIR} manually."
 
 fulltest: 
 	find | grep /Test | grep -v ".svn" | grep \\.py$$ | sed -e "s#^./##g" | bash -e - 

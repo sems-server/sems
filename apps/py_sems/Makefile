@@ -82,17 +82,17 @@ LD=gcc
 include $(COREPATH)/plug-in/Makefile.app_module
 
 .PHONY: install_python_files
-install_python_files: $(modules-prefix)/$(modules-dir)
+install_python_files: $(DESTDIR)$(modules-prefix)/$(modules-dir)
 	echo "Installing Python object files..."
 	for f in $(py_obj) ; do \
 		if [ -n "py/$$f" ]; then \
-			$(INSTALL-TOUCH) $(modules-prefix)/$(modules-dir)/$$f; \
-			$(INSTALL-MODULES) py/$$f $(modules-prefix)/$(modules-dir)/$$f; \
+			$(INSTALL-TOUCH) $(DESTDIR)$(modules-prefix)/$(modules-dir)/$$f; \
+			$(INSTALL-MODULES) py/$$f $(DESTDIR)$(modules-prefix)/$(modules-dir)/$$f; \
 		fi ; \
 	done
 
 	echo "Installing py_sems script path..."
-	$(INSTALL-MODULES) -d $(modules-prefix)/$(py-sems-modules-dir)
+	$(INSTALL-MODULES) -d $(DESTDIR)$(modules-prefix)/$(py-sems-modules-dir)
 
 .PHONY: clean_py_sems_lib
 clean_py_sems_lib:

@@ -15,6 +15,7 @@
 #	include "proto.h"
 	extern char	* memcpy P((char *, char *, int));
 #endif
+#include        "string.h"
 
 #include	"private.h"
 #include	"gsm.h"
