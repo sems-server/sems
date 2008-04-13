@@ -21,15 +21,17 @@ DEPEND=">=media-libs/spandsp-0.0.4_pre18
 	>=dev-lang/python-2.4.4-r4"
 
 src_compile () {
-    if [ -x ./configure ]; then
-        econf
-    fi
-    if [ -f Makefile ] || [ -f GNUmakefile ] || [ -f makefile ]; then
-        emake PREFIX=/usr RELEASE=${PVR} || die "emake failed"
-    fi
+	if [ -x ./configure ]; then
+		econf
+	fi
+	if [ -f Makefile ] || [ -f GNUmakefile ] || [ -f makefile ]; then
+		emake PREFIX=/usr RELEASE=${PVR} || die "emake failed"
+	fi
 }
 
 src_install () {
 	emake PREFIX=/usr cfg-target="/etc/sems/" DESTDIR="${D}" install || die
+	newinitd "${FILESDIR}"/sems.rc6 sems
+	newconfd "${FILESDIR}"/sems.confd sems
 	dodoc README
 }

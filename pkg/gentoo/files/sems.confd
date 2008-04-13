@@ -1,0 +1,24 @@
+# /etc/conf.d/sems: config file for /etc/init.d/sems
+
+# sems configuration file
+#SEMS_CFG_FILE="/etc/sems/sems.conf"
+
+# user to run sems as
+#SEMS_USER="sems"
+
+# group to run sems as
+#SEMS_GROUP="sems"
+
+# sems pidfile
+#SEMS_PIDFILE="/var/run/sems.pid"
+
+# set to true if you want to create core files
+#SEMS_CREATE_CORE="true"
+
+# path to use for core files
+#SEMS_COREDIR="/var/cores"
+
+# must be absolute path
+#SEMS_BINARY="/usr/sbin/sems"
+
+
