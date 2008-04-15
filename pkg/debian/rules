@@ -23,7 +23,7 @@ export DEB_BUILD_OPTIONS:="$(DEB_BUILD_OPTIONS) nostrip"
 
 PYTHON_MODULES=ivr py_sems conf_auth mailbox pin_collect
 
-EXCLUDED_MODULES=mp3 examples
+EXCLUDED_MODULES=mp3 examples 
 
 
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
@@ -46,7 +46,7 @@ build-stamp: configure-stamp
 	dh_testdir
 
 # Add here commands to compile the package.
-	$(MAKE) cfg-target=/etc/sems/ prefix=/usr
+	$(MAKE) cfg-target=/etc/sems/ prefix=/usr exclude_modules="$(EXCLUDED_MODULES)" DESTDIR=$(CURDIR)/debian/sems 
 #/usr/bin/docbook-to-man debian/ser.sgml > ser.1
 
 	touch build-stamp
@@ -68,16 +68,14 @@ install: build
 
 # Add here commands to install the package into debian/sems
 	$(MAKE) -C core/ install \
-		basedir=$(CURDIR)/debian/sems \
+		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
-		cfg-prefix=$(CURDIR)/debian/sems \
 		cfg-target=/etc/sems/
 							
 
 	$(MAKE) -C apps/ install exclude_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
-		basedir=$(CURDIR)/debian/sems \
+		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
-		cfg-prefix=$(CURDIR)/debian/sems \
 		cfg-target=/etc/sems/
 
 # fix etc/ser dir location
@@ -85,9 +83,8 @@ install: build
 
 # install only the python modules
 	$(MAKE) -C apps/ install modules="$(PYTHON_MODULES)" \
-		basedir=$(CURDIR)/debian/sems-python-modules \
+		DESTDIR=$(CURDIR)/debian/sems-python-modules \
 		prefix=/usr \
-		cfg-prefix=$(CURDIR)/debian/sems-python-modules \
 		cfg-target=/etc/sems/  
 
 # install /etc/default/sems file
