@@ -466,7 +466,7 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
     req.body     = c2stlstr(msg->body);
     req.serKey   = tid;
 
-    prepare_routes(msg->record_route, req.route);
+    prepare_routes_uas(msg->record_route, req.route);
 	
     for (list<sip_header*>::iterator it = msg->hdrs.begin(); 
 	 it != msg->hdrs.end(); ++it) {
@@ -531,7 +531,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     //
     // reply.next_hop;
 
-    prepare_routes(msg->record_route, reply.route);
+    prepare_routes_uac(msg->record_route, reply.route);
 
     for (list<sip_header*>::iterator it = msg->hdrs.begin(); 
 	 it != msg->hdrs.end(); ++it) {
@@ -544,7 +544,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     handleSipMsg(reply);
 }
 
-void SipCtrlInterface::prepare_routes(const list<sip_header*>& routes, string& route_field)
+void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
 {
     if(!routes.empty()){
 	
@@ -554,6 +554,22 @@ void SipCtrlInterface::prepare_routes(const list<sip_header*>& routes, string& r
 	++it;
 
 	for(; it != routes.rend(); ++it) {
+		
+	    route_field += ", " + c2stlstr((*it)->value);
+	}
+    }
+}
+
+void SipCtrlInterface::prepare_routes_uas(const list<sip_header*>& routes, string& route_field)
+{
+    if(!routes.empty()){
+	
+	list<sip_header*>::const_iterator it = routes.begin();
+
+	route_field = c2stlstr((*it)->value);
+	++it;
+
+	for(; it != routes.end(); ++it) {
 		
 	    route_field += ", " + c2stlstr((*it)->value);
 	}

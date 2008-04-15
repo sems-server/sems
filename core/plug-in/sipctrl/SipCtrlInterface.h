@@ -64,7 +64,8 @@ class SipCtrlInterface:
     trans_layer*   tl;
 
 
-    void prepare_routes(const list<sip_header*>& routes, string& route_field);
+    void prepare_routes_uac(const list<sip_header*>& routes, string& route_field);
+    void prepare_routes_uas(const list<sip_header*>& routes, string& route_field);
     int cancel(const AmSipRequest& req);
 
 protected:
