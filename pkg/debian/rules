@@ -87,12 +87,6 @@ install: build
 		prefix=/usr \
 		cfg-target=/etc/sems/  
 
-# install /etc/default/sems file
-	mkdir -p $(CURDIR)/debian/sems/etc/default
-	cp -f debian/sems.default $(CURDIR)/debian/sems/etc/default/sems
-#dh_movefiles
-
-
 # This single target is used to build all the packages, all at once, or
 # one at a time. So keep in mind: any options passed to commands here will
 # affect _all_ packages. Anything you want to only affect one package
