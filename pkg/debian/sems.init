@@ -41,7 +41,7 @@ if test "$SEMS_CFG_FILE" ; then
   CFGPARAMS="-f $SEMS_CFG_FILE"
 fi
 
-if test "$SEMS_CREATE_CORE" = "true" ; then
+if test "$SEMS_CREATE_CORE" = "yes" ; then
 	# directory for the core dump files
 	[ -d $SEMS_COREDIR ] || mkdir $SEMS_COREDIR
 	chmod 777 $SEMS_COREDIR
