@@ -1170,6 +1170,11 @@ void trans_layer::send_200_ack(sip_msg* reply)
 void trans_layer::retransmit(sip_trans* t)
 {
     assert(transport);
+    if(!t->retr_buf || t->retr_len){
+	// there is nothing to re-transmit yet!!!
+	return;
+    }
+
     int send_err = transport->send(&t->retr_addr,t->retr_buf,t->retr_len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
