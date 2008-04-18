@@ -893,8 +893,19 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 		
 	    case TS_CALLING:
 	    case TS_PROCEEDING:
+		// TODO:
+		//  we should take care of 200 ACKs
+		//    - on first reply:
+		//      - save to-tag.
+		//      - use route-set included in the INV req (if applicable).
+		//      - save ACK for retransmitions.
+		//    - compare to-tag on subsequent replies.
+		//      - (if different): 
+		//        - (generate new 200 ACK based on reply).
+		//        - (send BYE (check for existing UAC trans)).
+		//      - else:
+		//        - re-transmit ACK.
 		t->state = TS_TERMINATED;
-		// TODO: should we assume 200 ACK retransmition?
 		bucket->remove_trans(t);
 		goto pass_reply;
 		
@@ -954,12 +965,10 @@ int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_
 	t->state = TS_COMPLETED;
 	    
 	if(t->msg->u.request->method == sip_request::INVITE){
-	    //TODO: set G timer ?
 	    t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
 	    t->reset_timer(STIMER_H,H_TIMER,bucket->get_id());
 	}
 	else {
-	    //TODO: set J timer ?
 	    // 64*T1_TIMER if UDP / 0 if !UDP
 	    t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
 	}
@@ -976,7 +985,7 @@ int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_
 	    //
 	    // In this stack, the transaction layer
 	    // takes care of re-transmiting the 200 reply
-	    // in a UAS INVITE transaction. The core above
+	    // in a UAS INVITE transaction. The code above
 	    // is commented out and shows the behavior as
 	    // required by the RFC.
 	    //
@@ -987,8 +996,7 @@ int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_
 	}
 	else {
 	    t->state = TS_COMPLETED;
-	    // TODO: set J timer
-	    //  0 if !UDP
+	    // Only for unreliable transports.
 	    t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
 	}
     }
@@ -1170,7 +1178,7 @@ void trans_layer::send_200_ack(sip_msg* reply)
 void trans_layer::retransmit(sip_trans* t)
 {
     assert(transport);
-    if(!t->retr_buf || t->retr_len){
+    if(!t->retr_buf || !t->retr_len){
 	// there is nothing to re-transmit yet!!!
 	return;
     }
