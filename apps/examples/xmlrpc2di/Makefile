@@ -9,6 +9,7 @@ module_cflags  =
 # module_cflags  = -I$(XMLRPCPP_DIR)/src 
 # module_extra_objs = $(XMLRPCPP_DIR)/libXmlRpc.a
 # extra_clean = clean_libxmlrpc
+# and comment module_ldflags line above
 
 
 COREPATH ?=../../../core
