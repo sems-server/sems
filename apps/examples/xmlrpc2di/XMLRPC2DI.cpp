@@ -183,8 +183,7 @@ void XMLRPC2DI::sendRequest(const AmArg& args, AmArg& ret) {
       return;
     }
     XmlRpcClient c(srv->server.c_str(), srv->port, 
-		   srv->uri.empty()?NULL:srv->uri.c_str(),
-		   false);
+		   srv->uri.empty()?NULL:srv->uri.c_str());
 
     XmlRpcValue x_args, x_result;
     XMLRPC2DIServer::amarg2xmlrpcval(params, x_args);
