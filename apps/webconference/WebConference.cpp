@@ -412,7 +412,7 @@ void WebConferenceFactory::roomInfo(const AmArg& args, AmArg& ret) {
 
 void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   for (int i=0;i<6;i++)
-    assertArgCStr(args.get(1));
+    assertArgCStr(args.get(i));
 
   string room        = args.get(0).asCStr();
   string adminpin    = args.get(1).asCStr();
@@ -421,6 +421,23 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   string domain      = args.get(4).asCStr();
   string auth_user   = args.get(5).asCStr();
   string auth_pwd    = args.get(6).asCStr();
+  string headers;
+
+  try {
+      assertArgCStr(args.get(7));
+      headers = args.get(7).asCStr();
+      int i, len;
+      len = headers.length();
+      for (i = 0; i < len; i++) {
+	  if (headers[i] == '|') headers[i] = '\n';
+      }
+      if (headers[len - 1] != '\n') {
+	  headers += '\n';
+      }
+  }
+  catch (AmArg::OutOfBoundsException &e) {
+      headers = "";
+  }
 
   string from = "sip:" + from_user + "@" + domain;
   string to   = "sip:" + callee + "@" + domain;
@@ -445,7 +462,7 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   AmSession* s = AmUAC::dialout(room.c_str(), APP_NAME,  to,  
 				"<" + from +  ">", from, "<" + to + ">", 
 				string(""), // callid
-				string(""), // headers
+				headers, // headers
 				a);
   if (s) {
     string localtag = s->getLocalTag();
