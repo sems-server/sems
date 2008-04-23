@@ -292,7 +292,7 @@ void IvrFactory::init_python_interpreter(const string& script_path)
   PyEval_InitThreads();
   set_sys_path(script_path);
   import_ivr_builtins();
-  PyEval_ReleaseLock();
+  PyEval_SaveThread();
 }
 
 void IvrFactory::set_sys_path(const string& script_path)
