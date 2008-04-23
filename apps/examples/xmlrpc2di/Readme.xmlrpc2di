@@ -185,8 +185,7 @@ directly:
 
 To call someone into webconference (supports authenticated dial-out) 
 over an account at sparvoip.de using di_dial:
-
-import xmlrpclib
+from xmlrpclib import *
 server = ServerProxy("http://127.0.0.1:8090")
 server.di('di_dial', 'dial_auth','webconference', 'roomname',
  'sip:myuser@sparvoip.de', 'sip:0049301234567@sparvoip.de',
