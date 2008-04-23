@@ -713,6 +713,14 @@ void IvrDialog::onSessionStart(const AmSipRequest& req)
   AmB2BCallerSession::onSessionStart(req);
 }
 
+void IvrDialog::onSessionStart(const AmSipReply& rep)
+{
+  invite_req.body = rep.body;
+  callPyEventHandler("onSessionStart","s",rep.hdrs.c_str());
+  setInOut(&playlist,&playlist);
+  AmB2BSession::onSessionStart(rep);
+}
+
 void IvrDialog::onBye(const AmSipRequest& req)
 {
   if(callPyEventHandler("onBye",NULL))
