@@ -4,6 +4,7 @@ to:%email%
 header:X-Content: Voicemail
 
 Hello %user%@%domain%,
+
 %from% left a voice message for you.
 
 Thank you for using <your domain>'s Voicemail.
