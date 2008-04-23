@@ -158,6 +158,13 @@ in xmlrpc2di.conf. By default it is enabled.
 Examples (that hopefully trigger some creativity in the reader ;) 
 -----------------------------------------------------------------
 
+Checking load, setting log level:
+ from xmlrpclib import *
+ server = ServerProxy("http://127.0.0.1:8090")
+ print server.calls()
+ print "Current log level is ", server.get_loglevel()
+ server.set_loglevel(3)
+
 Register fritz at iptel.org using registrar client over XMLRPC 
 from python:
 
