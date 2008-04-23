@@ -182,8 +182,12 @@ void XMLRPC2DI::sendRequest(const AmArg& args, AmArg& ret) {
       ret.push("no active connections");
       return;
     }
-    XmlRpcClient c(srv->server.c_str(), srv->port, 
-		   srv->uri.empty()?NULL:srv->uri.c_str());
+    XmlRpcClient c((const char*)srv->server.c_str(), (int)srv->port, 
+		   (const char*)srv->uri.empty()?NULL:srv->uri.c_str()
+#ifdef HAVE_XMLRPCPP_SSL
+		   , false
+#endif
+		   );
 
     XmlRpcValue x_args, x_result;
     XMLRPC2DIServer::amarg2xmlrpcval(params, x_args);

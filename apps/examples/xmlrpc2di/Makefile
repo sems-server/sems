@@ -4,6 +4,9 @@ plug_in_name = xmlrpc2di
 
 module_ldflags = -lxmlrpc++ 
 module_cflags  = 
+# for gentoo ebuild or cvs-20040713 version:
+# module_cflags  = -DHAVE_XMLRPCPP_SSL
+#
 
 # use these for local installation: 
 # module_cflags  = -I$(XMLRPCPP_DIR)/src 
