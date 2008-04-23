@@ -112,11 +112,14 @@
  *
  * \section voicemailboxappdoc Voicemail and Mailbox
  * SEMS has a <i>voicemail</i> application, which send a recorded message via 
- * Email (voicemail2email): 
+ * Email (voicemail2email), saves the message to the voicebox, or does both: 
  *
  *  <ul><li> \ref ModuleDoc_voicemail </li></ul>
  * 
- * There is also a mailbox application, which stores recorded messages (in an IMAP 
+ * Messages saved to voicebox can be listened to using the voicebox application: 
+ *  <ul><li> \ref ModuleDoc_voicebox </li></ul> 
+ * 
+ * There is also a simpler mailbox application, which stores recorded messages (in an IMAP 
  * server) and users can dial in to check their messages: 
  * 
  *  <ul><li> \ref ModuleDoc_mailbox </li></ul>
@@ -142,6 +145,13 @@
  *  application: 
  * <ul><li>  \ref ModuleDoc_pin_collect </li></ul>
  *
+ * \subsection webconferencingappdoc  Web controlled conference  rooms
+ * 
+ *  Using the webconference application, conference rooms can be controlled
+ *  from e.g. a web control page, or some other external mechanism: 
+ * 
+ *   <ul><li> \ref ModuleDoc_webconference </li></ul>
+ *
  * 
  * \section Prepaid 
  *
@@ -155,7 +165,7 @@
  *
  *   <ul><li> \ref ModuleDoc_click2dial </li></ul>
  *
- * \section Scripting SEMS with Python 
+ * \section pythonscripting Scripting SEMS with Python 
  *
  * There are two application modules which embed a python interpreted into 
  * SEMS: the <i>ivr</i> module and the <i>py_sems</i> module.
@@ -176,7 +186,7 @@
  *
  * <ul><li> \ref ModuleDoc_py_sems  </li></ul>
  * 
- * \section Registering SEMS at a SIP registrar
+ * \section registrar_client Registering SEMS at a SIP registrar
  * 
  * The <i>reg_agent</i> module together with the <i>registar_client</i> module
  * can be used to register at a SIP registrar.
@@ -184,9 +194,15 @@
  * <ul><li> \ref ModuleDoc_reg_agent  </li></ul>
  * <ul><li> \ref ModuleDoc_registrar_client  </li></ul>
  *
- * \section Various applications
+ * \section various_apps Various applications
  * 
  *  <ul><li> \ref ModuleDoc_callback </li></ul>
+ *
+ *  <ul><li> \ref ModuleDoc_auth_b2b </li></ul>
+ *
+ * \section morecomponents Other components
+ *
+ *  <ul><li> \ref ModuleDoc_diameter_client </li></ul>
  */
 
 /*! \page AppDocExample Example Applications
@@ -244,6 +260,8 @@
  *
  * di_log (\ref ModuleDoc_di_log) implements the logging interface - it saves the last n log lines
  * in an in-memory ring buffer, which can be retrieved via DI (using xmlrpc2di via XMLRPC).
+ *
+ * call_gen (\ref ModuleDoc_call_gen) is a call generator, e.g. a load generator for testing SEMS.
  * 
  * jukecall (\ref ModuleDoc_jukecall) does a b2bua call to the callee with SEMS in the
  * media path, to be able to play a file into the call when the caller presses a 
@@ -261,9 +279,13 @@
  * The serviceline (\ref ModuleDoc_serviceline) is an application implementing a service 
  * line (press one to get to A, two for B, ...) with ivr, b2bua and SIP auth.
  * 
- * The py_sems_ex directory contains some example for the py_sems embedded Python interpreter.
+ * The py_sems_ex directory contains some example for the py_sems embedded Python interpreter, namely 
+ * an early media announcement implementation, and the jukecall example as py_sems application.
  *
  * The early_record (\ref ModuleDoc_early_record) is an example on how to receive and use early media. 
+ * 
+ * dtmftester (\ref ModuleDoc_dtmftester) just records the file and plays the digits, to check whether 
+ * DTMF detection is working.
  * 
  */
 
@@ -307,6 +329,14 @@
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
 
+/*! \page ModuleDoc_webconference Module Documentation: webconference Application 
+ *  \section Readme_webconference Readme file
+ *  \verbinclude Readme.webconference
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
 /*! \page ModuleDoc_early_announce Module Documentation: early_announce Application 
  *  \section Readme_early_announce Readme file
  *  \verbinclude Readme.early_announce
@@ -318,6 +348,14 @@
 /*! \page ModuleDoc_voicemail Module Documentation: voicemail Application 
  *  \section Readme_voicemail Readme file
  *  \verbinclude Readme.voicemail
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_voicebox Module Documentation: voicebox Application 
+ *  \section Readme_voicebox Readme file
+ *  \verbinclude Readme.voicebox
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -403,6 +441,23 @@
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
 
+/*! \page ModuleDoc_auth_b2b Module Documentation: auth_b2b application plugin
+ *  \section Readme_auth_b2b Readme file
+ *  \verbinclude Readme.auth_b2b
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_diameter_client Module Documentation: diameter_client component plugin
+ *  \section Readme_diameter_client Readme file
+ *  \verbinclude Readme.diameter_client
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+
 /*! \page ModuleDoc_sw_prepaid_sip Module Documentation: prepaid_sip application plugin
  *  \section Readme_prepaid_sip Readme file
  *  \verbinclude Readme.sw_prepaid_sip
@@ -470,6 +525,14 @@
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
 
+/*! \page ModuleDoc_call_gen Module Documentation: call_gen Application 
+ *  \section Readme_call_gen Readme file
+ *  \verbinclude Readme.call_gen
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
 /*! \page ModuleDoc_jukecall Module Documentation: jukecall Application 
  *  \section Readme_jukecall Readme file
  *  \verbinclude Readme.jukecall
@@ -505,6 +568,14 @@
 /*! \page ModuleDoc_early_record Module Documentation: early_record example Application 
  *  \section Readme_early_record Readme file
  *  \verbinclude Readme.earlyrecord
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_dtmftester Module Documentation: dtmftester example Application 
+ *  \section Readme_dtmftester Readme file
+ *  \verbinclude Readme.dtmftester
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
