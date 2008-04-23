@@ -327,6 +327,10 @@ void WebConferenceFactory::invoke(const string& method,
     args.assertArrayFmt("ss");
     getRoomPassword(args, ret);
     ret.push(getServerInfoString().c_str());    
+  } else if(method == "listRooms"){
+    args.assertArrayFmt("s");
+    listRooms(args, ret);
+    ret.push(getServerInfoString().c_str());    
   } else if(method == "_list"){
     ret.push("roomCreate");
     ret.push("roomInfo");
@@ -339,6 +343,7 @@ void WebConferenceFactory::invoke(const string& method,
     ret.push("vqCallFeedback");
     ret.push("vqRoomFeedback");
     ret.push("getRoomPassword");
+    ret.push("listRooms");
   } else
     throw AmDynInvoke::NotImplemented(method);
 }
@@ -557,6 +562,30 @@ void WebConferenceFactory::getRoomPassword(const AmArg& args, AmArg& ret) {
 
   ret.push(res_code);  
   ret.push(res.c_str());  
+}
+
+void WebConferenceFactory::listRooms(const AmArg& args, AmArg& ret) {
+
+  string pwd  = args.get(0).asCStr();
+
+  if ((!MasterPassword.length()) || 
+      pwd != MasterPassword) {
+    ret.push(407);
+    ret.push("Wrong Master Password.\n");
+    return;
+  }
+
+  AmArg room_list;
+  
+  rooms_mut.lock();
+  for (map<string, ConferenceRoom>::iterator it = 
+	 rooms.begin(); it != rooms.end(); it++) {
+    room_list.push(it->first.c_str());
+  }
+  rooms_mut.unlock();
+
+  ret.push(200);  
+  ret.push(room_list);  
 }
 
 void WebConferenceFactory::vqRoomFeedback(const AmArg& args, AmArg& ret) {

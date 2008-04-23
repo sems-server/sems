@@ -147,6 +147,7 @@ public:
   void resetFeedback(const AmArg& args, AmArg& ret);
   void flushFeedback(const AmArg& args, AmArg& ret);
   void getRoomPassword(const AmArg& args, AmArg& ret);
+  void listRooms(const AmArg& args, AmArg& ret);
 };
 
 

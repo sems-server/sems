@@ -96,9 +96,20 @@ serverInfo():
       int load,
       int cpu
 ----
+getRoomPassword(string master_pwd, string room)
+    int code, string result
+----
+listRooms(string master_pwd)
+    int code, string result
+----
 
 additionally there is feedback functions to save call quality reports 
 from users: vqRoomFeedback, vqCallFeedback, vqConferenceFeedback.
 resetFeedback, flushFeedback can be used to manipulate the feedback files.
 
-getRoomPassword retrieves the room password with the master password.
+getRoomPassword and listRooms in only available if master password is set 
+in webconference.conf
+
+
+
+    
