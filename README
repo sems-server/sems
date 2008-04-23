@@ -24,43 +24,60 @@ Introduction:
  
  The following applications are shipped with SEMS :
 
-  * announcement:  plays an announcement
+  * announcement   plays an announcement
 
-  * voicemail:     records voice messages and sends them 
-                   as email
+  * voicemail      records voice messages and sends them 
+                   as email, saves them to a voicebox, or
+                   both
 
-  * conference:    enables many people to talk together 
+  * conference     enables many people to talk together 
                    at the same time
 
-  * webconference: conference application that can be 
+  * webconference  conference application that can be 
                    controlled from an external program, 
                    e.g. a website 
 
-  * echo:          test module to echo the caller's voice
+  * echo           test module to echo the caller's voice
  
-  * mailbox:       auto-attendant that saves voicemails into
-                   an IMAP server. Users can dial in to check
+  * voicebox       users can dial in to the voicebox to check
                    their messages
 
-  * ann_b2b:       pre-call-announcement, plays announcement 
+  * mailbox        auto-attendant that saves voicemails into
+                   an IMAP server. Users can dial in to check
+                   their messages (simpler version)
+
+  * ann_b2b        pre-call-announcement, plays announcement 
                    before connecting the callee in B2BUA mode
  
-  * announce_transfer: pre-call-announcement, plays announcement 
+  * announce_transfer  pre-call-announcement, plays announcement 
                    and then transfers the caller to the callee 
                    using REFER
 
-  * early_announce: (pre-call) announcement using early media (183)
+  * early_announce (pre-call) announcement using early media (183),
+                   optionally continues the call in B2BUA mode
 
-  * conf_auth:     collect a PIN number, verify it against an 
+  * auth_b2b       B2BUA app that changes identity and authenticates
+                   second call leg
+
+  * conf_auth      collect a PIN number, verify it against an 
                    XMLRPC authentication server and connects in 
                    B2BUA mode
 
-  * pin_collect:   collect a PIN, optionally verify it, and transfer
+  * pin_collect    collect a PIN, optionally verify it, and transfer
                    the call into a conference
 
-  * callback:      reject the call, call back caller later and have 
+  * callback       reject the call, call back caller later and have 
                    her enter a number to call in b2bua with media relay
                    mode
+
+  * reg_agent     SIP REGISTER to register SEMS' contact to an aor
+
+  * sw_prepaid_sip prepaid application
+  
+  * call_timer     B2BUA, ends the call after a certain time
+
+  * precoded_announce plays preencoded announcements
+
 
  alongside a set of example applications intended to help 
  development of custom services, including a calling card 
@@ -82,8 +99,8 @@ Introduction:
  SEMS only supports patent free codecs. That means that codecs
  like g729 won't be supported. On the other hand, SEMS supports 
  all important patent free codecs out of the box (g711u, g711a, 
- GSM06.10, speex, G726 and iLBC). Integrating other codecs in SEMS
- is very simple.
+ GSM06.10, speex, G726, L16 and iLBC). Integrating other codecs 
+ in SEMS is very simple.
 
  SEMS shows very good performance on current standard
  PC architecture based server systems. It has sucessfully
@@ -95,11 +112,12 @@ Introduction:
 
 Requirements:
 
- 1. SER version 0.9.6-sems: SIP Epress Router (www.iptel.org/ser)
+ 1. optional: SER version 0.9.6-sems, or SER 2.0 with SASI:
+    SIP Epress Router (www.iptel.org/ser)
 
-    SEMS uses SER as its SIP stack. SEMS & SER communicate 
-    through unix socket, which means that a SER instance is
-    mandatory on every host using SEMS.
+    SEMS has its own SIP stack. SEMS can also use SER as its 
+    SIP stack. SEMS & SER communicate through unix socket (0.9.6),
+    or binrpc protocol (2.0 SASI).
 
  2. Python version >= 2.3 for the ivr (embedded python interpreter)
     and py_sems, optional
@@ -111,15 +129,17 @@ Requirements:
 
  5. xmlrpcpp for XMLRPC control, optional
 
+ 6. spandsp library for DTMF detection and PLC, optional
+    (SEMS has its own implementations for both)
+
 How to get started with SEMS:
 
-  To try out SEMS, the easiest is to get the bundle and install it: 
-    wget http://ftp.iptel.org/pub/sems/sems-0.10.0-bundle.tar.gz
-    tar xzvf sems-0.10.0-bundle.tar.gz ; cd sems-0.10.0-bundle
-    make install PREFIX=~/sems-0.10.0-install SERPREFIX=~/sems-0.10.0-install
-  This gets you the default set of applications installed in that
-  directory, and in the end prints the commands to start it. 
-
+  To try out SEMS, the easiest is to get a release candidate from 
+  http://ftp.iptel.org/pub/sems/testing/ , unpack and install it 
+  using the usual make && make install. After installation, the 
+  configuration file /usr/local/etc/sems/sems.conf needs to be 
+  adapted.
+ 
   You can also follow one of the tutorials
   linked from the SEMS homepage
   (e.g. http://www.iptel.org/howto_sems_voicemail).The Application
@@ -137,7 +157,7 @@ How to get started with SEMS:
 Installation:
 
  1. Download SEMS 
-     Download the source tarball from ftp://ftp.iptel.org/pub/sems,
+     Download the source tarball from ftp://ftp.iptel.org/pub/sems/,
      or get the newest version through svn:
       $ svn checkout svn://svn.berlios.de/sems/trunk
        -or-
@@ -163,8 +183,11 @@ Installation:
     is at '/usr/local/etc/sems/sems.conf'. 
     Else make your own using sems.conf.sample.
 
- 4. Get and start SER as SIP stack for SEMS: 
+ 4. Optional: Get and start SER as SIP stack for SEMS: 
     
+    By default, sipctrl plugin is loaded, which is the integrated SIP 
+    stack for SEMS. If SER should be used, the following procedure is
+    necessary: 
     To install the ser-0.9.6-sems into the directory /some/dir the 
     following commands can used:
 
