@@ -571,7 +571,9 @@ void WebConferenceFactory::listRooms(const AmArg& args, AmArg& ret) {
   if ((!MasterPassword.length()) || 
       pwd != MasterPassword) {
     ret.push(407);
-    ret.push("Wrong Master Password.\n");
+    AmArg res;
+    res.push("Wrong Master Password.\n");
+    ret.push(res);
     return;
   }
 
