@@ -24,20 +24,15 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef _PINAUTHCONFERENCE_H_
-#define _PINAUTHCONFERENCE_H_
+#ifndef _WEBCONFERENCE_H_
+#define _WEBCONFERENCE_H_
 
-#include "AmApi.h"
-#include "AmSession.h"
-#include "AmAudio.h"
-#include "AmConferenceChannel.h"
-#include "AmPlaylist.h"
-#include "AmPromptCollection.h"
-#include "ampi/UACAuthAPI.h"
 
-#include "AmRingTone.h"
 #include "RoomInfo.h"
 #include "CallStats.h"
+#include "AmApi.h"
+#include "AmPromptCollection.h"
+#include "AmRtpAudio.h" // playoutType
 
 #include <map>
 #include <string>
@@ -122,15 +117,15 @@ public:
 		      AmArg& session_params);
   int onLoad();
 
-  inline void newParticipant(const string& conf_id, 
-			     const string& localtag, 
-			     const string& number);
-  inline void updateStatus(const string& conf_id, 
-			   const string& localtag, 
-			   ConferenceRoomParticipant::ParticipantStatus status,
-			   const string& reason);
-
-  inline void callStats(bool success, unsigned int connect_t);
+  void newParticipant(const string& conf_id, 
+		      const string& localtag, 
+		      const string& number);
+  void updateStatus(const string& conf_id, 
+		    const string& localtag, 
+		    ConferenceRoomParticipant::ParticipantStatus status,
+		    const string& reason);
+  
+  void callStats(bool success, unsigned int connect_t);
   
   // DI API
   WebConferenceFactory* getInstance(){
@@ -154,73 +149,6 @@ public:
   void getRoomPassword(const AmArg& args, AmArg& ret);
 };
 
-class WebConferenceDialog 
-  : public AmSession,
-    public CredentialHolder
-{
-public:
-  enum WebConferenceState {
-    None,
-    EnteringPin,
-    EnteringConference,
-    InConference,
-    InConferenceRinging,
-    InConferenceEarly
-  }; 
-
-private:
-  AmPlaylist  play_list;
-  AmPlaylistSeparator separator;
-
-  AmPromptCollection& prompts;
-
-  // our ring tone
-  auto_ptr<AmRingTone> RingTone;
-
-  // our connection to the conference
-  auto_ptr<AmConferenceChannel> channel;
-  string  conf_id;
-  string pin_str;
-
-  void connectConference(const string& room);
-  void disconnectConference();
-
-  void onKicked();
-  void onMuted(bool mute);
-
-  WebConferenceState state;
-
-  WebConferenceFactory* factory;
-  bool is_dialout; 
-  UACAuthCred* cred;
-
-  bool muted;
-
-  time_t connect_ts;
-  time_t disconnect_ts;
-
-public:
-  WebConferenceDialog(AmPromptCollection& prompts,
-		      WebConferenceFactory* my_f, 
-		      UACAuthCred* cred);
-  WebConferenceDialog(AmPromptCollection& prompts,
-		      WebConferenceFactory* my_f, 
-		      const string& room);
-  ~WebConferenceDialog();
-
-  void process(AmEvent* ev);
-  void onSipReply(const AmSipReply& reply);
-  void onSessionStart(const AmSipRequest& req);
-  void onSessionStart(const AmSipReply& rep);
-  void onEarlySessionStart(const AmSipReply& rep);
-  void onRinging(const AmSipReply& rep);
-
-  void onDtmf(int event, int duration);
-  void onBye(const AmSipRequest& req);
-
-  UACAuthCred* getCredentials() { return cred; }
-
-};
 
 #endif
 // Local Variables:
