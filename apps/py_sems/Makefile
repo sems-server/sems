@@ -98,7 +98,7 @@ install_python_files: $(DESTDIR)$(modules-prefix)/$(modules-dir)
 clean_py_sems_lib:
 	COREPATH=../$(COREPATH) $(MAKE) -C sip/ clean
 	rm -f py/*.pyc
-
+	rm -f $(module_extra_objs)
 sip/py_sems_lib.a:
 	COREPATH=../$(COREPATH) $(MAKE) -C sip/ Makefile.gen
 	COREPATH=../$(COREPATH) $(MAKE) -C sip/ py_sems_lib.a
