@@ -26,16 +26,21 @@ void WCCCallStats::save() {
   if (!filename.length())
     return;
 
-  std::ofstream ofs(filename.c_str(), 
-		    std::ios::out | std::ios::trunc);
-  if (ofs.good()) {
-    ofs << total << std::endl << failed << std::endl << seconds;
-    ofs.close();
-    DBG("saved statistics: %u total %u failed %u seconds (%u min)\n", 
-	total, failed, seconds, seconds/60);
-  } else {
-    ERROR("opening/writing stats to '%s'\n", 
-	  filename.c_str());
+  try {
+    std::ofstream ofs(filename.c_str(), 
+		      std::ios::out | std::ios::trunc);
+    if (ofs.good()) {
+      ofs << total << std::endl << failed << std::endl << seconds;
+      ofs.close();
+      DBG("saved statistics: %u total %u failed %u seconds (%u min)\n", 
+	  total, failed, seconds, seconds/60);
+    } else {
+      ERROR("opening/writing stats to '%s'\n", 
+	    filename.c_str());
+    }
+  } catch (std::exception& e) {
+    ERROR("writing stats to '%s': %s\n", 
+	  filename.c_str(), e.what());
   }
 }
 
@@ -43,15 +48,20 @@ void WCCCallStats::load() {
   if (!filename.length())
     return;
 
-  std::ifstream ifs(filename.c_str(), std::ios::in);
-  if (ifs.good()) {
-    ifs >> total >> failed >> seconds;
-    ifs.close();
-    DBG("read statistics: %u total %u failed %u seconds (%u min)\n", 
-	total, failed, seconds, seconds/60);
-  } else {
-    ERROR("opening/reading stats from '%s'\n", 
-	  filename.c_str());
+  try {
+    std::ifstream ifs(filename.c_str(), std::ios::in);
+    if (ifs.good()) {
+      ifs >> total >> failed >> seconds;
+      ifs.close();
+      DBG("read statistics: %u total %u failed %u seconds (%u min)\n", 
+	  total, failed, seconds, seconds/60);
+    } else {
+      ERROR("opening/reading stats from '%s'\n", 
+	    filename.c_str());
+    }
+  } catch (std::exception& e) {
+      ERROR("opening/reading stats from '%s': %s\n", 
+	    filename.c_str(), e.what());
   }
 }
 
