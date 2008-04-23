@@ -43,6 +43,10 @@ include ../Makefile.defs
 
 LDFLAGS += -lstdc++ 
 
+ifeq ($(ARCH),iphone)
+LDFLAGS += -lgcc_eh
+endif
+
 ifdef USE_SPANDSP
 ifdef LIBSPANDSP_STATIC
 LDFLAGS += $(LIBSPANDSP_LDIR)libspandsp.a

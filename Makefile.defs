@@ -113,8 +113,11 @@ ifeq ($(OS), darwin)
 	CPPFLAGS += -DBSD44SOCKETS
 
 	# add the DarwinPorts directory
-	CPPFLAGS += -I /opt/local/include
-	LDFLAGS += -L/opt/local/lib
+	ifneq ($(ARCH), iphone)
+	      CPPFLAGS += -D__DARWIN_UNIX03
+	      CPPFLAGS += -I /opt/local/include
+	      LDFLAGS += -L/opt/local/lib
+	endif	      
 
 	override exclude_modules += binrpcctrl mp3 examples py_sems
 else
