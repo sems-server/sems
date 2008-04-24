@@ -531,15 +531,17 @@ int trans_layer::send_request(sip_msg* msg, char* tid)
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
 
+    trans_bucket* bucket = get_trans_bucket(p_msg->callid->value,
+					    get_cseq(p_msg)->num_str);
+    bucket->lock();
+
     int send_err = transport->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
     }
     else {
-	trans_bucket* bucket = get_trans_bucket(p_msg->callid->value,
-						get_cseq(p_msg)->num_str);
-	bucket->lock();
+
 	sip_trans* t = bucket->add_trans(p_msg,TT_UAC);
 	if(p_msg->u.request->method == sip_request::INVITE){
 	    
@@ -560,9 +562,9 @@ int trans_layer::send_request(sip_msg* msg, char* tid)
 	string t_id = int2hex(bucket->get_id()).substr(5,string::npos) 
 	    + ":" + long2hex((unsigned long)t);
 	memcpy(tid,t_id.c_str(),12);
-	
-	bucket->unlock();
     }
+
+    bucket->unlock();
     
     return send_err;
 }
