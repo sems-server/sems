@@ -45,4 +45,13 @@ struct SIPRegistrationEvent : public AmEvent {
 	};
 };
 
+char* getSIPRegistationStateString(unsigned int s) {
+  switch (s) {
+  case 0: return "RegisterPending";
+  case 1: return "RegisterActive";
+  case 2: return "RegisterExpired";
+  default: return "unknown";
+  }
+}
+
 #endif

@@ -34,6 +34,7 @@
 #include "log.h"
 
 #include <unistd.h>
+#include "ampi/SIPRegistrarClientAPI.h"
 
 #define MOD_NAME "reg_agent"
 
@@ -159,7 +160,8 @@ bool RegThread::check_registration(const RegInfo& ri) {
 	  return false; // does not exist
 	int state = res.get(1).asInt();
 	int expires = res.get(2).asInt();
-	DBG("Got state %ud with expires %ud for registration.\n", state, expires);
+	DBG("Got state %s with expires %us for registration.\n", 
+	    getSIPRegistationStateString(state), expires);
 	if (state == 2) // expired ... FIXME: add values from API here
 	  return false;
 	// else pending or active
