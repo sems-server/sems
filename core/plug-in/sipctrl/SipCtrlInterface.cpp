@@ -36,6 +36,7 @@ EXPORT_CONTROL_INTERFACE_FACTORY(SipCtrlInterfaceFactory,MOD_NAME);
 
 string SipCtrlInterfaceFactory::outbound_host = "";
 unsigned int SipCtrlInterfaceFactory::outbound_port = 0;
+bool SipCtrlInterfaceFactory::accept_fr_without_totag = false;
 
 AmCtrlInterface* SipCtrlInterfaceFactory::instance()
 {
@@ -65,6 +66,17 @@ int SipCtrlInterfaceFactory::onLoad()
 	if (parsed_uri.port) {
 	    SipCtrlInterfaceFactory::outbound_port = parsed_uri.port;
 	}
+    }
+
+    AmConfigReader cfg;
+    string cfgfile = AmConfig::ModConfigPath + string(MOD_NAME ".conf");
+    if (file_exists(cfgfile) && cfg.loadFile(cfgfile)) {
+	if (cfg.hasParameter("accept_fr_without_totag")) {
+	    accept_fr_without_totag = 
+		cfg.getParameter("accept_fr_without_totag") == "yes";
+	}
+    } else {
+	DBG("assuming SIP default settings.\n");
     }
 
     return 0;
