@@ -193,11 +193,13 @@ bool AmSmtpClient::send_command(const string& cmd)
     status = st_Ok;
   }
   else if(res_code < 600) {
-    ERROR("smtp server answered: %i %s\n",res_code,res_msg.c_str());
+    ERROR("smtp server answered: %i %s (cmd was '%s')\n",
+	  res_code,res_msg.c_str(),cmd.c_str());
     status = st_Error;
   }
   else {
-    WARN("unknown response from smtp server: %i %s\n",res_code,res_msg.c_str());
+    WARN("unknown response from smtp server: %i %s (cmd was '%s')\n",
+	 res_code,res_msg.c_str(),cmd.c_str());
     status = st_Unknown;
   }
 
