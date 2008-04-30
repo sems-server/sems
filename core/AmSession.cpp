@@ -322,7 +322,7 @@ void AmSession::negotiate(const string& sdp_body,
   if( sdp.remote_active || force_symmetric_rtp) {
     DBG("The other UA is NATed: switched to passive mode.\n");
     DBG("remote_active = %i; force_symmetric_rtp = %i\n",
-	sdp.remote_active,force_symmetric_rtp);
+	sdp.remote_active, force_symmetric_rtp);
 
     passive_mode = true;
   }
@@ -339,7 +339,7 @@ void AmSession::negotiate(const string& sdp_body,
   unlockAudio();
 
   if(sdp_reply)
-    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),*sdp_reply, AmConfig::SingleCodecInOK);
+    sdp.genResponse(advertisedIP(), rtp_str.getLocalPort(), *sdp_reply, AmConfig::SingleCodecInOK);
 }
 
 void AmSession::run()
@@ -784,7 +784,7 @@ void AmSession::sendReinvite(bool updateSDP, const string& headers)
   if (updateSDP) {
     rtp_str.setLocalIP(AmConfig::LocalIP);
     string sdp_body;
-    sdp.genResponse(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
+    sdp.genResponse(advertisedIP(), rtp_str.getLocalPort(), sdp_body);
     dlg.reinvite(headers, "application/sdp", sdp_body);
   } else {
     dlg.reinvite(headers, "", "");
@@ -793,12 +793,13 @@ void AmSession::sendReinvite(bool updateSDP, const string& headers)
 
 int AmSession::sendInvite(const string& headers) 
 {
-  // set local IP first, so that IP is set when 
-  // getLocalPort/setLocalPort may bind 
+  // Set local IP first, so that IP is set when 
+  // getLocalPort/setLocalPort may bind.
   rtp_str.setLocalIP(AmConfig::LocalIP);
-  // generate SDP
+  
+  // Generate SDP.
   string sdp_body;
-  sdp.genRequest(AmConfig::LocalIP,rtp_str.getLocalPort(),sdp_body);
+  sdp.genRequest(advertisedIP(), rtp_str.getLocalPort(), sdp_body);
   return dlg.invite(headers, "application/sdp", sdp_body);
 }
 
@@ -811,3 +812,15 @@ void AmSession::setOnHold(bool hold)
     sendReinvite();
   unlockAudio();
 }
+
+// Utility for basic NAT handling: allow the config file to specify the IP
+// address to use in SDP bodies and Contact header.
+// TODO: Contact header! :)
+string AmSession::advertisedIP()
+{
+  string set_ip = AmConfig::PublicIP; // "public_ip" parameter. (NEW)
+  DBG("AmConfig::PublicIP is %s.", set_ip.c_str());
+  if (set_ip.empty())
+    return AmConfig::LocalIP;           // "listen" parameter.
+  return set_ip;
+}  

@@ -253,6 +253,7 @@ int main(int argc, char* argv[])
 	  "       plug-in path:        %s\n"
 	  "       daemon mode:         %i\n"
 	  "       local SIP IP:        %s\n"
+          "       public media IP:     %s\n"
 	  "       local SIP port:      %i\n"
 	  "       local media IP:      %s\n"
 	  "       application:         %s\n"
@@ -261,6 +262,7 @@ int main(int argc, char* argv[])
 	  AmConfig::PlugInPath.c_str(),
 	  AmConfig::DaemonMode,
 	  AmConfig::LocalSIPIP.c_str(),
+	  AmConfig::PublicIP.c_str(),
 	  AmConfig::LocalSIPPort,
 	  AmConfig::LocalIP.c_str(),
 	  AmConfig::Application.empty()?

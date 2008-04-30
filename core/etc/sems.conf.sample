@@ -162,13 +162,27 @@ media_processor_threads=1
 #   registrations. 
 #   It defaults to the value of 'listen' (see above).
 #
-# Example :
+# Example:
 #  sip_ip=10.0.0.34
 #
 # default: <listen ip address>
 #
 #sip_ip=10.0.0.34
 
+# optional parameter: public_ip=<ip_address>
+# 
+# - when running SEMS behind certain simple NAT configurations,
+#   you can use this parameter to inform SEMS of its public IP
+#   address. If this parameter is set, SEMS will write this value
+#   into SDP bodies.
+#   If this parameter is not set, the local IP address is used.
+#   N.B., there is no support for port translation; the local 
+#   RTP port is used in either case.
+#   
+# Example:
+#  public_sip=75.101.219.48
+#  
+  
 # optional parameter: sip_port=<port_number>
 #
 # - this informs SEMS about the port where its SIP stack is 

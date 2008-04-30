@@ -457,6 +457,9 @@ public:
 			   const string& body,
 			   string& hdrs,
 			   int flags);
+  
+  // The IP address to put as c= in SDP bodies and to use for Contact:.
+  string advertisedIP();
 };
 
 #endif

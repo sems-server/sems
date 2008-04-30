@@ -47,6 +47,7 @@ string       AmConfig::ExcludePlugins          = "";
 string       AmConfig::ExcludePayloads         = "";
 int          AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
 string       AmConfig::LocalIP                 = "";
+string       AmConfig::PublicIP                = "";
 string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
 int          AmConfig::RtpLowPort              = RTP_LOWPORT;
 int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
@@ -146,6 +147,8 @@ int AmConfig::setDeadRtpTime(const string& drt)
 
 int AmConfig::readConfiguration()
 {
+  DBG("Reading configuration...");
+  
   AmConfigReader cfg;
 
   if(cfg.loadFile(ConfigurationFile.c_str())){
@@ -179,6 +182,15 @@ int AmConfig::readConfiguration()
 
   if(cfg.hasParameter("sip_ip"))
     LocalSIPIP = cfg.getParameter("sip_ip");
+  
+  if(cfg.hasParameter("public_ip")){
+    string p_ip = cfg.getParameter("public_ip");
+    DBG("Setting public_ip parameter to %s.\n", p_ip.c_str());
+    PublicIP = p_ip;
+  }
+  else {
+    DBG("Config file has no public_ip parameter.");
+  }
   
   // outbound_proxy
   OutboundProxy = cfg.getParameter("outbound_proxy");

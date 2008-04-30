@@ -62,8 +62,14 @@ struct AmConfig
   //static unsigned int MaxRecordTime;
   /** run the programm in daemon mode? */
   static int DaemonMode;
+  
   /** local IP for SDP media advertising */
   static string LocalIP;
+  
+  /** public IP for SDP media advertising; we actually
+   *  bind to local IP, but advertise public IP. */ 
+  static string PublicIP;
+  
   /** Separator character for uri application prefix (ex: voicemail+jiri@iptel.org) */
   static string PrefixSep;
   /** Lowest local RTP port */
