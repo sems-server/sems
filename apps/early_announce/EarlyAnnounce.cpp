@@ -54,7 +54,8 @@ string EarlyAnnounceFactory::AnnouncePath;
 string EarlyAnnounceFactory::AnnounceFile;
 #endif
 
-bool EarlyAnnounceFactory::ContinueB2B = false;
+EarlyAnnounceFactory::ContB2B EarlyAnnounceFactory::ContinueB2B = 
+  EarlyAnnounceFactory::Never;
 
 EarlyAnnounceFactory::EarlyAnnounceFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
@@ -140,10 +141,18 @@ int EarlyAnnounceFactory::onLoad()
   // get application specific global parameters
   configureModule(cfg);
 
-  if (cfg.hasParameter("continue_b2b") &&
-      cfg.getParameter("continue_b2b") == "yes") {
-    ContinueB2B = true;
-    DBG("early_announce in b2bua mode.\n");
+  if (cfg.hasParameter("continue_b2b")) { 
+    if (cfg.getParameter("continue_b2b") == "yes") {
+      ContinueB2B = Always;
+      DBG("early_announce in b2bua mode.\n");
+    }
+    else if (cfg.getParameter("continue_b2b") == "app-param") {
+      ContinueB2B = AppParam;
+      DBG("early_announce in b2bua/final reply mode "
+	  "(depends on app-param).\n");
+    } else {
+      DBG("early_announce sends final reply.\n");
+    }
   }
 
 #ifdef USE_MYSQL
@@ -354,11 +363,25 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 
   AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
   if(audio_event && 
-     (audio_event->event_id == AmAudioEvent::cleared))
-    {
+     (audio_event->event_id == AmAudioEvent::cleared)) {
       DBG("AmAudioEvent::cleared\n");
 
-      if (!EarlyAnnounceFactory::ContinueB2B) {
+      bool continue_b2b = false;
+      if (EarlyAnnounceFactory::ContinueB2B == 
+	  EarlyAnnounceFactory::Always) {
+	continue_b2b = true;
+      } else if (EarlyAnnounceFactory::ContinueB2B == 
+		 EarlyAnnounceFactory::AppParam) {
+	string iptel_app_param = getHeader(localreq.hdrs, PARAM_HDR);
+	if (iptel_app_param.length()) {
+	  continue_b2b = get_header_keyvalue(iptel_app_param,"B2B")=="yes";
+	} else {
+	  continue_b2b = getHeader(localreq.hdrs,"P-B2B")=="yes";
+	}
+      }
+      DBG("determined: continue_b2b = %s\n", continue_b2b?"true":"false");
+
+      if (!continue_b2b) {
 	unsigned int code_i = 404;
 	string reason = "Not Found";
 	
@@ -369,6 +392,8 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	    ERROR("while parsing Final-Reply-Code parameter\n");
 	  }
 	  reason = get_header_keyvalue(iptel_app_param,"Final-Reply-Reason");
+	  if (!reason.length())
+	    reason = "Not Found";
 	} else {
 	  string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
 	  if (code.length() && str2i(code, code_i)) {

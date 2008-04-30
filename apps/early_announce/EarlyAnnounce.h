@@ -53,8 +53,12 @@ public:
   static string AnnouncePath;
   static string AnnounceFile;
 #endif
-
-  static bool ContinueB2B;
+  enum ContB2B {
+    Always = 0,
+    Never,
+    AppParam
+  };
+  static ContB2B ContinueB2B;
 
   EarlyAnnounceFactory(const string& _app_name);
 
