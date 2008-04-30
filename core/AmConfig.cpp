@@ -62,6 +62,7 @@ bool         AmConfig::IgnoreRTPXHdrs          = false;
 string       AmConfig::Application             = "";
 AmConfig::ApplicationSelector AmConfig::AppSelect        = AmConfig::App_SPECIFIED;
 AmConfig::AppMappingVector AmConfig::AppMapping;
+bool         AmConfig::LogSessions             = false;
 
 unsigned int AmConfig::SessionLimit            = 0;
 unsigned int AmConfig::SessionLimitErrCode     = 503;
@@ -220,6 +221,8 @@ int AmConfig::readConfiguration()
       return -1;
     }
   }
+
+  LogSessions = cfg.getParameter("log_sessions")=="yes";
 
   Application  = cfg.getParameter("application");
 

@@ -373,6 +373,11 @@ void AmB2BCallerSession::createCalleeSession()
   callee_dlg.remote_party = dlg.local_party;
   callee_dlg.remote_uri   = dlg.local_uri;
 
+  if (AmConfig::LogSessions) {
+    INFO("Starting B2B callee session %s app %s\n",
+	 callee_session->getLocalTag().c_str(), invite_req.cmd.c_str());
+  }
+
   callee_session->start();
 
   AmSessionContainer* sess_cont = AmSessionContainer::instance();

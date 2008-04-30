@@ -116,9 +116,11 @@ void AmSessionContainer::run()
 void AmSessionContainer::stopAndQueue(AmSession* s)
 {
   ds_mut.lock();
-    
-  DBG("session cleaner about to stop %s\n",
-      s->getLocalTag().c_str());
+
+  if (AmConfig::LogSessions) {    
+    INFO("session cleaner about to stop %s\n",
+	 s->getLocalTag().c_str());
+  }
 
   s->stop();
   d_sessions.push(s);
@@ -193,6 +195,12 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 	as_mut.unlock();
 	return NULL;
       }
+
+      if (AmConfig::LogSessions) {      
+	INFO("Starting UAC session %s app %s\n",
+	     session->getLocalTag().c_str(), req.cmd.c_str());
+      }
+
       session->start();
 
       addSession_unsafe(req.callid,"",req.from_tag,session);
@@ -238,6 +246,12 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	const string& local_tag = session->getLocalTag();
 	// by default each session is in its own callgroup
 	session->setCallgroup(local_tag);
+
+	if (AmConfig::LogSessions) {
+	  INFO("Starting UAS session %s app %s\n",
+	       session->getLocalTag().c_str(), req.cmd.c_str());
+	}
+
 	session->start();
 
 	addSession_unsafe(req.callid,req.from_tag,local_tag,session);

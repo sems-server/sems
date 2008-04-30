@@ -123,6 +123,8 @@ struct AmConfig
 
   static bool IgnoreSIGCHLD;
 
+  static bool LogSessions;
+
   /** Init function. Resolves SMTP server address. */
   static int init();
 

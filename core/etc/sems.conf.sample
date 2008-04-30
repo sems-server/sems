@@ -48,6 +48,14 @@ loglevel=2
 # Example:
 # syslog_facility=LOCAL0
 
+# optional parameter: log_sessions=[yes|no]
+# 
+# Default: no
+# 
+# If log_sessions=yes is set, INFO level log messages are generated
+# for each session when it is started and stopped.
+#
+# log_sessions=yes
 
 # optional parameter: application
 # 
