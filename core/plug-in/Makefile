@@ -3,7 +3,7 @@ include ../../Makefile.defs
 exclude_modules ?= 
 #echo
 
-modules = $(filter-out $(exclude_modules) \
+modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
 		$(wildcard Makefile*) CVS, \
 		$(wildcard *) )
 #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
