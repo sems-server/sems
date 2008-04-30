@@ -32,6 +32,9 @@
 
 #include <map>
 
+#include <cctype>
+#include <algorithm>
+
 #define MOD_NAME "uac_auth"
 
 EXPORT_SESSION_EVENT_HANDLER_FACTORY(UACAuthFactory, MOD_NAME);
@@ -245,7 +248,10 @@ string UACAuth::find_attribute(const string& name, const string& header) {
 
 bool UACAuth::parse_header(const string& auth_hdr, UACAuthDigestChallenge& challenge) {
   size_t p = auth_hdr.find_first_not_of(' ');
-  if (auth_hdr.substr(p, 6) != "Digest") {
+  string method = auth_hdr.substr(p, 6);
+  std::transform(method.begin(), method.end(), method.begin(), 
+		 (int(*)(int)) toupper);
+  if (method != "DIGEST") {
     ERROR("only Digest auth supported\n");
     return false;
   }
