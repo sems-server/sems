@@ -71,7 +71,6 @@ class EarlyAnnounceDialog : public AmB2BCallerSession
 {
   AmAudioFile wav_file;
   string filename;
-  AmSipRequest localreq;
     
 public:
   EarlyAnnounceDialog(const string& filename);

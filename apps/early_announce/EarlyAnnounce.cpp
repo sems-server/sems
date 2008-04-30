@@ -266,9 +266,8 @@ void EarlyAnnounceDialog::onInvite(const AmSipRequest& req)
 
       throw AmSession::Exception(500,"could not reply");
     }
-    else {
-	    
-      localreq = req;
+    else {	    
+      invite_req = req;
     }
 
   } catch(const AmSession::Exception& e) {
@@ -354,7 +353,7 @@ void EarlyAnnounceDialog::onBye(const AmSipRequest& req)
 
 void EarlyAnnounceDialog::onCancel()
 {
-  dlg.reply(localreq,487,"Call terminated");
+  dlg.reply(invite_req,487,"Call terminated");
   setStopped();
 }
 
@@ -372,11 +371,11 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	continue_b2b = true;
       } else if (EarlyAnnounceFactory::ContinueB2B == 
 		 EarlyAnnounceFactory::AppParam) {
-	string iptel_app_param = getHeader(localreq.hdrs, PARAM_HDR);
+	string iptel_app_param = getHeader(invite_req.hdrs, PARAM_HDR);
 	if (iptel_app_param.length()) {
 	  continue_b2b = get_header_keyvalue(iptel_app_param,"B2B")=="yes";
 	} else {
-	  continue_b2b = getHeader(localreq.hdrs,"P-B2B")=="yes";
+	  continue_b2b = getHeader(invite_req.hdrs,"P-B2B")=="yes";
 	}
       }
       DBG("determined: continue_b2b = %s\n", continue_b2b?"true":"false");
@@ -385,7 +384,7 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	unsigned int code_i = 404;
 	string reason = "Not Found";
 	
-	string iptel_app_param = getHeader(localreq.hdrs, PARAM_HDR);
+	string iptel_app_param = getHeader(invite_req.hdrs, PARAM_HDR);
 	if (iptel_app_param.length()) {
 	  string code = get_header_keyvalue(iptel_app_param,"Final-Reply-Code");
 	  if (code.length() && str2i(code, code_i)) {
@@ -395,11 +394,11 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	  if (!reason.length())
 	    reason = "Not Found";
 	} else {
-	  string code = getHeader(localreq.hdrs,"P-Final-Reply-Code");
+	  string code = getHeader(invite_req.hdrs,"P-Final-Reply-Code");
 	  if (code.length() && str2i(code, code_i)) {
 	    ERROR("while parsing P-Final-Reply-Code\n");
 	  }
-	  string h_reason =  getHeader(localreq.hdrs,"P-Final-Reply-Reason");
+	  string h_reason =  getHeader(invite_req.hdrs,"P-Final-Reply-Reason");
 	  if (h_reason.length()) {
 	    INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
 	    INFO("Use '%s: Final-Reply-Code=<code>;"
@@ -409,14 +408,14 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	}
 
 	DBG("Replying with code %d %s\n", code_i, reason.c_str());
-	dlg.reply(localreq, code_i, reason);
+	dlg.reply(invite_req, code_i, reason);
 	
 	setStopped();
       } else {
 	set_sip_relay_only(true);
-	recvd_req.insert(std::make_pair(localreq.cseq,localreq));
+	recvd_req.insert(std::make_pair(invite_req.cseq,invite_req));
 	
-	relayEvent(new B2BSipRequestEvent(localreq,true));
+	relayEvent(new B2BSipRequestEvent(invite_req,true));
       }
 	
       return;
