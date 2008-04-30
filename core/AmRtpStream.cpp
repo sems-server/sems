@@ -222,11 +222,11 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   AmRtpPacket* rp = NULL;
   int err = nextPacket(rp);
     
-  if (!rp)
-    return 0;
-
   if(err <= 0)
     return err;
+
+  if (!rp)
+    return 0;
 
 #ifndef SUPPORT_IPV6
   if(passive) {
