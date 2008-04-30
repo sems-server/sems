@@ -66,7 +66,7 @@ public:
   void regIface(const AmCtrlInterface *i);
   bool hasIface() { return ctrlIface != NULL; };
 
-  static bool sendRequest(const AmSipRequest &, string &);
+  static bool sendRequest(const AmSipRequest &, char* serKey, unsigned int& serKeyLen);
   static bool sendReply(const AmSipReply &);
   static string getContact(const string &displayName, 
       const string &userName, const string &hostName, 

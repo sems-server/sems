@@ -40,6 +40,11 @@ const char* AmSipDialog::status2str[4]  = {
   "Disconnecting" };
 
 
+AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
+  : status(Disconnected),cseq(10),hdl(h), serKeyLen(0)
+{
+}
+
 AmSipDialog::~AmSipDialog()
 {
   DBG("callid = %s\n",callid.c_str());
@@ -527,9 +532,10 @@ int AmSipDialog::cancel()
   req.callid = callid;
   req.cseq = cancel_cseq;
   //useful for SER-2.0.0
-  req.serKey = serKey;
-  string empty;
-  return AmServer::sendRequest(req, empty) ? 0 : -1;
+  req.serKey = string(serKey, serKeyLen);
+  char empty[MAX_SER_KEY_LEN];
+  unsigned int unused = 0;
+  return AmServer::sendRequest(req, empty, unused) ? 0 : -1;
 }
 
 int AmSipDialog::sendRequest(const string& method, 
@@ -584,7 +590,7 @@ int AmSipDialog::sendRequest(const string& method,
     req.body = body;
   }
 
-  if (AmServer::sendRequest(req, serKey))
+  if (AmServer::sendRequest(req, serKey, serKeyLen))
     return -1;
     
   uac_trans[cseq] = AmSipTransaction(method,cseq);

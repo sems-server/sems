@@ -130,7 +130,7 @@ int UnixCtrlInterface::init(const string& socket_name)
     return 0;
 }
 
-int UnixCtrlInterface::send(const AmSipRequest &req, string &_)
+int UnixCtrlInterface::send(const AmSipRequest &req, char *, unsigned int &)
 {
   return rplAdapt.send(req, reply_socket_name, ser_socket_name);
 }

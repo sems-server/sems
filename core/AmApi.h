@@ -235,17 +235,20 @@ class AmInterfaceHandler;
 class AmCtrlInterface: public AmThread
 {
  public:
-    AmCtrlInterface() {}
-    //virtual ~AmCtrlInterface() = 0;
-
-    //@param serKey An out parameter
-    virtual int send(const AmSipRequest &, string &serKey) = 0;
-
-    virtual int send(const AmSipReply &) = 0;
-
-    virtual string getContact(const string &displayName, 
-        const string &userName, const string &hostName, 
-        const string &uriParams, const string &hdrParams) = 0;
+  AmCtrlInterface();
+  virtual ~AmCtrlInterface();
+  
+  //@param serKey    [out] An out parameter
+  //@param serKeyLen [out] An out parameter
+  
+  virtual int send(const AmSipRequest &, 
+		   char* serKey, unsigned int& serKeyLen) = 0;
+  
+  virtual int send(const AmSipReply &) = 0;
+  
+  virtual string getContact(const string &displayName, 
+			    const string &userName, const string &hostName, 
+			    const string &uriParams, const string &hdrParams) = 0;
 };
 
 /**

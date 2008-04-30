@@ -65,7 +65,7 @@ class UnixCtrlInterface : public AmCtrlInterface
     ~UnixCtrlInterface();
 
     // AmCtrlInterface
-    int send(const AmSipRequest &, string &);
+    int send(const AmSipRequest &, char *, unsigned int &);
     int send(const AmSipReply &);
 
     string getContact(const string &displayName, 

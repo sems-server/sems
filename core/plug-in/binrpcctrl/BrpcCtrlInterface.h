@@ -75,7 +75,7 @@ class BrpcCtrlInterface: public AmCtrlInterface
     void on_stop() {}
 
     // AmCtrlInterface
-    int send(const AmSipRequest &, string &);
+    int send(const AmSipRequest &, char *, unsigned int &);
     int send(const AmSipReply &);
 
     string getContact(const string &displayName, 

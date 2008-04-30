@@ -35,6 +35,7 @@
 #include <map>
 using std::string;
 
+#define MAX_SER_KEY_LEN 30
 #define CONTACT_USER_PREFIX "sems"
 
 // flags which may be used when sending request/reply
@@ -137,12 +138,10 @@ class AmSipDialog
 
   int cseq;            // CSeq for next request
 
-  string serKey;      // opaque string returned by SER, when staring a T
+  char serKey[MAX_SER_KEY_LEN];      // opaque string returned by SER, when staring a T
+  unsigned int serKeyLen;
 
-  AmSipDialog(AmSipDialogEventHandler* h=0)
-    : status(Disconnected),cseq(10),hdl(h)
-    {}
-
+  AmSipDialog(AmSipDialogEventHandler* h=0);
   ~AmSipDialog();
 
   bool   getUACTransPending() { return !uac_trans.empty(); }

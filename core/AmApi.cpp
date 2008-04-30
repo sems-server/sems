@@ -104,3 +104,11 @@ AmCtrlInterfaceFactory::AmCtrlInterfaceFactory(const string& name)
   : AmPluginFactory(name) 
 {
 }
+
+AmCtrlInterface::AmCtrlInterface() 
+{
+}
+
+AmCtrlInterface::~AmCtrlInterface() 
+{
+}

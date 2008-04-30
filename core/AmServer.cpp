@@ -62,9 +62,9 @@ bool AmServer::sendReply(const AmSipReply &reply)
   return ctrlIface->send(reply);
 }
 
-bool AmServer::sendRequest(const AmSipRequest &req, string &serKey)
+bool AmServer::sendRequest(const AmSipRequest &req, char* serKey, unsigned int& serKeyLen)
 {
-  return ctrlIface->send(req, serKey);
+  return ctrlIface->send(req, serKey, serKeyLen);
 }
 
 string AmServer::getContact(const string &displayName, 

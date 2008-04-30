@@ -81,8 +81,7 @@ public:
     /**
      * From AmCtrlInterface
      */
-
-    int send(const AmSipRequest &req, string &serKey);
+    int send(const AmSipRequest &req, char* serKey, unsigned int& serKeyLen);
     int send(const AmSipReply &rep);
     
 #ifndef _STANDALONE

@@ -158,8 +158,10 @@ string SipCtrlInterface::getContact(const string &displayName,
 }
 #endif
 
-int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
+int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& serKeyLen)
 {
+    serKeyLen = 0;
+
     if(req.method == "CANCEL")
 	return cancel(req);
 
@@ -269,12 +271,10 @@ int SipCtrlInterface::send(const AmSipRequest &req, string &serKey)
 	}
     }
 
-    char tid[12];
-
-    tl->send_request(msg,tid);
+    tl->send_request(msg,serKey);
     delete msg;
 
-    serKey = string(tid,12);
+    serKeyLen=12;
     return 0;
 }
 

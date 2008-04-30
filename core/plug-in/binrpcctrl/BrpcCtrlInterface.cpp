@@ -1120,7 +1120,7 @@ static inline brpc_t *build_request(const AmSipRequest &amReq,
   return req;
 }
 
-int BrpcCtrlInterface::send(const AmSipRequest &amReq, string &serKey)
+int BrpcCtrlInterface::send(const AmSipRequest &amReq, char *serKey, unsigned int &serKeyLen)
 {
   int ret = -1;
   brpc_t *req, *rpl = NULL;
@@ -1161,7 +1161,8 @@ int BrpcCtrlInterface::send(const AmSipRequest &amReq, string &serKey)
   }
   DBG("SER's opaque/reason: `%.*s'.\n", BRPC_STR_FMT(ser_opaque));
   //len must be fed, as the opaque could contain 0s
-  serKey = string(ser_opaque->val, ser_opaque->len);
+  memcpy(serKey, ser_opaque->val, ser_opaque->len);
+  serKeyLen = ser_opaque->len;
 
   ret = 0;
 end:
