@@ -376,7 +376,7 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
   register parse_st state;
   //default state
   state=SDP_DESCR;
-  DBG("parse_sdp_line_ex: parsing sdp messages .....\n%s\n", s);
+  DBG("parse_sdp_line_ex: parsing sdp message ..\n");
 
   while(*s != '\0'){
     switch(state){
@@ -602,7 +602,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
   line_end = get_next_line(media_line);
   SdpPayload payload;
   unsigned int payload_type;
-  DBG("parse_sdp_line_ex: parse_sdp_media: parsing media description, %s \n", s);
+  DBG("parse_sdp_line_ex: parse_sdp_media: parsing media description...\n");
   m.dir = SdpMedia::DirBoth;
 
   while(parsing){
