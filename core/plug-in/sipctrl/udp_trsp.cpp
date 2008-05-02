@@ -4,6 +4,8 @@
 #include "trans_layer.h"
 #include "log.h"
 
+#include "SipCtrlInterface.h"
+
 #include <netinet/in.h>
 #include <sys/param.h>
 #include <arpa/inet.h>
@@ -105,9 +107,12 @@ void udp_trsp::run()
 	    ERROR("Message was too big (>%d)\n",MAX_UDP_MSGLEN);
 	    continue;
 	}
-
 	sip_msg* s_msg = new sip_msg(buf,buf_len);
 
+	if (SipCtrlInterfaceFactory::log_raw_messages >= 0) {
+	    _LOG(SipCtrlInterfaceFactory::log_raw_messages, 
+		 "recvd msg\n--++--\n%s--++--\n", s_msg->buf);
+	}
 	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
 	//msg->remote_ip_len = sizeof(sockaddr_storage);
 
@@ -204,6 +209,15 @@ int udp_trsp::bind(const string& address, unsigned short port)
 /** @see transport */
 int udp_trsp::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
 {
+    if ((SipCtrlInterfaceFactory::log_raw_messages >= 0)
+	&& (SipCtrlInterfaceFactory::log_raw_messages <=log_level)) {
+	char buf[MAX_UDP_MSGLEN];
+	memcpy(buf, msg, msg_len);
+	buf[msg_len]='\0';
+	_LOG(SipCtrlInterfaceFactory::log_raw_messages, 
+	     "send  msg\n--++--\n%s--++--\n", buf);
+    }
+
   int err;
 #ifdef SUPPORT_IPV6
   if (sa->ss_family == AF_INET6) {

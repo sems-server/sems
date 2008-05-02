@@ -37,6 +37,8 @@ EXPORT_CONTROL_INTERFACE_FACTORY(SipCtrlInterfaceFactory,MOD_NAME);
 string SipCtrlInterfaceFactory::outbound_host = "";
 unsigned int SipCtrlInterfaceFactory::outbound_port = 0;
 bool SipCtrlInterfaceFactory::accept_fr_without_totag = false;
+int SipCtrlInterfaceFactory::log_raw_messages = 3;
+bool SipCtrlInterfaceFactory::log_parsed_messages = true;
 
 AmCtrlInterface* SipCtrlInterfaceFactory::instance()
 {
@@ -70,11 +72,31 @@ int SipCtrlInterfaceFactory::onLoad()
 
     AmConfigReader cfg;
     string cfgfile = AmConfig::ModConfigPath + string(MOD_NAME ".conf");
-    if (file_exists(cfgfile) && cfg.loadFile(cfgfile)) {
+    if (file_exists(cfgfile) && !cfg.loadFile(cfgfile)) {
 	if (cfg.hasParameter("accept_fr_without_totag")) {
 	    accept_fr_without_totag = 
 		cfg.getParameter("accept_fr_without_totag") == "yes";
 	}
+	DBG("sipctrl: accept_fr_without_totag = %s\n", 
+	    accept_fr_without_totag?"yes":"no");
+
+	if (cfg.hasParameter("log_raw_messages")) {
+	    string msglog = cfg.getParameter("log_raw_messages");
+	    if (msglog == "no") log_raw_messages = -1;
+	    else if (msglog == "error") log_raw_messages = 0;
+	    else if (msglog == "warn")  log_raw_messages = 1;
+	    else if (msglog == "info")  log_raw_messages = 2;
+	    else if (msglog == "debug") log_raw_messages = 3;
+	}
+	DBG("sipctrl: log_raw_messages level = %d\n", 
+	    log_raw_messages);
+
+	if (cfg.hasParameter("log_parsed_messages")) {
+	    log_parsed_messages = cfg.getParameter("log_parsed_messages")=="yes";
+	}
+	DBG("sipctrl: log_parsed_messages = %s\n", 
+	    log_parsed_messages?"yes":"no");
+
     } else {
 	DBG("assuming SIP default settings.\n");
     }
@@ -371,27 +393,28 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 
 void SipCtrlInterface::handleSipMsg(AmSipRequest &req)
 {
-    DBG("Received new request:\n");
-
-//     DBG_PARAM(req.cmd);
-    DBG_PARAM(req.method);
-//     DBG_PARAM(req.user);
-//     DBG_PARAM(req.domain);
-//     DBG_PARAM(req.dstip);
-//     DBG_PARAM(req.port);
-    DBG_PARAM(req.r_uri);
-    DBG_PARAM(req.from_uri);
-    DBG_PARAM(req.from);
-    DBG_PARAM(req.to);
-    DBG_PARAM(req.callid);
-    DBG_PARAM(req.from_tag);
-    DBG_PARAM(req.to_tag);
-    DBG("cseq = <%i>\n",req.cseq);
-    DBG_PARAM(req.serKey);
-    DBG_PARAM(req.route);
-    DBG_PARAM(req.next_hop);
-    DBG("hdrs = <%s>\n",req.hdrs.c_str());
-    DBG("body = <%s>\n",req.body.c_str());
+    DBG("Received new request\n");
+    if (SipCtrlInterfaceFactory::log_parsed_messages) {
+	//     DBG_PARAM(req.cmd);
+	DBG_PARAM(req.method);
+	//     DBG_PARAM(req.user);
+	//     DBG_PARAM(req.domain);
+	//     DBG_PARAM(req.dstip);
+	//     DBG_PARAM(req.port);
+	DBG_PARAM(req.r_uri);
+	DBG_PARAM(req.from_uri);
+	DBG_PARAM(req.from);
+	DBG_PARAM(req.to);
+	DBG_PARAM(req.callid);
+	DBG_PARAM(req.from_tag);
+	DBG_PARAM(req.to_tag);
+	DBG("cseq = <%i>\n",req.cseq);
+	DBG_PARAM(req.serKey);
+	DBG_PARAM(req.route);
+	DBG_PARAM(req.next_hop);
+	DBG("hdrs = <%s>\n",req.hdrs.c_str());
+	DBG("body = <%s>\n",req.body.c_str());
+    }
 
     if(req.method == "ACK")
 	return;

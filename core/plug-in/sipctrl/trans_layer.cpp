@@ -204,7 +204,7 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 	memcpy(c,body.s,body.len);
     }
 
-    DBG("Sending: <%.*s>\n",reply_len,reply_buf);
+    //    DBG("Sending: <%.*s>\n",reply_len,reply_buf);
 
     assert(transport);
     int err = transport->send(&req->remote_ip,reply_buf,reply_len);
@@ -1081,7 +1081,8 @@ void trans_layer::send_non_200_ack(sip_trans* t, sip_msg* reply)
     *c++ = CR;
     *c++ = LF;
 
-    DBG("About to send ACK: \n<%.*s>\n",ack_len,ack_buf);
+    DBG("About to send ACK\n");
+//     DBG("About to send ACK: \n<%.*s>\n",ack_len,ack_buf);
 
     assert(transport);
     int send_err = transport->send(&inv->remote_ip,ack_buf,ack_len);
@@ -1166,7 +1167,8 @@ void trans_layer::send_200_ack(sip_msg* reply)
     *msg++ = CR;
     *msg++ = LF;
 
-    DBG("About to send 200 ACK: \n<%.*s>\n",request_len,ack_buf);
+    DBG("About to send 200 ACK\n");
+    //    DBG("About to send 200 ACK: \n<%.*s>\n",request_len,ack_buf);
 
     assert(transport);
     int send_err = transport->send(&remote_ip,ack_buf,request_len);

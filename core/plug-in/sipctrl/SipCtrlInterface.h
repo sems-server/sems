@@ -32,6 +32,8 @@ public:
     static unsigned int   outbound_port;
 
     static bool           accept_fr_without_totag;
+    static int            log_raw_messages;
+    static bool           log_parsed_messages;
 
     SipCtrlInterfaceFactory(const string& name): AmCtrlInterfaceFactory(name) {}
     ~SipCtrlInterfaceFactory() {}
