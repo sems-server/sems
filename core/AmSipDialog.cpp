@@ -368,6 +368,7 @@ int AmSipDialog::bye()
       ERROR("bye(): Dialog should have"
 	    " been terminated by the app !!!\n");
     }
+    return 0;
   default:
     if(getUACTransPending())
       return cancel();
