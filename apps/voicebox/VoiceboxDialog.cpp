@@ -228,7 +228,7 @@ void VoiceboxDialog::openMailbox() {
   userdir_open = true;
   int ecode = ret.get(0).asInt();
   if (MSG_EUSRNOTFOUND == ecode) {
-    DBG("empty mailbox for user '%s' domain '%s'.",
+    DBG("empty mailbox for user '%s' domain '%s'.\n",
 	  user.c_str(), domain.c_str()
 	);
     closeMailbox();
@@ -236,7 +236,7 @@ void VoiceboxDialog::openMailbox() {
   }
 
   if (MSG_OK != ecode) {
-    ERROR("userdir_open for user '%s' domain '%s': %s",
+    ERROR("userdir_open for user '%s' domain '%s': %s\n",
 	  user.c_str(), domain.c_str(),
 	  MsgStrError(ret.get(0).asInt()));
     closeMailbox();
