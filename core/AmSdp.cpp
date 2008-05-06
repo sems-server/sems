@@ -1023,7 +1023,7 @@ static void parse_sdp_origin(AmSdp* sdp_msg, char* s)
 static bool contains(char* s, char* next_line, char c)
 {
   char* line=s;
-  while(line != next_line-1){
+  while((line != next_line-1) && (*line)){
     if(*line == c)
       return true;
     *line++;
