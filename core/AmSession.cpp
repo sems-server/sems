@@ -582,7 +582,8 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 
   } else if( req.method == "INFO" ){
 
-    if ((strip_header_params(getHeader(req.hdrs, "Content-Type"))
+    if ((req.content_type == "application/dtmf-relay") ||
+	(strip_header_params(getHeader(req.hdrs, "Content-Type"))
 	 =="application/dtmf-relay")|| 
 	(strip_header_params(getHeader(req.hdrs, "c"))
 	 =="application/dtmf-relay")){
