@@ -365,8 +365,8 @@ int AmSipDialog::bye()
     else {
       // missing AmSipRequest to be able
       // to send the reply on behalf of the app.
-      ERROR("bye(): Dialog should have"
-	    " been terminated by the app !!!\n");
+      DBG("ignoring bye() in Pending state: "
+	  "no UAC transaction to cancel.\n");
     }
     return 0;
   default:
