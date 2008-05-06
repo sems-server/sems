@@ -501,6 +501,9 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
     req.body     = c2stlstr(msg->body);
     req.serKey   = tid;
 
+    if (msg->content_type)
+ 	req.content_type = c2stlstr(msg->content_type->value);
+
     prepare_routes_uas(msg->record_route, req.route);
 	
     for (list<sip_header*>::iterator it = msg->hdrs.begin(); 

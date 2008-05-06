@@ -589,6 +589,8 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 	 =="application/dtmf-relay")){
       postDtmfEvent(new AmSipDtmfEvent(req.body));
       dlg.reply(req, 200, "OK");
+    } else {
+      dlg.reply(req, 415, "Unsupported Media Type");
     }
   } 
 }
