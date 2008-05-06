@@ -1256,7 +1256,7 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	// takes care of re-transmiting the 200 reply
 	// in a UAS INVITE transaction.
 	//
-	if(tr->state == TS_TERMINATED_200){
+	if(tr->type == TT_UAC){
 	    
 	    // re-transmit reply to INV
 	    retransmit(tr);
