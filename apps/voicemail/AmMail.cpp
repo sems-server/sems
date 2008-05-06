@@ -138,6 +138,7 @@ void AmMailDeamon::run()
 	cur_mail->error_count++;
       }
       else {
+	// todo: save messages with errors somewhere? 
 	if(cur_mail->clean_up)
 	  (*(cur_mail->clean_up))(cur_mail);
 	delete cur_mail;
@@ -145,17 +146,20 @@ void AmMailDeamon::run()
       event_fifo_mut.lock();
     }
 
-    event_fifo_mut.unlock();
     smtp.disconnect();
     smtp.close();
 
     if(n_event_fifo.empty()){
       _run_cond.set(false);
-    }
-    else {
-      while(!n_event_fifo.empty())
+    } else {
+      // requeue unsent mail
+      while(!n_event_fifo.empty()) {
+	event_fifo.push(n_event_fifo.front());
 	n_event_fifo.pop();
+      }
     }
+
+    event_fifo_mut.unlock();
 
     DBG("Mail deamon finished\n");
   }
