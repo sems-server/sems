@@ -1,3 +1,0 @@
-These files were generated with flite speech synthsizer 
-and meant for testing purposes only. 
-There are of course much better real and synthetic voices. 
