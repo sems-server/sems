@@ -8,6 +8,8 @@ module_cflags  =
 
 extra_target = query_stats
 extra_install = install_query_stats
+extra_clean = clean_query_stats
+
 include ../Makefile.app_module
 
 query_stats: query_stats.c Makefile
@@ -16,3 +18,6 @@ query_stats: query_stats.c Makefile
 install_query_stats: query_stats $(DESTDIR)$(bin-prefix)/$(bin-dir)
 	$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(QUERY_STATS_NAME)
 	$(INSTALL-BIN) $(QUERY_STATS_NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)
+
+clean_query_stats: 
+	rm -f $(QUERY_STATS_NAME)
