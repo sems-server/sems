@@ -66,10 +66,6 @@ LDFLAGS +=-lsamplerate
 endif
 
 ifdef WITH_ZRTP
-CPPFLAGS += -DWITH_ZRTP \
-	    -DBUILD_ZRTP_MUTEXES \
-	    -DBUILD_DEFAULT_CACHE -DBUILD_DEFAULT_TIMER -DUNIX -DBUILD_ZRTP_MUTEXES \
-	    -I/usr/local/include/zrtp 
 LDFLAGS +=-lzrtp -lbn
 endif
 
