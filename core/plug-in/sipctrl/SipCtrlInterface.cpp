@@ -557,17 +557,11 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     reply.dstip = get_addr_str(((sockaddr_in*)(&msg->local_ip))->sin_addr); //FIXME: IPv6
     reply.port  = int2str(ntohs(((sockaddr_in*)(&msg->local_ip))->sin_port));
 
-    if( (get_cseq(msg)->method == sip_request::INVITE) 
-	&& (msg->u.reply->code >= 200) 
-	&& (msg->u.reply->code < 300) ){
-	
-	tl->send_200_ack(msg);
-    }
-
-    //
-    // Will be computed in send_request()
-    //
-    // reply.next_hop;
+    //if( (get_cseq(msg)->method == sip_request::INVITE) 
+    // 	&& (msg->u.reply->code >= 200) 
+    // 	&& (msg->u.reply->code < 300) ){
+    // 	tl->send_200_ack(msg);
+    //}
 
     prepare_routes_uac(msg->record_route, reply.route);
 

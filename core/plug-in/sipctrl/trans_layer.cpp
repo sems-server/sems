@@ -876,7 +876,7 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 	    case TS_PROCEEDING:
 		
 		t->state = TS_COMPLETED;
-		send_non_200_ack(t,msg);
+		send_non_200_ack(msg,t);
 		
 		// TODO: set D timer if UDP
 		t->reset_timer(STIMER_D, D_TIMER, bucket->get_id());
@@ -909,10 +909,35 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 		//        - (send BYE (check for existing UAC trans)).
 		//      - else:
 		//        - re-transmit ACK.
-		t->state = TS_TERMINATED;
-		bucket->remove_trans(t);
+
+		t->state  = TS_TERMINATED_200;
+
+		t->to_tag.s = new char[to_tag.len];
+		t->to_tag.len = to_tag.len;
+		memcpy((void*)t->to_tag.s,to_tag.s,to_tag.len);
+		
+		send_200_ack(msg,t);
+
 		goto pass_reply;
 		
+	    case TS_TERMINATED_200:
+		
+		if( (to_tag.len != t->to_tag.len) ||
+		    (memcmp(to_tag.s,t->to_tag.s,to_tag.len) != 0) ){
+
+		    // TODO: 
+		    //   (this should be implemented in the UA)
+		    //   we should send 200 ACK also here,
+		    //   but this would mean that we should
+		    //   also be sending a BYE also to quit
+		    //   this dialog.
+		    //
+		    goto end;
+		}
+
+		retransmit(t);
+		goto end;
+
 	    default:
 		goto end;
 	    }
@@ -1045,7 +1070,7 @@ int trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg*
     return -1;
 }
 
-void trans_layer::send_non_200_ack(sip_trans* t, sip_msg* reply)
+void trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 {
     sip_msg* inv = t->msg;
     
@@ -1099,7 +1124,7 @@ void trans_layer::send_non_200_ack(sip_trans* t, sip_msg* reply)
     t->retr_len = ack_len;
 }
 
-void trans_layer::send_200_ack(sip_msg* reply)
+void trans_layer::send_200_ack(sip_msg* reply, sip_trans* t)
 {
     // Set request URI
     // TODO: use correct R-URI instead of just 'Contact'
@@ -1118,10 +1143,19 @@ void trans_layer::send_200_ack(sip_msg* reply)
     cstring r_uri = na.addr;
     list<sip_header*> route_hdrs;
 
-    for(list<sip_header*>::reverse_iterator it = reply->record_route.rbegin();
-	it != reply->record_route.rend(); ++it) {
-	
-	route_hdrs.push_back(new sip_header(0,"Route",(*it)->value));
+    if(t && !t->msg->route.empty()){
+	for(list<sip_header*>::iterator it = t->msg->route.begin();
+	    it != t->msg->route.end(); ++it) {
+	    
+	    route_hdrs.push_back(new sip_header(0,"Route",(*it)->value));
+	}
+    }
+    else {
+	for(list<sip_header*>::reverse_iterator it = reply->record_route.rbegin();
+	    it != reply->record_route.rend(); ++it) {
+	    
+	    route_hdrs.push_back(new sip_header(0,"Route",(*it)->value));
+	}
     }
 
     sockaddr_storage remote_ip;
@@ -1163,6 +1197,7 @@ void trans_layer::send_200_ack(sip_msg* reply)
     copy_hdr_wr(&msg,reply->to);
     copy_hdr_wr(&msg,reply->callid);
     copy_hdr_wr(&msg,max_forward);
+    delete max_forward;
     cseq_wr(&msg,get_cseq(reply)->num_str,cstring("ACK",3));
 
     *msg++ = CR;
@@ -1175,10 +1210,14 @@ void trans_layer::send_200_ack(sip_msg* reply)
     int send_err = transport->send(&remote_ip,ack_buf,request_len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
+	delete [] ack_buf;
     }
-
-    delete [] ack_buf;
-    delete max_forward;
+    else if(t){
+	delete [] t->retr_buf;
+	t->retr_buf = ack_buf;
+	t->retr_len = request_len;
+	memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
+    }
 }
 
 void trans_layer::retransmit(sip_trans* t)
@@ -1238,6 +1277,9 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	case TS_PROCEEDING:
 	    DBG("Transaction timeout!\n");
 	    timeout(bucket,tr);
+	    break;
+	case TS_TERMINATED_200:
+	    bucket->remove_trans(tr);
 	    break;
 	}
 	break;

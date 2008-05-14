@@ -65,7 +65,7 @@ class trans_layer
     /**
      * Send ACK coresponding to error replies
      */
-    void send_non_200_ack(sip_trans* t, sip_msg* reply);
+    void send_non_200_ack(sip_msg* reply, sip_trans* t);
     
     /**
      * Fills the address structure passed and modifies 
@@ -137,7 +137,7 @@ class trans_layer
      * Sends an end-to-end ACK for the reply
      * passed as a parameter.
      */
-    void send_200_ack(sip_msg* reply);
+    void send_200_ack(sip_msg* reply, sip_trans* t=NULL);
 
 
     /**
