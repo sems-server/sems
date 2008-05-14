@@ -113,3 +113,11 @@ in webconference.conf
 
 
     
+prompt suggestions: 
+------------------
+entering_conference: You are now entering the conference room.
+first_participant: You are the first participant in the conference.
+pin_prompt: Welcome to iptel dot org conference. Please enter your room number, followed by the pound key.
+wrong_pin: The room number is not correct. Please try again.
+
++ the numbers (0.wav ... 9.wav )
