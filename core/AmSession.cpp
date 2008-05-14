@@ -37,6 +37,10 @@
 #include "AmDtmfDetector.h"
 #include "AmPlayoutBuffer.h"
 
+#ifdef WITH_ZRTP
+#include "AmZRTP.h"
+#endif
+
 #include "log.h"
 
 #include <algorithm>
@@ -46,7 +50,6 @@
 #include <sys/time.h>
 
 // AmSessionEventHandler methods
-
 bool AmSessionEventHandler::process(AmEvent*)
 {
   return false;
@@ -128,6 +131,9 @@ AmSession::AmSession()
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false)
+#ifdef WITH_ZRTP
+  ,  zrtp_session(NULL), zrtp_audio(NULL), enable_zrtp(true)
+#endif
 {
   use_local_audio[AM_AUDIO_IN] = false;
   use_local_audio[AM_AUDIO_OUT] = false;
@@ -139,6 +145,10 @@ AmSession::~AmSession()
       evh != ev_handlers.end(); evh++)
     if((*evh)->destroy)
       delete *evh;
+
+#ifdef WITH_ZRTP
+  AmZRTP::freeSession(zrtp_session);
+#endif
 }
 
 void AmSession::setCallgroup(const string& cg) {
@@ -344,6 +354,39 @@ void AmSession::negotiate(const string& sdp_body,
 
 void AmSession::run()
 {
+#ifdef WITH_ZRTP
+  if (enable_zrtp) {
+    zrtp_session = (zrtp_conn_ctx_t*)malloc(sizeof(zrtp_conn_ctx_t));
+    if (NULL == zrtp_session)  {
+      ERROR("allocating ZRTP session context mem.\n");
+    } else {
+      zrtp_profile_t profile;
+      zrtp_profile_autoload(&profile, &AmZRTP::zrtp_global);		
+      profile.active = false;
+      profile.allowclear = true;
+      profile.autosecure = true; // automatically go into secure mode at the beginning
+      
+      if (zrtp_status_ok != zrtp_init_session_ctx( zrtp_session,
+						   &AmZRTP::zrtp_global,
+						   &profile, 
+						   AmZRTP::zrtp_instance_zid) ) {
+	ERROR("initializing ZRTP session context\n");
+	return;
+      }
+      
+      zrtp_audio = zrtp_attach_stream(zrtp_session, rtp_str.get_ssrc());
+      zrtp_audio->stream_usr_data = this;
+      
+      if (NULL == zrtp_audio) {
+	ERROR("attaching zrtp stream.\n");
+	return;
+      }
+      
+      DBG("initialized ZRTP session context OK\n");
+    }
+  }
+#endif
+
   try {
     try {
 
@@ -524,6 +567,14 @@ void AmSession::process(AmEvent* ev)
     onRtpTimeout();
     return;
   }
+
+#ifdef WITH_ZRTP
+  AmZRTPEvent* zrtp_ev = dynamic_cast<AmZRTPEvent*>(ev);
+  if(zrtp_ev){
+    onZRTPEvent((zrtp_event_t)zrtp_ev->event_id, zrtp_ev->stream_ctx);
+    return;
+  }
+#endif
 }
 
 
@@ -827,3 +878,92 @@ string AmSession::advertisedIP()
     return AmConfig::LocalIP;           // "listen" parameter.
   return set_ip;
 }  
+ 
+#ifdef WITH_ZRTP
+void AmSession::onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx) {
+  DBG("AmSession::onZRTPEvent \n");
+  switch (event)
+    {
+    case ZRTP_EVENT_IS_SECURE: {
+      INFO("ZRTP_EVENT_IS_SECURE \n");
+      //         info->is_verified  = ctx->_session_ctx->secrets.verifieds & ZRTP_BIT_RS0;
+ 
+      zrtp_conn_ctx_t *session = stream_ctx->_session_ctx;
+ 
+      if (ZRTP_SAS_BASE32 == session->sas_values.rendering) {
+ 	DBG("Got SAS value <<<%.4s>>>\n", session->sas_values.str1.buffer);
+      } else {
+ 	DBG("Got SAS values SAS1 '%s' and SAS2 '%s'\n", 
+ 	    session->sas_values.str1.buffer,
+ 	    session->sas_values.str2.buffer);
+      } 
+    } break;
+ 
+    case ZRTP_EVENT_IS_PENDINGCLEAR:
+      INFO("ZRTP_EVENT_IS_PENDINGCLEAR\n");
+      INFO("other side requested goClear. Going clear.\n\n");
+      zrtp_clear_stream(zrtp_audio);
+      break;
+ 
+    case ZRTP_EVENT_IS_CLEAR:
+      INFO("ZRTP_EVENT_IS_CLEAR\n");
+      break;
+ 
+    case ZRTP_EVENT_UNSUPPORTED:
+      INFO("ZRTP_EVENT_UNSUPPORTED\n");
+      break;
+    case ZRTP_EVENT_IS_INITIATINGSECURE:
+      INFO("ZRTP_EVENT_IS_INITIATINGSECURE\n");
+      break;
+    case ZRTP_EVENT_IS_PENDINGSECURE:
+      INFO("ZRTP_EVENT_PENDINGSECURE\n");
+      break;
+    case ZRTP_EVENT_IS_SECURE_DONE:
+      INFO("ZRTP_EVENT_IS_SECURE_DONE\n");
+      break;
+    case ZRTP_EVENT_ERROR:
+      INFO("ZRTP_EVENT_ERROR\n");
+      break;
+    case ZRTP_EVENT_NO_ZRTP:
+      INFO("ZRTP_EVENT_NO_ZRTP\n");
+      break;
+    case ZRTP_EVENT_NO_ZRTP_QUICK:
+      INFO("ZRTP_EVENT_NO_ZRTP_QUICK\n");
+      break;
+ 
+      // pbx functions
+    case ZRTP_EVENT_IS_CLIENT_ENROLLMENT:
+      INFO("ZRTP_EVENT_IS_CLIENT_ENROLLMENT\n");
+      break;
+    case ZRTP_EVENT_NEW_USER_ENROLLED:
+      INFO("ZRTP_EVENT_NEW_USER_ENROLLED\n");
+      break;
+    case ZRTP_EVENT_USER_ALREADY_ENROLLED:
+      INFO("ZRTP_EVENT_USER_ALREADY_ENROLLED\n");
+      break;
+    case ZRTP_EVENT_USER_UNENROLLED:
+      INFO("ZRTP_EVENT_USER_UNENROLLED\n");
+      break;
+    case ZRTP_EVENT_LOCAL_SAS_UPDATED:
+      INFO("ZRTP_EVENT_LOCAL_SAS_UPDATED\n");
+      break;
+    case ZRTP_EVENT_REMOTE_SAS_UPDATED:
+      INFO("ZRTP_EVENT_REMOTE_SAS_UPDATED\n");
+      break;
+ 
+      // errors
+    case ZRTP_EVENT_WRONG_SIGNALING_HASH:
+      INFO("ZRTP_EVENT_WRONG_SIGNALING_HASH\n");
+      break;
+    case ZRTP_EVENT_WRONG_MESSAGE_HMAC:
+      INFO("ZRTP_EVENT_WRONG_MESSAGE_HMAC\n");
+      break;
+     
+    default: 
+      INFO("unknown ZRTP_EVENT\n");
+      break;
+    } // end events case
+  
+}
+ 
+#endif

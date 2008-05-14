@@ -165,6 +165,7 @@ public:
 	    unsigned char* buffer,
 	    unsigned int   size );
 
+  int send_raw( char* packet, unsigned int length );
 
   int receive( unsigned char* buffer, unsigned int size,
 	       unsigned int& ts, int& payload);
@@ -210,6 +211,8 @@ public:
   /** Symmetric RTP: passive mode ? */
   void setPassiveMode(bool p) { passive = p; }
   bool getPassiveMode() { return passive; }
+
+  unsigned int get_ssrc() { return l_ssrc; }
 
   /** 
    * Set remote telephone event 

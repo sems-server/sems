@@ -11,7 +11,7 @@ RELEASE=$(REL_VERSION)$(EXTRAVERSION)
 
 CPPFLAGS += -D_DEBUG \
 	  -D_THREAD_SAFE -D_REENTRANT \
-	  -DVERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
+	  -DSEMS_VERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
 	  -DOS='"$(OS)"' 	\
 #         -DMAX_RTP_SESSIONS=8192 \
 #         -DOpenSER \
@@ -33,6 +33,10 @@ CPPFLAGS += -D_DEBUG \
 # (see http://www.mega-nerd.com/SRC/)
 #
 #USE_LIBSAMPLERATE = yes
+
+#
+# ZRTP support? (see zfoneproject.com)
+#WITH_ZRTP = yes
 
 #
 # exclude some modules from compilation?

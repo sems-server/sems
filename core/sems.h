@@ -45,7 +45,7 @@
 #define MAX_FORWARDS        "70"
 
 #define DEFAULT_SIGNATURE "Sip Express Media Server " \
-		"(" VERSION " (" ARCH "/" OS"))"
+		"(" SEMS_VERSION " (" ARCH "/" OS"))"
 
 // session considered dead after 5 minutes no RTP
 #define DEAD_RTP_TIME       5*60  

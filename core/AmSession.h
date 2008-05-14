@@ -38,6 +38,10 @@
 #include "AmSipEvent.h"
 #include "AmApi.h"
 
+#ifdef WITH_ZRTP
+#include "zrtp/zrtp.h"
+#endif
+
 #include <string>
 #include <vector>
 #include <queue>
@@ -145,7 +149,6 @@ private:
 	
 protected:
   AmSdp               sdp;
-  AmRtpAudio          rtp_str;
 
   /** this is the group the media is processed with 
       - by default local tag */
@@ -155,6 +158,17 @@ protected:
   bool accept_early_session;
 
 public:
+
+  AmRtpAudio          rtp_str;
+
+#ifdef WITH_ZRTP
+  zrtp_conn_ctx_t*    zrtp_session; // ZRTP session
+  zrtp_stream_ctx_t*  zrtp_audio;   // ZRTP stream for audio
+
+  /** must be set before session is started! i.e. in constructor */
+  bool enable_zrtp;
+#endif
+
   AmSipDialog         dlg;
 
   /** 
@@ -439,6 +453,14 @@ public:
   virtual void onSipReply(const AmSipReply& reply);
 
 
+  
+#ifdef WITH_ZRTP
+  /**
+   * ZRTP events @see ZRTP
+   */
+  virtual void onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx);
+#endif
+
   /** This callback is called if RTP timeout encountered */
   virtual void onRtpTimeout();
 
@@ -457,7 +479,7 @@ public:
 			   const string& body,
 			   string& hdrs,
 			   int flags);
-  
+
   // The IP address to put as c= in SDP bodies and to use for Contact:.
   string advertisedIP();
 };

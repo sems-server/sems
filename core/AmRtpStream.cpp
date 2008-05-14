@@ -51,6 +51,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#ifdef WITH_ZRTP
+#include "zrtp/zrtp.h"
+#endif
+
 #include <set>
 using std::set;
 
@@ -203,6 +207,36 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
   rp.compile((unsigned char*)buffer,size);
 
   rp.setAddr(&r_saddr);
+
+#ifdef WITH_ZRTP
+  if (session->zrtp_audio) {
+    zrtp_status_t status = zrtp_status_fail;
+    unsigned int size = rp.getBufferSize();
+    status = zrtp_process_rtp(session->zrtp_audio, (char*)rp.getBuffer(), &size);
+    switch (status) {
+    case zrtp_status_drop: {
+      DBG("ZRTP says: drop packet! %u - %u\n", size, rp.getBufferSize());
+      return 0;
+    } 
+    case zrtp_status_ok: {
+      //      DBG("ZRTP says: ok!\n");
+      if (rp.getBufferSize() != size)
+//       DBG("SEND packet size before: %d, after %d\n", 
+// 	   rp.getBufferSize(), size);
+      rp.setBufferSize(size);
+    } break;
+    default:
+    case zrtp_status_fail: {
+      DBG("ZRTP says: fail!\n");
+      //      DBG("(f)");
+      return 0;
+    }
+
+    }
+    
+  }
+#endif
+
   if(rp.send(l_sd) < 0){
     ERROR("while sending RTP packet.\n");
     return -1;
@@ -210,6 +244,24 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
  
   return size;
 }
+
+int AmRtpStream::send_raw( char* packet, unsigned int length )
+{
+  if ((mute) || (hold))
+    return 0;
+
+  AmRtpPacket rp;
+  rp.compile_raw((unsigned char*)packet, length);
+  rp.setAddr(&r_saddr);
+
+  if(rp.send(l_sd) < 0){
+    ERROR("while sending raw RTP packet.\n");
+    return -1;
+  }
+ 
+  return length;
+}
+
 
 // returns 
 // @param ts              [out] timestamp of the received packet, 
@@ -404,6 +456,13 @@ void AmRtpStream::init(const vector<SdpPayload*>& sdp_payloads)
   payload = sdp_payload->payload_type;
   last_payload = payload;
   resume();
+
+#ifdef WITH_ZRTP  
+  if( session->zrtp_audio  ) {
+    DBG("now starting zrtp stream...\n");
+    zrtp_start_stream( session->zrtp_audio );
+  }
+#endif
 }
 
 void AmRtpStream::pause()
@@ -455,7 +514,50 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   if (receive_buf.find(p->timestamp) != receive_buf.end())
     mem.freePacket(receive_buf[p->timestamp]);
 
-  receive_buf[p->timestamp] = p;
+#ifdef WITH_ZRTP
+  if (session->zrtp_audio) {
+
+    zrtp_status_t status = zrtp_status_fail;
+    unsigned int size = p->getBufferSize();
+    
+    status = zrtp_process_srtp(session->zrtp_audio, (char*)p->getBuffer(), &size);
+    switch (status)
+      {
+      case zrtp_status_forward:
+      case zrtp_status_ok: {
+	p->setBufferSize(size);
+	if (p->parse() < 0) {
+	  ERROR("parsing decoded packet!\n");
+	  mem.freePacket(p);
+	} else {
+	  receive_buf[p->timestamp] = p;
+	}
+      }	break;
+
+      case zrtp_status_drop: {
+	//
+	// This is a protocol ZRTP packet or masked RTP media.
+	// In either case the packet must be dropped to protect your 
+	// media codec
+	mem.freePacket(p);
+	
+      } break;
+
+      case zrtp_status_fail:
+      default: {
+	ERROR("zrtp_status_fail!\n");
+        //
+        // This is some kind of error - see logs for more information
+        //
+	mem.freePacket(p);
+      } break;
+      }
+  } else {
+#endif // WITH_ZRTP
+    receive_buf[p->timestamp] = p;
+#ifdef WITH_ZRTP
+  }
+#endif
   receive_mut.unlock();
 }
 

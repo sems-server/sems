@@ -4,7 +4,7 @@ LIBNAME=sems.so
 PLUGIN_DIR=plug-in
 SRCS=$(filter-out $(NAME).cpp, $(wildcard *.cpp))
 HDRS=$(SRCS:.cpp=.h)
-OBJS=$(SRCS:.cpp=.o)
+OBJS=$(SRCS:.cpp=.o) 
 DEPS=$(SRCS:.cpp=.d) $(NAME).d
 AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
 
@@ -63,6 +63,14 @@ endif
 ifdef USE_LIBSAMPLERATE
 CPPFLAGS += -DUSE_LIBSAMPLERATE
 LDFLAGS +=-lsamplerate
+endif
+
+ifdef WITH_ZRTP
+CPPFLAGS += -DWITH_ZRTP \
+	    -DBUILD_ZRTP_MUTEXES \
+	    -DBUILD_DEFAULT_CACHE -DBUILD_DEFAULT_TIMER -DUNIX -DBUILD_ZRTP_MUTEXES \
+	    -I/usr/local/include/zrtp 
+LDFLAGS +=-lzrtp -lbn
 endif
 
 # implicit rules

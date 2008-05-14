@@ -35,6 +35,8 @@
 #include "AmIcmpWatcher.h"
 #include "AmRtpReceiver.h"
 
+#include "AmZRTP.h"
+
 #include "log.h"
 
 #include <unistd.h>
@@ -69,7 +71,6 @@ string pid_file;
 int    main_pid=0;
 int    child_pid=0;
 int    is_main=1;
-
 
 static int parse_args(int argc, char* argv[], const string& flags,
 		      const string& options, std::map<char,string>& args);
@@ -375,6 +376,13 @@ int main(int argc, char* argv[])
 
   init_random();
 
+#ifdef WITH_ZRTP
+  if (AmZRTP::init()) {
+    ERROR("Some error during zrtp initialization\n");
+    return -1;    
+  }
+#endif
+
   DBG("Starting session container\n");
   AmSessionContainer::instance()->start();
 
@@ -576,3 +584,4 @@ static int parse_args(int argc, char* argv[],
   }
   return 0;
 }
+
