@@ -82,26 +82,35 @@ int AmRtpPacket::parse()
   assert(b_size);
 
   rtp_hdr_t* hdr = (rtp_hdr_t*)buffer;
-
-  if(hdr->version != RTP_VERSION){
-    DBG("received RTP packet with unsupported version (%i).\n",
-	hdr->version);
-    return -1;
-  }
+  if 
+#ifndef WITH_ZRTP
+    (hdr->version != RTP_VERSION)
+#else 
+    ((hdr->version != RTP_VERSION) && (hdr->version != 0))
+#endif
+      {
+	DBG("received RTP packet with unsupported version (%i).\n",
+	    hdr->version);
+	return -1;
+      }
 
   data_offset = sizeof(rtp_hdr_t) + (hdr->cc*4);
 
   if(hdr->x != 0){
+#ifndef WITH_ZRTP 
     if (AmConfig::IgnoreRTPXHdrs) {
       // skip the extension header
+#endif
       if (b_size >= data_offset + 4) {
 	data_offset +=
 	  ntohs(((rtp_xhdr_t*) (buffer + data_offset))->len)*4;
       }
+#ifndef WITH_ZRTP
     } else {
       DBG("RTP extension headers not supported.\n");
       return -1;
     }
+#endif
   }
 
   payload = hdr->pt;
@@ -130,6 +139,11 @@ int AmRtpPacket::parse()
 unsigned char *AmRtpPacket::getData()
 {
   return &buffer[data_offset];
+}
+
+unsigned char *AmRtpPacket::getBuffer()
+{
+  return &buffer[0];
 }
 
 int AmRtpPacket::compile(unsigned char* data_buf, unsigned int size)
@@ -161,6 +175,23 @@ int AmRtpPacket::compile(unsigned char* data_buf, unsigned int size)
   memcpy(&buffer[data_offset],data_buf,d_size);
 
   return 0;
+}
+
+int AmRtpPacket::compile_raw(unsigned char* data_buf, unsigned int size)
+{
+  if ((!size) || (!data_buf))
+    return -1;
+
+  if(size>sizeof(buffer)){
+    ERROR("builtin buffer size (%d) exceeded: %d\n",
+	  (int)sizeof(buffer), size);
+    return -1;
+  }
+
+  memcpy(&buffer[0], data_buf, size);
+  b_size = size;
+
+  return size;
 }
 
 int AmRtpPacket::send(int sd)

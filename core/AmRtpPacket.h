@@ -72,6 +72,9 @@ public:
 
   // returns -1 if error, else 0
   int compile(unsigned char* data_buf, unsigned int size);
+  // returns -1 if error, else 0
+  int compile_raw(unsigned char* data_buf, unsigned int size);
+
   int send(int sd);
   int recv(int sd);
 
@@ -79,6 +82,10 @@ public:
 
   unsigned int   getDataSize() const { return d_size; }
   unsigned char* getData();
+
+  unsigned int   getBufferSize() const { return b_size; }
+  unsigned char* getBuffer();
+  void setBufferSize(unsigned int b) { b_size = b; }
 
   void copy(const AmRtpPacket* p);
 
