@@ -16,6 +16,8 @@ using std::string;
 void print_usage(const char * progname)
 {
   fprintf(stderr,
+	  "SIP Express Media Server stats query\n"
+	  "\n"
 	  "Syntax: %s [<options>]\n"
 	  "\n"
 	  "where <options>: \n"
