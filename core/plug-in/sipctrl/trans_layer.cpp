@@ -839,6 +839,7 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 
 	case TS_CALLING:
 	    t->clear_timer(STIMER_A);
+	    t->clear_timer(STIMER_B);
 	    // fall through trap
 
 	case TS_TRYING:
@@ -1219,13 +1220,20 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	break;
 	
     case STIMER_B:  // Calling: -> Terminated
+
+	tr->clear_timer(STIMER_B);
+	if(tr->state == TS_CALLING) {
+	    DBG("Transaction timeout!\n");
+	    timeout(bucket,tr);
+	}
+	break;
+
     case STIMER_F:  // Trying/Proceeding: terminate transaction
 	
-	tr->clear_timer(type);
+	tr->clear_timer(STIMER_F);
 
 	switch(tr->state) {
 
-	case TS_CALLING:
 	case TS_TRYING:
 	case TS_PROCEEDING:
 	    DBG("Transaction timeout!\n");
