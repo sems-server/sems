@@ -131,6 +131,13 @@ class ConferenceDialog : public AmSession
   void closeChannels();
   void setupAudio();
 
+#ifdef WITH_SAS_TTS
+  void sayTTS(string text);
+  string last_sas;
+  cst_voice* tts_voice;
+  vector<AmAudioFile*> TTSFiles;
+#endif
+
 public:
   ConferenceDialog(const string& conf_id,
 		   AmConferenceChannel* dialout_channel=0);
@@ -145,6 +152,10 @@ public:
 
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply);
+
+#ifdef WITH_SAS_TTS
+  void onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx);
+#endif
 };
 
 #endif

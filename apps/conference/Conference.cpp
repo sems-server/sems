@@ -52,6 +52,12 @@
 	
 EXPORT_SESSION_FACTORY(ConferenceFactory,APP_NAME);
 
+
+#ifdef WITH_SAS_TTS
+#define TTS_CACHE_PATH "/tmp/"
+extern "C" cst_voice *register_cmu_us_kal();
+#endif
+
 ConferenceFactory::ConferenceFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
 {
@@ -310,6 +316,9 @@ ConferenceDialog::ConferenceDialog(const string& conf_id,
 {
   dialedout = this->dialout_channel.get() != 0;
   rtp_str.setPlayoutType(ConferenceFactory::m_PlayoutType);
+#ifdef WITH_SAS_TTS
+  tts_voice = register_cmu_us_kal();
+#endif  
 }
 
 ConferenceDialog::~ConferenceDialog()
@@ -318,6 +327,14 @@ ConferenceDialog::~ConferenceDialog()
 
   // clean playlist items
   play_list.close(false);
+
+#ifdef WITH_SAS_TTS
+  // garbage collect tts files - TODO: delete files
+  for (vector<AmAudioFile*>::iterator it =
+	 TTSFiles.begin();it!=TTSFiles.end();it++) {
+    delete *it;
+  }
+#endif
 }
 
 void ConferenceDialog::onStart() 
@@ -617,6 +634,14 @@ void ConferenceDialog::onDtmf(int event, int duration)
     dtmf_seq += dtmf2str(event);
 
     if(dtmf_seq.length() == 2){
+
+#ifdef WITH_SAS_TTS
+      if((dtmf_seq == "##") && !last_sas.empty()) {
+	sayTTS(last_sas);
+	dtmf_seq = "";
+      }
+#endif
+
       if(dtmf_seq == "#*") {
 	state = CS_dialing_out;
 	dtmf_seq = "";
@@ -910,3 +935,54 @@ void ConferenceDialog::onSipReply(const AmSipReply& reply)
   }
 }
 
+#ifdef WITH_SAS_TTS
+void ConferenceDialog::onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx) {
+  DBG("ZrtpConferenceDialog::onZRTPEvent \n");
+
+  switch (event) {
+  case ZRTP_EVENT_IS_SECURE: {
+    INFO("ZRTP_EVENT_IS_SECURE \n");
+    //         info->is_verified  = ctx->_session_ctx->secrets.verifieds & ZRTP_BIT_RS0;
+    
+    zrtp_conn_ctx_t *session = stream_ctx->_session_ctx;
+    
+    string tts_sas = "My SAS is ";
+    
+    if (ZRTP_SAS_BASE32 == session->sas_values.rendering) {
+      DBG("Got SAS value <<<%.4s>>>\n", session->sas_values.str1.buffer);
+      tts_sas += session->sas_values.str1.buffer;
+    } else {
+      DBG("Got SAS values SAS1 '%s' and SAS2 '%s'\n", 
+	  session->sas_values.str1.buffer,
+	  session->sas_values.str2.buffer);
+      tts_sas += session->sas_values.str1.buffer + string(" and ") + 
+	session->sas_values.str2.buffer + ".";
+    }
+    
+    sayTTS(tts_sas);
+    return;
+  } break;
+  default: break;
+  } 
+  AmSession::onZRTPEvent(event, stream_ctx);  
+}
+
+void ConferenceDialog::sayTTS(string text) {
+
+  string filename = string(TTS_CACHE_PATH) + text /* AmSession::getNewId() */
+    + string(".wav");
+
+  last_sas = text;
+  flite_text_to_speech(text.c_str(),tts_voice,filename.c_str());
+  
+  AmAudioFile* af = new AmAudioFile();
+  if(!af->open(filename.c_str(), AmAudioFile::Read)) {
+    play_list.addToPlayListFront(new AmPlaylistItem(af, NULL));
+    TTSFiles.push_back(af);
+  } else {
+    ERROR("ERROR reading TTSed file %s\n", filename.c_str());
+    delete af;
+  }
+}
+
+#endif // WITH_SAS_TTS
