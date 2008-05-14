@@ -36,7 +36,7 @@ CPPFLAGS += -D_DEBUG \
 
 #
 # ZRTP support? (see zfoneproject.com)
-WITH_ZRTP = yes
+#WITH_ZRTP = yes
 
 #
 # exclude some modules from compilation?

@@ -132,6 +132,8 @@ Requirements:
  6. spandsp library for DTMF detection and PLC, optional
     (SEMS has its own implementations for both)
 
+ 7. libZRTP SDK (http://zfoneproject.com) for ZRTP, optional
+
 How to get started with SEMS:
 
   To try out SEMS, the easiest is to get a release candidate from 
