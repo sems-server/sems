@@ -58,7 +58,7 @@ class ConferenceStatusContainer;
 #define WRONG_PIN           "wrong_pin"
 
 // default path for files
-#define WEBCONF_ANNOUNCE_PATH "../apps/examples/webconference/"
+#define WEBCONF_ANNOUNCE_PATH "/usr/local/lib/sems/audio/webconference/"
 
 class WebConferenceEvent : public AmEvent 
 {
