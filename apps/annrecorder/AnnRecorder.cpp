@@ -1,7 +1,7 @@
 /*
  * $Id: AnnRecorder.cpp 722 2008-02-12 12:52:31Z sayer $
  *
- * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2008 Fhg Fokus
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -39,7 +39,7 @@ using std::map;
 #define MOD_NAME "annrecorder"
 
 #define DEFAULT_TYPE "aa"
-#define DOMAIN_PROMPT_SUFFIX "-prompt"
+#define DOMAIN_PROMPT_SUFFIX "-prompts"
 
 #define TIMERID_START_TIMER   1
 #define TIMERID_CONFIRM_TIMER 2

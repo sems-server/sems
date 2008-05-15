@@ -119,6 +119,9 @@
  * Messages saved to voicebox can be listened to using the voicebox application: 
  *  <ul><li> \ref ModuleDoc_voicebox </li></ul> 
  * 
+ * The annrecorder application can be used to record a personal greeting message.: 
+ *  <ul><li> \ref ModuleDoc_annrecorder </li></ul> 
+ * 
  * There is also a simpler mailbox application, which stores recorded messages (in an IMAP 
  * server) and users can dial in to check their messages: 
  * 
@@ -360,6 +363,15 @@
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
+
+/*! \page ModuleDoc_annrecorder Module Documentation: annrecorder Application 
+ *  \section Readme_annrecorder Readme file
+ *  \verbinclude Readme.annrecorder
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
 
 /*! \page ModuleDoc_mailbox Module Documentation: mailbox Application 
  *  \section Readme_mailbox Readme file

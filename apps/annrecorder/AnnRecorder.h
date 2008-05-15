@@ -1,7 +1,7 @@
 /*
  * $Id: AnnRecorder.h 711 2008-02-10 18:52:44Z sayer $
  *
- * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2008 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
  *

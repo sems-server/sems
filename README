@@ -42,6 +42,9 @@ Introduction:
   * voicebox       users can dial in to the voicebox to check
                    their messages
 
+  * annrecorder    users can record their personal greeting 
+                   message
+
   * mailbox        auto-attendant that saves voicemails into
                    an IMAP server. Users can dial in to check
                    their messages (simpler version)
