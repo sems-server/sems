@@ -124,7 +124,7 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
   SAFE_READ(tag,4,fp,s);
   DBG("tag = <%.4s>\n",tag);
   if(strncmp(tag,"RIFF",4)){
-    DBG("wrong format !");
+    DBG("wrong format !\n");
     return -1;
   }
 
@@ -135,14 +135,14 @@ static int wav_read_header(FILE* fp, struct amci_file_desc_t* fmt_desc)
   SAFE_READ(tag,4,fp,s);
   DBG("tag = <%.4s>\n",tag);
   if(strncmp(tag,"WAVE",4)){
-    DBG("wrong format !");
+    DBG("wrong format !\n");
     return -1;
   }
 
   SAFE_READ(tag,4,fp,s);
   DBG("tag = <%.4s>\n",tag);
   if(strncmp(tag,"fmt ",4)){
-    DBG("wrong format !");
+    DBG("wrong format !\n");
     return -1;
   }
     
