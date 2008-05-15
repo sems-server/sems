@@ -23,7 +23,7 @@ App-Params
  -----+-----------+-----------
  dom   Domain      param_domain
  usr   User        param_user
- typ   Type        param_type
+ typ   Type        param_type; defaults to "vm" (for: voicemail)
  lng   Language    used for finding default greeting
 
 
