@@ -112,6 +112,7 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
   close();
 
   this->close_on_exit = true;
+  on_close_done = false;
 
   FILE* n_fp = NULL;
 
@@ -138,6 +139,7 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
 int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
 {
   close();
+  on_close_done = false;
   return fpopen_int(filename, mode, n_fp);
 }
 
@@ -245,7 +247,7 @@ void AmAudioFile::on_close()
 	ERROR("file format pointer not initialized: on_close will not be called\n");
       }
       else if(iofmt->on_close)
-	(*iofmt->on_close)(fp,&fmt_desc,open_mode, fmt->getHCodecNoInit(), fmt->getCodec());
+	(*iofmt->on_close)(fp,&fmt_desc,open_mode, fmt->getHCodecNoInit(), fmt->getCodec());      
     }
 
     if(open_mode == AmAudioFile::Write){
