@@ -53,6 +53,7 @@ class AmMail;
 #define MODE_VOICEMAIL 0
 #define MODE_BOX       1
 #define MODE_BOTH      2
+#define MODE_ANN       3
 
 #define MSG_SEPARATOR "+" // separates values in message name
 

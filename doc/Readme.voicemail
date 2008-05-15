@@ -1,13 +1,18 @@
 voicemail (voicemail2email) application 
 
-This application plays a greeting message to the caller, records a 
-voicemail and sends it out as email via SMTP.
+This application plays a greeting message to the caller and records a 
+voicemail. The voicemail is sent out as email via SMTP, saved in voicebox,
+or both. 
+
+In announcement mode, only the greeting message is played.
 
 Audio Files
 -----------
 
-The voicemail application looks in various file system paths or database
-tables for announce and beep messages to be played.
+If try_personal_greeting=yes is set, the voicemail application tries to find 
+a personal greeting message from msg_storage. Then the voicemail application
+looks in various file system paths or database tables for announce and beep 
+messages to be played. 
 
 If file system is used to store audio files, the announcement file to be
 played is looked for in the following order:
@@ -82,6 +87,7 @@ avoid packet fragmentation (UDP).
                                   voicemail  : send email (default)
                                   box        : leave in voicebox (store in msg_storage)
                                   both       : send email and leave in voicebox
+                                  ann        : just play greeting, don't record message.
   Sender          snd         - sender. If empty, From will be used
   Domain          dom         - domain specific announcement files/email template. 
                                 defaults to RURI domain.

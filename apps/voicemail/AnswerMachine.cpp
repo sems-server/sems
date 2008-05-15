@@ -507,6 +507,8 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
       vm_mode = MODE_BOX;
     else if (mode == "both")
       vm_mode = MODE_BOTH;
+    else if (mode == "ann")
+      vm_mode = MODE_ANN;
   }
 
   if (((vm_mode == MODE_BOTH) || (vm_mode == MODE_VOICEMAIL)) &&
@@ -616,7 +618,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500,"voicemail: no greeting file found");
 
   // VBOX mode does not need email template
-  if (vm_mode == MODE_BOX) 
+  if ((vm_mode == MODE_BOX) || (vm_mode == MODE_ANN))
     return new AnswerMachineDialog(user, sender, domain,
 				   email, announce_file, greeting_fp,
 				   vm_mode, NULL);
@@ -685,6 +687,7 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
 				 "message storage reference");
     }
   }
+
 }
 
 AnswerMachineDialog::~AnswerMachineDialog()
@@ -703,7 +706,14 @@ void AnswerMachineDialog::process(AmEvent* event)
 
       switch(status){
 
-      case 0:
+      case 0: {
+	// announcement mode - no recording
+	if (MODE_ANN == vm_mode) {
+	  dlg.bye();
+	  setStopped();
+	  return;
+	}
+
 	playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
 		
 	{AmArg di_args,ret;
@@ -713,7 +723,7 @@ void AnswerMachineDialog::process(AmEvent* event)
 
 	user_timer->invoke("setTimer",di_args,ret);}
 	status = 1;
-	break;
+      } break;
 
       case 1:
 	a_beep.rewind();
@@ -758,6 +768,10 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
   // disable DTMF detection - don't use DTMF here
   setDtmfDetectionEnabled(false);
 
+  // announcement mode - no receiving needed
+  if (MODE_ANN == vm_mode)
+    setReceiving(false);
+
 #ifdef USE_MYSQL
   string beep_file;
   if (!get_audio_file(BEEP_SOUND, "", "", "", &beep_file) ||
@@ -796,14 +810,17 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
   msg_filename = "/tmp/" + getLocalTag() + "."
     + AnswerMachineFactory::RecFileExt;
     
-  if(a_msg.open(msg_filename,AmAudioFile::Write,true))
-    throw string("AnswerMachine: couldn't open ") + 
-      msg_filename + string(" for writing");
+  if (vm_mode != MODE_ANN) {
+    if(a_msg.open(msg_filename,AmAudioFile::Write,true))
+      throw string("AnswerMachine: couldn't open ") + 
+	msg_filename + string(" for writing");
+  }
 
   //a_msg.setRecordTime(AnswerMachineFactory::MaxRecordTime*1000);
     
   playlist.addToPlaylist(new AmPlaylistItem(&a_greeting,NULL));
-  playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
+  if (vm_mode != MODE_ANN) 
+    playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
   //playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
 
   setInOut(&playlist,&playlist);
