@@ -134,6 +134,8 @@ int MsgStorage::msg_new(string domain, string user,
     return MSG_EUSRNOTFOUND;
   }
 
+  DBG("creating '%s'\n", (path + msg_name).c_str());
+
   FILE* fp = fopen((path + msg_name).c_str(), "wb");
   if (!fp) {
     ERROR("creating '%s': %s\n", 
@@ -150,6 +152,8 @@ int MsgStorage::msg_new(string domain, string user,
 void MsgStorage::msg_get(string domain, string user, 
   string msg_name, AmArg& ret) { 
   string fname = msg_dir + "/" + domain + "/" + user + "/"+ msg_name;
+  DBG("looking for  '%s'\n", fname.c_str());
+
   FILE* fp = fopen(fname.c_str(), "r");
   if (!fp) 
     ret.push(MSG_EMSGNOTFOUND);    
