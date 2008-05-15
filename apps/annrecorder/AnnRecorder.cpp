@@ -1,7 +1,7 @@
 /*
  * $Id: AnnRecorder.cpp 722 2008-02-12 12:52:31Z sayer $
  *
- * Copyright (C) 2008 Fhg Fokus
+ * Copyright (C) 2008 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.
  *
@@ -38,7 +38,7 @@ using std::map;
 
 #define MOD_NAME "annrecorder"
 
-#define DEFAULT_TYPE "aa"
+#define DEFAULT_TYPE "vm"
 #define DOMAIN_PROMPT_SUFFIX "-prompts"
 
 #define TIMERID_START_TIMER   1
@@ -357,9 +357,12 @@ void AnnRecorderDialog::onDtmf(int event, int duration_msec) {
 
 void AnnRecorderDialog::saveAndConfirm() {
 //    wav_file.setCloseOnDestroy(false);
-//  wav_file.on_close();
-  saveMessage(wav_file.getfp());
-  prompts.addToPlaylist(GREETING_SET,  (long)this, playlist);
+  wav_file.close();
+  FILE* fp = fopen(msg_filename.c_str(), "r");
+  if (fp) {
+    saveMessage(fp);
+    prompts.addToPlaylist(GREETING_SET,  (long)this, playlist);
+  }
   prompts.addToPlaylist(BYE,  (long)this, playlist);
   state = S_BYE;
 }
