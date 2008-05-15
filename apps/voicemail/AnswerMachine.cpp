@@ -448,7 +448,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
 
   if (!iptel_app_param.length()) {
-    AmSession::Exception(500, "voicemail: parameters not found");
+    throw AmSession::Exception(500, "voicemail: parameters not found");
   }
 
   language = get_header_keyvalue(iptel_app_param, "lng", "Language");
@@ -460,6 +460,13 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
       vm_mode = MODE_BOX;
     else if (mode == "both")
       vm_mode = MODE_BOTH;
+  }
+
+  if (((vm_mode == MODE_BOTH) || (vm_mode == MODE_VOICEMAIL)) &&
+      (email.find('@') == string::npos)) {
+    ERROR("no @ found in email address '%s' from params '%s'\n",
+	  email.c_str(), iptel_app_param.c_str());
+    throw AmSession::Exception(500, "voicemail: no email address");
   }
 
   user = get_header_keyvalue(iptel_app_param,"usr", "User");
