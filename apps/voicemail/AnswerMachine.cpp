@@ -96,27 +96,37 @@ int get_audio_file(string message, string domain, string user,
   if (!user.empty()) {
     *audio_file = string("/tmp/") + domain + "_" + user + "_" +
       MOD_NAME + "_" + message + ".wav";
-    query_string = "select audio from " + string(USER_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and domain='" + domain + "' and userid='" + user + "'";
+    query_string = "select audio from " + string(USER_AUDIO_TABLE) + 
+      " where application='" + MOD_NAME + "' and message='" + message + 
+      "' and domain='" + domain + "' and userid='" + user + "'";
   } else {
     if (language.empty()) {
       if (domain.empty()) {
        *audio_file = string("/tmp/") + MOD_NAME + "_" + message +
          ".wav";
-       query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and language=''";
+       query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + 
+	 " where application='" + MOD_NAME + "' and message='" + message + 
+	 "' and language=''";
       } else {
        *audio_file = string("/tmp/") + domain + "_" + MOD_NAME +
          "_" + message + ".wav";
-       query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and domain='" + domain + "' and language=''";
+       query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + 
+	 " where application='" + MOD_NAME + "' and message='" + message + 
+	 "' and domain='" + domain + "' and language=''";
       }
     } else {
       if (domain.empty()) {
        *audio_file = string("/tmp/") + MOD_NAME + "_" + message +
          "_" + language + ".wav";
-       query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and language='" + language + "'";
+       query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + 
+	 " where application='" + MOD_NAME + "' and message='" + message + 
+	 "' and language='" + language + "'";
       } else {
        *audio_file = string("/tmp/") + domain + "_" + MOD_NAME + "_" +
          message + "_" + language + ".wav";
-       query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + " where application='" + MOD_NAME + "' and message='" + message + "' and domain='" + domain + "' and language='" + language + "'";
+       query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + 
+	 " where application='" + MOD_NAME + "' and message='" + message + 
+	 "' and domain='" + domain + "' and language='" + language + "'";
       }
     }
   }
@@ -167,7 +177,10 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
     mysqlpp::Query query = AnswerMachineFactory::Connection.query();
 
     string query_string, table;
-    query_string = "select replace(template, '\r', '') as template, language from " + string(DEFAULT_TEMPLATE_TABLE) + " where application='" + MOD_NAME + "' and message='" + EMAIL_TMPL + "'";
+    query_string = "select replace(template, '\r', '') as template, " 
+      "language from " + string(DEFAULT_TEMPLATE_TABLE) + 
+      " where application='" + MOD_NAME + 
+      "' and message='" + EMAIL_TMPL + "'";
 
     DBG("Query string <%s>\n", query_string.c_str());
 
@@ -211,7 +224,9 @@ int AnswerMachineFactory::loadEmailTemplatesFromMySQL()
       return -1;
     }
 
-    query_string = "select domain, replace(template, '\r', '') as template, language from " + string(DOMAIN_TEMPLATE_TABLE) + " where application='" + MOD_NAME +"' and message='" + EMAIL_TMPL + "'";
+    query_string = "select domain, replace(template, '\r', '') as template, "
+      "language from " + string(DOMAIN_TEMPLATE_TABLE) + 
+      " where application='" + MOD_NAME +"' and message='" + EMAIL_TMPL + "'";
 
     DBG("Query string <%s>\n", query_string.c_str());
 
@@ -396,7 +411,8 @@ int AnswerMachineFactory::onLoad()
 
   /* Get email templates from file system */
 
-  if(loadEmailTemplates(cfg.getParameter("email_template_path",DEFAULT_MAIL_TMPL_PATH))){
+  if(loadEmailTemplates(cfg.getParameter("email_template_path",
+					 DEFAULT_MAIL_TMPL_PATH))){
     ERROR("while loading email templates\n");
     return -1;
   }
@@ -529,19 +545,23 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 
 #else
 
-  string announce_file = add2path(AnnouncePath,2, domain.c_str(), (user + ".wav").c_str());
+  string announce_file = add2path(AnnouncePath,2, 
+				  domain.c_str(), (user + ".wav").c_str());
   if (file_exists(announce_file)) goto announce_found;
 
   if (!language.empty()) {
-    announce_file = add2path(AnnouncePath,3, domain.c_str(), language.c_str(), DefaultAnnounce.c_str());
+    announce_file = add2path(AnnouncePath,3, 
+			     domain.c_str(), language.c_str(), DefaultAnnounce.c_str());
     if (file_exists(announce_file)) goto announce_found;
   }
 
-  announce_file = add2path(AnnouncePath,2, domain.c_str(), DefaultAnnounce.c_str());
+  announce_file = add2path(AnnouncePath,2, 
+			   domain.c_str(), DefaultAnnounce.c_str());
   if (file_exists(announce_file)) goto announce_found;
 
   if (!language.empty()) {
-    announce_file = add2path(AnnouncePath,2, language.c_str(),  DefaultAnnounce.c_str());
+    announce_file = add2path(AnnouncePath,2, 
+			     language.c_str(),  DefaultAnnounce.c_str());
     if (file_exists(announce_file)) goto announce_found;
   }
 	
@@ -612,14 +632,16 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
   user_timer = AnswerMachineFactory::UserTimer->getInstance();
   if(!user_timer){
     ERROR("could not get a user timer reference\n");
-    throw AmSession::Exception(500,"could not get a user timer reference");
+    throw AmSession::Exception(500,"could not get a "
+			       "user timer reference");
   }
 
   if (vm_mode == MODE_BOTH || vm_mode == MODE_BOX) {
     msg_storage = AnswerMachineFactory::MessageStorage->getInstance();
     if(!msg_storage){
       ERROR("could not get a message storage reference\n");
-      throw AmSession::Exception(500,"could not get a message storage reference");
+      throw AmSession::Exception(500,"could not get a "
+				 "message storage reference");
     }
   }
 }
@@ -705,7 +727,8 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
     throw string("AnswerMachine: could not open greeting or beep file\n");
 #else
   if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
-      a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),AmAudioFile::Read))
+      a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),
+		  AmAudioFile::Read))
     throw string("AnswerMachine: could not open annoucement files\n");
 #endif
 
