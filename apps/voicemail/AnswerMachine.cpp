@@ -67,11 +67,10 @@
 
 #define RECORD_TIMER 99
 
-EXPORT_SESSION_FACTORY(AnswerMachineFactory,MOD_NAME);
+#define DEFAULT_TYPE "vm"
+#define DOMAIN_PROMPT_SUFFIX "-prompts"
 
-AnswerMachineFactory::AnswerMachineFactory(const string& _app_name)
-  : AmSessionFactory(_app_name)
-{}
+EXPORT_SESSION_FACTORY(AnswerMachineFactory,MOD_NAME);
 
 string AnswerMachineFactory::RecFileExt;
 string AnswerMachineFactory::AnnouncePath;
@@ -80,10 +79,30 @@ int    AnswerMachineFactory::MaxRecordTime;
 AmDynInvokeFactory* AnswerMachineFactory::UserTimer=0;
 AmDynInvokeFactory* AnswerMachineFactory::MessageStorage=0;
 bool AnswerMachineFactory::SaveEmptyMsg = true;
-
+bool AnswerMachineFactory::TryPersonalGreeting = false;
 
 string       AnswerMachineFactory::SmtpServerAddress       = SMTP_ADDRESS_IP;
 unsigned int AnswerMachineFactory::SmtpServerPort          = SMTP_PORT;
+
+// todo: move this somewhere else
+
+const char* MsgStrError(int e) {
+  switch (e) {
+  case MSG_OK: return "MSG_OK"; break;
+  case MSG_EMSGEXISTS: return "MSG_EMSGEXISTS"; break;
+  case MSG_EUSRNOTFOUND: return "MSG_EUSRNOTFOUND"; break;
+  case MSG_EMSGNOTFOUND: return "MSG_EMSGNOTFOUND"; break;
+  case MSG_EALREADYCLOSED: return "MSG_EALREADYCLOSED"; break;
+  case MSG_EREADERROR: return "MSG_EREADERROR"; break;
+  case MSG_ENOSPC: return "MSG_ENOSPC"; break;
+  case MSG_ESTORAGE: return "MSG_ESTORAGE"; break;   
+  default: return "Unknown Error";
+  }
+}
+
+AnswerMachineFactory::AnswerMachineFactory(const string& _app_name)
+  : AmSessionFactory(_app_name), msg_storage(NULL)
+{ }
 
 #ifdef USE_MYSQL
 mysqlpp::Connection AnswerMachineFactory::Connection(mysqlpp::use_exceptions);
@@ -436,7 +455,18 @@ int AnswerMachineFactory::onLoad()
   MessageStorage = AmPlugIn::instance()->getFactory4Di("msg_storage");
   if(NULL == MessageStorage){
     INFO("could not load msg_storage. Voice Box mode will not be available.\n");
+  } else {
+    if ((msg_storage = MessageStorage->getInstance()) == NULL) {
+      ERROR("getting msg_storage instance\n");
+      return -1;
+    }
   }
+
+  TryPersonalGreeting = 
+    cfg.getParameter("try_personal_greeting") == "yes";
+
+  DBG("voicemail will %stry to find a personal greeting.\n", 
+      TryPersonalGreeting?"":"not ");
 
   DBG("Starting SMTP daemon\n");
   AmMailDeamon::instance()->start();
@@ -458,6 +488,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   string domain;
   string user;
   string sender;
+  string typ;
 
   int vm_mode = MODE_VOICEMAIL; 
 
@@ -497,6 +528,10 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   if (!domain.length())
     domain = req.domain;
 
+  typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
+  if (!typ.length())
+    typ = DEFAULT_TYPE;
+
   // checks
   if (user.empty()) 
     throw AmSession::Exception(500, "voicemail: user missing");
@@ -517,6 +552,11 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   DBG(" Sender:   <%s> \n", sender.c_str());
   DBG(" Domain:   <%s> \n", domain.c_str());
   DBG(" Language: <%s> \n", language.c_str());
+  DBG(" Type:     <%s> \n", typ.c_str());
+
+  FILE* greeting_fp = NULL;
+  if (TryPersonalGreeting)
+    greeting_fp = getMsgStoreGreeting(typ, user, domain);
 
 #ifdef USE_MYSQL
 
@@ -574,11 +614,11 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
  announce_found:
   if(announce_file.empty())
     throw AmSession::Exception(500,"voicemail: no greeting file found");
-    
+
   // VBOX mode does not need email template
   if (vm_mode == MODE_BOX) 
     return new AnswerMachineDialog(user, sender, domain,
-				   email, announce_file, 
+				   email, announce_file, greeting_fp,
 				   vm_mode, NULL);
 				    
   if(email.empty())
@@ -607,7 +647,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
     return 0;
   }
   return new AnswerMachineDialog(user, sender, domain,
-				 email, announce_file,
+				 email, announce_file, greeting_fp,
 				 vm_mode, &tmpl_it->second);
 }
 
@@ -617,9 +657,10 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
 					 const string& domain,
 					 const string& email, 
 					 const string& announce_file, 
+					 FILE* announce_fp, 
 					 int vm_mode,
 					 const EmailTemplate* tmpl) 
-  : announce_file(announce_file), 
+  : announce_file(announce_file), announce_fp(announce_fp),
     tmpl(tmpl), playlist(this), 
     status(0), vm_mode(vm_mode)
 {
@@ -722,14 +763,34 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
   if (!get_audio_file(BEEP_SOUND, "", "", "", &beep_file) ||
       beep_file.empty())
     throw string("AnswerMachine: could not find beep file\n");
-  if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
-      a_beep.open(beep_file,AmAudioFile::Read))
-    throw string("AnswerMachine: could not open greeting or beep file\n");
+
+  if (announce_fp) {
+    rewind(announce_fp);
+    if (a_greeting.fpopen(DEFAULT_TYPE"."DEFAULT_AUDIO_EXT, 
+			  AmAudioFile::Read, announce_fp) ||
+	a_beep.open(beep_file,AmAudioFile::Read)) {
+      if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
+	a_beep.open(beep_file,AmAudioFile::Read))
+      throw string("AnswerMachine: could not open greeting or beep file\n");
+    }
+  } else {
+    if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
+	a_beep.open(beep_file,AmAudioFile::Read))
+      throw string("AnswerMachine: could not open greeting or beep file\n");
+  }
 #else
-  if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
-      a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),
-		  AmAudioFile::Read))
-    throw string("AnswerMachine: could not open annoucement files\n");
+  if (announce_fp) {
+    if (a_greeting.fpopen(DEFAULT_TYPE"."DEFAULT_AUDIO_EXT, 
+			  AmAudioFile::Read, announce_fp) ||
+	a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),
+		    AmAudioFile::Read))
+      throw string("AnswerMachine: could not open annoucement files\n");
+  } else {
+    if (a_greeting.open(announce_file.c_str(),AmAudioFile::Read) ||
+	a_beep.open(add2path(AnswerMachineFactory::AnnouncePath,1, "beep.wav"),
+		    AmAudioFile::Read))
+      throw string("AnswerMachine: could not open annoucement files\n");
+  }
 #endif
 
   msg_filename = "/tmp/" + getLocalTag() + "."
@@ -855,3 +916,56 @@ void AnswerMachineDialog::saveBox(FILE* fp) {
     fclose(fp);
 }
 
+
+FILE* AnswerMachineFactory::getMsgStoreGreeting(string msgname, 
+						string user, 
+						string domain) {
+  if (!msg_storage)
+    return NULL;
+
+  msgname +=".wav";
+  domain += DOMAIN_PROMPT_SUFFIX;
+
+  DBG("trying to get message '%s' for user '%s' domain '%s'\n",
+      msgname.c_str(), user.c_str(), domain.c_str());
+  AmArg di_args,ret;
+  di_args.push(domain.c_str());  // domain
+  di_args.push(user.c_str());    // user
+  di_args.push(msgname.c_str()); // msg name
+
+  msg_storage->invoke("msg_get",di_args,ret);  
+  if (!ret.size()  
+      || !isArgInt(ret.get(0))) {
+    ERROR("msg_get for user '%s' domain '%s' msg '%s'"
+	  " returned no (valid) result.\n",
+	  user.c_str(), domain.c_str(),
+	  msgname.c_str()
+	  );
+    return NULL;
+  }
+  int ecode = ret.get(0).asInt();
+  if (MSG_OK != ecode) {
+    DBG("msg_get for user '%s' domain '%s' message '%s': %s\n",
+	  user.c_str(), domain.c_str(),
+	  msgname.c_str(),
+	  MsgStrError(ret.get(0).asInt()));
+    return NULL;
+  } 
+  
+  if ((ret.size() < 2) ||
+      (!isArgAObject(ret.get(1)))) {
+    ERROR("msg_get for user '%s' domain '%s' message '%s': "
+	  "invalid return value\n",
+	  user.c_str(), domain.c_str(),
+	  msgname.c_str());
+    return NULL;
+  }
+  MessageDataFile* f = 
+    dynamic_cast<MessageDataFile*>(ret.get(1).asObject());
+  if (NULL == f)
+    return NULL;
+
+  FILE* fp = f->fp;
+  delete f;
+  return fp;
+}

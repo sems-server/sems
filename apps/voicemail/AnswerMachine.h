@@ -68,28 +68,32 @@ class AnswerMachineFactory: public AmSessionFactory
     int loadEmailTemplates(const string& path);
 #endif
 
-public:
-    static string RecFileExt;
-    static string AnnouncePath;
-    static string DefaultAnnounce;
-    static int    MaxRecordTime;
-    static AmDynInvokeFactory* UserTimer;
-    static AmDynInvokeFactory* MessageStorage;
-    static bool SaveEmptyMsg;
+  FILE* getMsgStoreGreeting(string msgname, string user, string domain);
+  AmDynInvoke* msg_storage;
 
-    /** After server start, IP of the SMTP server. */
-    static string SmtpServerAddress;
-    /** SMTP server port. */
-    static unsigned int SmtpServerPort;
+public:
+  static string RecFileExt;
+  static string AnnouncePath;
+  static string DefaultAnnounce;
+  static int    MaxRecordTime;
+  static AmDynInvokeFactory* UserTimer;
+  static AmDynInvokeFactory* MessageStorage;
+  static bool SaveEmptyMsg;
+  static bool TryPersonalGreeting;
+
+  /** After server start, IP of the SMTP server. */
+  static string SmtpServerAddress;
+  /** SMTP server port. */
+  static unsigned int SmtpServerPort;
 
 #ifdef USE_MYSQL
-    static mysqlpp::Connection Connection;
+  static mysqlpp::Connection Connection;
 #endif
 
-    AnswerMachineFactory(const string& _app_name);
+  AnswerMachineFactory(const string& _app_name);
 
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req);
 };
 
 class AnswerMachineDialog : public AmSession
@@ -99,7 +103,9 @@ class AnswerMachineDialog : public AmSession
     AmPlaylist playlist;
 
     string announce_file;
+    FILE* announce_fp;
     string msg_filename;
+
 
     const EmailTemplate* tmpl;
     EmailTmplDict  email_dict;
@@ -120,6 +126,7 @@ class AnswerMachineDialog : public AmSession
 		      const string& domain,
 		      const string& email, 
 		      const string& announce_file, 
+		      FILE* announce_fp, 
 		      int vm_mode,
 		      const EmailTemplate* tmpl);
 
