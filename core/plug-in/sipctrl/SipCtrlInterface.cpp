@@ -475,9 +475,16 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
 	sip_nameaddr na;
 	const char* c = msg->contact->value.s;
 	if(parse_nameaddr(&na,&c,msg->contact->value.len) < 0){
-	    DBG("Contact parsing failed\n");
+	    WARN("Contact parsing failed\n");
+	    WARN("\tcontact = '%.*s'\n",msg->contact->value.len,msg->contact->value.s);
 	}
 	else {
+	    sip_uri u;
+	    if(parse_uri(&u,na.addr.s,na.addr.len)){
+		WARN("'Contact' in new request contains a malformed URI\n");
+		WARN("\tcontact uri = '%.*s'\n",na.addr.len,na.addr.s);
+	    }
+
 	    req.from_uri = c2stlstr(na.addr);
 	    req.contact  = c2stlstr(msg->contact->value);
 	}
