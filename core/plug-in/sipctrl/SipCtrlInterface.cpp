@@ -477,17 +477,23 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
 	if(parse_nameaddr(&na,&c,msg->contact->value.len) < 0){
 	    WARN("Contact parsing failed\n");
 	    WARN("\tcontact = '%.*s'\n",msg->contact->value.len,msg->contact->value.s);
+	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
 	}
 	else {
 	    sip_uri u;
 	    if(parse_uri(&u,na.addr.s,na.addr.len)){
 		WARN("'Contact' in new request contains a malformed URI\n");
 		WARN("\tcontact uri = '%.*s'\n",na.addr.len,na.addr.s);
+		WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
 	    }
 
 	    req.from_uri = c2stlstr(na.addr);
 	    req.contact  = c2stlstr(msg->contact->value);
 	}
+    }
+    else {
+	WARN("Request has no contact header\n");
+	WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
     }
     
     if(req.from_uri.empty()) {
