@@ -1,5 +1,7 @@
-ifndef HAVE_MAKEFILE_DEFS
-HAVE_MAKEFILE_DEFS = 1
+ifeq ($(makefile_defs), 1)
+else
+makefile_defs=1
+export makefile_defs
 
 SVN_REV?=r$(shell svnversion -n .)
 
@@ -251,4 +253,16 @@ $(DESTDIR)$(audio-prefix)/$(audio-dir):
 $(DESTDIR)$(doc-prefix)/$(doc-dir):
 	mkdir -p $(DESTDIR)$(doc-prefix)/$(doc-dir)
 
-endif
+#export stuff to sub-makes
+export REL_VERSION RELEASE
+export CPPFLAGS CXXFLAGS LDFLAGS CFLAGS LIB_LDFLAGS
+export CXX CC LD
+export DESTDIR PREFIX prefix basedir ser-prefix
+export start-script
+export cfg-prefix bin-prefix modules-prefix doc-prefix audio-prefix
+export cfg-dir bin-dir modules-dir audio-dir lib-dir ser-cfg-dir doc-dir man-dir
+export bin-target cfg-target modules-target audio-target ser-cfg-target lib-target
+export INSTALL TAR INSTALL-TOUCH INSTALL-CFG INSTALL-BIN INSTALL-MODULES INSTALL-DOC INSTALL-AUDIO
+
+
+endif  # ifeq ($(makefile_defs, 1)
