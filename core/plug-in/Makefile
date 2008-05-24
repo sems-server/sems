@@ -44,7 +44,7 @@ install:
 	done
 
 .PHONY: install-cfg
-install-cfg: $(cfg-target)
+install-cfg: $(DESTDIR)$(cfg-target)
 	-@for r in $(modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
