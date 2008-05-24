@@ -1,7 +1,7 @@
 COREPATH ?=../..
 include $(COREPATH)/../Makefile.defs
 
-LDFLAGS  += $(module_ldflags)
+LIB_LDFLAGS  += $(module_ldflags)
 CPPFLAGS += -I $(COREPATH) -I $(COREPATH)/amci 
 CFLAGS   += -Wall $(module_cflags)
 
