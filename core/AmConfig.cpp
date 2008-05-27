@@ -171,19 +171,21 @@ int AmConfig::readConfiguration()
   if(!ModConfigPath.empty() && (ModConfigPath[ModConfigPath.length()-1] != '/'))
     ModConfigPath += '/';
 
-  // local_ip
-  LocalIP = cfg.getParameter("listen");
-
+  // listen, sip_ip, sip_port, and media_ip
+  if(cfg.hasParameter("sip_ip")) {
+    LocalSIPIP = cfg.getParameter("sip_ip");
+  }
   if(cfg.hasParameter("sip_port")){
     if(!setSIPPort(cfg.getParameter("sip_port").c_str())){
       ERROR("invalid sip port specified\n");
       return -1;
     }		
   }
+  if(cfg.hasParameter("media_ip")) {
+    LocalIP = cfg.getParameter("media_ip");
+  }
 
-  if(cfg.hasParameter("sip_ip"))
-    LocalSIPIP = cfg.getParameter("sip_ip");
-  
+  // public_ip
   if(cfg.hasParameter("public_ip")){
     string p_ip = cfg.getParameter("public_ip");
     DBG("Setting public_ip parameter to %s.\n", p_ip.c_str());

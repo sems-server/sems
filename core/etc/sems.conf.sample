@@ -149,17 +149,14 @@ media_processor_threads=1
 # Example:
 #  session_limit="1000;503;Server overload"
 
-# optional parameter: listen=<ip_address>|<device>
+# optional parameter: media_ip=<ip_address>|<device>
 # 
-# - this informs SEMS about the interface where its SER is 
-#   bound to. SEMS needs this information to correctly set 
-#   the contact header in outgoing calls and registrations. 
-#   Should be set to equal the 'listen' configuration option
-#   in ser_sems.cfg.
-#   If not set, this defaults to the interface SEMS binds to.
+# - this informs SEMS about the IP address or interface that SEMS uses
+#   to send and receive media.  If not set, defaults to first non-loopback
+#   interface.
 # Examples: 
-#  listen=10.0.0.34
-#  listen=eth0
+#  media_ip=10.0.0.34
+#  media_ip=eth0
 
 # optional parameter: sip_ip=<ip_address>
 #
@@ -167,15 +164,12 @@ media_processor_threads=1
 #   bound to or should be bound to. If 'sipctrl' SIP stack is used,
 #   the SIP stack will bind to this address. This also sets 
 #   the value used for contact header in outgoing calls and 
-#   registrations. 
-#   It defaults to the value of 'listen' (see above).
+#   registrations. If not set, defaults to first non-loopback
+#   interface.
 #
 # Example:
 #  sip_ip=10.0.0.34
 #
-# default: <listen ip address>
-#
-#sip_ip=10.0.0.34
 
 # optional parameter: public_ip=<ip_address>
 # 
@@ -221,10 +215,8 @@ sip_port=5080
 #  
 #   default: empty
 #
-#   example:
+# Example:
 #   outbound_proxy=sip:proxy.mydomain.net
-#
-#outbound_proxy=sip:192.168.0.1
 
 # optional parameter: dead_rtp_time=<unsigned int>
 #

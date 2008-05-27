@@ -257,6 +257,7 @@ int main(int argc, char* argv[])
           "       public media IP:     %s\n"
 	  "       local SIP port:      %i\n"
 	  "       local media IP:      %s\n"
+	  "       outbound proxy:      %s\n"
 	  "       application:         %s\n"
 	  "\n",
 	  AmConfig::ConfigurationFile.c_str(),
@@ -266,6 +267,7 @@ int main(int argc, char* argv[])
 	  AmConfig::PublicIP.c_str(),
 	  AmConfig::LocalSIPPort,
 	  AmConfig::LocalIP.c_str(),
+	  AmConfig::OutboundProxy.c_str(),
 	  AmConfig::Application.empty()?
 	  "<not set>":AmConfig::Application.c_str()
 	  );
