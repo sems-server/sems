@@ -53,7 +53,7 @@ class UnixCtrlInterface : public AmCtrlInterface
     // this adapter is only used for sending replies
     UnixSocketAdapter sndAdapt; 
     // handler of requests (SIP request | reply) received from SER
-    AmInterfaceHandler *sipDispatcher;
+    AmSipDispatcher *sipDispatcher;
 
   protected:
     // AmCtrlInterface:AmThread

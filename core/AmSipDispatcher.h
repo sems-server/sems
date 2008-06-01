@@ -8,16 +8,7 @@
 
 using std::vector;
 
-class AmInterfaceHandler
-{
-  public:
-    virtual void handleSipMsg(AmSipRequest &) = 0;
-    virtual void handleSipMsg(AmSipReply &) = 0;
-
-    virtual ~AmInterfaceHandler(){};
-};
-
-class AmSipDispatcher : public AmInterfaceHandler
+class AmSipDispatcher
 {
   private:
     static AmSipDispatcher *_instance;
