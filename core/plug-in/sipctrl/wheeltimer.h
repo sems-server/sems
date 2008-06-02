@@ -123,7 +123,7 @@ public:
     static wheeltimer* instance();
 
     //clock reference
-    u_int32_t wall_clock; // 32 bits
+    volatile u_int32_t wall_clock; // 32 bits
 
     void clock_work();
     void insert_timer(timer* t);

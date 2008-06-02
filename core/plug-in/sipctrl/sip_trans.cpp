@@ -117,7 +117,8 @@ void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
     if(bucket){
 	bucket->lock();
 	if(bucket->exist(tr)){
-	    DBG("Transaction timer expired: type=0x%x, trans=%p\n",t->type,tr);
+	    DBG("Transaction timer expired: type=0x%x, trans=%p, eta=%i, t=%i\n",
+		t->type,tr,t->expires,wheeltimer::instance()->wall_clock);
 	    trans_layer::instance()->timer_expired(t,bucket,tr);
 	}
 	else {
