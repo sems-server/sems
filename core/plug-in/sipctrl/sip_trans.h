@@ -80,8 +80,13 @@ enum sip_timer_type {
     STIMER_I,  // Confirmed: -> Terminated
 
     // non-INVITE server transaction
-    STIMER_J   // Completed: -> Terminated
+    STIMER_J,  // Completed: -> Terminated
 
+    // This timer is not defined by
+    // RFC 3261. But it is needed
+    // to handle 200 ACKs automatically
+    // in UAC transactions.
+    STIMER_L  // Terminated_200 -> Terminated
 };
 
 
