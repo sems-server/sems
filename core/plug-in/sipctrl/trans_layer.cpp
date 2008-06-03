@@ -646,7 +646,6 @@ int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
     if(transport->get_local_port() != 5060)
 	via += ":" + int2str(transport->get_local_port());
 
-    //request_len += via_len(stl2cstr(via),branch);
     request_len += copy_hdr_len(req->via1);
 
     request_len += copy_hdr_len(req->to)
@@ -937,6 +936,10 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 		//        - re-transmit ACK.
 
 		t->state  = TS_TERMINATED_200;
+		t->clear_timer(STIMER_A);
+		t->clear_timer(STIMER_B);
+
+		t->reset_timer(STIMER_L, L_TIMER, bucket->get_id());
 
 		t->to_tag.s = new char[to_tag.len];
 		t->to_tag.len = to_tag.len;
@@ -1276,7 +1279,6 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 
     switch(type){
 
-
     case STIMER_A:  // Calling: (re-)send INV
 
 	n++;
@@ -1291,6 +1293,9 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	    DBG("Transaction timeout!\n");
 	    timeout(bucket,tr);
 	}
+	else {
+	    DBG("Transaction timeout timer hit while state=0x%x",tr->state);
+	}
 	break;
 
     case STIMER_F:  // Trying/Proceeding: terminate transaction
@@ -1304,9 +1309,9 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	    DBG("Transaction timeout!\n");
 	    timeout(bucket,tr);
 	    break;
-	case TS_TERMINATED_200:
-	    bucket->remove_trans(tr);
-	    break;
+// 	case TS_TERMINATED_200:
+// 	    bucket->remove_trans(tr);
+// 	    break;
 	}
 	break;
 
@@ -1315,6 +1320,7 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
     case STIMER_J:  // Completed: -> Terminated
     case STIMER_H:  // Completed: -> Terminated
     case STIMER_I:  // Confirmed: -> Terminated
+    case STIMER_L:  // Terminated_200 -> Terminated
 	
 	tr->clear_timer(type);
 	tr->state = TS_TERMINATED;

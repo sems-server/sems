@@ -59,6 +59,15 @@
 //type 0x0a
 #define J_TIMER  64*T1_TIMER
 
+
+// This timer is not defined by
+// RFC 3261. But it is needed
+// to handle 200 ACKs automatically
+// in UAC transactions.
+
+//type 0x0b
+#define L_TIMER  64*T1_TIMER
+
 #endif
 
 
