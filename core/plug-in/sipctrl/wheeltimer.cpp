@@ -71,8 +71,6 @@ void wheeltimer::insert_timer(timer* t)
 
 void wheeltimer::remove_timer(timer* t)
 {
-    //DBG("wheeltimer::remove_timer(%p)\n",t);
-
     //add new timer to user request list
     utimer_rem_m.lock();
     utimer_rem.push(t);
@@ -172,8 +170,6 @@ void wheeltimer::turn_wheel()
     }
     utimer_rem_m.unlock();
 	
-    //DBG("time = %d\n", wall_clock);
-	
     //check for expired timer to process
     process_current_timers();
 }
@@ -205,15 +201,8 @@ inline bool less_ts(unsigned int t1, unsigned int t2)
 
 void wheeltimer::place_timer(timer* t)
 {
-    //DBG("place_timer: type=0x%x, expires=%i\n",
-    //     t->type, t->expires);
-
-    // TODO: use ts_less
     if(less_ts(t->expires,wall_clock)){
 
- 	// t->cb(t->data);
-	// delete t;
-	
 	// we put the late ones at the beginning of next wheel turn
 	add_timer_to_wheel(t,0,((1<<BITS_PER_WHEEL)-1) & wall_clock);
 	
@@ -256,16 +245,6 @@ void wheeltimer::add_timer_to_wheel(timer* t, int wheel, unsigned int pos)
 
 void wheeltimer::delete_timer(timer* t)
 {
-    //DBG("delete_timer(%p)\n",t);
-
-    //     if(!t->prev && !t->next){
-    // 	DBG("deleting detached timer\n");
-    //     }
-    //     else {
-    // 	DBG("t->prev = %p; t->next = %p\n",t->prev,t->next);
-    //     }
-
-
     if(t->prev)
 	t->prev->next = t->next;
 
