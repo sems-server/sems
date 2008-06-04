@@ -29,6 +29,7 @@
 #include "AmUtils.h"
 #include "AmPlugIn.h"
 #include "AmSessionContainer.h"
+#include "AmEventDispatcher.h"
 
 #define MOD_NAME "registrar_client"
 
@@ -36,8 +37,18 @@
 
 #include <unistd.h>
 
-EXPORT_SIP_EVENT_HANDLER_FACTORY(SIPRegistrarClient, MOD_NAME);
-EXPORT_PLUGIN_CLASS_FACTORY(SIPRegistrarClient, MOD_NAME);
+//EXPORT_SIP_EVENT_HANDLER_FACTORY(SIPRegistrarClient, MOD_NAME);
+//EXPORT_PLUGIN_CLASS_FACTORY(SIPRegistrarClient, MOD_NAME);
+
+extern "C" void* plugin_class_create()
+{
+    SIPRegistrarClient* reg_c = SIPRegistrarClient::instance();
+    assert(dynamic_cast<AmDynInvokeFactory*>(reg_c));
+
+    DBG("Hallo, alles in ordnung!\n");
+
+    return (AmPluginFactory*)reg_c;
+}
 
 
 SIPRegistration::SIPRegistration(const string& handle,
@@ -179,12 +190,12 @@ SIPRegistrarClient* SIPRegistrarClient::instance()
   if(_instance == NULL){
     _instance = new SIPRegistrarClient(MOD_NAME);
   }
+
   return _instance;
 }
 
 SIPRegistrarClient::SIPRegistrarClient(const string& name)
-  : AmSIPEventHandler(name),
-    AmEventQueue(this) ,
+  : AmEventQueue(this),
     uac_auth_i(NULL),
     AmDynInvokeFactory(MOD_NAME)
 { 
@@ -515,6 +526,9 @@ remove_reg_unsafe(const string& reg_id) {
     reg = it->second;
     registrations.erase(it);
   }
+
+  AmEventDispatcher::instance()->delEventQueue(reg_id);
+
   return reg;
 }
 
@@ -531,6 +545,8 @@ add_reg(const string& reg_id, SIPRegistration* new_reg)
 		
   }
   registrations[reg_id] = new_reg;
+
+  AmEventDispatcher::instance()->addEventQueue(reg_id,this);
   reg_mut.unlock();
 
   if (reg != NULL)

@@ -58,7 +58,8 @@ class AmDtmfEvent;
 #define FL_FORCE_ACTIVE 2
 
 /**
- * \brief Interface for SIP events signaling plugins implement
+ * \brief Interface for SIP signaling plugins that
+ *        must change requests or replies (ex: session timer).
  *
  *  Signaling plugins must inherite from this class.
  */
@@ -73,8 +74,8 @@ public:
 
   virtual ~AmSessionEventHandler() {}
   /* 
-   * All the methods return true if event processing 
-   * should stopped after calling them.
+   * All the methods return true if the event processing 
+   * shall be stopped after them.
    */
   virtual bool process(AmEvent*);
   virtual bool onSipEvent(AmSipEvent*);
@@ -141,6 +142,8 @@ private:
 
   AmCondition<bool> sess_stopped;
   AmCondition<bool> detached;
+
+  static volatile unsigned int session_num;
 
   friend class AmMediaProcessor;
   friend class AmMediaProcessorThread;
@@ -363,6 +366,11 @@ public:
    * Creates a new Id which can be used within sessions.
    */
   static string getNewId();
+
+    /**
+     * Gets the number of running sessions
+     */
+    static unsigned int getSessionNum();
 
   /**
    * Entry point for DTMF events

@@ -49,31 +49,7 @@ class AmSessionContainer : public AmThread
 {
   static AmSessionContainer* _SessionContainer;
 
-  // some typedefs ...
-  typedef std::map<string,AmSession*> SessionMap;
-  typedef SessionMap::iterator SessionMapIter;
-
-  typedef std::map<string,string>     Dictionnary;
-  typedef Dictionnary::iterator  DictIter;
-
   typedef std::queue<AmSession*>      SessionQueue;
-
-  /** 
-   * Container for active sessions 
-   * local tag -> session
-   */
-  SessionMap a_sessions;
-
-  /** 
-   * Call ID + remote tag -> local tag 
-   *  (needed for CANCELs and some provisionnal answers)
-   *  (UAS sessions only)
-   */
-  Dictionnary as_id_lookup;
-
-  /** Mutex to protect the active session container */
-  AmMutex    as_mut;
-
 
   /** Container for dead sessions */
   SessionQueue d_sessions;
@@ -85,39 +61,6 @@ class AmSessionContainer : public AmThread
 
   /** We are a Singleton ! Avoid people to have their own instance. */
   AmSessionContainer();
-
-  /**
-   * Search the container for a session coresponding 
-   * to callid and remote_tag. (UAS only).
-   *
-   * @return the session related to callid & remote_tag
-   *         or NULL if none has been found.
-   */
-  AmSession* getSession(const string& callid, const string& remote_tag);
-
-  /**
-   * Search the container for a session coresponding to local_tag.
-   *
-   * @return the session related to local_tag 
-   *         or NULL if none has been found.
-   */
-  AmSession* getSession(const string& local_tag);
-
-  /**
-   * Adds a session to the container. (UAS only)
-   * @return true if the session is new within the container.
-   */
-  bool addSession_unsafe(const string& callid, 
-			 const string& remote_tag,
-			 const string& local_tag,
-			 AmSession* session);
-
-  /**
-   * Adds a session to the container.
-   * @return true if the session is new within the container.
-   */
-  bool addSession_unsafe(const string& local_tag,
-			 AmSession* session);
 
   /**
    * Tries to stop the session and queue it destruction.
@@ -154,7 +97,7 @@ class AmSessionContainer : public AmThread
    * @return true if the session is new within the container.
    */
   bool addSession(const string& local_tag,
-		  AmSession* session);
+ 		  AmSession* session);
 
   /** 
    * Constructs a new session and adds it to the active session container. 
@@ -174,11 +117,6 @@ class AmSessionContainer : public AmThread
    */
   void destroySession(AmSession* s);
   void destroySession(const string& local_tag);
-
-  /**
-   * Query the number of active sessions
-   */
-  int getSize();
 
   /**
    * post an event into the event queue of the identified dialog.

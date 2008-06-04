@@ -182,38 +182,37 @@ class AmSessionFactory: public AmPluginFactory
 			     AmArg& session_params);
 
   /**
-   * method to receive an Event that is posted
-   * to  the factory
+   * Method to receive any out-of-dialog request 
+   * other than INVITE, REFER and OPTIONS
    *
    * Warning:
    *   This method should not make any expensive
    *   processing as it would block the thread 
    *   posting the event!
    */
-  virtual void postEvent(AmEvent* ev);	
-
+  virtual void onOoDRequest(const AmSipRequest& req);
 };
 
 /** \brief Interface for plugins that implement session-less 
  *     UA behaviour (e.g. registrar client, event notification 
  *     client)
  */
-class AmSIPEventHandler : public AmPluginFactory 
-{
+// class AmSIPEventHandler : public AmPluginFactory 
+// {
 
- public:
-  AmSIPEventHandler(const string& name);
-  virtual ~AmSIPEventHandler() { }
+//  public:
+//   AmSIPEventHandler(const string& name);
+//   virtual ~AmSIPEventHandler() { }
 
-  /** will be called on incoming replies which do 
-   *  not belong to a dialog of a session in the 
-   *  SessionContainer.
-   *
-   *  @return true if reply was handled by plugin, false 
-   *          otherwise
-   */
-  virtual bool onSipReply(const AmSipReply& rep) = 0;
-};
+//   /** will be called on incoming replies which do 
+//    *  not belong to a dialog of a session in the 
+//    *  SessionContainer.
+//    *
+//    *  @return true if reply was handled by plugin, false 
+//    *          otherwise
+//    */
+//   virtual bool onSipReply(const AmSipReply& rep) = 0;
+// };
 
 /** \brief Interface for plugins that implement a
  *     logging facility
@@ -229,8 +228,6 @@ class AmLoggingFacility : public AmPluginFactory
    */
   virtual void log(int level, const char* msg) = 0;
 };
-
-class AmInterfaceHandler;
 
 class AmCtrlInterface: public AmThread
 {
@@ -260,10 +257,9 @@ class AmCtrlInterface: public AmThread
  * For sending messages, appropriate methods are exposed (the send()s).
  * The interface defines a thread that runs, polling on the two listening unix
  * sockets (one for requests, one for replies). After receiving a message,
- * a registered 'AmInterfaceHandler' is used to handle the incomming SIP
- * events (that end up either opening/updating a UAC session or posting to a
- * SIP event queue).
- *
+ * AmSipDispatcher shall be used to dispatch the incomming SIP messages 
+ * (that end up either opening/updating a UAC session or posting to some
+ * event queue).
  */
 class AmCtrlInterfaceFactory : public AmPluginFactory
 {

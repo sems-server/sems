@@ -227,15 +227,15 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   }
 
   // load SIPEventHandlers 
-  for(std::map<std::string,AmSIPEventHandler*>::iterator it = name2sipeh.begin();
-      it != name2sipeh.end(); it++){
-    err = it->second->onLoad();
-    if(err)
-      return err;
-    // register for receiving replys 
-    //AmReplyHandler::get()->registerReplyHandler(it->second);
-    AmSipDispatcher::instance()->registerReplyHandler(it->second);
-  }
+//   for(std::map<std::string,AmSIPEventHandler*>::iterator it = name2sipeh.begin();
+//       it != name2sipeh.end(); it++){
+//     err = it->second->onLoad();
+//     if(err)
+//       return err;
+//     // register for receiving replys 
+//     //AmReplyHandler::get()->registerReplyHandler(it->second);
+//     AmSipDispatcher::instance()->registerReplyHandler(it->second);
+//   }
 
   // init logging facilities
   for(std::map<std::string,AmLoggingFacility*>::iterator it = name2logfac.begin();
@@ -311,11 +311,11 @@ int AmPlugIn::loadPlugIn(const string& file)
     has_sym=true;
   }
 
-  if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SIP_EVENT_HANDLER_EXPORT_STR)) != NULL){
-    if(loadSIPehPlugIn((AmPluginFactory*)fc()))
-      goto error;
-    has_sym=true;
-  }
+//   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SIP_EVENT_HANDLER_EXPORT_STR)) != NULL){
+//     if(loadSIPehPlugIn((AmPluginFactory*)fc()))
+//       goto error;
+//     has_sym=true;
+//   }
 
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_LOG_FACILITY_EXPORT_STR)) != NULL){
     if(loadLogFacPlugIn((AmPluginFactory*)fc()))
@@ -444,13 +444,13 @@ AmDynInvokeFactory* AmPlugIn::getFactory4Di(const string& name)
   return 0;
 }
 
-AmSIPEventHandler* AmPlugIn::getFactory4SIPeh(const string& name)
-{
-  std::map<std::string,AmSIPEventHandler*>::iterator it = name2sipeh.find(name);
-  if(it != name2sipeh.end())
-    return it->second;
-  return 0;
-}
+// AmSIPEventHandler* AmPlugIn::getFactory4SIPeh(const string& name)
+// {
+//   std::map<std::string,AmSIPEventHandler*>::iterator it = name2sipeh.find(name);
+//   if(it != name2sipeh.end())
+//     return it->second;
+//   return 0;
+// }
 
 AmLoggingFacility* AmPlugIn::getFactory4LogFaclty(const string& name)
 {
@@ -574,28 +574,28 @@ int AmPlugIn::loadDiPlugIn(AmPluginFactory* f)
   return -1;
 }
 
-int AmPlugIn::loadSIPehPlugIn(AmPluginFactory* f)
-{
-  AmSIPEventHandler* sf = dynamic_cast<AmSIPEventHandler*>(f);
-  if(!sf){
-    ERROR("invalid SIP event handler plug-in!\n");
-    goto error;
-  }
+// int AmPlugIn::loadSIPehPlugIn(AmPluginFactory* f)
+// {
+//   AmSIPEventHandler* sf = dynamic_cast<AmSIPEventHandler*>(f);
+//   if(!sf){
+//     ERROR("invalid SIP event handler plug-in!\n");
+//     goto error;
+//   }
 
-  if(name2sipeh.find(sf->getName()) != name2sipeh.end()){
-    ERROR("sip event handler component '%s' already loaded !\n",
-	  sf->getName().c_str());
-    goto error;
-  }
+//   if(name2sipeh.find(sf->getName()) != name2sipeh.end()){
+//     ERROR("sip event handler component '%s' already loaded !\n",
+// 	  sf->getName().c_str());
+//     goto error;
+//   }
       
-  name2sipeh.insert(std::make_pair(sf->getName(),sf));
-  DBG("sip event handler component '%s' loaded.\n",sf->getName().c_str());
+//   name2sipeh.insert(std::make_pair(sf->getName(),sf));
+//   DBG("sip event handler component '%s' loaded.\n",sf->getName().c_str());
 
-  return 0;
+//   return 0;
 
- error:
-  return -1;
-}
+//  error:
+//   return -1;
+// }
 
 int AmPlugIn::loadLogFacPlugIn(AmPluginFactory* f)
 {
@@ -744,4 +744,56 @@ bool AmPlugIn::registerFactory4App(const string& app_name, AmSessionFactory* f)
   
   name2app.insert(make_pair(app_name,f));
   return true;
+}
+
+AmSessionFactory* AmPlugIn::findSessionFactory(AmSipRequest& req)
+{
+  if(req.cmd.empty()){
+    ERROR("AmPlugIn::findSessionFactory: req.cmd is empty!\n");
+    return NULL;
+  } 
+  else if(req.cmd == "sems"){
+
+    switch (AmConfig::AppSelect) {
+
+    case AmConfig::App_RURIUSER:
+      req.cmd = req.user; 
+      break;
+    case AmConfig::App_APPHDR: 
+      req.cmd = getHeader(req.hdrs, APPNAME_HDR); 
+      break;      
+    case AmConfig::App_RURIPARAM: 
+      req.cmd = get_header_param(req.r_uri, "app");
+      break;
+    case AmConfig::App_MAPPING: 
+      {
+	req.cmd = "";	
+	for (AmConfig::AppMappingVector::iterator it = 
+	       AmConfig::AppMapping.begin(); 
+	     it != AmConfig::AppMapping.end(); it++){
+	  if (!regexec(&it->first, req.r_uri.c_str(), 0, NULL, 0)) {
+	    DBG("match of r_uri '%s' to application %s\n", 
+	      req.r_uri.c_str(), it->second.c_str());
+	    req.cmd = it->second;
+	    break;
+	  }
+	}
+      } break;
+    case AmConfig::App_SPECIFIED: 
+      req.cmd = AmConfig::Application; 
+      break;
+    }
+
+    if (req.cmd.empty()) {
+	ERROR("could not find any application matching configured criteria\n");
+	return NULL;
+    }
+  }
+
+  AmSessionFactory* session_factory = getFactory4App(req.cmd);
+  if(!session_factory) {
+    ERROR("AmPlugIn::findSessionFactory: application '%s' not found !\n", req.cmd.c_str());
+  }
+
+  return session_factory;
 }

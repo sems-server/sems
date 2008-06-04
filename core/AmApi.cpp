@@ -74,10 +74,19 @@ void AmSessionFactory::configureSession(AmSession* sess) {
   //SessionTimer::sess->configureSessionTimer(mod_conf);
 }
 
-void AmSessionFactory::postEvent(AmEvent* ev) {
-  ERROR("unhandled Event in %s module\n", getName().c_str());
-  delete ev;
+void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
+{
+    ERROR("sorry, we don't support beginning a new session with "
+	  "a '%s' message\n", req.method.c_str());
+    
+    AmSipDialog::reply_error(req,501,"Not Implemented");
+    return;
 }
+
+// void AmSessionFactory::postEvent(AmEvent* ev) {
+//   ERROR("unhandled Event in %s module\n", getName().c_str());
+//   delete ev;
+// }
 
 AmSessionEventHandlerFactory::AmSessionEventHandlerFactory(const string& name)
   : AmPluginFactory(name) 
@@ -90,10 +99,10 @@ bool AmSessionEventHandlerFactory::onInvite(const AmSipRequest& req,
   return onInvite(req);
 }
 
-AmSIPEventHandler::AmSIPEventHandler(const string& name) 
-  : AmPluginFactory(name) 
-{
-}
+// AmSIPEventHandler::AmSIPEventHandler(const string& name) 
+//   : AmPluginFactory(name) 
+// {
+// }
 
 AmLoggingFacility::AmLoggingFacility(const string& name) 
   : AmPluginFactory(name) 

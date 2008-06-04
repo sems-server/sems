@@ -142,8 +142,7 @@ class SIPRegistration : public AmSipDialogEventHandler,
 class SIPNewRegistrationEvent;
 class SIPRemoveRegistrationEvent;
 
-class SIPRegistrarClient  : public AmSIPEventHandler,
-			    public AmThread,
+class SIPRegistrarClient  : public AmThread,
 			    public AmEventQueue,
 			    public AmEventHandler,
 			    public AmDynInvoke,

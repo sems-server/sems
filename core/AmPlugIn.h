@@ -40,9 +40,10 @@ class AmPluginFactory;
 class AmSessionFactory;
 class AmSessionEventHandlerFactory;
 class AmDynInvokeFactory;
-class AmSIPEventHandler;
+//class AmSIPEventHandler;
 class AmLoggingFacility;
 class AmCtrlInterfaceFactory;
+class AmSipRequest;
 
 struct amci_exports_t;
 struct amci_codec_t;
@@ -91,13 +92,13 @@ class AmPlugIn : public AmPayloadProviderInterface
   std::map<int,amci_payload_t*>     payloads;
   std::map<int,int>                 payload_order;
   std::map<string,amci_inoutfmt_t*> file_formats;
-  std::map<string,AmSessionFactory*>  name2app;
 
+  std::map<string,AmSessionFactory*>             name2app;
   std::map<string,AmSessionEventHandlerFactory*> name2seh;
-  std::map<string,AmPluginFactory*> name2base;
-  std::map<string,AmDynInvokeFactory*> name2di;
-  std::map<string,AmSIPEventHandler*> name2sipeh;
-  std::map<string,AmLoggingFacility*> name2logfac;
+  std::map<string,AmPluginFactory*>              name2base;
+  std::map<string,AmDynInvokeFactory*>           name2di;
+  std::map<string,AmLoggingFacility*>            name2logfac;
+
   AmCtrlInterfaceFactory *ctrlIface;
 
   int dynamic_pl; // range: 96->127, see RFC 1890
@@ -114,7 +115,6 @@ class AmPlugIn : public AmPayloadProviderInterface
   int loadSehPlugIn(AmPluginFactory* cb);
   int loadBasePlugIn(AmPluginFactory* cb);
   int loadDiPlugIn(AmPluginFactory* cb);
-  int loadSIPehPlugIn(AmPluginFactory* f);
   int loadLogFacPlugIn(AmPluginFactory* f);
   int loadCtrlFacPlugIn(AmPluginFactory* f);
 
@@ -150,8 +150,10 @@ class AmPlugIn : public AmPayloadProviderInterface
 
   /** @return the suported payloads. */
   const std::map<int,amci_payload_t*>& getPayloads() { return payloads; }
+
   /** @return the order of payloads. */
   const std::map<int,int>& getPayloadOrder() { return payload_order; }
+
   /** 
    * File format lookup according to the 
    * format name and/or file extension.
@@ -160,6 +162,7 @@ class AmPlugIn : public AmPayloadProviderInterface
    * @return NULL if failed.
    */
   amci_inoutfmt_t* fileFormat(const string& fmt_name, const string& ext = "");
+
   /** 
    * File format's subtype lookup function.
    * @param iofmt The file format.
@@ -167,18 +170,29 @@ class AmPlugIn : public AmPayloadProviderInterface
    * @return NULL if failed.
    */
   amci_subtype_t*  subtype(amci_inoutfmt_t* iofmt, int subtype);
+
   /** 
    * Codec lookup function.
    * @param id Codec ID (see amci/codecs.h).
    * @return NULL if failed.
    */
   amci_codec_t*    codec(int id);
+
   /**
    * Application lookup function
    * @param app_name application name
    * @return NULL if failed (-> application not found).
    */
   AmSessionFactory* getFactory4App(const string& app_name);
+
+  /** @return true if this record has been inserted. */
+  bool registerFactory4App(const string& app_name, AmSessionFactory* f);
+
+  /**
+   * Find the proper SessionFactory
+   * for the given request.
+   */
+  AmSessionFactory* findSessionFactory(AmSipRequest& req);
 
   /**
    * Session event handler lookup function
@@ -193,21 +207,12 @@ class AmPlugIn : public AmPayloadProviderInterface
   AmDynInvokeFactory* getFactory4Di(const string& name);
 
   /**
-   * SIP event handler lookup function
-   * @param name application name
-   * @return NULL if failed (-> handler not found).
-   */
-  AmSIPEventHandler* getFactory4SIPeh(const string& name);
-
-  /**
    * logging facility lookup function
    * @param name application name
    * @return NULL if failed (-> handler not found).
    */
   AmLoggingFacility* getFactory4LogFaclty(const string& name);
 
-  /** @return true if this record has been inserted. */
-  bool registerFactory4App(const string& app_name, AmSessionFactory* f);
 };
 
 #endif

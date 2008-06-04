@@ -243,7 +243,7 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
   msg_get_param(msg_c,cmd_str,buffer,CTRL_MSGBUF_SIZE);
 
   if(cmd_str == "calls")
-    reply = "Active calls: " + int2str(sc->getSize()) + "\n";
+      reply = "Active calls: " + int2str(AmSession::getSessionNum()) + "\n";
   else if (cmd_str == "which") {
     reply = 
       "calls                              -  number of active calls (Session Container size)\n"

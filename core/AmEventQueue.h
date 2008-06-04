@@ -51,7 +51,7 @@ protected:
 
 public:
   AmEventQueue(AmEventHandler*);
-  ~AmEventQueue();
+  virtual ~AmEventQueue();
 
   void postEvent(AmEvent*);
   void processEvents();

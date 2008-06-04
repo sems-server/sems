@@ -351,7 +351,7 @@ void WebConferenceFactory::invoke(const string& method,
 string WebConferenceFactory::getServerInfoString() {
   string res = "Server: " 
     DEFAULT_SIGNATURE  " calls: " + 
-    int2str(AmSessionContainer::instance()->getSize())+
+      int2str(AmSession::getSessionNum())+
     " active";
 
   if (stats != NULL) {

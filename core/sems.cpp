@@ -474,7 +474,6 @@ static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
 
 static string getLocalIP(const string& dev_name)
 {
-  //DBG("getLocalIP(%s)\n", dev_name.c_str());
 
 #ifdef SUPPORT_IPV6
   struct sockaddr_storage ss;

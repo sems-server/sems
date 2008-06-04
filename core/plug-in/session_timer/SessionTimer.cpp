@@ -60,6 +60,7 @@ SessionTimer::SessionTimer(AmSession* s)
 
 bool SessionTimer::process(AmEvent* ev)
 {
+  assert(ev);
   AmTimeoutEvent* timeout_ev = dynamic_cast<AmTimeoutEvent*>(ev);
   if (timeout_ev) {
     DBG("received timeout Event with ID %d\n", timeout_ev->data.get(0).asInt());

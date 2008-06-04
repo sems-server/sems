@@ -49,6 +49,9 @@
 #include <assert.h>
 #include <sys/time.h>
 
+volatile unsigned int AmSession::session_num = 0;
+
+
 // AmSessionEventHandler methods
 bool AmSessionEventHandler::process(AmEvent*)
 {
@@ -387,6 +390,8 @@ void AmSession::run()
   }
 #endif
 
+  session_num++;
+
   try {
     try {
 
@@ -430,8 +435,10 @@ void AmSession::run()
   catch(const AmSession::Exception& e){
     ERROR("%i %s\n",e.code,e.reason.c_str());
   }
-	
+
   destroy();
+
+  session_num--;
     
   // wait at least until session is out of RtpScheduler
   DBG("session is stopped.\n");
@@ -468,6 +475,12 @@ string AmSession::getNewId()
 
   return id;
 }
+
+unsigned int AmSession::getSessionNum()
+{
+    return AmSession::session_num;
+}
+
 
 void AmSession::setInbandDetector(Dtmf::InbandDetectorType t)
 { 
