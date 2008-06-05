@@ -32,6 +32,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <string.h>
 
 #include "AmSmtpClient.h"
 #include "AmUtils.h"
