@@ -106,6 +106,7 @@ protected:
 
 public:
   AmSharedVar<bool> loop;
+  AmSharedVar<bool> autorewind;
 
   AmAudioFile();
   ~AmAudioFile();

@@ -213,7 +213,7 @@ int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp)
 
 AmAudioFile::AmAudioFile()
   : AmBufferedAudio(0, 0, 0), data_size(0), 
-    fp(0), begin(0), loop(false),
+    fp(0), begin(0), loop(false), autorewind(false),
     on_close_done(false),
     close_on_exit(true)
 {
@@ -322,6 +322,11 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
       rewind();
       goto read_block;
       }
+
+    if (autorewind.get() && data_size>0){
+      DBG("autorewinding audio file...\n");
+      rewind();
+    }
     
     ret = -2; // eof
   }
