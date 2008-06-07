@@ -288,7 +288,7 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
 
   if (credential->realm.length() 
       && (credential->realm != challenge.realm)) {
-    DBG("realm mismatch ('%s' vs '%s'). auth failed.\n", 
+    DBG("authentication realm mismatch ('%s' vs '%s').\n", 
  	credential->realm.c_str(),challenge.realm.c_str());
   }
  
