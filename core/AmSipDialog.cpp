@@ -194,6 +194,10 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
       (remote_tag.empty() && !reply.remote_tag.empty()))
     remote_tag = reply.remote_tag;
 
+  if ((reply.code >= 200) && (reply.code < 300) && 
+      (status != Connected && !reply.remote_tag.empty()))
+    remote_tag = reply.remote_tag;
+
   // allow route overwritting
   if(status < Connected) {
 
