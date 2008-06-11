@@ -91,17 +91,18 @@ plugin_path=/usr/local/lib/sems/plug-in/
 
 # optional parameter: load_plugins=<modules list>
 # 
-# semicolon-separated list of modules to load
+# semicolon-separated list of modules to load.
 # If empty, all modules in plugin_path are loaded.
+# One of [sipctrl,unixsockctrl,binrpcctrl] must be loaded.
 #
-# example for announcement with g711 and ilbc codecs only 
-# load_plugins=wav;ilbc;announcement
+# example for announcement with only g711 and ilbc codecs  
+# load_plugins=wav;ilbc;announcement;sipctrl
 
 # optional parameter: exclude_plugins=<modules list>
 #
 # semicolon-separated list of modules to exclude from loading
-# ('blacklist'). This has only effect it load_plugins is empty.
-# If empty, all modules in plugin_path are loaded.
+# ('blacklist'). If empty, all modules in plugin_path are loaded.
+# This has only effect it load_plugins is not set.
 #
 # o binrpcctrl and unixsockctrl: excluded as sipctrl is default ctrl
 # o precoded_announce: no precoded sample files present
