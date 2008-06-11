@@ -579,8 +579,14 @@ bool brpc_sendto(int sockfd, brpc_addr_t *dest, brpc_t *msg, brpc_tv_t tout)
 		}
 
 		DBG("sending through FD#%d; to send: %zd.\n", sockfd, still);
-		if ((sent = sendto(sockfd, pos, still, MSG_DONTWAIT|MSG_NOSIGNAL, 
-				saddr, saddrlen)) < 0) {
+		if ((sent = sendto(sockfd, pos, still, MSG_DONTWAIT
+#ifdef MSG_NOSIGNAL
+				   |MSG_NOSIGNAL
+#elseifdef MSG_NOSIGPIPE
+				   |MSG_NOSIGPIPE
+#endif
+				   , saddr, saddrlen)) < 0) {
+
 			switch (errno) {
 				/* transient errors */
 				case EAGAIN: /* would block - strange one */
@@ -676,7 +682,14 @@ brpc_t *brpc_recvfrom(int sockfd, brpc_addr_t *src, brpc_tv_t tout)
 				offt, msglen - offt);
 #endif
 		if (0 < (rcvd = recvfrom(sockfd, pos, msglen - offt, 
-				MSG_DONTWAIT|MSG_NOSIGNAL, saddr, addrlen))) {
+					 MSG_DONTWAIT
+#ifdef MSG_NOSIGNAL
+					 |MSG_NOSIGNAL
+#elseifdef MSG_NOSIGPIPE
+					 |MSG_NOSIGPIPE
+#endif
+					 , saddr, addrlen))) {
+
 			pos += rcvd;
 			offt += rcvd;
 

@@ -24,10 +24,10 @@
 #include <stddef.h>
 
 #ifdef _LIBBINRPC_BUILD
-void *(*brpc_calloc)(size_t nmemb, size_t size);
-void *(*brpc_malloc)(size_t size);
-void (*brpc_free)(void *brpc_ptr);
-void *(*brpc_realloc)(void *ptr, size_t size);
+extern void *(*brpc_calloc)(size_t nmemb, size_t size);
+extern void *(*brpc_malloc)(size_t size);
+extern void (*brpc_free)(void *brpc_ptr);
+extern void *(*brpc_realloc)(void *ptr, size_t size);
 #endif /* _LIBBINRPC_BUILD */
 
 
