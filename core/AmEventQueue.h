@@ -33,6 +33,13 @@
 
 #include <queue>
 
+class AmEventQueueInterface
+{
+ public:
+  virtual ~AmEventQueueInterface() {}
+  virtual void postEvent(AmEvent*)=0;
+};
+
 /** 
  * \brief Asynchronous event queue implementation 
  * 
@@ -41,7 +48,7 @@
  * thread, which are then processed by the registered event
  *  handler.
  */
-class AmEventQueue
+class AmEventQueue: public AmEventQueueInterface
 {
 protected:
   AmEventHandler*   handler;
@@ -53,7 +60,7 @@ public:
   AmEventQueue(AmEventHandler*);
   virtual ~AmEventQueue();
 
-  virtual void postEvent(AmEvent*);
+  void postEvent(AmEvent*);
   void processEvents();
   void waitForEvent();
   void processSingleEvent();

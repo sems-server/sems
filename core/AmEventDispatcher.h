@@ -35,8 +35,8 @@ class AmEventDispatcher
 {
 public:
 
-    typedef std::map<string, AmEventQueue*> EvQueueMap;
-    typedef EvQueueMap::iterator            EvQueueMapIter;
+    typedef std::map<string, AmEventQueueInterface*> EvQueueMap;
+    typedef EvQueueMap::iterator                     EvQueueMapIter;
     
     typedef std::map<string,string>  Dictionnary;
     typedef Dictionnary::iterator    DictIter;
@@ -73,13 +73,13 @@ public:
     bool post(const string& callid, const string& remote_tag, AmEvent* ev);
 
     bool addEventQueue(const string& local_tag, 
-		       AmEventQueue* q,
+		       AmEventQueueInterface* q,
 		       const string& callid="", 
 		       const string& remote_tag="");
 
-    AmEventQueue* delEventQueue(const string& local_tag,
-				const string& callid="", 
-				const string& remote_tag="");
+    AmEventQueueInterface* delEventQueue(const string& local_tag,
+					 const string& callid="", 
+					 const string& remote_tag="");
 };
 
 #endif

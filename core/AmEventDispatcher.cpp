@@ -36,7 +36,7 @@ AmEventDispatcher* AmEventDispatcher::instance()
 }
 
 bool AmEventDispatcher::addEventQueue(const string& local_tag, 
-				      AmEventQueue* q,
+				      AmEventQueueInterface* q,
 				      const string& callid, 
 				      const string& remote_tag)
 {
@@ -63,11 +63,11 @@ bool AmEventDispatcher::addEventQueue(const string& local_tag,
     return exists;
 }
 
-AmEventQueue* AmEventDispatcher::delEventQueue(const string& local_tag,
-					       const string& callid, 
-					       const string& remote_tag)
+AmEventQueueInterface* AmEventDispatcher::delEventQueue(const string& local_tag,
+							const string& callid, 
+							const string& remote_tag)
 {
-    AmEventQueue* q = NULL;
+    AmEventQueueInterface* q = NULL;
     
     m_queues.lock();
     

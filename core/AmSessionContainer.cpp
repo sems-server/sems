@@ -141,16 +141,16 @@ void AmSessionContainer::destroySession(AmSession* s)
 void AmSessionContainer::destroySession(const string& local_tag)
 {
     AmSession* s = NULL;
-    AmEventQueue* q = AmEventDispatcher::instance()->
-	delEventQueue(local_tag);
+    AmEventQueueInterface* q = AmEventDispatcher::instance()->
+      delEventQueue(local_tag);
     
     if(q &&
        (s = dynamic_cast<AmSession*>(q))) {
-	
-	stopAndQueue(s);
+      
+      stopAndQueue(s);
     }
     else {
-	DBG("could not remove session: id not found or wrong type\n");
+      DBG("could not remove session: id not found or wrong type\n");
     }
 }
 
