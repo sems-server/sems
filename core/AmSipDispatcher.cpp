@@ -97,5 +97,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 	  AmSipDialog::reply_error(req,500,"Not implemented");
 	  return;
       }
+
+      sess_fact->onOoDRequest(req);
   }
 }
