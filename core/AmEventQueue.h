@@ -53,7 +53,7 @@ public:
   AmEventQueue(AmEventHandler*);
   virtual ~AmEventQueue();
 
-  void postEvent(AmEvent*);
+  virtual void postEvent(AmEvent*);
   void processEvents();
   void waitForEvent();
   void processSingleEvent();
