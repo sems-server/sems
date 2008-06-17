@@ -1137,7 +1137,6 @@ void trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     *c++ = LF;
 
     DBG("About to send ACK\n");
-//     DBG("About to send ACK: \n<%.*s>\n",ack_len,ack_buf);
 
     assert(transport);
     int send_err = transport->send(&inv->remote_ip,ack_buf,ack_len);
@@ -1145,12 +1144,12 @@ void trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 	ERROR("Error from transport layer\n");
 	delete ack_buf;
     }
-    
-    if (t->retr_buf)
-      delete [] t->retr_buf;
-
-    t->retr_buf = ack_buf;
-    t->retr_len = ack_len;
+    else {
+	delete [] t->retr_buf;
+	t->retr_buf = ack_buf;
+	t->retr_len = ack_len;
+	memcpy(&t->retr_addr,&inv->remote_ip,sizeof(sockaddr_storage));
+    }
 }
 
 void trans_layer::send_200_ack(sip_msg* reply, sip_trans* t)
