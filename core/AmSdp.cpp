@@ -544,7 +544,7 @@ static void parse_sdp_connection(AmSdp* sdp_msg, char* s, char t)
 	  c.addrType = 2;
 	  state = IP6;
 	}else{
-	  ERROR("parse_sdp_connection: Unknow addr_type in c=\n");
+	  ERROR("parse_sdp_connection: Unknown addr_type in c=\n");
 	  c.addrType = 0;
 	  parsing = 0;
 	}
@@ -612,7 +612,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       next = parse_until(media_line, ' ');
       string media(media_line, int(next-media_line)-1);
       if(media_type(media) < 0 )
-	ERROR("parse_sdp_media: Unknow media type\n");
+	ERROR("parse_sdp_media: Unknown media type\n");
       m.type = media_type(media);
       media_line = next;
       state = PORT;
@@ -647,7 +647,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 	next = parse_until(media_line, ' ');
 	string proto(media_line, int(next-media_line)-1);
 	if(transport_type(proto) < 0){
-	  ERROR("parse_sdp_media: Unknow transport protocol\n");
+	  ERROR("parse_sdp_media: Unknown transport protocol\n");
 	  state = FMT;
 	  break;
 	}
@@ -1148,7 +1148,7 @@ static bool attr_check(std::string attr)
     return true;
   else
     {
-    DBG("sdp_parse_attr: Unknow attribute name used:%s, plz see RFC4566\n", 
+    DBG("sdp_parse_attr: Unknown attribute name used:%s, plz see RFC4566\n", 
 	(char*)attr.c_str());
     return false;
     }
