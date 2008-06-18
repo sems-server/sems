@@ -72,7 +72,9 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   if(uas_trans.find(req.cseq) == uas_trans.end())
     uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq);
 
-  remote_uri = req.from_uri;
+  if (req.from_uri.length())
+    remote_uri = req.from_uri;
+
   sip_ip       = req.dstip;
   sip_port     = req.port;
 
@@ -96,7 +98,9 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
  */
 void AmSipDialog::updateStatusFromLocalRequest(const AmSipRequest& req)
 {
-  remote_uri = req.r_uri;
+  if (req.r_uri.length())
+    remote_uri = req.r_uri;
+
   if(callid.empty()){
     DBG("dialog callid is empty, updating from UACRequest\n");
     callid       = req.callid;
