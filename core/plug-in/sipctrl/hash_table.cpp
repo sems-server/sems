@@ -294,7 +294,7 @@ sip_trans* trans_bucket::match_reply(sip_msg* msg)
 	if(get_cseq((*it)->msg)->method_str.len != get_cseq(msg)->method_str.len)
 	    continue;
 
-	if(memcmp(msg->via_p1->branch.s+MAGIC_BRANCH_LEN,
+	if(memcmp((*it)->msg->via_p1->branch.s+MAGIC_BRANCH_LEN,
 		  branch,len))
 	    continue;
 
