@@ -161,8 +161,8 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
   case Disconnecting:
     if(t.method == "BYE"){
 	    
-      if((code < 300) && (code >= 200))
-	status = Disconnected;
+	if(code >= 200)
+	    status = Disconnected;
     }
     break;
   }
