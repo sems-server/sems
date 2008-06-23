@@ -116,7 +116,6 @@ class AmSessionContainer : public AmThread
    * Detroys a session.
    */
   void destroySession(AmSession* s);
-  void destroySession(const string& local_tag);
 
   /**
    * post an event into the event queue of the identified dialog.
