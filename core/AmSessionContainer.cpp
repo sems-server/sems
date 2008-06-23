@@ -135,22 +135,17 @@ void AmSessionContainer::stopAndQueue(AmSession* s)
 
 void AmSessionContainer::destroySession(AmSession* s)
 {
-  destroySession(s->getLocalTag());
-}
-
-void AmSessionContainer::destroySession(const string& local_tag)
-{
-    AmSession* s = NULL;
     AmEventQueueInterface* q = AmEventDispatcher::instance()->
-      delEventQueue(local_tag);
+	delEventQueue(s->getLocalTag(),
+		      s->getCallID(),
+		      s->getRemoteTag());
     
-    if(q &&
-       (s = dynamic_cast<AmSession*>(q))) {
-      
-      stopAndQueue(s);
+    if(q) {
+	
+	stopAndQueue(s);
     }
     else {
-      DBG("could not remove session: id not found or wrong type\n");
+	WARN("could not remove session: id not found or wrong type\n");
     }
 }
 
