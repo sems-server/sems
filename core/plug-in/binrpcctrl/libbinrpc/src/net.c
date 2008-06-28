@@ -582,8 +582,10 @@ bool brpc_sendto(int sockfd, brpc_addr_t *dest, brpc_t *msg, brpc_tv_t tout)
 		if ((sent = sendto(sockfd, pos, still, MSG_DONTWAIT
 #ifdef MSG_NOSIGNAL
 				   |MSG_NOSIGNAL
-#elseifdef MSG_NOSIGPIPE
+#else
+#ifdef MSG_NOSIGPIPE
 				   |MSG_NOSIGPIPE
+#endif
 #endif
 				   , saddr, saddrlen)) < 0) {
 
@@ -685,8 +687,10 @@ brpc_t *brpc_recvfrom(int sockfd, brpc_addr_t *src, brpc_tv_t tout)
 					 MSG_DONTWAIT
 #ifdef MSG_NOSIGNAL
 					 |MSG_NOSIGNAL
-#elseifdef MSG_NOSIGPIPE
+#else
+#ifdef MSG_NOSIGPIPE
 					 |MSG_NOSIGPIPE
+#endif
 #endif
 					 , saddr, addrlen))) {
 
