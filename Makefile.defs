@@ -232,7 +232,7 @@ INSTALL-DOC = $(INSTALL) -m 644
 INSTALL-AUDIO = $(INSTALL) -m 644
 
 #export stuff to sub-makes
-export REL_VERSION RELEASE
+export REL_VERSION RELEASE OS
 export CPPFLAGS CXXFLAGS LDFLAGS CFLAGS LIB_LDFLAGS
 export CXX CC LD
 export DESTDIR PREFIX prefix basedir ser-prefix
