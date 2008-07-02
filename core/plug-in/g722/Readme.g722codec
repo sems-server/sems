@@ -1,0 +1,10 @@
+This is a wrapper around the g722 codec from the spandsp library.
+
+G.722 is an ADPCM wideband (16khz) codec. Here the NB compatibility 
+mode is used - it is decoded in and encoded from 8khz.
+
+See  
+http://www.soft-switch.org/spandsp-modules.html 
+ and 
+http://www.soft-switch.org/spandsp-doc/g722_page.html
+for details about spandsp.

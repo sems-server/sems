@@ -1,6 +1,6 @@
 include ../../Makefile.defs
 
-exclude_modules ?= 
+exclude_modules ?= g722
 #echo
 
 modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
