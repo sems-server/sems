@@ -4,7 +4,7 @@ SPANDSP_INC=
 #/usr/include/
 SPANDSP_LIB = -lspandsp
 
-module_ldflags = $(SPEEX_LIB)
+module_ldflags = $(SPANDSP_LIB)
 module_cflags  = -ansi # -DNOFPU
 
 ifdef NOFPU
