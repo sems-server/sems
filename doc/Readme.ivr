@@ -9,8 +9,8 @@ Description:
 
 The 'ivr' plug-in enables SEMS to execute Python scripts 
 implementing some application. If you need more information
-concerning the developement of your own applications, have a
-look at the HOWTO under following link:
+concerning the developement of applications, please also have a
+look at the python section of the HOWTO under following link:
 http://www.iptel.org/howto/sems_application_development_tutorial
 
 Configuration file ivr.conf:
@@ -22,45 +22,16 @@ script_path: path to the script repository. All the scripts
 Note: Pre-loaded IVR scripts are registered and thus reachable
       just like every other SEMS application plug-in.
 
-Warning: For security reasons, only pre-loaded scripts can 
-         be executed.
+For security reasons, only pre-loaded scripts can be executed.
 
 
 How to select which Python script will be executed:
 ---------------------------------------------------
 
-
-there are quite a few possibilities to call a certain script:
-
-* based on username:
-
-  - in ser.cfg:
-    t_write_unix("/tmp/sems_sock","ivr")
-
-  - in this case, the script is determined by the username 
-    found in the request URI.
-
-  - Ex: R-URI 123@sems.iptel.org starts <script_path>/123.py
-
-
-* based on the plugin name parameter:
-
-  - in ser.cfg:
-    t_write_unix("/tmp/sems_sock","whatEverScriptYouWantToUse")
-
-  - this will start <script_path>/whatEverScriptYouWantToUse.py, 
-    no matter which URI has been dialed.
-
-
-* based on the "P-App-Name" header:
-
-  - in ser.cfg:
-    t_write_unix("/tmp/sems_sock","sems")
-
-  - the SIP message should contain following header:
-    P-App-Name: whatEverScriptYouWantToUse
-
-  - this form will start the application/script mentioned in the header value.
+If the application determined by the normal application selection 
+(sems.conf application=xyz) is "ivr", the script is executed which 
+is named as the username. 
+Example: R-URI 123@sems.iptel.org starts <script_path>/123.py
 
 
 Troubleshooting:
@@ -105,8 +76,12 @@ IVR API quickref:
               log using sems' log facility
 
           createThread(Callable thread)
-              create a thread. Only to be used on module 
-              initialization code!
+              create a thread. Only to be used in module 
+              initialization code (no effect afterwards)
+
+	  AUDIO_READ, AUDIO_WRITE (IvrAudioFile::open, fpopen)
+
+	  SEMS_LOG_LEVEL (start log level)
 
 class IvrDialogBase:
 
@@ -126,6 +101,11 @@ class IvrDialogBase:
     def onDtmf(self,key,duration): # received DTMF
         pass
 
+    def onSipReply(IvrSipReply r):
+    	pass
+
+    def onSipRequest(IvrSipRequest r):
+    	pass
 
     # Session control
     def stopSession(self): # stop everything
@@ -201,3 +181,69 @@ class IvrDialogBase:
 
     # B2BUA Event handlers
     # some other handlers...
+
+class IvrUAC: 
+      # make a new outgoing call
+      def dialout(str user, str app_name, str r_uri, 
+		       str from, str from_uri, str to)
+
+# see AmAudioMixIn.h
+class IvrAudioMixIn: 
+      #
+      # initialize with two audio devices, interval s, mixing level l, and 
+      # the finish_b_while_mixing flag (optional, default false)
+      def init(IvrAudio audio_a, IvrAudio audio_b, int s, double l [, int finish])
+
+class AmAudioFile:
+      #"open the audio file"
+      def open(str filename, int open_mode [, bool is_tmp])
+      #"open the audio file"
+      def fpopen(str filename, int open_mode, File fp)
+      # "close the audio file"
+      def close()
+      # "rewind the audio file"
+      def rewind()
+      #   "returns the recorded data size"
+      int getDataSize()
+      #   "set the maximum record time in millisecond"
+      def setRecordTime(int record_time)
+      #   "creates a new Python file with the actual file"
+      #   " and eventually flushes headers (audio->on_stop)"
+      def exportRaw()
+      #   "text to speech"
+      def tts(str text)
+
+class IvrSipRequest: 
+# properties are read-only
+      str method
+      str user
+      str domain
+      str dstip
+      str port
+
+      str r_uri
+      str from_uri
+      str from
+      str to
+      str callid
+      str from_tag
+      str to_tag
+      str route
+      str next_hop
+      int cseq
+      str body
+      str hdrs
+
+class IvrSipReply:
+# properties are read-only
+      int code
+      str reason
+      str next_request_uri
+      str next_hop
+      str route
+      str hdrs
+      str body
+      str remote_tag
+      str local_tag
+      int cseq      
+
