@@ -99,16 +99,26 @@ int get_announce_msg(string application, string message, string user,
 	DBG("Query string <%s>\n", query_string.c_str());
 
 	query << query_string;
+
+#ifdef VERSION2
 	mysqlpp::Result res = query.store();
+#else
+    	mysqlpp::StoreQueryResult res = query.store();
+#endif
 
 	mysqlpp::Row row;
 
 	if (res) {
 	    if ((res.num_rows() > 0) && (row = res.at(0))) {
 		FILE *file;
-		unsigned long length = row.raw_string(0).size();
 		file = fopen((*audio_file).c_str(), "wb");
+#ifdef VERSION2
+		unsigned long length = row.raw_string(0).size();
 		fwrite(row.at(0).data(), 1, length, file);
+#else
+		mysqlpp::String s = row[0];
+		fwrite(s.data(), 1, s.length(), file);
+#endif
 		fclose(file);
 		return 1;
 	    } else {
@@ -200,7 +210,11 @@ int EarlyAnnounceFactory::onLoad()
 
   try {
 
+#ifdef VERSION2
     Connection.set_option(Connection.opt_reconnect, true);
+#else
+    Connection.set_option(new mysqlpp::ReconnectOption(true));
+#endif
     Connection.connect(mysql_db.c_str(), mysql_server.c_str(),
 		       mysql_user.c_str(), mysql_passwd.c_str());
     if (!Connection) {
