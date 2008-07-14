@@ -268,6 +268,8 @@ class AmArg
    *   e.g. "ssif" -> [cstr, cstr, int, double]
    */
   void assertArrayFmt(const char* format) const;
+
+  void clear();
 };
 
 #endif

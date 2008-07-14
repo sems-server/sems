@@ -326,3 +326,6 @@ vector<ArgBlob> AmArg::asArgBlobVector() const {
   return res;					
 }			
 
+void AmArg::clear() {
+  invalidate();
+}
