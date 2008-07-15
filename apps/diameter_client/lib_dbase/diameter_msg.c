@@ -1,5 +1,5 @@
 /*
- * $Id: message.c,v 1.4 2004/08/24 08:58:25 janakj Exp $
+ * $Id$
  *
  * 2003-04-07 created by bogdan
  *

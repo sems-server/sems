@@ -1,5 +1,5 @@
 /*
- * $Id: DtmfTester.cpp 410 2007-07-29 15:14:14Z sayer $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

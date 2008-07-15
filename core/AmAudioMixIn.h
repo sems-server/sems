@@ -1,5 +1,5 @@
 /*
- * $Id: AmAudioMixIn.h 322 2007-05-02 18:49:26Z sayer $
+ * $Id$
  *
  * Copyright (C) 2007 iptego GmbH
  *

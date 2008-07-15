@@ -1,5 +1,5 @@
 /*
- * $Id: AmAudio.cpp 633 2008-01-28 18:17:36Z sayer $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

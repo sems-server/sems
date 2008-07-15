@@ -1,5 +1,5 @@
 /*
- * $Id: ServiceLine.h 433 2007-08-29 20:17:38Z sayer $
+ * $Id$
  *
  * Copyright (C) 2007 iptego GmbH
  *

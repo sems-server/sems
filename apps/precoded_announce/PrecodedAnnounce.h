@@ -1,5 +1,5 @@
 /*
- * $Id: AmUtils.h 744 2008-02-21 18:40:01Z sayer $
+ * $Id$
  *
  * Copyright (C) 2008 iptego GmbH
  *

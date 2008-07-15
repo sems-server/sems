@@ -1,5 +1,5 @@
 /*
- * $Id: AmB2ABSession.h 145 2006-11-26 00:01:18Z sayer $
+ * $Id$
  *
  * Copyright (C) 2006-2007 iptego GmbH
  *

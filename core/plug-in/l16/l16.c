@@ -1,5 +1,5 @@
 /*
- * $Id: wav.c 261 2007-03-07 20:34:39Z sayer $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

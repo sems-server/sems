@@ -1,5 +1,5 @@
 /*
- * $Id: IvrSipReply.cpp,v 1.15.2.1 2005/09/02 13:47:46 sayer Exp $
+ * $Id$
  * Copyright (C) 2007 iptego GmbH
  *
  * This file is part of sems, a free SIP media server.

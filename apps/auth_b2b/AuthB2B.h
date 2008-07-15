@@ -1,5 +1,5 @@
 /*
- * $Id: $
+ * $Id$
  *
  * Copyright (C) 2008 iptego GmbH
  * Based on the concept of sw_prepaid_sip, Copyright (C) 2007 Sipwise GmbH

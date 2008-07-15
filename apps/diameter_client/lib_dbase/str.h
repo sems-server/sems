@@ -1,5 +1,5 @@
 /*
- * $Id: str.h,v 1.4.2.1 2005/11/17 03:56:02 sobomax Exp $
+ * $Id$
  *
  * Copyright (C) 2001-2003 FhG Fokus
  *

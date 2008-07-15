@@ -1,5 +1,5 @@
 /*
- * $Id: avp.c,v 1.3 2004/08/24 08:58:25 janakj Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2003 FhG Fokus
  *

@@ -1,5 +1,5 @@
 /*
- * $Id: $
+ * $Id$
  *
  * Copyright (C) 2007 Sipwise GmbH
  * Based on the concept of mycc, Copyright (C) 2002-2003 Fhg Fokus

@@ -1,5 +1,5 @@
 /*
- * $Id: CTConfD.h 145 2006-11-26 00:01:18Z sayer $
+ * $Id$
  *
  * Copyright (C) 2006 ipteo GmbH
  *

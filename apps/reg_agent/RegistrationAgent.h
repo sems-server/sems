@@ -1,5 +1,5 @@
 /*
- * $Id: RegistrationAgent.h,v 1.6.8.1 2005/06/01 12:00:24 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2007 iptego GmbH
  *

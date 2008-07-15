@@ -1,5 +1,5 @@
 /*
- * $Id: AmSession.h,v 1.20.2.5 2005/08/31 13:54:29 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2006 iptego GmbH
  *

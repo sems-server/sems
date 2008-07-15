@@ -1,5 +1,5 @@
 /*
- * $Id: CacheAnnounce.h 145 2006-11-26 00:01:18Z sayer $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  * Copyright (C) 2007 iptego GmbH

@@ -1,5 +1,5 @@
 /*
- * $Id: AnnRecorder.cpp 722 2008-02-12 12:52:31Z sayer $
+ * $Id$
  *
  * Copyright (C) 2008 iptego GmbH
  *

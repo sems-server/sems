@@ -1,5 +1,5 @@
 /*
- * $Id: AmCallWatcher.cpp 279 2007-03-23 21:30:44Z sayer $
+ * $Id$
  *
  *  (c) 2007 iptego GmbH
  *

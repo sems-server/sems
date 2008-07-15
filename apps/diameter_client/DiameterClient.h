@@ -1,5 +1,5 @@
 /*
- * $Id: ServerConnection.cpp 463 2007-09-28 11:54:19Z sayer $
+ * $Id$
  *
  * Copyright (C) 2007 iptego GmbH
  *

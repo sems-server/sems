@@ -1,6 +1,6 @@
 
 /*
- * $Id: AmPromptFileCollection.cpp 288 2007-03-28 16:32:02Z sayer $
+ * $Id$
  *
  * Copyright (C) 2007 iptego GmbH
  *

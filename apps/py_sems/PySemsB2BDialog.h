@@ -1,5 +1,5 @@
 /*
- * $Id: PySemsDialog.h,v 1.26.2.1 2005/09/02 13:47:46 rco Exp $
+ * $Id$
  * 
  * Copyright (C) 2002-2003 Fhg Fokus
  * Copyright (C) 2006 iptego GmbH

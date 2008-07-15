@@ -1,5 +1,5 @@
 /*
- * $Id: AnnRecorder.h 711 2008-02-10 18:52:44Z sayer $
+ * $Id$
  *
  * Copyright (C) 2008 iptego GmbH
  *

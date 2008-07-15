@@ -1,5 +1,5 @@
 /*
- * $Id: AmZRTP.h 934 2008-05-06 09:25:34Z sayer $
+ * $Id$
  *
  * Copyright (C) 2008 iptego GmbH
  *

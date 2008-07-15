@@ -1,5 +1,5 @@
 /*
- * $Id: Conference.cpp 288 2007-03-28 16:32:02Z sayer $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

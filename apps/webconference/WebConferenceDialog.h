@@ -2,7 +2,7 @@
 #define _WebconferenceDialog_H_
 
 /*
- * $Id: PinAuthConference.h 288 2007-03-28 16:32:02Z sayer $
+ * $Id$
  *
  * Copyright (C) 2007-2008 iptego GmbH
  *

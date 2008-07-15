@@ -1,5 +1,5 @@
 /*
- * $Id: $
+ * $Id$
  *
  * Copyright (C) 2008 iptego GmbH
  * Based on the concept of auth_b2b, Copyright (C) 2008 iptego GmbH

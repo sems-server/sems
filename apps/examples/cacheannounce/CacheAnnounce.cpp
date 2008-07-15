@@ -1,5 +1,5 @@
 /*
- * $Id: CacheAnnounce.cpp 206 2007-02-05 14:45:07Z sayer $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  * Copyright (C) 2007 iptego GmbH

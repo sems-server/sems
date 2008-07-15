@@ -1,5 +1,5 @@
 /*
- * $Id: AmArg.h 368 2007-06-12 18:24:33Z sayer $
+ * $Id$
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *

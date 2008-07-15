@@ -1,5 +1,5 @@
 /*
- * $Id: $
+ * $Id$
  *
  * Copyright (C) 2008 iptego GmbH
  * Based on the concept of mycc, Copyright (C) 2007 Sipwise GmbH

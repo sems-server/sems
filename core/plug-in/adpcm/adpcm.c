@@ -1,5 +1,5 @@
 /*
- * $Id: adpcm.c 261 2007-03-07 20:34:39Z sayer $
+ * $Id$
  *
  * Copyright (C) 2007 iptego GmbH
  * 

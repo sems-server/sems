@@ -1,5 +1,5 @@
 /*
- * $Id: AmDtmfDetector.h,v 1.1.2.1 2005/06/01 12:00:24 rco Exp $
+ * $Id$
  *
  * Copyright (C) 2006 Sippy Software, Inc.
  *
