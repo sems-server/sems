@@ -1,0 +1,10 @@
+ o explicit condition ordering (explicit priority)
+ o checking of FSM consitency (e.g. target state names)
+ o better error reporting in script compilation (e.g. line number)
+ o better error handling (exceptions)
+ o 'not' operator on conditions
+ o 'or' operator
+ o provide session init function for modules
+ o embed python interpreter in module ?
+   -> py( ... python code ... ) condition and action
+ o correct en/decode DI args (e.g. arrays)

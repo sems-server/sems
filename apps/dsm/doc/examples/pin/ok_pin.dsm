@@ -1,0 +1,9 @@
+-- this is a commend
+   -- this is a comment
+
+      -- this is a comment
+
+initial state START 
+	enter {
+	  playPrompt(ok_pin);
+	};

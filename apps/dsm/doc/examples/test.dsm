@@ -1,0 +1,32 @@
+
+initial state START 
+	enter {
+	  playPrompt(hello);
+	  DI(user_timer, setTimer, (int)1, (int)5, @local_tag);
+	  DI(user_timer, setTimer, (int)2, (int)20, @local_tag);
+	  recordFile(/tmp/test_rec.wav);
+	};
+
+state ADDKEY;
+state FIN;
+
+transition "start pin entry" START - / set($pin = "") -> ADDKEY;
+
+transition "play from timer" ADDKEY - timerTest(#id == 1) /  {
+	   playPrompt(hello); 
+	   stopRecord();
+	   closePlaylist();
+	   playFile("/tmp/test_rec.wav");
+	   } 
+    -> ADDKEY;
+
+transition "add a key" ADDKEY - keyTest(#key < 10) / 
+	   { 
+	     append($pin, #key);
+	     playPrompt(#key);
+	   } -> ADDKEY;
+
+transition "timeout stop it" ADDKEY - timerTest(#id == 2) / stop(true) -> FIN;
+
+transition finished ADDKEY - keyTest(#key > 9) / playPrompt(entering) -> FIN;
+

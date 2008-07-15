@@ -1,0 +1,6 @@
+-- another nonsensical fsm...
+initial state start;
+transition "just an example" start - / { playPrompt(1); playPrompt(2); playPrompt(3); } -> end;
+state end;
+transition "stop it" end - noAudioTest() / stop(true) -> end;
+transition "bye recvd" end - hangup() / stop(false) -> end;

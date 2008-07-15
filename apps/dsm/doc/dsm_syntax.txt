@@ -1,0 +1,102 @@
+=============================
+-- comment
+import(mod_name);
+
+[initial] state name 
+	  [ enter { 
+	      action; 
+	      action;
+	      ...
+	    } ] 
+	  [ exit { 
+	      action;
+	      action;
+	      ...
+	    } ]
+      ;
+
+transition name s1 - [ { condition; condition; ... } ] [/ { action; action; ...} ]  -> s2;
+
+=============================
+#paramname uses the event parameter 'paramname' (from current event)
+$varname uses the variable varname (from session's variable map)
+@selectname uses the "select" 'selectname' (from the session's dialog)
+=============================
+actions:
+ -- reprocess the current event after transition:
+ repost()
+
+ -- call/jump/return sub-FSM
+ jumpFSM(name)
+ callFSM(name)
+ returnFSM()
+
+ playPrompt(param)
+   from promptCollection, e.g. playPrompt("hello");
+ playFile(filename)
+ recordFile(filename)
+ stopRecord()
+ closePlaylist
+
+ set($var, value)
+  e.g.  set($var, "text"); set($var, $var2); set($var, #key)
+ append($var, value)
+ e.g. append($var, "text"); append($var, #key);
+      append($var, @select); append($var, $var2);
+
+ log(level, text)
+   e.g. log(1, $var1)
+
+ setTimer(timer_id, timeout)
+   e.g. setTimer(1, $timeout)
+
+  DI(factory, function [, params...])
+  e.g. DI(factory, function, $var_param, (int)int_param, "$str param", @select_par, ...)
+       DI(user_timer, setTimer, (int)1, (int)5, @local_tag);
+  DIgetResult(factory, function, param,...)
+    saves result from DI call to DI_res or DI_res0, DI_res1, ...
+
+  stop(<send bye>)
+   e.g. stop(false), stop(true)
+============================= 
+conditions:
+ 
+ test(#key == 1)
+ test(#key != 1)
+ test(#key < 1)
+ test(#key > 1)
+
+ test($var == 1)
+ test($var != 1)
+ test($var < 1)
+ test($var < 1)
+
+ test(len($var) < len(#key))
+ test(len($var) < len(@user))
+
+ -- like test(expr), but only on key press
+ keyTest(expr) 
+ timerTest(expr)
+ noAudioTest(expr)
+
+ keyPress(no) 
+  -- bye received: 
+ hangup  
+   
+
+=============================
+@selects :
+ local_tag
+ user
+ domain
+ remote_tag
+ callid
+ local_uri
+ remote_uri
+=============================
+imports:
+ module imported with import(mod_name); loads mod_name.so in 
+ module load path. modules provide conditions and actions.
+ modules' actions/conditions-factory is checked first 
+ (modules can override core conditions/actions)
+

@@ -1,0 +1,153 @@
+344a345
+> 
+393a395,397
+>       out << "state " << sm.name;
+> 
+> 
+604a609,715
+> 
+> QString makeSC( StateMachine& sm, QTextStream& out, const char* header, bool debug )
+> {
+>     if( sm.name.isEmpty() ) return invalidName;
+>     if( !sm.state(sm.initialState) ) return invalidInitial;
+> 
+>     QStringList states = sm.stateList();
+>     if( states.isEmpty() ) return noStates;
+> 
+>     QStringList::Iterator it;
+> 
+>     for( it = states.begin(); it != states.end(); ++it ) {
+>       State* s = sm.state( *it );
+>       if (sm.initialState == *it) 
+> 	out << "initial "; 
+> 
+>       out << "state " << *it ;
+>       if (!s->incomeActions.empty()) {
+> 	out << endl << "     enter ";
+> 	out << " {" << endl << "        ";
+> 	OutputList::Iterator zIt;
+> 	for( zIt = s->incomeActions.begin(); zIt != s->incomeActions.end(); ++zIt ) {
+> 	  if (zIt != s->incomeActions.begin())
+> 	    out << endl  << "        ";
+> 	  out << (*zIt).first << "; ";
+> 	}
+> 	out << endl << "     }";
+>       }
+> 
+>       if (!s->outcomeActions.empty()) {
+> 	out << endl << "     exit ";
+> 	out << " {" << endl << "        ";
+> 	OutputList::Iterator zIt;
+> 	for( zIt = s->outcomeActions.begin(); zIt != s->outcomeActions.end(); ++zIt ) {
+> 	  if (zIt != s->outcomeActions.begin())
+> 	    out << endl  << "        ";
+> 	  out << (*zIt).first << "; ";
+> 	}
+> 	out << endl << "     }";
+>       }
+> 
+>       out << ";" << endl << endl;
+> 
+>       State::TransitionList::Iterator ti;
+>       bool first = true;
+> 
+>       State::TransitionList tl = s->transitionList();
+> 
+>       for( ti = tl.begin(); ti != tl.end(); ++ti ) {
+> 	
+>  	out << "transition ";
+> 	if ((*ti)->name().contains(' '))
+> 	  out << "\"";
+> 	out <<  (*ti)->name();
+> 	if ((*ti)->name().contains(' '))
+> 	  out << "\"";
+> 
+> 	out << " " << s->name() << " ";
+> 	out << "-";
+> 
+> //  	out << "transition " <<  (*ti)->name() << " " << s->name() << " ";
+> // 	out << "-";
+> 
+> 
+> 	if (!(*ti)->condition.isEmpty()) {
+> 	  QString cond = (*ti)->condition;
+> 	  
+> 	  int i=0;
+> 	  while (i < cond.length()) {
+> 	    i = cond.find('\n', i);
+> 	    if (i < 0)
+> 	      break;
+> 	    cond = cond.replace(i, 1, "\n           ");
+> 	    i+=1;
+> 	  }
+> 
+> 	  if (cond.contains('\n')) 
+> 	    out << " {" << endl << "          ";
+> 
+> 	  out << " " << cond  << " ";
+> 
+> 	  if (cond.contains('\n')) 
+> 	    out << endl << "     " << " }" << endl;
+> 	}
+> 
+> 	if (!(*ti)->actions.empty()) {
+> 	  if (!(*ti)->condition.isEmpty())
+> 	    out << "       " ;
+> 	  out << "/ "; 
+> 	  if ((*ti)->actions.size() > 1) 
+> 	    out << " { ";
+> 
+> 	  OutputList::Iterator zIt;
+> 	  for( zIt = (*ti)->actions.begin(); zIt != (*ti)->actions.end(); ++zIt )
+> 	    out << (*zIt).first << "; ";
+> 
+> 	  if ((*ti)->actions.size() > 1) 
+> 	    out << "} ";
+> 
+> 	}
+> 	out  << "-> " << (*ti)->target << ";" << endl << endl ;
+>       }
+>     }
+> 
+>     return QString();
+> }
+> 
+775a887,889
+>     
+>     makeSC(sm, out, "", debug);
+>     return 0;
+777,792c891,907
+<     if( !impl ) {
+<         // qDebug( "writing declaration to %s", outputFile );
+<         QString error = makeHeader( sm, out, debug );
+<         if( !error.isEmpty() ) {
+<             SHOW_ERROR( error );
+<             exit( 1 );
+<         }
+<     }
+<     else {
+<         // qDebug( "writing implementation with header %s to %s", headerFile, outputFile );
+<         QString error = makeBody( sm, out, headerFile, debug );
+<         if( !error.isEmpty() ) {
+<             SHOW_ERROR( error );
+<             exit( 1 );
+<         }
+<     }
+---
+> 
+> //     if( !impl ) {
+> //         // qDebug( "writing declaration to %s", outputFile );
+> //         QString error = makeHeader( sm, out, debug );
+> //         if( !error.isEmpty() ) {
+> //             SHOW_ERROR( error );
+> //             exit( 1 );
+> //         }
+> //     }
+> //     else {
+> //         // qDebug( "writing implementation with header %s to %s", headerFile, outputFile );
+> //         QString error = makeBody( sm, out, headerFile, debug );
+> //         if( !error.isEmpty() ) {
+> //             SHOW_ERROR( error );
+> //             exit( 1 );
+> //         }
+> //     }

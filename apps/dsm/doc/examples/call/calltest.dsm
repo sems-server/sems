@@ -1,0 +1,22 @@
+
+initial state START 
+	enter {
+	  playPrompt(hello);
+	};
+
+state ADDKEY;
+state FIN;
+
+transition "start pin entry" START - / set($pin = "") -> ADDKEY;
+
+transition "add a key" ADDKEY - keyTest(#key < 10) / 
+	   { 
+ 	     closePlaylist();
+	     append($pin, #key);
+	     playPrompt(#key);
+	     callFSM(callsub)
+	   } -> ADDKEY;
+
+
+transition bye_recvd ADDKEY - hangup() / stop(false) -> FIN;
+

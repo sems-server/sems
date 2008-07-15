@@ -1,0 +1,5 @@
+initial state START 
+	enter {
+	  log(3, $pin);
+	  returnFSM();
+	};

@@ -1,0 +1,76 @@
+
+initial state START 
+	enter {
+	  playPrompt(hello);
+	  -- test only: should go in onLoad() code, 
+	  -- otherwise one connection per call
+	  DI(xmlrpc2di, newConnection, vbs, 127.0.0.1,(int)8302, "");
+	};
+
+state ADDKEY;
+state PLAY_FIN;
+
+state BYE
+        enter {
+         stop(true);
+        };
+
+state FIN
+        enter {
+         stop(false);
+        };
+
+transition bye_after_fin PLAY_FIN - noAudioTest(1 == 1) -> BYE;
+
+
+state TESTPINRESULT 
+         enter {
+	    log(3, $validPin)
+	    log(3, $tryAgain)
+         };
+
+transition "start pin entry" START - / set($pin = "") -> ADDKEY;
+
+transition "add a key" ADDKEY - keyTest(#key < 10) / 
+	   { 
+ 	     closePlaylist();
+	     append($pin, #key);
+	     playPrompt(#key);
+	   } -> ADDKEY;
+
+transition bye_recvd ADDKEY - hangup() -> FIN;
+transition bye_recvd PLAY_FIN - hangup() -> FIN;
+
+transition check_pin_server ADDKEY - keyTest(#key > 9) /  {
+	    closePlaylist();
+            playPrompt(entering);
+ 	    DIgetResult(xmlrpc2di, sendRequestList, vbs, checkPIN, @user, $pin);
+	    set($status=      $DI_res0);
+	    set($description= $DI_res1);
+	    set($domt=        $DI_res2);
+	    set($imguid=      $DI_res3);
+	    set($inid=        $DI_res4);
+	    set($vbsSessionId=$DI_res5);
+	    set($validPin=    $DI_res6);
+	    set($tryAgain=    $DI_res7);
+	    set($participantType=$DI_res8);
+	    set($inProgress=  $DI_res9);
+	    set($registered=  $DI_res10);
+	    set($startTime=   $DI_res11);
+	    repost();
+	   }   -> TESTPINRESULT;
+
+transition incorrect_retry TESTPINRESULT - 
+	          test($validPin == 0); test($tryAgain == 1) 
+                 / { 
+                  set($pin=""); 
+                  playPrompt(retry_pin);
+                } -> ADDKEY; 
+
+transition incorrect_no_retry TESTPINRESULT - 
+	          test($validPin == 0); test($tryAgain == 0) 
+                 / { 
+                  playPrompt(no_retry_pin);
+                } -> PLAY_FIN;
+
+transition correct_pin TESTPINRESULT - test($validPin == 0); / jumpFSM(ok_pin) -> PLAY_FIN;

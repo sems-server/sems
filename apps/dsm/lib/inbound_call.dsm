@@ -1,0 +1,27 @@
+-- this is just a nonsense script
+import(mod_sys);
+
+initial state start;
+
+transition "secret door" start - test($pin == 155) -> the_secret_room;
+transition "another key below 7" start - keyTest(#key < 7) / { append($pin, #key); playPrompt(#key); } -> start;
+
+transition "everything else" start - keyTest() / log(2, $pin); stop(true) -> end;
+
+state end;
+
+state the_secret_room 
+      enter {
+      	    recordFile(/tmp/record.wav)
+      	    setTimer(1, 10);	       
+            -- another way to set a timer: DI(user_timer, setTimer, (int)1, (int)10, @local_tag);
+      };
+transition replay the_secret_room - timerTest(#id == 1) / { stopRecord(); playFile(/tmp/record.wav); } -> the_replay;
+
+state the_replay;
+transition fin the_replay - noAudioTest() / stop(true) -> end;
+
+transition "bye recvd" start - hangup() / stop(false) -> end;
+transition "bye recvd" the_replay - hangup() / stop(false) -> end;
+transition "bye recvd" the_secret_room - hangup() / stop(false) -> end;
+
