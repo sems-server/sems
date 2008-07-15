@@ -60,6 +60,7 @@ install-cfg:
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
 			-e "s#/usr/.*lib/sems/ivr/#$(lib-target)ivr/#g" \
+			-e "s#/usr/.*lib/sems/dsm/#$(lib-target)dsm/#g" \
 			-e "s#/usr/.*lib/sems/py_sems/#$(lib-target)py_sems/#g" \
 			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
 			< $$r > $(DESTDIR)$(cfg-target)$$r; \
