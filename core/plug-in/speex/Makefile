@@ -1,4 +1,5 @@
 plug_in_name = speex
+COREPATH =../..
 
 SPEEX_INC=
 #/usr/include/
