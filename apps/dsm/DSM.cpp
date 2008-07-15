@@ -36,6 +36,8 @@
 #include <fstream>
 
 
+#define MOD_NAME "dsm"
+
 // session creator export 
 extern "C" void* session_factory_create() {
   return DSMFactory::instance();

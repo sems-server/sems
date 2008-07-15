@@ -6,7 +6,7 @@ include $(COREPATH)/../Makefile.defs
 
 exclude_modules ?= 
 modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
-		$(wildcard Makefile*), \
+		$(wildcard Makefile*) lib, \
 		$(wildcard *) )
 
 
@@ -15,7 +15,7 @@ all: modules
 
 .PHONY: clean
 clean:
-	-@rm -f *.so
+	-@rm -f lib/*.so
 	-@for r in $(modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
