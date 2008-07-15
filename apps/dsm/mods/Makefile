@@ -1,5 +1,5 @@
-DSMPATH ?= ../
-COREPATH ?= $(DSMPATH)/../../core
+DSMPATH = ../
+COREPATH = $(DSMPATH)/../../core
 .DEFAULT_GOAL := all
 
 include $(COREPATH)/../Makefile.defs
