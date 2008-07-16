@@ -315,6 +315,7 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
   int timer_id = timeout_ev->data.get(0).asInt();
 
   if (timer_id == ID_SESSION_REFRESH_TIMER) {
+    DBG("Session Timer: initiating refresh (Re-Invite)\n");
     if (session_refresher == refresh_local) 
       // send reinvite with SDP
       s->sendReinvite(true);
@@ -323,10 +324,9 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
   } else if (timer_id == ID_SESSION_INTERVAL_TIMER) {
     //     // let the session know it got timeout
     //     onTimeout();
-	
+    DBG("Session Timer: Timerout, ending session.\n");
     s->dlg.bye();
     s->setStopped();
-
   } else {
     DBG("unknown timeout event received.\n");
   }
