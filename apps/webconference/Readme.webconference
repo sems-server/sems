@@ -92,9 +92,7 @@ unmute(string room, string adminpin, string call_tag) :
 	  2     call does not exist in room
 ----
 serverInfo():
-      string name,
-      int load,
-      int cpu
+      string serverInfo
 ----
 getRoomPassword(string master_pwd, string room)
     int code, string result
