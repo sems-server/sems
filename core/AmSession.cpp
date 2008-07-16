@@ -885,8 +885,8 @@ void AmSession::setOnHold(bool hold)
 // TODO: Contact header! :)
 string AmSession::advertisedIP()
 {
-  string set_ip = AmConfig::PublicIP; // "public_ip" parameter. (NEW)
-  DBG("AmConfig::PublicIP is %s.", set_ip.c_str());
+  string set_ip = AmConfig::PublicIP; // "public_ip" parameter. 
+  DBG("AmConfig::PublicIP is %s.\n", set_ip.c_str());
   if (set_ip.empty())
     return AmConfig::LocalIP;           // "listen" parameter.
   return set_ip;
