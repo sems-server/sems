@@ -6,13 +6,13 @@ QUERY_STATS_NAME = sems-stats
 module_ldflags = 
 module_cflags  = 
 
-extra_target = query_stats
+extra_target = $(QUERY_STATS_NAME)
 extra_install = install_query_stats
 extra_clean = clean_query_stats
 
 include ../Makefile.app_module
 
-query_stats: query_stats.c Makefile
+$(QUERY_STATS_NAME): query_stats.c Makefile
 	$(CXX) $(CXXFLAGS) -o $(QUERY_STATS_NAME) query_stats.c
 
 install_query_stats: query_stats $(DESTDIR)$(bin-prefix)/$(bin-dir)
