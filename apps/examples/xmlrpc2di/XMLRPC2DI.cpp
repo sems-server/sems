@@ -26,12 +26,12 @@
  */
 #include "XMLRPC2DI.h"
 
-#include "AmSessionContainer.h"
 #include "AmPlugIn.h"
 #include "log.h"
 #include "AmConfigReader.h"
 #include "AmUtils.h"
 #include "AmArg.h"
+#include "AmSession.h"
 
 #define MOD_NAME "xmlrpc2di"
 
@@ -326,7 +326,7 @@ void XMLRPC2DIServer::on_stop() {
   DBG("sorry, don't know how to stop the server.\n");
 }
 void XMLRPC2DIServerCallsMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
-  int res = AmSessionContainer::instance()->getSize();
+  int res = AmSession::getSessionNum();
   DBG("XMLRPC2DI: calls = %d\n", res);
   result = res;
 }
