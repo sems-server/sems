@@ -358,7 +358,7 @@ bool AmSessionAudioConnector::disconnectSession(AmSession* sess)
 
 // ----------------------- AudioDelayBridge -----------------
 /** BRIDGE_DELAY is needed because of possible different packet sizes */ 
-#define BRIDGE_DELAY 320 // 30ms 
+#define BRIDGE_DELAY 30 * SYSTEM_SAMPLERATE/1000 // 30ms 
 
 /* AudioBridge */
 AmAudioDelayBridge::AmAudioDelayBridge()
