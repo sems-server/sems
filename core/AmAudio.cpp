@@ -129,7 +129,7 @@ AmAudioRtpFormat::~AmAudioRtpFormat()
 
 AmAudioFormat::AmAudioFormat()
   : channels(-1), rate(-1), codec(NULL),
-    frame_length(20), frame_size(160), frame_encoded_size(320)
+    frame_length(20), frame_size(20*SYSTEM_SAMPLERATE/1000), frame_encoded_size(320)
 {
 
 }
