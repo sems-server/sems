@@ -462,7 +462,7 @@ AmSemsInbandDtmfDetector::AmSemsInbandDtmfDetector(AmKeyPressSink *keysink)
     m_last(' '),
     m_idx(0),
     m_count(0),
-    SAMPLERATE(8000)
+    SAMPLERATE(SYSTEM_SAMPLERATE)
 {
   /* precalculate 2 * cos (2 PI k / N) */
   for(unsigned i = 0; i < NELEMSOF(rel_cos2pik); i++) {

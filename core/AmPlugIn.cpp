@@ -92,7 +92,7 @@ amci_codec_t _codec_tevent = {
 amci_payload_t _payload_tevent = { 
   -1,
   "telephone-event",
-  8000,
+  8000, // telephone-event has always SR 8000 
   -1,
   CODEC_TELEPHONE_EVENT,
   -1 

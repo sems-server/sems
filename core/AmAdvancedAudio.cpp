@@ -223,7 +223,7 @@ int AmAudioDelay::write(unsigned int user_ts, unsigned int size) {
 }
 
 int AmAudioDelay::read(unsigned int user_ts, unsigned int size) { 
-  sarr.read((unsigned int) (user_ts  - delay*8000.0), (short*)  ((unsigned char*) samples), size >> 1); 
+  sarr.read((unsigned int) (user_ts  - delay*(float)SYSTEM_SAMPLERATE), (short*)  ((unsigned char*) samples), size >> 1); 
   return size;
 }
 

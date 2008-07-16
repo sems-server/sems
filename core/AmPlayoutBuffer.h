@@ -42,18 +42,18 @@ using std::multiset;
 #define EXP_THRESHOLD 20
 #define SHR_THRESHOLD 180
 
-#define WSOLA_START_OFF  80
+#define WSOLA_START_OFF  10 * SYSTEM_SAMPLERATE / 1000
 #define WSOLA_SCALED_WIN 50
 
-// the maximum packet size that will be processed
-//   640 is 80ms @ 8khz
-#define MAX_PACKET_SAMPLES 640
-// search segments of size TEMPLATE_SEG samples 
-#define TEMPLATE_SEG   80
+// the maximum packet size that will be processed (80ms)
+#define MAX_PACKET_SAMPLES 80 * SYSTEM_SAMPLERATE / 1000
+// search segments of size TEMPLATE_SEG samples (10 ms)
+#define TEMPLATE_SEG   10 * SYSTEM_SAMPLERATE / 1000
 
 // Maximum value: AUDIO_BUFFER_SIZE / 2
 // Note: plc result get stored in our back buffer
-#define PLC_MAX_SAMPLES (160*4) 
+// maximum of 80ms PLC
+#define PLC_MAX_SAMPLES (4*20*SYSTEM_SAMPLERATE / 1000) 
 
 class AmPLCBuffer;
 

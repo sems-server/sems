@@ -39,8 +39,6 @@
 
 #include <typeinfo>
 
-#define SYSTEM_SAMPLERATE 8000 // fixme: sr per session
-
 /** \brief structure to hold loaded codec instances */
 struct CodecContainer
 {
@@ -140,7 +138,7 @@ AmAudioSimpleFormat::AmAudioSimpleFormat(int codec_id)
   : AmAudioFormat(), codec_id(codec_id)
 {
   codec = getCodec();
-  rate = 8000;
+  rate = SYSTEM_SAMPLERATE;
   channels = 1;
 }
 
@@ -275,6 +273,7 @@ AmAudio::~AmAudio()
 }
 
 void AmAudio::setFormat(AmAudioFormat* new_fmt) {
+  DBG("set format to %p --------------------------\n", new_fmt);
   fmt.reset(new_fmt);
   fmt->resetCodec();
 }
@@ -377,10 +376,10 @@ int AmAudio::encode(unsigned int size)
 {
   int s = size;
 
-  //     if(!fmt.get()){
-  // 	DBG("no encode fmt\n");
-  // 	return 0;
-  //     }
+//   if(!fmt.get()){
+//     DBG("no encode fmt\n");
+//     return 0;
+//   }
 
   amci_codec_t* codec = fmt->getCodec();
   long h_codec = fmt->getHCodec();

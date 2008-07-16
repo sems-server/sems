@@ -28,6 +28,7 @@
 #ifndef _LowcFE_h_
 #define _LowcFE_h_
 
+#include "AmAudio.h"
 
 typedef float Float;
 
@@ -37,13 +38,13 @@ typedef float Float;
 #define POVERLAPMAX   (PITCH_MAX >> 2)              /* maximum pitch OLA window */
 #define HISTORYLEN    (PITCH_MAX * 3 + POVERLAPMAX) /* history buff length*/
 #define NDEC          2                             /* 2:1 decimation */
-#define CORRLEN       160                           /* 20 msec correlation length */
+#define CORRLEN       20 * SYSTEM_SAMPLERATE / 1000 /* 20 msec correlation length */
 #define CORRBUFLEN    (CORRLEN + PITCH_MAX)         /* correlation buffer length */
 #define CORRMINPOWER  ((Float)250.)                 /* minimum power */
 #define EOVERLAPINCR  32                            /* end OLA increment per frame,4 ms */
-#define FRAMESZ       80                            /* 10 msec at 8 KHz */
+#define FRAMESZ       (10 * SYSTEM_SAMPLERATE / 1000) /* 10 msec */
 #define ATTENFAC      ((Float).2)                   /* attenu. factor per 10 ms frame */
-#define ATTENINCR     (ATTENFAC/FRAMESZ)            /* attenuation per sample */
+#define ATTENINCR     (ATTENFAC/(Float)(FRAMESZ))   /* attenuation per sample */
 
 /** \brief LowcFE erased frame generator for fec (plc) */
 class LowcFE {

@@ -42,7 +42,7 @@
 
 #define PI 3.14 
 
-#define MAX_DELAY 8000 /* 1 second */
+#define MAX_DELAY SYSTEM_SAMPLERATE*1 /* 1 second */
 
 AmPlayoutBuffer::AmPlayoutBuffer(AmPLCBuffer *plcbuffer)
   : r_ts(0),w_ts(0), 

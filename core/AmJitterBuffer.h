@@ -29,11 +29,12 @@
 #define _AmJitterBuffer_h_
 
 #include "amci/amci.h"
+#include "AmAudio.h"
 #include "AmThread.h"
 #include "SampleArray.h"
 
-#define INITIAL_JITTER	    640 // 80 miliseconds
-#define MAX_JITTER	    16000 // 2 seconds
+#define INITIAL_JITTER	    80 * SYSTEM_SAMPLERATE / 1000 // 80 miliseconds
+#define MAX_JITTER	    2  * SYSTEM_SAMPLERATE // 2 seconds
 #define RESYNC_THRESHOLD    2
 
 class Packet {

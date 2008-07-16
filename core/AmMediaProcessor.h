@@ -28,8 +28,9 @@
 #ifndef _AmMediaProcessor_h_
 #define _AmMediaProcessor_h_
 
-#include "AmSession.h"
 #include "AmEventQueue.h"
+#include "amci/amci.h" // AUDIO_BUFFER_SIZE
+class AmSession;
 
 #include <set>
 using std::set;

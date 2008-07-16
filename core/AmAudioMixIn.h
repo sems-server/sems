@@ -33,8 +33,8 @@
 
 
 #define MAX_PACKETLENGTH_MS   30
-#define MAX_BUF_SAMPLES  8000 * MAX_PACKETLENGTH_MS / 1000
-#define DEFAULT_SAMPLE_RATE 8000 // eh...
+#define MAX_BUF_SAMPLES  SYSTEM_SAMPLERATE * MAX_PACKETLENGTH_MS / 1000
+#define DEFAULT_SAMPLE_RATE SYSTEM_SAMPLERATE // eh...
 
 /**
  * \brief \ref AmAudio to mix in every n seconds a file

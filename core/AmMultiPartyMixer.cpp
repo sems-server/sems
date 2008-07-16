@@ -37,7 +37,7 @@
 
 // the internal delay of the mixer (between put and get)
 #define MIXER_DELAY_MS 20
-#define MIXER_DELAY    MIXER_DELAY_MS*8  // 8000/1000
+#define MIXER_DELAY    MIXER_DELAY_MS*SYSTEM_SAMPLERATE/1000
 
 AmMultiPartyMixer::AmMultiPartyMixer()
   : channels(),

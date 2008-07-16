@@ -26,6 +26,7 @@
  */
 
 #include "AmMediaProcessor.h"
+#include "AmSession.h"
 #include "AmRtpStream.h"
 
 #include <assert.h>
@@ -212,7 +213,7 @@ void AmMediaProcessorThread::run()
     events.processEvents();
     processDtmfEvents();
 
-    ts += 80; // 10 ms
+    ts += 10 * SYSTEM_SAMPLERATE / 1000; // 10 ms
     timeradd(&tick,&next_tick,&next_tick);
   }
 }

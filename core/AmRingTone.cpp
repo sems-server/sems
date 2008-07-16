@@ -34,9 +34,9 @@ int AmRingTone::read(unsigned int user_ts, unsigned int size)
   for(unsigned int i=0; i<PCM16_B2S(size); i++, s++, t++){
 
     if(t < on_period<<3){
-      float fs = sin((float(t*freq)/8000.0)*2.0*PI)*15000.0;
+      float fs = sin((float(t*freq)/(float)SYSTEM_SAMPLERATE)*2.0*PI)*15000.0;
       if(freq2 != 0)
-	fs += sin((float(t*freq2)/8000.0)*2.0*PI)*15000.0;
+	fs += sin((float(t*freq2)/(float)SYSTEM_SAMPLERATE)*2.0*PI)*15000.0;
       *s = (short)(fs);
     }
     else
