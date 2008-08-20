@@ -87,7 +87,7 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
       
       if (nb_samples<<1 != len_from_a)
 	memset((void*)&pdest[len_from_a>>1], 0, 
-	       nb_samples<<1 - len_from_a);
+	       (nb_samples<<1) - len_from_a);
 
       // add audio from B
       len = B->get(user_ts, (unsigned char*)mix_buf, nb_samples);
