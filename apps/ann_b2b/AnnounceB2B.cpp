@@ -83,12 +83,12 @@ AmSession* AnnounceB2BFactory::onInvite(const AmSipRequest& req)
     
   DBG("trying '%s'\n",announce_file.c_str());
   if(file_exists(announce_file))
-    new AnnounceCallerDialog(announce_file);
+    return new AnnounceCallerDialog(announce_file);
     
   announce_file = announce_path + req.user + ".wav";
   DBG("trying '%s'\n",announce_file.c_str());
   if(file_exists(announce_file))
-    new AnnounceCallerDialog(announce_file);
+    return new AnnounceCallerDialog(announce_file);
     
   announce_file = AnnouncePath + AnnounceFile;
   return new AnnounceCallerDialog(announce_file);
