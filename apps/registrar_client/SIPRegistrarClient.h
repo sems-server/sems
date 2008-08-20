@@ -39,8 +39,10 @@
 
 #include <map>
 #include <string>
+#include <set>
 using std::map;
 using std::string;
+using std::set;
 
 struct SIPRegistrationInfo {
   string domain;
@@ -170,6 +172,13 @@ class SIPRegistrarClient  : public AmSIPEventHandler,
 
 
   void checkTimeouts();
+
+  bool started;
+  void start_once();
+
+  set<string> outstanding_regs;
+  AmMutex outstanding_regs_mut;
+
  public:
   SIPRegistrarClient(const string& name);
   // DI factory

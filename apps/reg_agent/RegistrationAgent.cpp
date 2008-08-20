@@ -156,19 +156,24 @@ bool RegThread::check_registration(const RegInfo& ri) {
       di_args.push(ri.handle.c_str());
       uac_auth_i->invoke("getRegistrationState", di_args, res);
       if (res.size()) {
-	if (!res.get(0).asInt())
+	if (!res.get(0).asInt()) {
+	  INFO("dne\n");
+
 	  return false; // does not exist
+	}
 	int state = res.get(1).asInt();
 	int expires = res.get(2).asInt();
 	DBG("Got state %s with expires %us for registration.\n", 
 	    getSIPRegistationStateString(state), expires);
 	if (state == 2) // expired ... FIXME: add values from API here
 	  return false;
+	INFO("pending\n");
 	// else pending or active
 	return true;
       }
     }
   }
+  INFO("all\n");
   return false;
 }
 
@@ -181,7 +186,7 @@ void RegThread::run() {
     for (vector<RegInfo>::iterator it = registrations.begin(); 
 	 it != registrations.end(); it++) {
       if (!check_registration(*it)) {
-	DBG("Registration %d does not exist or timeout. Creating registration.\n",
+	INFO("Registration %d does not exist or timeout. Creating registration.\n",
 	    (int)(it - registrations.begin()));
 	create_registration(*it);
       }

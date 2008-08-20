@@ -186,7 +186,8 @@ SIPRegistrarClient::SIPRegistrarClient(const string& name)
   : AmSIPEventHandler(name),
     AmEventQueue(this) ,
     uac_auth_i(NULL),
-    AmDynInvokeFactory(MOD_NAME)
+    AmDynInvokeFactory(MOD_NAME),
+    started(false)
 { 
 }
 
@@ -279,9 +280,18 @@ void SIPRegistrarClient::checkTimeouts() {
 }
 
 int SIPRegistrarClient::onLoad() {
-  instance()->start();
+  instance()->start_once();
   return 0;
 }
+
+void SIPRegistrarClient::start_once() {
+  if (started) 
+    return;
+  started=true;
+
+  start();
+}
+
 
 void SIPRegistrarClient::process(AmEvent* ev) {
   AmSipReplyEvent* sip_rep = dynamic_cast<AmSipReplyEvent*>(ev);
@@ -414,6 +424,7 @@ void SIPRegistration::onSipReply(AmSipReply& reply) {
 
 void SIPRegistrarClient::onNewRegistration(SIPNewRegistrationEvent* new_reg) {
 
+  string handle = new_reg->handle;
   SIPRegistration* reg = new SIPRegistration(new_reg->handle, new_reg->info, 
 					     new_reg->sess_link);
   
@@ -443,6 +454,10 @@ void SIPRegistrarClient::onNewRegistration(SIPNewRegistrationEvent* new_reg) {
   
   add_reg(new_reg->handle, reg);
   reg->doRegistration();
+
+  outstanding_regs_mut.lock();
+  outstanding_regs.erase(handle);
+  outstanding_regs_mut.unlock();
 }
 
 void SIPRegistrarClient::onRemoveRegistration(SIPRemoveRegistrationEvent* new_reg) {
@@ -548,6 +563,10 @@ string SIPRegistrarClient::createRegistration(const string& domain,
 					      const string& sess_link) {
 	
   string handle = AmSession::getNewId();
+  outstanding_regs_mut.lock();
+  outstanding_regs.insert(handle);
+  outstanding_regs_mut.unlock();
+
   instance()->
     postEvent(new SIPNewRegistrationEvent(SIPRegistrationInfo(domain, user, 
 							      name, auth_user, pwd),
@@ -575,6 +594,15 @@ bool SIPRegistrarClient::getRegistrationState(const string& handle,
   }
 		
   reg_mut.unlock();
+  if (!res) {
+    outstanding_regs_mut.lock();
+    if (outstanding_regs.find(handle) != outstanding_regs.end()) {
+      res = true;
+      state = SIPRegistration::RegisterPending;
+      expires_left = 1000;
+    }
+    outstanding_regs_mut.unlock();
+  }
   return res;
 }
 
