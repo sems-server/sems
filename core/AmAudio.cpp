@@ -261,6 +261,10 @@ AmAudio::AmAudio(AmAudioFormat *_fmt)
   : fmt(_fmt),
     max_rec_time(-1),
     rec_time(0)
+#ifdef USE_LIBSAMPLERATE 
+  , resample_state(NULL),
+    resample_buf_samples(0)
+#endif
 {
 }
 
