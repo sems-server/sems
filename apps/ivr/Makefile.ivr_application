@@ -4,6 +4,8 @@
 COREPATH ?= ../../core
 IVRPATH ?= ../ivr
 
+AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
+
 include $(COREPATH)/../Makefile.defs
 include $(IVRPATH)/Makefile.defs
 
@@ -37,7 +39,7 @@ compile:
 	python${PYTHON_VERSION} $(IVRPATH)/py_comp -q .
 
 .PHONY: install
-install: all
+install: all $(extra_install)
 	install -d $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}
 	install -m ${LIB_PERMISSIONS}  *.pyc $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}
 	install -d $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
@@ -55,6 +57,18 @@ install-cfg:
 			< $$r > $(DESTDIR)$(cfg-target)$$r; \
 	done
 
+$(DESTDIR)(audio-prefix)/$(audio-dir):
+	mkdir -p $(DESTDIR)$(audio-prefix)/$(audio-dir)
+
+.PHONY: $(NAME)_audio
+$(NAME)_audio: $(DESTDIR)$(audio-prefix)/$(audio-dir)
+	mkdir -p $(DESTDIR)$(audio-prefix)/$(audio-dir)$(NAME)
+	-@for f in $(AUDIO_FILES) ; do \
+		if [ -n "wav/$$f" ]; then \
+			$(INSTALL-TOUCH) $(DESTDIR)$(audio-prefix)/$(audio-dir)$(NAME)/$$f; \
+			$(INSTALL-AUDIO) wav/$$f $(DESTDIR)$(audio-prefix)/$(audio-dir)$(NAME)/$$f; \
+		fi ; \
+	done
 
 uninstall: 
 	@echo "please remove the files from $(DESTDIR)${LIB_INSTALLDIR} manually."
