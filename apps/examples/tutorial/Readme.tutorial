@@ -1,5 +1,13 @@
 SEMS application development tutorial examples
 
+  o myapp myconfigurableapp  myannounceapp 
+ 
+  o myjukebox 
+
+  o mycc cc_acc  cc_acc_xmlrpc
+
+  o ivr_announce annc_service
+
 These are the examples from the application development tutorial 
 which is available from the SEMS website: 
 http://www.iptel.org/sems/sems_application_development_tutorial
@@ -18,5 +26,4 @@ http://www.iptel.org/files/sems-tutorial-config.tgz
 
 For the calling card example, you may want to download some sample
 wav files from http://www.iptel.org/files/ccard_wav.tgz
-
 
