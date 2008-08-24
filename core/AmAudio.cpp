@@ -323,7 +323,7 @@ int AmAudio::put(unsigned int user_ts, unsigned char* buffer, unsigned int size)
 
   memcpy((unsigned char*)samples,buffer,size);
 
-  unsigned int s = encode(size);
+  int s = encode(size);
   if(s>0){
     //DBG("%s\n",typeid(this).name());
     incRecordTime(bytes2samples(size));
