@@ -96,8 +96,12 @@ void set_log_facility(const char* facility) {
 void dprint(int level, const char* fct, const char* file, int line, const char* fmt, ...)
 {
   va_list ap;
-    
+
+#ifndef _DEBUG
   fprintf(stderr, "(%i) %s: %s (%s:%i): ",(int)getpid(), level2txt(level), fct, file, line);
+#else
+  fprintf(stderr, "(%i) %s: " THREAD_FMT "%s (%s:%i): ",(int)getpid(), level2txt(level), THREAD_ID fct, file, line);
+#endif
   va_start(ap, fmt);
   vfprintf(stderr,fmt,ap);
   fflush(stderr);

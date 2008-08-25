@@ -45,7 +45,7 @@ void AmSipDispatcher::handleSipMsg(AmSipReply &reply)
     AmSipReplyEvent* ev = new AmSipReplyEvent(reply);
     if(!AmEventDispatcher::instance()->post(reply.local_tag,ev)){
 	
-	ERROR("could not dispatch reply\n");
+	ERROR("could not dispatch reply: %s\n", reply.print().c_str());
 	delete ev;
     }
 }

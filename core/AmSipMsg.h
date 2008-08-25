@@ -18,6 +18,7 @@ class _AmSipMsgInDlg
     string       hdrs;
     string       body;
     unsigned int cseq;
+    string       callid;
 
     string dstip; // IP where Ser received the message
     string port;  // Ser's SIP port
@@ -25,23 +26,27 @@ class _AmSipMsgInDlg
     string       serKey;
 
     _AmSipMsgInDlg() : cseq(0) { }
-    ~_AmSipMsgInDlg() { }
+    virtual ~_AmSipMsgInDlg() { };
+
+    virtual string print() = 0;
 };
 
 /** \brief represents a SIP reply */
-struct AmSipReply : public _AmSipMsgInDlg
+class AmSipReply : public _AmSipMsgInDlg
 {
+ public:
   unsigned int code;
   string       reason;
   string       next_request_uri;
 
+  /*TODO: this should be merged with request's from_/to_tag and moved above*/
   string       remote_tag;
   string       local_tag;
 
-  string       callid;
 
   AmSipReply() : code(0), _AmSipMsgInDlg() { }
   ~AmSipReply() { }
+  string print();
 };
 
 
@@ -57,12 +62,13 @@ class AmSipRequest : public _AmSipMsgInDlg
   string from_uri;
   string from;
   string to;
-  string callid;
   string from_tag;
   string to_tag;
 
   AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }
+  
+  string print();
 };
 
 string getHeader(const string& hdrs,const string& hdr_name);

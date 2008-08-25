@@ -29,6 +29,9 @@
 #define _log_h_
 
 #include <syslog.h>
+#ifdef _DEBUG
+#include <pthread.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,6 +67,18 @@ extern "C" {
 #endif
 #define LOG_FAC_PRINT(level, args... ) log_fac_print( level, __FUNCTION__, __FILE__, __LINE__, ##args )
 
+#ifdef _DEBUG
+#ifndef NO_THREADID_LOG
+#define THREAD_FMT	"[%lx] "
+#define THREAD_ID	(unsigned long)pthread_self(), 
+#endif 
+#endif 
+
+#ifndef THREAD_FMT
+#define THREAD_FMT	""
+#define THREAD_ID 
+#endif
+
 #if  __GNUC__ < 3
 #define _LOG(level,fmt...) LOG_PRINT(level,##fmt)
 #else
@@ -75,16 +90,16 @@ extern "C" {
       else {								\
 	switch(level){							\
 	case L_ERR:							\
-	  syslog(LOG_ERR, (char*)("Error: (%s)(%s)(%i): " fmt), __FILE__, __FUNCTION__, __LINE__, ##args); \
+	  syslog(LOG_ERR, (char*)("ERROR: " THREAD_FMT "%s (%s:%i): " fmt), THREAD_ID __FUNCTION__, __FILE__, __LINE__, ##args); \
 	  break;							\
 	case L_WARN:							\
-	  syslog(LOG_WARNING, (char*)("Warning: (%s)(%s)(%i): " fmt), __FILE__, __FUNCTION__, __LINE__, ##args); \
+	  syslog(LOG_WARNING, (char*)("WARNING: " THREAD_FMT "%s (%s:%i): " fmt), THREAD_ID __FUNCTION__, __FILE__, __LINE__, ##args); \
 	  break;							\
 	case L_INFO:							\
-	  syslog(LOG_INFO, (char*)("Info: (%s)(%s)(%i): " fmt), __FILE__, __FUNCTION__, __LINE__, ##args); \
+	  syslog(LOG_INFO, (char*)("INFO: " THREAD_FMT "%s (%s:%i): " fmt), THREAD_ID __FUNCTION__, __FILE__, __LINE__, ##args); \
 	  break;							\
 	case L_DBG:							\
-	  syslog(LOG_DEBUG, (char*)("Debug: (%s)(%s)(%i): " fmt), __FILE__, __FUNCTION__, __LINE__, ##args); \
+	  syslog(LOG_DEBUG, (char*)("DEBUG: " THREAD_FMT "%s (%s:%i): " fmt), THREAD_ID __FUNCTION__, __FILE__, __LINE__, ##args); \
 	  break;							\
 	}								\
       }									\

@@ -178,27 +178,33 @@ class AmArg
 #define isArgAObject(a) (AmArg::AObject == a.getType())
 #define isArgBlob(a) (AmArg::Blob == a.getType())
 
+#define _THROW_TYPE_MISMATCH(exp,got) \
+	do { \
+		ERROR("type mismatch: expected: %d; received: %d.", AmArg::exp, got.getType()); \
+		throw AmArg::TypeMismatchException(); \
+	} while (0) 
+
 #define assertArgArray(a)			\
   if (!isArgArray(a))				\
-    throw AmArg::TypeMismatchException();
+	_THROW_TYPE_MISMATCH(Array,a);
 #define assertArgDouble(a)			\
   if (!isArgDouble(a))				\
-    throw AmArg::TypeMismatchException();
+	_THROW_TYPE_MISMATCH(Double,a);
 #define assertArgInt(a)				\
   if (!isArgInt(a))				\
-    throw AmArg::TypeMismatchException();
+	_THROW_TYPE_MISMATCH(Int,a);
 #define assertArgCStr(a)			\
   if (!isArgCStr(a))				\
-    throw AmArg::TypeMismatchException();
+	_THROW_TYPE_MISMATCH(CStr,a);
 #define assertArgAObject(a)			\
   if (!isArgAObject(a))				\
-    throw AmArg::TypeMismatchException();   
+	_THROW_TYPE_MISMATCH(AObject,a);
 #define assertArgBlob(a)			\
   if (!isArgBlob(a))				\
-    throw AmArg::TypeMismatchException();
+	_THROW_TYPE_MISMATCH(Blob,a);
 #define assertArgStruct(a)			\
   if (!isArgStruct(a))				\
-    throw AmArg::TypeMismatchException();
+	_THROW_TYPE_MISMATCH(Struct,a);
 
   void setBorrowedPointer(ArgObject* v) {
     type = AObject;

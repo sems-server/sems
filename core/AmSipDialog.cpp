@@ -181,7 +181,8 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 {
   TransMap::iterator t_it = uac_trans.find(reply.cseq);
   if(t_it == uac_trans.end()){
-    ERROR("could not find any transaction matching reply\n");
+    ERROR("could not find any transaction matching reply: %s\n", 
+        ((AmSipReply)reply).print().c_str());
     return;
   }
   DBG("updateStatus(reply): transaction found!\n");
