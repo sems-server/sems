@@ -7,6 +7,12 @@
 
 #include "AmApi.h"
 #include "AmSipDispatcher.h"
+#include "ConnPool.h"
+#include "CtrlServer.h"
+
+
+#define ASI_VERSION         0x2
+
 
 class BrpcCtrlInterfaceFactory : public AmCtrlInterfaceFactory
 {
@@ -30,22 +36,17 @@ class BrpcCtrlInterface: public AmCtrlInterface
     // handler of requests (SIP request | reply) received from SER
     AmSipDispatcher *sipDispatcher;
 
-    //addresses for:
-    //- SEMS listening for SER requests
-    //- SER listening for SEMS requests
-    //- SEMS SeNDing requests to SER, when using PF_LOCAL sockets (might not
-    //be used) 
-    brpc_addr_t semsAddr, serAddr, sndAddr;
-    int semsFd, serFd;
+    ConnPool *serConn;
+    CtrlServer *ctrlSrv;
 
     inline void handleSipMsg(AmSipRequest &req)
     {
-	AmSipDispatcher::instance()->handleSipMsg(req);
+      AmSipDispatcher::instance()->handleSipMsg(req);
     }
 
     inline void handleSipMsg(AmSipReply &rpl)
     {
-	AmSipDispatcher::instance()->handleSipMsg(rpl);
+      AmSipDispatcher::instance()->handleSipMsg(rpl);
     }
 
     brpc_t *rpcExecute(brpc_t *req);
@@ -57,12 +58,7 @@ class BrpcCtrlInterface: public AmCtrlInterface
     static brpc_t *digests(brpc_t *req, void *iface);
     static brpc_t *req_handler(brpc_t *req, void *iface);
 
-    int getSerFd();
-    void closeSerConn();
-    static void closeSock(int *sock, brpc_addr_t *addr);
-
     bool initCallbacks();
-    void _run();
 
  public:
     BrpcCtrlInterface();
@@ -72,7 +68,7 @@ class BrpcCtrlInterface: public AmCtrlInterface
 
     // AmThread
     void run();
-    void on_stop() {}
+    void on_stop();
 
     // AmCtrlInterface
     int send(const AmSipRequest &, char *, unsigned int &);
