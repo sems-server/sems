@@ -51,6 +51,7 @@ roomInfo(string room, string adminpin):
          2    Ringing
          3    Connected
          4    Disconnecting
+	 5    Finished
    reason: e.g. "200 OK", "606 Declined", ...
 
   code/result:
