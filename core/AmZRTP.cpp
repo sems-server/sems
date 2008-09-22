@@ -33,6 +33,7 @@
 #include "log.h"
 #include "AmConfigReader.h"
 #include "AmUtils.h"
+#include <stdlib.h>
 
 #define ZRTP_CACHE_SAVE_INTERVAL 1
 
