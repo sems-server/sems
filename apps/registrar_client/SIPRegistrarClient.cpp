@@ -197,7 +197,8 @@ SIPRegistrarClient* SIPRegistrarClient::instance()
 SIPRegistrarClient::SIPRegistrarClient(const string& name)
   : AmEventQueue(this),
     uac_auth_i(NULL),
-    AmDynInvokeFactory(MOD_NAME)
+    AmDynInvokeFactory(MOD_NAME),
+    stop_requested(false)
 { 
 }
 
@@ -211,7 +212,7 @@ void SIPRegistrarClient::run() {
     uac_auth_i = uac_auth_f->getInstance();
   }
 
-  while (true) {
+  while (!stop_requested.get()) {
     if (registrations.size()) {
       unsigned int cnt = 250;
       while (cnt > 0) {
@@ -294,7 +295,33 @@ int SIPRegistrarClient::onLoad() {
   return 0;
 }
 
+void SIPRegistrarClient::onServerShutdown() {
+  // TODO: properly wait until unregistered, with timeout
+  DBG("shutdown SIP registrar client: deregistering\n");
+  for (std::map<std::string, SIPRegistration*>::iterator it=
+	 registrations.begin(); it != registrations.end(); it++) {
+    it->second->doUnregister();
+    AmEventDispatcher::instance()->delEventQueue(it->first);
+  }
+
+  stop_requested.set(true);
+//   
+//   setStopped();
+//   return;
+}
+
 void SIPRegistrarClient::process(AmEvent* ev) {
+  if (ev->event_id == E_SYSTEM) {
+    AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(ev);
+    if(sys_ev){	
+      DBG("Session received system Event\n");
+      if (sys_ev->sys_event == AmSystemEvent::ServerShutdown) {
+	onServerShutdown();
+      }
+      return;
+    }
+  }
+
   AmSipReplyEvent* sip_rep = dynamic_cast<AmSipReplyEvent*>(ev);
   if (sip_rep) {
     onSipReplyEvent(sip_rep);
@@ -312,6 +339,7 @@ void SIPRegistrarClient::process(AmEvent* ev) {
     onRemoveRegistration(rem_reg);
     return;
   }
+
 
 }
 

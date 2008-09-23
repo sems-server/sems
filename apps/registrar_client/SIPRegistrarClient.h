@@ -167,8 +167,9 @@ class SIPRegistrarClient  : public AmThread,
 
   AmDynInvoke* uac_auth_i;
 
-
+  AmSharedVar<bool> stop_requested;
   void checkTimeouts();
+  void onServerShutdown();
  public:
   SIPRegistrarClient(const string& name);
   // DI factory
