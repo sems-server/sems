@@ -35,6 +35,7 @@ AmEventDispatcher* AmEventDispatcher::instance()
   return _instance ? _instance : ((_instance = new AmEventDispatcher()));
 }
 
+/** @return false on error */
 bool AmEventDispatcher::addEventQueue(const string& local_tag, 
 				      AmEventQueueInterface* q,
 				      const string& callid, 
@@ -60,7 +61,7 @@ bool AmEventDispatcher::addEventQueue(const string& local_tag,
 
     m_queues.unlock();
     
-    return exists;
+    return !exists;
 }
 
 AmEventQueueInterface* AmEventDispatcher::delEventQueue(const string& local_tag,
