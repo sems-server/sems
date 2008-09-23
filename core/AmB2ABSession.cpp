@@ -40,7 +40,8 @@ AmB2ABSession::AmB2ABSession()
 
 AmB2ABSession::AmB2ABSession(const string& other_local_tag)
   : other_id(other_local_tag),
-    AmSession()
+    AmSession(),
+    connector(NULL)
 {}
 
 
