@@ -511,8 +511,12 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 
   receive_mut.lock();
   // free packet on double packet for TS received
-  if (receive_buf.find(p->timestamp) != receive_buf.end())
-    mem.freePacket(receive_buf[p->timestamp]);
+  if(!(telephone_event_pt.get() && 
+       (p->payload == telephone_event_pt->payload_type))) {
+    if (receive_buf.find(p->timestamp) != receive_buf.end()) {
+      mem.freePacket(receive_buf[p->timestamp]);
+    }
+  }  
 
 #ifdef WITH_ZRTP
   if (session->zrtp_audio) {
@@ -530,7 +534,12 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 	  ERROR("parsing decoded packet!\n");
 	  mem.freePacket(p);
 	} else {
-	  receive_buf[p->timestamp] = p;
+          if(telephone_event_pt.get() && 
+	     (p->payload == telephone_event_pt->payload_type)) {
+            rtp_ev_qu.push(p);
+          } else {
+	    receive_buf[p->timestamp] = p;
+          }
 	}
       }	break;
 
@@ -554,7 +563,14 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
       }
   } else {
 #endif // WITH_ZRTP
-    receive_buf[p->timestamp] = p;
+
+    if(telephone_event_pt.get() && 
+       (p->payload == telephone_event_pt->payload_type)) {
+      rtp_ev_qu.push(p);
+    } else {
+      receive_buf[p->timestamp] = p;
+    }
+
 #ifdef WITH_ZRTP
   }
 #endif
@@ -584,6 +600,14 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
     DBG("diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
     receive_mut.unlock();
     return RTP_TIMEOUT;
+  }
+
+  if(!rtp_ev_qu.empty()) {
+    // first return RTP telephone event payloads
+    p = rtp_ev_qu.front();
+    rtp_ev_qu.pop();
+    receive_mut.unlock();
+    return 1;
   }
 
   if(receive_buf.empty()){
