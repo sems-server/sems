@@ -178,8 +178,7 @@ void AmSessionContainer::destroySession(AmSession* s)
 		      s->getCallID(),
 		      s->getRemoteTag());
     
-    if(q) {
-	
+    if(q) {	
 	stopAndQueue(s);
     }
     else {
@@ -195,9 +194,20 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
       session->setCallgroup(req.from_tag);
 
       session->setNegotiateOnReply(true);
+
+      if (!addSession("","",req.from_tag,session)) {
+	ERROR("adding session to session container\n");
+	delete session;
+	return NULL;
+      }
+
       if (int err = session->sendInvite(req.hdrs)) {
 	ERROR("INVITE could not be sent: error code = %d.\n", 
 	      err);
+	AmEventDispatcher::instance()->
+	  delEventQueue(session->getLocalTag(),
+			session->getCallID(),
+			session->getRemoteTag());	
 	delete session;
 	return NULL;
       }
@@ -209,7 +219,6 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 
       session->start();
 
-      addSession("","",req.from_tag,session);
     }
   } 
   catch(const AmSession::Exception& e){
@@ -243,12 +252,17 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 
 	if (AmConfig::LogSessions) {
 	  INFO("Starting UAS session %s app %s\n",
-	       session->getLocalTag().c_str(), req.cmd.c_str());
+	       local_tag.c_str(), req.cmd.c_str());
+	}
+
+	if (!addSession(req.callid,req.from_tag,local_tag,session)) {
+	  ERROR("adding session to session container\n");
+	  delete session;
+	  throw string("internal server error");
 	}
 
 	session->start();
 
-	addSession(req.callid,req.from_tag,local_tag,session);
 	session->postEvent(new AmSipRequestEvent(req));
       }
   } 
@@ -352,7 +366,7 @@ bool AmSessionContainer::addSession(const string& callid,
 				    const string& local_tag,
 				    AmSession* session)
 {
-  if(_container_closed.get()) 
+  if(_container_closed.get())
     return false;
   
   return AmEventDispatcher::instance()->
