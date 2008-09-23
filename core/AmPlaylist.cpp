@@ -145,6 +145,11 @@ void AmPlaylist::addToPlayListFront(AmPlaylistItem* item)
 void AmPlaylist::close(bool notify)
 {
   cur_mut.lock();
+  if(!cur_item && !items.empty()){
+    cur_item = items.front();
+    items.pop_front();
+  }
+
   while(cur_item)
     gotoNextItem(notify);
   cur_mut.unlock();
