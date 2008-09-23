@@ -319,11 +319,11 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 	}
     }
 
-    tl->send_request(msg,serKey);
+    int res = tl->send_request(msg,serKey);
     delete msg;
 
     serKeyLen=12;
-    return 0;
+    return res;
 }
 
 void SipCtrlInterface::run()
