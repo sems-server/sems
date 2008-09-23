@@ -102,9 +102,9 @@ static void sig_usr_un(int signo)
 
       need_clean.set(false);
 
-      AmRtpReceiver::dispose();
-
       AmSessionContainer::dispose();
+
+      AmRtpReceiver::dispose();
 
       AmServer::dispose();
 
