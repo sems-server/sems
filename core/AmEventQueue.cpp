@@ -82,6 +82,11 @@ void AmEventQueue::waitForEvent()
   ev_pending.wait_for();
 }
 
+void AmEventQueue::wakeup() 
+{
+  ev_pending.set(true);
+}
+
 void AmEventQueue::processSingleEvent()
 {
   m_queue.lock();

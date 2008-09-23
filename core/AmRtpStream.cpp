@@ -379,7 +379,8 @@ AmRtpStream::AmRtpStream(AmSession* _s)
 AmRtpStream::~AmRtpStream()
 {
   if(l_sd){
-    AmRtpReceiver::instance()->removeStream(l_sd);
+    if (AmRtpReceiver::haveInstance())
+	AmRtpReceiver::instance()->removeStream(l_sd);
     close(l_sd);
   }
 }

@@ -63,6 +63,7 @@ public:
   void postEvent(AmEvent*);
   void processEvents();
   void waitForEvent();
+  void wakeup();
   void processSingleEvent();
 };
 

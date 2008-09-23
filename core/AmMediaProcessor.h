@@ -62,6 +62,7 @@ class AmMediaProcessorThread :
   // AmThread interface
   void run();
   void on_stop();
+  AmSharedVar<bool> stop_requested;
     
   // AmEventHandler interface
   void process(AmEvent* e);
@@ -120,6 +121,8 @@ public:
   void changeCallgroup(AmSession* s, 
 		       const string& new_callgroup);
 
+  void stop();
+  static void dispose();
 };
 
 

@@ -34,6 +34,7 @@
 using std::string;
 
 #define E_PLUGIN 100
+#define E_SYSTEM 101
 
 /** \brief base event class */
 struct AmEvent
@@ -42,7 +43,11 @@ struct AmEvent
   bool processed;
 
   AmEvent(int event_id);
+  AmEvent(const AmEvent& rhs);
+
   virtual ~AmEvent();
+
+  virtual AmEvent* clone();
 };
 
 /** 
@@ -62,6 +67,25 @@ struct AmPluginEvent: public AmEvent
     : AmEvent(E_PLUGIN), name(n), data(d) {}
 };
 
+/**
+ * \brief named event for system events (e.g. server stopped) 
+ */
+struct AmSystemEvent : public AmEvent 
+{
+  enum EvType {
+    ServerShutdown = 0
+  };
+
+  EvType sys_event;
+
+  AmSystemEvent(EvType e)
+    : AmEvent(E_SYSTEM), sys_event(e) { }
+
+  AmSystemEvent(const AmSystemEvent& rhs) 
+    : AmEvent(rhs), sys_event(rhs.sys_event) { }
+
+  AmEvent* clone() {  return new AmSystemEvent(*this); };
+};
 
 /** \brief event handler interface */
 class AmEventHandler
@@ -70,5 +94,11 @@ class AmEventHandler
   virtual void process(AmEvent*)=0;
   virtual ~AmEventHandler() { };
 };
+
+/* class AmEventFactory */
+/* { */
+/*   virtual AmEvent* generateEvent(const string& receiver_id) = 0; */
+/*   virtual ~AmEventFactory() { } */
+/* }; */
 
 #endif

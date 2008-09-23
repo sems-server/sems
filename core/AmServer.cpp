@@ -42,6 +42,22 @@ AmServer*  AmServer::instance()
   return _instance ? _instance : ((_instance = new AmServer()));
 }
 
+void AmServer::dispose() 
+{
+    if(_instance != NULL) {
+      if(_instance->ctrlIface != NULL) {
+        _instance->ctrlIface->join();
+      }
+      delete _instance;
+      _instance = NULL;
+    }
+}
+
+AmServer::~AmServer()
+{
+  INFO("Signaling Server has been recycled.\n");
+}
+
 void AmServer::run()
 {
   ctrlIface->start();

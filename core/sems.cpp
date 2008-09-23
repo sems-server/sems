@@ -34,6 +34,7 @@
 #include "AmMediaProcessor.h"
 #include "AmIcmpWatcher.h"
 #include "AmRtpReceiver.h"
+#include "AmEventDispatcher.h"
 
 #include "AmZRTP.h"
 
@@ -92,7 +93,31 @@ static void sig_usr_un(int signo)
     
   if (!main_pid || (main_pid == getpid())) {
     unlink(pid_file.c_str());
+
+    static AmMutex            clean_up_mut;
+    static AmCondition<bool>  need_clean(true);
+
+    clean_up_mut.lock();
+    if(need_clean.get()) {
+
+      need_clean.set(false);
+
+      AmRtpReceiver::dispose();
+
+      AmSessionContainer::dispose();
+
+      AmServer::dispose();
+
+      AmMediaProcessor::dispose();
+
+      AmEventDispatcher::dispose();
+
+    } 
+
+    clean_up_mut.unlock();
+
     INFO("Finished.\n");
+
     exit(0);
   }
 

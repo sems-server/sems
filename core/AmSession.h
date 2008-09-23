@@ -419,6 +419,10 @@ public:
   virtual void onSipReply(const AmSipReply& reply);
 
 
+  /**
+   * entry point for system events
+   */
+  virtual void onSystemEvent(AmSystemEvent* ev);
   
 #ifdef WITH_ZRTP
   /**

@@ -57,7 +57,12 @@ AmRtpReceiver* AmRtpReceiver::instance()
   return _instance;
 }
 
+bool AmRtpReceiver::haveInstance() {
+  return NULL != _instance;
+}
+
 AmRtpReceiver::AmRtpReceiver()
+  : stop_requested(false)
 {
   fds  = new struct pollfd[MAX_RTP_SESSIONS];
   nfds = 0;
@@ -66,10 +71,28 @@ AmRtpReceiver::AmRtpReceiver()
 AmRtpReceiver::~AmRtpReceiver()
 {
   delete [] (fds);
+  INFO("RTP receiver has been recycled.\n");
 }
 
 void AmRtpReceiver::on_stop()
 {
+  INFO("requesting RTP receiver to stop.\n");
+  stop_requested.set(true);
+}
+
+void AmRtpReceiver::dispose() 
+{
+  if(_instance != NULL) {
+    if(!_instance->is_stopped()) {
+      _instance->stop();
+
+      while(!_instance->is_stopped()) 
+	usleep(10000);
+    }
+    // todo: add locking here
+    delete _instance;
+    _instance = NULL;
+  }
 }
 
 void AmRtpReceiver::run()
@@ -77,7 +100,7 @@ void AmRtpReceiver::run()
   unsigned int   tmp_nfds = 0;
   struct pollfd* tmp_fds  = new struct pollfd[MAX_RTP_SESSIONS];
 
-  while(true){
+  while(!stop_requested.get()){
 	
     fds_mut.lock();
     tmp_nfds = nfds;
@@ -126,6 +149,8 @@ void AmRtpReceiver::run()
       streams_mut.unlock();      
     }
   }
+
+  delete[] (tmp_fds);
 }
 
 void AmRtpReceiver::addStream(int sd, AmRtpStream* stream)

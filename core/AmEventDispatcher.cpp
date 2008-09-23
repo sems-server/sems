@@ -107,6 +107,7 @@ bool AmEventDispatcher::post(const string& local_tag, AmEvent* ev)
     return posted;
 }
 
+
 bool AmEventDispatcher::post(const string& callid, const string& remote_tag, AmEvent* ev)
 {
     bool posted = false;
@@ -124,6 +125,46 @@ bool AmEventDispatcher::post(const string& callid, const string& remote_tag, AmE
     m_queues.unlock();
     
     return posted;
+}
+
+bool AmEventDispatcher::broadcast(AmEvent* ev)
+{
+    if (!ev)
+      return false;
+
+    bool posted = false;
+    m_queues.lock();
+
+    for (EvQueueMapIter it = queues.begin(); 
+	 it != queues.end(); it++) {
+      it->second->postEvent(ev->clone());
+      posted = true;
+    }
+
+    m_queues.unlock();
+
+    delete ev;
+
+    return posted;
+}
+
+bool AmEventDispatcher::empty() {
+    bool res = false;
+
+    m_queues.lock();
+    res = queues.empty();
+    m_queues.unlock();    
+
+    return res;  
+}
+
+void AmEventDispatcher::dispose() 
+{
+  if(_instance != NULL) {
+    // todo: add locking here
+    delete _instance;
+    _instance = NULL;
+  }
 }
 
 bool AmEventDispatcher::postSipRequest(const string& callid, const string& remote_tag, 

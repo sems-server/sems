@@ -49,7 +49,6 @@ class AmRtpReceiver: public AmThread {
   typedef std::map<int, AmRtpStream*, greater<int> > Streams;
 
   static AmRtpReceiver* _instance;
-
     
   Streams  streams;
   AmMutex  streams_mut;
@@ -64,11 +63,15 @@ class AmRtpReceiver: public AmThread {
     
   void run();
   void on_stop();
-    
+  AmSharedVar<bool> stop_requested;
+
 public:
   static AmRtpReceiver* instance();
+  static bool haveInstance();
   void addStream(int sd, AmRtpStream* stream);
   void removeStream(int sd);
+
+  static void dispose();
 };
 
 #endif

@@ -50,11 +50,12 @@ private:
   static AmCtrlInterface *ctrlIface;
 
   /** Avoid external instantiation. @see instance(). */
-  ~AmServer(){}
+  ~AmServer();
 
 public:
   /** Get a fifo server instance. */
   static AmServer* instance();
+  static void dispose();
 
   /** Runs the fifo server. */
   void run();
@@ -69,8 +70,8 @@ public:
   static bool sendRequest(const AmSipRequest &, char* serKey, unsigned int& serKeyLen);
   static bool sendReply(const AmSipReply &);
   static string getContact(const string &displayName, 
-      const string &userName, const string &hostName, 
-      const string &uriParams, const string &hdrParams);
+			   const string &userName, const string &hostName, 
+			   const string &uriParams, const string &hdrParams);
 };
 
 #endif

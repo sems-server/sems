@@ -50,14 +50,16 @@ struct SchedRequest :
 
 /*         session scheduler              */
 
-AmMediaProcessor* AmMediaProcessor::_instance;
+AmMediaProcessor* AmMediaProcessor::_instance = NULL;
 
 AmMediaProcessor::AmMediaProcessor()
+  : threads(NULL),num_threads(0)
 {
 }
 
 AmMediaProcessor::~AmMediaProcessor()
 {
+  INFO("Media processor has been recycled.\n");
 }
 
 void AmMediaProcessor::init() {
@@ -167,10 +169,49 @@ void AmMediaProcessor::removeFromProcessor(AmSession* s,
   threads[sched_thread]->postRequest(new SchedRequest(r_type,s));
 }
 
-/* the actual session scheduler thread */
+void AmMediaProcessor::stop() {
+  assert(threads);
+  for (unsigned int i=0;i<num_threads;i++) {
+    if(threads[i] != NULL) {
+      threads[i]->stop();
+    }
+  }
+  bool threads_stopped = true;
+  do {
+    usleep(10000);
+    for (unsigned int i=0;i<num_threads;i++) {
+      if((threads[i] != NULL) &&(!threads[i]->is_stopped())) {
+        threads_stopped = false;
+        break;
+      }
+    }
+  } while(!threads_stopped);
+  
+  for (unsigned int i=0;i<num_threads;i++) {
+    if(threads[i] != NULL) {
+      delete threads[i];
+      threads[i] = NULL;
+    }
+  }
+  delete []  threads;
+  threads = NULL;
+}
+
+void AmMediaProcessor::dispose() 
+{
+  if(_instance != NULL) {
+    if(_instance->threads != NULL) {
+      _instance->stop();
+    }
+    delete _instance;
+    _instance = NULL;
+  }
+}
+
+/* the actual media processing thread */
 
 AmMediaProcessorThread::AmMediaProcessorThread()
-  : events(this)
+  : events(this), stop_requested(false)
 {
 }
 AmMediaProcessorThread::~AmMediaProcessorThread()
@@ -179,10 +220,13 @@ AmMediaProcessorThread::~AmMediaProcessorThread()
 
 void AmMediaProcessorThread::on_stop()
 {
+  INFO("requesting media processor to stop.\n");
+  stop_requested.set(true);
 }
 
 void AmMediaProcessorThread::run()
 {
+  stop_requested = false;
   struct timeval now,next_tick,diff,tick;
   // wallclock time
   unsigned int ts = 0;
@@ -193,7 +237,7 @@ void AmMediaProcessorThread::run()
   gettimeofday(&now,NULL);
   timeradd(&tick,&now,&next_tick);
     
-  while(true){
+  while(!stop_requested.get()){
 
     gettimeofday(&now,NULL);
 

@@ -65,12 +65,16 @@ private:
 public:
 
     static AmEventDispatcher* instance();
+    static void dispose();
 
     bool postSipRequest(const string& callid, const string& remote_tag, 
 			const AmSipRequest& req);
 
     bool post(const string& local_tag, AmEvent* ev);
     bool post(const string& callid, const string& remote_tag, AmEvent* ev);
+
+    /* send event to all event queues. Note: event instances will be cloned */
+    bool broadcast(AmEvent* ev);
 
     bool addEventQueue(const string& local_tag, 
 		       AmEventQueueInterface* q,
@@ -80,6 +84,8 @@ public:
     AmEventQueueInterface* delEventQueue(const string& local_tag,
 					 const string& callid="", 
 					 const string& remote_tag="");
+
+    bool empty();
 };
 
 #endif

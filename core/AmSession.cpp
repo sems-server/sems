@@ -371,8 +371,9 @@ void AmSession::run()
   session_num--;
     
   // wait at least until session is out of RtpScheduler
-  DBG("session is stopped.\n");
   //detached.wait_for();
+
+  DBG("session is stopped.\n");
 }
 
 void AmSession::on_stop()
@@ -483,6 +484,15 @@ void AmSession::process(AmEvent* ev)
   CALL_EVENT_H(process,ev);
 
   DBG("AmSession::process\n");
+
+  if (ev->event_id == E_SYSTEM) {
+    AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(ev);
+    if(sys_ev){	
+      DBG("Session received system Event\n");
+      onSystemEvent(sys_ev);
+      return;
+    }
+  }
 
   AmSipEvent* sip_ev = dynamic_cast<AmSipEvent*>(ev);
   if(sip_ev){	
@@ -750,6 +760,13 @@ int AmSession::acceptAudio(const string& body,
   }
 
   return -1;
+}
+
+void AmSession::onSystemEvent(AmSystemEvent* ev) {
+  if (ev->sys_event == AmSystemEvent::ServerShutdown) {
+    setStopped();
+    return;
+  }
 }
 
 void AmSession::onSendRequest(const string& method, const string& content_type,

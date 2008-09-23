@@ -47,7 +47,7 @@ using std::string;
  */
 class AmSessionContainer : public AmThread
 {
-  static AmSessionContainer* _SessionContainer;
+  static AmSessionContainer* _instance;
 
   typedef std::queue<AmSession*>      SessionQueue;
 
@@ -55,6 +55,9 @@ class AmSessionContainer : public AmThread
   SessionQueue d_sessions;
   /** Mutex to protect the dead session container */
   AmMutex      ds_mut;
+
+  /** is container closed for new sessions? */
+  AmCondition<bool> _container_closed;
 
   /** the daemon only runs if this is true */
   AmCondition<bool> _run_cond;
@@ -72,8 +75,12 @@ class AmSessionContainer : public AmThread
   /** @see AmThread::on_stop() */
   void on_stop();
 
+  bool clean_sessions();
+
  public:
   static AmSessionContainer* instance();
+
+  static void dispose();
 
   /**
    * Creates a new session.

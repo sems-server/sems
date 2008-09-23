@@ -41,80 +41,118 @@
 
 // AmSessionContainer methods
 
-AmSessionContainer* AmSessionContainer::_SessionContainer=0;
+AmSessionContainer* AmSessionContainer::_instance=NULL;
 
 AmSessionContainer::AmSessionContainer()
-    : _run_cond(false)
+  : _run_cond(false), _container_closed(false)
       
 {
 }
 
 AmSessionContainer* AmSessionContainer::instance()
 {
-  if(!_SessionContainer)
-    _SessionContainer = new AmSessionContainer();
+  if(!_instance)
+    _instance = new AmSessionContainer();
 
-  return _SessionContainer;
+  return _instance;
 }
 
-void AmSessionContainer::on_stop() 
-{ 
+void AmSessionContainer::dispose() 
+{
+  if(_instance != NULL) {
+    if(!_instance->is_stopped()) {
+      _instance->stop();
+
+      while(!_instance->is_stopped()) 
+	usleep(10000);
+    }
+    // todo: add locking here
+    delete _instance;
+    _instance = NULL;
+  }
+}
+
+bool AmSessionContainer::clean_sessions() {
+  ds_mut.lock();
+  DBG("Session cleaner starting its work\n");
+  
+  try {
+    SessionQueue n_sessions;
+    
+    while(!d_sessions.empty()){
+      
+      AmSession* cur_session = d_sessions.front();
+      d_sessions.pop();
+      
+      ds_mut.unlock();
+      
+      if(cur_session->is_stopped() && cur_session->detached.get()){
+	
+	DBG("session %p has been destroyed'\n",(void*)cur_session->_pid);
+	delete cur_session;
+      }
+      else {
+	DBG("session %p still running\n",(void*)cur_session->_pid);
+	n_sessions.push(cur_session);
+      }
+      
+      ds_mut.lock();
+    }
+    
+    swap(d_sessions,n_sessions);
+    
+  }catch(std::exception& e){
+    ERROR("exception caught in session cleaner: %s\n", e.what());
+    throw; /* throw again as this is fatal (because unlocking the mutex fails!! */
+  }catch(...){
+    ERROR("unknown exception caught in session cleaner!\n");
+    throw; /* throw again as this is fatal (because unlocking the mutex fails!! */
+  }
+  bool more = !d_sessions.empty();
+  ds_mut.unlock();
+  return more;
 }
 
 void AmSessionContainer::run()
 {
 
-  while(1){
+  while(!_container_closed.get()){
 
     _run_cond.wait_for();
 
-    // Let some time for the Sessions 
-    // to stop by themselves
+    if(_container_closed.get()) 
+      break;
+
+    // Give the Sessions some time to stop by themselves
     sleep(5);
 
-    ds_mut.lock();
-    DBG("Session cleaner starting its work\n");
-	
-    try {
-      SessionQueue n_sessions;
-
-      while(!d_sessions.empty()){
-
-	AmSession* cur_session = d_sessions.front();
-	d_sessions.pop();
-
-	ds_mut.unlock();
-
-	if(cur_session->is_stopped() && cur_session->detached.get()){
-		    
-	    DBG("session %p has been destroyed'\n",(void*)cur_session->_pid);
-	    delete cur_session;
-	}
-	else {
-	    DBG("session %p still running\n",(void*)cur_session->_pid);
-	    n_sessions.push(cur_session);
-	}
-
-	ds_mut.lock();
-      }
-
-      swap(d_sessions,n_sessions);
-
-    }catch(std::exception& e){
-      ERROR("exception caught in session cleaner: %s\n", e.what());
-      throw; /* throw again as this is fatal (because unlocking the mutex fails!! */
-    }catch(...){
-      ERROR("unknown exception caught in session cleaner!\n");
-      throw; /* throw again as this is fatal (because unlocking the mutex fails!! */
-    }
-
-    bool more = !d_sessions.empty();
-    ds_mut.unlock();
+    bool more = clean_sessions();
 
     DBG("Session cleaner finished\n");
-    if(!more)
+    if(!more  && (!_container_closed.get()))
       _run_cond.set(false);
   }
+  DBG("Session cleaner terminating\n");
+}
+
+void AmSessionContainer::on_stop() 
+{ 
+  _container_closed.set(true);
+
+  DBG("brodcasting ServerShutdown system event to sessions...\n");
+  AmEventDispatcher::instance()->
+    broadcast(new AmSystemEvent(AmSystemEvent::ServerShutdown));
+    
+  DBG("waiting for active event queues to stop...\n");
+
+  while (!AmEventDispatcher::instance()->empty())
+    sleep(1);
+    
+  DBG("cleaning sessions...\n");
+  while (clean_sessions()) 
+    sleep(1);
+
+  _run_cond.set(true); // so that thread stops
 }
 
 void AmSessionContainer::stopAndQueue(AmSession* s)
@@ -314,14 +352,20 @@ bool AmSessionContainer::addSession(const string& callid,
 				    const string& local_tag,
 				    AmSession* session)
 {
-    return AmEventDispatcher::instance()->
-	addEventQueue(local_tag,(AmEventQueue*)session,
-		      callid,remote_tag);
+  if(_container_closed.get()) 
+    return false;
+  
+  return AmEventDispatcher::instance()->
+    addEventQueue(local_tag,(AmEventQueue*)session,
+		  callid,remote_tag);
 }
 
 bool AmSessionContainer::addSession(const string& local_tag,
 				    AmSession* session)
 {
-    return AmEventDispatcher::instance()->
-	addEventQueue(local_tag,(AmEventQueue*)session);
+  if(_container_closed.get()) 
+    return false;
+
+  return AmEventDispatcher::instance()->
+    addEventQueue(local_tag,(AmEventQueue*)session);
 }
