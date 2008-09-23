@@ -37,6 +37,7 @@
 #include "AmSipDialog.h"
 #include "AmSipEvent.h"
 #include "AmApi.h"
+#include "AmSessionEventHandler.h"
 
 #ifdef WITH_ZRTP
 #include "zrtp/zrtp.h"
@@ -56,49 +57,6 @@ class AmDtmfEvent;
 
 /* definition imported from Ser parser/msg_parser.h */
 #define FL_FORCE_ACTIVE 2
-
-/**
- * \brief Interface for SIP signaling plugins that
- *        must change requests or replies (ex: session timer).
- *
- *  Signaling plugins must inherite from this class.
- */
-class AmSessionEventHandler
-  : public ArgObject
-{
-public:
-  bool destroy;
-
-  AmSessionEventHandler()
-    : destroy(true) {}
-
-  virtual ~AmSessionEventHandler() {}
-  /* 
-   * All the methods return true if the event processing 
-   * shall be stopped after them.
-   */
-  virtual bool process(AmEvent*);
-  virtual bool onSipEvent(AmSipEvent*);
-  virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&);
-
-  virtual bool onSendRequest(const string& method, 
-			     const string& content_type,
-			     const string& body,
-			     string& hdrs,
-			     int flags,
-			     unsigned int cseq);
-
-  virtual bool onSendReply(const AmSipRequest& req,
-			   unsigned int  code,
-			   const string& reason,
-			   const string& content_type,
-			   const string& body,
-			   string& hdrs,
-			   int flags);
-};
-
-
 
 #define AM_AUDIO_IN  0
 #define AM_AUDIO_OUT 1
@@ -132,8 +90,6 @@ private:
   AmDtmfEventQueue m_dtmfEventQueue;
   bool m_dtmfDetectionEnabled;
 
-  vector<AmSessionEventHandler*> ev_handlers;
-
   /** @see AmThread::run() */
   void run();
 
@@ -159,6 +115,8 @@ protected:
 
   /** do accept early session? */
   bool accept_early_session;
+
+  vector<AmSessionEventHandler*> ev_handlers;
 
 public:
 

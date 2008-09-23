@@ -52,77 +52,7 @@
 volatile unsigned int AmSession::session_num = 0;
 
 
-// AmSessionEventHandler methods
-bool AmSessionEventHandler::process(AmEvent*)
-{
-  return false;
-}
-
-bool AmSessionEventHandler::onSipEvent(AmSipEvent*)
-{
-  return false;
-}
-
-bool AmSessionEventHandler::onSipRequest(const AmSipRequest&)
-{
-  return false;
-}
-
-bool AmSessionEventHandler::onSipReply(const AmSipReply& reply)
-{
-  return false;
-}
-
-bool AmSessionEventHandler::onSendRequest(const string& method, 
-					  const string& content_type,
-					  const string& body,
-					  string& hdrs,
-					  int flags,
-					  unsigned int cseq)
-{
-  return false;
-}
-
-bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
-					unsigned int  code,
-					const string& reason,
-					const string& content_type,
-					const string& body,
-					string& hdrs,
-					int flags)
-{
-  return false;
-}
-
-
 // AmSession methods
-
-
-#if __GNUC__ < 3
-#define CALL_EVENT_H(method,args...) \
-            do{\
-                vector<AmSessionEventHandler*>::iterator evh = ev_handlers.begin(); \
-                bool stop = false; \
-                while((evh != ev_handlers.end()) && !stop){ \
-                    stop = (*evh)->method( ##args ); \
-                    evh++; \
-		} \
-		if(stop) \
-                    return; \
-            }while(0)
-#else
-#define CALL_EVENT_H(method,...) \
-            do{\
-                vector<AmSessionEventHandler*>::iterator evh = ev_handlers.begin(); \
-                bool stop = false; \
-                while((evh != ev_handlers.end()) && !stop){ \
-                    stop = (*evh)->method( __VA_ARGS__ ); \
-                    evh++; \
-		} \
-		if(stop) \
-                    return; \
-            }while(0)
-#endif
 
 
 AmSession::AmSession()
