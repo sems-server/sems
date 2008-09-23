@@ -39,6 +39,7 @@
 
 #include <string>
 #include <map>
+#include <queue>
 #include <memory>
 using std::string;
 using std::auto_ptr;
@@ -58,7 +59,7 @@ class AmAudio;
 class AmSession;
 class SdpPayload;
 typedef std::map<unsigned int, AmRtpPacket*, ts_less> ReceiveBuffer;
-
+typedef std::queue<AmRtpPacket*>  RtpEventQueue;
 
 /**
  * This provides the memory for the receive buffer.
@@ -131,6 +132,7 @@ protected:
 
   PacketMem       mem;
   ReceiveBuffer   receive_buf;
+  RtpEventQueue   rtp_ev_qu;
   AmMutex         receive_mut;
 
 
