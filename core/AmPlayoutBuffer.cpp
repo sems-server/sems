@@ -523,7 +523,7 @@ void AmJbPlayout::direct_write_buffer(unsigned int ts, ShortSample* buf, unsigne
 
 void AmJbPlayout::prepare_buffer(unsigned int audio_buffer_ts, unsigned int ms)
 {
-  ShortSample buf[AUDIO_BUFFER_SIZE];
+  ShortSample buf[AUDIO_BUFFER_SIZE * 10];
   unsigned int ts;
   unsigned int nb_samples;
   /**
