@@ -64,6 +64,7 @@ const BRPC_STR_STATIC_INIT(SIP_REQUEST_INFO, "INFO");
 const BRPC_STR_STATIC_INIT(SIP_REQUEST_BYE, "BYE");
 const BRPC_STR_STATIC_INIT(SIP_REQUEST_PRACK, "PRACK");
 const BRPC_STR_STATIC_INIT(SIP_REQUEST_REFER, "REFER");
+const BRPC_STR_STATIC_INIT(SIP_REQUEST_NOTIFY, "NOTIFY");
 
 //these are needed for requests
 const BRPC_STR_STATIC_INIT(SER_DFMT_METHOD, "@method");
@@ -97,7 +98,8 @@ static const brpc_str_t *SIP_CORE_METHODS[] = {
   &SIP_REQUEST_CANCEL,
   &SIP_REQUEST_PRACK,
   &SIP_REQUEST_INFO,
-  &SIP_REQUEST_REFER
+  &SIP_REQUEST_REFER,
+  &SIP_REQUEST_NOTIFY
 };
 
 static const brpc_str_t *REQ_FMTS[] = {
@@ -336,6 +338,8 @@ bool BrpcCtrlInterface::initCallbacks()
       brpc_cb_req(SIP_REQUEST_PRACK.val, NULL, 
           (brpc_cb_req_f)&req_handler, NULL, this) &&
       brpc_cb_req(SIP_REQUEST_REFER.val, NULL, 
+          (brpc_cb_req_f)&req_handler, NULL, this) &&
+      brpc_cb_req(SIP_REQUEST_NOTIFY.val, NULL, 
           (brpc_cb_req_f)&req_handler, NULL, this) &&
       1)) {
     ERROR("failed to register the BINRPC callbaks: %s [%d].\n", 
