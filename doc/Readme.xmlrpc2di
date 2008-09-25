@@ -22,8 +22,16 @@ A small patch set needs to be applied as well:
 patch -p0 < xmlrpcpp07_sems.patch
 
 If xmlrpcpp is extracted to a different directory, the path in
-the Makefile needs to be adapted.
+the Makefile needs to be adapted. If your xmlrpc++ installation has the
+SSL for xmlrpc client option, you may need to add -DHAVE_XMLRPCPP_SSL 
+to module_cflags due to some ambiguity in the header.
 
+The XMLRPC server can be configured to run as single threaded server (if
+one request is executed, the next ones have to wait), or a multi-threaded server 
+with a thread pool, in which case the callers only have to wait if there are 
+as many requests served in parallel as threads. Note that it is a good idea to 
+implement DI functions thread-safe, as they may be called from different threads
+in SEMS anyway.
 
 Configuration parameters
 ------------------------
@@ -40,6 +48,10 @@ Configuration parameters
   run_server       yes        start an XMLRPC server
 
   server_retry_after 10       retry a failed server after n seconds
+
+  multithreaded    yes        MT or default server
+ 
+  threads          5          only in case of multithreaded
 
 Using XMLRPC2DI client over DI
 ------------------------------
