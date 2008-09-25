@@ -15,7 +15,7 @@ module_cflags  =
 # and comment module_ldflags line above
 
 
-COREPATH ?=../../../core
+COREPATH ?=../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 #$(XMLRPCPP_DIR)/libXmlRpc.a: 

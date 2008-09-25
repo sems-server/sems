@@ -3,7 +3,7 @@ COREPATH ?= ../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_modules ?= mp3 examples py_sems
+exclude_modules ?= mp3 examples py_sems xmlrpc2di
 modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
 		$(wildcard Makefile*) CVS, \
 		$(wildcard *) examples/tutorial/cc_acc )
