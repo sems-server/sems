@@ -3,7 +3,7 @@ XMLRPCPP_DIR = xmlrpc++0.7
 plug_in_name = xmlrpc2di
 
 module_ldflags = -lxmlrpc++ 
-module_cflags  = 
+module_cflags  = -DHAVE_XMLRPCPP_SSL 
 # for gentoo ebuild or cvs-20040713 version:
 # module_cflags  = -DHAVE_XMLRPCPP_SSL
 #

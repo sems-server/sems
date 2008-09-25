@@ -65,9 +65,31 @@ int XMLRPC2DI::load() {
     return 0;
   configured = true;
 
+  
   AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
     return -1;
+
+  string multithreaded = cfg.getParameter("multithreaded", "yes");
+
+  XmlRpcServer* s;
+  bool multi_threaded = false;
+  unsigned int threads = 0;
+  if (multithreaded == "yes") {
+    multi_threaded = true;
+    if (!cfg.getParameter("threads").length())
+      threads = 5;
+    else 
+      threads = cfg.getParameterInt("threads", 5);
+
+    DBG("Running multi-threaded XMLRPC server with %u threads\n", threads);
+    MultithreadXmlRpcServer* mt_s = new MultithreadXmlRpcServer();
+    mt_s->createThreads(threads);    
+    s = mt_s;
+  } else {
+    DBG("Running single-threaded XMLRPC server\n");
+    s = new XmlRpcServer();
+  }
 
   ServerRetryAfter = cfg.getParameterInt("server_retry_after", 10);
   DBG("retrying failed server after %u seconds\n", ServerRetryAfter);
@@ -106,8 +128,7 @@ int XMLRPC2DI::load() {
   DBG("XMLRPC Server: %snabling builtin method 'di'.\n", export_di?"E":"Not e");
 
 
-  server = new XMLRPC2DIServer(XMLRPCPort, export_di, direct_export);
-
+  server = new XMLRPC2DIServer(XMLRPCPort, export_di, direct_export, s);
   server->start();
   return 0;
 }
@@ -228,14 +249,16 @@ void XMLRPC2DI::invoke(const string& method,
 
 XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port, 
 				 bool di_export, 
-				 string direct_export) 
+				 string direct_export,
+				 XmlRpcServer* s) 
   : port(port),
+    s(s),
     // register method 'calls'
-    calls_method(&s),
+    calls_method(s),
     // register method 'get_loglevel'
-    setloglevel_method(&s),
+    setloglevel_method(s),
     // register method 'set_loglevel'
-    getloglevel_method(&s)
+    getloglevel_method(s)
 {	
   DBG("XMLRPC Server: enabled builtin method 'calls'\n");
   DBG("XMLRPC Server: enabled builtin method 'get_loglevel'\n");
@@ -244,7 +267,7 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
   // export all methods via 'di' function? 
   if (di_export) {
     // register method 'di'
-    di_method = new XMLRPC2DIServerDIMethod(&s);
+    di_method = new XMLRPC2DIServerDIMethod(s);
   }
   
   vector<string> export_ifaces = explode(direct_export, ";");
@@ -281,7 +304,7 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
     for (unsigned int i=0;i<fct_list.size();i++) {
       string method = fct_list.get(i).asCStr();
       // see whether method already registered
-      bool has_method = (NULL != s.findMethod(method));
+      bool has_method = (NULL != s->findMethod(method));
       if (has_method) {
 	ERROR("name conflict for method '%s' from interface '%s', "
 	      "method already exported!\n",
@@ -294,14 +317,14 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
 	DBG("XMLRPC Server: adding method '%s'\n",
 	    method.c_str());
 	DIMethodProxy* mp = new DIMethodProxy(method, method, di_f);
-	s.addMethod(mp);
+	s->addMethod(mp);
       }
       
       DBG("XMLRPC Server: adding method '%s.%s'\n",
 	  iface.c_str(), method.c_str());
       DIMethodProxy* mp = new DIMethodProxy(iface + "." + method, 
 					    method, di_f);
-      s.addMethod(mp);
+      s->addMethod(mp);
     }
   } catch (AmDynInvoke::NotImplemented& e) {
     ERROR("Not implemented in interface '%s': '%s'\n", 
@@ -318,9 +341,9 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
 
 void XMLRPC2DIServer::run() {
   DBG("Binding XMLRPC2DIServer to port %u \n", port);
-  s.bindAndListen(port);
+  s->bindAndListen(port);
   DBG("starting XMLRPC2DIServer...\n");
-  s.work(-1.0);
+  s->work(-1.0);
 }
 void XMLRPC2DIServer::on_stop() {
   DBG("sorry, don't know how to stop the server.\n");

@@ -28,6 +28,7 @@
 #define XMLRPC2DISERVER_H
 
 #include "XmlRpc.h"
+#include "MultithreadXmlRpcServer.h"
 using namespace XmlRpc;
 
 #include "AmThread.h"
@@ -83,7 +84,8 @@ struct DIMethodProxy : public XmlRpcServerMethod
 };
 
 class XMLRPC2DIServer : public AmThread {
-  XmlRpcServer s;
+  XmlRpcServer* s;
+
   unsigned int port; 
   XMLRPC2DIServerCallsMethod       calls_method;
   XMLRPC2DIServerSetLoglevelMethod setloglevel_method;
@@ -94,7 +96,8 @@ class XMLRPC2DIServer : public AmThread {
  public: 
   XMLRPC2DIServer(unsigned int port, 
 		  bool di_export, 
-		  string direct_export);
+		  string direct_export,
+		  XmlRpcServer* s);
   void run();
   void on_stop();
   
