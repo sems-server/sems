@@ -277,7 +277,6 @@ AmAudio::~AmAudio()
 }
 
 void AmAudio::setFormat(AmAudioFormat* new_fmt) {
-  DBG("set format to %p --------------------------\n", new_fmt);
   fmt.reset(new_fmt);
   fmt->resetCodec();
 }
