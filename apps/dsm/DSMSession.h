@@ -42,11 +42,12 @@ class DSMSession {
   DSMSession();
   virtual ~DSMSession();
 
-  virtual void playPrompt(const string& name) = 0;
+  virtual void playPrompt(const string& name, bool loop = false) = 0;
   virtual void playFile(const string& name, bool loop) = 0;
   virtual void recordFile(const string& name) = 0;
   virtual void stopRecord() = 0;
   virtual void closePlaylist(bool notify) = 0;
+  virtual void setPromptSet(const string& name) = 0;
 
   /* holds variables which are accessed by $varname */
   map<string, string> var;

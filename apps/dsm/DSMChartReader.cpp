@@ -171,7 +171,8 @@ bool DSMChartReader::importModule(const string& mod_cmd, const string& mod_path)
 }
 
 bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart, 
-			 const string& mod_path, DSMElemContainer* owner) {
+			    const string& mod_path, DSMElemContainer* owner,
+			    vector<DSMModule*>& out_mods) {
   vector<DSMElement*> stack;
   size_t pos = 0;
   while (pos < chart.length()) {
@@ -389,6 +390,11 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
       continue;
     }
   }
+
+  for (vector<DSMModule*>::iterator it=
+	 mods.begin(); it != mods.end(); it++)
+    out_mods.push_back(*it);
+
   return true;
 }
 

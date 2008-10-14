@@ -49,6 +49,7 @@ class DSMDialog : public AmSession,
 
   vector<AmAudioFile*> audiofiles;
   AmAudioFile* rec_file;
+  map<string, AmPromptCollection*> prompt_sets;
 
 public:
   DSMDialog(AmPromptCollection& prompts,
@@ -57,6 +58,7 @@ public:
 	    UACAuthCred* credentials = NULL);
   ~DSMDialog();
 
+  void onInvite(const AmSipRequest& req);
   void onSessionStart(const AmSipRequest& req);
   void onSessionStart(const AmSipReply& rep);
   void startSession();
@@ -67,11 +69,17 @@ public:
 
   UACAuthCred* getCredentials();
 
-  void playPrompt(const string& name);
+  void addPromptSet(const string& name, AmPromptCollection* prompt_set);
+  void setPromptSets(map<string, AmPromptCollection*>& new_prompt_sets);
+
+  // DSMSession interface
+  void playPrompt(const string& name, bool loop = false);
   void closePlaylist(bool notify);
   void playFile(const string& name, bool loop);
   void recordFile(const string& name);
   void stopRecord();
+
+  void setPromptSet(const string& name);
 };
 
 #endif

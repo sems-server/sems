@@ -26,6 +26,8 @@
  */
 
 #include "DSMStateEngine.h"
+#include "DSMModule.h"
+
 #include "AmSession.h"
 #include "log.h"
 
@@ -112,6 +114,12 @@ DSMStateEngine::~DSMStateEngine() {
   
 }
 
+void DSMStateEngine::onInvite(const AmSipRequest& req, DSMSession* sess) {
+  for (vector<DSMModule*>::iterator it =
+	 mods.begin(); it != mods.end(); it++)
+    (*it)->onInvite(req, sess);
+}
+
 bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from, 
 			     vector<DSMAction*>::iterator to, 
 			     AmSession* sess,  DSMCondition::EventType event,
@@ -151,6 +159,12 @@ bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from,
 
 void DSMStateEngine::addDiagram(DSMStateDiagram* diag) {
   diags.push_back(diag);
+}
+
+void DSMStateEngine::addModules(vector<DSMModule*> modules) {
+  for (vector<DSMModule*>::iterator it=
+	 modules.begin(); it != modules.end(); it++)
+    mods.push_back(*it);
 }
 
 bool DSMStateEngine::init(AmSession* sess, const string& startDiagram) {
@@ -332,3 +346,4 @@ DSMTransition::DSMTransition(){
 
 DSMTransition::~DSMTransition(){
 }
+

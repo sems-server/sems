@@ -62,7 +62,7 @@ bool DSMStateDiagramCollection::loadFile(const string& filename, const string& n
     s += r + "\n";
   }
   DBG("dsm text\n------------------\n%s\n------------------\n", s.c_str());
-  if (!cr.decode(&diags.back(), s, mod_path, this)) {
+  if (!cr.decode(&diags.back(), s, mod_path, this, mods)) {
     ERROR("DonkeySM decode script error!\n");
     return false;
   }
@@ -74,4 +74,6 @@ void DSMStateDiagramCollection::addToEngine(DSMStateEngine* e) {
   for (vector <DSMStateDiagram>::iterator it = 
 	 diags.begin(); it != diags.end(); it++) 
     e->addDiagram(&(*it));
+  
+  e->addModules(mods);
 }

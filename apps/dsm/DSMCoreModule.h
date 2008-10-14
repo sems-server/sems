@@ -50,10 +50,12 @@ class DSMCoreModule
 };
 
 DEF_SCStrArgAction(SCPlayPromptAction);
+DEF_SCStrArgAction(SCPlayPromptLoopedAction);
 DEF_SCStrArgAction(SCRecordFileAction);
 DEF_SCStrArgAction(SCStopRecordAction);
 DEF_SCStrArgAction(SCClosePlaylistAction);
 DEF_SCStrArgAction(SCStopAction);
+DEF_SCStrArgAction(SCSetPromptsAction);
 
 DEF_SCModSEStrArgAction(SCRepostAction);
 DEF_SCModSEStrArgAction(SCJumpFSMAction);
@@ -101,5 +103,7 @@ class TestDSMCondition
 
 string resolveVars(const string s, AmSession* sess,
 		   DSMSession* sc_sess, map<string,string>* event_params);
+
+string trim(string const& str,char const* sepSet);
 
 #endif

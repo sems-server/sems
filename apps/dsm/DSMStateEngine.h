@@ -28,8 +28,11 @@
 #define _STATE_ENGINE_H
 
 #include "DSMElemContainer.h"
+#include "AmSipMsg.h"
 
 class AmSession;
+class DSMSession;
+
 #include <map>
 using std::map;
 #include <vector>
@@ -124,6 +127,8 @@ class DSMTransition
   string to_state;
 };
 
+class DSMModule;
+
 class DSMStateDiagram  {
   vector<State> states;
   string name;
@@ -157,16 +162,23 @@ class DSMStateEngine {
 		  vector<DSMAction*>::iterator to, 
 		  AmSession* sess, DSMCondition::EventType event,
 		  map<string,string>* event_params,  bool& is_consumed);
+
+  vector<DSMModule*> mods;
+
  public: 
   DSMStateEngine();
   ~DSMStateEngine();
 
   void addDiagram(DSMStateDiagram* diag); 
+  void addModules(vector<DSMModule*> modules);
+
   bool init(AmSession* sess, const string& startDiagram);
 
   void runEvent(AmSession* sess,
 		DSMCondition::EventType event,
 		map<string,string>* event_params);
+
+  void onInvite(const AmSipRequest& req, DSMSession* sess);
 };
 
 

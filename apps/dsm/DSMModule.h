@@ -27,6 +27,9 @@
 #ifndef _DSM_MODULE_H
 #define _DSM_MODULE_H
 #include "DSMStateEngine.h"
+#include "AmSipMsg.h"
+#include "AmArg.h"
+class DSMSession;
 
 #include <string>
 using std::string;
@@ -41,6 +44,9 @@ class DSMModule {
   
   virtual DSMAction* getAction(const string& from_str) = 0;
   virtual DSMCondition* getCondition(const string& from_str) = 0;
+
+  virtual void preload() { }
+  virtual void onInvite(const AmSipRequest& req, DSMSession* sess) { }
 };
 
 typedef void* (*SCFactoryCreate)();

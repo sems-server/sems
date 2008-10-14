@@ -29,13 +29,15 @@
 
 #include "DSMStateEngine.h"
 #include <string>
-using std::string;
 
+using std::string;
+class DSMModule;
 
 class DSMStateDiagramCollection  
 : public DSMElemContainer
 {
-  vector <DSMStateDiagram> diags;
+  vector<DSMStateDiagram> diags;
+  vector<DSMModule*> mods;
 
  public: 
   DSMStateDiagramCollection();

@@ -46,6 +46,11 @@ DSMDialog::~DSMDialog()
     delete *it;
 }
 
+void DSMDialog::onInvite(const AmSipRequest& req) {
+  engine.onInvite(req, this);
+  AmSession::onInvite(req);
+}
+
 void DSMDialog::onSessionStart(const AmSipRequest& req)
 {
   DBG("DSMDialog::onSessionStart\n");
@@ -113,9 +118,9 @@ inline UACAuthCred* DSMDialog::getCredentials() {
   return cred.get();
 }
 
-void DSMDialog::playPrompt(const string& name) {
+void DSMDialog::playPrompt(const string& name, bool loop) {
   DBG("playing prompt '%s'\n", name.c_str());
-  prompts.addToPlaylist(name,  (long)this, playlist);  
+  prompts.addToPlaylist(name,  (long)this, playlist, /*front =*/ false, loop);  
 }
 
 void DSMDialog::closePlaylist(bool notify) {
@@ -165,3 +170,32 @@ void DSMDialog::stopRecord() {
     return;
   }
 }
+
+void DSMDialog::addPromptSet(const string& name, 
+			     AmPromptCollection* prompt_set) {
+  if (prompt_set) {
+    DBG("adding prompt set '%s'\n", name.c_str());
+    prompt_sets[name] = prompt_set;
+  } else {
+    ERROR("trying to add NULL prompt set\n");
+  }
+}
+
+void DSMDialog::setPromptSets(map<string, AmPromptCollection*>& 
+			      new_prompt_sets) {
+  prompt_sets = new_prompt_sets;
+}
+
+void DSMDialog::setPromptSet(const string& name) {
+  map<string, AmPromptCollection*>::iterator it = 
+    prompt_sets.find(name);
+
+  if (it == prompt_sets.end()) {
+    ERROR("prompt set %s unknown\n", name.c_str());
+    return;
+  }
+
+  DBG("setting prompt set '%s'\n", name.c_str());
+  prompts = *it->second;
+}
+

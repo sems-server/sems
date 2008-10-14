@@ -73,6 +73,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("stop", SCStopAction);
 
   DEF_CMD("playPrompt", SCPlayPromptAction);
+  DEF_CMD("playPromptLooped", SCPlayPromptLoopedAction);
   DEF_CMD("playFile", SCPlayFileAction);
   DEF_CMD("recordFile", SCRecordFileAction);
   DEF_CMD("stopRecord", SCStopRecordAction);
@@ -83,6 +84,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("log", SCLogAction);
 
   DEF_CMD("setTimer", SCSetTimerAction);
+
+  DEF_CMD("setPrompts", SCSetPromptsAction);
 
   if (cmd == "DI") {
     SCDIAction * a = new SCDIAction(params, false);
@@ -184,6 +187,23 @@ bool SCPlayPromptAction::execute(AmSession* sess,
   return false;
 }
 
+
+bool SCSetPromptsAction::execute(AmSession* sess, 
+				 DSMCondition::EventType event,
+				 map<string,string>* event_params) {
+  GET_SCSESSION();
+  sc_sess->setPromptSet(resolveVars(arg, sess, sc_sess, event_params));
+  return false;
+}
+
+bool SCPlayPromptLoopedAction::execute(AmSession* sess, 
+				 DSMCondition::EventType event,
+				 map<string,string>* event_params) {
+  GET_SCSESSION();
+  sc_sess->playPrompt(resolveVars(arg, sess, sc_sess, event_params), true);
+  return false;
+}
+
 bool SCPlayFileAction::execute(AmSession* sess, 
 			       DSMCondition::EventType event,
 			       map<string,string>* event_params) {
@@ -282,7 +302,7 @@ bool SCLogAction::execute(AmSession* sess,
     return false;
   }
   string l_line = resolveVars(par2, sess, sc_sess, event_params).c_str();
-  _LOG((int)lvl, "FSM: %s %s\n", (par2 != l_line)?par2.c_str():"",
+  _LOG((int)lvl, "FSM: %s '%s'\n", (par2 != l_line)?par2.c_str():"",
        l_line.c_str());
   return false;
 }

@@ -36,7 +36,10 @@ actions:
  playFile(filename)
  recordFile(filename)
  stopRecord()
- closePlaylist
+ closePlaylist()
+
+ setPromptSet() 
+   if more prompt sets are loaded
 
  set($var, value)
   e.g.  set($var, "text"); set($var, $var2); set($var, #key)

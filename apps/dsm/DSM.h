@@ -42,6 +42,8 @@ using std::string;
 
 #include <memory>
 
+class DSMDialog;
+
 /** \brief Factory for announcement sessions */
 class DSMFactory
   : public AmSessionFactory
@@ -54,10 +56,16 @@ class DSMFactory
 
   static DSMFactory* _instance;
   DSMFactory(const string& _app_name);
+  ~DSMFactory();
   bool loaded;
+
+  map<string, AmPromptCollection*> prompt_sets; 
+  void prepareSession(DSMDialog* s);
+
 public:
   static DSMFactory* instance();
 
+  static map<string, string> config;
 
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);

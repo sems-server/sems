@@ -90,7 +90,10 @@ class DSMChartReader {
   DSMChartReader();
   ~DSMChartReader();
   bool decode(DSMStateDiagram* e, const string& chart, 
-	      const string& mod_path, DSMElemContainer* owner);
+	      const string& mod_path, DSMElemContainer* owner,
+	      vector<DSMModule*>& out_mods);
+
+  friend class DSMFactory;
 };
 
 #endif
