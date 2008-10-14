@@ -106,7 +106,8 @@ AmCachedAudioFile* AudioFileEntry::getAudio(){
 }
 
 int AmPromptCollection::addToPlaylist(const std::string& name, long sess_id, 
-				      AmPlaylist& list, bool front) {
+				      AmPlaylist& list, bool front, 
+				      bool loop) {
   string s = name;
   std::map<std::string, AudioFileEntry*>::iterator it=store.begin();
 
@@ -127,6 +128,9 @@ int AmPromptCollection::addToPlaylist(const std::string& name, long sess_id,
   if (NULL == af) {
     return -2;
   }
+
+  if (loop) 
+    af->loop.set(true);
 
   if (front)
     list.addToPlayListFront(new AmPlaylistItem(af,NULL));

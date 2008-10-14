@@ -97,7 +97,8 @@ class AmPromptCollection {
    * to the playlist @list
    */
   int addToPlaylist(const string& name, long sess_id, 
-		    AmPlaylist& list, bool front=false);
+		    AmPlaylist& list, bool front=false, 
+		    bool loop=false);
   /**
    * cleanup allocated object of sess_id
    */
