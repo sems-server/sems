@@ -28,6 +28,10 @@
 #ifndef _ans_machine_h_
 #define _ans_machine_h_
 
+#ifndef SEMS_VERSION
+#include "config.h"
+#endif
+
 #define CONFIG_FILE         "/usr/local/etc/sems/sems.conf"
 #define MOD_CFG_PATH        "/usr/local/etc/sems/etc"
 #define SER_FIFO            "/tmp/ser_fifo"
