@@ -145,7 +145,7 @@ int DSMFactory::onLoad()
     DSMChartReader reader;
     for (vector<string>::iterator it=
 	   preload_names.begin(); it != preload_names.end(); it++) {
-      DBG("preloading '%s'...\n");
+      DBG("preloading '%s'...\n", it->c_str());
       if (!reader.importModule("import("+*it+")", ModPath)) {
 	ERROR("importing module '%s' for preload\n", it->c_str());
 	return -1;

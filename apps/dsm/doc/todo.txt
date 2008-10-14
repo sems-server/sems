@@ -4,7 +4,7 @@
  o better error handling (exceptions)
  o 'not' operator on conditions
  o 'or' operator
- o provide session init function for modules
+ x provide session init function for modules
  o embed python interpreter in module ?
    -> py( ... python code ... ) condition and action
  o correct en/decode DI args (e.g. arrays)
