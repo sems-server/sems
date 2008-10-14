@@ -32,7 +32,9 @@ which a set of dialog properties can be accessed (e.g. @local_tag).
 The DonkeySM can be extended by modules, which add new conditions
 and actions to the language. This way, menuing system etc can be 
 implemented as DSM, while complex logic or processing can efficitently 
-be implemented in C++. DonkeySM also has built in actions to call 
+be implemented in C++. Modules can act on new sessions, and have a 
+initialization function that is called when the module is loaded.
+DonkeySM also has built in actions to call 
 DI methods from other modules. 
 
 It can cache a set of prompts, configured at start, in memory 

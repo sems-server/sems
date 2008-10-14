@@ -38,7 +38,7 @@ actions:
  stopRecord()
  closePlaylist()
 
- setPromptSet() 
+ setPromptSet(name) 
    if more prompt sets are loaded
 
  set($var, value)
