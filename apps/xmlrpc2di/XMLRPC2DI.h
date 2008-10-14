@@ -142,6 +142,7 @@ class XMLRPC2DI
 
   void newConnection(const AmArg& args, AmArg& ret);
   void sendRequest(const AmArg& args, AmArg& ret);
+  void sendRequestList(const AmArg& args, AmArg& ret);
  public:
   XMLRPC2DI(const string& mod_name);
   ~XMLRPC2DI() { }

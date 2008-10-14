@@ -228,6 +228,47 @@ void XMLRPC2DI::sendRequest(const AmArg& args, AmArg& ret) {
   }
 }
 
+void XMLRPC2DI::sendRequestList(const AmArg& args, AmArg& ret) {
+  string app_name     = args.get(0).asCStr();
+  string method       = args.get(1).asCStr();
+
+  while (true) {
+    XMLRPCServerEntry* srv = getServer(app_name);
+    if (NULL == srv) {
+      ret.push(-1);
+      ret.push("no active connections");
+      return;
+    }
+    XmlRpcClient c((const char*)srv->server.c_str(), (int)srv->port, 
+		   (const char*)srv->uri.empty()?NULL:srv->uri.c_str()
+#ifdef HAVE_XMLRPCPP_SSL
+		   , false
+#endif
+		   );
+
+    XmlRpcValue x_args, x_result;
+
+    x_args.setSize(args.size()-2);
+    for (size_t i=2;i<args.size();i++) {
+      XMLRPC2DIServer::amarg2xmlrpcval(args.get(i), x_args[i]);
+    }
+
+    if (c.execute(method.c_str(), x_args, x_result) &&  !c.isFault()) {
+      DBG("successfully executed method %s on server %s:%d\n",
+	  method.c_str(), srv->server.c_str(), srv->port);
+      ret.push(0);
+      ret.push("OK");
+//       ret.assertArray(3);
+      XMLRPC2DIServer::xmlrpcval2amarg(x_result, ret, 0);
+      return;      
+    } else {
+      DBG("executing method %s failed on server %s:%d\n",
+	  method.c_str(), srv->server.c_str(), srv->port);
+      srv->set_failed();
+    }
+  }
+}
+
 void XMLRPC2DI::invoke(const string& method, 
 		       const AmArg& args, AmArg& ret) {
 
@@ -237,9 +278,13 @@ void XMLRPC2DI::invoke(const string& method,
   } else if(method == "sendRequest"){
     args.assertArrayFmt("ssa");   // app, method, args
     sendRequest(args, ret);
+  } else if(method == "sendRequestList"){
+    args.assertArrayFmt("ss");   // app, method, ...
+    sendRequestList(args, ret);
   } else if(method == "_list"){ 
     ret.push(AmArg("newConnection"));
     ret.push(AmArg("sendRequest"));
+    ret.push(AmArg("sendRequestList"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
   
@@ -429,7 +474,15 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a,
 	a[a.size()-1].assertArray(0);
 	AmArg arr; 
 	xmlrpcval2amarg(v[i], a[a.size()-1], 0);
+      } break; 
+      case XmlRpcValue::TypeStruct: {	
+	for (XmlRpc::XmlRpcValue::ValueStruct::iterator it=
+		 ((XmlRpcValue::ValueStruct)v).begin(); it != ((XmlRpcValue::ValueStruct)v).end(); it++) {	    
+	    a[it->first] = AmArg();
+	    xmlrpcval2amarg(it->second, a[it->first], 0);
+	  }
       } break;
+
 	// TODO: support more types (datetime, struct, ...)
       default:     throw XmlRpcException("unsupported parameter type", 400);
       };
