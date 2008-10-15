@@ -250,7 +250,7 @@ void XMLRPC2DI::sendRequestList(const AmArg& args, AmArg& ret) {
 
     x_args.setSize(args.size()-2);
     for (size_t i=2;i<args.size();i++) {
-      XMLRPC2DIServer::amarg2xmlrpcval(args.get(i), x_args[i]);
+      XMLRPC2DIServer::amarg2xmlrpcval(args.get(i), x_args[i-2]);
     }
 
     if (c.execute(method.c_str(), x_args, x_result) &&  !c.isFault()) {
