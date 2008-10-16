@@ -497,16 +497,18 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
     req.port     = int2str(ntohs(((sockaddr_in*)(&msg->local_ip))->sin_port));
     req.r_uri    = c2stlstr(msg->u.request->ruri_str);
 
-    if(msg->contact){
+    if(get_contact(msg)){
 
 	sip_nameaddr na;
-	const char* c = msg->contact->value.s;
-	if(parse_nameaddr(&na,&c,msg->contact->value.len) < 0){
-	    DBG("Contact parsing failed\n");
+ 	const char* c = get_contact(msg)->value.s;
+ 	if(parse_nameaddr(&na,&c,get_contact(msg)->value.len) < 0){
+	    WARN("Contact parsing failed:\n");
+ 	    WARN("\tcontact = '%.*s'\n",get_contact(msg)->value.len,get_contact(msg)->value.s);
+  	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
 	}
 	else {
 	    req.from_uri = c2stlstr(na.addr);
-	    req.contact  = c2stlstr(msg->contact->value);
+	    req.contact  = c2stlstr(get_contact(msg)->value);
 	}
     }
     
@@ -559,12 +561,13 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     reply.code   = msg->u.reply->code;
     reply.reason = c2stlstr(msg->u.reply->reason);
 
-    if(msg->contact){
+    if(get_contact(msg)){
 
-	const char* c = msg->contact->value.s;
+	// parse the first contact
+	const char* c = get_contact(msg)->value.s;
 	sip_nameaddr na;
 	
-	int err = parse_nameaddr(&na,&c,msg->contact->value.len);
+	int err = parse_nameaddr(&na,&c,get_contact(msg)->value.len);
 	if(err < 0) {
 	    
 	    ERROR("Contact nameaddr parsing failed\n");
@@ -572,8 +575,13 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 	}
 	
 	// 'Contact' header?
-	reply.next_request_uri = c2stlstr(na.addr); 
-	reply.contact = c2stlstr(msg->contact->value);
+	reply.next_request_uri = c2stlstr(na.addr);
+	
+	list<sip_header*>::iterator c_it = msg->contacts.begin();
+	reply.contact = c2stlstr((*c_it)->value);
+	for(;c_it!=msg->contacts.end(); ++c_it){
+	    reply.contact += "," + c2stlstr((*c_it)->value);
+	}
     }
 
     reply.callid = c2stlstr(msg->callid->value);
@@ -583,12 +591,6 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 
     reply.dstip = get_addr_str(((sockaddr_in*)(&msg->local_ip))->sin_addr); //FIXME: IPv6
     reply.port  = int2str(ntohs(((sockaddr_in*)(&msg->local_ip))->sin_port));
-
-    //if( (get_cseq(msg)->method == sip_request::INVITE) 
-    // 	&& (msg->u.reply->code >= 200) 
-    // 	&& (msg->u.reply->code < 300) ){
-    // 	tl->send_200_ack(msg);
-    //}
 
     prepare_routes_uac(msg->record_route, reply.route);
 

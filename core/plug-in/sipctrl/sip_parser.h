@@ -111,7 +111,8 @@ struct sip_msg
     sip_via_parm*      via_p1;
 
     sip_header*        callid;
-    sip_header*        contact;
+
+    list<sip_header*>  contacts;
     list<sip_header*>  route;
     list<sip_header*>  record_route;
     sip_header*        content_type;
@@ -129,6 +130,8 @@ struct sip_msg
 
 int parse_method(int* method, const char* beg, int len);
 int parse_sip_msg(sip_msg* msg);
+
+#define get_contact(msg) (msg->contacts.empty() ? NULL : (*msg->contacts.begin()))
 
 #endif
 
