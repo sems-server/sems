@@ -653,7 +653,7 @@ int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
 	+ copy_hdr_len(req->callid)
 	+ cseq_len(get_cseq(req)->num_str,cancel_str)
 	+ copy_hdrs_len(req->route)
-	+ copy_hdr_len(req->contact);
+	+ copy_hdrs_len(req->contacts);
 
     request_len += 2/* CRLF end-of-headers*/;
 
@@ -673,7 +673,7 @@ int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
     copy_hdr_wr(&c,req->callid);
     cseq_wr(&c,get_cseq(req)->num_str,cancel_str);
     copy_hdrs_wr(&c,req->route);
-    copy_hdr_wr(&c,req->contact);
+    copy_hdrs_wr(&c,req->contacts);
 
     *c++ = CR;
     *c++ = LF;
@@ -1156,14 +1156,14 @@ void trans_layer::send_200_ack(sip_msg* reply, sip_trans* t)
 {
     // Set request URI
     // TODO: use correct R-URI instead of just 'Contact'
-    if(!reply->contact) {
+    if(!get_contact(reply)) {
 	DBG("Sorry, reply has no Contact header: could not send ACK\n");
 	return;
     }
     
     sip_nameaddr na;
-    const char* c = reply->contact->value.s;
-    if(parse_nameaddr(&na,&c,reply->contact->value.len) < 0){
+    const char* c = get_contact(reply)->value.s;
+    if(parse_nameaddr(&na,&c,get_contact(reply)->value.len) < 0){
 	DBG("Sorry, reply's Contact parsing failed: could not send ACK\n");
 	return;
     }

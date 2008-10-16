@@ -112,7 +112,7 @@ static int parse_header_type(sip_msg* msg, sip_header* h)
       } break;
       case 'm': { // Contact      
 	h->type = sip_header::H_CONTACT;
-	msg->contact = h;
+	msg->contacts.push_back(h);
       } break;
 	//       case 'e': // Content-Encoding
 	// 	{} break;
@@ -209,7 +209,7 @@ static int parse_header_type(sip_msg* msg, sip_header* h)
 	    case 'O':
 		if(!lower_cmp(h->name.s+2,CONTACT_lc+2,CONTACT_len-2)){
 		    h->type = sip_header::H_CONTACT;
-		    msg->contact = h;
+		    msg->contacts.push_back(h);
 		}
 		break;
 
