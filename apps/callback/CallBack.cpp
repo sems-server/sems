@@ -313,6 +313,8 @@ CallBackCalleeDialog::CallBackCalleeDialog(const string& other_tag,
 				     UACAuthCred* cred) 
   : AmB2ABCalleeSession(other_tag), cred(cred)
 {
+  // set configured playout type
+  rtp_str.setPlayoutType(CallBackFactory::m_PlayoutType);
   setDtmfDetectionEnabled(false);
 }
 
