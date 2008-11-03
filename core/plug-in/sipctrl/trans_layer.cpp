@@ -882,7 +882,7 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
     
     to_tag = ((sip_from_to*)msg->to->p)->tag;
     if((t->msg->u.request->method != sip_request::CANCEL) && !to_tag.len){
-	DBG("To-tag missing in final reply\n");
+	DBG("To-tag missing in final reply (see sipctrl.conf?)\n");
 	if (!SipCtrlInterfaceFactory::accept_fr_without_totag)
 	    return -1;
     }
