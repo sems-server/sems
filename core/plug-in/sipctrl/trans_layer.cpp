@@ -467,7 +467,7 @@ void trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     bucket->remove_trans(t);
 }
 
-int trans_layer::send_request(sip_msg* msg, char* tid)
+int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
 {
     // Request-URI
     // To
@@ -481,6 +481,8 @@ int trans_layer::send_request(sip_msg* msg, char* tid)
     // Content-Length / Content-Type
     
     assert(transport);
+
+    tid_len = 0;
 
     if(set_next_hop(msg->route,msg->u.request->ruri_str,
 		    &msg->remote_ip) < 0){
@@ -587,7 +589,8 @@ int trans_layer::send_request(sip_msg* msg, char* tid)
 
 	string t_id = int2hex(bucket->get_id()).substr(5,string::npos) 
 	    + ":" + long2hex((unsigned long)t);
-	memcpy(tid,t_id.c_str(),12);
+	memcpy(tid,t_id.c_str(),t_id.length());
+	tid_len = t_id.length();
     }
 
     bucket->unlock();

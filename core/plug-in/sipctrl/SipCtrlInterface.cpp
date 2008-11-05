@@ -319,10 +319,9 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 	}
     }
 
-    int res = tl->send_request(msg,serKey);
+    int res = tl->send_request(msg,serKey,serKeyLen);
     delete msg;
 
-    serKeyLen=12;
     return res;
 }
 
@@ -518,8 +517,10 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
 	}
     }
     else {
-	WARN("Request has no contact header\n");
-	WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
+	if (req.method == "INVITE") {
+	    WARN("Request has no contact header\n");
+	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
+	}
     }
     
     if(req.from_uri.empty()) {

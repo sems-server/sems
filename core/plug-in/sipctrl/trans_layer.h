@@ -139,10 +139,11 @@ class trans_layer
      * Sends a UAC request.
      * Caution: Route headers should not be added to the
      * general header list (msg->hdrs).
-     * @param msg Pre-built message.
-     * @param tid buffer for the transaction key (char[12])
+     * @param [in]  msg Pre-built message.
+     * @param [out] tid buffer for the transaction key (char*)
+     * @param [out] length of transaction key
      */
-    int send_request(sip_msg* msg, char* tid);
+    int send_request(sip_msg* msg, char* tid, unsigned int& tid_len);
 
     /**
      * Cancels a request. 
