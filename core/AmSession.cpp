@@ -50,6 +50,7 @@
 #include <sys/time.h>
 
 volatile unsigned int AmSession::session_num = 0;
+AmMutex AmSession::session_num_mut;
 
 
 // AmSession methods
@@ -320,7 +321,9 @@ void AmSession::run()
   }
 #endif
 
+  session_num_mut.lock();
   session_num++;
+  session_num_mut.unlock();
 
   try {
     try {
@@ -368,7 +371,9 @@ void AmSession::run()
 
   destroy();
 
+  session_num_mut.lock();
   session_num--;
+  session_num_mut.unlock();
     
   // wait at least until session is out of RtpScheduler
   //detached.wait_for();
@@ -409,7 +414,11 @@ string AmSession::getNewId()
 
 unsigned int AmSession::getSessionNum()
 {
-    return AmSession::session_num;
+  unsigned int res = 0;
+  session_num_mut.lock();
+  res = session_num;
+  session_num_mut.unlock();
+  return res;
 }
 
 

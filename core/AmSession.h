@@ -100,6 +100,7 @@ private:
   AmCondition<bool> detached;
 
   static volatile unsigned int session_num;
+  static AmMutex session_num_mut;
 
   friend class AmMediaProcessor;
   friend class AmMediaProcessorThread;
