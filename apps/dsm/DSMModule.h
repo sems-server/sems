@@ -45,7 +45,7 @@ class DSMModule {
   virtual DSMAction* getAction(const string& from_str) = 0;
   virtual DSMCondition* getCondition(const string& from_str) = 0;
 
-  virtual void preload() { }
+  virtual int preload() { return 0; }
   virtual void onInvite(const AmSipRequest& req, DSMSession* sess) { }
 };
 

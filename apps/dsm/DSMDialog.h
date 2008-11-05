@@ -47,7 +47,7 @@ class DSMDialog : public AmSession,
   string startDiagName;
   AmPlaylist playlist;
 
-  vector<AmAudioFile*> audiofiles;
+  vector<AmAudio*> audiofiles;
   AmAudioFile* rec_file;
   map<string, AmPromptCollection*> prompt_sets;
 
@@ -80,6 +80,7 @@ public:
   void stopRecord();
 
   void setPromptSet(const string& name);
+  void addSeparator(const string& name);
 };
 
 #endif

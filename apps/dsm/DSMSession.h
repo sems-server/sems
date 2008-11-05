@@ -27,7 +27,8 @@
 #ifndef _DSM_SESSION_H
 #define _DSM_SESSION_H
 
-#include <AmArg.h>
+#include "AmArg.h"
+#include "AmEvent.h"
 
 #include <string>
 using std::string;
@@ -35,6 +36,14 @@ using std::string;
 using std::vector;
 #include <map>
 using std::map;
+
+#define DSM_ERRNO_FILE        "1"
+#define DSM_ERRNO_UNKNOWN_ARG "2"
+#define DSM_ERRNO_GENERAL     "99"
+#define DSM_ERRNO_OK          ""
+
+#define SET_ERRNO(new_errno) \
+    var["errno"] = new_errno
 
 class DSMSession {
 
@@ -48,12 +57,23 @@ class DSMSession {
   virtual void stopRecord() = 0;
   virtual void closePlaylist(bool notify) = 0;
   virtual void setPromptSet(const string& name) = 0;
+  virtual void addSeparator(const string& name) = 0;
 
   /* holds variables which are accessed by $varname */
   map<string, string> var;
 
   /* result of the last DI call */
   AmArg di_res;
+};
+
+
+
+#define DSM_EVENT_ID -10
+/**  generic event for passing events between DSM sessions */
+struct DSMEvent : public AmEvent {
+ DSMEvent() : AmEvent(DSM_EVENT_ID) { }
+  ~DSMEvent() { }
+  map<string, string> params;
 };
 
 #endif

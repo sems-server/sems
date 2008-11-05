@@ -152,7 +152,10 @@ int DSMFactory::onLoad()
       }
       DSMModule* last_loaded = reader.mods.back();
       if (last_loaded) {
-	last_loaded->preload();
+ 	if (last_loaded->preload()) {
+ 	  DBG("Error while preloading '%s'\n", it->c_str());
+ 	  return -1;
+ 	}
       }
     }
   }

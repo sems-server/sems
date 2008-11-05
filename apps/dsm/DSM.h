@@ -43,7 +43,7 @@ using std::string;
 #include <memory>
 
 class DSMDialog;
-
+class DSMModule;
 /** \brief Factory for announcement sessions */
 class DSMFactory
   : public AmSessionFactory
@@ -62,6 +62,7 @@ class DSMFactory
   map<string, AmPromptCollection*> prompt_sets; 
   void prepareSession(DSMDialog* s);
 
+  vector<DSMModule*> preloaded_mods;
 public:
   static DSMFactory* instance();
 

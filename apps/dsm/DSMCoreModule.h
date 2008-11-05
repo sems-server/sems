@@ -56,6 +56,7 @@ DEF_SCStrArgAction(SCStopRecordAction);
 DEF_SCStrArgAction(SCClosePlaylistAction);
 DEF_SCStrArgAction(SCStopAction);
 DEF_SCStrArgAction(SCSetPromptsAction);
+DEF_SCStrArgAction(SCAddSeparatorAction);
 
 DEF_SCModSEStrArgAction(SCRepostAction);
 DEF_SCModSEStrArgAction(SCJumpFSMAction);
@@ -68,6 +69,7 @@ DEF_TwoParAction(SCAppendAction);
 DEF_TwoParAction(SCSetTimerAction);
 DEF_TwoParAction(SCLogAction);
 DEF_TwoParAction(SCPlayFileAction);
+DEF_TwoParAction(SCPostEventAction);
 
 class SCDIAction					
 : public DSMAction {

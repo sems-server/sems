@@ -28,6 +28,7 @@
 #include "DSMCoreModule.h"
 #include "DSMSession.h"
 #include "AmSession.h"
+#include "AmSessionContainer.h"
 #include "AmUtils.h"
 
 DSMCoreModule::DSMCoreModule() {
@@ -78,6 +79,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("recordFile", SCRecordFileAction);
   DEF_CMD("stopRecord", SCStopRecordAction);
   DEF_CMD("closePlaylist", SCClosePlaylistAction);
+  DEF_CMD("addSeparator", SCAddSeparatorAction);
+
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("append", SCAppendAction);
@@ -86,6 +89,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("setTimer", SCSetTimerAction);
 
   DEF_CMD("setPrompts", SCSetPromptsAction);
+
+  DEF_CMD("postEvent", SCPostEventAction);
 
   if (cmd == "DI") {
     SCDIAction * a = new SCDIAction(params, false);
@@ -128,8 +133,14 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "noAudioTest") 
     return new TestDSMCondition(params, DSMCondition::NoAudio);
 
+  if (cmd == "separatorTest") 
+    return new TestDSMCondition(params, DSMCondition::PlaylistSeparator);
+
   if (cmd == "hangup") 
     return new TestDSMCondition(params, DSMCondition::Hangup);  
+
+  if (cmd == "eventTest") 
+    return new TestDSMCondition(params, DSMCondition::DSMEvent);  
 
   ERROR("could not find condition for '%s'\n", cmd.c_str());
   return NULL;
@@ -196,11 +207,45 @@ bool SCSetPromptsAction::execute(AmSession* sess,
   return false;
 }
 
+bool SCAddSeparatorAction::execute(AmSession* sess, 
+				   DSMCondition::EventType event,
+				   map<string,string>* event_params) {
+  GET_SCSESSION();
+  sc_sess->addSeparator(resolveVars(arg, sess, sc_sess, event_params));
+  return false;
+}
+
 bool SCPlayPromptLoopedAction::execute(AmSession* sess, 
 				 DSMCondition::EventType event,
 				 map<string,string>* event_params) {
   GET_SCSESSION();
   sc_sess->playPrompt(resolveVars(arg, sess, sc_sess, event_params), true);
+  return false;
+}
+
+CONST_TwoParAction(SCPostEventAction, ",", true);
+
+bool SCPostEventAction::execute(AmSession* sess, 
+			       DSMCondition::EventType event,
+			       map<string,string>* event_params) {
+
+  GET_SCSESSION();
+  string sess_id = resolveVars(par1, sess, sc_sess, event_params);
+  string var = resolveVars(par2, sess, sc_sess, event_params);
+  DSMEvent* ev = new DSMEvent();
+  if (!var.empty()) {
+    if (var == "var")
+      ev->params = sc_sess->var;
+    else 
+      ev->params[var] = sc_sess->var[var];
+  }
+
+  DBG("posting event to session '%s'\n", sess_id.c_str());
+  if (!AmSessionContainer::instance()->postEvent(sess_id, ev))
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+  else 
+    sc_sess->SET_ERRNO(DSM_ERRNO_OK);
+
   return false;
 }
 

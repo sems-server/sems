@@ -66,7 +66,9 @@ class DSMCondition
     Hold,
     UnHold,
 
-    XmlrpcResponse
+    XmlrpcResponse,
+    DSMEvent,
+    PlaylistSeparator
   };
 
   DSMCondition() { }
