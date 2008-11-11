@@ -67,6 +67,7 @@ public:
   static DSMFactory* instance();
 
   static map<string, string> config;
+  static bool   RunInviteEvent;
 
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);

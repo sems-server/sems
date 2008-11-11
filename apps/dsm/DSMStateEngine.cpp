@@ -111,13 +111,15 @@ DSMStateEngine::DSMStateEngine()
 }
 
 DSMStateEngine::~DSMStateEngine() {
-  
 }
 
-void DSMStateEngine::onInvite(const AmSipRequest& req, DSMSession* sess) {
+bool DSMStateEngine::onInvite(const AmSipRequest& req, DSMSession* sess) {
+  bool res = true;
   for (vector<DSMModule*>::iterator it =
 	 mods.begin(); it != mods.end(); it++)
-    (*it)->onInvite(req, sess);
+    res &= (*it)->onInvite(req, sess);
+
+  return res;
 }
 
 bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from, 
@@ -167,16 +169,17 @@ void DSMStateEngine::addModules(vector<DSMModule*> modules) {
     mods.push_back(*it);
 }
 
-bool DSMStateEngine::init(AmSession* sess, const string& startDiagram) {
+bool DSMStateEngine::init(AmSession* sess, const string& startDiagram, 
+			  DSMCondition::EventType init_event) {
 
-  if (!jumpDiag(startDiagram, sess, DSMCondition::Any, NULL)) {
+  if (!jumpDiag(startDiagram, sess, init_event, NULL)) {
     ERROR("initializing with start diag '%s'\n",
 	  startDiagram.c_str());
     return false;
   }
 
-  DBG("run null event...\n");
-  runEvent(sess, DSMCondition::Any, NULL);
+  DBG("run init event...\n");
+  runEvent(sess, init_event, NULL);
   return true;
 }
 

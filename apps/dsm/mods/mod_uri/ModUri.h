@@ -38,7 +38,7 @@ class URIModule
   DSMAction* getAction(const string& from_str);
   DSMCondition* getCondition(const string& from_str);
 
-  void onInvite(const AmSipRequest& req, DSMSession* sess);
+  bool onInvite(const AmSipRequest& req, DSMSession* sess);
 };
 
 DEF_TwoParAction(URIParseAction);

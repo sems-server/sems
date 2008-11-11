@@ -57,6 +57,8 @@ class DSMCondition
  public:
   enum EventType {
     Any,
+    Invite,
+    SessionStart,
     Key,
     Timer,
 
@@ -174,13 +176,15 @@ class DSMStateEngine {
   void addDiagram(DSMStateDiagram* diag); 
   void addModules(vector<DSMModule*> modules);
 
-  bool init(AmSession* sess, const string& startDiagram);
+  bool init(AmSession* sess, const string& startDiagram,
+	    DSMCondition::EventType init_event);
 
   void runEvent(AmSession* sess,
 		DSMCondition::EventType event,
 		map<string,string>* event_params);
 
-  void onInvite(const AmSipRequest& req, DSMSession* sess);
+  /** @return whether call should be accepted */
+  bool onInvite(const AmSipRequest& req, DSMSession* sess);
 };
 
 

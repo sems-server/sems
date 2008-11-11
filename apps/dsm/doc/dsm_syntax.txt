@@ -61,6 +61,7 @@ actions:
 
   stop(<send bye>)
    e.g. stop(false), stop(true)
+
 ============================= 
 conditions:
  
@@ -102,4 +103,16 @@ imports:
  module load path. modules provide conditions and actions.
  modules' actions/conditions-factory is checked first 
  (modules can override core conditions/actions)
+=============================
+special variables:
+    reply_request       "0" ->do not reply to the request as standard behaviour
 
+    connect_session     "0" ->do not connect session to media processor on start
+=============================
+errors:
+   actions set $errno
+     #define DSM_ERRNO_OK          ""
+     #define DSM_ERRNO_FILE        "1"
+     #define DSM_ERRNO_UNKNOWN_ARG "2"
+     #define DSM_ERRNO_GENERAL     "99"
+     ...

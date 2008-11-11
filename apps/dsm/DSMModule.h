@@ -46,7 +46,7 @@ class DSMModule {
   virtual DSMCondition* getCondition(const string& from_str) = 0;
 
   virtual int preload() { return 0; }
-  virtual void onInvite(const AmSipRequest& req, DSMSession* sess) { }
+  virtual bool onInvite(const AmSipRequest& req, DSMSession* sess) { return true; }
 };
 
 typedef void* (*SCFactoryCreate)();

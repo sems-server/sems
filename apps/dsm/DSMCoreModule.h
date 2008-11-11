@@ -55,6 +55,7 @@ DEF_SCStrArgAction(SCRecordFileAction);
 DEF_SCStrArgAction(SCStopRecordAction);
 DEF_SCStrArgAction(SCClosePlaylistAction);
 DEF_SCStrArgAction(SCStopAction);
+DEF_SCStrArgAction(SCConnectMediaAction);
 DEF_SCStrArgAction(SCSetPromptsAction);
 DEF_SCStrArgAction(SCAddSeparatorAction);
 

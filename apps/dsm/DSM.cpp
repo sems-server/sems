@@ -56,6 +56,7 @@ DSMFactory* DSMFactory::instance()
 string DSMFactory::InboundStartDiag;
 string DSMFactory::OutboundStartDiag;
 map<string, string> DSMFactory::config;
+bool DSMFactory::RunInviteEvent;
 
 DSMFactory::DSMFactory(const string& _app_name)
   : AmSessionFactory(_app_name),
@@ -184,6 +185,8 @@ int DSMFactory::onLoad()
   for (std::map<string,string>::const_iterator it = 
 	 cfg.begin(); it != cfg.end(); it++)
     config[it->first] = it->second;
+
+  RunInviteEvent = cfg.getParameter("run_invite_event")=="yes";
 
   return 0;
 }

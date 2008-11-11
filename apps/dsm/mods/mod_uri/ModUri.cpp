@@ -111,8 +111,9 @@ bool URIParseAction::execute(AmSession* sess,
   return false;
 }
 
-void URIModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
+bool URIModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
   sess->var["hdrs"] = req.hdrs;
+  return true;
 }
 
 CONST_TwoParAction(URIGetHeaderAction, ",", false);

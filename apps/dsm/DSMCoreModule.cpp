@@ -80,7 +80,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("stopRecord", SCStopRecordAction);
   DEF_CMD("closePlaylist", SCClosePlaylistAction);
   DEF_CMD("addSeparator", SCAddSeparatorAction);
-
+  DEF_CMD("connectMedia", SCConnectMediaAction);
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("append", SCAppendAction);
@@ -141,6 +141,12 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
 
   if (cmd == "eventTest") 
     return new TestDSMCondition(params, DSMCondition::DSMEvent);  
+
+  if (cmd == "invite") 
+    return new TestDSMCondition(params, DSMCondition::Invite);  
+
+  if (cmd == "sessionStart") 
+    return new TestDSMCondition(params, DSMCondition::SessionStart);  
 
   ERROR("could not find condition for '%s'\n", cmd.c_str());
   return NULL;
@@ -287,6 +293,15 @@ bool SCClosePlaylistAction::execute(AmSession* sess,
   sc_sess->closePlaylist(notify);
   return false;
 }
+
+bool SCConnectMediaAction::execute(AmSession* sess, 
+				   DSMCondition::EventType event,
+				   map<string,string>* event_params) {
+  GET_SCSESSION();
+  sc_sess->connectMedia();
+  return false;
+}
+
 
 bool SCStopAction::execute(AmSession* sess, 
 			   DSMCondition::EventType event,

@@ -27,6 +27,8 @@
 
 #include "DSMDialog.h"
 #include "AmUtils.h"
+#include "AmMediaProcessor.h"
+#include "DSM.h"
 
 DSMDialog::DSMDialog(AmPromptCollection& prompts,
 		     DSMStateDiagramCollection& diags,
@@ -51,9 +53,28 @@ DSMDialog::~DSMDialog()
     it->second->cleanup((long)this);
 }
 
+/** returns whether var exists && var==value*/
+bool DSMDialog::checkVar(const string& var_name, const string& var_val) {
+  map<string, string>::iterator it = var.find(var_name);
+  if ((it != var.end()) && (it->second == var_val)) 
+    return false;
+
+  return true;
+}
+
 void DSMDialog::onInvite(const AmSipRequest& req) {
-  engine.onInvite(req, this);
-  AmSession::onInvite(req);
+  bool run_session_invite = engine.onInvite(req, this);
+
+  if (DSMFactory::RunInviteEvent) {
+    if (!engine.init(this, startDiagName, DSMCondition::Invite))
+      run_session_invite =false;
+
+    run_session_invite &= 
+      !checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE);
+  }
+
+  if (run_session_invite) 
+    AmSession::onInvite(req);
 }
 
 void DSMDialog::onSessionStart(const AmSipRequest& req)
@@ -69,15 +90,26 @@ void DSMDialog::onSessionStart(const AmSipReply& rep)
 }
 
 void DSMDialog::startSession(){
-  engine.init(this, startDiagName);
+  engine.init(this, startDiagName, DSMCondition::SessionStart);
 
   setReceiving(true);
 
+  if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
+    if (!getInput())
+      setInput(&playlist);
+
+    setOutput(&playlist);
+  }
+}
+
+void DSMDialog::connectMedia() {
   if (!getInput())
     setInput(&playlist);
 
   setOutput(&playlist);
+  AmMediaProcessor::instance()->addSession(this, callgroup);
 }
+
 
 void DSMDialog::onDtmf(int event, int duration_msec) {
   DBG("* Got DTMF key %d duration %d\n", 

@@ -51,6 +51,7 @@ class DSMDialog : public AmSession,
   AmAudioFile* rec_file;
   map<string, AmPromptCollection*> prompt_sets;
 
+  bool checkVar(const string& var_name, const string& var_val);
 public:
   DSMDialog(AmPromptCollection& prompts,
 	    DSMStateDiagramCollection& diags,
@@ -81,6 +82,7 @@ public:
 
   void setPromptSet(const string& name);
   void addSeparator(const string& name);
+  void connectMedia();
 };
 
 #endif
