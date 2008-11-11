@@ -1,0 +1,30 @@
+
+import(mod_dlg);
+
+initial state START ;
+transition "on invite" START - invite -> runinvite;
+transition "on sess start" START - sessionStart -> runstart;
+
+state runinvite 
+      enter { 
+       -- we don't want to have the default 200 OK reply
+       set(reply_request=0);
+      };
+
+state runstart
+      enter { 
+       dlg.acceptInvite(183, progress);
+       connectMedia();
+       -- can of course be playPrompt as well
+       playFile(/home/stefan/sub_nautilus.wav);
+       setTimer(1, 10);
+      };
+
+transition FR runstart - timerTest(#id==1) / 
+   dlg.reply(500, denied);
+   stop
+  -> FIN;
+
+transition bye runstart - hangup / stop -> FIN;
+
+state FIN;

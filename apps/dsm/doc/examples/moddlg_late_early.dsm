@@ -1,0 +1,44 @@
+-- this is an example of an early media application, that
+-- has to do some possibly blocking operation on start of processing,
+-- so session processing is delayed (here with timer 1)
+-- later 183 is sent, and FR sent after another timer 2
+
+import(mod_dlg);
+
+initial state START ;
+transition "on invite" START - invite -> runinvite;
+transition "on sess start" START - sessionStart -> runstart;
+state runinvite 
+      enter { 
+       log(2, run invite!); 
+       dlg.reply(100, trytry);
+       -- we don't want to have the default 200 OK reply
+       set(reply_request=0);
+};
+
+state runstart
+      enter { 
+       log(2, run start!); 
+       -- we don't want to have session connected (RTP sent) yet
+       set(connect_session=0);
+       setTimer(1, 2);
+      };
+
+transition "go early" runstart - timerTest(#id==1) / 
+	   dlg.acceptInvite(183, progress);
+	   connectMedia();
+	   playFile(/home/stefan/sub_nautilus.wav);
+	   setTimer(2, 5);
+   -> waitstop; 
+
+state waitstop;
+
+transition FR waitstop - timerTest(#id==2) / 
+	   dlg.reply(500, denied);
+	   stop 
+  -> FIN;
+
+transition bye waitstop - hangup / stop -> FIN;
+transition bye runstart - hangup / stop -> FIN;
+
+state FIN;
