@@ -75,10 +75,21 @@ AmPayloadProviderInterface* PrecodedDialog::getPayloadProvider() {
 void PrecodedDialog::onSessionStart(const AmSipRequest& req)
 {
 
-  AmPrecodedFileInstance* file = file_def->getFileInstance(rtp_str.getCurrentPayload(), 
+  int current_payload=rtp_str.getCurrentPayload();
+  if ((current_payload == -1) && !m_payloads.empty()) {
+    current_payload = m_payloads[0]->payload_type;
+  }
+  AmPrecodedFileInstance* file = file_def->getFileInstance(current_payload, 
 							   m_payloads);
-  if (!file || file->open()) 
-    throw string("PrecodedDialog::onSessionStart: Cannot open file\n");
+  if (!file) {
+    ERROR("no payload\n");
+  }
+  if (!file || file->open()) { 
+    ERROR("PrecodedDialog::onSessionStart: Cannot open file\n");
+    dlg.bye();
+    setStopped();
+    return;
+  }
  
   rtp_str.setFormat(file->getRtpFormat());
 
