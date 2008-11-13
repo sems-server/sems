@@ -474,14 +474,17 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a,
 	a[a.size()-1].assertArray(0);
 	AmArg arr; 
 	xmlrpcval2amarg(v[i], a[a.size()-1], 0);
-      } break; 
+      } break;
+#ifdef XMLRPCPP_SUPPORT_STRUCT_ACCESS
       case XmlRpcValue::TypeStruct: {	
 	for (XmlRpc::XmlRpcValue::ValueStruct::iterator it=
-		 ((XmlRpcValue::ValueStruct)v).begin(); it != ((XmlRpcValue::ValueStruct)v).end(); it++) {	    
+		 ((XmlRpcValue::ValueStruct)v).begin(); 
+	     it != ((XmlRpcValue::ValueStruct)v).end(); it++) {	    
 	    a[it->first] = AmArg();
 	    xmlrpcval2amarg(it->second, a[it->first], 0);
 	  }
       } break;
+#endif
 
 	// TODO: support more types (datetime, struct, ...)
       default:     throw XmlRpcException("unsupported parameter type", 400);

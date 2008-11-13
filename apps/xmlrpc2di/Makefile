@@ -3,10 +3,14 @@ XMLRPCPP_DIR = xmlrpc++0.7
 plug_in_name = xmlrpc2di
 
 module_ldflags = -lxmlrpc++ 
-module_cflags  = -DHAVE_XMLRPCPP_SSL
+module_cflags  = 
 # for gentoo ebuild or cvs-20040713 version:
 # module_cflags  = -DHAVE_XMLRPCPP_SSL
 #
+# if your xmlrpcpp version has access to struct value map 
+#(    operator XmlRpcValue::ValueStruct const&() in XmlRpcValue.h around line 168)
+# you can support struct type in XMLRPC conversion 
+# -D XMLRPCPP_SUPPORT_STRUCT_ACCESS
 
 # use these for local installation: 
 # module_cflags  = -I$(XMLRPCPP_DIR)/src 
