@@ -1,6 +1,6 @@
-diff -c -r original/xmlrpc++0.7/Makefile xmlrpc++0.7/Makefile
-*** original/xmlrpc++0.7/Makefile	Thu Mar  6 18:25:38 2003
---- xmlrpc++0.7/Makefile	Wed Jul  4 16:36:43 2007
+diff -c -r xmlrpc++0.7.orig/Makefile xmlrpc++0.7/Makefile
+*** xmlrpc++0.7.orig/Makefile	Fri Nov 14 16:22:41 2008
+--- xmlrpc++0.7/Makefile	Fri Nov 14 16:23:25 2008
 ***************
 *** 1,10 ****
   # makefile written for gnu make
@@ -24,10 +24,9 @@ diff -c -r original/xmlrpc++0.7/Makefile xmlrpc++0.7/Makefile
   CXXFLAGS	= $(DEBUG) $(GCCWARN) $(OPTIMIZE) $(INCLUDES)
   
   LIB		= ./libXmlRpc.a
-Only in xmlrpc++0.7: Makefile~
-diff -c -r original/xmlrpc++0.7/src/XmlRpc.h xmlrpc++0.7/src/XmlRpc.h
-*** original/xmlrpc++0.7/src/XmlRpc.h	Thu Mar  6 18:25:37 2003
---- xmlrpc++0.7/src/XmlRpc.h	Wed Jul  4 16:40:26 2007
+diff -c -r xmlrpc++0.7.orig/src/XmlRpc.h xmlrpc++0.7/src/XmlRpc.h
+*** xmlrpc++0.7.orig/src/XmlRpc.h	Fri Nov 14 16:22:41 2008
+--- xmlrpc++0.7/src/XmlRpc.h	Fri Nov 14 16:23:25 2008
 ***************
 *** 38,43 ****
 --- 38,46 ----
@@ -52,3 +51,46 @@ diff -c -r original/xmlrpc++0.7/src/XmlRpc.h xmlrpc++0.7/src/XmlRpc.h
       //! Returns a pointer to the currently installed message reporting object.
       static XmlRpcLogHandler* getLogHandler() 
       { return _logHandler; }
+diff -c -r xmlrpc++0.7.orig/src/XmlRpcClient.cpp xmlrpc++0.7/src/XmlRpcClient.cpp
+*** xmlrpc++0.7.orig/src/XmlRpcClient.cpp	Fri Nov 14 16:22:41 2008
+--- xmlrpc++0.7/src/XmlRpcClient.cpp	Fri Nov 14 16:24:26 2008
+***************
+*** 7,12 ****
+--- 7,14 ----
+  #include <stdio.h>
+  #include <stdlib.h>
+  
++ #include <string.h>
++ #include <strings.h>
+  
+  using namespace XmlRpc;
+  
+diff -c -r xmlrpc++0.7.orig/src/XmlRpcServerConnection.cpp xmlrpc++0.7/src/XmlRpcServerConnection.cpp
+*** xmlrpc++0.7.orig/src/XmlRpcServerConnection.cpp	Fri Nov 14 16:22:41 2008
+--- xmlrpc++0.7/src/XmlRpcServerConnection.cpp	Fri Nov 14 16:25:00 2008
+***************
+*** 8,13 ****
+--- 8,16 ----
+  # include <stdlib.h>
+  #endif
+  
++ #include <string.h>
++ #include <strings.h>
++ 
+  using namespace XmlRpc;
+  
+  // Static data
+diff -c -r xmlrpc++0.7.orig/src/XmlRpcSocket.cpp xmlrpc++0.7/src/XmlRpcSocket.cpp
+*** xmlrpc++0.7.orig/src/XmlRpcSocket.cpp	Fri Nov 14 16:22:41 2008
+--- xmlrpc++0.7/src/XmlRpcSocket.cpp	Fri Nov 14 16:25:30 2008
+***************
+*** 27,32 ****
+--- 27,34 ----
+  
+  #endif // MAKEDEPEND
+  
++ #include <string.h>
++ #include <strings.h>
+  
+  using namespace XmlRpc;
+  
