@@ -49,7 +49,7 @@ struct sip_uri
     cstring    host;
 
     cstring    port_str; // ?? short ??
-    short int  port;
+    short unsigned int  port;
 
     list<sip_avp*> params;
     list<sip_avp*> hdrs;
