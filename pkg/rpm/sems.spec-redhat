@@ -1,5 +1,5 @@
 %define name sems
-%define ver  0.1.1
+%define ver  1.0.0
 %define rel  0
 
 Summary: SIP Express Media Server, an extensible SIP media server.
@@ -7,7 +7,7 @@ Name: %{name}
 Version: %{ver}
 Release: %{rel}
 Packager: Raphael Coeffic <rco@iptel.org>
-Source: sems-0.1.1.tar.gz
+Source: sems-1.0.0-0_src.tar.gz
 URL: http://sems.berlios.de
 Vendor: FhG Fokus
 License: GPL
@@ -39,7 +39,7 @@ make install basedir=$RPM_BUILD_ROOT \
 		start-script=sems.redhat
 
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/rc.d/init.d
-install -m755 $RPM_BUILD_DIR/%{name}-%{ver}/scripts/sems.redhat \
+install -m755 $RPM_BUILD_DIR/%{name}-%{ver}/core/scripts/sems.redhat \
               $RPM_BUILD_ROOT/%{_sysconfdir}/rc.d/init.d/sems
 
 %clean
@@ -58,13 +58,10 @@ rm -rf "$RPM_BUILD_ROOT"
 
 %dir %{_libdir}/sems
 %dir %{_libdir}/sems/plug-in
-%dir %{_libdir}/sems/plug-in/audio
-%dir %{_libdir}/sems/plug-in/apps
-%{_libdir}/sems/plug-in/audio/*
-%{_libdir}/sems/plug-in/apps/*
+%{_libdir}/sems/plug-in/*
 
 %dir %{_libdir}/sems/audio
-%{_libdir}/sems/audio/default_en.wav
+%{_libdir}/sems/audio/*
 
 %dir %{_docdir}/sems
 %doc %{_docdir}/sems/README
