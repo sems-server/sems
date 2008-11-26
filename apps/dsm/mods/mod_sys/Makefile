@@ -13,6 +13,6 @@ include $(COREPATH)/plug-in/Makefile.app_module
 install: all $(extra_install)
 	mkdir -p $(DESTDIR)$(lib-prefix)/$(lib-dir)/dsm
 	if [ -f "$(lib_name)" ]; then \
-	 $(INSTALL-TOUCH) $(lib-prefix)/$(lib-dir)/dsm/; \
-	 $(INSTALL-MODULES) $(lib_name) $(lib-prefix)/$(lib-dir)/dsm/; \
+	 $(INSTALL-TOUCH) $(DESTDIR)$(lib-prefix)/$(lib-dir)/dsm/; \
+	 $(INSTALL-MODULES) $(lib_name) $(DESTDIR)$(lib-prefix)/$(lib-dir)/dsm/; \
 	fi
