@@ -170,9 +170,9 @@ int mISDNStack::init() {
         struct mISDNport *mISDNport, **mISDNportp;
         int i, cnt,port;
         int pri, ports;
-        int nt, ptp, ptmp;
-        net_stack_t *nst;
-        manager_t *mgr;
+        int nt, ptp;
+        //net_stack_t *nst;
+        //manager_t *mgr;
         layer_info_t li;
         stack_info_t *stinf;
                                 
@@ -492,6 +492,7 @@ y[qi->_x_.off+1],\
 y[qi->_x_.off+2],\
 y[qi->_x_.off+3]\
 );ret.append(x);} else ret.append(" \n");
+
 std::string mISDNStack::dumpIE(char *buf,int len) {
 	Q931_info_t* qi;
 	ie_info_t *ie;
@@ -499,8 +500,9 @@ std::string mISDNStack::dumpIE(char *buf,int len) {
 	u16  *arr;
 	char *p,*x,*y;
 	std::string ret,tmp_a,tmp_b;
-	int i,j;
-	
+	int j;
+	size_t i;
+
 	qi = (Q931_info_t*)(buf + mISDN_HEADER_LEN);
 	x =(char*)&buf2;
 	arr=(u16 *)qi;
@@ -546,3 +548,10 @@ std::string mISDNStack::dumpIE(char *buf,int len) {
 
 	return ret;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

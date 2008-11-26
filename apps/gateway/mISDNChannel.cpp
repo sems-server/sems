@@ -100,12 +100,14 @@ static signed char _mISDN_l3_ie2pos[128] = {
                         24,25,-1,-1,26,-1,-1,-1,27,28,-1,-1,29,30,31,-1
 };
 
+/*
 static unsigned char _mISDN_l3_pos2ie[32] = {
                         0x04, 0x08, 0x10, 0x14, 0x18, 0x1c, 0x1e, 0x20,
                         0x27, 0x28, 0x29, 0x2c, 0x34, 0x40, 0x42, 0x43,
                         0x44, 0x45, 0x46, 0x47, 0x4c, 0x4d, 0x6c, 0x6d,
                         0x70, 0x71, 0x74, 0x78, 0x79, 0x7c, 0x7d, 0x7e
 };
+*/
 
 int mISDN_get_free_ext_ie(mISDN::Q931_info_t *qi) {
         int     i;
@@ -226,7 +228,6 @@ void mISDNChannel::unregister_BC() {
 }
 	
 int mISDNChannel::placeCall(const AmSipRequest &req, std::string tonumber, std::string fromnumber) {
-        int ret;
         m_called=tonumber;
         m_TON_d=0; //Unknown
         m_NPI_d=1; // ISDN E.164
@@ -244,7 +245,7 @@ int mISDNChannel::placeCall(const AmSipRequest &req, std::string tonumber, std::
 int mISDNChannel::accept() {
 	mISDNStack* stack=mISDNStack::instance();
 	char buf[MAX_MSG_SIZE];
-        mISDN::Q931_info_t *qi;
+        // mISDN::Q931_info_t *qi;
         mISDN::iframe_t *frame = (mISDN::iframe_t *)buf;
 	DBG("mISDNChannel::accept\n");
 	frame->prim = CC_CONNECT | REQUEST;
@@ -260,7 +261,7 @@ int mISDNChannel::accept() {
 int mISDNChannel::hangup() {
 	mISDNStack* stack=mISDNStack::instance();
 	char buf[MAX_MSG_SIZE];
-        mISDN::Q931_info_t *qi;
+        // mISDN::Q931_info_t *qi;
         mISDN::iframe_t *frame = (mISDN::iframe_t *)buf;
                         
 	DBG("mISDNChannel::hangup\n");
@@ -276,11 +277,12 @@ int mISDNChannel::hangup() {
 
 int mISDNChannel::call() {
 	mISDNStack* stack=mISDNStack::instance();
-	unsigned char buf[MAX_MSG_SIZE], *np, *p, *msg, ie[64];
+	unsigned char buf[MAX_MSG_SIZE], *p, *msg, ie[64];
 	mISDN::Q931_info_t *qi;
 	mISDN::iframe_t *frame = (mISDN::iframe_t *)buf;
-	int ret,len,i;
-	
+	int ret;
+	size_t i;
+
 	INFO("mISDN is making outbound call from %s to %s\n", m_caller.c_str(), m_called.c_str());
 	//making new isdn call ref
 	m_CR=stack->GenerateCR();
@@ -349,8 +351,7 @@ int mISDNChannel::call() {
 int mISDNChannel::processMsg(char *msg_buf,int msg_buf_s) {
 	mISDNStack* stack=mISDNStack::instance();
 	char buf[MAX_MSG_SIZE];
-        int  buf_s;
-	mISDN::Q931_info_t *qi;
+	// mISDN::Q931_info_t *qi;
         mISDN::iframe_t *frame = (mISDN::iframe_t *)buf;
 	char *p;
 
@@ -371,7 +372,7 @@ int mISDNChannel::processMsg(char *msg_buf,int msg_buf_s) {
 		            unsigned char buf[MAX_MSG_SIZE];
 //            		    mISDN::Q931_info_t *qi;
                     	    mISDN::iframe_t *frame = (mISDN::iframe_t *)buf;
-                            int ret,len;
+                            int ret;
 			    frame->prim = CC_PROCEEDING | REQUEST;
 		    	    frame->addr = m_port->upper_id | FLG_MSG_DOWN;
 	                    frame->dinfo= m_CR;
@@ -654,3 +655,10 @@ int mISDNChannel::bchan_destroy() {
 	return OK;
 }
 
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */

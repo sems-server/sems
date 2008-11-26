@@ -92,7 +92,8 @@ void GWSession::onSipRequest(const AmSipRequest& req)
 
 void GWSession::onSipReply(const AmSipReply& reply) {
     int status = dlg.getStatus();
-    DBG("GWSession::onSipReply: code = %i, reason = %s\n, status = %i\n",  reply.code,reply.reason.c_str(),dlg.getStatus());
+    DBG("GWSession::onSipReply: code = %i, reason = %s\n, status = %i\n",  
+	reply.code,reply.reason.c_str(),dlg.getStatus());
     if((dlg.getStatus()==AmSipDialog::Pending)&&(reply.code==183)) {	onProgress(reply);   }
     if((dlg.getStatus()==AmSipDialog::Pending)&&(reply.code>=300)) {	
 	int ret=((mISDNChannel*)m_OtherLeg)->hangup();
@@ -145,3 +146,10 @@ GWSession* GWSession::CallFromOutside(std::string &fromnumber, std::string &tonu
 //    ((GWSession*)s)->setInOut(chan,chan);
     return (GWSession *)s;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 4
+ * End:
+ */
