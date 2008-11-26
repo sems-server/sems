@@ -123,7 +123,7 @@ make install TTS="y" exclude_modules="examples %{!?with_ilbc:ilbc} mp3" \
 	audio-prefix= \
 	audio-dir=%{_libdir}/sems/audio/
 
-install -D -p -m755 pkg/rpm/sems.redhat $RPM_BUILD_ROOT/%{_sysconfdir}/init.d/sems
+install -D -p -m755 pkg/rpm/sems.init $RPM_BUILD_ROOT/%{_sysconfdir}/init.d/sems
 
 # Remove installed README
 rm -rf $RPM_BUILD_ROOT%{_docdir}/sems
