@@ -5,21 +5,21 @@ Release:	0.7.svn1095%{?dist}
 URL:		http://www.iptel.org/sems
 # svn -r 1095 export http://svn.berlios.de/svnroot/repos/sems/branches/1.0.0 sems-1.0.0
 # tar cjvf sems-1.0.0.tar.bz2 sems-1.0.0
-Source:		http://ftp.iptel.org/pub/%{name}/%{name}-%{version}.tar.bz2
+Source:		%{name}-%{version}.tar.gz
 License:	GPLv2+
 Group:		Applications/Communications
 # Enable OpenSER
-Patch0:		sems--openser_enable.diff
+#Patch0:		sems--openser_enable.diff
 # Use external gsm instead of shipped one
-Patch2:		sems--external_gsm_lib.diff
+#Patch2:		sems--external_gsm_lib.diff
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:	python >= 2.3
 BuildRequires:	sip-devel
-BuildRequires:	libsamplerate-devel
-BuildRequires:	gsm-devel
-BuildRequires:	spandsp-devel
+#BuildRequires:	libsamplerate-devel
+#BuildRequires:	gsm-devel
+#BuildRequires:	spandsp-devel
 # TODO consider enabling flite support in apps/conference
-BuildRequires:	flite-devel
+#BuildRequires:	flite-devel
 BuildRequires:	speex-devel
 Requires(post):	/sbin/chkconfig
 Requires(preun):/sbin/chkconfig
@@ -30,7 +30,7 @@ SEMS (SIP Express Media Server) is very extensible and programmable
 SIP media server for SER or OpenSER. The plug-in based SDK enables
 you to extend SEMS and write your own applications and integrate new
 codec. Voicemail, announcement and echo plug-ins are already included.
-Sems supports g711u, g711a, GSM06.10 and wav file.
+SEMS supports g711u, g711a, GSM06.10 and wav file.
 
 %package	ivr
 Summary:	IVR functionality for SEMS
@@ -96,9 +96,9 @@ This application collects a PIN and then transfers using a
 
 %prep
 %setup -q
-rm -rf core/plug-in/gsm/gsm-1.0-pl10/
-%patch0 -p0 -b .openser_enable
-%patch2 -p0 -b .gsm_ext
+#rm -rf core/plug-in/gsm/gsm-1.0-pl10/
+#%patch0 -p0 -b .openser_enable
+#%patch2 -p0 -b .gsm_ext
 iconv -f iso8859-1 -t UTF-8 apps/diameter_client/Readme.diameter_client > apps/diameter_client/Readme.diameter_client.utf8 && mv apps/diameter_client/Readme.diameter_client{.utf8,}
 iconv -f iso8859-1 -t UTF-8 doc/Readme.voicebox > doc/Readme.voicebox.utf8 && mv doc/Readme.voicebox{.utf8,}
 
@@ -160,8 +160,14 @@ fi
 %config(noreplace) %{_sysconfdir}/sems/etc/click2dial.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/conference.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/early_announce.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/dsm.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/dsm_in_prompts.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/dsm_out_prompts.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/gateway.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/ivr.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/msg_storage.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/precoded_announce.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/py_sems.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/reg_agent.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/sipctrl.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/stats.conf
@@ -170,11 +176,9 @@ fi
 %config(noreplace) %{_sysconfdir}/sems/etc/voicebox.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/voicemail.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/webconference.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/xmlrpc2di.conf
 
 %doc README
-%doc apps/msg_storage/Readme.msg_storage
-%doc apps/webconference/Readme.webconference
-%doc apps/diameter_client/Readme.diameter_client
 %doc apps/examples/tutorial/cc_acc/Readme.cc_acc
 %doc doc/figures
 %doc doc/CHANGELOG
@@ -189,19 +193,23 @@ fi
 %doc doc/Readme.call_timer
 %doc doc/Readme.callback
 %doc doc/Readme.click2dial
+%doc doc/Readme.conf_auth
 %doc doc/Readme.conference
+%doc doc/Readme.diameter_client
 %doc doc/Readme.early_announce
 %doc doc/Readme.echo
 %if 0%{?with_ilbc}
 %doc doc/Readme.iLBC
 %endif
 #%doc doc/Readme.mp3plugin
+%doc doc/Readme.msg_storage
 %doc doc/Readme.reg_agent
 %doc doc/Readme.registrar_client
 %doc doc/Readme.sw_prepaid_sip
 %doc doc/Readme.uac_auth
 %doc doc/Readme.voicebox
 %doc doc/Readme.voicemail
+%doc doc/Readme.webconference
 %doc doc/WHATSNEW
 
 %{_sysconfdir}/init.d/sems
@@ -253,6 +261,7 @@ fi
 %{_libdir}/sems/plug-in/click2dial.so
 %{_libdir}/sems/plug-in/conference.so
 %{_libdir}/sems/plug-in/diameter_client.so
+%{_libdir}/sems/plug-in/dsm.so
 %{_libdir}/sems/plug-in/early_announce.so
 %{_libdir}/sems/plug-in/echo.so
 %if 0%{?with_ilbc}
@@ -273,6 +282,12 @@ fi
 %{_libdir}/sems/plug-in/voicemail.so
 %{_libdir}/sems/plug-in/wav.so
 %{_libdir}/sems/plug-in/webconference.so
+
+%{_libdir}/sems/dsm/mod_dlg.so
+%{_libdir}/sems/dsm/mod_sys.so
+%{_libdir}/sems/dsm/mod_uri.so
+%{_libdir}/sems/dsm/inbound_call.dsm
+%{_libdir}/sems/dsm/outbound_call.dsm
 
 %files conf_auth
 %defattr(-,root,root)
