@@ -10,11 +10,6 @@ CFLAGS   += $(module_cflags)
 CPPFLAGS += $(module_cflags)
 CXXFLAGS += $(module_cflags)
 
-ifdef USE_LIBSAMPLERATE
-CPPFLAGS += -DUSE_LIBSAMPLERATE
-LDFLAGS +=-lsamplerate
-endif
-
 app_module_dir = $(COREPATH)/lib
 
 lib_name = $(plug_in_name).so

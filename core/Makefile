@@ -55,22 +55,8 @@ LDFLAGS += -lspandsp
 endif
 endif
 
-
-ifdef USE_SPANDSP
-ifneq ($(spandsp_defs), 1)
-spandsp_defs=1
-export spandsp_defs
-CPPFLAGS += -DUSE_SPANDSP -D__STDC_LIMIT_MACROS
-endif
-endif
-
 ifdef USE_LIBSAMPLERATE
-ifneq ($(libsrc_defs), 1)
-libsrc_defs=1
-export libsrc_defs
-CPPFLAGS += -DUSE_LIBSAMPLERATE
 LDFLAGS +=-lsamplerate
-endif
 endif
 
 ifdef WITH_ZRTP
