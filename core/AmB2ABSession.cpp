@@ -182,14 +182,16 @@ void AmB2ABCallerSession::onB2ABEvent(B2ABEvent* ev)
 void AmB2ABCallerSession::connectCallee(const string& remote_party,
 					const string& remote_uri,
 					const string& local_party,
-					const string& local_uri)
+					const string& local_uri,
+					const string& headers)
 {
   if(callee_status != None)
     terminateOtherLeg();
 
   B2ABConnectLegEvent* ev = new B2ABConnectLegEvent(remote_party,remote_uri,
 						    local_party,local_uri,
-						    getLocalTag());
+						    getLocalTag(),
+						    headers);
 
   relayEvent(ev);
   callee_status = NoReply;
@@ -257,7 +259,7 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
       setCallgroup(co_ev->callgroup);
 			
       setNegotiateOnReply(true);
-      if (sendInvite()) {
+      if (sendInvite(co_ev->headers)) {
 	throw string("INVITE could not be sent\n");
       }
       return;

@@ -82,18 +82,21 @@ struct B2ABConnectLegEvent: public B2ABEvent
   string local_party;
   string local_uri;
   string callgroup;
+  string headers;
 
   B2ABConnectLegEvent(const string& remote_party,
 		      const string& remote_uri,
 		      const string& local_party,
 		      const string& local_uri,
-		      const string& callgroup)
+		      const string& callgroup,
+		      const string& headers)
     : B2ABEvent(B2ABConnectLeg),
-       remote_party(remote_party),
-       remote_uri(remote_uri),
-       local_party(local_party),
-       local_uri(local_uri),
-       callgroup(callgroup)
+    remote_party(remote_party),
+    remote_uri(remote_uri),
+    local_party(local_party),
+    local_uri(local_uri),
+    callgroup(callgroup),
+    headers(headers)
   {}
 };
 
@@ -214,7 +217,8 @@ class AmB2ABCallerSession: public AmB2ABSession
   void connectCallee(const string& remote_party,
 		     const string& remote_uri,
 		     const string& local_party,
-		     const string& local_uri);
+		     const string& local_uri,
+		     const string& headers="");
 
   // @see AmB2ABSession
   void terminateOtherLeg();
