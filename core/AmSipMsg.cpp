@@ -99,6 +99,23 @@ bool findHeader(const string& hdrs,const string& hdr_name,
   return false;
 }
 
+bool removeHeader(string& hdrs, const string& hdr_name) {
+  size_t pos1, pos2, hdr_start;
+
+  if (findHeader(hdrs,hdr_name, pos1, pos2, 
+		 hdr_start)) {
+    while (pos2 < hdrs.length() && 
+	   (hdrs[pos2]=='\r' || hdrs[pos2]=='\n'))
+      pos2++;
+
+    hdr_start -= hdr_name.length(); 
+    hdrs.erase(hdr_start, pos2 - hdr_start);
+    return true;
+  }
+
+  return false;
+}
+
 /* Print Member */
 #define _PM(member, name) \
   do { \

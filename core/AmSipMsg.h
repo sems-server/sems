@@ -84,5 +84,5 @@ bool findHeader(const string& hdrs,const string& hdr_name,
 		size_t& pos1, size_t& pos2, 
 		size_t& hdr_start);
 
-
+bool removeHeader(string& hdrs, const string& hdr_name);
 #endif /* __AMSIPMSG_H__ */
