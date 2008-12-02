@@ -1,0 +1,28 @@
+b2b_connect application
+
+This application is a full back2back user agent (i.e. both signaling and 
+media is handled by SEMS and each user agent, caller and callee, only 
+see the SEMs IP address).
+Thus, the outgoing call is connected in B2BUA mode with media relay ('b2abua'),
+so technically the two legs are independent sip dialogs and media sessions.
+
+The outgoing calls (B leg) are optionally SIP authenticated, so for example,
+normal gateways can be used. The uac_auth module must be loaded for this 
+to work. If the uac_auth module is not loaded, the outgoing calls are not
+authenticated.
+
+P-App-Param in the INVITE sent to SEMS contains information required
+to do the second call from SEMS to callee, together with the request URI.
+The request URI username part should contain the user to call, while the
+P-App-Param should contain the domain SEMS should add to the username, 
+as well as credentials (if the outgoing call must be authenticated).
+
+Example for SER:
+R-URI: john@semsip:5070
+append_hf("P-App-Param: u=semsuser;d=ser.mydomain.com:5060;p=password\r\n");
+
+This will result in sems trying to set up a call to john@ser.mydomain.com:5060.
+If a 407 Authentication required is received, semsuser and 'password' will be
+used as credentials.
+
+Improvements are of course welcome as svn diff to the semsdev mailing list.
