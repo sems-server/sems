@@ -152,11 +152,35 @@ void b2b_connectDialog::onSessionStart(const AmSipRequest& req)
 
 void b2b_connectDialog::onB2ABEvent(B2ABEvent* ev)
 {
+  if (ev->event_id == B2ABConnectOtherLegException) {
+    B2ABConnectOtherLegExceptionEvent* ex_ev = 
+      dynamic_cast<B2ABConnectOtherLegExceptionEvent*>(ev);
+    if (ex_ev && dlg.getStatus() == AmSipDialog::Pending) {
+      DBG("callee leg creation failed with exception '%d %s'\n",
+	  ex_ev->code, ex_ev->reason.c_str());
+      dlg.reply(invite_req, ex_ev->code, ex_ev->reason);
+      setStopped();
+      return;
+    }
+  }
+
+  if (ev->event_id == B2ABConnectOtherLegFailed) {
+    B2ABConnectOtherLegFailedEvent* f_ev = 
+      dynamic_cast<B2ABConnectOtherLegFailedEvent*>(ev);
+    if (f_ev && dlg.getStatus() == AmSipDialog::Pending) {
+      DBG("callee leg creation failed with reply '%d %s'\n",
+	  f_ev->code, f_ev->reason.c_str());
+      dlg.reply(invite_req, f_ev->code, f_ev->reason);
+      setStopped();
+      return;
+    }
+  }
 
   if (ev->event_id == B2ABConnectAudio) {
     // delayed processing of first INVITE request
     AmSession::onInvite(invite_req);
   }
+
   AmB2ABCallerSession::onB2ABEvent(ev);
 }
 
@@ -241,9 +265,8 @@ AmB2ABCalleeSession* b2b_connectDialog::createCalleeSession()
 }
 
 b2b_connectCalleeSession::b2b_connectCalleeSession(const string& other_tag,
-					   const string& user, const string& pwd) 
-  : auth(NULL), 
-    credentials("", user, pwd), // domain (realm) is unused in credentials 
+						   const string& user, const string& pwd) 
+  : credentials("", user, pwd), // domain (realm) is unused in credentials 
     AmB2ABCalleeSession(other_tag) {
 
   rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT); 
@@ -251,8 +274,7 @@ b2b_connectCalleeSession::b2b_connectCalleeSession(const string& other_tag,
 }
 
 b2b_connectCalleeSession::~b2b_connectCalleeSession() {
-  if (auth) 
-    delete auth;
+
 }
 
 inline UACAuthCred* b2b_connectCalleeSession::getCredentials() {
@@ -260,34 +282,13 @@ inline UACAuthCred* b2b_connectCalleeSession::getCredentials() {
 }
 
 void b2b_connectCalleeSession::onSipReply(const AmSipReply& reply) {
-    AmB2ABCalleeSession::onSipReply(reply);
-}
-
-void b2b_connectCalleeSession::onSendRequest(const string& method, const string& content_type,
-					 const string& body, string& hdrs, int flags, unsigned int cseq)
-{
-  AmB2ABCalleeSession::onSendRequest(method, content_type,
-				    body, hdrs, flags, cseq);
-}
-
-void b2b_connectCalleeSession::onB2ABEvent(B2ABEvent* ev)
-{
-
-//   if (ev->event_id == B2ABConnectAudio) {
-//     // delayed processing of first INVITE request
-//     AmSession::onInvite(invite_req);
-//   }
-  AmB2ABCalleeSession::onB2ABEvent(ev);
-}
-
-void b2b_connectCalleeSession::process(AmEvent* ev)
-{
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(ev);
-    if(audio_event && (audio_event->event_id == AmAudioEvent::noAudio)){
-      DBG("connecting audio\n");
-      connectSession();
-      return;
-      }
-
-  AmB2ABCalleeSession::process(ev);
+  int status_before = dlg.getStatus();
+  AmB2ABCalleeSession::onSipReply(reply);
+  int status = dlg.getStatus();
+ 
+  if ((status_before == AmSipDialog::Pending)&&
+      (status == AmSipDialog::Disconnected)) {
+    DBG("status change Pending -> Disconnected. Stopping session.\n");
+    setStopped();
+  }
 }

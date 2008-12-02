@@ -89,23 +89,15 @@ class b2b_connectCalleeSession
 : public AmB2ABCalleeSession, public CredentialHolder
 {
   UACAuthCred credentials;
-  AmSessionEventHandler* auth;
   AmSipRequest invite_req;
 
  protected:
+   void onSipReply(const AmSipReply& reply);
  
-  void onSipReply(const AmSipReply& reply);
-  void onSendRequest(const string& method, const string& content_type,
-                     const string& body, string& hdrs, int flags, unsigned int cseq);
- 
- public:
+public:
   b2b_connectCalleeSession(const string& other_tag, const string& user, const string& pwd); 
   ~b2b_connectCalleeSession();
-  void onB2ABEvent(B2ABEvent* ev);
-  void process(AmEvent* ev);
 
   inline UACAuthCred* getCredentials();
-  
-  void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
 };
 #endif                           
