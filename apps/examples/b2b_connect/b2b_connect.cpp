@@ -76,7 +76,7 @@ b2b_connectDialog::b2b_connectDialog() // AmDynInvoke* user_timer)
   AmB2ABCallerSession()
 
 {
-  rtp_str.setPlayoutType(JB_PLAYOUT); 
+  rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT); 
 }
 
 b2b_connectDialog::~b2b_connectDialog()
@@ -237,28 +237,6 @@ AmB2ABCalleeSession* b2b_connectDialog::createCalleeSession()
           "(uac_auth module loaded?)\n");
   }
 
-  AmSipDialog& callee_dlg = sess->dlg;
-  
-  other_id = AmSession::getNewId();
-  
-  callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
-  
-  // this will be overwritten by ConnectLeg event 
-  callee_dlg.remote_party = dlg.local_party;
-  callee_dlg.remote_uri   = dlg.local_uri;
-
-  // if given as parameters, use these
-  callee_dlg.local_party  = from; 
-  callee_dlg.local_uri    = from; 
-  
-  DBG("Created B2BUA callee leg, From: %s\n",
-      from.c_str());
-
-  sess->start();
-  
-  AmSessionContainer* sess_cont = AmSessionContainer::instance();
-  sess_cont->addSession(other_id,sess);
   return sess;
 }
 
@@ -268,7 +246,7 @@ b2b_connectCalleeSession::b2b_connectCalleeSession(const string& other_tag,
     credentials("", user, pwd), // domain (realm) is unused in credentials 
     AmB2ABCalleeSession(other_tag) {
 
-  rtp_str.setPlayoutType(JB_PLAYOUT); 
+  rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT); 
   setDtmfDetectionEnabled(false);
 }
 
@@ -295,10 +273,10 @@ void b2b_connectCalleeSession::onSendRequest(const string& method, const string&
 void b2b_connectCalleeSession::onB2ABEvent(B2ABEvent* ev)
 {
 
-  if (ev->event_id == B2ABConnectAudio) {
-    // delayed processing of first INVITE request
-    AmSession::onInvite(invite_req);
-  }
+//   if (ev->event_id == B2ABConnectAudio) {
+//     // delayed processing of first INVITE request
+//     AmSession::onInvite(invite_req);
+//   }
   AmB2ABCalleeSession::onB2ABEvent(ev);
 }
 
