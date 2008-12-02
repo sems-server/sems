@@ -44,24 +44,19 @@ class b2b_connectFactory: public AmSessionFactory
   
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);
+
+  static bool TransparentHeaders; // default
+
 };
 
 class b2b_connectDialog : public AmB2ABCallerSession
 {
-  enum {
-    BB_Init = 0,
-    BB_Dialing,
-    BB_Connected,
-    BB_Teardown
-  } CallerState;
-
-  int m_state;
-
   string domain;
   string user;
   string password;
   string from;
   string to;
+
   AmSipRequest invite_req;
   
 /*   AmDynInvoke* m_user_timer; */

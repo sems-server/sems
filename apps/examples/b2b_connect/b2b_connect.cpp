@@ -30,8 +30,10 @@
 #include "AmAudio.h"
 #include "AmPlugIn.h"
 #include "AmMediaProcessor.h"
-//#include "AmConfigReader.h"
+#include "AmConfigReader.h"
 #include "AmSessionContainer.h"
+
+bool b2b_connectFactory::TransparentHeaders = true; // default
 
 EXPORT_SESSION_FACTORY(b2b_connectFactory,MOD_NAME);
 
@@ -44,10 +46,16 @@ b2b_connectFactory::b2b_connectFactory(const string& _app_name)
 
 int b2b_connectFactory::onLoad()
 {
-//   AmConfigReader cfg;
-//   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
-//     return -1;
+  AmConfigReader cfg;
+  if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
+    INFO("configuration file '%s' not found. using defaults.\n",
+	 (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str());
+    return 0;
+  }
 
+  if (cfg.getParameter("transparent_headers")=="false")
+    TransparentHeaders = false;
+  
 //   user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
 //   if(!user_timer_fact) {
 //     ERROR("could not load user_timer from session_timer plug-in\n");
@@ -66,13 +74,18 @@ AmSession* b2b_connectFactory::onInvite(const AmSipRequest& req)
 //     throw AmSession::Exception(500,"could not get a user timer reference");
 //   }
 
+  string app_param = getHeader(req.hdrs, PARAM_HDR);
+
+  if (!app_param.length()) {
+    throw  AmSession::Exception(500, "b2b_connect: parameters not found");
+  }
+
   return new b2b_connectDialog(); //user_timer);
 }
 
 
 b2b_connectDialog::b2b_connectDialog() // AmDynInvoke* user_timer)
-: m_state(BB_Init),
-  //m_user_timer(user_timer),
+: //m_user_timer(user_timer),
   AmB2ABCallerSession()
 
 {
@@ -88,17 +101,11 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
   // TODO: do reinvites get here? if so, don't set a timer then
   // -> yes, they do.
 
-  // TODO: errors thrown as exception don't seem to trigger a reply?
-  // -> only in SessionFactory::onInvite they do. todo: move the logic to 
-  //    session factory 
-
-  //setReceiving(false);
-  //AmMediaProcessor::instance()->removeSession(this);
 
   string app_param = getHeader(req.hdrs, PARAM_HDR);
 
   if (!app_param.length()) {
-    AmSession::Exception(500, "b2b_connect: parameters not found");
+    throw AmSession::Exception(500, "b2b_connect: parameters not found");
   }
 
   domain = get_header_keyvalue(app_param,"d");
@@ -108,41 +115,23 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
   from = "sip:"+user+"@"+domain;
   to = "sip:"+req.user+"@"+domain;
 
-//   DBG("-----------------------------------------------------------------\n");
-//   DBG("domain = %s, user = %s, pwd = %s, from = %s, to = %s;",  
-//       domain.c_str(), user.c_str(), password.c_str(), from.c_str(), to.c_str());
-//   DBG("-----------------------------------------------------------------\n");
-
-  m_state = BB_Dialing;
-
   if(dlg.reply(req, 100, "Connecting") != 0) {
     throw AmSession::Exception(500,"Failed to reply 100");
   }
 
   invite_req = req;
-  size_t pos1, pos2, hdr_start;
-
-  if (findHeader(invite_req.hdrs,PARAM_HDR, pos1, pos2, 
-		 hdr_start)) {
-    while (invite_req.hdrs[pos2]=='\r' ||invite_req.hdrs[pos2]=='\n') 
-      pos2++;
-
-    hdr_start -= 11; //"P-App-Param"
-    invite_req.hdrs.erase(hdr_start, pos2-hdr_start);
-  }
-
-  if (findHeader(invite_req.hdrs,"P-App-Name", pos1, pos2, 
-		 hdr_start)) {
-    while (invite_req.hdrs[pos2]=='\r' ||invite_req.hdrs[pos2]=='\n') 
-      pos2++;
-    hdr_start -= 10; //"P-App-Name"
-    invite_req.hdrs.erase(hdr_start, pos2-hdr_start);
+  if (b2b_connectFactory::TransparentHeaders) {
+    removeHeader(invite_req.hdrs, PARAM_HDR);
+    removeHeader(invite_req.hdrs, "P-App-Name");
+    removeHeader(invite_req.hdrs, "User-Agent");
+    removeHeader(invite_req.hdrs, "Max-Forwards");
   }
 
   dlg.updateStatus(req);
   recvd_req.insert(std::make_pair(req.cseq,req));
   
-  connectCallee("<" + to + ">", to, from, from);
+  connectCallee("<" + to + ">", to, from, from, 
+		b2b_connectFactory::TransparentHeaders ? invite_req.hdrs : "");
 }
 
 void b2b_connectDialog::onSessionStart(const AmSipRequest& req)
@@ -217,12 +206,8 @@ void b2b_connectDialog::onDtmf(int event, int duration)
   
 }
 
-
 void b2b_connectDialog::onBye(const AmSipRequest& req)
 {
-  if (m_state == BB_Connected) {
-//     stopAccounting();
-  }
   terminateOtherLeg();
   setStopped();
 }
