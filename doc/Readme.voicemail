@@ -88,6 +88,7 @@ avoid packet fragmentation (UDP).
                                   box        : leave in voicebox (store in msg_storage)
                                   both       : send email and leave in voicebox
                                   ann        : just play greeting, don't record message.
+  User            usr         - voicebox user 
   Sender          snd         - sender. If empty, From will be used
   Domain          dom         - domain specific announcement files/email template. 
                                 defaults to RURI domain.
