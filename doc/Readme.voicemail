@@ -93,6 +93,8 @@ avoid packet fragmentation (UDP).
   Domain          dom         - domain specific announcement files/email template. 
                                 defaults to RURI domain.
   Language        lng         - optional: language for announcement file/email template
+  Type            typ         - optional (default: 'vm'): prompt file to play, for user recorded
+                                greeting (see annrecorder app)
   
 
   Example:
