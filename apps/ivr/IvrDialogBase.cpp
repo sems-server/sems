@@ -73,6 +73,9 @@ IvrDialogBase_dealloc(IvrDialogBase* self)
 {
   DBG("IvrDialogBase_dealloc\n");
   Py_XDECREF(self->dialog);
+  self->dialog=NULL;
+  Py_XDECREF(self->invite_req);
+  self->invite_req=NULL;
   self->ob_type->tp_free((PyObject*)self);
 }
 
