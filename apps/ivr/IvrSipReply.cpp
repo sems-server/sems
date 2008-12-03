@@ -48,7 +48,7 @@ static PyObject* IvrSipReply_new(PyTypeObject *type, PyObject *args, PyObject *k
       return NULL;
     }
     
-    if (!PyCObject_Check(o_req)){
+    if ((NULL == o_req) || !PyCObject_Check(o_req)){
 	    
       Py_DECREF(self);
       return NULL;

@@ -36,7 +36,7 @@ static PyObject* IvrDialogBase_new(PyTypeObject *type, PyObject *args, PyObject 
       return NULL;
     }
     
-    if (!PyCObject_Check(o_dlg)){
+    if ((NULL == o_dlg) || !PyCObject_Check(o_dlg)){
 	    
       Py_DECREF(self);
       return NULL;
