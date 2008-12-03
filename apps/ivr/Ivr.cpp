@@ -747,15 +747,29 @@ bool IvrDialog::onOtherReply(const AmSipReply& r)
   return false;
 }
 
-void IvrDialog::onSipReply(const AmSipReply& r) {
+PyObject * getPySipReply(const AmSipReply& r)
+{
+  PYLOCK;
+
   AmSipReply* rep_cpy = new AmSipReply(r);
-  callPyEventHandler("onSipReply","O",IvrSipReply_FromPtr(rep_cpy));
+  return IvrSipReply_FromPtr(rep_cpy);
+}
+
+PyObject * getPySipRequest(const AmSipRequest& r)
+{
+  PYLOCK;
+
+  AmSipRequest* req_cpy = new AmSipRequest(r);
+  return IvrSipRequest_FromPtr(req_cpy);
+}
+
+void IvrDialog::onSipReply(const AmSipReply& r) {
+  callPyEventHandler("onSipReply","O",getPySipReply(r));
   AmB2BSession::onSipReply(r);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){
-  AmSipRequest* req_cpy = new AmSipRequest(r);
-  callPyEventHandler("onSipRequest","O", IvrSipRequest_FromPtr(req_cpy));
+  callPyEventHandler("onSipRequest","O", getPySipRequest(r));
   AmB2BSession::onSipRequest(r);
 }
 
