@@ -1223,7 +1223,11 @@ void trans_layer::send_200_ack(sip_msg* reply, sip_trans* t)
     via_wr(&msg,via,branch);
 
     copy_hdrs_wr(&msg,route_hdrs);
-
+    // clear route headers list
+    for (list<sip_header*>::iterator it=route_hdrs.begin(); 
+	 it!= route_hdrs.end(); it++)
+	delete *it;
+    
     copy_hdr_wr(&msg,reply->from);
     copy_hdr_wr(&msg,reply->to);
     copy_hdr_wr(&msg,reply->callid);
