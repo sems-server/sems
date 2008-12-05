@@ -369,6 +369,7 @@ void AmSession::run()
     ERROR("%i %s\n",e.code,e.reason.c_str());
   }
 
+  onBeforeDestroy();
   destroy();
 
   session_num_mut.lock();

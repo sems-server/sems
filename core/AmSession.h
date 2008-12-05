@@ -416,7 +416,9 @@ public:
    * Entry point for SIP events
    */
   virtual void onSipEvent(AmSipEvent* sip_ev);
+  /** Entry point for SIP Requests   */
   virtual void onSipRequest(const AmSipRequest& req);
+  /** Entry point for SIP Replies   */
   virtual void onSipReply(const AmSipReply& reply);
 
 
@@ -435,7 +437,7 @@ public:
   /** This callback is called if RTP timeout encountered */
   virtual void onRtpTimeout();
 
-  /* only called by AmSipDialog */
+  /* Called by AmSipDialog when a request is sent */
   virtual void onSendRequest(const string& method,
 			     const string& content_type,
 			     const string& body,
@@ -443,6 +445,7 @@ public:
 			     int flags,
 			     unsigned int cseq);
 
+  /* Called by AmSipDialog when a reply is sent */
   virtual void onSendReply(const AmSipRequest& req,
 			   unsigned int  code,
 			   const string& reason,
@@ -450,6 +453,12 @@ public:
 			   const string& body,
 			   string& hdrs,
 			   int flags);
+
+  /** 
+   * called in the session thread before the session is destroyed,
+   * i.e. after the main event loop has finished
+   */
+  virtual void onBeforeDestroy() { }
 
   // The IP address to put as c= in SDP bodies and to use for Contact:.
   string advertisedIP();
