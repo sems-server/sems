@@ -118,6 +118,7 @@ AmPlaylist::AmPlaylist(AmEventQueue* q)
 
 AmPlaylist::~AmPlaylist()
 {
+  close(false);
 }
 
 void AmPlaylist::addToPlaylist(AmPlaylistItem* item)
