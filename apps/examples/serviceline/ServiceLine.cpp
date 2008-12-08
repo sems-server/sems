@@ -167,7 +167,8 @@ void ServiceLineCallerDialog::onDtmf(int event, int duration)
 }
 
 AmB2ABCalleeSession* ServiceLineCallerDialog::createCalleeSession() {
-  ServiceLineCalleeDialog* sess = new ServiceLineCalleeDialog(getLocalTag());
+  ServiceLineCalleeDialog* sess = 
+    new ServiceLineCalleeDialog(getLocalTag(), connector);
 
   AmSessionEventHandlerFactory* uac_auth_f = 
     AmPlugIn::instance()->getFactory4Seh("uac_auth");
@@ -190,8 +191,9 @@ AmB2ABCalleeSession* ServiceLineCallerDialog::createCalleeSession() {
 ServiceLineCalleeDialog::~ServiceLineCalleeDialog() {
 }
 
-ServiceLineCalleeDialog::ServiceLineCalleeDialog(const string& other_tag) 
-  : AmB2ABCalleeSession(other_tag),
+ServiceLineCalleeDialog::ServiceLineCalleeDialog(const string& other_tag, 
+						 AmSessionAudioConnector* connector) 
+  : AmB2ABCalleeSession(other_tag, connector),
     cred(ServiceLineFactory::GWAuthrealm, 
 	 ServiceLineFactory::GWAuthuser, 
 	 ServiceLineFactory::GWAuthpwd)

@@ -85,7 +85,8 @@ class JukecalleeSession
 	auto_ptr<AmAudioFile> song;
 
 public:
-	JukecalleeSession(const string& other_tag);
+  JukecalleeSession(const string& other_tag, 
+		    AmSessionAudioConnector* connector);
 };
  
 class JukeEvent : public AmEvent {

@@ -33,15 +33,13 @@
 #include <assert.h>
 
 AmB2ABSession::AmB2ABSession()
-  : AmSession(),
-    connector(NULL)
+  : AmSession(), connector(NULL)
 {
 }
 
 AmB2ABSession::AmB2ABSession(const string& other_local_tag)
   : other_id(other_local_tag),
-    AmSession(),
-    connector(NULL)
+    AmSession()
 {}
 
 
@@ -91,22 +89,20 @@ void AmB2ABSession::relayEvent(AmEvent* ev)
 
 void AmB2ABSession::connectSession()
 {
-    if (!connector)
-	return;
-
-    connector->connectSession(this);
-    AmMediaProcessor::instance()->addSession(this, callgroup);
+  if (!connector) {
+    DBG("error - trying to connect session, but no connector!\n");
+    return;
+  }
+  connector->connectSession(this);
+  AmMediaProcessor::instance()->addSession(this, callgroup);
 }
 
 void AmB2ABSession::disconnectSession()
 {
-    if (!connector)
-	return;
-
-    if (!connector->disconnectSession(this)){
-	delete connector;
-	connector = NULL;
-    }
+  if (!connector)
+    return;
+  
+  connector->disconnectSession(this);
 }
 
 void AmB2ABSession::onBye(const AmSipRequest& req) {
@@ -132,14 +128,26 @@ AmB2ABCallerSession::AmB2ABCallerSession()
   : AmB2ABSession(),
     callee_status(None)
 {
+  // owned by us
+  connector = new AmSessionAudioConnector();
 }
+
 AmB2ABCallerSession::~AmB2ABCallerSession()
-{ }
+{
+  delete connector;
+}
+
+void AmB2ABCallerSession::onBeforeDestroy() {
+  DBG("Waiting for release from callee session...\n");
+  connector->waitReleased();
+  DBG("OK, got release from callee session.\n");
+}
 
 void AmB2ABCallerSession::terminateOtherLeg()
 {
   if (callee_status != None)
     AmB2ABSession::terminateOtherLeg();
+
   callee_status = None;
 }
 
@@ -151,10 +159,25 @@ void AmB2ABCallerSession::onB2ABEvent(B2ABEvent* ev)
     callee_status = Connected;
 
     DBG("ConnectAudio event received from other leg\n");
-    B2ABConnectAudioEvent* ca = dynamic_cast<B2ABConnectAudioEvent*>(ev);
-    assert(ca);
+    B2ABConnectAudioEvent* ca = 
+      dynamic_cast<B2ABConnectAudioEvent*>(ev);
+    if (!ca) 
+      return;
 		
-    connector = ca->connector;
+    connectSession();
+
+    return;
+  } break;
+
+  case B2ABConnectEarlyAudio: {
+    callee_status = Early;
+
+    DBG("ConnectEarlyAudio event received from other leg\n");
+    B2ABConnectEarlyAudioEvent* ca = 
+      dynamic_cast<B2ABConnectEarlyAudioEvent*>(ev);
+    if (!ca)
+      return;
+		
     connectSession();
 
     return;
@@ -190,8 +213,8 @@ void AmB2ABCallerSession::connectCallee(const string& remote_party,
 
   B2ABConnectLegEvent* ev = new B2ABConnectLegEvent(remote_party,remote_uri,
 						    local_party,local_uri,
-						    getLocalTag(),
-						    headers);
+						    getLocalTag(), // callgroup
+						    headers);  // extra headers
 
   relayEvent(ev);
   callee_status = NoReply;
@@ -228,15 +251,28 @@ void AmB2ABCallerSession::setupCalleeSession(AmB2ABCalleeSession* callee_session
 
 AmB2ABCalleeSession* AmB2ABCallerSession::createCalleeSession()
 {
-  return new AmB2ABCalleeSession(getLocalTag());
+  return new AmB2ABCalleeSession(getLocalTag(), connector);
 }
 
-AmB2ABCalleeSession::AmB2ABCalleeSession(const string& other_local_tag)
-  : AmB2ABSession(other_local_tag)
-{ }
+AmB2ABCalleeSession::AmB2ABCalleeSession(const string& other_local_tag, 
+					 AmSessionAudioConnector* callers_connector)
+  : AmB2ABSession(other_local_tag),
+    is_connected(false)
+{ 
+  connector=callers_connector;
+  connector->block();
+}
 
 AmB2ABCalleeSession::~AmB2ABCalleeSession() 
-{ }
+{
+}
+
+void AmB2ABCalleeSession::onBeforeDestroy() {
+  DBG("releasing caller session.\n");
+  connector->release();
+  // now caller session is released
+}
+
 
 void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
 {
@@ -251,11 +287,11 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
 			
       dlg.remote_party = co_ev->remote_party;
       dlg.remote_uri   = co_ev->remote_uri;
-			
+
       // set outbound proxy as next hop 
       if (!AmConfig::OutboundProxy.empty()) 
- 	dlg.next_hop = AmConfig::OutboundProxy;
-
+	dlg.next_hop = AmConfig::OutboundProxy;
+			
       setCallgroup(co_ev->callgroup);
 			
       setNegotiateOnReply(true);
@@ -284,12 +320,22 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
   AmB2ABSession::onB2ABEvent(ev);
 }
 
+void AmB2ABCalleeSession::onEarlySessionStart(const AmSipReply& rep) {
+  DBG("onEarlySessionStart of callee session\n");
+  connectSession();
+  is_connected = true;
+  relayEvent(new B2ABConnectEarlyAudioEvent());
+}
+
+
 void AmB2ABCalleeSession::onSessionStart(const AmSipReply& rep) {
   DBG("onSessionStart of callee session\n");
-  // connect our audio
-  connector = new AmSessionAudioConnector();
-  connectSession();
-  relayEvent(new B2ABConnectAudioEvent(connector));
+  if (!is_connected) {
+    is_connected = true;
+    DBG("call connectSession\n");
+    connectSession();
+  }
+  relayEvent(new B2ABConnectAudioEvent());
 }
 
 void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep) {
@@ -308,7 +354,6 @@ void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep) {
   }
 }
 
-
 // ----------------------- SessionAudioConnector -----------------
 
 void AmSessionAudioConnector::connectSession(AmSession* sess) 
@@ -317,14 +362,24 @@ void AmSessionAudioConnector::connectSession(AmSession* sess)
 
     tag_mut.lock();
 
-    if(!connected[0]){
+    if (connected[0] && tag_sess[0] == tag) {
+      // re-connect to position 0
+      sess->setInOut(&audio_connectors[0],&audio_connectors[1]);
+    } else if (connected[1] && tag_sess[1] == tag) {
+      // re-connect to position 1
+      sess->setInOut(&audio_connectors[1],&audio_connectors[0]);
+    } else if(!connected[0]){
+      // connect to empty position 0
       connected[0] = true;
-      tag_sess[0] = tag;
+      tag_sess[0] = "";
+      tag_sess[0].append(tag);
       sess->setInOut(&audio_connectors[0],&audio_connectors[1]);
     }
     else if(!connected[1]){
+      // connect to empty position 1
       connected[1] = true;
-      tag_sess[1] = tag;
+      tag_sess[1] = "";
+      tag_sess[1].append(tag);
       sess->setInOut(&audio_connectors[1],&audio_connectors[0]);
     }
     else {
@@ -341,27 +396,42 @@ bool AmSessionAudioConnector::disconnectSession(AmSession* sess)
   const string& tag = sess->getLocalTag();
 
   tag_mut.lock();
-  if (tag_sess[0] == tag) {
+  if (connected[0] && (tag_sess[0] == tag)) {
     tag_sess[0].clear();
     connected[0] = false;
     sess->setInOut(NULL, NULL);
     res = connected[1];
-  } else if (tag_sess[1] == tag) {
+  } else if (connected[1] && (tag_sess[1] == tag)) {
     tag_sess[1].clear();
     connected[1] = false;
     sess->setInOut(NULL, NULL);
     res = connected[0];
   } else {
-    ERROR("disconnecting from wrong AmSessionAudioConnector\n");
+    DBG("disconnecting from wrong AmSessionAudioConnector\n");
   }
   tag_mut.unlock();
 
   return res;
 }
 
+/* mark as in use by not owning entity */
+void AmSessionAudioConnector::block() {
+  released.set(false);
+}
+  
+/* mark as released by not owning entity */
+void AmSessionAudioConnector::release() {
+  released.set(true);
+}
+
+/* wait until released  */
+void AmSessionAudioConnector::waitReleased() {
+  released.wait_for();
+}
+
 // ----------------------- AudioDelayBridge -----------------
 /** BRIDGE_DELAY is needed because of possible different packet sizes */ 
-#define BRIDGE_DELAY 30 * SYSTEM_SAMPLERATE/1000 // 30ms 
+#define BRIDGE_DELAY 30 * SYSTEM_SAMPLERATE/1000 // 30ms
 
 /* AudioBridge */
 AmAudioDelayBridge::AmAudioDelayBridge()
@@ -384,3 +454,5 @@ int AmAudioDelayBridge::read(unsigned int user_ts, unsigned int size) {
   sarr.read(user_ts, (short*) ((unsigned char*) samples), size >> 1); 
   return size;
 }
+
+

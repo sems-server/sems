@@ -304,14 +304,15 @@ void CallBackDialog::process(AmEvent* ev)
 
 // need this to pass credentials...
 AmB2ABCalleeSession* CallBackDialog::createCalleeSession() {
-  CallBackCalleeDialog* sess = new CallBackCalleeDialog(getLocalTag(), cred);
+  CallBackCalleeDialog* sess = new CallBackCalleeDialog(getLocalTag(), connector, cred);
   addAuthHandler(sess);
   return sess;
 }
 
 CallBackCalleeDialog::CallBackCalleeDialog(const string& other_tag, 
-				     UACAuthCred* cred) 
-  : AmB2ABCalleeSession(other_tag), cred(cred)
+					   AmSessionAudioConnector* connector,
+					   UACAuthCred* cred) 
+  : AmB2ABCalleeSession(other_tag, connector), cred(cred)
 {
   // set configured playout type
   rtp_str.setPlayoutType(CallBackFactory::m_PlayoutType);

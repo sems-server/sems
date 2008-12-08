@@ -98,9 +98,11 @@ b2b_connectDialog::~b2b_connectDialog()
 
 void b2b_connectDialog::onInvite(const AmSipRequest& req)
 {
-  // TODO: do reinvites get here? if so, don't set a timer then
-  // -> yes, they do.
-
+  if (dlg.getStatus() == AmSipDialog::Connected) {
+    // reinvites
+    AmB2ABCallerSession::onInvite(req);
+    return;
+  }
 
   string app_param = getHeader(req.hdrs, PARAM_HDR);
 
@@ -228,7 +230,9 @@ void b2b_connectDialog::onCancel()
 
 AmB2ABCalleeSession* b2b_connectDialog::createCalleeSession()
 {
-  b2b_connectCalleeSession* sess = new b2b_connectCalleeSession(getLocalTag(), user, password);
+  b2b_connectCalleeSession* sess = new b2b_connectCalleeSession(getLocalTag(), 						   
+								connector, 
+								user, password);
 
   AmSessionEventHandlerFactory* uac_auth_f = 
     AmPlugIn::instance()->getFactory4Seh("uac_auth");
@@ -250,10 +254,11 @@ AmB2ABCalleeSession* b2b_connectDialog::createCalleeSession()
 }
 
 b2b_connectCalleeSession::b2b_connectCalleeSession(const string& other_tag,
+						   AmSessionAudioConnector* connector,
 						   const string& user, const string& pwd) 
   : credentials("", user, pwd), // domain (realm) is unused in credentials 
-    AmB2ABCalleeSession(other_tag) {
-
+    AmB2ABCalleeSession(other_tag, connector) 
+{
   rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT); 
   setDtmfDetectionEnabled(false);
 }

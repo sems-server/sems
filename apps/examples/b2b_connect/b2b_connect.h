@@ -90,7 +90,9 @@ class b2b_connectCalleeSession
    void onSipReply(const AmSipReply& reply);
  
 public:
-  b2b_connectCalleeSession(const string& other_tag, const string& user, const string& pwd); 
+  b2b_connectCalleeSession(const string& other_tag, 
+			   AmSessionAudioConnector* connector,
+			   const string& user, const string& pwd); 
   ~b2b_connectCalleeSession();
 
   inline UACAuthCred* getCredentials();

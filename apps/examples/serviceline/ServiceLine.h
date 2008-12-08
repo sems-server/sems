@@ -87,7 +87,8 @@ class ServiceLineCalleeDialog
   UACAuthCred cred;
 
 public:
-  ServiceLineCalleeDialog(const string& other_tag);
+  ServiceLineCalleeDialog(const string& other_tag, 
+			  AmSessionAudioConnector* connector);
   ~ServiceLineCalleeDialog();
   UACAuthCred* getCredentials();
 };

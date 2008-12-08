@@ -126,7 +126,9 @@ class CallBackCalleeDialog
 {
   UACAuthCred* cred;
 public:
-  CallBackCalleeDialog(const string& other_tag, UACAuthCred* cred);
+  CallBackCalleeDialog(const string& other_tag,
+		       AmSessionAudioConnector* connector,
+		       UACAuthCred* cred);
   ~CallBackCalleeDialog();
   UACAuthCred* getCredentials() { return cred; }
 };

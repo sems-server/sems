@@ -45,8 +45,8 @@ void PySemsB2ABDialog::onSessionStart(const AmSipRequest& req)
 }
 
 AmB2ABCalleeSession* PySemsB2ABDialog::createCalleeSession() {
-  return new PySemsB2ABCalleeDialog(getLocalTag());
-
+  return new PySemsB2ABCalleeDialog(getLocalTag(), 
+				    connector);
 }
 
 void PySemsB2ABDialog::process(AmEvent* event) 

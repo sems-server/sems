@@ -1,4 +1,23 @@
 
+class AmSessionAudioConnector
+{
+%TypeHeaderCode
+#include "../../../core/AmB2ABSession.h"
+%End
+public:
+	AmSessionAudioConnector();
+
+	~AmSessionAudioConnector();
+
+	void block();
+
+	void release();
+
+	void waitReleased();
+private:
+	AmSessionAudioConnector(const AmSessionAudioConnector&);
+};
+
 class PySemsB2ABDialog
 {
 %TypeHeaderCode
@@ -62,7 +81,7 @@ class AmB2ABCalleeSession
 #include "../../../core/AmB2ABSession.h"
 %End
 public:
-  AmB2ABCalleeSession(const string& /*other_local_tag*/);
+  AmB2ABCalleeSession(const string& /*other_local_tag*/, AmSessionAudioConnector* );
 
   void connectSession();
   void disconnectSession();
@@ -83,7 +102,7 @@ class PySemsB2ABCalleeDialog : AmB2ABCalleeSession
 #include "../../../core/AmB2ABSession.h"
 %End
 public:
-  PySemsB2ABCalleeDialog(const string& /*other_local_tag*/);
+  PySemsB2ABCalleeDialog(const string& /*other_local_tag*/, AmSessionAudioConnector* /* connector */);
 
 protected:
   virtual void onPyB2ABEvent(PySemsB2ABEvent* /TransferBack/);

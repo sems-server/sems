@@ -149,12 +149,13 @@ void JukecallSession::process(AmEvent* event)
 }
 
 AmB2ABCalleeSession* JukecallSession::createCalleeSession() {
-	AmB2ABCalleeSession* sess = new JukecalleeSession(getLocalTag());
+  AmB2ABCalleeSession* sess = new JukecalleeSession(getLocalTag(), connector);
 	return sess;
 }
 
-JukecalleeSession::JukecalleeSession(const string& other_tag) 
-	: AmB2ABCalleeSession(other_tag)
+JukecalleeSession::JukecalleeSession(const string& other_tag, 
+				     AmSessionAudioConnector* connector) 
+  : AmB2ABCalleeSession(other_tag, connector)
 {
 	setDtmfDetectionEnabled(false);
 }

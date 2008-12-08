@@ -62,8 +62,9 @@ struct PySemsB2ABEvent: public B2ABEvent
 class PySemsB2ABCalleeDialog : public AmB2ABCalleeSession
 {
  public:
- PySemsB2ABCalleeDialog(const string& other_local_tag)
-   : AmB2ABCalleeSession(other_local_tag) { }
+ PySemsB2ABCalleeDialog(const string& other_local_tag, 
+			AmSessionAudioConnector* connector)
+   : AmB2ABCalleeSession(other_local_tag, connector) { }
 
  protected:
   void onB2ABEvent(B2ABEvent* ev);
