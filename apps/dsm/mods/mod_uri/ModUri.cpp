@@ -35,7 +35,7 @@
 #include <sys/types.h>
 
 #include "DSMCoreModule.h"
-#include "UriParser.h"
+#include "AmUriParser.h"
 
 SC_EXPORT(URIModule);
 
@@ -96,7 +96,7 @@ bool URIParseAction::execute(AmSession* sess,
   string uri = resolveVars(par1, sess, sc_sess, event_params);
   string prefix = resolveVars(par2, sess, sc_sess, event_params);
 
-  UriParser p;
+  AmUriParser p;
   p.uri = uri;
   if (!p.parse_uri()) {
     DBG("parsing URI '%s' failed\n", uri.c_str());
