@@ -39,50 +39,50 @@ using std::string;
 class JukecallFactory: public AmSessionFactory
 {
 public:
-    JukecallFactory(const string& _app_name);
+  JukecallFactory(const string& _app_name);
 
-    int onLoad();
+  int onLoad();
 
-    AmSession* onInvite(const AmSipRequest& req);
+  AmSession* onInvite(const AmSipRequest& req);
 };
 
 class JukecallSession 
-	: public AmB2ABCallerSession
+  : public AmB2ABCallerSession
 {
 
 public:
-	enum JukeLeg1_state {
-		JC_initial_announcement = 0,
-		JC_connect,
-		JC_juke
-	};
+  enum JukeLeg1_state {
+    JC_initial_announcement = 0,
+    JC_connect,
+    JC_juke
+  };
 
 private:
-	// our state
-	JukeLeg1_state state;
-	AmAudioFile initial_announcement;
+  // our state
+  JukeLeg1_state state;
+  AmAudioFile initial_announcement;
 
-	auto_ptr<AmAudioFile> song;
+  auto_ptr<AmAudioFile> song;
 
 protected:
-	AmB2ABCalleeSession* createCalleeSession();
+  AmB2ABCalleeSession* createCalleeSession();
 
 public:
 
-    JukecallSession();
-    ~JukecallSession();
+  JukecallSession();
+  ~JukecallSession();
 
-	void onSessionStart(const AmSipRequest& req);
-	void process(AmEvent* event);
+  void onSessionStart(const AmSipRequest& req);
+  void process(AmEvent* event);
 
-    void onDtmf(int event, int duration_msec);
+  void onDtmf(int event, int duration_msec);
 };
 
 class JukecalleeSession 
-	: public AmB2ABCalleeSession {
+  : public AmB2ABCalleeSession {
 	
-	void process(AmEvent* event);
-	auto_ptr<AmAudioFile> song;
+  void process(AmEvent* event);
+  auto_ptr<AmAudioFile> song;
 
 public:
   JukecalleeSession(const string& other_tag, 
@@ -91,8 +91,8 @@ public:
  
 class JukeEvent : public AmEvent {
 public:
-	JukeEvent(int key) 
-		: AmEvent(key) {}
+  JukeEvent(int key) 
+    : AmEvent(key) {}
 };
 
 #endif

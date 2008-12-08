@@ -40,32 +40,32 @@ EXPORT_SESSION_FACTORY(JukecallFactory,MOD_NAME);
 #define JUKE_DIR             "../apps/examples/jukecall/wav/"
 
 JukecallFactory::JukecallFactory(const string& _app_name)
-	: AmSessionFactory(_app_name)
+  : AmSessionFactory(_app_name)
 {
 }
 
 
 int JukecallFactory::onLoad()
 {
-	// read configuration
+  // read configuration
 
-	DBG("JukecallFactory loaded.\n");
-    return 0;
+  DBG("JukecallFactory loaded.\n");
+  return 0;
 }
 
 AmSession* JukecallFactory::onInvite(const AmSipRequest& req)
 {
-	if (req.user.length() <= 3) {
-		throw AmSession::Exception(403, "Need a number to call");
-	}
+  if (req.user.length() <= 3) {
+    throw AmSession::Exception(403, "Need a number to call");
+  }
 
-	JukecallSession* dlg = new JukecallSession();
+  JukecallSession* dlg = new JukecallSession();
 
-	return dlg;
+  return dlg;
 }
 
 JukecallSession::JukecallSession() 
-	: AmB2ABCallerSession()
+  : AmB2ABCallerSession()
 {
 }
 
@@ -75,116 +75,116 @@ JukecallSession::~JukecallSession()
 
 void JukecallSession::onSessionStart(const AmSipRequest& req)
 {
-    if (dlg.getStatus()==AmSipDialog::Connected) {
-		// reinvite
-		AmB2ABCallerSession::onSessionStart(req);
-		return;
-    }
+  if (dlg.getStatus()==AmSipDialog::Connected) {
+    // reinvite
+    AmB2ABCallerSession::onSessionStart(req);
+    return;
+  }
 
-    DBG("-----------------------------------------------------------------\n");
-    DBG("playing file\n");
+  DBG("-----------------------------------------------------------------\n");
+  DBG("playing file\n");
 
-    if(initial_announcement.open(INITIAL_ANNOUNCEMENT,AmAudioFile::Read)) {
-		dlg.bye();
-		throw string("CTConfDDialog::onSessionStart: Cannot open file '%s'\n", INITIAL_ANNOUNCEMENT);
-	}
+  if(initial_announcement.open(INITIAL_ANNOUNCEMENT,AmAudioFile::Read)) {
+    dlg.bye();
+    throw string("CTConfDDialog::onSessionStart: Cannot open file '%s'\n", INITIAL_ANNOUNCEMENT);
+  }
 
-	// set this as our output
-    setOutput(&initial_announcement);
+  // set this as our output
+  setOutput(&initial_announcement);
 
-	state = JC_initial_announcement;
+  state = JC_initial_announcement;
 }
 
 void JukecallSession::onDtmf(int event, int duration_msec) {
-	DBG("got DTMF %d\n", event);
+  DBG("got DTMF %d\n", event);
 
-	// no jukebox if other party is not connected
-	if (getCalleeStatus()!=AmB2ABCallerSession::Connected)
-		return;
+  // no jukebox if other party is not connected
+  if (getCalleeStatus()!=AmB2ABCallerSession::Connected)
+    return;
 
-	// no jukebox in the beginning and while playing
-	if (state != JC_connect) 
-		return;
+  // no jukebox in the beginning and while playing
+  if (state != JC_connect) 
+    return;
 
-	DBG("playing back file...\n");
+  DBG("playing back file...\n");
 
-	song.reset(new AmAudioFile());
-	if (song->open(JUKE_DIR+int2str(event)+".wav",AmAudioFile::Read)) {
-		ERROR("could not open file\n");
-		return;
-	}
-    setOutput(song.get());
-	state = JC_juke;
+  song.reset(new AmAudioFile());
+  if (song->open(JUKE_DIR+int2str(event)+".wav",AmAudioFile::Read)) {
+    ERROR("could not open file\n");
+    return;
+  }
+  setOutput(song.get());
+  state = JC_juke;
 
-	relayEvent(new JukeEvent(event));
+  relayEvent(new JukeEvent(event));
 }
 
 void JukecallSession::process(AmEvent* event)
 {
 
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
-		switch(state) {
-		case JC_initial_announcement: {
-			state = JC_connect;
-			string callee = "sip:" + dlg.user.substr(3) + "@" + dlg.domain;
-			DBG("-------------------------- connecting %s ------------------------\n", callee.c_str());
-			connectCallee(callee, callee, 
-						  dlg.remote_party, dlg.remote_uri);
+  AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
+  if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
+    switch(state) {
+    case JC_initial_announcement: {
+      state = JC_connect;
+      string callee = "sip:" + dlg.user.substr(3) + "@" + dlg.domain;
+      DBG("-------------------------- connecting %s ------------------------\n", callee.c_str());
+      connectCallee(callee, callee, 
+		    dlg.remote_party, dlg.remote_uri);
 
-			return;
+      return;
 
-		} break;
+    } break;
 
-		case JC_juke: {
-			DBG("reconnecting audio\n");
-			connectSession();
-			state = JC_connect;
-			return;
-		}; break;
+    case JC_juke: {
+      DBG("reconnecting audio\n");
+      connectSession();
+      state = JC_connect;
+      return;
+    }; break;
 
-		default: {
-			DBG("cleared in other state.\n");
-			return;
-		};
-		}
-		
+    default: {
+      DBG("cleared in other state.\n");
+      return;
+    };
     }
+		
+  }
 
-    AmB2ABCallerSession::process(event);
+  AmB2ABCallerSession::process(event);
 }
 
 AmB2ABCalleeSession* JukecallSession::createCalleeSession() {
   AmB2ABCalleeSession* sess = new JukecalleeSession(getLocalTag(), connector);
-	return sess;
+  return sess;
 }
 
 JukecalleeSession::JukecalleeSession(const string& other_tag, 
 				     AmSessionAudioConnector* connector) 
   : AmB2ABCalleeSession(other_tag, connector)
 {
-	setDtmfDetectionEnabled(false);
+  setDtmfDetectionEnabled(false);
 }
 
 
 void JukecalleeSession::process(AmEvent* event) {
-    JukeEvent* juke_event = dynamic_cast<JukeEvent*>(event);
-    if(juke_event) {
-		song.reset(new AmAudioFile());
-		if (song->open(JUKE_DIR+int2str(event->event_id)+".wav",AmAudioFile::Read)) {
-			ERROR("could not open file\n");
-			return;
-		}
-		setOutput(song.get());
-		return;
-	}
+  JukeEvent* juke_event = dynamic_cast<JukeEvent*>(event);
+  if(juke_event) {
+    song.reset(new AmAudioFile());
+    if (song->open(JUKE_DIR+int2str(event->event_id)+".wav",AmAudioFile::Read)) {
+      ERROR("could not open file\n");
+      return;
+    }
+    setOutput(song.get());
+    return;
+  }
 
-    AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
-    if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
-		DBG("reconnecting audio\n");
-		connectSession();
-		return;
-	}
+  AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
+  if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
+    DBG("reconnecting audio\n");
+    connectSession();
+    return;
+  }
 	
-	AmB2ABCalleeSession::process(event);
+  AmB2ABCalleeSession::process(event);
 }
