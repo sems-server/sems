@@ -79,9 +79,9 @@ loglevel=2
 # examples:
 # application = conference
 # application = $(mapping)
-# application = $(apphdr)
 # application = $(ruri.user)
 # application = $(ruri.param)
+application = $(apphdr)
 
 # optional parameter: plugin_path=<path>
 # 
