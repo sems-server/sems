@@ -239,7 +239,7 @@ CallBackDialog::~CallBackDialog()
 
 
 void CallBackDialog::onSessionStart(const AmSipRequest& req) { 
-  if (dlg.getStatus()==AmSipDialog::Connected) {
+  if (state != CBNone) {
     // reinvite
     AmB2ABCallerSession::onSessionStart(req);
     return;
