@@ -478,26 +478,35 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   string domain      = args.get(4).asCStr();
   string auth_user   = args.get(5).asCStr();
   string auth_pwd    = args.get(6).asCStr();
+  string callee_domain;
   string headers;
 
   try {
-      assertArgCStr(args.get(7));
-      headers = args.get(7).asCStr();
-      int i, len;
-      len = headers.length();
-      for (i = 0; i < len; i++) {
-	  if (headers[i] == '|') headers[i] = '\n';
-      }
-      if (headers[len - 1] != '\n') {
-	  headers += '\n';
-      }
+    assertArgCStr(args.get(7));
+    headers = args.get(7).asCStr();
+    int i, len;
+    len = headers.length();
+    for (i = 0; i < len; i++) {
+      if (headers[i] == '|') headers[i] = '\n';
+    }
+    if (headers[len - 1] != '\n') {
+      headers += '\n';
+    }
   }
   catch (AmArg::OutOfBoundsException &e) {
-      headers = "";
+    headers = "";
+  }
+
+  try {
+    assertArgCStr(args.get(8));
+    callee_domain = args.get(8).asCStr();
+  }
+  catch (AmArg::OutOfBoundsException &e) {
+    callee_domain = domain;
   }
 
   string from = "sip:" + from_user + "@" + domain;
-  string to   = "sip:" + callee + "@" + domain;
+  string to   = "sip:" + callee + "@" + callee_domain;
 
   // check adminpin
   rooms_mut.lock();

@@ -60,7 +60,7 @@ roomInfo(string room, string adminpin):
 ----
 dialout(string room, string adminpin, string callee,
         string from_user, string domain,
-        string auth_user, string auth_pwd [, headers]) :
+        string auth_user, string auth_pwd [, headers [, callee_domain]]) :
      int code, string result, string callid
 
    code/result:
