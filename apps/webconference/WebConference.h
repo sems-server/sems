@@ -80,6 +80,8 @@ class WebConferenceFactory
   map<string, ConferenceRoom> rooms;
   AmMutex rooms_mut;
 
+  int room_sweep_cnt;
+
   // for DI 
   static WebConferenceFactory* _instance;
   bool configured;
@@ -105,11 +107,17 @@ class WebConferenceFactory
   // for access of dialog to its url
   string getAdminpin(const string& room);
 
+  void sweepRooms();
+
 public:
   static string DigitsDir;
   static PlayoutType m_PlayoutType;
   static string urlbase;
   static string MasterPassword;
+  
+  static int ParticipantExpiredDelay;
+  static int RoomExpiredDelay;
+  static int RoomSweepInterval;
 
   WebConferenceFactory(const string& _app_name);
   AmSession* onInvite(const AmSipRequest&);

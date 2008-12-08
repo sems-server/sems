@@ -14,8 +14,6 @@ using std::list;
 #include "AmArg.h"
 #include "AmThread.h"
 
-#define PARTICIPANT_EXPIRED_DELAY 10
-
 struct ConferenceRoomParticipant {
   enum ParticipantStatus {
     Disconnected = 0,
@@ -44,7 +42,8 @@ struct ConferenceRoomParticipant {
   inline bool expired(const struct timeval& now);
 
   inline void updateStatus(ParticipantStatus new_status, 
-			   const string& reason);
+			   const string& reason,
+			   struct timeval& now);
 
   inline void setMuted(int mute);
   
@@ -54,9 +53,11 @@ struct ConferenceRoomParticipant {
 struct ConferenceRoom {
   string adminpin;
 
+  struct timeval last_access_time;
+
   list<ConferenceRoomParticipant> participants;
 
-  ConferenceRoom() { }
+  ConferenceRoom();
   ~ConferenceRoom() { }
 
   void cleanExpired();
@@ -72,6 +73,9 @@ struct ConferenceRoom {
   bool hasParticipant(const string& localtag);
 
   void setMuted(const string& localtag, int mute);
+
+  bool expired(const struct timeval& now);
+  bool expired();
 };
 
 

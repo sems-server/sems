@@ -66,6 +66,10 @@ string WebConferenceFactory::urlbase = "";
 
 string WebConferenceFactory::MasterPassword;
 
+int WebConferenceFactory::ParticipantExpiredDelay;
+int WebConferenceFactory::RoomExpiredDelay;
+int WebConferenceFactory::RoomSweepInterval;
+
 int WebConferenceFactory::onLoad()
 {
   // only execute this once
@@ -158,8 +162,24 @@ int WebConferenceFactory::onLoad()
   MasterPassword  = cfg.getParameter("master_password");
   if (!MasterPassword.empty()) {
     DBG("Master password set.\n");
+  }  
+
+  if (cfg.getParameter("participants_expire") == "no") { 
+    ParticipantExpiredDelay = -1;
+  } else {
+    // default: 10s
+    ParticipantExpiredDelay = cfg.getParameterInt("participants_expire_delay", 10);
   }
-    
+
+  if (cfg.getParameter("rooms_expire") == "no") { 
+    RoomExpiredDelay = -1;
+  } else {
+    RoomExpiredDelay = cfg.getParameterInt("rooms_expire_delay", 7200); // default: 2h
+  }
+
+  // default: every 10 times
+  RoomSweepInterval = cfg.getParameterInt("room_sweep_interval", 10);
+ 
   return 0;
 }
 
@@ -208,6 +228,12 @@ ConferenceRoom* WebConferenceFactory::getRoom(const string& room,
       if (it->second.adminpin.empty()) 
 	it->second.adminpin = adminpin;
       res = &it->second;
+      
+      if (res->expired()) {
+	DBG("clearing expired room '%s'\n", room.c_str());
+	rooms.erase(it);
+	res = NULL;
+      }
     } 
   }
 
@@ -368,10 +394,34 @@ string WebConferenceFactory::getRandomPin() {
   return res;
 }
 
+// possibly clear expired rooms. OJO: lock rooms_mut !
+void WebConferenceFactory::sweepRooms() {
+  if ((RoomSweepInterval>0) && (!((++room_sweep_cnt)%RoomSweepInterval))) {
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    
+    map<string, ConferenceRoom>::iterator it=rooms.begin();
+    while (it != rooms.end()) { 
+      if (it->second.expired(now)) {
+	map<string, ConferenceRoom>::iterator d_it = it;
+	it++;       
+	DBG("clearing expired room '%s'\n", d_it->first.c_str());
+	rooms.erase(d_it);
+      } else {
+	it++;
+      }
+    }
+  }
+}
+
 void WebConferenceFactory::roomCreate(const AmArg& args, AmArg& ret) {
   assertArgCStr(args.get(0));
   string room = args.get(0).asCStr();
   rooms_mut.lock();
+  
+  // sweep rooms (if necessary)
+  sweepRooms();
+
   map<string, ConferenceRoom>::iterator it = rooms.find(room);
   if (it == rooms.end()) {
     rooms[room] = ConferenceRoom();
@@ -451,6 +501,10 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
 
   // check adminpin
   rooms_mut.lock();
+  
+  // sweep rooms (if necessary)
+  sweepRooms();
+
   ConferenceRoom* r = getRoom(room, adminpin);
   rooms_mut.unlock();
   if (NULL == r) {
