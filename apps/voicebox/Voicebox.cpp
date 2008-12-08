@@ -296,6 +296,9 @@ AmSession* VoiceboxFactory::onInvite(const AmSipRequest& req)
   string pin;
   string domain;
   string language;
+  string uid;
+  string did;
+
    
   string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
   
@@ -303,11 +306,23 @@ AmSession* VoiceboxFactory::onInvite(const AmSipRequest& req)
     AmSession::Exception(500, APP_NAME ": parameters not found");
   }
   
-  user = get_header_keyvalue(iptel_app_param, "usr", "User");
+
+  // consistently with voicemail application:
+  //  uid overrides user
+  user = get_header_keyvalue(iptel_app_param, "uid", "UserID");
+  if (user.empty())
+    user = get_header_keyvalue(iptel_app_param, "usr", "User");
+
+  //  did overrides domain
+  domain = get_header_keyvalue(iptel_app_param, "did", "DomainID");
+  if (domain.empty())
+    domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
+
+
   pin = get_header_keyvalue(iptel_app_param, "pin", "PIN");
-  domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
   language = get_header_keyvalue(iptel_app_param,"lng", "Language");
 
+  
   // checks
   if (user.empty()) 
     throw AmSession::Exception(500, APP_NAME ": user missing");

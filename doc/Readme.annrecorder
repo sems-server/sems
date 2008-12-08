@@ -25,7 +25,8 @@ App-Params
  usr   User        param_user
  typ   Type        param_type; defaults to "vm" (for: voicemail)
  lng   Language    used for finding default greeting
-
+ did   DomainID    optional, overrides Domain above
+ uid   UserID      optional, overrides User above
 
 Flow Diagram
 ------------

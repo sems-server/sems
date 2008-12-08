@@ -24,6 +24,8 @@ application parameters (App-Param  header)
  PIN      pin       PIN (will be asked for PIN if not empty)
  Domain   dom       Domain (for prompts/storage)
  Language lng       Language (for prompts/storage)
+ UserID   uid       optional, overrides User above
+ DomainID did       optional, overrides Domain above
 
 Prompts
 -------

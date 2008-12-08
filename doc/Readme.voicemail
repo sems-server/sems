@@ -17,15 +17,16 @@ messages to be played.
 If file system is used to store audio files, the announcement file to be
 played is looked for in the following order:
 
- <announce_path><domain><user>'.wav'
- <announce_path><domain><language><default_announce>
- <announce_path><domain><default_announce>
+ <announce_path><did><uid>'.wav'
+ <announce_path><did><language><default_announce>
+ <announce_path><did><default_announce>
  <announce_path><language><default_announce>
  <announce_path><default_announce>
 
 where <announce_path> and <default_announce> is set in voicemail.conf,
 <domain> is the host part of the request URI, <user> the user part of 
-the request URI, and <language> is the App-Param 'Language' (see below).
+the request URI (if not overridden by uid="..." or "usr=..."), and 
+<language> is the App-Param 'Language' (see below).
 
 If MySQL database is used to store audio files, the announcement to be
 played is looked for first from user_audio table, then from domain_audio
@@ -95,6 +96,8 @@ avoid packet fragmentation (UDP).
   Language        lng         - optional: language for announcement file/email template
   Type            typ         - optional (default: 'vm'): prompt file to play, for user recorded
                                 greeting (see annrecorder app)
+  UserID          uid         - optional: override user by user id (see Note below)
+  DomainID        did         - optional: override domain by domain id (see Note below)
   
 
   Example:
@@ -105,6 +108,17 @@ avoid packet fragmentation (UDP).
 
     P-App-name: voicemail
     P-App-Param: eml=user@maildomain.net;mod=both;lng=english;snd=someone@iptel.org;dom=iptel.org;
+
+Using UserID (UID) and DomainID (DID)
+-------------------------------------
+
+If the platform supports aliases and multiple domains, the canonical user name and domain
+name may not be available when sending the INVITE request to the voicemail/voicebox server.
+Also, domain ID is case insensitive, thus iptel.org and Iptel.org may appear as different 
+domains to the case sensitive msg_storage engine.
+Thus, the user and domain may be overridden by user id and domain id. These values are not 
+used in the email template, they are used only for selection of the user's voicebox and 
+personal greeting message.
 
 
 Voicebox mode
@@ -215,3 +229,9 @@ Following variables are supported:
  - %from%/%sender% : Sender or remote URI.
  - %from_user% : remote user.
  - %from_domain% : remote domain.
+
+ - %vmsg_length% : voice message length in seconds
+
+ - %uid% : user id
+ - %did% : domain id
+ - %ts%  : unix timestamp (seconds)

@@ -127,6 +127,8 @@ class AnswerMachineDialog : public AmSession
 		      const string& domain,
 		      const string& email, 
 		      const string& announce_file, 
+		      const string& uid,
+		      const string& did,
 		      FILE* announce_fp, 
 		      int vm_mode,
 		      const EmailTemplate* tmpl);

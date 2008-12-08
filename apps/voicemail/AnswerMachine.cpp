@@ -489,6 +489,8 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   string user;
   string sender;
   string typ;
+  string uid; // user ID
+  string did; // domain ID
 
   int vm_mode = MODE_VOICEMAIL; 
 
@@ -534,8 +536,17 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   if (!typ.length())
     typ = DEFAULT_TYPE;
 
+  uid = get_header_keyvalue(iptel_app_param, "uid", "UserID");
+  if (uid.empty())
+    uid=user;
+
+  did = get_header_keyvalue(iptel_app_param, "did", "DomainID");
+  if (did.empty())
+    did=domain;
+
+
   // checks
-  if (user.empty()) 
+  if (uid.empty()) 
     throw AmSession::Exception(500, "voicemail: user missing");
 
   if (sender.empty()) 
@@ -555,10 +566,12 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   DBG(" Domain:   <%s> \n", domain.c_str());
   DBG(" Language: <%s> \n", language.c_str());
   DBG(" Type:     <%s> \n", typ.c_str());
+  DBG(" UID:      <%s> \n", uid.c_str());
+  DBG(" DID:      <%s> \n", did.c_str());
 
   FILE* greeting_fp = NULL;
   if (TryPersonalGreeting)
-    greeting_fp = getMsgStoreGreeting(typ, user, domain);
+    greeting_fp = getMsgStoreGreeting(typ, uid, did);
 
 #ifdef USE_MYSQL
 
@@ -588,17 +601,17 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 #else
 
   string announce_file = add2path(AnnouncePath,2, 
-				  domain.c_str(), (user + ".wav").c_str());
+				  did.c_str(), (uid + ".wav").c_str());
   if (file_exists(announce_file)) goto announce_found;
 
   if (!language.empty()) {
     announce_file = add2path(AnnouncePath,3, 
-			     domain.c_str(), language.c_str(), DefaultAnnounce.c_str());
+			     did.c_str(), language.c_str(), DefaultAnnounce.c_str());
     if (file_exists(announce_file)) goto announce_found;
   }
 
   announce_file = add2path(AnnouncePath,2, 
-			   domain.c_str(), DefaultAnnounce.c_str());
+			   did.c_str(), DefaultAnnounce.c_str());
   if (file_exists(announce_file)) goto announce_found;
 
   if (!language.empty()) {
@@ -620,17 +633,17 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   // VBOX mode does not need email template
   if ((vm_mode == MODE_BOX) || (vm_mode == MODE_ANN))
     return new AnswerMachineDialog(user, sender, domain,
-				   email, announce_file, greeting_fp,
-				   vm_mode, NULL);
-				    
+				   email, announce_file, uid, did, 
+				   greeting_fp, vm_mode, NULL);
+
   if(email.empty())
     throw AmSession::Exception(404,"missing email address");
 
   map<string,EmailTemplate>::iterator tmpl_it;
   if (!language.empty()) {
-    tmpl_it = email_tmpl.find(domain + "_" + language);
+    tmpl_it = email_tmpl.find(did + "_" + language);
     if(tmpl_it == email_tmpl.end()) {
-      tmpl_it = email_tmpl.find(domain);
+      tmpl_it = email_tmpl.find(did);
       if(tmpl_it == email_tmpl.end()) {
 	tmpl_it = email_tmpl.find(DEFAULT_MAIL_TMPL + "_"
 				  + language);
@@ -639,7 +652,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
       }
     }
   } else {
-    tmpl_it = email_tmpl.find(domain);
+    tmpl_it = email_tmpl.find(did);
     if(tmpl_it == email_tmpl.end())
       tmpl_it = email_tmpl.find(DEFAULT_MAIL_TMPL);
   }
@@ -649,7 +662,9 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
     return 0;
   }
   return new AnswerMachineDialog(user, sender, domain,
-				 email, announce_file, greeting_fp,
+				 email, announce_file, 
+				 uid, did,
+				 greeting_fp,
 				 vm_mode, &tmpl_it->second);
 }
 
@@ -659,6 +674,8 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
 					 const string& domain,
 					 const string& email, 
 					 const string& announce_file, 
+					 const string& uid,
+					 const string& did,
 					 FILE* announce_fp, 
 					 int vm_mode,
 					 const EmailTemplate* tmpl) 
@@ -671,6 +688,8 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
   email_dict["from"] = sender;
   email_dict["domain"] = domain;
   email_dict["email"] = email;
+  email_dict["uid"] = uid;
+  email_dict["did"] = did;
 
   user_timer = AnswerMachineFactory::UserTimer->getInstance();
   if(!user_timer){
@@ -920,8 +939,8 @@ void AnswerMachineDialog::saveBox(FILE* fp) {
   DBG("message name is '%s'\n", msg_name.c_str());
 
   AmArg di_args,ret;
-  di_args.push(email_dict["domain"].c_str()); // domain
-  di_args.push(email_dict["user"].c_str());   // user
+  di_args.push(email_dict["did"].c_str());    // domain
+  di_args.push(email_dict["uid"].c_str());    // user
   di_args.push(msg_name.c_str());             // message name
   AmArg df;
   MessageDataFile df_arg(fp);
@@ -966,6 +985,14 @@ FILE* AnswerMachineFactory::getMsgStoreGreeting(string msgname,
 	  user.c_str(), domain.c_str(),
 	  msgname.c_str(),
 	  MsgStrError(ret.get(0).asInt()));
+
+    if ((ret.size() > 1) && isArgAObject(ret.get(1))) {
+      MessageDataFile* f = 
+	dynamic_cast<MessageDataFile*>(ret.get(1).asObject());
+      if (NULL != f)
+	delete f;
+    }
+
     return NULL;
   } 
   

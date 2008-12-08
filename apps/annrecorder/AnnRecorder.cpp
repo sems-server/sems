@@ -133,14 +133,19 @@ void AnnRecorderFactory::getAppParams(const AmSipRequest& req, map<string, strin
 
   language = get_header_keyvalue(iptel_app_param, "lng", "Language");
 
-  user = get_header_keyvalue(iptel_app_param,"usr", "User");
-  if (!user.length())
-    user = req.user;
+  user = get_header_keyvalue(iptel_app_param,"uid", "UserID");
+  if (user.empty()) {
+    user = get_header_keyvalue(iptel_app_param,"usr", "User");
+    if (!user.length())
+      user = req.user;
+  }
   
-  domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
-  if (!domain.length())
-    domain = req.domain;
-
+  domain = get_header_keyvalue(iptel_app_param, "did", "DomainID");
+  if (domain.empty()){
+    domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
+    if (domain.empty())
+      domain = req.domain;
+  }
   
   typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
   if (!typ.length())
@@ -500,6 +505,14 @@ FILE* AnnRecorderDialog::getCurrentMessage() {
 	  user.c_str(), domain.c_str(),
 	  msgname.c_str(),
 	  MsgStrError(ret.get(0).asInt()));
+
+    if ((ret.size() > 1) && isArgAObject(ret.get(1))) {
+      MessageDataFile* f = 
+	dynamic_cast<MessageDataFile*>(ret.get(1).asObject());
+      if (NULL != f)
+	delete f;
+    }
+
     return NULL;
   } 
   
