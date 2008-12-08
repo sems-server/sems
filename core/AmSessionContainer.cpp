@@ -328,8 +328,8 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
 
   if(!session_factory) {
 
-      ERROR("No session factory");
-      AmSipDialog::reply_error(req,500,"No session factory");
+      ERROR("No session factory for application\n");
+      AmSipDialog::reply_error(req,500,"Server Internal Error");
 
       return NULL;
   }
