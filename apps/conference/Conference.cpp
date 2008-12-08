@@ -71,6 +71,8 @@ string ConferenceFactory::DialoutSuffix;
 PlayoutType ConferenceFactory::m_PlayoutType = ADAPTIVE_PLAYOUT;
 unsigned int ConferenceFactory::MaxParticipants;
 
+bool ConferenceFactory::UseRFC4240Rooms;
+
 #ifdef USE_MYSQL
 mysqlpp::Connection ConferenceFactory::Connection(mysqlpp::use_exceptions);
 
@@ -291,6 +293,9 @@ int ConferenceFactory::onLoad()
     ERROR("while parsing max_participants parameter\n"); 
   }
 
+  UseRFC4240Rooms = cfg.getParameter("use_rfc4240_rooms")=="yes";
+  DBG("%ssing RFC4240 room naming.\n", UseRFC4240Rooms?"U":"Not u");
+
   return 0;
 }
 
@@ -302,7 +307,21 @@ AmSession* ConferenceFactory::onInvite(const AmSipRequest& req)
     DBG("Conference is full.\n");
     throw AmSession::Exception(486, "Busy Here");
   }
-  return new ConferenceDialog(req.user);
+
+  string conf_id=req.user;
+
+  if (UseRFC4240Rooms) {
+    // see RFC4240 5.  Conference Service
+    if (req.user.length()<5)
+      throw AmSession::Exception(404, "Not Found");
+    
+    if (req.user.substr(0,5)!="conf=")
+      throw AmSession::Exception(404, "Not Found");
+
+    conf_id = req.user.substr(5);
+  }
+
+  return new ConferenceDialog(conf_id);
 }
 
 AmSession* ConferenceFactory::onRefer(const AmSipRequest& req)
@@ -351,8 +370,7 @@ ConferenceDialog::~ConferenceDialog()
 #endif
 }
 
-void ConferenceDialog::onStart() 
-{
+void ConferenceDialog::onStart() {
 }
 
 void ConferenceDialog::onSessionStart(const AmSipRequest& req)

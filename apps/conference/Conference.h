@@ -83,6 +83,8 @@ public:
   static string DialoutSuffix;
   static PlayoutType m_PlayoutType;
   static unsigned int MaxParticipants;
+  static bool UseRFC4240Rooms;
+
 
 #ifdef USE_MYSQL
   static mysqlpp::Connection Connection;
