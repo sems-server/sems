@@ -23,8 +23,9 @@ export DEB_BUILD_OPTIONS:="$(DEB_BUILD_OPTIONS) nostrip"
 
 PYTHON_MODULES=ivr py_sems conf_auth mailbox pin_collect
 
-EXCLUDED_MODULES=mp3 examples 
+EXCLUDED_MODULES=mp3 examples gateway
 
+CPPFLAGS += -DHAVE_XMLRPCPP_SSL -DHAVE_OLD_SPANDSP_CALLBACK
 
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 	CFLAGS += -g
@@ -36,7 +37,7 @@ endif
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	# Add here commands to configure the package.
+# Add here commands to configure the package.
 
 	touch configure-stamp
 
@@ -46,7 +47,7 @@ build-stamp: configure-stamp
 	dh_testdir
 
 # Add here commands to compile the package.
-	$(MAKE) cfg-target=/etc/sems/ prefix=/usr exclude_modules="$(EXCLUDED_MODULES)" DESTDIR=$(CURDIR)/debian/sems 
+	USE_SPANDSP=yes CPPFLAGS="$(CPPFLAGS)" $(MAKE) cfg-target=/etc/sems/ prefix=/usr exclude_modules="$(EXCLUDED_MODULES)" DESTDIR=$(CURDIR)/debian/sems 
 #/usr/bin/docbook-to-man debian/ser.sgml > ser.1
 
 	touch build-stamp
@@ -71,7 +72,7 @@ install: build
 		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
 		cfg-target=/etc/sems/
-							
+
 
 	$(MAKE) -C apps/ install exclude_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
 		DESTDIR=$(CURDIR)/debian/sems \
