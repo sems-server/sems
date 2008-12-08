@@ -36,7 +36,11 @@
 
 #ifdef USE_SPANDSP
 #include <math.h>
+#ifndef HAVE_OLD_SPANDSP_CALLBACK
 #include "spandsp.h"
+#else
+#include "spandsp/tone_detect.h"
+#endif
 #endif
 
 
