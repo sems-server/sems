@@ -1,3 +1,9 @@
+sems (1.1.0-0rc1) unstable; urgency=low
+
+  * Debian Release Candidate 1 for 1.1.
+
+ -- Stefan Sayer <sayer@iptel.org>  Mon Dec  8 23:01:40 CET 2008
+
 sems (1.0.0-0pre1-r856M) unstable; urgency=low
 
   * Debian Release Candidate 1 for 1.0.
