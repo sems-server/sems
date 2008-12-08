@@ -5,7 +5,7 @@ HFILES = sipAPIpy_sems_lib.h sippy_sems_libPySemsB2ABEvent.h sippy_sems_libPySem
 CC = gcc
 CXX = g++
 LINK = g++
-CPPFLAGS = -I. -I$(COREPATH) -I/usr/include/python2.5
+CPPFLAGS = -I. -I$(COREPATH) -I/usr/include/python$(PY_VER)
 CFLAGS = -pipe -fPIC -O2 -w
 CXXFLAGS = -Wall -Wno-reorder -g -pipe -fPIC -O2 -w
 LFLAGS = -g -shared -Wl,--version-script=py_sems_lib.exp
