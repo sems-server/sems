@@ -71,7 +71,7 @@ static inline int skip_name(string& s, unsigned int pos)
   }
 
   if (quoted) {
-    ERROR("skip_name(): Closing quote missing in name part of Contact\n");
+    ERROR("skip_name(): Closing quote missing in name part of URI\n");
     return -1;
   } 
 
