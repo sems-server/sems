@@ -52,7 +52,8 @@ class JukecallSession
 
 public:
   enum JukeLeg1_state {
-    JC_initial_announcement = 0,
+    JC_none = 0,
+    JC_initial_announcement,
     JC_connect,
     JC_juke
   };

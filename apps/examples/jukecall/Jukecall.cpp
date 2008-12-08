@@ -65,7 +65,7 @@ AmSession* JukecallFactory::onInvite(const AmSipRequest& req)
 }
 
 JukecallSession::JukecallSession() 
-  : AmB2ABCallerSession()
+  : AmB2ABCallerSession(), state(JC_none)
 {
 }
 
@@ -75,7 +75,7 @@ JukecallSession::~JukecallSession()
 
 void JukecallSession::onSessionStart(const AmSipRequest& req)
 {
-  if (dlg.getStatus()==AmSipDialog::Connected) {
+  if (state != JC_none) {
     // reinvite
     AmB2ABCallerSession::onSessionStart(req);
     return;
