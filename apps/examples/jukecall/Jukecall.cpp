@@ -75,6 +75,12 @@ JukecallSession::~JukecallSession()
 
 void JukecallSession::onSessionStart(const AmSipRequest& req)
 {
+    if (dlg.getStatus()==AmSipDialog::Connected) {
+		// reinvite
+		AmB2ABCallerSession::onSessionStart(req);
+		return;
+    }
+
     DBG("-----------------------------------------------------------------\n");
     DBG("playing file\n");
 
