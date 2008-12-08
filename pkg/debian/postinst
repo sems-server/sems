@@ -34,6 +34,16 @@ if ! test -e $DEFAULTFILE; then
   exit 0
 fi
 
+# create voicebox spool directory if 
+if [ ! -d /var/spool/voicebox ]; then 
+  mkdir -p /var/spool/voicebox/
+fi
+
+# make directory writable for sems user
+if [ -d /var/spool/voicebox ]; then 
+  chown sems /var/spool/voicebox
+fi
+
 # ----------------------------------------------------------------------
 
 function fn_config_replace 
