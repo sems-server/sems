@@ -269,7 +269,12 @@ class AmSpanDSPInbandDtmfDetector
   int m_lastCode;
   dtmf_rx_state_t rx_state;
 
-  static void tone_report_func(void *user_data, int code, int level, int delay);
+  static void tone_report_func(void *user_data, int code
+#ifndef HAVE_OLD_SPANDSP_CALLBACK
+			       , int level, int delay
+#endif
+			       );
+
   void tone_report_f(int code, int level, int delay);
   int char2int(char code);  
 /*   static void dtmf_rx_callback(void* user_data, const char* digits, int len);  */

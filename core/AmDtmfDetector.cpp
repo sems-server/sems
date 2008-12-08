@@ -651,10 +651,17 @@ int AmSpanDSPInbandDtmfDetector::streamPut(const unsigned char* samples, unsigne
   return size;
 }
 
+#ifndef HAVE_OLD_SPANDSP_CALLBACK
 void AmSpanDSPInbandDtmfDetector::tone_report_func(void *user_data, int code, int level, int delay) {
   AmSpanDSPInbandDtmfDetector* o = (AmSpanDSPInbandDtmfDetector*)user_data;
   o->tone_report_f(code, level, delay);
 }
+#else
+void AmSpanDSPInbandDtmfDetector::tone_report_func(void *user_data, int code) {
+  AmSpanDSPInbandDtmfDetector* o = (AmSpanDSPInbandDtmfDetector*)user_data;
+  o->tone_report_f(code, 0, 0);
+}
+#endif
 
 void AmSpanDSPInbandDtmfDetector::tone_report_f(int code, int level, int delay) {
   //  DBG("spandsp reports tone %c, %d, %d\n", code, level, delay);
