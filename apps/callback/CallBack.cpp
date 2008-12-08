@@ -239,6 +239,12 @@ CallBackDialog::~CallBackDialog()
 
 
 void CallBackDialog::onSessionStart(const AmSipRequest& req) { 
+  if (dlg.getStatus()==AmSipDialog::Connected) {
+    // reinvite
+    AmB2ABCallerSession::onSessionStart(req);
+    return;
+  }
+
   ERROR("incoming calls not supported!\n");
   setStopped();
   dlg.bye();
