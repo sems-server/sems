@@ -119,6 +119,7 @@ AmSession* ServiceLineFactory::onInvite(const AmSipRequest& req)
 ServiceLineCallerDialog::ServiceLineCallerDialog(const string& filename)
   : filename(filename), 
     playlist(this),
+    started(false),
     AmB2ABCallerSession()
 {
 }
@@ -126,7 +127,12 @@ ServiceLineCallerDialog::ServiceLineCallerDialog(const string& filename)
 void ServiceLineCallerDialog::onSessionStart(const AmSipRequest& req)
 {
 
-  AmB2ABCallerSession::onSessionStart(req);
+  if (started) {
+    // reinvite
+    AmB2ABCallerSession::onSessionStart(req);
+    return;
+  }
+  started = true;
 
   if(wav_file.open(filename,AmAudioFile::Read))
     throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");

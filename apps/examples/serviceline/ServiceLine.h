@@ -69,6 +69,8 @@ class ServiceLineCallerDialog: public AmB2ABCallerSession
 
   string callee_addr;
   string callee_uri;
+
+  bool started;
     
 public:
   ServiceLineCallerDialog(const string& filename);
