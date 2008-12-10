@@ -1,7 +1,7 @@
 Summary:	SIP Express Media Server, an extensible SIP media server
 Name:		sems
-Version:	1.0.0
-Release:	0.7.svn1095%{?dist}
+Version:	1.1.0
+Release:	1
 URL:		http://www.iptel.org/sems
 # svn -r 1095 export http://svn.berlios.de/svnroot/repos/sems/branches/1.0.0 sems-1.0.0
 # tar cjvf sems-1.0.0.tar.bz2 sems-1.0.0
@@ -147,6 +147,7 @@ fi
 %files
 %defattr(-,root,root)
 %dir %{_sysconfdir}/sems
+%dir %{_sysconfdir}/sems/etc
 %config(noreplace) %{_sysconfdir}/sems/default.template
 %config(noreplace) %{_sysconfdir}/sems/sems.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/ann_b2b.conf
@@ -217,8 +218,6 @@ fi
 %{_sbindir}/sems
 %{_sbindir}/sems-stats
 
-%dir %{_sysconfdir}/sems
-%dir %{_sysconfdir}/sems/etc
 %dir %{_libdir}/sems
 %dir %{_libdir}/sems/audio
 %dir %{_libdir}/sems/audio/ann_b2b
@@ -352,6 +351,9 @@ fi
 %{_libdir}/sems/plug-in/speex.so
 
 %changelog
+* Tue Dec 09 2008 Alfred E. Heggestad <aeh@db.org> 1.1.0-1
+- Update for v1.1.0
+
 * Fri Oct 17 2008 Peter Lemenkov <lemenkov@gmail.com> 1.0.0-0.7.svn1095
 - Fixed installation of audio files
 
