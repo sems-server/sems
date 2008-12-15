@@ -37,7 +37,7 @@ include ../Makefile.audio_module
 
 $(ILBC_DIR)/libilbc.a:
 #	-@cd $(ILBC_DIR); $(MAKE) all
-	$(MAKE) -C $(ILBC_DIR) libilbc.a
+	$(MAKE) -C $(ILBC_DIR) 
 
 .PHONY: clean_ilbclib
 clean_ilbclib:

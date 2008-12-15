@@ -1,7 +1,11 @@
 COREPATH ?=../../..
+lib_name = libilbc.a
+
+.PHONY: all
+all: $(lib_name) 
+
 include $(COREPATH)/../Makefile.defs
 
-lib_name = libilbc.a
 
 srcs     = $(wildcard *.c)
 hrds     = $(wildcard *.h)
@@ -11,8 +15,6 @@ depends  = $(srcs:.c=.d)
 AR		= ar
 RANLIB		= ranlib
 
-.PHONY: all
-all: $(lib_name) 
 
 .PHONY: clean
 clean:
