@@ -180,7 +180,7 @@ class AmArg
 
 #define _THROW_TYPE_MISMATCH(exp,got) \
 	do { \
-		ERROR("type mismatch: expected: %d; received: %d.", AmArg::exp, got.getType()); \
+		ERROR("type mismatch: expected: %d; received: %d.\n", AmArg::exp, got.getType()); \
 		throw AmArg::TypeMismatchException(); \
 	} while (0) 
 
