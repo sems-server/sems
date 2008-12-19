@@ -127,6 +127,10 @@
  *
  * \section various_apps Various applications
  * 
+ * xmlrpc2di (\ref ModuleDoc_xmlrpc2di) exposes DI interfaces as XMLRPC server.
+ * This is very useful to connect SEMS with other software, that e.g. trigger click2dial
+ * calls, create registrations at SIP registrar, do monitoring, etc.  
+ *
  *  <ul><li> \ref ModuleDoc_callback </li></ul>
  *
  *  <ul><li> \ref ModuleDoc_auth_b2b </li></ul>
@@ -135,7 +139,6 @@
  *
  *  <ul><li> \ref ModuleDoc_diameter_client </li></ul>
  */
-
 
 
 /*! \page ModuleDoc_ann_b2b Module Documentation: ann_b2b Application 

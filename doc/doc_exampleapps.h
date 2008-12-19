@@ -7,6 +7,15 @@
  * like the xmlrpc2di, cacheannounce, db_announce, serviceline and the
  * calling card application might be used right out of the box.
  * 
+ *
+ * \section exampleappb2bapps Back-to-back user agent applications
+ * 
+ * The b2b_connect is a transparent back-to-back user agent application, 
+ * that optionally authenticates the second call leg. If can be used as kind of 
+ * simple SBC and for other such purposes. 
+ * 
+ * \ref ModuleDoc_b2b_connect
+ * 
  * \section exampleapptutorialdoc The examples from the tutorial
  *
  * The <a href="http://www.iptel.org/sems/sems_application_development_tutorial">
@@ -35,10 +44,6 @@
  *
  * \section otherexampleappdoc Other example applications
  * 
- * xmlrpc2di (\ref ModuleDoc_xmlrpc2di) exposes DI interfaces as XMLRPC server.
- * This is very useful to connect SEMS with other software, that e.g. trigger click2dial
- * calls, create registrations at SIP registrar, do monitoring, etc.  
- *
  * di_dial (\ref ModuleDoc_di_dialer) triggers outgoing calls, i.e. calls that originate from SEMS.
  * It can provide credentials from dialout PINs for authentication. 
  * 
