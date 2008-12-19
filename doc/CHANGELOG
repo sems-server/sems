@@ -1,32 +1,116 @@
 
 Changelog for SEMS 
+
+Version 1.1.0 RC1
+ (in order)
+
+ - SEMS-42: callee domain optionally specified in webconference dialout
+
+ - SEMS-35: time out empty webconference rooms
+
+ - support for multi domain through uid/did in voicebox system
+
+ - early media support for b2b w/ media relay
+
+ - transparent signaling + media B2BUA application
+
+ - MT XMLRPC server
+
+ - ISDN gateway module 
+
+ - controlled server shutdown (de-initialization, stopping of sessions) 
+
+ - improved logging 
+
+ - MT binrpc receiver, connection pool for sending to SER
+
+ - DSM state machine interpreter: write applications as simple,
+   self-documenting, correct, state machine description charts
+
+ - g722 codec from spandsp in 8khz compatibility mode
+
+ - support for out of dialog request handling in modules
+
+ - audio file autorewind
+
+ - AmAudio mixing 
+
+ - 488 reply (instead of 606) if no compatible codec found
+
+ ... plus as always lots of fixes
+
+Version 1.0.0
+
+ - internal SIP stack (sipctrl)
+
+ - module to use ser2 as SIP stack (binrpcctrl)
+
+ - rewritten SDP parser
+
+ - various options for application selection (configured, special header, 
+   RURI regexp, RURI user, RURI parameter)
+   
+ - ZRTP support
+
+ - XMLRPC client mode
+
+ - DIAMETER client
+
+ - new complete mailbox system (msg_storage+voicebox+voicemail+annrecorder) 
+
  - simple call generator application 
 
- - fixed artifacts on wav files with extra chunks
+ - early media pre-call announcement application with B2B
 
- - support for spandsp DTMF detection 
+ - B2B call timer application 
 
  - callback application
 
  - prepaid and click2dial applications
 
+ - precoded annoucements
+
+ - early media receiving example
+
  - support for extra headers in dialout sessions
 
  - support for setting the URI of a session in SDP
-
- - early media receiving example
 
  - support for posting events into conferences
 
  - support for receiving early media
 
- - support for local audio as audio sources into audio engine 
-   on the same channel as RTP 
-
  - outbound_proxy option sets next hop on outgoing dialogs and 
    registrations
 
  - b/f: don't reuse dialog for SIP authenticated re-sending of INVITE
+
+ - fixed artifacts on wav files with extra chunks
+
+ - support for spandsp DTMF detection, packet loss concealment
+
+ - speex NB, G726, L16 codecs
+
+ - support for local audio as audio sources into audio engine 
+   on the same channel as RTP 
+
+ - selectively exclude codecs
+
+ - MP3 playback
+
+ - libsrc resampling enables prompt files in other bitrates
+
+ - RTP receive buffer optimization 
+
+ - configurable session limit
+
+ - basic OPTIONS support for alive monitoring through SIP
+
+ - syslog calls logging, configurable syslog facility
+
+ - builds for and on solaris, openembedded, openwrt, Darwin, too
+
+ ... plus as always lots of fixes
 
 Version 0.10.0 (final)
  - new module for exposing internal DI APIs via XMLRPC 
