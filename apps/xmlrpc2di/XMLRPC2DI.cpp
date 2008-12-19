@@ -32,6 +32,7 @@
 #include "AmUtils.h"
 #include "AmArg.h"
 #include "AmSession.h"
+#include "TOXmlRpcClient.h"
 
 #define MOD_NAME "xmlrpc2di"
 
@@ -42,6 +43,8 @@ XMLRPC2DI* XMLRPC2DI::_instance=0;
 
 // retry a failed server after 10 seconds
 unsigned int XMLRPC2DI::ServerRetryAfter = 10; 
+
+double XMLRPC2DI::ServerTimeout = -1;
 
 XMLRPC2DI* XMLRPC2DI::instance()
 {
@@ -93,6 +96,21 @@ int XMLRPC2DI::load() {
 
   ServerRetryAfter = cfg.getParameterInt("server_retry_after", 10);
   DBG("retrying failed server after %u seconds\n", ServerRetryAfter);
+
+  
+  string server_timeout = cfg.getParameter("server_timeout");
+  if (!server_timeout.empty()) {
+    unsigned int server_timeout_i = 0;
+    if (str2i(server_timeout, server_timeout_i)) {
+      ERROR("could not understand server_timeout=%s\n", 
+	    server_timeout.c_str());
+      return -1;
+    }
+    
+    if (server_timeout_i) {
+      ServerTimeout = (double)server_timeout_i/1000.0; // in millisec
+    }
+  }
 
   string run_server = cfg.getParameter("run_server","yes");
   if (run_server != "yes") {
@@ -203,7 +221,7 @@ void XMLRPC2DI::sendRequest(const AmArg& args, AmArg& ret) {
       ret.push("no active connections");
       return;
     }
-    XmlRpcClient c((const char*)srv->server.c_str(), (int)srv->port, 
+    TOXmlRpcClient c((const char*)srv->server.c_str(), (int)srv->port, 
 		   (const char*)srv->uri.empty()?NULL:srv->uri.c_str()
 #ifdef HAVE_XMLRPCPP_SSL
 		   , false
@@ -212,7 +230,8 @@ void XMLRPC2DI::sendRequest(const AmArg& args, AmArg& ret) {
 
     XmlRpcValue x_args, x_result;
     XMLRPC2DIServer::amarg2xmlrpcval(params, x_args);
-    if (c.execute(method.c_str(), x_args, x_result) &&  !c.isFault()) {
+
+    if (c.execute(method.c_str(), x_args, x_result, XMLRPC2DI::ServerTimeout) &&  !c.isFault()) {
       DBG("successfully executed method %s on server %s:%d\n",
 	  method.c_str(), srv->server.c_str(), srv->port);
       ret.push(0);
@@ -239,7 +258,7 @@ void XMLRPC2DI::sendRequestList(const AmArg& args, AmArg& ret) {
       ret.push("no active connections");
       return;
     }
-    XmlRpcClient c((const char*)srv->server.c_str(), (int)srv->port, 
+    TOXmlRpcClient c((const char*)srv->server.c_str(), (int)srv->port, 
 		   (const char*)srv->uri.empty()?NULL:srv->uri.c_str()
 #ifdef HAVE_XMLRPCPP_SSL
 		   , false
@@ -253,7 +272,7 @@ void XMLRPC2DI::sendRequestList(const AmArg& args, AmArg& ret) {
       XMLRPC2DIServer::amarg2xmlrpcval(args.get(i), x_args[i-2]);
     }
 
-    if (c.execute(method.c_str(), x_args, x_result) &&  !c.isFault()) {
+    if (c.execute(method.c_str(), x_args, x_result, XMLRPC2DI::ServerTimeout) &&  !c.isFault()) {
       DBG("successfully executed method %s on server %s:%d\n",
 	  method.c_str(), srv->server.c_str(), srv->port);
       ret.push(0);
@@ -476,13 +495,13 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a,
 	xmlrpcval2amarg(v[i], a[a.size()-1], 0);
       } break;
 #ifdef XMLRPCPP_SUPPORT_STRUCT_ACCESS
-      case XmlRpcValue::TypeStruct: {	
-	for (XmlRpc::XmlRpcValue::ValueStruct::iterator it=
-		 ((XmlRpcValue::ValueStruct)v).begin(); 
-	     it != ((XmlRpcValue::ValueStruct)v).end(); it++) {	    
-	    a[it->first] = AmArg();
-	    xmlrpcval2amarg(it->second, a[it->first], 0);
-	  }
+      case XmlRpcValue::TypeStruct: {
+       for (XmlRpc::XmlRpcValue::ValueStruct::iterator it=
+                ((XmlRpcValue::ValueStruct)v).begin();
+            it != ((XmlRpcValue::ValueStruct)v).end(); it++) {
+           a[it->first] = AmArg();
+           xmlrpcval2amarg(it->second, a[it->first], 0);
+         }
       } break;
 #endif
 

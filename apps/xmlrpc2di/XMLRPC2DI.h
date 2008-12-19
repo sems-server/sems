@@ -157,6 +157,8 @@ class XMLRPC2DI
 	      const AmArg& args, AmArg& ret);
 
   static unsigned int ServerRetryAfter;
+  static double ServerTimeout;
+
 };
 
 #endif
