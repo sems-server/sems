@@ -35,11 +35,11 @@ static PyObject* IvrAudioMixIn_init(IvrAudioMixIn* self, PyObject* args)
   AmAudioFile* b = NULL;
   int s;
   double l;
-  int finish = 0;
+  int finish = 0, mix_once=0, mix_immediate=0;
 
   PyObject *o_a, *o_b;
 
-  if(!PyArg_ParseTuple(args,"OOid|i", &o_a, &o_b, &s, &l, &finish))
+  if(!PyArg_ParseTuple(args,"OOid|iii", &o_a, &o_b, &s, &l, &finish, &mix_once, &mix_immediate))
     return NULL;
 
   if (o_a == Py_None) {
@@ -69,7 +69,12 @@ static PyObject* IvrAudioMixIn_init(IvrAudioMixIn* self, PyObject* args)
     delete self->mix;
   }
 
-  self->mix = new AmAudioMixIn(a, b, s, l, finish);
+  int flags = 0;
+  if (finish) flags |=AUDIO_MIXIN_FINISH_B_MIX;
+  if (mix_once) flags |=AUDIO_MIXIN_ONCE;
+  if (mix_immediate) flags |=AUDIO_MIXIN_IMMEDIATE_START;
+
+  self->mix = new AmAudioMixIn(a, b, s, l, flags);
 
   Py_INCREF(Py_None);
   return Py_None;

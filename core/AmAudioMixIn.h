@@ -32,7 +32,7 @@
 #include "AmAudioFile.h"
 
 
-#define MAX_PACKETLENGTH_MS   30
+#define MAX_PACKETLENGTH_MS   80
 #define MAX_BUF_SAMPLES  SYSTEM_SAMPLERATE * MAX_PACKETLENGTH_MS / 1000
 #define DEFAULT_SAMPLE_RATE SYSTEM_SAMPLERATE // eh...
 
@@ -46,14 +46,20 @@
  * playback of B started.
  *
  */
+#define AUDIO_MIXIN_FINISH_B_MIX      1       /* when A ends while mixing in B, end playback only after B has ended */
+#define AUDIO_MIXIN_ONCE              1 << 1  /* only mix in once */
+#define AUDIO_MIXIN_IMMEDIATE_START   1 << 2  /* start mixing in immediately, or wait s seconds before */
+
 class AmAudioMixIn : public AmAudio {
   AmAudio* A;
   AmAudioFile* B;
   unsigned int s;
   double l;
-  bool finish_b_while_mixing;
+  int flags;
 
   bool mixing;
+
+  AmMutex B_mut;
 
   unsigned int next_start_ts;
   bool next_start_ts_i;
@@ -64,8 +70,11 @@ class AmAudioMixIn : public AmAudio {
  public:
   AmAudioMixIn(AmAudio* A, AmAudioFile* B, 
 	       unsigned int s, double l, 
-	       bool finish_b_while_mixing = false);
+	       unsigned int flags = 0);
   ~AmAudioMixIn();
+
+  void mixin(AmAudioFile* f);
+
  protected:
   // not used
   int read(unsigned int user_ts, unsigned int size){ return -1; }

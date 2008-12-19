@@ -6,20 +6,31 @@ that uses two AmAudio 'devices' (in the IVR: IvrAudioFile) as audio
 sources, plays the first one, and periodically mixes in the second one.
 The period, i.e. the time between two times mixing in the second audio,
 can be specified, as well as the level with which the second one is
-mixed into the first. The last parameter, a boolean, specifies whether
+mixed into the first. 
+
+The last parameter, a boolean, specifies whether
 playback of the second audio should be finished if the first is finished
 while mixing in the second.
+
+With the mix_once and the mix_immediate it can be specified whether it should
+be mixed in onyl once, and whether it should be mixed in immediately.
+E.g. if there should be some prompt or info tone played into the background
+of a call, mix_once=True and mix_immediate=True are useful.
+
 If level == 0, playback of the first is not continued when playing the 
 second, which means that it continues right where it was before 
 playback of the second started.
 
 IVR usage: 
     init(IvrAudioFile first, IvrAudioFile second, 
-         int interval, float level, boolean finish)
+         int interval, float level, boolean finish, 
+         boolean mix_once, boolean mix_immediate)
 
 C++ usage:
 AmAudioMixIn::
   AmAudioMixIn(AmAudio* A, AmAudioFile* B, 
 	       unsigned int interval, double level, 
-	       bool finish_b_while_mixing = false);
+	       int flags);
+
+  where flags definitions can be found in AmAudioMixIn.h
 

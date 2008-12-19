@@ -28,32 +28,43 @@
 #include "AmAudioMixIn.h"
 #include "SampleArray.h"
 
+#define IS_FINISH_B_MIX    (flags & AUDIO_MIXIN_FINISH_B_MIX) 
+#define IS_ONLY_ONCE       (flags & AUDIO_MIXIN_ONCE)
+#define IS_IMMEDIATE_START (flags & AUDIO_MIXIN_IMMEDIATE_START)
+
 AmAudioMixIn::AmAudioMixIn(AmAudio* A, AmAudioFile* B, 
 			   unsigned int s, double l,
-			   bool finish_b_while_mixing) 
+			   unsigned int flags) 
   :   A(A),B(B), s(s), l(l), 
       mixing(false), next_start_ts_i(false),
-      finish_b_while_mixing(finish_b_while_mixing)
+      flags(flags)
 {
 }
+
 AmAudioMixIn::~AmAudioMixIn() { }
 
 int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer, 
-		       unsigned int nb_samples) {
+		      unsigned int nb_samples) {
   if (!mixing) {
     if (!next_start_ts_i) {
       next_start_ts_i = true;
+      next_start_ts = IS_IMMEDIATE_START ? 
+	user_ts : user_ts + s*DEFAULT_SAMPLE_RATE;
+    }
+    if (!ts_less()(user_ts, next_start_ts)) {
+      DBG("starting mix-in\n");
+      mixing = true;
       next_start_ts = user_ts + s*DEFAULT_SAMPLE_RATE;
-    } else {
-      if (ts_less()(next_start_ts, user_ts)) {
-	DBG("starting mix-in\n");
-	mixing = true;
-	next_start_ts = user_ts + s*DEFAULT_SAMPLE_RATE;
-      }
     }
   } 
   
-  if (!mixing) {
+  if (NULL == A)
+    return -1;
+
+  B_mut.lock();
+
+  if (!mixing || NULL == B) {
+    B_mut.unlock();
     return A->get(user_ts, buffer, nb_samples);
   } else {
     if (l < 0.01) { // epsilon 
@@ -62,8 +73,12 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
       if (res <= 0) { // B empty
 	res = A->get(user_ts, buffer, nb_samples);
 	mixing = false;
-	B->rewind();
+	if (IS_ONLY_ONCE)
+	  B = NULL;
+	else
+	  B->rewind();
       }
+      B_mut.unlock();
       return  res;
     } else {      // mix the two
       int res = 0;
@@ -71,10 +86,11 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
       // get audio from A
       int len = A->get(user_ts, (unsigned char*)mix_buf, nb_samples);
 
-      if ((len<0) && !finish_b_while_mixing) { // A finished
+      if ((len<0) && !IS_FINISH_B_MIX) { // A finished
+	B_mut.unlock();
 	return len;
       }
-      for (int i=0;i<len;i++) {
+      for (int i=0; i<(PCM16_B2S(len)); i++) {
 	pdest[i]=(short)(((double)mix_buf[i])*(1.0-l));
       }
 
@@ -85,29 +101,42 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
       if (res>0)
 	len_from_a=(unsigned int)res;
       
-      if (nb_samples<<1 != len_from_a)
+      if (PCM16_S2B(nb_samples) != len_from_a)
 	memset((void*)&pdest[len_from_a>>1], 0, 
 	       (nb_samples<<1) - len_from_a);
-
+      
       // add audio from B
       len = B->get(user_ts, (unsigned char*)mix_buf, nb_samples);
-
       if (len<0) { // B finished
 	mixing = false;
-	B->rewind();
+	
+	if (IS_ONLY_ONCE)
+	  B = NULL;
+	else
+	  B->rewind();
       } else {
-	for (int i=0;i<len;i++) {
-	  pdest[i]+=(short)(((double)mix_buf[i])*l);
-	}
-	if (len>res) // audio from B is longer than from A
-	  res = len;
+	for (int i=0; i<(PCM16_B2S(len)); i++)  {
+	    pdest[i]+=(short)(((double)mix_buf[i])*l);
+	  }
+	       if (len>res) // audio from B is longer than from A
+		 res = len;
+	     }
+	B_mut.unlock();
+	
+	return res;
       }
-      return res;
     }
   }
-}
 
-int AmAudioMixIn::put(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
-  ERROR("writing not supported\n");
-  return -1;
-}
+  int AmAudioMixIn::put(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
+    ERROR("writing not supported\n");
+    return -1;
+  }
+
+  void AmAudioMixIn::mixin(AmAudioFile* f) {
+    B_mut.lock();
+    B = f;
+    mixing = next_start_ts_i = false; /* so that mix in will re-start */
+    B_mut.unlock();
+  }
+
