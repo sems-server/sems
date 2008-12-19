@@ -1,3 +1,5 @@
+COREPATH =../..
+
 plug_in_name = g722
 
 SPANDSP_INC=
