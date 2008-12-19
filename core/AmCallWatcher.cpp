@@ -189,11 +189,16 @@ void AmCallWatcherGarbageCollector::run() {
     bool erased = false;
 
     mut.lock();
-    for (AmCallWatcher::CallStatusTimedMap::iterator it = garbage.begin(); 
-	 it != garbage.end(); it++) {
+    AmCallWatcher::CallStatusTimedMap::iterator it = garbage.begin(); 
+    while (it != garbage.end()) {
       if (it->second.second < now.tv_sec) {
-	garbage.erase(it); // map::erase does not invalidate map::iterator
+	AmCallWatcher::CallStatusTimedMap::iterator d_it = it;
+	it++;
+	delete (d_it->second.first);
+	garbage.erase(d_it);	
 	erased = true;
+      } else {
+	it++;
       }
     }
     if (erased){
