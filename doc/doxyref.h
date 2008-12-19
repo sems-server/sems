@@ -15,6 +15,7 @@
  *  \arg \ref Compiling 
  *  \arg \ref Configure-Sems-Ser-HOWTO
  *  \arg \ref AppDoc
+ *  \arg \ref ZRTP
  *
  *  \section developerdoc Developer's documentation
  *   \arg <a href="http://www.iptel.org/files/semsng-designoverview.pdf">
