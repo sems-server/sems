@@ -4,6 +4,10 @@ Changelog for SEMS
 Version 1.1.0 RC1
  (in order)
 
+ - configurable server timeout for XMLRPC client 
+
+ - DIAMETER client with TLS
+
  - SEMS-42: callee domain optionally specified in webconference dialout
 
  - SEMS-35: time out empty webconference rooms
