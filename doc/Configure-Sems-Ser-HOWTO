@@ -1,3 +1,14 @@
+
+******* IMPORTANT ***************************************************************************
+ This is only needed if SER, the SIP Express Router, is used as SIP stack for SEMS. Since 1.0 
+ you can simply use the sipctrl module, which provides a SIP stack for SEMS. sipctrl is set
+ as the default control plugin, so usually there need not be any changes in that regard.
+
+ But, if you need more functionality from the SIP stack, e.g. TLS, TCP, filtering of inbound 
+ requests etc., you can use ser2 with the binrpcctl module, and the SASI SER application server 
+ interface, and then parts of the information below apply.
+*********************************************************************************************
+
 ***************************
 *  Sems + Ser mini-HOWTO  *
 ***************************
