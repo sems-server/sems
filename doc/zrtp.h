@@ -51,9 +51,13 @@
  * 
  *  \section zlicense Licensing
  *  
- *  The Zfone SDK is supposed to be released under a GPL license in the near future, which will make it 
- *  possible to use the SDK with SEMS for other uses than evaluation.
+ *  <p>The Zfone SDK is licensed under the Affero GPL v3. As SEMS is licensed under GPL 2+, you may use 
+ *  SEMS under GPLv3 and link with libZRTP under Affero GPL v3. You may use the resulting program under
+ *  the restrictions of both GPLv3 and AGPLv3.</p>
  * 
+ *  <p>Note that due to the nature of the GPL, without written consent of the authors of SEMS as with any other 
+ *  non-free library, it is not possible to use/distribute SEMS with a specially licensed commercial version of 
+ *  the libZRTP SDK. If in doubt, talk to your lawyer.</p>
  *  
  *  \section zphones Phones with ZRTP 
  *  
