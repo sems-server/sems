@@ -66,7 +66,7 @@ int CCAcc::getCredit(string pin) {
    serverAddress = "localhost";
    const char* uri = 0;
    port = 8000;
-   XmlRpcClient xmlrpccall(serverAddress, port, uri);
+   XmlRpcClient xmlrpccall(serverAddress, port, uri, false);
    XmlRpcValue noArgs, result;
    XmlRpcValue xmlArg;
    xmlArg[0] = pin;
@@ -82,7 +82,7 @@ int CCAcc::subtractCredit(string pin, int amount) {
    serverAddress = "localhost";
    const char* uri = 0;
    port = 8000;
-   XmlRpcClient xmlrpccall(serverAddress, port, uri);
+   XmlRpcClient xmlrpccall(serverAddress, port, uri, false);
    XmlRpcValue noArgs, result;
    XmlRpcValue xmlArg;
    xmlArg[0][0]["methodName"] = "subtractCredit";

@@ -1,5 +1,5 @@
 ###########################################################
-XMLRPCPP_DIR = xmlrpc++0.7
+XMLRPCPP_DIR = ../../../xmlrpc2di/xmlrpc++
 
 plug_in_name = cc_acc_xmlrpc
 
