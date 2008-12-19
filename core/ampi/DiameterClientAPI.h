@@ -20,6 +20,7 @@
 //   unsigned int app_id
 //   unsigned int vendor_id
 //   string product_name
+//   unsigned int timeout // millisec
 
 
 // sendRequest
@@ -54,5 +55,16 @@ struct DiameterReplyEvent
     applicationId(applicationId), avps(avps)
   { }
 };
+
+struct DiameterTimeoutEvent 
+  : public AmEvent
+{
+  unsigned int req_id;
+
+  DiameterTimeoutEvent(unsigned int req_id)
+    : AmEvent(1), req_id(req_id) 
+  { }
+};
+
 
 #endif

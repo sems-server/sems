@@ -12,7 +12,13 @@ hrds     = $(wildcard *.h)
 objs     = $(srcs:.c=.o) 
 depends  = $(srcs:.c=.d)
 
-cflags  ?= $(CFLAGS) -I $(MCOREPATH) -Wall $(module_cflags)
+cflags  ?= $(C_FLAGS) -I $(MCOREPATH) -Wall $(module_cflags) 
+
+WITH_OPENSSL = 1
+
+ifdef WITH_OPENSSL
+cflags+=  -D WITH_OPENSSL
+endif
 
 AR		= ar
 RANLIB		= ranlib

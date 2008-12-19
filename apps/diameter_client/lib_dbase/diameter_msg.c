@@ -232,7 +232,8 @@ AAAMessage* AAATranslateMessage( unsigned char* source, unsigned int sourceLen,
 
   /* check the params */
   if( !source || !sourceLen || sourceLen<AAA_MSG_HDR_SIZE) {
-    ERROR("ERROR:AAATranslateMessage: invalid buffered received!\n");
+    ERROR("ERROR:AAATranslateMessage: could not decipher "
+	  "received message - wrong size (%d)!\n", sourceLen);
     goto error;
   }
 

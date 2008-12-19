@@ -1,9 +1,9 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 iptego GmbH
+ * Copyright (C) 2007-2008 IPTEGO GmbH
  *
- * This file is part of SEMS, a free SIP media server.
+ * This file is part of sems, a free SIP media server.
  *
  * sems is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef _DIAMETER_CLIENT_H
 #define _DIAMETER_CLIENT_H
 

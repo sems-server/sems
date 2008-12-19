@@ -4,6 +4,7 @@
  * Digest Authentication - Diameter support
  *
  * Copyright (C) 2001-2003 FhG Fokus
+ * Copyright (C) 2008 iptego GmbH
  *
  * This file is part of ser, a free SIP server.
  *
@@ -40,6 +41,10 @@
 
 #include "sys/time.h"
 
+#ifdef WITH_OPENSSL
+#include <openssl/ssl.h>
+#endif
+
 #define MAX_WAIT_SEC	2
 #define MAX_WAIT_USEC	0
 
@@ -49,25 +54,46 @@
 #define CONN_ERROR	-1
 #define CONN_CLOSED	-2
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
-void reset_read_buffer(rd_buf_t *rb);
-int do_read( int socket, rd_buf_t *p);
+#ifdef WITH_OPENSSL
+  extern BIO* bio_err;
+#endif
 
+  struct dia_tcp_conn_t {
+    int sockfd;
+#ifdef WITH_OPENSSL
+    SSL_CTX* ctx;
+    SSL* ssl;
+    BIO* sbio;
+#endif
+  };
 
-/* it initializes the TCP connection */ 
-int init_mytcp(const char* host, int port);
+  typedef  struct dia_tcp_conn_t dia_tcp_conn;
 
-/* send a message over an already opened TCP connection */
-int tcp_send(int sockfd, char* buf, int len);
-/* receive reply
- */
-int tcp_recv_reply(int sockfd, rd_buf_t* rb, AAAMessage** msg, 
-		   time_t wait_sec, suseconds_t wait_usec);
+  /* initializes the lib/module */ 
+  int tcp_init_tcp();
 
-/* send a message over an already opened TCP connection */
-int tcp_send_recv(int sockfd, char* buf, int len, rd_buf_t* resp,
-					 unsigned int id);
+  /* initializes the TCP connection */ 
+  dia_tcp_conn* tcp_create_connection(const char* host, int port,
+				      const char* CA_file, const char* client_cert_file);
 
-void close_tcp_connection(int sfd);
+  /* send a message over an already opened TCP connection */
+  int tcp_send(dia_tcp_conn* conn_st, char* buf, int len);
+
+  /* receive reply
+   */
+  int tcp_recv_msg(dia_tcp_conn* conn_st, rd_buf_t* rb,  
+		     time_t wait_sec, suseconds_t wait_usec);
+
+  void tcp_close_connection(dia_tcp_conn* conn_st);
+
+  void tcp_destroy_connection(dia_tcp_conn* conn_st);
+
+#ifdef  __cplusplus
+}
+#endif
 
 #endif

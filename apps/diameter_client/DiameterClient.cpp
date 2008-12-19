@@ -1,9 +1,9 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 iptego GmbH
+ * Copyright (C) 2007-2008 IPTEGO GmbH
  *
- * This file is part of SEMS, a free SIP media server.
+ * This file is part of sems, a free SIP media server.
  *
  * sems is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,6 +56,11 @@ DiameterClient::~DiameterClient() {
 }
 
 int DiameterClient::onLoad() {
+  if (tcp_init_tcp()) {
+    ERROR("initializing tcp transport layer.\n");
+    return -1;
+  }
+
   DBG("DiameterClient loaded.\n");
   return 0;
 }
@@ -71,18 +76,31 @@ void DiameterClient::newConnection(const AmArg& args,
   int    app_id       = args.get(6).asInt();
   int    vendor_id    = args.get(7).asInt();
   string product_name = args.get(8).asCStr();
+  int    req_timeout  = args.get(9).asInt();
+
+  string ca_file;
+  string cert_file;
+
+  if (args.size() > 10) {
+    ca_file = args.get(10).asCStr();
+    cert_file = args.get(11).asCStr();
+  }
 
   ServerConnection* sc = new ServerConnection();
   DBG("initializing new connection for application %s...\n",
       app_name.c_str());
   sc->init(server_ip, server_port, 
+	   ca_file, cert_file,
 	   origin_host, origin_realm, origin_ip, 
-	   app_id, vendor_id, product_name);
+	   app_id, vendor_id, product_name, 
+	   req_timeout);
+
   DBG("starting new connection...\n");
   sc->start();
+
   DBG("registering connection...\n");
   conn_mut.lock();
-  connections.insert(std::make_pair(app_name, sc));
+  connections.insert(make_pair(app_name, sc));
   conn_mut.unlock();
 
   ret.push(0);
@@ -130,7 +148,12 @@ void DiameterClient::invoke(const string& method, const AmArg& args,
 			    AmArg& ret)
 {
   if(method == "newConnection"){
-    args.assertArrayFmt("ssisssiis");
+    if (args.size()==10 /*sizeof("ssisssiisi")*/) {
+      args.assertArrayFmt("ssisssiisi");
+    } else  {
+      // plus optional ssl/tls parameters ss
+      args.assertArrayFmt("ssisssiisiss"); 
+    }
     newConnection(args, ret);
   } else if(method == "sendRequest"){
     args.assertArrayFmt("siias");

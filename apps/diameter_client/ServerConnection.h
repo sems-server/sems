@@ -1,9 +1,9 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007 iptego GmbH
+ * Copyright (C) 2007-2008 IPTEGO GmbH
  *
- * This file is part of SEMS, a free SIP media server.
+ * This file is part of sems, a free SIP media server.
  *
  * sems is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #ifndef _DIAMETER_SERVER_CONNECTION_H
 #define _DIAMETER_SERVER_CONNECTION_H
 
@@ -75,7 +74,7 @@ struct DiameterRequestEvent
 
 struct DiameterServerConnection {
   bool in_use;
-  int sockfd;
+  dia_tcp_conn* dia_conn; // transport connection
   rd_buf_t rb;
 
   string origin_host;
@@ -97,13 +96,21 @@ class ServerConnection
 {
   struct timeval connect_ts;
   bool open;
+  int timeout_check_cntr;
   
   string server_name;
   int server_port;
+
+  // openssl
+  string ca_file;
+  string cert_file;
+
   string origin_host;
   string origin_realm;
   string origin_ip;
   AAAApplicationId app_id;
+
+  int request_timeout; // millisec
 
   char origin_ip_address[2+4];// AF and address
 
@@ -113,11 +120,12 @@ class ServerConnection
   
   DiameterServerConnection conn;
 
-  map<unsigned int, pair<string, struct timeval> > 
-    req_map;
+  typedef map<unsigned int, pair<string, struct timeval> > DReqMap;
+  DReqMap req_map;
   AmMutex req_map_mut;
 
   void openConnection();
+  void closeConnection();
 
   int addOrigin(AAAMessage* msg);
 
@@ -125,6 +133,7 @@ class ServerConnection
   int handleRequest(AAAMessage* req);
   AAAMessage* ReqEvent2AAAMessage(DiameterRequestEvent* re);
   AmArg AAAMessageAVPs2AmArg(AAAMessage* rep);
+  int AAAMessageGetReplyCode(AAAMessage* rep);
 
   static int addStringAVP(AAAMessage* msg, AAA_AVPCode avp_code, string& val, bool attail = false);
   static int addDataAVP(AAAMessage* msg, AAA_AVPCode avp_code, char* val, unsigned int len);
@@ -136,17 +145,23 @@ class ServerConnection
   void process(AmEvent*);
   void receive();
   void setRetryConnectLater();
+  void checkTimeouts();
+  void shutdownConnection();
+
  public:
   ServerConnection();
   ~ServerConnection();
   int init(const string& _server_name, 
 	   int _server_port,
+	   const string& _ca_file,
+	   const string& _cert_file,
 	   const string& _origin_host, 
 	   const string& _origin_realm,
 	   const string& _origin_ip,
 	   AAAApplicationId _app_id,
 	   unsigned int _vendorID,
-	   const string& _product_name);
+	   const string& _product_name,
+	   int _request_timeout); // millisec
 
   bool is_open() { return open; }
   void run();
