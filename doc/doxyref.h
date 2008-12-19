@@ -32,10 +32,10 @@
  *
  */
 
-/*! \page whatsnew_0100 What's new in SEMS 0.10.0
+/*! \page whatsnew_0100 What's new in SEMS 0.10.0 from 0.9.0
  * SEMS has changed a lot between 0.9 versions and 0.10 versions.
- * The file WHATSNEW lists the most important changes:
- * \verbinclude WHATSNEW
+ * The file WHATSNEW_0.10 lists the most important changes:
+ * \verbinclude WHATSNEW_0.10
  * 
  */
 
@@ -417,14 +417,6 @@
 /*! \page ModuleDoc_uac_auth Module Documentation: uac_auth component 
  *  \section Readme_uac_auth Readme file
  *  \verbinclude Readme.uac_auth
- *  
- *  \section Links
- *  Back to \ref AppDoc, to \ref AppDocExample.
- */
-
-/*! \page ModuleDoc_registrar_client Module Documentation: registrar_client component 
- *  \section Readme_registrar_client Readme file
- *  \verbinclude Readme.registrar_client
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
