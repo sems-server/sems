@@ -13,6 +13,7 @@ plug_in_name = xmlrpc2di
 # -D XMLRPCPP_SUPPORT_STRUCT_ACCESS
 
 # use these for local installation: 
+ module_ldflags = -lssl
  module_cflags  = -I$(XMLRPCPP_DIR)/src -DHAVE_XMLRPCPP_SSL -D XMLRPCPP_SUPPORT_STRUCT_ACCESS
  module_extra_objs = $(XMLRPCPP_DIR)/libXmlRpc.a
  extra_clean = clean_libxmlrpc
