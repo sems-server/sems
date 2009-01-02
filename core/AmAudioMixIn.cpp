@@ -116,27 +116,27 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
 	  B->rewind();
       } else {
 	for (int i=0; i<(PCM16_B2S(len)); i++)  {
-	    pdest[i]+=(short)(((double)mix_buf[i])*l);
-	  }
-	       if (len>res) // audio from B is longer than from A
-		 res = len;
-	     }
-	B_mut.unlock();
-	
-	return res;
+	  pdest[i]+=(short)(((double)mix_buf[i])*l);
+	}
+	if (len>res) // audio from B is longer than from A
+	  res = len;
       }
+      B_mut.unlock();
+	
+      return res;
     }
   }
+}
 
-  int AmAudioMixIn::put(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
-    ERROR("writing not supported\n");
-    return -1;
-  }
+int AmAudioMixIn::put(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
+  ERROR("writing not supported\n");
+  return -1;
+}
 
-  void AmAudioMixIn::mixin(AmAudioFile* f) {
-    B_mut.lock();
-    B = f;
-    mixing = next_start_ts_i = false; /* so that mix in will re-start */
-    B_mut.unlock();
-  }
+void AmAudioMixIn::mixin(AmAudioFile* f) {
+  B_mut.lock();
+  B = f;
+  mixing = next_start_ts_i = false; /* so that mix in will re-start */
+  B_mut.unlock();
+}
 
