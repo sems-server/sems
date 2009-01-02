@@ -36,7 +36,6 @@ using std::set;
 AmAudioQueue::AmAudioQueue() 
   : AmAudio(new AmAudioSimpleFormat(CODEC_PCM16)) // we get and put in this (internal) fmt
 {
-  sarr.clear_all();
 }
 
 AmAudioQueue::~AmAudioQueue() { 

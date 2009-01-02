@@ -58,7 +58,6 @@ struct AudioQueueEntry {
  */
 
 class AmAudioQueue : public AmAudio {
-  SampleArrayShort sarr;
 
   AmMutex inputQueue_mut;
   std::list<AudioQueueEntry> inputQueue;
