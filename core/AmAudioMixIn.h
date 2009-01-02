@@ -39,6 +39,8 @@
 /**
  * \brief \ref AmAudio to mix in every n seconds a file
  * 
+ * This is only for output (e.g. mixing in some tones into a call)
+ *  
  * AmAudio that plays Audio A and 
  * every s seconds mixes in AudioFile B with level l.
  * If l == 0, playback of A is not continued when playing B,
