@@ -8,3 +8,4 @@
  o embed python interpreter in module ?
    -> py( ... python code ... ) condition and action
  o correct en/decode DI args (e.g. arrays)
+ o mod_mysql 
