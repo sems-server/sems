@@ -22,9 +22,11 @@
 #define AAA_NOT_AUTHORIZED	 2
 #define AAA_SRVERR			 3
 
-#define AAA_ERROR			-1
+#define AAA_ERROR		-1
 #define AAA_CONN_CLOSED		-2
-#define AAA_TIMEOUT			-3
+#define AAA_TIMEOUT		-3
+#define AAA_CONN_SHUTDOWN	-2
+
 #define AAA_USER_IN_GROUP	 0	
 
 #define AAA_NO_CONNECTION	-1

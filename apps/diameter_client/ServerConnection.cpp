@@ -1,16 +1,16 @@
 /*
  * $Id$
  *
- * Copyright (C) 2007-2008 IPTEGO GmbH
+ * Copyright (C) 2007-2009 IPTEGO GmbH
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
  * sems is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
@@ -20,8 +20,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -62,8 +62,11 @@ DiameterServerConnection::DiameterServerConnection()
 }
 
 
-void DiameterServerConnection::terminate() {
+void DiameterServerConnection::terminate(bool tls_shutdown) {
   if (dia_conn) {
+    if (tls_shutdown) 
+      tcp_tls_shutdown(dia_conn);
+    
     tcp_close_connection(dia_conn);
     tcp_destroy_connection(dia_conn);
     dia_conn = NULL;
@@ -244,37 +247,48 @@ void ServerConnection::openConnection() {
   
   AAAFreeMessage(&cer);
 
-  int res = tcp_recv_msg(conn.dia_conn, &conn.rb,
+  unsigned int cea_receive_cnt = 3;
+  while (true) {
+    int res = tcp_recv_msg(conn.dia_conn, &conn.rb,
 			 CONNECT_CEA_REPLY_TIMEOUT, 0);
-  
-  if (res <= 0) {
-    if (!res) {
-      ERROR( " openConnection(): did not receive response (CEA).\n");
-    } else {
-      ERROR( " openConnection(): error receiving response (CEA).\n");
+    
+    if (res <= 0) {
+      if (!res) {
+	ERROR( " openConnection(): did not receive response (CEA).\n");
+      } else {
+	ERROR( " openConnection(): error receiving response (CEA).\n");
+      }
+      conn.terminate();
+      setRetryConnectLater();
+      return;
     }
-    conn.terminate();
-    setRetryConnectLater();
-    return;
-  }
+    
+    /* obtain the structure corresponding to the message */
+    AAAMessage* cea = AAATranslateMessage(conn.rb.buf, conn.rb.buf_len, 0);	
+    if(!cea) {
+      ERROR( " openConnection(): could not decipher response (CEA).\n");
+      conn.terminate();
+      setRetryConnectLater();
+      return;
+    }
 
-  /* obtain the structure corresponding to the message */
-  AAAMessage* cea = AAATranslateMessage(conn.rb.buf, conn.rb.buf_len, 0);	
-  if(!cea) {
-    ERROR( " openConnection(): could not decipher response (CEA).\n");
-    conn.terminate();
-    setRetryConnectLater();
-    return;
-  }
-
-  // assume its CEA....
-  
+    if (cea->commandCode == AAA_CC_CEA) {
 #ifdef EXTRA_DEBUG 
-  if (cea != NULL)
-    AAAPrintMessage(cea);
+      AAAPrintMessage(cea);
 #endif
+      AAAFreeMessage(&cea);
+      break;
+    }
 
-  AAAFreeMessage(&cea);
+    AAAFreeMessage(&cea);
+
+    if (!(cea_receive_cnt--)) {
+      ERROR( " openConnection(): no CEA received.\n");
+      conn.terminate();
+      setRetryConnectLater();
+      return;
+    }
+  }
   
   DBG("Connection opened.\n");
   open = true;
@@ -425,6 +439,7 @@ int ServerConnection::handleRequest(AAAMessage* req) {
     AAAMessageSetReply(reply);
     
     if (addOrigin(reply) || addResultCodeAVP(reply, AAA_SUCCESS)) {
+      AAAFreeMessage(&reply);
       return AAA_ERROR_MESSAGE;
     }
 
@@ -451,7 +466,62 @@ int ServerConnection::handleRequest(AAAMessage* req) {
   }; break;
 
   case AAA_CC_DPR: { // Disconnect-Peer-Request
-    DBG("Disconnect-Peer-Request not yet implemented\n");
+    string disconnect_cause = "UNKNOWN";
+    AAA_AVP* avp = req->avpList.head;
+    while (avp) {
+      if (avp->code == AVP_Disconnect_Cause) {
+	switch((unsigned int)htonl(*((unsigned int*)avp->data.s))){
+	case 0:disconnect_cause = "REBOOTING"; break;
+	case 1:disconnect_cause = "BUSY"; break;
+	case 2:disconnect_cause = "DO_NOT_WANT_TO_TALK_TO_YOU"; break;
+	}
+	break;
+      }
+      avp=avp->next;
+    }
+
+    DBG("Disconnect-Peer-Request received. Cause: '%s'."
+	" Sending Disconnect-Peer-Answer...\n", disconnect_cause.c_str());
+
+    AAAMessage* reply;
+    if ( (reply=AAAInMessage(AAA_CC_DPA, AAA_APP_DIAMETER_COMMON_MSG))==NULL) {
+      ERROR(M_NAME":handleRequest(): can't create new "
+	    "DPA message!\n");
+      return AAA_ERROR_MESSAGE;
+    }
+
+    AAAMessageSetReply(reply);
+
+    // always send success (causing retry of requests on 
+    // different connection first, so race is unlikely)
+    if (addOrigin(reply) || addResultCodeAVP(reply, AAA_SUCCESS)) {
+      AAAFreeMessage(&reply);
+      return AAA_ERROR_MESSAGE;
+    }
+
+    reply->endtoendId = req->endtoendId;
+    reply->hopbyhopId = req->hopbyhopId;
+
+    if(AAABuildMsgBuffer(reply) != AAA_ERR_SUCCESS) {
+      ERROR( " sendRequest(): message buffer not created\n");
+      AAAFreeMessage(&reply);
+      return AAA_ERROR_MESSAGE;
+    }
+
+    int ret = tcp_send(conn.dia_conn, reply->buf.s, reply->buf.len);
+    if (ret) {
+      ERROR( " sendRequest(): could not send message\n");
+      closeConnection();
+      AAAFreeMessage(&reply);
+      return AAA_ERROR_COMM;
+    }
+
+    AAAFreeMessage(&reply);
+
+    setRetryConnectLater();
+
+    return 0;
+
   }; break;
 
   default: {
@@ -538,9 +608,15 @@ void ServerConnection::receive() {
   int res = tcp_recv_msg(conn.dia_conn, &conn.rb,
 			 0, CONN_WAIT_USECS);
 
+
   if (res < 0) {
-    ERROR( M_NAME "receive(): tcp_recv_reply() failed.\n");
-    closeConnection();
+    if (res == AAA_CONN_SHUTDOWN) {
+      INFO( M_NAME "receive(): shutdown - closing connection.\n");
+      closeConnection(true);
+    } else {
+      closeConnection();
+      ERROR( M_NAME "receive(): tcp_recv_reply() failed.\n");
+    }
     return;
   }
 
@@ -634,7 +710,7 @@ void ServerConnection::checkTimeouts() {
 void ServerConnection::shutdownConnection() {
   gettimeofday(&connect_ts, NULL);
   connect_ts.tv_sec += RETRY_CONNECTION_SYSERROR;
-  closeConnection();
+  closeConnection(true);
 
   req_map_mut.lock();
   DBG("shutdown: posting timeout to %zd pending requests....\n",
@@ -652,8 +728,8 @@ void ServerConnection::shutdownConnection() {
   req_map_mut.unlock();
 }
 
-void ServerConnection::closeConnection() {
+void ServerConnection::closeConnection(bool tls_shutdown) {
   if (open)
-    conn.terminate();
+    conn.terminate(tls_shutdown);
   open = false;
 }

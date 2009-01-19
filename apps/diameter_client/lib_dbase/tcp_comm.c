@@ -4,7 +4,7 @@
  * Digest Authentication - Diameter support
  *
  * Copyright (C) 2001-2003 FhG Fokus
- * Copyright (C) 2007 iptego GmbH
+ * Copyright (C) 2007-2009 iptego GmbH
  *
  * This file is part of ser, a free SIP server.
  *
@@ -195,9 +195,20 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
   meth=TLSv1_client_method();
   conn_st->ctx = SSL_CTX_new(meth);
 
+  if (!conn_st->ctx) {
+    ERROR("SSL: creating TLSv1_client_method context\n");
+    return 0;
+  }
+
+  if (SSL_CTX_set_default_verify_paths(conn_st->ctx) != 1) {
+    ERROR("SSL: SSL_CTX_set_default_verify_paths\n");
+    return 0;
+  }
+
   if (!strlen(client_cert_file)) {
     DBG("no client certificate - not authenticating client.\n");
   } else {
+
     if (!SSL_CTX_use_certificate_chain_file(conn_st->ctx, client_cert_file)) {
       ERROR("using certificate from file '%s'\n",
 	    client_cert_file);
@@ -248,6 +259,15 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
 
   return conn_st;
 }
+
+void tcp_tls_shutdown(dia_tcp_conn* conn_st) {
+#ifdef WITH_OPENSSL
+  if (conn_st->ctx && conn_st->ssl) {
+    SSL_shutdown(conn_st->ssl);
+  }
+#endif
+}
+
 
 void reset_read_buffer(rd_buf_t *rb)
 {
@@ -516,8 +536,8 @@ int tcp_recv_msg(dia_tcp_conn* conn_st, rd_buf_t* rb,
       ERROR( M_NAME":tcp_reply_recv(): error when trying to read from socket\n");
       return AAA_CONN_CLOSED;
     case CONN_CLOSED:
-      ERROR( M_NAME":tcp_reply_recv(): connection closed by diameter peer\n");
-      return AAA_CONN_CLOSED;
+      INFO( M_NAME":tcp_reply_recv(): connection closed by diameter peer\n");
+      return AAA_CONN_SHUTDOWN;
     }
   return 1; //received something
 }

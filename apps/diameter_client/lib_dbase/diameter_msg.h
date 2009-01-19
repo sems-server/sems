@@ -4,6 +4,7 @@
  * 2003-04-07 created by bogdan
  *
  * Copyright (C) 2002-2003 FhG Fokus
+ * Copyright (C) 2007-2009 IPTEGO GmbH
  *
  * This file is part of disc, a free diameter server/client.
  *

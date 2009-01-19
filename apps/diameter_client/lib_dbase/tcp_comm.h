@@ -4,7 +4,7 @@
  * Digest Authentication - Diameter support
  *
  * Copyright (C) 2001-2003 FhG Fokus
- * Copyright (C) 2008 iptego GmbH
+ * Copyright (C) 2008-2009 iptego GmbH
  *
  * This file is part of ser, a free SIP server.
  *
@@ -54,6 +54,7 @@
 #define CONN_ERROR	-1
 #define CONN_CLOSED	-2
 
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -92,6 +93,7 @@ extern "C" {
 
   void tcp_destroy_connection(dia_tcp_conn* conn_st);
 
+  void tcp_tls_shutdown(dia_tcp_conn* conn_st);
 #ifdef  __cplusplus
 }
 #endif
