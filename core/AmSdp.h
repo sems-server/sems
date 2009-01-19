@@ -160,6 +160,8 @@ public:
   // us to do passive RTP ?
   bool remote_active;
 
+  unsigned int accepted_media;   // index of the media which we accept (todo: multi stream)
+
   SdpOrigin        l_origin;      // local origin (o= )
     
   AmSdp();

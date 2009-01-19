@@ -103,7 +103,8 @@ bool SdpPayload::operator == (int r)
 //
 AmSdp::AmSdp()
   : remote_active(false),
-    telephone_event_pt(NULL)
+    telephone_event_pt(NULL),
+    accepted_media(0)
 {
   l_origin.user = "sems";
   l_origin.sessId = get_random();
@@ -118,7 +119,8 @@ AmSdp::AmSdp(const AmSdp& p_sdp_msg)
     conn(p_sdp_msg.conn),
     media(p_sdp_msg.media),
     telephone_event_pt(NULL),
-    remote_active(false)
+    remote_active(false),
+    accepted_media(0)
 {
   memcpy(r_buf,p_sdp_msg.r_buf,BUFFER_SIZE);
 }
@@ -212,6 +214,21 @@ int AmSdp::genResponse(const string& localip, int localport, string& out_buf, bo
  
  if(remote_active /* dir == SdpMedia::DirActive */)
    out_buf += "a=direction:passive\r\n";
+
+  // add rejected media line for all except the accepted one
+  for( vector<SdpMedia>::iterator m_it = media.begin(); m_it != media.end(); ++m_it ){
+    if ((unsigned int)(m_it - media.begin())  != accepted_media) {
+      string rej_line = "m=" + media_t_2_str(m_it->type) + " 0 " +
+	transport_p_2_str(m_it->transport);
+      // add one bogus payload (required by sdp) - ignored (3264 s 6)
+      if (m_it->payloads.size()) {
+	rej_line += " "+int2str(m_it->payloads[0].payload_type)+"\n";
+      } else {
+	rej_line += " 0\n"; // violating 3264, but in this case the offer already did
+      }
+      out_buf += rej_line;
+    }
+  }
  
  return 0;
 }
@@ -285,7 +302,9 @@ const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(AmPayloadProviderInterfa
     //  DBG("media clock rates: %d\n", m_it->payloads[i].clock_rate);
     //}
     //    DBG("type found: %d\n", m_it->payloads[0].t);
-    if( (media_type != m_it->type) )
+
+    // only accept our media type, and reject if port=0 (section 8.2)
+    if( (media_type != m_it->type) || (!m_it->port))
       continue;
 
     vector<SdpPayload>::iterator it = m_it->payloads.begin();
@@ -338,6 +357,9 @@ const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(AmPayloadProviderInterfa
 	remote_active = true;
       
       port = (int)m_it->port;
+
+      // save index of accepted media
+      accepted_media = m_it - media.begin();
     }
     break;
   }
