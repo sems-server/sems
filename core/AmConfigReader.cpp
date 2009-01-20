@@ -112,10 +112,18 @@ int  AmConfigReader::loadFile(const string& path)
       val_end = c;
     }
 
-    if((key_beg < key_end) && (val_beg <= val_end))
-      keys[string(key_beg,key_end-key_beg)] = 
+    if((key_beg < key_end) && (val_beg <= val_end)) {
+      string keyname = string(key_beg,key_end-key_beg);
+      if (hasParameter(keyname)) {
+	WARN("while loading '%s': overwriting configuration "
+	     "'%s' value '%s' with  '%s'\n",
+	     path.c_str(), keyname.c_str(), 
+	     getParameter(keyname).c_str(), 
+	     string(val_beg,val_end-val_beg).c_str());
+      }
+      keys[keyname] = 
 	string(val_beg,val_end-val_beg);
-    else
+    } else
       goto syntax_error;
   }
 
