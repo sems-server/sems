@@ -12,6 +12,8 @@
 # 
 # example: option=value # i like this option
 #
+# @filename includes mod_config_path/filename
+# @/absolute/path/to/file includes file
 
 ############################################################
 # Network configuration

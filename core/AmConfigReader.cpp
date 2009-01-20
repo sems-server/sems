@@ -72,8 +72,10 @@ int  AmConfigReader::loadFile(const string& path)
 	inc_beg = c++;
 	while( !IS_EOL(*c) && !IS_SPACE(*c) ) c++;
 	inc_end = c;
-	if(loadFile(AmConfig::ModConfigPath +
-		    string(inc_beg,inc_end-inc_beg) ))
+	string fname = string(inc_beg,inc_end-inc_beg);
+	if (fname.length() && fname[0] != '/')
+	  fname = AmConfig::ModConfigPath + fname;
+	if(loadFile(fname))
 	    return -1;
 	continue;
     }
@@ -114,15 +116,20 @@ int  AmConfigReader::loadFile(const string& path)
 
     if((key_beg < key_end) && (val_beg <= val_end)) {
       string keyname = string(key_beg,key_end-key_beg);
+      string val = string(val_beg,val_end-val_beg);
       if (hasParameter(keyname)) {
 	WARN("while loading '%s': overwriting configuration "
 	     "'%s' value '%s' with  '%s'\n",
 	     path.c_str(), keyname.c_str(), 
-	     getParameter(keyname).c_str(), 
-	     string(val_beg,val_end-val_beg).c_str());
+	     getParameter(keyname).c_str(), val.c_str());
       }
-      keys[keyname] = 
-	string(val_beg,val_end-val_beg);
+
+      keys[keyname] = val;
+
+      // small hack to make include work with right path
+      if (keyname == "plugin_config_path")
+	AmConfig::ModConfigPath = val;
+
     } else
       goto syntax_error;
   }
