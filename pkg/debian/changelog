@@ -1,3 +1,21 @@
+sems (1.1.0-1) unstable; urgency=low
+
+  * DSM state machine scripting (it's cool!)
+  * an (experimental) ISDN gateway module
+  * binrpc: MT (SER->) and connection pool (->SER)
+  * MT xmlrpc server
+  * controlled server shutdown
+  * improved logging
+  * g722 in 8khz compat mode
+  * out of dialog request handling for modules & dialogs without
+    sessions
+  * audio file autorewind, AmAudio mixing
+  * SIP and media IP separately configurable
+  * UID/DID support for voicemail/-box/annrecorder
+  * and quite some bugs and mem leaks fixed, documentation, etc. 
+
+ -- Stefan Sayer <stefan.sayer@iptego.com>  Tue, 20 Jan 2009 18:11:25 +0100
+
 sems (1.1.0-0rc1) unstable; urgency=low
 
   * Debian Release Candidate 1 for 1.1.
