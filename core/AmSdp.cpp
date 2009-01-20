@@ -38,6 +38,7 @@ inline char* get_next_line(char* s);
 static char* is_eql_next(char* s);
 static char* parse_until(char* s, char end);
 static bool contains(char* s, char* next_line, char c);
+static bool is_wsp(char s);
 
 static int media_type(std::string media);
 static int transport_type(std::string transport);
@@ -153,9 +154,8 @@ int AmSdp::parse()
   }
   
   telephone_event_pt = findPayload("telephone-event");
-  
+    
   return ret;
-  
 }
 
 int AmSdp::genResponse(const string& localip, int localport, string& out_buf, bool single_codec)
@@ -681,7 +681,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
     case FMT:
       {
 	if(contains(media_line, line_end, ' ')){
-	next = parse_until(media_line, ' ');
+	  next = parse_until(media_line, ' ');
 	//if(next < line_end){
 	  string value(media_line, int(next-media_line)-1);
 	  media_line = next;
@@ -803,13 +803,10 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	      string value(attr_line, int(next-attr_line)-1);
 	      str2i(value, encoding_param);
 	      attr_line = next;
-	      params += value;
-	      params += ' ';
 	      rtpmap_st = ENC_PARAM;
 	    }else{
 	      string last_value(attr_line, int(line_end-attr_line)-1);
 	      str2i(last_value, encoding_param);
-	      params += last_value;
 	      parsing = 0;
 	    }
 	    break;
@@ -835,7 +832,7 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
       }
       
 
-    }else if(attr == "fmtp"){
+    } else if(attr == "fmtp"){
       while(parsing){
 	switch(fmtp_st){
 	case FORMAT:
@@ -849,25 +846,29 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	  }
 	case FORMAT_PARAM:
 	  { 
-	    next = parse_until(attr_line, ' ');
-	    if(next < line_end){
-	      string value(attr_line, int(next-attr_line)-1);
-	      attr_line = next;
-	      params += value;
-	      params += ' ';
-	      fmtp_st = FORMAT_PARAM;
-	    }else{
-	      string last_value(attr_line, int(line_end-attr_line)-1);
-	      params += last_value;
-	      parsing = 0;
-	    }
-	    break;
-	      }
+	    line_end--;
+	    while (is_wsp(*line_end))
+	      line_end--;
+
+	    params = string(attr_line, line_end-attr_line+1);
+	    parsing = 0;
+	  }
 	  break;
 	}
       }
 
-      DBG("found media attr 'fmtp' type '%d'\n", payload_type);
+      DBG("found media attr 'fmtp' for payload '%d': '%s'\n", 
+	  payload_type, params.c_str());
+
+      vector<SdpPayload>::iterator pl_it;
+      
+      for(pl_it=media.payloads.begin();
+	   (pl_it != media.payloads.end())
+	     && (pl_it->payload_type != int(payload_type));
+	   pl_it++);
+
+      if(pl_it != media.payloads.end())
+	pl_it->sdp_format_parameters = params;
 
     } else if (attr == "direction") {
 	next = parse_until(attr_line, '\r');
@@ -892,7 +893,6 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	    DBG("found media attr 'direction', but value is not"
 		" followed by cr\n");
 	}
-
 
     }else{
       attr_check(attr);
@@ -1051,6 +1051,10 @@ static bool contains(char* s, char* next_line, char c)
     *line++;
   }
   return false;
+}
+
+static bool is_wsp(char s) {
+  return s==' ' || s == '\r' || s == '\n' || s == '\t';
 }
 
 static char* parse_until(char* s, char end)
