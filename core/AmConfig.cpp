@@ -63,6 +63,7 @@ string       AmConfig::Application             = "";
 AmConfig::ApplicationSelector AmConfig::AppSelect        = AmConfig::App_SPECIFIED;
 AmConfig::AppMappingVector AmConfig::AppMapping;
 bool         AmConfig::LogSessions             = false;
+int          AmConfig::UnhandledReplyLoglevel  = 0;
 
 unsigned int AmConfig::SessionLimit            = 0;
 unsigned int AmConfig::SessionLimitErrCode     = 503;
@@ -225,6 +226,17 @@ int AmConfig::readConfiguration()
   }
 
   LogSessions = cfg.getParameter("log_sessions")=="yes";
+
+  if (cfg.hasParameter("unhandled_reply_loglevel")) {
+    string msglog = cfg.getParameter("unhandled_reply_loglevel");
+    if (msglog == "no") UnhandledReplyLoglevel = -1;
+    else if (msglog == "error") UnhandledReplyLoglevel = 0;
+    else if (msglog == "warn")  UnhandledReplyLoglevel = 1;
+    else if (msglog == "info")  UnhandledReplyLoglevel = 2;
+    else if (msglog == "debug") UnhandledReplyLoglevel = 3;
+    else ERROR("Could not interpret unhandled_reply_loglevel \"%s\"\n",
+	       msglog.c_str());
+  }
 
   Application  = cfg.getParameter("application");
 

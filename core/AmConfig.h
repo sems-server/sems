@@ -125,6 +125,8 @@ struct AmConfig
 
   static bool LogSessions;
 
+  static int UnhandledReplyLoglevel;
+
   /** Init function. Resolves SMTP server address. */
   static int init();
 

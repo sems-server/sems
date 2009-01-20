@@ -42,12 +42,18 @@ AmSipDispatcher* AmSipDispatcher::instance()
 
 void AmSipDispatcher::handleSipMsg(AmSipReply &reply)
 {
-    AmSipReplyEvent* ev = new AmSipReplyEvent(reply);
-    if(!AmEventDispatcher::instance()->post(reply.local_tag,ev)){
-	
-	ERROR("could not dispatch reply: %s\n", reply.print().c_str());
-	delete ev;
+  AmSipReplyEvent* ev = new AmSipReplyEvent(reply);
+  if(!AmEventDispatcher::instance()->post(reply.local_tag,ev)){
+    if ((reply.code >= 200) && (reply.code < 300)) {
+      if (AmConfig::UnhandledReplyLoglevel >= 0) {
+	_LOG(AmConfig::UnhandledReplyLoglevel,
+	     "unhandled positive reply: %s\n", reply.print().c_str());
+      }
+    } else {
+      ERROR("unhandled reply: %s\n", reply.print().c_str());
     }
+    delete ev;
+  }
 }
 
 void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
