@@ -99,7 +99,7 @@ case "$1" in
 	echo "Restarting $DESC: $NAME"
 	start-stop-daemon --oknodo --stop --quiet --pidfile \
 		$SEMS_PIDFILE --exec $DAEMON
-	sleep 1
+	sleep 5
 	start-stop-daemon --start --quiet --pidfile \
 		$SEMS_PIDFILE --exec $DAEMON  -- $PARAMS
 	echo "."

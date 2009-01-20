@@ -257,7 +257,7 @@ loglevel=2
 #
 #   default=no
 #
-# use_default_signature=no
+use_default_signature=yes
 
 # optional parameter: signature=<signature string>
 #
