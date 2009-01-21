@@ -3,11 +3,10 @@ plug_in_name = diameter_client
 DIAMETER_BASE_LIBDIR = lib_dbase/
 DIAMETER_BASE_LIBNAME = lib_dbase.a
 
-# for TLS support: 
-# 
-#WITH_OPENSSL = 1
+# TLS support, mandatory
+WITH_OPENSSL = 1
 
-module_ldflags =
+module_ldflags = 
 module_cflags  = -I $(DIAMETER_BASE_LIBDIR)
 
 
