@@ -30,7 +30,7 @@
 #include "AmMediaProcessor.h"
 #include "DSM.h"
 
-DSMDialog::DSMDialog(AmPromptCollection& prompts,
+DSMDialog::DSMDialog(AmPromptCollection* prompts,
 		     DSMStateDiagramCollection& diags,
 		     const string& startDiagName,
 		     UACAuthCred* credentials)
@@ -47,7 +47,7 @@ DSMDialog::~DSMDialog()
 	 audiofiles.begin();it!=audiofiles.end();it++) 
     delete *it;
 
-  used_prompt_sets.insert(&prompts);
+  used_prompt_sets.insert(prompts);
   for (set<AmPromptCollection*>::iterator it=
 	 used_prompt_sets.begin(); it != used_prompt_sets.end(); it++)
     (*it)->cleanup((long)this);
@@ -175,14 +175,15 @@ inline UACAuthCred* DSMDialog::getCredentials() {
 
 void DSMDialog::playPrompt(const string& name, bool loop) {
   DBG("playing prompt '%s'\n", name.c_str());
-  if (prompts.addToPlaylist(name,  (long)this, playlist, 
+  if (prompts->addToPlaylist(name,  (long)this, playlist, 
 			    /*front =*/ false, loop))  {
     if ((var["prompts.default_fallback"] != "yes") ||
-      default_prompts.addToPlaylist(name,  (long)this, playlist, 
+      default_prompts->addToPlaylist(name,  (long)this, playlist, 
 				    /*front =*/ false, loop)) {
+	DBG("checked [%p]\n", default_prompts);
       SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
     } else {
-      used_prompt_sets.insert(&default_prompts);
+      used_prompt_sets.insert(default_prompts);
       SET_ERRNO(DSM_ERRNO_OK);    
     }      
   } else {
@@ -270,8 +271,8 @@ void DSMDialog::setPromptSet(const string& name) {
   }
 
   DBG("setting prompt set '%s'\n", name.c_str());
-  used_prompt_sets.insert(&prompts);
-  prompts = *it->second;
+  used_prompt_sets.insert(prompts);
+  prompts = it->second;
   SET_ERRNO(DSM_ERRNO_OK);
 }
 

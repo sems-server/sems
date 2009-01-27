@@ -44,8 +44,8 @@ class DSMDialog : public AmSession,
   std::auto_ptr<UACAuthCred> cred;
   
   DSMStateEngine engine;
-  AmPromptCollection& prompts;
-  AmPromptCollection& default_prompts;
+  AmPromptCollection* prompts;
+  AmPromptCollection* default_prompts;
   DSMStateDiagramCollection& diags;
   string startDiagName;
   AmPlaylist playlist;
@@ -57,7 +57,7 @@ class DSMDialog : public AmSession,
 
   bool checkVar(const string& var_name, const string& var_val);
 public:
-  DSMDialog(AmPromptCollection& prompts,
+  DSMDialog(AmPromptCollection* prompts,
 	    DSMStateDiagramCollection& diags,
 	    const string& startDiagName,
 	    UACAuthCred* credentials = NULL);

@@ -242,8 +242,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
   } else {
     start_diag = req.cmd;
   }
-
-  DSMDialog* s = new DSMDialog(prompts, diags, start_diag, NULL);
+  DSMDialog* s = new DSMDialog(&prompts, diags, start_diag, NULL);
   prepareSession(s);
   return s;
 }
@@ -270,7 +269,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
       cred = dynamic_cast<UACAuthCred*>(cred_obj);
   }
 
-  DSMDialog* s = new DSMDialog(prompts, diags, start_diag, cred); 
+  DSMDialog* s = new DSMDialog(&prompts, diags, start_diag, cred); 
   prepareSession(s);
 
   if (NULL == cred) {
