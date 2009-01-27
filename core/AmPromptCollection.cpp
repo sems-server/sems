@@ -105,6 +105,19 @@ AmCachedAudioFile* AudioFileEntry::getAudio(){
   return new AmCachedAudioFile(&cache);
 }
 
+bool AmPromptCollection::hasPrompt(const string& name) {
+  string s = name;
+  std::map<std::string, AudioFileEntry*>::iterator it=store.begin();
+
+  while (it != store.end()) {
+    if (!strcmp(it->first.c_str(), s.c_str()))
+      break;
+    it++;
+  }
+  return it != store.end();
+
+}
+
 int AmPromptCollection::addToPlaylist(const std::string& name, long sess_id, 
 				      AmPlaylist& list, bool front, 
 				      bool loop) {

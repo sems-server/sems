@@ -92,6 +92,12 @@ class AmPromptCollection {
   int setPrompt(const string& name, 
 		const string& filename,
 		const char* mod_name);
+
+  /**
+   * check whether prompt exists
+   */
+  bool hasPrompt(const string& name);
+
   /**
    * add the announcement identified with  @param name 
    * to the playlist @list
