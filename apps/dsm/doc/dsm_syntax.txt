@@ -15,7 +15,9 @@ import(mod_name);
 	    } ]
       ;
 
-transition name s1 - [ { condition; condition; ... } ] [/ { action; action; ...} ]  -> s2;
+transition name s1 - [ { [not] condition; [not] condition; ... } ] [/ { action; action; ...} ]  -> s2;
+ or 
+transition name (s1a, s1b[, s1c, ...])  - [ { [not] condition; [not] condition; ... } ] [/ { action; action; ...} ]  -> s2;
 
 =============================
 #paramname uses the event parameter 'paramname' (from current event)
@@ -41,8 +43,8 @@ actions:
  setPromptSet(name) 
    if more prompt sets are loaded
 
- set($var, value)
-  e.g.  set($var, "text"); set($var, $var2); set($var, #key)
+ set($var=value)
+  e.g.  set($var="text"); set($var=$var2); set($var=#key)
  append($var, value)
  e.g. append($var, "text"); append($var, #key);
       append($var, @select); append($var, $var2);

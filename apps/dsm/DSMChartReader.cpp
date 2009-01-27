@@ -112,13 +112,21 @@ DSMAction* DSMChartReader::actionFromToken(const string& str) {
   return core_mod.getAction(str);
 }
 
-DSMCondition* DSMChartReader::conditionFromToken(const string& str) {
+DSMCondition* DSMChartReader::conditionFromToken(const string& str, bool invert) {
   for (vector<DSMModule*>::iterator it=
 	 mods.begin(); it!= mods.end(); it++) {
     DSMCondition* c=(*it)->getCondition(str);
-    if (c) return c;
+    if (c) {
+      c->invert = invert;
+      return c;
+    }
   }
-  return core_mod.getCondition(str);
+
+  DSMCondition* c = core_mod.getCondition(str);
+  if (c) 
+    c->invert = invert;
+
+  return c;
 }
 
 void splitCmd(const string& from_str, 
@@ -332,8 +340,15 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	}
 	continue;
       }
+      
+      if (token == "not") {
+	cl->invert_next = !cl->invert_next;
+	continue;
+      }
+
       //       DBG("new condition: '%s'\n", token.c_str());
-      DSMCondition* c = conditionFromToken(token);
+      DSMCondition* c = conditionFromToken(token, cl->invert_next);
+      cl->invert_next = false;
       if (!c) 
 	return false;
       

@@ -28,6 +28,7 @@
 #include "DSMStateEngine.h"
 #include "DSMModule.h"
 
+#include "AmUtils.h"
 #include "AmSession.h"
 #include "log.h"
 
@@ -63,25 +64,53 @@ void DSMStateDiagram::addState(const State& state, bool is_initial) {
 }
 
 bool DSMStateDiagram::addTransition(const DSMTransition& trans) {
-  DBG("adding Transition '%s' %s -()-> %s\n",
+  DBG("adding Transition '%s' %s -(...)-> %s\n",
       trans.name.c_str(), trans.from_state.c_str(), trans.to_state.c_str());
   for (vector<DSMCondition*>::const_iterator it=
 	 trans.precond.begin(); it != trans.precond.end(); it++) {
-    DBG("       DSMCondition  '%s'\n", (*it)->name.c_str());
+    DBG("       DSMCondition  %s'%s'\n", 
+	(*it)->invert?"not ":"", (*it)->name.c_str());
   }
   for (vector<DSMAction*>::const_iterator it=
 	 trans.actions.begin(); it != trans.actions.end(); it++) {
     DBG("       Action     '%s'\n", (*it)->name.c_str());
   }
 
-  State* source_st = getState(trans.from_state);
-  if (!source_st) {
-    ERROR("state '%s' for transition '%s' not found\n",
-	  trans.from_state.c_str(), trans.name.c_str());
-    return false;
+  vector<string> from_states;
+
+  if (trans.from_state.find_first_of("(") != string::npos) {
+
+    string states = trans.from_state;
+    if (states.length() && states[0] == '(')
+      states = states.substr(1);
+    if (states.length() && states[states.length()-1] == ')')
+      states = states.substr(0, states.length()-1);
+
+    from_states = explode(states, ",");
+    for (vector<string>::iterator it=from_states.begin(); 
+	 it != from_states.end(); it++) {
+      if (it->length() && (*it)[0] == ' ')
+	*it = it->substr(1);
+      if (it->length() && (*it)[it->length()-1] == ' ')
+	*it = it->substr(0, it->length()-1);
+    }
+
+  } else  {
+    from_states.push_back(trans.from_state);
   }
-  
-  source_st->transitions.push_back(trans);
+
+  for (vector<string>::iterator it=
+	 from_states.begin(); it != from_states.end(); it++) {
+    State* source_st = getState(*it);
+    if (!source_st) {
+      ERROR("state '%s' for transition '%s' not found\n",
+	    it->c_str(), trans.name.c_str());
+      return false;
+    }
+    
+    source_st->transitions.push_back(trans);
+  }
+
   return true;
 }
 
@@ -183,6 +212,13 @@ bool DSMStateEngine::init(AmSession* sess, const string& startDiagram,
   return true;
 }
 
+bool DSMCondition::_match(AmSession* sess, 
+		      DSMCondition::EventType event,
+		      map<string,string>* event_params) {
+  // or xor
+  return invert?(!match(sess,event,event_params)):match(sess,event,event_params);
+}
+
 bool DSMCondition::match(AmSession* sess, 
 		      DSMCondition::EventType event,
 		      map<string,string>* event_params) {
@@ -220,7 +256,7 @@ void DSMStateEngine::runEvent(AmSession* sess,
       
       vector<DSMCondition*>::iterator con=tr->precond.begin();
       while (con!=tr->precond.end()) {
-	if (!(*con)->match(sess, event, event_params))
+	if (!(*con)->_match(sess, event, event_params))
 	  break;
 	con++;
       }

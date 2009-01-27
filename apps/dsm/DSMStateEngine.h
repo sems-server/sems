@@ -73,11 +73,16 @@ class DSMCondition
     PlaylistSeparator
   };
 
-  DSMCondition() { }
+  bool invert; 
+  
+  DSMCondition() : invert(false) { }
   virtual ~DSMCondition() { }
 
   EventType type;
   map<string, string> params;
+
+  bool _match(AmSession* sess, DSMCondition::EventType event,
+	      map<string,string>* event_params);
 
   virtual bool match(AmSession* sess, DSMCondition::EventType event,
 		     map<string,string>* event_params);

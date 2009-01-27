@@ -69,6 +69,15 @@ bool DSMStateDiagramCollection::loadFile(const string& filename, const string& n
   return true;
 }
 
+bool DSMStateDiagramCollection::hasDiagram(const string& name) {
+  for (vector<DSMStateDiagram>::iterator it=
+	 diags.begin(); it != diags.end(); it++) 
+    if (it->getName() == name)
+      return true;
+  
+  return false;
+}
+
 void DSMStateDiagramCollection::addToEngine(DSMStateEngine* e) {
   DBG("adding %zd diags to engine\n", diags.size());
   for (vector <DSMStateDiagram>::iterator it = 

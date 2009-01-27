@@ -172,6 +172,22 @@ int DSMFactory::onLoad()
       return -1;
     }
   }
+  
+  string RegisterDiags = cfg.getParameter("register_apps");
+  vector<string> register_names = explode(RegisterDiags, ",");
+  for (vector<string>::iterator it=
+	 register_names.begin(); it != register_names.end(); it++) {
+    if (diags.hasDiagram(*it)) {
+      bool res = AmPlugIn::instance()->registerFactory4App(*it,this);
+      if(res)
+	INFO("DSM state machine registered: %s.\n",
+	     it->c_str());
+    } else {
+      ERROR("trying to register application '%s' which is not loaded.\n",
+	    it->c_str());
+      return -1;
+    }
+  }
 
   InboundStartDiag = cfg.getParameter("inbound_start_diag");
   if (InboundStartDiag.empty()) {
@@ -200,21 +216,35 @@ void DSMFactory::prepareSession(DSMDialog* s) {
 
 AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 {
-  if (InboundStartDiag.empty()) {
-    ERROR("no inbound calls allowed\n");
-    throw AmSession::Exception(488, "Not Acceptable Here");
+  string start_diag;
+  if (req.cmd == MOD_NAME) {
+    if (InboundStartDiag.empty()) {
+      ERROR("no inbound calls allowed\n");
+      throw AmSession::Exception(488, "Not Acceptable Here");
+    }
+    start_diag = InboundStartDiag;
+  } else {
+    start_diag = req.cmd;
   }
-  DSMDialog* s = new DSMDialog(prompts, diags, InboundStartDiag, NULL);
+
+  DSMDialog* s = new DSMDialog(prompts, diags, start_diag, NULL);
   prepareSession(s);
   return s;
 }
 
 AmSession* DSMFactory::onInvite(const AmSipRequest& req,
-				AmArg& session_params)
+				AmArg& session_params) 
 {
-  if (OutboundStartDiag.empty()) {
-    ERROR("no outbound calls allowed\n");
+
+  string start_diag;
+
+  if (req.cmd == MOD_NAME) {
+    if (OutboundStartDiag.empty()) {
+      ERROR("no outbound calls allowed\n");
     throw AmSession::Exception(488, "Not Acceptable Here");
+    }
+  } else {
+    start_diag = req.cmd;
   }
 
   UACAuthCred* cred = NULL;
@@ -224,7 +254,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
       cred = dynamic_cast<UACAuthCred*>(cred_obj);
   }
 
-  DSMDialog* s = new DSMDialog(prompts, diags, OutboundStartDiag, cred); 
+  DSMDialog* s = new DSMDialog(prompts, diags, start_diag, cred); 
   prepareSession(s);
 
   if (NULL == cred) {

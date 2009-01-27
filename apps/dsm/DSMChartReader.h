@@ -69,8 +69,9 @@ class ActionList : public DSMElement {
 };
 
 struct DSMConditionList : public DSMElement {
- DSMConditionList() { }
+ DSMConditionList() : invert_next(false) { }
   vector<DSMCondition*> conditions;
+  bool invert_next;
 };
 
 class DSMChartReader {
@@ -80,7 +81,7 @@ class DSMChartReader {
 
   string getToken(string str, size_t& pos);
   DSMAction* actionFromToken(const string& str);
-  DSMCondition* conditionFromToken(const string& str);
+  DSMCondition* conditionFromToken(const string& str, bool invert);
 
   bool importModule(const string& mod_cmd, const string& mod_path);
   vector<DSMModule*> mods;
