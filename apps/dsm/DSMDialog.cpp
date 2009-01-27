@@ -34,7 +34,7 @@ DSMDialog::DSMDialog(AmPromptCollection& prompts,
 		     DSMStateDiagramCollection& diags,
 		     const string& startDiagName,
 		     UACAuthCred* credentials)
-  : prompts(prompts), diags(diags), startDiagName(startDiagName), 
+  : prompts(prompts), default_prompts(prompts), diags(diags), startDiagName(startDiagName), 
     playlist(this), cred(credentials), 
     rec_file(NULL)
 {
@@ -47,10 +47,14 @@ DSMDialog::~DSMDialog()
 	 audiofiles.begin();it!=audiofiles.end();it++) 
     delete *it;
 
-  prompts.cleanup((long)this);
-  for (map<string, AmPromptCollection*>::iterator it=
-	 prompt_sets.begin(); it != prompt_sets.end(); it++)
-    it->second->cleanup((long)this);
+  used_prompt_sets.insert(&prompts);
+  for (set<AmPromptCollection*>::iterator it=
+	 used_prompt_sets.begin(); it != used_prompt_sets.end(); it++)
+    (*it)->cleanup((long)this);
+
+//   for (map<string, AmPromptCollection*>::iterator it=
+// 	 prompt_sets.begin(); it != prompt_sets.end(); it++)
+//     it->second->cleanup((long)this);
 }
 
 /** returns whether var exists && var==value*/
@@ -172,11 +176,18 @@ inline UACAuthCred* DSMDialog::getCredentials() {
 void DSMDialog::playPrompt(const string& name, bool loop) {
   DBG("playing prompt '%s'\n", name.c_str());
   if (prompts.addToPlaylist(name,  (long)this, playlist, 
-			    /*front =*/ false, loop)) 
-    SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
-  else
+			    /*front =*/ false, loop))  {
+    if ((var["prompts.default_fallback"] != "yes") ||
+      default_prompts.addToPlaylist(name,  (long)this, playlist, 
+				    /*front =*/ false, loop)) {
+      SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    } else {
+      used_prompt_sets.insert(&default_prompts);
+      SET_ERRNO(DSM_ERRNO_OK);    
+    }      
+  } else {
     SET_ERRNO(DSM_ERRNO_OK);
-
+  }
 }
 
 void DSMDialog::closePlaylist(bool notify) {
@@ -259,6 +270,7 @@ void DSMDialog::setPromptSet(const string& name) {
   }
 
   DBG("setting prompt set '%s'\n", name.c_str());
+  used_prompt_sets.insert(&prompts);
   prompts = *it->second;
   SET_ERRNO(DSM_ERRNO_OK);
 }

@@ -104,6 +104,22 @@ int DSMFactory::onLoad()
     }
   }
 
+
+  bool has_all_prompts = true;
+  vector<string> required_prompts = 
+    explode(cfg.getParameter("required_prompts"), ",");
+  
+  for (vector<string>::iterator it=required_prompts.begin(); 
+       it != required_prompts.end(); it++) {
+    if (!prompts.hasPrompt(*it)) {
+      ERROR("required prompt '%s' not loaded.\n",
+	    it->c_str());
+      has_all_prompts = false;
+    }
+  }
+  if (!has_all_prompts)
+    return -1;
+
   string prompt_sets_path = cfg.getParameter("prompts_sets_path");
 
   vector<string> prompt_sets_names = 

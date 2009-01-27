@@ -35,6 +35,8 @@ actions:
 
  playPrompt(param)
    from promptCollection, e.g. playPrompt("hello");
+   if $prompts.default_fallback=yes, default prompt set is tried if
+   prompt not found in current prompt set
  playFile(filename)
  recordFile(filename)
  stopRecord()

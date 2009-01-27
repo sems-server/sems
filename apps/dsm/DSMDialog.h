@@ -35,6 +35,8 @@
 #include "DSMStateEngine.h"
 #include "DSMStateDiagramCollection.h"
 
+#include <set>
+
 class DSMDialog : public AmSession,
 		  public DSMSession,
 		  public CredentialHolder
@@ -43,6 +45,7 @@ class DSMDialog : public AmSession,
   
   DSMStateEngine engine;
   AmPromptCollection& prompts;
+  AmPromptCollection& default_prompts;
   DSMStateDiagramCollection& diags;
   string startDiagName;
   AmPlaylist playlist;
@@ -50,6 +53,7 @@ class DSMDialog : public AmSession,
   vector<AmAudio*> audiofiles;
   AmAudioFile* rec_file;
   map<string, AmPromptCollection*> prompt_sets;
+  std::set<AmPromptCollection*> used_prompt_sets;
 
   bool checkVar(const string& var_name, const string& var_val);
 public:
@@ -75,6 +79,7 @@ public:
 
   // DSMSession interface
   void playPrompt(const string& name, bool loop = false);
+
   void closePlaylist(bool notify);
   void playFile(const string& name, bool loop);
   void recordFile(const string& name);
