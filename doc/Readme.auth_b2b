@@ -40,3 +40,5 @@ App-Param:
   u - user in B leg
   d - domain in B leg
   p - password for auth in B leg (auth user=user)
+
+Alternatively, the account (user/domain/pwd) can be set in auth_b2b.conf.
