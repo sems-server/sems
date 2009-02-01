@@ -44,6 +44,10 @@ class AuthB2BFactory: public AmSessionFactory
   
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);
+  static string user;
+  static string domain;
+  static string pwd;
+
 };
 
 class AuthB2BDialog : public AmB2BCallerSession

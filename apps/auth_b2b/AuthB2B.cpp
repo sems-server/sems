@@ -34,8 +34,12 @@
 #include "AmAudio.h"
 #include "AmPlugIn.h"
 #include "AmMediaProcessor.h"
-//#include "AmConfigReader.h"
+#include "AmConfigReader.h"
 #include "AmSessionContainer.h"
+
+string AuthB2BFactory::user;
+string AuthB2BFactory::domain;
+string AuthB2BFactory::pwd;
 
 EXPORT_SESSION_FACTORY(AuthB2BFactory,MOD_NAME);
 
@@ -48,9 +52,16 @@ AuthB2BFactory::AuthB2BFactory(const string& _app_name)
 
 int AuthB2BFactory::onLoad()
 {
-//   AmConfigReader cfg;
-//   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
-//     return -1;
+   AmConfigReader cfg;
+   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
+     INFO("No configuration for auth_b2b present (%s)\n",
+	  (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str()
+	  );
+   } else {
+     user = cfg.getParameter("user");
+     domain = cfg.getParameter("domain");
+     pwd = cfg.getParameter("pwd");
+   }
 
 //   user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
 //   if(!user_timer_fact) {
@@ -101,15 +112,21 @@ void AuthB2BDialog::onInvite(const AmSipRequest& req)
   setReceiving(false);
   AmMediaProcessor::instance()->removeSession(this);
 
-  string app_param = getHeader(req.hdrs, PARAM_HDR);
+  if (AuthB2BFactory::user.empty()) {
+    string app_param = getHeader(req.hdrs, PARAM_HDR);
 
-  if (!app_param.length()) {
-    AmSession::Exception(500, "auth_b2b: parameters not found");
+    if (!app_param.length()) {
+      AmSession::Exception(500, "auth_b2b: parameters not found");
+    }
+    
+    domain = get_header_keyvalue(app_param,"d");
+    user = get_header_keyvalue(app_param,"u");
+    password = get_header_keyvalue(app_param,"p");
+  } else {
+    domain = AuthB2BFactory::domain;
+    user = AuthB2BFactory::user;
+    password = AuthB2BFactory::pwd;
   }
-
-  domain = get_header_keyvalue(app_param,"d");
-  user = get_header_keyvalue(app_param,"u");
-  password = get_header_keyvalue(app_param,"p");
 
   from = "sip:"+user+"@"+domain;
   to = "sip:"+req.user+"@"+domain;
