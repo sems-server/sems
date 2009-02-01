@@ -253,7 +253,7 @@ void C2DCallerDialog::onB2BEvent(B2BEvent* ev)
   if(ev->event_id == B2BSipReply) {
     AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
 
-    if(reply.code == 407 && cred.get() != NULL) {
+    if(((reply.code == 407)||(reply.code == 401))  && cred.get() != NULL) {
       AmB2BSession::onB2BEvent(ev);
       return;
     }
