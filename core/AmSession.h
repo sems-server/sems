@@ -310,8 +310,10 @@ public:
    * Signals the session it should stop.
    * This will cause the session to be able 
    * to exit the main loop.
+   * If wakeup is set, a bogus event will 
+   * be sent to wake up the session.
    */
-  void setStopped() { sess_stopped.set(true); }
+  void setStopped(bool wakeup = false);
 
   /**
    * Has the session already been stopped ?

@@ -393,6 +393,13 @@ void AmSession::on_stop()
     clearAudio();
 }
 
+void AmSession::setStopped(bool wakeup) {
+  sess_stopped.set(true); 
+  if (wakeup) 
+    AmSessionContainer::instance()->postEvent(getLocalTag(), 
+					      new AmEvent(0));
+}
+
 void AmSession::destroy()
 {
   DBG("AmSession::destroy()\n");
