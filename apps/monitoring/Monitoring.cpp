@@ -123,10 +123,14 @@ void Monitor::logAdd(const AmArg& args, AmArg& ret) {
   LogBucket& bucket = getLogBucket(args[0].asCStr());
   bucket.log_lock.lock();
   try {
-    bucket.log[args[0].asCStr()].info[args[1].asCStr()].push(AmArg(args[2]));
+    AmArg& val = bucket.log[args[0].asCStr()].info[args[1].asCStr()];
+    if (!isArgArray(val)) {
+      AmArg v1 = val;
+      val = AmArg();
+      val.push(v1);
+    }
+    val.push(AmArg(args[2]));
   } catch (...) {
-    ret.push(-1);
-    ret.push("ERROR while converting value");
     bucket.log_lock.unlock();
     throw;
   }
