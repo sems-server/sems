@@ -89,13 +89,14 @@ class wheeltimer: public AmThread
     //the timer wheel
     base_timer wheels[WHEELS][ELMTS_PER_WHEEL];
 
+    // utimer add/remove lock
+    AmMutex    utimer_m;
+
     //list with timer insertions requests
     std::queue<timer*> utimer_add;
-    AmMutex    utimer_add_m;
 
     //list with timer deletions requests
     std::queue<timer*> utimer_rem;
-    AmMutex    utimer_rem_m;
 
     //list with expired timers
     base_timer utimer_expired;

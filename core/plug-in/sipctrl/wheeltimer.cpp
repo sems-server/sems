@@ -64,9 +64,9 @@ wheeltimer::~wheeltimer()
 void wheeltimer::insert_timer(timer* t)
 {
     //add new timer to user request list
-    utimer_add_m.lock();
+    utimer_m.lock();
     utimer_add.push(t);
-    utimer_add_m.unlock();
+    utimer_m.unlock();
 }
 
 void wheeltimer::remove_timer(timer* t)
@@ -74,9 +74,9 @@ void wheeltimer::remove_timer(timer* t)
     //DBG("wheeltimer::remove_timer(%p)\n",t);
 
     //add new timer to user request list
-    utimer_rem_m.lock();
+    utimer_m.lock();
     utimer_rem.push(t);
-    utimer_rem_m.unlock();
+    utimer_m.unlock();
 }
 
 void wheeltimer::run()
@@ -157,20 +157,18 @@ void wheeltimer::turn_wheel()
     update_wheel(i);
 	
     // Check for timer insertion requests
-    utimer_add_m.lock();
+    utimer_m.lock();
     while(!utimer_add.empty()) {
 	place_timer(utimer_add.front());
 	utimer_add.pop();
     }
-    utimer_add_m.unlock();
 	
     // Check for timer deletion requests
-    utimer_rem_m.lock();
     while(!utimer_rem.empty()) {
 	delete_timer(utimer_rem.front());
 	utimer_rem.pop();
     }
-    utimer_rem_m.unlock();
+    utimer_m.unlock();
 	
     //DBG("time = %d\n", wall_clock);
 	
