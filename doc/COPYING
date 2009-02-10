@@ -12,7 +12,10 @@ IMPORTANT NOTES
    (see http://www.gnu.org/copyleft/gpl-faq.html#TOCHeardOtherLicense
     for an explanation how parallel licenses comply with GPL)
 
-2) SEMS software allows programmers to plug-in external modules to the
+2) You can use SEMS under the conditions of the GPL version 2, 
+   or (at your option) any later version of that license.
+
+3) SEMS software allows programmers to plug-in external modules to the
    core part. Note that GPL mandates all plug-ins developed for the
    SEMS software released under GPL license to be GPL-ed or use a GPL
    compatible free software license.
@@ -20,9 +23,10 @@ IMPORTANT NOTES
    (see http://www.gnu.org/copyleft/gpl-faq.html#GPLAndPlugins
     for a detailed explanation)
 
-3) Note that the GPL below is copyrighted by the Free Software Foundation,
-   but the SEMS software is copyrighted by FhG, iptego GmbH and portions by
+4) Note that the GPL below is copyrighted by the Free Software Foundation,
+   but the SEMS software is copyrighted by FhG, IPTEGO GmbH and portions by
    its contributors.
+
 
 -------------------------------------------------------------------------
 

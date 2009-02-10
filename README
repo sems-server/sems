@@ -22,6 +22,8 @@ Introduction:
  user agent (B2BUA) functionality, complex VoIP services
  can be realized completely in SEMS. 
  
+ SEMS is GPL (v2+) software. See doc/COPYING for details.
+
  The following applications are shipped with SEMS :
 
   * announcement   plays an announcement
