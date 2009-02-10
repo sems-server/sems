@@ -180,10 +180,13 @@ void AmArg::concat(const AmArg& a) {
 }
 
 const size_t AmArg::size() const {
-  if ((Array != type) && (Struct != type))
-    throw TypeMismatchException();
+  if (Array == type)
+    return v_array->size(); 
 
-  return v_array->size(); 
+  if (Struct == type)
+    return v_struct->size(); 
+
+  throw TypeMismatchException();
 }
 
 AmArg& AmArg::get(size_t idx) {
@@ -281,6 +284,10 @@ AmArg::ValueStruct::const_iterator AmArg::end() const {
   return v_struct->end();
 }
 
+void AmArg::erase(const char* name) {
+  assertStruct();
+  v_struct->erase(name);
+}
 
 void AmArg::assertArrayFmt(const char* format) const {
   size_t fmt_len = strlen(format);

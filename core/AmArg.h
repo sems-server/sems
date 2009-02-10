@@ -261,6 +261,9 @@ class AmArg
   ValueStruct::const_iterator begin() const;
   ValueStruct::const_iterator end() const;
 
+  /** remove struct member */
+  void erase(const char* name);
+
   /** 
    * throws exception if arg array does not conform to spec 
    *   i  - int 
