@@ -34,6 +34,7 @@
 
 #include "AmSessionContainer.h"
 #include "AmMediaProcessor.h"
+#include "ampi/MonitoringAPI.h"
 
 #include "sems.h"
 #include "log.h"
@@ -498,6 +499,8 @@ void ConferenceDialog::setupAudio()
   setInOut(&play_list,&play_list);
     
   setCallgroup(conf_id);
+  
+  MONITORING_LOG(getCallID().c_str(), "conf_id", conf_id.c_str());
 	
   if(dialedout || !allow_dialout) {
     DBG("Dialout not enabled or dialout channel. Disabling DTMF detection.\n");
