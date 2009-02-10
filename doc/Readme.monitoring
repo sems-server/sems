@@ -1,0 +1,61 @@
+monitoring module
+
+The 'monitoring' module gets information regarding calls from the core 
+and applications, and makes them available via DI methods, e.g. for 
+monitoring a SEMS server via XMLRPC (using xmlrpc2di), or any other 
+method that can acces DI.
+
+monitoring information is explicitely pushed to monitoring module via 
+DI calls (See ampi/MonitoringAPI.h for useful macros). Info is always 
+accessed via primary key, usually call-id. Info for every call is organized 
+as attribute-value pairs (one or more values), value can be any type 
+representable by AmArg (SEMS' variable type). 
+
+A call can be marked as finished. If not done before, this is done by 
+the session container when deleting a session (i.e., as the session 
+garbage collector in session container only runs every few seconds, 
+this can lag some seconds). Finished sessions can be listed and erased
+separately, to free used memory.
+
+Internally, the monitoring module keeps info in locked buckets of calls; 
+thus lock contention can be minimized by adapting NUM_LOG_BUCKETS 
+(Monitoring.h), which defaults to 16 (should be ok for most cases).
+
+monitoring must be compile time enabled in Makefile.defs by setting 
+ USE_MONITORING = yes
+and the monitoring module needs to be loaded.
+
+
+DI API
+------
+functions to log, e.g. from inside SEMS:
+ log(ID, key, value [, key, value [, key, value [...]]])  - set one or multiple AVPs
+ logAdd(ID, key, value)   - add a value to an AVPs
+
+functions to get log, e.g. from the outside:
+ list           - list IDs of calls
+ listFinished   - list IDs of finished calls
+ listUnfinished - list IDs of unfinished (active) calls
+ get            - get info for a specific call, parameter is the ID
+ erase          - erase info of a specific call, parameter is the ID (+free used memory)
+ clear          - erase info of all calls (+free used memory)
+ clearFinished  - erase info of all finished calls (+free used memory)
+
+(of course, log()/logAdd() functions can also be accessed via e.g. XMLRPC.)
+
+Performance
+-----------
+monitoring is not very much optimized for speed. Thus, especially by 
+using DI/AmArg, a lot of string comparisions and copying is performed. 
+If you measure any performance figures in real life usage comparing use 
+of monitoring vs. monitoring not enabled, please contribute 
+(mailto:semsdev@iptel.org, http://tracker.iptel.org) to be included in 
+this documentation.
+
+
+TODO
+----
+ o internal garbage collector, e.g. x secs after call is finished
+ o codec info
+ o more app specific info
+ o b2bua specific info

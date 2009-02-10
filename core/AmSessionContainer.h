@@ -31,6 +31,8 @@
 #include "AmThread.h"
 #include "AmSession.h"
 
+#include "ampi/MonitoringAPI.h"
+
 #include <string>
 #include <queue>
 #include <map>
@@ -140,6 +142,9 @@ class AmSessionContainer : public AmThread
    * @return false if session doesn't exist 
    */
   bool postEvent(const string& local_tag, AmEvent* event);
+
+  _MONITORING_DEFINE_INTERFACE;
+
 };
 
 #endif

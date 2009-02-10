@@ -39,9 +39,9 @@
 
 #include "sems.h"
 
-// AmSessionContainer methods
-
 AmSessionContainer* AmSessionContainer::_instance=NULL;
+
+_MONITORING_DECLARE_INTERFACE(AmSessionContainer);
 
 AmSessionContainer::AmSessionContainer()
   : _run_cond(false), _container_closed(false)
@@ -88,6 +88,8 @@ bool AmSessionContainer::clean_sessions() {
       
       if(cur_session->is_stopped() && cur_session->detached.get()){
 	
+	MONITORING_MARK_FINISHED(cur_session->getCallID().c_str());
+
 	DBG("session %p has been destroyed'\n",(void*)cur_session->_pid);
 	delete cur_session;
       }
@@ -115,6 +117,7 @@ bool AmSessionContainer::clean_sessions() {
 
 void AmSessionContainer::run()
 {
+  _MONITORING_INIT;
 
   while(!_container_closed.get()){
 
@@ -201,6 +204,13 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 	return NULL;
       }
 
+      MONITORING_LOG5(session->getCallID().c_str(), 
+		      "app", req.cmd.c_str(),
+		      "dir", "out",
+		      "from", req.from.c_str(),
+		      "to", req.to.c_str(),
+		      "ruri", req.r_uri.c_str());
+      
       if (int err = session->sendInvite(req.hdrs)) {
 	ERROR("INVITE could not be sent: error code = %d.\n", 
 	      err);
@@ -209,6 +219,7 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 			session->getCallID(),
 			session->getRemoteTag());	
 	delete session;
+	MONITORING_MARK_FINISHED(session->getCallID().c_str());
 	return NULL;
       }
 
@@ -260,6 +271,13 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	  delete session;
 	  throw string("internal server error");
 	}
+
+	MONITORING_LOG5(req.callid.c_str(), 
+			"app", req.cmd.c_str(),
+			"dir", "in",
+			"from", req.from.c_str(),
+			"to", req.to.c_str(),
+			"ruri", req.r_uri.c_str());
 
 	session->start();
 

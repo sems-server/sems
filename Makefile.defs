@@ -9,7 +9,7 @@ SVN_REV?=r$(shell svnversion -n .)
 VERSION = 1
 PATCHLEVEL = 1
 SUBLEVEL = 0
-EXTRAVERSION ?= -pre-$(SVN_REV)
+EXTRAVERSION ?= -dev-$(SVN_REV)
 
 REL_VERSION=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
 RELEASE=$(REL_VERSION)$(EXTRAVERSION)
@@ -49,6 +49,11 @@ CPPFLAGS += -D_DEBUG \
 # e.g. python modules:
 #exclude_modules ?= py_sems ivr mailbox pin_collect conf_auth mp3 examples
 
+# build in support for monitoring?
+#
+#
+#USE_MONITORING=yes
+
 LDFLAGS += -lm
 
 OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
@@ -67,6 +72,10 @@ libsrc_defs=1
 export libsrc_defs
 CPPFLAGS += -DUSE_LIBSAMPLERATE
 endif
+endif
+
+ifdef USE_MONITORING
+CPPFLAGS += -DUSE_MONITORING      
 endif
 
 # Additions for Solaris support.
