@@ -41,8 +41,8 @@ actions:
  setPromptSet(name) 
    if more prompt sets are loaded
 
- set($var, value)
-  e.g.  set($var, "text"); set($var, $var2); set($var, #key)
+ set($var=value)
+  e.g.  set($var="text"); set($var=$var2); set($var=#key)
  append($var, value)
  e.g. append($var, "text"); append($var, #key);
       append($var, @select); append($var, $var2);
