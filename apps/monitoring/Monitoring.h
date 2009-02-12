@@ -68,9 +68,14 @@ class Monitor
   void clearFinished(const AmArg& args, AmArg& ret);
   void erase(const AmArg& args, AmArg& ret);
   void get(const AmArg& args, AmArg& ret);
-  void list(const AmArg& args, AmArg& ret);
+  void getAttribute(const AmArg& args, AmArg& ret);
+  void getAttributeActive(const AmArg& args, AmArg& ret);
+  void getAttributeFinished(const AmArg& args, AmArg& ret);
+  void listAll(const AmArg& args, AmArg& ret);
+  void listByFilter(const AmArg& args, AmArg& ret);
+  void listByRegex(const AmArg& args, AmArg& ret);
   void listFinished(const AmArg& args, AmArg& ret);
-  void listUnfinished(const AmArg& args, AmArg& ret);
+  void listActive(const AmArg& args, AmArg& ret);
 
  public:
 

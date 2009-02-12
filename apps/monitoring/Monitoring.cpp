@@ -29,6 +29,9 @@
 
 #include "log.h"
 
+#include <sys/types.h>
+#include <regex.h>
+
 //EXPORT_PLUGIN_CLASS_FACTORY(Monitor, MOD_NAME);
 extern "C" void* plugin_class_create()
 {
@@ -67,20 +70,30 @@ void Monitor::invoke(const string& method,
     logAdd(args,ret);
   } else if(method == "markFinished"){
     markFinished(args,ret);
+  } else if(method == "get"){
+    get(args,ret);
+  } else if(method == "getAttribute"){
+    getAttribute(args,ret);
+  } else if(method == "getAttributeFinished"){
+    getAttributeFinished(args,ret);
+  } else if(method == "getAttributeActive"){
+    getAttributeActive(args,ret);
+  } else if(method == "list"){
+    listAll(args,ret);
+  } else if(method == "listByFilter"){
+    listByFilter(args,ret);
+  } else if(method == "listByRegex"){
+    listByRegex(args,ret);
+  } else if(method == "listFinished"){
+    listFinished(args,ret);
+  } else if(method == "listActive"){
+    listActive(args,ret);
   } else if(method == "clear"){
     clear(args,ret);
   } else if(method == "clearFinished"){
     clearFinished(args,ret);
   } else if(method == "erase"){
     clear(args,ret);
-  } else if(method == "get"){
-    get(args,ret);
-  } else if(method == "list"){
-    list(args,ret);
-  } else if(method == "listFinished"){
-    listFinished(args,ret);
-  } else if(method == "listUnfinished"){
-    listUnfinished(args,ret);
   } else if(method == "_list"){ 
     ret.push(AmArg("log"));
     ret.push(AmArg("logAdd"));
@@ -89,9 +102,14 @@ void Monitor::invoke(const string& method,
     ret.push(AmArg("clear"));
     ret.push(AmArg("clearFinished"));
     ret.push(AmArg("get"));
+    ret.push(AmArg("getAttribute"));
+    ret.push(AmArg("getAttributeActive"));
+    ret.push(AmArg("getAttributeFinished"));
     ret.push(AmArg("list"));
+    ret.push(AmArg("listByFilter"));
+    ret.push(AmArg("listByRegex"));
     ret.push(AmArg("listFinished"));
-    ret.push(AmArg("listUnfinished"));
+    ret.push(AmArg("listActive"));
   } else
     throw AmDynInvoke::NotImplemented(method);
 }
@@ -201,7 +219,32 @@ void Monitor::get(const AmArg& args, AmArg& ret) {
   bucket.log_lock.unlock();
 }
 
-void Monitor::list(const AmArg& args, AmArg& ret) {
+#define DEF_GET_ATTRIB_FUNC(func_name, cond)				\
+  void Monitor::func_name(const AmArg& args, AmArg& ret) {		\
+    assertArgCStr(args[0]);						\
+    string attr_name = args[0].asCStr();				\
+    for (int i=0;i<NUM_LOG_BUCKETS;i++) {				\
+      logs[i].log_lock.lock();						\
+      for (std::map<string, LogInfo>::iterator it=			\
+	     logs[i].log.begin();it != logs[i].log.end();it++) {	\
+	if (cond) {							\
+	  ret.push(AmArg());						\
+	  AmArg& val = ret.get(ret.size()-1);				\
+	  val.push(AmArg(it->first.c_str()));				\
+	  val.push(it->second.info[attr_name]);				\
+	}								\
+      }									\
+      logs[i].log_lock.unlock();					\
+    }									\
+  }
+
+DEF_GET_ATTRIB_FUNC(getAttribute, true)
+DEF_GET_ATTRIB_FUNC(getAttributeActive,  (!it->second.finished))
+DEF_GET_ATTRIB_FUNC(getAttributeFinished, (it->second.finished))
+
+#undef DEF_GET_ATTRIB_FUNC
+
+void Monitor::listAll(const AmArg& args, AmArg& ret) {
  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     for (std::map<string, LogInfo>::iterator it=
@@ -210,6 +253,66 @@ void Monitor::list(const AmArg& args, AmArg& ret) {
     }
     logs[i].log_lock.unlock();
   }
+}
+
+void Monitor::listByFilter(const AmArg& args, AmArg& ret) {
+  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
+    logs[i].log_lock.lock();
+    try {
+      for (std::map<string, LogInfo>::iterator it=
+	     logs[i].log.begin(); it != logs[i].log.end(); it++) {
+	bool match = true;
+	for (size_t i=0;i<args.size();i++) {
+	  AmArg& p = args.get(i);	  
+	  if (!(it->second.info[p.get(0).asCStr()]==p.get(1))) {
+	    match = false;
+	    break;
+	  }
+	}
+
+	if (!match)
+	  continue;
+
+	ret.push(AmArg(it->first.c_str()));  
+      }
+    } catch(...) {
+      logs[i].log_lock.unlock();
+      throw;
+    }
+    logs[i].log_lock.unlock();
+  }
+}
+
+void Monitor::listByRegex(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args[0]);
+  assertArgCStr(args[1]);
+
+  regex_t attr_reg;
+  if(regcomp(&attr_reg,args[1].asCStr(),REG_NOSUB)){
+    ERROR("could not compile regex '%s'\n", args[1].asCStr());
+    return;
+  }
+  
+  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
+    logs[i].log_lock.lock();
+    try {
+      for (std::map<string, LogInfo>::iterator it=
+	     logs[i].log.begin(); it != logs[i].log.end(); it++) {
+	if (!it->second.info.hasMember(args[0].asCStr())  || 
+	    !isArgCStr(it->second.info[args[0].asCStr()]) ||
+	    regexec(&attr_reg,it->second.info[args[0].asCStr()].asCStr(),0,0,0))
+	  continue;
+
+	ret.push(AmArg(it->first.c_str()));  
+      }
+    } catch(...) {
+      logs[i].log_lock.unlock();
+      throw;
+    }
+    logs[i].log_lock.unlock();
+  }
+
+  regfree(&attr_reg);
 }
 
 void Monitor::listFinished(const AmArg& args, AmArg& ret) {
@@ -225,7 +328,7 @@ void Monitor::listFinished(const AmArg& args, AmArg& ret) {
 }
 
 
-void Monitor::listUnfinished(const AmArg& args, AmArg& ret) {
+void Monitor::listActive(const AmArg& args, AmArg& ret) {
  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     for (std::map<string, LogInfo>::iterator it=

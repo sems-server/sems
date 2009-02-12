@@ -9,7 +9,7 @@ monitoring information is explicitely pushed to monitoring module via
 DI calls (See ampi/MonitoringAPI.h for useful macros). Info is always 
 accessed via primary key, usually call-id. Info for every call is organized 
 as attribute-value pairs (one or more values), value can be any type 
-representable by AmArg (SEMS' variable type). 
+representable by AmArg (SEMS' variant type). 
 
 A call can be marked as finished. If not done before, this is done by 
 the session container when deleting a session (i.e., as the session 
@@ -30,16 +30,29 @@ DI API
 ------
 functions to log, e.g. from inside SEMS:
  log(ID, key, value [, key, value [, key, value [...]]])  - set one or multiple AVPs
- logAdd(ID, key, value)   - add a value to an AVPs
+ logAdd(ID, key, value)   - add a value to a AVPs
+ markFinished(ID) - mark call as finished
 
 functions to get log, e.g. from the outside:
- list           - list IDs of calls
- listFinished   - list IDs of finished calls
- listUnfinished - list IDs of unfinished (active) calls
- get            - get info for a specific call, parameter is the ID
- erase          - erase info of a specific call, parameter is the ID (+free used memory)
- clear          - erase info of all calls (+free used memory)
- clearFinished  - erase info of all finished calls (+free used memory)
+ list()            - list IDs of calls
+ listByFilter(exp, exp, exp, ...) - list IDs of calls that match the filter expressions: 
+                      exp of the form array of attr_name-value, 
+                      e.g. listByFilter(['dir', 'in'], ['codec_name', 'GSM'])                      
+ listByRegex(attr_name, regexp) - list IDs of calls that match the regular expression
+                     on the attribute (string attributes only), e.g. 
+                     listByRegex('r_uri', '.*mydomain.net.*')
+ listActive()      - list IDs of active (unfinished) calls
+ listFinished()    - list IDs of finished calls
+ get(ID)           - get info for a specific call, parameter is the call ID
+ getAttribute(attr_name) 
+                   - get a specific attribute from all calls, parameter is the attribute name
+ getAttributeActive(attr_name) 
+                   - get a specific attribute from all active calls, parameter is the attribute name
+ getAttributeFinished(attr_name) 
+                   - get a specific attribute from all finished calls, parameter is the attribute name
+ erase(ID)         - erase info of a specific call, parameter is the call ID (+free used memory)
+ clear()           - erase info of all calls (+free used memory)
+ clearFinished()   - erase info of all finished calls (+free used memory)
 
 (of course, log()/logAdd() functions can also be accessed via e.g. XMLRPC.)
 
