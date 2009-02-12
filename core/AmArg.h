@@ -216,6 +216,7 @@ class AmArg
   const char* asCStr()   const { return v_cstr; }
   ArgObject*  asObject() const { return v_obj; }
   ArgBlob*    asBlob()   const { return v_blob; }
+  ValueStruct* asStruct() const { return v_struct; }
 
   vector<string>     asStringVector()    const; 
   vector<int>        asIntVector()       const; 
@@ -279,7 +280,11 @@ class AmArg
   void assertArrayFmt(const char* format) const;
 
   void clear();
+  friend bool operator==(const AmArg& lhs, const AmArg& rhs);
 };
+
+// equality
+bool operator==(const AmArg& lhs, const AmArg& rhs);
 
 #endif
 

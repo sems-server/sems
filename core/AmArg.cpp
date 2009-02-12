@@ -257,6 +257,24 @@ AmArg& AmArg::operator[](const char* key) const {
   return (*v_struct)[key];
 }
 
+bool operator==(const AmArg& lhs, const AmArg& rhs) {
+  if (lhs.type != rhs.type)
+    return false;
+
+  switch(lhs.type){
+  case AmArg::Int:    { return lhs.v_int == rhs.v_int; } break;
+  case AmArg::Double: { return lhs.v_double == rhs.v_double; } break;
+  case AmArg::CStr:   { return !strcmp(lhs.v_cstr,rhs.v_cstr); } break;
+  case AmArg::AObject:{ return lhs.v_obj == rhs.v_obj; } break;
+  case AmArg::Array:  { return lhs.v_array == rhs.v_array;  } break;
+  case AmArg::Struct: { return lhs.v_struct == rhs.v_struct;  } break;
+  case AmArg::Blob:   {  return (lhs.v_blob->len == rhs.v_blob->len) &&  
+	!memcmp(lhs.v_blob->data, rhs.v_blob->data, lhs.v_blob->len); } break;
+  case AmArg::Undef:  return true;
+  default: assert(0);
+  }
+}
+
 bool AmArg::hasMember(const char* name) const {
   return type == Struct && v_struct->find(name) != v_struct->end();
 }
