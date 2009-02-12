@@ -7,7 +7,8 @@ namespace XmlRpc {
 
 
   XmlRpcSource::XmlRpcSource(int fd /*= -1*/, bool deleteOnClose /*= false*/) 
-    : _fd(fd), _deleteOnClose(deleteOnClose), _keepOpen(false)
+    : _ssl(false), _ssl_ctx(NULL), _ssl_ssl(NULL), _ssl_meth(NULL),
+      _fd(fd), _deleteOnClose(deleteOnClose), _keepOpen(false)      
   {
   }
 
