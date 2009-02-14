@@ -134,6 +134,11 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
   
   connectCallee("<" + to + ">", to, from, from, 
 		b2b_connectFactory::TransparentHeaders ? invite_req.hdrs : "");
+
+  MONITORING_LOG(other_id.c_str(), 
+		 "app", MOD_NAME);
+  
+
 }
 
 void b2b_connectDialog::onSessionStart(const AmSipRequest& req)
@@ -230,7 +235,7 @@ void b2b_connectDialog::onCancel()
 
 AmB2ABCalleeSession* b2b_connectDialog::createCalleeSession()
 {
-  b2b_connectCalleeSession* sess = new b2b_connectCalleeSession(getLocalTag(), 						   
+  b2b_connectCalleeSession* sess = new b2b_connectCalleeSession(getLocalTag(),
 								connector, 
 								user, password);
 
