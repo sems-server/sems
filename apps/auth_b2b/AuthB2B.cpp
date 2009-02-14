@@ -179,7 +179,7 @@ bool AuthB2BDialog::onOtherReply(const AmSipReply& reply)
 {
   bool ret = false;
 
-  if (m_state == BB_Dialing) {
+  if ((m_state == BB_Dialing) && (reply.cseq == invite_req.cseq)) {
     if (reply.code < 200) {
       DBG("Callee is trying... code %d\n", reply.code);
     }
@@ -279,6 +279,18 @@ void AuthB2BDialog::createCalleeSession()
   
   DBG("Created B2BUA callee leg, From: %s\n",
       from.c_str());
+
+  if (AmConfig::LogSessions) {
+    INFO("Starting B2B callee session %s app %s\n",
+	 callee_session->getLocalTag().c_str(), invite_req.cmd.c_str());
+  }
+
+  MONITORING_LOG5(other_id.c_str(), 
+		  "app",  invite_req.cmd.c_str(),
+		  "dir",  "out",
+		  "from", callee_dlg.local_party.c_str(),
+		  "to",   callee_dlg.remote_party.c_str(),
+		  "ruri", callee_dlg.remote_uri.c_str());
 
   callee_session->start();
   
