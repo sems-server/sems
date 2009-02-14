@@ -7,9 +7,9 @@ method that can acces DI.
 
 monitoring information is explicitely pushed to monitoring module via 
 DI calls (See ampi/MonitoringAPI.h for useful macros). Info is always 
-accessed via primary key, usually call-id. Info for every call is organized 
-as attribute-value pairs (one or more values), value can be any type 
-representable by AmArg (SEMS' variant type). 
+accessed via primary key, usually the session's local tag. Info for 
+every call is organized as attribute-value pairs (one or more values), 
+value can be any type representable by AmArg (SEMS' variant type). 
 
 A call can be marked as finished. If not done before, this is done by 
 the session container when deleting a session (i.e., as the session 

@@ -500,7 +500,7 @@ void ConferenceDialog::setupAudio()
     
   setCallgroup(conf_id);
   
-  MONITORING_LOG(getCallID().c_str(), "conf_id", conf_id.c_str());
+  MONITORING_LOG(getLocalTag().c_str(), "conf_id", conf_id.c_str());
 	
   if(dialedout || !allow_dialout) {
     DBG("Dialout not enabled or dialout channel. Disabling DTMF detection.\n");

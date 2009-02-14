@@ -88,7 +88,7 @@ bool AmSessionContainer::clean_sessions() {
       
       if(cur_session->is_stopped() && cur_session->detached.get()){
 	
-	MONITORING_MARK_FINISHED(cur_session->getCallID().c_str());
+	MONITORING_MARK_FINISHED(cur_session->getLocalTag().c_str());
 
 	DBG("session %p has been destroyed'\n",(void*)cur_session->_pid);
 	delete cur_session;
@@ -204,7 +204,7 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 	return NULL;
       }
 
-      MONITORING_LOG5(session->getCallID().c_str(), 
+      MONITORING_LOG5(session->getLocalTag().c_str(), 
 		      "app", req.cmd.c_str(),
 		      "dir", "out",
 		      "from", req.from.c_str(),
@@ -219,7 +219,7 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 			session->getCallID(),
 			session->getRemoteTag());	
 	delete session;
-	MONITORING_MARK_FINISHED(session->getCallID().c_str());
+	MONITORING_MARK_FINISHED(session->getLocalTag().c_str());
 	return NULL;
       }
 
@@ -272,7 +272,7 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	  throw string("internal server error");
 	}
 
-	MONITORING_LOG5(req.callid.c_str(), 
+	MONITORING_LOG5(local_tag.c_str(), 
 			"app", req.cmd.c_str(),
 			"dir", "in",
 			"from", req.from.c_str(),
