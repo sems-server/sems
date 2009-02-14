@@ -27,6 +27,7 @@
 #include "AmB2BSession.h"
 #include "AmSessionContainer.h"
 #include "AmConfig.h"
+#include "ampi/MonitoringAPI.h"
 
 #include <assert.h>
 
@@ -198,8 +199,9 @@ void AmB2BSession::onOtherBye(const AmSipRequest& req)
 
 bool AmB2BSession::onOtherReply(const AmSipReply& reply)
 {
-  if(reply.code >= 300)
-    terminateLeg();
+  if(reply.code >= 300) 
+    setStopped();
+  
   return false;
 }
 
@@ -265,42 +267,43 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
     AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
 
     if(other_id != reply.local_tag){
-      DBG("Dialog missmatch!!\n");
+      DBG("Dialog missmatch!\n");
       return;
     }
-
-    DBG("reply received from other leg\n");
-
-    switch(callee_status){
-    case NoReply:
-    case Ringing:
-
-      if(reply.code < 200){
-
-	callee_status = Ringing;
-      }
-      else if(reply.code < 300){
-
-	callee_status  = Connected;
-
-	if (!sip_relay_only) {
-	  sip_relay_only = true;
-	  reinviteCaller(reply);
-	}
-      }
-      else {
-// 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
-// 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
+    if (reply.cseq == invite_req.cseq) {
+      DBG("reply received from other leg\n");
+      
+      switch(callee_status){
+      case NoReply:
+      case Ringing:
 	
-	terminateOtherLeg();
+	if(reply.code < 200){
+	  
+	  callee_status = Ringing;
+	}
+	else if(reply.code < 300){
+	  
+	  callee_status  = Connected;
+	  
+	  if (!sip_relay_only) {
+	    sip_relay_only = true;
+	    reinviteCaller(reply);
+	  }
+	}
+	else {
+	  // 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
+	  // 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
+	  
+	  terminateOtherLeg();
+	}
+	
+	processed = onOtherReply(reply);
+	break;
+	
+      default:
+	DBG("reply from callee: %i %s\n",reply.code,reply.reason.c_str());
+	break;
       }
-		
-      processed = onOtherReply(reply);
-      break;
-
-    default:
-      DBG("reply from callee: %i %s\n",reply.code,reply.reason.c_str());
-      break;
     }
   }
    
@@ -317,8 +320,12 @@ void AmB2BCallerSession::relayEvent(AmEvent* ev)
       B2BSipEvent*     sip_ev = dynamic_cast<B2BSipEvent*>(ev);
       B2BConnectEvent* co_ev  = dynamic_cast<B2BConnectEvent*>(ev);
 	    
-      if( (sip_ev && sip_ev->forward) || co_ev )
+      if( (sip_ev && sip_ev->forward) || co_ev ) {
 	createCalleeSession();
+	if (other_id.length()) {
+	  MONITORING_LOG(getLocalTag().c_str(), "b2b_leg", other_id.c_str());
+	}
+      }
     }
   }
 
@@ -359,13 +366,15 @@ int AmB2BCallerSession::reinviteCaller(const AmSipReply& callee_reply)
   return dlg.sendRequest("INVITE",content_type,callee_reply.body, "", SIP_FLAGS_VERBATIM);
 }
 
-void AmB2BCallerSession::createCalleeSession()
-{
-  AmB2BCalleeSession* callee_session = newCalleeSession();
+void AmB2BCallerSession::createCalleeSession() {
+  AmB2BCalleeSession* callee_session = newCalleeSession();  
+  if (NULL == callee_session) 
+    return;
+
   AmSipDialog& callee_dlg = callee_session->dlg;
 
   other_id = AmSession::getNewId();
-    
+  
   callee_dlg.local_tag    = other_id;
   callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
 
@@ -377,6 +386,13 @@ void AmB2BCallerSession::createCalleeSession()
     INFO("Starting B2B callee session %s app %s\n",
 	 callee_session->getLocalTag().c_str(), invite_req.cmd.c_str());
   }
+
+  MONITORING_LOG5(other_id.c_str(), 
+		  "app",  invite_req.cmd.c_str(),
+		  "dir",  "out",
+		  "from", callee_dlg.local_party.c_str(),
+		  "to",   callee_dlg.remote_party.c_str(),
+		  "ruri", callee_dlg.remote_uri.c_str());
 
   callee_session->start();
 
@@ -405,8 +421,15 @@ AmB2BCalleeSession::~AmB2BCalleeSession() {
 void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 {
   if(ev->event_id == B2BConnectLeg){
-
     B2BConnectEvent* co_ev = dynamic_cast<B2BConnectEvent*>(ev);
+    if (!co_ev)
+      return;
+
+    MONITORING_LOG3(getLocalTag().c_str(), 
+		    "b2b_leg", other_id.c_str(),
+		    "to", co_ev->remote_party.c_str(),
+		    "ruri", co_ev->remote_uri.c_str());
+
 
     dlg.remote_party = co_ev->remote_party;
     dlg.remote_uri   = co_ev->remote_uri;
