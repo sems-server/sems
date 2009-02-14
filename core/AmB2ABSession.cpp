@@ -29,6 +29,7 @@
 #include "AmSessionContainer.h"
 #include "AmConfig.h"
 #include "AmMediaProcessor.h"
+#include "ampi/MonitoringAPI.h"
 
 #include <assert.h>
 
@@ -226,6 +227,9 @@ void AmB2ABCallerSession::relayEvent(AmEvent* ev)
     B2ABConnectLegEvent* co_ev  = dynamic_cast<B2ABConnectLegEvent*>(ev);   
     if( co_ev ) {
       setupCalleeSession(createCalleeSession(), co_ev);
+      if (other_id.length()) {
+	MONITORING_LOG(getLocalTag().c_str(), "b2b_leg", other_id.c_str());
+      }
     }
   }
 
@@ -235,6 +239,10 @@ void AmB2ABCallerSession::relayEvent(AmEvent* ev)
 void AmB2ABCallerSession::setupCalleeSession(AmB2ABCalleeSession* callee_session,
 					     B2ABConnectLegEvent* ev) 
 {
+
+  if (NULL == callee_session)
+    return;
+
   other_id = AmSession::getNewId();
   //  return;
   assert(callee_session);
@@ -242,6 +250,10 @@ void AmB2ABCallerSession::setupCalleeSession(AmB2ABCalleeSession* callee_session
   AmSipDialog& callee_dlg = callee_session->dlg;
   callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
   callee_dlg.local_tag    = other_id; 
+
+
+  MONITORING_LOG(other_id.c_str(), 
+		 "dir",  "out");
 
   callee_session->start();
 
@@ -282,6 +294,12 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
       B2ABConnectLegEvent* co_ev = dynamic_cast<B2ABConnectLegEvent*>(ev);
       assert(co_ev);
 
+      MONITORING_LOG4(getLocalTag().c_str(), 
+		      "b2b_leg", other_id.c_str(),
+		      "from",    co_ev->local_party.c_str(),
+		      "to",      co_ev->remote_party.c_str(),
+		      "ruri",    co_ev->remote_uri.c_str());
+
       dlg.local_party  = co_ev->local_party;
       dlg.local_uri    = co_ev->local_uri;
 			
@@ -298,6 +316,7 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
       if (sendInvite(co_ev->headers)) {
 	throw string("INVITE could not be sent\n");
       }
+
       return;
     } 
     catch(const AmSession::Exception& e){
