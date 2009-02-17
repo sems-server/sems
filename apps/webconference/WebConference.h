@@ -118,6 +118,8 @@ public:
   static int ParticipantExpiredDelay;
   static int RoomExpiredDelay;
   static int RoomSweepInterval;
+  
+  static bool ignore_pin;
 
   WebConferenceFactory(const string& _app_name);
   AmSession* onInvite(const AmSipRequest&);
