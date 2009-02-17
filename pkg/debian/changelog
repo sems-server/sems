@@ -1,3 +1,10 @@
+sems (1.0.1) unstable; urgency=low
+
+  * 1.0.1 release from svn rev 1280 
+  * a lot of bugfixes since 1.0.0 release (see svn commit log for details)
+
+ -- Stefan Sayer <sayer@iptel.org>  Tue, 17 Feb 2009 18:17:44 +0100
+
 sems (1.0.0-0pre1-r856M) unstable; urgency=low
 
   * Debian Release Candidate 1 for 1.0.
