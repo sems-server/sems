@@ -1,0 +1,14 @@
+urlcatcher
+----------
+
+The urlcatcher demonstrates how to open a URL embedded in SDP 
+when a call comes in, like the webconference application does. 
+This way, e.g. a conference control web page can be shown which
+allows to list participants, dial in further users etc.
+
+How to use it: 
+
+o register your SEMS at some registrar with reg_agent
+o direct calls to urlcatcher (application=urlcatcher)
+o call yourself from https://webconference.iptel.org or your
+  own web interface 
