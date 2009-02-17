@@ -69,6 +69,7 @@ string WebConferenceFactory::MasterPassword;
 int WebConferenceFactory::ParticipantExpiredDelay;
 int WebConferenceFactory::RoomExpiredDelay;
 int WebConferenceFactory::RoomSweepInterval;
+bool WebConferenceFactory::ignore_pin = false;
 
 int WebConferenceFactory::onLoad()
 {
@@ -170,6 +171,9 @@ int WebConferenceFactory::onLoad()
     // default: 10s
     ParticipantExpiredDelay = cfg.getParameterInt("participants_expire_delay", 10);
   }
+  ignore_pin = cfg.getParameter("ignore_pin")=="yes";
+  DBG("Ignore PINs  enabled: %s\n", ignore_pin?"yes":"no");
+
 
   if (cfg.getParameter("rooms_expire") == "no") { 
     RoomExpiredDelay = -1;
@@ -220,7 +224,8 @@ ConferenceRoom* WebConferenceFactory::getRoom(const string& room,
     rooms[room].adminpin = adminpin;   
     res = &rooms[room];
   } else {
-    if (!it->second.adminpin.empty() && 
+    if ((!ignore_pin) &&
+	(!it->second.adminpin.empty()) && 
 	(it->second.adminpin != adminpin)) {
       // wrong pin
     } else {
