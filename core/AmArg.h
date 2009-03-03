@@ -119,16 +119,15 @@ class AmArg
     ValueStruct*   v_struct;
   };
 
+  void invalidate();
 
+ public:
   void assertArray();
   void assertArray() const;
 
   void assertStruct();
   void assertStruct() const;
 
-  void invalidate();
-
- public:
  AmArg() 
    : type(Undef) 
   { }
