@@ -433,8 +433,16 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
 	  s = next;
 	  break;
 	}
+
+      case 'u': {
+	  DBG("parse_sdp_line_ex: found uri\n");
+	  s = is_eql_next(s);
+	  next = get_next_line(s);
+	  sdp_msg->uri = string(s, int(next-s)-2);
+	  s = next;
+      } break;
+
       case 'i':
-      case 'u':
       case 'e':
       case 'p':
       case 'b':
