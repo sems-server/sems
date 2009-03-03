@@ -1,1 +1,2 @@
-add_subdirectory (wav)
+ADD_SUBDIRECTORY (wav)
+ADD_SUBDIRECTORY (sipctrl)

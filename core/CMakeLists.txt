@@ -1,5 +1,5 @@
 
-set (sems_SRCS
+SET (sems_SRCS
  AmAdvancedAudio.cpp
  AmApi.cpp
  AmArg.cpp
@@ -49,12 +49,9 @@ set (sems_SRCS
  sems.cpp
 )
 
-include_directories (${SEMS_SOURCE_DIR}/core/ampi)
-include_directories (${SEMS_SOURCE_DIR}/core/amci)
 
-configure_file( config.h.cmake ${SEMS_SOURCE_DIR}/core/config.h )
 
-add_executable (sems ${sems_SRCS})
-target_link_libraries(sems ${CMAKE_DL_LIBS} pthread stdc++ m)
+ADD_EXECUTABLE (sems ${sems_SRCS})
+TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} pthread stdc++ m)
 
-add_subdirectory (plug-in)
+ADD_SUBDIRECTORY(plug-in)
