@@ -172,9 +172,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply)
 
     if(reply.code >= 200)
       relayed_req.erase(t);
-  }
-  else {
-
+  } else {
     AmSession::onSipReply(reply);
     relayEvent(new B2BSipReplyEvent(reply,false));
   }
@@ -227,10 +225,9 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 
 void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 {
-    //string content_type = getHeader(reply.hdrs,"Content-Type");
-    dlg.reply(orig,reply.code,reply.reason,
-	      reply.content_type,
-	      reply.body,reply.hdrs,SIP_FLAGS_VERBATIM);
+  dlg.reply(orig,reply.code,reply.reason,
+	    reply.content_type,
+	    reply.body,reply.hdrs,SIP_FLAGS_VERBATIM);
 }
 
 // 
@@ -267,43 +264,42 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
     AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
 
     if(other_id != reply.local_tag){
-      DBG("Dialog missmatch!\n");
+      DBG("Dialog mismatch!\n");
       return;
     }
-    if (reply.cseq == invite_req.cseq) {
-      DBG("reply received from other leg\n");
+
+    DBG("reply received from other leg\n");
       
-      switch(callee_status){
-      case NoReply:
-      case Ringing:
+    switch(callee_status){
+    case NoReply:
+    case Ringing:
 	
-	if(reply.code < 200){
+      if(reply.code < 200){
 	  
-	  callee_status = Ringing;
-	}
-	else if(reply.code < 300){
-	  
-	  callee_status  = Connected;
-	  
-	  if (!sip_relay_only) {
-	    sip_relay_only = true;
-	    reinviteCaller(reply);
-	  }
-	}
-	else {
-	  // 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
-	  // 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
-	  
-	  terminateOtherLeg();
-	}
-	
-	processed = onOtherReply(reply);
-	break;
-	
-      default:
-	DBG("reply from callee: %i %s\n",reply.code,reply.reason.c_str());
-	break;
+	callee_status = Ringing;
       }
+      else if(reply.code < 300){
+	  
+	callee_status  = Connected;
+	  
+	if (!sip_relay_only) {
+	  sip_relay_only = true;
+	  reinviteCaller(reply);
+	}
+      }
+      else {
+	// 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
+	// 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
+	  
+	terminateOtherLeg();
+      }
+	
+      processed = onOtherReply(reply);
+      break;
+	
+    default:
+      DBG("reply from callee: %i %s\n",reply.code,reply.reason.c_str());
+      break;
     }
   }
    
