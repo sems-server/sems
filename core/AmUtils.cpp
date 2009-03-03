@@ -981,7 +981,7 @@ void add_env_path(const char* name, const string& path)
 #ifndef BSD_COMP
   setenv(name,var.c_str(),1);
 #else
-  string sol_putenv = name + "=" + var;
+  string sol_putenv = name + string("=") + var;
   putenv(sol_putenv.c_str());
 #endif
 }
