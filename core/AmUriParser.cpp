@@ -46,7 +46,7 @@ bool AmUriParser::isEqual(const AmUriParser& c) const {
 /*
  * Skip display name part
  */
-static inline int skip_name(string& s, unsigned int pos)
+static inline int skip_name(const string& s, unsigned int pos)
 {
   size_t i;
   int last_wsp, quoted = 0;
@@ -89,7 +89,7 @@ static inline int skip_name(string& s, unsigned int pos)
  * Skip URI, stops when , (next contact)
  * or ; (parameter) is found
  */
-static inline int skip_uri(string& s, unsigned int pos)
+static inline int skip_uri(const string& s, unsigned int pos)
 {
   unsigned int len = s.length() - pos;
   unsigned int p = pos;
@@ -310,7 +310,7 @@ bool AmUriParser::parse_uri() {
  * parse params int param map
  *
  */
-bool AmUriParser::parse_params(string& line, int& pos) {
+bool AmUriParser::parse_params(const string& line, int& pos) {
   size_t p1=pos, p2=pos;
   int st = 0; int quoted = false;
   char last_c = ' ';
@@ -357,7 +357,7 @@ bool AmUriParser::parse_params(string& line, int& pos) {
 }
 
 
-bool AmUriParser::parse_contact(string& line, size_t pos, size_t& end) {
+bool AmUriParser::parse_contact(const string& line, size_t pos, size_t& end) {
   int p0 = skip_name(line, pos);
   if (p0 < 0) { return false; }
   int p1 = skip_uri(line, p0);
