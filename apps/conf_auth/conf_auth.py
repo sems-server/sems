@@ -37,7 +37,6 @@ class IvrDialog(IvrDialogBase):
 	conf_to = ''
 	conf_uri = ''
 	conf_duration = 0
-	conf_participants = 0
 		
 	def sessionInfo(self):
 		print "IVR Session info:"
@@ -88,7 +87,6 @@ class IvrDialog(IvrDialogBase):
 					self.conf_to = erg[1]
 					self.conf_uri = erg[2]
 					self.conf_duration = erg[3]
-					self.conf_participants = erg[4]
 					self.state = connect
 					self.removeTimer(HINT_TIMER)
 				else:
