@@ -26,6 +26,9 @@ from account import *
 # URI for XMLRPC webconference control, set to your server
 CONTROL_URI="https://webconference.iptel.org/control"
 
+# refresh in ms
+REFRESH_INTERVAL=1000
+
 HAS_ACCOUNT=False
 try:
 	from accountconfig import *
@@ -121,7 +124,7 @@ class StartQT4(QtGui.QMainWindow):
 
 		self.timer = QtCore.QTimer(self)
 		self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.timer_hit)
-		self.timer.start(500)
+		self.timer.start(REFRESH_INTERVAL)
 		
 	def timer_hit(self):
 		res = self.s.roomInfo(self.roomname, self.adminpin)
