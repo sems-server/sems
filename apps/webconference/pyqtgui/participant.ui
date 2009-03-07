@@ -1,0 +1,64 @@
+<ui version="4.0" >
+ <class>participant</class>
+ <widget class="QDockWidget" name="participant" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>115</width>
+    <height>141</height>
+   </rect>
+  </property>
+  <property name="floating" >
+   <bool>true</bool>
+  </property>
+  <property name="features" >
+   <set>QDockWidget::AllDockWidgetFeatures</set>
+  </property>
+  <property name="allowedAreas" >
+   <set>Qt::AllDockWidgetAreas</set>
+  </property>
+  <property name="windowTitle" >
+   <string>mapf</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents" >
+   <layout class="QGridLayout" name="gridLayout" >
+    <item row="0" column="0" >
+     <widget class="QFrame" name="frame" >
+      <property name="frameShape" >
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow" >
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2" >
+       <item row="0" column="0" >
+        <widget class="QLabel" name="l_status" >
+         <property name="text" >
+          <string>status</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" >
+        <widget class="QPushButton" name="bt_ciao" >
+         <property name="text" >
+          <string>ciao</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" >
+        <widget class="QCheckBox" name="cb_muted" >
+         <property name="text" >
+          <string>muted</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

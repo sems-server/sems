@@ -1,0 +1,7 @@
+# set this to the SIP account you want to use to make calls
+DOMAIN="iptel.org"
+USER="someuser"
+PASSWORD="somepassword"
+
+# usually the same as USER
+AUTH_USER=USER

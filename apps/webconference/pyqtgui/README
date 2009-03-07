@@ -1,0 +1,19 @@
+webconference PyQT GUI
+
+(c) 2009 Stefan Sayer License: GPLv3 (see LICENSE)
+
+This example demonstrates how simple it is to write a UI for webconference.
+It was intended as webconf UI for Nokia Internet Tablets, but it turns out
+that XMLRPC over https every second is too much for that device (=drains a
+lot of power).
+
+Requires: PyQT4, QT4
+
+To set an account permanently (and not be asked all the time) do 
+ mv accountconfig.py.sample accountconfig.py 
+and edit the account in it.
+
+To use your own conference bridge, edit CONTROL_URL in webconference.py.
+
+All improvements are welcome, preferably as patch to semsdev list 
+(mailto:semsdev@iptel.org).
