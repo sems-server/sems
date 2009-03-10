@@ -391,6 +391,10 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
   // safety
   if (packet_len > MAX_PACKET_SAMPLES)
     return s;
+  
+  // not possible to stretch packets shorter than 10ms 
+  if (packet_len < TEMPLATE_SEG)
+      return s;
 
   if (fabs(factor - 1.0) <= SCALE_FACTOR_START) {
 #ifdef DEBUG_PLAYOUTBUF
@@ -462,6 +466,10 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
 
     // put merged segment into buffer
     buffer_put( cur_ts, merge_buf, TEMPLATE_SEG);
+    if (p_buf_end - srch - TEMPLATE_SEG < 0) {
+      ERROR("audio after merged segment spills over\n");
+      break;
+    }
     // add after merged segment audio from after srch 
     buffer_put( cur_ts + TEMPLATE_SEG, srch + TEMPLATE_SEG, 
 		p_buf_end - srch - TEMPLATE_SEG );
