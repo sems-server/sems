@@ -116,13 +116,12 @@ void Monitor::invoke(const string& method,
 
 void Monitor::log(const AmArg& args, AmArg& ret) {
   assertArgCStr(args[0]);
-  assertArgCStr(args[1]);
   
   LogBucket& bucket = getLogBucket(args[0].asCStr());
   bucket.log_lock.lock();
   try {
     for (size_t i=1;i<args.size();i+=2)
-    bucket.log[args[0].asCStr()].info[args[i].asCStr()]=AmArg(args[i+1]);
+      bucket.log[args[0].asCStr()].info[args[i].asCStr()]=AmArg(args[i+1]);
   } catch (...) {
     bucket.log_lock.unlock();
     ret.push(-1);
