@@ -53,6 +53,9 @@ using std::map;
 #define SET_ERRNO(new_errno) \
     var["errno"] = new_errno
 
+class DSMDisposable;
+class AmPlaylistItem;
+
 class DSMSession {
 
  public:
@@ -63,10 +66,15 @@ class DSMSession {
   virtual void playFile(const string& name, bool loop) = 0;
   virtual void recordFile(const string& name) = 0;
   virtual void stopRecord() = 0;
+  virtual void addToPlaylist(AmPlaylistItem* item) = 0;
   virtual void closePlaylist(bool notify) = 0;
   virtual void setPromptSet(const string& name) = 0;
   virtual void addSeparator(const string& name) = 0;
   virtual void connectMedia() = 0;
+
+  /** transfer ownership of object to this session instance */
+  virtual void transferOwnership(DSMDisposable* d) = 0;
+
   /* holds variables which are accessed by $varname */
   map<string, string> var;
 
@@ -78,6 +86,12 @@ class DSMSession {
 };
 
 
+
+class DSMDisposable {
+ public:
+  DSMDisposable() { }
+  virtual ~DSMDisposable() { }
+};
 
 #define DSM_EVENT_ID -10
 /**  generic event for passing events between DSM sessions */

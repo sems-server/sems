@@ -43,6 +43,10 @@ DSMDialog::DSMDialog(AmPromptCollection* prompts,
 
 DSMDialog::~DSMDialog()
 {
+  for (std::set<DSMDisposable*>::iterator it=
+	 gc_trash.begin(); it != gc_trash.end(); it++)
+    delete *it;
+
   for (vector<AmAudio*>::iterator it=
 	 audiofiles.begin();it!=audiofiles.end();it++) 
     delete *it;
@@ -196,6 +200,11 @@ void DSMDialog::closePlaylist(bool notify) {
   playlist.close(notify);  
 }
 
+void DSMDialog::addToPlaylist(AmPlaylistItem* item) {
+  DBG("add item to playlist\n");
+  playlist.addToPlaylist(item);
+}
+
 void DSMDialog::playFile(const string& name, bool loop) {
   AmAudioFile* af = new AmAudioFile();
   if(af->open(name,AmAudioFile::Read)) {
@@ -289,4 +298,8 @@ void DSMDialog::addSeparator(const string& name) {
   // for garbage collector
   audiofiles.push_back(sep);
   SET_ERRNO(DSM_ERRNO_OK);
+}
+
+void DSMDialog::transferOwnership(DSMDisposable* d) {
+  gc_trash.insert(d);
 }

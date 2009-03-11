@@ -55,6 +55,9 @@ class DSMDialog : public AmSession,
   map<string, AmPromptCollection*> prompt_sets;
   std::set<AmPromptCollection*> used_prompt_sets;
 
+  // owned by this instance
+  std::set<DSMDisposable*> gc_trash;
+  
   bool checkVar(const string& var_name, const string& var_val);
 public:
   DSMDialog(AmPromptCollection* prompts,
@@ -81,6 +84,7 @@ public:
   void playPrompt(const string& name, bool loop = false);
 
   void closePlaylist(bool notify);
+  void addToPlaylist(AmPlaylistItem* item);
   void playFile(const string& name, bool loop);
   void recordFile(const string& name);
   void stopRecord();
@@ -88,6 +92,8 @@ public:
   void setPromptSet(const string& name);
   void addSeparator(const string& name);
   void connectMedia();
+
+  void transferOwnership(DSMDisposable* d);
 };
 
 #endif
