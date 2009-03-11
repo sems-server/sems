@@ -1,0 +1,15 @@
+import(mod_conference)
+
+initial state lobby 
+  enter { playFile(wav/default_en.wav) };
+
+state room;
+
+transition "lobby to room" lobby - noAudioTest /  {
+   conference.setPlayoutType(adaptive)
+   conference.join(myroom) 
+ } -> room;
+
+transition "bye recvd" (lobby, room) - hangup / stop(false) -> end;
+
+state end;
