@@ -46,7 +46,9 @@ class DSMDialog;
 class DSMModule;
 /** \brief Factory for announcement sessions */
 class DSMFactory
-  : public AmSessionFactory
+  : public AmSessionFactory,
+    public AmDynInvoke,
+    public AmDynInvokeFactory
 {
   AmPromptCollection prompts;
   DSMStateDiagramCollection diags;
@@ -73,6 +75,13 @@ public:
   AmSession* onInvite(const AmSipRequest& req);
   AmSession* onInvite(const AmSipRequest& req,
 		      AmArg& session_params);
+  // DI
+  // DI factory
+  AmDynInvoke* getInstance() { return instance(); }
+  // DI API
+  void invoke(const string& method, 
+	      const AmArg& args, AmArg& ret);
+
 };
 
 #endif

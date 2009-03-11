@@ -30,17 +30,18 @@
 #include "AmPlugIn.h"
 #include "log.h"
 #include "AmConfigReader.h"
+#include "AmSessionContainer.h"
+
 #include "DSMDialog.h"
 #include "DSMChartReader.h"
 
 #include <string>
 #include <fstream>
 
-
 #define MOD_NAME "dsm"
 
-// session creator export 
-extern "C" void* session_factory_create() {
+extern "C" void* plugin_class_create()
+{
   return DSMFactory::instance();
 }
 
@@ -59,7 +60,7 @@ map<string, string> DSMFactory::config;
 bool DSMFactory::RunInviteEvent;
 
 DSMFactory::DSMFactory(const string& _app_name)
-  : AmSessionFactory(_app_name),
+  : AmSessionFactory(_app_name),AmDynInvokeFactory(_app_name),
     loaded(false)
 {
 }
@@ -291,3 +292,27 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
   return s;
 }
 
+
+void DSMFactory::invoke(const string& method, const AmArg& args, 
+				AmArg& ret)
+{
+  if(method == "postDSMEvent"){
+    assertArgCStr(args.get(0))
+
+    DSMEvent* ev = new DSMEvent();
+    for (size_t i=0;i<args[1].size();i++)
+      ev->params[args[1][i][0].asCStr()] = args[1][i][1].asCStr();
+
+    if (AmSessionContainer::instance()->postEvent(args.get(0).asCStr(), ev)) {
+      ret.push(AmArg(200));
+      ret.push(AmArg("OK"));
+    } else {
+      ret.push(AmArg(404));
+      ret.push(AmArg("Session not found"));
+    }
+      
+  } else if(method == "_list"){ 
+    ret.push(AmArg("postDSMEvent"));
+  }  else
+    throw AmDynInvoke::NotImplemented(method);
+}
