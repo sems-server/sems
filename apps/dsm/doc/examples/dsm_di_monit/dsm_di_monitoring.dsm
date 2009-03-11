@@ -1,0 +1,34 @@
+import(mod_conference)
+import(mod_monitoring)
+
+initial state lobby 
+  enter { 
+	playFile(wav/welcome.wav) 
+	monitoring.log(username, @user)
+	monitoring.log(position, lobby)
+  };
+
+state room;
+
+transition "lobby to room" lobby - eventTest(#action==take) /  {   
+   closePlaylist()
+   conference.setPlayoutType(adaptive)
+   playFile(wav/taken.wav) 
+   conference.join(#roomname)
+   connectMedia()
+   monitoring.log(position, #roomname)
+} -> room;
+
+transition "room change" room - eventTest(#action==take) /  {   
+   closePlaylist()
+   playFile(wav/change.wav) 
+   conference.join(#roomname)
+   connectMedia()
+   monitoring.log(position, #roomname)
+} -> room;
+
+transition "kickout event" room - eventTest(#action==kick) / stop(true) -> end;
+
+transition "bye recvd" (lobby, room) - hangup / stop(false) -> end;
+
+state end;
