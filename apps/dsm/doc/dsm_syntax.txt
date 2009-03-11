@@ -33,16 +33,25 @@ actions:
  callFSM(name)
  returnFSM()
 
+  stop(<send bye>)
+   e.g. stop(false), stop(true)
+
  playPrompt(param)
    from promptCollection, e.g. playPrompt("hello");
    if $prompts.default_fallback=yes, default prompt set is tried if
    prompt not found in current prompt set
+ playPromptLooped(param)
  playFile(filename)
  recordFile(filename)
  stopRecord()
  closePlaylist()
+ addSeparator(id)
+   fires event when playlist hits it 
+ connectMedia() 
+   set playlist as input and output of session
 
- setPromptSet(name) 
+
+ setPrompts(name) 
    if more prompt sets are loaded
 
  set($var=value)
@@ -63,9 +72,10 @@ actions:
   DIgetResult(factory, function, param,...)
     saves result from DI call to DI_res or DI_res0, DI_res1, ...
 
-  stop(<send bye>)
-   e.g. stop(false), stop(true)
-
+  postEvent(session_id, variable_name)
+     posts event with variable as DSM event parameter
+  postEvent(session_id, var) 
+     posts event with complete current variable set as DSM event parameter
 ============================= 
 conditions:
  
@@ -86,11 +96,17 @@ conditions:
  keyTest(expr) 
  timerTest(expr)
  noAudioTest(expr)
+ separatorTest(expr)
+ eventTest(expr)
 
  keyPress(no) 
   -- bye received: 
  hangup  
-   
+
+  -- execution is invite (with run_invite_event):
+ invite 
+  -- execution is start of session (with run_invite_event, otherwise its always true):
+ sessionStart
 
 =============================
 @selects :
