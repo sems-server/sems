@@ -3,9 +3,13 @@
 
 #include "AmSession.h"
 #include "AmPlaylist.h"
+#include "AmAudioFile.h"
 
 #include <string>
 using std::string;
+
+#include <vector>
+using std::vector;
 
 class MyJukeboxFactory: public AmSessionFactory
 {
@@ -21,6 +25,8 @@ public:
 class MyJukeboxDialog : public AmSession
 {
     AmPlaylist playlist;
+
+    vector<AmAudioFile*> used_audio_files;
 
  public:
     MyJukeboxDialog();

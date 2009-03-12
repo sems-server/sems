@@ -45,6 +45,10 @@ MyJukeboxDialog::~MyJukeboxDialog()
 {
   // clean playlist items
   playlist.close(false);
+  // clean used AmAudioFile objects
+  for (vector<AmAudioFile*>::iterator it=
+	 used_audio_files.begin(); it != used_audio_files.end();it++)
+    delete *it;
 }
 
 void MyJukeboxDialog::onSessionStart(const AmSipRequest& req)
@@ -67,6 +71,8 @@ void MyJukeboxDialog::onDtmf(int event, int duration) {
   }
   AmPlaylistItem*  item = new AmPlaylistItem(wav_file, NULL);
   playlist.addToPlaylist(item);
+  // for garbage collection later
+  used_audio_files.push_back(wav_file);
 }
 
 void MyJukeboxDialog::process(AmEvent* ev)
