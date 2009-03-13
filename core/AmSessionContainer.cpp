@@ -218,8 +218,8 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 	  delEventQueue(session->getLocalTag(),
 			session->getCallID(),
 			session->getRemoteTag());	
-	delete session;
 	MONITORING_MARK_FINISHED(session->getLocalTag().c_str());
+	delete session;
 	return NULL;
       }
 
