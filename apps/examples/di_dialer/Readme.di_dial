@@ -13,7 +13,8 @@ DI Interface:
 		1 - string user
 		2 - string from
 		3 - string to
-
+                4 - optional: variable arguments, e.g. dict:
+                     {'somevar':'someval'}
 	method: "dial_auth"
           place a call with uac authentication (see below) 
 	params:
@@ -24,6 +25,8 @@ DI Interface:
 		4 - string auth_realm
 		5 - string auth_user
 		6 - string auth_pwd
+                7 - optional: variable arguments, e.g. dict:
+                     {'somevar':'someval'}
 
 	method: "dial_pin"
           place a call with uac authentication, 
@@ -49,6 +52,10 @@ while true; do \
   dial announcement 123 sip:ann@10.0.0.45 sip:123@83.246.121.43; \
  sleep 1; \
 done
+
+For dialing DSM scripts, variables can be given to the script: 
+ s.dial('test_di_dial_params', '123', 'sip:35@192.168.5.106', 'sip:5@192.168.5.106', {'somevar':'someval'}) 
+s.dial_auth('test_di_dial_params', '123', 'sip:35@192.168.5.106', 'sip:5@192.168.5.106', 'realm','user','pwd',{'somevar':'someval'})     
 
 
 Outgoing calls with SIP authentication

@@ -23,7 +23,8 @@ class DIDial : public AmDynInvoke
   string dialout(const string& application, 
 		 const string& user,
 		 const string& from, 
-		 const string& to);
+		 const string& to,
+		 AmArg* extra_params);
 
   string dialout_auth(const string& application, 
 		      const string& user,
@@ -31,7 +32,8 @@ class DIDial : public AmDynInvoke
 		      const string& to,
 		      const string& realm, 
 		      const string& a_user,
-		      const string& pwd);
+		      const string& pwd,
+		      AmArg* extra_params);
 
   string dialout_auth_b2b(const string& application, 
 		       const string& announcement, 
