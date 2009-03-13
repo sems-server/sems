@@ -366,7 +366,7 @@ string AmArg::print(const AmArg &a) {
     case Double:
       return int2str((int)a.asDouble()); //TODO: FIXME
     case CStr:
-      return '"' + string(a.asCStr()) + '"';
+      return "'" + string(a.asCStr()) + "'";
     case Array:
       s = "[";
       for (size_t i = 0; i < a.size(); i ++)
@@ -379,7 +379,7 @@ string AmArg::print(const AmArg &a) {
       s = "{";
       for (AmArg::ValueStruct::const_iterator it = a.asStruct()->begin();
           it != a.asStruct()->end(); it ++) {
-        s += it->first + ":";
+        s += "'"+it->first + "': ";
         s += print(it->second);
         s += ", ";
       }
