@@ -101,8 +101,8 @@ class XMLRPC2DIServer : public AmThread {
   void run();
   void on_stop();
   
-  static void xmlrpcval2amarg(XmlRpcValue& v, AmArg& a, 
-			      unsigned int start_index = 0);
+  static void xmlrpcval2amargarray(XmlRpcValue& v, AmArg& a, unsigned int start_index);
+  static void xmlrpcval2amarg(XmlRpcValue& v, AmArg& a);
 
   /** convert all args in a into result*/
   static void amarg2xmlrpcval(const AmArg& a, XmlRpcValue& result);
@@ -158,7 +158,9 @@ class XMLRPC2DI
 
   static unsigned int ServerRetryAfter;
   static double ServerTimeout;
-
+  
+  static bool DebugServerParams;
+  static bool DebugServerResult;
 };
 
 #endif

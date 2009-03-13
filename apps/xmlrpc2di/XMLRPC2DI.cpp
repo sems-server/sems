@@ -44,6 +44,9 @@ XMLRPC2DI* XMLRPC2DI::_instance=0;
 // retry a failed server after 10 seconds
 unsigned int XMLRPC2DI::ServerRetryAfter = 10; 
 
+bool XMLRPC2DI::DebugServerParams = false;
+bool XMLRPC2DI::DebugServerResult = false;
+
 double XMLRPC2DI::ServerTimeout = -1;
 
 XMLRPC2DI* XMLRPC2DI::instance()
@@ -74,6 +77,9 @@ int XMLRPC2DI::load() {
     return -1;
 
   string multithreaded = cfg.getParameter("multithreaded", "yes");
+
+  DebugServerResult = cfg.getParameter("debug_server_result", "no") == "yes";
+  DebugServerParams = cfg.getParameter("debug_server_params", "no") == "yes";
 
   XmlRpcServer* s;
   bool multi_threaded = false;
@@ -277,8 +283,7 @@ void XMLRPC2DI::sendRequestList(const AmArg& args, AmArg& ret) {
 	  method.c_str(), srv->server.c_str(), srv->port);
       ret.push(0);
       ret.push("OK");
-//       ret.assertArray(3);
-      XMLRPC2DIServer::xmlrpcval2amarg(x_result, ret, 0);
+      XMLRPC2DIServer::xmlrpcval2amarg(x_result, ret);
       return;      
     } else {
       DBG("executing method %s failed on server %s:%d\n",
@@ -447,8 +452,12 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
 
     // get args
     AmArg args;
-    XMLRPC2DIServer::xmlrpcval2amarg(params, args, 2);
+    XMLRPC2DIServer::xmlrpcval2amargarray(params, args, 2);
   
+    if (XMLRPC2DI::DebugServerParams) {
+      DBG(" params: <%s>\n", AmArg::print(args).c_str()); 
+    }
+
     AmDynInvokeFactory* di_f = AmPlugIn::instance()->getFactory4Di(fact_name);
     if(!di_f){
       throw XmlRpcException("could not get factory", 500);
@@ -459,6 +468,11 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
     }
     AmArg ret;
     di->invoke(fct_name, args, ret);
+
+
+    if (XMLRPC2DI::DebugServerResult) {
+      DBG(" result: <%s>\n", AmArg::print(ret).c_str()); 
+    }
   
     XMLRPC2DIServer::amarg2xmlrpcval(ret, result);
 
@@ -479,37 +493,50 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
   }
 }
 
-void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a, 
-				      unsigned int start_index) {
-  if (v.valid()) {
-    for (int i=start_index; i<v.size();i++) {
-      switch (v[i].getType()) {
-      case XmlRpcValue::TypeInt:   { /* DBG("X->A INT\n");*/ a.push(AmArg((int)v[i]));    }  break;
-      case XmlRpcValue::TypeDouble:{ /* DBG("X->A DBL\n");*/ a.push(AmArg((double)v[i])); }  break;
-      case XmlRpcValue::TypeString:{ /* DBG("X->A STR\n");*/ a.push(AmArg(((string)v[i]).c_str())); }  break;
-      case XmlRpcValue::TypeArray: { 
-	// DBG("X->A ARR\n"); 
-	a.push(AmArg());
-	a[a.size()-1].assertArray(0);
-	AmArg arr; 
-	xmlrpcval2amarg(v[i], a[a.size()-1], 0);
-      } break;
-#ifdef XMLRPCPP_SUPPORT_STRUCT_ACCESS
-      case XmlRpcValue::TypeStruct: {
-       for (XmlRpc::XmlRpcValue::ValueStruct::iterator it=
-                ((XmlRpcValue::ValueStruct)v).begin();
-            it != ((XmlRpcValue::ValueStruct)v).end(); it++) {
-           a[it->first] = AmArg();
-           xmlrpcval2amarg(it->second, a[it->first], 0);
-         }
-      } break;
-#endif
 
-	// TODO: support more types (datetime, struct, ...)
-      default:     throw XmlRpcException("unsupported parameter type", 400);
-      };
+void XMLRPC2DIServer::xmlrpcval2amargarray(XmlRpcValue& v, AmArg& a, 
+					   unsigned int start_index) {
+  if (v.valid()) {
+    a.assertArray();
+    size_t a_array_pos = a.size();
+
+    for (int i=start_index; i<v.size();i++) {
+      xmlrpcval2amarg(v[i], a[a_array_pos]);
+      a_array_pos++;
     }
-  } 
+  }
+}
+void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a) {
+  if (v.valid()) {
+    switch (v.getType()) {
+    case XmlRpcValue::TypeInt:   {  /* DBG("X->A INT\n"); */ a = (int)v;    }  break;
+    case XmlRpcValue::TypeDouble:{  /* DBG("X->A DBL\n"); */ a = (double)v; }  break;
+    case XmlRpcValue::TypeString:{  /* DBG("X->A STR\n"); */ a = ((string)v).c_str(); }  break;
+    case XmlRpcValue::TypeArray: { 
+      /* DBG("X->A ARR\n"); */ 
+      a.assertArray();
+      xmlrpcval2amargarray(v, a, 0);
+    } break;
+#ifdef XMLRPCPP_SUPPORT_STRUCT_ACCESS
+    case XmlRpcValue::TypeStruct: {
+      /* DBG("X->A STR\n"); */ 
+      a.assertStruct();
+      const XmlRpc::XmlRpcValue::ValueStruct& xvs = 
+	(XmlRpc::XmlRpcValue::ValueStruct)v;
+      for (XmlRpc::XmlRpcValue::ValueStruct::const_iterator it=
+	     xvs.begin(); it != xvs.end(); it++) {	
+	// not nice but cast operators in XmlRpcValue are not const
+	XmlRpcValue& var = const_cast<XmlRpcValue&>(it->second);
+	a[it->first] = AmArg();
+	xmlrpcval2amarg(var, a[it->first]);
+      }      
+    } break;
+#endif
+      
+      // TODO: support more types (datetime, struct, ...)
+    default:     throw XmlRpcException("unsupported parameter type", 400);
+    };
+  }
 }
 
 void XMLRPC2DIServer::amarg2xmlrpcval(const AmArg& a, 
@@ -573,13 +600,22 @@ void DIMethodProxy::execute(XmlRpcValue& params,
     }
     
     AmArg args, ret;
-    XMLRPC2DIServer::xmlrpcval2amarg(params, args);
+
     
     DBG("XMLRPC2DI '%s': function '%s'\n", 
 	server_method_name.c_str(),
 	di_method_name.c_str());
 
+    XMLRPC2DIServer::xmlrpcval2amarg(params, args);
+    if (XMLRPC2DI::DebugServerParams) {
+      DBG(" params: <%s>\n", AmArg::print(args).c_str()); 
+    }
+
     di->invoke(di_method_name, args, ret);
+
+    if (XMLRPC2DI::DebugServerResult) {
+      DBG(" result: <%s>\n", AmArg::print(ret).c_str()); 
+    }
     
     XMLRPC2DIServer::amarg2xmlrpcval(ret, result);
 
