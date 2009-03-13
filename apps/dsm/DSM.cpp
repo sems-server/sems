@@ -226,9 +226,13 @@ int DSMFactory::onLoad()
 
 void DSMFactory::prepareSession(DSMDialog* s) {
   s->setPromptSets(prompt_sets);
+}
+
+void DSMFactory::addVariables(DSMDialog* s, const string& prefix,
+			      map<string, string>& vars) {
   for (map<string, string>::iterator it = 
-	 config.begin(); it != config.end(); it++)
-    s->var["config."+it->first] = it->second;
+	 vars.begin(); it != vars.end(); it++)
+    s->var[prefix+it->first] = it->second;
 }
 
 AmSession* DSMFactory::onInvite(const AmSipRequest& req)
@@ -264,14 +268,42 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
   }
 
   UACAuthCred* cred = NULL;
+  map<string, string> vars;
+  // Creds
   if (session_params.getType() == AmArg::AObject) {
     ArgObject* cred_obj = session_params.asObject();
     if (cred_obj)
       cred = dynamic_cast<UACAuthCred*>(cred_obj);
+  } else if (session_params.getType() == AmArg::Array) {
+    DBG("session params is array - size %d\n", session_params.size());
+    // Creds
+    if (session_params.get(0).getType() == AmArg::AObject) {
+      ArgObject* cred_obj = session_params.get(0).asObject();
+      if (cred_obj)
+	cred = dynamic_cast<UACAuthCred*>(cred_obj);
+    }
+    // Creds + vars
+    if (session_params.size()>1 && 
+	session_params.get(1).getType() == AmArg::Struct) {
+      for (AmArg::ValueStruct::const_iterator it=session_params.get(1).begin(); 
+	   it != session_params.get(1).end(); it++) {
+	vars[it->first] = it->second.asCStr();
+      }
+    }
+  } else if (session_params.getType() == AmArg::Struct) {
+    // vars
+    for (AmArg::ValueStruct::const_iterator it=session_params.begin(); 
+	 it != session_params.end(); it++) {
+      vars[it->first] = it->second.asCStr();
+    }
   }
 
   DSMDialog* s = new DSMDialog(&prompts, diags, start_diag, cred); 
-  prepareSession(s);
+  prepareSession(s);  
+
+  addVariables(s, "config.", config);
+  if (!vars.empty())
+    addVariables(s, "", vars);
 
   if (NULL == cred) {
     WARN("discarding unknown session parameters.\n");

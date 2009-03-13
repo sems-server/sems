@@ -63,6 +63,9 @@ class DSMFactory
 
   map<string, AmPromptCollection*> prompt_sets; 
   void prepareSession(DSMDialog* s);
+  void addVariables(DSMDialog* s, const string& prefix,
+		    map<string, string>& vars);
+
 
   vector<DSMModule*> preloaded_mods;
 public:
