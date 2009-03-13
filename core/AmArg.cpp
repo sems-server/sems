@@ -27,6 +27,7 @@
 
 #include "AmArg.h"
 #include "log.h"
+#include "AmUtils.h"
 
 const char* t2str(int type) {
   switch (type) {
@@ -353,4 +354,40 @@ vector<ArgBlob> AmArg::asArgBlobVector() const {
 
 void AmArg::clear() {
   invalidate();
+}
+
+string AmArg::print(const AmArg &a) {
+  string s;
+  switch (a.getType()) {
+    case Undef:
+      return "<UNDEFINED>";
+    case Int:
+      return int2str(a.asInt());
+    case Double:
+      return int2str((int)a.asDouble()); //TODO: FIXME
+    case CStr:
+      return '"' + string(a.asCStr()) + '"';
+    case Array:
+      s = "[";
+      for (size_t i = 0; i < a.size(); i ++)
+        s += print(a[i]) + ", ";
+      if (1 < s.size())
+        s.resize(s.size() - 2); // strip last ", "
+      s += "]";
+      return s;
+    case Struct:
+      s = "{";
+      for (AmArg::ValueStruct::const_iterator it = a.asStruct()->begin();
+          it != a.asStruct()->end(); it ++) {
+        s += it->first + ":";
+        s += print(it->second);
+        s += ", ";
+      }
+      if (1 < s.size())
+        s.resize(s.size() - 2); // strip last ", "
+      s += "}";
+      return s;
+    default: break;
+  }
+  return "<UNKONWN TYPE>";
 }

@@ -280,6 +280,8 @@ class AmArg
 
   void clear();
   friend bool operator==(const AmArg& lhs, const AmArg& rhs);
+
+  static string print(const AmArg &a);
 };
 
 // equality
