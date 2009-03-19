@@ -2,15 +2,8 @@
 *  Sems + OpenSER mini-HOWTO  *
 *******************************
 
-Sems 1.0 includes plugin sipctrl.so, which turns Sems into a regular,
+SEMS 1.0 includes plugin sipctrl.so, which turns SEMS into a regular,
 RFC3261 compliant SIP user agent.  No special interaction is thus
-anymore needed between Sems and OpenSER.  Just follow the general Sems
+anymore needed between SEMS and OpenSER.  Just follow the general SEMS
 instructions on how to configure the user agent and how to select an
-application that Sems executes upon receiving initial INVITE.
-
-In version 1.0 of Sems, it is still possible to use the old Unix socket
-interface between Sems and OpenSER by loading plugin unixsockctrl.so
-instead of plugin sipctrl.so.  If you decide to do that, then follow the
-instructions in Configure-Sems-OpenSER-HOWTO of version 0.10.0 of Sems.
-Note, however, that this old interface is not anymore supported and will
-be completely removed in the next version of Sems.
+application that SEMS executes upon receiving initial INVITE.
