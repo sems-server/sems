@@ -65,6 +65,9 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("closePlaylist", SCClosePlaylistAction);
   DEF_CMD("addSeparator", SCAddSeparatorAction);
   DEF_CMD("connectMedia", SCConnectMediaAction);
+  DEF_CMD("disconnectMedia", SCDisconnectMediaAction);
+  DEF_CMD("mute", SCMuteAction);
+  DEF_CMD("unmute", SCUnmuteAction);
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("append", SCAppendAction);
@@ -88,6 +91,9 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
     a->name = from_str;
     return a;
   }  
+
+  DEF_CMD("B2B.connectCallee", SCB2BConnectCalleeAction);
+  DEF_CMD("B2B.terminateOtherLeg", SCB2BTerminateOtherLegAction);
 
   ERROR("could not find action named '%s'\n", cmd.c_str());
   return NULL;
@@ -132,6 +138,12 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
 
   if (cmd == "sessionStart") 
     return new TestDSMCondition(params, DSMCondition::SessionStart);  
+
+  if (cmd == "B2B.otherReply") 
+    return new TestDSMCondition(params, DSMCondition::B2BOtherReply);  
+
+  if (cmd == "B2B.otherBye") 
+    return new TestDSMCondition(params, DSMCondition::B2BOtherBye);  
 
   ERROR("could not find condition for '%s'\n", cmd.c_str());
   return NULL;
@@ -196,6 +208,18 @@ EXEC_ACTION_START(SCClosePlaylistAction) {
 
 EXEC_ACTION_START(SCConnectMediaAction) {
   sc_sess->connectMedia();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCDisconnectMediaAction) {
+  sc_sess->disconnectMedia();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCMuteAction) {
+  sc_sess->mute();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCUnmuteAction) {
+  sc_sess->unmute();
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCStopAction) {
@@ -547,3 +571,13 @@ EXEC_ACTION_START(SCDIAction) {
 } EXEC_ACTION_END;
   
 
+CONST_ACTION_2P(SCB2BConnectCalleeAction,',', false);
+EXEC_ACTION_START(SCB2BConnectCalleeAction) {  
+  string remote_party = resolveVars(par1, sess, sc_sess, event_params);
+  string remote_uri = resolveVars(par2, sess, sc_sess, event_params);
+  sc_sess->B2BconnectCallee(remote_party, remote_uri);
+} EXEC_ACTION_END;
+ 
+EXEC_ACTION_START(SCB2BTerminateOtherLegAction) {
+  sc_sess->B2BterminateOtherLeg();
+} EXEC_ACTION_END;

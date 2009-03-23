@@ -70,7 +70,10 @@ class DSMCondition
 
     XmlrpcResponse,
     DSMEvent,
-    PlaylistSeparator
+    PlaylistSeparator,
+    
+    B2BOtherReply,
+    B2BOtherBye
   };
 
   bool invert; 

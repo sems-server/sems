@@ -71,6 +71,15 @@ class DSMSession {
   virtual void setPromptSet(const string& name) = 0;
   virtual void addSeparator(const string& name) = 0;
   virtual void connectMedia() = 0;
+  virtual void disconnectMedia() = 0;
+  virtual void mute() = 0;
+  virtual void unmute() = 0;
+
+  /** B2BUA functions */
+  virtual void B2BconnectCallee(const string& remote_party,
+				const string& remote_uri,
+				bool relayed_invite = false) = 0;
+  virtual void B2BterminateOtherLeg() = 0;
 
   /** transfer ownership of object to this session instance */
   virtual void transferOwnership(DSMDisposable* d) = 0;

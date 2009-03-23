@@ -26,7 +26,7 @@
  */
 #ifndef _DSM_DIALOG_H
 #define _DSM_DIALOG_H
-#include "AmSession.h"
+#include "AmB2BSession.h"
 #include "AmPromptCollection.h"
 
 #include "ampi/UACAuthAPI.h"
@@ -36,8 +36,8 @@
 #include "DSMStateDiagramCollection.h"
 
 #include <set>
-
-class DSMDialog : public AmSession,
+/** implementation of the actual session in DSM */
+class DSMDialog : public AmB2BCallerSession,
 		  public DSMSession,
 		  public CredentialHolder
 {
@@ -92,8 +92,21 @@ public:
   void setPromptSet(const string& name);
   void addSeparator(const string& name);
   void connectMedia();
+  void disconnectMedia();
+  void mute();
+  void unmute();
 
   void transferOwnership(DSMDisposable* d);
+  
+protected:
+  // AmB2BSession methods
+  void onOtherBye(const AmSipRequest& req);
+  bool onOtherReply(const AmSipReply& reply);
+public:
+  void B2BterminateOtherLeg();
+  void B2BconnectCallee(const string& remote_party,
+			const string& remote_uri,
+			bool relayed_invite = false);
 };
 
 #endif

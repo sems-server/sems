@@ -48,11 +48,24 @@ actions:
  addSeparator(id)
    fires event when playlist hits it 
  connectMedia() 
-   set playlist as input and output of session
+   set playlist as input and output of session, and connect to mediaprocessor 
+ disconnectMedia() 
+   disconnect from mediaprocessor
 
+ mute() 
+   set RTP stream to muted (don't send and receive RTP packets)
+ unmute() 
+   set RTP stream to unmuted (send and receive RTP packets)
+
+
+ B2B.connectCallee(remote_party, remote_uri)
+   connect second leg of B2B session (see AmB2BSession)
+
+ B2B.terminateOtherLeg
+   disconnect second leg of B2B session (see AmB2BSession)
 
  setPrompts(name) 
-   if more prompt sets are loaded
+   if more than one prompt sets are loaded
 
  set($var=value)
   e.g.  set($var="text"); set($var=$var2); set($var=#key)
@@ -109,6 +122,16 @@ conditions:
  invite 
   -- execution is start of session (with run_invite_event, otherwise its always true):
  sessionStart
+
+ B2B.otherReply 
+   Reply on other leg received (see AmB2BSession)
+    #code    - reply code
+    #reason  - reply reason
+    #hdrs    - headers
+     
+ B2B.otherBye
+   BYE on other leg received
+    #hdrs    - headers
 
 =============================
 @selects :

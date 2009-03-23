@@ -57,6 +57,10 @@ DEF_ACTION_1P(SCStopRecordAction);
 DEF_ACTION_1P(SCClosePlaylistAction);
 DEF_ACTION_1P(SCStopAction);
 DEF_ACTION_1P(SCConnectMediaAction);
+DEF_ACTION_1P(SCDisconnectMediaAction);
+DEF_ACTION_1P(SCMuteAction);
+DEF_ACTION_1P(SCUnmuteAction);
+
 DEF_ACTION_1P(SCSetPromptsAction);
 DEF_ACTION_1P(SCAddSeparatorAction);
 
@@ -73,6 +77,9 @@ DEF_ACTION_2P(SCLogAction);
 DEF_ACTION_1P(SCLogVarsAction);
 DEF_ACTION_2P(SCPlayFileAction);
 DEF_ACTION_2P(SCPostEventAction);
+
+DEF_ACTION_2P(SCB2BConnectCalleeAction);
+DEF_ACTION_1P(SCB2BTerminateOtherLegAction);
 
 class SCDIAction					
 : public DSMAction {
@@ -105,6 +112,25 @@ class TestDSMCondition
   bool match(AmSession* sess, DSMCondition::EventType event,
 	     map<string,string>* event_params);
 };
+
+
+#define GET_SCSESSION()					       \
+  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess);       \
+  if (!sc_sess) {					       \
+    ERROR("wrong session type\n");			       \
+    return false;					       \
+  }
+
+
+#define EXEC_ACTION_START(act_name)					\
+  bool act_name::execute(AmSession* sess,				\
+			 DSMCondition::EventType event,			\
+			 map<string,string>* event_params) {		\
+    GET_SCSESSION();							
+
+#define EXEC_ACTION_END				\
+  return false;					\
+  }
 
 
 #endif

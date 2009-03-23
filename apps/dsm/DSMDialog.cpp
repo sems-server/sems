@@ -39,6 +39,7 @@ DSMDialog::DSMDialog(AmPromptCollection* prompts,
     rec_file(NULL)
 {
   diags.addToEngine(&engine);
+  set_sip_relay_only(false);
 }
 
 DSMDialog::~DSMDialog()
@@ -82,11 +83,12 @@ void DSMDialog::onInvite(const AmSipRequest& req) {
   }
 
   if (run_session_invite) 
-    AmSession::onInvite(req);
+    AmB2BCallerSession::onInvite(req);
 }
 
 void DSMDialog::onSessionStart(const AmSipRequest& req)
 {
+  AmB2BCallerSession::onSessionStart(req);
   DBG("DSMDialog::onSessionStart\n");
   startSession();
 }
@@ -94,6 +96,8 @@ void DSMDialog::onSessionStart(const AmSipRequest& req)
 void DSMDialog::onSessionStart(const AmSipReply& rep)
 {
   DBG("DSMDialog::onSessionStart (SEMS originator mode)\n");
+  invite_req.body = rep.body;
+ 
   startSession();
 }
 
@@ -116,6 +120,18 @@ void DSMDialog::connectMedia() {
 
   setOutput(&playlist);
   AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void DSMDialog::disconnectMedia() {
+  AmMediaProcessor::instance()->removeSession(this);
+}
+
+void DSMDialog::mute() {
+  setMute(true);
+}
+
+void DSMDialog::unmute() {
+  setMute(false);
 }
 
 
@@ -172,7 +188,7 @@ void DSMDialog::process(AmEvent* event)
     engine.runEvent(this, DSMCondition::PlaylistSeparator, &params);
   }
 
-  AmSession::process(event);
+  AmB2BCallerSession::process(event);
 }
 
 inline UACAuthCred* DSMDialog::getCredentials() {
@@ -304,4 +320,37 @@ void DSMDialog::addSeparator(const string& name) {
 
 void DSMDialog::transferOwnership(DSMDisposable* d) {
   gc_trash.insert(d);
+}
+
+// AmB2BSession methods
+void DSMDialog::onOtherBye(const AmSipRequest& req) {
+  DBG("* Got BYE from other leg\n");
+
+  map<string, string> params;
+  params["hdrs"] = req.hdrs; // todo: optimization - make this configurable
+  engine.runEvent(this, DSMCondition::B2BOtherBye, &params);
+}
+
+bool DSMDialog::onOtherReply(const AmSipReply& reply) {
+  DBG("* Got reply from other leg: %u %s\n", 
+      reply.code, reply.reason.c_str());
+
+  map<string, string> params;
+  params["code"] = int2str(reply.code);
+  params["reason"] = reply.reason;
+  params["hdrs"] = reply.hdrs; // todo: optimization - make this configurable
+
+  engine.runEvent(this, DSMCondition::B2BOtherReply, &params);
+
+  return false;
+}
+
+void DSMDialog::B2BterminateOtherLeg() {
+  terminateOtherLeg();
+}
+
+void DSMDialog::B2BconnectCallee(const string& remote_party,
+				 const string& remote_uri,
+				 bool relayed_invite) {
+  connectCallee(remote_party, remote_uri, relayed_invite);
 }

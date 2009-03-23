@@ -1,0 +1,47 @@
+import(mod_conference)
+
+initial state lobby 
+  enter { playFile(wav/welcome.wav) };
+
+transition "bye in lobby recvd" lobby - hangup / stop(false) -> end;
+
+state room;
+
+transition "lobby to connect" lobby - noAudioTest /  {
+   disconnectMedia();
+   mute();
+   B2B.connectCallee("sip:conference@iptel.org", "sip:conference@iptel.org")
+ } -> waitconnect;
+
+state waitconnect;
+
+transition "bye" waitconnect - hangup / { 
+   log(1, bye while connecting);
+   B2B.terminateOtherLeg(); 
+   stop(false);
+} -> end;
+
+transition "prov reply" waitconnect - B2B.otherReply(#code < 200)  / { 
+   log(1, received provisional reply)
+   log(1, #code)
+   log(1, #reason)
+} -> waitconnect;
+
+transition "positive reply" waitconnect - B2B.otherReply(#code < 300)  / { 
+   log(1, received positive reply)
+   log(1, #code)
+   log(1, #reason)
+} -> conn;
+
+transition "negative reply" waitconnect - B2B.otherReply()  / { 
+   log(1, received negative reply)
+   log(1, #code)
+   log(1, #reason)
+   stop(true)
+} -> end;
+
+state conn;
+transition "bye recvd" conn - hangup / B2B.terminateOtherLeg(); stop(false) -> end;
+transition "bye on other leg" conn - B2B.otherBye() / stop(true) -> end;
+
+state end;
