@@ -29,10 +29,13 @@
 #include "DSMStateEngine.h"
 #include "AmSipMsg.h"
 #include "AmArg.h"
+
 class DSMSession;
 
 #include <string>
 using std::string;
+
+#include <typeinfo>
 
 // script modules interface
 // factory only: it produces actions and conditions from script statements.
@@ -75,17 +78,17 @@ typedef void* (*SCFactoryCreate)();
   EXPORT_SC_FACTORY(SC_FACTORY_EXPORT,class_name)
 
 
+string trim(string const& str,char const* sepSet);
 
 class SCStrArgAction   
 : public DSMAction {
  protected:
   string arg;
  public:
-  SCStrArgAction(const string& arg)
-    : arg(arg) { }
+  SCStrArgAction(const string& m_arg); 
 };
 
-#define DEF_SCStrArgAction(CL_Name)					\
+#define DEF_ACTION_1P(CL_Name)						\
   class CL_Name								\
   : public SCStrArgAction {						\
   public:								\
@@ -96,7 +99,7 @@ class SCStrArgAction
   };									\
   
 
-#define DEF_SCModSEStrArgAction(CL_Name)					\
+#define DEF_SCModSEStrArgAction(CL_Name)				\
   class CL_Name								\
   : public SCStrArgAction {						\
   public:								\
@@ -107,7 +110,7 @@ class SCStrArgAction
     SEAction getSEAction(std::string&);					\
   };									\
 
-#define DEF_TwoParAction(CL_Name)					\
+#define DEF_ACTION_2P(CL_Name)						\
   class CL_Name								\
   : public DSMAction {							\
     string par1;							\
@@ -119,15 +122,127 @@ class SCStrArgAction
 		 map<string,string>* event_params);			\
   };									\
 
-#define CONST_TwoParAction(CL_name, sep, optional)		\
-  CL_name::CL_name(const string& arg) {				\
-    vector<string> args = explode(arg,sep);			\
-    if (!optional && args.size()!=2) {				\
-      ERROR("expression '%s' not valid\n", arg.c_str());	\
-      return;							\
-    }								\
-    par1 = args.size()?trim(args[0], " \t"):"";			\
-    par2 = args.size()>1?trim(args[1], " \t"):"";		\
+/* bool xsplit(const string& arg, char sep, bool optional, string& par1, string& par2); */
+
+#define CONST_ACTION_2P(CL_name, sep, optional)				\
+  CL_name::CL_name(const string& arg) {					\
+    size_t p = 0;							\
+    char last_c = ' ';							\
+    bool quot=false;							\
+    char quot_c = ' ';							\
+    bool sep_found = false;						\
+    while (p<arg.size()) {						\
+      if (quot) {							\
+	if (last_c != '\\' && arg[p]==quot_c)				\
+	  quot=false;							\
+      } else {								\
+	if (last_c != '\\'  && (arg[p]=='\'' || arg[p]=='\"')) {	\
+	  quot = true;							\
+	  quot_c = arg[p];						\
+	} else {							\
+	  if (arg[p] == sep) {						\
+	    sep_found = true;						\
+	    break;							\
+	  }								\
+	}								\
+      }									\
+      p++;								\
+      last_c = arg[p];							\
+    }									\
+									\
+    if ((!optional) && (!sep_found)) {					\
+      ERROR("expected two parameters separated with '%c' in expression '%s' for %s\n", \
+	    sep,arg.c_str(),typeid(this).name());			\
+      return;								\
+    }									\
+									\
+    par1 = trim(arg.substr(0,p), " \t");				\
+    if (sep_found) 							\
+      par2 = trim(arg.substr(p+1), " \t");				\
+									\
+    if (par1.length() && par1[0]=='\'') {				\
+      par1 = trim(par1, "\'");						\
+      size_t rpos = 0;							\
+      while ((rpos=par1.find("\\\'")) != string::npos)			\
+	par1.erase(rpos, 1);						\
+    } else if (par1.length() && par1[0]=='\"') {			\
+      par1 = trim(par1, "\"");						\
+      size_t rpos = 0;							\
+      while ((rpos=par1.find("\\\"")) != string::npos)			\
+	par1.erase(rpos, 1);						\
+    }									\
+									\
+    if (par2.length() && par2[0]=='\'') {				\
+      par2 = trim(par2, "\'");						\
+      size_t rpos = 0;							\
+      while ((rpos=par2.find("\\\'")) != string::npos)			\
+	par2.erase(rpos, 1);						\
+    } else if (par2.length() && par2[0]=='\"') {			\
+      par2 = trim(par2, "\"");						\
+      size_t rpos = 0;							\
+      while ((rpos=par2.find("\\\"")) != string::npos)			\
+	par2.erase(rpos, 1);						\
+    }									\
+									\
+    if ((!optional) && ((par1.empty())||(par2.empty()))) {		\
+      ERROR("expected two parameters separated with '%c' in expression '%s' for %s\n", \
+	    sep,arg.c_str(),typeid(this).name());			\
+      return;								\
+    }									\
+  }									\
+  
+
+#define GET_SCSESSION()					       \
+  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess);       \
+  if (!sc_sess) {					       \
+    ERROR("wrong session type\n");			       \
+    return false;					       \
   }
+
+
+#define EXEC_ACTION_START(act_name)					\
+  bool act_name::execute(AmSession* sess,				\
+			 DSMCondition::EventType event,			\
+			 map<string,string>* event_params) {		\
+  GET_SCSESSION();							
+
+#define EXEC_ACTION_END				\
+  return false;					\
+  }
+
+string resolveVars(const string s, AmSession* sess,
+		   DSMSession* sc_sess, map<string,string>* event_params);
+
+#define DEF_CMD(cmd_name, class_name) \
+				      \
+  if (cmd == cmd_name) {	      \
+    class_name * a =		      \
+      new class_name(params);	      \
+    a->name = from_str;		      \
+    return a;			      \
+  }
+
+#define DEF_SCCondition(cond_name)		\
+  class cond_name				\
+  : public DSMCondition {			\
+    string arg;					\
+    bool inv;					\
+    						\
+  public:					\
+    						\
+  cond_name(const string& arg, bool inv)			\
+    : arg(arg), inv(inv) { }					\
+    bool match(AmSession* sess, DSMCondition::EventType event,	\
+	       map<string,string>* event_params);		\
+  };								\
+  
+
+#define MATCH_CONDITION_START(cond_clsname)				\
+  bool cond_clsname::match(AmSession* sess, DSMCondition::EventType event, \
+			   map<string,string>* event_params) {		\
+  GET_SCSESSION();
+
+#define MATCH_CONDITION_END }			
+
 
 #endif

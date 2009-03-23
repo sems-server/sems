@@ -151,7 +151,9 @@ void DSMDialog::process(AmEvent* event)
   if(audio_event && 
      ((audio_event->event_id == AmAudioEvent::cleared) || 
       (audio_event->event_id == AmAudioEvent::noAudio))){
-    engine.runEvent(this, DSMCondition::NoAudio, NULL);
+    map<string, string> params;
+    params["type"] = audio_event->event_id == AmAudioEvent::cleared?"cleared":"noAudio";
+    engine.runEvent(this, DSMCondition::NoAudio, &params);
     return;
   }
 

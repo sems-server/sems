@@ -41,6 +41,6 @@ class DLGModule
   bool onInvite(const AmSipRequest& req, DSMSession* sess);
 };
 
-DEF_TwoParAction(DLGReplyAction);
-DEF_TwoParAction(DLGAcceptInviteAction);
+DEF_ACTION_2P(DLGReplyAction);
+DEF_ACTION_2P(DLGAcceptInviteAction);
 #endif

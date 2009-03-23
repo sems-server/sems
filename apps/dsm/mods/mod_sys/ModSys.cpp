@@ -59,14 +59,6 @@ DSMAction* SCSysModule::getAction(const string& from_str) {
   string params;
   splitCmd(from_str, cmd, params);
 
-#define DEF_CMD(cmd_name, class_name) \
-				      \
-  if (cmd == cmd_name) {	      \
-    class_name * a =		      \
-      new class_name(params);	      \
-    a->name = from_str;		      \
-    return a;			      \
-  }
   DEF_CMD("sys.mkdir", SCMkDirAction);
 
   return NULL;
@@ -89,16 +81,7 @@ DSMCondition* SCSysModule::getCondition(const string& from_str) {
   return NULL;
 }
 
-#define GET_SCSESSION()				       \
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess); \
-  if (!sc_sess) {				       \
-    ERROR("wrong session type\n");		       \
-    return false;					       \
-  }
-
-bool FileExistsCondition::match(AmSession* sess, DSMCondition::EventType event,
-				map<string,string>* event_params) {
-  GET_SCSESSION();
+MATCH_CONDITION_START(FileExistsCondition) {
   DBG("checking file '%s'\n", arg.c_str());
   string fname = resolveVars(arg, sess, sc_sess, event_params);
   bool ex =  file_exists(fname);
@@ -110,18 +93,15 @@ bool FileExistsCondition::match(AmSession* sess, DSMCondition::EventType event,
     DBG("returning %s\n", (ex)?"true":"false");
     return ex;
   }
-}
+} MATCH_CONDITION_END;
 
 
-bool SCMkDirAction::execute(AmSession* sess, 
-			    DSMCondition::EventType event,
-			    map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCMkDirAction) {
   string d = resolveVars(arg, sess, sc_sess, event_params);
   DBG("mkdir '%s'\n", d.c_str());
   if (mkdir(d.c_str(),  S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
     ERROR("kmdir failed for '%s': %s\n", 
 	  d.c_str(), strerror(errno));
   }
-  return false;
-}
+} EXEC_ACTION_END;
+

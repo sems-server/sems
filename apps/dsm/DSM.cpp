@@ -216,7 +216,7 @@ int DSMFactory::onLoad()
   }
 
   for (std::map<string,string>::const_iterator it = 
-	 cfg.begin(); it != cfg.end(); it++)
+	 cfg.begin(); it != cfg.end(); it++) 
     config[it->first] = it->second;
 
   RunInviteEvent = cfg.getParameter("run_invite_event")=="yes";
@@ -231,7 +231,7 @@ void DSMFactory::prepareSession(DSMDialog* s) {
 void DSMFactory::addVariables(DSMDialog* s, const string& prefix,
 			      map<string, string>& vars) {
   for (map<string, string>::iterator it = 
-	 vars.begin(); it != vars.end(); it++)
+	 vars.begin(); it != vars.end(); it++) 
     s->var[prefix+it->first] = it->second;
 }
 
@@ -249,6 +249,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
   }
   DSMDialog* s = new DSMDialog(&prompts, diags, start_diag, NULL);
   prepareSession(s);
+  addVariables(s, "config.", config);
   return s;
 }
 

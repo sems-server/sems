@@ -41,7 +41,7 @@ class URIModule
   bool onInvite(const AmSipRequest& req, DSMSession* sess);
 };
 
-DEF_TwoParAction(URIParseAction);
-DEF_TwoParAction(URIGetHeaderAction);
+DEF_ACTION_2P(URIParseAction);
+DEF_ACTION_2P(URIGetHeaderAction);
 
 #endif

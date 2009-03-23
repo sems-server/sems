@@ -81,7 +81,7 @@ DSMCondition* MonitoringModule::getCondition(const string& from_str) {
   }
 
 
-CONST_TwoParAction(MonLogAction, ",", true);
+CONST_ACTION_2P(MonLogAction, ',', true);
 bool MonLogAction::execute(AmSession* sess, 
 			   DSMCondition::EventType event,
 			   map<string,string>* event_params) {
@@ -95,7 +95,7 @@ bool MonLogAction::execute(AmSession* sess,
   return false;
 }
 
-CONST_TwoParAction(MonLogAddAction, ",", true);
+CONST_ACTION_2P(MonLogAddAction, ',', true);
 bool MonLogAddAction::execute(AmSession* sess, 
 			   DSMCondition::EventType event,
 			   map<string,string>* event_params) {

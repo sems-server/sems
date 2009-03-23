@@ -86,7 +86,7 @@ DSMCondition* URIModule::getCondition(const string& from_str) {
     return false;					 \
   }
 
-CONST_TwoParAction(URIParseAction, ",", true);
+CONST_ACTION_2P(URIParseAction, ',', true);
 
 bool URIParseAction::execute(AmSession* sess, 
 			     DSMCondition::EventType event,
@@ -116,8 +116,7 @@ bool URIModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
   return true;
 }
 
-CONST_TwoParAction(URIGetHeaderAction, ",", false);
-
+CONST_ACTION_2P(URIGetHeaderAction, ',', false);
 bool URIGetHeaderAction::execute(AmSession* sess, 
 				 DSMCondition::EventType event,
 				 map<string,string>* event_params) {
@@ -126,8 +125,7 @@ bool URIGetHeaderAction::execute(AmSession* sess,
   string hname  = resolveVars(par1, sess, sc_sess, event_params);
   string dstname = resolveVars(par2, sess, sc_sess, event_params);
 
-  sc_sess->var[dstname] = getHeader(sc_sess->var["hdrs"], hname);
-  DBG("got header '%s' value '%s' as $%s\n", 
+  sc_sess->var[dstname] = getHeader(sc_sess->var["hdrs"], hname);  DBG("got header '%s' value '%s' as $%s\n", 
       hname.c_str(), sc_sess->var[dstname].c_str(), dstname.c_str());
   return false;
 }

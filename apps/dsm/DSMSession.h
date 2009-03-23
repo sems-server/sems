@@ -78,6 +78,9 @@ class DSMSession {
   /* holds variables which are accessed by $varname */
   map<string, string> var;
 
+  /* holds AmArg variables. todo: merge var with these */
+  map<string, AmArg> avar;
+
   /* result of the last DI call */
   AmArg di_res;
 

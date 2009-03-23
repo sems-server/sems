@@ -66,8 +66,13 @@ string DSMChartReader::getToken(string str, size_t& pos) {
 	last_chr = str[pos1];
 	pos1++;
       }
-    }
-    if (str[pos1] == '(') {
+    } else  if (str[pos1] == '\'') {
+      pos1++;
+      while (pos1<str.length() && !((str[pos1] == '\'') && (last_chr != '\\'))) {
+	last_chr = str[pos1];
+	pos1++;
+      }
+    } else if (str[pos1] == '(') {
       int lvl = 0;
       pos1++;
       while (pos1<str.length() && (lvl || (str[pos1] != ')'))) {
@@ -77,9 +82,16 @@ string DSMChartReader::getToken(string str, size_t& pos) {
 	else if (str[pos1] == ')')
 	  lvl--;
 	    
-	if (str[pos1] == '"') {
+	else if (str[pos1] == '"') {
 	  pos1++;
 	  while (pos1<str.length() && !((str[pos1] == '"') && (last_chr != '\\'))) {
+	    last_chr = str[pos1];
+	    pos1++;
+	  }
+	}
+	else if (str[pos1] == '\'') {
+	  pos1++;
+	  while (pos1<str.length() && !((str[pos1] == '\'') && (last_chr != '\\'))) {
 	    last_chr = str[pos1];
 	    pos1++;
 	  }
@@ -93,7 +105,7 @@ string DSMChartReader::getToken(string str, size_t& pos) {
   }
 
   string res;
-  if (str[pos] == '"')
+  if ((str[pos] == '"') || (str[pos] == '\''))
     res = str.substr(pos+1, pos1-pos-2);
   else 
     res = str.substr(pos, pos1-pos);
@@ -127,16 +139,6 @@ DSMCondition* DSMChartReader::conditionFromToken(const string& str, bool invert)
     c->invert = invert;
 
   return c;
-}
-
-void splitCmd(const string& from_str, 
-	      string& cmd, string& params) {
-  size_t b_pos = from_str.find('(');
-  if (b_pos != string::npos) {
-    cmd = from_str.substr(0, b_pos);
-    params = from_str.substr(b_pos + 1, from_str.rfind(')') - b_pos -1);
-  } else 
-    cmd = from_str;  
 }
 
 bool DSMChartReader::importModule(const string& mod_cmd, const string& mod_path) {

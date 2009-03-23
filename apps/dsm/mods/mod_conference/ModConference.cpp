@@ -87,7 +87,7 @@ DSMCondition* ConfModule::getCondition(const string& from_str) {
   }
 
 
-CONST_TwoParAction(ConfPostEventAction, ",", true);
+CONST_ACTION_2P(ConfPostEventAction, ',', true);
 
 bool ConfPostEventAction::execute(AmSession* sess, 
 			     DSMCondition::EventType event,

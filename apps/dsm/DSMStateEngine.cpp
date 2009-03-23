@@ -297,6 +297,9 @@ void DSMStateEngine::runEvent(AmSession* sess,
 	}
 	
 	// go into new state
+	if (!target_st) {
+	  break;
+	}
 	DBG("changing to new state '%s'\n", target_st->name.c_str());
 	current = target_st;
 	

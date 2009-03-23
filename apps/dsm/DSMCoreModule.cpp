@@ -34,15 +34,8 @@
 DSMCoreModule::DSMCoreModule() {
 }
 
-string trim(string const& str,char const* sepSet)
-{
-  string::size_type const first = str.find_first_not_of(sepSet);
-  return ( first==string::npos )
-    ? std::string()  : 
-    str.substr(first, str.find_last_not_of(sepSet)-first+1);
-}
 
-void DSMCoreModule::splitCmd(const string& from_str, 
+void splitCmd(const string& from_str, 
 			    string& cmd, string& params) {
   size_t b_pos = from_str.find('(');
   if (b_pos != string::npos) {
@@ -56,15 +49,6 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   string cmd;
   string params;
   splitCmd(from_str, cmd, params);
-
-#define DEF_CMD(cmd_name, class_name) \
-				      \
-  if (cmd == cmd_name) {	      \
-    class_name * a =		      \
-      new class_name(params);	      \
-    a->name = from_str;		      \
-    return a;			      \
-  }
 
   DEF_CMD("repost", SCRepostAction);
   DEF_CMD("jumpFSM", SCJumpFSMAction);
@@ -85,6 +69,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("set", SCSetAction);
   DEF_CMD("append", SCAppendAction);
   DEF_CMD("log", SCLogAction);
+  DEF_CMD("logVars", SCLogVarsAction);
 
   DEF_CMD("setTimer", SCSetTimerAction);
 
@@ -152,90 +137,24 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   return NULL;
 }
 
-
-inline string resolveVars(const string s, AmSession* sess,
-			  DSMSession* sc_sess, map<string,string>* event_params) {
-  if (s.length()) {
-    switch(s[0]) {
-    case '$': return sc_sess->var[s.substr(1)];
-    case '#': 
-      if (event_params) 
-	return  (*event_params)[s.substr(1)];
-      else 
-	return string();
-    case '@': {
-      string s1 = s.substr(1); 
-      if (s1 == "local_tag")
-	return sess->getLocalTag();	
-      else if (s1 == "user")
-	return sess->dlg.user;
-      else if (s1 == "domain")
-	return sess->dlg.domain;
-      else if (s1 == "remote_tag")
-	return sess->getRemoteTag();
-      else if (s1 == "callid")
-	return sess->getCallID();
-      else if (s1 == "local_uri")
-	return sess->dlg.local_uri;
-      else if (s1 == "remote_uri")
-	return sess->dlg.remote_uri;
-      else
-	return string();
-    } 
-    default: return trim(s, "\"");
-    }
-  }
-  return s;
-}
-
-#define GET_SCSESSION()				       \
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess); \
-  if (!sc_sess) {				       \
-    ERROR("wrong session type\n");		       \
-    return false;					       \
-  }
-
-
-bool SCPlayPromptAction::execute(AmSession* sess, 
-				 DSMCondition::EventType event,
-				 map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCPlayPromptAction) {
   sc_sess->playPrompt(resolveVars(arg, sess, sc_sess, event_params));
-  return false;
-}
+} EXEC_ACTION_END;
 
-
-bool SCSetPromptsAction::execute(AmSession* sess, 
-				 DSMCondition::EventType event,
-				 map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCSetPromptsAction) {
   sc_sess->setPromptSet(resolveVars(arg, sess, sc_sess, event_params));
-  return false;
-}
+} EXEC_ACTION_END;
 
-bool SCAddSeparatorAction::execute(AmSession* sess, 
-				   DSMCondition::EventType event,
-				   map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCAddSeparatorAction){
   sc_sess->addSeparator(resolveVars(arg, sess, sc_sess, event_params));
-  return false;
-}
+} EXEC_ACTION_END;
 
-bool SCPlayPromptLoopedAction::execute(AmSession* sess, 
-				 DSMCondition::EventType event,
-				 map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCPlayPromptLoopedAction){
   sc_sess->playPrompt(resolveVars(arg, sess, sc_sess, event_params), true);
-  return false;
-}
+} EXEC_ACTION_END;
 
-CONST_TwoParAction(SCPostEventAction, ",", true);
-
-bool SCPostEventAction::execute(AmSession* sess, 
-			       DSMCondition::EventType event,
-			       map<string,string>* event_params) {
-
-  GET_SCSESSION();
+CONST_ACTION_2P(SCPostEventAction, ',', true);
+EXEC_ACTION_START(SCPostEventAction){
   string sess_id = resolveVars(par1, sess, sc_sess, event_params);
   string var = resolveVars(par2, sess, sc_sess, event_params);
   DSMEvent* ev = new DSMEvent();
@@ -251,69 +170,41 @@ bool SCPostEventAction::execute(AmSession* sess,
     sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
   else 
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);
+} EXEC_ACTION_END;
 
-  return false;
-}
-
-bool SCPlayFileAction::execute(AmSession* sess, 
-			       DSMCondition::EventType event,
-			       map<string,string>* event_params) {
-  GET_SCSESSION();
-
+EXEC_ACTION_START(SCPlayFileAction) {
   bool loop = 
     resolveVars(par2, sess, sc_sess, event_params) == "true";
   DBG("par1 = '%s', par2 = %s\n", par1.c_str(), par2.c_str());
   sc_sess->playFile(resolveVars(par1, sess, sc_sess, event_params), 
 		    loop);
-  return false;
-}
+} EXEC_ACTION_END;
 
-bool SCRecordFileAction::execute(AmSession* sess, 
-				 DSMCondition::EventType event,
-				 map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCRecordFileAction) {
   sc_sess->recordFile(resolveVars(arg, sess, sc_sess, event_params));
-  return false;
-}
+} EXEC_ACTION_END;
 
-bool SCStopRecordAction::execute(AmSession* sess, 
-				 DSMCondition::EventType event,
-				 map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCStopRecordAction) {
   sc_sess->stopRecord();
-  return false;
-}
+} EXEC_ACTION_END;
 
-bool SCClosePlaylistAction::execute(AmSession* sess, 
-				    DSMCondition::EventType event,
-				    map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCClosePlaylistAction) {
   bool notify = 
     resolveVars(arg, sess, sc_sess, event_params) == "true";
   sc_sess->closePlaylist(notify);
-  return false;
-}
+} EXEC_ACTION_END;
 
-bool SCConnectMediaAction::execute(AmSession* sess, 
-				   DSMCondition::EventType event,
-				   map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCConnectMediaAction) {
   sc_sess->connectMedia();
-  return false;
-}
+} EXEC_ACTION_END;
 
-
-bool SCStopAction::execute(AmSession* sess, 
-			   DSMCondition::EventType event,
-			   map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCStopAction) {
   if (resolveVars(arg, sess, sc_sess, event_params) == "true") {
     DBG("sending bye\n");
     sess->dlg.bye();
   }
   sess->setStopped();
-  return false;
-}
+} EXEC_ACTION_END;
 
 #define DEF_SCModActionExec(clsname)				\
 								\
@@ -348,14 +239,11 @@ DSMAction::SEAction SCReturnFSMAction::getSEAction(string& param) {
 #undef DEF_SCModActionExec
 
 
-CONST_TwoParAction(SCPlayFileAction, ",", true);
+CONST_ACTION_2P(SCPlayFileAction, ',', true);
 
-CONST_TwoParAction(SCLogAction, ",", false);
-bool SCLogAction::execute(AmSession* sess, 
-			  DSMCondition::EventType event,
-			  map<string,string>* event_params) {
-  GET_SCSESSION();
-  
+CONST_ACTION_2P(SCLogAction, ',', false);
+EXEC_ACTION_START(SCLogAction) {
+
   unsigned int lvl;
   if (str2i(resolveVars(par1, sess, sc_sess, event_params), lvl)) {
     ERROR("unknown log level '%s'\n", par1.c_str());
@@ -364,29 +252,35 @@ bool SCLogAction::execute(AmSession* sess,
   string l_line = resolveVars(par2, sess, sc_sess, event_params).c_str();
   _LOG((int)lvl, "FSM: %s '%s'\n", (par2 != l_line)?par2.c_str():"",
        l_line.c_str());
-  return false;
-}
+} EXEC_ACTION_END;
 
-CONST_TwoParAction(SCSetAction,"=", false);
-bool SCSetAction::execute(AmSession* sess, 
-			  DSMCondition::EventType event,
-			  map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCLogVarsAction) {
+  unsigned int lvl;
+  if (str2i(resolveVars(arg, sess, sc_sess, event_params), lvl)) {
+    ERROR("unknown log level '%s'\n", arg.c_str());
+    return false;
+  }
+
+  _LOG((int)lvl, "FSM: variables set ---\n");
+  for (map<string, string>::iterator it = 
+	 sc_sess->var.begin(); it != sc_sess->var.end(); it++) {
+    _LOG((int)lvl, "FSM:  $%s='%s'\n", it->first.c_str(), it->second.c_str());
+  }
+  _LOG((int)lvl, "FSM: variables end ---\n");
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCSetAction,'=', false);
+EXEC_ACTION_START(SCSetAction) {
   string var_name = (par1.length() && par1[0] == '$')?
     par1.substr(1) : par1;
 
   sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params);
   DBG("set variable '%s'='%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
-  return false;
-}
+} EXEC_ACTION_END;
 
-CONST_TwoParAction(SCAppendAction,",", false);
-bool SCAppendAction::execute(AmSession* sess, 
-			  DSMCondition::EventType event,
-			  map<string,string>* event_params) {
-  GET_SCSESSION();
-
+CONST_ACTION_2P(SCAppendAction,',', false);
+EXEC_ACTION_START(SCAppendAction) {
   string var_name = (par1.length() && par1[0] == '$')?
     par1.substr(1) : par1;
 
@@ -394,14 +288,10 @@ bool SCAppendAction::execute(AmSession* sess,
 
   DBG("$%s now '%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
-  return false;
-}
+} EXEC_ACTION_END;
 
-CONST_TwoParAction(SCSetTimerAction,",", false);
-bool SCSetTimerAction::execute(AmSession* sess, 
-			       DSMCondition::EventType event,
-			       map<string,string>* event_params) {
-  GET_SCSESSION();
+CONST_ACTION_2P(SCSetTimerAction,',', false);
+EXEC_ACTION_START(SCSetTimerAction) {
 
   unsigned int timerid;
   if (str2i(resolveVars(par1, sess, sc_sess, event_params), timerid)) {
@@ -436,8 +326,8 @@ bool SCSetTimerAction::execute(AmSession* sess,
   di_args.push((int)timeout);      // in seconds
   di_args.push(sess->getLocalTag().c_str());
   user_timer->invoke("setTimer", di_args, ret);
-  return false;
-}
+
+} EXEC_ACTION_END;
 
 
 // TODO: replace with real expression matching 
@@ -554,10 +444,7 @@ SCDIAction::SCDIAction(const string& arg, bool get_res)
   }
 }
 
-bool SCDIAction::execute(AmSession* sess,
-			 DSMCondition::EventType event,
-			 map<string,string>* event_params) {
-  GET_SCSESSION();
+EXEC_ACTION_START(SCDIAction) {
 
   if (params.size() < 2) {
     ERROR("DI needs at least: mod_name, "
@@ -657,7 +544,6 @@ bool SCDIAction::execute(AmSession* sess,
       ERROR("unsupported AmArg return type!");
     }
   }
-  return false;
-}
+} EXEC_ACTION_END;
   
 

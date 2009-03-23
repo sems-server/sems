@@ -37,11 +37,12 @@ using std::map;
 class AmSession;
 class DSMSession;
 
+void splitCmd(const string& from_str, 
+		string& cmd, string& params);
+
 class DSMCoreModule 
 : public DSMModule {
 
-  void splitCmd(const string& from_str, 
-		string& cmd, string& params);
  public:
   DSMCoreModule();
     
@@ -49,15 +50,15 @@ class DSMCoreModule
   DSMCondition* getCondition(const string& from_str);
 };
 
-DEF_SCStrArgAction(SCPlayPromptAction);
-DEF_SCStrArgAction(SCPlayPromptLoopedAction);
-DEF_SCStrArgAction(SCRecordFileAction);
-DEF_SCStrArgAction(SCStopRecordAction);
-DEF_SCStrArgAction(SCClosePlaylistAction);
-DEF_SCStrArgAction(SCStopAction);
-DEF_SCStrArgAction(SCConnectMediaAction);
-DEF_SCStrArgAction(SCSetPromptsAction);
-DEF_SCStrArgAction(SCAddSeparatorAction);
+DEF_ACTION_1P(SCPlayPromptAction);
+DEF_ACTION_1P(SCPlayPromptLoopedAction);
+DEF_ACTION_1P(SCRecordFileAction);
+DEF_ACTION_1P(SCStopRecordAction);
+DEF_ACTION_1P(SCClosePlaylistAction);
+DEF_ACTION_1P(SCStopAction);
+DEF_ACTION_1P(SCConnectMediaAction);
+DEF_ACTION_1P(SCSetPromptsAction);
+DEF_ACTION_1P(SCAddSeparatorAction);
 
 DEF_SCModSEStrArgAction(SCRepostAction);
 DEF_SCModSEStrArgAction(SCJumpFSMAction);
@@ -65,12 +66,13 @@ DEF_SCModSEStrArgAction(SCCallFSMAction);
 DEF_SCModSEStrArgAction(SCReturnFSMAction);
 
 
-DEF_TwoParAction(SCSetAction);
-DEF_TwoParAction(SCAppendAction);
-DEF_TwoParAction(SCSetTimerAction);
-DEF_TwoParAction(SCLogAction);
-DEF_TwoParAction(SCPlayFileAction);
-DEF_TwoParAction(SCPostEventAction);
+DEF_ACTION_2P(SCSetAction);
+DEF_ACTION_2P(SCAppendAction);
+DEF_ACTION_2P(SCSetTimerAction);
+DEF_ACTION_2P(SCLogAction);
+DEF_ACTION_1P(SCLogVarsAction);
+DEF_ACTION_2P(SCPlayFileAction);
+DEF_ACTION_2P(SCPostEventAction);
 
 class SCDIAction					
 : public DSMAction {
@@ -104,9 +106,5 @@ class TestDSMCondition
 	     map<string,string>* event_params);
 };
 
-string resolveVars(const string s, AmSession* sess,
-		   DSMSession* sc_sess, map<string,string>* event_params);
-
-string trim(string const& str,char const* sepSet);
 
 #endif

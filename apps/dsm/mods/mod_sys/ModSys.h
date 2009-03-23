@@ -39,18 +39,6 @@ class SCSysModule
   DSMCondition* getCondition(const string& from_str);
 };
 
-class FileExistsCondition 
-: public DSMCondition {
-  string arg;
-  bool inv;
-
- public:
-
- FileExistsCondition(const string& arg, bool inv) 
-   : arg(arg), inv(inv) { }
-  bool match(AmSession* sess, DSMCondition::EventType event,
-	     map<string,string>* event_params);
-};
-
-DEF_SCStrArgAction(SCMkDirAction);
+DEF_SCCondition(FileExistsCondition);
+DEF_ACTION_1P(SCMkDirAction);
 #endif

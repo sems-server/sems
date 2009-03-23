@@ -62,6 +62,8 @@ actions:
 
  log(level, text)
    e.g. log(1, $var1)
+ -- log all variables:
+ logVars(level) 
 
  setTimer(timer_id, timeout)
    e.g. setTimer(1, $timeout)

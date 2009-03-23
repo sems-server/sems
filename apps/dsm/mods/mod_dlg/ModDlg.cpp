@@ -89,7 +89,7 @@ bool DLGModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
     return false;					 \
   }
 
-CONST_TwoParAction(DLGReplyAction, ",", true);
+CONST_ACTION_2P(DLGReplyAction, ',', true);
 
 bool DLGReplyAction::execute(AmSession* sess, 
 			     DSMCondition::EventType event,
@@ -119,7 +119,7 @@ bool DLGReplyAction::execute(AmSession* sess,
   return false;
 }
 
-CONST_TwoParAction(DLGAcceptInviteAction, ",", true);
+CONST_ACTION_2P(DLGAcceptInviteAction, ',', true);
 
 bool DLGAcceptInviteAction::execute(AmSession* sess, 
 				     DSMCondition::EventType event,

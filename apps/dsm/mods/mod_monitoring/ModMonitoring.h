@@ -40,8 +40,8 @@ class MonitoringModule
   DSMCondition* getCondition(const string& from_str);
 };
 
-DEF_TwoParAction(MonLogAction);
-DEF_TwoParAction(MonLogAddAction);
-DEF_SCStrArgAction(MonLogVarsAction);
+DEF_ACTION_2P(MonLogAction);
+DEF_ACTION_2P(MonLogAddAction);
+DEF_ACTION_1P(MonLogVarsAction);
 
 #endif
