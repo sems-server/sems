@@ -1,0 +1,253 @@
+import(mod_mysql)
+
+initial state lobby 
+  enter { 
+  log(1, something);
+  log(1, "something");
+  log(1, "some,thing");
+  log(1, "some\",thing");
+  log(1, 'some",thing');
+  log(1, 'some\',thing');
+ playFile(wav/running_tests.wav) };
+
+-- jump to spefcific test, e.g.
+--  transition run_test1 lobby - noAudioTest /  repost() -> test15_res;
+
+
+transition run_test1 lobby - noAudioTest /  {
+ mysql.connect();
+ log(1, TEST1);
+ logVars(1);
+ repost();
+} -> test1_eval;
+state test1_eval;
+transition test1_pass test1_eval - test($errno == "") / playFile(wav/test_ok.wav); log(1, test PASSED) -> test1_res;
+transition test1_fail test1_eval - test($errno != "") / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test1_res;
+state test1_res;
+
+
+transition run_test2 test1_res - noAudioTest /  {
+ -- protocol
+ mysql.connect(noprotocol://root:sa07@localhost/sems);
+ log(1, TEST2 - protocol);
+ logVars(1);
+ repost();
+} -> test2_eval;
+state test2_eval;
+transition test2_pass test2_eval - test($errno == 2) / playFile(wav/test_ok.wav); log(1, test PASSED) -> test2_res;
+transition test2_fail test2_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test2_res;
+state test2_res;
+
+transition run_test3 test2_res - noAudioTest /  {
+ -- password
+ mysql.connect(mysql://root:wrongpassword@localhost/sems);
+ log(1, TEST3 - password);
+ logVars(1);
+ repost();
+} -> test3_eval;
+state test3_eval;
+transition test3_pass test3_eval - test($errno == 30); test($db.errno==1045) / playFile(wav/test_ok.wav); log(1, test PASSED) -> test3_res;
+transition test3_fail test3_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test3_res;
+state test3_res;
+
+transition run_test4 test3_res - noAudioTest /  {
+ -- host
+ mysql.connect(mysql://root:wrongpassword@unknownhost/sems);
+ log(1, TEST4 - host);
+ logVars(1);
+ repost();
+} -> test4_eval;
+state test4_eval;
+transition test4_pass test4_eval - test($errno == 30); test($db.errno==2005) / playFile(wav/test_ok.wav); log(1, test PASSED) -> test4_res;
+transition test4_fail test4_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test4_res;
+state test4_res;
+
+transition run_test5 test4_res - noAudioTest /  {
+ -- replacevar
+ mysql.resolveQueryParams(SELECT * FROM table)
+ log(1, TEST5 - replace nothing);
+ logVars(1)
+ repost();
+} -> test5_eval;
+state test5_eval;
+transition test5_pass test5_eval - test($db.qstr == SELECT * FROM table); / playFile(wav/test_ok.wav); log(1, test PASSED) -> test5_res;
+transition test5_fail test5_eval -  / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test5_res;
+state test5_res;
+
+transition run_test6 test5_res - noAudioTest /  {
+ log(1, TEST6 - replace empty);
+ mysql.resolveQueryParams()
+ logVars(1);
+ repost();
+} -> test6_eval;
+state test6_eval;
+transition test6_pass test6_eval - test($db.qstr == );/ playFile(wav/test_ok.wav); log(1, test PASSED) -> test6_res;
+transition test6_fail test6_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test6_res;
+state test6_res;
+
+transition run_test7 test6_res - noAudioTest /  {
+ log(1, TEST7 - replace var at end);
+ set($sometable=mytable)
+ mysql.resolveQueryParams(SELECT * FROM $sometable)
+ logVars(1);
+ repost();
+} -> test7_eval;
+state test7_eval;
+transition test7_pass test7_eval - test($db.qstr == SELECT * FROM mytable);/ playFile(wav/test_ok.wav); log(1, test PASSED) -> test7_res;
+transition test7_fail test7_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test7_res;
+state test7_res;
+
+transition run_test8 test7_res - noAudioTest /  {
+ log(1, TEST8 - replace two vars);
+ set($sometable=mytable)
+ set($somekey=mykey)
+ mysql.resolveQueryParams(SELECT * FROM $sometable WHERE key=$somekey)
+ logVars(1);
+ repost();
+} -> test8_eval;
+state test8_eval;
+transition test8_pass test8_eval - test($db.qstr == SELECT * FROM mytable WHERE key=mykey);/ playFile(wav/test_ok.wav); log(1, test PASSED) -> test8_res;
+transition test8_fail test8_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test8_res;
+state test8_res;
+
+transition run_test9 test8_res - noAudioTest /  {
+ log(1, TEST9 - replace two vars);
+ set($sometable=mytable)
+ set($somekey=mykey)
+ mysql.resolveQueryParams(SELECT * FROM $sometable WHERE key=$somekey AND someeventparam=#type)
+ logVars(1);
+ repost();
+} -> test9_eval;
+state test9_eval;
+transition test9_pass test9_eval - test($db.qstr == SELECT * FROM mytable WHERE key=mykey AND someeventparam=noAudio);/ playFile(wav/test_ok.wav); log(1, test PASSED) -> test9_res;
+transition test9_fail test9_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test9_res;
+state test9_res;
+
+transition run_test10 test9_res - noAudioTest /  {
+ log(1, TEST10 - more replacing);
+ set($sometable=audio)
+ set($app=someapp)
+ mysql.resolveQueryParams(INSERT INTO $sometable (application,message) VALUES ($app,some message))
+ logVars(1);
+ repost();
+} -> test10_eval;
+state test10_eval;
+transition test10_pass test10_eval - test($db.qstr == INSERT INTO audio (application,message) VALUES (someapp,some message)); / playFile(wav/test_ok.wav); log(1, test PASSED) -> test10_res;
+transition test10_fail test10_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test10_res;
+state test10_res;
+
+transition run_test11 test10_res - noAudioTest /  {
+ log(1, TEST11 - escaped);
+ set($sometable=audio)
+ set($app=someapp)
+ mysql.resolveQueryParams(\$sometable \#notreplaced)
+ logVars(1);
+ repost();
+} -> test11_eval;
+state test11_eval;
+transition test11_pass test11_eval - test($db.qstr == \$sometable \#notreplaced); / playFile(wav/test_ok.wav); log(1, test PASSED) -> test11_res;
+transition test11_fail test11_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test11_res;
+state test11_res;
+
+transition run_test12 test11_res - noAudioTest /  {
+ log(1, TEST12 - insert into);
+ set($sometable=audio)
+ set($app=someapp)
+ mysql.connect()
+ mysql.execute(INSERT INTO $sometable (application,message) VALUES ('$app','some message');)
+ logVars(1);
+ repost();
+} -> test12_eval;
+state test12_eval;
+transition test12_pass test12_eval - test($errno == ""); test($db.rows==1) / playFile(wav/test_ok.wav); log(1, test PASSED) -> test12_res;
+transition test12_fail test12_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test12_res;
+state test12_res;
+
+transition run_test13 test12_res - noAudioTest /  {
+ log(1, TEST13 - delete from);
+ set($sometable=audio)
+ set($app=someapp)
+ mysql.connect()
+ mysql.execute(DELETE FROM $sometable WHERE message='some message';)
+ logVars(1);
+ repost();
+} -> test13_eval;
+state test13_eval;
+transition test13_pass test13_eval - test($errno == ""); / playFile(wav/test_ok.wav); log(1, test PASSED) -> test13_res;
+transition test13_fail test13_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test13_res;
+state test13_res;
+
+transition run_test14 test13_res - noAudioTest /  {
+ log(1, TEST14 - query, get row);
+ mysql.connect()
+ mysql.query(DELETE FROM audio;)
+ mysql.query(INSERT INTO audio (application,message) VALUES ("someapp","some message");)
+ mysql.query(INSERT INTO audio (application,message) VALUES ("someotherapp","some other message");)
+ mysql.query(SELECT id,application,message FROM audio;)
+ mysql.getResult(0)
+ logVars(1);
+ mysql.getResult(1)
+ logVars(1);
+ repost();
+} -> test14_eval;
+state test14_eval;
+transition test14_pass test14_eval - test($errno == ""); / playFile(wav/test_ok.wav); log(1, test PASSED) -> test14_res;
+transition test14_fail test14_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test14_res;
+state test14_res;
+
+transition run_test15 test14_res - noAudioTest /  {
+ log(1, TEST15 - queryGetResult);
+ mysql.connect()
+ mysql.query(DELETE FROM audio;)
+ mysql.query(INSERT INTO audio (application,message) VALUES ("someapp","some message");)
+ mysql.query(INSERT INTO audio (application,message) VALUES ("someotherapp","some other message");)
+ mysql.queryGetResult("SELECT id,application,message FROM audio;")
+ logVars(1);
+ repost();
+} -> test15_eval;
+state test15_eval;
+transition test15_pass test15_eval - test($errno == ""); test(id != ""); / playFile(wav/test_ok.wav); log(1, test PASSED) -> test15_res;
+transition test15_fail test15_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test15_res;
+state test15_res;
+
+transition run_test16 test15_res - noAudioTest /  {
+ log(1, TEST16 - disconnect);
+ mysql.connect()
+ mysql.disconnect()
+ mysql.queryGetResult("SELECT id,application,message FROM audio;")
+ logVars(1);
+ repost();
+} -> test16_eval;
+state test16_eval;
+transition test16_pass test16_eval - test($errno == 30); / playFile(wav/test_ok.wav); log(1, test PASSED) -> test16_res;
+transition test16_fail test16_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test16_res;
+state test16_res;
+
+transition run_test17 test16_res - noAudioTest /  {
+ log(1, TEST17 - connected);
+ mysql.connect()
+ logVars(1);
+ repost();
+} -> test17_eval;
+state test17_eval;
+transition test17_pass test17_eval - mysql.connected / playFile(wav/test_ok.wav); log(1, test PASSED) -> test17_res;
+transition test17_fail test17_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test17_res;
+state test17_res;
+
+transition run_test18 test17_res - noAudioTest /  {
+ log(1, TEST18 - hasResult);
+ mysql.connect()
+ mysql.query(DELETE FROM audio;)
+ mysql.query(INSERT INTO audio (application,message) VALUES ("someapp","some message");)
+ mysql.query("SELECT id,application,message FROM audio;")
+ logVars(1);
+ repost();
+} -> test18_eval;
+state test18_eval;
+transition test18_pass test18_eval - mysql.hasResult / playFile(wav/test_ok.wav); log(1, test PASSED) -> test18_res;
+transition test18_fail test18_eval - / playFile(wav/test_failed.wav); log(1, test FAILED)   -> test18_res;
+state test18_res;
+
+transition all_finished test18_res - noAudioTest / stop(true) -> end;
+transition "bye recvd" (lobby, test7_res) - hangup / stop(false) -> end;
+state end;
