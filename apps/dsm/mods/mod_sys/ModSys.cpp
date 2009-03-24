@@ -60,6 +60,7 @@ DSMAction* SCSysModule::getAction(const string& from_str) {
   splitCmd(from_str, cmd, params);
 
   DEF_CMD("sys.mkdir", SCMkDirAction);
+  DEF_CMD("sys.getNewId", SCGetNewIdAction);
 
   return NULL;
 }
@@ -104,4 +105,10 @@ EXEC_ACTION_START(SCMkDirAction) {
 	  d.c_str(), strerror(errno));
   }
 } EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCGetNewIdAction) {
+  string d = resolveVars(arg, sess, sc_sess, event_params);
+  sc_sess->var[d]=AmSession::getNewId();
+} EXEC_ACTION_END;
+
 

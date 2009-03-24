@@ -41,4 +41,5 @@ class SCSysModule
 
 DEF_SCCondition(FileExistsCondition);
 DEF_ACTION_1P(SCMkDirAction);
+DEF_ACTION_1P(SCGetNewIdAction);
 #endif
