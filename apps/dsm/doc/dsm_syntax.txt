@@ -59,6 +59,8 @@ actions:
  unmute() 
    set RTP stream to unmuted (send and receive RTP packets)
 
+ enableDTMFDetection() 
+ disableDTMFDetection()
 
  B2B.connectCallee(remote_party, remote_uri)
    connect second leg of B2B session (see AmB2BSession)

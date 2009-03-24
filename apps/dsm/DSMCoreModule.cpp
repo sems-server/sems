@@ -70,6 +70,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("disconnectMedia", SCDisconnectMediaAction);
   DEF_CMD("mute", SCMuteAction);
   DEF_CMD("unmute", SCUnmuteAction);
+  DEF_CMD("enableDTMFDetection", SCEnableDTMFDetection);
+  DEF_CMD("disableDTMFDetection", SCDisableDTMFDetection);
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("append", SCAppendAction);
@@ -236,6 +238,15 @@ EXEC_ACTION_START(SCMuteAction) {
 
 EXEC_ACTION_START(SCUnmuteAction) {
   sc_sess->unmute();
+} EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(SCEnableDTMFDetection) {
+  sess->setDtmfDetectionEnabled(true);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCDisableDTMFDetection) {
+  sess->setDtmfDetectionEnabled(false);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCStopAction) {

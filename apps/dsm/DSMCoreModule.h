@@ -62,6 +62,8 @@ DEF_ACTION_1P(SCConnectMediaAction);
 DEF_ACTION_1P(SCDisconnectMediaAction);
 DEF_ACTION_1P(SCMuteAction);
 DEF_ACTION_1P(SCUnmuteAction);
+DEF_ACTION_1P(SCEnableDTMFDetection);
+DEF_ACTION_1P(SCDisableDTMFDetection);
 
 DEF_ACTION_1P(SCSetPromptsAction);
 DEF_ACTION_1P(SCAddSeparatorAction);
