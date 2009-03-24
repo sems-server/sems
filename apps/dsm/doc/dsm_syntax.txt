@@ -44,6 +44,8 @@ actions:
  playFile(filename)
  recordFile(filename)
  stopRecord()
+ getRecordLength([dst_varname])   -- only while recording! default dst var: record_length
+ getRecordDataSize([dst_varname]) -- only while recording! default dst var: record_data_size
  closePlaylist()
  addSeparator(id)
    fires event when playlist hits it 

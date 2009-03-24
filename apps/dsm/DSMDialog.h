@@ -87,6 +87,8 @@ public:
   void addToPlaylist(AmPlaylistItem* item);
   void playFile(const string& name, bool loop);
   void recordFile(const string& name);
+  unsigned int getRecordLength();
+  unsigned int getRecordDataSize();
   void stopRecord();
 
   void setPromptSet(const string& name);

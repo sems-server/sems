@@ -65,6 +65,8 @@ class DSMSession {
   virtual void playPrompt(const string& name, bool loop = false) = 0;
   virtual void playFile(const string& name, bool loop) = 0;
   virtual void recordFile(const string& name) = 0;
+  virtual unsigned int getRecordLength() = 0;
+  virtual unsigned int getRecordDataSize() = 0;
   virtual void stopRecord() = 0;
   virtual void addToPlaylist(AmPlaylistItem* item) = 0;
   virtual void closePlaylist(bool notify) = 0;

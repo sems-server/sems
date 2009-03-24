@@ -62,6 +62,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("playFile", SCPlayFileAction);
   DEF_CMD("recordFile", SCRecordFileAction);
   DEF_CMD("stopRecord", SCStopRecordAction);
+  DEF_CMD("getRecordLength", SCGetRecordLengthAction);
+  DEF_CMD("getRecordDataSize", SCGetRecordDataSizeAction);
   DEF_CMD("closePlaylist", SCClosePlaylistAction);
   DEF_CMD("addSeparator", SCAddSeparatorAction);
   DEF_CMD("connectMedia", SCConnectMediaAction);
@@ -198,6 +200,20 @@ EXEC_ACTION_START(SCRecordFileAction) {
 
 EXEC_ACTION_START(SCStopRecordAction) {
   sc_sess->stopRecord();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCGetRecordLengthAction) {
+  string varname = resolveVars(arg, sess, sc_sess, event_params);
+  if (varname.empty())
+    varname = "record_length";
+  sc_sess->var[varname]=int2str(sc_sess->getRecordLength());
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCGetRecordDataSizeAction) {
+  string varname = resolveVars(arg, sess, sc_sess, event_params);
+  if (varname.empty())
+    varname = "record_data_size";
+  sc_sess->var[varname]=int2str(sc_sess->getRecordDataSize());
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCClosePlaylistAction) {

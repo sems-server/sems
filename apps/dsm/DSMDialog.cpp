@@ -258,6 +258,24 @@ void DSMDialog::recordFile(const string& name) {
   SET_ERRNO(DSM_ERRNO_OK);
 }
 
+unsigned int DSMDialog::getRecordLength() {
+  if (!rec_file) {
+    SET_ERRNO(DSM_ERRNO_FILE);
+    return 0;
+  }
+  SET_ERRNO(DSM_ERRNO_OK);
+  return rec_file->getLength();
+}
+
+unsigned int DSMDialog::getRecordDataSize() {
+  if (!rec_file) {
+    SET_ERRNO(DSM_ERRNO_FILE);
+    return 0;
+  }
+  SET_ERRNO(DSM_ERRNO_OK);
+  return rec_file->getDataSize();
+}
+
 void DSMDialog::stopRecord() {
   if (rec_file) {
     setInput(&playlist);

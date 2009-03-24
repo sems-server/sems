@@ -65,7 +65,7 @@ class DSMFactory
   void prepareSession(DSMDialog* s);
   void addVariables(DSMDialog* s, const string& prefix,
 		    map<string, string>& vars);
-
+  void addParams(DSMDialog* s, const string& hdrs);
 
   vector<DSMModule*> preloaded_mods;
 public:
@@ -73,6 +73,8 @@ public:
 
   static map<string, string> config;
   static bool   RunInviteEvent;
+  static bool   SetParamVariables;
+
 
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);

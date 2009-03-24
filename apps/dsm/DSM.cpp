@@ -58,6 +58,7 @@ string DSMFactory::InboundStartDiag;
 string DSMFactory::OutboundStartDiag;
 map<string, string> DSMFactory::config;
 bool DSMFactory::RunInviteEvent;
+bool DSMFactory::SetParamVariables;
 
 DSMFactory::DSMFactory(const string& _app_name)
   : AmSessionFactory(_app_name),AmDynInvokeFactory(_app_name),
@@ -221,6 +222,8 @@ int DSMFactory::onLoad()
 
   RunInviteEvent = cfg.getParameter("run_invite_event")=="yes";
 
+  SetParamVariables = cfg.getParameter("set_param_variables")=="yes";
+
   return 0;
 }
 
@@ -233,6 +236,19 @@ void DSMFactory::addVariables(DSMDialog* s, const string& prefix,
   for (map<string, string>::iterator it = 
 	 vars.begin(); it != vars.end(); it++) 
     s->var[prefix+it->first] = it->second;
+}
+
+void DSMFactory::addParams(DSMDialog* s, const string& hdrs) {
+  // TODO: use real parser with quoting and optimize
+  map<string, string> params;
+  vector<string> items = explode(getHeader(hdrs, PARAM_HDR), ";");
+  for (vector<string>::iterator it=items.begin(); 
+       it != items.end(); it++) {
+    vector<string> kv = explode(*it, "=");
+    if (kv.size()==2) 
+      params.insert(make_pair(kv[0], kv[1]));
+  }
+  addVariables(s, "", params);  
 }
 
 AmSession* DSMFactory::onInvite(const AmSipRequest& req)
@@ -250,6 +266,10 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
   DSMDialog* s = new DSMDialog(&prompts, diags, start_diag, NULL);
   prepareSession(s);
   addVariables(s, "config.", config);
+
+  if (SetParamVariables) 
+    addParams(s, req.hdrs);
+
   return s;
 }
 
@@ -305,6 +325,9 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
   addVariables(s, "config.", config);
   if (!vars.empty())
     addVariables(s, "", vars);
+
+  if (SetParamVariables) 
+    addParams(s, req.hdrs); 
 
   if (NULL == cred) {
     WARN("discarding unknown session parameters.\n");
