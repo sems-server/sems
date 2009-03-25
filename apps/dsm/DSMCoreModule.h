@@ -76,6 +76,7 @@ DEF_SCModSEStrArgAction(SCReturnFSMAction);
 
 DEF_ACTION_2P(SCSetAction);
 DEF_ACTION_2P(SCAppendAction);
+DEF_ACTION_1P(SCClearAction);
 DEF_ACTION_2P(SCSetTimerAction);
 DEF_ACTION_2P(SCLogAction);
 DEF_ACTION_1P(SCLogVarsAction);

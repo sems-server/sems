@@ -76,6 +76,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("set", SCSetAction);
   DEF_CMD("append", SCAppendAction);
   DEF_CMD("log", SCLogAction);
+  DEF_CMD("clear", SCClearAction);
   DEF_CMD("logVars", SCLogVarsAction);
 
   DEF_CMD("setTimer", SCSetTimerAction);
@@ -329,6 +330,14 @@ EXEC_ACTION_START(SCSetAction) {
   DBG("set variable '%s'='%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
 } EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCClearAction) {
+  string var_name = (arg.length() && arg[0] == '$')?
+    arg.substr(1) : arg;
+  DBG("clear variable '%s'\n", var_name.c_str());
+  sc_sess->var.erase(var_name);
+} EXEC_ACTION_END;
+
 
 CONST_ACTION_2P(SCAppendAction,',', false);
 EXEC_ACTION_START(SCAppendAction) {

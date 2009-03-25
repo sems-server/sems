@@ -76,6 +76,7 @@ actions:
  append($var, value)
  e.g. append($var, "text"); append($var, #key);
       append($var, @select); append($var, $var2);
+ clear($var)
 
  log(level, text)
    e.g. log(1, $var1)
