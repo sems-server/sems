@@ -402,7 +402,6 @@ MATCH_CONDITION_START(MyHasResultCondition) {
 } MATCH_CONDITION_END;
 
 MATCH_CONDITION_START(MyConnectedCondition) {
-  // TODO
   mysqlpp::Connection* conn = 
     getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
