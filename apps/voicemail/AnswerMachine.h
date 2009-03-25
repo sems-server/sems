@@ -73,6 +73,7 @@ class AnswerMachineFactory: public AmSessionFactory
   AmDynInvoke* msg_storage;
 
 public:
+  static string EmailAddress;
   static string RecFileExt;
   static string AnnouncePath;
   static string DefaultAnnounce;

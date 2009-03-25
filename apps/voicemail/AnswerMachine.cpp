@@ -72,6 +72,7 @@
 
 EXPORT_SESSION_FACTORY(AnswerMachineFactory,MOD_NAME);
 
+string AnswerMachineFactory::EmailAddress;
 string AnswerMachineFactory::RecFileExt;
 string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
@@ -478,6 +479,9 @@ int AnswerMachineFactory::onLoad()
   DBG("Voicebox will%s save empty messages.\n", 
       SaveEmptyMsg?"":" not");
 
+  // override email address
+  EmailAddress = cfg.getParameter("email_address");
+
   return 0;
 }
 
@@ -495,22 +499,29 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   int vm_mode = MODE_VOICEMAIL; 
 
   string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
-
-  if (!iptel_app_param.length()) {
-    throw AmSession::Exception(500, "voicemail: parameters not found");
-  }
-
-  language = get_header_keyvalue(iptel_app_param, "lng", "Language");
-  email = get_header_keyvalue(iptel_app_param, "eml", "Email-Address");
-
   string mode = get_header_keyvalue(iptel_app_param,"mod", "Mode");
-  if (!mode.empty()) {
-    if (mode == "box")
-      vm_mode = MODE_BOX;
-    else if (mode == "both")
-      vm_mode = MODE_BOTH;
-    else if (mode == "ann")
-      vm_mode = MODE_ANN;
+
+  if (!EmailAddress.length()) {
+
+    if (!iptel_app_param.length()) {
+      throw AmSession::Exception(500, "voicemail: parameters not found");
+    }
+    
+    language = get_header_keyvalue(iptel_app_param, "lng", "Language");
+    email = get_header_keyvalue(iptel_app_param, "eml", "Email-Address");
+    
+    if (!mode.empty()) {
+      if (mode == "box")
+	vm_mode = MODE_BOX;
+      else if (mode == "both")
+	vm_mode = MODE_BOTH;
+      else if (mode == "ann")
+	vm_mode = MODE_ANN;
+    }
+  } else {
+    // overrides email address
+    vm_mode = MODE_VOICEMAIL;
+    email = EmailAddress;
   }
 
   if (((vm_mode == MODE_BOTH) || (vm_mode == MODE_VOICEMAIL)) &&
@@ -519,7 +530,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 	  email.c_str(), iptel_app_param.c_str());
     throw AmSession::Exception(500, "voicemail: no email address");
   }
-
+  
   user = get_header_keyvalue(iptel_app_param,"usr", "User");
   if (!user.length())
     user = req.user;
@@ -531,33 +542,33 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
   if (!domain.length())
     domain = req.domain;
-
+  
   typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
   if (!typ.length())
     typ = DEFAULT_TYPE;
-
+  
   uid = get_header_keyvalue(iptel_app_param, "uid", "UserID");
   if (uid.empty())
     uid=user;
-
+  
   did = get_header_keyvalue(iptel_app_param, "did", "DomainID");
   if (did.empty())
     did=domain;
-
-
+  
+  
   // checks
   if (uid.empty()) 
     throw AmSession::Exception(500, "voicemail: user missing");
-
+  
   if (sender.empty()) 
     throw AmSession::Exception(500, "voicemail: sender missing");
-
+  
   if (((vm_mode == MODE_BOX) || (vm_mode == MODE_BOTH))
       && (NULL == MessageStorage)) {
     throw AmSession::Exception(500, "voicemail: no message storage available");
   }
-    
-
+  
+  
   DBG("voicemail invocation parameters: \n");
   DBG(" Mode:     <%s> \n", mode.c_str());
   DBG(" Email:    <%s> \n", email.c_str());
