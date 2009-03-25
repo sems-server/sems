@@ -36,7 +36,8 @@ DSMDialog::DSMDialog(AmPromptCollection* prompts,
 		     UACAuthCred* credentials)
   : prompts(prompts), default_prompts(prompts), diags(diags), startDiagName(startDiagName), 
     playlist(this), cred(credentials), 
-    rec_file(NULL)
+    rec_file(NULL),
+    process_invite(true), process_sessionstart(true)
 {
   diags.addToEngine(&engine);
   set_sip_relay_only(false);
@@ -72,6 +73,13 @@ bool DSMDialog::checkVar(const string& var_name, const string& var_val) {
 }
 
 void DSMDialog::onInvite(const AmSipRequest& req) {
+  if (!process_invite) {
+    // re-INVITEs
+    AmB2BCallerSession::onInvite(req);
+    return;
+  }
+  process_invite = false;
+    
   bool run_session_invite = engine.onInvite(req, this);
 
   if (DSMFactory::RunInviteEvent) {
@@ -88,17 +96,24 @@ void DSMDialog::onInvite(const AmSipRequest& req) {
 
 void DSMDialog::onSessionStart(const AmSipRequest& req)
 {
-  AmB2BCallerSession::onSessionStart(req);
-  DBG("DSMDialog::onSessionStart\n");
-  startSession();
+  if (process_sessionstart) {
+    process_sessionstart = false;
+    AmB2BCallerSession::onSessionStart(req);
+
+    DBG("DSMDialog::onSessionStart\n");
+    startSession();
+  }
 }
 
 void DSMDialog::onSessionStart(const AmSipReply& rep)
 {
-  DBG("DSMDialog::onSessionStart (SEMS originator mode)\n");
-  invite_req.body = rep.body;
+  if (process_sessionstart) {
+    process_sessionstart = false;
+    DBG("DSMDialog::onSessionStart (SEMS originator mode)\n");
+    invite_req.body = rep.body;
  
-  startSession();
+    startSession();    
+  }
 }
 
 void DSMDialog::startSession(){

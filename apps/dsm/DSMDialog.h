@@ -50,6 +50,9 @@ class DSMDialog : public AmB2BCallerSession,
   string startDiagName;
   AmPlaylist playlist;
 
+  bool process_invite;
+  bool process_sessionstart;
+
   vector<AmAudio*> audiofiles;
   AmAudioFile* rec_file;
   map<string, AmPromptCollection*> prompt_sets;
