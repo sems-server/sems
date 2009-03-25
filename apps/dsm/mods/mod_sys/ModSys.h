@@ -42,6 +42,6 @@ class SCSysModule
 DEF_SCCondition(FileExistsCondition);
 DEF_ACTION_1P(SCMkDirAction);
 DEF_ACTION_1P(SCMkDirRecursiveAction);
-DEF_ACTION_1P(SCGetNewIdAction);
+DEF_ACTION_2P(SCRenameAction);
 
 #endif

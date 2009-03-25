@@ -61,7 +61,7 @@ DSMAction* SCSysModule::getAction(const string& from_str) {
 
   DEF_CMD("sys.mkdir", SCMkDirAction);
   DEF_CMD("sys.mkdirRecursive", SCMkDirRecursiveAction);
-  DEF_CMD("sys.getNewId", SCGetNewIdAction);
+  DEF_CMD("sys.rename", SCRenameAction);
 
   return NULL;
 }
@@ -163,9 +163,17 @@ EXEC_ACTION_START(SCMkDirRecursiveAction) {
   }
 } EXEC_ACTION_END;
 
-EXEC_ACTION_START(SCGetNewIdAction) {
-  string d = resolveVars(arg, sess, sc_sess, event_params);
-  sc_sess->var[d]=AmSession::getNewId();
+CONST_ACTION_2P(SCRenameAction, ',', true);
+EXEC_ACTION_START(SCRenameAction) {
+  string src = resolveVars(par1, sess, sc_sess, event_params);
+  string dst = resolveVars(par2, sess, sc_sess, event_params);
+
+  if (!rename(src.c_str(), dst.c_str())) {
+    sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
+  } else {
+    DBG("renaming '%s' to '%s' failed: '%s'\n", 
+	src.c_str(), dst.c_str(), strerror(errno));
+    sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+  }
+
 } EXEC_ACTION_END;
-
-
