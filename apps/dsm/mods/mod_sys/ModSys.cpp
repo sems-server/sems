@@ -60,6 +60,7 @@ DSMAction* SCSysModule::getAction(const string& from_str) {
   splitCmd(from_str, cmd, params);
 
   DEF_CMD("sys.mkdir", SCMkDirAction);
+  DEF_CMD("sys.mkdirRecursive", SCMkDirRecursiveAction);
   DEF_CMD("sys.getNewId", SCGetNewIdAction);
 
   return NULL;
@@ -96,13 +97,69 @@ MATCH_CONDITION_START(FileExistsCondition) {
   }
 } MATCH_CONDITION_END;
 
+bool sys_mkdir(const char* p) {
+  if (mkdir(p,  S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
+    ERROR("mkdir failed for '%s': %s\n", 
+	  p, strerror(errno));
+    return false;
+  }
+  return true;
+}
 
 EXEC_ACTION_START(SCMkDirAction) {
   string d = resolveVars(arg, sess, sc_sess, event_params);
   DBG("mkdir '%s'\n", d.c_str());
-  if (mkdir(d.c_str(),  S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) {
-    ERROR("kmdir failed for '%s': %s\n", 
-	  d.c_str(), strerror(errno));
+  if (sys_mkdir(d.c_str())) {
+    sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
+  } else {
+    sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+  }
+} EXEC_ACTION_END;
+
+
+bool sys_get_parent_dir(const char* path, char* parentPath) {
+
+  //size_t pos = strcspn(dirPath, "/\\");
+  char* ptr = strrchr(path, '/'); // search char from end reverse
+  if (ptr == NULL) {
+    ptr = strrchr(path, '\\'); // search char from end reverse
+    if (ptr == NULL) {
+      return false;
+    }
+  }
+  
+  // copy the parent substring to parentPath
+  unsigned int i;
+  for (i = 0; &(path[i+1]) != ptr; i++) {
+    parentPath[i] = path[i];
+  }
+  parentPath[i] = '\0';
+  
+  return true;
+}
+
+bool sys_mkdir_recursive(const char* p) {
+  if (!file_exists(p)) {
+    char parent_dir[strlen(p)+1];
+    bool has_parent = sys_get_parent_dir(p, parent_dir);
+    if (has_parent) {
+      bool parent_exists = sys_mkdir_recursive(parent_dir);
+      if (parent_exists) {
+	return sys_mkdir(p);
+      }
+    }
+    return false;
+  }
+  return true;
+}
+
+EXEC_ACTION_START(SCMkDirRecursiveAction) {
+  string d = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("mkdir recursive '%s'\n", d.c_str());
+  if (sys_mkdir_recursive(d.c_str())) {
+    sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
+  } else {
+    sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
   }
 } EXEC_ACTION_END;
 
