@@ -411,19 +411,3 @@ MATCH_CONDITION_START(MyConnectedCondition) {
   return conn->connected();
 } MATCH_CONDITION_END;
 
-// bool FileExistsCondition::match(AmSession* sess, DSMCondition::EventType event,
-// 				map<string,string>* event_params) {
-//   GET_SCSESSION();
-//   DBG("checking file '%s'\n", arg.c_str());
-//   string fname = resolveVars(arg, sess, sc_sess, event_params);
-//   bool ex =  file_exists(fname);
-//   DBG("file '%s' %s\n", fname.c_str(), ex?"exists":"does not exist");
-//   if (inv) {
-//     DBG("returning %s\n", (!ex)?"true":"false");
-//     return !ex;
-//   }  else {
-//     DBG("returning %s\n", (ex)?"true":"false");
-//     return ex;
-//   }
-// }
-
