@@ -75,6 +75,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("append", SCAppendAction);
+  DEF_CMD("inc", SCIncAction);
   DEF_CMD("log", SCLogAction);
   DEF_CMD("clear", SCClearAction);
   DEF_CMD("logVars", SCLogVarsAction);
@@ -347,6 +348,17 @@ EXEC_ACTION_START(SCAppendAction) {
   sc_sess->var[var_name] += resolveVars(par2, sess, sc_sess, event_params);
 
   DBG("$%s now '%s'\n", 
+      var_name.c_str(), sc_sess->var[var_name].c_str());
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCIncAction) {
+  string var_name = (arg.length() && arg[0] == '$')?
+    arg.substr(1) : arg;
+  unsigned int val = 0;
+  str2i(sc_sess->var[var_name], val);
+  sc_sess->var[var_name] = int2str(val+1);
+
+  DBG("inc: $%s now '%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
 } EXEC_ACTION_END;
 
