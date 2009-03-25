@@ -56,6 +56,8 @@ DSMAction* SCMysqlModule::getAction(const string& from_str) {
   DEF_CMD("mysql.getResult",          SCMyGetResultAction);
   DEF_CMD("mysql.getClientVersion",   SCMyGetClientVersion);
   DEF_CMD("mysql.resolveQueryParams", SCMyResolveQueryParams);
+  DEF_CMD("mysql.saveResult",         SCMySaveResultAction);
+  DEF_CMD("mysql.useResult",          SCMyUseResultAction);
 
   return NULL;
 }
@@ -289,7 +291,6 @@ EXEC_ACTION_START(SCMyQueryAction) {
 
 CONST_ACTION_2P(SCMyQueryGetResultAction, ',', true);
 EXEC_ACTION_START(SCMyQueryGetResultAction) {
-  DBG("par1='%s', par2='%s'\n", par1.c_str(), par2.c_str());
   mysqlpp::Connection* conn = 
     getMyDSMSessionConnection(sc_sess);
   if (NULL == conn) 
@@ -410,3 +411,11 @@ MATCH_CONDITION_START(MyConnectedCondition) {
   return conn->connected();
 } MATCH_CONDITION_END;
 
+
+EXEC_ACTION_START(SCMySaveResultAction) {
+  sc_sess->avar[resolveVars(arg, sess, sc_sess, event_params)] = sc_sess->avar[MY_AKEY_RESULT];
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCMyUseResultAction) {
+  sc_sess->avar[MY_AKEY_RESULT] = sc_sess->avar[resolveVars(arg, sess, sc_sess, event_params)];
+} EXEC_ACTION_END;

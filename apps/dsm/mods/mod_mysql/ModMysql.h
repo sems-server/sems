@@ -85,6 +85,8 @@ DEF_ACTION_1P(SCMyGetClientVersion);
 DEF_ACTION_1P(SCMyResolveQueryParams);
 DEF_SCCondition(MyHasResultCondition);
 DEF_SCCondition(MyConnectedCondition);
+DEF_ACTION_1P(SCMySaveResultAction);
+DEF_ACTION_1P(SCMyUseResultAction);
 
 
 

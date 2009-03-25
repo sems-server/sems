@@ -79,7 +79,11 @@ Actions:
 -- gets client version into $db.client_version
  mysql.getClientVersion()
 
+-- save result into another name
+  mysql.saveResult(string name)
 
+-- user saved result
+  mysql.userResult(string name)
 
 Conditions
 ==========
@@ -107,6 +111,7 @@ to the session:
                    | 
   Result           | avar["db.res"]
                    | 
+  Result           | avar[parameter] on mysql.saveResult
 
 Note: Due to the implementation of MySQL++, the complete result set has 
 to be copied one more time internally, if mysql.query() is used. So if
