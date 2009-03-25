@@ -1,5 +1,6 @@
 Actions: 
  sys.mkdir(string dirname)
+ sys.mkdirRecursive(string dirname)
  sys.getNewId(string varname)
 
 Conditions: 
