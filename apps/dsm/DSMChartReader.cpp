@@ -217,7 +217,7 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
     if (stack.empty()) {
       if (token == ";")
 	continue;
-      ERROR("I do not understand '%s'\n", token.c_str());
+      ERROR("Without context I do not understand '%s'\n", token.c_str());
       return false;
     }
 
