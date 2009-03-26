@@ -75,6 +75,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("append", SCAppendAction);
+  DEF_CMD("substr", SCSubStrAction);
   DEF_CMD("inc", SCIncAction);
   DEF_CMD("log", SCLogAction);
   DEF_CMD("clear", SCClearAction);
@@ -346,6 +347,29 @@ EXEC_ACTION_START(SCAppendAction) {
     par1.substr(1) : par1;
 
   sc_sess->var[var_name] += resolveVars(par2, sess, sc_sess, event_params);
+
+  DBG("$%s now '%s'\n", 
+      var_name.c_str(), sc_sess->var[var_name].c_str());
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCSubStrAction,',', false);
+EXEC_ACTION_START(SCSubStrAction) {
+  string var_name = (par1.length() && par1[0] == '$')?
+    par1.substr(1) : par1;
+  unsigned int pos = 0;
+  if (str2i(resolveVars(par2, sess, sc_sess, event_params), pos)) {
+    ERROR("substr length '%s'\n",
+	  resolveVars(par2, sess, sc_sess, event_params).c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    return false;
+  }
+  try {
+    sc_sess->var[var_name] = sc_sess->var[var_name].substr(pos);
+  } catch(...) {
+    ERROR("in substr\n");
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    return false;
+  }
 
   DBG("$%s now '%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
