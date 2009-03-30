@@ -47,16 +47,7 @@ transition check_pin_server ADDKEY - keyTest(#key > 9) /  {
  	    DIgetResult(xmlrpc2di, sendRequestList, vbs, checkPIN, @user, $pin);
 	    set($status=      $DI_res0);
 	    set($description= $DI_res1);
-	    set($domt=        $DI_res2);
-	    set($imguid=      $DI_res3);
-	    set($inid=        $DI_res4);
-	    set($vbsSessionId=$DI_res5);
-	    set($validPin=    $DI_res6);
-	    set($tryAgain=    $DI_res7);
-	    set($participantType=$DI_res8);
-	    set($inProgress=  $DI_res9);
-	    set($registered=  $DI_res10);
-	    set($startTime=   $DI_res11);
+	    set($validPin=    $DI_res2);
 	    repost();
 	   }   -> TESTPINRESULT;
 
