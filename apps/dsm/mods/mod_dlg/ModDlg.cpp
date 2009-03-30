@@ -32,8 +32,6 @@
 #include "AmSession.h"
 #include <string.h>
 
-#include "DSMCoreModule.h"
-
 SC_EXPORT(DLGModule);
 
 DLGModule::DLGModule() {

@@ -34,7 +34,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "DSMCoreModule.h"
 #include "AmUriParser.h"
 
 SC_EXPORT(URIModule);

@@ -34,8 +34,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "DSMCoreModule.h"
-
 SC_EXPORT(SCSysModule);
 
 SCSysModule::SCSysModule() {

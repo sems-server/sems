@@ -32,8 +32,6 @@
 #include "AmRtpAudio.h"
 
 #include "DSMSession.h"
-#include "DSMCoreModule.h"
-
 #include "ModConference.h"
 
 SC_EXPORT(ConfModule);

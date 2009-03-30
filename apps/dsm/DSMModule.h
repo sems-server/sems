@@ -213,6 +213,10 @@ class SCStrArgAction
 string resolveVars(const string s, AmSession* sess,
 		   DSMSession* sc_sess, map<string,string>* event_params);
 
+void splitCmd(const string& from_str, 
+		string& cmd, string& params);
+
+
 #define DEF_CMD(cmd_name, class_name) \
 				      \
   if (cmd == cmd_name) {	      \
@@ -244,5 +248,23 @@ string resolveVars(const string s, AmSession* sess,
 
 #define MATCH_CONDITION_END }			
 
+
+#define GET_SCSESSION()					       \
+  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess);       \
+  if (!sc_sess) {					       \
+    ERROR("wrong session type\n");			       \
+    return false;					       \
+  }
+
+
+#define EXEC_ACTION_START(act_name)					\
+  bool act_name::execute(AmSession* sess,				\
+			 DSMCondition::EventType event,			\
+			 map<string,string>* event_params) {		\
+    GET_SCSESSION();							
+
+#define EXEC_ACTION_END				\
+  return false;					\
+  }
 
 #endif

@@ -32,8 +32,6 @@
 #include "DSMSession.h"
 #include "AmSession.h"
 
-#include "DSMCoreModule.h"
-
 SC_EXPORT(SCMysqlModule);
 
 SCMysqlModule::SCMysqlModule() {

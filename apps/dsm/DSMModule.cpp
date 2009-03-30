@@ -85,3 +85,13 @@ string resolveVars(const string s, AmSession* sess,
   }
   return s;
 }
+
+void splitCmd(const string& from_str, 
+			    string& cmd, string& params) {
+  size_t b_pos = from_str.find('(');
+  if (b_pos != string::npos) {
+    cmd = from_str.substr(0, b_pos);
+    params = from_str.substr(b_pos + 1, from_str.rfind(')') - b_pos -1);
+  } else 
+    cmd = from_str;  
+}

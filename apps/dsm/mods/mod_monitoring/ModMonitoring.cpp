@@ -31,7 +31,6 @@
 #include "ampi/MonitoringAPI.h"
 
 #include "DSMSession.h"
-#include "DSMCoreModule.h"
 #include "AmSession.h"
 
 #include "ModMonitoring.h"

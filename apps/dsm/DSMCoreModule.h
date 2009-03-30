@@ -37,9 +37,6 @@ using std::map;
 class AmSession;
 class DSMSession;
 
-void splitCmd(const string& from_str, 
-		string& cmd, string& params);
-
 class DSMCoreModule 
 : public DSMModule {
 
@@ -119,25 +116,5 @@ class TestDSMCondition
   bool match(AmSession* sess, DSMCondition::EventType event,
 	     map<string,string>* event_params);
 };
-
-
-#define GET_SCSESSION()					       \
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess);       \
-  if (!sc_sess) {					       \
-    ERROR("wrong session type\n");			       \
-    return false;					       \
-  }
-
-
-#define EXEC_ACTION_START(act_name)					\
-  bool act_name::execute(AmSession* sess,				\
-			 DSMCondition::EventType event,			\
-			 map<string,string>* event_params) {		\
-    GET_SCSESSION();							
-
-#define EXEC_ACTION_END				\
-  return false;					\
-  }
-
 
 #endif
