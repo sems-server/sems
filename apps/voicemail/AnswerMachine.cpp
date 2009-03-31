@@ -109,12 +109,12 @@ AnswerMachineFactory::AnswerMachineFactory(const string& _app_name)
 mysqlpp::Connection AnswerMachineFactory::Connection(mysqlpp::use_exceptions);
 
 int get_audio_file(string message, string domain, string user,
-                  string language, string *audio_file)
+                  string language, string& audio_file)
 {
   string query_string;
 
   if (!user.empty()) {
-    *audio_file = string("/tmp/") + domain + "_" + user + "_" +
+    audio_file = string("/tmp/") + domain + "_" + user + "_" +
       MOD_NAME + "_" + message + ".wav";
     query_string = "select audio from " + string(USER_AUDIO_TABLE) + 
       " where application='" + MOD_NAME + "' and message='" + message + 
@@ -122,13 +122,13 @@ int get_audio_file(string message, string domain, string user,
   } else {
     if (language.empty()) {
       if (domain.empty()) {
-       *audio_file = string("/tmp/") + MOD_NAME + "_" + message +
+       audio_file = string("/tmp/") + MOD_NAME + "_" + message +
          ".wav";
        query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + 
 	 " where application='" + MOD_NAME + "' and message='" + message + 
 	 "' and language=''";
       } else {
-       *audio_file = string("/tmp/") + domain + "_" + MOD_NAME +
+       audio_file = string("/tmp/") + domain + "_" + MOD_NAME +
          "_" + message + ".wav";
        query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + 
 	 " where application='" + MOD_NAME + "' and message='" + message + 
@@ -136,13 +136,13 @@ int get_audio_file(string message, string domain, string user,
       }
     } else {
       if (domain.empty()) {
-       *audio_file = string("/tmp/") + MOD_NAME + "_" + message +
+       audio_file = string("/tmp/") + MOD_NAME + "_" + message +
          "_" + language + ".wav";
        query_string = "select audio from " + string(DEFAULT_AUDIO_TABLE) + 
 	 " where application='" + MOD_NAME + "' and message='" + message + 
 	 "' and language='" + language + "'";
       } else {
-       *audio_file = string("/tmp/") + domain + "_" + MOD_NAME + "_" +
+       audio_file = string("/tmp/") + domain + "_" + MOD_NAME + "_" +
          message + "_" + language + ".wav";
        query_string = "select audio from " + string(DOMAIN_AUDIO_TABLE) + 
 	 " where application='" + MOD_NAME + "' and message='" + message + 
@@ -166,17 +166,17 @@ int get_audio_file(string message, string domain, string user,
       if ((res.num_rows() > 0) && (row = res.at(0))) {
        FILE *file;
        unsigned long length = row.raw_string(0).size();
-       file = fopen((*audio_file).c_str(), "wb");
+       file = fopen(audio_file.c_str(), "wb");
        fwrite(row.at(0).data(), 1, length, file);
        fclose(file);
        return 1;
       } else {
-       *audio_file = "";
+       audio_file = "";
        return 1;
       }
     } else {
       ERROR("Database query error\n");
-      *audio_file = "";
+      audio_file = "";
       return 0;
     }
   }
@@ -184,7 +184,7 @@ int get_audio_file(string message, string domain, string user,
   catch (const mysqlpp::Exception& er) {
     // Catch-all for any MySQL++ exceptions
     ERROR("MySQL++ error: %s\n", er.what());
-    *audio_file = "";
+    audio_file = "";
     return 0;
   }
 }
@@ -589,25 +589,25 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   string announce_file;
 
   if (get_audio_file(GREETING_MSG, domain, req.user, "",
-                    &announce_file) && !announce_file.empty())
+                    announce_file) && !announce_file.empty())
     goto announce_found;
 
   if (!language.empty()) {
     if (get_audio_file(GREETING_MSG, domain, "", language,
-                      &announce_file) && !announce_file.empty())
+                      announce_file) && !announce_file.empty())
       goto announce_found;
   } else {
     if (get_audio_file(GREETING_MSG, domain, "", "",
-                      &announce_file) && !announce_file.empty())
+                      announce_file) && !announce_file.empty())
       goto announce_found;
   }
 
   if (!language.empty())
     if (get_audio_file(GREETING_MSG, "", "", language,
-                      &announce_file) && !announce_file.empty())
+                      announce_file) && !announce_file.empty())
       goto announce_found;
 
-  get_audio_file(GREETING_MSG, "", "", "", &announce_file);
+  get_audio_file(GREETING_MSG, "", "", "", announce_file);
 
 #else
 
@@ -804,7 +804,7 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
 
 #ifdef USE_MYSQL
   string beep_file;
-  if (!get_audio_file(BEEP_SOUND, "", "", "", &beep_file) ||
+  if (!get_audio_file(BEEP_SOUND, "", "", "", beep_file) ||
       beep_file.empty())
     throw string("AnswerMachine: could not find beep file\n");
 
