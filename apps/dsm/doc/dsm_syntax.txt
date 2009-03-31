@@ -68,6 +68,12 @@ actions:
  B2B.terminateOtherLeg
    disconnect second leg of B2B session (see AmB2BSession)
 
+ B2B.sendReinvite(generate_sdp [, string extra_headers])
+   send a reinvite in caller leg (first leg), e.g. to 
+   reconnect first leg after B2B.otherBye received. 
+   generate_sdp can be 'true' or 'false'
+   (B2B.sendReinvite(true) recommended)
+
  setPrompts(name) 
    if more than one prompt sets are loaded
 

@@ -84,6 +84,7 @@ DEF_ACTION_2P(SCPostEventAction);
 
 DEF_ACTION_2P(SCB2BConnectCalleeAction);
 DEF_ACTION_1P(SCB2BTerminateOtherLegAction);
+DEF_ACTION_2P(SCB2BReinviteAction);
 
 class SCDIAction					
 : public DSMAction {
