@@ -108,8 +108,8 @@ AnswerMachineFactory::AnswerMachineFactory(const string& _app_name)
 #ifdef USE_MYSQL
 mysqlpp::Connection AnswerMachineFactory::Connection(mysqlpp::use_exceptions);
 
-int get_audio_file(string message, string domain, string user,
-                  string language, string& audio_file)
+int get_audio_file(const string& message, const string& domain, const string& user,
+		   const string& language, string& audio_file)
 {
   string query_string;
 
