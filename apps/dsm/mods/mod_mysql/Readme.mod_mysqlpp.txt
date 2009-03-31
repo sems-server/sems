@@ -82,8 +82,23 @@ Actions:
 -- save result into another name
   mysql.saveResult(string name)
 
--- user saved result
-  mysql.userResult(string name)
+-- use saved result
+  mysql.useResult(string name)
+
+-- play a file from DB 
+  mysql.playDBAudio(string query, string filename)
+
+  filename is there to detect file type
+
+-- get a file from DB to local fs
+  mysql.getFileFromDB(string query, string filename)
+
+-- put a local file into DB
+  mysql.putFileToDB(string query, string filename)
+
+  __FILE__ in query is replaced with the contents of the file at 'filename'
+
+  sets $db.rows, $db.info, $db.insert_id
 
 Conditions
 ==========

@@ -31,6 +31,10 @@
 
 #include "DSMSession.h"
 #include "AmSession.h"
+#include "AmPlaylist.h"
+
+#include <stdio.h>
+#include <fstream>
 
 SC_EXPORT(SCMysqlModule);
 
@@ -56,6 +60,9 @@ DSMAction* SCMysqlModule::getAction(const string& from_str) {
   DEF_CMD("mysql.resolveQueryParams", SCMyResolveQueryParams);
   DEF_CMD("mysql.saveResult",         SCMySaveResultAction);
   DEF_CMD("mysql.useResult",          SCMyUseResultAction);
+  DEF_CMD("mysql.playDBAudio",        SCMyPlayDBAudioAction);
+  DEF_CMD("mysql.getFileFromDB",      SCMyGetFileFromDBAction);
+  DEF_CMD("mysql.putFileToDB",        SCMyPutFileToDBAction);
 
   return NULL;
 }
@@ -416,4 +423,148 @@ EXEC_ACTION_START(SCMySaveResultAction) {
 
 EXEC_ACTION_START(SCMyUseResultAction) {
   sc_sess->avar[MY_AKEY_RESULT] = sc_sess->avar[resolveVars(arg, sess, sc_sess, event_params)];
+} EXEC_ACTION_END;
+
+
+CONST_ACTION_2P(SCMyPlayDBAudioAction, ',', true);
+EXEC_ACTION_START(SCMyPlayDBAudioAction) {
+  mysqlpp::Connection* conn = 
+    getMyDSMSessionConnection(sc_sess);
+  if (NULL == conn) 
+    return false;
+  string qstr = replaceQueryParams(par1, sc_sess, event_params);
+
+  try {
+    mysqlpp::Query query = conn->query(qstr.c_str());
+    mysqlpp::UseQueryResult res = query.use();    
+    if (res) {
+
+      mysqlpp::Row row = res.fetch_row();
+      if (!row) {
+	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOROW);
+	return false;
+      }
+      FILE *t_file = tmpfile();
+      if (NULL == t_file) {
+	sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+	return false;
+      }
+
+      fwrite(row.at(0).data(), 1, row.at(0).size(), t_file);
+      rewind(t_file);
+      
+      DSMDisposableAudioFile* a_file = new DSMDisposableAudioFile();
+      if (a_file->fpopen(par2, AmAudioFile::Read, t_file)) {
+	sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+	return false;
+      }
+
+      sc_sess->addToPlaylist(new AmPlaylistItem(a_file, NULL));
+      sc_sess->transferOwnership(a_file);
+
+      sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
+    } else {
+      sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
+    }
+  } catch (const mysqlpp::Exception& e) {
+    ERROR("DB query '%s' failed: '%s'\n", 
+	  qstr.c_str(), e.what());
+    sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
+    sc_sess->var["db.ereason"] = e.what();
+  }
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCMyGetFileFromDBAction, ',', true);
+EXEC_ACTION_START(SCMyGetFileFromDBAction) {
+  mysqlpp::Connection* conn = 
+    getMyDSMSessionConnection(sc_sess);
+  if (NULL == conn) 
+    return false;
+  string qstr = replaceQueryParams(par1, sc_sess, event_params);
+
+  try {
+    mysqlpp::Query query = conn->query(qstr.c_str());
+    mysqlpp::UseQueryResult res = query.use();    
+    if (res) {
+      mysqlpp::Row row = res.fetch_row();
+      if (!row) {
+	sc_sess->SET_ERRNO(DSM_ERRNO_MY_NOROW);
+	return false;
+      }
+      FILE *t_file = fopen(par2.c_str(), "wb");
+      if (NULL == t_file) {
+	sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+	return false;
+      }
+
+      fwrite(row.at(0).data(), 1, row.at(0).size(), t_file);
+      fclose(t_file);
+
+      sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
+    } else {
+      sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
+    }
+  } catch (const mysqlpp::Exception& e) {
+    ERROR("DB query '%s' failed: '%s'\n", 
+	  qstr.c_str(), e.what());
+    sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
+    sc_sess->var["db.ereason"] = e.what();
+  }
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCMyPutFileToDBAction, ',', true);
+EXEC_ACTION_START(SCMyPutFileToDBAction) {
+  mysqlpp::Connection* conn = 
+    getMyDSMSessionConnection(sc_sess);
+  if (NULL == conn) 
+    return false;
+  string qstr = replaceQueryParams(par1, sc_sess, event_params);
+
+  size_t fpos = qstr.find("__FILE__");
+  if (fpos == string::npos) {
+    ERROR("missing __FILE__ in query string '%s'\n", 
+	  par1.c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    return false;
+  }
+  
+  try {
+    std::ifstream data_file(par2.c_str(), std::ios::in | std::ios::binary);
+    if (!data_file) {
+      DBG("could not read file '%s'\n", par2.c_str());
+      sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+      return false;
+    }
+    // that one is clever...
+    // (see http://www.gamedev.net/community/forums/topic.asp?topic_id=353162 )
+    string file_data((std::istreambuf_iterator<char>(data_file)), 
+		     std::istreambuf_iterator<char>());
+       
+    if (file_data.empty()) {
+      DBG("could not read file '%s'\n", par2.c_str());
+      sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+      return false;
+    }
+
+    mysqlpp::Query query = conn->query();
+    query << qstr.substr(0, fpos) <<  
+      mysqlpp::escape << file_data << qstr.substr(fpos+8);
+
+    mysqlpp::SimpleResult res = query.execute();
+    if (res) {
+      sc_sess->SET_ERRNO(DSM_ERRNO_OK);
+      sc_sess->var["db.rows"] = int2str(res.rows());
+      sc_sess->var["db.info"] = res.info();
+      sc_sess->var["db.insert_id"] = int2str(res.insert_id());
+    } else {
+      sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
+      sc_sess->var["db.info"] = res.info();
+    }
+
+  } catch (const mysqlpp::Exception& e) {
+    ERROR("DB query '%s' failed: '%s'\n", 
+	  par1.c_str(), e.what());
+    sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);    
+    sc_sess->var["db.ereason"] = e.what();
+  }
 } EXEC_ACTION_END;

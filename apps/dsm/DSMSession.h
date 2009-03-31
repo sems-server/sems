@@ -30,6 +30,7 @@
 #include "AmArg.h"
 #include "AmEvent.h"
 #include "AmSipMsg.h"
+#include "AmAudioFile.h"
 
 #include <string>
 using std::string;
@@ -100,11 +101,19 @@ class DSMSession {
 };
 
 
-
 class DSMDisposable {
  public:
   DSMDisposable() { }
   virtual ~DSMDisposable() { }
+};
+
+class DSMDisposableAudioFile 
+: public DSMDisposable, 
+  public AmAudioFile 
+{
+ public:
+  DSMDisposableAudioFile() { }
+  ~DSMDisposableAudioFile() { }
 };
 
 #define DSM_EVENT_ID -10

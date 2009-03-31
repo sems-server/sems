@@ -1,0 +1,15 @@
+import(mod_mysql);
+
+initial state lobby 
+  enter { 
+   mysql.connect(mysql://root:sa07@localhost/sems);
+   mysql.putFileToDB('INSERT INTO audio (application,message,audio) VALUES ("test","testmessage","__FILE__")', wav/welcome.wav);
+   mysql.playDBAudio(SELECT audio FROM audio WHERE id=$db.insert_id, anything.wav);
+   mysql.getFileFromDB(SELECT audio FROM audio WHERE id=$db.insert_id, /tmp/retrieved.wav);
+  };
+
+transition "error" lobby - test($errno!="") / stop(true) -> end;
+transition "audio ends" lobby - noAudioTest / stop(true) -> end;
+transition "bye recvd" lobby - hangup / stop(false) -> end;
+
+state end;
