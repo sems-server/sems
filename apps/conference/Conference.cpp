@@ -77,7 +77,7 @@ bool ConferenceFactory::UseRFC4240Rooms;
 #ifdef USE_MYSQL
 mysqlpp::Connection ConferenceFactory::Connection(mysqlpp::use_exceptions);
 
-int get_audio_file(string message, string domain, string language,
+int get_audio_file(const string& message, const string& domain, const string& language,
 		   string& audio_file)
 {
   string query_string;
