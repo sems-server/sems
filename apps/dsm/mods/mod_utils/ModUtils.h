@@ -42,5 +42,5 @@ class SCUtilsModule
 DEF_ACTION_2P(SCUPlayCountRightAction);
 DEF_ACTION_2P(SCUPlayCountLeftAction);
 DEF_ACTION_1P(SCGetNewIdAction);
-
+DEF_ACTION_2P(SCUSpellAction);
 #endif

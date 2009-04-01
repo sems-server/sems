@@ -58,6 +58,7 @@ DSMAction* SCUtilsModule::getAction(const string& from_str) {
   DEF_CMD("utils.playCountRight", SCUPlayCountRightAction);
   DEF_CMD("utils.playCountLeft",  SCUPlayCountLeftAction);
   DEF_CMD("utils.getNewId", SCGetNewIdAction);
+  DEF_CMD("utils.spell", SCUSpellAction);
 
   return NULL;
 }
@@ -142,4 +143,15 @@ EXEC_ACTION_START(SCUPlayCountLeftAction) {
 EXEC_ACTION_START(SCGetNewIdAction) {
   string d = resolveVars(arg, sess, sc_sess, event_params);
   sc_sess->var[d]=AmSession::getNewId();
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUSpellAction, ',', true);
+EXEC_ACTION_START(SCUSpellAction) {
+  string basedir = resolveVars(par2, sess, sc_sess, event_params);
+
+  string play_string = resolveVars(par1, sess, sc_sess, event_params);
+  DBG("spelling '%s'\n", play_string.c_str());
+  for (size_t i=0;i<play_string.length();i++)
+    sc_sess->playFile(basedir+play_string[i]+".wav", false);
+
 } EXEC_ACTION_END;
