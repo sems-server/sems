@@ -60,6 +60,7 @@ DSMAction* SCSysModule::getAction(const string& from_str) {
   DEF_CMD("sys.mkdir", SCMkDirAction);
   DEF_CMD("sys.mkdirRecursive", SCMkDirRecursiveAction);
   DEF_CMD("sys.rename", SCRenameAction);
+  DEF_CMD("sys.unlink", SCUnlinkAction);
 
   return NULL;
 }
@@ -174,4 +175,18 @@ EXEC_ACTION_START(SCRenameAction) {
     sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
   }
 
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCUnlinkAction) {
+  string fname = resolveVars(arg, sess, sc_sess, event_params);
+  if (fname.empty())
+    return false;
+
+  if (!unlink(fname.c_str())) {
+    sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
+  } else {
+    DBG("unlink '%s' failed: '%s'\n", 
+	fname.c_str(), strerror(errno));
+    sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+  }
 } EXEC_ACTION_END;
