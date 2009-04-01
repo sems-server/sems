@@ -88,14 +88,14 @@ public:
 
   void closePlaylist(bool notify);
   void addToPlaylist(AmPlaylistItem* item);
-  void playFile(const string& name, bool loop);
+  void playFile(const string& name, bool loop, bool front=false);
   void recordFile(const string& name);
   unsigned int getRecordLength();
   unsigned int getRecordDataSize();
   void stopRecord();
 
   void setPromptSet(const string& name);
-  void addSeparator(const string& name);
+  void addSeparator(const string& name, bool front = false);
   void connectMedia();
   void disconnectMedia();
   void mute();

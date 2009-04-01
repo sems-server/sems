@@ -63,7 +63,7 @@ DEF_ACTION_1P(SCEnableDTMFDetection);
 DEF_ACTION_1P(SCDisableDTMFDetection);
 
 DEF_ACTION_1P(SCSetPromptsAction);
-DEF_ACTION_1P(SCAddSeparatorAction);
+DEF_ACTION_2P(SCAddSeparatorAction);
 
 DEF_SCModSEStrArgAction(SCRepostAction);
 DEF_SCModSEStrArgAction(SCJumpFSMAction);
@@ -80,6 +80,7 @@ DEF_ACTION_2P(SCSetTimerAction);
 DEF_ACTION_2P(SCLogAction);
 DEF_ACTION_1P(SCLogVarsAction);
 DEF_ACTION_2P(SCPlayFileAction);
+DEF_ACTION_2P(SCPlayFileFrontAction);
 DEF_ACTION_2P(SCPostEventAction);
 
 DEF_ACTION_2P(SCB2BConnectCalleeAction);

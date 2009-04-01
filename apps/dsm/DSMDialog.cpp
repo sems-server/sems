@@ -238,7 +238,7 @@ void DSMDialog::addToPlaylist(AmPlaylistItem* item) {
   playlist.addToPlaylist(item);
 }
 
-void DSMDialog::playFile(const string& name, bool loop) {
+void DSMDialog::playFile(const string& name, bool loop, bool front) {
   AmAudioFile* af = new AmAudioFile();
   if(af->open(name,AmAudioFile::Read)) {
     ERROR("audio file '%s' could not be opened for reading.\n", 
@@ -250,7 +250,11 @@ void DSMDialog::playFile(const string& name, bool loop) {
   if (loop) 
     af->loop.set(true);
 
-  playlist.addToPlaylist(new AmPlaylistItem(af, NULL));
+  if (front)
+    playlist.addToPlayListFront(new AmPlaylistItem(af, NULL));
+  else
+    playlist.addToPlaylist(new AmPlaylistItem(af, NULL));
+
   audiofiles.push_back(af);
   SET_ERRNO(DSM_ERRNO_OK);
 }
@@ -337,7 +341,7 @@ void DSMDialog::setPromptSet(const string& name) {
 }
 
 
-void DSMDialog::addSeparator(const string& name) {
+void DSMDialog::addSeparator(const string& name, bool front) {
   unsigned int id = 0;
   if (str2i(name, id)) {
     SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
@@ -345,7 +349,10 @@ void DSMDialog::addSeparator(const string& name) {
   }
 
   AmPlaylistSeparator* sep = new AmPlaylistSeparator(this, id);
-  playlist.addToPlaylist(new AmPlaylistItem(sep, sep));
+  if (front)
+    playlist.addToPlayListFront(new AmPlaylistItem(sep, sep));
+  else
+    playlist.addToPlaylist(new AmPlaylistItem(sep, sep));
   // for garbage collector
   audiofiles.push_back(sep);
   SET_ERRNO(DSM_ERRNO_OK);

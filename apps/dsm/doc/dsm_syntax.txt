@@ -42,13 +42,14 @@ actions:
    prompt not found in current prompt set
  playPromptLooped(param)
  playFile(filename)
+ playFileFront(filename)
  recordFile(filename)
  stopRecord()
  getRecordLength([dst_varname])   -- only while recording! default dst var: record_length
  getRecordDataSize([dst_varname]) -- only while recording! default dst var: record_data_size
  closePlaylist()
- addSeparator(id)
-   fires event when playlist hits it 
+ addSeparator(id [, bool front])
+   fires event when playlist hits it ; front=[true|false]
  connectMedia() 
    set playlist as input and output of session, and connect to mediaprocessor 
  disconnectMedia() 

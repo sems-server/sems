@@ -49,6 +49,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("playPrompt", SCPlayPromptAction);
   DEF_CMD("playPromptLooped", SCPlayPromptLoopedAction);
   DEF_CMD("playFile", SCPlayFileAction);
+  DEF_CMD("playFileFront", SCPlayFileFrontAction);
   DEF_CMD("recordFile", SCRecordFileAction);
   DEF_CMD("stopRecord", SCStopRecordAction);
   DEF_CMD("getRecordLength", SCGetRecordLengthAction);
@@ -154,8 +155,10 @@ EXEC_ACTION_START(SCSetPromptsAction) {
   sc_sess->setPromptSet(resolveVars(arg, sess, sc_sess, event_params));
 } EXEC_ACTION_END;
 
+CONST_ACTION_2P(SCAddSeparatorAction, ',', true);
 EXEC_ACTION_START(SCAddSeparatorAction){
-  sc_sess->addSeparator(resolveVars(arg, sess, sc_sess, event_params));
+  bool front = resolveVars(par2, sess, sc_sess, event_params) == "true";
+  sc_sess->addSeparator(resolveVars(par1, sess, sc_sess, event_params), front);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCPlayPromptLoopedAction){
@@ -181,12 +184,22 @@ EXEC_ACTION_START(SCPostEventAction){
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);
 } EXEC_ACTION_END;
 
+CONST_ACTION_2P(SCPlayFileAction, ',', true);
 EXEC_ACTION_START(SCPlayFileAction) {
   bool loop = 
     resolveVars(par2, sess, sc_sess, event_params) == "true";
   DBG("par1 = '%s', par2 = %s\n", par1.c_str(), par2.c_str());
   sc_sess->playFile(resolveVars(par1, sess, sc_sess, event_params), 
 		    loop);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCPlayFileFrontAction, ',', true);
+EXEC_ACTION_START(SCPlayFileFrontAction) {
+  bool loop = 
+    resolveVars(par2, sess, sc_sess, event_params) == "true";
+  DBG("par1 = '%s', par2 = %s\n", par1.c_str(), par2.c_str());
+  sc_sess->playFile(resolveVars(par1, sess, sc_sess, event_params), 
+		    loop, true);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCRecordFileAction) {
@@ -281,9 +294,6 @@ DSMAction::SEAction SCReturnFSMAction::getSEAction(string& param) {
 }
 
 #undef DEF_SCModActionExec
-
-
-CONST_ACTION_2P(SCPlayFileAction, ',', true);
 
 CONST_ACTION_2P(SCLogAction, ',', false);
 EXEC_ACTION_START(SCLogAction) {
