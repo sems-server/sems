@@ -99,10 +99,13 @@ protected:
   int write(unsigned int user_ts, unsigned int size);
 
   /** @return a file format from file name. (ex: '1234.wav') */
-  virtual AmAudioFileFormat* fileName2Fmt(const string& name);
+  virtual AmAudioFileFormat* fileName2Fmt(const string& name, const string& subtype);
+
+  /** @return subtype ID and trim filename if subtype embedded */
+  string getSubtype(string& filename);
 
   /** internal function for opening the file */
-  int fpopen_int(const string& filename, OpenMode mode, FILE* n_fp);
+  int fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, const string& subtype);
 
 public:
   AmSharedVar<bool> loop;

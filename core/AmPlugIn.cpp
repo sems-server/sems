@@ -420,6 +420,22 @@ amci_subtype_t* AmPlugIn::subtype(amci_inoutfmt_t* iofmt, int subtype)
   return 0;
 }
 
+int AmPlugIn::subtypeID(amci_inoutfmt_t* iofmt, const string& subtype_name) {
+  if(!iofmt)
+    return -1;
+
+  amci_subtype_t* st = iofmt->subtypes;
+  if(subtype_name.empty()) // default subtype wanted
+    return st->type;
+
+  for(;;st++){
+    if(!st || st->type<0) break;
+    if(st->name == subtype_name)
+      return st->type;
+  }
+  return -1;
+}
+
 AmSessionFactory* AmPlugIn::getFactory4App(const string& app_name)
 {
   std::map<std::string,AmSessionFactory*>::iterator it = name2app.find(app_name);

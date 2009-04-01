@@ -172,6 +172,13 @@ class AmPlugIn : public AmPayloadProviderInterface
   amci_subtype_t*  subtype(amci_inoutfmt_t* iofmt, int subtype);
 
   /** 
+   * File subtype ID lookup function.
+   * @param subtype_name The subtype's name (e.g. Pcm16).
+   * @return -1 if failed.
+   */
+  int subtypeID(amci_inoutfmt_t* iofmt, const string& subtype_name);
+
+  /** 
    * Codec lookup function.
    * @param id Codec ID (see amci/codecs.h).
    * @return NULL if failed.

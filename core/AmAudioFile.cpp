@@ -76,7 +76,7 @@ amci_subtype_t*  AmAudioFileFormat::getSubtype()
 }
 
 
-AmAudioFileFormat* AmAudioFile::fileName2Fmt(const string& name)
+AmAudioFileFormat* AmAudioFile::fileName2Fmt(const string& name, const string& subtype)
 {
   string ext = file_extension(name);
   if(ext == ""){
@@ -90,7 +90,15 @@ AmAudioFileFormat* AmAudioFile::fileName2Fmt(const string& name)
     return NULL;
   }
 
-  return new AmAudioFileFormat(iofmt->name);
+  int subtype_id = -1;
+  if (!subtype.empty()) {
+    subtype_id = AmPlugIn::instance()->subtypeID(iofmt, subtype);
+    if (subtype_id<0) {
+      WARN("subtype '%s' for file '%s' not found. Using default subtype\n",
+	   subtype.c_str(), name.c_str());
+    }
+  }
+  return new AmAudioFileFormat(iofmt->name, subtype_id);
 }
 
 
@@ -105,6 +113,17 @@ int AmAudioFileFormat::getCodecId()
   return -1;
 }
 
+string AmAudioFile::getSubtype(string& filename) {
+  string res;
+  size_t dpos  = filename.rfind('|');
+  if (dpos != string::npos) {
+    res = filename.substr(dpos+1);
+    filename = filename.substr(0, dpos);
+  }
+  return res;
+}
+
+
 // returns 0 if everything's OK
 // return -1 if error
 int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
@@ -116,13 +135,16 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
 
   FILE* n_fp = NULL;
 
+  string f_name = filename;
+  string subtype = getSubtype(f_name);
+
   if(!is_tmp){
-    n_fp = fopen(filename.c_str(),mode == AmAudioFile::Read ? "r" : "w+");
+    n_fp = fopen(f_name.c_str(),mode == AmAudioFile::Read ? "r" : "w+");
     if(!n_fp){
       if(mode == AmAudioFile::Read)
-	ERROR("file not found: %s\n",filename.c_str());
+	ERROR("file not found: %s\n",f_name.c_str());
       else
-	ERROR("could not create/overwrite file: %s\n",filename.c_str());
+	ERROR("could not create/overwrite file: %s\n",f_name.c_str());
       return -1;
     }
   } else {	
@@ -133,22 +155,25 @@ int  AmAudioFile::open(const string& filename, OpenMode mode, bool is_tmp)
     }
   }
 
-  return fpopen_int(filename, mode, n_fp);
+  return fpopen_int(f_name, mode, n_fp, subtype);
 }
 
 int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
 {
   close();
   on_close_done = false;
-  return fpopen_int(filename, mode, n_fp);
+  string f_name = filename;
+  string subtype = getSubtype(f_name);
+  return fpopen_int(f_name, mode, n_fp, subtype);
 }
 
-int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp)
+int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, const string& subtype)
 {
 
-  AmAudioFileFormat* f_fmt = fileName2Fmt(filename);
+  AmAudioFileFormat* f_fmt = fileName2Fmt(filename, subtype);
   if(!f_fmt){
-    ERROR("while trying to the format of '%s'\n",filename.c_str());
+    ERROR("while trying to determine the format of '%s'\n",
+	  filename.c_str());
     return -1;
   }
   fmt.reset(f_fmt);
