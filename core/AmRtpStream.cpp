@@ -319,9 +319,9 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
     {
       dtmf_payload_t* dpl = (dtmf_payload_t*)rp->getData();
 
-      DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i\n",
-	  dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration));
-      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate()));
+      DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
+	  dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration),rp->timestamp);
+      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate(), rp->timestamp));
       mem.freePacket(rp);
       return RTP_DTMF;
     }

@@ -129,9 +129,10 @@ class AmKeyPressSink {
    * @param source which detector posted this event
    * @param start time when key was pressed
    * @param stop time when key was released
+   * @param flush whether key should be registered as own keypress immediately
    */
   virtual void registerKeyReleased(int event, Dtmf::EventSource source,
-				   const struct timeval& start, const struct timeval& stop) = 0;
+				   const struct timeval& start, const struct timeval& stop, bool flush=false) = 0;
   /**
    * Through this method the AmDtmfDetector receives events that was
    * detected by specific detectors.
@@ -156,13 +157,18 @@ class AmRtpDtmfEvent : public AmDtmfEvent
    */
   int m_volume;
 
+  /** 
+   * RTP timestamp 
+   */
+  unsigned int m_ts;
+
  public:
   /**
    * Constructor
    * @param payload data from rtp packet of payload type telephone-event
    * @param sample_rate sampling rate (from SDP payload description)
    */
-  AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate);
+  AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate, unsigned int ts);
 
   /**
    * Volume value from RTP packet
@@ -172,6 +178,8 @@ class AmRtpDtmfEvent : public AmDtmfEvent
    * E flag from RTP packet
    */
   int e() { return m_e; }
+
+  unsigned int ts() { return m_ts; }
 };
 
 /**
@@ -328,9 +336,16 @@ class AmRtpDtmfDetector
    */
   bool m_eventPending;
   int m_currentEvent;
+  unsigned int m_currentTS;
+  bool m_currentTS_i;
   int m_packetCount;
 
-  static const int MAX_PACKET_WAIT = 3;
+  unsigned int m_lastTS;
+  bool m_lastTS_i;
+
+  // after MAX_PACKET_WAIT packets with no RTP DTMF packets received, 
+  // a RTP DTMF event is sent out to the aggregating detector
+  static const int MAX_PACKET_WAIT = 5;
   /**
    * Time when first packet for current event was received
    */
@@ -339,7 +354,7 @@ class AmRtpDtmfDetector
   /**
    * Send out pending event
    */
-  void sendPending();
+  void sendPending(bool flush=false);
 
  public:
   /**
@@ -404,9 +419,11 @@ class AmDtmfDetector
    * @param source which detector posted this event
    * @param start time when key was pressed
    * @param stop time when key was released
+   * @param flush whether key should be registered as own keypress immediately
    */
   void registerKeyReleased(int event, Dtmf::EventSource source,
-			   const struct timeval& start, const struct timeval& stop);
+			   const struct timeval& start, const struct timeval& stop,
+			   bool flush=false);
   /**
    * Through this method the AmDtmfDetector receives events that was
    * detected by specific detectors.

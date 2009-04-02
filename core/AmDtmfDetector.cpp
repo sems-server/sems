@@ -135,13 +135,14 @@ void AmSipDtmfEvent::parseLine(const string& line)
 //
 // AmRtpDtmfEvent methods
 //
-AmRtpDtmfEvent::AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate)
+AmRtpDtmfEvent::AmRtpDtmfEvent(const dtmf_payload_t *payload, int sample_rate, unsigned int ts)
   : AmDtmfEvent(Dtmf::SOURCE_RTP)
 {
   m_duration_msec = ntohs(payload->duration) * 1000 / sample_rate;
   m_e = payload->e;
   m_volume = payload->volume;
   m_event = payload->event;
+  m_ts = ts;
   // RFC 2833:
   // R: This field is reserved for future use. The sender MUST set it
   // to zero, the receiver MUST ignore it.
@@ -180,7 +181,8 @@ AmDtmfDetector::AmDtmfDetector(AmSession *session)
     m_sipDetector(this),
     m_eventPending(false), m_sipEventReceived(false),
     m_inbandEventReceived(false), m_rtpEventReceived(false),
-    m_inband_type(Dtmf::SEMSInternal)
+    m_inband_type(Dtmf::SEMSInternal),
+    m_currentEvent(-1)
 {
 #ifndef USE_SPANDSP
   setInbandDetector(Dtmf::SEMSInternal);
@@ -237,11 +239,12 @@ void AmDtmfDetector::process(AmEvent *evt)
 
 void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
                                          const struct timeval& start,
-                                         const struct timeval& stop)
+                                         const struct timeval& stop,
+					 bool flush)
 {
   // Old event has not been sent yet
   // push out it now
-  if (m_eventPending && m_currentEvent != event)
+  if (flush || (m_eventPending && m_currentEvent != event))
     {
       reportEvent();
     }
@@ -333,7 +336,8 @@ void AmDtmfDetector::putDtmfAudio(const unsigned char *buf, int size, int user_t
 
 // AmRtpDtmfDetector methods
 AmRtpDtmfDetector::AmRtpDtmfDetector(AmKeyPressSink *keysink)
-  : m_keysink(keysink), m_eventPending(false), m_packetCount(0)
+  : m_keysink(keysink), m_eventPending(false), m_packetCount(0), 
+    m_currentTS(0), m_currentTS_i(false), m_lastTS_i(false)
 {
 }
 
@@ -345,44 +349,50 @@ void AmRtpDtmfDetector::process(AmRtpDtmfEvent *evt)
     // ITU-T Q.24A)
     {
       m_packetCount = 0; // reset idle packet counter
+
+      if (m_lastTS_i && m_lastTS == evt->ts()) {
+	// ignore events from past key press which was already reported
+	return;
+      }
+
       if (!m_eventPending)
         {
 	  gettimeofday(&m_startTime, NULL);
 	  m_eventPending = true;
 	  m_currentEvent = evt->event();
+	  m_currentTS = evt->ts();
+	  m_currentTS_i = true;
         }
-
-      if (m_eventPending)
+      else
         {
-	  if (evt->event() != m_currentEvent)
+	  if ((evt->event() != m_currentEvent) || 
+	      (m_currentTS_i && (evt->ts() != m_currentTS)))
             {
 	      // Previous event does not end correctly so send out it now...
-	      sendPending();
+	      sendPending(true);
 	      // ... and reinitialize to process current event
 	      gettimeofday(&m_startTime, NULL);
 	      m_eventPending = true;
 	      m_currentEvent = evt->event();
-            }
-	  if (evt->e())
-            {
-	      sendPending();
+	      m_currentTS = evt->ts();
+	      m_currentTS_i = true;
             }
         }
-      if (m_eventPending)
-        {
-	  m_keysink->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP);
-        }
+      m_keysink->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP);    
     }
 }
 
-void AmRtpDtmfDetector::sendPending()
+void AmRtpDtmfDetector::sendPending(bool flush)
 {
   if (m_eventPending)
     {
       struct timeval end_time;
       gettimeofday(&end_time, NULL);
-      m_keysink->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time);
+      m_keysink->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time, flush);
       m_eventPending = false;
+      m_currentTS_i = false;
+      m_lastTS = m_currentTS;
+      m_lastTS_i = true;     
     }
 }
 
