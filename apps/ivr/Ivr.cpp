@@ -708,7 +708,7 @@ bool IvrDialog::callPyEventHandler(char* name, char* fmt, ...)
 
 void IvrDialog::onSessionStart(const AmSipRequest& req)
 {
-  callPyEventHandler("onSessionStart","s",req.hdrs.c_str());
+  callPyEventHandler("onSessionStart","(s)",req.hdrs.c_str());
   setInOut(&playlist,&playlist);
   AmB2BCallerSession::onSessionStart(req);
 }
@@ -716,7 +716,7 @@ void IvrDialog::onSessionStart(const AmSipRequest& req)
 void IvrDialog::onSessionStart(const AmSipReply& rep)
 {
   invite_req.body = rep.body;
-  callPyEventHandler("onSessionStart","s",rep.hdrs.c_str());
+  callPyEventHandler("onSessionStart","(s)",rep.hdrs.c_str());
   setInOut(&playlist,&playlist);
   AmB2BSession::onSessionStart(rep);
 }
@@ -729,7 +729,7 @@ void IvrDialog::onBye(const AmSipRequest& req)
 
 void IvrDialog::onDtmf(int event, int duration_msec)
 {
-  if(callPyEventHandler("onDtmf","ii",event,duration_msec))
+  if(callPyEventHandler("onDtmf","(ii)",event,duration_msec))
     AmB2BSession::onDtmf(event,duration_msec);
 }
 
@@ -741,7 +741,7 @@ void IvrDialog::onOtherBye(const AmSipRequest& req)
 
 bool IvrDialog::onOtherReply(const AmSipReply& r)
 {
-  if(callPyEventHandler("onOtherReply","is",
+  if(callPyEventHandler("onOtherReply","(is)",
 			r.code,r.reason.c_str()))
     AmB2BSession::onOtherReply(r);
   return false;
@@ -764,12 +764,12 @@ PyObject * getPySipRequest(const AmSipRequest& r)
 }
 
 void IvrDialog::onSipReply(const AmSipReply& r) {
-  callPyEventHandler("onSipReply","O",getPySipReply(r));
+  callPyEventHandler("onSipReply","(O)",getPySipReply(r));
   AmB2BSession::onSipReply(r);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){
-  callPyEventHandler("onSipRequest","O", getPySipRequest(r));
+  callPyEventHandler("onSipRequest","(O)", getPySipRequest(r));
   AmB2BSession::onSipRequest(r);
 }
 
@@ -791,7 +791,7 @@ void IvrDialog::process(AmEvent* event)
   AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
   if(plugin_event && plugin_event->name == "timer_timeout") {
 
-    callPyEventHandler("onTimer", "i", plugin_event->data.get(0).asInt());
+    callPyEventHandler("onTimer", "(i)", plugin_event->data.get(0).asInt());
     event->processed = true;
   }
 
