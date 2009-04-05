@@ -62,11 +62,11 @@ static PyObject* IvrSipRequest_new(PyTypeObject *type, PyObject *args, PyObject 
   return (PyObject *)self;
 }
 
-// static void
-// IvrSipRequest_dealloc(IvrSipRequest* self) 
-// {
-//   self->ob_type->tp_free((PyObject*)self);
-// }
+static void
+IvrSipRequest_dealloc(IvrSipRequest* self) 
+{
+  self->ob_type->tp_free((PyObject*)self);
+}
 
 #define def_IvrSipRequest_GETTER(getter_name, attr)		\
   static PyObject*						\
@@ -155,7 +155,7 @@ PyTypeObject IvrSipRequestType = {
   "ivr.IvrSipRequest",        /*tp_name*/
   sizeof(IvrSipRequest),      /*tp_basicsize*/
   0,                         /*tp_itemsize*/
-  0,                         /*tp_dealloc*/
+    (destructor)IvrSipRequest_dealloc,                         /*tp_dealloc*/
   0,                         /*tp_print*/
   0,                         /*tp_getattr*/
   0,                         /*tp_setattr*/
