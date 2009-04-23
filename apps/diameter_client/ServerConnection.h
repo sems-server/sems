@@ -38,6 +38,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <stdint.h>
 using std::string;
 using std::vector;
 using std::map;
