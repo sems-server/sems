@@ -30,6 +30,7 @@ typedef struct {
     
   PyObject_HEAD
   AmSipRequest* p_req;
+  bool own_p_req;
 } IvrSipRequest;
 
 
@@ -56,15 +57,50 @@ static PyObject* IvrSipRequest_new(PyTypeObject *type, PyObject *args, PyObject 
     }
 	
     self->p_req = (AmSipRequest*)PyCObject_AsVoidPtr(o_req);
+    self->own_p_req = true;
   }
 
   DBG("IvrSipRequest_new\n");
   return (PyObject *)self;
 }
 
+static PyObject* IvrSipRequest_newRef(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = {"ivr_req", NULL};
+  IvrSipRequest *self;
+
+  self = (IvrSipRequest *)type->tp_alloc(type, 0);
+  if (self != NULL) {
+	
+    PyObject* o_req = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist, &o_req)){
+	    
+      Py_DECREF(self);
+      return NULL;
+    }
+    
+    if ((NULL == o_req) || !PyCObject_Check(o_req)){
+	    
+      Py_DECREF(self);
+      return NULL;
+    }
+	
+    self->p_req = (AmSipRequest*)PyCObject_AsVoidPtr(o_req);
+    self->own_p_req = false;
+  }
+
+  DBG("IvrSipRequest_newRef\n");
+  return (PyObject *)self;
+}
+
 static void
 IvrSipRequest_dealloc(IvrSipRequest* self) 
 {
+  DBG("IvrSipRequest_dealloc\n");
+
+  if(self->own_p_req)
+    delete self->p_req;
+
   self->ob_type->tp_free((PyObject*)self);
 }
 
@@ -198,6 +234,19 @@ PyObject* IvrSipRequest_FromPtr(AmSipRequest* req)
   PyObject* args = Py_BuildValue("(O)",c_req);
     
   PyObject* py_req = IvrSipRequest_new(&IvrSipRequestType,args,NULL);
+    
+  Py_DECREF(args);
+  Py_DECREF(c_req);
+
+  return py_req;
+}
+
+PyObject* IvrSipRequest_BorrowedFromPtr(AmSipRequest* req)
+{
+  PyObject* c_req = PyCObject_FromVoidPtr(req,NULL);
+  PyObject* args = Py_BuildValue("(O)",c_req);
+    
+  PyObject* py_req = IvrSipRequest_newRef(&IvrSipRequestType,args,NULL);
     
   Py_DECREF(args);
   Py_DECREF(c_req);

@@ -64,6 +64,7 @@ static PyObject* IvrSipReply_new(PyTypeObject *type, PyObject *args, PyObject *k
 static void
 IvrSipReply_dealloc(IvrSipReply* self) 
 {
+  delete self->p_req;
   self->ob_type->tp_free((PyObject*)self);
 }
 

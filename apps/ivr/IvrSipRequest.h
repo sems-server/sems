@@ -31,5 +31,6 @@
 
 extern PyTypeObject IvrSipRequestType;
 PyObject* IvrSipRequest_FromPtr(AmSipRequest* req);
+PyObject* IvrSipRequest_BorrowedFromPtr(AmSipRequest* req);
 
 #endif

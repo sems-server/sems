@@ -750,26 +750,26 @@ bool IvrDialog::onOtherReply(const AmSipReply& r)
 PyObject * getPySipReply(const AmSipReply& r)
 {
   PYLOCK;
-
-  AmSipReply* rep_cpy = new AmSipReply(r);
-  return IvrSipReply_FromPtr(rep_cpy);
+  return IvrSipReply_FromPtr(new AmSipReply(r));
 }
 
 PyObject * getPySipRequest(const AmSipRequest& r)
 {
   PYLOCK;
-
-  AmSipRequest* req_cpy = new AmSipRequest(r);
-  return IvrSipRequest_FromPtr(req_cpy);
+  return IvrSipRequest_FromPtr(new AmSipRequest(r));
 }
 
 void IvrDialog::onSipReply(const AmSipReply& r) {
-  callPyEventHandler("onSipReply","(O)",getPySipReply(r));
+  PyObject* pyo = getPySipReply(r);
+  callPyEventHandler("onSipReply","(O)", pyo);
+  Py_DECREF(pyo);
   AmB2BSession::onSipReply(r);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){
-  callPyEventHandler("onSipRequest","(O)", getPySipRequest(r));
+  PyObject* pyo = getPySipRequest(r);
+  callPyEventHandler("onSipRequest","(O)", pyo);
+  Py_DECREF(pyo);
   AmB2BSession::onSipRequest(r);
 }
 

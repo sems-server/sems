@@ -53,8 +53,8 @@ static PyObject* IvrDialogBase_new(PyTypeObject *type, PyObject *args, PyObject 
       return NULL;
     }
 
-    // initialize self.invite_req
-    self->invite_req = IvrSipRequest_FromPtr(self->p_dlg->getInviteReq());
+    // initialize self.invite_req - AmSipRequest is not owned!
+    self->invite_req = IvrSipRequest_BorrowedFromPtr(self->p_dlg->getInviteReq());
     if(!self->invite_req){
       PyErr_Print();
       ERROR("IvrDialogBase: while creating IvrSipRequest instance for invite_req\n");
