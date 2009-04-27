@@ -48,7 +48,9 @@ EchoFactory::EchoFactory(const string& _app_name)
 int EchoFactory::onLoad()
 {
   session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
-  DBG("session_timer_f == 0x%.16lX\n",(unsigned long)session_timer_f);
+  if (NULL == session_timer_f) {
+    ERROR("load session_timer module for echo application.\n");
+  }
   return (session_timer_f == NULL);
 }
 
