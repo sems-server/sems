@@ -191,6 +191,12 @@ class AmB2BCallerSession: public AmB2BSession
   virtual void createCalleeSession();
   void relayEvent(AmEvent* ev);
 
+  /** Tell if the session should
+   *  relay early media SDPs to
+   *  caller leg
+   */
+  bool sip_relay_early_media_sdp;
+
  public:
   AmB2BCallerSession();
   virtual ~AmB2BCallerSession();
@@ -215,6 +221,7 @@ class AmB2BCallerSession: public AmB2BSession
 
   AmSipRequest* getInviteReq() { return &invite_req; }
 
+  void set_sip_relay_early_media_sdp(bool r);
 };
 
 /** \brief Callee leg of a B2B session */

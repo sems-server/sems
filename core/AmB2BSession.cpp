@@ -236,12 +236,17 @@ void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 
 AmB2BCallerSession::AmB2BCallerSession()
   : AmB2BSession(),
-    callee_status(None)
+    callee_status(None), sip_relay_early_media_sdp(false)
 {
 }
 
 AmB2BCallerSession::~AmB2BCallerSession()
 {
+}
+
+void AmB2BCallerSession::set_sip_relay_early_media_sdp(bool r)
+{
+  sip_relay_early_media_sdp = r; 
 }
 
 void AmB2BCallerSession::terminateLeg()
@@ -275,6 +280,10 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
     case Ringing:
 	
       if(reply.code < 200){
+	if ((!sip_relay_only) && sip_relay_early_media_sdp && 
+	    reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
+	  reinviteCaller(reply);
+	}
 	  
 	callee_status = Ringing;
       }
