@@ -121,7 +121,11 @@ DSMAction* DSMChartReader::actionFromToken(const string& str) {
     if (a) return a;
   }
 
-  return core_mod.getAction(str);
+  DSMAction* a = core_mod.getAction(str);
+  if (a) return a;
+
+  ERROR("could not find action for '%s' (missing import?)\n", str.c_str());
+  return NULL;
 }
 
 DSMCondition* DSMChartReader::conditionFromToken(const string& str, bool invert) {
@@ -138,7 +142,9 @@ DSMCondition* DSMChartReader::conditionFromToken(const string& str, bool invert)
   if (c) 
     c->invert = invert;
 
-  return c;
+  if (c)  return c;
+  ERROR("could not find condition for '%s' (missing import?)\n", str.c_str());
+  return NULL;
 }
 
 bool DSMChartReader::importModule(const string& mod_cmd, const string& mod_path) {

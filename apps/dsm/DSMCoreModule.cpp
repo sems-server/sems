@@ -93,7 +93,6 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("B2B.terminateOtherLeg", SCB2BTerminateOtherLegAction);
   DEF_CMD("B2B.sendReinvite", SCB2BReinviteAction);
 
-  ERROR("could not find action named '%s'\n", cmd.c_str());
   return NULL;
 }
 
@@ -143,7 +142,6 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "B2B.otherBye") 
     return new TestDSMCondition(params, DSMCondition::B2BOtherBye);  
 
-  ERROR("could not find condition for '%s'\n", cmd.c_str());
   return NULL;
 }
 
