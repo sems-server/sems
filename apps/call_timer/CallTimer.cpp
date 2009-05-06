@@ -147,25 +147,10 @@ void CallTimerDialog::onInvite(const AmSipRequest& req)
   }
 
   invite_req = req;
-  size_t pos1, pos2, hdr_start;
 
   // remove P-App-Name, P-App-Param header
-  if (findHeader(invite_req.hdrs,PARAM_HDR, pos1, pos2, 
-		 hdr_start)) {
-    while (invite_req.hdrs[pos2]=='\r' ||invite_req.hdrs[pos2]=='\n') 
-      pos2++;
-
-    hdr_start -= 11; //"P-App-Param"
-    invite_req.hdrs.erase(hdr_start, pos2-hdr_start);
-  }
-
-  if (findHeader(invite_req.hdrs,"P-App-Name", pos1, pos2, 
-		 hdr_start)) {
-    while (invite_req.hdrs[pos2]=='\r' ||invite_req.hdrs[pos2]=='\n') 
-      pos2++;
-    hdr_start -= 10; //"P-App-Name"
-    invite_req.hdrs.erase(hdr_start, pos2-hdr_start);
-  }
+  removeHeader(invite_req.hdrs, "P-App-Param");
+  removeHeader(invite_req.hdrs, "P-App-Name");
 
   dlg.updateStatus(invite_req);
   recvd_req.insert(std::make_pair(invite_req.cseq,invite_req));
