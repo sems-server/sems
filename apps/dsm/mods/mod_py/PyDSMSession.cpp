@@ -111,7 +111,7 @@ extern "C" {
     int loop = 0;
     int front = 0;
 
-    if(!PyArg_ParseTuple(args,"s|ii",&name, &loop))
+    if(!PyArg_ParseTuple(args,"s|ii", &name, &loop, &front))
       return NULL;
 
     GET_SESS_PTR;
@@ -281,8 +281,8 @@ extern "C" {
     {"playPrompt",       (PyCFunction)playPrompt, METH_VARARGS,"play a prompt"},
     {"playFile",         (PyCFunction)playFile,   METH_VARARGS,"play a file"},
     {"recordFile",       (PyCFunction)recordFile, METH_VARARGS,"start recording to a file"},
-    {"getRecordLength",  (PyCFunction)getRecordLength, METH_VARARGS,"get the length of the current recording"},
-    {"getRecordDataSize",(PyCFunction)getRecordDataSize, METH_VARARGS,"get the data size of the current recording"},
+    {"getRecordLength",  (PyCFunction)getRecordLength, METH_NOARGS,"get the length of the current recording"},
+    {"getRecordDataSize",(PyCFunction)getRecordDataSize, METH_NOARGS,"get the data size of the current recording"},
     {"stopRecord",      (PyCFunction)stopRecord, METH_NOARGS,"stop the running recording"},
     {"closePlaylist",   (PyCFunction)closePlaylist, METH_VARARGS,"close the playlist"},
     {"setPromptSet",    (PyCFunction)setPromptSet, METH_VARARGS,"set prompt set"},
@@ -292,7 +292,7 @@ extern "C" {
     {"mute",            (PyCFunction)mute, METH_NOARGS,"mute RTP)"},
     {"unmute",          (PyCFunction)unmute, METH_NOARGS,"unmute RTP"},
     {"B2BconnectCallee", (PyCFunction)B2BconnectCallee, METH_VARARGS,"connect callee of B2B leg"},
-    {"B2BterminateOtherLeg", (PyCFunction)B2BterminateOtherLeg, METH_VARARGS,"terminate other leg of B2B call"},
+    {"B2BterminateOtherLeg", (PyCFunction)B2BterminateOtherLeg, METH_NOARGS,"terminate other leg of B2B call"},
 
     {NULL}  /* Sentinel */
   };
