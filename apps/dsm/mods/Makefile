@@ -4,7 +4,12 @@ COREPATH = $(DSMPATH)/../../core
 
 include $(COREPATH)/../Makefile.defs
 
+ifneq ($(USE_MONITORING), yes)
+exclude_modules ?= mod_monitoring
+else
 exclude_modules ?= 
+endif
+
 modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
 		$(wildcard Makefile*) lib, \
 		$(wildcard *) )
