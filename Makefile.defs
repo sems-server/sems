@@ -269,9 +269,10 @@ export cfg-dir bin-dir modules-dir audio-dir lib-dir ser-cfg-dir doc-dir man-dir
 export bin-target cfg-target modules-target audio-target ser-cfg-target lib-target
 export INSTALL TAR INSTALL-TOUCH INSTALL-CFG INSTALL-BIN INSTALL-MODULES INSTALL-DOC INSTALL-AUDIO
 
-export USE_SPANDSP LIBSPANDSP_STATIC LIBSPANDSP_LDIR
+export USE_SPANDSP LIBSPANDSP_STATIC LIBSPANDSP_LDIR 
 export USE_LIBSAMPLERATE
 export WITH_ZRTP
+export USE_MONITORING
 
 endif  # ifeq ($(makefile_defs, 1)
 

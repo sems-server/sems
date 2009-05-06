@@ -3,7 +3,12 @@ COREPATH ?= ../core
 
 include $(COREPATH)/../Makefile.defs
 
+ifneq ($(USE_MONITORING), yes)
+exclude_modules ?= mp3 examples py_sems xmlrpc2di gateway monitoring
+else
 exclude_modules ?= mp3 examples py_sems xmlrpc2di gateway
+endif
+
 modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
 		$(wildcard Makefile*) CVS, \
 		$(wildcard *) examples/tutorial/cc_acc )
