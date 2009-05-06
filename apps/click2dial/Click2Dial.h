@@ -49,6 +49,8 @@ class Click2DialFactory: public AmSessionFactory
     static string AnnounceFile;
     static AmSessionEventHandler* AuthHandler;
 
+    static bool relay_early_media_sdp;
+
     Click2DialFactory(const string& _app_name);
 
     int onLoad();

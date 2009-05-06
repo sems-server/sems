@@ -45,6 +45,8 @@ EXPORT_SESSION_FACTORY(Click2DialFactory, MOD_NAME);
 string Click2DialFactory::AnnouncePath;
 string Click2DialFactory::AnnounceFile;
 
+bool Click2DialFactory::relay_early_media_sdp = true;
+
 Click2DialFactory::Click2DialFactory(const string& _app_name)
 : AmSessionFactory(_app_name)
 {
@@ -73,6 +75,9 @@ int Click2DialFactory::onLoad()
       announce_file.c_str());
     return -1;
   }
+
+  if (cfg.getParameter("relay_early_media") == "no")
+    relay_early_media_sdp = false;
 
   return 0;
 }
@@ -188,7 +193,8 @@ const string& filename, const string& c_uri, UACAuthCred* credentials)
 : filename(filename), callee_uri(c_uri), cred(credentials),
 AmB2BCallerSession()
 {
-  set_sip_relay_only(false);
+  set_sip_relay_only(false);  
+  set_sip_relay_early_media_sdp(Click2DialFactory::relay_early_media_sdp);
 }
 
 
