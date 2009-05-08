@@ -84,7 +84,6 @@ int SCPyModule::preload() {
 
   PyEval_ReleaseLock();
   return 0;
-//   _thr_state = PyEval_SaveThread();
 }
 
 DSMAction* SCPyModule::getAction(const string& from_str) {

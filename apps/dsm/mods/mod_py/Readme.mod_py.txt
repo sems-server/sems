@@ -23,6 +23,10 @@ Indentation is a little ugly with multi-line py() actions.
 But this is Python's fault (in 21st century, who creates a 
 programming language with fixed indentation?).
 
+mod_py MUST be preloaded, to initialize the python interpreter.
+add preload=mod_py to dsm.conf. 
+
+
 locals
 ======
 type    - event type (dsm.Timer, dsm.Key, ...)
