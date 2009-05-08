@@ -37,9 +37,12 @@ class SCPyModule
 
 
  public:
+
   SCPyModule();
   ~SCPyModule();
   
+  int preload();
+
   DSMAction* getAction(const string& from_str);
   DSMCondition* getCondition(const string& from_str);
   static PyObject* dsm_module;
