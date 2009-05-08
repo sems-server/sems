@@ -49,7 +49,8 @@ SET (sems_SRCS
  sems.cpp
 )
 
-
+INCLUDE_DIRECTORIES (ampi)
+INCLUDE_DIRECTORIES (amci)
 
 ADD_EXECUTABLE (sems ${sems_SRCS})
 TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} pthread stdc++ m)

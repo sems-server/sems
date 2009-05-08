@@ -22,4 +22,4 @@ set (sipctrl_SRCS
 
 add_library(sipctrl SHARED ${sipctrl_SRCS})
 set_target_properties(sipctrl PROPERTIES PREFIX "")
-target_link_libraries(sipctrl ${CMAKE_DL_LIBS} pthread stdc++ m)
+target_link_libraries(sipctrl ${CMAKE_DL_LIBS} pthread m)

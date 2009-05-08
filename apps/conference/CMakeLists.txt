@@ -1,0 +1,30 @@
+set (conference_SRCS
+Conference.cpp
+)
+
+add_library(conference SHARED ${conference_SRCS})
+set_target_properties(conference PROPERTIES OUTPUT_NAME "conference")
+set_target_properties(conference PROPERTIES PREFIX "")
+target_link_libraries(conference ${CMAKE_DL_LIBS} pthread m)
+
+IF(FLITE_FOUND AND ZRTP_FOUND)
+IF(CMAKE_COMPILER_IS_GNUCC)
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWITH_SAS_TTS -I${FLITE_INCLUDE_DIR}/flite")
+ENDIF(CMAKE_COMPILER_IS_GNUCC)
+
+IF(CMAKE_COMPILER_IS_GNUCXX)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_SAS_TTS -I${FLITE_INCLUDE_DIR}/flite")
+ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+SET_TARGET_PROPERTIES(conference PROPERTIES LINK_FLAGS "${LINK_FLAGS} -lflite_cmu_us_kal -lflite_usenglish -lflite_cmulex -lflite")
+ENDIF(FLITE_FOUND AND ZRTP_FOUND)
+
+IF(MYSQLPP_FOUND)
+IF(CMAKE_COMPILER_IS_GNUCC)
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MYSQL -I/usr/include/mysql++ -I/usr/include/mysql")
+ENDIF(CMAKE_COMPILER_IS_GNUCC)
+
+IF(CMAKE_COMPILER_IS_GNUCXX)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MYSQL -I/usr/include/mysql++ -I/usr/include/mysql")
+ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+SET_TARGET_PROPERTIES(conference PROPERTIES LINK_FLAGS "${LINK_FLAGS} -lmysqlpp")
+ENDIF(MYSQLPP_FOUND)

@@ -1,0 +1,27 @@
+set (xmlrpc2di_SRCS
+MultithreadXmlRpcServer.cpp
+TOXmlRpcClient.cpp
+XMLRPC2DI.cpp
+)
+
+ADD_SUBDIRECTORY (xmlrpc++)
+
+INCLUDE_DIRECTORIES (xmlrpc++/src)
+
+set_property(TARGET xmlrpcpp PROPERTY IMPORTED_LOCATION ./xmlrpc++/src/xmlrpcpp.a)
+
+add_library(xmlrpc2di SHARED ${xmlrpc2di_SRCS})
+set_target_properties(xmlrpc2di PROPERTIES OUTPUT_NAME "xmlrpc2di")
+set_target_properties(xmlrpc2di PROPERTIES PREFIX "")
+target_link_libraries(xmlrpc2di ${CMAKE_DL_LIBS} pthread m xmlrpcpp)
+
+IF(OPENSSL_FOUND)
+IF(CMAKE_COMPILER_IS_GNUCC)
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_XMLRPCPP_SSL -DXMLRPCPP_SUPPORT_STRUCT_ACCESS")
+ENDIF(CMAKE_COMPILER_IS_GNUCC)
+
+IF(CMAKE_COMPILER_IS_GNUCXX)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_XMLRPCPP_SSL -DXMLRPCPP_SUPPORT_STRUCT_ACCESS")
+ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+SET_TARGET_PROPERTIES(xmlrpc2di PROPERTIES LINK_FLAGS "${LINK_FLAGS} -lssl")
+ENDIF(OPENSSL_FOUND)

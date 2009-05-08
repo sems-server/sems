@@ -1,0 +1,23 @@
+set (libdbase_SRCS
+avp.c
+diameter_msg.c
+tcp_comm.c
+)
+
+SET(CMAKE_VERBOSE_MAKEFILE ON)
+
+IF(OPENSSL_FOUND)
+IF(CMAKE_COMPILER_IS_GNUCC)
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWITH_OPENSSL")
+ENDIF(CMAKE_COMPILER_IS_GNUCC)
+
+IF(CMAKE_COMPILER_IS_GNUCXX)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWITH_OPENSSL")
+ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+ENDIF(OPENSSL_FOUND)
+
+add_library(libdbase STATIC ${libdbase_SRCS})
+set_target_properties(libdbase PROPERTIES OUTPUT_NAME "libdbase")
+set_target_properties(libdbase PROPERTIES PREFIX "")
+target_link_libraries(libdbase ${CMAKE_DL_LIBS} pthread m)
+
