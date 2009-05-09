@@ -144,23 +144,29 @@ bool py_execute(PyCodeObject* py_func, DSMSession* sc_sess,
   PyObject*d = PyModule_GetDict(m);
 
   PyObject* locals = PyDict_New();
-  PyDict_SetItem(locals, PyString_FromString("dsm"), SCPyModule::dsm_module);
-  PyDict_SetItem(locals, PyString_FromString("session"), SCPyModule::session_module);
+  PyDict_SetItemString(locals, "dsm", SCPyModule::dsm_module);
+  PyDict_SetItemString(locals, "session", SCPyModule::session_module);
 
   PyObject* params = PyDict_New();
   if (NULL != event_params) {
     for (map<string,string>::iterator it=event_params->begin(); 
 	 it != event_params->end(); it++) {
-      PyDict_SetItemString(params, it->first.c_str(), 
-			   PyString_FromString(it->second.c_str()));
+      PyObject* v = PyString_FromString(it->second.c_str());
+      PyDict_SetItemString(params, it->first.c_str(), v);
+      Py_DECREF(v);
     }
   }
   PyDict_SetItemString(locals, "params", params);
-  PyDict_SetItemString(locals, "type", PyInt_FromLong(event));
+  Py_DECREF(params);
+
+  PyObject *t = PyInt_FromLong(event);
+  PyDict_SetItemString(locals, "type", t);
+  Py_DECREF(t);
 
   PyObject* py_sc_sess = PyCObject_FromVoidPtr(sc_sess,NULL);
   PyObject* ts_dict = PyThreadState_GetDict();
   PyDict_SetItemString(ts_dict, "_dsm_sess_", py_sc_sess);
+  Py_DECREF(py_sc_sess);  
 
   // call the function
   PyObject* res = PyEval_EvalCode((PyCodeObject*)py_func, d, locals);
@@ -169,16 +175,14 @@ bool py_execute(PyCodeObject* py_func, DSMSession* sc_sess,
     PyErr_Print();
   
   ts_dict = PyThreadState_GetDict(); // should be the same as before
-  py_sc_sess = PyDict_GetItemString(ts_dict, "_dsm_sess_"); // should be the same as before
-  Py_XDECREF(py_sc_sess);  
   PyDict_DelItemString(ts_dict, "_dsm_sess_");
   
-  Py_DECREF(params);
   Py_DECREF(locals);
   if (NULL == res) {
     ERROR("evaluating python code\n");
   } else if (PyBool_Check(res)) {
     py_res = PyInt_AsLong(res);
+    Py_DECREF(res);
   } else {
     if (expect_int_result) {
       ERROR("unknown result from python code\n");
