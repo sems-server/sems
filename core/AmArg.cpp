@@ -170,6 +170,17 @@ void AmArg::push(const AmArg& a) {
   v_array->push_back(a);
 }
 
+void AmArg::push(const string &key, const AmArg &val) {
+  assertStruct();
+  (*v_struct)[key] = val;
+}
+
+void AmArg::pop(AmArg &a) {
+  assertArray();
+  a = v_array->front();
+  v_array->erase(v_array->begin());
+}
+
 void AmArg::concat(const AmArg& a) {
   assertArray();
   if (a.getType() == Array) { 

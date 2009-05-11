@@ -122,11 +122,6 @@ class AmArg
   void invalidate();
 
  public:
-  void assertArray();
-  void assertArray() const;
-
-  void assertStruct();
-  void assertStruct() const;
 
  AmArg() 
    : type(Undef) 
@@ -150,6 +145,12 @@ class AmArg
     v_cstr = strdup(v);
   }
   
+ AmArg(const string &v)
+   : type(CStr)
+  {
+    v_cstr = strdup(v.c_str());
+  }
+  
  AmArg(const ArgBlob v)
    : type(Blob)
   {
@@ -164,6 +165,12 @@ class AmArg
   AmArg(std::map<std::string, AmArg>& v);
   
   ~AmArg() { invalidate(); }
+
+  void assertArray();
+  void assertArray() const;
+
+  void assertStruct();
+  void assertStruct() const;
 
   short getType() const { return type; }
 
@@ -227,6 +234,8 @@ class AmArg
   void assertArray(size_t s);
 
   void push(const AmArg& a);
+  void push(const string &key, const AmArg &val);
+  void pop(AmArg &a);
 
   void concat(const AmArg& a);
   
