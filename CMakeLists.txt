@@ -9,6 +9,15 @@ SET(SEMS_EXTRA_VERSION dev)
 SET(SEMS_VERSION
     "${SEMS_MAJOR_VERSION}.${SEMS_MINOR_VERSION}.${SEMS_BUILD_VERSION}-${SEMS_EXTRA_VERSION}")
 
+IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND NOT MSVC_IDE)
+	message(FATAL_ERROR "In-source builds are not allowed.
+CMake would overwrite all makefiles distributed with SEMS.
+Please create a directory and run cmake from there, passing the path
+to this source directory as the last argument.
+This process created the file `CMakeCache.txt' and the directory `CMakeFiles'.
+Please delete them.")
+ENDIF(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND NOT MSVC_IDE)
+
 OPTION(SEMS_USE_SPANDSP       "Build with spandsp" OFF)
 OPTION(SEMS_USE_LIBSAMPLERATE "Build with libsamplerate" OFF)
 OPTION(SEMS_USE_ZRTP          "Build with ZRTP" OFF)
