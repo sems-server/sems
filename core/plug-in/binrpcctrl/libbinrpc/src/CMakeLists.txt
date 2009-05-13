@@ -40,8 +40,8 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBINRPC_LIB_VER=\"1.0-1\" -D_LIBBINRPC_BUILD -DNDEBUG")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-add_library(libbinrpc STATIC ${libbinrpc_SRCS})
-set_target_properties(libbinrpc PROPERTIES OUTPUT_NAME "libbinrpc")
-set_target_properties(libbinrpc PROPERTIES PREFIX "")
-target_link_libraries(libbinrpc ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(libbinrpc STATIC ${libbinrpc_SRCS})
+SET_TARGET_PROPERTIES(libbinrpc PROPERTIES OUTPUT_NAME "libbinrpc")
+SET_TARGET_PROPERTIES(libbinrpc PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(libbinrpc ${CMAKE_DL_LIBS} pthread m)
 

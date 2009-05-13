@@ -8,12 +8,12 @@ ADD_SUBDIRECTORY (libbinrpc)
 
 INCLUDE_DIRECTORIES (libbinrpc/include)
 
-set_property(TARGET libbinrpc PROPERTY IMPORTED_LOCATION ./libbinrpc/src/binrpcctrl.a)
+SET_PROPERTY(TARGET libbinrpc PROPERTY IMPORTED_LOCATION ./libbinrpc/src/binrpcctrl.a)
 
-add_library(binrpcctrl SHARED ${binrpcctrl_SRCS})
-set_target_properties(binrpcctrl PROPERTIES OUTPUT_NAME "binrpcctrl")
-set_target_properties(binrpcctrl PROPERTIES PREFIX "")
-target_link_libraries(binrpcctrl ${CMAKE_DL_LIBS} pthread m libbinrpc)
+ADD_LIBRARY(binrpcctrl SHARED ${binrpcctrl_SRCS})
+SET_TARGET_PROPERTIES(binrpcctrl PROPERTIES OUTPUT_NAME "binrpcctrl")
+SET_TARGET_PROPERTIES(binrpcctrl PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(binrpcctrl ${CMAKE_DL_LIBS} pthread m libbinrpc)
 
 
 

@@ -3,8 +3,8 @@ SessionTimer.cpp
 UserTimer.cpp
 )
 
-add_library(session_timer SHARED ${session_timer_SRCS})
-set_target_properties(session_timer PROPERTIES OUTPUT_NAME "session_timer")
-set_target_properties(session_timer PROPERTIES PREFIX "")
-target_link_libraries(session_timer ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(session_timer SHARED ${session_timer_SRCS})
+SET_TARGET_PROPERTIES(session_timer PROPERTIES OUTPUT_NAME "session_timer")
+SET_TARGET_PROPERTIES(session_timer PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(session_timer ${CMAKE_DL_LIBS} pthread m)
 

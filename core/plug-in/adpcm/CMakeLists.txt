@@ -7,8 +7,8 @@ g723_40.c
 g72x.c
 )
 
-add_library(adpcm SHARED ${adpcm_SRCS})
-set_target_properties(adpcm PROPERTIES OUTPUT_NAME "adpcm")
-set_target_properties(adpcm PROPERTIES PREFIX "")
-target_link_libraries(adpcm ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(adpcm SHARED ${adpcm_SRCS})
+SET_TARGET_PROPERTIES(adpcm PROPERTIES OUTPUT_NAME "adpcm")
+SET_TARGET_PROPERTIES(adpcm PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(adpcm ${CMAKE_DL_LIBS} pthread m)
 

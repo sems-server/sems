@@ -10,8 +10,8 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMOD_NAME='\"callback\"'")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-add_library(callback SHARED ${callback_SRCS})
-set_target_properties(callback PROPERTIES OUTPUT_NAME "callback")
-set_target_properties(callback PROPERTIES PREFIX "")
-target_link_libraries(callback ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(callback SHARED ${callback_SRCS})
+SET_TARGET_PROPERTIES(callback PROPERTIES OUTPUT_NAME "callback")
+SET_TARGET_PROPERTIES(callback PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(callback ${CMAKE_DL_LIBS} pthread m)
 

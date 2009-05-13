@@ -3,8 +3,8 @@ ContactInfo.cpp
 SIPRegistrarClient.cpp
 )
 
-add_library(registrar_client SHARED ${registrar_client_SRCS})
-set_target_properties(registrar_client PROPERTIES OUTPUT_NAME "registrar_client")
-set_target_properties(registrar_client PROPERTIES PREFIX "")
-target_link_libraries(registrar_client ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(registrar_client SHARED ${registrar_client_SRCS})
+SET_TARGET_PROPERTIES(registrar_client PROPERTIES OUTPUT_NAME "registrar_client")
+SET_TARGET_PROPERTIES(registrar_client PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(registrar_client ${CMAKE_DL_LIBS} pthread m)
 

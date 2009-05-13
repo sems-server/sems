@@ -26,8 +26,8 @@ syntFilter.c
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
-add_library(libilbc STATIC ${ilbc_SRCS})
-set_target_properties(libilbc PROPERTIES OUTPUT_NAME "ilbc")
-set_target_properties(libilbc PROPERTIES PREFIX "")
-target_link_libraries(libilbc ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(libilbc STATIC ${ilbc_SRCS})
+SET_TARGET_PROPERTIES(libilbc PROPERTIES OUTPUT_NAME "ilbc")
+SET_TARGET_PROPERTIES(libilbc PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(libilbc ${CMAKE_DL_LIBS} pthread m)
 

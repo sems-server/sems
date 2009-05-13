@@ -4,8 +4,8 @@ set (wav_SRCS
  wav_hdr.c
 )
 
-add_library(wav SHARED ${wav_SRCS})
-set_target_properties(wav PROPERTIES OUTPUT_NAME "wav")
-set_target_properties(wav PROPERTIES PREFIX "")
-target_link_libraries(wav ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(wav SHARED ${wav_SRCS})
+SET_TARGET_PROPERTIES(wav PROPERTIES OUTPUT_NAME "wav")
+SET_TARGET_PROPERTIES(wav PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(wav ${CMAKE_DL_LIBS} pthread m)
 

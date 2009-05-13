@@ -10,8 +10,8 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMOD_NAME='\"call_timer\"'")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-add_library(call_timer SHARED ${call_timer_SRCS})
-set_target_properties(call_timer PROPERTIES OUTPUT_NAME "call_timer")
-set_target_properties(call_timer PROPERTIES PREFIX "")
-target_link_libraries(call_timer ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(call_timer SHARED ${call_timer_SRCS})
+SET_TARGET_PROPERTIES(call_timer PROPERTIES OUTPUT_NAME "call_timer")
+SET_TARGET_PROPERTIES(call_timer PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(call_timer ${CMAKE_DL_LIBS} pthread m)
 

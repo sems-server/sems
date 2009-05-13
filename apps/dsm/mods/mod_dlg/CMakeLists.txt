@@ -2,8 +2,8 @@ set (mod_dlg_SRCS
 ModDlg.cpp
 )
 
-add_library(mod_dlg SHARED ${mod_dlg_SRCS})
-set_target_properties(mod_dlg PROPERTIES OUTPUT_NAME "mod_dlg")
-set_target_properties(mod_dlg PROPERTIES PREFIX "")
-target_link_libraries(mod_dlg ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(mod_dlg SHARED ${mod_dlg_SRCS})
+SET_TARGET_PROPERTIES(mod_dlg PROPERTIES OUTPUT_NAME "mod_dlg")
+SET_TARGET_PROPERTIES(mod_dlg PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(mod_dlg ${CMAKE_DL_LIBS} pthread m)
 

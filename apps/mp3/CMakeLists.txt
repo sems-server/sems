@@ -6,8 +6,8 @@ mp3.c
 #	module_ldflags += -lmpg123
 #	module_cflags += -DWITH_MPG123DECODER
 
-add_library(mp3 SHARED ${mp3_SRCS})
-set_target_properties(mp3 PROPERTIES OUTPUT_NAME "mp3")
-set_target_properties(mp3 PROPERTIES PREFIX "")
-target_link_libraries(mp3 ${CMAKE_DL_LIBS} pthread m mp3lame)
+ADD_LIBRARY(mp3 SHARED ${mp3_SRCS})
+SET_TARGET_PROPERTIES(mp3 PROPERTIES OUTPUT_NAME "mp3")
+SET_TARGET_PROPERTIES(mp3 PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(mp3 ${CMAKE_DL_LIBS} pthread m mp3lame)
 

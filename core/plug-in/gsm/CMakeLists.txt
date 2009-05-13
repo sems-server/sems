@@ -2,8 +2,8 @@ set (gsm_SRCS
  gsm.c
 )
 
-add_library(gsm SHARED ${gsm_SRCS})
-set_target_properties(gsm PROPERTIES OUTPUT_NAME "gsm")
-set_target_properties(gsm PROPERTIES PREFIX "")
-target_link_libraries(gsm ${CMAKE_DL_LIBS} pthread ${GSM_LIBRARIES} m)
+ADD_LIBRARY(gsm SHARED ${gsm_SRCS})
+SET_TARGET_PROPERTIES(gsm PROPERTIES OUTPUT_NAME "gsm")
+SET_TARGET_PROPERTIES(gsm PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(gsm ${CMAKE_DL_LIBS} pthread ${GSM_LIBRARIES} m)
 

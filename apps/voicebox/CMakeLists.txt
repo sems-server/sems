@@ -3,8 +3,8 @@ Voicebox.cpp
 VoiceboxDialog.cpp
 )
 
-add_library(voicebox SHARED ${voicebox_SRCS})
-set_target_properties(voicebox PROPERTIES OUTPUT_NAME "voicebox")
-set_target_properties(voicebox PROPERTIES PREFIX "")
-target_link_libraries(voicebox ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(voicebox SHARED ${voicebox_SRCS})
+SET_TARGET_PROPERTIES(voicebox PROPERTIES OUTPUT_NAME "voicebox")
+SET_TARGET_PROPERTIES(voicebox PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(voicebox ${CMAKE_DL_LIBS} pthread m)
 

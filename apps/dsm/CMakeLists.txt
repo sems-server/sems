@@ -14,8 +14,8 @@ INCLUDE_DIRECTORIES (.)
 
 ADD_SUBDIRECTORY (mods)
 
-add_library(dsm SHARED ${dsm_SRCS})
-set_target_properties(dsm PROPERTIES OUTPUT_NAME "dsm")
-set_target_properties(dsm PROPERTIES PREFIX "")
-target_link_libraries(dsm ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(dsm SHARED ${dsm_SRCS})
+SET_TARGET_PROPERTIES(dsm PROPERTIES OUTPUT_NAME "dsm")
+SET_TARGET_PROPERTIES(dsm PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(dsm ${CMAKE_DL_LIBS} pthread m)
 

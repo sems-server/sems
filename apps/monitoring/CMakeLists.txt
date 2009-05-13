@@ -10,8 +10,8 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMOD_NAME='\"monitoring\"'")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-add_library(monitoring SHARED ${monitoring_SRCS})
-set_target_properties(monitoring PROPERTIES OUTPUT_NAME "monitoring")
-set_target_properties(monitoring PROPERTIES PREFIX "")
-target_link_libraries(monitoring ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(monitoring SHARED ${monitoring_SRCS})
+SET_TARGET_PROPERTIES(monitoring PROPERTIES OUTPUT_NAME "monitoring")
+SET_TARGET_PROPERTIES(monitoring PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(monitoring ${CMAKE_DL_LIBS} pthread m)
 

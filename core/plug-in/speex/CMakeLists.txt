@@ -3,8 +3,8 @@ set (speex_SRCS
 )
 
 # module_cflags  = -ansi # -DNOFPU
-add_library(speex SHARED ${speex_SRCS})
-set_target_properties(speex PROPERTIES OUTPUT_NAME "speex")
-set_target_properties(speex PROPERTIES PREFIX "")
-target_link_libraries(speex ${CMAKE_DL_LIBS} pthread ${SPEEX_LIBRARIES} m)
+ADD_LIBRARY(speex SHARED ${speex_SRCS})
+SET_TARGET_PROPERTIES(speex PROPERTIES OUTPUT_NAME "speex")
+SET_TARGET_PROPERTIES(speex PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(speex ${CMAKE_DL_LIBS} pthread ${SPEEX_LIBRARIES} m)
 

@@ -20,6 +20,7 @@ set (sipctrl_SRCS
   wheeltimer.cpp
 )
 
-add_library(sipctrl SHARED ${sipctrl_SRCS})
-set_target_properties(sipctrl PROPERTIES PREFIX "")
-target_link_libraries(sipctrl ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(sipctrl SHARED ${sipctrl_SRCS})
+SET_TARGET_PROPERTIES(sipctrl PROPERTIES OUTPUT_NAME "sipctrl")
+SET_TARGET_PROPERTIES(sipctrl PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(sipctrl ${CMAKE_DL_LIBS} pthread m)

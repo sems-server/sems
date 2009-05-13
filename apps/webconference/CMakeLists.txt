@@ -5,8 +5,8 @@ WebConference.cpp
 WebConferenceDialog.cpp
 )
 
-add_library(webconference SHARED ${webconference_SRCS})
-set_target_properties(webconference PROPERTIES OUTPUT_NAME "webconference")
-set_target_properties(webconference PROPERTIES PREFIX "")
-target_link_libraries(webconference ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(webconference SHARED ${webconference_SRCS})
+SET_TARGET_PROPERTIES(webconference PROPERTIES OUTPUT_NAME "webconference")
+SET_TARGET_PROPERTIES(webconference PROPERTIES PREFIX "")
+TARGET_LINK_LIBRARIES(webconference ${CMAKE_DL_LIBS} pthread m)
 
