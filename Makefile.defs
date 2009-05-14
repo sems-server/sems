@@ -19,7 +19,6 @@ CPPFLAGS += -D_DEBUG \
 	  -DSEMS_VERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
 	  -DOS='"$(OS)"' 	\
 #         -DMAX_RTP_SESSIONS=8192 \
-#         -DOpenSER \
 #	  -DSUPPORT_IPV6 \
 #	  -DNO_THREADID_LOG \
 
