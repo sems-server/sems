@@ -160,7 +160,7 @@ const string& AmConfigReader::getParameter(const string& param, const string& de
 unsigned int AmConfigReader::getParameterInt(const string& param, unsigned int defval)
 {
   unsigned int result=0;
-  if(str2i(getParameter(param),result))
+  if(!hasParameter(param) || str2i(getParameter(param),result))
     return defval;
   else
     return result;
