@@ -37,7 +37,7 @@ class IvrDialogBase:
     def stopSession(self): # stop everything
         pass
 
-    def bye(self): # BYEs (or CANCELs) the SIP dialog
+    def bye(self [, headers]): # BYEs (or CANCELs) the SIP dialog
         pass
 
 

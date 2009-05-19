@@ -182,10 +182,16 @@ static PyObject* IvrDialogBase_dropSession(IvrDialogBase* self, PyObject*)
   return Py_None;
 }
 
-static PyObject* IvrDialogBase_bye(IvrDialogBase* self, PyObject*)
+static PyObject* IvrDialogBase_bye(IvrDialogBase* self, PyObject* args)
 {
+  char* hdrs = "";
+
   assert(self->p_dlg);
-  self->p_dlg->dlg.bye();
+
+  if(!PyArg_ParseTuple(args,"|s", &hdrs))
+    return NULL;
+
+  self->p_dlg->dlg.bye(hdrs);
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -518,7 +524,7 @@ static PyMethodDef IvrDialogBase_methods[] = {
   {"stopSession", (PyCFunction)IvrDialogBase_stopSession, METH_NOARGS,
    "Stop the session"
   },
-  {"bye", (PyCFunction)IvrDialogBase_bye, METH_NOARGS,
+  {"bye", (PyCFunction)IvrDialogBase_bye, METH_VARARGS,
    "Send a BYE"
   },
   {"redirect", (PyCFunction)IvrDialogBase_redirect, METH_VARARGS,
