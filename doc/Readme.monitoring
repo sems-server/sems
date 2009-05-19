@@ -30,10 +30,12 @@ This will remove all info about finished sessions preiodically.
 
 DI API
 ------
-functions to log, e.g. from inside SEMS:
+functions to log, e.g. from inside SEMS (but may also be like memcache from outside):
  log(ID, key, value [, key, value [, key, value [...]]])  - set one or multiple AVPs
  logAdd(ID, key, value)   - add a value to a AVPs
  markFinished(ID) - mark call as finished
+ setExpiration(ID, time) - set expiration of item identified with ID to time 
+                           in seconds since the Epoch (like time(2))
 
 functions to get log, e.g. from the outside:
  list()            - list IDs of calls

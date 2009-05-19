@@ -63,6 +63,11 @@ Monitor::~Monitor() {
 }
 
 int Monitor::onLoad() {
+  AmArg a;
+  a.assertArray();
+  AmArg b;
+  a.pop(b);
+
   // todo: if GC configured, start thread
   AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
@@ -92,6 +97,8 @@ void Monitor::invoke(const string& method,
     logAdd(args,ret);
   } else if(method == "markFinished"){
     markFinished(args,ret);
+  } else if(method == "setExpiration"){
+    setExpiration(args,ret);
   } else if(method == "get"){
     get(args,ret);
   } else if(method == "getAttribute"){
@@ -120,6 +127,7 @@ void Monitor::invoke(const string& method,
     ret.push(AmArg("log"));
     ret.push(AmArg("logAdd"));
     ret.push(AmArg("markFinished"));
+    ret.push(AmArg("setExpiration"));
     ret.push(AmArg("erase"));
     ret.push(AmArg("clear"));
     ret.push(AmArg("clearFinished"));
@@ -184,7 +192,19 @@ void Monitor::markFinished(const AmArg& args, AmArg& ret) {
   LogBucket& bucket = getLogBucket(args[0].asCStr());
   bucket.log_lock.lock();
   if (!bucket.log[args[0].asCStr()].finished)
-    bucket.log[args[0].asCStr()].finished  = time(0);
+    bucket.log[args[0].asCStr()].finished = time(0);
+  bucket.log_lock.unlock();
+  ret.push(0);
+  ret.push("OK");
+}
+
+void Monitor::setExpiration(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args[0]);
+  assertArgInt(args[1]);
+
+  LogBucket& bucket = getLogBucket(args[0].asCStr());
+  bucket.log_lock.lock();
+  bucket.log[args[0].asCStr()].finished = args[1].asInt();
   bucket.log_lock.unlock();
   ret.push(0);
   ret.push("OK");

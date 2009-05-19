@@ -68,6 +68,7 @@ class Monitor
   void log(const AmArg& args, AmArg& ret);
   void logAdd(const AmArg& args, AmArg& ret);
   void markFinished(const AmArg& args, AmArg& ret);
+  void setExpiration(const AmArg& args, AmArg& ret);
   void clear(const AmArg& args, AmArg& ret);
   void clearFinished(const AmArg& args, AmArg& ret);
   void erase(const AmArg& args, AmArg& ret);
