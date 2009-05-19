@@ -63,11 +63,6 @@ Monitor::~Monitor() {
 }
 
 int Monitor::onLoad() {
-  AmArg a;
-  a.assertArray();
-  AmArg b;
-  a.pop(b);
-
   // todo: if GC configured, start thread
   AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
