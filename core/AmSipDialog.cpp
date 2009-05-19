@@ -360,13 +360,13 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 }
 
 
-int AmSipDialog::bye()
+int AmSipDialog::bye(const string& hdrs)
 {
   switch(status){
   case Disconnecting:
   case Connected:
     status = Disconnected;
-    return sendRequest("BYE");
+    return sendRequest("BYE", "", "", hdrs);
   case Pending:
     status = Disconnecting;
     if(getUACTransPending())

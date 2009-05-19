@@ -167,7 +167,7 @@ class AmSipDialog
 		  const string& hdrs = "",
 		  int flags = 0);
     
-  int bye();
+  int bye(const string& hdrs = "");
   int cancel();
   int update(const string& hdrs);
   int reinvite(const string& hdrs,  
