@@ -25,6 +25,8 @@ monitoring must be compile time enabled in Makefile.defs by setting
  USE_MONITORING = yes
 and the monitoring module needs to be loaded.
 
+In monitoring.conf the option can be set to run a garbage collector thread.
+This will remove all info about finished sessions preiodically.
 
 DI API
 ------

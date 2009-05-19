@@ -29,6 +29,7 @@
 #define _MONITORING_H_
 
 #include <map>
+#include <memory>
 
 #include "AmThread.h"
 #include "AmApi.h"
@@ -49,17 +50,20 @@ struct LogBucket {
   AmMutex log_lock;
   std::map<string, LogInfo> log;
 };
+class MonitorGarbageCollector;
 
 class Monitor 
 : public AmDynInvokeFactory,
-  public AmDynInvoke
-   
+  public AmDynInvoke   
 {
   static Monitor* _instance;
+  std::auto_ptr<MonitorGarbageCollector> gc_thread;
 
   LogBucket logs[NUM_LOG_BUCKETS];
 
   LogBucket& getLogBucket(const string& call_id);
+
+  void clearFinished();
 
   void log(const AmArg& args, AmArg& ret);
   void logAdd(const AmArg& args, AmArg& ret);
@@ -88,15 +92,20 @@ class Monitor
   void invoke(const string& method, 
 	      const AmArg& args, AmArg& ret);
   int onLoad();
+  static unsigned int gcInterval;
+
+  friend class MonitorGarbageCollector;
 };
 
-/*
-class MonitorGarbageCollector : public AmThread {
+class MonitorGarbageCollector 
+: public AmThread,
+  public AmEventQueueInterface
+ {
+  AmSharedVar<bool> running;
+
  public:
   void run();
   void on_stop();
-
+  void postEvent(AmEvent* e);
 };
-*/
-
 #endif

@@ -27,10 +27,14 @@
 
 #include "Monitoring.h"
 
+#include "AmConfigReader.h"
+#include "AmEventDispatcher.h"
+
 #include "log.h"
 
 #include <sys/types.h>
 #include <regex.h>
+#include <unistd.h>
 
 //EXPORT_PLUGIN_CLASS_FACTORY(Monitor, MOD_NAME);
 extern "C" void* plugin_class_create()
@@ -42,6 +46,7 @@ extern "C" void* plugin_class_create()
 }
 
 Monitor* Monitor::_instance=0;
+unsigned int Monitor::gcInterval = 10;
 
 Monitor* Monitor::instance()
 {
@@ -51,7 +56,7 @@ Monitor* Monitor::instance()
 }
 
 Monitor::Monitor(const string& name) 
-  : AmDynInvokeFactory(MOD_NAME) {
+  : AmDynInvokeFactory(MOD_NAME), gc_thread(NULL) {
 }
 
 Monitor::~Monitor() {
@@ -59,6 +64,23 @@ Monitor::~Monitor() {
 
 int Monitor::onLoad() {
   // todo: if GC configured, start thread
+  AmConfigReader cfg;
+  if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
+    DBG("monitoring not starting garbage collector\n");
+    return 0;
+  }
+
+  if (cfg.getParameter("run_garbage_collector","no") == "yes") {
+    gcInterval = cfg.getParameterInt("garbage_collector_interval", 10);
+    DBG("Running garbage collection for monitoring every %u seconds\n", 
+	gcInterval);
+    gc_thread.reset(new MonitorGarbageCollector());
+    gc_thread->start();
+    AmEventDispatcher::instance()->addEventQueue("monitoring_gc", gc_thread.get());
+//     // add garbage collector to garbage collector...
+//     AmThreadWatcher::instance()->add(gc_thread);
+  }
+
   return 0;
 }
 
@@ -189,12 +211,21 @@ void Monitor::clear(const AmArg& args, AmArg& ret) {
 }
 
 void Monitor::clearFinished(const AmArg& args, AmArg& ret) {
- for (int i=0;i<NUM_LOG_BUCKETS;i++) {
+  clearFinished();
+
+  ret.push(0);
+  ret.push("OK");
+}
+
+void Monitor::clearFinished() {
+  time_t now = time(0);
+  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     std::map<string, LogInfo>::iterator it=
       logs[i].log.begin();
     while (it != logs[i].log.end()) {
-      if (it->second.finished > 0) {
+      if (it->second.finished && 
+	  it->second.finished <= now) {
 	std::map<string, LogInfo>::iterator d_it = it;
 	it++;
 	logs[i].log.erase(d_it);
@@ -204,8 +235,6 @@ void Monitor::clearFinished(const AmArg& args, AmArg& ret) {
     }
     logs[i].log_lock.unlock();
   }
-  ret.push(0);
-  ret.push("OK");
 }
 
 void Monitor::get(const AmArg& args, AmArg& ret) {
@@ -218,10 +247,28 @@ void Monitor::get(const AmArg& args, AmArg& ret) {
   bucket.log_lock.unlock();
 }
 
+void Monitor::getAttribute(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args[0]);
+  string attr_name = args[0].asCStr();
+  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
+    logs[i].log_lock.lock();
+    for (std::map<string, LogInfo>::iterator it=
+	   logs[i].log.begin();it != logs[i].log.end();it++) {
+      ret.push(AmArg());
+      AmArg& val = ret.get(ret.size()-1);
+      val.push(AmArg(it->first.c_str()));
+      val.push(it->second.info[attr_name]);
+    }
+    logs[i].log_lock.unlock();
+  }
+}
+
+
 #define DEF_GET_ATTRIB_FUNC(func_name, cond)				\
   void Monitor::func_name(const AmArg& args, AmArg& ret) {		\
     assertArgCStr(args[0]);						\
     string attr_name = args[0].asCStr();				\
+    time_t now = time(0);						\
     for (int i=0;i<NUM_LOG_BUCKETS;i++) {				\
       logs[i].log_lock.lock();						\
       for (std::map<string, LogInfo>::iterator it=			\
@@ -237,10 +284,10 @@ void Monitor::get(const AmArg& args, AmArg& ret) {
     }									\
   }
 
-DEF_GET_ATTRIB_FUNC(getAttribute, true)
-DEF_GET_ATTRIB_FUNC(getAttributeActive,  (!it->second.finished))
-DEF_GET_ATTRIB_FUNC(getAttributeFinished, (it->second.finished))
-
+DEF_GET_ATTRIB_FUNC(getAttributeActive,  (!(it->second.finished && 
+					    it->second.finished <= now)))
+DEF_GET_ATTRIB_FUNC(getAttributeFinished,(it->second.finished && 
+					  it->second.finished <= now))
 #undef DEF_GET_ATTRIB_FUNC
 
 void Monitor::listAll(const AmArg& args, AmArg& ret) {
@@ -315,11 +362,14 @@ void Monitor::listByRegex(const AmArg& args, AmArg& ret) {
 }
 
 void Monitor::listFinished(const AmArg& args, AmArg& ret) {
- for (int i=0;i<NUM_LOG_BUCKETS;i++) {
+  time_t now = time(0);
+  ret.assertArray();
+  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     for (std::map<string, LogInfo>::iterator it=
 	   logs[i].log.begin(); it != logs[i].log.end(); it++) {
-      if (it->second.finished > 0)
+      if (it->second.finished && 
+	  it->second.finished <= now)
 	ret.push(AmArg(it->first.c_str()));
     }
     logs[i].log_lock.unlock();
@@ -328,11 +378,14 @@ void Monitor::listFinished(const AmArg& args, AmArg& ret) {
 
 
 void Monitor::listActive(const AmArg& args, AmArg& ret) {
- for (int i=0;i<NUM_LOG_BUCKETS;i++) {
+  time_t now = time(0);
+  ret.assertArray();
+  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     for (std::map<string, LogInfo>::iterator it=
 	   logs[i].log.begin(); it != logs[i].log.end(); it++) {
-      if (!it->second.finished)
+      if (!(it->second.finished &&
+	    it->second.finished <= now))
 	ret.push(AmArg(it->first.c_str()));
     }
     logs[i].log_lock.unlock();
@@ -347,4 +400,30 @@ LogBucket& Monitor::getLogBucket(const string& call_id) {
     c = c ^ call_id[i];
   
   return logs[c % NUM_LOG_BUCKETS];
+}
+
+void MonitorGarbageCollector::run() {
+  DBG("running MonitorGarbageCollector thread\n");
+  running.set(true);
+  while (running.get()) {
+    sleep(Monitor::gcInterval);
+    Monitor::instance()->clearFinished();
+  }
+  DBG("MonitorGarbageCollector thread ends\n");
+  AmEventDispatcher::instance()->delEventQueue("monitoring_gc");
+}
+
+void MonitorGarbageCollector::postEvent(AmEvent* e) {
+  AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(e);  
+  if (sys_ev && 
+      sys_ev->sys_event == AmSystemEvent::ServerShutdown) {
+    DBG("stopping MonitorGarbageCollector thread\n");
+    running.set(false);
+    return;
+  }
+
+  WARN("received unknown event\n");
+}
+
+void MonitorGarbageCollector::on_stop() {
 }
