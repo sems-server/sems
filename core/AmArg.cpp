@@ -177,6 +177,12 @@ void AmArg::push(const string &key, const AmArg &val) {
 
 void AmArg::pop(AmArg &a) {
   assertArray();
+  if (!size()) {
+    if (a.getType() == AmArg::Undef) 
+      return;
+    a = AmArg();
+    return;
+  }
   a = v_array->front();
   v_array->erase(v_array->begin());
 }
