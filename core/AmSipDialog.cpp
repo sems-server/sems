@@ -449,11 +449,16 @@ int AmSipDialog::update(const string& hdrs)
   }	
 }
 
-int AmSipDialog::refer(const string& refer_to)
+int AmSipDialog::refer(const string& refer_to,
+		       int expires)
 {
   switch(status){
-  case Connected:
-    return sendRequest("REFER", "", "", "Refer-To: "+refer_to);
+  case Connected: {
+    string hdrs = "Refer-To: " + refer_to + CRLF;
+    if (expires>0) 
+      hdrs+= "Expires: " + int2str(expires) + CRLF;
+    return sendRequest("REFER", "", "", hdrs);
+  }
   case Disconnecting:
   case Pending:
     DBG("refer(): we are not yet connected."
@@ -478,7 +483,7 @@ int AmSipDialog::transfer(const string& target)
     AmSipDialog tmp_d(*this);
 		
     tmp_d.setRoute("");
-    tmp_d.contact_uri = "Contact: <" + tmp_d.remote_uri + ">\n";
+    tmp_d.contact_uri = "Contact: <" + tmp_d.remote_uri + ">" CRLF;
     tmp_d.remote_uri = target;
 		
     string r_set;
@@ -655,7 +660,7 @@ void AmSipDialog::setRoute(const string& n_route)
     string::size_type comma_pos;
 	
     comma_pos = m_route.find(',');
-    //route += "Route: " + m_route.substr(0,comma_pos) + "\n";
+    //route += "Route: " + m_route.substr(0,comma_pos) + "\r\n";
     route.push_back(m_route.substr(0,comma_pos));
 	
     if(comma_pos != string::npos)

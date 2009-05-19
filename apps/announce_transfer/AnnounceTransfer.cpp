@@ -143,8 +143,7 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
       if (getHeader(req.hdrs,"Event") != "refer") 
 	throw AmSession::Exception(481, "Subscription does not exist");
 
-      if ((strip_header_params(getHeader(req.hdrs,"Content-Type")) 
-	   != "message/sipfrag"))
+      if ((strip_header_params(req.content_type) != "message/sipfrag"))
 	throw AmSession::Exception(415, "Unsupported Media Type");
 			
       string sipfrag_sline = req.body.substr(8, req.body.find("\n") - 8);

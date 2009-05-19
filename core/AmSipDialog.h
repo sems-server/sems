@@ -176,7 +176,8 @@ class AmSipDialog
   int invite(const string& hdrs,  
 	     const string& content_type,
 	     const string& body);
-  int refer(const string& refer_to);
+  int refer(const string& refer_to,
+	    int expires = -1);
   int transfer(const string& target);
   int drop();
 
