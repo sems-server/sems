@@ -337,7 +337,7 @@ void AmArg::assertArrayFmt(const char* format) const {
       case 'o': assertArgAObject(get(i)); got+='o'; break;
       case 'a': assertArgArray(get(i)); got+='a'; break;
       case 'b': assertArgBlob(get(i)); got+='b'; break;
-      case 'u': assertArgStruct(get(i)); got+='a'; break;
+      case 'u': assertArgStruct(get(i)); got+='u'; break;
       default: got+='?'; ERROR("ignoring unknown format type '%c'\n", 
 			       format[i]); break;
       }
