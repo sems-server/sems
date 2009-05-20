@@ -181,7 +181,7 @@ int DSMFactory::onLoad()
       }
     }
   }
-  // TODO: pass preloaded mods to chart reader
+  // todo: pass preloaded mods to chart reader
 
   string LoadDiags = cfg.getParameter("load_diags");
   vector<string> diags_names = explode(LoadDiags, ",");
@@ -272,7 +272,10 @@ void AmArg2DSMStrMap(const AmArg& arg,
     else if (it->second.getType() == AmArg::Array) {
       vars[it->first+"_size"] = int2str(it->second.size());
       for (size_t i=0;i<it->second.size();i++) {
-	vars[it->first+"_"+int2str(i)] = AmArg::print(it->second.get(i));
+	if (it->second.get(i).getType() == AmArg::CStr)
+	  vars[it->first+"_"+int2str(i)] = it->second.get(i).asCStr();
+	else
+	  vars[it->first+"_"+int2str(i)] = AmArg::print(it->second.get(i));
       }
     } else {
       vars[it->first] = AmArg::print(it->second);	
