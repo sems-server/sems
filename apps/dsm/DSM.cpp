@@ -31,7 +31,8 @@
 #include "log.h"
 #include "AmConfigReader.h"
 #include "AmSessionContainer.h"
-
+#include "ampi/MonitoringAPI.h"
+#include "AmUriParser.h"
 #include "DSMDialog.h"
 #include "DSMChartReader.h"
 
@@ -56,6 +57,9 @@ DSMFactory* DSMFactory::instance()
 
 string DSMFactory::InboundStartDiag;
 string DSMFactory::OutboundStartDiag;
+bool DSMFactory::MonSelectUseCaller = true;
+bool DSMFactory::MonSelectUseCallee = true;
+
 map<string, string> DSMFactory::config;
 bool DSMFactory::RunInviteEvent;
 bool DSMFactory::SetParamVariables;
@@ -105,7 +109,6 @@ int DSMFactory::onLoad()
       }
     }
   }
-
 
   bool has_all_prompts = true;
   vector<string> required_prompts = 
@@ -216,6 +219,9 @@ int DSMFactory::onLoad()
     INFO("no 'outbound_start_diag' set in config. outbound calls disabled.\n");
   }
 
+  if (!InboundStartDiag.empty() || OutboundStartDiag.empty())
+    AmPlugIn::instance()->registerFactory4App("dsm",this);
+
   for (std::map<string,string>::const_iterator it = 
 	 cfg.begin(); it != cfg.end(); it++) 
     config[it->first] = it->second;
@@ -223,6 +229,12 @@ int DSMFactory::onLoad()
   RunInviteEvent = cfg.getParameter("run_invite_event")=="yes";
 
   SetParamVariables = cfg.getParameter("set_param_variables")=="yes";
+
+  if (cfg.getParameter("monitor_select_use_caller")=="no")
+    MonSelectUseCaller = false;
+
+  if (cfg.getParameter("monitor_select_use_callee")=="no")
+    MonSelectUseCallee = false;
 
   return 0;
 }
@@ -251,15 +263,104 @@ void DSMFactory::addParams(DSMDialog* s, const string& hdrs) {
   addVariables(s, "", params);  
 }
 
+void AmArg2DSMStrMap(const AmArg& arg,
+		     map<string, string>& vars) {
+  for (AmArg::ValueStruct::const_iterator it=arg.begin(); 
+       it != arg.end(); it++) {
+    if (it->second.getType() == AmArg::CStr)
+      vars[it->first] = it->second.asCStr();
+    else if (it->second.getType() == AmArg::Array) {
+      vars[it->first+"_size"] = int2str(it->second.size());
+      for (size_t i=0;i<it->second.size();i++) {
+	vars[it->first+"_"+int2str(i)] = AmArg::print(it->second.get(i));
+      }
+    } else {
+      vars[it->first] = AmArg::print(it->second);	
+    }
+  }
+}
+
 AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 {
   string start_diag;
+  map<string, string> vars;
+
   if (req.cmd == MOD_NAME) {
     if (InboundStartDiag.empty()) {
       ERROR("no inbound calls allowed\n");
       throw AmSession::Exception(488, "Not Acceptable Here");
     }
-    start_diag = InboundStartDiag;
+    if (InboundStartDiag=="$(mon_select)") {
+#ifdef USE_MONITORING
+
+      AmArg di_args, ret;
+      if (MonSelectUseCaller) {
+	AmUriParser from_parser;
+	from_parser.uri = req.from_uri;
+	if (!from_parser.parse_uri()) {
+	  DBG("failed to parse from_uri '%s'\n", req.from_uri.c_str());
+	  throw AmSession::Exception(488, "Not Acceptable Here");
+	}
+	
+	if (NULL == MONITORING_GLOBAL_INTERFACE) {
+	  ERROR("using $(mon_select) but monitoring not loaded\n");
+	  throw AmSession::Exception(488, "Not Acceptable Here");
+	}
+
+	AmArg caller_filter;
+	caller_filter.push("caller");
+	caller_filter.push(from_parser.uri_user);
+	DBG(" && looking for caller=='%s'\n", from_parser.uri_user.c_str());
+	di_args.push(caller_filter);
+      }
+      if (MonSelectUseCallee) {
+	AmArg callee_filter;
+	callee_filter.push("callee");
+	callee_filter.push(req.user);
+	DBG(" && looking for callee=='%s'\n", req.user.c_str());
+	di_args.push(callee_filter);	
+      }
+      MONITORING_GLOBAL_INTERFACE->invoke("listByFilter",di_args,ret);
+      
+      if ((ret.getType()!=AmArg::Array)||
+	  !ret.size()) {
+	INFO("call info not found. caller uri %s, r-uri %s\n", 
+	     req.from_uri.c_str(), req.r_uri.c_str());
+	throw AmSession::Exception(488, "Not Acceptable Here");
+      }
+
+      AmArg sess_id, sess_params;
+      if (ret.size()>1) {
+	DBG("multiple call info found - picking the first one\n");
+      }
+      sess_id.push(ret.get(0).asCStr());
+      MONITORING_GLOBAL_INTERFACE->invoke("get",sess_id,sess_params);
+      
+      if ((sess_params.getType()!=AmArg::Array)||
+	  !sess_params.size() ||
+	  sess_params.get(0).getType() != AmArg::Struct) {
+	INFO("call parameters not found. caller uri %s, r-uri %s, id %s\n", 
+	     req.from_uri.c_str(), req.r_uri.c_str(), ret.get(0).asCStr());
+	throw AmSession::Exception(488, "Not Acceptable Here");
+      }
+
+      AmArg& sess_dict = sess_params.get(0);
+      if (sess_dict.hasMember("app")) {
+	start_diag = sess_dict["app"].asCStr();
+	DBG("selected application '%s' for session\n", start_diag.c_str());
+      } else {
+	ERROR("selected session params don't contain 'app'\n");
+	throw AmSession::Exception(488, "Not Acceptable Here");
+      }
+      AmArg2DSMStrMap(sess_dict["appParams"], vars);
+	
+#else
+      ERROR("using $(mon_select) for dsm application, but compiled without monitoring support!\n");
+      throw AmSession::Exception(488, "Not Acceptable Here");
+#endif
+    } else {
+      start_diag = InboundStartDiag;
+    }
   } else {
     start_diag = req.cmd;
   }
@@ -270,9 +371,14 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
   if (SetParamVariables) 
     addParams(s, req.hdrs);
 
+
+  if (!vars.empty())
+    addVariables(s, "", vars);
+
   return s;
 }
 
+// outgoing call
 AmSession* DSMFactory::onInvite(const AmSipRequest& req,
 				AmArg& session_params) 
 {
@@ -306,17 +412,11 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
     // Creds + vars
     if (session_params.size()>1 && 
 	session_params.get(1).getType() == AmArg::Struct) {
-      for (AmArg::ValueStruct::const_iterator it=session_params.get(1).begin(); 
-	   it != session_params.get(1).end(); it++) {
-	vars[it->first] = it->second.asCStr();
-      }
+      AmArg2DSMStrMap(session_params.get(1), vars);
     }
   } else if (session_params.getType() == AmArg::Struct) {
     // vars
-    for (AmArg::ValueStruct::const_iterator it=session_params.begin(); 
-	 it != session_params.end(); it++) {
-      vars[it->first] = it->second.asCStr();
-    }
+    AmArg2DSMStrMap(session_params, vars);
   }
 
   DSMDialog* s = new DSMDialog(&prompts, diags, start_diag, cred); 

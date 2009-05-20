@@ -56,6 +56,9 @@ class DSMFactory
   static string InboundStartDiag;
   static string OutboundStartDiag;
 
+  static bool MonSelectUseCaller;
+  static bool MonSelectUseCallee;
+
   static DSMFactory* _instance;
   DSMFactory(const string& _app_name);
   ~DSMFactory();
