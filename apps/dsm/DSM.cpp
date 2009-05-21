@@ -384,7 +384,8 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
       if (ret.size()>1) {
 	DBG("multiple call info found - picking the first one\n");
       }
-      sess_id.push(ret.get(0).asCStr());
+      const char* session_id = ret.get(0).asCStr();
+      sess_id.push(session_id);
       MONITORING_GLOBAL_INTERFACE->invoke("get",sess_id,sess_params);
       
       if ((sess_params.getType()!=AmArg::Array)||
@@ -404,6 +405,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 	throw AmSession::Exception(488, "Not Acceptable Here");
       }
       AmArg2DSMStrMap(sess_dict["appParams"], vars);
+      vars["mon_session_record"] = session_id;
 	
 #else
       ERROR("using $(mon_select) for dsm application, but compiled without monitoring support!\n");
