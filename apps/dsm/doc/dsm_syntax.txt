@@ -80,6 +80,8 @@ actions:
 
  set($var=value)
   e.g.  set($var="text"); set($var=$var2); set($var=#key)
+ var($dstvar=srcvarname)
+  e.g.  var($dstvar=$var_counter)
  append($var, value)
  e.g. append($var, "text"); append($var, #key);
       append($var, @select); append($var, $var2);

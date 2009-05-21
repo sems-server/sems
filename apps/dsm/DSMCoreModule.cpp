@@ -64,6 +64,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("disableDTMFDetection", SCDisableDTMFDetection);
 
   DEF_CMD("set", SCSetAction);
+  DEF_CMD("var", SCGetVarAction);
   DEF_CMD("append", SCAppendAction);
   DEF_CMD("substr", SCSubStrAction);
   DEF_CMD("inc", SCIncAction);
@@ -327,8 +328,20 @@ EXEC_ACTION_START(SCSetAction) {
     par1.substr(1) : par1;
 
   sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params);
-  DBG("set variable '%s'='%s'\n", 
+  DBG("set $%s='%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCGetVarAction,'=', false);
+EXEC_ACTION_START(SCGetVarAction){
+  string dst_var_name = (par1.length() && par1[0] == '$')?
+    par1.substr(1) : par1;
+  string var_name = resolveVars(par2, sess, sc_sess, event_params);
+  
+  DBG("var_name = %s, dst = %s\n", var_name.c_str(), dst_var_name.c_str());
+  sc_sess->var[dst_var_name] = sc_sess->var[var_name];
+  DBG("set $%s='%s'\n", 
+      dst_var_name.c_str(), sc_sess->var[dst_var_name].c_str());
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCClearAction) {
