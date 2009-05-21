@@ -11,7 +11,7 @@ exclude_modules ?=
 endif
 
 modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
-		$(wildcard Makefile*) lib, \
+		$(wildcard Makefile*) lib CMakeLists.txt, \
 		$(wildcard *) )
 
 
