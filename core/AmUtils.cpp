@@ -564,8 +564,13 @@ int create_unix_socket(const string& path)
 string file_extension(const string& path)
 {
   string::size_type pos = path.rfind('.');
-  if(pos == string::npos)
-    return "";
+  if(pos == string::npos){
+    pos = path.rfind("%2E");
+
+    if(pos == string::npos)
+      return "";
+    return path.substr(pos+3,string::npos);
+  }
 
   return path.substr(pos+1,string::npos);
 }
