@@ -100,6 +100,9 @@
 #define _MONITORING_DEFINE_INTERFACE		\
   static AmDynInvoke*  monitoring_di;		\
 
+#define MONITORING_GLOBAL_INTERFACE		\
+  AmSessionContainer::monitoring_di
+
 #define _MONITORING_INIT						\
   AmDynInvokeFactory* monitoring_fact= AmPlugIn::instance()->getFactory4Di("monitoring"); \
   if(!monitoring_fact) {						\
