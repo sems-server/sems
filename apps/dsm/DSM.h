@@ -42,6 +42,14 @@ using std::string;
 
 #include <memory>
 
+enum MonSelectType {
+  MonSelect_NONE, 
+  MonSelect_RURI, 
+  MonSelect_TO, 
+  MonSelect_FROM, 
+  MonSelect_PAI
+}; 
+
 class DSMDialog;
 class DSMModule;
 /** \brief Factory for announcement sessions */
@@ -56,8 +64,9 @@ class DSMFactory
   static string InboundStartDiag;
   static string OutboundStartDiag;
 
-  static bool MonSelectUseCaller;
-  static bool MonSelectUseCallee;
+
+  static MonSelectType MonSelectCaller;
+  static MonSelectType MonSelectCallee;
 
   static DSMFactory* _instance;
   DSMFactory(const string& _app_name);

@@ -35,6 +35,7 @@
 #include "AmUriParser.h"
 #include "DSMDialog.h"
 #include "DSMChartReader.h"
+#include "AmSipHeaders.h"
 
 #include <string>
 #include <fstream>
@@ -57,8 +58,9 @@ DSMFactory* DSMFactory::instance()
 
 string DSMFactory::InboundStartDiag;
 string DSMFactory::OutboundStartDiag;
-bool DSMFactory::MonSelectUseCaller = true;
-bool DSMFactory::MonSelectUseCallee = true;
+
+MonSelectType DSMFactory::MonSelectCaller;
+MonSelectType DSMFactory::MonSelectCallee;
 
 map<string, string> DSMFactory::config;
 bool DSMFactory::RunInviteEvent;
@@ -230,11 +232,29 @@ int DSMFactory::onLoad()
 
   SetParamVariables = cfg.getParameter("set_param_variables")=="yes";
 
-  if (cfg.getParameter("monitor_select_use_caller")=="no")
-    MonSelectUseCaller = false;
+  string cfg_usecaller = cfg.getParameter("monitor_select_use_caller");
+  if (cfg_usecaller.empty() || cfg_usecaller=="from") 
+    MonSelectCaller = MonSelect_FROM;
+  else if (cfg_usecaller=="no") 
+    MonSelectCaller = MonSelect_NONE;
+  else if (cfg_usecaller=="pai") 
+    MonSelectCaller = MonSelect_PAI;
+  else {
+    ERROR("monitor_select_use_caller value '%s' not understood\n",
+	  cfg_usecaller.c_str());
+  }
 
-  if (cfg.getParameter("monitor_select_use_callee")=="no")
-    MonSelectUseCallee = false;
+  string cfg_usecallee = cfg.getParameter("monitor_select_use_callee");
+  if (cfg_usecallee.empty() || cfg_usecallee=="ruri") 
+    MonSelectCallee = MonSelect_RURI;
+  else if (cfg_usecallee=="no") 
+    MonSelectCallee = MonSelect_NONE;
+  else if (cfg_usecallee=="from") 
+    MonSelectCallee = MonSelect_FROM;
+  else {
+    ERROR("monitor_select_use_callee value '%s' not understood\n",
+	  cfg_usecallee.c_str());
+  }
 
   return 0;
 }
@@ -296,30 +316,58 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
     if (InboundStartDiag=="$(mon_select)") {
 #ifdef USE_MONITORING
 
+      if (NULL == MONITORING_GLOBAL_INTERFACE) {
+	ERROR("using $(mon_select) but monitoring not loaded\n");
+	throw AmSession::Exception(488, "Not Acceptable Here");
+      }
+
       AmArg di_args, ret;
-      if (MonSelectUseCaller) {
+      if (MonSelectCaller != MonSelect_NONE) {
 	AmUriParser from_parser;
-	from_parser.uri = req.from_uri;
+	if (MonSelectCaller == MonSelect_FROM)
+	  from_parser.uri = req.from_uri;
+	else {
+	  size_t end;
+	  string pai = getHeader(req.hdrs, SIP_HDR_P_ASSERTED_IDENTITY);
+	  if (!from_parser.parse_contact(pai, 0, end)) {
+	    ERROR("Failed to parse "SIP_HDR_P_ASSERTED_IDENTITY " '%s'\n",
+		  pai.c_str());
+	    throw AmSession::Exception(488, "Not Acceptable Here");
+	  }
+	}
+
 	if (!from_parser.parse_uri()) {
-	  DBG("failed to parse from_uri '%s'\n", req.from_uri.c_str());
+	  DBG("failed to parse caller uri '%s'\n", from_parser.uri.c_str());
 	  throw AmSession::Exception(488, "Not Acceptable Here");
 	}
 	
-	if (NULL == MONITORING_GLOBAL_INTERFACE) {
-	  ERROR("using $(mon_select) but monitoring not loaded\n");
-	  throw AmSession::Exception(488, "Not Acceptable Here");
-	}
-
 	AmArg caller_filter;
 	caller_filter.push("caller");
 	caller_filter.push(from_parser.uri_user);
 	DBG(" && looking for caller=='%s'\n", from_parser.uri_user.c_str());
 	di_args.push(caller_filter);
       }
-      if (MonSelectUseCallee) {
+
+
+      if (MonSelectCallee != MonSelect_NONE) {
 	AmArg callee_filter;
 	callee_filter.push("callee");
-	callee_filter.push(req.user);
+	if (MonSelectCallee == MonSelect_RURI)
+	  callee_filter.push(req.user);
+	else {
+	  AmUriParser to_parser;
+	  size_t end;
+	  if (!to_parser.parse_contact(req.to, 0, end)) {
+	    ERROR("Failed to parse To '%s'\n", req.to.c_str());
+	    throw AmSession::Exception(488, "Not Acceptable Here");
+	  }
+	  if (!to_parser.parse_uri()) {
+	    DBG("failed to parse callee uri '%s'\n", to_parser.uri.c_str());
+	    throw AmSession::Exception(488, "Not Acceptable Here");
+	  }
+	  callee_filter.push(to_parser.uri_user);
+	}
+	  
 	DBG(" && looking for callee=='%s'\n", req.user.c_str());
 	di_args.push(callee_filter);	
       }
