@@ -44,4 +44,5 @@ DEF_ACTION_1P(SCMkDirAction);
 DEF_ACTION_1P(SCMkDirRecursiveAction);
 DEF_ACTION_2P(SCRenameAction);
 DEF_ACTION_1P(SCUnlinkAction);
+DEF_ACTION_2P(SCUnlinkArrayAction);
 #endif

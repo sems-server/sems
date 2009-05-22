@@ -61,6 +61,7 @@ DSMAction* SCSysModule::getAction(const string& from_str) {
   DEF_CMD("sys.mkdirRecursive", SCMkDirRecursiveAction);
   DEF_CMD("sys.rename", SCRenameAction);
   DEF_CMD("sys.unlink", SCUnlinkAction);
+  DEF_CMD("sys.unlinkArray", SCUnlinkArrayAction);
 
   return NULL;
 }
@@ -188,5 +189,32 @@ EXEC_ACTION_START(SCUnlinkAction) {
     DBG("unlink '%s' failed: '%s'\n", 
 	fname.c_str(), strerror(errno));
     sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+  }
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUnlinkArrayAction, ',', true);
+EXEC_ACTION_START(SCUnlinkArrayAction) {
+  string fname = resolveVars(par1, sess, sc_sess, event_params);
+  if (fname.empty())
+    return false;
+  string prefix = resolveVars(par2, sess, sc_sess, event_params);
+
+  unsigned int arr_size = 0;
+  if (str2i(sc_sess->var[fname + "_size"], arr_size)) {
+    ERROR("_size not present/parseable '$%s'\n", sc_sess->var[fname + "_size"].c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    return false;
+  }
+
+  sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
+  for (unsigned int i=0;i<arr_size;i++)  {
+    
+    string file_fullname  = prefix + '/' + sc_sess->var[fname + "_"+int2str(i)];
+    DBG("unlinking '%s'\n", file_fullname.c_str());
+    if (unlink(file_fullname.c_str())) {
+      DBG("unlink '%s' failed: '%s'\n", 
+	  file_fullname.c_str(), strerror(errno));
+      sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+    }
   }
 } EXEC_ACTION_END;
