@@ -43,4 +43,5 @@ class DLGModule
 
 DEF_ACTION_2P(DLGReplyAction);
 DEF_ACTION_2P(DLGAcceptInviteAction);
+DEF_ACTION_1P(DLGByeAction);
 #endif

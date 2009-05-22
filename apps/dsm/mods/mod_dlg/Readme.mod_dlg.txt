@@ -11,3 +11,6 @@ dlg.acceptInvite([code, reason]);
  accept audio stream from last_req (INVITE), and reply with 200 OK (default)
  or code, reason
  
+dlg.bye([headers])
+ send BYE. useful for example for continuing processing after call has ended.
+

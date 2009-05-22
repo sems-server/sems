@@ -31,6 +31,7 @@
 #include "DSMSession.h"
 #include "AmSession.h"
 #include <string.h>
+#include "AmSipHeaders.h"
 
 SC_EXPORT(DLGModule);
 
@@ -66,6 +67,7 @@ DSMAction* DLGModule::getAction(const string& from_str) {
 
   DEF_CMD("dlg.reply", DLGReplyAction);
   DEF_CMD("dlg.acceptInvite", DLGAcceptInviteAction);
+  DEF_CMD("dlg.bye", DLGByeAction);
 
   return NULL;
 }
@@ -162,3 +164,13 @@ bool DLGAcceptInviteAction::execute(AmSession* sess,
 
   return false;
 }
+
+EXEC_ACTION_START(DLGByeAction) {
+  string hdrs = resolveVars(arg, sess, sc_sess, event_params);
+
+  if (sess->dlg.bye(hdrs)) {
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+  } else {
+    sc_sess->SET_ERRNO(DSM_ERRNO_OK);
+  }
+} EXEC_ACTION_END;
