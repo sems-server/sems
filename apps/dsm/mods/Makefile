@@ -5,9 +5,9 @@ COREPATH = $(DSMPATH)/../../core
 include $(COREPATH)/../Makefile.defs
 
 ifneq ($(USE_MONITORING), yes)
-exclude_modules ?= mod_monitoring
+exclude_modules ?= mod_monitoring mod_mysql mod_aws
 else
-exclude_modules ?= 
+exclude_modules ?= mod_mysql mod_aws
 endif
 
 modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
