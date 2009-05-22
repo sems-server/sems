@@ -80,6 +80,7 @@ DEF_ACTION_2P(SCSetTimerAction);
 DEF_ACTION_2P(SCLogAction);
 DEF_ACTION_1P(SCLogVarsAction);
 DEF_ACTION_2P(SCGetVarAction);
+DEF_ACTION_2P(SCSetVarAction);
 DEF_ACTION_2P(SCPlayFileAction);
 DEF_ACTION_2P(SCPlayFileFrontAction);
 DEF_ACTION_2P(SCPostEventAction);
