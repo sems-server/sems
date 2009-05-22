@@ -142,7 +142,8 @@ void AmSessionContainer::on_stop()
 { 
   _container_closed.set(true);
 
-  DBG("brodcasting ServerShutdown system event to sessions...\n");
+  DBG("brodcasting ServerShutdown system event to %u sessions...\n",
+      AmSession::getSessionNum());
   AmEventDispatcher::instance()->
     broadcast(new AmSystemEvent(AmSystemEvent::ServerShutdown));
     
