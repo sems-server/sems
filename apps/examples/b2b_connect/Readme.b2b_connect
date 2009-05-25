@@ -25,4 +25,9 @@ This will result in sems trying to set up a call to john@ser.mydomain.com:5060.
 If a 407 Authentication required is received, semsuser and 'password' will be
 used as credentials.
 
-Improvements are of course welcome as svn diff to the semsdev mailing list.
+If b2b_connect.conf parameter transparent_destination is set to true
+(default is false), then Request URI and To URI are passed to the second
+leg unaltered.
+
+Improvements are of course welcome as svn diff to the semsdev mailing
+list.

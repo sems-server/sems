@@ -34,6 +34,7 @@
 #include "AmSessionContainer.h"
 
 bool b2b_connectFactory::TransparentHeaders = true; // default
+bool b2b_connectFactory::TransparentDestination = false; // default
 
 EXPORT_SESSION_FACTORY(b2b_connectFactory,MOD_NAME);
 
@@ -55,6 +56,9 @@ int b2b_connectFactory::onLoad()
 
   if (cfg.getParameter("transparent_headers")=="false")
     TransparentHeaders = false;
+
+  if (cfg.getParameter("transparent_ruri")=="true")
+    TransparentDestination = true;
   
 //   user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
 //   if(!user_timer_fact) {
@@ -105,6 +109,7 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
   }
 
   string app_param = getHeader(req.hdrs, PARAM_HDR);
+  string remote_party, remote_uri;
 
   if (!app_param.length()) {
     throw AmSession::Exception(500, "b2b_connect: parameters not found");
@@ -115,8 +120,13 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
   password = get_header_keyvalue(app_param,"p");
 
   from = "sip:"+user+"@"+domain;
-  to = "sip:"+req.user+"@"+domain;
-
+  if (b2b_connectFactory::TransparentDestination) {
+      remote_uri = req.r_uri;
+      remote_party = to = req.to;
+  } else {
+      remote_uri = to = "sip:"+req.user+"@"+domain;
+      remote_party = "<" + to + ">";
+  }
   if(dlg.reply(req, 100, "Connecting") != 0) {
     throw AmSession::Exception(500,"Failed to reply 100");
   }
@@ -132,7 +142,7 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
   dlg.updateStatus(req);
   recvd_req.insert(std::make_pair(req.cseq,req));
   
-  connectCallee("<" + to + ">", to, from, from, 
+  connectCallee(remote_party, remote_uri, from, from, 
 		b2b_connectFactory::TransparentHeaders ? invite_req.hdrs : "");
 
   MONITORING_LOG(other_id.c_str(), 

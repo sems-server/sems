@@ -46,6 +46,7 @@ class b2b_connectFactory: public AmSessionFactory
   AmSession* onInvite(const AmSipRequest& req);
 
   static bool TransparentHeaders; // default
+  static bool TransparentDestination; // default
 
 };
 
