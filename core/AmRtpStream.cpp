@@ -453,6 +453,11 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
 
 void AmRtpStream::init(const vector<SdpPayload*>& sdp_payloads)
 {
+  if (sdp_payloads.empty()) {
+    ERROR("can not initialize RTP stream without payloads.\n");
+    return;
+  }
+
   SdpPayload *sdp_payload = sdp_payloads[0];
   payload = sdp_payload->payload_type;
   last_payload = payload;
