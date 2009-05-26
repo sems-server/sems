@@ -57,6 +57,7 @@ SCPyModule::~SCPyModule() {
 
 int SCPyModule::preload() {
   if(!Py_IsInitialized()){
+    add_env_path("PYTHONPATH",AmConfig::PlugInPath);
     Py_Initialize();
     DBG("Python version %s\n", Py_GetVersion());
   }
