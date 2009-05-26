@@ -1,6 +1,6 @@
 webconference PyQT GUI
 
-(c) 2009 Stefan Sayer License: GPLv3 (see LICENSE)
+(c) 2009 Stefan Sayer License: GPLv3 (see http://www.gnu.org/licenses/gpl-3.0.html)
 
 This example demonstrates how simple it is to write a UI for webconference.
 It was intended as webconf UI for Nokia Internet Tablets, but it turns out
@@ -13,7 +13,8 @@ To set an account permanently (and not be asked all the time) do
  mv accountconfig.py.sample accountconfig.py 
 and edit the account in it.
 
-To use your own conference bridge, edit CONTROL_URL in webconference.py.
+To use your own conference bridge, edit CONTROL_URL in webconference.py and
+on your sems server set direct_export=webconference in xmlrpc2di.conf.
 
 All improvements are welcome, preferably as patch to semsdev list 
 (mailto:semsdev@iptel.org).
