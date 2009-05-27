@@ -136,9 +136,12 @@ bool AmEventDispatcher::broadcast(AmEvent* ev)
     bool posted = false;
     m_queues.lock();
 
-    for (EvQueueMapIter it = queues.begin(); 
-	 it != queues.end(); it++) {
+    EvQueueMapIter it = queues.begin(); 
+    while (it != queues.end()) {
+      it++;
+      m_queues.unlock();
       it->second->postEvent(ev->clone());
+      m_queues.lock();
       posted = true;
     }
 
