@@ -227,12 +227,12 @@ int DSMFactory::onLoad()
   }
 
   InboundStartDiag = cfg.getParameter("inbound_start_diag");
-  if (InboundStartDiag.empty()) {
-    INFO("no 'inbound_start_diag' set in config. inbound calls disabled.\n");
+  if (InboundStartDiag.empty() && register_names.empty()) {
+    INFO("no 'inbound_start_diag' set in config. inbound calls with application 'dsm' disabled.\n");
   }
   OutboundStartDiag = cfg.getParameter("outbound_start_diag");
-  if (OutboundStartDiag.empty()) {
-    INFO("no 'outbound_start_diag' set in config. outbound calls disabled.\n");
+  if (OutboundStartDiag.empty() && register_names.empty()) {
+    INFO("no 'outbound_start_diag' set in config. outbound calls with application 'dsm' disabled.\n");
   }
 
   if (!InboundStartDiag.empty() || OutboundStartDiag.empty())
