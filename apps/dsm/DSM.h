@@ -35,7 +35,7 @@
 #include "DSMStateEngine.h"
 #include "DSMStateDiagramCollection.h"
 #include "DSMSession.h"
-
+#include "DSMChartReader.h"
 
 #include <string>
 using std::string;
@@ -56,7 +56,8 @@ class DSMModule;
 class DSMFactory
   : public AmSessionFactory,
     public AmDynInvoke,
-    public AmDynInvokeFactory
+    public AmDynInvokeFactory,
+    public AmEventQueueInterface
 {
   AmPromptCollection prompts;
   DSMStateDiagramCollection diags;
@@ -79,7 +80,7 @@ class DSMFactory
 		    map<string, string>& vars);
   void addParams(DSMDialog* s, const string& hdrs);
 
-  vector<DSMModule*> preloaded_mods;
+  DSMChartReader preload_reader;
 public:
   static DSMFactory* instance();
 
@@ -98,6 +99,8 @@ public:
   // DI API
   void invoke(const string& method, 
 	      const AmArg& args, AmArg& ret);
+
+  void postEvent(AmEvent* e);
 
 };
 

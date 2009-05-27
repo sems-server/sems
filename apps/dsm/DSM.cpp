@@ -36,6 +36,7 @@
 #include "DSMDialog.h"
 #include "DSMChartReader.h"
 #include "AmSipHeaders.h"
+#include "AmEventDispatcher.h"
 
 #include <string>
 #include <fstream>
@@ -70,6 +71,20 @@ DSMFactory::DSMFactory(const string& _app_name)
   : AmSessionFactory(_app_name),AmDynInvokeFactory(_app_name),
     loaded(false)
 {
+  AmEventDispatcher::instance()->addEventQueue("dsm", this);
+}
+
+void DSMFactory::postEvent(AmEvent* e) {
+  AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(e);  
+  if (sys_ev && 
+      sys_ev->sys_event == AmSystemEvent::ServerShutdown) {
+    DBG("stopping DSM...\n");
+    preload_reader.cleanup();
+    AmEventDispatcher::instance()->delEventQueue("dsm");
+    return;
+  }
+
+  WARN("received unknown event\n");
 }
 
 DSMFactory::~DSMFactory() {
@@ -166,15 +181,14 @@ int DSMFactory::onLoad()
   string preload_mods = cfg.getParameter("preload_mods");
   vector<string> preload_names = explode(preload_mods, ",");
   if (preload_names.size()) {
-    DSMChartReader reader;
     for (vector<string>::iterator it=
 	   preload_names.begin(); it != preload_names.end(); it++) {
       DBG("preloading '%s'...\n", it->c_str());
-      if (!reader.importModule("import("+*it+")", ModPath)) {
+      if (!preload_reader.importModule("import("+*it+")", ModPath)) {
 	ERROR("importing module '%s' for preload\n", it->c_str());
 	return -1;
       }
-      DSMModule* last_loaded = reader.mods.back();
+      DSMModule* last_loaded = preload_reader.mods.back();
       if (last_loaded) {
  	if (last_loaded->preload()) {
  	  DBG("Error while preloading '%s'\n", it->c_str());

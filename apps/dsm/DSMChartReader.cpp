@@ -421,3 +421,9 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
   return true;
 }
 
+
+void DSMChartReader::cleanup() {
+  for (vector<DSMModule*>::iterator it=mods.begin(); it != mods.end(); it++)
+    delete *it;
+  mods.clear();  
+}

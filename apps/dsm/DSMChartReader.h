@@ -95,6 +95,7 @@ class DSMChartReader {
 	      vector<DSMModule*>& out_mods);
 
   friend class DSMFactory;
+  void cleanup();
 };
 
 #endif
