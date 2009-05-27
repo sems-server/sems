@@ -1,0 +1,29 @@
+
+import(mod_dlg);
+
+initial state START ;
+transition "on invite" START - invite -> runinvite;
+transition "on sess start" START - sessionStart -> runstart;
+state runinvite enter { log(1, run invite!); 
+      set(reply_request=0);
+      dlg.reply(100, trytry);
+};
+
+state runstart
+      enter { log(1, run start!); 
+        set(connect_session=0);
+        setTimer(1, 5);
+      };
+
+transition "go connect" runstart - timerTest(#id==1) / 
+	   dlg.acceptInvite();
+	   connectMedia();
+	   playFile(/home/stefan/sub_nautilus.wav);
+   -> waitstop; 
+
+state waitstop;
+
+transition bye waitstop - hangup / stop -> FIN;
+transition bye runstart - hangup / stop -> FIN;
+
+state FIN;

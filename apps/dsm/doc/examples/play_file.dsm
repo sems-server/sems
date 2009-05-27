@@ -1,0 +1,10 @@
+
+initial state START 
+	enter {
+	  playFile(/home/stefan/sub_nautilus.wav);
+	};
+
+transition "file ends" START - noAudioTest / stop(true) -> END;
+
+transition "file ends" START - hangup / stop(false) -> END;
+state END; 
