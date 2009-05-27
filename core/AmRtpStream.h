@@ -141,9 +141,6 @@ protected:
   
   AmSession*         session;
 
-  /** Initializes a new random local port, and sets own attributes properly. */
-  void setLocalPort();
-
 
 public:
 
@@ -187,6 +184,9 @@ public:
    */
   void setLocalIP(const string& ip);
 	    
+  /** Initializes a new random local port, and sets own attributes properly. */
+  void setLocalPort();
+
   /** 
    * Gets RTP port number. If no RTP port in assigned, assigns a new one.
    * @return local RTP port. 
