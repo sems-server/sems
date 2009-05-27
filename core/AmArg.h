@@ -157,6 +157,11 @@ class AmArg
     v_blob = new ArgBlob(v);
   }
 
+  AmArg(ArgObject* v) 
+    : type(AObject),
+    v_obj(v) 
+   { }
+
   // convenience constructors
   AmArg(vector<std::string>& v);
   AmArg(const vector<int>& v );
@@ -213,6 +218,7 @@ class AmArg
 	_THROW_TYPE_MISMATCH(Struct,a);
 
   void setBorrowedPointer(ArgObject* v) {
+    invalidate();
     type = AObject;
     v_obj = v;
   }
