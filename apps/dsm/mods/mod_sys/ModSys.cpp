@@ -33,6 +33,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdio.h>
 
 SC_EXPORT(SCSysModule);
 
@@ -62,6 +63,7 @@ DSMAction* SCSysModule::getAction(const string& from_str) {
   DEF_CMD("sys.rename", SCRenameAction);
   DEF_CMD("sys.unlink", SCUnlinkAction);
   DEF_CMD("sys.unlinkArray", SCUnlinkArrayAction);
+  DEF_CMD("sys.tmpnam", SCTmpNamAction);
 
   return NULL;
 }
@@ -216,5 +218,17 @@ EXEC_ACTION_START(SCUnlinkArrayAction) {
 	  file_fullname.c_str(), strerror(errno));
       sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
     }
+  }
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCTmpNamAction) {
+  string varname = resolveVars(arg, sess, sc_sess, event_params);
+  char fname[L_tmpnam];
+  if (!tmpnam(fname)) {
+    ERROR("unique name cannot be generated\n");
+    sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+  } else {
+    sc_sess->var[varname] = fname;
+    sc_sess->SET_ERRNO(DSM_ERRNO_OK);
   }
 } EXEC_ACTION_END;
