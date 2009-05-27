@@ -35,7 +35,6 @@
 class SCPyModule 
 : public DSMModule {
 
-
  public:
 
   SCPyModule();
@@ -47,6 +46,19 @@ class SCPyModule
   DSMCondition* getCondition(const string& from_str);
   static PyObject* dsm_module;
   static PyObject* session_module;
+  static PyInterpreterState* interp;
+  static PyThreadState* tstate;
+};
+
+/** smart ArgObject that "owns" a python dictionary reference */
+struct SCPyDictArg
+  : public ArgObject, 
+  public DSMDisposable   
+{
+  SCPyDictArg();
+  SCPyDictArg(PyObject* pPyObject);
+  ~SCPyDictArg();
+  PyObject* pPyObject;
 };
 
 class SCPyPyAction			
@@ -57,17 +69,17 @@ class SCPyPyAction
     bool execute(AmSession* sess,	
 		 DSMCondition::EventType event,	
 		 map<string,string>* event_params);
-  };							
+};
 
 class PyPyCondition
 : public DSMCondition {
-
-  PyObject* py_func;    		
- public:	
-    		
-    PyPyCondition(const string& arg);
-    bool match(AmSession* sess, DSMCondition::EventType event,	
-	       map<string,string>* event_params);
-  };								
+  
+  PyObject* py_func;
+ public:
+  
+  PyPyCondition(const string& arg);
+  bool match(AmSession* sess, DSMCondition::EventType event,
+	     map<string,string>* event_params);
+};
 
 #endif

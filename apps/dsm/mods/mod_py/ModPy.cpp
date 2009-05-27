@@ -33,6 +33,11 @@
 #include "AmSession.h"
 #include "PyDSMSession.h"
 #include "PyDSM.h"
+#include "AmArg.h"
+   #include <stdio.h>
+
+#include "grammar.h"
+#include "pythread.h"
 
 struct PythonGIL
 {
@@ -47,12 +52,11 @@ SC_EXPORT(SCPyModule);
 
 PyObject* SCPyModule::dsm_module = NULL;
 PyObject* SCPyModule::session_module = NULL;
+PyInterpreterState* SCPyModule::interp = NULL;
+PyThreadState* SCPyModule::tstate = NULL;
 
 SCPyModule::SCPyModule() {
 
-}
-
-SCPyModule::~SCPyModule() {
 }
 
 int SCPyModule::preload() {
@@ -64,6 +68,9 @@ int SCPyModule::preload() {
 
   PyEval_InitThreads();
 
+  interp = PyThreadState_Get()->interp; 
+  tstate = PyThreadState_Get();
+
   PyImport_AddModule("dsm");
   dsm_module = Py_InitModule("dsm",mod_py_methods);
   PyModule_AddIntConstant(dsm_module, "Any", DSMCondition::Any);
@@ -73,7 +80,8 @@ int SCPyModule::preload() {
   PyModule_AddIntConstant(dsm_module, "Timer", DSMCondition::Timer);
   PyModule_AddIntConstant(dsm_module, "NoAudio", DSMCondition::NoAudio);
   PyModule_AddIntConstant(dsm_module, "Hangup", DSMCondition::Hangup);
-  PyModule_AddIntConstant(dsm_module, "Hold", DSMCondition::Hold);  PyModule_AddIntConstant(dsm_module, "UnHold", DSMCondition::UnHold);
+  PyModule_AddIntConstant(dsm_module, "Hold", DSMCondition::Hold);  
+  PyModule_AddIntConstant(dsm_module, "UnHold", DSMCondition::UnHold);
   PyModule_AddIntConstant(dsm_module, "XmlrpcResponse", DSMCondition::XmlrpcResponse);
   PyModule_AddIntConstant(dsm_module, "DSMEvent", DSMCondition::DSMEvent);
   PyModule_AddIntConstant(dsm_module, "PlaylistSeparator", DSMCondition::PlaylistSeparator);
@@ -129,6 +137,48 @@ DSMCondition* SCPyModule::getCondition(const string& from_str) {
   return NULL;
 }
 
+SCPyDictArg::SCPyDictArg() 
+ : pPyObject(NULL) {
+}
+
+SCPyDictArg::SCPyDictArg(PyObject* pPyObject) 
+ : pPyObject(pPyObject) {
+}
+
+SCPyDictArg::~SCPyDictArg() {
+  PYLOCK;
+
+  if (NULL != pPyObject) {
+    PyDict_Clear(pPyObject);
+  }
+  Py_XDECREF(pPyObject); 
+}
+
+PyObject* getPyLocals(DSMSession* sc_sess) {
+  map<string, AmArg>::iterator l_it;
+  SCPyDictArg* py_arg = NULL;
+  ArgObject* py_locals_obj;
+
+  if (((l_it=sc_sess->avar.find("py_locals")) != sc_sess->avar.end()) && 
+      (l_it->second.getType() == AmArg::AObject) && 
+      ((py_locals_obj = l_it->second.asObject()) != NULL) &&
+      ((py_arg = dynamic_cast<SCPyDictArg*>(py_locals_obj)) != NULL) &&
+      (py_arg->pPyObject != NULL)
+      ) {
+    return py_arg->pPyObject;
+  }
+
+  PyObject* locals = PyDict_New();
+  PyDict_SetItemString(locals, "dsm", SCPyModule::dsm_module);
+  PyDict_SetItemString(locals, "session", SCPyModule::session_module);
+  
+  py_arg = new SCPyDictArg(locals);
+  sc_sess->transferOwnership(py_arg);
+  sc_sess->avar["py_locals"] = AmArg(py_arg);
+  
+  return locals;
+}
+
 bool py_execute(PyCodeObject* py_func, DSMSession* sc_sess, 
 		DSMCondition::EventType event, map<string,string>* event_params,
 		bool expect_int_result) {
@@ -136,17 +186,15 @@ bool py_execute(PyCodeObject* py_func, DSMSession* sc_sess,
   PYLOCK;
 
   bool py_res = false;
-  
+  DBG("add main \n");
   PyObject* m = PyImport_AddModule("__main__");
   if (m == NULL) {
     ERROR("getting main module\n");
     return false;
   }
-  PyObject*d = PyModule_GetDict(m);
-
-  PyObject* locals = PyDict_New();
-  PyDict_SetItemString(locals, "dsm", SCPyModule::dsm_module);
-  PyDict_SetItemString(locals, "session", SCPyModule::session_module);
+  DBG("get globals \n");
+  PyObject* globals = PyModule_GetDict(m);
+  PyObject* locals = getPyLocals(sc_sess);
 
   PyObject* params = PyDict_New();
   if (NULL != event_params) {
@@ -158,27 +206,31 @@ bool py_execute(PyCodeObject* py_func, DSMSession* sc_sess,
     }
   }
   PyDict_SetItemString(locals, "params", params);
-  Py_DECREF(params);
 
   PyObject *t = PyInt_FromLong(event);
   PyDict_SetItemString(locals, "type", t);
-  Py_DECREF(t);
 
   PyObject* py_sc_sess = PyCObject_FromVoidPtr(sc_sess,NULL);
   PyObject* ts_dict = PyThreadState_GetDict();
   PyDict_SetItemString(ts_dict, "_dsm_sess_", py_sc_sess);
-  Py_DECREF(py_sc_sess);  
+  Py_DECREF(py_sc_sess);
 
   // call the function
-  PyObject* res = PyEval_EvalCode((PyCodeObject*)py_func, d, locals);
+  PyObject* res = PyEval_EvalCode((PyCodeObject*)py_func, globals, locals);
 
   if(PyErr_Occurred())
     PyErr_Print();
+
+  PyDict_DelItemString(locals, "params");
+  PyDict_Clear(params);
+  Py_DECREF(params);
+
+  PyDict_DelItemString(locals, "type");
+  Py_DECREF(t);
   
-  ts_dict = PyThreadState_GetDict(); // should be the same as before
+  //   ts_dict = PyThreadState_GetDict(); // should be the same as before
   PyDict_DelItemString(ts_dict, "_dsm_sess_");
   
-  Py_DECREF(locals);
   if (NULL == res) {
     ERROR("evaluating python code\n");
   } else if (PyBool_Check(res)) {
@@ -195,7 +247,8 @@ bool py_execute(PyCodeObject* py_func, DSMSession* sc_sess,
 }
 
 SCPyPyAction::SCPyPyAction(const string& arg) {
-  py_func = Py_CompileString(arg.c_str(), "<mod_py>", Py_file_input);
+  PYLOCK;
+  py_func = Py_CompileString(arg.c_str(), ("<mod_py action: '"+arg+"'>").c_str(), Py_file_input);
   if (NULL == py_func) {
     ERROR("compiling python code '%s'\n", 
 	  arg.c_str());
@@ -214,7 +267,8 @@ EXEC_ACTION_START(SCPyPyAction) {
 
 
 PyPyCondition::PyPyCondition(const string& arg) {
-  py_func = Py_CompileString(arg.c_str(), "<mod_py>", Py_eval_input);
+  PYLOCK;
+  py_func = Py_CompileString(arg.c_str(), ("<mod_py condition: '"+arg+"'>").c_str(), Py_eval_input);
   if (NULL == py_func) {
     ERROR("compiling python code '%s'\n", 
 	  arg.c_str());
@@ -229,3 +283,61 @@ MATCH_CONDITION_START(PyPyCondition) {
   return py_execute((PyCodeObject*)py_func, sc_sess, 
 	     event, event_params, false);
 } MATCH_CONDITION_END;
+
+
+// define PYDSM_WITH_MEM_DEBUG
+
+#ifndef PYDSM_WITH_MEM_DEBUG
+SCPyModule::~SCPyModule() { }
+#else
+
+void printdict(PyObject* p, char* name) {
+  return;
+
+  DBG("dict %s %p -------------\n", name, p);
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+  
+  while (PyDict_Next(p, &pos, &key, &value)) {
+    DBG(" obj '%s' ref %d\n", PyString_AsString(key), key->ob_refcnt);
+  }
+  DBG("dict %p end -------------\n", p);
+}
+
+extern grammar _PyParser_Grammar; /* From graminit.c */
+
+SCPyModule::~SCPyModule() {
+  //PYLOCK;
+  PyEval_AcquireThread(tstate);
+  FILE* f = fopen("refs.txt", "w");
+  
+  _Py_PrintReferences(f);
+  
+  /* Disable signal handling */
+  PyOS_FiniInterrupts();
+
+    PyInterpreterState_Clear(interp);
+  
+  
+  /* Delete current thread */
+  PyThreadState_Swap(NULL);
+  PyInterpreterState_Delete(interp);
+  
+  /* Sundry finalizers */
+  PyMethod_Fini();
+  PyFrame_Fini();
+  PyCFunction_Fini();
+  PyTuple_Fini();
+  PyList_Fini();
+  PySet_Fini();
+  PyString_Fini();
+  PyInt_Fini();
+  PyFloat_Fini();
+  
+  PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+  
+  _Py_PrintReferenceAddresses(f);
+
+  fclose(f);
+}
+#endif //PYDSM_WITH_MEM_DEBUG

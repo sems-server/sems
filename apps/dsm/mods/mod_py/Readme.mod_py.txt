@@ -11,7 +11,8 @@ The 'type' and 'params' are accessible to determine the current
 event's type and parameters.
 
 py() actions and conditions can access session's variables using
-session.var(name) and session.setvar(name, value).
+session.var(name) and session.setvar(name, value). Locals stay 
+across different py(...) actions/conditions.
 
 They may even directly use some media functionality implemented 
 in DSM sessions - see session module's help below. But, 
@@ -170,3 +171,28 @@ DATA
     UnHold = 8
     XmlrpcResponse = 9
 
+
+
+how to debug memory leak:
+-------------------------
+
+Unfortunately, it seems to be not simple to get embedded 
+python interpreter leak free. Here is how to run with python's 
+mem debug:
+
+compile python with --with-pydebug, e.g. 
+
+./configure --with-pydebug --prefix=/path/to/mod_dsm/python
+make && make install
+
+set debug python in Makefile, e.g. replace PY_VER/PY_EXE:
+ PY_VER = 2.5
+ PY_EXE = ./python/bin/python
+
+make mod_py with -D PYDSM_WITH_MEM_DEBUG
+
+run sems with -E, make calls, end sems with ctrl-c
+from python do scripts/combinerefs.py refs.txt.
+generate calls with e.g. sipp:
+sipp -sn uac -i 192.168.5.106 -s 35 -d 500 -r 400 192.168.5.106:5070
+(sudo su; ulimit -n 100000  before starting sems)

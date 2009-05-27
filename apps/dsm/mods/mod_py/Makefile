@@ -4,6 +4,10 @@ PYTHON_VERSION ?= $(shell python -c 'import sys;print sys.version[0:3]')
 PY_VER = $(PYTHON_VERSION)
 PY_EXE = python$(PY_VER)
 
+# for local python build, use e.g.:
+#PY_VER = 2.6
+#PY_EXE = python2.6/bin/python
+
 DSMPATH ?= ../..
 
 PYTHON_DIR = $(shell $(PY_EXE) ./python_inc.py)
