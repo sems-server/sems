@@ -255,6 +255,36 @@ void AmAudioFile::rewind()
   clearBufferEOF();
 }
 
+void AmAudioFile::rewind(unsigned int msec)
+{
+  long fpos = ftell(fp);
+  long int k = fmt->calcBytesToRead((fmt->rate/1000)*msec);
+  
+  if(fpos > begin + k) {
+    DBG("Rewinding %d milliseconds (%ld bytes)\n", msec, k);
+    fseek(fp, -k, SEEK_CUR);
+  } else {
+    DBG("Rewinding file\n");
+    fseek(fp, begin, SEEK_SET);
+  }
+  clearBufferEOF();
+}
+
+void AmAudioFile::forward(unsigned int msec)
+{
+  long fpos = ftell(fp);
+  long int k = fmt->calcBytesToRead((fmt->rate/1000)*msec);
+  
+  if(fpos <= (data_size - k)) {
+    DBG("Forwarding %d milliseconds (%ld bytes)\n", msec, k);
+    fseek(fp, k, SEEK_CUR);
+    clearBufferEOF();
+  } else {
+    DBG("Forwarding to EOF\n");
+    fseek(fp, data_size, SEEK_SET);
+  }
+}
+
 void AmAudioFile::on_close()
 {
   if(fp && !on_close_done){

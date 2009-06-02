@@ -134,10 +134,14 @@ public:
 
   int fpopen(const string& filename, OpenMode mode, FILE* n_fp);
 
-  /**
-   * Rewind the file.
-   */
+  /** Rewind the file to beginning. */
   void rewind();
+
+  /** Rewind the file some milliseconds. */
+  void rewind(unsigned int msec);
+
+  /** skip forward some milliseconds. */
+  void forward(unsigned int msec); 
 
   /** Closes the file. */
   void close();
