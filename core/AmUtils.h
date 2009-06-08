@@ -68,6 +68,11 @@ string long2hex(unsigned long val);
 bool reverse_hex2int(const string& str, unsigned int& result);
 
 /** 
+ * Convert a double to a string. 
+ */
+string double2str(double val);
+
+/** 
  * Convert a string to an uint. 
  * @param str    [in]  string to convert.
  * @param result [out] result integer.

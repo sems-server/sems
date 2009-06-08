@@ -116,6 +116,41 @@ string long2hex(unsigned long val)
   return string((char*)buffer);
 }
 
+/** Convert a double to a string. (from jsoncpp) */
+string double2str(double val) {
+  char buffer[32];
+  sprintf(buffer, "%#.16g", val); 
+  char* ch = buffer + strlen(buffer) - 1;
+  if (*ch != '0') return buffer; // nothing to truncate, so save time
+  while(ch > buffer && *ch == '0'){
+    --ch;
+  }
+  char* last_nonzero = ch;
+  while(ch >= buffer){
+    switch(*ch){
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      --ch;
+      continue;
+    case '.':
+      // Truncate zeroes to save bytes in output, but keep one.
+      *(last_nonzero+2) = '\0';
+      return string(buffer);
+    default:
+      return string(buffer);
+    }
+  }
+  return string(buffer);
+}
+
 /**
  * Convert a reversed hex string to uint.
  * @param str    [in]  string to convert.

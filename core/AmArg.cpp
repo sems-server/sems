@@ -381,7 +381,7 @@ string AmArg::print(const AmArg &a) {
     case Int:
       return int2str(a.asInt());
     case Double:
-      return int2str((int)a.asDouble()); //TODO: FIXME
+      return double2str(a.asDouble());
     case CStr:
       return "'" + string(a.asCStr()) + "'";
     case Array:
