@@ -1,3 +1,5 @@
+
+ o run_invite_event per DSM script
  o explicit condition ordering (explicit priority)
  o checking of FSM consitency (e.g. target state names)
  o better error reporting in script compilation (e.g. line number)
@@ -5,10 +7,11 @@
  x 'not' operator on conditions
  o 'or' operator
  x provide session init function for modules
- o embed python interpreter in module ?
+ x embed python interpreter in module ?
    -> py( ... python code ... ) condition and action
- o correct en/decode DI args (e.g. arrays)
+ x correct en/decode DI args (e.g. arrays)
  o replace DSMSession::map<string, string> var with map<string, AmArg>
+   var -> avar
  x register scripts as app  
  o mod_mysql 
  o session creation from module
