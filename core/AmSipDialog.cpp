@@ -455,7 +455,7 @@ int AmSipDialog::refer(const string& refer_to,
   switch(status){
   case Connected: {
     string hdrs = "Refer-To: " + refer_to + CRLF;
-    if (expires>0) 
+    if (expires>=0) 
       hdrs+= "Expires: " + int2str(expires) + CRLF;
     return sendRequest("REFER", "", "", hdrs);
   }
