@@ -68,6 +68,7 @@ DSMAction* DLGModule::getAction(const string& from_str) {
   DEF_CMD("dlg.reply", DLGReplyAction);
   DEF_CMD("dlg.acceptInvite", DLGAcceptInviteAction);
   DEF_CMD("dlg.bye", DLGByeAction);
+  DEF_CMD("dlg.connectCalleeRelayed", DLGConnectCalleeRelayedAction);
 
   return NULL;
 }
@@ -173,4 +174,12 @@ EXEC_ACTION_START(DLGByeAction) {
   } else {
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);
   }
+} EXEC_ACTION_END;
+
+
+CONST_ACTION_2P(DLGConnectCalleeRelayedAction,',', false);
+EXEC_ACTION_START(DLGConnectCalleeRelayedAction) {  
+  string remote_party = resolveVars(par1, sess, sc_sess, event_params);
+  string remote_uri = resolveVars(par2, sess, sc_sess, event_params);
+  sc_sess->B2BconnectCallee(remote_party, remote_uri, true);
 } EXEC_ACTION_END;
