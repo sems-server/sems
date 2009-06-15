@@ -84,6 +84,9 @@ class DSMSession {
 				bool relayed_invite = false) = 0;
   virtual void B2BterminateOtherLeg() = 0;
 
+  /** insert reqeust in list of received ones */
+  virtual void B2BaddReceivedRequest(const AmSipRequest& req) = 0;
+
   /** transfer ownership of object to this session instance */
   virtual void transferOwnership(DSMDisposable* d) = 0;
 

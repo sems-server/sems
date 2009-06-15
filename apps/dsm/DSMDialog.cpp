@@ -67,9 +67,9 @@ DSMDialog::~DSMDialog()
 bool DSMDialog::checkVar(const string& var_name, const string& var_val) {
   map<string, string>::iterator it = var.find(var_name);
   if ((it != var.end()) && (it->second == var_val)) 
-    return false;
+    return true;
 
-  return true;
+  return false;
 }
 
 void DSMDialog::onInvite(const AmSipRequest& req) {
@@ -89,8 +89,10 @@ void DSMDialog::onInvite(const AmSipRequest& req) {
     if (!engine.init(this, startDiagName, DSMCondition::Invite))
       run_session_invite =false;
 
-    run_session_invite &= 
-      !checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE);
+    if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
+      DBG("session choose to not connect media\n");
+      run_session_invite = false;     // don't accept audio 
+    }    
   }
 
   if (run_session_invite) 
@@ -124,7 +126,7 @@ void DSMDialog::startSession(){
 
   setReceiving(true);
 
-  if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
+  if (!checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
     if (!getInput())
       setInput(&playlist);
 
@@ -396,4 +398,10 @@ void DSMDialog::B2BconnectCallee(const string& remote_party,
 				 const string& remote_uri,
 				 bool relayed_invite) {
   connectCallee(remote_party, remote_uri, relayed_invite);
+}
+
+void DSMDialog::B2BaddReceivedRequest(const AmSipRequest& req) {
+  DBG("inserting request '%s' with CSeq %d in list of received requests\n", 
+      req.method.c_str(), req.cseq);
+  recvd_req.insert(std::make_pair(req.cseq, req));
 }

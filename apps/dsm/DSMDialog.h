@@ -112,6 +112,8 @@ public:
   void B2BconnectCallee(const string& remote_party,
 			const string& remote_uri,
 			bool relayed_invite = false);
+
+  void B2BaddReceivedRequest(const AmSipRequest& req);
 };
 
 #endif
