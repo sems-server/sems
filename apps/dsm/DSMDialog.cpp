@@ -73,6 +73,9 @@ bool DSMDialog::checkVar(const string& var_name, const string& var_val) {
 }
 
 void DSMDialog::onInvite(const AmSipRequest& req) {
+  // make B2B dialogs work in onInvite as well
+  invite_req = req;
+
   if (!process_invite) {
     // re-INVITEs
     AmB2BCallerSession::onInvite(req);
