@@ -329,29 +329,7 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       }
       AmArg ret;
       di->invoke(fct_name, args, ret);
-			
-      if (ret.size()) {
-	reply="[";
-	for (unsigned int i=0;i<ret.size();i++) {
-	  const AmArg& r = ret.get(i);
-	  switch (r.getType()) {
-	  case AmArg::CStr:  
-	    reply=reply + r.asCStr(); break;
-	  case AmArg::Int:  
-	    reply=reply + int2str(r.asInt()); break;
-	  case AmArg::Double: {
-	    char res[10];
-	    snprintf(res, 10, "%e", r.asDouble());
-	    reply=reply + res; 
-	  } break;
-	  default: break;
-	  }
-	  if (i<ret.size()-1) reply = reply + ",";
-	}
-	reply+="]\n";
-      } else 
-	reply = "(none)\n";
-
+      reply=AmArg::print(ret);
     } catch (const AmDynInvoke::NotImplemented& e) {
       reply = "Exception occured: AmDynInvoke::NotImplemented '"+
 	e.what+"'\n";
