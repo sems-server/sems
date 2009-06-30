@@ -76,7 +76,7 @@ int  AmConfigReader::loadFile(const string& path)
 	if (fname.length() && fname[0] != '/')
 	  fname = AmConfig::ModConfigPath + fname;
 	if(loadFile(fname))
-	    return -1;
+	    goto error;
 	continue;
     }
 
@@ -139,6 +139,7 @@ int  AmConfigReader::loadFile(const string& path)
 
  syntax_error:
   ERROR("syntax error line %i in %s\n",lc,path.c_str());
+ error:
   fclose(fp);
   return -1;
 }

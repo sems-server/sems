@@ -28,6 +28,11 @@
 #include "AmSessionEventHandler.h"
 
 // AmSessionEventHandler methods
+int AmSessionEventHandler::configure(AmConfigReader& conf)
+{
+  return 0;
+}
+
 bool AmSessionEventHandler::process(AmEvent*)
 {
   return false;

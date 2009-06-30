@@ -75,8 +75,6 @@ Dtmf::InbandDetectorType
 AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
 bool AmConfig::IgnoreSIGCHLD      = true;
 
-AmSessionTimerConfig AmConfig::defaultSessionTimerConfig;
-
 int AmConfig::setSIPPort(const string& port) 
 {
   if(sscanf(port.c_str(),"%u",&AmConfig::LocalSIPPort) != 1) {
@@ -368,7 +366,7 @@ int AmConfig::readConfiguration()
     }
   }
 
-  return defaultSessionTimerConfig.readFromConfig(cfg);
+  return 0;
 }	
 
 int AmConfig::init()
@@ -376,68 +374,3 @@ int AmConfig::init()
   return 0;
 }
 
-AmSessionTimerConfig::AmSessionTimerConfig()
-  : EnableSessionTimer(DEFAULT_ENABLE_SESSION_TIMER), 
-    SessionExpires(SESSION_EXPIRES), 
-    MinimumTimer(MINIMUM_TIMER)
-{
-
-}
-AmSessionTimerConfig::~AmSessionTimerConfig() 
-{
-}
-
-int AmSessionTimerConfig::readFromConfig(AmConfigReader& cfg)
-{
-  // enable_session_timer
-  if(cfg.hasParameter("enable_session_timer")){
-    if(!setEnableSessionTimer(cfg.getParameter("enable_session_timer"))){
-      ERROR("invalid enable_session_timer specified\n");
-      return -1;
-    }
-  }
-
-  // session_expires
-  if(cfg.hasParameter("session_expires")){
-    if(!setSessionExpires(cfg.getParameter("session_expires"))){
-      ERROR("invalid session_expires specified\n");
-      return -1;
-    }
-  }
-
-  // minimum_timer
-  if(cfg.hasParameter("minimum_timer")){
-    if(!setMinimumTimer(cfg.getParameter("minimum_timer"))){
-      ERROR("invalid minimum_timer specified\n");
-      return -1;
-    }
-  }
-  return 0;
-}
-
-int AmSessionTimerConfig::setEnableSessionTimer(const string& enable) {
-  if ( strcasecmp(enable.c_str(), "yes") == 0 ) {
-    EnableSessionTimer = 1;
-  } else if ( strcasecmp(enable.c_str(), "no") == 0 ) {
-    EnableSessionTimer = 0;
-  } else {
-    return 0;
-  }	
-  return 1;
-}		
-
-int AmSessionTimerConfig::setSessionExpires(const string& se) {
-  if(sscanf(se.c_str(),"%u",&SessionExpires) != 1) {
-    return 0;
-  }
-  DBG("setSessionExpires(%i)\n",SessionExpires);
-  return 1;
-} 
-
-int AmSessionTimerConfig::setMinimumTimer(const string& minse) {
-  if(sscanf(minse.c_str(),"%u",&MinimumTimer) != 1) {
-    return 0;
-  }
-  DBG("setMinimumTimer(%i)\n",MinimumTimer);
-  return 1;
-}

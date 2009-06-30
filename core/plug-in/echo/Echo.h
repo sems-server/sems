@@ -38,6 +38,7 @@ using std::string;
 class EchoFactory: public AmSessionFactory
 {
   AmSessionEventHandlerFactory* session_timer_f;
+  AmConfigReader conf;
 
 public:
   EchoFactory(const string& _app_name);
@@ -58,6 +59,9 @@ public:
   void onBye(const AmSipRequest& req);
   void onDtmf(int event, int duration);
 };
+
+
+#define MODULE_NAME "echo"
 
 #endif
 // Local Variables:

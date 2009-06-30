@@ -44,7 +44,7 @@ AmDynInvokeFactory::AmDynInvokeFactory(const string& name)
 }
 
 AmSessionFactory::AmSessionFactory(const string& name)
-  : AmPluginFactory(name), mod_conf(AmConfig::defaultSessionTimerConfig)
+  : AmPluginFactory(name)
 {
 }
 
@@ -67,7 +67,7 @@ AmSession* AmSessionFactory::onRefer(const AmSipRequest& req,
 }
 
 int AmSessionFactory::configureModule(AmConfigReader& cfg) {
-  return mod_conf.readFromConfig(cfg);
+  return 0;//mod_conf.readFromConfig(cfg);
 }
 
 void AmSessionFactory::configureSession(AmSession* sess) {

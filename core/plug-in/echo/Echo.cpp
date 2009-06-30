@@ -29,6 +29,7 @@
 #include "AmSession.h"
 #include "AmConfig.h"
 #include "AmAudio.h"
+#include "AmConfigReader.h"
 #include "log.h"
 
 #include "Echo.h"
@@ -47,17 +48,46 @@ EchoFactory::EchoFactory(const string& _app_name)
 
 int EchoFactory::onLoad()
 {
-  session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
-  if (NULL == session_timer_f) {
-    ERROR("load session_timer module for echo application.\n");
+  bool useSessionTimer = false;
+    
+  if(conf.loadFile(AmConfig::ModConfigPath + string(MODULE_NAME)+ ".conf")){
+    WARN("Could not open " MODULE_NAME ".conf\n");
+    WARN("assuming that default values are fine\n");
   }
-  return (session_timer_f == NULL);
+  else {
+    if(conf.hasParameter("enable_session_timer") &&
+       (conf.getParameter("enable_session_timer") == string("yes")) ){
+      
+      useSessionTimer = true;
+    }
+  }
+  
+  if(useSessionTimer){
+    session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
+    DBG("session_timer_f == 0x%.16lX\n",(unsigned long)session_timer_f);
+    if(session_timer_f == NULL){
+      ERROR("Could not load the session_timer module: switch it off\n");
+      //return -1;
+    }
+  }
+  
+  return 0;
 }
 
 AmSession* EchoFactory::onInvite(const AmSipRequest& req)
 {
   AmSession* s = new EchoDialog();
-  s->addHandler(session_timer_f->getHandler(s));
+  
+  AmSessionEventHandler* h = session_timer_f->getHandler(s);
+
+  if(h->configure(conf)){
+    
+    ERROR("Could not configure the session timer: switch it off.\n");
+    delete h;
+  }
+  else {
+    s->addHandler(h);
+  }
 
   return s;
 }

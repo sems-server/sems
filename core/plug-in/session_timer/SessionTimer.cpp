@@ -99,9 +99,9 @@ bool SessionTimer::onSendRequest(const string& method,
   if  ((method != "INVITE") && (method != "UPDATE"))
     goto end;
   
-  m_hdrs += "Session-Expires: "+ int2str(session_timer_conf.getSessionExpires()) +CRLF
-    + "Min-SE: " + int2str(session_timer_conf.getMinimumTimer()) + CRLF;
-
+  m_hdrs += "Session-Expires: "+ int2str(session_interval) +CRLF
+    + "Min-SE: " + int2str(min_se) + CRLF;
+  
  end:
   hdrs += m_hdrs;
   return false;
@@ -114,9 +114,6 @@ bool SessionTimer::onSendReply(const AmSipRequest& req,
 			       string& hdrs,
 			       int flags)
 {
-  //if (!session_timer_conf.getEnableSessionTimer())
-  // 	return "";
-
   string m_hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED)  "timer"  CRLF;
   if  ((req.method != "INVITE") && (req.method != "UPDATE")) 
     return false;
@@ -136,14 +133,21 @@ bool SessionTimer::onSendReply(const AmSipRequest& req,
 
 
 /* Session Timer: -ssa */
-void SessionTimer::configureSessionTimer(const AmSessionTimerConfig& conf) 
+int  SessionTimer::configure(AmConfigReader& conf) 
 {
-  session_timer_conf = conf;
+  if(session_timer_conf.readFromConfig(conf))
+    return -1;
+
+  session_interval = session_timer_conf.getSessionExpires();
+  min_se = session_timer_conf.getMinimumTimer();
+
   DBG("Configured session with EnableSessionTimer = %s, SessionExpires = %u, MinimumTimer = %u\n", 
       session_timer_conf.getEnableSessionTimer() ? "yes":"no", 
       session_timer_conf.getSessionExpires(),
       session_timer_conf.getMinimumTimer()
       );
+
+  return 0;
 }
 
 /** 
@@ -153,15 +157,14 @@ void SessionTimer::configureSessionTimer(const AmSessionTimerConfig& conf)
  */
 bool SessionTimerFactory::checkSessionExpires(const AmSipRequest& req) 
 {
-  //if (session_timer_conf.getEnableSessionTimer()) {
   string session_expires = getHeader(req.hdrs, "Session-Expires", "x");
 
   if (session_expires.length()) {
     unsigned int i_se;
     if (!str2i(strip_header_params(session_expires), i_se)) {
+
       //if (i_se < session_timer_conf.getMinimumTimer()) {
-      //TODO: reply_error...
-      //throw SessionTimerException(session_timer_conf.getMinimumTimer());
+      //TODO: reply 422...
       //}
     } else
       throw AmSession::Exception(500,"internal error"); // malformed request?
@@ -181,20 +184,17 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
     // determine session interval
     string sess_expires_hdr = getHeader(req.hdrs, "Session-Expires", "x");
     
-    //session_interval = get_session_interval_from(req);
+    unsigned int rem_sess_expires=0; 
     if (!sess_expires_hdr.empty()) {
       if (str2i(strip_header_params(sess_expires_hdr),
-		session_interval)) {
+		rem_sess_expires)) {
 	WARN("error while parsing Session-Expires header value '%s'\n", 
 	     strip_header_params(sess_expires_hdr).c_str()); // exception?
-	session_interval = session_timer_conf.getSessionExpires();  
       }
-    } else {
-      session_interval = session_timer_conf.getSessionExpires();  
     }
 
     // get Min-SE
-    unsigned int i_minse = session_timer_conf.getMinimumTimer();
+    unsigned int i_minse = min_se;
     string min_se_hdr = getHeader(req.hdrs, "Min-SE");
     if (!min_se_hdr.empty()) {
       if (str2i(strip_header_params(min_se_hdr),
@@ -205,15 +205,15 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
     }
 
     // calculate actual se
-    unsigned int min = session_timer_conf.getMinimumTimer();
-    if (i_minse > min)
-      min = i_minse;
-    if ((session_timer_conf.getSessionExpires() < min)||
-	(session_interval<min)) {
-      session_interval = min;
+
+    if (i_minse > min_se)
+      min_se = i_minse;
+
+    if (rem_sess_expires < min_se) {
+      session_interval = min_se;
     } else {
-      if (session_timer_conf.getSessionExpires() < session_interval)
-	session_interval = session_timer_conf.getSessionExpires();
+      if (rem_sess_expires < session_interval)
+	session_interval = rem_sess_expires;
     }
      
     // determine session refresher -- cf rfc4028 Table 2
@@ -254,12 +254,10 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipReply& reply)
   if (sess_expires_hdr.empty())
     sess_expires_hdr = getHeader(reply.hdrs, "x"); // compact form
   
-  session_interval = session_timer_conf.getSessionExpires();
   session_refresher = refresh_local;
   session_refresher_role = UAC;
   
   if (!sess_expires_hdr.empty()) {
-    //session_interval = get_session_interval_from(req);
     unsigned int sess_i_tmp = 0;
     if (str2i(strip_header_params(sess_expires_hdr),
 	      sess_i_tmp)) {
@@ -267,8 +265,8 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipReply& reply)
 	   strip_header_params(sess_expires_hdr).c_str()); // exception?
     } else {
       // this is forbidden by rfc, but to be sure against 'rogue' proxy/uas
-      if (sess_i_tmp < session_timer_conf.getMinimumTimer()) {
-	session_interval = session_timer_conf.getMinimumTimer();
+      if (sess_i_tmp < min_se) {
+	session_interval = min_se;
       } else {
 	session_interval = sess_i_tmp;
       }
@@ -281,7 +279,6 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipReply& reply)
   
   removeTimers(s);
   setTimers(s);
-
 }
 
 void SessionTimer::setTimers(AmSession* s) 
@@ -334,3 +331,68 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
   return;
 }
 
+AmSessionTimerConfig::AmSessionTimerConfig()
+  : EnableSessionTimer(DEFAULT_ENABLE_SESSION_TIMER), 
+    SessionExpires(SESSION_EXPIRES), 
+    MinimumTimer(MINIMUM_TIMER)
+{
+
+}
+AmSessionTimerConfig::~AmSessionTimerConfig() 
+{
+}
+
+int AmSessionTimerConfig::readFromConfig(AmConfigReader& cfg)
+{
+  // enable_session_timer
+  if(cfg.hasParameter("enable_session_timer")){
+    if(!setEnableSessionTimer(cfg.getParameter("enable_session_timer"))){
+      ERROR("invalid enable_session_timer specified\n");
+      return -1;
+    }
+  }
+
+  // session_expires
+  if(cfg.hasParameter("session_expires")){
+    if(!setSessionExpires(cfg.getParameter("session_expires"))){
+      ERROR("invalid session_expires specified\n");
+      return -1;
+    }
+  }
+
+  // minimum_timer
+  if(cfg.hasParameter("minimum_timer")){
+    if(!setMinimumTimer(cfg.getParameter("minimum_timer"))){
+      ERROR("invalid minimum_timer specified\n");
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int AmSessionTimerConfig::setEnableSessionTimer(const string& enable) {
+  if ( strcasecmp(enable.c_str(), "yes") == 0 ) {
+    EnableSessionTimer = 1;
+  } else if ( strcasecmp(enable.c_str(), "no") == 0 ) {
+    EnableSessionTimer = 0;
+  } else {
+    return 0;
+  }	
+  return 1;
+}		
+
+int AmSessionTimerConfig::setSessionExpires(const string& se) {
+  if(sscanf(se.c_str(),"%u",&SessionExpires) != 1) {
+    return 0;
+  }
+  DBG("setSessionExpires(%i)\n",SessionExpires);
+  return 1;
+} 
+
+int AmSessionTimerConfig::setMinimumTimer(const string& minse) {
+  if(sscanf(minse.c_str(),"%u",&MinimumTimer) != 1) {
+    return 0;
+  }
+  DBG("setMinimumTimer(%i)\n",MinimumTimer);
+  return 1;
+}

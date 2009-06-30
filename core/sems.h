@@ -54,11 +54,6 @@
 // session considered dead after 5 minutes no RTP
 #define DEAD_RTP_TIME       5*60  
 
-/* Session Timer defaul configuration: */
-#define DEFAULT_ENABLE_SESSION_TIMER 1
-#define SESSION_EXPIRES              60 // seconds
-#define MINIMUM_TIMER                5   //seconds
-
 #define NUM_MEDIA_PROCESSORS 1
 
 #define MAX_NET_DEVICES     32

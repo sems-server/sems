@@ -32,6 +32,9 @@
 #include "AmSipEvent.h"
 #include <string>
 using std::string;
+
+class AmConfigReader;
+
 /**
  * \brief Interface for SIP signaling plugins that
  *        change requests or replies using hooks (ex: session timer).
@@ -52,6 +55,10 @@ public:
     : destroy(true) {}
 
   virtual ~AmSessionEventHandler() {}
+
+  /** Returns -1 on error, 0 else. */
+  virtual int configure(AmConfigReader& conf);
+
   /* 
    * All the methods return true if the event processing 
    * shall be stopped after them.

@@ -38,7 +38,6 @@ using std::string;
 #include <sys/types.h>
 #include <regex.h>
 
-class AmSessionTimerConfig;
 
 /**
  * \brief holds the current configuration.
@@ -76,8 +75,6 @@ struct AmConfig
   static int RtpLowPort;
   /** Highest local RTP port */
   static int RtpHighPort;
-  /* Session Timer: */
-  static AmSessionTimerConfig defaultSessionTimerConfig;
   /** number of session scheduler threads */
   static int MediaProcessorThreads;
   /** the interface SIP requests are sent from - needed for registrar_client */
@@ -154,38 +151,6 @@ struct AmConfig
   static int setMediaProcessorThreads(const string& th);
   /** Setter for parameter DeadRtpTime, returns 0 on invalid value */
   static int setDeadRtpTime(const string& drt);
-};
-
-class AmConfigReader;
-/** \brief config for the session timer */
-class AmSessionTimerConfig {
-  /** Session Timer: enable? */
-  int EnableSessionTimer;
-  /** Session Timer: Desired Session-Expires */
-  unsigned int SessionExpires;
-  /** Session Timer: Minimum Session-Expires */
-  unsigned int MinimumTimer;
-    
-public:
-  AmSessionTimerConfig();
-  ~AmSessionTimerConfig();
-  
-
-  /** Session Timer: Enable Session Timer?
-      returns 0 on invalid value */
-  int setEnableSessionTimer(const string& enable);
-  /** Session Timer: Setter for Desired Session-Expires, 
-      returns 0 on invalid value */
-  int setSessionExpires(const string& se);
-  /** Session Timer: Setter for Minimum Session-Expires, 
-      returns 0 on invalid value */
-  int setMinimumTimer(const string& minse);
-
-  bool getEnableSessionTimer() { return EnableSessionTimer; }
-  unsigned int getSessionExpires() { return SessionExpires; }
-  unsigned int getMinimumTimer() { return MinimumTimer; }
-
-  int readFromConfig(AmConfigReader& cfg);
 };
 
 #endif

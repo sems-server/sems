@@ -40,6 +40,12 @@ class AmTimeoutEvent;
 #define ID_SESSION_INTERVAL_TIMER -1
 #define ID_SESSION_REFRESH_TIMER  -2
 
+/* Session Timer defaul configuration: */
+#define DEFAULT_ENABLE_SESSION_TIMER 1
+#define SESSION_EXPIRES              120  // seconds
+#define MINIMUM_TIMER                90   //seconds
+
+
 /** \brief Factory of the session timer event handler */
 class SessionTimerFactory: public AmSessionEventHandlerFactory
 {
@@ -55,9 +61,43 @@ class SessionTimerFactory: public AmSessionEventHandlerFactory
   AmSessionEventHandler* getHandler(AmSession* s);
 };
 
+/** \brief config for the session timer */
+class AmSessionTimerConfig 
+{
+
+  /** Session Timer: enable? */
+  int EnableSessionTimer;
+  /** Session Timer: Desired Session-Expires */
+  unsigned int SessionExpires;
+  /** Session Timer: Minimum Session-Expires */
+  unsigned int MinimumTimer;
+    
+public:
+  AmSessionTimerConfig();
+  ~AmSessionTimerConfig();
+  
+
+  /** Session Timer: Enable Session Timer?
+      returns 0 on invalid value */
+  int setEnableSessionTimer(const string& enable);
+  /** Session Timer: Setter for Desired Session-Expires, 
+      returns 0 on invalid value */
+  int setSessionExpires(const string& se);
+  /** Session Timer: Setter for Minimum Session-Expires, 
+      returns 0 on invalid value */
+  int setMinimumTimer(const string& minse);
+
+  bool getEnableSessionTimer() { return EnableSessionTimer; }
+  unsigned int getSessionExpires() { return SessionExpires; }
+  unsigned int getMinimumTimer() { return MinimumTimer; }
+
+  int readFromConfig(AmConfigReader& cfg);
+};
+
 /** \brief SessionEventHandler for implementing session timer logic for a session */
 class SessionTimer: public AmSessionEventHandler
 {
+  AmSessionTimerConfig session_timer_conf;
   AmSession* s;
 
   enum SessionRefresher {
@@ -69,10 +109,8 @@ class SessionTimer: public AmSessionEventHandler
     UAS
   };
 
-  void configureSessionTimer(const AmSessionTimerConfig& conf);
-  AmSessionTimerConfig session_timer_conf;
-
   bool                 remote_timer_aware;
+  unsigned int         min_se;
   unsigned int         session_interval;  
   SessionRefresher     session_refresher;
   SessionRefresherRole session_refresher_role;
@@ -97,6 +135,7 @@ class SessionTimer: public AmSessionEventHandler
   virtual ~SessionTimer(){}
 
   /* @see AmSessionEventHandler */
+  virtual int  configure(AmConfigReader& conf); 
   virtual bool process(AmEvent*);
   virtual bool onSipEvent(AmSipEvent*);
   virtual bool onSipRequest(const AmSipRequest&);

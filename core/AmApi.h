@@ -32,6 +32,7 @@
 #include "AmThread.h"
 #include "AmSipMsg.h"
 #include "AmConfig.h"
+#include "AmConfigReader.h"
 #include "AmArg.h"
 #include "AmEventQueue.h"
 
@@ -118,8 +119,6 @@ class AmSessionEventHandlerFactory: public AmPluginFactory
 /** \brief Interface for plugins to create sessions */
 class AmSessionFactory: public AmPluginFactory
 {
-
-  AmSessionTimerConfig mod_conf;
 
  protected:
   /**
