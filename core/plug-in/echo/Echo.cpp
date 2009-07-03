@@ -43,7 +43,7 @@ EXPORT_SESSION_FACTORY(EchoFactory,"echo");
 
 EchoFactory::EchoFactory(const string& _app_name)
   : AmSessionFactory(_app_name),
-    session_timer_f(0)
+    session_timer_f(NULL)
 {}
 
 int EchoFactory::onLoad()
@@ -64,9 +64,9 @@ int EchoFactory::onLoad()
   
   if(useSessionTimer){
     session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
-    DBG("session_timer_f == 0x%.16lX\n",(unsigned long)session_timer_f);
+    //    DBG("session_timer_f == 0x%.16lX\n",(unsigned long)session_timer_f);
     if(session_timer_f == NULL){
-      ERROR("Could not load the session_timer module: switch it off\n");
+      ERROR("Could not load the session_timer module: disabling session timers.\n");
       //return -1;
     }
   }
@@ -78,15 +78,15 @@ AmSession* EchoFactory::onInvite(const AmSipRequest& req)
 {
   AmSession* s = new EchoDialog();
   
-  AmSessionEventHandler* h = session_timer_f->getHandler(s);
-
-  if(h->configure(conf)){
+  if (NULL != session_timer_f) {
+    AmSessionEventHandler* h = session_timer_f->getHandler(s);
     
-    ERROR("Could not configure the session timer: switch it off.\n");
-    delete h;
-  }
-  else {
-    s->addHandler(h);
+    if(h->configure(conf)){
+      ERROR("Could not configure the session timer: disabling session timers.\n");
+      delete h;
+    } else {
+      s->addHandler(h);
+    }
   }
 
   return s;
