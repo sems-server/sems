@@ -172,6 +172,7 @@ string AmSipReply::print()
   _PMB(reason, "phrase");
   _PM(callid, "i");
   _PM(int2str(cseq), "cseq");
+  _PM(method, "cseq meth");
   _PM(local_tag, "l-tag");
   _PM(remote_tag, "r-tag");
   _PM(next_hop, "nhop");
