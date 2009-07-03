@@ -568,6 +568,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 
     reply.body = msg->body.len ? c2stlstr(msg->body) : "";
     reply.cseq = get_cseq(msg)->num;
+    reply.method = c2stlstr(get_cseq(msg)->method_str);
 
     reply.code   = msg->u.reply->code;
     reply.reason = c2stlstr(msg->u.reply->reason);
