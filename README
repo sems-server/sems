@@ -141,11 +141,23 @@ Requirements:
 
 How to get started with SEMS:
 
-  To try out SEMS, the easiest is to get a release candidate from 
-  http://ftp.iptel.org/pub/sems/testing/ , unpack and install it 
+  To try out SEMS, the easiest is to get a release from 
+  http://ftp.iptel.org/pub/sems/, unpack and install it 
   using the usual make && make install. After installation, the 
   configuration file /usr/local/etc/sems/sems.conf needs to be 
   adapted.
+
+  On debian, you can add the iptel.org SEMS repository to 
+  /etc/apt/sources.list:
+   deb http://ftp.iptel.org/pub/sems/debian lenny free
+   deb-src http://ftp.iptel.org/pub/sems/debian lenny free
+  and install SEMS from binary packages with: 
+  $ apt-get install sems sems-python-modules
+  If you want to build SEMS from source on debian, see below.
+
+  On Fedora, simply do 
+   $ sudo yum install sems
+  and sems package will be installed.
  
   You can also follow one of the tutorials
   linked from the SEMS homepage
@@ -195,30 +207,12 @@ Installation:
     
     By default, sipctrl plugin is loaded, which is the integrated SIP 
     stack for SEMS. If SER should be used, the following procedure is
-    necessary for ser 0.9.6-sems as SIP stack: 
-    o To install the ser-0.9.6-sems into the directory /some/dir the 
-      following commands can used:
-
-      $ wget http://ftp.iptel.org/pub/sems/ser-0.9.6-sems_src.tar.gz
-      $ tar xzvf ser-0.9.6-sems_src.tar.gz
-      $ cd ser-0.9.6-sems
-      $ make install PREFIX=/some/dir
-
-      With the install target install-ser-cfg, e.g. using 
-       $ make install-ser-cfg SERPREFIX=/some/dir 
-      you can install a general ser-sems.cfg which will work with 
-      ser-0.9.6-sems and make SER to act only as SIP stack for SEMS, i.e. 
-      direct every request to SEMS. Then 
-       $ /some/dir/sbin/ser -f /some/dir/etc/ser/ser-sems.cfg
-      runs SER on port 5070. This way, several versions of SER can be 
-      used on the same server, e.g. a different version of SER as Registrar
-      server.
-
+    necessary for ser  as SIP stack: 
     o For ser 2.0/sasi use this patched ser2.0 version:
       http://ftp.iptel.org/pub/sems/ser2-sasi-080108.tar.bz2 
-      (or ser head with patches from the bug tracker at 
+      (or ser head possibly with patches from the bug tracker at 
        http://tracker.iptel.org/browse/SER-346 )    
-      and core/etc/ser-sems.sasi.cfg.
+      and core/etc/ser-sems.sasi.cfg. Then load the binrpcctrl module.
 
  5. Start SEMS:
 
@@ -245,6 +239,27 @@ Installation:
 
     For more information please refer to doc/Configure-SEMS-Ser-HOWTO and
     the SER User's guide. 
+
+Creating packages on debian (ubuntu, ...):
+
+   install debian package build tools:
+   $ apt-get install debhelper devscripts
+
+   install dependencies:
+   $  apt-get install g++ make libspandsp-dev flite-dev libspeex-dev \
+         libssl-dev python-dev python-sip4-dev openssl
+   
+   get the source: 
+   $ wget ftp.iptel.org/pub/sems/sems-x.y.z.tar.gz ; tar xzvf sems-x.y.z.tar.gz
+   $ cd sems-x.y.z ; ln -s pkg/debian .
+
+   set version in changelog if not correct
+   $ dch -v x.y.z "SEMS x.y.z release"
+   
+   build package:
+   $ dpkg-buildpackage -rfakeroot -us -uc
+
+   install package in .. using dpkg.
 
 Installed files using 'make install':
 
