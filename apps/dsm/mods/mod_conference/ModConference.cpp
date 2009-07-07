@@ -107,13 +107,28 @@ bool ConfPostEventAction::execute(AmSession* sess,
 }
 
 
-
+CONST_ACTION_2P(ConfJoinAction, ',', true);
 bool ConfJoinAction::execute(AmSession* sess, 
 			     DSMCondition::EventType event,
 			     map<string,string>* event_params) {
   GET_SCSESSION();
 
-  string channel_id = resolveVars(arg, sess, sc_sess, event_params);
+  string channel_id = resolveVars(par1, sess, sc_sess, event_params);
+  string mode = resolveVars(par2, sess, sc_sess, event_params);
+
+  bool connect_play = false;
+  bool connect_record = false;
+  if (mode.empty()) {
+    connect_play = true;
+    connect_record = true;
+  } else if (mode == "speakonly") {
+    connect_play = true;
+  } else if (mode == "listenonly") {
+    connect_record = true;
+  } 
+  DBG("connect_play = %s, connect_rec = %s\n", 
+      connect_play?"true":"false", 
+      connect_record?"true":"false");
   
   AmConferenceChannel* chan = AmConferenceStatus::getChannel(channel_id, sess->getLocalTag());
   if (NULL == chan) {
@@ -122,8 +137,14 @@ bool ConfJoinAction::execute(AmSession* sess,
   }
 
   DSMConfChannel* dsm_chan = new DSMConfChannel(chan);
-  
-  sc_sess->addToPlaylist(new AmPlaylistItem(chan, chan));
+  AmAudio* play_item = NULL;
+  AmAudio* rec_item = NULL;
+  if (connect_play)
+    play_item = chan;
+  if (connect_record)
+    rec_item = chan;
+
+  sc_sess->addToPlaylist(new AmPlaylistItem(play_item, rec_item));
 
   sc_sess->transferOwnership(dsm_chan);
 

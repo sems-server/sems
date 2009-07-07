@@ -1,0 +1,43 @@
+import(mod_conference)
+
+initial state lobby 
+  enter { playFile(wav/default_en.wav) };
+
+
+state room;
+
+transition "lobby to room" lobby - noAudioTest /  {
+   conference.setPlayoutType(adaptive)
+   conference.join(myroom) 
+} -> room;
+
+
+transition "key 1 pressed" room - keyPress(1); test($is_spkonly == "") / {
+ set($is_spkonly=1);  
+ closePlaylist(false);
+ conference.join(myroom, speakonly); 
+} -> room;
+
+transition "key 1 pressed" room - keyPress(1); test($is_spkonly == "1") / {
+ set($is_spkonly=""); 
+ closePlaylist(false); 
+ conference.join(myroom); 
+} -> room;
+
+transition "key 2 pressed" room - keyPress(2); test($is_listenonly == "") / {
+ set($is_listenonly=1);
+ closePlaylist(false);  
+ conference.join(myroom, listenonly); 
+} -> room;
+
+transition "key 2 pressed" room - keyPress(2); test($is_listenonly == "1") / {
+ set($is_listenonly="");  
+ closePlaylist(false);
+ conference.join(myroom); 
+} -> room;
+
+transition "x event" room - eventTest(#action==kick) / stop(true) -> end;
+
+transition "bye recvd" (lobby, room) - hangup / stop(false) -> end;
+
+state end;

@@ -51,7 +51,7 @@ class DSMConfChannel : public DSMDisposable {
   ~DSMConfChannel() { }
 };
 
-DEF_ACTION_1P(ConfJoinAction);
+DEF_ACTION_2P(ConfJoinAction);
 DEF_ACTION_2P(ConfPostEventAction);
 DEF_ACTION_1P(ConfSetPlayoutTypeAction);
 #endif
