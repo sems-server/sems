@@ -1,5 +1,7 @@
 webconference : conference with dial-in and dial-out over DI (xmlrpc)
 
+Intro
+-----
 This conference module can do dial-in, dial-out and mixed 
 dial-in/dial-out conferences.  It can be controlled over DI functions 
 from other modules, and, for example, using the xmlrpc2di module, 
@@ -25,11 +27,28 @@ You will probably want to load uac_auth and xmlrpc2di modules.
 There is some very simple feedback and call statistics functionality, which 
 will save its results to a log file.
 
-An admin PIN can be set, which serves to retrieve room PINs (for site administrator
-or the like).
+A master password can be set, which serves to retrieve room PINs (adminpins),
+for site administrator or the like.
 
-implemented DI functions:
+Room adminpin handling
+----------------------
+The adminpin is used so that only authorized users can access the conference control.
+The adminpin can be completely disabled by setting ignore_pin in webconference.conf, 
+in that case a specified adminpin is just ignored.
 
+On all actions that inspect or modify a room, if the room specified with room/adminpin
+does not exist, by default the room is (re)opened with the specified adminpin. 
+This means that roomCreate() does not necessarily need to be called; if roomInfo() 
+is called with a new room name and adminpin, the room is created and the adminpin 
+is set.
+
+If a room exists and the adminpin is not set (for example if the room is created
+by dial-in), the first call to roomInfo/dialout/kick/... with room/adminpin will
+set the adminpin.
+
+
+implemented DI functions
+------------------------
 All functions return as extra parameter the serverInfo, a status line showing the 
 SEMS version, and current call statistics.
 
@@ -117,8 +136,6 @@ getRoomPassword and listRooms in only available if master password is set
 in webconference.conf
 
 
-
-    
 prompt suggestions: 
 ------------------
 entering_conference: You are now entering the conference room.
@@ -127,3 +144,18 @@ pin_prompt: Welcome to iptel dot org conference. Please enter your room number, 
 wrong_pin: The room number is not correct. Please try again.
 
 + the numbers (0.wav ... 9.wav )
+
+
+webconference.iptel.org server
+------------------------------
+
+At the free SIP service iptel.org there is a SEMS webconference server 
+running, which can be accessed through its rather simple web GUI at
+ https://webconference.iptel.org/ and http://webconference.iptel.org/
+and through its XMLRPC control URI
+ https://webconference.iptel.org/control
+
+see also:
+--------
+pyqt example gui client in 
+ apps/webconference/pyqtgui
