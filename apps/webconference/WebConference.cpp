@@ -184,6 +184,11 @@ int WebConferenceFactory::onLoad()
   // default: every 10 times
   RoomSweepInterval = cfg.getParameterInt("room_sweep_interval", 10);
  
+  // seed the rng (at least a little)
+  struct timeval now;
+  gettimeofday(&now, NULL);    
+  srandom(now.tv_usec + now.tv_sec);
+
   return 0;
 }
 
