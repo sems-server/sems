@@ -1200,9 +1200,14 @@ void trans_layer::send_200_ack(sip_msg* reply, sip_trans* t)
 
     sip_header* max_forward = new sip_header(0,cstring("Max-Forwards"),cstring("10"));
 
-    cstring via((char*)transport->get_local_ip()); 
+    //cstring via((char*)transport->get_local_ip());
+    //request_len += via_len(via,branch);
 
-    request_len += via_len(via,branch);
+    string via(transport->get_local_ip());
+    if(transport->get_local_port() != 5060)
+	via += ":" + int2str(transport->get_local_port());
+
+    request_len += via_len(stl2cstr(via),branch);
 
     request_len += copy_hdrs_len(route_hdrs);
 
@@ -1220,7 +1225,7 @@ void trans_layer::send_200_ack(sip_msg* reply, sip_trans* t)
     char* msg = ack_buf;
 
     request_line_wr(&msg,cstring("ACK",3),r_uri);
-    via_wr(&msg,via,branch);
+    via_wr(&msg,stl2cstr(via),branch);
 
     copy_hdrs_wr(&msg,route_hdrs);
     // clear route headers list
