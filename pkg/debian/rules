@@ -25,7 +25,9 @@ PYTHON_MODULES=ivr py_sems conf_auth mailbox pin_collect
 
 EXCLUDED_MODULES=mp3 examples gateway
 
-CPPFLAGS += -DHAVE_XMLRPCPP_SSL -DHAVE_OLD_SPANDSP_CALLBACK
+CPPFLAGS += -DHAVE_XMLRPCPP_SSL 
+# for older than lenny add:
+# -DHAVE_OLD_SPANDSP_CALLBACK
 
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 	CFLAGS += -g
