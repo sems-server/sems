@@ -321,21 +321,27 @@ void WebConferenceFactory::invoke(const string& method,
   
 
   if(method == "roomCreate"){
+    args.assertArrayFmt("s");
     roomCreate(args, ret);
     ret.push(getServerInfoString().c_str());
   } else if(method == "roomInfo"){
+    args.assertArrayFmt("ss");
     roomInfo(args, ret);
     ret.push(getServerInfoString().c_str());
   } else if(method == "dialout"){
+    args.assertArrayFmt("sssssss");
     dialout(args, ret);
     ret.push(getServerInfoString().c_str());
   } else if(method == "mute"){
+    args.assertArrayFmt("sss");
     mute(args, ret);
     ret.push(getServerInfoString().c_str());
   } else if(method == "unmute"){
+    args.assertArrayFmt("sss");
     unmute(args, ret);
     ret.push(getServerInfoString().c_str());
   } else if(method == "kickout"){
+    args.assertArrayFmt("sss");
     kickout(args, ret);
     ret.push(getServerInfoString().c_str());
   } else if(method == "changeRoomAdminpin"){
@@ -346,12 +352,15 @@ void WebConferenceFactory::invoke(const string& method,
     serverInfo(args, ret);		
     ret.push(getServerInfoString().c_str());    
   } else if(method == "vqRoomFeedback"){
+    args.assertArrayFmt("ssi");
     vqRoomFeedback(args, ret);		
     ret.push(getServerInfoString().c_str());    
   } else if(method == "vqCallFeedback"){
+    args.assertArrayFmt("sssi");
     vqCallFeedback(args, ret);		
     ret.push(getServerInfoString().c_str());    
   } else if(method == "vqConferenceFeedback"){
+    args.assertArrayFmt("ssssi");
     vqConferenceFeedback(args, ret);		
     ret.push(getServerInfoString().c_str());    
   } else if(method == "help"){
@@ -430,7 +439,6 @@ void WebConferenceFactory::sweepRooms() {
 }
 
 void WebConferenceFactory::roomCreate(const AmArg& args, AmArg& ret) {
-  assertArgCStr(args.get(0));
   string room = args.get(0).asCStr();
   rooms_mut.lock();
   
@@ -460,8 +468,6 @@ void WebConferenceFactory::roomCreate(const AmArg& args, AmArg& ret) {
 }
 
 void WebConferenceFactory::roomInfo(const AmArg& args, AmArg& ret) {
-  assertArgCStr(args.get(0));
-  assertArgCStr(args.get(1));
   string room = args.get(0).asCStr();
   string adminpin = args.get(1).asCStr();
 
@@ -483,9 +489,6 @@ void WebConferenceFactory::roomInfo(const AmArg& args, AmArg& ret) {
 }
 
 void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
-  for (int i=0;i<6;i++)
-    assertArgCStr(args.get(i));
-
   string room        = args.get(0).asCStr();
   string adminpin    = args.get(1).asCStr();
   string callee      = args.get(2).asCStr();
@@ -493,31 +496,34 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   string domain      = args.get(4).asCStr();
   string auth_user   = args.get(5).asCStr();
   string auth_pwd    = args.get(6).asCStr();
-  string callee_domain;
+  string callee_domain = domain;
   string headers;
 
-  try {
-    assertArgCStr(args.get(7));
-    headers = args.get(7).asCStr();
-    int i, len;
-    len = headers.length();
-    for (i = 0; i < len; i++) {
-      if (headers[i] == '|') headers[i] = '\n';
+  if (args.size()>7) {
+    try {
+      assertArgCStr(args.get(7));
+      headers = args.get(7).asCStr();
+      int i, len;
+      len = headers.length();
+      for (i = 0; i < len; i++) {
+	if (headers[i] == '|') headers[i] = '\n';
+      }
+      if (headers[len - 1] != '\n') {
+	headers += '\n';
+      }
+    } catch (AmArg::TypeMismatchException &e) {
+      headers = "";
     }
-    if (headers[len - 1] != '\n') {
-      headers += '\n';
-    }
-  }
-  catch (AmArg::OutOfBoundsException &e) {
-    headers = "";
-  }
 
-  try {
-    assertArgCStr(args.get(8));
-    callee_domain = args.get(8).asCStr();
-  }
-  catch (AmArg::OutOfBoundsException &e) {
-    callee_domain = domain;
+    if (args.size()>8) {
+      try {
+	assertArgCStr(args.get(8));
+	callee_domain = args.get(8).asCStr();
+      }
+      catch (AmArg::TypeMismatchException &e) {
+	callee_domain = domain;
+      }
+    }
   }
 
   string from = "sip:" + from_user + "@" + domain;
@@ -547,7 +553,7 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   AmSession* s = AmUAC::dialout(room.c_str(), APP_NAME,  to,  
 				"<" + from +  ">", from, "<" + to + ">", 
 				string(""), // callid
-				headers, // headers
+				headers,    // headers
 				a);
   if (s) {
     string localtag = s->getLocalTag();
@@ -568,8 +574,6 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
 
 void WebConferenceFactory::postConfEvent(const AmArg& args, AmArg& ret,
 					 int id, int mute) {
-  for (int i=0;i<2;i++)
-    assertArgCStr(args.get(1));
   string room        = args.get(0).asCStr();
   string adminpin    = args.get(1).asCStr();
   string call_tag    = args.get(2).asCStr();
@@ -686,12 +690,7 @@ void WebConferenceFactory::listRooms(const AmArg& args, AmArg& ret) {
   ret.push(room_list);  
 }
 
-void WebConferenceFactory::vqRoomFeedback(const AmArg& args, AmArg& ret) {
-  
-  assertArgCStr(args.get(0));
-  assertArgCStr(args.get(1));
-  assertArgInt(args.get(2));
-
+void WebConferenceFactory::vqRoomFeedback(const AmArg& args, AmArg& ret) {  
   string room = args.get(0).asCStr();
   string adminpin = args.get(1).asCStr();
   int opinion = args.get(2).asInt();
@@ -704,11 +703,6 @@ void WebConferenceFactory::vqRoomFeedback(const AmArg& args, AmArg& ret) {
 }
 
 void WebConferenceFactory::vqCallFeedback(const AmArg& args, AmArg& ret) {
-  assertArgCStr(args.get(0));
-  assertArgCStr(args.get(1));
-  assertArgCStr(args.get(2));
-  assertArgInt(args.get(3));
-
   string room = args.get(0).asCStr();
   string adminpin = args.get(1).asCStr();
   string tag = args.get(2).asCStr();
@@ -722,12 +716,6 @@ void WebConferenceFactory::vqCallFeedback(const AmArg& args, AmArg& ret) {
 }
 
 void WebConferenceFactory::vqConferenceFeedback(const AmArg& args, AmArg& ret) {
-  assertArgCStr(args.get(0));
-  assertArgCStr(args.get(1));
-  assertArgCStr(args.get(2));
-  assertArgCStr(args.get(3));
-  assertArgInt(args.get(4));
-
   string room = args.get(0).asCStr();
   string adminpin = args.get(1).asCStr();
   string sender = args.get(2).asCStr();
