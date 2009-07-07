@@ -1,3 +1,14 @@
+sems (1.1.1) unstable; urgency=low
+
+  * SEMS 1.1.1 bugfix release   - fixed Via HF missing the port number
+    in ACK to 200 reply  - do not try to scale too short RTP packets  -
+    fixed initialization of SSL - caused random crashing of xmlrpc
+    server  - fix size() for AmArg struct type  - authenticate on both
+    401 and 407 reply in click2dial  - fixed ssl build dependency for
+    DIAMETER client in deb
+
+ -- root <root@UNPROVISIONED.lab.iptego.de>  Tue, 07 Jul 2009 15:13:24 +0200
+
 sems (1.1.0-1) unstable; urgency=low
 
   * DSM state machine scripting (it's cool!)
