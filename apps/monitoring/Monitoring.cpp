@@ -254,6 +254,7 @@ void Monitor::clearFinished() {
 
 void Monitor::get(const AmArg& args, AmArg& ret) {
   assertArgCStr(args[0]);
+  ret.assertArray();
   LogBucket& bucket = getLogBucket(args[0].asCStr());
   bucket.log_lock.lock();
   std::map<string, LogInfo>::iterator it=bucket.log.find(args[0].asCStr());
@@ -282,6 +283,7 @@ void Monitor::getAttribute(const AmArg& args, AmArg& ret) {
 #define DEF_GET_ATTRIB_FUNC(func_name, cond)				\
   void Monitor::func_name(const AmArg& args, AmArg& ret) {		\
     assertArgCStr(args[0]);						\
+    ret.assertArray();							\
     string attr_name = args[0].asCStr();				\
     time_t now = time(0);						\
     for (int i=0;i<NUM_LOG_BUCKETS;i++) {				\
@@ -306,7 +308,8 @@ DEF_GET_ATTRIB_FUNC(getAttributeFinished,(it->second.finished &&
 #undef DEF_GET_ATTRIB_FUNC
 
 void Monitor::listAll(const AmArg& args, AmArg& ret) {
- for (int i=0;i<NUM_LOG_BUCKETS;i++) {
+  ret.assertArray();
+  for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     for (std::map<string, LogInfo>::iterator it=
 	   logs[i].log.begin(); it != logs[i].log.end(); it++) {
@@ -317,6 +320,7 @@ void Monitor::listAll(const AmArg& args, AmArg& ret) {
 }
 
 void Monitor::listByFilter(const AmArg& args, AmArg& ret) {
+  ret.assertArray();
   for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     try {
@@ -348,6 +352,7 @@ void Monitor::listByRegex(const AmArg& args, AmArg& ret) {
   assertArgCStr(args[0]);
   assertArgCStr(args[1]);
 
+  ret.assertArray();
   regex_t attr_reg;
   if(regcomp(&attr_reg,args[1].asCStr(),REG_NOSUB)){
     ERROR("could not compile regex '%s'\n", args[1].asCStr());
