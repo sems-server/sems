@@ -49,8 +49,7 @@ class ArgObject {
   virtual ~ArgObject() { }
 };
 
-struct ArgBlob {
-  char* data;
+struct ArgBlob {  char* data;
   int   len;
   
 ArgBlob() 
@@ -84,6 +83,7 @@ class AmArg
     Undef=0,
 
     Int,
+    Bool,
     Double,
     CStr,
     AObject,		// for passing pointers to objects not owned by AmArg
@@ -111,6 +111,7 @@ class AmArg
   // value
   union {
     int            v_int;
+    bool           v_bool;
     double         v_double;
     const char*    v_cstr;
     ArgObject*     v_obj;
@@ -132,6 +133,11 @@ class AmArg
  AmArg(const int& v)
    : type(Int),
     v_int(v)
+    { }
+
+ AmArg(const bool& v)
+   : type(Bool),
+    v_bool(v)
     { }
   
  AmArg(const double& v)
@@ -185,6 +191,7 @@ class AmArg
 #define isArgStruct(a)(AmArg::Struct == a.getType())
 #define isArgDouble(a) (AmArg::Array == a.getType())
 #define isArgInt(a) (AmArg::Int == a.getType())
+#define isArgBool(a) (AmArg::Bool == a.getType())
 #define isArgCStr(a) (AmArg::CStr == a.getType())
 #define isArgAObject(a) (AmArg::AObject == a.getType())
 #define isArgBlob(a) (AmArg::Blob == a.getType())
@@ -204,6 +211,9 @@ class AmArg
 #define assertArgInt(a)				\
   if (!isArgInt(a))				\
 	_THROW_TYPE_MISMATCH(Int,a);
+#define assertArgBool(a)				\
+  if (!isArgBool(a))				\
+	_THROW_TYPE_MISMATCH(Bool,a);
 #define assertArgCStr(a)			\
   if (!isArgCStr(a))				\
 	_THROW_TYPE_MISMATCH(CStr,a);
@@ -224,6 +234,7 @@ class AmArg
   }
 
   int         asInt()    const { return v_int; }
+  int         asBool()   const { return v_bool; }
   double      asDouble() const { return v_double; }
   const char* asCStr()   const { return v_cstr; }
   ArgObject*  asObject() const { return v_obj; }
@@ -232,6 +243,7 @@ class AmArg
 
   vector<string>     asStringVector()    const; 
   vector<int>        asIntVector()       const; 
+  vector<bool>       asBoolVector()      const; 
   vector<double>     asDoubleVector()    const; 
   vector<ArgObject*> asArgObjectVector() const; 
   vector<ArgBlob>    asArgBlobVector()   const; 
@@ -242,6 +254,8 @@ class AmArg
   void push(const AmArg& a);
   void push(const string &key, const AmArg &val);
   void pop(AmArg &a);
+  void pop_back(AmArg &a);
+  void pop_back();
 
   void concat(const AmArg& a);
   
@@ -278,10 +292,13 @@ class AmArg
 
   /** remove struct member */
   void erase(const char* name);
+  /** remove struct member */
+  void erase(const std::string& name);
 
   /** 
    * throws exception if arg array does not conform to spec 
    *   i  - int 
+   *   t  - bool
    *   f  - double
    *   s  - cstr
    *   o  - object
@@ -296,7 +313,11 @@ class AmArg
   void clear();
   friend bool operator==(const AmArg& lhs, const AmArg& rhs);
 
+  friend bool json2arg(std::istream& input, AmArg& res);
+
   static string print(const AmArg &a);
+
+  const char* t2str(int type);
 };
 
 // equality

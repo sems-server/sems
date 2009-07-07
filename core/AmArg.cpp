@@ -29,16 +29,17 @@
 #include "log.h"
 #include "AmUtils.h"
 
-const char* t2str(int type) {
+const char* AmArg::t2str(int type) {
   switch (type) {
-  case 0: return "Undef";
-  case 1: return "Int";
-  case 2: return "Double";
-  case 3: return "CStr";
-  case 4: return "AObject";
-  case 5: return "Blob";
-  case 6: return "Array";
-  case 7: return "Struct";
+  case AmArg::Undef:   return "Undef";
+  case AmArg::Int:     return "Int";
+  case AmArg::Bool:    return "Bool";
+  case AmArg::Double:  return "Double";
+  case AmArg::CStr:    return "CStr";
+  case AmArg::AObject: return "AObject";
+  case AmArg::Blob:    return "Blob";
+  case AmArg::Array:   return "Array";
+  case AmArg::Struct:  return "Struct";
   default: return "unknown";
   }
 }
@@ -57,6 +58,7 @@ AmArg& AmArg::operator=(const AmArg& v) {
     type = v.type;
     switch(type){
     case Int:    { v_int = v.v_int; } break;
+    case Bool:   { v_bool = v.v_bool; } break;
     case Double: { v_double = v.v_double; } break;
     case CStr:   { v_cstr = strdup(v.v_cstr); } break;
     case AObject:{ v_obj = v.v_obj; } break;
@@ -187,6 +189,25 @@ void AmArg::pop(AmArg &a) {
   v_array->erase(v_array->begin());
 }
 
+void AmArg::pop_back(AmArg &a) {
+  assertArray();
+  if (!size()) {
+    if (a.getType() == AmArg::Undef) 
+      return;
+    a = AmArg();
+    return;
+  }
+  a = v_array->back();
+  v_array->erase(v_array->end());
+}
+
+void AmArg::pop_back() {
+  assertArray();
+  if (!size())
+    return;
+  v_array->erase(v_array->end());
+}
+
 void AmArg::concat(const AmArg& a) {
   assertArray();
   if (a.getType() == Array) { 
@@ -281,6 +302,7 @@ bool operator==(const AmArg& lhs, const AmArg& rhs) {
 
   switch(lhs.type){
   case AmArg::Int:    { return lhs.v_int == rhs.v_int; } break;
+  case AmArg::Bool:   { return lhs.v_bool == rhs.v_bool; } break;
   case AmArg::Double: { return lhs.v_double == rhs.v_double; } break;
   case AmArg::CStr:   { return !strcmp(lhs.v_cstr,rhs.v_cstr); } break;
   case AmArg::AObject:{ return lhs.v_obj == rhs.v_obj; } break;
@@ -325,6 +347,11 @@ void AmArg::erase(const char* name) {
   v_struct->erase(name);
 }
 
+void AmArg::erase(const std::string& name) {
+  assertStruct();
+  v_struct->erase(name);
+}
+
 void AmArg::assertArrayFmt(const char* format) const {
   size_t fmt_len = strlen(format);
   string got;
@@ -332,6 +359,7 @@ void AmArg::assertArrayFmt(const char* format) const {
     for (size_t i=0;i<fmt_len;i++) {
       switch (format[i]) {
       case 'i': assertArgInt(get(i)); got+='i';  break;
+      case 't': assertArgBool(get(i)); got+='t';  break;
       case 'f': assertArgDouble(get(i)); got+='f'; break;
       case 's': assertArgCStr(get(i)); got+='s'; break;
       case 'o': assertArgAObject(get(i)); got+='o'; break;
@@ -358,6 +386,7 @@ void AmArg::assertArrayFmt(const char* format) const {
   }			
 VECTOR_GETTER(string, asStringVector, asCStr)
 VECTOR_GETTER(int, asIntVector, asInt)
+VECTOR_GETTER(bool, asBoolVector, asBool)
 VECTOR_GETTER(double, asDoubleVector, asDouble)
 VECTOR_GETTER(ArgObject*, asArgObjectVector, asObject)
 #undef  VECTOR_GETTER
@@ -379,7 +408,9 @@ string AmArg::print(const AmArg &a) {
     case Undef:
       return "<UNDEFINED>";
     case Int:
-      return int2str(a.asInt());
+      return a.asInt()<0?"-"+int2str(abs(a.asInt())):int2str(abs(a.asInt()));
+    case Bool:
+      return a.asBool()?"true":"false";
     case Double:
       return double2str(a.asDouble());
     case CStr:
