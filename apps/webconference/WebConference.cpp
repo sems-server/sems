@@ -338,6 +338,10 @@ void WebConferenceFactory::invoke(const string& method,
   } else if(method == "kickout"){
     kickout(args, ret);
     ret.push(getServerInfoString().c_str());
+  } else if(method == "changeRoomAdminpin"){
+    args.assertArrayFmt("sss");
+    changeRoomAdminpin(args, ret);
+    ret.push(getServerInfoString().c_str());    
   } else if(method == "serverInfo"){
     serverInfo(args, ret);		
     ret.push(getServerInfoString().c_str());    
@@ -374,6 +378,7 @@ void WebConferenceFactory::invoke(const string& method,
     ret.push("mute");
     ret.push("unmute");
     ret.push("kickout");
+    ret.push("changeRoomAdminpin");
     ret.push("serverInfo");
     ret.push("vqConferenceFeedback");
     ret.push("vqCallFeedback");
@@ -458,7 +463,7 @@ void WebConferenceFactory::roomInfo(const AmArg& args, AmArg& ret) {
   assertArgCStr(args.get(0));
   assertArgCStr(args.get(1));
   string room = args.get(0).asCStr();
-  string adminpin = args.get(1).asCStr();;
+  string adminpin = args.get(1).asCStr();
 
    rooms_mut.lock();
    ConferenceRoom* r = getRoom(room, adminpin);
@@ -635,6 +640,24 @@ void WebConferenceFactory::getRoomPassword(const AmArg& args, AmArg& ret) {
 
   ret.push(res_code);  
   ret.push(res.c_str());  
+}
+
+void WebConferenceFactory::changeRoomAdminpin(const AmArg& args, AmArg& ret) {
+  string room = args.get(0).asCStr();
+  string adminpin = args.get(1).asCStr();
+  string new_adminpin = args.get(2).asCStr();
+
+  rooms_mut.lock();
+  ConferenceRoom* r = getRoom(room, adminpin);
+  if (NULL == r) {
+    ret.push(1);
+    ret.push("wrong adminpin");
+  } else {
+    r->adminpin = new_adminpin;
+    ret.push(0);
+    ret.push("OK");
+  }
+  rooms_mut.unlock();
 }
 
 void WebConferenceFactory::listRooms(const AmArg& args, AmArg& ret) {

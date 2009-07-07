@@ -92,6 +92,13 @@ unmute(string room, string adminpin, string call_tag) :
           1     wrong adminpin
 	  2     call does not exist in room
 ----
+changeRoomAdminpin(string room, string adminpin, string new_adminpin) : 
+     int code, string result
+
+   code/result: 
+          0     OK
+          1     wrong adminpin
+----
 serverInfo():
       string serverInfo
 ----

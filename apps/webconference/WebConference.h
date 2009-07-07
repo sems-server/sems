@@ -150,6 +150,7 @@ public:
   void kickout(const AmArg& args, AmArg& ret);
   void mute(const AmArg& args, AmArg& ret);
   void unmute(const AmArg& args, AmArg& ret);
+  void changeRoomAdminpin(const AmArg& args, AmArg& ret);
   void serverInfo(const AmArg& args, AmArg& ret);
   void vqRoomFeedback(const AmArg& args, AmArg& ret);
   void vqCallFeedback(const AmArg& args, AmArg& ret);
