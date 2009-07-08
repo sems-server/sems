@@ -230,8 +230,6 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 	memcpy(c,body.s,body.len);
     }
 
-    //    DBG("Sending: <%.*s>\n",reply_len,reply_buf);
-
     assert(transport);
     int err = transport->send(&req->remote_ip,reply_buf,reply_len);
 
@@ -277,11 +275,6 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 			      unsigned short next_port,
 			      sockaddr_storage* remote_ip)
 {
-    //string         next_hop;
-    //unsigned short next_port=0; 
-
-    //assert(msg->type == SIP_REQUEST);
-
     int err=0;
 
     if(!route_hdrs.empty()){
@@ -1028,10 +1021,6 @@ int trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg
 	// -> TIMER L is already started.
 	
 	delete msg;
-
-	// test code
-	retransmit(t);
-
 	break;
 
     default:
@@ -1249,9 +1238,6 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	    DBG("Transaction timeout!\n");
 	    timeout(bucket,tr);
 	    break;
-// 	case TS_TERMINATED_200:
-// 	    bucket->remove_trans(tr);
-// 	    break;
 	}
 	break;
 
