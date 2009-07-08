@@ -189,8 +189,6 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
   AmSipTransaction& t = t_it->second;
 
-  //t->reply_code = reply.code;
-
   // rfc3261 12.1
   // && method==INVITE
   // Dialog established only by 101-199 or 2xx 
@@ -252,8 +250,18 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     break;
   }
 
-  if(reply.code >= 200)
+  // TODO: remove the transaction only after the dedicated timer has hit
+  //       this would help taking care of multiple 2xx replies.
+  if(reply.code >= 200){
     uac_trans.erase(t_it);
+
+    // TODO: 
+    // - place this somewhere else.
+    //   (probably in AmSession...)
+    if(reply.code < 300){
+      send_200_ack(t);
+    }
+  }
 }
 
 string AmSipDialog::getContactHdr()
@@ -607,12 +615,12 @@ int AmSipDialog::sendRequest(const string& method,
 
   if (AmServer::sendRequest(req, serKey, serKeyLen))
     return -1;
-    
+ 
   uac_trans[cseq] = AmSipTransaction(method,cseq);
 
   // increment for next request
   cseq++;
-    
+
   return 0;
 }
 
@@ -674,4 +682,66 @@ int AmSipDialog::drop()
 {	
   status = Disconnected;
   return 1;
+}
+
+int AmSipDialog::send_200_ack(const AmSipTransaction& t,
+			      const string& content_type,
+			      const string& body,
+			      const string& hdrs,
+			      int flags)
+{
+  // TODO: implement missing pieces from RFC 3261:
+  // "The ACK MUST contain the same credentials as the INVITE.  If
+  // the 2xx contains an offer (based on the rules above), the ACK MUST
+  // carry an answer in its body.  If the offer in the 2xx response is not
+  // acceptable, the UAC core MUST generate a valid answer in the ACK and
+  // then send a BYE immediately."
+
+  string m_hdrs = hdrs;
+
+  if(hdl)
+    hdl->onSendRequest("ACK",content_type,body,m_hdrs,flags,t.cseq);
+
+  AmSipRequest req;
+
+  req.method = "ACK";
+  req.r_uri = remote_uri;
+  req.next_hop = next_hop;
+
+  req.from = "From: " + local_party;
+  if(!local_tag.empty())
+    req.from += ";tag=" + local_tag;
+    
+  req.to = "To: " + remote_party;
+  if(!remote_tag.empty()) 
+    req.to += ";tag=" + remote_tag;
+    
+  req.cseq = t.cseq;// should be the same as the INVITE
+  req.callid = callid;
+  req.contact = getContactHdr();
+    
+  if(!m_hdrs.empty())
+    req.hdrs = m_hdrs;
+  
+  if (!(flags&SIP_FLAGS_VERBATIM)) {
+    // add Signature
+    if (AmConfig::Signature.length())
+      req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
+    
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) /*TODO: configurable?!*/MAX_FORWARDS CRLF;
+
+  }
+
+  if(!route.empty())
+    req.route = getRoute();
+    
+  if(!body.empty()) {
+    req.content_type = content_type;
+    req.body = body;
+  }
+
+  if (AmServer::sendRequest(req, serKey, serKeyLen))
+    return -1;
+
+  return 0;
 }

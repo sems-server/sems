@@ -166,6 +166,12 @@ class AmSipDialog
 		  const string& body = "",
 		  const string& hdrs = "",
 		  int flags = 0);
+
+  int send_200_ack(const AmSipTransaction& t,
+		   const string& content_type = "",
+		   const string& body = "",
+		   const string& hdrs = "",
+		   int flags = 0);
     
   int bye(const string& hdrs = "");
   int cancel();

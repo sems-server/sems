@@ -319,6 +319,41 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 	}
     }
 
+    string next_hop;
+    unsigned int next_port_i = 0;
+
+    if(!req.next_hop.empty()){
+	string next_port;
+ 	const char* c = req.next_hop.c_str();
+	while(*c != 0){
+	    if(*c == ':'){
+		next_port = string(c+1);
+		if(str2i(next_port,next_port_i)){
+		    ERROR("Could not convert port number in req.next_hop");
+		    ERROR("Using default outbound proxy");
+		    next_hop = SipCtrlInterfaceFactory::outbound_host;
+		    next_port_i = SipCtrlInterfaceFactory::outbound_port;
+		}
+		break;
+	    }
+	    next_hop += *(c++);
+	}
+    }
+    else if(!SipCtrlInterfaceFactory::outbound_host.empty()){
+	next_hop = SipCtrlInterfaceFactory::outbound_host;
+	next_port_i = SipCtrlInterfaceFactory::outbound_port;
+    }
+
+    cstring c_next_hop = stl2cstr(next_hop);
+    if(tl->set_next_hop(msg->route,msg->u.request->ruri_str,
+			c_next_hop,(unsigned short)next_port_i,
+			&msg->remote_ip) < 0){
+	// TODO: error handling
+	DBG("set_next_hop failed\n");
+	//delete msg;
+	return -1;
+    }
+
     int res = tl->send_request(msg,serKey,serKeyLen);
     delete msg;
 
@@ -441,29 +476,7 @@ void SipCtrlInterface::handleSipMsg(AmSipRequest &req)
 	DBG("body = <%s>\n",req.body.c_str());
     }
 
-    if(req.method == "ACK")
-	return;
-    
-#ifdef _STANDALONE
-    // Debug code - begin
-    AmSipReply reply;
-    
-    reply.method    = req.method;
-    reply.code      = 200;
-    reply.reason    = "OK";
-    reply.serKey    = req.serKey;
-    reply.local_tag = "12345";
-    reply.contact   = "Contact: sip:" + req.dstip + ":" + req.port;
-    
-    int err = send(reply);
-    if(err < 0){
-	DBG("send failed with err code %i\n",err);
-    }
-    // Debug code - end
-#else
-
     AmSipDispatcher::instance()->handleSipMsg(req);
-#endif
 }
 
 void SipCtrlInterface::handleSipMsg(AmSipReply &rep)
@@ -474,10 +487,7 @@ void SipCtrlInterface::handleSipMsg(AmSipReply &rep)
     DBG_PARAM(rep.remote_tag);
     DBG("cseq = <%i>\n",rep.cseq);
 
-#ifndef _STANDALONE
-
     AmSipDispatcher::instance()->handleSipMsg(rep);
-#endif
 }
 
 void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
@@ -539,7 +549,9 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
     req.to_tag   = c2stlstr(((sip_from_to*)msg->to->p)->tag);
     req.cseq     = get_cseq(msg)->num;
     req.body     = c2stlstr(msg->body);
-    req.serKey   = tid;
+
+    if(tid != NULL)
+	req.serKey = tid;
 
     if (msg->content_type)
  	req.content_type = c2stlstr(msg->content_type->value);

@@ -70,7 +70,8 @@ class trans_layer
      * @return -1 if errors
      * @return transaction state if successfull
      */
-    int update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* msg);
+    int update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* msg);
+    int update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg* msg);
 
     /**
      * Implements the state changes for the UAS state machine
@@ -93,13 +94,6 @@ class trans_layer
      */
     void send_non_200_ack(sip_msg* reply, sip_trans* t);
     
-    /**
-     * Fills the address structure passed and modifies 
-     * R-URI and Route headers as needed.
-     */
-    int set_next_hop(list<sip_header*>& route_hdrs, cstring& r_uri, 
-		     sockaddr_storage* remote_ip);
-
     /**
      * Transaction timeout
      */
@@ -161,11 +155,12 @@ class trans_layer
     void received_msg(sip_msg* msg);
 
     /**
-     * Sends an end-to-end ACK for the reply
-     * passed as a parameter.
+     * Fills the address structure passed and modifies 
+     * R-URI and Route headers as needed.
      */
-    void send_200_ack(sip_msg* reply, sip_trans* t=NULL);
-
+    int set_next_hop(list<sip_header*>& route_hdrs, cstring& r_uri, 
+		     cstring& next_hop, unsigned short next_port,
+		     sockaddr_storage* remote_ip);
 
     /**
      * This is called by the transaction timer callback.

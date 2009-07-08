@@ -35,7 +35,7 @@
 
 #include <assert.h>
 
-int _timer_type_lookup[] = { -1, 0,1,2, 0,1,2, 0,1,2, 0 };
+int _timer_type_lookup[] = { -1, 0,1,2, 0,1,2, 0,1,2, 0,2  };
 
 inline timer** fetch_timer(unsigned int timer_type, timer** base)
 {
@@ -89,6 +89,9 @@ timer* sip_trans::get_timer(unsigned int timer_type)
     return *fetch_timer(timer_type,timers);
 }
 
+
+char _timer_name_lookup[] = {'0','A','B','D','E','F','K','G','H','I','J','L'};
+
 /**
  * Resets a specific timer
  *
@@ -101,8 +104,7 @@ void sip_trans::reset_timer(timer* t, unsigned int timer_type)
     
     if(*tp != NULL){
 
-	DBG("Clearing old timer of type %c\n",
-	    (*tp)->type?'A'+(*tp)->type-1:'0');
+	DBG("Clearing old timer of type %c\n",_timer_name_lookup[(*tp)->type]);
 	wheeltimer::instance()->remove_timer(*tp);
     }
 
@@ -118,13 +120,13 @@ void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
     if(bucket){
 	bucket->lock();
 	if(bucket->exist(tr)){
-	    DBG("Transaction timer expired: type=0x%x, trans=%p, eta=%i, t=%i\n",
-		t->type,tr,t->expires,wheeltimer::instance()->wall_clock);
+	    DBG("Transaction timer expired: type=%c, trans=%p, eta=%i, t=%i\n",
+		_timer_name_lookup[t->type],tr,t->expires,wheeltimer::instance()->wall_clock);
 	    trans_layer::instance()->timer_expired(t,bucket,tr);
 	}
 	else {
 	    WARN("Transaction %p does not exist anymore\n",tr);
-	    WARN("Timer type=0x%x will be deleted without further processing\n",t->type);
+	    WARN("Timer type=%c will be deleted without further processing\n",_timer_name_lookup[t->type]);
 	}
 	bucket->unlock();
     }
@@ -148,7 +150,7 @@ void sip_trans::reset_timer(unsigned int timer_type, unsigned int expire_delay /
     expires += wt->wall_clock;
     
     DBG("New timer of type %c at time=%i\n",
-	timer_type?'A'+timer_type-1:'0',expires);
+	_timer_name_lookup[timer_type],expires);
 
     timer* t = new timer(timer_type,expires,
 			 (timer_cb)trans_timer_cb,

@@ -273,11 +273,12 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 // Ref. RFC 3261 "12.2.1.1 Generating the Request"
 //
 int trans_layer::set_next_hop(list<sip_header*>& route_hdrs, 
-			      cstring& r_uri, 
+			      cstring& r_uri, cstring& next_hop,
+			      unsigned short next_port,
 			      sockaddr_storage* remote_ip)
 {
-    string         next_hop;
-    unsigned short next_port=0; 
+    //string         next_hop;
+    //unsigned short next_port=0; 
 
     //assert(msg->type == SIP_REQUEST);
 
@@ -317,12 +318,9 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 
 	}
 
-	if (SipCtrlInterfaceFactory::outbound_host.empty()) {
-	    next_hop  = c2stlstr(na.uri.host);
+	if (next_hop.len == 0) {
+	    next_hop  = na.uri.host;
 	    next_port = na.uri.port;
-	} else {
-	    next_hop = SipCtrlInterfaceFactory::outbound_host;
-	    next_port = SipCtrlInterfaceFactory::outbound_port;
 	}	    
 
 	if(!is_lr){
@@ -411,27 +409,20 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 	}
 	
     }
-    else {
-
-	if (SipCtrlInterfaceFactory::outbound_host.empty()) {
-	    sip_uri parsed_r_uri;
-	    err = parse_uri(&parsed_r_uri,r_uri.s,r_uri.len);
-	    if(err < 0){
-		ERROR("Invalid Request URI\n");
-		return -1;
-	    }
-	    next_hop  = c2stlstr(parsed_r_uri.host);
-	    next_port = parsed_r_uri.port;
-	} else {
-	    next_hop = SipCtrlInterfaceFactory::outbound_host;
-	    next_port = SipCtrlInterfaceFactory::outbound_port;
+    else if (next_hop.len == 0) {
+	sip_uri parsed_r_uri;
+	err = parse_uri(&parsed_r_uri,r_uri.s,r_uri.len);
+	if(err < 0){
+	    ERROR("Invalid Request URI\n");
+	    return -1;
 	}
+	next_hop  = parsed_r_uri.host;
+	next_port = parsed_r_uri.port;
     }
 
-    DBG("next_hop:next_port is <%s:%u>\n", next_hop.c_str(), next_port);
+    DBG("next_hop:next_port is <%.*s:%u>\n", next_hop.len, next_hop.s, next_port);
     
-    err = resolver::instance()->resolve_name(next_hop.c_str(),
-					     remote_ip,IPv4,UDP);
+    err = resolver::instance()->resolve_name(c2stlstr(next_hop).c_str(),remote_ip,IPv4,UDP);
     if(err < 0){
 	ERROR("Unresolvable Request URI\n");
 	return -1;
@@ -483,14 +474,6 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
     assert(transport);
 
     tid_len = 0;
-
-    if(set_next_hop(msg->route,msg->u.request->ruri_str,
-		    &msg->remote_ip) < 0){
-	// TODO: error handling
-	DBG("set_next_hop failed\n");
-	//delete msg;
-	return -1;
-    }
 
     // assume that msg->route headers are not in msg->hdrs
     msg->hdrs.insert(msg->hdrs.begin(),msg->route.begin(),msg->route.end());
@@ -570,21 +553,9 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
     }
     else {
 
-	sip_trans* t = bucket->add_trans(p_msg,TT_UAC);
-	if(p_msg->u.request->method == sip_request::INVITE){
-	    
-	    // if transport == UDP
-	    t->reset_timer(STIMER_A,A_TIMER,bucket->get_id());
-	    // for any transport type
-	    t->reset_timer(STIMER_B,B_TIMER,bucket->get_id());
-	}
-	else {
-	    
-	    // if transport == UDP
-	    t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
-	    // for any transport type
-	    t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
-
+	sip_trans* t = 0;
+	if(update_uac_request(bucket,t,p_msg) < 0){
+	    ERROR("Could not update UAC state for request.\n");
 	}
 
 	string t_id = int2hex(bucket->get_id()).substr(5,string::npos) 
@@ -696,28 +667,27 @@ int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
 
+    trans_bucket* n_bucket = get_trans_bucket(p_msg->callid->value,
+					      get_cseq(p_msg)->num_str);
+    
+    if(bucket != n_bucket)
+	n_bucket->lock();
+
     int send_err = transport->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
     }
     else {
-	trans_bucket* n_bucket = get_trans_bucket(p_msg->callid->value,
-						  get_cseq(p_msg)->num_str);
 
-	if(bucket != n_bucket)
-	    n_bucket->lock();
-
-	sip_trans* t = n_bucket->add_trans(p_msg,TT_UAC);
-	    
-	// if transport == UDP
-	t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
-	// for any transport type
-	t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
-
-	if(bucket != n_bucket)
-	    n_bucket->unlock();
+	sip_trans* t=NULL;
+	if(update_uac_request(bucket,t,p_msg)<0){
+	    ERROR("Could not update state for UAC transaction\n");
+	}
     }
+
+    if(bucket != n_bucket)
+	n_bucket->unlock();
     
     bucket->unlock();
     return send_err;
@@ -762,16 +732,27 @@ void trans_layer::received_msg(sip_msg* msg)
 		DBG("ACK matched INVITE transaction\n");
 		
 		err = update_uas_request(bucket,t,msg);
+		DBG("update_uas_request(bucket,t,msg) = %i\n",err);
 		if(err<0){
 		    DBG("trans_layer::update_uas_trans() failed!\n");
 		    // Anyway, there is nothing we can do...
 		}
-		else if(err == TS_TERMINATED){
+		else if((err == TS_TERMINATED) ||
+			(err == TS_REMOVED)){
 		
 		    // do not touch the transaction anymore:
 		    // it could have been deleted !!!
 		       
 		    // should we forward the ACK to SEMS-App upstream? Yes
+		    bucket->unlock();
+		    
+		    //  let's pass the request to
+		    //  the UA. 
+		    assert(ua);
+		    DBG("Passing ACK to the UA.\n");
+		    ua->handle_sip_request(NULL,msg);
+		    
+		    DROP_MSG;
 		}
 	    }
 	    else {
@@ -816,7 +797,7 @@ void trans_layer::received_msg(sip_msg* msg)
 	    // Reply matched UAC transaction
 	    
 	    DBG("Reply matched an existing transaction\n");
-	    if(update_uac_trans(bucket,t,msg) < 0){
+	    if(update_uac_reply(bucket,t,msg) < 0){
 		ERROR("update_uac_trans() failed, so what happens now???\n");
 		break;
 	    }
@@ -851,7 +832,7 @@ void trans_layer::received_msg(sip_msg* msg)
 }
 
 
-int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
+int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
 {
     assert(msg->type == SIP_REPLY);
 
@@ -920,17 +901,18 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 	} 
 	else {
 	    
+	    DBG("Positive final reply to INVITE transaction (state=%i)\n",t->state);
+
 	    // Positive final reply to INVITE transaction
 	    switch(t->state){
 		
 	    case TS_CALLING:
 	    case TS_PROCEEDING:
+
 		// TODO:
-		//  we should take care of 200 ACKs
+		//  we should take care of 200 ACK re-transmissions
 		//    - on first reply:
 		//      - save to-tag.
-		//      - use route-set included in the INV req (if applicable).
-		//      - save ACK for retransmitions.
 		//    - compare to-tag on subsequent replies.
 		//      - (if different): 
 		//        - (generate new 200 ACK based on reply).
@@ -948,8 +930,6 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 		t->to_tag.len = to_tag.len;
 		memcpy((void*)t->to_tag.s,to_tag.s,to_tag.len);
 		
-		send_200_ack(msg,t);
-
 		goto pass_reply;
 		
 	    case TS_TERMINATED_200:
@@ -959,14 +939,16 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
 
 		    // TODO: 
 		    //   (this should be implemented in the UA)
-		    //   we should send 200 ACK also here,
+		    //   we should also send a 200 ACK here,
 		    //   but this would mean that we should
-		    //   also be sending a BYE also to quit
-		    //   this dialog.
+		    //   also be sending a BYE to quit
+		    //   this dialog...
 		    //
+		    DBG("Received 200 reply with different To-tag as the previous one.\n");
 		    goto end;
 		}
 
+		DBG("Received 200 reply retransmission\n");
 		retransmit(t);
 		goto end;
 
@@ -1011,10 +993,62 @@ int trans_layer::update_uac_trans(trans_bucket* bucket, sip_trans* t, sip_msg* m
     return 0;
 }
 
+int trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg* msg)
+{
+    if(msg->u.request->method != sip_request::ACK){
+	t = bucket->add_trans(msg,TT_UAC);
+    }
+    else {
+	// 200 ACK
+	t = bucket->match_request(msg);
+	if(t == NULL){
+	    DBG("While sending 200 ACK: no matching transaction\n");
+	    return -1;
+	}
+
+	delete [] t->retr_buf;
+	t->retr_buf = msg->buf;
+	t->retr_len = msg->len;
+	msg->buf = NULL;
+	msg->len = 0;
+	memcpy(&t->retr_addr,&msg->remote_ip,sizeof(sockaddr_storage));
+    }
+
+    switch(msg->u.request->method){
+
+    case sip_request::INVITE:
+	// if transport == UDP
+	t->reset_timer(STIMER_A,A_TIMER,bucket->get_id());
+	// for any transport type
+	t->reset_timer(STIMER_B,B_TIMER,bucket->get_id());
+	break;
+    
+    case sip_request::ACK:
+	// we do not need any timer here:
+	// -> TIMER L is already started.
+	
+	delete msg;
+
+	// test code
+	retransmit(t);
+
+	break;
+
+    default:
+	// if transport == UDP
+	t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
+	// for any transport type
+	t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
+	break;
+    }
+	
+    return 0;
+}
+
 int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
 {
     if(t->reply_status >= 200){
-	ERROR("Trying to send a reply whereby reply_status >= 300\n");
+	ERROR("Transaction has already been closed with a final reply\n");
 	return -1;
     }
 
@@ -1072,7 +1106,7 @@ int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_
 int trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
 {
     if(msg->u.request->method != sip_request::ACK){
-	ERROR("Bug? Recvd non-ACK for existing UAS transaction\n");
+	ERROR("Bug? Recvd non-ACK request for existing UAS transaction!?\n");
 	return -1;
     }
 	
@@ -1155,111 +1189,6 @@ void trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     }
 }
 
-void trans_layer::send_200_ack(sip_msg* reply, sip_trans* t)
-{
-    // Set request URI
-    // TODO: use correct R-URI instead of just 'Contact'
-    if(!get_contact(reply)) {
-	DBG("Sorry, reply has no Contact header: could not send ACK\n");
-	return;
-    }
-    
-    sip_nameaddr na;
-    const char* c = get_contact(reply)->value.s;
-    if(parse_nameaddr(&na,&c,get_contact(reply)->value.len) < 0){
-	DBG("Sorry, reply's Contact parsing failed: could not send ACK\n");
-	return;
-    }
-    
-    cstring r_uri = na.addr;
-    list<sip_header*> route_hdrs;
-
-    if(t && !t->msg->route.empty()){
-	for(list<sip_header*>::iterator it = t->msg->route.begin();
-	    it != t->msg->route.end(); ++it) {
-	    
-	    route_hdrs.push_back(new sip_header(0,"Route",(*it)->value));
-	}
-    }
-    else {
-	for(list<sip_header*>::reverse_iterator it = reply->record_route.rbegin();
-	    it != reply->record_route.rend(); ++it) {
-	    
-	    route_hdrs.push_back(new sip_header(0,"Route",(*it)->value));
-	}
-    }
-
-    sockaddr_storage remote_ip;
-    set_next_hop(route_hdrs,r_uri,&remote_ip);
-
-    int request_len = request_line_len(cstring("ACK",3),r_uri);
-   
-    char branch_buf[BRANCH_BUF_LEN];
-    compute_branch(branch_buf,reply->callid->value,reply->cseq->value);
-    cstring branch(branch_buf,BRANCH_BUF_LEN);
-
-    sip_header* max_forward = new sip_header(0,cstring("Max-Forwards"),cstring("10"));
-
-    //cstring via((char*)transport->get_local_ip());
-    //request_len += via_len(via,branch);
-
-    string via(transport->get_local_ip());
-    if(transport->get_local_port() != 5060)
-	via += ":" + int2str(transport->get_local_port());
-
-    request_len += via_len(stl2cstr(via),branch);
-
-    request_len += copy_hdrs_len(route_hdrs);
-
-    request_len += copy_hdr_len(reply->to);
-    request_len += copy_hdr_len(reply->from);
-    request_len += copy_hdr_len(reply->callid);
-    request_len += copy_hdr_len(max_forward);
-    request_len += cseq_len(get_cseq(reply)->num_str,cstring("ACK",3));
-    request_len += 2/* CRLF end-of-headers*/;
-
-    // Allocate new message
-    char* ack_buf = new char[request_len];
-
-    // generate it
-    char* msg = ack_buf;
-
-    request_line_wr(&msg,cstring("ACK",3),r_uri);
-    via_wr(&msg,stl2cstr(via),branch);
-
-    copy_hdrs_wr(&msg,route_hdrs);
-    // clear route headers list
-    for (list<sip_header*>::iterator it=route_hdrs.begin(); 
-	 it!= route_hdrs.end(); it++)
-	delete *it;
-    
-    copy_hdr_wr(&msg,reply->from);
-    copy_hdr_wr(&msg,reply->to);
-    copy_hdr_wr(&msg,reply->callid);
-    copy_hdr_wr(&msg,max_forward);
-    delete max_forward;
-    cseq_wr(&msg,get_cseq(reply)->num_str,cstring("ACK",3));
-
-    *msg++ = CR;
-    *msg++ = LF;
-
-    DBG("About to send 200 ACK\n");
-    //    DBG("About to send 200 ACK: \n<%.*s>\n",request_len,ack_buf);
-
-    assert(transport);
-    int send_err = transport->send(&remote_ip,ack_buf,request_len);
-    if(send_err < 0){
-	ERROR("Error from transport layer\n");
-	delete [] ack_buf;
-    }
-    else if(t){
-	delete [] t->retr_buf;
-	t->retr_buf = ack_buf;
-	t->retr_len = request_len;
-	memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
-    }
-}
-
 void trans_layer::retransmit(sip_trans* t)
 {
     assert(transport);
@@ -1333,6 +1262,10 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
     case STIMER_I:  // Confirmed: -> Terminated
     case STIMER_L:  // Terminated_200 -> Terminated
 	
+	// TODO:
+	//  - check if the UA has sent the ACK.
+	//    else, send ACK & BYE.
+
 	tr->clear_timer(type);
 	tr->state = TS_TERMINATED;
 	bucket->remove_trans(tr);

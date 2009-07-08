@@ -107,8 +107,7 @@ sip_trans* trans_bucket::match_request(sip_msg* msg)
 	trans_list::iterator it = elmts.begin();
 	for(;it!=elmts.end();++it) {
 	    
-	    if( ((*it)->type != TT_UAS) || 
-		((*it)->msg->type != SIP_REQUEST)){
+	    if( (*it)->msg->type != SIP_REQUEST ){
 		continue;
 	    }
 

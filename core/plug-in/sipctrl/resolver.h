@@ -29,12 +29,6 @@
 
 struct sockaddr_storage;
 
-/* struct name_entry */
-/* { */
-/*     string name; */
-/*     string address; */
-/* }; */
-
 enum address_type {
 
     IPv4=1,
