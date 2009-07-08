@@ -253,14 +253,14 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
   // TODO: remove the transaction only after the dedicated timer has hit
   //       this would help taking care of multiple 2xx replies.
   if(reply.code >= 200){
-    uac_trans.erase(t_it);
-
     // TODO: 
     // - place this somewhere else.
     //   (probably in AmSession...)
     if(reply.code < 300){
       send_200_ack(t);
     }
+
+    uac_trans.erase(t_it);
   }
 }
 
