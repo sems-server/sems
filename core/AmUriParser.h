@@ -37,6 +37,7 @@ struct AmUriParser {
   string uri_user; 
   string uri_host; 
   string uri_port; 
+  string uri_headers;
   string uri_param;
 
   map<string, string> params;
