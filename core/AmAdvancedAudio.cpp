@@ -279,3 +279,54 @@ int AmAudioFrontlist::get(unsigned int user_ts, unsigned char* buffer, unsigned 
   ba_mut.unlock();
   return res;
 }
+
+
+int AmNullAudio::write(unsigned int user_ts, unsigned int size) {
+  // need to stop at some point? 
+  if (write_msec < 0)
+    return size;
+
+  if (!write_end_ts_i) {
+    write_end_ts_i = true;
+    write_end_ts = user_ts + write_msec*fmt->rate/1000;
+  }
+
+  if (!ts_less()(user_ts, write_end_ts)) {
+    DBG("%dms of silence ended (write)\n", write_msec);
+    return -1;
+  }
+
+  return size;
+}
+
+int AmNullAudio::read(unsigned int user_ts, unsigned int size) {
+  // need to stop at some point? 
+  if (read_msec < 0) {
+    memset((unsigned char*) samples, 0, size);
+    return size;
+  }
+
+  if (!read_end_ts_i) {
+    read_end_ts_i = true;
+    read_end_ts = user_ts + read_msec*fmt->rate/1000; 
+  }
+
+  if (!ts_less()(user_ts, read_end_ts)) {
+    DBG("%dms of silence ended (read)\n", read_msec);
+    return -1;
+  }
+
+  memset((unsigned char*) samples, 0, size);
+  return size;
+}
+
+void AmNullAudio::setReadLength(int n_msec) {
+  read_msec = n_msec;
+  read_end_ts_i = false;
+}
+
+void AmNullAudio::setWriteLength(int n_msec) {
+  write_msec = n_msec;
+  write_end_ts_i = false;
+}
+

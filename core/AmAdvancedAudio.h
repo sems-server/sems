@@ -143,5 +143,39 @@ class AmAudioDelay : public AmAudio {
   int read(unsigned int user_ts, unsigned int size);
 };
 
+/** 
+ * AmNullAudio plays silence, and recording goes to void. 
+ * it can be parametrized with a maximum length (in milliseconds), 
+ * after which it is ended.
+ * Read and write length can also be set after creation (and possibly even
+ * when in use).
+ */
+class AmNullAudio 
+: public AmAudio {
+  int read_msec;
+  int write_msec;
+
+  bool read_end_ts_i;
+  unsigned int read_end_ts;
+
+  bool write_end_ts_i;
+  unsigned int write_end_ts;
+
+ public:
+  AmNullAudio(int read_msec = -1, int write_msec = -1)
+    : read_msec(read_msec), write_msec(write_msec),
+    read_end_ts_i(false), write_end_ts_i(false) { }
+  ~AmNullAudio() { }
+
+  /** (re) set maximum read length*/
+  void setReadLength(int n_msec);
+  /** (re) set maximum write length*/
+  void setWriteLength(int n_msec);
+
+ protected:
+  int write(unsigned int user_ts, unsigned int size);
+  int read(unsigned int user_ts, unsigned int size);
+};
+
 #endif // _AmAdvancedAudio_h_
 
