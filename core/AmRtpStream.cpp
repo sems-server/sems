@@ -436,7 +436,7 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
    * We need to do more sophisticated parsing -- hence p_s_i_f_n().
    */
   if (!populate_sockaddr_in_from_name(addr, &sa)) {
-    ERROR("Address not valid (host: %s).\n", addr.c_str());
+    WARN("Address not valid (host: %s).\n", addr.c_str());
     throw string("invalid address");
   }
 

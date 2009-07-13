@@ -276,6 +276,9 @@ void AmSession::negotiate(const string& sdp_body,
     rtp_str.setLocalIP(AmConfig::LocalIP);
     rtp_str.setPassiveMode(passive_mode);
     rtp_str.setRAddr(r_host, r_port);
+  } catch (const string& err_str) {
+    unlockAudio();
+    throw AmSession::Exception(400, err_str);
   } catch (...) {
     unlockAudio();
     throw;
