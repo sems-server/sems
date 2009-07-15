@@ -62,7 +62,8 @@ class AnnounceTransferDialog : public AmSession
   enum  { Disconnected = 0,
 	  Announcing,
 	  Transfering,
-	  Hangup } AnnounceStatus; 
+	  Hangup        // remote hangup 
+  } AnnounceStatus; 
 public:
   AnnounceTransferDialog(const string& filename);
   ~AnnounceTransferDialog();
