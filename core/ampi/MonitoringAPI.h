@@ -19,7 +19,7 @@
   }									\
   
   // hm... there must be a better method for this...
-#define MONITORING_LOG2(AmSessionContainer, callid, prop1, val1, prop2, val2) \
+#define MONITORING_LOG2(callid, prop1, val1, prop2, val2) \
   if (NULL != AmSessionContainer::monitoring_di) {			\
     AmArg di_args,ret;							\
     di_args.push(AmArg(callid));					\
