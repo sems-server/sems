@@ -85,7 +85,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
   
   DBG("method: `%s' [%zd].\n", req.method.c_str(), req.method.length());
   
-  if((req.method == "INVITE")){
+  if(req.method == "INVITE"){
       
       AmSessionContainer::instance()->startSessionUAS(req);
   }
@@ -95,8 +95,10 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       AmSipDialog::reply_error(req,200,"OK");
       return;
 
-  } else if(req.method == "CANCEL"){      
-    // CANCEL to a (here) non-existing dialog
+  } else if( (req.method == "CANCEL") || 
+	     (req.method == "BYE") ){
+      
+    // CANCEL/BYE of a (here) non-existing dialog
     AmSipDialog::reply_error(req,481,
 			     "Call leg/Transaction does not exist");
     return;
@@ -106,7 +108,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       AmSessionFactory* sess_fact = AmPlugIn::instance()->findSessionFactory(req);
       if(!sess_fact){
 
-	  AmSipDialog::reply_error(req,500,"Not implemented");
+	  AmSipDialog::reply_error(req,404,"Not found");
 	  return;
       }
 
