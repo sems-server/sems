@@ -94,8 +94,14 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       // Basic OPTIONS support
       AmSipDialog::reply_error(req,200,"OK");
       return;
-  }
-  else {
+
+  } else if(req.method == "CANCEL"){      
+    // CANCEL to a (here) non-existing dialog
+    AmSipDialog::reply_error(req,481,
+			     "Call leg/Transaction does not exist");
+    return;
+
+  } else {
 
       AmSessionFactory* sess_fact = AmPlugIn::instance()->findSessionFactory(req);
       if(!sess_fact){
