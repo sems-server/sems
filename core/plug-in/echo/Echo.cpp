@@ -93,7 +93,7 @@ AmSession* EchoFactory::onInvite(const AmSipRequest& req)
 }
 
 EchoDialog::EchoDialog() 
-  : playout_type(SIMPLE_PLAYOUT)
+  : playout_type(ADAPTIVE_PLAYOUT)
 {
 	
 }
