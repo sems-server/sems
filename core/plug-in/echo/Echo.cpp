@@ -104,6 +104,7 @@ EchoDialog::~EchoDialog()
 
 void EchoDialog::onSessionStart(const AmSipRequest& req)
 {
+  rtp_str.setPlayoutType(playout_type);
   setInOut(&echo,&echo);
 }
 
