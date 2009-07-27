@@ -52,7 +52,7 @@
 #   RTP port is advertised in SDP in either case.
 #   
 # Example:
-#  public_sip=75.101.219.48
+#  public_ip=75.101.219.48
 #  
   
 # optional parameter: sip_port=<port_number>
