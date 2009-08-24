@@ -151,6 +151,8 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
     
   sockfd = socket(PF_INET, SOCK_STREAM, 0);
 	
+  DBG("got DIAMETER socket #%d\n", sockfd); 
+
   if (sockfd < 0) 
     {
       ERROR(M_NAME":init_diatcp(): error creating the socket\n");
@@ -197,11 +199,14 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
 
   if (!conn_st->ctx) {
     ERROR("SSL: creating TLSv1_client_method context\n");
+    tcp_close_connection(conn_st);
     return 0;
   }
 
   if (SSL_CTX_set_default_verify_paths(conn_st->ctx) != 1) {
     ERROR("SSL: SSL_CTX_set_default_verify_paths\n");
+    SSL_CTX_free(conn_st->ctx);
+    tcp_close_connection(conn_st);
     return 0;
   }
 
@@ -213,6 +218,7 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
       ERROR("using certificate from file '%s'\n",
 	    client_cert_file);
       SSL_CTX_free(conn_st->ctx);
+      tcp_close_connection(conn_st);
       pkg_free(conn_st);
       return 0;
     }
@@ -224,6 +230,7 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
       ERROR("Loading private key file '%s'\n",
 	    client_cert_file);
       SSL_CTX_free(conn_st->ctx);
+      tcp_close_connection(conn_st);
       pkg_free(conn_st);
       return 0;
     }
@@ -235,6 +242,7 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
     ERROR("Loading CA file '%s'\n",
 	  CA_file);
     SSL_CTX_free(conn_st->ctx);
+    tcp_close_connection(conn_st);
     pkg_free(conn_st);
     return 0;
   }
@@ -250,6 +258,7 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
     ERROR("in SSL connect\n");
     SSL_free(conn_st->ssl);
     SSL_CTX_free(conn_st->ctx);
+    tcp_close_connection(conn_st);
     pkg_free(conn_st);
     return 0;
   }
