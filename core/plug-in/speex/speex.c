@@ -131,7 +131,7 @@ static char* read_param(char* input, const char *param, char** param_value)
   int param_size;
 
   /* Eat spaces and semi-colons */
-  while (*input==' ' && *input==';')
+  while (*input==' ' && *input==';' && *input!='"')
     input++;
 
   *param_value = NULL;
@@ -144,7 +144,7 @@ static char* read_param(char* input, const char *param, char** param_value)
 
   /* Found and discarded a matching parameter */
   *param_value = input;
-  while (*input && *input!=' ' && *input!=';')
+  while (*input && *input!=' ' && *input!=';' && *input!='"')
     input++;
 
   if (*input)
