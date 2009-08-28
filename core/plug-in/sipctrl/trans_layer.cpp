@@ -702,12 +702,12 @@ void trans_layer::received_msg(sip_msg* msg)
 	DROP_MSG;
     }
     
-    assert(msg->callid && get_cseq(msg));
     if(!msg->callid || !get_cseq(msg)){
 	
 	DBG("Call-ID or CSeq header missing: dropping message\n");
 	DROP_MSG;
     }
+    assert(msg->callid && get_cseq(msg));
 
     unsigned int  h = hash(msg->callid->value, get_cseq(msg)->num_str);
     trans_bucket* bucket = get_trans_bucket(h);
