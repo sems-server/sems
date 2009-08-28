@@ -202,6 +202,15 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 
   DBG("AmPlugIn: Initializing plugins...\n");
 
+  if (ctrlIface) {
+    if ((err = ctrlIface->onLoad())) {
+      ERROR("failed to initialize control interface.\n");
+      return err;
+    } else {
+	AmServer::instance()->regIface(ctrlIface->instance());
+    }
+  }
+
   // initialize base components
   for(std::map<std::string,AmPluginFactory*>::iterator it = name2base.begin();
       it != name2base.end(); it++){
@@ -255,15 +264,6 @@ int AmPlugIn::load(const string& directory, const string& plugins)
     err = it->second->onLoad();
     if(err)
       return err;
-  }
-
-  if (ctrlIface) {
-    if ((err = ctrlIface->onLoad())) {
-      ERROR("failed to initialize control interface.\n");
-      return err;
-    } else {
-	AmServer::instance()->regIface(ctrlIface->instance());
-    }
   }
 
   DBG("AmPlugIn: Initialized plugins.\n");
