@@ -245,7 +245,7 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 	    case HTAB:
 	    case CR:
 	    case LF:
-		DBG("Bad character in IPv6 address\n");
+		DBG("Bad character in IPv6 address (0x%x)\n",**c);
 		return MALFORMED_SIP_MSG;
 	    }
 	    break;
@@ -299,6 +299,10 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 	    case HTAB:
 	    case ';':
 		goto end_by;
+	    }
+	    if((**c < '0') ||(**c > '9')){
+		DBG("bad character in port number (0x%x)\n",**c);
+		return MALFORMED_SIP_MSG;
 	    }
 	    break;
 

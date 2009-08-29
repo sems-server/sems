@@ -37,11 +37,13 @@ using std::list;
 // Constants
 //
 
-#define UNDEFINED_ERR     -1
-#define UNEXPECTED_EOT    -2
-#define UNEXPECTED_EOL    -3
-#define MALFORMED_SIP_MSG -4
-#define MALFORMED_URI     -5
+#define UNDEFINED_ERR      -1
+#define UNEXPECTED_EOT     -2
+#define UNEXPECTED_EOL     -3
+#define MALFORMED_SIP_MSG  -4
+#define INCOMPLETE_SIP_MSG -5
+#define MALFORMED_URI      -6
+#define MALFORMED_FLINE    -7
 
 #define IS_IN(c,l,r) (((c)>=(l))&&((c)<=(r)))
 

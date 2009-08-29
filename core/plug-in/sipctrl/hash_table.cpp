@@ -410,7 +410,7 @@ unsigned int hash(const cstring& ci, const cstring& cs)
     return h & (H_TABLE_ENTRIES-1);
 }
 
-char _branch_lookup[] = {
+char _tag_lookup[] = {
     'a','b','c','d','e','f','g','h',
     'i','j','k','l','m','n','o','p',
     'q','r','s','t','u','v','w','x',
@@ -421,8 +421,54 @@ char _branch_lookup[] = {
     '4','5','6','7','8','9','.','~'
 };
 
+inline void compute_tag(char* tag, unsigned int hl, unsigned int hh)
+{
+    hl += hh >> 16;
+    hh &= 0xFFFF;
 
-void compute_branch(char* branch, const cstring& callid, const cstring& cseq)
+    tag[0] = _tag_lookup[hl&0x3F];
+    tag[1] = _tag_lookup[(hl >> 6)&0x3F];
+    tag[2] = _tag_lookup[(hl >> 12)&0x3F];
+    tag[3] = _tag_lookup[(hl >> 18)&0x3F];
+    tag[4] = _tag_lookup[(hl >> 24)&0x3F];
+    tag[5] = _tag_lookup[(hl >> 30)&((hh << 2) & 0x3F)];
+    tag[6] = _tag_lookup[(hh >> 4)&0x3F];
+    tag[7] = _tag_lookup[(hh >> 10)&0x3F];
+}
+
+void compute_sl_to_tag(char* to_tag/*[8]*/, sip_msg* msg)
+{
+    unsigned int hl=0;
+    unsigned int hh=0;
+    
+    assert(msg->type == SIP_REQUEST);
+    assert(msg->u.request);
+
+    hl = hashlittle(msg->u.request->method_str.s,
+		    msg->u.request->method_str.len,hl);
+
+    hl = hashlittle(msg->u.request->ruri_str.s,
+		    msg->u.request->ruri_str.len,hl);
+
+    if(msg->callid){
+	hh = hashlittle(msg->callid->value.s,
+			msg->callid->value.len,hh);
+    }
+
+    if(msg->from){
+	hh = hashlittle(msg->from->value.s,
+			msg->from->value.len,hh);
+    }
+
+    if(msg->cseq){
+	hh = hashlittle(msg->cseq->value.s,
+			msg->cseq->value.len,hh);
+    }
+    
+    compute_tag(to_tag,hl,hh);
+}
+
+void compute_branch(char* branch/*[8]*/, const cstring& callid, const cstring& cseq)
 {
     unsigned int h=0;
     unsigned int h_tv=0;
@@ -434,17 +480,7 @@ void compute_branch(char* branch, const cstring& callid, const cstring& cseq)
     h = hashlittle(cseq.s,cseq.len,h);
     h_tv = tv.tv_sec + tv.tv_usec;
 
-    h += h_tv >> 16;
-    h_tv &= 0xFFFF;
-
-    branch[0] = _branch_lookup[h&0x3F];
-    branch[1] = _branch_lookup[(h >> 6)&0x3F];
-    branch[2] = _branch_lookup[(h >> 12)&0x3F];
-    branch[3] = _branch_lookup[(h >> 18)&0x3F];
-    branch[4] = _branch_lookup[(h >> 24)&0x3F];
-    branch[5] = _branch_lookup[(h >> 30)&((h_tv << 2) & 0x3F)];
-    branch[6] = _branch_lookup[(h_tv >> 4)&0x3F];
-    branch[7] = _branch_lookup[(h_tv >> 10)&0x3F];
+    compute_tag(branch,h,h_tv);
 }
 
 trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num)

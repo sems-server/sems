@@ -93,6 +93,16 @@ class trans_layer
      * Send ACK coresponding to error replies
      */
     void send_non_200_ack(sip_msg* reply, sip_trans* t);
+
+    /**
+     * Sends a stateless reply. Useful for error replies.
+     * If a body is included, the hdrs parameter should
+     * include a well-formed 'Content-Type', but no
+     * 'Content-Length' header.
+     */
+    int send_sl_reply(sip_msg* req, int reply_code, 
+		      const cstring& reason, 
+		      const cstring& hdrs, const cstring& body);
     
     /**
      * Transaction timeout

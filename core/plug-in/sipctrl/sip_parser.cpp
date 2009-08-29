@@ -397,20 +397,46 @@ static int parse_first_line(sip_msg* msg, char** c)
 }
 
 
-int parse_sip_msg(sip_msg* msg)
+int parse_sip_msg(sip_msg* msg, char*& err_msg)
 {
     char* c = msg->buf;
 
-    int err_fl = parse_first_line(msg,&c);
+    int err = parse_first_line(msg,&c);
 
-    if(err_fl == UNEXPECTED_EOT)
-	return err_fl;
+    if(err) {
+	err_msg = (char*)"Could not parse first line";
+	return MALFORMED_FLINE;
+    }
 
-    int err_hdrs = parse_headers(msg,&c);
+    err = parse_headers(msg,&c);
 
-    if(!msg->via1){
-	DBG("Missing via header\n");
-	return MALFORMED_SIP_MSG;
+    if(!err){
+	msg->body.set(c,msg->len - (c - msg->buf));
+    }
+
+    if(!msg->via1 ||
+       !msg->cseq ||
+       !msg->from ||
+       !msg->to ||
+       !msg->callid) {
+
+	if(!msg->via1){
+	    err_msg = (char*)"missing Via header field";
+	} 
+	else if(!msg->cseq){
+	    err_msg = (char*)"missing CSeq header field";
+	}
+	else if(!msg->from){
+	    err_msg = (char*)"missing From header field";
+	}
+	else if(!msg->to){
+	    err_msg = (char*)"missing To header field";
+	}
+	else if(!msg->callid){
+	    err_msg = (char*)"missing Call-ID header field";
+	}
+
+	return INCOMPLETE_SIP_MSG;
     }
 
     auto_ptr<sip_via> via(new sip_via());
@@ -421,23 +447,9 @@ int parse_sip_msg(sip_msg* msg)
 
 	msg->via_p1 = *via->parms.begin();
 	msg->via1->p = via.release();
-
-// 	DBG("first via: proto=<%i>, addr=<%.*s:%.*s>, branch=<%.*s>\n", 
-// 	    msg->via_p1->trans.type, 
-// 	    msg->via_p1->host.len,
-// 	    msg->via_p1->host.s,
-// 	    (msg->via_p1->port.len ? msg->via_p1->port.len : 4),
-// 	    (msg->via_p1->port.len ? msg->via_p1->port.s : "5060"),
-// 	    msg->via_p1->branch.len,
-// 	    msg->via_p1->branch.s );
-
     }
-    else
-	return MALFORMED_SIP_MSG;
-
-
-    if(!msg->cseq){
-	DBG("Missing cseq header\n");
+    else {
+	err_msg = (char*)"could not parse Via hf";
 	return MALFORMED_SIP_MSG;
     }
 
@@ -447,19 +459,11 @@ int parse_sip_msg(sip_msg* msg)
 		   msg->cseq->value.len) &&
        cseq->num_str.len &&
        cseq->method_str.len ) {
-	
-// 	DBG("Cseq header: '%.*s' '%.*s'\n",
-// 	    cseq->str.len,cseq->str.s,
-// 	    cseq->method.len,cseq->method.s);
 
 	msg->cseq->p = cseq.release();
     }
-    else
-	return MALFORMED_SIP_MSG;
-
-
-    if(!msg->from){
-	DBG("Missing from header\n");
+    else {
+	err_msg = (char*)"could not parse CSeq hf";
 	return MALFORMED_SIP_MSG;
     }
 
@@ -468,17 +472,10 @@ int parse_sip_msg(sip_msg* msg)
 		      msg->from->value.s,
 		      msg->from->value.len)) {
 
-// 	DBG("From header: name-addr=\"%.*s <%.*s>\"\n",
-// 	    from->nameaddr.name.len,from->nameaddr.name.s,
-// 	    from->nameaddr.addr.len,from->nameaddr.addr.s);
-
 	msg->from->p = from.release();
     }
-    else
-	return MALFORMED_SIP_MSG;
-
-    if(!msg->to){
-	DBG("Missing to header\n");
+    else {
+	err_msg = (char*)"could not parse From hf";
 	return MALFORMED_SIP_MSG;
     }
 
@@ -487,20 +484,14 @@ int parse_sip_msg(sip_msg* msg)
 		      msg->to->value.s,
 		      msg->to->value.len)) {
 
-// 	DBG("To header: name-addr=\"%.*s <%.*s>\"\n",
-// 	    to->nameaddr.name.len,to->nameaddr.name.s,
-// 	    to->nameaddr.addr.len,to->nameaddr.addr.s);
-
 	msg->to->p = to.release();
     }
-    else
+    else {
+	err_msg = (char*)"could not parse To hf";
 	return MALFORMED_SIP_MSG;
-
-    if(!(err_fl || err_hdrs)){
-	msg->body.set(c,msg->len - (c - msg->buf));
     }
 
-    return err_fl || err_hdrs;
+    return 0;
 }
 
 /** EMACS **

@@ -144,6 +144,9 @@ void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
 void sip_trans::reset_timer(unsigned int timer_type, unsigned int expire_delay /* ms */,
 			    unsigned int bucket_id)
 {
+    timer_type &= 0xFFFF;
+    assert(timer_type < sizeof(_timer_name_lookup));
+
     wheeltimer* wt = wheeltimer::instance();
 
     unsigned int expires = expire_delay / (TIMER_RESOLUTION/1000);

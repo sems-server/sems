@@ -114,6 +114,7 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     // MAY be contained:
     //  - Accept
 
+    assert(bucket && t);
 
     bucket->lock();
     if(!bucket->exist(t)){
@@ -123,6 +124,7 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     }
 
     sip_msg* req = t->msg;
+    assert(req);
 
     bool have_to_tag = false;
     int  reply_len   = status_line_len(reason);
@@ -130,9 +132,11 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     for(list<sip_header*>::iterator it = req->hdrs.begin();
 	it != req->hdrs.end(); ++it) {
 
+	assert((*it));
 	switch((*it)->type){
 
 	case sip_header::H_TO:
+	    assert((*it)->p);
 	    if(! ((sip_from_to*)(*it)->p)->tag.len ) {
 
 		reply_len += 5/* ';tag=' */
@@ -180,17 +184,19 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 	switch((*it)->type){
 
 	case sip_header::H_TO:
-	    memcpy(c,(*it)->name.s,(*it)->name.len);
-	    c += (*it)->name.len;
-	    
-	    *(c++) = ':';
-	    *(c++) = SP;
-	    
-	    memcpy(c,(*it)->value.s,(*it)->value.len);
-	    c += (*it)->value.len;
-	    
-	    if(!have_to_tag){
-
+	    if(have_to_tag){
+		copy_hdr_wr(&c,*it);
+	    }
+	    else {
+		memcpy(c,(*it)->name.s,(*it)->name.len);
+		c += (*it)->name.len;
+		
+		*(c++) = ':';
+		*(c++) = SP;
+		
+		memcpy(c,(*it)->value.s,(*it)->value.len);
+		c += (*it)->value.len;
+		
 		memcpy(c,";tag=",5);
 		c += 5;
 
@@ -199,10 +205,10 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 
 		memcpy(c,to_tag.s,to_tag.len);
 		c += to_tag.len;
-	    }
 
-	    *(c++) = CR;
-	    *(c++) = LF;
+		*(c++) = CR;
+		*(c++) = LF;
+	    }
 	    break;
 
 	case sip_header::H_FROM:
@@ -264,6 +270,147 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     
  end:
     bucket->unlock();
+    return err;
+}
+
+int trans_layer::send_sl_reply(sip_msg* req, int reply_code, 
+			       const cstring& reason, const cstring& hdrs, 
+			       const cstring& body)
+{
+    // Ref.: RFC 3261 8.2.6, 12.1.1
+    //
+    // Fields to copy (from RFC 3261):
+    //  - From
+    //  - Call-ID
+    //  - CSeq
+    //  - Vias (same order)
+    //  - To (+ tag if not yet present in request)
+    //  - (if a dialog is created) Record-Route
+    //
+    // Fields to generate (if INVITE transaction):
+    //    - Contact
+    //    - Route: copied from 
+    // 
+    // SHOULD be contained:
+    //  - Allow, Supported
+    //
+    // MAY be contained:
+    //  - Accept
+
+    assert(req);
+
+    bool have_to_tag = false;
+    int  reply_len   = status_line_len(reason);
+
+    for(list<sip_header*>::iterator it = req->hdrs.begin();
+	it != req->hdrs.end(); ++it) {
+
+	assert(*it);
+	switch((*it)->type){
+
+	case sip_header::H_TO:
+
+	    if((!(*it)->p) || (!((sip_from_to*)(*it)->p)->tag.len) ) {
+
+		reply_len += 5/* ';tag=' */
+		    + SL_TOTAG_LEN; 
+	    }
+	    else {
+		// To-tag present in request
+		have_to_tag = true;
+	    }
+	    // fall-through-trap
+	case sip_header::H_FROM:
+	case sip_header::H_CALL_ID:
+	case sip_header::H_CSEQ:
+	case sip_header::H_VIA:
+	case sip_header::H_RECORD_ROUTE:
+	    reply_len += copy_hdr_len(*it);
+	    break;
+	}
+    }
+
+    reply_len += hdrs.len;
+
+    string c_len = int2str(body.len);
+    reply_len += content_length_len((char*)c_len.c_str());
+
+    if(body.len){
+	
+	reply_len += body.len;
+    }
+
+    reply_len += 2/*CRLF*/;
+    
+    // Allocate buffer for the reply
+    //
+    char* reply_buf = new char[reply_len];
+    char* c = reply_buf;
+
+    status_line_wr(&c,reply_code,reason);
+
+    for(list<sip_header*>::iterator it = req->hdrs.begin();
+	it != req->hdrs.end(); ++it) {
+
+	switch((*it)->type){
+
+	case sip_header::H_TO:
+
+	    if(have_to_tag){
+		copy_hdr_wr(&c,*it);
+	    }
+	    else {
+		memcpy(c,(*it)->name.s,(*it)->name.len);
+		c += (*it)->name.len;
+		
+		*(c++) = ':';
+		*(c++) = SP;
+		
+		memcpy(c,(*it)->value.s,(*it)->value.len);
+		c += (*it)->value.len;
+	    
+		memcpy(c,";tag=",5);
+		c += 5;
+
+		char to_tag[SL_TOTAG_LEN];
+		compute_sl_to_tag(to_tag,req);
+		memcpy(c,to_tag,SL_TOTAG_LEN);
+		c += SL_TOTAG_LEN;
+
+		*(c++) = CR;
+		*(c++) = LF;
+	    }
+	    break;
+
+	case sip_header::H_FROM:
+	case sip_header::H_CALL_ID:
+	case sip_header::H_CSEQ:
+	case sip_header::H_VIA:
+	case sip_header::H_RECORD_ROUTE:
+	    copy_hdr_wr(&c,*it);
+	    break;
+	}
+    }
+
+    if (hdrs.len) {
+	memcpy(c,hdrs.s,hdrs.len);
+	c += hdrs.len;
+    }
+
+    content_length_wr(&c,(char*)c_len.c_str());
+
+    *c++ = CR;
+    *c++ = LF;
+
+    if(body.len){
+	
+	memcpy(c,body.s,body.len);
+    }
+
+    assert(transport);
+    int err = transport->send(&req->remote_ip,reply_buf,reply_len);
+    delete [] reply_buf;
+
     return err;
 }
 
@@ -521,7 +668,8 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
     }
 
     // and parse it
-    if(parse_sip_msg(p_msg)){
+    char* err_msg=0;
+    if(parse_sip_msg(p_msg,err_msg)){
 	ERROR("Parser failed on generated request\n");
 	ERROR("Message was: <%.*s>\n",p_msg->len,p_msg->buf);
 	delete p_msg;
@@ -646,7 +794,8 @@ int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
     *c++ = LF;
 
     // and parse it
-    if(parse_sip_msg(p_msg)){
+    char* err_msg=0;
+    if(parse_sip_msg(p_msg,err_msg)){
 	ERROR("Parser failed on generated request\n");
 	ERROR("Message was: <%.*s>\n",p_msg->len,p_msg->buf);
 	delete p_msg;
@@ -693,22 +842,29 @@ void trans_layer::received_msg(sip_msg* msg)
           delete msg;\
           return
 
-    int err = parse_sip_msg(msg);
-    DBG("parse_sip_msg returned %i\n",err);
+    char* err_msg=0;
+    int err = parse_sip_msg(msg,err_msg);
 
     if(err){
+	DBG("parse_sip_msg returned %i\n",err);
+
+	if(!err_msg){
+
+	    err_msg = (char*)"unknown parsing error";
+	    DBG("parsing error: %s\n",err_msg);
+	}
+
 	DBG("Message was: \"%.*s\"\n",msg->len,msg->buf);
-	DBG("dropping message\n");
+
+	if(err != MALFORMED_FLINE){
+	    send_sl_reply(msg,400,cstring(err_msg),
+			  cstring(),cstring());
+	}
+
 	DROP_MSG;
     }
     
-    if(!msg->callid || !get_cseq(msg)){
-	
-	DBG("Call-ID or CSeq header missing: dropping message\n");
-	DROP_MSG;
-    }
     assert(msg->callid && get_cseq(msg));
-
     unsigned int  h = hash(msg->callid->value, get_cseq(msg)->num_str);
     trans_bucket* bucket = get_trans_bucket(h);
     sip_trans* t = NULL;
@@ -756,30 +912,29 @@ void trans_layer::received_msg(sip_msg* msg)
 	else {
 
 	    string t_id;
-	    sip_trans* t = NULL;
-	    if(msg->u.request->method != sip_request::ACK){
+	    if(msg->u.request->method == sip_request::ACK){
 		
+		// non-2xx ACK??? drop!
+		break;
+	    }
+	    else {
 		// New transaction
 		t = bucket->add_trans(msg, TT_UAS);
 
 		t_id = int2hex(h).substr(5,string::npos) 
 		    + ":" + long2hex((unsigned long)t);
-	    }
 
-	    bucket->unlock();
-	    
-	    //  let's pass the request to
-	    //  the UA. 
-	    assert(ua);
-	    ua->handle_sip_request(t_id.c_str(),msg);
-
-	    if(!t){
-		DROP_MSG;
+		bucket->unlock();
+		
+		//  let's pass the request to
+		//  the UA. 
+		assert(ua);
+		ua->handle_sip_request(t_id.c_str(),msg);
+		
+		// forget the msg: it will be
+		// owned by the new transaction
+		return;
 	    }
-	    //Else:
-	    // forget the msg: it will be
-	    // owned by the new transaction
-	    return;
 	}
 	break;
     

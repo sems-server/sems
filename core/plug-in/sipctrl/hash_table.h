@@ -129,8 +129,12 @@ unsigned int hash(const cstring& ci, const cstring& cs);
 
 #define BRANCH_BUF_LEN 8
 
-// char branch[BRANCH_BUF_LEN]
-void compute_branch(char* branch, const cstring& callid, const cstring& cseq);
+void compute_branch(char* branch/*[BRANCH_BUF_LEN]*/, 
+		    const cstring& callid, const cstring& cseq);
+
+#define SL_TOTAG_LEN BRANCH_BUF_LEN
+
+void compute_sl_to_tag(char* to_tag/*[SL_TOTAG_LEN]*/, sip_msg* msg);
 
 void dumps_transactions();
 
