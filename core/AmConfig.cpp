@@ -63,6 +63,7 @@ string       AmConfig::Application             = "";
 AmConfig::ApplicationSelector AmConfig::AppSelect        = AmConfig::App_SPECIFIED;
 AmConfig::AppMappingVector AmConfig::AppMapping;
 bool         AmConfig::LogSessions             = false;
+bool         AmConfig::LogEvents               = false;
 int          AmConfig::UnhandledReplyLoglevel  = 0;
 
 unsigned int AmConfig::SessionLimit            = 0;
@@ -224,6 +225,7 @@ int AmConfig::readConfiguration()
   }
 
   LogSessions = cfg.getParameter("log_sessions")=="yes";
+  LogEvents = cfg.getParameter("log_events")=="yes";
 
   if (cfg.hasParameter("unhandled_reply_loglevel")) {
     string msglog = cfg.getParameter("unhandled_reply_loglevel");

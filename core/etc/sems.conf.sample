@@ -210,6 +210,16 @@ loglevel=2
 #
 # log_sessions=yes
 
+# optional parameter: log_events=[yes|no]
+# 
+# Default: no
+# 
+# If log_eventy=yes is set, generic DBG level log messages are 
+# generated for each event that is posted into an event queue.
+#
+# log_events=yes
+
+
 ############################################################
 # tuning
 
