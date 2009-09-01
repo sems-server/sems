@@ -108,6 +108,12 @@ void EchoDialog::onSessionStart(const AmSipRequest& req)
   setInOut(&echo,&echo);
 }
 
+void EchoDialog::onSessionStart(const AmSipReply& req)
+{
+  rtp_str.setPlayoutType(playout_type);
+  setInOut(&echo,&echo);
+}
+
 void EchoDialog::onBye(const AmSipRequest& req)
 {
   setStopped();
