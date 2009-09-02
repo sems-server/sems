@@ -43,4 +43,7 @@ DEF_ACTION_2P(SCUPlayCountRightAction);
 DEF_ACTION_2P(SCUPlayCountLeftAction);
 DEF_ACTION_1P(SCGetNewIdAction);
 DEF_ACTION_2P(SCUSpellAction);
+DEF_ACTION_2P(SCURandomAction);
+DEF_ACTION_1P(SCUSRandomAction);
+
 #endif
