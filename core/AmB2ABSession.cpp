@@ -306,10 +306,6 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
       dlg.remote_party = co_ev->remote_party;
       dlg.remote_uri   = co_ev->remote_uri;
 
-      // set outbound proxy as next hop 
-      if (!AmConfig::OutboundProxy.empty()) 
-	dlg.next_hop = AmConfig::OutboundProxy;
-			
       setCallgroup(co_ev->callgroup);
 			
       setNegotiateOnReply(true);

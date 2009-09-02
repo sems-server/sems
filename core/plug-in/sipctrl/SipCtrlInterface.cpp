@@ -324,18 +324,17 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 
     if(!req.next_hop.empty()){
 	string next_port;
- 	const char* c = req.next_hop.c_str();
-	while(*c != 0){
-	    if(*c == ':'){
-		next_port = string(c+1);
-		if(str2i(next_port,next_port_i)){
-		    ERROR("Could not convert port number in req.next_hop");
-		    ERROR("Using default outbound proxy");
-		    next_hop = SipCtrlInterfaceFactory::outbound_host;
-		    next_port_i = SipCtrlInterfaceFactory::outbound_port;
-		}
-		break;
-	    }
+	sip_uri parsed_uri;
+	if (parse_uri(&parsed_uri, (char *)req.next_hop.c_str(),
+		      req.next_hop.length()) < 0) {
+	    ERROR("invalid next hop URI\n");
+	    ERROR("Using default outbound proxy");
+	    next_hop = SipCtrlInterfaceFactory::outbound_host;
+	    next_port_i = SipCtrlInterfaceFactory::outbound_port;
+	} else {
+	    next_hop = c2stlstr(parsed_uri.host);
+	    if (parsed_uri.port) {
+		next_port_i= parsed_uri.port;	    }
 	    next_hop += *(c++);
 	}
     }
@@ -350,7 +349,7 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 			&msg->remote_ip) < 0){
 	// TODO: error handling
 	DBG("set_next_hop failed\n");
-	//delete msg;
+	delete msg;
 	return -1;
     }
 
