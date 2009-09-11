@@ -57,20 +57,22 @@ void AmAudioFileFormat::setSubtypeId(int subtype_id)  {
 amci_subtype_t*  AmAudioFileFormat::getSubtype()
 {
   if(!p_subtype && !name.empty()){
-
+    // get file format from file name
     amci_inoutfmt_t* iofmt = AmPlugIn::instance()->fileFormat(name.c_str());
     if(!iofmt){
       ERROR("AmAudioFileFormat::getSubtype: file format '%s' does not exist\n",
 	    name.c_str());
-      throw string("AmAudioFileFormat::getSubtype: file format '%s' does not exist\n");
+      return NULL;
     }
-    else {
-      p_subtype = AmPlugIn::instance()->subtype(iofmt,subtype);
-      if(!p_subtype)
-	ERROR("AmAudioFileFormat::getSubtype: subtype %i in format '%s' does not exist\n",
-	      subtype,iofmt->name);
-      subtype = p_subtype->type;
+
+    p_subtype = AmPlugIn::instance()->subtype(iofmt,subtype);
+    if(!p_subtype) {
+      ERROR("AmAudioFileFormat::getSubtype: subtype %i in format '%s' does not exist\n",
+	    subtype,iofmt->name);
+      return NULL;
     }
+ 
+    subtype = p_subtype->type;
   }
   return p_subtype;
 }

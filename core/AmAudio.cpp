@@ -359,11 +359,10 @@ int AmAudio::decode(unsigned int size)
   amci_codec_t* codec = fmt->getCodec();
   long h_codec = fmt->getHCodec();
 
-  //     if(!codec){
-  // 	ERROR("audio format set, but no codec has been loaded\n");
-  // 	abort();
-  // 	return -1;
-  //     }
+  if(!codec){
+    ERROR("audio format set, but no codec has been loaded\n");
+    return -1;
+  }
 
   if(codec->decode){
     s = (*codec->decode)(samples.back_buffer(),samples,s,
