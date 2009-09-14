@@ -30,7 +30,7 @@
 
 #define SEMS_VERSION "${SEMS_VERSION}"
 #define OS "${CMAKE_SYSTEM_NAME}"
-#define ARCH "${ARCH}"
+#define ARCH "${CMAKE_SYSTEM_PROCESSOR}"
 
 #define CONFIG_FILE         "/usr/local/etc/sems/sems.conf"
 #define MOD_CFG_PATH        "/usr/local/etc/sems/etc/"
