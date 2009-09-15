@@ -5,6 +5,5 @@ SIPRegistrarClient.cpp
 
 ADD_LIBRARY(registrar_client SHARED ${registrar_client_SRCS})
 SET_TARGET_PROPERTIES(registrar_client PROPERTIES OUTPUT_NAME "registrar_client")
-SET_TARGET_PROPERTIES(registrar_client PROPERTIES PREFIX "")
 TARGET_LINK_LIBRARIES(registrar_client ${CMAKE_DL_LIBS} pthread m)
 

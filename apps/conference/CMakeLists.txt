@@ -4,7 +4,6 @@ Conference.cpp
 
 ADD_LIBRARY(conference SHARED ${conference_SRCS})
 SET_TARGET_PROPERTIES(conference PROPERTIES OUTPUT_NAME "conference")
-SET_TARGET_PROPERTIES(conference PROPERTIES PREFIX "")
 TARGET_LINK_LIBRARIES(conference ${CMAKE_DL_LIBS} pthread m)
 
 IF(FLITE_FOUND AND ZRTP_FOUND)

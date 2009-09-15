@@ -22,6 +22,5 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_library(xmlrpcpp STATIC ${xmlrpcpp_SRCS})
 set_target_properties(xmlrpcpp PROPERTIES OUTPUT_NAME "xmlrpcpp")
-set_target_properties(xmlrpcpp PROPERTIES PREFIX "")
 target_link_libraries(xmlrpcpp ${CMAKE_DL_LIBS} pthread m)
 

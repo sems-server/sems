@@ -12,7 +12,6 @@ SET_PROPERTY(TARGET libbinrpc PROPERTY IMPORTED_LOCATION ./libbinrpc/src/binrpcc
 
 ADD_LIBRARY(binrpcctrl SHARED ${binrpcctrl_SRCS})
 SET_TARGET_PROPERTIES(binrpcctrl PROPERTIES OUTPUT_NAME "binrpcctrl")
-SET_TARGET_PROPERTIES(binrpcctrl PROPERTIES PREFIX "")
 TARGET_LINK_LIBRARIES(binrpcctrl ${CMAKE_DL_LIBS} pthread m libbinrpc)
 
 

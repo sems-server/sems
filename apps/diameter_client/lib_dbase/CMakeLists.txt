@@ -18,6 +18,5 @@ ENDIF(OPENSSL_FOUND)
 
 add_library(libdbase STATIC ${libdbase_SRCS})
 set_target_properties(libdbase PROPERTIES OUTPUT_NAME "libdbase")
-set_target_properties(libdbase PROPERTIES PREFIX "")
 target_link_libraries(libdbase ${CMAKE_DL_LIBS} pthread m)
 
