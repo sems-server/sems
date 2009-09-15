@@ -32,14 +32,14 @@
 #define OS "${CMAKE_SYSTEM_NAME}"
 #define ARCH "${CMAKE_SYSTEM_PROCESSOR}"
 
-#define CONFIG_FILE         "/usr/local/etc/sems/sems.conf"
-#define MOD_CFG_PATH        "/usr/local/etc/sems/etc/"
+#define CONFIG_FILE         "${SEMS_CFG_PREFIX}/etc/sems/sems.conf"
+#define MOD_CFG_PATH        "${SEMS_CFG_PREFIX}/etc/sems/etc/"
 #define SER_FIFO            "/tmp/ser_fifo"
 #define FIFO_NAME           "/tmp/am_fifo"
 #define SEND_METHOD         "unix"
-#define ANNOUNCE_PATH       "/usr/local/lib/sems/audio"
+#define ANNOUNCE_PATH       "${SEMS_AUDIO_PREFIX}/sems/audio"
 #define ANNOUNCE_FILE       "default.wav"
-#define PLUG_IN_PATH        "/usr/local/lib/sems/plug-in"
+#define PLUG_IN_PATH        "${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in"
 #define DEFAULT_ANNOUNCE    "default.wav"
 #define DEFAULT_RECORD_TIME 30
 #define DEFAULT_DAEMON_MODE 1

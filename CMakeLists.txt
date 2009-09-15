@@ -28,6 +28,27 @@ OPTION(SEMS_USE_MONITORING    "Build with monitoring support" OFF)
 OPTION(SEMS_USE_IPV6          "Build with IPv6 support" OFF)
 OPTION(MAX_RTP_SESSIONS:int   "How many rtp sessions SEMS will handle simultaneously? (default 2048)" 2048)
 
+OPTION(SEMS_CFG_PREFIX:string  "none" /usr/local)
+OPTION(SEMS_AUDIO_PREFIX:string "none" /usr/local)
+OPTION(SEMS_EXEC_PREFIX:string "none" /usr/local)
+OPTION(SEMS_LIBDIR:string "none" lib)
+
+IF (NOT SEMS_CFG_PREFIX)
+	SET(SEMS_CFG_PREFIX "/usr/local")
+ENDIF (NOT SEMS_CFG_PREFIX)
+
+IF (NOT SEMS_AUDIO_PREFIX)
+	SET(SEMS_AUDIO_PREFIX "/usr/local")
+ENDIF (NOT SEMS_AUDIO_PREFIX)
+
+IF (NOT SEMS_EXEC_PREFIX)
+	SET(SEMS_EXEC_PREFIX "/usr/local")
+ENDIF (NOT SEMS_EXEC_PREFIX)
+
+IF (NOT SEMS_LIBDIR)
+	SET(SEMS_LIBDIR "lib")
+ENDIF (NOT SEMS_LIBDIR)
+
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 # compile with spandsp DTMF detection? see soft-switch.org
