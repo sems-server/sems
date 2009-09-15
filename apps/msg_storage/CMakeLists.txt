@@ -6,13 +6,7 @@ MsgStorage.cpp
 #spooldir: 
 #	mkdir -p $(DESTDIR)/var/spool/voicebox
 
-IF(CMAKE_COMPILER_IS_GNUCC)
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMOD_NAME=\"msg_storage\"")
-ENDIF(CMAKE_COMPILER_IS_GNUCC)
-
-IF(CMAKE_COMPILER_IS_GNUCXX)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMOD_NAME='\"msg_storage\"'")
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+ADD_DEFINITIONS(-DMOD_NAME="msg_storage")
 
 ADD_LIBRARY(msg_storage SHARED ${msg_storage_SRCS})
 SET_TARGET_PROPERTIES(msg_storage PROPERTIES OUTPUT_NAME "msg_storage")
