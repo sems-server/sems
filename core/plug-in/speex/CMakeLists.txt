@@ -2,6 +2,8 @@ set (speex_SRCS
  speex.c
 )
 
+INCLUDE_DIRECTORIES(${SPEEX_INCLUDE_DIR})
+
 # module_cflags  = -ansi # -DNOFPU
 ADD_LIBRARY(speex SHARED ${speex_SRCS})
 SET_TARGET_PROPERTIES(speex PROPERTIES OUTPUT_NAME "speex")
