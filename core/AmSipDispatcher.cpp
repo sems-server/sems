@@ -92,7 +92,15 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
   else if(req.method == "OPTIONS"){
       
       // Basic OPTIONS support
-      AmSipDialog::reply_error(req,200,"OK");
+    if (!AmConfig::OptionsSessionLimit || 
+	(AmSession::getSessionNum() < AmConfig::OptionsSessionLimit)) {
+      AmSipDialog::reply_error(req, 200, "OK");
+    } else {
+      // return error code if near to overload
+      AmSipDialog::reply_error(req,
+			       AmConfig::OptionsSessionLimitErrCode, 
+			       AmConfig::OptionsSessionLimitErrReason);
+    }
       return;
 
   } else if( (req.method == "CANCEL") || 

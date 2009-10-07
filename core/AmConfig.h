@@ -110,6 +110,10 @@ struct AmConfig
   static unsigned int SessionLimitErrCode;
   static string SessionLimitErrReason;
 
+  static unsigned int OptionsSessionLimit;
+  static unsigned int OptionsSessionLimitErrCode;
+  static string OptionsSessionLimitErrReason;
+
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
   static unsigned int DeadRtpTime;
 

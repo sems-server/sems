@@ -70,6 +70,10 @@ unsigned int AmConfig::SessionLimit            = 0;
 unsigned int AmConfig::SessionLimitErrCode     = 503;
 string       AmConfig::SessionLimitErrReason   = "Server overload";
 
+unsigned int AmConfig::OptionsSessionLimit            = 0;
+unsigned int AmConfig::OptionsSessionLimitErrCode     = 503;
+string       AmConfig::OptionsSessionLimitErrReason   = "Server overload";
+
 vector <string> AmConfig::CodecOrder;
 
 Dtmf::InbandDetectorType 
@@ -365,6 +369,18 @@ int AmConfig::readConfiguration()
 	ERROR("invalid session_limit specified.\n");
       }
       SessionLimitErrReason = limit[2];
+    }
+  }
+
+  if(cfg.hasParameter("options_session_limit")){ 
+    vector<string> limit = explode(cfg.getParameter("options_session_limit"), ";");
+    if (limit.size() != 3) {
+      ERROR("invalid options_session_limit specified.\n");
+    } else {
+      if (str2i(limit[0], OptionsSessionLimit) || str2i(limit[1], OptionsSessionLimitErrCode)) {
+	ERROR("invalid options_session_limit specified.\n");
+      }
+      OptionsSessionLimitErrReason = limit[2];
     }
   }
 

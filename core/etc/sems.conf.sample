@@ -244,6 +244,18 @@ loglevel=2
 # Example:
 #  session_limit="1000;503;Server overload"
 
+# optional parameter: options_session_limit=<limit>;<err code>;<err reason>
+# 
+# - this sets a custom response to OPTIONS, if the session count reaches
+#   a certain limit. This way health monitor could raise an alarm to syste
+#   administrator. 
+# 
+# Default: 0 (None)
+#
+# Example:
+#  options_session_limit="900;503;Warning, server soon overloaded"
+
+
 # optional parameter: dead_rtp_time=<unsigned int>
 #
 # - if != 0, after this time (in seconds) of no RTP
