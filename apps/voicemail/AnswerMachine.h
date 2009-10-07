@@ -41,8 +41,10 @@
 
 #include <string>
 #include <map>
+#include <vector>
 using std::string;
 using std::map;
+using std::vector;
 
 // defaults for config options
 #define SMTP_ADDRESS_IP     "localhost"
@@ -82,6 +84,8 @@ public:
   static AmDynInvokeFactory* MessageStorage;
   static bool SaveEmptyMsg;
   static bool TryPersonalGreeting;
+
+  static vector<string> MailHeaderVariables;
 
   /** After server start, IP of the SMTP server. */
   static string SmtpServerAddress;
@@ -132,6 +136,7 @@ class AnswerMachineDialog : public AmSession
 		      const string& did,
 		      FILE* announce_fp, 
 		      int vm_mode,
+		      const EmailTmplDict& template_variables,
 		      const EmailTemplate* tmpl);
 
     ~AnswerMachineDialog();

@@ -82,6 +82,9 @@ AmDynInvokeFactory* AnswerMachineFactory::MessageStorage=0;
 bool AnswerMachineFactory::SaveEmptyMsg = true;
 bool AnswerMachineFactory::TryPersonalGreeting = false;
 
+vector<string> AnswerMachineFactory::MailHeaderVariables;
+
+
 string       AnswerMachineFactory::SmtpServerAddress       = SMTP_ADDRESS_IP;
 unsigned int AnswerMachineFactory::SmtpServerPort          = SMTP_PORT;
 
@@ -469,6 +472,16 @@ int AnswerMachineFactory::onLoad()
   DBG("voicemail will %stry to find a personal greeting.\n", 
       TryPersonalGreeting?"":"not ");
 
+  MailHeaderVariables = explode(cfg.getParameter("mail_header_vars"), ";");
+  if (MailHeaderVariables.size()) {
+    DBG("variables that will be substituted from " PARAM_HDR " header:\n");
+    for (vector<string>::iterator it=
+	   MailHeaderVariables.begin(); it != MailHeaderVariables.end(); it++) {
+      DBG("         %s\n", it->c_str());
+    }
+  }
+    
+
   DBG("Starting SMTP daemon\n");
   AmMailDeamon::instance()->start();
   
@@ -495,6 +508,8 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   string typ;
   string uid; // user ID
   string did; // domain ID
+
+  EmailTmplDict template_variables;
 
   int vm_mode = MODE_VOICEMAIL; 
 
@@ -641,11 +656,18 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   if(announce_file.empty())
     throw AmSession::Exception(500,"voicemail: no greeting file found");
 
+  // a little inefficient this way - but get_header_keyvalue supports escaping
+  for (vector<string>::iterator it=
+	 MailHeaderVariables.begin(); it != MailHeaderVariables.end(); it++) {
+    template_variables[*it] = get_header_keyvalue(iptel_app_param, *it);
+  }
+
   // VBOX mode does not need email template
   if ((vm_mode == MODE_BOX) || (vm_mode == MODE_ANN))
     return new AnswerMachineDialog(user, sender, domain,
 				   email, announce_file, uid, did, 
-				   greeting_fp, vm_mode, NULL);
+				   greeting_fp, vm_mode, 
+				   template_variables, NULL);
 
   if(email.empty())
     throw AmSession::Exception(404,"missing email address");
@@ -676,7 +698,8 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
 				 email, announce_file, 
 				 uid, did,
 				 greeting_fp,
-				 vm_mode, &tmpl_it->second);
+				 vm_mode, template_variables,
+				 &tmpl_it->second);
 }
 
 
@@ -689,10 +712,13 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
 					 const string& did,
 					 FILE* announce_fp, 
 					 int vm_mode,
+					 const EmailTmplDict& template_variables,
 					 const EmailTemplate* tmpl) 
   : announce_file(announce_file), announce_fp(announce_fp),
     tmpl(tmpl), playlist(this), 
-    status(0), vm_mode(vm_mode)
+  status(0), vm_mode(vm_mode),
+  email_dict(template_variables)
+
 {
   email_dict["user"] = user;
   email_dict["sender"] = sender;
