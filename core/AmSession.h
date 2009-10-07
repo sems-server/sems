@@ -328,10 +328,10 @@ public:
    */
   static string getNewId();
 
-    /**
-     * Gets the number of running sessions
-     */
-    static unsigned int getSessionNum();
+  /**
+   * Gets the number of running sessions
+   */
+  static unsigned int getSessionNum();
 
   /**
    * Entry point for DTMF events
@@ -357,6 +357,12 @@ public:
    * has been received for the session.
    */
   virtual void onInvite(const AmSipRequest& req);
+
+  /**
+   * onOutgoingInvite will be called if an INVITE 
+   * is sent in the session.
+   */
+  virtual void onOutgoingInvite(const string& headers) { }
 
   /**
    * onCancel will be called if a CANCEL for a running

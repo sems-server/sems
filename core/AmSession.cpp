@@ -823,6 +823,8 @@ void AmSession::sendReinvite(bool updateSDP, const string& headers)
 
 int AmSession::sendInvite(const string& headers) 
 {
+  onOutgoingInvite(headers);
+
   // Set local IP first, so that IP is set when 
   // getLocalPort/setLocalPort may bind.
   rtp_str.setLocalIP(AmConfig::LocalIP);
