@@ -165,16 +165,60 @@ EXEC_ACTION_START(SCMkDirRecursiveAction) {
   }
 } EXEC_ACTION_END;
 
+// copies ifp to ofp, blockwise
+void filecopy(FILE* ifp, FILE* ofp) {
+  size_t nread;
+  char buf[1024];
+  
+  rewind(ifp);
+  while (!feof(ifp)) {
+    nread = fread(buf, 1, 1024, ifp);
+    if (fwrite(buf, 1, nread, ofp) != nread)
+      break;
+  }
+}
+
 CONST_ACTION_2P(SCRenameAction, ',', true);
 EXEC_ACTION_START(SCRenameAction) {
   string src = resolveVars(par1, sess, sc_sess, event_params);
   string dst = resolveVars(par2, sess, sc_sess, event_params);
 
-  if (!rename(src.c_str(), dst.c_str())) {
+  int rres = rename(src.c_str(), dst.c_str());
+  if (!rres) {
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
+  } else if (rres == EXDEV) {
+    FILE* f1 = fopen(src.c_str(), "r");
+    if (NULL == f1) {
+      WARN("opening source file '%s' for copying failed: '%s'\n", 
+	   src.c_str(), strerror(errno));
+      sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+      return false;
+    }
+
+    FILE* f2 = fopen(dst.c_str(), "w");
+    if (NULL == f2) {
+      WARN("opening destination file '%s' for copying failed: '%s'\n", 
+	   dst.c_str(), strerror(errno));
+      sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+      return false;
+    }
+
+    filecopy(f1, f2);
+    
+    fclose(f1);
+    fclose(f2);
+    
+    if (unlink(src.c_str())) {
+      WARN("unlinking source file '%s' for copying failed: '%s'\n", 
+	   src.c_str(), strerror(errno));
+      sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
+      return false;
+    } 
+
+    sc_sess->SET_ERRNO(DSM_ERRNO_OK);
   } else {
-    DBG("renaming '%s' to '%s' failed: '%s'\n", 
-	src.c_str(), dst.c_str(), strerror(errno));
+    WARN("renaming '%s' to '%s' failed: '%s'\n", 
+	 src.c_str(), dst.c_str(), strerror(errno));
     sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
   }
 
@@ -188,7 +232,7 @@ EXEC_ACTION_START(SCUnlinkAction) {
   if (!unlink(fname.c_str())) {
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);    
   } else {
-    DBG("unlink '%s' failed: '%s'\n", 
+    WARN("unlink '%s' failed: '%s'\n", 
 	fname.c_str(), strerror(errno));
     sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
   }
