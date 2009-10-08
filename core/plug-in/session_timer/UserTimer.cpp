@@ -69,11 +69,6 @@ bool operator < (const AmTimer& l, const AmTimer& r)
   return timercmp(&l.time,&r.time,<);
 }
 
-bool operator == (const AmTimer& l, const AmTimer& r)
-{
-  return l.id == r.id;
-}
-
 void UserTimer::checkTimers() {
   timers_mut.lock();
   if(timers.empty()){
@@ -84,7 +79,7 @@ void UserTimer::checkTimers() {
   struct timeval cur_time;
   gettimeofday(&cur_time,NULL);
   
-  std::set<AmTimer>::iterator it = timers.begin();
+  std::multiset<AmTimer>::iterator it = timers.begin();
   
   while( timercmp(&it->time,&cur_time,<) 
 	 || timercmp(&it->time,&cur_time,==) ){
@@ -139,7 +134,7 @@ void UserTimer::removeTimer(int id, const string& session_id) {
 void UserTimer::unsafe_removeTimer(int id, const string& session_id) 
 {
   // erase old timer if exists
-  std::set<AmTimer>::iterator it = timers.begin(); 
+  std::multiset<AmTimer>::iterator it = timers.begin(); 
   while (it != timers.end()) {
     if ((it->id == id)&&(it->session_id == session_id)) {
       timers.erase(it);
@@ -152,10 +147,10 @@ void UserTimer::unsafe_removeTimer(int id, const string& session_id)
 void UserTimer::removeTimers(const string& session_id) {
   //  DBG("removing timers for <%s>\n", session_id.c_str());
   timers_mut.lock();
-  std::set<AmTimer>::iterator it = timers.begin(); 
+  std::multiset<AmTimer>::iterator it = timers.begin(); 
   while (it != timers.end()) {
     if (it->session_id == session_id) {
-      std::set<AmTimer>::iterator d_it = it;
+      std::multiset<AmTimer>::iterator d_it = it;
       it++;
       timers.erase(d_it);
       //  DBG("    o timer removed.\n");
@@ -169,10 +164,10 @@ void UserTimer::removeTimers(const string& session_id) {
 void UserTimer::removeUserTimers(const string& session_id) {
   //  DBG("removing User timers for <%s>\n", session_id.c_str());
   timers_mut.lock();
-  std::set<AmTimer>::iterator it = timers.begin(); 
+  std::multiset<AmTimer>::iterator it = timers.begin(); 
   while (it != timers.end()) {
     if ((it->id > 0)&&(it->session_id == session_id)) {
-      std::set<AmTimer>::iterator d_it = it;
+      std::multiset<AmTimer>::iterator d_it = it;
       it++;
       timers.erase(d_it);
       //  DBG("    o timer removed.\n");

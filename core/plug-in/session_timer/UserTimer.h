@@ -50,7 +50,6 @@ struct AmTimer
 
 
 bool operator < (const AmTimer& l, const AmTimer& r);
-bool operator == (const AmTimer& l, const AmTimer& r);
 
 /**
  * \brief user timer class.
@@ -65,7 +64,7 @@ class UserTimer: public AmDynInvoke
 {
   static UserTimer* _instance;
 
-  std::set<AmTimer> timers;
+  std::multiset<AmTimer> timers;
   AmMutex         timers_mut;
 
   void unsafe_removeTimer(int id, const string& session_id);
