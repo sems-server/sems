@@ -3,6 +3,5 @@ ModMonitoring.cpp
 )
 
 ADD_LIBRARY(mod_monitoring SHARED ${mod_monitoring_SRCS})
-SET_TARGET_PROPERTIES(mod_monitoring PROPERTIES OUTPUT_NAME "mod_monitoring")
-TARGET_LINK_LIBRARIES(mod_monitoring ${CMAKE_DL_LIBS} pthread m)
+TARGET_LINK_LIBRARIES(mod_monitoring ${CMAKE_DL_LIBS})
 

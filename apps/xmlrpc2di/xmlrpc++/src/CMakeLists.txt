@@ -13,14 +13,11 @@ XmlRpcUtil.cpp
 XmlRpcValue.cpp
 )
 
-SET(CMAKE_VERBOSE_MAKEFILE ON)
-
 # Add your system-dependent network libs here. These are
 # only used to build the tests (your application will need them too).
 # Linux: none
 # Solaris: -lsocket -lnsl
 
-add_library(xmlrpcpp STATIC ${xmlrpcpp_SRCS})
-set_target_properties(xmlrpcpp PROPERTIES OUTPUT_NAME "xmlrpcpp")
-target_link_libraries(xmlrpcpp ${CMAKE_DL_LIBS} pthread m)
+ADD_LIBRARY(xmlrpcpp STATIC ${xmlrpcpp_SRCS})
+TARGET_LINK_LIBRARIES(xmlrpcpp ${CMAKE_DL_LIBS})
 

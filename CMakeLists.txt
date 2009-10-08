@@ -28,26 +28,29 @@ OPTION(SEMS_USE_MONITORING    "Build with monitoring support" OFF)
 OPTION(SEMS_USE_IPV6          "Build with IPv6 support" OFF)
 OPTION(MAX_RTP_SESSIONS:int   "How many rtp sessions SEMS will handle simultaneously? (default 2048)" 2048)
 
-OPTION(SEMS_CFG_PREFIX:string  "none" /usr/local)
-OPTION(SEMS_AUDIO_PREFIX:string "none" /usr/local)
-OPTION(SEMS_EXEC_PREFIX:string "none" /usr/local)
-OPTION(SEMS_LIBDIR:string "none" lib)
+
+# add -lm and -lpthread to all targets
+SET(CMAKE_DL_LIBS ${CMAKE_DL_LIBS} m pthread)
 
 IF (NOT SEMS_CFG_PREFIX)
 	SET(SEMS_CFG_PREFIX "/usr/local")
 ENDIF (NOT SEMS_CFG_PREFIX)
+MESSAGE(STATUS "SEMS cfg prefix was set to: ${SEMS_CFG_PREFIX}")
 
 IF (NOT SEMS_AUDIO_PREFIX)
-	SET(SEMS_AUDIO_PREFIX "/usr/local")
+	SET(SEMS_AUDIO_PREFIX "/usr/local/lib")
 ENDIF (NOT SEMS_AUDIO_PREFIX)
+MESSAGE(STATUS "SEMS audio prefix was set to: ${SEMS_AUDIO_PREFIX}")
 
 IF (NOT SEMS_EXEC_PREFIX)
 	SET(SEMS_EXEC_PREFIX "/usr/local")
 ENDIF (NOT SEMS_EXEC_PREFIX)
+MESSAGE(STATUS "SEMS exec prefix was set to: ${SEMS_EXEC_PREFIX}")
 
 IF (NOT SEMS_LIBDIR)
 	SET(SEMS_LIBDIR "lib")
 ENDIF (NOT SEMS_LIBDIR)
+MESSAGE(STATUS "SEMS libdir was set to: ${SEMS_LIBDIR}")
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -149,10 +152,10 @@ ENDIF (GSM_INCLUDE_DIR AND GSM_LIBRARIES)
 
 # Let's try to find SPEEX library and header files
 FIND_LIBRARY(SPEEX_LIBRARIES NAMES speex)
-FIND_PATH(SPEEX_INCLUDE_DIR speex.h)
+FIND_PATH(SPEEX_INCLUDE_DIR speex/speex.h)
 IF(SPEEX_INCLUDE_DIR AND SPEEX_LIBRARIES)
 	SET(SPEEX_FOUND TRUE)
-	MESSAGE(STATUS "Found speex includes: ${SPEEX_INCLUDE_DIR}/speex.h")
+	MESSAGE(STATUS "Found speex includes: ${SPEEX_INCLUDE_DIR}/speex/speex.h")
 	MESSAGE(STATUS "Found speex library: ${SPEEX_LIBRARIES}")
 	MESSAGE(STATUS "Using speex: YES")
 ELSE(SPEEX_INCLUDE_DIR AND SPEEX_LIBRARIES)

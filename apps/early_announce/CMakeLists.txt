@@ -3,8 +3,7 @@ EarlyAnnounce.cpp
 )
 
 ADD_LIBRARY(early_announce SHARED ${early_announce_SRCS})
-SET_TARGET_PROPERTIES(early_announce PROPERTIES OUTPUT_NAME "early_announce")
-TARGET_LINK_LIBRARIES(early_announce ${CMAKE_DL_LIBS} pthread m)
+TARGET_LINK_LIBRARIES(early_announce ${CMAKE_DL_LIBS})
 
 IF(MYSQLPP_FOUND)
 	INCLUDE_DIRECTORIES(/usr/include/mysql)

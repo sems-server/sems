@@ -3,6 +3,5 @@ ModUri.cpp
 )
 
 ADD_LIBRARY(mod_uri SHARED ${mod_uri_SRCS})
-SET_TARGET_PROPERTIES(mod_uri PROPERTIES OUTPUT_NAME "mod_uri")
-TARGET_LINK_LIBRARIES(mod_uri ${CMAKE_DL_LIBS} pthread m)
+TARGET_LINK_LIBRARIES(mod_uri ${CMAKE_DL_LIBS})
 

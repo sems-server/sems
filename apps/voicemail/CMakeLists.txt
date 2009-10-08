@@ -6,8 +6,7 @@ EmailTemplate.cpp
 )
 
 ADD_LIBRARY(voicemail SHARED ${voicemail_SRCS})
-SET_TARGET_PROPERTIES(voicemail PROPERTIES OUTPUT_NAME "voicemail")
-TARGET_LINK_LIBRARIES(voicemail ${CMAKE_DL_LIBS} pthread m)
+TARGET_LINK_LIBRARIES(voicemail ${CMAKE_DL_LIBS})
 
 # Currently cannot be build with mysql++
 #IF(MYSQLPP_FOUND)

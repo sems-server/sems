@@ -12,8 +12,6 @@ time.c
 value.c
 )
 
-SET(CMAKE_VERBOSE_MAKEFILE ON)
-
 ###
 # Used flags
 #
