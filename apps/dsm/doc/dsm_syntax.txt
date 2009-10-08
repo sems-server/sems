@@ -95,6 +95,8 @@ actions:
 
  setTimer(timer_id, timeout)
    e.g. setTimer(1, $timeout)
+ removeTimer(timer_id)
+ removeTimers()
 
   DI(factory, function [, params...])
   e.g. DI(factory, function, $var_param, (int)int_param, "$str param", @select_par, ...)

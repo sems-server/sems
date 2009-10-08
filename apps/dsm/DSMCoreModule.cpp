@@ -74,6 +74,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("logVars", SCLogVarsAction);
 
   DEF_CMD("setTimer", SCSetTimerAction);
+  DEF_CMD("removeTimer", SCRemoveTimerAction);
+  DEF_CMD("removeTimers", SCRemoveTimersAction);
 
   DEF_CMD("setPrompts", SCSetPromptsAction);
 
@@ -445,6 +447,61 @@ EXEC_ACTION_START(SCSetTimerAction) {
   user_timer->invoke("setTimer", di_args, ret);
 
 } EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(SCRemoveTimerAction) {
+
+  unsigned int timerid;
+  if (str2i(resolveVars(arg, sess, sc_sess, event_params), timerid)) {
+    ERROR("timer id '%s' not decipherable\n", 
+	  resolveVars(arg, sess, sc_sess, event_params).c_str());
+    return false;
+  }
+
+  DBG("removing timer %u\n", timerid);
+  AmDynInvokeFactory* user_timer_fact = 
+    AmPlugIn::instance()->getFactory4Di("user_timer");
+
+  if(!user_timer_fact) {
+    ERROR("load sess_timer module for timers.\n");
+    return false;
+  }
+  AmDynInvoke* user_timer = user_timer_fact->getInstance();
+  if(!user_timer) {
+    ERROR("load sess_timer module for timers.\n");
+    return false;
+  }
+
+  AmArg di_args,ret;
+  di_args.push((int)timerid);
+  di_args.push(sess->getLocalTag().c_str());
+  user_timer->invoke("removeTimer", di_args, ret);
+
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCRemoveTimersAction) {
+
+
+  DBG("removing timers for session %s\n", sess->getLocalTag().c_str());
+  AmDynInvokeFactory* user_timer_fact = 
+    AmPlugIn::instance()->getFactory4Di("user_timer");
+
+  if(!user_timer_fact) {
+    ERROR("load sess_timer module for timers.\n");
+    return false;
+  }
+  AmDynInvoke* user_timer = user_timer_fact->getInstance();
+  if(!user_timer) {
+    ERROR("load sess_timer module for timers.\n");
+    return false;
+  }
+
+  AmArg di_args,ret;
+  di_args.push(sess->getLocalTag().c_str());
+  user_timer->invoke("removeUserTimers", di_args, ret);
+
+} EXEC_ACTION_END;
+
 
 
 // TODO: replace with real expression matching 

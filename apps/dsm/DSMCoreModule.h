@@ -77,6 +77,8 @@ DEF_ACTION_2P(SCSubStrAction);
 DEF_ACTION_1P(SCIncAction);
 DEF_ACTION_1P(SCClearAction);
 DEF_ACTION_2P(SCSetTimerAction);
+DEF_ACTION_1P(SCRemoveTimerAction);
+DEF_ACTION_1P(SCRemoveTimersAction);
 DEF_ACTION_2P(SCLogAction);
 DEF_ACTION_1P(SCLogVarsAction);
 DEF_ACTION_2P(SCGetVarAction);
