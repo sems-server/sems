@@ -1,0 +1,5 @@
+# A place for common parts of SEMS DSM script rules
+
+INSTALL(
+	FILES ${sems_dsm_script_names} DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/dsm/
+)

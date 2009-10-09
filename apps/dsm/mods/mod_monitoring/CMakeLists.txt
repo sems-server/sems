@@ -2,6 +2,6 @@ set (mod_monitoring_SRCS
 ModMonitoring.cpp
 )
 
-ADD_LIBRARY(mod_monitoring SHARED ${mod_monitoring_SRCS})
-TARGET_LINK_LIBRARIES(mod_monitoring ${CMAKE_DL_LIBS})
+SET(sems_dsm_module_name mod_monitoring)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)
 

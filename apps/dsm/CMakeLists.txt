@@ -13,6 +13,7 @@ DSMStateEngine.cpp
 # needed for DSM sub-modules
 INCLUDE_DIRECTORIES (.)
 
+ADD_SUBDIRECTORY (lib)
 ADD_SUBDIRECTORY (mods)
 
 SET(sems_module_name dsm)

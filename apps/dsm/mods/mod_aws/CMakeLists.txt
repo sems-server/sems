@@ -2,6 +2,6 @@ set (mod_aws_SRCS
 ModAws.cpp
 )
 
-ADD_LIBRARY(mod_aws SHARED ${mod_aws_SRCS})
-TARGET_LINK_LIBRARIES(mod_aws ${CMAKE_DL_LIBS} aws)
+SET(sems_dsm_module_name mod_aws)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/dsm.lib.rules.txt)
 

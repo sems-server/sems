@@ -1,0 +1,18 @@
+# A place for common parts of SEMS DSM modules rules
+#
+# We adding sems_dsm_ prefix to the internal name of the library to avoid nasty
+# issue then this name is equals to external library, our module links to.
+# E.g. the issue, then speex module should be linked to -lspeex
+
+ADD_LIBRARY(sems_dsm_${sems_dsm_module_name} SHARED ${${sems_dsm_module_name}_SRCS})
+
+# all modules should be linked against ${CMAKE_DL_LIBS} at least
+# and with additional ${sems_dsm_module_libs} if they exists
+TARGET_LINK_LIBRARIES(sems_dsm_${sems_dsm_module_name} ${CMAKE_DL_LIBS} ${sems_dsm_module_libs})
+
+SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES OUTPUT_NAME ${sems_dsm_module_name})
+
+INSTALL(
+	TARGETS sems_dsm_${sems_dsm_module_name}
+	LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/dsm/
+)
