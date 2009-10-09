@@ -48,6 +48,11 @@ SET (sems_SRCS
  sems.cpp
 )
 
+set (audio_files
+beep.wav
+default_en.wav
+)
+
 INCLUDE_DIRECTORIES (ampi)
 INCLUDE_DIRECTORIES (amci)
 
@@ -79,3 +84,5 @@ ADD_SUBDIRECTORY(plug-in)
 INSTALL(TARGETS sems
 	RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin
 	)
+
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)

@@ -5,6 +5,11 @@ AnswerMachine.cpp
 EmailTemplate.cpp
 )
 
+set (audio_files
+beep.wav
+default_en.wav
+)
+
 # Currently cannot be build with mysql++
 #IF(MYSQLPP_FOUND)
 #	IF(CMAKE_COMPILER_IS_GNUCC)
@@ -18,3 +23,4 @@ EmailTemplate.cpp
 
 SET(sems_module_name voicemail)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)

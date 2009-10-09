@@ -2,6 +2,11 @@ set (conference_SRCS
 Conference.cpp
 )
 
+set (audio_files
+beep.wav
+first_participant.wav
+)
+
 IF(FLITE_FOUND AND ZRTP_FOUND)
 	INCLUDE_DIRECTORIES(${FLITE_INCLUDE_DIR}/flite)
 	ADD_DEFINITIONS(-DWITH_SAS_TTS)
@@ -17,3 +22,4 @@ ENDIF(MYSQLPP_FOUND)
 
 SET(sems_module_name conference)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
