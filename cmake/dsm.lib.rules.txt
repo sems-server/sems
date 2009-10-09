@@ -1,5 +1,8 @@
 # A place for common parts of SEMS DSM modules rules
-#
+
+# We must add base apps/dsm directory as INCLUDEDIR
+INCLUDE_DIRECTORIES (../..)
+
 # We adding sems_dsm_ prefix to the internal name of the library to avoid nasty
 # issue then this name is equals to external library, our module links to.
 # E.g. the issue, then speex module should be linked to -lspeex
