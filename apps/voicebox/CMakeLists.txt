@@ -3,6 +3,6 @@ Voicebox.cpp
 VoiceboxDialog.cpp
 )
 
-ADD_LIBRARY(voicebox SHARED ${voicebox_SRCS})
-TARGET_LINK_LIBRARIES(voicebox ${CMAKE_DL_LIBS})
+SET(sems_module_name voicebox)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

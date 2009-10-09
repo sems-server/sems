@@ -2,6 +2,6 @@ set (announce_transfer_SRCS
 AnnounceTransfer.cpp
 )
 
-ADD_LIBRARY(announce_transfer SHARED ${announce_transfer_SRCS})
-TARGET_LINK_LIBRARIES(announce_transfer ${CMAKE_DL_LIBS})
+SET(sems_module_name announce_transfer)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

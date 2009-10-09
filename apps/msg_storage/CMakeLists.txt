@@ -6,8 +6,6 @@ MsgStorage.cpp
 #spooldir: 
 #	mkdir -p $(DESTDIR)/var/spool/voicebox
 
-ADD_DEFINITIONS(-DMOD_NAME="msg_storage")
-
-ADD_LIBRARY(msg_storage SHARED ${msg_storage_SRCS})
-TARGET_LINK_LIBRARIES(msg_storage ${CMAKE_DL_LIBS})
+SET(sems_module_name msg_storage)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

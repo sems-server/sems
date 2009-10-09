@@ -1,7 +1,4 @@
-set (stats_SRCS
-Statistics.cpp
-StatsUDPServer.cpp
-)
+# executable
 
 set (sems_stats_SRCS
 query_stats.cxx
@@ -10,9 +7,16 @@ query_stats.cxx
 ADD_EXECUTABLE (sems-stats ${sems_stats_SRCS})
 TARGET_LINK_LIBRARIES(sems-stats ${CMAKE_DL_LIBS} stdc++)
 
-ADD_LIBRARY(stats SHARED ${stats_SRCS})
-TARGET_LINK_LIBRARIES(stats ${CMAKE_DL_LIBS})
-
 INSTALL(TARGETS sems-stats
-	RUNTIME DESTINATION sbin
+	RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin
 	)
+
+# library
+set (stats_SRCS
+Statistics.cpp
+StatsUDPServer.cpp
+)
+
+SET(sems_module_name stats)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+

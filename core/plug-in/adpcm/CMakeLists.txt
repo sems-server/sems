@@ -7,6 +7,6 @@ g723_40.c
 g72x.c
 )
 
-ADD_LIBRARY(adpcm SHARED ${adpcm_SRCS})
-TARGET_LINK_LIBRARIES(adpcm ${CMAKE_DL_LIBS})
+SET(sems_module_name adpcm)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

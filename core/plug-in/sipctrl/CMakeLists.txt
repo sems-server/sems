@@ -20,10 +20,9 @@ set (sipctrl_SRCS
   wheeltimer.cpp
 )
 
-ADD_LIBRARY(sipctrl SHARED ${sipctrl_SRCS})
-TARGET_LINK_LIBRARIES(sipctrl ${CMAKE_DL_LIBS})
-
 IF(SEMS_USE_IPV6)
 	ADD_DEFINITIONS(-DSUPPORT_IPV6)
 ENDIF(SEMS_USE_IPV6)
 
+SET(sems_module_name sipctrl)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

@@ -10,8 +10,8 @@ INCLUDE_DIRECTORIES (libbinrpc/include)
 
 SET_PROPERTY(TARGET libbinrpc PROPERTY IMPORTED_LOCATION ./libbinrpc/src/binrpcctrl.a)
 
-ADD_LIBRARY(binrpcctrl SHARED ${binrpcctrl_SRCS})
-TARGET_LINK_LIBRARIES(binrpcctrl ${CMAKE_DL_LIBS} libbinrpc)
-
+SET(sems_module_name binrpcctrl)
+SET(sems_module_libs libbinrpc)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 
 

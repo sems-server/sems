@@ -3,6 +3,5 @@ ContactInfo.cpp
 SIPRegistrarClient.cpp
 )
 
-ADD_LIBRARY(registrar_client SHARED ${registrar_client_SRCS})
-TARGET_LINK_LIBRARIES(registrar_client ${CMAKE_DL_LIBS})
-
+SET(sems_module_name registrar_client)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

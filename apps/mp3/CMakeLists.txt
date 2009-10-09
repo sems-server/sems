@@ -6,6 +6,6 @@ mp3.c
 #	module_ldflags += -lmpg123
 #	module_cflags += -DWITH_MPG123DECODER
 
-ADD_LIBRARY(mp3 SHARED ${mp3_SRCS})
-TARGET_LINK_LIBRARIES(mp3 ${CMAKE_DL_LIBS} mp3lame)
-
+SET(sems_module_name mp3)
+SET(sems_module_libs mp3lame)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

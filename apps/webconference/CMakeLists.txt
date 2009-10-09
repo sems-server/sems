@@ -5,6 +5,5 @@ WebConference.cpp
 WebConferenceDialog.cpp
 )
 
-ADD_LIBRARY(webconference SHARED ${webconference_SRCS})
-TARGET_LINK_LIBRARIES(webconference ${CMAKE_DL_LIBS})
-
+SET(sems_module_name webconference)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

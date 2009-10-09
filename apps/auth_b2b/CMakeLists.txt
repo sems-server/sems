@@ -2,8 +2,6 @@ set (auth_b2b_SRCS
 AuthB2B.cpp
 )
 
-ADD_DEFINITIONS(-DMOD_NAME="auth_b2b")
-
-ADD_LIBRARY(auth_b2b SHARED ${auth_b2b_SRCS})
-TARGET_LINK_LIBRARIES(auth_b2b ${CMAKE_DL_LIBS})
+SET(sems_module_name auth_b2b)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

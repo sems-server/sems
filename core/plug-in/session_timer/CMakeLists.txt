@@ -3,6 +3,6 @@ SessionTimer.cpp
 UserTimer.cpp
 )
 
-ADD_LIBRARY(session_timer SHARED ${session_timer_SRCS})
-TARGET_LINK_LIBRARIES(session_timer ${CMAKE_DL_LIBS})
+SET(sems_module_name session_timer)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

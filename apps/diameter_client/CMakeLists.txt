@@ -8,10 +8,12 @@ INCLUDE_DIRECTORIES (lib_dbase)
 
 SET_PROPERTY(TARGET libdbase PROPERTY IMPORTED_LOCATION ./lib_dbase/libdbase.a)
 
-ADD_LIBRARY(diameter_client SHARED ${diameter_client_SRCS})
-TARGET_LINK_LIBRARIES(diameter_client ${CMAKE_DL_LIBS} libdbase)
+SET(sems_module_name diameter_client)
+SET(sems_module_libs libdbase)
 
 IF(OPENSSL_FOUND)
 	ADD_DEFINITIONS(-DWITH_OPENSSL)
-	TARGET_LINK_LIBRARIES(diameter_client ${CMAKE_DL_LIBS} ssl crypto)
+	SET(sems_module_libs ${sems_module_libs} ssl crypto)
 ENDIF(OPENSSL_FOUND)
+
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

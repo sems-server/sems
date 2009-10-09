@@ -3,6 +3,6 @@ AmAudioEcho.cpp
 Echo.cpp
 )
 
-ADD_LIBRARY(echo SHARED ${echo_SRCS})
-TARGET_LINK_LIBRARIES(echo ${CMAKE_DL_LIBS})
+SET(sems_module_name echo)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

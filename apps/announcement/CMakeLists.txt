@@ -2,6 +2,6 @@ set (announcement_SRCS
 Announcement.cpp
 )
 
-ADD_LIBRARY(announcement SHARED ${announcement_SRCS})
-TARGET_LINK_LIBRARIES(announcement ${CMAKE_DL_LIBS})
+SET(sems_module_name announcement)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

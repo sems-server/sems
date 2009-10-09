@@ -3,6 +3,6 @@ md5.c
 UACAuth.cpp
 )
 
-ADD_LIBRARY(uac_auth SHARED ${uac_auth_SRCS})
-TARGET_LINK_LIBRARIES(uac_auth ${CMAKE_DL_LIBS})
+SET(sems_module_name uac_auth)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

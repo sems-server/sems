@@ -2,6 +2,6 @@ set (l16_SRCS
  l16.c
 )
 
-ADD_LIBRARY(l16 SHARED ${l16_SRCS})
-TARGET_LINK_LIBRARIES(l16 ${CMAKE_DL_LIBS})
+SET(sems_module_name l16)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

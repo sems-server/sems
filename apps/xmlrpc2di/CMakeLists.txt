@@ -10,10 +10,12 @@ INCLUDE_DIRECTORIES (xmlrpc++/src)
 
 SET_PROPERTY(TARGET xmlrpcpp PROPERTY IMPORTED_LOCATION ./xmlrpc++/src/xmlrpcpp.a)
 
-ADD_LIBRARY(xmlrpc2di SHARED ${xmlrpc2di_SRCS})
-TARGET_LINK_LIBRARIES(xmlrpc2di ${CMAKE_DL_LIBS} xmlrpcpp)
+SET(sems_module_name xmlrpc2di)
+SET(sems_module_libs xmlrpcpp)
 
 IF(OPENSSL_FOUND)
 	ADD_DEFINITIONS(-DHAVE_XMLRPCPP_SSL -DXMLRPCPP_SUPPORT_STRUCT_ACCESS)
-	TARGET_LINK_LIBRARIES(xmlrpc2di ${CMAKE_DL_LIBS} ssl)
+	SET(sems_module_libs ${sems_module_libs} ssl)
 ENDIF(OPENSSL_FOUND)
+
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

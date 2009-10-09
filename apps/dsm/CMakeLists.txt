@@ -10,10 +10,10 @@ DSMStateDiagramCollection.cpp
 DSMStateEngine.cpp
 )
 
+# needed for DSM sub-modules
 INCLUDE_DIRECTORIES (.)
 
 ADD_SUBDIRECTORY (mods)
 
-ADD_LIBRARY(dsm SHARED ${dsm_SRCS})
-TARGET_LINK_LIBRARIES(dsm ${CMAKE_DL_LIBS})
-
+SET(sems_module_name dsm)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

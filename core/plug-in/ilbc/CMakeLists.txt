@@ -8,6 +8,7 @@ INCLUDE_DIRECTORIES (iLBC_rfc3951)
 
 SET_PROPERTY(TARGET libilbc PROPERTY IMPORTED_LOCATION ./iLBC_rfc3951/ilbc.a)
 
-ADD_LIBRARY(ilbc SHARED ${ilbc_SRCS})
-TARGET_LINK_LIBRARIES(ilbc ${CMAKE_DL_LIBS} libilbc)
+SET(sems_module_name ilbc)
+SET(sems_module_libs libilbc)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 

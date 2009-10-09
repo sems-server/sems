@@ -1,0 +1,20 @@
+# A place for common parts of SEMS modules rules
+#
+# We adding sems_ prefix to the internal name of the library to avoid nasty
+# issue then this name is equals to external library, our module links to.
+# E.g. the issue, then speex module should be linked to -lspeex
+
+ADD_LIBRARY(sems_${sems_module_name} SHARED ${${sems_module_name}_SRCS})
+
+ADD_DEFINITIONS(-DMOD_NAME="${sems_module_name}")
+
+# all modules should be linked against ${CMAKE_DL_LIBS} at least
+# and with additional ${sems_module_libs} if they exists
+TARGET_LINK_LIBRARIES(sems_${sems_module_name} ${CMAKE_DL_LIBS} ${sems_module_libs})
+
+SET_TARGET_PROPERTIES(sems_${sems_module_name} PROPERTIES OUTPUT_NAME ${sems_module_name})
+
+INSTALL(
+	TARGETS sems_${sems_module_name}
+	LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in/
+)

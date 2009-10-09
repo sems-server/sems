@@ -4,7 +4,6 @@ set (gsm_SRCS
 
 INCLUDE_DIRECTORIES(${GSM_INCLUDE_DIR})
 
-ADD_LIBRARY(libgsm SHARED ${gsm_SRCS})
-SET_TARGET_PROPERTIES(libgsm PROPERTIES OUTPUT_NAME "gsm")
-TARGET_LINK_LIBRARIES(libgsm ${CMAKE_DL_LIBS} gsm)
-
+SET(sems_module_name gsm)
+SET(sems_module_libs gsm)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)

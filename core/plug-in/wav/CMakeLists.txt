@@ -4,6 +4,6 @@ set (wav_SRCS
  wav_hdr.c
 )
 
-ADD_LIBRARY(wav SHARED ${wav_SRCS})
-TARGET_LINK_LIBRARIES(wav ${CMAKE_DL_LIBS})
+SET(sems_module_name wav)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 
