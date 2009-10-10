@@ -19,4 +19,4 @@ StatsUDPServer.cpp
 
 SET(sems_module_name stats)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
-
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)

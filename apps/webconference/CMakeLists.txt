@@ -26,3 +26,4 @@ wrong_pin.wav
 SET(sems_module_name webconference)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)

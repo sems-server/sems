@@ -24,3 +24,4 @@ default_en.wav
 SET(sems_module_name voicemail)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)

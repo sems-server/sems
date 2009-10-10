@@ -26,3 +26,4 @@ ENDIF(SEMS_USE_IPV6)
 
 SET(sems_module_name sipctrl)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)

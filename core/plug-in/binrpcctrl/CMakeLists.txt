@@ -13,5 +13,4 @@ SET_PROPERTY(TARGET libbinrpc PROPERTY IMPORTED_LOCATION ./libbinrpc/src/binrpcc
 SET(sems_module_name binrpcctrl)
 SET(sems_module_libs libbinrpc)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
-
-
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)

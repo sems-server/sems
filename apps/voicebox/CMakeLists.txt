@@ -65,4 +65,4 @@ you_have.wav
 SET(sems_module_name voicebox)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
-
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
