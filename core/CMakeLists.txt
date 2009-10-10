@@ -81,8 +81,12 @@ ENDIF(SEMS_USE_IPV6)
 
 ADD_SUBDIRECTORY(plug-in)
 
+CONFIGURE_FILE (./etc/sems.conf.cmake ./etc/sems.conf)
+
 INSTALL(TARGETS sems
 	RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin
-	)
+	FILES ./etc/sems.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/
+	FILES ./etc/app_mapping.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/
+)
 
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
