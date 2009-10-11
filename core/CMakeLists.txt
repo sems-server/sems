@@ -94,4 +94,48 @@ IF(ZRTP_FOUND)
 INSTALL(FILES ./etc/zrtp.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
 ENDIF(ZRTP_FOUND)
 
+SET(doc_dirs ../doc/figures)
+SET(doc_files
+	../doc/CHANGELOG
+	../doc/COMPILING
+	../doc/COPYING
+	../doc/Configure-Sems-OpenSER-HOWTO
+	../doc/Configure-Sems-Ser-HOWTO
+	../doc/Makefile
+	../doc/Readme.ann_b2b
+	../doc/Readme.announce_transfer
+	../doc/Readme.announcement
+	../doc/Readme.annrecorder
+	../doc/Readme.auth_b2b
+	../doc/Readme.call_timer
+	../doc/Readme.callback
+	../doc/Readme.click2dial
+	../doc/Readme.conf_auth
+	../doc/Readme.conference
+	../doc/Readme.diameter_client
+	../doc/Readme.early_announce
+	../doc/Readme.echo
+	../doc/Readme.iLBC
+	../doc/Readme.ivr
+	../doc/Readme.mailbox
+	../doc/Readme.monitoring
+	../doc/Readme.mp3plugin
+	../doc/Readme.msg_storage
+	../doc/Readme.pin_collect
+	../doc/Readme.py_sems
+	../doc/Readme.reg_agent
+	../doc/Readme.registrar_client
+	../doc/Readme.sw_prepaid_sip
+	../doc/Readme.twit
+	../doc/Readme.uac_auth
+	../doc/Readme.voicebox
+	../doc/Readme.voicemail
+	../doc/Readme.webconference
+	../doc/Readme.xmlrpc2di
+	../doc/WHATSNEW_0.10
+	./etc/ser-sems.cfg
+	./etc/ser-sems.sasi.cfg
+)
+
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)

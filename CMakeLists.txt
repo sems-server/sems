@@ -52,6 +52,11 @@ IF (NOT SEMS_LIBDIR)
 ENDIF (NOT SEMS_LIBDIR)
 MESSAGE(STATUS "SEMS libdir was set to: ${SEMS_LIBDIR}")
 
+IF (NOT SEMS_DOC_PREFIX)
+	SET(SEMS_DOC_PREFIX "/usr/share/doc")
+ENDIF (NOT SEMS_DOC_PREFIX)
+MESSAGE(STATUS "SEMS doc prefix was set to: ${SEMS_DOC_PREFIX}")
+
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 # compile with spandsp DTMF detection? see soft-switch.org
