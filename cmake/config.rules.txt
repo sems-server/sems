@@ -5,7 +5,10 @@ FOREACH (config_file ${sems_module_name} ${sems_config_files})
 	IF (SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE)
 		# If we do provide a template, then process it and create real
 		# config
-		CONFIGURE_FILE (./etc/${config_file}.conf.cmake ./etc/${config_file}.conf)
+		CONFIGURE_FILE (
+				${SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE}/${config_file}.conf.cmake
+				${SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE}/${config_file}.conf
+		)
 	ENDIF (SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE)
 
 	INSTALL(

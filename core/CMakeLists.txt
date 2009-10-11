@@ -82,7 +82,7 @@ ENDIF(SEMS_USE_IPV6)
 ADD_SUBDIRECTORY(plug-in)
 
 # Create config-file from template
-CONFIGURE_FILE (./etc/sems.conf.cmake ./etc/sems.conf)
+CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/core/etc/sems.conf.cmake ${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
 
 # Installation of main SEMS executable
 INSTALL(TARGETS sems RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin)
