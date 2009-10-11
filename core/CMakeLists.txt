@@ -81,12 +81,17 @@ ENDIF(SEMS_USE_IPV6)
 
 ADD_SUBDIRECTORY(plug-in)
 
+# Create config-file from template
 CONFIGURE_FILE (./etc/sems.conf.cmake ./etc/sems.conf)
 
-INSTALL(TARGETS sems
-	RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin
-	FILES ./etc/sems.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/
-	FILES ./etc/app_mapping.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/
-)
+# Installation of main SEMS executable
+INSTALL(TARGETS sems RUNTIME DESTINATION ${SEMS_EXEC_PREFIX}/sbin)
+
+# Installation of config-files
+INSTALL(FILES ./etc/sems.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/)
+INSTALL(FILES ./etc/app_mapping.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
+IF(ZRTP_FOUND)
+INSTALL(FILES ./etc/zrtp.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
+ENDIF(ZRTP_FOUND)
 
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
