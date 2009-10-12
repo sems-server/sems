@@ -7,7 +7,8 @@ welcome_msg.wav
 )
 
 SET(sems_module_name twit)
-SET(ivr_files twit)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/ivr.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
+
+PYTHON_SOURCES_COMPILE(twit ivr)
