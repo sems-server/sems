@@ -19,5 +19,4 @@ XmlRpcValue.cpp
 # Solaris: -lsocket -lnsl
 
 ADD_LIBRARY(xmlrpcpp STATIC ${xmlrpcpp_SRCS})
-TARGET_LINK_LIBRARIES(xmlrpcpp ${CMAKE_DL_LIBS})
 

@@ -25,5 +25,4 @@ syntFilter.c
 )
 
 ADD_LIBRARY(libilbc STATIC ${ilbc_SRCS})
-TARGET_LINK_LIBRARIES(libilbc ${CMAKE_DL_LIBS})
 

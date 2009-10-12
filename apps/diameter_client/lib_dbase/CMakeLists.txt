@@ -8,6 +8,5 @@ IF(OPENSSL_FOUND)
 	ADD_DEFINITIONS(-DWITH_OPENSSL)
 ENDIF(OPENSSL_FOUND)
 
-add_library(libdbase STATIC ${libdbase_SRCS})
-target_link_libraries(libdbase ${CMAKE_DL_LIBS})
+ADD_LIBRARY(libdbase STATIC ${libdbase_SRCS})
 
