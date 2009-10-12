@@ -18,5 +18,7 @@ IF(FLITE_FOUND)
 ENDIF(FLITE_FOUND)
 
 SET(sems_module_name ivr)
+SET(ivr_files py/log)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/ivr.rules.txt)
