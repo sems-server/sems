@@ -105,7 +105,11 @@ void SIPRegistration::doRegistration() {
   req.r_uri    = "sip:"+info.domain;
   dlg.remote_uri = req.r_uri;
   // set outbound proxy as next hop 
-  if (!AmConfig::OutboundProxy.empty()) 
+  DBG("proxy is '%s' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+      info.proxy.c_str());
+  if (!info.proxy.empty()) {
+    dlg.next_hop = info.proxy;
+  } else if (!AmConfig::OutboundProxy.empty()) 
     dlg.next_hop = AmConfig::OutboundProxy;
   else 
     dlg.next_hop = "";
@@ -126,7 +130,9 @@ void SIPRegistration::doUnregister() {
   dlg.remote_uri = req.r_uri;
 
   // set outbound proxy as next hop 
-  if (!AmConfig::OutboundProxy.empty()) 
+  if (!info.proxy.empty()) {
+    dlg.next_hop = info.proxy;
+  } else if (!AmConfig::OutboundProxy.empty()) 
     dlg.next_hop = AmConfig::OutboundProxy;
   else 
     dlg.next_hop = "";
@@ -589,12 +595,14 @@ string SIPRegistrarClient::createRegistration(const string& domain,
 					      const string& name,
 					      const string& auth_user,
 					      const string& pwd,
-					      const string& sess_link) {
+					      const string& sess_link,
+					      const string& proxy) {
 	
   string handle = AmSession::getNewId();
   instance()->
     postEvent(new SIPNewRegistrationEvent(SIPRegistrationInfo(domain, user, 
-							      name, auth_user, pwd),
+							      name, auth_user, pwd, 
+							      proxy),
 					  handle, sess_link));
   return handle;
 }
@@ -626,12 +634,17 @@ void SIPRegistrarClient::invoke(const string& method, const AmArg& args,
 				AmArg& ret)
 {
   if(method == "createRegistration"){
+    string proxy;
+    if (args.size() > 6)
+      proxy = args.get(6).asCStr();
+
     ret.push(createRegistration(args.get(0).asCStr(),
 				args.get(1).asCStr(),
 				args.get(2).asCStr(),
 				args.get(3).asCStr(),
 				args.get(4).asCStr(),
-				args.get(5).asCStr()
+				args.get(5).asCStr(),
+				proxy
 				).c_str());
   }
   else if(method == "removeRegistration"){

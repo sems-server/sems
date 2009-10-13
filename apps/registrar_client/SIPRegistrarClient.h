@@ -48,13 +48,16 @@ struct SIPRegistrationInfo {
   string name;
   string auth_user;
   string pwd;
+  string proxy;
+
   SIPRegistrationInfo(const string& domain,
 		      const string& user,
 		      const string& name,
 		      const string& auth_user,
-		      const string& pwd)
+		      const string& pwd,
+		      const string& proxy)
     : domain(domain),user(user),name(name),
-       auth_user(auth_user),pwd(pwd)
+    auth_user(auth_user),pwd(pwd),proxy(proxy)
   { }
 };
 
@@ -193,7 +196,8 @@ class SIPRegistrarClient  : public AmThread,
 			    const string& name,
 			    const string& auth_user,
 			    const string& pwd,
-			    const string& sess_link);
+			    const string& sess_link,
+			    const string& proxy);
   void removeRegistration(const string& handle);
 
   bool hasRegistration(const string& handle);

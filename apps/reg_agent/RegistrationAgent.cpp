@@ -61,6 +61,7 @@ int RegistrationAgentFactory::onLoad()
   ri.display_name = cfg.getParameter("display_name","");
   ri.auth_user = cfg.getParameter("auth_user","");
   ri.passwd = cfg.getParameter("pwd","");
+  ri.proxy = cfg.getParameter("proxy","");
 
   if (!ri.domain.length() || 
       !ri.user.length() || 
@@ -72,8 +73,8 @@ int RegistrationAgentFactory::onLoad()
     return 0;
   }
 
-  DBG("Adding registration #%d (%s %s %s %s)\n", 0, 
-      ri.domain.c_str(), ri.user.c_str(), ri.display_name.c_str(), ri.auth_user.c_str());
+  DBG("Adding registration #%d (%s %s %s %s %s)\n", 0, 
+      ri.domain.c_str(), ri.user.c_str(), ri.display_name.c_str(), ri.auth_user.c_str(), ri.proxy.c_str());
 
   dialer.add_reg(ri);
 
@@ -85,6 +86,7 @@ int RegistrationAgentFactory::onLoad()
     ri.display_name = cfg.getParameter("display_name"+int2str(ri_index),"");
     ri.auth_user = cfg.getParameter("auth_user"+int2str(ri_index),"");
     ri.passwd = cfg.getParameter("pwd"+int2str(ri_index),"");
+    ri.proxy = cfg.getParameter("proxy"+int2str(ri_index),"");
       
     if (!ri.domain.length() || 
 	!ri.user.length() || 
@@ -93,8 +95,8 @@ int RegistrationAgentFactory::onLoad()
 	!ri.passwd.length())
       break;
 	
-    DBG("Adding registration #%d (%s %s %s %s)\n", ri_index, 
-	ri.domain.c_str(), ri.user.c_str(), ri.display_name.c_str(), ri.auth_user.c_str());
+    DBG("Adding registration #%d (%s %s %s %s %s)\n", ri_index, 
+	ri.domain.c_str(), ri.user.c_str(), ri.display_name.c_str(), ri.auth_user.c_str(), ri.proxy.c_str());
     dialer.add_reg(ri);
     ri_index++;
   }
@@ -134,6 +136,7 @@ void RegThread::create_registration(RegInfo& ri) {
       di_args.push(ri.auth_user.c_str());  // auth_user
       di_args.push(ri.passwd.c_str());    // pwd
       di_args.push("reg_agent"); //sess_link
+      di_args.push(ri.proxy.c_str()); 
 			
       uac_auth_i->invoke("createRegistration", di_args, reg_handle);
       if (reg_handle.size()) 
@@ -181,6 +184,7 @@ void RegThread::run() {
     for (vector<RegInfo>::iterator it = registrations.begin(); 
 	 it != registrations.end(); it++) {
       if (!check_registration(*it)) {
+	// todo: this is very crude... should adjust retry time
 	DBG("Registration %d does not exist or timeout. Creating registration.\n",
 	    (int)(it - registrations.begin()));
 	create_registration(*it);
