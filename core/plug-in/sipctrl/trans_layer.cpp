@@ -1074,9 +1074,14 @@ int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* m
 
 		t->reset_timer(STIMER_L, L_TIMER, bucket->get_id());
 
-		t->to_tag.s = new char[to_tag.len];
-		t->to_tag.len = to_tag.len;
-		memcpy((void*)t->to_tag.s,to_tag.s,to_tag.len);
+		if (t->to_tag.len>0) {
+			t->to_tag.s = new char[to_tag.len];
+			t->to_tag.len = to_tag.len;
+			memcpy((void*)t->to_tag.s,to_tag.s,to_tag.len);
+		} else {
+			t->to_tag.s = NULL;
+			t->to_tag.len = 0;
+		}
 		
 		goto pass_reply;
 		
