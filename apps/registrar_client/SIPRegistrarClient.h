@@ -140,6 +140,9 @@ class SIPRegistration : public AmSipDialogEventHandler,
   RegistrationState getState(); 
   /** return the expires left for the registration */
   unsigned int getExpiresLeft(); 
+
+  SIPRegistrationInfo& getInfo() { return info; }
+  const string& getEventSink() { return sess_link; }
 };
 
 class SIPNewRegistrationEvent;
@@ -165,6 +168,7 @@ class SIPRegistrarClient  : public AmThread,
   void onSipReplyEvent(AmSipReplyEvent* ev);	
   void onNewRegistration(SIPNewRegistrationEvent* new_reg);
   void onRemoveRegistration(SIPRemoveRegistrationEvent* new_reg);
+  void listRegistrations(AmArg& res);
 
   static SIPRegistrarClient* _instance;
 

@@ -45,8 +45,6 @@ extern "C" void* plugin_class_create()
     SIPRegistrarClient* reg_c = SIPRegistrarClient::instance();
     assert(dynamic_cast<AmDynInvokeFactory*>(reg_c));
 
-    DBG("Hallo, alles in ordnung!\n");
-
     return (AmPluginFactory*)reg_c;
 }
 
@@ -630,6 +628,26 @@ bool SIPRegistrarClient::getRegistrationState(const string& handle,
   return res;
 }
 
+void SIPRegistrarClient::listRegistrations(AmArg& res) {
+  reg_mut.lock();
+
+  for (map<string, SIPRegistration*>::iterator it = 
+	 registrations.begin(); it != registrations.end(); it++) {
+    AmArg r;
+    r["handle"] = it->first;
+    r["domain"] = it->second->getInfo().domain;
+    r["user"] = it->second->getInfo().user;
+    r["name"] = it->second->getInfo().name;
+    r["auth_user"] = it->second->getInfo().auth_user;
+    r["proxy"] = it->second->getInfo().proxy;
+    r["event_sink"] = it->second->getEventSink();
+    res.push(r);
+  }
+
+  reg_mut.unlock();
+}
+
+
 void SIPRegistrarClient::invoke(const string& method, const AmArg& args, 
 				AmArg& ret)
 {
@@ -649,8 +667,7 @@ void SIPRegistrarClient::invoke(const string& method, const AmArg& args,
   }
   else if(method == "removeRegistration"){
     removeRegistration(args.get(0).asCStr());
-  } 
-  else if(method == "getRegistrationState"){
+  } else if(method == "getRegistrationState"){
     unsigned int state;
     unsigned int expires;
     if (instance()->getRegistrationState(args.get(0).asCStr(), 
@@ -661,10 +678,13 @@ void SIPRegistrarClient::invoke(const string& method, const AmArg& args,
     } else {
       ret.push(AmArg((int)0));
     }
+  } else if(method == "listRegistrations"){
+    listRegistrations(ret);
   } else if(method == "_list"){ 
     ret.push(AmArg("createRegistration"));
     ret.push(AmArg("removeRegistration"));
     ret.push(AmArg("getRegistrationState"));
+    ret.push(AmArg("listRegistrations"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
 }
