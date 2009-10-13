@@ -99,6 +99,30 @@ void DSMDialog::onInvite(const AmSipRequest& req) {
     AmB2BCallerSession::onInvite(req);
 }
 
+void DSMDialog::onOutgoingInvite(const string& headers) {
+  if (!process_invite) {
+    // re-INVITE sent out
+    return;
+  }
+  process_invite = false;
+
+  // TODO: construct correct request of outgoing INVITE
+  AmSipRequest req;
+  req.hdrs = headers;
+  bool run_session_invite = engine.onInvite(req, this);
+
+  if (DSMFactory::RunInviteEvent) {
+    if (!engine.init(this, startDiagName, DSMCondition::Invite))
+      run_session_invite =false;
+
+    if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
+      DBG("session choose to not connect media\n");
+      // TODO: set flag to not connect RTP on session start
+      run_session_invite = false;     // don't accept audio 
+    }    
+  }
+}
+
 void DSMDialog::onSessionStart(const AmSipRequest& req)
 {
   if (process_sessionstart) {

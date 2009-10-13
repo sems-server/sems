@@ -70,6 +70,7 @@ public:
   ~DSMDialog();
 
   void onInvite(const AmSipRequest& req);
+  void onOutgoingInvite(const string& headers);
   void onSessionStart(const AmSipRequest& req);
   void onSessionStart(const AmSipReply& rep);
   void startSession();
