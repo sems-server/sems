@@ -1,0 +1,26 @@
+set (audio_files
+	and.wav
+	beep.wav
+	bye.wav
+	default_en.wav
+	first_msg.wav
+	msg_deleted.wav
+	msg_menu.wav
+	msg_saved.wav
+	new_msg.wav
+	next_msg.wav
+	no_msg.wav
+	saved_msg.wav
+	you_have.wav
+)
+SET(sems_module_name mailbox)
+SET(sems_config_files mailbox_query)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
+
+PYTHON_SOURCES_COMPILE(mailbox ivr)
+PYTHON_SOURCES_COMPILE(mailbox_query ivr)
+PYTHON_SOURCES_COMPILE(imap_mailbox/MailboxURL ivr/imap_mailbox)
+PYTHON_SOURCES_COMPILE(imap_mailbox/__init__ ivr/imap_mailbox)
+PYTHON_SOURCES_COMPILE(imap_mailbox/imap4ext ivr/imap_mailbox)
