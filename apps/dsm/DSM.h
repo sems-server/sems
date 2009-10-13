@@ -66,8 +66,10 @@ class DSMFactory
   static string OutboundStartDiag;
 
 
+#ifdef USE_MONITORING
   static MonSelectType MonSelectCaller;
   static MonSelectType MonSelectCallee;
+#endif // USE_MONITORING
 
   static DSMFactory* _instance;
   DSMFactory(const string& _app_name);
@@ -87,6 +89,11 @@ public:
   static map<string, string> config;
   static bool   RunInviteEvent;
   static bool   SetParamVariables;
+
+#ifdef USE_MONITORING
+  static bool MonitoringFullCallgraph;
+  static bool MonitoringFullTransitions;
+#endif // USE_MONITORING
 
 
   int onLoad();

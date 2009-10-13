@@ -35,6 +35,8 @@
 #include "AmSessionContainer.h"
 #include "ampi/MonitoringAPI.h"
 
+#include "DSM.h" // for DSMFactory::MonitoringFullCallgraph
+
 DSMStateDiagram::DSMStateDiagram(const string& name) 
   : name(name) {
 }
@@ -304,6 +306,21 @@ void DSMStateEngine::runEvent(AmSession* sess,
 	}
 	DBG("changing to new state '%s'\n", target_st->name.c_str());
 	MONITORING_LOG(sess->getLocalTag().c_str(), "dsm_state", target_st->name.c_str());
+
+#ifdef USE_MONITORING
+	if (DSMFactory::MonitoringFullTransitions) {
+	  MONITORING_LOG_ADD(sess->getLocalTag().c_str(), 
+			     "dsm_stategraph", 
+			     ("> "+ tr->name + " >").c_str());
+	}
+
+	if (DSMFactory::MonitoringFullCallgraph) {
+	  MONITORING_LOG_ADD(sess->getLocalTag().c_str(), 
+			     "dsm_stategraph", 
+			     (current_diag->getName() +"/"+ target_st->name).c_str());
+	}
+#endif
+
 	current = target_st;
 	
 	// execute pre-actions
@@ -347,9 +364,18 @@ bool DSMStateEngine::jumpDiag(const string& diag_name, AmSession* sess,
 	      diag_name.c_str());
 	return false;
       }
+
       MONITORING_LOG2(sess->getLocalTag().c_str(), 
 		      "dsm_diag", diag_name.c_str(),
 		      "dsm_state", current->name.c_str());
+
+#ifdef USE_MONITORING
+      if (DSMFactory::MonitoringFullCallgraph) {
+	MONITORING_LOG_ADD(sess->getLocalTag().c_str(), 
+			    "dsm_stategraph", 
+			   (diag_name +"/"+ current->name).c_str());
+      }
+#endif
 
       // execute pre-actions
       DBG("running %zd pre_actions of init state '%s'\n",
@@ -380,6 +406,14 @@ bool DSMStateEngine::returnDiag(AmSession* sess) {
   MONITORING_LOG2(sess->getLocalTag().c_str(), 
 		  "dsm_diag", current_diag->getName().c_str(),
 		  "dsm_state", current->name.c_str());
+
+#ifdef USE_MONITORING
+      if (DSMFactory::MonitoringFullCallgraph) {
+	MONITORING_LOG_ADD(sess->getLocalTag().c_str(), 
+			    "dsm_stategraph", 
+			   (current_diag->getName() +"/"+ current->name).c_str());
+      }
+#endif
 
   DBG("returned to diag '%s' state '%s'\n",
       current_diag->getName().c_str(), 

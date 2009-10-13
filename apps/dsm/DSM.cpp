@@ -60,8 +60,13 @@ DSMFactory* DSMFactory::instance()
 string DSMFactory::InboundStartDiag;
 string DSMFactory::OutboundStartDiag;
 
+#ifdef USE_MONITORING
+bool DSMFactory::MonitoringFullCallgraph;
+bool DSMFactory::MonitoringFullTransitions;
+
 MonSelectType DSMFactory::MonSelectCaller;
 MonSelectType DSMFactory::MonSelectCallee;
+#endif // USE_MONITORING
 
 map<string, string> DSMFactory::config;
 bool DSMFactory::RunInviteEvent;
@@ -246,6 +251,17 @@ int DSMFactory::onLoad()
 
   SetParamVariables = cfg.getParameter("set_param_variables")=="yes";
 
+#ifdef USE_MONITORING
+  string monitoring_full_callgraph = cfg.getParameter("monitoring_full_stategraph");
+  MonitoringFullCallgraph = monitoring_full_callgraph == "yes";
+  DBG("%sogging full call graph (states) to monitoring.\n",
+      MonitoringFullCallgraph?"L":"Not l");
+
+  string monitoring_full_transitions = cfg.getParameter("monitoring_full_transitions");
+  MonitoringFullTransitions = monitoring_full_transitions == "yes";
+  DBG("%sogging full call graph (transitions) to monitoring.\n",
+      MonitoringFullTransitions?"L":"Not l");
+
   string cfg_usecaller = cfg.getParameter("monitor_select_use_caller");
   if (cfg_usecaller.empty() || cfg_usecaller=="from") 
     MonSelectCaller = MonSelect_FROM;
@@ -269,6 +285,7 @@ int DSMFactory::onLoad()
     ERROR("monitor_select_use_callee value '%s' not understood\n",
 	  cfg_usecallee.c_str());
   }
+#endif
 
   return 0;
 }
