@@ -50,7 +50,7 @@ enum MonSelectType {
   MonSelect_PAI
 }; 
 
-class DSMDialog;
+class DSMCall;
 class DSMModule;
 /** \brief Factory for announcement sessions */
 class DSMFactory
@@ -75,10 +75,10 @@ class DSMFactory
   bool loaded;
 
   map<string, AmPromptCollection*> prompt_sets; 
-  void prepareSession(DSMDialog* s);
-  void addVariables(DSMDialog* s, const string& prefix,
+  void prepareSession(DSMCall* s);
+  void addVariables(DSMCall* s, const string& prefix,
 		    map<string, string>& vars);
-  void addParams(DSMDialog* s, const string& hdrs);
+  void addParams(DSMCall* s, const string& hdrs);
 
   DSMChartReader preload_reader;
 public:

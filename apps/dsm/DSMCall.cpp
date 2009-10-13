@@ -25,12 +25,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "DSMDialog.h"
+#include "DSMCall.h"
 #include "AmUtils.h"
 #include "AmMediaProcessor.h"
 #include "DSM.h"
 
-DSMDialog::DSMDialog(AmPromptCollection* prompts,
+DSMCall::DSMCall(AmPromptCollection* prompts,
 		     DSMStateDiagramCollection& diags,
 		     const string& startDiagName,
 		     UACAuthCred* credentials)
@@ -43,7 +43,7 @@ DSMDialog::DSMDialog(AmPromptCollection* prompts,
   set_sip_relay_only(false);
 }
 
-DSMDialog::~DSMDialog()
+DSMCall::~DSMCall()
 {
   for (std::set<DSMDisposable*>::iterator it=
 	 gc_trash.begin(); it != gc_trash.end(); it++)
@@ -64,7 +64,7 @@ DSMDialog::~DSMDialog()
 }
 
 /** returns whether var exists && var==value*/
-bool DSMDialog::checkVar(const string& var_name, const string& var_val) {
+bool DSMCall::checkVar(const string& var_name, const string& var_val) {
   map<string, string>::iterator it = var.find(var_name);
   if ((it != var.end()) && (it->second == var_val)) 
     return true;
@@ -72,7 +72,7 @@ bool DSMDialog::checkVar(const string& var_name, const string& var_val) {
   return false;
 }
 
-void DSMDialog::onInvite(const AmSipRequest& req) {
+void DSMCall::onInvite(const AmSipRequest& req) {
   // make B2B dialogs work in onInvite as well
   invite_req = req;
 
@@ -99,7 +99,7 @@ void DSMDialog::onInvite(const AmSipRequest& req) {
     AmB2BCallerSession::onInvite(req);
 }
 
-void DSMDialog::onOutgoingInvite(const string& headers) {
+void DSMCall::onOutgoingInvite(const string& headers) {
   if (!process_invite) {
     // re-INVITE sent out
     return;
@@ -123,29 +123,29 @@ void DSMDialog::onOutgoingInvite(const string& headers) {
   }
 }
 
-void DSMDialog::onSessionStart(const AmSipRequest& req)
+void DSMCall::onSessionStart(const AmSipRequest& req)
 {
   if (process_sessionstart) {
     process_sessionstart = false;
     AmB2BCallerSession::onSessionStart(req);
 
-    DBG("DSMDialog::onSessionStart\n");
+    DBG("DSMCall::onSessionStart\n");
     startSession();
   }
 }
 
-void DSMDialog::onSessionStart(const AmSipReply& rep)
+void DSMCall::onSessionStart(const AmSipReply& rep)
 {
   if (process_sessionstart) {
     process_sessionstart = false;
-    DBG("DSMDialog::onSessionStart (SEMS originator mode)\n");
+    DBG("DSMCall::onSessionStart (SEMS originator mode)\n");
     invite_req.body = rep.body;
  
     startSession();    
   }
 }
 
-void DSMDialog::startSession(){
+void DSMCall::startSession(){
   engine.init(this, startDiagName, DSMCondition::SessionStart);
 
   setReceiving(true);
@@ -158,7 +158,7 @@ void DSMDialog::startSession(){
   }
 }
 
-void DSMDialog::connectMedia() {
+void DSMCall::connectMedia() {
   if (!getInput())
     setInput(&playlist);
 
@@ -166,20 +166,20 @@ void DSMDialog::connectMedia() {
   AmMediaProcessor::instance()->addSession(this, callgroup);
 }
 
-void DSMDialog::disconnectMedia() {
+void DSMCall::disconnectMedia() {
   AmMediaProcessor::instance()->removeSession(this);
 }
 
-void DSMDialog::mute() {
+void DSMCall::mute() {
   setMute(true);
 }
 
-void DSMDialog::unmute() {
+void DSMCall::unmute() {
   setMute(false);
 }
 
 
-void DSMDialog::onDtmf(int event, int duration_msec) {
+void DSMCall::onDtmf(int event, int duration_msec) {
   DBG("* Got DTMF key %d duration %d\n", 
       event, duration_msec);
 
@@ -189,13 +189,13 @@ void DSMDialog::onDtmf(int event, int duration_msec) {
   engine.runEvent(this, DSMCondition::Key, &params);
 }
 
-void DSMDialog::onBye(const AmSipRequest& req)
+void DSMCall::onBye(const AmSipRequest& req)
 {
   DBG("onBye\n");
   engine.runEvent(this, DSMCondition::Hangup, NULL);
 }
 
-void DSMDialog::process(AmEvent* event)
+void DSMCall::process(AmEvent* event)
 {
 
   if (event->event_id == DSM_EVENT_ID) {
@@ -235,11 +235,11 @@ void DSMDialog::process(AmEvent* event)
   AmB2BCallerSession::process(event);
 }
 
-inline UACAuthCred* DSMDialog::getCredentials() {
+inline UACAuthCred* DSMCall::getCredentials() {
   return cred.get();
 }
 
-void DSMDialog::playPrompt(const string& name, bool loop) {
+void DSMCall::playPrompt(const string& name, bool loop) {
   DBG("playing prompt '%s'\n", name.c_str());
   if (prompts->addToPlaylist(name,  (long)this, playlist, 
 			    /*front =*/ false, loop))  {
@@ -257,17 +257,17 @@ void DSMDialog::playPrompt(const string& name, bool loop) {
   }
 }
 
-void DSMDialog::closePlaylist(bool notify) {
+void DSMCall::closePlaylist(bool notify) {
   DBG("close playlist\n");
   playlist.close(notify);  
 }
 
-void DSMDialog::addToPlaylist(AmPlaylistItem* item) {
+void DSMCall::addToPlaylist(AmPlaylistItem* item) {
   DBG("add item to playlist\n");
   playlist.addToPlaylist(item);
 }
 
-void DSMDialog::playFile(const string& name, bool loop, bool front) {
+void DSMCall::playFile(const string& name, bool loop, bool front) {
   AmAudioFile* af = new AmAudioFile();
   if(af->open(name,AmAudioFile::Read)) {
     ERROR("audio file '%s' could not be opened for reading.\n", 
@@ -288,7 +288,7 @@ void DSMDialog::playFile(const string& name, bool loop, bool front) {
   SET_ERRNO(DSM_ERRNO_OK);
 }
 
-void DSMDialog::recordFile(const string& name) {
+void DSMCall::recordFile(const string& name) {
   if (rec_file) 
     stopRecord();
 
@@ -306,7 +306,7 @@ void DSMDialog::recordFile(const string& name) {
   SET_ERRNO(DSM_ERRNO_OK);
 }
 
-unsigned int DSMDialog::getRecordLength() {
+unsigned int DSMCall::getRecordLength() {
   if (!rec_file) {
     SET_ERRNO(DSM_ERRNO_FILE);
     return 0;
@@ -315,7 +315,7 @@ unsigned int DSMDialog::getRecordLength() {
   return rec_file->getLength();
 }
 
-unsigned int DSMDialog::getRecordDataSize() {
+unsigned int DSMCall::getRecordDataSize() {
   if (!rec_file) {
     SET_ERRNO(DSM_ERRNO_FILE);
     return 0;
@@ -324,7 +324,7 @@ unsigned int DSMDialog::getRecordDataSize() {
   return rec_file->getDataSize();
 }
 
-void DSMDialog::stopRecord() {
+void DSMCall::stopRecord() {
   if (rec_file) {
     setInput(&playlist);
     rec_file->close();
@@ -338,7 +338,7 @@ void DSMDialog::stopRecord() {
   }
 }
 
-void DSMDialog::addPromptSet(const string& name, 
+void DSMCall::addPromptSet(const string& name, 
 			     AmPromptCollection* prompt_set) {
   if (prompt_set) {
     DBG("adding prompt set '%s'\n", name.c_str());
@@ -348,12 +348,12 @@ void DSMDialog::addPromptSet(const string& name,
   }
 }
 
-void DSMDialog::setPromptSets(map<string, AmPromptCollection*>& 
+void DSMCall::setPromptSets(map<string, AmPromptCollection*>& 
 			      new_prompt_sets) {
   prompt_sets = new_prompt_sets;
 }
 
-void DSMDialog::setPromptSet(const string& name) {
+void DSMCall::setPromptSet(const string& name) {
   map<string, AmPromptCollection*>::iterator it = 
     prompt_sets.find(name);
 
@@ -370,7 +370,7 @@ void DSMDialog::setPromptSet(const string& name) {
 }
 
 
-void DSMDialog::addSeparator(const string& name, bool front) {
+void DSMCall::addSeparator(const string& name, bool front) {
   unsigned int id = 0;
   if (str2i(name, id)) {
     SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
@@ -387,12 +387,12 @@ void DSMDialog::addSeparator(const string& name, bool front) {
   SET_ERRNO(DSM_ERRNO_OK);
 }
 
-void DSMDialog::transferOwnership(DSMDisposable* d) {
+void DSMCall::transferOwnership(DSMDisposable* d) {
   gc_trash.insert(d);
 }
 
 // AmB2BSession methods
-void DSMDialog::onOtherBye(const AmSipRequest& req) {
+void DSMCall::onOtherBye(const AmSipRequest& req) {
   DBG("* Got BYE from other leg\n");
 
   map<string, string> params;
@@ -400,7 +400,7 @@ void DSMDialog::onOtherBye(const AmSipRequest& req) {
   engine.runEvent(this, DSMCondition::B2BOtherBye, &params);
 }
 
-bool DSMDialog::onOtherReply(const AmSipReply& reply) {
+bool DSMCall::onOtherReply(const AmSipReply& reply) {
   DBG("* Got reply from other leg: %u %s\n", 
       reply.code, reply.reason.c_str());
 
@@ -414,17 +414,17 @@ bool DSMDialog::onOtherReply(const AmSipReply& reply) {
   return false;
 }
 
-void DSMDialog::B2BterminateOtherLeg() {
+void DSMCall::B2BterminateOtherLeg() {
   terminateOtherLeg();
 }
 
-void DSMDialog::B2BconnectCallee(const string& remote_party,
+void DSMCall::B2BconnectCallee(const string& remote_party,
 				 const string& remote_uri,
 				 bool relayed_invite) {
   connectCallee(remote_party, remote_uri, relayed_invite);
 }
 
-void DSMDialog::B2BaddReceivedRequest(const AmSipRequest& req) {
+void DSMCall::B2BaddReceivedRequest(const AmSipRequest& req) {
   DBG("inserting request '%s' with CSeq %d in list of received requests\n", 
       req.method.c_str(), req.cseq);
   recvd_req.insert(std::make_pair(req.cseq, req));

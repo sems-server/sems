@@ -33,7 +33,7 @@
 #include "AmSessionContainer.h"
 #include "ampi/MonitoringAPI.h"
 #include "AmUriParser.h"
-#include "DSMDialog.h"
+#include "DSMCall.h"
 #include "DSMChartReader.h"
 #include "AmSipHeaders.h"
 #include "AmEventDispatcher.h"
@@ -273,18 +273,18 @@ int DSMFactory::onLoad()
   return 0;
 }
 
-void DSMFactory::prepareSession(DSMDialog* s) {
+void DSMFactory::prepareSession(DSMCall* s) {
   s->setPromptSets(prompt_sets);
 }
 
-void DSMFactory::addVariables(DSMDialog* s, const string& prefix,
+void DSMFactory::addVariables(DSMCall* s, const string& prefix,
 			      map<string, string>& vars) {
   for (map<string, string>::iterator it = 
 	 vars.begin(); it != vars.end(); it++) 
     s->var[prefix+it->first] = it->second;
 }
 
-void DSMFactory::addParams(DSMDialog* s, const string& hdrs) {
+void DSMFactory::addParams(DSMCall* s, const string& hdrs) {
   // TODO: use real parser with quoting and optimize
   map<string, string> params;
   vector<string> items = explode(getHeader(hdrs, PARAM_HDR), ";");
@@ -431,7 +431,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
   } else {
     start_diag = req.cmd;
   }
-  DSMDialog* s = new DSMDialog(&prompts, diags, start_diag, NULL);
+  DSMCall* s = new DSMCall(&prompts, diags, start_diag, NULL);
   prepareSession(s);
   addVariables(s, "config.", config);
 
@@ -486,7 +486,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
     AmArg2DSMStrMap(session_params, vars);
   }
 
-  DSMDialog* s = new DSMDialog(&prompts, diags, start_diag, cred); 
+  DSMCall* s = new DSMCall(&prompts, diags, start_diag, cred); 
   prepareSession(s);  
 
   addVariables(s, "config.", config);

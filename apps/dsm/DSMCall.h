@@ -24,8 +24,8 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef _DSM_DIALOG_H
-#define _DSM_DIALOG_H
+#ifndef _DSM_CALL_H
+#define _DSM_CALL_H
 #include "AmB2BSession.h"
 #include "AmPromptCollection.h"
 
@@ -37,7 +37,7 @@
 
 #include <set>
 /** implementation of the actual session in DSM */
-class DSMDialog : public AmB2BCallerSession,
+class DSMCall : public AmB2BCallerSession,
 		  public DSMSession,
 		  public CredentialHolder
 {
@@ -63,11 +63,11 @@ class DSMDialog : public AmB2BCallerSession,
   
   bool checkVar(const string& var_name, const string& var_val);
 public:
-  DSMDialog(AmPromptCollection* prompts,
+  DSMCall(AmPromptCollection* prompts,
 	    DSMStateDiagramCollection& diags,
 	    const string& startDiagName,
 	    UACAuthCred* credentials = NULL);
-  ~DSMDialog();
+  ~DSMCall();
 
   void onInvite(const AmSipRequest& req);
   void onOutgoingInvite(const string& headers);
