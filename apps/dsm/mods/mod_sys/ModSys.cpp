@@ -35,28 +35,9 @@
 #include <sys/types.h>
 #include <stdio.h>
 
-SC_EXPORT(SCSysModule);
+SC_EXPORT(MOD_CLS_NAME);
 
-SCSysModule::SCSysModule() {
-}
-
-SCSysModule::~SCSysModule() {
-}
-
-void splitCmd(const string& from_str, 
-	      string& cmd, string& params) {
-  size_t b_pos = from_str.find('(');
-  if (b_pos != string::npos) {
-    cmd = from_str.substr(0, b_pos);
-    params = from_str.substr(b_pos + 1, from_str.rfind(')') - b_pos -1);
-  } else 
-    cmd = from_str;  
-}
-
-DSMAction* SCSysModule::getAction(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
+MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("sys.mkdir", SCMkDirAction);
   DEF_CMD("sys.mkdirRecursive", SCMkDirRecursiveAction);
@@ -65,13 +46,9 @@ DSMAction* SCSysModule::getAction(const string& from_str) {
   DEF_CMD("sys.unlinkArray", SCUnlinkArrayAction);
   DEF_CMD("sys.tmpnam", SCTmpNamAction);
 
-  return NULL;
-}
+} MOD_ACTIONEXPORT_END;
 
-DSMCondition* SCSysModule::getCondition(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
+MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   if (cmd == "sys.file_exists") {
     return new FileExistsCondition(params, false);
@@ -82,8 +59,7 @@ DSMCondition* SCSysModule::getCondition(const string& from_str) {
     return new FileExistsCondition(params, true);
   }
 
-  return NULL;
-}
+} MOD_CONDITIONEXPORT_END;
 
 MATCH_CONDITION_START(FileExistsCondition) {
   DBG("checking file '%s'\n", arg.c_str());

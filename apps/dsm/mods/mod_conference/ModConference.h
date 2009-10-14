@@ -31,17 +31,9 @@
 #include "DSMSession.h"
 
 #include <memory>
+#define MOD_CLS_NAME ConfModule
 
-class ConfModule 
-: public DSMModule {
-
- public:
-  ConfModule();
-  ~ConfModule();
-  
-  DSMAction* getAction(const string& from_str);
-  DSMCondition* getCondition(const string& from_str);
-};
+DECLARE_MODULE(MOD_CLS_NAME);
 
 class DSMConfChannel : public DSMDisposable {
   std::auto_ptr<AmConferenceChannel> chan;
@@ -54,4 +46,5 @@ class DSMConfChannel : public DSMDisposable {
 DEF_ACTION_2P(ConfJoinAction);
 DEF_ACTION_2P(ConfPostEventAction);
 DEF_ACTION_1P(ConfSetPlayoutTypeAction);
+
 #endif

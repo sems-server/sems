@@ -34,53 +34,24 @@
 #include <string.h>
 #include "AmSipHeaders.h"
 
-SC_EXPORT(DLGModule);
+SC_EXPORT(MOD_CLS_NAME);
 
-DLGModule::DLGModule() {
-}
 
-DLGModule::~DLGModule() {
-}
-
-void splitCmd(const string& from_str, 
-	      string& cmd, string& params) {
-  size_t b_pos = from_str.find('(');
-  if (b_pos != string::npos) {
-    cmd = from_str.substr(0, b_pos);
-    params = from_str.substr(b_pos + 1, from_str.rfind(')') - b_pos -1);
-  } else 
-    cmd = from_str;  
-}
-
-DSMAction* DLGModule::getAction(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
-
-#define DEF_CMD(cmd_name, class_name) \
-				      \
-  if (cmd == cmd_name) {	      \
-    class_name * a =		      \
-      new class_name(params);	      \
-    a->name = from_str;		      \
-    return a;			      \
-  }
+MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("dlg.reply", DLGReplyAction);
   DEF_CMD("dlg.acceptInvite", DLGAcceptInviteAction);
   DEF_CMD("dlg.bye", DLGByeAction);
   DEF_CMD("dlg.connectCalleeRelayed", DLGConnectCalleeRelayedAction);
 
-  return NULL;
-}
+} MOD_ACTIONEXPORT_END;
 
-DSMCondition* DLGModule::getCondition(const string& from_str) {
-  return NULL;
-}
+MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
 
 bool DLGModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
   // save inivital invite to last_req 
-  sess->last_req.reset(new AmSipRequest(req));
+  // todo: save this in avar
+ sess->last_req.reset(new AmSipRequest(req));
   return true;
 }
 
@@ -92,12 +63,7 @@ bool DLGModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
   }
 
 CONST_ACTION_2P(DLGReplyAction, ',', true);
-
-bool DLGReplyAction::execute(AmSession* sess, 
-			     DSMCondition::EventType event,
-			     map<string,string>* event_params) {
-  GET_SCSESSION();
-
+EXEC_ACTION_START(DLGReplyAction) {
   string code = resolveVars(par1, sess, sc_sess, event_params);
   string reason = resolveVars(par2, sess, sc_sess, event_params);
   unsigned int code_i;
@@ -117,17 +83,10 @@ bool DLGReplyAction::execute(AmSession* sess,
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
   else
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);
-
-  return false;
-}
+} EXEC_ACTION_END;
 
 CONST_ACTION_2P(DLGAcceptInviteAction, ',', true);
-
-bool DLGAcceptInviteAction::execute(AmSession* sess, 
-				     DSMCondition::EventType event,
-				     map<string,string>* event_params) {
-  GET_SCSESSION();
-
+EXEC_ACTION_START(DLGAcceptInviteAction) {
   // defaults to 200 OK
   unsigned int code_i=200;
   string reason = "OK";
@@ -163,9 +122,7 @@ bool DLGAcceptInviteAction::execute(AmSession* sess,
     sess->setStopped();
     AmSipDialog::reply_error(*sc_sess->last_req.get(),e.code,e.reason);
   }
-
-  return false;
-}
+} EXEC_ACTION_END;
 
 EXEC_ACTION_START(DLGByeAction) {
   string hdrs = resolveVars(arg, sess, sc_sess, event_params);
@@ -194,5 +151,4 @@ EXEC_ACTION_START(DLGConnectCalleeRelayedAction) {
     ERROR("getting B2B session.\n");
 
   sc_sess->B2BconnectCallee(remote_party, remote_uri, true);
-
 } EXEC_ACTION_END;

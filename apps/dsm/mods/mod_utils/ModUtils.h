@@ -28,16 +28,9 @@
 #define _MOD_UTILS_H
 #include "DSMModule.h"
 
-class SCUtilsModule 
-: public DSMModule {
+#define MOD_CLS_NAME SCUtilsModule
 
- public:
-  SCUtilsModule();
-  ~SCUtilsModule();
-  
-  DSMAction* getAction(const string& from_str);
-  DSMCondition* getCondition(const string& from_str);
-};
+DECLARE_MODULE(MOD_CLS_NAME);
 
 DEF_ACTION_2P(SCUPlayCountRightAction);
 DEF_ACTION_2P(SCUPlayCountLeftAction);

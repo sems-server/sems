@@ -36,21 +36,12 @@
 
 #include <fstream>
 
-SC_EXPORT(SCAwsModule);
+SC_EXPORT(MOD_CLS_NAME);
 
 ConnectionPool<S3ConnectionPtr>* SCAwsModule::s3ConnectionPool = NULL;
 ConnectionPool<SQSConnectionPtr>* SCAwsModule::sqsConnectionPool = NULL;
 
-SCAwsModule::SCAwsModule() {
-}
-
-SCAwsModule::~SCAwsModule() {
-}
-
-DSMAction* SCAwsModule::getAction(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
+MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("aws.s3.put", SCS3PutFileAction);
   DEF_CMD("aws.s3.putArray", SCS3PutMultiFileAction);
@@ -62,22 +53,9 @@ DSMAction* SCAwsModule::getAction(const string& from_str) {
   DEF_CMD("aws.sqs.receiveMessage", SCSQSReceiveMessageAction);
   DEF_CMD("aws.sqs.deleteMessage", SCSQSDeleteMessageAction);
 
-  return NULL;
-}
+} MOD_ACTIONEXPORT_END;
 
-DSMCondition* SCAwsModule::getCondition(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
-
-//   if (cmd == "mysql.hasResult") {
-//     return new MyHasResultCondition(params, false);
-//   }
-
-
-  return NULL;
-}
-
+MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
 
 int SCAwsModule::preload() {
    AmConfigReader cfg;

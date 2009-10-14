@@ -28,18 +28,11 @@
 #define _MOD_DLG_H
 #include "DSMModule.h"
 
-class DLGModule 
-: public DSMModule {
+#define MOD_CLS_NAME DLGModule 
 
- public:
-  DLGModule();
-  ~DLGModule();
-  
-  DSMAction* getAction(const string& from_str);
-  DSMCondition* getCondition(const string& from_str);
-
-  bool onInvite(const AmSipRequest& req, DSMSession* sess);
-};
+DECLARE_MODULE_BEGIN(MOD_CLS_NAME);
+bool onInvite(const AmSipRequest& req, DSMSession* sess);
+DECLARE_MODULE_END;
 
 DEF_ACTION_2P(DLGReplyAction);
 DEF_ACTION_2P(DLGAcceptInviteAction);

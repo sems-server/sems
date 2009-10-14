@@ -38,21 +38,26 @@ using namespace aws;
 #define DSM_ERRNO_AWS_DELETE  "53"
 #define DSM_ERRNO_AWS_SEND    "54"
 
-class SCAwsModule 
-: public DSMModule {
+#define MOD_CLS_NAME SCAwsModule
 
- public:
-  SCAwsModule();
-  ~SCAwsModule();
+DECLARE_MODULE_BEGIN(MOD_CLS_NAME);
+
+/* class SCAwsModule  */
+/* : public DSMModule { */
+
+/*  public: */
+/*   SCAwsModule(); */
+/*   ~SCAwsModule(); */
   
-  DSMAction* getAction(const string& from_str);
-  DSMCondition* getCondition(const string& from_str);
+/*   DSMAction* getAction(const string& from_str); */
+/*   DSMCondition* getCondition(const string& from_str); */
 
   int preload();
 
   static ConnectionPool<S3ConnectionPtr>* s3ConnectionPool;
   static ConnectionPool<SQSConnectionPtr>* sqsConnectionPool;
-};
+DECLARE_MODULE_END;
+/* }; */
 
 
 DEF_ACTION_1P(SCS3CreateBucketAction);

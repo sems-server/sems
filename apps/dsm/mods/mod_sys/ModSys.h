@@ -28,16 +28,9 @@
 #define _MOD_SYS_H
 #include "DSMModule.h"
 
-class SCSysModule 
-: public DSMModule {
+#define MOD_CLS_NAME SCSysModule
 
- public:
-  SCSysModule();
-  ~SCSysModule();
-  
-  DSMAction* getAction(const string& from_str);
-  DSMCondition* getCondition(const string& from_str);
-};
+DECLARE_MODULE(MOD_CLS_NAME);
 
 DEF_SCCondition(FileExistsCondition);
 DEF_ACTION_1P(SCMkDirAction);

@@ -95,10 +95,7 @@ int SCPyModule::preload() {
   return 0;
 }
 
-DSMAction* SCPyModule::getAction(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
+MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   if (NULL==dsm_module) {
     ERROR("mod_py must be preloaded! add preload=mod_py to dsm.conf\n");
@@ -112,13 +109,10 @@ DSMAction* SCPyModule::getAction(const string& from_str) {
     return NULL;
   }
 
-  return NULL;
-}
+} MOD_ACTIONEXPORT_END;
 
-DSMCondition* SCPyModule::getCondition(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
+
+MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   if (NULL==dsm_module) {
     ERROR("mod_py must be preloaded! add preload=mod_py to dsm.conf\n");
@@ -134,8 +128,7 @@ DSMCondition* SCPyModule::getCondition(const string& from_str) {
     }
   }
 
-  return NULL;
-}
+} MOD_CONDITIONEXPORT_END;
 
 SCPyDictArg::SCPyDictArg() 
  : pPyObject(NULL) {
@@ -316,7 +309,7 @@ SCPyModule::~SCPyModule() {
   /* Disable signal handling */
   PyOS_FiniInterrupts();
 
-    PyInterpreterState_Clear(interp);
+  PyInterpreterState_Clear(interp);
   
   
   /* Delete current thread */

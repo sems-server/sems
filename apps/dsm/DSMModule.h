@@ -267,4 +267,60 @@ void splitCmd(const string& from_str,
   return false;					\
   }
 
+
+#define DECLARE_MODULE(mod_cls_name)			\
+  class mod_cls_name					\
+  : public DSMModule {					\
+							\
+  public:						\
+    mod_cls_name() { }					\
+ ~mod_cls_name() { }					\
+							\
+ DSMAction* getAction(const string& from_str);		\
+ DSMCondition* getCondition(const string& from_str);	\
+};
+
+#define DECLARE_MODULE_BEGIN(mod_cls_name)		\
+  class mod_cls_name					\
+  : public DSMModule {					\
+							\
+  public:						\
+    mod_cls_name() { }					\
+ ~mod_cls_name() { }					\
+							\
+ DSMAction* getAction(const string& from_str);		\
+ DSMCondition* getCondition(const string& from_str);	
+
+
+
+#define DECLARE_MODULE_END \
+  }
+
+#define MOD_ACTIONEXPORT_BEGIN(mod_cls_name)				\
+  DSMAction* mod_cls_name::getAction(const string& from_str) {		\
+  string cmd;								\
+  string params;							\
+  splitCmd(from_str, cmd, params);					
+
+#define MOD_ACTIONEXPORT_END			\
+  return NULL;					\
+  }						
+
+#define MOD_CONDITIONEXPORT_NONE(mod_cls_name)				\
+  DSMCondition* mod_cls_name::getCondition(const string& from_str) {	\
+    return NULL;							\
+  }
+
+
+#define MOD_CONDITIONEXPORT_BEGIN(mod_cls_name)				\
+  DSMCondition* mod_cls_name::getCondition(const string& from_str) {	\
+  string cmd;								\
+  string params;							\
+  splitCmd(from_str, cmd, params);
+
+#define MOD_CONDITIONEXPORT_END \
+  return NULL;			\
+  }				\
+
+
 #endif

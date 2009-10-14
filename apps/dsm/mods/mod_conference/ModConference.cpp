@@ -34,64 +34,20 @@
 #include "DSMSession.h"
 #include "ModConference.h"
 
-SC_EXPORT(ConfModule);
+SC_EXPORT(MOD_CLS_NAME);
 
-ConfModule::ConfModule() {
-}
-
-ConfModule::~ConfModule() {
-}
-
-void splitCmd(const string& from_str, 
-	      string& cmd, string& params) {
-  size_t b_pos = from_str.find('(');
-  if (b_pos != string::npos) {
-    cmd = from_str.substr(0, b_pos);
-    params = from_str.substr(b_pos + 1, from_str.rfind(')') - b_pos -1);
-  } else 
-    cmd = from_str;  
-}
-
-DSMAction* ConfModule::getAction(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
-
-#define DEF_CMD(cmd_name, class_name) \
-				      \
-  if (cmd == cmd_name) {	      \
-    class_name * a =		      \
-      new class_name(params);	      \
-    a->name = from_str;		      \
-    return a;			      \
-  }
+MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("conference.join", ConfJoinAction);
   DEF_CMD("conference.postEvent", ConfPostEventAction);
   DEF_CMD("conference.setPlayoutType", ConfSetPlayoutTypeAction);
 
-  return NULL;
-}
+} MOD_ACTIONEXPORT_END;
 
-DSMCondition* ConfModule::getCondition(const string& from_str) {
-  return NULL;
-}
-
-#define GET_SCSESSION()					 \
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess); \
-  if (!sc_sess) {					 \
-    ERROR("wrong session type\n");			 \
-    return false;					 \
-  }
-
+MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
 
 CONST_ACTION_2P(ConfPostEventAction, ',', true);
-
-bool ConfPostEventAction::execute(AmSession* sess, 
-			     DSMCondition::EventType event,
-			     map<string,string>* event_params) {
-  GET_SCSESSION();
-
+EXEC_ACTION_START(ConfPostEventAction) {
   string channel_id = resolveVars(par1, sess, sc_sess, event_params);
   string ev_id = resolveVars(par2, sess, sc_sess, event_params);
   
@@ -102,17 +58,11 @@ bool ConfPostEventAction::execute(AmSession* sess,
   }
 
   AmConferenceStatus::postConferenceEvent(channel_id, ev, sess->getLocalTag());
-
-  return false;
-}
+} EXEC_ACTION_END;
 
 
 CONST_ACTION_2P(ConfJoinAction, ',', true);
-bool ConfJoinAction::execute(AmSession* sess, 
-			     DSMCondition::EventType event,
-			     map<string,string>* event_params) {
-  GET_SCSESSION();
-
+EXEC_ACTION_START(ConfJoinAction) {
   string channel_id = resolveVars(par1, sess, sc_sess, event_params);
   string mode = resolveVars(par2, sess, sc_sess, event_params);
 
@@ -147,16 +97,10 @@ bool ConfJoinAction::execute(AmSession* sess,
   sc_sess->addToPlaylist(new AmPlaylistItem(play_item, rec_item));
 
   sc_sess->transferOwnership(dsm_chan);
-
-  return false;
-}
+} EXEC_ACTION_END;
 
 
-bool ConfSetPlayoutTypeAction::execute(AmSession* sess, 
-				       DSMCondition::EventType event,
-				       map<string,string>* event_params) {
-  GET_SCSESSION();
-
+EXEC_ACTION_START(ConfSetPlayoutTypeAction) {
   string playout_type = resolveVars(arg, sess, sc_sess, event_params);
   if (playout_type == "adaptive")
     sess->rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT);
@@ -164,6 +108,4 @@ bool ConfSetPlayoutTypeAction::execute(AmSession* sess,
     sess->rtp_str.setPlayoutType(JB_PLAYOUT);
   else 
     sess->rtp_str.setPlayoutType(SIMPLE_PLAYOUT);
-
-  return false;
-}
+} EXEC_ACTION_END;

@@ -31,8 +31,9 @@
 
 #include <Python.h>
 
+#define MOD_CLS_NAME SCPyModule
 
-class SCPyModule 
+class SCPyModule
 : public DSMModule {
 
  public:

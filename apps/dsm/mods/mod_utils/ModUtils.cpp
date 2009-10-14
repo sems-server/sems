@@ -34,28 +34,9 @@
 #include "DSMSession.h"
 #include "AmSession.h"
 
-SC_EXPORT(SCUtilsModule);
+SC_EXPORT(MOD_CLS_NAME);
 
-SCUtilsModule::SCUtilsModule() {
-}
-
-SCUtilsModule::~SCUtilsModule() {
-}
-
-void splitCmd(const string& from_str, 
-	      string& cmd, string& params) {
-  size_t b_pos = from_str.find('(');
-  if (b_pos != string::npos) {
-    cmd = from_str.substr(0, b_pos);
-    params = from_str.substr(b_pos + 1, from_str.rfind(')') - b_pos -1);
-  } else 
-    cmd = from_str;  
-}
-
-DSMAction* SCUtilsModule::getAction(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
+MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("utils.playCountRight", SCUPlayCountRightAction);
   DEF_CMD("utils.playCountLeft",  SCUPlayCountLeftAction);
@@ -64,16 +45,10 @@ DSMAction* SCUtilsModule::getAction(const string& from_str) {
   DEF_CMD("utils.rand", SCURandomAction);
   DEF_CMD("utils.srand", SCUSRandomAction);
 
-  return NULL;
-}
 
-DSMCondition* SCUtilsModule::getCondition(const string& from_str) {
-  string cmd;
-  string params;
-  splitCmd(from_str, cmd, params);
+} MOD_ACTIONEXPORT_END;
 
-  return NULL;
-}
+MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
 
 bool utils_play_count(DSMSession* sc_sess, unsigned int cnt, 
 		      const string& basedir, const string& suffix, bool right) {
