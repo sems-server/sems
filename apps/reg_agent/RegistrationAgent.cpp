@@ -38,6 +38,16 @@
 
 #define MOD_NAME "reg_agent"
 
+#define CFG_PARAM_DOMAIN  "domain"
+#define CFG_PARAM_USER    "user"
+#define CFG_PARAM_DISPLAY "display_name"
+#define CFG_PARAM_AUTH    "auth_user"
+#define CFG_PARAM_PASS    "pwd"
+#define CFG_PARAM_PROXY   "proxy"
+
+#define MAX_ACCOUNTS      100
+
+
 EXPORT_SESSION_FACTORY(RegistrationAgentFactory,MOD_NAME);
 
 RegistrationAgentFactory::RegistrationAgentFactory(const string& _app_name)
@@ -54,54 +64,43 @@ int RegistrationAgentFactory::onLoad()
   // get application specific global parameters
   configureModule(cfg);
 
-  // stay backwards compatible
-  RegInfo ri; 
-  ri.domain = cfg.getParameter("domain","");
-  ri.user = cfg.getParameter("user","");
-  ri.display_name = cfg.getParameter("display_name","");
-  ri.auth_user = cfg.getParameter("auth_user","");
-  ri.passwd = cfg.getParameter("pwd","");
-  ri.proxy = cfg.getParameter("proxy","");
+  int i = 0;
+  string idx_str;
+  do {
+    RegInfo ri;
+    ri.domain = cfg.getParameter(CFG_PARAM_DOMAIN+idx_str,"");
+    ri.user = cfg.getParameter(CFG_PARAM_USER+idx_str,"");
+    ri.display_name = cfg.getParameter(CFG_PARAM_DISPLAY+idx_str,"");
+    ri.auth_user = cfg.getParameter(CFG_PARAM_AUTH+idx_str,"");
+    ri.passwd = cfg.getParameter(CFG_PARAM_PASS+idx_str,"");
+    ri.proxy = cfg.getParameter(CFG_PARAM_PROXY+idx_str,"");
 
-  if (!ri.domain.length() || 
-      !ri.user.length() || 
-      !ri.display_name.length() || 
-      !ri.auth_user.length() || 
-      !ri.passwd.length()) {
-    ERROR("Account for registration not correctly configured.\n");
-    ERROR("RegistrationAgent will not register any accounts.\n");
-    return 0;
-  }
-
-  DBG("Adding registration #%d (%s %s %s %s %s)\n", 0, 
-      ri.domain.c_str(), ri.user.c_str(), ri.display_name.c_str(), ri.auth_user.c_str(), ri.proxy.c_str());
-
-  dialer.add_reg(ri);
-
-  unsigned int ri_index = 1;
-  while (ri_index < 100) {
-    RegInfo ri; 
-    ri.domain = cfg.getParameter("domain"+int2str(ri_index),"");
-    ri.user = cfg.getParameter("user"+int2str(ri_index),"");
-    ri.display_name = cfg.getParameter("display_name"+int2str(ri_index),"");
-    ri.auth_user = cfg.getParameter("auth_user"+int2str(ri_index),"");
-    ri.passwd = cfg.getParameter("pwd"+int2str(ri_index),"");
-    ri.proxy = cfg.getParameter("proxy"+int2str(ri_index),"");
-      
-    if (!ri.domain.length() || 
-	!ri.user.length() || 
-	!ri.display_name.length() || 
-	!ri.auth_user.length() || 
-	!ri.passwd.length())
+    if (!ri.domain.length() || !ri.user.length()) {
+      // not including the passwd: might be IP based registration
+      // not including the display name: allow user to skip it
+      DBG("no mandatory config parameters '" CFG_PARAM_DOMAIN "' and '"
+        CFG_PARAM_USER "' provided for entry #%d; configuration halted.\n", i);
       break;
-	
-    DBG("Adding registration #%d (%s %s %s %s %s)\n", ri_index, 
-	ri.domain.c_str(), ri.user.c_str(), ri.display_name.c_str(), ri.auth_user.c_str(), ri.proxy.c_str());
-    dialer.add_reg(ri);
-    ri_index++;
-  }
+    }
 
-  dialer.start();
+    if (!ri.auth_user.length()) // easier to config
+      ri.auth_user = ri.user;
+
+    dialer.add_reg(ri);
+    DBG("Adding registration account #%d (%s %s %s %s %s)\n", i, 
+        ri.domain.c_str(), ri.user.c_str(), ri.display_name.c_str(), 
+        ri.auth_user.c_str(), ri.proxy.c_str());
+
+    i ++;
+    idx_str = int2str(i);
+  } while (i < MAX_ACCOUNTS);
+
+  if (i <= 0) {
+    ERROR("no complete account provided: '" MOD_NAME "' module remains "
+        "inactive, which might not be what you want!\n");
+  } else {
+    dialer.start();
+  }
 
   return 0;
 }
