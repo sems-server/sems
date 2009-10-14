@@ -99,7 +99,14 @@ rtp_low_port=10000
 rtp_high_port=60000
 
 ############################################################
-# application configuration
+# modules and application configuration
+#
+# Configuration of plugin (module) loading:
+# - if load_plugins is set, only those are loaded.
+# - if load_plugins is not set, all modules in the plugin_path
+#   directory are loaded, except those which are listed 
+#   in exclude_plugins.
+#
 
 # optional parameter: plugin_path=<path>
 # 
