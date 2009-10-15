@@ -644,7 +644,7 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
 
     // Allocate new message
     sip_msg* p_msg = new sip_msg();
-    p_msg->buf = new char[request_len];
+    p_msg->buf = new char[request_len+1];
     p_msg->len = request_len;
 
     // generate it
@@ -663,9 +663,9 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
     if(msg->body.len){
 	memcpy(c,msg->body.s,msg->body.len);
 
-	// Not needed by now as the message is finished
-	//c += body.len;
+	c += msg->body.len;
     }
+    *c++ = '\0';
 
     // and parse it
     char* err_msg=0;
