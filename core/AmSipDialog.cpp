@@ -69,10 +69,18 @@ AmSipDialog::~AmSipDialog()
 
 void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
+  if (req.method == "ACK")
+    return;
+
   if(uas_trans.find(req.cseq) == uas_trans.end())
     uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq);
 
-  if (req.from_uri.length())
+  // target refresh requests
+  if (req.from_uri.length() && 
+      (req.method == "INVITE" || 
+       req.method == "UPDATE" ||
+       req.method == "SUBSCRIBE" ||
+       req.method == "NOTIFY"))
     remote_uri = req.from_uri;
 
   sip_ip       = req.dstip;
