@@ -24,4 +24,4 @@ INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
 
-PYTHON_SOURCES_COMPILE(py/log ivr)
+PYTHON_SOURCES_COMPILE(py/log.py ivr)
