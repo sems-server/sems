@@ -91,7 +91,7 @@ class AmPrecodedFileInstance
   int open();
   
  protected:
-  AmAudioFileFormat* fileName2Fmt(const string& name);
+  AmAudioFileFormat* fileName2Fmt(const string& name, const string& subtype);
 };
 
 class AmPrecodedFile 

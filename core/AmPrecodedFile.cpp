@@ -124,7 +124,7 @@ AmPrecodedFileInstance::AmPrecodedFileInstance(precoded_payload_t& precoded_payl
 AmPrecodedFileInstance::~AmPrecodedFileInstance(){
 }
 
-AmAudioFileFormat* AmPrecodedFileInstance::fileName2Fmt(const string& name) {
+AmAudioFileFormat* AmPrecodedFileInstance::fileName2Fmt(const string& name, const string& subtype) {
   return new AmPrecodedFileFormat(precoded_payload);
 }
 
