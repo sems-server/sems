@@ -37,7 +37,9 @@ DSMStateDiagramCollection::~DSMStateDiagramCollection() {
 }
 
 bool DSMStateDiagramCollection::loadFile(const string& filename, const string& name, 
-				      const string& mod_path) {
+					 const string& mod_path, bool debug_dsm) {
+  DBG("loading DSM '%s' from '%s'\n", name.c_str(), filename.c_str());
+
   DSMChartReader cr;
 
   ifstream ifs(filename.c_str());
@@ -61,7 +63,9 @@ bool DSMStateDiagramCollection::loadFile(const string& filename, const string& n
 
     s += r + "\n";
   }
-  DBG("dsm text\n------------------\n%s\n------------------\n", s.c_str());
+  if (debug_dsm) {
+    DBG("dsm text\n------------------\n%s\n------------------\n", s.c_str());
+  }
   if (!cr.decode(&diags.back(), s, mod_path, this, mods)) {
     ERROR("DonkeySM decode script error!\n");
     return false;

@@ -57,6 +57,7 @@ DSMFactory* DSMFactory::instance()
   return _instance;
 }
 
+bool DSMFactory::DebugDSM;
 string DSMFactory::InboundStartDiag;
 string DSMFactory::OutboundStartDiag;
 
@@ -179,6 +180,8 @@ int DSMFactory::onLoad()
     prompt_sets[*it] = pc;
   }
 
+  DebugDSM = cfg.getParameter("debug_raw_dsm") == "yes";
+ 
   string DiagPath = cfg.getParameter("diag_path");
   if (DiagPath.length() && DiagPath[DiagPath.length()-1] != '/')
     DiagPath += '/';
@@ -198,7 +201,7 @@ int DSMFactory::onLoad()
   vector<string> diags_names = explode(LoadDiags, ",");
   for (vector<string>::iterator it=
 	 diags_names.begin(); it != diags_names.end(); it++) {
-    if (!diags->loadFile(DiagPath+*it+".dsm", *it, ModPath)) {
+    if (!diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM)) {
       ERROR("loading %s from %s\n", 
 	    it->c_str(), (DiagPath+*it+".dsm").c_str());
       return -1;
@@ -545,7 +548,7 @@ void DSMFactory::reloadDSMs(const AmArg& args, AmArg& ret) {
   vector<string> diags_names = explode(LoadDiags, ",");
   for (vector<string>::iterator it=
 	 diags_names.begin(); it != diags_names.end(); it++) {
-    if (!new_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath)) {
+    if (!new_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM)) {
       ERROR("loading %s from %s\n", 
 	    it->c_str(), (DiagPath+*it+".dsm").c_str());
       ret.push(500);
@@ -694,7 +697,7 @@ void DSMFactory::loadDSM(const AmArg& args, AmArg& ret) {
   string dsm_file_name = DiagPath+dsm_name+".dsm";
   string res = "OK";
   diags_mut.lock();
-  if (!diags->loadFile(dsm_file_name, dsm_name, ModPath)) {
+  if (!diags->loadFile(dsm_file_name, dsm_name, ModPath, DebugDSM)) {
     ret.push(500);
     ret.push("error loading "+dsm_name+" from "+ dsm_file_name);
   } else {
@@ -711,7 +714,7 @@ void DSMFactory::loadDSMWithPaths(const AmArg& args, AmArg& ret) {
 
   string res = "OK";
   diags_mut.lock();
-  if (!diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path)) {
+  if (!diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path, DebugDSM)) {
     ret.push(500);
     ret.push("error loading "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
   } else {
