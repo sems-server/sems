@@ -34,7 +34,7 @@ DSMCall::DSMCall(AmPromptCollection* prompts,
 		     DSMStateDiagramCollection& diags,
 		     const string& startDiagName,
 		     UACAuthCred* credentials)
-  : prompts(prompts), default_prompts(prompts), diags(diags), startDiagName(startDiagName), 
+  : prompts(prompts), default_prompts(prompts), startDiagName(startDiagName), 
     playlist(this), cred(credentials), 
     rec_file(NULL),
     process_invite(true), process_sessionstart(true)

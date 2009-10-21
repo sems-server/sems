@@ -46,7 +46,6 @@ class DSMCall : public AmB2BCallerSession,
   DSMStateEngine engine;
   AmPromptCollection* prompts;
   AmPromptCollection* default_prompts;
-  DSMStateDiagramCollection& diags;
   string startDiagName;
   AmPlaylist playlist;
 
