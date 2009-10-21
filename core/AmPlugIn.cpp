@@ -255,12 +255,9 @@ int AmPlugIn::load(const string& directory, const string& plugins)
     // register for receiving logging messages
     register_logging_fac(it->second);
   }
-
     
-  std::map<std::string,AmSessionFactory*> apps(name2app);
-  for(std::map<std::string,AmSessionFactory*>::iterator it = apps.begin();
-      it != apps.end(); it++){
-
+  for(std::map<std::string,AmSessionFactory*>::iterator it = name2app.begin();
+      it != name2app.end(); it++){
     err = it->second->onLoad();
     if(err)
       return err;
