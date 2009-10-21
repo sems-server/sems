@@ -46,6 +46,7 @@ class DSMStateDiagramCollection
   bool loadFile(const string& filename, const string& name, const string& mod_path);
   void addToEngine(DSMStateEngine* e);
   bool hasDiagram(const string& name);
+  vector<string> getDiagramNames();
 };
 
 #endif

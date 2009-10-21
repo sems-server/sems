@@ -78,6 +78,14 @@ bool DSMStateDiagramCollection::hasDiagram(const string& name) {
   return false;
 }
 
+vector<string> DSMStateDiagramCollection::getDiagramNames() {
+  vector<string> res; 
+  for (vector<DSMStateDiagram>::iterator it=
+	 diags.begin(); it != diags.end(); it++) 
+    res.push_back(it->getName());
+  return res;
+}
+
 void DSMStateDiagramCollection::addToEngine(DSMStateEngine* e) {
   DBG("adding %zd diags to engine\n", diags.size());
   for (vector <DSMStateDiagram>::iterator it = 

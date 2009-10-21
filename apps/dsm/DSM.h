@@ -60,7 +60,8 @@ class DSMFactory
     public AmEventQueueInterface
 {
   AmPromptCollection prompts;
-  DSMStateDiagramCollection diags;
+  DSMStateDiagramCollection* diags;
+  AmMutex diags_mut;
 
   static string InboundStartDiag;
   static string OutboundStartDiag;
@@ -83,6 +84,18 @@ class DSMFactory
   void addParams(DSMCall* s, const string& hdrs);
 
   DSMChartReader preload_reader;
+
+  void listDSMs(const AmArg& args, AmArg& ret);
+  void hasDSM(const AmArg& args, AmArg& ret);
+  void reloadDSMs(const AmArg& args, AmArg& ret);
+  void preloadModules(const AmArg& args, AmArg& ret);
+  void preloadModule(const AmArg& args, AmArg& ret);
+  void loadDSM(const AmArg& args, AmArg& ret);
+  void loadDSMWithPaths(const AmArg& args, AmArg& ret);
+  void registerApplication(const AmArg& args, AmArg& ret);
+
+  int preloadModules(AmConfigReader& cfg, string& res, const string& ModPath);
+
 public:
   static DSMFactory* instance();
 

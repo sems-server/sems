@@ -44,10 +44,49 @@ A patch for fmsc 1.0.4 from the graphical FSM editor fsme
 (http://fsme.sf.net) is available, so DSMs can be defined in 
 click-n-drag fashion and compiled to SEMS DSM diagrams.
 
+DI commands
+===========
+
+postDSMEvent(string call_id, [ [[param0,val0],[param1,val1],...] ]
+ post a DSM event into a call. can be used to interact with running
+ calls in DSM. See DSM + monitoring + DI example in 
+ examples/dsm_di_monit. 
+
+ Example: 
+   s.postDSMEvent(call_id, [['action', 'take'],['roomname', 'realworld']])
+
+
+reloadDSMs()
+  reload all DSMs from config file (load_diags)
+
+loadDSM(string diag_name)
+  load DSM with name diag_name, paths are taken from config file
+
+loadDSMWithPaths(string diag_name, string diag_path, string mod_path)
+  load DSM with specified paths
+
+preloadModules()
+  preload all modules specified in config file (preload_mods)
+
+preloadModule(string mod_name, string mod_path)
+  preload module from specific path 
+
+hasDSM(string diag_name)
+  returns 1 if DSM with diag_name is loaded, 0 if not
+
+listDSMs()
+  return list of loaded DSMs
+
+registerApplication(string diag_name)
+  register DSM with name diag_name as application in SEMS
+  (e.g. to be used with application=$(apphdr), $(ruri.param) 
+  or $(ruri.user)
+
 More info
 =========
  o doc/dsm_syntax.txt has a quick reference for dsm syntax
  o doc/examples/ and lib/ some example DSMs
+ o doc/examples/dsm_di_monit example on interfacing with DSM
  o mods/ (will) have modules
 
 Internals
