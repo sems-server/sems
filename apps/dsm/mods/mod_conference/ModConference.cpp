@@ -39,12 +39,23 @@ SC_EXPORT(MOD_CLS_NAME);
 MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("conference.join", ConfJoinAction);
+  DEF_CMD("conference.leave", ConfLeaveAction);
+  DEF_CMD("conference.rejoin", ConfRejoinAction);
   DEF_CMD("conference.postEvent", ConfPostEventAction);
   DEF_CMD("conference.setPlayoutType", ConfSetPlayoutTypeAction);
 
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
+
+
+void DSMConfChannel::release() {
+  chan.release();
+}
+
+void DSMConfChannel::reset(AmConferenceChannel* channel) {
+  chan.reset(channel);
+}
 
 CONST_ACTION_2P(ConfPostEventAction, ',', true);
 EXEC_ACTION_START(ConfPostEventAction) {
@@ -60,33 +71,37 @@ EXEC_ACTION_START(ConfPostEventAction) {
   AmConferenceStatus::postConferenceEvent(channel_id, ev, sess->getLocalTag());
 } EXEC_ACTION_END;
 
-
-CONST_ACTION_2P(ConfJoinAction, ',', true);
-EXEC_ACTION_START(ConfJoinAction) {
-  string channel_id = resolveVars(par1, sess, sc_sess, event_params);
-  string mode = resolveVars(par2, sess, sc_sess, event_params);
-
+static bool ConferenceJoinChannel(DSMConfChannel** dsm_chan, 
+				  AmSession* sess,
+				  DSMSession* sc_sess,
+				  const string& channel_id, 
+				  const string& mode) {
   bool connect_play = false;
   bool connect_record = false;
   if (mode.empty()) {
     connect_play = true;
     connect_record = true;
   } else if (mode == "speakonly") {
-    connect_play = true;
-  } else if (mode == "listenonly") {
     connect_record = true;
+  } else if (mode == "listenonly") {
+    connect_play = true;
   } 
   DBG("connect_play = %s, connect_rec = %s\n", 
       connect_play?"true":"false", 
       connect_record?"true":"false");
   
-  AmConferenceChannel* chan = AmConferenceStatus::getChannel(channel_id, sess->getLocalTag());
+  AmConferenceChannel* chan = AmConferenceStatus::getChannel(channel_id, 
+							     sess->getLocalTag());
   if (NULL == chan) {
     ERROR("obtaining conference channel\n");
     return false;
   }
+  if (NULL != *dsm_chan) {
+    (*dsm_chan)->reset(chan);
+  } else {
+    *dsm_chan = new DSMConfChannel(chan);
+  }
 
-  DSMConfChannel* dsm_chan = new DSMConfChannel(chan);
   AmAudio* play_item = NULL;
   AmAudio* rec_item = NULL;
   if (connect_play)
@@ -96,9 +111,79 @@ EXEC_ACTION_START(ConfJoinAction) {
 
   sc_sess->addToPlaylist(new AmPlaylistItem(play_item, rec_item));
 
-  sc_sess->transferOwnership(dsm_chan);
+  return true;
+}
+
+CONST_ACTION_2P(ConfJoinAction, ',', true);
+EXEC_ACTION_START(ConfJoinAction) {
+  string channel_id = resolveVars(par1, sess, sc_sess, event_params);
+  string mode = resolveVars(par2, sess, sc_sess, event_params);
+
+  DSMConfChannel* dsm_chan = NULL;
+
+  if (ConferenceJoinChannel(&dsm_chan, sess, sc_sess, channel_id, mode)) {
+      // save channel for later use
+      AmArg c_arg;
+      c_arg.setBorrowedPointer(dsm_chan);
+      sc_sess->avar[CONF_AKEY_CHANNEL] = c_arg;
+      
+      // add to garbage collector
+      sc_sess->transferOwnership(dsm_chan);
+
+      sc_sess->SET_ERRNO(DSM_ERRNO_OK);
+  } else {
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+  }
 } EXEC_ACTION_END;
 
+static DSMConfChannel* getDSMConfChannel(DSMSession* sc_sess) {
+  if (sc_sess->avar.find(CONF_AKEY_CHANNEL) == sc_sess->avar.end()) {
+    return NULL;
+  }
+  ArgObject* ao = NULL; DSMConfChannel* res = NULL;
+  try {
+    if (!isArgAObject(sc_sess->avar[CONF_AKEY_CHANNEL])) {
+      return NULL;
+    }
+    ao = sc_sess->avar[CONF_AKEY_CHANNEL].asObject();
+  } catch (...){
+    return NULL;
+  }
+
+  if (NULL == ao || NULL == (res = dynamic_cast<DSMConfChannel*>(ao))) {
+    return NULL;
+  }
+  return res;
+}
+
+EXEC_ACTION_START(ConfLeaveAction) {
+  DSMConfChannel* chan = getDSMConfChannel(sc_sess);
+  if (NULL == chan) {
+    WARN("app error: trying to leave conference, but channel not found\n");
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    return false;
+  }
+  chan->release();
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(ConfRejoinAction, ',', true);
+EXEC_ACTION_START(ConfRejoinAction) {
+  string channel_id = resolveVars(par1, sess, sc_sess, event_params);
+  string mode = resolveVars(par2, sess, sc_sess, event_params);
+
+  DSMConfChannel* chan = getDSMConfChannel(sc_sess);
+  if (NULL == chan) {
+    WARN("app error: trying to rejoin conference, but channel not found\n");
+  } else {
+    chan->release();
+  }
+
+  if (ConferenceJoinChannel(&chan, sess, sc_sess, channel_id, mode)) {
+      sc_sess->SET_ERRNO(DSM_ERRNO_OK);
+  } else {
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+  }
+} EXEC_ACTION_END;
 
 EXEC_ACTION_START(ConfSetPlayoutTypeAction) {
   string playout_type = resolveVars(arg, sess, sc_sess, event_params);

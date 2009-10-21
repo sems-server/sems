@@ -35,15 +35,24 @@
 
 DECLARE_MODULE(MOD_CLS_NAME);
 
-class DSMConfChannel : public DSMDisposable {
+#define CONF_AKEY_CHANNEL "conf.chan" 
+
+class DSMConfChannel 
+: public DSMDisposable,
+  public ArgObject {
   std::auto_ptr<AmConferenceChannel> chan;
 
  public:
  DSMConfChannel(AmConferenceChannel* channel) : chan(channel) { }
   ~DSMConfChannel() { }
+  void release();
+  void reset(AmConferenceChannel* channel);
+
 };
 
 DEF_ACTION_2P(ConfJoinAction);
+DEF_ACTION_1P(ConfLeaveAction);
+DEF_ACTION_2P(ConfRejoinAction); 
 DEF_ACTION_2P(ConfPostEventAction);
 DEF_ACTION_1P(ConfSetPlayoutTypeAction);
 
