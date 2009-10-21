@@ -256,12 +256,16 @@ int AmPlugIn::load(const string& directory, const string& plugins)
     register_logging_fac(it->second);
   }
     
+  name2app_mut.lock();
   for(std::map<std::string,AmSessionFactory*>::iterator it = name2app.begin();
       it != name2app.end(); it++){
     err = it->second->onLoad();
-    if(err)
+    if(err) {
+      name2app_mut.unlock();
       return err;
+    }
   }
+  name2app_mut.unlock();
 
   DBG("AmPlugIn: Initialized plugins.\n");
 
@@ -435,10 +439,15 @@ int AmPlugIn::subtypeID(amci_inoutfmt_t* iofmt, const string& subtype_name) {
 
 AmSessionFactory* AmPlugIn::getFactory4App(const string& app_name)
 {
+  AmSessionFactory* res = NULL;
+
+  name2app_mut.lock();
   std::map<std::string,AmSessionFactory*>::iterator it = name2app.find(app_name);
-  if(it != name2app.end())
-    return it->second;
-  return 0;
+  if(it != name2app.end()) 
+    res = it->second;
+  name2app_mut.unlock();
+
+  return res;
 }
 
 AmSessionEventHandlerFactory* AmPlugIn::getFactory4Seh(const string& name)
@@ -520,21 +529,24 @@ int AmPlugIn::loadAppPlugIn(AmPluginFactory* f)
   AmSessionFactory* sf = dynamic_cast<AmSessionFactory*>(f);
   if(!sf){
     ERROR("invalid application plug-in!\n");
-    goto error;
+    return -1;
   }
+
+  name2app_mut.lock();
 
   if(name2app.find(sf->getName()) != name2app.end()){
     ERROR("application '%s' already loaded !\n",sf->getName().c_str());
-    goto error;
-  }
-      
+    name2app_mut.unlock();
+    return -1;
+  }      
+
   name2app.insert(std::make_pair(sf->getName(),sf));
   DBG("application '%s' loaded.\n",sf->getName().c_str());
 
+  name2app_mut.unlock();
+
   return 0;
 
- error:
-  return -1;
 }
 
 int AmPlugIn::loadSehPlugIn(AmPluginFactory* f)
@@ -748,15 +760,21 @@ int AmPlugIn::addFileFormat(amci_inoutfmt_t* f)
 
 bool AmPlugIn::registerFactory4App(const string& app_name, AmSessionFactory* f)
 {
+  bool res;
+
+  name2app_mut.lock();
   std::map<std::string,AmSessionFactory*>::iterator it = name2app.find(app_name);
   if(it != name2app.end()){
     WARN("Application '%s' has already been registered and cannot be registered a second time\n",
 	 app_name.c_str());
-    return false;
+    res =  false;
+  } else {
+    name2app.insert(make_pair(app_name,f));
+    res = true;
   }
-  
-  name2app.insert(make_pair(app_name,f));
-  return true;
+  name2app_mut.unlock();
+
+  return res;
 }
 
 AmSessionFactory* AmPlugIn::findSessionFactory(AmSipRequest& req)

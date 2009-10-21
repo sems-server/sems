@@ -29,6 +29,8 @@
 #ifndef _AmPlugIn_h_
 #define _AmPlugIn_h_
 
+#include "AmThread.h"
+
 #include <string>
 #include <map>
 #include <vector>
@@ -94,6 +96,8 @@ class AmPlugIn : public AmPayloadProviderInterface
   std::map<string,amci_inoutfmt_t*> file_formats;
 
   std::map<string,AmSessionFactory*>             name2app;
+  AmMutex name2app_mut;
+
   std::map<string,AmSessionEventHandlerFactory*> name2seh;
   std::map<string,AmPluginFactory*>              name2base;
   std::map<string,AmDynInvokeFactory*>           name2di;
