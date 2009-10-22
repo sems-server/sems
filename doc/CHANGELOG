@@ -1,6 +1,53 @@
 
 Changelog for SEMS 
 
+Version 1.2.0 (in order)
+
+- fixed precoded announcements for all codecs
+
+- exceptions for DSM
+
+- live reloading of DSM scripts 
+
+- fixed multiple timers with the same timestamp
+
+- mail_header_vars : variables from P-App-Param into voicemail template (SEMS-17)
+- twitter app
+
+- sipctrl: outbound proxy support and ACK sent from UA layer
+
+- DSM: mod_aws Amazon Web Services module
+
+- stored application and variables from monitoring for new calls 
+
+- complete working and usable CMake build system
+
+- DSM: mod_py Python module
+
+- fixed memory leak from ivr 
+
+- improved RTP DTMF detection using TS
+
+- Audio file recording with subtype (record.wav|A-Law)
+
+- DSM: B2BUA functionality
+
+- DSM: mod_mysql for MySQL DB access
+
+- DSM: Events from DI
+
+- DSM: mod_conference module
+
+- PyQT GUI example for webconference 
+
+- monitoring: server monitoring and in-memory AVP store
+
+- DSM: 'not' operator on conditions
+
+- DSM: transitions from multiple origin states
+
+- DSM: register scripts as application
+
 Version 1.1.0 RC1
  (in order)
 
