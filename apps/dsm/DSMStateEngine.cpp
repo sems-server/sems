@@ -156,9 +156,9 @@ bool DSMStateEngine::onInvite(const AmSipRequest& req, DSMSession* sess) {
 }
 
 bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from, 
-			     vector<DSMAction*>::iterator to, 
-			     AmSession* sess,  DSMCondition::EventType event,
-			     map<string,string>* event_params,  bool& is_consumed) {
+				vector<DSMAction*>::iterator to, 
+				AmSession* sess,  DSMCondition::EventType event,
+				map<string,string>* event_params,  bool& is_consumed) {
 //   DBG("running %zd actions\n", to - from);
   for (vector<DSMAction*>::iterator it=from; it != to; it++) {
     DBG("executing '%s'\n", (*it)->name.c_str()); 
@@ -205,11 +205,19 @@ void DSMStateEngine::addModules(vector<DSMModule*> modules) {
 bool DSMStateEngine::init(AmSession* sess, const string& startDiagram, 
 			  DSMCondition::EventType init_event) {
 
-  if (!jumpDiag(startDiagram, sess, init_event, NULL)) {
-    ERROR("initializing with start diag '%s'\n",
-	  startDiagram.c_str());
-    return false;
-  }  
+  try {
+    if (!jumpDiag(startDiagram, sess, init_event, NULL)) {
+      ERROR("initializing with start diag '%s'\n",
+	    startDiagram.c_str());
+      return false;
+    }
+  } catch (DSMException& e) {
+    DBG("Exception type '%s' occured while initializing! Run init event as exception...\n", 
+	e.params["type"].c_str());
+    runEvent(sess, init_event, &e.params, true);
+    return true;
+    
+  }
 
   DBG("run init event...\n");
   runEvent(sess, init_event, NULL);
@@ -245,98 +253,119 @@ bool DSMCondition::match(AmSession* sess,
 }
 
 void DSMStateEngine::runEvent(AmSession* sess,
-			   DSMCondition::EventType event,
-			   map<string,string>* event_params) {
+			      DSMCondition::EventType event,
+			      map<string,string>* event_params,
+			      bool run_exception) {
   if (!current || !current_diag)
     return;
+  
+  DSMCondition::EventType active_event = event;
+  map<string,string>* active_params = event_params;
+  map<string,string> exception_params;
+  bool is_exception = run_exception;
 
   bool is_consumed = true;
   do {
-    is_consumed = true;
+    try {
+      is_consumed = true;
 
-    for (vector<DSMTransition>::iterator tr = current->transitions.begin();
-	 tr != current->transitions.end();tr++) {
-      DBG("checking transition '%s'\n", tr->name.c_str());
-      
-      vector<DSMCondition*>::iterator con=tr->precond.begin();
-      while (con!=tr->precond.end()) {
-	if (!(*con)->_match(sess, event, event_params))
-	  break;
-	con++;
-      }
-      if (con == tr->precond.end()) {
-	DBG("transition '%s' matched.\n", tr->name.c_str());
+      for (vector<DSMTransition>::iterator tr = current->transitions.begin();
+	   tr != current->transitions.end();tr++) {
+	if (tr->is_exception != is_exception)
+	  continue;
 	
-	//  matched all preconditions
-	// find target state
-	State* target_st = current_diag->getState(tr->to_state);
-	if (!target_st) {
-	  ERROR("script writer error: transition '%s' from "
-		"state '%s' to unknown state '%s'\n",
-		tr->name.c_str(),
-		current->name.c_str(),
-		tr->to_state.c_str());
+	DBG("checking transition '%s'\n", tr->name.c_str());
+	
+	vector<DSMCondition*>::iterator con=tr->precond.begin();
+	while (con!=tr->precond.end()) {
+	  if (!(*con)->_match(sess, active_event, active_params))
+	    break;
+	  con++;
 	}
-	
-	// run post-actions
-	if (current->post_actions.size()) {
-	  DBG("running %zd post_actions of state '%s'\n",
-	      current->post_actions.size(), current->name.c_str());
-	  if (runactions(current->post_actions.begin(), 
-			 current->post_actions.end(), 
-			 sess, event, event_params, is_consumed)) {
+	if (con == tr->precond.end()) {
+	  DBG("transition '%s' matched.\n", tr->name.c_str());
+	  
+	  //  matched all preconditions
+	  // find target state
+	  State* target_st = current_diag->getState(tr->to_state);
+	  if (!target_st) {
+	    ERROR("script writer error: transition '%s' from "
+		  "state '%s' to unknown state '%s'\n",
+		  tr->name.c_str(),
+		  current->name.c_str(),
+		  tr->to_state.c_str());
+	  }
+	  
+	  // run post-actions
+	  if (current->post_actions.size()) {
+	    DBG("running %zd post_actions of state '%s'\n",
+		current->post_actions.size(), current->name.c_str());
+	    if (runactions(current->post_actions.begin(), 
+			   current->post_actions.end(), 
+			   sess, active_event, active_params, is_consumed)) {
+	      break;
+	    }
+	  }
+	  
+	  // run transition actions
+	  if (tr->actions.size()) {
+	    DBG("running %zd actions of transition '%s'\n",
+		tr->actions.size(), tr->name.c_str());
+	    if (runactions(tr->actions.begin(), 
+			   tr->actions.end(), 
+			   sess, active_event, active_params, is_consumed)) {
+	      break;
+	    }
+	  }
+	  
+	  // go into new state
+	  if (!target_st) {
 	    break;
 	  }
-	}
-	
-	// run transition actions
-	if (tr->actions.size()) {
-	  DBG("running %zd actions of transition '%s'\n",
-	      tr->actions.size(), tr->name.c_str());
-	  if (runactions(tr->actions.begin(), 
-			 tr->actions.end(), 
-			 sess, event, event_params, is_consumed)) {
-	    break;
-	  }
-	}
-	
-	// go into new state
-	if (!target_st) {
-	  break;
-	}
-	DBG("changing to new state '%s'\n", target_st->name.c_str());
-	MONITORING_LOG(sess->getLocalTag().c_str(), "dsm_state", target_st->name.c_str());
-
+	  DBG("changing to new state '%s'\n", target_st->name.c_str());
+	  
 #ifdef USE_MONITORING
-	if (DSMFactory::MonitoringFullTransitions) {
-	  MONITORING_LOG_ADD(sess->getLocalTag().c_str(), 
-			     "dsm_stategraph", 
-			     ("> "+ tr->name + " >").c_str());
-	}
-
-	if (DSMFactory::MonitoringFullCallgraph) {
-	  MONITORING_LOG_ADD(sess->getLocalTag().c_str(), 
-			     "dsm_stategraph", 
-			     (current_diag->getName() +"/"+ target_st->name).c_str());
-	}
-#endif
-
-	current = target_st;
-	
-	// execute pre-actions
-	if (current->pre_actions.size()) {
-	  DBG("running %zd pre_actions of state '%s'\n",
-	      current->pre_actions.size(), current->name.c_str());
-	  if (runactions(current->pre_actions.begin(), 
-			 current->pre_actions.end(), 
-			 sess, event, event_params, is_consumed)) {
-	    break;
+	  MONITORING_LOG(sess->getLocalTag().c_str(), "dsm_state", target_st->name.c_str());
+	  
+	  if (DSMFactory::MonitoringFullTransitions) {
+	    MONITORING_LOG_ADD(sess->getLocalTag().c_str(), 
+			       "dsm_stategraph", 
+			       ("> "+ tr->name + " >").c_str());
 	  }
+	  
+	  if (DSMFactory::MonitoringFullCallgraph) {
+	    MONITORING_LOG_ADD(sess->getLocalTag().c_str(), 
+			       "dsm_stategraph", 
+			       (current_diag->getName() +"/"+ target_st->name).c_str());
+	  }
+#endif
+	  
+	  current = target_st;
+	  
+	  // execute pre-actions
+	  if (current->pre_actions.size()) {
+	    DBG("running %zd pre_actions of state '%s'\n",
+		current->pre_actions.size(), current->name.c_str());
+	    if (runactions(current->pre_actions.begin(), 
+			   current->pre_actions.end(), 
+			   sess, active_event, active_params, is_consumed)) {
+	      break;
+	    }
+	  }
+	  
+	  break;
 	}
-
-	break;
       }
+    } catch (DSMException& e) {
+      DBG("DSMException occured, type = %s\n", e.params["type"].c_str());
+      is_consumed = false;
+
+      is_exception = true; // continue to process as exception event
+      exception_params = e.params;
+      active_params = &exception_params;
+      active_event = DSMCondition::DSMException;
     }
+
   } while (!is_consumed);
 }
 

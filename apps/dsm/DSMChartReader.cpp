@@ -340,6 +340,7 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	}
 
 	tr->precond = cl->conditions;
+	tr->is_exception = cl->is_exception;
 	delete cl;
 
 	// start AL_trans action list
@@ -354,6 +355,11 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	continue;
       }
 
+      if (token == "exception") {
+	cl->is_exception = true;
+	continue;
+      }
+      
       //       DBG("new condition: '%s'\n", token.c_str());
       DSMCondition* c = conditionFromToken(token, cl->invert_next);
       cl->invert_next = false;

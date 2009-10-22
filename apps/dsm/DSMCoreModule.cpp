@@ -44,6 +44,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("callFSM", SCCallFSMAction);
   DEF_CMD("returnFSM", SCReturnFSMAction);
 
+  DEF_CMD("throw", SCThrowAction);
+
   DEF_CMD("stop", SCStopAction);
 
   DEF_CMD("playPrompt", SCPlayPromptAction);
@@ -256,6 +258,29 @@ EXEC_ACTION_START(SCEnableDTMFDetection) {
 EXEC_ACTION_START(SCDisableDTMFDetection) {
   sess->setDtmfDetectionEnabled(false);
 } EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCThrowAction, ',', true);
+EXEC_ACTION_START(SCThrowAction) {
+  map<string, string> e_args;
+  e_args["type"] = resolveVars(par1, sess, sc_sess, event_params); 
+  DBG("throwing DSMException type '%s'\n", e_args["type"].c_str());
+
+  string e_params = resolveVars(par2, sess, sc_sess, event_params);
+  
+  // inefficient param-split
+  vector<string> params = explode(e_params, ";");
+  for (vector<string>::iterator it=
+	 params.begin(); it != params.end(); it++) {
+    vector<string> n = explode(*it, "=");
+    if (n.size()==2) {
+      e_args[n[0]]=n[1];
+    }
+  }
+  
+  throw DSMException(e_args);
+
+} EXEC_ACTION_END;
+
 
 EXEC_ACTION_START(SCStopAction) {
   if (resolveVars(arg, sess, sc_sess, event_params) == "true") {

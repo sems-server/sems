@@ -26,8 +26,9 @@ A session (call) in the DonkeySM has a set of named (string) variables.
 The variables may be used as parameter to most conditions and 
 actions, by prepending the variable name with a dollar sign. The
 parameters of an event (e.g. the key on key press) may be accessed
-by prepending the name with a hash. There are also 'selects' with 
-which a set of dialog properties can be accessed (e.g. @local_tag).
+by prepending the name with a hash (e.g. #key). There are also 
+'selects' with which a set of dialog properties can be accessed 
+(e.g. @local_tag).
 
 The DonkeySM can be extended by modules, which add new conditions
 and actions to the language. This way, menuing system etc can be 
@@ -37,7 +38,14 @@ initialization function that is called when the module is loaded.
 DonkeySM also has built in actions to call 
 DI methods from other modules. 
 
-It can cache a set of prompts, configured at start, in memory 
+Actions (and conditions) can throw exceptions. Once an exception occurs,
+execution of the current actions is interrupted. Exceptions are handled
+this way that special "exception" transitions are executed. Exception
+transitions are marked with "exception" in the conditions list. Once the
+FSM is in exception handling, only exception transitions are followed.
+DSMs may throw exceptions with the throw(<type>) action.
+
+DSM can cache a set of prompts, configured at start, in memory 
 using PromptCollection.
 
 A patch for fmsc 1.0.4 from the graphical FSM editor fsme 
@@ -46,6 +54,8 @@ click-n-drag fashion and compiled to SEMS DSM diagrams.
 
 DI commands
 ===========
+
+DI commands allow interaction with DSM calls, and DSM script reload:
 
 postDSMEvent(string call_id, [ [[param0,val0],[param1,val1],...] ]
  post a DSM event into a call. can be used to interact with running
@@ -95,7 +105,7 @@ The DSMStateEngine has a set of DSM diagrams which are loaded by
 the DSMStateDiagramCollection from text file and interpreted by
 the DSMChartReader, a simple stack based tokenizing compiler.
 
-DSMDialogs, which implement the DSMSession interface (additionally
+DSMCall, which implement the DSMSession interface (additionally
 to being an AmSession), run DSMStateEngine::runEvent for every event 
 that occurs that should be processed by the engine (e.g. Audio event, 
 onBye, ...). 
@@ -107,7 +117,7 @@ executed. The DSMCondition::match and DSMAction::execute functions
 get the event parameters and the session as parameters, so that they
 can operate on variables, implement selects etc. 
 
-The DSMDialog implementation is very simple, it uses a playlist and 
+The DSMCall implementation is very simple, it uses a playlist and 
 has PromptCollection to simply play prompts etc.
 
 DSMCoreModule is a 'built in' module that implements the basic 
@@ -122,9 +132,6 @@ used for creating the new session. As the DSMSession is mostly an abstract
 interface, other session types can easily be implemented, and their 
 functionality be exposed to the DSM interpreter by custom actions and 
 conditions that interact with that specific session type.
-
-Another direction is  python/lua/... interpreter module, so that 
-conditions and actions can be expressed in a more powerful language.
 
 A set of modules exposing more of the core functionality.
 
@@ -171,7 +178,9 @@ each condition of each transition is way too heavy!
 SEMS has a dynamically typed type (AmArg), why not use that one for 
 variables? That would also make DI simpler. 
  a patch is very welcome, best to semsdev list: semsdev@iptel.org or 
- the tracker: http://tracker.iptel.org
+ the tracker: http://tracker.iptel.org.
+ There is also the avar array ("AmArg-Var"), which can hold AmArg 
+ variables.
 
 some performance numbers? 
  unfortunately not yet for running DSMs. DSM processing is actually fast: 

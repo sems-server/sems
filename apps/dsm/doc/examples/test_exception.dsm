@@ -1,0 +1,10 @@
+
+initial state lobby
+  enter { 
+    playFile(wav/default_en.wav) 
+    throw(bla,blub=blu;i=somevalue); 
+  };
+transition "thrown error" lobby - exception; test(#blub=="blu"); / 
+    log(1, #i); stop(true) -> end;
+
+transition "file error" lobby - exception; test(#type="file") / stop(true) -> end;

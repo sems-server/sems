@@ -73,7 +73,9 @@ class DSMCondition
     PlaylistSeparator,
     
     B2BOtherReply,
-    B2BOtherBye
+    B2BOtherBye,
+
+    DSMException
   };
 
   bool invert; 
@@ -137,6 +139,8 @@ class DSMTransition
   vector<DSMAction*> actions;
   string from_state;
   string to_state;
+
+  bool is_exception;
 };
 
 class DSMModule;
@@ -156,6 +160,19 @@ class DSMStateDiagram  {
   void addState(const State& state, bool is_initial = false);
   bool addTransition(const DSMTransition& trans);
   const string& getName() { return name; }
+};
+
+class DSMException {
+ public:
+  DSMException(const string& e_type) 
+    { params["type"] = e_type; }
+
+  DSMException(map<string, string>& params)
+    : params(params) { }
+
+  ~DSMException() { }
+
+  map<string, string> params;    
 };
 
 class DSMStateEngine {
@@ -189,7 +206,8 @@ class DSMStateEngine {
 
   void runEvent(AmSession* sess,
 		DSMCondition::EventType event,
-		map<string,string>* event_params);
+		map<string,string>* event_params,
+		bool run_exception = false);
 
   /** @return whether call should be accepted */
   bool onInvite(const AmSipRequest& req, DSMSession* sess);

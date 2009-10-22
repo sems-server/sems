@@ -70,6 +70,7 @@ DEF_SCModSEStrArgAction(SCJumpFSMAction);
 DEF_SCModSEStrArgAction(SCCallFSMAction);
 DEF_SCModSEStrArgAction(SCReturnFSMAction);
 
+DEF_ACTION_2P(SCThrowAction);
 
 DEF_ACTION_2P(SCSetAction);
 DEF_ACTION_2P(SCAppendAction);
