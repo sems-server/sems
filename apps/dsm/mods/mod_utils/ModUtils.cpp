@@ -100,7 +100,9 @@ EXEC_ACTION_START(SCUPlayCountRightAction) {
     return false;
   }
 
-  return utils_play_count(sc_sess, cnt, basedir, ".wav", true);
+  utils_play_count(sc_sess, cnt, basedir, ".wav", true);
+
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 
@@ -116,12 +118,15 @@ EXEC_ACTION_START(SCUPlayCountLeftAction) {
     return false;
   }
 
-  return utils_play_count(sc_sess, cnt, basedir, ".wav", false);
+  utils_play_count(sc_sess, cnt, basedir, ".wav", false);
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCGetNewIdAction) {
   string d = resolveVars(arg, sess, sc_sess, event_params);
   sc_sess->var[d]=AmSession::getNewId();
+
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCURandomAction, ',', true);
@@ -139,10 +144,12 @@ EXEC_ACTION_START(SCURandomAction) {
     sc_sess->var[varname]=int2str(rand());
 
   DBG("Generated random $%s=%s\n", varname.c_str(), sc_sess->var[varname].c_str());
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCUSRandomAction) {
   srand(time(0));
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCUSpellAction, ',', true);
@@ -154,4 +161,5 @@ EXEC_ACTION_START(SCUSpellAction) {
   for (size_t i=0;i<play_string.length();i++)
     sc_sess->playFile(basedir+play_string[i]+".wav", false);
 
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
