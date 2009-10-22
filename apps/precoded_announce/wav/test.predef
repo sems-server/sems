@@ -10,3 +10,4 @@
 97;iLBC;8000;1;mode=30;30;50;test8k.ilbc30;
 98;iLBC;8000;1;mode=20;20;33;test8k.ilbc20;
 3;GSM;8000;1;<none>;20;33;test8k.gsm;
+18;G729;8000;1;<none>;20;20;test8k.g729;
