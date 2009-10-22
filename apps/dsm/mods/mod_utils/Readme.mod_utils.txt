@@ -15,11 +15,9 @@ Actions:
   (like SayDigits from *)
   Throws "file" exeption with #path if file can not be opened
 
-
  utils.rand(string varname [, int modulo])
   generates random number: $varname=rand()%modulo or $varname = rand()
 
  utils.srand() 
   seed the RNG with time().
 
-Conditions: 

@@ -96,7 +96,7 @@ EXEC_ACTION_START(SCUPlayCountRightAction) {
   if (str2i(resolveVars(par1, sess, sc_sess, event_params),cnt)) {
     ERROR("could not parse count '%s'\n", 
 	  resolveVars(par1, sess, sc_sess, event_params).c_str());
-    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   }
 
@@ -112,7 +112,7 @@ EXEC_ACTION_START(SCUPlayCountLeftAction) {
   if (str2i(resolveVars(par1, sess, sc_sess, event_params),cnt)) {
     ERROR("could not parse count '%s'\n", 
 	  resolveVars(par1, sess, sc_sess, event_params).c_str());
-    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   }
 
