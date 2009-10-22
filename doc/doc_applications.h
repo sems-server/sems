@@ -143,7 +143,7 @@
 
 /*! \page ModuleDoc_ann_b2b Module Documentation: ann_b2b Application 
  *  \section Readme_ann_b2b Readme file
- *  \verbinclude Readme.ann_b2b
+ *  \verbinclude Readme.ann_b2b.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -151,7 +151,7 @@
 
 /*! \page ModuleDoc_announce_auth Module Documentation: announce_auth Application 
  *  \section Readme_announce_auth Readme file
- *  \verbinclude Readme.announce_auth
+ *  \verbinclude Readme.announce_auth.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -159,7 +159,7 @@
 
 /*! \page ModuleDoc_announce_transfer Module Documentation: announce_transfer Application 
  *  \section Readme_announce_transfer Readme file
- *  \verbinclude Readme.announce_transfer
+ *  \verbinclude Readme.announce_transfer.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -167,7 +167,7 @@
 
 /*! \page ModuleDoc_announcement Module Documentation: announcement Application 
  *  \section Readme_announcement Readme file
- *  \verbinclude Readme.announcement
+ *  \verbinclude Readme.announcement.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -175,7 +175,7 @@
 
 /*! \page ModuleDoc_conference Module Documentation: conference Application 
  *  \section Readme_conference Readme file
- *  \verbinclude Readme.conference
+ *  \verbinclude Readme.conference.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -183,7 +183,7 @@
 
 /*! \page ModuleDoc_webconference Module Documentation: webconference Application 
  *  \section Readme_webconference Readme file
- *  \verbinclude Readme.webconference
+ *  \verbinclude Readme.webconference.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -191,7 +191,7 @@
 
 /*! \page ModuleDoc_early_announce Module Documentation: early_announce Application 
  *  \section Readme_early_announce Readme file
- *  \verbinclude Readme.early_announce
+ *  \verbinclude Readme.early_announce.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -199,7 +199,7 @@
 
 /*! \page ModuleDoc_voicemail Module Documentation: voicemail Application 
  *  \section Readme_voicemail Readme file
- *  \verbinclude Readme.voicemail
+ *  \verbinclude Readme.voicemail.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -207,7 +207,7 @@
 
 /*! \page ModuleDoc_voicebox Module Documentation: voicebox Application 
  *  \section Readme_voicebox Readme file
- *  \verbinclude Readme.voicebox
+ *  \verbinclude Readme.voicebox.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -215,7 +215,7 @@
 
 /*! \page ModuleDoc_annrecorder Module Documentation: annrecorder Application 
  *  \section Readme_annrecorder Readme file
- *  \verbinclude Readme.annrecorder
+ *  \verbinclude Readme.annrecorder.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -224,7 +224,7 @@
 
 /*! \page ModuleDoc_mailbox Module Documentation: mailbox Application 
  *  \section Readme_mailbox Readme file
- *  \verbinclude Readme.mailbox
+ *  \verbinclude Readme.mailbox.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -232,7 +232,7 @@
 
 /*! \page ModuleDoc_ivr Module Documentation: ivr Application 
  *  \section Readme_ivr Readme file
- *  \verbinclude Readme.ivr
+ *  \verbinclude Readme.ivr.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -240,7 +240,7 @@
 
 /*! \page ModuleDoc_py_sems Module Documentation: py_sems Application 
  *  \section Readme_py_sems Readme file
- *  \verbinclude Readme.py_sems
+ *  \verbinclude Readme.py_sems.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -248,7 +248,7 @@
 
 /*! \page ModuleDoc_reg_agent Module Documentation: reg_agent Application 
  *  \section Readme_reg_agent Readme file
- *  \verbinclude Readme.reg_agent
+ *  \verbinclude Readme.reg_agent.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -256,7 +256,7 @@
 
 /*! \page ModuleDoc_registrar_client Module Documentation: registrar_client Application 
  *  \section Readme_registrar_client Readme file
- *  \verbinclude Readme.registrar_client
+ *  \verbinclude Readme.registrar_client.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -264,7 +264,7 @@
 
 /*! \page ModuleDoc_uac_auth Module Documentation: uac_auth component 
  *  \section Readme_uac_auth Readme file
- *  \verbinclude Readme.uac_auth
+ *  \verbinclude Readme.uac_auth.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -272,7 +272,7 @@
 
 /*! \page ModuleDoc_mp3plugin Module Documentation: mp3 file writer audio plugin
  *  \section Readme_mp3plugin Readme file
- *  \verbinclude Readme.mp3plugin
+ *  \verbinclude Readme.mp3plugin.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -280,7 +280,7 @@
 
 /*! \page ModuleDoc_iLBC Module Documentation: iLBC codec plugin
  *  \section Readme_iLBC Readme file
- *  \verbinclude Readme.iLBC
+ *  \verbinclude Readme.iLBC.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -288,7 +288,7 @@
 
 /*! \page ModuleDoc_callback Module Documentation: callback application plugin
  *  \section Readme_callback Readme file
- *  \verbinclude Readme.callback
+ *  \verbinclude Readme.callback.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -296,7 +296,7 @@
 
 /*! \page ModuleDoc_auth_b2b Module Documentation: auth_b2b application plugin
  *  \section Readme_auth_b2b Readme file
- *  \verbinclude Readme.auth_b2b
+ *  \verbinclude Readme.auth_b2b.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -304,7 +304,7 @@
 
 /*! \page ModuleDoc_diameter_client Module Documentation: diameter_client component plugin
  *  \section Readme_diameter_client Readme file
- *  \verbinclude Readme.diameter_client
+ *  \verbinclude Readme.diameter_client.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -313,7 +313,7 @@
 
 /*! \page ModuleDoc_sw_prepaid_sip Module Documentation: prepaid_sip application plugin
  *  \section Readme_prepaid_sip Readme file
- *  \verbinclude Readme.sw_prepaid_sip
+ *  \verbinclude Readme.sw_prepaid_sip.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -321,7 +321,7 @@
 
 /*! \page ModuleDoc_click2dial Module Documentation: click2dial application plugin
  *  \section Readme_click2dial Readme file
- *  \verbinclude Readme.click2dial
+ *  \verbinclude Readme.click2dial.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -329,7 +329,7 @@
 
 /*! \page ModuleDoc_xmlrpc2di Module Documentation: xmlrpc2di Application 
  *  \section Readme_xmlrpc2di Readme file
- *  \verbinclude Readme.xmlrpc2di
+ *  \verbinclude Readme.xmlrpc2di.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -337,7 +337,7 @@
 
 /*! \page ModuleDoc_call_timer Module Documentation: call_timer Application 
  *  \section Readme_call_timer Readme file
- *  \verbinclude Readme.call_timer
+ *  \verbinclude Readme.call_timer.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -373,6 +373,31 @@
  *  \subsection dsm_mod_uri mod_uri - URI parser and related functionality
  *  <p>
  *  \verbinclude Readme.mod_uri.txt
+ *  </p>
+ *
+ *  \subsection dsm_mod_utils mod_utils - Utility functions
+ *  <p>
+ *  \verbinclude Readme.mod_utils.txt
+ *  </p>
+ * 
+ *  \subsection dsm_mod_conference mod_conference - Conferencing functions
+ *  <p>
+ *  \verbinclude Readme.mod_conference.txt
+ *  </p>
+ * 
+ *  \subsection dsm_mod_mysql mod_mysql - MySQL DB access
+ *  <p>
+ *  \verbinclude Readme.mod_mysql.txt
+ *  </p>
+ * 
+ *  \subsection dsm_mod_py mod_py - Embedded Python functions
+ *  <p>
+ *  \verbinclude Readme.mod_py.txt
+ *  </p>
+ * 
+ *  \subsection dsm_mod_aws mod_aws - Amazon Web Services functions
+ *  <p>
+ *  \verbinclude Readme.mod_aws.txt
  *  </p>
  * 
  * 
