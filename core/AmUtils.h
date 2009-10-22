@@ -286,7 +286,7 @@ void init_random();
 unsigned int get_random();
 
 /** Explode string by a separator to a vector */
-std::vector <string> explode(string s, string e);
+std::vector<string> explode(const string& s, const string& delim, const bool keep_empty = false);
 
 /** add a directory to an environement variable */
 void add_env_path(const char* name, const string& path);

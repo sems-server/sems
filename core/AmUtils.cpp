@@ -972,21 +972,31 @@ unsigned int get_random()
     
   return r;
 }
+
 // Explode string by a separator to a vector
-vector <string> explode(string s, string e) {
-  vector <string> ret;
-  int iPos = s.find(e, 0);
-  int iLen = e.length();
-  while (iPos > -1) {
-    if (iPos != 0)
-      ret.push_back(s.substr(0, iPos));
-    s.erase(0, iPos+iLen);
-    iPos = s.find(e, 0);
+// see http://stackoverflow.com/questions/236129/c-how-to-split-a-string
+std::vector<string> explode(const string& s, const string& delim, 
+			    const bool keep_empty) {
+  vector<string> result;
+  if (delim.empty()) {
+    result.push_back(s);
+    return result;
   }
-  if (s != "")
-    ret.push_back(s);
-  return ret;
+  string::const_iterator substart = s.begin(), subend;
+  while (true) {
+    subend = search(substart, s.end(), delim.begin(), delim.end());
+    string temp(substart, subend);
+    if (keep_empty || !temp.empty()) {
+      result.push_back(temp);
+    }
+    if (subend == s.end()) {
+      break;
+    }
+    substart = subend + delim.size();
+  }
+  return result;
 }
+
 
 
 // Warning: static var is not mutexed
