@@ -133,7 +133,7 @@ State* DSMStateDiagram::getInitialState() {
   if (initial_state.empty()) {
     ERROR("diag '%s' doesn't have an initial state!\n",
 	  name.c_str());
-    return false;
+    return NULL;
   }
   return getState(initial_state);
 }
