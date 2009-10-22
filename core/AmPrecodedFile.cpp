@@ -31,11 +31,11 @@
 #include <fstream>
 
 unsigned int precoded_bytes2samples(long h_codec, unsigned int num_bytes) {
-  return num_bytes;
+  return ((AmAudioFormat*)h_codec)->frame_size;
 }
 
 unsigned int precoded_samples2bytes(long h_codec, unsigned int num_samples) {
-  return num_samples;
+  return ((AmAudioFormat*)h_codec)->frame_encoded_size;
 }
 
 amci_codec_t _codec_precoded = { 
@@ -65,6 +65,7 @@ AmPrecodedRtpFormat::AmPrecodedRtpFormat(precoded_payload_t& precoded_payload,
   // fill unused stuff
   frame_length = precoded_payload.frame_ms;
   frame_encoded_size = precoded_payload.frame_bytes;
+  h_codec = (long)this;
 }
 
 AmPrecodedRtpFormat::~AmPrecodedRtpFormat() {
@@ -86,6 +87,11 @@ AmPrecodedFileFormat::AmPrecodedFileFormat(precoded_payload_t& precoded_payload)
   channels = precoded_payload.channels;
   rate = precoded_payload.sample_rate;
   codec = getCodec();
+
+  // used in precoded_bytes2samples()/precoded_samples2bytes()
+  frame_size = precoded_payload.frame_ms * precoded_payload.sample_rate / 1000;
+  frame_encoded_size = precoded_payload.frame_bytes;
+  h_codec = (long)this;
 }
 
 AmPrecodedFileFormat::~AmPrecodedFileFormat() { 

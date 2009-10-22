@@ -1,11 +1,12 @@
 # format: 
 # codec id;payload name;samplerate;channels;format parameters;frame milliseconds;frame bytes;filename (full path)
 #
+# to create e.g. .gsm file:
+#    sox test.wav -r 8000 -c 1 -g test8k.gsm
 #
 0;PCMU;8000;1;<none>;20;160;test8k.pcmu;
 8;PCMA;8000;1;<none>;20;160;test8k.pcma;
 96;iLBC;8000;1;<none>;30;50;test8k.ilbc30;
 97;iLBC;8000;1;mode=30;30;50;test8k.ilbc30;
 98;iLBC;8000;1;mode=20;20;33;test8k.ilbc20;
-
-
+3;GSM;8000;1;<none>;20;33;test8k.gsm;
