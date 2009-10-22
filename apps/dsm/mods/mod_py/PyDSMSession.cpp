@@ -25,6 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "DSMStateEngine.h"
 #include "PyDSMSession.h"
 #include "log.h"
 #include "DSMSession.h"
@@ -100,7 +101,13 @@ extern "C" {
     GET_SESS_PTR;
     
     DBG("playPrompt('%s', loop=%s)\n", name, loop?"true":"false");
-    sess->playPrompt(name, loop);
+    try {
+      sess->playPrompt(name, loop);
+    } catch (DSMException& e) {
+      PyErr_SetString(PyExc_RuntimeError, e.params["type"].c_str());
+      return NULL;
+    }
+
     Py_INCREF(Py_None);
     return Py_None;
   }
@@ -116,9 +123,15 @@ extern "C" {
 
     GET_SESS_PTR;
     
-    DBG("playPrompt('%s', loop=%s, front=%s)\n", name, 
+    DBG("playFile('%s', loop=%s, front=%s)\n", name, 
 	loop?"true":"false", front?"true":"false");
-    sess->playFile(name, loop, front);
+    try {
+      sess->playFile(name, loop, front);
+    } catch (DSMException& e) {
+      PyErr_SetString(PyExc_RuntimeError, e.params["type"].c_str());
+      return NULL;
+    }
+
     Py_INCREF(Py_None);
     return Py_None;
   }
@@ -132,7 +145,13 @@ extern "C" {
     GET_SESS_PTR;
     
     DBG("recordFile('%s')\n", name);
-    sess->recordFile(name);
+    try {
+      sess->recordFile(name);
+    } catch (DSMException& e) {
+      PyErr_SetString(PyExc_RuntimeError, e.params["type"].c_str());
+      return NULL;
+    }
+
     Py_INCREF(Py_None);
     return Py_None;
   }
@@ -186,7 +205,13 @@ extern "C" {
     GET_SESS_PTR;
     
     DBG("setPromptSet('%s')\n", name);
-    sess->setPromptSet(name);
+    try {
+      sess->setPromptSet(name);
+    } catch (DSMException& e) {
+      PyErr_SetString(PyExc_RuntimeError, e.params["type"].c_str());
+      return NULL;
+    }
+
     Py_INCREF(Py_None);
     return Py_None;
   }

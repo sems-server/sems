@@ -36,6 +36,35 @@ params  - dictionary with event parameters
 dsm     - module to access dsm functions (see below)
 session - module to access session functions (see below)
 
+exceptions
+==========
+dsm.playPrompt, dsm.playFile, dsm.recordFile and dsm.setPromptSet
+may throw an exception. This is a Python RuntimeError exception,
+not the DSM exception handling (exceptions in interpreted code
+can not be catched through outside of the interpreter). 
+The application needs to catch the exceptions in the python code
+itself, and can then handle them or signal the DSM code to throw
+an exception. example:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+initial state begin 
+ enter {
+  py(dsm.INFO("hello dsm-world\n"))
+  py(#
+try:
+	session.playFile('doesnotexist.wav')
+except RuntimeError, e:
+	dsm.ERROR('thats a runtime error: ' + e.message + '!\n')
+	session.setvar('exception', e.message)
+)
+  log(2, huhu, still there);
+  repost();
+};
+transition "catch py exception" begin - test($exception!="") / throw($exception) -> begin;
+transition "normal exception handling" begin - exception; test(#type=="file") -> exception_state;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 example
 =======
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -44,7 +73,7 @@ import(mod_py);
 initial state begin 
  enter {
   py(dsm.INFO("hello dsm-world"))
-  py(
+  py(#
 session.setvar('some_variable','some val')
 print session.var('some_variable')
 print "dsm.Timer = ", dsm.Timer
