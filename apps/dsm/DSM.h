@@ -63,6 +63,8 @@ class DSMFactory
   DSMStateDiagramCollection* diags;
   AmMutex diags_mut;
 
+  vector<DSMStateDiagramCollection*> old_diags;
+
   static bool DebugDSM;
 
   static string InboundStartDiag;

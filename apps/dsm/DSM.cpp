@@ -99,6 +99,10 @@ DSMFactory::~DSMFactory() {
   for (map<string, AmPromptCollection*>::iterator it=
 	 prompt_sets.begin(); it != prompt_sets.end(); it++)
     delete it->second;
+
+  for (vector<DSMStateDiagramCollection*>::iterator it=
+	 old_diags.begin(); it != old_diags.end(); it++)
+    delete *it;
 }
 
 int DSMFactory::onLoad()
@@ -557,12 +561,9 @@ void DSMFactory::reloadDSMs(const AmArg& args, AmArg& ret) {
     }
   }
   diags_mut.lock();
-  DSMStateDiagramCollection* old_diags = diags;
+  old_diags.push_back(diags);
   diags = new_diags; 
   diags_mut.unlock();
-
-  DBG("deleting old diagram collection\n");
-  delete old_diags;
 
   ret.push(200);
   ret.push("DSMs reloaded");
@@ -685,7 +686,7 @@ void DSMFactory::loadDSM(const AmArg& args, AmArg& ret) {
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
       ret.push(500);
       ret.push("loading config file " +AmConfig::ModConfigPath + string(MOD_NAME ".conf"));
-      return ;
+      return;
   }
 
   string DiagPath = cfg.getParameter("diag_path");
@@ -697,12 +698,17 @@ void DSMFactory::loadDSM(const AmArg& args, AmArg& ret) {
   string dsm_file_name = DiagPath+dsm_name+".dsm";
   string res = "OK";
   diags_mut.lock();
-  if (!diags->loadFile(dsm_file_name, dsm_name, ModPath, DebugDSM)) {
-    ret.push(500);
-    ret.push("error loading "+dsm_name+" from "+ dsm_file_name);
+  if (diags->hasDiagram(dsm_name)) {
+    ret.push(400);
+    ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
   } else {
-    ret.push(200);
-    ret.push("loaded "+dsm_name+" from "+ dsm_file_name);
+    if (!diags->loadFile(dsm_file_name, dsm_name, ModPath, DebugDSM)) {
+      ret.push(500);
+      ret.push("error loading "+dsm_name+" from "+ dsm_file_name);
+    } else {
+      ret.push(200);
+      ret.push("loaded "+dsm_name+" from "+ dsm_file_name);
+    }
   }
   diags_mut.unlock();
 }
@@ -714,12 +720,17 @@ void DSMFactory::loadDSMWithPaths(const AmArg& args, AmArg& ret) {
 
   string res = "OK";
   diags_mut.lock();
-  if (!diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path, DebugDSM)) {
-    ret.push(500);
-    ret.push("error loading "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
+  if (diags->hasDiagram(dsm_name)) {
+    ret.push(400);
+    ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
   } else {
-    ret.push(200);
-    ret.push("loaded "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
+    if (!diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path, DebugDSM)) {
+      ret.push(500);
+      ret.push("error loading "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
+    } else {
+      ret.push(200);
+      ret.push("loaded "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
+    }
   }
   diags_mut.unlock();
 }
