@@ -167,6 +167,18 @@ class DSMException {
   DSMException(const string& e_type) 
     { params["type"] = e_type; }
 
+  DSMException(const string& e_type, 
+	       const string& key1, const string& val1) 
+    { params["type"] = e_type; 
+      params[key1] = val1; }
+
+  DSMException(const string& e_type, 
+	       const string& key1, const string& val1,
+	       const string& key2, const string& val2) 
+    { params["type"] = e_type; 
+      params[key1] = val1; 
+      params[key2] = val2; }
+
   DSMException(map<string, string>& params)
     : params(params) { }
 

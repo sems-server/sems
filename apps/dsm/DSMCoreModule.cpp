@@ -183,9 +183,9 @@ EXEC_ACTION_START(SCPostEventAction){
 
   DBG("posting event to session '%s'\n", sess_id.c_str());
   if (!AmSessionContainer::instance()->postEvent(sess_id, ev))
-    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
   else 
-    sc_sess->SET_ERRNO(DSM_ERRNO_OK);
+    sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCPlayFileAction, ',', true);
@@ -219,6 +219,7 @@ EXEC_ACTION_START(SCGetRecordLengthAction) {
   if (varname.empty())
     varname = "record_length";
   sc_sess->var[varname]=int2str(sc_sess->getRecordLength());
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCGetRecordDataSizeAction) {
@@ -232,31 +233,38 @@ EXEC_ACTION_START(SCClosePlaylistAction) {
   bool notify = 
     resolveVars(arg, sess, sc_sess, event_params) == "true";
   sc_sess->closePlaylist(notify);
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCConnectMediaAction) {
   sc_sess->connectMedia();
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCDisconnectMediaAction) {
   sc_sess->disconnectMedia();
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCMuteAction) {
   sc_sess->mute();
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCUnmuteAction) {
   sc_sess->unmute();
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 
 EXEC_ACTION_START(SCEnableDTMFDetection) {
   sess->setDtmfDetectionEnabled(true);
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCDisableDTMFDetection) {
   sess->setDtmfDetectionEnabled(false);
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCThrowAction, ',', true);
@@ -328,11 +336,13 @@ EXEC_ACTION_START(SCLogAction) {
   unsigned int lvl;
   if (str2i(resolveVars(par1, sess, sc_sess, event_params), lvl)) {
     ERROR("unknown log level '%s'\n", par1.c_str());
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   }
   string l_line = resolveVars(par2, sess, sc_sess, event_params).c_str();
   _LOG((int)lvl, "FSM: %s '%s'\n", (par2 != l_line)?par2.c_str():"",
        l_line.c_str());
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCLogVarsAction) {
@@ -348,6 +358,7 @@ EXEC_ACTION_START(SCLogVarsAction) {
     _LOG((int)lvl, "FSM:  $%s='%s'\n", it->first.c_str(), it->second.c_str());
   }
   _LOG((int)lvl, "FSM: variables end ---\n");
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCSetAction,'=', false);
@@ -358,6 +369,7 @@ EXEC_ACTION_START(SCSetAction) {
   sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params);
   DBG("set $%s='%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCSetVarAction,'=', false);
@@ -366,6 +378,7 @@ EXEC_ACTION_START(SCSetVarAction) {
   sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params);
   DBG("set $%s='%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 
@@ -386,6 +399,7 @@ EXEC_ACTION_START(SCClearAction) {
     arg.substr(1) : arg;
   DBG("clear variable '%s'\n", var_name.c_str());
   sc_sess->var.erase(var_name);
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 
@@ -398,6 +412,7 @@ EXEC_ACTION_START(SCAppendAction) {
 
   DBG("$%s now '%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCSubStrAction,',', false);
@@ -408,19 +423,20 @@ EXEC_ACTION_START(SCSubStrAction) {
   if (str2i(resolveVars(par2, sess, sc_sess, event_params), pos)) {
     ERROR("substr length '%s'\n",
 	  resolveVars(par2, sess, sc_sess, event_params).c_str());
-    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   }
   try {
     sc_sess->var[var_name] = sc_sess->var[var_name].substr(pos);
   } catch(...) {
     ERROR("in substr\n");
-    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   }
 
   DBG("$%s now '%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCIncAction) {
@@ -432,6 +448,8 @@ EXEC_ACTION_START(SCIncAction) {
 
   DBG("inc: $%s now '%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
+
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCSetTimerAction,',', false);
@@ -441,6 +459,7 @@ EXEC_ACTION_START(SCSetTimerAction) {
   if (str2i(resolveVars(par1, sess, sc_sess, event_params), timerid)) {
     ERROR("timer id '%s' not decipherable\n", 
 	  resolveVars(par1, sess, sc_sess, event_params).c_str());
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   }
 
@@ -448,6 +467,7 @@ EXEC_ACTION_START(SCSetTimerAction) {
   if (str2i(resolveVars(par2, sess, sc_sess, event_params), timeout)) {
     ERROR("timeout value '%s' not decipherable\n", 
 	  resolveVars(par2, sess, sc_sess, event_params).c_str());
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   }
 
@@ -457,11 +477,13 @@ EXEC_ACTION_START(SCSetTimerAction) {
 
   if(!user_timer_fact) {
     ERROR("load sess_timer module for timers.\n");
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     return false;
   }
   AmDynInvoke* user_timer = user_timer_fact->getInstance();
   if(!user_timer) {
     ERROR("load sess_timer module for timers.\n");
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     return false;
   }
 
@@ -471,6 +493,7 @@ EXEC_ACTION_START(SCSetTimerAction) {
   di_args.push(sess->getLocalTag().c_str());
   user_timer->invoke("setTimer", di_args, ret);
 
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 
@@ -480,6 +503,7 @@ EXEC_ACTION_START(SCRemoveTimerAction) {
   if (str2i(resolveVars(arg, sess, sc_sess, event_params), timerid)) {
     ERROR("timer id '%s' not decipherable\n", 
 	  resolveVars(arg, sess, sc_sess, event_params).c_str());
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     return false;
   }
 
@@ -488,11 +512,13 @@ EXEC_ACTION_START(SCRemoveTimerAction) {
     AmPlugIn::instance()->getFactory4Di("user_timer");
 
   if(!user_timer_fact) {
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     ERROR("load sess_timer module for timers.\n");
     return false;
   }
   AmDynInvoke* user_timer = user_timer_fact->getInstance();
   if(!user_timer) {
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     ERROR("load sess_timer module for timers.\n");
     return false;
   }
@@ -502,6 +528,7 @@ EXEC_ACTION_START(SCRemoveTimerAction) {
   di_args.push(sess->getLocalTag().c_str());
   user_timer->invoke("removeTimer", di_args, ret);
 
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCRemoveTimersAction) {
@@ -513,11 +540,13 @@ EXEC_ACTION_START(SCRemoveTimersAction) {
 
   if(!user_timer_fact) {
     ERROR("load sess_timer module for timers.\n");
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     return false;
   }
   AmDynInvoke* user_timer = user_timer_fact->getInstance();
   if(!user_timer) {
     ERROR("load sess_timer module for timers.\n");
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     return false;
   }
 
@@ -525,6 +554,7 @@ EXEC_ACTION_START(SCRemoveTimersAction) {
   di_args.push(sess->getLocalTag().c_str());
   user_timer->invoke("removeUserTimers", di_args, ret);
 
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 
@@ -648,6 +678,7 @@ EXEC_ACTION_START(SCDIAction) {
   if (params.size() < 2) {
     ERROR("DI needs at least: mod_name, "
 	  "function_name (in '%s'\n", name.c_str());
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;    
   }
 
@@ -658,11 +689,13 @@ EXEC_ACTION_START(SCDIAction) {
 
   if(!fact) {
     ERROR("load module for factory '%s'.\n", fact_name.c_str());
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     return false;
   }
   AmDynInvoke* di_inst = fact->getInstance();
   if(!di_inst) {
     ERROR("load module for factory '%s'\n", fact_name.c_str());
+    sc_sess->SET_RES(DSM_RES_ADMIN);
     return false;
   }
   p_it++; 
@@ -686,6 +719,7 @@ EXEC_ACTION_START(SCDIAction) {
       } else {
 	ERROR("converting value '%s' to int\n", 
 	      p.c_str());
+	sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
 	return false;
       }
     } else {
@@ -701,21 +735,26 @@ EXEC_ACTION_START(SCDIAction) {
   } catch (const AmDynInvoke::NotImplemented& ni) {
     ERROR("not implemented DI function '%s'\n", 
 	  ni.what.c_str());
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   } catch (const AmArg::OutOfBoundsException& oob) {
     ERROR("out of bounds in  DI call '%s'\n", 
 	  name.c_str());
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   } catch (const AmArg::TypeMismatchException& oob) {
     ERROR("type mismatch  in  DI call '%s'\n", 
 	  name.c_str());
+    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
     return false;
   } catch (...) {
     ERROR("unexpected Exception  in  DI call '%s'\n", 
 	  name.c_str());
+    sc_sess->SET_RES(DSM_RES_UNKNOWN);
     return false;
   }
 
+  bool flag_error = false;
   if (get_res) {
     // rudimentary variables conversion...
     if (isArgCStr(sc_sess->di_res)) 
@@ -736,13 +775,21 @@ EXEC_ACTION_START(SCDIAction) {
 	} break;
 	default: {
 	  ERROR("unsupported AmArg return type!");
+	  flag_error = true;
+	  sc_sess->SET_RES(DSM_RES_UNKNOWN);
 	}
 	}
       }
     } else {
       ERROR("unsupported AmArg return type!");
+      flag_error = true;
+      sc_sess->SET_RES(DSM_RES_UNKNOWN);
     }
   }
+  if (!flag_error) {
+    sc_sess->SET_RES(DSM_RES_OK);
+  }
+
 } EXEC_ACTION_END;
   
 
@@ -751,14 +798,17 @@ EXEC_ACTION_START(SCB2BConnectCalleeAction) {
   string remote_party = resolveVars(par1, sess, sc_sess, event_params);
   string remote_uri = resolveVars(par2, sess, sc_sess, event_params);
   sc_sess->B2BconnectCallee(remote_party, remote_uri);
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
  
 EXEC_ACTION_START(SCB2BTerminateOtherLegAction) {
   sc_sess->B2BterminateOtherLeg();
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCB2BReinviteAction,',', true);
 EXEC_ACTION_START(SCB2BReinviteAction) {
   bool updateSDP = par1=="true";
   sess->sendReinvite(updateSDP, par2);
+  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;

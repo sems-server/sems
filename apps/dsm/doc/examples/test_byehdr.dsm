@@ -1,0 +1,7 @@
+
+initial state START 
+	enter {
+	  playFile(wav/default_en.wav);
+	};
+transition "got bye" START - hangup / log(1, #headers) -> end;
+state end;

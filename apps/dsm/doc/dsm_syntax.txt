@@ -40,14 +40,23 @@ actions:
    from promptCollection, e.g. playPrompt("hello");
    if $prompts.default_fallback=yes, default prompt set is tried if
    prompt not found in current prompt set
+   Throws "prompt" exeption with #name if prompt not found.
+
  playPromptLooped(param)
 
  setPromptSet(name)
-   if more prompt sets are loaded
+   select active prompt set if more prompt sets are loaded
+   Throws "prompt" exeption with #name if prompt set not found
 
  playFile(filename)
+   Throws "file" exeption with #path if file can not be opened
+
  playFileFront(filename)
+   Throws "file" exeption with #path if file can not be opened
+
  recordFile(filename)
+   Throws "file" exeption with #path if file can not be opened for recording
+
  stopRecord()
  getRecordLength([dst_varname])   -- only while recording! default dst var: record_length
  getRecordDataSize([dst_varname]) -- only while recording! default dst var: record_data_size

@@ -54,6 +54,17 @@ using std::map;
 #define SET_ERRNO(new_errno) \
     var["errno"] = new_errno
 
+#define DSM_RES_OK          ""
+#define DSM_RES_UNKNOWN     "1" // unknown error
+#define DSM_RES_UNKNOWN_ARG "2" // unknown argument/argument error
+#define DSM_RES_ADMIN       "3" // configuration error
+#define DSM_RES_SCRIPT      "4" // DSM script error
+#define DSM_RES_INTERNAL    "5" // internal error
+
+#define SET_RES(new_res) \
+    var["res"] = new_res
+
+
 class DSMDisposable;
 class AmPlaylistItem;
 
