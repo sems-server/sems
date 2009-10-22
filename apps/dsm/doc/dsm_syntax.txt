@@ -15,7 +15,7 @@ import(mod_name);
 	    } ]
       ;
 
-transition name s1 - [ { [not] condition; [not] condition; ... } ] [/ { action; action; ...} ]  -> s2;
+transition name s1 - [exception;] [ { [not] condition; [not] condition; ... } ] [/ { action; action; ...} ]  -> s2;
  or 
 transition name (s1a, s1b[, s1c, ...])  - [ { [not] condition; [not] condition; ... } ] [/ { action; action; ...} ]  -> s2;
 
@@ -33,7 +33,7 @@ actions:
  callFSM(name)
  returnFSM()
 
-  stop(<send bye>)
+ stop(<send bye>)
    e.g. stop(false), stop(true)
 
  playPrompt(param)
@@ -41,6 +41,10 @@ actions:
    if $prompts.default_fallback=yes, default prompt set is tried if
    prompt not found in current prompt set
  playPromptLooped(param)
+
+ setPromptSet(name)
+   if more prompt sets are loaded
+
  playFile(filename)
  playFileFront(filename)
  recordFile(filename)
@@ -59,6 +63,12 @@ actions:
    set RTP stream to muted (don't send and receive RTP packets)
  unmute() 
    set RTP stream to unmuted (send and receive RTP packets)
+
+ postEvent(sess_id[, variable name])
+   post dsm event to session sess_id; variable copied as event variable
+   e.g. postEvent(@local_tag, PAI) : post event to ourselves
+ postEvent(sess_id, var)
+   all local variables copied as event variables
 
  enableDTMFDetection() 
  disableDTMFDetection()
@@ -104,10 +114,9 @@ actions:
   DIgetResult(factory, function, param,...)
     saves result from DI call to DI_res or DI_res0, DI_res1, ...
 
-  postEvent(session_id, variable_name)
-     posts event with variable as DSM event parameter
-  postEvent(session_id, var) 
-     posts event with complete current variable set as DSM event parameter
+  throw(<type>[,arg1=val1;arg2=val2;...])
+   e.g. throw(bad_command),  throw(bad_command,cmd=help;reason=whynot)
+
 ============================= 
 conditions:
  
@@ -129,6 +138,8 @@ conditions:
  timerTest(expr)
  noAudioTest(expr)
  separatorTest(expr)
+  e.g. separatorTest(#id == 5)
+
  eventTest(expr)
 
  keyPress(no) 
