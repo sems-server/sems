@@ -354,6 +354,10 @@
  *  <p>
  *  \verbinclude dsm_syntax.txt
  *  </p>
+ *  \section dsm_errorhandling Error handling in DSM
+ *  <p>
+ *  \verbinclude dsm_errorhandling.txt
+ *  </p>
  *  \section dsm_todo DSM Todo
  *  <p>
  *  \verbinclude dsm_todo.txt
