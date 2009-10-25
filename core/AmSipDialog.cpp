@@ -264,7 +264,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     // TODO: 
     // - place this somewhere else.
     //   (probably in AmSession...)
-    if(reply.code < 300){
+    if((reply.code < 300) && (t.method == "INVITE")) {
       send_200_ack(t);
     }
 
