@@ -3,7 +3,7 @@
  o explicit condition ordering (explicit priority)
  o checking of FSM consitency (e.g. target state names)
  o better error reporting in script compilation (e.g. line number)
- o better error handling (exceptions)
+ x better error handling (exceptions)
  x 'not' operator on conditions
  o 'or' operator
  x provide session init function for modules
@@ -13,5 +13,5 @@
  o replace DSMSession::map<string, string> var with map<string, AmArg>
    var -> avar
  x register scripts as app  
- o mod_mysql 
+ x mod_mysql 
  o session creation from module

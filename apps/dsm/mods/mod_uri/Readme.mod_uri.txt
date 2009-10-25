@@ -9,6 +9,8 @@ uri.parse(<uri>, <prefix>)
     uri.parse(@remote_uri, remote_);
     uri.parse($PAI, pai_);
 
+  * Sets $errno (general).
+
 uri.getHeader(<header>, <dst>)
     get header from initial INVITE into variable <dst>
 

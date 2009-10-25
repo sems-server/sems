@@ -76,13 +76,15 @@ EXEC_ACTION_START(DLGReplyAction) {
   if (!sc_sess->last_req.get()) {
     ERROR("no last request to reply\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+    sc_sess->SET_STRERROR("no last request to reply");
     return false;
   }
 
-  if (sess->dlg.reply(*sc_sess->last_req.get(), code_i, reason))    
+  if (sess->dlg.reply(*sc_sess->last_req.get(), code_i, reason)) {
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
-  else
-    sc_sess->SET_ERRNO(DSM_ERRNO_OK);
+    sc_sess->SET_STRERROR("error sending reply");
+  } else
+    sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(DLGAcceptInviteAction, ',', true);
@@ -97,6 +99,8 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
     if (str2i(code, code_i)) {
       ERROR("decoding reply code '%s'\n", code.c_str());
       sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+      sc_sess->SET_STRERROR("decoding reply code '"+
+			    code+"%s'\n");
       return false;
     }
   }
@@ -104,6 +108,7 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
   if (!sc_sess->last_req.get()) {
     ERROR("no last request to reply\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+    sc_sess->SET_STRERROR("no last request to reply");
     return false;
   }
 
@@ -128,7 +133,8 @@ EXEC_ACTION_START(DLGByeAction) {
   string hdrs = resolveVars(arg, sess, sc_sess, event_params);
 
   if (sess->dlg.bye(hdrs)) {
-    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+    sc_sess->SET_STRERROR("Error sending bye");
   } else {
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);
   }

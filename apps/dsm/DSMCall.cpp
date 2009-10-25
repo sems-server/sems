@@ -249,10 +249,10 @@ void DSMCall::playPrompt(const string& name, bool loop) {
       throw DSMException("prompt", "name", name);
     } else {
       used_prompt_sets.insert(default_prompts);
-      SET_RES(DSM_RES_OK);    
+      CLR_ERRNO;
     }      
   } else {
-    SET_RES(DSM_RES_OK);
+    CLR_ERRNO;
   }
 }
 
@@ -286,7 +286,7 @@ void DSMCall::playFile(const string& name, bool loop, bool front) {
     playlist.addToPlaylist(new AmPlaylistItem(af, NULL));
 
   audiofiles.push_back(af);
-  SET_RES(DSM_RES_OK);
+  CLR_ERRNO;
 }
 
 void DSMCall::recordFile(const string& name) {
@@ -304,24 +304,26 @@ void DSMCall::recordFile(const string& name) {
     return;
   }
   setInput(rec_file); 
-  SET_RES(DSM_RES_OK);
+  CLR_ERRNO;
 }
 
 unsigned int DSMCall::getRecordLength() {
   if (!rec_file) {
-    SET_RES(DSM_RES_SCRIPT);
+    SET_ERRNO(DSM_ERRNO_SCRIPT);
+    SET_STRERROR("getRecordLength used while not recording.");
     return 0;
   }
-  SET_RES(DSM_RES_OK);
+  CLR_ERRNO;
   return rec_file->getLength();
 }
 
 unsigned int DSMCall::getRecordDataSize() {
   if (!rec_file) {
-    SET_RES(DSM_RES_SCRIPT);
+    SET_ERRNO(DSM_ERRNO_SCRIPT);
+    SET_STRERROR("getRecordDataSize used while not recording.");
     return 0;
   }
-  SET_RES(DSM_RES_OK);
+  CLR_ERRNO;
   return rec_file->getDataSize();
 }
 
@@ -331,10 +333,11 @@ void DSMCall::stopRecord() {
     rec_file->close();
     delete rec_file;
     rec_file = NULL;
-    SET_RES(DSM_RES_OK);
+    CLR_ERRNO;
   } else {
     WARN("stopRecord: we are not recording\n");
-    SET_RES(DSM_RES_SCRIPT);
+    SET_ERRNO(DSM_ERRNO_SCRIPT);
+    SET_STRERROR("stopRecord used while not recording.");
     return;
   }
 }
@@ -344,10 +347,11 @@ void DSMCall::addPromptSet(const string& name,
   if (prompt_set) {
     DBG("adding prompt set '%s'\n", name.c_str());
     prompt_sets[name] = prompt_set;
-    SET_RES(DSM_RES_OK);
+    CLR_ERRNO;
   } else {
     ERROR("trying to add NULL prompt set\n");
-    SET_RES(DSM_RES_INTERNAL);
+    SET_ERRNO(DSM_ERRNO_INTERNAL);
+    SET_STRERROR("trying to add NULL prompt set\n");
   }
 }
 
@@ -369,14 +373,15 @@ void DSMCall::setPromptSet(const string& name) {
   DBG("setting prompt set '%s'\n", name.c_str());
   used_prompt_sets.insert(prompts);
   prompts = it->second;
-  SET_RES(DSM_RES_OK);
+  CLR_ERRNO;
 }
 
 
 void DSMCall::addSeparator(const string& name, bool front) {
   unsigned int id = 0;
   if (str2i(name, id)) {
-    SET_RES(DSM_RES_UNKNOWN_ARG);
+    SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    SET_STRERROR("separator id '"+name+"' not a number");
     return;
   }
 
@@ -387,7 +392,7 @@ void DSMCall::addSeparator(const string& name, bool front) {
     playlist.addToPlaylist(new AmPlaylistItem(sep, sep));
   // for garbage collector
   audiofiles.push_back(sep);
-  SET_RES(DSM_RES_OK);
+  CLR_ERRNO;
 }
 
 void DSMCall::transferOwnership(DSMDisposable* d) {

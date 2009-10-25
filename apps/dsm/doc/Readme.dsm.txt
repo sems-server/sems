@@ -43,7 +43,8 @@ execution of the current actions is interrupted. Exceptions are handled
 this way that special "exception" transitions are executed. Exception
 transitions are marked with "exception" in the conditions list. Once the
 FSM is in exception handling, only exception transitions are followed.
-DSMs may throw exceptions with the throw(<type>) action.
+DSMs may throw exceptions with the throw(<type>) action or the 
+throwOnError() action.
 
 DSM can cache a set of prompts, configured at start, in memory 
 using PromptCollection.

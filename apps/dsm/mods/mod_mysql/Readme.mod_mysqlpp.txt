@@ -12,9 +12,10 @@ Actions:
  
 
  mysql.connect([db_url])
-  - sets $errno if error occured and
+  - sets $errno if error occured (arg,) and
    $db.ereason
    $db.errno if available
+
 
 -- disconnect connection
  mysql.disconnect()
@@ -109,11 +110,12 @@ Conditions
 ERROR codes 
 ===========
 $errno:
-#define DSM_ERRNO_MY_CONNECTION "30"
-#define DSM_ERRNO_MY_QUERY      "31"
-#define DSM_ERRNO_MY_NORESULT   "32"
-#define DSM_ERRNO_MY_NOROW      "33"
-#define DSM_ERRNO_MY_NOCOLUMN   "34"
+
+#define DSM_ERRNO_MY_CONNECTION "connection"
+#define DSM_ERRNO_MY_QUERY      "query"
+#define DSM_ERRNO_MY_NORESULT   "result"
+#define DSM_ERRNO_MY_NOROW      "result"
+#define DSM_ERRNO_MY_NOCOLUMN   "result"
 
 Internals
 =========

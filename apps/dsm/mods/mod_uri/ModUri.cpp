@@ -62,7 +62,8 @@ EXEC_ACTION_START(URIParseAction) {
   p.uri = uri;
   if (!p.parse_uri()) {
     DBG("parsing URI '%s' failed\n", uri.c_str());
-    sc_sess->SET_RES(DSM_RES_UNKNOWN);
+    sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+    sc_sess->SET_STRERROR("parsing URI '"+uri+"%s' failed");
     return false;
   }
   
@@ -71,7 +72,7 @@ EXEC_ACTION_START(URIParseAction) {
   sc_sess->var[prefix+"host"]         = p.uri_host;
   sc_sess->var[prefix+"param"]        = p.uri_param;
 
-  sc_sess->SET_RES(DSM_RES_OK);
+  sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(URIGetHeaderAction, ',', false);
@@ -84,5 +85,4 @@ EXEC_ACTION_START(URIGetHeaderAction) {
   DBG("got header '%s' value '%s' as $%s\n", 
       hname.c_str(), sc_sess->var[dstname].c_str(), dstname.c_str());
 
-  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;

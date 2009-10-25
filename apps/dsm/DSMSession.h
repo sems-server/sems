@@ -40,30 +40,33 @@ using std::vector;
 using std::map;
 #include <memory>
 
-#define DSM_ERRNO_FILE        "1"
-#define DSM_ERRNO_UNKNOWN_ARG "2"
-#define DSM_ERRNO_GENERAL     "99"
-#define DSM_ERRNO_OK          ""
-
 #define DSM_REPLY_REQUEST      "reply_request" // todo: rethink these names
 #define DSM_REPLY_REQUEST_FALSE "0"
 
 #define DSM_CONNECT_SESSION    "connect_session" // todo: rethink these names
 #define DSM_CONNECT_SESSION_FALSE    "0"
 
-#define SET_ERRNO(new_errno) \
-    var["errno"] = new_errno
+#define DSM_ERRNO_FILE        "file"
+#define DSM_ERRNO_UNKNOWN_ARG "arg"
+#define DSM_ERRNO_SCRIPT      "script"
+#define DSM_ERRNO_CONFIG      "config"
+#define DSM_ERRNO_INTERNAL    "internal"
+#define DSM_ERRNO_GENERAL     "general"
 
-#define DSM_RES_OK          ""
-#define DSM_RES_UNKNOWN     "1" // unknown error
-#define DSM_RES_UNKNOWN_ARG "2" // unknown argument/argument error
-#define DSM_RES_ADMIN       "3" // configuration error
-#define DSM_RES_SCRIPT      "4" // DSM script error
-#define DSM_RES_INTERNAL    "5" // internal error
 
-#define SET_RES(new_res) \
-    var["res"] = new_res
+#define DSM_ERRNO_OK          ""
 
+#define SET_ERRNO(new_errno)			\
+  var["errno"] = new_errno
+
+#define CLR_ERRNO				\
+  var["errno"] = DSM_ERRNO_OK;
+
+#define SET_STRERROR(new_str)			\
+  var["strerror"] = new_str
+
+#define CLR_STRERROR				\
+  var["strerror"] = "";
 
 class DSMDisposable;
 class AmPlaylistItem;

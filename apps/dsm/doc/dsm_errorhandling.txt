@@ -1,0 +1,77 @@
+Error handling in DSM
+---------------------
+
+There are two mechanisms of error handling in DSM: 
+Reporting an error as $errno, and throwing an exception.
+
+Some actions throw an exception directly if a severe error occurs, 
+for example the "playFile" action if the file could 
+not be opened. These functions are marked with 
+ "   Throws "<xyz>" exeption with <arguments>  if ..."
+in the description/documentation.
+
+Other actions just set the error variable $errno. After those
+the DSM script may execute the throwOnError(); action, which
+throws an exception if the error is set. These actions are
+marked in the description as "Sets Errno."
+
+All actions that may set the variable $errno to some value
+need to reset $errno if no error occured, otherwise an exception
+from an error of a previous action could be thrown.
+
+Exceptions may be caught with exception transitions (see general DSM 
+description). 
+
+For Python (mod_py), exception handling is special - the the mod_py
+documentation.
+
+
+Example 1: Handling file exceptions
+-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-
+state BEGIN 
+enter {
+  playFile(maybeexisting.wav);
+};
+transition "key pressed" BEGIN - keyPress(1) -> OTHER;
+
+state OTHER
+enter {
+  playFile(mayalsobeexisting.wav);
+};
+
+transition "file error" (BEGIN, OTHER) - exception; test(#type=="file") /
+ stop(true) -> end;
+transition "hangs up" (BEGIN, OTHER) - hangup / stop(false) -> end;
+
+state end;
+-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-
+
+
+Example 2: Handling error with exception
+-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-
+import(mod_mysql);
+state BEGIN 
+enter {
+  mysql.connect();
+  throwOnError();
+  mysql.queryGetResult(select file from prompts where user=@user);
+  throwOnError();
+  playFile($file);
+};
+transition "mysql connection error occured" BEGIN - exception; test(#type=="connection") /
+   log(1, MySQL connection error); playFile(sorry_error.wav) -> PLAYEND;
+
+transition "mysql query error / no result" BEGIN - exception; test(#type=="noresult") /
+   playFile(default_prompt.wav) -> PLAYEND;
+
+transition "file opening error" BEGIN - exception; test(#type=="file") /
+   playFile(default_prompt.wav) -> PLAYEND;
+
+transition "other error occured" BEGIN - exception;  /
+  log(1, error:); log(1, #text); playFile(sorry_error.wav) -> PLAYEND;
+
+state PLAYEND;
+transition "finished" PLAYEND - noAudioTest / stop(true) -> end;
+state end;
+-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-
+

@@ -34,11 +34,11 @@
 #define MY_AKEY_CONNECTION "db.con"
 #define MY_AKEY_RESULT     "db.res"
 
-#define DSM_ERRNO_MY_CONNECTION "30"
-#define DSM_ERRNO_MY_QUERY      "31"
-#define DSM_ERRNO_MY_NORESULT   "32"
-#define DSM_ERRNO_MY_NOROW      "33"
-#define DSM_ERRNO_MY_NOCOLUMN   "34"
+#define DSM_ERRNO_MY_CONNECTION "connection"
+#define DSM_ERRNO_MY_QUERY      "query"
+#define DSM_ERRNO_MY_NORESULT   "result"
+#define DSM_ERRNO_MY_NOROW      "result"
+#define DSM_ERRNO_MY_NOCOLUMN   "result"
 
 class SCMysqlModule 
 : public DSMModule {

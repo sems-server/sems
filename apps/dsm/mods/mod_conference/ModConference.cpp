@@ -65,12 +65,13 @@ EXEC_ACTION_START(ConfPostEventAction) {
   unsigned int ev;
   if (str2i(ev_id, ev)) {
     ERROR("decoding conference event id '%s'\n", ev_id.c_str());
-    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("decoding conference event id '"+ev_id+"%s'\n");
     return false;
   }
 
   AmConferenceStatus::postConferenceEvent(channel_id, ev, sess->getLocalTag());
-  sc_sess->SET_RES(DSM_RES_OK);
+  sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 static bool ConferenceJoinChannel(DSMConfChannel** dsm_chan, 
@@ -133,9 +134,9 @@ EXEC_ACTION_START(ConfJoinAction) {
       // add to garbage collector
       sc_sess->transferOwnership(dsm_chan);
 
-      sc_sess->SET_RES(DSM_RES_OK);
+      sc_sess->CLR_ERRNO;
   } else {
-    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
   }
 } EXEC_ACTION_END;
 
@@ -163,12 +164,13 @@ EXEC_ACTION_START(ConfLeaveAction) {
   DSMConfChannel* chan = getDSMConfChannel(sc_sess);
   if (NULL == chan) {
     WARN("app error: trying to leave conference, but channel not found\n");
-    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
+    sc_sess->SET_ERRNO(DSM_ERRNO_SCRIPT);
+    sc_sess->SET_STRERROR("trying to leave conference, but channel not found");
     return false;
   }
   chan->release();
 
-  sc_sess->SET_RES(DSM_RES_OK);
+  sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(ConfRejoinAction, ',', true);
@@ -184,9 +186,9 @@ EXEC_ACTION_START(ConfRejoinAction) {
   }
 
   if (ConferenceJoinChannel(&chan, sess, sc_sess, channel_id, mode)) {
-      sc_sess->SET_RES(DSM_RES_OK);
+  sc_sess->CLR_ERRNO;
   } else {
-    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
   }
 } EXEC_ACTION_END;
 
@@ -198,5 +200,4 @@ EXEC_ACTION_START(ConfSetPlayoutTypeAction) {
     sess->rtp_str.setPlayoutType(JB_PLAYOUT);
   else 
     sess->rtp_str.setPlayoutType(SIMPLE_PLAYOUT);
-  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;

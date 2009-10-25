@@ -15,11 +15,16 @@ action parameter.
 aws.s3.put(string filename [, string keyname]) 
   put file into bucket, if specified under key keyname, 
   else keyname=filename
+  * throws Exception type="aws", with #cause
+  * sets $errno (aws_put)
+
 
 aws.s3.putArray(string filename_array [, string keyname_array])
   put files into bucket, if specified under key keyname, 
   else keyname=filename
   array is $filename_0, $filename_1, .. $filename_size
+  * throws Exception type="aws", with #cause
+  * sets $errno (aws_put,arg)
 
 SQS: queue name from $aws.sqs.queue is used if not specified as 
 action parameter.
@@ -27,18 +32,22 @@ action parameter.
 aws.s3.createBucket([string bucket_name])
   create bucket. created bucket name in $aws.s3.bucket (should be same
   as bucket_name)
+  * throws Exception type="aws", with #cause
+  * sets $errno (aws_create,aws_conn,arg)
 
 aws.sqs.createQueue(int visibilityTimeout [, string queue_name])
   create queue
+  * sets $errno (aws_create,aws_conn,arg)
 
 aws.sqs.deleteQueue([string queue_name])
   delete queue
+  * sets $errno (aws_create,aws_conn,arg)
 
 aws.sqs.sendMessage(string message [, string queue_name])
   send a message in queue. sets
     $aws.sqs.url
     $aws.sqs.md5
-
+  * sets $errno (aws_create,aws_conn,arg)
 
 Error handling
 --------------

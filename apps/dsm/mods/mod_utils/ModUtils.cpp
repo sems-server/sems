@@ -90,43 +90,43 @@ bool utils_play_count(DSMSession* sc_sess, unsigned int cnt,
 
 CONST_ACTION_2P(SCUPlayCountRightAction, ',', true);
 EXEC_ACTION_START(SCUPlayCountRightAction) {
+  string cnt_s = resolveVars(par1, sess, sc_sess, event_params);
   string basedir = resolveVars(par2, sess, sc_sess, event_params);
 
   unsigned int cnt = 0;
-  if (str2i(resolveVars(par1, sess, sc_sess, event_params),cnt)) {
-    ERROR("could not parse count '%s'\n", 
-	  resolveVars(par1, sess, sc_sess, event_params).c_str());
-    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
+  if (str2i(cnt_s,cnt)) {
+    ERROR("could not parse count '%s'\n", cnt_s.c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("could not parse count '"+cnt_s+"'\n");
     return false;
   }
 
   utils_play_count(sc_sess, cnt, basedir, ".wav", true);
 
-  sc_sess->SET_RES(DSM_RES_OK);
+  sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 
 CONST_ACTION_2P(SCUPlayCountLeftAction, ',', true);
 EXEC_ACTION_START(SCUPlayCountLeftAction) {
+  string cnt_s = resolveVars(par1, sess, sc_sess, event_params);
   string basedir = resolveVars(par2, sess, sc_sess, event_params);
 
   unsigned int cnt = 0;
-  if (str2i(resolveVars(par1, sess, sc_sess, event_params),cnt)) {
-    ERROR("could not parse count '%s'\n", 
-	  resolveVars(par1, sess, sc_sess, event_params).c_str());
-    sc_sess->SET_RES(DSM_RES_UNKNOWN_ARG);
+  if (str2i(cnt_s,cnt)) {
+    ERROR("could not parse count '%s'\n", cnt_s.c_str());
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    sc_sess->SET_STRERROR("could not parse count '"+cnt_s+"'\n");
     return false;
   }
 
   utils_play_count(sc_sess, cnt, basedir, ".wav", false);
-  sc_sess->SET_RES(DSM_RES_OK);
+  sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCGetNewIdAction) {
   string d = resolveVars(arg, sess, sc_sess, event_params);
   sc_sess->var[d]=AmSession::getNewId();
-
-  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCURandomAction, ',', true);
@@ -144,12 +144,10 @@ EXEC_ACTION_START(SCURandomAction) {
     sc_sess->var[varname]=int2str(rand());
 
   DBG("Generated random $%s=%s\n", varname.c_str(), sc_sess->var[varname].c_str());
-  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCUSRandomAction) {
   srand(time(0));
-  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCUSpellAction, ',', true);
@@ -161,5 +159,4 @@ EXEC_ACTION_START(SCUSpellAction) {
   for (size_t i=0;i<play_string.length();i++)
     sc_sess->playFile(basedir+play_string[i]+".wav", false);
 
-  sc_sess->SET_RES(DSM_RES_OK);
 } EXEC_ACTION_END;

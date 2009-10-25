@@ -32,26 +32,15 @@
 #include <libaws/aws.h>
 using namespace aws;
 
-#define DSM_ERRNO_AWS_CONN    "50"
-#define DSM_ERRNO_AWS_PUT     "51"
-#define DSM_ERRNO_AWS_CREATE  "52"
-#define DSM_ERRNO_AWS_DELETE  "53"
-#define DSM_ERRNO_AWS_SEND    "54"
+#define DSM_ERRNO_AWS_CONN    "aws_conn"
+#define DSM_ERRNO_AWS_PUT     "aws_put"
+#define DSM_ERRNO_AWS_CREATE  "aws_create"
+#define DSM_ERRNO_AWS_DELETE  "aws_delete"
+#define DSM_ERRNO_AWS_SEND    "aws_send"
 
 #define MOD_CLS_NAME SCAwsModule
 
 DECLARE_MODULE_BEGIN(MOD_CLS_NAME);
-
-/* class SCAwsModule  */
-/* : public DSMModule { */
-
-/*  public: */
-/*   SCAwsModule(); */
-/*   ~SCAwsModule(); */
-  
-/*   DSMAction* getAction(const string& from_str); */
-/*   DSMCondition* getCondition(const string& from_str); */
-
   int preload();
 
   static ConnectionPool<S3ConnectionPtr>* s3ConnectionPool;

@@ -24,7 +24,7 @@ transition name (s1a, s1b[, s1c, ...])  - [ { [not] condition; [not] condition; 
 $varname uses the variable varname (from session's variable map)
 @selectname uses the "select" 'selectname' (from the session's dialog)
 =============================
-actions:
+core actions:
  -- reprocess the current event after transition:
  repost()
 
@@ -76,8 +76,11 @@ actions:
  postEvent(sess_id[, variable name])
    post dsm event to session sess_id; variable copied as event variable
    e.g. postEvent(@local_tag, PAI) : post event to ourselves
+   * sets $errno (arg)
+
  postEvent(sess_id, var)
    all local variables copied as event variables
+   * sets $errno (arg)
 
  enableDTMFDetection() 
  disableDTMFDetection()
@@ -114,17 +117,25 @@ actions:
 
  setTimer(timer_id, timeout)
    e.g. setTimer(1, $timeout)
+   * sets $errno (arg,config)
  removeTimer(timer_id)
+   * sets $errno (arg,config)
  removeTimers()
+   * sets $errno (config)
 
   DI(factory, function [, params...])
   e.g. DI(factory, function, $var_param, (int)int_param, "$str param", @select_par, ...)
        DI(user_timer, setTimer, (int)1, (int)5, @local_tag);
+   * sets $errno (arg,config)
+
   DIgetResult(factory, function, param,...)
     saves result from DI call to DI_res or DI_res0, DI_res1, ...
+   * sets $errno (arg,config)
 
   throw(<type>[,arg1=val1;arg2=val2;...])
    e.g. throw(bad_command),  throw(bad_command,cmd=help;reason=whynot)
+
+  throwOnError()
 
 ============================= 
 conditions:
