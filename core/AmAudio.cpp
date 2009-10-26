@@ -64,13 +64,15 @@ int AmAudioRtpFormat::setCurrentPayload(int payload)
 {
   if (m_currentPayload != payload)
   {
-    std::map<int, SdpPayload *>::iterator p = m_sdpPayloadByPayload.find(payload);
+    std::map<int, SdpPayload *>::iterator p = 
+      m_sdpPayloadByPayload.find(payload);
     if (p == m_sdpPayloadByPayload.end())
     {
       ERROR("Could not find payload <%i>\n", payload);
       return -1;
     }
-    std::map<int, amci_payload_t *>::iterator pp = m_payloadPByPayload.find(payload);
+    std::map<int, amci_payload_t *>::iterator pp = 
+      m_payloadPByPayload.find(payload);
     if (pp == m_payloadPByPayload.end())
     {
       m_currentPayloadP = AmPlugIn::instance()->payload(p->second->int_pt);
@@ -86,7 +88,8 @@ int AmAudioRtpFormat::setCurrentPayload(int payload)
     m_currentPayload = payload;
     sdp_format_parameters = p->second->sdp_format_parameters;
 
-    std::map<int, CodecContainer *>::iterator c = m_codecContainerByPayload.find(payload);
+    std::map<int, CodecContainer *>::iterator c = 
+      m_codecContainerByPayload.find(payload);
     if (c == m_codecContainerByPayload.end())
     {
       codec = NULL;
@@ -123,7 +126,9 @@ int AmAudioRtpFormat::setCurrentPayload(int payload)
 
 AmAudioRtpFormat::~AmAudioRtpFormat()
 {
-  for (std::map<int, CodecContainer *>::iterator it = m_codecContainerByPayload.begin(); it != m_codecContainerByPayload.end(); ++it)
+  for (std::map<int, CodecContainer *>::iterator it = 
+	 m_codecContainerByPayload.begin(); 
+       it != m_codecContainerByPayload.end(); ++it)
     delete it->second;
 }
 
