@@ -470,9 +470,9 @@ int AmSipDialog::refer(const string& refer_to,
 {
   switch(status){
   case Connected: {
-    string hdrs = "Refer-To: " + refer_to + CRLF;
+    string hdrs = SIP_HDR_COLSP(SIP_HDR_REFER_TO) + refer_to + CRLF;
     if (expires>=0) 
-      hdrs+= "Expires: " + int2str(expires) + CRLF;
+      hdrs+= SIP_HDR_COLSP(SIP_HDR_EXPIRES) + int2str(expires) + CRLF;
     return sendRequest("REFER", "", "", hdrs);
   }
   case Disconnecting:
@@ -499,7 +499,8 @@ int AmSipDialog::transfer(const string& target)
     AmSipDialog tmp_d(*this);
 		
     tmp_d.setRoute("");
-    tmp_d.contact_uri = "Contact: <" + tmp_d.remote_uri + ">" CRLF;
+    tmp_d.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) 
+      "<" + tmp_d.remote_uri + ">" CRLF;
     tmp_d.remote_uri = target;
 		
     string r_set;
@@ -587,11 +588,11 @@ int AmSipDialog::sendRequest(const string& method,
   req.r_uri = remote_uri;
   req.next_hop = next_hop;
 
-  req.from = "From: " + local_party;
+  req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
   if(!local_tag.empty())
     req.from += ";tag=" + local_tag;
     
-  req.to = "To: " + remote_party;
+  req.to = SIP_HDR_COLSP(SIP_HDR_TO) + remote_party;
   if(!remote_tag.empty()) 
     req.to += ";tag=" + remote_tag;
     
@@ -716,11 +717,11 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   req.r_uri = remote_uri;
   req.next_hop = next_hop;
 
-  req.from = "From: " + local_party;
+  req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
   if(!local_tag.empty())
     req.from += ";tag=" + local_tag;
     
-  req.to = "To: " + remote_party;
+  req.to = SIP_HDR_COLSP(SIP_HDR_TO) + remote_party;
   if(!remote_tag.empty()) 
     req.to += ";tag=" + remote_tag;
     
