@@ -48,7 +48,11 @@ namespace XmlRpc {
     bool _ssl;
     SSL_CTX* _ssl_ctx;
     SSL* _ssl_ssl;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+    const SSL_METHOD* _ssl_meth;
+#else
     SSL_METHOD* _ssl_meth;
+#endif
   private:
 
     // Socket. This should really be a SOCKET (an alias for unsigned int*) on windows...
