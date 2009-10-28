@@ -50,7 +50,7 @@ MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
 
 
 void DSMConfChannel::release() {
-  chan.release();
+  chan.reset(NULL);
 }
 
 void DSMConfChannel::reset(AmConferenceChannel* channel) {
