@@ -13,6 +13,8 @@ mod_path=${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/dsm/
 # preload modules which have a preload (init) function
 #preload_mods=uri
 
+# print raw DSM text while loading to debug log?
+# debug_raw_dsm=yes
 
 # DSM to start for in/outbound call if application to execute=dsm
 # (from application=xyz in sems.conf, either application=dsm or 
@@ -48,6 +50,26 @@ load_prompts=${SEMS_CFG_PREFIX}/etc/sems/etc/dsm_in_prompts.conf,${SEMS_CFG_PREF
 # dialog. Default: no
 #
 #set_param_variables=yes
+
+# monitoring_full_stategraph=[yes|no]
+# 
+# Controls whether to log the full call graph (all states visited)
+# to the monitoring record. Note this may take some performance
+# and use some memory.
+#
+# Default: no
+#
+#monitoring_full_stategraph=yes
+
+# monitoring_full_transitions=[yes|no]
+# 
+# Controls whether to log the full call graph (all transitions)
+# to the monitoring record. Note this may take some performance
+# and use some memory.
+#
+# Default: no
+#
+#monitoring_full_transitions=yes
 
 # monitor_select_use_caller=[no|from|pai]
 #
