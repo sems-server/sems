@@ -187,6 +187,7 @@ class AmArg
 
   AmArg& operator=(const AmArg& rhs);
 
+#define isArgUndef(a) (AmArg::Undef == a.getType())
 #define isArgArray(a) (AmArg::Array == a.getType())
 #define isArgStruct(a)(AmArg::Struct == a.getType())
 #define isArgDouble(a) (AmArg::Array == a.getType())
