@@ -1,8 +1,8 @@
 set (dsm_SRCS
 DSM.cpp
+DSMCall.cpp
 DSMChartReader.cpp
 DSMCoreModule.cpp
-DSMDialog.cpp
 DSMElemContainer.cpp
 DSMModule.cpp
 DSMSession.cpp
