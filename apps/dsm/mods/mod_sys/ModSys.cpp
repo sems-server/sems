@@ -98,7 +98,12 @@ EXEC_ACTION_START(SCMkDirAction) {
 bool sys_get_parent_dir(const char* path, char* parentPath) {
 
   //size_t pos = strcspn(dirPath, "/\\");
-  char* ptr = strrchr(path, '/'); // search char from end reverse
+#ifdef __CORRECT_ISO_CPP_STRING_H_PROTO
+  const char* ptr;
+#else
+  char* ptr;
+#endif
+  ptr = strrchr(path, '/'); // search char from end reverse
   if (ptr == NULL) {
     ptr = strrchr(path, '\\'); // search char from end reverse
     if (ptr == NULL) {
