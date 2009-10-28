@@ -41,6 +41,9 @@
 #include <string>
 #include <fstream>
 
+#include <sys/types.h>
+#include <dirent.h>
+
 #define MOD_NAME "dsm"
 
 extern "C" void* plugin_class_create()
@@ -69,17 +72,13 @@ MonSelectType DSMFactory::MonSelectCaller;
 MonSelectType DSMFactory::MonSelectCallee;
 #endif // USE_MONITORING
 
-map<string, string> DSMFactory::config;
-bool DSMFactory::RunInviteEvent;
-bool DSMFactory::SetParamVariables;
-
 DSMFactory::DSMFactory(const string& _app_name)
   : AmSessionFactory(_app_name),AmDynInvokeFactory(_app_name),
     loaded(false)
 {
   AmEventDispatcher::instance()->addEventQueue("dsm", this);
 
-  diags = new DSMStateDiagramCollection();
+  MainScriptConfig.diags = new DSMStateDiagramCollection();
 }
 
 void DSMFactory::postEvent(AmEvent* e) {
@@ -100,9 +99,11 @@ DSMFactory::~DSMFactory() {
 	 prompt_sets.begin(); it != prompt_sets.end(); it++)
     delete it->second;
 
-  for (vector<DSMStateDiagramCollection*>::iterator it=
+  for (std::set<DSMStateDiagramCollection*>::iterator it=
 	 old_diags.begin(); it != old_diags.end(); it++)
     delete *it;
+
+  delete MainScriptConfig.diags;
 }
 
 int DSMFactory::onLoad()
@@ -117,136 +118,46 @@ int DSMFactory::onLoad()
  
   // get application specific global parameters
   configureModule(cfg);
-  
-  vector<string> prompts_files = 
-    explode(cfg.getParameter("load_prompts"), ",");
-  for (vector<string>::iterator it=
-	 prompts_files.begin(); it != prompts_files.end(); it++) {
-    DBG("loading prompts from '%s'\n", it->c_str());
-    std::ifstream ifs(it->c_str());
-    string s;
-    while (ifs.good() && !ifs.eof()) {
-      getline(ifs, s);
-      if (s.length() && s.find_first_not_of(" \t")!= string::npos &&
-	  s[s.find_first_not_of(" \t")] != '#') {
-        vector<string> p=explode(s, "=");
-	if (p.size()==2) {
-	  prompts.setPrompt(p[0], p[1], MOD_NAME);
-	  DBG("added prompt '%s' as '%s'\n", 
-	      p[0].c_str(), p[1].c_str());
-	}
-      }
-    }
-  }
-
-  bool has_all_prompts = true;
-  vector<string> required_prompts = 
-    explode(cfg.getParameter("required_prompts"), ",");
-  
-  for (vector<string>::iterator it=required_prompts.begin(); 
-       it != required_prompts.end(); it++) {
-    if (!prompts.hasPrompt(*it)) {
-      ERROR("required prompt '%s' not loaded.\n",
-	    it->c_str());
-      has_all_prompts = false;
-    }
-  }
-  if (!has_all_prompts)
-    return -1;
-
-  string prompt_sets_path = cfg.getParameter("prompts_sets_path");
-
-  vector<string> prompt_sets_names = 
-    explode(cfg.getParameter("load_prompts_sets"), ",");
-  for (vector<string>::iterator it=
-	 prompt_sets_names.begin(); it != prompt_sets_names.end(); it++) {
-    string fname = prompt_sets_path.empty() ? "": prompt_sets_path + "/";
-    fname += *it;
-    DBG("loading prompts for '%s' (file '%s')\n", it->c_str(), fname.c_str());
-    std::ifstream ifs(fname.c_str());
-    string s;
-    if (!ifs.good()) {
-      WARN("prompts set file '%s' could not be read\n", fname.c_str());
-    }
-    AmPromptCollection* pc = new AmPromptCollection();
-    while (ifs.good() && !ifs.eof()) {
-      getline(ifs, s);
-      if (s.length() && s.find_first_not_of(" \t")!= string::npos &&
-	  s[s.find_first_not_of(" \t")] != '#') {
-        vector<string> p=explode(s, "=");
-	if (p.size()==2) {
-	  pc->setPrompt(p[0], p[1], MOD_NAME);
-	  DBG("set '%s' added prompt '%s' as '%s'\n", 
-	      it->c_str(), p[0].c_str(), p[1].c_str());
-	}
-      }
-    }
-    prompt_sets[*it] = pc;
-  }
 
   DebugDSM = cfg.getParameter("debug_raw_dsm") == "yes";
  
-  string DiagPath = cfg.getParameter("diag_path");
-  if (DiagPath.length() && DiagPath[DiagPath.length()-1] != '/')
-    DiagPath += '/';
+  if (!loadPrompts(cfg))
+    return -1;
 
-  string ModPath = cfg.getParameter("mod_path");
+  if (!loadPromptSets(cfg))
+    return -1;
 
-  string err;
-  int res = preloadModules(cfg, err, ModPath);
-  if (res<0) {
-    ERROR("%s\n", err.c_str());
-    return res;
-  }
+  if (!loadDiags(cfg, MainScriptConfig.diags))
+    return -1;
 
-  // todo: pass preloaded mods to chart reader
-
-  string LoadDiags = cfg.getParameter("load_diags");
-  vector<string> diags_names = explode(LoadDiags, ",");
-  for (vector<string>::iterator it=
-	 diags_names.begin(); it != diags_names.end(); it++) {
-    if (!diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM)) {
-      ERROR("loading %s from %s\n", 
-	    it->c_str(), (DiagPath+*it+".dsm").c_str());
-      return -1;
-    }
-  }
-  
-  string RegisterDiags = cfg.getParameter("register_apps");
-  vector<string> register_names = explode(RegisterDiags, ",");
-  for (vector<string>::iterator it=
-	 register_names.begin(); it != register_names.end(); it++) {
-    if (diags->hasDiagram(*it)) {
-      bool res = AmPlugIn::instance()->registerFactory4App(*it,this);
-      if(res)
-	INFO("DSM state machine registered: %s.\n",
-	     it->c_str());
-    } else {
-      ERROR("trying to register application '%s' which is not loaded.\n",
-	    it->c_str());
-      return -1;
-    }
-  }
+  vector<string> registered_apps;
+  if (!registerApps(cfg, MainScriptConfig.diags, registered_apps))
+    return -1;
 
   InboundStartDiag = cfg.getParameter("inbound_start_diag");
-  if (InboundStartDiag.empty() && register_names.empty()) {
-    INFO("no 'inbound_start_diag' set in config. inbound calls with application 'dsm' disabled.\n");
-  }
-  OutboundStartDiag = cfg.getParameter("outbound_start_diag");
-  if (OutboundStartDiag.empty() && register_names.empty()) {
-    INFO("no 'outbound_start_diag' set in config. outbound calls with application 'dsm' disabled.\n");
+  if (InboundStartDiag.empty()) {
+    INFO("no 'inbound_start_diag' set in config. "
+	 "inbound calls with application 'dsm' disabled.\n");
   }
 
-  if (!InboundStartDiag.empty() || OutboundStartDiag.empty())
+  OutboundStartDiag = cfg.getParameter("outbound_start_diag");
+  if (OutboundStartDiag.empty()) {
+    INFO("no 'outbound_start_diag' set in config. "
+	 "outbound calls with application 'dsm' disabled.\n");
+  }
+
+  if (!InboundStartDiag.empty())
     AmPlugIn::instance()->registerFactory4App("dsm",this);
 
-  for (std::map<string,string>::const_iterator it = 
-	 cfg.begin(); it != cfg.end(); it++) 
-    config[it->first] = it->second;
+  MainScriptConfig.config_vars.insert(cfg.begin(), cfg.end());
 
-  RunInviteEvent = cfg.getParameter("run_invite_event")=="yes";
+//   for (std::map<string,string>::const_iterator it = 
+// 	 cfg.begin(); it != cfg.end(); it++) 
+//     MainScriptConfig.config_vars[it->first] = it->second;
 
-  SetParamVariables = cfg.getParameter("set_param_variables")=="yes";
+  MainScriptConfig.RunInviteEvent = cfg.getParameter("run_invite_event")=="yes";
+
+  MainScriptConfig.SetParamVariables = cfg.getParameter("set_param_variables")=="yes";
 
 #ifdef USE_MONITORING
   string monitoring_full_callgraph = cfg.getParameter("monitoring_full_stategraph");
@@ -284,8 +195,251 @@ int DSMFactory::onLoad()
   }
 #endif
 
+  string conf_d_dir = cfg.getParameter("conf_dir");
+  if (!conf_d_dir.empty()) {
+    if (conf_d_dir[conf_d_dir.length()-1] != '/')
+      conf_d_dir += '/';
+
+    DBG("processing configurations in '%s'...\n", conf_d_dir.c_str());
+    int err=0;
+    struct dirent* entry;
+    DIR* dir = opendir(conf_d_dir.c_str());
+    
+    if(!dir){
+      ERROR("config loader (%s): %s\n", 
+	    conf_d_dir.c_str(), strerror(errno));
+      return -1;
+    }
+    while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
+      string conf_name = string(entry->d_name);
+      
+      if(conf_name.find(".conf",conf_name.length()-5) == string::npos ){
+	continue;
+      }
+          
+      string conf_file_name = conf_d_dir + conf_name;
+
+      DBG("loading %s ...\n",conf_file_name.c_str());
+      if (!loadConfig(conf_file_name, conf_name, false, NULL)) 
+	return -1;
+
+    }
+  }
   return 0;
 }
+
+bool DSMFactory::loadPrompts(AmConfigReader& cfg) {
+
+  vector<string> prompts_files = 
+    explode(cfg.getParameter("load_prompts"), ",");
+  for (vector<string>::iterator it=
+	 prompts_files.begin(); it != prompts_files.end(); it++) {
+    DBG("loading prompts from '%s'\n", it->c_str());
+    std::ifstream ifs(it->c_str());
+    string s;
+    while (ifs.good() && !ifs.eof()) {
+      getline(ifs, s);
+      if (s.length() && s.find_first_not_of(" \t")!= string::npos &&
+	  s[s.find_first_not_of(" \t")] != '#') {
+        vector<string> p=explode(s, "=");
+	if (p.size()==2) {
+	  prompts.setPrompt(p[0], p[1], MOD_NAME);
+	  DBG("added prompt '%s' as '%s'\n", 
+	      p[0].c_str(), p[1].c_str());
+	}
+      }
+    }
+  }
+
+  bool has_all_prompts = true;
+  vector<string> required_prompts = 
+    explode(cfg.getParameter("required_prompts"), ",");
+  
+  for (vector<string>::iterator it=required_prompts.begin(); 
+       it != required_prompts.end(); it++) {
+    if (!prompts.hasPrompt(*it)) {
+      ERROR("required prompt '%s' not loaded.\n",
+	    it->c_str());
+      has_all_prompts = false;
+    }
+  }
+  if (!has_all_prompts)
+    return false;
+
+  return true;
+}
+
+bool DSMFactory::loadPromptSets(AmConfigReader& cfg) {
+  string prompt_sets_path = cfg.getParameter("prompts_sets_path");
+
+  vector<string> prompt_sets_names = 
+    explode(cfg.getParameter("load_prompts_sets"), ",");
+  for (vector<string>::iterator it=
+	 prompt_sets_names.begin(); it != prompt_sets_names.end(); it++) {
+    string fname = prompt_sets_path.empty() ? "": prompt_sets_path + "/";
+    fname += *it;
+    DBG("loading prompts for '%s' (file '%s')\n", it->c_str(), fname.c_str());
+    std::ifstream ifs(fname.c_str());
+    string s;
+    if (!ifs.good()) {
+      WARN("prompts set file '%s' could not be read\n", fname.c_str());
+    }
+    AmPromptCollection* pc = new AmPromptCollection();
+    while (ifs.good() && !ifs.eof()) {
+      getline(ifs, s);
+      if (s.length() && s.find_first_not_of(" \t")!= string::npos &&
+	  s[s.find_first_not_of(" \t")] != '#') {
+        vector<string> p=explode(s, "=");
+	if (p.size()==2) {
+	  pc->setPrompt(p[0], p[1], MOD_NAME);
+	  DBG("set '%s' added prompt '%s' as '%s'\n", 
+	      it->c_str(), p[0].c_str(), p[1].c_str());
+	}
+      }
+    }
+    prompt_sets[*it] = pc;
+  }
+  return true;
+}
+
+bool DSMFactory::loadDiags(AmConfigReader& cfg, DSMStateDiagramCollection* m_diags) {
+  string DiagPath = cfg.getParameter("diag_path");
+  if (DiagPath.length() && DiagPath[DiagPath.length()-1] != '/')
+    DiagPath += '/';
+
+  string ModPath = cfg.getParameter("mod_path");
+
+  string err;
+  int res = preloadModules(cfg, err, ModPath);
+  if (res<0) {
+    ERROR("%s\n", err.c_str());
+    return false;
+  }
+
+  // todo: pass preloaded mods to chart reader
+
+  string LoadDiags = cfg.getParameter("load_diags");
+  vector<string> diags_names = explode(LoadDiags, ",");
+  for (vector<string>::iterator it=
+	 diags_names.begin(); it != diags_names.end(); it++) {
+    if (!m_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM)) {
+      ERROR("loading %s from %s\n", 
+	    it->c_str(), (DiagPath+*it+".dsm").c_str());
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool DSMFactory::registerApps(AmConfigReader& cfg, DSMStateDiagramCollection* m_diags,
+			      vector<string>& register_names) {
+  string RegisterDiags = cfg.getParameter("register_apps");
+  register_names = explode(RegisterDiags, ",");
+  for (vector<string>::iterator it=
+	 register_names.begin(); it != register_names.end(); it++) {
+    if (m_diags->hasDiagram(*it)) {
+      bool res = AmPlugIn::instance()->registerFactory4App(*it,this);
+      if(res)
+	INFO("DSM state machine registered: %s.\n",
+	     it->c_str());
+    } else {
+      ERROR("trying to register application '%s' which is not loaded.\n",
+	    it->c_str());
+      return false;
+    }
+  }
+  return true;
+}
+
+// DI interface function
+void DSMFactory::loadConfig(const AmArg& args, AmArg& ret) {
+  string file_name = args.get(0).asCStr();
+  string diag_name = args.get(1).asCStr();
+
+  if (loadConfig(file_name, diag_name, true, NULL)) {
+    ret.push(200);
+    ret.push("OK");
+  } else {
+    ret.push(500);
+    ret.push("reload config failed");
+  }
+}
+
+bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_name, 
+			    bool live_reload, DSMStateDiagramCollection* m_diags) {
+
+  string script_name = conf_name.substr(0, conf_name.length()-5); // - .conf
+  DBG("loading %s from %s ...\n", script_name.c_str(), conf_file_name.c_str());
+  AmConfigReader cfg;
+  if(cfg.loadFile(conf_file_name))
+    return false;
+
+  DSMScriptConfig script_config;
+  script_config.RunInviteEvent = 
+    cfg.getParameter("run_invite_event")=="yes";
+
+  script_config.SetParamVariables = 
+    cfg.getParameter("set_param_variables")=="yes";
+
+  script_config.config_vars.insert(cfg.begin(), cfg.end());
+
+  if (live_reload) {
+    INFO("live DSM config reload does NOT reload prompts and prompt sets!\n");
+    INFO("(see http://tracker.iptel.org/browse/SEMS-67)\n");
+  } else {
+    if (!loadPrompts(cfg))
+      return false;
+
+    if (!loadPromptSets(cfg))
+      return false;
+  }
+
+  DSMStateDiagramCollection* used_diags;
+  if (m_diags != NULL)
+    used_diags = m_diags;     // got this from caller (main diags)
+  else {
+    // create a new set of diags 
+    used_diags = script_config.diags = new DSMStateDiagramCollection();
+  }
+
+  if (!loadDiags(cfg, used_diags))
+    return false;
+
+  vector<string> registered_apps;
+  if (!registerApps(cfg, used_diags, registered_apps))
+    return false;
+
+  ScriptConfigs_mut.lock();
+  try {
+    // set ScriptConfig to this for all registered apps' names
+    for (vector<string>::iterator reg_app_it=
+	   registered_apps.begin(); reg_app_it != registered_apps.end(); reg_app_it++) {
+      string& app_name = *reg_app_it;
+      // dispose of the old one, if it exists
+      map<string, DSMScriptConfig>::iterator it=ScriptConfigs.find(app_name);
+      if (it != ScriptConfigs.end()) {
+	// may be in use by active call - don't delete but save to 
+	// old_diags for garbage collection (destructor)
+	if (it->second.diags != NULL)
+	  old_diags.insert(it->second.diags);   
+      }
+      
+      // overwrite with new config
+      ScriptConfigs[app_name] = script_config;
+      
+      DBG("-------------------------- inserting script config with diags [%p] for '%s'\n", 
+	  script_config.diags, app_name.c_str());
+    }
+  } catch(...) {
+    ScriptConfigs_mut.unlock();
+    throw;
+  }
+  ScriptConfigs_mut.unlock();
+
+  return true;
+}
+
 
 void DSMFactory::prepareSession(DSMCall* s) {
   s->setPromptSets(prompt_sets);
@@ -436,7 +590,8 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
       vars["mon_session_record"] = session_id;
 	
 #else
-      ERROR("using $(mon_select) for dsm application, but compiled without monitoring support!\n");
+      ERROR("using $(mon_select) for dsm application, "
+	    "but compiled without monitoring support!\n");
       throw AmSession::Exception(488, "Not Acceptable Here");
 #endif
     } else {
@@ -445,16 +600,28 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
   } else {
     start_diag = req.cmd;
   }
-  diags_mut.lock();
-  DSMCall* s = new DSMCall(&prompts, *diags, start_diag, NULL);
-  diags_mut.unlock();
+
+  // determine run configuration for script
+  DSMScriptConfig call_config;
+  ScriptConfigs_mut.lock();
+  map<string, DSMScriptConfig>::iterator sc=ScriptConfigs.find(start_diag);
+  if (sc == ScriptConfigs.end()) 
+    call_config = MainScriptConfig;
+  else 
+    call_config = sc->second;
+
+  DBG("-------------------------- using script config with diags [%p] for '%s'\n", 
+      call_config.diags, start_diag.c_str());
+
+  DSMCall* s = new DSMCall(call_config, &prompts, *call_config.diags, start_diag, NULL);
+
+  ScriptConfigs_mut.unlock();
 
   prepareSession(s);
-  addVariables(s, "config.", config);
+  addVariables(s, "config.", call_config.config_vars);
 
-  if (SetParamVariables) 
+  if (call_config.SetParamVariables) 
     addParams(s, req.hdrs);
-
 
   if (!vars.empty())
     addVariables(s, "", vars);
@@ -503,14 +670,25 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
     AmArg2DSMStrMap(session_params, vars);
   }
 
-  DSMCall* s = new DSMCall(&prompts, *diags, start_diag, cred); 
+  DSMScriptConfig call_config;
+  ScriptConfigs_mut.lock();
+  map<string, DSMScriptConfig>::iterator sc=ScriptConfigs.find(start_diag);
+  if (sc == ScriptConfigs.end())
+    call_config = MainScriptConfig;
+  else 
+    call_config = sc->second;
+
+  DSMCall* s = new DSMCall(call_config, &prompts, *call_config.diags, start_diag, cred); 
+
+  ScriptConfigs_mut.unlock();
+
   prepareSession(s);  
 
-  addVariables(s, "config.", config);
+  addVariables(s, "config.", call_config.config_vars);
   if (!vars.empty())
     addVariables(s, "", vars);
 
-  if (SetParamVariables) 
+  if (call_config.SetParamVariables) 
     addParams(s, req.hdrs); 
 
   if (NULL == cred) {
@@ -560,10 +738,10 @@ void DSMFactory::reloadDSMs(const AmArg& args, AmArg& ret) {
       return;
     }
   }
-  diags_mut.lock();
-  old_diags.push_back(diags);
-  diags = new_diags; 
-  diags_mut.unlock();
+  ScriptConfigs_mut.lock();
+  old_diags.insert(MainScriptConfig.diags);
+  MainScriptConfig.diags = new_diags; 
+  ScriptConfigs_mut.unlock();
 
   ret.push(200);
   ret.push("DSMs reloaded");
@@ -638,19 +816,62 @@ void DSMFactory::preloadModule(const AmArg& args, AmArg& ret) {
 }
 
 void DSMFactory::listDSMs(const AmArg& args, AmArg& ret) {
-  diags_mut.lock();
-  vector<string> names = diags->getDiagramNames();
-  diags_mut.unlock();
+  vector<string> names;
+  ScriptConfigs_mut.lock();
+
+  try {
+    if (isArgUndef(args) || !args.size())
+      names = MainScriptConfig.diags->getDiagramNames();
+    else {
+      if (isArgCStr(args.get(0))) {
+	map<string, DSMScriptConfig>::iterator i=
+	  ScriptConfigs.find(args.get(0).asCStr());
+	if (i!= ScriptConfigs.end()) 
+	  names = i->second.diags->getDiagramNames();
+      }
+    }
+  } catch (...) {
+    ScriptConfigs_mut.unlock();
+    throw;
+  }
+
+  ScriptConfigs_mut.unlock();
+
   for (vector<string>::iterator it=
 	 names.begin(); it != names.end(); it++) {
     ret.push(*it);
   }
 }
 
+bool DSMFactory::hasDSM(const string& dsm_name, const string& conf_name) {
+  bool res = false; 
+  if (conf_name.empty())
+    res = MainScriptConfig.diags->hasDiagram(dsm_name);
+  else {
+      map<string, DSMScriptConfig>::iterator i=
+	ScriptConfigs.find(conf_name);
+	if (i!= ScriptConfigs.end()) 
+	  res = i->second.diags->hasDiagram(dsm_name);
+  }
+  return res;
+}
+
 void DSMFactory::hasDSM(const AmArg& args, AmArg& ret) {
-  diags_mut.lock();
-  bool res = diags->hasDiagram(args.get(0).asCStr());
-  diags_mut.unlock();
+  string conf_name;
+  if (args.size()>1 && isArgCStr(args.get(1)))
+    conf_name = args.get(1).asCStr();
+
+  bool res;
+
+  ScriptConfigs_mut.lock();
+  try {
+    res = hasDSM(args.get(0).asCStr(), conf_name); 
+  } catch(...) {
+    ScriptConfigs_mut.unlock();
+    throw;
+  }
+  ScriptConfigs_mut.unlock();
+
   if (res)
     ret.push("1");
   else
@@ -659,9 +880,20 @@ void DSMFactory::hasDSM(const AmArg& args, AmArg& ret) {
 
 void DSMFactory::registerApplication(const AmArg& args, AmArg& ret) {
   string diag_name = args.get(0).asCStr();
-  diags_mut.lock();
-  bool has_diag = diags->hasDiagram(diag_name);
-  diags_mut.unlock();  
+  string conf_name;
+  if (args.size()>1 && isArgCStr(args.get(1)))
+    conf_name = args.get(1).asCStr();
+  bool has_diag;
+
+  ScriptConfigs_mut.lock();
+  try {
+    has_diag = hasDSM(diag_name, conf_name); 
+  } catch(...) {
+    ScriptConfigs_mut.unlock();
+    throw;
+  }
+  ScriptConfigs_mut.unlock();  
+
   if (!has_diag) {
     ret.push(400);
     ret.push("unknown application (DSM)");
@@ -697,20 +929,26 @@ void DSMFactory::loadDSM(const AmArg& args, AmArg& ret) {
 
   string dsm_file_name = DiagPath+dsm_name+".dsm";
   string res = "OK";
-  diags_mut.lock();
-  if (diags->hasDiagram(dsm_name)) {
-    ret.push(400);
-    ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
-  } else {
-    if (!diags->loadFile(dsm_file_name, dsm_name, ModPath, DebugDSM)) {
-      ret.push(500);
-      ret.push("error loading "+dsm_name+" from "+ dsm_file_name);
+
+  ScriptConfigs_mut.lock();
+  try {
+    if (MainScriptConfig.diags->hasDiagram(dsm_name)) {
+      ret.push(400);
+      ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
     } else {
-      ret.push(200);
-      ret.push("loaded "+dsm_name+" from "+ dsm_file_name);
+      if (!MainScriptConfig.diags->loadFile(dsm_file_name, dsm_name, ModPath, DebugDSM)) {
+	ret.push(500);
+	ret.push("error loading "+dsm_name+" from "+ dsm_file_name);
+      } else {
+	ret.push(200);
+	ret.push("loaded "+dsm_name+" from "+ dsm_file_name);
+      }
     }
+  } catch(...) {
+    ScriptConfigs_mut.unlock();
+    throw;
   }
-  diags_mut.unlock();
+  ScriptConfigs_mut.unlock();
 }
 
 void DSMFactory::loadDSMWithPaths(const AmArg& args, AmArg& ret) {
@@ -719,20 +957,25 @@ void DSMFactory::loadDSMWithPaths(const AmArg& args, AmArg& ret) {
   string mod_path  = args.get(2).asCStr();
 
   string res = "OK";
-  diags_mut.lock();
-  if (diags->hasDiagram(dsm_name)) {
-    ret.push(400);
-    ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
-  } else {
-    if (!diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path, DebugDSM)) {
-      ret.push(500);
-      ret.push("error loading "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
+  ScriptConfigs_mut.lock();
+  try {
+    if (MainScriptConfig.diags->hasDiagram(dsm_name)) {
+      ret.push(400);
+      ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
     } else {
-      ret.push(200);
-      ret.push("loaded "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
+      if (!MainScriptConfig.diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path, DebugDSM)) {
+	ret.push(500);
+	ret.push("error loading "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
+      } else {
+	ret.push(200);
+	ret.push("loaded "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
+      }
     }
+  } catch(...) {
+    ScriptConfigs_mut.unlock();
+    throw;
   }
-  diags_mut.unlock();
+  ScriptConfigs_mut.unlock();
 }
 
 void DSMFactory::invoke(const string& method, const AmArg& args, 
@@ -773,6 +1016,9 @@ void DSMFactory::invoke(const string& method, const AmArg& args,
   } else if (method == "registerApplication"){
     args.assertArrayFmt("s");
     registerApplication(args,ret);
+  } else if (method == "loadConfig"){
+    args.assertArrayFmt("ss");
+    loadConfig(args,ret);
   } else if(method == "_list"){ 
     ret.push(AmArg("postDSMEvent"));
     ret.push(AmArg("reloadDSMs"));
@@ -780,6 +1026,7 @@ void DSMFactory::invoke(const string& method, const AmArg& args,
     ret.push(AmArg("loadDSMWithPaths"));
     ret.push(AmArg("preloadModules"));
     ret.push(AmArg("preloadModule"));
+    ret.push(AmArg("loadConfig"));
     ret.push(AmArg("hasDSM"));
     ret.push(AmArg("listDSMs"));
     ret.push(AmArg("registerApplication"));

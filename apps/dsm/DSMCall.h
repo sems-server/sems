@@ -49,6 +49,8 @@ class DSMCall : public AmB2BCallerSession,
   string startDiagName;
   AmPlaylist playlist;
 
+  bool run_invite_event;
+
   bool process_invite;
   bool process_sessionstart;
 
@@ -62,10 +64,11 @@ class DSMCall : public AmB2BCallerSession,
   
   bool checkVar(const string& var_name, const string& var_val);
 public:
-  DSMCall(AmPromptCollection* prompts,
-	    DSMStateDiagramCollection& diags,
-	    const string& startDiagName,
-	    UACAuthCred* credentials = NULL);
+  DSMCall(const DSMScriptConfig& config,
+	  AmPromptCollection* prompts,
+	  DSMStateDiagramCollection& diags,
+	  const string& startDiagName,
+	  UACAuthCred* credentials = NULL);
   ~DSMCall();
 
   void onInvite(const AmSipRequest& req);

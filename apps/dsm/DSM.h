@@ -42,6 +42,8 @@ using std::string;
 
 #include <memory>
 
+#include <set>
+
 enum MonSelectType {
   MonSelect_NONE, 
   MonSelect_RURI, 
@@ -60,16 +62,18 @@ class DSMFactory
     public AmEventQueueInterface
 {
   AmPromptCollection prompts;
-  DSMStateDiagramCollection* diags;
-  AmMutex diags_mut;
+  AmMutex main_diags_mut;
 
-  vector<DSMStateDiagramCollection*> old_diags;
+  std::set<DSMStateDiagramCollection*> old_diags;
 
   static bool DebugDSM;
 
   static string InboundStartDiag;
   static string OutboundStartDiag;
 
+  DSMScriptConfig MainScriptConfig;
+  map<string, DSMScriptConfig> ScriptConfigs;
+  AmMutex ScriptConfigs_mut;
 
 #ifdef USE_MONITORING
   static MonSelectType MonSelectCaller;
@@ -80,6 +84,16 @@ class DSMFactory
   DSMFactory(const string& _app_name);
   ~DSMFactory();
   bool loaded;
+
+  int preloadModules(AmConfigReader& cfg, string& res, const string& ModPath);
+  bool loadConfig(const string& conf_file_name, const string& conf_name, 
+		  bool live_reload, DSMStateDiagramCollection* m_diags);
+  bool loadDiags(AmConfigReader& cfg, DSMStateDiagramCollection* m_diags);
+  bool registerApps(AmConfigReader& cfg, DSMStateDiagramCollection* m_diags, 
+		    vector<string>& register_names /* out */);
+  bool loadPromptSets(AmConfigReader& cfg);
+  bool loadPrompts(AmConfigReader& cfg);
+  bool hasDSM(const string& dsm_name, const string& conf_name);
 
   map<string, AmPromptCollection*> prompt_sets; 
   void prepareSession(DSMCall* s);
@@ -97,15 +111,10 @@ class DSMFactory
   void loadDSM(const AmArg& args, AmArg& ret);
   void loadDSMWithPaths(const AmArg& args, AmArg& ret);
   void registerApplication(const AmArg& args, AmArg& ret);
-
-  int preloadModules(AmConfigReader& cfg, string& res, const string& ModPath);
+  void loadConfig(const AmArg& args, AmArg& ret);
 
 public:
   static DSMFactory* instance();
-
-  static map<string, string> config;
-  static bool   RunInviteEvent;
-  static bool   SetParamVariables;
 
 #ifdef USE_MONITORING
   static bool MonitoringFullCallgraph;

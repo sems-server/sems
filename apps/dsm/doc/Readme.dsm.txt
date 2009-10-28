@@ -68,13 +68,16 @@ postDSMEvent(string call_id, [ [[param0,val0],[param1,val1],...] ]
 
 
 reloadDSMs()
-  reload all DSMs from config file (load_diags)
+  reload all DSMs from config file (load_diags) from main config
+  - DSM is loaded with main config
 
 loadDSM(string diag_name)
   load DSM with name diag_name, paths are taken from config file
+  - DSM is loaded with main config
 
 loadDSMWithPaths(string diag_name, string diag_path, string mod_path)
   load DSM with specified paths
+  - DSM is loaded with main config
 
 preloadModules()
   preload all modules specified in config file (preload_mods)
@@ -82,16 +85,24 @@ preloadModules()
 preloadModule(string mod_name, string mod_path)
   preload module from specific path 
 
-hasDSM(string diag_name)
+hasDSM(string diag_name, [string config])
   returns 1 if DSM with diag_name is loaded, 0 if not
+  if config empty or not given, DSM of main config will be listed
 
-listDSMs()
+listDSMs([string config])
   return list of loaded DSMs
+  if config empty or not given, DSM of main config will be listed
 
-registerApplication(string diag_name)
+registerApplication(string diag_name, [string config])
   register DSM with name diag_name as application in SEMS
   (e.g. to be used with application=$(apphdr), $(ruri.param) 
   or $(ruri.user)
+  if config empty or not given, DSM is assumed to be in main config
+
+loadConfig(string conf_file_name, string conf_name)
+  (re)load application configuration and script 
+  like a file in conf_dir
+
 
 More info
 =========

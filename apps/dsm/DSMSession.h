@@ -117,6 +117,15 @@ class DSMSession {
   std::auto_ptr<AmSipRequest> last_req;
 };
 
+class DSMStateDiagramCollection;
+
+struct DSMScriptConfig {
+  DSMStateDiagramCollection* diags;
+  map<string,string> config_vars;
+
+  bool RunInviteEvent;
+  bool SetParamVariables;
+};
 
 class DSMDisposable {
  public:

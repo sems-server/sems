@@ -30,14 +30,17 @@
 #include "AmMediaProcessor.h"
 #include "DSM.h"
 
-DSMCall::DSMCall(AmPromptCollection* prompts,
-		     DSMStateDiagramCollection& diags,
-		     const string& startDiagName,
-		     UACAuthCred* credentials)
-  : prompts(prompts), default_prompts(prompts), startDiagName(startDiagName), 
-    playlist(this), cred(credentials), 
-    rec_file(NULL),
-    process_invite(true), process_sessionstart(true)
+DSMCall::DSMCall(const DSMScriptConfig& config,
+		 AmPromptCollection* prompts,
+		 DSMStateDiagramCollection& diags,
+		 const string& startDiagName,
+		 UACAuthCred* credentials)
+  : 
+  run_invite_event(config.RunInviteEvent),
+  prompts(prompts), default_prompts(prompts), startDiagName(startDiagName), 
+  playlist(this), cred(credentials), 
+  rec_file(NULL),
+  process_invite(true), process_sessionstart(true)
 {
   diags.addToEngine(&engine);
   set_sip_relay_only(false);
@@ -81,7 +84,7 @@ void DSMCall::onInvite(const AmSipRequest& req) {
     
   bool run_session_invite = engine.onInvite(req, this);
 
-  if (DSMFactory::RunInviteEvent) {
+  if (run_invite_event) {
     if (!engine.init(this, startDiagName, DSMCondition::Invite))
       run_session_invite =false;
 
@@ -107,7 +110,7 @@ void DSMCall::onOutgoingInvite(const string& headers) {
   req.hdrs = headers;
   bool run_session_invite = engine.onInvite(req, this);
 
-  if (DSMFactory::RunInviteEvent) {
+  if (run_invite_event) {
     if (!engine.init(this, startDiagName, DSMCondition::Invite))
       run_session_invite =false;
 
