@@ -224,6 +224,7 @@ int DSMFactory::onLoad()
 	return -1;
 
     }
+    closedir(dir);
   }
   return 0;
 }
@@ -427,9 +428,6 @@ bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_nam
       
       // overwrite with new config
       ScriptConfigs[app_name] = script_config;
-      
-      DBG("-------------------------- inserting script config with diags [%p] for '%s'\n", 
-	  script_config.diags, app_name.c_str());
     }
   } catch(...) {
     ScriptConfigs_mut.unlock();
@@ -609,9 +607,6 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
     call_config = MainScriptConfig;
   else 
     call_config = sc->second;
-
-  DBG("-------------------------- using script config with diags [%p] for '%s'\n", 
-      call_config.diags, start_diag.c_str());
 
   DSMCall* s = new DSMCall(call_config, &prompts, *call_config.diags, start_diag, NULL);
 
