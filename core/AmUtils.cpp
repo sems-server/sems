@@ -48,6 +48,7 @@
 #include <sys/un.h>
 
 #include <regex.h>
+#include <algorithm>
 
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX 104
