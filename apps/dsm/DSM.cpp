@@ -386,7 +386,7 @@ bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_nam
 
   if (live_reload) {
     INFO("live DSM config reload does NOT reload prompts and prompt sets!\n");
-    INFO("(see http://tracker.iptel.org/browse/SEMS-67)\n");
+    INFO("(see http://tracker.iptel.org/browse/SEMS-68)\n");
   } else {
     if (!loadPrompts(cfg))
       return false;
