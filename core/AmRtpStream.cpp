@@ -356,7 +356,6 @@ AmRtpStream::AmRtpStream(AmSession* _s)
     monitor_rtp_timeout(true)
 {
 
-
 #ifdef SUPPORT_IPV6
   memset(&r_saddr,0,sizeof(struct sockaddr_storage));
   memset(&l_saddr,0,sizeof(struct sockaddr_storage));
@@ -374,6 +373,7 @@ AmRtpStream::AmRtpStream(AmSession* _s)
 
   l_ssrc = get_random();
   sequence = get_random();
+  gettimeofday(&last_recv_time,NULL);
 }
 
 AmRtpStream::~AmRtpStream()
@@ -482,11 +482,11 @@ void AmRtpStream::resume()
 }
 
 void AmRtpStream::setOnHold(bool on_hold) {
-	mute = hold = on_hold;
+  mute = hold = on_hold;
 }
 
 bool AmRtpStream::getOnHold() {
-	return hold;
+  return hold;
 }
 
 void AmRtpStream::icmpError()
