@@ -23,7 +23,7 @@ OPTIONS="-f /etc/sems/sems.conf"
 RETVAL=0
 
 start() {
-        pidofproc $prog > /dev/null 2>&1 && echo "sems already running" && return 0
+        pidofproc -p $pidfile > /dev/null 2>&1 && echo "sems already running" && return 0
         echo -n $"Starting $prog: "
         daemon $sems -P $pidfile $OPTIONS
         RETVAL=$?
