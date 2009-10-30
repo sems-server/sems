@@ -25,7 +25,7 @@ RETVAL=0
 start() {
         pidofproc $prog > /dev/null 2>&1 && echo "sems already running" && return 0
         echo -n $"Starting $prog: "
-        daemon $sems $OPTIONS
+        daemon $sems -P $pidfile $OPTIONS
         RETVAL=$?
         echo
         [ $RETVAL = 0 ] && touch $lockfile
