@@ -42,8 +42,11 @@ compile:
 install: all $(extra_install)
 	install -d $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}
 	install -m ${LIB_PERMISSIONS}  *.pyc $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}
-	install -d $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
-	install -m ${LIB_PERMISSIONS}  ${LIBDIR}/*.pyc $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}
+
+ifneq (,$(LIBDIR))
+	install -d $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR} 
+	install -m ${LIB_PERMISSIONS}  ${LIBDIR}/*.pyc $(DESTDIR)${BASEDIR}/${LIB_INSTALLDIR}/${LIBDIR}  
+endif
 
 .PHONY: install-cfg
 install-cfg: 
