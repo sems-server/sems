@@ -13,9 +13,13 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-sems=/usr/sbin/sems
-OPTIONS="-f /etc/sems/sems.conf"
 prog=sems
+sems=/usr/sbin/$prog
+
+pidfile=/var/run/$prog.pid
+lockfile=/var/lock/subsys/$prog
+
+OPTIONS="-f /etc/sems/sems.conf"
 RETVAL=0
 
 start() {
@@ -24,7 +28,7 @@ start() {
         daemon $sems $OPTIONS
         RETVAL=$?
         echo
-        [ $RETVAL = 0 ] && touch /var/lock/subsys/sems
+        [ $RETVAL = 0 ] && touch $lockfile
         return $RETVAL
 }
 
@@ -33,7 +37,7 @@ stop() {
 	killproc $sems 2> /dev/null
 	RETVAL=$?
 	echo
-	[ $RETVAL = 0 ] && rm -f /var/lock/subsys/sems /var/run/sems.pid
+	[ $RETVAL = 0 ] && rm -f $lockfile $pidfile
 }
 
 reload() {
@@ -58,7 +62,7 @@ case "$1" in
 	start
 	;;
   condrestart)
-	if [ -f /var/run/sems.pid ] ; then
+	if [ -f $pidfile ] ; then
 		stop
 		start
 	fi
