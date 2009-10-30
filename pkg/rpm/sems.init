@@ -38,6 +38,7 @@ stop() {
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && rm -f $lockfile $pidfile
+        return $RETVAL
 }
 
 reload() {
