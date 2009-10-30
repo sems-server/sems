@@ -19,7 +19,7 @@ prog=sems
 RETVAL=0
 
 start() {
-        pidofproc $prog > /dev/null 2>&1 && echo "sems already running" && return 1
+        pidofproc $prog > /dev/null 2>&1 && echo "sems already running" && return 0
         echo -n $"Starting $prog: "
         daemon $sems $OPTIONS
         RETVAL=$?
