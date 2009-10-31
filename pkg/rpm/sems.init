@@ -23,8 +23,14 @@ OPTIONS="-f /etc/sems/sems.conf"
 RETVAL=0
 
 start() {
-        pidofproc -p $pidfile > /dev/null 2>&1 && echo "sems already running" && return 0
         echo -n $"Starting $prog: "
+
+	# check whether SEMS was already started
+	if pidofproc -p $pidfile > /dev/null 2>&1 ; then
+		echo -n "already running" && warning && echo
+		return 0
+	fi
+
         daemon $sems -P $pidfile $OPTIONS
         RETVAL=$?
         echo
@@ -34,6 +40,13 @@ start() {
 
 stop() {
 	echo -n $"Stopping $prog: "
+
+	# check whether SEMS is running
+	if ! pidofproc -p $pidfile > /dev/null 2>&1 ; then
+		echo -n "not running" && warning && echo
+		return 0
+	fi
+
 	killproc -p $pidfile 2> /dev/null
 	RETVAL=$?
 	echo
