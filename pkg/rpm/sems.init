@@ -10,6 +10,17 @@
 # pidfile: /var/run/sems.pid
 # config: /etc/sems.conf
 
+### BEGIN INIT INFO
+# Provides: sems
+# Required-Start: $local_fs $network $syslog
+# Required-Stop: $local_fs $network $syslog
+# Default-Start:
+# Default-Stop: 0 1 6
+# Short-Description: SEMS is a SIP Media Server.
+# Description: SEMS is a media and application server for SIP based VoIP services.
+### END INIT INFO
+
+
 # Source function library.
 . /etc/rc.d/init.d/functions
 
