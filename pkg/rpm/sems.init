@@ -54,7 +54,7 @@ stop() {
         return $RETVAL
 }
 
-reload() {
+restart() {
 	stop
 	start
 }
@@ -72,13 +72,11 @@ case "$1" in
 	RETVAL=$?
 	;;
   restart)
-	stop
-	start
+	restart
 	;;
   condrestart)
 	if [ -f $pidfile ] ; then
-		stop
-		start
+		restart
 	fi
 	;;
   *)
