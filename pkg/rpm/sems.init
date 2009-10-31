@@ -74,13 +74,13 @@ case "$1" in
   restart)
 	restart
 	;;
-  condrestart)
+  condrestart|try-restart)
 	if [ -f $pidfile ] ; then
 		restart
 	fi
 	;;
   *)
-	echo $"Usage: $prog {start|stop|restart|condrestart|status|help}"
+	echo $"Usage: $prog {start|stop|restart|condrestart|try-restart|status|help}"
 	exit 1
 esac
 
