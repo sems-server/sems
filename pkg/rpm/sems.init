@@ -18,7 +18,6 @@
 # Description: SEMS is a media and application server for SIP based VoIP services.
 ### END INIT INFO
 
-
 # Source function library.
 . /etc/rc.d/init.d/functions
 
@@ -30,6 +29,11 @@ lockfile=/var/lock/subsys/$prog
 conffile=/etc/$prog/$prog.conf
 
 OPTIONS=""
+
+# User-defined options and/or overrides of the variables, listed above,
+# should go there:
+[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+
 RETVAL=0
 
 start() {
