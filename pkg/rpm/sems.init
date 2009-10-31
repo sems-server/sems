@@ -27,8 +27,9 @@ sems=/usr/sbin/$prog
 
 pidfile=/var/run/$prog.pid
 lockfile=/var/lock/subsys/$prog
+conffile=/etc/$prog/$prog.conf
 
-OPTIONS="-f /etc/sems/sems.conf"
+OPTIONS=""
 RETVAL=0
 
 start() {
@@ -40,7 +41,7 @@ start() {
 		return 0
 	fi
 
-        daemon $sems -P $pidfile $OPTIONS
+        daemon $sems -P $pidfile -f $conffile $OPTIONS
         RETVAL=$?
         echo
         [ $RETVAL = 0 ] && touch $lockfile
