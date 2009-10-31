@@ -71,7 +71,7 @@ case "$1" in
         status -p $pidfile $prog
 	RETVAL=$?
 	;;
-  restart)
+  restart|force-reload)
 	restart
 	;;
   condrestart|try-restart)
@@ -80,7 +80,7 @@ case "$1" in
 	fi
 	;;
   *)
-	echo $"Usage: $prog {start|stop|restart|condrestart|try-restart|status|help}"
+	echo $"Usage: $prog {start|stop|restart|force-reload|condrestart|try-restart|status|help}"
 	exit 1
 esac
 
