@@ -7,8 +7,6 @@
 # description: SEMS is a SIP Media Server.
 #
 # processname: sems
-# pidfile: /var/run/sems.pid
-# config: /etc/sems.conf
 
 ### BEGIN INIT INFO
 # Provides: sems
