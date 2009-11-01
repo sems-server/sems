@@ -39,6 +39,14 @@ RETVAL=0
 start() {
         echo -n $"Starting $prog: "
 
+	# Check user's rights (we need only creating/opening fds
+	# so we check only effective UID)
+	if [ $EUID -ne 0 ] ; then
+		echo -n "not enough rights" && failure && echo
+		RETVAL=4
+		return $RETVAL
+	fi
+
 	# check whether SEMS was already started
 	if pidofproc -p $pidfile > /dev/null 2>&1 ; then
 		echo -n "already running" && warning && echo
@@ -54,6 +62,14 @@ start() {
 
 stop() {
 	echo -n $"Stopping $prog: "
+
+	# Check user's rights (we need only creating/opening fds
+	# so we check only effective UID)
+	if [ $EUID -ne 0 ] ; then
+		echo -n "not enough rights" && failure && echo
+		RETVAL=4
+		return $RETVAL
+	fi
 
 	# check whether SEMS is running
 	if ! pidofproc -p $pidfile > /dev/null 2>&1 ; then
