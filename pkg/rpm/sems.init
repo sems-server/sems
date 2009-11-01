@@ -95,7 +95,7 @@ case "$1" in
 	;;
   *)
 	echo $"Usage: $prog {start|stop|restart|force-reload|condrestart|try-restart|status|help}"
-	exit 1
+	RETVAL=2
 esac
 
 exit $RETVAL
