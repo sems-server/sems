@@ -115,7 +115,7 @@ case "$1" in
 	;;
   *)
 	echo $"Usage: $prog {start|stop|restart|force-reload|condrestart|try-restart|status|help}"
-	RETVAL=2
+	[ "$1" = 'help' ] && RETVAL=0 || RETVAL=2
 esac
 
 exit $RETVAL
