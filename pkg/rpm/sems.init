@@ -88,6 +88,10 @@ case "$1" in
   restart|force-reload)
 	restart
 	;;
+  reload)
+	echo -n $"Reloading $prog: not supported" && failure && echo
+	RETVAL=3
+	;;
   condrestart|try-restart)
 	if [ -f $pidfile ] ; then
 		restart
