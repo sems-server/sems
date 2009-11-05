@@ -256,16 +256,13 @@ int AmPlugIn::load(const string& directory, const string& plugins)
     register_logging_fac(it->second);
   }
     
-  name2app_mut.lock();
   for(std::map<std::string,AmSessionFactory*>::iterator it = name2app.begin();
       it != name2app.end(); it++){
     err = it->second->onLoad();
     if(err) {
-      name2app_mut.unlock();
       return err;
     }
   }
-  name2app_mut.unlock();
 
   DBG("AmPlugIn: Initialized plugins.\n");
 
