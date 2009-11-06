@@ -1,5 +1,5 @@
 
- o run_invite_event per DSM script
+ x run_invite_event per DSM script
  o explicit condition ordering (explicit priority)
  o checking of FSM consitency (e.g. target state names)
  o better error reporting in script compilation (e.g. line number)
