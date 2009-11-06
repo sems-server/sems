@@ -222,7 +222,7 @@ IvrFactory::IvrFactory(const string& _app_name)
 
 // }
 
-void IvrFactory::import_object(PyObject* m, char* name, PyTypeObject* type)
+void IvrFactory::import_object(PyObject* m, const char* name, PyTypeObject* type)
 {
   if (PyType_Ready(type) < 0){
     ERROR("PyType_Ready failed !\n");

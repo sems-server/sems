@@ -90,7 +90,7 @@ class IvrFactory: public AmSessionFactory
   void import_ivr_builtins();
 
   void import_object(PyObject* m, 
-		     char* name, 
+		     const char* name, 
 		     PyTypeObject* type);
 
   /** @return true if everything ok */
