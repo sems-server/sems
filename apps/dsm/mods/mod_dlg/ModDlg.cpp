@@ -93,7 +93,8 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
   unsigned int code_i=200;
   string reason = "OK";
   string code = resolveVars(par1, sess, sc_sess, event_params);
-  DBG("GOT CODE %s\n", code.c_str());
+  DBG("replying with code %s\n", code.c_str());
+
   if (code.length()) {
     reason = resolveVars(par2, sess, sc_sess, event_params);
     if (str2i(code, code_i)) {
