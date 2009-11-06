@@ -200,6 +200,10 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 
   DBG("AmPlugIn: modules loaded.\n");
 
+  std::map<string,AmSessionFactory*> app_load = name2app;
+  
+  set<string> loaded_modules;
+
   DBG("AmPlugIn: Initializing plugins...\n");
 
   if (ctrlIface) {
@@ -214,25 +218,39 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   // initialize base components
   for(std::map<std::string,AmPluginFactory*>::iterator it = name2base.begin();
       it != name2base.end(); it++){
+    if (loaded_modules.find(it->first) != loaded_modules.end())
+      continue;
+
     err = it->second->onLoad();
     if(err)
       return err;
+
+    loaded_modules.insert(it->first);
   }
+
 
   // initialize session event handlers
   for(std::map<std::string,AmSessionEventHandlerFactory*>::iterator it = name2seh.begin();
       it != name2seh.end(); it++){
+    if (loaded_modules.find(it->first) != loaded_modules.end())
+      continue;
+
     err = it->second->onLoad();
     if(err)
       return err;
+    loaded_modules.insert(it->first);
   }
 
   // initialize DI component plugins
   for(std::map<std::string,AmDynInvokeFactory*>::iterator it = name2di.begin();
       it != name2di.end(); it++){
+    if (loaded_modules.find(it->first) != loaded_modules.end())
+      continue;
+
     err = it->second->onLoad();
     if(err)
       return err;
+    loaded_modules.insert(it->first);
   }
 
   // load SIPEventHandlers 
@@ -249,19 +267,28 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   // init logging facilities
   for(std::map<std::string,AmLoggingFacility*>::iterator it = name2logfac.begin();
       it != name2logfac.end(); it++){
-    err = it->second->onLoad();
-    if(err)
-      return err;
+
+    if (!(loaded_modules.find(it->first) != loaded_modules.end())) {
+      err = it->second->onLoad();
+      if(err)
+	return err;
+      loaded_modules.insert(it->first);
+    }
     // register for receiving logging messages
     register_logging_fac(it->second);
   }
-    
-  for(std::map<std::string,AmSessionFactory*>::iterator it = name2app.begin();
-      it != name2app.end(); it++){
+  
+  // application plugins
+  for(std::map<std::string,AmSessionFactory*>::iterator it = app_load.begin();
+      it != app_load.end(); it++){
+    if (loaded_modules.find(it->first) != loaded_modules.end())
+      continue;
+
     err = it->second->onLoad();
-    if(err) {
+    if(err) 
       return err;
-    }
+
+    loaded_modules.insert(it->first);
   }
 
   DBG("AmPlugIn: Initialized plugins.\n");
