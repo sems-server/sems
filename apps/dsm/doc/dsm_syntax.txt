@@ -198,9 +198,14 @@ imports:
  (modules can override core conditions/actions)
 =============================
 special variables:
-    reply_request       "0" ->do not reply to the request as standard behaviour
+    connect_session     "0" -> after the start event (initial transition):
+                                  do not connect session to 
+                                  media processor on start
 
-    connect_session     "0" ->do not connect session to media processor on start
+                            -> after the invite event:
+                                  do not reply with 200 OK and do not 
+                                  connect session to media processor on start
+    
 =============================
 errors:
    actions set $errno

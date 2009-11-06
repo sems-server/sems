@@ -1,5 +1,7 @@
 * mod_dlg saves the initial INVITE to DSMSession::last_req
-
+* set connect_session to 0 with set(connect_session=0)
+  if you want to reply with other than the standard 200 OK 
+  to initial INVITE received.
 
 dlg.reply(code,reason);
  reply to the request in DSMSession::last_req 
