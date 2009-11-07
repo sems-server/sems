@@ -92,7 +92,6 @@ static void sig_usr_un(int signo)
   WARN("Signal %d received.\n", signo);
     
   if (!main_pid || (main_pid == getpid())) {
-    unlink(pid_file.c_str());
 
     static AmMutex            clean_up_mut;
     static AmCondition<bool>  need_clean(true);
@@ -117,6 +116,8 @@ static void sig_usr_un(int signo)
     clean_up_mut.unlock();
 
     INFO("Finished.\n");
+
+    unlink(pid_file.c_str());
 
     exit(0);
   }
