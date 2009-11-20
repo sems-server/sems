@@ -7,3 +7,6 @@ If the registration is not successful, it tries to
 re-register.
 
 This module depends on the registrar_client module.
+
+Loading uac_auth module is needed if the registration should
+be authenticated!

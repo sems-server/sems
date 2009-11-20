@@ -6,6 +6,9 @@ explicitely removed via "removeRegistration".
 
 It is invoked via DI API, or used by the reg_agent module.
 
+Loading uac_auth module is needed if the registration should
+be authenticated!
+
 API functions: 
 =============
 
