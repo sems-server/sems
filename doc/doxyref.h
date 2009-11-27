@@ -16,6 +16,7 @@
  *  \arg \ref Configure-Sems-Ser-HOWTO
  *  \arg \ref AppDoc
  *  \arg \ref ZRTP
+ *  \arg \ref Tuning
  *
  *  \section developerdoc Developer's documentation
  *   \arg <a href="http://www.iptel.org/files/semsng-designoverview.pdf">
@@ -87,6 +88,41 @@
  * \verbinclude sems.conf.sample
  * 
  */
+
+/*! \page Tuning Tuning SEMS for high load
+ * 
+ * <p>For high load, there are several compile and run time options 
+ * to make SEMS run smoothly.</p>
+ * 
+ * <p>When running SEMS, make sure that you have the ulimit for open files 
+ * (process.max-file-descriptor) set to an value which is high enough. 
+ * You may need to adapt raise the system wide hard limit (on Linux see 
+ * /etc/security/limits.conf), or run SEMS as super
+ * user. Note that an unlimited open files limit is not possible, but it is sufficient
+ * to set it to some very high value (e.g. ulimit -n 100000).</p>
+ * 
+ * <p>There is a compile-time variable that sets a limit on how many RTP sessions are 
+ * supported concurrently, this is MAX_RTP_SESSIONS. You may either add this at compile
+ * time to your value, or edit Makefile.defs and adapt the value there.</p>
+ * 
+ * <p>SEMS uses one thread per session (processing of the signaling). This thread
+ * sleeps on a mutex (the session's event queue) most of the time 
+ * (RTP/audio processing is handled by the AmMediaProcessor
+ * threads, which is only a small, configurable, number), thus the scheduler should 
+ * usually not have any performance issue with this. The advantage of using a 
+ * thread per call/session
+ * is that if the thread blocks due to some blocking operation (DB, file etc), processing 
+ * of other calls is not affected. The downside of using a thread per session is that you 
+ * will spend memory for the stack for every thread, which can fill up your system memory 
+ * quickly, if you have many sessions. The default for the stack size is 1M, which for most
+ * cases is quite a lot, so if memory consumption is an issue, you could adapt this 
+ * in AmThread, at the call to pthread_attr_setstacksize. Note that, at least in Linux, 
+ * the memory is allocated, but if a page is not used, the page is not really consumed, which
+ * means that most of that empty memory space for the stack is not really consumed anyway. 
+ * If you allocate more than system memory for stack, though, thread creation may still fail
+ * with ENOMEM.</p>
+ */
+
 
 
 
