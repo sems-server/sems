@@ -344,7 +344,7 @@
  */
 
 
-/*! \page ModuleDoc_dsm Module Documentation: dsm Application 
+/*! \page ModuleDoc_dsm DSM: State machine notation for VoIP applications 
  *  
  *  \section Readme_dsm DSM Readme file 
  *  <p>

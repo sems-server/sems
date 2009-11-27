@@ -201,3 +201,11 @@
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
 
+/*! \page ModuleDoc_b2b_connect Module Documentation: b2b_connect example Application 
+ *  \section Readme_b2b_connect Readme file
+ *  \verbinclude Readme.b2b_connect
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+ 

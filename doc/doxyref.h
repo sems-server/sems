@@ -4,7 +4,6 @@
 
 /*! \page index SEMS Documentation 
  *  \section news News & Changes
- *  \arg \ref whatsnew_0100 
  *  \arg \ref changelog 
  *
  *  \section general General
@@ -13,8 +12,8 @@
  *  \section userdoc User's documentation
  *  \arg \ref sems.conf.sample
  *  \arg \ref Compiling 
- *  \arg \ref Configure-Sems-Ser-HOWTO
  *  \arg \ref AppDoc
+ *  \arg \ref ModuleDoc_dsm
  *  \arg \ref ZRTP
  *  \arg \ref Tuning
  *
@@ -30,6 +29,10 @@
  *    \arg \b Main:  SEMS website http://iptel.org/sems
  *    \arg \b sems & semsdev Lists: List server http://lists.iptel.org
  *    \arg \b Bugs:  Bug tracker: http://tracker.iptel.org/browse/SEMS
+ * 
+ *  \section outdated_doc Outdated documentation bits
+ *  \arg \ref whatsnew_0100 
+ *  \arg \ref Configure-Sems-Ser-HOWTO
  *
  */
 
