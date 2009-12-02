@@ -327,7 +327,7 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 	sip_uri parsed_uri;
 	if (parse_uri(&parsed_uri, (char *)req.next_hop.c_str(),
 		      req.next_hop.length()) < 0) {
-	    ERROR("invalid next hop URI\n");
+	    ERROR("invalid next hop URI '%s'\n", req.next_hop.c_str());
 	    ERROR("Using default outbound proxy");
 	    next_hop = SipCtrlInterfaceFactory::outbound_host;
 	    next_port_i = SipCtrlInterfaceFactory::outbound_port;
