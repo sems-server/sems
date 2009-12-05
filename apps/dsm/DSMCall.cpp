@@ -440,3 +440,38 @@ void DSMCall::B2BaddReceivedRequest(const AmSipRequest& req) {
       req.method.c_str(), req.cseq);
   recvd_req.insert(std::make_pair(req.cseq, req));
 }
+
+void DSMCall::B2BsetHeaders(const string& hdr, bool replaceCRLF) {
+  if (!replaceCRLF)  {
+    invite_req.hdrs = hdr;
+  } else {
+    string hdr_crlf = hdr;
+    DBG("hdr_crlf is '%s'\n", hdr_crlf.c_str());
+
+    while (true) {
+      size_t p = hdr_crlf.find("\\r\\n");
+      if (p==string::npos)
+	break;
+      hdr_crlf.replace(p, 4, "\r\n");
+    }
+    DBG("-> hdr_crlf is '%s'\n", hdr_crlf.c_str());
+    invite_req.hdrs += hdr_crlf;
+  }
+  // add \r\n if not in header
+  if (invite_req.hdrs.length()>2 && 
+      invite_req.hdrs.substr(invite_req.hdrs.length()-2) != "\r\n")
+    invite_req.hdrs+="\r\n";
+}
+
+void DSMCall::B2BaddHeader(const string& hdr) {
+  invite_req.hdrs +=hdr;
+  // add \r\n if not in header
+  if (invite_req.hdrs.length()>2 && 
+      invite_req.hdrs.substr(invite_req.hdrs.length()-2) != "\r\n")
+    invite_req.hdrs+="\r\n";
+}
+
+void DSMCall::B2BclearHeaders() {
+  invite_req.hdrs.clear();
+}
+

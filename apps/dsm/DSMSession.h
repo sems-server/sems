@@ -98,8 +98,17 @@ class DSMSession {
 				bool relayed_invite = false) = 0;
   virtual void B2BterminateOtherLeg() = 0;
 
-  /** insert reqeust in list of received ones */
+  /** insert request in list of received ones */
   virtual void B2BaddReceivedRequest(const AmSipRequest& req) = 0;
+
+  /** set headers of outgoing INVITE */
+  virtual void B2BsetHeaders(const string& hdr, bool replaceCRLF) = 0;
+
+  /** set headers of outgoing INVITE */
+  virtual void B2BclearHeaders() = 0;
+
+  /** add a header to the headers of outgoing INVITE */
+  virtual void B2BaddHeader(const string& hdr) = 0;
 
   /** transfer ownership of object to this session instance */
   virtual void transferOwnership(DSMDisposable* d) = 0;

@@ -97,6 +97,18 @@ core actions:
    generate_sdp can be 'true' or 'false'
    (B2B.sendReinvite(true) recommended)
 
+ B2B.clearHeaders()
+   clear the headers used for outgoing INVITE on B leg
+
+ B2B.addHeader(string header)
+  add a header for outgoing INVITE on B leg
+ 
+ B2B.setHeaders(string headers [, replace_crlf=true|false])
+  set headers for outgoing INVITE on B leg
+  replace_crlf=true for replacing \r\n with CRLF
+  e.g. 
+  B2B.setHeaders("P-One: value\r\nP-Two: anothervalue", true)
+
  setPrompts(name) 
    if more than one prompt sets are loaded
 

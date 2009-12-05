@@ -99,6 +99,9 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("B2B.connectCallee", SCB2BConnectCalleeAction);
   DEF_CMD("B2B.terminateOtherLeg", SCB2BTerminateOtherLegAction);
   DEF_CMD("B2B.sendReinvite", SCB2BReinviteAction);
+  DEF_CMD("B2B.addHeader", SCB2BAddHeaderAction);
+  DEF_CMD("B2B.clearHeaders", SCB2BClearHeadersAction);
+  DEF_CMD("B2B.setHeaders", SCB2BSetHeadersAction);
 
   return NULL;
 }
@@ -827,4 +830,27 @@ CONST_ACTION_2P(SCB2BReinviteAction,',', true);
 EXEC_ACTION_START(SCB2BReinviteAction) {
   bool updateSDP = par1=="true";
   sess->sendReinvite(updateSDP, par2);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCB2BAddHeaderAction) {
+  string val = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("adding B2B header '%s'\n", val.c_str());
+  sc_sess->B2BaddHeader(val);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCB2BSetHeadersAction,',', true);
+EXEC_ACTION_START(SCB2BSetHeadersAction) {
+  string val = resolveVars(par1, sess, sc_sess, event_params);
+  string repl = resolveVars(par2, sess, sc_sess, event_params);
+  bool replace_crlf = false;
+  if (repl == "true")
+    replace_crlf = true;
+  DBG("setting B2B headers to '%s' (%sreplacing CRLF)\n", 
+      val.c_str(), replace_crlf?"":"not ");
+  sc_sess->B2BsetHeaders(val, replace_crlf);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCB2BClearHeadersAction) {
+  DBG("clearing B2B headers\n");
+  sc_sess->B2BclearHeaders();
 } EXEC_ACTION_END;

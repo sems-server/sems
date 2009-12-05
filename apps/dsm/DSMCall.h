@@ -117,6 +117,9 @@ public:
 			bool relayed_invite = false);
 
   void B2BaddReceivedRequest(const AmSipRequest& req);
+  void B2BsetHeaders(const string& hdr, bool replaceCRLF);
+  void B2BclearHeaders();
+  void B2BaddHeader(const string& hdr);
 };
 
 #endif
