@@ -33,7 +33,7 @@ transition "key 2 pressed" room - keyPress(2); test($is_listenonly == "") / {
 transition "key 2 pressed - listenonly" room - keyPress(2); test($is_listenonly == "1") / {
  set($is_listenonly="");
  closePlaylist(false);
- conference.join(myroom);
+ conference.rejoin(myroom);
 } -> room;
 
 transition "kick event" room - eventTest(#action==kick) / closePlaylist(false); conference.leave(); stop(true) -> end;
