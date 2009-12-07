@@ -48,10 +48,13 @@ core actions:
    select active prompt set if more prompt sets are loaded
    Throws "prompt" exeption with #name if prompt set not found
 
- playFile(filename)
+ playFile(filename [, loop=true])
+   e.g. playFile($myfile, true); will play the file looped.
    Throws "file" exeption with #path if file can not be opened
 
- playFileFront(filename)
+ playFileFront(filename [, loop=true])
+   e.g. playFileFront($myfile, true); will play the file at first
+   position in the playlist, and looped.
    Throws "file" exeption with #path if file can not be opened
 
  recordFile(filename)
