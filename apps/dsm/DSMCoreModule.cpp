@@ -75,6 +75,9 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("log", SCLogAction);
   DEF_CMD("clear", SCClearAction);
   DEF_CMD("logVars", SCLogVarsAction);
+  DEF_CMD("logParams", SCLogParamsAction);
+  DEF_CMD("logSelects", SCLogSelectsAction);
+  DEF_CMD("logAll", SCLogAllAction);
 
   DEF_CMD("setTimer", SCSetTimerAction);
   DEF_CMD("removeTimer", SCRemoveTimerAction);
@@ -344,7 +347,6 @@ DSMAction::SEAction SCReturnFSMAction::getSEAction(string& param) {
 
 CONST_ACTION_2P(SCLogAction, ',', false);
 EXEC_ACTION_START(SCLogAction) {
-
   unsigned int lvl;
   if (str2i(resolveVars(par1, sess, sc_sess, event_params), lvl)) {
     ERROR("unknown log level '%s'\n", par1.c_str());
@@ -355,11 +357,12 @@ EXEC_ACTION_START(SCLogAction) {
        l_line.c_str());
 } EXEC_ACTION_END;
 
-EXEC_ACTION_START(SCLogVarsAction) {
+void log_vars(const string& l_arg, AmSession* sess,
+	      DSMSession* sc_sess, map<string,string>* event_params) {
   unsigned int lvl;
-  if (str2i(resolveVars(arg, sess, sc_sess, event_params), lvl)) {
-    ERROR("unknown log level '%s'\n", arg.c_str());
-    return false;
+  if (str2i(resolveVars(l_arg, sess, sc_sess, event_params), lvl)) {
+    ERROR("unknown log level '%s'\n", l_arg.c_str());
+    return;
   }
 
   _LOG((int)lvl, "FSM: variables set ---\n");
@@ -368,6 +371,71 @@ EXEC_ACTION_START(SCLogVarsAction) {
     _LOG((int)lvl, "FSM:  $%s='%s'\n", it->first.c_str(), it->second.c_str());
   }
   _LOG((int)lvl, "FSM: variables end ---\n");
+}
+
+EXEC_ACTION_START(SCLogVarsAction) {
+  log_vars(arg, sess, sc_sess, event_params);
+} EXEC_ACTION_END;
+
+void log_params(const string& l_arg, AmSession* sess,
+		DSMSession* sc_sess, map<string,string>* event_params) {
+  unsigned int lvl;
+  if (str2i(resolveVars(l_arg, sess, sc_sess, event_params), lvl)) {
+    ERROR("unknown log level '%s'\n", l_arg.c_str());
+    return;
+  }
+
+  if (NULL == event_params) {
+    _LOG((int)lvl, "FSM: no event params ---\n");
+    return;
+  }
+
+  _LOG((int)lvl, "FSM: params set ---\n");
+  for (map<string, string>::iterator it = 
+	 event_params->begin(); it != event_params->end(); it++) {
+    _LOG((int)lvl, "FSM:  #%s='%s'\n", it->first.c_str(), it->second.c_str());
+  }
+  _LOG((int)lvl, "FSM: params end ---\n");
+}
+
+EXEC_ACTION_START(SCLogParamsAction) {
+  log_params(arg, sess, sc_sess, event_params);
+} EXEC_ACTION_END;
+
+
+void log_selects(const string& l_arg, AmSession* sess,
+		 DSMSession* sc_sess, map<string,string>* event_params) {
+  unsigned int lvl;
+  if (str2i(resolveVars(l_arg, sess, sc_sess, event_params), lvl)) {
+    ERROR("unknown log level '%s'\n", l_arg.c_str());
+    return;
+  }
+
+  _LOG((int)lvl, "FSM: selects set ---\n");
+
+#define SELECT_LOG(select_name)					\
+  _LOG((int)lvl, "FSM:  @%s='%s'\n", select_name,			\
+       resolveVars("@" select_name, sess, sc_sess, event_params).c_str());	
+
+  SELECT_LOG("local_tag");
+  SELECT_LOG("user");
+  SELECT_LOG("domain");
+  SELECT_LOG("remote_tag");
+  SELECT_LOG("callid");
+  SELECT_LOG("local_uri");
+  SELECT_LOG("remote_uri");
+#undef SELECT_LOG
+  _LOG((int)lvl, "FSM: selects end ---\n");
+}
+
+EXEC_ACTION_START(SCLogSelectsAction) {
+  log_selects(arg, sess, sc_sess, event_params);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCLogAllAction) {
+  log_vars(arg, sess, sc_sess, event_params);
+  log_params(arg, sess, sc_sess, event_params);
+  log_selects(arg, sess, sc_sess, event_params);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCSetAction,'=', false);

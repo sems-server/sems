@@ -129,6 +129,12 @@ core actions:
    e.g. log(1, $var1)
  -- log all variables:
  logVars(level) 
+ -- log all selects:
+ logSelects(level) 
+ -- log all Params (only in actions of a transition):
+ logParams(level) 
+ -- log everything:
+ logAll(level) 
 
  setTimer(timer_id, timeout)
    e.g. setTimer(1, $timeout)
