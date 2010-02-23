@@ -39,6 +39,7 @@ EXPORT_SESSION_FACTORY(AnnouncementFactory,MOD_NAME);
 
 string AnnouncementFactory::AnnouncePath;
 string AnnouncementFactory::AnnounceFile;
+bool   AnnouncementFactory::Loop = false;
 
 AnnouncementFactory::AnnouncementFactory(const string& _app_name)
   : AmSessionFactory(_app_name)
@@ -67,6 +68,8 @@ int AnnouncementFactory::onLoad()
 	  announce_file.c_str());
     return -1;
   }
+
+  Loop = cfg.getParameter("loop") == "true";
 
   return 0;
 }
@@ -158,7 +161,10 @@ void AnnouncementDialog::startSession(){
     ERROR("Couldn't open file %s.\n", filename.c_str());
     throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
   }
-    
+
+  if (AnnouncementFactory::Loop) 
+    wav_file.loop.set(true);
+
   setOutput(&wav_file);
 }
 

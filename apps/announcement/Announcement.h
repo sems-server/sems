@@ -46,6 +46,7 @@ class AnnouncementFactory: public AmSessionFactory
 public:
   static string AnnouncePath;
   static string AnnounceFile;
+  static bool   Loop;
 
   AnnouncementFactory(const string& _app_name);
 
