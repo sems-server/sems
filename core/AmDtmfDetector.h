@@ -345,7 +345,7 @@ class AmRtpDtmfDetector
 
   // after MAX_PACKET_WAIT packets with no RTP DTMF packets received, 
   // a RTP DTMF event is sent out to the aggregating detector
-  static const int MAX_PACKET_WAIT = 5;
+  static const int MAX_PACKET_WAIT = 8;
   /**
    * Time when first packet for current event was received
    */
@@ -382,7 +382,7 @@ class AmDtmfDetector
   public AmKeyPressSink
 {
  private:
-  static const int WAIT_TIMEOUT = 100; // miliseconds
+  static const int WAIT_TIMEOUT = 200; // miliseconds
   /**
    * Session this class belongs to.
    */
