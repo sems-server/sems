@@ -12,3 +12,7 @@ It searches for files to play following these rules:
  2) [AnnouncePath]/[User].wav
 
 That's it.
+
+It can also loop the file if configured to do so. 
+
+Now that really is it.
