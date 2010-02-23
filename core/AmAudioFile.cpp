@@ -354,31 +354,48 @@ int AmAudioFile::read(unsigned int user_ts, unsigned int size)
   long fpos  = ftell(fp);
   if(data_size < 0 || fpos - begin < data_size){
     
-    if((data_size > 0) && (fpos - begin + (int)size > data_size)){
+    if((data_size > 0) && (fpos - begin + (int)size > data_size)) {
+      // last block to read
       s = data_size - fpos + begin;
     }
     
-    s = fread((void*)((unsigned char*)samples),1,s,fp);
+    if ((data_size == -1) && loop.get() && feof(fp)) {
+      // data size unknown, loop and eof
+      DBG("rewinding audio file...\n");
+      rewind();
+      goto read_block;
+    }
+
+    if (data_size == -1 && autorewind.get() && feof(fp)) {
+      // data size unknown, autorewind and eof      
+      DBG("autorewinding audio file...\n");
+      rewind();
+
+      ret = -2; // eof
+    } else {
+      // read from file
+      s = fread((void*)((unsigned char*)samples),1,s,fp);
     
-    ret = (!ferror(fp) ? s : -1);
-    
+      ret = (!ferror(fp) ? s : -1);
+    }
+
 #if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN))
 #define bswap_16(A)  ((((u_int16_t)(A) & 0xff00) >> 8) | \
 		      (((u_int16_t)(A) & 0x00ff) << 8))
     
     unsigned int i;
     for(i=0;i<=size/2;i++) {
-      ((u_int16_t *)((unsigned char*)samples))[i]=bswap_16(((u_int16_t *)((unsigned char*)samples))[i]);
+      ((u_int16_t *)((unsigned char*)samples))[i]=
+	bswap_16(((u_int16_t *)((unsigned char*)samples))[i]);
     }
     
 #endif
-  }
-  else {
-    if(loop.get() && data_size>0){
+  } else {
+    if (loop.get() && data_size>0) {
       DBG("rewinding audio file...\n");
       rewind();
       goto read_block;
-      }
+    }
 
     if (autorewind.get() && data_size>0){
       DBG("autorewinding audio file...\n");
