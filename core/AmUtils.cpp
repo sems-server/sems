@@ -957,7 +957,9 @@ void init_random()
   int seed=0;
   FILE* fp_rand = fopen("/dev/urandom","r");
   if(fp_rand){
-    fread(&seed,sizeof(int),1,fp_rand);
+    if (fread(&seed,sizeof(int),1,fp_rand) != 1) {
+      DBG("/dev/urandom could not be read, rng probably not initialized.\n");
+    }
     fclose(fp_rand);
   }
   seed += getpid();
