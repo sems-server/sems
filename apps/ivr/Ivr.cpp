@@ -759,17 +759,22 @@ PyObject * getPySipRequest(const AmSipRequest& r)
   return IvrSipRequest_FromPtr(new AmSipRequest(r));
 }
 
+void safe_Py_DECREF(PyObject* pyo) {
+  PYLOCK;
+  Py_DECREF(pyo);
+}
+
 void IvrDialog::onSipReply(const AmSipReply& r) {
   PyObject* pyo = getPySipReply(r);
   callPyEventHandler("onSipReply","(O)", pyo);
-  Py_DECREF(pyo);
+  safe_Py_DECREF(pyo);
   AmB2BSession::onSipReply(r);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){
   PyObject* pyo = getPySipRequest(r);
   callPyEventHandler("onSipRequest","(O)", pyo);
-  Py_DECREF(pyo);
+  safe_Py_DECREF(pyo);
   AmB2BSession::onSipRequest(r);
 }
 
