@@ -177,7 +177,7 @@ class AmB2ABSession: public AmSession
 
   AmB2ABSession();
   AmB2ABSession(const string& other_local_tag);
-  ~AmB2ABSession();
+  virtual ~AmB2ABSession();
 
   void onBye(const AmSipRequest& req);
 

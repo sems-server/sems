@@ -66,6 +66,7 @@ public:
   };
 
   AmAudioEvent(int id):AmEvent(id){}
+  virtual ~AmAudioEvent() { }
 };
 
 

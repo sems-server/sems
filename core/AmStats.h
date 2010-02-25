@@ -48,6 +48,8 @@ class MeanValue
     n_val(0)
     {}
 
+  virtual ~MeanValue() { }
+
   void push(double val){
     cum_val += val;
     n_val++;
