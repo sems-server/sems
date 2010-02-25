@@ -39,7 +39,7 @@ class PySemsB2ABDialog : public AmB2ABCallerSession,
 
   PySemsB2ABDialog();
   PySemsB2ABDialog(AmDynInvoke* user_timer);
-  ~PySemsB2ABDialog();
+  virtual ~PySemsB2ABDialog();
 
   void onSessionStart(const AmSipRequest& req);
 
@@ -65,7 +65,7 @@ class PySemsB2ABCalleeDialog : public AmB2ABCalleeSession
  PySemsB2ABCalleeDialog(const string& other_local_tag, 
 			AmSessionAudioConnector* connector)
    : AmB2ABCalleeSession(other_local_tag, connector) { }
-
+  virtual ~PySemsB2ABCalleeDialog() { }
  protected:
   void onB2ABEvent(B2ABEvent* ev);
 

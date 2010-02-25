@@ -38,7 +38,7 @@ class PySemsB2BDialog : public AmB2BCallerSession,
 
   PySemsB2BDialog();
   PySemsB2BDialog(AmDynInvoke* user_timer);
-  ~PySemsB2BDialog();
+  virtual ~PySemsB2BDialog();
 
   void onSessionStart(const AmSipRequest& req);
 

@@ -41,7 +41,7 @@ class PySemsDialog  :  public AmSession,
 
   PySemsDialog();
   PySemsDialog(AmDynInvoke* user_timer);
-  ~PySemsDialog();
+  virtual ~PySemsDialog();
 
   void onSessionStart(const AmSipRequest& req);
 
