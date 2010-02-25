@@ -22,7 +22,11 @@ using std::string;
              *sipCppPtr = new std::string(PyString_AS_STRING(sipPy));
              return 0;
          }
-         *sipCppPtr = (std::string *)sipForceConvertTo_string(sipPy,sipIsErr);
+#if  SIP_VERSION < 0x040901
+         *sipCppPtr = (std::string *)sipForceConvertToType(sipPy, sipType_string, NULL, SIP_NO_CONVERTORS, NULL, sipIsErr);
+#else
+         *sipCppPtr = (std::string *)sipForceConvertToType(sipPy, sipType_string, NULL, SIP_NO_CONVERTORS, NULL, sipIsErr);
+#endif
          return 1;
 %End
 };

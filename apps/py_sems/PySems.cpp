@@ -32,12 +32,21 @@
 
 #include "PySemsDialog.h"
 #include "PySemsB2BDialog.h"
+#include "PySemsB2ABDialog.h"
 #include "PySemsUtils.h"
 
+#include <sip.h>
 #include "sip/sipAPIpy_sems_lib.h"
+
+#if SIP_VERSION < 0x040901
+#define SIP_USE_OLD_CLASS_CONVERSION 1
+#endif
+
+#ifdef SIP_USE_OLD_CLASS_CONVERSION
 #include "sip/sippy_sems_libPySemsDialog.h"
 #include "sip/sippy_sems_libPySemsB2BDialog.h"
 #include "sip/sippy_sems_libPySemsB2ABDialog.h"
+#endif
 
 #include <unistd.h>
 #include <pthread.h>
@@ -268,21 +277,33 @@ AmSession* PySemsFactory::newDlg(const string& name)
   }; break;
   case PySemsScriptDesc::Dialog: {
     PySemsDialog* dlg = (PySemsDialog*)
+#ifdef SIP_USE_OLD_CLASS_CONVERSION
       sipForceConvertTo_PySemsDialog(dlg_inst,&err);
+#else
+      sipForceConvertToType(dlg_inst, sipType_PySemsDialog, NULL, SIP_NO_CONVERTORS, NULL, &err);
+#endif
     sess = dlg;
     dlg_base = dlg;
   }; break;
 
   case PySemsScriptDesc::B2BDialog: {
     PySemsB2BDialog* b2b_dlg = (PySemsB2BDialog*)
+#ifdef SIP_USE_OLD_CLASS_CONVERSION
       sipForceConvertTo_PySemsB2BDialog(dlg_inst,&err);
+#else
+      sipForceConvertToType(dlg_inst, sipType_PySemsB2BDialog, NULL, SIP_NO_CONVERTORS, NULL, &err);
+#endif
     sess = b2b_dlg;
     dlg_base = b2b_dlg;
   }; break;
 
   case PySemsScriptDesc::B2ABDialog: {
     PySemsB2ABDialog* b2ab_dlg = (PySemsB2ABDialog*)
-      sipForceConvertTo_PySemsB2ABDialog(dlg_inst,&err);      
+#ifdef SIP_USE_OLD_CLASS_CONVERSION
+      sipForceConvertTo_PySemsB2ABDialog(dlg_inst,&err);
+#else
+      sipForceConvertToType(dlg_inst, sipType_PySemsB2ABDialog, NULL, SIP_NO_CONVERTORS, NULL, &err);
+#endif
     sess = b2ab_dlg;
     dlg_base = b2ab_dlg;
 
