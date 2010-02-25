@@ -10,7 +10,7 @@ WITH_MPG123DECODER ?= yes
 
 ifeq ($(WITH_MPG123DECODER), yes)
 	module_ldflags += -lmpg123
-	module_cflags += -DWITH_MPG123DECODER
+	module_cflags += -DWITH_MPG123DECODER -D_FILE_OFFSET_BITS=64
 endif
 
 # if you want to build lame from source use these 
