@@ -89,7 +89,7 @@ void AmZRTP::freeSession(zrtp_conn_ctx_t* zrtp_session) {
 }
 
 void zrtp_get_cache_path(char *path, uint32_t length) {
-  sprintf(path, "%s", AmZRTP::cache_path.c_str());
+  snprintf(path, length, "%s", AmZRTP::cache_path.c_str());
 }
 
 
