@@ -27,6 +27,7 @@
 
 #ifndef _DIAMETER_SERVER_CONNECTION_H
 #define _DIAMETER_SERVER_CONNECTION_H
+#include <stdint.h>
 
 #include "diameter_client.h"
 
