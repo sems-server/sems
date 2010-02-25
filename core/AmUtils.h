@@ -240,12 +240,6 @@ void set_port_v6(struct sockaddr_storage* ss, short port);
 short get_port_v6(struct sockaddr_storage* ss);
 #endif
 
-/**
- * Creates and binds a unix socket to given path.
- * @param path path the new socket should be bound to.
- */
-int create_unix_socket(const string& path);
-
 /** \brief microseconds sleep using select */
 #define sleep_us(nusecs) \
 	{ \

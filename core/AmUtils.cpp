@@ -563,40 +563,6 @@ short get_port_v6(struct sockaddr_storage* ss)
 
 #endif
 
-int create_unix_socket(const string& path)
-{
-  if(path.empty()){
-    ERROR("parameter path is empty\n");
-    return -1;
-  }
-
-  int sd = socket(PF_UNIX,SOCK_DGRAM,0);
-  if(sd == -1){
-    ERROR("could not create unix socket: %s\n",strerror(errno));
-    return -1;
-  }
-
-  if(path.size() > UNIX_PATH_MAX-1){
-    ERROR("could not create unix socket: unix socket path is too long\n");
-    close(sd);
-    return -1;
-  }
-	
-  struct sockaddr_un sock_addr;
-  sock_addr.sun_family = AF_UNIX;
-  strcpy(sock_addr.sun_path,path.c_str());
-	
-  if(bind(sd,(struct sockaddr *)&sock_addr,
-	  sizeof(struct sockaddr_un)) == -1) {
-    ERROR("could not bind unix socket (path=%s): %s\n",path.c_str(),strerror(errno));
-    close(sd);
-    return -1;
-  }
-
-  return sd;
-}
-
-
 string file_extension(const string& path)
 {
   string::size_type pos = path.rfind('.');
