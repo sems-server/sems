@@ -259,6 +259,7 @@ double distribution(cell_t **chain, size_t tsz, size_t hsz)
 	}
 	rmsd = sqrt((double)sum / hsz);
 	//rmsd = ((double)sum / hsz);
+	free(dist);
 	return rmsd;
 }
 
