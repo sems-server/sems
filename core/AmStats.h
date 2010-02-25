@@ -104,9 +104,6 @@ class MeanArray: public MeanValue
   double *buffer;
   size_t  buf_size;
 
-  double  cum_val;
-  size_t  n_val;
-
  public:
   MeanArray(size_t size)
     : buf_size(size),
