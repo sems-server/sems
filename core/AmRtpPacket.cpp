@@ -238,9 +238,3 @@ int AmRtpPacket::recv(int sd)
     
   return ret;
 }
-
-void AmRtpPacket::copy(const AmRtpPacket* p)
-{
-  memcpy(this,p,sizeof(AmRtpPacket));
-  memcpy(buffer,p->buffer,b_size);
-}

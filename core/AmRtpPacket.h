@@ -87,9 +87,6 @@ public:
   unsigned char* getBuffer();
   void setBufferSize(unsigned int b) { b_size = b; }
 
-  void copy(const AmRtpPacket* p);
-
-  friend class AmRtpPacketTracer;
 };
 
 #endif
