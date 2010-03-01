@@ -19,36 +19,37 @@ state runinvite
 
 state runstart
       enter { 
-       log(2, run start!); 
-       -- we don't want to have session connected (RTP sent) yet
-       set(connect_session=0);
-       setTimer(1, 2);
+        log(2, run start!); 
+        -- we don't want to have session connected (RTP sent) yet
+        set(connect_session=0);
+        setTimer(1, 2);
       };
-
 transition "go early" runstart - timerTest(#id==1) / 
-	   dlg.acceptInvite(183, progress);
-	   connectMedia();
-	   playFile(wav/default_en.wav);
+        dlg.acceptInvite(183, progress);
+        connectMedia();
+        playFile(wav/default_en.wav);
    -> playing_early_msg; 
 transition "playing file failed" runstart - exception; test(#type==file) / {
- log(1, Error playing file!); 
- dlg.reply(500, server error); 
- stop 
+        log(1, Error playing file!); 
+        dlg.reply(500, server error); 
+        stop 
 } -> FIN;
 
 state playing_early_msg;
-
 transition "early message ended" playing_early_msg - noAudioTest / 
-           dlg.acceptInvite(200, ok);
-           recordFile(/tmp/test.wav);
-           setTimer(3,10);
+        dlg.acceptInvite(200, ok);
+        recordFile(/tmp/test.wav);
+        setTimer(3,10);
   -> recording;
 transition "recording failed" playing_early_msg - exception; / 
    log(1, Error recording!); stop(true) -> FIN;
 
 state recording;
 
-transition "recording timer" recording - timerTest(#id==3) / stop(true) -> FIN;
-transition bye (playing_early_msg, recording) - hangup / stop -> FIN;
-
+transition "bye in early" (playing_early_msg, runstart) - hangup / {
+        dlg.reply(487,call terminated);
+        stop(false) 
+} -> FIN;
+transition "recording timer" recording - timerTest(#id==3) / stop -> FIN;
+transition "bye in recording" recording - hangup / stop -> FIN;
 state FIN;

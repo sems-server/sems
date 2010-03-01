@@ -197,6 +197,15 @@ void DSMCall::onBye(const AmSipRequest& req)
   engine.runEvent(this, DSMCondition::Hangup, &params);
 }
 
+void DSMCall::onCancel() {
+  DBG("onCancel\n");
+  if (dlg.getStatus() < AmSipDialog::Connected) 
+    engine.runEvent(this, DSMCondition::Hangup, NULL);
+  else {
+    DBG("ignoring onCancel event in established dialog\n");
+  }
+}
+
 void DSMCall::process(AmEvent* event)
 {
 
