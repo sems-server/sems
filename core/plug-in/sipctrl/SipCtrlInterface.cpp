@@ -45,9 +45,6 @@
 
 #include <assert.h>
 
-#include <stack>
-using std::stack;
-
 #ifndef _STANDALONE
 
 #include "AmApi.h"
