@@ -179,6 +179,7 @@ void AmMediaProcessor::stop() {
   bool threads_stopped = true;
   do {
     usleep(10000);
+    threads_stopped = true;
     for (unsigned int i=0;i<num_threads;i++) {
       if((threads[i] != NULL) &&(!threads[i]->is_stopped())) {
         threads_stopped = false;
