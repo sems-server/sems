@@ -185,7 +185,7 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
   return 0;
 }
 
-void AmSipDialog::updateStatus(const AmSipReply& reply)
+void AmSipDialog::updateStatus(const AmSipReply& reply, bool do_200_ack)
 {
   TransMap::iterator t_it = uac_trans.find(reply.cseq);
   if(t_it == uac_trans.end()){
@@ -264,7 +264,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     // TODO: 
     // - place this somewhere else.
     //   (probably in AmSession...)
-    if((reply.code < 300) && (t.method == "INVITE")) {
+    if((reply.code < 300) && (t.method == "INVITE") && do_200_ack) {
       send_200_ack(t);
     }
 

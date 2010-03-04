@@ -149,7 +149,7 @@ class AmSipDialog
   string getContactHdr();
 
   void updateStatus(const AmSipRequest& req);
-  void updateStatus(const AmSipReply& reply);
+  void updateStatus(const AmSipReply& reply, bool do_200_ack=true);
   /** update Status from locally originated request (e.g. INVITE) */
   void updateStatusFromLocalRequest(const AmSipRequest& req);
 

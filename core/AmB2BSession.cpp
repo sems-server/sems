@@ -167,11 +167,15 @@ void AmB2BSession::onSipReply(const AmSipReply& reply)
     AmSipReply n_reply = reply;
     n_reply.cseq = t->second.cseq;
     
-    dlg.updateStatus(reply);
+    dlg.updateStatus(reply, false);
     relayEvent(new B2BSipReplyEvent(n_reply,true));
 
-    if(reply.code >= 200)
-      relayed_req.erase(t);
+    if(reply.code >= 200) {
+      if ((reply.code < 300) && (t->second.method == "INVITE")) {
+	DBG("not removing relayed INVITE transaction yet...\n");
+      } else 
+	relayed_req.erase(t);
+    }
   } else {
     AmSession::onSipReply(reply);
     relayEvent(new B2BSipReplyEvent(reply,false));
@@ -219,8 +223,27 @@ void AmB2BSession::terminateOtherLeg()
 
 void AmB2BSession::relaySip(const AmSipRequest& req)
 {
-  relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq);
-  dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs,SIP_FLAGS_VERBATIM);
+  if (req.method != "ACK") {
+    relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq);
+    dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs,SIP_FLAGS_VERBATIM);
+  } else {
+    // its a (200) ACK 
+    TransMap::iterator t = relayed_req.begin(); 
+
+    while (t != relayed_req.end()) {
+      if (t->second.cseq == req.cseq)
+	break;
+      t++;
+    } 
+    if (t == relayed_req.end()) {
+      ERROR("transaction for ACK not found in relayed requests\n");
+      return;
+    }
+    DBG("sending relayed ACK\n");
+    dlg.send_200_ack(AmSipTransaction(t->second.method, t->first), 
+		     req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
+    relayed_req.erase(t);
+  }
 }
 
 void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
