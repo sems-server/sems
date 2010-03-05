@@ -25,6 +25,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <sstream>
 #include "DSMModule.h"
 #include "DSMSession.h"
 #include "AmSession.h"
@@ -51,9 +52,51 @@ string trim(string const& str,char const* sepSet)
     str.substr(first, str.find_last_not_of(sepSet)-first+1);
 }
 
-string resolveVars(const string s, AmSession* sess,
-		   DSMSession* sc_sess, map<string,string>* event_params) {
+bool isNumber(const std::string& s) {
+  if (s.empty())
+    return false;
+
+  for (string::size_type i = 0; i < s.length(); i++) {
+    if (!std::isdigit(s[i]))
+      return false;
+  }
+  return true;
+}
+
+string resolveVars(const string ts, AmSession* sess,
+		   DSMSession* sc_sess, map<string,string>* event_params,
+		   bool eval_ops) {
+  string s = ts;
   if (s.length()) {
+
+    if(eval_ops) {
+      // remove all spaces
+      string::size_type p;
+      for (p = s.find (" ", 0 ); 
+  	p != string::npos; p = s.find(" ", p)) {
+        s.erase (p, 1);
+      }
+
+      // evaluate operators
+      string a,b;
+      if((p = s.find("-")) != string::npos) {
+        a = resolveVars(s.substr(0, p), sess, sc_sess, event_params, true);
+        b = resolveVars(s.substr(p+1, string::npos), sess, sc_sess, event_params, true);
+        if(isNumber(a) && isNumber(b)) {
+          std::stringstream res; res << atoi(a.c_str()) - atoi(b.c_str());
+          return res.str();
+        }
+      }
+      else if((p = s.find("+")) != string::npos) {
+        a = resolveVars(s.substr(0, p), sess, sc_sess, event_params, true);
+        b = resolveVars(s.substr(p+1, string::npos), sess, sc_sess, event_params, true);
+        if(isNumber(a) && isNumber(b)) {
+          std::stringstream res; res << atoi(a.c_str()) + atoi(b.c_str());
+          return res.str();
+        }
+      }
+    }
+
     switch(s[0]) {
     case '$': return sc_sess->var[s.substr(1)];
     case '#': 

@@ -443,7 +443,7 @@ EXEC_ACTION_START(SCSetAction) {
   string var_name = (par1.length() && par1[0] == '$')?
     par1.substr(1) : par1;
 
-  sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params);
+  sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params, true);
   DBG("set $%s='%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
 } EXEC_ACTION_END;

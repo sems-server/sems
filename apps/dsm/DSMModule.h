@@ -214,7 +214,8 @@ class SCStrArgAction
   return false;
 
 string resolveVars(const string s, AmSession* sess,
-		   DSMSession* sc_sess, map<string,string>* event_params);
+		   DSMSession* sc_sess, map<string,string>* event_params,
+		   bool eval_ops = false);
 
 void splitCmd(const string& from_str, 
 		string& cmd, string& params);
