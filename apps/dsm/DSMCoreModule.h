@@ -74,6 +74,7 @@ DEF_ACTION_2P(SCThrowAction);
 DEF_ACTION_1P(SCThrowOnErrorAction);
 
 DEF_ACTION_2P(SCSetAction);
+DEF_ACTION_2P(SCEvalAction);
 DEF_ACTION_2P(SCAppendAction);
 DEF_ACTION_2P(SCSubStrAction);
 DEF_ACTION_1P(SCIncAction);
