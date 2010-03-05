@@ -257,11 +257,6 @@ public:
   bool getMonitorRTPTimeout() { return monitor_rtp_timeout; }
 
   /**
-   * Report an ICMP error.
-   */
-  void icmpError();
-
-  /**
    * Insert an RTP packet to the buffer.
    * Note: memory is owned by this instance.
    */

@@ -32,7 +32,6 @@
 #include "AmSessionContainer.h"
 #include "AmServer.h"
 #include "AmMediaProcessor.h"
-#include "AmIcmpWatcher.h"
 #include "AmRtpReceiver.h"
 #include "AmEventDispatcher.h"
 

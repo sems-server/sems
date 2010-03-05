@@ -18,7 +18,6 @@ SET (sems_SRCS
  AmEvent.cpp
  AmEventDispatcher.cpp
  AmEventQueue.cpp
- AmIcmpWatcher.cpp
  AmJitterBuffer.cpp
  AmMediaProcessor.cpp
  AmMultiPartyMixer.cpp

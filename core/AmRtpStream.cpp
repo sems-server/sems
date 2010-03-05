@@ -27,7 +27,6 @@
 
 #include "AmRtpStream.h"
 #include "AmRtpPacket.h"
-#include "AmIcmpWatcher.h"
 #include "AmRtpReceiver.h"
 #include "AmConfig.h"
 #include "AmPlugIn.h"
@@ -161,7 +160,6 @@ void AmRtpStream::setLocalPort()
     
   l_sd = sd;
   l_port = port;
-  //AmIcmpWatcher::instance()->addStream(l_port,this);
   AmRtpReceiver::instance()->addStream(l_sd,this);
   DBG("local rtp port set to %i\n",l_port);
 }
@@ -487,15 +485,6 @@ void AmRtpStream::setOnHold(bool on_hold) {
 
 bool AmRtpStream::getOnHold() {
   return hold;
-}
-
-void AmRtpStream::icmpError()
-{
-  if(!passive){
-    // AmIcmpWatcher::instance()->removeStream(l_port);
-    if(session)
-      session->stop();
-  }
 }
 
 AmRtpPacket* AmRtpStream::newPacket() {
