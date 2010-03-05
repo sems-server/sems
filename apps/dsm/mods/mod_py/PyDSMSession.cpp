@@ -29,6 +29,7 @@
 #include "PyDSMSession.h"
 #include "log.h"
 #include "DSMSession.h"
+#include "AmSession.h"
 
 extern "C" {
 
@@ -73,6 +74,42 @@ extern "C" {
     DBG("returning '%s'\n", sess->var[varname].c_str());
 
     return PyString_FromString(sess->var[varname].c_str());
+  }
+
+  static PyObject* mod_py_getselect(PyObject*, PyObject* args)
+  {
+    char *varname;
+    if(!PyArg_ParseTuple(args,"s",&varname))
+      return NULL;
+
+    GET_SESS_PTR;
+
+    string res;
+
+    AmSession* sc_sess = dynamic_cast<AmSession*>(sess);
+    if (NULL == sc_sess) {
+      ERROR("Not possible to cast to session object.\n");
+      return NULL;
+    }
+  
+    if (!strcmp("local_tag", varname))
+      res = sc_sess->getLocalTag();	
+    else if (!strcmp("user", varname))
+      res = sc_sess->dlg.user;
+    else if (!strcmp("domain", varname))
+      res = sc_sess->dlg.domain;
+    else if (!strcmp("remote_tag", varname))
+      res = sc_sess->getRemoteTag();
+    else if (!strcmp("callid", varname))
+      res = sc_sess->getCallID();
+    else if (!strcmp("local_uri", varname))
+      res = sc_sess->dlg.local_uri;
+    else if (!strcmp("remote_uri", varname))
+      res = sc_sess->dlg.remote_uri;
+
+    DBG("returning '%s'\n", res.c_str());
+
+    return PyString_FromString(res.c_str());
   }
 
   static PyObject* mod_py_seterror(PyObject*, PyObject* args)
@@ -301,6 +338,7 @@ extern "C" {
   PyMethodDef session_methods[] = {
     {"setvar",   (PyCFunction)mod_py_setvar, METH_VARARGS,"set a session's variable"},
     {"var",      (PyCFunction)mod_py_getvar, METH_VARARGS,"get a session's variable"},
+    {"select",   (PyCFunction)mod_py_getselect, METH_VARARGS,"get a session's select"},
     {"setError", (PyCFunction)mod_py_seterror, METH_VARARGS,"set error (errno)"},
 
     {"playPrompt",       (PyCFunction)playPrompt, METH_VARARGS,"play a prompt"},

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (C) 2009 TelTech Systems
+ * Copyright (C) 2009 IPTEGO GmbH
  *
  * This file is part of SEMS, a free SIP media server.
  *

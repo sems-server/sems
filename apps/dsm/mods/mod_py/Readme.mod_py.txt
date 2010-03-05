@@ -142,6 +142,9 @@ FUNCTIONS
     recordFile(string name)
         start recording to a file
 
+    select(string name)
+        get a session's select
+
     setError(int errno)
         set error (errno)
 
