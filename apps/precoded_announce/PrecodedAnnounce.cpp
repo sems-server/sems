@@ -49,8 +49,7 @@ int PrecodedFactory::onLoad()
       return -1;
     }
 
-    AmPrecodedFile::initPrecodedCodec();
-
+    precoded_file.initPlugin();
     return 0;
 }
 
@@ -72,13 +71,25 @@ AmPayloadProviderInterface* PrecodedDialog::getPayloadProvider() {
   return file_def;
 }
 
+AmAudioRtpFormat* PrecodedDialog::getNewRtpFormat() {
+  if (m_payloads.empty()) {
+    ERROR("can not create RTP format without payloads.\n");
+    return NULL;
+  }
+
+  current_payload = m_payloads[0]->payload_type;
+    
+  precoded_payload_t *precoded_payload = 
+    static_cast<precoded_payload_t*>(file_def->payload(current_payload));
+  if (precoded_payload == NULL) {
+    ERROR("new payload not provided\n");
+    return NULL;
+  }
+  return new AmPrecodedRtpFormat(*precoded_payload, m_payloads);
+}
+
 void PrecodedDialog::onSessionStart(const AmSipRequest& req)
 {
-
-  int current_payload=rtp_str.getCurrentPayload();
-  if ((current_payload == -1) && !m_payloads.empty()) {
-    current_payload = m_payloads[0]->payload_type;
-  }
   AmPrecodedFileInstance* file = file_def->getFileInstance(current_payload, 
 							   m_payloads);
   if (!file) {
@@ -91,8 +102,6 @@ void PrecodedDialog::onSessionStart(const AmSipRequest& req)
     return;
   }
  
-  rtp_str.setFormat(file->getRtpFormat());
-
   setOutput(file);
   setReceiving(false);
 }

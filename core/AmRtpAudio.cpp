@@ -143,7 +143,7 @@ void AmRtpAudio::init(const vector<SdpPayload*>& sdp_payloads)
 {
   DBG("AmRtpAudio::init(...)\n");
   AmRtpStream::init(sdp_payloads);
-  fmt.reset(new AmAudioRtpFormat(sdp_payloads));
+  fmt.reset(session->getNewRtpFormat());
 }
 
 int AmRtpAudio::setCurrentPayload(int payload)

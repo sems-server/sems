@@ -216,6 +216,13 @@ AmPayloadProviderInterface* AmSession::getPayloadProvider() {
   return AmPlugIn::instance();
 }
 
+// todo: - move this back into AmRtpAudio
+//       - simplify payloads handling and move to AmRtpAudio
+//         entirely
+AmAudioRtpFormat* AmSession::getNewRtpFormat() {
+  return new AmAudioRtpFormat(m_payloads);
+}
+
 void AmSession::negotiate(const string& sdp_body,
 			  bool force_symmetric_rtp,
 			  string* sdp_reply)

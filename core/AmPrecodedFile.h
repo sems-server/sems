@@ -46,6 +46,8 @@ struct precoded_payload_t : public amci_payload_t {
   unsigned int frame_ms;
   unsigned int frame_bytes;
   string filename;
+
+  precoded_payload_t() {codec_id = PRECODED_CODEC_ID;}
 };
 
 class AmPrecodedFileFormat : public AmAudioFileFormat {
@@ -102,9 +104,11 @@ class AmPrecodedFile
  public: 
   AmPrecodedFile();
   ~AmPrecodedFile();
-  static void initPrecodedCodec();
 
-  int open(std::string filename);
+  /** need to call after open() */
+  void initPlugin();
+
+  int open(const std::string& filename);
 
   amci_payload_t*  payload(int payload_id);
   int getDynPayload(const string& name, int rate, int encoding_param);

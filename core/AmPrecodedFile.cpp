@@ -30,6 +30,8 @@
 #include "log.h"
 #include <fstream>
 
+#include <libgen.h>
+
 unsigned int precoded_bytes2samples(long h_codec, unsigned int num_bytes) {
   return ((AmAudioFormat*)h_codec)->frame_size;
 }
@@ -49,9 +51,11 @@ amci_codec_t _codec_precoded = {
   precoded_samples2bytes
 };
 
-
-void AmPrecodedFile::initPrecodedCodec() {
+void AmPrecodedFile::initPlugin() {
   AmPlugIn::instance()->addCodec(&_codec_precoded);
+  for(std::map<int,precoded_payload_t>::iterator it = 
+	payloads.begin(); it != payloads.end(); ++it)
+    AmPlugIn::instance()->addPayload(&it->second);
 }
 
 AmPrecodedRtpFormat::AmPrecodedRtpFormat(precoded_payload_t& precoded_payload,
@@ -62,7 +66,6 @@ AmPrecodedRtpFormat::AmPrecodedRtpFormat(precoded_payload_t& precoded_payload,
   rate = precoded_payload.sample_rate;
   // frame_size is in samples, precoded_payload.frame_size in millisec
   frame_size = precoded_payload.frame_ms * precoded_payload.sample_rate / 1000;
-  // fill unused stuff
   frame_length = precoded_payload.frame_ms;
   frame_encoded_size = precoded_payload.frame_bytes;
   h_codec = (long)this;
@@ -119,7 +122,7 @@ int precoded_file_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options
 
 AmPrecodedFileInstance::AmPrecodedFileInstance(precoded_payload_t& precoded_payload, 
 					       const vector<SdpPayload*>&  payloads) 
-  : precoded_payload(precoded_payload), payloads(payloads)
+  : AmAudioFile(), precoded_payload(precoded_payload), payloads(payloads)
 {
   memset(&m_iofmt, 0, sizeof(amci_inoutfmt_t));
   m_iofmt.open = &precoded_file_open;
@@ -149,11 +152,15 @@ AmPrecodedFile::AmPrecodedFile()
 AmPrecodedFile::~AmPrecodedFile() {
 }
 
-int AmPrecodedFile::open(std::string filename) {
+int AmPrecodedFile::open(const std::string& filename) {
   std::ifstream ifs(filename.c_str());
   if (!ifs.good()) {
     return -1;
   }
+
+  char *dir = strdup(filename.c_str());
+  string str_dir(dirname(dir));
+  str_dir += "/";
 
   while (ifs.good() && !ifs.eof()) {
     string codec_line;
@@ -187,14 +194,15 @@ int AmPrecodedFile::open(std::string filename) {
     pl.format_parameters = codec_def[4];
     get_uint_item(frame_ms, 5, "frame ms");
     get_uint_item(frame_bytes, 6, "frame bytes");
-    pl.filename=codec_def[7];
+    pl.filename=str_dir + codec_def[7];
 #undef get_uint_item
 
     DBG("inserting codec '%s' file '%s' and id %d\n",
 	pl.name, pl.filename.c_str(), pl.payload_id);
     payloads[pl.payload_id]=pl;
   }
-
+  free(dir);
+  ifs.close();
   return 0; // OK
 }
 

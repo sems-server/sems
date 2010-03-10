@@ -85,6 +85,11 @@ protected:
   vector<SdpPayload *>  m_payloads;
   bool         negotiate_onreply;
 
+  friend class AmRtpAudio;
+
+  /** get new RTP format for the session */
+  virtual AmAudioRtpFormat* getNewRtpFormat();
+
 private:
   AmDtmfDetector   m_dtmfDetector;
   AmDtmfEventQueue m_dtmfEventQueue;

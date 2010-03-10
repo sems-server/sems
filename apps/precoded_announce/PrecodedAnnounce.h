@@ -50,6 +50,11 @@ class PrecodedDialog : public AmSession
     
   AmPrecodedFile* file_def;
 
+  int current_payload;
+
+protected:
+  AmAudioRtpFormat* getNewRtpFormat();
+
  public:
   PrecodedDialog(AmPrecodedFile* file_def);
   ~PrecodedDialog();
