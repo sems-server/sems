@@ -457,7 +457,9 @@ State::State() {
 State::~State() {
 }
 
-DSMTransition::DSMTransition(){
+DSMTransition::DSMTransition()
+  : is_exception(false)
+{
 }
 
 DSMTransition::~DSMTransition(){
