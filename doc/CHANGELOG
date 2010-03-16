@@ -1,52 +1,50 @@
-
 Changelog for SEMS 
 
-Version 1.2.0 (in order)
+Version 1.2.0
+
+- many DSM improvements:
+  - exceptions support
+  - transitions from multiple origin states
+  - 'not' operator on conditions
+  - B2BUA functionality
+  - register scripts as application
+  - live reload of scripts
+  - script sets with its own configuration
+  - mod_mysql for MySQL DB access  
+  - mod_conference module
+  - mod_aws Amazon Web Services module
+  - mod_py Python module
+  - CANCEL handling in early dialogs (generates hangup event)
+  - Events from DI Interface
+  - eval() function for simple expression evaluation (+, -)
+
+- ivr: fixed memory leak and crashes that occured with high load
+
+- complete working and usable CMake build system
+
+- twitter app
+
+- monitoring: server monitoring and in-memory AVP store
 
 - fixed precoded announcements for all codecs
-
-- exceptions for DSM
-
-- live reloading of DSM scripts 
 
 - fixed multiple timers with the same timestamp
 
 - mail_header_vars : variables from P-App-Param into voicemail template (SEMS-17)
-- twitter app
 
 - sipctrl: outbound proxy support and ACK sent from UA layer
 
-- DSM: mod_aws Amazon Web Services module
-
 - stored application and variables from monitoring for new calls 
-
-- complete working and usable CMake build system
-
-- DSM: mod_py Python module
-
-- fixed memory leak from ivr 
 
 - improved RTP DTMF detection using TS
 
-- Audio file recording with subtype (record.wav|A-Law)
-
-- DSM: B2BUA functionality
-
-- DSM: mod_mysql for MySQL DB access
-
-- DSM: Events from DI
-
-- DSM: mod_conference module
+- Audio file recording with subtype (e.g. record.wav|A-Law)
 
 - PyQT GUI example for webconference 
 
-- monitoring: server monitoring and in-memory AVP store
 
-- DSM: 'not' operator on conditions
 
-- DSM: transitions from multiple origin states
-
-- DSM: register scripts as application
+- py_sems compiles with newer sip4 versions
 
 Version 1.1.0 RC1
  (in order)
