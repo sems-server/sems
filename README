@@ -1,6 +1,6 @@
 
           +------------------------------------+
-          | SIP express media server  - README |
+          | SIP Express Media Server  - README |
           +------------------------------------+
 
 
@@ -19,10 +19,32 @@ Introduction:
  components like announcement servers as building 
  blocks of more complex applications, or, using its powerful 
  framework for application development including back-to-back 
- user agent (B2BUA) functionality, complex VoIP services
- can be realized completely in SEMS. 
+ user agent (B2BUA) and state machine scripting functionality, 
+ complex VoIP services can be realized completely in SEMS. 
  
- SEMS is GPL (v2+) software. See doc/COPYING for details.
+ SEMS only supports patent free codecs. That means that codecs
+ like g729 won't be supported. On the other hand, SEMS supports 
+ all important patent free codecs out of the box (g711u, g711a, 
+ GSM06.10, speex, G726, L16 and iLBC). Integrating other codecs 
+ in SEMS is very simple (patented or not).
+
+ SEMS shows very good performance on current standard
+ PC architecture based server systems. It has sucessfully
+ been run with 1200 G.711 conference channels on a quad-core
+ Intel(R) Xeon at 2GHz (700 GSM, 280 iLBC channels), and up to 
+ 5000 channels on a dual quad Xeon at 2.9GHz. On the 
+ other hand it also runs on very small devices - for example 
+ small embedded systems like routers running OpenWRT, for which 
+ of course the achievable channel count is not that high.
+
+License:
+
+ SEMS is free (speech+beer) software. It is licensed under dual 
+ license terms, the GPL (v2+) and proprietary license.
+
+ See doc/COPYING for details.
+
+Applications:
 
  The following applications are shipped with SEMS :
 
@@ -84,10 +106,22 @@ Introduction:
   * precoded_announce plays preencoded announcements
 
 
- alongside a set of example applications intended to help 
+Developing and customizing Applications and services:
+
+ SEMS comes with a set of example applications intended to help 
  development of custom services, including a calling card 
  application, a traffic generator, a component to control the 
- media server via XMLRPC, and announcements played from DB. 
+ media server via XMLRPC, and announcements played from DB.
+
+ DSM state machine scripting is a powerful yet simple method
+ to rapidly implement custom applications. With this method,
+ the service logic is written as an easy to understand 
+ textual definition of a state machine, which is interpreted
+ and executed for every call. The (domain specific) language 
+ for defining state machines can be extended by implementing
+ modules. A set of useful modules are shipped with SEMS, 
+ including MySQL database access module, Python module, 
+ conference support, Amazon AWS and more. 
 
  SEMS' core implements basic call and audio processing, 
  and loads plug-ins which extend the system. Audio
@@ -99,23 +133,11 @@ Introduction:
  You can easily extend SEMS by creating your own plug-ins.
  Applications can be written using the SEMS framework API 
  in C++, or in Python using an embedded python interpreter 
- of the ivr or py_sems modules.
-
- SEMS only supports patent free codecs. That means that codecs
- like g729 won't be supported. On the other hand, SEMS supports 
- all important patent free codecs out of the box (g711u, g711a, 
- GSM06.10, speex, G726, L16 and iLBC). Integrating other codecs 
- in SEMS is very simple.
-
- SEMS shows very good performance on current standard
- PC architecture based server systems. It has sucessfully
- been run with 1200 G.711 conference channels on a quad-core
- Intel(R) Xeon at 2GHz (700 GSM, 280 iLBC channels). On the 
- other hand it also runs on very small devices - for example 
- small embedded systems like routers running OpenWRT, for which 
- of course the achievable channel count is not that high.
+ of the ivr or py_sems modules, or the DSM.
 
 Requirements:
+
+ All requirements are optional.
 
  1. optional: SER version 0.9.6-sems, or SER 2.0 with SASI:
     SIP Epress Router (www.iptel.org/ser)
@@ -237,9 +259,6 @@ Installation:
     A sample ser.cfg file in this style can be found at 
     http://ftp.iptel.org/pub/sems/ser.cfg
 
-    For more information please refer to doc/Configure-SEMS-Ser-HOWTO and
-    the SER User's guide. 
-
 Creating packages on debian (ubuntu, ...):
 
    install debian package build tools:
@@ -305,8 +324,33 @@ Support, mailing lists, bugs and contact:
 Authors:
 
   Raphael Coeffic (rco@iptel.org), the father of SEMS, 
-  Stefan Sayer (stefan.sayer@iptego.de), current lead developer,
-  and all contributors.
+  Stefan Sayer (stefan.sayer@gmail.com), current lead developer,
+  and all contributors:
+    Alex Gradinar
+    Alfred E Heggestad
+    Andreas Granig
+    Andrey Samusenko
+    Andriy I Pylypenko
+    B. Oldenburg
+    Balint Kovacs
+    Bogdan Pintea
+    Greger Viken Teigre
+    Grzegorz Stanislawski
+    Helmut Kuper
+    Jeremy A
+    Jiri Kuthan
+    Juha Heinanen
+    Ovidiu Sas
+    Peter Lemenkov
+    Peter Loeppky
+    Richard Newman
+    Robert Szokovacs
+    Rui Jin Zheng
+    Tom van der Geer
+    Ulrich Abend
+   (if you want to be added or removed from this list, please mail to stefan.sayer@gmail.com)
+ 
+  Special thanks to IPTEGO GmbH and iptelorg GmbH for sponsoring development of SEMS.
 
 Contributions:
 
@@ -314,22 +358,7 @@ Contributions:
   example new application or codec modules, documentation pages, howtos
   etc. Please email one of the lists or the authors.
 
-Special thanks goes to:
-
-  * Juha Heinanen 
-     for numerous bug reports, improvements and contributions
-
-  * Ulrich Abend (ullstar@iptel.org)
-      for his great debuging work and ISDN gateway which 
-      unfortunately did not make it into this version yet.
-
-  * Jiri Kuthan (jiri@iptel.org)
-      for the debuging work and help to implement
-      the first communicating part between Ser & SEMS ('vm' module).
-
-  * iptego GmbH and iptelorg for sponsoring development and improvement
-    of SEMS.
- 
-  * All the others who helped during test session and reported bugs :-)
-
+  Please also have a look at the contributions license policy 
+  (see doc/COPYING).
+  
 SEMS - the media-S in the SLAMP.
