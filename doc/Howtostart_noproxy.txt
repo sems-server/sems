@@ -21,11 +21,10 @@ Introduction
    using the service.
 
    Note:
-          What is not possible with this method is to use applications,
-          which need additional information for a call, from the
-          subscriber data. For example, in order to send a voicemail as
-          email, the SEMS server needs the email address to send the mail
-          to.
+          What is not possible with this method is to use applications
+          which need additional information for a call from the subscriber
+          data. For example, in order to send a voicemail as email the
+          SEMS server needs the email address to send the mail to.
 
 Requirements
 
@@ -73,8 +72,6 @@ Installing SEMS from source
      * the sems binary in /usr/local/sbin/sems
      * modules in /usr/local/lib/sems/plug-in/
      * audio files in /usr/local/lib/sems/audio/
-
-Installing SEMS from source
 
 Configuring the application for SEMS
 
@@ -189,7 +186,7 @@ m
      __________________________________________________________________
 
 
-    Generated on Wed Mar 17 14:15:58 2010 for SEMS by  [15]doxygen 1.6.1
+    Generated on Wed Mar 17 14:34:30 2010 for SEMS by  [15]doxygen 1.6.1
 
 References
 

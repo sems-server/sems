@@ -25,10 +25,10 @@
  *  \section developerdoc Developer's documentation
  *   \arg <a href="http://www.iptel.org/files/semsng-designoverview.pdf">
  *         SEMS Design Overview</a>
- *  \arg <a href="http://www.iptel.org/sems/sems_application_development_tutorial"> 
- *    Application Development Tutorial </a>
- *  \arg \ref AppDocExample
- *  \arg \ref ComponentDoc
+ *   \arg <a href="http://www.iptel.org/files/semsng-app_module_tutorial.pdf">
+ *     Application development tutorial</a> - find the sources in apps/examples/tutorial
+ *   \arg \ref AppDocExample
+ *   \arg \ref ComponentDoc
  *
  *  \section weblinks Web sites
  *    \arg \b Main:  SEMS website http://iptel.org/sems
@@ -37,7 +37,9 @@
  * 
  *  \section outdated_doc Outdated documentation bits
  *  \arg \ref whatsnew_0100 
- *  \arg \ref Configure-Sems-Ser-HOWTO
+ *  \arg installation instructions for tutorial applications: 
+ *     <a href="http://www.iptel.org/sems/sems_application_development_tutorial"> 
+ *    Application Development Tutorial </a>
  *
  */
 

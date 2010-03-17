@@ -15,9 +15,9 @@
    phone for testing or using the service.
   </p>   
       
-   \note What is not possible with this method is to use applications, which need
-   additional information for a call, from the subscriber data. For example,
-   in order to send a voicemail as email, the SEMS server needs the email 
+   \note What is not possible with this method is to use applications which need
+   additional information for a call from the subscriber data. For example,
+   in order to send a voicemail as email the SEMS server needs the email 
    address to send the mail to.
       
   \section Requirements
@@ -67,8 +67,6 @@
     - the sems binary in /usr/local/sbin/sems
     - modules in /usr/local/lib/sems/plug-in/
     - audio files in /usr/local/lib/sems/audio/
-
-  \subsection
       
   \section Configuring_application Configuring the application for SEMS 
   

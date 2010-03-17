@@ -34,7 +34,8 @@ User's documentation
 Developer's documentation
 
      * [19]SEMS Design Overview
-     * [20]Application Development Tutorial
+     * [20]Application development tutorial - find the sources in
+       apps/examples/tutorial
      * [21]Example Applications
      * [22]Component Modules Documentation
 
@@ -47,11 +48,12 @@ Web sites
 Outdated documentation bits
 
      * [26]Changes in SEMS from 0.9 versions to 0.10
-     * Configure-Sems-Ser-HOWTO
+     * installation instructions for tutorial applications:
+       [27]Application Development Tutorial
      __________________________________________________________________
 
 
-    Generated on Wed Mar 17 14:15:58 2010 for SEMS by  [27]doxygen 1.6.1
+    Generated on Wed Mar 17 14:34:30 2010 for SEMS by  [28]doxygen 1.6.1
 
 References
 
@@ -74,11 +76,12 @@ References
   17. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ZRTP.html
   18. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/Tuning.html
   19. http://www.iptel.org/files/semsng-designoverview.pdf
-  20. http://www.iptel.org/sems/sems_application_development_tutorial
+  20. http://www.iptel.org/files/semsng-app_module_tutorial.pdf
   21. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/AppDocExample.html
   22. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ComponentDoc.html
   23. http://iptel.org/sems
   24. http://lists.iptel.org/
   25. http://tracker.iptel.org/browse/SEMS
   26. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/whatsnew_0100.html
-  27. http://www.doxygen.org/index.html
+  27. http://www.iptel.org/sems/sems_application_development_tutorial
+  28. http://www.doxygen.org/index.html
