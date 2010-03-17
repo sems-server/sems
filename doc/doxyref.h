@@ -9,6 +9,11 @@
  *  \section general General
  *  \arg \ref Readme 
  * 
+ *  \section howtostart How to get started
+ *  \arg \ref howtostart_noproxy
+ *  \arg \ref howtostart_simpleproxy
+ *  \arg \ref howtostart_voicemail
+ *
  *  \section userdoc User's documentation
  *  \arg \ref sems.conf.sample
  *  \arg \ref Compiling 
