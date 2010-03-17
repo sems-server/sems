@@ -1,0 +1,107 @@
+     * [1]Main Page
+     * [2]Related Pages
+     * [3]Namespaces
+     * [4]Data Structures
+     * [5]Files
+     * [6]Directories
+     * [7]Examples
+
+ZRTP encryption
+
+Introduction
+
+   ZRTP is a key agreement protocol to negotiate the keys for encryption
+   of RTP in phone calls. It is a proposed public standard: [8]ZRTP: Media
+   Path Key Agreement for Secure RTP.
+
+   Even though it uses public key encryption, a PKI is not needed. Since
+   the keys are negotiated in the media path, support for it in signaling
+   is not necessary. ZRTP also offers opportunistic encryption, which
+   means that calls between UAs that support it are encrypted, but calls
+   to UAs not supporting it are still possible, but unencrypted. The
+   actual RTP encryption is done with [9]SRTP. For more information about
+   ZRTP, see the [10]Zfone project, the [11]draft and the [12]wikipedia
+   article.
+
+ZRTP in SEMS
+
+   Since the version 1.0 SEMS supports ZRTP with the use of the [13]Zfone
+   SDK.
+
+   To build SEMS with ZRTP support, install the SDK and set WITH_ZRTP=yes
+   in Makefile.defs, or build with
+ $ make WITH_ZRTP=yes
+
+   The conference application is enabled to tell the caller the SAS phrase
+   if it is compiled with WITH_SAS_TTS option, set in
+   apps/conference/Makefile. For this to work, the [14]flite
+   text-to-speech synthesizer version 1.2 or 1.3 is needed.
+
+Online demo
+
+   Call
+sip:[15]secureconference@iptel.org
+
+   or
+sip:[16]zrtp@iptel.org
+
+   for a test drive of ZRTP conferencing. If you call that number with a
+   ZRTP enabled phone, you should be told the SAS string that is also
+   displayed in your phone. Press two times the hash (##) while in the
+   call to read out the SAS string again.
+
+How to use ZRTP in your application
+
+   Have a look at the conference application on how to add ZRTP support in
+   your application. There is a void AmSession::onZRTPEvent(zrtp_event_t
+   event, zrtp_stream_ctx_t *stream_ctx) event that is called with the
+   appropriate ZRTP event type and the zrtp stream context, if the state
+   of the ZRTP encryption changes. The zrtp_event are defined in the Zfone
+   SDK, e.g. ZRTP_EVENT_IS_SECURE.
+
+Licensing
+
+   The Zfone SDK is licensed under the Affero GPL v3. As SEMS is licensed
+   under GPL 2+, you may use SEMS under GPLv3 and link with libZRTP under
+   Affero GPL v3. You may use the resulting program under the restrictions
+   of both GPLv3 and AGPLv3.
+
+   Note that due to the nature of the GPL, without written consent of the
+   authors of SEMS as with any other non-free library, it is not possible
+   to distribute SEMS linked to specially licensed commercial version of
+   the libZRTP SDK, nor the AGPL version. If in doubt, talk to your
+   lawyer.
+
+Phones with ZRTP
+
+     * [17]Zfone turns every softphone into a secure phone by tapping into
+       the RTP sent and received
+     * [18]Twinkle is a very good free softphone for Linux. It can speak
+       ZRTP with the use of GNU [19]libzrtpcpp.
+     __________________________________________________________________
+
+
+    Generated on Wed Mar 17 14:15:58 2010 for SEMS by  [20]doxygen 1.6.1
+
+References
+
+   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
+   8. http://tools.ietf.org/html/draft-zimmermann-avt-zrtp
+   9. http://www.ietf.org/rfc/rfc3711.txt
+  10. http://zfoneproject.com/
+  11. http://tools.ietf.org/html/draft-zimmermann-avt-zrtp
+  12. http://en.wikipedia.org/wiki/ZRTP
+  13. http://zfoneproject.com/prod_sdk.html
+  14. http://cmuflite.org/
+  15. mailto:secureconference@iptel.org
+  16. mailto:zrtp@iptel.org
+  17. http://zfoneproject.com/
+  18. http://twinklephone.com/
+  19. http://www.gnutelephony.org/index.php/GNU_ZRTP
+  20. http://www.doxygen.org/index.html

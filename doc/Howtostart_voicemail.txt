@@ -1,0 +1,198 @@
+     * [1]Main Page
+     * [2]Related Pages
+     * [3]Namespaces
+     * [4]Data Structures
+     * [5]Files
+     * [6]Directories
+     * [7]Examples
+
+How to set up the proxy for voicemail and voicebox in SEMS
+
+Introduction
+
+   This text describes how one can set up a SER based home proxy SIP proxy
+   with voicemail and voicebox service implemented in SEMS.
+
+   With minor modifications, this should work with home proxies
+   implemented with SER derivatives ([8]Kamailio 1.x, [9]OpenSIPS), and
+   also with [10]sip-router (e.g. Kamailio 3.0) based proxy
+   configurations. For other types of proxies or SIP platforms, it should
+   give an idea of what is required to use a SEMS based voicemail system.
+
+Features of a voicemail system with SEMS
+
+   The voicemail system that comes with SEMS supports the following
+   features
+     * voicemail2email and/or dial-in voicebox
+     * greeting only mode
+     * voicebox plays message count
+     * new and saved messages
+     * user can record personal greeting message (as a separate service
+       number)
+     * multi-domain capable
+     * multi-language capable (e.g. as user setting), supports
+       single-digits pre and post
+     * supports domain and user aliases (domain/user string or domain-ID
+       (DID)/user-ID (UID) )
+     * prompts per domain/language
+     * default greeting message per domain/language
+     * configurable key bindings for menu
+
+Parameters to voicemail applications
+
+   Usually, when a call should be sent to the voicemail system, the home
+   proxy already knows some parts or all of the user profile, for example
+   the email address of a user, or the voicemail settings; for example the
+   user profile is already loaded from a DB (or LDAP, RADIUS, DIAMETER
+   etc). For this reason, in a SEMS based voicemail system, the proxy adds
+   the relevant information as parameters to the INVITE request. Those
+   parameters are set in the P-App-Param header.
+
+   Example:
+     INVITE sip:1000@sems01.iptel.org:5080 SIP/2.0.
+
+     From: "sayer@iptel" <sip:sayer@iptel.org>;tag=d3olt2dqvl.
+
+     To: <sip:1000@iptel.org>.
+
+     ...
+     P-App-Name: voicebox.
+
+     P-App-Param: usr=sayer;dom=iptel.org;lng=en;uid=3ab0a114-ceff-11da-8607-000
+2b3abca3a;did=2f2091f5-ceff-11da-8220-0002b338cf3a;.
+
+   If the proxy does not support this, or does not have access to the user
+   profile, there are two solutions:
+     * add another SER-based proxy in front of SEMS that has access to
+       user profile, and adds those headers
+     * add the functionality for accessing the user profile to SEMS (e.g.
+       access DB in SEMS)
+
+   For both solutions, the main complexity lies in the fact that the right
+   user needs to be identified (with support for multi domain, aliases,
+   call forwarding etc).
+
+Features of a voicemail system with SEMS
+
+   There is three applications involved in a voicemail/voicebox system in
+   SEMS: voicemail, voicebox and annrecorder. Voicemail is the application
+   that records a message, and sends the message as email or stores it
+   into the voicebox storage. Voicebox is the application that users can
+   dial into, listen to their messages, delete or save them. Annrecorder
+   is an application that lets users record their personal greeting
+   message.
+
+   If only voicemail2email is to be used, the voicemail application alone
+   can be employed. In that case, the mode must be set to voicemail (see
+   voicemail application parameters below).
+
+Storage for voice message files and greetings
+
+   The storage for voice messages is implemented in a separate module.
+   This way for example a specialized adapter to some replicated storage
+   system can be implemented and loaded without changing the other
+   applications.
+
+   A storage module only needs to support a few very simple functions:
+   Create, get and delete messages, mark a message as read, list a user's
+   directory, and get the number of messages in the user's directory. The
+   sender and the message record time is encoded in the message name.
+
+   The default storage module, msg_storage, is an implementation that just
+   uses the normal file system calls (fopen(), readdir(), opendir() etc).
+   As 'saved' flag, the mtime of the file is compared to the atime.
+
+   Note:
+          If your file system does not support atime, this will not work,
+          i.e. all messages will always appear as unread!
+
+Domain/User text or domain ID (DID) and user ID (UID)
+
+   If the platform supports user and domain aliases (e.g. sip.iptel.org
+   and iptel.org, or numeric aliases), there may not be a canonical user
+   name available. For that case, the user ID and domain ID (canonical
+   user/domain ID) may be used, by setting UID/DID application parameters.
+   This overrides the user name and domain name, so that the correct user
+   and domain is identified.
+
+Voicemail application modes
+
+   The voicemail application has four modes:
+     * voicemail : send email (default)
+     * box : leave in voicebox (store in msg_storage)
+     * both : send email and leave in voicebox
+     * ann : just play greeting, don't record message.
+
+   For voicemail and both mode, the email address must be given as
+   parameter.
+
+Voicemail specific AVPs
+
+   The following user AVPs should be configured in SerWeb to be
+   user-configurable:
+     * voicemail : voicemail mode - 'voicemail', 'box', 'both', or 'ann'
+     * email: email address
+     * lang: language - selectable from those for which prompts are
+       present
+
+Proxy configuration for ser-oob.cfg
+
+   These route fragments could be inserted into a typical ser-oob or
+   default Kamailio configuration.
+
+Leaving a message
+
+   This should be added to native SIP destinations which are not found in
+   usrloc, i.e. instead of replying 480 User temporarily not available,
+   and in FAILURE_ROUTE:
+       append_hf("P-App-Name: voicemail\r\n");
+       append_hf("P-App-Param: mod=%$t.voicemail%|;eml='%$t.email%|';usr=%@ruri.
+user%|;snd='%@from.uri%|';dom=%@ruri.host%|;uid=%$t.uid%|;did=%$t.did%|;");
+       rewritehostport("voicemail.domain.net:5080");
+       route(FORWARD);
+
+Calling voicebox
+
+   This should be added to SITE-SPECIFIC route:
+     if (uri=~"^sip:1000") {               # 1000 is voicebox access number
+         append_hf("P-App-Name: voicebox\r\n");
+         append_hf("P-App-Param: usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng
+=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;\r\n");
+         rewritehostport("voicemail.domain.net:5080");
+         route(FORWARD);
+     }
+
+Recording the greeting
+
+   This is very similar to the one above, and should be added to
+   SITE_SPECIFIC as well:
+     if (uri=~"^sip:1001") {               # 1001 is recod greeting number
+         append_hf("P-App-Name: annrecorder\r\n");
+         append_hf("P-App-Param: usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng
+=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;typ=vm;\r\n");
+         rewritehostport("voicemail.domain.net:5080");
+         route(FORWARD);
+     }
+
+   Note the type (typ) here; the annrecorder application can be used to
+   record different greetings (e.g. away greeting when recording message,
+   or normal away greeting). This type can be used when sending a call to
+   voicemail application.
+     __________________________________________________________________
+
+
+    Generated on Wed Mar 17 14:15:58 2010 for SEMS by  [11]doxygen 1.6.1
+
+References
+
+   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
+   8. http://kamailio.org/
+   9. http://opensips.org/
+  10. http://sip-router.org/
+  11. http://www.doxygen.org/index.html

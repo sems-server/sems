@@ -1,0 +1,183 @@
+     * [1]Main Page
+     * [2]Related Pages
+     * [3]Namespaces
+     * [4]Data Structures
+     * [5]Files
+     * [6]Directories
+     * [7]Examples
+
+Application Modules Documentation
+
+   Documentation for the applications that come with SEMS. The
+   applications can be found in the apps/ directory and are installed by
+   default if they do not depend on special libraries (eg. liblame). A set
+   of [8]Example Applications that illustrate how to make use certain
+   aspects of the SEMS framework can be found in the apps/examples
+   directory. These are not installed by default.
+
+Announcement Applications
+
+   Applications that play announcements to the caller. For plain
+   announcements, there is the announcement module.
+     * [9]Module Documentation: announcement Application
+
+   Pre-call announcements can either be implemented using early media with
+   the early_announce application,
+     * [10]Module Documentation: early_announce Application
+
+   or the session is established and after the announcement SEMS acts as
+   B2BUA, inviting the original r-uri, and finally reinviting the caller:
+     * [11]Module Documentation: ann_b2b Application
+
+   Another possibility is to establish the session and then REFER the
+   caller:
+     * [12]Module Documentation: announce_transfer Application
+
+   As SEMS can also do UAC authentication for a call using the uac_auth
+   component plugin ( ModuleDoc_uac_auth). An example where this is used
+   is the announce_auth example application:
+     * [13]Module Documentation: announce_auth Application
+
+Voicemail and Mailbox
+
+   SEMS has a voicemail application, which send a recorded message via
+   Email (voicemail2email), saves the message to the voicebox, or does
+   both:
+     * [14]Module Documentation: voicemail Application
+
+   Messages saved to voicebox can be listened to using the voicebox
+   application:
+     * [15]Module Documentation: voicebox Application
+
+   The annrecorder application can be used to record a personal greeting
+   message.:
+     * [16]Module Documentation: annrecorder Application
+
+   There is also a simpler mailbox application, which stores recorded
+   messages (in an IMAP server) and users can dial in to check their
+   messages:
+     * [17]Module Documentation: mailbox Application
+
+Conferencing
+
+   SEMS can be a conference bridge with the conference application:
+     * [18]Module Documentation: conference Application
+
+Authentication for conference rooms (PIN entry)
+
+   There are two possibilies how a PIN entry for conference rooms (or for
+   other services) can be implemented: after the PIN is collected and
+   verified against a XMLRPC authentication server, the call can be
+   connected to the conference room either using B2BUA, or it can be
+   transfered to the conference bridge using a (proprietary) REFER call
+   flow. The b2bua solution, which also gives the possibility to limit the
+   call time, is implemented in the conf_auth plugin:
+     * [19]Module Documentation: conf_auth Application
+
+   The other call flow can be implemented using the pin_collect
+   application:
+     * [20]Module Documentation: pin_collect Application
+
+Web controlled conference rooms
+
+   Using the webconference application, conference rooms can be controlled
+   from e.g. a web control page, or some other external mechanism:
+     * [21]Module Documentation: webconference Application
+
+Prepaid
+
+   This is a signalling-only prepaid engine.
+     * [22]Module Documentation: prepaid_sip application plugin
+
+Click2Dial
+
+   An xmlrpc-enabled way to initiate authenticated calls:
+     * [23]Module Documentation: click2dial application plugin
+
+Defining and developing applications as state machine charts
+
+   The DSM module allows to define an application as simple, easy to read,
+   self-documenting, concise state diagram. This state machine definition
+   is then interpreted and executed by the DSM application.
+     * [24]DSM: State machine notation for VoIP applications
+
+Scripting SEMS with Python
+
+   There are two application modules which embed a python interpreted into
+   SEMS: the ivr module and the py_sems module.
+
+   The ivr module plugin embeds a python interpreter into SEMS. In it,
+   applications written in python can be run (mailbox, conf_auth,
+   pin_collect for example) and new applications can be prototyped and
+   implemented very quickly:
+     * [25]Module Documentation: ivr Application
+
+   The ivr module has a simple to use, yet limited API, which uses
+   hand-written wrappers for the python bindings.
+
+   py_sems uses a binding generator to make python classes from the SEMS
+   core C++ classes, thus exposing a lot more functionality natively to
+   python:
+     * [26]Module Documentation: py_sems Application
+
+Registering SEMS at a SIP registrar
+
+   The reg_agent module together with the registar_client module can be
+   used to register at a SIP registrar.
+     * [27]Module Documentation: reg_agent Application
+
+     * [28]Module Documentation: registrar_client Application
+
+Various applications
+
+   xmlrpc2di ([29]Module Documentation: xmlrpc2di Application) exposes DI
+   interfaces as XMLRPC server. This is very useful to connect SEMS with
+   other software, that e.g. trigger click2dial calls, create
+   registrations at SIP registrar, do monitoring, etc.
+     * [30]Module Documentation: callback application plugin
+
+     * [31]Module Documentation: auth_b2b application plugin
+
+Other components
+
+     * [32]Module Documentation: diameter_client component plugin
+     __________________________________________________________________
+
+
+    Generated on Wed Mar 17 14:15:58 2010 for SEMS by  [33]doxygen 1.6.1
+
+References
+
+   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
+   8. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/AppDocExample.html
+   9. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_announcement.html
+  10. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_early_announce.html
+  11. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_ann_b2b.html
+  12. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_announce_transfer.html
+  13. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_announce_auth.html
+  14. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_voicemail.html
+  15. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_voicebox.html
+  16. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_annrecorder.html
+  17. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_mailbox.html
+  18. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_conference.html
+  19. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_conf_auth.html
+  20. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_pin_collect.html
+  21. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_webconference.html
+  22. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_sw_prepaid_sip.html
+  23. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_click2dial.html
+  24. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_dsm.html
+  25. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_ivr.html
+  26. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_py_sems.html
+  27. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_reg_agent.html
+  28. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_registrar_client.html
+  29. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_xmlrpc2di.html
+  30. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_callback.html
+  31. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_auth_b2b.html
+  32. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_diameter_client.html
+  33. http://www.doxygen.org/index.html

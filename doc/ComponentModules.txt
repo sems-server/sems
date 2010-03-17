@@ -1,0 +1,34 @@
+     * [1]Main Page
+     * [2]Related Pages
+     * [3]Namespaces
+     * [4]Data Structures
+     * [5]Files
+     * [6]Directories
+     * [7]Examples
+
+Component Modules Documentation
+
+   SEMS is extensible with modules. Component modules are modules which
+   implement functionality which can be used by other modules, e.g. by
+   application modules.
+     * [8]Module Documentation: registrar_client Application :
+       registrar_client
+
+     * [9]Module Documentation: uac_auth component : uac_auth
+     __________________________________________________________________
+
+
+    Generated on Wed Mar 17 14:15:58 2010 for SEMS by  [10]doxygen 1.6.1
+
+References
+
+   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
+   8. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_registrar_client.html
+   9. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_uac_auth.html
+  10. http://www.doxygen.org/index.html
