@@ -7,7 +7,7 @@ SVN_REV?=r$(shell svnversion -n .)
 
 #version number
 VERSION = 1
-PATCHLEVEL = 1
+PATCHLEVEL = 3
 SUBLEVEL = 0
 EXTRAVERSION ?= -dev-$(SVN_REV)
 
