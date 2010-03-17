@@ -10,7 +10,7 @@ exclude_modules ?= mp3 examples py_sems xmlrpc2di gateway
 endif
 
 modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
-		$(wildcard Makefile*) CVS, \
+		$(wildcard Makefile*) CVS CMakeLists.txt, \
 		$(wildcard *) examples/tutorial/cc_acc )
 #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
 
