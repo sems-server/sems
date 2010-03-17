@@ -1,9 +1,0 @@
-*******************************
-*  Sems + OpenSER mini-HOWTO  *
-*******************************
-
-SEMS 1.0 includes plugin sipctrl.so, which turns SEMS into a regular,
-RFC3261 compliant SIP user agent.  No special interaction is thus
-anymore needed between SEMS and OpenSER.  Just follow the general SEMS
-instructions on how to configure the user agent and how to select an
-application that SEMS executes upon receiving initial INVITE.
