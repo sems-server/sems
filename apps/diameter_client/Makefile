@@ -22,7 +22,7 @@ COREPATH ?=../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 $(DIAMETER_BASE_LIBDIR)$(DIAMETER_BASE_LIBNAME):
-	make -C $(DIAMETER_BASE_LIBDIR) $(DIAMETER_BASE_LIBNAME)
+	make -C $(DIAMETER_BASE_LIBDIR) 
 
 baseclean:
 	make -C $(DIAMETER_BASE_LIBDIR) clean
