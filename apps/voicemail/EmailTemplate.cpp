@@ -58,9 +58,13 @@ int EmailTemplate::load(const string& filename)
     return -1;
   }
 
-  fread(buffer,1,file_size,fp);
+  size_t f_rd = fread(buffer,1,file_size,fp);
   fclose(fp);
-  buffer[file_size] = '\0';
+  if (f_rd != file_size) {
+    WARN("short read on file %s (expected %u, got %zd)\n",
+	 filename.c_str(), file_size, f_rd);
+  }
+  buffer[f_rd] = '\0';
 
   int ret = parse(buffer);
   delete [] buffer;
