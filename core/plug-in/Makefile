@@ -4,7 +4,7 @@ exclude_modules ?= g722
 #echo
 
 modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
-		$(wildcard Makefile*) CVS, \
+		$(wildcard Makefile*) CMakeLists.txt, \
 		$(wildcard *) )
 #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
 
