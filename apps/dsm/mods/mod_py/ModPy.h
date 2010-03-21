@@ -26,10 +26,10 @@
  */
 #ifndef _MOD_PY_H
 #define _MOD_PY_H
+#include <Python.h>
+
 #include "DSMModule.h"
 #include "DSMSession.h"
-
-#include <Python.h>
 
 #define MOD_CLS_NAME SCPyModule
 
