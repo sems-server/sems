@@ -61,7 +61,7 @@ void CCAcc::invoke(const string& method, const AmArg& args, AmArg& ret)
 
 /* accounting functions... */;
 int CCAcc::getCredit(string pin) {	
-   char* serverAddress;
+   const char* serverAddress;
    int port;
    serverAddress = "localhost";
    const char* uri = 0;
@@ -77,7 +77,7 @@ int CCAcc::getCredit(string pin) {
 }
 
 int CCAcc::subtractCredit(string pin, int amount) {
-   char* serverAddress;
+   const char* serverAddress;
    int port;
    serverAddress = "localhost";
    const char* uri = 0;
