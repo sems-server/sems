@@ -173,12 +173,12 @@ AmSession* CallGenFactory::onInvite(const AmSipRequest& req)
 AmSession* CallGenFactory::onInvite(const AmSipRequest& req, AmArg& args)
 {  
   size_t cnt = 0; 
-  int    ncalls           = args.get(cnt++).asInt();
-  int    wait_time_base   = args.get(cnt++).asInt();
-  int    wait_time_rand   = args.get(cnt++).asInt();
+  cnt++; // int    ncalls           = args.get(cnt++).asInt();
+  cnt++; // int    wait_time_base   = args.get(cnt++).asInt();
+  cnt++; // int    wait_time_rand   = args.get(cnt++).asInt();
   string ruri_user        = args.get(cnt++).asCStr();
   string ruri_host        = args.get(cnt++).asCStr();
-  int    ruri_rand_digits = args.get(cnt++).asInt();
+  cnt++; // int    ruri_rand_digits = args.get(cnt++).asInt();
   int    play_rand_digits = args.get(cnt++).asInt();
   int    call_time_base   = args.get(cnt++).asInt();
   int    call_time_rand   = args.get(cnt++).asInt();
@@ -236,15 +236,15 @@ void CallGenFactory::invoke(const string& method,
 
 void CallGenFactory::createCall(const AmArg& args) {
   size_t cnt = 0; 
-  int    ncalls           = args.get(cnt++).asInt();
-  int    wait_time_base   = args.get(cnt++).asInt();
-  int    wait_time_rand   = args.get(cnt++).asInt();
+  cnt++; // int    ncalls           = args.get(cnt++).asInt();
+  cnt++; // int    wait_time_base   = args.get(cnt++).asInt();
+  cnt++; // int    wait_time_rand   = args.get(cnt++).asInt();
   string ruri_user        = args.get(cnt++).asCStr();
   string ruri_host        = args.get(cnt++).asCStr();
   int    ruri_rand_digits = args.get(cnt++).asInt();
-  int    play_rand_digits = args.get(cnt++).asInt();
-  int    call_time_base   = args.get(cnt++).asInt();
-  int    call_time_rand   = args.get(cnt++).asInt();
+  cnt++; // int    play_rand_digits = args.get(cnt++).asInt();
+  cnt++; // int    call_time_base   = args.get(cnt++).asInt();
+  cnt++; // int    call_time_rand   = args.get(cnt++).asInt();
 
   string from = "sip:callgen@"+AmConfig::LocalSIPIP;
   string call_ruri = "sip:"+ruri_user;
@@ -257,7 +257,7 @@ void CallGenFactory::createCall(const AmArg& args) {
   AmArg* c_args = new AmArg(args);
   
   DBG("placing new call to %s\n", call_ruri.c_str());
-  AmSession* s = AmUAC::dialout("callgen", // user
+  /* AmSession* s = */ AmUAC::dialout("callgen", // user
 				APP_NAME,  
 				call_ruri,
 				"<" + from +  ">", from, 
