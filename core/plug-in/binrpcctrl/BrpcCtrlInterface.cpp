@@ -37,13 +37,16 @@ EXPORT_CONTROL_INTERFACE_FACTORY(BrpcCtrlInterfaceFactory, MOD_NAME);
 #define ETX   0x03
 #define SUB   0x21
 
+#define BRPC_STR_STATIC_NOCONST_INIT(name, _cstr_) \
+  static brpc_str_t name = {const_cast<char*>(_cstr_), sizeof(_cstr_)}
+
 // ASI protocol methods
-const BRPC_STR_STATIC_INIT(METH_SYNC, "asi.sync");
-const BRPC_STR_STATIC_INIT(METH_METHODS, "methods");
-const BRPC_STR_STATIC_INIT(METH_DIGESTS, "digests");
+const BRPC_STR_STATIC_NOCONST_INIT(METH_SYNC, "asi.sync");
+const BRPC_STR_STATIC_NOCONST_INIT(METH_METHODS, "methods");
+const BRPC_STR_STATIC_NOCONST_INIT(METH_DIGESTS, "digests");
 // SER RPC methods
-const BRPC_STR_STATIC_INIT(METH_CORE_VER, "core.version");
-const BRPC_STR_STATIC_INIT(METH_SER_RESYNC, "asi.resync");
+const BRPC_STR_STATIC_NOCONST_INIT(METH_CORE_VER, "core.version");
+const BRPC_STR_STATIC_NOCONST_INIT(METH_SER_RESYNC, "asi.resync");
 
 //reply codes
 enum RPC_ERR_CODE {
@@ -52,42 +55,42 @@ enum RPC_ERR_CODE {
 	CODE_RPC_FAILURE = 500,
 };
 //reply phrases
-const BRPC_STR_STATIC_INIT(REASON_RPC_SUCCESS, "Success");
-const BRPC_STR_STATIC_INIT(REASON_RPC_INVALID, "Invalid call");
-const BRPC_STR_STATIC_INIT(REASON_RPC_FAILURE, "Internal Server Error");
+const BRPC_STR_STATIC_NOCONST_INIT(REASON_RPC_SUCCESS, "Success");
+const BRPC_STR_STATIC_NOCONST_INIT(REASON_RPC_INVALID, "Invalid call");
+const BRPC_STR_STATIC_NOCONST_INIT(REASON_RPC_FAILURE, "Internal Server Error");
 
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_REGISTER, "REGISTER");
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_INVITE, "INVITE");
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_CANCEL, "CANCEL");
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_ACK, "ACK");
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_INFO, "INFO");
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_BYE, "BYE");
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_PRACK, "PRACK");
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_REFER, "REFER");
-const BRPC_STR_STATIC_INIT(SIP_REQUEST_NOTIFY, "NOTIFY");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_REGISTER, "REGISTER");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_INVITE, "INVITE");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_CANCEL, "CANCEL");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_ACK, "ACK");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_INFO, "INFO");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_BYE, "BYE");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_PRACK, "PRACK");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_REFER, "REFER");
+const BRPC_STR_STATIC_NOCONST_INIT(SIP_REQUEST_NOTIFY, "NOTIFY");
 
 //these are needed for requests
-const BRPC_STR_STATIC_INIT(SER_DFMT_METHOD, "@method");
-const BRPC_STR_STATIC_INIT(SER_DFMT_RURI_USER, "@ruri.user");
-const BRPC_STR_STATIC_INIT(SER_DFMT_RURI_HOST, "@ruri.host");
-const BRPC_STR_STATIC_INIT(SER_DFMT_RCV_IP, "@received.ip");
-const BRPC_STR_STATIC_INIT(SER_DFMT_RCV_PORT, "@received.port");
-const BRPC_STR_STATIC_INIT(SER_DFMT_RURI, "@ruri");
-const BRPC_STR_STATIC_INIT(SER_DFMT_CONTACT_URI, "@hf_value.contact[1].uri");
-const BRPC_STR_STATIC_INIT(SER_DFMT_FROM_URI, "@from.uri");
-const BRPC_STR_STATIC_INIT(SER_DFMT_TO_URI, "@to.uri");
-const BRPC_STR_STATIC_INIT(SER_DFMT_CALL_ID, "@call_id");
-const BRPC_STR_STATIC_INIT(SER_DFMT_FROM_TAG, "@from.tag");
-const BRPC_STR_STATIC_INIT(SER_DFMT_TO_TAG, "@to.tag");
-const BRPC_STR_STATIC_INIT(SER_DFMT_CSEQ_NUM, "@cseq.num");
-const BRPC_STR_STATIC_INIT(SER_DFMT_RR_ALL, "@hf_value.record_route");
-const BRPC_STR_STATIC_INIT(SER_DFMT_BODY, "@msg.body");
-const BRPC_STR_STATIC_INIT(SER_DFMT_CMD, "$sems_cmd");
-const BRPC_STR_STATIC_INIT(SER_DFMT_HDRS, "$sems_hdrs");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_METHOD, "@method");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_RURI_USER, "@ruri.user");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_RURI_HOST, "@ruri.host");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_RCV_IP, "@received.ip");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_RCV_PORT, "@received.port");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_RURI, "@ruri");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_CONTACT_URI, "@hf_value.contact[1].uri");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_FROM_URI, "@from.uri");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_TO_URI, "@to.uri");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_CALL_ID, "@call_id");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_FROM_TAG, "@from.tag");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_TO_TAG, "@to.tag");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_CSEQ_NUM, "@cseq.num");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_RR_ALL, "@hf_value.record_route");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_BODY, "@msg.body");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_CMD, "$sems_cmd");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_HDRS, "$sems_hdrs");
 //aditionals, for replies
-const BRPC_STR_STATIC_INIT(SER_DFMT_CODE, "@code");
-const BRPC_STR_STATIC_INIT(SER_DFMT_REASON, "@reason");
-const BRPC_STR_STATIC_INIT(SER_DFMT_CONTTYPE, "@hf_value.content_type");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_CODE, "@code");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_REASON, "@reason");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_DFMT_CONTTYPE, "@hf_value.content_type");
 
 
 static const brpc_str_t *SIP_CORE_METHODS[] = {
@@ -159,10 +162,10 @@ enum SIP_REQ_FLAGS {
 };
 
 
-const BRPC_STR_STATIC_INIT(SER_REQUEST, "asi.uac.request");
-const BRPC_STR_STATIC_INIT(SER_CANCEL, "asi.uac.cancel");
-const BRPC_STR_STATIC_INIT(SER_ACK, "asi.uac.ack");
-const BRPC_STR_STATIC_INIT(SER_REPLY, "asi.uas.reply");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_REQUEST, "asi.uac.request");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_CANCEL, "asi.uac.cancel");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_ACK, "asi.uac.ack");
+const BRPC_STR_STATIC_NOCONST_INIT(SER_REPLY, "asi.uas.reply");
 
 /**
  * All replies for SIP requests (including CANCEL and ACK) are of format: 
@@ -180,7 +183,7 @@ const static char CANCEL_FMT_REQ[] = "s";
 
 #define STR2BSTR(bstr, _str)  \
   brpc_str_t bstr = {const_cast<char *>((_str).c_str()), (_str).length()}; \
-  DBG("%s: `%.*s'.\n", #_str, BRPC_STR_FMT(&bstr))
+  DBG("%s: `%.*s'.\n", #_str, BRPC_STR_STATIC_FMT(&bstr))
 
 #define CONFIRM_RECEPTION 0
 
