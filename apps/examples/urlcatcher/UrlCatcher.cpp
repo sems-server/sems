@@ -75,7 +75,13 @@ AmSession* UrlCatcherFactory::onInvite(const AmSipRequest& req)
   if (sdp.uri.empty())
     throw AmSession::Exception(404, "Not Found Here (No Call URI found)");
 
-  system((UrlCatcherFactory::ExecCmd + " \""+sdp.uri+"\"").c_str());
+  int res = system((UrlCatcherFactory::ExecCmd + " \""+sdp.uri+"\"").c_str());
+  if (res == -1) {
+    ERROR("executing system command '%s'\n", 
+	  (UrlCatcherFactory::ExecCmd + " \""+sdp.uri+"\"").c_str());
+  } else {
+    DBG("command returned code %d\n", res);
+  }
 
   throw AmSession::Exception(404, "Not Found Here (but I got your URL)");
 }
