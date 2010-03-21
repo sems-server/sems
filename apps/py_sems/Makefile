@@ -8,7 +8,7 @@ TTS ?= y
 # put used Python modules from lib-dynload here, e.g. time, mysql, _cvs.so etc.
 PYTHON_DYNLOAD_MODULES = $(wildcard $(PYTHON_LIBDIR)/lib-dynload/*.so) \
 	$(wildcard $(PYTHON_LIBDIR)/site-packages/*.so)
-PYTHON_module_cflags = -I$(PYTHON_DIR) -Isip/
+PYTHON_module_cflags = -fno-strict-aliasing -I$(PYTHON_DIR) -Isip/
 PYTHON_module_ldflags = -Xlinker --export-dynamic \
 			-L$(PYTHON_LIBDIR)/config \
 			-lpython$(PY_VER) 
