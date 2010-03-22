@@ -4,7 +4,6 @@ COREPATH ?=../../core
 LAME_DIR = ./lame-3.96.1
 
 module_ldflags =  -lmp3lame 
-module_cflags  = -I/usr/include/lame
 
 WITH_MPG123DECODER ?= yes
 
