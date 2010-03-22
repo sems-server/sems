@@ -28,7 +28,8 @@
 typedef unsigned char uint8_t;
 typedef signed short int16_t;
 
-#include "spandsp/g722.h"
+
+#include <spandsp.h>
 #include "../../log.h"
 
 
