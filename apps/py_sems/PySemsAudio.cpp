@@ -242,9 +242,11 @@ static PyMethodDef PySemsAudioFile_methods[] = {
 
 static PyObject* PySemsAudioFile_getloop(PySemsAudioFile* self, void*)
 {
-  PyObject* loop = self->af->loop.get() ? Py_True : Py_False;
-  Py_INCREF(loop);
-  return loop;
+  if (self->af->loop.get()) {
+    Py_RETURN_TRUE;
+  } else {
+    Py_RETURN_FALSE;
+  }
 }
 
 static int PySemsAudioFile_setloop(PySemsAudioFile* self, PyObject* value, void*)
