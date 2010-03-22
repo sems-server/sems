@@ -10,7 +10,7 @@ PYTHON_DIR = $(shell $(PY_EXE) ./python_inc.py)
 PYTHON_LIBDIR = $(shell $(PY_EXE) ./python_lib.py)
 
 # put used Python modules from lib-dynload here, e.g. time, mysql, _cvs.so etc.
-PYTHON_module_cflags = -I$(PYTHON_DIR) -fno-strict-aliasing
+PYTHON_module_cflags = -I$(PYTHON_DIR) -fno-strict-aliasing -Wno-write-strings
 
 PYTHON_module_ldflags = -L$(PYTHON_LIBDIR)/config \
 			-lpython$(PY_VER)
