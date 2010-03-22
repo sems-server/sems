@@ -279,7 +279,7 @@ class AmSpanDSPInbandDtmfDetector
 
   struct timeval key_start;
   int m_lastCode;
-  dtmf_rx_state_t rx_state;
+  dtmf_rx_state_t* rx_state;
 
   static void tone_report_func(void *user_data, int code
 #ifndef HAVE_OLD_SPANDSP_CALLBACK
