@@ -649,15 +649,34 @@ int AmSemsInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned i
 AmSpanDSPInbandDtmfDetector::AmSpanDSPInbandDtmfDetector(AmKeyPressSink *keysink)
   : AmInbandDtmfDetector(keysink) 
 {
-  dtmf_rx_init(&rx_state, NULL /* dtmf_rx_callback */, (void*)this); 
-  dtmf_rx_set_realtime_callback(&rx_state, tone_report_func, (void*)this); 
+#ifdef HAVE_OLD_SPANDSP_CALLBACK
+  rx_state = malloc(sizeof(dtmf_rx_state_t));
+  if (NULL == rx_state) {
+    throw string("error allocating memory for DTMF detector\n");
+  }
+#else
+  rx_state = NULL;
+#endif
+  rx_state = dtmf_rx_init(rx_state, NULL /* dtmf_rx_callback */, (void*)this); 
+
+  if (rx_state==NULL) {
+    throw string("error allocating memory for DTMF detector\n");
+  }
+  dtmf_rx_set_realtime_callback(rx_state, tone_report_func, (void*)this); 
 }
 
 AmSpanDSPInbandDtmfDetector::~AmSpanDSPInbandDtmfDetector() {
+  // not in 0.0.4:
+  //  dtmf_rx_release(rx_state);
+#ifdef HAVE_OLD_SPANDSP_CALLBACK
+  free(rx_state);
+#else
+  dtmf_rx_free(rx_state);
+#endif
 }
 
 int AmSpanDSPInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts) {
-  dtmf_rx(&rx_state, (const int16_t*) samples, size/2);
+  dtmf_rx(rx_state, (const int16_t*) samples, size/2);
   return size;
 }
 
