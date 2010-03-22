@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lame.h"
+#include <lame/lame.h>
 
 #ifdef WITH_MPG123DECODER
 #include "mpg123.h"
