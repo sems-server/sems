@@ -59,9 +59,9 @@ bool utils_play_count(DSMSession* sc_sess, unsigned int cnt,
   }
   
   for (int i=9;i>1;i--) {
-    div_t num = div(cnt, (int)exp10(i));  
+    div_t num = div(cnt, (int)pow(10.,i));  
     if (num.quot) {
-      sc_sess->playFile(basedir+int2str(int(num.quot * exp10(i)))+suffix, false);
+      sc_sess->playFile(basedir+int2str(int(num.quot * pow(10.,i)))+suffix, false);
     }
     cnt = num.rem;
   }
