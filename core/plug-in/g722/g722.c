@@ -62,8 +62,8 @@ END_FILE_FORMATS
 END_EXPORTS
 
 typedef struct {
-  g722_encode_state_t encode_state;
-  g722_decode_state_t decode_state;    
+  g722_encode_state_t* encode_state;
+  g722_decode_state_t* decode_state;    
 } G722State;
 
 
@@ -77,16 +77,20 @@ long G722NB_create(const char* format_parameters, amci_codec_fmt_info_t* format_
     return 0;
   }
 
-  if (!g722_encode_init(&gs->encode_state, 
-			64000, G722_SAMPLE_RATE_8000)) {
+  gs->encode_state = g722_encode_init(NULL,
+				      64000, G722_SAMPLE_RATE_8000);
+
+  if (!gs->encode_state) {
     ERROR("error initializing G722 encoder\n");
     free(gs);
     return 0;
   }
 
-  if (!g722_decode_init(&gs->decode_state, 
-			64000, G722_SAMPLE_RATE_8000)) {
+  gs->decode_state = g722_decode_init(NULL, 
+				      64000, G722_SAMPLE_RATE_8000);
+  if (!gs->decode_state) {
     ERROR("error initializing G722 decoder\n");
+    free(gs->encode_state);
     free(gs);
     return 0;
   }
@@ -96,6 +100,35 @@ long G722NB_create(const char* format_parameters, amci_codec_fmt_info_t* format_
 
 void G722NB_destroy(long handle)
 {
+  G722State* gs;
+
+  if (!handle)
+    return;
+
+  gs = (G722State*) handle;
+  
+  if (gs->encode_state) {
+    g722_encode_release(gs->encode_state);
+
+    /* 20080616 is 0.0.5 release date
+       a bit silly, but looks like spandsp does not have
+       version in version.h */
+#if SPANDSP_RELEASE_DATE > 20080616
+    g722_encode_free(gs->encode_state);
+#endif
+  }
+
+  if (gs->decode_state) {
+    g722_decode_release(gs->decode_state);
+    /* 20080616 is 0.0.5 release date
+       a bit silly, but looks like spandsp does not have
+       version in version.h */
+#if SPANDSP_RELEASE_DATE > 20080616
+    g722_decode_free(gs->decode_state);
+#endif
+  }
+
+  free(gs);
 }
 
 static unsigned int G722NB_bytes2samples(long h_codec, unsigned int num_bytes) {
@@ -124,7 +157,7 @@ int Pcm16_2_G722NB( unsigned char* out_buf, unsigned char* in_buf, unsigned int 
 
   gs = (G722State*) h_codec;
 
-  return g722_encode(&gs->encode_state, out_buf, (signed short*)in_buf, size >> 1);
+  return g722_encode(gs->encode_state, out_buf, (signed short*)in_buf, size >> 1);
 }
 
 int G722NB_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
@@ -145,5 +178,5 @@ int G722NB_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int 
 
   gs = (G722State*) h_codec;
 
-  return g722_decode(&gs->decode_state, (signed short*)out_buf, in_buf, size) << 1;
+  return g722_decode(gs->decode_state, (signed short*)out_buf, in_buf, size) << 1;
 }
