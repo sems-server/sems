@@ -972,7 +972,7 @@ void AnswerMachineDialog::saveMessage()
 
 void AnswerMachineDialog::saveBox(FILE* fp) {
   string msg_name = email_dict["ts"] + MSG_SEPARATOR +  
-    email_dict["sender"] + ".wav";
+    email_dict["sender"] + "." + AnswerMachineFactory::RecFileExt;
   DBG("message name is '%s'\n", msg_name.c_str());
 
   AmArg di_args,ret;
