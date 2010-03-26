@@ -170,7 +170,7 @@ protected:
   virtual void on_stop()=0;
 
 public:
-  pid_t     _pid;
+  unsigned long _pid;
   AmThread();
   virtual ~AmThread() {}
 

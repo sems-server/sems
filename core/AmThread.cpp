@@ -64,12 +64,12 @@ AmThread::AmThread()
 void * AmThread::_start(void * _t)
 {
   AmThread* _this = (AmThread*)_t;
-  _this->_pid = (pid_t) _this->_td;
-  DBG("Thread %lu is starting.\n", (unsigned long int) _this->_pid);
+  _this->_pid = (unsigned long) _this->_td;
+  DBG("Thread %lu is starting.\n", (unsigned long) _this->_pid);
   _this->_stopped.set(false);
   _this->run();
 
-  DBG("Thread %lu is ending.\n", (unsigned long int) _this->_pid);
+  DBG("Thread %lu is ending.\n", (unsigned long) _this->_pid);
   _this->_stopped.set(true);
     
   //thread_nr_mut.lock();

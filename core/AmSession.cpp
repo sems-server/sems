@@ -425,7 +425,7 @@ string AmSession::getNewId()
 
   id += int2hex(get_random()) + "-";
   id += int2hex(t.tv_sec) + int2hex(t.tv_usec) + "-";
-  id += int2hex((unsigned int) pthread_self());
+  id += int2hex((unsigned int)((unsigned long)pthread_self()));
 
   return id;
 }
