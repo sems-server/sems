@@ -33,7 +33,6 @@ CPPFLAGS += -D_DEBUG \
 #LIBSPANDSP_STATIC = yes
 #LIBSPANDSP_LDIR = /usr/local/lib/
 
-
 # compile with sample rate conversion from secret rabbit code? 
 # (see http://www.mega-nerd.com/SRC/)
 #
@@ -63,6 +62,8 @@ spandsp_defs=1
 export spandsp_defs
 CPPFLAGS += -DUSE_SPANDSP -D__STDC_LIMIT_MACROS
 endif
+else
+override exclude_modules += g722
 endif
 
 ifdef USE_LIBSAMPLERATE
@@ -160,7 +161,7 @@ ifeq ($(OS), darwin)
 	      LDFLAGS += -L/opt/local/lib
 	endif	      
 
-	override exclude_modules += binrpcctrl mp3 examples py_sems
+	override exclude_modules += binrpcctrl ivr examples py_sems
 else
 	LDFLAGS+= -fPIC -ldl -lsocket -lnsl -lpthread
 	TARGET=solaris
@@ -272,7 +273,7 @@ export USE_SPANDSP LIBSPANDSP_STATIC LIBSPANDSP_LDIR
 export USE_LIBSAMPLERATE
 export WITH_ZRTP
 export USE_MONITORING
-
+export exclude_modules
 endif  # ifeq ($(makefile_defs, 1)
 
 mk-install-dirs: $(DESTDIR)$(cfg-target) \
