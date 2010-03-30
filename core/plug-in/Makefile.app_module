@@ -18,7 +18,7 @@ lib_full_name ?= $(app_module_dir)/$(lib_name)
 module_conf_files =  $(wildcard etc/*.conf)
 AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
 EXTRA_LIB_DIR?=lib/
-EXTRA_LIB_FILES=$(notdir $(wildcard $(EXTRA_LIB_DIR)*))
+EXTRA_LIB_FILES=$(filter-out CMakeLists.txt, $(notdir $(wildcard $(EXTRA_LIB_DIR)*)))
 
 srcs     = $(wildcard *.cpp)
 hrds     = $(wildcard *.h)
