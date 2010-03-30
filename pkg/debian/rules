@@ -98,7 +98,8 @@ binary-common:
 	dh_testdir
 	dh_testroot
 	dh_installdebconf	
-	dh_installdocs doc/Readme.*
+	dh_installdocs doc/*.txt
+	dh_installdocs doc/dsm/
 	dh_installexamples
 	dh_installmenu
 #	dh_installlogrotate
