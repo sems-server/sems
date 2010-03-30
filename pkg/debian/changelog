@@ -1,3 +1,9 @@
+sems (1.2.0) unstable; urgency=low
+
+  * SEMS 1.2.0 release
+
+ -- Stefan Sayer <stefan@waspi>  Tue, 30 Mar 2010 21:46:39 +0200
+
 sems (1.1.1) unstable; urgency=low
 
   * SEMS 1.1.1 bugfix release   - fixed Via HF missing the port number
