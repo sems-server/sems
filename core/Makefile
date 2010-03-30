@@ -24,7 +24,7 @@ clean:
 
 .PHONY: modules
 modules:
-	$(MAKE) -C $(PLUGIN_DIR) $(MAKECMDGOALS)
+	cd $(PLUGIN_DIR); $(MAKE) modules
 
 .PHONY: deps
 deps: $(DEPS)
