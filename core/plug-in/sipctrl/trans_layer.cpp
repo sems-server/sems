@@ -129,11 +129,39 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     bool have_to_tag = false;
     int  reply_len   = status_line_len(reason);
 
+    // add 'received' should be added
+    // check if first Via has rport parameter
+
+    assert(req->via1);
+    assert(req->via_p1);
+
+    unsigned int new_via1_len = copy_hdr_len(req->via1);
+    string remote_ip_str = get_addr_str(((sockaddr_in*)&req->remote_ip)->sin_addr).c_str();
+    new_via1_len += 10/*;received=*/ + remote_ip_str.length();
+
+    // needed if rport parameter was present but empty
+    string remote_port_str;
+    if(req->via_p1->has_rport) {
+	if(!req->via_p1->rport.len){
+	    remote_port_str = int2str(ntohs(((sockaddr_in*)&req->remote_ip)->sin_port));
+	    new_via1_len += remote_port_str.length() + 1/* "=<port number>" */;
+	}
+    }
+
+    // copy necessary headers
     for(list<sip_header*>::iterator it = req->hdrs.begin();
 	it != req->hdrs.end(); ++it) {
 
 	assert((*it));
 	switch((*it)->type){
+
+	case sip_header::H_VIA:
+	    // if first via, take the possibly modified one
+	    if((*it) == req->via1)
+		reply_len += new_via1_len;
+	    else
+		reply_len += copy_hdr_len(*it);
+	    break;
 
 	case sip_header::H_TO:
 	    assert((*it)->p);
@@ -148,11 +176,12 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 
 		t->to_tag = ((sip_from_to*)(*it)->p)->tag;
 	    }
-	    // fall-through-trap
+	    reply_len += copy_hdr_len(*it);
+	    break;
+
 	case sip_header::H_FROM:
 	case sip_header::H_CALL_ID:
 	case sip_header::H_CSEQ:
-	case sip_header::H_VIA:
 	case sip_header::H_RECORD_ROUTE:
 	    reply_len += copy_hdr_len(*it);
 	    break;
@@ -176,12 +205,74 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     char* reply_buf = new char[reply_len];
     char* c = reply_buf;
 
+    DBG("reply_len = %i\n",reply_len);
+
     status_line_wr(&c,reply_code,reason);
 
     for(list<sip_header*>::iterator it = req->hdrs.begin();
 	it != req->hdrs.end(); ++it) {
 
 	switch((*it)->type){
+
+	case sip_header::H_VIA:
+	    
+	    if((*it) == req->via1) {// 1st Via
+		
+		// move this code to something like:
+		// write_reply_via(old_via1,old_via_p1,remote_ip_str,remote_port_str)
+
+		unsigned int len;
+
+		memcpy(c,(*it)->name.s,(*it)->name.len);
+		c += (*it)->name.len;
+		
+		*(c++) = ':';
+		*(c++) = SP;
+		
+		if(req->via_p1->has_rport && !req->via_p1->rport.len){
+
+		    // copy everything from the beginning up to the "rport" param:
+		    len = (req->via_p1->rport.s + req->via_p1->rport.len) - req->via1->value.s;
+		    memcpy(c,req->via1->value.s,len);
+		    c += len;
+
+		    // add '='
+		    *(c++) = '=';
+
+		    // add the remote port
+		    memcpy(c,remote_port_str.c_str(),remote_port_str.length());
+		    c += remote_port_str.length();
+
+		    //copy up to the end of the first Via parm
+		    len = req->via_p1->eop - (req->via_p1->rport.s + req->via_p1->rport.len);
+		    memcpy(c,req->via_p1->rport.s + req->via_p1->rport.len, len);
+		    c += len;
+		}
+		else {
+		    //copy up to the end of the first Via parm
+		    len = req->via_p1->eop - req->via1->value.s;
+		    memcpy(c,req->via1->value.s,len);
+		    c += len;
+		}
+
+		memcpy(c,";received=",10);
+		c += 10;
+
+		memcpy(c,remote_ip_str.c_str(),remote_ip_str.length());
+		c += remote_ip_str.length();
+
+		//copy the rest of the first Via header 
+		len = req->via1->value.s + req->via1->value.len - req->via_p1->eop;
+		memcpy(c,req->via_p1->eop,len);
+		c += len;
+
+		*(c++) = CR;
+		*(c++) = LF;
+	    }
+	    else {
+		copy_hdr_wr(&c,*it);
+	    }
+	    break;
 
 	case sip_header::H_TO:
 	    if(have_to_tag){
@@ -214,7 +305,6 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 	case sip_header::H_FROM:
 	case sip_header::H_CALL_ID:
 	case sip_header::H_CSEQ:
-	case sip_header::H_VIA:
 	case sip_header::H_RECORD_ROUTE:
 	    copy_hdr_wr(&c,*it);
 	    break;
@@ -237,8 +327,29 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     }
 
     assert(transport);
-    int err = transport->send(&req->remote_ip,reply_buf,reply_len);
+    // TODO: inspect topmost 'Via' and select proper addr/port (w/ received, rport)
+    // refs: RFC3261 18.2.2; RFC3581
+    sockaddr_storage remote_ip;
+    memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
 
+    if(req->via_p1->has_rport){
+
+	if(req->via_p1->rport_i){
+	    // use 'rport'
+	    ((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->rport_i);
+	}
+	// else: use the source port from the replied request (from IP hdr)
+    }
+    else {
+	
+	if(req->via_p1->port_i){
+	    // use port from 'sent-by' via address
+	    ((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
+	}
+	// else: use the source port from the replied request (from IP hdr)
+    }
+
+    int err = transport->send(&remote_ip,reply_buf,reply_len);
     if(err < 0){
 	delete [] reply_buf;
 	goto end;
@@ -256,7 +367,7 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
 
 	t->retr_buf = reply_buf;
 	t->retr_len = reply_len;
-	memcpy(&t->retr_addr,&req->remote_ip,sizeof(sockaddr_storage));
+	memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
 
 	err = 0;
     }
@@ -408,6 +519,7 @@ int trans_layer::send_sl_reply(sip_msg* req, int reply_code,
     }
 
     assert(transport);
+    //TODO: select proper address depending on Via (w/ received, rport), remote_ip
     int err = transport->send(&req->remote_ip,reply_buf,reply_len);
     delete [] reply_buf;
 
@@ -629,7 +741,8 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
     if(transport->get_local_port() != 5060)
 	via += ":" + int2str(transport->get_local_port());
 
-    request_len += via_len(stl2cstr(via),branch);
+    // add 'rport' parameter defaultwise? yes, for now
+    request_len += via_len(stl2cstr(via),branch,true);
 
     request_len += copy_hdrs_len(msg->hdrs);
 
@@ -652,7 +765,7 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
     request_line_wr(&c,msg->u.request->method_str,
 		    msg->u.request->ruri_str);
 
-    via_wr(&c,stl2cstr(via),branch);
+    via_wr(&c,stl2cstr(via),branch,true);
     copy_hdrs_wr(&c,msg->hdrs);
 
     content_length_wr(&c,stl2cstr(content_len));
@@ -761,6 +874,8 @@ int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
     if(transport->get_local_port() != 5060)
 	via += ":" + int2str(transport->get_local_port());
 
+    //TODO: add 'rport' parameter by default?
+
     request_len += copy_hdr_len(req->via1);
 
     request_len += copy_hdr_len(req->to)
@@ -856,7 +971,10 @@ void trans_layer::received_msg(sip_msg* msg)
 
 	DBG("Message was: \"%.*s\"\n",msg->len,msg->buf);
 
-	if(err != MALFORMED_FLINE){
+	if((err != MALFORMED_FLINE)
+	   && (msg->type == SIP_REQUEST)
+	   && (msg->u.request->method != sip_request::ACK)){
+
 	    send_sl_reply(msg,400,cstring(err_msg),
 			  cstring(),cstring());
 	}
@@ -1034,8 +1152,6 @@ int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* m
 		
 		t->state = TS_COMPLETED;
 		send_non_200_ack(msg,t);
-		
-		// TODO: set D timer if UDP
 		t->reset_timer(STIMER_D, D_TIMER, bucket->get_id());
 		
 		goto pass_reply;
@@ -1119,7 +1235,6 @@ int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* m
 	    t->state = TS_COMPLETED;
 	
 	    t->clear_timer(STIMER_E);
-	    // TODO: timer should be 0 if reliable transport
 	    t->reset_timer(STIMER_K, K_TIMER, bucket->get_id());
 	    
 	    if(t->msg->u.request->method != sip_request::CANCEL)

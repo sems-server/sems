@@ -30,8 +30,37 @@
 
 #include "log.h"
 
+#include <string>
+using std::string;
+
 #include <memory>
 using std::auto_ptr;
+
+#include "AmUtils.h"
+
+sip_via_parm::sip_via_parm()
+    : eop(NULL),params(),
+      trans(), host(), 
+      port(), port_i(),
+      branch(), 
+      recved(),
+      has_rport(false),
+      rport(),
+      rport_i()
+{
+}
+
+sip_via_parm::sip_via_parm(const sip_via_parm& p)
+    : eop(NULL),params(),
+      trans(p.trans), host(p.host), 
+      port(p.port), port_i(p.port_i),
+      branch(p.branch), 
+      recved(p.recved),
+      has_rport(p.has_rport),
+      rport(p.rport),
+      rport_i(p.rport_i)
+{
+}
 
 sip_via_parm::~sip_via_parm()
 {
@@ -51,6 +80,7 @@ sip_via::~sip_via()
     }
 }
 
+//TODO: make case-insensitive
 static int parse_transport(sip_transport* t, const char** c, int len)
 {
     enum {
@@ -189,7 +219,7 @@ static int parse_transport(sip_transport* t, const char** c, int len)
     return 0;
 }
 
-static int parse_by(cstring* host, cstring* port, const char** c, int len)
+static int parse_by(sip_via_parm* v, const char** c, int len)
 {
     enum {
 	BY_HOST=0,
@@ -219,7 +249,7 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 
 	    case ':':
 		st = BY_PORT_SWS;
-		host->set(beg,*c - beg);
+		v->host.set(beg,*c - beg);
 		break;
 
 	    case ';':
@@ -228,7 +258,7 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 	    case SP:
 	    case HTAB:
 		st = BY_COLON;
-		host->set(beg,*c - beg);
+		v->host.set(beg,*c - beg);
 		break;
 	    }
 	    break;
@@ -238,7 +268,7 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 
 	    case ']':
 		st = BY_COLON;
-		host->set(beg,*c+1 - beg);
+		v->host.set(beg,*c+1 - beg);
 		break;
 
 	    case SP:
@@ -285,6 +315,8 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 	    default:
 		st = BY_PORT;
 		beg = *c;
+		v->port_i = 0;
+		(*c)--;
 		break;
 	    }
 	    break;
@@ -304,6 +336,7 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 		DBG("bad character in port number (0x%x)\n",**c);
 		return MALFORMED_SIP_MSG;
 	    }
+	    v->port_i = v->port_i*10 + (**c - '0'); 
 	    break;
 
 	case_ST_CR(**c);
@@ -313,7 +346,7 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 	    switch(saved_st){
 	    case BY_HOST:
 		saved_st = BY_COLON;
-		host->set(beg,*c - (st==ST_CRLF?2:1) - beg);
+		v->host.set(beg,*c - (st==ST_CRLF?2:1) - beg);
 		break;
 	    case BY_PORT:
 		goto end_by;
@@ -326,16 +359,16 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
  end_by:
     switch(st){
     case BY_HOST:
-	host->set(beg,*c-beg);
+	v->host.set(beg,*c-beg);
 	break;
     case BY_PORT:
-	port->set(beg,*c-beg);
+	v->port.set(beg,*c-beg);
 	break;
     case ST_LF:
     case ST_CRLF:
 	switch(saved_st){
 	case BY_PORT:
-	    port->set(beg,*c - (st==ST_CRLF?2:1) - beg);
+	    v->port.set(beg,*c - (st==ST_CRLF?2:1) - beg);
 	    break;
 	}
 	break;
@@ -347,6 +380,8 @@ static int parse_by(cstring* host, cstring* port, const char** c, int len)
 	DBG("Unexpected end state: st = %i\n",st);
 	return UNDEFINED_ERR;
     }
+
+    //DBG("Via 'sent-by': '%.*s:%i'\n",v->host.len,v->host.s,v->port_i);
 
     return 0;
 }
@@ -361,7 +396,22 @@ inline int parse_via_params(sip_via_parm* parm, const char** c, int len)
 	VP_BRANCH3,
 	VP_BRANCH4,
 	VP_BRANCH5,
-	VP_BRANCH6,
+	VP_BRANCH,
+
+	VP_R,
+
+	VP_RECVD1,
+	VP_RECVD2,
+	VP_RECVD3,
+	VP_RECVD4,
+	VP_RECVD5,
+	VP_RECVD6,
+	VP_RECVD,
+
+	VP_RPORT1,
+	VP_RPORT2,
+	VP_RPORT3,
+	VP_RPORT,
 
 	VP_OTHER
     };
@@ -378,6 +428,45 @@ inline int parse_via_params(sip_via_parm* parm, const char** c, int len)
 
 	for(;c!=end;c++){
 
+	    switch(st){
+		
+	    case VP_BEG:
+		switch(*c){
+		case 'b':
+		case 'B':
+		    st = VP_BRANCH1;
+		    break;
+
+		case 'r':
+		case 'R':
+		    st = VP_R;
+		    break;
+
+		default:
+		    st = VP_OTHER;
+		    break;
+		}
+		break;
+
+	    case VP_R:
+		
+		switch(*c){
+		case 'e':// "re..."
+		case 'E':
+		    st = VP_RECVD1;
+		    break;
+
+		case 'p':// "rp..."
+		case 'P':
+		    st = VP_RPORT1;
+		    break;
+
+		default:
+		    st = VP_OTHER;
+		    break;
+		}
+		break;
+
 #define case_VIA_PARAM(st1,ch1,ch2,st2)\
 	    case st1:\
 		switch(*c){\
@@ -387,16 +476,28 @@ inline int parse_via_params(sip_via_parm* parm, const char** c, int len)
 		    break;\
 		default:\
 		    st = VP_OTHER;\
+		    break;\
 		}\
 		break
 
-	    switch(st){
-		case_VIA_PARAM(VP_BEG,    'b','B',VP_BRANCH1);
 		case_VIA_PARAM(VP_BRANCH1,'r','R',VP_BRANCH2);
 		case_VIA_PARAM(VP_BRANCH2,'a','A',VP_BRANCH3);
 		case_VIA_PARAM(VP_BRANCH3,'n','N',VP_BRANCH4);
 		case_VIA_PARAM(VP_BRANCH4,'c','C',VP_BRANCH5);
-		case_VIA_PARAM(VP_BRANCH5,'h','H',VP_BRANCH6);
+		case_VIA_PARAM(VP_BRANCH5,'h','H',VP_BRANCH);
+
+		// "re"
+		case_VIA_PARAM(VP_RECVD1,'c','C',VP_RECVD2);
+		case_VIA_PARAM(VP_RECVD2,'e','E',VP_RECVD3);
+		case_VIA_PARAM(VP_RECVD3,'i','I',VP_RECVD4);
+		case_VIA_PARAM(VP_RECVD4,'v','V',VP_RECVD5);
+		case_VIA_PARAM(VP_RECVD5,'e','E',VP_RECVD6);
+		case_VIA_PARAM(VP_RECVD6,'d','D',VP_RECVD);
+
+		// "rp"
+		case_VIA_PARAM(VP_RPORT1, 'o','O',VP_RPORT2);
+		case_VIA_PARAM(VP_RPORT2, 'r','R',VP_RPORT3);
+		case_VIA_PARAM(VP_RPORT3, 't','T',VP_RPORT);
 
 	    case VP_OTHER:
 		goto next_param;
@@ -404,14 +505,32 @@ inline int parse_via_params(sip_via_parm* parm, const char** c, int len)
 	}
 
 	switch(st){
-	case VP_BRANCH6:
+	case VP_BRANCH:
 	    parm->branch = (*it)->value;
+	    DBG("parsed branch: %.*s\n",(*it)->value.len,(*it)->value.s);
+	    break;
+	case VP_RECVD:
+	    parm->recved = (*it)->value;
+	    break;
+	case VP_RPORT:
+	    parm->has_rport = true;
+	    parm->rport = (*it)->value;
+	    if(parm->rport.len) {
+		if(str2i(c2stlstr(parm->rport),parm->rport_i)) {
+		    DBG("invalid port number in Via 'sent-by' address.\n");
+		}
+	    }
+	    else {
+		parm->rport.s = (*it)->name.s + (*it)->name.len;
+	    }
 	    break;
 	}
 	
     next_param:
 	continue; // makes compiler happy
     }
+
+    DBG("has_rport: %i\n",parm->has_rport);
     
     return ret;
 }
@@ -457,12 +576,13 @@ int parse_via(sip_via* via, const char* beg, int len)
 		break;
 
 	    default:
-		ret = parse_by(&parm->host,&parm->port, &c, end-c);
+		ret = parse_by(parm.get(), &c, end-c);
 		if(ret) return ret;
 
 		ret = parse_via_params(parm.get(),&c,end-c);
 		if(ret) return ret;
 
+		parm->eop = c;
 		via->parms.push_back(parm.release());
 		parm.reset(new sip_via_parm());
 		

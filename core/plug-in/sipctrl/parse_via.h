@@ -49,14 +49,25 @@ struct sip_transport
 
 struct sip_via_parm
 {
-    sip_transport  trans;
-    cstring        host;
-    cstring        port; // ?? int/short ??
+    const char* eop;
 
     list<sip_avp*> params;
 
+    sip_transport  trans;
+    cstring        host;
+    cstring        port;
+    unsigned int   port_i;
+
     cstring        branch;
 
+    cstring        recved;
+
+    bool           has_rport;
+    cstring        rport;
+    unsigned int   rport_i;    
+
+    sip_via_parm();
+    sip_via_parm(const sip_via_parm& p);
     ~sip_via_parm();
 };
 

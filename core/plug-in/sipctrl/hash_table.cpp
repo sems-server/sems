@@ -124,7 +124,7 @@ sip_trans* trans_bucket::match_request(sip_msg* msg)
 		continue;
 	    }
 	    
-	    if((*it)->msg->via_p1->branch.len != len + MAGIC_BRANCH_LEN)
+	    if((*it)->msg->via_p1->branch.len != (unsigned int)len + MAGIC_BRANCH_LEN)
 		continue;
 
 	    if((*it)->msg->via_p1->host.len != 

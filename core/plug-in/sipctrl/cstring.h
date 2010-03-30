@@ -33,7 +33,7 @@
 struct cstring 
 {
     const char*  s;
-    int  len;
+    unsigned int  len;
 
     cstring()
 	: s(0), len(0)
@@ -47,11 +47,11 @@ struct cstring
      : s(s), len(strlen(s)) 
      {} 
 
-    cstring(const char* s, int l)
+    cstring(const char* s, unsigned int l)
     : s(s), len(l)
     {}
 
-    void set(const char* _s, int _len){
+    void set(const char* _s, unsigned int _len){
 	s = _s;
 	len = _len;
     }

@@ -35,9 +35,7 @@ int copy_hdrs_len(const list<sip_header*>& hdrs)
 
     list<sip_header*>::const_iterator it = hdrs.begin();
     for(;it != hdrs.end(); ++it){
-
-	ret += (*it)->name.len + (*it)->value.len
-	    + 4/* ': ' + CRLF */;
+	ret += copy_hdr_len(*it);
     }
     
     return ret;

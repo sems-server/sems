@@ -92,7 +92,6 @@ void udp_trsp::run()
     int buf_len;
 
     msghdr           msg;
-    //control_data     cmsg;
     cmsghdr*         cmsgptr; 
     sockaddr_storage from_addr;
     iovec            iov[1];
@@ -140,7 +139,6 @@ void udp_trsp::run()
 		 "recvd msg\n--++--\n%s--++--\n", s_msg->buf);
 	}
 	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
-	//msg->remote_ip_len = sizeof(sockaddr_storage);
 
 	for (cmsgptr = CMSG_FIRSTHDR(&msg);
              cmsgptr != NULL;
