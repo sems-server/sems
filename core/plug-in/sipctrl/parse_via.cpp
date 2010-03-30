@@ -80,7 +80,6 @@ sip_via::~sip_via()
     }
 }
 
-//TODO: make case-insensitive
 static int parse_transport(sip_transport* t, const char** c, int len)
 {
     enum {
@@ -124,8 +123,12 @@ static int parse_transport(sip_transport* t, const char** c, int len)
 	case TR_BEG:
 	    switch(**c){
 
+	    case 'u':
 	    case 'U':
-		if ((len >= 3) && !memcmp(*c+1,"DP",2)) {
+		if ( (len >= 3) &&
+		     ( (*(*c+1) == 'd') || (*(*c+1) == 'D') ) &&
+		     ( (*(*c+2) == 'p') || (*(*c+2) == 'P') ) ) {
+
 		    t->type = sip_transport::UDP;
 		    st = TR_UDP;
 		    *c += 2;
@@ -134,12 +137,18 @@ static int parse_transport(sip_transport* t, const char** c, int len)
 		    st = TR_OTHER;
 		break;
 
+	    case 't':
 	    case 'T':
 		st = TR_T;
 		break;
 
+	    case 's':
 	    case 'S':
-		if ((len >= 4) && !memcmp(*c+1,"CTP",3)) {
+		if ( (len >= 4) && 
+		     ( (*(*c+1) == 'c') || (*(*c+1) == 'C') ) &&
+		     ( (*(*c+2) == 't') || (*(*c+2) == 'T') ) &&
+		     ( (*(*c+3) == 'p') || (*(*c+3) == 'P') ) ) {
+
 		    t->type = sip_transport::SCTP;
 		    st = TR_SCTP;
 		    *c += 3;
@@ -156,8 +165,10 @@ static int parse_transport(sip_transport* t, const char** c, int len)
 
 	case TR_T:
 	    switch(**c){
+	    case 'l':
 	    case 'L':
-		if((len >= 3) && (*(*c+1) == 'S')){
+		if( (len >= 3) && 
+		    ( (*(*c+1) == 's') || (*(*c+1) == 'S')) ){
 		    t->type = sip_transport::TLS;
 		    st = TR_TLS;
 		    (*c)++;
@@ -166,8 +177,10 @@ static int parse_transport(sip_transport* t, const char** c, int len)
 		    st = TR_OTHER;
 		break;
 		    
+	    case 'c':
 	    case 'C':
-		if((len >= 3) && (*(*c+1) == 'P')){
+		if((len >= 3) &&
+		    ( (*(*c+1) == 'p') || (*(*c+1) == 'P')) ){
 		    t->type = sip_transport::TCP;
 		    st = TR_TCP;
 		    (*c)++;

@@ -302,7 +302,7 @@ static int parse_sip_uri(sip_uri* uri, const char* beg, int len)
 
     if(uri->port_str.len){
 	uri->port = 0;
-	for(int i=0; i<uri->port_str.len; i++){
+	for(unsigned int i=0; i<uri->port_str.len; i++){
 	    uri->port = uri->port*10 + (uri->port_str.s[i] - '0');
 	}
     }
