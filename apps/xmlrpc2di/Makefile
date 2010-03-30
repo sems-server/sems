@@ -24,7 +24,8 @@ COREPATH ?=../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 $(XMLRPCPP_DIR)/libXmlRpc.a: 
-	$(MAKE) -C $(XMLRPCPP_DIR) libXmlRpc.a
+	$(MAKE) -C $(XMLRPCPP_DIR) libXmlRpc.a && \
+	ranlib $(XMLRPCPP_DIR)/libXmlRpc.a
 
 clean_libxmlrpc: 
 	@if [ -d $(XMLRPCPP_DIR) ]; \
