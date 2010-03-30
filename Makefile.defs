@@ -50,7 +50,7 @@ CPPFLAGS += -D_DEBUG \
 # build in support for monitoring?
 #
 #
-#USE_MONITORING=yes
+USE_MONITORING=yes
 
 LDFLAGS += -lm
 
