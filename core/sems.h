@@ -34,9 +34,6 @@
 
 #define CONFIG_FILE         "/usr/local/etc/sems/sems.conf"
 #define MOD_CFG_PATH        "/usr/local/etc/sems/etc/"
-#define SER_FIFO            "/tmp/ser_fifo"
-#define FIFO_NAME           "/tmp/am_fifo"
-#define SEND_METHOD         "unix"
 #define ANNOUNCE_PATH       "/usr/local/lib/sems/audio"
 #define ANNOUNCE_FILE       "default.wav"
 #define PLUG_IN_PATH        "/usr/local/lib/sems/plug-in"
