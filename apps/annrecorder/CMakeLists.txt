@@ -2,7 +2,7 @@ set (annrecorder_SRCS
 AnnRecorder.cpp
 )
 
-set (audio_filenames
+set (audio_files
 beep.wav
 bye.wav
 confirm.wav
