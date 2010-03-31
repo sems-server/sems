@@ -109,6 +109,8 @@ class WebConferenceFactory
 
   void sweepRooms();
 
+  int load();
+
 public:
   static string DigitsDir;
   static PlayoutType m_PlayoutType;
