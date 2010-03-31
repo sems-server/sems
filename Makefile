@@ -13,7 +13,7 @@ subdirs = core apps
 .PHONY: clean
 clean:
 	-@rm -f *.so
-	-@for r in $(subdirs) "" ; do \
+	-@for r in $(subdirs) doc "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "making $$r" ; \
@@ -77,8 +77,8 @@ tar:
 
 .PHONY: doc
 doc:
-	make -C core/ doc
+	make -C doc/ doc
 
 .PHONY: fulldoc
 fulldoc:
-	make -C core/ fulldoc
+	make -C doc/ fulldoc
