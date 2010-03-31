@@ -39,6 +39,8 @@ fulldoc:
 	rm -Rf doxygen_output; doxygen doxygen_fulldoc ; \
 	rm -rf ../doc/doxygen_fulldoc ; mv doxygen_output ../doc/doxygen_fulldoc
 
+COREPATH=.
+
 include ../Makefile.defs
 
 LDFLAGS += -lstdc++ 
@@ -71,7 +73,7 @@ endif
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
 $(NAME): $(NAME).o $(OBJS) ../Makefile.defs
-	$(LD) -o $(NAME) $(NAME).o $(OBJS) $(LDFLAGS)
+	$(LD) -o $(NAME) $(NAME).o $(OBJS) $(LDFLAGS) $(EXTRA_LDFLAGS)
 
 install: all mk-install-dirs \
 	install-audio \

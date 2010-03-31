@@ -5,14 +5,10 @@ NAME=sems
 .PHONY: all
 all: modules
 
+COREPATH=core
 include Makefile.defs
 
 modules = core apps
-
-# or, if you want to build all that is there:
-# modules = $(filter-out $(wildcard Makefile* README doc *gz), \
-#			$(wildcard *) ) 
-# imodules = $(filter-out ser-0.9.6-sems, $(modules))
 
 .PHONY: clean
 clean:

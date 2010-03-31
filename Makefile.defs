@@ -54,7 +54,8 @@ USE_MONITORING=yes
 
 LDFLAGS += -lm
 
-OS     = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
+OS   := $(shell $(CC) $(EXTRA_CFLAGS) -o $(COREPATH)/../getos $(COREPATH)/../getos.c && $(COREPATH)/../getos)
+ARCH := $(shell $(CC) $(EXTRA_CFLAGS) -o $(COREPATH)/../getarch $(COREPATH)/../getarch.c && $(COREPATH)/../getarch)
 
 ifdef USE_SPANDSP
 ifneq ($(spandsp_defs), 1)
@@ -80,7 +81,6 @@ endif
 
 # Additions for Solaris support.
 ifeq ($(OS),solaris)
-	GETARCH=uname -p
 	CPPFLAGS += -DHAVE_SYS_SOCKIO_H -DBSD_COMP -fPIC -include compat/solaris.h
         CFLAGS += -DHAVE_SYS_SOCKIO_H -DBSD_COMP -fPIC -include compat/solaris.h
         # For nanosleep.
@@ -91,14 +91,10 @@ ifeq ($(OS),solaris)
 	# I don't have libspeex installed.
 	# binrpcctrl does some really weird header stuff that doesn't work.
 	exclude_modules += binrpcctrl ilbc speex
-else
-	GETARCH=uname -m
 endif
 
-ARCH ?= $(shell $(GETARCH) |sed -e s/i.86/i386/ -e s/sun4u/sparc64/  \
-			-e s/armv4l/arm/ -e "s/Power Macintosh/ppc/" \
-			-e "s/cobalt/mips2/" \
-			-e s/amd64/x86_64/ )
+
+
 
 # fix sparc -> sparc64
 ifeq ($(ARCH),sparc)
@@ -144,7 +140,7 @@ else
 ifeq ($(OS), netbsd)
 	LDFLAGS += -rdynamic -pthread
 else
-ifeq ($(OS), darwin)
+ifeq ($(OS), macosx)
 	LDFLAGS += -rdynamic -pthread
 	LIB_LDFLAGS = -flat_namespace -undefined suppress -bundle
 	CXXFLAGS += -fno-common
@@ -184,9 +180,6 @@ PREFIX ?= /usr/local
 prefix = $(PREFIX)
 BASEDIR ?=
 basedir = $(BASEDIR)
-# for install-ser-cfg
-SERPREFIX ?= /opt/ser-sems
-ser-prefix = $(SERPREFIX)
 
 # Redhat users should use sems.redhat instead of sems
 # the file will be to $(bin-prefix)/$(bin-dir)/sems copied.
@@ -259,7 +252,7 @@ INSTALL-DOC = $(INSTALL) -m 644
 INSTALL-AUDIO = $(INSTALL) -m 644
 
 #export stuff to sub-makes
-export REL_VERSION RELEASE OS
+export REL_VERSION RELEASE OS ARCH
 export CPPFLAGS CXXFLAGS LDFLAGS CFLAGS LIB_LDFLAGS
 export CXX CC LD
 export DESTDIR PREFIX prefix basedir ser-prefix
