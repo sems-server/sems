@@ -73,6 +73,11 @@ bool WebConferenceFactory::ignore_pin = false;
 
 int WebConferenceFactory::onLoad()
 {
+  return getInstance()->load();
+}
+
+int WebConferenceFactory::load()
+{
   // only execute this once
   if (configured) 
     return 0;
@@ -297,7 +302,7 @@ AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req,
   }
 
   AmSession* s = new WebConferenceDialog(prompts, getInstance(), cred); 
-  
+
   AmSessionEventHandlerFactory* uac_auth_f = 
     AmPlugIn::instance()->getFactory4Seh("uac_auth");
   if (uac_auth_f != NULL) {
