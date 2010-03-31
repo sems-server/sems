@@ -3,21 +3,18 @@ COREPATH ?= ../core
 
 include $(COREPATH)/../Makefile.defs
 
+exclude_app_modules += mp3 examples py_sems xmlrpc2di gateway
+
 ifneq ($(USE_MONITORING), yes)
-override exclude_modules = mp3 examples py_sems xmlrpc2di gateway monitoring
-else
-override exclude_modules = mp3 examples py_sems xmlrpc2di gateway
+exclude_app_modules += monitoring
 endif
 
-modules ?= $(filter-out $(subst ;, ,$(exclude_modules))\
+$(info exclude_app_modules: $(exclude_app_modules))
+app_modules = $(filter-out $(subst ;, ,$(exclude_app_modules))\
 		$(wildcard Makefile*) CVS CMakeLists.txt, \
 		$(wildcard *) examples/tutorial/cc_acc )
-#modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
 
-ifeq ($(OS),solaris)
-# These don't build on Solaris because of missing Python, invalid make args, or other.
-	exclude_modules += py_sems py_comp pin_collect mailbox ivr diameter_client conf_auth mp3 cc_acc_xmlrpc xmlrpc2di
-endif
+#modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
 
 .PHONY: all
 all: modules
@@ -25,7 +22,7 @@ all: modules
 .PHONY: clean
 clean:
 	-@rm -f *.so
-	-@for r in $(modules) "" ; do \
+	-@for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
@@ -35,7 +32,7 @@ clean:
 
 .PHONY: modules
 modules:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
 			echo  "" ; \
@@ -48,7 +45,7 @@ install: install-bin install-cfg
 
 .PHONY: install-bin
 install-bin:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
@@ -58,7 +55,7 @@ install-bin:
 
 .PHONY: install-cfg
 install-cfg: $(DESTDIR)$(cfg-target)
-	-@for r in $(modules) "" ; do \
+	-@for r in $(app_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \

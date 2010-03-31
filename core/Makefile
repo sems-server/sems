@@ -19,7 +19,7 @@ all: ../Makefile.defs
 .PHONY: clean
 clean:
 	rm -f $(OBJS) $(DEPS) $(NAME) $(NAME).o
-	rm -f lib/*.so
+	rm -f lib/*.so compat/getos compat/getarch
 	$(MAKE) -C $(PLUGIN_DIR) clean
 
 .PHONY: modules
@@ -42,28 +42,6 @@ fulldoc:
 COREPATH=.
 
 include ../Makefile.defs
-
-LDFLAGS += -lstdc++ 
-
-ifeq ($(ARCH),iphone)
-LDFLAGS += -lgcc_eh
-endif
-
-ifdef USE_SPANDSP
-ifdef LIBSPANDSP_STATIC
-LDFLAGS += $(LIBSPANDSP_LDIR)libspandsp.a
-else
-LDFLAGS += -lspandsp
-endif
-endif
-
-ifdef USE_LIBSAMPLERATE
-LDFLAGS +=-lsamplerate
-endif
-
-ifdef WITH_ZRTP
-LDFLAGS +=-lzrtp -lbn
-endif
 
 # implicit rules
 %.o : %.cpp %.d ../Makefile.defs

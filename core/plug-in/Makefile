@@ -1,9 +1,10 @@
+COREPATH=..
 include ../../Makefile.defs
 
-modules = $(filter-out $(subst ;, ,$(exclude_modules)) \
+$(info exclude_core_modules: $(exclude_core_modules))
+core_modules = $(filter-out $(subst ;, ,$(exclude_core_modules)) \
 		$(wildcard Makefile*) CMakeLists.txt, \
 		$(wildcard *) )
-#modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
 
 .DEFAULT_GOAL := all
 .PHONY: all
@@ -12,7 +13,7 @@ all: modules
 .PHONY: clean
 clean:
 	-@rm -f *.so
-	-@for r in $(modules) "" ; do \
+	-@for r in $(core_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
@@ -22,7 +23,7 @@ clean:
 
 .PHONY: modules
 modules:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(core_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
 			echo  "" ; \
@@ -32,7 +33,7 @@ modules:
 
 .PHONY: install
 install:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(core_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
@@ -42,7 +43,7 @@ install:
 
 .PHONY: install-cfg
 install-cfg: $(DESTDIR)$(cfg-target)
-	-@for r in $(modules) "" ; do \
+	-@for r in $(core_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \

@@ -33,6 +33,6 @@ COREPATH ?=$(DSMPATH)/../../core
 lib_full_name = $(DSMPATH)/mods/lib/$(lib_name)
 include $(DSMPATH)/mods/Makefile.dsm_module
 
-ifneq ($(OS),darwin)
+ifneq ($(OS),macosx)
 PYTHON_module_ldflags += -Xlinker --export-dynamic
 endif

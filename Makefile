@@ -8,32 +8,32 @@ all: modules
 COREPATH=core
 include Makefile.defs
 
-modules = core apps
+subdirs = core apps
 
 .PHONY: clean
 clean:
 	-@rm -f *.so
-	-@for r in $(modules) "" ; do \
+	-@for r in $(subdirs) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
-			echo "" ; \
+			echo "making $$r" ; \
 			$(MAKE) -C $$r clean ; \
 		fi ; \
 	done
 
 .PHONY: modules
 modules:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(subdirs) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
-			echo  "" ; \
+			echo  "making $$r" ; \
 			$(MAKE) -C $$r all; \
 		fi ; \
 	done 
 
 .PHONY: install
 install:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(subdirs) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \

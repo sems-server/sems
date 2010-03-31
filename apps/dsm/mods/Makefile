@@ -4,13 +4,14 @@ COREPATH = $(DSMPATH)/../../core
 
 include $(COREPATH)/../Makefile.defs
 
+exclude_dsm_modules = mod_mysql mod_aws
+
 ifneq ($(USE_MONITORING), yes)
-override exclude_modules += mod_monitoring mod_mysql mod_aws
-else
-override exclude_modules += mod_mysql mod_aws
+exclude_dsm_modules += mod_monitoring
 endif
 
-modules = $(filter-out $(subst ;, ,$(exclude_modules))\
+$(info exclude_dsm_modules: $(exclude_dsm_modules))
+dsm_modules = $(filter-out $(subst ;, ,$(exclude_dsm_modules))\
 		$(wildcard Makefile*) lib CMakeLists.txt, \
 		$(wildcard *) )
 
@@ -21,7 +22,7 @@ all: modules
 .PHONY: clean
 clean:
 	-@rm -f lib/*.so
-	-@for r in $(modules) "" ; do \
+	-@for r in $(dsm_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
@@ -31,7 +32,7 @@ clean:
 
 .PHONY: modules
 modules:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(dsm_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo  "" ; \
 			echo  "" ; \
@@ -44,7 +45,7 @@ install: install-bin install-cfg
 
 .PHONY: install-bin
 install-bin:
-	-@for r in $(modules) "" ; do \
+	-@for r in $(dsm_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
@@ -54,7 +55,7 @@ install-bin:
 
 .PHONY: install-cfg
 install-cfg: $(DESTDIR)$(cfg-target)
-	-@for r in $(modules) "" ; do \
+	-@for r in $(dsm_modules) "" ; do \
 		if [ -n "$$r" ]; then \
 			echo "" ; \
 			echo "" ; \
