@@ -98,8 +98,6 @@ SET(doc_files
 	../doc/CHANGELOG
 	../doc/COMPILING
 	../doc/COPYING
-	../doc/Configure-Sems-OpenSER-HOWTO
-	../doc/Configure-Sems-Ser-HOWTO
 	../doc/Makefile
 	../doc/Readme.ann_b2b.txt
 	../doc/Readme.announce_transfer.txt
