@@ -29,16 +29,6 @@ modules:
 .PHONY: deps
 deps: $(DEPS)
 
-.PHONY: doc
-doc:
-	rm -Rf doxygen_output; doxygen doxygen_proj ; \
-	rm -rf ../doc/doxygen_doc ; mv doxygen_output ../doc/doxygen_doc
-
-.PHONY: fulldoc
-fulldoc:
-	rm -Rf doxygen_output; doxygen doxygen_fulldoc ; \
-	rm -rf ../doc/doxygen_fulldoc ; mv doxygen_output ../doc/doxygen_fulldoc
-
 COREPATH=.
 
 include ../Makefile.defs
