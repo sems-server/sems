@@ -321,7 +321,7 @@ EXEC_ACTION_START(SCMyQueryGetResultAction) {
     mysqlpp::Query query = conn->query(qstr.c_str());
     mysqlpp::StoreQueryResult res = query.store();    
     if (res) {
-      size_t rowindex_i = 0;
+      unsigned int rowindex_i = 0;
       string rowindex = resolveVars(par2, sess, sc_sess, event_params);
       if (rowindex.length()) {
 	if (str2i(rowindex, rowindex_i)) {
@@ -369,7 +369,7 @@ EXEC_ACTION_START(SCMyGetResultAction) {
     return false;
   }
 
-  size_t rowindex_i = 0;
+  unsigned int rowindex_i = 0;
   string rowindex = resolveVars(par1, sess, sc_sess, event_params);
   string colname  = resolveVars(par2, sess, sc_sess, event_params);
 
