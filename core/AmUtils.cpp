@@ -31,7 +31,7 @@
 #include "AmThread.h"
 #include "AmConfig.h"
 #include "log.h"
-#include "AmServer.h"
+//#include "AmServer.h"
 #include "AmSipMsg.h"
 
 #include <stdarg.h>

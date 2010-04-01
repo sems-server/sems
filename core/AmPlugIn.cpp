@@ -32,7 +32,7 @@
 #include "AmUtils.h"
 #include "AmSdp.h"
 #include "AmSipDispatcher.h"
-#include "AmServer.h"
+//#include "AmServer.h"
 
 #include "amci/amci.h"
 #include "amci/codecs.h"
@@ -101,8 +101,8 @@ amci_payload_t _payload_tevent = {
 AmPlugIn* AmPlugIn::_instance=0;
 
 AmPlugIn::AmPlugIn()
-  : dynamic_pl(DYNAMIC_PAYLOAD_TYPE_START),   
-    ctrlIface(NULL)
+  : dynamic_pl(DYNAMIC_PAYLOAD_TYPE_START)
+    //ctrlIface(NULL)
 {
 }
 
@@ -206,14 +206,14 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 
   DBG("AmPlugIn: Initializing plugins...\n");
 
-  if (ctrlIface) {
-    if ((err = ctrlIface->onLoad())) {
-      ERROR("failed to initialize control interface.\n");
-      return err;
-    } else {
-	AmServer::instance()->regIface(ctrlIface->instance());
-    }
-  }
+//   if (ctrlIface) {
+//     if ((err = ctrlIface->onLoad())) {
+//       ERROR("failed to initialize control interface.\n");
+//       return err;
+//     } else {
+// 	AmServer::instance()->regIface(ctrlIface->instance());
+//     }
+//   }
 
   // initialize base components
   for(std::map<std::string,AmPluginFactory*>::iterator it = name2base.begin();
@@ -348,13 +348,13 @@ int AmPlugIn::loadPlugIn(const string& file)
     has_sym=true;
   }
 
-  // try load a control plugin
-  if ((fc = (FactoryCreate)dlsym(h_dl,FACTORY_CONTROL_INTERFACE_EXPORT_STR))) {
-    if (loadCtrlFacPlugIn((AmPluginFactory*)fc()))
-      goto error;
-    assert(! has_sym);
-    has_sym = true;
-  }
+//   // try load a control plugin
+//   if ((fc = (FactoryCreate)dlsym(h_dl,FACTORY_CONTROL_INTERFACE_EXPORT_STR))) {
+//     if (loadCtrlFacPlugIn((AmPluginFactory*)fc()))
+//       goto error;
+//     assert(! has_sym);
+//     has_sym = true;
+//   }
 
   if(!has_sym){
     ERROR("Plugin type could not be detected (%s)(%s)\n",file.c_str(),dlerror());
@@ -669,27 +669,26 @@ int AmPlugIn::loadLogFacPlugIn(AmPluginFactory* f)
   return -1;
 }
 
-int AmPlugIn::loadCtrlFacPlugIn(AmPluginFactory* f)
-{
-  AmCtrlInterfaceFactory *_ctrlIface = dynamic_cast<AmCtrlInterfaceFactory *>(f);
-  if (! _ctrlIface) {
-    ERROR("invalid control interface plugin.\n");
-    return -1;
-  }
-  if (ctrlIface) {
-    ERROR("one control interface already loaded (`%s'): can not load a "
-      "second one (`%s').\n", (ctrlIface->getName()).c_str(), 
-      (_ctrlIface->getName()).c_str());
-    return -1;
-  }
-  ctrlIface = _ctrlIface;//->instance();
-  if (! ctrlIface) {
-    ERROR("BUG: failed to retrieve a control interface instance.\n");
-    return -1;
-  }
-
-  return 0;
-}
+// int AmPlugIn::loadCtrlFacPlugIn(AmPluginFactory* f)
+// {
+//   AmCtrlInterfaceFactory *_ctrlIface = dynamic_cast<AmCtrlInterfaceFactory *>(f);
+//   if (! _ctrlIface) {
+//     ERROR("invalid control interface plugin.\n");
+//     return -1;
+//   }
+//   if (ctrlIface) {
+//     ERROR("one control interface already loaded (`%s'): can not load a "
+//       "second one (`%s').\n", (ctrlIface->getName()).c_str(), 
+//       (_ctrlIface->getName()).c_str());
+//     return -1;
+//   }
+//   ctrlIface = _ctrlIface;//->instance();
+//   if (! ctrlIface) {
+//     ERROR("BUG: failed to retrieve a control interface instance.\n");
+//     return -1;
+//   }
+//   return 0;
+// }
 
 int AmPlugIn::addCodec(amci_codec_t* c)
 {

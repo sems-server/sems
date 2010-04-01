@@ -2,16 +2,18 @@ NAME=sems
 LIBNAME=sems.so
 
 PLUGIN_DIR=plug-in
+SIP_STACK_DIR=sip
+
 SRCS=$(filter-out $(NAME).cpp, $(wildcard *.cpp))
 HDRS=$(SRCS:.cpp=.h)
-OBJS=$(SRCS:.cpp=.o) 
+OBJS=$(SRCS:.cpp=.o) sip/sip_stack.a
 DEPS=$(SRCS:.cpp=.d) $(NAME).d
 AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
 
-
 .PHONY: all
 all: ../Makefile.defs
-	-@$(MAKE) deps    && \
+	-@$(MAKE) sip_stack && \
+	  $(MAKE) deps    && \
 	  $(MAKE) $(NAME) && \
 	  $(MAKE) modules
 
@@ -22,9 +24,17 @@ clean:
 	rm -f lib/*.so compat/getos compat/getarch
 	$(MAKE) -C $(PLUGIN_DIR) clean
 
+.PHONY: sip_stack
+sip_stack:
+	-@echo ""
+	-@echo "making SIP stack"
+	-@cd $(SIP_STACK_DIR); $(MAKE) all
+
 .PHONY: modules
 modules:
-	cd $(PLUGIN_DIR); $(MAKE) modules
+	-@echo ""
+	-@echo "making core modules"
+	-@cd $(PLUGIN_DIR); $(MAKE) modules
 
 .PHONY: deps
 deps: $(DEPS)
@@ -37,15 +47,16 @@ include ../Makefile.defs
 %.o : %.cpp %.d ../Makefile.defs
 	$(CXX) -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS)
 
-%.d : %.cpp %.h Makefile ../Makefile.defs
+%.d : %.cpp %.h ../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
 $(NAME): $(NAME).o $(OBJS) ../Makefile.defs
+	-@echo ""
+	-@echo "making $(NAME) executable"
 	$(LD) -o $(NAME) $(NAME).o $(OBJS) $(LDFLAGS) $(EXTRA_LDFLAGS)
 
 install: all mk-install-dirs \
 	install-audio \
-	install-doc \
 	install-modules-cfg \
 	install-cfg \
 	install-bin \
@@ -100,10 +111,6 @@ install-audio: $(DESTDIR)$(audio-prefix)/$(audio-dir)
 			$(INSTALL-AUDIO) wav/$$f $(DESTDIR)$(audio-prefix)/$(audio-dir)$$f; \
 		fi ; \
 	done
-
-install-doc: $(DESTDIR)$(doc-prefix)/$(doc-dir)
-	$(INSTALL-TOUCH) $(DESTDIR)$(doc-prefix)/$(doc-dir)README
-	$(INSTALL-DOC) ../README $(DESTDIR)$(doc-prefix)/$(doc-dir)
 
 dist: tar
 

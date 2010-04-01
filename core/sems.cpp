@@ -30,12 +30,14 @@
 #include "AmConfig.h"
 #include "AmPlugIn.h"
 #include "AmSessionContainer.h"
-#include "AmServer.h"
+//#include "AmServer.h"
 #include "AmMediaProcessor.h"
 #include "AmRtpReceiver.h"
 #include "AmEventDispatcher.h"
 
 #include "AmZRTP.h"
+
+#include "SipCtrlInterface.h"
 
 #include "log.h"
 
@@ -104,7 +106,7 @@ static void sig_usr_un(int signo)
 
       AmRtpReceiver::dispose();
 
-      AmServer::dispose();
+      //AmServer::dispose();
 
       AmMediaProcessor::dispose();
 
@@ -261,7 +263,6 @@ int main(int argc, char* argv[])
   // 	return -1;
 
   AmConfig::readConfiguration();
-  //     semsConfig.warnUnknownParams();
     
   if(use_args(argv[0], args)){
     print_usage(argv[0]);
@@ -422,14 +423,10 @@ int main(int argc, char* argv[])
   DBG("Starting RTP receiver\n");
   AmRtpReceiver::instance()->start();
 
-  if (AmServer::instance()->hasIface()) {
-    AmServer::instance()->run();
-  } else {
-    ERROR("SEMS cannot start without a control interface plug-in.\n"
-	  "The following plug-ins can be used: unixsockctrl, binrpcctrl, and sipctrl.\n"
-	  "If SEMS should use its own SIP stack instead of SER's, please load the sipctrl plug-in.\n");
-    return -1;
-  }
+  DBG("Starting SIP stack\n");
+  SipCtrlInterface sip_ctrl;
+  sip_ctrl.load();
+  sip_ctrl.run(AmConfig::LocalSIPIP,AmConfig::LocalSIPPort);
 
   return 0;
 }

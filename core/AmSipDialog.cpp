@@ -30,7 +30,7 @@
 #include "AmSession.h"
 #include "AmUtils.h"
 #include "AmSipHeaders.h"
-#include "AmServer.h"
+#include "SipCtrlInterface.h"
 #include "sems.h"
 
 const char* AmSipDialog::status2str[4]  = { 	
@@ -274,45 +274,20 @@ void AmSipDialog::updateStatus(const AmSipReply& reply, bool do_200_ack)
 
 string AmSipDialog::getContactHdr()
 {
-  if(!contact_uri.empty())
-    return contact_uri;
+  if(contact_uri.empty()) {
 
-  string userName;
-  if(user.empty() || !AmConfig::PrefixSep.empty())
-    userName += CONTACT_USER_PREFIX;
+    contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<sip:";
+
+    if(!user.empty()) {
+      contact_uri += user + "@";
+    }
     
-  if(!AmConfig::PrefixSep.empty())
-    userName += AmConfig::PrefixSep;
-    
-  if(!user.empty())
-    userName += user;
-
-  string hostName;
-  if (! sip_ip.empty()) {
-#ifdef SUPPORT_IPV6
-    if(sip_ip.find('.') != string::npos)
-      hostName += sip_ip;
-    else
-      hostName += "[" + sip_ip + "]";
-#else
-    hostName += sip_ip;
-#endif
-
-    if(! sip_port.empty())
-      hostName += ":" + sip_port;
+    contact_uri += AmConfig::LocalSIPIP + ":";
+    contact_uri += AmConfig::LocalSIPPort;
+    contact_uri += CRLF;
   }
 
-  string uri = AmServer::getContact(/*display name*/"", userName, hostName, 
-      /*uri params*/"", /*hdrs params*/"");
-
-  string res = SIP_HDR_COLSP(SIP_HDR_CONTACT) + uri + CRLF;
-
-  // save contact_uri for subsequent contact header
-  // only if sip_ip is known
-  if (!sip_ip.empty())
-    contact_uri  = res;
-
-  return res;
+  return contact_uri;
 }
 
 int AmSipDialog::reply(const AmSipRequest& req,
@@ -347,13 +322,14 @@ int AmSipDialog::reply(const AmSipRequest& req,
   if ((req.method!="CANCEL")&&
       !((req.method=="BYE")&&(code<300)))
     reply.contact = getContactHdr();
+
   reply.content_type = content_type;
   reply.body = body;
 
   if(updateStatusReply(req,code))
     return -1;
 
-  return AmServer::sendReply(reply);
+  return SipCtrlInterface::send(reply);
 }
 
 /* static */
@@ -372,7 +348,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
 
-  return AmServer::sendReply(reply);
+  return SipCtrlInterface::send(reply);
 }
 
 
@@ -567,7 +543,7 @@ int AmSipDialog::cancel()
   req.serKey = string(serKey, serKeyLen);
   char empty[MAX_SER_KEY_LEN];
   unsigned int unused = 0;
-  return AmServer::sendRequest(req, empty, unused) ? 0 : -1;
+  return SipCtrlInterface::send(req, empty, unused) ? 0 : -1;
 }
 
 int AmSipDialog::sendRequest(const string& method, 
@@ -622,7 +598,7 @@ int AmSipDialog::sendRequest(const string& method,
     req.body = body;
   }
 
-  if (AmServer::sendRequest(req, serKey, serKeyLen))
+  if (SipCtrlInterface::send(req, serKey, serKeyLen))
     return -1;
  
   uac_trans[cseq] = AmSipTransaction(method,cseq);
@@ -749,7 +725,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
     req.body = body;
   }
 
-  if (AmServer::sendRequest(req, serKey, serKeyLen))
+  if (SipCtrlInterface::send(req, serKey, serKeyLen))
     return -1;
 
   return 0;

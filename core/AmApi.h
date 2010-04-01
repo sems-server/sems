@@ -228,47 +228,6 @@ class AmLoggingFacility : public AmPluginFactory
   virtual void log(int level, const char* msg) = 0;
 };
 
-class AmCtrlInterface: public AmThread
-{
- public:
-  AmCtrlInterface();
-  virtual ~AmCtrlInterface();
-  
-  //@param serKey    [out] An out parameter
-  //@param serKeyLen [out] An out parameter
-  
-  virtual int send(const AmSipRequest &, 
-		   char* serKey, unsigned int& serKeyLen) = 0;
-  
-  virtual int send(const AmSipReply &) = 0;
-  
-  virtual string getContact(const string &displayName, 
-			    const string &userName, const string &hostName, 
-			    const string &uriParams, const string &hdrParams) = 0;
-};
-
-/**
- * \brief Interface for plugins that implement a control interface.
- * 
- * The AmCtrlInterface defines the interface for 
- * SER-SEMS communication interface (unix socket/fifo).
- *
- * For sending messages, appropriate methods are exposed (the send()s).
- * The interface defines a thread that runs, polling on the two listening unix
- * sockets (one for requests, one for replies). After receiving a message,
- * AmSipDispatcher shall be used to dispatch the incomming SIP messages 
- * (that end up either opening/updating a UAC session or posting to some
- * event queue).
- */
-class AmCtrlInterfaceFactory : public AmPluginFactory
-{
-  public:
-    AmCtrlInterfaceFactory(const string& name);
-    virtual ~AmCtrlInterfaceFactory() {}
-
-    virtual AmCtrlInterface* instance() = 0;
-};
-
 #if  __GNUC__ < 3
 #define EXPORT_FACTORY(fctname,class_name,args...) \
             extern "C" void* fctname()\

@@ -44,7 +44,7 @@ class AmSessionEventHandlerFactory;
 class AmDynInvokeFactory;
 //class AmSIPEventHandler;
 class AmLoggingFacility;
-class AmCtrlInterfaceFactory;
+//class AmCtrlInterfaceFactory;
 class AmSipRequest;
 
 struct amci_exports_t;
@@ -103,7 +103,7 @@ class AmPlugIn : public AmPayloadProviderInterface
   std::map<string,AmDynInvokeFactory*>           name2di;
   std::map<string,AmLoggingFacility*>            name2logfac;
 
-  AmCtrlInterfaceFactory *ctrlIface;
+  //AmCtrlInterfaceFactory *ctrlIface;
 
   int dynamic_pl; // range: 96->127, see RFC 1890
   std::set<string> excluded_payloads;  // don't load these payloads (named)
@@ -120,7 +120,7 @@ class AmPlugIn : public AmPayloadProviderInterface
   int loadBasePlugIn(AmPluginFactory* cb);
   int loadDiPlugIn(AmPluginFactory* cb);
   int loadLogFacPlugIn(AmPluginFactory* f);
-  int loadCtrlFacPlugIn(AmPluginFactory* f);
+  //int loadCtrlFacPlugIn(AmPluginFactory* f);
 
  public:
 

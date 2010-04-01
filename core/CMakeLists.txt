@@ -33,7 +33,6 @@ SET (sems_SRCS
  AmRtpReceiver.cpp
  AmRtpStream.cpp
  AmSdp.cpp
- AmServer.cpp
  AmSession.cpp
  AmSessionContainer.cpp
  AmSessionEventHandler.cpp
@@ -48,6 +47,7 @@ SET (sems_SRCS
  LowcFE.cpp
  log.cpp
  sems.cpp
+ SipCtrlInterface.cpp
 )
 
 set (audio_files

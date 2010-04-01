@@ -109,15 +109,15 @@ AmLoggingFacility::AmLoggingFacility(const string& name)
 {
 }
 
-AmCtrlInterfaceFactory::AmCtrlInterfaceFactory(const string& name) 
-  : AmPluginFactory(name) 
-{
-}
+// AmCtrlInterfaceFactory::AmCtrlInterfaceFactory(const string& name) 
+//   : AmPluginFactory(name) 
+// {
+// }
 
-AmCtrlInterface::AmCtrlInterface() 
-{
-}
+// AmCtrlInterface::AmCtrlInterface() 
+// {
+// }
 
-AmCtrlInterface::~AmCtrlInterface() 
-{
-}
+// AmCtrlInterface::~AmCtrlInterface() 
+// {
+// }
