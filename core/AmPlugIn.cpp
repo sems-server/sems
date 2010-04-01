@@ -184,6 +184,13 @@ int AmPlugIn::load(const string& directory, const string& plugins)
     for (vector<string>::iterator it = plugins_list.begin(); 
        it != plugins_list.end(); it++) {
       string plugin_file = *it;
+      if (plugin_file == "sipctrl") {
+	WARN("sipctrl is integrated into the core, loading sipctrl "
+	     "module is not necessary any more\n");
+	WARN("please update your configuration to not load sipctrl module\n");
+	continue;
+      }
+
       if(plugin_file.find(".so",plugin_file.length()-3) == string::npos )
         plugin_file+=".so";
 

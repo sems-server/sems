@@ -46,11 +46,6 @@ struct sip_header;
 class SipCtrlInterface:
     public sip_ua
 {
-    static string outbound_host;
-    static unsigned int outbound_port;
-    static bool log_parsed_messages;
-    static int log_raw_messages;
-    static bool accept_fr_without_totag;
 
     //string         bind_addr;
     //unsigned short bind_port;
@@ -60,6 +55,13 @@ class SipCtrlInterface:
     static int cancel(const AmSipRequest& req);
 
 public:
+
+    static string outbound_host;
+    static unsigned int outbound_port;
+    static bool log_parsed_messages;
+    static int log_raw_messages;
+    static bool accept_fr_without_totag;
+
     SipCtrlInterface();
     ~SipCtrlInterface(){}
 

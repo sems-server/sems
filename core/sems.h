@@ -28,10 +28,6 @@
 #ifndef _ans_machine_h_
 #define _ans_machine_h_
 
-#define SEMS_VERSION "1.3.0-dev"
-#define OS "Darwin"
-#define ARCH "i386"
-
 #define CONFIG_FILE         "/usr/local/etc/sems/sems.conf"
 #define MOD_CFG_PATH        "/usr/local/etc/sems/etc/"
 #define ANNOUNCE_PATH       "/usr/local/lib/sems/audio"
