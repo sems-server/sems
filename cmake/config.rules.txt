@@ -14,4 +14,4 @@ FOREACH (config_file ${sems_module_name} ${sems_config_files})
 	INSTALL(
 		FILES ./etc/${config_file}.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/
 	)
-ENDFOREACH()
+ENDFOREACH(config_file ${sems_module_name} ${sems_config_files})
