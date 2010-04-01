@@ -134,8 +134,8 @@ void udp_trsp::run()
 	}
 	sip_msg* s_msg = new sip_msg(buf,buf_len);
 
-	if (SipCtrlInterfaceFactory::log_raw_messages >= 0) {
-	    _LOG(SipCtrlInterfaceFactory::log_raw_messages, 
+	if (SipCtrlInterface::log_raw_messages >= 0) {
+	    _LOG(SipCtrlInterface::log_raw_messages, 
 		 "recvd msg\n--++--\n%.*s--++--\n", s_msg->len, s_msg->buf);
 	}
 	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
