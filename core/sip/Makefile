@@ -30,10 +30,10 @@ include ../../Makefile.defs
 %.d : %.cpp %.h ../../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
-$(LIBNAME): $(OBJS) ../Makefile.defs
+$(LIBNAME): $(OBJS) ../../Makefile.defs
 	-@echo ""
 	-@echo "making $(LIBNAME)"
-	$(AR) rvs $(OBJS)
+	$(AR) rvs $(LIBNAME) $(OBJS)
 
 ifeq '$(LIBNAME)' '$(MAKECMDGOALS)'
 include $(DEPS)
