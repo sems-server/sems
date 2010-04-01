@@ -2,4 +2,4 @@ FOREACH (audio_file ${audio_files})
 	INSTALL(
 		FILES wav/${audio_file} DESTINATION ${SEMS_AUDIO_PREFIX}/sems/audio/${sems_module_name}
 	)
-ENDFOREACH()
+ENDFOREACH(audio_file ${audio_files})

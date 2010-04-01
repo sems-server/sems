@@ -2,7 +2,7 @@ FOREACH (doc_file ${doc_files})
 	INSTALL(
 		FILES ${doc_file} DESTINATION ${SEMS_DOC_PREFIX}/sems-${SEMS_MAJOR_VERSION}.${SEMS_MINOR_VERSION}.${SEMS_BUILD_VERSION}
 	)
-ENDFOREACH()
+ENDFOREACH(doc_file ${doc_files})
 
 FOREACH (doc_dir ${doc_dirs})
 	INSTALL(
@@ -10,4 +10,4 @@ FOREACH (doc_dir ${doc_dirs})
 		DESTINATION ${SEMS_DOC_PREFIX}/sems-${SEMS_MAJOR_VERSION}.${SEMS_MINOR_VERSION}.${SEMS_BUILD_VERSION}
 		PATTERN .svn EXCLUDE
 	)
-ENDFOREACH()
+ENDFOREACH(doc_dir ${doc_dirs})
