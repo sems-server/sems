@@ -5,6 +5,7 @@ SET (sems_SRCS
  AmAudio.cpp
  AmAudioFile.cpp
  AmAudioMixIn.cpp
+ AmAudioMixer.cpp
  AmB2ABSession.cpp
  AmB2BSession.cpp
  AmBufferedAudio.cpp
@@ -35,11 +36,13 @@ SET (sems_SRCS
  AmServer.cpp
  AmSession.cpp
  AmSessionContainer.cpp
+ AmSessionEventHandler.cpp
  AmSipDialog.cpp
  AmSipDispatcher.cpp
  AmSipMsg.cpp
  AmThread.cpp
  AmUAC.cpp
+ AmUriParser.cpp
  AmUtils.cpp
  AmZRTP.cpp
  LowcFE.cpp
