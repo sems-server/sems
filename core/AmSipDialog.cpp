@@ -283,8 +283,11 @@ string AmSipDialog::getContactHdr()
     }
     
     contact_uri += AmConfig::LocalSIPIP + ":";
-    contact_uri += AmConfig::LocalSIPPort;
+    contact_uri += int2str(AmConfig::LocalSIPPort);
+    contact_uri += ">";
+
     contact_uri += CRLF;
+    
   }
 
   return contact_uri;
