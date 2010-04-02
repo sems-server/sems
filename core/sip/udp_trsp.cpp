@@ -233,11 +233,11 @@ int udp_trsp::bind(const string& address, unsigned short port)
 /** @see transport */
 int udp_trsp::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
 {
-//     if ((SipCtrlInterfaceFactory::log_raw_messages >= 0)
-// 	&& (SipCtrlInterfaceFactory::log_raw_messages <=log_level)) {
-// 	_LOG(SipCtrlInterfaceFactory::log_raw_messages, 
-// 	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
-//     }
+    if ((SipCtrlInterface::log_raw_messages >= 0)
+	&& (SipCtrlInterface::log_raw_messages <=log_level)) {
+	_LOG(SipCtrlInterface::log_raw_messages, 
+	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
+    }
 
   int err;
 #ifdef SUPPORT_IPV6
