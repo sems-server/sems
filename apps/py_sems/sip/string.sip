@@ -23,7 +23,7 @@ using std::string;
              return 0;
          }
 #if  SIP_VERSION < 0x040901
-         *sipCppPtr = (std::string *)sipForceConvertToType(sipPy, sipType_string, NULL, SIP_NO_CONVERTORS, NULL, sipIsErr);
+         *sipCppPtr = (std::string *)sipForceConvertTo_string(sipPy, sipIsErr);
 #else
          *sipCppPtr = (std::string *)sipForceConvertToType(sipPy, sipType_string, NULL, SIP_NO_CONVERTORS, NULL, sipIsErr);
 #endif
