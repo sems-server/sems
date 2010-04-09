@@ -40,12 +40,29 @@ struct sip_trans;
 struct sip_header;
 struct sockaddr_storage;
 
-class MyCtrlInterface;
 class trans_bucket;
 class udp_trsp;
 class sip_ua;
 class timer;
 
+class trans_ticket
+{
+    sip_trans*    _t;
+    trans_bucket* _bucket;
+    
+    friend class trans_layer;
+    friend class AmSipDialog;
+
+public:
+    trans_ticket()
+	: _t(0), _bucket(0) {}
+
+    trans_ticket(sip_trans* t, trans_bucket* bucket)
+	: _t(t), _bucket(bucket) {}
+
+    trans_ticket(const trans_ticket& ticket)
+	: _t(ticket._t), _bucket(ticket._bucket) {}
+};
 
 class trans_layer
 {
@@ -134,7 +151,7 @@ class trans_layer
      * include a well-formed 'Content-Type', but no
      * 'Content-Length' header.
      */
-    int send_reply(trans_bucket* bucket, sip_trans* t,
+    int send_reply(trans_ticket* tt,
 		   int reply_code, const cstring& reason,
 		   const cstring& to_tag, const cstring& hdrs, 
 		   const cstring& body);
@@ -144,18 +161,16 @@ class trans_layer
      * Caution: Route headers should not be added to the
      * general header list (msg->hdrs).
      * @param [in]  msg Pre-built message.
-     * @param [out] tid buffer for the transaction key (char*)
-     * @param [out] length of transaction key
+     * @param [out] tt transaction ticket (needed for replies & CANCEL)
      */
-    int send_request(sip_msg* msg, char* tid, unsigned int& tid_len);
+    int send_request(sip_msg* msg, trans_ticket* tt);
 
     /**
      * Cancels a request. 
      * A CANCEL request is sent if necessary.
-     * @param bucket bucket of the original request.
-     * @param t transaction of the original request.
+     * @param tt transaction ticket from the original INVITE.
      */
-    int cancel(trans_bucket* bucket, sip_trans* t);
+    int cancel(trans_ticket* tt);
     
 
     /**

@@ -224,7 +224,7 @@ void AmB2BSession::terminateOtherLeg()
 void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
-    relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq);
+      relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
     dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs,SIP_FLAGS_VERBATIM);
   } else {
     // its a (200) ACK 
@@ -240,7 +240,7 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
       return;
     }
     DBG("sending relayed ACK\n");
-    dlg.send_200_ack(AmSipTransaction(t->second.method, t->first), 
+    dlg.send_200_ack(AmSipTransaction(t->second.method, t->first,t->second.tt), 
 		     req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
     relayed_req.erase(t);
   }
@@ -459,7 +459,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
     dlg.remote_uri   = co_ev->remote_uri;
 
     if (co_ev->relayed_invite) {
-      relayed_req[dlg.cseq] = AmSipTransaction("INVITE", co_ev->r_cseq);
+	relayed_req[dlg.cseq] = AmSipTransaction("INVITE", co_ev->r_cseq, trans_ticket());
     }
 
     dlg.sendRequest("INVITE",co_ev->content_type,co_ev->body,co_ev->hdrs,SIP_FLAGS_VERBATIM);

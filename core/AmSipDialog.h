@@ -45,16 +45,18 @@ using std::string;
 /** \brief SIP transaction representation */
 struct AmSipTransaction
 {
-  string       method;
-  unsigned int cseq;
+    string       method;
+    unsigned int cseq;
+    trans_ticket tt;
 
   // last reply code
   // (sent or received)
   //int reply_code;
 
-  AmSipTransaction(const string& method, unsigned int cseq)
+    AmSipTransaction(const string& method, unsigned int cseq, const trans_ticket& tt)
     : method(method),
-       cseq(cseq)
+      cseq(cseq),
+      tt(tt)
   {}
 
   AmSipTransaction()

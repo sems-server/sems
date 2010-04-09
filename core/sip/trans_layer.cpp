@@ -89,7 +89,7 @@ void trans_layer::register_transport(udp_trsp* trsp)
 
 
 
-int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
+int trans_layer::send_reply(trans_ticket* tt,
 			    int reply_code, const cstring& reason,
 			    const cstring& to_tag, const cstring& hdrs, 
 			    const cstring& body)
@@ -114,7 +114,11 @@ int trans_layer::send_reply(trans_bucket* bucket, sip_trans* t,
     // MAY be contained:
     //  - Accept
 
-    assert(bucket && t);
+    assert(tt);
+    assert(tt->_bucket && tt->_t);
+
+    trans_bucket* bucket = tt->_bucket;
+    sip_trans*    t = tt->_t;
 
     bucket->lock();
     if(!bucket->exist(t)){
@@ -710,7 +714,7 @@ void trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     bucket->remove_trans(t);
 }
 
-int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
+int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
 {
     // Request-URI
     // To
@@ -724,8 +728,11 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
     // Content-Length / Content-Type
     
     assert(transport);
+    assert(msg);
+    assert(tt);
 
-    tid_len = 0;
+    tt->_bucket = 0;
+    tt->_t = 0;
 
     // assume that msg->route headers are not in msg->hdrs
     msg->hdrs.insert(msg->hdrs.begin(),msg->route.begin(),msg->route.end());
@@ -796,10 +803,10 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
 
-    trans_bucket* bucket = get_trans_bucket(p_msg->callid->value,
+    tt->_bucket = get_trans_bucket(p_msg->callid->value,
 					    get_cseq(p_msg)->num_str);
-    bucket->lock();
-
+    tt->_bucket->lock();
+    
     int send_err = transport->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
@@ -807,24 +814,24 @@ int trans_layer::send_request(sip_msg* msg, char* tid, unsigned int& tid_len)
     }
     else {
 
-	sip_trans* t = 0;
-	if(update_uac_request(bucket,t,p_msg) < 0){
+	if(update_uac_request(tt->_bucket,tt->_t,p_msg) < 0){
 	    ERROR("Could not update UAC state for request.\n");
 	}
-
-	string t_id = int2hex(bucket->get_id()).substr(5,string::npos) 
-	    + ":" + long2hex((unsigned long)t);
-	memcpy(tid,t_id.c_str(),t_id.length());
-	tid_len = t_id.length();
     }
 
-    bucket->unlock();
+    tt->_bucket->unlock();
     
     return send_err;
 }
 
-int trans_layer::cancel(trans_bucket* bucket, sip_trans* t)
+int trans_layer::cancel(trans_ticket* tt)
 {
+    assert(tt);
+    assert(tt->_bucket && tt->_t);
+
+    trans_bucket* bucket = tt->_bucket;
+    sip_trans*    t = tt->_t;
+
     bucket->lock();
     if(!bucket->exist(t)){
 	DBG("No transaction to cancel: wrong key or finally replied\n");
@@ -1039,15 +1046,14 @@ void trans_layer::received_msg(sip_msg* msg)
 		// New transaction
 		t = bucket->add_trans(msg, TT_UAS);
 
-		t_id = int2hex(h).substr(5,string::npos) 
-		    + ":" + long2hex((unsigned long)t);
-
 		bucket->unlock();
 		
 		//  let's pass the request to
 		//  the UA. 
 		assert(ua);
-		ua->handle_sip_request(t_id.c_str(),msg);
+
+		trans_ticket tt(t,bucket);
+		ua->handle_sip_request(&tt,msg);
 		
 		// forget the msg: it will be
 		// owned by the new transaction

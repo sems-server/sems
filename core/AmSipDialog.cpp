@@ -72,8 +72,10 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   if (req.method == "ACK")
     return;
 
-  if(uas_trans.find(req.cseq) == uas_trans.end())
-    uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq);
+  if(uas_trans.find(req.cseq) == uas_trans.end()){
+      DBG("req.tt = {0x%X,0x%X}\n",req.tt._bucket, req.tt._t);
+      uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
+  }
 
   // target refresh requests
   if (req.from_uri.length() && 
@@ -312,7 +314,7 @@ int AmSipDialog::reply(const AmSipRequest& req,
   reply.method = req.method;
   reply.code = code;
   reply.reason = reason;
-  reply.serKey = req.serKey;
+  reply.tt = req.tt;
   reply.local_tag = local_tag;
   reply.hdrs = m_hdrs;
 
@@ -344,7 +346,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   reply.method = req.method;
   reply.code = code;
   reply.reason = reason;
-  reply.serKey = req.serKey;
+  reply.tt = req.tt;
   reply.hdrs = hdrs;
   reply.local_tag = AmSession::getNewId();
 
@@ -357,31 +359,31 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 
 int AmSipDialog::bye(const string& hdrs)
 {
-  switch(status){
-  case Disconnecting:
-  case Connected:
-    status = Disconnected;
-    return sendRequest("BYE", "", "", hdrs);
-  case Pending:
-    status = Disconnecting;
-    if(getUACTransPending())
-      return cancel();
-    else {
-      // missing AmSipRequest to be able
-      // to send the reply on behalf of the app.
-      DBG("ignoring bye() in Pending state: "
-	  "no UAC transaction to cancel.\n");
-    }
-    return 0;
-  default:
-    if(getUACTransPending())
-      return cancel();
-    else {
-      DBG("bye(): we are not connected "
-	  "(status=%i). do nothing!\n",status);
-    }
-    return 0;
-  }	
+    switch(status){
+    case Disconnecting:
+    case Connected:
+	status = Disconnected;
+	return sendRequest("BYE", "", "", hdrs);
+    case Pending:
+	status = Disconnecting;
+	if(getUACTransPending())
+	    return cancel();
+	else {
+	    // missing AmSipRequest to be able
+	    // to send the reply on behalf of the app.
+	    DBG("ignoring bye() in Pending state: "
+		"no UAC transaction to cancel.\n");
+	}
+	return 0;
+    default:
+	if(getUACTransPending())
+	    return cancel();
+	else {
+	    DBG("bye(): we are not connected "
+		"(status=%i). do nothing!\n",status);
+	}
+	return 0;
+    }	
 }
 
 int AmSipDialog::reinvite(const string& hdrs,  
@@ -520,33 +522,27 @@ int AmSipDialog::transfer(const string& target)
 
 int AmSipDialog::cancel()
 {
-  int cancel_cseq = -1;
-  TransMap::reverse_iterator t;
-
-  for(t = uac_trans.rbegin();
-      t != uac_trans.rend(); t++) {
-
-    if(t->second.method == "INVITE"){
-      cancel_cseq = t->second.cseq;
-      break;
-    }
-  }
     
-  if(t == uac_trans.rend()){
+    
+    for(TransMap::reverse_iterator t = uac_trans.rbegin();
+	t != uac_trans.rend(); t++) {
+	
+	if(t->second.method == "INVITE"){
+	    
+	    AmSipRequest req;
+	    
+	    req.method = "CANCEL";
+	    req.callid = callid;
+	    req.cseq = t->second.cseq;
+
+	    req.tt = t->second.tt;
+
+	    return SipCtrlInterface::send(req) ? 0 : -1;
+	}
+    }
+    
     ERROR("could not find INVITE transaction to cancel\n");
     return -1;
-  }
-    
-  AmSipRequest req;
-  req.method = "CANCEL";
-  //useful for SER-0.9.6/Open~
-  req.callid = callid;
-  req.cseq = cancel_cseq;
-  //useful for SER-2.0.0
-  req.serKey = string(serKey, serKeyLen);
-  char empty[MAX_SER_KEY_LEN];
-  unsigned int unused = 0;
-  return SipCtrlInterface::send(req, empty, unused) ? 0 : -1;
 }
 
 int AmSipDialog::sendRequest(const string& method, 
@@ -601,10 +597,10 @@ int AmSipDialog::sendRequest(const string& method,
     req.body = body;
   }
 
-  if (SipCtrlInterface::send(req, serKey, serKeyLen))
+  if (SipCtrlInterface::send(req))
     return -1;
  
-  uac_trans[cseq] = AmSipTransaction(method,cseq);
+  uac_trans[cseq] = AmSipTransaction(method,cseq,req.tt);
 
   // increment for next request
   cseq++;
@@ -728,7 +724,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
     req.body = body;
   }
 
-  if (SipCtrlInterface::send(req, serKey, serKeyLen))
+  if (SipCtrlInterface::send(req))
     return -1;
 
   return 0;

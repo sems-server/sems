@@ -133,8 +133,6 @@ string AmSipRequest::print()
 {
   string buf;
 
-  _PM(serKey, "serkey");
-
   _PM(r_uri, "r-uri");
   _PM(callid, "i");
   _PM(int2str(cseq), "cseq");
@@ -165,8 +163,6 @@ string AmSipRequest::print()
 string AmSipReply::print()
 {
   string buf;
-
-  _PM(serKey, "serkey");
 
   _PM(int2str(code), "code");
   _PMB(reason, "phrase");

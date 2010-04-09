@@ -52,8 +52,9 @@ class SipCtrlInterface:
     
     void prepare_routes_uac(const list<sip_header*>& routes, string& route_field);
     void prepare_routes_uas(const list<sip_header*>& routes, string& route_field);
-    static int cancel(const AmSipRequest& req);
+    static int cancel(AmSipRequest& req);
 
+    friend class udp_trsp;
 public:
 
     static string outbound_host;
@@ -72,12 +73,12 @@ public:
     /**
      * From AmCtrlInterface
      */
-    static int send(const AmSipRequest &req, char* serKey, unsigned int& serKeyLen);
+    static int send(AmSipRequest &req);
     static int send(const AmSipReply &rep);
     
-    string getContact(const string &displayName, 
-		    const string &userName, const string &hostName, 
-		    const string &uriParams, const string &hdrParams);
+//     string getContact(const string &displayName, 
+// 		    const string &userName, const string &hostName, 
+// 		    const string &uriParams, const string &hdrParams);
     
     void handleSipMsg(AmSipRequest &req);
     void handleSipMsg(AmSipReply &rep);
@@ -85,7 +86,7 @@ public:
     /**
      * From sip_ua
      */
-    void handle_sip_request(const char* tid, sip_msg* msg);
+    void handle_sip_request(trans_ticket* tt, sip_msg* msg);
     void handle_sip_reply(sip_msg* msg);
 };
 

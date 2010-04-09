@@ -116,25 +116,14 @@ SipCtrlInterface::SipCtrlInterface()
     trans_layer::instance()->register_ua(this);
 }
 
-int SipCtrlInterface::cancel(const AmSipRequest& req)
+int SipCtrlInterface::cancel(AmSipRequest& req)
 {
-    unsigned int  h=0;
-    unsigned long t=0;
-
-    if((sscanf(req.serKey.c_str(),"%x:%lx",&h,&t) != 2) ||
-       (h >= H_TABLE_ENTRIES)){
-	ERROR("Invalid transaction key: invalid bucket ID (key=%s)\n",req.serKey.c_str());
-	return -1;
-    }
-
-    return trans_layer::instance()->cancel(get_trans_bucket(h),(sip_trans*)t);
+    return trans_layer::instance()->cancel(&req.tt);
 }
 
 
-int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& serKeyLen)
+int SipCtrlInterface::send(AmSipRequest &req)
 {
-    serKeyLen = 0;
-
     if(req.method == "CANCEL")
 	return cancel(req);
 
@@ -278,7 +267,7 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 	return -1;
     }
 
-    int res = trans_layer::instance()->send_request(msg,serKey,serKeyLen);
+    int res = trans_layer::instance()->send_request(msg,&req.tt);
     delete msg;
 
     return res;
@@ -301,15 +290,6 @@ void SipCtrlInterface::run(const string& bind_addr, unsigned short bind_port)
 
 int SipCtrlInterface::send(const AmSipReply &rep)
 {
-    unsigned int  h=0;
-    unsigned long t=0;
-
-    if((sscanf(rep.serKey.c_str(),"%x:%lx",&h,&t) != 2) ||
-       (h >= H_TABLE_ENTRIES)){
-	ERROR("Invalid transaction key: invalid bucket ID\n");
-	return -1;
-    }
-    
     sip_msg msg;
 
     if(!rep.hdrs.empty()) {
@@ -360,7 +340,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	}
     }
 
-    int ret = trans_layer::instance()->send_reply(get_trans_bucket(h),(sip_trans*)t,
+    int ret = trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
 			     rep.code,stl2cstr(rep.reason),
 			     stl2cstr(rep.local_tag),
 			     cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body));
@@ -391,7 +371,6 @@ void SipCtrlInterface::handleSipMsg(AmSipRequest &req)
 	DBG_PARAM(req.from_tag);
 	DBG_PARAM(req.to_tag);
 	DBG("cseq = <%i>\n",req.cseq);
-	DBG_PARAM(req.serKey);
 	DBG_PARAM(req.route);
 	DBG_PARAM(req.next_hop);
 	DBG("hdrs = <%s>\n",req.hdrs.c_str());
@@ -412,10 +391,12 @@ void SipCtrlInterface::handleSipMsg(AmSipReply &rep)
     AmSipDispatcher::instance()->handleSipMsg(rep);
 }
 
-void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
+void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
 {
+    assert(msg);
     assert(msg->from && msg->from->p);
     assert(msg->to && msg->to->p);
+    assert(tt);
     
     AmSipRequest req;
     
@@ -472,8 +453,7 @@ void SipCtrlInterface::handle_sip_request(const char* tid, sip_msg* msg)
     req.cseq     = get_cseq(msg)->num;
     req.body     = c2stlstr(msg->body);
 
-    if(tid != NULL)
-	req.serKey = tid;
+    req.tt = *tt;
 
     if (msg->content_type)
  	req.content_type = c2stlstr(msg->content_type->value);

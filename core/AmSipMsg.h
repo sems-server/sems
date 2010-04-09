@@ -4,6 +4,8 @@
 #include <string>
 using std::string;
 
+#include "sip/trans_layer.h"
+
 /* enforce common naming in Req&Rpl */
 class _AmSipMsgInDlg
 {
@@ -23,7 +25,8 @@ class _AmSipMsgInDlg
     string dstip; // IP where Ser received the message
     string port;  // Ser's SIP port
 
-    string       serKey;
+    // transaction ticket from sip stack
+    trans_ticket tt;
 
     _AmSipMsgInDlg() : cseq(0) { }
     virtual ~_AmSipMsgInDlg() { };
