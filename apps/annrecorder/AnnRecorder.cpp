@@ -110,8 +110,8 @@ int AnnRecorderFactory::onLoad()
     return -1;
   }
 
-  message_storage_fact= AmPlugIn::instance()->getFactory4Di("msg_storage");
-  if(!user_timer_fact) {
+  message_storage_fact = AmPlugIn::instance()->getFactory4Di("msg_storage");
+  if(!message_storage_fact) {
     ERROR("sorry, could not get msg_storage, please load a suitable plug-in\n");
     return -1;
   }
