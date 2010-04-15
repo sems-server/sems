@@ -36,6 +36,7 @@ SET (sems_SRCS
  AmSession.cpp
  AmSessionContainer.cpp
  AmSessionEventHandler.cpp
+ AmSessionProcessor.cpp
  AmSipDialog.cpp
  AmSipDispatcher.cpp
  AmSipMsg.cpp
