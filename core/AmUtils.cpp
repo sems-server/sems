@@ -419,13 +419,12 @@ string filename_from_fullpath(const string& path)
   return "";
 }
 
-AmMutex inet_ntoa_mut;
 string get_addr_str(struct in_addr in)
 {
-  inet_ntoa_mut.lock();
-  string addr = inet_ntoa(in);
-  inet_ntoa_mut.unlock();
-  return addr;
+  char res[46]; // INET6_ADDRSTRLEN
+  if (inet_ntop(AF_INET, &in, res, 46))
+    return string(res);
+  else return "";
 }
 
 AmMutex inet_gethostbyname;
