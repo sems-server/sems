@@ -161,7 +161,6 @@ void AmSessionContainer::on_stop()
 
 void AmSessionContainer::stopAndQueue(AmSession* s)
 {
-  ds_mut.lock();
 
   if (AmConfig::LogSessions) {    
     INFO("session cleaner about to stop %s\n",
@@ -169,9 +168,10 @@ void AmSessionContainer::stopAndQueue(AmSession* s)
   }
 
   s->stop();
+
+  ds_mut.lock();
   d_sessions.push(s);
-  _run_cond.set(true);
-    
+  _run_cond.set(true);    
   ds_mut.unlock();
 }
 
