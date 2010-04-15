@@ -31,6 +31,9 @@
 #include "AmSipMsg.h"
 #include <map>
 
+#define EVENT_DISPATCHER_POWER   10
+#define EVENT_DISPATCHER_BUCKETS (1<<EVENT_DISPATCHER_POWER)
+
 class AmEventDispatcher
 {
 public:
@@ -50,18 +53,22 @@ private:
      * Container for active sessions 
      * local tag -> event queue
      */
-    EvQueueMap queues;
+    EvQueueMap queues[EVENT_DISPATCHER_BUCKETS];
+    
+    // mutex for "queues" 
+    AmMutex queues_mut[EVENT_DISPATCHER_BUCKETS];
 
     /** 
      * Call ID + remote tag -> local tag 
      *  (needed for CANCELs and some provisionnal answers)
      *  (UAS sessions only)
      */
-    Dictionnary id_lookup;
-    
-    // mutex for "queues" and "id_lookup"
-    AmMutex m_queues;
+    Dictionnary id_lookup[EVENT_DISPATCHER_BUCKETS];
+    // mutex for "id_lookup" 
+    AmMutex id_lookup_mut[EVENT_DISPATCHER_BUCKETS];
 
+    unsigned int hash(const string& s1);
+    unsigned int hash(const string& s1, const string s2);
 public:
 
     static AmEventDispatcher* instance();
