@@ -23,27 +23,60 @@ Tuning SEMS for high load
    either add this at compile time to your value, or edit Makefile.defs
    and adapt the value there.
 
-   SEMS uses one thread per session (processing of the signaling). This
-   thread sleeps on a mutex (the session's event queue) most of the time
-   (RTP/audio processing is handled by the [8]AmMediaProcessor threads,
-   which is only a small, configurable, number), thus the scheduler should
-   usually not have any performance issue with this. The advantage of
-   using a thread per call/session is that if the thread blocks due to
-   some blocking operation (DB, file etc), processing of other calls is
-   not affected. The downside of using a thread per session is that you
-   will spend memory for the stack for every thread, which can fill up
-   your system memory quickly, if you have many sessions. The default for
-   the stack size is 1M, which for most cases is quite a lot, so if memory
-   consumption is an issue, you could adapt this in [9]AmThread, at the
-   call to pthread_attr_setstacksize. Note that, at least in Linux, the
-   memory is allocated, but if a page is not used, the page is not really
-   consumed, which means that most of that empty memory space for the
-   stack is not really consumed anyway. If you allocate more than system
-   memory for stack, though, thread creation may still fail with ENOMEM.
+   SEMS normally uses one thread per session (processing of the
+   signaling). This thread sleeps on a mutex (the session's event queue)
+   most of the time (RTP/audio processing is handled by the
+   [8]AmMediaProcessor threads, which is only a small, configurable,
+   number), thus the scheduler should usually not have any performance
+   issue with this. The advantage of using a thread per call/session is
+   that if the thread blocks due to some blocking operation (DB, file
+   etc), processing of other calls is not affected. The downside of using
+   a thread per session is that you will spend memory for the stack for
+   every thread, which can fill up your system memory quickly, if you have
+   many sessions. The default for the stack size is 1M, which for most
+   cases is quite a lot, so if memory consumption is an issue, you could
+   adapt this in [9]AmThread, at the call to pthread_attr_setstacksize.
+   Note that, at least in Linux, the memory is allocated, but if a page is
+   not used, the page is not really consumed, which means that most of
+   that empty memory space for the stack is not really consumed anyway. If
+   you allocate more than system memory for stack, though, thread creation
+   may still fail with ENOMEM.
+
+   You can compile SEMS with thread pool support (see Makefile.defs). This
+   improves performance a lot for high CPS applications, e.g. signaling
+   only B2BUA apps. You should NOT use threadpool if your applications use
+   operations which could be blocking for a longer time (e.g. sleep,
+   remote server access which could possibly be non-responsive), because
+   one blocked session (call) is blocking all the other sessions (calls)
+   that are processed by the same thread. So, for example, if the
+   application logic of one call queries a server synchronously which
+   takes a few seconds to respond, all the other calls are blocked from
+   processing SIP messages and application logic during that time.
+
+   The reasons a thread pool gives a large performance boost over
+   one-thread-per-call for high CPS applications presumably are that
+   thread creation takes some time, and the thread scheduling is less
+   efficient if there are very many active threads (as opposed to many
+   sleeping threads like in usual media server applications, where the
+   application/signaling threads sleep most of the time, while only the
+   media/RTP processing threads are active).
+
+   On top of that, you save lots of memory (mostly the stack memory),
+   also, because of STL memory allocator.
+
+   If you notice retransmissions or even failing calls, but the CPU load
+   is not at 100%, there may be several reasons for it:
+     * SIP messages are dropped when sending, because the NIC/network is
+       not fast enough in accepting all the packets written to its queue
+       and putting them on the network (you can check this with your OS,
+       for newer Linux in /proc, check dropped packets on send for the SIP
+       port)
+     * there is contention on some mutexes -> adapt EVENT_DISPATCHER_POWER
+       in [10]AmEventDispatcher.h -> add striping for some other Mutexes
      __________________________________________________________________
 
 
-    Generated on Wed Mar 17 14:34:30 2010 for SEMS by  [10]doxygen 1.6.1
+    Generated on Thu Apr 15 15:33:12 2010 for SEMS by  [11]doxygen 1.6.1
 
 References
 
@@ -56,4 +89,5 @@ References
    7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
    8. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/classAmMediaProcessor.html
    9. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/classAmThread.html
-  10. http://www.doxygen.org/index.html
+  10. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/AmEventDispatcher_8h_source.html
+  11. http://www.doxygen.org/index.html

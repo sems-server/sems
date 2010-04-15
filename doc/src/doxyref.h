@@ -94,7 +94,7 @@
  * supported concurrently, this is MAX_RTP_SESSIONS. You may either add this at compile
  * time to your value, or edit Makefile.defs and adapt the value there.</p>
  * 
- * <p>SEMS uses one thread per session (processing of the signaling). This thread
+ * <p>SEMS normally uses one thread per session (processing of the signaling). This thread
  * sleeps on a mutex (the session's event queue) most of the time 
  * (RTP/audio processing is handled by the AmMediaProcessor
  * threads, which is only a small, configurable, number), thus the scheduler should 
@@ -110,6 +110,23 @@
  * means that most of that empty memory space for the stack is not really consumed anyway. 
  * If you allocate more than system memory for stack, though, thread creation may still fail
  * with ENOMEM.</p>
+  <p> You can compile SEMS with thread pool support (see Makefile.defs). This improves 
+  performance a lot for high CPS applications, e.g. signaling only B2BUA apps. You should NOT use threadpool if your applications use operations which could be blocking for a longer time (e.g. sleep, remote server access which could possibly be non-responsive), because one blocked session (call) is blocking all the other sessions (calls) that are processed by the same thread. So, for example, if the application logic of one call queries a server synchronously which takes a few seconds to respond, all the other calls are blocked from processing SIP messages and application logic during that time.
+
+The reasons a thread pool gives a large performance boost over one-thread-per-call for high CPS applications presumably are that thread creation takes some time, and the thread scheduling is less efficient if there are very many active threads (as opposed to many sleeping threads like in usual media server applications, where the application/signaling threads sleep most of the time, while only the media/RTP processing threads are active).
+
+On top of that, you save lots of memory (mostly the stack memory), also, because of STL memory allocator.
+</p>
+  <p> 
+ If you notice retransmissions or even failing calls, but the CPU load is not at 100%, there may be several reasons for it:
+    - SIP messages are dropped when sending, because the NIC/network is not 
+      fast enough in accepting all the packets written to its queue and putting 
+      them on the network (you can check this with your OS, for newer Linux in 
+      /proc, check dropped packets on send for the SIP port)
+    - there is contention on some mutexes
+      -> adapt EVENT_DISPATCHER_POWER in AmEventDispatcher.h
+      -> add striping for some other Mutexes
+  </p>
  */
 
 
