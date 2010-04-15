@@ -204,7 +204,7 @@ ServiceLineCalleeDialog::ServiceLineCalleeDialog(const string& other_tag,
 	 ServiceLineFactory::GWAuthuser, 
 	 ServiceLineFactory::GWAuthpwd)
 {
-  rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT);
+  RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT);
   setDtmfDetectionEnabled(false);
 }
 

@@ -349,7 +349,7 @@ ConferenceDialog::ConferenceDialog(const string& conf_id,
     allow_dialout(false)
 {
   dialedout = this->dialout_channel.get() != 0;
-  rtp_str.setPlayoutType(ConferenceFactory::m_PlayoutType);
+  RTPStream()->setPlayoutType(ConferenceFactory::m_PlayoutType);
 #ifdef WITH_SAS_TTS
   tts_voice = register_cmu_us_kal();
 #endif  
@@ -763,7 +763,7 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
   dialout_dlg.remote_uri   = uri;
 
   string body;
-  int local_port = dialout_session->rtp_str.getLocalPort();
+  int local_port = dialout_session->RTPStream()->getLocalPort();
   dialout_session->sdp.genRequest(AmConfig::LocalIP,local_port,body);
 
   if (extra_headers.length() == 0) {
@@ -855,7 +855,7 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
   DBG("ConferenceDialog::onSipRequest: remote_tag = %s\n",dlg.remote_tag.c_str());
 
   string body;
-  int local_port = rtp_str.getLocalPort();
+  int local_port = RTPStream()->getLocalPort();
   sdp.genRequest(AmConfig::LocalIP,local_port,body);
   dlg.sendRequest("INVITE","application/sdp",body,"");
 

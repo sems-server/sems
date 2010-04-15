@@ -104,13 +104,13 @@ EchoDialog::~EchoDialog()
 
 void EchoDialog::onSessionStart(const AmSipRequest& req)
 {
-  rtp_str.setPlayoutType(playout_type);
+  RTPStream()->setPlayoutType(playout_type);
   setInOut(&echo,&echo);
 }
 
 void EchoDialog::onSessionStart(const AmSipReply& req)
 {
-  rtp_str.setPlayoutType(playout_type);
+  RTPStream()->setPlayoutType(playout_type);
   setInOut(&echo,&echo);
 }
 
@@ -134,7 +134,7 @@ void EchoDialog::onDtmf(int event, int duration)
       playout_type = SIMPLE_PLAYOUT;
     DBG("received *. set playout technique to %s.\n", pt);
 		
-    rtp_str.setPlayoutType(playout_type);
+    RTPStream()->setPlayoutType(playout_type);
   }
 #endif
 }

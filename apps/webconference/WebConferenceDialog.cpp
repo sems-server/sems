@@ -40,7 +40,7 @@ WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
   is_dialout = (cred != NULL);
   accept_early_session = is_dialout;
   // set configured playout type
-  rtp_str.setPlayoutType(WebConferenceFactory::m_PlayoutType);
+  RTPStream()->setPlayoutType(WebConferenceFactory::m_PlayoutType);
 }
 
 WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
@@ -54,7 +54,7 @@ WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
   DBG("set conf_id to %s\n", conf_id.c_str());
   is_dialout = false;
   // set configured playout type
-  rtp_str.setPlayoutType(WebConferenceFactory::m_PlayoutType);
+  RTPStream()->setPlayoutType(WebConferenceFactory::m_PlayoutType);
 }
 
 WebConferenceDialog::~WebConferenceDialog()

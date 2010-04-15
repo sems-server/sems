@@ -60,7 +60,7 @@ SimpleConferenceDialog::SimpleConferenceDialog()
   : play_list(this)
 {
   // use adaptive playout - its the best method around
-  rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT);
+  RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT);
 }
 
 SimpleConferenceDialog::~SimpleConferenceDialog()

@@ -61,7 +61,7 @@ AmSession::AmSession()
   : AmEventQueue(this),
     dlg(this),
     detached(true),
-    sess_stopped(false),rtp_str(this),negotiate_onreply(false),
+    sess_stopped(false),negotiate_onreply(false),
     input(0), output(0), local_input(0), local_output(0),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
@@ -216,7 +216,7 @@ const vector<SdpPayload*>& AmSession::getPayloads()
 
 int AmSession::getRPort()
 {
-  return rtp_str.getRPort();
+  return RTPStream()->getRPort();
 }
 
 AmPayloadProviderInterface* AmSession::getPayloadProvider() {
@@ -270,7 +270,7 @@ void AmSession::negotiate(const string& sdp_body,
 	  telephone_event_payload->payload_type);
 	
       lockAudio();
-      rtp_str.setTelephoneEventPT(telephone_event_payload);
+      RTPStream()->setTelephoneEventPT(telephone_event_payload);
       unlockAudio();
     }
   else {
@@ -288,9 +288,9 @@ void AmSession::negotiate(const string& sdp_body,
 
   lockAudio();
   try {
-    rtp_str.setLocalIP(AmConfig::LocalIP);
-    rtp_str.setPassiveMode(passive_mode);
-    rtp_str.setRAddr(r_host, r_port);
+    RTPStream()->setLocalIP(AmConfig::LocalIP);
+    RTPStream()->setPassiveMode(passive_mode);
+    RTPStream()->setRAddr(r_host, r_port);
   } catch (const string& err_str) {
     unlockAudio();
     throw AmSession::Exception(400, err_str);
@@ -301,7 +301,9 @@ void AmSession::negotiate(const string& sdp_body,
   unlockAudio();
 
   if(sdp_reply)
-    sdp.genResponse(advertisedIP(), rtp_str.getLocalPort(), *sdp_reply, AmConfig::SingleCodecInOK);
+    sdp.genResponse(advertisedIP(), 
+		    RTPStream()->getLocalPort(), 
+		    *sdp_reply, AmConfig::SingleCodecInOK);
 }
 
 #ifdef SESSION_THREADPOOL
@@ -359,7 +361,7 @@ bool AmSession::startup() {
 	return false;
       }
       
-      zrtp_audio = zrtp_attach_stream(zrtp_session, rtp_str.get_ssrc());
+      zrtp_audio = zrtp_attach_stream(zrtp_session, RTPStream()->get_ssrc());
       zrtp_audio->stream_usr_data = this;
       
       if (NULL == zrtp_audio) {
@@ -764,7 +766,7 @@ void AmSession::onSipReply(const AmSipReply& reply)
       case AmSipDialog::Connected:
 	
 	try {
-	  rtp_str.setMonitorRTPTimeout(true);
+	  RTPStream()->setMonitorRTPTimeout(true);
 
 	  acceptAudio(reply.body,reply.hdrs);
 
@@ -797,7 +799,7 @@ void AmSession::onSipReply(const AmSipReply& reply)
 
 	  onRinging(reply);
 
-	  rtp_str.setMonitorRTPTimeout(false);
+	  RTPStream()->setMonitorRTPTimeout(false);
 
 	  if(input || output || local_input || local_output)
 	    AmMediaProcessor::instance()->addSession(this,
@@ -813,10 +815,10 @@ void AmSession::onSipReply(const AmSipReply& reply)
 	    
 	      onEarlySessionStart(reply);
 
-	      rtp_str.setMonitorRTPTimeout(false);
+	      RTPStream()->setMonitorRTPTimeout(false);
 	      
 	      // ping the other side to open fw/NAT/symmetric RTP
-	      rtp_str.ping();
+	      RTPStream()->ping();
 
 	      if(input || output || local_input || local_output)
 		AmMediaProcessor::instance()->addSession(this,
@@ -876,11 +878,11 @@ int AmSession::acceptAudio(const string& body,
 	    
       // enable RTP stream
       lockAudio();
-      rtp_str.init(m_payloads);
+      RTPStream()->init(m_payloads);
       unlockAudio();
 	    
       DBG("Sending Rtp data to %s/%i\n",
-	  rtp_str.getRHost().c_str(),rtp_str.getRPort());
+	  RTPStream()->getRHost().c_str(),RTPStream()->getRPort());
 
       return 0;
     }
@@ -935,9 +937,9 @@ void AmSession::sendUpdate()
 void AmSession::sendReinvite(bool updateSDP, const string& headers) 
 {
   if (updateSDP) {
-    rtp_str.setLocalIP(AmConfig::LocalIP);
+    RTPStream()->setLocalIP(AmConfig::LocalIP);
     string sdp_body;
-    sdp.genResponse(advertisedIP(), rtp_str.getLocalPort(), sdp_body);
+    sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
     dlg.reinvite(headers, "application/sdp", sdp_body);
   } else {
     dlg.reinvite(headers, "", "");
@@ -950,19 +952,19 @@ int AmSession::sendInvite(const string& headers)
 
   // Set local IP first, so that IP is set when 
   // getLocalPort/setLocalPort may bind.
-  rtp_str.setLocalIP(AmConfig::LocalIP);
+  RTPStream()->setLocalIP(AmConfig::LocalIP);
   
   // Generate SDP.
   string sdp_body;
-  sdp.genRequest(advertisedIP(), rtp_str.getLocalPort(), sdp_body);
+  sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
   return dlg.invite(headers, "application/sdp", sdp_body);
 }
 
 void AmSession::setOnHold(bool hold)
 {
   lockAudio();
-  bool old_hold = rtp_str.getOnHold();
-  rtp_str.setOnHold(hold);
+  bool old_hold = RTPStream()->getOnHold();
+  RTPStream()->setOnHold(hold);
   if (hold != old_hold) 
     sendReinvite();
   unlockAudio();

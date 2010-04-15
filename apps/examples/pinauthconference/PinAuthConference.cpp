@@ -101,7 +101,7 @@ PinAuthConferenceDialog::PinAuthConferenceDialog(AmPromptCollection& prompts)
   : play_list(this), separator(this, 0), prompts(prompts), state(None)
 {
   // set configured playout type
-  rtp_str.setPlayoutType(PinAuthConferenceFactory::m_PlayoutType);
+  RTPStream()->setPlayoutType(PinAuthConferenceFactory::m_PlayoutType);
 }
 
 PinAuthConferenceDialog::~PinAuthConferenceDialog()

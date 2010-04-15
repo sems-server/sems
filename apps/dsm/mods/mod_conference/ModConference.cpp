@@ -195,9 +195,9 @@ EXEC_ACTION_START(ConfRejoinAction) {
 EXEC_ACTION_START(ConfSetPlayoutTypeAction) {
   string playout_type = resolveVars(arg, sess, sc_sess, event_params);
   if (playout_type == "adaptive")
-    sess->rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT);
+    sess->RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT);
   else if (playout_type == "jb")
-    sess->rtp_str.setPlayoutType(JB_PLAYOUT);
+    sess->RTPStream()->setPlayoutType(JB_PLAYOUT);
   else 
-    sess->rtp_str.setPlayoutType(SIMPLE_PLAYOUT);
+    sess->RTPStream()->setPlayoutType(SIMPLE_PLAYOUT);
 } EXEC_ACTION_END;

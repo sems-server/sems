@@ -118,8 +118,8 @@ void SWPrepaidSIPDialog::onInvite(const AmSipRequest& req)
 
   // TODO: errors thrown as exception don't seem to trigger a reply?
 
-  setReceiving(false);
-  AmMediaProcessor::instance()->removeSession(this);
+  // this will prevent us from being added to media processor
+  setInOut(NULL,NULL);
 
   m_uuid = getHeader(req.hdrs,"P-Caller-Uuid");
   if(!m_uuid.length()) {

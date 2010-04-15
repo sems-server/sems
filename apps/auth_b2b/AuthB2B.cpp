@@ -109,8 +109,8 @@ void AuthB2BDialog::onInvite(const AmSipRequest& req)
   // -> only in SessionFactory::onInvite they do. todo: move the logic to 
   //    session factory 
 
-  setReceiving(false);
-  AmMediaProcessor::instance()->removeSession(this);
+  // this will prevent us from being added to media processor
+  setInOut(NULL,NULL); 
 
   if (AuthB2BFactory::user.empty()) {
     string app_param = getHeader(req.hdrs, PARAM_HDR);
@@ -131,10 +131,10 @@ void AuthB2BDialog::onInvite(const AmSipRequest& req)
   from = "sip:"+user+"@"+domain;
   to = "sip:"+req.user+"@"+domain;
 
-//   DBG("-----------------------------------------------------------------\n");
-//   DBG("domain = %s, user = %s, pwd = %s, from = %s, to = %s;",  
-//       domain.c_str(), user.c_str(), password.c_str(), from.c_str(), to.c_str());
-//   DBG("-----------------------------------------------------------------\n");
+   // DBG("-----------------------------------------------------------------\n");
+   // DBG("domain = %s, user = %s, pwd = %s, from = %s, to = %s;",  
+   //     domain.c_str(), user.c_str(), password.c_str(), from.c_str(), to.c_str());
+   // DBG("-----------------------------------------------------------------\n");
 
   m_state = BB_Dialing;
 

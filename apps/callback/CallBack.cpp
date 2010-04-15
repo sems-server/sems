@@ -228,7 +228,7 @@ CallBackDialog::CallBackDialog(AmPromptCollection& prompts,
     state(CBNone)
 {
   // set configured playout type
-  rtp_str.setPlayoutType(CallBackFactory::m_PlayoutType);
+  RTPStream()->setPlayoutType(CallBackFactory::m_PlayoutType);
 }
 
 CallBackDialog::~CallBackDialog()
@@ -321,7 +321,7 @@ CallBackCalleeDialog::CallBackCalleeDialog(const string& other_tag,
   : AmB2ABCalleeSession(other_tag, connector), cred(cred)
 {
   // set configured playout type
-  rtp_str.setPlayoutType(CallBackFactory::m_PlayoutType);
+  RTPStream()->setPlayoutType(CallBackFactory::m_PlayoutType);
   setDtmfDetectionEnabled(false);
 }
 

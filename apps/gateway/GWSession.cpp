@@ -26,7 +26,7 @@ void GWSession::setOtherLeg(AmAudio *otherleg) {
 }
 void GWSession::onInvite(const AmSipRequest& req) {
     DBG("GWSession::onInvite\n");
-//    rtp_str.setMonitorRTPTimeout(false);
+//    RTPStream()->setMonitorRTPTimeout(false);
     invite_req=req;
     return;
 }

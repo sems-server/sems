@@ -284,10 +284,10 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 
     AmSession* s = (*it);
     // todo: get frame size/checkInterval from local audio if local in+out (?)
-    unsigned int f_size = s->rtp_str.getFrameSize(); 
+    unsigned int f_size = s->RTPStream()->getFrameSize(); 
 
     // complete frame time reached? 
-    if (s->rtp_str.checkInterval(ts, f_size)) {
+    if (s->RTPStream()->checkInterval(ts, f_size)) {
       s->lockAudio();
 
       int got_audio = -1;
@@ -295,8 +295,8 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
       // get/receive audio
       if (!s->getAudioLocal(AM_AUDIO_IN)) {
 	// input is not local - receive from rtp stream
-	if (s->rtp_str.receiving || s->rtp_str.getPassiveMode()) {
-	  int ret = s->rtp_str.receive(ts);
+	if (s->RTPStream()->receiving || s->RTPStream()->getPassiveMode()) {
+	  int ret = s->RTPStream()->receive(ts);
 	  if(ret < 0){
 	    switch(ret){
 	      
@@ -317,7 +317,7 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 	      break;
 	    }
 	  } else {
-	    got_audio = s->rtp_str.get(ts,buffer,f_size);
+	    got_audio = s->RTPStream()->get(ts,buffer,f_size);
 	    
 	    if (s->isDtmfDetectionEnabled() && got_audio > 0)
 	      s->putDtmfAudio(buffer, got_audio, ts);
@@ -355,9 +355,9 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
     s->lockAudio();
     AmAudio* output = s->getOutput();
 	    
-    if(output && s->rtp_str.sendIntReached()){
+    if(output && s->RTPStream()->sendIntReached()){
 		
-      int size = output->get(ts,buffer,s->rtp_str.getFrameSize());
+      int size = output->get(ts,buffer,s->RTPStream()->getFrameSize());
       if(size <= 0){
 	DBG("output->get() returned: %i\n",size);
 	postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s)); 
@@ -365,8 +365,8 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
       else {
 	if (!s->getAudioLocal(AM_AUDIO_OUT)) {
 	  // audio should go to RTP
-	  if(!s->rtp_str.mute){	     
-	    if(s->rtp_str.put(ts,buffer,size)<0)
+	  if(!s->RTPStream()->mute){	     
+	    if(s->RTPStream()->put(ts,buffer,size)<0)
 	      postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
 	  }
 	} else {

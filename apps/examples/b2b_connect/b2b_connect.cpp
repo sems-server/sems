@@ -93,7 +93,7 @@ b2b_connectDialog::b2b_connectDialog() // AmDynInvoke* user_timer)
   AmB2ABCallerSession()
 
 {
-  rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT); 
+  RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT); 
 }
 
 b2b_connectDialog::~b2b_connectDialog()
@@ -274,7 +274,7 @@ b2b_connectCalleeSession::b2b_connectCalleeSession(const string& other_tag,
   : credentials("", user, pwd), // domain (realm) is unused in credentials 
     AmB2ABCalleeSession(other_tag, connector) 
 {
-  rtp_str.setPlayoutType(ADAPTIVE_PLAYOUT); 
+  RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT); 
   setDtmfDetectionEnabled(false);
 }
 

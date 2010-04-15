@@ -137,8 +137,8 @@ void CallTimerDialog::onInvite(const AmSipRequest& req)
     return;
   }
     
-  setReceiving(false);
-  AmMediaProcessor::instance()->removeSession(this);
+  // this will prevent us from being added to media processor
+  setInOut(NULL,NULL);
 
   m_state = BB_Dialing;
 
