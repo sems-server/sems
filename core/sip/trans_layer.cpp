@@ -1024,7 +1024,8 @@ void trans_layer::received_msg(sip_msg* msg)
 		    //  the UA. 
 		    assert(ua);
 		    DBG("Passing ACK to the UA.\n");
-		    ua->handle_sip_request(NULL,msg);
+		    trans_ticket tt(t,bucket);
+		    ua->handle_sip_request(&tt,msg);
 		    
 		    DROP_MSG;
 		}
