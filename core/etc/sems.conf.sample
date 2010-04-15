@@ -360,3 +360,31 @@ use_default_signature=yes
 # default: error
 # 
 # unhandled_reply_loglevel=info
+
+############################################################
+# SIP stack settings
+#   default settings (i.e. leave out) for these should be OK
+#   for most applications
+
+
+#
+# Log raw messages?  [no|debug|info|warn|error]
+#
+# Default: debug
+#
+#log_raw_messages=no
+
+#
+# Log parsed received messages?  [yes|no]
+#
+# Default: yes
+#
+#log_parsed_messages=no
+
+# SIP UDP socket receive buffer size (in bytes)
+#
+# if not set, system default is used (which usually
+# is modest). set sytem wide upper limit with
+# e.g. sysctl -w net.core.rmem_max=8388608
+#
+# udp_rcvbuf = <value>

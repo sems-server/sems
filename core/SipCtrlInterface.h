@@ -62,6 +62,7 @@ public:
     static bool log_parsed_messages;
     static int log_raw_messages;
     static bool accept_fr_without_totag;
+    static int udp_rcvbuf;
 
     SipCtrlInterface();
     ~SipCtrlInterface(){}

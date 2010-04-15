@@ -57,6 +57,7 @@ unsigned int SipCtrlInterface::outbound_port = 0;
 bool SipCtrlInterface::accept_fr_without_totag = false;
 int SipCtrlInterface::log_raw_messages = 3;
 bool SipCtrlInterface::log_parsed_messages = true;
+int SipCtrlInterface::udp_rcvbuf = -1;
 
 int SipCtrlInterface::load()
 {
@@ -102,6 +103,16 @@ int SipCtrlInterface::load()
 	}
 	DBG("log_parsed_messages = %s\n", 
 	    log_parsed_messages?"yes":"no");
+
+	if (cfg.hasParameter("udp_rcvbuf")) {
+	    unsigned int config_udp_rcvbuf = -1;
+	    if (str2i(cfg.getParameter("udp_rcvbuf"), config_udp_rcvbuf)) {
+		ERROR("invalid value specified for udp_rcvbuf\n");
+		return false;
+	    }
+	    udp_rcvbuf = config_udp_rcvbuf;
+	    DBG("sipctrl: udp_rcvbuf = %d\n", udp_rcvbuf);
+	}
 
     } else {
 	DBG("assuming SIP default settings.\n");

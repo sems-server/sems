@@ -222,6 +222,30 @@ int udp_trsp::bind(const string& address, unsigned short port)
 	return -1;
     }
 
+    if (SipCtrlInterface::udp_rcvbuf > 0) {
+	DBG("trying to set SIP UDP socket buffer to %d\n",
+	    SipCtrlInterface::udp_rcvbuf);
+	if(setsockopt(sd, SOL_SOCKET, SO_RCVBUF,
+		      (void*)&SipCtrlInterface::udp_rcvbuf,
+		      sizeof (SipCtrlInterface::udp_rcvbuf)) == -1) {
+	    WARN("could not set SIP UDP socket buffer: '%s'\n",
+		 strerror(errno));
+	} else {
+	    socklen_t optlen;
+	    int set_rcvbuf_size=0;
+	    if (getsockopt(sd, SOL_SOCKET, SO_RCVBUF,
+			   &set_rcvbuf_size, &optlen) == -1) {
+		WARN("could not read back SIP UDP socket buffer length: '%s'\n",
+		     strerror(errno));
+	    } else {
+		if (set_rcvbuf_size != SipCtrlInterface::udp_rcvbuf) {
+		    WARN("failed to set SIP UDP RCVBUF size (wanted %d, got %d)\n",
+			 SipCtrlInterface::udp_rcvbuf, set_rcvbuf_size);
+		}
+	    }
+	}
+    }
+
     local_port = port;
     local_ip   = address;
 
