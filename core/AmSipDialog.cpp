@@ -73,7 +73,7 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     return;
 
   if(uas_trans.find(req.cseq) == uas_trans.end()){
-      DBG("req.tt = {0x%X,0x%X}\n",req.tt._bucket, req.tt._t);
+      DBG("req.tt = {%p,%p}\n",req.tt._bucket, req.tt._t);
       uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
   }
 
