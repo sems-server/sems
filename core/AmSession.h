@@ -66,10 +66,13 @@ class AmDtmfEvent;
  * 
  * The session is identified by Call-ID, From-Tag and To-Tag.
  */
-class AmSession : public AmThread,
-		  public AmEventQueue, 
-		  public AmEventHandler,
-		  public AmSipDialogEventHandler
+class AmSession : 
+#ifndef SESSION_THREADPOOL
+  public AmThread,
+#endif
+  public AmEventQueue, 
+  public AmEventHandler,
+  public AmSipDialogEventHandler
 {
   AmMutex      audio_mut;
   // remote (to/from RTP) audio inout
@@ -95,11 +98,40 @@ private:
   AmDtmfEventQueue m_dtmfEventQueue;
   bool m_dtmfDetectionEnabled;
 
+  enum ProcessingStatus { 
+    SESSION_PROCESSING_EVENTS,
+    SESSION_WAITING_DISCONNECTED,
+    SESSION_ENDED_DISCONNECTED
+  };
+  ProcessingStatus processing_status;
+
+#ifndef SESSION_THREADPOOL
   /** @see AmThread::run() */
   void run();
-
-  /** @see AmThread::on_stop() */
   void on_stop();
+#else
+public:
+  void start();
+  bool is_stopped();
+
+private:
+  void stop();
+  void* _pid;
+#endif
+
+  /** @return whether startup was successful */
+  bool startup();
+
+  /** @return whether session continues running */
+  bool processingCycle();
+
+  /** clean up session */
+  void finalize();
+
+  /** process pending events,  
+      @return whether everything went smoothly */
+  bool processEventsCatchExceptions();
+
 
   AmCondition<bool> sess_stopped;
   AmCondition<bool> detached;
@@ -111,6 +143,7 @@ private:
   friend class AmMediaProcessorThread;
   friend class AmSessionContainer;
   friend class AmSessionFactory;
+  friend class AmSessionProcessorThread;
 	
 protected:
   AmSdp               sdp;

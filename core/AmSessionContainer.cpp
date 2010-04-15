@@ -90,11 +90,11 @@ bool AmSessionContainer::clean_sessions() {
 	
 	MONITORING_MARK_FINISHED(cur_session->getLocalTag().c_str());
 
-	DBG("session %p has been destroyed'\n",(void*)cur_session->_pid);
+	DBG("session [%p] has been destroyed\n",(void*)cur_session->_pid);
 	delete cur_session;
       }
       else {
-	DBG("session %p still running\n",(void*)cur_session->_pid);
+	DBG("session [%p] still running\n",(void*)cur_session->_pid);
 	n_sessions.push(cur_session);
       }
       
@@ -191,9 +191,10 @@ void AmSessionContainer::destroySession(AmSession* s)
 }
 
 AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session_params) {
+
   AmSession* session = NULL;
   try {
-    if((session = createSession(req, session_params)) != 0){
+    if((session = createSession(req, session_params)) != 0) {
       session->dlg.updateStatusFromLocalRequest(req); // sets local tag as well
       session->setCallgroup(req.from_tag);
 
@@ -228,8 +229,18 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 	INFO("Starting UAC session %s app %s\n",
 	     session->getLocalTag().c_str(), req.cmd.c_str());
       }
-
-      session->start();
+      
+      try {
+	session->start();
+      } catch (const string& err) {
+	AmEventDispatcher::instance()->
+	  delEventQueue(session->getLocalTag(),
+			session->getCallID(),
+			session->getRemoteTag());
+	
+	delete session;
+	throw;
+      }
 
     }
   } 
@@ -280,7 +291,17 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 			"to", req.to.c_str(),
 			"ruri", req.r_uri.c_str());
 
-	session->start();
+	try {
+	  session->start();
+	} catch (const string& err) {
+	  AmEventDispatcher::instance()->
+	    delEventQueue(session->getLocalTag(),
+			  session->getCallID(),
+			  session->getRemoteTag());
+	  
+	  delete session;
+	  throw;
+	}
 
 	session->postEvent(new AmSipRequestEvent(req));
       }

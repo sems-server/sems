@@ -75,7 +75,9 @@ struct AmConfig
   static int RtpLowPort;
   /** Highest local RTP port */
   static int RtpHighPort;
-  /** number of session scheduler threads */
+  /** number of session (signaling/application) processor threads */
+  static int SessionProcessorThreads;
+  /** number of media processor threads */
   static int MediaProcessorThreads;
   /** the interface SIP requests are sent from - needed for registrar_client */
   static string LocalSIPIP;
@@ -153,6 +155,8 @@ struct AmConfig
   static int setFork(const string& fork);
   /** Setter for parameter stderr, returns 0 on invalid value */
   static int setStderr(const string& s);
+  /** Setter for parameter SessionProcessorThreads, returns 0 on invalid value */
+  static int setSessionProcessorThreads(const string& th);
   /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */
   static int setMediaProcessorThreads(const string& th);
   /** Setter for parameter DeadRtpTime, returns 0 on invalid value */

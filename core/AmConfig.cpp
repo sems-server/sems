@@ -51,6 +51,7 @@ string       AmConfig::PublicIP                = "";
 string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
 int          AmConfig::RtpLowPort              = RTP_LOWPORT;
 int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
+int          AmConfig::SessionProcessorThreads = NUM_SESSION_PROCESSORS;
 int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
 int          AmConfig::LocalSIPPort            = 5060;
 string       AmConfig::LocalSIPIP              = "";
@@ -134,6 +135,13 @@ int AmConfig::setStderr(const string& s) {
   }	
   return 1;
 }		
+
+int AmConfig::setSessionProcessorThreads(const string& th) {
+  if(sscanf(th.c_str(),"%u",&SessionProcessorThreads) != 1) {
+    return 0;
+  }
+  return 1;
+}
 
 int AmConfig::setMediaProcessorThreads(const string& th) {
   if(sscanf(th.c_str(),"%u",&MediaProcessorThreads) != 1) {
@@ -323,12 +331,32 @@ int AmConfig::readConfiguration()
     }
   }
 
+  if(cfg.hasParameter("session_processor_threads")){
+#ifdef SESSION_THREADPOOL
+    if(!setSessionProcessorThreads(cfg.getParameter("session_processor_threads"))){
+      ERROR("invalid session_processor_threads value specified\n");
+      return -1;
+    }
+    if (SessionProcessorThreads<1) {
+      ERROR("invalid session_processor_threads value specified."
+	    " need at least one thread\n");
+      return -1;
+    }
+#else
+    WARN("session_processor_threads specified in sems.conf,\n");
+    WARN("but SEMS is compiled without SESSION_THREADPOOL support.\n");
+    WARN("set USE_THREADPOOL in Makefile.defs to enable session thread pool.\n");
+    WARN("SEMS will start now, but every call will have its own thread.\n");    
+#endif
+  }
+
   if(cfg.hasParameter("media_processor_threads")){
     if(!setMediaProcessorThreads(cfg.getParameter("media_processor_threads"))){
       ERROR("invalid media_processor_threads value specified");
       return -1;
     }
   }
+
 
   // single codec in 200 OK
   if(cfg.hasParameter("single_codec_in_ok")){

@@ -29,8 +29,11 @@
 #include "log.h"
 #include "AmConfig.h"
 
+#include <typeinfo>
 AmEventQueue::AmEventQueue(AmEventHandler* handler)
-  : handler(handler),ev_pending(false)
+  : handler(handler),
+    wakeup_handler(NULL),
+    ev_pending(false)
 {
 }
 
@@ -53,6 +56,8 @@ void AmEventQueue::postEvent(AmEvent* event)
   if(event)
     ev_queue.push(event);
   ev_pending.set(true);
+  if (NULL != wakeup_handler)
+    wakeup_handler->notify(this);
   m_queue.unlock();
 
   if (AmConfig::LogEvents) 
@@ -70,10 +75,12 @@ void AmEventQueue::processEvents()
     m_queue.unlock();
 
     if (AmConfig::LogEvents) 
-      DBG("before processing event\n");
+      DBG("before processing event (%s)\n",
+	  typeid(*event).name());
     handler->process(event);
     if (AmConfig::LogEvents) 
-      DBG("event processed\n");
+      DBG("event processed (%s)\n",
+	  typeid(*event).name());
     delete event;
     m_queue.lock();
   }
@@ -117,3 +124,10 @@ void AmEventQueue::processSingleEvent()
   m_queue.unlock();
 }
 
+void AmEventQueue::setEventNotificationSink(AmEventNotificationSink* 
+					    _wakeup_handler) {
+  // locking actually not necessary - if replacing pointer is atomic 
+  m_queue.lock(); 
+  wakeup_handler = _wakeup_handler;
+  m_queue.unlock();
+}

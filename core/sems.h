@@ -52,6 +52,9 @@
 #define SESSION_EXPIRES              60 // seconds
 #define MINIMUM_TIMER                5   //seconds
 
+// threads to start for signaling/application
+#define NUM_SESSION_PROCESSORS 10    
+// threads to start for RTP processing
 #define NUM_MEDIA_PROCESSORS 1
 
 #define MAX_NET_DEVICES     32

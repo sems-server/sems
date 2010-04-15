@@ -22,6 +22,18 @@ CPPFLAGS += -D_DEBUG \
 #	  -DSUPPORT_IPV6 \
 #	  -DNO_THREADID_LOG \
 
+
+# compile with session thread pool support?
+#      use this for very high concurrent call count 
+#      applications (e.g. for signaling only)
+#      if compiled with thread pool, there will be a 
+#      thread pool of configurable size processing the
+#      signaling and application logic of the calls.
+#      if compiled without thread pool support, every
+#      session will have its own thread.
+#
+#USE_THREADPOOL = yes
+
 # compile with spandsp DTMF detection? see soft-switch.org
 #   this needs a fairly new version of spandsp - tested with 0.0.4pre11
 #   will not work with spandsp 0.0.2 .
@@ -61,6 +73,10 @@ GETARCH=$(COREPATH)/compat/getarch
 
 OS   := $(shell $(CC) $(EXTRA_CFLAGS) -o $(GETOS) $(GETOS).c && $(GETOS))
 ARCH := $(shell $(CC) $(EXTRA_CFLAGS) -o $(GETARCH) $(GETARCH).c && $(GETARCH))
+
+ifdef USE_THREADPOOL
+CPPFLAGS += -DSESSION_THREADPOOL
+endif
 
 ifdef USE_SPANDSP
 ifneq ($(spandsp_defs), 1)

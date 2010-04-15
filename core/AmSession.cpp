@@ -33,6 +33,7 @@
 #include "AmPlugIn.h"
 #include "AmApi.h"
 #include "AmSessionContainer.h"
+#include "AmSessionProcessor.h"
 #include "AmMediaProcessor.h"
 #include "AmDtmfDetector.h"
 #include "AmPlayoutBuffer.h"
@@ -57,16 +58,21 @@ AmMutex AmSession::session_num_mut;
 
 
 AmSession::AmSession()
-  : AmEventQueue(this), // AmDialogState(),
+  : AmEventQueue(this),
     dlg(this),
     detached(true),
     sess_stopped(false),rtp_str(this),negotiate_onreply(false),
     input(0), output(0), local_input(0), local_output(0),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
-    accept_early_session(false)
+    accept_early_session(false),
+    processing_status(SESSION_PROCESSING_EVENTS)
 #ifdef WITH_ZRTP
   ,  zrtp_session(NULL), zrtp_audio(NULL), enable_zrtp(true)
+#endif
+
+#ifdef SESSION_THREADPOOL
+  , _pid(this)
 #endif
 {
   use_local_audio[AM_AUDIO_IN] = false;
@@ -83,6 +89,8 @@ AmSession::~AmSession()
 #ifdef WITH_ZRTP
   AmZRTP::freeSession(zrtp_session);
 #endif
+
+  DBG("AmSession destructor finished\n");
 }
 
 void AmSession::setCallgroup(const string& cg) {
@@ -296,8 +304,41 @@ void AmSession::negotiate(const string& sdp_body,
     sdp.genResponse(advertisedIP(), rtp_str.getLocalPort(), *sdp_reply, AmConfig::SingleCodecInOK);
 }
 
-void AmSession::run()
-{
+#ifdef SESSION_THREADPOOL
+void AmSession::start() {
+  AmSessionProcessorThread* processor_thread = 
+    AmSessionProcessor::getProcessorThread();
+  if (NULL == processor_thread) 
+    throw string("no processing thread available");
+
+  // have the thread register and start us
+  processor_thread->startSession(this);
+}
+
+bool AmSession::is_stopped() {
+  return processing_status == SESSION_ENDED_DISCONNECTED;
+}
+#else
+// in this case every session has its own thread 
+// - this is the main processing loop
+void AmSession::run() {
+  DBG("startup session\n");
+  if (!startup())
+    return;
+
+  DBG("running session event loop\n");
+  while (true) {
+    waitForEvent();
+    if (!processingCycle())
+      break;
+  }
+
+  DBG("session event loop ended, finalizing session\n");
+  finalize();
+}
+#endif
+
+bool AmSession::startup() {
 #ifdef WITH_ZRTP
   if (enable_zrtp) {
     zrtp_session = (zrtp_conn_ctx_t*)malloc(sizeof(zrtp_conn_ctx_t));
@@ -315,7 +356,7 @@ void AmSession::run()
 						   &profile, 
 						   AmZRTP::zrtp_instance_zid) ) {
 	ERROR("initializing ZRTP session context\n");
-	return;
+	return false;
       }
       
       zrtp_audio = zrtp_attach_stream(zrtp_session, rtp_str.get_ssrc());
@@ -323,7 +364,7 @@ void AmSession::run()
       
       if (NULL == zrtp_audio) {
 	ERROR("attaching zrtp stream.\n");
-	return;
+	return false;
       }
       
       DBG("initialized ZRTP session context OK\n");
@@ -340,32 +381,7 @@ void AmSession::run()
 
       onStart();
 
-      while (!sess_stopped.get() || 
-	     (dlg.getStatus() == AmSipDialog::Disconnecting)//  ||
-	     // (dlg.getUACTransPending())
-	     ){
-
-	waitForEvent();
-	processEvents();
-
-	DBG("%s dlg.getUACTransPending() = %i\n",
-	    dlg.callid.c_str(),dlg.getUACTransPending());
-      }
-	    
-      if ( dlg.getStatus() != AmSipDialog::Disconnected ) {
-		
-	DBG("dlg '%s' not terminated: sending bye\n",dlg.callid.c_str());
-	if(dlg.bye() == 0){
-	  while ( dlg.getStatus() != AmSipDialog::Disconnected ){
-	    waitForEvent();
-	    processEvents();
-	  }
-	}
-	else {
-	  WARN("failed to terminate call properly\n");
-	}
-      }
-    }
+    } 
     catch(const AmSession::Exception& e){ throw e; }
     catch(const string& str){
       ERROR("%s\n",str.c_str());
@@ -374,28 +390,128 @@ void AmSession::run()
     catch(...){
       throw AmSession::Exception(500,"unexpected exception.");
     }
-  }
-  catch(const AmSession::Exception& e){
+    
+  } catch(const AmSession::Exception& e){
     ERROR("%i %s\n",e.code,e.reason.c_str());
+    onBeforeDestroy();
+    destroy();
+    
+    session_num_mut.lock();
+    session_num--;
+    session_num_mut.unlock();
+
+    return false;
   }
 
+  return true;
+}
+
+bool AmSession::processEventsCatchExceptions() {
+  try {
+    try {	
+      processEvents();
+    } 
+    catch(const AmSession::Exception& e){ throw e; }
+    catch(const string& str){
+      ERROR("%s\n",str.c_str());
+      throw AmSession::Exception(500,"unexpected exception.");
+    } 
+    catch(...){
+      throw AmSession::Exception(500,"unexpected exception.");
+    }    
+  } catch(const AmSession::Exception& e){
+    ERROR("%i %s\n",e.code,e.reason.c_str());
+    return false;
+  }
+  return true;
+}
+
+/** one cycle of the event processing loop. 
+    this should be called until it returns false. */
+bool AmSession::processingCycle() {
+
+  switch (processing_status) {
+  case SESSION_PROCESSING_EVENTS: 
+    {
+      if (!processEventsCatchExceptions())
+	return false; // exception occured, stop processing
+      
+      int dlg_status = dlg.getStatus();
+      bool s_stopped = sess_stopped.get();
+      
+      DBG("%s/%s: %s, %s, %i UACTransPending\n",
+	  dlg.callid.c_str(),getLocalTag().c_str(), 
+	  AmSipDialog::status2str[dlg_status],
+	  s_stopped?"stopped":"running",
+	  dlg.getUACTransPending());
+      
+      // session running?
+      if (!s_stopped || (dlg_status == AmSipDialog::Disconnecting))
+	return true;
+      
+      // session stopped?
+      if (s_stopped &&
+	  (dlg_status == AmSipDialog::Disconnected)) {
+	processing_status = SESSION_ENDED_DISCONNECTED;
+	return false;
+      }
+      
+      // wait for session's status to be disconnected
+      // todo: set some timer to tear down the session anyway,
+      //       or react properly on negative reply to BYE (e.g. timeout)
+      processing_status = SESSION_WAITING_DISCONNECTED;
+      
+      if (dlg_status != AmSipDialog::Disconnected) {
+	// app did not send BYE - do that for the app
+	if (dlg.bye() != 0) {
+	  processing_status = SESSION_ENDED_DISCONNECTED;
+	  // BYE sending failed - don't wait for dlg status to go disconnected
+	  return false;
+	}
+      }
+      
+      return true;
+      
+    } break;
+    
+  case SESSION_WAITING_DISCONNECTED: {
+    // processing events until dialog status is Disconnected 
+    
+    if (!processEventsCatchExceptions()) {
+      processing_status = SESSION_ENDED_DISCONNECTED;
+      return false; // exception occured, stop processing
+    }
+    bool res = dlg.getStatus() != AmSipDialog::Disconnected;
+    if (!res)
+      processing_status = SESSION_ENDED_DISCONNECTED;
+    return res;
+  }; break;
+
+  default: {
+    ERROR("unknown session processing state\n");
+    return false; // stop processing      
+  }
+  }
+}
+
+void AmSession::finalize() {
+  DBG("running finalize sequence...\n");
   onBeforeDestroy();
   destroy();
-
+  
   session_num_mut.lock();
   session_num--;
   session_num_mut.unlock();
-    
-  // wait at least until session is out of RtpScheduler
-  //detached.wait_for();
 
   DBG("session is stopped.\n");
 }
-
-void AmSession::on_stop()
+#ifndef SESSION_THREADPOOL
+void AmSession::on_stop() 
+#else
+void AmSession::stop()
+#endif  
 {
-  //sess_stopped.set(true);
-  DBG("AmSession::on_stop()\n");
+  DBG("AmSession::stop()\n");
 
   if (!getDetached())
     AmMediaProcessor::instance()->clearSession(this);

@@ -30,7 +30,7 @@
 #include "AmConfig.h"
 #include "AmPlugIn.h"
 #include "AmSessionContainer.h"
-//#include "AmServer.h"
+#include "AmSessionProcessor.h"
 #include "AmMediaProcessor.h"
 #include "AmRtpReceiver.h"
 #include "AmEventDispatcher.h"
@@ -99,7 +99,6 @@ static void sig_usr_un(int signo)
 
     clean_up_mut.lock();
     if(need_clean.get()) {
-
       need_clean.set(false);
 
       AmSessionContainer::dispose();
@@ -111,7 +110,6 @@ static void sig_usr_un(int signo)
       AmMediaProcessor::dispose();
 
       AmEventDispatcher::dispose();
-
     } 
 
     clean_up_mut.unlock();
@@ -413,6 +411,11 @@ int main(int argc, char* argv[])
 
   DBG("Starting session container\n");
   AmSessionContainer::instance()->start();
+  
+#ifdef SESSION_THREADPOOL
+  DBG("starting session processor threads\n");
+  AmSessionProcessor::addThreads(AmConfig::SessionProcessorThreads);
+#endif 
 
   DBG("Starting media processor\n");
   AmMediaProcessor::instance()->init();

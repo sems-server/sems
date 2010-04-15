@@ -230,6 +230,16 @@ loglevel=2
 ############################################################
 # tuning
 
+# optional parameter: session_processor_threads=<num_value>
+# 
+# - controls how many threads should be created that
+#   process the application logic and in-dialog signaling. 
+#   This is only available if compiled with threadpool support!
+#   (set USE_THREADPOOL in Makefile.defs)
+#   Defaults to 10
+#
+# session_processor_threads=50
+
 # optional parameter: media_processor_threads=<num_value>
 # 
 # - controls how many threads should be created that

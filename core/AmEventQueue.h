@@ -40,6 +40,16 @@ class AmEventQueueInterface
   virtual void postEvent(AmEvent*)=0;
 };
 
+class AmEventQueue;
+/** a receiver for notifications about 
+    the fact that events are pending */
+class AmEventNotificationSink
+{
+ public:
+  virtual ~AmEventNotificationSink() { }
+  virtual void notify(AmEventQueue* sender) = 0;
+};
+
 /** 
  * \brief Asynchronous event queue implementation 
  * 
@@ -52,12 +62,13 @@ class AmEventQueue: public AmEventQueueInterface
 {
 protected:
   AmEventHandler*   handler;
+  AmEventNotificationSink* wakeup_handler;
   std::queue<AmEvent*>   ev_queue;
   AmMutex           m_queue;
   AmCondition<bool> ev_pending;
 
 public:
-  AmEventQueue(AmEventHandler*);
+  AmEventQueue(AmEventHandler* handler);
   virtual ~AmEventQueue();
 
   void postEvent(AmEvent*);
@@ -65,6 +76,8 @@ public:
   void waitForEvent();
   void wakeup();
   void processSingleEvent();
+
+  void setEventNotificationSink(AmEventNotificationSink* _wakeup_handler);
 };
 
 #endif
