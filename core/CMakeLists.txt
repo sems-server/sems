@@ -49,6 +49,23 @@ SET (sems_SRCS
  log.cpp
  sems.cpp
  SipCtrlInterface.cpp
+ sip/hash.cpp
+ sip/hash_table.cpp
+ sip/msg_fline.cpp
+ sip/msg_hdrs.cpp
+ sip/parse_common.cpp
+ sip/parse_cseq.cpp
+ sip/parse_from_to.cpp
+ sip/parse_header.cpp
+ sip/parse_uri.cpp
+ sip/parse_via.cpp
+ sip/resolver.cpp
+ sip/sip_parser.cpp
+ sip/sip_trans.cpp
+ sip/trans_layer.cpp
+ sip/transport.cpp
+ sip/udp_trsp.cpp
+ sip/wheeltimer.cpp
 )
 
 set (audio_files
