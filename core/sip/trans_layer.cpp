@@ -858,7 +858,7 @@ int trans_layer::cancel(trans_ticket* tt)
 	return 0;
 
     case TS_COMPLETED:
-	// final reply has been sent:
+	// final reply has been sent, but still no ACK:
 	// do nothing!!!
 	bucket->unlock();
 	return 0;
@@ -1140,8 +1140,8 @@ int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* m
     to_tag = ((sip_from_to*)msg->to->p)->tag;
     if((t->msg->u.request->method != sip_request::CANCEL) && !to_tag.len){
 	DBG("To-tag missing in final reply (see sipctrl.conf?)\n");
-	//if (!SipCtrlInterface::accept_fr_without_totag)
-	//    return -1;
+	if (!SipCtrlInterface::accept_fr_without_totag)
+	    return -1;
     }
     
     if(t->msg->u.request->method == sip_request::INVITE){
