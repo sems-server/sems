@@ -1,4 +1,5 @@
 set (adpcm_SRCS
+adpcm.c
 g711.c
 g721.c
 g723_16.c
