@@ -46,15 +46,12 @@ struct sip_header;
 class SipCtrlInterface:
     public sip_ua
 {
-
-    //string         bind_addr;
-    //unsigned short bind_port;
-    
     void prepare_routes_uac(const list<sip_header*>& routes, string& route_field);
     void prepare_routes_uas(const list<sip_header*>& routes, string& route_field);
     static int cancel(AmSipRequest& req);
 
     friend class udp_trsp;
+
 public:
 
     static string outbound_host;
@@ -77,13 +74,6 @@ public:
     static int send(AmSipRequest &req);
     static int send(const AmSipReply &rep);
     
-//     string getContact(const string &displayName, 
-// 		    const string &userName, const string &hostName, 
-// 		    const string &uriParams, const string &hdrParams);
-    
-    void handleSipMsg(AmSipRequest &req);
-    void handleSipMsg(AmSipReply &rep);
-
     /**
      * From sip_ua
      */

@@ -364,44 +364,6 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 #define DBG_PARAM(p)\
     DBG("%s = <%s>\n",#p,p.c_str());
 
-void SipCtrlInterface::handleSipMsg(AmSipRequest &req)
-{
-    DBG("Received new request\n");
-    if (SipCtrlInterface::log_parsed_messages) {
-	//     DBG_PARAM(req.cmd);
-	DBG_PARAM(req.method);
-	//     DBG_PARAM(req.user);
-	//     DBG_PARAM(req.domain);
-	//     DBG_PARAM(req.dstip);
-	//     DBG_PARAM(req.port);
-	DBG_PARAM(req.r_uri);
-	DBG_PARAM(req.from_uri);
-	DBG_PARAM(req.from);
-	DBG_PARAM(req.to);
-	DBG_PARAM(req.callid);
-	DBG_PARAM(req.from_tag);
-	DBG_PARAM(req.to_tag);
-	DBG("cseq = <%i>\n",req.cseq);
-	DBG_PARAM(req.route);
-	DBG_PARAM(req.next_hop);
-	DBG("hdrs = <%s>\n",req.hdrs.c_str());
-	DBG("body = <%s>\n",req.body.c_str());
-    }
-
-    AmSipDispatcher::instance()->handleSipMsg(req);
-}
-
-void SipCtrlInterface::handleSipMsg(AmSipReply &rep)
-{
-    DBG("Received reply: %i %s\n",rep.code,rep.reason.c_str());
-    DBG_PARAM(rep.callid);
-    DBG_PARAM(rep.local_tag);
-    DBG_PARAM(rep.remote_tag);
-    DBG("cseq = <%i>\n",rep.cseq);
-
-    AmSipDispatcher::instance()->handleSipMsg(rep);
-}
-
 void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
 {
     assert(msg);
@@ -479,7 +441,29 @@ void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
 	}
     }
 
-    handleSipMsg(req);
+    DBG("Received new request\n");
+    if (SipCtrlInterface::log_parsed_messages) {
+	//     DBG_PARAM(req.cmd);
+	DBG_PARAM(req.method);
+	//     DBG_PARAM(req.user);
+	//     DBG_PARAM(req.domain);
+	//     DBG_PARAM(req.dstip);
+	//     DBG_PARAM(req.port);
+	DBG_PARAM(req.r_uri);
+	DBG_PARAM(req.from_uri);
+	DBG_PARAM(req.from);
+	DBG_PARAM(req.to);
+	DBG_PARAM(req.callid);
+	DBG_PARAM(req.from_tag);
+	DBG_PARAM(req.to_tag);
+	DBG("cseq = <%i>\n",req.cseq);
+	DBG_PARAM(req.route);
+	DBG_PARAM(req.next_hop);
+	DBG("hdrs = <%s>\n",req.hdrs.c_str());
+	DBG("body = <%s>\n",req.body.c_str());
+    }
+
+    AmSipDispatcher::instance()->handleSipMsg(req);
 }
 
 void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
@@ -539,8 +523,16 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 	}
     }
     
-    handleSipMsg(reply);
+    DBG("Received reply: %i %s\n",reply.code,reply.reason.c_str());
+    DBG_PARAM(reply.callid);
+    DBG_PARAM(reply.local_tag);
+    DBG_PARAM(reply.remote_tag);
+    DBG("cseq = <%i>\n",reply.cseq);
+
+    AmSipDispatcher::instance()->handleSipMsg(reply);
 }
+
+#undef DBG_PARAM(p)
 
 void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
 {
