@@ -41,7 +41,7 @@ struct sip_header;
 struct sockaddr_storage;
 
 class trans_bucket;
-class udp_trsp;
+class trsp_socket;
 class sip_ua;
 class timer;
 
@@ -72,8 +72,8 @@ class trans_layer
      */
     static trans_layer* _instance;
 
-    sip_ua*   ua;
-    udp_trsp* transport;
+    sip_ua*      ua;
+    trsp_socket* transport;
     
     
     /** Avoid external instantiation. @see instance(). */
@@ -143,7 +143,7 @@ class trans_layer
      * Register a transport instance.
      * This method MUST be called ONCE.
      */
-    void register_transport(udp_trsp* trsp);
+    void register_transport(trsp_socket* trsp);
 
     /**
      * Sends a UAS reply.

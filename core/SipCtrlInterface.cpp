@@ -288,15 +288,27 @@ void SipCtrlInterface::run(const string& bind_addr, unsigned short bind_port)
 {
     INFO("Starting SIP control interface\n");
 
-    udp_trsp* udp_server =  new udp_trsp(trans_layer::instance());
+    udp_trsp_socket* udp_socket = new udp_trsp_socket;
+    udp_socket->bind(bind_addr,bind_port);
 
-    trans_layer::instance()->register_transport(udp_server);
-    udp_server->bind(bind_addr,bind_port);
-    
+    trans_layer::instance()->register_transport(udp_socket);
+
+    udp_trsp** udp_servers = new udp_trsp*[AmConfig::SIPServerThreads];
+
     wheeltimer::instance()->start();
 
-    udp_server->start();
-    udp_server->join();
+    for(int i=0; i<AmConfig::SIPServerThreads;i++){
+	udp_servers[i] = new udp_trsp(udp_socket);
+	udp_servers[i]->start();
+    }
+
+    for(int i=0; i<AmConfig::SIPServerThreads;i++){
+	udp_servers[i]->join();
+	delete udp_servers[i];
+    }
+
+    delete [] udp_servers;
+    delete udp_socket;
 }
 
 int SipCtrlInterface::send(const AmSipReply &rep)

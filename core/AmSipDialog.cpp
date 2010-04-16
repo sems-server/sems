@@ -69,13 +69,19 @@ AmSipDialog::~AmSipDialog()
 
 void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
-  if (req.method == "ACK")
+  if (req.method == "ACK") {
+    // || (req.method == "CANCEL")
     return;
+  }
 
   if(uas_trans.find(req.cseq) == uas_trans.end()){
       DBG("req.tt = {%p,%p}\n",req.tt._bucket, req.tt._t);
       uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
   }
+  // else {
+  //   // shouldn't we drop those requests?
+  //   // (CANCEL requests should have been handled before)
+  // }
 
   // target refresh requests
   if (req.from_uri.length() && 
@@ -334,7 +340,12 @@ int AmSipDialog::reply(const AmSipRequest& req,
   if(updateStatusReply(req,code))
     return -1;
 
-  return SipCtrlInterface::send(reply);
+  int ret = SipCtrlInterface::send(reply);
+  if(ret){
+    ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
+	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
+  }
+  return ret;
 }
 
 /* static */
@@ -353,7 +364,12 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
 
-  return SipCtrlInterface::send(reply);
+  int ret = SipCtrlInterface::send(reply);
+  if(ret){
+    ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
+	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
+  }
+  return ret;
 }
 
 
@@ -609,15 +625,15 @@ int AmSipDialog::sendRequest(const string& method,
 }
 
 
-bool AmSipDialog::match_cancel(const AmSipRequest& cancel_req)
-{
-  TransMap::iterator t = uas_trans.find(cancel_req.cseq);
+// bool AmSipDialog::match_cancel(const AmSipRequest& cancel_req)
+// {
+//   TransMap::iterator t = uas_trans.find(cancel_req.cseq);
 
-  if((t != uas_trans.end()) && (t->second.method == "INVITE"))
-    return true;
+//   if((t != uas_trans.end()) && (t->second.method == "INVITE"))
+//     return true;
 
-  return false;
-}
+//   return false;
+// }
 
 string AmSipDialog::get_uac_trans_method(unsigned int cseq)
 {

@@ -93,8 +93,12 @@ void set_log_facility(const char* facility) {
   }
 }
 
+AmMutex dprint_mut;
+
 void dprint(int level, const char* fct, const char* file, int line, const char* fmt, ...)
 {
+  dprint_mut.lock();
+
   va_list ap;
 
 #ifndef _DEBUG
@@ -106,6 +110,8 @@ void dprint(int level, const char* fct, const char* file, int line, const char* 
   vfprintf(stderr,fmt,ap);
   fflush(stderr);
   va_end(ap);
+
+  dprint_mut.unlock();
 }
 
 void log_print (int level, const char* fmt, ...)

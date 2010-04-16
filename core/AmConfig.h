@@ -79,6 +79,8 @@ struct AmConfig
   static int SessionProcessorThreads;
   /** number of media processor threads */
   static int MediaProcessorThreads;
+  /** number of SIP server threads */
+  static int SIPServerThreads;
   /** the interface SIP requests are sent from - needed for registrar_client */
   static string LocalSIPIP;
   /** the port SIP requests are sent from - optional (default 5060) */
@@ -159,6 +161,8 @@ struct AmConfig
   static int setSessionProcessorThreads(const string& th);
   /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */
   static int setMediaProcessorThreads(const string& th);
+  /** Setter for parameter SIPServerThreads, returns 0 on invalid value */
+  static int setSIPServerThreads(const string& th);
   /** Setter for parameter DeadRtpTime, returns 0 on invalid value */
   static int setDeadRtpTime(const string& drt);
 };

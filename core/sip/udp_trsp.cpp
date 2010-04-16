@@ -58,135 +58,29 @@
 //     u_char          data[DSTADDR_DATASIZE];
 // };
 
-
-udp_trsp::udp_trsp(trans_layer* tl)
-    : transport(tl), sd(0)
-{
-    tl->register_transport(this);
-}
-
-udp_trsp::~udp_trsp()
-{
-}
-
-
-const char* udp_trsp::get_local_ip()
-{
-    return local_ip.c_str();
-}
-
-unsigned short udp_trsp::get_local_port()
-{
-    return local_port;
-}
-
-void udp_trsp::copy_local_addr(sockaddr_storage* sa)
-{
-    memcpy(sa,&local_addr,sizeof(sockaddr_storage));
-}
-
-/** @see AmThread */
-void udp_trsp::run()
-{
-    char buf[MAX_UDP_MSGLEN];
-    int buf_len;
-
-    msghdr           msg;
-    cmsghdr*         cmsgptr; 
-    sockaddr_storage from_addr;
-    iovec            iov[1];
-
-    iov[0].iov_base = buf;
-    iov[0].iov_len  = MAX_UDP_MSGLEN;
-
-    memset(&msg,0,sizeof(msg));
-    msg.msg_name       = &from_addr;
-    msg.msg_namelen    = sizeof(sockaddr_storage);
-    msg.msg_iov        = iov;
-    msg.msg_iovlen     = 1;
-    msg.msg_control    = new u_char[DSTADDR_DATASIZE];
-    msg.msg_controllen = DSTADDR_DATASIZE;
-
-    if(sd<=0){
-	ERROR("Transport instance not bound\n");
-	return;
-    }
-
-    while(true){
-
-	DBG("before recvmsg (%s:%i)\n",local_ip.c_str(),local_port);
-
-	buf_len = recvmsg(sd,&msg,0);
-	if(buf_len <= 0){
-	    ERROR("recvfrom returned %d: %s\n",buf_len,strerror(errno));
-	    switch(errno){
-	    case EBADF:
-	    case ENOTSOCK:
-	    case EOPNOTSUPP:
-		return;
-	    }
-	    continue;
-	}
-
-	if(buf_len > MAX_UDP_MSGLEN){
-	    ERROR("Message was too big (>%d)\n",MAX_UDP_MSGLEN);
-	    continue;
-	}
-	sip_msg* s_msg = new sip_msg(buf,buf_len);
-
-	if (SipCtrlInterface::log_raw_messages >= 0) {
-	    _LOG(SipCtrlInterface::log_raw_messages, 
-		 "recvd msg\n--++--\n%.*s--++--\n", s_msg->len, s_msg->buf);
-	}
-	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
-
-	for (cmsgptr = CMSG_FIRSTHDR(&msg);
-             cmsgptr != NULL;
-             cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
-	    
-            if (cmsgptr->cmsg_level == IPPROTO_IP &&
-                cmsgptr->cmsg_type == DSTADDR_SOCKOPT) {
-		
-		s_msg->local_ip.ss_family = AF_INET;
-		((sockaddr_in*)(&s_msg->local_ip))->sin_port   = htons(local_port);
-                memcpy(&((sockaddr_in*)(&s_msg->local_ip))->sin_addr,dstaddr(cmsgptr),sizeof(in_addr));
-            }
-        } 
-
-	// pass message to the parser / transaction layer
-	tl->received_msg(s_msg);
-    }
-}
-
-/** @see AmThread */
-void udp_trsp::on_stop()
-{
-
-}
-
-    
-/** @see transport */
-int udp_trsp::bind(const string& address, unsigned short port)
+/** @see trsp_socket */
+int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 {
     if(sd){
 	WARN("re-binding socket\n");
 	close(sd);
     }
     
-    memset(&local_addr,0,sizeof(local_addr));
-    local_addr.ss_family = AF_INET;
-#if defined(BSD44SOCKETS)
-    local_addr.ss_len = sizeof(struct sockaddr_in);
-#endif
-    SAv4(&local_addr)->sin_port = htons(port);
+    memset(&addr,0,sizeof(addr));
 
-    if(inet_aton(address.c_str(),&SAv4(&local_addr)->sin_addr)<0){
+    addr.ss_family = AF_INET;
+#if defined(BSD44SOCKETS)
+    addr.ss_len = sizeof(struct sockaddr_in);
+#endif
+    SAv4(&addr)->sin_port = htons(bind_port);
+
+    if(inet_aton(bind_ip.c_str(),&SAv4(&addr)->sin_addr)<0){
 	
 	ERROR("inet_aton: %s\n",strerror(errno));
 	return -1;
     }
 
-    if(SAv4(&local_addr)->sin_addr.s_addr == INADDR_ANY){
+    if(SAv4(&addr)->sin_addr.s_addr == INADDR_ANY){
 	ERROR("Sorry, we cannot bind 'ANY' address\n");
 	return -1;
     }
@@ -197,7 +91,7 @@ int udp_trsp::bind(const string& address, unsigned short port)
     } 
     
 
-    if(::bind(sd,(const struct sockaddr*)&local_addr,
+    if(::bind(sd,(const struct sockaddr*)&addr,
 	     sizeof(struct sockaddr_in))) {
 
 	ERROR("bind: %s\n",strerror(errno));
@@ -246,46 +140,108 @@ int udp_trsp::bind(const string& address, unsigned short port)
 	}
     }
 
-    local_port = port;
-    local_ip   = address;
+    port = bind_port;
+    ip   = bind_ip;
 
-    DBG("UDP transport bound to %s:%i\n",address.c_str(),port);
+    DBG("UDP transport bound to %s:%i\n",ip.c_str(),port);
 
     return 0;
 }
 
-/** @see transport */
-int udp_trsp::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
+/** @see trsp_socket */
+
+udp_trsp::udp_trsp(udp_trsp_socket* sock)
+    : transport(sock)
 {
-    if ((SipCtrlInterface::log_raw_messages >= 0)
-	&& (SipCtrlInterface::log_raw_messages <=log_level)) {
-	_LOG(SipCtrlInterface::log_raw_messages, 
-	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
+}
+
+udp_trsp::~udp_trsp()
+{
+}
+
+
+/** @see AmThread */
+void udp_trsp::run()
+{
+    char buf[MAX_UDP_MSGLEN];
+    int buf_len;
+
+    msghdr           msg;
+    cmsghdr*         cmsgptr; 
+    sockaddr_storage from_addr;
+    iovec            iov[1];
+
+    iov[0].iov_base = buf;
+    iov[0].iov_len  = MAX_UDP_MSGLEN;
+
+    memset(&msg,0,sizeof(msg));
+    msg.msg_name       = &from_addr;
+    msg.msg_namelen    = sizeof(sockaddr_storage);
+    msg.msg_iov        = iov;
+    msg.msg_iovlen     = 1;
+    msg.msg_control    = new u_char[DSTADDR_DATASIZE];
+    msg.msg_controllen = DSTADDR_DATASIZE;
+
+    if(sock->get_sd()<=0){
+	ERROR("Transport instance not bound\n");
+	return;
     }
 
-  int err;
-#ifdef SUPPORT_IPV6
-  if (sa->ss_family == AF_INET6) {
-    err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, sizeof(sockaddr_in6));
-  }
-  else {
-#endif
-    err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, sizeof(sockaddr_in));
-#ifdef SUPPORT_IPV6
-  }
-#endif
+    DBG("Started UDP server listening to %s:%i\n",sock->get_ip(),sock->get_port());
 
-  if (err < 0) {
-    ERROR("sendto: %s\n",strerror(errno));
-    return err;
-  }
-  else if (err != msg_len) {
-    ERROR("sendto: sent %i instead of %i bytes\n", err, msg_len);
-    return -1;
-  }
+    while(true){
 
-  return 0;
+	//DBG("before recvmsg (%s:%i)\n",sock->get_ip(),sock->get_port());
+
+	buf_len = recvmsg(sock->get_sd(),&msg,0);
+	if(buf_len <= 0){
+	    ERROR("recvfrom returned %d: %s\n",buf_len,strerror(errno));
+	    switch(errno){
+	    case EBADF:
+	    case ENOTSOCK:
+	    case EOPNOTSUPP:
+		return;
+	    }
+	    continue;
+	}
+
+	if(buf_len > MAX_UDP_MSGLEN){
+	    ERROR("Message was too big (>%d)\n",MAX_UDP_MSGLEN);
+	    continue;
+	}
+	sip_msg* s_msg = new sip_msg(buf,buf_len);
+
+	if (SipCtrlInterface::log_raw_messages >= 0) {
+	    _LOG(SipCtrlInterface::log_raw_messages, 
+		 "recvd msg\n--++--\n%.*s--++--\n", s_msg->len, s_msg->buf);
+	}
+	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
+
+	for (cmsgptr = CMSG_FIRSTHDR(&msg);
+             cmsgptr != NULL;
+             cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
+	    
+            if (cmsgptr->cmsg_level == IPPROTO_IP &&
+                cmsgptr->cmsg_type == DSTADDR_SOCKOPT) {
+		
+		s_msg->local_ip.ss_family = AF_INET;
+		((sockaddr_in*)(&s_msg->local_ip))->sin_port   = htons(sock->get_port());
+                memcpy(&((sockaddr_in*)(&s_msg->local_ip))->sin_addr,dstaddr(cmsgptr),sizeof(in_addr));
+            }
+        } 
+
+	// pass message to the parser / transaction layer
+	trans_layer::instance()->received_msg(s_msg);
+    }
 }
+
+/** @see AmThread */
+void udp_trsp::on_stop()
+{
+
+}
+
+    
 
 /** EMACS **
  * Local variables:

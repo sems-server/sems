@@ -98,21 +98,23 @@ static void sig_usr_un(int signo)
     static AmCondition<bool>  need_clean(true);
 
     clean_up_mut.lock();
+
     if(need_clean.get()) {
+
       need_clean.set(false);
+      clean_up_mut.unlock();
 
       AmSessionContainer::dispose();
 
       AmRtpReceiver::dispose();
 
-      //AmServer::dispose();
-
       AmMediaProcessor::dispose();
 
       AmEventDispatcher::dispose();
     } 
-
-    clean_up_mut.unlock();
+    else {
+      clean_up_mut.unlock();
+    }
 
     INFO("Finished.\n");
 

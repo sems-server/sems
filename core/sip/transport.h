@@ -28,46 +28,77 @@
 #define _transport_h_
 
 #include "../AmThread.h"
+#include <sys/socket.h>
+
 #include <string>
-
 using std::string;
-
-class trans_layer;
-struct sockaddr_storage;
 
 #define SAv4(addr) \
             ((struct sockaddr_in*)addr)
 
+#define SAv6(addr) \
+            ((struct sockaddr_in6*)addr)
 
-class transport: public AmThread
+class trsp_socket
 {
- protected:
-    /**
-     * Transaction layer pointer.
-     * This is used for received messages.
-     */
-    trans_layer* tl;
+protected:
+    // socket descriptor
+    int sd;
 
- public:
-    transport(trans_layer* tl);
+    // bound address
+    sockaddr_storage addr;
 
-    virtual ~transport();
-    
+    // bound IP
+    string           ip;
+
+    // bound port number
+    unsigned short   port;
+
+public:
+    trsp_socket();
+    virtual ~trsp_socket();
+
     /**
-     * Binds the transport server to an address
+     * Binds the transport socket to an address
      * @return -1 if error(s) occured.
      */
     virtual int bind(const string& address, unsigned short port)=0;
 
     /**
+     * Getter for IP address
+     */
+    const char* get_ip();
+    
+    /**
+     * Getter for the port number
+     */
+    unsigned short get_port();
+
+    /**
+     *  Getter for the socket descriptor
+     */
+    int get_sd();
+
+    /**
+     * Copy the internal address into the given one (sa).
+     */
+    void copy_addr_to(sockaddr_storage* sa);
+
+    /**
      * Sends a message.
      * @return -1 if error(s) occured.
      */
-    virtual int send(const sockaddr_storage* sa, const char* msg, const int msg_len)=0;
+    virtual int send(const sockaddr_storage* sa, const char* msg, const int msg_len);
+};
 
-    virtual const char* get_local_ip()=0;
-    virtual unsigned short get_local_port()=0;
-    virtual void copy_local_addr(sockaddr_storage* sa)=0;
+class transport: public AmThread
+{
+protected:
+    trsp_socket* sock;
+
+public:
+    transport(trsp_socket* sock): sock(sock) {}
+    virtual ~transport();
 };
 
 #endif

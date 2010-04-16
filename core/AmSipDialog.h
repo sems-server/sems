@@ -193,7 +193,7 @@ class AmSipDialog
    * @return true if a transaction could be found that
    *              matches the CANCEL's one.
    */
-  bool match_cancel(const AmSipRequest& cancel_req);
+  //bool match_cancel(const AmSipRequest& cancel_req);
 
   /**
    * @return the method of the corresponding uac request

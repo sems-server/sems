@@ -25,17 +25,76 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include "transport.h"
-#include <assert.h>
+#include "../SipCtrlInterface.h"
+#include "../log.h"
 
-transport::transport(trans_layer* tl)
-    : tl(tl)
+#include <assert.h>
+#include <netinet/in.h>
+
+trsp_socket::trsp_socket()
+    : sd(0), ip(), port(0)
 {
-    assert(tl);
+    memset(&addr,0,sizeof(sockaddr_storage));
+}
+
+trsp_socket::~trsp_socket()
+{
+}
+
+const char* trsp_socket::get_ip()
+{
+    return ip.c_str();
+}
+
+unsigned short trsp_socket::get_port()
+{
+    return port;
+}
+
+void trsp_socket::copy_addr_to(sockaddr_storage* sa)
+{
+    memcpy(sa,&addr,sizeof(sockaddr_storage));
+}
+
+int trsp_socket::get_sd()
+{
+    return sd;
+}
+
+int trsp_socket::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
+{
+    if ((SipCtrlInterface::log_raw_messages >= 0)
+	&& (SipCtrlInterface::log_raw_messages <= log_level)) {
+	_LOG(SipCtrlInterface::log_raw_messages, 
+	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
+    }
+
+  int err;
+#ifdef SUPPORT_IPV6
+  if (sa->ss_family == AF_INET6) {
+    err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, sizeof(sockaddr_in6));
+  }
+  else {
+#endif
+    err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, sizeof(sockaddr_in));
+#ifdef SUPPORT_IPV6
+  }
+#endif
+
+  if (err < 0) {
+    ERROR("sendto: %s\n",strerror(errno));
+    return err;
+  }
+  else if (err != msg_len) {
+    ERROR("sendto: sent %i instead of %i bytes\n", err, msg_len);
+    return -1;
+  }
+
+  return 0;
 }
 
 transport::~transport()
 {
-
 }
 
 /** EMACS **

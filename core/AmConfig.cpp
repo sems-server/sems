@@ -53,6 +53,7 @@ int          AmConfig::RtpLowPort              = RTP_LOWPORT;
 int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
 int          AmConfig::SessionProcessorThreads = NUM_SESSION_PROCESSORS;
 int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
+int          AmConfig::SIPServerThreads        = NUM_SIP_SERVERS;
 int          AmConfig::LocalSIPPort            = 5060;
 string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::OutboundProxy           = "";
@@ -149,6 +150,14 @@ int AmConfig::setMediaProcessorThreads(const string& th) {
   }
   return 1;
 }
+
+int AmConfig::setSIPServerThreads(const string& th){
+  if(sscanf(th.c_str(),"%u",&SIPServerThreads) != 1) {
+    return 0;
+  }
+  return 1;
+}
+
 
 int AmConfig::setDeadRtpTime(const string& drt)
 {

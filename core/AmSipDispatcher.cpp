@@ -70,9 +70,14 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       if(!ev_disp->post(local_tag,ev)) {
 
 	  delete ev;
-	  
-	  AmSipDialog::reply_error(req,481,
-	      "Call leg/Transaction does not exist");
+	  if(req.method != "ACK") {
+	    AmSipDialog::reply_error(req,481,
+				     "Call leg/Transaction does not exist");
+	  }
+	  else {
+	    ERROR("received ACK for non-existing dialog (callid=%s;remote_tag=%s;local_tag=%s)\n",
+		  callid.c_str(),remote_tag.c_str(),local_tag.c_str());
+	  }
       }
 
       return;
@@ -84,7 +89,6 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
   }
   
   DBG("method: `%s' [%zd].\n", req.method.c_str(), req.method.length());
-  
   if(req.method == "INVITE"){
       
       AmSessionContainer::instance()->startSessionUAS(req);

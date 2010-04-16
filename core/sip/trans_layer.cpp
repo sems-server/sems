@@ -82,7 +82,7 @@ void trans_layer::register_ua(sip_ua* ua)
     this->ua = ua;
 }
 
-void trans_layer::register_transport(udp_trsp* trsp)
+void trans_layer::register_transport(trsp_socket* trsp)
 {
     transport = trsp;
 }
@@ -123,7 +123,7 @@ int trans_layer::send_reply(trans_ticket* tt,
     bucket->lock();
     if(!bucket->exist(t)){
 	bucket->unlock();
-	ERROR("Invalid transaction key: transaction does not exist\n");
+	ERROR("Invalid transaction key: transaction does not exist (%p;%p)\n",bucket,t);
 	return -1;
     }
 
@@ -744,9 +744,9 @@ int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
     compute_branch(branch_buf,msg->callid->value,msg->cseq->value);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
     
-    string via(transport->get_local_ip());
-    if(transport->get_local_port() != 5060)
-	via += ":" + int2str(transport->get_local_port());
+    string via(transport->get_ip());
+    if(transport->get_port() != 5060)
+	via += ":" + int2str(transport->get_port());
 
     // add 'rport' parameter defaultwise? yes, for now
     request_len += via_len(stl2cstr(via),branch,true);
@@ -877,9 +877,9 @@ int trans_layer::cancel(trans_ticket* tt)
     compute_branch(branch_buf,req->callid->value,get_cseq(req)->num_str);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
     
-    string via(transport->get_local_ip());
-    if(transport->get_local_port() != 5060)
-	via += ":" + int2str(transport->get_local_port());
+    string via(transport->get_ip());
+    if(transport->get_port() != 5060)
+	via += ":" + int2str(transport->get_port());
 
     //TODO: add 'rport' parameter by default?
 
