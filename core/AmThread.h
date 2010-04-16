@@ -29,6 +29,9 @@
 #define _AmThread_h_
 
 #include <pthread.h>
+#include <sys/time.h>
+#include <time.h>
+#include <errno.h>
 
 #include <queue>
 
@@ -150,6 +153,29 @@ public:
       pthread_cond_wait(&cond,&m);
     }
     pthread_mutex_unlock(&m);
+  }
+  
+  /** Waits for the condition to be true or a timeout. */
+  bool wait_for_to(unsigned long usec)
+  {
+    struct timeval now;
+    struct timespec timeout;
+    int retcode = 0;
+    bool ret = false;
+
+    gettimeofday(&now, NULL);
+    timeout.tv_sec = now.tv_sec;
+    timeout.tv_nsec = (now.tv_usec + usec) * 1000;
+
+    pthread_mutex_lock(&m);
+    while(!t && !retcode){
+      retcode = pthread_cond_timedwait(&cond,&m, &timeout);
+    }
+
+    if(t) ret = true;
+    pthread_mutex_unlock(&m);
+
+    return ret;
   }
 };
 
