@@ -388,3 +388,9 @@ use_default_signature=yes
 # e.g. sysctl -w net.core.rmem_max=8388608
 #
 # udp_rcvbuf = <value>
+
+# Number of SIP UDP receiver threads
+#
+# Default: 4
+#
+# sip_server_threads=8

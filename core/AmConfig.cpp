@@ -366,6 +366,13 @@ int AmConfig::readConfiguration()
     }
   }
 
+  if(cfg.hasParameter("sip_server_threads")){
+    if(!setSIPServerThreads(cfg.getParameter("sip_server_threads"))){
+      ERROR("invalid sip_server_threads value specified");
+      return -1;
+    }
+  }
+
 
   // single codec in 200 OK
   if(cfg.hasParameter("single_codec_in_ok")){
