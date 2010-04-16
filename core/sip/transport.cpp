@@ -30,6 +30,7 @@
 
 #include <assert.h>
 #include <netinet/in.h>
+#include <string.h> // memset, strerror, ...
 
 trsp_socket::trsp_socket()
     : sd(0), ip(), port(0)
