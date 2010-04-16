@@ -12,8 +12,14 @@ extra_clean = clean_query_stats
 
 include ../Makefile.app_module
 
-$(QUERY_STATS_NAME): query_stats.cxx Makefile
-	$(CXX) $(CXXFLAGS) -o $(QUERY_STATS_NAME) query_stats.cxx
+%.d: %.cxx Makefile
+	$(CXX) -MM $< $(CXXFLAGS) $(CPPFLAGS) > $@
+
+%.o: %.cxx %.d $(COREPATH)/../Makefile.defs
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+
+$(QUERY_STATS_NAME): query_stats.d query_stats.o Makefile
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(QUERY_STATS_NAME) query_stats.o
 
 install_query_stats: $(QUERY_STATS_NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)
 	$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(QUERY_STATS_NAME)
