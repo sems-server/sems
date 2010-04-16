@@ -30,7 +30,7 @@
 
 #include <sys/types.h>
 #include <math.h>
-
+#include <string.h>
 /** 
  * \brief math mean implementation 
  *
@@ -110,6 +110,7 @@ class MeanArray: public MeanValue
     MeanValue()
     {
       buffer = new double[size];
+      memset(buffer, 0, sizeof(buffer[0])*size);
     }
 
   ~MeanArray(){
