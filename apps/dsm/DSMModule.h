@@ -29,6 +29,7 @@
 #include "DSMStateEngine.h"
 #include "AmSipMsg.h"
 #include "AmArg.h"
+#include "AmSession.h"
 
 class DSMSession;
 
