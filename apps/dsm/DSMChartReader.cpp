@@ -170,7 +170,7 @@ bool DSMChartReader::importModule(const string& mod_cmd, const string& mod_path)
 
   SCFactoryCreate fc = NULL;
   if ((fc = (SCFactoryCreate)dlsym(h_dl,SC_FACTORY_EXPORT_STR)) == NULL) {
-    ERROR("invalid SC module '%s'\n", fname.c_str());
+    ERROR("invalid SC module '%s' (SC_EXPORT missing?)\n", fname.c_str());
     return false;
   }
    
