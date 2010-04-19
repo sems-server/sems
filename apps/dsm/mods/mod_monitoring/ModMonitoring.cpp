@@ -72,14 +72,6 @@ DSMCondition* MonitoringModule::getCondition(const string& from_str) {
   return NULL;
 }
 
-#define GET_SCSESSION()					 \
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess); \
-  if (!sc_sess) {					 \
-    ERROR("wrong session type\n");			 \
-    return false;					 \
-  }
-
-
 CONST_ACTION_2P(MonLogAction, ',', true);
 bool MonLogAction::execute(AmSession* sess, 
 			   DSMCondition::EventType event,
