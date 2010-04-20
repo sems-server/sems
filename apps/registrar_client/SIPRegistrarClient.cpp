@@ -102,15 +102,16 @@ void SIPRegistration::doRegistration() {
   dlg.remote_tag = "";
   req.r_uri    = "sip:"+info.domain;
   dlg.remote_uri = req.r_uri;
+
   // set outbound proxy as next hop 
-  DBG("proxy is '%s' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
-      info.proxy.c_str());
-  if (!info.proxy.empty()) {
-    dlg.next_hop = info.proxy;
-  } else if (!AmConfig::OutboundProxy.empty()) 
-    dlg.next_hop = AmConfig::OutboundProxy;
-  else 
-    dlg.next_hop = "";
+//   DBG("proxy is '%s' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+//       info.proxy.c_str());
+//   if (!info.proxy.empty()) {
+//     dlg.next_hop = info.proxy;
+//   } else if (!AmConfig::OutboundProxy.empty()) 
+//     dlg.next_hop = AmConfig::OutboundProxy;
+//   else 
+//     dlg.next_hop = "";
   
   dlg.sendRequest(req.method, "", "", "Expires: 1000\n");
 
@@ -128,12 +129,12 @@ void SIPRegistration::doUnregister() {
   dlg.remote_uri = req.r_uri;
 
   // set outbound proxy as next hop 
-  if (!info.proxy.empty()) {
-    dlg.next_hop = info.proxy;
-  } else if (!AmConfig::OutboundProxy.empty()) 
-    dlg.next_hop = AmConfig::OutboundProxy;
-  else 
-    dlg.next_hop = "";
+//   if (!info.proxy.empty()) {
+//     dlg.next_hop = info.proxy;
+//   } else if (!AmConfig::OutboundProxy.empty()) 
+//     dlg.next_hop = AmConfig::OutboundProxy;
+//   else 
+//     dlg.next_hop = "";
 
   dlg.sendRequest(req.method, "", "", "Expires: 0\n");
 

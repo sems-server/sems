@@ -104,7 +104,7 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     local_party  = req.to;
 
     setRoute(req.route);
-    next_hop   = req.next_hop;
+    //next_hop   = req.next_hop;
   }
 }
 
@@ -128,11 +128,7 @@ void AmSipDialog::updateStatusFromLocalRequest(const AmSipRequest& req)
     remote_party = req.to;
     local_party  = req.from;
 
-    // 	sip_ip       = AmConfig::req.dstip;
-    // 	sip_port     = req.port;
-
-    // 	setRoute(req.route);
-    next_hop   = req.next_hop;
+    //next_hop   = req.next_hop;
   }
 }
 
@@ -223,7 +219,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply, bool do_200_ack)
     if(!reply.route.empty())
       setRoute(reply.route);
 
-    next_hop = reply.next_hop;
+    //next_hop = reply.next_hop;
   }
 
   if (reply.next_request_uri.length())
@@ -510,16 +506,9 @@ int AmSipDialog::transfer(const string& target)
 	r_set += "," + *it;
 			
       r_set += "\"";
+      hdrs = PARAM_HDR ": " + r_set;
     }
 				
-    if (!(next_hop.empty() && route.empty())) {
-      hdrs = PARAM_HDR ": ";
-      if (!next_hop.empty()) 
-	hdrs+="Transfer-NH=\"" + next_hop +"\";";
-		  
-      if (!r_set.empty()) 
-	hdrs+=r_set;
-    }
     int ret = tmp_d.sendRequest("REFER","","",hdrs);
     if(!ret){
       uac_trans.insert(tmp_d.uac_trans.begin(),
@@ -577,7 +566,7 @@ int AmSipDialog::sendRequest(const string& method,
 
   req.method = method;
   req.r_uri = remote_uri;
-  req.next_hop = next_hop;
+  //req.next_hop = next_hop;
 
   req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
   if(!local_tag.empty())
@@ -706,7 +695,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
 
   req.method = "ACK";
   req.r_uri = remote_uri;
-  req.next_hop = next_hop;
+  //req.next_hop = next_hop;
 
   req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
   if(!local_tag.empty())

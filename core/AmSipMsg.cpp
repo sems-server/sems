@@ -138,7 +138,7 @@ string AmSipRequest::print()
   _PM(int2str(cseq), "cseq");
   _PM(from_tag, "l-tag");
   _PM(to_tag, "r-tag");
-  _PM(next_hop, "nhop");
+  //_PM(next_hop, "nhop");
   _PMB(route, "rtset");
   _PM(contact, "m");
 
@@ -171,7 +171,7 @@ string AmSipReply::print()
   _PM(method, "cseq meth");
   _PM(local_tag, "l-tag");
   _PM(remote_tag, "r-tag");
-  _PM(next_hop, "nhop");
+  //_PM(next_hop, "nhop");
   _PMB(route, "rtset");
   _PM(contact, "m");
 

@@ -60,8 +60,8 @@ AmSession* AmUAC::dialout(const string& user,
   req.hdrs     = hdrs;
     
   // set outbound proxy as next hop 
-  if (!AmConfig::OutboundProxy.empty()) 
-    req.next_hop = AmConfig::OutboundProxy;
+  //if (!AmConfig::OutboundProxy.empty()) 
+  //  req.next_hop = AmConfig::OutboundProxy;
 
   return AmSessionContainer::instance()->startSessionUAC(req, session_params);
 }

@@ -136,7 +136,7 @@ class AmSipDialog
   string getRoute(); // record routing
   void   setRoute(const string& n_route);
 
-  string next_hop;     // next_hop for t_uac_dlg
+  //string next_hop;     // next_hop for t_uac_dlg
 
   int cseq;            // CSeq for next request
 

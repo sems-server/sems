@@ -247,23 +247,24 @@ int SipCtrlInterface::send(AmSipRequest &req)
     string next_hop;
     unsigned int next_port_i = 0;
 
-    if(!req.next_hop.empty()){
-	string next_port;
-	sip_uri parsed_uri;
-	if (parse_uri(&parsed_uri, (char *)req.next_hop.c_str(),
-		      req.next_hop.length()) < 0) {
-	    ERROR("invalid next hop URI '%s'\n", req.next_hop.c_str());
-	    ERROR("Using default outbound proxy");
-	    next_hop = SipCtrlInterface::outbound_host;
-	    next_port_i = SipCtrlInterface::outbound_port;
-	} else {
-	    next_hop = c2stlstr(parsed_uri.host);
-	    if (parsed_uri.port) {
-		next_port_i= parsed_uri.port;	    }
-	    next_hop += *(c++);
-	}
-    }
-    else if(!SipCtrlInterface::outbound_host.empty()){
+//     if(!req.next_hop.empty()){
+// 	string next_port;
+// 	sip_uri parsed_uri;
+// 	if (parse_uri(&parsed_uri, (char *)req.next_hop.c_str(),
+// 		      req.next_hop.length()) < 0) {
+// 	    ERROR("invalid next hop URI '%s'\n", req.next_hop.c_str());
+// 	    ERROR("Using default outbound proxy");
+// 	    next_hop = SipCtrlInterface::outbound_host;
+// 	    next_port_i = SipCtrlInterface::outbound_port;
+// 	} else {
+// 	    next_hop = c2stlstr(parsed_uri.host);
+// 	    if (parsed_uri.port) {
+// 		next_port_i= parsed_uri.port;	    }
+// 	    next_hop += *(c++);
+// 	}
+//     }
+//    else 
+    if(!SipCtrlInterface::outbound_host.empty()){
 	next_hop = SipCtrlInterface::outbound_host;
 	next_port_i = SipCtrlInterface::outbound_port;
     }
@@ -470,7 +471,7 @@ void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
 	DBG_PARAM(req.to_tag);
 	DBG("cseq = <%i>\n",req.cseq);
 	DBG_PARAM(req.route);
-	DBG_PARAM(req.next_hop);
+	//DBG_PARAM(req.next_hop);
 	DBG("hdrs = <%s>\n",req.hdrs.c_str());
 	DBG("body = <%s>\n",req.body.c_str());
     }

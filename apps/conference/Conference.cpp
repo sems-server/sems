@@ -840,13 +840,13 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
   string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
   if (iptel_app_param.length()) {
     dlg.setRoute(get_header_keyvalue(iptel_app_param,"Transfer-RR"));
-    dlg.next_hop = get_header_keyvalue(iptel_app_param,"Transfer-NH");
+    //dlg.next_hop = get_header_keyvalue(iptel_app_param,"Transfer-NH");
   } else {
     INFO("Use of P-Transfer-RR/P-Transfer-NH is deprecated. "
 	 "Use '%s: Transfer-RR=<rr>;Transfer-NH=<nh>' instead.\n",PARAM_HDR);
 
     dlg.setRoute(getHeader(req.hdrs,"P-Transfer-RR"));
-    dlg.next_hop = getHeader(req.hdrs,"P-Transfer-NH");
+    //dlg.next_hop = getHeader(req.hdrs,"P-Transfer-NH");
   }
 
   DBG("ConferenceDialog::onSipRequest: local_party = %s\n",dlg.local_party.c_str());

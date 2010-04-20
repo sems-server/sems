@@ -25,7 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-//#include "AmServer.h"
 #include "AmSession.h"
 #include "AmSdp.h"
 #include "AmConfig.h"
@@ -82,9 +81,11 @@ AmSession::AmSession()
 AmSession::~AmSession()
 {
   for(vector<AmSessionEventHandler*>::iterator evh = ev_handlers.begin();
-      evh != ev_handlers.end(); evh++)
+      evh != ev_handlers.end(); evh++) {
+    
     if((*evh)->destroy)
       delete *evh;
+  }
 
 #ifdef WITH_ZRTP
   AmZRTP::freeSession(zrtp_session);
@@ -251,18 +252,6 @@ void AmSession::negotiate(const string& sdp_body,
   if (m_payloads.size() == 0)
     throw AmSession::Exception(488,"could not find compatible payload");
     
-/*
-  if(payload.int_pt == -1){
-
-    payload = *tmp_pl;
-    DBG("new payload: %i\n",payload.int_pt);
-  }
-  else if(payload.int_pt != tmp_pl->int_pt){
-    DBG("old payload: %i; new payload: %i\n",payload.int_pt,tmp_pl->int_pt);
-    throw AmSession::Exception(400,"do not accept payload changes");
-  }
-*/
-
   const SdpPayload *telephone_event_payload = sdp.telephoneEventPayload();
   if(telephone_event_payload)
     {

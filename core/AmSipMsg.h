@@ -11,7 +11,7 @@ class _AmSipMsgInDlg
 {
   public:
     string       method;
-    string       next_hop; // URI
+    //string       next_hop; // URI
     string       route;
 
     string       contact;
