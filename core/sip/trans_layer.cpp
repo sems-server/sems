@@ -115,7 +115,11 @@ int trans_layer::send_reply(trans_ticket* tt,
     //  - Accept
 
     assert(tt);
-    assert(tt->_bucket && tt->_t);
+
+    if (!tt->_bucket || !tt->_t) {
+	ERROR("Invalid transaction ticket\n");
+	return -1;
+    }
 
     trans_bucket* bucket = tt->_bucket;
     sip_trans*    t = tt->_t;
