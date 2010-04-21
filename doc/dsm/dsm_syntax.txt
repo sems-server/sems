@@ -168,11 +168,13 @@ core actions:
 conditions:
  
  test(#key == 1)
+ test(#key == prefix*)
  test(#key != 1)
  test(#key < 1)
  test(#key > 1)
 
  test($var == 1)
+ test($var == prefix*)
  test($var != 1)
  test($var < 1)
  test($var < 1)
