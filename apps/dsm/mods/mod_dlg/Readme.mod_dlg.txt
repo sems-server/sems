@@ -22,3 +22,28 @@ dlg.bye([headers])
 dlg.connectCalleeRelayed(string remote_party, string remote_uri)
  like B2B.connectCallee() but for relayed INVITEs, i.e. for executing in 
  invite run (run_invite_event=yes and transition "on INVITE" START - invite -> runinvite;)
+
+
+dlg.dialout(string arrayname)
+  dial out a new call
+  simple format/mandatory:
+   arrayname_caller   caller user
+   arrayname_callee   callee user
+   arrayname_domain   domain caller and callee
+   arrayname_app      application to execute
+
+  additional/overwrite:
+   arrayname_r_uri     INVITE request URI
+   arrayname_from      From
+   arrayname_from_uri  From URI (only internally used)
+   arrayname_to        To
+   arrayname_auth_user authentication user
+   arrayname_auth_pwd  authentication pwd
+   arrayname_ltag      ltag for new call
+   arrayname_hdrs      headers for new call
+
+  returns $arrayname_ltag and sets ERRNO.
+   
+
+
+

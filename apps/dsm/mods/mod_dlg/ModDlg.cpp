@@ -34,6 +34,9 @@
 #include <string.h>
 #include "AmSipHeaders.h"
 
+#include "AmUAC.h"
+#include "ampi/UACAuthAPI.h"
+
 SC_EXPORT(MOD_CLS_NAME);
 
 
@@ -43,6 +46,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("dlg.acceptInvite", DLGAcceptInviteAction);
   DEF_CMD("dlg.bye", DLGByeAction);
   DEF_CMD("dlg.connectCalleeRelayed", DLGConnectCalleeRelayedAction);
+  DEF_CMD("dlg.dialout", DLGDialoutAction);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -158,4 +162,83 @@ EXEC_ACTION_START(DLGConnectCalleeRelayedAction) {
     ERROR("getting B2B session.\n");
 
   sc_sess->B2BconnectCallee(remote_party, remote_uri, true);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(DLGDialoutAction) {  
+  string arrayname = resolveVars(arg, sess, sc_sess, event_params);
+
+#define GET_VARIABLE_MANDATORY(varname_suffix, outvar)			\
+  it = sc_sess->var.find(arrayname+varname_suffix); \
+  if (it == sc_sess->var.end()) {					\
+    WARN("%s", std::string("need " + arrayname + varname_suffix " set for dlg.dialoutSimple("+arrayname+")").c_str()); \
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);				\
+    return false;							\
+  }									\
+  outvar = it->second;
+
+#define GET_VARIABLE_OPTIONAL(varname_suffix, outvar) \
+  it = sc_sess->var.find(arrayname+varname_suffix);  \
+  if (it != sc_sess->var.end())		      \
+    outvar = it->second;
+
+  map<string, string>::iterator it; 
+
+  string v_from;
+  GET_VARIABLE_MANDATORY("_caller", v_from);
+  string v_to;
+  GET_VARIABLE_MANDATORY("_callee", v_to);
+  string v_domain;
+  GET_VARIABLE_MANDATORY("_domain", v_domain);
+  string app_name;
+  GET_VARIABLE_MANDATORY("_app", app_name);
+
+  string user = v_from;
+  string r_uri = "sip:"+v_to+"@"+v_domain;
+
+  GET_VARIABLE_OPTIONAL("_r_uri", r_uri);
+
+  string from = "<sip:"+v_from+"@"+v_domain+">"; 
+  GET_VARIABLE_OPTIONAL("_from", from);
+
+  string from_uri = "sip:"+v_from+"@"+v_domain; 
+  GET_VARIABLE_OPTIONAL("_from_uri", from_uri);
+
+  string to = "<sip:"+v_to+"@"+v_domain+">";
+  GET_VARIABLE_OPTIONAL("_to", to);
+
+  string auth_user; 
+  GET_VARIABLE_OPTIONAL("_auth_user", auth_user);
+
+  string auth_pwd; 
+  GET_VARIABLE_OPTIONAL("_auth_pwd", auth_pwd);
+   
+  string ltag; 
+  GET_VARIABLE_OPTIONAL("_ltag", ltag);
+
+  string hdrs; 
+  GET_VARIABLE_OPTIONAL("_hdrs", hdrs);
+  
+#undef GET_VARIABLE_MANDATORY
+#undef GET_VARIABLE_OPTIONAL
+
+  DBG("placing UAC call: user <%s>, app <%s>, ruri <%s>, from <%s> "
+      "from_uri <%s>, to <%s>, ltag <%s>, hdrs <%s>, auth_user <%s>, auth_pwd <not shown>\n",
+      user.c_str(), app_name.c_str(), r_uri.c_str(), from.c_str(),
+      from_uri.c_str(), to.c_str(), ltag.c_str(), hdrs.c_str(), auth_user.c_str());
+
+  AmArg* sess_params = NULL;
+  if (!auth_user.empty() && !auth_pwd.empty()) {
+    sess_params = new AmArg();
+    sess_params->setBorrowedPointer(new UACAuthCred("", auth_user,auth_pwd));
+  }
+ 
+ AmSession* new_sess = AmUAC::dialout(user, app_name, r_uri, from, from_uri, to, ltag, hdrs, sess_params);
+
+ if (NULL != new_sess) {
+   sc_sess->var[arrayname + "_ltag"] = new_sess->getLocalTag();
+ } else {
+   sc_sess->var[arrayname + "_ltag"] = "";
+   sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+ }
+
 } EXEC_ACTION_END;
