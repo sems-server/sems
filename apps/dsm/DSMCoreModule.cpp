@@ -726,7 +726,16 @@ bool TestDSMCondition::match(AmSession* sess, DSMCondition::EventType event,
   DBG("test '%s' vs '%s'\n", l.c_str(), r.c_str());
 
   switch (ttype) {
-  case Eq: return l == r;
+  case Eq: {
+    size_t starpos = r.find("*");
+    if (starpos==string::npos)
+      return l == r;
+    else {
+      if (l.size()<starpos)
+	return false;
+      return r.substr(0, starpos) == l.substr(0, starpos);
+    }
+  }
   case Neq: return l != r;
   case Less: {
     char* endptr = NULL;
