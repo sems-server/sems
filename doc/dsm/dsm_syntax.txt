@@ -125,6 +125,9 @@ core actions:
  append($var, value)
  e.g. append($var, "text"); append($var, #key);
       append($var, @select); append($var, $var2);
+ substr($var, pos)
+  e.g. substr($myvar, 5);
+
  inc($var)
  clear($var)
 
