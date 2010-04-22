@@ -572,14 +572,14 @@ int AmSipDialog::sendRequest(const string& method,
 
   if(!route.empty()) {
 
-    req.route = "Route: ";
-    if(force_outbound_proxy){
+    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE);
+    if(force_outbound_proxy && !outbound_proxy.empty()){
       req.route += "<" + outbound_proxy + ";lr>, ";
     }
     req.route += route + CRLF;
   }
   else if (remote_tag.empty() && !outbound_proxy.empty()) {
-    req.route = "Route: <" + outbound_proxy + ";lr>" CRLF;
+    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE) "<" + outbound_proxy + ";lr>" CRLF;
   }
 
   if(!body.empty()) {

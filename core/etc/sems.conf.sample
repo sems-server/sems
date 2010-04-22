@@ -71,11 +71,9 @@ sip_port=5080
 
 # optional parameter: outbound_proxy=uri
 #
-# - this sets a next hop for calls and registrations outgoing 
-#   from SEMS. This does not apply to requests in a dialog that 
-#   is initiated by someone else and incoming to SEMS, as in 
-#   this case the next_hop is taken by SEMS from the incoming 
-#   request that established the dialog.
+# - this sets an outbound proxy for calls and registrations initiated 
+#   by SEMS. This does not apply to requests in a dialog that 
+#   is initiated by someone else and incoming to SEMS.
 #   If this is not set (default setting), then for dialogs 
 #   initiated by SEMS the r-uri is resolved and the request 
 #   is sent there directly.
@@ -87,6 +85,17 @@ sip_port=5080
 #
 # Example:
 #   outbound_proxy=sip:proxy.mydomain.net
+
+# optional parameter: force_outbound_proxy={yes|no}
+#
+# - forces SEMS to send any request to the outbound proxy in any
+#   situation. This option will only have an effect if the 
+#   outbound_proxy option has been set.
+#
+#   default: no
+#
+# Example:
+#   force_outbound_proxy=yes
 
 # optional parameter: rtp_low_port=<port>
 #
