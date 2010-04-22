@@ -127,16 +127,15 @@ SipCtrlInterface::SipCtrlInterface()
     trans_layer::instance()->register_ua(this);
 }
 
-int SipCtrlInterface::cancel(AmSipRequest& req)
+int SipCtrlInterface::cancel(trans_ticket* tt)
 {
-    return trans_layer::instance()->cancel(&req.tt);
+    return trans_layer::instance()->cancel(tt);
 }
-
 
 int SipCtrlInterface::send(AmSipRequest &req)
 {
     if(req.method == "CANCEL")
-	return cancel(req);
+	return cancel(&req.tt);
 
     sip_msg* msg = new sip_msg();
     
@@ -152,7 +151,6 @@ int SipCtrlInterface::send(AmSipRequest &req)
     // CSeq
     // Contact
     // Max-Forwards
-
     
     char* c = (char*)req.from.c_str();
     int err = parse_headers(msg,&c);
@@ -175,7 +173,6 @@ int SipCtrlInterface::send(AmSipRequest &req)
     msg->callid = new sip_header(0,"Call-ID",stl2cstr(req.callid));
     msg->hdrs.push_back(msg->callid);
 
-
     if(!req.contact.empty()){
 
 	c = (char*)req.contact.c_str();
@@ -189,9 +186,8 @@ int SipCtrlInterface::send(AmSipRequest &req)
     
     if(!req.route.empty()){
 	
- 	char *c = (char*)req.route.c_str();
-	
- 	err = parse_headers(msg,&c);
+ 	c = (char*)req.route.c_str();
+	err = parse_headers(msg,&c);
 	
 	if(err){
 	    ERROR("Route headers parsing failed\n");
@@ -199,27 +195,11 @@ int SipCtrlInterface::send(AmSipRequest &req)
 	    delete msg;
 	    return -1;
 	}
-
-	//
-	// parse_headers() appends our route headers 
-	// to msg->hdrs and msg->route. But we want
-	// only msg->route(), so we just remove the
-	// route headers at the end of msg->hdrs.
-	//
- 	for(sip_header* h_rr = msg->hdrs.back();
- 	    !msg->hdrs.empty(); h_rr = msg->hdrs.back()) {
-	    
- 	    if(h_rr->type != sip_header::H_ROUTE){
- 		break;
- 	    }
-	    
-	    msg->hdrs.pop_back();
- 	}
     }
 
     if(!req.hdrs.empty()) {
 	
- 	char *c = (char*)req.hdrs.c_str();
+ 	c = (char*)req.hdrs.c_str();
 	
  	err = parse_headers(msg,&c);
 	
@@ -242,41 +222,6 @@ int SipCtrlInterface::send(AmSipRequest &req)
 
 	    msg->body = stl2cstr(req.body);
 	}
-    }
-
-    string next_hop;
-    unsigned int next_port_i = 0;
-
-//     if(!req.next_hop.empty()){
-// 	string next_port;
-// 	sip_uri parsed_uri;
-// 	if (parse_uri(&parsed_uri, (char *)req.next_hop.c_str(),
-// 		      req.next_hop.length()) < 0) {
-// 	    ERROR("invalid next hop URI '%s'\n", req.next_hop.c_str());
-// 	    ERROR("Using default outbound proxy");
-// 	    next_hop = SipCtrlInterface::outbound_host;
-// 	    next_port_i = SipCtrlInterface::outbound_port;
-// 	} else {
-// 	    next_hop = c2stlstr(parsed_uri.host);
-// 	    if (parsed_uri.port) {
-// 		next_port_i= parsed_uri.port;	    }
-// 	    next_hop += *(c++);
-// 	}
-//     }
-//    else 
-    if(!SipCtrlInterface::outbound_host.empty()){
-	next_hop = SipCtrlInterface::outbound_host;
-	next_port_i = SipCtrlInterface::outbound_port;
-    }
-
-    cstring c_next_hop = stl2cstr(next_hop);
-    if(trans_layer::instance()->set_next_hop(msg->route,msg->u.request->ruri_str,
-			c_next_hop,(unsigned short)next_port_i,
-			&msg->remote_ip) < 0){
-
-	DBG("set_next_hop failed\n");
-	delete msg;
-	return -1;
     }
 
     int res = trans_layer::instance()->send_request(msg,&req.tt);

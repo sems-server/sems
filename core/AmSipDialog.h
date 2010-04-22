@@ -100,7 +100,6 @@ class AmSipDialog
   TransMap uac_trans;
 
   AmSipDialogEventHandler* hdl;
-  std::vector<string> route;        // record routing
 
   int updateStatusReply(const AmSipRequest& req, 
 			unsigned int code);
@@ -133,15 +132,11 @@ class AmSipDialog
   string remote_party; // To/From
   string local_party;  // To/From
 
-  string getRoute(); // record routing
-  void   setRoute(const string& n_route);
+  string route;
+  string outbound_proxy;
+  bool   force_outbound_proxy;
 
-  //string next_hop;     // next_hop for t_uac_dlg
-
-  int cseq;            // CSeq for next request
-
-  char serKey[MAX_SER_KEY_LEN];      // opaque string returned by SER, when staring a T
-  unsigned int serKeyLen;
+  int    cseq; // Local CSeq for next request
 
   AmSipDialog(AmSipDialogEventHandler* h=0);
   ~AmSipDialog();
@@ -152,10 +147,11 @@ class AmSipDialog
 
   void updateStatus(const AmSipRequest& req);
   void updateStatus(const AmSipReply& reply, bool do_200_ack=true);
+
   /** update Status from locally originated request (e.g. INVITE) */
   void updateStatusFromLocalRequest(const AmSipRequest& req);
 
-  int reply(const AmSipRequest& req, // Ser's transaction key
+  int reply(const AmSipRequest& req,
 	    unsigned int  code, 
 	    const string& reason,
 	    const string& content_type = "",
@@ -188,12 +184,6 @@ class AmSipDialog
 	    int expires = -1);
   int transfer(const string& target);
   int drop();
-
-  /**
-   * @return true if a transaction could be found that
-   *              matches the CANCEL's one.
-   */
-  //bool match_cancel(const AmSipRequest& cancel_req);
 
   /**
    * @return the method of the corresponding uac request

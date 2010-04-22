@@ -87,6 +87,8 @@ struct AmConfig
   static int LocalSIPPort;
   /** Outbound Proxy (optional, outgoing calls only) */
   static string OutboundProxy;
+  /** force Outbound Proxy to be used for in dialog requests */
+  static bool ForceOutboundProxy;
   /** Server/User-Agent header (optional) */
   static string Signature;
   /** If 200 OK reply should be limited to preferred codec only */

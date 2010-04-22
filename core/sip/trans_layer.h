@@ -97,12 +97,12 @@ class trans_layer
     int update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
 
     /**
-     * Retransmits reply / non-200 ACK (if possible).
+     * Retransmits the content of the retry buffer (replies or non-200 ACK).
      */
     void retransmit(sip_trans* t);
 
     /**
-     * Retransmits a message (mostly the first UAC request).
+     * Retransmits a message (UAC requests).
      */
     void retransmit(sip_msg* msg);
 
@@ -120,6 +120,14 @@ class trans_layer
     int send_sl_reply(sip_msg* req, int reply_code, 
 		      const cstring& reason, 
 		      const cstring& hdrs, const cstring& body);
+
+    /**
+     * Fills the address structure passed and modifies 
+     * R-URI and Route headers as needed.
+     */
+    int set_next_hop(list<sip_header*>& route_hdrs, cstring& r_uri, 
+		     cstring& next_hop, unsigned short& next_port,
+		     sockaddr_storage* remote_ip);
     
     /**
      * Transaction timeout
@@ -178,14 +186,6 @@ class trans_layer
      * when a new message has been recived.
      */
     void received_msg(sip_msg* msg);
-
-    /**
-     * Fills the address structure passed and modifies 
-     * R-URI and Route headers as needed.
-     */
-    int set_next_hop(list<sip_header*>& route_hdrs, cstring& r_uri, 
-		     cstring& next_hop, unsigned short next_port,
-		     sockaddr_storage* remote_ip);
 
     /**
      * This is called by the transaction timer callback.

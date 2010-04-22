@@ -38,17 +38,16 @@ using std::list;
 class AmSipRequest;
 class AmSipReply;
 
-class trans_layer;
-class trans_bucket;
 struct sip_msg;
 struct sip_header;
+class trans_ticket;
+
 
 class SipCtrlInterface:
     public sip_ua
 {
     void prepare_routes_uac(const list<sip_header*>& routes, string& route_field);
     void prepare_routes_uas(const list<sip_header*>& routes, string& route_field);
-    static int cancel(AmSipRequest& req);
 
     friend class udp_trsp;
 
@@ -68,10 +67,9 @@ public:
 
     void run(const string& bind_addr, unsigned short bind_port);
     
-    /**
-     * From AmCtrlInterface
-     */
     static int send(AmSipRequest &req);
+    static int cancel(trans_ticket* tt);
+
     static int send(const AmSipReply &rep);
     
     /**

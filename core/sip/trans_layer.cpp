@@ -539,7 +539,7 @@ int trans_layer::send_sl_reply(sip_msg* req, int reply_code,
 //
 int trans_layer::set_next_hop(list<sip_header*>& route_hdrs, 
 			      cstring& r_uri, cstring& next_hop,
-			      unsigned short next_port,
+			      unsigned short& next_port,
 			      sockaddr_storage* remote_ip)
 {
     int err=0;
@@ -648,7 +648,7 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 	    case RR_PARAMS:
 		// remove current route header from message
 		DBG("delete (fr=0x%p)\n",fr);
-		delete fr; // route_hdrs.front();
+		delete fr;
 		route_hdrs.pop_front();
 		DBG("route_hdrs.length() = %i\n",(int)route_hdrs.size());
 		break;
@@ -669,7 +669,8 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 	}
 	
     }
-    else if (next_hop.len == 0) {
+    else {
+
 	sip_uri parsed_r_uri;
 	err = parse_uri(&parsed_r_uri,r_uri.s,r_uri.len);
 	if(err < 0){
@@ -730,17 +731,26 @@ int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
     // Contact
     // Supported / Require
     // Content-Length / Content-Type
-    
+
     assert(transport);
     assert(msg);
     assert(tt);
 
+    cstring        next_hop;
+    unsigned short next_port = 0;
+
     tt->_bucket = 0;
     tt->_t = 0;
 
-    // assume that msg->route headers are not in msg->hdrs
-    msg->hdrs.insert(msg->hdrs.begin(),msg->route.begin(),msg->route.end());
+    if(trans_layer::instance()->set_next_hop(msg->route,msg->u.request->ruri_str,
+			next_hop,next_port,
+			&msg->remote_ip) < 0){
 
+	DBG("set_next_hop failed\n");
+	delete msg;
+	return -1;
+    }
+    
     int request_len = request_line_len(msg->u.request->method_str,
 				       msg->u.request->ruri_str);
 
@@ -1036,7 +1046,7 @@ void trans_layer::received_msg(sip_msg* msg)
 	    }
 	    else {
 		DBG("Found retransmission\n");
-		retransmit(t);
+		retransmit(t); // retransmit reply
 	    }
 	}
 	else {

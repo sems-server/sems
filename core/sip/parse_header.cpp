@@ -282,8 +282,6 @@ int parse_headers(sip_msg* msg, char** c)
     int saved_st = 0;
 
     char* begin = *c;
-    //bool  cr = false;
-
     auto_ptr<sip_header> hdr(new sip_header());
 
     for(;**c;(*c)++){

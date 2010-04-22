@@ -41,7 +41,9 @@ const char* AmSipDialog::status2str[4]  = {
 
 
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
-  : status(Disconnected),cseq(10),hdl(h), serKeyLen(0)
+  : status(Disconnected),cseq(10),hdl(h),
+    outbound_proxy(AmConfig::OutboundProxy),
+    force_outbound_proxy(AmConfig::ForceOutboundProxy)
 {
 }
 
@@ -69,8 +71,7 @@ AmSipDialog::~AmSipDialog()
 
 void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
-  if (req.method == "ACK") {
-    // || (req.method == "CANCEL")
+  if ((req.method == "ACK") || (req.method == "CANCEL")) {
     return;
   }
 
@@ -102,9 +103,7 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     local_uri    = req.r_uri;
     remote_party = req.from;
     local_party  = req.to;
-
-    setRoute(req.route);
-    //next_hop   = req.next_hop;
+    route        = req.route;
   }
 }
 
@@ -145,8 +144,6 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
   DBG("reply: transaction found!\n");
     
   AmSipTransaction& t = t_it->second;
-
-  //t->reply_code = code;
   switch(status){
 
   case Disconnected:
@@ -202,24 +199,21 @@ void AmSipDialog::updateStatus(const AmSipReply& reply, bool do_200_ack)
   AmSipTransaction& t = t_it->second;
 
   // rfc3261 12.1
-  // && method==INVITE
   // Dialog established only by 101-199 or 2xx 
   // responses to INVITE
-  if ((reply.code >= 101) && (reply.code < 300) &&  
-      (remote_tag.empty() && !reply.remote_tag.empty()))
-    remote_tag = reply.remote_tag;
 
-  if ((reply.code >= 200) && (reply.code < 300) && 
-      (status != Connected && !reply.remote_tag.empty()))
+  if ( (reply.code > 100) 
+       && (reply.code < 300) 
+       && !reply.remote_tag.empty() 
+       && (remote_tag.empty() ||
+	   ((status < Connected) && (reply.code >= 200))) ) {  
+
     remote_tag = reply.remote_tag;
+  }
 
   // allow route overwritting
-  if(status < Connected) {
-
-    if(!reply.route.empty())
-      setRoute(reply.route);
-
-    //next_hop = reply.next_hop;
+  if ((status < Connected) && !reply.route.empty()) {
+      route = reply.route;
   }
 
   if (reply.next_request_uri.length())
@@ -491,7 +485,7 @@ int AmSipDialog::transfer(const string& target)
     string      hdrs = "";
     AmSipDialog tmp_d(*this);
 		
-    tmp_d.setRoute("");
+    tmp_d.route = "";
     tmp_d.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) 
       "<" + tmp_d.remote_uri + ">" CRLF;
     tmp_d.remote_uri = target;
@@ -499,14 +493,7 @@ int AmSipDialog::transfer(const string& target)
     string r_set;
     if(!route.empty()){
 			
-      vector<string>::iterator it = route.begin();
-      r_set ="Transfer-RR=\"" + *it;
-			
-      for(it++; it != route.end(); it++)
-	r_set += "," + *it;
-			
-      r_set += "\"";
-      hdrs = PARAM_HDR ": " + r_set;
+      hdrs = PARAM_HDR ": " "Transfer-RR=\"" + route + "\"";
     }
 				
     int ret = tmp_d.sendRequest("REFER","","",hdrs);
@@ -527,22 +514,12 @@ int AmSipDialog::transfer(const string& target)
 
 int AmSipDialog::cancel()
 {
-    
-    
     for(TransMap::reverse_iterator t = uac_trans.rbegin();
 	t != uac_trans.rend(); t++) {
 	
 	if(t->second.method == "INVITE"){
-	    
-	    AmSipRequest req;
-	    
-	    req.method = "CANCEL";
-	    req.callid = callid;
-	    req.cseq = t->second.cseq;
-
-	    req.tt = t->second.tt;
-
-	    return SipCtrlInterface::send(req) ? 0 : -1;
+	  
+	  return SipCtrlInterface::cancel(&t->second.tt);
 	}
     }
     
@@ -566,7 +543,6 @@ int AmSipDialog::sendRequest(const string& method,
 
   req.method = method;
   req.r_uri = remote_uri;
-  //req.next_hop = next_hop;
 
   req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
   if(!local_tag.empty())
@@ -590,13 +566,22 @@ int AmSipDialog::sendRequest(const string& method,
     if (AmConfig::Signature.length())
       req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
     
-    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) /*TODO: configurable?!*/MAX_FORWARDS CRLF;
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) /*TODO: configurable?!*/ MAX_FORWARDS CRLF;
 
   }
 
-  if(!route.empty())
-    req.route = getRoute();
-    
+  if(!route.empty()) {
+
+    req.route = "Route: ";
+    if(force_outbound_proxy){
+      req.route += "<" + outbound_proxy + ";lr>, ";
+    }
+    req.route += route + CRLF;
+  }
+  else if (remote_tag.empty() && !outbound_proxy.empty()) {
+    req.route = "Route: <" + outbound_proxy + ";lr>" CRLF;
+  }
+
   if(!body.empty()) {
     req.content_type = content_type;
     req.body = body;
@@ -613,17 +598,6 @@ int AmSipDialog::sendRequest(const string& method,
   return 0;
 }
 
-
-// bool AmSipDialog::match_cancel(const AmSipRequest& cancel_req)
-// {
-//   TransMap::iterator t = uas_trans.find(cancel_req.cseq);
-
-//   if((t != uas_trans.end()) && (t->second.method == "INVITE"))
-//     return true;
-
-//   return false;
-// }
-
 string AmSipDialog::get_uac_trans_method(unsigned int cseq)
 {
   TransMap::iterator t = uac_trans.find(cseq);
@@ -632,39 +606,6 @@ string AmSipDialog::get_uac_trans_method(unsigned int cseq)
     return t->second.method;
 
   return "";
-}
-
-string AmSipDialog::getRoute()
-{
-  string r_set("");
-  for(vector<string>::iterator it = route.begin();
-      it != route.end(); it++) {
-    r_set += SIP_HDR_COLSP(SIP_HDR_ROUTE) + *it + CRLF;
-  }
-
-  return r_set;
-}
-
-void AmSipDialog::setRoute(const string& n_route)
-{
-  string m_route = n_route;
-  if(!m_route.empty() && (m_route.find("Route: ")!=string::npos))
-    m_route = m_route.substr(7/*sizeof("Route: ")*/);
-    
-  route.clear();
-  while(!m_route.empty()){
-	
-    string::size_type comma_pos;
-	
-    comma_pos = m_route.find(',');
-    //route += "Route: " + m_route.substr(0,comma_pos) + "\r\n";
-    route.push_back(m_route.substr(0,comma_pos));
-	
-    if(comma_pos != string::npos)
-      m_route = m_route.substr(comma_pos+1);
-    else
-      m_route = "";
-  }
 }
 
 int AmSipDialog::drop()
@@ -722,7 +663,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   }
 
   if(!route.empty())
-    req.route = getRoute();
+    req.route = route; //getRoute();
     
   if(!body.empty()) {
     req.content_type = content_type;

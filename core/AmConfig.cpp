@@ -57,6 +57,7 @@ int          AmConfig::SIPServerThreads        = NUM_SIP_SERVERS;
 int          AmConfig::LocalSIPPort            = 5060;
 string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::OutboundProxy           = "";
+bool         AmConfig::ForceOutboundProxy      = false;
 string       AmConfig::Signature               = "";
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
@@ -218,6 +219,11 @@ int AmConfig::readConfiguration()
   
   // outbound_proxy
   OutboundProxy = cfg.getParameter("outbound_proxy");
+
+  // force_outbound_proxy
+  if(cfg.hasParameter("force_outbound_proxy")) {
+    ForceOutboundProxy = (cfg.getParameter("force_outbound_proxy") == "yes");
+  }
   
   // plugin_path
   PlugInPath = cfg.getParameter("plugin_path");
