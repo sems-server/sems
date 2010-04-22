@@ -329,14 +329,14 @@ public:
 			 string* sdp_reply);
 
   /** send an UPDATE in the session */
-  void sendUpdate();
+  virtual void sendUpdate();
   /** send a Re-INVITE (if connected) */
-  void sendReinvite(bool updateSDP = true, const string& headers = "");
+  virtual void sendReinvite(bool updateSDP = true, const string& headers = "");
   /** send an INVITE */
-  int sendInvite(const string& headers = "");
+  virtual int sendInvite(const string& headers = "");
 
   /** set the session on/off hold */
-  void setOnHold(bool hold);
+  virtual void setOnHold(bool hold);
 
   /**
    * Destroy the session.
@@ -344,7 +344,7 @@ public:
    * and added to the dead session list.
    * @see AmSessionContainer
    */
-  void destroy();
+  virtual void destroy();
 
   /**
    * Signals the session it should stop.
