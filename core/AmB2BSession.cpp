@@ -135,6 +135,45 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
   case B2BTerminateLeg:
     terminateLeg();
     break;
+
+  case B2BMsgBody:
+    {
+      if (!sip_relay_only) {
+	ERROR("relayed message body received but not in sip_relay_only mode\n");
+	return;
+      }
+
+      B2BMsgBodyEvent* body_ev = dynamic_cast<B2BMsgBodyEvent*>(ev);
+      assert(body_ev);
+
+      DBG("received B2B Msg body event; is_offer=%s, r_cseq=%d\n",
+	  body_ev->is_offer?"true":"false", body_ev->r_cseq);
+      
+      if (body_ev->is_offer) {
+	// send INVITE with SDP
+	trans_ticket tt; // empty transaction ticket
+	relayed_body_req[dlg.cseq] = AmSipTransaction("INVITE", body_ev->r_cseq, tt);
+	if (dlg.reinvite("", body_ev->content_type, body_ev->body)) {
+	   ERROR("sending reinvite with relayed body\n");
+	   relayed_body_req.erase(dlg.cseq);
+	   // TODO?: relay error back instead?
+	   // tear down:
+	   DBG("error sending reinvite - terminating this and the other leg\n");
+	   terminateOtherLeg();	   
+	   terminateLeg();
+	}
+      } else {
+	// is_answer - send 200 ACK
+	// todo: use that from uas_trans? 
+	trans_ticket tt; // not used for ACK
+	AmSipTransaction trans("INVITE", body_ev->r_cseq, tt);
+	if (dlg.send_200_ack(trans, body_ev->content_type, body_ev->body, 
+			     "" /* hdrs - todo */, SIP_FLAGS_VERBATIM)) {
+	  ERROR("sending ACK with SDP\n");
+	}
+      }
+      return; 
+    }; break;
   }
 
   //ERROR("unknown event caught\n");
@@ -177,7 +216,46 @@ void AmB2BSession::onSipReply(const AmSipReply& reply)
 	relayed_req.erase(t);
     }
   } else {
-    AmSession::onSipReply(reply);
+    bool relay_body = 
+    // is a reply to request we sent, 
+    // even though we are in sip_relay_only  mode
+      (sip_relay_only && 
+       // positive reply
+       (200 <= reply.code) && (reply.code < 300) 
+       // with body
+       && !reply.body.empty()); // todo: && method == INVITE???
+    
+    if (relay_body) {
+      // is it an answer to a relayed body, or an answer to empty re-INVITE? 
+      TransMap::iterator rel_body_it = relayed_body_req.find(reply.cseq);
+      bool is_offer =  (rel_body_it == relayed_body_req.end());
+      // answer to empty re-INVITE we have sent
+      relayEvent(new B2BMsgBodyEvent(reply.content_type, reply.body, 
+				     is_offer, is_offer ? reply.cseq : rel_body_it->second.cseq));
+
+      if (is_offer) {	
+	// onSipReply from AmSession without do_200_ack in dlg.updateStatus(reply)
+	// todo (?): add do_200_ack flag to AmSession::onSipReply and call AmSession::onSipReply
+	CALL_EVENT_H(onSipReply,reply);
+	
+	int status = dlg.getStatus();
+	dlg.updateStatus(reply, false);
+	
+	if (status != dlg.getStatus())
+	  DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
+	      AmSipDialog::status2str[status], 
+	      AmSipDialog::status2str[dlg.getStatus()],
+	      getStopped() ? "true" : "false");
+	else 
+	  DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[status], 
+	      getStopped() ? "true" : "false");
+      } else {
+	relayed_body_req.erase(rel_body_it);
+	AmSession::onSipReply(reply);
+      }      
+    } else {
+      AmSession::onSipReply(reply);
+    }
     relayEvent(new B2BSipReplyEvent(reply,false));
   }
 }
@@ -305,7 +383,11 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
       if(reply.code < 200){
 	if ((!sip_relay_only) && sip_relay_early_media_sdp && 
 	    reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
-	  reinviteCaller(reply);
+	  if (reinviteCaller(reply)) {
+	    ERROR("re-INVITEing caller for early session - stopping this and other leg\n");
+	    terminateOtherLeg();
+	    terminateLeg();
+	  }
 	}
 	  
 	callee_status = Ringing;
@@ -316,7 +398,11 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	  
 	if (!sip_relay_only) {
 	  sip_relay_only = true;
-	  reinviteCaller(reply);
+	  if (reinviteCaller(reply)) {
+	    ERROR("re-INVITEing caller - stopping this and other leg\n");
+	    terminateOtherLeg();
+	    terminateLeg();
+	  }
 	}
       }
       else {

@@ -35,7 +35,8 @@ enum { B2BTerminateLeg,
        B2BConnectLeg, 
        B2BCallAccepted, 
        B2BSipRequest, 
-       B2BSipReply };
+       B2BSipReply,
+       B2BMsgBody };
 
 /** \brief base class for event in B2B session */
 struct B2BEvent: public AmEvent
@@ -78,6 +79,25 @@ struct B2BSipReplyEvent: public B2BSipEvent
   {}
 };
 
+/** \brief relay a message body to other leg in B2B session */
+struct B2BMsgBodyEvent : public B2BEvent {
+  string content_type;
+  string body;
+
+  bool is_offer;
+  unsigned int r_cseq;
+
+  B2BMsgBodyEvent(const string& content_type, 
+	       const string& body, 
+	       bool is_offer,
+	       unsigned int r_cseq)
+    : B2BEvent(B2BMsgBody),
+    content_type(content_type), body(body), 
+    is_offer(is_offer), r_cseq(r_cseq)  {
+  }
+  ~B2BMsgBodyEvent() { }
+};
+
 /** \brief trigger connecting the callee leg in B2B session */
 struct B2BConnectEvent: public B2BEvent
 {
@@ -94,8 +114,10 @@ struct B2BConnectEvent: public B2BEvent
   B2BConnectEvent(const string& remote_party,
 		  const string& remote_uri)
     : B2BEvent(B2BConnectLeg),
-       remote_party(remote_party),
-       remote_uri(remote_uri)
+    remote_party(remote_party),
+    remote_uri(remote_uri),
+    relayed_invite(false),
+    r_cseq(0)
   {}
 };
 
@@ -116,10 +138,18 @@ class AmB2BSession: public AmSession
    */
   bool sip_relay_only;
 
-  /** Requests which
+  /** 
+   * Requests which
    * have been relayed (sent)
    */
   TransMap relayed_req;
+
+  /** 
+   * Requests which have been originated 
+   * from local dialog but with 
+   * relayed body
+   */
+  TransMap relayed_body_req;
 
   /** Requests received for relaying */
   std::map<int,AmSipRequest> recvd_req;
