@@ -184,12 +184,15 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
     // determine session interval
     string sess_expires_hdr = getHeader(req.hdrs, "Session-Expires", "x");
     
+    bool rem_has_sess_expires = false;
     unsigned int rem_sess_expires=0; 
     if (!sess_expires_hdr.empty()) {
       if (str2i(strip_header_params(sess_expires_hdr),
 		rem_sess_expires)) {
 	WARN("error while parsing Session-Expires header value '%s'\n", 
 	     strip_header_params(sess_expires_hdr).c_str()); // exception?
+      } else {
+	rem_has_sess_expires = true;
       }
     }
 
@@ -205,17 +208,20 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
     }
 
     // calculate actual se
+    session_interval = session_timer_conf.getSessionExpires();
 
     if (i_minse > min_se)
       min_se = i_minse;
 
-    if (rem_sess_expires < min_se) {
+    if (rem_has_sess_expires && (rem_sess_expires < min_se)) {
       session_interval = min_se;
     } else {
-      if (rem_sess_expires < session_interval)
+      if (rem_has_sess_expires && (rem_sess_expires < session_interval))
 	session_interval = rem_sess_expires;
     }
      
+    DBG("using actual session interval %u\n", session_interval);
+
     // determine session refresher -- cf rfc4028 Table 2
     // only if the remote party supports timer and asks 
     // to be refresher we will let the remote party do it. 
