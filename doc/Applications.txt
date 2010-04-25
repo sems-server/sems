@@ -134,17 +134,27 @@ Various applications
    interfaces as XMLRPC server. This is very useful to connect SEMS with
    other software, that e.g. trigger click2dial calls, create
    registrations at SIP registrar, do monitoring, etc.
+
+   callback application can save lots of mobile calls costs, it calls back
+   caller and then the caller can enter a number to be connected to:
      * [30]Module Documentation: callback application plugin
 
+   auth_b2b application is identity change: A B2BUA where on the B leg the
+   caller identity and authentication is different. Can be used for
+   example for authenting to gateways.
      * [31]Module Documentation: auth_b2b application plugin
+
+   sst_b2b is SIP Session Timer enabled B2BUA, for making sure calls are
+   ended properly and without overbilling, and for topology hiding.
+     * [32]Module Documentation: sst_b2b application plugin
 
 Other components
 
-     * [32]Module Documentation: diameter_client component plugin
+     * [33]Module Documentation: diameter_client component plugin
      __________________________________________________________________
 
 
-    Generated on Wed Mar 17 14:15:58 2010 for SEMS by  [33]doxygen 1.6.1
+    Generated on Mon Apr 26 00:13:02 2010 for SEMS by  [34]doxygen 1.6.1
 
 References
 
@@ -179,5 +189,6 @@ References
   29. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_xmlrpc2di.html
   30. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_callback.html
   31. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_auth_b2b.html
-  32. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_diameter_client.html
-  33. http://www.doxygen.org/index.html
+  32. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_sst_b2b.html
+  33. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_diameter_client.html
+  34. http://www.doxygen.org/index.html

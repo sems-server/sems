@@ -131,10 +131,22 @@
  * This is very useful to connect SEMS with other software, that e.g. trigger click2dial
  * calls, create registrations at SIP registrar, do monitoring, etc.  
  *
+ * callback application can save lots of mobile calls costs, it calls back caller 
+ * and then the caller can enter a number to be connected to:
+ *
  *  <ul><li> \ref ModuleDoc_callback </li></ul>
+ *
+ * auth_b2b application is identity change: A B2BUA where on the B leg the caller
+ * identity and authentication is different. Can be used for example for authenting
+ * to gateways.
  *
  *  <ul><li> \ref ModuleDoc_auth_b2b </li></ul>
  *
+ * sst_b2b is SIP Session Timer enabled B2BUA, for making sure calls are ended 
+ * properly and without overbilling, and for topology hiding.
+ *
+ *  <ul><li> \ref ModuleDoc_sst_b2b </li></ul>
+ * 
  * \section morecomponents Other components
  *
  *  <ul><li> \ref ModuleDoc_diameter_client </li></ul>
@@ -297,6 +309,14 @@
 /*! \page ModuleDoc_auth_b2b Module Documentation: auth_b2b application plugin
  *  \section Readme_auth_b2b Readme file
  *  \verbinclude Readme.auth_b2b.txt
+ *  
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
+
+/*! \page ModuleDoc_sst_b2b Module Documentation: sst_b2b application plugin
+ *  \section Readme_sst_b2b Readme file
+ *  \verbinclude Readme.sst_b2b.txt
  *  
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
