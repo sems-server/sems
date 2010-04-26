@@ -132,7 +132,8 @@ class AmKeyPressSink {
    * @param flush whether key should be registered as own keypress immediately
    */
   virtual void registerKeyReleased(int event, Dtmf::EventSource source,
-				   const struct timeval& start, const struct timeval& stop, bool flush=false) = 0;
+				   const struct timeval& start, const struct timeval& stop, bool flush=false,
+				   bool has_eventid = false, unsigned int event_id = 0) = 0;
   /**
    * Through this method the AmDtmfDetector receives events that was
    * detected by specific detectors.
@@ -397,6 +398,9 @@ class AmDtmfDetector
   int m_currentEvent;
   bool m_eventPending;
 
+  bool m_current_eventid_i;
+  unsigned int m_current_eventid;
+
   bool m_sipEventReceived;
   bool m_inbandEventReceived;
   bool m_rtpEventReceived;
@@ -420,10 +424,12 @@ class AmDtmfDetector
    * @param start time when key was pressed
    * @param stop time when key was released
    * @param flush whether key should be registered as own keypress immediately
+   * @param has_eventid whether event has an id
+   * @param event_id id of the event
    */
   void registerKeyReleased(int event, Dtmf::EventSource source,
 			   const struct timeval& start, const struct timeval& stop,
-			   bool flush=false);
+			   bool flush=false, bool has_eventid = false, unsigned int event_id = 0);
   /**
    * Through this method the AmDtmfDetector receives events that was
    * detected by specific detectors.

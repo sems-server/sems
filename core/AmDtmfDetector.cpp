@@ -182,7 +182,8 @@ AmDtmfDetector::AmDtmfDetector(AmSession *session)
     m_eventPending(false), m_sipEventReceived(false),
     m_inbandEventReceived(false), m_rtpEventReceived(false),
     m_inband_type(Dtmf::SEMSInternal),
-    m_currentEvent(-1)
+    m_currentEvent(-1),
+    m_current_eventid_i(false)
 {
 #ifndef USE_SPANDSP
   setInbandDetector(Dtmf::SEMSInternal);
@@ -240,16 +241,22 @@ void AmDtmfDetector::process(AmEvent *evt)
 void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
                                          const struct timeval& start,
                                          const struct timeval& stop,
-					 bool flush)
+					 bool flush,
+					 bool has_eventid, unsigned int event_id)
 {
   // Old event has not been sent yet
   // push out it now
-  if (flush || (m_eventPending && m_currentEvent != event))
+  if (flush || (m_eventPending && m_currentEvent != event) || 
+      (m_eventPending && has_eventid && m_current_eventid_i && (event_id != m_current_eventid)))
     {
       reportEvent();
     }
+
   m_eventPending = true;
   m_currentEvent = event;
+  m_current_eventid_i = true;
+  m_current_eventid = event_id;
+
   memcpy(&m_startTime, &start, sizeof(struct timeval));
   memcpy(&m_lastReportTime, &stop, sizeof(struct timeval));
   switch (source)
@@ -325,6 +332,7 @@ void AmDtmfDetector::reportEvent()
   m_sipEventReceived = false;
   m_rtpEventReceived = false;
   m_inbandEventReceived = false;
+  m_current_eventid_i = false;
 
   m_reportLock.unlock();
 }
@@ -388,7 +396,7 @@ void AmRtpDtmfDetector::sendPending(bool flush)
     {
       struct timeval end_time;
       gettimeofday(&end_time, NULL);
-      m_keysink->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time, flush);
+      m_keysink->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time, flush, true, m_currentTS);
       m_eventPending = false;
       m_currentTS_i = false;
       m_lastTS = m_currentTS;
