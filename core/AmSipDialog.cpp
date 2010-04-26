@@ -701,7 +701,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   if (SipCtrlInterface::send(req))
     return -1;
 
-  uas_trans.remove(t.cseq);
+  uas_trans.erase(t.cseq);
 
   return 0;
 }
