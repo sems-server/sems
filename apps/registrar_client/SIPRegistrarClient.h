@@ -118,11 +118,15 @@ class SIPRegistration : public AmSipDialogEventHandler,
 		   const string& body,
 		   string& hdrs,
 		   int flags);
+
   // DialogControl if
   AmSipDialog* getDlg() { return &dlg; }
   // CredentialHolder	
   UACAuthCred* getCredentials() { return &cred; }
-  void onSipReply(AmSipReply& reply);
+
+  void onSipReply(const AmSipReply& reply, int old_dlg_status);
+  void onSipRequest(const AmSipRequest& req) {}
+  void onInvite2xx(const AmSipReply&) {}
 
   /** is this registration registered? */
   bool active; 

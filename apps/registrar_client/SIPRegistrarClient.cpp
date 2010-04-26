@@ -96,52 +96,54 @@ void SIPRegistration::setSessionEventHandler(AmSessionEventHandler* new_seh) {
   seh = new_seh;
 }
  
-void SIPRegistration::doRegistration() {
-  waiting_result = true;
-  req.to_tag     = "";
-  dlg.remote_tag = "";
-  req.r_uri    = "sip:"+info.domain;
-  dlg.remote_uri = req.r_uri;
-
-  // set outbound proxy as next hop 
-//   DBG("proxy is '%s' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
-//       info.proxy.c_str());
-//   if (!info.proxy.empty()) {
-//     dlg.next_hop = info.proxy;
-//   } else if (!AmConfig::OutboundProxy.empty()) 
-//     dlg.next_hop = AmConfig::OutboundProxy;
-//   else 
-//     dlg.next_hop = "";
-  
-  dlg.sendRequest(req.method, "", "", "Expires: 1000\n");
-
-  // save TS
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  reg_send_begin  = now.tv_sec;
+void SIPRegistration::doRegistration() 
+{
+    waiting_result = true;
+    req.to_tag     = "";
+    dlg.remote_tag = "";
+    req.r_uri    = "sip:"+info.domain;
+    dlg.remote_uri = req.r_uri;
+    
+    // set outbound proxy as next hop 
+    DBG("proxy is '%s' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+	info.proxy.c_str());
+    if (!info.proxy.empty()) {
+	dlg.outbound_proxy = info.proxy;
+    } else if (!AmConfig::OutboundProxy.empty()) 
+	dlg.outbound_proxy = AmConfig::OutboundProxy;
+    //else 
+    //    dlg.outbound_proxy = "";
+    
+    dlg.sendRequest(req.method, "", "", "Expires: 1000\n");
+    
+    // save TS
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    reg_send_begin  = now.tv_sec;
 }
 
-void SIPRegistration::doUnregister() {
-  waiting_result = true;
-  req.to_tag     = "";
-  dlg.remote_tag = "";
-  req.r_uri    = "sip:"+info.domain;
-  dlg.remote_uri = req.r_uri;
+void SIPRegistration::doUnregister() 
+{
+    waiting_result = true;
+    req.to_tag     = "";
+    dlg.remote_tag = "";
+    req.r_uri      = "sip:"+info.domain;
+    dlg.remote_uri = req.r_uri;
+    
+    // set outbound proxy as next hop 
+    if (!info.proxy.empty()) {
+	dlg.outbound_proxy = info.proxy;
+    } else if (!AmConfig::OutboundProxy.empty()) 
+	dlg.outbound_proxy = AmConfig::OutboundProxy;
+    //else 
+    //    dlg.outbound_proxy = "";
+    
+    dlg.sendRequest(req.method, "", "", "Expires: 0\n");
 
-  // set outbound proxy as next hop 
-//   if (!info.proxy.empty()) {
-//     dlg.next_hop = info.proxy;
-//   } else if (!AmConfig::OutboundProxy.empty()) 
-//     dlg.next_hop = AmConfig::OutboundProxy;
-//   else 
-//     dlg.next_hop = "";
-
-  dlg.sendRequest(req.method, "", "", "Expires: 0\n");
-
-  // save TS
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  reg_send_begin  = now.tv_sec;
+    // save TS
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    reg_send_begin  = now.tv_sec;
 }
 
 void SIPRegistration::onSendRequest(const string& method,
@@ -315,7 +317,8 @@ void SIPRegistrarClient::onServerShutdown() {
 //   return;
 }
 
-void SIPRegistrarClient::process(AmEvent* ev) {
+void SIPRegistrarClient::process(AmEvent* ev) 
+{
   if (ev->event_id == E_SYSTEM) {
     AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(ev);
     if(sys_ev){	
@@ -329,7 +332,7 @@ void SIPRegistrarClient::process(AmEvent* ev) {
 
   AmSipReplyEvent* sip_rep = dynamic_cast<AmSipReplyEvent*>(ev);
   if (sip_rep) {
-    onSipReplyEvent(sip_rep);
+      onSipReplyEvent(sip_rep);
     return;
   }
 
@@ -351,7 +354,7 @@ void SIPRegistrarClient::process(AmEvent* ev) {
 void SIPRegistrarClient::onSipReplyEvent(AmSipReplyEvent* ev) {
   SIPRegistration* reg = get_reg(ev->reply.local_tag);
   if (reg != NULL) {
-    reg->onSipReply(ev->reply);
+      reg->getDlg()->updateStatus(ev->reply);//onSipReply(ev->reply);
   }
 }
 
@@ -369,13 +372,12 @@ bool SIPRegistration::registerExpired(time_t now_sec) {
   return ((reg_begin+reg_expires) < (unsigned int)now_sec);	
 }
 
-void SIPRegistration::onSipReply(AmSipReply& reply) {
+void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status)
+{
   if ((seh!=NULL) && seh->onSipReply(reply)) 
     return;
 
   waiting_result = false;
-
-  dlg.updateStatus(reply);
 
   if ((reply.code>=200)&&(reply.code<300)) {
     DBG("positive reply to REGISTER!\n");
@@ -408,7 +410,7 @@ void SIPRegistration::onSipReply(AmSipReply& reply) {
 	if (server_contact.isEqual(local_contact)) {
 	  DBG("contact found\n");
 	  found = active = true;
-	  bool str2i(const string& str, unsigned int& result);
+	  //bool str2i(const string& str, unsigned int& result);
 					
 	  if (str2i(server_contact.params["expires"], reg_expires)) {
 	    ERROR("could not extract expires value.\n");

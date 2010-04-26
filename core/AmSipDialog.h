@@ -70,23 +70,35 @@ typedef std::map<int,AmSipTransaction> TransMap;
  */
 class AmSipDialogEventHandler 
 {
- public:
-  virtual void onSendRequest(const string& method,
+public:
+    
+    /** Hook called when a request has been received */
+    virtual void onSipRequest(const AmSipRequest& req)=0;
+
+    /** Hook called when a reply has been received */
+    virtual void onSipReply(const AmSipReply& reply, int old_dlg_status)=0;
+
+    /** Hook called before a request is sent */
+    virtual void onSendRequest(const string& method,
+			       const string& content_type,
+			       const string& body,
+			       string& hdrs,
+			       int flags,
+			       unsigned int cseq)=0;
+    
+    /** Hook called before a reply is sent */
+    virtual void onSendReply(const AmSipRequest& req,
+			     unsigned int  code,
+			     const string& reason,
 			     const string& content_type,
 			     const string& body,
 			     string& hdrs,
-			     int flags,
-			     unsigned int cseq)=0;
+			     int flags)=0;
+    
+    /** Hook called when a local INVITE request has been replied with 2xx */
+    virtual void onInvite2xx(const AmSipReply& reply)=0;
 
-  virtual void onSendReply(const AmSipRequest& req,
-			   unsigned int  code,
-			   const string& reason,
-			   const string& content_type,
-			   const string& body,
-			   string& hdrs,
-			   int flags)=0;
-
-  virtual ~AmSipDialogEventHandler() {};
+    virtual ~AmSipDialogEventHandler() {};
 };
 
 /**
@@ -136,7 +148,8 @@ class AmSipDialog
   string outbound_proxy;
   bool   force_outbound_proxy;
 
-  int    cseq; // Local CSeq for next request
+  unsigned int cseq; // Local CSeq for next request
+  unsigned int r_cseq; // last remote CSeq  
 
   AmSipDialog(AmSipDialogEventHandler* h=0);
   ~AmSipDialog();
@@ -145,12 +158,12 @@ class AmSipDialog
   int    getStatus() { return status; }
   string getContactHdr();
 
-  void updateStatus(const AmSipRequest& req);
-  void updateStatus(const AmSipReply& reply, bool do_200_ack=true);
-
   /** update Status from locally originated request (e.g. INVITE) */
   void updateStatusFromLocalRequest(const AmSipRequest& req);
 
+  void updateStatus(const AmSipRequest& req);
+  void updateStatus(const AmSipReply& reply);
+    
   int reply(const AmSipRequest& req,
 	    unsigned int  code, 
 	    const string& reason,
@@ -189,6 +202,8 @@ class AmSipDialog
    * @return the method of the corresponding uac request
    */
   string get_uac_trans_method(unsigned int cseq);
+
+  AmSipTransaction* get_uac_trans(unsigned int cseq);
 
   static int reply_error(const AmSipRequest& req,
 			 unsigned int  code, 

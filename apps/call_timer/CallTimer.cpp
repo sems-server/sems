@@ -131,7 +131,6 @@ CallTimerDialog::~CallTimerDialog()
 
 void CallTimerDialog::onInvite(const AmSipRequest& req)
 {
-
   if (dlg.getStatus() == AmSipDialog::Connected) {
     DBG("not acting on re-Invite\n");
     return;
@@ -152,7 +151,7 @@ void CallTimerDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs, "P-App-Param");
   removeHeader(invite_req.hdrs, "P-App-Name");
 
-  dlg.updateStatus(invite_req);
+  //dlg.updateStatus(invite_req);
   recvd_req.insert(std::make_pair(invite_req.cseq,invite_req));
   
   set_sip_relay_only(true);

@@ -636,9 +636,9 @@ void AmSession::process(AmEvent* ev)
   }
 
   AmAudioEvent* audio_ev = dynamic_cast<AmAudioEvent*>(ev);
-  if(audio_ev && (audio_ev->event_id == AmAudioEvent::cleared)){
-    setStopped();
-    return;
+  if(audio_ev){
+      onAudioEvent(audio_ev);
+      return;
   }
 
   AmDtmfEvent* dtmf_ev = dynamic_cast<AmDtmfEvent*>(ev);
@@ -671,14 +671,16 @@ void AmSession::onSipEvent(AmSipEvent* sip_ev)
 
   AmSipRequestEvent* req_ev = dynamic_cast<AmSipRequestEvent*>(sip_ev);
   if(req_ev) {
-    onSipRequest(req_ev->req);
+      //onSipRequest(req_ev->req);
+    dlg.updateStatus(req_ev->req);
     return;
   }
     
 
   AmSipReplyEvent* reply_ev = dynamic_cast<AmSipReplyEvent*>(sip_ev);
   if(reply_ev) {
-    onSipReply(reply_ev->reply);
+      //onSipReply(reply_ev->reply);
+    dlg.updateStatus(reply_ev->reply);
     return;
   }
 
@@ -689,7 +691,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 {
   CALL_EVENT_H(onSipRequest,req);
 
-  dlg.updateStatus(req);
+  //dlg.updateStatus(req);
     
   DBG("onSipRequest: method = %s\n",req.method.c_str());
   if(req.method == "INVITE"){
@@ -730,25 +732,25 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 }
 
 
-void AmSession::onSipReply(const AmSipReply& reply)
+void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   CALL_EVENT_H(onSipReply,reply);
 
-  int status = dlg.getStatus();
-  dlg.updateStatus(reply);
+//   int status = dlg.getStatus();
+//   dlg.updateStatus(reply);
 
-  if (status != dlg.getStatus())
+  if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
-	AmSipDialog::status2str[status], 
+	AmSipDialog::status2str[old_dlg_status], 
 	AmSipDialog::status2str[dlg.getStatus()],
 	sess_stopped.get() ? "true" : "false");
   else 
-    DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[status], 
+    DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[old_dlg_status], 
 	sess_stopped.get() ? "true" : "false");
 
 
   if (negotiate_onreply) {    
-    if(status < AmSipDialog::Connected){
+    if(old_dlg_status < AmSipDialog::Connected){
       
       switch(dlg.getStatus()){
 	
@@ -764,8 +766,8 @@ void AmSession::onSipReply(const AmSipReply& reply)
 	    onSessionStart(reply);
 		  
 	    if(input || output || local_input || local_output)
-	      AmMediaProcessor::instance()->addSession(this,
-						       callgroup); 
+		AmMediaProcessor::instance()->addSession(this,
+							 callgroup); 
 	    else { 
 	      DBG("no audio input and output set. "
 		  "Session will not be attached to MediaProcessor.\n");
@@ -822,6 +824,18 @@ void AmSession::onSipReply(const AmSipReply& reply)
       }
     }
   }
+}
+
+void AmSession::onInvite2xx(const AmSipReply& reply)
+{
+    AmSipTransaction* t = dlg.get_uac_trans(reply.cseq);
+    if(t) dlg.send_200_ack(*t);
+}
+
+void AmSession::onAudioEvent(AmAudioEvent* audio_ev)
+{
+    if (audio_ev->event_id == AmAudioEvent::cleared)
+	setStopped();
 }
 
 void AmSession::onInvite(const AmSipRequest& req)

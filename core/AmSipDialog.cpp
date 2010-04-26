@@ -75,6 +75,11 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     return;
   }
 
+  if (req.cseq <= r_cseq){
+      reply_error(req,500,"Server Internal Error");
+      return;
+  }
+
   if(uas_trans.find(req.cseq) == uas_trans.end()){
       DBG("req.tt = {%p,%p}\n",req.tt._bucket, req.tt._t);
       uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
@@ -105,6 +110,9 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     local_party  = req.to;
     route        = req.route;
   }
+  
+  if(hdl)
+      hdl->onSipRequest(req);
 }
 
 /**
@@ -186,7 +194,7 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
   return 0;
 }
 
-void AmSipDialog::updateStatus(const AmSipReply& reply, bool do_200_ack)
+void AmSipDialog::updateStatus(const AmSipReply& reply/*, bool do_200_ack*/)
 {
   TransMap::iterator t_it = uac_trans.find(reply.cseq);
   if(t_it == uac_trans.end()){
@@ -197,6 +205,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply, bool do_200_ack)
   DBG("updateStatus(reply): transaction found!\n");
 
   AmSipTransaction& t = t_it->second;
+  int old_dlg_status = status;
 
   // rfc3261 12.1
   // Dialog established only by 101-199 or 2xx 
@@ -262,12 +271,22 @@ void AmSipDialog::updateStatus(const AmSipReply& reply, bool do_200_ack)
     // TODO: 
     // - place this somewhere else.
     //   (probably in AmSession...)
-    if((reply.code < 300) && (t.method == "INVITE") && do_200_ack) {
-      send_200_ack(t);
-    }
+    if((reply.code < 300) && (t.method == "INVITE")) {
 
-    uac_trans.erase(t_it);
+	if(hdl) {
+	    hdl->onInvite2xx(reply);
+	}
+	else {
+	    send_200_ack(t);
+	}
+    }
+    else {
+	uac_trans.erase(t_it);
+    }
   }
+
+  if(hdl)
+      hdl->onSipReply(reply, old_dlg_status);
 }
 
 string AmSipDialog::getContactHdr()
@@ -608,6 +627,16 @@ string AmSipDialog::get_uac_trans_method(unsigned int cseq)
   return "";
 }
 
+AmSipTransaction* AmSipDialog::get_uac_trans(unsigned int cseq)
+{
+    TransMap::iterator t = uac_trans.find(cseq);
+    
+    if (t != uac_trans.end())
+	return &(t->second);
+    
+    return NULL;
+}
+
 int AmSipDialog::drop()
 {	
   status = Disconnected;
@@ -636,7 +665,6 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
 
   req.method = "ACK";
   req.r_uri = remote_uri;
-  //req.next_hop = next_hop;
 
   req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
   if(!local_tag.empty())

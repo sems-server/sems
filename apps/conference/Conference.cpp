@@ -862,10 +862,10 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
   return;
 }
 
-void ConferenceDialog::onSipReply(const AmSipReply& reply)
+void ConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   int status = dlg.getStatus();
-  AmSession::onSipReply(reply);
+  AmSession::onSipReply(reply,old_dlg_status);
 
   DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i\n",
       reply.code,reply.reason.c_str(),dlg.getStatus());

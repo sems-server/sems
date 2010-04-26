@@ -42,9 +42,7 @@ class AmPluginFactory;
 class AmSessionFactory;
 class AmSessionEventHandlerFactory;
 class AmDynInvokeFactory;
-//class AmSIPEventHandler;
 class AmLoggingFacility;
-//class AmCtrlInterfaceFactory;
 class AmSipRequest;
 
 struct amci_exports_t;
@@ -120,7 +118,6 @@ class AmPlugIn : public AmPayloadProviderInterface
   int loadBasePlugIn(AmPluginFactory* cb);
   int loadDiPlugIn(AmPluginFactory* cb);
   int loadLogFacPlugIn(AmPluginFactory* f);
-  //int loadCtrlFacPlugIn(AmPluginFactory* f);
 
  public:
 

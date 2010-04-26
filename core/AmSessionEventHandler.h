@@ -64,6 +64,7 @@ public:
    * shall be stopped after them.
    */
   virtual bool process(AmEvent*);
+
   virtual bool onSipEvent(AmSipEvent*);
   virtual bool onSipRequest(const AmSipRequest&);
   virtual bool onSipReply(const AmSipReply&);

@@ -153,7 +153,7 @@ public:
   void onBye(const AmSipRequest& req);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply);
+  void onSipReply(const AmSipReply& reply, int old_dlg_status);
 
 #ifdef WITH_SAS_TTS
   void onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx);

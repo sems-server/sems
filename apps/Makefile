@@ -13,6 +13,7 @@ $(info exclude_app_modules: $(exclude_app_modules))
 app_modules = $(filter-out $(subst ;, ,$(exclude_app_modules))\
 		$(wildcard Makefile*) CVS CMakeLists.txt, \
 		$(wildcard *) examples/tutorial/cc_acc )
+$(info app_modules: $(app_modules))
 
 #modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
 

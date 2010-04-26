@@ -173,12 +173,13 @@ void WebConferenceDialog::onSessionStart(const AmSipReply& rep) {
   connectConference(dlg.user);
 }
 
-void WebConferenceDialog::onSipReply(const AmSipReply& reply) {
-  int status = dlg.getStatus();
+void WebConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status) 
+{
+  //int status = dlg.getStatus();
 
-  AmSession::onSipReply(reply);
+  AmSession::onSipReply(reply,old_dlg_status);
 
-  if ((status < AmSipDialog::Connected) && 
+  if ((old_dlg_status < AmSipDialog::Connected) && 
       (dlg.getStatus() == AmSipDialog::Disconnected)) {
     DBG("Call failed.\n");
     setStopped();

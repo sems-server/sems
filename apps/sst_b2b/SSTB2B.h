@@ -93,7 +93,7 @@ class SSTB2BDialog : public AmB2BCallerSession
   void sendReinvite(bool updateSDP, const string& headers);
 
  protected:
-  void onSipReply(const AmSipReply& reply);
+    void onSipReply(const AmSipReply& reply, int old_dlg_status);
   void onSipRequest(const AmSipRequest& req);  
 
  protected:
@@ -115,7 +115,7 @@ class SSTB2BCalleeSession
 
  protected:
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply);
+    void onSipReply(const AmSipReply& reply, int old_dlg_status);
   void onSendRequest(const string& method, const string& content_type,
 		     const string& body, string& hdrs, int flags, unsigned int cseq);
 

@@ -147,7 +147,7 @@ void AuthB2BDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs,PARAM_HDR);
   removeHeader(invite_req.hdrs,"P-App-Name");
 
-  dlg.updateStatus(req);
+  //dlg.updateStatus(req);
   recvd_req.insert(std::make_pair(req.cseq,req));
   
   set_sip_relay_only(true);
@@ -314,15 +314,15 @@ inline UACAuthCred* AuthB2BCalleeSession::getCredentials() {
   return &credentials;
 }
 
-void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply) {
+void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status) {
   if (NULL == auth) {    
-    AmB2BCalleeSession::onSipReply(reply);
+      AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
     return;
   }
   
-  int cseq_before = dlg.cseq;
+  unsigned int cseq_before = dlg.cseq;
   if (!auth->onSipReply(reply)) {
-    AmB2BCalleeSession::onSipReply(reply);
+      AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "

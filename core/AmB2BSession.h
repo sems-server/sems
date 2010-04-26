@@ -170,7 +170,8 @@ class AmB2BSession: public AmSession
 
   /** @see AmSession */
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply);
+  void onSipReply(const AmSipReply& reply, int old_dlg_status);
+  void onInvite2xx(const AmSipReply& reply);
 
   /** @see AmEventQueue */
   void process(AmEvent* event);

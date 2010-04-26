@@ -188,14 +188,14 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
   if(!fwd)
     AmSession::onSipRequest(req);
   else {
-    dlg.updateStatus(req);
+      //dlg.updateStatus(req);
     recvd_req.insert(std::make_pair(req.cseq,req));
   }
 
   relayEvent(new B2BSipRequestEvent(req,fwd));
 }
 
-void AmB2BSession::onSipReply(const AmSipReply& reply)
+void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = t != relayed_req.end();
@@ -206,7 +206,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply)
     AmSipReply n_reply = reply;
     n_reply.cseq = t->second.cseq;
     
-    dlg.updateStatus(reply, false);
+    //dlg.updateStatus(reply, false);
     relayEvent(new B2BSipReplyEvent(n_reply,true));
 
     if(reply.code >= 200) {
@@ -238,26 +238,31 @@ void AmB2BSession::onSipReply(const AmSipReply& reply)
 	// todo (?): add do_200_ack flag to AmSession::onSipReply and call AmSession::onSipReply
 	CALL_EVENT_H(onSipReply,reply);
 	
-	int status = dlg.getStatus();
-	dlg.updateStatus(reply, false);
+	//int status = dlg.getStatus();
+	//dlg.updateStatus(reply, false);
 	
-	if (status != dlg.getStatus())
+	if (old_dlg_status != dlg.getStatus())
 	  DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
-	      AmSipDialog::status2str[status], 
+	      AmSipDialog::status2str[old_dlg_status], 
 	      AmSipDialog::status2str[dlg.getStatus()],
 	      getStopped() ? "true" : "false");
 	else 
-	  DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[status], 
+	  DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[old_dlg_status], 
 	      getStopped() ? "true" : "false");
       } else {
 	relayed_body_req.erase(rel_body_it);
-	AmSession::onSipReply(reply);
+	AmSession::onSipReply(reply, old_dlg_status);
       }      
     } else {
-      AmSession::onSipReply(reply);
+	AmSession::onSipReply(reply, old_dlg_status);
     }
     relayEvent(new B2BSipReplyEvent(reply,false));
   }
+}
+
+void AmB2BSession::onInvite2xx(const AmSipReply& reply)
+{
+    // do not send the 200 ACK yet...
 }
 
 void AmB2BSession::relayEvent(AmEvent* ev)

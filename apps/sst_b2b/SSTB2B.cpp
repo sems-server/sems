@@ -121,7 +121,7 @@ void SSTB2BDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs,PARAM_HDR);
   removeHeader(invite_req.hdrs,"P-App-Name");
 
-  dlg.updateStatus(req);
+  //dlg.updateStatus(req);
   recvd_req.insert(std::make_pair(req.cseq,req));
   
   set_sip_relay_only(true);
@@ -163,7 +163,8 @@ void SSTB2BDialog::onSipRequest(const AmSipRequest& req) {
   AmB2BCallerSession::onSipRequest(req);
 }
 
-void SSTB2BDialog::onSipReply(const AmSipReply& reply) {
+void SSTB2BDialog::onSipReply(const AmSipReply& reply, int old_dlg_status) 
+{
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = t != relayed_req.end();
 
@@ -173,7 +174,7 @@ void SSTB2BDialog::onSipReply(const AmSipReply& reply) {
       CALL_EVENT_H(onSipReply,reply);    
   }
 
-  AmB2BCallerSession::onSipReply(reply);
+  AmB2BCallerSession::onSipReply(reply,old_dlg_status);
 }
 
 bool SSTB2BDialog::onOtherReply(const AmSipReply& reply)
@@ -335,7 +336,8 @@ void SSTB2BCalleeSession::onSipRequest(const AmSipRequest& req) {
   AmB2BCalleeSession::onSipRequest(req);
 }
 
-void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply) {
+void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status) 
+{
   // call event handlers where it is not done 
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = t != relayed_req.end();
@@ -346,13 +348,13 @@ void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply) {
   }
 
   if (NULL == auth) {    
-    AmB2BCalleeSession::onSipReply(reply);
+      AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
     return;
   }
   
-  int cseq_before = dlg.cseq;
+  unsigned int cseq_before = dlg.cseq;
   if (!auth->onSipReply(reply)) {
-    AmB2BCalleeSession::onSipReply(reply);
+      AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
