@@ -33,7 +33,7 @@
  *  \section weblinks Web sites
  *    \arg \b Main:  SEMS website http://iptel.org/sems
  *    \arg \b sems & semsdev Lists: List server http://lists.iptel.org
- *    \arg \b Bugs:  Bug tracker: http://tracker.iptel.org/browse/SEMS
+ *    \arg \b Bugs:  Bug tracker: http://bugtracker.iptel.org/sems
  * 
  *  \section outdated_doc Outdated documentation bits
  *  \arg \ref whatsnew_0100 
