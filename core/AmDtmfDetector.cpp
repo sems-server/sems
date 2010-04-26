@@ -658,7 +658,7 @@ AmSpanDSPInbandDtmfDetector::AmSpanDSPInbandDtmfDetector(AmKeyPressSink *keysink
   : AmInbandDtmfDetector(keysink) 
 {
 #ifdef HAVE_OLD_SPANDSP_CALLBACK
-  rx_state = malloc(sizeof(dtmf_rx_state_t));
+  rx_state = (dtmf_rx_state_t*)malloc(sizeof(dtmf_rx_state_t));
   if (NULL == rx_state) {
     throw string("error allocating memory for DTMF detector\n");
   }
