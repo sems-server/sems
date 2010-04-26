@@ -30,6 +30,8 @@
 #include "AmMediaProcessor.h"
 #include "DSM.h"
 
+#include "../apps/jsonrpc/JsonRPCEvents.h" // todo!
+
 DSMCall::DSMCall(const DSMScriptConfig& config,
 		 AmPromptCollection* prompts,
 		 DSMStateDiagramCollection& diags,
@@ -242,6 +244,74 @@ void DSMCall::process(AmEvent* event)
     params["id"] = int2str(sep_ev->event_id);
     engine.runEvent(this, DSMCondition::PlaylistSeparator, &params);
   }
+
+  // todo: give modules the possibility to define/process events
+  JsonRpcEvent* jsonrpc_ev = dynamic_cast<JsonRpcEvent*>(event);
+  if (jsonrpc_ev) { 
+    DBG("received jsonrpc event\n");
+
+    JsonRpcResponseEvent* resp_ev = 
+      dynamic_cast<JsonRpcResponseEvent*>(jsonrpc_ev);
+    if (resp_ev) {
+      map<string, string> params;
+      params["ev_type"] = "JsonRpcResponse";
+      params["id"] = resp_ev->response.id;
+      params["is_error"] = resp_ev->response.is_error ? 
+	"true":"false";
+      if (isArgStruct(resp_ev->response.data)) {
+	AmArg::ValueStruct::const_iterator it = resp_ev->response.data.begin();
+        while (it != resp_ev->response.data.end()) {
+	  if (isArgCStr(it->second))
+	    params[it->first] = it->second.asCStr();
+	  else
+	    params[it->first] = AmArg::print(it->second);
+	  it++;
+	}
+      } else if (isArgArray(resp_ev->response.data)) {
+	vector<string> strs =  resp_ev->response.data.asStringVector();
+	for (vector<string>::iterator it = 
+	       strs.begin(); it != strs.end(); it++) {
+	  params[int2str(it-strs.begin())] = *it;
+	}
+      }
+
+      engine.runEvent(this, DSMCondition::JsonRpcResponse, &params);
+      return;
+    }
+
+    JsonRpcRequestEvent* req_ev = 
+      dynamic_cast<JsonRpcRequestEvent*>(jsonrpc_ev);
+    if (req_ev) {
+      map<string, string> params;
+      params["ev_type"] = "JsonRpcRequest";
+      params["is_notify"] = req_ev->isNotification() ? 
+	"true" : "false";
+      params["method"] = req_ev->method;
+      if (!req_ev->id.empty())
+	params["id"] = req_ev->id;
+      if (isArgStruct(req_ev->params)) {
+	AmArg::ValueStruct::const_iterator it = req_ev->params.begin();
+        while (it != req_ev->params.end()) {
+	  if (isArgCStr(it->second))
+	    params[it->first] = it->second.asCStr();
+	  else
+	    params[it->first] = AmArg::print(it->second);
+	  it++;
+	}
+      } else if (isArgArray(req_ev->params)) {
+	vector<string> strs =  req_ev->params.asStringVector();
+	for (vector<string>::iterator it = 
+	       strs.begin(); it != strs.end(); it++) {
+	  params[int2str(it-strs.begin())] = *it;
+	}
+      }
+      engine.runEvent(this, DSMCondition::JsonRpcRequest, &params);
+      return;
+    }
+
+  }
+
+
 
   AmB2BCallerSession::process(event);
 }

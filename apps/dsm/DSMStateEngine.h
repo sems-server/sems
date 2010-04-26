@@ -75,7 +75,10 @@ class DSMCondition
     B2BOtherReply,
     B2BOtherBye,
 
-    DSMException
+    DSMException,
+
+    JsonRpcResponse,
+    JsonRpcRequest
   };
 
   bool invert; 

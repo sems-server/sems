@@ -3,7 +3,7 @@ COREPATH ?= ../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_app_modules += mp3 examples py_sems xmlrpc2di gateway
+exclude_app_modules += mp3 examples py_sems xmlrpc2di gateway jsonrpc
 
 ifneq ($(USE_MONITORING), yes)
 exclude_app_modules += monitoring
