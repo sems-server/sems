@@ -490,7 +490,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     AmSipDispatcher::instance()->handleSipMsg(reply);
 }
 
-#undef DBG_PARAM(p)
+#undef DBG_PARAM
 
 void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
 {
