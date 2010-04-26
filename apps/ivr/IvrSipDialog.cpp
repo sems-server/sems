@@ -64,8 +64,8 @@ def_IvrSipDialog_GETTER(IvrSipDialog_getremote_tag,   remote_tag)
 def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_tag,    local_tag)
 def_IvrSipDialog_GETTER(IvrSipDialog_getremote_party, remote_party)
 def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_party,  local_party)
-def_IvrSipDialog_GETTER(IvrSipDialog_getroute,        getRoute())
-def_IvrSipDialog_GETTER(IvrSipDialog_getnext_hop,     next_hop)
+def_IvrSipDialog_GETTER(IvrSipDialog_getroute,        route)
+def_IvrSipDialog_GETTER(IvrSipDialog_getoutbound_proxy, outbound_proxy)
 
 #define def_IvrSipDialog_SETTER(setter_name, attr)			\
   static int								\
@@ -107,7 +107,7 @@ static PyGetSetDef IvrSipDialog_getset[] = {
   {"remote_party",(getter)IvrSipDialog_getremote_party, NULL, "To/From", NULL},
   {"local_party", (getter)IvrSipDialog_getlocal_party, NULL, "To/From", NULL},
   {"route",       (getter)IvrSipDialog_getroute, NULL, "record routing", NULL},
-  {"next_hop",    (getter)IvrSipDialog_getnext_hop, NULL, "next_hop for t_uac_dlg", NULL},
+  {"outbound_proxy", (getter)IvrSipDialog_getoutbound_proxy, NULL, "outbound proxy", NULL},
   {"cseq",    (getter)IvrSipDialog_getcseq, NULL, "CSeq for next request", NULL},
   {NULL}  /* Sentinel */
 };

@@ -77,19 +77,12 @@ IvrSipReply_dealloc(IvrSipReply* self)
 								
 								
 def_IvrSipReply_GETTER(IvrSipReply_getreason,     reason)
-def_IvrSipReply_GETTER(IvrSipReply_getnext_request_uri,         next_request_uri)
+def_IvrSipReply_GETTER(IvrSipReply_getnext_request_uri, next_request_uri)
 def_IvrSipReply_GETTER(IvrSipReply_gethdrs,         hdrs)
 def_IvrSipReply_GETTER(IvrSipReply_getremote_tag,   remote_tag)
 def_IvrSipReply_GETTER(IvrSipReply_getlocal_tag,    local_tag)
 def_IvrSipReply_GETTER(IvrSipReply_getroute,        route)
-def_IvrSipReply_GETTER(IvrSipReply_getnext_hop,     next_hop)
 def_IvrSipReply_GETTER(IvrSipReply_getbody,         body)
-
-// static PyObject*
-// IvrSipReply_getuser(IvrSipReply *self, void *closure)
-// {
-//   return PyString_FromString(self->p_req->user.c_str());
-// }
 
 static PyObject*
 IvrSipReply_getcseq(IvrSipReply *self, void *closure)
@@ -107,7 +100,6 @@ static PyGetSetDef IvrSipReply_getset[] = {
   {"code",          (getter)IvrSipReply_getcode, NULL, "code", NULL},
   {"reason",        (getter)IvrSipReply_getreason, NULL, "reason", NULL},
   {"next_request_uri",        (getter)IvrSipReply_getnext_request_uri, NULL, "next_request_uri", NULL},
-  {"next_hop",         (getter)IvrSipReply_getnext_hop, NULL, "next_hop", NULL},
   {"route",          (getter)IvrSipReply_getroute, NULL, "route", NULL},
   {"hdrs",         (getter)IvrSipReply_gethdrs, NULL, "hdrs", NULL},
   {"body",      (getter)IvrSipReply_getbody, NULL, "body", NULL},

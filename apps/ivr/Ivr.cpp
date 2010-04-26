@@ -764,11 +764,11 @@ void safe_Py_DECREF(PyObject* pyo) {
   Py_DECREF(pyo);
 }
 
-void IvrDialog::onSipReply(const AmSipReply& r) {
+void IvrDialog::onSipReply(const AmSipReply& r, int old_dlg_status) {
   PyObject* pyo = getPySipReply(r);
   callPyEventHandler("onSipReply","(O)", pyo);
   safe_Py_DECREF(pyo);
-  AmB2BSession::onSipReply(r);
+  AmB2BSession::onSipReply(r,old_dlg_status);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){

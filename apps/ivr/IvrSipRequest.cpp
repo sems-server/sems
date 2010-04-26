@@ -123,12 +123,8 @@ def_IvrSipRequest_GETTER(IvrSipRequest_getto,           to)
 def_IvrSipRequest_GETTER(IvrSipRequest_getcallid,       callid)
 def_IvrSipRequest_GETTER(IvrSipRequest_getfrom_tag,     from_tag)
 def_IvrSipRequest_GETTER(IvrSipRequest_getto_tag,       to_tag)
-
 def_IvrSipRequest_GETTER(IvrSipRequest_getroute,        route)
-def_IvrSipRequest_GETTER(IvrSipRequest_getnext_hop,     next_hop)
-
 def_IvrSipRequest_GETTER(IvrSipRequest_getbody,         body)
-
 def_IvrSipRequest_GETTER(IvrSipRequest_gethdrs,         hdrs)
 
 #undef def_IvrSipRequest_GETTER
@@ -177,7 +173,6 @@ static PyGetSetDef IvrSipRequest_getset[] = {
   {"from_tag",      (getter)IvrSipRequest_getfrom_tag, NULL, "remote tag", NULL},
   {"to_tag",        (getter)IvrSipRequest_getto_tag, NULL, "local tag", NULL},
   {"route",       (getter)IvrSipRequest_getroute, NULL, "record routing", NULL},
-  {"next_hop",    (getter)IvrSipRequest_getnext_hop, NULL, "next_hop for t_uac_dlg", NULL},
   {"cseq",    (getter)IvrSipRequest_getcseq, NULL, "CSeq for next request", NULL},
   {"body",    (getter)IvrSipRequest_getbody, NULL, "Body", NULL},
   {"hdrs",    (getter)IvrSipRequest_gethdrs, (setter)IvrSipRequest_sethdrs, "Additional headers", NULL},

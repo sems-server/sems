@@ -87,7 +87,7 @@ endif
 
 include $(COREPATH)/plug-in/Makefile.app_module
 
-ifneq ($(OS),darwin)
+ifneq ($(OS),macosx)
 PYTHON_module_ldflags += -Xlinker --export-dynamic
 endif
 
