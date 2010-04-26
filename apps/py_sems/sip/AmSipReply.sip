@@ -12,7 +12,6 @@ public:
     unsigned int code;
     string       reason;
     string       next_request_uri;
-    string       next_hop;
     string       route;
     string       hdrs;
     string       body;

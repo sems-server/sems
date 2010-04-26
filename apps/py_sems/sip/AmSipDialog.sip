@@ -33,12 +33,10 @@ public:
     string remote_party; // To/From
     string local_party;  // To/From
 
-    string next_hop;     // next_hop for t_uac_dlg
-
     int cseq;            // CSeq for next request
+    int r_cseq;
 
-    string getRoute(); // record routing
-    void   setRoute(const string& /* n_route */);
+    string route; // record routing
 
     bool   getUACTransPending();
     int    getStatus();

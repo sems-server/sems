@@ -28,8 +28,6 @@ public:
     string body;
 
     string route;     // record routing
-    string next_hop;  // next_hop for t_uac_dlg
-    
 };
 
 string getHeader(const string& /* hdrs */,const string& /* hdr_name */);
