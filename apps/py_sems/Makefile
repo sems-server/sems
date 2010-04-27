@@ -10,12 +10,8 @@ TTS ?= y
 PYTHON_DYNLOAD_MODULES = $(wildcard $(PYTHON_LIBDIR)/lib-dynload/*.so) \
 	$(wildcard $(PYTHON_LIBDIR)/site-packages/*.so)
 PYTHON_module_cflags = -Wno-write-strings -fno-strict-aliasing -I$(PYTHON_DIR) -Isip/
-PYTHON_module_ldflags = -Xlinker --export-dynamic \
-			-L$(PYTHON_LIBDIR)/config \
+PYTHON_module_ldflags = -L$(PYTHON_LIBDIR)/config \
 			-lpython$(PY_VER) 
-
-#\
-#$(PYTHON_DYNLOAD_MODULES)
 
 ifeq ($(TTS), y)
 #
@@ -81,6 +77,10 @@ extra_clean = clean_py_sems_lib
 LD=gcc
 
 include $(COREPATH)/plug-in/Makefile.app_module
+
+ifneq ($(OS),macosx)
+PYTHON_module_ldflags += -Xlinker --export-dynamic
+endif
 
 .PHONY: install_python_files
 install_python_files: $(DESTDIR)$(modules-prefix)/$(modules-dir)
