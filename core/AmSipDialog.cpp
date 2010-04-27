@@ -704,9 +704,10 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
     req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) + int2str(AmConfig::MaxForwards) + CRLF;
   }
 
-  if(!route.empty())
-    req.route = route;
-    
+  if(!route.empty()) {
+    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE) + route + CRLF;
+  }
+
   if(!body.empty()) {
     req.content_type = content_type;
     req.body = body;
