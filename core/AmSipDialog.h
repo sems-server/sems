@@ -205,8 +205,17 @@ class AmSipDialog
 
   AmSipTransaction* get_uac_trans(unsigned int cseq);
 
+  /**
+   * This method should only be used to send responses
+   * to requests which are not referenced by any dialog.
+   *
+   * WARNING: If the request has already been referenced 
+   * (see uas_trans, pending_invites), this method cannot 
+   * mark the request as replied, thus leaving it
+   * in the pending state forever.
+   */
   static int reply_error(const AmSipRequest& req,
-			 unsigned int  code, 
+			 unsigned int  code,
 			 const string& reason,
 			 const string& hdrs = "");
 };
