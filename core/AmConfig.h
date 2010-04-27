@@ -91,6 +91,8 @@ struct AmConfig
   static bool ForceOutboundProxy;
   /** Server/User-Agent header (optional) */
   static string Signature;
+  /** Value of Max-Forward header field for new requests */
+  static unsigned int MaxForwards;
   /** If 200 OK reply should be limited to preferred codec only */
   static bool SingleCodecInOK;
   static vector <string> CodecOrder;

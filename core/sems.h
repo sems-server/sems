@@ -39,7 +39,7 @@
 #define PREFIX_SEPARATOR    ""
 #define RTP_LOWPORT         1024
 #define RTP_HIGHPORT        0xffff
-#define MAX_FORWARDS        "70"
+#define MAX_FORWARDS        70
 
 #define DEFAULT_SIGNATURE "Sip Express Media Server " \
 		"(" SEMS_VERSION " (" ARCH "/" OS"))"

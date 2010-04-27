@@ -59,6 +59,7 @@ string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
 string       AmConfig::Signature               = "";
+unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
 bool	     AmConfig::SingleCodecInOK	       = false;
 unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
 bool         AmConfig::IgnoreRTPXHdrs          = false;
@@ -242,6 +243,16 @@ int AmConfig::readConfiguration()
     Signature = DEFAULT_SIGNATURE;
   else 
     Signature = cfg.getParameter("signature");
+
+  if (cfg.hasParameter("max_forwards")) {
+      unsigned int mf=0;
+      if(str2i(cfg.getParameter("max_forwards"), mf)) {
+	  ERROR("invalid max_forwards specified\n");
+      }
+      else {
+	  MaxForwards = mf;
+      }
+  }
 
   // log_level
   if(cfg.hasParameter("loglevel")){

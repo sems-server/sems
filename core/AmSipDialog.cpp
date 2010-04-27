@@ -585,7 +585,7 @@ int AmSipDialog::sendRequest(const string& method,
     if (AmConfig::Signature.length())
       req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
     
-    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) /*TODO: configurable?!*/ MAX_FORWARDS CRLF;
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) + int2str(AmConfig::MaxForwards) + CRLF;
 
   }
 
@@ -686,12 +686,11 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
     if (AmConfig::Signature.length())
       req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
     
-    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) /*TODO: configurable?!*/MAX_FORWARDS CRLF;
-
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) + int2str(AmConfig::MaxForwards) + CRLF;
   }
 
   if(!route.empty())
-    req.route = route; //getRoute();
+    req.route = route;
     
   if(!body.empty()) {
     req.content_type = content_type;
