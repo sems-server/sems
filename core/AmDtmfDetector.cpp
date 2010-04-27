@@ -254,8 +254,10 @@ void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
 
   m_eventPending = true;
   m_currentEvent = event;
-  m_current_eventid_i = true;
-  m_current_eventid = event_id;
+  if (has_eventid) {
+    m_current_eventid_i = true;
+    m_current_eventid = event_id;
+  }
 
   memcpy(&m_startTime, &start, sizeof(struct timeval));
   memcpy(&m_lastReportTime, &stop, sizeof(struct timeval));
