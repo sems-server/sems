@@ -149,6 +149,7 @@ class AmSipDialog
   bool   force_outbound_proxy;
 
   unsigned int cseq; // Local CSeq for next request
+  bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
 
   AmSipDialog(AmSipDialogEventHandler* h=0);

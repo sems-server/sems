@@ -41,9 +41,9 @@ const char* AmSipDialog::status2str[4]  = {
 
 
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
-    : status(Disconnected),cseq(10),hdl(h),pending_invites(0),
-      outbound_proxy(AmConfig::OutboundProxy),
-      force_outbound_proxy(AmConfig::ForceOutboundProxy)
+  : status(Disconnected),cseq(10),r_cseq_i(false),hdl(h),pending_invites(0),
+    outbound_proxy(AmConfig::OutboundProxy),
+    force_outbound_proxy(AmConfig::ForceOutboundProxy)
 {
 }
 
@@ -76,21 +76,23 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   }
 
   // Sanity checks
-  if (req.cseq <= r_cseq){
-      reply_error(req,500,"Server Internal Error");
-      return;
+  if (r_cseq_i && req.cseq <= r_cseq){
+    INFO("remote cseq lower than previous ones - refusing request\n");
+    // see 12.2.2
+    reply_error(req, 500, "Server Internal Error");
+    return;
   }
 
-  if ((req.method == "INVITE") && pending_invites) {
-      
-      reply_error(req,500,"Server Internal Error",
-		  "Retry-After: " + int2str(get_random() % 10) + CRLF);
+  if ((req.method == "INVITE") && pending_invites) {      
+    reply_error(req,491,"Request Pending",
+		"Retry-After: " + int2str(get_random() % 10) + CRLF);
   }
   else {
       pending_invites++;
   }
 
   r_cseq = req.cseq;
+  r_cseq_i = true;
 
   if(uas_trans.find(req.cseq) == uas_trans.end()){
       DBG("req.tt = {%p,%p}\n",req.tt._bucket, req.tt._t);
