@@ -71,7 +71,11 @@ AmSipDialog::~AmSipDialog()
 
 void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
+  DBG("AmSipDialog::updateStatus(request)\n");
+
   if ((req.method == "ACK") || (req.method == "CANCEL")) {
+    if(hdl)
+      hdl->onSipRequest(req);
     return;
   }
 
