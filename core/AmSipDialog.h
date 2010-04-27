@@ -45,18 +45,18 @@ using std::string;
 /** \brief SIP transaction representation */
 struct AmSipTransaction
 {
-    string       method;
-    unsigned int cseq;
-    trans_ticket tt;
+  string       method;
+  unsigned int cseq;
+  trans_ticket tt;
 
   // last reply code
   // (sent or received)
   //int reply_code;
 
-    AmSipTransaction(const string& method, unsigned int cseq, const trans_ticket& tt)
-    : method(method),
-      cseq(cseq),
-      tt(tt)
+AmSipTransaction(const string& method, unsigned int cseq, const trans_ticket& tt)
+: method(method),
+    cseq(cseq),
+    tt(tt)
   {}
 
   AmSipTransaction()
@@ -70,35 +70,35 @@ typedef std::map<int,AmSipTransaction> TransMap;
  */
 class AmSipDialogEventHandler 
 {
-public:
+ public:
     
-    /** Hook called when a request has been received */
-    virtual void onSipRequest(const AmSipRequest& req)=0;
+  /** Hook called when a request has been received */
+  virtual void onSipRequest(const AmSipRequest& req)=0;
 
-    /** Hook called when a reply has been received */
-    virtual void onSipReply(const AmSipReply& reply, int old_dlg_status)=0;
+  /** Hook called when a reply has been received */
+  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status)=0;
 
-    /** Hook called before a request is sent */
-    virtual void onSendRequest(const string& method,
-			       const string& content_type,
-			       const string& body,
-			       string& hdrs,
-			       int flags,
-			       unsigned int cseq)=0;
-    
-    /** Hook called before a reply is sent */
-    virtual void onSendReply(const AmSipRequest& req,
-			     unsigned int  code,
-			     const string& reason,
+  /** Hook called before a request is sent */
+  virtual void onSendRequest(const string& method,
 			     const string& content_type,
 			     const string& body,
 			     string& hdrs,
-			     int flags)=0;
+			     int flags,
+			     unsigned int cseq)=0;
     
-    /** Hook called when a local INVITE request has been replied with 2xx */
-    virtual void onInvite2xx(const AmSipReply& reply)=0;
+  /** Hook called before a reply is sent */
+  virtual void onSendReply(const AmSipRequest& req,
+			   unsigned int  code,
+			   const string& reason,
+			   const string& content_type,
+			   const string& body,
+			   string& hdrs,
+			   int flags)=0;
+    
+  /** Hook called when a local INVITE request has been replied with 2xx */
+  virtual void onInvite2xx(const AmSipReply& reply)=0;
 
-    virtual ~AmSipDialogEventHandler() {};
+  virtual ~AmSipDialogEventHandler() {};
 };
 
 /**
@@ -223,3 +223,10 @@ class AmSipDialog
 
 
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 2
+ * End:
+ */

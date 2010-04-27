@@ -715,3 +715,11 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
 
   return 0;
 }
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 2
+ * End:
+ */

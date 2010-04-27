@@ -530,7 +530,10 @@ inline AmRtpAudio* AmSession::RTPStream() {
 
 #endif
 
-// Local Variables:
-// mode:C++
-// End:
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 2
+ * End:
+ */
 

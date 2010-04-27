@@ -126,7 +126,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  } 
 	} else {
 	  ERROR("Request with CSeq %u not found in recvd_req.\n",
-	      reply_ev->reply.cseq);
+		reply_ev->reply.cseq);
 	}
       }
     }
@@ -154,13 +154,13 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	trans_ticket tt; // empty transaction ticket
 	relayed_body_req[dlg.cseq] = AmSipTransaction("INVITE", body_ev->r_cseq, tt);
 	if (dlg.reinvite("", body_ev->content_type, body_ev->body)) {
-	   ERROR("sending reinvite with relayed body\n");
-	   relayed_body_req.erase(dlg.cseq);
-	   // TODO?: relay error back instead?
-	   // tear down:
-	   DBG("error sending reinvite - terminating this and the other leg\n");
-	   terminateOtherLeg();	   
-	   terminateLeg();
+	  ERROR("sending reinvite with relayed body\n");
+	  relayed_body_req.erase(dlg.cseq);
+	  // TODO?: relay error back instead?
+	  // tear down:
+	  DBG("error sending reinvite - terminating this and the other leg\n");
+	  terminateOtherLeg();	   
+	  terminateLeg();
 	}
       } else {
 	// is_answer - send 200 ACK
@@ -188,7 +188,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
   if(!fwd)
     AmSession::onSipRequest(req);
   else {
-      //dlg.updateStatus(req);
+    //dlg.updateStatus(req);
     recvd_req.insert(std::make_pair(req.cseq,req));
   }
 
@@ -217,8 +217,8 @@ void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
     }
   } else {
     bool relay_body = 
-    // is a reply to request we sent, 
-    // even though we are in sip_relay_only  mode
+      // is a reply to request we sent, 
+      // even though we are in sip_relay_only  mode
       (sip_relay_only && 
        // positive reply
        (200 <= reply.code) && (reply.code < 300) 
@@ -254,7 +254,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	AmSession::onSipReply(reply, old_dlg_status);
       }      
     } else {
-	AmSession::onSipReply(reply, old_dlg_status);
+      AmSession::onSipReply(reply, old_dlg_status);
     }
     relayEvent(new B2BSipReplyEvent(reply,false));
   }
@@ -262,7 +262,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 
 void AmB2BSession::onInvite2xx(const AmSipReply& reply)
 {
-    // do not send the 200 ACK yet...
+  // do not send the 200 ACK yet...
 }
 
 void AmB2BSession::relayEvent(AmEvent* ev)
@@ -307,7 +307,7 @@ void AmB2BSession::terminateOtherLeg()
 void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
-      relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
+    relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
     dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs,SIP_FLAGS_VERBATIM);
   } else {
     // its a (200) ACK 
@@ -550,7 +550,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
     dlg.remote_uri   = co_ev->remote_uri;
 
     if (co_ev->relayed_invite) {
-	relayed_req[dlg.cseq] = AmSipTransaction("INVITE", co_ev->r_cseq, trans_ticket());
+      relayed_req[dlg.cseq] = AmSipTransaction("INVITE", co_ev->r_cseq, trans_ticket());
     }
 
     dlg.sendRequest("INVITE",co_ev->content_type,co_ev->body,co_ev->hdrs,SIP_FLAGS_VERBATIM);

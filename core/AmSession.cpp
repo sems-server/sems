@@ -154,7 +154,7 @@ void AmSession::setLocalInOut(AmAudio* in,AmAudio* out)
 }
 
 void AmSession::setAudioLocal(unsigned int dir, 
-				     bool local) {
+			      bool local) {
   assert(dir<2);
   use_local_audio[dir] = local;
 }
@@ -499,7 +499,7 @@ void AmSession::finalize() {
 #ifndef SESSION_THREADPOOL
 void AmSession::on_stop() 
 #else
-void AmSession::stop()
+  void AmSession::stop()
 #endif  
 {
   DBG("AmSession::stop()\n");
@@ -637,8 +637,8 @@ void AmSession::process(AmEvent* ev)
 
   AmAudioEvent* audio_ev = dynamic_cast<AmAudioEvent*>(ev);
   if(audio_ev){
-      onAudioEvent(audio_ev);
-      return;
+    onAudioEvent(audio_ev);
+    return;
   }
 
   AmDtmfEvent* dtmf_ev = dynamic_cast<AmDtmfEvent*>(ev);
@@ -671,7 +671,7 @@ void AmSession::onSipEvent(AmSipEvent* sip_ev)
 
   AmSipRequestEvent* req_ev = dynamic_cast<AmSipRequestEvent*>(sip_ev);
   if(req_ev) {
-      //onSipRequest(req_ev->req);
+    //onSipRequest(req_ev->req);
     dlg.updateStatus(req_ev->req);
     return;
   }
@@ -679,7 +679,7 @@ void AmSession::onSipEvent(AmSipEvent* sip_ev)
 
   AmSipReplyEvent* reply_ev = dynamic_cast<AmSipReplyEvent*>(sip_ev);
   if(reply_ev) {
-      //onSipReply(reply_ev->reply);
+    //onSipReply(reply_ev->reply);
     dlg.updateStatus(reply_ev->reply);
     return;
   }
@@ -736,8 +736,8 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   CALL_EVENT_H(onSipReply,reply);
 
-//   int status = dlg.getStatus();
-//   dlg.updateStatus(reply);
+  //   int status = dlg.getStatus();
+  //   dlg.updateStatus(reply);
 
   if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
@@ -766,8 +766,8 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	    onSessionStart(reply);
 		  
 	    if(input || output || local_input || local_output)
-		AmMediaProcessor::instance()->addSession(this,
-							 callgroup); 
+	      AmMediaProcessor::instance()->addSession(this,
+						       callgroup); 
 	    else { 
 	      DBG("no audio input and output set. "
 		  "Session will not be attached to MediaProcessor.\n");
@@ -828,14 +828,14 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 
 void AmSession::onInvite2xx(const AmSipReply& reply)
 {
-    AmSipTransaction* t = dlg.get_uac_trans(reply.cseq);
-    if(t) dlg.send_200_ack(*t);
+  AmSipTransaction* t = dlg.get_uac_trans(reply.cseq);
+  if(t) dlg.send_200_ack(*t);
 }
 
 void AmSession::onAudioEvent(AmAudioEvent* audio_ev)
 {
-    if (audio_ev->event_id == AmAudioEvent::cleared)
-	setStopped();
+  if (audio_ev->event_id == AmAudioEvent::cleared)
+    setStopped();
 }
 
 void AmSession::onInvite(const AmSipRequest& req)
@@ -1069,7 +1069,13 @@ void AmSession::onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx) {
       INFO("unknown ZRTP_EVENT\n");
       break;
     } // end events case
-  
 }
  
 #endif
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 2
+ * End:
+ */

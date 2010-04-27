@@ -9,25 +9,25 @@ using std::string;
 /* enforce common naming in Req&Rpl */
 class _AmSipMsgInDlg
 {
-  public:
-    string       method;
-    string       route;
+ public:
+  string       method;
+  string       route;
 
-    string       contact;
-    string       content_type;
+  string       contact;
+  string       content_type;
 
-    string       hdrs;
-    string       body;
-    unsigned int cseq;
-    string       callid;
+  string       hdrs;
+  string       body;
+  unsigned int cseq;
+  string       callid;
 
-    // transaction ticket from sip stack
-    trans_ticket tt;
+  // transaction ticket from sip stack
+  trans_ticket tt;
 
-    _AmSipMsgInDlg() : cseq(0) { }
-    virtual ~_AmSipMsgInDlg() { };
+ _AmSipMsgInDlg() : cseq(0) { }
+  virtual ~_AmSipMsgInDlg() { };
 
-    virtual string print() = 0;
+  virtual string print() = 0;
 };
 
 /** \brief represents a SIP reply */
@@ -43,7 +43,7 @@ class AmSipReply : public _AmSipMsgInDlg
   string       local_tag;
 
 
-  AmSipReply() : code(0), _AmSipMsgInDlg() { }
+ AmSipReply() : code(0), _AmSipMsgInDlg() { }
   ~AmSipReply() { }
   string print();
 };
@@ -64,7 +64,7 @@ class AmSipRequest : public _AmSipMsgInDlg
   string from_tag;
   string to_tag;
 
-  AmSipRequest() : _AmSipMsgInDlg() { }
+ AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }
   
   string print();
@@ -85,3 +85,11 @@ bool findHeader(const string& hdrs,const string& hdr_name,
 
 bool removeHeader(string& hdrs, const string& hdr_name);
 #endif /* __AMSIPMSG_H__ */
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 2
+ * End:
+ */

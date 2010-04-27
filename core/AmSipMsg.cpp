@@ -117,16 +117,16 @@ bool removeHeader(string& hdrs, const string& hdr_name) {
 }
 
 /* Print Member */
-#define _PM(member, name) \
-  do { \
-    if (! member.empty()) \
+#define _PM(member, name)			\
+  do {						\
+    if (! member.empty())			\
       buf += string(name) + ":" + member + ";"; \
   } while (0)
 /* Print Member in Brackets */
-#define _PMB(member, name) \
-  do { \
-    if (! member.empty()) \
-      buf += string(name) + ":" + "[" + member + "]" + ";"; \
+#define _PMB(member, name)					\
+  do {								\
+    if (! member.empty())					\
+      buf += string(name) + ":" + "[" + member + "]" + ";";	\
   } while (0)
 
 string AmSipRequest::print()
@@ -182,3 +182,10 @@ string AmSipReply::print()
 
 #undef _PM
 #undef _PMB
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 2
+ * End:
+ */
