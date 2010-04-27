@@ -262,14 +262,13 @@ void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 
 void AmB2BSession::onInvite2xx(const AmSipReply& reply)
 {
-    TransMap::iterator it = relayed_req.find(reply.cseq);
-    int req_fwded = it != relayed_req.end();
-    if(!req_fwded) {
-	dlg.send_200_ack(it->second);
-    }
-    else {
-	DBG("no 200 ACK now: waiting for the 200 ACK from the other side...\n");
-    }
+  TransMap::iterator it = relayed_req.find(reply.cseq);
+  bool req_fwded = it != relayed_req.end();
+  if(!req_fwded) {
+    AmSession::onInvite2xx(reply);
+  } else {
+    DBG("no 200 ACK now: waiting for the 200 ACK from the other side...\n");
+  }
 }
 
 void AmB2BSession::relayEvent(AmEvent* ev)
@@ -569,3 +568,10 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 
   AmB2BSession::onB2BEvent(ev);
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset: 2
+ * End:
+ */
