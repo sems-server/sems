@@ -262,7 +262,14 @@ void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 
 void AmB2BSession::onInvite2xx(const AmSipReply& reply)
 {
-  // do not send the 200 ACK yet...
+    TransMap::iterator it = relayed_req.find(reply.cseq);
+    int req_fwded = it != relayed_req.end();
+    if(!req_fwded) {
+	dlg.send_200_ack(it->second);
+    }
+    else {
+	DBG("no 200 ACK now: waiting for the 200 ACK from the other side...\n");
+    }
 }
 
 void AmB2BSession::relayEvent(AmEvent* ev)
@@ -311,7 +318,7 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
     dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs,SIP_FLAGS_VERBATIM);
     // todo: relay error event back if sending fails
   } else {
-    // its a (200) ACK 
+    //its a (200) ACK 
     TransMap::iterator t = relayed_req.begin(); 
 
     while (t != relayed_req.end()) {
