@@ -48,12 +48,6 @@
 #include "AmConfigReader.h"
 #include "AmSipDispatcher.h"
 
-#ifndef MOD_NAME
-#define MOD_NAME  "sipctrl"
-#endif
-
-string SipCtrlInterface::outbound_host = "";
-unsigned int SipCtrlInterface::outbound_port = 0;
 bool SipCtrlInterface::accept_fr_without_totag = false;
 int SipCtrlInterface::log_raw_messages = 3;
 bool SipCtrlInterface::log_parsed_messages = true;
@@ -70,10 +64,6 @@ int SipCtrlInterface::load()
 		      AmConfig::OutboundProxy.length()) < 0) {
 	    ERROR("invalid outbound_proxy specified\n");
 	    return -1;
-	}
-	outbound_host = c2stlstr(parsed_uri.host);
-	if (parsed_uri.port) {
-	    outbound_port = parsed_uri.port;
 	}
     }
 
