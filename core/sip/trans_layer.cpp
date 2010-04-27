@@ -747,7 +747,6 @@ int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
 			&msg->remote_ip) < 0){
 
 	DBG("set_next_hop failed\n");
-	delete msg;
 	return -1;
     }
     
