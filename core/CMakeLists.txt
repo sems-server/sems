@@ -150,8 +150,6 @@ SET(doc_files
 	../doc/Readme.webconference.txt
 	../doc/Readme.xmlrpc2di.txt
 	../doc/WHATSNEW_0.10
-	./etc/ser-sems.cfg
-	./etc/ser-sems.sasi.cfg
 )
 
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)

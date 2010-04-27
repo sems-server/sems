@@ -90,20 +90,6 @@ install-modules: $(PLUGIN_DIR) $(DESTDIR)$(modules-prefix)/$(modules-dir)
 install-modules-cfg: $(PLUGIN_DIR) 
 	$(MAKE) -C $(PLUGIN_DIR) install-cfg
 
-install-ser-cfg: etc/ser-sems.cfg
-	mkdir -p $(DESTDIR)$(ser-cfg-target)
-
-	if [ ! -f  $(DESTDIR)$(ser-cfg-target)/ser-sems.cfg ]; then \
-		sed -e "s#/opt/ser-sems#$(ser-prefix)#g" \
-			< etc/ser-sems.cfg > $(DESTDIR)$(ser-cfg-target)ser-sems.cfg; \
-	fi
-
-	$(INSTALL-CFG) etc/ser-sems.cfg $(DESTDIR)$(ser-cfg-target)ser-sems.cfg.default
-
-	@echo \*\*\* installed ser-sems.cfg at $(DESTDIR)$(ser-cfg-target)ser-sems.cfg
-	@echo \*\*\* run $(DESTDIR)$(ser-prefix)/sbin/ser -f $(DESTDIR)$(ser-cfg-target)ser-sems.cfg
-	@echo \*\*\* to start ser for sems.
-
 install-audio: $(DESTDIR)$(audio-prefix)/$(audio-dir)
 	for f in $(AUDIO_FILES) ; do \
 		if [ -n "wav/$$f" ]; then \

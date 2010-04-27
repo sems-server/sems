@@ -139,27 +139,22 @@ Requirements:
 
  All requirements are optional.
 
- 1. optional: SER version 0.9.6-sems, or SER 2.0 with SASI:
-    SIP Epress Router (www.iptel.org/ser)
-
-    SEMS has its own SIP stack. SEMS can also use SER as its 
-    SIP stack. SEMS & SER communicate through unix socket (0.9.6),
-    or binrpc protocol (2.0 SASI).
-
- 2. Python version >= 2.3 for the ivr (embedded python interpreter)
+ 1. Python version >= 2.3 for the ivr (embedded python interpreter)
     and py_sems, optional
 
- 3. flite speech synthesizer for TTS in the ivr, optional
+ 2. flite speech synthesizer for TTS in the ivr, optional
 
- 4. lame >= 3.95 for mp3 file output, optional. mpg123 for mp3 playback,
+ 3. lame >= 3.95 for mp3 file output, optional. mpg123 for mp3 playback,
     optional
 
- 5. xmlrpcpp for XMLRPC control, optional
+ 4. xmlrpcpp for XMLRPC control, optional
 
- 6. spandsp library for DTMF detection and PLC, optional
+ 5. spandsp library for DTMF detection and PLC, optional
     (SEMS has its own implementations for both)
 
- 7. libZRTP SDK (http://zfoneproject.com) for ZRTP, optional
+ 6. libZRTP SDK (http://zfoneproject.com) for ZRTP, optional
+
+ 7. libev for jsonrpc, optional
 
 How to get started with SEMS:
 
@@ -224,25 +219,13 @@ Installation:
     is at '/usr/local/etc/sems/sems.conf'. 
     Else make your own using sems.conf.sample.
 
- 4. Optional, needed if you want to use SER as SEMS frontend (SIP stack):
-    Get and start SER as SIP stack for SEMS: 
-    
-    By default, sipctrl plugin is loaded, which is the integrated SIP 
-    stack for SEMS. If SER should be used, the following procedure is
-    necessary for ser  as SIP stack: 
-    o For ser 2.0/sasi use this patched ser2.0 version:
-      http://ftp.iptel.org/pub/sems/ser2-sasi-080108.tar.bz2 
-      (or ser head possibly with patches from the bug tracker at 
-       http://tracker.iptel.org/browse/SER-346 )    
-      and core/etc/ser-sems.sasi.cfg. Then load the binrpcctrl module.
-
- 5. Start SEMS:
+ 4. Start SEMS:
 
     If you installed SEMS with 'make install', sems can be
     found at '/usr/local/sbin/sems'.
     If you need help starting 'sems', try 'sems -h'.
 
- 6. Using SEMS
+ 5. Using SEMS
     
     SEMS needs to be told from the many possible applications that are
     loaded which one to run. You can simply set the application 

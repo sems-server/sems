@@ -248,8 +248,6 @@ modules-dir = lib/sems/plug-in/
 audio-dir = lib/sems/audio/
 lib-dir = lib/sems/
 
-ser-cfg-dir = etc/ser/
-
 ifeq ($(OS), linux)
 	doc-dir = share/doc/sems/
 	man-dir = share/man/
@@ -278,7 +276,6 @@ bin-target = $(prefix)/$(bin-dir)
 cfg-target = $(prefix)/$(cfg-dir)
 modules-target = $(prefix)/$(modules-dir)
 audio-target = $(prefix)/$(audio-dir)
-ser-cfg-target =$(ser-prefix)/$(ser-cfg-dir)
 lib-target = $(prefix)/$(lib-dir)
 
 ifeq ($(OS), solaris)
@@ -305,8 +302,8 @@ export CXX CC LD
 export DESTDIR PREFIX prefix basedir ser-prefix
 export start-script
 export cfg-prefix bin-prefix modules-prefix doc-prefix audio-prefix lib-prefix
-export cfg-dir bin-dir modules-dir audio-dir lib-dir ser-cfg-dir doc-dir man-dir
-export bin-target cfg-target modules-target audio-target ser-cfg-target lib-target
+export cfg-dir bin-dir modules-dir audio-dir lib-dir doc-dir man-dir
+export bin-target cfg-target modules-target audio-target lib-target
 export INSTALL TAR INSTALL-TOUCH INSTALL-CFG INSTALL-BIN INSTALL-MODULES INSTALL-DOC INSTALL-AUDIO
 
 export USE_SPANDSP LIBSPANDSP_STATIC LIBSPANDSP_LDIR 
