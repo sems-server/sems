@@ -130,7 +130,7 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
 
     ERROR("%i %s\n",e.code,e.reason.c_str());
     sess->setStopped();
-    AmSipDialog::reply_error(*sc_sess->last_req.get(),e.code,e.reason);
+    sess->dlg.reply(*sc_sess->last_req.get(),e.code,e.reason);
   }
 } EXEC_ACTION_END;
 

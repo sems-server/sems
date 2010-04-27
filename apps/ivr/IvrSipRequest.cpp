@@ -114,8 +114,6 @@ IvrSipRequest_dealloc(IvrSipRequest* self)
 def_IvrSipRequest_GETTER(IvrSipRequest_getmethod,       method)
 def_IvrSipRequest_GETTER(IvrSipRequest_getuser,         user)
 def_IvrSipRequest_GETTER(IvrSipRequest_getdomain,       domain)
-def_IvrSipRequest_GETTER(IvrSipRequest_getdstip,        dstip)
-def_IvrSipRequest_GETTER(IvrSipRequest_getport,         port)
 def_IvrSipRequest_GETTER(IvrSipRequest_getr_uri,        r_uri)
 def_IvrSipRequest_GETTER(IvrSipRequest_getfrom_uri,     from_uri)
 def_IvrSipRequest_GETTER(IvrSipRequest_getfrom,         from)
@@ -160,8 +158,6 @@ static PyGetSetDef IvrSipRequest_getset[] = {
   {"method",        (getter)IvrSipRequest_getmethod, NULL, "method", NULL},
   {"user",          (getter)IvrSipRequest_getuser, NULL, "local user", NULL},
   {"domain",        (getter)IvrSipRequest_getdomain, NULL, "local domain", NULL},
-  {"dstip",         (getter)IvrSipRequest_getdstip, NULL, "dstip", NULL},
-  {"port",          (getter)IvrSipRequest_getport, NULL, "port", NULL},
 
   {"r_uri",         (getter)IvrSipRequest_getr_uri, NULL, "port", NULL},
   {"from_uri",      (getter)IvrSipRequest_getfrom_uri, NULL, "port", NULL},

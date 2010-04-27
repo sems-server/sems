@@ -67,7 +67,6 @@ SIPRegistration::SIPRegistration(const string& handle,
   req.cmd      = "sems";
   req.user     = info.user;
   req.method   = "REGISTER";
-  req.dstip    = AmConfig::LocalIP;
   req.r_uri    = "sip:"+info.domain;
   req.from     = info.name+" <sip:"+info.user+"@"+info.domain+">";
   req.from_uri = "sip:"+info.user+"@"+info.domain;
@@ -79,10 +78,6 @@ SIPRegistration::SIPRegistration(const string& handle,
 
   // clear dlg.callid? ->reregister?
   dlg.updateStatusFromLocalRequest(req);
-	
-  dlg.sip_ip   = AmConfig::LocalSIPIP;
-  if (AmConfig::LocalSIPPort)
-    dlg.sip_port = int2str(AmConfig::LocalSIPPort);
   dlg.cseq = 50;
 }
 

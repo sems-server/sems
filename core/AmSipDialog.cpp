@@ -41,9 +41,9 @@ const char* AmSipDialog::status2str[4]  = {
 
 
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
-  : status(Disconnected),cseq(10),hdl(h),
-    outbound_proxy(AmConfig::OutboundProxy),
-    force_outbound_proxy(AmConfig::ForceOutboundProxy)
+    : status(Disconnected),cseq(10),hdl(h),pending_invites(0),
+      outbound_proxy(AmConfig::OutboundProxy),
+      force_outbound_proxy(AmConfig::ForceOutboundProxy)
 {
 }
 
@@ -75,9 +75,19 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     return;
   }
 
+  // Sanity checks
   if (req.cseq <= r_cseq){
       reply_error(req,500,"Server Internal Error");
       return;
+  }
+
+  if ((req.method == "INVITE") && pending_invites) {
+      
+      reply_error(req,500,"Server Internal Error",
+		  "Retry-After: " + int2str(get_random() % 10) + CRLF);
+  }
+  else {
+      pending_invites++;
   }
 
   r_cseq = req.cseq;
@@ -190,12 +200,15 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
 	req.method.c_str(),t.method.c_str());
 
     uas_trans.erase(t_it);
+
+    if(t.method == "INVITE")
+	pending_invites--;
   }
 
   return 0;
 }
 
-void AmSipDialog::updateStatus(const AmSipReply& reply/*, bool do_200_ack*/)
+void AmSipDialog::updateStatus(const AmSipReply& reply)
 {
   TransMap::iterator t_it = uac_trans.find(reply.cseq);
   if(t_it == uac_trans.end()){

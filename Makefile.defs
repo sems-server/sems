@@ -177,9 +177,6 @@ ifeq ($(OS), macosx)
 	      CPPFLAGS += -I /opt/local/include
 	      LDFLAGS += -L/opt/local/lib
 	endif	      
-
-	exclude_core_modules += binrpcctrl 
-	exclude_app_modules += ivr
 else
 ifeq ($(OS), solaris)
        	LDFLAGS+= -fPIC -ldl -lsocket -lnsl -lpthread

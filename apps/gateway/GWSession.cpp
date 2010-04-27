@@ -41,7 +41,7 @@ void GWSession::onSessionStart(const AmSipRequest& req) {
 	}catch(const AmSession::Exception& e){
     	    ERROR("%i %s\n",e.code,e.reason.c_str());
             setStopped();
-            AmSipDialog::reply_error(req,e.code,e.reason);
+            dlg.reply(req,e.code,e.reason);
             return;
         }
         DBG("GWSession::onSessionStart Setting Audio\n");

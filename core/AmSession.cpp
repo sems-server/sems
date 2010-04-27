@@ -852,7 +852,7 @@ void AmSession::onInvite(const AmSipRequest& req)
 
     ERROR("%i %s\n",e.code,e.reason.c_str());
     setStopped();
-    AmSipDialog::reply_error(req,e.code,e.reason);
+    dlg.reply(req,e.code,e.reason);
   }
 }
 

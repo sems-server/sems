@@ -110,6 +110,8 @@ class AmSipDialog
 
   TransMap uas_trans;
   TransMap uac_trans;
+    
+  unsigned int pending_invites;
 
   AmSipDialogEventHandler* hdl;
 

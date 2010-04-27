@@ -54,8 +54,6 @@ static PyObject* IvrSipDialog_new(PyTypeObject *type, PyObject *args, PyObject *
 								
 def_IvrSipDialog_GETTER(IvrSipDialog_getuser,         user)
 def_IvrSipDialog_GETTER(IvrSipDialog_getdomain,       domain)
-def_IvrSipDialog_GETTER(IvrSipDialog_getsip_ip,       sip_ip)
-def_IvrSipDialog_GETTER(IvrSipDialog_getsip_port,     sip_port)
 def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_uri,    local_uri)
 def_IvrSipDialog_GETTER(IvrSipDialog_getremote_uri,   remote_uri)
 def_IvrSipDialog_GETTER(IvrSipDialog_getcontact_uri,  contact_uri)
@@ -96,8 +94,6 @@ IvrSipDialog_getcseq(IvrSipDialog *self, void *closure)
 static PyGetSetDef IvrSipDialog_getset[] = {
   {"user",        (getter)IvrSipDialog_getuser, NULL, "local user", NULL},
   {"domain",      (getter)IvrSipDialog_getdomain, NULL, "local domain", NULL},
-  {"sip_ip",      (getter)IvrSipDialog_getsip_ip, NULL, "destination IP of first received message", NULL},
-  {"sip_port",    (getter)IvrSipDialog_getsip_port, NULL, "optional: SIP port", NULL},
   {"local_uri",   (getter)IvrSipDialog_getlocal_uri, NULL, "local uri", NULL},
   {"remote_uri",  (getter)IvrSipDialog_getremote_uri, (setter)IvrSipDialog_setremote_uri, "remote uri", NULL},
   {"contact_uri", (getter)IvrSipDialog_getcontact_uri, NULL, "pre-calculated contact uri", NULL},
