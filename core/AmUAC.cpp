@@ -46,7 +46,6 @@ AmSession* AmUAC::dialout(const string& user,
   req.cmd      = app_name;
   req.user     = user;
   req.method   = "INVITE";
-  req.dstip    = AmConfig::LocalIP;
   req.r_uri    = r_uri;
   req.from     = from;
   req.from_uri = from_uri;
@@ -59,10 +58,6 @@ AmSession* AmUAC::dialout(const string& user,
   req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
   req.hdrs     = hdrs;
     
-  // set outbound proxy as next hop 
-  //if (!AmConfig::OutboundProxy.empty()) 
-  //  req.next_hop = AmConfig::OutboundProxy;
-
   return AmSessionContainer::instance()->startSessionUAC(req, session_params);
 }
 

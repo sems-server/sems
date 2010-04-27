@@ -335,8 +335,6 @@ void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
     req.method   = c2stlstr(msg->u.request->method_str);
     req.user     = c2stlstr(msg->u.request->ruri.user);
     req.domain   = c2stlstr(msg->u.request->ruri.host);
-    req.dstip    = get_addr_str(((sockaddr_in*)(&msg->local_ip))->sin_addr); //FIXME: IPv6
-    req.port     = int2str(ntohs(((sockaddr_in*)(&msg->local_ip))->sin_port));
     req.r_uri    = c2stlstr(msg->u.request->ruri_str);
 
     if(get_contact(msg)){
@@ -405,8 +403,6 @@ void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
 	DBG_PARAM(req.method);
 	//     DBG_PARAM(req.user);
 	//     DBG_PARAM(req.domain);
-	//     DBG_PARAM(req.dstip);
-	//     DBG_PARAM(req.port);
 	DBG_PARAM(req.r_uri);
 	DBG_PARAM(req.from_uri);
 	DBG_PARAM(req.from);
@@ -416,7 +412,6 @@ void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
 	DBG_PARAM(req.to_tag);
 	DBG("cseq = <%i>\n",req.cseq);
 	DBG_PARAM(req.route);
-	//DBG_PARAM(req.next_hop);
 	DBG("hdrs = <%s>\n",req.hdrs.c_str());
 	DBG("body = <%s>\n",req.body.c_str());
     }
@@ -467,9 +462,6 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     
     reply.remote_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
     reply.local_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
-
-    reply.dstip = get_addr_str(((sockaddr_in*)(&msg->local_ip))->sin_addr); //FIXME: IPv6
-    reply.port  = int2str(ntohs(((sockaddr_in*)(&msg->local_ip))->sin_port));
 
     prepare_routes_uac(msg->record_route, reply.route);
 

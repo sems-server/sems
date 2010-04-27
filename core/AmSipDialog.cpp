@@ -80,6 +80,8 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
       return;
   }
 
+  r_cseq = req.cseq;
+
   if(uas_trans.find(req.cseq) == uas_trans.end()){
       DBG("req.tt = {%p,%p}\n",req.tt._bucket, req.tt._t);
       uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
@@ -94,11 +96,10 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
       (req.method == "INVITE" || 
        req.method == "UPDATE" ||
        req.method == "SUBSCRIBE" ||
-       req.method == "NOTIFY"))
-    remote_uri = req.from_uri;
+       req.method == "NOTIFY")) {
 
-  sip_ip       = req.dstip;
-  sip_port     = req.port;
+    remote_uri = req.from_uri;
+  }
 
   if(callid.empty()){
     callid       = req.callid;
@@ -227,11 +228,6 @@ void AmSipDialog::updateStatus(const AmSipReply& reply/*, bool do_200_ack*/)
 
   if (reply.next_request_uri.length())
     remote_uri = reply.next_request_uri;
-
-  if(!reply.dstip.empty()){
-      sip_ip     = reply.dstip;
-      sip_port   = reply.port;
-  }
 
   switch(status){
   case Disconnecting:

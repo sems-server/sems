@@ -21,9 +21,6 @@ class _AmSipMsgInDlg
     unsigned int cseq;
     string       callid;
 
-    string dstip; // IP where Ser received the message
-    string port;  // Ser's SIP port
-
     // transaction ticket from sip stack
     trans_ticket tt;
 

@@ -138,7 +138,6 @@ string AmSipRequest::print()
   _PM(int2str(cseq), "cseq");
   _PM(from_tag, "l-tag");
   _PM(to_tag, "r-tag");
-  //_PM(next_hop, "nhop");
   _PMB(route, "rtset");
   _PM(contact, "m");
 
@@ -151,10 +150,6 @@ string AmSipRequest::print()
   _PM(from_uri, "f-uri");
   _PM(from, "from");
   _PM(to, "to");
-
-  _PM(dstip, "dstip");
-  _PM(port, "dstport");
-
 
   buf = method + " [" + buf + "]";
   return buf;
@@ -180,9 +175,6 @@ string AmSipReply::print()
   _PMB(body, "body");
 
   _PM(next_request_uri, "next-r-uri");
-
-  _PM(dstip, "dstip");
-  _PM(port, "dstport");
 
   buf = method + " [" + buf + "]";
   return buf;
