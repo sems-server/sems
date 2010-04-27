@@ -309,6 +309,7 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
   if (req.method != "ACK") {
     relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
     dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs,SIP_FLAGS_VERBATIM);
+    // todo: relay error event back if sending fails
   } else {
     // its a (200) ACK 
     TransMap::iterator t = relayed_req.begin(); 
@@ -554,6 +555,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
     }
 
     dlg.sendRequest("INVITE",co_ev->content_type,co_ev->body,co_ev->hdrs,SIP_FLAGS_VERBATIM);
+    // todo: relay error event back if sending fails
 
     return;
   }    
