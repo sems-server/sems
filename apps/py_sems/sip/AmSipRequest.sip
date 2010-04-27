@@ -12,8 +12,6 @@ public:
     string method;
     string user;
     string domain;
-    string dstip; // IP where Ser received the message
-    string port;  // Ser's SIP port
     string r_uri;
     string from_uri;
     string from;

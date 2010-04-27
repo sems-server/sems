@@ -17,7 +17,7 @@ public:
     string       body;
 
     // Parsed from the hdrs
-    // string       callid;
+    string       callid;
     string       remote_tag;
     string       local_tag;
     unsigned int cseq;

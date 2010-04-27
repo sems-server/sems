@@ -18,8 +18,6 @@ public:
 
     string user;         // local user
     string domain;       // local domain
-    string sip_ip;       // destination IP of first received message
-    string sip_port;     // optional: SIP port
 
     string local_uri;    // local uri
     string remote_uri;   // remote uri
