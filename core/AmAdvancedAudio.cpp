@@ -34,25 +34,32 @@ using std::set;
 
 /* AudioQueue */
 AmAudioQueue::AmAudioQueue() 
-  : AmAudio(new AmAudioSimpleFormat(CODEC_PCM16)) // we get and put in this (internal) fmt
+  : AmAudio(new AmAudioSimpleFormat(CODEC_PCM16)), // we get and put in this (internal) fmt
+    owning(true)
 {
 }
 
 AmAudioQueue::~AmAudioQueue() { 
-  set<AmAudio*> deleted_audios; // don't delete them twice
-  for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin();it != inputQueue.end(); it++) {
-    if (deleted_audios.find(it->audio) == deleted_audios.end()) {
-      deleted_audios.insert(it->audio);
-      delete it->audio;
+  if (owning) {
+    set<AmAudio*> deleted_audios; // don't delete them twice
+    for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin();it != inputQueue.end(); it++) {
+      if (deleted_audios.find(it->audio) == deleted_audios.end()) {
+	deleted_audios.insert(it->audio);
+	delete it->audio;
+      }
+    }
+    
+    for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin();it != outputQueue.end(); it++) {
+      if (deleted_audios.find(it->audio) == deleted_audios.end()) {
+	deleted_audios.insert(it->audio);
+	delete it->audio;
+      }
     }
   }
-	
-  for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin();it != outputQueue.end(); it++) {
-    if (deleted_audios.find(it->audio) == deleted_audios.end()) {
-      deleted_audios.insert(it->audio);
-      delete it->audio;
-    }
-  }
+}
+
+void AmAudioQueue::setOwning(bool _owning) {
+  owning = _owning;
 }
 
 int AmAudioQueue::write(unsigned int user_ts, unsigned int size) {

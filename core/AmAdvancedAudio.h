@@ -63,6 +63,8 @@ class AmAudioQueue : public AmAudio {
   std::list<AudioQueueEntry> inputQueue;
   AmMutex outputQueue_mut;
   std::list<AudioQueueEntry> outputQueue;
+
+  bool owning;
  public:
   AmAudioQueue();
   ~AmAudioQueue();
@@ -79,6 +81,7 @@ class AmAudioQueue : public AmAudio {
   /** this removes the audio if it is in on of the queues and does not
       delete them */
   int removeAudio(AmAudio* audio);
+  void setOwning(bool _owning);
 
  protected:
   int write(unsigned int user_ts, unsigned int size);
