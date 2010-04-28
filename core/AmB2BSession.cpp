@@ -198,7 +198,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
-  bool fwd = t != relayed_req.end();
+  bool fwd = (t != relayed_req.end()) && (reply.code != 100);
 
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
