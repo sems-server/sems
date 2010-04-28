@@ -70,6 +70,8 @@ bool DSMFactory::MonitoringFullTransitions;
 
 MonSelectType DSMFactory::MonSelectCaller;
 MonSelectType DSMFactory::MonSelectCallee;
+
+string DSMFactory::MonSelectFallback;
 #endif // USE_MONITORING
 
 DSMFactory::DSMFactory(const string& _app_name)
@@ -193,6 +195,8 @@ int DSMFactory::onLoad()
     ERROR("monitor_select_use_callee value '%s' not understood\n",
 	  cfg_usecallee.c_str());
   }
+
+  MonSelectFallback = cfg.getParameter("monitor_select_fallback");
 #endif
 
   string conf_d_dir = cfg.getParameter("conf_dir");
@@ -483,22 +487,20 @@ void AmArg2DSMStrMap(const AmArg& arg,
   }
 }
 
-AmSession* DSMFactory::onInvite(const AmSipRequest& req)
-{
-  string start_diag;
-  map<string, string> vars;
+void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag, map<string, string>& vars) {
+#define FALLBACK_OR_EXCEPTION(code, reason)				\
+  if (MonSelectFallback.empty()) {					\
+    throw AmSession::Exception(code, reason);				\
+  } else {								\
+    INFO("falling back to '%s'\n", MonSelectFallback.c_str());		\
+    start_diag = MonSelectFallback;					\
+    return;								\
+  }
 
-  if (req.cmd == MOD_NAME) {
-    if (InboundStartDiag.empty()) {
-      ERROR("no inbound calls allowed\n");
-      throw AmSession::Exception(488, "Not Acceptable Here");
-    }
-    if (InboundStartDiag=="$(mon_select)") {
 #ifdef USE_MONITORING
-
       if (NULL == MONITORING_GLOBAL_INTERFACE) {
 	ERROR("using $(mon_select) but monitoring not loaded\n");
-	throw AmSession::Exception(488, "Not Acceptable Here");
+	FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
       }
 
       AmArg di_args, ret;
@@ -510,15 +512,15 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 	  size_t end;
 	  string pai = getHeader(req.hdrs, SIP_HDR_P_ASSERTED_IDENTITY);
 	  if (!from_parser.parse_contact(pai, 0, end)) {
-	    ERROR("Failed to parse "SIP_HDR_P_ASSERTED_IDENTITY " '%s'\n",
+	    WARN("Failed to parse " SIP_HDR_P_ASSERTED_IDENTITY " '%s'\n",
 		  pai.c_str());
-	    throw AmSession::Exception(488, "Not Acceptable Here");
+	    FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
 	  }
 	}
 
 	if (!from_parser.parse_uri()) {
 	  DBG("failed to parse caller uri '%s'\n", from_parser.uri.c_str());
-	  throw AmSession::Exception(488, "Not Acceptable Here");
+	  FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
 	}
 	
 	AmArg caller_filter;
@@ -539,11 +541,11 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 	  size_t end;
 	  if (!to_parser.parse_contact(req.to, 0, end)) {
 	    ERROR("Failed to parse To '%s'\n", req.to.c_str());
-	    throw AmSession::Exception(488, "Not Acceptable Here");
+	    FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
 	  }
 	  if (!to_parser.parse_uri()) {
 	    DBG("failed to parse callee uri '%s'\n", to_parser.uri.c_str());
-	    throw AmSession::Exception(488, "Not Acceptable Here");
+	    FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
 	  }
 	  callee_filter.push(to_parser.uri_user);
 	}
@@ -557,7 +559,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 	  !ret.size()) {
 	INFO("call info not found. caller uri %s, r-uri %s\n", 
 	     req.from_uri.c_str(), req.r_uri.c_str());
-	throw AmSession::Exception(488, "Not Acceptable Here");
+	FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
       }
 
       AmArg sess_id, sess_params;
@@ -573,7 +575,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 	  sess_params.get(0).getType() != AmArg::Struct) {
 	INFO("call parameters not found. caller uri %s, r-uri %s, id %s\n", 
 	     req.from_uri.c_str(), req.r_uri.c_str(), ret.get(0).asCStr());
-	throw AmSession::Exception(488, "Not Acceptable Here");
+	FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
       }
 
       AmArg& sess_dict = sess_params.get(0);
@@ -582,7 +584,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 	DBG("selected application '%s' for session\n", start_diag.c_str());
       } else {
 	ERROR("selected session params don't contain 'app'\n");
-	throw AmSession::Exception(488, "Not Acceptable Here");
+	FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
       }
       AmArg2DSMStrMap(sess_dict["appParams"], vars);
       vars["mon_session_record"] = session_id;
@@ -590,8 +592,24 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 #else
       ERROR("using $(mon_select) for dsm application, "
 	    "but compiled without monitoring support!\n");
-      throw AmSession::Exception(488, "Not Acceptable Here");
+      FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
 #endif
+
+#undef FALLBACK_OR_EXCEPTION
+}
+ 
+AmSession* DSMFactory::onInvite(const AmSipRequest& req)
+{
+  string start_diag;
+  map<string, string> vars;
+
+  if (req.cmd == MOD_NAME) {
+    if (InboundStartDiag.empty()) {
+      ERROR("no inbound calls allowed\n");
+      throw AmSession::Exception(488, "Not Acceptable Here");
+    }
+    if (InboundStartDiag=="$(mon_select)") {
+      runMonitorAppSelect(req, start_diag, vars);
     } else {
       start_diag = InboundStartDiag;
     }

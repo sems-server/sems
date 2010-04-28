@@ -78,6 +78,8 @@ class DSMFactory
 #ifdef USE_MONITORING
   static MonSelectType MonSelectCaller;
   static MonSelectType MonSelectCallee;
+  static string MonSelectFallback;
+
 #endif // USE_MONITORING
 
   static DSMFactory* _instance;
@@ -100,6 +102,8 @@ class DSMFactory
   void addVariables(DSMCall* s, const string& prefix,
 		    map<string, string>& vars);
   void addParams(DSMCall* s, const string& hdrs);
+  void runMonitorAppSelect(const AmSipRequest& req, 
+			   string& start_diag, map<string, string>& vars);
 
   DSMChartReader preload_reader;
 
