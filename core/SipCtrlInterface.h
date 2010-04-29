@@ -66,12 +66,30 @@ public:
     int load();
 
     void run(const string& bind_addr, unsigned short bind_port);
-    
+
+    /**
+     * Sends a SIP request.
+     *
+     * @param req The request to send. If the request creates a transaction, 
+     *            its ticket is written into req.tt.
+     */
     static int send(AmSipRequest &req);
+
+    /**
+     * Sends a SIP reply. 
+     *
+     * @param rep The reply to be sent. 'rep.tt' should be set to transaction 
+     *            ticket included in the SIP request.
+     */
+    static int send(const AmSipReply &rep);
+
+    /**
+     * CANCELs an INVITE transaction.
+     *
+     * @param tt transaction ticket of the request to cancel.
+     */
     static int cancel(trans_ticket* tt);
 
-    static int send(const AmSipReply &rep);
-    
     /**
      * From sip_ua
      */

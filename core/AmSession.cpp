@@ -736,9 +736,6 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   CALL_EVENT_H(onSipReply,reply);
 
-  //   int status = dlg.getStatus();
-  //   dlg.updateStatus(reply);
-
   if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
 	AmSipDialog::status2str[old_dlg_status], 

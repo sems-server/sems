@@ -537,11 +537,16 @@ int trans_layer::send_sl_reply(sip_msg* req, int reply_code,
 //
 // Ref. RFC 3261 "12.2.1.1 Generating the Request"
 //
-int trans_layer::set_next_hop(list<sip_header*>& route_hdrs, 
-			      cstring& r_uri, cstring& next_hop,
-			      unsigned short& next_port,
-			      sockaddr_storage* remote_ip)
+int trans_layer::set_next_hop(sip_msg* msg)
 {
+    assert(msg);
+
+    list<sip_header*>& route_hdrs = msg->route; 
+    cstring& r_uri = msg->u.request->ruri_str;
+    sockaddr_storage* remote_ip = &msg->remote_ip;
+
+    cstring        next_hop;
+    unsigned short next_port = 0;
     int err=0;
 
     if(!route_hdrs.empty()){
@@ -647,10 +652,14 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 		DBG("Malformed first route header\n");
 	    case RR_PARAMS:
 		// remove current route header from message
-		DBG("delete (fr=0x%p)\n",fr);
-		delete fr;
 		route_hdrs.pop_front();
 		DBG("route_hdrs.length() = %i\n",(int)route_hdrs.size());
+		{
+		    list<sip_header*>::iterator h_it = std::find(msg->hdrs.begin(),msg->hdrs.end(),fr);
+		    if(h_it != msg->hdrs.end()) msg->hdrs.erase(h_it);
+		}
+		DBG("delete (fr=0x%p)\n",fr);
+		delete fr;
 		break;
 		
 	    case RR_NXT_ROUTE:
@@ -663,7 +672,7 @@ int trans_layer::set_next_hop(list<sip_header*>& route_hdrs,
 	    
 	    // copy r_uri at the end of 
 	    // the route set.
-	    route_hdrs.push_back(new sip_header(0,"Route",r_uri));
+	    msg->hdrs.push_back(new sip_header(0,"Route",r_uri));
 
 	    r_uri = na.addr;
 	}
@@ -736,15 +745,10 @@ int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
     assert(msg);
     assert(tt);
 
-    cstring        next_hop;
-    unsigned short next_port = 0;
-
     tt->_bucket = 0;
     tt->_t = 0;
 
-    if(trans_layer::instance()->set_next_hop(msg->route,msg->u.request->ruri_str,
-			next_hop,next_port,
-			&msg->remote_ip) < 0){
+    if(trans_layer::instance()->set_next_hop(msg) < 0){
 
 	DBG("set_next_hop failed\n");
 	return -1;

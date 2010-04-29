@@ -125,9 +125,7 @@ class trans_layer
      * Fills the address structure passed and modifies 
      * R-URI and Route headers as needed.
      */
-    int set_next_hop(list<sip_header*>& route_hdrs, cstring& r_uri, 
-		     cstring& next_hop, unsigned short& next_port,
-		     sockaddr_storage* remote_ip);
+    int set_next_hop(sip_msg* req);
     
     /**
      * Transaction timeout
