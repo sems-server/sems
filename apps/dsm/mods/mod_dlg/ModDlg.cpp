@@ -226,13 +226,38 @@ EXEC_ACTION_START(DLGDialoutAction) {
       user.c_str(), app_name.c_str(), r_uri.c_str(), from.c_str(),
       from_uri.c_str(), to.c_str(), ltag.c_str(), hdrs.c_str(), auth_user.c_str());
 
-  AmArg* sess_params = NULL;
+  AmArg* sess_params = new AmArg();
+  bool has_auth = false;
   if (!auth_user.empty() && !auth_pwd.empty()) {
-    sess_params = new AmArg();
-    sess_params->setBorrowedPointer(new UACAuthCred("", auth_user,auth_pwd));
+    AmArg auth_param;
+    auth_param.setBorrowedPointer(new UACAuthCred("", auth_user,auth_pwd));
+    sess_params->push(auth_param);
+    has_auth = true;
   }
+  AmArg var_struct;
+  string varprefix = arrayname+"_var.";
+  bool has_vars = false;
+  map<string, string>::iterator lb = sc_sess->var.lower_bound(varprefix);
+  while (lb != sc_sess->var.end()) {
+    if ((lb->first.length() < varprefix.length()) ||
+	strncmp(lb->first.c_str(), varprefix.c_str(),varprefix.length()))
+      break;
+    string varname = lb->first.substr(varprefix.length());
+    if (!has_auth) // sess_params is variable struct
+      (*sess_params)[varname] = lb->second;
+    else // variable struct is in sess_params array
+      var_struct[lb->first] = lb->second;
+
+    lb++;
+    has_vars = true;
+  }
+
+  if (has_vars && has_auth)
+      sess_params->push(var_struct);
  
- AmSession* new_sess = AmUAC::dialout(user, app_name, r_uri, from, from_uri, to, ltag, hdrs, sess_params);
+  DBG("sess_params: '%s'\n", AmArg::print(*sess_params).c_str());
+
+  AmSession* new_sess = AmUAC::dialout(user, app_name, r_uri, from, from_uri, to, ltag, hdrs, sess_params);
 
  if (NULL != new_sess) {
    sc_sess->var[arrayname + "_ltag"] = new_sess->getLocalTag();
