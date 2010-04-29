@@ -63,7 +63,10 @@ core actions:
  stopRecord()
  getRecordLength([dst_varname])   -- only while recording! default dst var: record_length
  getRecordDataSize([dst_varname]) -- only while recording! default dst var: record_data_size
- closePlaylist()
+ closePlaylist(notify=true)
+   if notify=true, send an event
+ setInOutPlaylist() 
+   set playlist as input and output
  addSeparator(id [, bool front])
    fires event when playlist hits it ; front=[true|false]
  connectMedia() 

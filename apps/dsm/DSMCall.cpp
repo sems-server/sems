@@ -424,6 +424,11 @@ void DSMCall::stopRecord() {
   }
 }
 
+void DSMCall::setInOutPlaylist() {
+  DBG("setting playlist as input and output\n");
+  setInOut(&playlist, &playlist);
+}
+
 void DSMCall::addPromptSet(const string& name, 
 			     AmPromptCollection* prompt_set) {
   if (prompt_set) {
@@ -479,6 +484,10 @@ void DSMCall::addSeparator(const string& name, bool front) {
 
 void DSMCall::transferOwnership(DSMDisposable* d) {
   gc_trash.insert(d);
+}
+
+void DSMCall::releaseOwnership(DSMDisposable* d) {
+  gc_trash.erase(d);
 }
 
 // AmB2BSession methods

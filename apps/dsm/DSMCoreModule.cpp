@@ -58,6 +58,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("getRecordLength", SCGetRecordLengthAction);
   DEF_CMD("getRecordDataSize", SCGetRecordDataSizeAction);
   DEF_CMD("closePlaylist", SCClosePlaylistAction);
+  DEF_CMD("setInOutPlaylist", SCSetInOutPlaylistAction);
   DEF_CMD("addSeparator", SCAddSeparatorAction);
   DEF_CMD("connectMedia", SCConnectMediaAction);
   DEF_CMD("disconnectMedia", SCDisconnectMediaAction);
@@ -242,6 +243,11 @@ EXEC_ACTION_START(SCClosePlaylistAction) {
   bool notify = 
     resolveVars(arg, sess, sc_sess, event_params) == "true";
   sc_sess->closePlaylist(notify);
+} EXEC_ACTION_END;
+
+
+EXEC_ACTION_START(SCSetInOutPlaylistAction) {
+  sc_sess->setInOutPlaylist();
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCConnectMediaAction) {

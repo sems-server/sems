@@ -89,7 +89,6 @@ public:
 
   // DSMSession interface
   void playPrompt(const string& name, bool loop = false);
-
   void closePlaylist(bool notify);
   void addToPlaylist(AmPlaylistItem* item);
   void playFile(const string& name, bool loop, bool front=false);
@@ -97,6 +96,7 @@ public:
   unsigned int getRecordLength();
   unsigned int getRecordDataSize();
   void stopRecord();
+  void setInOutPlaylist();
 
   void setPromptSet(const string& name);
   void addSeparator(const string& name, bool front = false);
@@ -106,6 +106,7 @@ public:
   void unmute();
 
   void transferOwnership(DSMDisposable* d);
+  void releaseOwnership(DSMDisposable* d);
   
 protected:
   // AmB2BSession methods

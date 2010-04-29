@@ -83,6 +83,8 @@ class DSMSession {
   virtual unsigned int getRecordLength() = 0;
   virtual unsigned int getRecordDataSize() = 0;
   virtual void stopRecord() = 0;
+  virtual void setInOutPlaylist() = 0;
+
   virtual void addToPlaylist(AmPlaylistItem* item) = 0;
   virtual void closePlaylist(bool notify) = 0;
   virtual void setPromptSet(const string& name) = 0;
@@ -112,6 +114,9 @@ class DSMSession {
 
   /** transfer ownership of object to this session instance */
   virtual void transferOwnership(DSMDisposable* d) = 0;
+
+  /** release ownership of object from this session instance */
+  virtual void releaseOwnership(DSMDisposable* d) = 0;
 
   /* holds variables which are accessed by $varname */
   map<string, string> var;
