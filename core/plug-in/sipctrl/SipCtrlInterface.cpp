@@ -298,6 +298,10 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 	if(err){
 	    ERROR("Additional headers parsing failed\n");
 	    ERROR("Faulty headers were: <%s>\n",req.hdrs.c_str());
+
+	    // re-add route headers to msg->hdrs so they get deleted properly
+	    msg->hdrs.insert(msg->hdrs.begin(),msg->route.begin(),msg->route.end());
+
 	    delete msg;
 	    return -1;
 	}
@@ -346,6 +350,10 @@ int SipCtrlInterface::send(const AmSipRequest &req, char* serKey, unsigned int& 
 			&msg->remote_ip) < 0){
 	// TODO: error handling
 	DBG("set_next_hop failed\n");
+
+	// re-add route headers to msg->hdrs so they get deleted properly
+	msg->hdrs.insert(msg->hdrs.begin(),msg->route.begin(),msg->route.end());
+
 	delete msg;
 	return -1;
     }
