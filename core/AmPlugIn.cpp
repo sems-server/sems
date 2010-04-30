@@ -45,6 +45,8 @@
 #include <errno.h>
 
 #include <set>
+#include <vector>
+#include <algorithm>
 using std::set;
 
 static unsigned int pcm16_bytes2samples(long h_codec, unsigned int num_bytes)
@@ -106,10 +108,29 @@ AmPlugIn::AmPlugIn()
 {
 }
 
+static void delete_plugin_factory(std::pair<string, AmPluginFactory*> pf)
+{
+  DBG("deleting plug-in factory: %s\n", pf.first.c_str());
+  delete pf.second;
+}
+
 AmPlugIn::~AmPlugIn()
 {
+  std::for_each(name2app.begin(), name2app.end(), delete_plugin_factory);
+  std::for_each(name2seh.begin(), name2seh.end(), delete_plugin_factory);
+  std::for_each(name2base.begin(), name2base.end(), delete_plugin_factory);
+  std::for_each(name2di.begin(), name2di.end(), delete_plugin_factory);
+  std::for_each(name2logfac.begin(), name2logfac.end(), delete_plugin_factory);
+
   for(vector<void*>::iterator it=dlls.begin();it!=dlls.end();++it)
     dlclose(*it);
+}
+
+void AmPlugIn::dispose()
+{
+  if (_instance) {
+    delete _instance;
+  }
 }
 
 AmPlugIn* AmPlugIn::instance()
@@ -134,27 +155,26 @@ void AmPlugIn::init() {
   addPayload(&_payload_tevent);
 }
 
-
 int AmPlugIn::load(const string& directory, const string& plugins)
 {
   int err=0;
-  struct dirent* entry;
-  DIR* dir = opendir(directory.c_str());
-
-  if(!dir){
-    ERROR("plug-ins loader (%s): %s\n",directory.c_str(),strerror(errno));
-    return -1;
-  }
-
-
+  
   if (!plugins.length()) {
     DBG("AmPlugIn: loading modules in directory '%s':\n", directory.c_str());
 
+    DIR* dir = opendir(directory.c_str());
+    if (!dir){
+      ERROR("while opening plug-in directory (%s): %s\n", directory.c_str(), strerror(errno));
+      return -1;
+    }
+    
     vector<string> excluded_plugins = explode(AmConfig::ExcludePlugins, ";");
     set<string> excluded_plugins_s; 
     for (vector<string>::iterator it = excluded_plugins.begin(); 
 	 it != excluded_plugins.end();it++)
       excluded_plugins_s.insert(*it);
+
+    struct dirent* entry;
 
     while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
       string plugin_name = string(entry->d_name);
@@ -177,7 +197,10 @@ int AmPlugIn::load(const string& directory, const string& plugins)
         return -1;
       }
     }
-  } else {
+    
+    closedir(dir);
+  } 
+  else {
     DBG("AmPlugIn: loading modules '%s':\n", plugins.c_str());
 
     vector<string> plugins_list = explode(plugins, ";");
@@ -203,7 +226,6 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       }
     }
   }
-  closedir(dir);
 
   DBG("AmPlugIn: modules loaded.\n");
 
@@ -282,7 +304,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       loaded_modules.insert(it->first);
     }
     // register for receiving logging messages
-    register_logging_fac(it->second);
+    register_log_hook(it->second);
   }
   
   // application plugins

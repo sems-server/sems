@@ -126,6 +126,7 @@ class AmPlugIn : public AmPayloadProviderInterface
   int addFileFormat(amci_inoutfmt_t* f);
 
   static AmPlugIn* instance();
+  static void dispose();
 
   void init();
 
