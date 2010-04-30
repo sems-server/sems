@@ -94,6 +94,14 @@ void DSMCall::onInvite(const AmSipRequest& req) {
       DBG("session choose to not connect media\n");
       run_session_invite = false;     // don't accept audio 
     }    
+
+    if (checkVar(DSM_ACCEPT_EARLY_SESSION, DSM_ACCEPT_EARLY_SESSION_FALSE)) {
+      DBG("session choose to not accept early session\n");
+      accept_early_session = false;
+    } else {
+      accept_early_session = true;
+    }
+
   }
 
   if (run_session_invite) 
@@ -121,6 +129,35 @@ void DSMCall::onOutgoingInvite(const string& headers) {
       // TODO: set flag to not connect RTP on session start
       run_session_invite = false;     // don't accept audio 
     }    
+  }
+}
+
+void DSMCall::onRinging(const AmSipReply& reply) {
+  map<string, string> params;
+  params["code"] = int2str(reply.code);
+  params["reason"] = reply.reason;
+  params["has_body"] = reply.body.empty() ?
+    "false" : "true";
+  engine.runEvent(this, DSMCondition::Ringing, &params);
+  // todo: local ringbacktone
+}
+
+void DSMCall::onEarlySessionStart(const AmSipReply& reply) {
+  map<string, string> params;
+  params["code"] = int2str(reply.code);
+  params["reason"] = reply.reason;
+  params["has_body"] = reply.body.empty() ?
+    "false" : "true";
+  engine.runEvent(this, DSMCondition::EarlySession, &params);
+
+  if (checkVar(DSM_CONNECT_EARLY_SESSION, DSM_CONNECT_EARLY_SESSION_FALSE)) {
+    DBG("call does not connect early session\n");
+  } else {
+    if (!getInput())
+      setInput(&playlist);
+
+    if (!getOutput())
+      setOutput(&playlist);    
   }
 }
 
@@ -205,6 +242,21 @@ void DSMCall::onCancel() {
     engine.runEvent(this, DSMCondition::Hangup, NULL);
   else {
     DBG("ignoring onCancel event in established dialog\n");
+  }
+}
+
+void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status) {
+  AmB2BCallerSession::onSipReply(reply,old_dlg_status);
+
+  if ((old_dlg_status < AmSipDialog::Connected) && 
+      (dlg.getStatus() == AmSipDialog::Disconnected)) {
+    DBG("Outbound call failed with reply %d %s.\n", 
+	reply.code, reply.reason.c_str());
+    map<string, string> params;
+    params["code"] = int2str(reply.code);
+    params["reason"] = reply.reason;
+    engine.runEvent(this, DSMCondition::FailedCall, &params);    
+    setStopped();
   }
 }
 

@@ -59,6 +59,9 @@ class DSMCondition
     Any,
     Invite,
     SessionStart,
+    Ringing,
+    EarlySession,
+    FailedCall,
     Key,
     Timer,
 

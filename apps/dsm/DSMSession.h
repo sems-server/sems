@@ -46,6 +46,12 @@ using std::map;
 #define DSM_CONNECT_SESSION    "connect_session" // todo: rethink these names
 #define DSM_CONNECT_SESSION_FALSE    "0"
 
+#define DSM_ACCEPT_EARLY_SESSION    "accept_early_session" // todo: rethink these names
+#define DSM_ACCEPT_EARLY_SESSION_FALSE   "0"
+
+#define DSM_CONNECT_EARLY_SESSION        "connect_early_session" // todo: rethink these names
+#define DSM_CONNECT_EARLY_SESSION_FALSE    "0"
+
 #define DSM_ERRNO_FILE        "file"
 #define DSM_ERRNO_UNKNOWN_ARG "arg"
 #define DSM_ERRNO_SCRIPT      "script"

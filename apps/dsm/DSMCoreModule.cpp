@@ -151,6 +151,15 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "sessionStart") 
     return new TestDSMCondition(params, DSMCondition::SessionStart);  
 
+  if (cmd == "ringing") 
+    return new TestDSMCondition(params, DSMCondition::Ringing);
+
+  if (cmd == "early") 
+    return new TestDSMCondition(params, DSMCondition::EarlySession);
+
+  if (cmd == "failed") 
+    return new TestDSMCondition(params, DSMCondition::FailedCall);  
+
   if (cmd == "B2B.otherReply") 
     return new TestDSMCondition(params, DSMCondition::B2BOtherReply);  
 

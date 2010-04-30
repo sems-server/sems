@@ -73,6 +73,8 @@ public:
 
   void onInvite(const AmSipRequest& req);
   void onOutgoingInvite(const string& headers);
+  void onRinging(const AmSipReply& reply);
+  void onEarlySessionStart(const AmSipReply& reply);
   void onSessionStart(const AmSipRequest& req);
   void onSessionStart(const AmSipReply& rep);
   void startSession();
@@ -80,6 +82,7 @@ public:
   void onBye(const AmSipRequest& req);
   void onDtmf(int event, int duration_msec);
 
+  void onSipReply(const AmSipReply& reply, int old_dlg_status);
   void process(AmEvent* event);
 
   UACAuthCred* getCredentials();
