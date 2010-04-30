@@ -95,13 +95,6 @@ void DSMCall::onInvite(const AmSipRequest& req) {
       run_session_invite = false;     // don't accept audio 
     }    
 
-    if (checkVar(DSM_ACCEPT_EARLY_SESSION, DSM_ACCEPT_EARLY_SESSION_FALSE)) {
-      DBG("session choose to not accept early session\n");
-      accept_early_session = false;
-    } else {
-      accept_early_session = true;
-    }
-
   }
 
   if (run_session_invite) 
@@ -129,6 +122,15 @@ void DSMCall::onOutgoingInvite(const string& headers) {
       // TODO: set flag to not connect RTP on session start
       run_session_invite = false;     // don't accept audio 
     }    
+
+    if (checkVar(DSM_ACCEPT_EARLY_SESSION, DSM_ACCEPT_EARLY_SESSION_FALSE)) {
+      DBG("session choose to not accept early session\n");
+      accept_early_session = false;
+    } else {
+      DBG("session choose to accept early session\n");
+      accept_early_session = true;
+    }
+
   }
 }
 
