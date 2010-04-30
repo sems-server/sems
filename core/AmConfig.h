@@ -59,8 +59,21 @@ struct AmConfig
   /** semicolon separated list of payloads to exclude from loading */
   static string ExcludePayloads;  
   //static unsigned int MaxRecordTime;
-  /** run the programm in daemon mode? */
-  static int DaemonMode;
+  /** log level */
+  static int LogLevel;
+  /** log to stderr */
+  static bool LogStderr;
+
+#ifndef DISABLE_DAEMON_MODE
+  /** run the program in daemon mode? */
+  static bool DaemonMode;
+  /** PID file when in daemon mode */
+  static string DaemonPidFile;
+  /** set UID when in daemon mode */
+  static string DaemonUid;
+  /** set GID when in daemon mode */
+  static string DaemonGid;
+#endif
   
   /** local IP for SDP media advertising */
   static string LocalIP;
@@ -138,9 +151,6 @@ struct AmConfig
 
   static int UnhandledReplyLoglevel;
 
-  /** Init function. Resolves SMTP server address. */
-  static int init();
-
   /** Read global configuration file and insert values. Maybe overwritten by
    * command line arguments */
   static int readConfiguration();
@@ -156,11 +166,15 @@ struct AmConfig
   /** Setter for RtpHighPort, returns 0 on invalid value */
   static int setRtpHighPort(const string& port);
   /** Setter for Loglevel, returns 0 on invalid value */
-  static int setLoglevel(const string& level);
-  /** Setter for parameter fork, returns 0 on invalid value */
-  static int setFork(const string& fork);
+  static int setLogLevel(const string& level, bool apply=true);
   /** Setter for parameter stderr, returns 0 on invalid value */
-  static int setStderr(const string& s);
+  static int setLogStderr(const string& s, bool apply=true);
+
+#ifndef DISABLE_DAEMON_MODE
+  /** Setter for parameter DaemonMode, returns 0 on invalid value */
+  static int setDaemonMode(const string& fork);
+#endif
+
   /** Setter for parameter SessionProcessorThreads, returns 0 on invalid value */
   static int setSessionProcessorThreads(const string& th);
   /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */

@@ -30,12 +30,13 @@
 #include "AmConfig.h"
 #include "AmPlugIn.h"
 #include "AmSessionContainer.h"
-#include "AmSessionProcessor.h"
 #include "AmMediaProcessor.h"
 #include "AmRtpReceiver.h"
 #include "AmEventDispatcher.h"
 
-#include "AmZRTP.h"
+#ifdef WITH_ZRTP
+# include "AmZRTP.h"
+#endif
 
 #include "SipCtrlInterface.h"
 
@@ -64,101 +65,185 @@
 using std::string;
 using std::make_pair;
 
-#ifndef sighandler_t
-typedef void (*sighandler_t) (int);
-#endif
 
-const char* progname;
-string pid_file;
-int    main_pid=0;
-int    child_pid=0;
-int    is_main=1;
+const char* progname = NULL;    /**< Program name (actually argv[0])*/
+int main_pid = 0;               /**< Main process PID */
 
-static int parse_args(int argc, char* argv[], const string& flags,
-		      const string& options, std::map<char,string>& args);
+/** SIP stack (controller interface) */
+static SipCtrlInterface sip_ctrl;
 
-static void print_usage(char* progname);
-static void print_version();
 
-static string getLocalIP(const string& dev_name);
-
-int sig_flag;
-int deamon_mode=1;
-
-static void sig_usr_un(int signo)
+static void print_usage(bool short_=false)
 {
-  if (signo == SIGCHLD && AmConfig::IgnoreSIGCHLD)
-    return;
-
-  WARN("Signal %d received.\n", signo);
-    
-  if (!main_pid || (main_pid == getpid())) {
-
-    static AmMutex            clean_up_mut;
-    static AmCondition<bool>  need_clean(true);
-
-    clean_up_mut.lock();
-
-    if(need_clean.get()) {
-
-      need_clean.set(false);
-      clean_up_mut.unlock();
-
-      AmSessionContainer::dispose();
-
-      AmRtpReceiver::dispose();
-
-      AmMediaProcessor::dispose();
-
-      AmEventDispatcher::dispose();
-    } 
-    else {
-      clean_up_mut.unlock();
-    }
-
-    INFO("Finished.\n");
-
-    unlink(pid_file.c_str());
-
-    exit(0);
+  if (short_) {
+    printf("Usage: %s [OPTIONS]\n"
+           "Try `%s -h' for more information.\n",
+           progname, progname);
   }
-
-  return;
+  else {
+    printf(
+        DEFAULT_SIGNATURE "\n"
+        "Usage: %s [OPTIONS]\n"
+        "Available options:\n"
+        "    -f <file>       Set configuration file\n"
+        "    -x <dir>        Set path for plug-ins\n"
+        "    -d <device/ip>  Set network device (or IP address) for media advertising\n"
+#ifndef DISABLE_DAEMON_MODE
+        "    -E              Enable debug mode (do not daemonize, log to stderr).\n"
+        "    -P <file>       Set PID file\n"
+        "    -u <uid>        Set user ID\n"
+        "    -g <gid>        Set group ID\n"
+#else
+        "    -E              Enable debug mode (log to stderr)\n"
+#endif
+        "    -D <level>      Set log level (0=error, 1=warning, 2=info, 3=debug; default=%d)\n"
+        "    -v              Print version\n"
+        "    -h              Print this help\n",
+        progname, AmConfig::LogLevel
+    );
+  }
 }
 
-int set_sighandler(sighandler_t sig_usr)
+/* Note: The function should not use log because it is called before logging is initialized. */
+static bool parse_args(int argc, char* argv[],
+                      const string& flags, const string& options,
+                      std::map<char,string>& args)
 {
-  if (signal(SIGINT, sig_usr) == SIG_ERR ) {
-    ERROR("No SIGINT signal handler can be installed.\n");
-    return -1;
-  }
-    
-  if (signal(SIGPIPE, sig_usr) == SIG_ERR ) {
-    ERROR("No SIGPIPE signal handler can be installed.\n");
-    return -1;
+  for(int i=1; i<argc; i++){
+    char* arg = argv[i];
+
+    if( (*arg != '-') || !*(++arg) ) {
+      fprintf(stderr, "%s: invalid argument '%s'\n", progname, argv[i]);
+      return false;
+    }
+
+    if( flags.find(*arg) != string::npos ) {
+      args[*arg] = "yes";
+    }
+    else if(options.find(*arg) != string::npos) {
+      if(!argv[++i]){
+        fprintf(stderr, "%s: missing argument for option '-%c'\n", progname, *arg);
+        return false;
+      }
+
+      args[*arg] = argv[i];
+    }
+    else {
+      fprintf(stderr, "%s: unknown option '-%c'\n", progname, *arg);
+      return false;
+    }
   }
 
-  if (signal(SIGCHLD , sig_usr)  == SIG_ERR ) {
-    ERROR("No SIGCHLD signal handler can be installed.\n");
-    return -1;
+  return true;
+}
+
+/* Note: The function should not use logging because it is called before
+   the logging is initialized. */
+static bool apply_args(std::map<char,string>& args)
+{
+  for(std::map<char,string>::iterator it = args.begin();
+      it != args.end(); ++it){
+
+    switch( it->first ){
+    case 'd':
+      AmConfig::LocalIP = it->second;
+      break;
+
+    case 'D':
+      if (!AmConfig::setLogLevel(it->second)) {
+        fprintf(stderr, "%s: invalid log level: %s\n", progname, it->second.c_str());
+        return false;
+      }
+      break;
+
+    case 'E':
+#ifndef DISABLE_DAEMON_MODE
+     AmConfig::DaemonMode = false;
+#endif
+     if (!AmConfig::setLogStderr("yes")) {
+       return false;
+     }
+     break;
+
+    case 'f':
+      AmConfig::ConfigurationFile = it->second;
+      break;
+
+    case 'x':
+      AmConfig::PlugInPath = it->second;
+      break;
+
+#ifndef DISABLE_DAEMON_MODE
+    case 'P':
+      AmConfig::DaemonPidFile = it->second;
+      break;
+
+    case 'u':
+      AmConfig::DaemonUid = it->second;
+      break;
+
+    case 'g':
+      AmConfig::DaemonGid = it->second;
+      break;
+#endif
+
+    case 'h':
+    case 'v':
+    default:
+      /* nothing to apply */
+      break;
+    }
   }
 
-  if (signal(SIGTERM , sig_usr)  == SIG_ERR ) {
-    ERROR("No SIGTERM signal handler can be installed.\n");
-    return -1;
+  return true;
+}
+
+/** Flag to mark the shutdown is in progress (in the main process) */
+static AmCondition<bool> is_shutting_down(false);
+
+static void signal_handler(int sig)
+{
+  WARN("Signal %s (%d) received.\n", strsignal(sig), sig);
+
+  if (sig == SIGCHLD && AmConfig::IgnoreSIGCHLD) {
+    return;
   }
 
-  if (signal(SIGHUP , sig_usr)  == SIG_ERR ) {
-    ERROR("No SIGHUP signal handler can be installed.\n");
-    return -1;
+  if (main_pid == getpid()) {
+    if(!is_shutting_down.get()) {
+      is_shutting_down.set(true);
+
+      INFO("Stopping SIP stack after signal\n");
+      sip_ctrl.stop();
+    }
+  }
+  else {
+    /* exit other processes immediately */
+    exit(0);
+  }
+}
+
+int set_sighandler(void (*handler)(int))
+{
+  static int sigs[] = {
+      SIGHUP, SIGPIPE, SIGINT, SIGTERM, SIGCHLD, 0
+  };
+
+  for (int* sig = sigs; *sig; sig++) {
+    if (signal(*sig, handler) == SIG_ERR ) {
+      ERROR("Cannot install signal handler for %s.\n", strsignal(*sig));
+      return -1;
+    }
   }
 
   return 0;
 }
 
-int write_pid_file()
+#ifndef DISABLE_DAEMON_MODE
+
+static int write_pid_file()
 {
-  FILE* fpid = fopen(pid_file.c_str(), "w");
+  FILE* fpid = fopen(AmConfig::DaemonPidFile.c_str(), "w");
 
   if (fpid) {
     string spid = int2str((int)getpid());
@@ -167,140 +252,234 @@ int write_pid_file()
     return 0;
   }
   else {
-    ERROR("Could not write pid file '%s': %s.\n",
-	  pid_file.c_str(), strerror(errno));
+    ERROR("Cannot write PID file '%s': %s.\n",
+        AmConfig::DaemonPidFile.c_str(), strerror(errno));
   }
 
   return -1;
 }
 
-// returns 0 if OK
-static int use_args(char* progname, std::map<char,string>& args)
+#endif /* !DISABLE_DAEMON_MODE */
+
+
+/** Get the list of network interfaces with the associated PF_INET addresses */
+static bool getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_list)
 {
-  for(std::map<char,string>::iterator it = args.begin(); 
-      it != args.end(); ++it){
-	 
-    if(it->second.empty())
-      continue;
-	 
-    switch( it->first ){
+  struct ifconf ifc;
+  struct ifreq ifrs[MAX_NET_DEVICES];
 
-    case 'h':
-      print_usage(progname);
-      exit(0);
-      break;
+  ifc.ifc_len = sizeof(struct ifreq) * MAX_NET_DEVICES;
+  ifc.ifc_req = ifrs;
+  memset(ifrs, 0, ifc.ifc_len);
 
-    case 'v':
-      print_version();
-      exit(0);
-      break;
+  if(ioctl(sd, SIOCGIFCONF, &ifc)!=0){
+    ERROR("getInterfaceList: ioctl: %s.\n", strerror(errno));
+    return false;
+  }
 
-    case 'E':
-      AmConfig::setStderr("yes");
-      continue;
-
-    case 'd':
-      //if(AmConfig::LocalIP.empty())
-      // AmConfig::LocalIP = getLocalIP(it->second);
-      AmConfig::LocalIP = it->second;
-      break;
-	     
-    case 'x':
-      AmConfig::PlugInPath = it->second;
-      break;
-	     
-    case 'D':
-      if(sscanf(it->second.c_str(), "%u", &log_level) != 1){
-	fprintf(stderr, "%s: bad log level number: %s.\n", progname, it->second.c_str());
-	return -1;
-      }
-      break;
-
-    case 'f':
-    case 'P':
-    case 'u':
-    case 'g':
-      // already processed, ignore it here
-      break;
-	     
-    default:
-      ERROR("%s: bad parameter '-%c'.\n", progname, it->first);
-      return -1;
+#if !defined(BSD44SOCKETS)
+  int n_dev = ifc.ifc_len / sizeof(struct ifreq);
+  for(int i=0; i<n_dev; i++){
+    if(ifrs[i].ifr_addr.sa_family==PF_INET){
+      struct sockaddr_in* sa = (struct sockaddr_in*)&ifrs[i].ifr_addr;
+      if_list.push_back(make_pair((char*)ifrs[i].ifr_name,
+                                  inet_ntoa(sa->sin_addr)));
     }
   }
-  return 0;
+#else // defined(BSD44SOCKETS)
+  struct ifreq* p_ifr = ifc.ifc_req;
+  while((char*)p_ifr - (char*)ifc.ifc_req < ifc.ifc_len){
+
+    if(p_ifr->ifr_addr.sa_family == PF_INET){
+      struct sockaddr_in* sa = (struct sockaddr_in*)&p_ifr->ifr_addr;
+      if_list.push_back(make_pair((const char*)p_ifr->ifr_name,
+                                  inet_ntoa(sa->sin_addr)));
+    }
+
+    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + p_ifr->ifr_addr.sa_len);
+  }
+#endif
+
+  return true;
 }
 
+/** Get the PF_INET address associated with the network interface */
+static string getLocalIP(const string& dev_name)
+{
+  string local_ip;
+  struct ifreq ifr;
+  std::vector<std::pair<string,string> > if_list;
+
+#ifdef SUPPORT_IPV6
+  struct sockaddr_storage ss;
+  if(inet_aton_v6(dev_name.c_str(), &ss))
+#else
+    struct in_addr inp;
+  if(inet_aton(dev_name.c_str(), &inp))
+#endif
+    {
+      return dev_name;
+    }
+
+  int sd = socket(PF_INET, SOCK_DGRAM, 0);
+  if(sd == -1){
+    ERROR("socket: %s.\n", strerror(errno));
+    goto error;
+  }
+
+  if(dev_name.empty()) {
+    if (!getInterfaceList(sd, if_list)) {
+      goto error;
+    }
+  }
+  else {
+    memset(&ifr, 0, sizeof(struct ifreq));
+    strncpy(ifr.ifr_name, dev_name.c_str(), IFNAMSIZ-1);
+
+    if(ioctl(sd, SIOCGIFADDR, &ifr)!=0){
+      ERROR("ioctl(SIOCGIFADDR): %s.\n", strerror(errno));
+      goto error;
+    }
+
+    if(ifr.ifr_addr.sa_family==PF_INET){
+      struct sockaddr_in* sa = (struct sockaddr_in*)&ifr.ifr_addr;
+      struct sockaddr_in sa4;
+      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
+
+      if_list.push_back(make_pair((char*)ifr.ifr_name,
+				  inet_ntoa(sa4.sin_addr)));
+    }
+  }
+
+  for( std::vector<std::pair<string,string> >::iterator it = if_list.begin();
+       it != if_list.end(); ++it) {
+    memset(&ifr, 0, sizeof(struct ifreq));
+    strncpy(ifr.ifr_name, it->first.c_str(), IFNAMSIZ-1);
+
+    if(ioctl(sd, SIOCGIFFLAGS, &ifr)!=0){
+      ERROR("ioctl(SIOCGIFFLAGS): %s.\n", strerror(errno));
+      goto error;
+    }
+
+    if( (ifr.ifr_flags & IFF_UP) &&
+        (!dev_name.empty() || !(ifr.ifr_flags & IFF_LOOPBACK)) ) {
+      local_ip = it->second;
+      break;
+    }
+  }
+
+  if(ifr.ifr_flags & IFF_LOOPBACK){
+    WARN("Media advertising using loopback address!\n"
+         "Try to use another network interface if your SEMS "
+         "should be accessible from the rest of the world.\n");
+  }
+
+ error:
+  close(sd);
+  return local_ip;
+}
+
+/*
+ * Main
+ */
 int main(int argc, char* argv[])
 {
+  int success = false;
   std::map<char,string> args;
+  std::map<char,string>::iterator cfg_arg;
 
-  if(parse_args(argc, argv, "hvE", "ugPfiodxD", args)){
-    print_usage(argv[0]);
-    return -1;
+  progname = strrchr(argv[0], '/');
+  progname = (progname == NULL ? argv[0] : progname + 1);
+
+#ifndef DISABLE_DAEMON_MODE
+  if(!parse_args(argc, argv, "hvE", "fxdDugP", args)){
+#else
+  if(!parse_args(argc, argv, "hvE", "fxdD", args)){
+#endif
+    print_usage(true);
+    return 1;
   }
 
   if(args.find('h') != args.end()){
-    print_usage(argv[0]);
+    print_usage();
     return 0;
   }
 
   if(args.find('v') != args.end()){
-    print_version();
+    printf("%s\n", DEFAULT_SIGNATURE);
     return 0;
   }
 
-  init_log();
+  /* apply command-line options */
+  if(!apply_args(args)){
+    print_usage(true);
+    goto error;
+  }
 
-  AmConfig::setStderr("yes");
-  AmConfig::setLoglevel("1");
+  init_logging();
 
-  std::map<char,string>::iterator cfg_arg;
-  if( (cfg_arg = args.find('f')) != args.end() )
-    AmConfig::ConfigurationFile = cfg_arg->second;
-
-  //     if(!semsConfig.reloadFile(AmConfig::ConfigurationFile.c_str()))
-  // 	return -1;
-
+  /* load and apply configuration file */
   AmConfig::readConfiguration();
-    
-  if(use_args(argv[0], args)){
-    print_usage(argv[0]);
-    return -1;
+  log_level = AmConfig::LogLevel;
+  log_stderr = AmConfig::LogStderr;
+
+  /* re-apply command-line options to override configuration file */
+  if(!apply_args(args)){
+    goto error;
   }
 
   AmConfig::LocalIP = getLocalIP(AmConfig::LocalIP);
+  if (AmConfig::LocalIP.empty()) {
+    ERROR("Cannot determine proper local address for media advertising!\n"
+          "Try using 'ifconfig -a' to find a proper interface and configure SEMS to use it.\n");
+    goto error;
+  }
+
   if (AmConfig::LocalSIPIP.empty()) {
     AmConfig::LocalSIPIP = AmConfig::LocalIP;
   }
 
-  print_version();
-  printf( "\n\nConfiguration:\n"
-	  "       configuration file:  %s\n"
-	  "       plug-in path:        %s\n"
-	  "       daemon mode:         %i\n"
-	  "       local SIP IP:        %s\n"
-          "       public media IP:     %s\n"
-	  "       local SIP port:      %i\n"
-	  "       local media IP:      %s\n"
-	  "       outbound proxy:      %s\n"
-	  "       application:         %s\n"
-	  "\n",
-	  AmConfig::ConfigurationFile.c_str(),
-	  AmConfig::PlugInPath.c_str(),
-	  AmConfig::DaemonMode,
-	  AmConfig::LocalSIPIP.c_str(),
-	  AmConfig::PublicIP.c_str(),
-	  AmConfig::LocalSIPPort,
-	  AmConfig::LocalIP.c_str(),
-	  AmConfig::OutboundProxy.c_str(),
-	  AmConfig::Application.empty()?
-	  "<not set>":AmConfig::Application.c_str()
-	  );
+  printf("Configuration:\n"
+#ifdef _DEBUG
+         "       log level:           %s (%i)\n"
+         "       log to stderr:       %s\n"
+#endif
+	 "       configuration file:  %s\n"
+	 "       plug-in path:        %s\n"
+#ifndef DISABLE_DAEMON_MODE
+         "       daemon mode:         %s\n"
+         "       daemon UID:          %s\n"
+         "       daemon GID:          %s\n"
+#endif
+	 "       local SIP IP:        %s\n"
+         "       public media IP:     %s\n"
+	 "       local SIP port:      %i\n"
+	 "       local media IP:      %s\n"
+	 "       out-bound proxy:     %s\n"
+	 "       application:         %s\n"
+	 "\n",
+#ifdef _DEBUG
+	 log_level2str[AmConfig::LogLevel], AmConfig::LogLevel,
+         AmConfig::LogStderr ? "yes" : "no",
+#endif
+	 AmConfig::ConfigurationFile.c_str(),
+	 AmConfig::PlugInPath.c_str(),
+#ifndef DISABLE_DAEMON_MODE
+	 AmConfig::DaemonMode ? "yes" : "no",
+	 AmConfig::DaemonUid.empty() ? "<not set>" : AmConfig::DaemonUid.c_str(),
+	 AmConfig::DaemonGid.empty() ? "<not set>" : AmConfig::DaemonGid.c_str(),
+#endif
+	 AmConfig::LocalSIPIP.c_str(),
+	 AmConfig::PublicIP.c_str(),
+	 AmConfig::LocalSIPPort,
+	 AmConfig::LocalIP.c_str(),
+	 AmConfig::OutboundProxy.c_str(),
+	 AmConfig::Application.empty() ? "<not set>" : AmConfig::Application.c_str());
+
+#ifndef DISABLE_DAEMON_MODE
 
   if(AmConfig::DaemonMode){
-
-    if( (cfg_arg = args.find('g')) != args.end() ){
+    if(!AmConfig::DaemonGid.empty()){
       unsigned int gid;
       if(str2i(cfg_arg->second, gid)){
 	struct group* grnam = getgrnam(cfg_arg->second.c_str());
@@ -308,20 +487,20 @@ int main(int argc, char* argv[])
 	  gid = grnam->gr_gid;
 	}
 	else{
-	  ERROR("Could not find group '%s' in the group database.\n",
+	  ERROR("Cannot not find group '%s' in the group database.\n",
 		cfg_arg->second.c_str());
-	  return -1;
+	  goto error;
 	}
       }
       if(setgid(gid)<0){
-	ERROR("Cannot change gid to %i: %s.",
+	ERROR("Cannot change GID to %i: %s.",
 	      gid,
 	      strerror(errno));
-	return -1;
+	goto error;
       }
     }
 
-    if( (cfg_arg = args.find('u')) != args.end() ){
+    if(!AmConfig::DaemonUid.empty()){
       unsigned int uid;
       if(str2i(cfg_arg->second, uid)){
 	struct passwd* pwnam = getpwnam(cfg_arg->second.c_str());
@@ -329,16 +508,16 @@ int main(int argc, char* argv[])
 	  uid = pwnam->pw_uid;
 	}
 	else{
-	  ERROR("Could not find user '%s' in the user database.\n",
+	  ERROR("Cannot not find user '%s' in the user database.\n",
 		cfg_arg->second.c_str());
-	  return -1;
+	  goto error;
 	}
       }
       if(setuid(uid)<0){
-	ERROR("Cannot change uid to %i: %s.",
+	ERROR("Cannot change UID to %i: %s.",
 	      uid,
 	      strerror(errno));
-	return -1;
+	goto error;
       }
     }
 
@@ -346,7 +525,7 @@ int main(int argc, char* argv[])
     int pid;
     if ((pid=fork())<0){
       ERROR("Cannot fork: %s.\n", strerror(errno));
-      return -1;
+      goto error;
     }else if (pid!=0){
       /* parent process => exit*/
       return 0;
@@ -358,262 +537,98 @@ int main(int argc, char* argv[])
     /* fork again to drop group  leadership */
     if ((pid=fork())<0){
       ERROR("Cannot fork: %s.\n", strerror(errno));
-      return -1;
+      goto error;
     }else if (pid!=0){
       /*parent process => exit */
       return 0;
     }
 	
-    if( (cfg_arg = args.find('P')) != args.end() ){
-      pid_file = cfg_arg->second;
-      if(write_pid_file()<0)
-	return -1;
+    if(write_pid_file()<0) {
+      goto error;
     }
 
     /* try to replace stdin, stdout & stderr with /dev/null */
     if (freopen("/dev/null", "r", stdin)==0){
-      ERROR("Unable to replace stdin with /dev/null: %s.\n",
+      ERROR("Cannot replace stdin with /dev/null: %s.\n",
 	    strerror(errno));
       /* continue, leave it open */
     };
     if (freopen("/dev/null", "w", stdout)==0){
-      ERROR("Unable to replace stdout with /dev/null: %s.\n",
+      ERROR("Cannot replace stdout with /dev/null: %s.\n",
 	    strerror(errno));
       /* continue, leave it open */
     };
     /* close stderr only if log_stderr=0 */
-    if ((!log_stderr) &&(freopen("/dev/null", "w", stderr)==0)){
-      ERROR("Unable to replace stderr with /dev/null: %s.\n",
+    if ((!log_stderr) && (freopen("/dev/null", "w", stderr)==0)){
+      ERROR("Cannot replace stderr with /dev/null: %s.\n",
 	    strerror(errno));
       /* continue, leave it open */
     };
   }
 
+#endif /* DISABLE_DAEMON_MODE */
+
   main_pid = getpid();
-
-  if(set_sighandler(sig_usr_un))
-    return -1;
-
-  if(AmConfig::init())
-    return -1;
-
-  DBG("Loading plug-ins\n");
-  AmPlugIn::instance()->init();
-  if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
-    return -1;
 
   init_random();
 
+  if(set_sighandler(signal_handler))
+    goto error;
+    
+  INFO("Loading plug-ins\n");
+  AmPlugIn::instance()->init();
+  if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
+    goto error;
+
 #ifdef WITH_ZRTP
   if (AmZRTP::init()) {
-    ERROR("Some error during zrtp initialization\n");
-    return -1;    
+    ERROR("Cannot initialize ZRTP\n");
+    goto error;
   }
 #endif
 
-  DBG("Starting session container\n");
+  INFO("Starting session container\n");
   AmSessionContainer::instance()->start();
   
 #ifdef SESSION_THREADPOOL
-  DBG("starting session processor threads\n");
+  INFO("Starting session processor threads\n");
   AmSessionProcessor::addThreads(AmConfig::SessionProcessorThreads);
 #endif 
 
-  DBG("Starting media processor\n");
+  INFO("Starting media processor\n");
   AmMediaProcessor::instance()->init();
 
-//   DBG("Starting mailer\n");
-//   AmMailDeamon::instance()->start();
-
-  DBG("Starting RTP receiver\n");
+  INFO("Starting RTP receiver\n");
   AmRtpReceiver::instance()->start();
 
-  DBG("Starting SIP stack\n");
-  SipCtrlInterface sip_ctrl;
+  INFO("Starting SIP stack (control interface)\n");
   sip_ctrl.load();
-  sip_ctrl.run(AmConfig::LocalSIPIP,AmConfig::LocalSIPPort);
+  sip_ctrl.run(AmConfig::LocalSIPIP, AmConfig::LocalSIPPort);
+  
+  success = true;
 
-  return 0;
-}
+  INFO("Disposing RTP receiver\n");
+  AmRtpReceiver::dispose();
 
-static void print_usage(char* progname)
-{
-  printf(
-	 "USAGE: %s [options]\n"
-	 "   Options:\n"
-	 "       -f config_filename:  sets configuration file to use\n"
-	 "       -d device:           sets network device for media advertising\n"
-	 "       -P pid_file:         write a pid file.\n"
-	 "       -u uid:              set user id.\n"
-	 "       -g gid:              set group id.\n"
-	 "       -x plugin_path:      path for plugins\n"
-	 "       -D log_level:        sets log level (error=0, warning=1, info=2, debug=3).\n"
-	 "       -E :                 debug mode: do not fork and log to stderr.\n"
-	 "       -v :                 version.\n"
-	 "       -h :                 this help screen.\n"
-	 "\n",
-	 progname
-	 );
-}
+  INFO("Disposing media processor\n");
+  AmMediaProcessor::dispose();
 
-static void print_version()
-{
-  printf("%s\n", DEFAULT_SIGNATURE);
-}
+  INFO("Disposing session container\n");
+  AmSessionContainer::dispose();
 
-static void getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_list)
-{
-  struct ifconf ifc;
-  struct ifreq ifrs[MAX_NET_DEVICES];
+  INFO("Disposing event dispatcher\n");
+  AmEventDispatcher::dispose();
 
-  ifc.ifc_len = sizeof(struct ifreq) * MAX_NET_DEVICES;
-  ifc.ifc_req = ifrs;
-  memset(ifrs, 0, ifc.ifc_len);
-    
-  if(ioctl(sd, SIOCGIFCONF, &ifc)!=0){
-    ERROR("getInterfaceList: ioctl: %s.\n", strerror(errno));
-    exit(-1);
-  }
+ error:
+  INFO("Disposing plug-ins\n");
+  AmPlugIn::dispose();
 
-#if !defined(BSD44SOCKETS)
-  int n_dev = ifc.ifc_len / sizeof(struct ifreq);
-  for(int i=0; i<n_dev; i++){
-    if(ifrs[i].ifr_addr.sa_family==PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&ifrs[i].ifr_addr;
-      struct sockaddr_in sa4;
-      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
-      if_list.push_back(make_pair((char*)ifrs[i].ifr_name,
- 				  inet_ntoa(sa4.sin_addr)));
-    }
-  }
-#else // defined(BSD44SOCKETS)
-  struct ifreq* p_ifr = ifc.ifc_req;
-  while((char*)p_ifr - (char*)ifc.ifc_req < ifc.ifc_len){
-
-    if(p_ifr->ifr_addr.sa_family == PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&p_ifr->ifr_addr;
-      if_list.push_back(make_pair((const char*)p_ifr->ifr_name,
- 				  inet_ntoa(sa->sin_addr)));
-    }
-
-    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + p_ifr->ifr_addr.sa_len);
+#ifndef DISABLE_DAEMON_MODE
+  if (AmConfig::DaemonMode) {
+    unlink(AmConfig::DaemonPidFile.c_str());
   }
 #endif
+
+  INFO("Exiting (%s)\n", success ? "success" : "failure");
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-
-static string getLocalIP(const string& dev_name)
-{
-
-#ifdef SUPPORT_IPV6
-  struct sockaddr_storage ss;
-  if(inet_aton_v6(dev_name.c_str(), &ss))
-#else
-    struct in_addr inp;
-  if(inet_aton(dev_name.c_str(), &inp))
-#endif    
-    {
-      return dev_name;
-    }
-
-  int sd = socket(PF_INET, SOCK_DGRAM, 0);
-  if(sd == -1){
-    ERROR("setLocalIP: socket: %s.\n", strerror(errno));
-    exit(-1);
-  }	
-
-  struct ifreq ifr;
-  std::vector<std::pair<string,string> > if_list;
-
-  if(dev_name.empty())
-    getInterfaceList(sd, if_list);
-  else {
-    memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, dev_name.c_str(), IFNAMSIZ-1);
-	
-    if(ioctl(sd, SIOCGIFADDR, &ifr)!=0){
-      ERROR("setLocalIP: ioctl: %s.\n", strerror(errno));
-      exit(-1);
-    }
-
-    if(ifr.ifr_addr.sa_family==PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&ifr.ifr_addr;
-      struct sockaddr_in sa4;
-      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
-      if_list.push_back(make_pair((char*)ifr.ifr_name,
-				  inet_ntoa(sa4.sin_addr)));
-    }
-  }
-
-  string local_ip;
-  for( std::vector<std::pair<string,string> >::iterator it = if_list.begin();
-       it != if_list.end(); ++it) {
-
-    memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, it->first.c_str(), IFNAMSIZ-1);
-
-    if(ioctl(sd, SIOCGIFFLAGS, &ifr)!=0){
-      ERROR("setLocalIP: ioctl: %s.\n", strerror(errno));
-      exit(-1);
-    }
-
-    if( (ifr.ifr_flags & IFF_UP) &&
-	(!dev_name.empty() || !(ifr.ifr_flags & IFF_LOOPBACK)) ) {
-	   
-      local_ip = it->second;
-      break;
-    }
-  }
-
-  close(sd);
-
-  if(local_ip.empty()){
-    ERROR("Could not determine proper local address for media advertising!\n");
-    ERROR("Try using 'ifconfig -a' to find a proper interface and configure\n");
-    ERROR("SEMS to use it.\n");
-    exit(-1);
-  }
-
-  if(ifr.ifr_flags & IFF_LOOPBACK){
-    WARN("Media advertising using loopback address!\n");
-    WARN("Try to use another network interface if your SEMS\n");
-    WARN("should be joinable from the rest of the world.\n");
-  }
-
-  return local_ip;
-}
-
-static int parse_args(int argc, char* argv[],
-		      const string& flags,
-		      const string& options,
-		      std::map<char,string>& args)
-{
-  for(int i=1; i<argc; i++){
-
-    char* arg = argv[i];
-
-    if( (*arg != '-') || !*(++arg) ) { 
-      fprintf(stderr, "%s: invalid parameter: '%s'.\n", argv[0], argv[i]);
-      return -1;
-    }    
-
-    if( flags.find(*arg) != string::npos ) {
-	    
-      args[*arg] = "yes";
-    }
-    else if(options.find(*arg) != string::npos) {
-
-      if(!argv[++i]){
-	fprintf(stderr, "%s: missing argument for parameter '-%c'.\n", argv[0], *arg);
-	return -1;
-      }
-	    
-      args[*arg] = argv[i];
-    }
-    else {
-      fprintf(stderr, "%s: unknown parameter '-%c'.\n", argv[0], arg[1]);
-      return -1;
-    }
-  }
-  return 0;
-}
-

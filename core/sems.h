@@ -20,8 +20,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 /** @file sems.h */
@@ -35,17 +35,23 @@
 #define PLUG_IN_PATH        "/usr/local/lib/sems/plug-in"
 #define DEFAULT_ANNOUNCE    "default.wav"
 #define DEFAULT_RECORD_TIME 30
-#define DEFAULT_DAEMON_MODE 1
 #define PREFIX_SEPARATOR    ""
 #define RTP_LOWPORT         1024
 #define RTP_HIGHPORT        0xffff
 #define MAX_FORWARDS        70
 
+#ifndef DISABLE_DAEMON_MODE
+# define DEFAULT_DAEMON_MODE        true
+# define DEFAULT_DAEMON_PID_FILE    "/var/local/run/sems.pid"
+# define DEFAULT_DAEMON_UID         ""
+# define DEFAULT_DAEMON_GID         ""
+#endif
+
 #define DEFAULT_SIGNATURE "Sip Express Media Server " \
 		"(" SEMS_VERSION " (" ARCH "/" OS"))"
 
 // session considered dead after 5 minutes no RTP
-#define DEAD_RTP_TIME       5*60  
+#define DEAD_RTP_TIME       5*60
 
 /* Session Timer defaul configuration: */
 #define DEFAULT_ENABLE_SESSION_TIMER 1

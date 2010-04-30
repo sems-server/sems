@@ -38,6 +38,8 @@
 #include "AmUtils.h"
 
 #include <fstream>
+#include <cctype>
+#include <algorithm>
 
 string       AmConfig::ConfigurationFile       = CONFIG_FILE;
 string       AmConfig::ModConfigPath           = MOD_CFG_PATH;
@@ -45,7 +47,16 @@ string       AmConfig::PlugInPath              = PLUG_IN_PATH;
 string       AmConfig::LoadPlugins             = "";
 string       AmConfig::ExcludePlugins          = "";
 string       AmConfig::ExcludePayloads         = "";
-int          AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
+int          AmConfig::LogLevel                = L_INFO;
+bool         AmConfig::LogStderr               = false;
+
+#ifndef DISABLE_DAEMON_MODE
+bool         AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
+string       AmConfig::DaemonPidFile           = DEFAULT_DAEMON_PID_FILE;
+string       AmConfig::DaemonUid               = DEFAULT_DAEMON_UID;
+string       AmConfig::DaemonGid               = DEFAULT_DAEMON_GID;
+#endif
+
 string       AmConfig::LocalIP                 = "";
 string       AmConfig::PublicIP                = "";
 string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
@@ -86,7 +97,7 @@ bool AmConfig::IgnoreSIGCHLD      = true;
 
 int AmConfig::setSIPPort(const string& port) 
 {
-  if(sscanf(port.c_str(),"%u",&AmConfig::LocalSIPPort) != 1) {
+  if(sscanf(port.c_str(),"%u",&LocalSIPPort) != 1) {
     return 0;
   }
   return 1;
@@ -94,7 +105,7 @@ int AmConfig::setSIPPort(const string& port)
 
 int AmConfig::setRtpLowPort(const string& port)
 {
-  if(sscanf(port.c_str(),"%i",&AmConfig::RtpLowPort) != 1) {
+  if(sscanf(port.c_str(),"%i",&RtpLowPort) != 1) {
     return 0;
   }
   return 1;
@@ -102,42 +113,73 @@ int AmConfig::setRtpLowPort(const string& port)
 
 int AmConfig::setRtpHighPort(const string& port)
 {
-  if(sscanf(port.c_str(),"%i",&AmConfig::RtpHighPort) != 1) {
+  if(sscanf(port.c_str(),"%i",&RtpHighPort) != 1) {
     return 0;
   }
   return 1;
 }
 
-int AmConfig::setLoglevel(const string& ll) {
-    
-  if(sscanf(ll.c_str(),"%u",&log_level) != 1) {
-    return 0;
-  }
-  return 1;
-}
+int AmConfig::setLogLevel(const string& level, bool apply)
+{
+  int n;
 
-int AmConfig::setFork(const string& fork) {
-  if ( strcasecmp(fork.c_str(), "yes") == 0 ) {
-    DaemonMode = 1;
-  } else if ( strcasecmp(fork.c_str(), "no") == 0 ) {
-    DaemonMode = 0;
+  if (sscanf(level.c_str(), "%i", &n) == 1) {
+    if (n < L_ERR || n > L_DBG) {
+      return 0;
+    }
   } else {
-    return 0;
-  }	
-  return 1;
-}		
+    string s(level);
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
 
-int AmConfig::setStderr(const string& s) {
+    if (s == "error" || s == "err") {
+      n = L_ERR;
+    } else if (s == "warning" || s == "warn") {
+      n = L_WARN;
+    } else if (s == "info") {
+      n = L_INFO;
+    } else if (s=="debug" || s == "dbg") {
+      n = L_DBG;
+    } else {
+      return 0;
+    }
+  }
+
+  LogLevel = n;
+  if (apply) {
+    log_level = LogLevel;
+  }
+  return 1;
+}
+
+int AmConfig::setLogStderr(const string& s, bool apply)
+{
   if ( strcasecmp(s.c_str(), "yes") == 0 ) {
-    log_stderr = 1;
-    AmConfig::DaemonMode = 0;
+    LogStderr = true;
   } else if ( strcasecmp(s.c_str(), "no") == 0 ) {
-    log_stderr = 0;
+    LogStderr = false;
   } else {
     return 0;
-  }	
+  }
+  if (apply) {
+    log_stderr = LogStderr;
+  }
+  return 1;
+}
+
+#ifndef DISABLE_DAEMON_MODE
+
+int AmConfig::setDaemonMode(const string& fork) {
+  if ( strcasecmp(fork.c_str(), "yes") == 0 ) {
+    DaemonMode = true;
+  } else if ( strcasecmp(fork.c_str(), "no") == 0 ) {
+    DaemonMode = false;
+  } else {
+    return 0;
+  }
   return 1;
 }		
+
+#endif /* !DISABLE_DAEMON_MODE */
 
 int AmConfig::setSessionProcessorThreads(const string& th) {
   if(sscanf(th.c_str(),"%u",&SessionProcessorThreads) != 1) {
@@ -163,7 +205,7 @@ int AmConfig::setSIPServerThreads(const string& th){
 
 int AmConfig::setDeadRtpTime(const string& drt)
 {
-  if(sscanf(drt.c_str(),"%u",&AmConfig::DeadRtpTime) != 1) {
+  if(sscanf(drt.c_str(),"%u",&DeadRtpTime) != 1) {
     return 0;
   }
   return 1;
@@ -171,11 +213,11 @@ int AmConfig::setDeadRtpTime(const string& drt)
 
 int AmConfig::readConfiguration()
 {
-  DBG("Reading configuration...");
+  DBG("Reading configuration...\n");
   
   AmConfigReader cfg;
 
-  if(cfg.loadFile(ConfigurationFile.c_str())){
+  if(cfg.loadFile(AmConfig::ConfigurationFile.c_str())){
     ERROR("while loading main configuration file\n");
     return -1;
   }
@@ -183,13 +225,16 @@ int AmConfig::readConfiguration()
   // take values from global configuration file
   // they will be overwritten by command line args
 
-
+#ifndef DISABLE_SYSLOG_LOG
   if (cfg.hasParameter("syslog_facility")) {
-    set_log_facility(cfg.getParameter("syslog_facility").c_str());
+    set_syslog_facility(cfg.getParameter("syslog_facility").c_str());
   }
+#endif
 
   // plugin_config_path
-  ModConfigPath = cfg.getParameter("plugin_config_path",ModConfigPath);
+  if (cfg.hasParameter("plugin_config_path")) {
+    ModConfigPath = cfg.getParameter("plugin_config_path",ModConfigPath);
+  }
 
   if(!ModConfigPath.empty() && (ModConfigPath[ModConfigPath.length()-1] != '/'))
     ModConfigPath += '/';
@@ -219,7 +264,8 @@ int AmConfig::readConfiguration()
   }
   
   // outbound_proxy
-  OutboundProxy = cfg.getParameter("outbound_proxy");
+  if (cfg.hasParameter("outbound_proxy"))
+    OutboundProxy = cfg.getParameter("outbound_proxy");
 
   // force_outbound_proxy
   if(cfg.hasParameter("force_outbound_proxy")) {
@@ -227,16 +273,20 @@ int AmConfig::readConfiguration()
   }
   
   // plugin_path
-  PlugInPath = cfg.getParameter("plugin_path");
+  if (cfg.hasParameter("plugin_path"))
+    PlugInPath = cfg.getParameter("plugin_path");
 
   // load_plugins
-  LoadPlugins = cfg.getParameter("load_plugins");
+  if (cfg.hasParameter("load_plugins"))
+    LoadPlugins = cfg.getParameter("load_plugins");
 
   // exclude_plugins
-  ExcludePlugins = cfg.getParameter("exclude_plugins");
+  if (cfg.hasParameter("exclude_plugins"))
+    ExcludePlugins = cfg.getParameter("exclude_plugins");
 
   // exclude_plugins
-  ExcludePayloads = cfg.getParameter("exclude_payloads");
+  if (cfg.hasParameter("exclude_payload"))
+    ExcludePayloads = cfg.getParameter("exclude_payloads");
 
   // user_agent
   if (cfg.getParameter("use_default_signature")=="yes")
@@ -256,14 +306,17 @@ int AmConfig::readConfiguration()
 
   // log_level
   if(cfg.hasParameter("loglevel")){
-    if(!setLoglevel(cfg.getParameter("loglevel"))){
+    if(!setLogLevel(cfg.getParameter("loglevel"))){
       ERROR("invalid log level specified\n");
       return -1;
     }
   }
 
-  LogSessions = cfg.getParameter("log_sessions")=="yes";
-  LogEvents = cfg.getParameter("log_events")=="yes";
+  if(cfg.hasParameter("log_sessions"))
+    LogSessions = cfg.getParameter("log_sessions")=="yes";
+  
+  if(cfg.hasParameter("log_events"))
+    LogEvents = cfg.getParameter("log_events")=="yes";
 
   if (cfg.hasParameter("unhandled_reply_loglevel")) {
     string msglog = cfg.getParameter("unhandled_reply_loglevel");
@@ -320,18 +373,39 @@ int AmConfig::readConfiguration()
     AppSelect = App_SPECIFIED;
   }
 
+#ifndef DISABLE_DAEMON_MODE
+
   // fork 
   if(cfg.hasParameter("fork")){
-    if(!setFork(cfg.getParameter("fork"))){
+    if(!setDaemonMode(cfg.getParameter("fork"))){
       ERROR("invalid fork value specified,"
 	    " valid are only yes or no\n");
       return -1;
     }
   }
 
+  // daemon (alias for fork)
+  if(cfg.hasParameter("daemon")){
+    if(!setDaemonMode(cfg.getParameter("daemon"))){
+      ERROR("invalid daemon value specified,"
+	    " valid are only yes or no\n");
+      return -1;
+    }
+  }
+
+  if(cfg.hasParameter("daemon_uid")){
+    DaemonUid = cfg.getParameter("daemon_uid");
+  }
+
+  if(cfg.hasParameter("daemon_gid")){
+    DaemonGid = cfg.getParameter("daemon_gid");
+  }
+
+#endif /* !DISABLE_DAEMON_MODE */
+
   // stderr 
   if(cfg.hasParameter("stderr")){
-    if(!setStderr(cfg.getParameter("stderr"))){
+    if(!setLogStderr(cfg.getParameter("stderr"), false)){
       ERROR("invalid stderr value specified,"
 	    " valid are only yes or no\n");
       return -1;
@@ -447,9 +521,3 @@ int AmConfig::readConfiguration()
 
   return 0;
 }	
-
-int AmConfig::init()
-{
-  return 0;
-}
-
