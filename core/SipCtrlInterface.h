@@ -51,6 +51,8 @@ class SipCtrlInterface:
 
     friend class udp_trsp;
 
+    AmCondition<bool> stopped;
+    
 public:
 
     static string outbound_host;
@@ -66,7 +68,8 @@ public:
     int load();
 
     void run(const string& bind_addr, unsigned short bind_port);
-
+    void stop();
+    
     /**
      * Sends a SIP request.
      *
