@@ -51,6 +51,8 @@
 
 #include <assert.h>
 
+#include <algorithm>
+
 /** 
  * Singleton pointer.
  * @see instance()
