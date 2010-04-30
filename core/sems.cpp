@@ -105,36 +105,34 @@ static void print_usage(bool short_=false)
 }
 
 /* Note: The function should not use log because it is called before logging is initialized. */
-static bool parse_args(int argc, char* argv[],
-                      const string& flags, const string& options,
-                      std::map<char,string>& args)
+static bool parse_args(int argc, char* argv[], std::map<char,string>& args)
 {
-  for(int i=1; i<argc; i++){
-    char* arg = argv[i];
+#ifndef DISABLE_DAEMON_MODE
+    static const char* opts = ":hvEf:x:d:D:u:g:P:";
+#else    
+    static const char* opts = ":hvEf:x:d:D:";
+#endif    
 
-    if( (*arg != '-') || !*(++arg) ) {
-      fprintf(stderr, "%s: invalid argument '%s'\n", progname, argv[i]);
-      return false;
+    opterr = 0;
+    
+    while (true) {
+	int c = getopt(argc, argv, opts);
+	switch (c) {
+	case -1:
+	    return true;
+	    
+	case ':':
+	    fprintf(stderr, "%s: missing argument for option '-%c'\n", progname, optopt);
+	    return false;
+	    
+	case '?':
+	    fprintf(stderr, "%s: unknown option '-%c'\n", progname, optopt);
+	    return false;
+	    
+	default:
+	    args[c] = (optarg ? optarg : "yes");
+	}
     }
-
-    if( flags.find(*arg) != string::npos ) {
-      args[*arg] = "yes";
-    }
-    else if(options.find(*arg) != string::npos) {
-      if(!argv[++i]){
-        fprintf(stderr, "%s: missing argument for option '-%c'\n", progname, *arg);
-        return false;
-      }
-
-      args[*arg] = argv[i];
-    }
-    else {
-      fprintf(stderr, "%s: unknown option '-%c'\n", progname, *arg);
-      return false;
-    }
-  }
-
-  return true;
 }
 
 /* Note: The function should not use logging because it is called before
@@ -391,11 +389,7 @@ int main(int argc, char* argv[])
   progname = strrchr(argv[0], '/');
   progname = (progname == NULL ? argv[0] : progname + 1);
 
-#ifndef DISABLE_DAEMON_MODE
-  if(!parse_args(argc, argv, "hvE", "fxdDugP", args)){
-#else
-  if(!parse_args(argc, argv, "hvE", "fxdD", args)){
-#endif
+  if(!parse_args(argc, argv, args)){
     print_usage(true);
     return 1;
   }
