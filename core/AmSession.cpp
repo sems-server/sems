@@ -671,16 +671,19 @@ void AmSession::onSipEvent(AmSipEvent* sip_ev)
 
   AmSipRequestEvent* req_ev = dynamic_cast<AmSipRequestEvent*>(sip_ev);
   if(req_ev) {
-    //onSipRequest(req_ev->req);
     dlg.updateStatus(req_ev->req);
     return;
   }
-    
 
   AmSipReplyEvent* reply_ev = dynamic_cast<AmSipReplyEvent*>(sip_ev);
   if(reply_ev) {
-    //onSipReply(reply_ev->reply);
     dlg.updateStatus(reply_ev->reply);
+    return;
+  }
+
+  AmSipTimeoutEvent* to_ev = dynamic_cast<AmSipTimeoutEvent*>(sip_ev);
+  if(to_ev) {
+    dlg.uasTimeout(to_ev);
     return;
   }
 
@@ -691,8 +694,6 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 {
   CALL_EVENT_H(onSipRequest,req);
 
-  //dlg.updateStatus(req);
-    
   DBG("onSipRequest: method = %s\n",req.method.c_str());
   if(req.method == "INVITE"){
 	

@@ -132,8 +132,8 @@ class sip_trans
 
     /**
      * Retransmission buffer
-     *  - UAS transaction: ACK
-     *  - UAC transaction: final reply
+     *  - UAC transaction: ACK
+     *  - UAS transaction: last reply
      */
     char* retr_buf;
 

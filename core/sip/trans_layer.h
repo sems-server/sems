@@ -27,8 +27,6 @@
 #ifndef _trans_layer_h_
 #define _trans_layer_h_
 
-//#include "AmApi.h"
-
 #include "cstring.h"
 
 #include <list>
@@ -133,6 +131,13 @@ class trans_layer
     void timeout(trans_bucket* bucket, sip_trans* t);
 
  public:
+
+    /**
+     * Config option: if true, final replies without 
+     * a to-tag will be accepted for requests which do not
+     * create a dialog.
+     */
+    static bool accept_fr_without_totag;
 
     /**
      * Retrieve the singleton instance.

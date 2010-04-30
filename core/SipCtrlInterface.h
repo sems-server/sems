@@ -59,7 +59,6 @@ public:
     static unsigned int outbound_port;
     static bool log_parsed_messages;
     static int log_raw_messages;
-    static bool accept_fr_without_totag;
     static int udp_rcvbuf;
 
     SipCtrlInterface();
@@ -96,8 +95,9 @@ public:
     /**
      * From sip_ua
      */
-    void handle_sip_request(trans_ticket* tt, sip_msg* msg);
+    void handle_sip_request(const trans_ticket& tt, sip_msg* msg);
     void handle_sip_reply(sip_msg* msg);
+    void timer_expired(sip_trans* trans, sip_timer_type tt);
 };
 
 

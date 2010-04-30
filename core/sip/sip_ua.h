@@ -27,6 +27,8 @@
 #ifndef _sip_ua_h_
 #define _sip_ua_h_
 
+#include "sip_trans.h"
+
 class trans_ticket;
 struct sip_msg;
 
@@ -34,8 +36,12 @@ class sip_ua
 {
 public:
     virtual ~sip_ua() {}
-    virtual void handle_sip_request(trans_ticket* tt, sip_msg* msg)=0;
+
+    virtual void handle_sip_request(const trans_ticket& tt, sip_msg* msg)=0;
     virtual void handle_sip_reply(sip_msg* msg)=0;
+
+    // UAS timer expired (UAC timers generate a local 408)
+    virtual void timer_expired(sip_trans* trans, sip_timer_type tt)=0;
 };
 
 #endif

@@ -42,6 +42,8 @@ using std::string;
 #define SIP_FLAGS_VERBATIM     1 // send request verbatim, 
                                  // i.e. modify as little as possible
 
+class AmSipTimeoutEvent;
+
 /** \brief SIP transaction representation */
 struct AmSipTransaction
 {
@@ -49,12 +51,8 @@ struct AmSipTransaction
   unsigned int cseq;
   trans_ticket tt;
 
-  // last reply code
-  // (sent or received)
-  //int reply_code;
-
-AmSipTransaction(const string& method, unsigned int cseq, const trans_ticket& tt)
-: method(method),
+  AmSipTransaction(const string& method, unsigned int cseq, const trans_ticket& tt)
+  : method(method),
     cseq(cseq),
     tt(tt)
   {}
@@ -164,6 +162,8 @@ class AmSipDialog
 
   void updateStatus(const AmSipRequest& req);
   void updateStatus(const AmSipReply& reply);
+
+  void uasTimeout(AmSipTimeoutEvent* to_ev);
     
   int reply(const AmSipRequest& req,
 	    unsigned int  code, 

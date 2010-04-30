@@ -97,15 +97,7 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 
   r_cseq = req.cseq;
   r_cseq_i = true;
-
-  if(uas_trans.find(req.cseq) == uas_trans.end()){
-      DBG("req.tt = {%p,%p}\n",req.tt._bucket, req.tt._t);
-      uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
-  }
-  // else {
-  //   // shouldn't we drop those requests?
-  //   // (CANCEL requests should have been handled before)
-  // }
+  uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
 
   // target refresh requests
   if (req.from_uri.length() && 
@@ -151,8 +143,6 @@ void AmSipDialog::updateStatusFromLocalRequest(const AmSipRequest& req)
     local_uri    = req.from_uri;
     remote_party = req.to;
     local_party  = req.from;
-
-    //next_hop   = req.next_hop;
   }
 }
 
@@ -302,6 +292,34 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
   if(hdl)
       hdl->onSipReply(reply, old_dlg_status);
+}
+
+void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
+{
+  assert(to_ev);
+
+  switch(to_ev->type){
+  case AmSipTimeoutEvent::no2xxACK:
+    //TODO
+    DBG("Timeout: missing 2xx-ACK received\n");
+    break;
+
+  case AmSipTimeoutEvent::noErrorACK:
+    //TODO
+    DBG("Timeout: missing non-2xx-ACK\n");
+    break;
+
+  case AmSipTimeoutEvent::noPRACK:
+    //TODO
+    DBG("Timeout: missing PRACK\n");
+    break;
+
+  case AmSipTimeoutEvent::_noEv:
+  default:
+    break;
+  };
+  
+  to_ev->processed = true;
 }
 
 string AmSipDialog::getContactHdr()

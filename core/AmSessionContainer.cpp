@@ -195,7 +195,7 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
   AmSession* session = NULL;
   try {
     if((session = createSession(req, session_params)) != 0) {
-      session->dlg.updateStatusFromLocalRequest(req); // sets local tag as well
+      session->dlg.updateStatusFromLocalRequest(req);
       session->setCallgroup(req.from_tag);
 
       session->setNegotiateOnReply(true);

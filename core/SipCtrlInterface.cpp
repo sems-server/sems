@@ -47,8 +47,9 @@
 #include "AmApi.h"
 #include "AmConfigReader.h"
 #include "AmSipDispatcher.h"
+#include "AmEventDispatcher.h"
+#include "AmSipEvent.h"
 
-bool SipCtrlInterface::accept_fr_without_totag = false;
 int SipCtrlInterface::log_raw_messages = 3;
 bool SipCtrlInterface::log_parsed_messages = true;
 int SipCtrlInterface::udp_rcvbuf = -1;
@@ -71,11 +72,11 @@ int SipCtrlInterface::load()
     string cfgfile = AmConfig::ConfigurationFile.c_str();
     if (file_exists(cfgfile) && !cfg.loadFile(cfgfile)) {
 	if (cfg.hasParameter("accept_fr_without_totag")) {
-	    accept_fr_without_totag = 
+	    trans_layer::accept_fr_without_totag = 
 		cfg.getParameter("accept_fr_without_totag") == "yes";
 	}
 	DBG("accept_fr_without_totag = %s\n", 
-	    accept_fr_without_totag?"yes":"no");
+	    trans_layer::accept_fr_without_totag?"yes":"no");
 
 	if (cfg.hasParameter("log_raw_messages")) {
 	    string msglog = cfg.getParameter("log_raw_messages");
@@ -324,12 +325,11 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 #define DBG_PARAM(p)\
     DBG("%s = <%s>\n",#p,p.c_str());
 
-void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
+void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 {
     assert(msg);
     assert(msg->from && msg->from->p);
     assert(msg->to && msg->to->p);
-    assert(tt);
     
     AmSipRequest req;
     
@@ -384,7 +384,7 @@ void SipCtrlInterface::handle_sip_request(trans_ticket* tt, sip_msg* msg)
     req.cseq     = get_cseq(msg)->num;
     req.body     = c2stlstr(msg->body);
 
-    req.tt = *tt;
+    req.tt = tt;
 
     if (msg->content_type)
  	req.content_type = c2stlstr(msg->content_type->value);
@@ -485,6 +485,50 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 }
 
 #undef DBG_PARAM
+
+void SipCtrlInterface::timer_expired(sip_trans* trans, sip_timer_type tt)
+{
+    assert(trans);
+    assert(trans->type == TT_UAS);
+
+    AmSipTimeoutEvent::EvType ev = AmSipTimeoutEvent::_noEv;
+
+    //TODO: send an event to the SIP Dialog
+    switch(tt){
+	
+    case STIMER_H:
+	switch(trans->state){
+	case TS_TERMINATED_200: // missing 200-ACK
+	    ev = AmSipTimeoutEvent::no2xxACK;
+	    break;
+	case TS_COMPLETED: // missing error-ACK
+	    ev = AmSipTimeoutEvent::noErrorACK;
+	    break;
+
+	// TODO: missing PRACK
+	//case TS_???:
+	default:
+	    ERROR("timer H expired / transaction in undefined state\n");
+	    return;
+	}
+    default:
+	return;
+    }
+
+    assert(trans->msg);
+    assert(trans->to_tag.len);
+    assert(trans->msg->cseq && trans->msg->cseq->p);
+
+    sip_cseq* cseq = dynamic_cast<sip_cseq*>(trans->msg->cseq->p);
+    
+    if(!cseq){
+	ERROR("missing CSeq\n");
+	return;
+    }
+ 
+    AmEventDispatcher::instance()->post(c2stlstr(trans->to_tag),
+					new AmSipTimeoutEvent(ev, cseq->num, c2stlstr(cseq->method_str)));
+}
 
 void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
 {

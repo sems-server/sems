@@ -95,10 +95,4 @@ class AmEventHandler
   virtual ~AmEventHandler() { };
 };
 
-/* class AmEventFactory */
-/* { */
-/*   virtual AmEvent* generateEvent(const string& receiver_id) = 0; */
-/*   virtual ~AmEventFactory() { } */
-/* }; */
-
 #endif

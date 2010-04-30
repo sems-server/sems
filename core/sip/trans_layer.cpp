@@ -59,6 +59,7 @@
  */
 trans_layer* trans_layer::_instance = NULL;
 
+bool trans_layer::accept_fr_without_totag = false;
 
 trans_layer* trans_layer::instance()
 {
@@ -879,6 +880,10 @@ int trans_layer::cancel(trans_ticket* tt)
     case TS_COMPLETED:
 	// final reply has been sent, but still no ACK:
 	// do nothing!!!
+
+	// TODO: switch to TS_CANCELLING??
+	// this would allow for sending the BYE as soon
+	// we get an ACK or a timeout (STIMER_H)...
 	bucket->unlock();
 	return 0;
 	
@@ -1043,8 +1048,7 @@ void trans_layer::received_msg(sip_msg* msg)
 		    //  the UA. 
 		    assert(ua);
 		    DBG("Passing ACK to the UA.\n");
-		    trans_ticket tt(t,bucket);
-		    ua->handle_sip_request(&tt,msg);
+		    ua->handle_sip_request(trans_ticket(t,bucket),msg);
 		    
 		    DROP_MSG;
 		}
@@ -1072,8 +1076,7 @@ void trans_layer::received_msg(sip_msg* msg)
 		//  the UA. 
 		assert(ua);
 
-		trans_ticket tt(t,bucket);
-		ua->handle_sip_request(&tt,msg);
+		ua->handle_sip_request(trans_ticket(t,bucket),msg);
 		
 		// forget the msg: it will be
 		// owned by the new transaction
@@ -1159,7 +1162,7 @@ int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* m
     to_tag = ((sip_from_to*)msg->to->p)->tag;
     if((t->msg->u.request->method != sip_request::CANCEL) && !to_tag.len){
 	DBG("To-tag missing in final reply (see sipctrl.conf?)\n");
-	if (!SipCtrlInterface::accept_fr_without_totag)
+	if (!trans_layer::accept_fr_without_totag)
 	    return -1;
     }
     
@@ -1220,7 +1223,7 @@ int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* m
 			t->to_tag.s = new char[to_tag.len];
 			t->to_tag.len = to_tag.len;
 			memcpy((void*)t->to_tag.s,to_tag.s,to_tag.len);
-		} 
+		}
 		
 		goto pass_reply;
 		
@@ -1542,7 +1545,6 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
     case STIMER_D:  // Completed: -> Terminated
     case STIMER_K:  // Completed: terminate transaction
     case STIMER_J:  // Completed: -> Terminated
-    case STIMER_H:  // Completed: -> Terminated
     case STIMER_I:  // Confirmed: -> Terminated
     case STIMER_L:  // Terminated_200 -> Terminated
 	
@@ -1551,10 +1553,15 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	//    else, send ACK & BYE.
 
 	tr->clear_timer(type);
-	tr->state = TS_TERMINATED;
 	bucket->remove_trans(tr);
 	break;
 
+    case STIMER_H:  // Completed: -> Terminated
+
+	tr->clear_timer(type);
+	ua->timer_expired(tr,STIMER_H);
+	bucket->remove_trans(tr);
+	break;
 
     case STIMER_E:  // Trying/Proceeding: (re-)send request
     case STIMER_G:  // Completed: (re-)send response

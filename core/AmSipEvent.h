@@ -38,6 +38,31 @@ class AmSipEvent: public AmEvent
   AmSipEvent(int id = -1)
     : AmEvent(id)
     {}
+
+  AmSipEvent(const AmSipEvent& ev)
+    : AmEvent(ev)
+    {}
+};
+
+class AmSipTimeoutEvent: public AmSipEvent
+{
+ public:
+
+  enum EvType {
+    _noEv=0,
+    no2xxACK,
+    noErrorACK,
+    noPRACK
+  };
+
+  EvType       type;
+
+  unsigned int cseq_num;
+  string       cseq_method;
+
+ AmSipTimeoutEvent(EvType t, unsigned int cseq_num, const string& cseq_method)
+    : AmSipEvent(-1), type(t)
+  {}
 };
 
 /** \brief SIP request event */
