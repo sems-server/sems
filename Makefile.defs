@@ -3,13 +3,14 @@ else
 makefile_defs=1
 export makefile_defs
 
-SVN_REV?=r$(shell svnversion -n .)
+#SVN_REV?=r$(shell svnversion -n .)
 
 #version number
 VERSION = 1
 PATCHLEVEL = 2
-SUBLEVEL = 0
-EXTRAVERSION ?= -dev-$(SVN_REV)
+SUBLEVEL = 1
+EXTRAVERSION ?= 
+#-dev-$(SVN_REV)
 
 REL_VERSION=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
 RELEASE=$(REL_VERSION)$(EXTRAVERSION)

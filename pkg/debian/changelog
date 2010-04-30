@@ -1,3 +1,13 @@
+sems (1.2.1) unstable; urgency=low
+
+  * webconference app configuration fixed
+  * retransmission exponential backoff timer fixed
+  * session timer interval fixed
+  * some build related fixes (mostly CMake related)
+  * minor mem leak fixed for falied request headers
+
+ -- Stefan Sayer <stefan@waspi>  Fri, 30 Apr 2010 16:30:10 +0200
+
 sems (1.2.0) unstable; urgency=low
 
   * SEMS 1.2.0 release
