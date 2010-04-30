@@ -38,5 +38,7 @@ DEF_ACTION_1P(SCGetNewIdAction);
 DEF_ACTION_2P(SCUSpellAction);
 DEF_ACTION_2P(SCURandomAction);
 DEF_ACTION_1P(SCUSRandomAction);
+DEF_ACTION_2P(SCUSAddAction);
+DEF_ACTION_2P(SCUSSubAction);
 
 #endif

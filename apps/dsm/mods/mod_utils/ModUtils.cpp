@@ -44,7 +44,8 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("utils.spell", SCUSpellAction);
   DEF_CMD("utils.rand", SCURandomAction);
   DEF_CMD("utils.srand", SCUSRandomAction);
-
+  DEF_CMD("utils.add", SCUSAddAction);
+  DEF_CMD("utils.sub", SCUSSubAction);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -158,5 +159,42 @@ EXEC_ACTION_START(SCUSpellAction) {
   DBG("spelling '%s'\n", play_string.c_str());
   for (size_t i=0;i<play_string.length();i++)
     sc_sess->playFile(basedir+play_string[i]+".wav", false);
+
+} EXEC_ACTION_END;
+
+
+CONST_ACTION_2P(SCUSAddAction, ',', false);
+EXEC_ACTION_START(SCUSAddAction) {
+  string n1 = resolveVars(par1, sess, sc_sess, event_params);
+  string n2 = resolveVars(par2, sess, sc_sess, event_params);
+
+  string varname = par1;
+  if (varname.length() && varname[0] == '$')
+    varname = varname.substr(1);
+
+  // todo: err checking
+  string res = double2str(atof(n1.c_str()) + atof(n2.c_str()));
+
+  DBG("setting var[%s] = %s + %s = %s\n", 
+      varname.c_str(), n1.c_str(), n2.c_str(), res.c_str());
+  sc_sess->var[varname] = res;
+
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUSSubAction, ',', false);
+EXEC_ACTION_START(SCUSSubAction) {
+  string n1 = resolveVars(par1, sess, sc_sess, event_params);
+  string n2 = resolveVars(par2, sess, sc_sess, event_params);
+
+  string varname = par1;
+  if (varname.length() && varname[0] == '$')
+    varname = varname.substr(1);
+
+  // todo: err checking
+  string res = double2str(atof(n1.c_str()) - atof(n2.c_str()));
+
+  DBG("setting var[%s] = %s - %s = %s\n", 
+      varname.c_str(), n1.c_str(), n2.c_str(), res.c_str());
+  sc_sess->var[varname] = res;
 
 } EXEC_ACTION_END;

@@ -23,3 +23,11 @@ Actions:
  utils.srand() 
   seed the RNG with time().
 
+ utils.add($var, val)
+   add val (float value) to var. also 
+   utils.add($var1, $val); utils.add($var, #param)
+
+ utils.sub($var, val)
+   subtract val from var
+
+
