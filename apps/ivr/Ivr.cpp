@@ -77,26 +77,7 @@ extern "C" {
     if(!PyArg_ParseTuple(args,"is",&level,&msg))
       return NULL;
 
-    if((level)<=log_level) {
-      if(log_stderr)
-	log_print( level, msg );
-      else {
-	switch(level){
-	case L_ERR:
-	  syslog(LOG_ERR, "Error: %s", msg);
-	  break;
-	case L_WARN:
-	  syslog(LOG_WARNING, "Warning: %s", msg);
-	  break;
-	case L_INFO:
-	  syslog(LOG_INFO, "Info: %s", msg);
-	  break;
-	case L_DBG:
-	  syslog(LOG_DEBUG, "Debug: %s", msg);
-	  break;
-	}
-      }
-    }
+    _LOG(level, "%s", msg);
 	
     Py_INCREF(Py_None);
     return Py_None;
