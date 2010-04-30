@@ -223,9 +223,19 @@ class AmLoggingFacility : public AmPluginFactory
   AmLoggingFacility(const string& name);
   virtual ~AmLoggingFacility() { }
 
-  /** will be called on logging messages
+  /**
+   * This method is called when logging a message if the instance
+   * is registered as a logging hook.
+   *
+   * @param level log level
+   * @param pid   process ID
+   * @param tid   thread ID
+   * @param func  function name
+   * @param file  file name
+   * @param line  line number
+   * @param msg   message
    */
-  virtual void log(int level, const char* msg) = 0;
+  virtual void log(int level, pid_t pid, pthread_t tid, const char* func, const char* file, int line, char* msg) = 0;
 };
 
 #if  __GNUC__ < 3

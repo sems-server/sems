@@ -20,102 +20,120 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/** @file log.h */
 #ifndef _log_h_
 #define _log_h_
 
-#include <syslog.h>
-#ifdef _DEBUG
-#include <pthread.h>
-#endif
+#include <sys/types.h>	/* pid_t */
+#include <stdio.h>
+#include <unistd.h>	/* getpid() */
+#include <pthread.h>	/* pthread_self() */
+
 
 #ifdef __cplusplus
 extern "C" {
+# if 0
+}
+# endif
 #endif
 
-#define L_ERR    0
-#define L_WARN   1
-#define L_INFO   2
-#define L_DBG    3
+/**
+ * @{ Log levels
+ */
+enum Log_Level {
+  L_ERR = 0,
+  L_WARN,
+  L_INFO,
+  L_DBG
+};
+/** @} */
 
-  /* priority at which we log */
-#define DPRINT_PRIO LOG_DEBUG
+#define FIX_LOG_LEVEL(level) \
+  ((level) < L_ERR ? L_ERR : ((level) > L_DBG ? L_DBG : (level)))
 
-#define LOG_NAME "sems"
+#ifdef __cplusplus
+# define FUNC_NAME __PRETTY_FUNCTION__
+#else
+# define FUNC_NAME __FUNCTION__
+#endif
 
-  extern int log_level;
-  extern int log_stderr;
-
-  extern int log_facility;
-
-  void init_log();
-  void set_log_facility(const char* facility);
-
-  void dprint (int level, const char* fct, const char* file, int line, const char* fmt, ...);
-  void log_print (int level, const char* fmt, ...);
-  void register_logging_fac(void*);
-  void log_fac_print(int level, const char* fct, const char* file, int line, const char* fmt, ...);
+#ifdef __linux
+# include <linux/unistd.h>
+# define GET_PID() syscall(__NR_gettid)
+#else
+# define GET_PID() getpid()
+#endif
 
 #ifdef _DEBUG
-#define LOG_PRINT(level, args... ) dprint( level, __FUNCTION__, __FILE__, __LINE__, ##args )
+# ifndef NO_THREADID_LOG
+#  define GET_TID() pthread_self()
+#  define LOC_FMT   " [%s, #%lx] [%u/%s:%d]"
+#  define LOC_DATA  FUNC_NAME, tid_, pid_, __FILE__, __LINE__
+# else
+#  define GET_TID() 0
+#  define LOC_FMT   " [%s] [%u/%s:%d]"
+#  define LOC_DATA  FUNC_NAME, pid_, __FILE__, __LINE__
+# endif
 #else
-#define LOG_PRINT(level, args... ) log_print( level , ##args )
-#endif
-#define LOG_FAC_PRINT(level, args... ) log_fac_print( level, __FUNCTION__, __FILE__, __LINE__, ##args )
-
-#ifdef _DEBUG
-#ifndef NO_THREADID_LOG
-#define THREAD_FMT	"[%lx] "
-#define THREAD_ID	(unsigned long)pthread_self(), 
-#endif 
-#endif 
-
-#ifndef THREAD_FMT
-#define THREAD_FMT	""
-#define THREAD_ID 
+# define GET_TID()   0
+# define LOC_FMT   " [%u/%s:%d]"
+# define LOC_DATA  pid_, __FILE__, __LINE__
 #endif
 
-#if  __GNUC__ < 3
-#define _LOG(level,fmt...) LOG_PRINT(level,##fmt)
-#else
-#define _LOG(level, fmt, args...)					\
-  do{									\
-    if((level)<=log_level) {						\
-      if(log_stderr)							\
-	LOG_PRINT( level, fmt, ##args );				\
-      else {								\
-	switch(level){							\
-	case L_ERR:							\
-	  syslog(LOG_ERR, (char*)("ERROR: " THREAD_FMT "%s (%s:%i): " fmt), THREAD_ID __FUNCTION__, __FILE__, __LINE__, ##args); \
-	  break;							\
-	case L_WARN:							\
-	  syslog(LOG_WARNING, (char*)("WARNING: " THREAD_FMT "%s (%s:%i): " fmt), THREAD_ID __FUNCTION__, __FILE__, __LINE__, ##args); \
-	  break;							\
-	case L_INFO:							\
-	  syslog(LOG_INFO, (char*)("INFO: " THREAD_FMT "%s (%s:%i): " fmt), THREAD_ID __FUNCTION__, __FILE__, __LINE__, ##args); \
-	  break;							\
-	case L_DBG:							\
-	  syslog(LOG_DEBUG, (char*)("DEBUG: " THREAD_FMT "%s (%s:%i): " fmt), THREAD_ID __FUNCTION__, __FILE__, __LINE__, ##args); \
-	  break;							\
-	}								\
-      }									\
-    }									\
-    LOG_FAC_PRINT( level, fmt, ##args );				\
-  }while(0)
+/* The underscores in parameter and local variable names are there to
+   avoid collisions. */
+#define _LOG(level__, fmt, args...) \
+  do { \
+    int level_ = FIX_LOG_LEVEL(level__); \
+    \
+    if ((level_) <= log_level) { \
+      pid_t pid_ = GET_PID(); \
+      pthread_t tid_ = GET_TID(); \
+      char msg_[512]; \
+      int n_ = snprintf(msg_, sizeof(msg_), fmt, ##args); \
+      if (msg_[n_ - 1] == '\n') msg_[n_ - 1] = '\0'; \
+      \
+      if (log_stderr) { \
+        fprintf(stderr, "%s: %s" LOC_FMT "\n", log_level2str[level_], msg_, LOC_DATA); \
+	fflush(stderr); \
+      } \
+      run_log_hooks(level_, pid_, tid_, FUNC_NAME, __FILE__, __LINE__, msg_); \
+    } \
+  } while(0)
+
+/**
+ * @{ Logging macros
+ */
+#define ERROR(fmt, args...) _LOG(L_ERR,  fmt, ##args)
+#define WARN(fmt, args...)  _LOG(L_WARN, fmt, ##args)
+#define INFO(fmt, args...)  _LOG(L_INFO, fmt, ##args)
+#define DBG(fmt, args...)   _LOG(L_DBG,  fmt, ##args)
+/** @} */
+
+extern int log_level;
+extern int log_stderr;
+extern const char* log_level2str[];
+
+void init_logging(void);
+void run_log_hooks(int, pid_t, pthread_t, const char*, const char*, int, char*);
+
+#ifndef DISABLE_SYSLOG_LOG
+int set_syslog_facility(const char*);
 #endif
-
-
-#define DBG(args...) _LOG(L_DBG, ##args)
-#define ERROR(args...) _LOG(L_ERR, ##args)
-#define WARN(args...)  _LOG(L_WARN,  ##args)
-#define INFO(args...)  _LOG(L_INFO,  ##args)
 
 #ifdef __cplusplus
 }
 #endif
 
+#ifdef __cplusplus
+/* ...only for C++ */
+class AmLoggingFacility;
+void register_log_hook(AmLoggingFacility*);
 #endif
+
+#endif /* !_log_h_ */

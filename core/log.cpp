@@ -20,135 +20,164 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "log.h"
-
-#include <unistd.h>
-#include <stdarg.h>
+#include <ctype.h>
 #include <stdio.h>
-#include <assert.h>
+#include <unistd.h>
+
+#ifndef DISABLE_SYSLOG_LOG
+# include <syslog.h>
+#endif
 
 #include <vector>
-#include "AmApi.h"
+#include <string>
 
-int log_level=L_INFO;
-int log_stderr=0;
-
-/* log facility (see syslog(3)) */
-int log_facility=LOG_DAEMON;
-
-vector<AmLoggingFacility*> log_hooks;
+#include "AmApi.h"	/* AmLoggingFacility */
+#include "AmThread.h"   /* AmMutex */
+#include "log.h"
 
 
-inline const char* level2txt(int level)
-{
-  switch(level){
-  case L_ERR:  return "ERROR";
-  case L_WARN: return "WARNING";
-  case L_INFO: return "INFO";
-  case L_DBG:  return "DEBUG";
-  }
-  return "";
-}
+int log_level  = AmConfig::LogLevel;	/**< log level */
+int log_stderr = AmConfig::LogStderr;	/**< non-zero if logging to stderr */
 
-void init_log()
-{
-  openlog(LOG_NAME, LOG_PID|LOG_CONS,log_facility);
-  setlogmask( -1 );
-}
+/** Map log levels to text labels */
+const char* log_level2str[] = { "ERROR", "WARNING", "INFO", "DEBUG" };
 
-void set_log_facility(const char* facility) {
-  int new_facility = -1;
-  if (!strcmp(facility, "DAEMON")){
-    new_facility = LOG_DAEMON;
-  } else if (!strcmp(facility, "USER")) {
-    new_facility = LOG_USER;
-  } else if (strlen(facility)==6 && 
-	     !strncmp(facility, "LOCAL", 5) &&
-	     facility[5]-'0' < 8) {
-    switch (facility[5]) {
-    case '0': new_facility = LOG_LOCAL0; break;
-    case '1': new_facility = LOG_LOCAL1; break;
-    case '2': new_facility = LOG_LOCAL2; break;
-    case '3': new_facility = LOG_LOCAL3; break;
-    case '4': new_facility = LOG_LOCAL4; break;
-    case '5': new_facility = LOG_LOCAL5; break;
-    case '6': new_facility = LOG_LOCAL6; break;
-    case '7': new_facility = LOG_LOCAL7; break;
-    }
-  } else {
-    ERROR("unknown syslog facility '%s'\n", 
-	  facility);
-    return;
+/** Registered logging hooks */
+static vector<AmLoggingFacility*> log_hooks;
+static AmMutex log_hooks_mutex;
+
+#ifndef DISABLE_SYSLOG_LOG
+
+/**
+ * Syslog Logging Facility (built-in plug-in)
+ */
+class SyslogLogFac : public AmLoggingFacility {
+  int facility;		/**< syslog facility */
+
+  void init() {
+    openlog("sems", LOG_PID | LOG_CONS, facility);
+    setlogmask(-1);
   }
 
-  if (new_facility != log_facility) {
-    log_facility = new_facility;
+ public:
+  SyslogLogFac() : AmLoggingFacility("syslog"), facility(LOG_DAEMON) {
+    init();
+  }
+
+  ~SyslogLogFac() {
     closelog();
-    init_log();
   }
+
+  int onLoad() {
+    /* unused (because it is a built-in plug-in */
+    return 0;
+  }
+
+  bool setFacility(const char* str);
+  void log(int, pid_t, pthread_t, const char*, const char*, int, char*);
+};
+
+static SyslogLogFac syslog_log;
+
+/** Set syslog facility */
+bool SyslogLogFac::setFacility(const char* str) {
+  static int local_fac[] = {
+    LOG_LOCAL0, LOG_LOCAL1, LOG_LOCAL2, LOG_LOCAL3,
+    LOG_LOCAL4, LOG_LOCAL5, LOG_LOCAL6, LOG_LOCAL7,
+  };
+
+  int new_facility = -1;
+
+  if (!strcmp(str, "DAEMON")){
+    new_facility = LOG_DAEMON;
+  }
+  else if (!strcmp(str, "USER")) {
+    new_facility = LOG_USER;
+  }
+  else if (strlen(str) == 6 && !strncmp(str, "LOCAL", 5) &&
+           isdigit(str[5]) && str[5] - '0' < 8) {
+    new_facility = local_fac[str[5] - '0'];
+  }
+  else {
+    ERROR("unknown syslog facility '%s'\n", str);
+    return false;
+  }
+
+  if (new_facility != facility) {
+    facility = new_facility;
+    closelog();
+    init();
+  }
+
+  return true;
 }
 
-AmMutex dprint_mut;
-
-void dprint(int level, const char* fct, const char* file, int line, const char* fmt, ...)
+void SyslogLogFac::log(int level, pid_t pid, pthread_t tid, const char* func, const char* file, int line, char* msg)
 {
-  dprint_mut.lock();
-
-  va_list ap;
-
-#ifndef _DEBUG
-  fprintf(stderr, "(%i) %s: %s (%s:%i): ",(int)getpid(), level2txt(level), fct, file, line);
-#else
-  fprintf(stderr, "(%i) %s: " THREAD_FMT "%s (%s:%i): ",(int)getpid(), level2txt(level), THREAD_ID fct, file, line);
-#endif
-  va_start(ap, fmt);
-  vfprintf(stderr,fmt,ap);
-  fflush(stderr);
-  va_end(ap);
-
-  dprint_mut.unlock();
-}
-
-void log_print (int level, const char* fmt, ...)
-{
-  va_list ap;
-
-  fprintf(stderr, "(%i) %s: ",(int)getpid(),level2txt(level));
-  va_start(ap, fmt);
-  vfprintf(stderr,fmt,ap);
-  fflush(stderr);
-  va_end(ap);
-}
-
-void log_fac_print(int level, const char* fct, const char* file, int line, const char* fmt, ...)
-{
-  va_list ap;
-  char logline[512];
-  int len;
-
-  if(log_hooks.empty()) return;
-
-  // file, line etc
-  len = snprintf(logline, sizeof(logline), "(%i) %s: %s (%s:%i): ",
-                    (int)getpid(), level2txt(level), fct, file, line);
-  // dbg msg
-  va_start(ap, fmt);
-  vsnprintf(logline+len, sizeof(logline)-len, fmt, ap);
-  va_end(ap);
-
-  for(unsigned i=0; i<log_hooks.size(); i++) log_hooks[i]->log(level, logline);
-}
-
-void register_logging_fac(void* vp)
-{
-  AmLoggingFacility* lf = static_cast<AmLoggingFacility*>(vp);
+  static const int log2syslog_level[] = { LOG_ERR, LOG_WARNING, LOG_INFO, LOG_DEBUG };
 #ifdef _DEBUG
-  assert(lf != NULL);
+# ifndef NO_THREADID_LOG
+  syslog(log2syslog_level[level], "%s: %s [%s, #%lx] [%s:%d]",
+      log_level2str[level], msg, func, tid, file, line);
+# else /* NO_THREADID_LOG */
+  syslog(log2syslog_level[level], "%s: %s [%s] [%s:%d]",
+      log_level2str[level], msg, func, file, line);
+# endif /* NO_THREADID_LOG */
+#else /* !_DEBUG */
+  syslog(log2syslog_level[level], "%s: %s [%s:%d]",
+      log_level2str[level], msg, file, line);
+#endif /* !_DEBUG */
+}
+
+int set_syslog_facility(const char* str)
+{
+  return (syslog_log.setFacility(str) == true);
+}
+
+#endif /* !DISABLE_SYSLOG_LOG */
+
+
+/**
+ * Initialize logging
+ */
+void init_logging()
+{
+  log_hooks.clear();
+
+#ifndef DISABLE_SYSLOG_LOG
+  register_log_hook(&syslog_log);
 #endif
-  log_hooks.push_back(lf);
+
+  INFO("Logging initialized\n");
+}
+
+/**
+ * Run log hooks
+ */
+void run_log_hooks(int level, pid_t pid, pthread_t tid, const char* func, const char* file, int line, char* msg)
+{
+  log_hooks_mutex.lock();
+
+  if (!log_hooks.empty()) {
+    for (vector<AmLoggingFacility*>::iterator it = log_hooks.begin();
+         it != log_hooks.end(); ++it) {
+      (*it)->log(level, pid, tid, func, file, line, msg);
+    }
+  }
+
+  log_hooks_mutex.unlock();
+}
+
+/**
+ * Register the log hook
+ */
+void register_log_hook(AmLoggingFacility* fac)
+{
+  AmLock lock(log_hooks_mutex);
+  log_hooks.push_back(fac);
 }
