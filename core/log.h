@@ -57,7 +57,11 @@ enum Log_Level {
   ((level) < L_ERR ? L_ERR : ((level) > L_DBG ? L_DBG : (level)))
 
 #ifdef __cplusplus
-# define FUNC_NAME __PRETTY_FUNCTION__
+# ifdef PRETTY_FUNCTION_LOG
+#  define FUNC_NAME __PRETTY_FUNCTION__
+# else
+#  define FUNC_NAME __FUNCTION__
+#endif
 #else
 # define FUNC_NAME __FUNCTION__
 #endif
@@ -72,12 +76,12 @@ enum Log_Level {
 #ifdef _DEBUG
 # ifndef NO_THREADID_LOG
 #  define GET_TID() pthread_self()
-#  define LOC_FMT   " [%s, #%lx] [%u/%s:%d]"
-#  define LOC_DATA  FUNC_NAME, (unsigned long)tid_, pid_, __FILE__, __LINE__
+#  define LOC_FMT   " [#%lx/%u] [%s, %s:%d]"
+#  define LOC_DATA  tid_, pid_, FUNC_NAME, __FILE__, __LINE__
 # else
 #  define GET_TID() 0
-#  define LOC_FMT   " [%s] [%u/%s:%d]"
-#  define LOC_DATA  FUNC_NAME, pid_, __FILE__, __LINE__
+#  define LOC_FMT   " [%u] [%s %s:%d]"
+#  define LOC_DATA  pid_, FUNC_NAME,  __FILE__, __LINE__
 # endif
 #else
 # define GET_TID()   0
@@ -85,25 +89,31 @@ enum Log_Level {
 # define LOC_DATA  pid_, __FILE__, __LINE__
 #endif
 
+#ifdef LOG_LOC_DATA_ATEND
+#define COMPLETE_LOG_FMT "%s: %s" LOC_FMT "\n", log_level2str[level_], msg_, LOC_DATA
+#else
+#define COMPLETE_LOG_FMT LOC_FMT " %s: %s" "\n", LOC_DATA, log_level2str[level_], msg_
+#endif
+
 /* The underscores in parameter and local variable names are there to
    avoid collisions. */
-#define _LOG(level__, fmt, args...) \
-  do { \
-    int level_ = FIX_LOG_LEVEL(level__); \
-    \
-    if ((level_) <= log_level) { \
-      pid_t pid_ = GET_PID(); \
-      pthread_t tid_ = GET_TID(); \
-      char msg_[512]; \
-      int n_ = snprintf(msg_, sizeof(msg_), fmt, ##args); \
-      if (msg_[n_ - 1] == '\n') msg_[n_ - 1] = '\0'; \
-      \
-      if (log_stderr) { \
-        fprintf(stderr, "%s: %s" LOC_FMT "\n", log_level2str[level_], msg_, LOC_DATA); \
-	fflush(stderr); \
-      } \
+#define _LOG(level__, fmt, args...)					\
+  do {									\
+    int level_ = FIX_LOG_LEVEL(level__);				\
+									\
+    if ((level_) <= log_level) {					\
+      pid_t pid_ = GET_PID();						\
+      pthread_t tid_ = GET_TID();					\
+      char msg_[512];							\
+      int n_ = snprintf(msg_, sizeof(msg_), fmt, ##args);		\
+      if (msg_[n_ - 1] == '\n') msg_[n_ - 1] = '\0';			\
+									\
+      if (log_stderr) {							\
+	fprintf(stderr, COMPLETE_LOG_FMT);				\
+	fflush(stderr);							\
+      }									\
       run_log_hooks(level_, pid_, tid_, FUNC_NAME, __FILE__, __LINE__, msg_); \
-    } \
+    }									\
   } while(0)
 
 /**

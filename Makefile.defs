@@ -21,6 +21,8 @@ CPPFLAGS += -D_DEBUG \
 #         -DMAX_RTP_SESSIONS=8192 \
 #	  -DSUPPORT_IPV6 \
 #	  -DNO_THREADID_LOG \
+#         -DLOG_PRETTY_FUNCTION \
+#         -DLOG_LOC_DATA_ATEND
 
 
 # compile with session thread pool support?
