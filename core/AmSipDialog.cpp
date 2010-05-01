@@ -333,8 +333,9 @@ string AmSipDialog::getContactHdr()
     }
     
 
-    contact_uri += AmConfig::PublicIP.empty() ? 
-      AmConfig::LocalSIPIP : AmConfig::PublicIP + ":";
+    contact_uri += (AmConfig::PublicIP.empty() ? 
+      AmConfig::LocalSIPIP : AmConfig::PublicIP ) 
+      + ":";
     contact_uri += int2str(AmConfig::LocalSIPPort);
     contact_uri += ">";
 
