@@ -66,6 +66,8 @@ int AmAudioQueue::write(unsigned int user_ts, unsigned int size) {
   inputQueue_mut.lock();
   unsigned int size_trav = size;
   for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin(); it != inputQueue.end(); it++) {
+    if (it->audio == NULL)
+      continue;
     if (it->put) {
       if ((size_trav = it->audio->put(user_ts, samples, size_trav)) < 0)
 	break;
@@ -83,6 +85,8 @@ int AmAudioQueue::read(unsigned int user_ts, unsigned int size) {
   outputQueue_mut.lock();
   unsigned int size_trav = size;
   for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin(); it != outputQueue.end(); it++) {
+    if (it->audio == NULL)
+      continue;
     if (it->put) {
       if ((size_trav = it->audio->put(user_ts, samples, size_trav)) < 0)
 	break;
