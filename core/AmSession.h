@@ -467,15 +467,15 @@ public:
   /** Entry point for SIP Requests   */
   virtual void onSipRequest(const AmSipRequest& req);
   /** Entry point for SIP Replies   */
-    virtual void onSipReply(const AmSipReply& reply, int old_dlg_status);
+  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status);
 
-    /** 2xx reply has been received for an INVITE transaction */
-    virtual void onInvite2xx(const AmSipReply& reply);
+  /** 2xx reply has been received for an INVITE transaction */
+  virtual void onInvite2xx(const AmSipReply& reply);
 
-    /**
-     * Entry point for Audio events
-     */
-    virtual void onAudioEvent(AmAudioEvent* audio_ev);
+  /**
+   * Entry point for Audio events
+   */
+  virtual void onAudioEvent(AmAudioEvent* audio_ev);
 
   /**
    * entry point for system events
