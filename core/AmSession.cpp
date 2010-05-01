@@ -784,6 +784,7 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
       case AmSipDialog::Pending:
 	
 	switch(reply.code){
+	  // todo: 180 with body (remote rbt)
 	case 180: { 
 
 	  onRinging(reply);
@@ -972,8 +973,7 @@ void AmSession::setOnHold(bool hold)
 }
 
 // Utility for basic NAT handling: allow the config file to specify the IP
-// address to use in SDP bodies and Contact header.
-// TODO: Contact header! :)
+// address to use in SDP bodies 
 string AmSession::advertisedIP()
 {
   string set_ip = AmConfig::PublicIP; // "public_ip" parameter. 

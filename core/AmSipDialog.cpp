@@ -332,7 +332,9 @@ string AmSipDialog::getContactHdr()
       contact_uri += user + "@";
     }
     
-    contact_uri += AmConfig::LocalSIPIP + ":";
+
+    contact_uri += AmConfig::PublicIP.empty() ? 
+      AmConfig::LocalSIPIP : AmConfig::PublicIP + ":";
     contact_uri += int2str(AmConfig::LocalSIPPort);
     contact_uri += ">";
 
