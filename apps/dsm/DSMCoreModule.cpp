@@ -68,6 +68,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("disableDTMFDetection", SCDisableDTMFDetection);
 
   DEF_CMD("set", SCSetAction);
+  DEF_CMD("sets", SCSetSAction);
   DEF_CMD("eval", SCEvalAction);
   DEF_CMD("setVar", SCSetVarAction);
   DEF_CMD("var", SCGetVarAction);
@@ -460,6 +461,59 @@ EXEC_ACTION_START(SCSetAction) {
     par1.substr(1) : par1;
 
   sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params);
+  DBG("set $%s='%s'\n", 
+      var_name.c_str(), sc_sess->var[var_name].c_str());
+} EXEC_ACTION_END;
+
+string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess, 
+		     map<string,string>* event_params) {
+  string res = q;
+  size_t repl_pos = 0;
+  while (repl_pos<res.length()) {
+    size_t rstart = res.find_first_of("$#@", repl_pos);
+    repl_pos = rstart+1;
+    if (rstart == string::npos) 
+      break;
+    if (rstart && res[rstart-1] == '\\') // escaped
+      continue;
+    
+    size_t rend = res.find_first_of(" ,()$#@\t;'\"", rstart+1);
+    if (rend==string::npos)
+      rend = res.length();
+    string keyname = res.substr(rstart+1, rend-rstart-1);
+    // todo: simply use resolveVars (?)
+    switch(res[rstart]) {
+    case '$': {
+      
+      if (sc_sess->var.find(keyname) == sc_sess->var.end())
+	res.erase(rstart, rend-rstart); 
+      else 
+	res.replace(rstart, rend-rstart, sc_sess->var[keyname]); 
+    } break;
+    case '#':
+      if (NULL!=event_params) {
+	if (event_params->find(keyname) != event_params->end())
+	  res.replace(rstart, rend-rstart, (*event_params)[keyname]);
+	else
+	  res.erase(rstart, rend-rstart);	
+      } break;
+    case '@': {
+      // todo: optimize 
+      res.replace(rstart, rend-rstart, 
+		  resolveVars("@"+keyname, sess, sc_sess, event_params));
+    } break;
+    default: break;
+    }
+  }
+  return res;
+}
+CONST_ACTION_2P(SCSetSAction,'=', false);
+EXEC_ACTION_START(SCSetSAction) {
+  string var_name = (par1.length() && par1[0] == '$')?
+    par1.substr(1) : par1;
+
+  sc_sess->var[var_name] = replaceParams(par2, sess, sc_sess, event_params);
+					 
   DBG("set $%s='%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
 } EXEC_ACTION_END;
