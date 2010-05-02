@@ -100,6 +100,8 @@ public:
   unsigned int getRecordDataSize();
   void stopRecord();
   void setInOutPlaylist();
+  void setInputPlaylist();
+  void setOutputPlaylist();
 
   void setPromptSet(const string& name);
   void addSeparator(const string& name, bool front = false);

@@ -483,6 +483,16 @@ void DSMCall::setInOutPlaylist() {
   setInOut(&playlist, &playlist);
 }
 
+void DSMCall::setInputPlaylist() {
+  DBG("setting playlist as input\n");
+  setInput(&playlist);
+}
+
+void DSMCall::setOutputPlaylist() {
+  DBG("setting playlist as output\n");
+  setOutput(&playlist);
+}
+
 void DSMCall::addPromptSet(const string& name, 
 			     AmPromptCollection* prompt_set) {
   if (prompt_set) {

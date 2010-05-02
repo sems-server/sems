@@ -90,6 +90,8 @@ class DSMSession {
   virtual unsigned int getRecordDataSize() = 0;
   virtual void stopRecord() = 0;
   virtual void setInOutPlaylist() = 0;
+  virtual void setInputPlaylist() = 0;
+  virtual void setOutputPlaylist() = 0;
 
   virtual void addToPlaylist(AmPlaylistItem* item) = 0;
   virtual void closePlaylist(bool notify) = 0;
