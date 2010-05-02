@@ -38,11 +38,6 @@ bool AmSessionEventHandler::process(AmEvent*)
   return false;
 }
 
-bool AmSessionEventHandler::onSipEvent(AmSipEvent*)
-{
-  return false;
-}
-
 bool AmSessionEventHandler::onSipRequest(const AmSipRequest&)
 {
   return false;

@@ -71,11 +71,6 @@ bool SessionTimer::process(AmEvent* ev)
   return false;
 }
 
-bool SessionTimer::onSipEvent(AmSipEvent* ev)
-{
-  return false;
-}
-
 bool SessionTimer::onSipRequest(const AmSipRequest& req)
 {
   updateTimer(s,req);

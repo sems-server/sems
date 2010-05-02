@@ -31,19 +31,24 @@
 #include "AmEvent.h"
 #include "AmSipMsg.h"
 
-/** \brief SIP event */
+class AmSipDialog;
+
+/** \brief base class for SIP events */
 class AmSipEvent: public AmEvent
 {
  public:
-  AmSipEvent(int id = -1)
-    : AmEvent(id)
+  AmSipEvent()
+    : AmEvent(-1)
     {}
 
   AmSipEvent(const AmSipEvent& ev)
     : AmEvent(ev)
     {}
+
+  virtual void operator() (AmSipDialog* dlg)=0;
 };
 
+/** \brief UAS reply re-transmission timeout event */
 class AmSipTimeoutEvent: public AmSipEvent
 {
  public:
@@ -60,9 +65,11 @@ class AmSipTimeoutEvent: public AmSipEvent
   unsigned int cseq_num;
   string       cseq_method;
 
- AmSipTimeoutEvent(EvType t, unsigned int cseq_num, const string& cseq_method)
-    : AmSipEvent(-1), type(t)
-  {}
+  AmSipTimeoutEvent(EvType t, unsigned int cseq_num, const string& cseq_method)
+    : AmSipEvent(), type(t)
+   {}
+
+  virtual void operator() (AmSipDialog* dlg);
 };
 
 /** \brief SIP request event */
@@ -72,8 +79,10 @@ class AmSipRequestEvent: public AmSipEvent
   AmSipRequest req;
     
   AmSipRequestEvent(const AmSipRequest& r)
-    : AmSipEvent(-1), req(r)
+    : AmSipEvent(), req(r)
     {}
+
+  virtual void operator() (AmSipDialog* dlg);
 };
 
 /** \brief SIP reply event */
@@ -84,6 +93,8 @@ class AmSipReplyEvent: public AmSipEvent
 
   AmSipReplyEvent(const AmSipReply& r) 
     : AmSipEvent(),reply(r) {}
+
+  virtual void operator() (AmSipDialog* dlg);
 };
 
 

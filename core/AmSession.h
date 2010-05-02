@@ -456,14 +456,10 @@ public:
   virtual void onRinging(const AmSipReply& reply){}
 
   /**
-   * @see AmDialogState
+   * onBye is called whenever a BYE request is received. 
    */
   virtual void onBye(const AmSipRequest& req);
 
-  /**
-   * Entry point for SIP events
-   */
-  virtual void onSipEvent(AmSipEvent* sip_ev);
   /** Entry point for SIP Requests   */
   virtual void onSipRequest(const AmSipRequest& req);
   /** Entry point for SIP Replies   */

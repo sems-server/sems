@@ -137,7 +137,7 @@ class SessionTimer: public AmSessionEventHandler
   /* @see AmSessionEventHandler */
   virtual int  configure(AmConfigReader& conf); 
   virtual bool process(AmEvent*);
-  virtual bool onSipEvent(AmSipEvent*);
+
   virtual bool onSipRequest(const AmSipRequest&);
   virtual bool onSipReply(const AmSipReply&);
 

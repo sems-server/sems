@@ -629,9 +629,8 @@ void AmSession::process(AmEvent* ev)
   }
 
   AmSipEvent* sip_ev = dynamic_cast<AmSipEvent*>(ev);
-  if(sip_ev){	
-    DBG("Session received SIP Event\n");
-    onSipEvent(sip_ev);
+  if(sip_ev){
+    (*sip_ev)(&dlg);
     return;
   }
 
@@ -662,32 +661,6 @@ void AmSession::process(AmEvent* ev)
     return;
   }
 #endif
-}
-
-
-void AmSession::onSipEvent(AmSipEvent* sip_ev)
-{
-  CALL_EVENT_H(onSipEvent,sip_ev);
-
-  AmSipRequestEvent* req_ev = dynamic_cast<AmSipRequestEvent*>(sip_ev);
-  if(req_ev) {
-    dlg.updateStatus(req_ev->req);
-    return;
-  }
-
-  AmSipReplyEvent* reply_ev = dynamic_cast<AmSipReplyEvent*>(sip_ev);
-  if(reply_ev) {
-    dlg.updateStatus(reply_ev->reply);
-    return;
-  }
-
-  AmSipTimeoutEvent* to_ev = dynamic_cast<AmSipTimeoutEvent*>(sip_ev);
-  if(to_ev) {
-    dlg.uasTimeout(to_ev);
-    return;
-  }
-
-  ERROR("Unknown SIP Event");
 }
 
 void AmSession::onSipRequest(const AmSipRequest& req)
