@@ -77,7 +77,7 @@ enum Log_Level {
 # ifndef NO_THREADID_LOG
 #  define GET_TID() pthread_self()
 #  define LOC_FMT   " [#%lx/%u] [%s, %s:%d]"
-#  define LOC_DATA  tid_, pid_, FUNC_NAME, __FILE__, __LINE__
+#  define LOC_DATA  (unsigned long)tid_, pid_, FUNC_NAME, __FILE__, __LINE__
 # else
 #  define GET_TID() 0
 #  define LOC_FMT   " [%u] [%s %s:%d]"
