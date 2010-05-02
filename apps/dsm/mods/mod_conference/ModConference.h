@@ -29,14 +29,17 @@
 #include "DSMModule.h"
 #include "AmConferenceStatus.h"
 #include "DSMSession.h"
+#include "AmAdvancedAudio.h"
 
 #include <memory>
 #define MOD_CLS_NAME ConfModule
 
 DECLARE_MODULE(MOD_CLS_NAME);
 
-#define CONF_AKEY_CHANNEL "conf.chan" 
+#define CONF_AKEY_CHANNEL        "conf.chan" 
+#define CONF_AKEY_DEF_TEECHANNEL "conf.teechan" 
 
+/** holds a conference channel  */
 class DSMConfChannel 
 : public DSMDisposable,
   public ArgObject {
@@ -47,7 +50,22 @@ class DSMConfChannel
   ~DSMConfChannel() { }
   void release();
   void reset(AmConferenceChannel* channel);
+};
 
+/** hold conference channel and audio queue */
+class DSMTeeConfChannel
+: public DSMDisposable,
+  public ArgObject {
+  std::auto_ptr<AmConferenceChannel> chan;
+  AmAudioQueue audio_queue;
+
+ public:
+  DSMTeeConfChannel(AmConferenceChannel* channel);
+  ~DSMTeeConfChannel();
+
+  void release();
+  void reset(AmConferenceChannel* channel);
+  AmAudio* setupAudio(AmAudio* out);
 };
 
 DEF_ACTION_2P(ConfJoinAction);
@@ -56,4 +74,6 @@ DEF_ACTION_2P(ConfRejoinAction);
 DEF_ACTION_2P(ConfPostEventAction);
 DEF_ACTION_1P(ConfSetPlayoutTypeAction);
 
+DEF_ACTION_2P(ConfTeeJoinAction);
+DEF_ACTION_1P(ConfTeeLeaveAction);
 #endif
