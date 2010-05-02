@@ -477,7 +477,7 @@ string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess,
     if (rstart && res[rstart-1] == '\\') // escaped
       continue;
     
-    size_t rend = res.find_first_of(" ,()$#@\t;'\"", rstart+1);
+    size_t rend = res.find_first_of(" ,()$#@\t;:'\"", rstart+1);
     if (rend==string::npos)
       rend = res.length();
     string keyname = res.substr(rstart+1, rend-rstart-1);
