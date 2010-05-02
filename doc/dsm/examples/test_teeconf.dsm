@@ -1,0 +1,41 @@
+--  an example on tee-conference, i.e. talking in two conferences
+--   tee-conferences could e.g. be used for subgroup conferences (side-panels)
+-- 
+--  caller 5 joins chan1 and speaks in chan2
+--  caller 4 joins chan1
+--  everyone else joins chan2
+
+import(mod_uri);
+import(mod_conference);
+
+initial state begin 
+  enter {
+    setInOutPlaylist();
+    conference.setPlayoutType(adaptive);
+    uri.parse(@remote_uri, rparty.);
+    repost();
+  };
+
+transition "tee participant" begin - test($rparty.user==5)  / {
+  -- speak and listen in chan2
+  conference.join(chan2);
+
+  -- speak in chan1
+  conference.teejoin(chan1);
+} -> IN_CONF;
+
+transition "other participant with user 4" begin - test($rparty.user==4)  / {
+  conference.join(chan1);
+} -> IN_CONF;
+
+transition "other participant" begin - / {
+  conference.join(chan2);
+} -> IN_CONF;
+
+state IN_CONF;
+transition "tee participant key" IN_CONF - keyTest($rparty.user==5)  / {
+  conference.teeleave();
+} -> IN_CONF;
+
+transition "bye received" IN_CONF - hangup / stop(false) -> end;
+state end;
