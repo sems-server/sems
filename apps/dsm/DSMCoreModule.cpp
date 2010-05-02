@@ -895,6 +895,24 @@ EXEC_ACTION_START(SCDIAction) {
 	sc_sess->SET_STRERROR("converting value '"+p+"' to int\n");
 	EXEC_ACTION_STOP;
       }
+    } else if (p.length() > 5 && 
+	       p.substr(0, 5) =="(array)") {
+      p = resolveVars(p.substr(7), sess, sc_sess, event_params);
+      AmArg var_struct;
+      string varprefix = p+".";
+      bool has_vars = false;
+      map<string, string>::iterator lb = sc_sess->var.lower_bound(varprefix);
+      while (lb != sc_sess->var.end()) {
+	if ((lb->first.length() < varprefix.length()) ||
+	    strncmp(lb->first.c_str(), varprefix.c_str(),varprefix.length()))
+	  break;
+	string varname = lb->first.substr(varprefix.length());
+	var_struct[varname] = lb->second;
+	
+	lb++;
+	has_vars = true;
+      }
+      di_args.push(var_struct);
     } else {
       di_args.push(resolveVars(p, sess, sc_sess, event_params).c_str());
     }
