@@ -493,6 +493,8 @@ void SipCtrlInterface::timer_expired(sip_trans* trans, sip_timer_type tt)
 
     AmSipTimeoutEvent::EvType ev = AmSipTimeoutEvent::_noEv;
 
+    DBG("tt=%i;state=%i\n",tt,trans->state);
+
     //TODO: send an event to the SIP Dialog
     switch(tt){
 	
@@ -511,6 +513,8 @@ void SipCtrlInterface::timer_expired(sip_trans* trans, sip_timer_type tt)
 	    ERROR("timer H expired / transaction in undefined state\n");
 	    return;
 	}
+	break;
+
     default:
 	return;
     }
@@ -527,7 +531,7 @@ void SipCtrlInterface::timer_expired(sip_trans* trans, sip_timer_type tt)
     }
  
     AmEventDispatcher::instance()->post(c2stlstr(trans->to_tag),
-					new AmSipTimeoutEvent(ev, cseq->num, c2stlstr(cseq->method_str)));
+					new AmSipTimeoutEvent(ev, cseq->num));
 }
 
 void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)

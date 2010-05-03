@@ -467,6 +467,11 @@ public:
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);
+  
+  /** missing 2xx-ACK */
+  virtual void onNo2xxACK(unsigned int cseq);
+  /** missing non-2xx-ACK */
+  virtual void onNoErrorACK(unsigned int cseq);
 
   /**
    * Entry point for Audio events

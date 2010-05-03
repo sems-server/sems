@@ -96,6 +96,12 @@ class AmSipDialogEventHandler
   /** Hook called when a local INVITE request has been replied with 2xx */
   virtual void onInvite2xx(const AmSipReply& reply)=0;
 
+  /** Hook called when a UAS INVITE transaction did not receive a 2xx-ACK */
+  virtual void onNo2xxACK(unsigned int cseq)=0;
+
+  /** Hook called when a UAS INVITE transaction did not receive a non-2xx-ACK */
+  virtual void onNoErrorACK(unsigned int cseq)=0;
+
   virtual ~AmSipDialogEventHandler() {};
 };
 

@@ -62,10 +62,9 @@ class AmSipTimeoutEvent: public AmSipEvent
 
   EvType       type;
 
-  unsigned int cseq_num;
-  string       cseq_method;
+  unsigned int cseq;
 
-  AmSipTimeoutEvent(EvType t, unsigned int cseq_num, const string& cseq_method)
+  AmSipTimeoutEvent(EvType t, unsigned int cseq_num)
     : AmSipEvent(), type(t)
    {}
 

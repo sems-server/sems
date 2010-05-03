@@ -804,6 +804,17 @@ void AmSession::onInvite2xx(const AmSipReply& reply)
   if(t) dlg.send_200_ack(*t);
 }
 
+void AmSession::onNo2xxACK(unsigned int cseq)
+{
+  dlg.bye();
+  setStopped();
+}
+
+void AmSession::onNoErrorACK(unsigned int cseq)
+{
+  setStopped();
+}
+
 void AmSession::onAudioEvent(AmAudioEvent* audio_ev)
 {
   if (audio_ev->event_id == AmAudioEvent::cleared)

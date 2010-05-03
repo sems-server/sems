@@ -300,13 +300,13 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
 
   switch(to_ev->type){
   case AmSipTimeoutEvent::no2xxACK:
-    //TODO
-    DBG("Timeout: missing 2xx-ACK received\n");
+    DBG("Timeout: missing 2xx-ACK\n");
+    if(hdl) hdl->onNo2xxACK(to_ev->cseq);
     break;
 
   case AmSipTimeoutEvent::noErrorACK:
-    //TODO
     DBG("Timeout: missing non-2xx-ACK\n");
+    if(hdl) hdl->onNoErrorACK(to_ev->cseq);
     break;
 
   case AmSipTimeoutEvent::noPRACK:
