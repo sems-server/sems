@@ -12,7 +12,7 @@ hrds     = $(wildcard *.h)
 objs     = $(srcs:.c=.o) 
 depends  = $(srcs:.c=.d)
 
-cflags  ?= $(C_FLAGS) -I $(MCOREPATH) -Wall $(module_cflags) 
+cflags  ?= $(CPPFLAGS) $(C_FLAGS) -I $(MCOREPATH) -Wall $(module_cflags) 
 
 WITH_OPENSSL = 1
 
