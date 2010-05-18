@@ -606,14 +606,15 @@ int main(int argc, char* argv[])
   
   success = true;
 
+  // session container stops active sessions
+  INFO("Disposing session container\n");
+  AmSessionContainer::dispose();
+
   INFO("Disposing RTP receiver\n");
   AmRtpReceiver::dispose();
 
   INFO("Disposing media processor\n");
   AmMediaProcessor::dispose();
-
-  INFO("Disposing session container\n");
-  AmSessionContainer::dispose();
 
   INFO("Disposing event dispatcher\n");
   AmEventDispatcher::dispose();
@@ -627,6 +628,8 @@ int main(int argc, char* argv[])
     unlink(AmConfig::DaemonPidFile.c_str());
   }
 #endif
+
+  sip_ctrl.cleanup();
 
   INFO("Exiting (%s)\n", success ? "success" : "failure");
   return (success ? EXIT_SUCCESS : EXIT_FAILURE);

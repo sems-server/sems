@@ -43,6 +43,9 @@ struct sip_header;
 class trans_ticket;
 
 
+class udp_trsp_socket;
+class udp_trsp;
+
 class SipCtrlInterface:
     public sip_ua
 {
@@ -53,6 +56,9 @@ class SipCtrlInterface:
 
     AmCondition<bool> stopped;
     
+    udp_trsp_socket* udp_socket;
+    udp_trsp** udp_servers;
+
 public:
 
     static string outbound_host;
@@ -68,7 +74,8 @@ public:
 
     void run(const string& bind_addr, unsigned short bind_port);
     void stop();
-    
+    void cleanup();
+
     /**
      * Sends a SIP request.
      *
