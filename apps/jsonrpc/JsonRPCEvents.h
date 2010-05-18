@@ -92,4 +92,19 @@ struct JsonRpcRequestEvent
   bool isNotification() { return id.empty(); }
 };
 
+struct JsonRpcConnectionEvent
+  : public JsonRpcEvent {
+
+  // todo: add connection id
+  enum {
+    DISCONNECT = 0
+  };
+
+  int what;
+
+  JsonRpcConnectionEvent(int what) 
+    : what(what) { }
+  ~JsonRpcConnectionEvent() { }
+};
+
 #endif // _JsonRPCEvents_h_

@@ -78,6 +78,8 @@ int JsonRPCServerModule::load() {
 void JsonRPCServerModule::invoke(const string& method, 
 				 const AmArg& args, AmArg& ret) {
   if (method == "execRpc"){
+
+    // todo: add connection id
     args.assertArrayFmt("sssisis");   // evq_link, notificationReceiver, requestReceiver, 
                                       // flags(i), host, port (i), method, [params]
     if (args.size() > 7)  {

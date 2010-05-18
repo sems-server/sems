@@ -28,6 +28,9 @@
 #include "RpcServerLoop.h"
 #include "JsonRPCServer.h"
 #include "JsonRPC.h"
+#include "JsonRPCEvents.h"
+
+#include "AmEventDispatcher.h"
 
 #include "log.h"
 
@@ -101,8 +104,24 @@ static void read_cb(struct ev_loop *loop, struct ev_io *w, int revents) {
     switch (res) {
     case JsonrpcNetstringsConnection::CONTINUE: 
       ev_io_start(loop,&cli->ev_read); return;
-    case JsonrpcNetstringsConnection::REMOVE: 
-      ev_io_stop(EV_A_ w); delete cli; return;
+    case JsonrpcNetstringsConnection::REMOVE: {
+      ev_io_stop(EV_A_ w); 
+
+      // let event receivers know about broken connection
+      // todo: add connection id
+      if (!cli->notificationReceiver.empty())
+	AmEventDispatcher::instance()->post(cli->notificationReceiver, 
+					    new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT));
+      if (!cli->requestReceiver.empty())
+	AmEventDispatcher::instance()->post(cli->requestReceiver, 
+					    new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT));
+      for (std::map<std::string, std::string>::iterator it=
+	     cli->replyReceivers.begin(); it != cli->replyReceivers.end(); it++) {
+	AmEventDispatcher::instance()->post(it->second, 
+					    new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT));	
+      }
+      delete cli; 
+    } return;
     case JsonrpcNetstringsConnection::DISPATCH: {
       ev_io_stop(EV_A_ w); 
       JsonRPCServerLoop::dispatchServerEvent(new JsonServerEvent(cli));
