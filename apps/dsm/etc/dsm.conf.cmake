@@ -95,3 +95,24 @@ load_prompts=${SEMS_CFG_PREFIX}/etc/sems/etc/dsm_in_prompts.conf,${SEMS_CFG_PREF
 #
 #monitor_select_use_callee=no
 
+# monitor_select_fallback=app
+#
+# fallback application for $(mon_select) application selection
+# if record not found for filter, use this app
+#
+# monitor_select_fallback=default_inbound_app
+
+# conf_dir=<path>
+#
+# <path> is scanned for *.conf files. Every .conf
+# file is loaded, and in the .conf file, the following
+# DSM config parameters are processed:
+#   diag_path=
+#   load_diags=
+#   register_apps=
+#   mod_path=
+#   preload_mods=
+#   run_invite_event=
+#
+#
+#

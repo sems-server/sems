@@ -39,11 +39,17 @@
 #define PLUG_IN_PATH        "${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in"
 #define DEFAULT_ANNOUNCE    "default.wav"
 #define DEFAULT_RECORD_TIME 30
-#define DEFAULT_DAEMON_MODE 1
 #define PREFIX_SEPARATOR    ""
 #define RTP_LOWPORT         1024
 #define RTP_HIGHPORT        0xffff
-#define MAX_FORWARDS        "70"
+#define MAX_FORWARDS        70
+
+#ifndef DISABLE_DAEMON_MODE
+# define DEFAULT_DAEMON_MODE        true
+# define DEFAULT_DAEMON_PID_FILE    "/var/local/run/sems.pid"
+# define DEFAULT_DAEMON_UID         ""
+# define DEFAULT_DAEMON_GID         ""
+#endif
 
 #define DEFAULT_SIGNATURE "Sip Express Media Server " \
 		"(" SEMS_VERSION " (" ARCH "/" OS"))"
@@ -56,9 +62,12 @@
 #define SESSION_EXPIRES              60 // seconds
 #define MINIMUM_TIMER                5   //seconds
 
-#define NUM_MEDIA_PROCESSORS 1
-
+// threads to start for signaling/application
 #define NUM_SESSION_PROCESSORS 10
+// threads to start for RTP processing
+#define NUM_MEDIA_PROCESSORS 1
+// number of SIP servers to start
+#define NUM_SIP_SERVERS 4
 
 #define MAX_NET_DEVICES     32
 
