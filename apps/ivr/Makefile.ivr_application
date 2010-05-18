@@ -24,7 +24,7 @@ LIB_PERMISSIONS="644"
 PYCHECKERARGS = --stdlib
 PYCHECKERDOCARGS = --classdoc --funcdoc
 
-module_conf_files =  $(wildcard etc/*)
+module_conf_files =  $(wildcard etc/*.conf)
 
 .PHONY: all
 all: compile
@@ -50,13 +50,13 @@ endif
 
 .PHONY: install-cfg
 install-cfg: 
-	mkdir -p $(DESTDIR)$(cfg-target)etc
+	mkdir -p $(DESTDIR)$(cfg-target)
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
 			$(INSTALL-TOUCH) $(DESTDIR)$(cfg-target)$$r ; \
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
-			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
+			-e "s#/usr/.*etc/sems/#$(cfg-target)#g" \
 			< $$r > $(DESTDIR)$(cfg-target)$$r; \
 	done
 

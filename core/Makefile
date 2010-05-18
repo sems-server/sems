@@ -68,7 +68,7 @@ install: all mk-install-dirs \
 install-cfg: $(DESTDIR)$(cfg-target)
 		sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
-			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
+			-e "s#/usr/.*etc/sems/#$(cfg-target)#g" \
 			< etc/sems.conf.sample > $(DESTDIR)$(cfg-target)sems.conf.default
 		chmod 644 $(DESTDIR)$(cfg-target)sems.conf.default
 		if [ ! -f $(DESTDIR)$(cfg-target)sems.conf ]; then \
@@ -77,8 +77,8 @@ install-cfg: $(DESTDIR)$(cfg-target)
 		fi
 
 # Make sure the destination exists and is a directory!
-		mkdir -p $(DESTDIR)$(cfg-target)etc
-		$(INSTALL-CFG) etc/app_mapping.conf $(DESTDIR)$(cfg-target)etc/
+		mkdir -p $(DESTDIR)$(cfg-target)
+		$(INSTALL-CFG) etc/app_mapping.conf $(DESTDIR)$(cfg-target)
 
 install-bin: $(DESTDIR)$(bin-prefix)/$(bin-dir)
 		$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(NAME)

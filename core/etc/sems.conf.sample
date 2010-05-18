@@ -171,7 +171,7 @@ application = $(apphdr)
 #
 # - in this path configuration files of the applications 
 #   (e.g. announcement.conf) are searched
-plugin_config_path=/usr/local/etc/sems/etc/
+plugin_config_path=/usr/local/etc/sems/
 
 # optional parameter: exclude_payloads=<payload list>
 #

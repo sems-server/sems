@@ -42,13 +42,13 @@ install: all
 
 .PHONY: install-cfg
 install-cfg: 
-	mkdir -p $(cfg-target)etc
+	mkdir -p $(cfg-target)
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
 			$(INSTALL-TOUCH) $(cfg-target)$$r ; \
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
-			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
+			-e "s#/usr/.*etc/sems/#$(cfg-target)#g" \
 			< $$r > $(DESTDIR)$(cfg-target)$$r; \
 	done
 

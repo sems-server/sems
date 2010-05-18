@@ -53,7 +53,7 @@ install: all $(extra_install)
 
 .PHONY: install-cfg
 install-cfg: 
-	mkdir -p $(DESTDIR)$(cfg-target)etc
+	mkdir -p $(DESTDIR)$(cfg-target)
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
 			$(INSTALL-TOUCH) $(DESTDIR)$(cfg-target)$$r ; \
@@ -62,7 +62,7 @@ install-cfg:
 			-e "s#/usr/.*lib/sems/ivr/#$(lib-target)ivr/#g" \
 			-e "s#/usr/.*lib/sems/dsm/#$(lib-target)dsm/#g" \
 			-e "s#/usr/.*lib/sems/py_sems/#$(lib-target)py_sems/#g" \
-			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
+			-e "s#/usr/.*etc/sems/#$(cfg-target)#g" \
 			< $$r > $(DESTDIR)$(cfg-target)$$r; \
 	done
 
