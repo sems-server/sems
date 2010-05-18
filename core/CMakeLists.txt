@@ -39,6 +39,7 @@ SET (sems_SRCS
  AmSessionProcessor.cpp
  AmSipDialog.cpp
  AmSipDispatcher.cpp
+ AmSipEvent.cpp
  AmSipMsg.cpp
  AmThread.cpp
  AmUAC.cpp
@@ -46,9 +47,9 @@ SET (sems_SRCS
  AmUtils.cpp
  AmZRTP.cpp
  LowcFE.cpp
+ SipCtrlInterface.cpp
  log.cpp
  sems.cpp
- SipCtrlInterface.cpp
  sip/hash.cpp
  sip/hash_table.cpp
  sip/msg_fline.cpp
