@@ -592,7 +592,7 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
 #else
       ERROR("using $(mon_select) for dsm application, "
 	    "but compiled without monitoring support!\n");
-      FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
+      throw AmSession::Exception(500, "Internal Server Error");
 #endif
 
 #undef FALLBACK_OR_EXCEPTION
