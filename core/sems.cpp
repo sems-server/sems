@@ -280,8 +280,12 @@ static bool getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
   for(int i=0; i<n_dev; i++){
     if(ifrs[i].ifr_addr.sa_family==PF_INET){
       struct sockaddr_in* sa = (struct sockaddr_in*)&ifrs[i].ifr_addr;
+
+      // avoid dereferencing type-punned pointer below
+      struct sockaddr_in sa4;
+      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
       if_list.push_back(make_pair((char*)ifrs[i].ifr_name,
-                                  inet_ntoa(sa->sin_addr)));
+                                  inet_ntoa(sa4.sin_addr)));
     }
   }
 #else // defined(BSD44SOCKETS)
@@ -341,9 +345,10 @@ static string getLocalIP(const string& dev_name)
 
     if(ifr.ifr_addr.sa_family==PF_INET){
       struct sockaddr_in* sa = (struct sockaddr_in*)&ifr.ifr_addr;
+
+      // avoid dereferencing type-punned pointer below
       struct sockaddr_in sa4;
       memcpy(&sa4, sa, sizeof(struct sockaddr_in));
-
       if_list.push_back(make_pair((char*)ifr.ifr_name,
 				  inet_ntoa(sa4.sin_addr)));
     }
