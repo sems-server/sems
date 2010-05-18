@@ -841,6 +841,24 @@ SCDIAction::SCDIAction(const string& arg, bool get_res)
   }
 }
 
+void string2argarray(const string& key, const string& val, AmArg& res) {
+  if (key.empty())
+    return;
+
+  if (!(isArgStruct(res) || isArgUndef(res))) {
+    WARN("array element [%s] is shadowed by value '%s'\n", 
+	 key.c_str(), AmArg::print(res).c_str());
+    return;
+  }
+
+  size_t delim = key.find(".");
+  if (delim == string::npos) {
+    res[key]=val;
+    return;
+  }
+  string2argarray(key.substr(delim+1), val, res[key.substr(0,delim)]);
+}
+
 EXEC_ACTION_START(SCDIAction) {
 
   if (params.size() < 2) {
@@ -906,8 +924,12 @@ EXEC_ACTION_START(SCDIAction) {
 	if ((lb->first.length() < varprefix.length()) ||
 	    strncmp(lb->first.c_str(), varprefix.c_str(),varprefix.length()))
 	  break;
+	
 	string varname = lb->first.substr(varprefix.length());
-	var_struct[varname] = lb->second;
+	if (varname.find(".") == string::npos)
+	  var_struct[varname] = lb->second;
+	else
+	  string2argarray(varname, lb->second, var_struct);
 	
 	lb++;
 	has_vars = true;

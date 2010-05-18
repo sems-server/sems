@@ -158,6 +158,10 @@ core actions:
   DI(factory, function [, params...])
   e.g. DI(factory, function, $var_param, (int)int_param, "$str param", @select_par, ...)
        DI(user_timer, setTimer, (int)1, (int)5, @local_tag);
+       set($sweets.candy="nice");
+       set($sweets.fruit="superb");
+       set($sweets.cake.tahini="great");
+       DI(myfactory, myfunc, (array)sweets);
    * sets $errno (arg,config)
 
   DIgetResult(factory, function, param,...)
