@@ -895,8 +895,8 @@ EXEC_ACTION_START(SCDIAction) {
 	sc_sess->SET_STRERROR("converting value '"+p+"' to int\n");
 	EXEC_ACTION_STOP;
       }
-    } else if (p.length() > 5 && 
-	       p.substr(0, 5) =="(array)") {
+    } else if (p.length() > 7 && 
+	       p.substr(0, 7) =="(array)") {
       p = resolveVars(p.substr(7), sess, sc_sess, event_params);
       AmArg var_struct;
       string varprefix = p+".";
