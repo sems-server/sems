@@ -70,7 +70,7 @@ USE_MONITORING=yes
 
 # Support for long debug messages? (useful for debugging SIP messages' contents)
 #
-LONG_DEBUG_MESSAGE=yes
+#LONG_DEBUG_MESSAGE=yes
 
 
 ################### end of configuration section #######################
