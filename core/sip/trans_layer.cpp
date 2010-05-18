@@ -818,10 +818,10 @@ int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
 
     memcpy(&p_msg->remote_ip,&msg->remote_ip,sizeof(sockaddr_storage));
 
-    DBG("Sending to %s:%i <%.*s>\n",
+    DBG("Sending to %s:%i <%.*s...>\n",
 	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
-	p_msg->len,p_msg->buf);
+	50 /* preview - instead of p_msg->len */,p_msg->buf);
 
     tt->_bucket = get_trans_bucket(p_msg->callid->value,
 					    get_cseq(p_msg)->num_str);

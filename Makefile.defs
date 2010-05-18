@@ -68,6 +68,13 @@ exclude_core_modules = sipctrl
 #
 USE_MONITORING=yes
 
+# Support for long debug messages? (useful for debugging SIP messages' contents)
+#
+LONG_DEBUG_MESSAGE=yes
+
+
+################### end of configuration section #######################
+
 LDFLAGS += -lm
 
 GETOS=$(COREPATH)/compat/getos
@@ -99,8 +106,15 @@ endif
 endif
 
 ifdef USE_MONITORING
-CPPFLAGS += -DUSE_MONITORING      
+CPPFLAGS += -DUSE_MONITORING
 endif
+
+ifdef LONG_DEBUG_MESSAGE
+CPPFLAGS += -DLOG_BUFFER_LEN=2048
+else
+CPPFLAGS += -DLOG_BUFFER_LEN=512
+endif
+
 
 # Additions for Solaris support.
 ifeq ($(OS),solaris)

@@ -104,7 +104,7 @@ enum Log_Level {
     if ((level_) <= log_level) {					\
       pid_t pid_ = GET_PID();						\
       pthread_t tid_ = GET_TID();					\
-      char msg_[512];							\
+      char msg_[LOG_BUFFER_LEN];					\
       int n_ = snprintf(msg_, sizeof(msg_), fmt, ##args);		\
       if (msg_[n_ - 1] == '\n') msg_[n_ - 1] = '\0';			\
 									\
