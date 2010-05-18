@@ -15,7 +15,7 @@ app_module_dir = $(COREPATH)/lib
 lib_name = $(plug_in_name).so
 lib_full_name ?= $(app_module_dir)/$(lib_name)
 
-module_conf_files =  $(wildcard etc/*.conf)
+module_conf_files =  $(notdir $(wildcard etc/*.conf))
 AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
 EXTRA_LIB_DIR?=lib/
 EXTRA_LIB_FILES=$(filter-out CMakeLists.txt, $(notdir $(wildcard $(EXTRA_LIB_DIR)*)))
@@ -53,7 +53,7 @@ install: all $(extra_install)
 
 .PHONY: install-cfg
 install-cfg: 
-	mkdir -p $(DESTDIR)$(cfg-target)etc
+	mkdir -p $(DESTDIR)$(cfg-target)
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
 			$(INSTALL-TOUCH) $(DESTDIR)$(cfg-target)$$r ; \
@@ -63,7 +63,7 @@ install-cfg:
 			-e "s#/usr/.*lib/sems/dsm/#$(lib-target)dsm/#g" \
 			-e "s#/usr/.*lib/sems/py_sems/#$(lib-target)py_sems/#g" \
 			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
-			< $$r > $(DESTDIR)$(cfg-target)$$r; \
+			< etc/$$r > $(DESTDIR)$(cfg-target)$$r; \
 	done
 
 $(DESTDIR)(audio-prefix)/$(audio-dir):
