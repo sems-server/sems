@@ -161,6 +161,9 @@ bool object_parse(std::istream& input, AmArg& res) {
   do {
     std::string key;
     if (!parse_string(input, &key)) {
+      if (match("}",input,true)) {          
+	return true;
+      }
       return false;
     }
     if (!match(":", input)) {
