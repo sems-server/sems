@@ -33,7 +33,7 @@ static    GWSession* CallFromOutside(std::string &fromnumber, std::string &tonum
   void onBye(const AmSipRequest& req);
 //virtual void onSipEvent(AmSipEvent* sip_ev);
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply);
+  void onSipReply(const AmSipReply& reply, int old_dlg_status);
 //virtual void onRtpTimeout();
 //virtual void onSendRequest(const string& method, const string& content_type, const string& body, string& hdrs, int flags, unsigned int cseq);
 //virtual void onSendReply(const AmSipRequest& req, unsigned int code,const string& reason,const string& content_type, const string& body,string& hdrs,int flags)
