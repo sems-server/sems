@@ -59,7 +59,7 @@
 #define MINIMUM_TIMER                5   //seconds
 
 // threads to start for signaling/application
-#define NUM_SESSION_PROCESSORS 10    
+#define NUM_SESSION_PROCESSORS 10
 // threads to start for RTP processing
 #define NUM_MEDIA_PROCESSORS 1
 // number of SIP servers to start

@@ -17,11 +17,11 @@ mod_path=${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/dsm/
 # debug_raw_dsm=yes
 
 # DSM to start for in/outbound call if application to execute=dsm
-# (from application=xyz in sems.conf, either application=dsm or 
+# (from application=xyz in sems.conf, either application=dsm or
 #  application=$(apphdr)/$(ruriparam) etc)
 #
 # use $(mon_select) to search for call info from monitoring
-#  e.g. inbound_start_diag=$(mon_select) and see 
+#  e.g. inbound_start_diag=$(mon_select) and see
 #  below monitor_select options
 #
 inbound_start_diag=inbound_call
@@ -46,13 +46,13 @@ load_prompts=${SEMS_CFG_PREFIX}/etc/sems/etc/dsm_in_prompts.conf,${SEMS_CFG_PREF
 #run_invite_event=yes
 
 # set_param_variables controls whether application parameters
-# from the P-App-Param header are set as variables in the DSM 
+# from the P-App-Param header are set as variables in the DSM
 # dialog. Default: no
 #
 #set_param_variables=yes
 
 # monitoring_full_stategraph=[yes|no]
-# 
+#
 # Controls whether to log the full call graph (all states visited)
 # to the monitoring record. Note this may take some performance
 # and use some memory.
@@ -62,7 +62,7 @@ load_prompts=${SEMS_CFG_PREFIX}/etc/sems/etc/dsm_in_prompts.conf,${SEMS_CFG_PREF
 #monitoring_full_stategraph=yes
 
 # monitoring_full_transitions=[yes|no]
-# 
+#
 # Controls whether to log the full call graph (all transitions)
 # to the monitoring record. Note this may take some performance
 # and use some memory.
@@ -74,10 +74,10 @@ load_prompts=${SEMS_CFG_PREFIX}/etc/sems/etc/dsm_in_prompts.conf,${SEMS_CFG_PREF
 # monitor_select_use_caller=[no|from|pai]
 #
 # for $(mon_select) application selection from monitoring:
-#  select application by caller? 
+#  select application by caller?
 #   from: caller==remote_uri.user (From URI user part)
 #   pai:  caller==P-Asserted-Identity user part
-#   no:   caller not regarded 
+#   no:   caller not regarded
 #
 # Default: from
 #
@@ -86,7 +86,7 @@ load_prompts=${SEMS_CFG_PREFIX}/etc/sems/etc/dsm_in_prompts.conf,${SEMS_CFG_PREF
 # monitor_select_use_callee=[no|ruri|to]
 #
 # for $(mon_select) application selection from monitoring:
-#  select application by callee? 
+#  select application by callee?
 #   ruri: callee==r_uri.user (request URI user part)
 #   to:   callee==local_uri.user (To URI user part)
 #   no:   callee not regarded
