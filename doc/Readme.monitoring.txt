@@ -1,9 +1,15 @@
-monitoring module
+monitoring module - in-memory AVP DB
 
 The 'monitoring' module gets information regarding calls from the core 
 and applications, and makes them available via DI methods, e.g. for 
 monitoring a SEMS server via XMLRPC (using xmlrpc2di), or any other 
 method that can acces DI.
+
+Even though its primary intention is to store call related information
+for monitoring purposes (what its name hints at), the monitoring module
+may be used as generic in-memory store, e.g. to store information that
+is later accessed by calls or other external processes, or to store
+information that is to be passed into future calls.
 
 monitoring information is explicitely pushed to monitoring module via 
 DI calls (See ampi/MonitoringAPI.h for useful macros). Info is always 
@@ -30,14 +36,19 @@ This will remove all info about finished sessions preiodically.
 
 DI API
 ------
-functions to log, e.g. from inside SEMS (but may also be like memcache from outside):
- log(ID, key, value [, key, value [, key, value [...]]])  - set one or multiple AVPs
- logAdd(ID, key, value)   - add a value to a AVPs
+functions to write values, e.g. from inside SEMS (but may also be like memcache from outside):
+
+ set(ID, key, value [, key, value [, key, value [...]]])  - set one or multiple AVPs
+ add(ID, key, value)      - add a value to an AVP
+
+ log(ID, key, value [, key, value [, key, value [...]]])  - alias to set(...)
+ logAdd(ID, key, value)  - alias to add(...)
+
  markFinished(ID) - mark call as finished
  setExpiration(ID, time) - set expiration of item identified with ID to time 
                            in seconds since the Epoch (like time(2))
 
-functions to get log, e.g. from the outside:
+functions to get values, e.g. from the outside:
  list()            - list IDs of calls
  listByFilter(exp, exp, exp, ...) - list IDs of calls that match the filter expressions: 
                       exp of the form array of attr_name-value, 
@@ -72,7 +83,6 @@ this documentation.
 
 TODO
 ----
- o internal garbage collector, e.g. x secs after call is finished
  o codec info
  o more app specific info
  o b2bua specific info

@@ -86,9 +86,9 @@ int Monitor::onLoad() {
 
 void Monitor::invoke(const string& method, 
 		     const AmArg& args, AmArg& ret) {
-  if(method == "log"){
+  if((method == "log") || (method == "set")) {
     log(args,ret);
-  } else if(method == "logAdd"){
+  } else if((method == "logAdd") || (method == "add")) {
     logAdd(args,ret);
   } else if(method == "markFinished"){
     markFinished(args,ret);
@@ -120,7 +120,9 @@ void Monitor::invoke(const string& method,
     clear(args,ret);
   } else if(method == "_list"){ 
     ret.push(AmArg("log"));
+    ret.push(AmArg("set"));
     ret.push(AmArg("logAdd"));
+    ret.push(AmArg("add"));
     ret.push(AmArg("markFinished"));
     ret.push(AmArg("setExpiration"));
     ret.push(AmArg("erase"));
