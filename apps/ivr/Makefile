@@ -1,8 +1,6 @@
 plug_in_name = ivr
 
 include Makefile.defs
-PY_VER = $(PYTHON_VERSION)
-PY_EXE = python$(PY_VER)
 
 COREPATH ?=../../core
 

@@ -48,7 +48,7 @@ py_obj = $(py_src:.py=.pyc)
 ifeq (all,$(MAKECMDGOALS))
 .PHONY: python_files
 python_files: 
-	python$(PY_VER) py_comp -l -q py &&\
+	$(PY_EXE) py_comp -l -q py &&\
 	cp py/*.pyc $(COREPATH)/lib
 
 endif
@@ -56,20 +56,20 @@ endif
 ifeq (,$(MAKECMDGOALS))
 .PHONY: python_files
 python_files: 
-	python$(PY_VER) py_comp -l -q py &&\
+	$(PY_EXE) py_comp -l -q py &&\
 	cp py/*.pyc $(COREPATH)/lib
 
 endif
 
 ifeq (module_package,$(MAKECMDGOALS))
 python_files:
-	python$(PY_VER) py_comp -l -q py
+	$(PY_EXE) py_comp -l -q py
 
 endif
 
 ifeq (install,$(MAKECMDGOALS))
 python_files:
-	python$(PY_VER) py_comp -l -q py
+	$(PY_EXE) py_comp -l -q py
 
 endif
 

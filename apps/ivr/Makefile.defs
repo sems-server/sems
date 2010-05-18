@@ -2,6 +2,9 @@
 #
 PYTHON_VERSION ?= $(shell python -c 'import sys;print sys.version[0:3]')
 
+PY_VER = $(PYTHON_VERSION)
+PY_EXE = python$(PY_VER)
+
 # For flite text-to-speech set TTS = y
 #
 TTS ?= n
