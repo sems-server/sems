@@ -95,6 +95,10 @@ enum Log_Level {
 #define COMPLETE_LOG_FMT LOC_FMT " %s: %s" "\n", LOC_DATA, log_level2str[level_], msg_
 #endif
 
+#ifndef LOG_BUFFER_LEN
+#define LOG_BUFFER_LEN 512
+#endif
+
 /* The underscores in parameter and local variable names are there to
    avoid collisions. */
 #define _LOG(level__, fmt, args...)					\
