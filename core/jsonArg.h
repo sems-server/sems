@@ -31,7 +31,13 @@
 #include <iostream>
 
 string arg2json(const AmArg &a);
+
+/** @return true on success */
 bool json2arg(std::istream& input, AmArg& res);
+
+/** @return true on success */
 bool json2arg(const char* input, AmArg& res);
+
+/** @return true on success */
 bool json2arg(const std::string& input, AmArg& res);
 #endif
