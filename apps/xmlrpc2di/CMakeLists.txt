@@ -5,10 +5,7 @@ XMLRPC2DI.cpp
 )
 
 ADD_SUBDIRECTORY (xmlrpc++)
-
 INCLUDE_DIRECTORIES (xmlrpc++/src)
-
-SET_PROPERTY(TARGET xmlrpcpp PROPERTY IMPORTED_LOCATION ./xmlrpc++/src/xmlrpcpp.a)
 
 SET(sems_module_name xmlrpc2di)
 SET(sems_module_libs xmlrpcpp)

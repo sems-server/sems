@@ -6,8 +6,6 @@ ServerConnection.cpp
 ADD_SUBDIRECTORY (lib_dbase)
 INCLUDE_DIRECTORIES (lib_dbase)
 
-SET_PROPERTY(TARGET libdbase PROPERTY IMPORTED_LOCATION ./lib_dbase/libdbase.a)
-
 SET(sems_module_name diameter_client)
 SET(sems_module_libs libdbase)
 
