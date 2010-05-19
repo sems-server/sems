@@ -50,6 +50,8 @@ SET (sems_SRCS
  SipCtrlInterface.cpp
  log.cpp
  sems.cpp
+ jsonxx.cpp
+ jsonArg.cpp
  sip/hash.cpp
  sip/hash_table.cpp
  sip/msg_fline.cpp
