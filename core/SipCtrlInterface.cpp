@@ -114,7 +114,7 @@ int SipCtrlInterface::load()
 }
 
 SipCtrlInterface::SipCtrlInterface()
-    : stopped(false)
+    : stopped(false), udp_servers(NULL), udp_socket(NULL)
 {
     trans_layer::instance()->register_ua(this);
 }
@@ -254,11 +254,13 @@ void SipCtrlInterface::stop()
 void SipCtrlInterface::cleanup()
 {
     DBG("Stopping SIP control interface threads\n");
-    
-    for(int i=0; i<AmConfig::SIPServerThreads;i++){
-	udp_servers[i]->stop();
-	udp_servers[i]->join();
-	delete udp_servers[i];
+
+    if (NULL != udp_servers) {
+	for(int i=0; i<AmConfig::SIPServerThreads;i++){
+	    udp_servers[i]->stop();
+	    udp_servers[i]->join();
+	    delete udp_servers[i];
+	}
     }
 
     trans_layer::instance()->register_transport(NULL);
