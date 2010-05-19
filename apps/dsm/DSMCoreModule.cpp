@@ -31,6 +31,8 @@
 #include "AmSessionContainer.h"
 #include "AmUtils.h"
 
+#include "jsonArg.h"
+
 DSMCoreModule::DSMCoreModule() {
 }
 
@@ -833,6 +835,7 @@ bool TestDSMCondition::match(AmSession* sess, DSMCondition::EventType event,
 
 SCDIAction::SCDIAction(const string& arg, bool get_res) 
   : get_res(get_res) {
+  // TODO: don't ignore "" (don't use explode here)
   params = explode(arg,",");
   if (params.size()<2) {
     ERROR("DI needs at least: mod_name, "
@@ -915,7 +918,7 @@ EXEC_ACTION_START(SCDIAction) {
       }
     } else if (p.length() > 8 &&  
 	       p.substr(0, 8) =="(struct)") {
-      p = p.substr(8);
+      p.erase(0, 8);
       AmArg var_struct;
       string varprefix = p+".";
       bool has_vars = false;
@@ -937,7 +940,7 @@ EXEC_ACTION_START(SCDIAction) {
       di_args.push(var_struct);
     } else if (p.length() > 7 &&  
 	       p.substr(0, 7) =="(array)") {
-      p = p.substr(7);
+      p.erase(0, 7);
       di_args.push(AmArg());
       AmArg& var_array = di_args.get(di_args.size()-1);
       
@@ -950,6 +953,22 @@ EXEC_ACTION_START(SCDIAction) {
 	var_array.push(it->second);
 	i++;
       }
+    } else if (p.length() > 6 &&  
+	       p.substr(0, 6) == "(json)") {
+      p.erase(0, 6);
+      if (p.length() && p[0] == '"') {
+	// remove quotes if parameter in form (json)"{"json":"object"}"
+	p = trim(p,"\"");
+      } else {
+	p = resolveVars(p, sess, sc_sess, event_params);
+      }
+
+      di_args.push(AmArg());
+      AmArg& var_json = di_args.get(di_args.size()-1);
+      if (!json2arg(p, var_json)) {
+	WARN("Error parsing JSON object '%s'\n", p.c_str());
+	// todo: throw exception? 
+      }      
     } else {
       di_args.push(resolveVars(p, sess, sc_sess, event_params).c_str());
     }

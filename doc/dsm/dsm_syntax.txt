@@ -156,7 +156,7 @@ core actions:
    * sets $errno (config)
 
   DI(factory, function [, params...])
-  e.g. DI(factory, function, $var_param, (int)int_param, "str param", @select_par, (array)arrayname, (struct)structname, ...)
+  e.g. DI(factory, function, $var_param, (int)int_param, "str param", @select_par, (array)arrayname, (struct)structname, (json)json_object...)
        DI(user_timer, setTimer, (int)1, (int)5, @local_tag);
 
        set($sweets.candy="nice");
@@ -167,6 +167,9 @@ core actions:
        set($bi[0]="ba");
        set($bi[1]="butzki");
        DI(myfactory, myfunc, (array)bi);
+        
+       set($js="{"x":"y", "a": 1}");
+       DI(myfactory, myfunc, (json)$js);
 
    * sets $errno (arg,config)
 
