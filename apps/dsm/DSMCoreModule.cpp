@@ -913,9 +913,9 @@ EXEC_ACTION_START(SCDIAction) {
 	sc_sess->SET_STRERROR("converting value '"+p+"' to int\n");
 	EXEC_ACTION_STOP;
       }
-    } else if (p.length() > 7 && 
-	       p.substr(0, 7) =="(array)") {
-      p = resolveVars(p.substr(7), sess, sc_sess, event_params);
+    } else if (p.length() > 8 &&  
+	       p.substr(0, 8) =="(struct)") {
+      p = p.substr(8);
       AmArg var_struct;
       string varprefix = p+".";
       bool has_vars = false;
@@ -935,6 +935,21 @@ EXEC_ACTION_START(SCDIAction) {
 	has_vars = true;
       }
       di_args.push(var_struct);
+    } else if (p.length() > 7 &&  
+	       p.substr(0, 7) =="(array)") {
+      p = p.substr(7);
+      di_args.push(AmArg());
+      AmArg& var_array = di_args.get(di_args.size()-1);
+      
+      unsigned int i=0;
+      while (true) {
+	map<string, string>::iterator it = 
+	  sc_sess->var.find(p+"["+int2str(i)+"]");
+	if (it == sc_sess->var.end())
+	  break;
+	var_array.push(it->second);
+	i++;
+      }
     } else {
       di_args.push(resolveVars(p, sess, sc_sess, event_params).c_str());
     }
