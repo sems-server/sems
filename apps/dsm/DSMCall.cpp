@@ -332,6 +332,31 @@ void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status) {
   }
 }
 
+static void varPrintArg(const AmArg& a, map<string, string>& dst, const string& name) {
+  switch (a.getType()) {
+  case AmArg::Undef: dst[name] =  "null"; return;
+  case AmArg::Int: dst[name] =  a.asInt()<0 ? 
+      "-"+int2str(abs(a.asInt())):int2str(abs(a.asInt())); return;
+  case AmArg::Bool:
+     dst[name] = a.asBool()?"true":"false"; return;     
+  case AmArg::Double:
+    dst[name] = double2str(a.asDouble()); return;
+  case AmArg::CStr:
+    dst[name] = a.asCStr(); return;
+  case AmArg::Array:
+    for (size_t i = 0; i < a.size(); i ++)
+      varPrintArg(a.get(i), dst, name+"["+int2str(i)+"]");
+    return;
+  case AmArg::Struct:
+    for (AmArg::ValueStruct::const_iterator it = a.asStruct()->begin();
+	 it != a.asStruct()->end(); it ++) {
+      varPrintArg(it->second, dst, name+"."+it->first);
+    }
+    return;
+  default: dst[name] = "<UNKONWN TYPE>"; return;
+  }
+}
+
 void DSMCall::process(AmEvent* event)
 {
 
@@ -382,24 +407,16 @@ void DSMCall::process(AmEvent* event)
       params["id"] = resp_ev->response.id;
       params["is_error"] = resp_ev->response.is_error ? 
 	"true":"false";
-      if (isArgStruct(resp_ev->response.data)) {
-	AmArg::ValueStruct::const_iterator it = resp_ev->response.data.begin();
-        while (it != resp_ev->response.data.end()) {
-	  if (isArgCStr(it->second))
-	    params[it->first] = it->second.asCStr();
-	  else
-	    params[it->first] = AmArg::print(it->second);
-	  it++;
-	}
-      } else if (isArgArray(resp_ev->response.data)) {
-	vector<string> strs =  resp_ev->response.data.asStringVector();
-	for (vector<string>::iterator it = 
-	       strs.begin(); it != strs.end(); it++) {
-	  params[int2str(it-strs.begin())] = *it;
-	}
-      }
+
+      // decode result for easy use from script
+      varPrintArg(resp_ev->response.data, params, resp_ev->response.is_error ? "error": "result");
+
+      // save reference to full parameters
+      avar[DSM_AVAR_JSONRPCRESPONEDATA] = AmArg(&resp_ev->response.data);
 
       engine.runEvent(this, DSMCondition::JsonRpcResponse, &params);
+
+      avar.erase(DSM_AVAR_JSONRPCRESPONEDATA);
       return;
     }
 
@@ -413,29 +430,20 @@ void DSMCall::process(AmEvent* event)
       params["method"] = req_ev->method;
       if (!req_ev->id.empty())
 	params["id"] = req_ev->id;
-      if (isArgStruct(req_ev->params)) {
-	AmArg::ValueStruct::const_iterator it = req_ev->params.begin();
-        while (it != req_ev->params.end()) {
-	  if (isArgCStr(it->second))
-	    params[it->first] = it->second.asCStr();
-	  else
-	    params[it->first] = AmArg::print(it->second);
-	  it++;
-	}
-      } else if (isArgArray(req_ev->params)) {
-	vector<string> strs =  req_ev->params.asStringVector();
-	for (vector<string>::iterator it = 
-	       strs.begin(); it != strs.end(); it++) {
-	  params[int2str(it-strs.begin())] = *it;
-	}
-      }
+
+      // decode request params result for easy use from script
+      varPrintArg(req_ev->params, params, "params");
+
+      // save reference to full parameters
+      avar[DSM_AVAR_JSONRPCREQUESTDATA] = AmArg(&req_ev->params);
+
       engine.runEvent(this, DSMCondition::JsonRpcRequest, &params);
+
+      avar.erase(DSM_AVAR_JSONRPCREQUESTDATA);
       return;
     }
 
   }
-
-
 
   AmB2BCallerSession::process(event);
 }

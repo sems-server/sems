@@ -62,6 +62,9 @@ using std::map;
 #define DSM_AVAR_REQUEST "request"
 #define DSM_AVAR_REPLY   "reply"
 
+#define DSM_AVAR_JSONRPCREQUESTDATA "JsonRpcRequestParameters"
+#define DSM_AVAR_JSONRPCRESPONEDATA "JsonRpcResponseParameters"
+
 #define DSM_ERRNO_FILE        "file"
 #define DSM_ERRNO_UNKNOWN_ARG "arg"
 #define DSM_ERRNO_SCRIPT      "script"
