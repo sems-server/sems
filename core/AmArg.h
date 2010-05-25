@@ -76,6 +76,7 @@ ArgBlob()
 
 /** \brief variable type argument for DynInvoke APIs */
 class AmArg
+: public ArgObject
 {
  public:
   // type enum
