@@ -360,7 +360,7 @@ int AmConfig::readConfiguration()
 	return -1;
       }
       regex_t app_re;
-      if (regcomp(&app_re, re_v[0].c_str(), REG_NOSUB)) {
+      if (regcomp(&app_re, re_v[0].c_str(), REG_EXTENDED | REG_NOSUB)) {
 	ERROR("compiling regex '%s' in %s.\n", 
 	      re_v[0].c_str(), appcfg_fname.c_str());
 	return -1;
