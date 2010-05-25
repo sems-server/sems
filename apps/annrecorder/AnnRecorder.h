@@ -72,6 +72,7 @@ public:
 
   static string AnnouncePath;
   static string DefaultAnnounce;
+  static bool   SimpleMode;
 
   AnnRecorderFactory(const string& _app_name);
 

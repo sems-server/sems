@@ -30,6 +30,7 @@
 #include "log.h"
 #include "AmPlugIn.h"
 #include "AmSessionContainer.h"
+#include "AmUriParser.h"
 #include "../msg_storage/MsgStorageAPI.h"
 
 #include "VoiceboxDialog.h"
@@ -57,7 +58,7 @@ unsigned int VoiceboxFactory::repeat_key = 1;
 unsigned int VoiceboxFactory::save_key = 2;
 unsigned int VoiceboxFactory::delete_key = 3;
 unsigned int VoiceboxFactory::startover_key = 4;
-
+bool   VoiceboxFactory::SimpleMode=false;
 string VoiceboxFactory::default_language = "";
 
 AmPromptCollection* VoiceboxFactory::getPrompts(const string& domain, 
@@ -189,6 +190,8 @@ int VoiceboxFactory::onLoad()
   // get application specific global parameters
   configureModule(cfg);
 
+  SimpleMode = cfg.getParameter("simple_mode") == "yes";
+
   default_language = cfg.getParameter("default_language");
   if (default_language.length()) {
     DBG("set default language '%s'\n", default_language.c_str());
@@ -299,29 +302,41 @@ AmSession* VoiceboxFactory::onInvite(const AmSipRequest& req)
   string uid;
   string did;
 
-   
-  string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
-  
-  if (!iptel_app_param.length()) {
-    AmSession::Exception(500, APP_NAME ": parameters not found");
+  if(SimpleMode){
+    AmUriParser p;
+    p.uri = req.from_uri;
+    if (!p.parse_uri()) {
+      DBG("parsing From-URI '%s' failed\n", p.uri.c_str());
+      throw AmSession::Exception(500, APP_NAME ": could not parse From-URI");
+    }
+    user = p.uri_user;
+    //domain = p.uri_domain;
+    domain = "default";
   }
+  else {
+    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+  
+    if (!iptel_app_param.length()) {
+      throw AmSession::Exception(500, APP_NAME ": parameters not found");
+    }
   
 
-  // consistently with voicemail application:
-  //  uid overrides user
-  user = get_header_keyvalue(iptel_app_param, "uid", "UserID");
-  if (user.empty())
-    user = get_header_keyvalue(iptel_app_param, "usr", "User");
-
-  //  did overrides domain
-  domain = get_header_keyvalue(iptel_app_param, "did", "DomainID");
-  if (domain.empty())
-    domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
+    // consistently with voicemail application:
+    //  uid overrides user
+    user = get_header_keyvalue(iptel_app_param, "uid", "UserID");
+    if (user.empty())
+      user = get_header_keyvalue(iptel_app_param, "usr", "User");
 
 
-  pin = get_header_keyvalue(iptel_app_param, "pin", "PIN");
-  language = get_header_keyvalue(iptel_app_param,"lng", "Language");
+    //  did overrides domain
+    domain = get_header_keyvalue(iptel_app_param, "did", "DomainID");
+    if (domain.empty())
+      domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
 
+
+    pin = get_header_keyvalue(iptel_app_param, "pin", "PIN");
+    language = get_header_keyvalue(iptel_app_param,"lng", "Language");
+  }
   
   // checks
   if (user.empty()) 

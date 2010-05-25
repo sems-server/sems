@@ -30,6 +30,7 @@
 #include "AmUtils.h"
 #include "AmPlugIn.h"
 #include "AmPromptCollection.h"
+#include "AmUriParser.h"
 #include "../msg_storage/MsgStorageAPI.h"
 #include "sems.h"
 #include "log.h"
@@ -56,6 +57,7 @@ EXPORT_SESSION_FACTORY(AnnRecorderFactory,MOD_NAME);
 
 string AnnRecorderFactory::AnnouncePath;
 string AnnRecorderFactory::DefaultAnnounce;
+bool   AnnRecorderFactory::SimpleMode=false;
 AmDynInvokeFactory* AnnRecorderFactory::user_timer_fact = NULL;
 AmDynInvokeFactory* AnnRecorderFactory::message_storage_fact = NULL;
 
@@ -93,6 +95,8 @@ int AnnRecorderFactory::onLoad()
     AnnouncePath += "/";
   DefaultAnnounce = cfg.getParameter("default_announce");
 
+  SimpleMode = (cfg.getParameter("simple_mode") == "yes");
+
   AM_PROMPT_START;
   AM_PROMPT_ADD(WELCOME, ANNREC_ANNOUNCE_PATH WELCOME".wav");
   AM_PROMPT_ADD(YOUR_PROMPT, ANNREC_ANNOUNCE_PATH YOUR_PROMPT".wav");
@@ -125,32 +129,46 @@ void AnnRecorderFactory::getAppParams(const AmSipRequest& req, map<string, strin
   string user;
   string typ;
 
-  string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
-
-  if (!iptel_app_param.length()) {
-    throw AmSession::Exception(500, MOD_NAME ": parameters not found");
-  }
-
-  language = get_header_keyvalue(iptel_app_param, "lng", "Language");
-
-  user = get_header_keyvalue(iptel_app_param,"uid", "UserID");
-  if (user.empty()) {
-    user = get_header_keyvalue(iptel_app_param,"usr", "User");
-    if (!user.length())
-      user = req.user;
-  }
-  
-  domain = get_header_keyvalue(iptel_app_param, "did", "DomainID");
-  if (domain.empty()){
-    domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
-    if (domain.empty())
-      domain = req.domain;
-  }
-  
-  typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
-  if (!typ.length())
+  if (SimpleMode){
+    AmUriParser p;
+    p.uri = req.from_uri;
+    if (!p.parse_uri()) {
+      DBG("parsing From-URI '%s' failed\n", p.uri.c_str());
+      throw AmSession::Exception(500, MOD_NAME ": could not parse From-URI");
+    }
+    user = p.uri_user;
+    //domain = p.uri_domain;
+    domain = "default";
     typ = DEFAULT_TYPE;
-
+  }
+  else {
+    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+    
+    if (!iptel_app_param.length()) {
+      throw AmSession::Exception(500, MOD_NAME ": parameters not found");
+    }
+    
+    language = get_header_keyvalue(iptel_app_param, "lng", "Language");
+    
+    user = get_header_keyvalue(iptel_app_param,"uid", "UserID");
+    if (user.empty()) {
+      user = get_header_keyvalue(iptel_app_param,"usr", "User");
+      if (!user.length())
+	user = req.user;
+    }
+    
+    domain = get_header_keyvalue(iptel_app_param, "did", "DomainID");
+    if (domain.empty()){
+      domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
+      if (domain.empty())
+	domain = req.domain;
+    }
+    
+    typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
+    if (!typ.length())
+      typ = DEFAULT_TYPE;
+  }
+  
   // checks
   if (user.empty()) 
     throw AmSession::Exception(500, MOD_NAME ": user missing");    

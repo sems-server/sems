@@ -81,6 +81,8 @@ AmDynInvokeFactory* AnswerMachineFactory::UserTimer=0;
 AmDynInvokeFactory* AnswerMachineFactory::MessageStorage=0;
 bool AnswerMachineFactory::SaveEmptyMsg = true;
 bool AnswerMachineFactory::TryPersonalGreeting = false;
+int  AnswerMachineFactory::DefaultVMMode = MODE_VOICEMAIL;
+bool AnswerMachineFactory::SimpleMode = false;
 
 vector<string> AnswerMachineFactory::MailHeaderVariables;
 
@@ -365,18 +367,21 @@ int AnswerMachineFactory::onLoad()
   // get application specific global parameters
   configureModule(cfg);
 
+  DefaultVMMode = cfg.getParameterInt("default_vm_mode",DefaultVMMode);
+  SimpleMode = cfg.getParameter("simple_mode") == "yes";
+
   // smtp_server
   SmtpServerAddress = cfg.getParameter("smtp_server",SmtpServerAddress);
-
+  
   // smtp_port
   if(cfg.hasParameter("smtp_port")){
     if(sscanf(cfg.getParameter("smtp_port").c_str(),
-             "%u",&SmtpServerPort) != 1) {
+	      "%u",&SmtpServerPort) != 1) {
       ERROR("invalid smtp_port specified\n");
       return -1;
     }
   }
-
+  
   DBG("SMTP server set to %s:%u\n",
       SmtpServerAddress.c_str(), SmtpServerPort);
 
@@ -433,7 +438,7 @@ int AnswerMachineFactory::onLoad()
 #else
 
   /* Get email templates from file system */
-
+  
   if(loadEmailTemplates(cfg.getParameter("email_template_path",
 					 DEFAULT_MAIL_TMPL_PATH))){
     ERROR("while loading email templates\n");
@@ -479,8 +484,7 @@ int AnswerMachineFactory::onLoad()
 	   MailHeaderVariables.begin(); it != MailHeaderVariables.end(); it++) {
       DBG("         %s\n", it->c_str());
     }
-  }
-    
+  }    
 
   DBG("Starting SMTP daemon\n");
   AmMailDeamon::instance()->start();
@@ -508,69 +512,81 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   string typ;
   string uid; // user ID
   string did; // domain ID
+  string mode;
+  string iptel_app_param;
 
   EmailTmplDict template_variables;
 
-  int vm_mode = MODE_VOICEMAIL; 
+  int vm_mode = DefaultVMMode; 
 
-  string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
-  string mode = get_header_keyvalue(iptel_app_param,"mod", "Mode");
-
-  if (!EmailAddress.length()) {
-
-    if (!iptel_app_param.length()) {
-      throw AmSession::Exception(500, "voicemail: parameters not found");
-    }
-    
-    language = get_header_keyvalue(iptel_app_param, "lng", "Language");
-    email = get_header_keyvalue(iptel_app_param, "eml", "Email-Address");
-    
-    if (!mode.empty()) {
-      if (mode == "box")
-	vm_mode = MODE_BOX;
-      else if (mode == "both")
-	vm_mode = MODE_BOTH;
-      else if (mode == "ann")
-	vm_mode = MODE_ANN;
-    }
-  } else {
-    // overrides email address
-    vm_mode = MODE_VOICEMAIL;
+  if(SimpleMode) {
     email = EmailAddress;
-  }
-
-  if (((vm_mode == MODE_BOTH) || (vm_mode == MODE_VOICEMAIL)) &&
-      (email.find('@') == string::npos)) {
-    ERROR("no @ found in email address '%s' from params '%s'\n",
-	  email.c_str(), iptel_app_param.c_str());
-    throw AmSession::Exception(500, "voicemail: no email address");
-  }
-  
-  user = get_header_keyvalue(iptel_app_param,"usr", "User");
-  if (!user.length())
-    user = req.user;
-  
-  sender = get_header_keyvalue(iptel_app_param, "snd", "Sender");
-  if (!sender.length()) 
-    sender = req.from;  
-  
-  domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
-  if (!domain.length())
-    domain = req.domain;
-  
-  typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
-  if (!typ.length())
+    uid = user = req.user;
+    //did = domain = req.domain;
+    did = domain = "default";
+    sender = req.from;
     typ = DEFAULT_TYPE;
+  }
+  else {
   
-  uid = get_header_keyvalue(iptel_app_param, "uid", "UserID");
-  if (uid.empty())
-    uid=user;
-  
-  did = get_header_keyvalue(iptel_app_param, "did", "DomainID");
-  if (did.empty())
-    did=domain;
-  
-  
+    iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+    mode = get_header_keyvalue(iptel_app_param,"mod", "Mode");
+    
+    if (!EmailAddress.length()) {
+      
+      if (!iptel_app_param.length()) {
+	throw AmSession::Exception(500, "voicemail: parameters not found");
+      }
+      
+      language = get_header_keyvalue(iptel_app_param, "lng", "Language");
+      email = get_header_keyvalue(iptel_app_param, "eml", "Email-Address");
+      
+      if (!mode.empty()) {
+	if (mode == "box")
+	  vm_mode = MODE_BOX;
+	else if (mode == "both")
+	  vm_mode = MODE_BOTH;
+	else if (mode == "ann")
+	  vm_mode = MODE_ANN;
+      }
+    } else {
+      // overrides email address
+      //vm_mode = MODE_VOICEMAIL;
+      email = EmailAddress;
+    }
+    
+    if (((vm_mode == MODE_BOTH) || (vm_mode == MODE_VOICEMAIL)) &&
+	(email.find('@') == string::npos)) {
+      ERROR("no @ found in email address '%s' from params '%s'\n",
+	    email.c_str(), iptel_app_param.c_str());
+      throw AmSession::Exception(500, "voicemail: no email address");
+    }
+    
+    user = get_header_keyvalue(iptel_app_param,"usr", "User");
+    if (!user.length())
+      user = req.user;
+    
+    sender = get_header_keyvalue(iptel_app_param, "snd", "Sender");
+    if (!sender.length()) 
+      sender = req.from;  
+    
+    domain = get_header_keyvalue(iptel_app_param, "dom", "Domain");
+    if (!domain.length())
+      domain = req.domain;
+    
+    typ = get_header_keyvalue(iptel_app_param, "typ", "Type");
+    if (!typ.length())
+      typ = DEFAULT_TYPE;
+    
+    uid = get_header_keyvalue(iptel_app_param, "uid", "UserID");
+    if (uid.empty())
+      uid=user;
+    
+    did = get_header_keyvalue(iptel_app_param, "did", "DomainID");
+    if (did.empty())
+      did=domain;
+  }
+    
   // checks
   if (uid.empty()) 
     throw AmSession::Exception(500, "voicemail: user missing");
@@ -594,7 +610,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   DBG(" Type:     <%s> \n", typ.c_str());
   DBG(" UID:      <%s> \n", uid.c_str());
   DBG(" DID:      <%s> \n", did.c_str());
-
+  
   FILE* greeting_fp = NULL;
   if (TryPersonalGreeting)
     greeting_fp = getMsgStoreGreeting(typ, uid, did);
@@ -656,10 +672,13 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   if(announce_file.empty())
     throw AmSession::Exception(500,"voicemail: no greeting file found");
 
-  // a little inefficient this way - but get_header_keyvalue supports escaping
-  for (vector<string>::iterator it=
-	 MailHeaderVariables.begin(); it != MailHeaderVariables.end(); it++) {
-    template_variables[*it] = get_header_keyvalue(iptel_app_param, *it);
+  if(!SimpleMode) {
+
+    // a little inefficient this way - but get_header_keyvalue supports escaping
+    for (vector<string>::iterator it=
+	   MailHeaderVariables.begin(); it != MailHeaderVariables.end(); it++) {
+      template_variables[*it] = get_header_keyvalue(iptel_app_param, *it);
+    }
   }
 
   // VBOX mode does not need email template

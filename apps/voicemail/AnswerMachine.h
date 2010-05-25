@@ -84,6 +84,8 @@ public:
   static AmDynInvokeFactory* MessageStorage;
   static bool SaveEmptyMsg;
   static bool TryPersonalGreeting;
+  static int  DefaultVMMode;
+  static bool SimpleMode;
 
   static vector<string> MailHeaderVariables;
 

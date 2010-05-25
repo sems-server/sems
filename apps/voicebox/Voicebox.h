@@ -64,6 +64,7 @@ class VoiceboxFactory
   static unsigned int delete_key;
   static unsigned int startover_key;
   static string default_language;
+  static bool   SimpleMode;
 
 public:
 
