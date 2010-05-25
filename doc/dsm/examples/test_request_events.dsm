@@ -1,0 +1,24 @@
+-- example for SIP request processing from script
+
+import(mod_dlg);
+
+initial state in_call
+  enter { 
+    -- from now on, get events for SIP requests
+    set($enable_request_events="true");
+  };
+
+transition "SIP BYE request" in_call - sipRequest(#method==BYE) / {
+  dlg.replyRequest(200, "okey bye bye");
+  -- set event param "processed" - BYE will not be processed by normal app logic
+  set(#processed=true);
+  logAll(1);
+  stop(false);
+ } -> end;
+
+transition "SIP reply" in_call - sipReply / logAll(1) -> lobby;
+
+-- this is not executed - BYE gets processed above
+transition "bye in lobby recvd" in_call - hangup / stop(false) -> end;
+
+state end;

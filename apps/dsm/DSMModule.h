@@ -53,6 +53,8 @@ class DSMModule {
   virtual bool onInvite(const AmSipRequest& req, DSMSession* sess) { return true; }
 };
 
+typedef map<string,string> EventParamT;
+
 typedef void* (*SCFactoryCreate)();
 
 #define SCSTR(x) #x

@@ -57,28 +57,32 @@ class DSMCondition
  public:
   enum EventType {
     Any,
+
     Invite,
     SessionStart,
     Ringing,
     EarlySession,
     FailedCall,
-    Key,
-    Timer,
-
-    NoAudio,
+    SipRequest,
+    SipReply,
 
     Hangup,
     Hold,
     UnHold,
 
-    XmlrpcResponse,
-    DSMEvent,
-    PlaylistSeparator,
-    
     B2BOtherReply,
     B2BOtherBye,
 
+    Key,
+    Timer,
+
+    NoAudio,
+    PlaylistSeparator,
+
+    DSMEvent,    
     DSMException,
+
+    XmlrpcResponse,
 
     JsonRpcResponse,
     JsonRpcRequest

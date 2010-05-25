@@ -43,6 +43,7 @@ SC_EXPORT(MOD_CLS_NAME);
 MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("dlg.reply", DLGReplyAction);
+  DEF_CMD("dlg.replyRequest", DLGReplyRequestAction);
   DEF_CMD("dlg.acceptInvite", DLGAcceptInviteAction);
   DEF_CMD("dlg.bye", DLGByeAction);
   DEF_CMD("dlg.connectCalleeRelayed", DLGConnectCalleeRelayedAction);
@@ -66,29 +67,52 @@ bool DLGModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
     return false;					 \
   }
 
-CONST_ACTION_2P(DLGReplyAction, ',', true);
-EXEC_ACTION_START(DLGReplyAction) {
+// todo: convert errors to exceptions
+void replyRequest(DSMSession* sc_sess, AmSession* sess, 
+		  EventParamT* event_params,
+		  const string& par1, const string& par2,
+		  const AmSipRequest& req) {
   string code = resolveVars(par1, sess, sc_sess, event_params);
   string reason = resolveVars(par2, sess, sc_sess, event_params);
   unsigned int code_i;
   if (str2i(code, code_i)) {
     ERROR("decoding reply code '%s'\n", code.c_str());
     sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
-    return false;
+    return;
   }
 
   if (!sc_sess->last_req.get()) {
     ERROR("no last request to reply\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
     sc_sess->SET_STRERROR("no last request to reply");
-    return false;
+    return;
   }
 
-  if (sess->dlg.reply(*sc_sess->last_req.get(), code_i, reason)) {
+  if (sess->dlg.reply(req, code_i, reason)) {
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
     sc_sess->SET_STRERROR("error sending reply");
   } else
     sc_sess->CLR_ERRNO;
+}
+
+CONST_ACTION_2P(DLGReplyAction, ',', true);
+EXEC_ACTION_START(DLGReplyAction) {
+  replyRequest(sc_sess, sess, event_params, par1, par2, *sc_sess->last_req.get());
+} EXEC_ACTION_END;
+
+// todo (?) move replyRequest to core module (?)
+CONST_ACTION_2P(DLGReplyRequestAction, ',', true);
+EXEC_ACTION_START(DLGReplyRequestAction) {
+  DSMSipRequest* sip_req;
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REQUEST);
+  if (it == sc_sess->avar.end() ||
+      !isArgAObject(it->second) || 
+      !(sip_req = dynamic_cast<DSMSipRequest*>(it->second.asObject()))) {
+    throw DSMException("dlg", "cause", "no request");
+  }
+    
+  replyRequest(sc_sess, sess, event_params, par1, par2, *sip_req->req);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(DLGAcceptInviteAction, ',', true);

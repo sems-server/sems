@@ -35,6 +35,7 @@ bool onInvite(const AmSipRequest& req, DSMSession* sess);
 DECLARE_MODULE_END;
 
 DEF_ACTION_2P(DLGReplyAction);
+DEF_ACTION_2P(DLGReplyRequestAction);
 DEF_ACTION_2P(DLGAcceptInviteAction);
 DEF_ACTION_2P(DLGConnectCalleeRelayedAction);
 DEF_ACTION_1P(DLGByeAction);

@@ -67,10 +67,16 @@ DSMCall::~DSMCall()
 /** returns whether var exists && var==value*/
 bool DSMCall::checkVar(const string& var_name, const string& var_val) {
   map<string, string>::iterator it = var.find(var_name);
-  if ((it != var.end()) && (it->second == var_val)) 
-    return true;
+  return (it != var.end()) && (it->second == var_val);
+}
 
-  return false;
+/** returns whether params, param exists && param==value*/
+bool checkParam(const string& par_name, const string& par_val, map<string, string>* params) {
+  if (NULL == params)
+    return false;
+
+  map<string, string>::iterator it = params->find(par_name);
+  return (it != params->end()) && (it->second == par_val);
 }
 
 void DSMCall::onInvite(const AmSipRequest& req) {
@@ -134,7 +140,7 @@ void DSMCall::onOutgoingInvite(const string& headers) {
   }
 }
 
-void DSMCall::onRinging(const AmSipReply& reply) {
+ void DSMCall::onRinging(const AmSipReply& reply) {
   map<string, string> params;
   params["code"] = int2str(reply.code);
   params["reason"] = reply.reason;
@@ -247,7 +253,71 @@ void DSMCall::onCancel() {
   }
 }
 
+void DSMCall::onSipRequest(const AmSipRequest& req) {
+
+  if (checkVar(DSM_ENABLE_REQUEST_EVENTS, DSM_TRUE)) {
+    map<string, string> params;
+    params["method"] = req.method;
+    params["r_uri"] = req.r_uri;
+    params["from"] = req.from;
+    params["to"] = req.to;
+    params["hdrs"] = req.hdrs;
+
+    params["content_type"] = req.content_type;
+    params["body"] = req.body;
+
+    params["cseq"] = int2str(req.cseq);
+
+    // pass AmSipRequest for use by mod_dlg
+    DSMSipRequest* sip_req = new DSMSipRequest(&req);
+    avar[DSM_AVAR_REQUEST] = AmArg(sip_req);
+    
+    engine.runEvent(this, DSMCondition::SipRequest, &params);
+
+    delete sip_req;
+    avar.erase(DSM_AVAR_REQUEST);
+
+    if (checkParam(DSM_PROCESSED, DSM_TRUE, &params)) {
+      DBG("DSM script processed SIP request '%s', returning\n", 
+	  req.method.c_str());
+      return;
+    }
+  }
+
+  AmB2BCallerSession::onSipRequest(req);  
+}
+
 void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status) {
+
+  if (checkVar(DSM_ENABLE_REPLY_EVENTS, DSM_TRUE)) {
+    map<string, string> params;
+    params["code"] = int2str(reply.code);
+    params["reason"] = reply.reason;
+    params["hdrs"] = reply.hdrs;
+    params["content_type"] = reply.content_type;
+    params["body"] = reply.body;
+
+    params["cseq"] = int2str(reply.cseq);
+
+    params["dlg_status"] = int2str(dlg.getStatus());
+    params["old_dlg_status"] = int2str(old_dlg_status);
+
+    // pass AmSipReply for use by mod_dlg (? sending ACK?)
+    DSMSipReply* dsm_reply = new DSMSipReply(&reply);
+    avar[DSM_AVAR_REPLY] = AmArg(dsm_reply);
+    
+    engine.runEvent(this, DSMCondition::SipReply, &params);
+
+    delete dsm_reply;
+    avar.erase(DSM_AVAR_REPLY);
+
+    if (checkParam(DSM_PROCESSED, DSM_TRUE, &params)) {
+      DBG("DSM script processed SIP reply '%u %s', returning\n", 
+	  reply.code, reply.reason.c_str());
+      return;
+    }
+  }
+
   AmB2BCallerSession::onSipReply(reply,old_dlg_status);
 
   if ((old_dlg_status < AmSipDialog::Connected) && 

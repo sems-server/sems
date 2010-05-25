@@ -82,7 +82,9 @@ public:
   void onBye(const AmSipRequest& req);
   void onDtmf(int event, int duration_msec);
 
+  void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, int old_dlg_status);
+
   void process(AmEvent* event);
 
   UACAuthCred* getCredentials();

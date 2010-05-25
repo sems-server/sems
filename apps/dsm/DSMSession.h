@@ -40,8 +40,11 @@ using std::vector;
 using std::map;
 #include <memory>
 
-#define DSM_REPLY_REQUEST      "reply_request" // todo: rethink these names
-#define DSM_REPLY_REQUEST_FALSE "0"
+#define DSM_TRUE "true"
+#define DSM_FALSE "false"
+
+#define DSM_PROCESSED "processed"
+#define DSM_CONNECT   "connect"
 
 #define DSM_CONNECT_SESSION    "connect_session" // todo: rethink these names
 #define DSM_CONNECT_SESSION_FALSE    "0"
@@ -51,6 +54,13 @@ using std::map;
 
 #define DSM_CONNECT_EARLY_SESSION        "connect_early_session" // todo: rethink these names
 #define DSM_CONNECT_EARLY_SESSION_FALSE    "0"
+
+#define DSM_ENABLE_REQUEST_EVENTS  "enable_request_events"
+#define DSM_ENABLE_REPLY_EVENTS    "enable_reply_events"
+
+
+#define DSM_AVAR_REQUEST "request"
+#define DSM_AVAR_REPLY   "reply"
 
 #define DSM_ERRNO_FILE        "file"
 #define DSM_ERRNO_UNKNOWN_ARG "arg"
@@ -73,6 +83,9 @@ using std::map;
 
 #define CLR_STRERROR				\
   var["strerror"] = "";
+
+typedef map<string, string> VarMapT;
+typedef map<string, AmArg>  AVarMapT;
 
 class DSMDisposable;
 class AmPlaylistItem;
@@ -127,10 +140,10 @@ class DSMSession {
   virtual void releaseOwnership(DSMDisposable* d) = 0;
 
   /* holds variables which are accessed by $varname */
-  map<string, string> var;
+  VarMapT var;
 
-  /* holds AmArg variables. todo: merge var with these */
-  map<string, AmArg> avar;
+  /* holds AmArg variables. todo(?): merge var with these */
+  AVarMapT avar;
 
   /* result of the last DI call */
   AmArg di_res;
@@ -163,6 +176,27 @@ class DSMDisposableAudioFile
   DSMDisposableAudioFile() { }
   ~DSMDisposableAudioFile() { }
 };
+
+class DSMSipRequest
+: public ArgObject {
+ public: 
+  const AmSipRequest* req;
+
+  DSMSipRequest(const AmSipRequest* req)
+    : req(req)  { }
+  ~DSMSipRequest() { }
+};
+
+class DSMSipReply
+: public ArgObject {
+ public: 
+  const AmSipReply* reply;
+
+  DSMSipReply(const AmSipReply* reply)
+    : reply(reply)  { }
+  ~DSMSipReply() { }
+};
+
 
 #define DSM_EVENT_ID -10
 /**  generic event for passing events between DSM sessions */

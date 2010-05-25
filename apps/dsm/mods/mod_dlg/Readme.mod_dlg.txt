@@ -1,12 +1,21 @@
-* mod_dlg saves the initial INVITE to DSMSession::last_req
+* mod_dlg saves the initial INVITE to DSMSession::last_req,
+  this can be processed with dlg.reply(...)/dlg.acceptInvite(...)
 * set connect_session to 0 with set(connect_session=0)
   if you want to reply with other than the standard 200 OK 
   to initial INVITE received.
+* for processing of other requests, use enable_request_events and replyRequest
 
 dlg.reply(code,reason);
  reply to the request in DSMSession::last_req 
  (usually INVITE, if not yet replied) with code and reason
  * sets $errno (arg,general)
+
+dlg.replyRequest(code,reason);
+ request processing in script; use with set($enable_request_events="true");
+ reply to any request (in avar[DSM_AVAR_REQUEST]) with code and reason
+ * sets $errno (arg,general)
+ * throws exception if request not found (i.e. called from other event than
+   sipRequest)
 
 dlg.acceptInvite([code, reason]);
  e.g. dlg.acceptInvite(183, progress);

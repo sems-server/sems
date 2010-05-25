@@ -2,6 +2,7 @@
  * $Id$
  *
  * Copyright (C) 2008 iptego GmbH
+ * Copyright (C) 2010 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -168,6 +169,12 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
 
   if (cmd == "B2B.otherBye") 
     return new TestDSMCondition(params, DSMCondition::B2BOtherBye);  
+
+  if (cmd == "sipRequest") 
+    return new TestDSMCondition(params, DSMCondition::SipRequest);  
+
+  if (cmd == "sipReply") 
+    return new TestDSMCondition(params, DSMCondition::SipReply);  
 
   return NULL;
 }
@@ -459,12 +466,25 @@ EXEC_ACTION_START(SCLogAllAction) {
 
 CONST_ACTION_2P(SCSetAction,'=', false);
 EXEC_ACTION_START(SCSetAction) {
-  string var_name = (par1.length() && par1[0] == '$')?
-    par1.substr(1) : par1;
+  if (par1.length() && par1[0] == '#') {
+    // set param
+    if (NULL != event_params) {
+      string res = resolveVars(par2, sess, sc_sess, event_params);
+      (*event_params)[par1.substr(1)] = res;
+      DBG("set #%s='%s'\n", par1.substr(1).c_str(), res.c_str());
+    } else {
+      DBG("not setting %s (no param set)\n", par1.c_str());
+    }
+  } else {
+    // set variable
+    string var_name = (par1.length() && par1[0] == '$')?
+      par1.substr(1) : par1;
 
-  sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params);
-  DBG("set $%s='%s'\n", 
-      var_name.c_str(), sc_sess->var[var_name].c_str());
+    sc_sess->var[var_name] = resolveVars(par2, sess, sc_sess, event_params);
+    
+    DBG("set $%s='%s'\n", 
+	var_name.c_str(), sc_sess->var[var_name].c_str());
+  }
 } EXEC_ACTION_END;
 
 string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess, 
@@ -511,13 +531,25 @@ string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess,
 }
 CONST_ACTION_2P(SCSetSAction,'=', false);
 EXEC_ACTION_START(SCSetSAction) {
-  string var_name = (par1.length() && par1[0] == '$')?
-    par1.substr(1) : par1;
+  if (par1.length() && par1[0] == '#') {
+    // set param
+    if (NULL != event_params) {
+      string res = replaceParams(par2, sess, sc_sess, event_params);
+      (*event_params)[par1.substr(1)] = res;
+      DBG("set #%s='%s'\n", par1.substr(1).c_str(), res.c_str());
+    } else {
+      DBG("not set %s (no param set)\n", par1.c_str());
+    }
+  } else {
+    // set variable
+    string var_name = (par1.length() && par1[0] == '$')?
+      par1.substr(1) : par1;
 
-  sc_sess->var[var_name] = replaceParams(par2, sess, sc_sess, event_params);
-					 
-  DBG("set $%s='%s'\n", 
-      var_name.c_str(), sc_sess->var[var_name].c_str());
+    sc_sess->var[var_name] = replaceParams(par2, sess, sc_sess, event_params);
+    
+    DBG("set $%s='%s'\n", 
+	var_name.c_str(), sc_sess->var[var_name].c_str());
+  }
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCEvalAction,'=', false);
