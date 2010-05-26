@@ -69,10 +69,10 @@ tar:
 			(mkdir -p tmp/_tar1; mkdir -p tmp/_tar2 ; \
 			    cd tmp/_tar1; $(TAR) -xf - ) && \
 			    mv tmp/_tar1/$(notdir $(CURDIR)) \
-			       tmp/_tar2/"$(NAME)-$(REL_VERSION)" && \
+			       tmp/_tar2/"$(NAME)-$(RELEASE)" && \
 			    (cd tmp/_tar2 && $(TAR) \
 			                    -zcf ../../"$(NAME)-$(RELEASE)".tar.gz \
-			                               "$(NAME)-$(REL_VERSION)" ) ; \
+			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp
 
 .PHONY: doc
