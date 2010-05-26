@@ -19,7 +19,7 @@ include ../Makefile.app_module
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 $(QUERY_STATS_NAME): query_stats.d query_stats.o Makefile
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(QUERY_STATS_NAME) query_stats.o
+	$(LD) -o $(QUERY_STATS_NAME) query_stats.o $(LDFLAGS) $(EXTRA_LDFLAGS) 
 
 install_query_stats: $(QUERY_STATS_NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)
 	$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(QUERY_STATS_NAME)
