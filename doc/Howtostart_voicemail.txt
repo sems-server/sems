@@ -145,9 +145,8 @@ Leaving a message
    This should be added to native SIP destinations which are not found in
    usrloc, i.e. instead of replying 480 User temporarily not available,
    and in FAILURE_ROUTE:
-       append_hf("P-App-Name: voicemail\r\n");
-       append_hf("P-App-Param: mod=%$t.voicemail%|;eml='%$t.email%|';usr=%@ruri.
-user%|;snd='%@from.uri%|';dom=%@ruri.host%|;uid=%$t.uid%|;did=%$t.did%|;");
+       append_hf_value("P-App-Name","voicemail");
+       append_hf_value("P-App-Param","mod=%$t.voicemail%|;eml='%$t.email%|';usr=%@ruri.user%|;snd='%@from.uri%|';dom=%@ruri.host%|;uid=%$t.uid%|;did=%$t.did%|;");
        rewritehostport("voicemail.domain.net:5080");
        route(FORWARD);
 
@@ -155,9 +154,8 @@ Calling voicebox
 
    This should be added to SITE-SPECIFIC route:
      if (uri=~"^sip:1000") {               # 1000 is voicebox access number
-         append_hf("P-App-Name: voicebox\r\n");
-         append_hf("P-App-Param: usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng
-=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;\r\n");
+         append_hf_value("P-App-Name","voicebox");
+         append_hf_value("P-App-Param","usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;");
          rewritehostport("voicemail.domain.net:5080");
          route(FORWARD);
      }
@@ -167,9 +165,8 @@ Recording the greeting
    This is very similar to the one above, and should be added to
    SITE_SPECIFIC as well:
      if (uri=~"^sip:1001") {               # 1001 is recod greeting number
-         append_hf("P-App-Name: annrecorder\r\n");
-         append_hf("P-App-Param: usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng
-=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;typ=vm;\r\n");
+         append_hf_value("P-App-Name","annrecorder");
+         append_hf_value("P-App-Param","usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;typ=vm;");
          rewritehostport("voicemail.domain.net:5080");
          route(FORWARD);
      }

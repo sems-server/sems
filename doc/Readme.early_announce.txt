@@ -131,12 +131,6 @@ port=5060
 #children=4
 sip_warning=no
 
-# Configure Ser to create a FIFO server
-#fifo="/tmp/ser_fifo"
-
-# Configure Ser to create an unix socket server
-unix_sock="/tmp/ser_socket"
-
 loadmodule "modules/sl/sl.so"
 loadmodule "modules/tm/tm.so"
 loadmodule "modules/rr/rr.so"
@@ -148,10 +142,6 @@ loadmodule "modules/avpops/avpops.so"
 # add value to ;lr param to make some broken UAs happy
 modparam("rr", "enable_full_lr", 1)
 
-modparam( "avpops", "avp_aliases", "sess_params=i:66" )
-
-# this is to be appended to the invite
-modparam("tm", "tw_append","early_headers:P-App-Name=avp[$sess_params]")
 
 # -------------------------  request routing logic -------------------
 # main routing logic
@@ -179,45 +169,15 @@ route{
         };
 
         if (uri==myself) {
-        	# filter unsupported requests
-           	if (!(method=="REGISTER" || method=="ACK" || method=="INVITE" ||
-              	      method=="BYE" || method=="CANCEL" )) {
-                	sl_send_reply("501", "method not understood here");
-                	break;
-           	}
-
-           	if (method=="REGISTER") {
-              		# make UAs which want to register unhappy
-              		sl_send_reply("501","registration couldn't be accepted");
-              		break;
-           	};
-
-            	if (!t_newtran()){
-                	sl_send_reply("500","could not create transaction");
-                	break;
-            	};
 
            	if (method == "INVITE") {
 
-           		avp_write("Final-Reply-Code=405;Final-Reply-Reason=Prohiboted", 
-                                  "$sess_param");
+		   	append_hf("P-App-Name: early_announce\r\n");
+		   	append_hf("P-App-Param: Final-Reply-Code=405;Final-Reply-Reason=Prohibited\r\n");
 
-            		if(!t_write_unix("/tmp/sems_sock","early_announce/early_headers")){
-                		log("could not contact early_announce\n");
-                		t_reply("404","not found");
-            		};
-            		break;
-
-	        }  else if (method=="BYE" || method=="CANCEL") {
-                	if(!t_write_unix("/tmp/sems_sock","bye")) {
-                    		t_reply("500","error contacting sems");
-                	};
-                	break;
-           	} else if (method=="ACK"){
-                        # absorb ACKs
-                        t_relay();
-                        break;
-           	};
+			# assume that SEMS runs on locahost at port 5080
+			t_relay_to("udp:localhost:5080");
+		}
            	break;
         }
 

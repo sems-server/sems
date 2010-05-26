@@ -37,18 +37,16 @@ mailbox_query:
 Example for ser.cfg
 ===================
 
-# appends for INVITE to mailbox
-modparam("tm", "tw_append", "mailbox_headers:P-Iptel-Param=avp[$mailbox_url]")
-
-
-...
+# for all INVITEs that should go to mailbox
+#
         # replace this with a function that loads imap url e.g. from DB
         # into $mailbox_url AVP
-		avp_write("Mailbox-URL=imap://user:password@imapserver:143/INBOX",
-                      "$mailbox_url");
+	avp_write("Mailbox-URL=imap://user:password@imapserver:143/INBOX",
+		  "$mailbox_url");
 
-		if (!t_write_unix("/tmp/sems_sock","mailbox/mailbox_headers")){
-			log("could not contact mailbox\n");
-			t_reply("500","could not contact media server");	
-		}
-		break;
+	append_hf_value("P-App-Name","mailbox");
+       	append_hf_value("P-App-Param","%$mailbox_url");
+
+	# assume that SEMS is running at localhost:5080
+	t_relay_to("udp:localhost:5080");
+	break;

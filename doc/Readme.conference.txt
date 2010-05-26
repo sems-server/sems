@@ -131,17 +131,8 @@ Adding participants with "Transfer" REFER:
   P-Transfer-RR  : route set of the call
   P-Transfer-NH  : next hop 
 
- These headers must be configured in ser.cfg to be passed to the conference 
- application, for example using the following tw_append: 
-
- # appends for REFER
- modparam( "tm", "tw_append",
-   "refer_append:hdr[P-Transfer-NH];hdr[P-Transfer-RR]")
-
- ...
- 
- t_write_unix("/tmp/msp_conference_sock","conference/refer_append");
-
  Note that while this request has the method 'REFER', it does not follow rfc3515,
- for example the Refer-To header is not used.
+ for example the Refer-To header is not used. Also, the behavior implemented by SEMS
+ here is in no way standard conform and should only be used between two SEMS instances
+ placed behind the same last record-routing proxy.
 

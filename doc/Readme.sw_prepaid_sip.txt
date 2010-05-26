@@ -76,24 +76,16 @@ Caller    Proxy       SEMS      Callee
 How to configure SEMS' sip proxy
 --------------------------------
 
-Modify the "tw_append" parameter of the "tm" option to pass the mandatory headers to
-SEMS:
+Using SIP router, just add a proper block to pass prepaid calls to SEMS. 
 
-modparam("tm", "tw_append", 
-  "prepaid_headers:hdr[P-Caller-Uuid];hdr[P-Proxy];hdr[P-R-Uri];hdr[P-Acc-Dest]")
-
-Then add a proper block to pass prepaid calls to SEMS. In this example,
-we assume that calls prefixed by "pre" are considered prepaid requests.
-For ser-0.9.6 as SEMS' sip proxy, use something like:
+In this example, we assume that calls prefixed by "pre" are considered prepaid 
+requests:
 
 if(uri =~ "sip:pre.+@")
 {
 	strip(3);
-	if(!t_write_unix("/tmp/sems.sock","sw_prepaid_sip/prepaid_headers"))
-	{
-		xlog("L_ERR", "Error contacting SEMS - M=%rm R=%ru F=%fu T=%tu ID=%ci\n");
-		t_reply("500","Could not contact B2BUA server");
-	}
+	# assume that SEMS is running at localhost:5080
+	t_relay_to("udp:localhost:5080");
 	break;
 }
 
