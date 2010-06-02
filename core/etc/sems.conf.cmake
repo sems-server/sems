@@ -71,11 +71,9 @@ sip_port=5080
 
 # optional parameter: outbound_proxy=uri
 #
-# - this sets a next hop for calls and registrations outgoing 
-#   from SEMS. This does not apply to requests in a dialog that 
-#   is initiated by someone else and incoming to SEMS, as in 
-#   this case the next_hop is taken by SEMS from the incoming 
-#   request that established the dialog.
+# - this sets an outbound proxy for calls and registrations initiated 
+#   by SEMS. This does not apply to requests in a dialog that 
+#   is initiated by someone else and incoming to SEMS.
 #   If this is not set (default setting), then for dialogs 
 #   initiated by SEMS the r-uri is resolved and the request 
 #   is sent there directly.
@@ -88,6 +86,17 @@ sip_port=5080
 # Example:
 #   outbound_proxy=sip:proxy.mydomain.net
 
+# optional parameter: force_outbound_proxy={yes|no}
+#
+# - forces SEMS to send any request to the outbound proxy in any
+#   situation. This option will only have an effect if the 
+#   outbound_proxy option has been set.
+#
+#   default: no
+#
+# Example:
+#   force_outbound_proxy=yes
+
 # optional parameter: rtp_low_port=<port>
 #
 # - sets lowest for RTP used port
@@ -99,7 +108,14 @@ rtp_low_port=10000
 rtp_high_port=60000
 
 ############################################################
-# application configuration
+# modules and application configuration
+#
+# Configuration of plugin (module) loading:
+# - if load_plugins is set, only those are loaded.
+# - if load_plugins is not set, all modules in the plugin_path
+#   directory are loaded, except those which are listed 
+#   in exclude_plugins.
+#
 
 # optional parameter: plugin_path=<path>
 # 
@@ -223,6 +239,16 @@ loglevel=2
 ############################################################
 # tuning
 
+# optional parameter: session_processor_threads=<num_value>
+# 
+# - controls how many threads should be created that
+#   process the application logic and in-dialog signaling. 
+#   This is only available if compiled with threadpool support!
+#   (set USE_THREADPOOL in Makefile.defs)
+#   Defaults to 10
+#
+# session_processor_threads=50
+
 # optional parameter: media_processor_threads=<num_value>
 # 
 # - controls how many threads should be created that
@@ -343,3 +369,37 @@ use_default_signature=yes
 # default: error
 # 
 # unhandled_reply_loglevel=info
+
+############################################################
+# SIP stack settings
+#   default settings (i.e. leave out) for these should be OK
+#   for most applications
+
+
+#
+# Log raw messages?  [no|debug|info|warn|error]
+#
+# Default: debug
+#
+#log_raw_messages=no
+
+#
+# Log parsed received messages?  [yes|no]
+#
+# Default: yes
+#
+#log_parsed_messages=no
+
+# SIP UDP socket receive buffer size (in bytes)
+#
+# if not set, system default is used (which usually
+# is modest). set sytem wide upper limit with
+# e.g. sysctl -w net.core.rmem_max=8388608
+#
+# udp_rcvbuf = <value>
+
+# Number of SIP UDP receiver threads
+#
+# Default: 4
+#
+# sip_server_threads=8
