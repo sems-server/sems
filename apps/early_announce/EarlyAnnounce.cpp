@@ -178,13 +178,13 @@ int EarlyAnnounceFactory::onLoad()
 
   mysql_user = cfg.getParameter("mysql_user");
   if (mysql_user.empty()) {
-    ERROR("conference.conf parameter 'mysql_user' is missing.\n");
+    ERROR("early_announce.conf parameter 'mysql_user' is missing.\n");
     return -1;
   }
 
   mysql_passwd = cfg.getParameter("mysql_passwd");
   if (mysql_passwd.empty()) {
-    ERROR("conference.conf parameter 'mysql_passwd' is missing.\n");
+    ERROR("early_announce.conf parameter 'mysql_passwd' is missing.\n");
     return -1;
   }
 
