@@ -104,21 +104,19 @@ AmPromptCollection* VoiceboxFactory::findPrompts(const string& domain,
 AmPromptCollection* VoiceboxFactory::loadPrompts(string prompt_base_path, 
 						 string domain, string language,
 						 bool load_digits) {
+
   AmPromptCollection* pc = new AmPromptCollection();
 
   string prompt_path = prompt_base_path + "/" + domain + "/" + language + "/";
-
-  if (pc->setPrompt("pin_prompt", prompt_path + "pin_prompt.wav", APP_NAME) < 0) { 
-    DBG("no pin prompt set for domain <%s>,  language <%s>\n",
-	domain.c_str(), language.c_str());
-  } 
 
   #define ADD_DEF_PROMPT(str) \
   if (pc->setPrompt(str, prompt_path + str + ".wav", APP_NAME) < 0) { \
     delete pc; \
     return NULL; \
   } 
+
   //		Parts for the welcome text
+  ADD_DEF_PROMTP("pin_prompt");
   ADD_DEF_PROMPT("you_have");
   ADD_DEF_PROMPT("new_msgs");
   ADD_DEF_PROMPT("saved_msgs");
