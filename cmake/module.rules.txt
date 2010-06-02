@@ -6,7 +6,7 @@
 
 ADD_LIBRARY(sems_${sems_module_name} SHARED ${${sems_module_name}_SRCS})
 
-ADD_DEFINITIONS(-DMOD_NAME="\\\"${sems_module_name}\\\"")
+ADD_DEFINITIONS(-DMOD_NAME=\\\"${sems_module_name}\\\")
 
 # all modules should be linked against ${CMAKE_DL_LIBS} at least
 # and with additional ${sems_module_libs} if they exists
