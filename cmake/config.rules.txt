@@ -1,6 +1,6 @@
 FOREACH (config_file ${sems_module_name} ${sems_config_files})
 	# Check whether we providing a template for this config
-	FIND_PATH(SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE ${config_file}.conf.cmake PATHS ./etc)
+	FIND_PATH(SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE ${config_file}.conf.cmake PATHS ${CMAKE_CURRENT_SOURCE_DIR}/etc)
 
 	IF (SEMS_${sems_module_name}_CONFIG_${config_file}_TEMPLATE)
 		# If we do provide a template, then process it and create real
