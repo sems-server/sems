@@ -32,6 +32,12 @@ OPTION(SEMS_USE_MONITORING    "Build with monitoring support" OFF)
 OPTION(SEMS_USE_IPV6          "Build with IPv6 support" OFF)
 OPTION(MAX_RTP_SESSIONS:int   "How many rtp sessions SEMS will handle simultaneously? (default 2048)" 2048)
 
+# Fix weird static libs handling in old CMake
+IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} STREQUAL "2.4")
+	SET(SEMS_WORKAROUND_FOR_OLD_CMAKE_2_4_FOR_STATIC_LIBS  ON)
+ELSE (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} STREQUAL "2.4")
+	SET(SEMS_WORKAROUND_FOR_OLD_CMAKE_2_4_FOR_STATIC_LIBS  OFF)
+ENDIF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} STREQUAL "2.4")
 
 # add -lm and -lpthread to all targets
 SET(CMAKE_DL_LIBS ${CMAKE_DL_LIBS} m pthread)
