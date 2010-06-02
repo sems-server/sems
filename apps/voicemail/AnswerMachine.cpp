@@ -398,13 +398,13 @@ int AnswerMachineFactory::onLoad()
 
   mysql_user = cfg.getParameter("mysql_user");
   if (mysql_user.empty()) {
-    ERROR("voicemail.conf paramater 'mysql_user' is missing.\n");
+    ERROR("voicemail.conf parameter 'mysql_user' is missing.\n");
     return -1;
   }
 
   mysql_passwd = cfg.getParameter("mysql_passwd");
   if (mysql_passwd.empty()) {
-    ERROR("voicemail.conf paramater 'mysql_passwd' is missing.\n");
+    ERROR("voicemail.conf parameter 'mysql_passwd' is missing.\n");
     return -1;
   }
 
