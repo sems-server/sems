@@ -23,3 +23,13 @@ greeting_set=${SEMS_AUDIO_PREFIX}/sems/audio/annrecorder/greeting_set.wav
 # "Thank you for using the iptel dot org service. Good Bye. - "
 bye=${SEMS_AUDIO_PREFIX}/sems/audio/annrecorder/bye.wav
 
+#
+# Simple mode: 
+#
+#  If the simple mode is activated, the user part 
+#  of the From-URI is used as the key to store the 
+#  user annoucement. (no domain is used)
+#
+# Default value: no
+#
+# simple_mode=yes

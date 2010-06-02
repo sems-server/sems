@@ -15,7 +15,7 @@ prompt_base_path=${SEMS_AUDIO_PREFIX}/sems/audio/voicebox/
 # 
 # specific prompts for these domains will be supported:
 #
-domains=iptel.org
+# domains=iptel.org;otherdomain.org
 
 # 
 # a language may have single digits to follow the tens if spoken 
@@ -31,6 +31,20 @@ languages=english(digits=right);
 # default language (if not set in App-Params)
 #
 default_language=english
+
+#
+# Simple mode: 
+#
+#  If the simple mode is activated, the user part   
+#  of the From-URI is used as the key to retrieve the voicemails. 
+#
+#  Also, the user will not be asked for a PIN. It is the responsability
+#  of upstream SIP proxies to ensure any requried protection of the 
+#  personnal voiceboxes.
+#
+# Default value: no
+#
+#simple_mode=yes
 
 #
 # keys config (optional)
