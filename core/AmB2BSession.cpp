@@ -314,7 +314,7 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
     relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
-    dlg.sendRequest(req.method,"application/sdp",req.body,req.hdrs,SIP_FLAGS_VERBATIM);
+    dlg.sendRequest(req.method,req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
     // todo: relay error event back if sending fails
   } else {
     //its a (200) ACK 
@@ -473,7 +473,7 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
 
   B2BConnectEvent* ev = new B2BConnectEvent(remote_party,remote_uri);
 
-  ev->content_type = "application/sdp"; // FIXME
+  ev->content_type = invite_req.content_type;
   ev->body         = invite_req.body;
   ev->hdrs         = invite_req.hdrs;
   ev->relayed_invite = relayed_invite;
