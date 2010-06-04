@@ -673,14 +673,12 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     onInvite(req);
 
     if(detached.get() && !getStopped()){
-	
       onSessionStart(req);
-	    
       if(input || output || local_input || local_output)
-	AmMediaProcessor::instance()->addSession(this, callgroup);
+    	AmMediaProcessor::instance()->addSession(this, callgroup);
       else {
-	DBG("no audio input and output set. "
-	    "Session will not be attached to MediaProcessor.\n");
+    	DBG("no audio input and output set. "
+    	    "Session will not be attached to MediaProcessor.\n");
       }
     }
   }
@@ -800,8 +798,7 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 
 void AmSession::onInvite2xx(const AmSipReply& reply)
 {
-  AmSipTransaction* t = dlg.get_uac_trans(reply.cseq);
-  if(t) dlg.send_200_ack(*t);
+  dlg.send_200_ack(reply.cseq);
 }
 
 void AmSession::onNo2xxACK(unsigned int cseq)

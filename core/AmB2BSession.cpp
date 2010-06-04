@@ -164,10 +164,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	}
       } else {
 	// is_answer - send 200 ACK
-	// todo: use that from uas_trans? 
-	trans_ticket tt; // not used for ACK
-	AmSipTransaction trans("INVITE", body_ev->r_cseq, tt);
-	if (dlg.send_200_ack(trans, body_ev->content_type, body_ev->body, 
+	if (dlg.send_200_ack(body_ev->r_cseq, body_ev->content_type, body_ev->body, 
 			     "" /* hdrs - todo */, SIP_FLAGS_VERBATIM)) {
 	  ERROR("sending ACK with SDP\n");
 	}
@@ -330,8 +327,8 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
       return;
     }
     DBG("sending relayed ACK\n");
-    dlg.send_200_ack(AmSipTransaction(t->second.method, t->first,t->second.tt), 
-		     req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
+    dlg.send_200_ack(t->first /*cseq*/, req.content_type, req.body, 
+		     req.hdrs, SIP_FLAGS_VERBATIM);
     relayed_req.erase(t);
   }
 }

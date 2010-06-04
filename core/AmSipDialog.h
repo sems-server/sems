@@ -156,7 +156,7 @@ class AmSipDialog
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
 
-  AmSipDialog(AmSipDialogEventHandler* h=0);
+  AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();
 
   bool   getUACTransPending() { return !uac_trans.empty(); }
@@ -185,7 +185,7 @@ class AmSipDialog
 		  const string& hdrs = "",
 		  int flags = 0);
 
-  int send_200_ack(const AmSipTransaction& t,
+  int send_200_ack(unsigned int inv_cseq,
 		   const string& content_type = "",
 		   const string& body = "",
 		   const string& hdrs = "",

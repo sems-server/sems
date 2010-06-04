@@ -45,6 +45,7 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     outbound_proxy(AmConfig::OutboundProxy),
     force_outbound_proxy(AmConfig::ForceOutboundProxy)
 {
+  assert(h);
 }
 
 AmSipDialog::~AmSipDialog()
@@ -282,7 +283,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 	    hdl->onInvite2xx(reply);
 	}
 	else {
-	    send_200_ack(t);
+	    send_200_ack(t.cseq);
 	}
     }
     else {
@@ -679,7 +680,7 @@ int AmSipDialog::drop()
   return 1;
 }
 
-int AmSipDialog::send_200_ack(const AmSipTransaction& t,
+int AmSipDialog::send_200_ack(unsigned int inv_cseq,
 			      const string& content_type,
 			      const string& body,
 			      const string& hdrs,
@@ -692,10 +693,15 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   // acceptable, the UAC core MUST generate a valid answer in the ACK and
   // then send a BYE immediately."
 
+  if (uac_trans.find(inv_cseq) == uac_trans.end()) {
+    ERROR("trying to ACK a non-existing transaction (cseq=%i;local_tag=%s)\n",inv_cseq,local_tag.c_str());
+    return -1;
+  }
+
   string m_hdrs = hdrs;
 
   if(hdl)
-    hdl->onSendRequest("ACK",content_type,body,m_hdrs,flags,t.cseq);
+    hdl->onSendRequest("ACK",content_type,body,m_hdrs,flags,inv_cseq);
 
   AmSipRequest req;
 
@@ -710,7 +716,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   if(!remote_tag.empty()) 
     req.to += ";tag=" + remote_tag;
     
-  req.cseq = t.cseq;// should be the same as the INVITE
+  req.cseq = inv_cseq;// should be the same as the INVITE
   req.callid = callid;
   req.contact = getContactHdr();
     
@@ -737,7 +743,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   if (SipCtrlInterface::send(req))
     return -1;
 
-  uac_trans.erase(t.cseq);
+  uac_trans.erase(inv_cseq);
 
   return 0;
 }
