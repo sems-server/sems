@@ -3,6 +3,7 @@
 *.o
 *.a
 *.so
+*.pyc
 getarch
 getos
 sems
