@@ -4,6 +4,7 @@
 *.a
 *.so
 *.pyc
+*.pyo
 getarch
 getos
 sems
