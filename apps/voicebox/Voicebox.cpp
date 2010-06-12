@@ -116,7 +116,7 @@ AmPromptCollection* VoiceboxFactory::loadPrompts(string prompt_base_path,
   } 
 
   //		Parts for the welcome text
-  ADD_DEF_PROMTP("pin_prompt");
+  ADD_DEF_PROMPT("pin_prompt");
   ADD_DEF_PROMPT("you_have");
   ADD_DEF_PROMPT("new_msgs");
   ADD_DEF_PROMPT("saved_msgs");
