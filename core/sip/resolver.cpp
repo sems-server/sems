@@ -32,6 +32,9 @@
 
 #include "log.h"
 
+#include <sys/socket.h> 
+#include <netinet/in.h>
+
 resolver* resolver::_instance=0;
 
 resolver::resolver()

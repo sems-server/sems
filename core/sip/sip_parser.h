@@ -35,6 +35,7 @@
 using std::list;
 
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 struct sip_request;
 struct sip_reply;
