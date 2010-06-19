@@ -7,7 +7,7 @@ GIT = $(shell which git)
 SVNVERSION = $(shell which svnversion)
 
 ifneq ($(GIT),)
-   SCM_REV = $(shell git describe --always --dirty)
+   SCM_REV = $(shell if git --help describe |grep dirty 2>&1 >/dev/null ; then git describe --always --dirty; else git describe --always ; fi) 
 endif
 
 ifeq ($(SCM_REV),)
