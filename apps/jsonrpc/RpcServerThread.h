@@ -33,16 +33,6 @@
 #include "AmThread.h"
 #include "RpcPeer.h"
 
-struct JsonServerEvent 
- : public AmEvent {
-
-  JsonrpcNetstringsConnection* conn;
-
-  JsonServerEvent(JsonrpcNetstringsConnection* c)
-    : conn(c), AmEvent(121) { } 
-  ~JsonServerEvent() { }
-};
-
 class RpcServerThread 
 : public AmThread, public AmEventQueue, public AmEventHandler 
 {

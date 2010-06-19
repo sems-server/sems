@@ -39,9 +39,32 @@
 using std::string;
 
 #include "AmUtils.h"
+#include "AmEventDispatcher.h"
+#include "JsonRPCEvents.h"
 
-JsonrpcNetstringsConnection::JsonrpcNetstringsConnection() 
-  : fd(0), msg_size(0), rcvd_size(0), in_msg(false), msg_recv(true)
+void JsonrpcPeerConnection::notifyDisconnect() {
+  // let event receivers know about broken connection
+  DBG("notifying event receivers about broken connection\n");
+  if (!notificationReceiver.empty())
+    AmEventDispatcher::instance()->
+      post(notificationReceiver, 
+	   new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT, id));
+  if (!requestReceiver.empty())
+    AmEventDispatcher::instance()->
+      post(requestReceiver, 
+	   new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT, id));
+  
+  for (std::map<std::string, std::string>::iterator it=
+	 replyReceivers.begin(); it != replyReceivers.end(); it++) {
+    AmEventDispatcher::instance()->
+      post(it->second, 
+	   new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT, id));	
+  }
+}
+
+JsonrpcNetstringsConnection::JsonrpcNetstringsConnection(const std::string& id) 
+  : JsonrpcPeerConnection(id), 
+    fd(0), msg_size(0), rcvd_size(0), in_msg(false), msg_recv(true)
 {
 }
 
@@ -159,7 +182,7 @@ int JsonrpcNetstringsConnection::netstringsRead() {
 	return REMOVE;
       }
       
-      // DBG("received '%c'\n", msgbuf[rcvd_size]);
+      DBG("received '%c'\n", msgbuf[rcvd_size]);
       if (msgbuf[rcvd_size] == ':') {
 	msgbuf[rcvd_size] = '\0';
 	if (str2i(std::string(msgbuf, rcvd_size), msg_size)) {

@@ -45,6 +45,7 @@ class JsonRPCServerModule
 
   // DI methods
   void execRpc(const AmArg& args, AmArg& ret);
+  void sendMessage(const AmArg& args, AmArg& ret);
 
  public:
   JsonRPCServerModule(const string& mod_name);

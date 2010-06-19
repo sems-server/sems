@@ -35,18 +35,29 @@
 
 #include "RpcPeer.h"
 #include "RpcServerThread.h"
+#include "JsonRPCEvents.h"
+
 #include "AmArg.h"
+
+#include <map>
+
 class JsonRPCServerLoop 
 : public AmThread, public AmEventQueue, public AmEventHandler
 {
-  RpcServerThreadpool threadpool;
+  static  RpcServerThreadpool threadpool;
   static ev_async async_w;
   static struct ev_loop *loop;
 
   static JsonRPCServerLoop* _instance;
 
+  static std::map<string, JsonrpcPeerConnection*> connections;
+  static AmMutex connections_mut;
+
+  static vector<JsonServerEvent*> pending_events; // todo: use map<set<> > if many pending events
+  static AmMutex pending_events_mut;
+
  public:
-  JsonRPCServerLoop();  
+  JsonRPCServerLoop();
   ~JsonRPCServerLoop();
 
   static JsonRPCServerLoop* instance();
@@ -63,9 +74,38 @@ class JsonRPCServerLoop
 		      int port, const string& method, 
 		      AmArg& params,
 		      AmArg& ret);
+
+  static void sendMessage(const string& connection_id, 
+			  int msg_type, 
+			  const string& method, 
+			  const string& id,
+			  const string& reply_sink,
+			  AmArg& params,
+			  AmArg& ret);
   void run();
   void on_stop();
   void process(AmEvent* ev);
+
+  static string newConnectionId();
+
+  /**
+     add connection with id
+     @return whether connection with this id existed before
+  */
+  static bool registerConnection(JsonrpcPeerConnection* peer, const string& id);
+
+  /**
+     remove a connection with id
+     @return whether connection with this id existed
+  */
+  static bool removeConnection(const string& id);
+
+  /**
+     get a connection with id
+     @return NULL if not found
+  */
+  static JsonrpcPeerConnection* getConnection(const string& id);
+
 };
 
 #endif

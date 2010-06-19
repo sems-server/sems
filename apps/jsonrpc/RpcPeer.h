@@ -30,6 +30,7 @@
 
 #include <ev.h>
 #include <stdlib.h>
+#include "log.h"
 
 #define MAX_RPC_MSG_SIZE 20*1024*1024 // 20k
 #define MAX_NS_LEN_SIZE 10 
@@ -39,6 +40,8 @@
 #include <string>
 
 struct JsonrpcPeerConnection {
+  std::string id;
+
   // event queue keys that should receive the reply
   // to requests sent on that connection
   std::map<std::string, std::string> replyReceivers;
@@ -67,7 +70,16 @@ struct JsonrpcPeerConnection {
 
   int req_id;
 
-  virtual ~JsonrpcPeerConnection() { }
+  JsonrpcPeerConnection(const std::string& id)
+  : id(id) { 
+    DBG("created connection '%s'\n", id.c_str());
+  }
+
+  virtual ~JsonrpcPeerConnection() { 
+    DBG("destroying connection '%s'\n", id.c_str());
+  }
+
+  void notifyDisconnect();
 };
 
 struct JsonrpcNetstringsConnection 
@@ -84,7 +96,7 @@ struct JsonrpcNetstringsConnection
   bool in_msg;
   bool msg_recv;
 
-  JsonrpcNetstringsConnection(); 
+  JsonrpcNetstringsConnection(const std::string& id); 
   ~JsonrpcNetstringsConnection(); 
 
   int connect(const std::string& host, int port, std::string& res_str);

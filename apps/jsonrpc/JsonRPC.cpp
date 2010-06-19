@@ -26,6 +26,7 @@
  */
 
 #include "JsonRPC.h"
+#include "JsonRPCServer.h"
 
 JsonRPCServerModule* JsonRPCServerModule::_instance = NULL;
 
@@ -90,8 +91,26 @@ void JsonRPCServerModule::invoke(const string& method,
     }
     execRpc(args, ret);
     // sendRequestList(args, ret);
+  } else if (method == "sendMessage"){
+    args.assertArrayFmt("sisss");          // conn_id, type, method, id, reply_sink, [params]
+    if (args.size() > 5) {
+      if (!isArgArray(args.get(5)) && !isArgStruct(args.get(5))) {
+	ERROR("internal error: params to JSON-RPC must be struct or array\n");
+	throw AmArg::TypeMismatchException();
+      }
+    }
+    sendMessage(args, ret);
+  } else if (method == "execServerFunction"){ 
+    args.assertArrayFmt("ss");          // method, id, params
+    JsonRpcServer::execRpc(args.get(0).asCStr(), args.get(1).asCStr(), args.get(2), ret);
+    // JsonRpcServer::execRpc(args, ret);
+  } else if (method == "getServerPort"){
+    ret.push(port);
   } else if(method == "_list"){ 
     ret.push(AmArg("execRpc"));
+    ret.push(AmArg("sendMessage"));
+    ret.push(AmArg("getServerPort"));
+    ret.push(AmArg("execServerFunction"));
     // ret.push(AmArg("newConnection"));
     // ret.push(AmArg("sendRequest"));
     // ret.push(AmArg("sendRequestList"));
@@ -114,4 +133,17 @@ void JsonRPCServerModule::execRpc(const AmArg& args, AmArg& ret) {
 			     args.get(4).asCStr(), 
 			     args.get(5).asInt(), args.get(6).asCStr(), 
 			     params, ret);
+}
+
+void JsonRPCServerModule::sendMessage(const AmArg& args, AmArg& ret) {
+  AmArg none_params;
+  AmArg& params = none_params;
+  if (args.size()>5)
+    params = args.get(5);
+  JsonRPCServerLoop::sendMessage(args.get(0).asCStr(), // conn_id, 
+				 args.get(1).asInt(),  // type, (0 == reply)
+				 args.get(2).asCStr(), // method,
+				 args.get(3).asCStr(), // id
+				 args.get(4).asCStr(), // reply_sink
+				 params, ret);
 }

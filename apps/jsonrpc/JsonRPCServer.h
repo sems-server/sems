@@ -46,7 +46,9 @@ struct JsonRpcError {
 };
 
 class JsonRpcServer {
+ public:
   static void execRpc(const AmArg& rpc_params, AmArg& rpc_res);
+  static void execRpc(const string& method, const string& id, const AmArg& params, AmArg& rpc_res);
   static void runCoreMethod(const string& method, const AmArg& params, AmArg& res);
  public:
   static int processMessage(char* msgbuf, unsigned int* msg_size,
@@ -54,6 +56,9 @@ class JsonRpcServer {
 
   static int createRequest(const string& evq_link, const string& method, AmArg& params, 
 			   JsonrpcNetstringsConnection* peer, bool is_notification = false);
+
+  static int createReply(JsonrpcNetstringsConnection* peer, const string& id, 
+			 AmArg& result, bool is_error);
 };
 
 #endif // _JsonRPCServer_h_

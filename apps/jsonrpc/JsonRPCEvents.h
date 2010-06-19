@@ -34,8 +34,14 @@
 #include <string>
 using std::string;
 
+#define JSONRPC_MSG_REQUEST  0
+#define JSONRPC_MSG_RESPONSE 1
+#define JSONRPC_MSG_ERROR    2
+class JsonrpcNetstringsConnection;
+
 struct JsonRpcEvent
   : public AmEvent {
+  string connection_id;
   JsonRpcEvent() 
     : AmEvent(122) { }
   virtual ~JsonRpcEvent() { }
@@ -95,16 +101,73 @@ struct JsonRpcRequestEvent
 struct JsonRpcConnectionEvent
   : public JsonRpcEvent {
 
-  // todo: add connection id
   enum {
     DISCONNECT = 0
   };
 
   int what;
+  string connection_id;
 
-  JsonRpcConnectionEvent(int what) 
-    : what(what) { }
+ JsonRpcConnectionEvent(int what, const string& connection_id) 
+   : what(what), connection_id(connection_id) { }
   ~JsonRpcConnectionEvent() { }
+};
+
+
+// events used internally: 
+
+struct JsonServerEvent 
+ : public AmEvent {
+
+  enum EventType { 
+    StartReadLoop = 0,
+    SendMessage    
+  };
+
+  JsonrpcNetstringsConnection* conn;
+  string connection_id;
+
+ JsonServerEvent(JsonrpcNetstringsConnection* c,
+		 EventType ev_type)
+    : conn(c), AmEvent(ev_type) { }
+
+ JsonServerEvent(const string& connection_id,
+		 EventType ev_type)
+   : connection_id(connection_id), AmEvent(ev_type), 
+    conn(NULL) { }
+
+  ~JsonServerEvent() { }
+};
+
+struct JsonServerSendMessageEvent
+  : public JsonServerEvent {
+
+  bool is_reply; 
+  string method;
+  string id;
+  AmArg params;
+  string reply_link;
+  bool is_error;
+
+  JsonServerSendMessageEvent(const string& connection_id,
+			     bool is_reply,
+			     const string& method,
+			     const string& id,
+			     AmArg& params,
+			     const string& reply_link = "")
+    : JsonServerEvent(connection_id, SendMessage),
+    is_reply(is_reply), reply_link(reply_link),
+    method(method), id(id), params(params) { }
+
+ JsonServerSendMessageEvent(const JsonServerSendMessageEvent& e,
+			    JsonrpcNetstringsConnection* conn)
+   : JsonServerEvent(conn, SendMessage),
+    is_reply(e.is_reply),reply_link(e.reply_link),
+    method(e.method), id(e.id), params(e.params), 
+    is_error(e.is_error) { 
+    connection_id = e.connection_id;
+  }
+
 };
 
 #endif // _JsonRPCEvents_h_
