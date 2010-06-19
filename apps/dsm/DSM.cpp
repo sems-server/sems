@@ -210,25 +210,25 @@ int DSMFactory::onLoad()
     DIR* dir = opendir(conf_d_dir.c_str());
     
     if(!dir){
-      ERROR("config loader (%s): %s\n", 
+      INFO("DSM config files loader (%s): %s\n",
 	    conf_d_dir.c_str(), strerror(errno));
-      return -1;
-    }
-    while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
-      string conf_name = string(entry->d_name);
-      
-      if(conf_name.find(".conf",conf_name.length()-5) == string::npos ){
-	continue;
+    } else {
+      while( ((entry = readdir(dir)) != NULL) && (err == 0) ){
+	string conf_name = string(entry->d_name);
+	
+	if (conf_name.find(".conf",conf_name.length()-5) == string::npos){
+	  continue;
+	}
+        
+	string conf_file_name = conf_d_dir + conf_name;
+	
+	DBG("loading %s ...\n",conf_file_name.c_str());
+	if (!loadConfig(conf_file_name, conf_name, false, NULL)) 
+	  return -1;
+
       }
-          
-      string conf_file_name = conf_d_dir + conf_name;
-
-      DBG("loading %s ...\n",conf_file_name.c_str());
-      if (!loadConfig(conf_file_name, conf_name, false, NULL)) 
-	return -1;
-
+      closedir(dir);
     }
-    closedir(dir);
   }
   return 0;
 }
