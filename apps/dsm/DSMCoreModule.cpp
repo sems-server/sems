@@ -176,6 +176,12 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "sipReply") 
     return new TestDSMCondition(params, DSMCondition::SipReply);  
 
+  if (cmd == "jsonRpcRequest") 
+    return new TestDSMCondition(params, DSMCondition::JsonRpcRequest);  
+
+  if (cmd == "jsonRpcResponse") 
+    return new TestDSMCondition(params, DSMCondition::JsonRpcResponse);  
+
   return NULL;
 }
 
@@ -498,11 +504,28 @@ string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess,
       break;
     if (rstart && res[rstart-1] == '\\') // escaped
       continue;
-    
-    size_t rend = res.find_first_of(" ,()$#@\t;:'\"", rstart+1);
+    size_t rend;
+    if (res.length() > rstart+1 && 
+	(res[rstart+1] == '(' ||
+	 res[rstart+1] == '"' ||
+	 res[rstart+1] == '\''
+	 ))
+      rend = res.find_first_of(" ,()$#@\t;:'\"", rstart+2);
+    else 
+      rend = res.find_first_of(" ,()$#@\t;:'\"", rstart+1);
     if (rend==string::npos)
       rend = res.length();
     string keyname = res.substr(rstart+1, rend-rstart-1);
+
+    if (keyname.length()>2) {
+      if ((keyname[0] == '(' && res[rend] == ')') ||
+	  (keyname[0] == res[rend] &&
+	   (keyname[0] == '"' ||keyname[0] == '\''))) {
+	keyname = keyname.substr(1);
+	if (rend != res.length())
+	  rend++;
+      }
+    }
     // todo: simply use resolveVars (?)
     switch(res[rstart]) {
     case '$': {
@@ -607,17 +630,37 @@ EXEC_ACTION_START(SCSubStrAction) {
   string var_name = (par1.length() && par1[0] == '$')?
     par1.substr(1) : par1;
   unsigned int pos = 0;
-  if (str2i(resolveVars(par2, sess, sc_sess, event_params), pos)) {
-    ERROR("substr length '%s' unparseable\n",
-	  resolveVars(par2, sess, sc_sess, event_params).c_str());
-    return false;
+  unsigned int pos2 = 0;
+  size_t c_pos = par2.find(",");
+  if (c_pos == string::npos) {
+    if (str2i(resolveVars(par2, sess, sc_sess, event_params), pos)) {
+      ERROR("substr length '%s' unparseable\n",
+	    resolveVars(par2, sess, sc_sess, event_params).c_str());
+      return false;
+    }
+  } else {
+    if (str2i(resolveVars(par2.substr(0, c_pos), sess, sc_sess, event_params), pos)) {
+      ERROR("substr length '%s' unparseable\n",
+	    resolveVars(par2.substr(0, c_pos), sess, sc_sess, event_params).c_str());
+      return false;
+    }
+
+    if (str2i(resolveVars(par2.substr(c_pos+1), sess, sc_sess, event_params), pos2)) {
+      ERROR("substr length '%s' unparseable\n",
+	    resolveVars(par2.substr(0, c_pos-1), sess, sc_sess, event_params).c_str());
+      return false;
+    }
   }
+
   try {
-    sc_sess->var[var_name] = sc_sess->var[var_name].substr(pos);
+    if (pos2 == 0)
+      sc_sess->var[var_name] = sc_sess->var[var_name].substr(pos);
+    else 
+      sc_sess->var[var_name] = sc_sess->var[var_name].substr(pos, pos2);
   } catch(...) {
     ERROR("in substr\n");
     return false;
-  }
+  }  
 
   DBG("$%s now '%s'\n", 
       var_name.c_str(), sc_sess->var[var_name].c_str());
