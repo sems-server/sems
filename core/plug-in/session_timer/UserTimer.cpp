@@ -70,6 +70,8 @@ bool operator < (const AmTimer& l, const AmTimer& r)
 }
 
 void UserTimer::checkTimers() {
+  vector<std::pair<string, int> > expired_timers;
+
   timers_mut.lock();
   if(timers.empty()){
     timers_mut.unlock();
@@ -87,19 +89,26 @@ void UserTimer::checkTimers() {
     string session_id = it->session_id;
     // erase
     timers.erase(it);
-    // 'fire' timer	  
-    if (!AmSessionContainer::instance()->postEvent(session_id, 
-						   new AmTimeoutEvent(id))) {
-      DBG("Timeout Event could not be posted, session does not exist any more.\n");
-    }
-    else {
-      DBG("Timeout Event could be posted.\n");
-    }
+    expired_timers.push_back(make_pair(session_id, id));
     
     if(timers.empty()) break;
     it = timers.begin();
   }
   timers_mut.unlock();
+
+  for (vector<std::pair<string, int> >::iterator e_it =
+	 expired_timers.begin(); e_it != expired_timers.end(); e_it++) {
+    // 'fire' timer
+    if (!AmSessionContainer::instance()->postEvent(e_it->first, 
+						   new AmTimeoutEvent(e_it->second))) {
+      DBG("Timeout Event '%d' could not be posted, session '%s' does not exist any more.\n",
+	  e_it->second, e_it->first.c_str());
+    }
+    else {
+      DBG("Timeout Event '%d' posted to %s.\n", 
+	  e_it->second, e_it->first.c_str());
+    }
+  }
 }
 
 void UserTimer::setTimer(int id, int seconds, const string& session_id) {
