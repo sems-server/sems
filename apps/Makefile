@@ -1,21 +1,46 @@
 COREPATH ?= ../core
 .DEFAULT_GOAL := all
 
+local_exclude_app_modules=$(exclude_app_modules)
+
 include $(COREPATH)/../Makefile.defs
 
-exclude_app_modules += mp3 examples py_sems xmlrpc2di gateway jsonrpc
 
-ifneq ($(USE_MONITORING), yes)
-exclude_app_modules += monitoring
-endif
+# modules...
 
-$(info exclude_app_modules: $(exclude_app_modules))
-app_modules = $(filter-out $(subst ;, ,$(exclude_app_modules))\
+# if app_modules is set 
+#   make $(app_modules)
+# else 
+#   if exclude_app_modules is set
+#     make * - $(exclude_app_modules)
+#   else
+#     make * - Makefile.defs:exclude_app_modules +  local excludes
+#   
+
+ifneq ($(app_modules),)
+ app_modules = $(app_modules)
+else
+ ifneq ($(local_exclude_app_modules),)
+   exclude_app_modules = $(local_exclude_app_modules)
+ else
+   exclude_app_modules += mp3 examples py_sems xmlrpc2di gateway jsonrpc
+
+   ifneq ($(USE_MONITORING), yes)
+   exclude_app_modules += monitoring
+   endif
+
+ endif
+
+ $(info local_exclude_app_modules: $(local_exclude_app_modules))
+ $(info exclude_app_modules: $(exclude_app_modules))
+ app_modules = $(filter-out $(subst ;, ,$(exclude_app_modules))\
 		$(wildcard Makefile*) CVS CMakeLists.txt, \
 		$(wildcard *) examples/tutorial/cc_acc )
-$(info app_modules: $(app_modules))
 
-#modules = wav gsm ilbc bot echo announcement recorder voicemail dtmf_demo ivr
+endif
+
+
+$(info app_modules: $(app_modules))
 
 .PHONY: all
 all: modules
