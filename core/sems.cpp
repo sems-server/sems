@@ -485,7 +485,7 @@ int main(int argc, char* argv[])
 	  gid = grnam->gr_gid;
 	}
 	else{
-	  ERROR("Cannot not find group '%s' in the group database.\n",
+	  ERROR("Cannot find group '%s' in the group database.\n",
 		AmConfig::DaemonGid.c_str());
 	  goto error;
 	}
@@ -506,7 +506,7 @@ int main(int argc, char* argv[])
 	  uid = pwnam->pw_uid;
 	}
 	else{
-	  ERROR("Cannot not find user '%s' in the user database.\n",
+	  ERROR("Cannot find user '%s' in the user database.\n",
 		AmConfig::DaemonUid.c_str());
 	  goto error;
 	}
