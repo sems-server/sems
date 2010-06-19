@@ -389,7 +389,6 @@ int main(int argc, char* argv[])
 {
   int success = false;
   std::map<char,string> args;
-  std::map<char,string>::iterator cfg_arg;
 
   progname = strrchr(argv[0], '/');
   progname = (progname == NULL ? argv[0] : progname + 1);
@@ -480,14 +479,14 @@ int main(int argc, char* argv[])
   if(AmConfig::DaemonMode){
     if(!AmConfig::DaemonGid.empty()){
       unsigned int gid;
-      if(str2i(cfg_arg->second, gid)){
-	struct group* grnam = getgrnam(cfg_arg->second.c_str());
+      if(str2i(AmConfig::DaemonGid, gid)){
+	struct group* grnam = getgrnam(AmConfig::DaemonGid.c_str());
 	if(grnam != NULL){
 	  gid = grnam->gr_gid;
 	}
 	else{
 	  ERROR("Cannot not find group '%s' in the group database.\n",
-		cfg_arg->second.c_str());
+		AmConfig::DaemonGid.c_str());
 	  goto error;
 	}
       }
@@ -501,14 +500,14 @@ int main(int argc, char* argv[])
 
     if(!AmConfig::DaemonUid.empty()){
       unsigned int uid;
-      if(str2i(cfg_arg->second, uid)){
-	struct passwd* pwnam = getpwnam(cfg_arg->second.c_str());
+      if(str2i(AmConfig::DaemonUid, uid)){
+	struct passwd* pwnam = getpwnam(AmConfig::DaemonUid.c_str());
 	if(pwnam != NULL){
 	  uid = pwnam->pw_uid;
 	}
 	else{
 	  ERROR("Cannot not find user '%s' in the user database.\n",
-		cfg_arg->second.c_str());
+		AmConfig::DaemonUid.c_str());
 	  goto error;
 	}
       }
