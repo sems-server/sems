@@ -512,6 +512,9 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a) {
     case XmlRpcValue::TypeInt:   {  /* DBG("X->A INT\n"); */ a = (int)v;    }  break;
     case XmlRpcValue::TypeDouble:{  /* DBG("X->A DBL\n"); */ a = (double)v; }  break;
     case XmlRpcValue::TypeString:{  /* DBG("X->A STR\n"); */ a = ((string)v).c_str(); }  break;
+    case XmlRpcValue::TypeBoolean : {  /* DBG("X->A BOL\n"); */ a = (bool)v;  }
+    case XmlRpcValue::TypeInvalid : {  /* DBG("X->A BOL\n"); */ a = AmArg();  }
+      
     case XmlRpcValue::TypeArray: { 
       /* DBG("X->A ARR\n"); */ 
       a.assertArray();
@@ -542,6 +545,15 @@ void XMLRPC2DIServer::xmlrpcval2amarg(XmlRpcValue& v, AmArg& a) {
 void XMLRPC2DIServer::amarg2xmlrpcval(const AmArg& a, 
 				      XmlRpcValue& result) {
   switch (a.getType()) {
+
+  case AmArg::Undef:
+    result = 0; // XmlRpcValue();
+    break;
+  
+  case AmArg::Bool:  
+    result = a.asBool();
+    break;
+
   case AmArg::CStr:  
     //    DBG("a->X CSTR\n");
     result = string(a.asCStr()); break;
