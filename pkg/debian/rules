@@ -19,7 +19,7 @@ export DEB_BUILD_OPTIONS:="$(DEB_BUILD_OPTIONS) nostrip"
 
 PYTHON_MODULES=ivr py_sems conf_auth mailbox pin_collect
 
-EXTRA_APP_MODULES=xmlrpc2di jsonrpc
+EXCLUDED_MODULES=gateway examples mp3
 
 CPPFLAGS += -DHAVE_XMLRPCPP_SSL 
 # for older than lenny add:
