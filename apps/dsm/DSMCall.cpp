@@ -332,31 +332,6 @@ void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status) {
   }
 }
 
-static void varPrintArg(const AmArg& a, map<string, string>& dst, const string& name) {
-  switch (a.getType()) {
-  case AmArg::Undef: dst[name] =  "null"; return;
-  case AmArg::Int: dst[name] =  a.asInt()<0 ? 
-      "-"+int2str(abs(a.asInt())):int2str(abs(a.asInt())); return;
-  case AmArg::Bool:
-     dst[name] = a.asBool()?"true":"false"; return;     
-  case AmArg::Double:
-    dst[name] = double2str(a.asDouble()); return;
-  case AmArg::CStr:
-    dst[name] = a.asCStr(); return;
-  case AmArg::Array:
-    for (size_t i = 0; i < a.size(); i ++)
-      varPrintArg(a.get(i), dst, name+"["+int2str(i)+"]");
-    return;
-  case AmArg::Struct:
-    for (AmArg::ValueStruct::const_iterator it = a.asStruct()->begin();
-	 it != a.asStruct()->end(); it ++) {
-      varPrintArg(it->second, dst, name+"."+it->first);
-    }
-    return;
-  default: dst[name] = "<UNKONWN TYPE>"; return;
-  }
-}
-
 void DSMCall::process(AmEvent* event)
 {
 

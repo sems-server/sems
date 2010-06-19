@@ -29,6 +29,7 @@
 
 #include "DSMElemContainer.h"
 #include "AmSipMsg.h"
+#include "AmArg.h"
 
 class AmSession;
 class DSMSession;
@@ -235,5 +236,6 @@ class DSMStateEngine {
   bool onInvite(const AmSipRequest& req, DSMSession* sess);
 };
 
+extern void varPrintArg(const AmArg& a, map<string, string>& dst, const string& name);
 
 #endif
