@@ -28,11 +28,13 @@
 #include "hash_table.h"
 #include "hash.h"
 
+#include "AmSipHeaders.h"
 #include "sip_parser.h"
 #include "parse_header.h"
 #include "parse_cseq.h"
 #include "parse_via.h"
 #include "parse_from_to.h"
+#include "parse_100rel.h"
 #include "sip_trans.h"
 
 #include "log.h"
@@ -112,14 +114,15 @@ sip_trans* trans_bucket::match_request(sip_msg* msg)
 	    }
 
 	    if(msg->u.request->method != (*it)->msg->u.request->method) {
-		if( (msg->u.request->method == sip_request::ACK) &&
-		    ((*it)->msg->u.request->method == sip_request::INVITE) ) {
-		    
-		    t = match_200_ack(*it,msg);
-		    if(t){
-			break;
-		    }
-		}
+                if((*it)->msg->u.request->method == sip_request::INVITE) {
+                    if(msg->u.request->method == sip_request::ACK) {
+                        if ((t = match_200_ack(*it,msg)))
+                            break;
+                    } else if(msg->u.request->method == sip_request::PRACK) {
+                        if ((t = match_1xx_prack(*it,msg)))
+                            break;
+                    }
+                }
 		
 		continue;
 	    }
@@ -346,6 +349,50 @@ sip_trans* trans_bucket::match_200_ack(sip_trans* t, sip_msg* msg)
 	return NULL;
     
     return t;
+}
+
+sip_trans* trans_bucket::match_1xx_prack(sip_trans* t, sip_msg* msg)
+{
+  /* first, check quickly if lenghts match (From tag, To tag, Call-ID) */
+
+  sip_from_to* from = dynamic_cast<sip_from_to*>(msg->from->p);
+  sip_from_to* t_from = dynamic_cast<sip_from_to*>(t->msg->from->p);
+  if(from->tag.len != t_from->tag.len)
+    return 0;
+
+  sip_from_to* to = dynamic_cast<sip_from_to*>(msg->to->p);
+  if(to->tag.len != t->to_tag.len)
+    return 0;
+
+  if(msg->callid->value.len != t->msg->callid->value.len)
+    return 0;
+
+
+  sip_rack *rack = dynamic_cast<sip_rack *>(msg->rack->p);
+  sip_cseq* t_cseq = dynamic_cast<sip_cseq*>(t->msg->cseq->p);
+  if (rack->cseq != t_cseq->num)
+    return 0;
+
+  if (rack->rseq != t->last_rseq)
+    return 0;
+
+  if (rack->method != t->msg->u.request->method)
+    return 0;
+
+
+  /* numbers fit, try content */
+
+  if(memcmp(from->tag.s,t_from->tag.s,from->tag.len))
+      return NULL;
+
+  if(memcmp(msg->callid->value.s,t->msg->callid->value.s,
+            msg->callid->value.len))
+      return NULL;
+  
+  if(memcmp(to->tag.s,t->to_tag.s,to->tag.len))
+      return NULL;
+  
+  return t;
 }
 
 sip_trans* trans_bucket::add_trans(sip_msg* msg, int ttype)

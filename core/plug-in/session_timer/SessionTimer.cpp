@@ -119,7 +119,7 @@ bool SessionTimer::onSendReply(const AmSipRequest& req,
     
   if (((session_refresher_role==UAC) && (session_refresher==refresh_remote)) 
       || ((session_refresher_role==UAS) && remote_timer_aware))
-    m_hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRED)  "timer"  CRLF;
+    m_hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE)  "timer"  CRLF;
     
   hdrs += m_hdrs;
 

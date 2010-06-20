@@ -19,15 +19,16 @@ class _AmSipMsgInDlg
   string       hdrs;
   string       body;
   unsigned int cseq;
+  unsigned int rseq;
   string       callid;
 
   // transaction ticket from sip stack
   trans_ticket tt;
 
- _AmSipMsgInDlg() : cseq(0) { }
+  _AmSipMsgInDlg() : cseq(0), rseq(0) { }
   virtual ~_AmSipMsgInDlg() { };
 
-  virtual string print() = 0;
+  virtual string print() const = 0;
 };
 
 /** \brief represents a SIP reply */
@@ -45,7 +46,7 @@ class AmSipReply : public _AmSipMsgInDlg
 
  AmSipReply() : code(0), _AmSipMsgInDlg() { }
   ~AmSipReply() { }
-  string print();
+  string print() const;
 };
 
 
@@ -67,7 +68,7 @@ class AmSipRequest : public _AmSipMsgInDlg
  AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }
   
-  string print();
+  string print() const;
 };
 
 string getHeader(const string& hdrs,const string& hdr_name);

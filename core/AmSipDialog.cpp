@@ -254,6 +254,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     break;
 
   case Pending:
+    // TODO [SBGW]: if negative and PRACK, tear down the call (???)
   case Disconnected:
     // only change status of dialog if reply 
     // to INVITE received
@@ -299,6 +300,7 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
   assert(to_ev);
 
   switch(to_ev->type){
+#if 0
   case AmSipTimeoutEvent::no2xxACK:
     DBG("Timeout: missing 2xx-ACK\n");
     if(hdl) hdl->onNo2xxACK(to_ev->cseq);
@@ -308,10 +310,16 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
     DBG("Timeout: missing non-2xx-ACK\n");
     if(hdl) hdl->onNoErrorACK(to_ev->cseq);
     break;
+#else
+  case AmSipTimeoutEvent::noACK:
+    DBG("Timeout: missing ACK\n");
+    if(hdl) hdl->onNoAck(to_ev->cseq);
+    break;
+#endif
 
   case AmSipTimeoutEvent::noPRACK:
-    //TODO
     DBG("Timeout: missing PRACK\n");
+    if(hdl) hdl->onNoPrack(to_ev->req, to_ev->rpl);
     break;
 
   case AmSipTimeoutEvent::_noEv:
@@ -375,8 +383,8 @@ int AmSipDialog::reply(const AmSipRequest& req,
       reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
   }
 
-  if ((req.method!="CANCEL")&&
-      !((req.method=="BYE")&&(code<300)))
+  if (code < 300 && req.method != "CANCEL" && req.method != "BYE")
+    /* if 300<=code<400, explicit contact setting should be done */
     reply.contact = getContactHdr();
 
   reply.content_type = content_type;
@@ -489,22 +497,19 @@ int AmSipDialog::invite(const string& hdrs,
   }	
 }
 
-int AmSipDialog::update(const string& hdrs)
+int AmSipDialog::update(const string &cont_type, 
+                        const string &body, 
+                        const string &hdrs)
 {
   switch(status){
   case Connected:
-    return sendRequest("UPDATE", "", "", hdrs);
-  case Disconnecting:
   case Pending:
-    DBG("update(): we are not yet connected."
-	"(status=%i). do nothing!\n",status);
+    return sendRequest(SIP_METH_UPDATE, cont_type, body, hdrs);
 
-    return 0;
   default:
-    DBG("update(): we are not connected "
-	"(status=%i). do nothing!\n",status);
-    return 0;
+    DBG("update(): dialog not connected (status=%i). do nothing!\n",status);
   }	
+  return -1;
 }
 
 int AmSipDialog::refer(const string& refer_to,
@@ -565,6 +570,25 @@ int AmSipDialog::transfer(const string& target)
       "(status=%i). do nothing!\n",status);
     
   return 0;
+}
+
+int AmSipDialog::prack(const string &cont_type, 
+                       const string &body, 
+                       const string &hdrs)
+{
+  switch(status) {
+    case Pending:
+      break;
+    case Disconnected:
+    case Connected:
+    case Disconnecting:
+      ERROR("can not send PRACK while dialog is in state '%d'.\n", status);
+      return -1;
+    default:
+      ERROR("BUG: unexpected dialog state '%d'.\n", status);
+      return -1;
+  }
+  return sendRequest(SIP_METH_PRACK, cont_type, body, hdrs);
 }
 
 int AmSipDialog::cancel()

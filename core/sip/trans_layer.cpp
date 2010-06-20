@@ -30,6 +30,7 @@
 #include "hash_table.h"
 #include "parse_cseq.h"
 #include "parse_from_to.h"
+#include "parse_100rel.h"
 #include "sip_trans.h"
 #include "msg_fline.h"
 #include "msg_hdrs.h"
@@ -44,6 +45,7 @@
 #include "AmUtils.h"
 #include "AmSipMsg.h"
 #include "AmConfig.h"
+#include "AmSipEvent.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -886,10 +888,6 @@ int trans_layer::cancel(trans_ticket* tt)
 	// we get an ACK or a timeout (STIMER_H)...
 	bucket->unlock();
 	return 0;
-	
-    case TS_PROCEEDING:
-	// continue with CANCEL request
-	break;
     }
 
     cstring cancel_str("CANCEL");
@@ -950,7 +948,7 @@ int trans_layer::cancel(trans_ticket* tt)
 
     memcpy(&p_msg->remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
 
-    DBG("Sending to %s:%i <%.*s>\n",
+    DBG("Sending to %s:%i:\n<%.*s>\n",
 	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
@@ -1014,7 +1012,22 @@ void trans_layer::received_msg(sip_msg* msg)
     }
     
     assert(msg->callid && get_cseq(msg));
-    unsigned int  h = hash(msg->callid->value, get_cseq(msg)->num_str);
+#if 0
+    unsigned int  h;
+    if (msg->rack) { /* it's a PRACK */
+        h = hash(msg->callid->value, get_rack(msg)->cseq_str);
+        DBG("### RACK: <%.*s> <%.*s>\n", 
+            msg->callid->value.len, msg->callid->value.s,
+            get_rack(msg)->cseq_str.len, get_rack(msg)->cseq_str.s);
+    } else {
+        h = hash(msg->callid->value, get_cseq(msg)->num_str);
+        DBG("### XXXX: <%.*s> <%.*s>\n", 
+            msg->callid->value.len, msg->callid->value.s,
+            get_cseq(msg)->num_str.len, get_cseq(msg)->num_str.s);
+    }
+#else
+    unsigned int h = hash(msg->callid->value, get_cseq(msg)->num_str);
+#endif
     trans_bucket* bucket = get_trans_bucket(h);
     sip_trans* t = NULL;
 
@@ -1060,6 +1073,7 @@ void trans_layer::received_msg(sip_msg* msg)
 	}
 	else {
 
+#if 0
 	    string t_id;
 	    if(msg->u.request->method == sip_request::ACK){
 		
@@ -1082,6 +1096,48 @@ void trans_layer::received_msg(sip_msg* msg)
 		// owned by the new transaction
 		return;
 	    }
+#else
+             unsigned inv_h;
+             trans_bucket* inv_bucket;
+             sip_trans* inv_t;
+ 
+             switch (msg->u.request->method) {
+                 case sip_request::ACK:
+                     // non-2xx ACK??? drop!
+                     break;
+ 
+                 case sip_request::PRACK:
+                     bucket->unlock();
+                     /* match INVITE transaction, cool off the 1xx timers */
+                     inv_h = hash(msg->callid->value, get_rack(msg)->cseq_str);
+                     inv_bucket = get_trans_bucket(inv_h);
+                     inv_bucket->lock();
+                     if((inv_t = inv_bucket->match_request(msg)) != NULL) {
+                         assert(msg->u.request->method != 
+                             inv_t->msg->u.request->method);
+                         err = update_uas_request(inv_bucket,inv_t,msg);
+                         DBG("update_uas_request(bucket,t,msg) = %i\n",err);
+                     }
+                     inv_bucket->unlock();
+                     bucket->lock();
+                     // no break
+ 
+                 default:
+                     // New transaction
+                     t = bucket->add_trans(msg, TT_UAS);
+ 
+                     bucket->unlock();
+ 
+                     //  let's pass the request to
+                     //  the UA. 
+                     assert(ua);
+                     ua->handle_sip_request(trans_ticket(t,bucket),msg);
+ 
+                     // forget the msg: it will be
+                     // owned by the new transaction
+                     return;
+             }
+#endif
 	}
 	break;
     
@@ -1387,7 +1443,15 @@ int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_
     }
     else {
 	// provisional reply
-	t->state = TS_PROCEEDING;
+        if (t->last_rseq) {
+            t->state = TS_PROCEEDING_REL;
+            // see above notes, for 2xx replies; the same applies for
+            // 1xx/PRACK
+	    t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
+	    t->reset_timer(STIMER_H,H_TIMER,bucket->get_id());
+        } else {
+	    t->state = TS_PROCEEDING;
+        }
     }
 	
     return t->state;
@@ -1395,12 +1459,19 @@ int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_
 
 int trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
 {
-    if(msg->u.request->method != sip_request::ACK){
-	ERROR("Bug? Recvd non-ACK request for existing UAS transaction!?\n");
+    if(msg->u.request->method != sip_request::ACK &&
+            msg->u.request->method != sip_request::PRACK){
+	ERROR("Bug? Recvd non PR-/ACK request for existing UAS transact.!?\n");
 	return -1;
     }
 	
     switch(t->state){
+
+    case TS_PROCEEDING_REL:
+        // stop retransmissions
+	t->clear_timer(STIMER_G);
+	t->clear_timer(STIMER_H);
+        return t->state;
 	    
     case TS_COMPLETED:
 	t->state = TS_CONFIRMED;
@@ -1542,6 +1613,37 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	}
 	break;
 
+    case STIMER_H:  // PENDING_REL, Completed: -> Terminated
+        if(tr->type == TT_UAS) { // TODO: can timer _H fire for TT_UAC??
+          bool handled;
+
+          switch(tr->state) {
+          case TS_PROCEEDING_REL: // missing PRACK for rel-1xx
+            assert(tr->retr_len);
+            tr->clear_timer(type); // stop retransmissions
+            //signal timeout to UA
+            ua->handle_reply_timeout(AmSipTimeoutEvent::noPRACK, tr, bucket);
+                //tr->msg, tr->retr_buf, tr->retr_len); //signal timeout to UA
+            handled = true; // let the UA [3..6]xx, if it wishes so
+            break;
+
+          case TS_TERMINATED_200: // missing ACK for (locally replied) 200
+          case TS_COMPLETED: // missing ACK for (locally replied) [3..6]xx
+            tr->clear_timer(type);
+            ////ua->timer_expired(tr,STIMER_H);
+            ua->handle_reply_timeout(AmSipTimeoutEvent::noACK, tr);
+            bucket->remove_trans(tr);
+            handled = true;
+            break;
+
+          default: 
+            handled = false;
+          }
+
+          if (handled)
+            break;
+        }
+
     case STIMER_D:  // Completed: -> Terminated
     case STIMER_K:  // Completed: terminate transaction
     case STIMER_J:  // Completed: -> Terminated
@@ -1553,13 +1655,6 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	//    else, send ACK & BYE.
 
 	tr->clear_timer(type);
-	bucket->remove_trans(tr);
-	break;
-
-    case STIMER_H:  // Completed: -> Terminated
-
-	tr->clear_timer(type);
-	ua->timer_expired(tr,STIMER_H);
 	bucket->remove_trans(tr);
 	break;
 

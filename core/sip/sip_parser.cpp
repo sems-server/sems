@@ -32,18 +32,20 @@
 #include "parse_via.h"
 #include "parse_cseq.h"
 #include "parse_from_to.h"
+#include "parse_100rel.h"
 
 #include "log.h"
 
 #include <memory>
 using std::auto_ptr;
 
-sip_msg::sip_msg(char* msg_buf, int msg_len)
+sip_msg::sip_msg(const char* msg_buf, int msg_len)
     : buf(NULL),
       hdrs(),
       to(NULL),
       from(NULL),
       cseq(NULL),
+      rack(NULL),
       via1(NULL),via_p1(NULL),
       callid(NULL),
       contacts(),
@@ -71,6 +73,7 @@ sip_msg::sip_msg()
       to(NULL),
       from(NULL),
       cseq(NULL),
+      rack(NULL),
       via1(NULL),via_p1(NULL),
       callid(NULL),
       contacts(),
@@ -130,6 +133,9 @@ const char* CANCELm = "CANCEL";
 const char* REGISTERm = "REGISTER";
 #define REGISTER_len 8
 
+const char *PRACKm = "PRACK";
+#define PRACK_len 5
+
 
 int parse_method(int* method, const char* beg, int len)
 {
@@ -187,6 +193,11 @@ int parse_method(int* method, const char* beg, int len)
 	    *method = sip_request::REGISTER;
 	}
 	break;
+
+    case PRACK_len:
+        if(!memcmp(c, PRACKm, PRACK_len))
+            *method = sip_request::PRACK;
+        break;
     }
     
     // other method
@@ -489,6 +500,16 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
     else {
 	err_msg = (char*)"could not parse To hf";
 	return MALFORMED_SIP_MSG;
+    }
+
+    if (msg->rack) {
+        auto_ptr<sip_rack> rack(new sip_rack());
+        if (parse_rack(rack.get(), msg->rack->value.s, msg->rack->value.len)) {
+            msg->rack->p = rack.release();
+        } else {
+            err_msg = (char *)"could not parse RAck hf";
+            return MALFORMED_SIP_MSG;
+        }
     }
 
     return 0;

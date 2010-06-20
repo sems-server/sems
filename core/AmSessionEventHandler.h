@@ -67,6 +67,8 @@ public:
 
   virtual bool onSipRequest(const AmSipRequest&);
   virtual bool onSipReply(const AmSipReply&);
+  virtual bool onSipReqTimeout(const AmSipRequest &);
+  virtual bool onSipRplTimeout(const AmSipRequest &, const AmSipReply &);
 
   virtual bool onSendRequest(const string& method, 
 			     const string& content_type,

@@ -66,6 +66,7 @@ private:
     trans_list::iterator find_trans(sip_trans* t);
 
     sip_trans* match_200_ack(sip_trans* t,sip_msg* msg);
+    sip_trans* match_1xx_prack(sip_trans* t,sip_msg* msg);
 
 public:
 

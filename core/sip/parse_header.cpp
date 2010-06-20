@@ -29,6 +29,7 @@
 #include "parse_header.h"
 #include "parse_common.h"
 #include "sip_parser.h"
+#include "AmSipHeaders.h"
 
 #include "log.h"
 
@@ -46,9 +47,12 @@ using std::auto_ptr;
 #define VIA_len            3
 #define FROM_len           4
 #define CSEQ_len           4
+#define RSEQ_len           SIP_HDR_LEN(SIP_HDR_RSEQ) // 4
+#define RACK_len           SIP_HDR_LEN(SIP_HDR_RACK) // 4
 #define ROUTE_len          5
 #define CALL_ID_len        7
 #define CONTACT_len        7
+#define REQUIRE_len        SIP_HDR_LEN(SIP_HDR_REQUIRE) // 7
 #define CONTENT_TYPE_len   12
 #define RECORD_ROUTE_len   12
 #define CONTENT_LENGTH_len 14
@@ -162,6 +166,8 @@ static int parse_header_type(sip_msg* msg, sip_header* h)
 	break;
 
     //case FROM_len:
+    //case RSEQ_len:
+    //case RACK_len:
     case CSEQ_len:
 	switch(h->name.s[0]){
 	case 'f':
@@ -178,9 +184,25 @@ static int parse_header_type(sip_msg* msg, sip_header* h)
 		msg->cseq = h;
 	    }
 	    break;
-	default:
-	    h->type = sip_header::H_OTHER;
-	    break;
+        case 'r':
+        case 'R':
+            switch(h->name.s[1]) {
+                case 'S':
+                    if(!lower_cmp(h->name.s+2, SIP_HDR_RSEQ+2,
+                            SIP_HDR_LEN(SIP_HDR_RSEQ)-2))
+                        h->type = sip_header::H_RSEQ;
+                    break;
+                case 'A':
+                    if(!lower_cmp(h->name.s+2, SIP_HDR_RACK+2, 
+                            SIP_HDR_LEN(SIP_HDR_RACK)-2)) {
+                        h->type = sip_header::H_RACK;
+                        if (msg->type == SIP_REQUEST && 
+                                msg->u.request->method == sip_request::PRACK)
+                            msg->rack = h;
+                    }
+                    break;
+            }
+            break;
 	}
 	break;
 
@@ -192,6 +214,7 @@ static int parse_header_type(sip_msg* msg, sip_header* h)
 	break;
 
     //case CALL_ID_len:
+    //case REQUIRE_len:
     case CONTACT_len:
 	switch(h->name.s[0]){
 	case 'c':
@@ -218,6 +241,12 @@ static int parse_header_type(sip_msg* msg, sip_header* h)
 		break;
 	    }
 	    break;
+        case 'r':
+        case 'R':
+            if (! lower_cmp(h->name.s+1, SIP_HDR_REQUIRE+1,
+                SIP_HDR_LEN(SIP_HDR_REQUIRE)-1))
+              h->type = sip_header::H_REQUIRE;
+            break;
 
 	default:
 	    h->type = sip_header::H_OTHER;

@@ -51,6 +51,7 @@ enum {
     TS_TRYING=1,   // UAC:!INV;     UAS:!INV
     TS_CALLING,    // UAC:INV
     TS_PROCEEDING, // UAC:INV,!INV; UAS:INV,!INV
+    TS_PROCEEDING_REL, // UAS:INV
     TS_COMPLETED,  // UAC:INV,!INV; UAS:INV,!INV
     TS_CONFIRMED,  //               UAS:INV
     TS_TERMINATED_200,
@@ -124,8 +125,9 @@ class sip_trans
     cstring to_tag;
 
     /** reply code of last
-	sent/received reply */
+        sent/received reply */
     int reply_status;
+
 
     /** Transaction state */
     int state;
@@ -139,6 +141,9 @@ class sip_trans
 
     /** Length of the retransmission buffer */
     int   retr_len;
+
+    /** used by UAS only; keeps RSeq of last sent reliable 1xx */
+    unsigned last_rseq;
 
     /** Destination for retransmissions */
     sockaddr_storage retr_addr;

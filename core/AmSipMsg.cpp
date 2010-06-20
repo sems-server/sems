@@ -129,7 +129,7 @@ bool removeHeader(string& hdrs, const string& hdr_name) {
       buf += string(name) + ":" + "[" + member + "]" + ";";	\
   } while (0)
 
-string AmSipRequest::print()
+string AmSipRequest::print() const
 {
   string buf;
 
@@ -155,7 +155,7 @@ string AmSipRequest::print()
   return buf;
 }
 
-string AmSipReply::print()
+string AmSipReply::print() const
 {
   string buf;
 

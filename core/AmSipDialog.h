@@ -96,11 +96,19 @@ class AmSipDialogEventHandler
   /** Hook called when a local INVITE request has been replied with 2xx */
   virtual void onInvite2xx(const AmSipReply& reply)=0;
 
+#if 0
   /** Hook called when a UAS INVITE transaction did not receive a 2xx-ACK */
   virtual void onNo2xxACK(unsigned int cseq)=0;
 
   /** Hook called when a UAS INVITE transaction did not receive a non-2xx-ACK */
   virtual void onNoErrorACK(unsigned int cseq)=0;
+#else
+  /** Hook called when a UAS INVITE transaction did not receive the ACK */
+  virtual void onNoAck(unsigned int)=0;
+
+  /** Hook called when a UAS INVITE transaction did not receive the PRACK */
+  virtual void onNoPrack(const AmSipRequest &, const AmSipReply &)=0;
+#endif
 
   virtual ~AmSipDialogEventHandler() {};
 };
@@ -152,6 +160,7 @@ class AmSipDialog
   string outbound_proxy;
   bool   force_outbound_proxy;
 
+  int rseq;          // RSeq for next request (NOTE: keep it signed!)
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
@@ -193,7 +202,12 @@ class AmSipDialog
     
   int bye(const string& hdrs = "");
   int cancel();
-  int update(const string& hdrs);
+  int prack(const string &cont_type, 
+            const string &body, 
+            const string &hdrs);
+  int update(const string &cont_type, 
+            const string &body, 
+            const string &hdrs);
   int reinvite(const string& hdrs,  
 	       const string& content_type,
 	       const string& body);

@@ -135,6 +135,8 @@ struct AmConfig
   static unsigned int OptionsSessionLimitErrCode;
   static string OptionsSessionLimitErrReason;
 
+  static unsigned char rel100;
+
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
   static unsigned int DeadRtpTime;
 

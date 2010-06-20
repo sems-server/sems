@@ -61,6 +61,14 @@ class AmDtmfEvent;
 #define AM_AUDIO_IN  0
 #define AM_AUDIO_OUT 1
 
+
+/* maximum number of reliable 1xx supported; needed for marking first 1xx
+ * (which can not be followed by subsequent ones w/o being PRACKed), as
+ * opposed to having another value storing it's value. */
+#define MAX_RSEQ_BITS           24
+#define LOC_RSEQ_ORDER(_rseq)   (_rseq & ((1 << MAX_RSEQ_BITS) - 1))
+
+
 /**
  * \brief Implements the default behavior of one session
  * 
@@ -156,6 +164,12 @@ protected:
 
   /** do accept early session? */
   bool accept_early_session;
+  /** enable the reliability of provisional replies? */
+  unsigned char reliable_1xx;
+#define REL100_DISABLED         0
+#define REL100_SUPPORTED        1
+#define REL100_REQUIRE          2
+#define REL100_MAX              REL100_REQUIRE
 
   vector<AmSessionEventHandler*> ev_handlers;
 
@@ -329,11 +343,15 @@ public:
 			 string* sdp_reply);
 
   /** send an UPDATE in the session */
-  virtual void sendUpdate();
+  void sendUpdate(string &cont_type, string &body, string &hdrs);
   /** send a Re-INVITE (if connected) */
   virtual void sendReinvite(bool updateSDP = true, const string& headers = "");
   /** send an INVITE */
   virtual int sendInvite(const string& headers = "");
+  /** send a PRACK request */
+  void sendPrack(const string &sdp_offer, 
+                 const string &rseq_val, 
+                 const string &cseq_val);
 
   /** set the session on/off hold */
   virtual void setOnHold(bool hold);
@@ -419,6 +437,14 @@ public:
   virtual void onCancel(){}
 
   /**
+   * onPrack is called when a PRACK request is received for the session.
+   * The sequencing correctness (RAck fits) is already checked.
+   * Should be overridden if SDP offer is expected with it.
+   * @param cnt order of which 1xx this PRACK is for 
+   */
+  virtual void onPrack(const AmSipRequest& req, unsigned cnt);
+
+  /**
    * onSessionStart will be called after call setup.
    *
    * Throw AmSession::Exception if you want to 
@@ -464,14 +490,25 @@ public:
   virtual void onSipRequest(const AmSipRequest& req);
   /** Entry point for SIP Replies   */
   virtual void onSipReply(const AmSipReply& reply, int old_dlg_status);
+#if 0
+  /** There was a timeout receiving a reply for the given SIP request */
+  virtual void onSipReqTimeout(const AmSipRequest &req);
+  /** There was a timeout receiving a request (PR-/ACK) for given SIP reply */
+  virtual void onSipRplTimeout(const AmSipRequest &req, const AmSipReply &rpl);
+#endif
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);
   
+#if 0
   /** missing 2xx-ACK */
   virtual void onNo2xxACK(unsigned int cseq);
   /** missing non-2xx-ACK */
   virtual void onNoErrorACK(unsigned int cseq);
+#else
+  virtual void onNoAck(unsigned int cseq);
+  virtual void onNoPrack(const AmSipRequest &req, const AmSipReply &rpl);
+#endif
 
   /**
    * Entry point for Audio events
@@ -518,6 +555,8 @@ public:
 
   // The IP address to put as c= in SDP bodies and to use for Contact:.
   string advertisedIP();
+
+  string sid4dbg();
 };
 
 inline AmRtpAudio* AmSession::RTPStream() {

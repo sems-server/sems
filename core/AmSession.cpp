@@ -36,6 +36,7 @@
 #include "AmMediaProcessor.h"
 #include "AmDtmfDetector.h"
 #include "AmPlayoutBuffer.h"
+#include "AmSipHeaders.h"
 
 #ifdef WITH_ZRTP
 #include "AmZRTP.h"
@@ -48,6 +49,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/time.h>
+
 
 volatile unsigned int AmSession::session_num = 0;
 AmMutex AmSession::session_num_mut;
@@ -65,6 +67,7 @@ AmSession::AmSession()
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
+    reliable_1xx(AmConfig::rel100),
     processing_status(SESSION_PROCESSING_EVENTS)
 #ifdef WITH_ZRTP
   ,  zrtp_session(NULL), zrtp_audio(NULL), enable_zrtp(true)
@@ -76,6 +79,8 @@ AmSession::AmSession()
 {
   use_local_audio[AM_AUDIO_IN] = false;
   use_local_audio[AM_AUDIO_OUT] = false;
+  if (reliable_1xx)
+    dlg.rseq = 0; //???
 }
 
 AmSession::~AmSession()
@@ -668,8 +673,41 @@ void AmSession::onSipRequest(const AmSipRequest& req)
   CALL_EVENT_H(onSipRequest,req);
 
   DBG("onSipRequest: method = %s\n",req.method.c_str());
-  if(req.method == "INVITE"){
-	
+  if(req.method == SIP_METH_INVITE){
+
+    switch(reliable_1xx) {
+      case REL100_SUPPORTED: /* if support is on, enforce if asked by UAC */
+        if (key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED), 
+              SIP_EXT_100REL) ||
+            key_in_list(getHeader(req.hdrs, SIP_HDR_REQUIRE), 
+              SIP_EXT_100REL)) {
+          reliable_1xx = REL100_REQUIRE;
+          DBG(SIP_EXT_100REL " now active.\n");
+        }
+        break;
+      case REL100_REQUIRE: /* if support is required, reject if UAC doesn't */
+        if (! (key_in_list(getHeader(req.hdrs,SIP_HDR_SUPPORTED), 
+              SIP_EXT_100REL) ||
+            key_in_list(getHeader(req.hdrs, SIP_HDR_REQUIRE), 
+              SIP_EXT_100REL))) {
+          ERROR("'" SIP_EXT_100REL "' extension required, but not advertised"
+            " by peer.\n");
+          dlg.reply(req, 421, "Extension Required", "", "",
+              SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF);
+          if (dlg.getStatus() < AmSipDialog::Connected)
+            setStopped();
+          return;
+        }
+      default:
+        ERROR("BUG: unexpected value `%d' for '" SIP_EXT_100REL "' switch.", 
+          reliable_1xx);
+#ifndef NDEBUG
+        abort();
+#endif
+      case 0: /* support disabled */
+        break;
+    }
+
     onInvite(req);
 
     if(detached.get() && !getStopped()){
@@ -702,9 +740,25 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     } else {
       dlg.reply(req, 415, "Unsupported Media Type");
     }
-  } 
-}
+  } else if( req.method == SIP_METH_PRACK ) {
+    if (reliable_1xx != REL100_REQUIRE) {
+      WARN("unexpected PRACK received while " SIP_EXT_100REL " not active.\n");
+      return;
+    }
 
+    if ((1<<MAX_RSEQ_BITS)<=req.rseq && req.rseq<=(unsigned)abs(dlg.rseq)) {
+      // call interface function
+      onPrack(req, LOC_RSEQ_ORDER(req.rseq));
+      if (req.rseq == (unsigned)-dlg.rseq) {
+        dlg.rseq = -dlg.rseq; // confirmed
+        DBG("latest RSeq (%u) confirmed.\n", dlg.rseq);
+      }
+    } else {
+      WARN("no matching RAck value in PRACK (%s).\n", req.hdrs.c_str());
+      return;
+    }
+  }
+}
 
 void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
@@ -755,7 +809,7 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	break;
 	
       case AmSipDialog::Pending:
-	
+
 	switch(reply.code){
 	  // todo: 180 with body (remote rbt)
 	case 180: { 
@@ -793,10 +847,53 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	} break;
 	default:  break;// continue waiting.
 	}
-      }
-    }
-  }
+
+        // FIXME: should this stay under negotiate_onreply???
+        if (100 < reply.code && reply.code < 200 && 
+            reply.method == SIP_METH_INVITE) {
+          switch (reliable_1xx) {
+          case REL100_SUPPORTED:
+            if (key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
+                SIP_EXT_100REL))
+              reliable_1xx = REL100_REQUIRE;
+            else
+              break;
+
+          case REL100_REQUIRE: {
+            if (! reply.rseq) {
+              ERROR("no RSeq value (or unsupported 0) in reliable 1xx.\n");
+              dlg.cancel();
+              setStopped();
+              break;
+            }
+            string cseq_val = int2str(reply.cseq) + " " + reply.method;
+            sendPrack(/*rcvd sdp_offr [TODO]*/"",int2str(reply.rseq),cseq_val);
+            DBG(SIP_EXT_100REL " now active.\n");
+          }
+          break;
+
+          case 0:
+            // 100rel support disabled
+            break;
+          default:
+            ERROR("BUG: unexpected value `%d' for " SIP_EXT_100REL " switch.", 
+                reliable_1xx);
+#ifndef NDEBUG
+            abort();
+#endif
+          } // switch reliable 1xx
+        } else if (300<=reply.code && reliable_1xx && 
+            reply.method==SIP_METH_PRACK) {
+          // if PRACK fails, tear down session
+          dlg.cancel();
+          setStopped();
+        } // if 1xx && INVITE || failed && PRACK
+      } // switch dlg status
+    } // status < Connected
+  } //if negotiate_onreply
 }
+
+
 
 void AmSession::onInvite2xx(const AmSipReply& reply)
 {
@@ -804,6 +901,7 @@ void AmSession::onInvite2xx(const AmSipReply& reply)
   if(t) dlg.send_200_ack(*t);
 }
 
+#if 0
 void AmSession::onNo2xxACK(unsigned int cseq)
 {
   dlg.bye();
@@ -814,6 +912,29 @@ void AmSession::onNoErrorACK(unsigned int cseq)
 {
   setStopped();
 }
+#else
+void AmSession::onNoAck(unsigned int cseq)
+{
+  if (dlg.getStatus() == AmSipDialog::Connected)
+    dlg.bye();
+  setStopped();
+}
+
+void AmSession::onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)
+{
+  INFO("reply <%s> timed out.\n", rpl.print().c_str());
+  if (100 < rpl.code && rpl.code < 200 && reliable_1xx == REL100_REQUIRE &&
+      (unsigned)dlg.rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
+    INFO("reliable %d reply timed out; rejecting request.\n", rpl.code);
+    dlg.reply(req, 504, "Server Time-out");
+    if (dlg.getStatus() < AmSipDialog::Connected)
+      setStopped();
+  } else {
+    WARN("reply timed-out, but not reliable.\n"); // debugging
+  }
+}
+
+#endif
 
 void AmSession::onAudioEvent(AmAudioEvent* audio_ev)
 {
@@ -842,6 +963,12 @@ void AmSession::onInvite(const AmSipRequest& req)
 void AmSession::onBye(const AmSipRequest& req)
 {
   setStopped();
+}
+
+void AmSession::onPrack(const AmSipRequest& req, unsigned cnt)
+{
+  DBG("handling #%u PRACK.\n", cnt);
+  dlg.reply(req, 200, "OK");
 }
 
 int AmSession::acceptAudio(const string& body,
@@ -906,6 +1033,47 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
 			    const string& reason, const string& content_type,
 			    const string& body, string& hdrs, int flags)
 {
+  if (req.method == SIP_METH_INVITE) {
+    if (100 < code && code < 200) {
+      switch (reliable_1xx) {
+        case REL100_SUPPORTED:
+          hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+          break;
+        case REL100_REQUIRE:
+          // add Require HF
+          hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+          // add RSeq HF
+#ifndef NDEBUG
+          if ((abs(dlg.rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 
+              ((1 << MAX_RSEQ_BITS) - 1)) {
+            ERROR("CRITICAL: RSeq value too high: increase MAX_RSEQ_BITS "
+              "(now %d) and recompile.\n", MAX_RSEQ_BITS);
+            abort();
+          }
+#endif
+          if (dlg.rseq < 0) { // RSeq not yet PRACKed
+            // refuse subsequent 1xx if first isn't yet PRACKed
+            if ((((unsigned)-dlg.rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 0)
+              throw AmSession::Exception(491, "last reliable 1xx not yet "
+                  "PRACKed");
+            dlg.rseq --;
+          } else if (! dlg.rseq) { // only init rseq if 1xx is used
+            unsigned rseq_1st = (get_random() + 1) << MAX_RSEQ_BITS;
+            rseq_1st &= 0x7fffffff;
+            dlg.rseq = -((signed)rseq_1st);
+          } else {
+            dlg.rseq = -(++dlg.rseq);
+          }
+          // FIXME: code above is not re-entrant; should it actually be???
+          hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(-dlg.rseq) + CRLF;
+          break;
+      }
+    } else if (code < 300 && reliable_1xx == REL100_REQUIRE) {
+      if (dlg.rseq < 0) // reliable 1xx is pending
+        throw AmSession::Exception(491, "last reliable 1xx not yet PRACKed");
+    }
+  }
+
   CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs,flags);
 }
 
@@ -915,9 +1083,47 @@ void AmSession::onRtpTimeout()
   setStopped();
 }
 
-void AmSession::sendUpdate() 
+void AmSession::sendUpdate(string &cont_type, string &body, string &hdrs)
 {
-  dlg.update("");
+  dlg.update(cont_type, body, hdrs);
+}
+
+void AmSession::sendPrack(const string &sdp_offer, 
+                          const string &rseq_val, 
+                          const string &cseq_val)
+{
+  string hdrs = "RAck: " + rseq_val + " " + cseq_val + "\r\n";
+
+  // TODO: digest an answer based on the sdp_offer
+
+  // TODO: should't cseq&rseq be handled in dialog, entirely?!?!
+  if (dlg.prack(/*cont. type*/"", /*body*/"", hdrs) < 0)
+    ERROR("failed to send PRACK request in session '%s'.\n",sid4dbg().c_str());
+}
+
+string AmSession::sid4dbg()
+{
+  string dbg;
+  dbg = dlg.callid + "/" + dlg.local_tag + "/" + dlg.remote_tag + "/" + 
+      int2str(RTPStream()->getLocalPort()) + "/" + 
+      RTPStream()->getRHost() + ":" + int2str(RTPStream()->getRPort());
+  return dbg;
+}
+
+static inline string get_100rel_hdr(unsigned char reliable_1xx)
+{
+  switch(reliable_1xx) {
+    case REL100_SUPPORTED: 
+      return SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+    case REL100_REQUIRE: 
+      return SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+    default:
+      ERROR("BUG: unexpected reliability switch value of '%d'.\n",
+          reliable_1xx);
+    case 0:
+      break;
+  }
+  return "";
 }
 
 void AmSession::sendReinvite(bool updateSDP, const string& headers) 
@@ -926,9 +1132,10 @@ void AmSession::sendReinvite(bool updateSDP, const string& headers)
     RTPStream()->setLocalIP(AmConfig::LocalIP);
     string sdp_body;
     sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-    dlg.reinvite(headers, "application/sdp", sdp_body);
+    dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "application/sdp",
+        sdp_body);
   } else {
-    dlg.reinvite(headers, "", "");
+    dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "", "");
   }
 }
 
@@ -943,7 +1150,8 @@ int AmSession::sendInvite(const string& headers)
   // Generate SDP.
   string sdp_body;
   sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-  return dlg.invite(headers, "application/sdp", sdp_body);
+  return dlg.invite(headers + get_100rel_hdr(reliable_1xx), "application/sdp",
+      sdp_body);
 }
 
 void AmSession::setOnHold(bool hold)

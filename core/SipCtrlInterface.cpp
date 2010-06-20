@@ -28,12 +28,15 @@
 
 #include "AmUtils.h"
 #include "AmSipMsg.h"
+#include "AmSipHeaders.h"
 
 #include "sip/trans_layer.h"
 #include "sip/sip_parser.h"
 #include "sip/parse_header.h"
 #include "sip/parse_from_to.h"
 #include "sip/parse_cseq.h"
+#include "sip/parse_extensions.h"
+#include "sip/parse_100rel.h"
 #include "sip/hash_table.h"
 #include "sip/sip_trans.h"
 #include "sip/wheeltimer.h"
@@ -300,7 +303,50 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	}
     }
 
-    
+
+    /* check if we need to store RSeq. */
+    // FIXME: shouldn't the global "100rel==on?" check be present here??
+    if(100 < rep.code && rep.code < 200 && rep.method == SIP_METH_INVITE) {
+        unsigned ext = 0;
+        unsigned rseq = 0;
+        for(list<sip_header*>::iterator it = msg.hdrs.begin();
+                !(ext && rseq) && it != msg.hdrs.end(); ++it) {
+            // check if there's a Require field containing 100rel; if there
+            // is, look for RSeq and store it's value in transaction;
+            DBG("HT:%d, ext:%d, rseq:%d.\n", (*it)->type, ext, rseq);
+            switch ((*it)->type) {
+            case sip_header::H_REQUIRE:
+                if (ext)
+                    // there was alrady a(nother?) Require HF
+                    continue;
+                if(!parse_extensions(&ext, (*it)->value.s, (*it)->value.len)) {
+                    ERROR("failed to parse(own?)'" SIP_HDR_REQUIRE "' hdr.\n");
+                    continue;
+                }
+                if (rseq) { // our RSeq's are never 0
+                    rep.tt._t->last_rseq = rseq;
+                    continue; // the end.
+                }
+                break;
+
+            case sip_header::H_RSEQ:
+                if (rseq) {
+                    ERROR("multiple '" SIP_HDR_RSEQ "' headers in reply.\n");
+                    continue;
+                }
+                if (! parse_rseq(&rseq, (*it)->value.s, (*it)->value.len)) {
+                    ERROR("failed to parse (own?) '" SIP_HDR_RSEQ "' hdr.\n");
+                    continue;
+                }
+                if (ext) {
+                    rep.tt._t->last_rseq = rseq;
+                    continue; // the end.
+                }
+            }
+        }
+    }
+
+
     unsigned int hdrs_len = copy_hdrs_len(msg.hdrs);
 
     if(!rep.body.empty()) {
@@ -331,17 +377,10 @@ int SipCtrlInterface::send(const AmSipReply &rep)
     return ret;
 }
 
-#define DBG_PARAM(p)\
-    DBG("%s = <%s>\n",#p,p.c_str());
 
-void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
+inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg, 
+    AmSipRequest &req)
 {
-    assert(msg);
-    assert(msg->from && msg->from->p);
-    assert(msg->to && msg->to->p);
-    
-    AmSipRequest req;
-    
     req.cmd      = "sems";
     req.method   = c2stlstr(msg->u.request->method_str);
     req.user     = c2stlstr(msg->u.request->ruri.user);
@@ -370,7 +409,7 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 	}
     }
     else {
-	if (req.method == "INVITE") {
+	if (req.method == SIP_METH_INVITE) {
 	    WARN("Request has no contact header\n");
 	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
 	}
@@ -393,20 +432,103 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
     req.cseq     = get_cseq(msg)->num;
     req.body     = c2stlstr(msg->body);
 
-    req.tt = tt;
+    if (msg->rack)
+        req.rseq = get_rack(msg)->rseq;
 
     if (msg->content_type)
  	req.content_type = c2stlstr(msg->content_type->value);
 
     prepare_routes_uas(msg->record_route, req.route);
 	
-    for (list<sip_header*>::iterator it = msg->hdrs.begin(); 
+    for (list<sip_header *>::const_iterator it = msg->hdrs.begin(); 
 	 it != msg->hdrs.end(); ++it) {
-	if((*it)->type == sip_header::H_OTHER){
+	if((*it)->type == sip_header::H_OTHER || 
+                (*it)->type == sip_header::H_REQUIRE){
 	    req.hdrs += c2stlstr((*it)->name) + ": " 
-		+ c2stlstr((*it)->value) + "\r\n";
+		+ c2stlstr((*it)->value) + CRLF;
 	}
     }
+}
+
+inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
+{
+    reply.content_type = msg->content_type ? c2stlstr(msg->content_type->value): "";
+
+    reply.body = msg->body.len ? c2stlstr(msg->body) : "";
+    reply.cseq = get_cseq(msg)->num;
+    reply.method = c2stlstr(get_cseq(msg)->method_str);
+
+    reply.code   = msg->u.reply->code;
+    reply.reason = c2stlstr(msg->u.reply->reason);
+
+    if(get_contact(msg)){
+
+	// parse the first contact
+	const char* c = get_contact(msg)->value.s;
+	sip_nameaddr na;
+	
+	int err = parse_nameaddr(&na,&c,get_contact(msg)->value.len);
+	if(err < 0) {
+	    
+	    ERROR("Contact nameaddr parsing failed\n");
+	    return false;
+	}
+	
+	// 'Contact' header?
+	reply.next_request_uri = c2stlstr(na.addr);
+	
+	list<sip_header*>::iterator c_it = msg->contacts.begin();
+	reply.contact = c2stlstr((*c_it)->value);
+	for(;c_it!=msg->contacts.end(); ++c_it){
+	    reply.contact += "," + c2stlstr((*c_it)->value);
+	}
+    }
+
+    reply.callid = c2stlstr(msg->callid->value);
+    
+    reply.remote_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
+    reply.local_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
+
+
+    prepare_routes_uac(msg->record_route, reply.route);
+
+    unsigned rseq;
+    for (list<sip_header*>::iterator it = msg->hdrs.begin(); 
+	 it != msg->hdrs.end(); ++it) {
+        switch ((*it)->type) {
+          case sip_header::H_OTHER:
+          case sip_header::H_REQUIRE:
+	      reply.hdrs += c2stlstr((*it)->name) + ": " 
+                  + c2stlstr((*it)->value) + CRLF;
+              break;
+          case sip_header::H_RSEQ:
+              if (! parse_rseq(&rseq, (*it)->value.s, (*it)->value.len)) {
+                  ERROR("failed to parse (rcvd) '" SIP_HDR_RSEQ "' hdr.\n");
+              } else {
+                  reply.rseq = rseq;
+              }
+              break;
+        }
+    }
+
+    return true;
+}
+
+
+#define DBG_PARAM(p)\
+    DBG("%s = <%s>\n",#p,p.c_str());
+
+void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
+{
+    assert(msg);
+    assert(msg->from && msg->from->p);
+    assert(msg->to && msg->to->p);
+    
+    AmSipRequest req;
+
+    sip_msg2am_request(msg, req);
+
+    req.tt = tt;
 
     DBG("Received new request\n");
     if (SipCtrlInterface::log_parsed_messages) {
@@ -437,52 +559,8 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     
     AmSipReply   reply;
 
-    reply.content_type = msg->content_type ? c2stlstr(msg->content_type->value): "";
-
-    reply.body = msg->body.len ? c2stlstr(msg->body) : "";
-    reply.cseq = get_cseq(msg)->num;
-    reply.method = c2stlstr(get_cseq(msg)->method_str);
-
-    reply.code   = msg->u.reply->code;
-    reply.reason = c2stlstr(msg->u.reply->reason);
-
-    if(get_contact(msg)){
-
-	// parse the first contact
-	const char* c = get_contact(msg)->value.s;
-	sip_nameaddr na;
-	
-	int err = parse_nameaddr(&na,&c,get_contact(msg)->value.len);
-	if(err < 0) {
-	    
-	    ERROR("Contact nameaddr parsing failed\n");
-	    return;
-	}
-	
-	// 'Contact' header?
-	reply.next_request_uri = c2stlstr(na.addr);
-	
-	list<sip_header*>::iterator c_it = msg->contacts.begin();
-	reply.contact = c2stlstr((*c_it)->value);
-	for(;c_it!=msg->contacts.end(); ++c_it){
-	    reply.contact += "," + c2stlstr((*c_it)->value);
-	}
-    }
-
-    reply.callid = c2stlstr(msg->callid->value);
-    
-    reply.remote_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
-    reply.local_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
-
-    prepare_routes_uac(msg->record_route, reply.route);
-
-    for (list<sip_header*>::iterator it = msg->hdrs.begin(); 
-	 it != msg->hdrs.end(); ++it) {
-	if((*it)->type == sip_header::H_OTHER){
-	    reply.hdrs += c2stlstr((*it)->name) + ": " 
-		+ c2stlstr((*it)->value) + "\r\n";
-	}
-    }
+    if (! sip_msg2am_reply(msg, reply))
+      return;
     
     DBG("Received reply: %i %s\n",reply.code,reply.reason.c_str());
     DBG_PARAM(reply.callid);
@@ -493,8 +571,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     AmSipDispatcher::instance()->handleSipMsg(reply);
 }
 
-#undef DBG_PARAM
-
+#if 0
 void SipCtrlInterface::timer_expired(sip_trans* trans, sip_timer_type tt)
 {
     assert(trans);
@@ -542,6 +619,66 @@ void SipCtrlInterface::timer_expired(sip_trans* trans, sip_timer_type tt)
     AmEventDispatcher::instance()->post(c2stlstr(trans->to_tag),
 					new AmSipTimeoutEvent(ev, cseq->num));
 }
+#endif
+
+
+void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
+    sip_trans *tr, trans_bucket *buk)
+{
+  AmSipTimeoutEvent *tmo_evt;
+  
+  switch (evt) {
+  case AmSipTimeoutEvent::noACK: {
+      sip_cseq* cseq = dynamic_cast<sip_cseq*>(tr->msg->cseq->p);
+
+      if(!cseq){
+          ERROR("missing CSeq\n");
+          return;
+      }
+    tmo_evt = new AmSipTimeoutEvent(evt, cseq->num);
+    }
+    break;
+
+  case AmSipTimeoutEvent::noPRACK: {
+      sip_msg msg(tr->retr_buf, tr->retr_len);
+
+      char* err_msg=0;
+      int err = parse_sip_msg(&msg, err_msg);
+      if (err) {
+          ERROR("failed to parse (own) reply[%d]: %s.\n", err, 
+              err_msg ? err_msg : "???");
+          return;
+      }
+
+      AmSipReply reply;
+      if (! sip_msg2am_reply(&msg, reply)) {
+          ERROR("failed to convert sip_msg to AmSipReply.\n");
+          return;
+      }
+
+      AmSipRequest request;
+      sip_msg2am_request(tr->msg, request);
+      request.tt = trans_ticket(tr, buk);
+
+      DBG("Reply timed out: %i %s\n",reply.code,reply.reason.c_str());
+      DBG_PARAM(reply.callid);
+      DBG_PARAM(reply.local_tag);
+      DBG_PARAM(reply.remote_tag);
+      DBG("cseq = <%i>\n",reply.cseq);
+
+      tmo_evt = new AmSipTimeoutEvent(evt, request, reply);
+    }
+    break;
+
+  default:
+    ERROR("BUG: unexpected timout event type '%d'.\n", evt);
+    return;
+  }
+
+  AmEventDispatcher::instance()->post(c2stlstr(tr->to_tag), tmo_evt);
+}
+
+#undef DBG_PARAM
 
 void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
 {

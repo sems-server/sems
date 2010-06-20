@@ -48,6 +48,17 @@ bool AmSessionEventHandler::onSipReply(const AmSipReply& reply)
   return false;
 }
 
+bool AmSessionEventHandler::onSipReqTimeout(const AmSipRequest &)
+{
+  return false;
+}
+
+bool AmSessionEventHandler::onSipRplTimeout(const AmSipRequest &, 
+    const AmSipReply &)
+{
+  return false;
+}
+
 bool AmSessionEventHandler::onSendRequest(const string& method, 
 					  const string& content_type,
 					  const string& body,
