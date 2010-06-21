@@ -510,6 +510,12 @@ public:
 			   string& hdrs,
 			   int flags);
 
+  /** Hook called when an SDP offer is required */
+  virtual void onSdpOfferNeeded(AmSdp& offer);
+
+  /** Hook called when an SDP offer is required */
+  virtual void onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer);
+
   /** 
    * called in the session thread before the session is destroyed,
    * i.e. after the main event loop has finished

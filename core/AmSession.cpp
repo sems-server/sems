@@ -906,6 +906,20 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
   CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs,flags);
 }
 
+/** Hook called when an SDP offer is required */
+void AmSession::onSdpOfferNeeded(AmSdp& offer)
+{
+  // NYI
+  assert(0);
+}
+
+/** Hook called when an SDP offer is required */
+void AmSession::onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer)
+{
+  // NYI
+  assert(0);
+}
+
 void AmSession::onRtpTimeout()
 {
   DBG("stopping Session.\n");

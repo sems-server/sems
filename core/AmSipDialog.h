@@ -29,6 +29,7 @@
 #define AmSipDialog_h
 
 #include "AmSipMsg.h"
+#include "AmSdp.h"
 
 #include <string>
 #include <vector>
@@ -69,6 +70,7 @@ typedef std::map<int,AmSipTransaction> TransMap;
 class AmSipDialogEventHandler 
 {
  public:
+  virtual ~AmSipDialogEventHandler() {};
     
   /** Hook called when a request has been received */
   virtual void onSipRequest(const AmSipRequest& req)=0;
@@ -92,7 +94,7 @@ class AmSipDialogEventHandler
 			   const string& body,
 			   string& hdrs,
 			   int flags)=0;
-    
+
   /** Hook called when a local INVITE request has been replied with 2xx */
   virtual void onInvite2xx(const AmSipReply& reply)=0;
 
@@ -102,7 +104,11 @@ class AmSipDialogEventHandler
   /** Hook called when a UAS INVITE transaction did not receive a non-2xx-ACK */
   virtual void onNoErrorACK(unsigned int cseq)=0;
 
-  virtual ~AmSipDialogEventHandler() {};
+  /** Hook called when an SDP offer is required */
+  virtual void onSdpOfferNeeded(AmSdp& offer)=0;
+
+  /** Hook called when an SDP offer is required */
+  virtual void onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer)=0;
 };
 
 /**
@@ -117,10 +123,23 @@ class AmSipDialog
     
   unsigned int pending_invites;
 
+  enum OAState {
+    OA_None=0,
+    OA_OfferRecved,
+    OA_Completed
+  };
+
+  OAState oa_state;
+  AmSdp   sdp_local;
+  AmSdp   sdp_remote;
+
   AmSipDialogEventHandler* hdl;
 
   int updateStatusReply(const AmSipRequest& req, 
 			unsigned int code);
+
+  void onSdp(const AmSipRequest& req);
+  void onSdp(const AmSipReply& reply);
 
  public:
   enum Status {

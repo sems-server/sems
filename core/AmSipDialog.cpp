@@ -74,56 +74,91 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
   DBG("AmSipDialog::updateStatus(request)\n");
 
-  if ((req.method == "ACK") || (req.method == "CANCEL")) {
-    if(hdl)
-      hdl->onSipRequest(req);
-    return;
-  }
+  if ((req.method != "ACK") || (req.method != "CANCEL")) {
 
-  // Sanity checks
-  if (r_cseq_i && req.cseq <= r_cseq){
-    INFO("remote cseq lower than previous ones - refusing request\n");
-    // see 12.2.2
-    reply_error(req, 500, "Server Internal Error");
-    return;
-  }
+    // Sanity checks
+    if (r_cseq_i && req.cseq <= r_cseq){
+      INFO("remote cseq lower than previous ones - refusing request\n");
+      // see 12.2.2
+      reply_error(req, 500, "Server Internal Error");
+      return;
+    }
 
-  if ((req.method == "INVITE") && pending_invites) {      
-    reply_error(req,500,"Server Internal Error",
-		"Retry-After: " + int2str(get_random() % 10) + CRLF);
-  }
-  else {
+    if ((req.method == "INVITE") && pending_invites) {      
+      reply_error(req,500,"Server Internal Error",
+		  "Retry-After: " + int2str(get_random() % 10) + CRLF);
+    }
+    else {
       pending_invites++;
+    }
+    
+    r_cseq = req.cseq;
+    r_cseq_i = true;
+    uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
+    
+    // target refresh requests
+    if (req.from_uri.length() && 
+	(req.method == "INVITE" || 
+	 req.method == "UPDATE" ||
+	 req.method == "SUBSCRIBE" ||
+	 req.method == "NOTIFY")) {
+      
+      remote_uri = req.from_uri;
+    }
+    
+    if(callid.empty()){
+      callid       = req.callid;
+      remote_tag   = req.from_tag;
+      user         = req.user;
+      domain       = req.domain;
+      local_uri    = req.r_uri;
+      remote_party = req.from;
+      local_party  = req.to;
+      route        = req.route;
+    }
   }
 
-  r_cseq = req.cseq;
-  r_cseq_i = true;
-  uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
+  if((req.method == "INVITE" || req.method == "UPDATE" || req.method == "ACK") &&
+     !req.body.empty() && 
+     (req.content_type == "application/sdp")) {
 
-  // target refresh requests
-  if (req.from_uri.length() && 
-      (req.method == "INVITE" || 
-       req.method == "UPDATE" ||
-       req.method == "SUBSCRIBE" ||
-       req.method == "NOTIFY")) {
-
-    remote_uri = req.from_uri;
-  }
-
-  if(callid.empty()){
-    callid       = req.callid;
-    remote_tag   = req.from_tag;
-    user         = req.user;
-    domain       = req.domain;
-    local_uri    = req.r_uri;
-    remote_party = req.from;
-    local_party  = req.to;
-    route        = req.route;
+    onSdp(req);
   }
   
   if(hdl)
       hdl->onSipRequest(req);
 }
+
+void AmSipDialog::onSdp(const AmSipRequest& req)
+{
+  const char* err_txt = NULL;
+  int         err_code = 0;
+
+  sdp_remote.setBody(req.body.c_str());
+
+  if(sdp_remote.parse()){
+    err_code = 400;
+    err_txt = "session description parsing failed";
+  }
+  else if(sdp_remote.media.empty()){
+    err_code = 400;
+    err_txt = "no media line found in SDP message";
+  }
+  else {
+
+    switch(oa_state) {
+    case OA_None:
+    case OA_Completed:
+      oa_state = OA_OfferRecved;
+      break;
+      
+    case OA_OfferRecved:
+      oa_state = OA_Completed;
+      break;
+    }
+  }
+}
+
 
 /**
  *
