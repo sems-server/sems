@@ -29,3 +29,19 @@ conference.teejoin(string roomname [, string avar_id])
 conference.teeleave([string avar_id])
    - leave tee conference (release conf channel)
    - resets playlist as input and output
+
+conference.setupMixIn(float level, unsigned int seconds)
+   - set up MixIn for mixing in files into output later
+    notes: 
+      o only do that when playlist is input/output 
+          (possibly do setInOutPlaylist first)
+      o in sessionStart event, set $connect_session=0, otherwise
+        playlist will be set as output again, and MixIn does not 
+        play, e.g.
+          set($connect_session=0);
+          setInOutPlaylist();
+          conference.setupMixIn(0.5);
+
+     o if you use setupMixIn multiple times, use setInOutPlaylist first!!!!!
+       otherwise it could crash if old MixIn is still in the output / 
+       the audio queue
