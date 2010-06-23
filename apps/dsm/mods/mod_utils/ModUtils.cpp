@@ -208,7 +208,7 @@ EXEC_ACTION_START(SCUIntAction) {
     varname = varname.substr(1);  
 
   sc_sess->var[varname] = int2str((int)atof(val.c_str()));
-  DBG("set var[%s] = %s\n", 
+  DBG("set $%s = %s\n", 
       varname.c_str(), sc_sess->var[varname].c_str());
 
 } EXEC_ACTION_END;
