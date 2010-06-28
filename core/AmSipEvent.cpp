@@ -10,11 +10,11 @@ void AmSipTimeoutEvent::operator() (AmSipDialog* dlg)
 void AmSipRequestEvent::operator() (AmSipDialog* dlg)
 {
     assert(dlg);
-    dlg->updateStatus(req);
+    dlg->onRxRequest(req);
 }
 
 void AmSipReplyEvent::operator() (AmSipDialog* dlg)
 {
     assert(dlg);
-    dlg->updateStatus(reply);
+    dlg->onRxReply(reply);
 }

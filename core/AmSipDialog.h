@@ -44,6 +44,7 @@ using std::string;
                                  // i.e. modify as little as possible
 
 class AmSipTimeoutEvent;
+class AmSipDialogEventHandler;
 
 /** \brief SIP transaction representation */
 struct AmSipTransaction
@@ -64,93 +65,31 @@ struct AmSipTransaction
 
 typedef std::map<int,AmSipTransaction> TransMap;
 
-/**
- * \brief base class for SIP request/reply event handler 
- */
-class AmSipDialogEventHandler 
-{
- public:
-  virtual ~AmSipDialogEventHandler() {};
-    
-  /** Hook called when a request has been received */
-  virtual void onSipRequest(const AmSipRequest& req)=0;
-
-  /** Hook called when a reply has been received */
-  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status)=0;
-
-  /** Hook called before a request is sent */
-  virtual void onSendRequest(const string& method,
-			     const string& content_type,
-			     const string& body,
-			     string& hdrs,
-			     int flags,
-			     unsigned int cseq)=0;
-    
-  /** Hook called before a reply is sent */
-  virtual void onSendReply(const AmSipRequest& req,
-			   unsigned int  code,
-			   const string& reason,
-			   const string& content_type,
-			   const string& body,
-			   string& hdrs,
-			   int flags)=0;
-
-  /** Hook called when a local INVITE request has been replied with 2xx */
-  virtual void onInvite2xx(const AmSipReply& reply)=0;
-
-  /** Hook called when a UAS INVITE transaction did not receive a 2xx-ACK */
-  virtual void onNo2xxACK(unsigned int cseq)=0;
-
-  /** Hook called when a UAS INVITE transaction did not receive a non-2xx-ACK */
-  virtual void onNoErrorACK(unsigned int cseq)=0;
-
-  /** Hook called when an SDP offer is required */
-  virtual void onSdpOfferNeeded(AmSdp& offer)=0;
-
-  /** Hook called when an SDP offer is required */
-  virtual void onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer)=0;
-};
 
 /**
  * \brief implements the dialog state machine
  */
 class AmSipDialog
 {
-  int status;
-
-  TransMap uas_trans;
-  TransMap uac_trans;
-    
-  unsigned int pending_invites;
+ public:
+  enum Status {	
+    Disconnected=0,
+    Trying,
+    Proceeding,
+    Cancelling,
+    Early,
+    Connected,
+    Disconnecting,
+    __max_Status
+  };
 
   enum OAState {
     OA_None=0,
     OA_OfferRecved,
-    OA_Completed
+    OA_OfferSent,
+    OA_Completed,
+    __max_OA
   };
-
-  OAState oa_state;
-  AmSdp   sdp_local;
-  AmSdp   sdp_remote;
-
-  AmSipDialogEventHandler* hdl;
-
-  int updateStatusReply(const AmSipRequest& req, 
-			unsigned int code);
-
-  void onSdp(const AmSipRequest& req);
-  void onSdp(const AmSipReply& reply);
-
- public:
-  enum Status {
-	
-    Disconnected=0,
-    Pending,
-    Connected,
-    Disconnecting
-  };
-
-  static const char* status2str[4];
 
   string user;         // local user
   string domain;       // local domain
@@ -179,14 +118,17 @@ class AmSipDialog
   ~AmSipDialog();
 
   bool   getUACTransPending() { return !uac_trans.empty(); }
-  int    getStatus() { return status; }
+
+  Status getStatus() { return status; }
+  const char* getStatusStr();
+
   string getContactHdr();
 
   /** update Status from locally originated request (e.g. INVITE) */
-  void updateStatusFromLocalRequest(const AmSipRequest& req);
+  void initFromLocalRequest(const AmSipRequest& req);
 
-  void updateStatus(const AmSipRequest& req);
-  void updateStatus(const AmSipReply& reply);
+  void onRxRequest(const AmSipRequest& req);
+  void onRxReply(const AmSipReply& reply);
 
   void uasTimeout(AmSipTimeoutEvent* to_ev);
     
@@ -244,8 +186,87 @@ class AmSipDialog
 			 unsigned int  code,
 			 const string& reason,
 			 const string& hdrs = "");
+
+private:
+  Status status;
+
+  TransMap uas_trans;
+  TransMap uac_trans;
+    
+  unsigned int pending_invites;
+
+  OAState oa_state;
+  AmSdp   sdp_local;
+  AmSdp   sdp_remote;
+
+  AmSipDialogEventHandler* hdl;
+
+  int onTxReply(const AmSipRequest& req, 
+			unsigned int code);
+  void onTxRequest(const AmSipRequest& req);
+
+  int onRxSdp(const string& body, const char** err_txt);
+
+  int onTxSdp(const string& body);
+
+  void onSdpCompleted();
 };
 
+const char* dlgStatusStr(AmSipDialog::Status st);
+
+
+/**
+ * \brief base class for SIP request/reply event handler 
+ */
+class AmSipDialogEventHandler 
+{
+ public:
+  virtual ~AmSipDialogEventHandler() {};
+    
+  /** 
+   * Hook called when a request has been received
+   */
+  virtual void onSipRequest(const AmSipRequest& req)=0;
+
+  /** Hook called when a reply has been received */
+  virtual void onSipReply(const AmSipReply& reply, 
+			  AmSipDialog::Status old_dlg_status)=0;
+
+  /** Hook called before a request is sent */
+  virtual void onSendRequest(const string& method,
+			     const string& content_type,
+			     const string& body,
+			     string& hdrs,
+			     int flags,
+			     unsigned int cseq)=0;
+    
+  /** Hook called before a reply is sent */
+  virtual void onSendReply(const AmSipRequest& req,
+			   unsigned int  code,
+			   const string& reason,
+			   const string& content_type,
+			   const string& body,
+			   string& hdrs,
+			   int flags)=0;
+
+  /** Hook called when a local INVITE request has been replied with 2xx */
+  virtual void onInvite2xx(const AmSipReply& reply)=0;
+
+  /** Hook called when a UAS INVITE transaction did not receive a 2xx-ACK */
+  virtual void onNo2xxACK(unsigned int cseq)=0;
+
+  /** Hook called when a UAS INVITE transaction did not receive a non-2xx-ACK */
+  virtual void onNoErrorACK(unsigned int cseq)=0;
+
+  /** Hook called when an SDP offer is required */
+  virtual bool onSdpOfferNeeded(AmSdp& offer)=0;
+
+  /** Hook called when an SDP offer is required */
+  virtual bool onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer)=0;
+
+  /** Hook called when the SDP transaction has been completed */
+  virtual void onSdpCompleted(const AmSdp& local, const AmSdp& remote)=0;
+};
 
 #endif
 

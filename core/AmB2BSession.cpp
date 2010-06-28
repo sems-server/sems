@@ -182,17 +182,16 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
     (req.method != "BYE") &&
     (req.method != "CANCEL");
 
-  if(!fwd)
+  if(!fwd){
     AmSession::onSipRequest(req);
-  else {
-    //dlg.updateStatus(req);
-    recvd_req.insert(std::make_pair(req.cseq,req));
+    return;
   }
 
+  recvd_req.insert(std::make_pair(req.cseq,req));
   relayEvent(new B2BSipRequestEvent(req,fwd));
 }
 
-void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
+void AmB2BSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = (t != relayed_req.end()) && (reply.code != 100);
@@ -240,11 +239,11 @@ void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	
 	if (old_dlg_status != dlg.getStatus())
 	  DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
-	      AmSipDialog::status2str[old_dlg_status], 
-	      AmSipDialog::status2str[dlg.getStatus()],
+	      dlgStatusStr(old_dlg_status), dlg.getStatusStr(),
 	      getStopped() ? "true" : "false");
 	else 
-	  DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[old_dlg_status], 
+	  DBG("Dialog status stays %s (stopped=%s)\n", 
+	      dlgStatusStr(old_dlg_status), 
 	      getStopped() ? "true" : "false");
       } else {
 	relayed_body_req.erase(rel_body_it);
@@ -296,9 +295,19 @@ bool AmB2BSession::onOtherReply(const AmSipReply& reply)
 void AmB2BSession::terminateLeg()
 {
   setStopped();
-  if ((dlg.getStatus() == AmSipDialog::Pending) 
-      || (dlg.getStatus() == AmSipDialog::Connected))
+  int st = dlg.getStatus();
+
+  switch(st){
+  case AmSipDialog::Trying:
+  case AmSipDialog::Proceeding:
+  case AmSipDialog::Early:
+  case AmSipDialog::Connected:
     dlg.bye();
+    break;
+
+  default:
+    break;
+  }
 }
 
 void AmB2BSession::terminateOtherLeg()

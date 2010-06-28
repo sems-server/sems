@@ -353,19 +353,23 @@ void AmB2ABCalleeSession::onSessionStart(const AmSipReply& rep) {
   relayEvent(new B2ABConnectAudioEvent());
 }
 
-void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep, int old_dlg_status) {
+void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status) {
 
-    int status_before = old_dlg_status;//dlg.getStatus();
-    AmB2ABSession::onSipReply(rep, old_dlg_status);
-  int status = dlg.getStatus();
+  AmSipDialog::Status status_before = old_dlg_status;
+  AmB2ABSession::onSipReply(rep, old_dlg_status);
+  AmSipDialog::Status status = dlg.getStatus();
  
-  if ((status_before == AmSipDialog::Pending)&&
+  if (((status_before == AmSipDialog::Trying) ||
+       (status_before == AmSipDialog::Proceeding) ||
+       (status_before == AmSipDialog::Early) ) &&
       (status == AmSipDialog::Disconnected)) {
 	  
     DBG("callee session creation failed. notifying callersession.\n");
     relayEvent(new B2ABConnectOtherLegFailedEvent(rep.code, rep.reason));
 
-  } else if ((status == AmSipDialog::Pending) && (rep.code == 180)) {
+  } else if (((status == AmSipDialog::Trying) ||
+	      (status == AmSipDialog::Proceeding) ||
+	      (status == AmSipDialog::Early) ) && (rep.code == 180)) {
     relayEvent(new B2ABOtherLegRingingEvent());
   }
 }

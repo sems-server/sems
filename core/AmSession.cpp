@@ -427,12 +427,12 @@ bool AmSession::processingCycle() {
       if (!processEventsCatchExceptions())
 	return false; // exception occured, stop processing
       
-      int dlg_status = dlg.getStatus();
+      AmSipDialog::Status dlg_status = dlg.getStatus();
       bool s_stopped = sess_stopped.get();
       
       DBG("%s/%s: %s, %s, %i UACTransPending\n",
 	  dlg.callid.c_str(),getLocalTag().c_str(), 
-	  AmSipDialog::status2str[dlg_status],
+	  dlgStatusStr(dlg_status),
 	  s_stopped?"stopped":"running",
 	  dlg.getUACTransPending());
       
@@ -700,21 +700,22 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     } else {
       dlg.reply(req, 415, "Unsupported Media Type");
     }
-  } 
+  }
 }
 
 
-void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
+void AmSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
   CALL_EVENT_H(onSipReply,reply);
 
   if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
-	AmSipDialog::status2str[old_dlg_status], 
-	AmSipDialog::status2str[dlg.getStatus()],
+	dlgStatusStr(old_dlg_status), 
+	dlg.getStatusStr(),
 	sess_stopped.get() ? "true" : "false");
   else 
-    DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[old_dlg_status], 
+    DBG("Dialog status stays %s (stopped=%s)\n", 
+	dlgStatusStr(old_dlg_status), 
 	sess_stopped.get() ? "true" : "false");
 
 
@@ -752,7 +753,9 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	}
 	break;
 	
-      case AmSipDialog::Pending:
+      case AmSipDialog::Trying:
+      case AmSipDialog::Proceeding:
+      case AmSipDialog::Early:
 	
 	switch(reply.code){
 	  // todo: 180 with body (remote rbt)
@@ -791,6 +794,8 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	} break;
 	default:  break;// continue waiting.
 	}
+
+      default: break;
       }
     }
   }
@@ -907,16 +912,24 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
 }
 
 /** Hook called when an SDP offer is required */
-void AmSession::onSdpOfferNeeded(AmSdp& offer)
+bool AmSession::onSdpOfferNeeded(AmSdp& offer)
 {
-  // NYI
-  assert(0);
+  //TODO: sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), offer);
+  return false;
 }
 
 /** Hook called when an SDP offer is required */
-void AmSession::onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer)
+bool AmSession::onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer)
 {
-  // NYI
+  //TODO: sdp.genResponse(advertisedIP(),
+  //                      RTPStream()->getLocalPort(), 
+  //                      answer, AmConfig::SingleCodecInOK);
+  return false;
+}
+
+void AmSession::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
+{
+  // TODO!!!
   assert(0);
 }
 
