@@ -57,7 +57,8 @@ const char* AmSipDialog::getStatusStr()
 }
 
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
-  : status(Disconnected),cseq(10),r_cseq_i(false),hdl(h),pending_invites(0),
+  : status(Disconnected),cseq(10),r_cseq_i(false),hdl(h),
+    pending_invites(0),cancel_pending(false),
     outbound_proxy(AmConfig::OutboundProxy),
     force_outbound_proxy(AmConfig::ForceOutboundProxy)
 {
@@ -380,6 +381,14 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	  remote_tag = reply.to_tag;
 	}
       }
+      else { // error reply
+	status = Disconnected;
+      }
+      
+      if(cancel_pending){
+	cancel_pending = false;
+	bye();
+      }
       break;
 
     case Early:
@@ -396,16 +405,25 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	route = reply.route;
 	remote_uri = reply.contact;
       }
+      else { // error reply
+	status = Disconnected;
+      }
       break;
 
     case Cancelling:
-      if(reply.code >= 300){
-	// CANCEL accepted
-	status = Disconnected;
+      if(reply.cseq_method == "INVITE"){
+	if(reply.code >= 300){
+	  // CANCEL accepted
+	  status = Disconnected;
+	}
+	else {
+	  // CANCEL rejected
+	  sendRequest("BYE");
+	}
       }
       else {
-	// CANCEL rejected
-	sendRequest("BYE");
+	// we don't care about
+	// the reply to the CANCEL itself...
       }
       break;
 
@@ -415,23 +433,16 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
     }
   }
 
-  // TODO: remove the transaction only after the dedicated timer has hit
-  //       this would help taking care of multiple 2xx replies.
   if(reply.code >= 200){
-    // TODO: 
-    // - place this somewhere else.
-    //   (probably in AmSession...)
     if((reply.code < 300) && (t.method == "INVITE")) {
-
       hdl->onInvite2xx(reply);
     }
     else {
-	uac_trans.erase(t_it);
+      uac_trans.erase(t_it);
     }
   }
 
-  if(hdl)
-      hdl->onSipReply(reply, old_dlg_status);
+  hdl->onSipReply(reply, old_dlg_status);
 }
 
 void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
@@ -590,8 +601,8 @@ int AmSipDialog::bye(const string& hdrs)
       return sendRequest("BYE", "", "", hdrs);
 
     case Trying:
-      //TODO: wait for at least Proceeding 
-      //      or Early before CANCEL
+      cancel_pending=true;
+      return 0;
 
     case Proceeding:
     case Early:

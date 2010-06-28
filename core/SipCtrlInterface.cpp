@@ -390,6 +390,7 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
     req.from_tag = c2stlstr(((sip_from_to*)msg->from->p)->tag);
     req.to_tag   = c2stlstr(((sip_from_to*)msg->to->p)->tag);
     req.cseq     = get_cseq(msg)->num;
+    req.cseq_method = c2stlstr(get_cseq(msg)->method_str);
     req.body     = c2stlstr(msg->body);
 
     req.tt = tt;
@@ -439,6 +440,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 
     reply.body = msg->body.len ? c2stlstr(msg->body) : "";
     reply.cseq = get_cseq(msg)->num;
+    reply.cseq_method = c2stlstr(get_cseq(msg)->method_str);
 
     reply.code   = msg->u.reply->code;
     reply.reason = c2stlstr(msg->u.reply->reason);

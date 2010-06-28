@@ -193,8 +193,14 @@ private:
   TransMap uas_trans;
   TransMap uac_trans;
     
+  // Number of open UAS INVITE transactions
   unsigned int pending_invites;
 
+  // In case a CANCEL should have been sent
+  // while in 'Trying' state
+  bool         cancel_pending;
+
+  // Offer/answer
   OAState oa_state;
   AmSdp   sdp_local;
   AmSdp   sdp_remote;

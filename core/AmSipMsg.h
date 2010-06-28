@@ -19,6 +19,7 @@ class _AmSipMsgInDlg
 
   string callid;
   unsigned int cseq;
+  string cseq_method;
 
   string route;
   string contact;
