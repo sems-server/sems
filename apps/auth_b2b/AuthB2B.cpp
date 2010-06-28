@@ -281,12 +281,11 @@ void AuthB2BDialog::createCalleeSession()
       from.c_str());
 
   if (AmConfig::LogSessions) {
-    INFO("Starting B2B callee session %s app %s\n",
-	 callee_session->getLocalTag().c_str(), invite_req.cmd.c_str());
+    INFO("Starting B2B callee session %s\n",
+	 callee_session->getLocalTag().c_str());
   }
 
-  MONITORING_LOG5(other_id.c_str(), 
-		  "app",  invite_req.cmd.c_str(),
+  MONITORING_LOG4(other_id.c_str(), 
 		  "dir",  "out",
 		  "from", callee_dlg.local_party.c_str(),
 		  "to",   callee_dlg.remote_party.c_str(),

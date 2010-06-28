@@ -259,11 +259,11 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
   if ( (reply.code > 100) 
        && (reply.code < 300) 
-       && !reply.remote_tag.empty() 
+       && !reply.to_tag.empty() 
        && (remote_tag.empty() ||
 	   ((status < Connected) && (reply.code >= 200))) ) {  
 
-    remote_tag = reply.remote_tag;
+    remote_tag = reply.to_tag;
   }
 
   // allow route overwritting
@@ -271,8 +271,8 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
       route = reply.route;
   }
 
-  if (reply.next_request_uri.length())
-    remote_uri = reply.next_request_uri;
+  if (reply.contact.length())
+    remote_uri = reply.contact;
 
   switch(status){
   case Disconnecting:
@@ -398,11 +398,10 @@ int AmSipDialog::reply(const AmSipRequest& req,
 
   AmSipReply reply;
 
-  reply.method = req.method;
   reply.code = code;
   reply.reason = reason;
   reply.tt = req.tt;
-  reply.local_tag = local_tag;
+  reply.to_tag = local_tag;
   reply.hdrs = m_hdrs;
 
   if (!flags&SIP_FLAGS_VERBATIM) {
@@ -435,12 +434,11 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 {
   AmSipReply reply;
 
-  reply.method = req.method;
   reply.code = code;
   reply.reason = reason;
   reply.tt = req.tt;
   reply.hdrs = hdrs;
-  reply.local_tag = AmSession::getNewId();
+  reply.to_tag = AmSession::getNewId();
 
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
