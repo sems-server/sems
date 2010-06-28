@@ -190,11 +190,11 @@ void AmSessionContainer::destroySession(AmSession* s)
     }
 }
 
-AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session_params) {
+AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, const string& app_name, AmArg* session_params) {
 
   AmSession* session = NULL;
   try {
-    if((session = createSession(req, session_params)) != 0) {
+      if((session = createSession(req, app_name, session_params)) != 0) {
       session->dlg.updateStatusFromLocalRequest(req);
       session->setCallgroup(req.from_tag);
 
@@ -206,8 +206,7 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 	return NULL;
       }
 
-      MONITORING_LOG5(session->getLocalTag().c_str(), 
-		      "app", req.cmd.c_str(),
+      MONITORING_LOG4(session->getLocalTag().c_str(), 
 		      "dir", "out",
 		      "from", req.from.c_str(),
 		      "to", req.to.c_str(),
@@ -226,8 +225,8 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
       }
 
       if (AmConfig::LogSessions) {      
-	INFO("Starting UAC session %s app %s\n",
-	     session->getLocalTag().c_str(), req.cmd.c_str());
+	INFO("Starting UAC session %s\n",
+	     session->getLocalTag().c_str());
       }
       
       try {
@@ -274,8 +273,8 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	session->setCallgroup(local_tag);
 
 	if (AmConfig::LogSessions) {
-	  INFO("Starting UAS session %s app %s\n",
-	       local_tag.c_str(), req.cmd.c_str());
+	  INFO("Starting UAS session %s\n",
+	       local_tag.c_str());
 	}
 
 	if (!addSession(req.callid,req.from_tag,local_tag,session)) {
@@ -284,8 +283,7 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	  throw string("internal server error");
 	}
 
-	MONITORING_LOG5(local_tag.c_str(), 
-			"app", req.cmd.c_str(),
+	MONITORING_LOG4(local_tag.c_str(), 
 			"dir", "in",
 			"from", req.from.c_str(),
 			"to", req.to.c_str(),
@@ -349,7 +347,8 @@ bool AmSessionContainer::postEvent(const string& local_tag,
 
 }
 
-AmSession* AmSessionContainer::createSession(AmSipRequest& req, 
+AmSession* AmSessionContainer::createSession(AmSipRequest& req,
+					     const string& app_name,
 					     AmArg* session_params)
 {
   if (AmConfig::SessionLimit &&
@@ -363,7 +362,10 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
       return NULL;
   }
 
-  AmSessionFactory* session_factory = 
+  AmSessionFactory* session_factory = NULL;
+  if(!app_name.empty())
+      AmPlugIn::instance()->getFactory4App(app_name);
+  else
       AmPlugIn::instance()->findSessionFactory(req);
 
   if(!session_factory) {

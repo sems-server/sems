@@ -43,7 +43,7 @@ AmSipDispatcher* AmSipDispatcher::instance()
 void AmSipDispatcher::handleSipMsg(AmSipReply &reply)
 {
   AmSipReplyEvent* ev = new AmSipReplyEvent(reply);
-  if(!AmEventDispatcher::instance()->post(reply.local_tag,ev)){
+  if(!AmEventDispatcher::instance()->post(reply.from_tag,ev)){
     if ((reply.code >= 200) && (reply.code < 300)) {
       if (AmConfig::UnhandledReplyLoglevel >= 0) {
 	_LOG(AmConfig::UnhandledReplyLoglevel,

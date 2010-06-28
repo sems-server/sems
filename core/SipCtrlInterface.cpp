@@ -323,7 +323,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 
     int ret = trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
 			     rep.code,stl2cstr(rep.reason),
-			     stl2cstr(rep.local_tag),
+			     stl2cstr(rep.to_tag),
 			     cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body));
 
     delete [] hdrs_buf;
@@ -342,7 +342,6 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
     
     AmSipRequest req;
     
-    req.cmd      = "sems";
     req.method   = c2stlstr(msg->u.request->method_str);
     req.user     = c2stlstr(msg->u.request->ruri.user);
     req.domain   = c2stlstr(msg->u.request->ruri.host);
@@ -410,7 +409,6 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 
     DBG("Received new request\n");
     if (SipCtrlInterface::log_parsed_messages) {
-	//     DBG_PARAM(req.cmd);
 	DBG_PARAM(req.method);
 	//     DBG_PARAM(req.user);
 	//     DBG_PARAM(req.domain);
@@ -441,7 +439,6 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 
     reply.body = msg->body.len ? c2stlstr(msg->body) : "";
     reply.cseq = get_cseq(msg)->num;
-    reply.method = c2stlstr(get_cseq(msg)->method_str);
 
     reply.code   = msg->u.reply->code;
     reply.reason = c2stlstr(msg->u.reply->reason);
@@ -459,8 +456,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 	    return;
 	}
 	
-	// 'Contact' header?
-	reply.next_request_uri = c2stlstr(na.addr);
+	reply.contact = c2stlstr(na.addr);
 	
 	list<sip_header*>::iterator c_it = msg->contacts.begin();
 	reply.contact = c2stlstr((*c_it)->value);
@@ -471,8 +467,8 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
 
     reply.callid = c2stlstr(msg->callid->value);
     
-    reply.remote_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
-    reply.local_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
+    reply.to_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
+    reply.from_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
 
     prepare_routes_uac(msg->record_route, reply.route);
 
@@ -486,8 +482,8 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     
     DBG("Received reply: %i %s\n",reply.code,reply.reason.c_str());
     DBG_PARAM(reply.callid);
-    DBG_PARAM(reply.local_tag);
-    DBG_PARAM(reply.remote_tag);
+    DBG_PARAM(reply.from_tag);
+    DBG_PARAM(reply.to_tag);
     DBG("cseq = <%i>\n",reply.cseq);
 
     AmSipDispatcher::instance()->handleSipMsg(reply);

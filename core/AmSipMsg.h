@@ -10,16 +10,23 @@ using std::string;
 class _AmSipMsgInDlg
 {
  public:
-  string       method;
-  string       route;
+  string from;
+  string from_uri;
+  string from_tag;
 
-  string       contact;
-  string       content_type;
+  string to;
+  string to_tag;
 
-  string       hdrs;
-  string       body;
+  string callid;
   unsigned int cseq;
-  string       callid;
+
+  string route;
+  string contact;
+
+  string content_type;
+  string hdrs;
+
+  string body;
 
   // transaction ticket from sip stack
   trans_ticket tt;
@@ -36,12 +43,6 @@ class AmSipReply : public _AmSipMsgInDlg
  public:
   unsigned int code;
   string       reason;
-  string       next_request_uri;
-
-  /*TODO: this should be merged with request's from_/to_tag and moved above*/
-  string       remote_tag;
-  string       local_tag;
-
 
  AmSipReply() : code(0), _AmSipMsgInDlg() { }
   ~AmSipReply() { }
@@ -53,18 +54,13 @@ class AmSipReply : public _AmSipMsgInDlg
 class AmSipRequest : public _AmSipMsgInDlg
 {
  public:
-  string cmd;
+  string method;
 
   string user;
   string domain;
   string r_uri;
-  string from_uri;
-  string from;
-  string to;
-  string from_tag;
-  string to_tag;
 
- AmSipRequest() : _AmSipMsgInDlg() { }
+  AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }
   
   string print();

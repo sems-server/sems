@@ -90,6 +90,7 @@ class AmSessionContainer : public AmThread
    * @return a new session or NULL on error.
    */
   AmSession* createSession(AmSipRequest& req, 
+			   const string& app_name = "",
 			   AmArg* session_params = NULL);
 
   /**
@@ -118,7 +119,8 @@ class AmSessionContainer : public AmThread
    * Constructs a new session and adds it to the active session container. 
    * @param req client's request
    */
-  AmSession* startSessionUAC(AmSipRequest& req, 
+  AmSession* startSessionUAC(AmSipRequest& req,
+			     const string& app_name,
 			     AmArg* session_params = NULL);
 
   /**

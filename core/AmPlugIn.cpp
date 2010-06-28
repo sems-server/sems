@@ -839,52 +839,46 @@ bool AmPlugIn::registerFactory4App(const string& app_name, AmSessionFactory* f)
 
 AmSessionFactory* AmPlugIn::findSessionFactory(AmSipRequest& req)
 {
-  if(req.cmd.empty()){
-    ERROR("AmPlugIn::findSessionFactory: req.cmd is empty!\n");
-    return NULL;
-  } 
-  else if(req.cmd == "sems"){
+    string app_name;
 
     switch (AmConfig::AppSelect) {
-
+	
     case AmConfig::App_RURIUSER:
-      req.cmd = req.user; 
-      break;
+	app_name = req.user; 
+	break;
     case AmConfig::App_APPHDR: 
-      req.cmd = getHeader(req.hdrs, APPNAME_HDR); 
-      break;      
+	app_name = getHeader(req.hdrs, APPNAME_HDR); 
+	break;      
     case AmConfig::App_RURIPARAM: 
-      req.cmd = get_header_param(req.r_uri, "app");
-      break;
+	app_name = get_header_param(req.r_uri, "app");
+	break;
     case AmConfig::App_MAPPING: 
-      {
-	req.cmd = "";	
-	for (AmConfig::AppMappingVector::iterator it = 
-	       AmConfig::AppMapping.begin(); 
-	     it != AmConfig::AppMapping.end(); it++){
-	  if (!regexec(&it->first, req.r_uri.c_str(), 0, NULL, 0)) {
-	    DBG("match of r_uri '%s' to application %s\n", 
-	      req.r_uri.c_str(), it->second.c_str());
-	    req.cmd = it->second;
-	    break;
-	  }
-	}
-      } break;
+	{
+	    for (AmConfig::AppMappingVector::iterator it = 
+		     AmConfig::AppMapping.begin(); 
+		 it != AmConfig::AppMapping.end(); it++){
+		if (!regexec(&it->first, req.r_uri.c_str(), 0, NULL, 0)) {
+		    DBG("match of r_uri '%s' to application %s\n", 
+			req.r_uri.c_str(), it->second.c_str());
+		    app_name = it->second;
+		    break;
+		}
+	    }
+	} break;
     case AmConfig::App_SPECIFIED: 
-      req.cmd = AmConfig::Application; 
-      break;
+	app_name = AmConfig::Application; 
+	break;
     }
-
-    if (req.cmd.empty()) {
+    
+    if (app_name.empty()) {
 	ERROR("could not find any application matching configured criteria\n");
 	return NULL;
     }
-  }
-
-  AmSessionFactory* session_factory = getFactory4App(req.cmd);
-  if(!session_factory) {
-    ERROR("AmPlugIn::findSessionFactory: application '%s' not found !\n", req.cmd.c_str());
-  }
-
-  return session_factory;
+    
+    AmSessionFactory* session_factory = getFactory4App(app_name);
+    if(!session_factory) {
+	ERROR("AmPlugIn::findSessionFactory: application '%s' not found !\n", app_name.c_str());
+    }
+    
+    return session_factory;
 }

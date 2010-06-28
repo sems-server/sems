@@ -379,6 +379,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
     AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
 
     if(other_id != reply.local_tag){
+    if(other_id != reply.from_tag){// was: local_tag
       DBG("Dialog mismatch!\n");
       return;
     }

@@ -163,9 +163,9 @@ string AmSipReply::print()
   _PMB(reason, "phrase");
   _PM(callid, "i");
   _PM(int2str(cseq), "cseq");
-  _PM(method, "cseq meth");
-  _PM(local_tag, "l-tag");
-  _PM(remote_tag, "r-tag");
+  //_PM(method, "cseq meth");
+  _PM(from_tag, "from-tag");
+  _PM(to_tag, "to-tag");
   //_PM(next_hop, "nhop");
   _PMB(route, "rtset");
   _PM(contact, "m");
@@ -174,9 +174,9 @@ string AmSipReply::print()
   _PM(content_type, "c");
   _PMB(body, "body");
 
-  _PM(next_request_uri, "next-r-uri");
+  _PM(contact, "contact");
 
-  buf = method + " [" + buf + "]";
+  buf = /*method +*/ " [" + buf + "]";
   return buf;
 }
 
