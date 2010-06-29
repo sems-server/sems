@@ -45,3 +45,6 @@ conference.setupMixIn(float level, unsigned int seconds)
      o if you use setupMixIn multiple times, use setInOutPlaylist first!!!!!
        otherwise it could crash if old MixIn is still in the output / 
        the audio queue
+
+conference.playMixIn(string filename)
+    - mix in a file
