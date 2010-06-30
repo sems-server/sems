@@ -287,6 +287,9 @@ void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
 
 void AmDtmfDetector::registerKeyPressed(int event, Dtmf::EventSource type, bool has_eventid, unsigned int event_id)
 {
+  DBG("registerKeyPressed(%d, .., %s, %u); m_eventPending=%s, m_currentEvent=%d, m_current_eventid=%u,m_current_eventid_i=%s\n",
+      event, has_eventid?"true":"false", event_id, m_eventPending?"true":"false", m_currentEvent, m_current_eventid, m_current_eventid_i?"true":"false");
+
   struct timeval tm;
   gettimeofday(&tm, NULL);
 
