@@ -759,7 +759,7 @@ int AmSpanDSPInbandDtmfDetector::char2int(char code) {
   if (code == '#') 
     return IVR_DTMF_HASH;
   if (code == '*') 
-    return IVR_DTMF_HASH;
+    return IVR_DTMF_ASTERISK;
 
   if (code >= 'A' && code <= 'D')
     return code-'A';
