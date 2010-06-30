@@ -240,7 +240,9 @@ void AmDtmfDetector::process(AmEvent *evt)
 
 void AmDtmfDetector::flushKey(unsigned int event_id) {
   // flush the current key if it corresponds to the one with event_id
+  DBG("flushKey\n");
   if (m_eventPending && m_current_eventid_i && event_id == m_current_eventid) {
+    DBG("flushKey - reportEvent()\n");
     reportEvent();
   }
 }
@@ -254,6 +256,7 @@ void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
   // push out it now
   if ((m_eventPending && m_currentEvent != event) ||
       (m_eventPending && has_eventid && m_current_eventid_i && (event_id != m_current_eventid))) {
+    DBG("event differs - reportEvent()\n");
     reportEvent();
   }
 
@@ -296,12 +299,22 @@ void AmDtmfDetector::registerKeyPressed(int event, Dtmf::EventSource type, bool 
     }
   else
     {
+      // Old event has not been sent yet
+      // push out it now
+      if ((m_currentEvent != event) ||
+	  (has_eventid && m_current_eventid_i && (event_id != m_current_eventid))) {
+	DBG("event differs - reportEvent() from key pressed\n");
+	reportEvent();
+      }
+
       long delta_msec = (tm.tv_sec - m_lastReportTime.tv_sec) * 1000 +
 	(tm.tv_usec - m_lastReportTime.tv_usec) / 1000;
       // SIP INFO can report stop time is in future so avoid changing 
       // m_lastReportTime during that period
       if (delta_msec > 0)
 	memcpy(&m_lastReportTime, &tm, sizeof(struct timeval));
+
+
     }
 
   if (has_eventid) {
@@ -372,11 +385,14 @@ void AmRtpDtmfDetector::process(AmRtpDtmfEvent *evt)
 
       if (m_lastTS_i && m_lastTS == evt->ts()) {
 	// ignore events from past key press which was already reported
+	DBG("ignore RTP event ts ==%u\n", evt->ts());
 	return;
       }
 
       if (!m_eventPending)
         {
+	  DBG("new m_eventPending, event()==%d, ts=%u\n", evt->event(), evt->ts());
+
 	  gettimeofday(&m_startTime, NULL);
 	  m_eventPending = true;
 	  m_currentEvent = evt->event();
@@ -385,10 +401,14 @@ void AmRtpDtmfDetector::process(AmRtpDtmfEvent *evt)
         }
       else
         {
+	  DBG("RTP event, event()==%d, m_currentEvent == %d, m_currentTS_i=%s, evt->ts=%u, m_currentTS=%u\n",
+	      evt->event(), m_currentEvent, m_currentTS_i?"true":"false", evt->ts(), m_currentTS);
+
 	  if ((evt->event() != m_currentEvent) || 
 	      (m_currentTS_i && (evt->ts() != m_currentTS)))
             {
 	      // Previous event does not end correctly so send out it now...
+	      DBG("flushKey %u\n", m_currentTS);
 	      m_keysink->flushKey(m_currentTS);
 	      // ... and reinitialize to process current event
 	      gettimeofday(&m_startTime, NULL);
@@ -398,6 +418,7 @@ void AmRtpDtmfDetector::process(AmRtpDtmfEvent *evt)
 	      m_currentTS_i = true;
             }
         }
+      DBG("registerKeyPressed %d, %u\n", m_currentEvent, m_currentTS);
       m_keysink->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP, true, m_currentTS);
     }
 }
@@ -408,6 +429,7 @@ void AmRtpDtmfDetector::sendPending()
     {
       struct timeval end_time;
       gettimeofday(&end_time, NULL);
+      DBG("registerKeyReleased(%d, ... %u)\n", m_currentEvent, m_currentTS);
       m_keysink->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time, true, m_currentTS);
       m_eventPending = false;
       m_currentTS_i = false;
@@ -420,6 +442,7 @@ void AmRtpDtmfDetector::checkTimeout()
 {
   if (m_eventPending && m_packetCount++ > MAX_PACKET_WAIT)
     {
+      DBG("idle timeout ... sendPending()\n");
       sendPending();
     }
 }
