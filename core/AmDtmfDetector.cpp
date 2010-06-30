@@ -252,7 +252,7 @@ void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
 {
   // Old event has not been sent yet
   // push out it now
-  if ((m_eventPending && m_currentEvent != event) || 
+  if ((m_eventPending && m_currentEvent != event) ||
       (m_eventPending && has_eventid && m_current_eventid_i && (event_id != m_current_eventid))) {
     reportEvent();
   }
@@ -398,7 +398,7 @@ void AmRtpDtmfDetector::process(AmRtpDtmfEvent *evt)
 	      m_currentTS_i = true;
             }
         }
-      m_keysink->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP, true, m_currentTS);    
+      m_keysink->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP, true, m_currentTS);
     }
 }
 
