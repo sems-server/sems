@@ -86,6 +86,9 @@ USE_MONITORING=yes
 #
 #LONG_DEBUG_MESSAGE=yes
 
+# Is this a debug build or not?
+debug=no
+
 
 ################### end of configuration section #######################
 
@@ -157,11 +160,14 @@ CXX = g++
 CC = gcc
 LD = $(CC)
 
+CXXFLAGS += -Wall -Wno-reorder -fPIC -g $(EXTRA_CXXFLAGS)
+CFLAGS   += -Wall -fPIC -g $(EXTRA_CFLAGS)
 
-CXXFLAGS += -Wall -Wno-reorder -fPIC -g \
-	    -O2 $(EXTRA_CXXFLAGS)
-         
-CFLAGS += -Wall -fPIC -g -O2 $(EXTRA_CFLAGS)
+# only optimize if releasing, as it slows down the build process
+ifneq ($(debug),yes)
+	CXXFLAGS += -O2
+	CFLAGS += -O2
+endif
 
 ifeq ($(DEBUG_PLAYOUT), yes)
 CPPFLAGS +=  -DDEBUG_PLAYOUTBUF

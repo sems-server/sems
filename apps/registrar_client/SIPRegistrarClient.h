@@ -132,7 +132,7 @@ class SIPRegistration : public AmSipDialogEventHandler,
   void onNoErrorACK(unsigned int) {}
 #else
   void onNoAck(unsigned int) {}
-  void onNoPrack(unsigned int) {}
+  void onNoPrack(const AmSipRequest &, const AmSipReply &) {}
 #endif
 
   /** is this registration registered? */

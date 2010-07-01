@@ -186,7 +186,7 @@ void AmB2ABCallerSession::onB2ABEvent(B2ABEvent* ev)
 
   case B2ABConnectOtherLegException:
   case B2ABConnectOtherLegFailed: {
-    DBG("looks like callee leg could not be created. terminating our leg.\n");
+    WARN("looks like callee leg could not be created. terminating our leg.\n");
     terminateLeg();
     callee_status = None;
     return;
@@ -362,7 +362,8 @@ void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep, int old_dlg_status) 
   if ((status_before == AmSipDialog::Pending)&&
       (status == AmSipDialog::Disconnected)) {
 	  
-    DBG("callee session creation failed. notifying callersession.\n");
+    DBG("callee session creation failed. notifying caller session.\n");
+    DBG("this happened with reply: %d.\n", rep.code);
     relayEvent(new B2ABConnectOtherLegFailedEvent(rep.code, rep.reason));
 
   } else if ((status == AmSipDialog::Pending) && (rep.code == 180)) {

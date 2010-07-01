@@ -109,7 +109,8 @@ void SIPRegistration::doRegistration()
     //else 
     //    dlg.outbound_proxy = "";
     
-    dlg.sendRequest(req.method, "", "", "Expires: 1000\n");
+    if (dlg.sendRequest(req.method, "", "", "Expires: 1000\n") < 0)
+      ERROR("failed to send registration.\n");
     
     // save TS
     struct timeval now;
@@ -133,7 +134,8 @@ void SIPRegistration::doUnregister()
     //else 
     //    dlg.outbound_proxy = "";
     
-    dlg.sendRequest(req.method, "", "", "Expires: 0\n");
+    if (dlg.sendRequest(req.method, "", "", "Expires: 0\n") < 0)
+      ERROR("failed to send deregistration.\n");
 
     // save TS
     struct timeval now;

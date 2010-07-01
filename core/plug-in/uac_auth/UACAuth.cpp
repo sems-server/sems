@@ -164,15 +164,18 @@ bool UACAuth::onSipReply(const AmSipReply& reply)
 	    if (dlg->sendRequest(ri->second.method,
 				 ri->second.content_type,
 				 ri->second.body, 
-				 hdrs) == 0) 			
+				 hdrs) == 0) {
 	      processed = true;
+              DBG("authenticated request successfully sent.\n");
+            } else {
+              ERROR("failed to send authenticated request.\n");
+            }
 	  }
 	} 
       }
-  }
-	
-  if (reply.code >= 200)
+  } else if (reply.code >= 200) {
     sent_requests.erase(reply.cseq); // now we dont need it any more
+  }
 	
   return processed;
 }
