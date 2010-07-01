@@ -379,22 +379,22 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
   int i, len;
   string lonely_user_file;
 
-  string app_param_hdr = getHeader(req.hdrs, PARAM_HDR);
+  string app_param_hdr = getHeader(req.hdrs, PARAM_HDR, true);
   if (app_param_hdr.length()) {
     from_header = get_header_keyvalue(app_param_hdr, "Dialout-From");
     extra_headers = get_header_keyvalue(app_param_hdr, "Dialout-Extra");
     dialout_suffix = get_header_keyvalue(app_param_hdr, "Dialout-Suffix");      
     language = get_header_keyvalue(app_param_hdr, "Language");      
   } else {
-    from_header = getHeader(req.hdrs, "P-Dialout-From");
-    extra_headers = getHeader(req.hdrs, "P-Dialout-Extra");
-    dialout_suffix = getHeader(req.hdrs, "P-Dialout-Suffix");
+    from_header = getHeader(req.hdrs, "P-Dialout-From", true);
+    extra_headers = getHeader(req.hdrs, "P-Dialout-Extra", true);
+    dialout_suffix = getHeader(req.hdrs, "P-Dialout-Suffix", true);
     if (from_header.length() || extra_headers.length() 
 	|| dialout_suffix.length()) {
       DBG("Warning: P-Dialout- style headers are deprecated."
 	  " Please use P-App-Param header instead.\n");
     }
-    language = getHeader(req.hdrs, "P-Language");
+    language = getHeader(req.hdrs, "P-Language", true);
     if (language.length()) {
       DBG("Warning: P-Language header is deprecated."
 	  " Please use P-App-Param header instead.\n");
@@ -837,14 +837,14 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
   dlg.remote_tag = "";
 
   // get route set and next hop
-  string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+  string iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
   if (iptel_app_param.length()) {
     dlg.route = get_header_keyvalue(iptel_app_param,"Transfer-RR");
   } else {
     INFO("Use of P-Transfer-RR/P-Transfer-NH is deprecated. "
 	 "Use '%s: Transfer-RR=<rr>;Transfer-NH=<nh>' instead.\n",PARAM_HDR);
 
-    dlg.route = getHeader(req.hdrs,"P-Transfer-RR");
+    dlg.route = getHeader(req.hdrs,"P-Transfer-RR", true);
   }
 
   DBG("ConferenceDialog::onSipRequest: local_party = %s\n",dlg.local_party.c_str());

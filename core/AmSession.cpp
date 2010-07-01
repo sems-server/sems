@@ -851,7 +851,7 @@ int AmSession::acceptAudio(const string& body,
   try {
     try {
       // handle codec and send reply
-      string str_msg_flags = getHeader(hdrs,"P-MsgFlags");
+      string str_msg_flags = getHeader(hdrs,"P-MsgFlags", true);
       unsigned int msg_flags = 0;
       if(reverse_hex2int(str_msg_flags,msg_flags)){
 	ERROR("while parsing 'P-MsgFlags' header\n");

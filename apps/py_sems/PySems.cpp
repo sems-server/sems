@@ -128,7 +128,7 @@ extern "C" {
     if(!PyArg_ParseTuple(args,"ss",&headers,&header_name))
       return NULL;
 
-    string res = getHeader(headers,header_name);
+    string res = getHeader(headers,header_name, true);
     return PyString_FromString(res.c_str());
   }
 

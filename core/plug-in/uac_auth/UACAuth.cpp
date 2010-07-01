@@ -134,13 +134,14 @@ bool UACAuth::onSipReply(const AmSipReply& reply)
 	// 				credential->user.c_str(),
 	// 				credential->pwd.c_str());
 	if (((reply.code == 401) && 
-	     getHeader(ri->second.hdrs, "Authorization").length()) ||
+	     getHeader(ri->second.hdrs, "Authorization", true).length()) ||
 	    ((reply.code == 407) && 
-	     getHeader(ri->second.hdrs, "Proxy-Authorization").length())) {
+	     getHeader(ri->second.hdrs, "Proxy-Authorization", true).length())) {
 	  DBG("Authorization failed!\n");
 	} else {
-	  string auth_hdr = (reply.code==407) ? getHeader(reply.hdrs, "Proxy-Authenticate") : 
-	    getHeader(reply.hdrs, "WWW-Authenticate");
+	  string auth_hdr = (reply.code==407) ? 
+      getHeader(reply.hdrs, "Proxy-Authenticate", true) : 
+	    getHeader(reply.hdrs, "WWW-Authenticate", true);
 	  string result; 
 			
 	  string auth_uri; 

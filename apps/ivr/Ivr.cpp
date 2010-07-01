@@ -90,7 +90,7 @@ extern "C" {
     if(!PyArg_ParseTuple(args,"ss",&headers,&header_name))
       return NULL;
 
-    string res = getHeader(headers,header_name);
+    string res = getHeader(headers,header_name, true);
     return PyString_FromString(res.c_str());
   }
 
@@ -115,14 +115,14 @@ extern "C" {
       return NULL;
 
     string res;
-    string iptel_app_param = getHeader(headers, PARAM_HDR);
+    string iptel_app_param = getHeader(headers, PARAM_HDR, true);
     if (iptel_app_param.length()) {
       res = get_header_keyvalue(iptel_app_param,header_name);
     } else {
       INFO("Use of P-%s is deprecated. \n", header_name);
       INFO("Use '%s: %s=<addr>' instead.\n", PARAM_HDR, header_name);
 
-      res = getHeader(headers,string("P-") + header_name);
+      res = getHeader(headers,string("P-") + header_name, true);
     }
 
 	 

@@ -113,7 +113,7 @@ void AuthB2BDialog::onInvite(const AmSipRequest& req)
   setInOut(NULL,NULL); 
 
   if (AuthB2BFactory::user.empty()) {
-    string app_param = getHeader(req.hdrs, PARAM_HDR);
+    string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
     if (!app_param.length()) {
       AmSession::Exception(500, "auth_b2b: parameters not found");

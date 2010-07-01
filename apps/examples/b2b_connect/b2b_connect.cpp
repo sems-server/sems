@@ -78,7 +78,7 @@ AmSession* b2b_connectFactory::onInvite(const AmSipRequest& req)
 //     throw AmSession::Exception(500,"could not get a user timer reference");
 //   }
 
-  string app_param = getHeader(req.hdrs, PARAM_HDR);
+  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
   if (!app_param.length()) {
     throw  AmSession::Exception(500, "b2b_connect: parameters not found");
@@ -108,7 +108,7 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
     return;
   }
 
-  string app_param = getHeader(req.hdrs, PARAM_HDR);
+  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
   string remote_party, remote_uri;
 
   if (!app_param.length()) {

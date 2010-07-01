@@ -18,7 +18,11 @@
 #include "fct.h"
 
 FCT_BGN() {
-    FCTMF_SUITE_CALL(test_headers);
+  init_logging();
+  log_stderr = true;
+  log_level = 3;
+
+  FCTMF_SUITE_CALL(test_headers);
 } FCT_END();
 
 

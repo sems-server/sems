@@ -529,7 +529,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   }
   else {
   
-    iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+    iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
     mode = get_header_keyvalue(iptel_app_param,"mod", "Mode");
     
     if (!EmailAddress.length()) {

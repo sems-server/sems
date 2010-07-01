@@ -788,6 +788,18 @@ string get_header_keyvalue(const string& param_hdr, const string& short_name, co
  * while skipping escaped values
  */
 string get_header_keyvalue(const string& param_hdr, const string& name) {
+  vector <string> parts = explode(param_hdr, ",");
+  vector<string>::iterator vit;
+  string part;
+  for ( vit=parts.begin() ; vit < parts.end(); vit++ )
+  {
+    part = get_header_keyvalue_single(*vit, name);
+    if(!part.empty()) break;
+  }
+  return part;
+}
+
+string get_header_keyvalue_single(const string& param_hdr, const string& name) {
   // ugly, but we need escaping
 #define ST_FINDKEY  0
 #define ST_FK_ESC   1
@@ -902,7 +914,7 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
 
 /** get the value of key @param name from \ref PARAM_HDR header in hdrs */
 string get_session_param(const string& hdrs, const string& name) {
-  string iptel_app_param = getHeader(hdrs, PARAM_HDR);
+  string iptel_app_param = getHeader(hdrs, PARAM_HDR, true);
   if (!iptel_app_param.length()) {
     //      DBG("call parameters header PARAM_HDR not found "
     // 	 "(need to configure ser's tw_append?).\n");

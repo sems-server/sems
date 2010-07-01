@@ -457,7 +457,7 @@ void DSMFactory::addVariables(DSMCall* s, const string& prefix,
 void DSMFactory::addParams(DSMCall* s, const string& hdrs) {
   // TODO: use real parser with quoting and optimize
   map<string, string> params;
-  vector<string> items = explode(getHeader(hdrs, PARAM_HDR), ";");
+  vector<string> items = explode(getHeader(hdrs, PARAM_HDR, true), ";");
   for (vector<string>::iterator it=items.begin(); 
        it != items.end(); it++) {
     vector<string> kv = explode(*it, "=");
@@ -510,7 +510,7 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
 	  from_parser.uri = req.from_uri;
 	else {
 	  size_t end;
-	  string pai = getHeader(req.hdrs, SIP_HDR_P_ASSERTED_IDENTITY);
+	  string pai = getHeader(req.hdrs, SIP_HDR_P_ASSERTED_IDENTITY, true);
 	  if (!from_parser.parse_contact(pai, 0, end)) {
 	    WARN("Failed to parse " SIP_HDR_P_ASSERTED_IDENTITY " '%s'\n",
 		  pai.c_str());
