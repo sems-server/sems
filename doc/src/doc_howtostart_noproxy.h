@@ -91,7 +91,7 @@
   <p> so that SEMS executes the conference application for an incoming call.</p>
   
   <p> We want SEMS to register at a SIP server, so we need to tell it about the user name and the password, this is set 
-   in <b>/usr/local/etc/sems/etc/reg_agent.conf</b> (of course this user name bob and the password need to be set to the
+   in <b>/usr/local/etc/sems/reg_agent.conf</b> (of course this user name bob and the password need to be set to the
    ones used for testing):</p>
   \code
      domain=iptel.org
@@ -143,7 +143,7 @@
   \endcode
   
   and in 
-  <b>/usr/local/etc/sems/etc/dsm.conf </b>: 
+  <b>/usr/local/etc/sems/dsm.conf </b>: 
   \code
     diag_path=/usr/local/lib/sems/dsm/
     load_diags=mydsmapp
