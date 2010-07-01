@@ -129,18 +129,26 @@ class AmKeyPressSink {
    * @param source which detector posted this event
    * @param start time when key was pressed
    * @param stop time when key was released
-   * @param flush whether key should be registered as own keypress immediately
+   * @param has_eventid whether event has an id
+   * @param event_id id of the event
    */
   virtual void registerKeyReleased(int event, Dtmf::EventSource source,
-				   const struct timeval& start, const struct timeval& stop, bool flush=false,
+				   const struct timeval& start, const struct timeval& stop,
 				   bool has_eventid = false, unsigned int event_id = 0) = 0;
   /**
    * Through this method the AmDtmfDetector receives events that was
    * detected by specific detectors.
    * @param event code of key released
    * @param source which detector posted this event
+   * @param has_eventid whether event has an id
+   * @param event_id id of the event
    */
-  virtual void registerKeyPressed(int event, Dtmf::EventSource source) = 0;
+  virtual void registerKeyPressed(int event, Dtmf::EventSource source, bool has_eventid=false, unsigned int event_id=0) = 0;
+  /**
+   *   Flush (report to session) any pending key if ti matches the event id
+   *   @param  event_id ID of the event (e.g. RTP TS)
+   */
+  virtual void flushKey(unsigned int event_id) = 0;
 };
 
 /**
@@ -355,7 +363,7 @@ class AmRtpDtmfDetector
   /**
    * Send out pending event
    */
-  void sendPending(bool flush=false);
+  void sendPending();
 
  public:
   /**
@@ -423,20 +431,19 @@ class AmDtmfDetector
    * @param source which detector posted this event
    * @param start time when key was pressed
    * @param stop time when key was released
-   * @param flush whether key should be registered as own keypress immediately
-   * @param has_eventid whether event has an id
-   * @param event_id id of the event
    */
   void registerKeyReleased(int event, Dtmf::EventSource source,
 			   const struct timeval& start, const struct timeval& stop,
-			   bool flush=false, bool has_eventid = false, unsigned int event_id = 0);
+			   bool has_eventid = false, unsigned int event_id = 0);
   /**
    * Through this method the AmDtmfDetector receives events that was
    * detected by specific detectors.
    * @param event code of key released
    * @param source which detector posted this event
    */
-  void registerKeyPressed(int event, Dtmf::EventSource source);
+  void registerKeyPressed(int event, Dtmf::EventSource source, bool has_eventid=false, unsigned int event_id=0);
+
+  void flushKey(unsigned int event_id);
 
  public:
   /**

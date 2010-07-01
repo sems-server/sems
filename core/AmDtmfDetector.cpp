@@ -238,19 +238,24 @@ void AmDtmfDetector::process(AmEvent *evt)
   evt->processed = true;
 }
 
+void AmDtmfDetector::flushKey(unsigned int event_id) {
+  // flush the current key if it corresponds to the one with event_id
+  if (m_eventPending && m_current_eventid_i && event_id == m_current_eventid) {
+    reportEvent();
+  }
+}
+
 void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
                                          const struct timeval& start,
                                          const struct timeval& stop,
-					 bool flush,
 					 bool has_eventid, unsigned int event_id)
 {
   // Old event has not been sent yet
   // push out it now
-  if (flush || (m_eventPending && m_currentEvent != event) || 
-      (m_eventPending && has_eventid && m_current_eventid_i && (event_id != m_current_eventid)))
-    {
-      reportEvent();
-    }
+  if ((m_eventPending && m_currentEvent != event) || 
+      (m_eventPending && has_eventid && m_current_eventid_i && (event_id != m_current_eventid))) {
+    reportEvent();
+  }
 
   m_eventPending = true;
   m_currentEvent = event;
@@ -277,7 +282,7 @@ void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
     }
 }
 
-void AmDtmfDetector::registerKeyPressed(int event, Dtmf::EventSource type)
+void AmDtmfDetector::registerKeyPressed(int event, Dtmf::EventSource type, bool has_eventid, unsigned int event_id)
 {
   struct timeval tm;
   gettimeofday(&tm, NULL);
@@ -298,6 +303,11 @@ void AmDtmfDetector::registerKeyPressed(int event, Dtmf::EventSource type)
       if (delta_msec > 0)
 	memcpy(&m_lastReportTime, &tm, sizeof(struct timeval));
     }
+
+  if (has_eventid) {
+    m_current_eventid_i = true;
+    m_current_eventid = event_id;
+  }
 }
 
 void AmDtmfDetector::checkTimeout()
@@ -379,7 +389,7 @@ void AmRtpDtmfDetector::process(AmRtpDtmfEvent *evt)
 	      (m_currentTS_i && (evt->ts() != m_currentTS)))
             {
 	      // Previous event does not end correctly so send out it now...
-	      sendPending(true);
+	      m_keysink->flushKey(m_currentTS);
 	      // ... and reinitialize to process current event
 	      gettimeofday(&m_startTime, NULL);
 	      m_eventPending = true;
@@ -388,17 +398,17 @@ void AmRtpDtmfDetector::process(AmRtpDtmfEvent *evt)
 	      m_currentTS_i = true;
             }
         }
-      m_keysink->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP);    
+      m_keysink->registerKeyPressed(m_currentEvent, Dtmf::SOURCE_RTP, true, m_currentTS);    
     }
 }
 
-void AmRtpDtmfDetector::sendPending(bool flush)
+void AmRtpDtmfDetector::sendPending()
 {
   if (m_eventPending)
     {
       struct timeval end_time;
       gettimeofday(&end_time, NULL);
-      m_keysink->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time, flush, true, m_currentTS);
+      m_keysink->registerKeyReleased(m_currentEvent, Dtmf::SOURCE_RTP, m_startTime, end_time, true, m_currentTS);
       m_eventPending = false;
       m_currentTS_i = false;
       m_lastTS = m_currentTS;
