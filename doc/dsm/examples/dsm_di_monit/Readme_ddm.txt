@@ -32,9 +32,9 @@ The 'monitoring' module serves for general purpose call monitoring.
 Applications can add specific attributes to the set which is being 
 logged for every call. Monitoring exports is functions also through 
 a DI interface, which can then be accessed for example from the 
-outside through XMLRPC. On the other hand there is a DSM module 
-mod_monitoring, which allows a DSM to add attributes 
-(monitoring.log()).
+outside through XMLRPC (using xmlrpc2di module). On the other hand 
+there is a DSM module mod_monitoring, which allows a DSM to add 
+attributes (monitoring.log()).
 
 
 
@@ -153,7 +153,7 @@ stop(true) sends a BYE and stops the session. We should not forget to stop the s
 
 
 So, lets try this out. First we load the necessary modules and set as 
-application to execute when a call comse in the DSM script:
+application to execute when a call comes in the DSM script:
 sems.conf:
  load_plugins=wav;l16;ilbc;sipctrl;dsm;xmlrpc2di;monitoring
  application=dsm_di_monitoring
@@ -161,7 +161,7 @@ sems.conf:
 We tell dsm to load this dsm script and register it as 
 application in SEMS:
 dsm.conf:
- diag_path=../apps/dsm/doc/examples/dsm_di_monit
+ diag_path=../doc/dsm/examples/dsm_di_monit
  load_diags=dsm_di_monitoring
  register_apps=dsm_di_monitoring
  mod_path=../apps/dsm/mods/lib/

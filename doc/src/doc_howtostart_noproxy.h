@@ -78,9 +78,9 @@
     
   In <b>/usr/local/etc/sems/sems.conf</b>, we set
   \code
-   load_plugins=sipctrl;wav;uac_auth;registrar_client;reg_agent;conference   
+   load_plugins=wav;uac_auth;registrar_client;reg_agent;conference   
   \endcode
-  <p>  to load the modules we need; sipctrl loads the SIP stack, wav is for reading WAV files and for the G711 codec,
+  <p>  to load the modules we need; wav is for reading WAV files and for the G711 codec,
   uac_auth is the module which implements authentication, registrar_client facilitates registration at a SIP server, 
   and reg_agent is the application that uses registrar_client to have SEMS register at a SIP server.</p>
 
@@ -138,7 +138,7 @@
   
   To use a DSM application, we set in <b>/usr/local/etc/sems/sems.conf </b>
   \code
-   load_plugins=sipctrl;wav;uac_auth;registrar_client;reg_agent;session_timer;dsm
+   load_plugins=wav;uac_auth;registrar_client;reg_agent;session_timer;dsm
    application=mydsmapp
   \endcode
   
