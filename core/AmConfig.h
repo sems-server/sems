@@ -145,6 +145,8 @@ struct AmConfig
 
   static bool IgnoreSIGCHLD;
 
+  static bool IgnoreSIGPIPE;
+
   static bool LogSessions;
 
   static bool LogEvents;

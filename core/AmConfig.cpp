@@ -94,6 +94,7 @@ vector <string> AmConfig::CodecOrder;
 Dtmf::InbandDetectorType 
 AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
 bool AmConfig::IgnoreSIGCHLD      = true;
+bool AmConfig::IgnoreSIGPIPE      = true;
 
 int AmConfig::setSIPPort(const string& port) 
 {
