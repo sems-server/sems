@@ -12,13 +12,14 @@ HDRS=$(SRCS:.cpp=.h)
 OBJS=$(SRCS:.cpp=.o)
 DEPS=$(SRCS:.cpp=.d)
 
-CPPFLAGS += -I..
+CPPFLAGS += -I.. -DNOMAIN
 
 
 .PHONY: all
 all: ../../Makefile.defs
 	-@$(MAKE) core_deps  && $(MAKE) deps    && \
-	  $(MAKE) $(NAME)
+	  $(MAKE) $(NAME) && \
+	./$(NAME)
 
 .PHONY: sip_stack
 sip_stack:
