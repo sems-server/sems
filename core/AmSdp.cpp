@@ -276,6 +276,9 @@ int AmSdp::genRequest(const string& localip, int localport, string& out_buf)
 	+ " " + string(it2->second->name)
 	+ "/" + int2str(it2->second->sample_rate)
 	+ "\r\n";
+      if (it2->second->name == string("telephone-event")) {
+	out_buf +="a=fmtp:"+int2str(it2->first)+" 0-16\r\n";
+      }
     } else {
       ERROR("Payload %d was not found in payloads map!\n", it->second);
       return -1;
