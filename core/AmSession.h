@@ -384,6 +384,14 @@ public:
   bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
   void setDtmfDetectionEnabled(bool e) { m_dtmfDetectionEnabled = e; }
   void putDtmfAudio(const unsigned char *buf, int size, int user_ts);
+
+  /**
+   * send a DTMF as RTP payload (RFC4733)
+   * @param event event ID (e.g. key press), see rfc
+   * @param duration_ms duration in milliseconds
+   */
+  void sendDtmf(int event, unsigned int duration_ms);
+
   /** event handler for apps to use*/
   virtual void onDtmf(int event, int duration);
 

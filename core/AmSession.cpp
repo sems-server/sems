@@ -584,6 +584,11 @@ void AmSession::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
   m_dtmfEventQueue.putDtmfAudio(buf, size, user_ts);
 }
 
+void AmSession::sendDtmf(int event, unsigned int duration_ms) {
+  RTPStream()->sendDtmf(event, duration_ms);
+}
+
+
 void AmSession::onDtmf(int event, int duration_msec)
 {
   DBG("AmSession::onDtmf(%i,%i)\n",event,duration_msec);

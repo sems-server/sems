@@ -69,6 +69,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("unmute", SCUnmuteAction);
   DEF_CMD("enableDTMFDetection", SCEnableDTMFDetection);
   DEF_CMD("disableDTMFDetection", SCDisableDTMFDetection);
+  DEF_CMD("sendDTMF", SCSendDTMFAction);
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("sets", SCSetSAction);
@@ -1159,4 +1160,28 @@ EXEC_ACTION_START(SCB2BSetHeadersAction) {
 EXEC_ACTION_START(SCB2BClearHeadersAction) {
   DBG("clearing B2B headers\n");
   sc_sess->B2BclearHeaders();
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCSendDTMFAction,',', true);
+EXEC_ACTION_START(SCSendDTMFAction) {
+  string event = resolveVars(par1, sess, sc_sess, event_params);
+  string duration = resolveVars(par2, sess, sc_sess, event_params);  
+  
+  unsigned int event_i;
+  if (str2i(event, event_i)) {
+    ERROR("event '%s' not a valid DTMF event\n", event.c_str());
+    throw DSMException("core", "cause", "invalid DTMF:"+ event);
+  }
+
+  unsigned int duration_i;
+  if (duration.empty()) {
+    duration_i = 500; // default
+  } else {
+    if (str2i(duration, duration_i)) {
+      ERROR("event duration '%s' not a valid DTMF duration\n", duration.c_str());
+      throw DSMException("core", "cause", "invalid DTMF duration:"+ duration);
+    }
+  }
+
+  sess->sendDtmf(event_i, duration_i);
 } EXEC_ACTION_END;
