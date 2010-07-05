@@ -212,8 +212,12 @@ EXEC_ACTION_START(SCPostEventAction){
   if (!var.empty()) {
     if (var == "var")
       ev->params = sc_sess->var;
-    else 
-      ev->params[var] = sc_sess->var[var];
+    else {
+      vector<string> vars = explode(var, ";");
+      for (vector<string>::iterator it =
+	     vars.begin(); it != vars.end(); it++)
+	ev->params[*it] = sc_sess->var[*it];
+    }
   }
 
   DBG("posting event to session '%s'\n", sess_id.c_str());
