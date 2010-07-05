@@ -79,9 +79,10 @@ core actions:
  unmute() 
    set RTP stream to unmuted (send and receive RTP packets)
 
- postEvent(sess_id[, variable name])
-   post dsm event to session sess_id; variable copied as event variable
+ postEvent(sess_id[, variable_name;variable_name;...])
+   post dsm event to session sess_id; variables copied as event parameters
    e.g. postEvent(@local_tag, PAI) : post event to ourselves
+        postEvent($some_call, var1;var2;var3)     post event with var1, var2, var3
    * sets $errno (arg)
 
  postEvent(sess_id, var)
