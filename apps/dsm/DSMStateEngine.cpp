@@ -139,6 +139,70 @@ State* DSMStateDiagram::getInitialState() {
 }
 
 
+bool DSMStateDiagram::checkConsistency(string& report) {
+  bool res = true;
+  DBG("checking consistency of '%s'\n", name.c_str());
+  res &= checkInitialState(report);
+  res &= checkDestinationStates(report);
+  res &= checkHangupHandled(report);
+  return res;
+}
+
+bool DSMStateDiagram::checkInitialState(string& report) {
+  DBG("checking for initial state...\n");
+  if (NULL == getInitialState()) {
+    report+=name+": " "No initial state defined!\n";
+    return false;
+  }
+  return true;
+}
+bool DSMStateDiagram::checkDestinationStates(string& report) {
+  DBG("checking for existence of destination states...\n");
+  bool res = true;
+  for (vector<State>::iterator it=
+	 states.begin(); it != states.end(); it++) {
+    for (vector<DSMTransition>::iterator t_it=
+	   it->transitions.begin(); t_it != it->transitions.end(); t_it++) {
+      if (NULL == getState(t_it->to_state)) {
+	report += name+": State '"+it->name+"' Transition '"+t_it->name+
+	  "' : Destination state '"+ t_it->to_state +"' is not defined\n";
+	res = false;
+      }
+    }
+  }
+  return res;
+}
+
+bool DSMStateDiagram::checkHangupHandled(string& report) {
+  DBG("checking for hangup handled in all states...\n");
+  bool res = true;
+  for (vector<State>::iterator it=
+	 states.begin(); it != states.end(); it++) {
+    bool have_hangup_trans = false;
+    for (vector<DSMTransition>::iterator t_it=
+	   it->transitions.begin(); t_it != it->transitions.end(); t_it++) {
+      for (vector<DSMCondition*>::iterator c_it=
+	     t_it->precond.begin(); c_it!=t_it->precond.end(); c_it++) {
+	if ((*c_it)->type == DSMCondition::Hangup) {
+	  // todo: what if other conditions unmet?
+	  have_hangup_trans = true;
+	  break;
+	}
+      }
+      if (have_hangup_trans)
+	break;
+
+    }
+    if (!have_hangup_trans) {
+      report += name+": State '"+it->name+"': hangup is not handled\n";
+      res = false;
+    }
+  }
+
+  return res;
+}
+
+
 DSMStateEngine::DSMStateEngine() 
   : current(NULL) {
 }
@@ -492,3 +556,4 @@ void varPrintArg(const AmArg& a, map<string, string>& dst, const string& name) {
   default: dst[name] = "<UNKONWN TYPE>"; return;
   }
 }
+

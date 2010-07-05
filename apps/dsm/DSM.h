@@ -67,6 +67,7 @@ class DSMFactory
   std::set<DSMStateDiagramCollection*> old_diags;
 
   static bool DebugDSM;
+  static bool CheckDSM;
 
   static string InboundStartDiag;
   static string OutboundStartDiag;

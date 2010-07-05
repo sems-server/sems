@@ -161,6 +161,10 @@ class DSMStateDiagram  {
   string name;
   string initial_state;
 
+  bool checkInitialState(string& report);
+  bool checkDestinationStates(string& report);
+  bool checkHangupHandled(string& report);
+
  public:
   DSMStateDiagram(const string& name);
   ~DSMStateDiagram();
@@ -171,6 +175,7 @@ class DSMStateDiagram  {
   void addState(const State& state, bool is_initial = false);
   bool addTransition(const DSMTransition& trans);
   const string& getName() { return name; }
+  bool checkConsistency(string& report);
 };
 
 class DSMException {

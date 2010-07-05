@@ -37,7 +37,7 @@ DSMStateDiagramCollection::~DSMStateDiagramCollection() {
 }
 
 bool DSMStateDiagramCollection::loadFile(const string& filename, const string& name, 
-					 const string& mod_path, bool debug_dsm) {
+					 const string& mod_path, bool debug_dsm, bool check_dsm) {
   DBG("loading DSM '%s' from '%s'\n", name.c_str(), filename.c_str());
 
   DSMChartReader cr;
@@ -70,6 +70,19 @@ bool DSMStateDiagramCollection::loadFile(const string& filename, const string& n
     ERROR("DonkeySM decode script error!\n");
     return false;
   }
+  if (check_dsm) {
+    string report;
+    if (!diags.back().checkConsistency(report)) {
+      WARN("consistency check failed on '%s' from file '%s':\n", 
+	   name.c_str(), filename.c_str());
+      WARN("------------------------------------------\n"
+	   "%s\n"
+	   "------------------------------------------\n", report.c_str());
+    } else {
+      DBG("DSM '%s' passed consistency check\n", name.c_str());
+    }
+  }
+
   return true;
 }
 

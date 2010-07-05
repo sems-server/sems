@@ -63,6 +63,7 @@ DSMFactory* DSMFactory::instance()
 bool DSMFactory::DebugDSM;
 string DSMFactory::InboundStartDiag;
 string DSMFactory::OutboundStartDiag;
+bool DSMFactory::CheckDSM;
 
 #ifdef USE_MONITORING
 bool DSMFactory::MonitoringFullCallgraph;
@@ -72,6 +73,7 @@ MonSelectType DSMFactory::MonSelectCaller;
 MonSelectType DSMFactory::MonSelectCallee;
 
 string DSMFactory::MonSelectFallback;
+
 #endif // USE_MONITORING
 
 DSMFactory::DSMFactory(const string& _app_name)
@@ -122,6 +124,7 @@ int DSMFactory::onLoad()
   configureModule(cfg);
 
   DebugDSM = cfg.getParameter("debug_raw_dsm") == "yes";
+  CheckDSM = cfg.getParameter("dsm_consistency_check", "yes") == "yes";
  
   if (!loadPrompts(cfg))
     return -1;
@@ -327,7 +330,7 @@ bool DSMFactory::loadDiags(AmConfigReader& cfg, DSMStateDiagramCollection* m_dia
   vector<string> diags_names = explode(LoadDiags, ",");
   for (vector<string>::iterator it=
 	 diags_names.begin(); it != diags_names.end(); it++) {
-    if (!m_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM)) {
+    if (!m_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM, CheckDSM)) {
       ERROR("loading %s from %s\n", 
 	    it->c_str(), (DiagPath+*it+".dsm").c_str());
       return false;
@@ -743,7 +746,7 @@ void DSMFactory::reloadDSMs(const AmArg& args, AmArg& ret) {
   vector<string> diags_names = explode(LoadDiags, ",");
   for (vector<string>::iterator it=
 	 diags_names.begin(); it != diags_names.end(); it++) {
-    if (!new_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM)) {
+    if (!new_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM, CheckDSM)) {
       ERROR("loading %s from %s\n", 
 	    it->c_str(), (DiagPath+*it+".dsm").c_str());
       ret.push(500);
@@ -949,7 +952,7 @@ void DSMFactory::loadDSM(const AmArg& args, AmArg& ret) {
       ret.push(400);
       ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
     } else {
-      if (!MainScriptConfig.diags->loadFile(dsm_file_name, dsm_name, ModPath, DebugDSM)) {
+      if (!MainScriptConfig.diags->loadFile(dsm_file_name, dsm_name, ModPath, DebugDSM, CheckDSM)) {
 	ret.push(500);
 	ret.push("error loading "+dsm_name+" from "+ dsm_file_name);
       } else {
@@ -976,7 +979,7 @@ void DSMFactory::loadDSMWithPaths(const AmArg& args, AmArg& ret) {
       ret.push(400);
       ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
     } else {
-      if (!MainScriptConfig.diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path, DebugDSM)) {
+      if (!MainScriptConfig.diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path, DebugDSM, CheckDSM)) {
 	ret.push(500);
 	ret.push("error loading "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
       } else {
