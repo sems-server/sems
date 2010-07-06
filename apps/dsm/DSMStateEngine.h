@@ -87,6 +87,7 @@ class DSMCondition
 
     JsonRpcResponse,
     JsonRpcRequest
+
   };
 
   bool invert; 
@@ -97,10 +98,10 @@ class DSMCondition
   EventType type;
   map<string, string> params;
 
-  bool _match(AmSession* sess, DSMCondition::EventType event,
+  bool _match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 	      map<string,string>* event_params);
 
-  virtual bool match(AmSession* sess, DSMCondition::EventType event,
+  virtual bool match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 		     map<string,string>* event_params);
 };
 
@@ -120,7 +121,7 @@ class DSMAction
   virtual ~DSMAction() { /* DBG("dest action\n"); */ }
 
   /** @return whether state engine is to be modified (via getSEAction) */
-  virtual bool execute(AmSession* sess, DSMCondition::EventType event,	\
+  virtual bool execute(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event, \
 		       map<string,string>* event_params) = 0;
 
   /** @return state engine modification */
@@ -210,14 +211,16 @@ class DSMStateEngine {
 
   vector<pair<DSMStateDiagram*, State*> > stack;
 
-  bool callDiag(const string& diag_name, AmSession* sess, DSMCondition::EventType event,
-			   map<string,string>* event_params);
-  bool jumpDiag(const string& diag_name, AmSession* sess, DSMCondition::EventType event,
-			   map<string,string>* event_params);
-  bool returnDiag(AmSession* sess);
+  bool callDiag(const string& diag_name, AmSession* sess, DSMSession* sc_sess, 
+		DSMCondition::EventType event,
+		map<string,string>* event_params);
+  bool jumpDiag(const string& diag_name, AmSession* sess, DSMSession* sc_sess,
+		DSMCondition::EventType event,
+		map<string,string>* event_params);
+  bool returnDiag(AmSession* sess, DSMSession* sc_sess);
   bool runactions(vector<DSMAction*>::iterator from, 
 		  vector<DSMAction*>::iterator to, 
-		  AmSession* sess, DSMCondition::EventType event,
+		  AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 		  map<string,string>* event_params,  bool& is_consumed);
 
   vector<DSMModule*> mods;
@@ -229,10 +232,11 @@ class DSMStateEngine {
   void addDiagram(DSMStateDiagram* diag); 
   void addModules(vector<DSMModule*> modules);
 
-  bool init(AmSession* sess, const string& startDiagram,
+  bool init(AmSession* sess, DSMSession* sc_sess,
+	    const string& startDiagram,
 	    DSMCondition::EventType init_event);
 
-  void runEvent(AmSession* sess,
+  void runEvent(AmSession* sess, DSMSession* sc_sess,
 		DSMCondition::EventType event,
 		map<string,string>* event_params,
 		bool run_exception = false);

@@ -67,7 +67,7 @@ class SCPyPyAction
     PyObject* py_func;
  public:				
     SCPyPyAction(const string& arg);
-    bool execute(AmSession* sess,	
+    bool execute(AmSession* sess, DSMSession* sc_sess,
 		 DSMCondition::EventType event,	
 		 map<string,string>* event_params);
 };
@@ -79,7 +79,7 @@ class PyPyCondition
  public:
   
   PyPyCondition(const string& arg);
-  bool match(AmSession* sess, DSMCondition::EventType event,
+  bool match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 	     map<string,string>* event_params);
 };
 

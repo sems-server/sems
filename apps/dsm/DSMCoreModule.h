@@ -110,7 +110,7 @@ class SCDIAction
   bool get_res;
  public:
   SCDIAction(const string& arg, bool get_res);
-  bool execute(AmSession* sess,
+  bool execute(AmSession* sess, DSMSession* sc_sess,
 	       DSMCondition::EventType event,
 	       map<string,string>* event_params);
 };									

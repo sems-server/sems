@@ -93,7 +93,7 @@ void DSMCall::onInvite(const AmSipRequest& req) {
   bool run_session_invite = engine.onInvite(req, this);
 
   if (run_invite_event) {
-    if (!engine.init(this, startDiagName, DSMCondition::Invite))
+    if (!engine.init(this, this, startDiagName, DSMCondition::Invite))
       run_session_invite =false;
 
     if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
@@ -120,7 +120,7 @@ void DSMCall::onOutgoingInvite(const string& headers) {
   bool run_session_invite = engine.onInvite(req, this);
 
   if (run_invite_event) {
-    if (!engine.init(this, startDiagName, DSMCondition::Invite))
+    if (!engine.init(this, this, startDiagName, DSMCondition::Invite))
       run_session_invite =false;
 
     if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
@@ -146,7 +146,7 @@ void DSMCall::onOutgoingInvite(const string& headers) {
   params["reason"] = reply.reason;
   params["has_body"] = reply.body.empty() ?
     "false" : "true";
-  engine.runEvent(this, DSMCondition::Ringing, &params);
+  engine.runEvent(this, this, DSMCondition::Ringing, &params);
   // todo: local ringbacktone
 }
 
@@ -156,7 +156,7 @@ void DSMCall::onEarlySessionStart(const AmSipReply& reply) {
   params["reason"] = reply.reason;
   params["has_body"] = reply.body.empty() ?
     "false" : "true";
-  engine.runEvent(this, DSMCondition::EarlySession, &params);
+  engine.runEvent(this, this, DSMCondition::EarlySession, &params);
 
   if (checkVar(DSM_CONNECT_EARLY_SESSION, DSM_CONNECT_EARLY_SESSION_FALSE)) {
     DBG("call does not connect early session\n");
@@ -192,7 +192,7 @@ void DSMCall::onSessionStart(const AmSipReply& rep)
 }
 
 void DSMCall::startSession(){
-  engine.init(this, startDiagName, DSMCondition::SessionStart);
+  engine.init(this, this, startDiagName, DSMCondition::SessionStart);
 
   setReceiving(true);
 
@@ -232,7 +232,7 @@ void DSMCall::onDtmf(int event, int duration_msec) {
   map<string, string> params;
   params["key"] = int2str(event);
   params["duration"] = int2str(duration_msec);
-  engine.runEvent(this, DSMCondition::Key, &params);
+  engine.runEvent(this, this, DSMCondition::Key, &params);
 }
 
 void DSMCall::onBye(const AmSipRequest& req)
@@ -241,13 +241,13 @@ void DSMCall::onBye(const AmSipRequest& req)
   map<string, string> params;
   params["headers"] = req.hdrs;
  
-  engine.runEvent(this, DSMCondition::Hangup, &params);
+  engine.runEvent(this, this, DSMCondition::Hangup, &params);
 }
 
 void DSMCall::onCancel() {
   DBG("onCancel\n");
   if (dlg.getStatus() < AmSipDialog::Connected) 
-    engine.runEvent(this, DSMCondition::Hangup, NULL);
+    engine.runEvent(this, this, DSMCondition::Hangup, NULL);
   else {
     DBG("ignoring onCancel event in established dialog\n");
   }
@@ -272,7 +272,7 @@ void DSMCall::onSipRequest(const AmSipRequest& req) {
     DSMSipRequest* sip_req = new DSMSipRequest(&req);
     avar[DSM_AVAR_REQUEST] = AmArg(sip_req);
     
-    engine.runEvent(this, DSMCondition::SipRequest, &params);
+    engine.runEvent(this, this, DSMCondition::SipRequest, &params);
 
     delete sip_req;
     avar.erase(DSM_AVAR_REQUEST);
@@ -306,7 +306,7 @@ void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status) {
     DSMSipReply* dsm_reply = new DSMSipReply(&reply);
     avar[DSM_AVAR_REPLY] = AmArg(dsm_reply);
     
-    engine.runEvent(this, DSMCondition::SipReply, &params);
+    engine.runEvent(this, this, DSMCondition::SipReply, &params);
 
     delete dsm_reply;
     avar.erase(DSM_AVAR_REPLY);
@@ -327,7 +327,7 @@ void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status) {
     map<string, string> params;
     params["code"] = int2str(reply.code);
     params["reason"] = reply.reason;
-    engine.runEvent(this, DSMCondition::FailedCall, &params);    
+    engine.runEvent(this, this, DSMCondition::FailedCall, &params);
     setStopped();
   }
 }
@@ -338,7 +338,7 @@ void DSMCall::process(AmEvent* event)
   if (event->event_id == DSM_EVENT_ID) {
     DSMEvent* dsm_event = dynamic_cast<DSMEvent*>(event);
     if (dsm_event) {      
-      engine.runEvent(this, DSMCondition::DSMEvent, &dsm_event->params);
+      engine.runEvent(this, this, DSMCondition::DSMEvent, &dsm_event->params);
       return;
     }
   
@@ -350,7 +350,7 @@ void DSMCall::process(AmEvent* event)
       (audio_event->event_id == AmAudioEvent::noAudio))){
     map<string, string> params;
     params["type"] = audio_event->event_id == AmAudioEvent::cleared?"cleared":"noAudio";
-    engine.runEvent(this, DSMCondition::NoAudio, &params);
+    engine.runEvent(this, this, DSMCondition::NoAudio, &params);
     return;
   }
 
@@ -359,14 +359,14 @@ void DSMCall::process(AmEvent* event)
     int timer_id = plugin_event->data.get(0).asInt();
     map<string, string> params;
     params["id"] = int2str(timer_id);
-    engine.runEvent(this, DSMCondition::Timer, &params);
+    engine.runEvent(this, this, DSMCondition::Timer, &params);
   }
 
   AmPlaylistSeparatorEvent* sep_ev = dynamic_cast<AmPlaylistSeparatorEvent*>(event);
   if (sep_ev) {
     map<string, string> params;
     params["id"] = int2str(sep_ev->event_id);
-    engine.runEvent(this, DSMCondition::PlaylistSeparator, &params);
+    engine.runEvent(this, this, DSMCondition::PlaylistSeparator, &params);
   }
 
   // todo: give modules the possibility to define/process events
@@ -389,7 +389,7 @@ void DSMCall::process(AmEvent* event)
       // save reference to full parameters
       avar[DSM_AVAR_JSONRPCRESPONEDATA] = AmArg(&resp_ev->response.data);
 
-      engine.runEvent(this, DSMCondition::JsonRpcResponse, &params);
+      engine.runEvent(this, this, DSMCondition::JsonRpcResponse, &params);
 
       avar.erase(DSM_AVAR_JSONRPCRESPONEDATA);
       return;
@@ -412,7 +412,7 @@ void DSMCall::process(AmEvent* event)
       // save reference to full parameters
       avar[DSM_AVAR_JSONRPCREQUESTDATA] = AmArg(&req_ev->params);
 
-      engine.runEvent(this, DSMCondition::JsonRpcRequest, &params);
+      engine.runEvent(this, this, DSMCondition::JsonRpcRequest, &params);
 
       avar.erase(DSM_AVAR_JSONRPCREQUESTDATA);
       return;
@@ -613,7 +613,7 @@ void DSMCall::onOtherBye(const AmSipRequest& req) {
 
   map<string, string> params;
   params["hdrs"] = req.hdrs; // todo: optimization - make this configurable
-  engine.runEvent(this, DSMCondition::B2BOtherBye, &params);
+  engine.runEvent(this, this, DSMCondition::B2BOtherBye, &params);
 }
 
 bool DSMCall::onOtherReply(const AmSipReply& reply) {
@@ -625,7 +625,7 @@ bool DSMCall::onOtherReply(const AmSipReply& reply) {
   params["reason"] = reply.reason;
   params["hdrs"] = reply.hdrs; // todo: optimization - make this configurable
 
-  engine.runEvent(this, DSMCondition::B2BOtherReply, &params);
+  engine.runEvent(this, this, DSMCondition::B2BOtherReply, &params);
 
   return false;
 }

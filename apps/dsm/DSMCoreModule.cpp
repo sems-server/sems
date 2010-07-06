@@ -352,7 +352,7 @@ EXEC_ACTION_START(SCStopAction) {
 
 #define DEF_SCModActionExec(clsname)				\
 								\
-  bool clsname::execute(AmSession* sess,			\
+  bool clsname::execute(AmSession* sess, DSMSession* sc_sess,	\
 			DSMCondition::EventType event,		\
 			map<string,string>* event_params) {	\
     return true;						\
