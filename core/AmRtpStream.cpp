@@ -216,6 +216,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
 	dtmf.event = current_send_dtmf.first;
 	dtmf.e = dtmf.r = 0;
 	dtmf.duration = htons(ts - current_send_dtmf_ts);
+	dtmf.volume = 20;
 
 	DBG("sending DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
 	    dtmf.event,dtmf.e,dtmf.r,dtmf.volume,ntohs(dtmf.duration),current_send_dtmf_ts);
@@ -247,6 +248,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
 	dtmf.e = 1; 
 	dtmf.r = 0;
 	dtmf.duration = htons(current_send_dtmf.second);
+	dtmf.volume = 20;
 
 	DBG("sending DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
 	    dtmf.event,dtmf.e,dtmf.r,dtmf.volume,ntohs(dtmf.duration),current_send_dtmf_ts);
