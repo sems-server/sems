@@ -290,15 +290,15 @@ bool DSMStateEngine::init(AmSession* sess, DSMSession* sc_sess,
 }
 
 bool DSMCondition::_match(AmSession* sess, DSMSession* sc_sess,
-		      DSMCondition::EventType event,
-		      map<string,string>* event_params) {
+			  DSMCondition::EventType event,
+			  map<string,string>* event_params) {
   // or xor
-  return invert?(!match(sess,sc_sess,event,event_params)):match(sess, sc_sess, event, event_params);
+  return invert? (!match(sess,sc_sess,event,event_params)) : match(sess, sc_sess, event, event_params);
 }
 
 bool DSMCondition::match(AmSession* sess, DSMSession* sc_sess,
-		      DSMCondition::EventType event,
-		      map<string,string>* event_params) {
+			 DSMCondition::EventType event,
+			 map<string,string>* event_params) {
 
   if ((type != Any) && (event != type))
     return false;

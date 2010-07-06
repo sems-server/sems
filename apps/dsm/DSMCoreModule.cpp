@@ -31,6 +31,7 @@
 #include "AmSession.h"
 #include "AmSessionContainer.h"
 #include "AmUtils.h"
+#include "AmEventDispatcher.h"
 
 #include "jsonArg.h"
 
@@ -93,6 +94,9 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("setPrompts", SCSetPromptsAction);
 
   DEF_CMD("postEvent", SCPostEventAction);
+
+  DEF_CMD("registerEventQueue", SCRegisterEventQueueAction);
+  DEF_CMD("unregisterEventQueue", SCUnregisterEventQueueAction);
 
   if (cmd == "DI") {
     SCDIAction * a = new SCDIAction(params, false);
@@ -182,6 +186,15 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
 
   if (cmd == "jsonRpcResponse") 
     return new TestDSMCondition(params, DSMCondition::JsonRpcResponse);  
+
+  if (cmd == "startup")
+    return new TestDSMCondition(params, DSMCondition::Startup);
+
+  if (cmd == "reload")
+    return new TestDSMCondition(params, DSMCondition::Reload);
+
+  if (cmd == "system")
+    return new TestDSMCondition(params, DSMCondition::System);
 
   return NULL;
 }
@@ -843,7 +856,7 @@ TestDSMCondition::TestDSMCondition(const string& expr, DSMCondition::EventType e
   name = expr;
 }
 
-bool TestDSMCondition::match(AmSession* sess, DSMCondition::EventType event,
+bool TestDSMCondition::match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 			  map<string,string>* event_params) {
   if (ttype == None || (type != DSMCondition::Any && type != event))
     return false;
@@ -851,7 +864,6 @@ bool TestDSMCondition::match(AmSession* sess, DSMCondition::EventType event,
   if (ttype == Always)
     return true;
 
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess);
   if (!sc_sess) {
     ERROR("wrong session type\n");
     return false;
@@ -1188,4 +1200,22 @@ EXEC_ACTION_START(SCSendDTMFAction) {
   }
 
   sess->sendDtmf(event_i, duration_i);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCRegisterEventQueueAction) {
+  string q_name = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("Registering event queue '%s'\n", q_name.c_str());
+  if (q_name.empty()) {
+    WARN("Registering empty event queue name!\n");
+  }
+  AmEventDispatcher::instance()->addEventQueue(q_name, sess);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCUnregisterEventQueueAction) {
+  string q_name = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("Unregistering event queue '%s'\n", q_name.c_str());
+  if (q_name.empty()) {
+    WARN("Unregistering empty event queue name!\n");
+  }
+  AmEventDispatcher::instance()->delEventQueue(q_name);
 } EXEC_ACTION_END;

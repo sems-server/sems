@@ -187,6 +187,13 @@ sendDTMF(key [, duration_ms])
 
   throwOnError()
 
+  registerEventQueue(queue_name)
+    register session to receive events under the name queue_name
+    WARNING: make sure to unregister the event queue before ending the session!
+
+  unregisterEventQueue(queue_name)
+    unregister events queue queue_name
+
 ============================= 
 conditions:
  
@@ -206,13 +213,13 @@ conditions:
  test(len($var) < len(@user))
 
  -- like test(expr), but only on key press
- keyTest(expr) 
- timerTest(expr)
- noAudioTest(expr)
- separatorTest(expr)
+ key or keyTest(expr)
+ timer or timerTest(expr)
+ noAudio or noAudioTest(expr)
+ separator or separatorTest(expr)
   e.g. separatorTest(#id == 5)
 
- eventTest(expr)
+ event or eventTest(expr)
 
  keyPress(no) 
   -- bye received: 
@@ -228,6 +235,15 @@ conditions:
  failed
   -- event is start of session (with run_invite_event, otherwise its always true):
  sessionStart
+
+ -- event is startup
+ startup
+
+ -- event is reload
+ startup
+
+ -- event is system event
+ system
 
  B2B.otherReply 
    Reply on other leg received (see AmB2BSession)

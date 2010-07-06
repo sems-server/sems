@@ -104,6 +104,9 @@ DEF_ACTION_1P(SCB2BAddHeaderAction);
 DEF_ACTION_1P(SCB2BClearHeadersAction);
 DEF_ACTION_2P(SCB2BSetHeadersAction);
 
+DEF_ACTION_1P(SCRegisterEventQueueAction);
+DEF_ACTION_1P(SCUnregisterEventQueueAction);
+
 class SCDIAction					
 : public DSMAction {
   vector<string> params;
@@ -132,7 +135,7 @@ class TestDSMCondition
 
  public:
   TestDSMCondition(const string& expr, DSMCondition::EventType e);
-  bool match(AmSession* sess, DSMCondition::EventType event,
+  bool match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 	     map<string,string>* event_params);
 };
 

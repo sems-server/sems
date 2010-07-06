@@ -37,6 +37,7 @@
 #include "DSMChartReader.h"
 #include "AmSipHeaders.h"
 #include "AmEventDispatcher.h"
+#include "SystemDSM.h"
 
 #include <string>
 #include <fstream>
@@ -163,6 +164,17 @@ int DSMFactory::onLoad()
   MainScriptConfig.RunInviteEvent = cfg.getParameter("run_invite_event")=="yes";
 
   MainScriptConfig.SetParamVariables = cfg.getParameter("set_param_variables")=="yes";
+
+  vector<string> system_dsms = explode(cfg.getParameter("run_system_dsms"), ",");
+  for (vector<string>::iterator it=system_dsms.begin(); it != system_dsms.end(); it++) {
+    string status;
+    if (createSystemDSM("main", *it, false /* reload */, status)) {
+      DBG("created SystemDSM '%s'\n", it->c_str());
+    } else {
+      ERROR("creating system DSM '%s': '%s'\n", it->c_str(), status.c_str());
+      return -1;
+    }
+  }
 
 #ifdef USE_MONITORING
   string monitoring_full_callgraph = cfg.getParameter("monitoring_full_stategraph");
@@ -420,6 +432,7 @@ bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_nam
 
   ScriptConfigs_mut.lock();
   try {
+    Name2ScriptConfig[script_name] = script_config;
     // set ScriptConfig to this for all registered apps' names
     for (vector<string>::iterator reg_app_it=
 	   registered_apps.begin(); reg_app_it != registered_apps.end(); reg_app_it++) {
@@ -442,7 +455,19 @@ bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_nam
   }
   ScriptConfigs_mut.unlock();
 
-  return true;
+  bool res = true;
+
+  vector<string> system_dsms = explode(cfg.getParameter("run_system_dsms"), ",");
+  for (vector<string>::iterator it=system_dsms.begin(); it != system_dsms.end(); it++) {
+    string status;
+    if (createSystemDSM(script_name, *it, live_reload, status)) {
+    } else {
+      ERROR("creating system DSM '%s': '%s'\n", it->c_str(), status.c_str());
+      res = false;
+    }
+  }
+
+  return res;
 }
 
 
@@ -724,6 +749,39 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
   }
 
   return s;
+}
+
+bool DSMFactory::createSystemDSM(const string& config_name, const string& start_diag, bool reload, string& status) {
+  bool res = true;
+
+  DSMScriptConfig* script_config = NULL;
+  ScriptConfigs_mut.lock();
+  if (config_name == "main")
+    script_config = &MainScriptConfig;
+  else {
+    map<string, DSMScriptConfig>::iterator it = Name2ScriptConfig.find(config_name);
+    if (it != Name2ScriptConfig.end()) 
+      script_config = &it->second;
+  }
+  if (script_config==NULL) {
+    status = "Error: Script config '"+config_name+"' not found, in [";
+    for (map<string, DSMScriptConfig>::iterator it = 
+	   Name2ScriptConfig.begin(); it != Name2ScriptConfig.end(); it++) {
+      if (it != Name2ScriptConfig.begin()) 
+	status+=", ";
+      status += it->first; 
+    }
+    status += "]";
+    res = false;
+  } else {
+    SystemDSM* s = new SystemDSM(*script_config, start_diag, reload);
+    s->start();
+    // add to garbage collector
+    AmThreadWatcher::instance()->add(s);
+    status = "OK";
+  }
+  ScriptConfigs_mut.unlock();
+  return res;
 }
 
 void DSMFactory::reloadDSMs(const AmArg& args, AmArg& ret) {
@@ -1035,6 +1093,16 @@ void DSMFactory::invoke(const string& method, const AmArg& args,
   } else if (method == "loadConfig"){
     args.assertArrayFmt("ss");
     loadConfig(args,ret);
+  } else if (method == "runSystemDSM"){
+    args.assertArrayFmt("ss");
+    string status;
+    if (createSystemDSM(args.get(0).asCStr(), args.get(1).asCStr(), false, status)) {
+      ret.push(200);
+      ret.push(status);
+    } else {
+      ret.push(500);
+      ret.push(status);
+    }
   } else if(method == "_list"){ 
     ret.push(AmArg("postDSMEvent"));
     ret.push(AmArg("reloadDSMs"));
@@ -1046,6 +1114,8 @@ void DSMFactory::invoke(const string& method, const AmArg& args,
     ret.push(AmArg("hasDSM"));
     ret.push(AmArg("listDSMs"));
     ret.push(AmArg("registerApplication"));
+    ret.push(AmArg("runSystemDSM"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
 }
+

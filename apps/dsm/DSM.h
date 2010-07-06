@@ -73,7 +73,10 @@ class DSMFactory
   static string OutboundStartDiag;
 
   DSMScriptConfig MainScriptConfig;
+  // script name -> config
   map<string, DSMScriptConfig> ScriptConfigs;
+  // config name -> config
+  map<string, DSMScriptConfig> Name2ScriptConfig;
   AmMutex ScriptConfigs_mut;
 
 #ifdef USE_MONITORING
@@ -107,6 +110,8 @@ class DSMFactory
 			   string& start_diag, map<string, string>& vars);
 
   DSMChartReader preload_reader;
+
+  bool createSystemDSM(const string& config_name, const string& start_diag, bool reload, string& status);
 
   void listDSMs(const AmArg& args, AmArg& ret);
   void hasDSM(const AmArg& args, AmArg& ret);

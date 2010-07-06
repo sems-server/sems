@@ -86,8 +86,11 @@ class DSMCondition
     XmlrpcResponse,
 
     JsonRpcResponse,
-    JsonRpcRequest
+    JsonRpcRequest,
 
+    Startup,
+    Reload,
+    System
   };
 
   bool invert; 

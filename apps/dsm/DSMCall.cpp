@@ -340,8 +340,7 @@ void DSMCall::process(AmEvent* event)
     if (dsm_event) {      
       engine.runEvent(this, this, DSMCondition::DSMEvent, &dsm_event->params);
       return;
-    }
-  
+    }  
   }
 
   AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
