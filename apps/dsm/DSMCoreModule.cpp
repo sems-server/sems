@@ -132,22 +132,22 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "test")
     return new TestDSMCondition(params, DSMCondition::Any);
 
-  if (cmd == "keyTest") 
+  if ((cmd == "keyTest") || (cmd == "key"))
     return new TestDSMCondition(params, DSMCondition::Key);
 
-  if (cmd == "timerTest") 
+  if ((cmd == "timerTest") || (cmd == "timer"))
     return new TestDSMCondition(params, DSMCondition::Timer);
 
-  if (cmd == "noAudioTest") 
+  if ((cmd == "noAudioTest") || (cmd == "noAudio"))
     return new TestDSMCondition(params, DSMCondition::NoAudio);
 
-  if (cmd == "separatorTest") 
+  if ((cmd == "separatorTest") || (cmd == "separator"))
     return new TestDSMCondition(params, DSMCondition::PlaylistSeparator);
 
   if (cmd == "hangup") 
     return new TestDSMCondition(params, DSMCondition::Hangup);  
 
-  if (cmd == "eventTest") 
+  if ((cmd == "eventTest") || (cmd == "event"))
     return new TestDSMCondition(params, DSMCondition::DSMEvent);  
 
   if (cmd == "invite") 
