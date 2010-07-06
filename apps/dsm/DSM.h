@@ -111,8 +111,6 @@ class DSMFactory
 
   DSMChartReader preload_reader;
 
-  bool createSystemDSM(const string& config_name, const string& start_diag, bool reload, string& status);
-
   void listDSMs(const AmArg& args, AmArg& ret);
   void hasDSM(const AmArg& args, AmArg& ret);
   void reloadDSMs(const AmArg& args, AmArg& ret);
@@ -144,6 +142,8 @@ public:
 	      const AmArg& args, AmArg& ret);
 
   void postEvent(AmEvent* e);
+
+  bool createSystemDSM(const string& config_name, const string& start_diag, bool reload, string& status);
 
 };
 

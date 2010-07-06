@@ -65,7 +65,7 @@ call and media related functionality is not available (and will throw
 exceptions with type 'core').
 
 A system DSM receives the "startup" event on start of the server, or if 
-it is created via runSystemDSM DI call. It gets a "reload" event if the
+it is created via createSystemDSM DI call. It gets a "reload" event if the
 system DSM is created by a live config reload.
 
 On server shutdown, a system DSM receives a "system" event with 
@@ -124,7 +124,7 @@ loadConfig(string conf_file_name, string conf_name)
   (re)load application configuration and script 
   like a file in conf_dir
 
-runSystemDSM(string conf_name, string start_diag)
+createSystemDSM(string conf_name, string start_diag)
   run a system DSM (i.e. a DSM thread not connected to a session)
   using scripts/configuration from conf_name. 
   conf_name=='main' for main scripts/main config (from dsm.conf)

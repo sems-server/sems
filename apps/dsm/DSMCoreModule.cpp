@@ -32,6 +32,7 @@
 #include "AmSessionContainer.h"
 #include "AmUtils.h"
 #include "AmEventDispatcher.h"
+#include "DSM.h"
 
 #include "jsonArg.h"
 
@@ -97,6 +98,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
 
   DEF_CMD("registerEventQueue", SCRegisterEventQueueAction);
   DEF_CMD("unregisterEventQueue", SCUnregisterEventQueueAction);
+  DEF_CMD("createSystemDSM", SCCreateSystemDSMAction);
 
   if (cmd == "DI") {
     SCDIAction * a = new SCDIAction(params, false);
@@ -1219,3 +1221,24 @@ EXEC_ACTION_START(SCUnregisterEventQueueAction) {
   }
   AmEventDispatcher::instance()->delEventQueue(q_name);
 } EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCCreateSystemDSMAction,',', false);
+EXEC_ACTION_START(SCCreateSystemDSMAction) {
+  string conf_name = resolveVars(par1, sess, sc_sess, event_params);
+  string script_name = resolveVars(par2, sess, sc_sess, event_params);
+
+  if (conf_name.empty() || script_name.empty()) {
+    throw DSMException("core", "cause", "parameters missing - "
+		       "need both conf_name and script_name for createSystemDSM");
+  }
+
+  DBG("creating system DSM conf_name %s, script_name %s\n", 
+      conf_name.c_str(), script_name.c_str());
+  string status;
+  if (!DSMFactory::instance()->createSystemDSM(conf_name, script_name, false, status)) {
+    ERROR("creating system DSM: %s\n", status.c_str());
+    throw DSMException("core", "cause", status);
+  }
+  
+} EXEC_ACTION_END;
+

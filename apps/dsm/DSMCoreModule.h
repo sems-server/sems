@@ -107,6 +107,8 @@ DEF_ACTION_2P(SCB2BSetHeadersAction);
 DEF_ACTION_1P(SCRegisterEventQueueAction);
 DEF_ACTION_1P(SCUnregisterEventQueueAction);
 
+DEF_ACTION_2P(SCCreateSystemDSMAction);
+
 class SCDIAction					
 : public DSMAction {
   vector<string> params;

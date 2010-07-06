@@ -1093,7 +1093,7 @@ void DSMFactory::invoke(const string& method, const AmArg& args,
   } else if (method == "loadConfig"){
     args.assertArrayFmt("ss");
     loadConfig(args,ret);
-  } else if (method == "runSystemDSM"){
+  } else if (method == "createSystemDSM"){
     args.assertArrayFmt("ss");
     string status;
     if (createSystemDSM(args.get(0).asCStr(), args.get(1).asCStr(), false, status)) {
@@ -1114,7 +1114,7 @@ void DSMFactory::invoke(const string& method, const AmArg& args,
     ret.push(AmArg("hasDSM"));
     ret.push(AmArg("listDSMs"));
     ret.push(AmArg("registerApplication"));
-    ret.push(AmArg("runSystemDSM"));
+    ret.push(AmArg("createSystemDSM"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
 }
