@@ -72,7 +72,29 @@ bool parse_string(std::istream& input, std::string* value) {
     char ch;
     while(!input.eof() && input.good()) {
         input.get(ch);
-        if (ch == '"') {
+	if (ch == '\\') {
+	  if (input.eof())
+	    return false;
+	  char ch1;
+	  input.get(ch1);
+	  switch (ch1) {
+	  case '"': 
+	  case '\\': 
+	  case '/': value->push_back(ch1); break;
+	  case 'b': value->push_back('\b'); break;
+	  case 'f': value->push_back('\f'); break;
+	  case 'n': value->push_back('\n'); break;
+	  case 'r': value->push_back('\r'); break;
+	  case 't': value->push_back('\t'); break;
+	  case 'u': {
+	    //	    ERROR("todo: unicode\n");
+	    return false;
+	  } break;
+	  default: return false;
+	  }
+	}
+
+        if (ch == '"' ) {
             break;
         }
         value->push_back(ch);
