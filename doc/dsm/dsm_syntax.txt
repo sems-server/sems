@@ -96,6 +96,10 @@ sendDTMF(key [, duration_ms])
   send a DTMF event (RFC4733 event)
   duration_ms defaults to 500ms
 
+sendDTMFSequence(sequence [, duration_ms])
+  send a sequence of DTMF events (RFC4733 event), e.g. 123#45*1
+  duration_ms defaults to 500ms
+
  B2B.connectCallee(remote_party, remote_uri)
    connect second leg of B2B session (see AmB2BSession)
 

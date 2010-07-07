@@ -63,6 +63,7 @@ DEF_ACTION_1P(SCUnmuteAction);
 DEF_ACTION_1P(SCEnableDTMFDetection);
 DEF_ACTION_1P(SCDisableDTMFDetection);
 DEF_ACTION_2P(SCSendDTMFAction);
+DEF_ACTION_2P(SCSendDTMFSequenceAction);
 
 DEF_ACTION_1P(SCSetPromptsAction);
 DEF_ACTION_2P(SCAddSeparatorAction);

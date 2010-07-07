@@ -72,6 +72,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("enableDTMFDetection", SCEnableDTMFDetection);
   DEF_CMD("disableDTMFDetection", SCDisableDTMFDetection);
   DEF_CMD("sendDTMF", SCSendDTMFAction);
+  DEF_CMD("sendDTMFSequence", SCSendDTMFSequenceAction);
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("sets", SCSetSAction);
@@ -1202,6 +1203,40 @@ EXEC_ACTION_START(SCSendDTMFAction) {
   }
 
   sess->sendDtmf(event_i, duration_i);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCSendDTMFSequenceAction,',', true);
+EXEC_ACTION_START(SCSendDTMFSequenceAction) {
+  string events = resolveVars(par1, sess, sc_sess, event_params);
+  string duration = resolveVars(par2, sess, sc_sess, event_params);
+
+  unsigned int duration_i;
+  if (duration.empty()) {
+    duration_i = 500; // default
+  } else {
+    if (str2i(duration, duration_i)) {
+      ERROR("event duration '%s' not a valid DTMF duration\n", duration.c_str());
+      throw DSMException("core", "cause", "invalid DTMF duration:"+ duration);
+    }
+  }
+
+  for (size_t i=0;i<events.length();i++) {
+    if ((events[i]<'0' || events[i]>'9')
+	&& (events[i] != '#') && (events[i] != '*')
+	&& (events[i] <'A' || events[i] >'F')) {
+	DBG("skipping non-DTMF event char '%c'\n", events[i]);
+	continue;
+    }
+    int event = events[i] - '0';
+    if (events[i] == '*')
+      event = 10;
+    else if (events[i] == '#')
+      event = 11;
+    else if (events[i] >= 'A' && events[i] <= 'F' )
+      event = 12 + (events[i] - 'A');
+    DBG("sending event %d duration %u\n", event, duration_i);
+    sess->sendDtmf(event, duration_i);
+  }
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCRegisterEventQueueAction) {
