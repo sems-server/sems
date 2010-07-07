@@ -19,10 +19,10 @@
 
 FCT_BGN() {
   init_logging();
-  log_stderr = true;
-  log_level = 3;
-
+  log_stderr=true;
+  log_level=3;
   FCTMF_SUITE_CALL(test_headers);
+  FCTMF_SUITE_CALL(test_jsonarg);
 } FCT_END();
 
 
