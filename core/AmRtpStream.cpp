@@ -449,16 +449,33 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
 #endif
 }
 
-void AmRtpStream::init(const vector<SdpPayload*>& sdp_payloads)
+void AmRtpStream::setPassiveMode(bool p)
 {
-  if (sdp_payloads.empty()) {
+  passive = p;
+  DBG("The other UA is NATed: switched to passive mode.\n");
+}
+
+int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
+		      const SdpMedia& remote_media, 
+		      const SdpConnection& conn, 
+		      bool remote_active)
+{
+  if (remote_media.payloads.empty()) {
     ERROR("can not initialize RTP stream without payloads.\n");
-    return;
+    return -1;
   }
 
-  SdpPayload *sdp_payload = sdp_payloads[0];
-  payload = sdp_payload->payload_type;
+  //TODO: support mute & on_hold
+
+  setLocalIP(AmConfig::LocalIP);
+  setPassiveMode(remote_active);
+  setRAddr(conn.address, remote_media.port);
+
+  // TODO: take the first *supported* payload
+  //       (align with the SDP answer algo)
+  payload = remote_media.payloads[0].payload_type;
   last_payload = payload;
+
   resume();
 
 #ifdef WITH_ZRTP  
@@ -467,6 +484,8 @@ void AmRtpStream::init(const vector<SdpPayload*>& sdp_payloads)
     zrtp_start_stream( session->zrtp_audio );
   }
 #endif
+
+  return 0;
 }
 
 void AmRtpStream::pause()

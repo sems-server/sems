@@ -158,6 +158,55 @@ int AmSdp::parse()
   return ret;
 }
 
+void AmSdp::print(string& mime_type, string& body)
+{
+  string out_buf =
+      "v="+int2str(version)+"\r\n"
+      "o="+origin.user+" "+int2str(origin.sessId)+" "+int2str(origin.sessV)+" IN IP4 "+conn.address+"\r\n"
+      "s="+sessionName+"\r\n"
+      "c=IN IP4 "+conn.address+"\r\n"
+      "t=0 0\r\n";
+
+  for(std::vector<SdpMedia>::iterator media_it = media.begin();
+      media_it != media.end(); media_it++) {
+      
+      out_buf += "m=" + media_t_2_str(media_it->type) + " " + int2str(media_it->port) + " " + transport_p_2_str(media_it->transport);
+
+      string options;
+      for(std::vector<SdpPayload>::iterator pl_it = media_it->payloads.begin();
+	  pl_it != media_it->payloads.end(); pl_it++) {
+
+	  out_buf += " " + int2str(pl_it->payload_type);
+
+	  // "a=rtpmap:" line
+	  options += "a=rtpmap:" + int2str(pl_it->payload_type) + " " 
+	      + pl_it->encoding_name + "/" + int2str(pl_it->clock_rate);
+
+	  if(pl_it->encoding_param > 0){
+	      options += "/" + int2str(pl_it->encoding_param);
+	  }
+
+	  options += "\r\n";
+	  
+	  // "a=fmtp:" line
+	  if(pl_it->sdp_format_parameters.size()){
+	      options += "a=fmtp:" + int2str(pl_it->payload_type) + " "
+		  + pl_it->sdp_format_parameters + "\r\n";
+	  }
+	  
+      }
+
+      out_buf += "\r\n" + options;
+
+      if(remote_active /* dir == SdpMedia::DirActive */)
+	  out_buf += "a=direction:passive\r\n";
+  }
+
+  body = out_buf;
+  mime_type = "application/sdp";
+}
+
+#if 0
 int AmSdp::genResponse(const string& localip, int localport, string& out_buf, bool single_codec)
 {
   string l_ip = "IP4 " + localip;
@@ -285,6 +334,7 @@ int AmSdp::genRequest(const string& localip, int localport, string& out_buf)
 
 }
 
+
 const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(AmPayloadProviderInterface* payload_provider, 
 							int media_type, string& addr, int& port)
 {
@@ -365,6 +415,7 @@ const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(AmPayloadProviderInterfa
   }
   return sup_pl;
 }
+#endif
 	
 bool AmSdp::hasTelephoneEvent()
 {

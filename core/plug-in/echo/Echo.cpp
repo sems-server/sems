@@ -102,20 +102,22 @@ EchoDialog::~EchoDialog()
 {
 }
 
-void EchoDialog::onSessionStart(const AmSipRequest& req)
+void EchoDialog::onSessionStart(// const AmSipRequest& req
+				)
 {
   RTPStream()->setPlayoutType(playout_type);
   setInOut(&echo,&echo);
 }
 
-void EchoDialog::onSessionStart(const AmSipReply& req)
-{
-  RTPStream()->setPlayoutType(playout_type);
-  setInOut(&echo,&echo);
-}
+// void EchoDialog::onSessionStart(const AmSipReply& req)
+// {
+//   RTPStream()->setPlayoutType(playout_type);
+//   setInOut(&echo,&echo);
+// }
 
 void EchoDialog::onBye(const AmSipRequest& req)
 {
+  AmSession::onBye(req);
   setStopped();
 }
 

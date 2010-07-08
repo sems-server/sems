@@ -60,7 +60,7 @@ AmSession::AmSession()
   : AmEventQueue(this),
     dlg(this),
     detached(true),
-    sess_stopped(false),negotiate_onreply(false),
+    sess_stopped(false),//negotiate_onreply(false),
     input(0), output(0), local_input(0), local_output(0),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
@@ -232,6 +232,7 @@ AmAudioRtpFormat* AmSession::getNewRtpFormat() {
   return new AmAudioRtpFormat(m_payloads);
 }
 
+/*
 void AmSession::negotiate(const string& sdp_body,
 			  bool force_symmetric_rtp,
 			  string* sdp_reply)
@@ -294,6 +295,7 @@ void AmSession::negotiate(const string& sdp_body,
 		    RTPStream()->getLocalPort(), 
 		    *sdp_reply, AmConfig::SingleCodecInOK);
 }
+*/
 
 #ifdef SESSION_THREADPOOL
 void AmSession::start() {
@@ -497,7 +499,7 @@ void AmSession::finalize() {
   DBG("session is stopped.\n");
 }
 #ifndef SESSION_THREADPOOL
-void AmSession::on_stop() 
+  void AmSession::on_stop() 
 #else
   void AmSession::stop()
 #endif  
@@ -669,30 +671,18 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 
   DBG("onSipRequest: method = %s\n",req.method.c_str());
   if(req.method == "INVITE"){
-	
     onInvite(req);
-
-    if(detached.get() && !getStopped()){
-      onSessionStart(req);
-      if(input || output || local_input || local_output)
-    	AmMediaProcessor::instance()->addSession(this, callgroup);
-      else {
-    	DBG("no audio input and output set. "
-    	    "Session will not be attached to MediaProcessor.\n");
-      }
-    }
+  }
+  else if(req.method == "ACK"){
+    return;
   }
   else if( req.method == "BYE" ){
-	
-    dlg.reply(req,200,"OK");
     onBye(req);
   }
   else if( req.method == "CANCEL" ){
-
-    dlg.reply(req,200,"OK");
-    onCancel();
-
-  } else if( req.method == "INFO" ){
+    onCancel(req);
+  } 
+  else if( req.method == "INFO" ){
 
     if (req.content_type == "application/dtmf-relay") {
       postDtmfEvent(new AmSipDtmfEvent(req.body));
@@ -700,6 +690,9 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     } else {
       dlg.reply(req, 415, "Unsupported Media Type");
     }
+  }
+  else {
+    dlg.reply(req, 501, "Not implemented");
   }
 }
 
@@ -719,7 +712,7 @@ void AmSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
 	sess_stopped.get() ? "true" : "false");
 
 
-  if (negotiate_onreply) {    
+  /*  if (negotiate_onreply) {    
     if(old_dlg_status < AmSipDialog::Connected){
       
       switch(dlg.getStatus()){
@@ -799,6 +792,7 @@ void AmSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
       }
     }
   }
+  */
 }
 
 void AmSession::onInvite2xx(const AmSipReply& reply)
@@ -825,27 +819,23 @@ void AmSession::onAudioEvent(AmAudioEvent* audio_ev)
 
 void AmSession::onInvite(const AmSipRequest& req)
 {
-  try {
-    string sdp_reply;
-
-    acceptAudio(req.body,req.hdrs,&sdp_reply);
-    if(dlg.reply(req,200,"OK",
-		 "application/sdp",sdp_reply) != 0)
-      throw AmSession::Exception(500,"could not send response");
-	
-  }catch(const AmSession::Exception& e){
-
-    ERROR("%i %s\n",e.code,e.reason.c_str());
-    setStopped();
-    dlg.reply(req,e.code,e.reason);
-  }
+  dlg.reply(req,200,"OK");
 }
 
 void AmSession::onBye(const AmSipRequest& req)
 {
+  dlg.reply(req,200,"OK");
   setStopped();
 }
 
+void AmSession::onCancel(const AmSipRequest& req)
+{
+  dlg.reply(req,200,"OK");
+  // TODO: if dialog is not yet finally replied,
+  //       answer the INVITE transaction with 487
+}
+
+/*
 int AmSession::acceptAudio(const string& body,
 			   const string& hdrs,
 			   string*       sdp_reply)
@@ -890,7 +880,7 @@ int AmSession::acceptAudio(const string& body,
 
   return -1;
 }
-
+*/
 void AmSession::onSystemEvent(AmSystemEvent* ev) {
   if (ev->sys_event == AmSystemEvent::ServerShutdown) {
     setStopped();
@@ -912,25 +902,83 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
 }
 
 /** Hook called when an SDP offer is required */
-bool AmSession::onSdpOfferNeeded(AmSdp& offer)
+bool AmSession::getSdpOffer(AmSdp& offer)
 {
-  //TODO: sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), offer);
-  return false;
+  offer.version = 0;
+  offer.origin.user = "sems";
+  offer.origin.sessId = 1;
+  offer.origin.sessV = 1;
+  offer.sessionName = "sems";
+  offer.conn.network = NT_IN;
+  offer.conn.addrType = AT_V4;
+  offer.conn.address = advertisedIP();
+
+  offer.media.push_back(SdpMedia());
+  offer.media[0].type = MT_AUDIO;
+  offer.media[0].port = RTPStream()->getLocalPort();
+  offer.media[0].nports = 0;
+  offer.media[0].transport = TP_RTPAVP;
+  offer.media[0].dir = SdpMedia::DirBoth;
+
+  offer.media[0].payloads.push_back(SdpPayload());
+  offer.media[0].payloads[0].payload_type = 0;
+  offer.media[0].payloads[0].encoding_name = "pcmu";
+  offer.media[0].payloads[0].clock_rate = 8000;
+
+  return true;
 }
 
 /** Hook called when an SDP offer is required */
-bool AmSession::onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer)
+bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 {
-  //TODO: sdp.genResponse(advertisedIP(),
-  //                      RTPStream()->getLocalPort(), 
-  //                      answer, AmConfig::SingleCodecInOK);
-  return false;
+  answer.version = 0;
+  answer.origin.user = "sems";
+  answer.origin.sessId = 1;
+  answer.origin.sessV = 1;
+  answer.sessionName = "sems";
+  answer.conn.network = NT_IN;
+  answer.conn.addrType = AT_V4;
+  answer.conn.address = AmConfig::LocalIP;
+
+  answer.media.push_back(SdpMedia());
+  answer.media[0].type = MT_AUDIO;
+  answer.media[0].port = RTPStream()->getLocalPort();
+  answer.media[0].nports = 0;
+  answer.media[0].transport = TP_RTPAVP;
+  answer.media[0].dir = SdpMedia::DirBoth;
+
+  answer.media[0].payloads.push_back(SdpPayload());
+  answer.media[0].payloads[0].payload_type = 0;
+  answer.media[0].payloads[0].encoding_name = "pcmu";
+  answer.media[0].payloads[0].clock_rate = 8000;
+
+  return true;
 }
 
-void AmSession::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
+void AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 {
-  // TODO!!!
-  assert(0);
+  lockAudio();
+  RTPStream()->init(getPayloadProvider(),
+		    remote_sdp.media[0], 
+		    remote_sdp.conn, 
+		    remote_sdp.remote_active);
+  unlockAudio();
+
+  if(detached.get() && !getStopped()){
+
+    if(dlg.getStatus() == AmSipDialog::Connected)
+      onSessionStart();
+    else if(dlg.getStatus() == AmSipDialog::Early)
+      onEarlySessionStart();
+
+    if(input || output || local_input || local_output) {
+      AmMediaProcessor::instance()->addSession(this, callgroup);
+    }
+    else {
+      DBG("no audio input and output set. "
+	  "Session will not be attached to MediaProcessor.\n");
+    }
+  }
 }
 
 void AmSession::onRtpTimeout()
@@ -946,14 +994,14 @@ void AmSession::sendUpdate()
 
 void AmSession::sendReinvite(bool updateSDP, const string& headers) 
 {
-  if (updateSDP) {
-    RTPStream()->setLocalIP(AmConfig::LocalIP);
-    string sdp_body;
-    sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-    dlg.reinvite(headers, "application/sdp", sdp_body);
-  } else {
+  //  if (updateSDP) {
+  //    RTPStream()->setLocalIP(AmConfig::LocalIP);
+  //    string sdp_body;
+  //    getSdpOffer(content_type,sdp_body);
+  //    dlg.reinvite(headers, content_type, sdp_body);
+  //} else {
     dlg.reinvite(headers, "", "");
-  }
+    //}
 }
 
 int AmSession::sendInvite(const string& headers) 
@@ -965,9 +1013,9 @@ int AmSession::sendInvite(const string& headers)
   RTPStream()->setLocalIP(AmConfig::LocalIP);
   
   // Generate SDP.
-  string sdp_body;
-  sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-  return dlg.invite(headers, "application/sdp", sdp_body);
+  //string sdp_body;
+  //sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
+  return dlg.invite(headers, "", "");
 }
 
 void AmSession::setOnHold(bool hold)
@@ -985,7 +1033,7 @@ void AmSession::setOnHold(bool hold)
 string AmSession::advertisedIP()
 {
   string set_ip = AmConfig::PublicIP; // "public_ip" parameter. 
-  DBG("AmConfig::PublicIP is %s.\n", set_ip.c_str());
+  DBG("AmConfig::PublicIP is <%s>.\n", set_ip.c_str());
   if (set_ip.empty())
     return AmConfig::LocalIP;           // "listen" parameter.
   return set_ip;

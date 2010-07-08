@@ -308,7 +308,7 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
 
       setCallgroup(co_ev->callgroup);
 			
-      setNegotiateOnReply(true);
+      //setNegotiateOnReply(true);
       if (sendInvite(co_ev->headers)) {
 	throw string("INVITE could not be sent\n");
       }

@@ -139,11 +139,59 @@ int AmRtpAudio::write(unsigned int user_ts, unsigned int size)
   return send(user_ts,(unsigned char*)samples,size);
 }
 
-void AmRtpAudio::init(const vector<SdpPayload*>& sdp_payloads)
+int AmRtpAudio::init(AmPayloadProviderInterface* payload_provider,
+		     const SdpMedia& remote_media, 
+		     const SdpConnection& conn, 
+		     bool remote_active)
 {
   DBG("AmRtpAudio::init(...)\n");
-  AmRtpStream::init(sdp_payloads);
-  fmt.reset(session->getNewRtpFormat());
+  if(AmRtpStream::init(payload_provider,remote_media,conn,remote_active)){
+    return -1;
+  }
+
+  vector<SdpPayload*> payloads;
+  amci_payload_t* a_pl = NULL;
+  int int_pt=-1;
+
+  assert(!remote_media.payloads.empty());
+  vector<SdpPayload>::const_iterator p_it = remote_media.payloads.begin();
+
+  // TODO: add support for multiple payloads
+  if(p_it->payload_type >= DYNAMIC_PAYLOAD_TYPE_START) {
+    // Try dynamic payloads
+    // and give a chance to broken
+    // implementation using a static payload number
+    // for dynamic ones.
+
+    int_pt = payload_provider->
+      getDynPayload(p_it->encoding_name,
+		    p_it->clock_rate,
+		    p_it->encoding_param);
+  }
+  else {
+    int_pt = p_it->payload_type;
+  }
+  
+  if(int_pt < 0) {
+    ERROR("Invalid payload type %i\n",int_pt);
+    return -1;
+  }
+
+  // try static payloads
+  a_pl = payload_provider->payload(int_pt);
+  if(a_pl == NULL){
+    ERROR("No internal payload corresponding to type %i\n",int_pt);
+    return -1;
+  }
+
+  SdpPayload* pl = new SdpPayload();
+  pl->payload_type = p_it->payload_type;
+  pl->int_pt = int_pt;
+  payloads.push_back(pl);
+
+  // TODO: free memory in ~AmAudioRtpFormat()
+  fmt.reset(new AmAudioRtpFormat(payloads));
+  return 0;
 }
 
 int AmRtpAudio::setCurrentPayload(int payload)

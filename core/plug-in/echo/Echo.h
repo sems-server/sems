@@ -55,8 +55,8 @@ public:
   EchoDialog();
   ~EchoDialog();
 
-  void onSessionStart(const AmSipRequest& req);
-  void onSessionStart(const AmSipReply& rep);
+  void onSessionStart(/*const AmSipRequest& req);
+			void onSessionStart(const AmSipReply& rep*/);
   void onBye(const AmSipRequest& req);
   void onDtmf(int event, int duration);
 };

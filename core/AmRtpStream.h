@@ -95,8 +95,8 @@ protected:
      Remote payload (only different from 
      int_payload if using dynamic payloads)
   */
-  int         payload;
-  unsigned int   sequence;
+  int          payload;
+  unsigned int sequence;
 
   /**
      Payload of last received packet.
@@ -124,23 +124,20 @@ protected:
   bool           r_ssrc_i;
 
   /** symmetric RTP */
-  bool              passive;      // passive mode ?
+  bool           passive;      // passive mode ?
 
   /** Payload type for telephone event */
   auto_ptr<const SdpPayload> telephone_event_pt;
-
 
   PacketMem       mem;
   ReceiveBuffer   receive_buf;
   RtpEventQueue   rtp_ev_qu;
   AmMutex         receive_mut;
 
-
   /* get next packet in buffer */
   int nextPacket(AmRtpPacket*& p);
   
   AmSession*         session;
-
 
 public:
 
@@ -211,7 +208,7 @@ public:
   void setRAddr(const string& addr, unsigned short port);
 
   /** Symmetric RTP: passive mode ? */
-  void setPassiveMode(bool p) { passive = p; }
+  void setPassiveMode(bool p);
   bool getPassiveMode() { return passive; }
 
   unsigned int get_ssrc() { return l_ssrc; }
@@ -228,12 +225,11 @@ public:
 
   /**
    * Enables RTP stream.
-   * @param sdp_payload payload from the SDP message.
-   * @warning start() must have been called so that play and record work.
-   * @warning It should be called only if the stream has been completly initialized,
-   * @warning and only once per session. Use resume() then.
    */
-  virtual void init(const vector<SdpPayload*>& sdp_payloads);
+  virtual int init(AmPayloadProviderInterface* payload_provider,
+		   const SdpMedia& remote_media, 
+		   const SdpConnection& conn, 
+		   bool remote_active);
 
   /**
    * Stops RTP stream.
@@ -268,6 +264,14 @@ public:
   void clearRTPTimeout(struct timeval* recv_time);
 
   virtual unsigned int bytes2samples(unsigned int) const = 0;
+
+  /** 
+   * Get a compatible payload from SDP offer/response. 
+   * @return empty vector if error encountered.
+   */
+  //const std::vector<SdpPayload*>& getCompatiblePayloads(AmPayloadProviderInterface* payload_provider,
+  //							int media_type, string& addr, int& port);
+
 };
 
 /** \brief event fired on RTP timeout */

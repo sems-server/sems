@@ -86,7 +86,7 @@ class AmSession :
   bool use_local_audio[2];
 protected:
   vector<SdpPayload *>  m_payloads;
-  bool         negotiate_onreply;
+  //bool         negotiate_onreply;
 
   friend class AmRtpAudio;
 
@@ -222,9 +222,9 @@ public:
    * Accept the SDP proposal
    * thus setting up audio stream
    */
-  int acceptAudio(const string& body,
-		  const string& hdrs = "",
-		  string*       sdp_reply=0);
+  //int acceptAudio(const string& body,
+  //		  const string& hdrs = "",
+  //		  string*       sdp_reply=0);
 
   /**
    * Lock audio input & output
@@ -318,15 +318,15 @@ public:
   int getRPort();
 
   /** Set whether on positive reply session should be negotiated */
-  void setNegotiateOnReply(bool n) { negotiate_onreply = n; }
+  //void setNegotiateOnReply(bool n) { negotiate_onreply = n; }
 
   /** get the payload provider for the session */
   virtual AmPayloadProviderInterface* getPayloadProvider();
 
   /** handle SDP negotiation: only for INVITEs & re-INVITEs */
-  virtual void negotiate(const string& sdp_body,
-			 bool force_symmetric_rtp,
-			 string* sdp_reply);
+  //virtual void negotiate(const string& sdp_body,
+  //			 bool force_symmetric_rtp,
+  //			 string* sdp_reply);
 
   /** send an UPDATE in the session */
   virtual void sendUpdate();
@@ -416,7 +416,7 @@ public:
    * Note: You are still responsible for responding the 
    *       initial transaction.
    */
-  virtual void onCancel(){}
+  virtual void onCancel(const AmSipRequest& req);
 
   /**
    * onSessionStart will be called after call setup.
@@ -427,7 +427,7 @@ public:
    * Warning:
    *   Sems will NOT send any BYE on his own.
    */
-  virtual void onSessionStart(const AmSipRequest& req){}
+  virtual void onSessionStart(){}
 
   /**
    * onSessionStart method for calls originating 
@@ -439,15 +439,15 @@ public:
    * Warning:
    *   Sems will NOT send any BYE on his own.
    */
-  virtual void onSessionStart(const AmSipReply& reply){}
+  //virtual void onSessionStart(const AmSipReply& reply){}
 
 
   /**
-   * onEarlySessionStart will be called after 
-   * 183 early media reply is received and early session 
-   * is setup, if accept_early_session is set.
+   * onEarlySessionStart will be called when
+   * the media session is setup with the dialog
+   * in Early state.
    */
-  virtual void onEarlySessionStart(const AmSipReply& reply){}
+  virtual void onEarlySessionStart(){}
 
   /**
    * onRinging will be called after 180 is received. 
@@ -512,10 +512,10 @@ public:
 			   int flags);
 
   /** Hook called when an SDP offer is required */
-  virtual bool onSdpOfferNeeded(AmSdp& offer);
+  virtual bool getSdpOffer(AmSdp& offer);
 
   /** Hook called when an SDP offer is required */
-  virtual bool onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer);
+  virtual bool getSdpAnswer(const AmSdp& offer, AmSdp& answer);
 
   virtual void onSdpCompleted(const AmSdp& offer, const AmSdp& answer);
 

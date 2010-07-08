@@ -116,7 +116,10 @@ public:
 	  unsigned int nb_samples);
 
   // AmRtpStream interface
-  void init(const vector<SdpPayload*>& sdp_payloads);
+  int init(AmPayloadProviderInterface* payload_provider,
+	   const SdpMedia& remote_media, 
+	   const SdpConnection& conn, 
+	   bool remote_active);
 
   void setPlayoutType(PlayoutType type);
 

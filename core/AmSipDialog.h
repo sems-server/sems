@@ -207,15 +207,15 @@ private:
 
   AmSipDialogEventHandler* hdl;
 
-  int onTxReply(const AmSipRequest& req, 
-			unsigned int code);
-  void onTxRequest(const AmSipRequest& req);
+  int onTxReply(AmSipReply& reply);
+  int onTxRequest(AmSipRequest& req);
 
   int onRxSdp(const string& body, const char** err_txt);
-
   int onTxSdp(const string& body);
 
   void onSdpCompleted();
+
+  int  triggerOfferAnswer(string& content_type, string& body);
 };
 
 const char* dlgStatusStr(AmSipDialog::Status st);
@@ -265,10 +265,10 @@ class AmSipDialogEventHandler
   virtual void onNoErrorACK(unsigned int cseq)=0;
 
   /** Hook called when an SDP offer is required */
-  virtual bool onSdpOfferNeeded(AmSdp& offer)=0;
+  virtual bool getSdpOffer(AmSdp& offer)=0;
 
   /** Hook called when an SDP offer is required */
-  virtual bool onSdpAnswerNeeded(const AmSdp& offer, AmSdp& answer)=0;
+  virtual bool getSdpAnswer(const AmSdp& offer, AmSdp& answer)=0;
 
   /** Hook called when the SDP transaction has been completed */
   virtual void onSdpCompleted(const AmSdp& local, const AmSdp& remote)=0;

@@ -87,7 +87,7 @@ struct SdpOrigin
  */
 struct SdpPayload
 {
-  int type;
+  int    type;   // media type
   int    int_pt; // internal payload type
   int    payload_type; // SDP payload type
   string encoding_name;
@@ -150,12 +150,10 @@ public:
   unsigned int     version;     // v=
   SdpOrigin        origin;      // o=
   string           sessionName; // s= 
-  string           uri;          // u=
+  string           uri;         // u=
   SdpConnection    conn;        // c=
   std::vector<SdpMedia> media;  // m= ... [a=rtpmap:...]+
 
-  // Supported payloads
-  std::vector<SdpPayload*> sup_pl; 
   // Is remote host requesting 
   // us to do passive RTP ?
   bool remote_active;
@@ -187,19 +185,15 @@ public:
    */
   int genRequest(const string& localip,int localport, string& out_buf);
 
-  /** 
-   * Get a compatible payload from SDP offer/response. 
-   * @return empty vector if error encountered.
-   */
-  const std::vector<SdpPayload*>& getCompatiblePayloads(AmPayloadProviderInterface* payload_provider,
-							int media_type, string& addr, int& port);
-
   /**
    * Test if remote UA supports 'telefone_event'.
    */
   bool hasTelephoneEvent();
 
   const SdpPayload *telephoneEventPayload() const { return telephone_event_pt; }
+
+
+  void print(string& mime_type, string& body);
 };
 
 #endif

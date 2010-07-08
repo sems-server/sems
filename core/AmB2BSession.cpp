@@ -464,10 +464,12 @@ void AmB2BCallerSession::relayEvent(AmEvent* ev)
   AmB2BSession::relayEvent(ev);
 }
 
-void AmB2BCallerSession::onSessionStart(const AmSipRequest& req)
+void AmB2BCallerSession::onSessionStart(/*const AmSipRequest& req*/)
 {
-  invite_req = req;
-  AmB2BSession::onSessionStart(req);
+  //TODO:
+  //invite_req = req;
+  //AmB2BSession::onSessionStart(req);
+  assert(0);
 }
 
 void AmB2BCallerSession::connectCallee(const string& remote_party,

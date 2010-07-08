@@ -243,7 +243,7 @@ class AmB2BCallerSession: public AmB2BSession
   const AmSipRequest& getOriginalRequest() { return invite_req; }
 
   // @see AmSession
-  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart(/*const AmSipRequest& req*/);
 
   // @see AmB2BSession
   void terminateLeg();
