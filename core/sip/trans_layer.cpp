@@ -871,24 +871,21 @@ int trans_layer::cancel(trans_ticket* tt)
     
     switch(t->state){
     case TS_CALLING:
-	// do not send a request:
-	// just remove the transaction
-	bucket->remove_trans(t);
 	bucket->unlock();
-	return 0;
+	ERROR("Trying to cancel a request while in TS_CALLING state.\n");
+	return -1;
 
     case TS_COMPLETED:
-	// final reply has been sent, but still no ACK:
-	// do nothing!!!
-
-	// TODO: switch to TS_CANCELLING??
-	// this would allow for sending the BYE as soon
-	// we get an ACK or a timeout (STIMER_H)...
 	bucket->unlock();
-	return 0;
+	ERROR("Trying to cancel a request while in TS_COMPLETED state\n");
+	return -1;
 	
     case TS_PROCEEDING:
 	// continue with CANCEL request
+	break;
+
+    default:
+	assert(0);
 	break;
     }
 
