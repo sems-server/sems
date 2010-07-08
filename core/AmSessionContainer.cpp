@@ -194,12 +194,10 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, const string& 
 
   AmSession* session = NULL;
   try {
-      if((session = createSession(req, app_name, session_params)) != 0) {
+    if((session = createSession(req, app_name, session_params)) != 0) {
       session->dlg.initFromLocalRequest(req);
       session->setCallgroup(req.from_tag);
-
-      session->setNegotiateOnReply(true);
-
+      
       if (!addSession("","",req.from_tag,session)) {
 	ERROR("adding session to session container\n");
 	delete session;
@@ -364,9 +362,9 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
 
   AmSessionFactory* session_factory = NULL;
   if(!app_name.empty())
-      AmPlugIn::instance()->getFactory4App(app_name);
+      session_factory = AmPlugIn::instance()->getFactory4App(app_name);
   else
-      AmPlugIn::instance()->findSessionFactory(req);
+      session_factory = AmPlugIn::instance()->findSessionFactory(req);
 
   if(!session_factory) {
 
