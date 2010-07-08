@@ -100,13 +100,6 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
     }
     
     int true_opt = 1;
-    if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,
-		  (void*)&true_opt, sizeof (true_opt)) == -1) {
-	
-	ERROR("%s\n",strerror(errno));
-	close(sd);
-	return -1;
-    }
 
     if(setsockopt(sd, IPPROTO_IP, DSTADDR_SOCKOPT,
 		  (void*)&true_opt, sizeof (true_opt)) == -1) {
