@@ -96,7 +96,7 @@ enum Log_Level {
 #endif
 
 #ifndef LOG_BUFFER_LEN
-#define LOG_BUFFER_LEN 512
+#define LOG_BUFFER_LEN 4096
 #endif
 
 /* The underscores in parameter and local variable names are there to
