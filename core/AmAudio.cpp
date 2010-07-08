@@ -391,6 +391,7 @@ int AmAudio::encode(unsigned int size)
   amci_codec_t* codec = fmt->getCodec();
   long h_codec = fmt->getHCodec();
 
+  assert(codec);
   if(codec->encode){
     s = (*codec->encode)(samples.back_buffer(),samples,(unsigned int) size,
 			 fmt->channels,fmt->rate,h_codec);
