@@ -801,116 +801,145 @@ string get_header_keyvalue(const string& param_hdr, const string& name) {
 
 string get_header_keyvalue_single(const string& param_hdr, const string& name) {
   // ugly, but we need escaping
-#define ST_FINDKEY  0
-#define ST_FK_ESC   1
-#define ST_CMPKEY   2
-#define ST_SRCHEND  3
-#define ST_SE_VAL   4
-#define ST_SE_ESC   5
+#define ST_FINDBGN  0
+#define ST_FB_ESC   1
+#define ST_BEGINKEY 2
+#define ST_CMPKEY   3
+#define ST_FINDEQ   4
+#define ST_FINDVAL  5
+#define ST_VALUE    6
+#define ST_VAL_ESC  7
 
-  size_t p=0, s_begin=0, corr=0, 
+  size_t p=0, k_begin=0, corr=0, 
     v_begin=0, v_end=0;
 
-  unsigned int st = ST_FINDKEY;
+  char last = ' ';
+  char esc_char = ' ';
+
+  unsigned int st = ST_BEGINKEY;
   
-  while (p<param_hdr.length()) {
+  while (p<param_hdr.length() && !v_end) {
     char curr = param_hdr[p];
-
+    // DBG("curr %c, st=%d\n", curr, st);
     switch(st) {
-    default:
-    case ST_FINDKEY: {
-	switch(curr){
-	case '"':
-	case '\'':
-	    st = ST_FK_ESC;
-	    break;
-	default:
-	  if (curr==name[0]) {
-	    st = ST_CMPKEY;
-	    s_begin = p;
-	    corr = 1;
-	  }
-	}
-	p++;
-    }; break;
+    case ST_FINDBGN: {
+      switch(curr) {
+      case '"':
+      case '\'':
+	{
+	  st = ST_FB_ESC;
+	  esc_char = curr;
+	} break;
+      case ';':
+	st = ST_BEGINKEY;
+	break;
+      default: break;
+      } break;
+    } break;
 
-    case ST_FK_ESC: {
-	switch(curr){
-	case '"':
-	case '\'':
-	    st = ST_FINDKEY;
-	    break;
-	default:
-	    break;
+    case ST_FB_ESC: {
+      if (curr == esc_char && last != '\\') {
+	st = ST_FINDBGN;
+      }
+    } break;
+
+    case ST_BEGINKEY: {
+      switch (curr) {
+      case ' ': // spaces before the key
+      case '\t':
+	break;
+      default:
+	if (curr==name[0]) {
+	  st = ST_CMPKEY;
+	  k_begin = p;
+	  corr = 1;
 	}
-      p++;
-    }; break;
+      }
+    } break;
 
     case ST_CMPKEY: {
-      if (corr==name.length()) {
-	if (curr=='=') {
-	  st = ST_SRCHEND;
-	  v_begin=++p;
-	} else {
-	  p=s_begin+1;
-	  st = ST_FINDKEY;
-	  corr=0;
-	}
-      } else {
 	if (curr==name[corr]) {
-	  p++;
 	  corr++;
+	  if (corr == name.length()) {
+	    st = ST_FINDEQ;
+	  }
 	} else {
-	  st = ST_FINDKEY;
+	  st = ST_FINDBGN;
 	  corr=0;
-	  p=s_begin+1;	  
+	  p=k_begin; // will continue searching one after k_begin
 	}
+    } break;
+
+    case ST_FINDEQ: {
+      switch (curr) {
+      case ' ':
+      case '\t':
+	break;
+      case '=': 
+	st = ST_FINDVAL; break;
+      default: { 
+	  st = ST_FINDBGN;
+	  corr=0;
+	  p=k_begin; // will continue searching one after k_begin
+      } break;
       }
-    }; break;
+    } break;
 
-    case ST_SRCHEND: {
-	switch(curr){
-	case '"':
-	case '\'':
-	    v_begin++;
-	    st = ST_SE_ESC;
-	    break;
-	default:
-	    st = ST_SE_VAL;
-	}
-	p++;
-	v_end = p;
-    }; break;
+    case ST_FINDVAL: {
+      switch (curr) {
+      case ' ':
+      case '\t':
+	break;
 
-    case ST_SE_VAL: {
-      if (curr==';')
-	p = param_hdr.length();
-      else {
-	v_end = p;
-	p++;
+      case '"':
+      case '\'': {
+	st = ST_VAL_ESC;
+	esc_char = curr;
+	v_begin=p;
+      } break;
+      default: 
+	st = ST_VALUE;
+	v_begin=p;
       }
-    }; break;
+    } break;
 
-    case ST_SE_ESC: {
-	switch(curr){
-	case '"':
-	case '\'':
-	    p = param_hdr.length();
-	    break;
-	default:
-	    v_end = p;
-	    p++;
-	}
-    }; break;
+    case ST_VALUE: {
+      switch (curr) {
+      case '"':
+      case '\'': {
+	st = ST_VAL_ESC;
+	esc_char = curr;
+      } break;
+      case ';':
+	v_end = p;
+	break;
+      default: break;
+      }
+    } break;
 
+
+    case ST_VAL_ESC: {
+      if (curr == esc_char && last != '\\') {
+	st = ST_VALUE;
+      }
+    } break;
     }
+
+    p++;
+    last = curr;
   }
+
+  if (!v_end && (st == ST_VALUE || st == ST_VAL_ESC))
+    v_end = p;
   
-  if (v_begin && v_end)
-    return param_hdr.substr(v_begin, v_end-v_begin+1);
-  else if (v_begin && (p==param_hdr.length()))
-    return param_hdr.substr(v_begin);
-  else 
+  if (v_begin && v_end) {
+    if ((v_end - v_begin > 1) &&
+	(param_hdr[v_begin] == param_hdr[v_end-1]) &&
+	((param_hdr[v_begin] == '\'') || (param_hdr[v_begin] == '"')))
+	return param_hdr.substr(v_begin+1, v_end-v_begin-2); // whole value quoted
+
+    return param_hdr.substr(v_begin, v_end-v_begin);
+  }  else 
     return "";
 }
 

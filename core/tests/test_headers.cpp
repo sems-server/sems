@@ -41,7 +41,20 @@ FCTMF_SUITE_BGN(test_headers) {
 
       fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval;myotherfunkykey=myval", "P-My-Test", true), "mykey") == "myval" );
 
-      fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval;myotherfunkykey=myval2", "P-My-Test", true), "myotherfunkykey") == "myval2" );
+      fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval;myotherfunkykey=myval;andsomemore", "P-My-Test", true), "mykey") == "myval" );
+
+      fct_chk(get_header_keyvalue(getHeader("P-App-Param: product_id=1;productid=1;bla=blub ", "P-App-Param"), "product_id") == "1");
+      fct_chk(get_header_keyvalue(getHeader("P-App-Param: product_id=11;productid=1;bla=blub ", "P-App-Param"), "product_id") == "11");
+
+
+      fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey=myval;andsomemore", "P-My-Test", true), "mykey") == "myval" );
+      fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey= myval;andsomemore", "P-My-Test", true), "myotherfunkykey") == "myval" );
+      fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey= \"myval\";andsomemore", "P-My-Test", true), "myotherfunkykey") == "myval" );
+
+      fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey='myval';andsomemore", "P-My-Test", true), "myotherfunkykey") == "myval" );
+      fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey= '';andsomemore", "P-My-Test", true), "myotherfunkykey") == "");
+
+      fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey= 'test \\' escaped';andsomemore", "P-My-Test", true), "test \\' escaped") == "");
 
     } FCT_TEST_END();
 
