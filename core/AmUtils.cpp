@@ -905,9 +905,11 @@ string get_header_keyvalue_single(const string& param_hdr, const string& name) {
 
     }
   }
-
+  
   if (v_begin && v_end)
     return param_hdr.substr(v_begin, v_end-v_begin+1);
+  else if (v_begin && (p==param_hdr.length()))
+    return param_hdr.substr(v_begin);
   else 
     return "";
 }
