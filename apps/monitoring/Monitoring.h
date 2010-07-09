@@ -77,7 +77,7 @@ class Monitor
   void getAttributeActive(const AmArg& args, AmArg& ret);
   void getAttributeFinished(const AmArg& args, AmArg& ret);
   void listAll(const AmArg& args, AmArg& ret);
-  void listByFilter(const AmArg& args, AmArg& ret);
+  void listByFilter(const AmArg& args, AmArg& ret, bool erase);
   void listByRegex(const AmArg& args, AmArg& ret);
   void listFinished(const AmArg& args, AmArg& ret);
   void listActive(const AmArg& args, AmArg& ret);
