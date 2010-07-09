@@ -77,12 +77,6 @@ class AmPayloadProviderInterface {
  */
 class AmPlugIn : public AmPayloadProviderInterface
 {
- public:
-  //     enum PlugInType {
-  //       Audio,
-  //       App
-  //     };
-
  private:
   static AmPlugIn* _instance;
 

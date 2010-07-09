@@ -60,13 +60,13 @@ void AmPrecodedFile::initPlugin() {
 
 AmPrecodedRtpFormat::AmPrecodedRtpFormat(precoded_payload_t& precoded_payload,
 					 const vector<SdpPayload *>& payloads)
-  : AmAudioRtpFormat(payloads), precoded_payload(precoded_payload)
+  : AmAudioRtpFormat(/*payloads*/), precoded_payload(precoded_payload)
 {
   channels = precoded_payload.channels;
   rate = precoded_payload.sample_rate;
   // frame_size is in samples, precoded_payload.frame_size in millisec
   frame_size = precoded_payload.frame_ms * precoded_payload.sample_rate / 1000;
-  frame_length = precoded_payload.frame_ms;
+  //frame_length = precoded_payload.frame_ms;
   frame_encoded_size = precoded_payload.frame_bytes;
   h_codec = (long)this;
 }

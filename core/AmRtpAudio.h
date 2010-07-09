@@ -116,10 +116,14 @@ public:
 	  unsigned int nb_samples);
 
   // AmRtpStream interface
+  // int init(AmPayloadProviderInterface* payload_provider,
+  // 	   const SdpMedia& remote_media, 
+  // 	   const SdpConnection& conn, 
+  // 	   bool remote_active);
   int init(AmPayloadProviderInterface* payload_provider,
-	   const SdpMedia& remote_media, 
-	   const SdpConnection& conn, 
-	   bool remote_active);
+	   unsigned char media_i, 
+	   const AmSdp& local,
+	   const AmSdp& remote);
 
   void setPlayoutType(PlayoutType type);
 

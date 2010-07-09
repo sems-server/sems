@@ -91,7 +91,7 @@ protected:
   friend class AmRtpAudio;
 
   /** get new RTP format for the session */
-  virtual AmAudioRtpFormat* getNewRtpFormat();
+  //virtual AmAudioRtpFormat* getNewRtpFormat();
 
 private:
   AmDtmfDetector   m_dtmfDetector;
@@ -517,7 +517,7 @@ public:
   /** Hook called when an SDP offer is required */
   virtual bool getSdpAnswer(const AmSdp& offer, AmSdp& answer);
 
-  virtual void onSdpCompleted(const AmSdp& offer, const AmSdp& answer);
+  virtual int onSdpCompleted(const AmSdp& offer, const AmSdp& answer);
 
   /** 
    * called in the session thread before the session is destroyed,

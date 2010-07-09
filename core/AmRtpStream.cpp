@@ -456,20 +456,74 @@ void AmRtpStream::setPassiveMode(bool p)
 }
 
 int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
-		      const SdpMedia& remote_media, 
-		      const SdpConnection& conn, 
-		      bool remote_active)
+		      unsigned char media_i, 
+		      const AmSdp& local,
+		      const AmSdp& remote)
 {
-  if (remote_media.payloads.empty()) {
-    ERROR("can not initialize RTP stream without payloads.\n");
-    return -1;
+  const SdpMedia& local_media = local.media[media_i];
+  const SdpMedia& remote_media = remote.media[media_i];
+
+  payloads.clear();
+  pl_map.clear();
+  payloads.resize(local_media.payloads.size());
+
+  int i=0;
+  vector<SdpPayload>::const_iterator sdp_it = local_media.payloads.begin();
+  vector<Payload>::iterator p_it = payloads.begin();
+
+  // first pass on local SDP
+  while(p_it != payloads.end()) {
+
+    amci_payload_t* a_pl = payload_provider->payload(sdp_it->payload_type);
+    if(a_pl == NULL){
+      ERROR("No internal payload corresponding to type %i\n",
+	    sdp_it->payload_type);
+      return -1;//TODO
+    };
+    
+    p_it->pt         = sdp_it->payload_type;
+    p_it->name       = a_pl->name;
+    p_it->codec_id   = a_pl->codec_id;
+    p_it->clock_rate = a_pl->sample_rate;
+
+    pl_map[sdp_it->payload_type].index     = i;
+    pl_map[sdp_it->payload_type].remote_pt = -1;
+    
+    ++p_it;
+    ++sdp_it;
+    ++i;
   }
 
-  //TODO: support mute & on_hold
+  // second pass on remote SDP
+  sdp_it = remote_media.payloads.begin();
+  while(sdp_it != remote_media.payloads.begin()) {
 
-  setLocalIP(AmConfig::LocalIP);
-  setPassiveMode(remote_active);
-  setRAddr(conn.address, remote_media.port);
+    PayloadMappingTable::iterator pmt_it = pl_map.end();
+    if(sdp_it->encoding_name.empty()){ // must be a static payload
+
+      pmt_it = pl_map.find(sdp_it->payload_type);
+    }
+    else {
+      for(p_it = payloads.begin(); p_it != payloads.end(); ++p_it){
+	if((p_it->name == sdp_it->encoding_name) && 
+	   (p_it->clock_rate == (unsigned int)sdp_it->clock_rate)){
+	  pmt_it = pl_map.find(p_it->pt);
+	  break;
+	}
+      }
+    }
+
+    if(pmt_it != pl_map.end()){
+      pmt_it->second.remote_pt = sdp_it->payload_type;
+    }
+  }
+
+  //TODO: support mute, on_hold & sendrecv/sendonly/recvonly/inactive
+  //      support for passive-mode
+
+  setLocalIP(local.conn.address);
+  //setPassiveMode(remote_active);
+  setRAddr(remote.conn.address, remote_media.port);
 
   // TODO: take the first *supported* payload
   //       (align with the SDP answer algo)

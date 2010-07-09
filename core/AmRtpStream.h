@@ -85,17 +85,42 @@ struct PacketMem {
  */
 class AmRtpStream 
 {
-protected:
   static int next_port;
   static AmMutex port_mut;
 
+protected:
+  // get the next available port within configured range
   static int getNextPort();
 
-  /**
-     Remote payload (only different from 
-     int_payload if using dynamic payloads)
-  */
-  int          payload;
+  // payload collection
+  struct Payload {
+    unsigned char pt;
+    string        name;
+    unsigned int  clock_rate;
+    int           codec_id;
+  };
+
+  typedef std::vector<Payload> PayloadCollection;
+  
+  // list of locally supported payloads
+  PayloadCollection payloads;
+
+  // current payload (index into @payloads)
+  int payload;
+
+  struct PayloadMapping {
+    // remote payload type
+    int8_t remote_pt;
+
+    // index in payloads vector
+    uint8_t index;
+  };
+
+  typedef std::map<unsigned char, PayloadMapping> PayloadMappingTable;
+
+  // mapping from local payload type to PayloadMapping
+  PayloadMappingTable pl_map;
+
   unsigned int sequence;
 
   /**
@@ -224,12 +249,16 @@ public:
   int getTelephoneEventRate();
 
   /**
-   * Enables RTP stream.
+   * Inits the RTP stream with local information
    */
+  // virtual int init(AmPayloadProviderInterface* payload_provider,
+  // 		   const SdpMedia& remote_media, 
+  // 		   const SdpConnection& conn, 
+  // 		   bool remote_active);
   virtual int init(AmPayloadProviderInterface* payload_provider,
-		   const SdpMedia& remote_media, 
-		   const SdpConnection& conn, 
-		   bool remote_active);
+		   unsigned char media_i, 
+		   const AmSdp& local,
+		   const AmSdp& remote);
 
   /**
    * Stops RTP stream.

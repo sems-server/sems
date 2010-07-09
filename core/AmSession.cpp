@@ -228,9 +228,9 @@ AmPayloadProviderInterface* AmSession::getPayloadProvider() {
 // todo: - move this back into AmRtpAudio
 //       - simplify payloads handling and move to AmRtpAudio
 //         entirely
-AmAudioRtpFormat* AmSession::getNewRtpFormat() {
-  return new AmAudioRtpFormat(m_payloads);
-}
+// AmAudioRtpFormat* AmSession::getNewRtpFormat() {
+//   return new AmAudioRtpFormat(m_payloads);
+// }
 
 /*
 void AmSession::negotiate(const string& sdp_body,
@@ -938,7 +938,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
   answer.sessionName = "sems";
   answer.conn.network = NT_IN;
   answer.conn.addrType = AT_V4;
-  answer.conn.address = AmConfig::LocalIP;
+  answer.conn.address = advertisedIP();
 
   answer.media.push_back(SdpMedia());
   answer.media[0].type = MT_AUDIO;
@@ -955,16 +955,19 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
   return true;
 }
 
-void AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
+int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 {
   lockAudio();
-  RTPStream()->init(getPayloadProvider(),
-		    remote_sdp.media[0], 
-		    remote_sdp.conn, 
-		    remote_sdp.remote_active);
+  // TODO: get the right media ID
+  int ret = RTPStream()->init(getPayloadProvider(),0,local_sdp,remote_sdp);
   unlockAudio();
+  
+  if(ret){
+    ERROR("while initializing RTP stream\n");
+    return -1;
+  }
 
-  if(detached.get() && !getStopped()){
+  if(detached.get() && !getStopped()) {
 
     if(dlg.getStatus() == AmSipDialog::Connected)
       onSessionStart();
@@ -979,6 +982,8 @@ void AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 	  "Session will not be attached to MediaProcessor.\n");
     }
   }
+
+  return 0;
 }
 
 void AmSession::onRtpTimeout()

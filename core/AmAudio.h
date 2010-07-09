@@ -113,7 +113,7 @@ public:
   /** Sampling rate. */
   int rate;
   /* frame length in ms (frame based codecs) - unused */
-  int frame_length;
+  //int frame_length;
   /* frame size in samples */
   int frame_size;
   /* encoded frame size in bytes - unused */
@@ -173,12 +173,14 @@ public:
 /** \brief RTP audio format */
 class AmAudioRtpFormat: public AmAudioFormat
 {
-  vector<SdpPayload *> m_payloads;
-  int m_currentPayload;
-  amci_payload_t *m_currentPayloadP;
-  std::map<int, SdpPayload *> m_sdpPayloadByPayload;
-  std::map<int, amci_payload_t *> m_payloadPByPayload;
-  std::map<int, CodecContainer *> m_codecContainerByPayload;
+  // vector<SdpPayload *> m_payloads;
+  // int m_currentPayload;
+  // amci_payload_t *m_currentPayloadP;
+  // std::map<int, SdpPayload *> m_sdpPayloadByPayload;
+  // std::map<int, amci_payload_t *> m_payloadPByPayload;
+  // std::map<int, CodecContainer *> m_codecContainerByPayload;
+
+  int codec_id;
 
 protected:
   virtual int getCodecId();
@@ -189,15 +191,17 @@ public:
    * All the information are taken from the 
    * payload description in the originating plug-in.
    */
-  AmAudioRtpFormat(const vector<SdpPayload *>& payloads);
+  //AmAudioRtpFormat(const vector<SdpPayload *>& payloads);
+  AmAudioRtpFormat();
   ~AmAudioRtpFormat();
 
   /**
    * changes payload. returns != 0 on error.
    */
-  int setCurrentPayload(int payload);
+  //int setCurrentPayload(int payload);
+  //int getCurrentPayload() { return m_currentPayload; };
 
-  int getCurrentPayload() { return m_currentPayload; };
+  int setCodecId(int codec_id);
 };
 
 /**

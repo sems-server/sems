@@ -49,17 +49,29 @@ struct CodecContainer
   long h_codec;
 };
 
-AmAudioRtpFormat::AmAudioRtpFormat(const vector<SdpPayload *>& payloads)
-  : AmAudioFormat(), m_payloads(payloads), m_currentPayload(-1)
+// AmAudioRtpFormat::AmAudioRtpFormat(const vector<SdpPayload *>& payloads)
+//   : AmAudioFormat(), m_payloads(payloads), m_currentPayload(-1)
+// {
+  // for (vector<SdpPayload *>::iterator it = m_payloads.begin();
+  // 	  it != m_payloads.end(); ++it)
+  // {
+  //   m_sdpPayloadByPayload[(*it)->payload_type] = *it;
+  // }
+  // setCurrentPayload(m_payloads[0]->payload_type);
+// }
+
+AmAudioRtpFormat::AmAudioRtpFormat()
 {
-  for (vector<SdpPayload *>::iterator it = m_payloads.begin();
-	  it != m_payloads.end(); ++it)
-  {
-    m_sdpPayloadByPayload[(*it)->payload_type] = *it;
-  }
-  setCurrentPayload(m_payloads[0]->payload_type);
+  
 }
 
+int AmAudioRtpFormat::setCodecId(int codec_id)
+{
+  this->codec_id = codec_id;
+  return 0;
+}
+
+#if 0
 int AmAudioRtpFormat::setCurrentPayload(int payload)
 {
   if (m_currentPayload != payload)
@@ -123,18 +135,20 @@ int AmAudioRtpFormat::setCurrentPayload(int payload)
   }
   return 0;
 }
+#endif
 
 AmAudioRtpFormat::~AmAudioRtpFormat()
 {
-  for (std::map<int, CodecContainer *>::iterator it = 
-	 m_codecContainerByPayload.begin(); 
-       it != m_codecContainerByPayload.end(); ++it)
-    delete it->second;
+  // for (std::map<int, CodecContainer *>::iterator it = 
+  // 	 m_codecContainerByPayload.begin(); 
+  //      it != m_codecContainerByPayload.end(); ++it)
+  //   delete it->second;
 }
 
 AmAudioFormat::AmAudioFormat()
   : channels(-1), rate(-1), codec(NULL),
-    frame_length(20), frame_size(20*SYSTEM_SAMPLERATE/1000), frame_encoded_size(320)
+    //frame_length(20), 
+    frame_size(20*SYSTEM_SAMPLERATE/1000), frame_encoded_size(320)
 {
 
 }
@@ -199,7 +213,7 @@ void AmAudioFormat::initCodec()
       while (fmt_i[i].id) {
 	switch (fmt_i[i].id) {
 	case AMCI_FMT_FRAME_LENGTH : {
-	  frame_length=fmt_i[i].value; 
+	  //frame_length=fmt_i[i].value; 
 	} break;
 	case AMCI_FMT_FRAME_SIZE: {
 	  frame_size=fmt_i[i].value; 
@@ -513,10 +527,12 @@ void DblBuffer::swap()
 
 int AmAudioRtpFormat::getCodecId()
 {
-  if(!m_currentPayloadP){
-    ERROR("AmAudioRtpFormat::getCodecId: could not find payload %i\n", m_currentPayload);
-    return -1;
-  }
-  else 
-    return m_currentPayloadP->codec_id;
+  // if(!m_currentPayloadP){
+  //   ERROR("AmAudioRtpFormat::getCodecId: could not find payload %i\n", m_currentPayload);
+  //   return -1;
+  // }
+  // else 
+  //   return m_currentPayloadP->codec_id;
+
+  return codec_id;
 }

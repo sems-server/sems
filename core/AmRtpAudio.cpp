@@ -139,75 +139,69 @@ int AmRtpAudio::write(unsigned int user_ts, unsigned int size)
   return send(user_ts,(unsigned char*)samples,size);
 }
 
+// int AmRtpAudio::init(AmPayloadProviderInterface* payload_provider,
+// 		     const SdpMedia& remote_media, 
+// 		     const SdpConnection& conn, 
+// 		     bool remote_active)
 int AmRtpAudio::init(AmPayloadProviderInterface* payload_provider,
-		     const SdpMedia& remote_media, 
-		     const SdpConnection& conn, 
-		     bool remote_active)
+		      unsigned char media_i, 
+		      const AmSdp& local,
+		      const AmSdp& remote)
 {
   DBG("AmRtpAudio::init(...)\n");
-  if(AmRtpStream::init(payload_provider,remote_media,conn,remote_active)){
+  if(AmRtpStream::init(payload_provider,media_i,local,remote)){
     return -1;
   }
 
-  vector<SdpPayload*> payloads;
-  amci_payload_t* a_pl = NULL;
-  int int_pt=-1;
-
-  assert(!remote_media.payloads.empty());
-  vector<SdpPayload>::const_iterator p_it = remote_media.payloads.begin();
-
-  // TODO: add support for multiple payloads
-  if(p_it->payload_type >= DYNAMIC_PAYLOAD_TYPE_START) {
-    // Try dynamic payloads
-    // and give a chance to broken
-    // implementation using a static payload number
-    // for dynamic ones.
-
-    int_pt = payload_provider->
-      getDynPayload(p_it->encoding_name,
-		    p_it->clock_rate,
-		    p_it->encoding_param);
-  }
-  else {
-    int_pt = p_it->payload_type;
-  }
+  AmAudioRtpFormat* fmt_p = new AmAudioRtpFormat();
+  fmt_p->channels = 1;
+  fmt_p->rate = payloads[0].clock_rate;
+  //fmt_p->frame_length = ;
+  //fmt_p->frame_size = ;
+  //fmt_p->frame_encoded_size = ;
+  //fmt_p->sdp_format_parameters = ;
   
-  if(int_pt < 0) {
-    ERROR("Invalid payload type %i\n",int_pt);
-    return -1;
-  }
+  fmt_p->setCodecId(payloads[0].codec_id);
+  fmt.reset(fmt_p);
 
-  // try static payloads
-  a_pl = payload_provider->payload(int_pt);
-  if(a_pl == NULL){
-    ERROR("No internal payload corresponding to type %i\n",int_pt);
-    return -1;
-  }
-
-  SdpPayload* pl = new SdpPayload();
-  pl->payload_type = p_it->payload_type;
-  pl->int_pt = int_pt;
-  payloads.push_back(pl);
-
-  // TODO: free memory in ~AmAudioRtpFormat()
-  fmt.reset(new AmAudioRtpFormat(payloads));
   return 0;
 }
 
 int AmRtpAudio::setCurrentPayload(int payload)
 {
-  int res = 
-    ((AmAudioRtpFormat *) fmt.get())->setCurrentPayload(payload);
-  if (!res) {
-    amci_codec_t* codec = fmt->getCodec();
-    use_default_plc = !(codec && codec->plc);
+  if(payload != this->payload){
+    PayloadMappingTable::iterator pmt_it = pl_map.find(payload);
+    if(pmt_it == pl_map.end()){
+      ERROR("Could not set current payload: payload %i unknown to this stream\n",payload);
+      return -1;
+    }
+    
+    unsigned char index = pmt_it->second.index;
+    if(index >= payloads.size()){
+      ERROR("Could not set current payload: payload %i maps to invalid index %i\n",
+	    payload, index);
+      return -1;
+    }
+    
+    this->payload = payload;
+    return ((AmAudioRtpFormat*)fmt.get())->setCodecId(payloads[index].codec_id);
   }
-  return res;
+  else {
+    return 0;
+  }
+
+  // int res = 
+  //   ((AmAudioRtpFormat *) fmt.get())->setCurrentPayload(payload);
+  // if (!res) {
+  //   amci_codec_t* codec = fmt->getCodec();
+  //   use_default_plc = !(codec && codec->plc);
+  // }
+  // return res;
 }
 
-int AmRtpAudio::getCurrentPayload() {
-  return ((AmAudioRtpFormat *) fmt.get())->getCurrentPayload();
-}
+//int AmRtpAudio::getCurrentPayload() {
+  //return ((AmAudioRtpFormat *) fmt.get())->getCurrentPayload();
+//}
 
 unsigned int AmRtpAudio::conceal_loss(unsigned int ts_diff, unsigned char *buffer)
 {

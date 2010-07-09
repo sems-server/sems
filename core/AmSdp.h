@@ -153,6 +153,7 @@ public:
   string           uri;         // u=
   SdpConnection    conn;        // c=
   std::vector<SdpMedia> media;  // m= ... [a=rtpmap:...]+
+  //TODO: t= lines
 
   // Is remote host requesting 
   // us to do passive RTP ?

@@ -213,8 +213,6 @@ private:
   int onRxSdp(const string& body, const char** err_txt);
   int onTxSdp(const string& body);
 
-  void onSdpCompleted();
-
   int  triggerOfferAnswer(string& content_type, string& body);
 };
 
@@ -271,7 +269,7 @@ class AmSipDialogEventHandler
   virtual bool getSdpAnswer(const AmSdp& offer, AmSdp& answer)=0;
 
   /** Hook called when the SDP transaction has been completed */
-  virtual void onSdpCompleted(const AmSdp& local, const AmSdp& remote)=0;
+  virtual int onSdpCompleted(const AmSdp& local, const AmSdp& remote)=0;
 };
 
 #endif

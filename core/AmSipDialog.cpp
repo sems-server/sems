@@ -212,7 +212,10 @@ int AmSipDialog::onRxSdp(const string& body, const char** err_txt)
       
     case OA_OfferSent:
       oa_state = OA_Completed;
-      onSdpCompleted();
+      if(hdl->onSdpCompleted(sdp_local, sdp_remote)){
+	err_code = 500;
+	*err_txt = "internal error";
+      }
       break;
 
     case OA_OfferRecved:
@@ -250,8 +253,7 @@ int AmSipDialog::onTxSdp(const string& body)
 
   case OA_OfferRecved:
     oa_state = OA_Completed;
-    onSdpCompleted();
-    break;
+    return hdl->onSdpCompleted(sdp_local, sdp_remote);
 
   case OA_OfferSent:
     // There is already a pending offer!!!
@@ -262,11 +264,6 @@ int AmSipDialog::onTxSdp(const string& body)
   }
 
   return 0;
-}
-
-void AmSipDialog::onSdpCompleted()
-{
-  hdl->onSdpCompleted(sdp_local, sdp_remote);
 }
 
 int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
@@ -425,8 +422,12 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
   if(reply.content_type == "application/sdp") {
 
     if(onTxSdp(reply.body)){
-      DBG("onTxSdp() failed\n");
-      return -1;
+
+      DBG("onTxSdp() failed (replying 500 internal error)\n");
+      reply.code = 500;
+      reply.reason = "internal error";
+      reply.body = "";
+      reply.content_type = "";
     }
   }
 
