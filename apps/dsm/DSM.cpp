@@ -72,6 +72,7 @@ bool DSMFactory::MonitoringFullTransitions;
 
 MonSelectType DSMFactory::MonSelectCaller;
 MonSelectType DSMFactory::MonSelectCallee;
+vector<string> DSMFactory::MonSelectFilters;
 
 string DSMFactory::MonSelectFallback;
 
@@ -211,6 +212,20 @@ int DSMFactory::onLoad()
 	  cfg_usecallee.c_str());
   }
 
+  MonSelectFilters  = explode(cfg.getParameter("monitor_select_filters"), ",");
+  string filters;
+  for (vector<string>::iterator it = 
+	 MonSelectFilters.begin(); it != MonSelectFilters.end(); it++) {
+    if (it != MonSelectFilters.begin()) 
+      filters += ", ";
+    filters+=*it;
+  }
+  if (MonSelectFilters.size()) {
+    DBG("using additional monitor app select filters: %s\n", 
+	filters.c_str());
+  } else {
+    DBG("not using additional monitor app select filters\n");
+  }
   MonSelectFallback = cfg.getParameter("monitor_select_fallback");
 #endif
 
@@ -515,7 +530,8 @@ void AmArg2DSMStrMap(const AmArg& arg,
   }
 }
 
-void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag, map<string, string>& vars) {
+void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag, 
+				     map<string, string>& vars) {
 #define FALLBACK_OR_EXCEPTION(code, reason)				\
   if (MonSelectFallback.empty()) {					\
     throw AmSession::Exception(code, reason);				\
@@ -579,8 +595,22 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
 	}
 	  
 	DBG(" && looking for callee=='%s'\n", req.user.c_str());
-	di_args.push(callee_filter);	
+	di_args.push(callee_filter);
       }
+      // apply additional filters
+      if (MonSelectFilters.size()) {
+	string app_params = getHeader(req.hdrs, PARAM_HDR);
+	for (vector<string>::iterator it = 
+	       MonSelectFilters.begin(); it != MonSelectFilters.end(); it++) {
+	  AmArg filter;
+	  filter.push(*it); // avp name
+	  string app_param_val = get_header_keyvalue(app_params, *it);
+	  filter.push(app_param_val);
+	  di_args.push(filter);
+	  DBG(" && looking for %s=='%s'\n", it->c_str(), app_param_val.c_str());
+	}
+      }
+
       MONITORING_GLOBAL_INTERFACE->invoke("listByFilter",di_args,ret);
       
       if ((ret.getType()!=AmArg::Array)||

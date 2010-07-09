@@ -83,6 +83,7 @@ class DSMFactory
   static MonSelectType MonSelectCaller;
   static MonSelectType MonSelectCallee;
   static string MonSelectFallback;
+  static vector<string> MonSelectFilters;
 
 #endif // USE_MONITORING
 
