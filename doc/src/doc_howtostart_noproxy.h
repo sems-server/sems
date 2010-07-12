@@ -154,7 +154,7 @@
   \code
   initial state BEGIN
    enter {
-     playFile(/usr/local/lib/sems/audio/webconference/first_participant.wav
+     playFile(/usr/local/lib/sems/audio/webconference/first_participant.wav);
    };
   transition "file ends" BEGIN - noAudioTest -> TYPING;
   
