@@ -52,7 +52,7 @@ struct JsonRpcResponse {
   AmArg data;
   bool is_error;
   
-  JsonRpcResponse(bool is_error, string id, AmArg data)
+  JsonRpcResponse(bool is_error, string id, const AmArg& data)
   : is_error(is_error), id(id), data(data) { }
   JsonRpcResponse(bool is_error, string id) 
   : is_error(is_error), id(id) { }
@@ -63,9 +63,10 @@ struct JsonRpcResponse {
 struct JsonRpcResponseEvent
   : public JsonRpcEvent {
   JsonRpcResponse response;
+  AmArg udata;
 
-  JsonRpcResponseEvent(bool is_error, string id, AmArg data)
-    : response(is_error, id, data)
+ JsonRpcResponseEvent(bool is_error, string id, const AmArg& data, const AmArg& udata)
+   : response(is_error, id, data), udata(udata)
     { }
   JsonRpcResponseEvent(bool is_error, string id)
     : response(is_error, id)
@@ -148,23 +149,25 @@ struct JsonServerSendMessageEvent
   AmArg params;
   string reply_link;
   bool is_error;
+  AmArg udata;
 
   JsonServerSendMessageEvent(const string& connection_id,
 			     bool is_reply,
 			     const string& method,
 			     const string& id,
-			     AmArg& params,
+			     const AmArg& params,
+			     const AmArg& udata = AmArg(),
 			     const string& reply_link = "")
     : JsonServerEvent(connection_id, SendMessage),
     is_reply(is_reply), reply_link(reply_link),
-    method(method), id(id), params(params) { }
+    method(method), id(id), params(params), udata(udata) { }
 
  JsonServerSendMessageEvent(const JsonServerSendMessageEvent& e,
 			    JsonrpcNetstringsConnection* conn)
    : JsonServerEvent(conn, SendMessage),
     is_reply(e.is_reply),reply_link(e.reply_link),
     method(e.method), id(e.id), params(e.params), 
-    is_error(e.is_error) { 
+    is_error(e.is_error), udata(e.udata) {
     connection_id = e.connection_id;
   }
 

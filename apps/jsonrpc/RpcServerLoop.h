@@ -72,7 +72,8 @@ class JsonRPCServerLoop
 		      int flags,
 		      const string& host, 
 		      int port, const string& method, 
-		      AmArg& params,
+		      const AmArg& params,
+		      const AmArg& udata,
 		      AmArg& ret);
 
   static void sendMessage(const string& connection_id, 
@@ -80,7 +81,8 @@ class JsonRPCServerLoop
 			  const string& method, 
 			  const string& id,
 			  const string& reply_sink,
-			  AmArg& params,
+			  const AmArg& params,
+			  const AmArg& udata,
 			  AmArg& ret);
   void run();
   void on_stop();

@@ -123,7 +123,12 @@ void JsonRPCServerModule::execRpc(const AmArg& args, AmArg& ret) {
   AmArg& params = none_params;
   if (args.size()>7)
     params = args.get(7);
-  
+
+  AmArg u_none_params;
+  AmArg& udata = u_none_params;
+  if (args.size()>8)
+    udata = args.get(8);
+
   JsonRPCServerLoop::execRpc(// evq_link, notification_link, request_link
 			     args.get(0).asCStr(), args.get(1).asCStr(),
 			     args.get(2).asCStr(), 
@@ -132,7 +137,7 @@ void JsonRPCServerModule::execRpc(const AmArg& args, AmArg& ret) {
 			     // host, port, method
 			     args.get(4).asCStr(), 
 			     args.get(5).asInt(), args.get(6).asCStr(), 
-			     params, ret);
+			     params, udata, ret);
 }
 
 void JsonRPCServerModule::sendMessage(const AmArg& args, AmArg& ret) {
@@ -140,10 +145,15 @@ void JsonRPCServerModule::sendMessage(const AmArg& args, AmArg& ret) {
   AmArg& params = none_params;
   if (args.size()>5)
     params = args.get(5);
+  AmArg u_none_params;
+  AmArg& udata = u_none_params;
+  if (args.size()>6)
+    udata = args.get(6);
+
   JsonRPCServerLoop::sendMessage(args.get(0).asCStr(), // conn_id, 
 				 args.get(1).asInt(),  // type, (0 == reply)
 				 args.get(2).asCStr(), // method,
 				 args.get(3).asCStr(), // id
 				 args.get(4).asCStr(), // reply_sink
-				 params, ret);
+				 params, udata, ret);
 }

@@ -39,6 +39,7 @@
 
 int JsonRpcServer::createRequest(const string& evq_link, const string& method, 
 				 AmArg& params, JsonrpcNetstringsConnection* peer, 
+				 const AmArg& udata,
 				 bool is_notification) {
   AmArg rpc_params;
   rpc_params["jsonrpc"] = "2.0";
@@ -50,9 +51,10 @@ int JsonRpcServer::createRequest(const string& evq_link, const string& method,
     rpc_params["id"] = req_id;
 
     if (!evq_link.empty()) 
-      peer->replyReceivers[req_id] = evq_link;
+      peer->replyReceivers[req_id] = make_pair(evq_link, udata);
     DBG("registering reply sink '%s' for id %s\n", 
 	evq_link.c_str(), req_id.c_str());
+
   }
 
   string rpc_params_json = arg2json(rpc_params);
@@ -122,8 +124,8 @@ int JsonRpcServer::processMessage(char* msgbuf, unsigned int* msg_size,
     }
     string id = rpc_params["id"].asCStr();
     
-    std::map<std::string, std::string>::iterator rep_recv_q = 
-      peer->replyReceivers.find(id);
+    std::map<std::string, std::pair<std::string, AmArg > >::iterator
+      rep_recv_q = peer->replyReceivers.find(id);
     if (rep_recv_q == peer->replyReceivers.end()) {
       DBG("received reply for unknown request");
       *msg_size = 0;
@@ -134,20 +136,23 @@ int JsonRpcServer::processMessage(char* msgbuf, unsigned int* msg_size,
       }
       return 0;
     }
+    const AmArg& udata = rep_recv_q->second.second;
+    const string& event_queue_id = rep_recv_q->second.first;
+
     JsonRpcResponseEvent* resp_ev = NULL; 
     if (rpc_params.hasMember("result")) {
-      resp_ev = new JsonRpcResponseEvent(false, id, rpc_params["result"]);
+      resp_ev = new JsonRpcResponseEvent(false, id, rpc_params["result"], udata);
     } else {
       if (!rpc_params.hasMember("error")) {
 	INFO("protocol error: reply does not have error nor result!\n");
 	return -2;
       }
-      resp_ev = new JsonRpcResponseEvent(true, id, rpc_params["error"]);
+      resp_ev = new JsonRpcResponseEvent(true, id, rpc_params["error"], udata);
     }
     resp_ev->connection_id = peer->id;
 
     bool posted = AmEventDispatcher::instance()->
-      post(rep_recv_q->second, resp_ev);
+      post(event_queue_id, resp_ev);
     if (!posted) {
       DBG("receiver event queue does not exist (any more)\n");
       peer->replyReceivers.erase(rep_recv_q);

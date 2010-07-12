@@ -88,12 +88,17 @@ void SystemDSM::process(AmEvent* event) {
       // decode result for easy use from script
       varPrintArg(resp_ev->response.data, params, resp_ev->response.is_error ? "error": "result");
 
+      // decode udata for easy use from script
+      varPrintArg(resp_ev->udata, params, "udata");
+
       // save reference to full parameters
-      avar[DSM_AVAR_JSONRPCRESPONEDATA] = AmArg(&resp_ev->response.data);
+      avar[DSM_AVAR_JSONRPCRESPONSEDATA] = AmArg(&resp_ev->response.data);
+      avar[DSM_AVAR_JSONRPCRESPONSEUDATA] = AmArg(&resp_ev->udata);
 
       engine.runEvent(&dummy_session, this, DSMCondition::JsonRpcResponse, &params);
 
-      avar.erase(DSM_AVAR_JSONRPCRESPONEDATA);
+      avar.erase(DSM_AVAR_JSONRPCRESPONSEUDATA);
+      avar.erase(DSM_AVAR_JSONRPCRESPONSEDATA);
       return;
     }
 

@@ -54,10 +54,10 @@ void JsonrpcPeerConnection::notifyDisconnect() {
       post(requestReceiver, 
 	   new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT, id));
   
-  for (std::map<std::string, std::string>::iterator it=
+  for (std::map<std::string, std::pair<std::string, AmArg > > ::iterator it=
 	 replyReceivers.begin(); it != replyReceivers.end(); it++) {
     AmEventDispatcher::instance()->
-      post(it->second, 
+      post(it->second.first,
 	   new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT, id));	
   }
 }
