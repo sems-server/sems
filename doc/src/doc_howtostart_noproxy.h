@@ -152,13 +152,14 @@
   
   Then we paste this little script in /usr/local/lib/sems/dsm/mydsmapp.dsm :
   \code
-  initial state BEGIN {
-    playFile(/usr/local/lib/sems/audio/webconference/first_participant.wav
-  };
+  initial state BEGIN
+   enter {
+     playFile(/usr/local/lib/sems/audio/webconference/first_participant.wav
+   };
   transition "file ends" BEGIN - noAudioTest -> TYPING;
   
   state TYPING;
-  transition "typed a key" BEGIN - keyTest(#key < 10) / { 
+  transition "typed a key" TYPING - keyTest(#key < 10) / {
     set($myfile=/usr/local/lib/sems/audio/webconference/);
     append($myfile, #key);
     append($myfile, .wav);
