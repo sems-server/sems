@@ -84,6 +84,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("inc", SCIncAction);
   DEF_CMD("log", SCLogAction);
   DEF_CMD("clear", SCClearAction);
+  DEF_CMD("clearArray", SCClearArrayAction);
   DEF_CMD("logVars", SCLogVarsAction);
   DEF_CMD("logParams", SCLogParamsAction);
   DEF_CMD("logSelects", SCLogSelectsAction);
@@ -632,6 +633,25 @@ EXEC_ACTION_START(SCClearAction) {
     arg.substr(1) : arg;
   DBG("clear variable '%s'\n", var_name.c_str());
   sc_sess->var.erase(var_name);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCClearArrayAction) {
+  string varprefix = (arg.length() && arg[0] == '$')?
+    arg.substr(1) : arg;
+  DBG("clear variable array '%s.*'\n", varprefix.c_str());
+
+  varprefix+=".";
+
+  map<string, string>::iterator lb = sc_sess->var.lower_bound(varprefix);
+  while (lb != sc_sess->var.end()) {
+    if ((lb->first.length() < varprefix.length()) ||
+	strncmp(lb->first.c_str(), varprefix.c_str(),varprefix.length()))
+      break;
+    map<string, string>::iterator lb_d = lb;
+    lb++;
+    sc_sess->var.erase(lb_d);    
+  }
+
 } EXEC_ACTION_END;
 
 

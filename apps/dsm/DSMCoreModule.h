@@ -83,6 +83,7 @@ DEF_ACTION_2P(SCAppendAction);
 DEF_ACTION_2P(SCSubStrAction);
 DEF_ACTION_1P(SCIncAction);
 DEF_ACTION_1P(SCClearAction);
+DEF_ACTION_1P(SCClearArrayAction);
 DEF_ACTION_2P(SCSetTimerAction);
 DEF_ACTION_1P(SCRemoveTimerAction);
 DEF_ACTION_1P(SCRemoveTimersAction);

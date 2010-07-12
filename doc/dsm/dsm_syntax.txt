@@ -144,6 +144,8 @@ sendDTMFSequence(sequence [, duration_ms])
 
  inc($var)
  clear($var)
+ clearArray($var)
+  clears all var.* variables
 
  log(level, text)
    e.g. log(1, $var1)
