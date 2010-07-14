@@ -373,7 +373,7 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 	  // output is local - audio should go in local_out
 	  AmAudio* local_output = s->getLocalOutput(); 
 	  if (local_output) {
-	    if (local_output->put(ts,buffer,size)) {
+	    if (local_output->put(ts,buffer,size) < 0) {
 	      postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
 	    }
 	  }
