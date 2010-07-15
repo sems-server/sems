@@ -64,7 +64,7 @@ int JsonRpcServer::createRequest(const string& evq_link, const string& method,
     return -3;
   }
 
-  DBG("RPC message: >>%.*s<<\n", rpc_params_json.length(), rpc_params_json.c_str());
+  DBG("RPC message: >>%.*s<<\n", (int)rpc_params_json.length(), rpc_params_json.c_str());
   memcpy(peer->msgbuf, rpc_params_json.c_str(), rpc_params_json.length());
   peer->msg_size = rpc_params_json.length();
   // set peer connection up for sending
@@ -90,7 +90,7 @@ int JsonRpcServer::createReply(JsonrpcNetstringsConnection* peer,
     return -3;
   }
 
-  DBG("created RPC reply: >>%.*s<<\n", res_s.length(), res_s.c_str());
+  DBG("created RPC reply: >>%.*s<<\n", (int)res_s.length(), res_s.c_str());
   memcpy(peer->msgbuf, res_s.c_str(), res_s.length());
   peer->msg_size = res_s.length();
 
@@ -103,7 +103,7 @@ int JsonRpcServer::processMessage(char* msgbuf, unsigned int* msg_size,
   // const char* txt = "{\"jsonrpc\": \"2.0\", \"result\": 19, \"id\": 1}";
   AmArg rpc_params;
   if (!json2arg(msgbuf, rpc_params)) {
-    INFO("Error parsing message '%.*s'\n", (int)msg_size, msgbuf);
+    INFO("Error parsing message '%.*s'\n", (int)*msg_size, msgbuf);
     return -1;
   }
 
@@ -248,7 +248,7 @@ int JsonRpcServer::processMessage(char* msgbuf, unsigned int* msg_size,
     return -3;
   }
 
-  DBG("RPC result: >>%.*s<<\n", res_s.length(), res_s.c_str());
+  DBG("RPC result: >>%.*s<<\n", (int)res_s.length(), res_s.c_str());
   memcpy(msgbuf, res_s.c_str(), res_s.length());
   *msg_size = res_s.length();
 
