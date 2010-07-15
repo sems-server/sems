@@ -337,7 +337,7 @@ void JsonRPCServerLoop::on_stop() {
 void JsonRPCServerLoop::returnConnection(JsonrpcNetstringsConnection* conn) {
   pending_events_mut.lock();
   // (check whether event for that connection pending)
-  DBG("checking %u pending events\n", pending_events.size());
+  DBG("checking %zd pending events\n", pending_events.size());
   for (vector<JsonServerEvent*>::iterator it=
 	 pending_events.begin(); it != pending_events.end(); it++) {
     DBG("%s vs %s\n", (*it)->connection_id.c_str(),conn->id.c_str());
