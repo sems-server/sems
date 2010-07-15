@@ -286,13 +286,11 @@ inline UACAuthCred* b2b_connectCalleeSession::getCredentials() {
   return &credentials;
 }
 
-void b2b_connectCalleeSession::onSipReply(const AmSipReply& reply) {
-  int status_before = dlg.getStatus();
-  AmB2ABCalleeSession::onSipReply(reply);
-  int status = dlg.getStatus();
+void b2b_connectCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status) {
+  AmB2ABCalleeSession::onSipReply(reply, old_dlg_status);
  
-  if ((status_before == AmSipDialog::Pending)&&
-      (status == AmSipDialog::Disconnected)) {
+  if ((old_dlg_status == AmSipDialog::Pending)&&
+      (dlg.getStatus() == AmSipDialog::Disconnected)) {
     DBG("status change Pending -> Disconnected. Stopping session.\n");
     setStopped();
   }
