@@ -69,6 +69,13 @@ AmSipDialog::~AmSipDialog()
   }
 }
 
+void AmSipDialog::setStatus(int new_status) {
+  DBG("setting  SIP dialog status: %s->%s\n",
+      status2str[status], status2str[new_status]);
+
+  status = new_status;
+}
+
 void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
   DBG("AmSipDialog::updateStatus(request)\n");

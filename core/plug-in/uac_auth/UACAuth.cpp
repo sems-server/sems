@@ -118,7 +118,7 @@ bool UACAuth::onSipRequest(const AmSipRequest& req)
   return false;
 }
 
-bool UACAuth::onSipReply(const AmSipReply& reply)
+bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   bool processed = false;
   if (reply.code==407 || reply.code==401) {
@@ -167,6 +167,9 @@ bool UACAuth::onSipReply(const AmSipReply& reply)
 				 ri->second.body, 
 				 hdrs) == 0) 			
 	      processed = true;
+	    // undo SIP dialog status change
+	    if (dlg->getStatus() != old_dlg_status)
+	      dlg->setStatus(old_dlg_status);
 	  }
 	} 
       }
