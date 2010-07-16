@@ -102,4 +102,18 @@ FCTMF_SUITE_BGN(test_jsonarg) {
       fct_chk(isArgDouble(rpc_params["result"]) && rpc_params["result"].asDouble() == 1.21);
     } FCT_TEST_END();
 
+    FCT_TEST_BGN(json_tofro_equality) {
+      AmArg a1;
+      a1["test"]=1;
+      a1["test2"].push("asdf");
+      a1["test2"].push(1);
+
+      string s = arg2json(a1);
+      AmArg a2;
+      bool back_conversion_result = json2arg(s, a2);
+      fct_chk(back_conversion_result);
+      // fct_chk(a1==a2);
+      // DBG("a1 = '%s', a2 = '%s', \n", AmArg::print(a1).c_str(), AmArg::print(a2).c_str());
+    } FCT_TEST_END();
+
 } FCTMF_SUITE_END();
