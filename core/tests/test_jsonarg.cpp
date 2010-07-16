@@ -49,4 +49,57 @@ FCTMF_SUITE_BGN(test_jsonarg) {
       fct_chk(rpc_params["result"][""].asInt()==1);
     } FCT_TEST_END();
 
+    FCT_TEST_BGN(json_number_e_parse) {
+      string s = "{\"result\": 0E1}";
+      // DBG("s.c_str() %s\n", s.c_str() );
+      AmArg rpc_params;
+      fct_chk(json2arg(s.c_str(), rpc_params));
+      fct_chk(isArgInt(rpc_params["result"]) && rpc_params["result"].asInt() == 0);
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(json_number_e_pow) {
+      string s = "{\"result\": 1E1}";
+      // DBG("s.c_str() %s\n", s.c_str() );
+      AmArg rpc_params;
+      fct_chk(json2arg(s.c_str(), rpc_params));
+      fct_chk(isArgInt(rpc_params["result"]) && rpc_params["result"].asInt() == 10);
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(json_number_e_pow2) {
+      string s = "{\"result\": 5e0}";
+      // DBG("s.c_str() %s\n", s.c_str() );
+      AmArg rpc_params;
+      fct_chk(json2arg(s.c_str(), rpc_params));
+      fct_chk(isArgInt(rpc_params["result"]) && rpc_params["result"].asInt() == 5);
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(json_number_e_wrong) {
+      string s = "{\"result\": 1E}";
+      // DBG("s.c_str() %s\n", s.c_str() );
+      AmArg rpc_params;
+      fct_chk(!json2arg(s.c_str(), rpc_params));
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(json_number_e_powneg1) {
+      string s = "{\"result\": 1E-1}";
+      // DBG("s.c_str() %s\n", s.c_str() );
+      AmArg rpc_params;
+      fct_chk(json2arg(s.c_str(), rpc_params));
+      // DBG("res: %s, type %d\n",  AmArg::print(rpc_params["result"]).c_str(), rpc_params["result"].getType());
+
+      fct_chk(isArgDouble(rpc_params["result"]));
+      fct_chk(isArgDouble(rpc_params["result"]) && rpc_params["result"].asDouble() == 0.1);
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(json_number_float_parse) {
+      string s = "{\"result\": 1.21}";
+      // DBG("s.c_str() %s\n", s.c_str() );
+      AmArg rpc_params;
+      fct_chk(json2arg(s.c_str(), rpc_params));
+      // DBG("res: %s, type %d\n",  AmArg::print(rpc_params["result"]).c_str(), rpc_params["result"].getType());
+
+      fct_chk(isArgDouble(rpc_params["result"]));
+      fct_chk(isArgDouble(rpc_params["result"]) && rpc_params["result"].asDouble() == 1.21);
+    } FCT_TEST_END();
+
 } FCTMF_SUITE_END();

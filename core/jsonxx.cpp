@@ -33,6 +33,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <iostream>
 #include <sstream>
 
+#include <math.h>
+
+#include "log.h"
+
 namespace jsonxx {
 
 void eat_whitespaces(std::istream& input) {
@@ -125,6 +129,7 @@ bool parse_null(std::istream& input) {
     return false;
 }
 
+  /*
 bool parse_float(std::istream& input, double* value) {
     eat_whitespaces(input);
     char ch;
@@ -160,6 +165,8 @@ bool parse_float(std::istream& input, double* value) {
         return false;
     }
 }
+  */
+
 
 bool parse_number(std::istream& input, long* value) {
     eat_whitespaces(input);
@@ -188,27 +195,238 @@ bool parse_number(std::istream& input, long* value) {
     }
 }
 
+
 bool parse_number(std::istream& input, int* value) {
     eat_whitespaces(input);
     char ch;
     std::string value_str;
+    std::string exp_str; // whole exp part
+    std::string exp_value_str; // value of exp part
     int sign = 1;
+    int e_sign = 1;
+    bool correct = true;
+    int e_value;
+
+    enum {
+      p_number,
+      p_e,
+      p_enumber
+    } p_state = p_number;
+
     if (match("-", input)) {
         sign = -1;
     } else {
         match("+", input);
     }
+
     while(input && !input.eof()) {
-        input.get(ch);
-        if (!isdigit(ch)) {
-            input.putback(ch);
-            break;
-        }
-        value_str.push_back(ch);
+      input.get(ch);
+      switch (p_state) {
+      case p_number: {
+	// DBG("st = p_number, ch=%c\n",ch);
+	if (ch == 'E' || ch == 'e') {
+	  exp_str.push_back(ch);
+	  p_state = p_e;
+	  continue;
+	}
+	if (!isdigit(ch)) {
+	  input.putback(ch);
+	  correct = false;
+	  break;
+	}
+	value_str.push_back(ch);
+      } break;
+
+      case p_e: {
+	// DBG("st = p_e, ch=%c\n",ch);
+
+	if (ch == '+') {
+	  exp_str.push_back(ch);
+	  p_state = p_enumber;
+	} else if (ch == '-') {
+	  e_sign = -1;
+	  exp_str.push_back(ch);
+	  p_state = p_enumber;
+	} else if (isdigit(ch)) {
+	  exp_value_str.push_back(ch);
+	  exp_str.push_back(ch);
+	  p_state = p_enumber;
+	} else {
+	  input.putback(ch);
+	  correct = false;
+	}
+      } break;
+
+      case p_enumber: {
+	// DBG("st = p_enumber, ch=%c\n",ch);
+
+	if (isdigit(ch)) {
+	  exp_value_str.push_back(ch);
+	  exp_str.push_back(ch);
+	} else {
+	  input.putback(ch);
+	  correct = false;
+	}
+      } break;
+
+      }
+
+      if (!correct)
+	break;
     }
+
+    if (p_state == p_e) { 
+      // todo: check also some other error states
+      for (std::string::reverse_iterator r_it=
+    	     exp_str.rbegin(); r_it != exp_str.rend(); r_it++)
+    	input.putback(*r_it);
+      for (std::string::reverse_iterator r_it=
+    	     value_str.rbegin(); r_it != value_str.rend(); r_it++)
+    	input.putback(*r_it);
+      return false;
+    }
+    
     if (value_str.size() > 0) {
         std::istringstream(value_str) >> *value;
 	*value*=sign;
+
+	if (exp_value_str.size()) {	  
+	  std::istringstream(exp_value_str) >> e_value;
+
+	  if (e_value && e_sign==-1) {
+	    // should have been catched by parse_float
+	    for (std::string::reverse_iterator r_it=
+		   exp_str.rbegin(); r_it != exp_str.rend(); r_it++)
+	      input.putback(*r_it);
+	    for (std::string::reverse_iterator r_it=
+		   value_str.rbegin(); r_it != value_str.rend(); r_it++)
+	      input.putback(*r_it);
+	    
+	    return false;  
+	  }
+	  *value *= pow(10, e_value);
+	}
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool parse_float(std::istream& input, double* value) {
+    eat_whitespaces(input);
+    char ch;
+    std::string value_str;
+    std::string exp_str; // whole exp part
+    std::string exp_value_str; // value of exp part
+    int sign = 1;
+    int e_sign = 1;
+    bool correct = true;
+    int e_value;
+    bool has_dot = false;
+
+    enum {
+      p_number,
+      p_e,
+      p_enumber
+    } p_state = p_number;
+
+    if (match("-", input)) {
+        sign = -1;
+    } else {
+        match("+", input);
+    }
+
+    while(input && !input.eof()) {
+      input.get(ch);
+      bool end = false;
+      switch (p_state) {
+      case p_number: {
+	 // DBG("st = p_number, ch=%c\n",ch);
+	if (ch == 'E' || ch == 'e') {
+	  exp_str.push_back(ch);
+	  p_state = p_e;
+	  continue;
+	}
+	if (ch == '.') {
+	  if (has_dot) {
+	    correct = false;
+	    break;
+	  }
+	  has_dot = true;
+	  value_str.push_back(ch);
+	  continue;
+	}
+
+	if (!isdigit(ch)) {
+	  input.putback(ch);
+	  end = true;
+	  break;
+	}
+	value_str.push_back(ch);
+      } break;
+
+      case p_e: {
+	 // DBG("st = p_e, ch=%c\n",ch);
+	if (ch == '+') {
+	  exp_str.push_back(ch);
+	  p_state = p_enumber;
+	} else if (ch == '-') {
+	  e_sign = -1;
+	  exp_str.push_back(ch);
+	  p_state = p_enumber;
+	} else if (isdigit(ch)) {
+	  exp_value_str.push_back(ch);
+	  exp_str.push_back(ch);
+	  p_state = p_enumber;
+	} else {
+	  input.putback(ch);
+	  correct = false;
+	}
+      } break;
+
+      case p_enumber: {
+	// DBG("st = p_enumber, ch=%c\n",ch);
+
+	if (isdigit(ch)) {
+	  exp_value_str.push_back(ch);
+	  exp_str.push_back(ch);
+	} else {
+	  input.putback(ch);
+	  end = true;
+	}
+      } break;
+
+      }
+
+      if (end || !correct)
+	break;
+    }
+
+    // DBG("correct = %s, has_dot = %s, e_sign = %d, exp_value_str.size() = %zd\n", 
+    // 	correct?"true":"false",has_dot?"true":"false",e_sign,exp_value_str.size());
+    if (!correct || (!has_dot && !(e_sign == -1 && exp_value_str.size())) || p_state == p_e) { 
+      // todo: check also some other error states
+      for (std::string::reverse_iterator r_it=
+    	     exp_str.rbegin(); r_it != exp_str.rend(); r_it++)
+    	input.putback(*r_it);
+      for (std::string::reverse_iterator r_it=
+    	     value_str.rbegin(); r_it != value_str.rend(); r_it++)
+    	input.putback(*r_it);
+      return false;
+    }
+    
+    if (value_str.size() > 0) {
+        std::istringstream(value_str) >> *value;
+	*value*=sign;
+
+	if (exp_value_str.size()) {	  
+	  std::istringstream(exp_value_str) >> e_value;
+
+	  *value *= pow(10, e_sign*e_value);
+	}
+
         return true;
     } else {
         return false;
