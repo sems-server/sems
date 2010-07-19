@@ -763,7 +763,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
     addParams(s, req.hdrs); 
 
   if (NULL == cred) {
-    WARN("discarding unknown session parameters.\n");
+    DBG("outgoing DSM call will not be authenticated.\n");
   } else {
     AmSessionEventHandlerFactory* uac_auth_f = 
       AmPlugIn::instance()->getFactory4Seh("uac_auth");
