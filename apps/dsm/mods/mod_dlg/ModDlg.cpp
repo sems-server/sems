@@ -235,6 +235,13 @@ EXEC_ACTION_START(DLGDialoutAction) {
   string hdrs; 
   GET_VARIABLE_OPTIONAL("_hdrs", hdrs);
   
+  if (hdrs.length()) {
+    size_t crpos;
+    while ((crpos=hdrs.find("\\r\\n")) != string::npos) {
+      hdrs.replace(crpos, 4, "\r\n");
+    }
+  }
+
 #undef GET_VARIABLE_MANDATORY
 #undef GET_VARIABLE_OPTIONAL
 
