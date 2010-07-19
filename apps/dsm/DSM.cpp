@@ -536,7 +536,7 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
   if (MonSelectFallback.empty()) {					\
     throw AmSession::Exception(code, reason);				\
   } else {								\
-    INFO("falling back to '%s'\n", MonSelectFallback.c_str());		\
+    DBG("falling back to '%s'\n", MonSelectFallback.c_str());		\
     start_diag = MonSelectFallback;					\
     return;								\
   }
@@ -615,7 +615,7 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
       
       if ((ret.getType()!=AmArg::Array)||
 	  !ret.size()) {
-	INFO("call info not found. caller uri %s, r-uri %s\n", 
+	DBG("call info not found. caller uri %s, r-uri %s\n", 
 	     req.from_uri.c_str(), req.r_uri.c_str());
 	FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
       }
