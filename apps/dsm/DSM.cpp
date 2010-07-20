@@ -724,7 +724,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
     if (cred_obj)
       cred = dynamic_cast<UACAuthCred*>(cred_obj);
   } else if (session_params.getType() == AmArg::Array) {
-    DBG("session params is array - size %d\n", session_params.size());
+    DBG("session params is array - size %zd\n", session_params.size());
     // Creds
     if (session_params.get(0).getType() == AmArg::AObject) {
       ArgObject* cred_obj = session_params.get(0).asObject();
