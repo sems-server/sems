@@ -38,6 +38,7 @@ DECLARE_MODULE(MOD_CLS_NAME);
 
 #define CONF_AKEY_CHANNEL        "conf.chan" 
 #define CONF_AKEY_DEF_TEECHANNEL "conf.teechan" 
+#define CONF_AKEY_MIXER          "conf.mixer" 
 
 /** holds a conference channel  */
 class DSMConfChannel 
@@ -68,6 +69,20 @@ class DSMTeeConfChannel
   AmAudio* setupAudio(AmAudio* out);
 };
 
+template<class T> class DSMDisposableT
+: public DSMDisposable,
+  public ArgObject {
+  std::auto_ptr<T> pobj;
+
+ public:
+ DSMDisposableT(T* _pobj) : pobj(_pobj) { }
+  ~DSMDisposableT() { }
+  void release() { pobj.reset(NULL); }
+  void reset(T* _pobj) { pobj.reset(_pobj); }
+
+  T* get() { return pobj.get(); }
+};
+
 DEF_ACTION_2P(ConfJoinAction);
 DEF_ACTION_1P(ConfLeaveAction);
 DEF_ACTION_2P(ConfRejoinAction); 
@@ -76,4 +91,8 @@ DEF_ACTION_1P(ConfSetPlayoutTypeAction);
 
 DEF_ACTION_2P(ConfTeeJoinAction);
 DEF_ACTION_1P(ConfTeeLeaveAction);
+
+DEF_ACTION_2P(ConfSetupMixInAction);
+DEF_ACTION_1P(ConfPlayMixInAction);
+
 #endif

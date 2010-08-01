@@ -30,9 +30,11 @@
 #include "AmPlaylist.h"
 #include "AmConferenceChannel.h"
 #include "AmRtpAudio.h"
+#include "AmAudioMixIn.h"
 
 #include "DSMSession.h"
 #include "ModConference.h"
+
 
 SC_EXPORT(MOD_CLS_NAME);
 
@@ -45,6 +47,9 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("conference.setPlayoutType", ConfSetPlayoutTypeAction);
   DEF_CMD("conference.teejoin", ConfTeeJoinAction);
   DEF_CMD("conference.teeleave", ConfTeeLeaveAction);
+
+  DEF_CMD("conference.setupMixIn", ConfSetupMixInAction);
+  DEF_CMD("conference.playMixIn", ConfPlayMixInAction);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -325,4 +330,72 @@ EXEC_ACTION_START(ConfTeeLeaveAction) {
   chan->release();
 
   sc_sess->CLR_ERRNO;
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(ConfSetupMixInAction, ',', true);
+EXEC_ACTION_START(ConfSetupMixInAction) {
+  string level = resolveVars(par1, sess, sc_sess, event_params);
+  string seconds = resolveVars(par2, sess, sc_sess, event_params);
+
+  unsigned int s; double l; int flags = 0;
+
+  l = atof(level.c_str());
+  if (seconds.empty()) {
+    s = 0;
+  } else {
+    if (str2i(seconds, s)) {
+      throw DSMException("conference", 
+			 "cause", "could not interpret seconds value");
+    }
+  }
+  if (s == 0) {
+    flags = AUDIO_MIXIN_IMMEDIATE_START | AUDIO_MIXIN_ONCE;
+  }
+
+  AmAudio* output = sess->getOutput();
+  AmAudioMixIn* m = new AmAudioMixIn(output, NULL, s, l, flags);
+  sess->setOutput(m);
+  
+  DSMDisposableT<AmAudioMixIn >* m_obj = 
+    getDSMConfChannel<DSMDisposableT<AmAudioMixIn > >(sc_sess, CONF_AKEY_MIXER);
+  if (NULL != m_obj) {
+    DBG("releasing old MixIn (hope script write setInOutPlaylist before)\n");
+    m_obj->reset(m);
+  } else {
+    DBG("creating new mixer container\n");
+    m_obj = new DSMDisposableT<AmAudioMixIn >(m);
+    AmArg c_arg;
+    c_arg.setBorrowedPointer(m_obj);
+    sc_sess->avar[CONF_AKEY_MIXER] = c_arg;
+      
+    // add to garbage collector
+    sc_sess->transferOwnership(m_obj);
+  }
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(ConfPlayMixInAction) {
+  string filename = resolveVars(arg, sess, sc_sess, event_params);
+
+  DSMDisposableT<AmAudioMixIn >* m_obj = 
+    getDSMConfChannel<DSMDisposableT<AmAudioMixIn > >(sc_sess, CONF_AKEY_MIXER);
+  if (NULL == m_obj) {
+    throw DSMException("conference", "cause", "mixer not setup!\n");
+  } 
+
+  AmAudioMixIn* m = m_obj->get();
+
+  DSMDisposableAudioFile* af = new DSMDisposableAudioFile();
+  if(af->open(filename,AmAudioFile::Read)) {
+    ERROR("audio file '%s' could not be opened for reading.\n", 
+	  filename.c_str());
+    delete af;
+    
+    throw DSMException("file", "path", filename);
+  }
+
+  sc_sess->transferOwnership(af);
+
+  DBG("starting mixin of file '%s'\n", filename.c_str());
+  m->mixin(af);
+
 } EXEC_ACTION_END;

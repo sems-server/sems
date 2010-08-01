@@ -53,6 +53,27 @@ A patch for fmsc 1.0.4 from the graphical FSM editor fsme
 (http://fsme.sf.net) is available, so DSMs can be defined in 
 click-n-drag fashion and compiled to SEMS DSM diagrams.
 
+
+SystemDSMs
+==========
+
+A system DSM is executed without a corresponding call. This can be useful 
+e.g. to execute something periodically, to make a call generator etc.
+
+Obviously, only limited functionality is available in System DSMs, all 
+call and media related functionality is not available (and will throw 
+exceptions with type 'core').
+
+A system DSM receives the "startup" event on start of the server, or if 
+it is created via createSystemDSM DI call. It gets a "reload" event if the
+system DSM is created by a live config reload.
+
+On server shutdown, a system DSM receives a "system" event with 
+"ServerShutdown" as type. 
+
+See test_system_event.dsm example for an example how to handle server
+start and reload.
+
 DI commands
 ===========
 
@@ -103,6 +124,10 @@ loadConfig(string conf_file_name, string conf_name)
   (re)load application configuration and script 
   like a file in conf_dir
 
+createSystemDSM(string conf_name, string start_diag)
+  run a system DSM (i.e. a DSM thread not connected to a session)
+  using scripts/configuration from conf_name. 
+  conf_name=='main' for main scripts/main config (from dsm.conf)
 
 More info
 =========

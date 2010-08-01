@@ -137,17 +137,26 @@ bool array_parse(std::istream& input, AmArg& res) {
   if (!match("[", input)) {
     return false;
   }
-  
+
+  res.assertArray();
+
+  if (match("]", input)) {
+    return true;
+  }
+
   do {
     res.push(AmArg());
     AmArg v;
     if (!json2arg(input, res.get(res.size()-1))) {
+      res.clear();
+      return false;
       res.pop_back();
       break; // TODO: return false????
     }
   } while (match(",", input));
   
   if (!match("]", input)) {
+    res.clear();
     return false;
   }
   return true;
@@ -158,26 +167,34 @@ bool object_parse(std::istream& input, AmArg& res) {
     return false;
   }
 
+  res.assertStruct();
+
+  if (match("}", input)) {
+    return true;
+  }
+
   do {
     std::string key;
     if (!parse_string(input, &key)) {
       if (match("}",input,true)) {          
 	return true;
       }
+      res.clear();
       return false;
     }
     if (!match(":", input)) {
+      res.clear();
       return false;
     }
     res[key] = AmArg(); // using the reference
     if (!json2arg(input, res[key])) {
-      res.erase(key);
-      // TODO: return false? but: empty will return false in subtree as well
-      break;      
+      res.clear();
+      return false;
     }
   } while (match(",", input));
   
   if (!match("}", input)) {
+    res.clear();
     return false;
   }
 
@@ -224,14 +241,13 @@ bool json2arg(std::istream& input, AmArg& res) {
   }
 
   if (array_parse(input, res)) {
-    res.type = AmArg::Array;
     return true;
   }
 
   if (object_parse(input, res)) {
-    res.type = AmArg::Struct;
      return true;
   }
-  res.invalidate();
+
+  res.clear();
   return false;
 }

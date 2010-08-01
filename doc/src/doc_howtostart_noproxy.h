@@ -78,9 +78,9 @@
     
   In <b>/usr/local/etc/sems/sems.conf</b>, we set
   \code
-   load_plugins=sipctrl;wav;uac_auth;registrar_client;reg_agent;conference   
+   load_plugins=wav;uac_auth;registrar_client;reg_agent;conference   
   \endcode
-  <p>  to load the modules we need; sipctrl loads the SIP stack, wav is for reading WAV files and for the G711 codec,
+  <p>  to load the modules we need; wav is for reading WAV files and for the G711 codec,
   uac_auth is the module which implements authentication, registrar_client facilitates registration at a SIP server, 
   and reg_agent is the application that uses registrar_client to have SEMS register at a SIP server.</p>
 
@@ -91,7 +91,7 @@
   <p> so that SEMS executes the conference application for an incoming call.</p>
   
   <p> We want SEMS to register at a SIP server, so we need to tell it about the user name and the password, this is set 
-   in <b>/usr/local/etc/sems/etc/reg_agent.conf</b> (of course this user name bob and the password need to be set to the
+   in <b>/usr/local/etc/sems/reg_agent.conf</b> (of course this user name bob and the password need to be set to the
    ones used for testing):</p>
   \code
      domain=iptel.org
@@ -138,12 +138,12 @@
   
   To use a DSM application, we set in <b>/usr/local/etc/sems/sems.conf </b>
   \code
-   load_plugins=sipctrl;wav;uac_auth;registrar_client;reg_agent;session_timer;dsm
+   load_plugins=wav;uac_auth;registrar_client;reg_agent;session_timer;dsm
    application=mydsmapp
   \endcode
   
   and in 
-  <b>/usr/local/etc/sems/etc/dsm.conf </b>: 
+  <b>/usr/local/etc/sems/dsm.conf </b>: 
   \code
     diag_path=/usr/local/lib/sems/dsm/
     load_diags=mydsmapp
@@ -152,13 +152,14 @@
   
   Then we paste this little script in /usr/local/lib/sems/dsm/mydsmapp.dsm :
   \code
-  initial state BEGIN {
-    playFile(/usr/local/lib/sems/audio/webconference/first_participant.wav
-  };
+  initial state BEGIN
+   enter {
+     playFile(/usr/local/lib/sems/audio/webconference/first_participant.wav);
+   };
   transition "file ends" BEGIN - noAudioTest -> TYPING;
   
   state TYPING;
-  transition "typed a key" BEGIN - keyTest(#key < 10) / { 
+  transition "typed a key" TYPING - keyTest(#key < 10) / {
     set($myfile=/usr/local/lib/sems/audio/webconference/);
     append($myfile, #key);
     append($myfile, .wav);

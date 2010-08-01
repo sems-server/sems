@@ -371,7 +371,7 @@ bool SIPRegistration::registerExpired(time_t now_sec) {
 
 void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
-  if ((seh!=NULL) && seh->onSipReply(reply)) 
+  if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status)) 
     return;
 
   waiting_result = false;
@@ -385,7 +385,7 @@ void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status)
 
     string contacts = reply.contact;
     if (contacts.empty()) 
-      contacts = getHeader(reply.hdrs, "Contact", "m");
+      contacts = getHeader(reply.hdrs, "Contact", "m", true);
     bool found = false;
 
     if (!contacts.length()) {

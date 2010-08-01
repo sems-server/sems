@@ -60,13 +60,6 @@ bool DLGModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
   return true;
 }
 
-#define GET_SCSESSION()					 \
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess); \
-  if (!sc_sess) {					 \
-    ERROR("wrong session type\n");			 \
-    return false;					 \
-  }
-
 // todo: convert errors to exceptions
 void replyRequest(DSMSession* sc_sess, AmSession* sess, 
 		  EventParamT* event_params,
@@ -242,6 +235,13 @@ EXEC_ACTION_START(DLGDialoutAction) {
   string hdrs; 
   GET_VARIABLE_OPTIONAL("_hdrs", hdrs);
   
+  if (hdrs.length()) {
+    size_t crpos;
+    while ((crpos=hdrs.find("\\r\\n")) != string::npos) {
+      hdrs.replace(crpos, 4, "\r\n");
+    }
+  }
+
 #undef GET_VARIABLE_MANDATORY
 #undef GET_VARIABLE_OPTIONAL
 

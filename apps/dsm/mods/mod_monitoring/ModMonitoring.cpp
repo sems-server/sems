@@ -73,10 +73,9 @@ DSMCondition* MonitoringModule::getCondition(const string& from_str) {
 }
 
 CONST_ACTION_2P(MonLogAction, ',', true);
-bool MonLogAction::execute(AmSession* sess, 
+bool MonLogAction::execute(AmSession* sess, DSMSession* sc_sess,
 			   DSMCondition::EventType event,
 			   map<string,string>* event_params) {
-  GET_SCSESSION();
 
   string prop = resolveVars(par1, sess, sc_sess, event_params);
   string val  = resolveVars(par2, sess, sc_sess, event_params);
@@ -87,10 +86,9 @@ bool MonLogAction::execute(AmSession* sess,
 }
 
 CONST_ACTION_2P(MonLogAddAction, ',', true);
-bool MonLogAddAction::execute(AmSession* sess, 
+bool MonLogAddAction::execute(AmSession* sess,  DSMSession* sc_sess,
 			   DSMCondition::EventType event,
 			   map<string,string>* event_params) {
-  GET_SCSESSION();
 
   string prop = resolveVars(par1, sess, sc_sess, event_params);
   string val  = resolveVars(par2, sess, sc_sess, event_params);
@@ -100,11 +98,9 @@ bool MonLogAddAction::execute(AmSession* sess,
   return false;
 }
 
-bool MonLogVarsAction::execute(AmSession* sess, 
+bool MonLogVarsAction::execute(AmSession* sess,   DSMSession* sc_sess,
 			       DSMCondition::EventType event,
 			       map<string,string>* event_params) {
-  GET_SCSESSION();
-
   AmArg di_args,ret;
   di_args.push(AmArg(sess->getLocalTag().c_str()));
 

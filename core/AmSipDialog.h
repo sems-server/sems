@@ -170,6 +170,8 @@ class AmSipDialog
 
   bool   getUACTransPending() { return !uac_trans.empty(); }
   int    getStatus() { return status; }
+  void   setStatus(int new_status);
+
   string getContactHdr();
 
   /** update Status from locally originated request (e.g. INVITE) */

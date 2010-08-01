@@ -9,6 +9,7 @@ HDRS=$(SRCS:.cpp=.h)
 OBJS=$(SRCS:.cpp=.o) sip/sip_stack.a
 DEPS=$(SRCS:.cpp=.d) $(NAME).d
 AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
+TEST_DIR=tests
 
 .PHONY: all
 all: ../Makefile.defs
@@ -35,6 +36,12 @@ modules:
 	-@echo ""
 	-@echo "making core modules"
 	-@cd $(PLUGIN_DIR); $(MAKE) modules
+
+.PHONY: test
+test:
+	-@echo ""
+	-@echo "making tests"
+	-@cd $(TEST_DIR); $(MAKE)
 
 .PHONY: deps
 deps: $(DEPS)

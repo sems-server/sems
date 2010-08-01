@@ -9,3 +9,4 @@ getarch
 getos
 sems
 sems-stats
+core/etc/*.conf

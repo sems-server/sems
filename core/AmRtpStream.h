@@ -43,6 +43,7 @@
 #include <memory>
 using std::string;
 using std::auto_ptr;
+using std::pair;
 
 // return values of AmRtpStream::receive
 #define RTP_EMPTY        0 // no rtp packet available
@@ -141,6 +142,23 @@ protected:
   
   AmSession*         session;
 
+  int compile_and_send(const int payload, bool marker, 
+		       unsigned int ts, unsigned char* buffer, 
+		       unsigned int size);
+
+
+  void sendDtmfPacket(unsigned int ts);
+  //       event, duration
+  std::queue<pair<int, unsigned int> > dtmf_send_queue;
+  AmMutex dtmf_send_queue_mut;
+  enum dtmf_sending_state_t {
+    DTMF_SEND_NONE,      // not sending event
+    DTMF_SEND_SENDING,   // sending event
+    DTMF_SEND_ENDING     // sending end of event
+  } dtmf_sending_state;
+  pair<int, unsigned int> current_send_dtmf;
+  unsigned int current_send_dtmf_ts;
+  int send_dtmf_end_repeat;
 
 public:
 
@@ -163,7 +181,7 @@ public:
   int send( unsigned int ts,
 	    unsigned char* buffer,
 	    unsigned int   size );
-
+  
   int send_raw( char* packet, unsigned int length );
 
   int receive( unsigned char* buffer, unsigned int size,
@@ -225,6 +243,13 @@ public:
   }
 
   int getTelephoneEventRate();
+
+  /**
+   * send a DTMF as RTP payload (RFC4733)
+   * @param event event ID (e.g. key press), see rfc
+   * @param duration_ms duration in milliseconds
+   */
+  void sendDtmf(int event, unsigned int duration_ms);
 
   /**
    * Enables RTP stream.

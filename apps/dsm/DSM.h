@@ -67,18 +67,23 @@ class DSMFactory
   std::set<DSMStateDiagramCollection*> old_diags;
 
   static bool DebugDSM;
+  static bool CheckDSM;
 
   static string InboundStartDiag;
   static string OutboundStartDiag;
 
   DSMScriptConfig MainScriptConfig;
+  // script name -> config
   map<string, DSMScriptConfig> ScriptConfigs;
+  // config name -> config
+  map<string, DSMScriptConfig> Name2ScriptConfig;
   AmMutex ScriptConfigs_mut;
 
 #ifdef USE_MONITORING
   static MonSelectType MonSelectCaller;
   static MonSelectType MonSelectCallee;
   static string MonSelectFallback;
+  static vector<string> MonSelectFilters;
 
 #endif // USE_MONITORING
 
@@ -138,6 +143,8 @@ public:
 	      const AmArg& args, AmArg& ret);
 
   void postEvent(AmEvent* e);
+
+  bool createSystemDSM(const string& config_name, const string& start_diag, bool reload, string& status);
 
 };
 

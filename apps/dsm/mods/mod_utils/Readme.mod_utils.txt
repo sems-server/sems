@@ -30,4 +30,7 @@ Actions:
  utils.sub($var, val)
    subtract val from var
 
+ utils.int($var, val)
+   get integer part of val into var
+
 

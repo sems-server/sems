@@ -337,7 +337,7 @@ void JsonRPCServerLoop::on_stop() {
 void JsonRPCServerLoop::returnConnection(JsonrpcNetstringsConnection* conn) {
   pending_events_mut.lock();
   // (check whether event for that connection pending)
-  DBG("checking %u pending events\n", pending_events.size());
+  DBG("checking %zd pending events\n", pending_events.size());
   for (vector<JsonServerEvent*>::iterator it=
 	 pending_events.begin(); it != pending_events.end(); it++) {
     DBG("%s vs %s\n", (*it)->connection_id.c_str(),conn->id.c_str());
@@ -367,7 +367,8 @@ void JsonRPCServerLoop::execRpc(const string& evq_link,
 				int flags,
 				const string& host,
 				int port, const string& method, 
-				AmArg& params,
+				const AmArg& params,
+				const AmArg& udata,
 				AmArg& ret) {
   string connection_id = newConnectionId();
   JsonrpcNetstringsConnection* peer = new JsonrpcNetstringsConnection(connection_id);
@@ -397,9 +398,7 @@ void JsonRPCServerLoop::execRpc(const string& evq_link,
   DBG("dispatching JsonServerSendMessageEvent\n");
   JsonServerSendMessageEvent* send_message_event = 
     new JsonServerSendMessageEvent(connection_id, false, method, "1" /* id - not empty */, 
-				   params);
-
-  send_message_event->reply_link = evq_link;
+				   params, udata, evq_link);
 
   JsonRPCServerLoop::dispatchServerEvent(send_message_event);
 
@@ -416,7 +415,8 @@ void JsonRPCServerLoop::sendMessage(const string& connection_id,
 				    const string& method, 
 				    const string& id,
 				    const string& reply_sink,
-				    AmArg& params,
+				    const AmArg& params,
+				    const AmArg& udata,
 				    AmArg& ret) {
   // check for presence of connection
   // (connection might still be removed until we really 
@@ -430,7 +430,7 @@ void JsonRPCServerLoop::sendMessage(const string& connection_id,
 
   JsonServerSendMessageEvent* ev = 
     new JsonServerSendMessageEvent(connection_id, msg_type != JSONRPC_MSG_REQUEST, 
-				 method, id, params, reply_sink);
+				   method, id, params, udata, reply_sink);
   ev->is_error = msg_type == JSONRPC_MSG_ERROR;
   instance()->postEvent(ev);
 

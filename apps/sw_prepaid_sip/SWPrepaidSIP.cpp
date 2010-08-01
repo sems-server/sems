@@ -121,25 +121,25 @@ void SWPrepaidSIPDialog::onInvite(const AmSipRequest& req)
   // this will prevent us from being added to media processor
   setInOut(NULL,NULL);
 
-  m_uuid = getHeader(req.hdrs,"P-Caller-Uuid");
+  m_uuid = getHeader(req.hdrs,"P-Caller-Uuid", true);
   if(!m_uuid.length()) {
     ERROR("Application header P-Caller-Uuid not found\n");
     throw AmSession::Exception(500, "could not get UUID parameter");
   }
 
-  m_proxy = getHeader(req.hdrs,"P-Proxy");
+  m_proxy = getHeader(req.hdrs,"P-Proxy", true);
   if(!m_proxy.length()) {
     ERROR("Application header P-Proxy not found\n");
     throw AmSession::Exception(500, "could not get PROXY parameter");
   }
 
-  m_ruri = getHeader(req.hdrs,"P-R-Uri");
+  m_ruri = getHeader(req.hdrs,"P-R-Uri", true);
   if(!m_ruri.length()) {
     ERROR("Application header P-R-Uri not found\n");
     throw AmSession::Exception(500, "could not get RURI parameter");
   }
 
-  m_dest = getHeader(req.hdrs,"P-Acc-Dest");
+  m_dest = getHeader(req.hdrs,"P-Acc-Dest", true);
 
   if(!m_dest.length()) {
     ERROR("Application header P-Acc-Dest not found\n");

@@ -105,7 +105,7 @@ void Monitor::invoke(const string& method,
   } else if(method == "list"){
     listAll(args,ret);
   } else if(method == "listByFilter"){
-    listByFilter(args,ret);
+    listByFilter(args,ret, false);
   } else if(method == "listByRegex"){
     listByRegex(args,ret);
   } else if(method == "listFinished"){
@@ -118,6 +118,8 @@ void Monitor::invoke(const string& method,
     clearFinished(args,ret);
   } else if(method == "erase"){
     clear(args,ret);
+  } else if(method == "eraseByFilter"){
+    listByFilter(args,ret, true);
   } else if(method == "_list"){ 
     ret.push(AmArg("log"));
     ret.push(AmArg("set"));
@@ -126,6 +128,7 @@ void Monitor::invoke(const string& method,
     ret.push(AmArg("markFinished"));
     ret.push(AmArg("setExpiration"));
     ret.push(AmArg("erase"));
+    ret.push(AmArg("eraseByFilter"));
     ret.push(AmArg("clear"));
     ret.push(AmArg("clearFinished"));
     ret.push(AmArg("get"));
@@ -321,26 +324,33 @@ void Monitor::listAll(const AmArg& args, AmArg& ret) {
   }
 }
 
-void Monitor::listByFilter(const AmArg& args, AmArg& ret) {
+void Monitor::listByFilter(const AmArg& args, AmArg& ret, bool erase) {
   ret.assertArray();
   for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     try {
-      for (std::map<string, LogInfo>::iterator it=
-	     logs[i].log.begin(); it != logs[i].log.end(); it++) {
+      std::map<string, LogInfo>::iterator it=logs[i].log.begin();
+
+      while (it != logs[i].log.end()) {
 	bool match = true;
-	for (size_t i=0;i<args.size();i++) {
-	  AmArg& p = args.get(i);	  
+	for (size_t a_i=0;a_i<args.size();a_i++) {
+	  AmArg& p = args.get(a_i);	  
 	  if (!(it->second.info[p.get(0).asCStr()]==p.get(1))) {
 	    match = false;
 	    break;
 	  }
 	}
 
-	if (!match)
-	  continue;
-
-	ret.push(AmArg(it->first.c_str()));  
+	if (match) {
+	  ret.push(AmArg(it->first.c_str()));
+	  if (erase) {
+	    std::map<string, LogInfo>::iterator d_it=it;
+	    it++;
+	    logs[i].log.erase(d_it);
+	    continue;
+	  }
+	}
+	it++;
       }
     } catch(...) {
       logs[i].log_lock.unlock();

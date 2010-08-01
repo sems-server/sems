@@ -55,7 +55,8 @@ class JsonRpcServer {
 			    JsonrpcPeerConnection* peer);
 
   static int createRequest(const string& evq_link, const string& method, AmArg& params, 
-			   JsonrpcNetstringsConnection* peer, bool is_notification = false);
+			   JsonrpcNetstringsConnection* peer, const AmArg& udata,
+			   bool is_notification = false);
 
   static int createReply(JsonrpcNetstringsConnection* peer, const string& id, 
 			 AmArg& result, bool is_error);

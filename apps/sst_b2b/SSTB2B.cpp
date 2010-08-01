@@ -171,7 +171,7 @@ void SSTB2BDialog::onSipReply(const AmSipReply& reply, int old_dlg_status)
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if (fwd) {
-      CALL_EVENT_H(onSipReply,reply);    
+      CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
   AmB2BCallerSession::onSipReply(reply,old_dlg_status);
@@ -344,7 +344,7 @@ void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if(fwd) {
-      CALL_EVENT_H(onSipReply,reply);    
+      CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
   if (NULL == auth) {    
@@ -353,7 +353,7 @@ void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status
   }
   
   unsigned int cseq_before = dlg.cseq;
-  if (!auth->onSipReply(reply)) {
+  if (!auth->onSipReply(reply, old_dlg_status)) {
       AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {

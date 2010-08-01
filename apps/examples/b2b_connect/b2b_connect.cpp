@@ -78,7 +78,7 @@ AmSession* b2b_connectFactory::onInvite(const AmSipRequest& req)
 //     throw AmSession::Exception(500,"could not get a user timer reference");
 //   }
 
-  string app_param = getHeader(req.hdrs, PARAM_HDR);
+  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
   if (!app_param.length()) {
     throw  AmSession::Exception(500, "b2b_connect: parameters not found");
@@ -108,7 +108,7 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
     return;
   }
 
-  string app_param = getHeader(req.hdrs, PARAM_HDR);
+  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
   string remote_party, remote_uri;
 
   if (!app_param.length()) {
@@ -286,13 +286,11 @@ inline UACAuthCred* b2b_connectCalleeSession::getCredentials() {
   return &credentials;
 }
 
-void b2b_connectCalleeSession::onSipReply(const AmSipReply& reply) {
-  int status_before = dlg.getStatus();
-  AmB2ABCalleeSession::onSipReply(reply);
-  int status = dlg.getStatus();
+void b2b_connectCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status) {
+  AmB2ABCalleeSession::onSipReply(reply, old_dlg_status);
  
-  if ((status_before == AmSipDialog::Pending)&&
-      (status == AmSipDialog::Disconnected)) {
+  if ((old_dlg_status == AmSipDialog::Pending)&&
+      (dlg.getStatus() == AmSipDialog::Disconnected)) {
     DBG("status change Pending -> Disconnected. Stopping session.\n");
     setStopped();
   }

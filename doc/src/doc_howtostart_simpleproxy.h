@@ -80,7 +80,7 @@
    we set application=$(apphdr) so that SEMS looks into the P-App-Name header to determine which application to run:
    \code
    application=$(apphdr)
-   load_plugin=sipctrl;wav;gsm;ilbc;speex;session_timer;conference;echo
+   load_plugin=wav;gsm;ilbc;speex;session_timer;conference;echo
    sip_ip=127.0.0.1
    sip_port=5070
    media_ip=some.public.ip.here

@@ -179,6 +179,11 @@ void WebConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status
 
   AmSession::onSipReply(reply,old_dlg_status);
 
+  DBG("reply: %u %s, old_dlg_status = %s, status = %s\n",
+      reply.code, reply.reason.c_str(),
+      AmSipDialog::status2str[old_dlg_status],
+      AmSipDialog::status2str[dlg.getStatus()]);
+
   if ((old_dlg_status < AmSipDialog::Connected) && 
       (dlg.getStatus() == AmSipDialog::Disconnected)) {
     DBG("Call failed.\n");

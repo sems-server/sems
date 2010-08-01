@@ -236,7 +236,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
       if (is_offer) {	
 	// onSipReply from AmSession without do_200_ack in dlg.updateStatus(reply)
 	// todo (?): add do_200_ack flag to AmSession::onSipReply and call AmSession::onSipReply
-	CALL_EVENT_H(onSipReply,reply);
+	CALL_EVENT_H(onSipReply,reply,old_dlg_status);
 	
 	//int status = dlg.getStatus();
 	//dlg.updateStatus(reply, false);

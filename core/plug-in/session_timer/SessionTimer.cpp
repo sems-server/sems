@@ -77,7 +77,7 @@ bool SessionTimer::onSipRequest(const AmSipRequest& req)
   return false;
 }
 
-bool SessionTimer::onSipReply(const AmSipReply& reply)
+bool SessionTimer::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   updateTimer(s,reply);
   return false;
@@ -152,7 +152,7 @@ int  SessionTimer::configure(AmConfigReader& conf)
  */
 bool SessionTimerFactory::checkSessionExpires(const AmSipRequest& req) 
 {
-  string session_expires = getHeader(req.hdrs, "Session-Expires", "x");
+  string session_expires = getHeader(req.hdrs, "Session-Expires", "x", true);
 
   if (session_expires.length()) {
     unsigned int i_se;
@@ -174,10 +174,10 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
   if((req.method == "INVITE")||(req.method == "UPDATE")){
     
     remote_timer_aware = 
-      key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED),"timer");
+      key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED),"timer", true);
     
     // determine session interval
-    string sess_expires_hdr = getHeader(req.hdrs, "Session-Expires", "x");
+    string sess_expires_hdr = getHeader(req.hdrs, "Session-Expires", "x", true);
     
     bool rem_has_sess_expires = false;
     unsigned int rem_sess_expires=0; 
@@ -193,7 +193,7 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
 
     // get Min-SE
     unsigned int i_minse = min_se;
-    string min_se_hdr = getHeader(req.hdrs, "Min-SE");
+    string min_se_hdr = getHeader(req.hdrs, "Min-SE", true);
     if (!min_se_hdr.empty()) {
       if (str2i(strip_header_params(min_se_hdr),
 		i_minse)) {
@@ -251,9 +251,9 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipReply& reply)
     return;
   
   // determine session interval
-  string sess_expires_hdr = getHeader(reply.hdrs, "Session-Expires");
+  string sess_expires_hdr = getHeader(reply.hdrs, "Session-Expires", true);
   if (sess_expires_hdr.empty())
-    sess_expires_hdr = getHeader(reply.hdrs, "x"); // compact form
+    sess_expires_hdr = getHeader(reply.hdrs, "x", true); // compact form
   
   session_refresher = refresh_local;
   session_refresher_role = UAC;

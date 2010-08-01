@@ -27,5 +27,6 @@ class DILog : public AmLoggingFacility, public AmDynInvoke, public AmDynInvokeFa
   int onLoad();
 
   // LF API
-  void log(int level, const char* fmt);
+  //void log(int level, const char* fmt);
+  void log(int level, pid_t pid, pthread_t tid, const char* func, const char* file, int line, char* msg);
 };

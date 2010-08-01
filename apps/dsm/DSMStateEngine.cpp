@@ -139,6 +139,70 @@ State* DSMStateDiagram::getInitialState() {
 }
 
 
+bool DSMStateDiagram::checkConsistency(string& report) {
+  bool res = true;
+  DBG("checking consistency of '%s'\n", name.c_str());
+  res &= checkInitialState(report);
+  res &= checkDestinationStates(report);
+  res &= checkHangupHandled(report);
+  return res;
+}
+
+bool DSMStateDiagram::checkInitialState(string& report) {
+  DBG("checking for initial state...\n");
+  if (NULL == getInitialState()) {
+    report+=name+": " "No initial state defined!\n";
+    return false;
+  }
+  return true;
+}
+bool DSMStateDiagram::checkDestinationStates(string& report) {
+  DBG("checking for existence of destination states...\n");
+  bool res = true;
+  for (vector<State>::iterator it=
+	 states.begin(); it != states.end(); it++) {
+    for (vector<DSMTransition>::iterator t_it=
+	   it->transitions.begin(); t_it != it->transitions.end(); t_it++) {
+      if (NULL == getState(t_it->to_state)) {
+	report += name+": State '"+it->name+"' Transition '"+t_it->name+
+	  "' : Destination state '"+ t_it->to_state +"' is not defined\n";
+	res = false;
+      }
+    }
+  }
+  return res;
+}
+
+bool DSMStateDiagram::checkHangupHandled(string& report) {
+  DBG("checking for hangup handled in all states...\n");
+  bool res = true;
+  for (vector<State>::iterator it=
+	 states.begin(); it != states.end(); it++) {
+    bool have_hangup_trans = false;
+    for (vector<DSMTransition>::iterator t_it=
+	   it->transitions.begin(); t_it != it->transitions.end(); t_it++) {
+      for (vector<DSMCondition*>::iterator c_it=
+	     t_it->precond.begin(); c_it!=t_it->precond.end(); c_it++) {
+	if ((*c_it)->type == DSMCondition::Hangup) {
+	  // todo: what if other conditions unmet?
+	  have_hangup_trans = true;
+	  break;
+	}
+      }
+      if (have_hangup_trans)
+	break;
+
+    }
+    if (!have_hangup_trans) {
+      report += name+": State '"+it->name+"': hangup is not handled\n";
+      res = false;
+    }
+  }
+
+  return res;
+}
+
+
 DSMStateEngine::DSMStateEngine() 
   : current(NULL) {
 }
@@ -157,12 +221,12 @@ bool DSMStateEngine::onInvite(const AmSipRequest& req, DSMSession* sess) {
 
 bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from, 
 				vector<DSMAction*>::iterator to, 
-				AmSession* sess,  DSMCondition::EventType event,
+				AmSession* sess,  DSMSession* sc_sess, DSMCondition::EventType event,
 				map<string,string>* event_params,  bool& is_consumed) {
 //   DBG("running %zd actions\n", to - from);
   for (vector<DSMAction*>::iterator it=from; it != to; it++) {
     DBG("executing '%s'\n", (*it)->name.c_str()); 
-    if ((*it)->execute(sess, event, event_params)) {
+    if ((*it)->execute(sess, sc_sess, event, event_params)) {
       string se_modifier;
       switch ((*it)->getSEAction(se_modifier)) {
       case DSMAction::Repost: 
@@ -170,17 +234,17 @@ bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from,
 	break;
       case DSMAction::Jump: 
 	DBG("jumping %s\n", se_modifier.c_str());
-	if (jumpDiag(se_modifier, sess, event, event_params)) {
+	if (jumpDiag(se_modifier, sess, sc_sess, event, event_params)) {
 	  // is_consumed = false; 
 	  return true;  
 	} break;
       case DSMAction::Call: 
-	if (callDiag(se_modifier, sess, event, event_params))  {
+	if (callDiag(se_modifier, sess, sc_sess, event, event_params))  {
 	  // is_consumed = false; 
 	  return true;   
 	} break;
       case DSMAction::Return: 
-	if (returnDiag(sess)) {  
+	if (returnDiag(sess, sc_sess)) {
 	  //is_consumed = false;
 	  return true; 
 	} break;
@@ -202,11 +266,12 @@ void DSMStateEngine::addModules(vector<DSMModule*> modules) {
     mods.push_back(*it);
 }
 
-bool DSMStateEngine::init(AmSession* sess, const string& startDiagram, 
+bool DSMStateEngine::init(AmSession* sess, DSMSession* sc_sess,
+			  const string& startDiagram,
 			  DSMCondition::EventType init_event) {
 
   try {
-    if (!jumpDiag(startDiagram, sess, init_event, NULL)) {
+    if (!jumpDiag(startDiagram, sess, sc_sess, init_event, NULL)) {
       ERROR("initializing with start diag '%s'\n",
 	    startDiagram.c_str());
       return false;
@@ -214,26 +279,26 @@ bool DSMStateEngine::init(AmSession* sess, const string& startDiagram,
   } catch (DSMException& e) {
     DBG("Exception type '%s' occured while initializing! Run init event as exception...\n", 
 	e.params["type"].c_str());
-    runEvent(sess, init_event, &e.params, true);
+    runEvent(sess, sc_sess, init_event, &e.params, true);
     return true;
     
   }
 
   DBG("run init event...\n");
-  runEvent(sess, init_event, NULL);
+  runEvent(sess, sc_sess, init_event, NULL);
   return true;
 }
 
-bool DSMCondition::_match(AmSession* sess, 
-		      DSMCondition::EventType event,
-		      map<string,string>* event_params) {
+bool DSMCondition::_match(AmSession* sess, DSMSession* sc_sess,
+			  DSMCondition::EventType event,
+			  map<string,string>* event_params) {
   // or xor
-  return invert?(!match(sess,event,event_params)):match(sess,event,event_params);
+  return invert? (!match(sess,sc_sess,event,event_params)) : match(sess, sc_sess, event, event_params);
 }
 
-bool DSMCondition::match(AmSession* sess, 
-		      DSMCondition::EventType event,
-		      map<string,string>* event_params) {
+bool DSMCondition::match(AmSession* sess, DSMSession* sc_sess,
+			 DSMCondition::EventType event,
+			 map<string,string>* event_params) {
 
   if ((type != Any) && (event != type))
     return false;
@@ -252,7 +317,7 @@ bool DSMCondition::match(AmSession* sess,
   return true;
 }
 
-void DSMStateEngine::runEvent(AmSession* sess,
+void DSMStateEngine::runEvent(AmSession* sess, DSMSession* sc_sess,
 			      DSMCondition::EventType event,
 			      map<string,string>* event_params,
 			      bool run_exception) {
@@ -278,7 +343,7 @@ void DSMStateEngine::runEvent(AmSession* sess,
 	
 	vector<DSMCondition*>::iterator con=tr->precond.begin();
 	while (con!=tr->precond.end()) {
-	  if (!(*con)->_match(sess, active_event, active_params))
+	  if (!(*con)->_match(sess, sc_sess, active_event, active_params))
 	    break;
 	  con++;
 	}
@@ -302,7 +367,7 @@ void DSMStateEngine::runEvent(AmSession* sess,
 		current->post_actions.size(), current->name.c_str());
 	    if (runactions(current->post_actions.begin(), 
 			   current->post_actions.end(), 
-			   sess, active_event, active_params, is_consumed)) {
+			   sess, sc_sess, active_event, active_params, is_consumed)) {
 	      break;
 	    }
 	  }
@@ -313,7 +378,7 @@ void DSMStateEngine::runEvent(AmSession* sess,
 		tr->actions.size(), tr->name.c_str());
 	    if (runactions(tr->actions.begin(), 
 			   tr->actions.end(), 
-			   sess, active_event, active_params, is_consumed)) {
+			   sess, sc_sess, active_event, active_params, is_consumed)) {
 	      break;
 	    }
 	  }
@@ -348,7 +413,7 @@ void DSMStateEngine::runEvent(AmSession* sess,
 		current->pre_actions.size(), current->name.c_str());
 	    if (runactions(current->pre_actions.begin(), 
 			   current->pre_actions.end(), 
-			   sess, active_event, active_params, is_consumed)) {
+			   sess, sc_sess, active_event, active_params, is_consumed)) {
 	      break;
 	    }
 	  }
@@ -369,7 +434,7 @@ void DSMStateEngine::runEvent(AmSession* sess,
   } while (!is_consumed);
 }
 
-bool DSMStateEngine::callDiag(const string& diag_name, AmSession* sess, 
+bool DSMStateEngine::callDiag(const string& diag_name, AmSession* sess, DSMSession* sc_sess,
 			   DSMCondition::EventType event,
 			   map<string,string>* event_params) {
   if (!current || !current_diag) {
@@ -377,10 +442,10 @@ bool DSMStateEngine::callDiag(const string& diag_name, AmSession* sess,
     return false;
   }
   stack.push_back(std::make_pair(current_diag, current));
-  return jumpDiag(diag_name, sess, event, event_params);
+  return jumpDiag(diag_name, sess, sc_sess, event, event_params);
 }
 
-bool DSMStateEngine::jumpDiag(const string& diag_name, AmSession* sess,
+bool DSMStateEngine::jumpDiag(const string& diag_name, AmSession* sess, DSMSession* sc_sess,
 			   DSMCondition::EventType event,
 			   map<string,string>* event_params) {
   for (vector<DSMStateDiagram*>::iterator it=
@@ -414,7 +479,7 @@ bool DSMStateEngine::jumpDiag(const string& diag_name, AmSession* sess,
       is_finished = true;
       runactions(current->pre_actions.begin(), 
 		 current->pre_actions.end(), 
-		 sess, event, event_params, is_finished); 
+		 sess, sc_sess, event, event_params, is_finished); 
 
       return true;
     }
@@ -423,7 +488,7 @@ bool DSMStateEngine::jumpDiag(const string& diag_name, AmSession* sess,
   return false;
 }
 
-bool DSMStateEngine::returnDiag(AmSession* sess) {
+bool DSMStateEngine::returnDiag(AmSession* sess, DSMSession* sc_sess) {
   if (stack.empty()) {
     ERROR("returning from empty stack\n");
     return false;
@@ -492,3 +557,4 @@ void varPrintArg(const AmArg& a, map<string, string>& dst, const string& name) {
   default: dst[name] = "<UNKONWN TYPE>"; return;
   }
 }
+

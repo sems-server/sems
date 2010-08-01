@@ -113,7 +113,7 @@ void AuthB2BDialog::onInvite(const AmSipRequest& req)
   setInOut(NULL,NULL); 
 
   if (AuthB2BFactory::user.empty()) {
-    string app_param = getHeader(req.hdrs, PARAM_HDR);
+    string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
     if (!app_param.length()) {
       AmSession::Exception(500, "auth_b2b: parameters not found");
@@ -321,7 +321,7 @@ void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_statu
   }
   
   unsigned int cseq_before = dlg.cseq;
-  if (!auth->onSipReply(reply)) {
+  if (!auth->onSipReply(reply, old_dlg_status)) {
       AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {

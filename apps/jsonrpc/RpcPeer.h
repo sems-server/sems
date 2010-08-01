@@ -31,6 +31,7 @@
 #include <ev.h>
 #include <stdlib.h>
 #include "log.h"
+#include "AmArg.h"
 
 #define MAX_RPC_MSG_SIZE 20*1024*1024 // 20k
 #define MAX_NS_LEN_SIZE 10 
@@ -44,7 +45,8 @@ struct JsonrpcPeerConnection {
 
   // event queue keys that should receive the reply
   // to requests sent on that connection
-  std::map<std::string, std::string> replyReceivers;
+  //        req_id              queue       udata
+  std::map<std::string, std::pair<std::string, AmArg > > replyReceivers;
 
   // if present, notifications will be sent 
   // to that event queue directly

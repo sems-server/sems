@@ -194,6 +194,8 @@ XmlRpcServerConnection::writeResponse()
     _request = "";
     _response = "";
     _connectionState = READ_HEADER;
+  } else {
+    return true; // not whole reponse written - continue in WRITE_RESPONSE state
   }
 
   return _keepAlive;    // Continue monitoring this source if true

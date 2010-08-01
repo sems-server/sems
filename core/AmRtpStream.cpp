@@ -188,19 +188,89 @@ int AmRtpStream::ping()
   return 2;
 }
 
-int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size )
-{
-  if ((mute) || (hold))
-    return 0;
+void AmRtpStream::sendDtmfPacket(unsigned int ts) {
+  while (true) {
+    switch(dtmf_sending_state) {
+    case DTMF_SEND_NONE: {
+      dtmf_send_queue_mut.lock();
+      if (dtmf_send_queue.empty()) {
+	dtmf_send_queue_mut.unlock();
+	return;
+      }
+      current_send_dtmf = dtmf_send_queue.front();
+      current_send_dtmf_ts = ts;
+      dtmf_send_queue.pop();
+      dtmf_send_queue_mut.unlock();
+      dtmf_sending_state = DTMF_SEND_SENDING;
+      current_send_dtmf_ts = ts;
+      DBG("starting to send DTMF\n");
+    } break;
+      
+    case DTMF_SEND_SENDING: {
+      if (ts_less()(ts, current_send_dtmf_ts + current_send_dtmf.second)) {
+	// send packet
+	if (!telephone_event_pt.get()) 
+	  return;
 
-  if(!size)
-    return -1;
+	dtmf_payload_t dtmf;
+	dtmf.event = current_send_dtmf.first;
+	dtmf.e = dtmf.r = 0;
+	dtmf.duration = htons(ts - current_send_dtmf_ts);
+	dtmf.volume = 20;
 
+	DBG("sending DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
+	    dtmf.event,dtmf.e,dtmf.r,dtmf.volume,ntohs(dtmf.duration),current_send_dtmf_ts);
+
+	compile_and_send(telephone_event_pt->payload_type, dtmf.duration == 0, 
+			 current_send_dtmf_ts, 
+			 (unsigned char*)&dtmf, sizeof(dtmf_payload_t)); 
+	return;
+
+      } else {
+	DBG("ending DTMF\n");
+	dtmf_sending_state = DTMF_SEND_ENDING;
+	send_dtmf_end_repeat = 0;
+      }
+    } break;
+      
+    case DTMF_SEND_ENDING:  {
+      if (send_dtmf_end_repeat >= 3) {
+	DBG("DTMF send complete\n");
+	dtmf_sending_state = DTMF_SEND_NONE;
+      } else {
+	send_dtmf_end_repeat++;
+	// send packet with end bit set, duration = event duration
+	if (!telephone_event_pt.get()) 
+	  return;
+
+	dtmf_payload_t dtmf;
+	dtmf.event = current_send_dtmf.first;
+	dtmf.e = 1; 
+	dtmf.r = 0;
+	dtmf.duration = htons(current_send_dtmf.second);
+	dtmf.volume = 20;
+
+	DBG("sending DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
+	    dtmf.event,dtmf.e,dtmf.r,dtmf.volume,ntohs(dtmf.duration),current_send_dtmf_ts);
+
+	compile_and_send(telephone_event_pt->payload_type, false, 
+			 current_send_dtmf_ts, 
+			 (unsigned char*)&dtmf, sizeof(dtmf_payload_t)); 
+	return;
+      }
+    } break;
+    };
+  }
+
+}
+
+int AmRtpStream::compile_and_send(const int payload, bool marker, unsigned int ts, 
+				  unsigned char* buffer, unsigned int size) {
   AmRtpPacket rp;
   rp.payload = payload;
-  rp.marker = false;
+  rp.timestamp = ts;
+  rp.marker = marker;
   rp.sequence = sequence++;
-  rp.timestamp = ts;   
   rp.ssrc = l_ssrc;
   rp.compile((unsigned char*)buffer,size);
 
@@ -241,6 +311,20 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
   }
  
   return size;
+}
+
+int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size )
+{
+  if ((mute) || (hold))
+    return 0;
+
+  sendDtmfPacket(ts);
+
+  if(!size)
+    return -1;
+
+  return compile_and_send(payload, false, ts, buffer, size);
+
 }
 
 int AmRtpStream::send_raw( char* packet, unsigned int length )
@@ -351,7 +435,8 @@ AmRtpStream::AmRtpStream(AmSession* _s)
     mute(false),
     hold(false),
     receiving(true),
-    monitor_rtp_timeout(true)
+    monitor_rtp_timeout(true),
+    dtmf_sending_state(DTMF_SEND_NONE)
 {
 
 #ifdef SUPPORT_IPV6
@@ -623,6 +708,14 @@ int AmRtpStream::getTelephoneEventRate()
   if (telephone_event_pt.get())
     retval = telephone_event_pt->clock_rate;
   return retval;
+}
+
+void AmRtpStream::sendDtmf(int event, unsigned int duration_ms) {
+  dtmf_send_queue_mut.lock();
+  dtmf_send_queue.push(std::make_pair(event, duration_ms * getTelephoneEventRate() 
+				      / 1000));
+  dtmf_send_queue_mut.unlock();
+  DBG("enqueued DTMF event %i duration %u\n", event, duration_ms);
 }
 
 PacketMem::PacketMem() {

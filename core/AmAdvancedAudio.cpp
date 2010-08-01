@@ -281,8 +281,7 @@ int AmAudioFrontlist::get(unsigned int user_ts, unsigned char* buffer, unsigned 
   int res = size; 
 
   ba_mut.lock();
-  if (isEmpty()) {
-    if (back_audio) 
+  if (isEmpty() && back_audio) {
       res = back_audio->get(user_ts, buffer, size);
   } else {
     res = AmPlaylist::get(user_ts, buffer, size);

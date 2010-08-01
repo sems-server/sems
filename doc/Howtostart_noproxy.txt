@@ -84,13 +84,13 @@ Configuring the application for SEMS
    itself register to our SIP server.
 
    In /usr/local/etc/sems/sems.conf, we set
-   load_plugins=sipctrl;wav;uac_auth;registrar_client;reg_agent;conference
+   load_plugins=wav;uac_auth;registrar_client;reg_agent;conference
 
-   to load the modules we need; sipctrl loads the SIP stack, wav is for
-   reading WAV files and for the G711 codec, uac_auth is the module which
-   implements authentication, registrar_client facilitates registration at
-   a SIP server, and reg_agent is the application that uses
-   registrar_client to have SEMS register at a SIP server.
+   to load the modules we need; wav is for reading WAV files and for the
+   G711 codec, uac_auth is the module which implements authentication,
+   registrar_client facilitates registration at a SIP server, and
+   reg_agent is the application that uses registrar_client to have SEMS
+   register at a SIP server.
 
    We also set
    application=conference
@@ -99,8 +99,8 @@ Configuring the application for SEMS
 
    We want SEMS to register at a SIP server, so we need to tell it about
    the user name and the password, this is set in
-   /usr/local/etc/sems/etc/reg_agent.conf (of course this user name bob
-   and the password need to be set to the ones used for testing):
+   /usr/local/etc/sems/reg_agent.conf (of course this user name bob and
+   the password need to be set to the ones used for testing):
      domain=iptel.org
      user=bob
      display_name=bob
@@ -152,11 +152,10 @@ Creating and running a simple DSM applications
    calls, evaluating when to change state, and which actions to execute.
 
    To use a DSM application, we set in /usr/local/etc/sems/sems.conf
-   load_plugins=sipctrl;wav;uac_auth;registrar_client;reg_agent;session_timer;ds
-m
+   load_plugins=wav;uac_auth;registrar_client;reg_agent;session_timer;dsm
    application=mydsmapp
 
-   and in /usr/local/etc/sems/etc/dsm.conf :
+   and in /usr/local/etc/sems/dsm.conf :
     diag_path=/usr/local/lib/sems/dsm/
     load_diags=mydsmapp
     register_apps=mydsmapp
@@ -186,22 +185,22 @@ m
      __________________________________________________________________
 
 
-    Generated on Wed Mar 17 14:34:30 2010 for SEMS by  [15]doxygen 1.6.1
+    Generated on Thu Jul 1 15:32:02 2010 for SEMS by  [15]doxygen 1.6.1
 
 References
 
-   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
-   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
-   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
-   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
-   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
-   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
-   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
+   1. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/examples.html
    8. http://iptel.org/service/
    9. http://www.sip-communicator.org/
   10. http://twinklephone.com/
   11. http://www.voip-info.org/wiki/view/DID+Service+Providers
   12. http://sipgate.de/
-  13. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/AppDoc.html
-  14. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_dsm.html
+  13. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/AppDoc.html
+  14. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/ModuleDoc_dsm.html
   15. http://www.doxygen.org/index.html

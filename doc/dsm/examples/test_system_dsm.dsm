@@ -1,0 +1,37 @@
+-- script to show how SystemDSM can be used
+-- 
+-- on server startup (or via runSystemDSM), the "startup" event is processed.
+-- on config reload, the "reload" event is processed; here we only send an 
+--  event to the main SystemDSM thread
+
+initial state START;
+
+transition "startup" START - startup / {
+  log(2, "Here we are!");
+  logAll(2);
+  setTimer(1, 20);
+  -- register a friendlier name
+  registerEventQueue(system_dsm);
+} -> RUNNING;
+
+-- this gets called when script config is reloaded
+transition "reload" START - reload / {
+   set($cmd="reload");
+   postEvent(system_dsm, cmd);
+   -- or: postEvent(system_dsm, var) to post all variables, 
+   --      including changed config (#config.*)
+   stop(false);
+} -> END;
+
+state RUNNING;
+transition "timer hit" RUNNING - timer / log(2, "still there!"); setTimer(1, 20); -> RUNNING;
+
+transition "shutdown"  RUNNING - system / unregisterEventQueue(system_dsm); stop(false) -> END;
+
+transition "stop cmd"  RUNNING - eventTest(#cmd=="stop") / logAll(2); unregisterEventQueue(system_dsm); stop(false) } -> END;
+
+transition "reload cmd"  RUNNING - eventTest(#cmd=="reload") / log(2, "got refresh"); logParams(2); -> RUNNING;
+
+transition "some other event"  RUNNING - event / logAll(2) -> RUNNING;
+
+state END;

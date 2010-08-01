@@ -142,7 +142,7 @@ void AnnRecorderFactory::getAppParams(const AmSipRequest& req, map<string, strin
     typ = DEFAULT_TYPE;
   }
   else {
-    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
     
     if (!iptel_app_param.length()) {
       throw AmSession::Exception(500, MOD_NAME ": parameters not found");

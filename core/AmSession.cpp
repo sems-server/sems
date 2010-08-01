@@ -589,6 +589,11 @@ void AmSession::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
   m_dtmfEventQueue.putDtmfAudio(buf, size, user_ts);
 }
 
+void AmSession::sendDtmf(int event, unsigned int duration_ms) {
+  RTPStream()->sendDtmf(event, duration_ms);
+}
+
+
 void AmSession::onDtmf(int event, int duration_msec)
 {
   DBG("AmSession::onDtmf(%i,%i)\n",event,duration_msec);
@@ -762,7 +767,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 
 void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
-  CALL_EVENT_H(onSipReply,reply);
+  CALL_EVENT_H(onSipReply,reply,old_dlg_status);
 
   if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
@@ -978,7 +983,7 @@ int AmSession::acceptAudio(const string& body,
   try {
     try {
       // handle codec and send reply
-      string str_msg_flags = getHeader(hdrs,"P-MsgFlags");
+      string str_msg_flags = getHeader(hdrs,"P-MsgFlags", true);
       unsigned int msg_flags = 0;
       if(reverse_hex2int(str_msg_flags,msg_flags)){
 	ERROR("while parsing 'P-MsgFlags' header\n");

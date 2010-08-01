@@ -207,6 +207,10 @@ static void signal_handler(int sig)
     return;
   }
 
+  if (sig == SIGPIPE && AmConfig::IgnoreSIGPIPE) {
+    return;
+  }
+
   if (main_pid == getpid()) {
     if(!is_shutting_down.get()) {
       is_shutting_down.set(true);

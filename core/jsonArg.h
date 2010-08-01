@@ -29,6 +29,7 @@
 #define _jsonArg_h_
 #include <string>
 #include <iostream>
+#include "AmArg.h"
 
 string arg2json(const AmArg &a);
 

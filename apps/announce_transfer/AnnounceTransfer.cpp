@@ -112,7 +112,7 @@ void AnnounceTransferDialog::onSessionStart(const AmSipRequest& req)
     status = Announcing;
     callee_uri = get_session_param(req.hdrs, "Refer-To");
     if (!callee_uri.length()) {
-      callee_uri = getHeader(req.hdrs, "P-Refer-To");
+      callee_uri = getHeader(req.hdrs, "P-Refer-To", true);
       if (callee_uri.length()) {
 	INFO("Use of P-Refer-To header is deprecated. "
 	     "Use '%s: Refer-To=<uri>' instead.\n",PARAM_HDR);
@@ -140,7 +140,7 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
      (req.method == "NOTIFY")) {
     try {
 
-      if (strip_header_params(getHeader(req.hdrs,"Event", "o")) != "refer") 
+      if (strip_header_params(getHeader(req.hdrs,"Event", "o", true)) != "refer") 
 	throw AmSession::Exception(481, "Subscription does not exist");
 
       if ((strip_header_params(req.content_type) != "message/sipfrag"))

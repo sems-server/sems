@@ -69,6 +69,13 @@ AmSipDialog::~AmSipDialog()
   }
 }
 
+void AmSipDialog::setStatus(int new_status) {
+  DBG("setting  SIP dialog status: %s->%s\n",
+      status2str[status], status2str[new_status]);
+
+  status = new_status;
+}
+
 void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
   DBG("AmSipDialog::updateStatus(request)\n");
@@ -195,10 +202,10 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
     DBG("req.method = %s; t.method = %s\n",
 	req.method.c_str(),t.method.c_str());
 
-    uas_trans.erase(t_it);
-
     if(t.method == "INVITE")
 	pending_invites--;
+
+    uas_trans.erase(t_it);
   }
 
   return 0;

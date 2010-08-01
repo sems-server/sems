@@ -54,10 +54,10 @@ void JsonrpcPeerConnection::notifyDisconnect() {
       post(requestReceiver, 
 	   new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT, id));
   
-  for (std::map<std::string, std::string>::iterator it=
+  for (std::map<std::string, std::pair<std::string, AmArg > > ::iterator it=
 	 replyReceivers.begin(); it != replyReceivers.end(); it++) {
     AmEventDispatcher::instance()->
-      post(it->second, 
+      post(it->second.first,
 	   new JsonRpcConnectionEvent(JsonRpcConnectionEvent::DISCONNECT, id));	
   }
 }
@@ -196,8 +196,10 @@ int JsonrpcNetstringsConnection::netstringsRead() {
 	// DBG("received '%.*s'\n", rcvd_size, msgbuf);
 
 	if (rcvd_size == msg_size+1) { 
-	  if (msgbuf[msg_size] == ',')
+	  if (msgbuf[msg_size] == ',') {
+	    msgbuf[msg_size+1] = '\0';
 	    return DISPATCH;
+	  }
 	  INFO("Protocol error on connection [%p/%d]: netstring not terminated with ','\n",
 	       this, fd);
 	  close();
