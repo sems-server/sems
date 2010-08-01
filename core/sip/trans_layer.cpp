@@ -1072,31 +1072,6 @@ void trans_layer::received_msg(sip_msg* msg)
 	    }
 	}
 	else {
-
-#if 0
-	    string t_id;
-	    if(msg->u.request->method == sip_request::ACK){
-		
-		// non-2xx ACK??? drop!
-		break;
-	    }
-	    else {
-		// New transaction
-		t = bucket->add_trans(msg, TT_UAS);
-
-		bucket->unlock();
-		
-		//  let's pass the request to
-		//  the UA. 
-		assert(ua);
-
-		ua->handle_sip_request(trans_ticket(t,bucket),msg);
-		
-		// forget the msg: it will be
-		// owned by the new transaction
-		return;
-	    }
-#else
              unsigned inv_h;
              trans_bucket* inv_bucket;
              sip_trans* inv_t;
@@ -1137,7 +1112,6 @@ void trans_layer::received_msg(sip_msg* msg)
                      // owned by the new transaction
                      return;
              }
-#endif
 	}
 	break;
     

@@ -498,12 +498,6 @@ public:
   virtual void onSipRequest(const AmSipRequest& req);
   /** Entry point for SIP Replies   */
   virtual void onSipReply(const AmSipReply& reply, int old_dlg_status);
-#if 0
-  /** There was a timeout receiving a reply for the given SIP request */
-  virtual void onSipReqTimeout(const AmSipRequest &req);
-  /** There was a timeout receiving a request (PR-/ACK) for given SIP reply */
-  virtual void onSipRplTimeout(const AmSipRequest &req, const AmSipReply &rpl);
-#endif
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);

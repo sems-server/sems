@@ -571,57 +571,6 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     AmSipDispatcher::instance()->handleSipMsg(reply);
 }
 
-#if 0
-void SipCtrlInterface::timer_expired(sip_trans* trans, sip_timer_type tt)
-{
-    assert(trans);
-    assert(trans->type == TT_UAS);
-
-    AmSipTimeoutEvent::EvType ev = AmSipTimeoutEvent::_noEv;
-
-    DBG("tt=%i;state=%i\n",tt,trans->state);
-
-    //TODO: send an event to the SIP Dialog
-    switch(tt){
-	
-    case STIMER_H:
-	switch(trans->state){
-	case TS_TERMINATED_200: // missing 200-ACK
-	    ev = AmSipTimeoutEvent::no2xxACK;
-	    break;
-	case TS_COMPLETED: // missing error-ACK
-	    ev = AmSipTimeoutEvent::noErrorACK;
-	    break;
-
-	// TODO: missing PRACK
-	//case TS_???:
-	default:
-	    ERROR("timer H expired / transaction in undefined state\n");
-	    return;
-	}
-	break;
-
-    default:
-	return;
-    }
-
-    assert(trans->msg);
-    assert(trans->to_tag.len);
-    assert(trans->msg->cseq && trans->msg->cseq->p);
-
-    sip_cseq* cseq = dynamic_cast<sip_cseq*>(trans->msg->cseq->p);
-    
-    if(!cseq){
-	ERROR("missing CSeq\n");
-	return;
-    }
- 
-    AmEventDispatcher::instance()->post(c2stlstr(trans->to_tag),
-					new AmSipTimeoutEvent(ev, cseq->num));
-}
-#endif
-
-
 void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
     sip_trans *tr, trans_bucket *buk)
 {

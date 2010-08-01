@@ -906,18 +906,6 @@ void AmSession::onInvite2xx(const AmSipReply& reply)
   if(t) dlg.send_200_ack(*t);
 }
 
-#if 0
-void AmSession::onNo2xxACK(unsigned int cseq)
-{
-  dlg.bye();
-  setStopped();
-}
-
-void AmSession::onNoErrorACK(unsigned int cseq)
-{
-  setStopped();
-}
-#else
 void AmSession::onNoAck(unsigned int cseq)
 {
   if (dlg.getStatus() == AmSipDialog::Connected)
@@ -938,8 +926,6 @@ void AmSession::onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)
     WARN("reply timed-out, but not reliable.\n"); // debugging
   }
 }
-
-#endif
 
 void AmSession::onAudioEvent(AmAudioEvent* audio_ev)
 {

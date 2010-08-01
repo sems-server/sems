@@ -127,13 +127,8 @@ class SIPRegistration : public AmSipDialogEventHandler,
   void onSipReply(const AmSipReply& reply, int old_dlg_status);
   void onSipRequest(const AmSipRequest& req) {}
   void onInvite2xx(const AmSipReply&) {}
-#if 0
-  void onNo2xxACK(unsigned int) {}
-  void onNoErrorACK(unsigned int) {}
-#else
   void onNoAck(unsigned int) {}
   void onNoPrack(const AmSipRequest &, const AmSipReply &) {}
-#endif
 
   /** is this registration registered? */
   bool active; 

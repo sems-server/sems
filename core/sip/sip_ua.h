@@ -44,11 +44,6 @@ public:
     //virtual void handle_request_timeout(const sip_msg *msg)=0;
     virtual void handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
         sip_trans *tr, trans_bucket *buk=0)=0;
-
-#if 0
-    // UAS timer expired (UAC timers generate a local 408)
-    virtual void timer_expired(sip_trans* trans, sip_timer_type tt)=0;
-#endif
 };
 
 #endif

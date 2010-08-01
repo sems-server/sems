@@ -48,30 +48,6 @@ class AmSipEvent: public AmEvent
   virtual void operator() (AmSipDialog* dlg)=0;
 };
 
-#if 0
-/** \brief UAS reply re-transmission timeout event */
-class AmSipTimeoutEvent: public AmSipEvent
-{
- public:
-
-  enum EvType {
-    _noEv=0,
-    no2xxACK,
-    noErrorACK,
-    noPRACK
-  };
-
-  EvType       type;
-
-  unsigned int cseq;
-
-  AmSipTimeoutEvent(EvType t, unsigned int cseq_num)
-    : AmSipEvent(), type(t)
-   {}
-
-  virtual void operator() (AmSipDialog* dlg);
-};
-#else
 /** \brief UAS reply re-transmission timeout event */
 class AmSipTimeoutEvent: public AmSipEvent
 {
@@ -98,7 +74,6 @@ class AmSipTimeoutEvent: public AmSipEvent
 
   virtual void operator() (AmSipDialog* dlg);
 };
-#endif
 
 /** \brief SIP request event */
 class AmSipRequestEvent: public AmSipEvent
@@ -125,38 +100,6 @@ class AmSipReplyEvent: public AmSipEvent
   virtual void operator() (AmSipDialog* dlg);
 };
 
-
-#if 0
-// TODO: have a single AmSipT.outEv. class, with type and a _AmSipMsgInDlg
-// ptr: it will save the dynamic_cast efforts later.
-
-class AmSipTimeoutEvent: public AmSipEvent
-{
-  public:
-    AmSipTimeoutEvent(int id = -1) 
-      : AmSipEvent(-1)
-    {}
-};
-
-class AmSipReqTimeoutEvent : public AmSipTimeoutEvent
-{
-  public:
-    AmSipRequest req;
-    AmSipReqTimeoutEvent(AmSipRequest &r):
-      AmSipTimeoutEvent(), req(r)
-    {}
-};
-
-class AmSipRplTimeoutEvent : public AmSipTimeoutEvent
-{
-  public:
-    AmSipRequest req;
-    AmSipReply   rpl;
-    AmSipRplTimeoutEvent(AmSipRequest &_req, AmSipReply &_rpl):
-      AmSipTimeoutEvent(), req(_req), rpl(_rpl)
-    {}
-};
-#endif
 
 
 #endif

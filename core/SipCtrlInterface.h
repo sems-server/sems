@@ -109,9 +109,6 @@ public:
     void handle_sip_reply(sip_msg* msg);
     void handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
         sip_trans *tr, trans_bucket *buk=0);
-#if 0
-    void timer_expired(sip_trans* trans, sip_timer_type tt);
-#endif
 };
 
 
