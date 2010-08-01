@@ -920,6 +920,8 @@ void AmSession::onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)
       (unsigned)dlg.rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
     INFO("reliable %d reply timed out; rejecting request.\n", rpl.code);
     dlg.reply(req, 504, "Server Time-out");
+    // TODO: handle forking case (when more PRACKs are sent, out of which some
+    // might time-out/fail).
     if (dlg.getStatus() < AmSipDialog::Connected)
       setStopped();
   } else {
