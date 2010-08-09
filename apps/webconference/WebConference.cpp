@@ -194,6 +194,21 @@ int WebConferenceFactory::load()
   gettimeofday(&now, NULL);    
   srandom(now.tv_usec + now.tv_sec);
 
+  vector<string> predefined_rooms = explode(cfg.getParameter("predefined_rooms"), ";");
+  for (vector<string>::iterator it =
+	 predefined_rooms.begin(); it != predefined_rooms.end(); it++) {
+    vector<string> room_pwd = explode(*it, ":");
+    if (room_pwd.size()==2) {
+      DBG("creating room '%s'\n",room_pwd[0].c_str());
+      rooms[room_pwd[0]] = ConferenceRoom();
+      rooms[room_pwd[0]].adminpin = room_pwd[1];
+    } else {
+      ERROR("wrong entry '%s' in predefined_rooms: should be <room>:<pwd>\n",
+	    it->c_str());
+      return -1;
+    }
+  }
+
   return 0;
 }
 
