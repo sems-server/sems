@@ -703,6 +703,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
             setStopped();
           return;
         }
+        break; // 100rel required
       default:
         ERROR("BUG: unexpected value `%d' for '" SIP_EXT_100REL "' switch.", 
           reliable_1xx);
