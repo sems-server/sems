@@ -916,9 +916,6 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	  DBG("found media attr '%s', but value is not followed by cr\n",
 	      (char *)attr.c_str());
       }
-      //payload.type = media.type;
-      //payload.encoding_name = attr;
-      //payload.sdp_format_parameters = value;
     }
 
 
@@ -934,9 +931,6 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
       }
   }
 
-  media.payloads.push_back(payload);
-
-  //  DBG("parse_sdp_line_ex: parse_sdp_attr: done parsing sdp attributes\n");
   return;
 }
 
