@@ -30,7 +30,7 @@
 #include "AmConfig.h"
 #include "AmApi.h"
 #include "AmUtils.h"
-#include "AmSdp.h"
+//#include "AmSdp.h"
 #include "AmSipDispatcher.h"
 //#include "AmServer.h"
 
@@ -463,6 +463,18 @@ int AmPlugIn::getDynPayload(const string& name, int rate, int encoding_param) {
   return -1;
 }
 
+/** return 0, or -1 in case of error. */
+void AmPlugIn::getPayloads(vector<SdpPayload>& pl_vec)
+{
+  for (std::map<int,int>::const_iterator it = payload_order.begin(); it != payload_order.end(); ++it) {
+    std::map<int,amci_payload_t*>::const_iterator pl_it = payloads.find(it->second);
+    if(pl_it != payloads.end()){
+      pl_vec.push_back(SdpPayload(pl_it->first, pl_it->second->name, pl_it->second->sample_rate, 0));
+    } else {
+      ERROR("Payload %d (from the payload_order map) was not found in payloads map!\n", it->second);
+    }
+  }
+}
 
 amci_subtype_t* AmPlugIn::subtype(amci_inoutfmt_t* iofmt, int subtype)
 {

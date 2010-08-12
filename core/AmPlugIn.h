@@ -35,8 +35,10 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <list>
 using std::string;
 using std::vector;
+using std::list;
 
 class AmPluginFactory;
 class AmSessionFactory;
@@ -44,6 +46,7 @@ class AmSessionEventHandlerFactory;
 class AmDynInvokeFactory;
 class AmLoggingFacility;
 class AmSipRequest;
+class SdpPayload;
 
 struct amci_exports_t;
 struct amci_codec_t;
@@ -70,6 +73,11 @@ class AmPayloadProviderInterface {
    * @return -1 if failed, else the internal payload id.
    */
   virtual int getDynPayload(const string& name, int rate, int encoding_param) = 0;
+  
+  /**
+   * List all the payloads available for a media type
+   */
+  virtual void getPayloads(vector<SdpPayload>& pl_vec) = 0;
 };
 
 /**
@@ -143,6 +151,9 @@ class AmPlugIn : public AmPayloadProviderInterface
    * @return -1 if failed, else the internal payload id.
    */
   int getDynPayload(const string& name, int rate, int encoding_param);
+
+  /** return 0, or -1 in case of error. */
+  void getPayloads(vector<SdpPayload>& pl_vec);
 
   /** @return the suported payloads. */
   const std::map<int,amci_payload_t*>& getPayloads() { return payloads; }

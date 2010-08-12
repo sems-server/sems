@@ -219,14 +219,6 @@ public:
   void changeCallgroup(const string& cg);
 
   /**
-   * Accept the SDP proposal
-   * thus setting up audio stream
-   */
-  //int acceptAudio(const string& body,
-  //		  const string& hdrs = "",
-  //		  string*       sdp_reply=0);
-
-  /**
    * Lock audio input & output
    * (inclusive RTP stream)
    */
@@ -322,11 +314,6 @@ public:
 
   /** get the payload provider for the session */
   virtual AmPayloadProviderInterface* getPayloadProvider();
-
-  /** handle SDP negotiation: only for INVITEs & re-INVITEs */
-  //virtual void negotiate(const string& sdp_body,
-  //			 bool force_symmetric_rtp,
-  //			 string* sdp_reply);
 
   /** send an UPDATE in the session */
   virtual void sendUpdate();
@@ -430,19 +417,6 @@ public:
   virtual void onSessionStart(){}
 
   /**
-   * onSessionStart method for calls originating 
-   * from SEMS.
-   *
-   * Throw AmSession::Exception if you want to 
-   * signal any error.
-   * 
-   * Warning:
-   *   Sems will NOT send any BYE on his own.
-   */
-  //virtual void onSessionStart(const AmSipReply& reply){}
-
-
-  /**
    * onEarlySessionStart will be called when
    * the media session is setup with the dialog
    * in Early state.
@@ -494,7 +468,7 @@ public:
   /** This callback is called if RTP timeout encountered */
   virtual void onRtpTimeout();
 
-  /* Called by AmSipDialog when a request is sent */
+  /** Called by AmSipDialog when a request is sent */
   virtual void onSendRequest(const string& method,
 			     const string& content_type,
 			     const string& body,
@@ -502,7 +476,7 @@ public:
 			     int flags,
 			     unsigned int cseq);
 
-  /* Called by AmSipDialog when a reply is sent */
+  /** Called by AmSipDialog when a reply is sent */
   virtual void onSendReply(const AmSipRequest& req,
 			   unsigned int  code,
 			   const string& reason,

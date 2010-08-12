@@ -835,52 +835,6 @@ void AmSession::onCancel(const AmSipRequest& req)
   //       answer the INVITE transaction with 487
 }
 
-/*
-int AmSession::acceptAudio(const string& body,
-			   const string& hdrs,
-			   string*       sdp_reply)
-{
-  try {
-    try {
-      // handle codec and send reply
-      string str_msg_flags = getHeader(hdrs,"P-MsgFlags");
-      unsigned int msg_flags = 0;
-      if(reverse_hex2int(str_msg_flags,msg_flags)){
-	ERROR("while parsing 'P-MsgFlags' header\n");
-	msg_flags = 0;
-      }
-	    
-      negotiate( body,
-		 msg_flags & FL_FORCE_ACTIVE,
-		 sdp_reply);
-	    
-      // enable RTP stream
-      lockAudio();
-      RTPStream()->init(m_payloads);
-      unlockAudio();
-	    
-      DBG("Sending Rtp data to %s/%i\n",
-	  RTPStream()->getRHost().c_str(),RTPStream()->getRPort());
-
-      return 0;
-    }
-    catch(const AmSession::Exception& e){ throw e; }
-    catch(const string& str){
-      ERROR("%s\n",str.c_str());
-      throw AmSession::Exception(500,str);
-    }
-    catch(...){
-      throw AmSession::Exception(500,"unexpected exception.");
-    }
-  }
-  catch(const AmSession::Exception& e){
-    ERROR("%i %s\n",e.code,e.reason.c_str());
-    throw;
-  }
-
-  return -1;
-}
-*/
 void AmSession::onSystemEvent(AmSystemEvent* ev) {
   if (ev->sys_event == AmSystemEvent::ServerShutdown) {
     setStopped();
@@ -904,6 +858,8 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
 /** Hook called when an SDP offer is required */
 bool AmSession::getSdpOffer(AmSdp& offer)
 {
+  // TODO: move this code to AmRtpStream
+
   offer.version = 0;
   offer.origin.user = "sems";
   offer.origin.sessId = 1;
@@ -913,17 +869,19 @@ bool AmSession::getSdpOffer(AmSdp& offer)
   offer.conn.addrType = AT_V4;
   offer.conn.address = advertisedIP();
 
+  // TODO: support multiple media types
   offer.media.push_back(SdpMedia());
-  offer.media[0].type = MT_AUDIO;
-  offer.media[0].port = RTPStream()->getLocalPort();
-  offer.media[0].nports = 0;
-  offer.media[0].transport = TP_RTPAVP;
-  offer.media[0].dir = SdpMedia::DirBoth;
+  SdpMedia& offer_media = offer.media[0];
 
-  offer.media[0].payloads.push_back(SdpPayload());
-  offer.media[0].payloads[0].payload_type = 0;
-  offer.media[0].payloads[0].encoding_name = "pcmu";
-  offer.media[0].payloads[0].clock_rate = 8000;
+  // TODO: move following code to AmRtpStream
+
+  offer_media.type = MT_AUDIO;
+  offer_media.port = RTPStream()->getLocalPort();
+  offer_media.nports = 0;
+  offer_media.transport = TP_RTPAVP;
+  offer_media.dir = SdpMedia::DirBoth;
+
+  getPayloadProvider()->getPayloads(offer_media.payloads);
 
   return true;
 }
@@ -940,17 +898,51 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
   answer.conn.addrType = AT_V4;
   answer.conn.address = advertisedIP();
 
-  answer.media.push_back(SdpMedia());
-  answer.media[0].type = MT_AUDIO;
-  answer.media[0].port = RTPStream()->getLocalPort();
-  answer.media[0].nports = 0;
-  answer.media[0].transport = TP_RTPAVP;
-  answer.media[0].dir = SdpMedia::DirBoth;
+  // TODO: support multiple media types
+  const vector<SdpMedia>::const_iterator m_it = offer.media.begin();
 
-  answer.media[0].payloads.push_back(SdpPayload());
-  answer.media[0].payloads[0].payload_type = 0;
-  answer.media[0].payloads[0].encoding_name = "pcmu";
-  answer.media[0].payloads[0].clock_rate = 8000;
+  answer.media.push_back(SdpMedia());
+  SdpMedia& answer_media = answer.media[0];
+ 
+  // TODO: move rest of the function to AmRtpStream
+
+  answer_media.type = MT_AUDIO;
+  answer_media.port = RTPStream()->getLocalPort();
+  answer_media.nports = 0;
+  answer_media.transport = TP_RTPAVP;
+  answer_media.dir = SdpMedia::DirBoth;
+
+  // Calculate the intersection with the offered set of payloads
+
+  vector<SdpPayload>::const_iterator it = m_it->payloads.begin();
+  for(; it!= m_it->payloads.end(); ++it) {
+    amci_payload_t* a_pl = NULL;
+    if(it->payload_type < DYNAMIC_PAYLOAD_TYPE_START) {
+      // try static payloads
+      a_pl = getPayloadProvider()->payload(it->payload_type);
+    }
+
+    if( a_pl) {
+      answer_media.payloads.push_back(SdpPayload(a_pl->payload_id,a_pl->name,a_pl->sample_rate,0));
+    }
+    else {
+      // Try dynamic payloads
+      // and give a chance to broken
+      // implementation using a static payload number
+      // for dynamic ones.
+
+      int int_pt = getPayloadProvider()->
+	getDynPayload(it->encoding_name,
+		      it->clock_rate,
+		      it->encoding_param);
+      if(int_pt != -1){
+	answer_media.payloads.push_back(SdpPayload(int_pt,
+						   it->encoding_name,
+						   it->clock_rate,
+						   it->encoding_param));
+      }
+    }
+  }
 
   return true;
 }
@@ -958,7 +950,11 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 {
   lockAudio();
-  // TODO: get the right media ID
+  // TODO: 
+  //   - get the right media ID
+  //   - check if the stream coresponding to the media ID 
+  //     should be created or updated   
+  //
   int ret = RTPStream()->init(getPayloadProvider(),0,local_sdp,remote_sdp);
   unlockAudio();
   

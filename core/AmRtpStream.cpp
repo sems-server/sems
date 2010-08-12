@@ -460,6 +460,13 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
 		      const AmSdp& local,
 		      const AmSdp& remote)
 {
+  if((media_i >= local.media.size()) ||
+     (media_i >= remote.media.size()) ) {
+
+    ERROR("Media index %i is invalid, either within local or remote SDP (or both)",media_i);
+    return -1;
+  }
+
   const SdpMedia& local_media = local.media[media_i];
   const SdpMedia& remote_media = remote.media[media_i];
 
