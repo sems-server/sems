@@ -133,8 +133,6 @@ struct SdpMedia
  */
 class AmSdp
 {
-  /** scratch buffer */
-  char r_buf[BUFFER_SIZE];
 
   // Remote payload type for 
   // 'telephone-event'
@@ -166,35 +164,25 @@ public:
   AmSdp();
   AmSdp(const AmSdp& p_sdp_msg);
 
-  /** Sets the SDP offer to be parsed. */
-  void setBody(const char* _sdp_msg);
-  /** Parse the invitation 
-   * @return !=0 if error encountered.
-   */
-  int parse();
-
   /** 
-   * Generate an SDP answer to the offer parsed previously. 
+   * Parse the SDP message passed as an argument.
    * @return !=0 if error encountered.
    */
-  int genResponse(const string& localip, int localport, 
-		  string& out_buf, bool single_codec = false);
-
-  /** 
-   * Generate an SDP offer. 
-   * @return !=0 if error encountered.
-   */
-  int genRequest(const string& localip,int localport, string& out_buf);
+  int parse(const char* _sdp_msg);
 
   /**
-   * Test if remote UA supports 'telefone_event'.
+   * Prints the current SDP structure
+   * into a proper SDP message.
+   */
+  void print(string& body);
+
+  /**
+   * Test if the SDP message advertises 
+   * support for 'telefone_event'.
    */
   bool hasTelephoneEvent();
 
   const SdpPayload *telephoneEventPayload() const { return telephone_event_pt; }
-
-
-  void print(string& mime_type, string& body);
 };
 
 #endif

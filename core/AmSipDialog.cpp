@@ -191,9 +191,7 @@ int AmSipDialog::onRxSdp(const string& body, const char** err_txt)
   int err_code = 0;
   assert(err_txt);
 
-  sdp_remote.setBody(body.c_str());
-
-  if(sdp_remote.parse()){
+  if(sdp_remote.parse(body.c_str())){
     err_code = 400;
     *err_txt = "session description parsing failed";
   }
@@ -275,7 +273,8 @@ int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
     case OA_None:
     case OA_Completed:
       if(hdl->getSdpOffer(sdp_local)){
-	sdp_local.print(content_type, body);
+	sdp_local.print(body);
+	content_type = "application/sdp";//FIXME
       }
       else {
 	DBG("No SDP Offer to include in the reply.\n");
@@ -284,7 +283,8 @@ int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
       break;
     case OA_OfferRecved:
       if(hdl->getSdpAnswer(sdp_remote,sdp_local)){
-	sdp_local.print(content_type, body);
+	sdp_local.print(body);
+	content_type = "application/sdp";//FIXME
       }
       else {
 	DBG("No SDP Answer to include in the reply.\n");
