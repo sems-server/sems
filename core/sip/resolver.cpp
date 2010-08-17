@@ -35,27 +35,17 @@
 #include <sys/socket.h> 
 #include <netinet/in.h>
 
-resolver* resolver::_instance=0;
-
-resolver::resolver()
+_resolver::_resolver()
 {
     
 }
 
-resolver::~resolver()
+_resolver::~_resolver()
 {
     
 }
 
-resolver* resolver::instance()
-{
-    if(!_instance)
-	_instance = new resolver();
-    
-    return _instance;
-}
-    
-int resolver::resolve_name(const char* name, sockaddr_storage* sa, 
+int _resolver::resolve_name(const char* name, sockaddr_storage* sa, 
 			   const address_type types, const proto_type protos)
 {
     struct addrinfo hints,*res=0;

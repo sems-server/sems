@@ -55,46 +55,31 @@
 
 #include <algorithm>
 
-/** 
- * Singleton pointer.
- * @see instance()
- */
-trans_layer* trans_layer::_instance = NULL;
+bool _trans_layer::accept_fr_without_totag = false;
 
-bool trans_layer::accept_fr_without_totag = false;
-
-trans_layer* trans_layer::instance()
-{
-    if(!_instance)
-	_instance = new trans_layer();
-
-    return _instance;
-}
-
-
-trans_layer::trans_layer()
+_trans_layer::_trans_layer()
     : ua(NULL),
       transport(NULL)
 {
 }
 
-trans_layer::~trans_layer()
+_trans_layer::~_trans_layer()
 {}
 
 
-void trans_layer::register_ua(sip_ua* ua)
+void _trans_layer::register_ua(sip_ua* ua)
 {
     this->ua = ua;
 }
 
-void trans_layer::register_transport(trsp_socket* trsp)
+void _trans_layer::register_transport(trsp_socket* trsp)
 {
     transport = trsp;
 }
 
 
 
-int trans_layer::send_reply(trans_ticket* tt,
+int _trans_layer::send_reply(trans_ticket* tt,
 			    int reply_code, const cstring& reason,
 			    const cstring& to_tag, const cstring& hdrs, 
 			    const cstring& body)
@@ -397,7 +382,7 @@ int trans_layer::send_reply(trans_ticket* tt,
     return err;
 }
 
-int trans_layer::send_sl_reply(sip_msg* req, int reply_code, 
+int _trans_layer::send_sl_reply(sip_msg* req, int reply_code, 
 			       const cstring& reason, const cstring& hdrs, 
 			       const cstring& body)
 {
@@ -542,7 +527,7 @@ int trans_layer::send_sl_reply(sip_msg* req, int reply_code,
 //
 // Ref. RFC 3261 "12.2.1.1 Generating the Request"
 //
-int trans_layer::set_next_hop(sip_msg* msg)
+int _trans_layer::set_next_hop(sip_msg* msg)
 {
     assert(msg);
 
@@ -708,7 +693,7 @@ int trans_layer::set_next_hop(sip_msg* msg)
     return 0;
 }
 
-void trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
+void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 {
     t->reset_all_timers();
     t->state = TS_TERMINATED;
@@ -733,7 +718,7 @@ void trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     bucket->remove(t);
 }
 
-int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
+int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
 {
     // Request-URI
     // To
@@ -848,7 +833,7 @@ int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
     return send_err;
 }
 
-int trans_layer::cancel(trans_ticket* tt)
+int _trans_layer::cancel(trans_ticket* tt)
 {
     assert(tt);
     assert(tt->_bucket && tt->_t);
@@ -984,7 +969,7 @@ int trans_layer::cancel(trans_ticket* tt)
 }
 
 
-void trans_layer::received_msg(sip_msg* msg)
+void _trans_layer::received_msg(sip_msg* msg)
 {
 #define DROP_MSG \
           delete msg;\
@@ -1161,7 +1146,7 @@ void trans_layer::received_msg(sip_msg* msg)
 }
 
 
-int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
+int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
 {
     assert(msg->type == SIP_REPLY);
 
@@ -1321,7 +1306,7 @@ int trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* m
     return 0;
 }
 
-int trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg* msg)
+int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg* msg)
 {
     if(msg->u.request->method != sip_request::ACK){
 	t = bucket->add_trans(msg,TT_UAC);
@@ -1369,7 +1354,7 @@ int trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_msg
     return 0;
 }
 
-int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
+int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
 {
     if(t->reply_status >= 200){
 	ERROR("Transaction has already been closed with a final reply\n");
@@ -1435,7 +1420,7 @@ int trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_
     return t->state;
 }
 
-int trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
+int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
 {
     if(msg->u.request->method != sip_request::ACK &&
             msg->u.request->method != sip_request::PRACK){
@@ -1475,7 +1460,7 @@ int trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg*
     return -1;
 }
 
-void trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
+void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 {
     sip_msg* inv = t->msg;
     
@@ -1528,7 +1513,7 @@ void trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     }
 }
 
-void trans_layer::retransmit(sip_trans* t)
+void _trans_layer::retransmit(sip_trans* t)
 {
     assert(transport);
     if(!t->retr_buf || !t->retr_len){
@@ -1542,7 +1527,7 @@ void trans_layer::retransmit(sip_trans* t)
     }
 }
 
-void trans_layer::retransmit(sip_msg* msg)
+void _trans_layer::retransmit(sip_msg* msg)
 {
     assert(transport);
     int send_err = transport->send(&msg->remote_ip,msg->buf,msg->len);
@@ -1551,7 +1536,7 @@ void trans_layer::retransmit(sip_msg* msg)
     }
 }
 
-void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
+void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 {
     int n = t->type >> 16;
     int type = t->type & 0xFFFF;

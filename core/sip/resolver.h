@@ -27,6 +27,8 @@
 #ifndef _resolver_h_
 #define _resolver_h_
 
+#include "singleton.h"
+
 struct sockaddr_storage;
 
 enum address_type {
@@ -41,21 +43,19 @@ enum proto_type {
     UDP=2
 };
 
-class resolver
+class _resolver
 {
-    static resolver* _instance;
-
-    resolver();
-    ~resolver();
-
- public:
-
-    static resolver* instance();
-    
+public:
     int resolve_name(const char* name, sockaddr_storage* sa, 
 		     const address_type types, const proto_type protos);
+
+protected:
+    _resolver();
+    ~_resolver();
+
 };
 
+typedef singleton<_resolver> resolver;
 
 #endif
 

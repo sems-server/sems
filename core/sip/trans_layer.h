@@ -28,6 +28,7 @@
 #define _trans_layer_h_
 
 #include "cstring.h"
+#include "singleton.h"
 
 #include <list>
 using std::list;
@@ -38,49 +39,82 @@ struct sip_trans;
 struct sip_header;
 struct sockaddr_storage;
 
+class trans_ticket;
 class trans_bucket;
 class trsp_socket;
 class sip_ua;
 class timer;
 
-class trans_ticket
+/** 
+ * The transaction layer object.
+ * Uses the singleton pattern.
+ */
+class _trans_layer
 {
-    sip_trans*    _t;
-    trans_bucket* _bucket;
-    
-    friend class trans_layer;
-    friend class AmSipDialog;
-    friend class SipCtrlInterface; //TODO: make _t, _bucket public??
-
 public:
-    trans_ticket()
-	: _t(0), _bucket(0) {}
 
-    trans_ticket(sip_trans* t, trans_bucket* bucket)
-	: _t(t), _bucket(bucket) {}
-
-    trans_ticket(const trans_ticket& ticket)
-	: _t(ticket._t), _bucket(ticket._bucket) {}
-};
-
-class trans_layer
-{
-    /** 
-     * Singleton pointer.
-     * @see instance()
+    /**
+     * Config option: if true, final replies without 
+     * a to-tag will be accepted for requests which do not
+     * create a dialog.
      */
-    static trans_layer* _instance;
+    static bool accept_fr_without_totag;
+
+    /**
+     * Register a SIP UA.
+     * This method MUST be called ONCE.
+     */
+    void register_ua(sip_ua* ua);
+
+    /**
+     * Register a transport instance.
+     * This method MUST be called ONCE.
+     */
+    void register_transport(trsp_socket* trsp);
+
+    /**
+     * Sends a UAS reply.
+     * If a body is included, the hdrs parameter should
+     * include a well-formed 'Content-Type', but no
+     * 'Content-Length' header.
+     */
+    int send_reply(trans_ticket* tt,
+		   int reply_code, const cstring& reason,
+		   const cstring& to_tag, const cstring& hdrs, 
+		   const cstring& body);
+
+    /**
+     * Sends a UAC request.
+     * Caution: Route headers should not be added to the
+     * general header list (msg->hdrs).
+     * @param [in]  msg Pre-built message.
+     * @param [out] tt transaction ticket (needed for replies & CANCEL)
+     */
+    int send_request(sip_msg* msg, trans_ticket* tt);
+
+    /**
+     * Cancels a request. 
+     * A CANCEL request is sent if necessary.
+     * @param tt transaction ticket from the original INVITE.
+     */
+    int cancel(trans_ticket* tt);
+    
+    /**
+     * Called by the transport layer
+     * when a new message has been recived.
+     */
+    void received_msg(sip_msg* msg);
+
+    /**
+     * This is called by the transaction timer callback.
+     * At this place, the bucket is already locked, so
+     * please be quick.
+     */
+    void timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr);
 
     sip_ua*      ua;
     trsp_socket* transport;
     
-    
-    /** Avoid external instantiation. @see instance(). */
-    trans_layer();
-
-    /** Avoid external instantiation. @see instance(). */
-    ~trans_layer();
-
     /**
      * Implements the state changes for the UAC state machine
      * @return -1 if errors
@@ -131,75 +165,34 @@ class trans_layer
      */
     void timeout(trans_bucket* bucket, sip_trans* t);
 
- public:
-
-    /**
-     * Config option: if true, final replies without 
-     * a to-tag will be accepted for requests which do not
-     * create a dialog.
-     */
-    static bool accept_fr_without_totag;
-
-    /**
-     * Retrieve the singleton instance.
-     */
-    static trans_layer* instance();
-
-    /**
-     * Register a SIP UA.
-     * This method MUST be called ONCE.
-     */
-    void register_ua(sip_ua* ua);
-
-    /**
-     * Register a transport instance.
-     * This method MUST be called ONCE.
-     */
-    void register_transport(trsp_socket* trsp);
-
-    /**
-     * Sends a UAS reply.
-     * If a body is included, the hdrs parameter should
-     * include a well-formed 'Content-Type', but no
-     * 'Content-Length' header.
-     */
-    int send_reply(trans_ticket* tt,
-		   int reply_code, const cstring& reason,
-		   const cstring& to_tag, const cstring& hdrs, 
-		   const cstring& body);
-
-    /**
-     * Sends a UAC request.
-     * Caution: Route headers should not be added to the
-     * general header list (msg->hdrs).
-     * @param [in]  msg Pre-built message.
-     * @param [out] tt transaction ticket (needed for replies & CANCEL)
-     */
-    int send_request(sip_msg* msg, trans_ticket* tt);
-
-    /**
-     * Cancels a request. 
-     * A CANCEL request is sent if necessary.
-     * @param tt transaction ticket from the original INVITE.
-     */
-    int cancel(trans_ticket* tt);
+protected:
+    /** Avoid external instantiation. @see singleton. */
+    _trans_layer();
+    ~_trans_layer();
     
-
-    /**
-     * Called by the transport layer
-     * when a new message has been recived.
-     */
-    void received_msg(sip_msg* msg);
-
-    /**
-     * This is called by the transaction timer callback.
-     * At this place, the bucket is already locked, so
-     * please be quick.
-     */
-    void timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr);
 };
 
+typedef singleton<_trans_layer> trans_layer;
 
+class trans_ticket
+{
+    sip_trans*    _t;
+    trans_bucket* _bucket;
+    
+    friend class _trans_layer;
+    friend class AmSipDialog;
+    friend class SipCtrlInterface; //TODO: make _t, _bucket public??
+
+public:
+    trans_ticket()
+	: _t(0), _bucket(0) {}
+
+    trans_ticket(sip_trans* t, trans_bucket* bucket)
+	: _t(t), _bucket(bucket) {}
+
+    trans_ticket(const trans_ticket& ticket)
+	: _t(ticket._t), _bucket(ticket._bucket) {}
+};
 
 #endif // _trans_layer_h_
 
