@@ -27,7 +27,7 @@
 
 #include "trans_layer.h"
 #include "sip_parser.h"
-#include "hash_table.h"
+#include "trans_table.h"
 #include "parse_cseq.h"
 #include "parse_from_to.h"
 #include "parse_100rel.h"
@@ -730,7 +730,7 @@ void trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 
     ua->handle_sip_reply(&msg);
 
-    bucket->remove_trans(t);
+    bucket->remove(t);
 }
 
 int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
@@ -877,7 +877,7 @@ int trans_layer::cancel(trans_ticket* tt)
     case TS_CALLING:
 	// do not send a request:
 	// just remove the transaction
-	bucket->remove_trans(t);
+	bucket->remove(t);
 	bucket->unlock();
 	return 0;
 
@@ -1465,7 +1465,7 @@ int trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg*
 	    
     case TS_TERMINATED_200:
 	// remove transaction
-	bucket->remove_trans(t);
+	bucket->remove(t);
 	return TS_REMOVED;
 	    
     default:
@@ -1610,7 +1610,7 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
             tr->clear_timer(type);
             ////ua->timer_expired(tr,STIMER_H);
             ua->handle_reply_timeout(AmSipTimeoutEvent::noACK, tr);
-            bucket->remove_trans(tr);
+            bucket->remove(tr);
             handled = true;
             break;
 
@@ -1633,7 +1633,7 @@ void trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	//    else, send ACK & BYE.
 
 	tr->clear_timer(type);
-	bucket->remove_trans(tr);
+	bucket->remove(tr);
 	break;
 
     case STIMER_E:  // Trying/Proceeding: (re-)send request

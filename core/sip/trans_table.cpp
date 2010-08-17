@@ -25,10 +25,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "hash_table.h"
-#include "hash.h"
 
-#include "AmSipHeaders.h"
+#include "trans_table.h"
 #include "sip_parser.h"
 #include "parse_header.h"
 #include "parse_cseq.h"
@@ -36,42 +34,31 @@
 #include "parse_from_to.h"
 #include "parse_100rel.h"
 #include "sip_trans.h"
+#include "hash.h"
 
 #include "log.h"
-
-#include <sys/time.h>
-#include <time.h>
 
 #include <assert.h>
 
 //
 // Global transaction table
 //
-trans_bucket _trans_table[H_TABLE_ENTRIES];
+//trans_bucket _trans_table[H_TABLE_ENTRIES];
+hash_table<trans_bucket,H_TABLE_ENTRIES> _trans_table;
 
-
-
-trans_bucket::trans_bucket()
+trans_bucket::trans_bucket(unsigned long id)
+    : ht_bucket<sip_trans>::ht_bucket(id)
 {
-    id = (unsigned long)(trans_bucket*)(this - _trans_table);
-    pthread_mutex_init(&m,NULL);
 }
+
+// trans_bucket::trans_bucket()
+//     : ht_bucket<sip_trans>::ht_bucket((unsigned long)this - (unsigned long)_trans_table)
+// {
+// }
 
 trans_bucket::~trans_bucket()
 {
-    pthread_mutex_destroy(&m);
 }
-
-void trans_bucket::lock()
-{
-    pthread_mutex_lock(&m);
-}
-
-void trans_bucket::unlock()
-{
-    pthread_mutex_unlock(&m);
-}
-
 
 sip_trans* trans_bucket::match_request(sip_msg* msg)
 {
@@ -421,31 +408,6 @@ sip_trans* trans_bucket::add_trans(sip_msg* msg, int ttype)
     return t;
 }
 
-trans_bucket::trans_list::iterator trans_bucket::find_trans(sip_trans* t)
-{
-    trans_list::iterator it = elmts.begin();
-    for(;it!=elmts.end();++it)
-	if(*it == t)
-	    break;
-    
-    return it;
-}
-
-bool trans_bucket::exist(sip_trans* t)
-{
-    return find_trans(t) != elmts.end();
-}
-
-void trans_bucket::remove_trans(sip_trans* t)
-{
-    trans_list::iterator it = find_trans(t);
-
-    if(it != elmts.end()){
-	elmts.erase(it);
-	delete t;
-	DBG("~sip_trans()\n");
-    }
-}
 
 unsigned int hash(const cstring& ci, const cstring& cs)
 {
@@ -532,13 +494,13 @@ void compute_branch(char* branch/*[8]*/, const cstring& callid, const cstring& c
 
 trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num)
 {
-    return &_trans_table[hash(callid,cseq_num)];
+    return /*&*/_trans_table[hash(callid,cseq_num)];
 }
 
 trans_bucket* get_trans_bucket(unsigned int h)
 {
     assert(h < H_TABLE_ENTRIES);
-    return &_trans_table[h];
+    return /*&*/_trans_table[h];
 }
 
 void dumps_transactions()
@@ -550,20 +512,6 @@ void dumps_transactions()
 	bucket->lock();
 	bucket->dump();
 	bucket->unlock();
-    }
-}
-
-void trans_bucket::dump()
-{
-    if(elmts.empty())
-	return;
-
-    DBG("*** Bucket ID: %i ***\n",(int)get_id());
-
-    for(trans_list::iterator it = elmts.begin(); it != elmts.end(); ++it) {
-
-	DBG("type=0x%x; msg=%p; to_tag=%.*s; reply_status=%i; state=%i; retr_buf=%p\n",
-	    (*it)->type,(*it)->msg,(*it)->to_tag.len,(*it)->to_tag.s,(*it)->reply_status,(*it)->state,(*it)->retr_buf);
     }
 }
 

@@ -30,8 +30,8 @@
 #define _hash_table_h
 
 #include "cstring.h"
-
-#include <pthread.h>
+#include "../AmThread.h"
+#include "../log.h"
 
 #include <list>
 using std::list;
@@ -40,104 +40,115 @@ struct sip_trans;
 struct sip_msg;
 
 
-#define H_TABLE_POWER   10
-#define H_TABLE_ENTRIES (1<<H_TABLE_POWER)
-
-
-class trans_bucket
+template<class Value>
+class ht_bucket: public AmMutex
 {
 public:
-    typedef list<sip_trans*> trans_list;
+    typedef list<Value*> value_list;
 
-private:
-
-    unsigned long   id;
-
-    pthread_mutex_t m;
-    trans_list      elmts;
+    ht_bucket(unsigned long id) : id(id) {}
+    ~ht_bucket() {}
     
+    /**
+     * Caution: The bucket MUST be locked before you can 
+     * do anything with it.
+     */
+
+    /**
+     * Searches for the value ptr in this bucket.
+     * This is used to check if the value
+     * still exists.
+     *
+     * @return true if the value still exists.
+     */
+    bool exist(Value* t) {
+	return find(t) != elmts.end();
+    }
+    
+    /**
+     * Remove the value from this bucket,
+     * if it was still present.
+     */
+    void remove(Value* t) {
+    typename value_list::iterator it = find(t);
+
+    if(it != elmts.end()){
+	elmts.erase(it);
+	delete t;
+	DBG("~sip_trans()\n");
+    }
+    }
+
+    /**
+     * Returns the bucket id, which should be an index
+     * into the corresponding hash table.
+     */
+    unsigned long get_id() const {
+	return id;
+    }
+
+    // debug method
+    void dump() const {
+
+	if(elmts.empty())
+	    return;
+	
+	DBG("*** Bucket ID: %i ***\n",(int)get_id());
+	
+	for(typename value_list::const_iterator it = elmts.begin(); it != elmts.end(); ++it) {
+	    
+	    (*it)->dump();
+	}
+    }
+
+protected:
     /**
      * Finds a transaction ptr in this bucket.
      * This is used to check if the transaction
      * still exists.
      *
-     * @return iterator pointing at the transaction.
+     * @return iterator pointing at the value.
      */
-    trans_list::iterator find_trans(sip_trans* t);
-
-    sip_trans* match_200_ack(sip_trans* t,sip_msg* msg);
-    sip_trans* match_1xx_prack(sip_trans* t,sip_msg* msg);
-
-public:
-
-    /**
-     * Kept public to allow for static construction.
-     * !!! DO CREATE ANY BUCKETS ON YOUR OWN !!!
-     */
-    trans_bucket();
-    ~trans_bucket();
-    
-    /**
-     * The bucket MUST be locked before you can 
-     * do anything with it.
-     */
-    void lock();
-
-    /**
-     * Unlocks the bucket after work has been done.
-     */
-    void unlock();
-    
-    // Match a request to UAS transactions
-    // in this bucket
-    sip_trans* match_request(sip_msg* msg);
-
-    // Match a reply to UAC transactions
-    // in this bucket
-    sip_trans* match_reply(sip_msg* msg);
-
-    sip_trans* add_trans(sip_msg* msg, int ttype);
-
-    /**
-     * Searches for a transaction ptr in this bucket.
-     * This is used to check if the transaction
-     * still exists.
-     *
-     * @return true if the transaction still exists.
-     */
-    bool exist(sip_trans* t);
-    
-    /**
-     * Remove a transaction from this bucket,
-     * if it was still present.
-     */
-    void remove_trans(sip_trans* t);
-
-    unsigned long get_id() {
-	return id;
+    typename value_list::iterator find(Value* t)
+    {
+	typename value_list::iterator it = elmts.begin();
+	for(;it!=elmts.end();++it)
+	    if(*it == t)
+		break;
+	
+	return it;
     }
 
-
-    // debug method
-    void dump();
+    unsigned long  id;
+    value_list     elmts;
 };
 
-trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num);
-trans_bucket* get_trans_bucket(unsigned int h);
+template<class Bucket, unsigned long size>
+class hash_table
+{
+    Bucket* _table[size];
 
-unsigned int hash(const cstring& ci, const cstring& cs);
+public:
+    hash_table() {
+	for(unsigned long i=0; i<size; i++)
+	    _table[i] = new Bucket(i);
+    }
+
+    ~hash_table() {
+	for(unsigned long i=0; i<size; i++)
+	    delete _table[i];
+    }
+
+    Bucket* get_bucket(unsigned long hash) const {
+	return _table[hash % size];
+    }
+
+    Bucket* operator [](unsigned long hash) const {
+	return get_bucket(hash);
+    }
+};
 
 
-#define BRANCH_BUF_LEN 8
-
-void compute_branch(char* branch/*[BRANCH_BUF_LEN]*/, 
-		    const cstring& callid, const cstring& cseq);
-
-#define SL_TOTAG_LEN BRANCH_BUF_LEN
-
-void compute_sl_to_tag(char* to_tag/*[SL_TOTAG_LEN]*/, sip_msg* msg);
-
-void dumps_transactions();
 
 #endif
 

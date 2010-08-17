@@ -188,6 +188,8 @@ class sip_trans
 
     sip_trans();
     ~sip_trans();
+
+    void dump() const;
 };
 
 #endif

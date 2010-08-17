@@ -28,7 +28,7 @@
 #include "sip_trans.h"
 #include "sip_parser.h"
 #include "wheeltimer.h"
-#include "hash_table.h"
+#include "trans_table.h"
 #include "trans_layer.h"
 
 #include "log.h"
@@ -177,6 +177,12 @@ void sip_trans::reset_all_timers()
 	    timers[i] = NULL;
 	}
     }
+}
+
+void sip_trans::dump() const
+{
+    DBG("type=0x%x; msg=%p; to_tag=%.*s; reply_status=%i; state=%i; retr_buf=%p\n",
+	type,msg,to_tag.len,to_tag.s,reply_status,state,retr_buf);
 }
 
 /** EMACS **
