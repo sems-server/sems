@@ -23,6 +23,7 @@ all: ../Makefile.defs
 clean:
 	rm -f $(OBJS) $(DEPS) $(NAME) $(NAME).o
 	rm -f lib/*.so compat/getos compat/getarch
+	$(MAKE) -C $(SIP_STACK_DIR) clean
 	$(MAKE) -C $(PLUGIN_DIR) clean
 
 .PHONY: sip_stack
