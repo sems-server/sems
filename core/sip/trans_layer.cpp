@@ -836,8 +836,10 @@ int trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
     }
     else {
 
-	if(update_uac_request(tt->_bucket,tt->_t,p_msg) < 0){
+	send_err = update_uac_request(tt->_bucket,tt->_t,p_msg);
+	if(send_err < 0){
 	    ERROR("Could not update UAC state for request.\n");
+	    delete p_msg;
 	}
     }
 
@@ -967,8 +969,10 @@ int trans_layer::cancel(trans_ticket* tt)
     else {
 
 	sip_trans* t=NULL;
-	if(update_uac_request(bucket,t,p_msg)<0){
+	send_err = update_uac_request(bucket,t,p_msg);
+	if(send_err<0){
 	    ERROR("Could not update state for UAC transaction\n");
+	    delete p_msg;
 	}
     }
 
