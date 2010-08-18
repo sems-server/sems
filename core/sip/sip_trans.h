@@ -143,7 +143,7 @@ class sip_trans
     int   retr_len;
 
     /** used by UAS only; keeps RSeq of last sent reliable 1xx */
-    unsigned last_rseq;
+    unsigned int last_rseq;
 
     /** Destination for retransmissions */
     sockaddr_storage retr_addr;

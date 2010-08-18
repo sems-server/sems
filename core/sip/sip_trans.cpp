@@ -54,7 +54,8 @@ inline timer** fetch_timer(unsigned int timer_type, timer** base)
 sip_trans::sip_trans()
     : msg(0),
       retr_buf(0),
-      retr_len(0)
+      retr_len(0),
+      last_rseq(0)
 {
     memset(timers,0,SIP_TRANS_TIMERS*sizeof(void*));
 }
