@@ -255,7 +255,9 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
       }
       else {
 	// CANCEL rejected
-	sendRequest("BYE");
+	bye();
+	// if BYE could not be sent,
+	// there is nothing we can do anymore...
       }
     }
     break;
