@@ -54,6 +54,7 @@ static int parse_sip_uri(sip_uri* uri, const char* beg, int len)
 	URI_USER=0, 
 	URI_PW,
 	URI_HOST,
+	URI_HOST_V6,
 	URI_PORT,
 	URI_PNAME,
 	URI_PVALUE,
@@ -244,6 +245,21 @@ static int parse_sip_uri(sip_uri* uri, const char* beg, int len)
 
 		tmp1.s = c+1;
 		st = URI_HNAME;
+		break;
+	    }
+	    break;
+
+	case '[':
+	    switch(st){
+	    case URI_HOST:
+		st = URI_HOST_V6;
+		break;
+	    }
+	    break;
+	case ']':
+	    switch(st){
+	    case URI_HOST_V6:
+		st = URI_HOST;
 		break;
 	    }
 	    break;
