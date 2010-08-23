@@ -124,6 +124,9 @@ void SSTB2BDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs,PARAM_HDR);
   removeHeader(invite_req.hdrs,"P-App-Name");
 
+  removeHeader(invite_req.hdrs,SIP_HDR_SESSION_EXPIRES);
+  removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
+
   //dlg.updateStatus(req);
   recvd_req.insert(std::make_pair(req.cseq,req));
   
