@@ -403,7 +403,12 @@
  *  <p>
  *  \verbinclude Readme.mod_utils.txt
  *  </p>
- * 
+
+   \subsection dsm_mod_monitoring mod_monitoring - Monitoring functions
+   <p>
+   \verbinclude Readme.mod_monitoring.txt
+   </p>
+
  *  \subsection dsm_mod_conference mod_conference - Conferencing functions
  *  <p>
  *  \verbinclude Readme.mod_conference.txt
