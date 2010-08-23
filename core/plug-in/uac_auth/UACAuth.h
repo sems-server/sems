@@ -72,7 +72,7 @@ class UACAuthFactory
 
   // SessionEventHandler API
   AmSessionEventHandler* getHandler(AmSession* s);
-  bool onInvite(const AmSipRequest&);
+  bool onInvite(const AmSipRequest& req, AmConfigReader& conf);
 
   static UACAuthFactory* instance();
   AmDynInvoke* getInstance() { return instance(); }

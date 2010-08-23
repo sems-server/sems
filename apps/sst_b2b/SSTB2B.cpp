@@ -69,6 +69,8 @@ int SSTB2BFactory::onLoad()
 
 AmSession* SSTB2BFactory::onInvite(const AmSipRequest& req)
 {
+  if (!session_timer_fact->onInvite(req, cfg))
+    return NULL;
 
   SSTB2BDialog* b2b_dlg = new SSTB2BDialog();
   AmSessionEventHandler* h = session_timer_fact->getHandler(b2b_dlg);
@@ -76,6 +78,7 @@ AmSession* SSTB2BFactory::onInvite(const AmSipRequest& req)
     ERROR("could not get a session timer event handler\n");
     throw AmSession::Exception(500,"Server internal error");
   }
+
   if(h->configure(cfg)){
     ERROR("Could not configure the session timer: disabling session timers.\n");
     delete h;

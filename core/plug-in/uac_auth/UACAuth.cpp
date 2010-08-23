@@ -74,9 +74,9 @@ int UACAuthFactory::onLoad()
   return 0;
 }
 
-bool UACAuthFactory::onInvite(const AmSipRequest& req)
+bool UACAuthFactory::onInvite(const AmSipRequest& req, AmConfigReader& conf)
 {
-  return false;
+  return true;
 }
 
 AmSessionEventHandler* UACAuthFactory::getHandler(AmSession* s)

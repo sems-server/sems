@@ -76,10 +76,18 @@ int EchoFactory::onLoad()
 
 AmSession* EchoFactory::onInvite(const AmSipRequest& req)
 {
+  if (NULL != session_timer_f) {
+    if (!session_timer_f->onInvite(req, conf))
+      return NULL;
+  }
+
   AmSession* s = new EchoDialog();
   
   if (NULL != session_timer_f) {
+
     AmSessionEventHandler* h = session_timer_f->getHandler(s);
+    if (NULL == h)
+      return NULL;
     
     if(h->configure(conf)){
       ERROR("Could not configure the session timer: disabling session timers.\n");

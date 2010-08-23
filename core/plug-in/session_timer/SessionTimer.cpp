@@ -37,11 +37,9 @@ int SessionTimerFactory::onLoad()
   return 0;
 }
 
-bool SessionTimerFactory::onInvite(const AmSipRequest& req)
+bool SessionTimerFactory::onInvite(const AmSipRequest& req, AmConfigReader& cfg)
 {
-  if(!checkSessionExpires(req))
-    return true;
-  return false;
+  return checkSessionExpires(req, cfg);
 }
 
 
@@ -127,11 +125,9 @@ bool SessionTimer::onSendReply(const AmSipRequest& req,
   return false;
 }
 
-
-/* Session Timer: -ssa */
-int  SessionTimer::configure(AmConfigReader& conf) 
+int SessionTimer::configure(AmConfigReader& conf)
 {
-  if(session_timer_conf.readFromConfig(conf))
+  if(!session_timer_conf.readFromConfig(conf))
     return -1;
 
   session_interval = session_timer_conf.getSessionExpires();
@@ -152,22 +148,29 @@ int  SessionTimer::configure(AmConfigReader& conf)
  *   (<locally configured Min-SE)                  
  * Throws SessionIntervalTooSmallException if too low
  */
-bool SessionTimerFactory::checkSessionExpires(const AmSipRequest& req) 
+bool SessionTimerFactory::checkSessionExpires(const AmSipRequest& req, AmConfigReader& cfg)
 {
+  AmSessionTimerConfig sst_cfg;
+  if (sst_cfg.readFromConfig(cfg)) {
+    return false;
+  }
+
   string session_expires = getHeader(req.hdrs, SIP_HDR_SESSION_EXPIRES,
 				     SIP_HDR_SESSION_EXPIRES_COMPACT, true);
 
   if (session_expires.length()) {
     unsigned int i_se;
     if (!str2i(strip_header_params(session_expires), i_se)) {
-
-      //if (i_se < session_timer_conf.getMinimumTimer()) {
-      //TODO: reply 422...
-      //}
-    } else
-      throw AmSession::Exception(500,"internal error"); // malformed request?
+      if (i_se < sst_cfg.getMinimumTimer()) {
+	throw AmSession::Exception(422, "Session Interval Too Small",
+				   SIP_HDR_COLSP(SIP_HDR_MIN_SE)+
+				   int2str(sst_cfg.getMinimumTimer())+CRLF);
+      }
+    } else {
+      WARN("parsing session expires '%s' failed\n", session_expires.c_str());
+      throw AmSession::Exception(400,"Bad Request");
+    }
   }
-  //}
 
   return true;
 }

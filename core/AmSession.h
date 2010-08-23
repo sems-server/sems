@@ -195,7 +195,8 @@ public:
   struct Exception {
     int code;
     string reason;
-    Exception(int c, string r) : code(c), reason(r) {}
+    string hdrs;
+    Exception(int c, string r, string h="") : code(c), reason(r), hdrs(h) {}
   };
 
   /** 

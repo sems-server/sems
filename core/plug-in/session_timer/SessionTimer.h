@@ -49,20 +49,20 @@ class AmTimeoutEvent;
 /** \brief Factory of the session timer event handler */
 class SessionTimerFactory: public AmSessionEventHandlerFactory
 {
-  bool checkSessionExpires(const AmSipRequest& req);
+  bool checkSessionExpires(const AmSipRequest& req, AmConfigReader& cfg);
 
  public:
   SessionTimerFactory(const string& name)
     : AmSessionEventHandlerFactory(name) {}
 
   int onLoad();
-  bool onInvite(const AmSipRequest&);
+  bool onInvite(const AmSipRequest& req, AmConfigReader& cfg);
 
   AmSessionEventHandler* getHandler(AmSession* s);
 };
 
 /** \brief config for the session timer */
-class AmSessionTimerConfig 
+class AmSessionTimerConfig
 {
 
   /** Session Timer: enable? */
