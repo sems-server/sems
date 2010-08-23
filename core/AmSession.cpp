@@ -103,6 +103,10 @@ void AmSession::setCallgroup(const string& cg) {
   callgroup = cg;
 }
 
+string AmSession::getCallgroup() {
+  return callgroup;
+}
+
 void AmSession::changeCallgroup(const string& cg) {
   callgroup = cg;
   AmMediaProcessor::instance()->changeCallgroup(this, cg);

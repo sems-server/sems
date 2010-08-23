@@ -219,13 +219,16 @@ public:
   void addHandler(AmSessionEventHandler*);
 
   /**
-   * Set the call group for this call. 
+   * Set the call group for this call; calls in the same
+   * group are processed by the same media processor thread.
    * 
    * Note: this must be set before inserting 
-   * the session to the scheduler!
+   * the session to the MediaProcessor!
    */
   void setCallgroup(const string& cg);
-  string getCallgroup() { return callgroup; }
+
+  /** get the callgroup @return callgroup */
+  string getCallgroup();
 
   /** This function removes the session from 
    *  the media processor and adds it again. 
@@ -245,6 +248,7 @@ public:
    * (inclusive RTP stream)
    */
   void lockAudio();
+
   /**
    * Unlock audio input & output
    * (inclusive RTP stream)
@@ -280,7 +284,7 @@ public:
    * Local audio output getter.
    * Note: audio must be locked!
    */
-  AmAudio* getLocalOutput(){ return local_output;}
+  AmAudio* getLocalOutput() { return local_output;}
 
   /**
    * Local audio input & output set methods.
@@ -343,11 +347,14 @@ public:
 			 string* sdp_reply);
 
   /** send an UPDATE in the session */
-  void sendUpdate(string &cont_type, string &body, string &hdrs);
+  virtual void sendUpdate(string &cont_type, string &body, string &hdrs);
+
   /** send a Re-INVITE (if connected) */
   virtual void sendReinvite(bool updateSDP = true, const string& headers = "");
+
   /** send an INVITE */
   virtual int sendInvite(const string& headers = "");
+
   /** send a PRACK request */
   void sendPrack(const string &sdp_offer, 
                  const string &rseq_val, 
@@ -410,13 +417,13 @@ public:
    */
   void sendDtmf(int event, unsigned int duration_ms);
 
-  /** event handler for apps to use*/
+  /** DTMF event handler for apps to use*/
   virtual void onDtmf(int event, int duration);
 
   /**
    * onStart will be called before everything else.
    */
-  virtual void onStart(){}
+  virtual void onStart() {}
 
   /**
    * onInvite will be called if an INVITE or re-INVITE
@@ -442,7 +449,7 @@ public:
    * Note: You are still responsible for responding the 
    *       initial transaction.
    */
-  virtual void onCancel(){}
+  virtual void onCancel() {}
 
   /**
    * onPrack is called when a PRACK request is received for the session.
@@ -461,7 +468,7 @@ public:
    * Warning:
    *   Sems will NOT send any BYE on his own.
    */
-  virtual void onSessionStart(const AmSipRequest& req){}
+  virtual void onSessionStart(const AmSipRequest& req) {}
 
   /**
    * onSessionStart method for calls originating 
@@ -473,7 +480,7 @@ public:
    * Warning:
    *   Sems will NOT send any BYE on his own.
    */
-  virtual void onSessionStart(const AmSipReply& reply){}
+  virtual void onSessionStart(const AmSipReply& reply) {}
 
 
   /**
@@ -481,13 +488,13 @@ public:
    * 183 early media reply is received and early session 
    * is setup, if accept_early_session is set.
    */
-  virtual void onEarlySessionStart(const AmSipReply& reply){}
+  virtual void onEarlySessionStart(const AmSipReply& reply) {}
 
   /**
    * onRinging will be called after 180 is received. 
-   * If local audio is set up, session is added to scheduler. 
+   * If local audio is set up, session is added to media processor.
    */
-  virtual void onRinging(const AmSipReply& reply){}
+  virtual void onRinging(const AmSipReply& reply) {}
 
   /**
    * onBye is called whenever a BYE request is received. 
@@ -496,6 +503,7 @@ public:
 
   /** Entry point for SIP Requests   */
   virtual void onSipRequest(const AmSipRequest& req);
+
   /** Entry point for SIP Replies   */
   virtual void onSipReply(const AmSipReply& reply, int old_dlg_status);
 
