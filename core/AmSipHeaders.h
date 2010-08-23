@@ -21,6 +21,8 @@
 #define SIP_HDR_P_ASSERTED_IDENTITY "P-Asserted-Identity"
 #define SIP_HDR_REFER_TO        "Refer-To"
 #define SIP_HDR_EXPIRES         "Expires"
+#define SIP_HDR_SESSION_EXPIRES "Session-Expires"
+#define SIP_HDR_MIN_SE          "Min-SE"
 #define SIP_HDR_RSEQ            "RSeq"
 #define SIP_HDR_RACK            "RAck"
 #define SIP_HDR_COL(_hdr)       _hdr ":"
@@ -31,4 +33,5 @@
 
 #define SIP_EXT_100REL          "100rel"
 
+#define SIP_HDR_SESSION_EXPIRES_COMPACT "x"
 #endif /* __AMSIPHEADERS_H__ */
