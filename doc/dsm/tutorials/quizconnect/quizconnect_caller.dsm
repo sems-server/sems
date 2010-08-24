@@ -1,0 +1,150 @@
+import(mod_dlg);
+import(mod_mysql);
+import(mod_conference);
+
+initial state START;
+transition "got INVITE in caller leg" START - invite -> RUN_INVITE;
+transition "got session start in caller leg" START - sessionStart -> WAIT_CALLEE;
+
+state RUN_INVITE enter {
+  log(2, "got invite!");
+  set($connect_session=0);
+  mysql.connect();
+  throwOnError()
+  -- reply with 183 and parse SDP
+  dlg.acceptInvite(183, Session Progress);
+  -- set input and output of the session (we have $connect_session=0)
+  setInOutPlaylist();
+  -- play some welcome message
+  sets($prompt_name=$(config.prompt_path)/welcome_caller.wav)
+  playFile($prompt_name);
+
+  set($query_key=@user);
+  mysql.query(select callee, pin from callees where caller=$query_key);
+  repost();
+};
+
+transition "error opening file" RUN_INVITE - exception; test(#type==file) / {
+  log(0, "error opening file!");
+  dlg.reply(500, Server Internal Error);
+  stop(false);
+} -> END;
+
+transition "DB error when connecting" RUN_INVITE - exception; test(#type==connection) / {
+  log(0, "error connecting to DB!");
+  logParams(0);
+  dlg.reply(500, Server Internal Error);
+  stop(false);
+} -> END;
+
+transition "query failed" RUN_INVITE - test($errno!="") / {
+  log(1, "query failed!");
+  logParams(0);
+  dlg.reply(500, Server Internal Error);
+  stop(false);
+} -> END;
+
+transition "no results" RUN_INVITE - test($db.rows==0) / {
+  log(3, "no results");
+  dlg.reply(404, Not found);
+  stop(false);
+} -> END;
+
+transition "we have results" RUN_INVITE - test($db.rows!=0) / set($callee_counter=0) -> CREATE_CALLEE_LEGS;
+
+state CREATE_CALLEE_LEGS
+ enter {
+   repost();
+ };
+
+transition "create one more" CREATE_CALLEE_LEGS - test($callee_counter<$db.rows) / {
+   -- this will fill $callee, $pin from current row
+   mysql.getResult($callee_counter);
+   
+   set(b_leg_caller=quizconnect);
+   set(b_leg_callee=$callee);
+   set(b_leg_domain=$config.outbound_domain);
+   set(b_leg_app=quizconnect_callee);
+
+   -- pass $pin to other leg
+   set(b_leg_var.pin=$pin);
+
+   -- our ltag
+   set(b_leg_var.a_ltag=@local_tag);
+
+   dlg.dialout(b_leg);
+
+   -- if that worked, we have the ID of the other leg in $b_leg_ltag
+   log(3, $b_leg_ltag);
+
+   -- save it
+   sets($var_name=b_ltags[$(callee_counter)]);
+   setVar($var_name=$b_leg_ltag);
+
+   -- reset for new call
+   clear($b_leg_ltag);
+
+   inc(callee_counter);
+} -> CREATE_CALLEE_LEGS;
+
+transition "done creating callee legs" CREATE_CALLEE_LEGS - test($callee_counter==$db.rows) -> WAIT_CALLEE;
+
+state WAIT_CALLEE;
+
+transition "CANCEL received" WAIT_CALLEE - hangup /  {
+  dlg.reply(487, Request Terminated);
+  set($callee_counter=0);
+} -> CANCEL_CALLEES;
+
+state CANCEL_CALLEES
+ enter {
+   repost();
+ };
+
+transition "one more to cancel" CANCEL_CALLEES - test($callee_counter<$db.rows) / {
+  sets($var_name=b_ltags[$(callee_counter)]);
+  var(cancel_ltag=$var_name);
+  set(a_status=CANCEL);
+  postEvent($cancel_ltag, a_status);
+  inc(callee_counter);
+} -> CANCEL_CALLEES;
+
+transition "canceled all" CANCEL_CALLEES - test($callee_counter==$db.rows) / stop(false) -> END;
+
+transition "callee got it" WAIT_CALLEE - test(#b_status==MATCHED) / {
+  set($b_ltag=#b_ltag);
+  set($callee_counter=0);
+} -> CANCEL_OTHER_CALLEES;
+
+state CANCEL_OTHER_CALLEES
+ enter {
+   repost();
+ };
+
+transition "one more to cancel" CANCEL_OTHER_CALLEES - test($callee_counter<$db.rows) / {
+  sets($var_name=b_ltags[$(callee_counter)]);
+  var(cancel_ltag=$var_name);
+  set(a_status=CANCEL);
+  postEvent($cancel_ltag, a_status);
+  inc(callee_counter);
+} -> CANCEL_OTHER_CALLEES;
+
+transition "canceled all" CANCEL_OTHER_CALLEES - test($callee_counter==$db.rows) / {
+  closePlaylist(false);
+  dlg.acceptInvite(200, OK);
+  conference.join(@local_tag);
+} -> CONNECTED;
+
+state CONNECTED;
+
+transition "BYE received" CONNECTED - hangup / {
+  set($a_status=BYE);
+  postEvent($b_ltag, a_status);
+  stop(false);
+} -> END;
+
+transition "BYE in other leg" CONNECTED - event(#b_status==BYE) / {
+  stop(true);
+} -> END;
+
+state END;
