@@ -335,6 +335,8 @@ void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status) {
 void DSMCall::process(AmEvent* event)
 {
 
+  DBG("DSMCall::process\n");
+
   if (event->event_id == DSM_EVENT_ID) {
     DSMEvent* dsm_event = dynamic_cast<DSMEvent*>(event);
     if (dsm_event) {      
