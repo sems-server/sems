@@ -57,7 +57,7 @@ state CREATE_CALLEE_LEGS
    repost();
  };
 
-transition "create one more" CREATE_CALLEE_LEGS - test($callee_counter<$db.rows) / {
+transition "create one more callee legs" CREATE_CALLEE_LEGS - test($callee_counter<$db.rows) / {
    -- this will fill $callee, $pin from current row
    mysql.getResult($callee_counter);
    
@@ -65,6 +65,9 @@ transition "create one more" CREATE_CALLEE_LEGS - test($callee_counter<$db.rows)
    set(b_leg_callee=$callee);
    set(b_leg_domain=$config.outbound_domain);
    set(b_leg_app=quizconnect_callee);
+
+   -- set(b_leg_auth_user=$config.outbound_auth_user);
+   -- set(b_leg_auth_pwd=$config.outbound_auth_pwd);
 
    -- pass $pin to other leg
    set(b_leg_var.pin=$pin);
