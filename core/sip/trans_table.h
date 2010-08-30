@@ -2,6 +2,7 @@
 #define _trans_table_h_
 
 #include "hash_table.h"
+#include "cstring.h"
 
 #define H_TABLE_POWER   10
 #define H_TABLE_ENTRIES (1<<H_TABLE_POWER)

@@ -5,8 +5,6 @@ HDRS=$(SRCS:.cpp=.h)
 OBJS=$(SRCS:.cpp=.o)
 DEPS=$(SRCS:.cpp=.d)
 
-CPPFLAGS += -I..
-
 .PHONY: all
 all: ../../Makefile.defs
 	-@$(MAKE) deps    && \
@@ -20,17 +18,19 @@ clean:
 .PHONY: deps
 deps: $(DEPS)
 
-COREPATH=..
-include ../../Makefile.defs
+COREPATH = ..
+include $(COREPATH)/../Makefile.defs
+
+CPPFLAGS += -I$(COREPATH)
 
 # implicit rules
-%.o : %.cpp %.d ../../Makefile.defs
+%.o : %.cpp %.d $(COREPATH)/../Makefile.defs
 	$(CXX) -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS)
 
-%.d : %.cpp %.h ../../Makefile.defs
+%.d : %.cpp %.h $(COREPATH)/../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
-$(LIBNAME): $(OBJS) ../../Makefile.defs
+$(LIBNAME): $(OBJS) $(COREPATH)/../Makefile.defs
 	-@echo ""
 	-@echo "making $(LIBNAME)"
 	$(AR) rvs $(LIBNAME) $(OBJS)

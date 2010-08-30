@@ -50,6 +50,8 @@ deps: $(DEPS)
 COREPATH=.
 
 include ../Makefile.defs
+LDFLAGS += -lresolv
+CPPFLAGS += -I$(COREPATH)
 
 # implicit rules
 %.o : %.cpp %.d ../Makefile.defs

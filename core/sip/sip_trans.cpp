@@ -35,7 +35,14 @@
 
 #include <assert.h>
 
-int _timer_type_lookup[] = { -1, 0,1,2, 0,1,2, 0,1,2, 0,2  };
+int _timer_type_lookup[] = { 
+    -1,    // STIMER_INVALID
+    0,1,2, // STIMER_A, STIMER_B, STIMER_D
+    0,1,2, // STIMER_E, STIMER_F, STIMER_K
+    0,1,2, // STIMER_G, STIMER_H, STIMER_I
+    0,     // STIMER_J
+    2      // STIMER_L; shares the same slot as STIMER_D
+};
 
 inline timer** fetch_timer(unsigned int timer_type, timer** base)
 {

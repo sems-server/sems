@@ -44,7 +44,7 @@
 // Global transaction table
 //
 //trans_bucket _trans_table[H_TABLE_ENTRIES];
-hash_table<trans_bucket,H_TABLE_ENTRIES> _trans_table;
+hash_table<trans_bucket> _trans_table(H_TABLE_ENTRIES);
 
 trans_bucket::trans_bucket(unsigned long id)
     : ht_bucket<sip_trans>::ht_bucket(id)
@@ -494,13 +494,13 @@ void compute_branch(char* branch/*[8]*/, const cstring& callid, const cstring& c
 
 trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num)
 {
-    return /*&*/_trans_table[hash(callid,cseq_num)];
+    return _trans_table[hash(callid,cseq_num)];
 }
 
 trans_bucket* get_trans_bucket(unsigned int h)
 {
     assert(h < H_TABLE_ENTRIES);
-    return /*&*/_trans_table[h];
+    return _trans_table[h];
 }
 
 void dumps_transactions()

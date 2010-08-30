@@ -86,7 +86,7 @@ enum sip_timer_type {
     // This timer is not defined by
     // RFC 3261. But it is needed
     // to handle 200 ACKs automatically
-    // in UAC transactions.
+    // in INVITE client transactions.
     STIMER_L  // Terminated_200 -> Terminated
 };
 
@@ -128,9 +128,11 @@ class sip_trans
         sent/received reply */
     int reply_status;
 
-
     /** Transaction state */
     int state;
+
+    /** used by UAS only; keeps RSeq of last sent reliable 1xx */
+    unsigned int last_rseq;
 
     /**
      * Retransmission buffer
@@ -141,9 +143,6 @@ class sip_trans
 
     /** Length of the retransmission buffer */
     int   retr_len;
-
-    /** used by UAS only; keeps RSeq of last sent reliable 1xx */
-    unsigned int last_rseq;
 
     /** Destination for retransmissions */
     sockaddr_storage retr_addr;

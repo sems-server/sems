@@ -29,12 +29,13 @@
 #ifndef _hash_table_h
 #define _hash_table_h
 
-#include "cstring.h"
-#include "../AmThread.h"
-#include "../log.h"
+#include "AmThread.h"
+#include "log.h"
 
 #include <list>
+#include <map>
 using std::list;
+using std::map;
 
 struct sip_trans;
 struct sip_msg;
@@ -70,13 +71,12 @@ public:
      * if it was still present.
      */
     void remove(Value* t) {
-    typename value_list::iterator it = find(t);
+	typename value_list::iterator it = find(t);
 
-    if(it != elmts.end()){
-	elmts.erase(it);
-	delete t;
-	DBG("~sip_trans()\n");
-    }
+	if(it != elmts.end()){
+	    elmts.erase(it);
+	    delete t;
+	}
     }
 
     /**
@@ -123,13 +123,88 @@ protected:
     value_list     elmts;
 };
 
-template<class Bucket, unsigned long size>
+template<class Key, class Value>
+class ht_map_bucket: public AmMutex
+{
+public:
+    typedef map<Key,Value*> value_map;
+
+    ht_map_bucket(unsigned long id) : id(id) {}
+    ~ht_map_bucket() {}
+    
+    /**
+     * Caution: The bucket MUST be locked before you can 
+     * do anything with it.
+     */
+
+    /**
+     * Searches for the value ptr in this bucket.
+     * This is used to check if the value
+     * still exists.
+     *
+     * @return true if the value still exists.
+     */
+    bool exist(const Key& k) {
+	return find(k) != elmts.end();
+    }
+    
+    /**
+     * Remove the value from this bucket,
+     * if it was still present.
+     */
+    void remove(const Key& k) {
+	typename value_map::iterator it = find(k);
+
+	if(it != elmts.end()){
+	    Value* v = it->second;
+	    elmts.erase(it);
+	    delete v;
+	}
+    }
+
+    /**
+     * Returns the bucket id, which should be an index
+     * into the corresponding hash table.
+     */
+    unsigned long get_id() const {
+	return id;
+    }
+
+    // debug method
+    void dump() const {
+
+	if(elmts.empty())
+	    return;
+	
+	DBG("*** Bucket ID: %i ***\n",(int)get_id());
+	
+	for(typename value_map::const_iterator it = elmts.begin(); it != elmts.end(); ++it) {
+	    
+	    (*it)->dump();
+	}
+    }
+
+protected:
+    typename value_map::iterator find(const Key& k)
+    {
+	return elmts.find(k);
+    }
+
+    unsigned long  id;
+    value_map     elmts;
+};
+
+template<class Bucket>
 class hash_table
 {
-    Bucket* _table[size];
+    unsigned long size;
+    Bucket**    _table;
 
 public:
-    hash_table() {
+    hash_table(unsigned long size)
+	: size(size)
+    {
+	_table = new Bucket* [size];
 	for(unsigned long i=0; i<size; i++)
 	    _table[i] = new Bucket(i);
     }
@@ -137,14 +212,21 @@ public:
     ~hash_table() {
 	for(unsigned long i=0; i<size; i++)
 	    delete _table[i];
+	delete [] _table;
+    }
+
+    Bucket* operator [](unsigned long hash) const {
+	return get_bucket(hash);
     }
 
     Bucket* get_bucket(unsigned long hash) const {
 	return _table[hash % size];
     }
 
-    Bucket* operator [](unsigned long hash) const {
-	return get_bucket(hash);
+    void dump() const {
+	for(unsigned long l=0; l<size; l++){
+	    _table[l]->dump();
+	}
     }
 };
 

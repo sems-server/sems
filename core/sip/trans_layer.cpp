@@ -533,7 +533,6 @@ int _trans_layer::set_next_hop(sip_msg* msg)
 
     list<sip_header*>& route_hdrs = msg->route; 
     cstring& r_uri = msg->u.request->ruri_str;
-    sockaddr_storage* remote_ip = &msg->remote_ip;
 
     cstring        next_hop;
     unsigned short next_port = 0;
@@ -682,13 +681,15 @@ int _trans_layer::set_next_hop(sip_msg* msg)
 
     DBG("next_hop:next_port is <%.*s:%u>\n", next_hop.len, next_hop.s, next_port);
     
-    err = resolver::instance()->resolve_name(c2stlstr(next_hop).c_str(),remote_ip,IPv4,UDP);
+    err = resolver::instance()->resolve_name(c2stlstr(next_hop).c_str(),
+					     &(msg->h_dns),
+					     &(msg->remote_ip),IPv4);
     if(err < 0){
 	ERROR("Unresolvable Request URI\n");
 	return -1;
     }
 
-    ((sockaddr_in*)remote_ip)->sin_port = htons(next_port);
+    ((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
     
     return 0;
 }
@@ -804,6 +805,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
     }
 
     memcpy(&p_msg->remote_ip,&msg->remote_ip,sizeof(sockaddr_storage));
+    memcpy(&p_msg->h_dns,&msg->h_dns,sizeof(dns_handle));
 
     DBG("Sending to %s:%i <%.*s...>\n",
 	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
@@ -1283,6 +1285,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    t->state = TS_COMPLETED;
 	
 	    t->clear_timer(STIMER_E);
+	    t->clear_timer(STIMER_F);
 	    t->reset_timer(STIMER_K, K_TIMER, bucket->get_id());
 	    
 	    if(t->msg->u.request->method != sip_request::CANCEL)

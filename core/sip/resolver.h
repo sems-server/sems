@@ -28,11 +28,21 @@
 #define _resolver_h_
 
 #include "singleton.h"
+#include "hash_table.h"
+#include "atomic_types.h"
 
-struct sockaddr_storage;
+#include <string>
+#include <vector>
+using std::string;
+using std::vector;
+
+#include <netinet/in.h>
+
+#define DNS_CACHE_SIZE 128
 
 enum address_type {
 
+    IPnone=0,
     IPv4=1,
     IPv6=2
 };
@@ -43,16 +53,95 @@ enum proto_type {
     UDP=2
 };
 
+struct dns_handle;
+
+struct dns_base_entry
+{
+    long int expire;
+
+    dns_base_entry()
+	:expire(0)
+    {}
+
+    virtual ~dns_base_entry() {}
+};
+
+class dns_entry
+    : public atomic_ref_cnt,
+      public dns_base_entry
+{
+public:
+    vector<dns_base_entry*> ip_vec;
+
+    dns_entry();
+    virtual ~dns_entry();
+
+    virtual int next_ip(dns_handle* h, sockaddr_storage* sa)=0;
+};
+
+typedef ht_map_bucket<string,dns_entry> dns_bucket_base;
+
+class dns_bucket
+    : protected dns_bucket_base
+{
+public:
+    dns_bucket(unsigned long id);
+    bool insert(const string& name, dns_entry* e);
+    bool remove(const string& name);
+    dns_entry* find(const string& name);
+};
+
+typedef hash_table<dns_bucket> dns_cache;
+
+class dns_srv_entry;
+class dns_ip_entry;
+
+struct dns_handle
+{
+    dns_handle();
+    ~dns_handle();
+
+    bool valid();
+    bool eoip();
+
+    int next_ip(sockaddr_storage* sa);
+
+private:
+    friend class _resolver;
+    friend class dns_entry;
+    friend class dns_srv_entry;
+    friend class dns_ip_entry;
+
+    dns_srv_entry* srv_e;
+    int            srv_n;
+    unsigned short  port;
+
+    dns_ip_entry*  ip_e;
+    int            ip_n;
+};
+
 class _resolver
 {
 public:
-    int resolve_name(const char* name, sockaddr_storage* sa, 
-		     const address_type types, const proto_type protos);
-
+    int resolve_name(const char* name, 
+		     dns_handle* h,
+		     sockaddr_storage* sa,
+		     const address_type types);
+    
 protected:
     _resolver();
     ~_resolver();
 
+    int query_dns(const char* name,
+		  dns_entry** e,
+		  long now);
+
+    int str2ip(const char* name,
+	       sockaddr_storage* sa,
+	       const address_type types);
+
+private:
+    dns_cache cache;
 };
 
 typedef singleton<_resolver> resolver;

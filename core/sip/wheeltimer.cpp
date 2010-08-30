@@ -40,18 +40,6 @@ timer::~timer()
     DBG("timer::~timer(this=%p)\n",this);
 }
 
-
-
-//wheeltimer* wheeltimer::_instance=NULL;
-
-// wheeltimer* wheeltimer::instance()
-// {
-//     if(!_instance)
-// 	_instance = new wheeltimer();
-
-//     return _instance;
-// }
-
 _wheeltimer::_wheeltimer()
     : wall_clock(0)
 {
@@ -71,7 +59,7 @@ void _wheeltimer::insert_timer(timer* t)
 
 void _wheeltimer::remove_timer(timer* t)
 {
-    //add new timer to user request list
+    //add timer to remove to user request list
     utimer_rem_m.lock();
     utimer_rem.push_back(t);
     utimer_rem_m.unlock();
