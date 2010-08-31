@@ -1,7 +1,7 @@
 #ifndef _singleton_h_
 #define _singleton_h_
 
-#include "../AmThread.h"
+#include "AmThread.h"
 
 template<class T>
 class singleton

@@ -37,7 +37,7 @@
 #include "sip/parse_cseq.h"
 #include "sip/parse_extensions.h"
 #include "sip/parse_100rel.h"
-#include "sip/hash_table.h"
+#include "sip/trans_table.h"
 #include "sip/sip_trans.h"
 #include "sip/wheeltimer.h"
 #include "sip/msg_hdrs.h"
