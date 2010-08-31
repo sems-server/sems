@@ -474,17 +474,18 @@ void compute_sl_to_tag(char* to_tag/*[8]*/, sip_msg* msg)
 
 void compute_branch(char* branch/*[8]*/, const cstring& callid, const cstring& cseq)
 {
-    unsigned int h=0;
-    unsigned int h_tv=0;
+    unsigned int hl=0;
+    unsigned int hh=0;
     timeval      tv;
 
     gettimeofday(&tv,NULL);
 
-    h = hashlittle(callid.s,callid.len,h);
-    h = hashlittle(cseq.s,cseq.len,h);
-    h_tv = tv.tv_sec + tv.tv_usec;
+    hh = hl = tv.tv_sec + tv.tv_usec;
 
-    compute_tag(branch,h,h_tv);
+    hl = hashlittle(callid.s,callid.len,hl);
+    hh = hashlittle(cseq.s,cseq.len,hh);
+
+    compute_tag(branch,hl,hh);
 }
 
 trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num)
