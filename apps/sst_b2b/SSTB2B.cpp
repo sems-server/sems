@@ -34,6 +34,7 @@
 #include "AmMediaProcessor.h"
 #include "AmConfigReader.h"
 #include "AmSessionContainer.h"
+#include "AmSipHeaders.h"
 
 string SSTB2BFactory::user;
 string SSTB2BFactory::domain;
@@ -131,6 +132,7 @@ void SSTB2BDialog::onInvite(const AmSipRequest& req)
   recvd_req.insert(std::make_pair(req.cseq,req));
   
   set_sip_relay_only(true);
+  DBG("##### connecting to <%s>",req.r_uri.c_str());
   connectCallee("<" + req.r_uri + ">", req.r_uri, true);
 }
 

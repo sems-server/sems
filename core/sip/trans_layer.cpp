@@ -745,8 +745,21 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
     assert(msg);
     assert(tt);
 
+    cstring next_hop;
+    unsigned short next_port=0;
+
     tt->_bucket = 0;
     tt->_t = 0;
+
+    if(!msg->u.request->ruri_str.len ||
+       !msg->u.request->method_str.len) {
+	
+	ERROR("empty method name or R-URI");
+	return -1;
+    }
+    else {
+	DBG("send_request to <%.*s>",msg->u.request->ruri_str.len,msg->u.request->ruri_str.s);
+    }
 
     int request_len = request_line_len(msg->u.request->method_str,
 				       msg->u.request->ruri_str);
@@ -807,10 +820,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
 	return MALFORMED_SIP_MSG;
     }
 
-    cstring next_hop;
-    unsigned short next_port=0;
-
-    if(set_next_hop(p_msg,&next_hop,&next_port) < 0){
+    if(set_next_hop(msg,&next_hop,&next_port) < 0){
 	DBG("set_next_hop failed\n");
 	delete p_msg;
 	return -1;
@@ -1686,6 +1696,8 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	    sockaddr_storage sa;
 	    memset(&sa,0,sizeof(sockaddr_storage));
 
+	    //TODO: get the right port number 
+	    
 	    // get the next ip
 	    if(tr->msg->h_dns.next_ip(&sa) < 0){
 		tr->clear_timer(STIMER_M);
@@ -1697,9 +1709,11 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	    compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
 			   tr->msg->callid->value,tr->msg->cseq->value);
 
+	    retransmit(tr->msg);
+
 	    // reset counter for timer A & E
 	    timer* A_E_timer = tr->get_timer(STIMER_A);
-	    tr->reset_timer(A_E_timer->type,A_TIMER,bucket->get_id());
+	    tr->reset_timer(A_E_timer->type & 0xFFFF,A_TIMER,bucket->get_id());
 
 	    if(!tr->msg->h_dns.eoip())
 		tr->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
