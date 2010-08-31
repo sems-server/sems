@@ -10,16 +10,15 @@
 class trans_bucket: 
     public ht_bucket<sip_trans>
 {
-public:
-    typedef ht_bucket<sip_trans>::value_list trans_list;
-
-    /**
-     * Kept public to allow for static construction.
-     * !!! DO CREATE ANY BUCKETS ON YOUR OWN !!!
-     */
-    // trans_bucket();
     trans_bucket(unsigned long id);
     ~trans_bucket();
+
+    friend class hash_table<trans_bucket>;
+
+public:
+
+    typedef ht_bucket<sip_trans>::value_list trans_list;
+
     
     // Match a request to UAS transactions
     // in this bucket
@@ -30,12 +29,6 @@ public:
     sip_trans* match_reply(sip_msg* msg);
 
     sip_trans* add_trans(sip_msg* msg, int ttype);
-
-    // /**
-    //  * Remove a transaction from this bucket,
-    //  * if it was still present.
-    //  */
-    // void remove_trans(sip_trans* t);
 
 private:
     sip_trans* match_200_ack(sip_trans* t,sip_msg* msg);

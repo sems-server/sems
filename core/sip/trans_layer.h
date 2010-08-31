@@ -153,12 +153,6 @@ public:
     int send_sl_reply(sip_msg* req, int reply_code, 
 		      const cstring& reason, 
 		      const cstring& hdrs, const cstring& body);
-
-    /**
-     * Fills the address structure passed and modifies 
-     * R-URI and Route headers as needed.
-     */
-    int set_next_hop(sip_msg* req);
     
     /**
      * Transaction timeout
@@ -166,6 +160,19 @@ public:
     void timeout(trans_bucket* bucket, sip_trans* t);
 
 protected:
+
+    /**
+     * Fills the address structure passed and modifies 
+     * R-URI and Route headers as needed.
+     */
+    int set_next_hop(sip_msg* msg, cstring* next_hop,
+		     unsigned short* next_port);
+
+    /**
+     * Fills msg->remote_ip according to next_hop and next_port.
+     */
+    int set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port);    
+
     /** Avoid external instantiation. @see singleton. */
     _trans_layer();
     ~_trans_layer();

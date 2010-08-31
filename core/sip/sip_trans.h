@@ -61,36 +61,6 @@ enum {
 };
 
 
-enum sip_timer_type {
-
-    STIMER_INVALID=0,
-
-    // INVITE client transaction
-    STIMER_A,  // Calling: (re-)send INV
-    STIMER_B,  // Calling: -> Terminated
-    STIMER_D,  // Completed: -> Terminated
-
-    // non-INVITE client transaction
-    STIMER_E,  // Trying/Proceeding: (re-)send request
-    STIMER_F,  // Trying/Proceeding: terminate transaction
-    STIMER_K,  // Completed: terminate transaction  
-
-    // INVITE server transaction
-    STIMER_G,  // Completed: (re-)send response
-    STIMER_H,  // Completed: -> Terminated
-    STIMER_I,  // Confirmed: -> Terminated
-
-    // non-INVITE server transaction
-    STIMER_J,  // Completed: -> Terminated
-
-    // This timer is not defined by
-    // RFC 3261. But it is needed
-    // to handle 200 ACKs automatically
-    // in INVITE client transactions.
-    STIMER_L  // Terminated_200 -> Terminated
-};
-
-
 /**
  * We support at most 3 timer per transaction,
  * which is okay according to the standard

@@ -27,6 +27,49 @@
 #ifndef _sip_timers_h_
 #define _sip_timers_h_
 
+/**
+ * SIP transaction timer type definition
+ */
+enum sip_timer_type {
+
+    STIMER_INVALID=0,
+
+    // INVITE client transaction
+    STIMER_A,  // Calling: (re-)send INV
+    STIMER_B,  // Calling -> Terminated
+    STIMER_D,  // Completed -> Terminated
+
+    // non-INVITE client transaction
+    STIMER_E,  // Trying/Proceeding: (re-)send request
+    STIMER_F,  // Trying/Proceeding -> Terminated
+    STIMER_K,  // Completed -> Terminated
+
+    // INVITE server transaction
+    STIMER_G,  // Completed: (re-)send response
+    STIMER_H,  // Completed -> Terminated
+    STIMER_I,  // Confirmed -> Terminated
+
+    // non-INVITE server transaction
+    STIMER_J,  // Completed -> Terminated
+
+    // These timers are not defined by
+    // RFC 3261. 
+
+    // Used to handle 200 ACKs automatically
+    // in INVITE client transactions.
+    STIMER_L,  // Terminated_200 -> Terminated
+
+    // Transport address failover timer:
+    // - used to cycle throught multiple addresses
+    //   in case the R-URI resolves to multiple addresses
+    STIMER_M
+};
+
+
+/**
+ * SIP transaction timer default values
+ */
+
 #define T1_TIMER  500 /* 500 ms */
 #define T2_TIMER 4000 /*   4 s  */
 #define T4_TIMER 5000 /*   5 s  */
@@ -60,13 +103,18 @@
 #define J_TIMER  64*T1_TIMER
 
 
-// This timer is not defined by
-// RFC 3261. But it is needed
-// to handle 200 ACKs automatically
-// in UAC transactions.
+// Following timer values are not defined by
+// RFC 3261.
 
+// Used to handle 200 ACKs automatically
+// in INVITE client transactions.
 //type 0x0b
 #define L_TIMER  64*T1_TIMER
+
+// Transport address failover timer:
+// - used to cycle throught multiple addresses
+//   in case the R-URI resolves to multiple addresses
+#define M_TIMER  (B_TIMER/4)
 
 #endif
 

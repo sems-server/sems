@@ -325,7 +325,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     }
 
     assert(transport);
-    // TODO: inspect topmost 'Via' and select proper addr/port (w/ received, rport)
+    // TODO: inspect topmost 'Via' and select proper addr (+resolve DNS names)
     // refs: RFC3261 18.2.2; RFC3581
     sockaddr_storage remote_ip;
     memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
@@ -517,7 +517,7 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
     }
 
     assert(transport);
-    //TODO: select proper address depending on Via (w/ received, rport), remote_ip
+
     int err = transport->send(&req->remote_ip,reply_buf,reply_len);
     delete [] reply_buf;
 
@@ -527,15 +527,15 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
 //
 // Ref. RFC 3261 "12.2.1.1 Generating the Request"
 //
-int _trans_layer::set_next_hop(sip_msg* msg)
+int _trans_layer::set_next_hop(sip_msg* msg, 
+			       cstring* next_hop,
+			       unsigned short* next_port)
 {
     assert(msg);
 
     list<sip_header*>& route_hdrs = msg->route; 
     cstring& r_uri = msg->u.request->ruri_str;
 
-    cstring        next_hop;
-    unsigned short next_port = 0;
     int err=0;
 
     if(!route_hdrs.empty()){
@@ -572,9 +572,9 @@ int _trans_layer::set_next_hop(sip_msg* msg)
 
 	}
 
-	if (next_hop.len == 0) {
-	    next_hop  = na.uri.host;
-	    next_port = na.uri.port;
+	if (next_hop->len == 0) {
+	    *next_hop  = na.uri.host;
+	    *next_port = na.uri.port;
 	}	    
 
 	if(!is_lr){
@@ -675,22 +675,31 @@ int _trans_layer::set_next_hop(sip_msg* msg)
 	    ERROR("Invalid Request URI\n");
 	    return -1;
 	}
-	next_hop  = parsed_r_uri.host;
-	next_port = parsed_r_uri.port;
+	*next_hop  = parsed_r_uri.host;
+	*next_port = parsed_r_uri.port;
     }
 
-    DBG("next_hop:next_port is <%.*s:%u>\n", next_hop.len, next_hop.s, next_port);
+    DBG("next_hop:next_port is <%.*s:%u>\n", next_hop->len, next_hop->s, *next_port);
     
-    err = resolver::instance()->resolve_name(c2stlstr(next_hop).c_str(),
-					     &(msg->h_dns),
-					     &(msg->remote_ip),IPv4);
+    return 0;
+}
+
+
+int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port)
+{
+    memset(&(msg->remote_ip),0,sizeof(sockaddr_storage));
+    int err = resolver::instance()->resolve_name(c2stlstr(*next_hop).c_str(),
+						 &(msg->h_dns),
+						 &(msg->remote_ip),IPv4);
     if(err < 0){
 	ERROR("Unresolvable Request URI\n");
 	return -1;
     }
 
-    ((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
-    
+    if(!((sockaddr_in*)&(msg->remote_ip))->sin_port) {
+	((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
+    }
+ 
     return 0;
 }
 
@@ -739,12 +748,6 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
     tt->_bucket = 0;
     tt->_t = 0;
 
-    if(trans_layer::instance()->set_next_hop(msg) < 0){
-
-	DBG("set_next_hop failed\n");
-	return -1;
-    }
-    
     int request_len = request_line_len(msg->u.request->method_str,
 				       msg->u.request->ruri_str);
 
@@ -804,8 +807,20 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
 	return MALFORMED_SIP_MSG;
     }
 
-    memcpy(&p_msg->remote_ip,&msg->remote_ip,sizeof(sockaddr_storage));
-    memcpy(&p_msg->h_dns,&msg->h_dns,sizeof(dns_handle));
+    cstring next_hop;
+    unsigned short next_port=0;
+
+    if(set_next_hop(p_msg,&next_hop,&next_port) < 0){
+	DBG("set_next_hop failed\n");
+	delete p_msg;
+	return -1;
+    }
+
+    if(set_destination_ip(p_msg,&next_hop,next_port) < 0){
+     	DBG("set_destination_ip failed\n");
+	delete p_msg;
+     	return -1;
+    }
 
     DBG("Sending to %s:%i <%.*s...>\n",
 	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
@@ -1164,6 +1179,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 
 	case TS_CALLING:
 	    t->clear_timer(STIMER_A);
+	    t->clear_timer(STIMER_M);
 	    t->clear_timer(STIMER_B);
 	    // fall through trap
 
@@ -1197,6 +1213,8 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    case TS_CALLING:
 
 		t->clear_timer(STIMER_A);
+		t->clear_timer(STIMER_M);
+		t->clear_timer(STIMER_B);
 
 	    case TS_PROCEEDING:
 		
@@ -1236,6 +1254,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 
 		t->state  = TS_TERMINATED_200;
 		t->clear_timer(STIMER_A);
+		t->clear_timer(STIMER_M);
 		t->clear_timer(STIMER_B);
 
 		t->reset_timer(STIMER_L, L_TIMER, bucket->get_id());
@@ -1285,6 +1304,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    t->state = TS_COMPLETED;
 	
 	    t->clear_timer(STIMER_E);
+	    t->clear_timer(STIMER_M);
 	    t->clear_timer(STIMER_F);
 	    t->reset_timer(STIMER_K, K_TIMER, bucket->get_id());
 	    
@@ -1322,12 +1342,23 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	    return -1;
 	}
 
+	// clear old retransmission buffer
 	delete [] t->retr_buf;
+	
+	// transfer the message buffer 
+	// to the transaction (incl. ownership)
 	t->retr_buf = msg->buf;
 	t->retr_len = msg->len;
 	msg->buf = NULL;
 	msg->len = 0;
+	
+	// copy destination address
 	memcpy(&t->retr_addr,&msg->remote_ip,sizeof(sockaddr_storage));
+
+	// remove the message;
+	delete msg;
+
+	return 0;
     }
 
     switch(msg->u.request->method){
@@ -1339,13 +1370,6 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	t->reset_timer(STIMER_B,B_TIMER,bucket->get_id());
 	break;
     
-    case sip_request::ACK:
-	// we do not need any timer here:
-	// -> TIMER L is already started.
-	
-	delete msg;
-	break;
-
     default:
 	// if transport == UDP
 	t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
@@ -1353,7 +1377,11 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
 	break;
     }
-	
+
+    if(!msg->h_dns.eoip()){ // if transport == UDP
+	t->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
+    }
+
     return 0;
 }
 
@@ -1650,6 +1678,33 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	}
 	else {
 	    tr->reset_timer((n<<16) | type, T1_TIMER<<n, bucket->get_id());
+	}
+	break;
+
+    case STIMER_M:
+	{
+	    sockaddr_storage sa;
+	    memset(&sa,0,sizeof(sockaddr_storage));
+
+	    // get the next ip
+	    if(tr->msg->h_dns.next_ip(&sa) < 0){
+		tr->clear_timer(STIMER_M);
+		return;
+	    }
+	    memcpy(&tr->msg->remote_ip,&sa,sizeof(sockaddr_storage));
+
+	    // create new branch tag
+	    compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
+			   tr->msg->callid->value,tr->msg->cseq->value);
+
+	    // reset counter for timer A & E
+	    timer* A_E_timer = tr->get_timer(STIMER_A);
+	    tr->reset_timer(A_E_timer->type,A_TIMER,bucket->get_id());
+
+	    if(!tr->msg->h_dns.eoip())
+		tr->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
+	    else
+		tr->clear_timer(STIMER_M);
 	}
 	break;
 

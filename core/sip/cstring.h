@@ -64,9 +64,9 @@ struct cstring
 };
 
 #define c2stlstr(str) \
-          string(str.s,str.len)
+          string((str).s,(str).len)
 
 #define stl2cstr(str) \
-          cstring((char*)str.c_str(),str.length())
+          cstring((char*)(str).c_str(),(str).length())
 
 #endif

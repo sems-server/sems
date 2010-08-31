@@ -41,7 +41,8 @@ int _timer_type_lookup[] = {
     0,1,2, // STIMER_E, STIMER_F, STIMER_K
     0,1,2, // STIMER_G, STIMER_H, STIMER_I
     0,     // STIMER_J
-    2      // STIMER_L; shares the same slot as STIMER_D
+    2,     // STIMER_L; shares the same slot as STIMER_D
+    2      // STIMER_M; shares the same slot as STIMER_D/STIMER_K
 };
 
 inline timer** fetch_timer(unsigned int timer_type, timer** base)
@@ -98,7 +99,7 @@ timer* sip_trans::get_timer(unsigned int timer_type)
 }
 
 
-char _timer_name_lookup[] = {'0','A','B','D','E','F','K','G','H','I','J','L'};
+char _timer_name_lookup[] = {'0','A','B','D','E','F','K','G','H','I','J','L','M'};
 #define timer_name(type) \
     (_timer_name_lookup[(type) & 0xFFFF])
 
@@ -137,6 +138,7 @@ void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
 	else {
 	    WARN("Transaction %p does not exist anymore\n",tr);
 	    WARN("Timer type=%c will be deleted without further processing\n",timer_name(t->type));
+	    wheeltimer::instance()->remove_timer(t);
 	}
 	bucket->unlock();
     }

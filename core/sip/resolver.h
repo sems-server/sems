@@ -106,6 +106,8 @@ struct dns_handle
 
     int next_ip(sockaddr_storage* sa);
 
+    //void operator = (const dns_handle& h);
+
 private:
     friend class _resolver;
     friend class dns_entry;

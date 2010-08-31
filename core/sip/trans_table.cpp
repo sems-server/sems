@@ -43,18 +43,13 @@
 //
 // Global transaction table
 //
-//trans_bucket _trans_table[H_TABLE_ENTRIES];
+
 hash_table<trans_bucket> _trans_table(H_TABLE_ENTRIES);
 
 trans_bucket::trans_bucket(unsigned long id)
     : ht_bucket<sip_trans>::ht_bucket(id)
 {
 }
-
-// trans_bucket::trans_bucket()
-//     : ht_bucket<sip_trans>::ht_bucket((unsigned long)this - (unsigned long)_trans_table)
-// {
-// }
 
 trans_bucket::~trans_bucket()
 {
