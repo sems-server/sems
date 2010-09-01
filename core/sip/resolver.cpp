@@ -148,17 +148,16 @@ int dns_srv_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
     srv_entry* e=NULL;
     if((i - index > 1) && w_sum){
 	// multiple records: apply weigthed load balancing
-	
+	//
 	// TODO:
-	// - generate random number
-	// - pick the first record with cum. sum >= random number
-
+	// - remember the entries which have already been used
+	//
 	unsigned int r = rand() % (w_sum+1);
 
 	list<pair<unsigned int,int> >::iterator srv_lst_it = srv_lst.begin();
 	while(srv_lst_it != srv_lst.end()){
 	    if(srv_lst_it->first >= r){
-		//TODO: add this entry to some "already tried" list
+		//TODO: add this entry to some "already tried" list belonging to the dns handle
 		e = (srv_entry*)ip_vec[srv_lst_it->second];
 	    }
 	}
@@ -467,6 +466,10 @@ int _resolver::query_dns(const char* name, dns_entry** e, long now)
 	break;
     }
 
+    // TODO: parse the additional section as well.
+    //       there might be some A/AAAA records related to
+    //       the SRV targets.
+
     if((ret < 0) || (*e)->ip_vec.empty()){
 	delete *e;
 	*e = NULL;
@@ -514,8 +517,6 @@ int _resolver::resolve_name(const char* name,
 
     // no valid IP, query the DNS
     if(query_dns(name,&e,tv_now.tv_sec) < 0) {
-	// DNS query failed
-	WARN("DNS query failed");
 	return -1;
     }
 
