@@ -228,6 +228,8 @@ public:
 	    _table[l]->dump();
 	}
     }
+
+    unsigned long get_size() { return size; }
 };
 
 

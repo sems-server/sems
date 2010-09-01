@@ -84,6 +84,7 @@ typedef ht_map_bucket<string,dns_entry> dns_bucket_base;
 class dns_bucket
     : protected dns_bucket_base
 {
+    friend class _resolver;
 public:
     dns_bucket(unsigned long id);
     bool insert(const string& name, dns_entry* e);
@@ -106,8 +107,6 @@ struct dns_handle
 
     int next_ip(sockaddr_storage* sa);
 
-    //void operator = (const dns_handle& h);
-
 private:
     friend class _resolver;
     friend class dns_entry;
@@ -123,6 +122,7 @@ private:
 };
 
 class _resolver
+    : AmThread
 {
 public:
     int resolve_name(const char* name, 
@@ -141,6 +141,9 @@ protected:
     int str2ip(const char* name,
 	       sockaddr_storage* sa,
 	       const address_type types);
+
+    void run();
+    void on_stop() {}
 
 private:
     dns_cache cache;

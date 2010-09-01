@@ -266,7 +266,7 @@ dns_entry* dns_bucket::find(const string& name)
 _resolver::_resolver()
     : cache(DNS_CACHE_SIZE)
 {
-    
+    start();
 }
 
 _resolver::~_resolver()
@@ -602,6 +602,44 @@ int dns_handle::next_ip(sockaddr_storage* sa)
 	return srv_e->next_ip(this,sa);
     else
 	return ip_e->next_ip(this,sa);
+}
+
+void _resolver::run()
+{
+    for(;;) {
+	sleep(10);
+
+	timeval tv_now;
+	gettimeofday(&tv_now,NULL);
+
+	DBG("starting DNS cache garbage collection");
+	for(unsigned long i=0; i<cache.get_size(); i++){
+
+	    dns_bucket* bucket = cache.get_bucket(i);
+	    bucket->lock();
+	    
+	    for(dns_bucket::value_map::iterator it = bucket->elmts.begin();
+		it != bucket->elmts.end(); ++it){
+
+		dns_entry* dns_e = (dns_entry*)it->second;
+		if(tv_now.tv_sec >= it->second->expire){
+
+		    dns_bucket::value_map::iterator tmp_it = it;
+		    bool end_of_bucket = (++it == bucket->elmts.end());
+
+		    DBG("########### expiring record %p #############",dns_e);
+		    bucket->elmts.erase(tmp_it);
+		    dec_ref(dns_e);
+
+		    if(end_of_bucket) break;
+		}
+		else {
+		    DBG("######### record %p expires in %li seconds ##########",dns_e,it->second->expire-tv_now.tv_sec);
+		}
+	    }
+	    bucket->unlock();
+	}
+    }
 }
 
 /** EMACS **

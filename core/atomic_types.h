@@ -122,13 +122,11 @@ inline void inc_ref(atomic_ref_cnt* rc)
 {
   assert(rc);
   rc->inc();
-  //DBG("after inc_ref(%p): ref_cnt = %u",rc,rc->get());
 }
 
 inline void dec_ref(atomic_ref_cnt* rc)
 {
   assert(rc);
-  //DBG("before dec_ref(%p): ref_cnt = %u",rc,rc->get());
   if(rc->dec_and_test())
     delete rc;
 }
