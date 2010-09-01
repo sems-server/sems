@@ -574,7 +574,8 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 
 	if (next_hop->len == 0) {
 	    *next_hop  = na.uri.host;
-	    *next_port = na.uri.port;
+	    if(na.uri.port_str.len)
+		*next_port = na.uri.port;
 	}	    
 
 	if(!is_lr){
@@ -676,7 +677,8 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 	    return -1;
 	}
 	*next_hop  = parsed_r_uri.host;
-	*next_port = parsed_r_uri.port;
+	if(parsed_r_uri.port_str.len)
+	    *next_port = parsed_r_uri.port;
     }
 
     DBG("next_hop:next_port is <%.*s:%u>\n", next_hop->len, next_hop->s, *next_port);
@@ -687,12 +689,28 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 
 int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port)
 {
+    string nh = c2stlstr(*next_hop);
+    
+    if(!next_port){
+	// no explicit port specified,
+	// try SRV first
+
+	string srv_name = "_sip._udp." + nh;
+	if(!resolver::instance()->resolve_name(srv_name.c_str(),
+					       &(msg->h_dns),
+					       &(msg->remote_ip),IPv4)){
+	    return 0;
+	}
+
+	DBG("no SRV record for %s",srv_name.c_str());
+    }
+
     memset(&(msg->remote_ip),0,sizeof(sockaddr_storage));
-    int err = resolver::instance()->resolve_name(c2stlstr(*next_hop).c_str(),
+    int err = resolver::instance()->resolve_name(nh.c_str(),
 						 &(msg->h_dns),
 						 &(msg->remote_ip),IPv4);
     if(err < 0){
-	ERROR("Unresolvable Request URI\n");
+	ERROR("Unresolvable Request URI domain\n");
 	return -1;
     }
 
@@ -1711,7 +1729,6 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 
 	    // copy the new address back
 	    memcpy(&tr->msg->remote_ip,&sa,sizeof(sockaddr_storage));
-
 
 	    // create new branch tag
 	    compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
