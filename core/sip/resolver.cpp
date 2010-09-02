@@ -142,37 +142,48 @@ int dns_srv_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
 
     // fetch current priority
     unsigned short p = ((srv_entry*)ip_vec[i])->p;
-    unsigned int w_sum = ((srv_entry*)ip_vec[i])->w;
-    srv_lst.push_back(std::make_pair(w_sum,i));
+    unsigned int w_sum = 0;
 
     // and fetch records with same priority
     // which have not been chosen yet
     int srv_lst_size=0;
     unsigned int used_mask=(1<<i);
-    while( (++i != (int)ip_vec.size()) && 
-	   (i<(int)MAX_SRV_RR) &&
-	   (p==((srv_entry*)ip_vec[i])->p) ){
+    while( (p==((srv_entry*)ip_vec[i])->p) ){
 	
-	used_mask = used_mask << 1;
+	DBG("used_mask & h->srv_used: %i & %i",used_mask,h->srv_used);
 	if(!(used_mask & h->srv_used)){
 	    w_sum += ((srv_entry*)ip_vec[i])->w;
 	    srv_lst.push_back(std::make_pair(w_sum,i));
 	    srv_lst_size++;
 	}
+
+	if((++i >= (int)ip_vec.size()) ||
+	   (i >= (int)MAX_SRV_RR)){
+	    break;
+	}
+
+	DBG("(p==((srv_entry*)ip_vec[i])->p): %i, %i",p,((srv_entry*)ip_vec[i])->p);
+	used_mask = used_mask << 1;
     }
 
     srv_entry* e=NULL;
+    DBG("srv_lst_size: %i",srv_lst_size);
     if((srv_lst_size > 1) && w_sum){
 	// multiple records: apply weigthed load balancing
 	// - remember the entries which have already been used
-	unsigned int r = rand() % (w_sum+1);
+	unsigned int r = random() % (w_sum+1);
 
+	DBG("random SRV lottery: %u / %u",r,w_sum);
 	list<pair<unsigned int,int> >::iterator srv_lst_it = srv_lst.begin();
 	while(srv_lst_it != srv_lst.end()){
 	    if(srv_lst_it->first >= r){
+		DBG("h->srv_used: %i (before)",h->srv_used);
 		h->srv_used |= (1<<(srv_lst_it->second));
+		DBG("h->srv_used: %i (after)",h->srv_used);
 		e = (srv_entry*)ip_vec[srv_lst_it->second];
+		break;
 	    }
+	    ++srv_lst_it;
 	}
 
 	// should never trigger
@@ -180,10 +191,18 @@ int dns_srv_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
     }
     else {
 	// single record or all weights == 0
-	e = (srv_entry*)ip_vec[index];
-	if( (++i >= (int)ip_vec.size()) || (i>=(int)MAX_SRV_RR)){
-	    h->srv_n = -1;
+	e = (srv_entry*)ip_vec[srv_lst.begin()->second];
+
+	if( (i<(int)ip_vec.size()) && (i<(int)MAX_SRV_RR)){
+	    index = i;
 	}
+	else if(!w_sum){
+	    index++;
+	}
+	else {
+	    index = -1;
+	}
+	DBG("index = %i",index);
     }
 
     //TODO: find a solution for IPv6
@@ -390,13 +409,13 @@ static dns_base_entry* rr_to_srv_entry(ns_msg* handle, ns_rr* rr)
 	return NULL;
     }
     
-    printf("SRV:\tTTL=%i\t%s\tP=<%i> W=<%i> P=<%i> T=<%s>\n",
-	   ns_rr_ttl(*rr),
-	   ns_rr_name(*rr),
-	   ns_get16(rdata),
-	   ns_get16(rdata+2),
-	   ns_get16(rdata+4),
-	   name_buf);
+    DBG("SRV:\tTTL=%i\t%s\tP=<%i> W=<%i> P=<%i> T=<%s>\n",
+	ns_rr_ttl(*rr),
+	ns_rr_name(*rr),
+	ns_get16(rdata),
+	ns_get16(rdata+2),
+	ns_get16(rdata+4),
+	name_buf);
     
     srv_entry* srv_r = new srv_entry();
     srv_r->p = ns_get16(rdata);
@@ -602,7 +621,7 @@ bool dns_handle::valid()
 
 bool dns_handle::eoip()  
 { 
-    if(srv_n)
+    if(srv_e)
 	return (srv_n == -1) && (ip_n == -1);
     else
 	return (ip_n == -1);
