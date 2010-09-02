@@ -35,6 +35,11 @@
 #include <cctype>
 #include <algorithm>
 
+#include "md5.h"
+
+using std::string;
+
+
 #define MOD_NAME "uac_auth"
 
 EXPORT_SESSION_EVENT_HANDLER_FACTORY(UACAuthFactory, MOD_NAME);
@@ -208,23 +213,6 @@ bool UACAuth::onSendReply(const AmSipRequest& req,
 {
   return false;
 }
-
-
-
-#include "md5global.h"
-
-typedef struct {
-  UINT4 state[4];                                   /* state (ABCD) */
-  UINT4 count[2];        /* number of bits, modulo 2^64 (lsb first) */
-  unsigned char buffer[64];                         /* input buffer */
-} MD5_CTX;
-
-extern "C" void MD5Init  (MD5_CTX * ctx);
-extern "C" void MD5Update (MD5_CTX *, unsigned char *, unsigned int);
-extern "C" void MD5Final (unsigned char [16], MD5_CTX *);
-
-
-using std::string;
 
 void w_MD5Update(MD5_CTX *ctx, const string& s) {
   unsigned char a[255];
