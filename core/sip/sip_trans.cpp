@@ -115,7 +115,7 @@ void sip_trans::reset_timer(timer* t, unsigned int timer_type)
     
     if(*tp != NULL){
 
-	DBG("Clearing old timer of type %c\n",timer_name((*tp)->type));
+	DBG("Clearing old timer of type %c (this=%p)\n",timer_name((*tp)->type),*tp);
 	wheeltimer::instance()->remove_timer(*tp);
     }
 
@@ -138,7 +138,7 @@ void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
 	else {
 	    WARN("Transaction %p does not exist anymore\n",tr);
 	    WARN("Timer type=%c will be deleted without further processing\n",timer_name(t->type));
-	    wheeltimer::instance()->remove_timer(t);
+	    //wheeltimer::instance()->remove_timer(t);
 	}
 	bucket->unlock();
     }
@@ -181,7 +181,6 @@ void sip_trans::reset_all_timers()
     for(int i=0; i<SIP_TRANS_TIMERS; i++){
 	
 	if(timers[i]){
-	    DBG("remove_timer(%p)\n",timers[i]);
 	    wheeltimer::instance()->remove_timer(timers[i]);
 	    timers[i] = NULL;
 	}
