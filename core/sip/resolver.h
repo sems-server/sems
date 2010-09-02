@@ -115,6 +115,7 @@ private:
 
     dns_srv_entry* srv_e;
     int            srv_n;
+    unsigned int   srv_used;
     unsigned short  port;
 
     dns_ip_entry*  ip_e;

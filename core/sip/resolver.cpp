@@ -44,6 +44,13 @@ using std::list;
 
 #include "log.h"
 
+// Maximum number of SRV entries
+// within a cache entry
+//
+// (the limit is the # bits in dns_handle::srv_used)
+#define MAX_SRV_RR (sizeof(unsigned int)*8)
+
+
 struct ip_entry
     : public dns_base_entry
 {
@@ -116,6 +123,7 @@ int dns_srv_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
 	if(h->srv_e) dec_ref(h->srv_e);
 	h->srv_e = this;
 	h->srv_n = 0;
+	h->srv_used = 0;
     }
     else if(h->ip_n != -1){
 	((sockaddr_in*)sa)->sin_port = h->port;
@@ -138,26 +146,31 @@ int dns_srv_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
     srv_lst.push_back(std::make_pair(w_sum,i));
 
     // and fetch records with same priority
+    // which have not been chosen yet
+    int srv_lst_size=0;
+    unsigned int used_mask=(1<<i);
     while( (++i != (int)ip_vec.size()) && 
+	   (i<(int)MAX_SRV_RR) &&
 	   (p==((srv_entry*)ip_vec[i])->p) ){
 	
-	w_sum += ((srv_entry*)ip_vec[i])->w;
-	srv_lst.push_back(std::make_pair(w_sum,i));
+	used_mask = used_mask << 1;
+	if(!(used_mask & h->srv_used)){
+	    w_sum += ((srv_entry*)ip_vec[i])->w;
+	    srv_lst.push_back(std::make_pair(w_sum,i));
+	    srv_lst_size++;
+	}
     }
 
     srv_entry* e=NULL;
-    if((i - index > 1) && w_sum){
+    if((srv_lst_size > 1) && w_sum){
 	// multiple records: apply weigthed load balancing
-	//
-	// TODO:
 	// - remember the entries which have already been used
-	//
 	unsigned int r = rand() % (w_sum+1);
 
 	list<pair<unsigned int,int> >::iterator srv_lst_it = srv_lst.begin();
 	while(srv_lst_it != srv_lst.end()){
 	    if(srv_lst_it->first >= r){
-		//TODO: add this entry to some "already tried" list belonging to the dns handle
+		h->srv_used |= (1<<(srv_lst_it->second));
 		e = (srv_entry*)ip_vec[srv_lst_it->second];
 	    }
 	}
@@ -168,7 +181,7 @@ int dns_srv_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
     else {
 	// single record or all weights == 0
 	e = (srv_entry*)ip_vec[index];
-	if(++index >= (int)ip_vec.size()){
+	if( (++i >= (int)ip_vec.size()) || (i>=(int)MAX_SRV_RR)){
 	    h->srv_n = -1;
 	}
     }
