@@ -60,7 +60,7 @@ class atomic_int64
   
 public:
   void set(unsigned long long val) {
-#ifndef __LP64__ || !__LP64__
+#if !defined(__LP64__) || !__LP64__
     unsigned long long tmp_ll;
     do {
       tmp_ll = ll;
@@ -72,7 +72,7 @@ public:
   }
   
   unsigned long long get() {
-#ifndef __LP64__ || !__LP64__
+#if !defined(__LP64__) || !__LP64__
     unsigned long long tmp_ll;
     do {
       tmp_ll = ll;

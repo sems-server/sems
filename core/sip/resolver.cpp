@@ -37,9 +37,9 @@
 #include <resolv.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h> 
-//#include <arpa/nameser_compat.h> // Darwin only
 
 #include <list>
+#include <algorithm>
 
 using std::pair;
 using std::list;
