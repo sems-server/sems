@@ -136,9 +136,8 @@ void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
 	    trans_layer::instance()->timer_expired(t,bucket,tr);
 	}
 	else {
-	    WARN("Transaction %p does not exist anymore\n",tr);
-	    WARN("Timer type=%c will be deleted without further processing\n",timer_name(t->type));
-	    //wheeltimer::instance()->remove_timer(t);
+	    WARN("Ignoring expired timer (%p): transaction"
+		 " %p does not exist anymore\n",t,tr);
 	}
 	bucket->unlock();
     }

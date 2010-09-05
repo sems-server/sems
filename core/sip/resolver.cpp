@@ -634,6 +634,7 @@ void _resolver::run()
 		    dns_bucket::value_map::iterator tmp_it = it;
 		    bool end_of_bucket = (++it == bucket->elmts.end());
 
+		    DBG("DNS record expired (%p)",dns_e);
 		    bucket->elmts.erase(tmp_it);
 		    dec_ref(dns_e);
 
