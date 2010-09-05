@@ -30,6 +30,7 @@
 #include "singleton.h"
 #include "hash_table.h"
 #include "atomic_types.h"
+#include "parse_dns.h"
 
 #include <string>
 #include <vector>
@@ -70,12 +71,17 @@ class dns_entry
     : public atomic_ref_cnt,
       public dns_base_entry
 {
+    virtual dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end)=0;
+
 public:
     vector<dns_base_entry*> ip_vec;
 
+    static dns_entry* make_entry(ns_type t);
+
     dns_entry();
     virtual ~dns_entry();
-
+    virtual void init()=0;
+    virtual void add_rr(dns_record* rr, u_char* begin, u_char* end, long now);
     virtual int next_ip(dns_handle* h, sockaddr_storage* sa)=0;
 };
 
