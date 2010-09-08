@@ -376,24 +376,36 @@ EXEC_ACTION_START(SCStopAction) {
   }								\
 
 DEF_SCModActionExec(SCRepostAction);
-DSMAction::SEAction SCRepostAction::getSEAction(string& param) { 
+DSMAction::SEAction SCRepostAction::getSEAction(string& param,
+						AmSession* sess, DSMSession* sc_sess,
+						DSMCondition::EventType event,
+						map<string,string>* event_params) {
   return Repost; 
 }
 
 DEF_SCModActionExec(SCJumpFSMAction);
-DSMAction::SEAction SCJumpFSMAction::getSEAction(string& param) { 
-  param = arg;
+DSMAction::SEAction SCJumpFSMAction::getSEAction(string& param,
+						 AmSession* sess, DSMSession* sc_sess,
+						 DSMCondition::EventType event,
+						 map<string,string>* event_params) {
+  param = resolveVars(arg, sess, sc_sess, event_params);
   return Jump; 
 }
 
 DEF_SCModActionExec(SCCallFSMAction);
-DSMAction::SEAction SCCallFSMAction::getSEAction(string& param) { 
-  param = arg;
+DSMAction::SEAction SCCallFSMAction::getSEAction(string& param,
+						 AmSession* sess, DSMSession* sc_sess,
+						 DSMCondition::EventType event,
+						 map<string,string>* event_params) {
+  param = resolveVars(arg, sess, sc_sess, event_params);
   return Call; 
 }
 
 DEF_SCModActionExec(SCReturnFSMAction);
-DSMAction::SEAction SCReturnFSMAction::getSEAction(string& param) { 
+DSMAction::SEAction SCReturnFSMAction::getSEAction(string& param,
+						   AmSession* sess, DSMSession* sc_sess,
+						   DSMCondition::EventType event,
+						   map<string,string>* event_params) {
   return Return; 
 }
 

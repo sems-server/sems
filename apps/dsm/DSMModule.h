@@ -105,12 +105,17 @@ class SCStrArgAction
 #define DEF_SCModSEStrArgAction(CL_Name)				\
   class CL_Name								\
   : public SCStrArgAction {						\
+    bool is_evaluated;							\
   public:								\
-  CL_Name(const string& arg) : SCStrArgAction(arg) { }			\
+  CL_Name(const string& arg) : SCStrArgAction(arg),			\
+      is_evaluated(false) { }						\
     bool execute(AmSession* sess, DSMSession* sc_sess,			\
 		 DSMCondition::EventType event,				\
 		 map<string,string>* event_params);			\
-    SEAction getSEAction(std::string&);					\
+    SEAction getSEAction(std::string&,					\
+			 AmSession* sess, DSMSession* sc_sess,		\
+			 DSMCondition::EventType event,			\
+			 map<string,string>* event_params);		\
   };									\
 
 #define DEF_ACTION_2P(CL_Name)						\

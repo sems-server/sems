@@ -128,7 +128,10 @@ class DSMAction
 		       map<string,string>* event_params) = 0;
 
   /** @return state engine modification */
-  virtual SEAction getSEAction(string& param) { return None; }
+  virtual SEAction getSEAction(string& param,
+			       AmSession* sess, DSMSession* sc_sess,
+			       DSMCondition::EventType event,
+			       map<string,string>* event_params) { return None; }
 };
 
 class DSMTransition;

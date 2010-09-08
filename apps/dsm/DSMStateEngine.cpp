@@ -228,17 +228,19 @@ bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from,
     DBG("executing '%s'\n", (*it)->name.c_str()); 
     if ((*it)->execute(sess, sc_sess, event, event_params)) {
       string se_modifier;
-      switch ((*it)->getSEAction(se_modifier)) {
+      switch ((*it)->getSEAction(se_modifier,
+				 sess, sc_sess, event, event_params)) {
       case DSMAction::Repost: 
 	is_consumed = false; 
 	break;
       case DSMAction::Jump: 
-	DBG("jumping %s\n", se_modifier.c_str());
+	DBG("jumping to %s\n", se_modifier.c_str());
 	if (jumpDiag(se_modifier, sess, sc_sess, event, event_params)) {
 	  // is_consumed = false; 
 	  return true;  
 	} break;
-      case DSMAction::Call: 
+      case DSMAction::Call:
+	DBG("calling %s\n", se_modifier.c_str());
 	if (callDiag(se_modifier, sess, sc_sess, event, event_params))  {
 	  // is_consumed = false; 
 	  return true;   
