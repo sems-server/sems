@@ -66,8 +66,17 @@ bool DSMStateDiagramCollection::readFile(const string& filename, const string& n
 	  return false;
 	}
 
-	string include_name = r[0]=='/' ? r : load_path+"/"+r;
-	if (!readFile(include_name, name, load_path, s))
+	string current_load_path;
+	string include_name;
+	if (r[0]=='/') {
+	  include_name = r;
+	  size_t ppos = r.rfind("/");
+	  current_load_path = r.substr(0, ppos) + "/";
+	} else {
+	  current_load_path = load_path;
+	  include_name = load_path+"/"+r;
+	}
+	if (!readFile(include_name, name, current_load_path, s))
 	  return false;
 	continue;
       }
