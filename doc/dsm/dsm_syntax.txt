@@ -1,5 +1,7 @@
 =============================
 -- comment
+#include "script.dsm"
+#include "/path/to/anotherscript.dsm"
 import(mod_name);
 
 [initial] state name 

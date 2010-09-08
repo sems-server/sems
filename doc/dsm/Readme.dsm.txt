@@ -53,6 +53,10 @@ A patch for fmsc 1.0.4 from the graphical FSM editor fsme
 (http://fsme.sf.net) is available, so DSMs can be defined in 
 click-n-drag fashion and compiled to SEMS DSM diagrams.
 
+DSM scripts can include other scripts by using the #include "script.dsm"
+directive. That loads a script from the load path (where the current 
+script resides), unless an absolute path is given (e.g. 
+#include "/path/to/script).
 
 SystemDSMs
 ==========

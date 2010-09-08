@@ -36,11 +36,9 @@ DSMStateDiagramCollection::DSMStateDiagramCollection() {
 DSMStateDiagramCollection::~DSMStateDiagramCollection() {
 }
 
-bool DSMStateDiagramCollection::loadFile(const string& filename, const string& name, 
-					 const string& mod_path, bool debug_dsm, bool check_dsm) {
+bool DSMStateDiagramCollection::readFile(const string& filename, const string& name,
+					 const string& load_path, string& s) {
   DBG("loading DSM '%s' from '%s'\n", name.c_str(), filename.c_str());
-
-  DSMChartReader cr;
 
   ifstream ifs(filename.c_str());
   if (!ifs.good()) {
@@ -49,23 +47,52 @@ bool DSMStateDiagramCollection::loadFile(const string& filename, const string& n
     return false;
   }
 
-  diags.push_back(DSMStateDiagram(name));
-  string s;
   while (ifs.good() && !ifs.eof()) {
     string r;
     getline(ifs, r);
     // skip comments
     size_t fpos  = r.find_first_not_of(" \t");
-    if (fpos != string::npos &&
-	r.length() > fpos+1 &&
-	r.substr(fpos, 2) == "--") 
-      continue;
+    if (fpos != string::npos) {
+      if (r.length() > fpos+1 &&
+	  r.substr(fpos, 2) == "--")
+	continue;
+
+      if (r.length() > fpos+1 && 
+	  r.substr(fpos, 8) == "#include") {
+	r = r.substr(fpos+8);
+	r = trim(r, "'\" ");
+	if (r.empty()) {
+	  ERROR("missing include file name!\n");
+	  return false;
+	}
+
+	string include_name = r[0]=='/' ? r : load_path+"/"+r;
+	if (!readFile(include_name, name, load_path, s))
+	  return false;
+	continue;
+      }
+	
+    }
 
     s += r + "\n";
   }
+  return true;
+}
+
+bool DSMStateDiagramCollection::loadFile(const string& filename, const string& name,
+					 const string& load_path,
+					 const string& mod_path, bool debug_dsm, bool check_dsm) {
+
+  string s;
+  if (!readFile(filename, name, load_path, s))
+    return false;
+
   if (debug_dsm) {
     DBG("dsm text\n------------------\n%s\n------------------\n", s.c_str());
   }
+
+  diags.push_back(DSMStateDiagram(name));
+  DSMChartReader cr;
   if (!cr.decode(&diags.back(), s, mod_path, this, mods)) {
     ERROR("DonkeySM decode script error!\n");
     return false;
