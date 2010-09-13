@@ -1,5 +1,5 @@
 set (uac_auth_SRCS
-md5.c
+md5.cpp
 UACAuth.cpp
 )
 
