@@ -210,7 +210,11 @@ void IvrFactory::import_object(PyObject* m, const char* name, PyTypeObject* type
     return;
   }
   Py_INCREF(type);
+#if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 5
+  PyModule_AddObject(m, (char*)name, (PyObject *)type);
+#else
   PyModule_AddObject(m, name, (PyObject *)type);
+#endif
 }
 
 void IvrFactory::import_ivr_builtins()
