@@ -113,6 +113,9 @@ string resolveVars(const string ts, AmSession* sess,
       }else 
 	return string();
     case '@': {
+      if (s.length() < 2)
+	return "@";
+
       string s1 = s.substr(1); 
       if (s1 == "local_tag")
 	return sess->getLocalTag();	
