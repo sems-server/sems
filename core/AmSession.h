@@ -164,6 +164,7 @@ protected:
 
   /** do accept early session? */
   bool accept_early_session;
+
   /** enable the reliability of provisional replies? */
   unsigned char reliable_1xx;
 #define REL100_DISABLED         0
@@ -174,6 +175,13 @@ protected:
   vector<AmSessionEventHandler*> ev_handlers;
 
 public:
+
+  enum SessionRefreshMethod {
+    REFRESH_REINVITE = 0,      // use reinvite
+    REFRESH_UPDATE,            // use update
+    REFRESH_UPDATE_FB_REINV    // use update or fallback to reinvite
+  };
+  SessionRefreshMethod refresh_method;
 
   AmRtpAudio* RTPStream();
 
@@ -347,8 +355,11 @@ public:
 			 bool force_symmetric_rtp,
 			 string* sdp_reply);
 
+  /** refresh the session - re-INVITE or UPDATE*/
+  virtual void refresh();
+
   /** send an UPDATE in the session */
-  virtual void sendUpdate(string &cont_type, string &body, string &hdrs);
+  virtual void sendUpdate(const string &cont_type, const string &body, const string &hdrs);
 
   /** send a Re-INVITE (if connected) */
   virtual void sendReinvite(bool updateSDP = true, const string& headers = "");

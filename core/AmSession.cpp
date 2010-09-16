@@ -68,6 +68,7 @@ AmSession::AmSession()
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
     reliable_1xx(AmConfig::rel100),
+    refresh_method(REFRESH_UPDATE_FB_REINV),
     processing_status(SESSION_PROCESSING_EVENTS)
 #ifdef WITH_ZRTP
   ,  zrtp_session(NULL), zrtp_audio(NULL), enable_zrtp(true)
@@ -682,6 +683,15 @@ void AmSession::onSipRequest(const AmSipRequest& req)
   CALL_EVENT_H(onSipRequest,req);
 
   DBG("onSipRequest: method = %s\n",req.method.c_str());
+
+  if (refresh_method == REFRESH_UPDATE_FB_REINV) {
+    if (key_in_list(getHeader(req.hdrs, SIP_HDR_ALLOW),
+		    SIP_METH_UPDATE)) {
+      DBG("remote allows UPDATE, using UPDATE for session refresh.\n");
+      refresh_method = REFRESH_UPDATE;
+    }
+  }
+
   if(req.method == SIP_METH_INVITE){
 
     switch(reliable_1xx) {
@@ -773,6 +783,14 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   CALL_EVENT_H(onSipReply,reply,old_dlg_status);
+
+  if (refresh_method == REFRESH_UPDATE_FB_REINV) {
+    if (key_in_list(getHeader(reply.hdrs, SIP_HDR_ALLOW),
+		    SIP_METH_UPDATE)) {
+      DBG("remote allows UPDATE, using UPDATE for session refresh.\n");
+      refresh_method = REFRESH_UPDATE;
+    }
+  }
 
   if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
@@ -1081,7 +1099,18 @@ void AmSession::onRtpTimeout()
   setStopped();
 }
 
-void AmSession::sendUpdate(string &cont_type, string &body, string &hdrs)
+void AmSession::refresh() {
+  if (refresh_method == REFRESH_UPDATE) {
+    DBG("Refreshing session with UPDATE\n");
+    sendUpdate("", "", "");
+  } else {
+    DBG("Refreshing session with re-INVITE\n");
+    sendReinvite(true);
+  }
+}
+
+void AmSession::sendUpdate(const string &cont_type, const string &body,
+			   const string &hdrs)
 {
   dlg.update(cont_type, body, hdrs);
 }

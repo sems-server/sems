@@ -114,6 +114,7 @@ class SessionTimer: public AmSessionEventHandler
   unsigned int         session_interval;  
   SessionRefresher     session_refresher;
   SessionRefresherRole session_refresher_role;
+  bool                 accept_501_reply;
 
   void updateTimer(AmSession* s,const AmSipRequest& req);
   void updateTimer(AmSession* s,const AmSipReply& reply);

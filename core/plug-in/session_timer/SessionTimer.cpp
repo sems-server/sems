@@ -53,8 +53,10 @@ SessionTimer::SessionTimer(AmSession* s)
   :AmSessionEventHandler(),
    s(s),
    session_interval(0), 
-   session_refresher(refresh_remote)
-{}
+   session_refresher(refresh_remote),
+   accept_501_reply(true)
+{
+}
 
 bool SessionTimer::process(AmEvent* ev)
 {
@@ -139,6 +141,24 @@ int SessionTimer::configure(AmConfigReader& conf)
       session_timer_conf.getSessionExpires(),
       session_timer_conf.getMinimumTimer()
       );
+
+  if (conf.hasParameter("session_refresh_method")) {
+    string refresh_method_s = conf.getParameter("session_refresh_method");
+    if (refresh_method_s == "UPDATE") {
+      s->refresh_method = AmSession::REFRESH_UPDATE;
+    } else if (refresh_method_s == "UPDATE_FALLBACK_INVITE") {
+      s->refresh_method = AmSession::REFRESH_UPDATE_FB_REINV;
+    } else if (refresh_method_s == "INVITE") {
+      s->refresh_method = AmSession::REFRESH_REINVITE;
+    } else {
+      ERROR("unknown setting for 'session_refresh_method' config option.\n");
+      return -1;
+    }
+    DBG("set session refresh method: %d.\n", s->refresh_method);
+  }
+
+  if (conf.getParameter("accept_501_reply")=="no")
+    accept_501_reply = false;
 
   return 0;
 }
@@ -253,8 +273,9 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipReply& reply)
   if (!session_timer_conf.getEnableSessionTimer())
     return;
 
-  // only update timer on positive reply
-  if ((reply.code < 200) || (reply.code >= 300))
+  // only update timer on positive reply, or 501 if config'd
+  if (((reply.code < 200) || (reply.code >= 300)) &&
+      (!(accept_501_reply && reply.code == 501)))
     return;
   
   // determine session interval
@@ -319,12 +340,12 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
   int timer_id = timeout_ev->data.get(0).asInt();
 
   if (timer_id == ID_SESSION_REFRESH_TIMER) {
-    DBG("Session Timer: initiating refresh (Re-Invite)\n");
-    if (session_refresher == refresh_local) 
-      // send reinvite with SDP
-      s->sendReinvite(true);
-    else
-      WARN("need session refresh but remote session is refresher\n");
+    if (session_refresher == refresh_local) {
+      DBG("Session Timer: initiating session refresh\n");
+      s->refresh();
+    } else {
+      DBG("need session refresh but remote session is refresher\n");
+    }
   } else if (timer_id == ID_SESSION_INTERVAL_TIMER) {
     //     // let the session know it got timeout
     //     onTimeout();
