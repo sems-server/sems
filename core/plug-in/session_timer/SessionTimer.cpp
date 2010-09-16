@@ -127,7 +127,7 @@ bool SessionTimer::onSendReply(const AmSipRequest& req,
 
 int SessionTimer::configure(AmConfigReader& conf)
 {
-  if(!session_timer_conf.readFromConfig(conf))
+  if(session_timer_conf.readFromConfig(conf))
     return -1;
 
   session_interval = session_timer_conf.getSessionExpires();
