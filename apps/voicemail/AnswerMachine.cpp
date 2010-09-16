@@ -57,6 +57,7 @@
 #include <dirent.h>
 
 #include <time.h>
+#include <string.h>
 
 #define MOD_NAME               "voicemail"
 #define DEFAULT_AUDIO_EXT      "wav"
@@ -931,7 +932,10 @@ void AnswerMachineDialog::saveMessage()
   email_dict["vmsg_length"] = rec_len_s;
 
   if(!rec_size){
-    unlink(msg_filename.c_str());
+    if (unlink(msg_filename.c_str()) < 0) {
+      WARN("unlink(%s) failed: %s\n", 
+	   msg_filename.c_str(), strerror(errno));
+    }
 
     // record in box empty messages as well
     if (AnswerMachineFactory::SaveEmptyMsg &&
