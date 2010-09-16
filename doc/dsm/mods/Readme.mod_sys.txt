@@ -7,6 +7,16 @@ Actions:
     Array version of unlink (prefix/filename_0 .. prefix/filename_$filename_size) 
  sys.tmpnam(string varname)
 
+
+ sys.popen($var="command")
+   execute a command (using popen) and save result in $var
+   example:
+     sys.popen($myfiles="/bin/ls wav/*");
+   throws exceptions
+    #type=="popen", #cause==reason if fails to exec
+    #type=="pclose", #cause==reason if fails to close pipe
+ 
+
 Conditions: 
  sys.file_exists(string fname)
  sys.file_not_exists(string fname)

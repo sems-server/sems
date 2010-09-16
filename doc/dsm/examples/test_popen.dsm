@@ -1,0 +1,17 @@
+-- test popen
+import(mod_sys);
+import(mod_utils);
+
+initial state START 
+  enter { 
+    log(1,"Got into START state.");
+    sys.popen($myresult="/bin/ls wav/*");
+    logVars(2);
+    utils.splitStringCR($myresult);
+    logVars(2);
+    stop(true);
+  };
+
+transition "error executing" START - exception; test(#type==popen) / logParams(1); stop(true) -> END;
+transition "error closing" START - exception; test(#type==pclose) / logParams(1); stop(true) -> END;
+state END;
