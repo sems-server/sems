@@ -33,4 +33,11 @@ Actions:
  utils.int($var, val)
    get integer part of val into var
 
+ utils.splitStringCR($var [, $dstvar])
+ utils.splitStringCR(val, $dstvar])
+   split a string on newline (carriage return, \n) 
+   into an array ($var[0]..$var[n])
 
+   example: 
+    sys.popen($myresult="/bin/ls wav/*");    
+    utils.splitStringCR($myresult);

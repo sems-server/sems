@@ -47,6 +47,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("utils.add", SCUSAddAction);
   DEF_CMD("utils.sub", SCUSSubAction);
   DEF_CMD("utils.int", SCUIntAction);
+  DEF_CMD("utils.splitStringCR", SCUSplitStringAction);
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
@@ -211,4 +212,29 @@ EXEC_ACTION_START(SCUIntAction) {
   DBG("set $%s = %s\n", 
       varname.c_str(), sc_sess->var[varname].c_str());
 
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCUSplitStringAction, ',', true);
+EXEC_ACTION_START(SCUSplitStringAction) {
+  size_t cntr = 0;
+  string str = resolveVars(par1, sess, sc_sess, event_params);
+  string dst_array = par2;
+  if (!dst_array.length())
+    dst_array = par1;
+  if (dst_array.length() && dst_array[0]=='$')
+    dst_array = dst_array.substr(1);
+  
+  size_t p = 0, last_p = 0;
+  while (true) {
+    p = str.find("\n", last_p);
+    if (p==string::npos) {
+      if (last_p < str.length())
+	sc_sess->var[dst_array+"["+int2str(cntr)+"]"] = str.substr(last_p);
+      break;
+    }
+    
+    sc_sess->var[dst_array+"["+int2str(cntr++)+"]"] = str.substr(last_p, p-last_p);
+
+    last_p = p+1;    
+  }
 } EXEC_ACTION_END;
