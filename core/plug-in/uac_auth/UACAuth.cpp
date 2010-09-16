@@ -29,6 +29,7 @@
 #include "UACAuth.h"
 #include "AmSipMsg.h"
 #include "AmUtils.h"
+#include "AmSipHeaders.h"
 
 #include <map>
 
@@ -139,14 +140,14 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	// 				credential->user.c_str(),
 	// 				credential->pwd.c_str());
 	if (((reply.code == 401) && 
-	     getHeader(ri->second.hdrs, "Authorization", true).length()) ||
+	     getHeader(ri->second.hdrs, SIP_HDR_AUTHORIZATION, true).length()) ||
 	    ((reply.code == 407) && 
-	     getHeader(ri->second.hdrs, "Proxy-Authorization", true).length())) {
+	     getHeader(ri->second.hdrs, SIP_HDR_PROXY_AUTHORIZATION, true).length())) {
 	  DBG("Authorization failed!\n");
 	} else {
 	  string auth_hdr = (reply.code==407) ? 
-      getHeader(reply.hdrs, "Proxy-Authenticate", true) : 
-	    getHeader(reply.hdrs, "WWW-Authenticate", true);
+      getHeader(reply.hdrs, SIP_HDR_PROXY_AUTHENTICATE, true) : 
+	    getHeader(reply.hdrs, SIP_HDR_WWW_AUTHENTICATE, true);
 	  string result; 
 			
 	  string auth_uri; 
@@ -161,7 +162,8 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	    //	 		    stripHeader(ri->second.hdrs, "Proxy-Authorization"));
 	    hdrs += result;
 
-	    if (dlg->getStatus() < AmSipDialog::Connected) {
+	    if (dlg->getStatus() < AmSipDialog::Connected && 
+		ri->second.method != SIP_METH_BYE) {
 	      // reset remote tag so remote party 
 	      // thinks its new dlg
 	      dlg->remote_tag = "";
@@ -298,8 +300,8 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
   DBG("calculated response = %s\n", response);
 
   // compile auth response
-  result = ((code==401) ? "Authorization: Digest username=\"" : 
-	    "Proxy-Authorization: Digest username=\"")
+  result = ((code==401) ? SIP_HDR_COLSP(SIP_HDR_AUTHORIZATION) "Digest username=\"" : 
+	    SIP_HDR_COLSP(SIP_HDR_PROXY_AUTHORIZATION) "Digest username=\"")
     + credential->user + "\", realm=\"" + challenge.realm + "\", nonce=\""+challenge.nonce + 
     "\", uri=\""+uri+"\", ";
   if (challenge.opaque.length())

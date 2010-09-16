@@ -7,6 +7,7 @@
 #define SIP_METH_INVITE         "INVITE"
 #define SIP_METH_PRACK          "PRACK"
 #define SIP_METH_UPDATE         "UPDATE"
+#define SIP_METH_BYE            "BYE"
 
 #define SIP_HDR_FROM            "From"
 #define SIP_HDR_TO              "To"
@@ -25,6 +26,11 @@
 #define SIP_HDR_MIN_SE          "Min-SE"
 #define SIP_HDR_RSEQ            "RSeq"
 #define SIP_HDR_RACK            "RAck"
+#define SIP_HDR_AUTHORIZATION   "Authorization"
+#define SIP_HDR_PROXY_AUTHORIZATION "Proxy-Authorization"
+#define SIP_HDR_PROXY_AUTHENTICATE "Proxy-Authenticate"
+#define SIP_HDR_WWW_AUTHENTICATE "WWW-Authenticate"
+
 #define SIP_HDR_COL(_hdr)       _hdr ":"
 #define SIP_HDR_COLSP(_hdr)     SIP_HDR_COL(_hdr) " "
 
