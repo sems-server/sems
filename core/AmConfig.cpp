@@ -532,10 +532,12 @@ int AmConfig::readConfiguration()
     } else if (rel100s == "require") {
       rel100 = REL100_REQUIRE;
     } else {
-      ERROR("unknown setting for '100rel' config option.\n");
+      ERROR("unknown setting for '100rel' config option: '%s'.\n",
+	    rel100s.c_str());
       return -1;
     }
   }
+
   INFO("100rel: %d.\n", AmConfig::rel100);
 
   return 0;
