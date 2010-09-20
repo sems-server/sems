@@ -58,6 +58,9 @@ directive. That loads a script from the load path (where the current
 script resides), unless an absolute path is given (e.g. 
 #include "/path/to/script).
 
+There is SIP Session Timer (RFC4028) support, which is configured in 
+dsm.conf. By default, session timers are turned not enabled.
+
 SystemDSMs
 ==========
 
