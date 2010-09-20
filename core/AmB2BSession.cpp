@@ -28,6 +28,7 @@
 #include "AmSessionContainer.h"
 #include "AmConfig.h"
 #include "ampi/MonitoringAPI.h"
+#include "AmSipHeaders.h"
 
 #include <assert.h>
 
@@ -216,14 +217,17 @@ void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	relayed_req.erase(t);
     }
   } else {
+    string trans_method = dlg.get_uac_trans_method(reply.cseq);
+
     bool relay_body = 
       // is a reply to request we sent, 
       // even though we are in sip_relay_only  mode
       (sip_relay_only && 
        // positive reply
-       (200 <= reply.code) && (reply.code < 300) 
+       (200 <= reply.code) && (reply.code < 300) &&
        // with body
-       && !reply.body.empty()); // todo: && method == INVITE???
+       !reply.body.empty() &&
+       trans_method == SIP_METH_INVITE);
     
     if (relay_body) {
       // is it an answer to a relayed body, or an answer to empty re-INVITE? 
