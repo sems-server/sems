@@ -80,7 +80,8 @@ string DSMFactory::MonSelectFallback;
 
 DSMFactory::DSMFactory(const string& _app_name)
   : AmSessionFactory(_app_name),AmDynInvokeFactory(_app_name),
-    loaded(false)
+    loaded(false),
+    session_timer_f(NULL)
 {
   AmEventDispatcher::instance()->addEventQueue("dsm", this);
 
@@ -118,7 +119,6 @@ int DSMFactory::onLoad()
     return 0;
   loaded = true;
 
-  AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
     return -1;
  
@@ -260,6 +260,16 @@ int DSMFactory::onLoad()
       closedir(dir);
     }
   }
+
+  if(cfg.hasParameter("enable_session_timer") &&
+     (cfg.getParameter("enable_session_timer") == string("yes")) ){
+    DBG("enabling session timers\n");
+    session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
+    if(session_timer_f == NULL){
+      ERROR("Could not load the session_timer module: disabling session timers.\n");
+    }
+  }
+
   return 0;
 }
 
@@ -488,6 +498,23 @@ bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_nam
 
 void DSMFactory::prepareSession(DSMCall* s) {
   s->setPromptSets(prompt_sets);
+  setupSessionTimer(s);
+}
+
+void DSMFactory::setupSessionTimer(AmSession* s) {
+  if (NULL != session_timer_f) {
+
+    AmSessionEventHandler* h = session_timer_f->getHandler(s);
+    if (NULL == h)
+      return;
+
+    if(h->configure(cfg)){
+      ERROR("Could not configure the session timer: disabling session timers.\n");
+      delete h;
+    } else {
+      s->addHandler(h);
+    }
+  }
 }
 
 void DSMFactory::addVariables(DSMCall* s, const string& prefix,

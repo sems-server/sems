@@ -91,6 +91,7 @@ class DSMFactory
   DSMFactory(const string& _app_name);
   ~DSMFactory();
   bool loaded;
+  AmConfigReader cfg;
 
   int preloadModules(AmConfigReader& cfg, string& res, const string& ModPath);
   bool loadConfig(const string& conf_file_name, const string& conf_name, 
@@ -121,6 +122,9 @@ class DSMFactory
   void loadDSMWithPaths(const AmArg& args, AmArg& ret);
   void registerApplication(const AmArg& args, AmArg& ret);
   void loadConfig(const AmArg& args, AmArg& ret);
+
+  AmSessionEventHandlerFactory* session_timer_f;
+  void setupSessionTimer(AmSession* s);
 
 public:
   static DSMFactory* instance();
