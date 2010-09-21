@@ -97,6 +97,7 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   if ((req.method == "INVITE") && pending_invites) {      
     reply_error(req,500,"Server Internal Error",
 		"Retry-After: " + int2str(get_random() % 10) + CRLF);
+    return;
   }
   else {
       pending_invites++;
