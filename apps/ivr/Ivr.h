@@ -77,6 +77,8 @@ IvrScriptDesc(PyObject* mod,
 /** \brief session factory for python IVR sessions */
 class IvrFactory: public AmSessionFactory
 {
+  static AmConfigReader cfg;
+
   PyObject* ivr_module;
   //string script_path;
   string default_script;
@@ -84,6 +86,7 @@ class IvrFactory: public AmSessionFactory
   map<string,IvrScriptDesc> mod_reg;
 
   AmDynInvokeFactory* user_timer_fact;
+  static AmSessionEventHandlerFactory* session_timer_f;
 
   void init_python_interpreter(const string& script_path);
   void set_sys_path(const string& script_path);
@@ -111,6 +114,8 @@ class IvrFactory: public AmSessionFactory
   AmSession* onInvite(const AmSipRequest& req);
 
   void addDeferredThread(PyObject* pyCallable);
+
+  void setupSessionTimer(AmSession* s);
 };
 
 /** \brief python IVR wrapper for session base implementation */
