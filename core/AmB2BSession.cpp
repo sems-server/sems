@@ -190,6 +190,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
     AmSession::onSipRequest(req);
   else {
     //dlg.updateStatus(req);
+    updateRefreshMethod(req.hdrs);
     recvd_req.insert(std::make_pair(req.cseq,req));
   }
 
@@ -198,6 +199,8 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 
 void AmB2BSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
+  updateRefreshMethod(reply.hdrs);
+
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = (t != relayed_req.end()) && (reply.code != 100);
 
