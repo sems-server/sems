@@ -107,11 +107,13 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   uas_trans[req.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
 
   // target refresh requests
-  if (req.from_uri.length() && 
-      (req.method == "INVITE" || 
-       req.method == "UPDATE" ||
-       req.method == "SUBSCRIBE" ||
-       req.method == "NOTIFY")) {
+  if (req.from_uri.length() &&
+      (req.method.length()==6 &&
+       ((req.method == "INVITE") ||
+	(req.method == "UPDATE") ||
+	(req.method == "NOTIFY"))) ||
+      (req.method == "SUBSCRIBE"))
+    {
 
     remote_uri = req.from_uri;
   }
