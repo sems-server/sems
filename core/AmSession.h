@@ -181,7 +181,11 @@ public:
     REFRESH_UPDATE,            // use update
     REFRESH_UPDATE_FB_REINV    // use update or fallback to reinvite
   };
+  /** currently selected session refresh method */
   SessionRefreshMethod refresh_method;
+
+  /** update selected session refresh method from remote capabilities */
+  void updateRefreshMethod(const string& headers);
 
   AmRtpAudio* RTPStream();
 
@@ -551,6 +555,10 @@ public:
 
   /** This callback is called if RTP timeout encountered */
   virtual void onRtpTimeout();
+
+  /** This callback is called if session
+      timeout encountered (session timers) */
+  virtual void onSessionTimeout();
 
   /* Called by AmSipDialog when a request is sent */
   virtual void onSendRequest(const string& method,

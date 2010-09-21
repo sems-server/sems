@@ -314,6 +314,12 @@ void AmB2BSession::terminateOtherLeg()
   clear_other();
 }
 
+void AmB2BSession::onSessionTimeout() {
+  DBG("Session Timer: Timeout, ending other leg.");
+  terminateOtherLeg();
+  AmSession::onSessionTimeout();
+}
+
 void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {

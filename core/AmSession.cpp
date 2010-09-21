@@ -684,13 +684,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 
   DBG("onSipRequest: method = %s\n",req.method.c_str());
 
-  if (refresh_method == REFRESH_UPDATE_FB_REINV) {
-    if (key_in_list(getHeader(req.hdrs, SIP_HDR_ALLOW),
-		    SIP_METH_UPDATE)) {
-      DBG("remote allows UPDATE, using UPDATE for session refresh.\n");
-      refresh_method = REFRESH_UPDATE;
-    }
-  }
+  updateRefreshMethod(req.hdrs);
 
   if(req.method == SIP_METH_INVITE){
 
@@ -784,13 +778,7 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 {
   CALL_EVENT_H(onSipReply,reply,old_dlg_status);
 
-  if (refresh_method == REFRESH_UPDATE_FB_REINV) {
-    if (key_in_list(getHeader(reply.hdrs, SIP_HDR_ALLOW),
-		    SIP_METH_UPDATE)) {
-      DBG("remote allows UPDATE, using UPDATE for session refresh.\n");
-      refresh_method = REFRESH_UPDATE;
-    }
-  }
+  updateRefreshMethod(reply.hdrs);
 
   if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
@@ -1097,6 +1085,22 @@ void AmSession::onRtpTimeout()
 {
   DBG("stopping Session.\n");
   setStopped();
+}
+
+void AmSession::onSessionTimeout() {
+  DBG("Session Timer: Timeout, ending session.\n");
+  dlg.bye();
+  setStopped();
+}
+
+void AmSession::updateRefreshMethod(const string& headers) {
+  if (refresh_method == REFRESH_UPDATE_FB_REINV) {
+    if (key_in_list(getHeader(headers, SIP_HDR_ALLOW),
+		    SIP_METH_UPDATE)) {
+      DBG("remote allows UPDATE, using UPDATE for session refresh.\n");
+      refresh_method = REFRESH_UPDATE;
+    }
+  }
 }
 
 void AmSession::refresh() {

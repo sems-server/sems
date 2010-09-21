@@ -173,6 +173,8 @@ class AmB2BSession: public AmSession
   void onSipReply(const AmSipReply& reply, int old_dlg_status);
   void onInvite2xx(const AmSipReply& reply);
 
+  void onSessionTimeout();
+
   /** @see AmEventQueue */
   void process(AmEvent* event);
 
