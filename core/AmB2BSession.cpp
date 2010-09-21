@@ -310,7 +310,9 @@ void AmB2BSession::terminateLeg()
 
 void AmB2BSession::terminateOtherLeg()
 {
-  relayEvent(new B2BEvent(B2BTerminateLeg));
+  if (!other_id.empty())
+    relayEvent(new B2BEvent(B2BTerminateLeg));
+
   clear_other();
 }
 
