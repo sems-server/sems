@@ -111,6 +111,8 @@ void SSTB2BDialog::onInvite(const AmSipRequest& req)
   // this will prevent us from being added to media processor
   setInOut(NULL,NULL); 
 
+  updateRefreshMethod(req.hdrs);
+
   from = req.from;
   to = req.to;
 
