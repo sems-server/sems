@@ -109,11 +109,11 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 
   // target refresh requests
   if (req.from_uri.length() &&
-      (req.method.length()==6 &&
-       ((req.method == "INVITE") ||
-	(req.method == "UPDATE") ||
-	(req.method == "NOTIFY"))) ||
-      (req.method == "SUBSCRIBE"))
+      ((req.method.length()==6 &&
+	((req.method == "INVITE") ||
+	 (req.method == "UPDATE") ||
+	 (req.method == "NOTIFY"))) ||
+       (req.method == "SUBSCRIBE")))
     {
 
     remote_uri = req.from_uri;
