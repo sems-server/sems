@@ -75,6 +75,9 @@ struct DialoutConfEvent : public AmEvent {
 /** \brief Factory for conference sessions */
 class ConferenceFactory : public AmSessionFactory
 {
+  static AmSessionEventHandlerFactory* session_timer_f;
+  static AmConfigReader cfg;
+
 public:
   static string AudioPath;
   static string LonelyUserFile;
@@ -85,6 +88,7 @@ public:
   static unsigned int MaxParticipants;
   static bool UseRFC4240Rooms;
 
+  static void setupSessionTimer(AmSession* s);
 
 #ifdef USE_MYSQL
   static mysqlpp::Connection Connection;

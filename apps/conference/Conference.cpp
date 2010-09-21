@@ -73,6 +73,8 @@ PlayoutType ConferenceFactory::m_PlayoutType = ADAPTIVE_PLAYOUT;
 unsigned int ConferenceFactory::MaxParticipants;
 
 bool ConferenceFactory::UseRFC4240Rooms;
+AmConfigReader ConferenceFactory::cfg;
+AmSessionEventHandlerFactory* ConferenceFactory::session_timer_f = NULL;
 
 #ifdef USE_MYSQL
 mysqlpp::Connection ConferenceFactory::Connection(mysqlpp::use_exceptions);
@@ -155,7 +157,6 @@ int get_audio_file(const string& message, const string& domain, const string& la
 
 int ConferenceFactory::onLoad()
 {
-  AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(APP_NAME)+ ".conf"))
     return -1;
 
@@ -297,6 +298,15 @@ int ConferenceFactory::onLoad()
   UseRFC4240Rooms = cfg.getParameter("use_rfc4240_rooms")=="yes";
   DBG("%ssing RFC4240 room naming.\n", UseRFC4240Rooms?"U":"Not u");
 
+  if(cfg.hasParameter("enable_session_timer") &&
+     (cfg.getParameter("enable_session_timer") == string("yes")) ){
+    DBG("enabling session timers\n");
+    session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
+    if(session_timer_f == NULL){
+      ERROR("Could not load the session_timer module: disabling session timers.\n");
+    }
+  }
+
   return 0;
 }
 
@@ -322,7 +332,27 @@ AmSession* ConferenceFactory::onInvite(const AmSipRequest& req)
     conf_id = req.user.substr(5);
   }
 
-  return new ConferenceDialog(conf_id);
+  ConferenceDialog* s = new ConferenceDialog(conf_id);
+
+  setupSessionTimer(s);
+
+  return s;
+}
+
+void ConferenceFactory::setupSessionTimer(AmSession* s) {
+  if (NULL != session_timer_f) {
+
+    AmSessionEventHandler* h = session_timer_f->getHandler(s);
+    if (NULL == h)
+      return;
+
+    if(h->configure(cfg)){
+      ERROR("Could not configure the session timer: disabling session timers.\n");
+      delete h;
+    } else {
+      s->addHandler(h);
+    }
+  }
 }
 
 AmSession* ConferenceFactory::onRefer(const AmSipRequest& req)
@@ -332,7 +362,8 @@ AmSession* ConferenceFactory::onRefer(const AmSipRequest& req)
 
   AmSession* s = new ConferenceDialog(req.user);
   s->dlg.local_tag  = req.from_tag;
-    
+  
+  setupSessionTimer(s);
 
   DBG("ConferenceFactory::onRefer: local_tag = %s\n",s->dlg.local_tag.c_str());
 
@@ -748,6 +779,8 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
     new ConferenceDialog(conf_id,
 			 AmConferenceStatus::getChannel(getLocalTag(),
 							dialout_id));
+
+  ConferenceFactory::setupSessionTimer(dialout_session);
 
   AmSipDialog& dialout_dlg = dialout_session->dlg;
 
