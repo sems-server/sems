@@ -369,9 +369,9 @@ bool SIPRegistration::registerExpired(time_t now_sec) {
   return ((reg_begin+reg_expires) < (unsigned int)now_sec);	
 }
 
-void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status)
+void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
 {
-  if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status)) 
+  if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status, trans_method))
     return;
 
   waiting_result = false;
@@ -498,7 +498,7 @@ void SIPRegistrarClient::onRemoveRegistration(SIPRemoveRegistrationEvent* new_re
 void SIPRegistrarClient::on_stop() { }
 
 
-bool SIPRegistrarClient::onSipReply(const AmSipReply& rep) {
+bool SIPRegistrarClient::onSipReply(const AmSipReply& rep, int old_dlg_status, const string& trans_method) {
   DBG("got reply with tag '%s'\n", rep.local_tag.c_str());
 	
   if (instance()->hasRegistration(rep.local_tag)) {

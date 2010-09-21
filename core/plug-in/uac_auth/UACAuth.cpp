@@ -124,7 +124,7 @@ bool UACAuth::onSipRequest(const AmSipRequest& req)
   return false;
 }
 
-bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status)
+bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
 {
   bool processed = false;
   if (reply.code==407 || reply.code==401) {

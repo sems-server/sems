@@ -41,4 +41,8 @@
 #define SIP_EXT_100REL          "100rel"
 
 #define SIP_HDR_SESSION_EXPIRES_COMPACT "x"
+
+#define SIP_IS_200_CLASS(code)  ((code >= 200) && (code < 300))
+
+#define SIP_APPLICATION_SDP     "application/sdp"
 #endif /* __AMSIPHEADERS_H__ */

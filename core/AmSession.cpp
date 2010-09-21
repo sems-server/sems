@@ -36,7 +36,6 @@
 #include "AmMediaProcessor.h"
 #include "AmDtmfDetector.h"
 #include "AmPlayoutBuffer.h"
-#include "AmSipHeaders.h"
 
 #ifdef WITH_ZRTP
 #include "AmZRTP.h"
@@ -774,9 +773,10 @@ void AmSession::onSipRequest(const AmSipRequest& req)
   }
 }
 
-void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
+void AmSession::onSipReply(const AmSipReply& reply,
+			   int old_dlg_status, const string& trans_method)
 {
-  CALL_EVENT_H(onSipReply,reply,old_dlg_status);
+  CALL_EVENT_H(onSipReply, reply, old_dlg_status, trans_method);
 
   updateRefreshMethod(reply.hdrs);
 
@@ -786,7 +786,8 @@ void AmSession::onSipReply(const AmSipReply& reply, int old_dlg_status)
 	AmSipDialog::status2str[dlg.getStatus()],
 	sess_stopped.get() ? "true" : "false");
   else 
-    DBG("Dialog status stays %s (stopped=%s)\n", AmSipDialog::status2str[old_dlg_status], 
+    DBG("Dialog status stays %s (stopped=%s)\n",
+	AmSipDialog::status2str[old_dlg_status], 
 	sess_stopped.get() ? "true" : "false");
 
 
@@ -953,7 +954,7 @@ void AmSession::onInvite(const AmSipRequest& req)
 
     acceptAudio(req.body,req.hdrs,&sdp_reply);
     if(dlg.reply(req,200,"OK",
-		 "application/sdp",sdp_reply) != 0)
+		 SIP_APPLICATION_SDP, sdp_reply) != 0)
       throw AmSession::Exception(500,"could not send response");
 	
   }catch(const AmSession::Exception& e){
@@ -1103,20 +1104,26 @@ void AmSession::updateRefreshMethod(const string& headers) {
   }
 }
 
-void AmSession::refresh() {
+bool AmSession::refresh() {
   if (refresh_method == REFRESH_UPDATE) {
     DBG("Refreshing session with UPDATE\n");
-    sendUpdate("", "", "");
+    return sendUpdate("", "", "") == 0;
   } else {
+
+    if (dlg.getUACInvTransPending()) {
+      DBG("INVITE transaction pending - not refreshing now\n");
+      return false;
+    }
+
     DBG("Refreshing session with re-INVITE\n");
-    sendReinvite(true);
+    return sendReinvite(true) == 0;
   }
 }
 
-void AmSession::sendUpdate(const string &cont_type, const string &body,
+int AmSession::sendUpdate(const string &cont_type, const string &body,
 			   const string &hdrs)
 {
-  dlg.update(cont_type, body, hdrs);
+  return dlg.update(cont_type, body, hdrs);
 }
 
 void AmSession::sendPrack(const string &sdp_offer, 
@@ -1141,32 +1148,16 @@ string AmSession::sid4dbg()
   return dbg;
 }
 
-static inline string get_100rel_hdr(unsigned char reliable_1xx)
-{
-  switch(reliable_1xx) {
-    case REL100_SUPPORTED: 
-      return SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
-    case REL100_REQUIRE: 
-      return SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
-    default:
-      ERROR("BUG: unexpected reliability switch value of '%d'.\n",
-          reliable_1xx);
-    case 0:
-      break;
-  }
-  return "";
-}
-
-void AmSession::sendReinvite(bool updateSDP, const string& headers) 
+int AmSession::sendReinvite(bool updateSDP, const string& headers) 
 {
   if (updateSDP) {
     RTPStream()->setLocalIP(AmConfig::LocalIP);
     string sdp_body;
     sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-    dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "application/sdp",
+    return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), SIP_APPLICATION_SDP,
         sdp_body);
   } else {
-    dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "", "");
+    return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "", "");
   }
 }
 
@@ -1181,7 +1172,7 @@ int AmSession::sendInvite(const string& headers)
   // Generate SDP.
   string sdp_body;
   sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-  return dlg.invite(headers + get_100rel_hdr(reliable_1xx), "application/sdp",
+  return dlg.invite(headers + get_100rel_hdr(reliable_1xx), SIP_APPLICATION_SDP,
       sdp_body);
 }
 

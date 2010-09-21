@@ -226,6 +226,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
   AmSipTransaction& t = t_it->second;
   int old_dlg_status = status;
+  string trans_method = t.method;
 
   // rfc3261 12.1
   // Dialog established only by 101-199 or 2xx 
@@ -240,7 +241,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     remote_tag = reply.remote_tag;
   }
 
-  // allow route overwritting
+  // allow route overwriting
   if ((status < Connected) && !reply.route.empty()) {
       route = reply.route;
   }
@@ -250,7 +251,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
   switch(status){
   case Disconnecting:
-    if( t.method == "INVITE" ){
+    if (trans_method == SIP_METH_INVITE) {
 
       if(reply.code == 487){
 	// CANCEL accepted
@@ -270,7 +271,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
   case Disconnected:
     // only change status of dialog if reply 
     // to INVITE received
-    if(t.method == "INVITE"){ 
+    if (trans_method == SIP_METH_INVITE) { 
       if(reply.code < 200)
 	status = Pending;
       else if(reply.code >= 300)
@@ -289,7 +290,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     // TODO: 
     // - place this somewhere else.
     //   (probably in AmSession...)
-    if((reply.code < 300) && (t.method == "INVITE")) {
+    if((reply.code < 300) && (trans_method == SIP_METH_INVITE)) {
 
 	if(hdl) {
 	    hdl->onInvite2xx(reply);
@@ -304,7 +305,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
   }
 
   if(hdl)
-      hdl->onSipReply(reply, old_dlg_status);
+    hdl->onSipReply(reply, old_dlg_status, trans_method);
 }
 
 void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
@@ -328,6 +329,19 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
   };
   
   to_ev->processed = true;
+}
+
+bool AmSipDialog::getUACTransPending() {
+  return !uac_trans.empty();
+}
+
+bool AmSipDialog::getUACInvTransPending() {
+  for (TransMap::iterator it=uac_trans.begin();
+       it != uac_trans.end(); it++) {
+    if (it->second.method == "INVITE")
+      return true;
+  }
+  return false;
 }
 
 string AmSipDialog::getContactHdr()

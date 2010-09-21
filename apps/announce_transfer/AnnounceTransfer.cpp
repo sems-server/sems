@@ -181,7 +181,7 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
 
 }
 
-void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, int old_dlg_status) {
+void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, int old_dlg_status, const string& trans_method) {
   if ((status==Transfering ||status==Hangup)  && 
       dlg.get_uac_trans_method(rep.cseq) == "REFER") {
     if (rep.code >= 300) {
@@ -191,7 +191,7 @@ void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, int old_dlg_statu
     }
   }
 
-  AmSession::onSipReply(rep, old_dlg_status);
+  AmSession::onSipReply(rep, old_dlg_status, trans_method);
 }
 
 void AnnounceTransferDialog::onBye(const AmSipRequest& req)

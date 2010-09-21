@@ -74,7 +74,8 @@ class AmSipDialogEventHandler
   virtual void onSipRequest(const AmSipRequest& req)=0;
 
   /** Hook called when a reply has been received */
-  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status)=0;
+  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status,
+			  const string& trans_method)=0;
 
   /** Hook called before a request is sent */
   virtual void onSendRequest(const string& method,
@@ -160,7 +161,11 @@ class AmSipDialog
   AmSipDialog(AmSipDialogEventHandler* h=0);
   ~AmSipDialog();
 
-  bool   getUACTransPending() { return !uac_trans.empty(); }
+  /** @return whether UAC transaction is pending */
+  bool   getUACTransPending();
+
+  /** @return whether INVITE transaction is pending */
+  bool   getUACInvTransPending();
   int    getStatus() { return status; }
   void   setStatus(int new_status);
 
@@ -174,6 +179,7 @@ class AmSipDialog
 
   void uasTimeout(AmSipTimeoutEvent* to_ev);
     
+  /** @return 0 on success */
   int reply(const AmSipRequest& req,
 	    unsigned int  code, 
 	    const string& reason,
@@ -182,34 +188,51 @@ class AmSipDialog
 	    const string& hdrs = "",
 	    int flags = 0);
 
+  /** @return 0 on success */
   int sendRequest(const string& method, 
 		  const string& content_type = "",
 		  const string& body = "",
 		  const string& hdrs = "",
 		  int flags = 0);
 
+  /** @return 0 on success */
   int send_200_ack(const AmSipTransaction& t,
 		   const string& content_type = "",
 		   const string& body = "",
 		   const string& hdrs = "",
 		   int flags = 0);
     
+  /** @return 0 on success */
   int bye(const string& hdrs = "");
+
+  /** @return 0 on success */
   int cancel();
+
+  /** @return 0 on success */
   int prack(const string &cont_type, 
             const string &body, 
             const string &hdrs);
+
+  /** @return 0 on success */
   int update(const string &cont_type, 
             const string &body, 
             const string &hdrs);
+
+  /** @return 0 on success */
   int reinvite(const string& hdrs,  
 	       const string& content_type,
 	       const string& body);
+
+  /** @return 0 on success */
   int invite(const string& hdrs,  
 	     const string& content_type,
 	     const string& body);
+
+  /** @return 0 on success */
   int refer(const string& refer_to,
 	    int expires = -1);
+
+  /** @return 0 on success */
   int transfer(const string& target);
   int drop();
 

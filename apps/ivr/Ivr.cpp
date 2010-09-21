@@ -749,11 +749,11 @@ void safe_Py_DECREF(PyObject* pyo) {
   Py_DECREF(pyo);
 }
 
-void IvrDialog::onSipReply(const AmSipReply& r, int old_dlg_status) {
+void IvrDialog::onSipReply(const AmSipReply& r, int old_dlg_status, const string& trans_method) {
   PyObject* pyo = getPySipReply(r);
   callPyEventHandler("onSipReply","(O)", pyo);
   safe_Py_DECREF(pyo);
-  AmB2BSession::onSipReply(r,old_dlg_status);
+  AmB2BSession::onSipReply(r,old_dlg_status,trans_method);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){

@@ -124,7 +124,7 @@ class SIPRegistration : public AmSipDialogEventHandler,
   // CredentialHolder	
   UACAuthCred* getCredentials() { return &cred; }
 
-  void onSipReply(const AmSipReply& reply, int old_dlg_status);
+  void onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method);
   void onSipRequest(const AmSipRequest& req) {}
   void onInvite2xx(const AmSipReply&) {}
   void onNoAck(unsigned int) {}
@@ -192,7 +192,7 @@ class SIPRegistrarClient  : public AmThread,
   void invoke(const string& method, 
 	      const AmArg& args, AmArg& ret);
 	
-  bool onSipReply(const AmSipReply& rep);
+  bool onSipReply(const AmSipReply& rep, int old_dlg_status, const string& trans_method);
   int onLoad();
 	
   void run();

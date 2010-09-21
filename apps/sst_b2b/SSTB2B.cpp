@@ -132,23 +132,8 @@ void SSTB2BDialog::onInvite(const AmSipRequest& req)
   recvd_req.insert(std::make_pair(req.cseq,req));
   
   set_sip_relay_only(true);
-  DBG("##### connecting to <%s>",req.r_uri.c_str());
+  DBG("##### connecting to <%s> #####\n",req.r_uri.c_str());
   connectCallee("<" + req.r_uri + ">", req.r_uri, true);
-}
-
-void SSTB2BDialog::sendReinvite(bool updateSDP, const string& headers) {
-  if (sip_relay_only) {
-    // we send empty reinvite 
-    DBG("sending empty reinvite in callee session\n");
-    dlg.reinvite(headers, "", ""); 
-  } else {
-    AmB2BCallerSession::sendReinvite(updateSDP, headers);
-  }
-
-  // // we send empty reinvite
-  // dlg.reinvite(headers, "", "");
-  // we send reinvite with the last body we got from the other side
-  // last_otherleg_content_type, last_otherleg_body);
 }
 
 void SSTB2BDialog::process(AmEvent* ev)
@@ -171,7 +156,8 @@ void SSTB2BDialog::onSipRequest(const AmSipRequest& req) {
   AmB2BCallerSession::onSipRequest(req);
 }
 
-void SSTB2BDialog::onSipReply(const AmSipReply& reply, int old_dlg_status) 
+void SSTB2BDialog::onSipReply(const AmSipReply& reply, int old_dlg_status,
+			      const string& trans_method)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = t != relayed_req.end();
@@ -179,10 +165,10 @@ void SSTB2BDialog::onSipReply(const AmSipReply& reply, int old_dlg_status)
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if (fwd) {
-      CALL_EVENT_H(onSipReply,reply, old_dlg_status);
+      CALL_EVENT_H(onSipReply,reply, old_dlg_status, trans_method);
   }
 
-  AmB2BCallerSession::onSipReply(reply,old_dlg_status);
+  AmB2BCallerSession::onSipReply(reply,old_dlg_status, trans_method);
 }
 
 bool SSTB2BDialog::onOtherReply(const AmSipReply& reply)
@@ -344,7 +330,8 @@ void SSTB2BCalleeSession::onSipRequest(const AmSipRequest& req) {
   AmB2BCalleeSession::onSipRequest(req);
 }
 
-void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status) 
+void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status,
+				     const string& trans_method)
 {
   // call event handlers where it is not done 
   TransMap::iterator t = relayed_req.find(reply.cseq);
@@ -352,17 +339,17 @@ void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if(fwd) {
-      CALL_EVENT_H(onSipReply,reply, old_dlg_status);
+    CALL_EVENT_H(onSipReply,reply, old_dlg_status, trans_method);
   }
 
   if (NULL == auth) {    
-      AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
+    AmB2BCalleeSession::onSipReply(reply,old_dlg_status, trans_method);
     return;
   }
   
   unsigned int cseq_before = dlg.cseq;
-  if (!auth->onSipReply(reply, old_dlg_status)) {
-      AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
+  if (!auth->onSipReply(reply, old_dlg_status, trans_method)) {
+      AmB2BCalleeSession::onSipReply(reply, old_dlg_status, trans_method);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
@@ -388,15 +375,5 @@ void SSTB2BCalleeSession::onSendRequest(const string& method, const string& cont
   
   AmB2BCalleeSession::onSendRequest(method, content_type,
 				     body, hdrs, flags, cseq);
-}
-
-void SSTB2BCalleeSession::sendReinvite(bool updateSDP, const string& headers) {
-  if (sip_relay_only) {
-    // we send empty reinvite 
-    DBG("sending empty reinvite in callee session\n");
-    dlg.reinvite(headers, "", ""); 
-  } else {
-    AmB2BCalleeSession::sendReinvite(updateSDP, headers);
-  }
 }
 

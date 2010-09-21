@@ -173,11 +173,11 @@ void WebConferenceDialog::onSessionStart(const AmSipReply& rep) {
   connectConference(dlg.user);
 }
 
-void WebConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status) 
+void WebConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
 {
   //int status = dlg.getStatus();
 
-  AmSession::onSipReply(reply,old_dlg_status);
+  AmSession::onSipReply(reply,old_dlg_status,trans_method);
 
   DBG("reply: %u %s, old_dlg_status = %s, status = %s\n",
       reply.code, reply.reason.c_str(),

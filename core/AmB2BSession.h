@@ -30,6 +30,7 @@
 
 #include "AmSession.h"
 #include "AmSipDialog.h"
+#include "sip/hash.h"
 
 enum { B2BTerminateLeg, 
        B2BConnectLeg, 
@@ -65,18 +66,20 @@ struct B2BSipRequestEvent: public B2BSipEvent
   B2BSipRequestEvent(const AmSipRequest& req, bool forward)
     : B2BSipEvent(B2BSipRequest,forward),
        req(req)
-  {}
+  { }
 };
 
 /** \brief SIP reply in B2B session */
 struct B2BSipReplyEvent: public B2BSipEvent
 {
   AmSipReply reply;
+  string trans_method;
 
-  B2BSipReplyEvent(const AmSipReply& reply, bool forward)
-    : B2BSipEvent(B2BSipReply,forward),
-       reply(reply)
-  {}
+ B2BSipReplyEvent(const AmSipReply& reply, bool forward,
+		  string trans_method)
+   : B2BSipEvent(B2BSipReply,forward),
+    reply(reply), trans_method(trans_method)
+  { }
 };
 
 /** \brief relay a message body to other leg in B2B session */
@@ -84,17 +87,10 @@ struct B2BMsgBodyEvent : public B2BEvent {
   string content_type;
   string body;
 
-  bool is_offer;
-  unsigned int r_cseq;
-
-  B2BMsgBodyEvent(const string& content_type, 
-	       const string& body, 
-	       bool is_offer,
-	       unsigned int r_cseq)
+  B2BMsgBodyEvent(const string& content_type,
+		  const string& body)
     : B2BEvent(B2BMsgBody),
-    content_type(content_type), body(body), 
-    is_offer(is_offer), r_cseq(r_cseq)  {
-  }
+    content_type(content_type), body(body) { }
   ~B2BMsgBodyEvent() { }
 };
 
@@ -124,7 +120,8 @@ struct B2BConnectEvent: public B2BEvent
 /**
  * \brief Base class for Sessions in B2BUA mode.
  * 
- * It has two legs: Callee- and caller-leg.
+ * It has two legs as independent sessions:
+ * Callee- and caller-leg.
  */
 class AmB2BSession: public AmSession
 {
@@ -134,32 +131,40 @@ class AmB2BSession: public AmSession
 
   /** Tell if the session should
    *  process SIP request itself
-   * or only relay them.
+   * or only relay them (B2B mode).
    */
   bool sip_relay_only;
 
   /** 
-   * Requests which
-   * have been relayed (sent)
+   * Requests which have been relayed 
+   * from the other leg and sent as SIP
    */
   TransMap relayed_req;
-
-  /** 
-   * Requests which have been originated 
-   * from local dialog but with 
-   * relayed body
-   */
-  TransMap relayed_body_req;
 
   /** Requests received for relaying */
   std::map<int,AmSipRequest> recvd_req;
 
+  /** content-type of established session */
+  string established_content_type;
+  /** body of established session */
+  string established_body;
+  /** hash of body (from o-line) */
+  uint32_t body_hash;
+  /** save current session description (SDP) */
+  void saveSessionDescription(const string& content_type, const string& body);
+  /** @return whether session has changed */
+  bool updateSessionDescription(const string& content_type, const string& body);
+
+  /** reset relation with other leg */
   void clear_other();
 
   /** Relay one event to the other side. */
   virtual void relayEvent(AmEvent* ev);
 
+  /** send a relayed SIP Request */
   void relaySip(const AmSipRequest& req);
+
+  /** send a relayed SIP Reply */
   void relaySip(const AmSipRequest& orig, const AmSipReply& reply);
 
   /** Terminate our leg and forget the other. */
@@ -170,10 +175,19 @@ class AmB2BSession: public AmSession
 
   /** @see AmSession */
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, int old_dlg_status);
+  void onSipReply(const AmSipReply& reply,
+		  int old_dlg_status, const string& trans_method);
   void onInvite2xx(const AmSipReply& reply);
 
   void onSessionTimeout();
+
+  /** send re-INVITE with established session description 
+   *  @return 0 on success
+   */
+  int sendEstablishedReInvite();
+
+  /** do session refresh */
+  bool refresh();
 
   /** @see AmEventQueue */
   void process(AmEvent* event);
@@ -181,7 +195,7 @@ class AmB2BSession: public AmSession
   /** B2BEvent handler */
   virtual void onB2BEvent(B2BEvent* ev);
 
-  // Other leg received a BYE
+  /** handle BYE on other leg */
   virtual void onOtherBye(const AmSipRequest& req);
 
   /** 

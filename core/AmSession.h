@@ -34,6 +34,7 @@
 #include "AmRtpAudio.h"
 #include "AmDtmfDetector.h"
 #include "AmSipMsg.h"
+#include "AmSipHeaders.h"
 #include "AmSipDialog.h"
 #include "AmSipEvent.h"
 #include "AmApi.h"
@@ -360,13 +361,13 @@ public:
 			 string* sdp_reply);
 
   /** refresh the session - re-INVITE or UPDATE*/
-  virtual void refresh();
+  virtual bool refresh();
 
   /** send an UPDATE in the session */
-  virtual void sendUpdate(const string &cont_type, const string &body, const string &hdrs);
+  virtual int sendUpdate(const string &cont_type, const string &body, const string &hdrs);
 
   /** send a Re-INVITE (if connected) */
-  virtual void sendReinvite(bool updateSDP = true, const string& headers = "");
+  virtual int sendReinvite(bool updateSDP = true, const string& headers = "");
 
   /** send an INVITE */
   virtual int sendInvite(const string& headers = "");
@@ -521,7 +522,8 @@ public:
   virtual void onSipRequest(const AmSipRequest& req);
 
   /** Entry point for SIP Replies   */
-  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status);
+  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status,
+			      const string& trans_method);
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);
@@ -586,6 +588,7 @@ public:
   // The IP address to put as c= in SDP bodies and to use for Contact:.
   string advertisedIP();
 
+  /** format session id for debugging */
   string sid4dbg();
 };
 
@@ -596,6 +599,22 @@ inline AmRtpAudio* AmSession::RTPStream() {
     _rtp_str.reset(new AmRtpAudio(this));
   }
   return _rtp_str.get();
+}
+
+static inline string get_100rel_hdr(unsigned char reliable_1xx)
+{
+  switch(reliable_1xx) {
+    case REL100_SUPPORTED:
+      return SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+    case REL100_REQUIRE:
+      return SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+    default:
+      ERROR("BUG: unexpected reliability switch value of '%d'.\n",
+          reliable_1xx);
+    case 0:
+      break;
+  }
+  return "";
 }
 
 #endif

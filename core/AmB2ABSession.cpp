@@ -353,13 +353,13 @@ void AmB2ABCalleeSession::onSessionStart(const AmSipReply& rep) {
   relayEvent(new B2ABConnectAudioEvent());
 }
 
-void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep, int old_dlg_status) {
-
-    int status_before = old_dlg_status;//dlg.getStatus();
-    AmB2ABSession::onSipReply(rep, old_dlg_status);
+void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep,
+				     int old_dlg_status,
+				     const string& trans_method) {
+  AmB2ABSession::onSipReply(rep, old_dlg_status, trans_method);
   int status = dlg.getStatus();
  
-  if ((status_before == AmSipDialog::Pending)&&
+  if ((old_dlg_status == AmSipDialog::Pending)&&
       (status == AmSipDialog::Disconnected)) {
 	  
     DBG("callee session creation failed. notifying caller session.\n");

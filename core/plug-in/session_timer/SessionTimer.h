@@ -120,6 +120,7 @@ class SessionTimer: public AmSessionEventHandler
   void updateTimer(AmSession* s,const AmSipReply& reply);
     
   void setTimers(AmSession* s);
+  void retryRefreshTimer(AmSession* s);
   void removeTimers(AmSession* s);
 
   string getReplyHeaders(const AmSipRequest& req);
@@ -140,7 +141,8 @@ class SessionTimer: public AmSessionEventHandler
   virtual bool process(AmEvent*);
 
   virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&, int old_dlg_status);
+  virtual bool onSipReply(const AmSipReply&, int old_dlg_status,
+			  const string& trans_method);
 
   virtual bool onSendRequest(const string& method, 
 			     const string& content_type,

@@ -77,7 +77,8 @@ bool SessionTimer::onSipRequest(const AmSipRequest& req)
   return false;
 }
 
-bool SessionTimer::onSipReply(const AmSipReply& reply, int old_dlg_status)
+bool SessionTimer::onSipReply(const AmSipReply& reply, int old_dlg_status,
+			      const string& trans_method)
 {
   updateTimer(s,reply);
   return false;
@@ -327,6 +328,15 @@ void SessionTimer::setTimers(AmSession* s)
   }
 }
 
+void SessionTimer::retryRefreshTimer(AmSession* s) {
+  DBG("Retrying session refresh timer: T-2s, tag '%s' \n",
+      s->getLocalTag().c_str());
+
+  UserTimer::instance()->
+    setTimer(ID_SESSION_REFRESH_TIMER, 2, s->getLocalTag());
+}
+
+
 void SessionTimer::removeTimers(AmSession* s) 
 {
   UserTimer::instance()->
@@ -342,7 +352,9 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
   if (timer_id == ID_SESSION_REFRESH_TIMER) {
     if (session_refresher == refresh_local) {
       DBG("Session Timer: initiating session refresh\n");
-      s->refresh();
+      if (!s->refresh()) {
+	retryRefreshTimer(s);
+      }
     } else {
       DBG("need session refresh but remote session is refresher\n");
     }
