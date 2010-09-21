@@ -59,7 +59,9 @@ public:
 
     int cancel();
 
-    int update(const string& /* hdrs */);
+    int update(const string& /* content_type */,
+	       const string& /* body */
+	       const string& /* hdrs */);
 
     int reinvite(const string& /* hdrs */,
 		 const string& /* content_type */,
