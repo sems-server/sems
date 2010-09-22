@@ -138,14 +138,18 @@ void AmSessionContainer::run()
   DBG("Session cleaner terminating\n");
 }
 
-void AmSessionContainer::on_stop() 
-{ 
-  _container_closed.set(true);
-
+void AmSessionContainer::broadcastShutdown() {
   DBG("brodcasting ServerShutdown system event to %u sessions...\n",
       AmSession::getSessionNum());
   AmEventDispatcher::instance()->
     broadcast(new AmSystemEvent(AmSystemEvent::ServerShutdown));
+}
+
+void AmSessionContainer::on_stop() 
+{ 
+  _container_closed.set(true);
+
+  broadcastShutdown();
     
   DBG("waiting for active event queues to stop...\n");
 

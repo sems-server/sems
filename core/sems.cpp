@@ -203,6 +203,11 @@ static void signal_handler(int sig)
 {
   WARN("Signal %s (%d) received.\n", strsignal(sig), sig);
 
+  if ( sig == SIGHUP) {
+    AmSessionContainer::instance()->broadcastShutdown();
+    return;
+  }
+
   if (sig == SIGCHLD && AmConfig::IgnoreSIGCHLD) {
     return;
   }

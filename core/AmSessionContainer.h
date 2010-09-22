@@ -143,6 +143,11 @@ class AmSessionContainer : public AmThread
    */
   bool postEvent(const string& local_tag, AmEvent* event);
 
+  /** 
+   * broadcasts a server shutdown system event to all sessions
+   */
+  void  broadcastShutdown();
+
   _MONITORING_DEFINE_INTERFACE;
 
 };
