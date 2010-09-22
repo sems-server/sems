@@ -62,7 +62,6 @@ unsigned int AmConfig::MaxShutdownTime         = DEFAULT_MAX_SHUTDOWN_TIME;
 
 string       AmConfig::LocalIP                 = "";
 string       AmConfig::PublicIP                = "";
-string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
 int          AmConfig::RtpLowPort              = RTP_LOWPORT;
 int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
 int          AmConfig::SessionProcessorThreads = NUM_SESSION_PROCESSORS;
@@ -420,9 +419,6 @@ int AmConfig::readConfiguration()
 
   MaxShutdownTime = cfg.getParameterInt("max_shutdown_time",
 					DEFAULT_MAX_SHUTDOWN_TIME);
-
-  // user_prefix_separator
-  PrefixSep = cfg.getParameter("user_prefix_separator",PrefixSep);
 
   // rtp_low_port
   if(cfg.hasParameter("rtp_low_port")){

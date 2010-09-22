@@ -84,8 +84,6 @@ struct AmConfig
    *  bind to local IP, but advertise public IP. */ 
   static string PublicIP;
   
-  /** Separator character for uri application prefix (ex: voicemail+jiri@iptel.org) */
-  static string PrefixSep;
   /** Lowest local RTP port */
   static int RtpLowPort;
   /** Highest local RTP port */
