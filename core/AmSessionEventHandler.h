@@ -66,7 +66,10 @@ public:
   virtual bool process(AmEvent*);
 
   virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&);
+  virtual bool onSipReply(const AmSipReply&, int old_dlg_status,
+			  const string& trans_method);
+  virtual bool onSipReqTimeout(const AmSipRequest &);
+  virtual bool onSipRplTimeout(const AmSipRequest &, const AmSipReply &);
 
   virtual bool onSendRequest(const string& method, 
 			     const string& content_type,

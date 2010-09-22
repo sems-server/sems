@@ -81,7 +81,7 @@ EXEC_ACTION_START(URIGetHeaderAction) {
   string hname  = resolveVars(par1, sess, sc_sess, event_params);
   string dstname = resolveVars(par2, sess, sc_sess, event_params);
 
-  sc_sess->var[dstname] = getHeader(sc_sess->var["hdrs"], hname);  
+  sc_sess->var[dstname] = getHeader(sc_sess->var["hdrs"], hname, true);  
   DBG("got header '%s' value '%s' as $%s\n", 
       hname.c_str(), sc_sess->var[dstname].c_str(), dstname.c_str());
 

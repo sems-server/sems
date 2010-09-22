@@ -48,10 +48,13 @@ dlg.dialout(string arrayname)
    arrayname_to        To
    arrayname_auth_user authentication user
    arrayname_auth_pwd  authentication pwd
-   arrayname_ltag      ltag for new call
+   arrayname_ltag      ltag for new call - must be new
    arrayname_hdrs      headers for new call
 
-  returns $arrayname_ltag and sets ERRNO.
+   arrayname_var.*     variables for new call, e.g.
+                       arrayname_var.somevar will be set as $somevar
+
+  returns $arrayname_ltag (if successful) and sets ERRNO.
    
 
 

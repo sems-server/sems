@@ -43,7 +43,19 @@ bool AmSessionEventHandler::onSipRequest(const AmSipRequest&)
   return false;
 }
 
-bool AmSessionEventHandler::onSipReply(const AmSipReply& reply)
+bool AmSessionEventHandler::onSipReply(const AmSipReply& reply, int old_dlg_status,
+				       const string& trans_method)
+{
+  return false;
+}
+
+bool AmSessionEventHandler::onSipReqTimeout(const AmSipRequest &)
+{
+  return false;
+}
+
+bool AmSessionEventHandler::onSipRplTimeout(const AmSipRequest &, 
+    const AmSipReply &)
 {
   return false;
 }

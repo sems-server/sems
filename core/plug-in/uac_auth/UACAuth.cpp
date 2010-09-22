@@ -29,11 +29,17 @@
 #include "UACAuth.h"
 #include "AmSipMsg.h"
 #include "AmUtils.h"
+#include "AmSipHeaders.h"
 
 #include <map>
 
 #include <cctype>
 #include <algorithm>
+
+#include "md5.h"
+
+using std::string;
+
 
 #define MOD_NAME "uac_auth"
 
@@ -74,9 +80,9 @@ int UACAuthFactory::onLoad()
   return 0;
 }
 
-bool UACAuthFactory::onInvite(const AmSipRequest& req)
+bool UACAuthFactory::onInvite(const AmSipRequest& req, AmConfigReader& conf)
 {
-  return false;
+  return true;
 }
 
 AmSessionEventHandler* UACAuthFactory::getHandler(AmSession* s)
@@ -118,7 +124,7 @@ bool UACAuth::onSipRequest(const AmSipRequest& req)
   return false;
 }
 
-bool UACAuth::onSipReply(const AmSipReply& reply)
+bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
 {
   bool processed = false;
   if (reply.code==407 || reply.code==401) {
@@ -134,13 +140,14 @@ bool UACAuth::onSipReply(const AmSipReply& reply)
 	// 				credential->user.c_str(),
 	// 				credential->pwd.c_str());
 	if (((reply.code == 401) && 
-	     getHeader(ri->second.hdrs, "Authorization").length()) ||
+	     getHeader(ri->second.hdrs, SIP_HDR_AUTHORIZATION, true).length()) ||
 	    ((reply.code == 407) && 
-	     getHeader(ri->second.hdrs, "Proxy-Authorization").length())) {
+	     getHeader(ri->second.hdrs, SIP_HDR_PROXY_AUTHORIZATION, true).length())) {
 	  DBG("Authorization failed!\n");
 	} else {
-	  string auth_hdr = (reply.code==407) ? getHeader(reply.hdrs, "Proxy-Authenticate") : 
-	    getHeader(reply.hdrs, "WWW-Authenticate");
+	  string auth_hdr = (reply.code==407) ? 
+      getHeader(reply.hdrs, SIP_HDR_PROXY_AUTHENTICATE, true) : 
+	    getHeader(reply.hdrs, SIP_HDR_WWW_AUTHENTICATE, true);
 	  string result; 
 			
 	  string auth_uri; 
@@ -155,7 +162,8 @@ bool UACAuth::onSipReply(const AmSipReply& reply)
 	    //	 		    stripHeader(ri->second.hdrs, "Proxy-Authorization"));
 	    hdrs += result;
 
-	    if (dlg->getStatus() < AmSipDialog::Connected) {
+	    if (dlg->getStatus() < AmSipDialog::Connected && 
+		ri->second.method != SIP_METH_BYE) {
 	      // reset remote tag so remote party 
 	      // thinks its new dlg
 	      dlg->remote_tag = "";
@@ -164,15 +172,21 @@ bool UACAuth::onSipReply(const AmSipReply& reply)
 	    if (dlg->sendRequest(ri->second.method,
 				 ri->second.content_type,
 				 ri->second.body, 
-				 hdrs) == 0) 			
+				 hdrs) == 0) {
 	      processed = true;
+              DBG("authenticated request successfully sent.\n");
+	      // undo SIP dialog status change
+	      if (dlg->getStatus() != old_dlg_status)
+	        dlg->setStatus(old_dlg_status);
+            } else {
+              ERROR("failed to send authenticated request.\n");
+            }
 	  }
 	} 
       }
-  }
-	
-  if (reply.code >= 200)
+  } else if (reply.code >= 200) {
     sent_requests.erase(reply.cseq); // now we dont need it any more
+  }
 	
   return processed;
 }
@@ -201,23 +215,6 @@ bool UACAuth::onSendReply(const AmSipRequest& req,
 {
   return false;
 }
-
-
-
-#include "md5global.h"
-
-typedef struct {
-  UINT4 state[4];                                   /* state (ABCD) */
-  UINT4 count[2];        /* number of bits, modulo 2^64 (lsb first) */
-  unsigned char buffer[64];                         /* input buffer */
-} MD5_CTX;
-
-extern "C" void MD5Init  (MD5_CTX * ctx);
-extern "C" void MD5Update (MD5_CTX *, unsigned char *, unsigned int);
-extern "C" void MD5Final (unsigned char [16], MD5_CTX *);
-
-
-using std::string;
 
 void w_MD5Update(MD5_CTX *ctx, const string& s) {
   unsigned char a[255];
@@ -303,8 +300,8 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
   DBG("calculated response = %s\n", response);
 
   // compile auth response
-  result = ((code==401) ? "Authorization: Digest username=\"" : 
-	    "Proxy-Authorization: Digest username=\"")
+  result = ((code==401) ? SIP_HDR_COLSP(SIP_HDR_AUTHORIZATION) "Digest username=\"" : 
+	    SIP_HDR_COLSP(SIP_HDR_PROXY_AUTHORIZATION) "Digest username=\"")
     + credential->user + "\", realm=\"" + challenge.realm + "\", nonce=\""+challenge.nonce + 
     "\", uri=\""+uri+"\", ";
   if (challenge.opaque.length())

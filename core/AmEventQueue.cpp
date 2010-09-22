@@ -124,6 +124,13 @@ void AmEventQueue::processSingleEvent()
   m_queue.unlock();
 }
 
+bool AmEventQueue::eventPending() {
+  m_queue.lock();
+  bool res = !ev_queue.empty();
+  m_queue.unlock();
+  return res;
+}
+
 void AmEventQueue::setEventNotificationSink(AmEventNotificationSink* 
 					    _wakeup_handler) {
   // locking actually not necessary - if replacing pointer is atomic 

@@ -109,7 +109,8 @@ void SIPRegistration::doRegistration()
     //else 
     //    dlg.outbound_proxy = "";
     
-    dlg.sendRequest(req.method, "", "", "Expires: 1000\n");
+    if (dlg.sendRequest(req.method, "", "", "Expires: 1000\n") < 0)
+      ERROR("failed to send registration.\n");
     
     // save TS
     struct timeval now;
@@ -133,7 +134,8 @@ void SIPRegistration::doUnregister()
     //else 
     //    dlg.outbound_proxy = "";
     
-    dlg.sendRequest(req.method, "", "", "Expires: 0\n");
+    if (dlg.sendRequest(req.method, "", "", "Expires: 0\n") < 0)
+      ERROR("failed to send deregistration.\n");
 
     // save TS
     struct timeval now;
@@ -367,9 +369,9 @@ bool SIPRegistration::registerExpired(time_t now_sec) {
   return ((reg_begin+reg_expires) < (unsigned int)now_sec);	
 }
 
-void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status)
+void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
 {
-  if ((seh!=NULL) && seh->onSipReply(reply)) 
+  if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status, trans_method))
     return;
 
   waiting_result = false;
@@ -383,7 +385,7 @@ void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status)
 
     string contacts = reply.contact;
     if (contacts.empty()) 
-      contacts = getHeader(reply.hdrs, "Contact", "m");
+      contacts = getHeader(reply.hdrs, "Contact", "m", true);
     bool found = false;
 
     if (!contacts.length()) {
@@ -496,7 +498,7 @@ void SIPRegistrarClient::onRemoveRegistration(SIPRemoveRegistrationEvent* new_re
 void SIPRegistrarClient::on_stop() { }
 
 
-bool SIPRegistrarClient::onSipReply(const AmSipReply& rep) {
+bool SIPRegistrarClient::onSipReply(const AmSipReply& rep, int old_dlg_status, const string& trans_method) {
   DBG("got reply with tag '%s'\n", rep.local_tag.c_str());
 	
   if (instance()->hasRegistration(rep.local_tag)) {

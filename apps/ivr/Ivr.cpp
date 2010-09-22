@@ -90,7 +90,7 @@ extern "C" {
     if(!PyArg_ParseTuple(args,"ss",&headers,&header_name))
       return NULL;
 
-    string res = getHeader(headers,header_name);
+    string res = getHeader(headers,header_name, true);
     return PyString_FromString(res.c_str());
   }
 
@@ -115,14 +115,14 @@ extern "C" {
       return NULL;
 
     string res;
-    string iptel_app_param = getHeader(headers, PARAM_HDR);
+    string iptel_app_param = getHeader(headers, PARAM_HDR, true);
     if (iptel_app_param.length()) {
       res = get_header_keyvalue(iptel_app_param,header_name);
     } else {
       INFO("Use of P-%s is deprecated. \n", header_name);
       INFO("Use '%s: %s=<addr>' instead.\n", PARAM_HDR, header_name);
 
-      res = getHeader(headers,string("P-") + header_name);
+      res = getHeader(headers,string("P-") + header_name, true);
     }
 
 	 
@@ -181,27 +181,8 @@ IvrFactory::IvrFactory(const string& _app_name)
 {
 }
 
-// void IvrFactory::setScriptPath(const string& path)
-// {
-//     string python_path = script_path = path;
-
-    
-//     if(python_path.length()){
-
-// 	python_path = AmConfig::PlugInPath + ":" + python_path;
-//     }
-//     else
-// 	python_path = AmConfig::PlugInPath;
-
-//     char* old_path=0;
-//     if((old_path = getenv("PYTHONPATH")) != 0)
-// 	if(strlen(old_path))
-// 	    python_path += ":" + string(old_path);
-
-//     DBG("setting PYTHONPATH to: '%s'\n",python_path.c_str());
-//     setenv("PYTHONPATH",python_path.c_str(),1);
-
-// }
+AmConfigReader IvrFactory::cfg;
+AmSessionEventHandlerFactory* IvrFactory::session_timer_f = NULL;
 
 void IvrFactory::import_object(PyObject* m, const char* name, PyTypeObject* type)
 {
@@ -210,7 +191,11 @@ void IvrFactory::import_object(PyObject* m, const char* name, PyTypeObject* type
     return;
   }
   Py_INCREF(type);
+#if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 5
+  PyModule_AddObject(m, (char*)name, (PyObject *)type);
+#else
   PyModule_AddObject(m, name, (PyObject *)type);
+#endif
 }
 
 void IvrFactory::import_ivr_builtins()
@@ -346,6 +331,7 @@ IvrDialog* IvrFactory::newDlg(const string& name)
   dlg->setPyPtrs(mod_desc.mod,dlg_inst);
   Py_DECREF(dlg_inst);
 
+  setupSessionTimer(dlg);
   return dlg;
 }
 
@@ -448,9 +434,6 @@ int IvrFactory::onLoad()
     return -1;
   }
 
-
-  AmConfigReader cfg;
-
   if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1,MOD_NAME ".conf")))
     return -1;
 
@@ -518,6 +501,15 @@ int IvrFactory::onLoad()
     }
   }
 
+  if(cfg.hasParameter("enable_session_timer") &&
+     (cfg.getParameter("enable_session_timer") == string("yes")) ){
+    DBG("enabling session timers\n");
+    session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
+    if(session_timer_f == NULL){
+      ERROR("Could not load the session_timer module: disabling session timers.\n");
+    }
+  }
+
   start_deferred_threads();
 
   return 0; // don't stop sems from starting up
@@ -551,6 +543,22 @@ int IvrDialog::drop()
     setStopped();
 	
   return res;
+}
+
+void IvrFactory::setupSessionTimer(AmSession* s) {
+  if (NULL != session_timer_f) {
+
+    AmSessionEventHandler* h = session_timer_f->getHandler(s);
+    if (NULL == h)
+      return;
+
+    if(h->configure(cfg)){
+      ERROR("Could not configure the session timer: disabling session timers.\n");
+      delete h;
+    } else {
+      s->addHandler(h);
+    }
+  }
 }
 
 /**
@@ -745,11 +753,11 @@ void safe_Py_DECREF(PyObject* pyo) {
   Py_DECREF(pyo);
 }
 
-void IvrDialog::onSipReply(const AmSipReply& r, int old_dlg_status) {
+void IvrDialog::onSipReply(const AmSipReply& r, int old_dlg_status, const string& trans_method) {
   PyObject* pyo = getPySipReply(r);
   callPyEventHandler("onSipReply","(O)", pyo);
   safe_Py_DECREF(pyo);
-  AmB2BSession::onSipReply(r,old_dlg_status);
+  AmB2BSession::onSipReply(r,old_dlg_status,trans_method);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){
@@ -776,9 +784,10 @@ void IvrDialog::process(AmEvent* event)
     
   AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
   if(plugin_event && plugin_event->name == "timer_timeout") {
-
-    callPyEventHandler("onTimer", "(i)", plugin_event->data.get(0).asInt());
-    event->processed = true;
+    if (plugin_event->data.get(0).asInt() >= 0) {
+      callPyEventHandler("onTimer", "(i)", plugin_event->data.get(0).asInt());
+      event->processed = true;
+    }
   }
 
   if (!event->processed)

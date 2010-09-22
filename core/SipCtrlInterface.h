@@ -49,6 +49,9 @@ class udp_trsp;
 class SipCtrlInterface:
     public sip_ua
 {
+    void sip_msg2am_request(const sip_msg *msg, AmSipRequest &request);
+    bool sip_msg2am_reply(sip_msg *msg, AmSipReply &reply);
+    
     void prepare_routes_uac(const list<sip_header*>& routes, string& route_field);
     void prepare_routes_uas(const list<sip_header*>& routes, string& route_field);
 
@@ -104,7 +107,8 @@ public:
      */
     void handle_sip_request(const trans_ticket& tt, sip_msg* msg);
     void handle_sip_reply(sip_msg* msg);
-    void timer_expired(sip_trans* trans, sip_timer_type tt);
+    void handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
+        sip_trans *tr, trans_bucket *buk=0);
 };
 
 

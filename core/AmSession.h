@@ -34,6 +34,7 @@
 #include "AmRtpAudio.h"
 #include "AmDtmfDetector.h"
 #include "AmSipMsg.h"
+#include "AmSipHeaders.h"
 #include "AmSipDialog.h"
 #include "AmSipEvent.h"
 #include "AmApi.h"
@@ -60,6 +61,14 @@ class AmDtmfEvent;
 
 #define AM_AUDIO_IN  0
 #define AM_AUDIO_OUT 1
+
+
+/* maximum number of reliable 1xx supported; needed for marking first 1xx
+ * (which can not be followed by subsequent ones w/o being PRACKed), as
+ * opposed to having another value storing it's value. */
+#define MAX_RSEQ_BITS           24
+#define LOC_RSEQ_ORDER(_rseq)   (_rseq & ((1 << MAX_RSEQ_BITS) - 1))
+
 
 /**
  * \brief Implements the default behavior of one session
@@ -157,9 +166,27 @@ protected:
   /** do accept early session? */
   bool accept_early_session;
 
+  /** enable the reliability of provisional replies? */
+  unsigned char reliable_1xx;
+#define REL100_DISABLED         0
+#define REL100_SUPPORTED        1
+#define REL100_REQUIRE          2
+#define REL100_MAX              REL100_REQUIRE
+
   vector<AmSessionEventHandler*> ev_handlers;
 
 public:
+
+  enum SessionRefreshMethod {
+    REFRESH_REINVITE = 0,      // use reinvite
+    REFRESH_UPDATE,            // use update
+    REFRESH_UPDATE_FB_REINV    // use update or fallback to reinvite
+  };
+  /** currently selected session refresh method */
+  SessionRefreshMethod refresh_method;
+
+  /** update selected session refresh method from remote capabilities */
+  void updateRefreshMethod(const string& headers);
 
   AmRtpAudio* RTPStream();
 
@@ -181,7 +208,8 @@ public:
   struct Exception {
     int code;
     string reason;
-    Exception(int c, string r) : code(c), reason(r) {}
+    string hdrs;
+    Exception(int c, string r, string h="") : code(c), reason(r), hdrs(h) {}
   };
 
   /** 
@@ -205,13 +233,16 @@ public:
   void addHandler(AmSessionEventHandler*);
 
   /**
-   * Set the call group for this call. 
+   * Set the call group for this call; calls in the same
+   * group are processed by the same media processor thread.
    * 
    * Note: this must be set before inserting 
-   * the session to the scheduler!
+   * the session to the MediaProcessor!
    */
   void setCallgroup(const string& cg);
-  string getCallgroup() { return callgroup; }
+
+  /** get the callgroup @return callgroup */
+  string getCallgroup();
 
   /** This function removes the session from 
    *  the media processor and adds it again. 
@@ -223,6 +254,7 @@ public:
    * (inclusive RTP stream)
    */
   void lockAudio();
+
   /**
    * Unlock audio input & output
    * (inclusive RTP stream)
@@ -258,7 +290,7 @@ public:
    * Local audio output getter.
    * Note: audio must be locked!
    */
-  AmAudio* getLocalOutput(){ return local_output;}
+  AmAudio* getLocalOutput() { return local_output;}
 
   /**
    * Local audio input & output set methods.
@@ -315,12 +347,22 @@ public:
   /** get the payload provider for the session */
   virtual AmPayloadProviderInterface* getPayloadProvider();
 
+  /** refresh the session - re-INVITE or UPDATE*/
+  virtual bool refresh();
+
   /** send an UPDATE in the session */
-  virtual void sendUpdate();
+  virtual int sendUpdate(const string &cont_type, const string &body, const string &hdrs);
+
   /** send a Re-INVITE (if connected) */
-  virtual void sendReinvite(bool updateSDP = true, const string& headers = "");
+  virtual int sendReinvite(bool updateSDP = true, const string& headers = "");
+
   /** send an INVITE */
   virtual int sendInvite(const string& headers = "");
+
+  /** send a PRACK request */
+  void sendPrack(const string &sdp_offer, 
+                 const string &rseq_val, 
+                 const string &cseq_val);
 
   /** set the session on/off hold */
   virtual void setOnHold(bool hold);
@@ -371,13 +413,21 @@ public:
   bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
   void setDtmfDetectionEnabled(bool e) { m_dtmfDetectionEnabled = e; }
   void putDtmfAudio(const unsigned char *buf, int size, int user_ts);
-  /** event handler for apps to use*/
+
+  /**
+   * send a DTMF as RTP payload (RFC4733)
+   * @param event event ID (e.g. key press), see rfc
+   * @param duration_ms duration in milliseconds
+   */
+  void sendDtmf(int event, unsigned int duration_ms);
+
+  /** DTMF event handler for apps to use*/
   virtual void onDtmf(int event, int duration);
 
   /**
    * onStart will be called before everything else.
    */
-  virtual void onStart(){}
+  virtual void onStart() {}
 
   /**
    * onInvite will be called if an INVITE or re-INVITE
@@ -406,6 +456,14 @@ public:
   virtual void onCancel(const AmSipRequest& req);
 
   /**
+   * onPrack is called when a PRACK request is received for the session.
+   * The sequencing correctness (RAck fits) is already checked.
+   * Should be overridden if SDP offer is expected with it.
+   * @param cnt order of which 1xx this PRACK is for 
+   */
+  virtual void onPrack(const AmSipRequest& req, unsigned cnt);
+
+  /**
    * onSessionStart will be called after call setup.
    *
    * Throw AmSession::Exception if you want to 
@@ -425,9 +483,9 @@ public:
 
   /**
    * onRinging will be called after 180 is received. 
-   * If local audio is set up, session is added to scheduler. 
+   * If local audio is set up, session is added to media processor.
    */
-  virtual void onRinging(const AmSipReply& reply){}
+  virtual void onRinging(const AmSipReply& reply) {}
 
   /**
    * onBye is called whenever a BYE request is received. 
@@ -436,17 +494,16 @@ public:
 
   /** Entry point for SIP Requests   */
   virtual void onSipRequest(const AmSipRequest& req);
+
   /** Entry point for SIP Replies   */
-  virtual void onSipReply(const AmSipReply& reply, 
-			  AmSipDialog::Status old_dlg_status);
+  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status,
+			      const string& trans_method);
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);
   
-  /** missing 2xx-ACK */
-  virtual void onNo2xxACK(unsigned int cseq);
-  /** missing non-2xx-ACK */
-  virtual void onNoErrorACK(unsigned int cseq);
+  virtual void onNoAck(unsigned int cseq);
+  virtual void onNoPrack(const AmSipRequest &req, const AmSipReply &rpl);
 
   /**
    * Entry point for Audio events
@@ -468,7 +525,11 @@ public:
   /** This callback is called if RTP timeout encountered */
   virtual void onRtpTimeout();
 
-  /** Called by AmSipDialog when a request is sent */
+  /** This callback is called if session
+      timeout encountered (session timers) */
+  virtual void onSessionTimeout();
+
+  /* Called by AmSipDialog when a request is sent */
   virtual void onSendRequest(const string& method,
 			     const string& content_type,
 			     const string& body,
@@ -501,6 +562,9 @@ public:
 
   // The IP address to put as c= in SDP bodies and to use for Contact:.
   string advertisedIP();
+
+  /** format session id for debugging */
+  string sid4dbg();
 };
 
 inline AmRtpAudio* AmSession::RTPStream() {
@@ -510,6 +574,22 @@ inline AmRtpAudio* AmSession::RTPStream() {
     _rtp_str.reset(new AmRtpAudio(this));
   }
   return _rtp_str.get();
+}
+
+static inline string get_100rel_hdr(unsigned char reliable_1xx)
+{
+  switch(reliable_1xx) {
+    case REL100_SUPPORTED:
+      return SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+    case REL100_REQUIRE:
+      return SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+    default:
+      ERROR("BUG: unexpected reliability switch value of '%d'.\n",
+          reliable_1xx);
+    case 0:
+      break;
+  }
+  return "";
 }
 
 #endif

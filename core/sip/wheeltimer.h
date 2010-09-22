@@ -81,11 +81,11 @@ public:
     
 };
 
+#include "singleton.h"
 
-class wheeltimer: public AmThread
+class _wheeltimer:
+    public AmThread
 {
-    static wheeltimer* _instance;
-
     //the timer wheel
     base_timer wheels[WHEELS][ELMTS_PER_WHEEL];
 
@@ -104,9 +104,6 @@ class wheeltimer: public AmThread
     //list with expired timers
     base_timer utimer_expired;
 
-    wheeltimer();
-    ~wheeltimer();
-
     void turn_wheel();
     void update_wheel(int wheel);
 
@@ -122,10 +119,10 @@ protected:
     void run();
     void on_stop(){}
 
+    _wheeltimer();
+    ~_wheeltimer();
+
 public:
-
-    static wheeltimer* instance();
-
     //clock reference
     volatile u_int32_t wall_clock; // 32 bits
 
@@ -134,6 +131,7 @@ public:
     void remove_timer(timer* t);
 };
 
+typedef singleton<_wheeltimer> wheeltimer;
 
 #endif
 

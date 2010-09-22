@@ -66,6 +66,7 @@ functions to get values, e.g. from the outside:
  getAttributeFinished(attr_name) 
                    - get a specific attribute from all finished calls, parameter is the attribute name
  erase(ID)         - erase info of a specific call, parameter is the call ID (+free used memory)
+ eraseByFilter(exp, exp, exp, ...) - list IDs of calls that match the filter expressions and erase them; filter expressions like listByFilter 
  clear()           - erase info of all calls (+free used memory)
  clearFinished()   - erase info of all finished calls (+free used memory)
 

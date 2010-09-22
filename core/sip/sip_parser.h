@@ -30,6 +30,7 @@
 
 #include "cstring.h"
 #include "parse_uri.h"
+#include "resolver.h"
 
 #include <list>
 using std::list;
@@ -41,6 +42,7 @@ struct sip_request;
 struct sip_reply;
 struct sip_header;
 struct sip_via_parm;
+struct dns_handle;
 
 //
 // SIP message types:
@@ -63,6 +65,7 @@ struct sip_request
 	OTHER_METHOD=0,
 	INVITE,
 	ACK,
+        PRACK,
 	OPTIONS,
 	BYE,
 	CANCEL,
@@ -107,6 +110,7 @@ struct sip_msg
     sip_header*        from;
 
     sip_header*        cseq;
+    sip_header*        rack;
 
     sip_header*        via1;
     sip_via_parm*      via_p1;
@@ -123,9 +127,10 @@ struct sip_msg
     sockaddr_storage   local_ip;
 
     sockaddr_storage   remote_ip;
-
+    dns_handle         h_dns;
+    
     sip_msg();
-    sip_msg(char* msg_buf, int msg_len);
+    sip_msg(const char* msg_buf, int msg_len);
     ~sip_msg();
 };
 

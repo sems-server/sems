@@ -94,9 +94,10 @@ AmSessionEventHandlerFactory::AmSessionEventHandlerFactory(const string& name)
 }
 
 bool AmSessionEventHandlerFactory::onInvite(const AmSipRequest& req, 
-						  AmArg& session_params) {
+					    AmArg& session_params,
+					    AmConfigReader& cfg) {
   WARN("discarding session parameters for new session.\n");
-  return onInvite(req);
+  return onInvite(req, cfg);
 }
 
 // AmSIPEventHandler::AmSIPEventHandler(const string& name) 

@@ -191,7 +191,7 @@ class AmArg
 #define isArgUndef(a) (AmArg::Undef == a.getType())
 #define isArgArray(a) (AmArg::Array == a.getType())
 #define isArgStruct(a)(AmArg::Struct == a.getType())
-#define isArgDouble(a) (AmArg::Array == a.getType())
+#define isArgDouble(a) (AmArg::Double == a.getType())
 #define isArgInt(a) (AmArg::Int == a.getType())
 #define isArgBool(a) (AmArg::Bool == a.getType())
 #define isArgCStr(a) (AmArg::CStr == a.getType())

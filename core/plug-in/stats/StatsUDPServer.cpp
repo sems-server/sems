@@ -152,10 +152,7 @@ int StatsUDPServer::init()
 
   /* set sock opts? */
   optval=1;
-  if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof(optval)) ==-1){
-    ERROR("ERROR: setsockopt(reuseaddr): %s\n", strerror(errno));
-    return -1;	
-  }
+
   /* tos */
   optval=IPTOS_LOWDELAY;
   if (setsockopt(sd, IPPROTO_IP, IP_TOS, (void*)&optval, sizeof(optval)) ==-1){

@@ -7,7 +7,9 @@ GIT = $(shell which git)
 SVNVERSION = $(shell which svnversion)
 
 ifneq ($(GIT),)
-   SCM_REV = $(shell if git --help describe |grep dirty 2>&1 >/dev/null ; then git describe --always --dirty; else git describe --always ; fi) 
+   SCM_REV = $(shell if git --help describe |grep dirty 2>&1 >/dev/null ; \
+        then git describe --always --dirty 2>/dev/null; \
+        else git describe --always 2>/dev/null; fi)
 endif
 
 ifeq ($(SCM_REV),)
@@ -86,6 +88,9 @@ USE_MONITORING=yes
 #
 #LONG_DEBUG_MESSAGE=yes
 
+# Is this a debug build or not?
+debug=no
+
 
 ################### end of configuration section #######################
 
@@ -157,11 +162,14 @@ CXX = g++
 CC = gcc
 LD = $(CC)
 
+CXXFLAGS += -Wall -Wno-reorder -fPIC -g $(EXTRA_CXXFLAGS)
+CFLAGS   += -Wall -fPIC -g $(EXTRA_CFLAGS)
 
-CXXFLAGS += -Wall -Wno-reorder -fPIC -g \
-	    -O2 $(EXTRA_CXXFLAGS)
-         
-CFLAGS += -Wall -fPIC -g -O2 $(EXTRA_CFLAGS)
+# only optimize if releasing, as it slows down the build process
+ifneq ($(debug),yes)
+	CXXFLAGS += -O2
+	CFLAGS += -O2
+endif
 
 ifeq ($(DEBUG_PLAYOUT), yes)
 CPPFLAGS +=  -DDEBUG_PLAYOUTBUF

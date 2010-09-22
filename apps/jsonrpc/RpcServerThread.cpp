@@ -89,7 +89,8 @@ void RpcServerThread::process(AmEvent* event) {
 
     if (!snd_msg_ev->is_reply) {
       if (JsonRpcServer::createRequest(snd_msg_ev->reply_link, snd_msg_ev->method, 
-				       snd_msg_ev->params, connection, 
+				       snd_msg_ev->params, connection,
+				       snd_msg_ev->udata,
 				       snd_msg_ev->id.empty())) {
 	ERROR("creating request\n");
 	// give back connection into server loop

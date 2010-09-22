@@ -62,6 +62,8 @@ DEF_ACTION_1P(SCMuteAction);
 DEF_ACTION_1P(SCUnmuteAction);
 DEF_ACTION_1P(SCEnableDTMFDetection);
 DEF_ACTION_1P(SCDisableDTMFDetection);
+DEF_ACTION_2P(SCSendDTMFAction);
+DEF_ACTION_2P(SCSendDTMFSequenceAction);
 
 DEF_ACTION_1P(SCSetPromptsAction);
 DEF_ACTION_2P(SCAddSeparatorAction);
@@ -81,6 +83,7 @@ DEF_ACTION_2P(SCAppendAction);
 DEF_ACTION_2P(SCSubStrAction);
 DEF_ACTION_1P(SCIncAction);
 DEF_ACTION_1P(SCClearAction);
+DEF_ACTION_1P(SCClearArrayAction);
 DEF_ACTION_2P(SCSetTimerAction);
 DEF_ACTION_1P(SCRemoveTimerAction);
 DEF_ACTION_1P(SCRemoveTimersAction);
@@ -103,13 +106,18 @@ DEF_ACTION_1P(SCB2BAddHeaderAction);
 DEF_ACTION_1P(SCB2BClearHeadersAction);
 DEF_ACTION_2P(SCB2BSetHeadersAction);
 
+DEF_ACTION_1P(SCRegisterEventQueueAction);
+DEF_ACTION_1P(SCUnregisterEventQueueAction);
+
+DEF_ACTION_2P(SCCreateSystemDSMAction);
+
 class SCDIAction					
 : public DSMAction {
   vector<string> params;
   bool get_res;
  public:
   SCDIAction(const string& arg, bool get_res);
-  bool execute(AmSession* sess,
+  bool execute(AmSession* sess, DSMSession* sc_sess,
 	       DSMCondition::EventType event,
 	       map<string,string>* event_params);
 };									
@@ -131,7 +139,7 @@ class TestDSMCondition
 
  public:
   TestDSMCondition(const string& expr, DSMCondition::EventType e);
-  bool match(AmSession* sess, DSMCondition::EventType event,
+  bool match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 	     map<string,string>* event_params);
 };
 

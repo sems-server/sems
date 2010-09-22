@@ -112,7 +112,7 @@ void AnnounceTransferDialog::onSessionStart(const AmSipRequest& req)
     status = Announcing;
     callee_uri = get_session_param(req.hdrs, "Refer-To");
     if (!callee_uri.length()) {
-      callee_uri = getHeader(req.hdrs, "P-Refer-To");
+      callee_uri = getHeader(req.hdrs, "P-Refer-To", true);
       if (callee_uri.length()) {
 	INFO("Use of P-Refer-To header is deprecated. "
 	     "Use '%s: Refer-To=<uri>' instead.\n",PARAM_HDR);
@@ -140,7 +140,7 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
      (req.method == "NOTIFY")) {
     try {
 
-      if (strip_header_params(getHeader(req.hdrs,"Event", "o")) != "refer") 
+      if (strip_header_params(getHeader(req.hdrs,"Event", "o", true)) != "refer") 
 	throw AmSession::Exception(481, "Subscription does not exist");
 
       if ((strip_header_params(req.content_type) != "message/sipfrag"))
@@ -181,7 +181,7 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
 
 }
 
-void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, int old_dlg_status) {
+void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, int old_dlg_status, const string& trans_method) {
   if ((status==Transfering ||status==Hangup)  && 
       dlg.get_uac_trans_method(rep.cseq) == "REFER") {
     if (rep.code >= 300) {
@@ -191,7 +191,7 @@ void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, int old_dlg_statu
     }
   }
 
-  AmSession::onSipReply(rep, old_dlg_status);
+  AmSession::onSipReply(rep, old_dlg_status, trans_method);
 }
 
 void AnnounceTransferDialog::onBye(const AmSipRequest& req)

@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 SC_EXPORT(MOD_CLS_NAME);
 
@@ -45,7 +46,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("sys.unlink", SCUnlinkAction);
   DEF_CMD("sys.unlinkArray", SCUnlinkArrayAction);
   DEF_CMD("sys.tmpnam", SCTmpNamAction);
-
+  DEF_CMD("sys.popen", SCPopenAction);
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
@@ -54,7 +55,6 @@ MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
     return new FileExistsCondition(params, false);
   }
 
-  // ahem... missing not? 
   if (cmd == "sys.file_not_exists") {
     return new FileExistsCondition(params, true);
   }
@@ -256,4 +256,47 @@ EXEC_ACTION_START(SCTmpNamAction) {
     sc_sess->var[varname] = fname;
     sc_sess->SET_ERRNO(DSM_ERRNO_OK);
   }
+} EXEC_ACTION_END;
+
+
+CONST_ACTION_2P(SCPopenAction, '=', false);
+EXEC_ACTION_START(SCPopenAction) {
+  string dst_var = par1;
+  if (dst_var.length() && dst_var[0]=='$')
+    dst_var = dst_var.substr(1);
+
+  string cmd = resolveVars(par2, sess, sc_sess, event_params);
+  
+  DBG("executing '%s' while saving output to $%s\n", 
+      cmd.c_str(), dst_var.c_str());
+
+  char buf[100];
+  string res;
+  FILE* fp = popen(cmd.c_str(), "r");
+  if (fp==NULL) {
+    throw DSMException("sys", "type", "popen", "cause", strerror(errno));
+  }
+
+  size_t rlen;
+
+  while (true) {    
+    rlen = fread(buf, 1, 100, fp);
+    if (rlen < 100) {
+      if (rlen)
+	res += string(buf, rlen);
+      break;
+    }
+
+    res += string(buf, rlen);
+  }
+
+  sc_sess->var[dst_var] = res;
+  
+  int status = pclose(fp);
+  if (status==-1) {
+    throw DSMException("sys", "type", "pclose", "cause", strerror(errno));
+  }
+  sc_sess->var[dst_var+".status"] = int2str(status);
+  DBG("child process returned status %d\n", status);
+
 } EXEC_ACTION_END;

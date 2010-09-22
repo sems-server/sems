@@ -105,11 +105,17 @@ string resolveVars(const string ts, AmSession* sess,
       return "";
     }
     case '#': 
-      if (event_params) 
-	return  (*event_params)[s.substr(1)];
-      else 
+      if (event_params) {
+	map<string, string>::iterator it = event_params->find(s.substr(1));
+	if (it != event_params->end())
+	  return it->second;
+	return  "";
+      }else 
 	return string();
     case '@': {
+      if (s.length() < 2)
+	return "@";
+
       string s1 = s.substr(1); 
       if (s1 == "local_tag")
 	return sess->getLocalTag();	

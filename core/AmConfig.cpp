@@ -36,6 +36,7 @@
 #include "log.h"
 #include "AmConfigReader.h"
 #include "AmUtils.h"
+#include "AmSession.h"
 
 #include <fstream>
 #include <cctype>
@@ -89,11 +90,14 @@ unsigned int AmConfig::OptionsSessionLimit            = 0;
 unsigned int AmConfig::OptionsSessionLimitErrCode     = 503;
 string       AmConfig::OptionsSessionLimitErrReason   = "Server overload";
 
+unsigned char AmConfig::rel100                 = REL100_SUPPORTED;
+
 vector <string> AmConfig::CodecOrder;
 
 Dtmf::InbandDetectorType 
 AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
 bool AmConfig::IgnoreSIGCHLD      = true;
+bool AmConfig::IgnoreSIGPIPE      = true;
 
 int AmConfig::setSIPPort(const string& port) 
 {
@@ -518,6 +522,23 @@ int AmConfig::readConfiguration()
       OptionsSessionLimitErrReason = limit[2];
     }
   }
+
+  if (cfg.hasParameter("100rel")) {
+    string rel100s = cfg.getParameter("100rel");
+    if (rel100s == "disabled" || rel100s == "off") {
+      rel100 = REL100_DISABLED;
+    } else if (rel100s == "supported") {
+      rel100 = REL100_SUPPORTED;
+    } else if (rel100s == "require") {
+      rel100 = REL100_REQUIRE;
+    } else {
+      ERROR("unknown setting for '100rel' config option: '%s'.\n",
+	    rel100s.c_str());
+      return -1;
+    }
+  }
+
+  INFO("100rel: %d.\n", AmConfig::rel100);
 
   return 0;
 }	

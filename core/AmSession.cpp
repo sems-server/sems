@@ -49,6 +49,7 @@
 #include <assert.h>
 #include <sys/time.h>
 
+
 volatile unsigned int AmSession::session_num = 0;
 AmMutex AmSession::session_num_mut;
 
@@ -65,6 +66,8 @@ AmSession::AmSession()
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
+    reliable_1xx(AmConfig::rel100),
+    refresh_method(REFRESH_UPDATE_FB_REINV),
     processing_status(SESSION_PROCESSING_EVENTS)
 #ifdef WITH_ZRTP
   ,  zrtp_session(NULL), zrtp_audio(NULL), enable_zrtp(true)
@@ -76,6 +79,8 @@ AmSession::AmSession()
 {
   use_local_audio[AM_AUDIO_IN] = false;
   use_local_audio[AM_AUDIO_OUT] = false;
+  if (reliable_1xx)
+    dlg.rseq = 0; //???
 }
 
 AmSession::~AmSession()
@@ -96,6 +101,10 @@ AmSession::~AmSession()
 
 void AmSession::setCallgroup(const string& cg) {
   callgroup = cg;
+}
+
+string AmSession::getCallgroup() {
+  return callgroup;
 }
 
 void AmSession::changeCallgroup(const string& cg) {
@@ -586,6 +595,11 @@ void AmSession::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
   m_dtmfEventQueue.putDtmfAudio(buf, size, user_ts);
 }
 
+void AmSession::sendDtmf(int event, unsigned int duration_ms) {
+  RTPStream()->sendDtmf(event, duration_ms);
+}
+
+
 void AmSession::onDtmf(int event, int duration_msec)
 {
   DBG("AmSession::onDtmf(%i,%i)\n",event,duration_msec);
@@ -696,10 +710,12 @@ void AmSession::onSipRequest(const AmSipRequest& req)
   }
 }
 
-
-void AmSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
+void AmSession::onSipReply(const AmSipReply& reply,
+			   int old_dlg_status, const string& trans_method)
 {
-  CALL_EVENT_H(onSipReply,reply);
+  CALL_EVENT_H(onSipReply, reply, old_dlg_status, trans_method);
+
+  updateRefreshMethod(reply.hdrs);
 
   if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
@@ -795,20 +811,34 @@ void AmSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
   */
 }
 
+
+
 void AmSession::onInvite2xx(const AmSipReply& reply)
 {
   dlg.send_200_ack(reply.cseq);
 }
 
-void AmSession::onNo2xxACK(unsigned int cseq)
+void AmSession::onNoAck(unsigned int cseq)
 {
-  dlg.bye();
+  if (dlg.getStatus() == AmSipDialog::Connected)
+    dlg.bye();
   setStopped();
 }
 
-void AmSession::onNoErrorACK(unsigned int cseq)
+void AmSession::onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)
 {
-  setStopped();
+  INFO("reply <%s> timed out.\n", rpl.print().c_str());
+  if (100 < rpl.code && rpl.code < 200 && reliable_1xx == REL100_REQUIRE &&
+      (unsigned)dlg.rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
+    INFO("reliable %d reply timed out; rejecting request.\n", rpl.code);
+    dlg.reply(req, 504, "Server Time-out");
+    // TODO: handle forking case (when more PRACKs are sent, out of which some
+    // might time-out/fail).
+    if (dlg.getStatus() < AmSipDialog::Connected)
+      setStopped();
+  } else {
+    WARN("reply timed-out, but not reliable.\n"); // debugging
+  }
 }
 
 void AmSession::onAudioEvent(AmAudioEvent* audio_ev)
@@ -852,6 +882,47 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
 			    const string& reason, const string& content_type,
 			    const string& body, string& hdrs, int flags)
 {
+  if (req.method == SIP_METH_INVITE) {
+    if (100 < code && code < 200) {
+      switch (reliable_1xx) {
+        case REL100_SUPPORTED:
+          hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+          break;
+        case REL100_REQUIRE:
+          // add Require HF
+          hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+          // add RSeq HF
+#ifndef NDEBUG
+          if ((abs(dlg.rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 
+              ((1 << MAX_RSEQ_BITS) - 1)) {
+            ERROR("CRITICAL: RSeq value too high: increase MAX_RSEQ_BITS "
+              "(now %d) and recompile.\n", MAX_RSEQ_BITS);
+            abort();
+          }
+#endif
+          if (dlg.rseq < 0) { // RSeq not yet PRACKed
+            // refuse subsequent 1xx if first isn't yet PRACKed
+            if ((((unsigned)-dlg.rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 0)
+              throw AmSession::Exception(491, "last reliable 1xx not yet "
+                  "PRACKed");
+            dlg.rseq --;
+          } else if (! dlg.rseq) { // only init rseq if 1xx is used
+            unsigned rseq_1st = (get_random() + 1) << MAX_RSEQ_BITS;
+            rseq_1st &= 0x7fffffff;
+            dlg.rseq = -((signed)rseq_1st);
+          } else {
+            dlg.rseq = -(++dlg.rseq);
+          }
+          // FIXME: code above is not re-entrant; should it actually be???
+          hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(-dlg.rseq) + CRLF;
+          break;
+      }
+    } else if (code < 300 && reliable_1xx == REL100_REQUIRE) {
+      if (dlg.rseq < 0) // reliable 1xx is pending
+        throw AmSession::Exception(491, "last reliable 1xx not yet PRACKed");
+    }
+  }
+
   CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs,flags);
 }
 
@@ -988,21 +1059,77 @@ void AmSession::onRtpTimeout()
   setStopped();
 }
 
-void AmSession::sendUpdate() 
-{
-  dlg.update("");
+void AmSession::onSessionTimeout() {
+  DBG("Session Timer: Timeout, ending session.\n");
+  dlg.bye();
+  setStopped();
 }
 
-void AmSession::sendReinvite(bool updateSDP, const string& headers) 
+void AmSession::updateRefreshMethod(const string& headers) {
+  if (refresh_method == REFRESH_UPDATE_FB_REINV) {
+    if (key_in_list(getHeader(headers, SIP_HDR_ALLOW),
+		    SIP_METH_UPDATE)) {
+      DBG("remote allows UPDATE, using UPDATE for session refresh.\n");
+      refresh_method = REFRESH_UPDATE;
+    }
+  }
+}
+
+bool AmSession::refresh() {
+  if (refresh_method == REFRESH_UPDATE) {
+    DBG("Refreshing session with UPDATE\n");
+    return sendUpdate("", "", "") == 0;
+  } else {
+
+    if (dlg.getUACInvTransPending()) {
+      DBG("INVITE transaction pending - not refreshing now\n");
+      return false;
+    }
+
+    DBG("Refreshing session with re-INVITE\n");
+    return sendReinvite(true) == 0;
+  }
+}
+
+int AmSession::sendUpdate(const string &cont_type, const string &body,
+			   const string &hdrs)
 {
-  //  if (updateSDP) {
-  //    RTPStream()->setLocalIP(AmConfig::LocalIP);
-  //    string sdp_body;
-  //    getSdpOffer(content_type,sdp_body);
-  //    dlg.reinvite(headers, content_type, sdp_body);
-  //} else {
-    dlg.reinvite(headers, "", "");
-    //}
+  return dlg.update(cont_type, body, hdrs);
+}
+
+void AmSession::sendPrack(const string &sdp_offer, 
+                          const string &rseq_val, 
+                          const string &cseq_val)
+{
+  string hdrs = "RAck: " + rseq_val + " " + cseq_val + "\r\n";
+
+  // TODO: digest an answer based on the sdp_offer
+
+  // TODO: should't cseq&rseq be handled in dialog, entirely?!?!
+  if (dlg.prack(/*cont. type*/"", /*body*/"", hdrs) < 0)
+    ERROR("failed to send PRACK request in session '%s'.\n",sid4dbg().c_str());
+}
+
+string AmSession::sid4dbg()
+{
+  string dbg;
+  dbg = dlg.callid + "/" + dlg.local_tag + "/" + dlg.remote_tag + "/" + 
+      int2str(RTPStream()->getLocalPort()) + "/" + 
+      RTPStream()->getRHost() + ":" + int2str(RTPStream()->getRPort());
+  return dbg;
+}
+
+int AmSession::sendReinvite(bool updateSDP, const string& headers) 
+{
+  // if (updateSDP) {
+  //   RTPStream()->setLocalIP(AmConfig::LocalIP);
+  //   string sdp_body;
+  //   sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
+  //   return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), SIP_APPLICATION_SDP,
+  //       sdp_body);
+  // } else {
+    return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "", "");
+  // }
 }
 
 int AmSession::sendInvite(const string& headers) 
@@ -1014,9 +1141,10 @@ int AmSession::sendInvite(const string& headers)
   RTPStream()->setLocalIP(AmConfig::LocalIP);
   
   // Generate SDP.
-  //string sdp_body;
-  //sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-  return dlg.invite(headers, "", "");
+  // string sdp_body;
+  // sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
+  return dlg.invite(headers + get_100rel_hdr(reliable_1xx), 
+		    ""/*SIP_APPLICATION_SDP*/, ""/*sdp_body*/);
 }
 
 void AmSession::setOnHold(bool hold)

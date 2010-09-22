@@ -75,6 +75,9 @@ struct DialoutConfEvent : public AmEvent {
 /** \brief Factory for conference sessions */
 class ConferenceFactory : public AmSessionFactory
 {
+  static AmSessionEventHandlerFactory* session_timer_f;
+  static AmConfigReader cfg;
+
 public:
   static string AudioPath;
   static string LonelyUserFile;
@@ -85,6 +88,7 @@ public:
   static unsigned int MaxParticipants;
   static bool UseRFC4240Rooms;
 
+  static void setupSessionTimer(AmSession* s);
 
 #ifdef USE_MYSQL
   static mysqlpp::Connection Connection;
@@ -153,7 +157,8 @@ public:
   void onBye(const AmSipRequest& req);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, int old_dlg_status);
+  void onSipReply(const AmSipReply& reply, int old_dlg_status,
+		  const string& trans_method);
 
 #ifdef WITH_SAS_TTS
   void onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx);

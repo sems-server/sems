@@ -59,12 +59,12 @@ struct sip_from_to: public sip_parsed_hdr
 int parse_nameaddr(sip_nameaddr* na, const char** c, int len);
 int parse_from_to(sip_from_to* ft, const char* beg, int len);
 
-inline sip_from_to* get_from(sip_msg* msg)
+inline sip_from_to* get_from(const sip_msg* msg)
 {
     return dynamic_cast<sip_from_to*>(msg->from->p);
 }
 
-inline sip_from_to* get_to(sip_msg* msg)
+inline sip_from_to* get_to(const sip_msg* msg)
 {
     return dynamic_cast<sip_from_to*>(msg->to->p);
 }

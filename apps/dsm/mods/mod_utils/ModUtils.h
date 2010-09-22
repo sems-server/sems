@@ -40,5 +40,6 @@ DEF_ACTION_2P(SCURandomAction);
 DEF_ACTION_1P(SCUSRandomAction);
 DEF_ACTION_2P(SCUSAddAction);
 DEF_ACTION_2P(SCUSSubAction);
-
+DEF_ACTION_2P(SCUIntAction);
+DEF_ACTION_2P(SCUSplitStringAction);
 #endif

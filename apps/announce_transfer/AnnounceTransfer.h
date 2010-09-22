@@ -72,7 +72,7 @@ public:
   void startSession();
   void onBye(const AmSipRequest& req);
   void onSipRequest(const AmSipRequest& req);
-    void onSipReply(const AmSipReply& rep, int old_dlg_status);
+  void onSipReply(const AmSipReply& rep, int old_dlg_status, const string& trans_method);
   void onDtmf(int event, int duration_msec) {}
 
   void process(AmEvent* event);

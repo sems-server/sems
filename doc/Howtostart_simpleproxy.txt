@@ -89,7 +89,7 @@ Setting up SEMS to select the application
    application= so that SEMS looks into the P-App-Name header to determine
    which application to run:
    application=$(apphdr)
-   load_plugin=sipctrl;wav;gsm;ilbc;speex;session_timer;conference;echo
+   load_plugin=wav;gsm;ilbc;speex;session_timer;conference;echo
    sip_ip=127.0.0.1
    sip_port=5070
    media_ip=some.public.ip.here
@@ -100,16 +100,16 @@ Setting up SEMS to select the application
      __________________________________________________________________
 
 
-    Generated on Wed Mar 17 14:15:58 2010 for SEMS by  [9]doxygen 1.6.1
+    Generated on Thu Jul 1 15:32:02 2010 for SEMS by  [9]doxygen 1.6.1
 
 References
 
-   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
-   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
-   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
-   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
-   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
-   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
-   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
+   1. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/examples.html
    8. http://www.kamailio.org/dokuwiki/doku.php#setup
    9. http://www.doxygen.org/index.html

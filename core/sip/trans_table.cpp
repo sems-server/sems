@@ -25,51 +25,35 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "hash_table.h"
-#include "hash.h"
 
+#include "trans_table.h"
 #include "sip_parser.h"
 #include "parse_header.h"
 #include "parse_cseq.h"
 #include "parse_via.h"
 #include "parse_from_to.h"
+#include "parse_100rel.h"
 #include "sip_trans.h"
+#include "hash.h"
 
 #include "log.h"
-
-#include <sys/time.h>
-#include <time.h>
 
 #include <assert.h>
 
 //
 // Global transaction table
 //
-trans_bucket _trans_table[H_TABLE_ENTRIES];
 
+hash_table<trans_bucket> _trans_table(H_TABLE_ENTRIES);
 
-
-trans_bucket::trans_bucket()
+trans_bucket::trans_bucket(unsigned long id)
+    : ht_bucket<sip_trans>::ht_bucket(id)
 {
-    id = (unsigned long)(trans_bucket*)(this - _trans_table);
-    pthread_mutex_init(&m,NULL);
 }
 
 trans_bucket::~trans_bucket()
 {
-    pthread_mutex_destroy(&m);
 }
-
-void trans_bucket::lock()
-{
-    pthread_mutex_lock(&m);
-}
-
-void trans_bucket::unlock()
-{
-    pthread_mutex_unlock(&m);
-}
-
 
 sip_trans* trans_bucket::match_request(sip_msg* msg)
 {
@@ -112,14 +96,15 @@ sip_trans* trans_bucket::match_request(sip_msg* msg)
 	    }
 
 	    if(msg->u.request->method != (*it)->msg->u.request->method) {
-		if( (msg->u.request->method == sip_request::ACK) &&
-		    ((*it)->msg->u.request->method == sip_request::INVITE) ) {
-		    
-		    t = match_200_ack(*it,msg);
-		    if(t){
-			break;
-		    }
-		}
+                if((*it)->msg->u.request->method == sip_request::INVITE) {
+                    if(msg->u.request->method == sip_request::ACK) {
+                        if ((t = match_200_ack(*it,msg)))
+                            break;
+                    } else if(msg->u.request->method == sip_request::PRACK) {
+                        if ((t = match_1xx_prack(*it,msg)))
+                            break;
+                    }
+                }
 		
 		continue;
 	    }
@@ -348,6 +333,50 @@ sip_trans* trans_bucket::match_200_ack(sip_trans* t, sip_msg* msg)
     return t;
 }
 
+sip_trans* trans_bucket::match_1xx_prack(sip_trans* t, sip_msg* msg)
+{
+  /* first, check quickly if lenghts match (From tag, To tag, Call-ID) */
+
+  sip_from_to* from = dynamic_cast<sip_from_to*>(msg->from->p);
+  sip_from_to* t_from = dynamic_cast<sip_from_to*>(t->msg->from->p);
+  if(from->tag.len != t_from->tag.len)
+    return 0;
+
+  sip_from_to* to = dynamic_cast<sip_from_to*>(msg->to->p);
+  if(to->tag.len != t->to_tag.len)
+    return 0;
+
+  if(msg->callid->value.len != t->msg->callid->value.len)
+    return 0;
+
+
+  sip_rack *rack = dynamic_cast<sip_rack *>(msg->rack->p);
+  sip_cseq* t_cseq = dynamic_cast<sip_cseq*>(t->msg->cseq->p);
+  if (rack->cseq != t_cseq->num)
+    return 0;
+
+  if (rack->rseq != t->last_rseq)
+    return 0;
+
+  if (rack->method != t->msg->u.request->method)
+    return 0;
+
+
+  /* numbers fit, try content */
+
+  if(memcmp(from->tag.s,t_from->tag.s,from->tag.len))
+      return NULL;
+
+  if(memcmp(msg->callid->value.s,t->msg->callid->value.s,
+            msg->callid->value.len))
+      return NULL;
+  
+  if(memcmp(to->tag.s,t->to_tag.s,to->tag.len))
+      return NULL;
+  
+  return t;
+}
+
 sip_trans* trans_bucket::add_trans(sip_msg* msg, int ttype)
 {
     sip_trans* t = new sip_trans();
@@ -374,31 +403,6 @@ sip_trans* trans_bucket::add_trans(sip_msg* msg, int ttype)
     return t;
 }
 
-trans_bucket::trans_list::iterator trans_bucket::find_trans(sip_trans* t)
-{
-    trans_list::iterator it = elmts.begin();
-    for(;it!=elmts.end();++it)
-	if(*it == t)
-	    break;
-    
-    return it;
-}
-
-bool trans_bucket::exist(sip_trans* t)
-{
-    return find_trans(t) != elmts.end();
-}
-
-void trans_bucket::remove_trans(sip_trans* t)
-{
-    trans_list::iterator it = find_trans(t);
-
-    if(it != elmts.end()){
-	elmts.erase(it);
-	delete t;
-	DBG("~sip_trans()\n");
-    }
-}
 
 unsigned int hash(const cstring& ci, const cstring& cs)
 {
@@ -470,28 +474,29 @@ void compute_sl_to_tag(char* to_tag/*[8]*/, sip_msg* msg)
 
 void compute_branch(char* branch/*[8]*/, const cstring& callid, const cstring& cseq)
 {
-    unsigned int h=0;
-    unsigned int h_tv=0;
+    unsigned int hl=0;
+    unsigned int hh=0;
     timeval      tv;
 
     gettimeofday(&tv,NULL);
 
-    h = hashlittle(callid.s,callid.len,h);
-    h = hashlittle(cseq.s,cseq.len,h);
-    h_tv = tv.tv_sec + tv.tv_usec;
+    hh = hl = tv.tv_sec + tv.tv_usec;
 
-    compute_tag(branch,h,h_tv);
+    hl = hashlittle(callid.s,callid.len,hl);
+    hh = hashlittle(cseq.s,cseq.len,hh);
+
+    compute_tag(branch,hl,hh);
 }
 
 trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num)
 {
-    return &_trans_table[hash(callid,cseq_num)];
+    return _trans_table[hash(callid,cseq_num)];
 }
 
 trans_bucket* get_trans_bucket(unsigned int h)
 {
     assert(h < H_TABLE_ENTRIES);
-    return &_trans_table[h];
+    return _trans_table[h];
 }
 
 void dumps_transactions()
@@ -503,20 +508,6 @@ void dumps_transactions()
 	bucket->lock();
 	bucket->dump();
 	bucket->unlock();
-    }
-}
-
-void trans_bucket::dump()
-{
-    if(elmts.empty())
-	return;
-
-    DBG("*** Bucket ID: %i ***\n",(int)get_id());
-
-    for(trans_list::iterator it = elmts.begin(); it != elmts.end(); ++it) {
-
-	DBG("type=0x%x; msg=%p; to_tag=%.*s; reply_status=%i; state=%i; retr_buf=%p\n",
-	    (*it)->type,(*it)->msg,(*it)->to_tag.len,(*it)->to_tag.s,(*it)->reply_status,(*it)->state,(*it)->retr_buf);
     }
 }
 

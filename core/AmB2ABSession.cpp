@@ -186,7 +186,7 @@ void AmB2ABCallerSession::onB2ABEvent(B2ABEvent* ev)
 
   case B2ABConnectOtherLegException:
   case B2ABConnectOtherLegFailed: {
-    DBG("looks like callee leg could not be created. terminating our leg.\n");
+    WARN("looks like callee leg could not be created. terminating our leg.\n");
     terminateLeg();
     callee_status = None;
     return;
@@ -353,24 +353,25 @@ void AmB2ABCalleeSession::onSessionStart(const AmSipReply& rep) {
   relayEvent(new B2ABConnectAudioEvent());
 }
 
-void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status) {
-
-  AmSipDialog::Status status_before = old_dlg_status;
-  AmB2ABSession::onSipReply(rep, old_dlg_status);
-  AmSipDialog::Status status = dlg.getStatus();
+void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep,
+				     int old_dlg_status,
+				     const string& trans_method) {
+  AmB2ABSession::onSipReply(rep, old_dlg_status, trans_method);
+  int status = dlg.getStatus();
  
-  if (((status_before == AmSipDialog::Trying) ||
-       (status_before == AmSipDialog::Proceeding) ||
-       (status_before == AmSipDialog::Early) ) &&
-      (status == AmSipDialog::Disconnected)) {
-	  
-    DBG("callee session creation failed. notifying callersession.\n");
-    relayEvent(new B2ABConnectOtherLegFailedEvent(rep.code, rep.reason));
+  if ((old_dlg_status == AmSipDialog::Trying) ||
+      (old_dlg_status == AmSipDialog::Proceeding) ||
+      (old_dlg_status == AmSipDialog::Early)) {
 
-  } else if (((status == AmSipDialog::Trying) ||
-	      (status == AmSipDialog::Proceeding) ||
-	      (status == AmSipDialog::Early) ) && (rep.code == 180)) {
-    relayEvent(new B2ABOtherLegRingingEvent());
+    if (status == AmSipDialog::Disconnected) {
+	  
+      DBG("callee session creation failed. notifying caller session.\n");
+      DBG("this happened with reply: %d.\n", rep.code);
+      relayEvent(new B2ABConnectOtherLegFailedEvent(rep.code, rep.reason));
+
+    } else if (rep.code == 180) {
+      relayEvent(new B2ABOtherLegRingingEvent());
+    }
   }
 }
 

@@ -49,20 +49,20 @@ class AmTimeoutEvent;
 /** \brief Factory of the session timer event handler */
 class SessionTimerFactory: public AmSessionEventHandlerFactory
 {
-  bool checkSessionExpires(const AmSipRequest& req);
+  bool checkSessionExpires(const AmSipRequest& req, AmConfigReader& cfg);
 
  public:
   SessionTimerFactory(const string& name)
     : AmSessionEventHandlerFactory(name) {}
 
   int onLoad();
-  bool onInvite(const AmSipRequest&);
+  bool onInvite(const AmSipRequest& req, AmConfigReader& cfg);
 
   AmSessionEventHandler* getHandler(AmSession* s);
 };
 
 /** \brief config for the session timer */
-class AmSessionTimerConfig 
+class AmSessionTimerConfig
 {
 
   /** Session Timer: enable? */
@@ -114,11 +114,13 @@ class SessionTimer: public AmSessionEventHandler
   unsigned int         session_interval;  
   SessionRefresher     session_refresher;
   SessionRefresherRole session_refresher_role;
+  bool                 accept_501_reply;
 
   void updateTimer(AmSession* s,const AmSipRequest& req);
   void updateTimer(AmSession* s,const AmSipReply& reply);
     
   void setTimers(AmSession* s);
+  void retryRefreshTimer(AmSession* s);
   void removeTimers(AmSession* s);
 
   string getReplyHeaders(const AmSipRequest& req);
@@ -139,7 +141,8 @@ class SessionTimer: public AmSessionEventHandler
   virtual bool process(AmEvent*);
 
   virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&);
+  virtual bool onSipReply(const AmSipReply&, int old_dlg_status,
+			  const string& trans_method);
 
   virtual bool onSendRequest(const string& method, 
 			     const string& content_type,

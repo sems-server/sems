@@ -110,10 +110,10 @@ class AmSessionEventHandlerFactory: public AmPluginFactory
   virtual AmSessionEventHandler* getHandler(AmSession*)=0;
 
   /**
-   * @return true if session creation should be stopped
+   * @return false if session creation should be stopped
    */
-  virtual bool onInvite(const AmSipRequest& req)=0;
-  virtual bool onInvite(const AmSipRequest& req, AmArg& session_params);
+  virtual bool onInvite(const AmSipRequest& req, AmConfigReader& cfg)=0;
+  virtual bool onInvite(const AmSipRequest& req, AmArg& session_params, AmConfigReader& cfg);
 };
 
 /** \brief Interface for plugins to create sessions */

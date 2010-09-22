@@ -1,75 +1,4 @@
-SET (sems_SRCS
- AmAdvancedAudio.cpp
- AmApi.cpp
- AmArg.cpp
- AmAudio.cpp
- AmAudioFile.cpp
- AmAudioMixIn.cpp
- AmAudioMixer.cpp
- AmB2ABSession.cpp
- AmB2BSession.cpp
- AmBufferedAudio.cpp
- AmCachedAudioFile.cpp
- AmCallWatcher.cpp
- AmConferenceChannel.cpp
- AmConferenceStatus.cpp
- AmConfig.cpp
- AmConfigReader.cpp
- AmDtmfDetector.cpp
- AmEvent.cpp
- AmEventDispatcher.cpp
- AmEventQueue.cpp
- AmJitterBuffer.cpp
- AmMediaProcessor.cpp
- AmMultiPartyMixer.cpp
- AmPlaylist.cpp
- AmPlayoutBuffer.cpp
- AmPlugIn.cpp
- AmPrecodedFile.cpp
- AmPromptCollection.cpp
- AmRingTone.cpp
- AmRtpAudio.cpp
- AmRtpPacket.cpp
- AmRtpReceiver.cpp
- AmRtpStream.cpp
- AmSdp.cpp
- AmSession.cpp
- AmSessionContainer.cpp
- AmSessionEventHandler.cpp
- AmSessionProcessor.cpp
- AmSipDialog.cpp
- AmSipDispatcher.cpp
- AmSipEvent.cpp
- AmSipMsg.cpp
- AmThread.cpp
- AmUAC.cpp
- AmUriParser.cpp
- AmUtils.cpp
- AmZRTP.cpp
- LowcFE.cpp
- SipCtrlInterface.cpp
- log.cpp
- sems.cpp
- jsonxx.cpp
- jsonArg.cpp
- sip/hash.cpp
- sip/hash_table.cpp
- sip/msg_fline.cpp
- sip/msg_hdrs.cpp
- sip/parse_common.cpp
- sip/parse_cseq.cpp
- sip/parse_from_to.cpp
- sip/parse_header.cpp
- sip/parse_uri.cpp
- sip/parse_via.cpp
- sip/resolver.cpp
- sip/sip_parser.cpp
- sip/sip_trans.cpp
- sip/trans_layer.cpp
- sip/transport.cpp
- sip/udp_trsp.cpp
- sip/wheeltimer.cpp
-)
+FILE (GLOB sems_SRCS "*.cpp" "sip/*.cpp")
 
 set (audio_files
 beep.wav
@@ -80,7 +9,7 @@ INCLUDE_DIRECTORIES (ampi)
 INCLUDE_DIRECTORIES (amci)
 
 ADD_EXECUTABLE (sems ${sems_SRCS})
-TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} stdc++)
+TARGET_LINK_LIBRARIES(sems ${CMAKE_DL_LIBS} stdc++ resolv)
 
 IF(NOT MAX_RTP_SESSIONS)
 	SET(MAX_RTP_SESSIONS 2048)

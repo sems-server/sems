@@ -31,6 +31,8 @@
 #include "AmSession.h"
 #include "AmSessionContainer.h"
 #include "AmUtils.h"
+#include "AmEventDispatcher.h"
+#include "DSM.h"
 
 #include "jsonArg.h"
 
@@ -69,6 +71,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("unmute", SCUnmuteAction);
   DEF_CMD("enableDTMFDetection", SCEnableDTMFDetection);
   DEF_CMD("disableDTMFDetection", SCDisableDTMFDetection);
+  DEF_CMD("sendDTMF", SCSendDTMFAction);
+  DEF_CMD("sendDTMFSequence", SCSendDTMFSequenceAction);
 
   DEF_CMD("set", SCSetAction);
   DEF_CMD("sets", SCSetSAction);
@@ -80,6 +84,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("inc", SCIncAction);
   DEF_CMD("log", SCLogAction);
   DEF_CMD("clear", SCClearAction);
+  DEF_CMD("clearArray", SCClearArrayAction);
   DEF_CMD("logVars", SCLogVarsAction);
   DEF_CMD("logParams", SCLogParamsAction);
   DEF_CMD("logSelects", SCLogSelectsAction);
@@ -92,6 +97,10 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("setPrompts", SCSetPromptsAction);
 
   DEF_CMD("postEvent", SCPostEventAction);
+
+  DEF_CMD("registerEventQueue", SCRegisterEventQueueAction);
+  DEF_CMD("unregisterEventQueue", SCUnregisterEventQueueAction);
+  DEF_CMD("createSystemDSM", SCCreateSystemDSMAction);
 
   if (cmd == "DI") {
     SCDIAction * a = new SCDIAction(params, false);
@@ -131,22 +140,22 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "test")
     return new TestDSMCondition(params, DSMCondition::Any);
 
-  if (cmd == "keyTest") 
+  if ((cmd == "keyTest") || (cmd == "key"))
     return new TestDSMCondition(params, DSMCondition::Key);
 
-  if (cmd == "timerTest") 
+  if ((cmd == "timerTest") || (cmd == "timer"))
     return new TestDSMCondition(params, DSMCondition::Timer);
 
-  if (cmd == "noAudioTest") 
+  if ((cmd == "noAudioTest") || (cmd == "noAudio"))
     return new TestDSMCondition(params, DSMCondition::NoAudio);
 
-  if (cmd == "separatorTest") 
+  if ((cmd == "separatorTest") || (cmd == "separator"))
     return new TestDSMCondition(params, DSMCondition::PlaylistSeparator);
 
   if (cmd == "hangup") 
     return new TestDSMCondition(params, DSMCondition::Hangup);  
 
-  if (cmd == "eventTest") 
+  if ((cmd == "eventTest") || (cmd == "event"))
     return new TestDSMCondition(params, DSMCondition::DSMEvent);  
 
   if (cmd == "invite") 
@@ -182,6 +191,15 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "jsonRpcResponse") 
     return new TestDSMCondition(params, DSMCondition::JsonRpcResponse);  
 
+  if (cmd == "startup")
+    return new TestDSMCondition(params, DSMCondition::Startup);
+
+  if (cmd == "reload")
+    return new TestDSMCondition(params, DSMCondition::Reload);
+
+  if (cmd == "system")
+    return new TestDSMCondition(params, DSMCondition::System);
+
   return NULL;
 }
 
@@ -211,8 +229,12 @@ EXEC_ACTION_START(SCPostEventAction){
   if (!var.empty()) {
     if (var == "var")
       ev->params = sc_sess->var;
-    else 
-      ev->params[var] = sc_sess->var[var];
+    else {
+      vector<string> vars = explode(var, ";");
+      for (vector<string>::iterator it =
+	     vars.begin(); it != vars.end(); it++)
+	ev->params[*it] = sc_sess->var[*it];
+    }
   }
 
   DBG("posting event to session '%s'\n", sess_id.c_str());
@@ -347,31 +369,43 @@ EXEC_ACTION_START(SCStopAction) {
 
 #define DEF_SCModActionExec(clsname)				\
 								\
-  bool clsname::execute(AmSession* sess,			\
+  bool clsname::execute(AmSession* sess, DSMSession* sc_sess,	\
 			DSMCondition::EventType event,		\
 			map<string,string>* event_params) {	\
     return true;						\
   }								\
 
 DEF_SCModActionExec(SCRepostAction);
-DSMAction::SEAction SCRepostAction::getSEAction(string& param) { 
+DSMAction::SEAction SCRepostAction::getSEAction(string& param,
+						AmSession* sess, DSMSession* sc_sess,
+						DSMCondition::EventType event,
+						map<string,string>* event_params) {
   return Repost; 
 }
 
 DEF_SCModActionExec(SCJumpFSMAction);
-DSMAction::SEAction SCJumpFSMAction::getSEAction(string& param) { 
-  param = arg;
+DSMAction::SEAction SCJumpFSMAction::getSEAction(string& param,
+						 AmSession* sess, DSMSession* sc_sess,
+						 DSMCondition::EventType event,
+						 map<string,string>* event_params) {
+  param = resolveVars(arg, sess, sc_sess, event_params);
   return Jump; 
 }
 
 DEF_SCModActionExec(SCCallFSMAction);
-DSMAction::SEAction SCCallFSMAction::getSEAction(string& param) { 
-  param = arg;
+DSMAction::SEAction SCCallFSMAction::getSEAction(string& param,
+						 AmSession* sess, DSMSession* sc_sess,
+						 DSMCondition::EventType event,
+						 map<string,string>* event_params) {
+  param = resolveVars(arg, sess, sc_sess, event_params);
   return Call; 
 }
 
 DEF_SCModActionExec(SCReturnFSMAction);
-DSMAction::SEAction SCReturnFSMAction::getSEAction(string& param) { 
+DSMAction::SEAction SCReturnFSMAction::getSEAction(string& param,
+						   AmSession* sess, DSMSession* sc_sess,
+						   DSMCondition::EventType event,
+						   map<string,string>* event_params) {
   return Return; 
 }
 
@@ -613,6 +647,25 @@ EXEC_ACTION_START(SCClearAction) {
   sc_sess->var.erase(var_name);
 } EXEC_ACTION_END;
 
+EXEC_ACTION_START(SCClearArrayAction) {
+  string varprefix = (arg.length() && arg[0] == '$')?
+    arg.substr(1) : arg;
+  DBG("clear variable array '%s.*'\n", varprefix.c_str());
+
+  varprefix+=".";
+
+  map<string, string>::iterator lb = sc_sess->var.lower_bound(varprefix);
+  while (lb != sc_sess->var.end()) {
+    if ((lb->first.length() < varprefix.length()) ||
+	strncmp(lb->first.c_str(), varprefix.c_str(),varprefix.length()))
+      break;
+    map<string, string>::iterator lb_d = lb;
+    lb++;
+    sc_sess->var.erase(lb_d);    
+  }
+
+} EXEC_ACTION_END;
+
 
 CONST_ACTION_2P(SCAppendAction,',', false);
 EXEC_ACTION_START(SCAppendAction) {
@@ -838,7 +891,7 @@ TestDSMCondition::TestDSMCondition(const string& expr, DSMCondition::EventType e
   name = expr;
 }
 
-bool TestDSMCondition::match(AmSession* sess, DSMCondition::EventType event,
+bool TestDSMCondition::match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 			  map<string,string>* event_params) {
   if (ttype == None || (type != DSMCondition::Any && type != event))
     return false;
@@ -846,7 +899,6 @@ bool TestDSMCondition::match(AmSession* sess, DSMCondition::EventType event,
   if (ttype == Always)
     return true;
 
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess);
   if (!sc_sess) {
     ERROR("wrong session type\n");
     return false;
@@ -1160,3 +1212,100 @@ EXEC_ACTION_START(SCB2BClearHeadersAction) {
   DBG("clearing B2B headers\n");
   sc_sess->B2BclearHeaders();
 } EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCSendDTMFAction,',', true);
+EXEC_ACTION_START(SCSendDTMFAction) {
+  string event = resolveVars(par1, sess, sc_sess, event_params);
+  string duration = resolveVars(par2, sess, sc_sess, event_params);  
+  
+  unsigned int event_i;
+  if (str2i(event, event_i)) {
+    ERROR("event '%s' not a valid DTMF event\n", event.c_str());
+    throw DSMException("core", "cause", "invalid DTMF:"+ event);
+  }
+
+  unsigned int duration_i;
+  if (duration.empty()) {
+    duration_i = 500; // default
+  } else {
+    if (str2i(duration, duration_i)) {
+      ERROR("event duration '%s' not a valid DTMF duration\n", duration.c_str());
+      throw DSMException("core", "cause", "invalid DTMF duration:"+ duration);
+    }
+  }
+
+  sess->sendDtmf(event_i, duration_i);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCSendDTMFSequenceAction,',', true);
+EXEC_ACTION_START(SCSendDTMFSequenceAction) {
+  string events = resolveVars(par1, sess, sc_sess, event_params);
+  string duration = resolveVars(par2, sess, sc_sess, event_params);
+
+  unsigned int duration_i;
+  if (duration.empty()) {
+    duration_i = 500; // default
+  } else {
+    if (str2i(duration, duration_i)) {
+      ERROR("event duration '%s' not a valid DTMF duration\n", duration.c_str());
+      throw DSMException("core", "cause", "invalid DTMF duration:"+ duration);
+    }
+  }
+
+  for (size_t i=0;i<events.length();i++) {
+    if ((events[i]<'0' || events[i]>'9')
+	&& (events[i] != '#') && (events[i] != '*')
+	&& (events[i] <'A' || events[i] >'F')) {
+	DBG("skipping non-DTMF event char '%c'\n", events[i]);
+	continue;
+    }
+    int event = events[i] - '0';
+    if (events[i] == '*')
+      event = 10;
+    else if (events[i] == '#')
+      event = 11;
+    else if (events[i] >= 'A' && events[i] <= 'F' )
+      event = 12 + (events[i] - 'A');
+    DBG("sending event %d duration %u\n", event, duration_i);
+    sess->sendDtmf(event, duration_i);
+  }
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCRegisterEventQueueAction) {
+  string q_name = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("Registering event queue '%s'\n", q_name.c_str());
+  if (q_name.empty()) {
+    WARN("Registering empty event queue name!\n");
+  }
+  AmEventDispatcher::instance()->addEventQueue(q_name, sess);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCUnregisterEventQueueAction) {
+  string q_name = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("Unregistering event queue '%s'\n", q_name.c_str());
+  if (q_name.empty()) {
+    WARN("Unregistering empty event queue name!\n");
+  }
+  AmEventDispatcher::instance()->delEventQueue(q_name);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCCreateSystemDSMAction,',', false);
+EXEC_ACTION_START(SCCreateSystemDSMAction) {
+  string conf_name = resolveVars(par1, sess, sc_sess, event_params);
+  string script_name = resolveVars(par2, sess, sc_sess, event_params);
+
+  if (conf_name.empty() || script_name.empty()) {
+    throw DSMException("core", "cause", "parameters missing - "
+		       "need both conf_name and script_name for createSystemDSM");
+  }
+
+  DBG("creating system DSM conf_name %s, script_name %s\n", 
+      conf_name.c_str(), script_name.c_str());
+  string status;
+  if (!DSMFactory::instance()->createSystemDSM(conf_name, script_name, false, status)) {
+    ERROR("creating system DSM: %s\n", status.c_str());
+    throw DSMException("core", "cause", status);
+  }
+  
+} EXEC_ACTION_END;
+

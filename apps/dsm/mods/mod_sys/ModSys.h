@@ -39,4 +39,5 @@ DEF_ACTION_2P(SCRenameAction);
 DEF_ACTION_1P(SCUnlinkAction);
 DEF_ACTION_2P(SCUnlinkArrayAction);
 DEF_ACTION_1P(SCTmpNamAction);
+DEF_ACTION_2P(SCPopenAction);
 #endif

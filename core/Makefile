@@ -9,6 +9,7 @@ HDRS=$(SRCS:.cpp=.h)
 OBJS=$(SRCS:.cpp=.o) sip/sip_stack.a
 DEPS=$(SRCS:.cpp=.d) $(NAME).d
 AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
+TEST_DIR=tests
 
 .PHONY: all
 all: ../Makefile.defs
@@ -22,6 +23,7 @@ all: ../Makefile.defs
 clean:
 	rm -f $(OBJS) $(DEPS) $(NAME) $(NAME).o
 	rm -f lib/*.so compat/getos compat/getarch
+	$(MAKE) -C $(SIP_STACK_DIR) clean
 	$(MAKE) -C $(PLUGIN_DIR) clean
 
 .PHONY: sip_stack
@@ -36,12 +38,22 @@ modules:
 	-@echo "making core modules"
 	-@cd $(PLUGIN_DIR); $(MAKE) modules
 
+.PHONY: test
+test:
+	-@echo ""
+	-@echo "making tests"
+	-@cd $(TEST_DIR); $(MAKE)
+
 .PHONY: deps
 deps: $(DEPS)
 
 COREPATH=.
 
 include ../Makefile.defs
+
+CPPFLAGS += -I$(COREPATH)
+
+EXTRA_LDFLAGS += -lresolv
 
 # implicit rules
 %.o : %.cpp %.d ../Makefile.defs

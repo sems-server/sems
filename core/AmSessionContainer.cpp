@@ -303,8 +303,8 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
       }
   } 
   catch(const AmSession::Exception& e){
-    ERROR("%i %s\n",e.code,e.reason.c_str());
-    AmSipDialog::reply_error(req,e.code,e.reason);
+    ERROR("%i %s %s\n",e.code,e.reason.c_str(), e.hdrs.c_str());
+    AmSipDialog::reply_error(req,e.code,e.reason, e.hdrs);
   }
   catch(const string& err){
     ERROR("startSession: %s\n",err.c_str());

@@ -856,40 +856,40 @@ AmSessionFactory* AmPlugIn::findSessionFactory(AmSipRequest& req)
     switch (AmConfig::AppSelect) {
 	
     case AmConfig::App_RURIUSER:
-	app_name = req.user; 
-	break;
+      app_name = req.user; 
+      break;
     case AmConfig::App_APPHDR: 
-	app_name = getHeader(req.hdrs, APPNAME_HDR); 
-	break;      
+      req.cmd = getHeader(req.hdrs, APPNAME_HDR, true); 
+      break;      
     case AmConfig::App_RURIPARAM: 
-	app_name = get_header_param(req.r_uri, "app");
-	break;
+      app_name = get_header_param(req.r_uri, "app");
+      break;
     case AmConfig::App_MAPPING: 
-	{
-	    for (AmConfig::AppMappingVector::iterator it = 
-		     AmConfig::AppMapping.begin(); 
-		 it != AmConfig::AppMapping.end(); it++){
-		if (!regexec(&it->first, req.r_uri.c_str(), 0, NULL, 0)) {
-		    DBG("match of r_uri '%s' to application %s\n", 
-			req.r_uri.c_str(), it->second.c_str());
-		    app_name = it->second;
-		    break;
-		}
-	    }
-	} break;
+      {
+	for (AmConfig::AppMappingVector::iterator it = 
+	       AmConfig::AppMapping.begin(); 
+	     it != AmConfig::AppMapping.end(); it++){
+	  if (!regexec(&it->first, req.r_uri.c_str(), 0, NULL, 0)) {
+	    DBG("match of r_uri '%s' to application %s\n", 
+		req.r_uri.c_str(), it->second.c_str());
+	    app_name = it->second;
+	    break;
+	  }
+	}
+      } break;
     case AmConfig::App_SPECIFIED: 
-	app_name = AmConfig::Application; 
-	break;
+      app_name = AmConfig::Application; 
+      break;
     }
     
     if (app_name.empty()) {
-	ERROR("could not find any application matching configured criteria\n");
-	return NULL;
+      ERROR("could not find any application matching configured criteria\n");
+      return NULL;
     }
     
     AmSessionFactory* session_factory = getFactory4App(app_name);
     if(!session_factory) {
-	ERROR("AmPlugIn::findSessionFactory: application '%s' not found !\n", app_name.c_str());
+      ERROR("AmPlugIn::findSessionFactory: application '%s' not found !\n", app_name.c_str());
     }
     
     return session_factory;

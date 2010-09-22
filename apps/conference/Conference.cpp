@@ -73,6 +73,8 @@ PlayoutType ConferenceFactory::m_PlayoutType = ADAPTIVE_PLAYOUT;
 unsigned int ConferenceFactory::MaxParticipants;
 
 bool ConferenceFactory::UseRFC4240Rooms;
+AmConfigReader ConferenceFactory::cfg;
+AmSessionEventHandlerFactory* ConferenceFactory::session_timer_f = NULL;
 
 #ifdef USE_MYSQL
 mysqlpp::Connection ConferenceFactory::Connection(mysqlpp::use_exceptions);
@@ -155,7 +157,6 @@ int get_audio_file(const string& message, const string& domain, const string& la
 
 int ConferenceFactory::onLoad()
 {
-  AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(APP_NAME)+ ".conf"))
     return -1;
 
@@ -297,6 +298,15 @@ int ConferenceFactory::onLoad()
   UseRFC4240Rooms = cfg.getParameter("use_rfc4240_rooms")=="yes";
   DBG("%ssing RFC4240 room naming.\n", UseRFC4240Rooms?"U":"Not u");
 
+  if(cfg.hasParameter("enable_session_timer") &&
+     (cfg.getParameter("enable_session_timer") == string("yes")) ){
+    DBG("enabling session timers\n");
+    session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
+    if(session_timer_f == NULL){
+      ERROR("Could not load the session_timer module: disabling session timers.\n");
+    }
+  }
+
   return 0;
 }
 
@@ -322,7 +332,27 @@ AmSession* ConferenceFactory::onInvite(const AmSipRequest& req)
     conf_id = req.user.substr(5);
   }
 
-  return new ConferenceDialog(conf_id);
+  ConferenceDialog* s = new ConferenceDialog(conf_id);
+
+  setupSessionTimer(s);
+
+  return s;
+}
+
+void ConferenceFactory::setupSessionTimer(AmSession* s) {
+  if (NULL != session_timer_f) {
+
+    AmSessionEventHandler* h = session_timer_f->getHandler(s);
+    if (NULL == h)
+      return;
+
+    if(h->configure(cfg)){
+      ERROR("Could not configure the session timer: disabling session timers.\n");
+      delete h;
+    } else {
+      s->addHandler(h);
+    }
+  }
 }
 
 AmSession* ConferenceFactory::onRefer(const AmSipRequest& req)
@@ -332,7 +362,8 @@ AmSession* ConferenceFactory::onRefer(const AmSipRequest& req)
 
   AmSession* s = new ConferenceDialog(req.user);
   s->dlg.local_tag  = req.from_tag;
-    
+  
+  setupSessionTimer(s);
 
   DBG("ConferenceFactory::onRefer: local_tag = %s\n",s->dlg.local_tag.c_str());
 
@@ -379,22 +410,22 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
   int i, len;
   string lonely_user_file;
 
-  string app_param_hdr = getHeader(req.hdrs, PARAM_HDR);
+  string app_param_hdr = getHeader(req.hdrs, PARAM_HDR, true);
   if (app_param_hdr.length()) {
     from_header = get_header_keyvalue(app_param_hdr, "Dialout-From");
     extra_headers = get_header_keyvalue(app_param_hdr, "Dialout-Extra");
     dialout_suffix = get_header_keyvalue(app_param_hdr, "Dialout-Suffix");      
     language = get_header_keyvalue(app_param_hdr, "Language");      
   } else {
-    from_header = getHeader(req.hdrs, "P-Dialout-From");
-    extra_headers = getHeader(req.hdrs, "P-Dialout-Extra");
-    dialout_suffix = getHeader(req.hdrs, "P-Dialout-Suffix");
+    from_header = getHeader(req.hdrs, "P-Dialout-From", true);
+    extra_headers = getHeader(req.hdrs, "P-Dialout-Extra", true);
+    dialout_suffix = getHeader(req.hdrs, "P-Dialout-Suffix", true);
     if (from_header.length() || extra_headers.length() 
 	|| dialout_suffix.length()) {
       DBG("Warning: P-Dialout- style headers are deprecated."
 	  " Please use P-App-Param header instead.\n");
     }
-    language = getHeader(req.hdrs, "P-Language");
+    language = getHeader(req.hdrs, "P-Language", true);
     if (language.length()) {
       DBG("Warning: P-Language header is deprecated."
 	  " Please use P-App-Param header instead.\n");
@@ -749,6 +780,8 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
 			 AmConferenceStatus::getChannel(getLocalTag(),
 							dialout_id));
 
+  ConferenceFactory::setupSessionTimer(dialout_session);
+
   AmSipDialog& dialout_dlg = dialout_session->dlg;
 
   dialout_dlg.local_tag    = dialout_id;
@@ -837,14 +870,14 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
   dlg.remote_tag = "";
 
   // get route set and next hop
-  string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+  string iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
   if (iptel_app_param.length()) {
     dlg.route = get_header_keyvalue(iptel_app_param,"Transfer-RR");
   } else {
     INFO("Use of P-Transfer-RR/P-Transfer-NH is deprecated. "
 	 "Use '%s: Transfer-RR=<rr>;Transfer-NH=<nh>' instead.\n",PARAM_HDR);
 
-    dlg.route = getHeader(req.hdrs,"P-Transfer-RR");
+    dlg.route = getHeader(req.hdrs,"P-Transfer-RR", true);
   }
 
   DBG("ConferenceDialog::onSipRequest: local_party = %s\n",dlg.local_party.c_str());
@@ -862,10 +895,10 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
   return;
 }
 
-void ConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status)
+void ConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
 {
   int status = dlg.getStatus();
-  AmSession::onSipReply(reply,old_dlg_status);
+  AmSession::onSipReply(reply, old_dlg_status, trans_method);
 
   DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i\n",
       reply.code,reply.reason.c_str(),dlg.getStatus());

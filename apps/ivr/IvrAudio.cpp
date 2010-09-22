@@ -146,7 +146,15 @@ static PyObject* IvrAudioFile_fpopen(IvrAudioFile* self, PyObject* args)
 
 static PyObject* IvrAudioFile_rewind(IvrAudioFile* self, PyObject* args)
 {
-  self->af->rewind();
+  int rew_time;
+  if(!PyArg_ParseTuple(args,"|i",&rew_time))
+    return NULL;
+
+  if (rew_time != 0)
+    self->af->rewind(rew_time);
+  else
+    self->af->rewind();
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -229,7 +237,7 @@ static PyMethodDef IvrAudioFile_methods[] = {
   {"close", (PyCFunction)IvrAudioFile_close, METH_NOARGS,
    "close the audio file"
   },
-  {"rewind", (PyCFunction)IvrAudioFile_rewind, METH_NOARGS,
+  {"rewind", (PyCFunction)IvrAudioFile_rewind, METH_VARARGS,
    "rewind the audio file"
   },
   {"getDataSize", (PyCFunction)IvrAudioFile_getDataSize, METH_NOARGS,

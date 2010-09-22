@@ -28,7 +28,7 @@ Actions:
 
  * query string has replacement for vars and params, \$=$, \#=#
  * sets 
-    $db.success
+    $errno
     $db.rows
     $db.info
     $db.insert_id
@@ -42,7 +42,7 @@ Actions:
     mysql.query(SELECT * FROM mytable where key=#key);
 
  * sets 
-    $db.success
+    $errno
     $db.rows
 
 -- execute query and get first or nth result row
@@ -53,7 +53,7 @@ Actions:
     mysql.query(SELECT * FROM mytable where key=#key);
 
  * sets 
-    $db.success
+    $errno
     $db.rows
 
 -- resolve query parameters (as it would do on mysql.execute, mysql.query etc)

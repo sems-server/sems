@@ -47,10 +47,10 @@ using std::list;
 
 #define IS_IN(c,l,r) (((c)>=(l))&&((c)<=(r)))
 
-#define CR        (0x0d)
-#define LF        (0x0a)
-#define SP        (0x20)
-#define HTAB      (0x09)
+#define CR        (0x0d) // '\r'
+#define LF        (0x0a) // '\n'
+#define SP        (0x20) // ' '
+#define HTAB      (0x09) // '\t'
 #define IS_WSP(c) (0x20==(c)||0x09==(c))
 
 #define HCOLON    (':')
@@ -62,10 +62,12 @@ using std::list;
 #define IS_DIGIT(c) IS_IN(c,0x30,0x39)
 #define IS_ALPHANUM(c) (IS_ALPHA(c) || IS_DIGIT(c))
 
-#define IS_UPPER(c) IS_IN(c,0x41,0x5a)
-#define LOWER_B(c) (IS_UPPER(c) ? ((c)+0x20) : (c))
+//#define IS_UPPER(c) IS_IN(c,0x41,0x5a)
+//#define LOWER_B(c) (IS_UPPER(c) ? ((c)+0x20) : (c))
+#define IS_UPPER(c) (c & 0x20 == 0)
+#define LOWER_B(c)  (c | 0x20)
 
-
+// TODO: wouldn't a switch work quicker?
 #define IS_TOKEN(c) \
    (IS_ALPHANUM(c) || \
     ((c)=='-') || ((c)=='.') || ((c)=='!') || ((c)=='%') || \
@@ -151,7 +153,8 @@ inline int lower_cmp(const char* l, const char* r, int len)
     const char* end = l+len;
 
     while(l!=end){
-	if( LOWER_B(*l) != *r ){
+	//if( LOWER_B(*l) != *r ){
+	if( LOWER_B(*l) != LOWER_B(*r) ){
 	    return 1;
 	}
 	l++; r++;

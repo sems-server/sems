@@ -57,6 +57,7 @@
 #include <dirent.h>
 
 #include <time.h>
+#include <string.h>
 
 #define MOD_NAME               "voicemail"
 #define DEFAULT_AUDIO_EXT      "wav"
@@ -529,7 +530,7 @@ AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req)
   }
   else {
   
-    iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+    iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
     mode = get_header_keyvalue(iptel_app_param,"mod", "Mode");
     
     if (!EmailAddress.length()) {
@@ -931,7 +932,10 @@ void AnswerMachineDialog::saveMessage()
   email_dict["vmsg_length"] = rec_len_s;
 
   if(!rec_size){
-    unlink(msg_filename.c_str());
+    if (unlink(msg_filename.c_str()) < 0) {
+      WARN("unlink(%s) failed: %s\n", 
+	   msg_filename.c_str(), strerror(errno));
+    }
 
     // record in box empty messages as well
     if (AnswerMachineFactory::SaveEmptyMsg &&

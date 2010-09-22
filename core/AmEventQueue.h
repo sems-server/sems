@@ -76,6 +76,7 @@ public:
   void waitForEvent();
   void wakeup();
   void processSingleEvent();
+  bool eventPending();
 
   void setEventNotificationSink(AmEventNotificationSink* _wakeup_handler);
 };

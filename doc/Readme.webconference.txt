@@ -30,6 +30,9 @@ will save its results to a log file.
 A master password can be set, which serves to retrieve room PINs (adminpins),
 for site administrator or the like.
 
+There is SIP Session Timer (RFC4028) support, which is configured in 
+webconference.conf. By default, session timers are turned not enabled.
+
 Room adminpin handling
 ----------------------
 The adminpin is used so that only authorized users can access the conference control.

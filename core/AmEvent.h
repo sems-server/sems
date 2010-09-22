@@ -85,6 +85,13 @@ struct AmSystemEvent : public AmEvent
     : AmEvent(rhs), sys_event(rhs.sys_event) { }
 
   AmEvent* clone() {  return new AmSystemEvent(*this); };
+
+  static const char* getDescription(EvType t) {
+    switch (t) {
+    case ServerShutdown: return "ServerShutdown";
+    default: return "Unknown";
+    }
+  }
 };
 
 /** \brief event handler interface */

@@ -298,7 +298,7 @@ AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req)
 
 #ifdef USE_MYSQL
 
-    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR);
+    string iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
     string language = get_header_keyvalue(iptel_app_param,"Language");
     string announce_file = "";
 
@@ -385,11 +385,11 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	continue_b2b = true;
       } else if (EarlyAnnounceFactory::ContinueB2B == 
 		 EarlyAnnounceFactory::AppParam) {
-	string iptel_app_param = getHeader(invite_req.hdrs, PARAM_HDR);
+	string iptel_app_param = getHeader(invite_req.hdrs, PARAM_HDR, true);
 	if (iptel_app_param.length()) {
 	  continue_b2b = get_header_keyvalue(iptel_app_param,"B2B")=="yes";
 	} else {
-	  continue_b2b = getHeader(invite_req.hdrs,"P-B2B")=="yes";
+	  continue_b2b = getHeader(invite_req.hdrs,"P-B2B", true)=="yes";
 	}
       }
       DBG("determined: continue_b2b = %s\n", continue_b2b?"true":"false");
@@ -398,7 +398,7 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	unsigned int code_i = 404;
 	string reason = "Not Found";
 	
-	string iptel_app_param = getHeader(invite_req.hdrs, PARAM_HDR);
+	string iptel_app_param = getHeader(invite_req.hdrs, PARAM_HDR, true);
 	if (iptel_app_param.length()) {
 	  string code = get_header_keyvalue(iptel_app_param,"Final-Reply-Code");
 	  if (code.length() && str2i(code, code_i)) {
@@ -408,11 +408,11 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	  if (!reason.length())
 	    reason = "Not Found";
 	} else {
-	  string code = getHeader(invite_req.hdrs,"P-Final-Reply-Code");
+	  string code = getHeader(invite_req.hdrs,"P-Final-Reply-Code", true);
 	  if (code.length() && str2i(code, code_i)) {
 	    ERROR("while parsing P-Final-Reply-Code\n");
 	  }
-	  string h_reason =  getHeader(invite_req.hdrs,"P-Final-Reply-Reason");
+	  string h_reason =  getHeader(invite_req.hdrs,"P-Final-Reply-Reason", true);
 	  if (h_reason.length()) {
 	    INFO("Use of P-Final-Reply-Code/P-Final-Reply-Reason is deprecated. ");
 	    INFO("Use '%s: Final-Reply-Code=<code>;"

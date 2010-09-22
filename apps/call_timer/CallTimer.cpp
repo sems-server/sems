@@ -88,7 +88,7 @@ AmSession* CallTimerFactory::onInvite(const AmSipRequest& req)
      throw AmSession::Exception(500,"could not get a user timer reference");
   }
 
-  string app_param = getHeader(req.hdrs, PARAM_HDR);
+  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
   unsigned int call_time = CallTimerFactory::DefaultCallTimer;
 

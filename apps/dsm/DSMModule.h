@@ -96,7 +96,7 @@ class SCStrArgAction
   : public SCStrArgAction {						\
   public:								\
   CL_Name(const string& arg) : SCStrArgAction(arg) { }			\
-    bool execute(AmSession* sess,					\
+    bool execute(AmSession* sess, DSMSession* sc_sess,			\
 		 DSMCondition::EventType event,				\
 		 map<string,string>* event_params);			\
   };									\
@@ -105,12 +105,17 @@ class SCStrArgAction
 #define DEF_SCModSEStrArgAction(CL_Name)				\
   class CL_Name								\
   : public SCStrArgAction {						\
+    bool is_evaluated;							\
   public:								\
-  CL_Name(const string& arg) : SCStrArgAction(arg) { }			\
-    bool execute(AmSession* sess,					\
+  CL_Name(const string& arg) : SCStrArgAction(arg),			\
+      is_evaluated(false) { }						\
+    bool execute(AmSession* sess, DSMSession* sc_sess,			\
 		 DSMCondition::EventType event,				\
 		 map<string,string>* event_params);			\
-    SEAction getSEAction(std::string&);					\
+    SEAction getSEAction(std::string&,					\
+			 AmSession* sess, DSMSession* sc_sess,		\
+			 DSMCondition::EventType event,			\
+			 map<string,string>* event_params);		\
   };									\
 
 #define DEF_ACTION_2P(CL_Name)						\
@@ -120,7 +125,7 @@ class SCStrArgAction
     string par2;							\
   public:								\
     CL_Name(const string& arg);						\
-    bool execute(AmSession* sess,					\
+    bool execute(AmSession* sess, DSMSession* sc_sess,			\
 		 DSMCondition::EventType event,				\
 		 map<string,string>* event_params);			\
   };									\
@@ -195,25 +200,17 @@ class SCStrArgAction
   }									\
   
 
-#define GET_SCSESSION()					       \
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess);       \
-  if (!sc_sess) {					       \
-    ERROR("wrong session type\n");			       \
-    return false;					       \
-  }
-
-
 #define EXEC_ACTION_START(act_name)					\
-  bool act_name::execute(AmSession* sess,				\
+  bool act_name::execute(AmSession* sess, DSMSession* sc_sess,		\
 			 DSMCondition::EventType event,			\
-			 map<string,string>* event_params) {		\
-  GET_SCSESSION();							
+			 map<string,string>* event_params) {
+
 
 #define EXEC_ACTION_END				\
   return false;					\
   }
 
-#define EXEC_ACTION_STOP				\
+#define EXEC_ACTION_STOP			\
   return false;
 
 string resolveVars(const string s, AmSession* sess,
@@ -241,39 +238,19 @@ void splitCmd(const string& from_str,
     						\
   public:					\
     						\
-  cond_name(const string& arg, bool inv)			\
-    : arg(arg), inv(inv) { }					\
-    bool match(AmSession* sess, DSMCondition::EventType event,	\
-	       map<string,string>* event_params);		\
-  };								\
+  cond_name(const string& arg, bool inv)				\
+    : arg(arg), inv(inv) { }						\
+    bool match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event, \
+	       map<string,string>* event_params);			\
+  };
   
 
 #define MATCH_CONDITION_START(cond_clsname)				\
-  bool cond_clsname::match(AmSession* sess, DSMCondition::EventType event, \
-			   map<string,string>* event_params) {		\
-  GET_SCSESSION();
+  bool cond_clsname::match(AmSession* sess, DSMSession* sc_sess,	\
+			   DSMCondition::EventType event,		\
+			   map<string,string>* event_params) {
 
-#define MATCH_CONDITION_END }			
-
-
-#define GET_SCSESSION()					       \
-  DSMSession* sc_sess = dynamic_cast<DSMSession*>(sess);       \
-  if (!sc_sess) {					       \
-    ERROR("wrong session type\n");			       \
-    return false;					       \
-  }
-
-
-#define EXEC_ACTION_START(act_name)					\
-  bool act_name::execute(AmSession* sess,				\
-			 DSMCondition::EventType event,			\
-			 map<string,string>* event_params) {		\
-    GET_SCSESSION();							
-
-#define EXEC_ACTION_END				\
-  return false;					\
-  }
-
+#define MATCH_CONDITION_END }
 
 #define DECLARE_MODULE(mod_cls_name)			\
   class mod_cls_name					\

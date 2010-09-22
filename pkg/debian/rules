@@ -19,7 +19,7 @@ export DEB_BUILD_OPTIONS:="$(DEB_BUILD_OPTIONS) nostrip"
 
 PYTHON_MODULES=ivr py_sems conf_auth mailbox pin_collect
 
-EXTRA_APP_MODULES=xmlrpc2di jsonrpc
+EXCLUDED_MODULES=gateway examples mp3
 
 CPPFLAGS += -DHAVE_XMLRPCPP_SSL 
 # for older than lenny add:
@@ -45,7 +45,8 @@ build-stamp: configure-stamp
 	dh_testdir
 
 # Add here commands to compile the package.
-	USE_SPANDSP=yes CPPFLAGS="$(CPPFLAGS)" $(MAKE) \
+	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
+	$(MAKE) \
 	cfg-target=/etc/sems/ prefix=/usr exclude_app_modules="$(EXCLUDED_MODULES)" DESTDIR=$(CURDIR)/debian/sems
 #/usr/bin/docbook-to-man debian/ser.sgml > ser.1
 
@@ -67,12 +68,13 @@ install: build
 	dh_installdirs
 
 # Add here commands to install the package into debian/sems
+	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
 	$(MAKE) -C core/ install \
 		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
 		cfg-target=/etc/sems/
 
-
+	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
 	$(MAKE) -C apps/ install exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
 		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
@@ -82,6 +84,7 @@ install: build
 #	mv -f $(CURDIR)/debian/ser/usr/etc $(CURDIR)/debian/ser
 
 # install only the python modules
+	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
 	$(MAKE) -C apps/ install modules="$(PYTHON_MODULES)" \
 		DESTDIR=$(CURDIR)/debian/sems-python-modules \
 		prefix=/usr \

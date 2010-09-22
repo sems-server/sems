@@ -28,14 +28,22 @@
 #include "sip_trans.h"
 #include "sip_parser.h"
 #include "wheeltimer.h"
-#include "hash_table.h"
+#include "trans_table.h"
 #include "trans_layer.h"
 
 #include "log.h"
 
 #include <assert.h>
 
-int _timer_type_lookup[] = { -1, 0,1,2, 0,1,2, 0,1,2, 0,2  };
+int _timer_type_lookup[] = { 
+    -1,    // STIMER_INVALID
+    0,1,2, // STIMER_A, STIMER_B, STIMER_D
+    0,1,2, // STIMER_E, STIMER_F, STIMER_K
+    0,1,2, // STIMER_G, STIMER_H, STIMER_I
+    0,     // STIMER_J
+    2,     // STIMER_L; shares the same slot as STIMER_D
+    2      // STIMER_M; shares the same slot as STIMER_D/STIMER_K
+};
 
 inline timer** fetch_timer(unsigned int timer_type, timer** base)
 {
@@ -54,7 +62,8 @@ inline timer** fetch_timer(unsigned int timer_type, timer** base)
 sip_trans::sip_trans()
     : msg(0),
       retr_buf(0),
-      retr_len(0)
+      retr_len(0),
+      last_rseq(0)
 {
     memset(timers,0,SIP_TRANS_TIMERS*sizeof(void*));
 }
@@ -90,7 +99,7 @@ timer* sip_trans::get_timer(unsigned int timer_type)
 }
 
 
-char _timer_name_lookup[] = {'0','A','B','D','E','F','K','G','H','I','J','L'};
+char _timer_name_lookup[] = {'0','A','B','D','E','F','K','G','H','I','J','L','M'};
 #define timer_name(type) \
     (_timer_name_lookup[(type) & 0xFFFF])
 
@@ -106,7 +115,7 @@ void sip_trans::reset_timer(timer* t, unsigned int timer_type)
     
     if(*tp != NULL){
 
-	DBG("Clearing old timer of type %c\n",timer_name((*tp)->type));
+	DBG("Clearing old timer of type %c (this=%p)\n",timer_name((*tp)->type),*tp);
 	wheeltimer::instance()->remove_timer(*tp);
     }
 
@@ -127,8 +136,8 @@ void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
 	    trans_layer::instance()->timer_expired(t,bucket,tr);
 	}
 	else {
-	    WARN("Transaction %p does not exist anymore\n",tr);
-	    WARN("Timer type=%c will be deleted without further processing\n",timer_name(t->type));
+	    WARN("Ignoring expired timer (%p): transaction"
+		 " %p does not exist anymore\n",t,tr);
 	}
 	bucket->unlock();
     }
@@ -171,11 +180,16 @@ void sip_trans::reset_all_timers()
     for(int i=0; i<SIP_TRANS_TIMERS; i++){
 	
 	if(timers[i]){
-	    DBG("remove_timer(%p)\n",timers[i]);
 	    wheeltimer::instance()->remove_timer(timers[i]);
 	    timers[i] = NULL;
 	}
     }
+}
+
+void sip_trans::dump() const
+{
+    DBG("type=0x%x; msg=%p; to_tag=%.*s; reply_status=%i; state=%i; retr_buf=%p\n",
+	type,msg,to_tag.len,to_tag.s,reply_status,state,retr_buf);
 }
 
 /** EMACS **

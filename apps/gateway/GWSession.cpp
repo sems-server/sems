@@ -90,7 +90,7 @@ void GWSession::onSipRequest(const AmSipRequest& req)
   }
 }
 
-void GWSession::onSipReply(const AmSipReply& reply, int old_dlg_status) {
+void GWSession::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method) {
     int status = dlg.getStatus();
     DBG("GWSession::onSipReply: code = %i, reason = %s\n, status = %i\n",  
 	reply.code,reply.reason.c_str(),dlg.getStatus());
@@ -99,7 +99,7 @@ void GWSession::onSipReply(const AmSipReply& reply, int old_dlg_status) {
 	int ret=((mISDNChannel*)m_OtherLeg)->hangup();
     }
     DBG("GWSession::onSipReply calling parent\n");
-    AmSession::onSipReply(reply, old_dlg_status);
+    AmSession::onSipReply(reply, old_dlg_status, trans_method);
 }
 
 void GWSession::on_stop() {

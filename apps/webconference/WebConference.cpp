@@ -51,7 +51,8 @@ WebConferenceFactory::WebConferenceFactory(const string& _app_name)
     configured(false),
     use_direct_room(false),
     direct_room_strip(0),
-    stats(NULL)
+    stats(NULL),
+    session_timer_f(NULL)
 {
   if (NULL == _instance) {
     _instance = this;
@@ -83,7 +84,6 @@ int WebConferenceFactory::load()
     return 0;
   configured = true;
 
-  AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(APP_NAME)+ ".conf"))
     return -1;
 
@@ -194,6 +194,30 @@ int WebConferenceFactory::load()
   gettimeofday(&now, NULL);    
   srandom(now.tv_usec + now.tv_sec);
 
+  vector<string> predefined_rooms = explode(cfg.getParameter("predefined_rooms"), ";");
+  for (vector<string>::iterator it =
+	 predefined_rooms.begin(); it != predefined_rooms.end(); it++) {
+    vector<string> room_pwd = explode(*it, ":");
+    if (room_pwd.size()==2) {
+      DBG("creating room '%s'\n",room_pwd[0].c_str());
+      rooms[room_pwd[0]] = ConferenceRoom();
+      rooms[room_pwd[0]].adminpin = room_pwd[1];
+    } else {
+      ERROR("wrong entry '%s' in predefined_rooms: should be <room>:<pwd>\n",
+	    it->c_str());
+      return -1;
+    }
+  }
+
+  if(cfg.hasParameter("enable_session_timer") &&
+     (cfg.getParameter("enable_session_timer") == string("yes")) ){
+    DBG("enabling session timers\n");
+    session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
+    if(session_timer_f == NULL){
+      ERROR("Could not load the session_timer module: disabling session timers.\n");
+    }
+  }
+
   return 0;
 }
 
@@ -270,24 +294,47 @@ string WebConferenceFactory::getAccessUri(const string& room) {
   return res;
 }
 
+void WebConferenceFactory::setupSessionTimer(AmSession* s) {
+  if (NULL != session_timer_f) {
+
+    AmSessionEventHandler* h = session_timer_f->getHandler(s);
+    if (NULL == h)
+      return;
+
+    if(h->configure(cfg)){
+      ERROR("Could not configure the session timer: disabling session timers.\n");
+      delete h;
+    } else {
+      s->addHandler(h);
+    }
+  }
+}
+
 // incoming calls 
 AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req)
 {
-  if (use_direct_room) {
-    if (!regexec(&direct_room_re, req.user.c_str(), 0,0,0)) {
+  if (NULL != session_timer_f) {
+    if (!session_timer_f->onInvite(req, cfg))
+      return NULL;
+  }
+
+  WebConferenceDialog* w;
+
+  if (use_direct_room && !regexec(&direct_room_re, req.user.c_str(), 0,0,0)) {
       string room = req.user;
       if (room.length() > direct_room_strip) 
  	room = room.substr(direct_room_strip);
       DBG("direct room access match. connecting to room '%s'\n", 
 	  room.c_str());
-      WebConferenceDialog* w = 
-	new WebConferenceDialog(prompts, getInstance(), room);
 
+      w = new WebConferenceDialog(prompts, getInstance(), room);
       w->setUri(getAccessUri(room));
-      return w;
-    }
-  } 
-  return new WebConferenceDialog(prompts, getInstance(), NULL);
+
+  } else {
+    w = new WebConferenceDialog(prompts, getInstance(), NULL);
+  }
+  setupSessionTimer(w);
+  return w;
 }
 
 // outgoing calls 
@@ -315,6 +362,8 @@ AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req,
   }		
 
   s->setUri(getAccessUri(req.user));
+
+  setupSessionTimer(s);
 
   return s;
 }

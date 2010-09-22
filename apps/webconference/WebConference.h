@@ -82,13 +82,16 @@ class WebConferenceFactory
 
   int room_sweep_cnt;
 
+  AmSessionEventHandlerFactory* session_timer_f;
+
   // for DI 
   static WebConferenceFactory* _instance;
   bool configured;
+  AmConfigReader cfg;
 
   string getServerInfoString();
   string getRandomPin();
-  /** returns NULL if adminpin wrong */
+  /** @return NULL if adminpin wrong */
   ConferenceRoom* getRoom(const string& room, 
 			  const string& adminpin);
   void postConfEvent(const AmArg& args, AmArg& ret,
@@ -110,6 +113,8 @@ class WebConferenceFactory
   void sweepRooms();
 
   int load();
+  
+  void setupSessionTimer(AmSession* s);
 
 public:
   static string DigitsDir;

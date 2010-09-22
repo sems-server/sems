@@ -43,8 +43,11 @@ class DSMStateDiagramCollection
   DSMStateDiagramCollection();
   ~DSMStateDiagramCollection();
 
+  bool readFile(const string& filename, const string& name, 
+		const string& load_path, string& s);
   bool loadFile(const string& filename, const string& name, 
-		const string& mod_path, bool debug_dsm);
+		const string& load_path,
+		const string& mod_path, bool debug_dsm, bool check_dsm);
   void addToEngine(DSMStateEngine* e);
   bool hasDiagram(const string& name);
   vector<string> getDiagramNames();

@@ -55,18 +55,22 @@ class AmSipTimeoutEvent: public AmSipEvent
 
   enum EvType {
     _noEv=0,
-    no2xxACK,
-    noErrorACK,
-    noPRACK
+    noACK,
+    noPRACK,
   };
 
   EvType       type;
 
   unsigned int cseq;
+  AmSipRequest req;
+  AmSipReply   rpl;
 
   AmSipTimeoutEvent(EvType t, unsigned int cseq_num)
     : AmSipEvent(), type(t)
    {}
+  AmSipTimeoutEvent(EvType t, AmSipRequest &_req, AmSipReply &_rpl)
+    : AmSipEvent(), req(_req), rpl(_rpl)
+    {}
 
   virtual void operator() (AmSipDialog* dlg);
 };
@@ -95,6 +99,7 @@ class AmSipReplyEvent: public AmSipEvent
 
   virtual void operator() (AmSipDialog* dlg);
 };
+
 
 
 #endif

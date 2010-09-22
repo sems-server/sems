@@ -40,28 +40,16 @@ timer::~timer()
     DBG("timer::~timer(this=%p)\n",this);
 }
 
-
-
-wheeltimer* wheeltimer::_instance=NULL;
-
-wheeltimer* wheeltimer::instance()
-{
-    if(!_instance)
-	_instance = new wheeltimer();
-
-    return _instance;
-}
-
-wheeltimer::wheeltimer()
+_wheeltimer::_wheeltimer()
     : wall_clock(0)
 {
 }
 
-wheeltimer::~wheeltimer()
+_wheeltimer::~_wheeltimer()
 {
 }
 
-void wheeltimer::insert_timer(timer* t)
+void _wheeltimer::insert_timer(timer* t)
 {
     //add new timer to user request list
     utimer_add_m.lock();
@@ -69,15 +57,15 @@ void wheeltimer::insert_timer(timer* t)
     utimer_add_m.unlock();
 }
 
-void wheeltimer::remove_timer(timer* t)
+void _wheeltimer::remove_timer(timer* t)
 {
-    //add new timer to user request list
+    //add timer to remove to user request list
     utimer_rem_m.lock();
     utimer_rem.push_back(t);
     utimer_rem_m.unlock();
 }
 
-void wheeltimer::run()
+void _wheeltimer::run()
 {
   struct timeval now,next_tick,diff,tick;
 
@@ -113,7 +101,7 @@ void wheeltimer::run()
 
 
 
-void wheeltimer::update_wheel(int wheel)
+void _wheeltimer::update_wheel(int wheel)
 {
     // do not try do update wheel 0
     if(!wheel)
@@ -136,7 +124,7 @@ void wheeltimer::update_wheel(int wheel)
     }
 }
 
-void wheeltimer::turn_wheel()
+void _wheeltimer::turn_wheel()
 {
     u_int32_t mask = ((1<<BITS_PER_WHEEL)-1); // 0x00 00 00 FF
     int i=0;
@@ -182,7 +170,7 @@ void wheeltimer::turn_wheel()
     process_current_timers();
 }
 
-void wheeltimer::process_current_timers()
+void _wheeltimer::process_current_timers()
 {
     timer *t = (timer *)wheels[0][wall_clock & 0xFF].next;
     
@@ -207,7 +195,7 @@ inline bool less_ts(unsigned int t1, unsigned int t2)
     return (t1 - t2 > (unsigned int)(1<<31));
 }
 
-void wheeltimer::place_timer(timer* t)
+void _wheeltimer::place_timer(timer* t)
 {
     if(less_ts(t->expires,wall_clock)){
 
@@ -220,7 +208,7 @@ void wheeltimer::place_timer(timer* t)
     place_timer(t,WHEELS-1);
 }
 
-void wheeltimer::place_timer(timer* t, int wheel)
+void _wheeltimer::place_timer(timer* t, int wheel)
 {
     unsigned int pos;
     unsigned int clock_mask = t->expires ^ wall_clock;
@@ -239,7 +227,7 @@ void wheeltimer::place_timer(timer* t, int wheel)
     add_timer_to_wheel(t,wheel,pos);
 }
 
-void wheeltimer::add_timer_to_wheel(timer* t, int wheel, unsigned int pos)
+void _wheeltimer::add_timer_to_wheel(timer* t, int wheel, unsigned int pos)
 {
     t->next = wheels[wheel][pos].next;
     wheels[wheel][pos].next = t;
@@ -251,7 +239,7 @@ void wheeltimer::add_timer_to_wheel(timer* t, int wheel, unsigned int pos)
     t->prev = &(wheels[wheel][pos]);
 }
 
-void wheeltimer::delete_timer(timer* t)
+void _wheeltimer::delete_timer(timer* t)
 {
     if(t->prev)
 	t->prev->next = t->next;

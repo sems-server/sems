@@ -113,7 +113,7 @@ void AuthB2BDialog::onInvite(const AmSipRequest& req)
   setInOut(NULL,NULL); 
 
   if (AuthB2BFactory::user.empty()) {
-    string app_param = getHeader(req.hdrs, PARAM_HDR);
+    string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
     if (!app_param.length()) {
       AmSession::Exception(500, "auth_b2b: parameters not found");
@@ -313,15 +313,15 @@ inline UACAuthCred* AuthB2BCalleeSession::getCredentials() {
   return &credentials;
 }
 
-void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status) {
+void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method) {
   if (NULL == auth) {    
-      AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
+    AmB2BCalleeSession::onSipReply(reply,old_dlg_status,trans_method);
     return;
   }
   
   unsigned int cseq_before = dlg.cseq;
-  if (!auth->onSipReply(reply)) {
-      AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
+  if (!auth->onSipReply(reply, old_dlg_status,trans_method)) {
+    AmB2BCalleeSession::onSipReply(reply,old_dlg_status,trans_method);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "

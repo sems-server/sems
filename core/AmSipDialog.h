@@ -110,6 +110,7 @@ class AmSipDialog
   string outbound_proxy;
   bool   force_outbound_proxy;
 
+  int rseq;          // RSeq for next request (NOTE: keep it signed!)
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
@@ -117,10 +118,13 @@ class AmSipDialog
   AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();
 
-  bool   getUACTransPending() { return !uac_trans.empty(); }
+  /** @return whether UAC transaction is pending */
+  bool   getUACTransPending();
 
+  /** @return whether INVITE transaction is pending */
+  bool   getUACInvTransPending();
   Status getStatus() { return status; }
-  const char* getStatusStr();
+  void   setStatus(Status new_status);
 
   string getContactHdr();
 
@@ -132,6 +136,7 @@ class AmSipDialog
 
   void uasTimeout(AmSipTimeoutEvent* to_ev);
     
+  /** @return 0 on success */
   int reply(const AmSipRequest& req,
 	    unsigned int  code, 
 	    const string& reason,
@@ -140,29 +145,51 @@ class AmSipDialog
 	    const string& hdrs = "",
 	    int flags = 0);
 
+  /** @return 0 on success */
   int sendRequest(const string& method, 
 		  const string& content_type = "",
 		  const string& body = "",
 		  const string& hdrs = "",
 		  int flags = 0);
 
+  /** @return 0 on success */
   int send_200_ack(unsigned int inv_cseq,
 		   const string& content_type = "",
 		   const string& body = "",
 		   const string& hdrs = "",
 		   int flags = 0);
     
+  /** @return 0 on success */
   int bye(const string& hdrs = "");
+
+  /** @return 0 on success */
   int cancel();
-  int update(const string& hdrs);
+
+  /** @return 0 on success */
+  int prack(const string &cont_type, 
+            const string &body, 
+            const string &hdrs);
+
+  /** @return 0 on success */
+  int update(const string &cont_type, 
+            const string &body, 
+            const string &hdrs);
+
+  /** @return 0 on success */
   int reinvite(const string& hdrs,  
 	       const string& content_type,
 	       const string& body);
+
+  /** @return 0 on success */
   int invite(const string& hdrs,  
 	     const string& content_type,
 	     const string& body);
+
+  /** @return 0 on success */
   int refer(const string& refer_to,
 	    int expires = -1);
+
+  /** @return 0 on success */
   int transfer(const string& target);
   int drop();
 

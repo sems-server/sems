@@ -37,6 +37,7 @@
 #include "DSMChartReader.h"
 #include "AmSipHeaders.h"
 #include "AmEventDispatcher.h"
+#include "SystemDSM.h"
 
 #include <string>
 #include <fstream>
@@ -63,6 +64,7 @@ DSMFactory* DSMFactory::instance()
 bool DSMFactory::DebugDSM;
 string DSMFactory::InboundStartDiag;
 string DSMFactory::OutboundStartDiag;
+bool DSMFactory::CheckDSM;
 
 #ifdef USE_MONITORING
 bool DSMFactory::MonitoringFullCallgraph;
@@ -70,13 +72,16 @@ bool DSMFactory::MonitoringFullTransitions;
 
 MonSelectType DSMFactory::MonSelectCaller;
 MonSelectType DSMFactory::MonSelectCallee;
+vector<string> DSMFactory::MonSelectFilters;
 
 string DSMFactory::MonSelectFallback;
+
 #endif // USE_MONITORING
 
 DSMFactory::DSMFactory(const string& _app_name)
   : AmSessionFactory(_app_name),AmDynInvokeFactory(_app_name),
-    loaded(false)
+    loaded(false),
+    session_timer_f(NULL)
 {
   AmEventDispatcher::instance()->addEventQueue("dsm", this);
 
@@ -114,7 +119,6 @@ int DSMFactory::onLoad()
     return 0;
   loaded = true;
 
-  AmConfigReader cfg;
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf")))
     return -1;
  
@@ -122,6 +126,7 @@ int DSMFactory::onLoad()
   configureModule(cfg);
 
   DebugDSM = cfg.getParameter("debug_raw_dsm") == "yes";
+  CheckDSM = cfg.getParameter("dsm_consistency_check", "yes") == "yes";
  
   if (!loadPrompts(cfg))
     return -1;
@@ -161,6 +166,17 @@ int DSMFactory::onLoad()
 
   MainScriptConfig.SetParamVariables = cfg.getParameter("set_param_variables")=="yes";
 
+  vector<string> system_dsms = explode(cfg.getParameter("run_system_dsms"), ",");
+  for (vector<string>::iterator it=system_dsms.begin(); it != system_dsms.end(); it++) {
+    string status;
+    if (createSystemDSM("main", *it, false /* reload */, status)) {
+      DBG("created SystemDSM '%s'\n", it->c_str());
+    } else {
+      ERROR("creating system DSM '%s': '%s'\n", it->c_str(), status.c_str());
+      return -1;
+    }
+  }
+
 #ifdef USE_MONITORING
   string monitoring_full_callgraph = cfg.getParameter("monitoring_full_stategraph");
   MonitoringFullCallgraph = monitoring_full_callgraph == "yes";
@@ -196,6 +212,20 @@ int DSMFactory::onLoad()
 	  cfg_usecallee.c_str());
   }
 
+  MonSelectFilters  = explode(cfg.getParameter("monitor_select_filters"), ",");
+  string filters;
+  for (vector<string>::iterator it = 
+	 MonSelectFilters.begin(); it != MonSelectFilters.end(); it++) {
+    if (it != MonSelectFilters.begin()) 
+      filters += ", ";
+    filters+=*it;
+  }
+  if (MonSelectFilters.size()) {
+    DBG("using additional monitor app select filters: %s\n", 
+	filters.c_str());
+  } else {
+    DBG("not using additional monitor app select filters\n");
+  }
   MonSelectFallback = cfg.getParameter("monitor_select_fallback");
 #endif
 
@@ -230,6 +260,16 @@ int DSMFactory::onLoad()
       closedir(dir);
     }
   }
+
+  if(cfg.hasParameter("enable_session_timer") &&
+     (cfg.getParameter("enable_session_timer") == string("yes")) ){
+    DBG("enabling session timers\n");
+    session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
+    if(session_timer_f == NULL){
+      ERROR("Could not load the session_timer module: disabling session timers.\n");
+    }
+  }
+
   return 0;
 }
 
@@ -327,7 +367,7 @@ bool DSMFactory::loadDiags(AmConfigReader& cfg, DSMStateDiagramCollection* m_dia
   vector<string> diags_names = explode(LoadDiags, ",");
   for (vector<string>::iterator it=
 	 diags_names.begin(); it != diags_names.end(); it++) {
-    if (!m_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM)) {
+    if (!m_diags->loadFile(DiagPath+*it+".dsm", *it, DiagPath, ModPath, DebugDSM, CheckDSM)) {
       ERROR("loading %s from %s\n", 
 	    it->c_str(), (DiagPath+*it+".dsm").c_str());
       return false;
@@ -417,6 +457,7 @@ bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_nam
 
   ScriptConfigs_mut.lock();
   try {
+    Name2ScriptConfig[script_name] = script_config;
     // set ScriptConfig to this for all registered apps' names
     for (vector<string>::iterator reg_app_it=
 	   registered_apps.begin(); reg_app_it != registered_apps.end(); reg_app_it++) {
@@ -439,12 +480,41 @@ bool DSMFactory::loadConfig(const string& conf_file_name, const string& conf_nam
   }
   ScriptConfigs_mut.unlock();
 
-  return true;
+  bool res = true;
+
+  vector<string> system_dsms = explode(cfg.getParameter("run_system_dsms"), ",");
+  for (vector<string>::iterator it=system_dsms.begin(); it != system_dsms.end(); it++) {
+    string status;
+    if (createSystemDSM(script_name, *it, live_reload, status)) {
+    } else {
+      ERROR("creating system DSM '%s': '%s'\n", it->c_str(), status.c_str());
+      res = false;
+    }
+  }
+
+  return res;
 }
 
 
 void DSMFactory::prepareSession(DSMCall* s) {
   s->setPromptSets(prompt_sets);
+  setupSessionTimer(s);
+}
+
+void DSMFactory::setupSessionTimer(AmSession* s) {
+  if (NULL != session_timer_f) {
+
+    AmSessionEventHandler* h = session_timer_f->getHandler(s);
+    if (NULL == h)
+      return;
+
+    if(h->configure(cfg)){
+      ERROR("Could not configure the session timer: disabling session timers.\n");
+      delete h;
+    } else {
+      s->addHandler(h);
+    }
+  }
 }
 
 void DSMFactory::addVariables(DSMCall* s, const string& prefix,
@@ -457,7 +527,7 @@ void DSMFactory::addVariables(DSMCall* s, const string& prefix,
 void DSMFactory::addParams(DSMCall* s, const string& hdrs) {
   // TODO: use real parser with quoting and optimize
   map<string, string> params;
-  vector<string> items = explode(getHeader(hdrs, PARAM_HDR), ";");
+  vector<string> items = explode(getHeader(hdrs, PARAM_HDR, true), ";");
   for (vector<string>::iterator it=items.begin(); 
        it != items.end(); it++) {
     vector<string> kv = explode(*it, "=");
@@ -487,12 +557,13 @@ void AmArg2DSMStrMap(const AmArg& arg,
   }
 }
 
-void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag, map<string, string>& vars) {
+void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag, 
+				     map<string, string>& vars) {
 #define FALLBACK_OR_EXCEPTION(code, reason)				\
   if (MonSelectFallback.empty()) {					\
     throw AmSession::Exception(code, reason);				\
   } else {								\
-    INFO("falling back to '%s'\n", MonSelectFallback.c_str());		\
+    DBG("falling back to '%s'\n", MonSelectFallback.c_str());		\
     start_diag = MonSelectFallback;					\
     return;								\
   }
@@ -510,7 +581,7 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
 	  from_parser.uri = req.from_uri;
 	else {
 	  size_t end;
-	  string pai = getHeader(req.hdrs, SIP_HDR_P_ASSERTED_IDENTITY);
+	  string pai = getHeader(req.hdrs, SIP_HDR_P_ASSERTED_IDENTITY, true);
 	  if (!from_parser.parse_contact(pai, 0, end)) {
 	    WARN("Failed to parse " SIP_HDR_P_ASSERTED_IDENTITY " '%s'\n",
 		  pai.c_str());
@@ -551,13 +622,27 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
 	}
 	  
 	DBG(" && looking for callee=='%s'\n", req.user.c_str());
-	di_args.push(callee_filter);	
+	di_args.push(callee_filter);
       }
+      // apply additional filters
+      if (MonSelectFilters.size()) {
+	string app_params = getHeader(req.hdrs, PARAM_HDR);
+	for (vector<string>::iterator it = 
+	       MonSelectFilters.begin(); it != MonSelectFilters.end(); it++) {
+	  AmArg filter;
+	  filter.push(*it); // avp name
+	  string app_param_val = get_header_keyvalue(app_params, *it);
+	  filter.push(app_param_val);
+	  di_args.push(filter);
+	  DBG(" && looking for %s=='%s'\n", it->c_str(), app_param_val.c_str());
+	}
+      }
+
       MONITORING_GLOBAL_INTERFACE->invoke("listByFilter",di_args,ret);
       
       if ((ret.getType()!=AmArg::Array)||
 	  !ret.size()) {
-	INFO("call info not found. caller uri %s, r-uri %s\n", 
+	DBG("call info not found. caller uri %s, r-uri %s\n", 
 	     req.from_uri.c_str(), req.r_uri.c_str());
 	FALLBACK_OR_EXCEPTION(500, "Internal Server Error");
       }
@@ -666,7 +751,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
     if (cred_obj)
       cred = dynamic_cast<UACAuthCred*>(cred_obj);
   } else if (session_params.getType() == AmArg::Array) {
-    DBG("session params is array - size %d\n", session_params.size());
+    DBG("session params is array - size %zd\n", session_params.size());
     // Creds
     if (session_params.get(0).getType() == AmArg::AObject) {
       ArgObject* cred_obj = session_params.get(0).asObject();
@@ -705,7 +790,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
     addParams(s, req.hdrs); 
 
   if (NULL == cred) {
-    WARN("discarding unknown session parameters.\n");
+    DBG("outgoing DSM call will not be authenticated.\n");
   } else {
     AmSessionEventHandlerFactory* uac_auth_f = 
       AmPlugIn::instance()->getFactory4Seh("uac_auth");
@@ -721,6 +806,39 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
   }
 
   return s;
+}
+
+bool DSMFactory::createSystemDSM(const string& config_name, const string& start_diag, bool reload, string& status) {
+  bool res = true;
+
+  DSMScriptConfig* script_config = NULL;
+  ScriptConfigs_mut.lock();
+  if (config_name == "main")
+    script_config = &MainScriptConfig;
+  else {
+    map<string, DSMScriptConfig>::iterator it = Name2ScriptConfig.find(config_name);
+    if (it != Name2ScriptConfig.end()) 
+      script_config = &it->second;
+  }
+  if (script_config==NULL) {
+    status = "Error: Script config '"+config_name+"' not found, in [";
+    for (map<string, DSMScriptConfig>::iterator it = 
+	   Name2ScriptConfig.begin(); it != Name2ScriptConfig.end(); it++) {
+      if (it != Name2ScriptConfig.begin()) 
+	status+=", ";
+      status += it->first; 
+    }
+    status += "]";
+    res = false;
+  } else {
+    SystemDSM* s = new SystemDSM(*script_config, start_diag, reload);
+    s->start();
+    // add to garbage collector
+    AmThreadWatcher::instance()->add(s);
+    status = "OK";
+  }
+  ScriptConfigs_mut.unlock();
+  return res;
 }
 
 void DSMFactory::reloadDSMs(const AmArg& args, AmArg& ret) {
@@ -743,7 +861,8 @@ void DSMFactory::reloadDSMs(const AmArg& args, AmArg& ret) {
   vector<string> diags_names = explode(LoadDiags, ",");
   for (vector<string>::iterator it=
 	 diags_names.begin(); it != diags_names.end(); it++) {
-    if (!new_diags->loadFile(DiagPath+*it+".dsm", *it, ModPath, DebugDSM)) {
+    if (!new_diags->loadFile(DiagPath+*it+".dsm", *it, DiagPath, ModPath,
+			     DebugDSM, CheckDSM)) {
       ERROR("loading %s from %s\n", 
 	    it->c_str(), (DiagPath+*it+".dsm").c_str());
       ret.push(500);
@@ -949,7 +1068,7 @@ void DSMFactory::loadDSM(const AmArg& args, AmArg& ret) {
       ret.push(400);
       ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
     } else {
-      if (!MainScriptConfig.diags->loadFile(dsm_file_name, dsm_name, ModPath, DebugDSM)) {
+      if (!MainScriptConfig.diags->loadFile(dsm_file_name, dsm_name, DiagPath, ModPath, DebugDSM, CheckDSM)) {
 	ret.push(500);
 	ret.push("error loading "+dsm_name+" from "+ dsm_file_name);
       } else {
@@ -976,7 +1095,7 @@ void DSMFactory::loadDSMWithPaths(const AmArg& args, AmArg& ret) {
       ret.push(400);
       ret.push("DSM named '" + dsm_name + "' already loaded (use reloadDSMs to reload all)");
     } else {
-      if (!MainScriptConfig.diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, mod_path, DebugDSM)) {
+      if (!MainScriptConfig.diags->loadFile(diag_path+dsm_name+".dsm", dsm_name, diag_path, mod_path, DebugDSM, CheckDSM)) {
 	ret.push(500);
 	ret.push("error loading "+dsm_name+" from "+ diag_path+dsm_name+".dsm");
       } else {
@@ -1032,6 +1151,16 @@ void DSMFactory::invoke(const string& method, const AmArg& args,
   } else if (method == "loadConfig"){
     args.assertArrayFmt("ss");
     loadConfig(args,ret);
+  } else if (method == "createSystemDSM"){
+    args.assertArrayFmt("ss");
+    string status;
+    if (createSystemDSM(args.get(0).asCStr(), args.get(1).asCStr(), false, status)) {
+      ret.push(200);
+      ret.push(status);
+    } else {
+      ret.push(500);
+      ret.push(status);
+    }
   } else if(method == "_list"){ 
     ret.push(AmArg("postDSMEvent"));
     ret.push(AmArg("reloadDSMs"));
@@ -1043,6 +1172,8 @@ void DSMFactory::invoke(const string& method, const AmArg& args,
     ret.push(AmArg("hasDSM"));
     ret.push(AmArg("listDSMs"));
     ret.push(AmArg("registerApplication"));
+    ret.push(AmArg("createSystemDSM"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
 }
+

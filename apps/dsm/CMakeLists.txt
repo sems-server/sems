@@ -1,14 +1,4 @@
-set (dsm_SRCS
-DSM.cpp
-DSMCall.cpp
-DSMChartReader.cpp
-DSMCoreModule.cpp
-DSMElemContainer.cpp
-DSMModule.cpp
-DSMSession.cpp
-DSMStateDiagramCollection.cpp
-DSMStateEngine.cpp
-)
+FILE (GLOB dsm_SRCS "*.cpp")
 
 ADD_SUBDIRECTORY (lib)
 ADD_SUBDIRECTORY (mods)

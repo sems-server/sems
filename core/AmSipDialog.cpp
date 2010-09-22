@@ -88,6 +88,13 @@ AmSipDialog::~AmSipDialog()
   }
 }
 
+void AmSipDialog::setStatus(int new_status) {
+  DBG("setting  SIP dialog status: %s->%s\n",
+      status2str[status], status2str[new_status]);
+
+  status = new_status;
+}
+
 void AmSipDialog::onRxRequest(const AmSipRequest& req)
 {
   DBG("AmSipDialog::onRxRequest(request)\n");
@@ -456,6 +463,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
   DBG("onRxReply(reply): transaction found!\n");
 
   AmSipDialog::Status old_dlg_status = status;
+  string trans_method = t.method;
 
   // rfc3261 12.1
   // Dialog established only by 101-199 or 2xx 
@@ -559,7 +567,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
     }
   }
 
-  hdl->onSipReply(reply, old_dlg_status);
+  hdl->onSipReply(reply, old_dlg_status, trans_method);
 }
 
 void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
@@ -567,19 +575,14 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
   assert(to_ev);
 
   switch(to_ev->type){
-  case AmSipTimeoutEvent::no2xxACK:
-    DBG("Timeout: missing 2xx-ACK\n");
-    hdl->onNo2xxACK(to_ev->cseq);
-    break;
-
-  case AmSipTimeoutEvent::noErrorACK:
-    DBG("Timeout: missing non-2xx-ACK\n");
-    hdl->onNoErrorACK(to_ev->cseq);
+  case AmSipTimeoutEvent::noACK:
+    DBG("Timeout: missing ACK\n");
+    if(hdl) hdl->onNoAck(to_ev->cseq);
     break;
 
   case AmSipTimeoutEvent::noPRACK:
-    //TODO
     DBG("Timeout: missing PRACK\n");
+    if(hdl) hdl->onNoPrack(to_ev->req, to_ev->rpl);
     break;
 
   case AmSipTimeoutEvent::_noEv:
@@ -588,6 +591,19 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
   };
   
   to_ev->processed = true;
+}
+
+bool AmSipDialog::getUACTransPending() {
+  return !uac_trans.empty();
+}
+
+bool AmSipDialog::getUACInvTransPending() {
+  for (TransMap::iterator it=uac_trans.begin();
+       it != uac_trans.end(); it++) {
+    if (it->second.method == "INVITE")
+      return true;
+  }
+  return false;
 }
 
 string AmSipDialog::getContactHdr()
@@ -641,9 +657,9 @@ int AmSipDialog::reply(const AmSipRequest& req,
       reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
   }
 
-  //if ((req.method!="CANCEL")&&
-  //  !((req.method=="BYE")&&(code<300)))
-  reply.contact = getContactHdr();
+  if (code < 300 && req.method != "CANCEL" && req.method != "BYE")
+    /* if 300<=code<400, explicit contact setting should be done */
+    reply.contact = getContactHdr();
 
   if(!content_type.empty() && !body.empty()) {
     reply.content_type = content_type;
@@ -741,24 +757,25 @@ int AmSipDialog::invite(const string& hdrs,
   return -1;
 }
 
-int AmSipDialog::update(const string& hdrs)
+int AmSipDialog::update(const string &cont_type, 
+                        const string &body, 
+                        const string &hdrs)
 {
   switch(status){
   case Trying:
   case Proceeding:
   case Early:
   case Connected://if Connected, we should send a re-INVITE instead...
-    return sendRequest("UPDATE", "", "", hdrs);
+    return sendRequest(SIP_METH_UPDATE, cont_type, body, hdrs);
 
   default:
   case Cancelling:
   case Disconnected:
   case Disconnecting:
-    DBG("update(): we are not connected (anymore)."
-	" (status=%i). do nothing!\n",status);
+    DBG("update(): dialog not connected (status=%i). do nothing!\n",status);
+  }	
 
-    return 0;
-  }
+  return -1;
 }
 
 int AmSipDialog::refer(const string& refer_to,
@@ -813,6 +830,25 @@ int AmSipDialog::transfer(const string& target)
       "(status=%i). do nothing!\n",status);
     
   return 0;
+}
+
+int AmSipDialog::prack(const string &cont_type, 
+                       const string &body, 
+                       const string &hdrs)
+{
+  switch(status) {
+    case Pending:
+      break;
+    case Disconnected:
+    case Connected:
+    case Disconnecting:
+      ERROR("can not send PRACK while dialog is in state '%d'.\n", status);
+      return -1;
+    default:
+      ERROR("BUG: unexpected dialog state '%d'.\n", status);
+      return -1;
+  }
+  return sendRequest(SIP_METH_PRACK, cont_type, body, hdrs);
 }
 
 int AmSipDialog::cancel()
