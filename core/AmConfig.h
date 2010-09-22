@@ -75,6 +75,8 @@ struct AmConfig
   static string DaemonGid;
 #endif
   
+  static unsigned int MaxShutdownTime;
+
   /** local IP for SDP media advertising */
   static string LocalIP;
   

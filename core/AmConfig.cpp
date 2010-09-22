@@ -58,6 +58,8 @@ string       AmConfig::DaemonUid               = DEFAULT_DAEMON_UID;
 string       AmConfig::DaemonGid               = DEFAULT_DAEMON_GID;
 #endif
 
+unsigned int AmConfig::MaxShutdownTime         = DEFAULT_MAX_SHUTDOWN_TIME;
+
 string       AmConfig::LocalIP                 = "";
 string       AmConfig::PublicIP                = "";
 string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
@@ -416,6 +418,9 @@ int AmConfig::readConfiguration()
     }
   }
 
+  MaxShutdownTime = cfg.getParameterInt("max_shutdown_time",
+					DEFAULT_MAX_SHUTDOWN_TIME);
+
   // user_prefix_separator
   PrefixSep = cfg.getParameter("user_prefix_separator",PrefixSep);
 
@@ -467,7 +472,6 @@ int AmConfig::readConfiguration()
       return -1;
     }
   }
-
 
   // single codec in 200 OK
   if(cfg.hasParameter("single_codec_in_ok")){

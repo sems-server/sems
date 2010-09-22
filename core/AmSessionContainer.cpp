@@ -63,7 +63,7 @@ void AmSessionContainer::dispose()
     if(!_instance->is_stopped()) {
       _instance->stop();
 
-      while(!_instance->is_stopped()) 
+      while (!_instance->is_stopped())
 	usleep(10000);
     }
     // todo: add locking here
@@ -149,12 +149,19 @@ void AmSessionContainer::on_stop()
     
   DBG("waiting for active event queues to stop...\n");
 
-  while (!AmEventDispatcher::instance()->empty())
-    sleep(1);
+  for (unsigned int i=0;
+       (!AmEventDispatcher::instance()->empty() &&
+	(!AmConfig::MaxShutdownTime ||
+	 i < AmConfig::MaxShutdownTime * 1000 / 10));i++)
+    usleep(10000);
+
+  if (!AmEventDispatcher::instance()->empty()) {
+    WARN("Not all calls cleanly ended!\n");
+  }
     
   DBG("cleaning sessions...\n");
   while (clean_sessions()) 
-    sleep(1);
+    usleep(10000);
 
   _run_cond.set(true); // so that thread stops
 }

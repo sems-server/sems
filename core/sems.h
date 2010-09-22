@@ -40,6 +40,8 @@
 #define RTP_HIGHPORT        0xffff
 #define MAX_FORWARDS        70
 
+#define DEFAULT_MAX_SHUTDOWN_TIME 10 // 10 seconds max for shutting down
+
 #ifndef DISABLE_DAEMON_MODE
 # define DEFAULT_DAEMON_MODE        true
 # define DEFAULT_DAEMON_PID_FILE    "/var/local/run/sems.pid"
