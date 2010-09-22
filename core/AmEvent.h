@@ -73,7 +73,9 @@ struct AmPluginEvent: public AmEvent
 struct AmSystemEvent : public AmEvent 
 {
   enum EvType {
-    ServerShutdown = 0
+    ServerShutdown = 0,
+    User1,
+    User2
   };
 
   EvType sys_event;
@@ -89,6 +91,8 @@ struct AmSystemEvent : public AmEvent
   static const char* getDescription(EvType t) {
     switch (t) {
     case ServerShutdown: return "ServerShutdown";
+    case User1: return "User1";
+    case User2: return "User2";
     default: return "Unknown";
     }
   }

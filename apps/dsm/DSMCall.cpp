@@ -332,6 +332,15 @@ void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
   }
 }
 
+void DSMCall::onSystemEvent(AmSystemEvent* ev) {
+  map<string, string> params;
+  params["type"] = AmSystemEvent::getDescription(ev->sys_event);
+  engine.runEvent(this, this, DSMCondition::System, &params);
+  if (params["processed"] != DSM_TRUE) {
+    AmB2BCallerSession::onSystemEvent(ev);
+  }
+}
+
 void DSMCall::process(AmEvent* event)
 {
 

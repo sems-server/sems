@@ -201,10 +201,12 @@ static AmCondition<bool> is_shutting_down(false);
 
 static void signal_handler(int sig)
 {
-  WARN("Signal %s (%d) received.\n", strsignal(sig), sig);
-
-  if ( sig == SIGHUP) {
-    AmSessionContainer::instance()->broadcastShutdown();
+  if (sig == SIGUSR1 || sig == SIGUSR2) {
+    DBG("brodcasting User event to %u sessions...\n",
+	AmSession::getSessionNum());
+    AmEventDispatcher::instance()->
+      broadcast(new AmSystemEvent(sig == SIGUSR1? 
+				  AmSystemEvent::User1 : AmSystemEvent::User2));
     return;
   }
 
@@ -213,6 +215,13 @@ static void signal_handler(int sig)
   }
 
   if (sig == SIGPIPE && AmConfig::IgnoreSIGPIPE) {
+    return;
+  }
+
+  WARN("Signal %s (%d) received.\n", strsignal(sig), sig);
+
+  if (sig == SIGHUP) {
+    AmSessionContainer::instance()->broadcastShutdown();
     return;
   }
 
@@ -233,7 +242,7 @@ static void signal_handler(int sig)
 int set_sighandler(void (*handler)(int))
 {
   static int sigs[] = {
-      SIGHUP, SIGPIPE, SIGINT, SIGTERM, SIGCHLD, 0
+    SIGHUP, SIGPIPE, SIGINT, SIGTERM, SIGCHLD, SIGUSR1, SIGUSR2, 0
   };
 
   for (int* sig = sigs; *sig; sig++) {
