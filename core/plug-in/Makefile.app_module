@@ -44,26 +44,24 @@ clean: $(extra_clean)
 deps: $(depends) $(extra_depends)
 
 .PHONY: install
-install: all $(extra_install)
-	mkdir -p $(DESTDIR)$(modules-prefix)/$(modules-dir)
+install: all $(extra_install) $(DESTDIR)$(modules-prefix)/$(modules-dir)
 	if [ -f "$(lib_name)" ]; then \
 	 $(INSTALL-TOUCH) $(DESTDIR)$(modules-prefix)/$(modules-dir)/$(lib_name) ; \
 	 $(INSTALL-MODULES) $(lib_name) $(DESTDIR)$(modules-prefix)/$(modules-dir); \
 	fi
 
 .PHONY: install-cfg
-install-cfg: 
-	mkdir -p $(DESTDIR)$(cfg-target)
+install-cfg: $(DESTDIR)$(app-cfg-target)
 	-@for r in $(module_conf_files); do \
 			echo installing $$r ;  \
-			$(INSTALL-TOUCH) $(DESTDIR)$(cfg-target)$$r ; \
+			$(INSTALL-TOUCH) $(DESTDIR)$(app-cfg-target)$$r ; \
 			sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
 			-e "s#/usr/.*lib/sems/ivr/#$(lib-target)ivr/#g" \
 			-e "s#/usr/.*lib/sems/dsm/#$(lib-target)dsm/#g" \
 			-e "s#/usr/.*lib/sems/py_sems/#$(lib-target)py_sems/#g" \
-			-e "s#/usr/.*etc/sems#$(cfg-target)#g" \
-			< etc/$$r > $(DESTDIR)$(cfg-target)$$r; \
+			-e "s#/usr/.*etc/sems#$(app-cfg-target)#g" \
+			< etc/$$r > $(DESTDIR)$(app-cfg-target)$$r; \
 	done
 
 $(DESTDIR)(audio-prefix)/$(audio-dir):
