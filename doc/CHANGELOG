@@ -1,5 +1,65 @@
 Changelog for SEMS 
 
+Version 1.3.0
+ - SIP stack moved into the core (no need to load sipctrl any more)
+
+ - session app/signaling thread pool support (for very high session count)
+
+ - reduced memory usage if no RTP is processed
+
+ - SIP/UDP receive buffer configurable
+
+ - optimized potentially contentious mutexes
+
+ - multiple SIP/UDP receivers for even more signaling performance
+
+ - daemon mode can be compile-time disabled
+
+ - command line params may overrule config file
+
+ - CMake build with older versions possible (2.4)
+
+ - simple mode for voicemail/voicebox, usable without special handling by proxy
+
+ - RTP DTMF reception fixed (using RTP TS)
+
+ - support for DTMF sending/relaying on app level
+
+ - json-rpc (v2.0) module for interfacing (sync+async)
+
+ - 100rel (PRACK, RFC 3262) support
+
+ - open webconference rooms at startup
+
+ - DNS cache, support for load balancing on DNS SRV records
+
+ - new tutorials, DSM examples
+
+ - DSM state machine scripting platform
+    - #include scripts
+    - sys.popen to run external programs
+    - proper dialout support with ringing events, variables passed, auth etc.
+    - app selection and call preparation on in-mem DB (monitoring), with fallback
+    - System DSMs - executed DSM scripts unrelated to calls
+    - full conference support, with subgroups (mixed sidebars)
+    - mix in file into call or conference
+    - consistency checks on DSM scripts
+    - sets() for variable replacement
+    - raw SIP message processing
+    - arrays (also recursive) in DI action
+    - utils.add/sub
+    - prefix matching for test
+
+ - UPDATE support for Session Timer
+
+ - B2BUA with Session Timer (using UPDATE/re-INVITE with last SDP)
+
+ - SIP Session Timer for webconference, conference, dsm, ivr
+
+ - SIGHUP stops active calls, SIGUSR1/2 can be used by apps
+
+ - G.729 codec module (Intel IPP wrapper)
+
 Version 1.2.0
 
 - many DSM improvements:
