@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007 iptego GmbH
  *
  * This file is part of SEMS, a free SIP media server.

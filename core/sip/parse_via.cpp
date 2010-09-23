@@ -3,19 +3,21 @@
  *
  * Copyright (C) 2007 Raphael Coeffic
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -495,166 +497,4 @@ inline int parse_via_params(sip_via_parm* parm, const char** c, int len)
 
 		case_VIA_PARAM(VP_BRANCH1,'r','R',VP_BRANCH2);
 		case_VIA_PARAM(VP_BRANCH2,'a','A',VP_BRANCH3);
-		case_VIA_PARAM(VP_BRANCH3,'n','N',VP_BRANCH4);
-		case_VIA_PARAM(VP_BRANCH4,'c','C',VP_BRANCH5);
-		case_VIA_PARAM(VP_BRANCH5,'h','H',VP_BRANCH);
-
-		// "re"
-		case_VIA_PARAM(VP_RECVD1,'c','C',VP_RECVD2);
-		case_VIA_PARAM(VP_RECVD2,'e','E',VP_RECVD3);
-		case_VIA_PARAM(VP_RECVD3,'i','I',VP_RECVD4);
-		case_VIA_PARAM(VP_RECVD4,'v','V',VP_RECVD5);
-		case_VIA_PARAM(VP_RECVD5,'e','E',VP_RECVD6);
-		case_VIA_PARAM(VP_RECVD6,'d','D',VP_RECVD);
-
-		// "rp"
-		case_VIA_PARAM(VP_RPORT1, 'o','O',VP_RPORT2);
-		case_VIA_PARAM(VP_RPORT2, 'r','R',VP_RPORT3);
-		case_VIA_PARAM(VP_RPORT3, 't','T',VP_RPORT);
-
-	    case VP_OTHER:
-		goto next_param;
-	    }
-	}
-
-	switch(st){
-	case VP_BRANCH:
-	    parm->branch = (*it)->value;
-	    DBG("parsed branch: %.*s\n",(*it)->value.len,(*it)->value.s);
-	    break;
-	case VP_RECVD:
-	    parm->recved = (*it)->value;
-	    break;
-	case VP_RPORT:
-	    parm->has_rport = true;
-	    parm->rport = (*it)->value;
-	    if(parm->rport.len) {
-		if(str2i(c2stlstr(parm->rport),parm->rport_i)) {
-		    DBG("invalid port number in Via 'sent-by' address.\n");
-		}
-	    }
-	    else {
-		parm->rport.s = (*it)->name.s + (*it)->name.len;
-	    }
-	    break;
-	}
-	
-    next_param:
-	continue; // makes compiler happy
-    }
-
-    DBG("has_rport: %i\n",parm->has_rport);
-    
-    return ret;
-}
-
-
-int parse_via(sip_via* via, const char* beg, int len)
-{
-    enum {
-	
-	V_TRANS=0,
-	V_URI,
-	V_PARM_SEP,
-	V_PARM_SEP_SWS
-    };
-
-
-    const char* c   = beg;
-    const char* end = beg+len;
-
-    int saved_st=0, st=V_TRANS;
-
-    auto_ptr<sip_via_parm> parm(new sip_via_parm());
-
-    int ret = 0;
-    for(;c<end;c++){
-
- 	switch(st){
-
-	case V_TRANS:
- 	    ret = parse_transport(&parm->trans, &c, end-c);
-	    if(ret) return ret;
-
-	    st = V_URI;
- 	    break;
-	    
- 	case V_URI:
-	    switch(*c){
-
-	    case_CR_LF;
-		
-	    case SP:
-	    case HTAB:
-		break;
-
-	    default:
-		ret = parse_by(parm.get(), &c, end-c);
-		if(ret) return ret;
-
-		ret = parse_via_params(parm.get(),&c,end-c);
-		if(ret) return ret;
-
-		parm->eop = c;
-		via->parms.push_back(parm.release());
-		parm.reset(new sip_via_parm());
-		
-		st = V_PARM_SEP;
-		c--;
-		break;
-	    }
-	    break;
-
-	case V_PARM_SEP:
-	    switch(*c){
-
-	    case_CR_LF;
-
-	    case SP:
-	    case HTAB:
-		break;
-		
-	    case ',':
-		st = V_PARM_SEP_SWS;
-		break;
-
-	    default:
-		DBG("',' expected, found '%c'\n",*c);
-		return MALFORMED_SIP_MSG;
-	    }
-	    break;
-
-	case V_PARM_SEP_SWS:
-	    switch(*c){
-
-	    case_CR_LF;
-
-	    case SP:
-	    case HTAB:
-		break;
-		
-	    default:
-		st = V_TRANS;
-		c--;
-		break;
-	    }
-	    break;
-
-	case_ST_CR(*c);
-
-	case ST_LF:
-	case ST_CRLF:
-	    st = saved_st;
-	    break;
-	}
-    }
-
-    return 0;
-}
-
-/** EMACS **
- * Local variables:
- * mode: c++
- * c-basic-offset: 4
- * End:
- */
+		case_VIA_

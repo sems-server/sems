@@ -32,6 +32,13 @@ IMPORTANT NOTES
    core or the respective module, or alternatively license modifications
    under the Simplified BSD License.
 
+6) This program is released under the GPL with the additional exemption that
+   compiling, linking, and/or using OpenSSL is allowed.
+
+   That means that the SEMS IPR owners permit you to distribute binary copies
+   of SEMS linked with the OpenSSL library (which is not allowed with plain GPL,
+   as the OpenSSL license requires you to add a notice about the use of OpenSSL
+   to the software's documentation).
 -------------------------------------------------------------------------
 
 GNU Licence FAQ 

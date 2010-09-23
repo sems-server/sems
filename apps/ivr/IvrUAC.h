@@ -1,9 +1,7 @@
-/*
- * $Id$
- * Copyright (C) 2002-2003 Fhg Fokus
+/* Copyright (C) 2002-2003 Fhg Fokus
  * Copyright (C) 2006 Stefan Sayer
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
