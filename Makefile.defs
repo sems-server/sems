@@ -76,7 +76,7 @@ CPPFLAGS += -D_DEBUG \
 # exclude some modules from compilation?
 # e.g. python modules:
 
-exclude_core_modules = sipctrl
+exclude_core_modules = sipctrl g729
 #exclude_apps_modules = py_sems ivr mailbox pin_collect conf_auth mp3 examples
 
 # build in support for monitoring?
