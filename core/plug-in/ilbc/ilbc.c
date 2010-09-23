@@ -79,25 +79,25 @@ static unsigned int ilbc_samples2bytes(long, unsigned int);
 
 BEGIN_EXPORTS( "ilbc" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
-     BEGIN_CODECS
-CODEC( CODEC_ILBC, Pcm16_2_iLBC, iLBC_2_Pcm16, iLBC_PLC,
-       iLBC_create, 
-       iLBC_destroy,
-       ilbc_bytes2samples, ilbc_samples2bytes )
-     END_CODECS
+  BEGIN_CODECS
+    CODEC( CODEC_ILBC, Pcm16_2_iLBC, iLBC_2_Pcm16, iLBC_PLC,
+           iLBC_create, 
+           iLBC_destroy,
+           ilbc_bytes2samples, ilbc_samples2bytes )
+  END_CODECS
     
-BEGIN_PAYLOADS
-PAYLOAD( -1, "iLBC", 8000, 1, CODEC_ILBC, AMCI_PT_AUDIO_FRAME )
-     END_PAYLOADS
+  BEGIN_PAYLOADS
+    PAYLOAD( -1, "iLBC", 8000, 1, CODEC_ILBC, AMCI_PT_AUDIO_FRAME )
+  END_PAYLOADS
 
-BEGIN_FILE_FORMATS
-BEGIN_FILE_FORMAT( "iLBC", "ilbc", "audio/iLBC", iLBC_open, iLBC_close, 0, 0)
-     BEGIN_SUBTYPES
-SUBTYPE( ILBC30,  "iLBC30",  8000, 1, CODEC_ILBC )
-     SUBTYPE( ILBC20,  "iLBC20",  8000, 1, CODEC_ILBC )
-     END_SUBTYPES
-END_FILE_FORMAT
-END_FILE_FORMATS
+  BEGIN_FILE_FORMATS
+    BEGIN_FILE_FORMAT( "iLBC", "ilbc", "audio/iLBC", iLBC_open, iLBC_close, 0, 0)
+      BEGIN_SUBTYPES
+        SUBTYPE( ILBC30,  "iLBC30",  8000, 1, CODEC_ILBC )
+        SUBTYPE( ILBC20,  "iLBC20",  8000, 1, CODEC_ILBC )
+      END_SUBTYPES
+    END_FILE_FORMAT
+  END_FILE_FORMATS
 
 END_EXPORTS
 

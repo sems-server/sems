@@ -95,28 +95,28 @@ static unsigned int g711_samples2bytes(long, unsigned int);
 BEGIN_EXPORTS( "wav" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
      BEGIN_CODECS
-CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, 
-       AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY, 
-       g711_bytes2samples, g711_samples2bytes )
-     CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, 
-	    AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY, 
-	    g711_bytes2samples, g711_samples2bytes )
+      CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16,
+             AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY,
+             g711_bytes2samples, g711_samples2bytes )
+      CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16,
+	     AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY,
+	     g711_bytes2samples, g711_samples2bytes )
      END_CODECS
     
-BEGIN_PAYLOADS
-PAYLOAD( 0, "PCMU", 8000, 1, CODEC_ULAW, AMCI_PT_AUDIO_LINEAR )
-     PAYLOAD( 8, "PCMA", 8000, 1, CODEC_ALAW, AMCI_PT_AUDIO_LINEAR )
+     BEGIN_PAYLOADS
+        PAYLOAD( 0, "PCMU", 8000, 1, CODEC_ULAW, AMCI_PT_AUDIO_LINEAR )
+        PAYLOAD( 8, "PCMA", 8000, 1, CODEC_ALAW, AMCI_PT_AUDIO_LINEAR )
      END_PAYLOADS
 
-BEGIN_FILE_FORMATS
-BEGIN_FILE_FORMAT( "Wav", "wav", "audio/x-wav", wav_open, wav_close, wav_mem_open, wav_mem_close)
-     BEGIN_SUBTYPES
-SUBTYPE( WAV_PCM,  "Pcm16",  8000, 1, CODEC_PCM16 ) // we only support 8000/1 channel !
-     SUBTYPE( WAV_ALAW, "A-Law",  8000, 1, CODEC_ALAW )
-     SUBTYPE( WAV_ULAW, "Mu-Law", 8000, 1, CODEC_ULAW )
-     END_SUBTYPES
-END_FILE_FORMAT
-END_FILE_FORMATS
+     BEGIN_FILE_FORMATS
+       BEGIN_FILE_FORMAT( "Wav", "wav", "audio/x-wav", wav_open, wav_close, wav_mem_open, wav_mem_close)
+         BEGIN_SUBTYPES
+           SUBTYPE( WAV_PCM,  "Pcm16",  8000, 1, CODEC_PCM16 ) // we only support 8000/1 channel !
+           SUBTYPE( WAV_ALAW, "A-Law",  8000, 1, CODEC_ALAW )
+           SUBTYPE( WAV_ULAW, "Mu-Law", 8000, 1, CODEC_ULAW )
+         END_SUBTYPES
+       END_FILE_FORMAT
+     END_FILE_FORMATS
 
 END_EXPORTS
 

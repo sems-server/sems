@@ -48,17 +48,17 @@ static unsigned int gsm_samples2bytes(long, unsigned int);
 
 BEGIN_EXPORTS( "gsm", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
-     BEGIN_CODECS
-CODEC( CODEC_GSM0610, pcm16_2_gsm, gsm_2_pcm16, AMCI_NO_CODEC_PLC,
-       gsm_create_if, (amci_codec_destroy_t)gsm_destroy_if, gsm_bytes2samples, gsm_samples2bytes )
-     END_CODECS
+  BEGIN_CODECS
+    CODEC( CODEC_GSM0610, pcm16_2_gsm, gsm_2_pcm16, AMCI_NO_CODEC_PLC,
+           gsm_create_if, (amci_codec_destroy_t)gsm_destroy_if, gsm_bytes2samples, gsm_samples2bytes )
+  END_CODECS
     
-BEGIN_PAYLOADS
-PAYLOAD( 3, "GSM", 8000, 1, CODEC_GSM0610, AMCI_PT_AUDIO_FRAME )
-     END_PAYLOADS
+  BEGIN_PAYLOADS
+    PAYLOAD( 3, "GSM", 8000, 1, CODEC_GSM0610, AMCI_PT_AUDIO_FRAME )
+  END_PAYLOADS
 
-BEGIN_FILE_FORMATS
-END_FILE_FORMATS
+  BEGIN_FILE_FORMATS
+  END_FILE_FORMATS
 
 END_EXPORTS
 
