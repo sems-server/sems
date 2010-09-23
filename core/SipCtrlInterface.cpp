@@ -306,7 +306,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 
     /* check if we need to store RSeq. */
     // FIXME: shouldn't the global "100rel==on?" check be present here??
-    if(100 < rep.code && rep.code < 200 && rep.method == SIP_METH_INVITE) {
+    if(100 < rep.code && rep.code < 200 && rep.cseq_method == SIP_METH_INVITE) {
         unsigned ext = 0;
         unsigned rseq = 0;
         for(list<sip_header*>::iterator it = msg.hdrs.begin();
@@ -385,7 +385,7 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     assert(msg->from && msg->from->p);
     assert(msg->to && msg->to->p);
     
-    AmSipRequest req;
+    //AmSipRequest req;
     
     req.method   = c2stlstr(msg->u.request->method_str);
     req.user     = c2stlstr(msg->u.request->ruri.user);
@@ -616,8 +616,8 @@ void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
 
       DBG("Reply timed out: %i %s\n",reply.code,reply.reason.c_str());
       DBG_PARAM(reply.callid);
-      DBG_PARAM(reply.local_tag);
-      DBG_PARAM(reply.remote_tag);
+      DBG_PARAM(reply.to_tag);
+      DBG_PARAM(reply.from_tag);
       DBG("cseq = <%i>\n",reply.cseq);
 
       tmo_evt = new AmSipTimeoutEvent(evt, request, reply);

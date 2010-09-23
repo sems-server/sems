@@ -61,12 +61,11 @@ AmSession::AmSession()
   : AmEventQueue(this),
     dlg(this),
     detached(true),
-    sess_stopped(false),//negotiate_onreply(false),
+    sess_stopped(false),
     input(0), output(0), local_input(0), local_output(0),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
-    reliable_1xx(AmConfig::rel100),
     refresh_method(REFRESH_UPDATE_FB_REINV),
     processing_status(SESSION_PROCESSING_EVENTS)
 #ifdef WITH_ZRTP
@@ -79,8 +78,6 @@ AmSession::AmSession()
 {
   use_local_audio[AM_AUDIO_IN] = false;
   use_local_audio[AM_AUDIO_OUT] = false;
-  if (reliable_1xx)
-    dlg.rseq = 0; //???
 }
 
 AmSession::~AmSession()
@@ -711,7 +708,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 }
 
 void AmSession::onSipReply(const AmSipReply& reply,
-			   int old_dlg_status, const string& trans_method)
+			   AmSipDialog::Status old_dlg_status, const string& trans_method)
 {
   CALL_EVENT_H(onSipReply, reply, old_dlg_status, trans_method);
 
@@ -720,7 +717,7 @@ void AmSession::onSipReply(const AmSipReply& reply,
   if (old_dlg_status != dlg.getStatus())
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
 	dlgStatusStr(old_dlg_status), 
-	dlg.getStatusStr(),
+	dlgStatusStr(dlg.getStatus()),
 	sess_stopped.get() ? "true" : "false");
   else 
     DBG("Dialog status stays %s (stopped=%s)\n", 
@@ -827,18 +824,8 @@ void AmSession::onNoAck(unsigned int cseq)
 
 void AmSession::onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)
 {
-  INFO("reply <%s> timed out.\n", rpl.print().c_str());
-  if (100 < rpl.code && rpl.code < 200 && reliable_1xx == REL100_REQUIRE &&
-      (unsigned)dlg.rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
-    INFO("reliable %d reply timed out; rejecting request.\n", rpl.code);
-    dlg.reply(req, 504, "Server Time-out");
-    // TODO: handle forking case (when more PRACKs are sent, out of which some
-    // might time-out/fail).
-    if (dlg.getStatus() < AmSipDialog::Connected)
-      setStopped();
-  } else {
-    WARN("reply timed-out, but not reliable.\n"); // debugging
-  }
+  if (dlg.getStatus() < AmSipDialog::Connected)
+    setStopped();
 }
 
 void AmSession::onAudioEvent(AmAudioEvent* audio_ev)
@@ -857,6 +844,12 @@ void AmSession::onBye(const AmSipRequest& req)
   dlg.reply(req,200,"OK");
   setStopped();
 }
+
+// void AmSession::onPrack(const AmSipRequest& req, unsigned cnt)
+// {
+//   DBG("handling #%u PRACK.\n", cnt);
+//   dlg.reply(req, 200, "OK");
+// }
 
 void AmSession::onCancel(const AmSipRequest& req)
 {
@@ -882,47 +875,6 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
 			    const string& reason, const string& content_type,
 			    const string& body, string& hdrs, int flags)
 {
-  if (req.method == SIP_METH_INVITE) {
-    if (100 < code && code < 200) {
-      switch (reliable_1xx) {
-        case REL100_SUPPORTED:
-          hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
-          break;
-        case REL100_REQUIRE:
-          // add Require HF
-          hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
-          // add RSeq HF
-#ifndef NDEBUG
-          if ((abs(dlg.rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 
-              ((1 << MAX_RSEQ_BITS) - 1)) {
-            ERROR("CRITICAL: RSeq value too high: increase MAX_RSEQ_BITS "
-              "(now %d) and recompile.\n", MAX_RSEQ_BITS);
-            abort();
-          }
-#endif
-          if (dlg.rseq < 0) { // RSeq not yet PRACKed
-            // refuse subsequent 1xx if first isn't yet PRACKed
-            if ((((unsigned)-dlg.rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 0)
-              throw AmSession::Exception(491, "last reliable 1xx not yet "
-                  "PRACKed");
-            dlg.rseq --;
-          } else if (! dlg.rseq) { // only init rseq if 1xx is used
-            unsigned rseq_1st = (get_random() + 1) << MAX_RSEQ_BITS;
-            rseq_1st &= 0x7fffffff;
-            dlg.rseq = -((signed)rseq_1st);
-          } else {
-            dlg.rseq = -(++dlg.rseq);
-          }
-          // FIXME: code above is not re-entrant; should it actually be???
-          hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(-dlg.rseq) + CRLF;
-          break;
-      }
-    } else if (code < 300 && reliable_1xx == REL100_REQUIRE) {
-      if (dlg.rseq < 0) // reliable 1xx is pending
-        throw AmSession::Exception(491, "last reliable 1xx not yet PRACKed");
-    }
-  }
-
   CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs,flags);
 }
 
@@ -1128,7 +1080,7 @@ int AmSession::sendReinvite(bool updateSDP, const string& headers)
   //   return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), SIP_APPLICATION_SDP,
   //       sdp_body);
   // } else {
-    return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "", "");
+    return dlg.reinvite(headers, "", "");
   // }
 }
 
@@ -1143,7 +1095,7 @@ int AmSession::sendInvite(const string& headers)
   // Generate SDP.
   // string sdp_body;
   // sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-  return dlg.invite(headers + get_100rel_hdr(reliable_1xx), 
+  return dlg.invite(headers, 
 		    ""/*SIP_APPLICATION_SDP*/, ""/*sdp_body*/);
 }
 

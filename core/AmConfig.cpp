@@ -90,7 +90,7 @@ unsigned int AmConfig::OptionsSessionLimit            = 0;
 unsigned int AmConfig::OptionsSessionLimitErrCode     = 503;
 string       AmConfig::OptionsSessionLimitErrReason   = "Server overload";
 
-unsigned char AmConfig::rel100                 = REL100_SUPPORTED;
+unsigned char AmConfig::rel100                 = AmSipDialog::REL100_SUPPORTED;
 
 vector <string> AmConfig::CodecOrder;
 
@@ -526,11 +526,11 @@ int AmConfig::readConfiguration()
   if (cfg.hasParameter("100rel")) {
     string rel100s = cfg.getParameter("100rel");
     if (rel100s == "disabled" || rel100s == "off") {
-      rel100 = REL100_DISABLED;
+      rel100 = AmSipDialog::REL100_DISABLED;
     } else if (rel100s == "supported") {
-      rel100 = REL100_SUPPORTED;
+      rel100 = AmSipDialog::REL100_SUPPORTED;
     } else if (rel100s == "require") {
-      rel100 = REL100_REQUIRE;
+      rel100 = AmSipDialog::REL100_REQUIRE;
     } else {
       ERROR("unknown setting for '100rel' config option: '%s'.\n",
 	    rel100s.c_str());

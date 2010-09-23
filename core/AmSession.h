@@ -166,13 +166,6 @@ protected:
   /** do accept early session? */
   bool accept_early_session;
 
-  /** enable the reliability of provisional replies? */
-  unsigned char reliable_1xx;
-#define REL100_DISABLED         0
-#define REL100_SUPPORTED        1
-#define REL100_REQUIRE          2
-#define REL100_MAX              REL100_REQUIRE
-
   vector<AmSessionEventHandler*> ev_handlers;
 
 public:
@@ -461,7 +454,7 @@ public:
    * Should be overridden if SDP offer is expected with it.
    * @param cnt order of which 1xx this PRACK is for 
    */
-  virtual void onPrack(const AmSipRequest& req, unsigned cnt);
+  //virtual void onPrack(const AmSipRequest& req, unsigned cnt);
 
   /**
    * onSessionStart will be called after call setup.
@@ -496,7 +489,7 @@ public:
   virtual void onSipRequest(const AmSipRequest& req);
 
   /** Entry point for SIP Replies   */
-  virtual void onSipReply(const AmSipReply& reply, int old_dlg_status,
+  virtual void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status,
 			      const string& trans_method);
 
   /** 2xx reply has been received for an INVITE transaction */
@@ -576,21 +569,6 @@ inline AmRtpAudio* AmSession::RTPStream() {
   return _rtp_str.get();
 }
 
-static inline string get_100rel_hdr(unsigned char reliable_1xx)
-{
-  switch(reliable_1xx) {
-    case REL100_SUPPORTED:
-      return SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
-    case REL100_REQUIRE:
-      return SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
-    default:
-      ERROR("BUG: unexpected reliability switch value of '%d'.\n",
-          reliable_1xx);
-    case 0:
-      break;
-  }
-  return "";
-}
 
 #endif
 

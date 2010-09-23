@@ -91,6 +91,13 @@ class AmSipDialog
     __max_OA
   };
 
+  enum Rel100State {
+    REL100_DISABLED=0,
+    REL100_SUPPORTED=1,
+    REL100_REQUIRE=2,
+    _REL100_MAX=3
+  };
+
   string user;         // local user
   string domain;       // local domain
 
@@ -115,6 +122,9 @@ class AmSipDialog
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
 
+  /** enable the reliability of provisional replies? */
+  unsigned char reliable_1xx;
+
   AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();
 
@@ -123,7 +133,10 @@ class AmSipDialog
 
   /** @return whether INVITE transaction is pending */
   bool   getUACInvTransPending();
+
   Status getStatus() { return status; }
+  const char* getStatusStr();
+
   void   setStatus(Status new_status);
 
   string getContactHdr();
@@ -261,7 +274,8 @@ class AmSipDialogEventHandler
 
   /** Hook called when a reply has been received */
   virtual void onSipReply(const AmSipReply& reply, 
-			  AmSipDialog::Status old_dlg_status)=0;
+			  AmSipDialog::Status old_dlg_status,
+			  const string& trans_meth)=0;
 
   /** Hook called before a request is sent */
   virtual void onSendRequest(const string& method,
@@ -284,10 +298,11 @@ class AmSipDialogEventHandler
   virtual void onInvite2xx(const AmSipReply& reply)=0;
 
   /** Hook called when a UAS INVITE transaction did not receive a 2xx-ACK */
-  virtual void onNo2xxACK(unsigned int cseq)=0;
+  virtual void onNoAck(unsigned int cseq)=0;
 
   /** Hook called when a UAS INVITE transaction did not receive a non-2xx-ACK */
-  virtual void onNoErrorACK(unsigned int cseq)=0;
+  virtual void onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)=0;
+
 
   /** Hook called when an SDP offer is required */
   virtual bool getSdpOffer(AmSdp& offer)=0;

@@ -138,7 +138,7 @@ class UACAuth : public AmSessionEventHandler
   virtual bool process(AmEvent*);
   virtual bool onSipEvent(AmSipEvent*);
   virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&, int old_dlg_status, const string& trans_method);
+  virtual bool onSipReply(const AmSipReply&, AmSipDialog::Status old_dlg_status, const string& trans_method);
 	
   virtual bool onSendRequest(const string& method, 
 			     const string& content_type,

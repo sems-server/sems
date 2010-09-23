@@ -146,8 +146,8 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	// INV/UPD transaction changed session in other leg
 	if (SIP_IS_200_CLASS(reply_ev->reply.code) &&
 	    (!reply_ev->reply.body.empty()) &&
-	    (reply_ev->reply.method == SIP_METH_INVITE ||
-	     reply_ev->reply.method == SIP_METH_UPDATE)) {
+	    (reply_ev->reply.cseq_method == SIP_METH_INVITE ||
+	     reply_ev->reply.cseq_method == SIP_METH_UPDATE)) {
 	  if (updateSessionDescription(reply_ev->reply.content_type,
 				       reply_ev->reply.body)) {
 	    if (dlg.getUACInvTransPending()) {
@@ -188,7 +188,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 }
 
 void AmB2BSession::onSipReply(const AmSipReply& reply,
-			      int old_dlg_status,
+			      AmSipDialog::Status old_dlg_status,
 			      const string& trans_method)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
@@ -343,8 +343,7 @@ int AmB2BSession::sendEstablishedReInvite() {
   }
 
   DBG("sending re-INVITE with saved session description\n");
-  return dlg.reinvite(get_100rel_hdr(reliable_1xx),
-		      established_content_type, established_body);
+  return dlg.reinvite("",established_content_type, established_body);
 }
 
 bool AmB2BSession::refresh() {
@@ -391,8 +390,7 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
     }
 
     DBG("sending relayed ACK\n");
-    dlg.send_200_ack(AmSipTransaction(t->second.method, t->first,t->second.tt), 
-		     req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
+    dlg.send_200_ack(t->first, req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
 
     if (!req.body.empty() && t->second.method == SIP_METH_INVITE) {
     // delayed SDP negotiation - save SDP

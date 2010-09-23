@@ -859,7 +859,7 @@ AmSessionFactory* AmPlugIn::findSessionFactory(AmSipRequest& req)
       app_name = req.user; 
       break;
     case AmConfig::App_APPHDR: 
-      req.cmd = getHeader(req.hdrs, APPNAME_HDR, true); 
+      app_name = getHeader(req.hdrs, APPNAME_HDR, true); 
       break;      
     case AmConfig::App_RURIPARAM: 
       app_name = get_header_param(req.r_uri, "app");
