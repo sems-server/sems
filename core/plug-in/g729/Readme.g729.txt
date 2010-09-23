@@ -22,6 +22,11 @@
  run build script in ipp-samples/speech-codecs
 
  4. adapt paths in Makefile (especially IPP_SAMPLES_PATH/IPP_SAMPLES_ARCH)
+ or pass paths to make as in
+ $ IPP_SAMPLES_PATH=/path/to/ipp-samples/ \
+   IPP_SAMPLES_ARCH=linux64_gcc4 \
+   IPPROOT=/path/to/ipp/version/arch \
+   make
 
  About Licensing
  ---------------

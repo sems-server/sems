@@ -4,7 +4,7 @@ COREPATH =../..
 # adapt these paths to version/arch
 IPPROOT?=/opt/intel/ipp/6.1.2.051/ia32/
 IPP_SAMPLES_PATH?=/opt/intel/ipp/ipp-samples/
-IPP_SAMPLES_ARCH=linux32_gcc4
+IPP_SAMPLES_ARCH?=linux32_gcc4
 
 ######
 
