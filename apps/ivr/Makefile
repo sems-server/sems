@@ -33,8 +33,7 @@ endif
 
 LOCAL_INCLUDES = -I$(FLITE_DIR)/lang/usenglish
 
-module_ldflags = -lutil \
-	$(PYTHON_module_ldflags) \
+module_ldflags = $(PYTHON_module_ldflags) \
 	$(IVR_TTS_module_ldflags)
 
 # for perl support:
