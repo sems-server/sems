@@ -36,12 +36,10 @@
 */
 
 #ifndef TEST
-#define _GNU_SOURCE
-#include <unistd.h>
+#include "../../log.h"
 #include <stdio.h>
 #include "amci.h"
 #include "codecs.h"
-#include "../../log.h"
 #else
 #include <stdio.h>
 #define ERROR  printf

@@ -67,7 +67,9 @@ enum Log_Level {
 #endif
 
 #ifdef __linux
-# define _GNU_SOURCE
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+# endif
 # include <linux/unistd.h>
 # include <sys/syscall.h>
 # define GET_PID() syscall(__NR_gettid)
