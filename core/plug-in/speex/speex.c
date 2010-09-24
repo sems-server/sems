@@ -17,13 +17,14 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <string.h>
-#include <stdlib.h>
-
 #include "amci.h"
 #include "codecs.h"
 #include "speex/speex.h"
 #include "../../log.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 /* Speex constants */
 #define SPEEX_FRAME_MS			 20

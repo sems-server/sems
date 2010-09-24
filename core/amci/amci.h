@@ -35,6 +35,9 @@
 extern "C" {
 #endif
 
+#ifdef __linux
+#define _GNU_SOURCE
+#endif
 #include <stdio.h>
 
 /**
