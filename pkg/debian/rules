@@ -85,7 +85,7 @@ install: build
 
 # install only the python modules
 	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
-	$(MAKE) -C apps/ install modules="$(PYTHON_MODULES)" \
+	$(MAKE) -C apps/ install app_modules="$(PYTHON_MODULES)" \
 		DESTDIR=$(CURDIR)/debian/sems-python-modules \
 		prefix=/usr \
 		cfg-target=/etc/sems/  
