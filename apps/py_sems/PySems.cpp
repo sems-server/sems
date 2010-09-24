@@ -36,14 +36,15 @@
 #include <sip.h>
 #include "sip/sipAPIpy_sems_lib.h"
 
+// earlier than 4.7.6, include headers:
 #if SIP_VERSION < 0x040706
-#define SIP_USE_OLD_CLASS_CONVERSION 1
-#endif
-
-#ifdef SIP_USE_OLD_CLASS_CONVERSION
 #include "sip/sippy_sems_libPySemsDialog.h"
 #include "sip/sippy_sems_libPySemsB2BDialog.h"
 #include "sip/sippy_sems_libPySemsB2ABDialog.h"
+#endif
+
+#if SIP_VERSION < 0x040901
+#define SIP_USE_OLD_CLASS_CONVERSION 1
 #endif
 
 #include <unistd.h>
