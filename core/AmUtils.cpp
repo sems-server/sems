@@ -1017,11 +1017,14 @@ void add_env_path(const char* name, const string& path)
 {
   string var(path);
   char*  old_path=0;
+  char name_s[50];
 
   regex_t path_reg;
 
+  strcpy(name_s, name);
+
   assert(name);
-  if((old_path = getenv(name)) != 0) {
+  if((old_path = getenv(name_s)) != 0) {
     if(strlen(old_path)){
 	    
       if(regcomp(&path_reg,("[:|^]" + path + "[:|$]").c_str(),REG_NOSUB)){

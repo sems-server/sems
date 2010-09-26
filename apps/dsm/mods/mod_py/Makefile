@@ -33,5 +33,7 @@ lib_full_name = $(DSMPATH)/mods/lib/$(lib_name)
 include $(DSMPATH)/mods/Makefile.dsm_module
 
 ifneq ($(OS),macosx)
+ifneq ($(OS),solaris)
 PYTHON_module_ldflags += -Xlinker --export-dynamic
+endif
 endif

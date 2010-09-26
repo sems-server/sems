@@ -79,7 +79,9 @@ LD=gcc
 include $(COREPATH)/plug-in/Makefile.app_module
 
 ifneq ($(OS),macosx)
+ifneq ($(OS),solaris)
 PYTHON_module_ldflags += -Xlinker --export-dynamic
+endif
 endif
 
 .PHONY: install_python_files
