@@ -820,7 +820,7 @@ string get_header_keyvalue_single(const string& param_hdr, const string& name) {
   
   while (p<param_hdr.length() && !v_end) {
     char curr = param_hdr[p];
-    // DBG("curr %c, st=%d\n", curr, st);
+    // DBG("curr %c, st=%d, corr=%d\n", curr, st, corr);
     switch(st) {
     case ST_FINDBGN: {
       switch(curr) {
@@ -850,7 +850,10 @@ string get_header_keyvalue_single(const string& param_hdr, const string& name) {
 	break;
       default:
 	if (curr==name[0]) {
-	  st = ST_CMPKEY;
+	  if (name.length() == 1)
+	    st = ST_FINDEQ;
+	  else
+	    st = ST_CMPKEY;
 	  k_begin = p;
 	  corr = 1;
 	}
