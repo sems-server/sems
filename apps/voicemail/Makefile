@@ -21,12 +21,12 @@ extra_install = install_email_template $(plug_in_name)_audio
 vm_module:	all
 
 .PHONY: install_email_template
-install_email_template: $(DESTDIR)$(cfg-target)
-	$(INSTALL-TOUCH) $(DESTDIR)$(cfg-target)default.template.sample
-	$(INSTALL-CFG) default.template.sample $(DESTDIR)$(cfg-target)
-	if [ ! -f $(DESTDIR)$(cfg-target)default.template ]; then \
-		cp -f $(DESTDIR)$(cfg-target)default.template.sample \
-			$(DESTDIR)$(cfg-target)default.template; \
+install_email_template: $(DESTDIR)$(app-cfg-target)
+	$(INSTALL-TOUCH) $(DESTDIR)$(app-cfg-target)default.template.sample
+	$(INSTALL-CFG) default.template.sample $(DESTDIR)$(app-cfg-target)
+	if [ ! -f $(DESTDIR)$(app-cfg-target)default.template ]; then \
+		cp -f $(DESTDIR)$(app-cfg-target)default.template.sample \
+			$(DESTDIR)$(app-cfg-target)default.template; \
 	fi
 
 
