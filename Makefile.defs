@@ -20,7 +20,7 @@ endif
 
 #version number
 VERSION = 1
-PATCHLEVEL = 3
+PATCHLEVEL = 4
 SUBLEVEL = 0
 
 ifneq ($(SCM_REV),)
