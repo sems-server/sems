@@ -14,6 +14,7 @@ DEPS=$(SRCS:.cpp=.d)
 
 CPPFLAGS += -I.. -DNOMAIN
 
+EXTRA_LDFLAGS += -lresolv
 
 .PHONY: all
 all: ../../Makefile.defs
