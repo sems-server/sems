@@ -260,7 +260,7 @@ LIB_LDFLAGS += $(LDFLAGS)
 
 DESTDIR ?= 
 PREFIX ?= /usr/local
-prefix = $(PREFIX)
+prefix ?= $(PREFIX)
 BASEDIR ?=
 basedir = $(BASEDIR)
 
@@ -309,8 +309,8 @@ endif
 
 # target dirs for various stuff
 bin-target = $(prefix)/$(bin-dir)
-cfg-target = $(prefix)/$(cfg-dir)
-app-cfg-target = $(prefix)/$(cfg-dir)etc/
+cfg-target ?= $(prefix)/$(cfg-dir)
+app-cfg-target = $(cfg-target)etc/
 modules-target = $(prefix)/$(modules-dir)
 audio-target = $(prefix)/$(audio-dir)
 lib-target = $(prefix)/$(lib-dir)
