@@ -77,7 +77,7 @@ install: all mk-install-dirs \
 
 
 # note: on solaris 8 sed: ? or \(...\)* (a.s.o) do not work
-install-cfg: $(DESTDIR)$(cfg-target)
+install-cfg: $(DESTDIR)$(cfg-target) $(DESTDIR)$(app-cfg-target)
 		sed -e "s#/usr/.*lib/sems/audio/#$(audio-target)#g" \
 			-e "s#/usr/.*lib/sems/plug-in/#$(modules-target)#g" \
 			-e "s#/usr/.*etc/sems/#$(cfg-target)#g" \
@@ -88,9 +88,7 @@ install-cfg: $(DESTDIR)$(cfg-target)
 				$(DESTDIR)$(cfg-target)sems.conf; \
 		fi
 
-# Make sure the destination exists and is a directory!
-		mkdir -p $(DESTDIR)$(cfg-target)
-		$(INSTALL-CFG) etc/app_mapping.conf $(DESTDIR)$(cfg-target)
+		$(INSTALL-CFG) etc/app_mapping.conf $(DESTDIR)$(app-cfg-target)
 
 install-bin: $(DESTDIR)$(bin-prefix)/$(bin-dir)
 		$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(NAME)
