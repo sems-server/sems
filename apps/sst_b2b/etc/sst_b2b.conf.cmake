@@ -1,14 +1,9 @@
-# script_path - *.py from this path is loaded as applications
-script_path=${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/ivr/
-
-
-###############################################################
 # RFC4028 Session Timer
 #
 
 # - enables the session timer ([yes,no]; default: no)
-# 
-# enable_session_timer=yes
+#
+enable_session_timer=yes
 
 # - set the "Session-Expires" parameter for the session timer.
 #
@@ -35,4 +30,10 @@ script_path=${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/ivr/
 # Default: yes
 #
 #accept_501_reply=no
+
+######################################################
+#authentication (questionable whether that works)
+# user=someuser
+# domain=somedomain.net
+# pwd=sompwd
 

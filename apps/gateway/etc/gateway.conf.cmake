@@ -1,0 +1,9 @@
+callerdomain=192.168.0.15
+calleddomain=netitel.pl
+msn=6240495,6240496,6240497,6233270
+outprefixes=0*,1*,2*,3*,4*,5*,6*,7*,8*,9*,*
+defaultmsn=6240495
+auth_enable=yes
+auth_realm=netitel.pl
+auth_user=semsgw
+auth_pwd=***
