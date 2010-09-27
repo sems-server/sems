@@ -1,8 +1,6 @@
-# script_path - *.py from this path is loaded as applications
-script_path=${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/ivr/
+# Echo plug-in configuration file
+#
 
-
-###############################################################
 # RFC4028 Session Timer
 #
 
@@ -35,4 +33,3 @@ script_path=${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/ivr/
 # Default: yes
 #
 #accept_501_reply=no
-
