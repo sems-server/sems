@@ -18,7 +18,7 @@ StatsUDPServer.cpp
 )
 
 SET(sems_module_name stats)
-SET(doc_files README.stats)
+SET(stats_doc_files README.stats)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)

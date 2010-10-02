@@ -46,6 +46,8 @@ IF(ZRTP_FOUND)
 INSTALL(FILES ./etc/zrtp.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
 ENDIF(ZRTP_FOUND)
 
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
+
 SET(doc_dirs ../doc/figures)
 SET(doc_files
 	../doc/Applications.txt
@@ -58,5 +60,6 @@ SET(doc_files
 	../doc/WHATSNEW_0.10
 )
 
+SEMS_INSTALL_DOCS("${doc_files}" "${doc_dirs}")
+
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)

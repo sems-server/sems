@@ -4,6 +4,8 @@
 # issue then this name is equals to external library, our module links to.
 # E.g. the issue, then speex module should be linked to -lspeex
 
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
+
 ADD_LIBRARY(sems_${sems_module_name} SHARED ${${sems_module_name}_SRCS})
 
 ADD_DEFINITIONS(-DMOD_NAME=\\\"${sems_module_name}\\\")
@@ -18,3 +20,11 @@ INSTALL(
 	TARGETS sems_${sems_module_name}
 	LIBRARY DESTINATION ${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in/
 )
+
+IF(NOT DEFINED ${sems_module_name}_docs)
+	IF(EXISTS ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
+		SET(${sems_module_name}_docs ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
+	ENDIF(EXISTS ${CMAKE_SOURCE_DIR}/doc/Readme.${sems_module_name}.txt)
+ENDIF(NOT DEFINED ${sems_module_name}_docs)
+
+SEMS_INSTALL_DOCS("${${sems_module_name}_docs}" "${${sems_module_name}_doc_dirs}")
