@@ -1,7 +1,10 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 
-# Don't do automatic escaping of variables
-CMAKE_POLICY(SET CMP0005 OLD)
+IF(COMMAND cmake_policy)
+	# Don't do automatic escaping of variables
+	CMAKE_POLICY(SET CMP0005 OLD)
+ENDIF(COMMAND cmake_policy)
+
 
 # Add path for additional FindXXX.cmake scenarios
 set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
