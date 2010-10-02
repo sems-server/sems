@@ -229,6 +229,12 @@ ELSE(RTMP_FOUND)
 	MESSAGE(STATUS "Using librtmp: NO")
 ENDIF(RTMP_FOUND)
 
+# Check for res_search in -lresolv
+include(${CMAKE_SOURCE_DIR}/cmake/CheckSymbolExists.cmake)
+SET(CMAKE_REQUIRED_LIBRARIES resolv)
+CHECK_SYMBOL_EXISTS(res_search resolv.h HAVE_RES_SEARCH)
+MESSAGE(STATUS "Have res_search: ${HAVE_RES_SEARCH} ")
+
 INCLUDE_DIRECTORIES (${SEMS_SOURCE_DIR}/core/ampi)
 INCLUDE_DIRECTORIES (${SEMS_SOURCE_DIR}/core/amci)
 INCLUDE_DIRECTORIES (${SEMS_SOURCE_DIR}/core)
