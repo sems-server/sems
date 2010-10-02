@@ -8,6 +8,5 @@ FOREACH (doc_dir ${doc_dirs})
 	INSTALL(
 		DIRECTORY ${doc_dir}
 		DESTINATION ${SEMS_DOC_PREFIX}/sems-${SEMS_VERSION}
-		PATTERN .svn EXCLUDE
 	)
 ENDFOREACH(doc_dir ${doc_dirs})
