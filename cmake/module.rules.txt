@@ -5,6 +5,7 @@
 # E.g. the issue, then speex module should be linked to -lspeex
 
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
 
 ADD_LIBRARY(sems_${sems_module_name} SHARED ${${sems_module_name}_SRCS})
 
@@ -28,3 +29,9 @@ IF(NOT DEFINED ${sems_module_name}_docs)
 ENDIF(NOT DEFINED ${sems_module_name}_docs)
 
 SEMS_INSTALL_DOCS("${${sems_module_name}_docs}" "${${sems_module_name}_doc_dirs}")
+
+IF(NOT DEFINED ${sems_module_name}_config_files)
+	SEMS_INSTALL_CONFIGS("${sems_module_name}")
+ELSE(NOT DEFINED ${sems_module_name}_config_files)
+	SEMS_INSTALL_CONFIGS("${${sems_module_name}_config_files}")
+ENDIF(NOT DEFINED ${sems_module_name}_config_files)

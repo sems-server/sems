@@ -14,7 +14,6 @@ set (audio_files
 	you_have.wav
 )
 SET(sems_module_name mailbox)
-SET(sems_config_files mailbox_query)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
@@ -24,3 +23,5 @@ PYTHON_SOURCES_COMPILE(mailbox_query.py ivr)
 PYTHON_SOURCES_COMPILE(imap_mailbox/MailboxURL.py ivr/imap_mailbox)
 PYTHON_SOURCES_COMPILE(imap_mailbox/__init__.py ivr/imap_mailbox)
 PYTHON_SOURCES_COMPILE(imap_mailbox/imap4ext.py ivr/imap_mailbox)
+
+SEMS_INSTALL_CONFIGS("mailbox;mailbox_query")

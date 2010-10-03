@@ -16,4 +16,3 @@ IF(OPENSSL_FOUND)
 ENDIF(OPENSSL_FOUND)
 
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
