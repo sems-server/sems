@@ -1,5 +1,7 @@
-FOREACH (audio_file ${audio_files})
-	INSTALL(
-		FILES wav/${audio_file} DESTINATION ${SEMS_AUDIO_PREFIX}/sems/audio/${sems_module_name}
-	)
-ENDFOREACH(audio_file ${audio_files})
+MACRO(SEMS_INSTALL_AUDIO module_name audio_files)
+	FOREACH (audio_file ${audio_files})
+		INSTALL(
+			FILES wav/${audio_file} DESTINATION ${SEMS_AUDIO_PREFIX}/sems/audio/${sems_module_name}
+		)
+	ENDFOREACH(audio_file ${audio_files})
+ENDMACRO(SEMS_INSTALL_AUDIO)

@@ -1,3 +1,5 @@
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+
 FILE (GLOB sems_SRCS "*.cpp" "sip/*.cpp")
 
 set (audio_files
@@ -61,5 +63,4 @@ SET(doc_files
 )
 
 SEMS_INSTALL_DOCS("${doc_files}" "${doc_dirs}")
-
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+SEMS_INSTALL_AUDIO("" "${audio_files}")

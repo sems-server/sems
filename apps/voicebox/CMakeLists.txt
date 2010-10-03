@@ -3,7 +3,7 @@ Voicebox.cpp
 VoiceboxDialog.cpp
 )
 
-set (audio_files
+set (voicebox_audio_files
 0.wav
 1.wav
 10.wav
@@ -64,4 +64,3 @@ you_have.wav
 
 SET(sems_module_name voicebox)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)

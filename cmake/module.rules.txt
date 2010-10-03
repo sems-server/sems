@@ -6,6 +6,7 @@
 
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 
 ADD_LIBRARY(sems_${sems_module_name} SHARED ${${sems_module_name}_SRCS})
 
@@ -35,3 +36,7 @@ IF(NOT DEFINED ${sems_module_name}_config_files)
 ELSE(NOT DEFINED ${sems_module_name}_config_files)
 	SEMS_INSTALL_CONFIGS("${${sems_module_name}_config_files}")
 ENDIF(NOT DEFINED ${sems_module_name}_config_files)
+
+IF(DEFINED ${sems_module_name}_audio_files)
+	SEMS_INSTALL_AUDIO("${sems_module_name}" "${${sems_module_name}_audio_files}")
+ENDIF(DEFINED ${sems_module_name}_audio_files)
