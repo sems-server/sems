@@ -989,8 +989,8 @@ void AmSession::onSipReply(const AmSipReply& reply,
 
 void AmSession::onInvite2xx(const AmSipReply& reply)
 {
-  AmSipTransaction* t = dlg.get_uac_trans(reply.cseq);
-  if(t) dlg.send_200_ack(*t);
+  if(dlg.get_uac_trans(reply.cseq))
+    dlg.send_200_ack(reply.cseq);
 }
 
 void AmSession::onNoAck(unsigned int cseq)

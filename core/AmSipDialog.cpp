@@ -392,7 +392,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 	    hdl->onInvite2xx(reply);
 	}
 	else {
-	    send_200_ack(t);
+	    send_200_ack(reply.cseq);
 	}
     }
     else {
@@ -1052,9 +1052,9 @@ void AmSipDialog::rel100OnRequestOut(const string &method, string &hdrs)
 }
 
 
-string AmSipDialog::get_uac_trans_method(unsigned int cseq)
+string AmSipDialog::get_uac_trans_method(unsigned int t_cseq)
 {
-  TransMap::iterator t = uac_trans.find(cseq);
+  TransMap::iterator t = uac_trans.find(t_cseq);
 
   if (t != uac_trans.end())
     return t->second.method;
@@ -1062,9 +1062,9 @@ string AmSipDialog::get_uac_trans_method(unsigned int cseq)
   return "";
 }
 
-AmSipTransaction* AmSipDialog::get_uac_trans(unsigned int cseq)
+AmSipTransaction* AmSipDialog::get_uac_trans(unsigned int t_cseq)
 {
-    TransMap::iterator t = uac_trans.find(cseq);
+    TransMap::iterator t = uac_trans.find(t_cseq);
     
     if (t != uac_trans.end())
 	return &(t->second);
@@ -1078,7 +1078,7 @@ int AmSipDialog::drop()
   return 1;
 }
 
-int AmSipDialog::send_200_ack(const AmSipTransaction& t,
+int AmSipDialog::send_200_ack(unsigned int  inv_cseq,
 			      const string& content_type,
 			      const string& body,
 			      const string& hdrs,
@@ -1094,7 +1094,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   string m_hdrs = hdrs;
 
   if(hdl)
-    hdl->onSendRequest("ACK",content_type,body,m_hdrs,flags,t.cseq);
+    hdl->onSendRequest("ACK",content_type,body,m_hdrs,flags,inv_cseq);
 
   AmSipRequest req;
 
@@ -1109,7 +1109,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   if(!remote_tag.empty()) 
     req.to += ";tag=" + remote_tag;
     
-  req.cseq = t.cseq;// should be the same as the INVITE
+  req.cseq = inv_cseq;// should be the same as the INVITE
   req.callid = callid;
   req.contact = getContactHdr();
     
@@ -1134,7 +1134,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
   if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port, outbound_interface))
     return -1;
 
-  uac_trans.erase(t.cseq);
+  uac_trans.erase(inv_cseq);
 
   return 0;
 }

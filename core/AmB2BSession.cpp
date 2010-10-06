@@ -667,8 +667,7 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
     }
 
     DBG("sending relayed ACK\n");
-    dlg.send_200_ack(AmSipTransaction(t->second.method, t->first,t->second.tt), 
-		     req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
+    dlg.send_200_ack(t->first, req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
 
     if ((refresh_method != REFRESH_UPDATE) &&
 	!req.body.empty() &&

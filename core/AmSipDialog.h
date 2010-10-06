@@ -262,7 +262,7 @@ class AmSipDialog
 		  int flags = 0);
 
   /** @return 0 on success */
-  int send_200_ack(const AmSipTransaction& t,
+  int send_200_ack(unsigned int  inv_cseq,
 		   const string& content_type = "",
 		   const string& body = "",
 		   const string& hdrs = "",
@@ -307,9 +307,9 @@ class AmSipDialog
   /**
    * @return the method of the corresponding uac request
    */
-  string get_uac_trans_method(unsigned int cseq);
+  string get_uac_trans_method(unsigned int t_cseq);
 
-  AmSipTransaction* get_uac_trans(unsigned int cseq);
+  AmSipTransaction* get_uac_trans(unsigned int t_cseq);
 
   /**
    * This method should only be used to send responses
