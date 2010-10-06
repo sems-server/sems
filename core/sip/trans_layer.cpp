@@ -1312,7 +1312,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    switch(t->state){
 		
 	    case TS_CALLING:
-	    case TS_PROCEEDING:
+	    case TS_PROCEEDING: // first 2xx reply
 
 		// TODO:
 		//  we should take care of 200 ACK re-transmissions
@@ -1340,7 +1340,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		
 		goto pass_reply;
 		
-	    case TS_TERMINATED_200:
+	    case TS_TERMINATED_200: // subsequent 2xx reply (no ACK sent)
 		
 		if( (to_tag.len != t->to_tag.len) ||
 		    (memcmp(to_tag.s,t->to_tag.s,to_tag.len) != 0) ){
@@ -1541,7 +1541,7 @@ int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg
 	t->clear_timer(STIMER_H);
         return t->state;
 	    
-    case TS_COMPLETED:
+    case TS_COMPLETED: // non-2xx-ACK
 	t->state = TS_CONFIRMED;
 
 	t->clear_timer(STIMER_G);
@@ -1550,10 +1550,10 @@ int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg
 	t->reset_timer(STIMER_I,I_TIMER,bucket->get_id());
 	
 	// drop through
-    case TS_CONFIRMED:
+    case TS_CONFIRMED: // non-2xx-ACK re-transmission
 	return t->state;
 	    
-    case TS_TERMINATED_200:
+    case TS_TERMINATED_200: // 2xx-ACK
 	// remove transaction
 	bucket->remove(t);
 	return TS_REMOVED;
