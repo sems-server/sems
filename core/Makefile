@@ -88,7 +88,7 @@ install-cfg: $(DESTDIR)$(cfg-target) $(DESTDIR)$(app-cfg-target)
 				$(DESTDIR)$(cfg-target)sems.conf; \
 		fi
 
-		$(INSTALL-CFG) etc/app_mapping.conf $(DESTDIR)$(app-cfg-target)
+		$(INSTALL-CFG) etc/app_mapping.conf.sample $(DESTDIR)$(app-cfg-target)app_mapping.conf
 
 install-bin: $(DESTDIR)$(bin-prefix)/$(bin-dir)
 		$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(NAME)
