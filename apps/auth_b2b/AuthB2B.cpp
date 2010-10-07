@@ -196,13 +196,13 @@ bool AuthB2BDialog::onOtherReply(const AmSipReply& reply)
 //         m_user_timer->invoke("setTimer", di_args, ret);
       }
     }
-    else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {
+    else if(reply.code == 487 && (dlg.getStatus() < AmSipDialog::Connected)) {
       DBG("Stopping leg A on 487 from B with 487\n");
       dlg.reply(invite_req, 487, "Request terminated");
       setStopped();
       ret = true;
     }
-    else if (reply.code >= 300 && dlg.getStatus() == AmSipDialog::Connected) {
+    else if (dlg.getStatus() == AmSipDialog::Connected) {
       DBG("Callee final error in connected state with code %d\n",reply.code);
       terminateLeg();
     }
@@ -234,11 +234,8 @@ void AuthB2BDialog::onBye(const AmSipRequest& req)
 
 void AuthB2BDialog::onCancel()
 {
-  if(dlg.getStatus() == AmSipDialog::Pending) {
-    DBG("Wait for leg B to terminate");
-  }
-  else {
-    DBG("Canceling leg A on CANCEL since dialog is not pending");
+  if(dlg.getStatus() == AmSipDialog::Cancelling) {
+    terminateOtherLeg();
     dlg.reply(invite_req, 487, "Request terminated");
     setStopped();
   }
@@ -313,15 +310,15 @@ inline UACAuthCred* AuthB2BCalleeSession::getCredentials() {
   return &credentials;
 }
 
-void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method) {
+void AuthB2BCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status) {
   if (NULL == auth) {    
-    AmB2BCalleeSession::onSipReply(reply,old_dlg_status,trans_method);
+    AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
     return;
   }
   
   unsigned int cseq_before = dlg.cseq;
-  if (!auth->onSipReply(reply, old_dlg_status,trans_method)) {
-    AmB2BCalleeSession::onSipReply(reply,old_dlg_status,trans_method);
+  if (!auth->onSipReply(reply, old_dlg_status)) {
+    AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "

@@ -137,8 +137,8 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
   try {
     string sdp_reply;
 
-    sess->acceptAudio(sc_sess->last_req.get()->body,
-		      sc_sess->last_req.get()->hdrs,&sdp_reply);
+    // sess->acceptAudio(sc_sess->last_req.get()->body,
+    // 		      sc_sess->last_req.get()->hdrs,&sdp_reply);
     if(sess->dlg.reply(*sc_sess->last_req.get(),code_i, reason,
 		 "application/sdp",sdp_reply) != 0)
       throw AmSession::Exception(500,"could not send response");

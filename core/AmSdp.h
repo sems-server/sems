@@ -174,7 +174,7 @@ public:
    * Prints the current SDP structure
    * into a proper SDP message.
    */
-  void print(string& body);
+  void print(string& body) const;
 
   /**
    * Test if the SDP message advertises 

@@ -169,17 +169,24 @@ void DSMCall::onEarlySessionStart(const AmSipReply& reply) {
   }
 }
 
-void DSMCall::onSessionStart(const AmSipRequest& req)
+void DSMCall::onSessionStart()
 {
   if (process_sessionstart) {
     process_sessionstart = false;
-    AmB2BCallerSession::onSessionStart(req);
+    AmB2BCallerSession::onSessionStart();
 
     DBG("DSMCall::onSessionStart\n");
     startSession();
   }
 }
 
+int DSMCall::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
+{
+  answer.print(invite_req.body);
+  return AmB2BCallerSession::onSdpCompleted(offer,answer);
+}
+
+/*
 void DSMCall::onSessionStart(const AmSipReply& rep)
 {
   if (process_sessionstart) {
@@ -190,6 +197,7 @@ void DSMCall::onSessionStart(const AmSipReply& rep)
     startSession();    
   }
 }
+*/
 
 void DSMCall::startSession(){
   engine.init(this, this, startDiagName, DSMCondition::SessionStart);
@@ -287,7 +295,7 @@ void DSMCall::onSipRequest(const AmSipRequest& req) {
   AmB2BCallerSession::onSipRequest(req);  
 }
 
-void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method) {
+void DSMCall::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status) {
 
   if (checkVar(DSM_ENABLE_REPLY_EVENTS, DSM_TRUE)) {
     map<string, string> params;
@@ -318,7 +326,7 @@ void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
     }
   }
 
-  AmB2BCallerSession::onSipReply(reply,old_dlg_status,trans_method);
+  AmB2BCallerSession::onSipReply(reply,old_dlg_status);
 
   if ((old_dlg_status < AmSipDialog::Connected) && 
       (dlg.getStatus() == AmSipDialog::Disconnected)) {

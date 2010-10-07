@@ -148,7 +148,7 @@ int AmSdp::parse(const char* _sdp_msg)
   return ret;
 }
 
-void AmSdp::print(string& body)
+void AmSdp::print(string& body) const
 {
   string out_buf =
       "v="+int2str(version)+"\r\n"
@@ -157,13 +157,13 @@ void AmSdp::print(string& body)
       "c=IN IP4 "+conn.address+"\r\n"
       "t=0 0\r\n";
 
-  for(std::vector<SdpMedia>::iterator media_it = media.begin();
+  for(std::vector<SdpMedia>::const_iterator media_it = media.begin();
       media_it != media.end(); media_it++) {
       
       out_buf += "m=" + media_t_2_str(media_it->type) + " " + int2str(media_it->port) + " " + transport_p_2_str(media_it->transport);
 
       string options;
-      for(std::vector<SdpPayload>::iterator pl_it = media_it->payloads.begin();
+      for(std::vector<SdpPayload>::const_iterator pl_it = media_it->payloads.begin();
 	  pl_it != media_it->payloads.end(); pl_it++) {
 
 	  out_buf += " " + int2str(pl_it->payload_type);

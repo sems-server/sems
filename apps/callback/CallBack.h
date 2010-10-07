@@ -111,8 +111,8 @@ public:
   ~CallBackDialog();
 
   void process(AmEvent* ev);
-  void onSessionStart(const AmSipRequest& req);
-  void onSessionStart(const AmSipReply& rep);
+  void onInvite(const AmSipRequest& req); 
+  void onSessionStart();
   void onDtmf(int event, int duration);
 
   UACAuthCred* getCredentials() { return cred; }

@@ -62,7 +62,8 @@ public:
   AnnounceCallerDialog(const string& filename);
     
   void process(AmEvent* event);
-  void onSessionStart(const AmSipRequest& req);
+  void onInvite(const AmSipRequest& req);
+  void onSessionStart();
 };
 
 #endif

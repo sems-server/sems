@@ -688,19 +688,19 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
   string start_diag;
   map<string, string> vars;
 
-  if (req.cmd == MOD_NAME) {
-    if (InboundStartDiag.empty()) {
-      ERROR("no inbound calls allowed\n");
-      throw AmSession::Exception(488, "Not Acceptable Here");
-    }
-    if (InboundStartDiag=="$(mon_select)") {
-      runMonitorAppSelect(req, start_diag, vars);
-    } else {
-      start_diag = InboundStartDiag;
-    }
-  } else {
-    start_diag = req.cmd;
+  //if (req.cmd == MOD_NAME) {
+  if (InboundStartDiag.empty()) {
+    ERROR("no inbound calls allowed\n");
+    throw AmSession::Exception(488, "Not Acceptable Here");
   }
+  if (InboundStartDiag=="$(mon_select)") {
+    runMonitorAppSelect(req, start_diag, vars);
+  } else {
+    start_diag = InboundStartDiag;
+  }
+  //} else {
+  //start_diag = req.cmd;
+  //}
 
   // determine run configuration for script
   DSMScriptConfig call_config;
@@ -734,14 +734,14 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req,
 
   string start_diag;
 
-  if (req.cmd == MOD_NAME) {
-    if (OutboundStartDiag.empty()) {
-      ERROR("no outbound calls allowed\n");
+  //if (req.cmd == MOD_NAME) {
+  if (OutboundStartDiag.empty()) {
+    ERROR("no outbound calls allowed\n");
     throw AmSession::Exception(488, "Not Acceptable Here");
-    }
-  } else {
-    start_diag = req.cmd;
   }
+  //} else {
+  //start_diag = req.cmd;
+  //}
 
   UACAuthCred* cred = NULL;
   map<string, string> vars;

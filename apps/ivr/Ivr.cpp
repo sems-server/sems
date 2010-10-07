@@ -567,10 +567,10 @@ void IvrFactory::setupSessionTimer(AmSession* s) {
  */
 AmSession* IvrFactory::onInvite(const AmSipRequest& req)
 {
-  if(req.cmd != MOD_NAME)
-    return newDlg(req.cmd);
-  else
-    return newDlg(req.user);
+  // if(req.cmd != MOD_NAME)
+  //   return newDlg(req.cmd);
+  // else
+  return newDlg(req.user);
 }
 
 IvrDialog::IvrDialog(AmDynInvoke* user_timer)
@@ -695,19 +695,22 @@ bool IvrDialog::callPyEventHandler(char* name, char* fmt, ...)
   return ret;
 }
 
-void IvrDialog::onSessionStart(const AmSipRequest& req)
+void IvrDialog::onInvite(const AmSipRequest& req)
 {
-  callPyEventHandler("onSessionStart","(s)",req.hdrs.c_str());
-  setInOut(&playlist,&playlist);
-  AmB2BCallerSession::onSessionStart(req);
+  callPyEventHandler("onInvite","(s)",req.hdrs.c_str());
 }
 
-void IvrDialog::onSessionStart(const AmSipReply& rep)
+void IvrDialog::onSessionStart()
 {
-  invite_req.body = rep.body;
-  callPyEventHandler("onSessionStart","(s)",rep.hdrs.c_str());
+  callPyEventHandler("onSessionStart",NULL);
   setInOut(&playlist,&playlist);
-  AmB2BSession::onSessionStart(rep);
+  AmB2BCallerSession::onSessionStart();
+}
+
+int IvrDialog::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
+{
+  answer.print(invite_req.body);
+  return AmB2BCallerSession::onSdpCompleted(offer,answer);
 }
 
 void IvrDialog::onBye(const AmSipRequest& req)
@@ -753,11 +756,11 @@ void safe_Py_DECREF(PyObject* pyo) {
   Py_DECREF(pyo);
 }
 
-void IvrDialog::onSipReply(const AmSipReply& r, int old_dlg_status, const string& trans_method) {
+void IvrDialog::onSipReply(const AmSipReply& r, AmSipDialog::Status old_dlg_status) {
   PyObject* pyo = getPySipReply(r);
   callPyEventHandler("onSipReply","(O)", pyo);
   safe_Py_DECREF(pyo);
-  AmB2BSession::onSipReply(r,old_dlg_status,trans_method);
+  AmB2BSession::onSipReply(r,old_dlg_status);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){

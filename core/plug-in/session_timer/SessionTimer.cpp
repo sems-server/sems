@@ -77,8 +77,7 @@ bool SessionTimer::onSipRequest(const AmSipRequest& req)
   return false;
 }
 
-bool SessionTimer::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status,
-			      const string& trans_method)
+bool SessionTimer::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
   updateTimer(s,reply);
   return false;

@@ -30,6 +30,7 @@
 #include "AmArg.h"
 #include "AmSipMsg.h"
 #include "AmSipEvent.h"
+#include "AmSipDialog.h"
 #include <string>
 using std::string;
 
@@ -66,8 +67,7 @@ public:
   virtual bool process(AmEvent*);
 
   virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&, int old_dlg_status,
-			  const string& trans_method);
+  virtual bool onSipReply(const AmSipReply&, AmSipDialog::Status old_dlg_status);
   virtual bool onSipReqTimeout(const AmSipRequest &);
   virtual bool onSipRplTimeout(const AmSipRequest &, const AmSipReply &);
 

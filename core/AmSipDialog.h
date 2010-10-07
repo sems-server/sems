@@ -253,7 +253,8 @@ private:
   int onRxSdp(const string& body, const char** err_txt);
   int onTxSdp(const string& body);
 
-  int  triggerOfferAnswer(string& content_type, string& body);
+  int getSdpBody(string& sdp_body);
+  int triggerOfferAnswer(string& content_type, string& body);
 };
 
 const char* dlgStatusStr(AmSipDialog::Status st);
@@ -274,8 +275,7 @@ class AmSipDialogEventHandler
 
   /** Hook called when a reply has been received */
   virtual void onSipReply(const AmSipReply& reply, 
-			  AmSipDialog::Status old_dlg_status,
-			  const string& trans_meth)=0;
+			  AmSipDialog::Status old_dlg_status)=0;
 
   /** Hook called before a request is sent */
   virtual void onSendRequest(const string& method,

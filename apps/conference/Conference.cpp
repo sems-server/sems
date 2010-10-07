@@ -795,15 +795,17 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
   dialout_dlg.remote_party = uri;
   dialout_dlg.remote_uri   = uri;
 
-  string body;
-  int local_port = dialout_session->RTPStream()->getLocalPort();
-  dialout_session->sdp.genRequest(AmConfig::LocalIP,local_port,body);
+  //string body;
+  //int local_port = dialout_session->RTPStream()->getLocalPort();
+  //dialout_session->sdp.genRequest(AmConfig::LocalIP,local_port,body);
 
   if (extra_headers.length() == 0) {
     extra_headers = "";
   }
 
-  dialout_dlg.sendRequest("INVITE","application/sdp",body,extra_headers);
+  dialout_dlg.sendRequest("INVITE",
+			  "",""/*"application/sdp",body*/,
+			  extra_headers);
 
   dialout_session->start();
 
@@ -885,20 +887,22 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
   DBG("ConferenceDialog::onSipRequest: remote_party = %s\n",dlg.remote_party.c_str());
   DBG("ConferenceDialog::onSipRequest: remote_tag = %s\n",dlg.remote_tag.c_str());
 
-  string body;
-  int local_port = RTPStream()->getLocalPort();
-  sdp.genRequest(AmConfig::LocalIP,local_port,body);
-  dlg.sendRequest("INVITE","application/sdp",body,"");
+  //string body;
+  //int local_port = RTPStream()->getLocalPort();
+  //sdp.genRequest(AmConfig::LocalIP,local_port,body);
+  dlg.sendRequest("INVITE",
+ 		  "","",//"application/sdp",body,
+ 		  "");
 
   transfer_req.reset(new AmSipRequest(req));
 
   return;
 }
 
-void ConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
+void ConferenceDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
-  int status = dlg.getStatus();
-  AmSession::onSipReply(reply, old_dlg_status, trans_method);
+  //int status = dlg.getStatus();
+  AmSession::onSipReply(reply, old_dlg_status);
 
   DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i\n",
       reply.code,reply.reason.c_str(),dlg.getStatus());
@@ -907,6 +911,7 @@ void ConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status, c
      !transfer_req.get())
     return;
 
+  /*
   if(status < AmSipDialog::Connected){
 
     switch(dlg.getStatus()){
@@ -992,13 +997,10 @@ void ConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status, c
       }
       break;
 
-	    
-
     default: break;
     }
-
-
   }
+  */
 }
 
 #ifdef WITH_SAS_TTS

@@ -354,9 +354,8 @@ void AmB2ABCalleeSession::onSessionStart(const AmSipReply& rep) {
 }
 
 void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep,
-				     AmSipDialog::Status old_dlg_status,
-				     const string& trans_method) {
-  AmB2ABSession::onSipReply(rep, old_dlg_status, trans_method);
+				     AmSipDialog::Status old_dlg_status) {
+  AmB2ABSession::onSipReply(rep, old_dlg_status);
   AmSipDialog::Status status = dlg.getStatus();
  
   if ((old_dlg_status == AmSipDialog::Trying) ||

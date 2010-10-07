@@ -175,8 +175,7 @@ class AmB2BSession: public AmSession
 
   /** @see AmSession */
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply,
-		  AmSipDialog::Status old_dlg_status, const string& trans_method);
+  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onInvite2xx(const AmSipReply& reply);
 
   void onSessionTimeout();
@@ -259,7 +258,7 @@ class AmB2BCallerSession: public AmB2BSession
   const AmSipRequest& getOriginalRequest() { return invite_req; }
 
   // @see AmSession
-  void onSessionStart(/*const AmSipRequest& req*/);
+  void onInvite(const AmSipRequest& req);
 
   // @see AmB2BSession
   void terminateLeg();

@@ -157,8 +157,7 @@ public:
   void onBye(const AmSipRequest& req);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, int old_dlg_status,
-		  const string& trans_method);
+  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 
 #ifdef WITH_SAS_TTS
   void onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx);

@@ -188,14 +188,13 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 }
 
 void AmB2BSession::onSipReply(const AmSipReply& reply,
-			      AmSipDialog::Status old_dlg_status,
-			      const string& trans_method)
+			      AmSipDialog::Status old_dlg_status)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = (t != relayed_req.end()) && (reply.code != 100);
 
   DBG("onSipReply: %s -> %i %s (fwd=%s)\n",
-      trans_method.c_str(), reply.code,reply.reason.c_str(),fwd?"true":"false");
+      reply.cseq_method.c_str(), reply.code,reply.reason.c_str(),fwd?"true":"false");
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if(fwd) {
     updateRefreshMethod(reply.hdrs);
@@ -212,8 +211,8 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
 	relayed_req.erase(t);
     }
   } else {
-    AmSession::onSipReply(reply, old_dlg_status, trans_method);
-    relayEvent(new B2BSipReplyEvent(reply, false, trans_method));
+    AmSession::onSipReply(reply, old_dlg_status);
+    relayEvent(new B2BSipReplyEvent(reply, false, reply.cseq_method));
   }
 }
 
@@ -531,12 +530,10 @@ void AmB2BCallerSession::relayEvent(AmEvent* ev)
   AmB2BSession::relayEvent(ev);
 }
 
-void AmB2BCallerSession::onSessionStart(/*const AmSipRequest& req*/)
+void AmB2BCallerSession::onInvite(const AmSipRequest& req)
 {
-  //TODO:
-  //invite_req = req;
-  //AmB2BSession::onSessionStart(req);
-  assert(0);
+  invite_req = req;
+  AmB2BSession::onInvite(req);
 }
 
 void AmB2BCallerSession::connectCallee(const string& remote_party,

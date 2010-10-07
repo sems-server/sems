@@ -708,9 +708,9 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 }
 
 void AmSession::onSipReply(const AmSipReply& reply,
-			   AmSipDialog::Status old_dlg_status, const string& trans_method)
+			   AmSipDialog::Status old_dlg_status)
 {
-  CALL_EVENT_H(onSipReply, reply, old_dlg_status, trans_method);
+  CALL_EVENT_H(onSipReply, reply, old_dlg_status);
 
   updateRefreshMethod(reply.hdrs);
 

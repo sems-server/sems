@@ -88,8 +88,7 @@ class b2b_connectCalleeSession
   AmSipRequest invite_req;
 
  protected:
-  void onSipReply(const AmSipReply& reply, int old_dlg_status,
-		  const string& trans_method);
+  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
  
 public:
   b2b_connectCalleeSession(const string& other_tag, 

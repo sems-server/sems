@@ -243,13 +243,13 @@ bool SWPrepaidSIPDialog::onOtherReply(const AmSipReply& reply)
         m_user_timer->invoke("setTimer", di_args, ret);
       }
     }
-    else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {
+    else if(reply.code == 487 && dlg.getStatus() < AmSipDialog::Connected) {
       DBG("Canceling leg A on 487 from B");
       dlg.reply(m_localreq, 487, "Call terminated");
       setStopped();
       ret = true;
     }
-    else if (reply.code >= 300 && dlg.getStatus() == AmSipDialog::Connected) {
+    else if (dlg.getStatus() == AmSipDialog::Connected) {
       DBG("Callee final error in connected state with code %d\n",reply.code);
       terminateLeg();
     }
@@ -281,11 +281,8 @@ void SWPrepaidSIPDialog::onBye(const AmSipRequest& req)
 
 void SWPrepaidSIPDialog::onCancel()
 {
-  if(dlg.getStatus() == AmSipDialog::Pending) {
-    DBG("Wait for leg B to terminate");
-  }
-  else {
-    DBG("Canceling leg A on CANCEL since dialog is not pending");
+  if(dlg.getStatus() == AmSipDialog::Cancelling) {
+    terminateLeg();
     dlg.reply(m_localreq, 487, "Call terminated");
     setStopped();
   }

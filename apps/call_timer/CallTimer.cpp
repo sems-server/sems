@@ -198,17 +198,17 @@ bool CallTimerDialog::onOtherReply(const AmSipReply& reply)
         m_user_timer->invoke("setTimer", di_args, ret);
       }
     }
-    else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {
+    else if(reply.code == 487 && dlg.getStatus() < AmSipDialog::Connected) {
       DBG("Stopping leg A on 487 from B with 487\n");
       dlg.reply(invite_req, 487, "Request terminated");
       setStopped();
       ret = true;
     }
-    else if (reply.code >= 300 && dlg.getStatus() == AmSipDialog::Connected) {
+    else if (dlg.getStatus() == AmSipDialog::Connected) {
       DBG("Callee final error in connected state with code %d\n",reply.code);
       terminateLeg();
     }
-    else if (reply.code >= 300 && m_state == BB_Dialing) {
+    else if (m_state == BB_Dialing) {
       DBG("Callee final error with code %d\n",reply.code);
       AmB2BCallerSession::onOtherReply(reply);
       // reset into non-b2b mode to get possible INVITE again
@@ -241,11 +241,8 @@ void CallTimerDialog::onBye(const AmSipRequest& req)
 
 void CallTimerDialog::onCancel()
 {
-  if(dlg.getStatus() == AmSipDialog::Pending) {
-    DBG("Wait for leg B to terminate");
-  }
-  else {
-    DBG("Canceling leg A on CANCEL since dialog is not pending");
+  if(dlg.getStatus() == AmSipDialog::Cancelling) {
+    terminateOtherLeg();
     dlg.reply(invite_req, 487, "Request terminated");
     setStopped();
   }

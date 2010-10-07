@@ -94,7 +94,7 @@ public:
   ~WebConferenceDialog();
 
   void process(AmEvent* ev);
-  void onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method);
+  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSessionStart(const AmSipRequest& req);
   void onSessionStart(const AmSipReply& rep);
   void onEarlySessionStart(const AmSipReply& rep);

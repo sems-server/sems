@@ -311,30 +311,25 @@ int AmSipDialog::onTxSdp(const string& body)
   return 0;
 }
 
-int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
+int AmSipDialog::getSdpBody(string& sdp_body)
 {
-  switch(status){
-  case Connected:
-  case Early:
     switch(oa_state){
     case OA_None:
     case OA_Completed:
       if(hdl->getSdpOffer(sdp_local)){
-	sdp_local.print(body);
-	content_type = "application/sdp";//FIXME
+	sdp_local.print(sdp_body);
       }
       else {
-	DBG("No SDP Offer to include in the reply.\n");
+	DBG("No SDP Offer.\n");
 	return -1;
       }
       break;
     case OA_OfferRecved:
       if(hdl->getSdpAnswer(sdp_remote,sdp_local)){
-	sdp_local.print(body);
-	content_type = "application/sdp";//FIXME
+	sdp_local.print(sdp_body);
       }
       else {
-	DBG("No SDP Answer to include in the reply.\n");
+	DBG("No SDP Answer.\n");
 	return -1;
       }
       break;
@@ -342,9 +337,29 @@ int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
     default: 
       break;
     }
+
+    return 0;
+}
+
+int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
+{
+  switch(status){
+
+  case Early:
+    if(content_type != "application/sdp"){ // FIXME
+      break;
+    }
+    return getSdpBody(body);
+
+  case Connected:
+    if(getSdpBody(body)){
+      return -1;
+    }
+
+    content_type = "application/sdp"; // FIXME
     break;
     
-  default: 
+  default:
     break;
   }
 
@@ -607,7 +622,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
     }
   }
 
-  hdl->onSipReply(reply, old_dlg_status, trans_method);
+  hdl->onSipReply(reply, old_dlg_status);
 }
 
 void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)

@@ -238,10 +238,11 @@ CallBackDialog::~CallBackDialog()
 }
 
 
-void CallBackDialog::onSessionStart(const AmSipRequest& req) { 
+void CallBackDialog::onInvite(const AmSipRequest& req) 
+{ 
   if (state != CBNone) {
     // reinvite
-    AmB2ABCallerSession::onSessionStart(req);
+    AmB2ABCallerSession::onInvite(req);
     return;
   }
 
@@ -250,7 +251,8 @@ void CallBackDialog::onSessionStart(const AmSipRequest& req) {
   dlg.bye();
 }
 
-void CallBackDialog::onSessionStart(const AmSipReply& rep) { 
+void CallBackDialog::onSessionStart() 
+{ 
   state = CBEnteringNumber;    
   prompts.addToPlaylist(WELCOME_PROMPT,  (long)this, play_list);
   // set the playlist as input and output

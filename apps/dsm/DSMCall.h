@@ -75,15 +75,15 @@ public:
   void onOutgoingInvite(const string& headers);
   void onRinging(const AmSipReply& reply);
   void onEarlySessionStart(const AmSipReply& reply);
-  void onSessionStart(const AmSipRequest& req);
-  void onSessionStart(const AmSipReply& rep);
+  void onSessionStart();
+  int  onSdpCompleted(const AmSdp& offer, const AmSdp& answer);
   void startSession();
   void onCancel();
   void onBye(const AmSipRequest& req);
   void onDtmf(int event, int duration_msec);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method);
+  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 
   void process(AmEvent* event);
 

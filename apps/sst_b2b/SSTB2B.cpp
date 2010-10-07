@@ -156,8 +156,7 @@ void SSTB2BDialog::onSipRequest(const AmSipRequest& req) {
   AmB2BCallerSession::onSipRequest(req);
 }
 
-void SSTB2BDialog::onSipReply(const AmSipReply& reply, int old_dlg_status,
-			      const string& trans_method)
+void SSTB2BDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = t != relayed_req.end();
@@ -165,10 +164,10 @@ void SSTB2BDialog::onSipReply(const AmSipReply& reply, int old_dlg_status,
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if (fwd) {
-      CALL_EVENT_H(onSipReply,reply, old_dlg_status, trans_method);
+      CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
-  AmB2BCallerSession::onSipReply(reply,old_dlg_status, trans_method);
+  AmB2BCallerSession::onSipReply(reply,old_dlg_status);
 }
 
 bool SSTB2BDialog::onOtherReply(const AmSipReply& reply)
@@ -185,13 +184,13 @@ bool SSTB2BDialog::onOtherReply(const AmSipReply& reply)
         setInOut(NULL, NULL);
       }
     }
-    else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {
+    else if(reply.code == 487 && dlg.getStatus() < AmSipDialog::Connected) {
       DBG("Stopping leg A on 487 from B with 487\n");
       dlg.reply(invite_req, 487, "Request terminated");
       setStopped();
       ret = true;
     }
-    else if (reply.code >= 300 && dlg.getStatus() == AmSipDialog::Connected) {
+    else if (dlg.getStatus() == AmSipDialog::Connected) {
       DBG("Callee final error in connected state with code %d\n",reply.code);
       terminateLeg();
     }
@@ -223,10 +222,8 @@ void SSTB2BDialog::onBye(const AmSipRequest& req)
 
 void SSTB2BDialog::onCancel()
 {
-  if(dlg.getStatus() == AmSipDialog::Pending) {
-    DBG("Wait for leg B to terminate");
-  } else {
-    DBG("Canceling leg A on CANCEL since dialog is not pending");
+  if(dlg.getStatus() == AmSipDialog::Cancelling) {
+    terminateOtherLeg();
     dlg.reply(invite_req, 487, "Request terminated");
     setStopped();
   }
@@ -282,12 +279,12 @@ void SSTB2BDialog::createCalleeSession()
       from.c_str());
 
   if (AmConfig::LogSessions) {
-    INFO("Starting B2B callee session %s app %s\n",
-	 callee_session->getLocalTag().c_str(), invite_req.cmd.c_str());
+    INFO("Starting B2B callee session %s\n",
+	 callee_session->getLocalTag().c_str());
   }
 
-  MONITORING_LOG5(other_id.c_str(), 
-		  "app",  invite_req.cmd.c_str(),
+  MONITORING_LOG4(other_id.c_str(), 
+		  // "app",  invite_req.cmd.c_str(),
 		  "dir",  "out",
 		  "from", callee_dlg.local_party.c_str(),
 		  "to",   callee_dlg.remote_party.c_str(),
@@ -330,8 +327,7 @@ void SSTB2BCalleeSession::onSipRequest(const AmSipRequest& req) {
   AmB2BCalleeSession::onSipRequest(req);
 }
 
-void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status,
-				     const string& trans_method)
+void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
   // call event handlers where it is not done 
   TransMap::iterator t = relayed_req.find(reply.cseq);
@@ -339,17 +335,17 @@ void SSTB2BCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if(fwd) {
-    CALL_EVENT_H(onSipReply,reply, old_dlg_status, trans_method);
+    CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
   if (NULL == auth) {    
-    AmB2BCalleeSession::onSipReply(reply,old_dlg_status, trans_method);
+    AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
     return;
   }
   
   unsigned int cseq_before = dlg.cseq;
-  if (!auth->onSipReply(reply, old_dlg_status, trans_method)) {
-      AmB2BCalleeSession::onSipReply(reply, old_dlg_status, trans_method);
+  if (!auth->onSipReply(reply, old_dlg_status)) {
+      AmB2BCalleeSession::onSipReply(reply, old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "

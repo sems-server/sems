@@ -103,16 +103,17 @@ AnnounceCallerDialog::AnnounceCallerDialog(const string& filename)
   set_sip_relay_only(false);
 }
 
-void AnnounceCallerDialog::onSessionStart(const AmSipRequest& req)
+void AnnounceCallerDialog::onInvite(const AmSipRequest& req)
+{
+  callee_addr = req.to;
+  callee_uri  = req.r_uri;
+}
+
+void AnnounceCallerDialog::onSessionStart()
 {
   // we can drop all received packets
   // this disables DTMF detection as well
   setReceiving(false);
-
-  callee_addr = req.to;
-  callee_uri  = req.r_uri;
-
-  AmB2BCallerSession::onSessionStart(req);
 
   if(wav_file.open(filename,AmAudioFile::Read))
     throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");

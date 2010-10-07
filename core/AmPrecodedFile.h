@@ -113,6 +113,8 @@ class AmPrecodedFile
   amci_payload_t*  payload(int payload_id);
   int getDynPayload(const string& name, int rate, int encoding_param);
 
+  void getPayloads(vector<SdpPayload>& pl_vec);
+
   AmPrecodedFileInstance* getFileInstance(int payload_id, const vector<SdpPayload*>&  m_payloads);
 };
 

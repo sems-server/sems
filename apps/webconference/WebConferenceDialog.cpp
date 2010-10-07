@@ -173,16 +173,16 @@ void WebConferenceDialog::onSessionStart(const AmSipReply& rep) {
   connectConference(dlg.user);
 }
 
-void WebConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
+void WebConferenceDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
   //int status = dlg.getStatus();
 
-  AmSession::onSipReply(reply,old_dlg_status,trans_method);
+  AmSession::onSipReply(reply,old_dlg_status);
 
   DBG("reply: %u %s, old_dlg_status = %s, status = %s\n",
       reply.code, reply.reason.c_str(),
-      AmSipDialog::status2str[old_dlg_status],
-      AmSipDialog::status2str[dlg.getStatus()]);
+      dlgStatusStr(old_dlg_status),
+      dlg.getStatusStr());
 
   if ((old_dlg_status < AmSipDialog::Connected) && 
       (dlg.getStatus() == AmSipDialog::Disconnected)) {
@@ -196,17 +196,22 @@ void WebConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status
     ConferenceRoomParticipant::ParticipantStatus rep_st = 
       ConferenceRoomParticipant::Connecting;
     switch (dlg.getStatus()) {
-    case AmSipDialog::Pending: {
+    case AmSipDialog::Trying:
+    case AmSipDialog::Proceeding:
+    case AmSipDialog::Early:
+      {
       rep_st = ConferenceRoomParticipant::Connecting;
-      if (reply.code == 180) 
+      if (reply.code == 180 || reply.code == 183) 
 	rep_st  = ConferenceRoomParticipant::Ringing;
     } break;
     case AmSipDialog::Connected: 
       rep_st = ConferenceRoomParticipant::Connected; break;
+    case AmSipDialog::Cancelling:
     case AmSipDialog::Disconnecting: 
       rep_st = ConferenceRoomParticipant::Disconnecting; break;    
     case AmSipDialog::Disconnected: 
-      rep_st = ConferenceRoomParticipant::Finished; break;    
+      rep_st = ConferenceRoomParticipant::Finished; break;
+    default:break;
     }
     DBG("is dialout: updateing status\n");
     factory->updateStatus(dlg.user, getLocalTag(), 

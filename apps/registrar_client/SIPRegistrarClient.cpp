@@ -53,7 +53,7 @@ SIPRegistration::SIPRegistration(const string& handle,
 				 const SIPRegistrationInfo& info,
 				 const string& sess_link) 
   : info(info),
-    dlg(this),
+    dlg(NULL),
     cred(info.domain, info.auth_user, info.pwd),
     active(false),
     reg_begin(0),
@@ -64,7 +64,7 @@ SIPRegistration::SIPRegistration(const string& handle,
     waiting_result(false),
     seh(NULL)
 {
-  req.cmd      = "sems";
+  //req.cmd      = "sems";
   req.user     = info.user;
   req.method   = "REGISTER";
   req.r_uri    = "sip:"+info.domain;
@@ -77,7 +77,7 @@ SIPRegistration::SIPRegistration(const string& handle,
   //
 
   // clear dlg.callid? ->reregister?
-  dlg.updateStatusFromLocalRequest(req);
+  dlg.initFromLocalRequest(req);
   dlg.cseq = 50;
 }
 
@@ -348,10 +348,11 @@ void SIPRegistrarClient::process(AmEvent* ev)
 
 }
 
-void SIPRegistrarClient::onSipReplyEvent(AmSipReplyEvent* ev) {
-  SIPRegistration* reg = get_reg(ev->reply.local_tag);
+void SIPRegistrarClient::onSipReplyEvent(AmSipReplyEvent* ev) 
+{
+  SIPRegistration* reg = get_reg(ev->reply.from_tag);
   if (reg != NULL) {
-      reg->getDlg()->updateStatus(ev->reply);//onSipReply(ev->reply);
+      reg->onSipReply(ev->reply);
   }
 }
 
@@ -369,9 +370,9 @@ bool SIPRegistration::registerExpired(time_t now_sec) {
   return ((reg_begin+reg_expires) < (unsigned int)now_sec);	
 }
 
-void SIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
+void SIPRegistration::onSipReply(const AmSipReply& reply)
 {
-  if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status, trans_method))
+  if ((seh!=NULL) && seh->onSipReply(reply, dlg.getStatus()))
     return;
 
   waiting_result = false;
@@ -498,10 +499,10 @@ void SIPRegistrarClient::onRemoveRegistration(SIPRemoveRegistrationEvent* new_re
 void SIPRegistrarClient::on_stop() { }
 
 
-bool SIPRegistrarClient::onSipReply(const AmSipReply& rep, int old_dlg_status, const string& trans_method) {
-  DBG("got reply with tag '%s'\n", rep.local_tag.c_str());
+bool SIPRegistrarClient::onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status) {
+  DBG("got reply with tag '%s'\n", rep.from_tag.c_str());
 	
-  if (instance()->hasRegistration(rep.local_tag)) {
+  if (instance()->hasRegistration(rep.from_tag)) {
     instance()->postEvent(new AmSipReplyEvent(rep));
     return true;
   } else 

@@ -489,8 +489,7 @@ public:
   virtual void onSipRequest(const AmSipRequest& req);
 
   /** Entry point for SIP Replies   */
-  virtual void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status,
-			      const string& trans_method);
+  virtual void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);

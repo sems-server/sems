@@ -233,6 +233,15 @@ int AmPrecodedFile::getDynPayload(const string& name, int rate, int encoding_par
   return -1;
 }
 
+
+void AmPrecodedFile::getPayloads(vector<SdpPayload>& pl_vec)
+{
+  for(std::map<int,precoded_payload_t>::iterator pl_it = payloads.begin();
+      pl_it != payloads.end(); ++pl_it) {
+    pl_vec.push_back(SdpPayload(pl_it->first, pl_it->second.name, pl_it->second.sample_rate, 0));
+  }
+}
+
 AmPrecodedFileInstance* AmPrecodedFile::getFileInstance(int payload_id, 
 							const vector<SdpPayload*>&  m_payloads) {
   std::map<int,precoded_payload_t>::iterator it=payloads.find(payload_id);

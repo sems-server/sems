@@ -271,12 +271,8 @@ int EarlyAnnounceFactory::onLoad()
 void EarlyAnnounceDialog::onInvite(const AmSipRequest& req) 
 {
   try {
-
-    string sdp_reply;
-    acceptAudio(req.body,req.hdrs,&sdp_reply);
-
     if(dlg.reply(req,183,"Session Progress",
-		 "application/sdp",sdp_reply) != 0){
+		 "application/sdp") != 0){
 
       throw AmSession::Exception(500,"could not reply");
     }
