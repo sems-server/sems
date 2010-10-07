@@ -21,7 +21,9 @@ MsgStorage* MsgStorage::_instance = 0;
 EXPORT_PLUGIN_CLASS_FACTORY(MsgStorage, MOD_NAME);
 
 MsgStorage::MsgStorage(const string& name)
-    : AmDynInvokeFactory(name) { 
+  : AmDynInvokeFactory(name),
+    listeners()
+{ 
       _instance = this; 
 }
 
@@ -52,7 +54,7 @@ int MsgStorage::onLoad() {
   status = mkdir(path.c_str(), 
 		     S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   if (status && (errno != EEXIST)) {
-    ERROR("creating test path in storage '%s': %s\n", 
+    ERROR("Write permission check failed. Could not create '%s': %s\n", 
 	  path.c_str(),strerror(errno));
     return -1;
   }
@@ -91,6 +93,7 @@ void MsgStorage::invoke(const string& method,
     userdir_open(args.get(0).asCStr(),	      
       args.get(1).asCStr(),
       ret);
+#if 0
   } else if(method == "userdir_close"){
     ret.push(userdir_close(args.get(0).asCStr(),
       args.get(1).asCStr()));
@@ -98,6 +101,12 @@ void MsgStorage::invoke(const string& method,
     userdir_getcount(args.get(0).asCStr(),
       args.get(1).asCStr(),
       ret);
+#endif
+  } else if(method == "events_subscribe"){
+    events_subscribe(args.get(0).asDynInv(),
+		     args.get(1).asCStr());
+  } else if(method == "events_unsubscribe"){
+    events_unsubscribe(args.get(0).asDynInv());
   } else if(method == "_list"){
     ret.push("msg_new");
     ret.push("msg_get");
@@ -105,8 +114,13 @@ void MsgStorage::invoke(const string& method,
     ret.push("msg_delete");
     
     ret.push("userdir_open");
+#if 0
     ret.push("userdir_close");
     ret.push("userdir_getcount");
+#endif
+
+    ret.push("events_subscribe");
+    ret.push("events_unsubscribe");
   }
   else
     throw AmDynInvoke::NotImplemented(method); 
@@ -146,6 +160,9 @@ int MsgStorage::msg_new(string domain, string user,
   if (data)
     filecopy(data, fp);
   fclose(fp);
+
+  event_notify(domain,user,"msg_new");
+
   return MSG_OK;
 }
 
@@ -185,6 +202,8 @@ int MsgStorage::msg_markread(string domain, string user, string msg_name) {
     return MSG_EREADERROR;
   }
 
+  event_notify(domain,user,"msg_markread");
+
   return MSG_OK;
 }
 
@@ -196,6 +215,9 @@ int MsgStorage::msg_delete(string domain, string user, string msg_name) {
 	    path.c_str(),strerror(errno));
       return MSG_EMSGNOTFOUND;
   }
+
+  event_notify(domain,user,"msg_delete");
+
   return MSG_OK;
 }
 
@@ -246,12 +268,55 @@ void MsgStorage::userdir_open(string domain, string user, AmArg& ret) {
   ret.push(msglist);
 }
 
+#if 0
 int MsgStorage::userdir_close(string domain, string user) {   
   // TODO: unblock the directory from delete (decrease lock)
   return 0; 
 }
 
-void MsgStorage::userdir_getcount(string domain, string user, AmArg& ret) { }
+void MsgStorage::userdir_getcount(string domain, string user, AmArg& ret) { 
+  // TODO: return some useful value
+}
+#endif
+
+void MsgStorage::events_subscribe(AmDynInvoke* event_sink, string method)
+{
+  listeners_mut.lock();
+  listeners.insert(make_pair(event_sink,method));
+  listeners_mut.unlock();
+}
+
+void MsgStorage::events_unsubscribe(AmDynInvoke* event_sink)
+{
+  listeners_mut.lock();
+  listeners.erase(event_sink);
+  listeners_mut.unlock();
+}
+
+void MsgStorage::event_notify(const string& domain, 
+			      const string& user, 
+			      const string& event)
+{
+  AmArg args,ret;
+  args.push(domain);
+  args.push(user);
+  args.push(event);
+
+  listeners_mut.lock();
+
+  for(Listeners::iterator it = listeners.begin();
+      it != listeners.end(); ++it) {
+    try {
+      it->first->invoke(it->second, args, ret);
+    }
+    catch(...){
+      DBG("Unexpected exception while notifying event subscribers");
+    }
+    ret.clear();
+  }
+
+  listeners_mut.unlock();
+}
 
 // copies ifp to ofp, blockwise
 void MsgStorage::filecopy(FILE* ifp, FILE* ofp) {
