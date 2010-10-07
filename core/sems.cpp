@@ -435,7 +435,11 @@ int main(int argc, char* argv[])
   init_logging();
 
   /* load and apply configuration file */
-  AmConfig::readConfiguration();
+  if(AmConfig::readConfiguration()){
+    ERROR("Errors occured while reading configuration file: exiting.");
+    return -1;
+  }
+
   log_level = AmConfig::LogLevel;
   log_stderr = AmConfig::LogStderr;
 
