@@ -433,6 +433,17 @@ use_default_signature=yes
 #
 #100rel=require
 
+#
+# accept forked dialogs on UAS side? [yes|no]
+#
+#  no - INVITE with existing callid+remote_tag is replied with 482.
+# yes - INVITE with existing callid+remote_tag+via_branch is replied with 482.
+#       Forked INVITEs (!= via-branch) are accepted. 
+#
+# Default: yes
+#
+#accept_forked_dialogs=no
+
 # Make SIP authenticated requests sticky to the proxy? [yes | no]
 #
 # If enabled, host of request-URI of out-of-dialog requests that are 

@@ -153,6 +153,7 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     remote_party = req.from;
     local_party  = req.to;
     route        = req.route;
+    first_branch = req.via_branch;
   }
 
   int cont = rel100OnRequestIn(req);

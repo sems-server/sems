@@ -108,6 +108,7 @@ class AmSessionContainer : public AmThread
   AddSessionStatus addSession(const string& callid,
 			      const string& remote_tag,
 			      const string& local_tag,
+			      const string& via_branch,
 			      AmSession* session);
 
   /**
@@ -139,7 +140,9 @@ class AmSessionContainer : public AmThread
    * post an event into the event queue of the identified dialog.
    * @return false if session doesn't exist 
    */
-  bool postEvent(const string& callid, const string& remote_tag,
+  bool postEvent(const string& callid, 
+		 const string& remote_tag,
+		 const string& via_branch,
 		 AmEvent* event);
 
   /**

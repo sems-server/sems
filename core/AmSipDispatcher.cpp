@@ -76,7 +76,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 				     "Call leg/Transaction does not exist");
 	  }
 	  else {
-	    ERROR("received ACK for non-existing dialog "
+	    WARN("received ACK for non-existing dialog "
 		  "(callid=%s;remote_tag=%s;local_tag=%s)\n",
 		  callid.c_str(),remote_tag.c_str(),local_tag.c_str());
 	  }

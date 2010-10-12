@@ -334,6 +334,9 @@ public:
   /** Gets the Session's local tag */
   const string& getLocalTag() const;
 
+  /** Gets the branch param of the first via in the original INVITE*/
+  const string& getFirstBranch() const;
+
   /** Sets the Session's local tag if not set already */
   void setLocalTag();
 

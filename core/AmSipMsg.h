@@ -73,6 +73,7 @@ class AmSipRequest : public _AmSipMsgInDlg
 
   string rack_method;
   unsigned int rack_cseq;
+  string via_branch;
 
  AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }

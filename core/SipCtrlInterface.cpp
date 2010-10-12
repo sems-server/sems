@@ -471,6 +471,7 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.from_tag = c2stlstr(((sip_from_to*)msg->from->p)->tag);
     req.to_tag   = c2stlstr(((sip_from_to*)msg->to->p)->tag);
     req.cseq     = get_cseq(msg)->num;
+    req.via_branch = c2stlstr(msg->via_p1->branch);
     req.body     = c2stlstr(msg->body);
 
     if (msg->rack) {

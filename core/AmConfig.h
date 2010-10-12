@@ -162,6 +162,8 @@ struct AmConfig
   static unsigned int OptionsSessionLimitErrCode;
   static string OptionsSessionLimitErrReason;
 
+  static bool AcceptForkedDialogs;
+
   static bool ShutdownMode;
   static unsigned int ShutdownModeErrCode;
   static string ShutdownModeErrReason;

@@ -94,6 +94,8 @@ unsigned int AmConfig::OptionsSessionLimit            = 0;
 unsigned int AmConfig::OptionsSessionLimitErrCode     = 503;
 string       AmConfig::OptionsSessionLimitErrReason   = "Server overload";
 
+bool         AmConfig::AcceptForkedDialogs     = true;
+
 bool         AmConfig::ShutdownMode            = false;
 unsigned int AmConfig::ShutdownModeErrCode     = 503;
 string       AmConfig::ShutdownModeErrReason   = "Server shutting down";
@@ -490,6 +492,9 @@ int AmConfig::readConfiguration()
       OptionsSessionLimitErrReason = limit[2];
     }
   }
+
+  if(cfg.hasParameter("accept_forked_dialogs"))
+    AcceptForkedDialogs = !(cfg.getParameter("accept_forked_dialogs") == "no");
 
   if(cfg.hasParameter("shutdown_mode_reply")){
     string c_reply = cfg.getParameter("shutdown_mode_reply");    

@@ -195,9 +195,10 @@ void AmSessionContainer::destroySession(AmSession* s)
     AmEventQueueInterface* q = AmEventDispatcher::instance()->
 	delEventQueue(s->getLocalTag(),
 		      s->getCallID(),
-		      s->getRemoteTag());
+		      s->getRemoteTag(),
+		      s->getFirstBranch());
     
-    if(q) {	
+    if(q) {
 	stopAndQueue(s);
     }
     else {
@@ -300,7 +301,7 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	}
 
 	switch(addSession(req.callid,req.from_tag,local_tag,
-			  session.get())) {
+			  req.via_branch,session.get())) {
 
 	case AmSessionContainer::Inserted:
 	  // successful case
@@ -330,7 +331,8 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	  session->start();
 	} catch (...) {
 	  AmEventDispatcher::instance()->
-	    delEventQueue(req.callid,req.from_tag,local_tag);
+	    delEventQueue(req.callid,req.from_tag,local_tag,
+			  req.via_branch);
 	  throw;
 	}
 
@@ -355,11 +357,12 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 
 bool AmSessionContainer::postEvent(const string& callid, 
 				   const string& remote_tag,
+				   const string& via_branch,
 				   AmEvent* event)
 {
     bool posted =
-	AmEventDispatcher::instance()->
-	post(callid,remote_tag,event);
+      AmEventDispatcher::instance()->
+        post(callid,remote_tag,via_branch,event);
 
     if(!posted)
 	delete event;
@@ -446,6 +449,7 @@ AmSessionContainer::AddSessionStatus
 AmSessionContainer::addSession(const string& callid,
 			       const string& remote_tag,
 			       const string& local_tag,
+			       const string& via_branch,
 			       AmSession* session)
 {
   if(_container_closed.get())
@@ -453,7 +457,7 @@ AmSessionContainer::addSession(const string& callid,
   
   if(AmEventDispatcher::instance()->
      addEventQueue(local_tag,(AmEventQueue*)session,
-		   callid,remote_tag)) {
+		   callid,remote_tag,via_branch)) {
     return Inserted;
   }
 

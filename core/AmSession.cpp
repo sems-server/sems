@@ -210,6 +210,11 @@ const string& AmSession::getLocalTag() const
   return dlg.local_tag;
 }
 
+const string& AmSession::getFirstBranch() const
+{
+  return dlg.first_branch;
+}
+
 void AmSession::setUri(const string& uri)
 {
   DBG("AmSession::setUri(%s)\n",uri.c_str());

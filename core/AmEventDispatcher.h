@@ -59,8 +59,8 @@ private:
     AmMutex queues_mut[EVENT_DISPATCHER_BUCKETS];
 
     /** 
-     * Call ID + remote tag -> local tag 
-     *  (needed for CANCELs and some provisionnal answers)
+     * Call ID + remote tag + via_branch -> local tag 
+     *  (needed for CANCELs)
      *  (UAS sessions only)
      */
     Dictionnary id_lookup[EVENT_DISPATCHER_BUCKETS];
@@ -74,23 +74,32 @@ public:
     static AmEventDispatcher* instance();
     static void dispose();
 
-    bool postSipRequest(const string& callid, const string& remote_tag, 
-			const AmSipRequest& req);
+    bool postSipRequest(const AmSipRequest& req);
 
     bool post(const string& local_tag, AmEvent* ev);
-    bool post(const string& callid, const string& remote_tag, AmEvent* ev);
+    bool post(const string& callid, 
+	      const string& remote_tag, 
+	      const string& via_branch,
+	      AmEvent* ev);
 
     /* send event to all event queues. Note: event instances will be cloned */
     bool broadcast(AmEvent* ev);
 
+    bool addEventQueue(const string& local_tag,
+		       AmEventQueueInterface* q);
+
     bool addEventQueue(const string& local_tag, 
 		       AmEventQueueInterface* q,
-		       const string& callid="", 
-		       const string& remote_tag="");
+		       const string& callid, 
+		       const string& remote_tag,
+		       const string& via_branch);
+
+    AmEventQueueInterface* delEventQueue(const string& local_tag);
 
     AmEventQueueInterface* delEventQueue(const string& local_tag,
-					 const string& callid="", 
-					 const string& remote_tag="");
+					 const string& callid, 
+					 const string& remote_tag,
+					 const string& via_branch);
 
     bool empty();
 };
