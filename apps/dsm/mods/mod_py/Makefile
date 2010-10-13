@@ -18,8 +18,7 @@ PYTHON_module_cflags = -I$(PYTHON_DIR) -fno-strict-aliasing
 PYTHON_module_ldflags = -L$(PYTHON_LIBDIR)/config \
 			-lpython$(PY_VER)
 
-module_ldflags = -lutil \
-	$(PYTHON_module_ldflags) \
+module_ldflags = $(PYTHON_module_ldflags)
 
 module_cflags  = \
 	$(PYTHON_module_cflags) \
@@ -34,5 +33,7 @@ lib_full_name = $(DSMPATH)/mods/lib/$(lib_name)
 include $(DSMPATH)/mods/Makefile.dsm_module
 
 ifneq ($(OS),macosx)
+ifneq ($(OS),solaris)
 PYTHON_module_ldflags += -Xlinker --export-dynamic
+endif
 endif

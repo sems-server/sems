@@ -21,7 +21,6 @@ SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PYTHON_LIB_FLAGS}"
 
 SET(sems_module_name ivr)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
 
 PYTHON_SOURCES_COMPILE(py/log.py ivr)

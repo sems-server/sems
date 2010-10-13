@@ -28,7 +28,7 @@ endif
 LOCAL_INCLUDES = -I$(FLITE_DIR)/lang/usenglish
 
 # On FreeBSD, remove the following flags: -ldl -lpthread 
-module_ldflags = -ldl -lpthread -lutil -lm \
+module_ldflags = -ldl -lpthread -lm \
 	$(PYTHON_module_ldflags) \
 	$(PY_SEMS_TTS_module_ldflags)
 
@@ -79,7 +79,9 @@ LD=gcc
 include $(COREPATH)/plug-in/Makefile.app_module
 
 ifneq ($(OS),macosx)
+ifneq ($(OS),solaris)
 PYTHON_module_ldflags += -Xlinker --export-dynamic
+endif
 endif
 
 .PHONY: install_python_files

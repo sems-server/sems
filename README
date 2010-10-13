@@ -40,7 +40,9 @@ Introduction:
 License:
 
  SEMS is free (speech+beer) software. It is licensed under dual 
- license terms, the GPL (v2+) and proprietary license.
+ license terms, the GPL (v2+) and proprietary license. This program
+ is released under the GPL with the additional exemption that
+ compiling, linking, and/or using OpenSSL is allowed.
 
  See doc/COPYING for details.
 

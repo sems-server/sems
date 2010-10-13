@@ -4,7 +4,7 @@ COREPATH = $(DSMPATH)/../../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_dsm_modules = mod_mysql mod_aws
+exclude_dsm_modules ?= mod_mysql mod_aws
 
 ifneq ($(USE_MONITORING), yes)
 exclude_dsm_modules += mod_monitoring
@@ -14,7 +14,6 @@ $(info exclude_dsm_modules: $(exclude_dsm_modules))
 dsm_modules = $(filter-out $(subst ;, ,$(exclude_dsm_modules))\
 		$(wildcard Makefile*) lib CMakeLists.txt, \
 		$(wildcard *) )
-
 
 .PHONY: all
 all: modules

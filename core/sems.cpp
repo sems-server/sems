@@ -1,21 +1,21 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -201,13 +201,27 @@ static AmCondition<bool> is_shutting_down(false);
 
 static void signal_handler(int sig)
 {
-  WARN("Signal %s (%d) received.\n", strsignal(sig), sig);
+  if (sig == SIGUSR1 || sig == SIGUSR2) {
+    DBG("brodcasting User event to %u sessions...\n",
+	AmSession::getSessionNum());
+    AmEventDispatcher::instance()->
+      broadcast(new AmSystemEvent(sig == SIGUSR1? 
+				  AmSystemEvent::User1 : AmSystemEvent::User2));
+    return;
+  }
 
   if (sig == SIGCHLD && AmConfig::IgnoreSIGCHLD) {
     return;
   }
 
   if (sig == SIGPIPE && AmConfig::IgnoreSIGPIPE) {
+    return;
+  }
+
+  WARN("Signal %s (%d) received.\n", strsignal(sig), sig);
+
+  if (sig == SIGHUP) {
+    AmSessionContainer::instance()->broadcastShutdown();
     return;
   }
 
@@ -228,7 +242,7 @@ static void signal_handler(int sig)
 int set_sighandler(void (*handler)(int))
 {
   static int sigs[] = {
-      SIGHUP, SIGPIPE, SIGINT, SIGTERM, SIGCHLD, 0
+    SIGHUP, SIGPIPE, SIGINT, SIGTERM, SIGCHLD, SIGUSR1, SIGUSR2, 0
   };
 
   for (int* sig = sigs; *sig; sig++) {
@@ -421,7 +435,11 @@ int main(int argc, char* argv[])
   init_logging();
 
   /* load and apply configuration file */
-  AmConfig::readConfiguration();
+  if(AmConfig::readConfiguration()){
+    ERROR("Errors occured while reading configuration file: exiting.");
+    return -1;
+  }
+
   log_level = AmConfig::LogLevel;
   log_stderr = AmConfig::LogStderr;
 

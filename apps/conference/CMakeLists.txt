@@ -2,7 +2,7 @@ set (conference_SRCS
 Conference.cpp
 )
 
-set (audio_files
+set (conference_audio_files
 beep.wav
 first_participant.wav
 )
@@ -22,5 +22,3 @@ ENDIF(MYSQLPP_FOUND)
 
 SET(sems_module_name conference)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)

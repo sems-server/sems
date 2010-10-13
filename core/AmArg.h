@@ -1,21 +1,21 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -49,11 +49,13 @@ class ArgObject {
   virtual ~ArgObject() { }
 };
 
-struct ArgBlob {  char* data;
+struct ArgBlob {  
+
+  char* data;
   int   len;
   
-ArgBlob() 
-: data(NULL),len(0)
+  ArgBlob() 
+  : data(NULL),len(0)
   {  
   }
 
@@ -74,6 +76,8 @@ ArgBlob()
   ~ArgBlob() { if (data) free(data); }
 };
 
+class AmDynInvoke;
+
 /** \brief variable type argument for DynInvoke APIs */
 class AmArg
 : public ArgObject
@@ -87,7 +91,8 @@ class AmArg
     Bool,
     Double,
     CStr,
-    AObject,		// for passing pointers to objects not owned by AmArg
+    AObject, // pointer to an object not owned by AmArg
+    ADynInv, // pointer to a AmDynInvoke (useful for call backs)
     Blob,
     
     Array,
@@ -116,6 +121,7 @@ class AmArg
     double         v_double;
     const char*    v_cstr;
     ArgObject*     v_obj;
+    AmDynInvoke*   v_inv;
     ArgBlob*       v_blob;
     ValueArray*    v_array;
     ValueStruct*   v_struct;
@@ -169,6 +175,11 @@ class AmArg
     v_obj(v) 
    { }
 
+  AmArg(AmDynInvoke* v) 
+    : type(ADynInv),
+    v_inv(v) 
+   { }
+
   // convenience constructors
   AmArg(vector<std::string>& v);
   AmArg(const vector<int>& v );
@@ -196,6 +207,7 @@ class AmArg
 #define isArgBool(a) (AmArg::Bool == a.getType())
 #define isArgCStr(a) (AmArg::CStr == a.getType())
 #define isArgAObject(a) (AmArg::AObject == a.getType())
+#define isArgADynInv(a) (AmArg::ADynInv == a.getType())
 #define isArgBlob(a) (AmArg::Blob == a.getType())
 
 #define _THROW_TYPE_MISMATCH(exp,got) \
@@ -222,6 +234,9 @@ class AmArg
 #define assertArgAObject(a)			\
   if (!isArgAObject(a))				\
 	_THROW_TYPE_MISMATCH(AObject,a);
+#define assertArgADynInv(a)			\
+  if (!isArgADynInv(a))				\
+	_THROW_TYPE_MISMATCH(ADynInv,a);
 #define assertArgBlob(a)			\
   if (!isArgBlob(a))				\
 	_THROW_TYPE_MISMATCH(Blob,a);
@@ -240,6 +255,7 @@ class AmArg
   double      asDouble() const { return v_double; }
   const char* asCStr()   const { return v_cstr; }
   ArgObject*  asObject() const { return v_obj; }
+  AmDynInvoke* asDynInv() const { return v_inv; }
   ArgBlob*    asBlob()   const { return v_blob; }
   ValueStruct* asStruct() const { return v_struct; }
 
@@ -304,6 +320,7 @@ class AmArg
    *   f  - double
    *   s  - cstr
    *   o  - object
+   *   d  - dyninvoke
    *   b  - blob
    *   a  - array
    *   u  - struct

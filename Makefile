@@ -55,6 +55,7 @@ tar:
 		--exclude=$(notdir $(CURDIR))/tmp \
 		--exclude=core/$(notdir $(CURDIR))/tmp \
 		--exclude=.svn* \
+		--exclude=.git* \
 		--exclude=.\#* \
 		--exclude=*.[do] \
 		--exclude=*.la \

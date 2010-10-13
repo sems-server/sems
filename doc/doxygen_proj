@@ -605,7 +605,7 @@ RECURSIVE              = YES
 # excluded from the INPUT source files. This way you can easily exclude a
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = .svn \
+EXCLUDE                = .svn .git \
                          ../apps/xmlrpc2di/xmlrpc++ \
                          ../core/plug-in/ilbc/iLBC_rfc3951 \
                          ../core/plug-in/gsm/gsm-1.0-pl10 \

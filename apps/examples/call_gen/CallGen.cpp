@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2007 iptego GmbH
  *
  * This file is part of SEMS, a free SIP media server.
@@ -15,7 +13,7 @@
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.

@@ -6,6 +6,6 @@ g722.c
 
 SET(sems_module_name g722)
 SET(sems_module_libs spandsp)
-SET(doc_files Readme.g722codec)
+SET(g722_doc_files Readme.g722codec)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)

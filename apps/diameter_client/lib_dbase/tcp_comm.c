@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Digest Authentication - Diameter support
  *
  * Copyright (C) 2001-2003 FhG Fokus
@@ -13,7 +11,7 @@
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version
  * 
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org

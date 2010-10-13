@@ -1,21 +1,21 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -95,28 +95,28 @@ static unsigned int g711_samples2bytes(long, unsigned int);
 BEGIN_EXPORTS( "wav" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
      BEGIN_CODECS
-CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16, 
-       AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY, 
-       g711_bytes2samples, g711_samples2bytes )
-     CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16, 
-	    AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY, 
-	    g711_bytes2samples, g711_samples2bytes )
+      CODEC( CODEC_ULAW, Pcm16_2_ULaw, ULaw_2_Pcm16,
+             AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY,
+             g711_bytes2samples, g711_samples2bytes )
+      CODEC( CODEC_ALAW, Pcm16_2_ALaw, ALaw_2_Pcm16,
+	     AMCI_NO_CODEC_PLC, AMCI_NO_CODECCREATE, AMCI_NO_CODECDESTROY,
+	     g711_bytes2samples, g711_samples2bytes )
      END_CODECS
     
-BEGIN_PAYLOADS
-PAYLOAD( 0, "PCMU", 8000, 1, CODEC_ULAW, AMCI_PT_AUDIO_LINEAR )
-     PAYLOAD( 8, "PCMA", 8000, 1, CODEC_ALAW, AMCI_PT_AUDIO_LINEAR )
+     BEGIN_PAYLOADS
+        PAYLOAD( 0, "PCMU", 8000, 1, CODEC_ULAW, AMCI_PT_AUDIO_LINEAR )
+        PAYLOAD( 8, "PCMA", 8000, 1, CODEC_ALAW, AMCI_PT_AUDIO_LINEAR )
      END_PAYLOADS
 
-BEGIN_FILE_FORMATS
-BEGIN_FILE_FORMAT( "Wav", "wav", "audio/x-wav", wav_open, wav_close, wav_mem_open, wav_mem_close)
-     BEGIN_SUBTYPES
-SUBTYPE( WAV_PCM,  "Pcm16",  8000, 1, CODEC_PCM16 ) // we only support 8000/1 channel !
-     SUBTYPE( WAV_ALAW, "A-Law",  8000, 1, CODEC_ALAW )
-     SUBTYPE( WAV_ULAW, "Mu-Law", 8000, 1, CODEC_ULAW )
-     END_SUBTYPES
-END_FILE_FORMAT
-END_FILE_FORMATS
+     BEGIN_FILE_FORMATS
+       BEGIN_FILE_FORMAT( "Wav", "wav", "audio/x-wav", wav_open, wav_close, wav_mem_open, wav_mem_close)
+         BEGIN_SUBTYPES
+           SUBTYPE( WAV_PCM,  "Pcm16",  8000, 1, CODEC_PCM16 ) // we only support 8000/1 channel !
+           SUBTYPE( WAV_ALAW, "A-Law",  8000, 1, CODEC_ALAW )
+           SUBTYPE( WAV_ULAW, "Mu-Law", 8000, 1, CODEC_ULAW )
+         END_SUBTYPES
+       END_FILE_FORMAT
+     END_FILE_FORMATS
 
 END_EXPORTS
 

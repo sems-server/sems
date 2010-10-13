@@ -60,7 +60,7 @@ public:
     int cancel();
 
     int update(const string& /* content_type */,
-	       const string& /* body */
+	       const string& /* body */,
 	       const string& /* hdrs */);
 
     int reinvite(const string& /* hdrs */,

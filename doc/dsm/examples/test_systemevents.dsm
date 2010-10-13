@@ -1,0 +1,23 @@
+-- example for system events processing from script
+initial state ignore_shutdown;
+
+transition "got USR1" ignore_shutdown - system(#type=="User1") / logParams(1) -> ignore_shutdown;
+transition "got USR2, quit on shutdown" ignore_shutdown - system(#type=="User2") / logParams(1) -> quit_shutdown;
+transition "got shutdown" ignore_shutdown - system(#type=="ServerShutdown") / {
+ logParams(1); 
+ set(#processed="true");
+} -> ignore_shutdown;
+
+
+state quit_shutdown;
+transition "got shutdown" quit_shutdown - system(#type=="ServerShutdown") / {
+  logParams(1);
+  -- send BYE and stop
+  stop(true);
+  set(#processed="true");
+  -- or we could just not set #processed, then DSM would to it
+} -> end;
+
+state end;
+
+transition "hangup" (ignore_shutdown, quit_shutdown) - hangup / stop(false) -> end;

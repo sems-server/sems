@@ -9,3 +9,4 @@ INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
 
 PYTHON_SOURCES_COMPILE(pin_collect.py ivr)
+SEMS_INSTALL_CONFIGS(pin_collect)

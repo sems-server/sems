@@ -1,21 +1,21 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -37,6 +37,7 @@ const char* AmArg::t2str(int type) {
   case AmArg::Double:  return "Double";
   case AmArg::CStr:    return "CStr";
   case AmArg::AObject: return "AObject";
+  case AmArg::ADynInv: return "ADynInv";
   case AmArg::Blob:    return "Blob";
   case AmArg::Array:   return "Array";
   case AmArg::Struct:  return "Struct";
@@ -62,6 +63,7 @@ AmArg& AmArg::operator=(const AmArg& v) {
     case Double: { v_double = v.v_double; } break;
     case CStr:   { v_cstr = strdup(v.v_cstr); } break;
     case AObject:{ v_obj = v.v_obj; } break;
+    case ADynInv:{ v_inv = v.v_inv; } break;
     case Array:  { v_array = new ValueArray(*v.v_array); } break;
     case Struct: { v_struct = new ValueStruct(*v.v_struct); } break;
     case Blob:   {  v_blob = new ArgBlob(*v.v_blob); } break;
@@ -306,6 +308,7 @@ bool operator==(const AmArg& lhs, const AmArg& rhs) {
   case AmArg::Double: { return lhs.v_double == rhs.v_double; } break;
   case AmArg::CStr:   { return !strcmp(lhs.v_cstr,rhs.v_cstr); } break;
   case AmArg::AObject:{ return lhs.v_obj == rhs.v_obj; } break;
+  case AmArg::ADynInv:{ return lhs.v_inv == rhs.v_inv; } break;
   case AmArg::Array:  { return lhs.v_array == rhs.v_array;  } break;
   case AmArg::Struct: { return lhs.v_struct == rhs.v_struct;  } break;
   case AmArg::Blob:   {  return (lhs.v_blob->len == rhs.v_blob->len) &&  
@@ -363,6 +366,7 @@ void AmArg::assertArrayFmt(const char* format) const {
       case 'f': assertArgDouble(get(i)); got+='f'; break;
       case 's': assertArgCStr(get(i)); got+='s'; break;
       case 'o': assertArgAObject(get(i)); got+='o'; break;
+      case 'd': assertArgADynInv(get(i)); got+='d'; break;
       case 'a': assertArgArray(get(i)); got+='a'; break;
       case 'b': assertArgBlob(get(i)); got+='b'; break;
       case 'u': assertArgStruct(get(i)); got+='u'; break;
@@ -415,6 +419,10 @@ string AmArg::print(const AmArg &a) {
       return double2str(a.asDouble());
     case CStr:
       return "'" + string(a.asCStr()) + "'";
+    case AObject:
+      return "<Object>";
+    case ADynInv:
+      return "<DynInv>";
     case Array:
       s = "[";
       for (size_t i = 0; i < a.size(); i ++)

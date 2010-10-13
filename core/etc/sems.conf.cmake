@@ -206,6 +206,15 @@ stderr=no
 #   (same as -D)
 loglevel=2
 
+# optional parameter: max_shutdown_time=<time in seconds>
+#
+# Limit on server shutdown time (time to send/resend BYE
+# to active calls). 0 to disable (infinite).
+#
+# Default: 10
+#
+#max_shutdown_time = 10
+
 # optional parameter: syslog_facility={DAEMON|USER|LOCAL[0-7]}
 #
 # - sets the log facility that is used for syslog. Using this,
@@ -375,6 +384,15 @@ use_default_signature=yes
 #   default settings (i.e. leave out) for these should be OK
 #   for most applications
 
+# support 100rel (PRACK) extension (RFC3262)? [disabled|supported|require]
+#
+# disabled - disable support for 100rel
+# supported - support it if remote end does, default
+# require - required
+#
+# Default: supported
+#
+#100rel=require
 
 #
 # Log raw messages?  [no|debug|info|warn|error]

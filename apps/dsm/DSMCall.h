@@ -1,14 +1,14 @@
 /*
- * $Id$
- *
  * Copyright (C) 2008 iptego GmbH
  *
  * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
  * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
@@ -84,6 +84,8 @@ public:
 
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
+
+  void onSystemEvent(AmSystemEvent* ev);
 
   void process(AmEvent* event);
 

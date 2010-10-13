@@ -55,7 +55,8 @@ FCTMF_SUITE_BGN(test_headers) {
       fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey= '';andsomemore", "P-My-Test", true), "myotherfunkykey") == "");
 
       fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey= 'test \\' escaped';andsomemore", "P-My-Test", true), "test \\' escaped") == "");
-
+      fct_chk(get_header_keyvalue("u=sayer;d=iptel.org;p=abcdef", "u") == "sayer");
+      fct_chk(get_header_keyvalue("u=sayer;d=iptel.org;p=abcdef", "d") == "iptel.org");
     } FCT_TEST_END();
 
 } FCTMF_SUITE_END();

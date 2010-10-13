@@ -1,3 +1,5 @@
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
+
 FILE (GLOB sems_SRCS "*.cpp" "sip/*.cpp")
 
 set (audio_files
@@ -46,43 +48,19 @@ IF(ZRTP_FOUND)
 INSTALL(FILES ./etc/zrtp.conf DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/etc/)
 ENDIF(ZRTP_FOUND)
 
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
+
 SET(doc_dirs ../doc/figures)
 SET(doc_files
+	../doc/Applications.txt
+	../doc/Howtostart_noproxy.txt
+	../doc/Howtostart_simpleproxy.txt
+	../doc/Howtostart_voicemail.txt
 	../doc/CHANGELOG
-	../doc/COMPILING
 	../doc/COPYING
-	../doc/Readme.ann_b2b.txt
-	../doc/Readme.announce_transfer.txt
-	../doc/Readme.announcement.txt
-	../doc/Readme.annrecorder.txt
-	../doc/Readme.auth_b2b.txt
-	../doc/Readme.call_timer.txt
-	../doc/Readme.callback.txt
-	../doc/Readme.click2dial.txt
-	../doc/Readme.conf_auth.txt
-	../doc/Readme.conference.txt
-	../doc/Readme.diameter_client.txt
-	../doc/Readme.early_announce.txt
-	../doc/Readme.echo.txt
-	../doc/Readme.iLBC.txt
-	../doc/Readme.ivr.txt
-	../doc/Readme.mailbox.txt
-	../doc/Readme.monitoring.txt
-	../doc/Readme.mp3plugin.txt
-	../doc/Readme.msg_storage.txt
-	../doc/Readme.pin_collect.txt
-	../doc/Readme.py_sems.txt
-	../doc/Readme.reg_agent.txt
-	../doc/Readme.registrar_client.txt
-	../doc/Readme.sw_prepaid_sip.txt
-	../doc/Readme.twit.txt
-	../doc/Readme.uac_auth.txt
-	../doc/Readme.voicebox.txt
-	../doc/Readme.voicemail.txt
-	../doc/Readme.webconference.txt
-	../doc/Readme.xmlrpc2di.txt
+	../doc/Tuning.txt
 	../doc/WHATSNEW_0.10
 )
 
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/audio.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/doc.rules.txt)
+SEMS_INSTALL_DOCS("${doc_files}" "${doc_dirs}")
+SEMS_INSTALL_AUDIO("" "${audio_files}")

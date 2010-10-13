@@ -1,21 +1,21 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -58,9 +58,10 @@ string       AmConfig::DaemonUid               = DEFAULT_DAEMON_UID;
 string       AmConfig::DaemonGid               = DEFAULT_DAEMON_GID;
 #endif
 
+unsigned int AmConfig::MaxShutdownTime         = DEFAULT_MAX_SHUTDOWN_TIME;
+
 string       AmConfig::LocalIP                 = "";
 string       AmConfig::PublicIP                = "";
-string       AmConfig::PrefixSep               = PREFIX_SEPARATOR;
 int          AmConfig::RtpLowPort              = RTP_LOWPORT;
 int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
 int          AmConfig::SessionProcessorThreads = NUM_SESSION_PROCESSORS;
@@ -220,6 +221,7 @@ int AmConfig::readConfiguration()
   DBG("Reading configuration...\n");
   
   AmConfigReader cfg;
+  int            ret=0;
 
   if(cfg.loadFile(AmConfig::ConfigurationFile.c_str())){
     ERROR("while loading main configuration file\n");
@@ -228,6 +230,15 @@ int AmConfig::readConfiguration()
        
   // take values from global configuration file
   // they will be overwritten by command line args
+
+  // stderr 
+  if(cfg.hasParameter("stderr")){
+    if(!setLogStderr(cfg.getParameter("stderr"), true)){
+      ERROR("invalid stderr value specified,"
+	    " valid are only yes or no\n");
+      ret = -1;
+    }
+  }
 
 #ifndef DISABLE_SYSLOG_LOG
   if (cfg.hasParameter("syslog_facility")) {
@@ -250,7 +261,7 @@ int AmConfig::readConfiguration()
   if(cfg.hasParameter("sip_port")){
     if(!setSIPPort(cfg.getParameter("sip_port").c_str())){
       ERROR("invalid sip port specified\n");
-      return -1;
+      ret = -1;
     }		
   }
   if(cfg.hasParameter("media_ip")) {
@@ -312,7 +323,7 @@ int AmConfig::readConfiguration()
   if(cfg.hasParameter("loglevel")){
     if(!setLogLevel(cfg.getParameter("loglevel"))){
       ERROR("invalid log level specified\n");
-      return -1;
+      ret = -1;
     }
   }
 
@@ -349,29 +360,30 @@ int AmConfig::readConfiguration()
     if (!appcfg.good()) {
       ERROR("could not load application mapping  file at '%s'\n",
 	    appcfg_fname.c_str());
-      return -1;
+      ret = -1;
     }
-
-    while (!appcfg.eof()) {
-      string entry;
-      getline (appcfg,entry);
-      if (!entry.length() || entry[0] == '#')
-	continue;
-      vector<string> re_v = explode(entry, "=>");
-      if (re_v.size() != 2) {
-	ERROR("Incorrect line '%s' in %s: expected format 'regexp=>app_name'\n",
-	      entry.c_str(), appcfg_fname.c_str());
-	return -1;
+    else {
+      while (!appcfg.eof()) {
+	string entry;
+	getline (appcfg,entry);
+	if (!entry.length() || entry[0] == '#')
+	  continue;
+	vector<string> re_v = explode(entry, "=>");
+	if (re_v.size() != 2) {
+	  ERROR("Incorrect line '%s' in %s: expected format 'regexp=>app_name'\n",
+		entry.c_str(), appcfg_fname.c_str());
+	  ret = -1;
+	}
+	regex_t app_re;
+	if (regcomp(&app_re, re_v[0].c_str(), REG_EXTENDED | REG_NOSUB)) {
+	  ERROR("compiling regex '%s' in %s.\n", 
+		re_v[0].c_str(), appcfg_fname.c_str());
+	  ret = -1;
+	}
+	DBG("adding application mapping '%s' => '%s'\n",
+	    re_v[0].c_str(),re_v[1].c_str());
+	AppMapping.push_back(make_pair(app_re, re_v[1]));
       }
-      regex_t app_re;
-      if (regcomp(&app_re, re_v[0].c_str(), REG_EXTENDED | REG_NOSUB)) {
-	ERROR("compiling regex '%s' in %s.\n", 
-	      re_v[0].c_str(), appcfg_fname.c_str());
-	return -1;
-      }
-      DBG("adding application mapping '%s' => '%s'\n",
-	  re_v[0].c_str(),re_v[1].c_str());
-      AppMapping.push_back(make_pair(app_re, re_v[1]));
     }
   } else {
     AppSelect = App_SPECIFIED;
@@ -384,7 +396,7 @@ int AmConfig::readConfiguration()
     if(!setDaemonMode(cfg.getParameter("fork"))){
       ERROR("invalid fork value specified,"
 	    " valid are only yes or no\n");
-      return -1;
+      ret = -1;
     }
   }
 
@@ -393,7 +405,7 @@ int AmConfig::readConfiguration()
     if(!setDaemonMode(cfg.getParameter("daemon"))){
       ERROR("invalid daemon value specified,"
 	    " valid are only yes or no\n");
-      return -1;
+      ret = -1;
     }
   }
 
@@ -407,23 +419,14 @@ int AmConfig::readConfiguration()
 
 #endif /* !DISABLE_DAEMON_MODE */
 
-  // stderr 
-  if(cfg.hasParameter("stderr")){
-    if(!setLogStderr(cfg.getParameter("stderr"), false)){
-      ERROR("invalid stderr value specified,"
-	    " valid are only yes or no\n");
-      return -1;
-    }
-  }
-
-  // user_prefix_separator
-  PrefixSep = cfg.getParameter("user_prefix_separator",PrefixSep);
+  MaxShutdownTime = cfg.getParameterInt("max_shutdown_time",
+					DEFAULT_MAX_SHUTDOWN_TIME);
 
   // rtp_low_port
   if(cfg.hasParameter("rtp_low_port")){
     if(!setRtpLowPort(cfg.getParameter("rtp_low_port"))){
       ERROR("invalid rtp low port specified\n");
-      return -1;
+      ret = -1;
     }
   }
 
@@ -431,7 +434,7 @@ int AmConfig::readConfiguration()
   if(cfg.hasParameter("rtp_high_port")){
     if(!setRtpHighPort(cfg.getParameter("rtp_high_port"))){
       ERROR("invalid rtp high port specified\n");
-      return -1;
+      ret = -1;
     }
   }
 
@@ -439,12 +442,12 @@ int AmConfig::readConfiguration()
 #ifdef SESSION_THREADPOOL
     if(!setSessionProcessorThreads(cfg.getParameter("session_processor_threads"))){
       ERROR("invalid session_processor_threads value specified\n");
-      return -1;
+      ret = -1;
     }
     if (SessionProcessorThreads<1) {
       ERROR("invalid session_processor_threads value specified."
 	    " need at least one thread\n");
-      return -1;
+      ret = -1;
     }
 #else
     WARN("session_processor_threads specified in sems.conf,\n");
@@ -457,17 +460,16 @@ int AmConfig::readConfiguration()
   if(cfg.hasParameter("media_processor_threads")){
     if(!setMediaProcessorThreads(cfg.getParameter("media_processor_threads"))){
       ERROR("invalid media_processor_threads value specified");
-      return -1;
+      ret = -1;
     }
   }
 
   if(cfg.hasParameter("sip_server_threads")){
     if(!setSIPServerThreads(cfg.getParameter("sip_server_threads"))){
       ERROR("invalid sip_server_threads value specified");
-      return -1;
+      ret = -1;
     }
   }
-
 
   // single codec in 200 OK
   if(cfg.hasParameter("single_codec_in_ok")){
@@ -486,7 +488,7 @@ int AmConfig::readConfiguration()
   if(cfg.hasParameter("dead_rtp_time")){
     if(!setDeadRtpTime(cfg.getParameter("dead_rtp_time"))){
       ERROR("invalid dead_rtp_time value specified");
-      return -1;
+      ret = -1;
     }
   }
 
@@ -534,11 +536,11 @@ int AmConfig::readConfiguration()
     } else {
       ERROR("unknown setting for '100rel' config option: '%s'.\n",
 	    rel100s.c_str());
-      return -1;
+      ret = -1;
     }
   }
 
   INFO("100rel: %d.\n", AmConfig::rel100);
 
-  return 0;
+  return ret;
 }	

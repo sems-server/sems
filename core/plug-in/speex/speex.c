@@ -17,13 +17,14 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <string.h>
-#include <stdlib.h>
-
 #include "amci.h"
 #include "codecs.h"
 #include "speex/speex.h"
 #include "../../log.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 /* Speex constants */
 #define SPEEX_FRAME_MS			 20
@@ -123,7 +124,8 @@ static const int nb_encoded_frame_bits[] = { 5, 43, 119, 160, 220, 300, 364, 492
 
 /*
   Search for a parameter assignement in input string.
-  If it's not found *param_value is null, otherwise *param_value points to the right hand term.
+  If it's not found *param_value is null, otherwise *param_value points to the
+  right hand term.
   In both cases a pointer suitable for a new search is returned
 */
 static char* read_param(char* input, const char *param, char** param_value)
@@ -240,7 +242,8 @@ long speexNB_create(const char* format_parameters, amci_codec_fmt_info_t* format
     
   format_description[3].id = 0;
     
-  DBG("SpeexState %p inserted with mode %d and %d frames per packet,\n", ss, ss->mode, ss->frames_per_packet);
+  DBG("SpeexState %p inserted with mode %d and %d frames per packet,\n",
+      ss, ss->mode, ss->frames_per_packet);
     
   return (long)ss;
 }

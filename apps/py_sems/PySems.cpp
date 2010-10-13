@@ -1,9 +1,7 @@
-/*
- * $Id$
- * 
+/* 
  * Copyright (C) 2002-2003 Fhg Fokus
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,14 +36,15 @@
 #include <sip.h>
 #include "sip/sipAPIpy_sems_lib.h"
 
-#if SIP_VERSION < 0x040901
-#define SIP_USE_OLD_CLASS_CONVERSION 1
-#endif
-
-#ifdef SIP_USE_OLD_CLASS_CONVERSION
+// earlier than 4.7.6, include headers:
+#if SIP_VERSION < 0x040706
 #include "sip/sippy_sems_libPySemsDialog.h"
 #include "sip/sippy_sems_libPySemsB2BDialog.h"
 #include "sip/sippy_sems_libPySemsB2ABDialog.h"
+#endif
+
+#if SIP_VERSION < 0x040901
+#define SIP_USE_OLD_CLASS_CONVERSION 1
 #endif
 
 #include <unistd.h>
@@ -95,27 +94,7 @@ extern "C" {
     if(!PyArg_ParseTuple(args,"is",&level,&msg))
       return NULL;
 
-    if((level)<=log_level) {
-
-      if(log_stderr)
-	log_print( level, msg );
-      else {
-	switch(level){
-	case L_ERR:
-	  syslog(LOG_ERR , "Error: %s", msg);
-	  break;
-	case L_WARN:
-	  syslog(LOG_WARNING , "Warning: %s", msg);
-	  break;
-	case L_INFO:
-	  syslog(LOG_INFO , "Info: %s", msg);
-	  break;
-	case L_DBG:
-	  syslog(LOG_DEBUG , "Debug: %s", msg);
-	  break;
-	}
-      }
-    }
+    _LOG(level, "%s", msg);
 	
     Py_INCREF(Py_None);
     return Py_None;

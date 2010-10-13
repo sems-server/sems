@@ -10,3 +10,4 @@ getos
 sems
 sems-stats
 core/etc/*.conf
+core/etc/*.template

@@ -20,6 +20,7 @@
  *  \arg \ref AppDoc
  *  \arg \ref ModuleDoc_dsm
  *  \arg \ref ZRTP
+ *  \arg \ref signalsdoc
  *  \arg \ref Tuning
  *
  *  \section developerdoc Developer's documentation

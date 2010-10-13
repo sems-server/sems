@@ -23,7 +23,6 @@ INCLUDE_DIRECTORIES (sip)
 SET(sems_module_name py_sems)
 SET(sems_module_libs sip)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
-INCLUDE(${CMAKE_SOURCE_DIR}/cmake/config.rules.txt)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/python.rules.txt)
 
 PYTHON_SOURCES_COMPILE(py/py_sems_log.py plug-in)

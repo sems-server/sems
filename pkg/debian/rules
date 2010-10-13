@@ -21,6 +21,8 @@ PYTHON_MODULES=ivr py_sems conf_auth mailbox pin_collect
 
 EXCLUDED_MODULES=gateway examples mp3
 
+EXCLUDED_DSM_MODULES=mod_aws
+EXCLUDED_DSM_PY_MODULES=mod_aws mod_py
 CPPFLAGS += -DHAVE_XMLRPCPP_SSL 
 # for older than lenny add:
 # -DHAVE_OLD_SPANDSP_CALLBACK
@@ -47,7 +49,10 @@ build-stamp: configure-stamp
 # Add here commands to compile the package.
 	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
 	$(MAKE) \
-	cfg-target=/etc/sems/ prefix=/usr exclude_app_modules="$(EXCLUDED_MODULES)" DESTDIR=$(CURDIR)/debian/sems
+	cfg-target=/etc/sems/ prefix=/usr \
+	exclude_app_modules="$(EXCLUDED_MODULES)" \
+	exclude_dsm_modules="$(EXCLUDED_DSM_MODULES)" \
+	DESTDIR=$(CURDIR)/debian/sems
 #/usr/bin/docbook-to-man debian/ser.sgml > ser.1
 
 	touch build-stamp
@@ -75,7 +80,9 @@ install: build
 		cfg-target=/etc/sems/
 
 	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
-	$(MAKE) -C apps/ install exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
+	$(MAKE) -C apps/ install \
+		exclude_app_modules="$(EXCLUDED_MODULES) $(PYTHON_MODULES)" \
+		exclude_dsm_modules="$(EXCLUDED_DSM_PY_MODULES)" \
 		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
 		cfg-target=/etc/sems/
@@ -85,7 +92,15 @@ install: build
 
 # install only the python modules
 	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
-	$(MAKE) -C apps/ install modules="$(PYTHON_MODULES)" \
+	$(MAKE) -C apps/ install \
+		app_modules="$(PYTHON_MODULES)" \
+		DESTDIR=$(CURDIR)/debian/sems-python-modules \
+		prefix=/usr \
+		cfg-target=/etc/sems/  
+
+# install mod_py DSM module
+	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
+	$(MAKE) -C apps/dsm/mods/mod_py install \
 		DESTDIR=$(CURDIR)/debian/sems-python-modules \
 		prefix=/usr \
 		cfg-target=/etc/sems/  

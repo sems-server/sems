@@ -1,21 +1,21 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -79,25 +79,25 @@ static unsigned int ilbc_samples2bytes(long, unsigned int);
 
 BEGIN_EXPORTS( "ilbc" , AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY )
 
-     BEGIN_CODECS
-CODEC( CODEC_ILBC, Pcm16_2_iLBC, iLBC_2_Pcm16, iLBC_PLC,
-       iLBC_create, 
-       iLBC_destroy,
-       ilbc_bytes2samples, ilbc_samples2bytes )
-     END_CODECS
+  BEGIN_CODECS
+    CODEC( CODEC_ILBC, Pcm16_2_iLBC, iLBC_2_Pcm16, iLBC_PLC,
+           iLBC_create, 
+           iLBC_destroy,
+           ilbc_bytes2samples, ilbc_samples2bytes )
+  END_CODECS
     
-BEGIN_PAYLOADS
-PAYLOAD( -1, "iLBC", 8000, 1, CODEC_ILBC, AMCI_PT_AUDIO_FRAME )
-     END_PAYLOADS
+  BEGIN_PAYLOADS
+    PAYLOAD( -1, "iLBC", 8000, 1, CODEC_ILBC, AMCI_PT_AUDIO_FRAME )
+  END_PAYLOADS
 
-BEGIN_FILE_FORMATS
-BEGIN_FILE_FORMAT( "iLBC", "ilbc", "audio/iLBC", iLBC_open, iLBC_close, 0, 0)
-     BEGIN_SUBTYPES
-SUBTYPE( ILBC30,  "iLBC30",  8000, 1, CODEC_ILBC )
-     SUBTYPE( ILBC20,  "iLBC20",  8000, 1, CODEC_ILBC )
-     END_SUBTYPES
-END_FILE_FORMAT
-END_FILE_FORMATS
+  BEGIN_FILE_FORMATS
+    BEGIN_FILE_FORMAT( "iLBC", "ilbc", "audio/iLBC", iLBC_open, iLBC_close, 0, 0)
+      BEGIN_SUBTYPES
+        SUBTYPE( ILBC30,  "iLBC30",  8000, 1, CODEC_ILBC )
+        SUBTYPE( ILBC20,  "iLBC20",  8000, 1, CODEC_ILBC )
+      END_SUBTYPES
+    END_FILE_FORMAT
+  END_FILE_FORMATS
 
 END_EXPORTS
 

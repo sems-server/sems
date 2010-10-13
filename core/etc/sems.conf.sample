@@ -171,7 +171,7 @@ application = $(apphdr)
 #
 # - in this path configuration files of the applications 
 #   (e.g. announcement.conf) are searched
-plugin_config_path=/usr/local/etc/sems/
+plugin_config_path=/usr/local/etc/sems/etc/
 
 # optional parameter: exclude_payloads=<payload list>
 #
@@ -205,6 +205,15 @@ stderr=no
 # - sets log level (error=0, warning=1, info=2, debug=3)
 #   (same as -D)
 loglevel=2
+
+# optional parameter: max_shutdown_time=<time in seconds>
+#
+# Limit on server shutdown time (time to send/resend BYE
+# to active calls). 0 to disable (infinite).
+#
+# Default: 10
+#
+#max_shutdown_time = 10
 
 # optional parameter: syslog_facility={DAEMON|USER|LOCAL[0-7]}
 #

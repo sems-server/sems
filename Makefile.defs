@@ -1,4 +1,4 @@
-ifeq ($(makefile_defs), 1)
+ifeq ($(makefile_defs),1)
 else
 makefile_defs=1
 export makefile_defs
@@ -20,7 +20,7 @@ endif
 
 #version number
 VERSION = 1
-PATCHLEVEL = 3
+PATCHLEVEL = 4
 SUBLEVEL = 0
 
 ifneq ($(SCM_REV),)
@@ -76,7 +76,7 @@ CPPFLAGS += -D_DEBUG \
 # exclude some modules from compilation?
 # e.g. python modules:
 
-exclude_core_modules = sipctrl
+exclude_core_modules = sipctrl g729
 #exclude_apps_modules = py_sems ivr mailbox pin_collect conf_auth mp3 examples
 
 # build in support for monitoring?
@@ -260,7 +260,7 @@ LIB_LDFLAGS += $(LDFLAGS)
 
 DESTDIR ?= 
 PREFIX ?= /usr/local
-prefix = $(PREFIX)
+prefix ?= $(PREFIX)
 BASEDIR ?=
 basedir = $(BASEDIR)
 
@@ -309,7 +309,8 @@ endif
 
 # target dirs for various stuff
 bin-target = $(prefix)/$(bin-dir)
-cfg-target = $(prefix)/$(cfg-dir)
+cfg-target ?= $(prefix)/$(cfg-dir)
+app-cfg-target = $(cfg-target)etc/
 modules-target = $(prefix)/$(modules-dir)
 audio-target = $(prefix)/$(audio-dir)
 lib-target = $(prefix)/$(lib-dir)
@@ -339,7 +340,7 @@ export DESTDIR PREFIX prefix basedir ser-prefix
 export start-script
 export cfg-prefix bin-prefix modules-prefix doc-prefix audio-prefix lib-prefix
 export cfg-dir bin-dir modules-dir audio-dir lib-dir doc-dir man-dir
-export bin-target cfg-target modules-target audio-target lib-target
+export bin-target cfg-target app-cfg-target modules-target audio-target lib-target
 export INSTALL TAR INSTALL-TOUCH INSTALL-CFG INSTALL-BIN INSTALL-MODULES INSTALL-DOC INSTALL-AUDIO
 
 export USE_SPANDSP LIBSPANDSP_STATIC LIBSPANDSP_LDIR 
@@ -350,6 +351,7 @@ export exclude_core_modules exclude_app_modules
 endif  # ifeq ($(makefile_defs, 1)
 
 mk-install-dirs: $(DESTDIR)$(cfg-target) \
+		 $(DESTDIR)$(app-cfg-target) \
 		 $(DESTDIR)$(bin-prefix)/$(bin-dir) \
 		 $(DESTDIR)$(modules-prefix)/$(modules-dir) \
 		 $(DESTDIR)$(audio-prefix)/$(audio-dir) \
@@ -357,6 +359,9 @@ mk-install-dirs: $(DESTDIR)$(cfg-target) \
 
 $(DESTDIR)$(cfg-target): 
 	mkdir -p $(DESTDIR)$(cfg-target)
+
+$(DESTDIR)$(app-cfg-target): 
+	mkdir -p $(DESTDIR)$(app-cfg-target)
 
 $(DESTDIR)$(bin-prefix)/$(bin-dir):
 	mkdir -p $(DESTDIR)$(bin-prefix)/$(bin-dir)

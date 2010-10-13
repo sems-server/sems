@@ -33,8 +33,7 @@ endif
 
 LOCAL_INCLUDES = -I$(FLITE_DIR)/lang/usenglish
 
-module_ldflags = -lutil \
-	$(PYTHON_module_ldflags) \
+module_ldflags = $(PYTHON_module_ldflags) \
 	$(IVR_TTS_module_ldflags)
 
 # for perl support:
@@ -86,7 +85,9 @@ endif
 include $(COREPATH)/plug-in/Makefile.app_module
 
 ifneq ($(OS),macosx)
+ifneq ($(OS),solaris)
 PYTHON_module_ldflags += -Xlinker --export-dynamic
+endif
 endif
 
 .PHONY: install_python_files

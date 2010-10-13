@@ -1,21 +1,21 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -820,7 +820,7 @@ string get_header_keyvalue_single(const string& param_hdr, const string& name) {
   
   while (p<param_hdr.length() && !v_end) {
     char curr = param_hdr[p];
-    // DBG("curr %c, st=%d\n", curr, st);
+    // DBG("curr %c, st=%d, corr=%d\n", curr, st, corr);
     switch(st) {
     case ST_FINDBGN: {
       switch(curr) {
@@ -850,7 +850,10 @@ string get_header_keyvalue_single(const string& param_hdr, const string& name) {
 	break;
       default:
 	if (curr==name[0]) {
-	  st = ST_CMPKEY;
+	  if (name.length() == 1)
+	    st = ST_FINDEQ;
+	  else
+	    st = ST_CMPKEY;
 	  k_begin = p;
 	  corr = 1;
 	}
@@ -1021,7 +1024,7 @@ void add_env_path(const char* name, const string& path)
   regex_t path_reg;
 
   assert(name);
-  if((old_path = getenv(name)) != 0) {
+  if((old_path = getenv((char*)name)) != 0) {
     if(strlen(old_path)){
 	    
       if(regcomp(&path_reg,("[:|^]" + path + "[:|$]").c_str(),REG_NOSUB)){

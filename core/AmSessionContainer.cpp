@@ -1,22 +1,22 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2003 Fhg Fokus
  * Copyright (C) 2006 iptego GmbH
  *
- * This file is part of sems, a free SIP media server.
+ * This file is part of SEMS, a free SIP media server.
  *
- * sems is free software; you can redistribute it and/or modify
+ * SEMS is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
  *
- * For a license to use the ser software under conditions
+ * For a license to use the SEMS software under conditions
  * other than those described here, or to purchase support for this
  * software, please contact iptel.org by e-mail at the following addresses:
  *    info@iptel.org
  *
- * sems is distributed in the hope that it will be useful,
+ * SEMS is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -63,7 +63,7 @@ void AmSessionContainer::dispose()
     if(!_instance->is_stopped()) {
       _instance->stop();
 
-      while(!_instance->is_stopped()) 
+      while (!_instance->is_stopped())
 	usleep(10000);
     }
     // todo: add locking here
@@ -138,23 +138,34 @@ void AmSessionContainer::run()
   DBG("Session cleaner terminating\n");
 }
 
-void AmSessionContainer::on_stop() 
-{ 
-  _container_closed.set(true);
-
+void AmSessionContainer::broadcastShutdown() {
   DBG("brodcasting ServerShutdown system event to %u sessions...\n",
       AmSession::getSessionNum());
   AmEventDispatcher::instance()->
     broadcast(new AmSystemEvent(AmSystemEvent::ServerShutdown));
+}
+
+void AmSessionContainer::on_stop() 
+{ 
+  _container_closed.set(true);
+
+  broadcastShutdown();
     
   DBG("waiting for active event queues to stop...\n");
 
-  while (!AmEventDispatcher::instance()->empty())
-    sleep(1);
+  for (unsigned int i=0;
+       (!AmEventDispatcher::instance()->empty() &&
+	(!AmConfig::MaxShutdownTime ||
+	 i < AmConfig::MaxShutdownTime * 1000 / 10));i++)
+    usleep(10000);
+
+  if (!AmEventDispatcher::instance()->empty()) {
+    WARN("Not all calls cleanly ended!\n");
+  }
     
   DBG("cleaning sessions...\n");
   while (clean_sessions()) 
-    sleep(1);
+    usleep(10000);
 
   _run_cond.set(true); // so that thread stops
 }
