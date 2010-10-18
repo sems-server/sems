@@ -62,9 +62,9 @@ int EchoFactory::onLoad()
   
   if(useSessionTimer){
     session_timer_f = AmPlugIn::instance()->getFactory4Seh("session_timer");
-    //    DBG("session_timer_f == 0x%.16lX\n",(unsigned long)session_timer_f);
     if(session_timer_f == NULL){
-      ERROR("Could not load the session_timer module: disabling session timers.\n");
+      ERROR("Could not load the session_timer module: "
+	    "disabling session timers.\n");
       //return -1;
     }
   }
@@ -88,7 +88,8 @@ AmSession* EchoFactory::onInvite(const AmSipRequest& req)
       return NULL;
     
     if(h->configure(conf)){
-      ERROR("Could not configure the session timer: disabling session timers.\n");
+      ERROR("Could not configure the session timer: "
+	    "disabling session timers.\n");
       delete h;
     } else {
       s->addHandler(h);
@@ -108,18 +109,11 @@ EchoDialog::~EchoDialog()
 {
 }
 
-void EchoDialog::onSessionStart(// const AmSipRequest& req
-				)
+void EchoDialog::onSessionStart()
 {
   RTPStream()->setPlayoutType(playout_type);
   setInOut(&echo,&echo);
 }
-
-// void EchoDialog::onSessionStart(const AmSipReply& req)
-// {
-//   RTPStream()->setPlayoutType(playout_type);
-//   setInOut(&echo,&echo);
-// }
 
 void EchoDialog::onBye(const AmSipRequest& req)
 {

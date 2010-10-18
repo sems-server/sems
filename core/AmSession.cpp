@@ -881,6 +881,7 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
 /** Hook called when an SDP offer is required */
 bool AmSession::getSdpOffer(AmSdp& offer)
 {
+  DBG("AmSession::getSdpOffer(...) ...\n");
   // TODO: move this code to AmRtpStream
 
   offer.version = 0;
@@ -909,9 +910,11 @@ bool AmSession::getSdpOffer(AmSdp& offer)
   return true;
 }
 
-/** Hook called when an SDP offer is required */
+/** Hook called when an SDP answer is required */
 bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 {
+  DBG("AmSession::getSdpAnswer(...) ...\n");
+
   answer.version = 0;
   answer.origin.user = "sems";
   answer.origin.sessId = 1;
@@ -972,6 +975,8 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 
 int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 {
+  DBG("AmSession::onSdpCompleted(...) ...\n");
+
   lockAudio();
   // TODO: 
   //   - get the right media ID
