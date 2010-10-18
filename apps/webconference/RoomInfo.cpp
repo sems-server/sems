@@ -80,6 +80,16 @@ AmArg ConferenceRoom::asArgArray() {
   return res;
 }
 
+vector<string> ConferenceRoom::participantLtags() {
+  cleanExpired();
+  vector<string> res;
+  for (list<ConferenceRoomParticipant>::iterator it=participants.begin(); 
+       it != participants.end(); it++) {
+    res.push_back(it->localtag);
+  }
+  return res;
+}
+
 void ConferenceRoom::newParticipant(const string& localtag, 
 				    const string& number) {
   gettimeofday(&last_access_time, NULL);
@@ -148,4 +158,8 @@ bool ConferenceRoom::expired(const struct timeval& now) {
   timersub(&now,&last_access_time,&diff);
   return (diff.tv_sec > 0) &&
     (unsigned int)diff.tv_sec > (unsigned int)WebConferenceFactory::RoomExpiredDelay;
+}
+
+bool ConferenceRoom::hard_expired(const struct timeval& now) {
+  return expiry_time && (now.tv_sec > expiry_time);
 }
