@@ -138,19 +138,9 @@ AnnouncementDialog::~AnnouncementDialog()
 {
 }
 
-void AnnouncementDialog::onSessionStart(const AmSipRequest& req)
-{
-  DBG("AnnouncementDialog::onSessionStart\n");
-  startSession();
-}
+void AnnouncementDialog::onSessionStart() {
+  DBG("AnnouncementDialog::onSessionStart()...\n");
 
-void AnnouncementDialog::onSessionStart(const AmSipReply& rep)
-{
-  DBG("AnnouncementDialog::onSessionStart (SEMS originator mode)\n");
-  startSession();
-}
-
-void AnnouncementDialog::startSession(){
   // we can drop all received packets
   // this disables DTMF detection as well
   setReceiving(false);
