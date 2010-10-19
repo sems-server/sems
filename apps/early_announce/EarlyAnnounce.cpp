@@ -268,21 +268,11 @@ int EarlyAnnounceFactory::onLoad()
 
 void EarlyAnnounceDialog::onInvite(const AmSipRequest& req) 
 {
-  try {
-    if(dlg.reply(req,183,"Session Progress",
-		 "application/sdp") != 0){
-
-      throw AmSession::Exception(500,"could not reply");
-    }
-    else {	    
-      invite_req = req;
-    }
-
-  } catch(const AmSession::Exception& e) {
-
-    ERROR("%i %s\n",e.code,e.reason.c_str());
-    setStopped();
-    AmSipDialog::reply_error(req,e.code,e.reason);
+  if(dlg.reply(req,183,"Session Progress",
+	       "application/sdp") != 0){
+    throw AmSession::Exception(500,"could not reply");
+  } else {
+    invite_req = req;
   }
 }
 
@@ -346,9 +336,10 @@ void EarlyAnnounceDialog::onEarlySessionStart()
   // this disables DTMF detection as well
   setReceiving(false);
 
-  DBG("EarlyAnnounceDialog::onSessionStart\n");
+  DBG("EarlyAnnounceDialog::onEarlySessionStart\n");
+
   if(wav_file.open(filename,AmAudioFile::Read))
-    throw string("EarlyAnnounceDialog::onSessionStart: Cannot open file\n");
+    throw string("EarlyAnnounceDialog::onEarlySessionStart: Cannot open file");
     
   setOutput(&wav_file);
 }
