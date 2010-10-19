@@ -232,6 +232,9 @@ void CallTimerDialog::onBye(const AmSipRequest& req)
   if (m_state == BB_Connected) {
 //     stopAccounting();
   }
+  
+  dlg.reply(req,200,"OK");
+
   terminateOtherLeg();
   setStopped();
 }
