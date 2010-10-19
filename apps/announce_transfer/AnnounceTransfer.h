@@ -66,7 +66,8 @@ public:
   AnnounceTransferDialog(const string& filename);
   ~AnnounceTransferDialog();
 
-  void onSessionStart(const AmSipRequest& req);
+  void onInvite(const AmSipRequest& req);
+  void onSessionStart();
   void startSession();
   void onBye(const AmSipRequest& req);
   void onSipRequest(const AmSipRequest& req);

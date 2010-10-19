@@ -905,7 +905,7 @@ int AmSipDialog::update(const string &cont_type,
 int AmSipDialog::refer(const string& refer_to,
 		       int expires)
 {
-  if(status != Connected) {
+  if(status == Connected) {
     string hdrs = SIP_HDR_COLSP(SIP_HDR_REFER_TO) + refer_to + CRLF;
     if (expires>=0) 
       hdrs+= SIP_HDR_COLSP(SIP_HDR_EXPIRES) + int2str(expires) + CRLF;

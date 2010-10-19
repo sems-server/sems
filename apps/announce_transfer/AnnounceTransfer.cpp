@@ -99,15 +99,8 @@ AnnounceTransferDialog::~AnnounceTransferDialog()
 {
 }
 
-void AnnounceTransferDialog::onSessionStart(const AmSipRequest& req)
-{
-  // we can drop all received packets
-  // this disables DTMF detection as well
-  setReceiving(false);
-
-  DBG("AnnounceTransferDialog::onSessionStart\n");
+void AnnounceTransferDialog::onInvite(const AmSipRequest& req) {
   if (status == Disconnected) {
-    status = Announcing;
     callee_uri = get_session_param(req.hdrs, "Refer-To");
     if (!callee_uri.length()) {
       callee_uri = getHeader(req.hdrs, "P-Refer-To", true);
@@ -119,11 +112,25 @@ void AnnounceTransferDialog::onSessionStart(const AmSipRequest& req)
     if (!callee_uri.length())
       callee_uri = req.r_uri;
     DBG("transfer uri set to '%s'\n", callee_uri.c_str());
+  }
+
+  AmSession::onInvite(req);
+}
+
+void AnnounceTransferDialog::onSessionStart()
+{
+  // we can drop all received packets
+  // this disables DTMF detection as well
+  setReceiving(false);
+
+  DBG("AnnounceTransferDialog::onSessionStart\n");
+  if (status == Disconnected) {
+    status = Announcing;
     startSession();
   }
 }
 
-void AnnounceTransferDialog::startSession(){
+void AnnounceTransferDialog::startSession() {
   if(wav_file.open(filename,AmAudioFile::Read))
     throw string("AnnounceTransferDialog::onSessionStart: Cannot open file\n");
     
@@ -132,8 +139,6 @@ void AnnounceTransferDialog::startSession(){
 
 void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
 {
-  AmSession::onSipRequest(req);
-
   if((status == Transfering || status == Hangup) && 
      (req.method == "NOTIFY")) {
     try {
@@ -175,8 +180,9 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
     } catch (const AmSession::Exception& e) {
       dlg.reply(req, e.code, e.reason, "", "");
     }
+  } else {
+    AmSession::onSipRequest(req);
   }
-
 }
 
 void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status) {
