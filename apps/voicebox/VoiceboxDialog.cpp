@@ -78,7 +78,7 @@ VoiceboxDialog::~VoiceboxDialog()
   prompts->cleanup((long)this);
 }
 
-void VoiceboxDialog::onSessionStart(const AmSipRequest& req) { 
+void VoiceboxDialog::onSessionStart() { 
   if (pin.empty()) {
     state = Prompting;
     doMailboxStart();
@@ -93,6 +93,8 @@ void VoiceboxDialog::onSessionStart(const AmSipRequest& req) {
 
 void VoiceboxDialog::onBye(const AmSipRequest& req)
 {
+  dlg.reply(req,200,"OK");
+
   closeMailbox();
   setStopped();
 }

@@ -99,7 +99,7 @@ public:
 		 PromptOptions prompt_options);
   ~VoiceboxDialog();
 
-  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart();
   void onDtmf(int event, int duration);
   void onBye(const AmSipRequest& req);
   void process(AmEvent* ev);
