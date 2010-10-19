@@ -273,19 +273,10 @@ AnnRecorderDialog::~AnnRecorderDialog()
     unlink(msg_filename.c_str());
 }
 
-void AnnRecorderDialog::onSessionStart(const AmSipRequest& req)
+void AnnRecorderDialog::onSessionStart()
 {
   DBG("AnnRecorderDialog::onSessionStart\n");
-  startSession();
-}
 
-void AnnRecorderDialog::onSessionStart(const AmSipReply& rep)
-{
-  DBG("AnnRecorderDialog::onSessionStart (SEMS originator mode)\n");
-  startSession();
-}
-
-void AnnRecorderDialog::startSession(){
   prompts.addToPlaylist(WELCOME,  (long)this, playlist);
   prompts.addToPlaylist(YOUR_PROMPT,  (long)this, playlist);
   enqueueCurrent();
