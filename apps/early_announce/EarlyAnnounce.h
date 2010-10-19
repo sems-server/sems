@@ -75,7 +75,7 @@ public:
   ~EarlyAnnounceDialog();
 
   void onInvite(const AmSipRequest& req);
-  void onSessionStart(const AmSipRequest& req);
+  void onEarlySessionStart();
   void onBye(const AmSipRequest& req);
   void onCancel();
   void onDtmf(int event, int duration_msec) {}

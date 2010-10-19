@@ -470,14 +470,11 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
 
   // update Offer/Answer state
   // TODO: support multipart mime
-  if(reply.content_type.empty()){
-
-    if((reply.cseq_method == "INVITE") || (reply.cseq_method == "UPDATE")){
+  if((reply.cseq_method == "INVITE") || (reply.cseq_method == "UPDATE")){
       
-      if(triggerOfferAnswer(reply.content_type, reply.body)){
-	DBG("triggerOfferAnswer() failed\n");
-	return -1;
-      }
+    if(triggerOfferAnswer(reply.content_type, reply.body)){
+      DBG("triggerOfferAnswer() failed\n");
+      return -1;
     }
   }
 
@@ -785,10 +782,8 @@ int AmSipDialog::reply(const AmSipRequest& req,
     }
   }
 
-  if(!content_type.empty() && !body.empty()) {
-    reply.content_type = content_type;
-    reply.body = body;
-  }
+  reply.content_type = content_type;
+  reply.body = body;
 
   if(onTxReply(reply)){
     DBG("onTxReply failed\n");

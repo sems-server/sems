@@ -340,7 +340,7 @@ EarlyAnnounceDialog::~EarlyAnnounceDialog()
 {
 }
 
-void EarlyAnnounceDialog::onSessionStart(const AmSipRequest& req)
+void EarlyAnnounceDialog::onEarlySessionStart()
 {
   // we can drop all received packets
   // this disables DTMF detection as well
