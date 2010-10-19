@@ -365,7 +365,7 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
     relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
-    dlg.sendRequest(req.method,req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
+    dlg.sendRequest(req.method,req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM, false);
     // todo: relay error event back if sending fails
 
     if ((req.method == SIP_METH_INVITE ||
@@ -404,7 +404,7 @@ void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 {
   dlg.reply(orig,reply.code,reply.reason,
 	    reply.content_type,
-	    reply.body,reply.hdrs,SIP_FLAGS_VERBATIM);
+	    reply.body,reply.hdrs,SIP_FLAGS_VERBATIM,false);
 
   if ((orig.method == SIP_METH_INVITE ||
        orig.method == SIP_METH_UPDATE) &&

@@ -156,14 +156,16 @@ class AmSipDialog
 	    const string& content_type = "",
 	    const string& body = "",
 	    const string& hdrs = "",
-	    int flags = 0);
+	    int flags = 0,
+	    bool do_offeranswer = true);
 
   /** @return 0 on success */
   int sendRequest(const string& method, 
 		  const string& content_type = "",
 		  const string& body = "",
 		  const string& hdrs = "",
-		  int flags = 0);
+		  int flags = 0,
+		  bool do_offeranswer = true);
 
   /** @return 0 on success */
   int send_200_ack(unsigned int inv_cseq,
@@ -247,8 +249,8 @@ private:
 
   AmSipDialogEventHandler* hdl;
 
-  int onTxReply(AmSipReply& reply);
-  int onTxRequest(AmSipRequest& req);
+  int onTxReply(AmSipReply& reply, bool do_offeranswer);
+  int onTxRequest(AmSipRequest& req, bool do_offeranswer);
 
   int onRxSdp(const string& body, const char** err_txt);
   int onTxSdp(const string& body);

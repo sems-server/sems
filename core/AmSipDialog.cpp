@@ -390,7 +390,7 @@ void AmSipDialog::initFromLocalRequest(const AmSipRequest& req)
 
 // UAC behavior for locally sent requests
 // (called from AmSipDialog::sendRequest())
-int AmSipDialog::onTxRequest(AmSipRequest& req)
+int AmSipDialog::onTxRequest(AmSipRequest& req, bool do_offeranswer)
 {
   if((req.method == "INVITE") && (status == Disconnected)){
     status = Trying;
@@ -404,6 +404,9 @@ int AmSipDialog::onTxRequest(AmSipRequest& req)
       return -1;
   }
 
+  if (!do_offeranswer)
+    return 0;
+
   if(req.content_type == "application/sdp") {
 
     if(onTxSdp(req.body)){
@@ -416,7 +419,7 @@ int AmSipDialog::onTxRequest(AmSipRequest& req)
 }
 
 // UAS behavior for locally sent replies
-int AmSipDialog::onTxReply(AmSipReply& reply)
+int AmSipDialog::onTxReply(AmSipReply& reply, bool do_offeranswer)
 {
   TransMap::iterator t_it = uas_trans.find(reply.cseq);
   if(t_it == uas_trans.end()){
@@ -468,29 +471,31 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
     break;
   }
 
-  // update Offer/Answer state
-  // TODO: support multipart mime
-  if((reply.cseq_method == "INVITE") || (reply.cseq_method == "UPDATE")){
+  if (do_offeranswer) {
+    // update Offer/Answer state
+    // TODO: support multipart mime
+    if ((reply.cseq_method == "INVITE") || (reply.cseq_method == "UPDATE")) {
       
-    if(triggerOfferAnswer(reply.content_type, reply.body)){
-      DBG("triggerOfferAnswer() failed\n");
-      return -1;
+      if (triggerOfferAnswer(reply.content_type, reply.body)) {
+	DBG("triggerOfferAnswer() failed\n");
+	return -1;
+      }
+    }
+
+    if (reply.content_type == "application/sdp") {
+
+      if (onTxSdp(reply.body)) {
+
+	DBG("onTxSdp() failed (replying 500 internal error)\n");
+	reply.code = 500;
+	reply.reason = "internal error";
+	reply.body = "";
+	reply.content_type = "";
+      }
     }
   }
 
-  if(reply.content_type == "application/sdp") {
-
-    if(onTxSdp(reply.body)){
-
-      DBG("onTxSdp() failed (replying 500 internal error)\n");
-      reply.code = 500;
-      reply.reason = "internal error";
-      reply.body = "";
-      reply.content_type = "";
-    }
-  }
-
-  if((reply.code >= 200) && ((t.method != "INVITE") || (reply.cseq_method != "CANCEL"))){
+  if ((reply.code >= 200) && ((t.method != "INVITE") || (reply.cseq_method != "CANCEL"))) {
     
     DBG("reply.cseq_method = %s; t.method = %s\n",
 	reply.cseq_method.c_str(),t.method.c_str());
@@ -702,7 +707,8 @@ int AmSipDialog::reply(const AmSipRequest& req,
 		       const string& content_type,
 		       const string& body,
 		       const string& hdrs,
-		       int flags)
+		       int flags,
+		       bool do_offeranswer)
 {
   string m_hdrs = hdrs;
 
@@ -785,7 +791,7 @@ int AmSipDialog::reply(const AmSipRequest& req,
   reply.content_type = content_type;
   reply.body = body;
 
-  if(onTxReply(reply)){
+  if(onTxReply(reply, do_offeranswer)){
     DBG("onTxReply failed\n");
     return -1;
   }
@@ -998,7 +1004,8 @@ int AmSipDialog::sendRequest(const string& method,
 			     const string& content_type,
 			     const string& body,
 			     const string& hdrs,
-			     int flags)
+			     int flags,
+			     bool do_offeranswer)
 {
   string msg,ser_cmd;
   string m_hdrs = hdrs;
@@ -1058,7 +1065,7 @@ int AmSipDialog::sendRequest(const string& method,
     req.body = body;
   }
 
-  if(onTxRequest(req))
+  if(onTxRequest(req, do_offeranswer))
     return -1;
 
   if (SipCtrlInterface::send(req))
