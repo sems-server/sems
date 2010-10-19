@@ -365,7 +365,7 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
     relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
-    dlg.sendRequest(req.method,req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM, false);
+    dlg.sendRequest(req.method,req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
     // todo: relay error event back if sending fails
 
     if ((req.method == SIP_METH_INVITE ||
@@ -404,7 +404,7 @@ void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 {
   dlg.reply(orig,reply.code,reply.reason,
 	    reply.content_type,
-	    reply.body,reply.hdrs,SIP_FLAGS_VERBATIM,false);
+	    reply.body,reply.hdrs,SIP_FLAGS_VERBATIM);
 
   if ((orig.method == SIP_METH_INVITE ||
        orig.method == SIP_METH_UPDATE) &&
@@ -559,7 +559,7 @@ int AmB2BCallerSession::reinviteCaller(const AmSipReply& callee_reply)
 {
   return dlg.sendRequest(SIP_METH_INVITE,
 			 callee_reply.content_type, callee_reply.body,
-			 "" /* hdrs */, SIP_FLAGS_VERBATIM, false);
+			 "" /* hdrs */, SIP_FLAGS_VERBATIM);
 }
 
 void AmB2BCallerSession::createCalleeSession() {

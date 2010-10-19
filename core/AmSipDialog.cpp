@@ -390,7 +390,7 @@ void AmSipDialog::initFromLocalRequest(const AmSipRequest& req)
 
 // UAC behavior for locally sent requests
 // (called from AmSipDialog::sendRequest())
-int AmSipDialog::onTxRequest(AmSipRequest& req, bool do_offeranswer)
+int AmSipDialog::onTxRequest(AmSipRequest& req)
 {
   if((req.method == "INVITE") && (status == Disconnected)){
     status = Trying;
@@ -399,7 +399,7 @@ int AmSipDialog::onTxRequest(AmSipRequest& req, bool do_offeranswer)
     status = Disconnecting;
   }
 
-  if (!do_offeranswer)
+  if (!req.body.empty())
     return 0;
 
   if((req.method == "INVITE") || (req.method == "UPDATE")){
@@ -419,7 +419,7 @@ int AmSipDialog::onTxRequest(AmSipRequest& req, bool do_offeranswer)
 }
 
 // UAS behavior for locally sent replies
-int AmSipDialog::onTxReply(AmSipReply& reply, bool do_offeranswer)
+int AmSipDialog::onTxReply(AmSipReply& reply)
 {
   TransMap::iterator t_it = uas_trans.find(reply.cseq);
   if(t_it == uas_trans.end()){
@@ -471,7 +471,7 @@ int AmSipDialog::onTxReply(AmSipReply& reply, bool do_offeranswer)
     break;
   }
 
-  if (do_offeranswer) {
+  if (reply.body.empty()) {
     // update Offer/Answer state
     // TODO: support multipart mime
     if ((reply.cseq_method == "INVITE") || (reply.cseq_method == "UPDATE")) {
@@ -707,8 +707,7 @@ int AmSipDialog::reply(const AmSipRequest& req,
 		       const string& content_type,
 		       const string& body,
 		       const string& hdrs,
-		       int flags,
-		       bool do_offeranswer)
+		       int flags)
 {
   string m_hdrs = hdrs;
 
@@ -791,7 +790,7 @@ int AmSipDialog::reply(const AmSipRequest& req,
   reply.content_type = content_type;
   reply.body = body;
 
-  if(onTxReply(reply, do_offeranswer)){
+  if(onTxReply(reply)){
     DBG("onTxReply failed\n");
     return -1;
   }
@@ -1004,8 +1003,7 @@ int AmSipDialog::sendRequest(const string& method,
 			     const string& content_type,
 			     const string& body,
 			     const string& hdrs,
-			     int flags,
-			     bool do_offeranswer)
+			     int flags)
 {
   string msg,ser_cmd;
   string m_hdrs = hdrs;
@@ -1065,7 +1063,7 @@ int AmSipDialog::sendRequest(const string& method,
     req.body = body;
   }
 
-  if(onTxRequest(req, do_offeranswer))
+  if(onTxRequest(req))
     return -1;
 
   if (SipCtrlInterface::send(req))

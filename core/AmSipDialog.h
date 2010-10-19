@@ -40,6 +40,7 @@ using std::string;
 #define CONTACT_USER_PREFIX "sems"
 
 // flags which may be used when sending request/reply
+#define SIP_FLAGS_NONE         0 // none
 #define SIP_FLAGS_VERBATIM     1 // send request verbatim, 
                                  // i.e. modify as little as possible
 
@@ -156,16 +157,14 @@ class AmSipDialog
 	    const string& content_type = "",
 	    const string& body = "",
 	    const string& hdrs = "",
-	    int flags = 0,
-	    bool do_offeranswer = true);
+	    int flags = 0);
 
   /** @return 0 on success */
   int sendRequest(const string& method, 
 		  const string& content_type = "",
 		  const string& body = "",
 		  const string& hdrs = "",
-		  int flags = 0,
-		  bool do_offeranswer = true);
+		  int flags = 0);
 
   /** @return 0 on success */
   int send_200_ack(unsigned int inv_cseq,
@@ -249,8 +248,8 @@ private:
 
   AmSipDialogEventHandler* hdl;
 
-  int onTxReply(AmSipReply& reply, bool do_offeranswer);
-  int onTxRequest(AmSipRequest& req, bool do_offeranswer);
+  int onTxReply(AmSipReply& reply);
+  int onTxRequest(AmSipRequest& req);
 
   int onRxSdp(const string& body, const char** err_txt);
   int onTxSdp(const string& body);
