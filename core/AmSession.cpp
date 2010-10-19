@@ -682,7 +682,19 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 
   DBG("onSipRequest: method = %s\n",req.method.c_str());
   if(req.method == "INVITE"){
-    onInvite(req);
+    try {
+      onInvite(req);
+    }
+    catch(const string& s) {
+      ERROR("%s\n",s.c_str());
+      setStopped();
+      AmSipDialog::reply_error(req, 500, "Internal Server Error");
+    }
+    catch(const AmSession::Exception& e) {
+      ERROR("%i %s\n",e.code,e.reason.c_str());
+      setStopped();
+      AmSipDialog::reply_error(req,e.code,e.reason);
+    }
   }
   else if(req.method == "ACK"){
     return;
