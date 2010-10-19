@@ -837,7 +837,7 @@ void AnswerMachineDialog::process(AmEvent* event)
     AmSession::process(event);
 }
 
-void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
+void AnswerMachineDialog::onSessionStart()
 {
   // disable DTMF detection - don't use DTMF here
   setDtmfDetectionEnabled(false);
@@ -907,6 +907,8 @@ void AnswerMachineDialog::onSessionStart(const AmSipRequest& req)
 
 void AnswerMachineDialog::onBye(const AmSipRequest& req)
 {
+  dlg.reply(req,200,"OK");
+
   setInOut(NULL, NULL);
   saveMessage();
   setStopped();

@@ -143,7 +143,7 @@ class AnswerMachineDialog : public AmSession
 
     void process(AmEvent* event);
 
-    void onSessionStart(const AmSipRequest& req);
+    void onSessionStart();
     void onBye(const AmSipRequest& req);
     void onDtmf(int event, int duration_msec) {}
 
