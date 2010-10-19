@@ -209,7 +209,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
     case DTMF_SEND_SENDING: {
       if (ts_less()(ts, current_send_dtmf_ts + current_send_dtmf.second)) {
 	// send packet
-	if (!telephone_event_pt.get()) 
+	if (!remote_telephone_event_pt.get()) 
 	  return;
 
 	dtmf_payload_t dtmf;
@@ -221,7 +221,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
 	DBG("sending DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
 	    dtmf.event,dtmf.e,dtmf.r,dtmf.volume,ntohs(dtmf.duration),current_send_dtmf_ts);
 
-	compile_and_send(telephone_event_pt->payload_type, dtmf.duration == 0, 
+	compile_and_send(remote_telephone_event_pt->payload_type, dtmf.duration == 0, 
 			 current_send_dtmf_ts, 
 			 (unsigned char*)&dtmf, sizeof(dtmf_payload_t)); 
 	return;
@@ -240,7 +240,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
       } else {
 	send_dtmf_end_repeat++;
 	// send packet with end bit set, duration = event duration
-	if (!telephone_event_pt.get()) 
+	if (!remote_telephone_event_pt.get()) 
 	  return;
 
 	dtmf_payload_t dtmf;
@@ -253,7 +253,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
 	DBG("sending DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
 	    dtmf.event,dtmf.e,dtmf.r,dtmf.volume,ntohs(dtmf.duration),current_send_dtmf_ts);
 
-	compile_and_send(telephone_event_pt->payload_type, false, 
+	compile_and_send(remote_telephone_event_pt->payload_type, false, 
 			 current_send_dtmf_ts, 
 			 (unsigned char*)&dtmf, sizeof(dtmf_payload_t)); 
 	return;
@@ -397,13 +397,14 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
     return RTP_EMPTY;
   }
 
-  if (telephone_event_pt.get() && rp->payload == telephone_event_pt->payload_type)
+  if (local_telephone_event_pt.get() && 
+      rp->payload == local_telephone_event_pt->payload_type)
     {
       dtmf_payload_t* dpl = (dtmf_payload_t*)rp->getData();
 
       DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
 	  dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration),rp->timestamp);
-      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getTelephoneEventRate(), rp->timestamp));
+      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), rp->timestamp));
       mem.freePacket(rp);
       return RTP_DTMF;
     }
@@ -431,7 +432,6 @@ AmRtpStream::AmRtpStream(AmSession* _s)
     r_ssrc_i(false),
     session(_s),
     passive(false),
-    telephone_event_pt(NULL),
     mute(false),
     hold(false),
     receiving(true),
@@ -622,6 +622,16 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
   payload = local_media.payloads[0].payload_type;
   last_payload = payload;
 
+  const SdpPayload *telephone_event_payload = remote.telephoneEventPayload();
+  if(telephone_event_payload) {
+      DBG("remote party supports telephone events (pt=%i)\n",
+	  telephone_event_payload->payload_type);
+      remote_telephone_event_pt.reset(telephone_event_payload);
+  } else {
+    DBG("remote party doesn't support telephone events\n");
+  }
+  local_telephone_event_pt.reset(local.telephoneEventPayload());
+
   resume();
 
 #ifdef WITH_ZRTP  
@@ -671,8 +681,8 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 
   receive_mut.lock();
   // free packet on double packet for TS received
-  if(!(telephone_event_pt.get() && 
-       (p->payload == telephone_event_pt->payload_type))) {
+  if(!(local_telephone_event_pt.get() && 
+       (p->payload == local_telephone_event_pt->payload_type))) {
     if (receive_buf.find(p->timestamp) != receive_buf.end()) {
       mem.freePacket(receive_buf[p->timestamp]);
     }
@@ -694,8 +704,8 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 	  ERROR("parsing decoded packet!\n");
 	  mem.freePacket(p);
 	} else {
-          if(telephone_event_pt.get() && 
-	     (p->payload == telephone_event_pt->payload_type)) {
+          if(local_telephone_event_pt.get() && 
+	     (p->payload == local_telephone_event_pt->payload_type)) {
             rtp_ev_qu.push(p);
           } else {
 	    receive_buf[p->timestamp] = p;
@@ -724,8 +734,8 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   } else {
 #endif // WITH_ZRTP
 
-    if(telephone_event_pt.get() && 
-       (p->payload == telephone_event_pt->payload_type)) {
+    if(local_telephone_event_pt.get() && 
+       (p->payload == local_telephone_event_pt->payload_type)) {
       rtp_ev_qu.push(p);
     } else {
       receive_buf[p->timestamp] = p;
@@ -782,17 +792,17 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
   return 1;
 }
 
-int AmRtpStream::getTelephoneEventRate()
+int AmRtpStream::getLocalTelephoneEventRate()
 {
   int retval = 0;
-  if (telephone_event_pt.get())
-    retval = telephone_event_pt->clock_rate;
+  if (local_telephone_event_pt.get())
+    retval = local_telephone_event_pt->clock_rate;
   return retval;
 }
 
 void AmRtpStream::sendDtmf(int event, unsigned int duration_ms) {
   dtmf_send_queue_mut.lock();
-  dtmf_send_queue.push(std::make_pair(event, duration_ms * getTelephoneEventRate() 
+  dtmf_send_queue.push(std::make_pair(event, duration_ms * getLocalTelephoneEventRate() 
 				      / 1000));
   dtmf_send_queue_mut.unlock();
   DBG("enqueued DTMF event %i duration %u\n", event, duration_ms);

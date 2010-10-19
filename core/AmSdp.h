@@ -134,14 +134,10 @@ struct SdpMedia
 class AmSdp
 {
 
-  // Remote payload type for 
-  // 'telephone-event'
-  const SdpPayload *telephone_event_pt;
-
   /**
    * Find payload by name
    */
-  const SdpPayload *findPayload(const string& name);
+  const SdpPayload *findPayload(const string& name) const;
 
 public:
   // parsed SDP definition
@@ -176,13 +172,8 @@ public:
    */
   void print(string& body) const;
 
-  /**
-   * Test if the SDP message advertises 
-   * support for 'telefone_event'.
-   */
-  bool hasTelephoneEvent();
-
-  const SdpPayload *telephoneEventPayload() const { return telephone_event_pt; }
+  /** get telephone event payload (new object) */
+  const SdpPayload *telephoneEventPayload() const;
 };
 
 #endif

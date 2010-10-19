@@ -153,7 +153,8 @@ protected:
   bool           passive;      // passive mode ?
 
   /** Payload type for telephone event */
-  auto_ptr<const SdpPayload> telephone_event_pt;
+  auto_ptr<const SdpPayload> remote_telephone_event_pt;
+  auto_ptr<const SdpPayload> local_telephone_event_pt;
 
   PacketMem       mem;
   ReceiveBuffer   receive_buf;
@@ -257,15 +258,7 @@ public:
 
   unsigned int get_ssrc() { return l_ssrc; }
 
-  /** 
-   * Set remote telephone event 
-   * payload type 
-   */
-  void setTelephoneEventPT(const SdpPayload *pt) {
-    telephone_event_pt.reset(pt);
-  }
-
-  int getTelephoneEventRate();
+  int getLocalTelephoneEventRate();
 
   /**
    * send a DTMF as RTP payload (RFC4733)

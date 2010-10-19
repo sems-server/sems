@@ -104,7 +104,6 @@ bool SdpPayload::operator == (int r)
 //
 AmSdp::AmSdp()
   : remote_active(false),
-    telephone_event_pt(NULL),
     accepted_media(0)
 {
   l_origin.user = "sems";
@@ -119,7 +118,6 @@ AmSdp::AmSdp(const AmSdp& p_sdp_msg)
     sessionName(p_sdp_msg.sessionName),
     conn(p_sdp_msg.conn),
     media(p_sdp_msg.media),
-    telephone_event_pt(NULL),
     remote_active(false),
     accepted_media(0)
 {
@@ -143,8 +141,6 @@ int AmSdp::parse(const char* _sdp_msg)
     }
   }
   
-  telephone_event_pt = findPayload("telephone-event");
-    
   return ret;
 }
 
@@ -195,19 +191,18 @@ void AmSdp::print(string& body) const
   body = out_buf;
   //mime_type = "application/sdp";
 }
-	
-bool AmSdp::hasTelephoneEvent()
-{
-  return telephone_event_pt != NULL;
+
+const SdpPayload *AmSdp::telephoneEventPayload() const {
+  return findPayload("telephone-event");
 }
 
-const SdpPayload *AmSdp::findPayload(const string& name)
+const SdpPayload *AmSdp::findPayload(const string& name) const
 {
-  vector<SdpMedia>::iterator m_it;
+  vector<SdpMedia>::const_iterator m_it;
 
   for (m_it = media.begin(); m_it != media.end(); ++m_it)
     {
-      vector<SdpPayload>::iterator it = m_it->payloads.begin();
+      vector<SdpPayload>::const_iterator it = m_it->payloads.begin();
       for(; it != m_it->payloads.end(); ++it)
 
 	{
