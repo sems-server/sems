@@ -721,7 +721,19 @@ void AmSession::onSipRequest(const AmSipRequest& req)
         break;
     }
 
-    onInvite(req);
+    try {
+      onInvite(req);
+    }
+    catch(const string& s) {
+      ERROR("%s\n",s.c_str());
+      setStopped();
+      AmSipDialog::reply_error(req, 500, "Internal Server Error");
+    }
+    catch(const AmSession::Exception& e) {
+      ERROR("%i %s\n",e.code,e.reason.c_str());
+      setStopped();
+      AmSipDialog::reply_error(req,e.code,e.reason);
+    }
 
     if(detached.get() && !getStopped()){
 	
