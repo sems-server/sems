@@ -399,13 +399,13 @@ int AmSipDialog::onTxRequest(AmSipRequest& req, bool do_offeranswer)
     status = Disconnecting;
   }
 
+  if (!do_offeranswer)
+    return 0;
+
   if((req.method == "INVITE") || (req.method == "UPDATE")){
     if(triggerOfferAnswer(req.content_type, req.body))
       return -1;
   }
-
-  if (!do_offeranswer)
-    return 0;
 
   if(req.content_type == "application/sdp") {
 

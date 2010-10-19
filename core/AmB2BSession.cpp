@@ -559,7 +559,7 @@ int AmB2BCallerSession::reinviteCaller(const AmSipReply& callee_reply)
 {
   return dlg.sendRequest(SIP_METH_INVITE,
 			 callee_reply.content_type, callee_reply.body,
-			 "" /* hdrs */, SIP_FLAGS_VERBATIM);
+			 "" /* hdrs */, SIP_FLAGS_VERBATIM, false);
 }
 
 void AmB2BCallerSession::createCalleeSession() {
