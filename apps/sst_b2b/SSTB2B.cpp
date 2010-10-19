@@ -283,8 +283,8 @@ void SSTB2BDialog::createCalleeSession()
 	 callee_session->getLocalTag().c_str());
   }
 
-  MONITORING_LOG4(other_id.c_str(), 
-		  // "app",  invite_req.cmd.c_str(),
+  MONITORING_LOG5(other_id.c_str(),
+		  "app",  MOD_NAME,
 		  "dir",  "out",
 		  "from", callee_dlg.local_party.c_str(),
 		  "to",   callee_dlg.remote_party.c_str(),
