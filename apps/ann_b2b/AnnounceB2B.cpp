@@ -105,6 +105,8 @@ void AnnounceCallerDialog::onInvite(const AmSipRequest& req)
 {
   callee_addr = req.to;
   callee_uri  = req.r_uri;
+
+  AmB2BCallerSession::onInvite(req);
 }
 
 void AnnounceCallerDialog::onSessionStart()

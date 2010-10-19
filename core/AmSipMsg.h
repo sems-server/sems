@@ -11,7 +11,6 @@ class _AmSipMsgInDlg
 {
  public:
   string from;
-  string from_uri;
   string from_tag;
 
   string to;
@@ -46,6 +45,7 @@ class AmSipReply : public _AmSipMsgInDlg
  public:
   unsigned int code;
   string       reason;
+  string       to_uri;
 
  AmSipReply() : code(0), _AmSipMsgInDlg() { }
   ~AmSipReply() { }
@@ -62,6 +62,7 @@ class AmSipRequest : public _AmSipMsgInDlg
   string user;
   string domain;
   string r_uri;
+  string from_uri;
 
   AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }

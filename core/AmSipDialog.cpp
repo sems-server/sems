@@ -539,7 +539,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
       else if(reply.code < 300){
 	status = Connected;
 	route = reply.route;
-	remote_uri = reply.contact;
+	remote_uri = reply.to_uri;
 
 	if(reply.to_tag.empty()){
 	  DBG("received 2xx reply without to-tag "
@@ -576,7 +576,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
       else if(reply.code < 300){
 	status = Connected;
 	route = reply.route;
-	remote_uri = reply.contact;
+	remote_uri = reply.to_uri;
       }
       else { // error reply
 	status = Disconnected;

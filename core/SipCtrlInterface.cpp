@@ -482,10 +482,12 @@ inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
 	    return false;
 	}
 	
-	reply.contact = c2stlstr(na.addr);
+	reply.to_uri = c2stlstr(na.addr);
 	
 	list<sip_header*>::iterator c_it = msg->contacts.begin();
 	reply.contact = c2stlstr((*c_it)->value);
+	++c_it;
+
 	for(;c_it!=msg->contacts.end(); ++c_it){
 	    reply.contact += "," + c2stlstr((*c_it)->value);
 	}
@@ -573,6 +575,8 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     DBG_PARAM(reply.callid);
     DBG_PARAM(reply.from_tag);
     DBG_PARAM(reply.to_tag);
+    DBG_PARAM(reply.contact);
+    DBG_PARAM(reply.to_uri);
     DBG("cseq = <%i>\n",reply.cseq);
 
     AmSipDispatcher::instance()->handleSipMsg(reply);
