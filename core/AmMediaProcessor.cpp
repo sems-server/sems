@@ -83,7 +83,7 @@ AmMediaProcessor* AmMediaProcessor::instance()
 void AmMediaProcessor::addSession(AmSession* s, 
 				  const string& callgroup)
 {
-  s->detached.set(false);
+  s->processing_media.set(true);
  
   // evaluate correct scheduler
   unsigned int sched_thread = 0;
@@ -402,7 +402,7 @@ void AmMediaProcessorThread::process(AmEvent* e)
     set<AmSession*>::iterator s_it = sessions.find(s);
     if(s_it != sessions.end()){
       sessions.erase(s_it);
-      s->detached.set(true);
+      s->processing_media.set(false);
       DBG("Session removed from the scheduler\n");
     }
   }
@@ -414,7 +414,7 @@ void AmMediaProcessorThread::process(AmEvent* e)
     if(s_it != sessions.end()){
       sessions.erase(s_it);
       s->clearAudio();
-      s->detached.set(true);
+      s->processing_media.set(false);
       DBG("Session removed from the scheduler\n");
     }
   }

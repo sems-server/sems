@@ -60,7 +60,7 @@ AmMutex AmSession::session_num_mut;
 AmSession::AmSession()
   : AmEventQueue(this),
     dlg(this),
-    detached(true),
+    processing_media(false),
     sess_stopped(false),
     input(0), output(0), local_input(0), local_output(0),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
@@ -107,6 +107,14 @@ string AmSession::getCallgroup() {
 void AmSession::changeCallgroup(const string& cg) {
   callgroup = cg;
   AmMediaProcessor::instance()->changeCallgroup(this, cg);
+}
+
+void AmSession::startMediaProcessing() {
+  AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void AmSession::stopMediaProcessing() {
+  AmMediaProcessor::instance()->removeSession(this);
 }
 
 void AmSession::addHandler(AmSessionEventHandler* sess_evh)
@@ -1003,7 +1011,7 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
     return -1;
   }
 
-  if(detached.get() && !getStopped()) {
+  if(!processing_media.get() && !getStopped()) {
 
     if(dlg.getStatus() == AmSipDialog::Connected)
       onSessionStart();
@@ -1011,7 +1019,7 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
       onEarlySessionStart();
 
     if(input || output || local_input || local_output) {
-      AmMediaProcessor::instance()->addSession(this, callgroup);
+      startMediaProcessing();
     }
     else {
       DBG("no audio input and output set. "

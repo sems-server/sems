@@ -143,7 +143,7 @@ private:
 
 
   AmCondition<bool> sess_stopped;
-  AmCondition<bool> detached;
+  AmCondition<bool> processing_media;
 
   static volatile unsigned int session_num;
   static AmMutex session_num_mut;
@@ -225,6 +225,20 @@ public:
    */
   void addHandler(AmSessionEventHandler*);
 
+  /* ----         media processing                    ---- */
+
+  /** start processing media - add to media processor */
+  void startMediaProcessing();
+
+  /** stop processing media - remove from media processor */
+  void stopMediaProcessing();
+
+  /** Is the session being processed in  media processor? */
+  bool getProcessingMedia() { return processing_media.get(); }
+
+  /** Is the session detached from media processor? */
+  bool getDetached() { return !processing_media.get(); }
+
   /**
    * Set the call group for this call; calls in the same
    * group are processed by the same media processor thread.
@@ -237,10 +251,15 @@ public:
   /** get the callgroup @return callgroup */
   string getCallgroup();
 
-  /** This function removes the session from 
-   *  the media processor and adds it again. 
+  /**
+   * change the callgroup
+   *
+   * This function removes the session from
+   * the media processor and adds it again.
    */
   void changeCallgroup(const string& cg);
+
+  /* ----         audio input and output        ---- */
 
   /**
    * Lock audio input & output
@@ -310,6 +329,8 @@ public:
   /** setter for rtp_str->receiving */
   void setReceiving(bool receive) { RTPStream()->receiving = receive; }
 
+  /* ----         SIP dialog attributes                  ---- */
+
   /** Gets the Session's call ID */
   const string& getCallID() const;
 
@@ -328,6 +349,8 @@ public:
   /** Sets the URI for the session */
   void setUri(const string& uri);
 
+  /* ----         RTP stream attributes                  ---- */
+
   /** Gets the current RTP payload */
   const vector<SdpPayload*>& getPayloads();
 
@@ -339,6 +362,8 @@ public:
 
   /** get the payload provider for the session */
   virtual AmPayloadProviderInterface* getPayloadProvider();
+
+  /* ----         Call control                         ---- */
 
   /** refresh the session - re-INVITE or UPDATE*/
   virtual bool refresh();
@@ -359,6 +384,8 @@ public:
 
   /** set the session on/off hold */
   virtual void setOnHold(bool hold);
+
+  /* ----         Householding                              ---- */
 
   /**
    * Destroy the session.
@@ -382,18 +409,7 @@ public:
    */
   bool getStopped() { return sess_stopped.get(); }
 
-  /** Is the session detached from media processor? */
-  bool getDetached() { return detached.get(); }
-
-  /**
-   * Creates a new Id which can be used within sessions.
-   */
-  static string getNewId();
-
-  /**
-   * Gets the number of running sessions
-   */
-  static unsigned int getSessionNum();
+  /* ----         DTMF                          ---- */
 
   /**
    * Entry point for DTMF events
@@ -413,6 +429,8 @@ public:
    * @param duration_ms duration in milliseconds
    */
   void sendDtmf(int event, unsigned int duration_ms);
+
+  /* ----         Event handlers                         ---- */
 
   /** DTMF event handler for apps to use*/
   virtual void onDtmf(int event, int duration);
@@ -465,14 +483,14 @@ public:
    * Warning:
    *   Sems will NOT send any BYE on his own.
    */
-  virtual void onSessionStart(){}
+  virtual void onSessionStart() {}
 
   /**
    * onEarlySessionStart will be called when
    * the media session is setup with the dialog
    * in Early state.
    */
-  virtual void onEarlySessionStart(){}
+  virtual void onEarlySessionStart() {}
 
   /**
    * onRinging will be called after 180 is received. 
@@ -557,6 +575,17 @@ public:
 
   /** format session id for debugging */
   string sid4dbg();
+
+  /**
+   * Creates a new Id which can be used within sessions.
+   */
+  static string getNewId();
+
+  /**
+   * Gets the number of running sessions
+   */
+  static unsigned int getSessionNum();
+
 };
 
 inline AmRtpAudio* AmSession::RTPStream() {

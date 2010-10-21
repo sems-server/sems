@@ -86,7 +86,7 @@ bool AmSessionContainer::clean_sessions() {
       
       ds_mut.unlock();
       
-      if(cur_session->is_stopped() && cur_session->detached.get()){
+      if(cur_session->is_stopped() && !cur_session->getProcessingMedia()){
 	
 	MONITORING_MARK_FINISHED(cur_session->getLocalTag().c_str());
 
