@@ -149,10 +149,6 @@ void CallTimerDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs, "P-App-Param");
   removeHeader(invite_req.hdrs, "P-App-Name");
 
-  //dlg.updateStatus(invite_req);
-  recvd_req.insert(std::make_pair(invite_req.cseq,invite_req));
-  
-  set_sip_relay_only(true);
   connectCallee(invite_req.to, invite_req.r_uri, true);
 }
 

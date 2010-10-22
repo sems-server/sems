@@ -537,6 +537,15 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
   if(callee_status != None)
     terminateOtherLeg();
 
+  if (relayed_invite) {
+    // relayed INVITE - we need to add the original INVITE to
+    // list of received (relayed) requests
+    recvd_req.insert(std::make_pair(invite_req.cseq,invite_req));
+
+    // in SIP relay mode from the beginning
+    sip_relay_only = true;
+  }
+
   B2BConnectEvent* ev = new B2BConnectEvent(remote_party,remote_uri);
 
   ev->content_type = invite_req.content_type;
