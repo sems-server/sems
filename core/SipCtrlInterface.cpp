@@ -450,6 +450,11 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 		+ c2stlstr((*it)->value) + CRLF;
 	}
     }
+
+    req.remote_ip = get_addr_str(((sockaddr_in*)&msg->remote_ip)->sin_addr).c_str();
+    req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
+    req.local_ip = get_addr_str(((sockaddr_in*)&msg->local_ip)->sin_addr).c_str();
+    req.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
 }
 
 inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
@@ -512,6 +517,11 @@ inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
               break;
         }
     }
+
+    reply.remote_ip = get_addr_str(((sockaddr_in*)&msg->remote_ip)->sin_addr).c_str();
+    reply.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
+    reply.local_ip = get_addr_str(((sockaddr_in*)&msg->local_ip)->sin_addr).c_str();
+    reply.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
 
     return true;
 }
