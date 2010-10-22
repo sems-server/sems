@@ -71,12 +71,6 @@ class SSTB2BDialog : public AmB2BCallerSession
   string from;
   string to;
 
-  string last_otherleg_content_type;
-  string last_otherleg_body;
-
-  string last_content_type;
-  string last_body;
-
 /*   AmDynInvoke* m_user_timer; */
   /* set<int> b2b_reinvite_cseqs; // cseqs of reinvite we sent from the middle */
 
@@ -108,9 +102,6 @@ class SSTB2BCalleeSession
 {
   UACAuthCred credentials;
   AmSessionEventHandler* auth;
-
-  /* string last_otherleg_content_type; */
-  /* string last_otherleg_body; */
 
  protected:
   void onSipRequest(const AmSipRequest& req);
