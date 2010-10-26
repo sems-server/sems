@@ -32,10 +32,9 @@
 #include "AmSipDialog.h"
 #include "sip/hash.h"
 
-enum { B2BTerminateLeg, 
-       B2BConnectLeg, 
-       B2BCallAccepted, 
-       B2BSipRequest, 
+enum { B2BTerminateLeg,
+       B2BConnectLeg,
+       B2BSipRequest,
        B2BSipReply,
        B2BMsgBody };
 
