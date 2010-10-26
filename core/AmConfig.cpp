@@ -71,6 +71,7 @@ int          AmConfig::LocalSIPPort            = 5060;
 string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
+bool         AmConfig::ProxyStickyAuth         = false;
 string       AmConfig::Signature               = "";
 unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
 bool	     AmConfig::SingleCodecInOK	       = false;
@@ -285,6 +286,10 @@ int AmConfig::readConfiguration()
   // force_outbound_proxy
   if(cfg.hasParameter("force_outbound_proxy")) {
     ForceOutboundProxy = (cfg.getParameter("force_outbound_proxy") == "yes");
+  }
+
+  if(cfg.hasParameter("proxy_sticky_auth")) {
+    ProxyStickyAuth = (cfg.getParameter("proxy_sticky_auth") == "yes");
   }
   
   // plugin_path

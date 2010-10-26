@@ -167,6 +167,17 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
 	      // reset remote tag so remote party 
 	      // thinks its new dlg
 	      dlg->remote_tag = "";
+
+	      if (AmConfig::ProxyStickyAuth) {
+		// update remote URI to resolved IP
+		size_t hpos = dlg->remote_uri.find("@");
+		if (hpos != string::npos && reply.remote_ip.length()) {
+		  dlg->remote_uri = dlg->remote_uri.substr(0, hpos+1) +
+		    reply.remote_ip + ":"+int2str(reply.remote_port);
+		  DBG("updated remote URI to '%s'\n", dlg->remote_uri.c_str());
+		}
+	      }
+
 	    }
 	    // resend request 
 	    if (dlg->sendRequest(ri->second.method,

@@ -102,6 +102,8 @@ struct AmConfig
   static string OutboundProxy;
   /** force Outbound Proxy to be used for in dialog requests */
   static bool ForceOutboundProxy;
+  /** update ruri-host to previously resolved IP:port on SIP auth */
+  static bool ProxyStickyAuth;
   /** Server/User-Agent header (optional) */
   static string Signature;
   /** Value of Max-Forward header field for new requests */
