@@ -107,7 +107,7 @@ int SipCtrlInterface::load()
 		return false;
 	    }
 	    udp_rcvbuf = config_udp_rcvbuf;
-	    DBG("sipctrl: udp_rcvbuf = %d\n", udp_rcvbuf);
+	    DBG("udp_rcvbuf = %d\n", udp_rcvbuf);
 	}
 
     } else {
