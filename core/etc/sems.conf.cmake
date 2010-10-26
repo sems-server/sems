@@ -394,6 +394,21 @@ use_default_signature=yes
 #
 #100rel=require
 
+# Make SIP authenticated requests sticky to the proxy? [yes | no]
+#
+# If enabled, host of request-URI of out-of-dialog requests that are
+# authenticated with SIP auth is changed to the previously resolved
+# next-hop IP:port.
+#
+# default: no
+#
+# proxy_sticky_auth=yes
+
+#
+# Accept final replies without To-tag? [yes|no]
+#
+#accept_fr_without_totag=yes
+
 #
 # Log raw messages?  [no|debug|info|warn|error]
 #
