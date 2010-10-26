@@ -43,7 +43,9 @@ struct AmUriParser {
   map<string, string> params;
 
   bool isEqual(const AmUriParser& c) const;
+  /** @return true on success */
   bool parse_contact(const string& line, size_t pos, size_t& end);
+  /** @return true on success */
   bool parse_uri();
   bool parse_params(const string& line, int& pos);
   void dump();
