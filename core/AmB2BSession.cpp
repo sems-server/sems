@@ -638,10 +638,24 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 	AmSipTransaction(SIP_METH_INVITE, co_ev->r_cseq, trans_ticket());
     }
 
-    dlg.sendRequest(SIP_METH_INVITE, 
-		    co_ev->content_type, co_ev->body,
-		    co_ev->hdrs, SIP_FLAGS_VERBATIM);
-    // todo: relay error event back if sending fails
+    if (dlg.sendRequest(SIP_METH_INVITE,
+			co_ev->content_type, co_ev->body,
+			co_ev->hdrs, SIP_FLAGS_VERBATIM) < 0) {
+
+      DBG("sending INVITE failed, relaying back 400 Bad Request\n");
+      AmSipReply n_reply;
+      n_reply.code = 400;
+      n_reply.reason = "Bad Request";
+      n_reply.cseq = co_ev->r_cseq;
+      n_reply.local_tag = dlg.local_tag;
+      relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
+
+      if (co_ev->relayed_invite)
+	relayed_req.erase(dlg.cseq);
+
+      setStopped();
+      return;
+    }
 
     saveSessionDescription(co_ev->content_type, co_ev->body);
 
