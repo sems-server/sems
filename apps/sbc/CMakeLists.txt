@@ -1,5 +1,6 @@
 set (sbc_SRCS
 SBC.cpp
+HeaderFilter.cpp
 )
 
 SET(sems_module_name sbc)
