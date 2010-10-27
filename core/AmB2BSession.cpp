@@ -259,7 +259,7 @@ void AmB2BSession::terminateLeg()
   setStopped();
   if ((dlg.getStatus() == AmSipDialog::Pending) 
       || (dlg.getStatus() == AmSipDialog::Connected))
-    dlg.bye();
+    dlg.bye("", SIP_FLAGS_VERBATIM);
 }
 
 void AmB2BSession::terminateOtherLeg()

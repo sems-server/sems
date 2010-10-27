@@ -203,7 +203,7 @@ class AmSipDialog
 		   int flags = 0);
     
   /** @return 0 on success */
-  int bye(const string& hdrs = "");
+  int bye(const string& hdrs = "", int flags = 0);
 
   /** @return 0 on success */
   int cancel();
