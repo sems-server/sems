@@ -335,15 +335,17 @@ int AmB2BSession::sendEstablishedReInvite() {
 
   DBG("sending re-INVITE with saved session description\n");
   return dlg.reinvite(get_100rel_hdr(reliable_1xx),
-		      established_content_type, established_body);
+		      established_content_type, established_body,
+		      SIP_FLAGS_VERBATIM);
 }
 
-bool AmB2BSession::refresh() {
+bool AmB2BSession::refresh(int flags) {
+  DBG(" *** AmB2BSession::refresh *** \n");
   // not in B2B mode
   if (other_id.empty() ||
       // UPDATE as refresh handled like normal session
       refresh_method == REFRESH_UPDATE) {
-    return AmSession::refresh();
+    return AmSession::refresh(SIP_FLAGS_VERBATIM);
   }
 
   // refresh with re-INVITE

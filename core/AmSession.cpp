@@ -1104,7 +1104,7 @@ void AmSession::updateRefreshMethod(const string& headers) {
   }
 }
 
-bool AmSession::refresh() {
+bool AmSession::refresh(int flags) {
   if (refresh_method == REFRESH_UPDATE) {
     DBG("Refreshing session with UPDATE\n");
     return sendUpdate("", "", "") == 0;
@@ -1116,7 +1116,7 @@ bool AmSession::refresh() {
     }
 
     DBG("Refreshing session with re-INVITE\n");
-    return sendReinvite(true) == 0;
+    return sendReinvite(true, "", flags) == 0;
   }
 }
 
@@ -1148,16 +1148,16 @@ string AmSession::sid4dbg()
   return dbg;
 }
 
-int AmSession::sendReinvite(bool updateSDP, const string& headers) 
+int AmSession::sendReinvite(bool updateSDP, const string& headers, int flags) 
 {
   if (updateSDP) {
     RTPStream()->setLocalIP(AmConfig::LocalIP);
     string sdp_body;
     sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
     return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), SIP_APPLICATION_SDP,
-        sdp_body);
+			sdp_body, flags);
   } else {
-    return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "", "");
+    return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), "", "", flags);
   }
 }
 

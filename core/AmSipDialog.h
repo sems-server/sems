@@ -221,7 +221,8 @@ class AmSipDialog
   /** @return 0 on success */
   int reinvite(const string& hdrs,  
 	       const string& content_type,
-	       const string& body);
+	       const string& body,
+	       int flags = 0);
 
   /** @return 0 on success */
   int invite(const string& hdrs,  

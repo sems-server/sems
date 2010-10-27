@@ -471,11 +471,12 @@ int AmSipDialog::bye(const string& hdrs)
 
 int AmSipDialog::reinvite(const string& hdrs,  
 			  const string& content_type,
-			  const string& body)
+			  const string& body,
+			  int flags)
 {
   switch(status){
   case Connected:
-    return sendRequest("INVITE", content_type, body, hdrs);
+    return sendRequest("INVITE", content_type, body, hdrs, flags);
   case Disconnecting:
   case Pending:
     DBG("reinvite(): we are not yet connected."

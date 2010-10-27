@@ -186,7 +186,7 @@ class AmB2BSession: public AmSession
   int sendEstablishedReInvite();
 
   /** do session refresh */
-  bool refresh();
+  bool refresh(int flags = 0);
 
   /** @see AmEventQueue */
   void process(AmEvent* event);
