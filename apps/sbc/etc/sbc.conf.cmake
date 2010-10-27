@@ -1,9 +1,27 @@
-# RFC4028 Session Timer
+
+# profiles - comma-separated list of call profiles to load
 #
+# <name>.sbcprofile.conf is loaded from module config 
+# path (the path where this file resides)
+profiles=transparent,auth_b2b,sst_b2b
+
+# active call profile
+#
+# o active_profile=<profile_name>  always use <profile_name>
+#
+# o active_profile=$(ruri.user)    use user part of INVITE Request URI
+#
+# o active_profile=$(paramhdr)     use  "profile" option in P-App-Param header
+#
+active_profile=transparent
+
+
+## RFC4028 Session Timer
+# default configuration - can be overridden by call profiles
 
 # - enables the session timer ([yes,no]; default: no)
 #
-enable_session_timer=yes
+#enable_session_timer=yes
 
 # - set the "Session-Expires" parameter for the session timer.
 #
@@ -30,10 +48,4 @@ enable_session_timer=yes
 # Default: yes
 #
 #accept_501_reply=no
-
-######################################################
-#authentication (questionable whether that works)
-# user=someuser
-# domain=somedomain.net
-# pwd=sompwd
 
