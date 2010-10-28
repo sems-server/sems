@@ -45,6 +45,8 @@ using std::map;
 using std::vector;
 
 // defaults for config options
+#define DEFAULT_RECORD_TIME 30
+#define DEFAULT_ANNOUNCE    "default.wav"
 #define SMTP_ADDRESS_IP     "localhost"
 #define SMTP_PORT           25
 
