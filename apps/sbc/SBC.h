@@ -37,10 +37,15 @@
 
 using std::string;
 
+#define SBC_TIMER_ID_CALL_TIMER  1
 
 struct SBCCallProfile {
 
   AmConfigReader cfg;
+
+  string ruri;       /* updated if set */
+  string from;       /* updated if set */
+  string to;         /* updated if set */
 
   FilterType headerfilter;
   set<string> headerfilter_list;
@@ -54,11 +59,9 @@ struct SBCCallProfile {
   bool auth_enabled;
   UACAuthCred auth_credentials;
 
-  string ruri;       /* updated if set */
-  string from;       /* updated if set */
-  string to;         /* updated if set */
+  bool call_timer_enabled;
+  string call_timer;
 
-  // todo: call duration timer
   // todo: accounting
   // todo: RTP forwarding mode
   // todo: RTP transcoding mode
@@ -110,7 +113,8 @@ class SBCDialog : public AmB2BCallerSession
   string from;
   string to;
 
-  /*   AmDynInvoke* m_user_timer; */
+  unsigned int call_timer;
+  AmDynInvoke* m_user_timer;
 
   SBCCallProfile call_profile;
 

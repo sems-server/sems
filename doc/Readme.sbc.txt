@@ -129,6 +129,7 @@ Example profiles
  transparent   - completely transparent B2BUA
  auth_b2b      - identity change and SIP authentication (obsoletes auth_b2b app)
  sst_b2b       - B2BUA with SIP Session Timers (obsoletes sst_b2b app)
+ call_timer    - call timer (obsoletes call_timer app)
 
 Dependencies
 ------------

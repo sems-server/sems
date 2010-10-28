@@ -70,6 +70,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name, const string prof
     return false;
   }
 
+  ruri = cfg.getParameter("RURI");
+  from = cfg.getParameter("From");
+  to = cfg.getParameter("To");
+
   string hf_type = cfg.getParameter("header_filter", "transparent");
   if (hf_type=="transparent")
     headerfilter = Transparent;
@@ -109,9 +113,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name, const string prof
   auth_credentials.user = cfg.getParameter("auth_user");
   auth_credentials.pwd = cfg.getParameter("auth_pwd");
 
-  ruri = cfg.getParameter("RURI");
-  from = cfg.getParameter("From");
-  to = cfg.getParameter("To");
+  call_timer_enabled = cfg.getParameter("enable_call_timer", "no") == "yes";
+  call_timer = cfg.getParameter("call_timer");
 
   INFO("SBC: loaded SBC profile '%s':\n", name.c_str());
 
@@ -124,6 +127,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name, const string prof
        FilterType2String(messagefilter), messagefilter_list.size());
   INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
   INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
+  INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
+  if (call_timer_enabled) {
+    INFO("SBC:                  %s seconds\n", call_timer.c_str());
+  }
   
   return true;
 }
@@ -450,6 +457,33 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 			ruri_parser, from_parser, to_parser);
   }
 
+  if (call_profile.call_timer_enabled) {
+    call_profile.call_timer =
+      replaceParameters("call_timer", call_profile.call_timer, req, app_param,
+			ruri_parser, from_parser, to_parser);
+    if (str2i(call_profile.call_timer, call_timer)) {
+      ERROR("invalid call_timer value '%s'\n", call_profile.call_timer.c_str());
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
+    if (!call_timer) {
+      // time=0
+      throw AmSession::Exception(503, "Service Unavailable");
+    }
+
+    AmDynInvokeFactory* fact =
+      AmPlugIn::instance()->getFactory4Di("user_timer");
+    if (NULL == fact) {
+      ERROR("load session_timer module for call timers\n");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+    m_user_timer = fact->getInstance();
+    if(!m_user_timer) {
+      ERROR("could not get a timer reference\n");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+  }
+
   DBG("SBC: connecting to <%s>\n",ruri.c_str());
   DBG("     From:  <%s>\n",from.c_str());
   DBG("     To:  <%s>\n",to.c_str());
@@ -458,6 +492,18 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
 void SBCDialog::process(AmEvent* ev)
 {
+
+  AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(ev);
+  if(plugin_event && plugin_event->name == "timer_timeout") {
+    int timer_id = plugin_event->data.get(0).asInt();
+    if (timer_id == SBC_TIMER_ID_CALL_TIMER &&
+	getCalleeStatus() == Connected) {
+      DBG("SBC: %us call timer hit - ending call\n", call_timer);
+      terminateOtherLeg();
+      terminateLeg();
+    }
+  }
+
   AmB2BCallerSession::process(ev);
 }
 
@@ -531,6 +577,20 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
     else if(reply.code < 300) {
       if(getCalleeStatus()  == Connected) {
         m_state = BB_Connected;
+	if (call_profile.call_timer_enabled) {
+	  if (NULL == m_user_timer) {
+	    ERROR("internal implementation error: invalid timer reference\n");
+	    terminateOtherLeg();
+	    terminateLeg();
+	    return ret;
+	  }
+	  DBG("SBC: starting call timer of %u seconds\n", call_timer);
+	  AmArg di_args,ret;
+	  di_args.push((int)SBC_TIMER_ID_CALL_TIMER);
+	  di_args.push((int)call_timer);           // in seconds
+	  di_args.push(getLocalTag().c_str());
+	  m_user_timer->invoke("setTimer", di_args, ret);
+	}
       }
     }
     else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {
