@@ -146,7 +146,7 @@ x From update (displayname / host / host/user)
 x To update (displayname / host / host/user)
 x SIP authentication
 x session timers
-- maximum call duration timer
+x maximum call duration timer
 - accounting (MySQL DB, cassandra DB)
 - RTP forwarding mode (bridging)
 - RTP transcoding mode (bridging)

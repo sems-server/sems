@@ -29,7 +29,6 @@
 SBC - feature-wishlist
 
 - SDP filter (reconstructed SDP)
-- maximum call duration timer
 - accounting (MySQL DB, cassandra DB)
 - RTP forwarding mode (bridging)
 - RTP transcoding mode (bridging)
