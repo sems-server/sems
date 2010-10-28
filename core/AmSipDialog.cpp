@@ -90,12 +90,12 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   if (r_cseq_i && req.cseq <= r_cseq){
     INFO("remote cseq lower than previous ones - refusing request\n");
     // see 12.2.2
-    reply_error(req, 500, "Server Internal Error");
+    reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     return;
   }
 
   if ((req.method == "INVITE") && pending_invites) {      
-    reply_error(req,500,"Server Internal Error",
+    reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
 		"Retry-After: " + int2str(get_random() % 10) + CRLF);
     return;
   }
