@@ -77,6 +77,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   force_outbound_proxy = cfg.getParameter("force_outbound_proxy") == "yes";
   outbound_proxy = cfg.getParameter("outbound_proxy");
 
+  next_hop_ip = cfg.getParameter("next_hop_ip");
+  next_hop_port = cfg.getParameter("next_hop_port");
+
   string hf_type = cfg.getParameter("header_filter", "transparent");
   if (hf_type=="transparent")
     headerfilter = Transparent;
@@ -126,6 +129,11 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   INFO("SBC:      To   = '%s'\n", to.c_str());
   INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
   INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
+  if (!next_hop_ip.empty()) {
+    INFO("SBC:      next hop = %s%s\n", next_hop_ip.c_str(),
+	 next_hop_port.empty()? "" : (":"+next_hop_port).c_str());
+  }
+
   INFO("SBC:      header filter  is %s, %zd items in list\n",
        FilterType2String(headerfilter), headerfilter_list.size());
   INFO("SBC:      message filter is %s, %zd items in list\n",
@@ -442,7 +450,27 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       call_profile.outbound_proxy =
       replaceParameters("outbound_proxy", call_profile.outbound_proxy, req, app_param,
 				  ruri_parser, from_parser, to_parser);
-    DBG("set outbound proxy to '%s'\n", dlg.outbound_proxy.c_str());
+      DBG("set outbound proxy to '%s'\n", call_profile.outbound_proxy.c_str());
+  }
+
+  if (!call_profile.next_hop_ip.empty()) {
+    call_profile.next_hop_ip =
+      replaceParameters("next_hop_ip", call_profile.next_hop_ip, req, app_param,
+			ruri_parser, from_parser, to_parser);
+    DBG("set next hop ip to '%s'\n", call_profile.next_hop_ip.c_str());
+
+    if (!call_profile.next_hop_port.empty()) {
+      call_profile.next_hop_port =
+	replaceParameters("next_hop_port", call_profile.next_hop_port, req, app_param,
+			  ruri_parser, from_parser, to_parser);
+      unsigned int nh_port_i;
+      if (str2i(call_profile.next_hop_port, nh_port_i)) {
+	ERROR("next hop port '%s' not understood\n", call_profile.next_hop_port.c_str());
+	throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      }
+      call_profile.next_hop_port_i = nh_port_i;
+      DBG("set next hop port to '%u'\n", call_profile.next_hop_port_i);
+    }
   }
 
   m_state = BB_Dialing;
@@ -697,6 +725,12 @@ void SBCDialog::createCalleeSession()
     callee_dlg.outbound_proxy = call_profile.outbound_proxy;
   }
   
+  if (!call_profile.next_hop_ip.empty()) {
+    callee_dlg.next_hop_ip = call_profile.next_hop_ip;
+    callee_dlg.next_hop_port = call_profile.next_hop_port.empty() ?
+      5060 : call_profile.next_hop_port_i;
+  }
+
   other_id = AmSession::getNewId();
   
   callee_dlg.local_tag    = other_id;

@@ -681,7 +681,7 @@ int AmSipDialog::sendRequest(const string& method,
     req.body = body;
   }
 
-  if (SipCtrlInterface::send(req))
+  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port))
     return -1;
  
   uac_trans[cseq] = AmSipTransaction(method,cseq,req.tt);

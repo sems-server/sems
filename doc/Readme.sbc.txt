@@ -103,13 +103,17 @@ If a space is contained, use quotation at the beginning and end.
  Example:
    To="\"someone\" <$aU@mytodomain.com>"
 
-Outbound proxy
---------------
+Outbound proxy and next hop
+---------------------------
 
 An outbound proxy may be set with the outbound_proxy option. If this is
-not set, the outbound_proxy option of sems.conf is used, if set.
+not set, the outbound_proxy option of sems.conf is used, if that one is set.
+Setting an outbound proxy will add a route header. force_outbound_proxy forces
+the outbound proxy route also for in-dialog requests.
 
-force_outbound_proxy forces the outbound proxy also for in-dialog requests.
+The next hop (destination IP[:port] of outgoing requests) can be set with
+the next_hop_ip and next_hop_port options. next_hop_port defaults to 5060
+if not set or empty.
 
 Filters
 -------

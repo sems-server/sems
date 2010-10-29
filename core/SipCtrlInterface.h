@@ -87,7 +87,8 @@ public:
      * @param req The request to send. If the request creates a transaction, 
      *            its ticket is written into req.tt.
      */
-    static int send(AmSipRequest &req);
+    static int send(AmSipRequest &req,
+		    const string& next_hop_ip = "", unsigned short next_hop_port = 5060);
 
     /**
      * Sends a SIP reply. 

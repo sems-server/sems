@@ -153,6 +153,9 @@ class AmSipDialog
   string outbound_proxy;
   bool   force_outbound_proxy;
 
+  string next_hop_ip;
+  unsigned short next_hop_port;
+
   int rseq;          // RSeq for next request (NOTE: keep it signed!)
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;

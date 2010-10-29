@@ -50,6 +50,10 @@ struct SBCCallProfile {
   string outbound_proxy;
   bool force_outbound_proxy;
 
+  string next_hop_ip;
+  string next_hop_port;
+  unsigned short next_hop_port_i;
+
   FilterType headerfilter;
   set<string> headerfilter_list;
 
