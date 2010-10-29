@@ -90,6 +90,27 @@ The patterns which can be used are the following:
       auth_pwd=$P(p)
       From=sip:$P(u)@$P(d)
 
+  $H(headername) - value of header <headername>
+   Examples:
+    o P-Caller-Uuid: 0004152379B8
+       and
+      prepaid_caller_uuid=$H(P-Caller-Uuid)
+
+    o P-NextHop-IP: 10.0.2.15
+       and
+      next_hop_ip=$H(P-NextHop-IP)
+
+  $HU(headername) - header <headername> (as URI) User
+  $Hd(headername) - header <headername> (as URI) domain (host:port)
+  ...
+
+   Example:
+    o P-SomeNH-URI: sip:user@10.0.2.15:5092
+       and
+      next_hop_ip=$Hh(P-SomeNH-URI)
+      next_hop_port=$Hp(P-SomeNH-URI)
+
+
   \\  -> \
   \$  -> $
   \*  -> *
@@ -121,7 +142,6 @@ Headers and messages may be filtered. A filter can be set to
  o transparent - no filtering done
 
  o whitelist - only let items pass that are in the filter list
-
  o blacklist - filter out items that are in the filter list
 
 Note that if ACK messages should not be filtered.

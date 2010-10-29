@@ -401,6 +401,50 @@ string SBCDialog::replaceParameters(const char* r_type,
 	skip_chars = skip_p-p;
       } break;
 
+      case 'H': { // header
+	size_t name_offset = 2;
+	if (s[p+1] != '(') {
+	  if (s[p+2] != '(') {
+	    WARN("Error parsing H header replacement (missing '(')\n");
+	    break;
+	  }
+	  name_offset = 3;
+	}
+	if (s.length()<name_offset+1) {
+	  WARN("Error parsing H header replacement (short string)\n");
+	  break;
+	}
+
+	size_t skip_p = p+name_offset;
+	for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
+	if (skip_p==s.length()) {
+	  WARN("Error parsing H header replacement (unclosed brackets)\n");
+	  break;
+	}
+	string hdr_name = s.substr(p+name_offset, skip_p-p-name_offset);
+	// DBG("param_name = '%s' (skip-p - p = %d)\n", param_name.c_str(), skip_p-p);
+	if (name_offset == 2) {
+	  // full header
+	  res += getHeader(req.hdrs, hdr_name);
+	} else {
+	  // parse URI and use component
+	  AmUriParser uri_parser;
+	  uri_parser.uri = getHeader(req.hdrs, hdr_name);
+	  if ((s[p+1] == '.')) {
+	    res += uri_parser.uri;
+	    break;
+	  }
+
+	  if (!uri_parser.parse_uri()) {
+	    WARN("Error parsing header %s URI '%s'\n",
+		 hdr_name.c_str(), uri_parser.uri.c_str());
+	    break;
+	  }
+	  replaceParsedParam(s, p, uri_parser, res);
+	}
+	skip_chars = skip_p-p;
+      } break;
+
       default: {
 	WARN("unknown replace pattern $%c%c\n",
 	     s[p], s[p+1]);
