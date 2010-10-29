@@ -63,7 +63,8 @@ AmSessionEventHandlerFactory* SBCFactory::session_timer_fact = NULL;
 EXPORT_SESSION_FACTORY(SBCFactory,MOD_NAME);
 
 
-bool SBCCallProfile::readFromConfiguration(const string& name, const string profile_file_name) {
+bool SBCCallProfile::readFromConfiguration(const string& name,
+					   const string profile_file_name) {
   if (cfg.loadFile(profile_file_name)) {
     ERROR("reading SBC call profile from '%s'\n", profile_file_name.c_str());
     return false;
@@ -72,6 +73,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name, const string prof
   ruri = cfg.getParameter("RURI");
   from = cfg.getParameter("From");
   to = cfg.getParameter("To");
+
+  force_outbound_proxy = cfg.getParameter("force_outbound_proxy") == "yes";
+  outbound_proxy = cfg.getParameter("outbound_proxy");
 
   string hf_type = cfg.getParameter("header_filter", "transparent");
   if (hf_type=="transparent")
@@ -120,6 +124,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name, const string prof
   INFO("SBC:      RURI = '%s'\n", ruri.c_str());
   INFO("SBC:      From = '%s'\n", from.c_str());
   INFO("SBC:      To   = '%s'\n", to.c_str());
+  INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
+  INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
   INFO("SBC:      header filter  is %s, %zd items in list\n",
        FilterType2String(headerfilter), headerfilter_list.size());
   INFO("SBC:      message filter is %s, %zd items in list\n",
@@ -432,6 +438,13 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     req.to : replaceParameters("To", call_profile.to, req, app_param,
 				  ruri_parser, from_parser, to_parser);
 
+  if (!call_profile.outbound_proxy.empty()) {
+      call_profile.outbound_proxy =
+      replaceParameters("outbound_proxy", call_profile.outbound_proxy, req, app_param,
+				  ruri_parser, from_parser, to_parser);
+    DBG("set outbound proxy to '%s'\n", dlg.outbound_proxy.c_str());
+  }
+
   m_state = BB_Dialing;
 
   invite_req = req;
@@ -483,9 +496,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     }
   }
 
-  DBG("SBC: connecting to <%s>\n",ruri.c_str());
-  DBG("     From:  <%s>\n",from.c_str());
-  DBG("     To:  <%s>\n",to.c_str());
+  DBG("SBC: connecting to '%s'\n",ruri.c_str());
+  DBG("     From:  '%s'\n",from.c_str());
+  DBG("     To:  '%s'\n",to.c_str());
   connectCallee(to, ruri, true);
 }
 
@@ -678,6 +691,11 @@ void SBCDialog::createCalleeSession()
   }
 
   AmSipDialog& callee_dlg = callee_session->dlg;
+
+  callee_dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
+  if (!call_profile.outbound_proxy.empty()) {
+    callee_dlg.outbound_proxy = call_profile.outbound_proxy;
+  }
   
   other_id = AmSession::getNewId();
   

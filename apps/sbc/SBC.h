@@ -47,6 +47,9 @@ struct SBCCallProfile {
   string from;       /* updated if set */
   string to;         /* updated if set */
 
+  string outbound_proxy;
+  bool force_outbound_proxy;
+
   FilterType headerfilter;
   set<string> headerfilter_list;
 

@@ -103,6 +103,14 @@ If a space is contained, use quotation at the beginning and end.
  Example:
    To="\"someone\" <$aU@mytodomain.com>"
 
+Outbound proxy
+--------------
+
+An outbound proxy may be set with the outbound_proxy option. If this is
+not set, the outbound_proxy option of sems.conf is used, if set.
+
+force_outbound_proxy forces the outbound proxy also for in-dialog requests.
+
 Filters
 -------
 Headers and messages may be filtered. A filter can be set to 
