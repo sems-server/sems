@@ -71,12 +71,12 @@ The patterns which can be used are the following:
   $rU  - R-URI User
   ...
 
-  $ai  - P-Asserted-Identity URI
+  $ai  - P-Asserted-Identity URI (alias to $au)
   $au  - P-Asserted-Identity URI
-  $aU  - P-Asserted-Identity URI
+  $aU  - P-Asserted-Identity User
   ...
 
-  $pi  - P-Preferred-Identity URI
+  $pi  - P-Preferred-Identity URI (alias to $pu)
   $pu  - P-Preferred-Identity URI
   $pU  - P-Preferred-Identity User
   ...
