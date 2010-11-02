@@ -75,7 +75,6 @@ struct SBCCallProfile {
   string prepaid_uuid;
   string prepaid_acc_dest;
 
-  // todo: accounting
   // todo: RTP forwarding mode
   // todo: RTP transcoding mode
 
@@ -83,7 +82,9 @@ struct SBCCallProfile {
   : headerfilter(Transparent),
     messagefilter(Transparent),
     sst_enabled(false),
-    auth_enabled(false)
+    auth_enabled(false),
+    call_timer_enabled(false),
+    prepaid_enabled(false)
   { }
 
   bool readFromConfiguration(const string& name, const string profile_file_name);
@@ -137,13 +138,6 @@ class SBCDialog : public AmB2BCallerSession
 
   SBCCallProfile call_profile;
 
-  void replaceParsedParam(const string& s, size_t p,
-			  AmUriParser& parsed, string& res);
-
-  string replaceParameters(const char* r_type, const string& s, const AmSipRequest& req,
-			   const string& app_param,
-			   AmUriParser& ruri_parser, AmUriParser& from_parser,
-			   AmUriParser& to_parser);
   void stopCall();
   void startPrepaidAccounting();
   void stopPrepaidAccounting();

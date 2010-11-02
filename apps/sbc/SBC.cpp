@@ -51,6 +51,7 @@ SBC - feature-wishlist
 #include "AmSipHeaders.h"
 
 #include "HeaderFilter.h"
+#include "ParamReplacer.h"
 
 using std::map;
 
@@ -152,6 +153,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
        FilterType2String(headerfilter), headerfilter_list.size());
   INFO("SBC:      message filter is %s, %zd items in list\n",
        FilterType2String(messagefilter), messagefilter_list.size());
+
   INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
   INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
   INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
@@ -277,216 +279,6 @@ SBCDialog::~SBCDialog()
 {
 }
 
-void SBCDialog::replaceParsedParam(const string& s, size_t p,
-				   AmUriParser& parsed, string& res) {
-  switch (s[p+1]) {
-  case 'u': { // URI
-    res+=parsed.uri_user+"@"+parsed.uri_host;
-    if (!parsed.uri_port.empty())
-      res+=":"+parsed.uri_port;
-  } break;
-  case 'U': res+=parsed.uri_user; break; // User
-  case 'd': { // domain
-    res+=parsed.uri_host;
-    if (!parsed.uri_port.empty())
-      res+=":"+parsed.uri_port;
-  } break;
-  case 'h': res+=parsed.uri_host; break; // host
-  case 'p': res+=parsed.uri_port; break; // port
-  case 'H': res+=parsed.uri_headers; break; // Headers
-  case 'P': res+=parsed.uri_param; break; // Params
-  default: WARN("unknown replace pattern $%c%c\n",
-		s[p], s[p+1]); break;
-  };
-}
-
-
-string SBCDialog::replaceParameters(const char* r_type,
-				    const string& s, const AmSipRequest& req,
-				    const string& app_param,
-				    AmUriParser& ruri_parser, AmUriParser& from_parser,
-				    AmUriParser& to_parser) {
-  string res;
-  bool is_replaced = false;
-  size_t p = 0;
-  char last_char=' ';
-  
-  while (p<s.length()) {
-    size_t skip_chars = 1;
-    if (last_char=='\\') {
-      res += s[p];
-      is_replaced = true;
-    } else if (s[p]=='\\') {
-      if (p==s.length()-1)
-      res += s[p];
-    } else if ((s[p]=='$') && (s.length() >= p+1)) {
-      is_replaced = true;
-      p++;
-      switch (s[p]) {
-      case 'f': { // from
-	if ((s.length() == p+1) || (s[p+1] == '.')) {
-	  res += req.from;
-	  break;
-	}
-	  
-	if (from_parser.uri.empty()) {
-	  from_parser.uri = req.from;
-	  if (!from_parser.parse_uri()) {
-	    WARN("Error parsing From URI '%s'\n", req.from.c_str());
-	    break;
-	  }
-	}
-
-	replaceParsedParam(s, p, from_parser, res);
-
-      }; break;
-
-      case 't': { // to
-	if ((s.length() == p+1) || (s[p+1] == '.')) {
-	  res += req.to;
-	  break;
-	}
-
-	if (to_parser.uri.empty()) {
-	  to_parser.uri = req.to;
-	  if (!to_parser.parse_uri()) {
-	    WARN("Error parsing To URI '%s'\n", req.to.c_str());
-	    break;
-	  }
-	}
-
-	replaceParsedParam(s, p, to_parser, res);
-
-      }; break;
-
-      case 'r': { // r-uri
-	if ((s.length() == p+1) || (s[p+1] == '.')) {
-	  res += req.r_uri;
-	  break;
-	}
-	
-	if (ruri_parser.uri.empty()) {
-	  ruri_parser.uri = req.r_uri;
-	  if (!ruri_parser.parse_uri()) {
-	    WARN("Error parsing R-URI '%s'\n", req.r_uri.c_str());
-	    break;
-	  }
-	}
-	replaceParsedParam(s, p, ruri_parser, res);
-      }; break;
-
-#define case_HDR(pv_char, pv_name, hdr_name)				\
-	case pv_char: {							\
-	  AmUriParser uri_parser;					\
-	  uri_parser.uri = getHeader(req.hdrs, hdr_name);		\
-	  if ((s.length() == p+1) || (s[p+1] == '.')) {			\
-	    res += uri_parser.uri;					\
-	    break;							\
-	  }								\
-									\
-	  if (!uri_parser.parse_uri()) {				\
-	    WARN("Error parsing " pv_name " URI '%s'\n", uri_parser.uri.c_str()); \
-	    break;							\
-	  }								\
-	  if (s[p+1] == 'i') {						\
-	    res+=uri_parser.uri_user+"@"+uri_parser.uri_host;		\
-	    if (!uri_parser.uri_port.empty())				\
-	      res+=":"+uri_parser.uri_port;				\
-	  } else {							\
-	    replaceParsedParam(s, p, uri_parser, res);			\
-	  }								\
-	}; break;							
-
-	case_HDR('a', "PAI", SIP_HDR_P_ASSERTED_IDENTITY);  // P-Asserted-Identity
-	case_HDR('p', "PPI", SIP_HDR_P_PREFERRED_IDENTITY); // P-Preferred-Identity
-
-      case 'P': { // app-params
-	if (s[p+1] != '(') {
-	  WARN("Error parsing P param replacement (missing '(')\n");
-	  break;
-	}
-	if (s.length()<p+3) {
-	  WARN("Error parsing P param replacement (short string)\n");
-	  break;
-	}
-
-	size_t skip_p = p+2;
-	for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
-	if (skip_p==s.length()) {
-	  WARN("Error parsing P param replacement (unclosed brackets)\n");
-	  break;
-	}
-	string param_name = s.substr(p+2, skip_p-p-2);
-	// DBG("param_name = '%s' (skip-p - p = %d)\n", param_name.c_str(), skip_p-p);
-	res += get_header_keyvalue(app_param, param_name);
-	skip_chars = skip_p-p;
-      } break;
-
-      case 'H': { // header
-	size_t name_offset = 2;
-	if (s[p+1] != '(') {
-	  if (s[p+2] != '(') {
-	    WARN("Error parsing H header replacement (missing '(')\n");
-	    break;
-	  }
-	  name_offset = 3;
-	}
-	if (s.length()<name_offset+1) {
-	  WARN("Error parsing H header replacement (short string)\n");
-	  break;
-	}
-
-	size_t skip_p = p+name_offset;
-	for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
-	if (skip_p==s.length()) {
-	  WARN("Error parsing H header replacement (unclosed brackets)\n");
-	  break;
-	}
-	string hdr_name = s.substr(p+name_offset, skip_p-p-name_offset);
-	// DBG("param_name = '%s' (skip-p - p = %d)\n", param_name.c_str(), skip_p-p);
-	if (name_offset == 2) {
-	  // full header
-	  res += getHeader(req.hdrs, hdr_name);
-	} else {
-	  // parse URI and use component
-	  AmUriParser uri_parser;
-	  uri_parser.uri = getHeader(req.hdrs, hdr_name);
-	  if ((s[p+1] == '.')) {
-	    res += uri_parser.uri;
-	    break;
-	  }
-
-	  if (!uri_parser.parse_uri()) {
-	    WARN("Error parsing header %s URI '%s'\n",
-		 hdr_name.c_str(), uri_parser.uri.c_str());
-	    break;
-	  }
-	  replaceParsedParam(s, p, uri_parser, res);
-	}
-	skip_chars = skip_p-p;
-      } break;
-
-      default: {
-	WARN("unknown replace pattern $%c%c\n",
-	     s[p], s[p+1]);
-      }; break;
-      };
-
-      p+=skip_chars; // skip $.X      
-    } else {
-      res += s[p];
-    }
-
-    last_char = s[p];
-    p++;
-  }
-
-  if (is_replaced) {
-    DBG("%s pattern replace: '%s' -> '%s'\n", r_type, s.c_str(), res.c_str());
-  }
-  return res;
-}
-
 void SBCDialog::onInvite(const AmSipRequest& req)
 {
   AmUriParser ruri_parser, from_parser, to_parser;
@@ -499,35 +291,31 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
+#define REPLACE_VALS req, app_param,ruri_parser, from_parser, to_parser
+
   ruri = call_profile.ruri.empty() ? 
-    req.r_uri : replaceParameters("RURI", call_profile.ruri, req, app_param,
-				  ruri_parser, from_parser, to_parser);
+    req.r_uri : replaceParameters(call_profile.ruri, "RURI", REPLACE_VALS);
 
   from = call_profile.from.empty() ? 
-    req.from : replaceParameters("From", call_profile.from, req, app_param,
-				  ruri_parser, from_parser, to_parser);
+    req.from : replaceParameters(call_profile.from, "From", REPLACE_VALS);
 
   to = call_profile.to.empty() ? 
-    req.to : replaceParameters("To", call_profile.to, req, app_param,
-				  ruri_parser, from_parser, to_parser);
+    req.to : replaceParameters(call_profile.to, "To", REPLACE_VALS);
 
   if (!call_profile.outbound_proxy.empty()) {
       call_profile.outbound_proxy =
-      replaceParameters("outbound_proxy", call_profile.outbound_proxy, req, app_param,
-				  ruri_parser, from_parser, to_parser);
+      replaceParameters(call_profile.outbound_proxy, "outbound_proxy", REPLACE_VALS);
       DBG("set outbound proxy to '%s'\n", call_profile.outbound_proxy.c_str());
   }
 
   if (!call_profile.next_hop_ip.empty()) {
     call_profile.next_hop_ip =
-      replaceParameters("next_hop_ip", call_profile.next_hop_ip, req, app_param,
-			ruri_parser, from_parser, to_parser);
+      replaceParameters(call_profile.next_hop_ip, "next_hop_ip", REPLACE_VALS);
     DBG("set next hop ip to '%s'\n", call_profile.next_hop_ip.c_str());
 
     if (!call_profile.next_hop_port.empty()) {
       call_profile.next_hop_port =
-	replaceParameters("next_hop_port", call_profile.next_hop_port, req, app_param,
-			  ruri_parser, from_parser, to_parser);
+	replaceParameters(call_profile.next_hop_port, "next_hop_port", REPLACE_VALS);
       unsigned int nh_port_i;
       if (str2i(call_profile.next_hop_port, nh_port_i)) {
 	ERROR("next hop port '%s' not understood\n", call_profile.next_hop_port.c_str());
@@ -555,11 +343,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   if (call_profile.auth_enabled) {
     call_profile.auth_credentials.user = 
-      replaceParameters("auth_user", call_profile.auth_credentials.user, req, app_param,
-			ruri_parser, from_parser, to_parser);
+      replaceParameters(call_profile.auth_credentials.user, "auth_user", REPLACE_VALS);
     call_profile.auth_credentials.pwd = 
-      replaceParameters("auth_pwd", call_profile.auth_credentials.pwd, req, app_param,
-			ruri_parser, from_parser, to_parser);
+      replaceParameters(call_profile.auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
   }
 
   // get timer
@@ -579,8 +365,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   if (call_profile.call_timer_enabled) {
     call_profile.call_timer =
-      replaceParameters("call_timer", call_profile.call_timer, req, app_param,
-			ruri_parser, from_parser, to_parser);
+      replaceParameters(call_profile.call_timer, "call_timer", REPLACE_VALS);
     if (str2i(call_profile.call_timer, call_timer)) {
       ERROR("invalid call_timer value '%s'\n", call_profile.call_timer.c_str());
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
@@ -594,8 +379,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   if (call_profile.prepaid_enabled) {
     call_profile.prepaid_accmodule =
-      replaceParameters("prepaid_accmodule", call_profile.prepaid_accmodule,
-			req, app_param, ruri_parser, from_parser, to_parser);
+      replaceParameters(call_profile.prepaid_accmodule, "prepaid_accmodule", REPLACE_VALS);
     if (call_profile.prepaid_accmodule.empty()) {
       ERROR("using prepaid but empty prepaid_accmodule!\n");
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
@@ -614,12 +398,10 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     }
 
     call_profile.prepaid_uuid =
-      replaceParameters("prepaid_uuid", call_profile.prepaid_uuid,
-			req, app_param, ruri_parser, from_parser, to_parser);
+      replaceParameters(call_profile.prepaid_uuid, "prepaid_uuid", REPLACE_VALS);
 
     call_profile.prepaid_acc_dest =
-      replaceParameters("prepaid_acc_dest", call_profile.prepaid_acc_dest,
-			req, app_param, ruri_parser, from_parser, to_parser);
+      replaceParameters(call_profile.prepaid_acc_dest, "prepaid_acc_dest", REPLACE_VALS);
 
     prepaid_starttime = time(NULL);
 
@@ -639,6 +421,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       throw AmSession::Exception(402,"Insufficient Credit");
     }
   }
+
+#undef REPLACE_VALS
 
   DBG("SBC: connecting to '%s'\n",ruri.c_str());
   DBG("     From:  '%s'\n",from.c_str());
