@@ -37,7 +37,8 @@
 
 using std::string;
 
-#define SBC_TIMER_ID_CALL_TIMER  1
+#define SBC_TIMER_ID_CALL_TIMER         1
+#define SBC_TIMER_ID_PREPAID_TIMEOUT    2
 
 struct SBCCallProfile {
 
@@ -68,6 +69,11 @@ struct SBCCallProfile {
 
   bool call_timer_enabled;
   string call_timer;
+
+  bool prepaid_enabled;
+  string prepaid_accmodule;
+  string prepaid_uuid;
+  string prepaid_acc_dest;
 
   // todo: accounting
   // todo: RTP forwarding mode
@@ -123,6 +129,12 @@ class SBCDialog : public AmB2BCallerSession
   unsigned int call_timer;
   AmDynInvoke* m_user_timer;
 
+  // prepaid
+  AmDynInvoke* prepaid_acc;
+  time_t prepaid_starttime;
+  struct timeval prepaid_acc_start;
+  int prepaid_credit;
+
   SBCCallProfile call_profile;
 
   void replaceParsedParam(const string& s, size_t p,
@@ -132,6 +144,9 @@ class SBCDialog : public AmB2BCallerSession
 			   const string& app_param,
 			   AmUriParser& ruri_parser, AmUriParser& from_parser,
 			   AmUriParser& to_parser);
+  void stopCall();
+  void startPrepaidAccounting();
+  void stopPrepaidAccounting();
 
  public:
 

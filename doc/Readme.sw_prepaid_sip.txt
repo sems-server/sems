@@ -1,3 +1,10 @@
+-------------------------------------------------
+This application has been obsoleted by the sbc
+module and will be discontinued in the next version.
+Please use the sbc module with the prepaid call
+profile for the same functionality.
+-------------------------------------------------
+
 #######################################################################
 #
 # sw_prepaid_sip, the signalling-only prepaid engine

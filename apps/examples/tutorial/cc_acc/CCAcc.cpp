@@ -39,6 +39,8 @@ CCAcc::~CCAcc() { }
 
 void CCAcc::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
+  DBG("cc_acc: %s(%s)\n", method.c_str(), AmArg::print(args).c_str());
+
     if(method == "getCredit"){
       assertArgCStr(args.get(0));
       ret.push(getCredit(args.get(0).asCStr()));
@@ -57,11 +59,14 @@ void CCAcc::invoke(const string& method, const AmArg& args, AmArg& ret)
       assertArgInt(args.get(1));
       ret.push(setCredit(args.get(0).asCStr(),
 			 args.get(1).asInt()));	
+    } else if(method == "connectCall"){
+      // call is connected
     } else if(method == "_list"){
       ret.push("getCredit");
       ret.push("subtractCredit");
       ret.push("setCredit");
       ret.push("addCredit");
+      ret.push("connectCall");
     }
     else
 	throw AmDynInvoke::NotImplemented(method);

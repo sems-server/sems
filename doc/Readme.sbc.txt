@@ -18,6 +18,8 @@ Features
  o Header and message filter
  o SIP authentication
  o SIP Session Timers
+ o call timer
+ o prepaid accounting
 
 SBC Profiles
 ------------
@@ -156,12 +158,58 @@ session_expires is set in the profile configuration file.
 Note that for performance reasons the whole SST configuration is in this
 case used from the profile configuration (it is not overwritten value-by-value).
 
+Prepaid
+-------
+Prepaid accounting can be enabled with the enable_prepaid option. The credit
+of an account is fetched when the initial INVITE is processed,
+and a timer is set once the call is connected. When the call ends, the credit
+is subtracted from the user.
+
+For accounting, a separate module is used. This allows to plug several types
+of accounting modules. The accounting module is selected with the 
+prepaid_accmodule option.
+
+The account which is billed is taken from the prepaid_uuid option. The billing
+destination is set with the prepaid_acc_dest option. 
+
+ Example:
+    enable_prepaid=yes
+    prepaid_accmodule=cc_acc
+    prepaid_uuid=$H(P-Caller-Uuid)
+    prepaid_acc_dest=$H(P-Acc-Dest)
+
+  Here the account UUID is taken from the P-Caller-Uuid header, and the
+  accounting destination from the P-Acc-Dest header.
+
+Credit amounts are expected to be calculated in seconds. The timestamps
+are presented in unix timestamp value (seconds since epoch). start_ts is
+the initial INVITE timestamp, connect_ts the connect (200 OK) timestamp,
+end_ts the BYE timestamp.
+
+Accounting interface:
+  getCredit(string uuid, string acc_dest, int start_ts, string call_id, string ltag)
+      result: int credit
+
+  connectCall(string uuid, string acc_dest, int start_ts, int connect_ts,
+              string call_id, string ltag, string b_ltag)
+
+  subtractCredit(string uuid, int call_duration, string acc_dest, int start_ts,
+                 int connect_ts, int end_ts, string call_id, string ltag, string b_ltag)
+
+The cc_acc and cc_acc_xmlrpc modules may be used for accounting modules, or as starting
+points for integration into custom billing systems.
+
+Parallel call limits can be implemented by implementing an account specific limit to the
+accounting module.
+
+
 Example profiles
 ----------------
  transparent   - completely transparent B2BUA
  auth_b2b      - identity change and SIP authentication (obsoletes auth_b2b app)
  sst_b2b       - B2BUA with SIP Session Timers (obsoletes sst_b2b app)
  call_timer    - call timer (obsoletes call_timer app)
+ prepaid       - prepaid accounting (obsoletes sw_prepaid_sip app)
 
 Dependencies
 ------------
