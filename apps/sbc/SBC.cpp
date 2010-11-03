@@ -1,6 +1,4 @@
 /*
- * $Id: SBC.cpp 1784 2010-04-15 13:01:00Z sayer $
- *
  * Copyright (C) 2010 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
@@ -52,7 +50,9 @@ SBC - feature-wishlist
 
 #include "HeaderFilter.h"
 #include "ParamReplacer.h"
+#include "SDPFilter.h"
 
+#include <algorithm>
 using std::map;
 
 string SBCFactory::user;
@@ -113,6 +113,28 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++)
     messagefilter_list.insert(*it);
 
+  string sdp_filter = cfg.getParameter("sdp_filter");
+  if (sdp_filter=="transparent") {
+    sdpfilter_enabled = true;
+    sdpfilter = Transparent;
+  } else if (sdp_filter=="whitelist") {
+    sdpfilter_enabled = true;
+    sdpfilter = Whitelist;
+  } else if (sdp_filter=="blacklist") {
+    sdpfilter_enabled = true;
+    sdpfilter = Blacklist;
+  } else {
+    sdpfilter_enabled = false;
+  }
+  if (sdpfilter_enabled) {
+    vector<string> c_elems = explode(cfg.getParameter("sdpfilter_list"), ",");
+    for (vector<string>::iterator it=c_elems.begin(); it != c_elems.end(); it++) {
+      string c = *it;
+      std::transform(c.begin(), c.end(), c.begin(), ::tolower);
+      sdpfilter_list.insert(c);
+    }
+  }
+
   sst_enabled = cfg.getParameter("enable_session_timer", "no") == "yes";
   use_global_sst_config = !cfg.hasParameter("session_expires");
   
@@ -153,6 +175,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
        FilterType2String(headerfilter), headerfilter_list.size());
   INFO("SBC:      message filter is %s, %zd items in list\n",
        FilterType2String(messagefilter), messagefilter_list.size());
+  INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
+       sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
+       sdpfilter_list.size());
 
   INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
   INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
@@ -333,6 +358,10 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs,PARAM_HDR);
   removeHeader(invite_req.hdrs,"P-App-Name");
 
+  if (call_profile.sdpfilter_enabled) {
+    b2b_mode = B2BMode_SDPFilter;
+  }
+
   if (call_profile.sst_enabled) {
     removeHeader(invite_req.hdrs,SIP_HDR_SESSION_EXPIRES);
     removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
@@ -469,6 +498,14 @@ void SBCDialog::relayEvent(AmEvent* ev) {
   }
 
   AmB2BCallerSession::relayEvent(ev);
+}
+
+int SBCDialog::filterBody(AmSdp& sdp, bool is_a2b) {
+  if (call_profile.sdpfilter_enabled && 
+      call_profile.sdpfilter != Transparent) {
+    filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
+  }
+  return 0;
 }
 
 void SBCDialog::onSipRequest(const AmSipRequest& req) {
@@ -855,3 +892,10 @@ void SBCCalleeSession::onSendRequest(const string& method, const string& content
 				     body, hdrs, flags, cseq);
 }
 
+int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {
+  if (call_profile.sdpfilter_enabled && 
+      call_profile.sdpfilter != Transparent) {
+    filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
+  }
+  return 0;
+}

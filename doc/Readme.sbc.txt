@@ -146,7 +146,15 @@ Headers and messages may be filtered. A filter can be set to
  o whitelist - only let items pass that are in the filter list
  o blacklist - filter out items that are in the filter list
 
-Note that if ACK messages should not be filtered.
+Note that ACK messages should not be filtered.
+
+Codec filter
+------------
+The SDP body of INVITE/200, UPDATE/200 and ACK may be filtered for codecs
+with the sdp_filter and sdpfilter_list call profile options. If sdp_filter is 
+set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
+Codecs may be filtered out by their payload names in whitelist or blacklist
+modes. The payload names in the list are case-insensitive (PCMU==pcmu).
 
 Session Timer configuration
 ---------------------------
@@ -210,6 +218,7 @@ Example profiles
  sst_b2b       - B2BUA with SIP Session Timers (obsoletes sst_b2b app)
  call_timer    - call timer (obsoletes call_timer app)
  prepaid       - prepaid accounting (obsoletes sw_prepaid_sip app)
+ codecfilter   - let only some low bitrate codecs pass
 
 Dependencies
 ------------

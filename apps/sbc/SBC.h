@@ -61,6 +61,10 @@ struct SBCCallProfile {
   FilterType messagefilter;
   set<string> messagefilter_list;
 
+  bool sdpfilter_enabled;
+  FilterType sdpfilter;
+  set<string> sdpfilter_list;
+
   bool sst_enabled;
   bool use_global_sst_config;
 
@@ -81,6 +85,8 @@ struct SBCCallProfile {
   SBCCallProfile()
   : headerfilter(Transparent),
     messagefilter(Transparent),
+    sdpfilter_enabled(false),
+    sdpfilter(Transparent),
     sst_enabled(false),
     auth_enabled(false),
     call_timer_enabled(false),
@@ -162,6 +168,8 @@ class SBCDialog : public AmB2BCallerSession
   bool onOtherReply(const AmSipReply& reply);
   void onOtherBye(const AmSipRequest& req);
 
+  int filterBody(AmSdp& sdp, bool is_a2b);
+
   void createCalleeSession();
 };
 
@@ -181,6 +189,8 @@ class SBCCalleeSession
 		     const string& body, string& hdrs, int flags, unsigned int cseq);
 
   /* bool onOtherReply(const AmSipReply& reply); */
+
+  int filterBody(AmSdp& sdp, bool is_a2b);
 
  public:
   SBCCalleeSession(const AmB2BCallerSession* caller,
