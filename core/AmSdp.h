@@ -174,6 +174,12 @@ public:
    */
   int parse();
 
+  /**
+   * Prints the current SDP structure
+   * into a proper SDP message.
+   */
+  void print(string& body) const;
+
   /** 
    * Generate an SDP answer to the offer parsed previously. 
    * @return !=0 if error encountered.
