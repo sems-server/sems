@@ -8,6 +8,7 @@
 #define SIP_METH_PRACK          "PRACK"
 #define SIP_METH_UPDATE         "UPDATE"
 #define SIP_METH_BYE            "BYE"
+#define SIP_METH_ACK            "ACK"
 
 #define SIP_HDR_FROM            "From"
 #define SIP_HDR_TO              "To"
