@@ -193,7 +193,10 @@ void AmSdp::print(string& body) const
 
 	  out_buf += " " + int2str(pl_it->payload_type);
 
-	  // "a=rtpmap:" line
+	  if (pl_it->encoding_name.empty()) // don't add rtpmap if no encoding name given
+	      continue;
+
+	  // "a=rtpmap:" line	  
 	  options += "a=rtpmap:" + int2str(pl_it->payload_type) + " " 
 	      + pl_it->encoding_name + "/" + int2str(pl_it->clock_rate);
 
