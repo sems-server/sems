@@ -561,22 +561,8 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
       if(getCalleeStatus()  == Connected) {
         m_state = BB_Connected;
 
-	if ((call_profile.call_timer_enabled || call_profile.prepaid_enabled) &&
-	    (NULL == m_user_timer)) {
-	  ERROR("internal implementation error: invalid timer reference\n");
-	  terminateOtherLeg();
-	  terminateLeg();
+	if (!startCallTimer())
 	  return ret;
-	}
-
-	if (call_profile.call_timer_enabled) {
-	  DBG("SBC: starting call timer of %u seconds\n", call_timer);
-	  AmArg di_args,ret;
-	  di_args.push((int)SBC_TIMER_ID_CALL_TIMER);
-	  di_args.push((int)call_timer);           // in seconds
-	  di_args.push(getLocalTag().c_str());
-	  m_user_timer->invoke("setTimer", di_args, ret);
-	}
 
 	startPrepaidAccounting();
       }
@@ -620,6 +606,28 @@ void SBCDialog::stopCall() {
   }
   terminateOtherLeg();
   terminateLeg();
+}
+
+/** @return whether successful */
+bool SBCDialog::startCallTimer() {
+  if ((call_profile.call_timer_enabled || call_profile.prepaid_enabled) &&
+      (NULL == m_user_timer)) {
+    ERROR("internal implementation error: invalid timer reference\n");
+    terminateOtherLeg();
+    terminateLeg();
+    return false;
+  }
+
+  if (call_profile.call_timer_enabled) {
+    DBG("SBC: starting call timer of %u seconds\n", call_timer);
+    AmArg di_args,ret;
+    di_args.push((int)SBC_TIMER_ID_CALL_TIMER);
+    di_args.push((int)call_timer);           // in seconds
+    di_args.push(getLocalTag().c_str());
+    m_user_timer->invoke("setTimer", di_args, ret);
+  }
+
+  return true;
 }
 
 void SBCDialog::startPrepaidAccounting() {

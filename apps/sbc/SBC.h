@@ -145,6 +145,7 @@ class SBCDialog : public AmB2BCallerSession
   SBCCallProfile call_profile;
 
   void stopCall();
+  bool startCallTimer();
   void startPrepaidAccounting();
   void stopPrepaidAccounting();
 
