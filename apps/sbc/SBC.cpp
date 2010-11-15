@@ -581,19 +581,9 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
 	startPrepaidAccounting();
       }
     }
-    else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {
-      DBG("Stopping leg A on 487 from B with 487\n");
-      dlg.reply(invite_req, 487, "Request terminated");
-      setStopped();
-      ret = true;
-    }
-    else if (reply.code >= 300 && dlg.getStatus() == AmSipDialog::Connected) {
-      DBG("Callee final error in connected state with code %d\n",reply.code);
-      terminateLeg();
-    }
     else {
       DBG("Callee final error with code %d\n",reply.code);
-      AmB2BCallerSession::onOtherReply(reply);
+      ret = AmB2BCallerSession::onOtherReply(reply);
     }
   }
   return ret;
