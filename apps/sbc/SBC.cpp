@@ -159,6 +159,42 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     return false;
   }
 
+  vector<string> reply_translations_v =
+    explode(cfg.getParameter("reply_translations"), "|");
+  for (vector<string>::iterator it =
+	 reply_translations_v.begin(); it != reply_translations_v.end(); it++) {
+    // expected: "603=>488 Not acceptable here"
+    vector<string> trans_components = explode(*it, "=>");
+    if (trans_components.size() != 2) {
+      ERROR("%s: entry '%s' in reply_translations could not be understood.\n",
+	    name.c_str(), it->c_str());
+      ERROR("expected 'from_code=>to_code reason'\n");
+      return false;
+    }
+
+    unsigned int from_code, to_code;
+    if (str2i(trans_components[0], from_code)) {
+      ERROR("%s: code '%s' in reply_translations not understood.\n",
+	    name.c_str(), trans_components[0].c_str());
+      return false;
+    }
+    unsigned int s_pos = 0;
+    string to_reply = trans_components[1];
+    while (s_pos < to_reply.length() && to_reply[s_pos] != ' ')
+      s_pos++;
+    if (str2i(to_reply.substr(0, s_pos), to_code)) {
+      ERROR("%s: code '%s' in reply_translations not understood.\n",
+	    name.c_str(), to_reply.substr(0, s_pos).c_str());
+      return false;
+    }
+
+    if (s_pos < to_reply.length())
+      s_pos++;
+    // DBG("got translation %u => %u %s\n",
+    // 	from_code, to_code, to_reply.substr(s_pos).c_str());
+    reply_translations[from_code] = make_pair(to_code, to_reply.substr(s_pos));
+  }
+
   INFO("SBC: loaded SBC profile '%s':\n", name.c_str());
 
   INFO("SBC:      RURI = '%s'\n", ruri.c_str());
@@ -190,6 +226,14 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:                    acc_module = '%s'\n", prepaid_accmodule.c_str());
     INFO("SBC:                    uuid       = '%s'\n", prepaid_uuid.c_str());
     INFO("SBC:                    acc_dest   = '%s'\n", prepaid_acc_dest.c_str());
+  }
+  if (reply_translations.size()) {
+    string reply_trans_codes;
+    for(map<unsigned int, pair<unsigned int, string> >::iterator it=
+	  reply_translations.begin(); it != reply_translations.end(); it++)
+      reply_trans_codes += int2str(it->first)+", ";
+    reply_trans_codes.erase(reply_trans_codes.length()-2);
+    INFO("SBC:      reply translation for  %s\n", reply_trans_codes.c_str());
   }
 
   return true;
@@ -367,7 +411,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
   }
 
-  inplaceHeaderFilter(invite_req.hdrs, 
+  inplaceHeaderFilter(invite_req.hdrs,
 		      call_profile.headerfilter_list, call_profile.headerfilter);
 
   if (call_profile.auth_enabled) {
@@ -483,17 +527,37 @@ void SBCDialog::process(AmEvent* ev)
 }
 
 void SBCDialog::relayEvent(AmEvent* ev) {
-  if (call_profile.headerfilter != Transparent) {
-    if (ev->event_id == B2BSipRequest) {
-      B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
-      assert(req_ev);
-      inplaceHeaderFilter(req_ev->req.hdrs, 
-			  call_profile.headerfilter_list, call_profile.headerfilter);
-    } else if (ev->event_id == B2BSipReply) {
-      B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
-      assert(reply_ev);
-      inplaceHeaderFilter(reply_ev->reply.hdrs, 
-			  call_profile.headerfilter_list, call_profile.headerfilter);
+  if ((call_profile.headerfilter != Transparent) &&
+      (ev->event_id == B2BSipRequest)) {
+    // header filter
+    B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
+    assert(req_ev);
+    inplaceHeaderFilter(req_ev->req.hdrs,
+			call_profile.headerfilter_list, call_profile.headerfilter);
+  } else {
+    if (ev->event_id == B2BSipReply) {
+      if ((call_profile.headerfilter != Transparent) ||
+	  (call_profile.reply_translations.size())) {
+	B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
+	assert(reply_ev);
+	// header filter
+	if (call_profile.headerfilter != Transparent) {
+	  inplaceHeaderFilter(reply_ev->reply.hdrs,
+			      call_profile.headerfilter_list,
+			      call_profile.headerfilter);
+	}
+
+	// reply translations
+	map<unsigned int, pair<unsigned int, string> >::iterator it =
+	  call_profile.reply_translations.find(reply_ev->reply.code);
+	if (it != call_profile.reply_translations.end()) {
+	  DBG("translating reply %u %s => %u %s\n",
+	      reply_ev->reply.code, reply_ev->reply.reason.c_str(),
+	      it->second.first, it->second.second.c_str());
+	  reply_ev->reply.code = it->second.first;
+	  reply_ev->reply.reason = it->second.second;
+	}
+      }
     }
   }
 
@@ -800,17 +864,37 @@ inline UACAuthCred* SBCCalleeSession::getCredentials() {
 }
 
 void SBCCalleeSession::relayEvent(AmEvent* ev) {
-  if (call_profile.headerfilter != Transparent) {
-    if (ev->event_id == B2BSipRequest) {
-      B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
-      assert(req_ev);
-      inplaceHeaderFilter(req_ev->req.hdrs, 
-			  call_profile.headerfilter_list, call_profile.headerfilter);
-    } else if (ev->event_id == B2BSipReply) {
-      B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
-      assert(reply_ev);
-      inplaceHeaderFilter(reply_ev->reply.hdrs, 
-			  call_profile.headerfilter_list, call_profile.headerfilter);
+  if ((call_profile.headerfilter != Transparent) &&
+      (ev->event_id == B2BSipRequest)) {
+    // header filter
+    B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
+    assert(req_ev);
+    inplaceHeaderFilter(req_ev->req.hdrs,
+			call_profile.headerfilter_list, call_profile.headerfilter);
+  } else {
+    if (ev->event_id == B2BSipReply) {
+      if ((call_profile.headerfilter != Transparent) ||
+	  (call_profile.reply_translations.size())) {
+	B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
+	assert(reply_ev);
+
+	// header filter
+	if (call_profile.headerfilter != Transparent) {
+	  inplaceHeaderFilter(reply_ev->reply.hdrs,
+			      call_profile.headerfilter_list,
+			      call_profile.headerfilter);
+	}
+	// reply translations
+	map<unsigned int, pair<unsigned int, string> >::iterator it =
+	  call_profile.reply_translations.find(reply_ev->reply.code);
+	if (it != call_profile.reply_translations.end()) {
+	  DBG("translating reply %u %s => %u %s\n",
+	      reply_ev->reply.code, reply_ev->reply.reason.c_str(),
+	      it->second.first, it->second.second.c_str());
+	  reply_ev->reply.code = it->second.first;
+	  reply_ev->reply.reason = it->second.second;
+	}
+      }
     }
   }
 

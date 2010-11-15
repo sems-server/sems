@@ -79,6 +79,8 @@ struct SBCCallProfile {
   string prepaid_uuid;
   string prepaid_acc_dest;
 
+  map<unsigned int, pair<unsigned int, string> > reply_translations;
+
   // todo: RTP forwarding mode
   // todo: RTP transcoding mode
 

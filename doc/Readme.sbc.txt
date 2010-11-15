@@ -16,6 +16,7 @@ Features
  o flexible call profile based configuration
  o From, To, RURI update
  o Header and message filter
+ o reply code translation
  o SIP authentication
  o SIP Session Timers
  o call timer
@@ -155,6 +156,26 @@ with the sdp_filter and sdpfilter_list call profile options. If sdp_filter is
 set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
 Codecs may be filtered out by their payload names in whitelist or blacklist
 modes. The payload names in the list are case-insensitive (PCMU==pcmu).
+
+Reply code translations
+-----------------------
+Response codes and reasons may be translated, e.g. if some 6xx class replies need
+to be changed to 4xx class replies.
+
+Example:
+ reply_translations="603=>488 Not acceptable here"
+
+Here, all 603 replies received on one leg will be sent out as 488 reply with
+the reason string "Not acceptable here".
+
+Entries are separated in the reply_translations list with a pipe symbol (|).
+
+Example:
+ reply_translations="603=>488 Not acceptable here|600=>406 Not acceptable"
+
+Warning: Changing response codes, especially between different response
+         code classes, can seriously mess up everything. Use with caution
+         and only if you know what you are doing!
 
 Session Timer configuration
 ---------------------------
