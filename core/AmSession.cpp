@@ -1081,7 +1081,6 @@ void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code,
           } else {
             dlg.rseq = -(++dlg.rseq);
           }
-          // FIXME: code above is not re-entrant; should it actually be???
           hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(-dlg.rseq) + CRLF;
           break;
       }
