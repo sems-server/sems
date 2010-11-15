@@ -127,6 +127,14 @@ string replaceParameters(const string& s,
 	replaceParsedParam(s, p, ruri_parser, res);
       }; break;
 
+      case 'c': { // call-id
+	if ((s.length() == p+1) || (s[p+1] == 'i')) {
+	  res += req.callid;
+	  break;
+	}
+	WARN("unknown replacement $c%c\n", s[p+1]);
+      }
+
 #define case_HDR(pv_char, pv_name, hdr_name)				\
 	case pv_char: {							\
 	  AmUriParser uri_parser;					\

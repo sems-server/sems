@@ -48,6 +48,8 @@ struct SBCCallProfile {
   string from;       /* updated if set */
   string to;         /* updated if set */
 
+  string callid;
+
   string outbound_proxy;
   bool force_outbound_proxy;
 
@@ -134,6 +136,7 @@ class SBCDialog : public AmB2BCallerSession
   string ruri;
   string from;
   string to;
+  string callid;
 
   unsigned int call_timer;
   AmDynInvoke* m_user_timer;

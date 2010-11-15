@@ -75,6 +75,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   from = cfg.getParameter("From");
   to = cfg.getParameter("To");
 
+  callid = cfg.getParameter("Call-ID");
+
   force_outbound_proxy = cfg.getParameter("force_outbound_proxy") == "yes";
   outbound_proxy = cfg.getParameter("outbound_proxy");
 
@@ -200,6 +202,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   INFO("SBC:      RURI = '%s'\n", ruri.c_str());
   INFO("SBC:      From = '%s'\n", from.c_str());
   INFO("SBC:      To   = '%s'\n", to.c_str());
+  if (!callid.empty()) {
+    INFO("SBC:      Call-ID   = '%s'\n", callid.c_str());
+  }
+
   INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
   INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
   if (!next_hop_ip.empty()) {
@@ -370,6 +376,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   to = call_profile.to.empty() ? 
     req.to : replaceParameters(call_profile.to, "To", REPLACE_VALS);
+
+  callid = call_profile.callid.empty() ?
+    "" : replaceParameters(call_profile.callid, "Call-ID", REPLACE_VALS);
 
   if (!call_profile.outbound_proxy.empty()) {
       call_profile.outbound_proxy =
@@ -817,7 +826,8 @@ void SBCDialog::createCalleeSession()
   other_id = AmSession::getNewId();
   
   callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
+  callee_dlg.callid       = callid.empty() ?
+    AmSession::getNewId() + "@" + AmConfig::LocalIP : callid;
   
   // this will be overwritten by ConnectLeg event 
   callee_dlg.remote_party = to;
