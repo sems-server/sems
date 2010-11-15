@@ -1,0 +1,21 @@
+-- handle cancel correctly
+-- by replying with 487
+-- 
+-- this is only necessary if run_invite_event=yes
+-- and final reply to INVITE is delayed
+-- so CANCEL can happen while call setup is proceeding
+import(mod_dlg);
+initial state BEGIN;
+
+transition "inv got" BEGIN - invite / {
+ set($connect_session=0);
+ dlg.reply(101, Still Trying);
+} -> WAIT;
+
+transition "cancel" BEGIN - hangup / {
+ dlg.reply(487, canceled);
+ stop(false); 
+} -> END;
+
+state WAIT;
+state END;
