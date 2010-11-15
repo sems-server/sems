@@ -45,7 +45,7 @@ using std::string;
  */
 
 /** Scratch buffer size. */
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE 4096
 
 /** network type */
 enum NetworkType { NT_OTHER=0, NT_IN };
