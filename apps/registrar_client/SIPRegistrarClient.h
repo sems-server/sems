@@ -129,6 +129,10 @@ class SIPRegistration : public AmSipDialogEventHandler,
   void onInvite2xx(const AmSipReply&) {}
   void onNoAck(unsigned int) {}
   void onNoPrack(const AmSipRequest &, const AmSipReply &) {}
+  void onInvite1xxRel(const AmSipReply &){}
+  void onPrack2xx(const AmSipReply &){}
+  void onFailure(AmSipDialogEventHandler::FailureCause cause, 
+      const AmSipRequest*, const AmSipReply*){}
 
   /** is this registration registered? */
   bool active; 

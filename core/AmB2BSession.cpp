@@ -356,8 +356,7 @@ int AmB2BSession::sendEstablishedReInvite() {
   }
 
   DBG("sending re-INVITE with saved session description\n");
-  return dlg.reinvite(get_100rel_hdr(reliable_1xx),
-		      established_content_type, established_body,
+  return dlg.reinvite("", established_content_type, established_body,
 		      SIP_FLAGS_VERBATIM);
 }
 

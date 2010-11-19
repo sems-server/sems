@@ -43,7 +43,9 @@ const char* AmSipDialog::status2str[4]  = {
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
   : status(Disconnected),cseq(10),r_cseq_i(false),hdl(h),pending_invites(0),
     outbound_proxy(AmConfig::OutboundProxy),
-    force_outbound_proxy(AmConfig::ForceOutboundProxy)
+    force_outbound_proxy(AmConfig::ForceOutboundProxy),
+    reliable_1xx(AmConfig::rel100),
+    rseq(0)
 {
 }
 
@@ -129,9 +131,66 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     local_party  = req.to;
     route        = req.route;
   }
-  
-  if(hdl)
+
+  int cont = rel100OnRequestIn(req);
+
+  if(cont && hdl)
       hdl->onSipRequest(req);
+}
+
+int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
+{
+  /* activate the 100rel, if needed */
+  if (req.method == SIP_METH_INVITE) {
+    switch(reliable_1xx) {
+      case REL100_SUPPORTED: /* if support is on, enforce if asked by UAC */
+        if (key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED), 
+              SIP_EXT_100REL) ||
+            key_in_list(getHeader(req.hdrs, SIP_HDR_REQUIRE), 
+              SIP_EXT_100REL)) {
+          reliable_1xx = REL100_REQUIRE;
+          DBG(SIP_EXT_100REL " now active.\n");
+        }
+        break;
+      case REL100_REQUIRE: /* if support is required, reject if UAC doesn't */
+        if (! (key_in_list(getHeader(req.hdrs,SIP_HDR_SUPPORTED), 
+              SIP_EXT_100REL) ||
+            key_in_list(getHeader(req.hdrs, SIP_HDR_REQUIRE), 
+              SIP_EXT_100REL))) {
+          ERROR("'" SIP_EXT_100REL "' extension required, but not advertised"
+            " by peer.\n");
+          if (hdl) hdl->onFailure(FAIL_REL100, &req, 0);
+          return 0; // has been replied
+        }
+        break; // 100rel required
+      default:
+        ERROR("BUG: unexpected value `%d' for '" SIP_EXT_100REL "' switch.", 
+          reliable_1xx);
+#ifndef NDEBUG
+        abort();
+#endif
+      case 0: /* support disabled */
+        break;
+    } // switch reliable_1xx
+  } else if (req.method == SIP_METH_PRACK) {
+    if (reliable_1xx != REL100_REQUIRE) {
+      WARN("unexpected PRACK received while " SIP_EXT_100REL " not active.\n");
+      // let if float up
+    } else if ((1<<MAX_RSEQ_BITS)<=req.rseq && 
+        req.rseq<=(unsigned)abs(rseq)) {
+      // reply generation will be done by the onSipRequest()
+      if (req.rseq == (unsigned)-rseq) {
+        rseq = -rseq; // confirmed
+        DBG("latest RSeq (%u) confirmed.\n", rseq);
+      }
+    } else {
+      WARN("no matching RAck value in PRACK (%s).\n", req.hdrs.c_str());
+      // just drop it, either a retransmission or some bogus
+      return 0;
+    }
+  }
+
+  return 1;
 }
 
 /**
@@ -267,7 +326,6 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     break;
 
   case Pending:
-    // TODO [SBGW]: if negative and PRACK, tear down the call (???)
   case Disconnected:
     // only change status of dialog if reply 
     // to INVITE received
@@ -283,6 +341,8 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
   default:
     break;
   }
+
+  int cont = rel100OnReplyIn(reply);
 
   // TODO: remove the transaction only after the dedicated timer has hit
   //       this would help taking care of multiple 2xx replies.
@@ -304,8 +364,60 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
     }
   }
 
-  if(hdl)
+  if(cont && hdl)
     hdl->onSipReply(reply, old_dlg_status, trans_method);
+}
+
+
+int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
+{
+  if (status!=Pending && status!=Connected)
+    return 1;
+
+  if (100<reply.code && reply.code<200 && reply.method==SIP_METH_INVITE) {
+    switch (reliable_1xx) {
+    case REL100_SUPPORTED:
+      if (key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
+          SIP_EXT_100REL))
+        reliable_1xx = REL100_REQUIRE;
+        // no break!
+      else
+        break;
+
+    case REL100_REQUIRE:
+      if (! reply.rseq) {
+        ERROR("no RSeq value (or unsupported 0) in reliable 1xx.\n");
+        if (hdl) hdl->onFailure(FAIL_REL100, 0, &reply);
+      } else {
+        DBG(SIP_EXT_100REL " now active.\n");
+        if (hdl) hdl->onInvite1xxRel(reply);
+      }
+      break;
+
+    case 0:
+      // 100rel support disabled
+      break;
+    default:
+      ERROR("BUG: unexpected value `%d' for " SIP_EXT_100REL " switch.", 
+          reliable_1xx);
+#ifndef NDEBUG
+      abort();
+#endif
+    } // switch reliable 1xx
+  } else if (reliable_1xx && reply.method==SIP_METH_PRACK) {
+    if (300 <= reply.code) {
+      // if PRACK fails, tear down session
+      if (hdl) hdl->onFailure(FAIL_REL100, 0, &reply);
+    } else if (200 <= reply.code) {
+      if (hdl) hdl->onPrack2xx(reply);
+    } else {
+      WARN("received '%d' for " SIP_METH_PRACK " method.\n", reply.code);
+    }
+    // absorbe the replys for the prack (they've been dispatched through 
+    // onPrack2xx, if necessary)
+    return 0;
+  }
+  return 1;
 }
 
 void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
@@ -320,7 +432,7 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
 
   case AmSipTimeoutEvent::noPRACK:
     DBG("Timeout: missing PRACK\n");
-    if(hdl) hdl->onNoPrack(to_ev->req, to_ev->rpl);
+    rel100OnTimeout(to_ev->req, to_ev->rpl);
     break;
 
   case AmSipTimeoutEvent::_noEv:
@@ -330,6 +442,20 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
   
   to_ev->processed = true;
 }
+
+void AmSipDialog::rel100OnTimeout(const AmSipRequest &req, 
+    const AmSipReply &rpl)
+{
+  INFO("reply <%s> timed out (not PRACKed).\n", rpl.print().c_str());
+  if (100 < rpl.code && rpl.code < 200 && reliable_1xx == REL100_REQUIRE &&
+      (unsigned)rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
+    INFO("reliable %d reply timed out; rejecting request.\n", rpl.code);
+    if(hdl) hdl->onNoPrack(req, rpl);
+  } else {
+    WARN("reply timed-out, but not reliable.\n"); // debugging
+  }
+}
+
 
 bool AmSipDialog::getUACTransPending() {
   return !uac_trans.empty();
@@ -382,6 +508,8 @@ int AmSipDialog::reply(const AmSipRequest& req,
     hdl->onSendReply(req,code,reason,
 		     content_type,body,m_hdrs,flags);
 
+  rel100OnReplyOut(req, code, m_hdrs);
+
   AmSipReply reply;
 
   reply.method = req.method;
@@ -413,6 +541,53 @@ int AmSipDialog::reply(const AmSipRequest& req,
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
   }
   return ret;
+}
+
+
+void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code, 
+    string &hdrs)
+{
+  if (req.method == SIP_METH_INVITE) {
+    if (100 < code && code < 200) {
+      switch (reliable_1xx) {
+        case REL100_SUPPORTED:
+          hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+          break;
+        case REL100_REQUIRE:
+          // add Require HF
+          hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+          // add RSeq HF
+#ifndef NDEBUG
+          if ((abs(rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 
+              ((1 << MAX_RSEQ_BITS) - 1)) {
+            ERROR("CRITICAL: RSeq value too high: increase MAX_RSEQ_BITS "
+              "(now %d) and recompile.\n", MAX_RSEQ_BITS);
+            abort();
+          }
+#endif
+          if (rseq < 0) { // RSeq not yet PRACKed
+            // refuse subsequent 1xx if first isn't yet PRACKed
+            if ((((unsigned)-rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 0)
+              throw AmSession::Exception(491, "last reliable 1xx not yet "
+                  "PRACKed");
+            rseq --;
+          } else if (! rseq) { // only init rseq if 1xx is used
+            unsigned rseq_1st = (get_random() + 1) << MAX_RSEQ_BITS;
+            rseq_1st &= 0x7fffffff;
+            rseq = -((signed)rseq_1st);
+          } else {
+            rseq = -(++rseq);
+          }
+          hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(-rseq) + CRLF;
+          break;
+        default:
+          break;
+      }
+    } else if (code < 300 && reliable_1xx == REL100_REQUIRE) {
+      if (rseq < 0) // reliable 1xx is pending
+        throw AmSession::Exception(491, "last reliable 1xx not yet PRACKed");
+    }
+  }
 }
 
 /* static */
@@ -587,15 +762,16 @@ int AmSipDialog::transfer(const string& target)
   return 0;
 }
 
-int AmSipDialog::prack(const string &cont_type, 
+int AmSipDialog::prack(const AmSipReply &reply1xx,
+                       const string &cont_type, 
                        const string &body, 
                        const string &hdrs)
 {
   switch(status) {
     case Pending:
+    case Connected:
       break;
     case Disconnected:
-    case Connected:
     case Disconnecting:
       ERROR("can not send PRACK while dialog is in state '%d'.\n", status);
       return -1;
@@ -603,7 +779,12 @@ int AmSipDialog::prack(const string &cont_type,
       ERROR("BUG: unexpected dialog state '%d'.\n", status);
       return -1;
   }
-  return sendRequest(SIP_METH_PRACK, cont_type, body, hdrs);
+  string h = hdrs +
+          SIP_HDR_COLSP(SIP_HDR_RACK) + 
+          int2str(reply1xx.rseq) + " " + 
+          int2str(reply1xx.cseq) + " " + 
+          reply1xx.method + CRLF;
+  return sendRequest(SIP_METH_PRACK, cont_type, body, h);
 }
 
 int AmSipDialog::cancel()
@@ -632,6 +813,8 @@ int AmSipDialog::sendRequest(const string& method,
 
   if(hdl)
     hdl->onSendRequest(method,content_type,body,m_hdrs,flags,cseq);
+
+  rel100OnRequestOut(method, m_hdrs);
 
   AmSipRequest req;
 
@@ -691,6 +874,27 @@ int AmSipDialog::sendRequest(const string& method,
 
   return 0;
 }
+
+void AmSipDialog::rel100OnRequestOut(const string &method, string &hdrs)
+{
+  if (method!=SIP_METH_INVITE) // && method!=SIP_METH_OPTIONS) 
+    return;
+
+  switch(reliable_1xx) {
+    case REL100_SUPPORTED:
+      hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+      return;
+    case REL100_REQUIRE:
+      hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+      return;
+    default:
+      ERROR("BUG: unexpected reliability switch value of '%d'.\n",
+          reliable_1xx);
+    case 0:
+      break;
+  }
+}
+
 
 string AmSipDialog::get_uac_trans_method(unsigned int cseq)
 {

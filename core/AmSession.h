@@ -166,13 +166,6 @@ protected:
   /** do accept early session? */
   bool accept_early_session;
 
-  /** enable the reliability of provisional replies? */
-  unsigned char reliable_1xx;
-#define REL100_DISABLED         0
-#define REL100_SUPPORTED        1
-#define REL100_REQUIRE          2
-#define REL100_MAX              REL100_REQUIRE
-
   vector<AmSessionEventHandler*> ev_handlers;
 
 public:
@@ -373,11 +366,6 @@ public:
   /** send an INVITE */
   virtual int sendInvite(const string& headers = "");
 
-  /** send a PRACK request */
-  void sendPrack(const string &sdp_offer, 
-                 const string &rseq_val, 
-                 const string &cseq_val);
-
   /** set the session on/off hold */
   virtual void setOnHold(bool hold);
 
@@ -470,14 +458,6 @@ public:
   virtual void onCancel() {}
 
   /**
-   * onPrack is called when a PRACK request is received for the session.
-   * The sequencing correctness (RAck fits) is already checked.
-   * Should be overridden if SDP offer is expected with it.
-   * @param cnt order of which 1xx this PRACK is for 
-   */
-  virtual void onPrack(const AmSipRequest& req, unsigned cnt);
-
-  /**
    * onSessionStart will be called after call setup.
    *
    * Throw AmSession::Exception if you want to 
@@ -528,6 +508,15 @@ public:
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);
+
+
+  virtual void onInvite1xxRel(const AmSipReply &);
+
+  /** Hook called when an answer for a locally sent PRACK is received */
+  virtual void onPrack2xx(const AmSipReply &);
+
+  virtual void onFailure(AmSipDialogEventHandler::FailureCause cause, 
+      const AmSipRequest*, const AmSipReply*);
   
 #if 0
   /** missing 2xx-ACK */
@@ -602,21 +591,6 @@ inline AmRtpAudio* AmSession::RTPStream() {
   return _rtp_str.get();
 }
 
-static inline string get_100rel_hdr(unsigned char reliable_1xx)
-{
-  switch(reliable_1xx) {
-    case REL100_SUPPORTED:
-      return SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
-    case REL100_REQUIRE:
-      return SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
-    default:
-      ERROR("BUG: unexpected reliability switch value of '%d'.\n",
-          reliable_1xx);
-    case 0:
-      break;
-  }
-  return "";
-}
 
 #endif
 
