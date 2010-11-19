@@ -10,11 +10,14 @@ Authentication Modes:
  XMLRPC : Authenticate against an XMLRPC server (python example 
           server in test/authserver.py
 
- REFER  : the transfer request (REFER) sent out has as user part of 
+ REFER : The Refer-to of the REFER sent in-dialog contains <user>+<pin>@domain,
+         such that this pin can be checked by an upstream app server or
+         proxy and acted upon (e.g. sent to the proper conference room).
+
+ TRANSFER : the transfer request (Transfer REFER) sent out has as user part of 
           the URI the original user part, a plus sign, and the entered 
           PIN. The PIN can thus be verified by the proxy handling the 
-          transfer REFER.
-
+          transfer REFER. See below for an explanation.
 
 "Transfer" REFER:
  The "Transfer REFER" is a proprietary REFER call flow which transfers a 
