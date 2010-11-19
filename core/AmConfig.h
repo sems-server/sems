@@ -30,6 +30,7 @@
 
 #include "AmSdp.h"
 #include "AmDtmfDetector.h"
+#include "AmSipDialog.h"
 
 #include <string>
 using std::string;
@@ -137,7 +138,7 @@ struct AmConfig
   static unsigned int OptionsSessionLimitErrCode;
   static string OptionsSessionLimitErrReason;
 
-  static unsigned char rel100;
+  static AmSipDialog::provisional_100rel rel100;
 
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */
   static unsigned int DeadRtpTime;

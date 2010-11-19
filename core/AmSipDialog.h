@@ -103,6 +103,19 @@ class AmSipDialogEventHandler
   /** Hook called when a UAS INVITE transaction did not receive the PRACK */
   virtual void onNoPrack(const AmSipRequest &, const AmSipReply &)=0;
 
+  /** Hook called when a privisional reply is received with 100rel active */
+  virtual void onInvite1xxRel(const AmSipReply &)=0;
+
+  /** Hook called when an answer for a locally sent PRACK is received */
+  virtual void onPrack2xx(const AmSipReply &)=0;
+
+  enum FailureCause {
+    FAIL_REL100,
+#define FAIL_REL100  AmSipDialogEventHandler::FAIL_REL100
+  };
+  virtual void onFailure(FailureCause cause, const AmSipRequest*, 
+      const AmSipReply*)=0;
+
   virtual ~AmSipDialogEventHandler() {};
 };
 
@@ -122,6 +135,14 @@ class AmSipDialog
 
   int updateStatusReply(const AmSipRequest& req, 
 			unsigned int code);
+
+  int rel100OnRequestIn(const AmSipRequest &req);
+  int rel100OnReplyIn(const AmSipReply &reply);
+  void rel100OnTimeout(const AmSipRequest &req, const AmSipReply &rpl);
+
+  void rel100OnRequestOut(const string &method, string &hdrs);
+  void rel100OnReplyOut(const AmSipRequest &req, unsigned int code, 
+      string &hdrs);
 
  public:
   enum Status {
@@ -155,6 +176,20 @@ class AmSipDialog
 
   string next_hop_ip;
   unsigned short next_hop_port;
+
+  /** enable the reliability of provisional replies? */
+  enum provisional_100rel { // could be a char
+    REL100_DISABLED,
+#define REL100_DISABLED         AmSipDialog::REL100_DISABLED
+    REL100_SUPPORTED,
+#define REL100_SUPPORTED        AmSipDialog::REL100_SUPPORTED
+    REL100_REQUIRE,
+    //REL100_PREFERED, //TODO
+#define REL100_REQUIRE          AmSipDialog::REL100_REQUIRE
+    REL100_MAX
+#define REL100_MAX              AmSipDialog::REL100_MAX
+  };
+  enum provisional_100rel reliable_1xx;
 
   int rseq;          // RSeq for next request (NOTE: keep it signed!)
   unsigned int cseq; // Local CSeq for next request
@@ -212,7 +247,8 @@ class AmSipDialog
   int cancel();
 
   /** @return 0 on success */
-  int prack(const string &cont_type, 
+  int prack(const AmSipReply &reply1xx,
+            const string &cont_type, 
             const string &body, 
             const string &hdrs);
 
