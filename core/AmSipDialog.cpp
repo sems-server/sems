@@ -567,7 +567,7 @@ int AmSipDialog::transfer(const string& target)
     string r_set;
     if(!route.empty()){
 			
-      hdrs = PARAM_HDR ": " "Transfer-RR=\"" + route + "\"";
+      hdrs = PARAM_HDR ": " "Transfer-RR=\"" + route + "\""+CRLF;
     }
 				
     int ret = tmp_d.sendRequest("REFER","","",hdrs);
