@@ -167,7 +167,7 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
 
       case REL100_DISABLED:
         // TODO: shouldn't this be part of a more general check in SEMS?
-        if (key_in_list(getHeader(req.hdrs,SIP_HDR_SUPPORTED),SIP_EXT_100REL))
+        if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL))
           reply_error(req, 420, SIP_REPLY_BAD_EXTENSION, 
               SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
         break;
