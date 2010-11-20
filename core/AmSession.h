@@ -63,13 +63,6 @@ class AmDtmfEvent;
 #define AM_AUDIO_OUT 1
 
 
-/* maximum number of reliable 1xx supported; needed for marking first 1xx
- * (which can not be followed by subsequent ones w/o being PRACKed), as
- * opposed to having another value storing it's value. */
-#define MAX_RSEQ_BITS           24
-#define LOC_RSEQ_ORDER(_rseq)   (_rseq & ((1 << MAX_RSEQ_BITS) - 1))
-
-
 /**
  * \brief Implements the default behavior of one session
  * 

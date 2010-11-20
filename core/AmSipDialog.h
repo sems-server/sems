@@ -191,7 +191,13 @@ class AmSipDialog
   };
   enum provisional_100rel reliable_1xx;
 
+#if 0
   int rseq;          // RSeq for next request (NOTE: keep it signed!)
+#else
+  unsigned rseq;          // RSeq for next request (NOTE: keep it signed!)
+  bool rseq_confirmed;    // latest RSeq is confirmed
+  unsigned rseq_1st;      // value of first RSeq (init value)
+#endif
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  

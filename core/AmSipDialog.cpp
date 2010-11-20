@@ -152,6 +152,7 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
           DBG(SIP_EXT_100REL " now active.\n");
         }
         break;
+
       case REL100_REQUIRE: /* if support is required, reject if UAC doesn't */
         if (! (key_in_list(getHeader(req.hdrs,SIP_HDR_SUPPORTED), 
               SIP_EXT_100REL) ||
@@ -163,30 +164,31 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
           return 0; // has been replied
         }
         break; // 100rel required
+
+      case REL100_DISABLED:
+        // TODO: shouldn't this be part of a more general check in SEMS?
+        if (key_in_list(getHeader(req.hdrs,SIP_HDR_SUPPORTED),SIP_EXT_100REL))
+          reply_error(req, 420, SIP_REPLY_BAD_EXTENSION, 
+              SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
+        break;
+
       default:
         ERROR("BUG: unexpected value `%d' for '" SIP_EXT_100REL "' switch.", 
           reliable_1xx);
 #ifndef NDEBUG
         abort();
 #endif
-      case 0: /* support disabled */
-        break;
     } // switch reliable_1xx
   } else if (req.method == SIP_METH_PRACK) {
     if (reliable_1xx != REL100_REQUIRE) {
       WARN("unexpected PRACK received while " SIP_EXT_100REL " not active.\n");
       // let if float up
-    } else if ((1<<MAX_RSEQ_BITS)<=req.rseq && 
-        req.rseq<=(unsigned)abs(rseq)) {
-      // reply generation will be done by the onSipRequest()
-      if (req.rseq == (unsigned)-rseq) {
-        rseq = -rseq; // confirmed
-        DBG("latest RSeq (%u) confirmed.\n", rseq);
+    } else if (rseq_1st<=req.rseq && req.rseq<=rseq) {
+      if (req.rseq == rseq) {
+        rseq_confirmed = true; // confirmed
       }
-    } else {
-      WARN("no matching RAck value in PRACK (%s).\n", req.hdrs.c_str());
-      // just drop it, either a retransmission or some bogus
-      return 0;
+      // else: confirmation for one of the pending 1xx
+      DBG("%sRSeq (%u) confirmed.\n", (req.rseq==rseq) ? "latest " : "", rseq);
     }
   }
 
@@ -385,8 +387,10 @@ int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
         break;
 
     case REL100_REQUIRE:
-      if (! reply.rseq) {
-        ERROR("no RSeq value (or unsupported 0) in reliable 1xx.\n");
+      if (!key_in_list(getHeader(reply.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL) ||
+          !reply.rseq) {
+        ERROR(SIP_EXT_100REL " not supported or no positive RSeq value in "
+            "(reliable) 1xx.\n");
         if (hdl) hdl->onFailure(FAIL_REL100, 0, &reply);
       } else {
         DBG(SIP_EXT_100REL " now active.\n");
@@ -394,7 +398,7 @@ int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
       }
       break;
 
-    case 0:
+    case REL100_DISABLED:
       // 100rel support disabled
       break;
     default:
@@ -448,7 +452,7 @@ void AmSipDialog::rel100OnTimeout(const AmSipRequest &req,
 {
   INFO("reply <%s> timed out (not PRACKed).\n", rpl.print().c_str());
   if (100 < rpl.code && rpl.code < 200 && reliable_1xx == REL100_REQUIRE &&
-      (unsigned)rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
+      rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
     INFO("reliable %d reply timed out; rejecting request.\n", rpl.code);
     if(hdl) hdl->onNoPrack(req, rpl);
   } else {
@@ -562,34 +566,25 @@ void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code,
           if (getHeader(hdrs, SIP_HDR_RSEQ).length())
             // already added (by app?)
             break;
-#ifndef NDEBUG
-          if ((abs(rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 
-              ((1 << MAX_RSEQ_BITS) - 1)) {
-            ERROR("CRITICAL: RSeq value too high: increase MAX_RSEQ_BITS "
-              "(now %d) and recompile.\n", MAX_RSEQ_BITS);
-            abort();
-          }
-#endif
-          if (rseq < 0) { // RSeq not yet PRACKed
-            // refuse subsequent 1xx if first isn't yet PRACKed
-            if ((((unsigned)-rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 0)
-              throw AmSession::Exception(491, "last reliable 1xx not yet "
-                  "PRACKed");
-            rseq --;
-          } else if (! rseq) { // only init rseq if 1xx is used
-            unsigned rseq_1st = (get_random() + 1) << MAX_RSEQ_BITS;
-            rseq_1st &= 0x7fffffff;
-            rseq = -((signed)rseq_1st);
+          if (! rseq) { // only init rseq if 1xx is used
+            rseq = (get_random() & 0x3ff) + 1; // start small (<1024) and non-0
+            rseq_confirmed = false;
+            rseq_1st = rseq;
           } else {
-            rseq = -(++rseq);
+            if ((! rseq_confirmed) && (rseq_1st == rseq))
+              // refuse subsequent 1xx if first isn't yet PRACKed
+              throw AmSession::Exception(491, "first reliable 1xx not yet "
+                  "PRACKed");
+            rseq ++;
           }
-          hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(-rseq) + CRLF;
+          hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(rseq) + CRLF;
           break;
         default:
           break;
       }
-    } else if (code < 300 && reliable_1xx == REL100_REQUIRE) {
-      if (rseq < 0) // reliable 1xx is pending
+    } else if (code < 300 && reliable_1xx == REL100_REQUIRE) { //code = 2xx
+      if (rseq && !rseq_confirmed) 
+        // reliable 1xx is pending, 2xx'ing not allowed yet
         throw AmSession::Exception(491, "last reliable 1xx not yet PRACKed");
     }
   }

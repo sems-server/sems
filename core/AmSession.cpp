@@ -731,6 +731,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
   } else if (req.method == SIP_METH_PRACK) {
     // TODO: SDP
     dlg.reply(req, 200, "OK");
+    // TODO: WARN: only include latest SDP if req.rseq == dlg.rseq (latest 1xx)
   }
 }
 
