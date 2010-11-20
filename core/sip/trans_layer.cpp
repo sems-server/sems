@@ -1127,6 +1127,12 @@ void _trans_layer::received_msg(sip_msg* msg)
  
                  case sip_request::PRACK:
                      bucket->unlock();
+                     if (! msg->rack) {
+                       send_sl_reply(msg, 400, 
+                           cstring("Missing valid RSeq header"),
+                           cstring(),cstring());
+                       DROP_MSG;
+                     }
                      /* match INVITE transaction, cool off the 1xx timers */
                      inv_h = hash(msg->callid->value, get_rack(msg)->cseq_str);
                      inv_bucket = get_trans_bucket(inv_h);
