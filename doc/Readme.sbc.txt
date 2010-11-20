@@ -173,7 +173,7 @@ set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
 Codecs may be filtered out by their payload names in whitelist or blacklist
 modes. The payload names in the list are case-insensitive (PCMU==pcmu).
 
-Reply code translations
+Response code translations
 -----------------------
 Response codes and reasons may be translated, e.g. if some 6xx class replies need
 to be changed to 4xx class replies.
@@ -256,6 +256,7 @@ Example profiles
  call_timer    - call timer (obsoletes call_timer app)
  prepaid       - prepaid accounting (obsoletes sw_prepaid_sip app)
  codecfilter   - let only some low bitrate codecs pass
+ replytranslate - swap 603 and 488 response code in replies
 
 Dependencies
 ------------
@@ -266,7 +267,7 @@ Roadmap
 -------
 x header filter (whitelist or blacklist)
 x message filter (whitelist or blacklist)
-- SDP filter (reconstructed SDP)
+x SDP filter (reconstructed SDP)
 x remote URI update (host / user / host/user)
 x From update (displayname / host / host/user)
 x To update (displayname / host / host/user)

@@ -2,6 +2,8 @@
 # authentication mode:
 #    XMLRPC : authenticate against XMLRPC server
 #    REFER  : add pin to REFER sent out to be checked at proxy
+#    TRANSFER  : add pin to R-URI, transfer call flow (see Readme.pin_collect.txt)
+
 auth_mode=XMLRPC
 
 # XMLRPC url to authenticate against if auth_mode==XMLRPC

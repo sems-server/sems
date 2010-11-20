@@ -141,6 +141,7 @@ class IvrDialog : public AmB2BCallerSession
   void setPyPtrs(PyObject *mod, PyObject *dlg);
 
   int transfer(const string& target);
+  int refer(const string& target, int expires);
   int drop();
     
   void onSessionStart(const AmSipRequest& req);
