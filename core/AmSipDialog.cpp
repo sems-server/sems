@@ -551,12 +551,17 @@ void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code,
     if (100 < code && code < 200) {
       switch (reliable_1xx) {
         case REL100_SUPPORTED:
-          hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+          if (! key_in_list(getHeader(hdrs, SIP_HDR_REQUIRE), SIP_EXT_100REL))
+            hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
           break;
         case REL100_REQUIRE:
           // add Require HF
-          hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+          if (! key_in_list(getHeader(hdrs, SIP_HDR_REQUIRE), SIP_EXT_100REL))
+            hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
           // add RSeq HF
+          if (getHeader(hdrs, SIP_HDR_RSEQ).length())
+            // already added (by app?)
+            break;
 #ifndef NDEBUG
           if ((abs(rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 
               ((1 << MAX_RSEQ_BITS) - 1)) {
@@ -882,11 +887,13 @@ void AmSipDialog::rel100OnRequestOut(const string &method, string &hdrs)
 
   switch(reliable_1xx) {
     case REL100_SUPPORTED:
-      hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
-      return;
+      if (! key_in_list(getHeader(hdrs, SIP_HDR_REQUIRE), SIP_EXT_100REL))
+        hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+      break;
     case REL100_REQUIRE:
-      hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
-      return;
+      if (! key_in_list(getHeader(hdrs, SIP_HDR_REQUIRE), SIP_EXT_100REL))
+        hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+      break;
     default:
       ERROR("BUG: unexpected reliability switch value of '%d'.\n",
           reliable_1xx);
