@@ -71,7 +71,13 @@ struct SBCCallProfile {
     prepaid_enabled(false)
   { }
 
+  ~SBCCallProfile()
+  { }
+
   bool readFromConfiguration(const string& name, const string profile_file_name);
+
+  bool operator==(const SBCCallProfile& rhs) const;
+  string print() const;
 };
 
 #endif // _SBCCallProfile_h

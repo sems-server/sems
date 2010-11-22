@@ -187,3 +187,103 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   return true;
 }
+
+bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
+  bool res =
+    ruri == rhs.ruri &&
+    from == rhs.from &&
+    to == rhs.to &&
+    callid == rhs.callid &&
+    outbound_proxy == rhs.outbound_proxy &&
+    force_outbound_proxy == rhs.force_outbound_proxy &&
+    next_hop_ip == rhs.next_hop_ip &&
+    next_hop_port == rhs.next_hop_port &&
+    next_hop_port_i == rhs.next_hop_port_i &&
+    headerfilter == rhs.headerfilter &&
+    headerfilter_list == rhs.headerfilter_list &&
+    messagefilter == rhs.messagefilter &&
+    messagefilter_list == rhs.messagefilter_list &&
+    sdpfilter_enabled == rhs.sdpfilter_enabled &&
+    sst_enabled == rhs.sst_enabled &&
+    use_global_sst_config == rhs.use_global_sst_config &&
+    auth_enabled == rhs.auth_enabled &&
+    call_timer_enabled == rhs.call_timer_enabled &&
+    prepaid_enabled == rhs.prepaid_enabled &&
+    reply_translations == reply_translations;
+
+  if (sdpfilter_enabled) {
+    res = res &&
+      sdpfilter == rhs.sdpfilter &&
+      sdpfilter_list == rhs.sdpfilter_list;
+  }
+  if (auth_enabled) {
+    res = res &&
+      auth_credentials.user == rhs.auth_credentials.user &&
+      auth_credentials.pwd == rhs.auth_credentials.pwd;
+  }
+  if (call_timer_enabled) {
+    res = res &&
+      call_timer == rhs.call_timer;
+  }
+  if (prepaid_enabled) {
+    res = res &&
+      prepaid_accmodule == rhs.prepaid_accmodule &&
+      prepaid_uuid == rhs.prepaid_uuid &&
+      prepaid_acc_dest == rhs.prepaid_acc_dest;
+  }
+
+  return res;
+}
+
+string stringset_print(const set<string>& s) {
+  string res;
+  for (set<string>::const_iterator i=s.begin(); i != s.end(); i++)
+    res += *i+" ";
+  return res;
+}
+
+string SBCCallProfile::print() const {
+  string res = 
+    "SBC call profile dump: ~~~~~~~~~~~~~~~~~\n";
+  res += "ruri:                 " + ruri + "\n";
+  res += "from:                 " + from + "\n";
+  res += "to:                   " + to + "\n";
+  res += "callid:               " + callid + "\n";
+  res += "outbound_proxy:       " + outbound_proxy + "\n";
+  res += "force_outbound_proxy: " + string(force_outbound_proxy?"true":"false") + "\n";
+  res += "next_hop_ip:          " + next_hop_ip + "\n";
+  res += "next_hop_port:        " + next_hop_port + "\n";
+  res += "next_hop_port_i:      " + int2str(next_hop_port_i) + "\n";
+  res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
+  res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
+  res += "messagefilter:        " + string(FilterType2String(messagefilter)) + "\n";
+  res += "messagefilter_list:   " + stringset_print(messagefilter_list) + "\n";
+  res += "sdpfilter_enabled:    " + string(sdpfilter_enabled?"true":"false") + "\n";
+  res += "sdpfilter:            " + string(FilterType2String(sdpfilter)) + "\n";
+  res += "sdpfilter_list:       " + stringset_print(sdpfilter_list) + "\n";
+  res += "sst_enabled:          " + string(sst_enabled?"true":"false") + "\n";
+  res += "use_global_sst_config:" + string(use_global_sst_config?"true":"false") + "\n";
+  res += "auth_enabled:         " + string(auth_enabled?"true":"false") + "\n";
+  res += "auth_user:            " + auth_credentials.user+"\n";
+  res += "auth_pwd:             " + auth_credentials.pwd+"\n";
+  res += "call_timer_enabled:   " + string(call_timer_enabled?"true":"false") + "\n";
+  res += "call_timer:           " + call_timer + "\n";
+  res += "prepaid_enabled:      " + string(prepaid_enabled?"true":"false") + "\n";
+  res += "prepaid_accmodule:    " + prepaid_accmodule + "\n";
+  res += "prepaid_uuid:         " + prepaid_uuid + "\n";
+  res += "prepaid_acc_dest:     " + prepaid_acc_dest + "\n";
+
+  if (reply_translations.size()) {
+    string reply_trans_codes;
+    for(map<unsigned int, std::pair<unsigned int, string> >::const_iterator it=
+	  reply_translations.begin(); it != reply_translations.end(); it++)
+      reply_trans_codes += int2str(it->first)+"=>"+
+	int2str(it->second.first)+" " + it->second.second+", ";
+    reply_trans_codes.erase(reply_trans_codes.length()-2);
+
+    res += "prepaid_acc_dest:     " + reply_trans_codes +"\n";
+  }
+  res += "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+  return res;
+}
+
