@@ -140,6 +140,9 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 
 int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
 {
+  if (reliable_1xx == REL100_IGNORED)
+    return 1;
+
   /* activate the 100rel, if needed */
   if (req.method == SIP_METH_INVITE) {
     switch(reliable_1xx) {
@@ -373,6 +376,9 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 
 int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
 {
+  if (reliable_1xx == REL100_IGNORED)
+    return 1;
+
   if (status!=Pending && status!=Connected)
     return 1;
 
@@ -450,6 +456,9 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
 void AmSipDialog::rel100OnTimeout(const AmSipRequest &req, 
     const AmSipReply &rpl)
 {
+  if (reliable_1xx == REL100_IGNORED)
+    return;
+
   INFO("reply <%s> timed out (not PRACKed).\n", rpl.print().c_str());
   if (100 < rpl.code && rpl.code < 200 && reliable_1xx == REL100_REQUIRE &&
       rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
@@ -551,6 +560,9 @@ int AmSipDialog::reply(const AmSipRequest& req,
 void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code, 
     string &hdrs)
 {
+  if (reliable_1xx == REL100_IGNORED)
+    return;
+
   if (req.method == SIP_METH_INVITE) {
     if (100 < code && code < 200) {
       switch (reliable_1xx) {

@@ -25,8 +25,6 @@
 
 /* 
 SBC - feature-wishlist
-
-- SDP filter (reconstructed SDP)
 - accounting (MySQL DB, cassandra DB)
 - RTP forwarding mode (bridging)
 - RTP transcoding mode (bridging)
@@ -166,6 +164,7 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile) // AmDynInvoke* user_ti
     call_profile(call_profile)
 {
   set_sip_relay_only(false);
+  dlg.reliable_1xx = REL100_IGNORED;
 }
 
 
@@ -680,7 +679,9 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
 				   const SBCCallProfile& call_profile) 
   : auth(NULL),
     call_profile(call_profile),
-    AmB2BCalleeSession(caller) {
+    AmB2BCalleeSession(caller)
+{
+  dlg.reliable_1xx = REL100_IGNORED;
 }
 
 SBCCalleeSession::~SBCCalleeSession() {

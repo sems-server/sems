@@ -186,6 +186,8 @@ class AmSipDialog
     REL100_REQUIRE,
     //REL100_PREFERED, //TODO
 #define REL100_REQUIRE          AmSipDialog::REL100_REQUIRE
+    REL100_IGNORED,
+#define REL100_IGNORED          AmSipDialog::REL100_IGNORED
     REL100_MAX
 #define REL100_MAX              AmSipDialog::REL100_MAX
   };

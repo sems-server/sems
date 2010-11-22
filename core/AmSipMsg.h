@@ -70,6 +70,9 @@ class AmSipRequest : public _AmSipMsgInDlg
   string from_tag;
   string to_tag;
 
+  string rack_method;
+  unsigned int rack_cseq;
+
  AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }
   

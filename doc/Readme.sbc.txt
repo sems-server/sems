@@ -193,6 +193,12 @@ Warning: Changing response codes, especially between different response
          code classes, can seriously mess up everything. Use with caution
          and only if you know what you are doing!
 
+Reliable 1xx (PRACK)
+--------------------
+
+Reliable 1xx (PRACK) extension (3262) is supported in a transparent mode,
+i.e. the RSeq header is relayed and RAck CSeq is translated properly.
+
 Session Timer configuration
 ---------------------------
 If SIP Session Timers are enabled for a profile, the session timers values
@@ -283,3 +289,4 @@ x maximum call duration timer
 - fallback profile
 - add headers
 - bridging between interfaces
+- rel1xx in non-transparent mode

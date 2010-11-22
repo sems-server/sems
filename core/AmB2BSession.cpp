@@ -29,6 +29,7 @@
 #include "AmConfig.h"
 #include "ampi/MonitoringAPI.h"
 #include "AmSipHeaders.h"
+#include "AmUtils.h"
 
 #include <assert.h>
 
@@ -381,7 +382,29 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
     relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
-    dlg.sendRequest(req.method,req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
+
+    const string* hdrs = &req.hdrs;
+    string m_hdrs;
+
+    // translate RAck for PRACK
+    if (req.method == SIP_METH_PRACK && req.rseq) {
+      TransMap::iterator t;
+      for (t=relayed_req.begin(); t != relayed_req.end(); t++) {
+	if (t->second.cseq == req.rack_cseq) {
+	  m_hdrs = req.hdrs +
+	    SIP_HDR_COLSP(SIP_HDR_RACK) + int2str(req.rseq) +
+	    " " + int2str(t->first) + " " + req.rack_method + CRLF;
+	  hdrs = &m_hdrs;
+	  break;
+	}
+      }
+      if (t==relayed_req.end()) {
+	WARN("Transaction with CSeq %d not found for translating RAck cseq\n",
+	     req.rack_cseq);
+      }
+    }
+
+    dlg.sendRequest(req.method, req.content_type, req.body, *hdrs, SIP_FLAGS_VERBATIM);
     // todo: relay error event back if sending fails
 
     if ((req.method == SIP_METH_INVITE ||
@@ -419,9 +442,18 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 
 void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 {
+  const string* hdrs = &reply.hdrs;
+  string m_hdrs;
+
+  if (reply.rseq != 0) {
+    m_hdrs = reply.hdrs +
+      SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(reply.rseq) + CRLF;
+    hdrs = &m_hdrs;
+  }
+
   dlg.reply(orig,reply.code,reply.reason,
 	    reply.content_type,
-	    reply.body,reply.hdrs,SIP_FLAGS_VERBATIM);
+	    reply.body, *hdrs,SIP_FLAGS_VERBATIM);
 
   if ((orig.method == SIP_METH_INVITE ||
        orig.method == SIP_METH_UPDATE) &&
