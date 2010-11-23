@@ -682,6 +682,11 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
     AmB2BCalleeSession(caller)
 {
   dlg.reliable_1xx = REL100_IGNORED;
+
+  if (call_profile.sdpfilter_enabled) {
+    b2b_mode = B2BMode_SDPFilter;
+  }
+
 }
 
 SBCCalleeSession::~SBCCalleeSession() {
