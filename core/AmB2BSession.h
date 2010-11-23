@@ -159,12 +159,12 @@ class AmB2BSession: public AmSession
   /** hash of body (from o-line) */
   uint32_t body_hash;
   /** save current session description (SDP) */
-  void saveSessionDescription(const string& content_type, const string& body);
+  virtual void saveSessionDescription(const string& content_type, const string& body);
   /** @return whether session has changed */
-  bool updateSessionDescription(const string& content_type, const string& body);
+  virtual bool updateSessionDescription(const string& content_type, const string& body);
 
   /** reset relation with other leg */
-  void clear_other();
+  virtual void clear_other();
 
   /** Relay one event to the other side. */
   virtual void relayEvent(AmEvent* ev);
