@@ -13,7 +13,8 @@ endif
 $(info exclude_dsm_modules: $(exclude_dsm_modules))
 dsm_modules = $(filter-out $(subst ;, ,$(exclude_dsm_modules))\
 		$(wildcard Makefile*) lib CMakeLists.txt, \
-		$(wildcard *) )
+		$(wildcard mod_*) )
+$(info dsm_modules: $(dsm_modules))
 
 .PHONY: all
 all: modules
