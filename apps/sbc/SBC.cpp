@@ -250,15 +250,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   // get timer
   if (call_profile.call_timer_enabled || call_profile.prepaid_enabled) {
-    AmDynInvokeFactory* fact =
-      AmPlugIn::instance()->getFactory4Di("user_timer");
-    if (NULL == fact) {
-      ERROR("load session_timer module for call timers\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-    m_user_timer = fact->getInstance();
-    if(NULL == m_user_timer) {
-      ERROR("could not get a timer reference\n");
+    if (!getUserTimer()) {
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
   }
@@ -280,20 +272,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   if (call_profile.prepaid_enabled) {
     call_profile.prepaid_accmodule =
       replaceParameters(call_profile.prepaid_accmodule, "prepaid_accmodule", REPLACE_VALS);
-    if (call_profile.prepaid_accmodule.empty()) {
-      ERROR("using prepaid but empty prepaid_accmodule!\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
 
-    AmDynInvokeFactory* pp_fact =
-      AmPlugIn::instance()->getFactory4Di(call_profile.prepaid_accmodule);
-    if (NULL == pp_fact) {
-      ERROR("prepaid_accmodule '%s' not loaded\n", call_profile.prepaid_accmodule.c_str());
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-    prepaid_acc = pp_fact->getInstance();
-    if(NULL == prepaid_acc) {
-      ERROR("could not get a prepaid acc reference\n");
+    if (!getPrepaidInterface()) {
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
@@ -328,6 +308,40 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   DBG("     From:  '%s'\n",from.c_str());
   DBG("     To:  '%s'\n",to.c_str());
   connectCallee(to, ruri, true);
+}
+
+bool SBCDialog::getUserTimer() {
+  AmDynInvokeFactory* fact =
+    AmPlugIn::instance()->getFactory4Di("user_timer");
+  if (NULL == fact) {
+    ERROR("load session_timer module for call timers\n");
+  }
+  m_user_timer = fact->getInstance();
+  if(NULL == m_user_timer) {
+    ERROR("could not get a timer reference\n");
+    return false;
+  }
+  return true;
+}
+
+bool SBCDialog::getPrepaidInterface() {
+  if (call_profile.prepaid_accmodule.empty()) {
+    ERROR("using prepaid but empty prepaid_accmodule!\n");
+    return false;
+  }
+  AmDynInvokeFactory* pp_fact =
+    AmPlugIn::instance()->getFactory4Di(call_profile.prepaid_accmodule);
+  if (NULL == pp_fact) {
+    ERROR("prepaid_accmodule '%s' not loaded\n",
+	  call_profile.prepaid_accmodule.c_str());
+    return false;
+  }
+  prepaid_acc = pp_fact->getInstance();
+  if(NULL == prepaid_acc) {
+    ERROR("could not get a prepaid acc reference\n");
+    return false;
+  }
+  return true;
 }
 
 void SBCDialog::process(AmEvent* ev)

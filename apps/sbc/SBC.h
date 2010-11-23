@@ -95,6 +95,9 @@ class SBCDialog : public AmB2BCallerSession
   void startPrepaidAccounting();
   void stopPrepaidAccounting();
 
+  bool getUserTimer();
+  bool getPrepaidInterface();
+
  public:
 
   SBCDialog(const SBCCallProfile& call_profile); //AmDynInvoke* user_timer);
