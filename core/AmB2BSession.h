@@ -290,7 +290,7 @@ class AmB2BCallerSession: public AmB2BSession
 class AmB2BCalleeSession: public AmB2BSession
 {
  public:
-  /*  AmB2BCalleeSession(const string& other_local_tag); */
+  AmB2BCalleeSession(const string& other_local_tag);
   AmB2BCalleeSession(const AmB2BCallerSession* caller);
 
   virtual ~AmB2BCalleeSession();

@@ -688,12 +688,11 @@ AmB2BCalleeSession* AmB2BCallerSession::newCalleeSession()
   return new AmB2BCalleeSession(this);
 }
 
-/* AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
+AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
   : AmB2BSession(other_local_tag)
 {
   a_leg = false;
 }
-*/
 
 AmB2BCalleeSession::AmB2BCalleeSession(const AmB2BCallerSession* caller)
   : AmB2BSession(caller->getLocalTag())
