@@ -70,15 +70,20 @@ static char _int2str_lookup[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', 
 
 string int2str(int val)
 {
-  char buffer[64] = {0};
+  char buffer[64] = {0,0};
   int i=62;
   div_t d;
 
-  d.quot = val;
+  d.quot = abs(val);
   do{
     d = div(d.quot,10);
     buffer[i] = _int2str_lookup[d.rem];
   }while(--i && d.quot);
+
+  if (i && (val<0)) {
+    buffer[i]='-';
+    i--;
+  }
 
   return string((char*)(buffer+i+1));
 }
