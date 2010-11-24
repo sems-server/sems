@@ -316,15 +316,13 @@ void SessionTimer::setTimers(AmSession* s)
   DBG("Setting session interval timer: %ds, tag '%s'\n", session_interval, 
       s->getLocalTag().c_str());
 
-  UserTimer::instance()->
-    setTimer(ID_SESSION_INTERVAL_TIMER, session_interval, s->getLocalTag());
+  s->setTimer(ID_SESSION_INTERVAL_TIMER, session_interval);
     
   // set session refresh action timer, after half the expiration
   if (session_refresher == refresh_local) {
     DBG("Setting session refresh timer: %ds, tag '%s'\n", session_interval/2, 
 	s->getLocalTag().c_str());
-    UserTimer::instance()->
-      setTimer(ID_SESSION_REFRESH_TIMER, session_interval/2, s->getLocalTag());
+    s->setTimer(ID_SESSION_REFRESH_TIMER, session_interval/2);
   }
 }
 
@@ -332,17 +330,14 @@ void SessionTimer::retryRefreshTimer(AmSession* s) {
   DBG("Retrying session refresh timer: T-2s, tag '%s' \n",
       s->getLocalTag().c_str());
 
-  UserTimer::instance()->
-    setTimer(ID_SESSION_REFRESH_TIMER, 2, s->getLocalTag());
+  s->setTimer(ID_SESSION_REFRESH_TIMER, 2);
 }
 
 
 void SessionTimer::removeTimers(AmSession* s) 
 {
-  UserTimer::instance()->
-    removeTimer(ID_SESSION_REFRESH_TIMER, s->getLocalTag());
-  UserTimer::instance()->
-    removeTimer(ID_SESSION_INTERVAL_TIMER, s->getLocalTag());
+  s->removeTimer(ID_SESSION_REFRESH_TIMER);
+  s->removeTimer(ID_SESSION_INTERVAL_TIMER);
 }
 
 void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev) 
