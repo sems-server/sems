@@ -43,8 +43,6 @@ using std::string;
 
 class SBCFactory: public AmSessionFactory
 {
-/*   AmDynInvokeFactory* user_timer_fact; */
-
   std::map<string, SBCCallProfile> call_profiles;
   std::map<string, AmConfigReader> call_profiles_configs;
 
@@ -80,7 +78,6 @@ class SBCDialog : public AmB2BCallerSession
   string callid;
 
   unsigned int call_timer;
-  AmDynInvoke* m_user_timer;
 
   // prepaid
   AmDynInvoke* prepaid_acc;
@@ -95,12 +92,11 @@ class SBCDialog : public AmB2BCallerSession
   void startPrepaidAccounting();
   void stopPrepaidAccounting();
 
-  bool getUserTimer();
   bool getPrepaidInterface();
 
  public:
 
-  SBCDialog(const SBCCallProfile& call_profile); //AmDynInvoke* user_timer);
+  SBCDialog(const SBCCallProfile& call_profile);
   ~SBCDialog();
   
   void process(AmEvent* ev);

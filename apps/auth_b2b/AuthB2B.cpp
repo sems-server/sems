@@ -43,7 +43,6 @@ EXPORT_SESSION_FACTORY(AuthB2BFactory,MOD_NAME);
 
 AuthB2BFactory::AuthB2BFactory(const string& _app_name)
 : AmSessionFactory(_app_name)
-// , user_timer_fact(NULL)
 {
 }
 
@@ -61,31 +60,18 @@ int AuthB2BFactory::onLoad()
      pwd = cfg.getParameter("pwd");
    }
 
-//   user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
-//   if(!user_timer_fact) {
-//     ERROR("could not load user_timer from session_timer plug-in\n");
-//     return -1;
-//   }
-
   return 0;
 }
 
 
 AmSession* AuthB2BFactory::onInvite(const AmSipRequest& req)
 {
-//   AmDynInvoke* user_timer = user_timer_fact->getInstance();
-//   if(!user_timer) {
-//     ERROR("could not get a user timer reference\n");
-//     throw AmSession::Exception(500,"could not get a user timer reference");
-//   }
-
-  return new AuthB2BDialog(); //user_timer);
+  return new AuthB2BDialog();
 }
 
 
-AuthB2BDialog::AuthB2BDialog() // AmDynInvoke* user_timer)
+AuthB2BDialog::AuthB2BDialog()
 : m_state(BB_Init),
-  //m_user_timer(user_timer),
   AmB2BCallerSession()
 
 {
@@ -187,11 +173,7 @@ bool AuthB2BDialog::onOtherReply(const AmSipReply& reply)
         setInOut(NULL, NULL);
 
 //         // set the call timer
-//         AmArg di_args,ret;
-//         di_args.push(TIMERID_CREDIT_TIMEOUT);
-//         di_args.push(m_credit);  // in seconds
-//         di_args.push(dlg.local_tag.c_str());
-//         m_user_timer->invoke("setTimer", di_args, ret);
+//      setTimer(TIMERID_CREDIT_TIMEOUT, m_credit);
       }
     }
     else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {

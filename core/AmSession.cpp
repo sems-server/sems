@@ -67,7 +67,8 @@ AmSession::AmSession()
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
     refresh_method(REFRESH_UPDATE_FB_REINV),
-    processing_status(SESSION_PROCESSING_EVENTS)
+    processing_status(SESSION_PROCESSING_EVENTS),
+    user_timer_ref(NULL)
 #ifdef WITH_ZRTP
   ,  zrtp_session(NULL), zrtp_audio(NULL), enable_zrtp(true)
 #endif
@@ -78,6 +79,7 @@ AmSession::AmSession()
 {
   use_local_audio[AM_AUDIO_IN] = false;
   use_local_audio[AM_AUDIO_OUT] = false;
+  DBG("user_timer_ref = %p\n", user_timer_ref);
 }
 
 AmSession::~AmSession()
@@ -1081,6 +1083,70 @@ string AmSession::advertisedIP()
     return AmConfig::LocalIP;           // "listen" parameter.
   return set_ip;
 }  
+
+// TODO: move user timers into core
+void AmSession::getUserTimerInstance() {
+  AmDynInvokeFactory* fact = 
+    AmPlugIn::instance()->getFactory4Di("user_timer");
+
+  if (!fact)
+    return;
+
+  user_timer_ref = fact->getInstance();
+}
+
+bool AmSession::timersSupported() {
+  return NULL != AmPlugIn::instance()->getFactory4Di("user_timer") ;
+}
+
+bool AmSession::setTimer(int timer_id, unsigned int timeout) {
+  if (NULL == user_timer_ref)
+    getUserTimerInstance();
+
+  if (NULL == user_timer_ref)
+    return false;
+
+  DBG("setting timer %d with timeout %u\n", timer_id, timeout);
+  AmArg di_args,ret;
+  di_args.push((int)timer_id);
+  di_args.push((int)timeout);           // in seconds
+  di_args.push(getLocalTag().c_str());
+  user_timer_ref->invoke("setTimer", di_args, ret);
+
+  return true;
+}
+
+bool AmSession::removeTimer(int timer_id) {
+  if (NULL == user_timer_ref)
+    getUserTimerInstance();
+
+  if (NULL == user_timer_ref)
+    return false;
+
+  DBG("removing timer %d\n", timer_id);
+  AmArg di_args,ret;
+  di_args.push((int)timer_id);
+  di_args.push(getLocalTag().c_str());
+  user_timer_ref->invoke("removeTimer", di_args, ret);
+
+  return true;
+}
+
+bool AmSession::removeTimers() {
+  if (NULL == user_timer_ref)
+    getUserTimerInstance();
+
+  if (NULL == user_timer_ref)
+    return false;
+
+  DBG("removing timers\n");
+  AmArg di_args,ret;
+  di_args.push(getLocalTag().c_str());
+  user_timer_ref->invoke("removeTimers", di_args, ret);
+
+  return true;
+}
+
  
 #ifdef WITH_ZRTP
 void AmSession::onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx) {

@@ -36,8 +36,6 @@ using std::string;
 class CallTimerFactory: public AmSessionFactory
 {
  public:
-  AmDynInvokeFactory* user_timer_fact; 
-
   static unsigned int DefaultCallTimer; 
   static bool UseAppParam;
 
@@ -59,14 +57,11 @@ class CallTimerDialog : public AmB2BCallerSession
 
   int m_state;
   
-  AmDynInvoke* m_user_timer;
-
   unsigned int call_time;
 
  public:
 
-  CallTimerDialog(AmDynInvoke* user_timer, 
-		  unsigned int call_time);
+  CallTimerDialog(unsigned int call_time);
   ~CallTimerDialog();
   
   void process(AmEvent* ev);

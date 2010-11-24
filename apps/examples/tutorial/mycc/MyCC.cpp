@@ -26,7 +26,7 @@ EXPORT_SESSION_FACTORY(MyCCFactory,MOD_NAME);
  string MyCCFactory::ConnectSuffix;
 
 MyCCFactory::MyCCFactory(const string& _app_name)
-  : AmSessionFactory(_app_name), user_timer_fact(NULL)
+  : AmSessionFactory(_app_name)
 {
 }
 
@@ -44,9 +44,8 @@ int MyCCFactory::onLoad()
   EnterNumber         = cfg.getParameter("enter_number", "/tmp/enter_number.wav"); 
   ConnectSuffix       = cfg.getParameter("connect_suffix", "@127.0.0.1"); 
 
-  user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
-  if(!user_timer_fact){
-    ERROR("could not load user_timer from session_timer plug-in\n");
+  if (!AmSession::timersSupported()) {
+    ERROR("load session_timer plug-in for timers\n");
     return -1;
   }
   cc_acc_fact = AmPlugIn::instance()->getFactory4Di("cc_acc");
@@ -60,26 +59,21 @@ int MyCCFactory::onLoad()
 
 AmSession* MyCCFactory::onInvite(const AmSipRequest& req)
 {
-    AmDynInvoke* user_timer = user_timer_fact->getInstance();
-    if(!user_timer){
-	ERROR("could not get a user timer reference\n");
-	throw AmSession::Exception(500,"could not get a user timer reference");
-    }
 
     AmDynInvoke* cc_acc = cc_acc_fact->getInstance();
-    if(!user_timer){
+    if(!cc_acc){
 	ERROR("could not get a cc acc reference\n");
 	throw AmSession::Exception(500,"could not get a cc acc reference");
     }
 
-    return new MyCCDialog(cc_acc, user_timer);
+    return new MyCCDialog(cc_acc);
 }
 
 
-MyCCDialog::MyCCDialog(AmDynInvoke* cc_acc, AmDynInvoke* user_timer)
+MyCCDialog::MyCCDialog(AmDynInvoke* cc_acc)
   : playlist(this), 
     state(CC_Collecting_PIN),
-    cc_acc(cc_acc), user_timer(user_timer),
+    cc_acc(cc_acc),
     AmB2BCallerSession()
     
 {
@@ -209,11 +203,7 @@ bool MyCCDialog::onOtherReply(const AmSipReply& reply) {
 	// detach from media processor (not in RTP path any more)
 	AmMediaProcessor::instance()->removeSession(this);
 	// set the call timer
-	AmArg di_args,ret;
-	di_args.push(TIMERID_CREDIT_TIMEOUT);
-	di_args.push(credit); // in seconds
-	di_args.push(dlg.local_tag.c_str());
-	user_timer->invoke("setTimer", di_args, ret);
+	setTimer(TIMERID_CREDIT_TIMEOUT, credit);
       }
     } else {
       DBG("Callee final error with code %d\n",reply.code);

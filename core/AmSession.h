@@ -148,7 +148,10 @@ private:
   friend class AmSessionProcessorThread;
 
   auto_ptr<AmRtpAudio> _rtp_str;
+
+  AmDynInvoke* user_timer_ref;
   
+  void getUserTimerInstance();
 protected:
   AmSdp               sdp;
 
@@ -415,6 +418,38 @@ public:
    * @param duration_ms duration in milliseconds
    */
   void sendDtmf(int event, unsigned int duration_ms);
+
+  /* ---- general purpose application level timers ------------ */
+
+  /** check for support of timers
+    @return true if application level timers are supported
+   */
+  static bool timersSupported();
+
+  /**
+     set a Timer
+     @param timer_id the ID of the timer (<0 for system timers)
+     @param timeout timeout in seconds
+     @return true on success
+  */
+  virtual bool setTimer(int timer_id, unsigned int timeout);
+
+  /**
+     remove a Timer
+     @param timer_id the ID of the timer (<0 for system timers)
+     @return true on success
+  */
+  virtual bool removeTimer(int timer_id);
+
+  /**
+     remove all Timers
+     @return true on success
+     Note: this doesn't clear timer events already in the 
+           event queue
+  */
+  virtual bool removeTimers();
+
+  /* ---------- event handlers ------------------------- */
 
   /** DTMF event handler for apps to use*/
   virtual void onDtmf(int event, int duration);

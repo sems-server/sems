@@ -35,7 +35,6 @@ using std::string;
 
 class AuthB2BFactory: public AmSessionFactory
 {
-/*   AmDynInvokeFactory* user_timer_fact; */
 
  public:
   AuthB2BFactory(const string& _app_name);
@@ -65,11 +64,9 @@ class AuthB2BDialog : public AmB2BCallerSession
   string from;
   string to;
   
-/*   AmDynInvoke* m_user_timer; */
-
  public:
 
-  AuthB2BDialog(); //AmDynInvoke* user_timer);
+  AuthB2BDialog();
   ~AuthB2BDialog();
   
   void process(AmEvent* ev);

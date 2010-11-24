@@ -35,7 +35,6 @@ using std::string;
 
 class SWPrepaidSIPFactory: public AmSessionFactory
 {
-  AmDynInvokeFactory* user_timer_fact;
   AmDynInvokeFactory* cc_acc_fact;
 
   public:
@@ -68,12 +67,11 @@ class SWPrepaidSIPDialog : public AmB2BCallerSession
   void stopAccounting();
   struct timeval m_acc_start;
 
-  AmDynInvoke* m_user_timer;
   AmDynInvoke* m_cc_acc;
 
   public:
 
-    SWPrepaidSIPDialog(AmDynInvoke* cc_acc, AmDynInvoke* user_timer);
+    SWPrepaidSIPDialog(AmDynInvoke* cc_acc);
     ~SWPrepaidSIPDialog();
 
     void process(AmEvent* ev);

@@ -37,8 +37,6 @@ using std::string;
 
 class SSTB2BFactory: public AmSessionFactory
 {
-/*   AmDynInvokeFactory* user_timer_fact; */
-
 
  public:
   SSTB2BFactory(const string& _app_name);
@@ -71,12 +69,9 @@ class SSTB2BDialog : public AmB2BCallerSession
   string from;
   string to;
 
-/*   AmDynInvoke* m_user_timer; */
-  /* set<int> b2b_reinvite_cseqs; // cseqs of reinvite we sent from the middle */
-
  public:
 
-  SSTB2BDialog(); //AmDynInvoke* user_timer);
+  SSTB2BDialog();
   ~SSTB2BDialog();
   
   void process(AmEvent* ev);

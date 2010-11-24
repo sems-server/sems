@@ -32,11 +32,9 @@ class PySemsB2ABDialog : public AmB2ABCallerSession,
   public PySemsDialogBase
 {
  public:
-  AmDynInvoke* user_timer;
   AmPlaylist playlist;
 
   PySemsB2ABDialog();
-  PySemsB2ABDialog(AmDynInvoke* user_timer);
   virtual ~PySemsB2ABDialog();
 
   void onSessionStart(const AmSipRequest& req);

@@ -10,7 +10,6 @@ using std::string;
 class MyCCFactory: public AmSessionFactory
 {
 
-  AmDynInvokeFactory* user_timer_fact;
   AmDynInvokeFactory* cc_acc_fact;
 
 public:
@@ -49,11 +48,10 @@ class MyCCDialog : public AmB2BCallerSession
   void stopAccounting();
   struct timeval acc_start;
 
-  AmDynInvoke* user_timer;
   AmDynInvoke* cc_acc;
 
  public:
-    MyCCDialog(AmDynInvoke* cc_acc, AmDynInvoke* user_timer);
+    MyCCDialog(AmDynInvoke* cc_acc);
     ~MyCCDialog();
 
     void onSessionStart(const AmSipRequest& req);

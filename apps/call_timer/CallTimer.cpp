@@ -46,8 +46,7 @@ bool         CallTimerFactory::UseAppParam = true;
 EXPORT_SESSION_FACTORY(CallTimerFactory,MOD_NAME);
 
 CallTimerFactory::CallTimerFactory(const string& _app_name)
-: AmSessionFactory(_app_name), 
-  user_timer_fact(NULL)
+: AmSessionFactory(_app_name)
 {
 }
 
@@ -67,9 +66,8 @@ int CallTimerFactory::onLoad()
     UseAppParam = (cfg.getParameter("use_app_param") == "yes");
   }
 
-  user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
-  if(!user_timer_fact) {
-    ERROR("could not load user_timer from session_timer plug-in\n");
+  if (!AmSession::timersSupported()) {
+    ERROR("load session_timer plug-in for timers\n");
     return -1;
   }
 
@@ -80,11 +78,6 @@ int CallTimerFactory::onLoad()
 AmSession* CallTimerFactory::onInvite(const AmSipRequest& req)
 {
   DBG(" *** creating new call timer session ***\n");
-  AmDynInvoke* user_timer = user_timer_fact->getInstance();
-  if(!user_timer) {
-    ERROR("could not get a user timer reference\n");
-     throw AmSession::Exception(500,"could not get a user timer reference");
-  }
 
   string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
@@ -107,15 +100,13 @@ AmSession* CallTimerFactory::onInvite(const AmSipRequest& req)
 
   DBG("using call timer %d seconds\n", call_time);
 
-  return new CallTimerDialog(user_timer, call_time);
+  return new CallTimerDialog(call_time);
 }
 
 
-CallTimerDialog::CallTimerDialog(AmDynInvoke* user_timer,
-				 unsigned int call_time)
+CallTimerDialog::CallTimerDialog(unsigned int call_time)
 : m_state(BB_Init),
   call_time(call_time),
-  m_user_timer(user_timer),
   AmB2BCallerSession()
 
 {
@@ -185,11 +176,7 @@ bool CallTimerDialog::onOtherReply(const AmSipReply& reply)
         setInOut(NULL, NULL);
 	// startAccounting();
 	// set the call timer
-	AmArg di_args,ret;
-	di_args.push(TIMERID_CALL_TIMER);
-	di_args.push((int)call_time);  // in seconds
-	di_args.push(dlg.local_tag.c_str());
-        m_user_timer->invoke("setTimer", di_args, ret);
+	setTimer(TIMERID_CALL_TIMER, call_time);
       }
     }
     else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {

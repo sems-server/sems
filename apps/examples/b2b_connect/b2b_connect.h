@@ -35,7 +35,6 @@ using std::string;
 
 class b2b_connectFactory: public AmSessionFactory
 {
-/*   AmDynInvokeFactory* user_timer_fact; */
 
  public:
   b2b_connectFactory(const string& _app_name);
@@ -58,11 +57,9 @@ class b2b_connectDialog : public AmB2ABCallerSession
 
   AmSipRequest invite_req;
   
-/*   AmDynInvoke* m_user_timer; */
-
  public:
 
-  b2b_connectDialog(); //AmDynInvoke* user_timer);
+  b2b_connectDialog();
   ~b2b_connectDialog();
   
   void onSessionStart(const AmSipRequest& req);

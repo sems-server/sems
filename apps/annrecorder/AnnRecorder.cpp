@@ -56,7 +56,6 @@ EXPORT_SESSION_FACTORY(AnnRecorderFactory,MOD_NAME);
 string AnnRecorderFactory::AnnouncePath;
 string AnnRecorderFactory::DefaultAnnounce;
 bool   AnnRecorderFactory::SimpleMode=false;
-AmDynInvokeFactory* AnnRecorderFactory::user_timer_fact = NULL;
 AmDynInvokeFactory* AnnRecorderFactory::message_storage_fact = NULL;
 
 const char* MsgStrError(int e) {
@@ -106,8 +105,7 @@ int AnnRecorderFactory::onLoad()
   AM_PROMPT_END(prompts, cfg, MOD_NAME);
 
 
-  user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
-  if(!user_timer_fact) {
+  if (!AmSession::timersSupported()) {
     ERROR("sorry, could not load user_timer from session_timer plug-in\n");
     return -1;
   }
@@ -253,12 +251,6 @@ AnnRecorderDialog::AnnRecorderDialog(const map<string, string>& params,
     prompts(prompts), cred(credentials),
     playlist(this)
 {
-  user_timer = AnnRecorderFactory::user_timer_fact->getInstance();
-  if(!user_timer) {
-    ERROR("could not get a user timer reference\n");
-    throw AmSession::Exception(500,"could not get a timer");
-  }
-
   msg_storage = AnnRecorderFactory::message_storage_fact->getInstance();
   if(!msg_storage){
     ERROR("could not get a message storage reference\n");
@@ -319,9 +311,7 @@ void AnnRecorderDialog::onDtmf(int event, int duration_msec) {
   DBG("DTMF %d, %d\n", event, duration_msec);
   // remove timer
   try {
-  AmArg di_args,ret;
-  di_args.push(getLocalTag().c_str());
-  user_timer->invoke("removeUserTimers", di_args, ret);
+    removeTimers();
   } catch(...) {
     ERROR("Exception caught calling mod api\n");
   }
@@ -434,22 +424,14 @@ void AnnRecorderDialog::process(AmEvent* event)
     if ((pl_ev->event_id == SEP_MSG_BEGIN) && 
 	(S_WAIT_START == state)) {
       // start timer
-      AmArg di_args,ret;
-      di_args.push(TIMERID_START_TIMER);
-      di_args.push(START_RECORDING_TIMEOUT);  // in seconds
-      di_args.push(getLocalTag().c_str());
-      user_timer->invoke("setTimer", di_args, ret);
+      setTimer(TIMERID_START_TIMER, START_RECORDING_TIMEOUT);
       return;
     }
 
     if ((pl_ev->event_id == SEP_CONFIRM_BEGIN) && 
 	(S_CONFIRM == state)) {
       // start timer
-      AmArg di_args,ret;
-      di_args.push(TIMERID_CONFIRM_TIMER);
-      di_args.push(CONFIRM_RECORDING_TIMEOUT);  // in seconds
-      di_args.push(getLocalTag().c_str());
-      user_timer->invoke("setTimer", di_args, ret);
+      setTimer(TIMERID_CONFIRM_TIMER, CONFIRM_RECORDING_TIMEOUT);
       return;
     }
     return;

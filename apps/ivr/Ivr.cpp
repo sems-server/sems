@@ -174,8 +174,7 @@ void PythonScriptThread::on_stop() {
 }
 
 IvrFactory::IvrFactory(const string& _app_name)
-  : AmSessionFactory(_app_name),
-    user_timer_fact(NULL)
+  : AmSessionFactory(_app_name)
 {
 }
 
@@ -300,14 +299,7 @@ IvrDialog* IvrFactory::newDlg(const string& name)
 
   IvrScriptDesc& mod_desc = mod_it->second;
 
-  AmDynInvoke* user_timer = user_timer_fact->getInstance();
-  if(!user_timer){
-    ERROR("could not get a user timer reference\n");
-    throw AmSession::Exception(500,"could not get a user timer reference");
-  }
-	
-
-  IvrDialog* dlg = new IvrDialog(user_timer);
+  IvrDialog* dlg = new IvrDialog();
 
   PyObject* c_dlg = PyCObject_FromVoidPtr(dlg,NULL);
   PyObject* dlg_inst = PyObject_CallMethod(mod_desc.dlg_class,"__new__","OO",
@@ -425,10 +417,8 @@ bool IvrFactory::loadScript(const string& path)
  */
 int IvrFactory::onLoad()
 {
-  user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
-  if(!user_timer_fact){
-	
-    ERROR("could not load user_timer from session_timer plug-in\n");
+  if (!AmSession::timersSupported()) {	
+    ERROR("load session_timer plug-in (for timers)\n");
     return -1;
   }
 
@@ -575,11 +565,10 @@ AmSession* IvrFactory::onInvite(const AmSipRequest& req)
     return newDlg(req.user);
 }
 
-IvrDialog::IvrDialog(AmDynInvoke* user_timer)
+IvrDialog::IvrDialog()
   : py_mod(NULL), 
     py_dlg(NULL),
-    playlist(this),
-    user_timer(user_timer)
+    playlist(this)
 {
   set_sip_relay_only(false);
 }

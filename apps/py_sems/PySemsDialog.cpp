@@ -22,24 +22,14 @@
 #include "PySemsUtils.h"
 
 PySemsDialog::PySemsDialog()
-  : playlist(this),
-    user_timer(NULL)
+  : playlist(this)
 {
 }
-
-PySemsDialog::PySemsDialog(AmDynInvoke* user_timer)
-  : playlist(this),
-    user_timer(user_timer)
-{
-}
-
 
 PySemsDialog::~PySemsDialog()
 {
   playlist.close(false);
 }
-
-
 
 void PySemsDialog::onSessionStart(const AmSipRequest& req)
 {

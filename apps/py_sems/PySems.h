@@ -83,8 +83,6 @@ class PySemsFactory: public AmSessionFactory
 
   map<string,PySemsScriptDesc> mod_reg;
 
-  AmDynInvokeFactory* user_timer_fact;
-
   void init_python_interpreter(const string& script_path);
   void set_sys_path(const string& script_path);
   void import_py_sems_builtins();

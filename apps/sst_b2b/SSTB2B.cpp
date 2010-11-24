@@ -91,7 +91,7 @@ AmSession* SSTB2BFactory::onInvite(const AmSipRequest& req)
 }
 
 
-SSTB2BDialog::SSTB2BDialog() // AmDynInvoke* user_timer)
+SSTB2BDialog::SSTB2BDialog()
 : m_state(BB_Init),
   AmB2BCallerSession()
 

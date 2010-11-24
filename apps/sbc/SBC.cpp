@@ -158,9 +158,9 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
 }
 
 
-SBCDialog::SBCDialog(const SBCCallProfile& call_profile) // AmDynInvoke* user_timer)
+SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
-    m_user_timer(NULL),prepaid_acc(NULL),
+    prepaid_acc(NULL),
     call_profile(call_profile)
 {
   set_sip_relay_only(false);
@@ -250,7 +250,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   // get timer
   if (call_profile.call_timer_enabled || call_profile.prepaid_enabled) {
-    if (!getUserTimer()) {
+    if (!timersSupported()) {
+      ERROR("load session_timer module for call timers\n");
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
   }
@@ -308,20 +309,6 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   DBG("     From:  '%s'\n",from.c_str());
   DBG("     To:  '%s'\n",to.c_str());
   connectCallee(to, ruri, true);
-}
-
-bool SBCDialog::getUserTimer() {
-  AmDynInvokeFactory* fact =
-    AmPlugIn::instance()->getFactory4Di("user_timer");
-  if (NULL == fact) {
-    ERROR("load session_timer module for call timers\n");
-  }
-  m_user_timer = fact->getInstance();
-  if(NULL == m_user_timer) {
-    ERROR("could not get a timer reference\n");
-    return false;
-  }
-  return true;
 }
 
 bool SBCDialog::getPrepaidInterface() {
@@ -516,8 +503,8 @@ void SBCDialog::stopCall() {
 /** @return whether successful */
 bool SBCDialog::startCallTimer() {
   if ((call_profile.call_timer_enabled || call_profile.prepaid_enabled) &&
-      (NULL == m_user_timer)) {
-    ERROR("internal implementation error: invalid timer reference\n");
+      (!AmSession::timersSupported())) {
+    ERROR("internal implementation error: timers not supported\n");
     terminateOtherLeg();
     terminateLeg();
     return false;
@@ -525,11 +512,7 @@ bool SBCDialog::startCallTimer() {
 
   if (call_profile.call_timer_enabled) {
     DBG("SBC: starting call timer of %u seconds\n", call_timer);
-    AmArg di_args,ret;
-    di_args.push((int)SBC_TIMER_ID_CALL_TIMER);
-    di_args.push((int)call_timer);           // in seconds
-    di_args.push(getLocalTag().c_str());
-    m_user_timer->invoke("setTimer", di_args, ret);
+    setTimer(SBC_TIMER_ID_CALL_TIMER, call_timer);
   }
 
   return true;
@@ -550,11 +533,7 @@ void SBCDialog::startPrepaidAccounting() {
 
   DBG("SBC: starting prepaid timer of %d seconds\n", prepaid_credit);
   {
-    AmArg di_args,ret;
-    di_args.push((int)SBC_TIMER_ID_PREPAID_TIMEOUT);
-    di_args.push((int)prepaid_credit);           // in seconds
-    di_args.push(getLocalTag().c_str());
-    m_user_timer->invoke("setTimer", di_args, ret);
+    setTimer(SBC_TIMER_ID_PREPAID_TIMEOUT, prepaid_credit);
   }
 
   {

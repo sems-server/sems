@@ -756,29 +756,12 @@ EXEC_ACTION_START(SCSetTimerAction) {
     EXEC_ACTION_STOP;
   }
 
-  DBG("setting timer %u with timeout %u\n", timerid, timeout);
-  AmDynInvokeFactory* user_timer_fact = 
-    AmPlugIn::instance()->getFactory4Di("user_timer");
-
-  if(!user_timer_fact) {
-    ERROR("load sess_timer module for timers.\n");
+  if (!sess->setTimer(timerid, timeout)) {
+    ERROR("load session_timer module for timers.\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_CONFIG);
     sc_sess->SET_STRERROR("load sess_timer module for timers.\n");
     EXEC_ACTION_STOP;
   }
-  AmDynInvoke* user_timer = user_timer_fact->getInstance();
-  if(!user_timer) {
-    ERROR("load sess_timer module for timers.\n");
-    sc_sess->SET_ERRNO(DSM_ERRNO_CONFIG);
-    sc_sess->SET_STRERROR("load sess_timer module for timers.\n");
-    EXEC_ACTION_STOP;
-  }
-
-  AmArg di_args,ret;
-  di_args.push((int)timerid);
-  di_args.push((int)timeout);      // in seconds
-  di_args.push(sess->getLocalTag().c_str());
-  user_timer->invoke("setTimer", di_args, ret);
 
   sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
@@ -795,53 +778,25 @@ EXEC_ACTION_START(SCRemoveTimerAction) {
     return false;
   }
 
-  DBG("removing timer %u\n", timerid);
-  AmDynInvokeFactory* user_timer_fact = 
-    AmPlugIn::instance()->getFactory4Di("user_timer");
-
-  if(!user_timer_fact) {
+  if (!sess->removeTimer(timerid)) {
+    ERROR("load session_timer module for timers.\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_CONFIG);
-    sc_sess->SET_STRERROR("load sess_timer module for timers.\n");
+    sc_sess->SET_STRERROR("load session_timer module for timers.\n");
     EXEC_ACTION_STOP;
   }
-  AmDynInvoke* user_timer = user_timer_fact->getInstance();
-  if(!user_timer) {
-    sc_sess->SET_ERRNO(DSM_ERRNO_CONFIG);
-    sc_sess->SET_STRERROR("load sess_timer module for timers.\n");
-    EXEC_ACTION_STOP;
-  }
-
-  AmArg di_args,ret;
-  di_args.push((int)timerid);
-  di_args.push(sess->getLocalTag().c_str());
-  user_timer->invoke("removeTimer", di_args, ret);
 
   sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCRemoveTimersAction) {
 
-
   DBG("removing timers for session %s\n", sess->getLocalTag().c_str());
-  AmDynInvokeFactory* user_timer_fact = 
-    AmPlugIn::instance()->getFactory4Di("user_timer");
-
-  if(!user_timer_fact) {
-    ERROR("load sess_timer module for timers.\n");
+  if (!sess->removeTimers()) {
+    ERROR("load session_timer module for timers.\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_CONFIG);
     sc_sess->SET_STRERROR("load sess_timer module for timers.\n");
     EXEC_ACTION_STOP;
   }
-  AmDynInvoke* user_timer = user_timer_fact->getInstance();
-  if(!user_timer) {
-    sc_sess->SET_ERRNO(DSM_ERRNO_CONFIG);
-    sc_sess->SET_STRERROR("load sess_timer module for timers.\n");
-    EXEC_ACTION_STOP;
-  }
-
-  AmArg di_args,ret;
-  di_args.push(sess->getLocalTag().c_str());
-  user_timer->invoke("removeUserTimers", di_args, ret);
 
   sc_sess->CLR_ERRNO;
 } EXEC_ACTION_END;

@@ -83,7 +83,6 @@ class IvrFactory: public AmSessionFactory
 
   map<string,IvrScriptDesc> mod_reg;
 
-  AmDynInvokeFactory* user_timer_fact;
   static AmSessionEventHandlerFactory* session_timer_f;
 
   void init_python_interpreter(const string& script_path);
@@ -131,10 +130,9 @@ class IvrDialog : public AmB2BCallerSession
 
   void createCalleeSession();
  public:
-  AmDynInvoke* user_timer;
   AmPlaylist playlist;
 
-  IvrDialog(AmDynInvoke* user_timer);
+  IvrDialog();
   ~IvrDialog();
 
   // must be called before everything else.

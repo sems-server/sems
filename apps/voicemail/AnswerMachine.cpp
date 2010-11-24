@@ -76,7 +76,6 @@ string AnswerMachineFactory::RecFileExt;
 string AnswerMachineFactory::AnnouncePath;
 string AnswerMachineFactory::DefaultAnnounce;
 int    AnswerMachineFactory::MaxRecordTime;
-AmDynInvokeFactory* AnswerMachineFactory::UserTimer=0;
 AmDynInvokeFactory* AnswerMachineFactory::MessageStorage=0;
 bool AnswerMachineFactory::SaveEmptyMsg = true;
 bool AnswerMachineFactory::TryPersonalGreeting = false;
@@ -452,10 +451,8 @@ int AnswerMachineFactory::onLoad()
   MaxRecordTime   = cfg.getParameterInt("max_record_time",DEFAULT_RECORD_TIME);
   RecFileExt      = cfg.getParameter("rec_file_ext",DEFAULT_AUDIO_EXT);
 
-  UserTimer = AmPlugIn::instance()->getFactory4Di("user_timer");
-  if(!UserTimer){
-	
-    ERROR("could not load user_timer from session_timer plug-in\n");
+  if (!AmSession::timersSupported()) {	
+    ERROR("load session_timer plug-in (for timers support)\n");
     return -1;
   }
 
@@ -746,13 +743,6 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
   email_dict["uid"] = uid;
   email_dict["did"] = did;
 
-  user_timer = AnswerMachineFactory::UserTimer->getInstance();
-  if(!user_timer){
-    ERROR("could not get a user timer reference\n");
-    throw AmSession::Exception(500,"could not get a "
-			       "user timer reference");
-  }
-
   if (vm_mode == MODE_BOTH || vm_mode == MODE_BOX) {
     msg_storage = AnswerMachineFactory::MessageStorage->getInstance();
     if(!msg_storage){
@@ -790,12 +780,8 @@ void AnswerMachineDialog::process(AmEvent* event)
 
 	playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
 		
-	{AmArg di_args,ret;
-	di_args.push(RECORD_TIMER);
-	di_args.push(AnswerMachineFactory::MaxRecordTime);
-	di_args.push(getLocalTag().c_str());
+	setTimer(RECORD_TIMER, AnswerMachineFactory::MaxRecordTime);
 
-	user_timer->invoke("setTimer",di_args,ret);}
 	status = 1;
       } break;
 

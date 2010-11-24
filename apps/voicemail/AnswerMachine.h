@@ -80,7 +80,6 @@ public:
   static string AnnouncePath;
   static string DefaultAnnounce;
   static int    MaxRecordTime;
-  static AmDynInvokeFactory* UserTimer;
   static AmDynInvokeFactory* MessageStorage;
   static bool SaveEmptyMsg;
   static bool TryPersonalGreeting;
@@ -118,7 +117,6 @@ class AnswerMachineDialog : public AmSession
     const EmailTemplate* tmpl;
     EmailTmplDict  email_dict;
 
-    AmDynInvoke* user_timer;
     AmDynInvoke* msg_storage;
 
     int status;
