@@ -79,7 +79,6 @@ AmSession::AmSession()
 {
   use_local_audio[AM_AUDIO_IN] = false;
   use_local_audio[AM_AUDIO_OUT] = false;
-  DBG("user_timer_ref = %p\n", user_timer_ref);
 }
 
 AmSession::~AmSession()
