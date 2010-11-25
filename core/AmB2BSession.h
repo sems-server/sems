@@ -264,6 +264,7 @@ class AmB2BCallerSession: public AmB2BSession
   virtual ~AmB2BCallerSession();
     
   CalleeStatus getCalleeStatus() { return callee_status; }
+  void setCalleeStatus(CalleeStatus c) { callee_status = c; }
 
   virtual AmB2BCalleeSession* newCalleeSession();
 
