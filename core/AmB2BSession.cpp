@@ -407,7 +407,8 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
     dlg.sendRequest(req.method, req.content_type, req.body, *hdrs, SIP_FLAGS_VERBATIM);
     // todo: relay error event back if sending fails
 
-    if ((req.method == SIP_METH_INVITE ||
+    if ((refresh_method != REFRESH_UPDATE) &&
+	(req.method == SIP_METH_INVITE ||
 	 req.method == SIP_METH_UPDATE) &&
 	!req.body.empty()) {
       saveSessionDescription(req.content_type, req.body);
@@ -431,7 +432,9 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
     dlg.send_200_ack(AmSipTransaction(t->second.method, t->first,t->second.tt), 
 		     req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
 
-    if (!req.body.empty() && t->second.method == SIP_METH_INVITE) {
+    if ((refresh_method != REFRESH_UPDATE) &&
+	!req.body.empty() &&
+	(t->second.method == SIP_METH_INVITE)) {
     // delayed SDP negotiation - save SDP
       saveSessionDescription(req.content_type, req.body);
     }
@@ -455,7 +458,8 @@ void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 	    reply.content_type,
 	    reply.body, *hdrs,SIP_FLAGS_VERBATIM);
 
-  if ((orig.method == SIP_METH_INVITE ||
+  if ((refresh_method != REFRESH_UPDATE) &&
+      (orig.method == SIP_METH_INVITE ||
        orig.method == SIP_METH_UPDATE) &&
       !reply.body.empty()) {
     saveSessionDescription(reply.content_type, reply.body);
@@ -744,7 +748,8 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
       return;
     }
 
-    saveSessionDescription(co_ev->content_type, co_ev->body);
+    if (refresh_method != REFRESH_UPDATE)
+      saveSessionDescription(co_ev->content_type, co_ev->body);
 
     return;
   }    
