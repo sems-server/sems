@@ -28,8 +28,10 @@
 #include "AmConfig.h"
 #include "log.h"
 #include "AmUtils.h"
+#include "md5.h"
 
 #include <errno.h>
+#include <fstream>
 
 #define IS_SPACE(c) ((c == ' ') || (c == '\t'))
 
@@ -145,6 +147,33 @@ int  AmConfigReader::loadFile(const string& path)
  error:
   fclose(fp);
   return -1;
+}
+
+bool AmConfigReader::getMD5(const string& path, string& md5hash, bool lowercase) {
+    std::ifstream data_file(path.c_str(), std::ios::in | std::ios::binary);
+    if (!data_file) {
+      DBG("could not read file '%s'\n", path.c_str());
+      return false;
+    }
+    // that one is clever...
+    // (see http://www.gamedev.net/community/forums/topic.asp?topic_id=353162 )
+    string file_data((std::istreambuf_iterator<char>(data_file)),
+		     std::istreambuf_iterator<char>());
+
+    if (file_data.empty()) {
+      return false;
+    }
+
+    MD5_CTX md5ctx;
+    MD5Init(&md5ctx);
+    MD5Update(&md5ctx, (unsigned char*)file_data.c_str(), file_data.length());
+    unsigned char _md5hash[16];
+    MD5Final(_md5hash, &md5ctx);
+    md5hash = "";
+    for (size_t i=0;i<16;i++) {
+      md5hash+=char2hex(_md5hash[i], lowercase);
+    }
+    return true;
 }
 
 bool AmConfigReader::hasParameter(const string& param)

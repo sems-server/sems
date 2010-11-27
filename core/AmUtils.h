@@ -56,9 +56,14 @@ string int2str(int val);
 string long2str(long int val);
 
 /** 
+ * Convert a a byte to a string using hexdecimal representation.
+ */
+string char2hex(unsigned char val, bool lowercase = false);
+
+/**
  * Convert an unsigned int to a string using hexdecimal representation. 
  */
-string int2hex(unsigned int val);
+string int2hex(unsigned int val, bool lowercase = false);
 
 /** 
  * Convert an unsigned long to a string using hexdecimal representation. 

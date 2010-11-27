@@ -109,8 +109,22 @@ string long2str(long int val)
 }
 
 static char _int2hex_lookup[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', '9','A','B','C','D','E','F' };
+static char _int2hex_lookup_l[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', '9','a','b','c','d','e','f' };
 
-string int2hex(unsigned int val)
+string char2hex(unsigned char val, bool lowercase)
+{
+  string res;
+  if (lowercase) {
+    res += _int2hex_lookup_l[val >> 4];
+    res += _int2hex_lookup_l[val & 0x0f];
+  } else {
+    res += _int2hex_lookup[val >> 4];
+    res += _int2hex_lookup[val & 0x0f];
+  }
+  return res;
+}
+
+string int2hex(unsigned int val, bool lowercase)
 {
   unsigned int digit=0;
 
@@ -120,7 +134,8 @@ string int2hex(unsigned int val)
   for(i=0; i<int(2*sizeof(int)); i++){
     digit = val >> 4*(2*sizeof(int)-1);
     val = val << 4;
-    buffer[j++] = _int2hex_lookup[(unsigned char)digit];
+    buffer[j++] = lowercase ?
+      _int2hex_lookup_l[(unsigned char)digit] : _int2hex_lookup[(unsigned char)digit];
   }
 
   return string((char*)buffer);
