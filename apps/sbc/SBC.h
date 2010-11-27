@@ -41,16 +41,31 @@ using std::string;
 #define SBC_TIMER_ID_PREPAID_TIMEOUT    2
 
 
-class SBCFactory: public AmSessionFactory
+class SBCFactory: public AmSessionFactory,
+    public AmDynInvoke,
+    public AmDynInvokeFactory
 {
-  std::map<string, SBCCallProfile> call_profiles;
-  std::map<string, AmConfigReader> call_profiles_configs;
 
+  std::map<string, SBCCallProfile> call_profiles;
+  
   string active_profile;
+  AmMutex profiles_mut;
+
+  static SBCFactory* _instance;
+  static bool loaded;
+
+  void listProfiles(const AmArg& args, AmArg& ret);
+  void reloadProfiles(const AmArg& args, AmArg& ret);
+  void reloadProfile(const AmArg& args, AmArg& ret);
+  void loadProfile(const AmArg& args, AmArg& ret);
+  void getActiveProfile(const AmArg& args, AmArg& ret);
+  void setActiveProfile(const AmArg& args, AmArg& ret);
 
  public:
+  static SBCFactory* instance();
   SBCFactory(const string& _app_name);
-  
+  ~SBCFactory();
+
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);
   static string user;
@@ -59,6 +74,14 @@ class SBCFactory: public AmSessionFactory
 
   static AmConfigReader cfg;
   static AmSessionEventHandlerFactory* session_timer_fact;
+
+  // DI
+  // DI factory
+  AmDynInvoke* getInstance() { return instance(); }
+  // DI API
+  void invoke(const string& method, 
+	      const AmArg& args, AmArg& ret);
+
 };
 
 class SBCDialog : public AmB2BCallerSession

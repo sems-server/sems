@@ -17,6 +17,8 @@ using std::set;
 struct SBCCallProfile {
 
   AmConfigReader cfg;
+  string md5hash;
+  string profile_file;
 
   string ruri;       /* updated if set */
   string from;       /* updated if set */

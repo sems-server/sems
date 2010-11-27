@@ -58,18 +58,41 @@ string SBCFactory::pwd;
 AmConfigReader SBCFactory::cfg;
 AmSessionEventHandlerFactory* SBCFactory::session_timer_fact = NULL;
 
-EXPORT_SESSION_FACTORY(SBCFactory,MOD_NAME);
-
-
-
-SBCFactory::SBCFactory(const string& _app_name)
-: AmSessionFactory(_app_name)
+extern "C" void* plugin_class_create()
 {
+  return SBCFactory::instance();
+}
+
+extern "C" void* session_factory_create()
+{
+  return plugin_class_create();
+}
+
+SBCFactory* SBCFactory::_instance=0;
+bool SBCFactory::loaded=false;
+
+SBCFactory* SBCFactory::instance()
+{
+  if(_instance == NULL)
+    _instance = new SBCFactory(MOD_NAME); 
+  return _instance;
 }
 
 
+SBCFactory::SBCFactory(const string& _app_name)
+  : AmSessionFactory(_app_name), AmDynInvokeFactory(_app_name)
+{
+}
+
+SBCFactory::~SBCFactory() {
+}
+
 int SBCFactory::onLoad()
 {
+
+  if (loaded)
+    return 0;
+  loaded = true;
 
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
     ERROR("No configuration for sbc present (%s)\n",
@@ -109,6 +132,8 @@ int SBCFactory::onLoad()
 
 AmSession* SBCFactory::onInvite(const AmSipRequest& req)
 {
+  profiles_mut.lock();
+
   string profile = active_profile;
   if (profile == "$(paramhdr)") {
     string app_param = getHeader(req.hdrs, PARAM_HDR, true);
@@ -120,6 +145,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
   map<string, SBCCallProfile>::iterator it=
     call_profiles.find(profile);
   if (it==call_profiles.end()) {
+    profiles_mut.unlock();
     ERROR("could not find call profile '%s' (active_profile = %s)\n",
 	  profile.c_str(), active_profile.c_str());
     throw AmSession::Exception(500,"Server Internal Error");
@@ -132,8 +158,10 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
 
   if (call_profile.sst_enabled) {
     DBG("Enabling SIP Session Timers\n");
-    if (!session_timer_fact->onInvite(req, sst_cfg))
+    if (!session_timer_fact->onInvite(req, sst_cfg)) {
+      profiles_mut.unlock();
       return NULL;
+    }
   }
 
   SBCDialog* b2b_dlg = new SBCDialog(call_profile);
@@ -141,6 +169,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
   if (call_profile.sst_enabled) {
     AmSessionEventHandler* h = session_timer_fact->getHandler(b2b_dlg);
     if(!h) {
+      profiles_mut.unlock();
       delete b2b_dlg;
       ERROR("could not get a session timer event handler\n");
       throw AmSession::Exception(500,"Server internal error");
@@ -153,8 +182,180 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
       b2b_dlg->addHandler(h);
     }
   }
+  profiles_mut.unlock();
 
   return b2b_dlg;
+}
+
+void SBCFactory::invoke(const string& method, const AmArg& args, 
+				AmArg& ret)
+{
+  if (method == "listProfiles"){
+    listProfiles(args, ret);
+  } else if (method == "reloadProfiles"){
+    reloadProfiles(args,ret);
+  } else if (method == "loadProfile"){
+    args.assertArrayFmt("u");
+    loadProfile(args,ret);
+  } else if (method == "reloadProfile"){
+    args.assertArrayFmt("u");
+    reloadProfile(args,ret);
+  } else if (method == "getActiveProfile"){
+    getActiveProfile(args,ret);
+  } else if (method == "setActiveProfile"){
+    args.assertArrayFmt("u");
+    setActiveProfile(args,ret);
+  } else if(method == "_list"){ 
+    ret.push(AmArg("listProfiles"));
+    ret.push(AmArg("reloadProfiles"));
+    ret.push(AmArg("reloadProfile"));
+    ret.push(AmArg("loadProfile"));
+    ret.push(AmArg("getActiveProfile"));
+    ret.push(AmArg("setActiveProfile"));
+  }  else
+    throw AmDynInvoke::NotImplemented(method);
+}
+
+void SBCFactory::listProfiles(const AmArg& args, AmArg& ret) {
+  profiles_mut.lock();
+  for (std::map<string, SBCCallProfile>::iterator it=
+	 call_profiles.begin(); it != call_profiles.end(); it++) {
+    AmArg p;
+    p["name"] = it->first;
+    p["md5"] = it->second.md5hash;
+    p["path"] = it->second.profile_file;
+    ret.push((p));
+  }
+  profiles_mut.unlock();
+}
+
+void SBCFactory::reloadProfiles(const AmArg& args, AmArg& ret) {
+  std::map<string, SBCCallProfile> new_call_profiles;
+  
+  bool failed = false;
+  string res = "OK";
+  AmArg profile_list;
+  profiles_mut.lock();
+  for (std::map<string, SBCCallProfile>::iterator it=
+	 call_profiles.begin(); it != call_profiles.end(); it++) {
+    new_call_profiles[it->first] = SBCCallProfile();
+    if (!new_call_profiles[it->first].readFromConfiguration(it->first,
+							    it->second.profile_file)) {
+      ERROR("reading call profile file '%s'\n", it->second.profile_file.c_str());
+      res = "Error reading call profile for "+it->first+" from "+it->second.profile_file+
+	+"; no profiles reloaded";
+      failed = true;
+      break;
+    }
+    AmArg p;
+    p["name"] = it->first;
+    p["md5"] = it->second.md5hash;
+    p["path"] = it->second.profile_file;
+    profile_list.push(p);
+  }
+  if (!failed) {
+    call_profiles = new_call_profiles;
+    ret.push(200);
+  } else {
+    ret.push(500);
+  }
+  ret.push(res);
+  ret.push(profile_list);
+  profiles_mut.unlock();
+}
+
+void SBCFactory::reloadProfile(const AmArg& args, AmArg& ret) {
+  bool failed = false;
+  string res = "OK";
+  AmArg p;
+  if (!args[0].hasMember("name")) {
+    ret.push(400);
+    ret.push("Parameters error: expected ['name': profile_name] ");
+    return;
+  }
+
+  profiles_mut.lock();
+  std::map<string, SBCCallProfile>::iterator it=
+    call_profiles.find(args[0]["name"].asCStr());
+  if (it == call_profiles.end()) {
+    res = "profile '"+string(args[0]["name"].asCStr())+"' not found";
+    failed = true;
+  } else {
+    SBCCallProfile new_cp;
+    if (!new_cp.readFromConfiguration(it->first, it->second.profile_file)) {
+      ERROR("reading call profile file '%s'\n", it->second.profile_file.c_str());
+      res = "Error reading call profile for "+it->first+" from "+it->second.profile_file;
+      failed = true;
+    } else {
+      it->second = new_cp;
+      p["name"] = it->first;
+      p["md5"] = it->second.md5hash;
+      p["path"] = it->second.profile_file;
+    }
+  }
+  profiles_mut.unlock();
+
+  if (!failed) {
+    ret.push(200);
+    ret.push(res);
+    ret.push(p);
+  } else {
+    ret.push(500);
+    ret.push(res);
+  }
+}
+
+void SBCFactory::loadProfile(const AmArg& args, AmArg& ret) {
+  if (!args[0].hasMember("name") || !args[0].hasMember("path")) {
+    ret.push(400);
+    ret.push("Parameters error: expected ['name': profile_name] "
+	     "and ['path': profile_path]");
+    return;
+  }
+  SBCCallProfile cp;
+  if (!cp.readFromConfiguration(args[0]["name"].asCStr(), args[0]["path"].asCStr())) {
+    ret.push(500);
+    ret.push("Error reading sbc call profile for "+string(args[0]["name"].asCStr())+
+	     " from file "+string(args[0]["path"].asCStr()));
+    return;
+  }
+
+  profiles_mut.lock();
+  call_profiles[args[0]["name"].asCStr()] = cp;
+  profiles_mut.unlock();
+  ret.push(200);
+  ret.push("OK");
+  AmArg p;
+  p["name"] = args[0]["name"];
+  p["md5"] = cp.md5hash;
+  p["path"] = args[0]["path"];
+  ret.push(p);
+}
+
+void SBCFactory::getActiveProfile(const AmArg& args, AmArg& ret) {
+  profiles_mut.lock();
+  AmArg p;
+  p["active_profile"] = active_profile;
+  profiles_mut.unlock();
+  ret.push(200);
+  ret.push("OK");
+  ret.push(p);
+}
+
+void SBCFactory::setActiveProfile(const AmArg& args, AmArg& ret) {
+  if (!args[0].hasMember("active_profile")) {
+    ret.push(400);
+    ret.push("Parameters error: expected ['active_profile': <active_profile>] ");
+    return;
+  }
+  profiles_mut.lock();
+  active_profile = args[0]["active_profile"].asCStr();
+  profiles_mut.unlock();
+  ret.push(200);
+  ret.push("OK");
+  AmArg p;
+  p["active_profile"] = args[0]["active_profile"];
+  ret.push(p);  
 }
 
 

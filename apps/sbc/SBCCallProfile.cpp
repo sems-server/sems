@@ -14,6 +14,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     return false;
   }
 
+  profile_file = profile_file_name;
+
   ruri = cfg.getParameter("RURI");
   from = cfg.getParameter("From");
   to = cfg.getParameter("To");
@@ -140,7 +142,12 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     reply_translations[from_code] = make_pair(to_code, to_reply.substr(s_pos));
   }
 
-  INFO("SBC: loaded SBC profile '%s':\n", name.c_str());
+  md5hash = "<unknown>";
+  if (!cfg.getMD5(profile_file_name, md5hash)){
+    ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());
+  }
+
+  INFO("SBC: loaded SBC profile '%s' - MD5: %s\n", name.c_str(), md5hash.c_str());
 
   INFO("SBC:      RURI = '%s'\n", ruri.c_str());
   INFO("SBC:      From = '%s'\n", from.c_str());
