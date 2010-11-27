@@ -889,7 +889,7 @@ int AmSipDialog::sendRequest(const string& method,
 
 void AmSipDialog::rel100OnRequestOut(const string &method, string &hdrs)
 {
-  if (method!=SIP_METH_INVITE) // && method!=SIP_METH_OPTIONS) 
+  if (reliable_1xx == REL100_IGNORED || method!=SIP_METH_INVITE) // && method!=SIP_METH_OPTIONS)
     return;
 
   switch(reliable_1xx) {
