@@ -14,6 +14,7 @@ Features
 --------
  o B2BUA
  o flexible call profile based configuration
+ o online reload of call profiles
  o From, To, RURI, Call-ID update
  o Header and message filter
  o reply code translation
@@ -37,6 +38,30 @@ active_profile configuration option
 
 By using the latter two options, the SBC profile for the call can be selected in the
 proxy.
+
+SBC profile reload
+------------------
+The SBC profiles may be reloaded while the server is running. A set of (python) scripts
+is provided and installed to trigger the reload (through XMLRPC):
+
+  sems-sbc-list-profiles                        list loaded profiles
+  sems-sbc-reload-profile  <name>               reload a profile (from its .conf file)
+  sems-sbc-reload-profiles                      reload all profiles (from .conf files)
+  sems-sbc-load-profile <name> <conf_file>      load a profile from a file (e.g. new
+                                                profile or file path changed)
+  sems-sbc-get-activeprofile                    get active_profile
+  sems-sbc-set-activeprofile <active_profile>   set active_profile
+
+The xmlrpc2di module must be loaded and XMLRPC control server bound to port 8090 for
+the scripts to work.
+
+Alternatively, the reload functions can be accessed by json-rpc v2 if the jsonrpc module
+is loaded. The expected parameters to all functions are in a dictionary with 
+   'name' :          profile name
+   'path' :          profile conf file path
+   'active_profile': active profile (string)
+Return code is [200, "OK", <result dictionary>] on success, or [<error code>, <error reason>]
+on failure.
 
 RURI, From, To, etc - Replacement patterns
 -------------------------------------
