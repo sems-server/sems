@@ -79,6 +79,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("eval", SCEvalAction);
   DEF_CMD("setVar", SCSetVarAction);
   DEF_CMD("var", SCGetVarAction);
+  DEF_CMD("param", SCGetParamAction);
   DEF_CMD("append", SCAppendAction);
   DEF_CMD("substr", SCSubStrAction);
   DEF_CMD("inc", SCIncAction);
@@ -627,6 +628,30 @@ EXEC_ACTION_START(SCSetVarAction) {
       var_name.c_str(), sc_sess->var[var_name].c_str());
 } EXEC_ACTION_END;
 
+CONST_ACTION_2P(SCGetParamAction,'=', false);
+EXEC_ACTION_START(SCGetParamAction){
+
+  string dst_var_name = (par1.length() && par1[0] == '$')?
+    par1.substr(1) : par1;
+  string param_name = resolveVars(par2, sess, sc_sess, event_params);
+  
+  DBG("param_name = %s, dst = %s\n", param_name.c_str(), dst_var_name.c_str());
+
+  if (NULL==event_params) {
+    sc_sess->var[dst_var_name] = "";
+    EXEC_ACTION_STOP;
+  }
+
+  map<string, string>::iterator it = event_params->find(param_name);
+  if (it != event_params->end()) {
+    sc_sess->var[dst_var_name] = it->second;
+  } else {
+    sc_sess->var[dst_var_name] = "";
+  }
+  
+  DBG("set $%s='%s'\n", 
+      dst_var_name.c_str(), sc_sess->var[dst_var_name].c_str());
+} EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCGetVarAction,'=', false);
 EXEC_ACTION_START(SCGetVarAction){

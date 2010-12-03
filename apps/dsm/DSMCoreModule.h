@@ -93,6 +93,7 @@ DEF_ACTION_1P(SCLogParamsAction);
 DEF_ACTION_1P(SCLogSelectsAction);
 DEF_ACTION_1P(SCLogAllAction);
 DEF_ACTION_2P(SCGetVarAction);
+DEF_ACTION_2P(SCGetParamAction);
 DEF_ACTION_2P(SCSetVarAction);
 DEF_ACTION_2P(SCPlayFileAction);
 DEF_ACTION_2P(SCPlayFileFrontAction);
