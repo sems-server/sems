@@ -81,6 +81,7 @@ public:
   void onCancel();
   void onBye(const AmSipRequest& req);
   void onDtmf(int event, int duration_msec);
+  void onBeforeDestroy();
 
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method);

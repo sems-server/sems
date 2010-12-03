@@ -218,6 +218,11 @@ bool DSMStateEngine::onInvite(const AmSipRequest& req, DSMSession* sess) {
 
   return res;
 }
+void DSMStateEngine::onBeforeDestroy(DSMSession* sc_sess, AmSession* sess) {
+  for (vector<DSMModule*>::iterator it =
+	 mods.begin(); it != mods.end(); it++)
+    (*it)->onBeforeDestroy(sc_sess, sess);
+}
 
 bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from, 
 				vector<DSMAction*>::iterator to, 
