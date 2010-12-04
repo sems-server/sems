@@ -43,7 +43,7 @@ bool DSMChartReader::is_wsp(const char c) {
 }
 
 bool DSMChartReader::is_snt(const char c) {
-  return c== ';' || c == '{' || c == '}';
+  return c== ';' || c == '{' || c == '}' || c == '[' || c == ']';
 }
 
 string DSMChartReader::getToken(string str, size_t& pos) {
@@ -219,15 +219,43 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
       stack.push_back(new DSMTransition());
       continue;
     }
-    
+        
     if (stack.empty()) {
       if (token == ";")
-	continue;
+      	continue;
       ERROR("Without context I do not understand '%s'\n", token.c_str());
       return false;
     }
 
     DSMElement* stack_top = &(*stack.back());
+    
+    DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(stack_top);
+   	if (ct) {
+      if (token == "[") {
+  	    stack.push_back(new DSMConditionList());
+  	    continue;
+  	  }
+      if (token == "{") {
+      	stack.push_back(new ActionList(ActionList::AL_if));
+      	continue;
+      }
+   	  if (token == ";") {
+   	  	stack.pop_back();
+    	  ActionList* al = dynamic_cast<ActionList*>(&(*stack.back()));
+    	  if (al) {
+      		owner->transferElem(ct);
+      		al->actions.push_back(ct);
+      		DBG("Added DSMConditionTree to ActionList\n");
+    	  } else {
+    	    ERROR("no ActionList for DSMConditionTree\n");
+    	    delete al;
+    	    return false;
+    	  }
+       	continue;
+     	}
+   	}
+    
+
     
     State* state = dynamic_cast<State*>(stack_top);
     if (state) {
@@ -237,6 +265,7 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	continue;
       }
       if (token == "enter") {
+      DBG("adding 'enter' actions for state '%s'\n", state->name.c_str());
 	stack.push_back(new ActionList(ActionList::AL_enter));
 	continue;
       }
@@ -261,115 +290,149 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
       continue;
     }
 
-    ActionList* al = dynamic_cast<ActionList*>(stack_top);
-    if (al) {
-      if (token == ";") {
-	continue;
+  	ActionList* al = dynamic_cast<ActionList*>(stack_top);
+  	if (al) {
+  		if (token == ";") {
+  			continue;
+  		}
+  		if (token == "{") {
+  			continue;
+  		} 
+  	
+    	if ((token == "}") || (token == "->")) {
+      	stack.pop_back();
+        if (stack.empty()) {
+        	ERROR("no item for action list\n");
+        	delete al;
+        	return false;
+      	}
+  	    
+  	    if (al->al_type == ActionList::AL_if ||
+            al->al_type == ActionList::AL_else) {
+        	DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(&(*stack.back()));
+        	if (!ct) {
+          	ERROR("no DSMConditionTree for action list\n");
+          	delete al;
+          	return false;
+        	}
+        	
+        	if (al->al_type == ActionList::AL_if) {
+          	ct->run_if_true = al->actions;
+        	} else if (al->al_type == ActionList::AL_else) {
+          	ct->run_if_false = al->actions;
+          }
+  	    } else if (al->al_type == ActionList::AL_enter || 
+            al->al_type == ActionList::AL_exit) {
+        	State* s = dynamic_cast<State*>(&(*stack.back()));
+        	if (!s) {
+          	ERROR("no State for action list\n");
+          	delete al;
+          	return false;
+        	}
+        	
+        	if (al->al_type == ActionList::AL_enter) {
+          	s->pre_actions = al->actions;
+        	} else if (al->al_type == ActionList::AL_exit) {
+          	s->post_actions = al->actions;
+          }
+        } else if (al->al_type == ActionList::AL_trans) {
+          	DSMTransition* t = dynamic_cast<DSMTransition*>(&(*stack.back()));
+          	if (!t) {
+            	ERROR("no DSMTransition for action list\n");
+            	delete al;
+            	return false;
+          	}
+          	t->actions = al->actions;
+        	} else {
+          	ERROR("internal: unknown transition list type\n");
+        	}
+        	delete al;
+        	continue;
       }
-      if (token == "{") {
-	continue;
-      } 
-      if ((token == "}") || (token == "->")) {
-	stack.pop_back();
-	if (stack.empty()) {
-	  ERROR("no item for action list\n");
-	  delete al;
-	  return false;
-	}
-	
-	if (al->al_type == ActionList::AL_enter || 
-	    al->al_type == ActionList::AL_exit) {
-	  State* s = dynamic_cast<State*>(&(*stack.back()));
-	  if (!s) {
-	    ERROR("no State for action list\n");
-	    delete al;
-	    return false;
-	  }
-	  if (al->al_type == ActionList::AL_enter)
-	    s->pre_actions = al->actions;
-	  else if (al->al_type == ActionList::AL_exit)
-	    s->post_actions = al->actions;
-	} else if (al->al_type == ActionList::AL_trans) {
-	  DSMTransition* t = dynamic_cast<DSMTransition*>(&(*stack.back()));
-	  if (!t) {
-	    ERROR("no DSMTransition for action list\n");
-	    delete al;
-	    return false;
-	  }
-	  t->actions = al->actions;
-	} else {
-	  ERROR("internal: unknown transition list type\n");
-	}
-	delete al;
-	continue;
-      }
-
-      // token is action
-      //       DBG("adding action '%s'\n", token.c_str());
-      DSMAction* a = actionFromToken(token);
-      if (!a)
-	return false;
-      owner->transferElem(a);
-      al->actions.push_back(a);
-      continue;
-    }
+  	
+    	if (token == "if") {
+      	//token is condition tree
+      	stack.push_back(new DSMConditionTree());
+      	continue;
+    	} else {
+      	// token is action
+      	DBG("adding action '%s'\n", token.c_str());
+  	
+      	DSMAction* a = actionFromToken(token);
+      	if (!a)
+        	return false;
+      	owner->transferElem(a);
+      	al->actions.push_back(a);
+      	continue;
+    	}
+  	}
     
+     
     DSMConditionList* cl = dynamic_cast<DSMConditionList*>(stack_top);
     if (cl) {
       if (token == ";")
-	continue;
+        continue;
 
       if ((token == "{") || (token == "}")) {
-	// readability
-	continue;
+      	// readability
+      	continue;
       } 
 
-      if ((token == "/") || (token == "->"))  {
-	// end of condition list
-	stack.pop_back();
-	if (stack.empty()) {
-	  ERROR("no transition to apply conditions to\n");
-	  delete cl;
-	  return false;
-	}
-	DSMTransition* tr = dynamic_cast<DSMTransition*>(&(*stack.back()));
-	if (!tr) {
-	  ERROR("no transition to apply conditions to\n");
-	  delete cl;
-	  return false;
-	}
-
-	tr->precond = cl->conditions;
-	tr->is_exception = cl->is_exception;
-	delete cl;
-
-	// start AL_trans action list
-	if (token == "/") {
-	  stack.push_back(new ActionList(ActionList::AL_trans));
-	}
-	continue;
+      if ((token == "/") || (token == "->") || (token == "]"))  {
+      	// end of condition list
+      	stack.pop_back();
+      	if (stack.empty()) {
+      	  ERROR("nothing to apply conditions to\n");
+      	  delete cl;
+      	  return false;
+      	}
+      	
+      	DSMElement* el = &(*stack.back());
+      	
+      	DSMTransition* tr = dynamic_cast<DSMTransition*>(el);
+      	DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(el);
+      	if (tr) {
+        	tr->precond = cl->conditions;
+        	tr->is_exception = cl->is_exception;
+        } else if (ct) {
+          ct->conditions = cl->conditions;
+          ct->is_exception = cl->is_exception;
+        } else {
+      	  ERROR("no transition or condition list to apply conditions to\n");
+      	  delete cl;
+      	  return false;
+      	}
+      
+      	delete cl;
+      
+      	// start AL_trans action list
+      	if (token == "/") {
+      	  stack.push_back(new ActionList(ActionList::AL_trans));
+      	}
+      	continue;
       }
       
       if (token == "not") {
-	cl->invert_next = !cl->invert_next;
-	continue;
+      	cl->invert_next = !cl->invert_next;
+      	continue;
       }
 
       if (token == "exception") {
-	cl->is_exception = true;
-	continue;
+      	cl->is_exception = true;
+      	continue;
       }
       
-      //       DBG("new condition: '%s'\n", token.c_str());
+      DBG("new condition: '%s'\n", token.c_str());
       DSMCondition* c = conditionFromToken(token, cl->invert_next);
       cl->invert_next = false;
       if (!c) 
-	return false;
+      	return false;
       
       owner->transferElem(c);
       cl->conditions.push_back(c);
       continue;
     }
+
 
     DSMTransition* tr = dynamic_cast<DSMTransition*>(stack_top);
     if (tr) {

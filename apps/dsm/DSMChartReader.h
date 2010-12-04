@@ -57,7 +57,9 @@ class ActionList : public DSMElement {
   enum AL_type {
     AL_enter,
     AL_exit,
-    AL_trans
+    AL_trans,
+    AL_if,
+ 	AL_else
   };
 
   AL_type al_type;
@@ -65,7 +67,7 @@ class ActionList : public DSMElement {
  ActionList(AL_type al_type) 
    : al_type(al_type) { }
 
-  vector<DSMAction*> actions;
+  vector<DSMElement*> actions;
 };
 
 struct DSMConditionList : public DSMElement {

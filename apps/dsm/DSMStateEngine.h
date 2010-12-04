@@ -141,8 +141,8 @@ class State
  public:
   State();
   ~State();
-  vector<DSMAction*> pre_actions;
-  vector<DSMAction*> post_actions;
+  vector<DSMElement*> pre_actions;
+  vector<DSMElement*> post_actions;
   
   vector<DSMTransition> transitions;
 };
@@ -154,11 +154,20 @@ class DSMTransition
   ~DSMTransition();
 
   vector<DSMCondition*> precond;
-  vector<DSMAction*> actions;
+  vector<DSMElement*> actions;
   string from_state;
   string to_state;
 
   bool is_exception;
+};
+
+class DSMConditionTree 
+: public DSMElement {
+  public:
+    vector<DSMCondition*> conditions;
+    vector<DSMElement*> run_if_true;
+    vector<DSMElement*> run_if_false;
+    bool is_exception;
 };
 
 class DSMModule;
@@ -224,8 +233,8 @@ class DSMStateEngine {
 		DSMCondition::EventType event,
 		map<string,string>* event_params);
   bool returnDiag(AmSession* sess, DSMSession* sc_sess);
-  bool runactions(vector<DSMAction*>::iterator from, 
-		  vector<DSMAction*>::iterator to, 
+  bool runactions(vector<DSMElement*>::iterator from, 
+		  vector<DSMElement*>::iterator to, 
 		  AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 		  map<string,string>* event_params,  bool& is_consumed);
 
