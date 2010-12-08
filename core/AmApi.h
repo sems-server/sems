@@ -192,27 +192,6 @@ class AmSessionFactory: public AmPluginFactory
   virtual void onOoDRequest(const AmSipRequest& req);
 };
 
-/** \brief Interface for plugins that implement session-less 
- *     UA behaviour (e.g. registrar client, event notification 
- *     client)
- */
-// class AmSIPEventHandler : public AmPluginFactory 
-// {
-
-//  public:
-//   AmSIPEventHandler(const string& name);
-//   virtual ~AmSIPEventHandler() { }
-
-//   /** will be called on incoming replies which do 
-//    *  not belong to a dialog of a session in the 
-//    *  SessionContainer.
-//    *
-//    *  @return true if reply was handled by plugin, false 
-//    *          otherwise
-//    */
-//   virtual bool onSipReply(const AmSipReply& rep) = 0;
-// };
-
 /** \brief Interface for plugins that implement a
  *     logging facility
  */
@@ -293,12 +272,38 @@ typedef void* (*FactoryCreate)();
 #define EXPORT_LOG_FACILITY_FACTORY(class_name,app_name) \
             EXPORT_FACTORY(FACTORY_LOG_FACILITY_EXPORT,class_name,app_name)
 
-/* 
- * defines for exporting a control interface plugin 
- */
-#define FACTORY_CONTROL_INTERFACE_EXPORT  control_interface_factory_create
-#define FACTORY_CONTROL_INTERFACE_EXPORT_STR  \
-    XSTR(FACTORY_CONTROL_INTERFACE_EXPORT)
-#define EXPORT_CONTROL_INTERFACE_FACTORY(class_name, app_name)  \
-    EXPORT_FACTORY(FACTORY_CONTROL_INTERFACE_EXPORT, class_name, app_name)
-#endif
+// ---------------- simplified SEMS plug-in interface  --------------------------
+// - export module as basic SEMS plugin with EXPORT_MODULE_FUNC
+// - in onLoad, register the capabilities you provide,
+//    e.g. AmPlugIn::registerApplication(...), AmPlugIn::registerDIInterface(...) etc
+
+#define EXPORT_MODULE_FUNC(class_name)	\
+  extern "C" void* base_plugin_create()		\
+  {						\
+    return class_name::instance();		\
+  }
+
+#define EXPORT_MODULE_FACTORY(class_name) \
+            EXPORT_MODULE_FUNC(class_name)
+
+
+// - use DECLARE_MODULE_INSTANCE/DEFINE_MODULE_INSTANCE to save some typing when
+//   creating plugins with DI Interface
+
+#define DEFINE_MODULE_INSTANCE(class_name, mod_name)	\
+							\
+  class_name* class_name::_instance=0;			\
+							\
+  class_name* class_name::instance()			\
+  {							\
+  if(_instance == NULL)					\
+    _instance = new class_name(mod_name);		\
+  return _instance;					\
+  }
+
+#define DECLARE_MODULE_INSTANCE(class_name)	\
+  static class_name* _instance;			\
+  static class_name* instance();
+
+
+#endif // _AmApi_h_

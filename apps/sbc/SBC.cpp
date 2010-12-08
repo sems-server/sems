@@ -58,26 +58,8 @@ string SBCFactory::pwd;
 AmConfigReader SBCFactory::cfg;
 AmSessionEventHandlerFactory* SBCFactory::session_timer_fact = NULL;
 
-extern "C" void* plugin_class_create()
-{
-  return SBCFactory::instance();
-}
-
-extern "C" void* session_factory_create()
-{
-  return SBCFactory::instance();
-}
-
-SBCFactory* SBCFactory::_instance=0;
-bool SBCFactory::loaded=false;
-
-SBCFactory* SBCFactory::instance()
-{
-  if(_instance == NULL)
-    _instance = new SBCFactory(MOD_NAME); 
-  return _instance;
-}
-
+EXPORT_MODULE_FACTORY(SBCFactory);
+DEFINE_MODULE_INSTANCE(SBCFactory, MOD_NAME);
 
 SBCFactory::SBCFactory(const string& _app_name)
   : AmSessionFactory(_app_name), AmDynInvokeFactory(_app_name)
@@ -89,11 +71,6 @@ SBCFactory::~SBCFactory() {
 
 int SBCFactory::onLoad()
 {
-
-  if (loaded)
-    return 0;
-  loaded = true;
-
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
     ERROR("No configuration for sbc present (%s)\n",
 	 (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str()
@@ -126,6 +103,17 @@ int SBCFactory::onLoad()
   }
 
   INFO("SBC: active profile: '%s'\n", active_profile.c_str());
+
+  if (!AmPlugIn::registerApplication(MOD_NAME, this)) {
+    ERROR("registering "MOD_NAME" application\n");
+    return -1;
+  }
+
+  if (!AmPlugIn::registerDIInterface(MOD_NAME, this)) {
+    ERROR("registering "MOD_NAME" DI interface\n");
+    return -1;
+  }
+
   return 0;
 }
 

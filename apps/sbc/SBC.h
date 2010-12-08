@@ -51,9 +51,6 @@ class SBCFactory: public AmSessionFactory,
   string active_profile;
   AmMutex profiles_mut;
 
-  static SBCFactory* _instance;
-  static bool loaded;
-
   void listProfiles(const AmArg& args, AmArg& ret);
   void reloadProfiles(const AmArg& args, AmArg& ret);
   void reloadProfile(const AmArg& args, AmArg& ret);
@@ -62,7 +59,8 @@ class SBCFactory: public AmSessionFactory,
   void setActiveProfile(const AmArg& args, AmArg& ret);
 
  public:
-  static SBCFactory* instance();
+  DECLARE_MODULE_INSTANCE(SBCFactory);
+
   SBCFactory(const string& _app_name);
   ~SBCFactory();
 

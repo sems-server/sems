@@ -243,15 +243,6 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 
   DBG("AmPlugIn: Initializing plugins...\n");
 
-//   if (ctrlIface) {
-//     if ((err = ctrlIface->onLoad())) {
-//       ERROR("failed to initialize control interface.\n");
-//       return err;
-//     } else {
-// 	AmServer::instance()->regIface(ctrlIface->instance());
-//     }
-//   }
-
   // initialize base components
   for(std::map<std::string,AmPluginFactory*>::iterator it = name2base.begin();
       it != name2base.end(); it++){
@@ -289,17 +280,6 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       return err;
     loaded_modules.insert(it->first);
   }
-
-  // load SIPEventHandlers 
-//   for(std::map<std::string,AmSIPEventHandler*>::iterator it = name2sipeh.begin();
-//       it != name2sipeh.end(); it++){
-//     err = it->second->onLoad();
-//     if(err)
-//       return err;
-//     // register for receiving replys 
-//     //AmReplyHandler::get()->registerReplyHandler(it->second);
-//     AmSipDispatcher::instance()->registerReplyHandler(it->second);
-//   }
 
   // init logging facilities
   for(std::map<std::string,AmLoggingFacility*>::iterator it = name2logfac.begin();
@@ -373,25 +353,11 @@ int AmPlugIn::loadPlugIn(const string& file)
     has_sym=true;
   }
 
-//   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SIP_EVENT_HANDLER_EXPORT_STR)) != NULL){
-//     if(loadSIPehPlugIn((AmPluginFactory*)fc()))
-//       goto error;
-//     has_sym=true;
-//   }
-
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_LOG_FACILITY_EXPORT_STR)) != NULL){
     if(loadLogFacPlugIn((AmPluginFactory*)fc()))
       goto error;
     has_sym=true;
   }
-
-//   // try load a control plugin
-//   if ((fc = (FactoryCreate)dlsym(h_dl,FACTORY_CONTROL_INTERFACE_EXPORT_STR))) {
-//     if (loadCtrlFacPlugIn((AmPluginFactory*)fc()))
-//       goto error;
-//     assert(! has_sym);
-//     has_sym = true;
-//   }
 
   if(!has_sym){
     ERROR("Plugin type could not be detected (%s)(%s)\n",file.c_str(),dlerror());
@@ -527,14 +493,6 @@ AmDynInvokeFactory* AmPlugIn::getFactory4Di(const string& name)
   return 0;
 }
 
-// AmSIPEventHandler* AmPlugIn::getFactory4SIPeh(const string& name)
-// {
-//   std::map<std::string,AmSIPEventHandler*>::iterator it = name2sipeh.find(name);
-//   if(it != name2sipeh.end())
-//     return it->second;
-//   return 0;
-// }
-
 AmLoggingFacility* AmPlugIn::getFactory4LogFaclty(const string& name)
 {
   std::map<std::string,AmLoggingFacility*>::iterator it = name2logfac.find(name);
@@ -660,29 +618,6 @@ int AmPlugIn::loadDiPlugIn(AmPluginFactory* f)
   return -1;
 }
 
-// int AmPlugIn::loadSIPehPlugIn(AmPluginFactory* f)
-// {
-//   AmSIPEventHandler* sf = dynamic_cast<AmSIPEventHandler*>(f);
-//   if(!sf){
-//     ERROR("invalid SIP event handler plug-in!\n");
-//     goto error;
-//   }
-
-//   if(name2sipeh.find(sf->getName()) != name2sipeh.end()){
-//     ERROR("sip event handler component '%s' already loaded !\n",
-// 	  sf->getName().c_str());
-//     goto error;
-//   }
-      
-//   name2sipeh.insert(std::make_pair(sf->getName(),sf));
-//   DBG("sip event handler component '%s' loaded.\n",sf->getName().c_str());
-
-//   return 0;
-
-//  error:
-//   return -1;
-// }
-
 int AmPlugIn::loadLogFacPlugIn(AmPluginFactory* f)
 {
   AmLoggingFacility* sf = dynamic_cast<AmLoggingFacility*>(f);
@@ -705,27 +640,6 @@ int AmPlugIn::loadLogFacPlugIn(AmPluginFactory* f)
  error:
   return -1;
 }
-
-// int AmPlugIn::loadCtrlFacPlugIn(AmPluginFactory* f)
-// {
-//   AmCtrlInterfaceFactory *_ctrlIface = dynamic_cast<AmCtrlInterfaceFactory *>(f);
-//   if (! _ctrlIface) {
-//     ERROR("invalid control interface plugin.\n");
-//     return -1;
-//   }
-//   if (ctrlIface) {
-//     ERROR("one control interface already loaded (`%s'): can not load a "
-//       "second one (`%s').\n", (ctrlIface->getName()).c_str(), 
-//       (_ctrlIface->getName()).c_str());
-//     return -1;
-//   }
-//   ctrlIface = _ctrlIface;//->instance();
-//   if (! ctrlIface) {
-//     ERROR("BUG: failed to retrieve a control interface instance.\n");
-//     return -1;
-//   }
-//   return 0;
-// }
 
 int AmPlugIn::addCodec(amci_codec_t* c)
 {
@@ -825,7 +739,8 @@ bool AmPlugIn::registerFactory4App(const string& app_name, AmSessionFactory* f)
   name2app_mut.lock();
   std::map<std::string,AmSessionFactory*>::iterator it = name2app.find(app_name);
   if(it != name2app.end()){
-    WARN("Application '%s' has already been registered and cannot be registered a second time\n",
+    WARN("Application '%s' has already been registered and cannot be "
+	 "registered a second time\n",
 	 app_name.c_str());
     res =  false;
   } else {
@@ -834,6 +749,15 @@ bool AmPlugIn::registerFactory4App(const string& app_name, AmSessionFactory* f)
   }
   name2app_mut.unlock();
 
+  return res;
+}
+
+// static alias to registerFactory4App
+bool AmPlugIn::registerApplication(const string& app_name, AmSessionFactory* f) {
+  bool res = instance()->registerFactory4App(app_name, f);
+  if (res) {
+    DBG("Application '%s' registered.\n", app_name.c_str());
+  }
   return res;
 }
 
@@ -888,3 +812,28 @@ AmSessionFactory* AmPlugIn::findSessionFactory(AmSipRequest& req)
 
   return session_factory;
 }
+
+#define REGISTER_STUFF(comp_name, map_name, param_name)			\
+  if(instance()->map_name.find(param_name) != instance()->map_name.end()){	\
+  ERROR(comp_name "'%s' already registered !\n", param_name.c_str());	\
+  return false;								\
+  }									\
+									\
+  instance()->map_name.insert(std::make_pair(param_name,f));		\
+  DBG(comp_name " '%s' registered.\n",param_name.c_str());		\
+  return true;
+
+bool AmPlugIn::registerSIPEventHandler(const string& seh_name,
+				       AmSessionEventHandlerFactory* f) {
+  REGISTER_STUFF("SIP Event handler", name2seh, seh_name);
+}
+
+bool AmPlugIn::registerDIInterface(const string& di_name, AmDynInvokeFactory* f) {
+  REGISTER_STUFF("DI Interface", name2di, di_name);
+}
+
+bool AmPlugIn::registerLoggingFacility(const string& lf_name, AmLoggingFacility* f) {
+  REGISTER_STUFF("Logging Facility", name2logfac, lf_name);
+}
+
+#undef REGISTER_STUFF

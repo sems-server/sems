@@ -197,6 +197,29 @@ class AmPlugIn : public AmPayloadProviderInterface
   /** @return true if this record has been inserted. */
   bool registerFactory4App(const string& app_name, AmSessionFactory* f);
 
+  /** register a factory for applications
+      @return true on success
+   */
+  static bool registerApplication(const string& app_name, AmSessionFactory* f);
+
+  /** register a SIP Event Handler module
+      note: unprotected, use only at server startup (onLoad)
+      @return true on success
+   */
+  static bool registerSIPEventHandler(const string& seh_name,
+				      AmSessionEventHandlerFactory* f);
+  /** register a DI Interface module
+      note: unprotected, use only at server startup (onLoad)
+      @return true on success
+   */
+  static bool registerDIInterface(const string& di_name, AmDynInvokeFactory* f);
+
+  /** register a logging facility
+      note: unprotected, use only at server startup (onLoad)
+      @return true on success
+   */
+  static bool registerLoggingFacility(const string& lf_name, AmLoggingFacility* f);
+
   /**
    * Find the proper SessionFactory
    * for the given request.
