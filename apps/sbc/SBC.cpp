@@ -65,7 +65,7 @@ extern "C" void* plugin_class_create()
 
 extern "C" void* session_factory_create()
 {
-  return plugin_class_create();
+  return SBCFactory::instance();
 }
 
 SBCFactory* SBCFactory::_instance=0;
