@@ -32,6 +32,9 @@
 #include <vector>
 using std::vector;
 
+#include <string>
+using std::string;
+
 DSMChartReader::DSMChartReader() {
 }
 
@@ -128,6 +131,24 @@ DSMAction* DSMChartReader::actionFromToken(const string& str) {
   return NULL;
 }
 
+DSMFunction* DSMChartReader::functionFromToken(const string& str) {
+  string cmd;
+  size_t b_pos = str.find('(');
+  if (b_pos != string::npos) {
+    cmd = str.substr(0, b_pos);
+  } else {
+    return NULL;
+  }
+
+  for (vector<DSMFunction*>::iterator it=funcs.begin(); it!= funcs.end(); it++) {
+    if((*it)->name == cmd) {
+        DBG("found function '%s' in fuction list\n", cmd.c_str());
+        return *it;
+    }
+  }
+  return NULL;
+}
+
 DSMCondition* DSMChartReader::conditionFromToken(const string& str, bool invert) {
   for (vector<DSMModule*>::iterator it=
 	 mods.begin(); it!= mods.end(); it++) {
@@ -205,6 +226,11 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
       continue;
     }
     
+    if (token == "function") {
+      stack.push_back(new DSMFunction());
+      continue;
+    }
+
     if (token == "initial") {
       stack.push_back(new AttribInitial());
       continue;
@@ -228,6 +254,35 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
     }
 
     DSMElement* stack_top = &(*stack.back());
+    
+    DSMFunction* f = dynamic_cast<DSMFunction*>(stack_top);
+    
+    if (f) {
+      if (f->name.length()==0) {
+        size_t b_pos = token.find('(');
+        if (b_pos != string::npos) {
+          f->name = token.substr(0, b_pos);
+          continue;
+        } else {
+          ERROR("Parse error -- function declarations must have a name followed by parentheses, e.g., 'function foo()'\n");
+          return false;
+        }
+      }
+          
+      if (token == "{") {
+      	stack.push_back(new ActionList(ActionList::AL_func));
+      	continue;
+      }
+      if (token == ";") {
+        owner->transferElem(f);
+        funcs.push_back(f);
+      	DBG("Adding DSMFunction '%s' to funcs\n", f->name.c_str());
+       	continue;
+      }
+      
+      DBG("Unknown token: %s\n", token.c_str());
+      return false;
+   }
     
     DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(stack_top);
    	if (ct) {
@@ -307,13 +362,21 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
         	return false;
       	}
   	    
-  	    if (al->al_type == ActionList::AL_if ||
+  	    if (al->al_type == ActionList::AL_func) {
+  	        DSMFunction* f = dynamic_cast<DSMFunction*>(&(*stack.back()));
+        	if (!f) {
+          	  ERROR("no DSMFunction for action list\n");
+          	  delete al;
+          	  return false;
+        	}
+        	f->actions = al->actions;
+  	    } else if (al->al_type == ActionList::AL_if ||
             al->al_type == ActionList::AL_else) {
         	DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(&(*stack.back()));
         	if (!ct) {
-          	ERROR("no DSMConditionTree for action list\n");
-          	delete al;
-          	return false;
+          	  ERROR("no DSMConditionTree for action list\n");
+          	  delete al;
+          	  return false;
         	}
         	
         	if (al->al_type == ActionList::AL_if) {
@@ -344,27 +407,37 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
           	}
           	t->actions = al->actions;
         	} else {
-          	ERROR("internal: unknown transition list type\n");
+              	ERROR("internal: unknown transition list type\n");
         	}
         	delete al;
         	continue;
       }
   	
-    	if (token == "if") {
-      	//token is condition tree
-      	stack.push_back(new DSMConditionTree());
-      	continue;
-    	} else {
-      	// token is action
-      	DBG("adding action '%s'\n", token.c_str());
-  	
-      	DSMAction* a = actionFromToken(token);
-      	if (!a)
-        	return false;
-      	owner->transferElem(a);
-      	al->actions.push_back(a);
-      	continue;
-    	}
+        if (token == "if") {
+          	//token is condition tree
+          	stack.push_back(new DSMConditionTree());
+          	continue;
+        } else {
+            DSMFunction* f = functionFromToken(token);
+            if (f) {
+              DBG("adding actions from function '%s'\n", f->name.c_str());
+              DBG("al.size is %zd before", al->actions.size());
+              for (vector<DSMElement*>::iterator it=f->actions.begin(); it != f->actions.end(); it++) {
+                DSMElement* a = *it;
+              	owner->transferElem(a);
+                al->actions.push_back(a);
+              }
+              DBG("al.size is %zd after", al->actions.size());
+            } else {
+              	DBG("adding action '%s'\n", token.c_str());
+              	DSMAction* a = actionFromToken(token);
+              	if (!a)
+                	return false;
+              	owner->transferElem(a);
+              	al->actions.push_back(a);
+            }
+          	continue;
+        }
   	}
     
      

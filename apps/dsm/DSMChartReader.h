@@ -59,7 +59,8 @@ class ActionList : public DSMElement {
     AL_exit,
     AL_trans,
     AL_if,
- 	AL_else
+ 	AL_else,
+ 	AL_func
   };
 
   AL_type al_type;
@@ -83,12 +84,15 @@ class DSMChartReader {
   bool is_snt(const char c);
 
   string getToken(string str, size_t& pos);
+  DSMFunction* functionFromToken(const string& str);
   DSMAction* actionFromToken(const string& str);
   DSMCondition* conditionFromToken(const string& str, bool invert);
 
   bool importModule(const string& mod_cmd, const string& mod_path);
   vector<DSMModule*> mods;
   DSMCoreModule core_mod;
+
+  vector<DSMFunction*> funcs;
 
  public:
   DSMChartReader();

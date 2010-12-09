@@ -170,6 +170,13 @@ class DSMConditionTree
     bool is_exception;
 };
 
+class DSMFunction 
+: public DSMElement {
+  public:
+    string name;
+    vector<DSMElement*> actions;
+};
+
 class DSMModule;
 
 class DSMStateDiagram  {

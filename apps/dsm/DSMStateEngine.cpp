@@ -228,7 +228,7 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 				vector<DSMElement*>::iterator to, 
 				AmSession* sess,  DSMSession* sc_sess, DSMCondition::EventType event,
 				map<string,string>* event_params,  bool& is_consumed) {
-//   DBG("running %zd actions\n", to - from);
+  DBG("running %zd actions\n", to - from);
   for (vector<DSMElement*>::iterator it=from; it != to; it++) {
 
   	DSMConditionTree* cond_tree = dynamic_cast<DSMConditionTree*>(*it);
