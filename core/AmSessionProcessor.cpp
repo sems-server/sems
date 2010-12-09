@@ -171,6 +171,9 @@ void AmSessionProcessorThread::startSession(AmSession* s) {
   // add this to be scheduled
   events.postEvent(new AmSessionProcessorThreadAddEvent(s));
 
+  // trigger processing of events already in queue at startup
+  notify(s);
+
   // wakeup the thread
   runcond.set(true);
 }
