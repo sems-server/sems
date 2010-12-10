@@ -110,10 +110,12 @@ bool SessionTimer::onSendReply(const AmSipRequest& req,
 			       string& hdrs,
 			       int flags)
 {
-  string m_hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED)  "timer"  CRLF;
-  if  ((req.method != SIP_METH_INVITE) && (req.method != SIP_METH_UPDATE))
+  if  (((req.method != SIP_METH_INVITE) && (req.method != SIP_METH_UPDATE)) ||
+       (code < 200) || (code >= 300))
     return false;
     
+  string m_hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED)  "timer"  CRLF;
+
   // only in 2xx responses to INV/UPD
   m_hdrs  += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) +
     int2str(session_interval) + ";refresher="+
