@@ -535,50 +535,50 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
       return;
     }
 
-    DBG("reply received from other leg\n");
+    DBG("%u reply received from other leg\n", reply.code);
       
     switch(callee_status){
     case NoReply:
     case Ringing:
-	
-      if(reply.code < 200){
-	if ((!sip_relay_only) && sip_relay_early_media_sdp && 
-	    reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
-	  if (reinviteCaller(reply)) {
-	    ERROR("re-INVITEing caller for early session - "
-		  "stopping this and other leg\n");
-	    terminateOtherLeg();
-	    terminateLeg();
+      if (reply.cseq == invite_req.cseq) {
+	if(reply.code < 200){
+	  if ((!sip_relay_only) && sip_relay_early_media_sdp &&
+	      reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
+	    if (reinviteCaller(reply)) {
+	      ERROR("re-INVITEing caller for early session failed - "
+		    "stopping this and other leg\n");
+	      terminateOtherLeg();
+	      terminateLeg();
+	    }
 	  }
-	}
 	  
-	callee_status = Ringing;
-      }
-      else if(reply.code < 300){
+	  callee_status = Ringing;
+	} else if(reply.code < 300){
 	  
-	callee_status  = Connected;
+	  callee_status  = Connected;
 	  
-	if (!sip_relay_only) {
-	  sip_relay_only = true;
-	  if (reinviteCaller(reply)) {
-	    ERROR("re-INVITEing caller - stopping this and other leg\n");
-	    terminateOtherLeg();
-	    terminateLeg();
+	  if (!sip_relay_only) {
+	    sip_relay_only = true;
+	    if (reinviteCaller(reply)) {
+	      ERROR("re-INVITEing caller failed - stopping this and other leg\n");
+	      terminateOtherLeg();
+	      terminateLeg();
+	    }
 	  }
-	}
-      }
-      else {
-	// 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
-	// 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
+	} else {
+	  // 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
+	  // 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
 	  
-	terminateOtherLeg();
+	  terminateOtherLeg();
+	}
+
+	processed = onOtherReply(reply);
       }
 	
-      processed = onOtherReply(reply);
       break;
 	
     default:
-      DBG("reply from callee: %i %s\n",reply.code,reply.reason.c_str());
+      DBG("reply from callee: %u %s\n",reply.code,reply.reason.c_str());
       break;
     }
   }
