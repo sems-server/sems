@@ -49,6 +49,10 @@ using std::string;
  */
 string int2str(int val);
 
+/**
+ * Convert an unsigned int to a string.
+ */
+string int2str(unsigned int val);
 
 /** 
  * Convert a long to a string. 

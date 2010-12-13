@@ -68,6 +68,22 @@
 
 static char _int2str_lookup[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', '9' };
 
+
+string int2str(unsigned int val)
+{
+  char buffer[64] = {0};
+  int i=62;
+  lldiv_t d;
+
+  d.quot = val;
+  do{
+    d = lldiv(d.quot,10);
+    buffer[i] = _int2str_lookup[d.rem];
+  }while(--i && d.quot);
+
+  return string((char*)(buffer+i+1));
+}
+
 string int2str(int val)
 {
   char buffer[64] = {0,0};
