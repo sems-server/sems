@@ -166,8 +166,8 @@ class AmB2BSession: public AmSession
   /** reset relation with other leg */
   virtual void clear_other();
 
-  /** Relay one event to the other side. */
-  virtual void relayEvent(AmEvent* ev);
+  /** Relay one event to the other side. @return 0 on success */
+  virtual int relayEvent(AmEvent* ev);
 
   /** send a relayed SIP Request */
   void relaySip(const AmSipRequest& req);
@@ -251,7 +251,7 @@ class AmB2BCallerSession: public AmB2BSession
  protected:
   AmSipRequest invite_req;
   virtual void createCalleeSession();
-  void relayEvent(AmEvent* ev);
+  int relayEvent(AmEvent* ev);
 
   /** Tell if the session should
    *  relay early media SDPs to

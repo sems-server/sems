@@ -126,7 +126,7 @@ class SBCDialog : public AmB2BCallerSession
   void onCancel();
 
  protected:
-  void relayEvent(AmEvent* ev);
+  int relayEvent(AmEvent* ev);
 
   void onSipReply(const AmSipReply& reply, int old_dlg_status,
 		  const string& trans_method);
@@ -147,7 +147,7 @@ class SBCCalleeSession
   SBCCallProfile call_profile;
 
  protected:
-  void relayEvent(AmEvent* ev);
+  int relayEvent(AmEvent* ev);
 
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, int old_dlg_status,

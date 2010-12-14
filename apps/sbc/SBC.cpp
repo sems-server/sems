@@ -543,7 +543,7 @@ void SBCDialog::process(AmEvent* ev)
   AmB2BCallerSession::process(ev);
 }
 
-void SBCDialog::relayEvent(AmEvent* ev) {
+int SBCDialog::relayEvent(AmEvent* ev) {
   if ((call_profile.headerfilter != Transparent) &&
       (ev->event_id == B2BSipRequest)) {
     // header filter
@@ -578,7 +578,7 @@ void SBCDialog::relayEvent(AmEvent* ev) {
     }
   }
 
-  AmB2BCallerSession::relayEvent(ev);
+  return AmB2BCallerSession::relayEvent(ev);
 }
 
 int SBCDialog::filterBody(AmSdp& sdp, bool is_a2b) {
@@ -880,7 +880,7 @@ inline UACAuthCred* SBCCalleeSession::getCredentials() {
   return &call_profile.auth_credentials;
 }
 
-void SBCCalleeSession::relayEvent(AmEvent* ev) {
+int SBCCalleeSession::relayEvent(AmEvent* ev) {
   if ((call_profile.headerfilter != Transparent) &&
       (ev->event_id == B2BSipRequest)) {
     // header filter
@@ -915,7 +915,7 @@ void SBCCalleeSession::relayEvent(AmEvent* ev) {
     }
   }
 
-  AmB2BCalleeSession::relayEvent(ev);
+  return AmB2BCalleeSession::relayEvent(ev);
 }
 
 void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {

@@ -252,15 +252,19 @@ void AmB2BSession::onInvite2xx(const AmSipReply& reply)
   }
 }
 
-void AmB2BSession::relayEvent(AmEvent* ev)
+int AmB2BSession::relayEvent(AmEvent* ev)
 {
   DBG("AmB2BSession::relayEvent: id=%s\n",
       other_id.c_str());
 
-  if(!other_id.empty())
-    AmSessionContainer::instance()->postEvent(other_id,ev);
-  else 
+  if(!other_id.empty()) {
+    if (!AmSessionContainer::instance()->postEvent(other_id,ev))
+      return -1;
+  } else {
     delete ev;
+  }
+
+  return 0;
 }
 
 void AmB2BSession::onOtherBye(const AmSipRequest& req)
@@ -587,7 +591,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
     AmB2BSession::onB2BEvent(ev);
 }
 
-void AmB2BCallerSession::relayEvent(AmEvent* ev)
+int AmB2BCallerSession::relayEvent(AmEvent* ev)
 {
   if(other_id.empty()){
 
@@ -605,7 +609,7 @@ void AmB2BCallerSession::relayEvent(AmEvent* ev)
     }
   }
 
-  AmB2BSession::relayEvent(ev);
+  return AmB2BSession::relayEvent(ev);
 }
 
 void AmB2BCallerSession::onSessionStart(const AmSipRequest& req)
