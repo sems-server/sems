@@ -60,7 +60,7 @@ AmSessionProcessorThread* AmSessionProcessor::getProcessorThread() {
 }
 
 void AmSessionProcessor::addThreads(unsigned int num_threads) {
-  DBG("starting %zd session processor threads\n", num_threads);
+  DBG("starting %u session processor threads\n", num_threads);
   threads_mut.lock();
   for (unsigned int i=0; i < num_threads;i++) {
     threads.push_back(new AmSessionProcessorThread());
