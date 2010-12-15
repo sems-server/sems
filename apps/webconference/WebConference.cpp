@@ -875,7 +875,7 @@ void WebConferenceFactory::vqRoomFeedback(const AmArg& args, AmArg& ret) {
   int opinion = args.get(2).asInt();
 
   saveFeedback(string("RO "+ room + "|||" + adminpin + "|||" + 
-	       int2str(opinion) + "|||" + int2str(time(NULL)) + "|||\n"));
+		      int2str(opinion) + "|||" + int2str((unsigned int)time(NULL)) + "|||\n"));
 
   ret.push(0);
   ret.push("OK");
@@ -888,7 +888,7 @@ void WebConferenceFactory::vqCallFeedback(const AmArg& args, AmArg& ret) {
   int opinion = args.get(3).asInt();
 
   saveFeedback("CA|||"+ room + "|||" + adminpin + "|||" + tag + "|||" + 
-	       int2str(opinion) + "|||" + int2str(time(NULL)) + "|||\n");
+	       int2str(opinion) + "|||" + int2str((unsigned int)time(NULL)) + "|||\n");
 
   ret.push(0);
   ret.push("OK");
@@ -902,7 +902,7 @@ void WebConferenceFactory::vqConferenceFeedback(const AmArg& args, AmArg& ret) {
   int opinion = args.get(4).asInt();
 
   saveFeedback("CO|||"+ room + "|||" + adminpin + "|||" + int2str(opinion) + "|||" + 
-	       sender + "|||" + comment +"|||" + int2str(time(NULL)) + "|||\n");
+	       sender + "|||" + comment +"|||" + int2str((unsigned int)time(NULL)) + "|||\n");
 
   ret.push(0);
   ret.push("OK");

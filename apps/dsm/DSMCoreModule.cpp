@@ -888,7 +888,7 @@ bool TestDSMCondition::match(AmSession* sess, DSMSession* sc_sess, DSMCondition:
   string r;
   if (lhs.length() > 5 && 
       (lhs.substr(0, 4) == "len(") && lhs[lhs.length()-1] == ')') {
-    l = int2str(resolveVars(lhs.substr(4, lhs.length()-5), sess, sc_sess, event_params).length());
+    l = int2str((unsigned int)resolveVars(lhs.substr(4, lhs.length()-5), sess, sc_sess, event_params).length());
   } else {    
     l   = resolveVars(lhs, sess, sc_sess, event_params);
   }
@@ -1124,11 +1124,11 @@ EXEC_ACTION_START(SCDIAction) {
       for (size_t i=0;i<sc_sess->di_res.size();i++) {
 	switch (sc_sess->di_res.get(i).getType()) {
 	case AmArg::CStr: {
-	  sc_sess->var["DI_res"+int2str(i)] = 
+	  sc_sess->var["DI_res"+int2str((unsigned int)i)] =
 	    sc_sess->di_res.get(i).asCStr();
 	} break;
 	case AmArg::Int: {
-	  sc_sess->var["DI_res"+int2str(i)] = 
+	  sc_sess->var["DI_res"+int2str((unsigned int)i)] =
 	    int2str(sc_sess->di_res.get(i).asInt());
 	} break;
 	default: {

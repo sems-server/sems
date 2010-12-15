@@ -229,11 +229,11 @@ EXEC_ACTION_START(SCUSplitStringAction) {
     p = str.find("\n", last_p);
     if (p==string::npos) {
       if (last_p < str.length())
-	sc_sess->var[dst_array+"["+int2str(cntr)+"]"] = str.substr(last_p);
+	sc_sess->var[dst_array+"["+int2str((unsigned int)cntr)+"]"] = str.substr(last_p);
       break;
     }
     
-    sc_sess->var[dst_array+"["+int2str(cntr++)+"]"] = str.substr(last_p, p-last_p);
+    sc_sess->var[dst_array+"["+int2str((unsigned int)cntr++)+"]"] = str.substr(last_p, p-last_p);
 
     last_p = p+1;    
   }
