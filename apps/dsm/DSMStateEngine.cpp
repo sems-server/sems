@@ -553,7 +553,7 @@ void varPrintArg(const AmArg& a, map<string, string>& dst, const string& name) {
     dst[name] = a.asCStr(); return;
   case AmArg::Array:
     for (size_t i = 0; i < a.size(); i ++)
-      varPrintArg(a.get(i), dst, name+"["+int2str(i)+"]");
+      varPrintArg(a.get(i), dst, name+"["+int2str((unsigned int)i)+"]");
     return;
   case AmArg::Struct:
     for (AmArg::ValueStruct::const_iterator it = a.asStruct()->begin();
