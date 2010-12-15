@@ -825,12 +825,12 @@ static void parse_session_attr(AmSdp* sdp_msg, char* s, char** next) {
   if (col == attr_end) {
     // property attribute
     sdp_msg->attributes.push_back(SdpAttribute(string(s, attr_end-s+1)));
-    DBG("got session attribute '%.*s\n", attr_end-s+1, s);
+    DBG("got session attribute '%.*s\n", (int)(attr_end-s+1), s);
   } else {
     // value attribute
     sdp_msg->attributes.push_back(SdpAttribute(string(s, col-s-1),
 					       string(col, attr_end-col+1)));
-    DBG("got session attribute '%.*s:%.*s'\n", col-s-1, s, attr_end-col+1, col);
+    DBG("got session attribute '%.*s:%.*s'\n", (int)(col-s-1), s, (int)(attr_end-col+1), col);
 
   }
 
