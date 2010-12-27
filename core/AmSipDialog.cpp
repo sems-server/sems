@@ -97,13 +97,14 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     return;
   }
 
-  if ((req.method == "INVITE") && pending_invites) {      
-    reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
-		"Retry-After: " + int2str(get_random() % 10) + CRLF);
-    return;
-  }
-  else {
-      pending_invites++;
+  if (req.method == "INVITE") {
+    if (pending_invites) {
+      reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
+		  "Retry-After: " + int2str(get_random() % 10) + CRLF);
+      return;
+    }
+
+    pending_invites++;
   }
 
   r_cseq = req.cseq;
