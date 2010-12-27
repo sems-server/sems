@@ -182,7 +182,7 @@ void udp_trsp::run()
 	return;
     }
 
-    DBG("Started UDP server listening to %s:%i\n",sock->get_ip(),sock->get_port());
+    DBG("Started UDP server listening on %s:%i\n",sock->get_ip(),sock->get_port());
 
     while(true){
 
