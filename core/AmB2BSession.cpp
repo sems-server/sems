@@ -595,18 +595,20 @@ int AmB2BCallerSession::relayEvent(AmEvent* ev)
 {
   if(other_id.empty()){
 
-    if(dynamic_cast<B2BEvent*>(ev)){
+    bool create_callee = false;
+    B2BSipEvent* sip_ev = dynamic_cast<B2BSipEvent*>(ev);
+    if (sip_ev && sip_ev->forward)
+      create_callee = true;
+    else
+      create_callee = dynamic_cast<B2BConnectEvent*>(ev) != NULL;
 
-      B2BSipEvent*     sip_ev = dynamic_cast<B2BSipEvent*>(ev);
-      B2BConnectEvent* co_ev  = dynamic_cast<B2BConnectEvent*>(ev);
-	    
-      if( (sip_ev && sip_ev->forward) || co_ev ) {
-	createCalleeSession();
-	if (other_id.length()) {
-	  MONITORING_LOG(getLocalTag().c_str(), "b2b_leg", other_id.c_str());
-	}
+    if (create_callee) {
+      createCalleeSession();
+      if (other_id.length()) {
+	MONITORING_LOG(getLocalTag().c_str(), "b2b_leg", other_id.c_str());
       }
     }
+
   }
 
   return AmB2BSession::relayEvent(ev);
