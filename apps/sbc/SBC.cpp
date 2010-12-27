@@ -52,9 +52,6 @@ SBC - feature-wishlist
 
 using std::map;
 
-string SBCFactory::user;
-string SBCFactory::domain;
-string SBCFactory::pwd;
 AmConfigReader SBCFactory::cfg;
 AmSessionEventHandlerFactory* SBCFactory::session_timer_fact = NULL;
 

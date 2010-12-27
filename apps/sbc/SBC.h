@@ -66,9 +66,6 @@ class SBCFactory: public AmSessionFactory,
 
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);
-  static string user;
-  static string domain;
-  static string pwd;
 
   static AmConfigReader cfg;
   static AmSessionEventHandlerFactory* session_timer_fact;
