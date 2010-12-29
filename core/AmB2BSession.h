@@ -81,18 +81,6 @@ struct B2BSipReplyEvent: public B2BSipEvent
   { }
 };
 
-/** \brief relay a message body to other leg in B2B session */
-struct B2BMsgBodyEvent : public B2BEvent {
-  string content_type;
-  string body;
-
-  B2BMsgBodyEvent(const string& content_type,
-		  const string& body)
-    : B2BEvent(B2BMsgBody),
-    content_type(content_type), body(body) { }
-  ~B2BMsgBodyEvent() { }
-};
-
 /** \brief trigger connecting the callee leg in B2B session */
 struct B2BConnectEvent: public B2BEvent
 {
