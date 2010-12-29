@@ -23,3 +23,6 @@ default_en.wav
 
 SET(sems_module_name voicemail)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
+INSTALL(
+	FILES ./default.template  DESTINATION ${SEMS_CFG_PREFIX}/etc/sems/
+)
