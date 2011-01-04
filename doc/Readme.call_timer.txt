@@ -1,6 +1,13 @@
 call_timer application
 ----------------------
 
+-------------------------------------------------
+This application has been obsoleted by the sbc
+module and will be discontinued in the next version.
+Please use the sbc module with the call_timer call
+profile for the same functionality.
+-------------------------------------------------
+
 call_timer is a simple back-to-back user agent application 
 that ends the call after a call timer expired. 
 

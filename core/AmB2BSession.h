@@ -32,10 +32,9 @@
 #include "AmSipDialog.h"
 #include "sip/hash.h"
 
-enum { B2BTerminateLeg, 
-       B2BConnectLeg, 
-       B2BCallAccepted, 
-       B2BSipRequest, 
+enum { B2BTerminateLeg,
+       B2BConnectLeg,
+       B2BSipRequest,
        B2BSipReply,
        B2BMsgBody };
 
@@ -125,6 +124,12 @@ struct B2BConnectEvent: public B2BEvent
  */
 class AmB2BSession: public AmSession
 {
+ public:
+  enum B2BMode {
+    B2BMode_Transparent,  // relay message bodies
+    B2BMode_SDPFilter     // reconstruct SDP
+  };
+
  protected:
   /** local tag of the other leg */
   string other_id;
@@ -134,6 +139,9 @@ class AmB2BSession: public AmSession
    * or only relay them (B2B mode).
    */
   bool sip_relay_only;
+
+  B2BMode b2b_mode;
+  bool a_leg;
 
   /** 
    * Requests which have been relayed 
@@ -186,7 +194,7 @@ class AmB2BSession: public AmSession
   int sendEstablishedReInvite();
 
   /** do session refresh */
-  bool refresh();
+  bool refresh(int flags = 0);
 
   /** @see AmEventQueue */
   void process(AmEvent* event);
@@ -204,6 +212,12 @@ class AmB2BSession: public AmSession
    */
   virtual bool onOtherReply(const AmSipReply& reply);
 
+  /** filter body ( b2b_mode == SDPFilter */
+  virtual int filterBody(string& content_type, string& body, bool is_a2b);
+
+  /** filter SDP body ( b2b_mode == SDPFilter */
+  virtual int filterBody(AmSdp& sdp, bool is_a2b);
+
   AmB2BSession();
   AmB2BSession(const string& other_local_tag);
 
@@ -211,6 +225,7 @@ class AmB2BSession: public AmSession
 
  public:
   void set_sip_relay_only(bool r);
+  B2BMode getB2BMode() const;
 };
 
 class AmB2BCalleeSession;
@@ -274,7 +289,7 @@ class AmB2BCallerSession: public AmB2BSession
 class AmB2BCalleeSession: public AmB2BSession
 {
  public:
-  AmB2BCalleeSession(const string& other_local_tag);
+  /*  AmB2BCalleeSession(const string& other_local_tag); */
   AmB2BCalleeSession(const AmB2BCallerSession* caller);
 
   virtual ~AmB2BCalleeSession();

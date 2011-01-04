@@ -106,6 +106,23 @@ struct SdpPayload
   bool operator == (int r);
 };
 
+/** \brief a=... line in SDP */
+struct SdpAttribute
+{
+  string attribute;
+  string value;
+
+  // property attribute
+  SdpAttribute(const string& attribute,
+	       const string& value)
+    : attribute(attribute), value(value) { }
+
+  // value attribute
+  SdpAttribute(const string& attribute)
+    : attribute(attribute) { }
+
+  string print() const;
+};
 
 /** \brief m=... line in SDP */
 struct SdpMedia
@@ -124,6 +141,8 @@ struct SdpMedia
   Direction     dir;  // a=direction
 
   std::vector<SdpPayload> payloads;
+
+  std::vector<SdpAttribute> attributes; // unknown attributes
 
   SdpMedia() : conn() {}
 };
@@ -146,6 +165,8 @@ public:
   string           sessionName; // s= 
   string           uri;         // u=
   SdpConnection    conn;        // c=
+  std::vector<SdpAttribute> attributes; // unknown session level attributes
+
   std::vector<SdpMedia> media;  // m= ... [a=rtpmap:...]+
   //TODO: t= lines
 

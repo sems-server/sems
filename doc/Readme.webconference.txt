@@ -39,11 +39,19 @@ The adminpin is used so that only authorized users can access the conference con
 The adminpin can be completely disabled by setting ignore_pin in webconference.conf, 
 in that case a specified adminpin is just ignored.
 
-On all actions that inspect or modify a room, if the room specified with room/adminpin
-does not exist, by default the room is (re)opened with the specified adminpin. 
-This means that roomCreate() does not necessarily need to be called; if roomInfo() 
-is called with a new room name and adminpin, the room is created and the adminpin 
-is set.
+There is two modes, configured in the configuration file: private_rooms=yes and
+private_rooms=no (which is the default).
+
+For private_rooms=no:
+  On all actions that inspect or modify a room, if the room specified with room/adminpin
+  does not exist, by default the room is (re)opened with the specified adminpin. 
+  This means that roomCreate() does not necessarily need to be called; if roomInfo() 
+  is called with a new room name and adminpin, the room is created and the adminpin 
+  is set.
+
+For private_rooms=yes:
+  The room has to be created with roomCreate, before anyone can enter the room by
+  dialing in or by creating a call with dialout.
 
 If a room exists and the adminpin is not set (for example if the room is created
 by dial-in), the first call to roomInfo/dialout/kick/... with room/adminpin will
@@ -56,8 +64,12 @@ All functions return as extra parameter the serverInfo, a status line showing th
 SEMS version, and current call statistics.
 
 ----
-roomCreate(string room):
+roomCreate(string room [, int timeout]):
    int code, string result, string adminpin
+
+  if webconference is configured with support_rooms_timeout=yes, the room is deleted
+  and participants are disconnected after <timeout>, if timeout parameter is present
+  and timeout > 0.
 
   code/result:
          0    OK

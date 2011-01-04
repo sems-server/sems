@@ -1,5 +1,12 @@
 SIP Session Timers (SST) enabled B2B application.
 
+-------------------------------------------------
+This application has been obsoleted by the sbc
+module and will be discontinued in the next version.
+Please use the sbc module with the sst_b2b call
+profile for the same functionality.
+-------------------------------------------------
+
 This application can be routed through for achieving 
 two things: 
 
@@ -17,15 +24,13 @@ The incoming INVITE for a newly established call is
 passed in signaling only B2B mode to the B leg, 
 which tries to send it to the request URI.
 
-SIP Session Timers are enabled on both legs. When the 
-timer expires, an empty INVITE is sent, and the resulting 
-SDP offer from body of the 200 is relayed into the other 
-leg, where it is sent out as INVITE with the offer. The 
-answer from B leg is relayed into A leg and sent as body
-in ACK message.
+SIP Session Timers are enabled on both legs. The
+session refresh method may be configured; UPDATE
+or INVITE with last established SDP may be used.
 
 SST expiration is configurable in config file.
 
+Session refresh with last established SDP:
 
  A                  b2b                  B
  |---INVITE / SDPa-->|                   |
@@ -39,9 +44,11 @@ SST expiration is configurable in config file.
 
           ... SST timer expires :
  |                   |                   |
- |<-- INVITE --------|                   |
- |- OK/SDPc (offer)->|                   |
- |                   |---INVITE / SDPc-->|
- |                   |<-- OK/SDPd (answ)-|
- |<----ACK/SDPd------|----ACK----------->|
+ |<-- INVITE / SDPb -|                   |
+ |- OK/SDPa (offer)->|                   |
+ |<----ACK  ---------|                   |
+ |                   |                   |
+ |                   |---INVITE / SDPa-->|
+ |                   |<-- OK/SDPb (answ)-|
+ |                   |----ACK----------->|
 

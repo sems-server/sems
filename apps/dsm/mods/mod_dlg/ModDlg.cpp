@@ -167,16 +167,17 @@ CONST_ACTION_2P(DLGConnectCalleeRelayedAction,',', false);
 EXEC_ACTION_START(DLGConnectCalleeRelayedAction) {  
   string remote_party = resolveVars(par1, sess, sc_sess, event_params);
   string remote_uri = resolveVars(par2, sess, sc_sess, event_params);
-  if (sc_sess->last_req.get()) {
-    sc_sess->B2BaddReceivedRequest(*sc_sess->last_req.get());
-  } else {
-    WARN("internal error: initial INVITE request missing.\n");
-  }
-  AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);
-  if (b2b_sess) 
-    b2b_sess->set_sip_relay_only(true);
-  else 
-    ERROR("getting B2B session.\n");
+
+  // if (sc_sess->last_req.get()) {
+  //   sc_sess->B2BaddReceivedRequest(*sc_sess->last_req.get());
+  // } else {
+  //   WARN("internal error: initial INVITE request missing.\n");
+  // }
+  // AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);
+  // if (b2b_sess) 
+  //   b2b_sess->set_sip_relay_only(true);
+  // else 
+  //   ERROR("getting B2B session.\n");
 
   sc_sess->B2BconnectCallee(remote_party, remote_uri, true);
 } EXEC_ACTION_END;

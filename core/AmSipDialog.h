@@ -118,6 +118,9 @@ class AmSipDialog
   string outbound_proxy;
   bool   force_outbound_proxy;
 
+  string next_hop_ip;
+  unsigned short next_hop_port;
+
   int rseq;          // RSeq for next request (NOTE: keep it signed!)
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;
@@ -174,7 +177,7 @@ class AmSipDialog
 		   int flags = 0);
     
   /** @return 0 on success */
-  int bye(const string& hdrs = "");
+  int bye(const string& hdrs = "", int flags = 0);
 
   /** @return 0 on success */
   int cancel();
@@ -192,7 +195,8 @@ class AmSipDialog
   /** @return 0 on success */
   int reinvite(const string& hdrs,  
 	       const string& content_type,
-	       const string& body);
+	       const string& body,
+	       int flags = 0);
 
   /** @return 0 on success */
   int invite(const string& hdrs,  

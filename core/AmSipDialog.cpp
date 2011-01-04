@@ -124,13 +124,13 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
     if (r_cseq_i && req.cseq <= r_cseq){
       INFO("remote cseq lower than previous ones - refusing request\n");
       // see 12.2.2
-      reply_error(req, 500, "Server Internal Error");
+      reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       return;
     }
 
     if (req.method == SIP_METH_INVITE) {
       if(pending_invites) {      
-	reply_error(req,500,"Server Internal Error",
+	reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
 		    "Retry-After: " + int2str(get_random() % 10) + CRLF);
 	return;
       }
@@ -828,20 +828,18 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 }
 
 
-int AmSipDialog::bye(const string& hdrs)
+int AmSipDialog::bye(const string& hdrs, int flags)
 {
     switch(status){
 
     case Connected:
-      return sendRequest("BYE", "", "", hdrs);
+	return sendRequest("BYE", "", "", hdrs, flags);
 
     case Trying:
     case Proceeding:
     case Early:
       return cancel();
 
-      //case Cancelling:
-      //case Disconnecting:
     default:
       DBG("bye(): we are not connected "
 	  "(status=%i). do nothing!\n",status);
@@ -851,10 +849,11 @@ int AmSipDialog::bye(const string& hdrs)
 
 int AmSipDialog::reinvite(const string& hdrs,  
 			  const string& content_type,
-			  const string& body)
+			  const string& body,
+			  int flags)
 {
   if(status == Connected) {
-    return sendRequest("INVITE", content_type, body, hdrs);
+    return sendRequest("INVITE", content_type, body, hdrs, flags);
   }
   else {
     DBG("reinvite(): we are not connected "
@@ -1066,7 +1065,7 @@ int AmSipDialog::sendRequest(const string& method,
   if(onTxRequest(req))
     return -1;
 
-  if (SipCtrlInterface::send(req))
+  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port))
     return -1;
  
   uac_trans[cseq] = AmSipTransaction(method,cseq,req.tt);

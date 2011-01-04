@@ -750,7 +750,8 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     bucket->remove(t);
 }
 
-int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
+int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
+			       const cstring& _next_hop, unsigned short _next_port)
 {
     // Request-URI
     // To
@@ -780,7 +781,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
 	return -1;
     }
     else {
-	DBG("send_request to <%.*s>",msg->u.request->ruri_str.len,msg->u.request->ruri_str.s);
+	DBG("send_request to R-URI <%.*s>",msg->u.request->ruri_str.len,msg->u.request->ruri_str.s);
     }
 
     int request_len = request_line_len(msg->u.request->method_str,
@@ -842,10 +843,15 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt)
 	return MALFORMED_SIP_MSG;
     }
 
-    if(set_next_hop(msg,&next_hop,&next_port) < 0){
-	DBG("set_next_hop failed\n");
-	delete p_msg;
-	return -1;
+    if (!_next_hop.len) {
+	if(set_next_hop(msg,&next_hop,&next_port) < 0){
+	    DBG("set_next_hop failed\n");
+	    delete p_msg;
+	    return -1;
+	}
+    } else {
+	next_hop = _next_hop;
+	next_port = _next_port ? _next_port : 5060;
     }
 
     if(set_destination_ip(p_msg,&next_hop,next_port) < 0){
@@ -1231,9 +1237,10 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     
     to_tag = ((sip_from_to*)msg->to->p)->tag;
     if((t->msg->u.request->method != sip_request::CANCEL) && !to_tag.len){
-	DBG("To-tag missing in final reply (see sipctrl.conf?)\n");
-	if (!trans_layer::accept_fr_without_totag)
+	if (!trans_layer::accept_fr_without_totag) {
+	    DBG("To-tag missing in final reply (see sems.conf?)\n");
 	    return -1;
+	}
     }
     
     if(t->msg->u.request->method == sip_request::INVITE){

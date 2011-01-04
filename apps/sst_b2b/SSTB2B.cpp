@@ -128,10 +128,6 @@ void SSTB2BDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs,SIP_HDR_SESSION_EXPIRES);
   removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
 
-  //dlg.updateStatus(req);
-  recvd_req.insert(std::make_pair(req.cseq,req));
-  
-  set_sip_relay_only(true);
   DBG("##### connecting to <%s> #####\n",req.r_uri.c_str());
   connectCallee("<" + req.r_uri + ">", req.r_uri, true);
 }

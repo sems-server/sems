@@ -33,6 +33,11 @@ class _AmSipMsgInDlg
   // transaction ticket from sip stack
   trans_ticket tt;
 
+  string         remote_ip;
+  unsigned short remote_port;
+  string         local_ip;
+  unsigned short local_port;
+
   _AmSipMsgInDlg() : cseq(0), rseq(0) { }
   virtual ~_AmSipMsgInDlg() { };
 

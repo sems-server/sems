@@ -37,7 +37,8 @@
 //
 
 AmB2BSession::AmB2BSession()
-  : sip_relay_only(true)
+  : sip_relay_only(true),
+    b2b_mode(B2BMode_Transparent)
 {
 }
 
@@ -56,6 +57,10 @@ AmB2BSession::~AmB2BSession()
 
 void AmB2BSession::set_sip_relay_only(bool r) { 
   sip_relay_only = r; 
+}
+
+AmB2BSession::B2BMode AmB2BSession::getB2BMode() const {
+  return b2b_mode;
 }
 
 void AmB2BSession::clear_other()
@@ -184,7 +189,18 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
     recvd_req.insert(std::make_pair(req.cseq,req));
   }
 
-  relayEvent(new B2BSipRequestEvent(req,fwd));
+  B2BSipRequestEvent* r_ev = new B2BSipRequestEvent(req,fwd);
+  
+  // filter relayed INVITE/UPDATE body
+  if (fwd && b2b_mode != B2BMode_Transparent &&
+      (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
+       req.method == SIP_METH_ACK)) {
+    DBG("filtering body for request '%s' (c/t '%s')\n",
+	req.method.c_str(), req.content_type.c_str());
+    filterBody(r_ev->req.content_type, r_ev->req.body, a_leg);
+  }
+
+  relayEvent(r_ev);
 }
 
 void AmB2BSession::onSipReply(const AmSipReply& reply,
@@ -201,6 +217,12 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
 
     AmSipReply n_reply = reply;
     n_reply.cseq = t->second.cseq;
+
+    // filter relayed INVITE/UPDATE body
+    if (b2b_mode != B2BMode_Transparent &&
+	(trans_method == SIP_METH_INVITE || trans_method == SIP_METH_UPDATE)) {
+      filterBody(n_reply.content_type, n_reply.body, a_leg);
+    }
     
     relayEvent(new B2BSipReplyEvent(n_reply, true, t->second.method));
 
@@ -342,15 +364,17 @@ int AmB2BSession::sendEstablishedReInvite() {
   }
 
   DBG("sending re-INVITE with saved session description\n");
-  return dlg.reinvite("",established_content_type, established_body);
+  return dlg.reinvite("",established_content_type, established_body,
+		      SIP_FLAGS_VERBATIM);
 }
 
-bool AmB2BSession::refresh() {
+bool AmB2BSession::refresh(int flags) {
+  DBG(" *** AmB2BSession::refresh *** \n");
   // not in B2B mode
   if (other_id.empty() ||
       // UPDATE as refresh handled like normal session
       refresh_method == REFRESH_UPDATE) {
-    return AmSession::refresh();
+    return AmSession::refresh(SIP_FLAGS_VERBATIM);
   }
 
   // refresh with re-INVITE
@@ -414,6 +438,30 @@ void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 
 }
 
+int AmB2BSession::filterBody(string& content_type, string& body, bool is_a2b) {
+  if (body.empty())
+    return 0;
+
+  if (content_type == SIP_APPLICATION_SDP) {
+    AmSdp f_sdp;
+    f_sdp.setBody(body.c_str());
+    int res = f_sdp.parse();
+    if (0 != res) {
+      DBG("SDP parsing failed!\n");
+      return res;
+    }
+    filterBody(f_sdp, is_a2b);
+    f_sdp.print(body);
+  }
+
+  return 0;
+}
+
+int AmB2BSession::filterBody(AmSdp& sdp, bool is_a2b) {
+  // default: transparent
+  return 0;
+}
+
 // 
 // AmB2BCallerSession methods
 //
@@ -422,6 +470,7 @@ AmB2BCallerSession::AmB2BCallerSession()
   : AmB2BSession(),
     callee_status(None), sip_relay_early_media_sdp(false)
 {
+  a_leg = true;
 }
 
 AmB2BCallerSession::~AmB2BCallerSession()
@@ -543,7 +592,20 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
   if(callee_status != None)
     terminateOtherLeg();
 
+  if (relayed_invite) {
+    // relayed INVITE - we need to add the original INVITE to
+    // list of received (relayed) requests
+    recvd_req.insert(std::make_pair(invite_req.cseq,invite_req));
+
+    // in SIP relay mode from the beginning
+    sip_relay_only = true;
+  }
+
   B2BConnectEvent* ev = new B2BConnectEvent(remote_party,remote_uri);
+
+  if (b2b_mode == B2BMode_SDPFilter) {
+    filterBody(invite_req.content_type, invite_req.body, true);
+  }
 
   ev->content_type = invite_req.content_type;
   ev->body         = invite_req.body;
@@ -600,14 +662,18 @@ AmB2BCalleeSession* AmB2BCallerSession::newCalleeSession()
   return new AmB2BCalleeSession(this);
 }
 
-AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
+/* AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
   : AmB2BSession(other_local_tag)
 {
+  a_leg = false;
 }
+*/
 
 AmB2BCalleeSession::AmB2BCalleeSession(const AmB2BCallerSession* caller)
   : AmB2BSession(caller->getLocalTag())
 {
+  a_leg = false;
+  b2b_mode = caller->getB2BMode();
 }
 
 AmB2BCalleeSession::~AmB2BCalleeSession() {
@@ -634,10 +700,24 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 	AmSipTransaction(SIP_METH_INVITE, co_ev->r_cseq, trans_ticket());
     }
 
-    dlg.sendRequest(SIP_METH_INVITE, 
-		    co_ev->content_type, co_ev->body,
-		    co_ev->hdrs, SIP_FLAGS_VERBATIM);
-    // todo: relay error event back if sending fails
+    if (dlg.sendRequest(SIP_METH_INVITE,
+			co_ev->content_type, co_ev->body,
+			co_ev->hdrs, SIP_FLAGS_VERBATIM) < 0) {
+
+      DBG("sending INVITE failed, relaying back 400 Bad Request\n");
+      AmSipReply n_reply;
+      n_reply.code = 400;
+      n_reply.reason = "Bad Request";
+      n_reply.cseq = co_ev->r_cseq;
+      n_reply.local_tag = dlg.local_tag;
+      relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
+
+      if (co_ev->relayed_invite)
+	relayed_req.erase(dlg.cseq);
+
+      setStopped();
+      return;
+    }
 
     saveSessionDescription(co_ev->content_type, co_ev->body);
 

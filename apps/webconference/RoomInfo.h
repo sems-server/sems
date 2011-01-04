@@ -8,6 +8,9 @@ using std::string;
 #include <list>
 using std::list;
 
+#include <vector>
+using std::vector;
+
 #include <sys/time.h> 
 
 
@@ -54,6 +57,7 @@ struct ConferenceRoom {
   string adminpin;
 
   struct timeval last_access_time;
+  time_t expiry_time;
 
   list<ConferenceRoomParticipant> participants;
 
@@ -63,6 +67,8 @@ struct ConferenceRoom {
   void cleanExpired();
 
   AmArg asArgArray();
+
+  vector<string> participantLtags();
 
   void newParticipant(const string& localtag, const string& number);
 
@@ -76,6 +82,8 @@ struct ConferenceRoom {
 
   bool expired(const struct timeval& now);
   bool expired();
+
+  bool hard_expired(const struct timeval& now);
 };
 
 

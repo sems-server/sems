@@ -92,7 +92,8 @@ public:
      * @param [in]  msg Pre-built message.
      * @param [out] tt transaction ticket (needed for replies & CANCEL)
      */
-    int send_request(sip_msg* msg, trans_ticket* tt);
+    int send_request(sip_msg* msg, trans_ticket* tt,
+		     const cstring& _next_hop, unsigned short _next_port);
 
     /**
      * Cancels a request. 

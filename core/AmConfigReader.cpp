@@ -96,10 +96,13 @@ int  AmConfigReader::loadFile(const string& path)
     TRIM(c);
 
     if(*c == '"'){
-
+      char last_c = ' ';
       val_beg = ++c;
 
-      while( (*c != '"') && (*c != '\0') ) c++;
+      while( ((*c != '"') || (last_c == '\\')) && (*c != '\0') ) {
+	last_c = *c;
+	c++;
+      }
 
       if(*c == '\0')
 	goto syntax_error;

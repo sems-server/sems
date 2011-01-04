@@ -28,6 +28,7 @@ using std::map;
 #include "strings.h"
 #endif
 
+static void parse_session_attr(AmSdp* sdp_msg, char* s, char** next);
 static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s);
 static void parse_sdp_connection(AmSdp* sdp_msg, char* s, char t);
 static void parse_sdp_media(AmSdp* sdp_msg, char* s);
@@ -37,6 +38,7 @@ static void parse_sdp_origin(AmSdp* sdp_masg, char* s);
 inline char* get_next_line(char* s);
 static char* is_eql_next(char* s);
 static char* parse_until(char* s, char end);
+static char* parse_until(char* s, char* end, char c);
 static bool contains(char* s, char* next_line, char c);
 static bool is_wsp(char s);
 
@@ -97,6 +99,13 @@ bool SdpPayload::operator == (int r)
 {
   DBG("pl == r: payload_type = %i; r = %i\n", payload_type, r);
   return payload_type == r;
+}
+
+string SdpAttribute::print() const {
+  if (value.empty())
+    return "a="+attribute+CRLF;
+  else
+    return "a="+attribute+":"+value+CRLF;
 }
 
 //
@@ -282,7 +291,9 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
       case 'a':
 	//DBG("parse_sdp_line_ex: found attributes\n");
 	s = is_eql_next(s);
-	next = get_next_line(s);
+	parse_session_attr(sdp_msg, s, &next);
+	// next = get_next_line(s);
+	// parse_sdp_attr(sdp_msg, s);
 	s = next;
 	state = SDP_DESCR;
 	break;
@@ -548,6 +559,40 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
   return;
 }
 
+static void parse_session_attr(AmSdp* sdp_msg, char* s, char** next) {
+  *next = get_next_line(s);
+  if (*next == s) {
+    WARN("premature end of SDP in session attr\n");
+    while (**next != '\0') (*next)++;
+    return;
+  }
+  char* attr_end = *next-1;
+  while (attr_end >= s &&
+	 ((*attr_end == 10) || (*attr_end == 13)))
+    attr_end--;
+
+  if (*attr_end == ':') {
+    WARN("incorrect SDP: value attrib without value: '%s'\n",
+	 string(s, attr_end-s+1).c_str());
+    return;
+  }
+
+  char* col = parse_until(s, attr_end, ':');
+
+  if (col == attr_end) {
+    // property attribute
+    sdp_msg->attributes.push_back(SdpAttribute(string(s, attr_end-s+1)));
+    DBG("got session attribute '%.*s\n", attr_end-s+1, s);
+  } else {
+    // value attribute
+    sdp_msg->attributes.push_back(SdpAttribute(string(s, col-s-1),
+					       string(col, attr_end-col+1)));
+    DBG("got session attribute '%.*s:%.*s'\n", col-s-1, s, attr_end-col+1, col);
+
+  }
+
+}
+
 static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 {
   if(sdp_msg->media.empty()){
@@ -727,9 +772,10 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
       attr_check(attr);
       next = parse_until(attr_line, '\r');
       if(next < line_end){
-	  //string value(attr_line, int(next-attr_line)-1);
-	  //DBG("found media attr '%s' value '%s'\n",
-	  //    (char*)attr.c_str(), (char*)value.c_str());
+	  string value(attr_line, int(next-attr_line)-1);
+	  DBG("found media attr '%s' value '%s'\n",
+	      (char*)attr.c_str(), (char*)value.c_str());
+	  media.attributes.push_back(SdpAttribute(attr, value));
       } else {
 	  DBG("found media attr '%s', but value is not followed by cr\n",
 	      (char *)attr.c_str());
@@ -740,9 +786,10 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
   } else {
       next = parse_until(attr_line, '\r');
       if(next < line_end){
-	//string attr(attr_line, int(next-attr_line)-1);
-	//attr_check(attr);
-	//DBG("found media attr '%s'\n", (char*)attr.c_str());
+	  string attr(attr_line, int(next-attr_line)-1);
+	  attr_check(attr);
+	  DBG("found media attr '%s'\n", (char*)attr.c_str());
+	  media.attributes.push_back(SdpAttribute(attr));
       } else {
 	  DBG("found media attr line '%s', which is not followed by cr\n",
 	      attr_line);
@@ -890,6 +937,16 @@ static char* parse_until(char* s, char end)
   return line;
 }
 
+static char* parse_until(char* s, char* end, char c)
+{
+  char* line=s;
+  while(line<end && *line && *line != c ){
+    line++;
+  }
+  if (line<end)
+    line++;
+  return line;
+}
 
 static char* is_eql_next(char* s)
 {

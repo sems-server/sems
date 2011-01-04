@@ -33,9 +33,6 @@
 #define ANNOUNCE_PATH       "/usr/local/lib/sems/audio"
 #define ANNOUNCE_FILE       "default.wav"
 #define PLUG_IN_PATH        "/usr/local/lib/sems/plug-in"
-#define DEFAULT_ANNOUNCE    "default.wav"
-#define DEFAULT_RECORD_TIME 30
-#define PREFIX_SEPARATOR    ""
 #define RTP_LOWPORT         1024
 #define RTP_HIGHPORT        0xffff
 #define MAX_FORWARDS        70

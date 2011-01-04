@@ -289,7 +289,7 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	if (!addSession(req.callid,req.from_tag,local_tag,session)) {
 	  ERROR("adding session to session container\n");
 	  delete session;
-	  throw string("internal server error");
+	  throw string(SIP_REPLY_SERVER_INTERNAL_ERROR);
 	}
 
 	MONITORING_LOG4(local_tag.c_str(), 
@@ -380,7 +380,7 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
   if(!session_factory) {
 
       ERROR("No session factory for application\n");
-      AmSipDialog::reply_error(req,500,"Server Internal Error");
+      AmSipDialog::reply_error(req,500,SIP_REPLY_SERVER_INTERNAL_ERROR);
 
       return NULL;
   }

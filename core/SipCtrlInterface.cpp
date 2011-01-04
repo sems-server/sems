@@ -107,7 +107,7 @@ int SipCtrlInterface::load()
 		return false;
 	    }
 	    udp_rcvbuf = config_udp_rcvbuf;
-	    DBG("sipctrl: udp_rcvbuf = %d\n", udp_rcvbuf);
+	    DBG("udp_rcvbuf = %d\n", udp_rcvbuf);
 	}
 
     } else {
@@ -129,7 +129,8 @@ int SipCtrlInterface::cancel(trans_ticket* tt)
     return trans_layer::instance()->cancel(tt);
 }
 
-int SipCtrlInterface::send(AmSipRequest &req)
+int SipCtrlInterface::send(AmSipRequest &req,
+			   const string& next_hop_ip, unsigned short next_hop_port)
 {
     if(req.method == "CANCEL")
 	return cancel(&req.tt);
@@ -221,7 +222,8 @@ int SipCtrlInterface::send(AmSipRequest &req)
 	}
     }
 
-    int res = trans_layer::instance()->send_request(msg,&req.tt);
+    int res = trans_layer::instance()->send_request(msg,&req.tt,
+						    stl2cstr(next_hop_ip),next_hop_port);
     delete msg;
 
     return res;
@@ -456,6 +458,11 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 		+ c2stlstr((*it)->value) + CRLF;
 	}
     }
+
+    req.remote_ip = get_addr_str(((sockaddr_in*)&msg->remote_ip)->sin_addr).c_str();
+    req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
+    req.local_ip = get_addr_str(((sockaddr_in*)&msg->local_ip)->sin_addr).c_str();
+    req.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
 }
 
 inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
@@ -519,6 +526,11 @@ inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
               break;
         }
     }
+
+    reply.remote_ip = get_addr_str(((sockaddr_in*)&msg->remote_ip)->sin_addr).c_str();
+    reply.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
+    reply.local_ip = get_addr_str(((sockaddr_in*)&msg->local_ip)->sin_addr).c_str();
+    reply.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
 
     return true;
 }

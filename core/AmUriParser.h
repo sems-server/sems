@@ -24,6 +24,8 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#ifndef _AmUriParser_h_
+#define _AmUriParser_h_
 
 #include <string>
 #include <map>
@@ -43,9 +45,13 @@ struct AmUriParser {
   map<string, string> params;
 
   bool isEqual(const AmUriParser& c) const;
+  /** @return true on success */
   bool parse_contact(const string& line, size_t pos, size_t& end);
+  /** @return true on success */
   bool parse_uri();
   bool parse_params(const string& line, int& pos);
   void dump();
   AmUriParser() { }
 };
+
+#endif

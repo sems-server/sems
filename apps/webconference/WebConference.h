@@ -54,6 +54,7 @@ class ConferenceStatusContainer;
 #define DROP_SOUND          "drop_sound"
 #define ENTER_PIN           "enter_pin"
 #define WRONG_PIN           "wrong_pin"
+#define WRONG_PIN_BYE       "wrong_pin_bye"
 
 // default path for files
 #define WEBCONF_ANNOUNCE_PATH "/usr/local/lib/sems/audio/webconference/"
@@ -67,6 +68,8 @@ public:
 	 Unmute 
   };
 };
+
+class WebConferenceCleaner;
 
 class WebConferenceFactory 
   : public AmSessionFactory,
@@ -82,6 +85,8 @@ class WebConferenceFactory
 
   AmSessionEventHandlerFactory* session_timer_f;
 
+  WebConferenceCleaner* cleaner;
+ 
   // for DI 
   static WebConferenceFactory* _instance;
   bool configured;
@@ -91,9 +96,13 @@ class WebConferenceFactory
   string getRandomPin();
   /** @return NULL if adminpin wrong */
   ConferenceRoom* getRoom(const string& room, 
-			  const string& adminpin);
+			  const string& adminpin,
+			  bool ignore_adminpin);
   void postConfEvent(const AmArg& args, AmArg& ret,
 		     int id, int mute);
+  /** broadcast conf event to all */
+  void postAllConfEvent(const string& room, const string& adminpin,
+			AmArg& ret, int id, bool ignore_adminpin);
 
   regex_t direct_room_re;
   bool use_direct_room;
@@ -126,13 +135,16 @@ public:
   
   static bool ignore_pin;
 
+  static bool PrivateRoomsMode;
+  
   WebConferenceFactory(const string& _app_name);
   AmSession* onInvite(const AmSipRequest&);
   AmSession* onInvite(const AmSipRequest& req,
 		      AmArg& session_params);
   int onLoad();
 
-  void newParticipant(const string& conf_id, 
+  bool isValidConference(const string& conf_id);
+  bool newParticipant(const string& conf_id, 
 		      const string& localtag, 
 		      const string& number);
   void updateStatus(const string& conf_id, 
@@ -142,33 +154,58 @@ public:
   
   void callStats(bool success, unsigned int connect_t);
   
+  void closeExpiredRooms();
+
   // DI API
   WebConferenceFactory* getInstance(){
     return _instance;
   }
   void invoke(const string& method, const AmArg& args, AmArg& ret);
 
+  void roomDelete(const string& room, const string& adminpin,
+		  AmArg& ret, bool ignore_adminpin);
+
   // DI functions
   void roomCreate(const AmArg& args, AmArg& ret);
   void roomInfo(const AmArg& args, AmArg& ret);
+  void roomDelete(const AmArg& args, AmArg& ret);
+  void changeRoomAdminpin(const AmArg& args, AmArg& ret);
+
   void dialout(const AmArg& args, AmArg& ret);
   void kickout(const AmArg& args, AmArg& ret);
   void mute(const AmArg& args, AmArg& ret);
   void unmute(const AmArg& args, AmArg& ret);
-  void changeRoomAdminpin(const AmArg& args, AmArg& ret);
+
   void serverInfo(const AmArg& args, AmArg& ret);
+
   void vqRoomFeedback(const AmArg& args, AmArg& ret);
   void vqCallFeedback(const AmArg& args, AmArg& ret);
   void vqConferenceFeedback(const AmArg& args, AmArg& ret);
   void resetFeedback(const AmArg& args, AmArg& ret);
   void flushFeedback(const AmArg& args, AmArg& ret);
+
   void getRoomPassword(const AmArg& args, AmArg& ret);
   void listRooms(const AmArg& args, AmArg& ret);
 };
 
 
+class WebConferenceCleaner
+  : public AmThread 
+{
+  WebConferenceFactory* factory;
+  AmCondition<bool> is_stopped;
+
+public:
+  WebConferenceCleaner(WebConferenceFactory* factory)
+    : factory(factory), is_stopped(false) { }
+
+  void run();
+  void on_stop();
+};
+
 #endif
 // Local Variables:
 // mode:C++
 // End:
+
 

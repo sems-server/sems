@@ -114,16 +114,23 @@ void WebConferenceDialog::onSessionStart(const AmSipRequest& req) {
 
   // direct room access?
   if (conf_id.empty()) {
-    state = EnteringPin;    
+    state = EnteringPin;
     prompts.addToPlaylist(ENTER_PIN,  (long)this, play_list);
     // set the playlist as input and output
     setInOut(&play_list,&play_list);
   } else {
-    DBG("########## direct connect conference #########\n"); 
-    factory->newParticipant(conf_id, 
-			    getLocalTag(), 
-			    dlg.remote_party);
-    factory->updateStatus(conf_id, 
+    DBG("########## direct connect conference #########\n");
+    if (!factory->newParticipant(conf_id, 
+				 getLocalTag(), 
+				 dlg.remote_party)) {
+      DBG("inexisting conference room\n");
+      state = PlayErrorFinish;
+      setInOut(&play_list,&play_list);
+      prompts.addToPlaylist(WRONG_PIN_BYE, (long)this, play_list);
+      return;
+    }
+
+    factory->updateStatus(conf_id,
 			  getLocalTag(), 
 			  ConferenceRoomParticipant::Connected,
 			  "direct access: entered");
@@ -271,21 +278,36 @@ void WebConferenceDialog::process(AmEvent* ev)
     if (EnteringConference == state) {
       state = InConference;
       DBG("########## connectConference after pin entry #########\n");
+
+      if (!factory->newParticipant(pin_str, 
+				   getLocalTag(), 
+				   dlg.remote_party)) {
+	DBG("inexisting conference room\n");
+	state = PlayErrorFinish;
+	setInOut(&play_list,&play_list);
+	prompts.addToPlaylist(WRONG_PIN_BYE, (long)this, play_list);
+	return;
+      }
+
       connectConference(pin_str);
-      factory->newParticipant(pin_str, 
-			      getLocalTag(), 
-			      dlg.remote_party);
       factory->updateStatus(pin_str, 
 			    getLocalTag(), 
 			    ConferenceRoomParticipant::Connected,
 			    "entered");
-    }    
+    }
   }
   // audio events
   AmAudioEvent* audio_ev = dynamic_cast<AmAudioEvent*>(ev);
   if (audio_ev  && 
       audio_ev->event_id == AmAudioEvent::noAudio) {
     DBG("########## noAudio event #########\n");
+    if (PlayErrorFinish == state) {
+      DBG("Finished playing bye message, ending call.\n");
+      dlg.bye();
+      setStopped();
+      return;
+    }
+
     return;
   }
 
@@ -317,10 +339,9 @@ void WebConferenceDialog::onDtmf(int event, int duration)
       play_list.close(false);
     } else if (event==10 || event==11) {
       // pound and star key
-      // if required add checking of pin here...
-      if (!pin_str.length()) {
-
+      if (!pin_str.length() || !factory->isValidConference(pin_str)) {
 	prompts.addToPlaylist(WRONG_PIN, (long)this, play_list, true);
+	pin_str.clear();
       } else {
 	state = EnteringConference;
 	setInOut(NULL, NULL);

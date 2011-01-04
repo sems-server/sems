@@ -51,9 +51,12 @@ void CCAcc::invoke(const string& method, const AmArg& args, AmArg& ret)
      } else if(method == "subtractCredit"){
        ret.push(subtractCredit(args.get(0).asCStr(),
 			      args.get(1).asInt()));	
+     } else if(method == "connectCall"){
+       //
      } else if(method == "_list"){
        ret.push("getCredit");
        ret.push("subtractCredit");
+       ret.push("connectCall");
      }
      else
 	throw AmDynInvoke::NotImplemented(method);

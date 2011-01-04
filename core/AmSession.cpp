@@ -696,7 +696,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     catch(const string& s) {
       ERROR("%s\n",s.c_str());
       setStopped();
-      AmSipDialog::reply_error(req, 500, "Internal Server Error");
+      AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
     catch(const AmSession::Exception& e) {
       ERROR("%i %s\n",e.code,e.reason.c_str());
@@ -1052,7 +1052,7 @@ void AmSession::updateRefreshMethod(const string& headers) {
   }
 }
 
-bool AmSession::refresh() {
+bool AmSession::refresh(int flags) {
   if (refresh_method == REFRESH_UPDATE) {
     DBG("Refreshing session with UPDATE\n");
     return sendUpdate("", "", "") == 0;
@@ -1064,7 +1064,7 @@ bool AmSession::refresh() {
     }
 
     DBG("Refreshing session with re-INVITE\n");
-    return sendReinvite(true) == 0;
+    return sendReinvite(true, "", flags) == 0;
   }
 }
 
@@ -1096,32 +1096,22 @@ string AmSession::sid4dbg()
   return dbg;
 }
 
-int AmSession::sendReinvite(bool updateSDP, const string& headers) 
+int AmSession::sendReinvite(bool updateSDP, const string& headers, int flags) 
 {
-  // if (updateSDP) {
-  //   RTPStream()->setLocalIP(AmConfig::LocalIP);
-  //   string sdp_body;
-  //   sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-  //   return dlg.reinvite(headers + get_100rel_hdr(reliable_1xx), SIP_APPLICATION_SDP,
-  //       sdp_body);
-  // } else {
-    return dlg.reinvite(headers, "", "");
-  // }
+  if(updateSDP){
+    dlg.reinvite(headers, SIP_APPLICATION_SDP, "", flags);
+  }
+  else {
+    return dlg.reinvite(headers, "", "", flags);
+  }
 }
 
 int AmSession::sendInvite(const string& headers) 
 {
   onOutgoingInvite(headers);
 
-  // Set local IP first, so that IP is set when 
-  // getLocalPort/setLocalPort may bind.
-  RTPStream()->setLocalIP(AmConfig::LocalIP);
-  
-  // Generate SDP.
-  // string sdp_body;
-  // sdp.genRequest(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
-  return dlg.invite(headers, 
-		    ""/*SIP_APPLICATION_SDP*/, ""/*sdp_body*/);
+  // Forces SDP offer/answer 
+  return dlg.invite(headers, SIP_APPLICATION_SDP, "");
 }
 
 void AmSession::setOnHold(bool hold)

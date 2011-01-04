@@ -8,6 +8,7 @@
 #define SIP_METH_PRACK          "PRACK"
 #define SIP_METH_UPDATE         "UPDATE"
 #define SIP_METH_BYE            "BYE"
+#define SIP_METH_ACK            "ACK"
 
 #define SIP_HDR_FROM            "From"
 #define SIP_HDR_TO              "To"
@@ -20,6 +21,7 @@
 #define SIP_HDR_USER_AGENT      "User-Agent"
 #define SIP_HDR_MAX_FORWARDS    "Max-Forwards"
 #define SIP_HDR_P_ASSERTED_IDENTITY "P-Asserted-Identity"
+#define SIP_HDR_P_PREFERRED_IDENTITY "P-Preferred-Identity"
 #define SIP_HDR_REFER_TO        "Refer-To"
 #define SIP_HDR_EXPIRES         "Expires"
 #define SIP_HDR_SESSION_EXPIRES "Session-Expires"
@@ -45,4 +47,6 @@
 #define SIP_IS_200_CLASS(code)  ((code >= 200) && (code < 300))
 
 #define SIP_APPLICATION_SDP     "application/sdp"
+
+#define SIP_REPLY_SERVER_INTERNAL_ERROR "Server Internal Error"
 #endif /* __AMSIPHEADERS_H__ */

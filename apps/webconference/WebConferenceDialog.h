@@ -48,7 +48,8 @@ public:
     EnteringConference,
     InConference,
     InConferenceRinging,
-    InConferenceEarly
+    InConferenceEarly,
+    PlayErrorFinish
   }; 
 
 private:

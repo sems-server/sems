@@ -31,8 +31,7 @@
 # optional parameter: sip_ip=<ip_address>
 #
 # - this informs SEMS about the SIP IP where its SIP stack is 
-#   bound to or should be bound to. If 'sipctrl' SIP stack is used,
-#   the SIP stack will bind to this address. This also sets 
+#   bound to or should be bound to. This also sets 
 #   the value used for contact header in outgoing calls and 
 #   registrations. If not set, defaults to first non-loopback
 #   interface.
@@ -62,8 +61,6 @@
 #   to correctly set the contact header in outgoing calls 
 #   and registrations. Should be set to equal the 'port' 
 #   configuration option in ser_sems.cfg.
-#   This does not need to be set if sipctrl SIP stack, outgoing 
-#   calls and registrations from SEMS are not used.
 #  
 #   default: 5060
 #
@@ -127,10 +124,9 @@ plugin_path=${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in/
 # 
 # semicolon-separated list of modules to load.
 # If empty, all modules in plugin_path are loaded.
-# One of [sipctrl,unixsockctrl,binrpcctrl] must be loaded.
 #
 # example for announcement with only g711 and ilbc codecs  
-# load_plugins=wav;ilbc;announcement;sipctrl
+# load_plugins=wav;ilbc;announcement
 
 # optional parameter: exclude_plugins=<modules list>
 #
@@ -138,9 +134,8 @@ plugin_path=${SEMS_EXEC_PREFIX}/${SEMS_LIBDIR}/sems/plug-in/
 # ('blacklist'). If empty, all modules in plugin_path are loaded.
 # This has only effect it load_plugins is not set.
 #
-# o binrpcctrl and unixsockctrl: excluded as sipctrl is default ctrl
 # o precoded_announce: no precoded sample files present
-exclude_plugins=binrpcctrl;unixsockctrl;precoded_announce
+exclude_plugins=precoded_announce
 
 # optional parameter: application
 # 
@@ -393,6 +388,21 @@ use_default_signature=yes
 # Default: supported
 #
 #100rel=require
+
+# Make SIP authenticated requests sticky to the proxy? [yes | no]
+#
+# If enabled, host of request-URI of out-of-dialog requests that are
+# authenticated with SIP auth is changed to the previously resolved
+# next-hop IP:port.
+#
+# default: no
+#
+# proxy_sticky_auth=yes
+
+#
+# Accept final replies without To-tag? [yes|no]
+#
+#accept_fr_without_totag=yes
 
 #
 # Log raw messages?  [no|debug|info|warn|error]
