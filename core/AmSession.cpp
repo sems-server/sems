@@ -1104,7 +1104,7 @@ string AmSession::sid4dbg()
 int AmSession::sendReinvite(bool updateSDP, const string& headers, int flags) 
 {
   if(updateSDP){
-    dlg.reinvite(headers, SIP_APPLICATION_SDP, "", flags);
+    return dlg.reinvite(headers, SIP_APPLICATION_SDP, "", flags);
   }
   else {
     return dlg.reinvite(headers, "", "", flags);

@@ -221,7 +221,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
 
     // filter relayed INVITE/UPDATE body
     if (b2b_mode != B2BMode_Transparent &&
-	(trans_method == SIP_METH_INVITE || trans_method == SIP_METH_UPDATE)) {
+	(reply.cseq_method == SIP_METH_INVITE || reply.cseq_method == SIP_METH_UPDATE)) {
       filterBody(n_reply.content_type, n_reply.body, a_leg);
     }
     
@@ -484,8 +484,7 @@ int AmB2BSession::filterBody(string& content_type, string& body, bool is_a2b) {
 
   if (content_type == SIP_APPLICATION_SDP) {
     AmSdp f_sdp;
-    f_sdp.setBody(body.c_str());
-    int res = f_sdp.parse();
+    int res = f_sdp.parse(body.c_str());
     if (0 != res) {
       DBG("SDP parsing failed!\n");
       return res;
@@ -750,7 +749,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
       n_reply.code = 400;
       n_reply.reason = "Bad Request";
       n_reply.cseq = co_ev->r_cseq;
-      n_reply.local_tag = dlg.local_tag;
+      n_reply.to_tag = dlg.local_tag;
       relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
 
       if (co_ev->relayed_invite)

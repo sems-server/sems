@@ -139,28 +139,6 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
       else {
 	pending_invites++;
       }      
-    } else if( req.method == SIP_METH_PRACK ) {
-
-      if (reliable_1xx != REL100_REQUIRE) {
-	WARN("unexpected PRACK received while " SIP_EXT_100REL " not active.\n");
-	return;
-      }
-
-      if ((1<<MAX_RSEQ_BITS)<=req.rseq && req.rseq<=(unsigned)abs(rseq)) {
-
-	// call interface function
-	//hdl->onPrack(req, LOC_RSEQ_ORDER(req.rseq));
-
-	reply(req, 200, "OK");
-
-	if (req.rseq == (unsigned)-rseq) {
-	  rseq = -rseq; // confirmed
-	  DBG("latest RSeq (%u) confirmed.\n", rseq);
-	}
-      } else {
-	WARN("no matching RAck value in PRACK (%s).\n", req.hdrs.c_str());
-	return;
-      }
     }
     
     r_cseq = req.cseq;
@@ -698,10 +676,10 @@ int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
   if (reliable_1xx == REL100_IGNORED)
     return 1;
 
-  if (status!=Pending && status!=Connected)
+  if (status!=Trying && status!=Proceeding && status!=Early && status!=Connected)
     return 1;
 
-  if (100<reply.code && reply.code<200 && reply.method==SIP_METH_INVITE) {
+  if (100<reply.code && reply.code<200 && reply.cseq_method==SIP_METH_INVITE) {
     switch (reliable_1xx) {
     case REL100_SUPPORTED:
       if (key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
@@ -733,7 +711,7 @@ int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
       abort();
 #endif
     } // switch reliable 1xx
-  } else if (reliable_1xx && reply.method==SIP_METH_PRACK) {
+  } else if (reliable_1xx && reply.cseq_method==SIP_METH_PRACK) {
     if (300 <= reply.code) {
       // if PRACK fails, tear down session
       if (hdl) hdl->onFailure(FAIL_REL100, 0, &reply);
@@ -780,7 +758,7 @@ void AmSipDialog::rel100OnTimeout(const AmSipRequest &req,
 
   INFO("reply <%s> timed out (not PRACKed).\n", rpl.print().c_str());
   if (100 < rpl.code && rpl.code < 200 && reliable_1xx == REL100_REQUIRE &&
-      rseq == rpl.rseq && rpl.method == SIP_METH_INVITE) {
+      rseq == rpl.rseq && rpl.cseq_method == SIP_METH_INVITE) {
     INFO("reliable %d reply timed out; rejecting request.\n", rpl.code);
     if(hdl) hdl->onNoPrack(req, rpl);
   } else {
@@ -858,58 +836,6 @@ int AmSipDialog::reply(const AmSipRequest& req,
   if (code < 300 && req.method != "CANCEL" && req.method != "BYE"){
     /* if 300<=code<400, explicit contact setting should be done */
     reply.contact = getContactHdr();
-  }
-
-  if (req.method == SIP_METH_INVITE) {
-
-    try {
-      if (100 < code && code < 200) {
-	switch (reliable_1xx) {
-        case REL100_SUPPORTED:
-          reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
-          break;
-        case REL100_REQUIRE:
-          // add Require HF
-          reply.hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
-          // add RSeq HF
-#ifndef NDEBUG
-          if ((abs(rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 
-              ((1 << MAX_RSEQ_BITS) - 1)) {
-            ERROR("CRITICAL: RSeq value too high: increase MAX_RSEQ_BITS "
-		  "(now %d) and recompile.\n", MAX_RSEQ_BITS);
-            abort();
-          }
-#endif
-          if (rseq < 0) { // RSeq not yet PRACKed
-            // refuse subsequent 1xx if first isn't yet PRACKed
-            if ((((unsigned)-rseq) & ((1 << MAX_RSEQ_BITS) - 1)) == 0){
-              throw AmSession::Exception(491, "last reliable 1xx not yet "
-					 "PRACKed");
-	    }
-            rseq --;
-          } else if (!rseq) { // only init rseq if 1xx is used
-            unsigned rseq_1st = (get_random() + 1) << MAX_RSEQ_BITS;
-            rseq_1st &= 0x7fffffff;
-            rseq = -((signed)rseq_1st);
-          } else {
-            rseq = -(++rseq);
-          }
-          // FIXME: code above is not re-entrant; should it actually be???
-          reply.hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(-rseq) + CRLF;
-          break;
-	}
-      } else if (code < 300 && reliable_1xx == REL100_REQUIRE) {
-	if (rseq < 0) // reliable 1xx is pending
-	  throw AmSession::Exception(491, "last reliable 1xx not yet PRACKed");
-      }
-    }
-    catch(const AmSession::Exception& e){
-      reply.code = e.code;
-      reply.reason = e.reason;
-      reply.body = "";
-      reply.content_type = "";
-      return -1;
-    }
   }
 
   reply.content_type = content_type;
@@ -1149,7 +1075,7 @@ int AmSipDialog::prack(const AmSipReply &reply1xx,
           SIP_HDR_COLSP(SIP_HDR_RACK) + 
           int2str(reply1xx.rseq) + " " + 
           int2str(reply1xx.cseq) + " " + 
-          reply1xx.method + CRLF;
+          reply1xx.cseq_method + CRLF;
   return sendRequest(SIP_METH_PRACK, cont_type, body, h);
 }
 

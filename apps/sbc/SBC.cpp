@@ -612,8 +612,7 @@ void SBCDialog::onSipRequest(const AmSipRequest& req) {
   AmB2BCallerSession::onSipRequest(req);
 }
 
-void SBCDialog::onSipReply(const AmSipReply& reply, int old_dlg_status,
-			      const string& trans_method)
+void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = t != relayed_req.end();
@@ -621,10 +620,10 @@ void SBCDialog::onSipReply(const AmSipReply& reply, int old_dlg_status,
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if (fwd) {
-      CALL_EVENT_H(onSipReply,reply, old_dlg_status, trans_method);
+      CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
-  AmB2BCallerSession::onSipReply(reply,old_dlg_status, trans_method);
+  AmB2BCallerSession::onSipReply(reply,old_dlg_status);
 }
 
 bool SBCDialog::onOtherReply(const AmSipReply& reply)
@@ -669,12 +668,17 @@ void SBCDialog::onBye(const AmSipRequest& req)
 
 void SBCDialog::onCancel()
 {
-  if(dlg.getStatus() == AmSipDialog::Pending) {
+  switch(dlg.getStatus()){
+  case AmSipDialog::Trying:
+  case AmSipDialog::Proceeding:
+  case AmSipDialog::Cancelling:
     DBG("Wait for leg B to terminate");
-  } else {
+    break;
+  default:
     DBG("Canceling leg A on CANCEL since dialog is not pending");
     dlg.reply(invite_req, 487, "Request terminated");
     setStopped();
+    break;
   }
 }
 
@@ -837,12 +841,11 @@ void SBCDialog::createCalleeSession()
       from.c_str());
 
   if (AmConfig::LogSessions) {
-    INFO("Starting B2B callee session %s app %s\n",
-	 callee_session->getLocalTag().c_str(), invite_req.cmd.c_str());
+    INFO("Starting B2B callee session %s\n",
+	 callee_session->getLocalTag().c_str()/*, invite_req.cmd.c_str()*/);
   }
 
-  MONITORING_LOG5(other_id.c_str(), 
-		  "app",  invite_req.cmd.c_str(),
+  MONITORING_LOG4(other_id.c_str(),
 		  "dir",  "out",
 		  "from", callee_dlg.local_party.c_str(),
 		  "to",   callee_dlg.remote_party.c_str(),
@@ -941,8 +944,7 @@ void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
   AmB2BCalleeSession::onSipRequest(req);
 }
 
-void SBCCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status,
-				     const string& trans_method)
+void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
   // call event handlers where it is not done 
   TransMap::iterator t = relayed_req.find(reply.cseq);
@@ -950,17 +952,17 @@ void SBCCalleeSession::onSipReply(const AmSipReply& reply, int old_dlg_status,
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
   if(fwd) {
-    CALL_EVENT_H(onSipReply,reply, old_dlg_status, trans_method);
+    CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
   if (NULL == auth) {    
-    AmB2BCalleeSession::onSipReply(reply,old_dlg_status, trans_method);
+    AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
     return;
   }
   
   unsigned int cseq_before = dlg.cseq;
-  if (!auth->onSipReply(reply, old_dlg_status, trans_method)) {
-      AmB2BCalleeSession::onSipReply(reply, old_dlg_status, trans_method);
+  if (!auth->onSipReply(reply, old_dlg_status)) {
+      AmB2BCalleeSession::onSipReply(reply, old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "

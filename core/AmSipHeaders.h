@@ -5,8 +5,10 @@
 #define SIP_SCHEME_SIP          "sip"
 
 #define SIP_METH_INVITE         "INVITE"
+#define SIP_METH_CANCEL         "CANCEL"
 #define SIP_METH_PRACK          "PRACK"
 #define SIP_METH_UPDATE         "UPDATE"
+#define SIP_METH_INFO           "INFO"
 #define SIP_METH_BYE            "BYE"
 #define SIP_METH_ACK            "ACK"
 

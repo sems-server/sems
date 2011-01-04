@@ -125,8 +125,7 @@ class SBCDialog : public AmB2BCallerSession
  protected:
   int relayEvent(AmEvent* ev);
 
-  void onSipReply(const AmSipReply& reply, int old_dlg_status,
-		  const string& trans_method);
+  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSipRequest(const AmSipRequest& req);  
 
   bool onOtherReply(const AmSipReply& reply);
@@ -147,8 +146,7 @@ class SBCCalleeSession
   int relayEvent(AmEvent* ev);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, int old_dlg_status,
-		  const string& trans_method);
+  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(const string& method, const string& content_type,
 		     const string& body, string& hdrs, int flags, unsigned int cseq);
 
