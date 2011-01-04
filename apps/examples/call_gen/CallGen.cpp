@@ -413,24 +413,10 @@ void CallGenDialog::onSessionStart(const AmSipReply& rep) {
     call_timer+=rand()%call_time_rand;
 
   if (call_timer > 0) {
-    AmDynInvokeFactory* UserTimer = AmPlugIn::instance()->getFactory4Di("user_timer");
-    if(!UserTimer){
+    if (!setTimer(CALL_TIMER, call_timer)) {
       ERROR("could not load user_timer from session_timer plug-in\n");
       return;
     }
-    AmDynInvoke* user_timer = UserTimer->getInstance();
-    if (!user_timer) {
-      ERROR("could not get user_timer\n");
-      return;
-    }
-
-    DBG("setting call timer to %d seconds\n", call_timer);
-    AmArg di_args,ret;
-    di_args.push(CALL_TIMER);
-    di_args.push(call_timer);
-    di_args.push(getLocalTag().c_str());
-      
-    user_timer->invoke("setTimer",di_args,ret);
   }
 }
 

@@ -544,12 +544,12 @@ void AmArg2DSMStrMap(const AmArg& arg,
     if (it->second.getType() == AmArg::CStr)
       vars[it->first] = it->second.asCStr();
     else if (it->second.getType() == AmArg::Array) {
-      vars[it->first+"_size"] = int2str(it->second.size());
+      vars[it->first+"_size"] = int2str((unsigned int)it->second.size());
       for (size_t i=0;i<it->second.size();i++) {
 	if (it->second.get(i).getType() == AmArg::CStr)
-	  vars[it->first+"_"+int2str(i)] = it->second.get(i).asCStr();
+	  vars[it->first+"_"+int2str((unsigned int)i)] = it->second.get(i).asCStr();
 	else
-	  vars[it->first+"_"+int2str(i)] = AmArg::print(it->second.get(i));
+	  vars[it->first+"_"+int2str((unsigned int)i)] = AmArg::print(it->second.get(i));
       }
     } else {
       vars[it->first] = AmArg::print(it->second);	

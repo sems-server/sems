@@ -67,7 +67,8 @@ AmSession::AmSession()
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
     refresh_method(REFRESH_UPDATE_FB_REINV),
-    processing_status(SESSION_PROCESSING_EVENTS)
+    processing_status(SESSION_PROCESSING_EVENTS),
+    user_timer_ref(NULL)
 #ifdef WITH_ZRTP
   ,  zrtp_session(NULL), zrtp_audio(NULL), enable_zrtp(true)
 #endif
@@ -689,7 +690,11 @@ void AmSession::onSipRequest(const AmSipRequest& req)
   CALL_EVENT_H(onSipRequest,req);
 
   DBG("onSipRequest: method = %s\n",req.method.c_str());
-  if(req.method == "INVITE"){
+
+  updateRefreshMethod(req.hdrs);
+
+  if(req.method == SIP_METH_INVITE){
+
     try {
       onInvite(req);
     }
@@ -704,16 +709,16 @@ void AmSession::onSipRequest(const AmSipRequest& req)
       AmSipDialog::reply_error(req,e.code,e.reason);
     }
   }
-  else if(req.method == "ACK"){
+  else if(req.method == SIP_METH_ACK){
     return;
   }
-  else if( req.method == "BYE" ){
+  else if( req.method == SIP_METH_BYE ){
     onBye(req);
   }
-  else if( req.method == "CANCEL" ){
+  else if( req.method == SIP_METH_CANCEL ){
     onCancel(req);
   } 
-  else if( req.method == "INFO" ){
+  else if( req.method == SIP_METH_INFO ){
 
     if (req.content_type == "application/dtmf-relay") {
       postDtmfEvent(new AmSipDtmfEvent(req.body));
@@ -721,6 +726,10 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     } else {
       dlg.reply(req, 415, "Unsupported Media Type");
     }
+  } else if (req.method == SIP_METH_PRACK) {
+    // TODO: SDP
+    dlg.reply(req, 200, "OK");
+    // TODO: WARN: only include latest SDP if req.rseq == dlg.rseq (latest 1xx)
   }
   else {
     dlg.reply(req, 501, "Not implemented");
@@ -822,9 +831,9 @@ void AmSession::onSipReply(const AmSipReply& reply,
 	}
 
       default: break;
-      }
-    }
-  }
+      } // switch dlg status
+    } // status < Connected
+  } //if negotiate_onreply
   */
 }
 
@@ -844,6 +853,9 @@ void AmSession::onNoAck(unsigned int cseq)
 
 void AmSession::onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)
 {
+  dlg.reply(req, 504, "Server Time-out");
+  // TODO: handle forking case (when more PRACKs are sent, out of which some
+  // might time-out/fail).
   if (dlg.getStatus() < AmSipDialog::Connected)
     setStopped();
 }
@@ -864,12 +876,6 @@ void AmSession::onBye(const AmSipRequest& req)
   dlg.reply(req,200,"OK");
   setStopped();
 }
-
-// void AmSession::onPrack(const AmSipRequest& req, unsigned cnt)
-// {
-//   DBG("handling #%u PRACK.\n", cnt);
-//   dlg.reply(req, 200, "OK");
-// }
 
 void AmSession::onCancel(const AmSipRequest& req)
 {
@@ -1074,17 +1080,16 @@ int AmSession::sendUpdate(const string &cont_type, const string &body,
   return dlg.update(cont_type, body, hdrs);
 }
 
-void AmSession::sendPrack(const string &sdp_offer, 
-                          const string &rseq_val, 
-                          const string &cseq_val)
+void AmSession::onInvite1xxRel(const AmSipReply &reply)
 {
-  string hdrs = "RAck: " + rseq_val + " " + cseq_val + "\r\n";
-
-  // TODO: digest an answer based on the sdp_offer
-
-  // TODO: should't cseq&rseq be handled in dialog, entirely?!?!
-  if (dlg.prack(/*cont. type*/"", /*body*/"", hdrs) < 0)
+  // TODO: SDP
+  if (dlg.prack(reply, /*cont. type*/"", /*body*/"", /*headers*/"") < 0)
     ERROR("failed to send PRACK request in session '%s'.\n",sid4dbg().c_str());
+}
+
+void AmSession::onPrack2xx(const AmSipReply &reply)
+{
+  /* TODO: SDP */
 }
 
 string AmSession::sid4dbg()
@@ -1124,6 +1129,27 @@ void AmSession::setOnHold(bool hold)
   unlockAudio();
 }
 
+void AmSession::onFailure(AmSipDialogEventHandler::FailureCause cause, 
+    const AmSipRequest *req, const AmSipReply *rpl)
+{
+  switch (cause) {
+    case FAIL_REL100:
+      if (rpl) {
+        dlg.cancel();
+        if (dlg.getStatus() < AmSipDialog::Connected)
+          setStopped();
+      } else if (req) {
+          dlg.reply(*req, 421, "Extension Required", "", "",
+              SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF);
+          if (dlg.getStatus() < AmSipDialog::Connected)
+            setStopped();
+      }
+      break;
+    default:
+      break;
+  }
+}
+
 // Utility for basic NAT handling: allow the config file to specify the IP
 // address to use in SDP bodies 
 string AmSession::advertisedIP()
@@ -1134,6 +1160,70 @@ string AmSession::advertisedIP()
     return AmConfig::LocalIP;           // "listen" parameter.
   return set_ip;
 }  
+
+// TODO: move user timers into core
+void AmSession::getUserTimerInstance() {
+  AmDynInvokeFactory* fact = 
+    AmPlugIn::instance()->getFactory4Di("user_timer");
+
+  if (!fact)
+    return;
+
+  user_timer_ref = fact->getInstance();
+}
+
+bool AmSession::timersSupported() {
+  return NULL != AmPlugIn::instance()->getFactory4Di("user_timer") ;
+}
+
+bool AmSession::setTimer(int timer_id, unsigned int timeout) {
+  if (NULL == user_timer_ref)
+    getUserTimerInstance();
+
+  if (NULL == user_timer_ref)
+    return false;
+
+  DBG("setting timer %d with timeout %u\n", timer_id, timeout);
+  AmArg di_args,ret;
+  di_args.push((int)timer_id);
+  di_args.push((int)timeout);           // in seconds
+  di_args.push(getLocalTag().c_str());
+  user_timer_ref->invoke("setTimer", di_args, ret);
+
+  return true;
+}
+
+bool AmSession::removeTimer(int timer_id) {
+  if (NULL == user_timer_ref)
+    getUserTimerInstance();
+
+  if (NULL == user_timer_ref)
+    return false;
+
+  DBG("removing timer %d\n", timer_id);
+  AmArg di_args,ret;
+  di_args.push((int)timer_id);
+  di_args.push(getLocalTag().c_str());
+  user_timer_ref->invoke("removeTimer", di_args, ret);
+
+  return true;
+}
+
+bool AmSession::removeTimers() {
+  if (NULL == user_timer_ref)
+    getUserTimerInstance();
+
+  if (NULL == user_timer_ref)
+    return false;
+
+  DBG("removing timers\n");
+  AmArg di_args,ret;
+  di_args.push(getLocalTag().c_str());
+  user_timer_ref->invoke("removeTimers", di_args, ret);
+
+  return true;
+}
+
  
 #ifdef WITH_ZRTP
 void AmSession::onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx) {

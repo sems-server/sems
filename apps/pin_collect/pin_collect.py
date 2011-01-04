@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from log import *
 from ivr import *
 
@@ -101,6 +102,12 @@ class IvrDialog(IvrDialogBase):
 						self.fail_msg.open(config['fail_msg'],AUDIO_READ)
 						self.enqueue(self.fail_msg,None)
 						
+				elif config['auth_mode'] == 'REFER':
+					self.state = connect
+					self.removeTimer(HINT_TIMER)
+					self.transfer_cseq = self.dialog.cseq
+					self.refer("sip:" + self.dialog.user + "+" + self.keys + "@" + \
+						self.dialog.domain, 20)
 				else:
 					self.state = connect
 					self.removeTimer(HINT_TIMER)

@@ -47,6 +47,10 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("sys.unlinkArray", SCUnlinkArrayAction);
   DEF_CMD("sys.tmpnam", SCTmpNamAction);
   DEF_CMD("sys.popen", SCPopenAction);
+
+  DEF_CMD("sys.getTimestamp", SCSysGetTimestampAction);
+  DEF_CMD("sys.subTimestamp", SCSysSubTimestampAction);
+
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
@@ -258,7 +262,6 @@ EXEC_ACTION_START(SCTmpNamAction) {
   }
 } EXEC_ACTION_END;
 
-
 CONST_ACTION_2P(SCPopenAction, '=', false);
 EXEC_ACTION_START(SCPopenAction) {
   string dst_var = par1;
@@ -299,4 +302,60 @@ EXEC_ACTION_START(SCPopenAction) {
   sc_sess->var[dst_var+".status"] = int2str(status);
   DBG("child process returned status %d\n", status);
 
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCSysGetTimestampAction) {
+  string varname = resolveVars(arg, sess, sc_sess, event_params);
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+
+  // long unsigned msecs = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+
+  char ms_buf[40];
+  snprintf(ms_buf, 40, "%lu", tv.tv_sec);
+  sc_sess->var[varname+".tv_sec"] = ms_buf;
+
+  snprintf(ms_buf, 40, "%lu", tv.tv_usec);
+  sc_sess->var[varname+".tv_usec"] = ms_buf;
+
+  DBG("got timestamp $%s=%s, $%s=%s, \n",
+      (varname+".tv_sec").c_str(), sc_sess->var[varname+".tv_sec"].c_str(),
+      (varname+".tv_usec").c_str(), sc_sess->var[varname+".tv_usec"].c_str()
+      );
+
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCSysSubTimestampAction, ',', false);
+EXEC_ACTION_START(SCSysSubTimestampAction) {
+  string t1 = resolveVars(par1, sess, sc_sess, event_params);
+  string t2 = resolveVars(par2, sess, sc_sess, event_params);
+
+  struct timeval tv1;
+  struct timeval tv2;
+
+  tv1.tv_sec = atol(sc_sess->var[t1+".tv_sec"].c_str());
+  tv1.tv_usec = atol(sc_sess->var[t1+".tv_usec"].c_str());
+
+  tv2.tv_sec = atol(sc_sess->var[t2+".tv_sec"].c_str());
+  tv2.tv_usec = atol(sc_sess->var[t2+".tv_usec"].c_str());
+
+  struct timeval diff;
+  timersub(&tv1,&tv2,&diff);
+
+  char ms_buf[40];
+  snprintf(ms_buf, 40, "%lu", diff.tv_sec);
+  sc_sess->var[t1+".tv_sec"] = ms_buf;
+
+  snprintf(ms_buf, 40, "%lu", diff.tv_usec);
+  sc_sess->var[t1+".tv_usec"] = ms_buf;
+
+  // may be overflowing - use only if timestamps known
+  snprintf(ms_buf, 40, "%lu", diff.tv_sec * 1000 + diff.tv_usec / 1000);
+  sc_sess->var[t1+".msec"] = ms_buf;
+
+  DBG("sub $%s = %s,  $%s = %s,  $%s = %s\n",
+      (t1+".tv_sec").c_str(), sc_sess->var[t1+".tv_sec"].c_str(),
+      (t1+".tv_usec").c_str(), sc_sess->var[t1+".tv_usec"].c_str(),
+      (t1+".msec").c_str(), sc_sess->var[t1+".msec"].c_str()
+      );
 } EXEC_ACTION_END;

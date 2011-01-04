@@ -27,11 +27,11 @@
 #define _SBC_H
 
 #include "AmB2BSession.h"
-#include "ampi/UACAuthAPI.h"
 
 #include "AmConfigReader.h"
 #include "AmUriParser.h"
 #include "HeaderFilter.h"
+#include "SBCCallProfile.h"
 
 #include <map>
 
@@ -40,82 +40,43 @@ using std::string;
 #define SBC_TIMER_ID_CALL_TIMER         1
 #define SBC_TIMER_ID_PREPAID_TIMEOUT    2
 
-struct SBCCallProfile {
 
-  AmConfigReader cfg;
-
-  string ruri;       /* updated if set */
-  string from;       /* updated if set */
-  string to;         /* updated if set */
-
-  string outbound_proxy;
-  bool force_outbound_proxy;
-
-  string next_hop_ip;
-  string next_hop_port;
-  unsigned short next_hop_port_i;
-
-  FilterType headerfilter;
-  set<string> headerfilter_list;
-
-  FilterType messagefilter;
-  set<string> messagefilter_list;
-
-  bool sdpfilter_enabled;
-  FilterType sdpfilter;
-  set<string> sdpfilter_list;
-
-  bool sst_enabled;
-  bool use_global_sst_config;
-
-  bool auth_enabled;
-  UACAuthCred auth_credentials;
-
-  bool call_timer_enabled;
-  string call_timer;
-
-  bool prepaid_enabled;
-  string prepaid_accmodule;
-  string prepaid_uuid;
-  string prepaid_acc_dest;
-
-  // todo: RTP forwarding mode
-  // todo: RTP transcoding mode
-
-  SBCCallProfile()
-  : headerfilter(Transparent),
-    messagefilter(Transparent),
-    sdpfilter_enabled(false),
-    sdpfilter(Transparent),
-    sst_enabled(false),
-    auth_enabled(false),
-    call_timer_enabled(false),
-    prepaid_enabled(false)
-  { }
-
-  bool readFromConfiguration(const string& name, const string profile_file_name);
-};
-
-class SBCFactory: public AmSessionFactory
+class SBCFactory: public AmSessionFactory,
+    public AmDynInvoke,
+    public AmDynInvokeFactory
 {
-/*   AmDynInvokeFactory* user_timer_fact; */
 
   std::map<string, SBCCallProfile> call_profiles;
-  std::map<string, AmConfigReader> call_profiles_configs;
-
+  
   string active_profile;
+  AmMutex profiles_mut;
+
+  void listProfiles(const AmArg& args, AmArg& ret);
+  void reloadProfiles(const AmArg& args, AmArg& ret);
+  void reloadProfile(const AmArg& args, AmArg& ret);
+  void loadProfile(const AmArg& args, AmArg& ret);
+  void getActiveProfile(const AmArg& args, AmArg& ret);
+  void setActiveProfile(const AmArg& args, AmArg& ret);
 
  public:
+  DECLARE_MODULE_INSTANCE(SBCFactory);
+
   SBCFactory(const string& _app_name);
-  
+  ~SBCFactory();
+
   int onLoad();
   AmSession* onInvite(const AmSipRequest& req);
-  static string user;
-  static string domain;
-  static string pwd;
 
   static AmConfigReader cfg;
   static AmSessionEventHandlerFactory* session_timer_fact;
+
+  // DI
+  // DI factory
+  AmDynInvoke* getInstance() { return instance(); }
+  // DI API
+  void invoke(const string& method, 
+	      const AmArg& args, AmArg& ret);
+
 };
 
 class SBCDialog : public AmB2BCallerSession
@@ -132,9 +93,9 @@ class SBCDialog : public AmB2BCallerSession
   string ruri;
   string from;
   string to;
+  string callid;
 
   unsigned int call_timer;
-  AmDynInvoke* m_user_timer;
 
   // prepaid
   AmDynInvoke* prepaid_acc;
@@ -145,12 +106,15 @@ class SBCDialog : public AmB2BCallerSession
   SBCCallProfile call_profile;
 
   void stopCall();
+  bool startCallTimer();
   void startPrepaidAccounting();
   void stopPrepaidAccounting();
 
+  bool getPrepaidInterface();
+
  public:
 
-  SBCDialog(const SBCCallProfile& call_profile); //AmDynInvoke* user_timer);
+  SBCDialog(const SBCCallProfile& call_profile);
   ~SBCDialog();
   
   void process(AmEvent* ev);
@@ -159,7 +123,7 @@ class SBCDialog : public AmB2BCallerSession
   void onCancel();
 
  protected:
-  void relayEvent(AmEvent* ev);
+  int relayEvent(AmEvent* ev);
 
   void onSipReply(const AmSipReply& reply, int old_dlg_status,
 		  const string& trans_method);
@@ -180,7 +144,7 @@ class SBCCalleeSession
   SBCCallProfile call_profile;
 
  protected:
-  void relayEvent(AmEvent* ev);
+  int relayEvent(AmEvent* ev);
 
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, int old_dlg_status,

@@ -65,7 +65,6 @@ class AnnRecorderFactory: public AmSessionFactory
   AmPromptCollection prompts;
 
 public:  
-  static AmDynInvokeFactory* user_timer_fact; 
   static AmDynInvokeFactory* message_storage_fact; 
 
   static string AnnouncePath;
@@ -95,7 +94,6 @@ class AnnRecorderDialog : public AmSession,
 
   string msg_filename; // recorded file
 
-  AmDynInvoke* user_timer;
   AmDynInvoke* msg_storage;
 
   std::auto_ptr<UACAuthCred> cred;

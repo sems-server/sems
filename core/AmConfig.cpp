@@ -92,7 +92,7 @@ unsigned int AmConfig::OptionsSessionLimit            = 0;
 unsigned int AmConfig::OptionsSessionLimitErrCode     = 503;
 string       AmConfig::OptionsSessionLimitErrReason   = "Server overload";
 
-unsigned char AmConfig::rel100                 = AmSipDialog::REL100_SUPPORTED;
+AmSipDialog::Rel100State AmConfig::rel100      = REL100_SUPPORTED;
 
 vector <string> AmConfig::CodecOrder;
 

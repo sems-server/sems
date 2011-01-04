@@ -249,6 +249,7 @@ class DSMStateEngine {
 
   /** @return whether call should be accepted */
   bool onInvite(const AmSipRequest& req, DSMSession* sess);
+  void onBeforeDestroy(DSMSession* sc_sess, AmSession* sess);
 };
 
 extern void varPrintArg(const AmArg& a, map<string, string>& dst, const string& name);

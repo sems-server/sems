@@ -442,8 +442,11 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.cseq_method = c2stlstr(get_cseq(msg)->method_str);
     req.body     = c2stlstr(msg->body);
 
-    if (msg->rack)
+    if (msg->rack) {
         req.rseq = get_rack(msg)->rseq;
+	req.rack_method = c2stlstr(get_rack(msg)->method_str);
+	req.rack_cseq = get_rack(msg)->cseq;
+    }
 
     if (msg->content_type)
  	req.content_type = c2stlstr(msg->content_type->value);

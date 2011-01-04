@@ -49,10 +49,25 @@ using std::string;
  */
 string int2str(int val);
 
+/**
+ * Convert an unsigned int to a string.
+ */
+string int2str(unsigned int val);
+
 /** 
+ * Convert a long to a string. 
+ */
+string long2str(long int val);
+
+/** 
+ * Convert a a byte to a string using hexdecimal representation.
+ */
+string char2hex(unsigned char val, bool lowercase = false);
+
+/**
  * Convert an unsigned int to a string using hexdecimal representation. 
  */
-string int2hex(unsigned int val);
+string int2hex(unsigned int val, bool lowercase = false);
 
 /** 
  * Convert an unsigned long to a string using hexdecimal representation. 
@@ -76,7 +91,7 @@ string double2str(double val);
  * Convert a string to an uint. 
  * @param str    [in]  string to convert.
  * @param result [out] result integer.
- * @return true if failed. 
+ * @return true if failed (!!!)
  */
 bool str2i(const string& str, unsigned int& result);
 
@@ -85,8 +100,45 @@ bool str2i(const string& str, unsigned int& result);
  * @param str    [in,out] gets incremented until sep char or error occurs
  * @param result [out] result of the function
  * @param sep    [in] character seprating the number to convert and the next token
+ * @return true if failed (!!!)
  */
 bool str2i(char*& str, unsigned int& result, char sep = ' ');
+
+
+/** 
+ * Convert a string to an int. 
+ * @param str    [in]  string to convert.
+ * @param result [out] result integer.
+ * @return true on success (!!!)
+ */
+bool str2int(const string& str, int& result);
+
+/** 
+ * Internal version of preceeding 'str2int' method. 
+ * @param str    [in,out] gets incremented until sep char or error occurs
+ * @param result [out] result of the function
+ * @param sep    [in] character seprating the number to convert and the next token
+ * @return true on success (!!!)
+ */
+bool str2int(char*& str, int& result, char sep = ' ');
+
+/** 
+ * Convert a string to a long int. 
+ * On many systems nowadays this could be the same as str2int.
+ * @param str    [in]  string to convert.
+ * @param result [out] result integer.
+ * @return true if on success (!!!).
+ */
+bool str2long(const string& str, long& result);
+
+/** 
+ * Internal version of preceeding 'str2long' method. 
+ * @param str    [in,out] gets incremented until sep char or error occurs
+ * @param result [out] result of the function
+ * @param sep    [in] character seprating the number to convert and the next token
+ * @return true on success
+ */
+bool str2long(char*& str, long& result, char sep = ' ');
 
 /**
  * Parse code/reason line.

@@ -66,7 +66,6 @@ struct AmSipTransaction
 
 typedef std::map<int,AmSipTransaction> TransMap;
 
-
 /**
  * \brief implements the dialog state machine
  */
@@ -92,13 +91,59 @@ class AmSipDialog
     __max_OA
   };
 
+  /** enable the reliability of provisional replies? */
   enum Rel100State {
-    REL100_DISABLED=0,
-    REL100_SUPPORTED=1,
-    REL100_REQUIRE=2,
-    _REL100_MAX=3
+    REL100_DISABLED,
+#define REL100_DISABLED         AmSipDialog::REL100_DISABLED
+    REL100_SUPPORTED,
+#define REL100_SUPPORTED        AmSipDialog::REL100_SUPPORTED
+    REL100_REQUIRE,
+    //REL100_PREFERED, //TODO
+#define REL100_REQUIRE          AmSipDialog::REL100_REQUIRE
+    REL100_IGNORED,
+#define REL100_IGNORED          AmSipDialog::REL100_IGNORED
+    REL100_MAX
+#define REL100_MAX              AmSipDialog::REL100_MAX
   };
 
+private:
+  Status status;
+
+  TransMap uas_trans;
+  TransMap uac_trans;
+    
+  // Number of open UAS INVITE transactions
+  unsigned int pending_invites;
+
+  // In case a CANCEL should have been sent
+  // while in 'Trying' state
+  bool         cancel_pending;
+
+  // Offer/answer
+  OAState oa_state;
+  AmSdp   sdp_local;
+  AmSdp   sdp_remote;
+
+  AmSipDialogEventHandler* hdl;
+
+  int onTxReply(AmSipReply& reply);
+  int onTxRequest(AmSipRequest& req);
+
+  int onRxSdp(const string& body, const char** err_txt);
+  int onTxSdp(const string& body);
+
+  int getSdpBody(string& sdp_body);
+  int triggerOfferAnswer(string& content_type, string& body);
+
+  int rel100OnRequestIn(const AmSipRequest &req);
+  int rel100OnReplyIn(const AmSipReply &reply);
+  void rel100OnTimeout(const AmSipRequest &req, const AmSipReply &rpl);
+
+  void rel100OnRequestOut(const string &method, string &hdrs);
+  void rel100OnReplyOut(const AmSipRequest &req, unsigned int code, 
+			string &hdrs);
+
+ public:
   string user;         // local user
   string domain;       // local domain
 
@@ -121,13 +166,15 @@ class AmSipDialog
   string next_hop_ip;
   unsigned short next_hop_port;
 
-  int rseq;          // RSeq for next request (NOTE: keep it signed!)
+  Rel100State reliable_1xx;
+
+  unsigned rseq;          // RSeq for next request
+  bool rseq_confirmed;    // latest RSeq is confirmed
+  unsigned rseq_1st;      // value of first RSeq (init value)
+
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
-
-  /** enable the reliability of provisional replies? */
-  unsigned char reliable_1xx;
 
   AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();
@@ -183,7 +230,8 @@ class AmSipDialog
   int cancel();
 
   /** @return 0 on success */
-  int prack(const string &cont_type, 
+  int prack(const AmSipReply &reply1xx,
+            const string &cont_type, 
             const string &body, 
             const string &hdrs);
 
@@ -231,39 +279,7 @@ class AmSipDialog
 			 unsigned int  code,
 			 const string& reason,
 			 const string& hdrs = "");
-
-private:
-  Status status;
-
-  TransMap uas_trans;
-  TransMap uac_trans;
-    
-  // Number of open UAS INVITE transactions
-  unsigned int pending_invites;
-
-  // In case a CANCEL should have been sent
-  // while in 'Trying' state
-  bool         cancel_pending;
-
-  // Offer/answer
-  OAState oa_state;
-  AmSdp   sdp_local;
-  AmSdp   sdp_remote;
-
-  AmSipDialogEventHandler* hdl;
-
-  int onTxReply(AmSipReply& reply);
-  int onTxRequest(AmSipRequest& req);
-
-  int onRxSdp(const string& body, const char** err_txt);
-  int onTxSdp(const string& body);
-
-  int getSdpBody(string& sdp_body);
-  int triggerOfferAnswer(string& content_type, string& body);
 };
-
-const char* dlgStatusStr(AmSipDialog::Status st);
-
 
 /**
  * \brief base class for SIP request/reply event handler 
@@ -271,8 +287,6 @@ const char* dlgStatusStr(AmSipDialog::Status st);
 class AmSipDialogEventHandler 
 {
  public:
-  virtual ~AmSipDialogEventHandler() {};
-    
   /** 
    * Hook called when a request has been received
    */
@@ -302,12 +316,11 @@ class AmSipDialogEventHandler
   /** Hook called when a local INVITE request has been replied with 2xx */
   virtual void onInvite2xx(const AmSipReply& reply)=0;
 
-  /** Hook called when a UAS INVITE transaction did not receive a 2xx-ACK */
+  /** Hook called when a UAS INVITE transaction did not receive the ACK */
   virtual void onNoAck(unsigned int cseq)=0;
 
-  /** Hook called when a UAS INVITE transaction did not receive a non-2xx-ACK */
+  /** Hook called when a UAS INVITE transaction did not receive the PRACK */
   virtual void onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)=0;
-
 
   /** Hook called when an SDP offer is required */
   virtual bool getSdpOffer(AmSdp& offer)=0;
@@ -317,7 +330,27 @@ class AmSipDialogEventHandler
 
   /** Hook called when the SDP transaction has been completed */
   virtual int onSdpCompleted(const AmSdp& local, const AmSdp& remote)=0;
+
+  /** Hook called when a privisional reply is received with 100rel active */
+  virtual void onInvite1xxRel(const AmSipReply &)=0;
+
+  /** Hook called when an answer for a locally sent PRACK is received */
+  virtual void onPrack2xx(const AmSipReply &)=0;
+
+  enum FailureCause {
+    FAIL_REL100,
+#define FAIL_REL100  AmSipDialogEventHandler::FAIL_REL100
+  };
+  virtual void onFailure(FailureCause cause, const AmSipRequest*, 
+      const AmSipReply*)=0;
+
+  virtual ~AmSipDialogEventHandler() {};
+    
 };
+
+const char* dlgStatusStr(AmSipDialog::Status st);
+
+
 
 #endif
 

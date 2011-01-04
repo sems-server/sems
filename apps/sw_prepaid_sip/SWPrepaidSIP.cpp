@@ -45,7 +45,7 @@
 EXPORT_SESSION_FACTORY(SWPrepaidSIPFactory,MOD_NAME);
 
 SWPrepaidSIPFactory::SWPrepaidSIPFactory(const string& _app_name)
-: AmSessionFactory(_app_name), user_timer_fact(NULL)
+: AmSessionFactory(_app_name)
 {
 }
 
@@ -58,9 +58,8 @@ int SWPrepaidSIPFactory::onLoad()
 
   string acc_plugin = cfg.getParameter("acc_plugin", ACC_PLUGIN);
 
-  user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
-  if(!user_timer_fact) {
-    ERROR("could not load user_timer from session_timer plug-in\n");
+  if (!AmSession::timersSupported()) {
+    ERROR("load session_timer plug-in for timers\n");
     return -1;
   }
 
@@ -78,25 +77,19 @@ int SWPrepaidSIPFactory::onLoad()
 
 AmSession* SWPrepaidSIPFactory::onInvite(const AmSipRequest& req)
 {
-  AmDynInvoke* user_timer = user_timer_fact->getInstance();
-  if(!user_timer) {
-    ERROR("could not get a user timer reference\n");
-    throw AmSession::Exception(500,"could not get a user timer reference");
-  }
-
   AmDynInvoke* cc_acc = cc_acc_fact->getInstance();
   if(!cc_acc) {
     ERROR("could not get an accounting reference\n");
     throw AmSession::Exception(500,"could not get an acc reference");
   }
 
-  return new SWPrepaidSIPDialog(cc_acc, user_timer);
+  return new SWPrepaidSIPDialog(cc_acc);
 }
 
 
-SWPrepaidSIPDialog::SWPrepaidSIPDialog(AmDynInvoke* cc_acc, AmDynInvoke* user_timer)
+SWPrepaidSIPDialog::SWPrepaidSIPDialog(AmDynInvoke* cc_acc)
 : m_state(CC_Init),
-m_cc_acc(cc_acc), m_user_timer(user_timer),
+  m_cc_acc(cc_acc),
 AmB2BCallerSession()
 
 {
@@ -231,11 +224,7 @@ bool SWPrepaidSIPDialog::onOtherReply(const AmSipReply& reply)
         setInOut(NULL, NULL);
 
         // set the call timer
-        AmArg di_args,ret;
-        di_args.push(TIMERID_CREDIT_TIMEOUT);
-        di_args.push(m_credit);  // in seconds
-        di_args.push(dlg.local_tag.c_str());
-        m_user_timer->invoke("setTimer", di_args, ret);
+	setTimer(TIMERID_CREDIT_TIMEOUT, m_credit);
       }
     }
     else if(reply.code == 487 && dlg.getStatus() < AmSipDialog::Connected) {

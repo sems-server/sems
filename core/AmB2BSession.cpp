@@ -29,6 +29,7 @@
 #include "AmConfig.h"
 #include "ampi/MonitoringAPI.h"
 #include "AmSipHeaders.h"
+#include "AmUtils.h"
 
 #include <assert.h>
 
@@ -249,15 +250,19 @@ void AmB2BSession::onInvite2xx(const AmSipReply& reply)
   }
 }
 
-void AmB2BSession::relayEvent(AmEvent* ev)
+int AmB2BSession::relayEvent(AmEvent* ev)
 {
   DBG("AmB2BSession::relayEvent: id=%s\n",
       other_id.c_str());
 
-  if(!other_id.empty())
-    AmSessionContainer::instance()->postEvent(other_id,ev);
-  else 
+  if(!other_id.empty()) {
+    if (!AmSessionContainer::instance()->postEvent(other_id,ev))
+      return -1;
+  } else {
     delete ev;
+  }
+
+  return 0;
 }
 
 void AmB2BSession::onOtherBye(const AmSipRequest& req)
@@ -364,7 +369,7 @@ int AmB2BSession::sendEstablishedReInvite() {
   }
 
   DBG("sending re-INVITE with saved session description\n");
-  return dlg.reinvite("",established_content_type, established_body,
+  return dlg.reinvite("", established_content_type, established_body,
 		      SIP_FLAGS_VERBATIM);
 }
 
@@ -389,10 +394,33 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
     relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
-    dlg.sendRequest(req.method,req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
+
+    const string* hdrs = &req.hdrs;
+    string m_hdrs;
+
+    // translate RAck for PRACK
+    if (req.method == SIP_METH_PRACK && req.rseq) {
+      TransMap::iterator t;
+      for (t=relayed_req.begin(); t != relayed_req.end(); t++) {
+	if (t->second.cseq == req.rack_cseq) {
+	  m_hdrs = req.hdrs +
+	    SIP_HDR_COLSP(SIP_HDR_RACK) + int2str(req.rseq) +
+	    " " + int2str(t->first) + " " + req.rack_method + CRLF;
+	  hdrs = &m_hdrs;
+	  break;
+	}
+      }
+      if (t==relayed_req.end()) {
+	WARN("Transaction with CSeq %d not found for translating RAck cseq\n",
+	     req.rack_cseq);
+      }
+    }
+
+    dlg.sendRequest(req.method, req.content_type, req.body, *hdrs, SIP_FLAGS_VERBATIM);
     // todo: relay error event back if sending fails
 
-    if ((req.method == SIP_METH_INVITE ||
+    if ((refresh_method != REFRESH_UPDATE) &&
+	(req.method == SIP_METH_INVITE ||
 	 req.method == SIP_METH_UPDATE) &&
 	!req.body.empty()) {
       saveSessionDescription(req.content_type, req.body);
@@ -415,7 +443,9 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
     DBG("sending relayed ACK\n");
     dlg.send_200_ack(t->first, req.content_type, req.body, req.hdrs, SIP_FLAGS_VERBATIM);
 
-    if (!req.body.empty() && t->second.method == SIP_METH_INVITE) {
+    if ((refresh_method != REFRESH_UPDATE) &&
+	!req.body.empty() &&
+	(t->second.method == SIP_METH_INVITE)) {
     // delayed SDP negotiation - save SDP
       saveSessionDescription(req.content_type, req.body);
     }
@@ -426,11 +456,21 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
 
 void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 {
+  const string* hdrs = &reply.hdrs;
+  string m_hdrs;
+
+  if (reply.rseq != 0) {
+    m_hdrs = reply.hdrs +
+      SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(reply.rseq) + CRLF;
+    hdrs = &m_hdrs;
+  }
+
   dlg.reply(orig,reply.code,reply.reason,
 	    reply.content_type,
-	    reply.body,reply.hdrs,SIP_FLAGS_VERBATIM);
+	    reply.body, *hdrs,SIP_FLAGS_VERBATIM);
 
-  if ((orig.method == SIP_METH_INVITE ||
+  if ((refresh_method != REFRESH_UPDATE) &&
+      (orig.method == SIP_METH_INVITE ||
        orig.method == SIP_METH_UPDATE) &&
       !reply.body.empty()) {
     saveSessionDescription(reply.content_type, reply.body);
@@ -506,50 +546,50 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
       return;
     }
 
-    DBG("reply received from other leg\n");
+    DBG("%u reply received from other leg\n", reply.code);
       
     switch(callee_status){
     case NoReply:
     case Ringing:
-	
-      if(reply.code < 200){
-	if ((!sip_relay_only) && sip_relay_early_media_sdp && 
-	    reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
-	  if (reinviteCaller(reply)) {
-	    ERROR("re-INVITEing caller for early session - "
-		  "stopping this and other leg\n");
-	    terminateOtherLeg();
-	    terminateLeg();
+      if (reply.cseq == invite_req.cseq) {
+	if(reply.code < 200){
+	  if ((!sip_relay_only) && sip_relay_early_media_sdp &&
+	      reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
+	    if (reinviteCaller(reply)) {
+	      ERROR("re-INVITEing caller for early session failed - "
+		    "stopping this and other leg\n");
+	      terminateOtherLeg();
+	      terminateLeg();
+	    }
 	  }
-	}
 	  
-	callee_status = Ringing;
-      }
-      else if(reply.code < 300){
+	  callee_status = Ringing;
+	} else if(reply.code < 300){
 	  
-	callee_status  = Connected;
+	  callee_status  = Connected;
 	  
-	if (!sip_relay_only) {
-	  sip_relay_only = true;
-	  if (reinviteCaller(reply)) {
-	    ERROR("re-INVITEing caller - stopping this and other leg\n");
-	    terminateOtherLeg();
-	    terminateLeg();
+	  if (!sip_relay_only) {
+	    sip_relay_only = true;
+	    if (reinviteCaller(reply)) {
+	      ERROR("re-INVITEing caller failed - stopping this and other leg\n");
+	      terminateOtherLeg();
+	      terminateLeg();
+	    }
 	  }
-	}
-      }
-      else {
-	// 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
-	// 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
+	} else {
+	  // 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
+	  // 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
 	  
-	terminateOtherLeg();
+	  terminateOtherLeg();
+	}
+
+	processed = onOtherReply(reply);
       }
 	
-      processed = onOtherReply(reply);
       break;
 	
     default:
-      DBG("reply from callee: %i %s\n",reply.code,reply.reason.c_str());
+      DBG("reply from callee: %u %s\n",reply.code,reply.reason.c_str());
       break;
     }
   }
@@ -558,25 +598,27 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
     AmB2BSession::onB2BEvent(ev);
 }
 
-void AmB2BCallerSession::relayEvent(AmEvent* ev)
+int AmB2BCallerSession::relayEvent(AmEvent* ev)
 {
   if(other_id.empty()){
 
-    if(dynamic_cast<B2BEvent*>(ev)){
+    bool create_callee = false;
+    B2BSipEvent* sip_ev = dynamic_cast<B2BSipEvent*>(ev);
+    if (sip_ev && sip_ev->forward)
+      create_callee = true;
+    else
+      create_callee = dynamic_cast<B2BConnectEvent*>(ev) != NULL;
 
-      B2BSipEvent*     sip_ev = dynamic_cast<B2BSipEvent*>(ev);
-      B2BConnectEvent* co_ev  = dynamic_cast<B2BConnectEvent*>(ev);
-	    
-      if( (sip_ev && sip_ev->forward) || co_ev ) {
-	createCalleeSession();
-	if (other_id.length()) {
-	  MONITORING_LOG(getLocalTag().c_str(), "b2b_leg", other_id.c_str());
-	}
+    if (create_callee) {
+      createCalleeSession();
+      if (other_id.length()) {
+	MONITORING_LOG(getLocalTag().c_str(), "b2b_leg", other_id.c_str());
       }
     }
+
   }
 
-  AmB2BSession::relayEvent(ev);
+  return AmB2BSession::relayEvent(ev);
 }
 
 void AmB2BCallerSession::onInvite(const AmSipRequest& req)
@@ -662,12 +704,11 @@ AmB2BCalleeSession* AmB2BCallerSession::newCalleeSession()
   return new AmB2BCalleeSession(this);
 }
 
-/* AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
+AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
   : AmB2BSession(other_local_tag)
 {
   a_leg = false;
 }
-*/
 
 AmB2BCalleeSession::AmB2BCalleeSession(const AmB2BCallerSession* caller)
   : AmB2BSession(caller->getLocalTag())
@@ -719,7 +760,8 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
       return;
     }
 
-    saveSessionDescription(co_ev->content_type, co_ev->body);
+    if (refresh_method != REFRESH_UPDATE)
+      saveSessionDescription(co_ev->content_type, co_ev->body);
 
     return;
   }    

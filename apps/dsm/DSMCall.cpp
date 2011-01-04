@@ -349,6 +349,10 @@ void DSMCall::onSystemEvent(AmSystemEvent* ev) {
   }
 }
 
+void DSMCall::onBeforeDestroy() {
+  engine.onBeforeDestroy(this, this);
+}
+
 void DSMCall::process(AmEvent* event)
 {
 

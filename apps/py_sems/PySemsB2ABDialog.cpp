@@ -20,14 +20,7 @@
 #include "PySemsB2ABDialog.h"
 #include "PySemsUtils.h"
 PySemsB2ABDialog::PySemsB2ABDialog()
-  : playlist(this),
-    user_timer(NULL)
-{
-}
-
-PySemsB2ABDialog::PySemsB2ABDialog(AmDynInvoke* user_timer)
-  : playlist(this),
-    user_timer(user_timer)
+  : playlist(this)
 {
 }
 

@@ -100,25 +100,8 @@ bool AmSessionEventHandlerFactory::onInvite(const AmSipRequest& req,
   return onInvite(req, cfg);
 }
 
-// AmSIPEventHandler::AmSIPEventHandler(const string& name) 
-//   : AmPluginFactory(name) 
-// {
-// }
 
 AmLoggingFacility::AmLoggingFacility(const string& name) 
   : AmPluginFactory(name) 
 {
 }
-
-// AmCtrlInterfaceFactory::AmCtrlInterfaceFactory(const string& name) 
-//   : AmPluginFactory(name) 
-// {
-// }
-
-// AmCtrlInterface::AmCtrlInterface() 
-// {
-// }
-
-// AmCtrlInterface::~AmCtrlInterface() 
-// {
-// }

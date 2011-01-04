@@ -33,6 +33,7 @@
 #include "AmMediaProcessor.h"
 #include "AmRtpReceiver.h"
 #include "AmEventDispatcher.h"
+#include "AmSessionProcessor.h"
 
 #ifdef WITH_ZRTP
 # include "AmZRTP.h"

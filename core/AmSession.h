@@ -63,13 +63,6 @@ class AmDtmfEvent;
 #define AM_AUDIO_OUT 1
 
 
-/* maximum number of reliable 1xx supported; needed for marking first 1xx
- * (which can not be followed by subsequent ones w/o being PRACKed), as
- * opposed to having another value storing it's value. */
-#define MAX_RSEQ_BITS           24
-#define LOC_RSEQ_ORDER(_rseq)   (_rseq & ((1 << MAX_RSEQ_BITS) - 1))
-
-
 /**
  * \brief Implements the default behavior of one session
  * 
@@ -155,7 +148,10 @@ private:
   friend class AmSessionProcessorThread;
 
   auto_ptr<AmRtpAudio> _rtp_str;
+
+  AmDynInvoke* user_timer_ref;
   
+  void getUserTimerInstance();
 protected:
   AmSdp               sdp;
 
@@ -378,11 +374,6 @@ public:
   /** send an INVITE */
   virtual int sendInvite(const string& headers = "");
 
-  /** send a PRACK request */
-  void sendPrack(const string &sdp_offer, 
-                 const string &rseq_val, 
-                 const string &cseq_val);
-
   /** set the session on/off hold */
   virtual void setOnHold(bool hold);
 
@@ -431,7 +422,37 @@ public:
    */
   void sendDtmf(int event, unsigned int duration_ms);
 
-  /* ----         Event handlers                         ---- */
+  /* ---- general purpose application level timers ------------ */
+
+  /** check for support of timers
+    @return true if application level timers are supported
+   */
+  static bool timersSupported();
+
+  /**
+     set a Timer
+     @param timer_id the ID of the timer (<0 for system timers)
+     @param timeout timeout in seconds
+     @return true on success
+  */
+  virtual bool setTimer(int timer_id, unsigned int timeout);
+
+  /**
+     remove a Timer
+     @param timer_id the ID of the timer (<0 for system timers)
+     @return true on success
+  */
+  virtual bool removeTimer(int timer_id);
+
+  /**
+     remove all Timers
+     @return true on success
+     Note: this doesn't clear timer events already in the 
+           event queue
+  */
+  virtual bool removeTimers();
+
+  /* ---------- event handlers ------------------------- */
 
   /** DTMF event handler for apps to use*/
   virtual void onDtmf(int event, int duration);
@@ -466,14 +487,6 @@ public:
    *       initial transaction.
    */
   virtual void onCancel(const AmSipRequest& req);
-
-  /**
-   * onPrack is called when a PRACK request is received for the session.
-   * The sequencing correctness (RAck fits) is already checked.
-   * Should be overridden if SDP offer is expected with it.
-   * @param cnt order of which 1xx this PRACK is for 
-   */
-  //virtual void onPrack(const AmSipRequest& req, unsigned cnt);
 
   /**
    * onSessionStart will be called after call setup.
@@ -512,6 +525,15 @@ public:
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);
+
+
+  virtual void onInvite1xxRel(const AmSipReply &);
+
+  /** Hook called when an answer for a locally sent PRACK is received */
+  virtual void onPrack2xx(const AmSipReply &);
+
+  virtual void onFailure(AmSipDialogEventHandler::FailureCause cause, 
+      const AmSipRequest*, const AmSipReply*);
   
   virtual void onNoAck(unsigned int cseq);
   virtual void onNoPrack(const AmSipRequest &req, const AmSipReply &rpl);

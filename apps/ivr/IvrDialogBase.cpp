@@ -411,13 +411,7 @@ static PyObject* IvrDialogBase_setTimer(IvrDialogBase* self, PyObject* args)
     return NULL;
   }
 
-  AmArg di_args,ret;
-  di_args.push(id);
-  di_args.push(interval);
-  di_args.push(self->p_dlg->getLocalTag().c_str());
-
-  self->p_dlg->user_timer->
-    invoke("setTimer", di_args, ret);
+  self->p_dlg->setTimer(id, interval);
     
   Py_INCREF(Py_None);
   return Py_None;
@@ -436,12 +430,7 @@ static PyObject* IvrDialogBase_removeTimer(IvrDialogBase* self, PyObject* args)
     return NULL;
   }
 
-  AmArg di_args,ret;
-  di_args.push(id);
-  di_args.push(self->p_dlg->getLocalTag().c_str());
-
-  self->p_dlg->user_timer->
-    invoke("removeTimer",di_args,ret);
+  self->p_dlg->removeTimer(id);
     
   Py_INCREF(Py_None);
   return Py_None;
@@ -452,12 +441,8 @@ static PyObject* IvrDialogBase_removeTimers(IvrDialogBase* self, PyObject* args)
 {
   assert(self->p_dlg);
     
-  AmArg di_args,ret;
-  di_args.push(self->p_dlg->getLocalTag().c_str());
+  self->p_dlg->removeTimers();
 
-  self->p_dlg->user_timer->
-    invoke("removeUserTimers",di_args,ret);
-    
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -487,6 +472,26 @@ IvrDialogBase_redirect(IvrDialogBase *self, PyObject* args)
     
   if(self->p_dlg->transfer(refer_to)){
     ERROR("redirect failed\n");
+    return NULL;
+  }
+    
+  Py_INCREF(Py_None);
+  return Py_None;
+    
+}
+
+static PyObject*
+IvrDialogBase_refer(IvrDialogBase *self, PyObject* args)
+{
+  assert(self->p_dlg);
+    
+  char* refer_to=0;
+  int expires;
+  if(!PyArg_ParseTuple(args,"si",&refer_to, &expires))
+    return NULL;
+    
+  if(self->p_dlg->refer(refer_to, expires)){
+    ERROR("REFER failed\n");
     return NULL;
   }
     
@@ -528,6 +533,9 @@ static PyMethodDef IvrDialogBase_methods[] = {
    "Send a BYE"
   },
   {"redirect", (PyCFunction)IvrDialogBase_redirect, METH_VARARGS,
+   "Transfers the remote party to some third party."
+  },   
+  {"refer", (PyCFunction)IvrDialogBase_refer, METH_VARARGS,
    "Refers the remote party to some third party."
   },   
   {"dropSession", (PyCFunction)IvrDialogBase_dropSession, METH_NOARGS,

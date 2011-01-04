@@ -1,0 +1,12 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import sys
+from xmlrpclib import *
+
+if len(sys.argv) != 2:
+	print "usage: %s <profile name>" % sys.argv[0]
+	sys.exit(1)
+
+s = ServerProxy('http://localhost:8090')
+print "Active calls: %d" % s.calls()
+print s.setActiveProfile(sys.argv[1])

@@ -81,18 +81,6 @@ struct B2BSipReplyEvent: public B2BSipEvent
   { }
 };
 
-/** \brief relay a message body to other leg in B2B session */
-struct B2BMsgBodyEvent : public B2BEvent {
-  string content_type;
-  string body;
-
-  B2BMsgBodyEvent(const string& content_type,
-		  const string& body)
-    : B2BEvent(B2BMsgBody),
-    content_type(content_type), body(body) { }
-  ~B2BMsgBodyEvent() { }
-};
-
 /** \brief trigger connecting the callee leg in B2B session */
 struct B2BConnectEvent: public B2BEvent
 {
@@ -159,15 +147,15 @@ class AmB2BSession: public AmSession
   /** hash of body (from o-line) */
   uint32_t body_hash;
   /** save current session description (SDP) */
-  void saveSessionDescription(const string& content_type, const string& body);
+  virtual void saveSessionDescription(const string& content_type, const string& body);
   /** @return whether session has changed */
-  bool updateSessionDescription(const string& content_type, const string& body);
+  virtual bool updateSessionDescription(const string& content_type, const string& body);
 
   /** reset relation with other leg */
-  void clear_other();
+  virtual void clear_other();
 
-  /** Relay one event to the other side. */
-  virtual void relayEvent(AmEvent* ev);
+  /** Relay one event to the other side. @return 0 on success */
+  virtual int relayEvent(AmEvent* ev);
 
   /** send a relayed SIP Request */
   void relaySip(const AmSipRequest& req);
@@ -250,7 +238,7 @@ class AmB2BCallerSession: public AmB2BSession
  protected:
   AmSipRequest invite_req;
   virtual void createCalleeSession();
-  void relayEvent(AmEvent* ev);
+  int relayEvent(AmEvent* ev);
 
   /** Tell if the session should
    *  relay early media SDPs to
@@ -263,6 +251,7 @@ class AmB2BCallerSession: public AmB2BSession
   virtual ~AmB2BCallerSession();
     
   CalleeStatus getCalleeStatus() { return callee_status; }
+  void setCalleeStatus(CalleeStatus c) { callee_status = c; }
 
   virtual AmB2BCalleeSession* newCalleeSession();
 
@@ -289,7 +278,7 @@ class AmB2BCallerSession: public AmB2BSession
 class AmB2BCalleeSession: public AmB2BSession
 {
  public:
-  /*  AmB2BCalleeSession(const string& other_local_tag); */
+  AmB2BCalleeSession(const string& other_local_tag);
   AmB2BCalleeSession(const AmB2BCallerSession* caller);
 
   virtual ~AmB2BCalleeSession();

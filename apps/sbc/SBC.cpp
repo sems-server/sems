@@ -25,8 +25,6 @@
 
 /* 
 SBC - feature-wishlist
-
-- SDP filter (reconstructed SDP)
 - accounting (MySQL DB, cassandra DB)
 - RTP forwarding mode (bridging)
 - RTP transcoding mode (bridging)
@@ -52,158 +50,24 @@ SBC - feature-wishlist
 #include "ParamReplacer.h"
 #include "SDPFilter.h"
 
-#include <algorithm>
 using std::map;
 
-string SBCFactory::user;
-string SBCFactory::domain;
-string SBCFactory::pwd;
 AmConfigReader SBCFactory::cfg;
 AmSessionEventHandlerFactory* SBCFactory::session_timer_fact = NULL;
 
-EXPORT_SESSION_FACTORY(SBCFactory,MOD_NAME);
-
-
-bool SBCCallProfile::readFromConfiguration(const string& name,
-					   const string profile_file_name) {
-  if (cfg.loadFile(profile_file_name)) {
-    ERROR("reading SBC call profile from '%s'\n", profile_file_name.c_str());
-    return false;
-  }
-
-  ruri = cfg.getParameter("RURI");
-  from = cfg.getParameter("From");
-  to = cfg.getParameter("To");
-
-  force_outbound_proxy = cfg.getParameter("force_outbound_proxy") == "yes";
-  outbound_proxy = cfg.getParameter("outbound_proxy");
-
-  next_hop_ip = cfg.getParameter("next_hop_ip");
-  next_hop_port = cfg.getParameter("next_hop_port");
-
-  string hf_type = cfg.getParameter("header_filter", "transparent");
-  if (hf_type=="transparent")
-    headerfilter = Transparent;
-  else if (hf_type=="whitelist")
-    headerfilter = Whitelist;
-  else if (hf_type=="blacklist")
-    headerfilter = Blacklist;
-  else {
-    ERROR("invalid header_filter mode '%s'\n", hf_type.c_str());
-    return false;
-  }
-  
-  vector<string> elems = explode(cfg.getParameter("header_list"), ",");
-  for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++)
-    headerfilter_list.insert(*it);
-
-  string mf_type = cfg.getParameter("message_filter", "transparent");
-  if (mf_type=="transparent")
-    messagefilter = Transparent;
-  else if (mf_type=="whitelist")
-    messagefilter = Whitelist;
-  else if (hf_type=="blacklist")
-    messagefilter = Blacklist;
-  else {
-    ERROR("invalid message_filter mode '%s'\n", mf_type.c_str());
-    return false;
-  }
-  
-  elems = explode(cfg.getParameter("message_list"), ",");
-  for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++)
-    messagefilter_list.insert(*it);
-
-  string sdp_filter = cfg.getParameter("sdp_filter");
-  if (sdp_filter=="transparent") {
-    sdpfilter_enabled = true;
-    sdpfilter = Transparent;
-  } else if (sdp_filter=="whitelist") {
-    sdpfilter_enabled = true;
-    sdpfilter = Whitelist;
-  } else if (sdp_filter=="blacklist") {
-    sdpfilter_enabled = true;
-    sdpfilter = Blacklist;
-  } else {
-    sdpfilter_enabled = false;
-  }
-  if (sdpfilter_enabled) {
-    vector<string> c_elems = explode(cfg.getParameter("sdpfilter_list"), ",");
-    for (vector<string>::iterator it=c_elems.begin(); it != c_elems.end(); it++) {
-      string c = *it;
-      std::transform(c.begin(), c.end(), c.begin(), ::tolower);
-      sdpfilter_list.insert(c);
-    }
-  }
-
-  sst_enabled = cfg.getParameter("enable_session_timer", "no") == "yes";
-  use_global_sst_config = !cfg.hasParameter("session_expires");
-  
-  auth_enabled = cfg.getParameter("enable_auth", "no") == "yes";
-  auth_credentials.user = cfg.getParameter("auth_user");
-  auth_credentials.pwd = cfg.getParameter("auth_pwd");
-
-  call_timer_enabled = cfg.getParameter("enable_call_timer", "no") == "yes";
-  call_timer = cfg.getParameter("call_timer");
-
-  prepaid_enabled = cfg.getParameter("enable_prepaid", "no") == "yes";
-  prepaid_accmodule = cfg.getParameter("prepaid_accmodule");
-  prepaid_uuid = cfg.getParameter("prepaid_uuid");
-  prepaid_acc_dest = cfg.getParameter("prepaid_acc_dest");
-
-  // check for acc module if configured statically
-  if (prepaid_enabled &&
-      (prepaid_accmodule.find('$') == string::npos) &&
-      (NULL == AmPlugIn::instance()->getFactory4Di(prepaid_accmodule))) {
-    ERROR("prepaid accounting module '%s' used in call profile "
-	  "'%s' is not loaded\n", prepaid_accmodule.c_str(), name.c_str());
-    return false;
-  }
-
-  INFO("SBC: loaded SBC profile '%s':\n", name.c_str());
-
-  INFO("SBC:      RURI = '%s'\n", ruri.c_str());
-  INFO("SBC:      From = '%s'\n", from.c_str());
-  INFO("SBC:      To   = '%s'\n", to.c_str());
-  INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
-  INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
-  if (!next_hop_ip.empty()) {
-    INFO("SBC:      next hop = %s%s\n", next_hop_ip.c_str(),
-	 next_hop_port.empty()? "" : (":"+next_hop_port).c_str());
-  }
-
-  INFO("SBC:      header filter  is %s, %zd items in list\n",
-       FilterType2String(headerfilter), headerfilter_list.size());
-  INFO("SBC:      message filter is %s, %zd items in list\n",
-       FilterType2String(messagefilter), messagefilter_list.size());
-  INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
-       sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
-       sdpfilter_list.size());
-
-  INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
-  INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
-  INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
-  if (call_timer_enabled) {
-    INFO("SBC:                  %s seconds\n", call_timer.c_str());
-  }
-  INFO("SBC:      prepaid %sabled\n", prepaid_enabled?"en":"dis");
-  if (prepaid_enabled) {
-    INFO("SBC:                    acc_module = '%s'\n", prepaid_accmodule.c_str());
-    INFO("SBC:                    uuid       = '%s'\n", prepaid_uuid.c_str());
-    INFO("SBC:                    acc_dest   = '%s'\n", prepaid_acc_dest.c_str());
-  }
-
-  return true;
-}
+EXPORT_MODULE_FACTORY(SBCFactory);
+DEFINE_MODULE_INSTANCE(SBCFactory, MOD_NAME);
 
 SBCFactory::SBCFactory(const string& _app_name)
-: AmSessionFactory(_app_name)
+  : AmSessionFactory(_app_name), AmDynInvokeFactory(_app_name)
 {
 }
 
+SBCFactory::~SBCFactory() {
+}
 
 int SBCFactory::onLoad()
 {
-
   if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
     ERROR("No configuration for sbc present (%s)\n",
 	 (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str()
@@ -236,12 +100,25 @@ int SBCFactory::onLoad()
   }
 
   INFO("SBC: active profile: '%s'\n", active_profile.c_str());
+
+  if (!AmPlugIn::registerApplication(MOD_NAME, this)) {
+    ERROR("registering "MOD_NAME" application\n");
+    return -1;
+  }
+
+  if (!AmPlugIn::registerDIInterface(MOD_NAME, this)) {
+    ERROR("registering "MOD_NAME" DI interface\n");
+    return -1;
+  }
+
   return 0;
 }
 
 
 AmSession* SBCFactory::onInvite(const AmSipRequest& req)
 {
+  profiles_mut.lock();
+
   string profile = active_profile;
   if (profile == "$(paramhdr)") {
     string app_param = getHeader(req.hdrs, PARAM_HDR, true);
@@ -253,6 +130,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
   map<string, SBCCallProfile>::iterator it=
     call_profiles.find(profile);
   if (it==call_profiles.end()) {
+    profiles_mut.unlock();
     ERROR("could not find call profile '%s' (active_profile = %s)\n",
 	  profile.c_str(), active_profile.c_str());
     throw AmSession::Exception(500,"Server Internal Error");
@@ -265,8 +143,10 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
 
   if (call_profile.sst_enabled) {
     DBG("Enabling SIP Session Timers\n");
-    if (!session_timer_fact->onInvite(req, sst_cfg))
+    if (!session_timer_fact->onInvite(req, sst_cfg)) {
+      profiles_mut.unlock();
       return NULL;
+    }
   }
 
   SBCDialog* b2b_dlg = new SBCDialog(call_profile);
@@ -274,6 +154,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
   if (call_profile.sst_enabled) {
     AmSessionEventHandler* h = session_timer_fact->getHandler(b2b_dlg);
     if(!h) {
+      profiles_mut.unlock();
       delete b2b_dlg;
       ERROR("could not get a session timer event handler\n");
       throw AmSession::Exception(500,"Server internal error");
@@ -286,17 +167,190 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
       b2b_dlg->addHandler(h);
     }
   }
+  profiles_mut.unlock();
 
   return b2b_dlg;
 }
 
+void SBCFactory::invoke(const string& method, const AmArg& args, 
+				AmArg& ret)
+{
+  if (method == "listProfiles"){
+    listProfiles(args, ret);
+  } else if (method == "reloadProfiles"){
+    reloadProfiles(args,ret);
+  } else if (method == "loadProfile"){
+    args.assertArrayFmt("u");
+    loadProfile(args,ret);
+  } else if (method == "reloadProfile"){
+    args.assertArrayFmt("u");
+    reloadProfile(args,ret);
+  } else if (method == "getActiveProfile"){
+    getActiveProfile(args,ret);
+  } else if (method == "setActiveProfile"){
+    args.assertArrayFmt("u");
+    setActiveProfile(args,ret);
+  } else if(method == "_list"){ 
+    ret.push(AmArg("listProfiles"));
+    ret.push(AmArg("reloadProfiles"));
+    ret.push(AmArg("reloadProfile"));
+    ret.push(AmArg("loadProfile"));
+    ret.push(AmArg("getActiveProfile"));
+    ret.push(AmArg("setActiveProfile"));
+  }  else
+    throw AmDynInvoke::NotImplemented(method);
+}
 
-SBCDialog::SBCDialog(const SBCCallProfile& call_profile) // AmDynInvoke* user_timer)
+void SBCFactory::listProfiles(const AmArg& args, AmArg& ret) {
+  profiles_mut.lock();
+  for (std::map<string, SBCCallProfile>::iterator it=
+	 call_profiles.begin(); it != call_profiles.end(); it++) {
+    AmArg p;
+    p["name"] = it->first;
+    p["md5"] = it->second.md5hash;
+    p["path"] = it->second.profile_file;
+    ret.push((p));
+  }
+  profiles_mut.unlock();
+}
+
+void SBCFactory::reloadProfiles(const AmArg& args, AmArg& ret) {
+  std::map<string, SBCCallProfile> new_call_profiles;
+  
+  bool failed = false;
+  string res = "OK";
+  AmArg profile_list;
+  profiles_mut.lock();
+  for (std::map<string, SBCCallProfile>::iterator it=
+	 call_profiles.begin(); it != call_profiles.end(); it++) {
+    new_call_profiles[it->first] = SBCCallProfile();
+    if (!new_call_profiles[it->first].readFromConfiguration(it->first,
+							    it->second.profile_file)) {
+      ERROR("reading call profile file '%s'\n", it->second.profile_file.c_str());
+      res = "Error reading call profile for "+it->first+" from "+it->second.profile_file+
+	+"; no profiles reloaded";
+      failed = true;
+      break;
+    }
+    AmArg p;
+    p["name"] = it->first;
+    p["md5"] = it->second.md5hash;
+    p["path"] = it->second.profile_file;
+    profile_list.push(p);
+  }
+  if (!failed) {
+    call_profiles = new_call_profiles;
+    ret.push(200);
+  } else {
+    ret.push(500);
+  }
+  ret.push(res);
+  ret.push(profile_list);
+  profiles_mut.unlock();
+}
+
+void SBCFactory::reloadProfile(const AmArg& args, AmArg& ret) {
+  bool failed = false;
+  string res = "OK";
+  AmArg p;
+  if (!args[0].hasMember("name")) {
+    ret.push(400);
+    ret.push("Parameters error: expected ['name': profile_name] ");
+    return;
+  }
+
+  profiles_mut.lock();
+  std::map<string, SBCCallProfile>::iterator it=
+    call_profiles.find(args[0]["name"].asCStr());
+  if (it == call_profiles.end()) {
+    res = "profile '"+string(args[0]["name"].asCStr())+"' not found";
+    failed = true;
+  } else {
+    SBCCallProfile new_cp;
+    if (!new_cp.readFromConfiguration(it->first, it->second.profile_file)) {
+      ERROR("reading call profile file '%s'\n", it->second.profile_file.c_str());
+      res = "Error reading call profile for "+it->first+" from "+it->second.profile_file;
+      failed = true;
+    } else {
+      it->second = new_cp;
+      p["name"] = it->first;
+      p["md5"] = it->second.md5hash;
+      p["path"] = it->second.profile_file;
+    }
+  }
+  profiles_mut.unlock();
+
+  if (!failed) {
+    ret.push(200);
+    ret.push(res);
+    ret.push(p);
+  } else {
+    ret.push(500);
+    ret.push(res);
+  }
+}
+
+void SBCFactory::loadProfile(const AmArg& args, AmArg& ret) {
+  if (!args[0].hasMember("name") || !args[0].hasMember("path")) {
+    ret.push(400);
+    ret.push("Parameters error: expected ['name': profile_name] "
+	     "and ['path': profile_path]");
+    return;
+  }
+  SBCCallProfile cp;
+  if (!cp.readFromConfiguration(args[0]["name"].asCStr(), args[0]["path"].asCStr())) {
+    ret.push(500);
+    ret.push("Error reading sbc call profile for "+string(args[0]["name"].asCStr())+
+	     " from file "+string(args[0]["path"].asCStr()));
+    return;
+  }
+
+  profiles_mut.lock();
+  call_profiles[args[0]["name"].asCStr()] = cp;
+  profiles_mut.unlock();
+  ret.push(200);
+  ret.push("OK");
+  AmArg p;
+  p["name"] = args[0]["name"];
+  p["md5"] = cp.md5hash;
+  p["path"] = args[0]["path"];
+  ret.push(p);
+}
+
+void SBCFactory::getActiveProfile(const AmArg& args, AmArg& ret) {
+  profiles_mut.lock();
+  AmArg p;
+  p["active_profile"] = active_profile;
+  profiles_mut.unlock();
+  ret.push(200);
+  ret.push("OK");
+  ret.push(p);
+}
+
+void SBCFactory::setActiveProfile(const AmArg& args, AmArg& ret) {
+  if (!args[0].hasMember("active_profile")) {
+    ret.push(400);
+    ret.push("Parameters error: expected ['active_profile': <active_profile>] ");
+    return;
+  }
+  profiles_mut.lock();
+  active_profile = args[0]["active_profile"].asCStr();
+  profiles_mut.unlock();
+  ret.push(200);
+  ret.push("OK");
+  AmArg p;
+  p["active_profile"] = args[0]["active_profile"];
+  ret.push(p);  
+}
+
+
+SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
-    m_user_timer(NULL),prepaid_acc(NULL),
+    prepaid_acc(NULL),
     call_profile(call_profile)
 {
   set_sip_relay_only(false);
+  dlg.reliable_1xx = REL100_IGNORED;
 }
 
 
@@ -326,6 +380,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   to = call_profile.to.empty() ? 
     req.to : replaceParameters(call_profile.to, "To", REPLACE_VALS);
+
+  callid = call_profile.callid.empty() ?
+    "" : replaceParameters(call_profile.callid, "Call-ID", REPLACE_VALS);
 
   if (!call_profile.outbound_proxy.empty()) {
       call_profile.outbound_proxy =
@@ -367,7 +424,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
   }
 
-  inplaceHeaderFilter(invite_req.hdrs, 
+  inplaceHeaderFilter(invite_req.hdrs,
 		      call_profile.headerfilter_list, call_profile.headerfilter);
 
   if (call_profile.auth_enabled) {
@@ -379,15 +436,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   // get timer
   if (call_profile.call_timer_enabled || call_profile.prepaid_enabled) {
-    AmDynInvokeFactory* fact =
-      AmPlugIn::instance()->getFactory4Di("user_timer");
-    if (NULL == fact) {
+    if (!timersSupported()) {
       ERROR("load session_timer module for call timers\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-    m_user_timer = fact->getInstance();
-    if(NULL == m_user_timer) {
-      ERROR("could not get a timer reference\n");
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
   }
@@ -409,20 +459,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   if (call_profile.prepaid_enabled) {
     call_profile.prepaid_accmodule =
       replaceParameters(call_profile.prepaid_accmodule, "prepaid_accmodule", REPLACE_VALS);
-    if (call_profile.prepaid_accmodule.empty()) {
-      ERROR("using prepaid but empty prepaid_accmodule!\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
 
-    AmDynInvokeFactory* pp_fact =
-      AmPlugIn::instance()->getFactory4Di(call_profile.prepaid_accmodule);
-    if (NULL == pp_fact) {
-      ERROR("prepaid_accmodule '%s' not loaded\n", call_profile.prepaid_accmodule.c_str());
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-    prepaid_acc = pp_fact->getInstance();
-    if(NULL == prepaid_acc) {
-      ERROR("could not get a prepaid acc reference\n");
+    if (!getPrepaidInterface()) {
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
@@ -459,6 +497,26 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   connectCallee(to, ruri, true);
 }
 
+bool SBCDialog::getPrepaidInterface() {
+  if (call_profile.prepaid_accmodule.empty()) {
+    ERROR("using prepaid but empty prepaid_accmodule!\n");
+    return false;
+  }
+  AmDynInvokeFactory* pp_fact =
+    AmPlugIn::instance()->getFactory4Di(call_profile.prepaid_accmodule);
+  if (NULL == pp_fact) {
+    ERROR("prepaid_accmodule '%s' not loaded\n",
+	  call_profile.prepaid_accmodule.c_str());
+    return false;
+  }
+  prepaid_acc = pp_fact->getInstance();
+  if(NULL == prepaid_acc) {
+    ERROR("could not get a prepaid acc reference\n");
+    return false;
+  }
+  return true;
+}
+
 void SBCDialog::process(AmEvent* ev)
 {
 
@@ -482,22 +540,42 @@ void SBCDialog::process(AmEvent* ev)
   AmB2BCallerSession::process(ev);
 }
 
-void SBCDialog::relayEvent(AmEvent* ev) {
-  if (call_profile.headerfilter != Transparent) {
-    if (ev->event_id == B2BSipRequest) {
-      B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
-      assert(req_ev);
-      inplaceHeaderFilter(req_ev->req.hdrs, 
-			  call_profile.headerfilter_list, call_profile.headerfilter);
-    } else if (ev->event_id == B2BSipReply) {
-      B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
-      assert(reply_ev);
-      inplaceHeaderFilter(reply_ev->reply.hdrs, 
-			  call_profile.headerfilter_list, call_profile.headerfilter);
+int SBCDialog::relayEvent(AmEvent* ev) {
+  if ((call_profile.headerfilter != Transparent) &&
+      (ev->event_id == B2BSipRequest)) {
+    // header filter
+    B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
+    assert(req_ev);
+    inplaceHeaderFilter(req_ev->req.hdrs,
+			call_profile.headerfilter_list, call_profile.headerfilter);
+  } else {
+    if (ev->event_id == B2BSipReply) {
+      if ((call_profile.headerfilter != Transparent) ||
+	  (call_profile.reply_translations.size())) {
+	B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
+	assert(reply_ev);
+	// header filter
+	if (call_profile.headerfilter != Transparent) {
+	  inplaceHeaderFilter(reply_ev->reply.hdrs,
+			      call_profile.headerfilter_list,
+			      call_profile.headerfilter);
+	}
+
+	// reply translations
+	map<unsigned int, pair<unsigned int, string> >::iterator it =
+	  call_profile.reply_translations.find(reply_ev->reply.code);
+	if (it != call_profile.reply_translations.end()) {
+	  DBG("translating reply %u %s => %u %s\n",
+	      reply_ev->reply.code, reply_ev->reply.reason.c_str(),
+	      it->second.first, it->second.second.c_str());
+	  reply_ev->reply.code = it->second.first;
+	  reply_ev->reply.reason = it->second.second;
+	}
+      }
     }
   }
 
-  AmB2BCallerSession::relayEvent(ev);
+  return AmB2BCallerSession::relayEvent(ev);
 }
 
 int SBCDialog::filterBody(AmSdp& sdp, bool is_a2b) {
@@ -561,39 +639,15 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
       if(getCalleeStatus()  == Connected) {
         m_state = BB_Connected;
 
-	if ((call_profile.call_timer_enabled || call_profile.prepaid_enabled) &&
-	    (NULL == m_user_timer)) {
-	  ERROR("internal implementation error: invalid timer reference\n");
-	  terminateOtherLeg();
-	  terminateLeg();
+	if (!startCallTimer())
 	  return ret;
-	}
-
-	if (call_profile.call_timer_enabled) {
-	  DBG("SBC: starting call timer of %u seconds\n", call_timer);
-	  AmArg di_args,ret;
-	  di_args.push((int)SBC_TIMER_ID_CALL_TIMER);
-	  di_args.push((int)call_timer);           // in seconds
-	  di_args.push(getLocalTag().c_str());
-	  m_user_timer->invoke("setTimer", di_args, ret);
-	}
 
 	startPrepaidAccounting();
       }
     }
-    else if(reply.code == 487 && dlg.getStatus() == AmSipDialog::Pending) {
-      DBG("Stopping leg A on 487 from B with 487\n");
-      dlg.reply(invite_req, 487, "Request terminated");
-      setStopped();
-      ret = true;
-    }
-    else if (reply.code >= 300 && dlg.getStatus() == AmSipDialog::Connected) {
-      DBG("Callee final error in connected state with code %d\n",reply.code);
-      terminateLeg();
-    }
     else {
       DBG("Callee final error with code %d\n",reply.code);
-      AmB2BCallerSession::onOtherReply(reply);
+      ret = AmB2BCallerSession::onOtherReply(reply);
     }
   }
   return ret;
@@ -632,6 +686,24 @@ void SBCDialog::stopCall() {
   terminateLeg();
 }
 
+/** @return whether successful */
+bool SBCDialog::startCallTimer() {
+  if ((call_profile.call_timer_enabled || call_profile.prepaid_enabled) &&
+      (!AmSession::timersSupported())) {
+    ERROR("internal implementation error: timers not supported\n");
+    terminateOtherLeg();
+    terminateLeg();
+    return false;
+  }
+
+  if (call_profile.call_timer_enabled) {
+    DBG("SBC: starting call timer of %u seconds\n", call_timer);
+    setTimer(SBC_TIMER_ID_CALL_TIMER, call_timer);
+  }
+
+  return true;
+}
+
 void SBCDialog::startPrepaidAccounting() {
   if (!call_profile.prepaid_enabled)
     return;
@@ -647,11 +719,7 @@ void SBCDialog::startPrepaidAccounting() {
 
   DBG("SBC: starting prepaid timer of %d seconds\n", prepaid_credit);
   {
-    AmArg di_args,ret;
-    di_args.push((int)SBC_TIMER_ID_PREPAID_TIMEOUT);
-    di_args.push((int)prepaid_credit);           // in seconds
-    di_args.push(getLocalTag().c_str());
-    m_user_timer->invoke("setTimer", di_args, ret);
+    setTimer(SBC_TIMER_ID_PREPAID_TIMEOUT, prepaid_credit);
   }
 
   {
@@ -755,7 +823,8 @@ void SBCDialog::createCalleeSession()
   other_id = AmSession::getNewId();
   
   callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
+  callee_dlg.callid       = callid.empty() ?
+    AmSession::getNewId() + "@" + AmConfig::LocalIP : callid;
   
   // this will be overwritten by ConnectLeg event 
   callee_dlg.remote_party = to;
@@ -789,7 +858,14 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
 				   const SBCCallProfile& call_profile) 
   : auth(NULL),
     call_profile(call_profile),
-    AmB2BCalleeSession(caller) {
+    AmB2BCalleeSession(caller)
+{
+  dlg.reliable_1xx = REL100_IGNORED;
+
+  if (call_profile.sdpfilter_enabled) {
+    b2b_mode = B2BMode_SDPFilter;
+  }
+
 }
 
 SBCCalleeSession::~SBCCalleeSession() {
@@ -801,22 +877,42 @@ inline UACAuthCred* SBCCalleeSession::getCredentials() {
   return &call_profile.auth_credentials;
 }
 
-void SBCCalleeSession::relayEvent(AmEvent* ev) {
-  if (call_profile.headerfilter != Transparent) {
-    if (ev->event_id == B2BSipRequest) {
-      B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
-      assert(req_ev);
-      inplaceHeaderFilter(req_ev->req.hdrs, 
-			  call_profile.headerfilter_list, call_profile.headerfilter);
-    } else if (ev->event_id == B2BSipReply) {
-      B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
-      assert(reply_ev);
-      inplaceHeaderFilter(reply_ev->reply.hdrs, 
-			  call_profile.headerfilter_list, call_profile.headerfilter);
+int SBCCalleeSession::relayEvent(AmEvent* ev) {
+  if ((call_profile.headerfilter != Transparent) &&
+      (ev->event_id == B2BSipRequest)) {
+    // header filter
+    B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
+    assert(req_ev);
+    inplaceHeaderFilter(req_ev->req.hdrs,
+			call_profile.headerfilter_list, call_profile.headerfilter);
+  } else {
+    if (ev->event_id == B2BSipReply) {
+      if ((call_profile.headerfilter != Transparent) ||
+	  (call_profile.reply_translations.size())) {
+	B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
+	assert(reply_ev);
+
+	// header filter
+	if (call_profile.headerfilter != Transparent) {
+	  inplaceHeaderFilter(reply_ev->reply.hdrs,
+			      call_profile.headerfilter_list,
+			      call_profile.headerfilter);
+	}
+	// reply translations
+	map<unsigned int, pair<unsigned int, string> >::iterator it =
+	  call_profile.reply_translations.find(reply_ev->reply.code);
+	if (it != call_profile.reply_translations.end()) {
+	  DBG("translating reply %u %s => %u %s\n",
+	      reply_ev->reply.code, reply_ev->reply.reason.c_str(),
+	      it->second.first, it->second.second.c_str());
+	  reply_ev->reply.code = it->second.first;
+	  reply_ev->reply.reason = it->second.second;
+	}
+      }
     }
   }
 
-  AmB2BCalleeSession::relayEvent(ev);
+  return AmB2BCalleeSession::relayEvent(ev);
 }
 
 void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {

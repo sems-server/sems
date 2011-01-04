@@ -21,15 +21,7 @@
 #include "PySemsB2BDialog.h"
 #include "PySemsUtils.h"
 PySemsB2BDialog::PySemsB2BDialog()
-  : playlist(this),
-    user_timer(NULL)
-{
-  set_sip_relay_only(false);
-}
-
-PySemsB2BDialog::PySemsB2BDialog(AmDynInvoke* user_timer)
-  : playlist(this),
-    user_timer(user_timer)
+  : playlist(this)
 {
   set_sip_relay_only(false);
 }

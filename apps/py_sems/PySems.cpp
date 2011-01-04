@@ -120,8 +120,7 @@ extern "C" {
 }
 
 PySemsFactory::PySemsFactory(const string& _app_name)
-  : AmSessionFactory(_app_name),
-    user_timer_fact(NULL)
+  : AmSessionFactory(_app_name)
 {
 }
 
@@ -228,10 +227,9 @@ AmSession* PySemsFactory::newDlg(const string& name)
 
   PySemsScriptDesc& mod_desc = mod_it->second;
 
-  AmDynInvoke* user_timer = user_timer_fact->getInstance();
-  if(!user_timer){
-    ERROR("could not get a user timer reference\n");
-    throw AmSession::Exception(500,"could not get a user timer reference");
+  if (!AmSession::timersSupported()) {
+    ERROR("load session_timer plugin for timers\n");
+    throw AmSession::Exception(500,SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 	
   PyObject* dlg_inst = PyObject_Call(mod_desc.dlg_class,PyTuple_New(0),NULL);
@@ -402,10 +400,8 @@ bool PySemsFactory::loadScript(const string& path)
  */
 int PySemsFactory::onLoad()
 {
-  user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
-  if(!user_timer_fact){
-	
-    ERROR("could not load user_timer from session_timer plug-in\n");
+  if (!AmSession::timersSupported()) {
+    ERROR("load session_timer plug-in (for timers)\n");
     return -1;
   }
 

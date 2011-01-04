@@ -69,6 +69,9 @@ class AmSipRequest : public _AmSipMsgInDlg
   string r_uri;
   string from_uri;
 
+  string rack_method;
+  unsigned int rack_cseq;
+
   AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }
   

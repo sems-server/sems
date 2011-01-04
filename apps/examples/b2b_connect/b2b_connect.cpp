@@ -58,9 +58,8 @@ int b2b_connectFactory::onLoad()
   if (cfg.getParameter("transparent_ruri")=="true")
     TransparentDestination = true;
   
-//   user_timer_fact = AmPlugIn::instance()->getFactory4Di("user_timer");
-//   if(!user_timer_fact) {
-//     ERROR("could not load user_timer from session_timer plug-in\n");
+//   if (!AmSession::timersSupported()) {
+//     ERROR("load session_timer plug-in for timers\n");
 //     return -1;
 //   }
 
@@ -70,25 +69,18 @@ int b2b_connectFactory::onLoad()
 
 AmSession* b2b_connectFactory::onInvite(const AmSipRequest& req)
 {
-//   AmDynInvoke* user_timer = user_timer_fact->getInstance();
-//   if(!user_timer) {
-//     ERROR("could not get a user timer reference\n");
-//     throw AmSession::Exception(500,"could not get a user timer reference");
-//   }
-
   string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
   if (!app_param.length()) {
     throw  AmSession::Exception(500, "b2b_connect: parameters not found");
   }
 
-  return new b2b_connectDialog(); //user_timer);
+  return new b2b_connectDialog();
 }
 
 
-b2b_connectDialog::b2b_connectDialog() // AmDynInvoke* user_timer)
-: //m_user_timer(user_timer),
-  AmB2ABCallerSession()
+b2b_connectDialog::b2b_connectDialog()
+  : AmB2ABCallerSession()
 
 {
   RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT); 

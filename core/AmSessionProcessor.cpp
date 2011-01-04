@@ -60,7 +60,7 @@ AmSessionProcessorThread* AmSessionProcessor::getProcessorThread() {
 }
 
 void AmSessionProcessor::addThreads(unsigned int num_threads) {
-  DBG("starting %zd session processor threads\n", num_threads);
+  DBG("starting %u session processor threads\n", num_threads);
   threads_mut.lock();
   for (unsigned int i=0; i < num_threads;i++) {
     threads.push_back(new AmSessionProcessorThread());
@@ -170,6 +170,9 @@ void AmSessionProcessorThread::startSession(AmSession* s) {
 
   // add this to be scheduled
   events.postEvent(new AmSessionProcessorThreadAddEvent(s));
+
+  // trigger processing of events already in queue at startup
+  notify(s);
 
   // wakeup the thread
   runcond.set(true);
