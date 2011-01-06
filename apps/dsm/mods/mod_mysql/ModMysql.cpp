@@ -254,9 +254,9 @@ EXEC_ACTION_START(SCMyExecuteAction) {
     mysqlpp::SimpleResult res = query.execute();
     if (res) {
       sc_sess->CLR_ERRNO;
-      sc_sess->var["db.rows"] = int2str((long)res.rows());
+      sc_sess->var["db.rows"] = int2str((int)res.rows());
       sc_sess->var["db.info"] = res.info();
-      sc_sess->var["db.insert_id"] = int2str((long)res.insert_id());
+      sc_sess->var["db.insert_id"] = int2str((int)res.insert_id());
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
       sc_sess->SET_STRERROR(res.info());
@@ -591,9 +591,9 @@ EXEC_ACTION_START(SCMyPutFileToDBAction) {
     mysqlpp::SimpleResult res = query.execute();
     if (res) {
       sc_sess->CLR_ERRNO;
-      sc_sess->var["db.rows"] = int2str((long)res.rows());
+      sc_sess->var["db.rows"] = int2str((int)res.rows());
       sc_sess->var["db.info"] = res.info();
-      sc_sess->var["db.insert_id"] = int2str((long)res.insert_id());
+      sc_sess->var["db.insert_id"] = int2str((int)res.insert_id());
     } else {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_QUERY);
       sc_sess->SET_STRERROR(res.info());
