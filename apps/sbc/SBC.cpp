@@ -32,8 +32,6 @@ SBC - feature-wishlist
 - call distribution
 - select profile on monitoring in-mem DB record
 - fallback profile
-- add headers
-- online profile reload
  */
 #include "SBC.h"
 
@@ -426,6 +424,22 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   inplaceHeaderFilter(invite_req.hdrs,
 		      call_profile.headerfilter_list, call_profile.headerfilter);
+
+
+  if (!call_profile.append_headers.empty()) {
+    string append_headers = replaceParameters(call_profile.append_headers,
+					      "append_headers", REPLACE_VALS);
+    if (append_headers.size()>2) {
+      if (append_headers[append_headers.size()-2] != '\r' ||
+	  append_headers[append_headers.size()-1] != '\n') {
+	while ((append_headers[append_headers.size()-1] == '\r') ||
+	       (append_headers[append_headers.size()-1] == '\n'))
+	  append_headers.erase(append_headers.size()-1);
+	append_headers += "\r\n";
+      }
+      invite_req.hdrs+=append_headers;
+    }
+  }
 
   if (call_profile.auth_enabled) {
     call_profile.auth_credentials.user = 

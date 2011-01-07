@@ -154,6 +154,9 @@ The patterns which can be used are the following:
   \\  -> \
   \$  -> $
   \*  -> *
+  \r  -> cr  (e.g. use \r\n to separate different headers in append_headers)
+  \n  -> lf
+  \t  -> tab
 
 If a quotation mark (") is used, it needs to be escaped with a backslash in
 the sbc profile configuration file.
@@ -207,6 +210,17 @@ with the sdp_filter and sdpfilter_list call profile options. If sdp_filter is
 set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
 Codecs may be filtered out by their payload names in whitelist or blacklist
 modes. The payload names in the list are case-insensitive (PCMU==pcmu).
+
+Adding headers
+--------------
+Additional headers can be added to the outgoing initial INVITE by using the
+append_headers call profile option. Here, several headers can be separated with
+\r\n. All replacement patterns from above can be used.
+
+Examples:
+ append_headers="P-Received-IP: $Ri\r\nP-Received-Port: $Rp"
+ append_headers="P-Source-IP: $si\r\nP-Source-Port: $sp\r\n"
+ append_headers="P-Original-URI: $r"
 
 Response code translations
 -----------------------
@@ -322,6 +336,6 @@ x maximum call duration timer
 - call distribution
 - select profile on monitoring in-mem DB record
 - fallback profile
-- add headers
+x add headers
 - bridging between interfaces
 - rel1xx in non-transparent mode

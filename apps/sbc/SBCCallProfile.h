@@ -83,6 +83,8 @@ struct SBCCallProfile {
 
   map<unsigned int, std::pair<unsigned int, string> > reply_translations;
 
+  string append_headers;
+
   // todo: RTP forwarding mode
   // todo: RTP transcoding mode
 

@@ -167,6 +167,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     reply_translations[from_code] = make_pair(to_code, to_reply.substr(s_pos));
   }
 
+  // append_headers=P-Received-IP: $si\r\nP-Received-Port:$sp\r\n
+  append_headers = cfg.getParameter("append_headers");
+
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
     ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());
@@ -215,6 +218,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       reply_trans_codes += int2str(it->first)+", ";
     reply_trans_codes.erase(reply_trans_codes.length()-2);
     INFO("SBC:      reply translation for  %s\n", reply_trans_codes.c_str());
+  }
+
+  if (append_headers.size()) {
+    INFO("SBC:      append headers '%s'\n", append_headers.c_str());
   }
 
   return true;
@@ -315,6 +322,7 @@ string SBCCallProfile::print() const {
 
     res += "prepaid_acc_dest:     " + reply_trans_codes +"\n";
   }
+  res += "append_headers:     " + append_headers + "\n";
   res += "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
   return res;
 }
