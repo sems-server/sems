@@ -116,6 +116,12 @@ The patterns which can be used are the following:
 
   $ci  - Call-ID
 
+  $si  - source (remote) IP address
+  $sp  - source (remote) port
+
+  $Ri  - destination (local/received) IP address
+  $Rp  - destination (local/received) port
+
   $P(paramname) - paramname from P-App-Param
     Example:
       P-App-Param: u=myuser;p=mypwd;d=mydomain

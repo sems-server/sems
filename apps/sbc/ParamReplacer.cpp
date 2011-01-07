@@ -133,7 +133,41 @@ string replaceParameters(const string& s,
 	  break;
 	}
 	WARN("unknown replacement $c%c\n", s[p+1]);
-      }
+      }; break;
+
+      case 's': { // source (remote)
+	if (s.length() < p+1) {
+	  WARN("unknown replacement $s\n");
+	  break;
+	}
+
+	if (s[p+1] == 'i') { // $si source IP address
+	  res += req.remote_ip.c_str();
+	  break;
+	} else if (s[p+1] == 'p') { // $sp source port
+	  res += int2str(req.remote_port);
+	  break;
+	}
+
+	WARN("unknown replacement $s%c\n", s[p+1]);
+      }; break;
+
+      case 'R': { // received (local)
+	if (s.length() < p+1) {
+	  WARN("unknown replacement $R\n");
+	  break;
+	}
+
+	if (s[p+1] == 'i') { // $si source IP address
+	  res += req.local_ip.c_str();
+	  break;
+	} else if (s[p+1] == 'p') { // $sp source port
+	  res += int2str(req.local_port);
+	  break;
+	}
+	WARN("unknown replacement $R%c\n", s[p+1]);
+      }; break;
+
 
 #define case_HDR(pv_char, pv_name, hdr_name)				\
 	case pv_char: {							\
