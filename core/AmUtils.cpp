@@ -50,6 +50,8 @@
 #include <regex.h>
 #include <algorithm>
 
+#include <fstream>
+
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX 104
 #endif
@@ -1213,4 +1215,55 @@ void add_env_path(const char* name, const string& path)
   string sol_putenv = name + string("=") + var;
   putenv(sol_putenv.c_str());
 #endif
+}
+
+bool readRegexMapping(const string& fname, const char* separator,
+		      const char* dbg_type,
+		      RegexMappingVector& result) {
+  std::ifstream appcfg(fname.c_str());
+  if (!appcfg.good()) {
+    ERROR("could not load %s file at '%s'\n",
+	  dbg_type, fname.c_str());
+    return false;
+  } else {
+    while (!appcfg.eof()) {
+      string entry;
+      getline (appcfg,entry);
+      if (!entry.length())
+	continue;
+      size_t non_wsp_pos = entry.find_first_not_of(" \t");
+      if (non_wsp_pos != string::npos && entry[non_wsp_pos] == '#')
+	continue;
+
+      vector<string> re_v = explode(entry, separator);
+      if (re_v.size() != 2) {
+	ERROR("Incorrect line '%s' in %s: expected format 'regexp%sstring'\n",
+	      entry.c_str(), fname.c_str(), separator);
+	return false;
+      }
+      regex_t app_re;
+      if (regcomp(&app_re, re_v[0].c_str(), REG_EXTENDED | REG_NOSUB)) {
+	ERROR("compiling regex '%s' in %s.\n", 
+	      re_v[0].c_str(), fname.c_str());
+	return false;
+      }
+      DBG("adding %s '%s' => '%s'\n",
+	  dbg_type, re_v[0].c_str(),re_v[1].c_str());
+      result.push_back(make_pair(app_re, re_v[1]));
+    }
+  }
+  return true;
+}
+
+bool runRegexMapping(const RegexMappingVector& mapping, const char* test_s,
+		     string& result) {
+  for (RegexMappingVector::const_iterator it = mapping.begin();
+       it != mapping.end(); it++) {
+    if (!regexec(&it->first, test_s, 0, NULL, 0)) {
+      DBG("match of '%s' to %s\n", test_s, it->second.c_str());
+      result = it->second;
+      return true;
+    }
+  }
+  return false;
 }

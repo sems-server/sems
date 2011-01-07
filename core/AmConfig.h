@@ -31,14 +31,11 @@
 #include "AmSdp.h"
 #include "AmDtmfDetector.h"
 #include "AmSipDialog.h"
+#include "AmUtils.h"
 
 #include <string>
 using std::string;
 #include <utility>
-
-#include <sys/types.h>
-#include <regex.h>
-
 
 /**
  * \brief holds the current configuration.
@@ -127,8 +124,7 @@ struct AmConfig
   static ApplicationSelector AppSelect;
 
   /* this is regex->application mapping is used if  App_MAPPING */
-  typedef vector<std::pair<regex_t, string> > AppMappingVector;
-  static AppMappingVector AppMapping; 
+  static RegexMappingVector AppMapping; 
 
   static unsigned int SessionLimit;
   static unsigned int SessionLimitErrCode;

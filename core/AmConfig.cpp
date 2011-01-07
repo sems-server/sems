@@ -38,7 +38,6 @@
 #include "AmUtils.h"
 #include "AmSession.h"
 
-#include <fstream>
 #include <cctype>
 #include <algorithm>
 
@@ -79,7 +78,7 @@ unsigned int AmConfig::DeadRtpTime             = DEAD_RTP_TIME;
 bool         AmConfig::IgnoreRTPXHdrs          = false;
 string       AmConfig::Application             = "";
 AmConfig::ApplicationSelector AmConfig::AppSelect        = AmConfig::App_SPECIFIED;
-AmConfig::AppMappingVector AmConfig::AppMapping;
+RegexMappingVector AmConfig::AppMapping;
 bool         AmConfig::LogSessions             = false;
 bool         AmConfig::LogEvents               = false;
 int          AmConfig::UnhandledReplyLoglevel  = 0;
@@ -361,34 +360,10 @@ int AmConfig::readConfiguration()
     AppSelect = App_MAPPING;  
     string appcfg_fname = ModConfigPath + "app_mapping.conf"; 
     DBG("Loading application mapping...\n");
-    std::ifstream appcfg(appcfg_fname.c_str());
-    if (!appcfg.good()) {
-      ERROR("could not load application mapping  file at '%s'\n",
-	    appcfg_fname.c_str());
+    if (!readRegexMapping(appcfg_fname, "=>", "application mapping",
+			  AppMapping)) {
+      ERROR("reading application mapping\n");
       ret = -1;
-    }
-    else {
-      while (!appcfg.eof()) {
-	string entry;
-	getline (appcfg,entry);
-	if (!entry.length() || entry[0] == '#')
-	  continue;
-	vector<string> re_v = explode(entry, "=>");
-	if (re_v.size() != 2) {
-	  ERROR("Incorrect line '%s' in %s: expected format 'regexp=>app_name'\n",
-		entry.c_str(), appcfg_fname.c_str());
-	  ret = -1;
-	}
-	regex_t app_re;
-	if (regcomp(&app_re, re_v[0].c_str(), REG_EXTENDED | REG_NOSUB)) {
-	  ERROR("compiling regex '%s' in %s.\n", 
-		re_v[0].c_str(), appcfg_fname.c_str());
-	  ret = -1;
-	}
-	DBG("adding application mapping '%s' => '%s'\n",
-	    re_v[0].c_str(),re_v[1].c_str());
-	AppMapping.push_back(make_pair(app_re, re_v[1]));
-      }
     }
   } else {
     AppSelect = App_SPECIFIED;

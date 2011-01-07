@@ -780,20 +780,10 @@ AmSessionFactory* AmPlugIn::findSessionFactory(AmSipRequest& req)
     case AmConfig::App_RURIPARAM: 
       req.cmd = get_header_param(req.r_uri, "app");
       break;
-    case AmConfig::App_MAPPING: 
-      {
-	req.cmd = "";	
-	for (AmConfig::AppMappingVector::iterator it = 
-	       AmConfig::AppMapping.begin(); 
-	     it != AmConfig::AppMapping.end(); it++){
-	  if (!regexec(&it->first, req.r_uri.c_str(), 0, NULL, 0)) {
-	    DBG("match of r_uri '%s' to application %s\n", 
-	      req.r_uri.c_str(), it->second.c_str());
-	    req.cmd = it->second;
-	    break;
-	  }
-	}
-      } break;
+    case AmConfig::App_MAPPING:
+      req.cmd = ""; // no match if not found
+      runRegexMapping(AmConfig::AppMapping, req.r_uri.c_str(), req.cmd);
+      break;
     case AmConfig::App_SPECIFIED: 
       req.cmd = AmConfig::Application; 
       break;

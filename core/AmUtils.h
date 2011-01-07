@@ -31,11 +31,14 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <regex.h>
 
 #include <string>
 using std::string;
 
 #include <vector>
+#include <utility>
 
 #define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
 
@@ -340,6 +343,20 @@ std::vector<string> explode(const string& s, const string& delim, const bool kee
 /** add a directory to an environement variable */
 void add_env_path(const char* name, const string& path);
 
+typedef std::vector<std::pair<regex_t, string> > RegexMappingVector;
+
+/** read a regex=>string mapping from file
+    @return true on success
+ */
+bool readRegexMapping(const string& fname, const char* separator,
+		      const char* dbg_type,
+		      RegexMappingVector& result);
+
+/** run a regex mapping - result is the first matching entry 
+    @return true if matched
+ */
+bool runRegexMapping(const RegexMappingVector& mapping, const char* test_s,
+		     string& result);
 #endif
 
 // Local Variables:
