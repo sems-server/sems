@@ -117,9 +117,10 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
 {
   profiles_mut.lock();
 
+  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
+
   string profile = active_profile;
   if (profile == "$(paramhdr)") {
-    string app_param = getHeader(req.hdrs, PARAM_HDR, true);
     profile = get_header_keyvalue(app_param,"profile");
   } else if (profile == "$(ruri.user)") {
     profile = req.user;
@@ -131,19 +132,64 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
     profiles_mut.unlock();
     ERROR("could not find call profile '%s' (active_profile = %s)\n",
 	  profile.c_str(), active_profile.c_str());
-    throw AmSession::Exception(500,"Server Internal Error");
+    throw AmSession::Exception(500,SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
   DBG("using call profile '%s'\n", profile.c_str());
   SBCCallProfile& call_profile = it->second;
+
+  if (!call_profile.refuse_with.empty()) {
+    AmUriParser ruri_parser, from_parser, to_parser;
+#define REPLACE_VALS req, app_param, ruri_parser, from_parser, to_parser
+    string refuse_with = replaceParameters(call_profile.refuse_with,
+					   "refuse_with", REPLACE_VALS);
+
+    if (refuse_with.empty()) {
+      ERROR("refuse_with empty after replacing (was '%s' in profile %s)\n",
+	    call_profile.refuse_with.c_str(), call_profile.profile_file.c_str());
+      profiles_mut.unlock();
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
+    size_t spos = refuse_with.find(' ');
+    unsigned int refuse_with_code;
+    if (spos == string::npos || spos == refuse_with.size() ||
+	str2i(refuse_with.substr(0, spos), refuse_with_code)) {
+      ERROR("invalid refuse_with '%s'->'%s' in  %s. Expected <code> <reason>\n",
+	    call_profile.refuse_with.c_str(), refuse_with.c_str(),
+	    call_profile.profile_file.c_str());
+      profiles_mut.unlock();
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+    string refuse_with_reason = refuse_with.substr(spos+1);
+
+    string hdrs = replaceParameters(call_profile.append_headers,
+				    "append_headers", REPLACE_VALS);
+    profiles_mut.unlock();
+
+    if (hdrs.size()>2)
+      assertEndCRLF(hdrs);
+
+    DBG("refusing call with %u %s\n", refuse_with_code, refuse_with_reason.c_str());
+    AmSipDialog::reply_error(req, refuse_with_code, refuse_with_reason, hdrs);
+
+    return NULL;
+#undef REPLACE_VALS
+  }
+
   AmConfigReader& sst_cfg = call_profile.use_global_sst_config ?
     cfg : call_profile.cfg; // override with profile config
 
   if (call_profile.sst_enabled) {
     DBG("Enabling SIP Session Timers\n");
-    if (!session_timer_fact->onInvite(req, sst_cfg)) {
+    try {
+      if (!session_timer_fact->onInvite(req, sst_cfg)) {
+	profiles_mut.unlock();
+	return NULL;
+      }
+    } catch (const AmSession::Exception& e) {
       profiles_mut.unlock();
-      return NULL;
+      throw;
     }
   }
 
@@ -362,13 +408,13 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   DBG("processing initial INVITE\n");
 
-  if(dlg.reply(req, 100, "Connecting") != 0) {
-    throw AmSession::Exception(500,"Failed to reply 100");
-  }
+#define REPLACE_VALS req, app_param, ruri_parser, from_parser, to_parser
 
   string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
-#define REPLACE_VALS req, app_param,ruri_parser, from_parser, to_parser
+  if(dlg.reply(req, 100, "Connecting") != 0) {
+    throw AmSession::Exception(500,"Failed to reply 100");
+  }
 
   ruri = call_profile.ruri.empty() ? 
     req.r_uri : replaceParameters(call_profile.ruri, "RURI", REPLACE_VALS);
@@ -430,13 +476,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     string append_headers = replaceParameters(call_profile.append_headers,
 					      "append_headers", REPLACE_VALS);
     if (append_headers.size()>2) {
-      if (append_headers[append_headers.size()-2] != '\r' ||
-	  append_headers[append_headers.size()-1] != '\n') {
-	while ((append_headers[append_headers.size()-1] == '\r') ||
-	       (append_headers[append_headers.size()-1] == '\n'))
-	  append_headers.erase(append_headers.size()-1);
-	append_headers += "\r\n";
-      }
+      assertEndCRLF(append_headers);
       invite_req.hdrs+=append_headers;
     }
   }
@@ -1008,4 +1048,14 @@ int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {
     filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
   }
   return 0;
+}
+
+void assertEndCRLF(string& s) {
+  if (s[s.size()-2] != '\r' ||
+      s[s.size()-1] != '\n') {
+    while ((s[s.size()-1] == '\r') ||
+	   (s[s.size()-1] == '\n'))
+      s.erase(s.size()-1);
+    s += "\r\n";
+  }
 }

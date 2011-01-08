@@ -17,6 +17,7 @@ Features
  o online reload of call profiles
  o From, To, RURI, Call-ID update
  o Header and message filter
+ o adding arbitrary headers
  o reply code translation
  o SIP authentication
  o SIP Session Timers
@@ -302,6 +303,19 @@ points for integration into custom billing systems.
 Parallel call limits can be implemented by implementing an account specific limit to the
 accounting module.
 
+Refusing calls
+--------------
+
+In some configurations, if may be necessary to refuse calls with a certain error response
+code and reason. If the refuse_with call profile option is set, the call is refused with
+the code and reason specified. In this case, all other call profile options are ignored,
+only the append_headers option has effect.
+
+Examples:
+ refuse_with="403 Invalid Domain $rd"
+
+ refuse_with="606 Not Acceptable"
+ append_headers="P-Original-URI: $r\r\nP-Original-To: $t"
 
 Example profiles
 ----------------
@@ -312,6 +326,7 @@ Example profiles
  prepaid       - prepaid accounting (obsoletes sw_prepaid_sip app)
  codecfilter   - let only some low bitrate codecs pass
  replytranslate - swap 603 and 488 response code in replies
+ refuse        - refuse all calls with 403 Forbidden
 
 Dependencies
 ------------

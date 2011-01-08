@@ -85,6 +85,8 @@ struct SBCCallProfile {
 
   string append_headers;
 
+  string refuse_with;
+
   // todo: RTP forwarding mode
   // todo: RTP transcoding mode
 

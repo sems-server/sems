@@ -165,4 +165,7 @@ class SBCCalleeSession
   
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
 };
+
+static void assertEndCRLF(string& s);
+
 #endif                           

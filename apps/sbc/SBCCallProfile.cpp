@@ -170,6 +170,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   // append_headers=P-Received-IP: $si\r\nP-Received-Port:$sp\r\n
   append_headers = cfg.getParameter("append_headers");
 
+  refuse_with = cfg.getParameter("refuse_with");
+
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
     ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());
@@ -177,47 +179,51 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   INFO("SBC: loaded SBC profile '%s' - MD5: %s\n", name.c_str(), md5hash.c_str());
 
-  INFO("SBC:      RURI = '%s'\n", ruri.c_str());
-  INFO("SBC:      From = '%s'\n", from.c_str());
-  INFO("SBC:      To   = '%s'\n", to.c_str());
-  if (!callid.empty()) {
-    INFO("SBC:      Call-ID   = '%s'\n", callid.c_str());
-  }
+  if (!refuse_with.empty()) {
+    INFO("SBC:      refusing calls with '%s'\n", refuse_with.c_str());
+  } else {
+    INFO("SBC:      RURI = '%s'\n", ruri.c_str());
+    INFO("SBC:      From = '%s'\n", from.c_str());
+    INFO("SBC:      To   = '%s'\n", to.c_str());
+    if (!callid.empty()) {
+      INFO("SBC:      Call-ID   = '%s'\n", callid.c_str());
+    }
 
-  INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
-  INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
-  if (!next_hop_ip.empty()) {
-    INFO("SBC:      next hop = %s%s\n", next_hop_ip.c_str(),
-	 next_hop_port.empty()? "" : (":"+next_hop_port).c_str());
-  }
+    INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
+    INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
+    if (!next_hop_ip.empty()) {
+      INFO("SBC:      next hop = %s%s\n", next_hop_ip.c_str(),
+	   next_hop_port.empty()? "" : (":"+next_hop_port).c_str());
+    }
 
-  INFO("SBC:      header filter  is %s, %zd items in list\n",
-       FilterType2String(headerfilter), headerfilter_list.size());
-  INFO("SBC:      message filter is %s, %zd items in list\n",
-       FilterType2String(messagefilter), messagefilter_list.size());
-  INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
-       sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
-       sdpfilter_list.size());
+    INFO("SBC:      header filter  is %s, %zd items in list\n",
+	 FilterType2String(headerfilter), headerfilter_list.size());
+    INFO("SBC:      message filter is %s, %zd items in list\n",
+	 FilterType2String(messagefilter), messagefilter_list.size());
+    INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
+	 sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
+	 sdpfilter_list.size());
 
-  INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
-  INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
-  INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
-  if (call_timer_enabled) {
-    INFO("SBC:                  %s seconds\n", call_timer.c_str());
-  }
-  INFO("SBC:      prepaid %sabled\n", prepaid_enabled?"en":"dis");
-  if (prepaid_enabled) {
-    INFO("SBC:                    acc_module = '%s'\n", prepaid_accmodule.c_str());
-    INFO("SBC:                    uuid       = '%s'\n", prepaid_uuid.c_str());
-    INFO("SBC:                    acc_dest   = '%s'\n", prepaid_acc_dest.c_str());
-  }
-  if (reply_translations.size()) {
-    string reply_trans_codes;
-    for(map<unsigned int, std::pair<unsigned int, string> >::iterator it=
-	  reply_translations.begin(); it != reply_translations.end(); it++)
-      reply_trans_codes += int2str(it->first)+", ";
-    reply_trans_codes.erase(reply_trans_codes.length()-2);
-    INFO("SBC:      reply translation for  %s\n", reply_trans_codes.c_str());
+    INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
+    INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
+    INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
+    if (call_timer_enabled) {
+      INFO("SBC:                  %s seconds\n", call_timer.c_str());
+    }
+    INFO("SBC:      prepaid %sabled\n", prepaid_enabled?"en":"dis");
+    if (prepaid_enabled) {
+      INFO("SBC:                    acc_module = '%s'\n", prepaid_accmodule.c_str());
+      INFO("SBC:                    uuid       = '%s'\n", prepaid_uuid.c_str());
+      INFO("SBC:                    acc_dest   = '%s'\n", prepaid_acc_dest.c_str());
+    }
+    if (reply_translations.size()) {
+      string reply_trans_codes;
+      for(map<unsigned int, std::pair<unsigned int, string> >::iterator it=
+	    reply_translations.begin(); it != reply_translations.end(); it++)
+	reply_trans_codes += int2str(it->first)+", ";
+      reply_trans_codes.erase(reply_trans_codes.length()-2);
+      INFO("SBC:      reply translation for  %s\n", reply_trans_codes.c_str());
+    }
   }
 
   if (append_headers.size()) {
@@ -248,7 +254,9 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     auth_enabled == rhs.auth_enabled &&
     call_timer_enabled == rhs.call_timer_enabled &&
     prepaid_enabled == rhs.prepaid_enabled &&
-    reply_translations == reply_translations;
+    reply_translations == rhs.reply_translations &&
+    append_headers == rhs.append_headers &&
+    refuse_with == rhs.refuse_with;
 
   if (sdpfilter_enabled) {
     res = res &&
