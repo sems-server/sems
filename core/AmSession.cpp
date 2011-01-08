@@ -696,7 +696,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     catch(const AmSession::Exception& e) {
       ERROR("%i %s\n",e.code,e.reason.c_str());
       setStopped();
-      AmSipDialog::reply_error(req,e.code,e.reason);
+      AmSipDialog::reply_error(req,e.code,e.reason, e.hdrs);
     }
 
     if(detached.get() && !getStopped()){
