@@ -8,7 +8,7 @@ The SBC application is a highly flexible high-performance Back-to-Back
 User Agent (B2BUA). It can be employed for a variety of uses, for example 
 topology hiding, From/To modification, enforcing SIP Session Timers, 
 identity change, SIP authentication. Future uses include accounting,
-call timers, RTP call bridging, transcoding, call distribution.
+RTP call bridging, transcoding, call distribution.
 
 Features
 --------
