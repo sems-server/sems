@@ -360,8 +360,8 @@ int AmConfig::readConfiguration()
     AppSelect = App_MAPPING;  
     string appcfg_fname = ModConfigPath + "app_mapping.conf"; 
     DBG("Loading application mapping...\n");
-    if (!readRegexMapping(appcfg_fname, "=>", "application mapping",
-			  AppMapping)) {
+    if (!read_regex_mapping(appcfg_fname, "=>", "application mapping",
+			    AppMapping)) {
       ERROR("reading application mapping\n");
       ret = -1;
     }

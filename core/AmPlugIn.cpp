@@ -782,7 +782,7 @@ AmSessionFactory* AmPlugIn::findSessionFactory(AmSipRequest& req)
       break;
     case AmConfig::App_MAPPING:
       req.cmd = ""; // no match if not found
-      runRegexMapping(AmConfig::AppMapping, req.r_uri.c_str(), req.cmd);
+      run_regex_mapping(AmConfig::AppMapping, req.r_uri.c_str(), req.cmd);
       break;
     case AmConfig::App_SPECIFIED: 
       req.cmd = AmConfig::Application; 

@@ -1217,9 +1217,9 @@ void add_env_path(const char* name, const string& path)
 #endif
 }
 
-bool readRegexMapping(const string& fname, const char* separator,
-		      const char* dbg_type,
-		      RegexMappingVector& result) {
+bool read_regex_mapping(const string& fname, const char* separator,
+			const char* dbg_type,
+			RegexMappingVector& result) {
   std::ifstream appcfg(fname.c_str());
   if (!appcfg.good()) {
     ERROR("could not load %s file at '%s'\n",
@@ -1255,8 +1255,8 @@ bool readRegexMapping(const string& fname, const char* separator,
   return true;
 }
 
-bool runRegexMapping(const RegexMappingVector& mapping, const char* test_s,
-		     string& result) {
+bool run_regex_mapping(const RegexMappingVector& mapping, const char* test_s,
+		       string& result) {
   for (RegexMappingVector::const_iterator it = mapping.begin();
        it != mapping.end(); it++) {
     if (!regexec(&it->first, test_s, 0, NULL, 0)) {

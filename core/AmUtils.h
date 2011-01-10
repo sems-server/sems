@@ -348,15 +348,15 @@ typedef std::vector<std::pair<regex_t, string> > RegexMappingVector;
 /** read a regex=>string mapping from file
     @return true on success
  */
-bool readRegexMapping(const string& fname, const char* separator,
-		      const char* dbg_type,
-		      RegexMappingVector& result);
+bool read_regex_mapping(const string& fname, const char* separator,
+			const char* dbg_type,
+			RegexMappingVector& result);
 
 /** run a regex mapping - result is the first matching entry 
     @return true if matched
  */
-bool runRegexMapping(const RegexMappingVector& mapping, const char* test_s,
-		     string& result);
+bool run_regex_mapping(const RegexMappingVector& mapping, const char* test_s,
+		       string& result);
 #endif
 
 // Local Variables:
