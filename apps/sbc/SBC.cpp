@@ -201,7 +201,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
       profiles_mut.unlock();
       delete b2b_dlg;
       ERROR("could not get a session timer event handler\n");
-      throw AmSession::Exception(500,"Server internal error");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
     if (h->configure(sst_cfg)){
@@ -848,7 +848,7 @@ void SBCDialog::createCalleeSession()
     if(!h) {
       ERROR("could not get a session timer event handler\n");
       delete callee_session;
-      throw AmSession::Exception(500,"Server internal error");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
     AmConfigReader& sst_cfg = call_profile.use_global_sst_config ? 
       SBCFactory::cfg: call_profile.cfg; // override with profile config
