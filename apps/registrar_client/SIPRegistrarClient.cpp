@@ -100,8 +100,6 @@ void SIPRegistration::doRegistration()
     dlg.remote_uri = req.r_uri;
     
     // set outbound proxy as next hop 
-    DBG("proxy is '%s' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
-	info.proxy.c_str());
     if (!info.proxy.empty()) {
 	dlg.outbound_proxy = info.proxy;
     } else if (!AmConfig::OutboundProxy.empty()) 
