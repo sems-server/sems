@@ -29,16 +29,46 @@ SBC Profiles
 All features are set in an SBC profile, which is configured in a separate
 configuration file with the extension .sbcprofile.conf. Several SBC profiles
 may be loaded at startup (load_profiles), and can be selected with the 
-active_profile configuration option
+active_profile configuration option. The active_profile option is a comma-separated
+list, the first profile that matches, i.e. is non-empty, will be used.
+
+In this list a profile may be selected
 
  o statically (active_profile=<profile_name>)
 
- o depending on user part of INVITE Request URI(active_profile=$(ruri.user))
+ o depending on user part of INVITE Request URI (active_profile=$(ruri.user))
 
  o depending on "profile" option in P-App-Param header (active_profile=$(paramhdr))
 
-By using the latter two options, the SBC profile for the call can be selected in the
-proxy.
+ o using any replacement pattern (see below), especially regex maps $M(val=>map)
+
+By using the latter options, the SBC profile for the call can also be selected in
+the proxy.
+
+Examples:
+ active_profile=auth_b2b
+ active_profile=$(paramhdr),refuse
+ active_profile=$M($si=>ipmap),$(P-SBCProfile),refuse
+
+Example: 
+  In order to have all calls coming from source IP 10.0.* going to
+  'internal1' profile, all calls coming from source IP 10.1.* going to 'internal2'
+  profile, then for calls coming from other IP addresses those to RURI-domain
+  iptel.org go to 'iptel' profile, and all other calls being refused, we could set
+  ~~~~~~~~~ sbc.conf ~~~~~~~~~
+  profiles=internal1,internal2,iptel,refuse
+  regex_maps=src_ipmap,rurimap
+  active_profile=$M($si=>src_ipmap),$M($rh=>rurimap),refuse
+  ~~~~~~~~~~~~~~~~~~ ~~~~~~~~~
+
+  ~~~~~~~~~ src_ipmap.conf ~~~
+  ^10\.0\..*=>internal1
+  ^10\.1\..*=>internal2
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ~~~~~~~~~ rurimap.conf ~~~~~
+  iptel.org=>iptel
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SBC profile reload
 ------------------
@@ -65,11 +95,11 @@ is loaded. The expected parameters to all functions are in a dictionary with
    'name' :          profile name
    'path' :          profile conf file path
    'active_profile': active profile (string)
-Return code is [200, "OK", <result dictionary>] on success, or [<error code>, <error reason>]
-on failure.
+Return code is [200, "OK", <result dictionary>] on success, or 
+[<error code>, <error reason>] on failure.
 
-RURI, From, To, etc - Replacement patterns
--------------------------------------
+Replacement patterns - active_profile, RURI, From, To, etc
+----------------------------------------------------------
 In SBC profile the appearance of the outgoing INVITE request can be set,
 by setting RURI, From and To parameters. If any of those parameters is not
 set, the corresponding value of the incoming request is used.
@@ -152,6 +182,10 @@ The patterns which can be used are the following:
       next_hop_port=$Hp(P-SomeNH-URI)
 
 
+  $M(value=>regexmap) - map a value (any pattern) to a regexmap (see below)
+    Example: $M($fU=>usermap)
+
+
   \\  -> \
   \$  -> $
   \*  -> *
@@ -167,6 +201,31 @@ the sbc profile configuration file.
 If a space is contained, use quotation at the beginning and end.
  Example:
    To="\"someone\" <$aU@mytodomain.com>"
+
+Regex mappings ($M(key=>map))
+-----------------------------
+
+A regex mapping is a (sorted) list of "regular expression" => "string value" pairs.
+The regex mapping is executed with a key - any string, replacement pattern or
+combination - and the first regular expression that matches returns the "string value".
+
+Regex mappings are read from a text file, where each line corresponds to one
+regex=>value pair. The mappings to load on startup are set with the regex_maps
+config option, the file name from where it is loaded is "<mapping name>.conf" in
+the plugin config path.
+
+Mappings can also loaded into the running server by using the setRegexMap DI function
+or the included sems-sbc-*-regex-* scripts:
+
+  sems-sbc-set-regex-map <name> <file>      load a regex map from a file
+  sems-sbc-get-regex-map-names              list regex map names
+
+ Example regex map:
+   ~~~~~~~ usermap.conf ~~~~~~
+   # this is a comment
+   ^stefan=>stefansayer
+   ^frank=>frankmajer
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Setting Call-ID
 ---------------

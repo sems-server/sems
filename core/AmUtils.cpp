@@ -951,7 +951,7 @@ string get_header_keyvalue(const string& param_hdr, const string& short_name, co
 }
 
 /** 
- * get value from parameter header with the name @param name 
+ * get value from parameter header with the name @param name
  * while skipping escaped values
  */
 string get_header_keyvalue(const string& param_hdr, const string& name) {
@@ -1215,6 +1215,26 @@ void add_env_path(const char* name, const string& path)
   string sol_putenv = name + string("=") + var;
   putenv(sol_putenv.c_str());
 #endif
+}
+
+/** skip to the end of a string enclosed in round brackets, skipping more 
+    bracketed items, too */
+size_t skip_to_end_of_brackets(const string& s, size_t start) {
+  size_t res = start;
+  char last_c = ' ';
+  int num_brackets = 0;
+  while (res < s.size() &&
+	 (s[res] != ')' || num_brackets || last_c == '\\')) {
+    if (last_c != '\\') {
+      if (s[res]==')' && num_brackets)
+	num_brackets--;
+      else if (s[res]=='(')
+	num_brackets++;
+    }
+    last_c = s[res];
+    res++;
+  }
+  return res;
 }
 
 bool read_regex_mapping(const string& fname, const char* separator,

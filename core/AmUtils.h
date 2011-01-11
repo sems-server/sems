@@ -343,6 +343,9 @@ std::vector<string> explode(const string& s, const string& delim, const bool kee
 /** add a directory to an environement variable */
 void add_env_path(const char* name, const string& path);
 
+
+size_t skip_to_end_of_brackets(const string& s, size_t start);
+
 typedef std::vector<std::pair<regex_t, string> > RegexMappingVector;
 
 /** read a regex=>string mapping from file
