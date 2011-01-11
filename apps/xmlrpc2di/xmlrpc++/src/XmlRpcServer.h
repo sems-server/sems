@@ -55,7 +55,8 @@ namespace XmlRpc {
     //! Create a socket, bind to the specified port, and
     //! set it in listen mode to make it available for clients.
     //! @param port The port to bind and listen on (zero to choose an arbitrary port)
-    bool bindAndListen(int port, int backlog = 5);
+    //! @param bind_ip The IP to bind and listen on ("" to listen on ANY interface)
+    bool bindAndListen(int port, const std::string& bind_ip, int backlog = 5);
 
     //! Get the port number this server is listening on.
     int getPort(void) const;

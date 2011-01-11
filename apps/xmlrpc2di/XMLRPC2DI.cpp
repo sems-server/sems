@@ -122,6 +122,11 @@ int XMLRPC2DI::load() {
     return 0;
   }
 
+  string bind_ip = cfg.getParameter("server_ip");
+  if (bind_ip.empty()) {
+    DBG("binding on ANY interface\n");
+  }
+
   string conf_xmlrpc_port = cfg.getParameter("xmlrpc_port",XMLRPC_PORT);
   if (conf_xmlrpc_port.empty()) {
     ERROR("configuration: xmlrpc_port must be defined!\n");
@@ -150,7 +155,7 @@ int XMLRPC2DI::load() {
   DBG("XMLRPC Server: %snabling builtin method 'di'.\n", export_di?"E":"Not e");
 
 
-  server = new XMLRPC2DIServer(XMLRPCPort, export_di, direct_export, s);
+  server = new XMLRPC2DIServer(XMLRPCPort, bind_ip, export_di, direct_export, s);
   server->start();
   return 0;
 }
@@ -314,11 +319,13 @@ void XMLRPC2DI::invoke(const string& method,
 
 // XMLRPC server functions
 
-XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port, 
+XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
+				 const string& bind_ip,
 				 bool di_export, 
 				 string direct_export,
 				 XmlRpcServer* s) 
   : port(port),
+    bind_ip(bind_ip),
     s(s),
     // register method 'calls'
     calls_method(s),
@@ -344,7 +351,8 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
   }
 
   DBG("Initialized XMLRPC2DIServer with: \n");
-  DBG("                          port = %u\n", port);
+  DBG("    IP = %s             port = %u\n", 
+      bind_ip.empty()?"ANY":bind_ip.c_str(), port);
 }
 
 /** register all methods on xmlrpc server listed by the iface 
@@ -408,7 +416,7 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
 
 void XMLRPC2DIServer::run() {
   DBG("Binding XMLRPC2DIServer to port %u \n", port);
-  s->bindAndListen(port);
+  s->bindAndListen(port, bind_ip);
   DBG("starting XMLRPC2DIServer...\n");
   s->work(-1.0);
 }

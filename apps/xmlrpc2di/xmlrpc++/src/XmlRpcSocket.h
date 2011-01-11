@@ -44,7 +44,7 @@ namespace XmlRpc {
     static bool setReuseAddr(int socket);
 
     //! Bind to a specified port
-    static bool bind(int socket, int port);
+    static bool bind(int socket, int port, const std::string& bind_ip);
 
     //! Set socket in listen mode
     static bool listen(int socket, int backlog);
