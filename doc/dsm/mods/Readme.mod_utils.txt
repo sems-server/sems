@@ -41,3 +41,10 @@ Actions:
    example: 
     sys.popen($myresult="/bin/ls wav/*");    
     utils.splitStringCR($myresult);
+
+utils.playRingTone(length [, on [, off [, f [, f2]]]])
+   play a RingTone (ringback tone)
+   defaults to length=0 (indefinite), on 1000ms, off 2000ms, f 440Hz, f2 480Hz
+
+   Example:
+      utils.playRingTone(0, 1000, 4000, 425, 0);   -- Germany

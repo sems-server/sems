@@ -28,6 +28,9 @@
 #define _MOD_UTILS_H
 #include "DSMModule.h"
 
+#include "AmRingTone.h"
+#include "DSMSession.h"
+
 #define MOD_CLS_NAME SCUtilsModule
 
 DECLARE_MODULE(MOD_CLS_NAME);
@@ -42,4 +45,17 @@ DEF_ACTION_2P(SCUSAddAction);
 DEF_ACTION_2P(SCUSSubAction);
 DEF_ACTION_2P(SCUIntAction);
 DEF_ACTION_2P(SCUSplitStringAction);
+
+DEF_ACTION_2P(SCUPlayRingToneAction);
+
+
+class DSMRingTone 
+: public AmRingTone,
+  public DSMDisposable
+{
+ public:
+  DSMRingTone(int length, int on, int off, int f, int f2=0)
+    :   AmRingTone(length, on, off, f, f2) { }
+  ~DSMRingTone() { }
+};
 #endif
