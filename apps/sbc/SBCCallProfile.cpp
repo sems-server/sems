@@ -173,6 +173,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   refuse_with = cfg.getParameter("refuse_with");
 
+  rtprelay_enabled = cfg.getParameter("enable_rtprelay") == "yes";
+
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
     ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());
@@ -208,6 +210,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
 	 sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
 	 sdpfilter_list.size());
+
+    INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
 
     INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
     INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
@@ -326,6 +330,7 @@ string SBCCallProfile::print() const {
   res += "prepaid_accmodule:    " + prepaid_accmodule + "\n";
   res += "prepaid_uuid:         " + prepaid_uuid + "\n";
   res += "prepaid_acc_dest:     " + prepaid_acc_dest + "\n";
+  res += "rtprelay_enabled:     " + string(rtprelay_enabled?"true":"false") + "\n";
 
   if (reply_translations.size()) {
     string reply_trans_codes;

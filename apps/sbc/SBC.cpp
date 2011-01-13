@@ -583,6 +583,11 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       replaceParameters(call_profile.auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
   }
 
+  if (call_profile.rtprelay_enabled) {
+    DBG("Enabling RTP relay mode\n");
+    rtp_relay_enabled = true;
+  }
+
   // get timer
   if (call_profile.call_timer_enabled || call_profile.prepaid_enabled) {
     if (!timersSupported()) {
@@ -1011,6 +1016,14 @@ void SBCDialog::createCalleeSession()
 		  "from", callee_dlg.local_party.c_str(),
 		  "to",   callee_dlg.remote_party.c_str(),
 		  "ruri", callee_dlg.remote_uri.c_str());
+
+  try {
+    initializeRTPRelay(callee_session);
+  }
+  catch (...) {
+    delete callee_session;
+    throw;
+  }
 
   callee_session->start();
   

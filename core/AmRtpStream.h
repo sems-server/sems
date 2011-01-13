@@ -135,6 +135,12 @@ protected:
   RtpEventQueue   rtp_ev_qu;
   AmMutex         receive_mut;
 
+  /** if relay_stream is initialized, received RTP is relayed there */
+  bool            relay_enabled;
+  /** pointer to relay stream.
+      NOTE: This may only be accessed in initialization
+      or by the AmRtpReceiver thread while relaying!  */
+  AmRtpStream*    relay_stream;
 
   /* get next packet in buffer */
   int nextPacket(AmRtpPacket*& p);
@@ -158,6 +164,8 @@ protected:
   pair<int, unsigned int> current_send_dtmf;
   unsigned int current_send_dtmf_ts;
   int send_dtmf_end_repeat;
+
+  void relay(AmRtpPacket* p);
 
 public:
 
@@ -193,6 +201,12 @@ public:
   AmRtpStream(AmSession* _s, int _if);
   /** Stops the stream and frees all resources. */
   virtual ~AmRtpStream();
+
+  /** returns the socket descriptor for local socket (initialized or not) */
+  int hasLocalSocket();
+
+  /** initializes and gets the socket descriptor for local socket */
+  int getLocalSocket();
 
   /**
    * This function must be called before setLocalPort, because
@@ -291,7 +305,17 @@ public:
    */
   void clearRTPTimeout(struct timeval* recv_time);
 
-  virtual unsigned int bytes2samples(unsigned int) const = 0;
+  virtual unsigned int bytes2samples(unsigned int) const;
+
+  /** set relay stream for  RTP relaying */
+  void setRelayStream(AmRtpStream* stream);
+
+  /** ensable RTP relaying through relay stream */
+  void enableRtpRelay();
+
+  /** disable RTP relaying through relay stream */
+  void disableRtpRelay();
+
 };
 
 /** \brief event fired on RTP timeout */

@@ -77,13 +77,14 @@ void AmRtpStream::setLocalIP(const string& ip)
 #endif
 }
 
-void AmRtpStream::setLocalPort()
+int AmRtpStream::hasLocalSocket() {
+  return l_sd;
+}
+
+int AmRtpStream::getLocalSocket()
 {
-  if(l_port)
-    return;
-  
-  assert(l_if >= 0);
-  assert(l_if < (int)AmConfig::Ifs.size());
+  if (l_sd)
+    return l_sd;
 
   int sd=0;
 #ifdef SUPPORT_IPV6
@@ -101,6 +102,21 @@ void AmRtpStream::setLocalPort()
     close(sd);
     throw string ("while setting socket non blocking.");
   }
+
+  l_sd = sd;
+  return l_sd;
+}
+
+void AmRtpStream::setLocalPort()
+{
+  if(l_port)
+    return;
+  
+  assert(l_if >= 0);
+  assert(l_if < (int)AmConfig::Ifs.size());
+
+  if (!getLocalSocket())
+    return;
   
   int retry = 10;
   unsigned short port = 0;
@@ -109,11 +125,11 @@ void AmRtpStream::setLocalPort()
     port = AmConfig::Ifs[l_if].getNextRtpPort();
 #ifdef SUPPORT_IPV6
     set_port_v6(&l_saddr,port);
-    if(!bind(sd,(const struct sockaddr*)&l_saddr,
+    if(!bind(l_sd,(const struct sockaddr*)&l_saddr,
 	     sizeof(struct sockaddr_storage)))
 #else	
       l_saddr.sin_port = htons(port);
-    if(!bind(sd,(const struct sockaddr*)&l_saddr,
+    if(!bind(l_sd,(const struct sockaddr*)&l_saddr,
 	     sizeof(struct sockaddr_in)))
 #endif
       {
@@ -122,24 +138,25 @@ void AmRtpStream::setLocalPort()
     else {
       DBG("bind: %s\n",strerror(errno));		
     }
-      
   }
 
+  int true_opt = 1;
   if (!retry){
     ERROR("could not find a free RTP port\n");
-    close(sd);
+    close(l_sd);
+    l_sd = 0;
     throw string("could not find a free RTP port");
   }
 
-  if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,
+  if(setsockopt(l_sd, SOL_SOCKET, SO_REUSEADDR,
 		(void*)&true_opt, sizeof (true_opt)) == -1) {
 
     ERROR("%s\n",strerror(errno));
-    close(sd);
+    close(l_sd);
+    l_sd = 0;
     throw string ("while setting local address reusable.");
   }
-    
-  l_sd = sd;
+
   l_port = port;
   AmRtpReceiver::instance()->addStream(l_sd,this);
   DBG("local rtp port set to %i\n",l_port);
@@ -418,7 +435,9 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     hold(false),
     receiving(true),
     monitor_rtp_timeout(true),
-    dtmf_sending_state(DTMF_SEND_NONE)
+    dtmf_sending_state(DTMF_SEND_NONE),
+    relay_stream(NULL),
+    relay_enabled(false)
 {
 
 #ifdef SUPPORT_IPV6
@@ -570,6 +589,14 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
     return;
   }
 
+  if (relay_enabled) {
+    if (NULL != relay_stream) {
+      relay_stream->relay(p);
+    }
+    mem.freePacket(p);
+    return;
+  }
+
   receive_mut.lock();
   // free packet on double packet for TS received
   if(!(telephone_event_pt.get() && 
@@ -641,6 +668,11 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 void AmRtpStream::clearRTPTimeout(struct timeval* recv_time) {
  memcpy(&last_recv_time, recv_time, sizeof(struct timeval));
 }
+
+unsigned int AmRtpStream::bytes2samples(unsigned int) const {
+  ERROR("bytes2samples called on AmRtpStream\n");
+  return 0;
+}
  
 int AmRtpStream::nextPacket(AmRtpPacket*& p)
 {
@@ -683,6 +715,19 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
   return 1;
 }
 
+void AmRtpStream::relay(AmRtpPacket* p) {
+  if (!l_port) // not yet initialized
+    return;
+
+  p->sequence = sequence++;
+  p->ssrc = l_ssrc;
+  p->setAddr(&r_saddr);
+
+  if(p->send(l_sd) < 0){
+    ERROR("while sending RTP packet.\n");
+  }
+}
+
 int AmRtpStream::getTelephoneEventRate()
 {
   int retval = 0;
@@ -698,6 +743,21 @@ void AmRtpStream::sendDtmf(int event, unsigned int duration_ms) {
   dtmf_send_queue_mut.unlock();
   DBG("enqueued DTMF event %i duration %u\n", event, duration_ms);
 }
+
+void AmRtpStream::setRelayStream(AmRtpStream* stream) {
+  relay_stream = stream;
+  DBG("set relay stream [%p] for RTP instance [%p]\n",
+      stream, this);
+}
+
+void AmRtpStream::enableRtpRelay() {
+  relay_enabled = true;
+}
+
+void AmRtpStream::disableRtpRelay() {
+  relay_enabled = false;
+}
+
 
 PacketMem::PacketMem() {
   memset(used, 0, sizeof(used));

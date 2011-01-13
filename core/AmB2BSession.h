@@ -32,6 +32,8 @@
 #include "AmSipDialog.h"
 #include "sip/hash.h"
 
+#define MAX_RELAY_STREAMS 3 // voice, video, rtt
+
 enum { B2BTerminateLeg,
        B2BConnectLeg,
        B2BSipRequest,
@@ -202,7 +204,8 @@ class AmB2BSession: public AmSession
   virtual bool onOtherReply(const AmSipReply& reply);
 
   /** filter body ( b2b_mode == SDPFilter */
-  virtual int filterBody(string& content_type, string& body, bool is_a2b);
+  virtual int filterBody(string& content_type, string& body,
+			 AmSdp& filter_sdp, bool is_a2b);
 
   /** filter SDP body ( b2b_mode == SDPFilter */
   virtual int filterBody(AmSdp& sdp, bool is_a2b);
@@ -212,9 +215,33 @@ class AmB2BSession: public AmSession
 
   virtual ~AmB2BSession();
 
+  /** flag to enable RTP relay mode */
+  bool rtp_relay_enabled;
+  /** RTP streams which receive from our side and are used
+      for relaying RTP from the other side */
+  AmRtpStream relay_rtp_streams[MAX_RELAY_STREAMS];
+  /** fd of the other streams' sockets (to remove from
+      RtpReceiver at end of relaying) */
+  int other_stream_fds[MAX_RELAY_STREAMS];
+  /** clear our and the other side's RTP streams from RTPReceiver */
+  void clearRtpReceiverRelay();
+  /** update remote connection in relay_streams */
+  void updateRelayStreams(const string& content_type, const string& body,
+			  AmSdp& parser_sdp);
+  /** replace connection with our address */
+  bool replaceConnectionAddress(const string& content_type, const string& body,
+				string& r_body);
+
  public:
   void set_sip_relay_only(bool r);
   B2BMode getB2BMode() const;
+
+  /** set RTP relay mode enabled */
+  void enableRtpRelay();
+  /** set RTP relay mode disabled */
+  void disableRtpRelay();
+  /** link RTP streams of other_session to our streams */
+  void setupRelayStreams(AmB2BSession* from_session);
 };
 
 class AmB2BCalleeSession;
@@ -273,6 +300,11 @@ class AmB2BCallerSession: public AmB2BSession
   AmSipRequest* getInviteReq() { return &invite_req; }
 
   void set_sip_relay_early_media_sdp(bool r);
+
+  /** initialize RTP relay mode, if rtp_relay_enabled
+      must be called *before* callee_session is started
+   */
+  void initializeRTPRelay(AmB2BCalleeSession* callee_session);
 };
 
 /** \brief Callee leg of a B2B session */

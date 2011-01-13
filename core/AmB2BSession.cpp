@@ -30,6 +30,7 @@
 #include "ampi/MonitoringAPI.h"
 #include "AmSipHeaders.h"
 #include "AmUtils.h"
+#include "AmRtpReceiver.h"
 
 #include <assert.h>
 
@@ -39,19 +40,27 @@
 
 AmB2BSession::AmB2BSession()
   : sip_relay_only(true),
-    b2b_mode(B2BMode_Transparent)
+    b2b_mode(B2BMode_Transparent),
+    rtp_relay_enabled(false)
 {
+  for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
+    other_stream_fds[i] = 0;
 }
 
 AmB2BSession::AmB2BSession(const string& other_local_tag)
   : other_id(other_local_tag),
-    sip_relay_only(true)
+    sip_relay_only(true),
+    rtp_relay_enabled(false)
 {
+  for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
+    other_stream_fds[i] = 0;
 }
-
 
 AmB2BSession::~AmB2BSession()
 {
+  if (rtp_relay_enabled)
+    clearRtpReceiverRelay();
+
   DBG("relayed_req.size() = %u\n",(unsigned int)relayed_req.size());
   DBG("recvd_req.size() = %u\n",(unsigned int)recvd_req.size());
 }
@@ -193,16 +202,110 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 
   B2BSipRequestEvent* r_ev = new B2BSipRequestEvent(req,fwd);
   
+  AmSdp filter_sdp;
+
   // filter relayed INVITE/UPDATE body
   if (fwd && b2b_mode != B2BMode_Transparent &&
       (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
        req.method == SIP_METH_ACK)) {
     DBG("filtering body for request '%s' (c/t '%s')\n",
 	req.method.c_str(), req.content_type.c_str());
-    filterBody(r_ev->req.content_type, r_ev->req.body, a_leg);
+    // todo: handle filtering errors
+    filterBody(r_ev->req.content_type, r_ev->req.body, filter_sdp, a_leg);
+  }
+
+  if (rtp_relay_enabled &&
+      (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
+       req.method == SIP_METH_ACK || req.method == SIP_METH_ACK)) {
+    updateRelayStreams(r_ev->req.content_type, r_ev->req.body, filter_sdp);
   }
 
   relayEvent(r_ev);
+}
+
+/** update RTP relay streams with address/port from SDP body */
+void AmB2BSession::updateRelayStreams(const string& content_type, const string& body,
+				      AmSdp& parser_sdp) {
+  if (body.empty() || (content_type != SIP_APPLICATION_SDP))
+    return;
+
+  if (parser_sdp.media.empty()) {
+    // SDP has not yet been parsed
+    parser_sdp.setBody(body.c_str());
+    if (parser_sdp.parse()) {
+      DBG("SDP parsing failed!\n");
+      return;
+    }
+  }
+
+  unsigned int media_index = 0;
+  for (std::vector<SdpMedia>::iterator it =
+	 parser_sdp.media.begin(); it != parser_sdp.media.end(); it++) {
+    if (media_index >= MAX_RELAY_STREAMS) {
+      ERROR("trying to relay SDP with more media lines than MAX_RELAY_STREAMS (%u)"
+	    "(consider increasing MAX_RELAY_STREAMS and rebuilding SEMS)\n",
+	    MAX_RELAY_STREAMS);
+      break;
+    }
+    string r_addr = it->conn.address;
+    if (r_addr.empty())
+      r_addr = parser_sdp.conn.address;
+
+    DBG("initializing RTP relay stream %u with remote <%s:%u>\n",
+	media_index, r_addr.c_str(), it->port);
+    relay_rtp_streams[media_index].setRAddr(r_addr, it->port);
+    media_index ++;
+  }
+}
+
+bool AmB2BSession::replaceConnectionAddress(const string& content_type,
+					    const string& body, string& r_body) {
+
+  if (body.empty() || (content_type != SIP_APPLICATION_SDP))
+    return false;
+
+  AmSdp parser_sdp;
+  parser_sdp.setBody(body.c_str());
+  if (parser_sdp.parse()) {
+    DBG("SDP parsing failed!\n");
+    return false;
+  }
+
+  // place advertisedIP() in connection address
+  if (!parser_sdp.conn.address.empty())
+    parser_sdp.conn.address = advertisedIP();
+
+  string replaced_ports;
+
+  unsigned int media_index = 0;
+  for (std::vector<SdpMedia>::iterator it =
+	 parser_sdp.media.begin(); it != parser_sdp.media.end(); it++) {
+    if (media_index >= MAX_RELAY_STREAMS) {
+      ERROR("trying to relay SDP with more media lines than MAX_RELAY_STREAMS (%u)"
+	    "(consider increasing MAX_RELAY_STREAMS and rebuilding SEMS)\n",
+	    MAX_RELAY_STREAMS);
+      break;
+    }
+    if (!it->conn.address.empty())
+      it->conn.address = advertisedIP();
+    try {
+      it->port = relay_rtp_streams[media_index].getLocalPort();
+      replaced_ports += (!media_index) ? int2str(it->port) : "/"+int2str(it->port);
+    } catch (const string& s) {
+      ERROR("setting port: '%s'\n", s.c_str());
+      return false; // TODO: or throw?
+    }
+
+    media_index++;
+  }
+
+  // regenerate SDP
+  parser_sdp.print(r_body);
+
+  DBG("replaced connection address in SDP with %s:%s.\n",
+      advertisedIP().c_str(), replaced_ports.c_str());
+
+  return true;
 }
 
 void AmB2BSession::onSipReply(const AmSipReply& reply,
@@ -221,12 +324,21 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
     AmSipReply n_reply = reply;
     n_reply.cseq = t->second.cseq;
 
+    AmSdp filter_sdp;
+
     // filter relayed INVITE/UPDATE body
     if (b2b_mode != B2BMode_Transparent &&
 	(trans_method == SIP_METH_INVITE || trans_method == SIP_METH_UPDATE)) {
-      filterBody(n_reply.content_type, n_reply.body, a_leg);
+      filterBody(n_reply.content_type, n_reply.body, filter_sdp, a_leg);
     }
     
+    if (rtp_relay_enabled &&
+	(reply.code >= 180  && reply.code < 300) &&
+	(trans_method == SIP_METH_INVITE || trans_method == SIP_METH_UPDATE ||
+	 trans_method == SIP_METH_ACK || trans_method == SIP_METH_ACK)) {
+      updateRelayStreams(n_reply.content_type, n_reply.body, filter_sdp);
+    }
+
     relayEvent(new B2BSipReplyEvent(n_reply, true, t->second.method));
 
     if(reply.code >= 200) {
@@ -284,6 +396,10 @@ bool AmB2BSession::onOtherReply(const AmSipReply& reply)
 void AmB2BSession::terminateLeg()
 {
   setStopped();
+
+  if (rtp_relay_enabled)
+    clearRtpReceiverRelay();
+
   if ((dlg.getStatus() == AmSipDialog::Pending) 
       || (dlg.getStatus() == AmSipDialog::Connected))
     dlg.bye("", SIP_FLAGS_VERBATIM);
@@ -361,7 +477,15 @@ int AmB2BSession::sendEstablishedReInvite() {
   }
 
   DBG("sending re-INVITE with saved session description\n");
-  return dlg.reinvite("", established_content_type, established_body,
+
+  const string* body = &established_body;
+  string r_body;
+  if (rtp_relay_enabled &&
+      replaceConnectionAddress(established_content_type, *body, r_body)) {
+	body = &r_body;
+  }
+
+  return dlg.reinvite("", established_content_type, *body,
 		      SIP_FLAGS_VERBATIM);
 }
 
@@ -412,7 +536,17 @@ void AmB2BSession::relaySip(const AmSipRequest& req)
       }
     }
 
-    dlg.sendRequest(req.method, req.content_type, req.body, *hdrs, SIP_FLAGS_VERBATIM);
+    const string* body = &req.body;
+    string r_body;
+    if (rtp_relay_enabled &&
+	(req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
+	 req.method == SIP_METH_ACK || req.method == SIP_METH_ACK)) {
+      if (replaceConnectionAddress(req.content_type, *body, r_body)) {
+	body = &r_body;
+      }
+    }
+
+    dlg.sendRequest(req.method, req.content_type, *body, *hdrs, SIP_FLAGS_VERBATIM);
     // todo: relay error event back if sending fails
 
     if ((refresh_method != REFRESH_UPDATE) &&
@@ -462,9 +596,19 @@ void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
     hdrs = &m_hdrs;
   }
 
+  const string* body = &reply.body;
+  string r_body;
+  if (rtp_relay_enabled &&
+      (orig.method == SIP_METH_INVITE || orig.method == SIP_METH_UPDATE ||
+       orig.method == SIP_METH_ACK || orig.method == SIP_METH_ACK)) {
+    if (replaceConnectionAddress(reply.content_type, *body, r_body)) {
+      body = &r_body;
+    }
+  }
+
   dlg.reply(orig,reply.code,reply.reason,
 	    reply.content_type,
-	    reply.body, *hdrs,SIP_FLAGS_VERBATIM);
+	    *body, *hdrs, SIP_FLAGS_VERBATIM);
 
   if ((refresh_method != REFRESH_UPDATE) &&
       (orig.method == SIP_METH_INVITE ||
@@ -475,20 +619,20 @@ void AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 
 }
 
-int AmB2BSession::filterBody(string& content_type, string& body, bool is_a2b) {
+int AmB2BSession::filterBody(string& content_type, string& body, AmSdp& filter_sdp,
+			     bool is_a2b) {
   if (body.empty())
     return 0;
 
   if (content_type == SIP_APPLICATION_SDP) {
-    AmSdp f_sdp;
-    f_sdp.setBody(body.c_str());
-    int res = f_sdp.parse();
+    filter_sdp.setBody(body.c_str());
+    int res = filter_sdp.parse();
     if (0 != res) {
       DBG("SDP parsing failed!\n");
       return res;
     }
-    filterBody(f_sdp, is_a2b);
-    f_sdp.print(body);
+    filterBody(filter_sdp, is_a2b);
+    filter_sdp.print(body);
   }
 
   return 0;
@@ -497,6 +641,51 @@ int AmB2BSession::filterBody(string& content_type, string& body, bool is_a2b) {
 int AmB2BSession::filterBody(AmSdp& sdp, bool is_a2b) {
   // default: transparent
   return 0;
+}
+
+void AmB2BSession::enableRtpRelay() {
+  DBG("enabled RTP relay mode for B2B call '%s'\n",
+      getLocalTag().c_str());
+  rtp_relay_enabled = true;
+}
+
+void AmB2BSession::disableRtpRelay() {
+  DBG("disabled RTP relay mode for B2B call '%s'\n",
+      getLocalTag().c_str());
+  rtp_relay_enabled = false;
+}
+
+void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
+  if (!rtp_relay_enabled)
+    return;
+
+  if (NULL == other_session) {
+    ERROR("trying to setup relay for NULL b2b session\n");
+    return;
+  }
+
+  // link the other streams as our relay streams
+  for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++) {
+    other_session->relay_rtp_streams[i].setRelayStream(&relay_rtp_streams[i]);
+    other_stream_fds[i] = other_session->relay_rtp_streams[i].getLocalSocket();
+    // set local IP (todo: option for other interface!)
+    relay_rtp_streams[i].setLocalIP(AmConfig::LocalIP);
+    relay_rtp_streams[i].enableRtpRelay();
+  }
+}
+
+void AmB2BSession::clearRtpReceiverRelay() {
+  for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++) {
+    // clear the other call's RTP relay streams from RTP receiver
+    if (other_stream_fds[i]) {
+      AmRtpReceiver::instance()->removeStream(other_stream_fds[i]);
+      other_stream_fds[i] = 0;
+    }
+    // clear our relay streams from RTP receiver
+    if (relay_rtp_streams[i].hasLocalSocket()) {
+      AmRtpReceiver::instance()->removeStream(relay_rtp_streams[i].getLocalSocket());
+    }
+  }
 }
 
 // 
@@ -643,7 +832,8 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
   B2BConnectEvent* ev = new B2BConnectEvent(remote_party,remote_uri);
 
   if (b2b_mode == B2BMode_SDPFilter) {
-    filterBody(invite_req.content_type, invite_req.body, true);
+    AmSdp filter_sdp;
+    filterBody(invite_req.content_type, invite_req.body, filter_sdp, true);
   }
 
   ev->content_type = invite_req.content_type;
@@ -691,6 +881,13 @@ void AmB2BCallerSession::createCalleeSession() {
 		  "to",   callee_dlg.remote_party.c_str(),
 		  "ruri", callee_dlg.remote_uri.c_str());
 
+  try {
+    initializeRTPRelay(callee_session);
+  } catch (...) {
+    delete callee_session;
+    throw;
+  }
+
   callee_session->start();
 
   AmSessionContainer* sess_cont = AmSessionContainer::instance();
@@ -700,6 +897,20 @@ void AmB2BCallerSession::createCalleeSession() {
 AmB2BCalleeSession* AmB2BCallerSession::newCalleeSession()
 {
   return new AmB2BCalleeSession(this);
+}
+
+void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) {
+  if (!callee_session || !rtp_relay_enabled)
+    return;
+
+  callee_session->enableRtpRelay();
+  callee_session->setupRelayStreams(this);
+  setupRelayStreams(callee_session);
+
+  // bind caller session's relay_streams to a port
+  for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
+    relay_rtp_streams[i].getLocalPort();
+
 }
 
 AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
@@ -739,8 +950,17 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 	AmSipTransaction(SIP_METH_INVITE, co_ev->r_cseq, trans_ticket());
     }
 
+    const string* body = &co_ev->body;
+    string r_body;
+    if (rtp_relay_enabled) {
+      if (replaceConnectionAddress(co_ev->content_type, *body, r_body)) {
+	body = &r_body;
+      }
+    }
+
+
     if (dlg.sendRequest(SIP_METH_INVITE,
-			co_ev->content_type, co_ev->body,
+			co_ev->content_type, *body,
 			co_ev->hdrs, SIP_FLAGS_VERBATIM) < 0) {
 
       DBG("sending INVITE failed, relaying back 400 Bad Request\n");
