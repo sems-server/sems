@@ -285,7 +285,7 @@ send RTP media to SEMS. SEMS then relays the RTP packets between the two sides.
 RTP relay can be enabled by setting
   enable_rtprelay=yes
 
-The SBC detects if UAs indicate that they are behind NAT by setting a:direction=active
+The SBC detects if UAs indicate that they are behind NAT by setting a=direction:active
 in SDP, and goes into passive mode until it receives the first packet from the NATed
 client, from which it learns the remote address. This mechanism is called "symmetric
 RTP".
