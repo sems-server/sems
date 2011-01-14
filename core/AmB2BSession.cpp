@@ -41,7 +41,8 @@
 AmB2BSession::AmB2BSession()
   : sip_relay_only(true),
     b2b_mode(B2BMode_Transparent),
-    rtp_relay_enabled(false)
+    rtp_relay_enabled(false),
+    rtp_relay_force_symmetric_rtp(false)
 {
   for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
     other_stream_fds[i] = 0;
@@ -50,7 +51,8 @@ AmB2BSession::AmB2BSession()
 AmB2BSession::AmB2BSession(const string& other_local_tag)
   : other_id(other_local_tag),
     sip_relay_only(true),
-    rtp_relay_enabled(false)
+    rtp_relay_enabled(false),
+    rtp_relay_force_symmetric_rtp(false)
 {
   for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
     other_stream_fds[i] = 0;
@@ -254,8 +256,17 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
     DBG("initializing RTP relay stream %u with remote <%s:%u>\n",
 	media_index, r_addr.c_str(), it->port);
     relay_rtp_streams[media_index].setRAddr(r_addr, it->port);
+    if (sdp.remote_active || rtp_relay_force_symmetric_rtp) {
+      relay_rtp_streams[media_index].setPassiveMode(true);
+    }
     media_index ++;
   }
+  if (rtp_relay_force_symmetric_rtp) {
+    DBG("Symmetric RTP: forced passive mode\n");
+  } else if (sdp.remote_active) {
+    DBG("Symmetric RTP: remote NATed, RTP stream set to passive mode\n");
+  }
+
 }
 
 bool AmB2BSession::replaceConnectionAddress(const string& content_type,
@@ -924,6 +935,8 @@ AmB2BCalleeSession::AmB2BCalleeSession(const AmB2BCallerSession* caller)
 {
   a_leg = false;
   b2b_mode = caller->getB2BMode();
+  rtp_relay_enabled = caller->getRtpRelayEnabled();
+  rtp_relay_force_symmetric_rtp = caller->getRtpRelayForceSymmetricRtp();
 }
 
 AmB2BCalleeSession::~AmB2BCalleeSession() {

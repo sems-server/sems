@@ -217,6 +217,9 @@ class AmB2BSession: public AmSession
 
   /** flag to enable RTP relay mode */
   bool rtp_relay_enabled;
+  /** force symmetric RTP */
+  bool rtp_relay_force_symmetric_rtp;
+
   /** RTP streams which receive from our side and are used
       for relaying RTP from the other side */
   AmRtpStream relay_rtp_streams[MAX_RELAY_STREAMS];
@@ -242,6 +245,8 @@ class AmB2BSession: public AmSession
   void disableRtpRelay();
   /** link RTP streams of other_session to our streams */
   void setupRelayStreams(AmB2BSession* from_session);
+  bool getRtpRelayEnabled() const { return rtp_relay_enabled; }
+  bool getRtpRelayForceSymmetricRtp() const { return rtp_relay_force_symmetric_rtp; }
 };
 
 class AmB2BCalleeSession;

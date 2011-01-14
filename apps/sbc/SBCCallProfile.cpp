@@ -174,6 +174,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   refuse_with = cfg.getParameter("refuse_with");
 
   rtprelay_enabled = cfg.getParameter("enable_rtprelay") == "yes";
+  force_symmetric_rtp = cfg.getParameter("rtprelay_force_symmetric_rtp");
+  msgflags_symmetric_rtp = cfg.getParameter("rtprelay_msgflags_symmetric_rtp") == "yes";
 
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
@@ -212,6 +214,15 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 	 sdpfilter_list.size());
 
     INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
+    if (rtprelay_enabled) {
+      if (!force_symmetric_rtp.empty()) {
+	INFO("SBC:      RTP force symmetric RTP: %s\n",
+	     force_symmetric_rtp.c_str());
+      }
+      if (msgflags_symmetric_rtp) {
+	INFO("SBC:      P-MsgFlags symmetric RTP detection enabled\n");
+      }
+    }
 
     INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
     INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
@@ -266,7 +277,10 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     prepaid_enabled == rhs.prepaid_enabled &&
     reply_translations == rhs.reply_translations &&
     append_headers == rhs.append_headers &&
-    refuse_with == rhs.refuse_with;
+    refuse_with == rhs.refuse_with &&
+    rtprelay_enabled == rhs.rtprelay_enabled &&
+    force_symmetric_rtp == rhs.force_symmetric_rtp &&
+    msgflags_symmetric_rtp == rhs.msgflags_symmetric_rtp;
 
   if (sdpfilter_enabled) {
     res = res &&
@@ -331,6 +345,9 @@ string SBCCallProfile::print() const {
   res += "prepaid_uuid:         " + prepaid_uuid + "\n";
   res += "prepaid_acc_dest:     " + prepaid_acc_dest + "\n";
   res += "rtprelay_enabled:     " + string(rtprelay_enabled?"true":"false") + "\n";
+  res += "force_symmetric_rtp:  " + force_symmetric_rtp;
+  res += "msgflags_symmetric_rtp: " + string(msgflags_symmetric_rtp?"true":"false") + "\n";
+
 
   if (reply_translations.size()) {
     string reply_trans_codes;

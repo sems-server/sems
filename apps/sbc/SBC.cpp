@@ -26,7 +26,6 @@
 /* 
 SBC - feature-wishlist
 - accounting (MySQL DB, cassandra DB)
-- RTP forwarding mode (bridging)
 - RTP transcoding mode (bridging)
 - overload handling (parallel call to target thresholds)
 - call distribution
@@ -547,6 +546,38 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     }
   }
 
+  if (call_profile.rtprelay_enabled) {
+    DBG("Enabling RTP relay mode\n");
+    rtp_relay_enabled = true;
+
+    // force symmetric RTP?
+    if (!call_profile.force_symmetric_rtp.empty()) {
+      string force_symmetric_rtp =
+	replaceParameters(call_profile.force_symmetric_rtp, "force_symmetric_rtp",
+			  REPLACE_VALS);
+      if (!force_symmetric_rtp.empty() && force_symmetric_rtp != "no"
+	  && force_symmetric_rtp != "0") {
+	DBG("forcing symmetric RTP (passive mode)\n");
+	rtp_relay_force_symmetric_rtp = true;
+      }
+    }
+    // enable symmetric RTP by P-MsgFlags?
+    if (!rtp_relay_force_symmetric_rtp) {
+      if (call_profile.msgflags_symmetric_rtp) {
+	string str_msg_flags = getHeader(req.hdrs,"P-MsgFlags", true);
+	unsigned int msg_flags = 0;
+	if(reverse_hex2int(str_msg_flags,msg_flags)){
+	  ERROR("while parsing 'P-MsgFlags' header\n");
+	  msg_flags = 0;
+	}
+	if (msg_flags & FL_FORCE_ACTIVE) {
+	  DBG("P-MsgFlags indicates forced symmetric RTP (passive mode)");
+	  rtp_relay_force_symmetric_rtp = true;
+	}
+      }
+    }
+  }
+
   m_state = BB_Dialing;
 
   invite_req = req;
@@ -581,11 +612,6 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       replaceParameters(call_profile.auth_credentials.user, "auth_user", REPLACE_VALS);
     call_profile.auth_credentials.pwd = 
       replaceParameters(call_profile.auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
-  }
-
-  if (call_profile.rtprelay_enabled) {
-    DBG("Enabling RTP relay mode\n");
-    rtp_relay_enabled = true;
   }
 
   // get timer

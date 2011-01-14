@@ -89,6 +89,8 @@ struct SBCCallProfile {
   string refuse_with;
 
   bool rtprelay_enabled;
+  string force_symmetric_rtp;
+  bool msgflags_symmetric_rtp;
 
   // todo: RTP transcoding mode
 

@@ -342,7 +342,6 @@ int AmRtpStream::send_raw( char* packet, unsigned int length )
   return length;
 }
 
-
 // returns 
 // @param ts              [out] timestamp of the received packet, 
 //                              in audio buffer relative time
@@ -360,31 +359,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   if (!rp)
     return 0;
 
-#ifndef SUPPORT_IPV6
-  if(passive) {
-    // #ifdef SUPPORT_IPV6
-    //     struct sockaddr_storage recv_addr;
-    // #else
-    struct sockaddr_in recv_addr;
-    rp->getAddr(&recv_addr);
-
-    // symmetric RTP
-    if ((recv_addr.sin_port != r_saddr.sin_port)
-	|| (recv_addr.sin_addr.s_addr 
-	    != r_saddr.sin_addr.s_addr)) {
-		
-      string addr_str = get_addr_str(recv_addr.sin_addr);
-      int port = ntohs(recv_addr.sin_port);
-      setRAddr(addr_str,port);
-      DBG("Symmetric RTP: setting new remote address: %s:%i\n",
-	  addr_str.c_str(),port);
-      // avoid comparing each time sender address
-    } else {
-      DBG("Symmetric RTP: remote end sends RTP from advertised address. Leaving passive mode.\n");
-    }
-    passive = false;
-  }
-#endif
+  handleSymmetricRtp(rp);
 
   /* do we have a new talk spurt? */
   begin_talk = ((last_payload == 13) || rp->marker);
@@ -534,6 +509,33 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
 #endif
 }
 
+void AmRtpStream::handleSymmetricRtp(AmRtpPacket* rp) {
+#ifndef SUPPORT_IPV6
+  if(passive) {
+    // #ifdef SUPPORT_IPV6
+    //     struct sockaddr_storage recv_addr;
+    // #else
+    struct sockaddr_in recv_addr;
+    rp->getAddr(&recv_addr);
+
+    // symmetric RTP
+    if ((recv_addr.sin_port != r_saddr.sin_port)
+	|| (recv_addr.sin_addr.s_addr != r_saddr.sin_addr.s_addr)) {
+      string addr_str = get_addr_str(recv_addr.sin_addr);
+      int port = ntohs(recv_addr.sin_port);
+      setRAddr(addr_str,port);
+      DBG("Symmetric RTP: setting new remote address: %s:%i\n",
+	  addr_str.c_str(),port);
+    } else {
+      DBG("Symmetric RTP: remote end sends RTP from advertised address."
+	  " Leaving passive mode.\n");
+    }
+    // avoid comparing each time sender address
+    passive = false;
+  }
+#endif
+}
+
 void AmRtpStream::init(const vector<SdpPayload*>& sdp_payloads)
 {
   if (sdp_payloads.empty()) {
@@ -590,6 +592,8 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   }
 
   if (relay_enabled) {
+    handleSymmetricRtp(p);
+
     if (NULL != relay_stream) {
       relay_stream->relay(p);
     }

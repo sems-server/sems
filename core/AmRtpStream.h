@@ -165,6 +165,9 @@ protected:
   unsigned int current_send_dtmf_ts;
   int send_dtmf_end_repeat;
 
+  /** handle symmetric RTP - if in passive mode, update raddr from rp */
+  void handleSymmetricRtp(AmRtpPacket* rp);
+
   void relay(AmRtpPacket* p);
 
 public:
