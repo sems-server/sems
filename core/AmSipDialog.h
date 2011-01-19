@@ -303,7 +303,9 @@ class AmSipDialog
   static int reply_error(const AmSipRequest& req,
 			 unsigned int  code,
 			 const string& reason,
-			 const string& hdrs = "");
+			 const string& hdrs = "",
+			 const string& next_hop_ip = "",
+			 unsigned short next_hop_port = 5060);
 };
 
 

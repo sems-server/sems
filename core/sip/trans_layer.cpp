@@ -82,9 +82,10 @@ void _trans_layer::register_transport(trsp_socket* trsp)
 
 
 int _trans_layer::send_reply(trans_ticket* tt,
-			    int reply_code, const cstring& reason,
-			    const cstring& to_tag, const cstring& hdrs, 
-			    const cstring& body)
+			     int reply_code, const cstring& reason,
+			     const cstring& to_tag, const cstring& hdrs,
+			     const cstring& body,
+			     const cstring& _next_hop, unsigned short _next_port)
 {
     // Ref.: RFC 3261 8.2.6, 12.1.1
     //
@@ -327,29 +328,51 @@ int _trans_layer::send_reply(trans_ticket* tt,
     }
 
     assert(transport);
+
+    int err = -1;
+
     // TODO: inspect topmost 'Via' and select proper addr (+resolve DNS names)
     // refs: RFC3261 18.2.2; RFC3581
     sockaddr_storage remote_ip;
-    memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
+    if (!_next_hop.len) {
+	memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
 
-    if(req->via_p1->has_rport){
+	if(req->via_p1->has_rport){
 
-	if(req->via_p1->rport_i){
-	    // use 'rport'
-	    ((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->rport_i);
+	    if(req->via_p1->rport_i){
+		// use 'rport'
+		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->rport_i);
+	    }
+	    // else: use the source port from the replied request (from IP hdr)
 	}
-	// else: use the source port from the replied request (from IP hdr)
-    }
-    else {
+	else {
 	
-	if(req->via_p1->port_i){
-	    // use port from 'sent-by' via address
-	    ((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
+	    if(req->via_p1->port_i){
+		// use port from 'sent-by' via address
+		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
+	    }
+	    // else: use the source port from the replied request (from IP hdr)
 	}
-	// else: use the source port from the replied request (from IP hdr)
+    } else {
+	DBG("setting next hop '%.*s:%u'\n",
+	    _next_hop.len, _next_hop.s, _next_port ? _next_port : 5060);
+	// use _next_hop:_next_port
+	if (resolver::instance()->str2ip(_next_hop.s, &remote_ip,
+					 (address_type)(IPv4 | IPv6)) != 1) {
+	    ERROR("Invalid next_hop_ip '%.*s'\n", _next_hop.len, _next_hop.s);
+	    delete [] reply_buf;
+	    goto end;
+	}
+	// default port to 5060
+	((sockaddr_in*)&remote_ip)->sin_port = htons(_next_port ? _next_port : 5060);
     }
 
-    int err = transport->send(&remote_ip,reply_buf,reply_len);
+    DBG("Sending to %s:%i <%.*s...>\n",
+	get_addr_str(((sockaddr_in*)&remote_ip)->sin_addr).c_str(),
+	ntohs(((sockaddr_in*)&remote_ip)->sin_port),
+	50 /* preview - instead of p_msg->len */,reply_buf);
+
+    err = transport->send(&remote_ip,reply_buf,reply_len);
     if(err < 0){
 	delete [] reply_buf;
 	goto end;

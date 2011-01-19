@@ -276,7 +276,8 @@ void SipCtrlInterface::cleanup()
     delete udp_socket;
 }
 
-int SipCtrlInterface::send(const AmSipReply &rep)
+int SipCtrlInterface::send(const AmSipReply &rep,
+			   const string& next_hop_ip, unsigned short next_hop_port)
 {
     sip_msg msg;
 
@@ -371,10 +372,12 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	}
     }
 
-    int ret = trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
-			     rep.code,stl2cstr(rep.reason),
-			     stl2cstr(rep.local_tag),
-			     cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body));
+    int ret =
+	trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
+					    rep.code,stl2cstr(rep.reason),
+					    stl2cstr(rep.local_tag),
+					    cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body),
+					    stl2cstr(next_hop_ip),next_hop_port);
 
     delete [] hdrs_buf;
 

@@ -93,14 +93,16 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   if (r_cseq_i && req.cseq <= r_cseq){
     INFO("remote cseq lower than previous ones - refusing request\n");
     // see 12.2.2
-    reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "",
+		next_hop_ip, next_hop_port);
     return;
   }
 
   if (req.method == "INVITE") {
     if (pending_invites) {
       reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
-		  "Retry-After: " + int2str(get_random() % 10) + CRLF);
+		  "Retry-After: " + int2str(get_random() % 10) + CRLF,
+		  next_hop_ip, next_hop_port);
       return;
     }
 
@@ -174,7 +176,8 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
         // TODO: shouldn't this be part of a more general check in SEMS?
         if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL))
           reply_error(req, 420, SIP_REPLY_BAD_EXTENSION, 
-              SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
+		      SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF,
+		      next_hop_ip, next_hop_port);
         break;
 
       default:
@@ -550,7 +553,7 @@ int AmSipDialog::reply(const AmSipRequest& req,
   if(updateStatusReply(req,code))
     return -1;
 
-  int ret = SipCtrlInterface::send(reply);
+  int ret = SipCtrlInterface::send(reply, next_hop_ip, next_hop_port);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
@@ -606,7 +609,9 @@ void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code,
 
 /* static */
 int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
-			     const string& reason, const string& hdrs)
+			     const string& reason, const string& hdrs,
+			     const string& next_hop_ip,
+			     unsigned short next_hop_port)
 {
   AmSipReply reply;
 
@@ -620,7 +625,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
 
-  int ret = SipCtrlInterface::send(reply);
+  int ret = SipCtrlInterface::send(reply, next_hop_ip, next_hop_port);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
