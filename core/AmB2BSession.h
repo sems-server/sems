@@ -142,6 +142,10 @@ class AmB2BSession: public AmSession
   /** Requests received for relaying */
   std::map<int,AmSipRequest> recvd_req;
 
+  /** CSeq of the INVITE that established this call */
+  unsigned int est_invite_cseq;
+  auto_ptr<AmSdp> invite_sdp;
+
   /** content-type of established session */
   string established_content_type;
   /** body of established session */
@@ -220,9 +224,12 @@ class AmB2BSession: public AmSession
   /** force symmetric RTP */
   bool rtp_relay_force_symmetric_rtp;
 
+
   /** RTP streams which receive from our side and are used
       for relaying RTP from the other side */
-  AmRtpStream relay_rtp_streams[MAX_RELAY_STREAMS];
+  AmRtpStream* relay_rtp_streams;
+  /** number of relay RTP streams */
+  unsigned int relay_rtp_streams_cnt;
   /** fd of the other streams' sockets (to remove from
       RtpReceiver at end of relaying) */
   int other_stream_fds[MAX_RELAY_STREAMS];
@@ -239,6 +246,8 @@ class AmB2BSession: public AmSession
   void set_sip_relay_only(bool r);
   B2BMode getB2BMode() const;
 
+  /** set RTP relay mode enabled for initial INVITE */
+  void enableRtpRelay(const AmSipRequest& initial_invite_req);
   /** set RTP relay mode enabled */
   void enableRtpRelay();
   /** set RTP relay mode disabled */

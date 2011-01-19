@@ -42,7 +42,9 @@ AmB2BSession::AmB2BSession()
   : sip_relay_only(true),
     b2b_mode(B2BMode_Transparent),
     rtp_relay_enabled(false),
-    rtp_relay_force_symmetric_rtp(false)
+    rtp_relay_force_symmetric_rtp(false),
+    relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
+    est_invite_cseq(0)
 {
   for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
     other_stream_fds[i] = 0;
@@ -52,7 +54,9 @@ AmB2BSession::AmB2BSession(const string& other_local_tag)
   : other_id(other_local_tag),
     sip_relay_only(true),
     rtp_relay_enabled(false),
-    rtp_relay_force_symmetric_rtp(false)
+    rtp_relay_force_symmetric_rtp(false),
+    relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
+    est_invite_cseq(0)
 {
   for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
     other_stream_fds[i] = 0;
@@ -62,6 +66,9 @@ AmB2BSession::~AmB2BSession()
 {
   if (rtp_relay_enabled)
     clearRtpReceiverRelay();
+
+  if (NULL != relay_rtp_streams)
+    delete[] relay_rtp_streams;
 
   DBG("relayed_req.size() = %u\n",(unsigned int)relayed_req.size());
   DBG("recvd_req.size() = %u\n",(unsigned int)recvd_req.size());
@@ -204,28 +211,46 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 
   B2BSipRequestEvent* r_ev = new B2BSipRequestEvent(req,fwd);
   
-  AmSdp filter_sdp;
+  auto_ptr<AmSdp> req_sdp;
 
   // filter relayed INVITE/UPDATE body
   if (fwd && b2b_mode != B2BMode_Transparent &&
       (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
        req.method == SIP_METH_ACK)) {
+    if (req.cseq == est_invite_cseq && req.method == SIP_METH_INVITE)
+      req_sdp.reset(invite_sdp.release());
+    if (NULL == req_sdp.get())
+      req_sdp.reset(new AmSdp());
+
     DBG("filtering body for request '%s' (c/t '%s')\n",
 	req.method.c_str(), req.content_type.c_str());
     // todo: handle filtering errors
-    filterBody(r_ev->req.content_type, r_ev->req.body, filter_sdp, a_leg);
+    filterBody(r_ev->req.content_type, r_ev->req.body, *req_sdp.get(), a_leg);
   }
 
   if (rtp_relay_enabled &&
       (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
-       req.method == SIP_METH_ACK || req.method == SIP_METH_ACK)) {
-    updateRelayStreams(r_ev->req.content_type, r_ev->req.body, filter_sdp);
+       req.method == SIP_METH_ACK || req.method == SIP_METH_ACK)
+      // don't update for initial INVITE again
+      && (!(req.cseq == est_invite_cseq && req.method == SIP_METH_INVITE))
+      ) {
+
+    if (NULL == req_sdp.get()) {
+      if (req.cseq == est_invite_cseq && req.method == SIP_METH_INVITE)
+	req_sdp.reset(invite_sdp.release());
+      if (NULL == req_sdp.get())
+	req_sdp.reset(new AmSdp());
+    }
+
+    updateRelayStreams(r_ev->req.content_type, r_ev->req.body, *req_sdp.get());
   }
 
   relayEvent(r_ev);
 }
 
-/** update RTP relay streams with address/port from SDP body */
+/** update RTP relay streams with address/port from SDP body 
+    create rtp_relay_streams if not existing
+*/
 void AmB2BSession::updateRelayStreams(const string& content_type, const string& body,
 				      AmSdp& parser_sdp) {
   if (body.empty() || (content_type != SIP_APPLICATION_SDP))
@@ -240,13 +265,25 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
     }
   }
 
+  if (NULL == relay_rtp_streams) {
+    relay_rtp_streams_cnt = parser_sdp.media.size();
+    if (relay_rtp_streams_cnt > MAX_RELAY_STREAMS) {
+      WARN("got SDP with more media streams (%zd) than MAX_RELAY_STREAMS (%u),"
+	   "consider changing MAX_RELAY_STREAMS and rebuilding SEMS.\n",
+	   relay_rtp_streams_cnt, MAX_RELAY_STREAMS);
+      relay_rtp_streams_cnt = MAX_RELAY_STREAMS;
+    }
+
+    relay_rtp_streams = new AmRtpStream[relay_rtp_streams_cnt];
+    DBG("Created %u RTP relay streams\n", relay_rtp_streams_cnt);
+  }
+
   unsigned int media_index = 0;
   for (std::vector<SdpMedia>::iterator it =
 	 parser_sdp.media.begin(); it != parser_sdp.media.end(); it++) {
-    if (media_index >= MAX_RELAY_STREAMS) {
-      ERROR("trying to relay SDP with more media lines than MAX_RELAY_STREAMS (%u)"
-	    "(consider increasing MAX_RELAY_STREAMS and rebuilding SEMS)\n",
-	    MAX_RELAY_STREAMS);
+    if (media_index >= relay_rtp_streams_cnt) {
+      WARN("trying to relay SDP with more media lines than "
+	    "relay streams initialized (%u)\n", relay_rtp_streams_cnt);
       break;
     }
     string r_addr = it->conn.address;
@@ -291,10 +328,9 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
   unsigned int media_index = 0;
   for (std::vector<SdpMedia>::iterator it =
 	 parser_sdp.media.begin(); it != parser_sdp.media.end(); it++) {
-    if (media_index >= MAX_RELAY_STREAMS) {
-      ERROR("trying to relay SDP with more media lines than MAX_RELAY_STREAMS (%u)"
-	    "(consider increasing MAX_RELAY_STREAMS and rebuilding SEMS)\n",
-	    MAX_RELAY_STREAMS);
+    if (media_index >= relay_rtp_streams_cnt) {
+      WARN("trying to relay SDP with more media lines than "
+	   "relay streams initialized (%u)\n", relay_rtp_streams_cnt);
       break;
     }
     if (!it->conn.address.empty())
@@ -654,6 +690,17 @@ int AmB2BSession::filterBody(AmSdp& sdp, bool is_a2b) {
   return 0;
 }
 
+void AmB2BSession::enableRtpRelay(const AmSipRequest& initial_invite_req) {
+  DBG("enabled RTP relay mode for B2B call '%s'\n",
+      getLocalTag().c_str());
+  rtp_relay_enabled = true;
+
+  // save AmSdp object of initial INVITE body
+  invite_sdp.reset(new AmSdp());
+  updateRelayStreams(initial_invite_req.content_type, initial_invite_req.body,
+		     *invite_sdp.get());
+}
+
 void AmB2BSession::enableRtpRelay() {
   DBG("enabled RTP relay mode for B2B call '%s'\n",
       getLocalTag().c_str());
@@ -675,8 +722,16 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
     return;
   }
 
+  if (NULL == relay_rtp_streams) {
+    relay_rtp_streams_cnt = other_session->relay_rtp_streams_cnt;
+    DBG("creating %u RTP streams from other_session\n",
+	relay_rtp_streams_cnt);
+    relay_rtp_streams = new AmRtpStream[relay_rtp_streams_cnt];
+  }
+
+
   // link the other streams as our relay streams
-  for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++) {
+  for (unsigned int i=0; i<relay_rtp_streams_cnt; i++) {
     other_session->relay_rtp_streams[i].setRelayStream(&relay_rtp_streams[i]);
     other_stream_fds[i] = other_session->relay_rtp_streams[i].getLocalSocket();
     // set local IP (todo: option for other interface!)
@@ -686,7 +741,7 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
 }
 
 void AmB2BSession::clearRtpReceiverRelay() {
-  for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++) {
+  for (unsigned int i=0; i<relay_rtp_streams_cnt; i++) {
     // clear the other call's RTP relay streams from RTP receiver
     if (other_stream_fds[i]) {
       AmRtpReceiver::instance()->removeStream(other_stream_fds[i]);
@@ -919,9 +974,8 @@ void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) 
   setupRelayStreams(callee_session);
 
   // bind caller session's relay_streams to a port
-  for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
+  for (unsigned int i=0; i<relay_rtp_streams_cnt; i++)
     relay_rtp_streams[i].getLocalPort();
-
 }
 
 AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
@@ -993,6 +1047,9 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 
     if (refresh_method != REFRESH_UPDATE)
       saveSessionDescription(co_ev->content_type, co_ev->body);
+
+    // save CSeq of establising INVITE
+    est_invite_cseq = dlg.cseq - 1;
 
     return;
   }    

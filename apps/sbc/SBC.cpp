@@ -547,8 +547,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   }
 
   if (call_profile.rtprelay_enabled) {
-    DBG("Enabling RTP relay mode\n");
-    rtp_relay_enabled = true;
+    DBG("Enabling RTP relay mode for SBC call\n");
 
     // force symmetric RTP?
     if (!call_profile.force_symmetric_rtp.empty()) {
@@ -576,11 +575,14 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 	}
       }
     }
+
+    enableRtpRelay(req);
   }
 
   m_state = BB_Dialing;
 
   invite_req = req;
+  est_invite_cseq = req.cseq;
 
   removeHeader(invite_req.hdrs,PARAM_HDR);
   removeHeader(invite_req.hdrs,"P-App-Name");
