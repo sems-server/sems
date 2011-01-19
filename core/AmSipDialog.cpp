@@ -993,7 +993,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
     req.body = body;
   }
 
-  if (SipCtrlInterface::send(req))
+  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port))
     return -1;
 
   uac_trans.erase(t.cseq);
