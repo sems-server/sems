@@ -512,6 +512,25 @@ string AmSipDialog::getContactHdr()
   return contact_uri;
 }
 
+string AmSipDialog::getRoute() {
+  string res;
+
+  if(!route.empty() || (force_outbound_proxy && !outbound_proxy.empty())) {
+    res = SIP_HDR_COLSP(SIP_HDR_ROUTE);
+
+    if(force_outbound_proxy && !outbound_proxy.empty())
+      res += "<" + outbound_proxy + ";lr>, ";
+
+    if (!route.empty())
+      res += route;
+
+    route += CRLF;
+  }
+
+  return res;
+}
+
+
 int AmSipDialog::reply(const AmSipRequest& req,
 		       unsigned int  code,
 		       const string& reason,
@@ -866,17 +885,7 @@ int AmSipDialog::sendRequest(const string& method,
 
   }
 
-  if(!route.empty()) {
-
-    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE);
-    if(force_outbound_proxy && !outbound_proxy.empty()){
-      req.route += "<" + outbound_proxy + ";lr>, ";
-    }
-    req.route += route + CRLF;
-  }
-  else if (remote_tag.empty() && !outbound_proxy.empty()) {
-    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE) "<" + outbound_proxy + ";lr>" CRLF;
-  }
+  req.route = getRoute();
 
   if(!body.empty()) {
     req.content_type = content_type;
@@ -989,9 +998,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
     req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) + int2str(AmConfig::MaxForwards) + CRLF;
   }
 
-  if(!route.empty()) {
-    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE) + route + CRLF;
-  }
+  req.route = getRoute();
 
   if(!body.empty()) {
     req.content_type = content_type;

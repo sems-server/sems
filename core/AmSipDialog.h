@@ -136,6 +136,8 @@ class AmSipDialog
   int updateStatusReply(const AmSipRequest& req, 
 			unsigned int code);
 
+  string getRoute();
+
   int rel100OnRequestIn(const AmSipRequest &req);
   int rel100OnReplyIn(const AmSipReply &reply);
   void rel100OnTimeout(const AmSipRequest &req, const AmSipReply &rpl);
