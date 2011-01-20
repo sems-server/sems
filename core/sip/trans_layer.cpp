@@ -714,7 +714,18 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 
 int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port)
 {
+
     string nh = c2stlstr(*next_hop);
+
+    if (resolver::instance()->str2ip(nh.c_str(), &(msg->remote_ip), IPv4) == 1) {
+	// already a valid IP address
+	if (!next_port)
+	    ((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(5060);
+	else
+	    ((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
+
+	return 0;
+    }
     
     if(!next_port){
 	// no explicit port specified,
