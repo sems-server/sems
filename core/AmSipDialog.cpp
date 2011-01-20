@@ -46,7 +46,7 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     reliable_1xx(AmConfig::rel100),
     rseq(0), rseq_1st(0), rseq_confirmed(false),
-    next_hop_port(0)
+    next_hop_port(0), next_hop_for_replies(false)
 {
 }
 
@@ -94,7 +94,8 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     INFO("remote cseq lower than previous ones - refusing request\n");
     // see 12.2.2
     reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "",
-		next_hop_ip, next_hop_port);
+		next_hop_for_replies ? next_hop_ip : "",
+		next_hop_for_replies ? next_hop_port : 0);
     return;
   }
 
@@ -102,7 +103,8 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
     if (pending_invites) {
       reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
 		  "Retry-After: " + int2str(get_random() % 10) + CRLF,
-		  next_hop_ip, next_hop_port);
+		  next_hop_for_replies ? next_hop_ip : "",
+		  next_hop_for_replies ? next_hop_port : 0);
       return;
     }
 
@@ -177,7 +179,8 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
         if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL))
           reply_error(req, 420, SIP_REPLY_BAD_EXTENSION, 
 		      SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF,
-		      next_hop_ip, next_hop_port);
+		      next_hop_for_replies ? next_hop_ip : "",
+		      next_hop_for_replies ? next_hop_port : 0);
         break;
 
       default:
@@ -572,7 +575,8 @@ int AmSipDialog::reply(const AmSipRequest& req,
   if(updateStatusReply(req,code))
     return -1;
 
-  int ret = SipCtrlInterface::send(reply, next_hop_ip, next_hop_port);
+  int ret = SipCtrlInterface::send(reply, next_hop_for_replies ? next_hop_ip : "",
+				   next_hop_for_replies ? next_hop_port : 0);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);

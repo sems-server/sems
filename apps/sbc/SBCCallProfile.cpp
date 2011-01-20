@@ -52,6 +52,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   next_hop_ip = cfg.getParameter("next_hop_ip");
   next_hop_port = cfg.getParameter("next_hop_port");
+  next_hop_for_replies = cfg.getParameter("next_hop_for_replies") == "yes";
 
   string hf_type = cfg.getParameter("header_filter", "transparent");
   if (hf_type=="transparent")
@@ -194,6 +195,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     if (!next_hop_ip.empty()) {
       INFO("SBC:      next hop = %s%s\n", next_hop_ip.c_str(),
 	   next_hop_port.empty()? "" : (":"+next_hop_port).c_str());
+
+      if (next_hop_for_replies) {
+	INFO("SBC:      next hop used for replies\n");
+      }
     }
 
     INFO("SBC:      header filter  is %s, %zd items in list\n",
@@ -244,6 +249,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     next_hop_ip == rhs.next_hop_ip &&
     next_hop_port == rhs.next_hop_port &&
     next_hop_port_i == rhs.next_hop_port_i &&
+    next_hop_for_replies == rhs.next_hop_for_replies &&
     headerfilter == rhs.headerfilter &&
     headerfilter_list == rhs.headerfilter_list &&
     messagefilter == rhs.messagefilter &&
@@ -301,6 +307,7 @@ string SBCCallProfile::print() const {
   res += "next_hop_ip:          " + next_hop_ip + "\n";
   res += "next_hop_port:        " + next_hop_port + "\n";
   res += "next_hop_port_i:      " + int2str(next_hop_port_i) + "\n";
+  res += "next_hop_for_replies: " + string(next_hop_for_replies?"true":"false") + "\n";
   res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
   res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
   res += "messagefilter:        " + string(FilterType2String(messagefilter)) + "\n";

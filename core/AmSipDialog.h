@@ -178,6 +178,7 @@ class AmSipDialog
 
   string next_hop_ip;
   unsigned short next_hop_port;
+  bool next_hop_for_replies;
 
   /** enable the reliability of provisional replies? */
   enum provisional_100rel { // could be a char
