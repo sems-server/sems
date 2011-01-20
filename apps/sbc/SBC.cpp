@@ -538,6 +538,12 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       }
       call_profile.next_hop_port_i = nh_port_i;
       DBG("set next hop port to '%u'\n", call_profile.next_hop_port_i);
+
+      if (!call_profile.next_hop_for_replies.empty()) {
+	call_profile.next_hop_for_replies =
+	  replaceParameters(call_profile.next_hop_for_replies, "next_hop_for_replies",
+			    REPLACE_VALS);
+      }
     }
   }
 
@@ -961,7 +967,12 @@ void SBCDialog::createCalleeSession()
     callee_dlg.next_hop_ip = call_profile.next_hop_ip;
     callee_dlg.next_hop_port = call_profile.next_hop_port.empty() ?
       5060 : call_profile.next_hop_port_i;
-    callee_dlg.next_hop_for_replies = call_profile.next_hop_for_replies;
+
+    if (!call_profile.next_hop_for_replies.empty()) {
+      callee_dlg.next_hop_for_replies =
+	(call_profile.next_hop_for_replies == "yes" ||
+	 call_profile.next_hop_for_replies == "1");
+    }
   }
 
   other_id = AmSession::getNewId();

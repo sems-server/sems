@@ -56,7 +56,7 @@ struct SBCCallProfile {
   string next_hop_ip;
   string next_hop_port;
   unsigned short next_hop_port_i;
-  bool next_hop_for_replies;
+  string next_hop_for_replies;
 
   FilterType headerfilter;
   set<string> headerfilter_list;
