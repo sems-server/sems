@@ -136,7 +136,7 @@ class DSMAction
 
 class DSMTransition;
 
-class State 
+class State
 : public DSMElement {
  public:
   State();
@@ -147,7 +147,7 @@ class State
   vector<DSMTransition> transitions;
 };
 
-class DSMTransition 
+class DSMTransition
 : public DSMElement {
  public:
   DSMTransition();
@@ -161,20 +161,20 @@ class DSMTransition
   bool is_exception;
 };
 
-class DSMConditionTree 
+class DSMConditionTree
 : public DSMElement {
-  public:
-    vector<DSMCondition*> conditions;
-    vector<DSMElement*> run_if_true;
-    vector<DSMElement*> run_if_false;
-    bool is_exception;
+ public:
+  vector<DSMCondition*> conditions;
+  vector<DSMElement*> run_if_true;
+  vector<DSMElement*> run_if_false;
+  bool is_exception;
 };
 
-class DSMFunction 
+class DSMFunction
 : public DSMElement {
-  public:
-    string name;
-    vector<DSMElement*> actions;
+ public:
+  string name;
+  vector<DSMElement*> actions;
 };
 
 class DSMModule;
