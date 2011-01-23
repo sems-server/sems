@@ -264,6 +264,7 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	default: break;
 	}
       }
+      continue;
     }
 
     DSMConditionTree* cond_tree = dynamic_cast<DSMConditionTree*>(*it);
@@ -285,8 +286,104 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 		      sess, sc_sess, event, event_params, is_consumed))
 	  return true;
       }
+      continue;
     }
 
+    DSMArrayFor* array_for = dynamic_cast<DSMArrayFor*>(*it);
+    if (array_for) {
+      DBG("running for (%s%s in %s) {\n",
+	  array_for->k.c_str(), array_for->v.empty() ? "" : (","+array_for->v).c_str(),
+	  array_for->array_struct.c_str());
+
+      string array_name = array_for->array_struct;
+      string k_name = array_for->k;
+      string v_name = array_for->v;
+
+      if (!array_name.length() || !k_name.length()) {
+	WARN("empty array or counter name in for\n");
+	continue;
+      }
+
+      if (array_name[0] == '$')	array_name.erase(0, 1);
+      if (k_name[0] == '$') k_name.erase(0, 1);
+      bool is_kv = !v_name.empty();
+      if (is_kv && v_name[0] == '$') v_name.erase(0, 1);
+
+
+      vector<pair<string, string> > cnt_values;
+
+      // get the counter values
+      if (is_kv) {
+	VarMapT::iterator lb = sc_sess->var.lower_bound(array_name);
+	while (lb != sc_sess->var.end()) {
+	  if ((lb->first.length() < array_name.length()) ||
+	      strncmp(lb->first.c_str(), array_name.c_str(), array_name.length()))
+	    break;
+
+	  string varname = lb->first.substr(array_name.length()+1);
+	  string valname = lb->second;
+	  cnt_values.push_back(make_pair(varname, valname));
+	  DBG("      '%s,%s'\n", varname.c_str(), valname.c_str());
+	  lb++;
+	}
+      } else {
+	unsigned int a_index = 0;
+	while (true) {
+	  VarMapT::iterator v = sc_sess->var.find(array_name+"["+int2str(a_index)+"]");
+	  if (v == sc_sess->var.end())
+	    break;
+	  cnt_values.push_back(make_pair(v->second, ""));
+	  DBG("      '%s'\n", v->second.c_str());
+	  a_index++;
+	}
+      }
+
+      // save counter
+      VarMapT::iterator c_it = sc_sess->var.find(k_name);
+      bool k_exists = c_it != sc_sess->var.end();
+      string k_save = k_exists ? c_it->second : string("");
+
+      bool v_exists = false; string v_save;
+      if (is_kv) {
+	c_it = sc_sess->var.find(v_name);
+	v_exists = c_it != sc_sess->var.end();
+	if (v_exists)
+	  v_save = c_it->second;
+      }
+
+      // run the loop
+      DBG("running for loop with %zd items\n", cnt_values.size());
+      for (vector<pair<string, string> >::iterator f_it=
+	     cnt_values.begin(); f_it != cnt_values.end(); f_it++) {
+	if (is_kv) {
+	  DBG("setting $%s=%s, $%s=%s\n", k_name.c_str(), f_it->first.c_str(),
+	      v_name.c_str(), f_it->second.c_str());
+	  sc_sess->var[k_name] = f_it->first;
+	  sc_sess->var[v_name] = f_it->second;
+	} else {
+	  DBG("setting $%s=%s\n", k_name.c_str(), f_it->first.c_str());
+	  sc_sess->var[k_name] = f_it->first;
+	}
+	runactions(array_for->actions.begin(), array_for->actions.end(),
+		   sess, sc_sess, event, event_params, is_consumed);
+      }
+      // restore the counter[s]
+      if (k_exists)
+	sc_sess->var[k_name] = k_save;
+      else
+	sc_sess->var.erase(k_name);
+
+      if (is_kv) {
+	if (v_exists)
+	  sc_sess->var[v_name] = v_save;
+	else
+	  sc_sess->var.erase(v_name);
+      }
+
+      continue;
+    }
+
+    ERROR("DSMElement typenot understood\n");
   }
   return false;
 } 

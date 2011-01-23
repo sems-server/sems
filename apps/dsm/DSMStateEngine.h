@@ -177,6 +177,15 @@ class DSMFunction
   vector<DSMElement*> actions;
 };
 
+class DSMArrayFor
+: public DSMElement {
+ public:
+  string k; // for(k in array)
+  string v; // if set, for(k,v in struct)
+  string array_struct; // array or struct name
+  vector<DSMElement*> actions;
+};
+
 class DSMModule;
 
 class DSMStateDiagram  {

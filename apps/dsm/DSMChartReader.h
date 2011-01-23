@@ -59,8 +59,9 @@ class ActionList : public DSMElement {
     AL_exit,
     AL_trans,
     AL_if,
- 	AL_else,
- 	AL_func
+    AL_else,
+    AL_func,
+    AL_for
   };
 
   AL_type al_type;
@@ -87,6 +88,7 @@ class DSMChartReader {
   DSMFunction* functionFromToken(const string& str);
   DSMAction* actionFromToken(const string& str);
   DSMCondition* conditionFromToken(const string& str, bool invert);
+  bool forFromToken(DSMArrayFor& af, const string& token);
 
   bool importModule(const string& mod_cmd, const string& mod_path);
   vector<DSMModule*> mods;
