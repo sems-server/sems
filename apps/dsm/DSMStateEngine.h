@@ -180,8 +180,18 @@ class DSMFunction
 class DSMArrayFor
 : public DSMElement {
  public:
+  DSMArrayFor() { }
+  ~DSMArrayFor() { }
+
+  enum DSMForType {
+    Range,
+    Array,
+    Struct
+  } for_type;
+
   string k; // for(k in array)
-  string v; // if set, for(k,v in struct)
+  string v; // for(k,v in struct)
+  int range[2];
   string array_struct; // array or struct name
   vector<DSMElement*> actions;
 };

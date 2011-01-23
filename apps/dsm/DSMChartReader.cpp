@@ -167,18 +167,42 @@ bool DSMChartReader::forFromToken(DSMArrayFor& af, const string& token) {
     return false;
   }
 
-  af.array_struct = forh_v[1];
-
   vector<string> kv = explode(forh_v[0], ",");
   if (kv.size() == 2) {
+    af.for_type = DSMArrayFor::Struct;
     af.k = kv[0];
     af.v = kv[1];
+    af.array_struct = forh_v[1];
     DBG("for (%s,%s in %s) {\n", af.k.c_str(), af.v.c_str(), af.array_struct.c_str());
+  } else if (forh_v[1].length() > 7 &&
+	forh_v[1].substr(0,6)=="range(" &&
+	forh_v[1][forh_v[1].length()-1] == ')') {
+    af.for_type = DSMArrayFor::Range;
+    string range_s = forh_v[1].substr(6, forh_v[1].length()-7);
+    vector<string> range_v = explode(range_s, ",");
+    if (range_v.size() == 2) {
+      if (!str2int(range_v[0], af.range[0]) ||
+	  !str2int(range_v[1], af.range[1])) {
+	ERROR("range(%s,%s) not understood in for\n",
+	      range_v[0].c_str(), range_v[1].c_str());
+	return false;
+      }
+    } else {
+      af.range[0] = 0;
+      if (!str2int(range_s, af.range[1])) {
+	ERROR("range(%s) not understood in for\n", range_s.c_str());
+	return false;
+      }
+    }
+    af.k = forh_v[0];
+    DBG("for (%s in range(%d, %d) {\n",
+	af.k.c_str(), af.range[0], af.range[1]);
   } else {
+    af.for_type = DSMArrayFor::Array;
+    af.array_struct = forh_v[1];
     af.k = forh_v[0];
     DBG("for (%s in %s) {\n", af.k.c_str(), af.array_struct.c_str());
   }
-
 
   return true;
 }
