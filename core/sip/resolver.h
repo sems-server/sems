@@ -143,11 +143,6 @@ public:
 	       sockaddr_storage* sa,
 	       const address_type types);
 
-    
-    int str2ip(const char* name,
-	       sockaddr_storage* sa,
-	       const address_type types);
-
 protected:
     _resolver();
     ~_resolver();
