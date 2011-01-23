@@ -734,18 +734,21 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
     if(!next_port){
 	// no explicit port specified,
 	// try SRV first
+	if (AmConfig::DisableDNSSRV) {
+	    DBG("no port specified, but DNS SRV disabled (skipping).\n");
+	} else {
+	    string srv_name = "_sip._udp." + nh;
 
-	string srv_name = "_sip._udp." + nh;
+	    DBG("no port specified, looking up SRV '%s'...\n", srv_name.c_str());
 
-	DBG("no port specified, looking up SRV '%s'...\n", srv_name.c_str());
+	    if(!resolver::instance()->resolve_name(srv_name.c_str(),
+						   &(msg->h_dns),
+						   &(msg->remote_ip),IPv4)){
+		return 0;
+	    }
 
-	if(!resolver::instance()->resolve_name(srv_name.c_str(),
-					       &(msg->h_dns),
-					       &(msg->remote_ip),IPv4)){
-	    return 0;
+	    DBG("no SRV record for %s",srv_name.c_str());
 	}
-
-	DBG("no SRV record for %s",srv_name.c_str());
     }
 
     memset(&(msg->remote_ip),0,sizeof(sockaddr_storage));

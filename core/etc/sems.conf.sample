@@ -379,6 +379,16 @@ use_default_signature=yes
 #   default settings (i.e. leave out) for these should be OK
 #   for most applications
 
+# skip DNS SRV lookup? [yes, no]
+#
+# according to RFC, if no port is specified, destination IP address
+# should be resolved with a DNS SRV lookup. If SEMS should not do that
+# (only an A record lookup), set disable_dns_srv=yes.
+#
+# Default: no
+#
+#disable_dns_srv=yes
+
 # support 100rel (PRACK) extension (RFC3262)? [disabled|supported|require]
 #
 # disabled - disable support for 100rel

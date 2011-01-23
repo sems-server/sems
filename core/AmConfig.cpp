@@ -71,6 +71,7 @@ string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
 bool         AmConfig::ProxyStickyAuth         = false;
+bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
 unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
 bool	     AmConfig::SingleCodecInOK	       = false;
@@ -289,6 +290,10 @@ int AmConfig::readConfiguration()
 
   if(cfg.hasParameter("proxy_sticky_auth")) {
     ProxyStickyAuth = (cfg.getParameter("proxy_sticky_auth") == "yes");
+  }
+
+  if(cfg.hasParameter("disable_dns_srv")) {
+    DisableDNSSRV = (cfg.getParameter("disable_dns_srv") == "yes");
   }
   
   // plugin_path

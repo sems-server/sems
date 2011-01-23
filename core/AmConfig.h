@@ -102,6 +102,8 @@ struct AmConfig
   static bool ForceOutboundProxy;
   /** update ruri-host to previously resolved IP:port on SIP auth */
   static bool ProxyStickyAuth;
+  /** skip DNS SRV lookup for resolving destination address*/
+  static bool DisableDNSSRV;
   /** Server/User-Agent header (optional) */
   static string Signature;
   /** Value of Max-Forward header field for new requests */
