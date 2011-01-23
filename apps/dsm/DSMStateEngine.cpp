@@ -231,62 +231,62 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
   DBG("running %zd actions\n", to - from);
   for (vector<DSMElement*>::iterator it=from; it != to; it++) {
 
-  	DSMConditionTree* cond_tree = dynamic_cast<DSMConditionTree*>(*it);
-  	if (cond_tree) {
-    	DBG("checking conditions\n");
-    	vector<DSMCondition*>::iterator con=cond_tree->conditions.begin();
-    	while (con!=cond_tree->conditions.end()) {
-    	  if (!(*con)->_match(sess, sc_sess, event, event_params))
-    	    break;
-    	  con++;
-    	}
-    	if (con == cond_tree->conditions.end()) {
-    	  DBG("condition tree matched.\n");
+    DSMConditionTree* cond_tree = dynamic_cast<DSMConditionTree*>(*it);
+    if (cond_tree) {
+      DBG("checking conditions\n");
+      vector<DSMCondition*>::iterator con=cond_tree->conditions.begin();
+      while (con!=cond_tree->conditions.end()) {
+	if (!(*con)->_match(sess, sc_sess, event, event_params))
+	  break;
+	con++;
+      }
+      if (con == cond_tree->conditions.end()) {
+	DBG("condition tree matched.\n");
         if (runactions(cond_tree->run_if_true.begin(), cond_tree->run_if_true.end(),
-  	  	  sess, sc_sess, event, event_params, is_consumed))
-  	  	  return true;
+		       sess, sc_sess, event, event_params, is_consumed))
+	  return true;
       } else {
         if(runactions(cond_tree->run_if_false.begin(), cond_tree->run_if_false.end(),
-  	      sess, sc_sess, event, event_params, is_consumed))
-  	      return true;
+		      sess, sc_sess, event, event_params, is_consumed))
+	  return true;
       }
     }
   	
-  	DSMAction* dsm_act = dynamic_cast<DSMAction*>(*it);
+    DSMAction* dsm_act = dynamic_cast<DSMAction*>(*it);
       
     if (dsm_act) {
       DBG("executing '%s'\n", (dsm_act)->name.c_str()); 
       if ((dsm_act)->execute(sess, sc_sess, event, event_params)) {
         string se_modifier;
         switch ((dsm_act)->getSEAction(se_modifier,
-  				 sess, sc_sess, event, event_params)) {
-          case DSMAction::Repost: 
-        		is_consumed = false; 
-        		break;
-          case DSMAction::Jump: 
-        		DBG("jumping to %s\n", se_modifier.c_str());
-        		if (jumpDiag(se_modifier, sess, sc_sess, event, event_params)) {
-        		  // is_consumed = false; 
-        		  return true;  
-        		}
-        		break;
-          case DSMAction::Call:
-        		DBG("calling %s\n", se_modifier.c_str());
-        		if (callDiag(se_modifier, sess, sc_sess, event, event_params))  {
-        		  // is_consumed = false; 
-        		  return true;   
-        		} 
-        		break;
-          case DSMAction::Return: 
-        		if (returnDiag(sess, sc_sess)) {
-        		  //is_consumed = false;
-        		  return true; 
-        		}
-        		break;
-          default: break;
-  	    }
+				       sess, sc_sess, event, event_params)) {
+	case DSMAction::Repost: 
+	  is_consumed = false; 
+	  break;
+	case DSMAction::Jump: 
+	  DBG("jumping to %s\n", se_modifier.c_str());
+	  if (jumpDiag(se_modifier, sess, sc_sess, event, event_params)) {
+	    // is_consumed = false; 
+	    return true;  
+	  }
+	  break;
+	case DSMAction::Call:
+	  DBG("calling %s\n", se_modifier.c_str());
+	  if (callDiag(se_modifier, sess, sc_sess, event, event_params))  {
+	    // is_consumed = false; 
+	    return true;   
+	  } 
+	  break;
+	case DSMAction::Return: 
+	  if (returnDiag(sess, sc_sess)) {
+	    //is_consumed = false;
+	    return true; 
+	  }
+	  break;
+	default: break;
+	}
       }
-  	}
+    }
   }
   return false;
 } 
