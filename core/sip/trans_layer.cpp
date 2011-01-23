@@ -717,12 +717,16 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
 
     string nh = c2stlstr(*next_hop);
 
+    DBG("checking whether '%s' is IP address...\n", nh.c_str());
     if (resolver::instance()->str2ip(nh.c_str(), &(msg->remote_ip), IPv4) == 1) {
 	// already a valid IP address
 	if (!next_port)
 	    ((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(5060);
 	else
 	    ((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
+
+	DBG("set destination to %s:%u\n", nh.c_str(),
+	    ntohs(((sockaddr_in*)&(msg->remote_ip))->sin_port));
 
 	return 0;
     }
@@ -732,6 +736,9 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
 	// try SRV first
 
 	string srv_name = "_sip._udp." + nh;
+
+	DBG("no port specified, looking up SRV '%s'...\n", srv_name.c_str());
+
 	if(!resolver::instance()->resolve_name(srv_name.c_str(),
 					       &(msg->h_dns),
 					       &(msg->remote_ip),IPv4)){
@@ -755,7 +762,7 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
 	    next_port = 5060;
 	((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
     }
- 
+
     return 0;
 }
 
