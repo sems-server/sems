@@ -228,32 +228,10 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 				vector<DSMElement*>::iterator to, 
 				AmSession* sess,  DSMSession* sc_sess, DSMCondition::EventType event,
 				map<string,string>* event_params,  bool& is_consumed) {
-  DBG("running %zd actions\n", to - from);
+  DBG("running %zd DSM action elements\n", to - from);
   for (vector<DSMElement*>::iterator it=from; it != to; it++) {
 
-    DSMConditionTree* cond_tree = dynamic_cast<DSMConditionTree*>(*it);
-    if (cond_tree) {
-      DBG("checking conditions\n");
-      vector<DSMCondition*>::iterator con=cond_tree->conditions.begin();
-      while (con!=cond_tree->conditions.end()) {
-	if (!(*con)->_match(sess, sc_sess, event, event_params))
-	  break;
-	con++;
-      }
-      if (con == cond_tree->conditions.end()) {
-	DBG("condition tree matched.\n");
-        if (runactions(cond_tree->run_if_true.begin(), cond_tree->run_if_true.end(),
-		       sess, sc_sess, event, event_params, is_consumed))
-	  return true;
-      } else {
-        if(runactions(cond_tree->run_if_false.begin(), cond_tree->run_if_false.end(),
-		      sess, sc_sess, event, event_params, is_consumed))
-	  return true;
-      }
-    }
-  	
     DSMAction* dsm_act = dynamic_cast<DSMAction*>(*it);
-      
     if (dsm_act) {
       DBG("executing '%s'\n", (dsm_act)->name.c_str()); 
       if ((dsm_act)->execute(sess, sc_sess, event, event_params)) {
@@ -287,6 +265,28 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	}
       }
     }
+
+    DSMConditionTree* cond_tree = dynamic_cast<DSMConditionTree*>(*it);
+    if (cond_tree) {
+      DBG("checking conditions\n");
+      vector<DSMCondition*>::iterator con=cond_tree->conditions.begin();
+      while (con!=cond_tree->conditions.end()) {
+	if (!(*con)->_match(sess, sc_sess, event, event_params))
+	  break;
+	con++;
+      }
+      if (con == cond_tree->conditions.end()) {
+	DBG("condition tree matched.\n");
+        if (runactions(cond_tree->run_if_true.begin(), cond_tree->run_if_true.end(),
+		       sess, sc_sess, event, event_params, is_consumed))
+	  return true;
+      } else {
+        if(runactions(cond_tree->run_if_false.begin(), cond_tree->run_if_false.end(),
+		      sess, sc_sess, event, event_params, is_consumed))
+	  return true;
+      }
+    }
+
   }
   return false;
 } 
