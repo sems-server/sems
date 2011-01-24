@@ -120,7 +120,7 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 {
   DBG("AmSipDialog::onRxRequest(request)\n");
 
-  if ((req.method != "ACK") && (req.method != "CANCEL")) {
+  if ((req.method != SIP_METH_ACK) && (req.method != SIP_METH_CANCEL)) {
 
     // Sanity checks
     if (r_cseq_i && req.cseq <= r_cseq){
@@ -191,14 +191,17 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
   default: break;
   }
 
-  if((req.method == "INVITE" || req.method == "UPDATE" || req.method == "ACK") &&
+  if((req.method == SIP_METH_INVITE || 
+      req.method == SIP_METH_UPDATE || 
+      req.method == SIP_METH_ACK ||
+      req.method == SIP_METH_PRACK) &&
      !req.body.empty() && 
      (req.content_type == SIP_APPLICATION_SDP)) {
 
     const char* err_txt=NULL;
     int err_code = onRxSdp(req.body,&err_txt);
     if(err_code){
-      if( req.method != "ACK" ){ // INVITE || UPDATE
+      if( req.method != SIP_METH_ACK ){ // INVITE || UPDATE
 	reply(req,err_code,err_txt);
       }
       else { // ACK
@@ -315,6 +318,10 @@ int AmSipDialog::getSdpBody(string& sdp_body)
       }
       break;
       
+    case OA_OfferSent:
+      DBG("Still waiting for a reply\n");
+      return -1;
+
     default: 
       break;
     }
@@ -322,30 +329,28 @@ int AmSipDialog::getSdpBody(string& sdp_body)
     return 0;
 }
 
-int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
-{
-  switch(status){
+// int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
+// {
+//   switch(status){
+  // case Early:
+  //   if(content_type != SIP_APPLICATION_SDP){ // FIXME
+  //     break;
+  //   }
+  //   return getSdpBody(body);
 
-  case Early:
-    if(content_type != SIP_APPLICATION_SDP){ // FIXME
-      break;
-    }
-    return getSdpBody(body);
-
-  case Connected:
-    if(getSdpBody(body)){
-      return -1;
-    }
-
-    content_type = SIP_APPLICATION_SDP; // FIXME
-    break;
+//   case Connected:
+//     if(getSdpBody(body)){
+//       return -1;
+//     }
+    // content_type = SIP_APPLICATION_SDP; // FIXME
+    // break;
     
-  default:
-    break;
-  }
+//   default:
+//     break;
+//   }
 
-  return 0;
-}
+//   return 0;
+// }
 
 int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
 {
@@ -433,27 +438,35 @@ void AmSipDialog::initFromLocalRequest(const AmSipRequest& req)
 // (called from AmSipDialog::sendRequest())
 int AmSipDialog::onTxRequest(AmSipRequest& req)
 {
-  if((req.method == "INVITE") && (status == Disconnected)){
+  if((req.method == SIP_METH_INVITE) && (status == Disconnected)){
     status = Trying;
   }
-  else if((req.method == "BYE") && (status != Disconnecting)){
+  else if((req.method == SIP_METH_BYE) && (status != Disconnecting)){
     status = Disconnecting;
   }
 
-  if (!req.body.empty())
-    return 0;
+  bool generate_sdp = req.body.empty() 
+    && (req.content_type == SIP_APPLICATION_SDP);
 
-  if((req.method == "INVITE") || (req.method == "UPDATE")){
-    if(triggerOfferAnswer(req.content_type, req.body))
-      return -1;
+  bool has_sdp = !req.body.empty() 
+    && (req.content_type == SIP_APPLICATION_SDP);
+
+  if (!generate_sdp && !has_sdp && 
+      ((req.method == SIP_METH_PRACK) ||
+       (req.method == SIP_METH_ACK))) {
+    generate_sdp = (oa_state == OA_OfferRecved);
   }
 
-  if(req.content_type == "application/sdp") {
-
-    if(onTxSdp(req.body)){
-      DBG("onTxSdp() failed\n");
-      return -1;
+  if (generate_sdp) {
+    if (!getSdpBody(req.body)){
+      req.content_type = SIP_APPLICATION_SDP;
+      has_sdp = true;
     }
+  }
+
+  if(has_sdp && (onTxSdp(req.body) != 0)){
+    DBG("onTxSdp() failed\n");
+    return -1;
   }
 
   return 0;
@@ -512,31 +525,45 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
     break;
   }
 
-  if (reply.body.empty()) {
+  bool generate_sdp = reply.body.empty() 
+    && (reply.content_type == SIP_APPLICATION_SDP);
+
+  bool has_sdp = !reply.body.empty() 
+    && (reply.content_type == SIP_APPLICATION_SDP);
+
+  if (!has_sdp && !generate_sdp) {
     // update Offer/Answer state
     // TODO: support multipart mime
-    if ((reply.cseq_method == "INVITE") || (reply.cseq_method == "UPDATE")) {
-      
-      if (triggerOfferAnswer(reply.content_type, reply.body)) {
-	DBG("triggerOfferAnswer() failed\n");
-	return -1;
-      }
-    }
+    if ((reply.cseq_method == SIP_METH_INVITE) ||
+	(reply.cseq_method == SIP_METH_UPDATE)) {
 
-    if (reply.content_type == "application/sdp") {
+      // TODO: do the same if reliable prov. reply
+      if ((reply.code >= 200) &&
+	  (reply.code < 300)) {
 
-      if (onTxSdp(reply.body)) {
-
-	DBG("onTxSdp() failed (replying 500 internal error)\n");
-	reply.code = 500;
-	reply.reason = "internal error";
-	reply.body = "";
-	reply.content_type = "";
+	generate_sdp = true;
       }
     }
   }
+  
+  if (generate_sdp) {
+    if(!getSdpBody(reply.body)) {
+      reply.content_type = SIP_APPLICATION_SDP;
+      has_sdp = true;
+    }
+  }
 
-  if ((reply.code >= 200) && ((t.method != "INVITE") || (reply.cseq_method != "CANCEL"))) {
+  if (has_sdp && (onTxSdp(reply.body) != 0)) {
+    
+    DBG("onTxSdp() failed (replying 500 internal error)\n");
+    reply.code = 500;
+    reply.reason = "internal error";
+    reply.body = "";
+    reply.content_type = "";
+  }
+  
+  if ((reply.code >= 200) && 
+      ((t.method != "INVITE") || (reply.cseq_method != "CANCEL"))) {
     
     DBG("reply.cseq_method = %s; t.method = %s\n",
 	reply.cseq_method.c_str(),t.method.c_str());
@@ -567,7 +594,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
   // Dialog established only by 101-199 or 2xx 
   // responses to INVITE
 
-  if(reply.cseq_method == "INVITE") {
+  if(reply.cseq_method == SIP_METH_INVITE) {
 
     switch(status){
 
@@ -576,8 +603,9 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
       if(reply.code < 200){
 	if(reply.to_tag.empty())
 	  status = Proceeding;
-	else
+	else {
 	  status = Early;
+	}
       }
       else if(reply.code < 300){
 	status = Connected;
@@ -605,16 +633,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
       break;
 
     case Early:
-      // TODO:
-      //
-      // if((reply.code) != 100 && 
-      //    !remote_tag.empty() && 
-      //    (remote_tag != reply.to_tag)) {
-      //   // fork a new dialog!!!
-      // }
-
       if(reply.code < 200){
-	// ignore this for now
       }
       else if(reply.code < 300){
 	status = Connected;
@@ -627,19 +646,13 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
       break;
 
     case Cancelling:
-      if(reply.cseq_method == "INVITE"){
-	if(reply.code >= 300){
-	  // CANCEL accepted
-	  status = Disconnected;
-	}
-	else {
-	  // CANCEL rejected
-	  sendRequest("BYE");
-	}
+      if(reply.code >= 300){
+	// CANCEL accepted
+	status = Disconnected;
       }
       else {
-	// we don't care about
-	// the reply to the CANCEL itself...
+	// CANCEL rejected
+	sendRequest("BYE");
       }
       break;
 
@@ -658,11 +671,46 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 
   int cont = rel100OnReplyIn(reply);
   if(reply.code >= 200){
-    if((reply.code < 300) && (reply.cseq_method == "INVITE")) {
+    if((reply.code < 300) && (reply.cseq_method == SIP_METH_INVITE)) {
       hdl->onInvite2xx(reply);
     }
     else {
       uac_trans.erase(t_it);
+    }
+  }
+  else { // reply.code < 200
+    if(reply.cseq_method == SIP_METH_INVITE) {
+          switch (reliable_1xx) {
+          case REL100_SUPPORTED:
+            if (key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
+                SIP_EXT_100REL))
+              reliable_1xx = REL100_REQUIRE;
+            else
+              break;
+
+          case REL100_REQUIRE: {
+            if (! reply.rseq) {
+              ERROR("no RSeq value (or unsupported 0) in reliable 1xx.\n");
+              cancel();
+              //TODO: notify & stop the session somehow...
+              break;
+            }
+            string cseq_val = int2str(reply.cseq) + " " + reply.cseq_method;
+            prack(reply,"","","");
+            DBG(SIP_EXT_100REL " now active.\n");
+          }
+          break;
+
+          case 0:
+            // 100rel support disabled
+            break;
+          default:
+            ERROR("BUG: unexpected value `%d' for " SIP_EXT_100REL " switch.", 
+                reliable_1xx);
+#ifndef NDEBUG
+            abort();
+#endif
+          } // switch reliable 1xx
     }
   }
 
@@ -1107,6 +1155,24 @@ int AmSipDialog::sendRequest(const string& method,
 			     const string& hdrs,
 			     int flags)
 {
+  int ret = sendRequest(method,content_type,body,hdrs,flags,cseq);
+  if (ret < 0)
+    return ret;
+
+  cseq++;
+  return 0;
+}
+
+
+
+
+int AmSipDialog::sendRequest(const string& method, 
+			     const string& content_type,
+			     const string& body,
+			     const string& hdrs,
+			     int flags,
+			     unsigned int req_cseq)
+{
   string msg,ser_cmd;
   string m_hdrs = hdrs;
 
@@ -1128,10 +1194,10 @@ int AmSipDialog::sendRequest(const string& method,
   if(!remote_tag.empty()) 
     req.to += ";tag=" + remote_tag;
     
-  req.cseq = cseq;
+  req.cseq = req_cseq;
   req.callid = callid;
     
-  if((method!="BYE")&&(method!="CANCEL"))
+  if((method!=SIP_METH_BYE)&&(method!=SIP_METH_CANCEL))
     req.contact = getContactHdr();
     
   if(!m_hdrs.empty())
@@ -1162,10 +1228,8 @@ int AmSipDialog::sendRequest(const string& method,
     req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE) "<" + outbound_proxy + ";lr>" CRLF;
   }
 
-  if(!body.empty()) {
-    req.content_type = content_type;
-    req.body = body;
-  }
+  req.content_type = content_type;
+  req.body = body;
 
   if(onTxRequest(req))
     return -1;
@@ -1173,8 +1237,12 @@ int AmSipDialog::sendRequest(const string& method,
   if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port))
     return -1;
  
-  uac_trans[cseq] = AmSipTransaction(method,cseq,req.tt);
-  cseq++; // increment for next request
+  if(method != SIP_METH_ACK) {
+    uac_trans[req_cseq] = AmSipTransaction(method,req_cseq,req.tt);
+  }
+  else {
+    uac_trans.erase(req_cseq);
+  }
 
   return 0;
 }
@@ -1280,13 +1348,18 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
   }
 
   if(!route.empty()) {
-    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE) + route + CRLF;
+    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE);
+    if(force_outbound_proxy && !outbound_proxy.empty()){
+      req.route += "<" + outbound_proxy + ";lr>, ";
+    }
+    req.route += route + CRLF;
   }
 
-  if(!body.empty()) {
-    req.content_type = content_type;
-    req.body = body;
-  }
+  req.content_type = content_type;
+  req.body = body;
+  
+  if(onTxRequest(req))
+    return -1;
 
   if (SipCtrlInterface::send(req))
     return -1;

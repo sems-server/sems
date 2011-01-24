@@ -143,6 +143,14 @@ private:
   void rel100OnReplyOut(const AmSipRequest &req, unsigned int code, 
 			string &hdrs);
 
+  /** @return 0 on success */
+  int sendRequest(const string& method, 
+		  const string& content_type,
+		  const string& body,
+		  const string& hdrs,
+		  int flags,
+		  unsigned int req_cseq);
+
  public:
   string user;         // local user
   string domain;       // local domain
@@ -279,6 +287,43 @@ private:
 			 unsigned int  code,
 			 const string& reason,
 			 const string& hdrs = "");
+
+// private:
+//   Status status;
+
+//   TransMap uas_trans;
+//   TransMap uac_trans;
+    
+//   // Number of open UAS INVITE transactions
+//   unsigned int pending_invites;
+
+//   // In case a CANCEL should have been sent
+//   // while in 'Trying' state
+//   bool         cancel_pending;
+
+//   // Offer/answer
+//   OAState oa_state;
+//   int     oa_cseq; // remote CSeq of the last offer/answer
+//   AmSdp   sdp_local;
+//   AmSdp   sdp_remote;
+
+//   AmSipDialogEventHandler* hdl;
+
+//   int onTxReply(AmSipReply& reply);
+//   int onTxRequest(AmSipRequest& req);
+
+//   int onRxSdp(unsigned int req_cseq, const string& body, const char** err_txt);
+//   int onTxSdp(unsigned int req_cseq, const string& body);
+
+//   int getSdpBody(string& sdp_body);
+
+//   /** @return 0 on success */
+//   int sendRequest(const string& method, 
+// 		  const string& content_type,
+// 		  const string& body,
+// 		  const string& hdrs,
+// 		  int flags,
+// 		  unsigned int req_cseq);
 };
 
 /**
