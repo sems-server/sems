@@ -136,9 +136,13 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 		    "Retry-After: " + int2str(get_random() % 10) + CRLF);
 	return;
       }
-      else {
-	pending_invites++;
-      }      
+      pending_invites++;
+
+      if((oa_state != OA_None) && (oa_state != OA_Completed)) {
+
+	// Reset Offer/Answer state
+	oa_state = OA_None;
+      }
     }
     
     r_cseq = req.cseq;
@@ -532,16 +536,26 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
     && (reply.content_type == SIP_APPLICATION_SDP);
 
   if (!has_sdp && !generate_sdp) {
-    // update Offer/Answer state
-    // TODO: support multipart mime
-    if ((reply.cseq_method == SIP_METH_INVITE) ||
-	(reply.cseq_method == SIP_METH_UPDATE)) {
+    // let's see whether we should force SDP or not.
 
-      // TODO: do the same if reliable prov. reply
+    if (reply.cseq_method == SIP_METH_INVITE){
+      
+      if ((reply.code == 183) 
+	  || ((reply.code >= 200) && (reply.code < 300))) {
+	
+	// either offer received or no offer at all:
+	//  -> force SDP
+	generate_sdp = (oa_state == OA_OfferRecved) || (oa_state == OA_None);
+      }
+    }
+    else if (reply.cseq_method == SIP_METH_UPDATE) {
+
       if ((reply.code >= 200) &&
 	  (reply.code < 300)) {
-
-	generate_sdp = true;
+	
+	// offer received:
+	//  -> force SDP
+	generate_sdp = (oa_state == OA_OfferRecved);
       }
     }
   }
