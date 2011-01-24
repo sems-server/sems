@@ -131,18 +131,15 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
     }
 
     if (req.method == SIP_METH_INVITE) {
-      if(pending_invites) {      
+      if(pending_invites || ((oa_state != OA_None) && (oa_state != OA_Completed))) {      
 	reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
 		    "Retry-After: " + int2str(get_random() % 10) + CRLF);
 	return;
       }
       pending_invites++;
 
-      if((oa_state != OA_None) && (oa_state != OA_Completed)) {
-
-	// Reset Offer/Answer state
-	oa_state = OA_None;
-      }
+      // Reset Offer/Answer state
+      oa_state = OA_None;
     }
     
     r_cseq = req.cseq;
