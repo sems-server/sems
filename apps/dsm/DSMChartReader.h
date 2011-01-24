@@ -73,10 +73,11 @@ class ActionList : public DSMElement {
 };
 
 struct DSMConditionList : public DSMElement {
- DSMConditionList() : invert_next(false), is_exception(false) { }
+ DSMConditionList() : invert_next(false), is_exception(false), is_if(false) { }
   vector<DSMCondition*> conditions;
   bool invert_next;
   bool is_exception;
+  bool is_if;
 };
 
 class DSMChartReader {

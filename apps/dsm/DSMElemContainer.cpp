@@ -32,11 +32,11 @@ DSMElemContainer::DSMElemContainer() {
 }
 
 DSMElemContainer::~DSMElemContainer() {
-  for (vector<DSMElement*>::iterator it=
+  for (set<DSMElement*>::iterator it=
 	 owned_elems.begin(); it != owned_elems.end(); it++) 
     delete *it;
 }
 
 void DSMElemContainer::transferElem(DSMElement* elem) {
-  owned_elems.push_back(elem);
+  owned_elems.insert(elem);
 }

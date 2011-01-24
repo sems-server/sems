@@ -346,20 +346,22 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
     DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(stack_top);
     if (ct) {
       if (token == "[") {
-	stack.push_back(new DSMConditionList());
+	DSMConditionList* cl = new DSMConditionList();
+	cl->is_if = true;
+	stack.push_back(cl);
 	continue;
-      }
+       }
       if (token == "{") {
       	stack.push_back(new ActionList(ActionList::AL_if));
       	continue;
       }
-      if (token == ";") {
+
+      if (token == ";" || token == "}") {
 	stack.pop_back();
 	ActionList* al = dynamic_cast<ActionList*>(&(*stack.back()));
 	if (al) {
 	  owner->transferElem(ct);
 	  al->actions.push_back(ct);
-	  DBG("Added DSMConditionTree to ActionList\n");
 	} else {
 	  ERROR("no ActionList for DSMConditionTree\n");
 	  delete al;
@@ -367,6 +369,9 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	}
        	continue;
       }
+
+      ERROR("syntax error: got '%s' without context\n", token.c_str());
+      return false;
     }
     
     State* state = dynamic_cast<State*>(stack_top);
@@ -418,7 +423,7 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	  delete al;
 	  return false;
       	}
-  	    
+
 	if (al->al_type == ActionList::AL_func) {
 	  DSMFunction* f = dynamic_cast<DSMFunction*>(&(*stack.back()));
 	  if (!f) {
@@ -427,22 +432,47 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	    return false;
 	  }
 	  f->actions = al->actions;
-	} else if (al->al_type == ActionList::AL_if ||
-		   al->al_type == ActionList::AL_else) {
+	  delete al;
+	  continue;
+	}
+
+	if (al->al_type == ActionList::AL_if ||
+	    al->al_type == ActionList::AL_else) {
 	  DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(&(*stack.back()));
 	  if (!ct) {
 	    ERROR("no DSMConditionTree for action list\n");
 	    delete al;
 	    return false;
 	  }
-        	
-	  if (al->al_type == ActionList::AL_if) {
+
+	  if (al->al_type == ActionList::AL_if)
 	    ct->run_if_true = al->actions;
-	  } else if (al->al_type == ActionList::AL_else) {
+	  else
 	    ct->run_if_false = al->actions;
-          }
-	} else if (al->al_type == ActionList::AL_enter || 
-		   al->al_type == ActionList::AL_exit) {
+
+	  stack.pop_back();
+	  ActionList* al_parent = dynamic_cast<ActionList*>(&(*stack.back()));
+	  if (al_parent) {
+	    owner->transferElem(ct);
+	    al_parent->actions.push_back(ct);
+	  } else {
+	    ERROR("no ActionList for DSMConditionTree\n");
+	    delete al;
+	    return false;
+	  }
+	  if (al->al_type == ActionList::AL_if)
+	    DBG("} // end if\n");
+	  else
+	    DBG("} // end else\n");
+
+	  delete al;
+
+	  continue;
+
+	}
+
+	if (al->al_type == ActionList::AL_enter ||
+	    al->al_type == ActionList::AL_exit) {
 	  State* s = dynamic_cast<State*>(&(*stack.back()));
 	  if (!s) {
 	    ERROR("no State for action list\n");
@@ -455,7 +485,11 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	  } else if (al->al_type == ActionList::AL_exit) {
 	    s->post_actions = al->actions;
           }
-        } else if (al->al_type == ActionList::AL_trans) {
+	  delete al;
+	  continue;
+        }
+
+	if (al->al_type == ActionList::AL_trans) {
 	  DSMTransition* t = dynamic_cast<DSMTransition*>(&(*stack.back()));
 	  if (!t) {
 	    ERROR("no DSMTransition for action list\n");
@@ -463,7 +497,11 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	    return false;
 	  }
 	  t->actions = al->actions;
-	} else if (al->al_type == ActionList::AL_for) {
+	  delete al;
+	  continue;
+	}
+
+	if (al->al_type == ActionList::AL_for) {
 	  DSMArrayFor* af = dynamic_cast<DSMArrayFor*>(&(*stack.back()));
 	  if (!af) {
 	    ERROR("no DSMArrayFor for action list\n");
@@ -483,18 +521,38 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 	  DBG("} // end for (%s%s in %s) {\n",
 	      af->k.c_str(), af->v.empty() ? "" : (","+af->v).c_str(),
 	      af->array_struct.c_str());
-	} else {
-	  ERROR("internal: unknown transition list type\n");
+	  delete al;
+	  continue;
 	}
-	delete al;
+
+	ERROR("internal: unknown transition list type\n");
+	return false;
+      }
+
+      if (token == "if") {
+	DBG("if ...\n");
+	// start condition tree
+	stack.push_back(new DSMConditionTree());
+	DSMConditionList* cl = new DSMConditionList();
+	cl->is_if = true;
+	stack.push_back(cl);
 	continue;
       }
-  	
-      if (token == "if") {
-	//token is condition tree
-	stack.push_back(new DSMConditionTree());
+
+      if (token == "else") {
+	DBG(" ... else ...\n");
+	DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(al->actions.back());
+	if (NULL == ct) {
+	  ERROR("syntax error: else without if block\n");
+	  return false;
+	}
+	stack.push_back(ct);
+	stack.push_back(new ActionList(ActionList::AL_else));
+	al->actions.pop_back();
 	continue;
-      } else if (token.substr(0, 3) == "for") {
+      }
+
+      if (token.substr(0, 3) == "for") {
 	// token is for loop
 	DSMArrayFor* af = new DSMArrayFor();
 	if (token.length() > 3) {
@@ -504,35 +562,50 @@ bool DSMChartReader::decode(DSMStateDiagram* e, const string& chart,
 
 	stack.push_back(af);
 	continue;
-      } else {
-	DSMFunction* f = functionFromToken(token);
-	if (f) {
-	  DBG("adding actions from function '%s'\n", f->name.c_str());
-	  DBG("al.size is %zd before", al->actions.size());
-	  for (vector<DSMElement*>::iterator it=f->actions.begin();
-	       it != f->actions.end(); it++) {
-	    DSMElement* a = *it;
-	    owner->transferElem(a);
-	    al->actions.push_back(a);
-	  }
-	  DBG("al.size is %zd after", al->actions.size());
-	} else {
-	  DBG("adding action '%s'\n", token.c_str());
-	  DSMAction* a = actionFromToken(token);
-	  if (!a)
-	    return false;
+      }
+
+      DSMFunction* f = functionFromToken(token);
+      if (f) {
+	DBG("adding actions from function '%s'\n", f->name.c_str());
+	DBG("al.size is %zd before", al->actions.size());
+	for (vector<DSMElement*>::iterator it=f->actions.begin();
+	     it != f->actions.end(); it++) {
+	  DSMElement* a = *it;
 	  owner->transferElem(a);
 	  al->actions.push_back(a);
 	}
+	DBG("al.size is %zd after", al->actions.size());
 	continue;
       }
-    }
+
+      DBG("adding action '%s'\n", token.c_str());
+      DSMAction* a = actionFromToken(token);
+      if (!a)
+	return false;
+      owner->transferElem(a);
+      al->actions.push_back(a);
+    } // actionlist
     
      
     DSMConditionList* cl = dynamic_cast<DSMConditionList*>(stack_top);
     if (cl) {
-      if (token == ";")
+      if (token == ";" || token == "[")
         continue;
+
+      if (cl->is_if && token == "{") {
+	// end of condition list for if
+	stack.pop_back();
+	DSMConditionTree* ct = dynamic_cast<DSMConditionTree*>(&(*stack.back()));
+	if (!ct) {
+	  ERROR("internal error: condition list without condition tree\n");
+	  return false;
+	}
+	DBG("{\n");
+	ct->conditions = cl->conditions;
+	ct->is_exception = cl->is_exception;
+	stack.push_back(new ActionList(ActionList::AL_if));
+	continue;
+      }
 
       if ((token == "{") || (token == "}")) {
       	// readability
