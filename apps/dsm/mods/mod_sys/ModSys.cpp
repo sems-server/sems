@@ -315,7 +315,7 @@ EXEC_ACTION_START(SCSysGetTimestampAction) {
   snprintf(ms_buf, 40, "%lu", tv.tv_sec);
   sc_sess->var[varname+".tv_sec"] = ms_buf;
 
-  snprintf(ms_buf, 40, "%lu", tv.tv_usec);
+  snprintf(ms_buf, 40, "%lu", (long unsigned int)tv.tv_usec);
   sc_sess->var[varname+".tv_usec"] = ms_buf;
 
   DBG("got timestamp $%s=%s, $%s=%s, \n",
@@ -346,7 +346,7 @@ EXEC_ACTION_START(SCSysSubTimestampAction) {
   snprintf(ms_buf, 40, "%lu", diff.tv_sec);
   sc_sess->var[t1+".tv_sec"] = ms_buf;
 
-  snprintf(ms_buf, 40, "%lu", diff.tv_usec);
+  snprintf(ms_buf, 40, "%lu", (long unsigned int)diff.tv_usec);
   sc_sess->var[t1+".tv_usec"] = ms_buf;
 
   // may be overflowing - use only if timestamps known
