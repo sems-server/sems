@@ -338,14 +338,24 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	}
       } else if (array_for->for_type == DSMArrayFor::Array) {
 	unsigned int a_index = 0;
-	while (true) {
-	  VarMapT::iterator v = sc_sess->var.find(array_name+"["+int2str(a_index)+"]");
-	  if (v == sc_sess->var.end())
-	    break;
+	VarMapT::iterator v = sc_sess->
+	  var.lower_bound(array_name+"["+int2str(a_index)+"]");
+
+	while (v != sc_sess->var.end()) {
+	  string this_index = array_name+"["+int2str(a_index)+"]";
+	  if (v->first.substr(0, this_index.length()) != this_index) {
+	    a_index++;
+	    this_index = array_name+"["+int2str(a_index)+"]";
+	    if (v->first.substr(0, this_index.length()) != this_index) {
+	      break;
+	    }
+	  }
+
 	  cnt_values.push_back(make_pair(v->second, ""));
 	  DBG("      '%s'\n", v->second.c_str());
-	  a_index++;
+	  v++;
 	}
+
       }
 
       // save counter k
