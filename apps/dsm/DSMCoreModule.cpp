@@ -545,9 +545,9 @@ string replaceParams(const string& q, AmSession* sess, DSMSession* sc_sess,
 	 res[rstart+1] == '"' ||
 	 res[rstart+1] == '\''
 	 ))
-      rend = res.find_first_of(" ,()$#@\t;:'\"", rstart+2);
+      rend = res.find_first_of(" ,()[]$#@\t;:'\"", rstart+2);
     else 
-      rend = res.find_first_of(" ,()$#@\t;:'\"", rstart+1);
+      rend = res.find_first_of(" ,()[]$#@\t;:'\"", rstart+1);
     if (rend==string::npos)
       rend = res.length();
     string keyname = res.substr(rstart+1, rend-rstart-1);
