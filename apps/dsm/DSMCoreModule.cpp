@@ -86,6 +86,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("log", SCLogAction);
   DEF_CMD("clear", SCClearAction);
   DEF_CMD("clearArray", SCClearArrayAction);
+  DEF_CMD("size", SCSizeAction);
   DEF_CMD("logVars", SCLogVarsAction);
   DEF_CMD("logParams", SCLogParamsAction);
   DEF_CMD("logSelects", SCLogSelectsAction);
@@ -689,6 +690,31 @@ EXEC_ACTION_START(SCClearArrayAction) {
     sc_sess->var.erase(lb_d);    
   }
 
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCSizeAction, ',', false);
+EXEC_ACTION_START(SCSizeAction) {
+  string array_name = par1;
+  if (array_name.length() && array_name[0]=='$')
+    array_name.erase(0,1);
+
+  string dst_name = par2;
+  if (dst_name.length()&&dst_name[0]=='$')
+    dst_name.erase(0,1);
+
+
+  unsigned int a_size = 0;
+  while (true) {
+    string ai_name = array_name+"["+int2str(a_size)+"]";
+    VarMapT::iterator lb = sc_sess->var.lower_bound(ai_name);
+    if (lb == sc_sess->var.end() ||
+	lb->first.substr(0,ai_name.length()) != ai_name)
+      break;
+    a_size++;
+  }
+  string res = int2str(a_size);
+  sc_sess->var[dst_name] = res;
+  DBG("set $%s=%s\n", dst_name.c_str(), res.c_str());
 } EXEC_ACTION_END;
 
 
