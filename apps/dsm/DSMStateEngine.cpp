@@ -292,8 +292,8 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
     DSMArrayFor* array_for = dynamic_cast<DSMArrayFor*>(*it);
     if (array_for) {
       if (array_for->for_type == DSMArrayFor::Range) {
-	DBG("running for (%s in range(%d, %d) {\n",
-	    array_for->k.c_str(), array_for->range[0], array_for->range[1]);
+	DBG("running for (%s in range(%s, %s) {\n",
+	    array_for->k.c_str(), array_for->v.c_str(), array_for->array_struct.c_str());
       } else {
 	DBG("running for (%s%s in %s) {\n",
 	    array_for->k.c_str(), array_for->v.empty() ? "" : (","+array_for->v).c_str(),
@@ -321,7 +321,7 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	v_name.erase(0, 1);
 
       vector<pair<string, string> > cnt_values;
-
+      int range[2] = {0,0};
       // get the counter values
       if (array_for->for_type == DSMArrayFor::Struct) {
 	VarMapT::iterator lb = sc_sess->var.lower_bound(array_name);
@@ -355,7 +355,21 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 	  DBG("      '%s'\n", v->second.c_str());
 	  v++;
 	}
+      } else if (array_for->for_type == DSMArrayFor::Range) {
+	string s_range = resolveVars(array_for->v, sess, sc_sess, event_params);
+	if (!str2int(s_range, range[0])) {
+	  WARN("Error converting lower bound range(%s,%s)\n",
+	       array_for->v.c_str(), array_for->array_struct.c_str());
+	  range[0]=0;
+	} else {
+	  s_range = resolveVars(array_for->array_struct, sess, sc_sess, event_params);
 
+	  if (!str2int(s_range, range[1])) {
+	    WARN("Error converting upper bound range(%s,%s)\n",
+		 array_for->v.c_str(), array_for->array_struct.c_str());
+	    range[0]=0; range[1]=0;
+	  }
+	}
       }
 
       // save counter k
@@ -374,15 +388,15 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
 
       // run the loop
       if (array_for->for_type == DSMArrayFor::Range) {
-	int cnt = array_for->range[0];
-	while (cnt != array_for->range[1]) {
+	int cnt = range[0];
+	while (cnt != range[1]) {
 	  sc_sess->var[k_name] = int2str(cnt);
 	  DBG("setting $%s=%s\n", k_name.c_str(), sc_sess->var[k_name].c_str());
 
 	  runactions(array_for->actions.begin(), array_for->actions.end(),
 		     sess, sc_sess, event, event_params, is_consumed);
 
-	  if (array_for->range[1] > array_for->range[0])
+	  if (range[1] > range[0])
 	    cnt++;
 	  else
 	    cnt--;

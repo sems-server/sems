@@ -190,9 +190,8 @@ class DSMArrayFor
   } for_type;
 
   string k; // for(k in array)
-  string v; // for(k,v in struct)
-  int range[2];
-  string array_struct; // array or struct name
+  string v; // for(k,v in struct), or range lower bound
+  string array_struct; // array or struct name, or range upper bound
   vector<DSMElement*> actions;
 };
 
