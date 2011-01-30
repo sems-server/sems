@@ -29,6 +29,7 @@ AmArg ConferenceRoomParticipant::asArgArray() {
   res.push(AmArg((int)status));
   res.push(AmArg(last_reason.c_str()));
   res.push(AmArg((int)muted));
+  res.push(AmArg(participant_id));
   return res;
 }
 
@@ -45,7 +46,9 @@ void ConferenceRoomParticipant::updateStatus(ConferenceRoomParticipant::Particip
   updateAccess(now);
 }
 
-ConferenceRoom::ConferenceRoom() {
+ConferenceRoom::ConferenceRoom()
+  : expiry_time(0)
+{
   gettimeofday(&last_access_time, NULL);
 }
 
@@ -91,12 +94,14 @@ vector<string> ConferenceRoom::participantLtags() {
 }
 
 void ConferenceRoom::newParticipant(const string& localtag, 
-				    const string& number) {
+				    const string& number,
+				    const string& participant_id) {
   gettimeofday(&last_access_time, NULL);
 
   participants.push_back(ConferenceRoomParticipant());
   participants.back().localtag = localtag;
   participants.back().number = number;
+  participants.back().participant_id = participant_id;
 }
 
 bool ConferenceRoom::hasParticipant(const string& localtag) {

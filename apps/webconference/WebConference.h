@@ -137,6 +137,13 @@ public:
 
   static bool PrivateRoomsMode;
   
+  // P-App-Param parameter to get participant ID from 
+  static string participant_id_paramname;
+  // if participant_id_paramname not configured:
+  // header to get participant ID from
+  static string participant_id_hdr;
+
+
   WebConferenceFactory(const string& _app_name);
   AmSession* onInvite(const AmSipRequest&);
   AmSession* onInvite(const AmSipRequest& req,
@@ -146,7 +153,8 @@ public:
   bool isValidConference(const string& conf_id);
   bool newParticipant(const string& conf_id, 
 		      const string& localtag, 
-		      const string& number);
+		      const string& number,
+		      const string& participant_id);
   void updateStatus(const string& conf_id, 
 		    const string& localtag, 
 		    ConferenceRoomParticipant::ParticipantStatus status,
@@ -186,6 +194,8 @@ public:
 
   void getRoomPassword(const AmArg& args, AmArg& ret);
   void listRooms(const AmArg& args, AmArg& ret);
+  void findParticipant(const AmArg& args, AmArg& ret);
+
 };
 
 
