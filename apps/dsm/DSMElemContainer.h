@@ -28,11 +28,11 @@
 #define _SC_ELEM_CONTAINER_H
 
 class DSMElement;
-#include <vector>
-using std::vector;
+#include <set>
+using std::set;
 
 class DSMElemContainer {
-  vector<DSMElement*> owned_elems;
+  set<DSMElement*> owned_elems;
  public: 
   DSMElemContainer();
   virtual ~DSMElemContainer();

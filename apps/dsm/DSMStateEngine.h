@@ -136,29 +136,63 @@ class DSMAction
 
 class DSMTransition;
 
-class State 
+class State
 : public DSMElement {
  public:
   State();
   ~State();
-  vector<DSMAction*> pre_actions;
-  vector<DSMAction*> post_actions;
+  vector<DSMElement*> pre_actions;
+  vector<DSMElement*> post_actions;
   
   vector<DSMTransition> transitions;
 };
 
-class DSMTransition 
+class DSMTransition
 : public DSMElement {
  public:
   DSMTransition();
   ~DSMTransition();
 
   vector<DSMCondition*> precond;
-  vector<DSMAction*> actions;
+  vector<DSMElement*> actions;
   string from_state;
   string to_state;
 
   bool is_exception;
+};
+
+class DSMConditionTree
+: public DSMElement {
+ public:
+  vector<DSMCondition*> conditions;
+  vector<DSMElement*> run_if_true;
+  vector<DSMElement*> run_if_false;
+  bool is_exception;
+};
+
+class DSMFunction
+: public DSMElement {
+ public:
+  string name;
+  vector<DSMElement*> actions;
+};
+
+class DSMArrayFor
+: public DSMElement {
+ public:
+  DSMArrayFor() { }
+  ~DSMArrayFor() { }
+
+  enum DSMForType {
+    Range,
+    Array,
+    Struct
+  } for_type;
+
+  string k; // for(k in array)
+  string v; // for(k,v in struct), or range lower bound
+  string array_struct; // array or struct name, or range upper bound
+  vector<DSMElement*> actions;
 };
 
 class DSMModule;
@@ -224,8 +258,8 @@ class DSMStateEngine {
 		DSMCondition::EventType event,
 		map<string,string>* event_params);
   bool returnDiag(AmSession* sess, DSMSession* sc_sess);
-  bool runactions(vector<DSMAction*>::iterator from, 
-		  vector<DSMAction*>::iterator to, 
+  bool runactions(vector<DSMElement*>::iterator from, 
+		  vector<DSMElement*>::iterator to, 
 		  AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event,
 		  map<string,string>* event_params,  bool& is_consumed);
 

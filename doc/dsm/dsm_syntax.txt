@@ -145,6 +145,10 @@ sendDTMFSequence(sequence [, duration_ms])
       append($var, @select); append($var, $var2);
  substr($var, pos)
   e.g. substr($myvar, 5);
+ 
+ size($arrayname, $dst);
+  set variable $dst to size of array 
+  (e.g. $arrayname[0], $arrayname[1] set, $dst set to 2)
 
  inc($var)
  clear($var)

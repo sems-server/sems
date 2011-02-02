@@ -57,7 +57,11 @@ class ActionList : public DSMElement {
   enum AL_type {
     AL_enter,
     AL_exit,
-    AL_trans
+    AL_trans,
+    AL_if,
+    AL_else,
+    AL_func,
+    AL_for
   };
 
   AL_type al_type;
@@ -65,14 +69,15 @@ class ActionList : public DSMElement {
  ActionList(AL_type al_type) 
    : al_type(al_type) { }
 
-  vector<DSMAction*> actions;
+  vector<DSMElement*> actions;
 };
 
 struct DSMConditionList : public DSMElement {
- DSMConditionList() : invert_next(false), is_exception(false) { }
+ DSMConditionList() : invert_next(false), is_exception(false), is_if(false) { }
   vector<DSMCondition*> conditions;
   bool invert_next;
   bool is_exception;
+  bool is_if;
 };
 
 class DSMChartReader {
@@ -81,12 +86,16 @@ class DSMChartReader {
   bool is_snt(const char c);
 
   string getToken(string str, size_t& pos);
+  DSMFunction* functionFromToken(const string& str);
   DSMAction* actionFromToken(const string& str);
   DSMCondition* conditionFromToken(const string& str, bool invert);
+  bool forFromToken(DSMArrayFor& af, const string& token);
 
   bool importModule(const string& mod_cmd, const string& mod_path);
   vector<DSMModule*> mods;
   DSMCoreModule core_mod;
+
+  vector<DSMFunction*> funcs;
 
  public:
   DSMChartReader();

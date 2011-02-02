@@ -46,11 +46,11 @@ DSMStateDiagram::~DSMStateDiagram() {
 
 void DSMStateDiagram::addState(const State& state, bool is_initial) {
   DBG("adding state '%s'\n", state.name.c_str());
-  for (vector<DSMAction*>::const_iterator it=
+  for (vector<DSMElement*>::const_iterator it=
 	 state.pre_actions.begin(); it != state.pre_actions.end(); it++) {
     DBG("   pre-action '%s'\n", (*it)->name.c_str());
   }
-  for (vector<DSMAction*>::const_iterator it=
+  for (vector<DSMElement*>::const_iterator it=
 	 state.post_actions.begin(); it != state.post_actions.end(); it++) {
     DBG("   post-action '%s'\n", (*it)->name.c_str());
   }
@@ -75,7 +75,7 @@ bool DSMStateDiagram::addTransition(const DSMTransition& trans) {
     DBG("       DSMCondition  %s'%s'\n", 
 	(*it)->invert?"not ":"", (*it)->name.c_str());
   }
-  for (vector<DSMAction*>::const_iterator it=
+  for (vector<DSMElement*>::const_iterator it=
 	 trans.actions.begin(); it != trans.actions.end(); it++) {
     DBG("       Action     '%s'\n", (*it)->name.c_str());
   }
@@ -224,42 +224,220 @@ void DSMStateEngine::onBeforeDestroy(DSMSession* sc_sess, AmSession* sess) {
     (*it)->onBeforeDestroy(sc_sess, sess);
 }
 
-bool DSMStateEngine::runactions(vector<DSMAction*>::iterator from, 
-				vector<DSMAction*>::iterator to, 
+bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from, 
+				vector<DSMElement*>::iterator to, 
 				AmSession* sess,  DSMSession* sc_sess, DSMCondition::EventType event,
 				map<string,string>* event_params,  bool& is_consumed) {
-//   DBG("running %zd actions\n", to - from);
-  for (vector<DSMAction*>::iterator it=from; it != to; it++) {
-    DBG("executing '%s'\n", (*it)->name.c_str()); 
-    if ((*it)->execute(sess, sc_sess, event, event_params)) {
-      string se_modifier;
-      switch ((*it)->getSEAction(se_modifier,
-				 sess, sc_sess, event, event_params)) {
-      case DSMAction::Repost: 
-	is_consumed = false; 
-	break;
-      case DSMAction::Jump: 
-	DBG("jumping to %s\n", se_modifier.c_str());
-	if (jumpDiag(se_modifier, sess, sc_sess, event, event_params)) {
-	  // is_consumed = false; 
-	  return true;  
-	} break;
-      case DSMAction::Call:
-	DBG("calling %s\n", se_modifier.c_str());
-	if (callDiag(se_modifier, sess, sc_sess, event, event_params))  {
-	  // is_consumed = false; 
-	  return true;   
-	} break;
-      case DSMAction::Return: 
-	if (returnDiag(sess, sc_sess)) {
-	  //is_consumed = false;
-	  return true; 
-	} break;
-      default: break;
+  DBG("running %zd DSM action elements\n", to - from);
+  for (vector<DSMElement*>::iterator it=from; it != to; it++) {
+
+    DSMAction* dsm_act = dynamic_cast<DSMAction*>(*it);
+    if (dsm_act) {
+      DBG("executing '%s'\n", (dsm_act)->name.c_str()); 
+      if ((dsm_act)->execute(sess, sc_sess, event, event_params)) {
+        string se_modifier;
+        switch ((dsm_act)->getSEAction(se_modifier,
+				       sess, sc_sess, event, event_params)) {
+	case DSMAction::Repost: 
+	  is_consumed = false; 
+	  break;
+	case DSMAction::Jump: 
+	  DBG("jumping to %s\n", se_modifier.c_str());
+	  if (jumpDiag(se_modifier, sess, sc_sess, event, event_params)) {
+	    // is_consumed = false; 
+	    return true;  
+	  }
+	  break;
+	case DSMAction::Call:
+	  DBG("calling %s\n", se_modifier.c_str());
+	  if (callDiag(se_modifier, sess, sc_sess, event, event_params))  {
+	    // is_consumed = false; 
+	    return true;   
+	  } 
+	  break;
+	case DSMAction::Return: 
+	  if (returnDiag(sess, sc_sess)) {
+	    //is_consumed = false;
+	    return true; 
+	  }
+	  break;
+	default: break;
+	}
       }
+      continue;
     }
+
+    DSMConditionTree* cond_tree = dynamic_cast<DSMConditionTree*>(*it);
+    if (cond_tree) {
+      DBG("checking conditions\n");
+      vector<DSMCondition*>::iterator con=cond_tree->conditions.begin();
+      while (con!=cond_tree->conditions.end()) {
+	if (!(*con)->_match(sess, sc_sess, event, event_params))
+	  break;
+	con++;
+      }
+      if (con == cond_tree->conditions.end()) {
+	DBG("condition tree matched.\n");
+        if (runactions(cond_tree->run_if_true.begin(), cond_tree->run_if_true.end(),
+		       sess, sc_sess, event, event_params, is_consumed))
+	  return true;
+      } else {
+        if(runactions(cond_tree->run_if_false.begin(), cond_tree->run_if_false.end(),
+		      sess, sc_sess, event, event_params, is_consumed))
+	  return true;
+      }
+      continue;
+    }
+
+    DSMArrayFor* array_for = dynamic_cast<DSMArrayFor*>(*it);
+    if (array_for) {
+      if (array_for->for_type == DSMArrayFor::Range) {
+	DBG("running for (%s in range(%s, %s) {\n",
+	    array_for->k.c_str(), array_for->v.c_str(), array_for->array_struct.c_str());
+      } else {
+	DBG("running for (%s%s in %s) {\n",
+	    array_for->k.c_str(), array_for->v.empty() ? "" : (","+array_for->v).c_str(),
+	    array_for->array_struct.c_str());
+      }
+
+      string array_name = array_for->array_struct;
+      string k_name = array_for->k;
+      string v_name = array_for->v;
+
+      if (!k_name.length()) {
+	ERROR("empty counter name in for\n");
+	continue;
+      }
+
+      if (array_for->for_type != DSMArrayFor::Range && !array_name.length()) {
+	ERROR("empty array name in for\n");
+	continue;
+      }
+
+      if (array_name[0] == '$')	array_name.erase(0, 1);
+      if (k_name[0] == '$') k_name.erase(0, 1);
+
+      if (array_for->for_type == DSMArrayFor::Struct && v_name[0] == '$')
+	v_name.erase(0, 1);
+
+      vector<pair<string, string> > cnt_values;
+      int range[2] = {0,0};
+      // get the counter values
+      if (array_for->for_type == DSMArrayFor::Struct) {
+	VarMapT::iterator lb = sc_sess->var.lower_bound(array_name);
+	while (lb != sc_sess->var.end()) {
+	  if ((lb->first.length() < array_name.length()) ||
+	      strncmp(lb->first.c_str(), array_name.c_str(), array_name.length()))
+	    break;
+
+	  string varname = lb->first.substr(array_name.length()+1);
+	  string valname = lb->second;
+	  cnt_values.push_back(make_pair(varname, valname));
+	  DBG("      '%s,%s'\n", varname.c_str(), valname.c_str());
+	  lb++;
+	}
+      } else if (array_for->for_type == DSMArrayFor::Array) {
+	unsigned int a_index = 0;
+	VarMapT::iterator v = sc_sess->
+	  var.lower_bound(array_name+"["+int2str(a_index)+"]");
+
+	while (v != sc_sess->var.end()) {
+	  string this_index = array_name+"["+int2str(a_index)+"]";
+	  if (v->first.substr(0, this_index.length()) != this_index) {
+	    a_index++;
+	    this_index = array_name+"["+int2str(a_index)+"]";
+	    if (v->first.substr(0, this_index.length()) != this_index) {
+	      break;
+	    }
+	  }
+
+	  cnt_values.push_back(make_pair(v->second, ""));
+	  DBG("      '%s'\n", v->second.c_str());
+	  v++;
+	}
+      } else if (array_for->for_type == DSMArrayFor::Range) {
+	string s_range = resolveVars(array_for->v, sess, sc_sess, event_params);
+	if (!str2int(s_range, range[0])) {
+	  WARN("Error converting lower bound range(%s,%s)\n",
+	       array_for->v.c_str(), array_for->array_struct.c_str());
+	  range[0]=0;
+	} else {
+	  s_range = resolveVars(array_for->array_struct, sess, sc_sess, event_params);
+
+	  if (!str2int(s_range, range[1])) {
+	    WARN("Error converting upper bound range(%s,%s)\n",
+		 array_for->v.c_str(), array_for->array_struct.c_str());
+	    range[0]=0; range[1]=0;
+	  }
+	}
+      }
+
+      // save counter k
+      VarMapT::iterator c_it = sc_sess->var.find(k_name);
+      bool k_exists = c_it != sc_sess->var.end();
+      string k_save = k_exists ? c_it->second : string("");
+
+      // save counter v for Struct
+      bool v_exists = false; string v_save;
+      if (array_for->for_type == DSMArrayFor::Struct) {
+	c_it = sc_sess->var.find(v_name);
+	v_exists = c_it != sc_sess->var.end();
+	if (v_exists)
+	  v_save = c_it->second;
+      }
+
+      // run the loop
+      if (array_for->for_type == DSMArrayFor::Range) {
+	int cnt = range[0];
+	while (cnt != range[1]) {
+	  sc_sess->var[k_name] = int2str(cnt);
+	  DBG("setting $%s=%s\n", k_name.c_str(), sc_sess->var[k_name].c_str());
+
+	  runactions(array_for->actions.begin(), array_for->actions.end(),
+		     sess, sc_sess, event, event_params, is_consumed);
+
+	  if (range[1] > range[0])
+	    cnt++;
+	  else
+	    cnt--;
+	}
+
+      } else {
+	DBG("running for loop with %zd items\n", cnt_values.size());
+	for (vector<pair<string, string> > ::iterator f_it=
+	       cnt_values.begin(); f_it != cnt_values.end(); f_it++) {
+	  if (array_for->for_type == DSMArrayFor::Struct) {
+	    DBG("setting $%s=%s, $%s=%s\n", k_name.c_str(), f_it->first.c_str(),
+		v_name.c_str(), f_it->second.c_str());
+	    sc_sess->var[k_name] = f_it->first;
+	    sc_sess->var[v_name] = f_it->second;
+	  } else {
+	    DBG("setting $%s=%s\n", k_name.c_str(), f_it->first.c_str());
+	    sc_sess->var[k_name] = f_it->first;
+	  }
+	  runactions(array_for->actions.begin(), array_for->actions.end(),
+		     sess, sc_sess, event, event_params, is_consumed);
+	}
+      }
+
+      // restore the counter[s]
+      if (k_exists)
+	sc_sess->var[k_name] = k_save;
+      else
+	sc_sess->var.erase(k_name);
+
+      if (array_for->for_type == DSMArrayFor::Struct) {
+	if (v_exists)
+	  sc_sess->var[v_name] = v_save;
+	else
+	  sc_sess->var.erase(v_name);
+      }
+
+      continue;
+    }
+
+    ERROR("DSMElement typenot understood\n");
   }
-  
   return false;
 } 
 
