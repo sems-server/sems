@@ -119,7 +119,8 @@ int SipCtrlInterface::load()
 }
 
 SipCtrlInterface::SipCtrlInterface()
-    : stopped(false), udp_servers(NULL), udp_socket(NULL)
+    : stopped(false), udp_servers(NULL), udp_sockets(NULL),
+      nr_udp_sockets(0), nr_udp_servers(0)
 {
     trans_layer::instance()->register_ua(this);
 }
@@ -229,28 +230,50 @@ int SipCtrlInterface::send(AmSipRequest &req,
     return res;
 }
 
-void SipCtrlInterface::run(const string& bind_addr, unsigned short bind_port)
+int SipCtrlInterface::run()
 {
+    //AmConfig::LocalSIPIP(), AmConfig::LocalSIPPort()
+
     DBG("Starting SIP control interface\n");
 
-    udp_socket = new udp_trsp_socket;
-    udp_socket->bind(bind_addr,bind_port);
-
-    trans_layer::instance()->register_transport(udp_socket);
-    udp_servers = new udp_trsp*[AmConfig::SIPServerThreads];
+    udp_sockets = new udp_trsp_socket*[AmConfig::Ifs.size()];
+    udp_servers = new udp_trsp*[AmConfig::SIPServerThreads * AmConfig::Ifs.size()];
 
     wheeltimer::instance()->start();
 
-    for(int i=0; i<AmConfig::SIPServerThreads;i++){
-	udp_servers[i] = new udp_trsp(udp_socket);
-	udp_servers[i]->start();
+    // Init transport instances
+    for(unsigned int i=0; i<AmConfig::Ifs.size();i++) {
+
+	udp_trsp_socket* udp_socket = new udp_trsp_socket;
+
+	if(udp_socket->bind(AmConfig::Ifs[i].LocalSIPIP,
+			    AmConfig::Ifs[i].LocalSIPPort) < 0){
+
+	    ERROR("Could not bind SIP/UDP socket to %s:%i",
+		  AmConfig::Ifs[i].LocalSIPIP.c_str(),
+		  AmConfig::Ifs[i].LocalSIPPort);
+
+	    delete udp_socket;
+	    return -1;
+	}
+
+	trans_layer::instance()->register_transport(udp_socket);
+	udp_sockets[i] = udp_socket;
+	nr_udp_sockets++;
+
+	for(int j=0; j<AmConfig::SIPServerThreads;j++){
+	    udp_servers[i*AmConfig::SIPServerThreads + j] = new udp_trsp(udp_socket);
+	    udp_servers[i*AmConfig::SIPServerThreads + j]->start();
+	    nr_udp_servers++;
+	}
     }
-    
+
     while (!stopped.get()) {
         stopped.wait_for();
     }
 
     DBG("SIP control interface ending\n");    
+    return 0;
 }
 
 void SipCtrlInterface::stop()
@@ -263,17 +286,28 @@ void SipCtrlInterface::cleanup()
     DBG("Stopping SIP control interface threads\n");
 
     if (NULL != udp_servers) {
-	for(int i=0; i<AmConfig::SIPServerThreads;i++){
+	for(int i=0; i<nr_udp_servers;i++){
 	    udp_servers[i]->stop();
 	    udp_servers[i]->join();
 	    delete udp_servers[i];
 	}
+
+	delete [] udp_servers;
+	udp_servers = NULL;
+	nr_udp_servers = 0;
     }
 
-    trans_layer::instance()->register_transport(NULL);
- 
-    delete [] udp_servers;
-    delete udp_socket;
+    trans_layer::instance()->clear_transports();
+
+    if (NULL != udp_sockets) {
+	for(int i=0; i<nr_udp_sockets;i++){
+	    delete udp_sockets[i];
+	}
+
+	delete [] udp_sockets;
+	udp_sockets = NULL;
+	nr_udp_sockets = 0;
+    }
 }
 
 int SipCtrlInterface::send(const AmSipReply &rep,

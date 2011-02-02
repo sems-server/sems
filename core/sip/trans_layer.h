@@ -35,6 +35,9 @@
 #include <list>
 using std::list;
 
+#include <vector>
+using std::vector;
+
 struct sip_msg;
 struct sip_uri;
 struct sip_trans;
@@ -70,9 +73,14 @@ public:
 
     /**
      * Register a transport instance.
-     * This method MUST be called ONCE.
+     * This method MUST be called at least once.
      */
     void register_transport(trsp_socket* trsp);
+
+    /**
+     * Clears all registered transport instances.
+     */
+    void clear_transports();
 
     /**
      * Sends a UAS reply.
@@ -116,9 +124,11 @@ public:
      */
     void timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr);
 
-    sip_ua*      ua;
-    trsp_socket* transport;
+    sip_ua*              ua;
+    vector<trsp_socket*> transports;
     
+    trsp_socket* transport() { return transports[0]; }
+
     /**
      * Implements the state changes for the UAC state machine
      * @return -1 if errors

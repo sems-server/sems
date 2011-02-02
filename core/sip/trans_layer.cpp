@@ -61,7 +61,7 @@ bool _trans_layer::accept_fr_without_totag = false;
 
 _trans_layer::_trans_layer()
     : ua(NULL),
-      transport(NULL)
+      transports()
 {
 }
 
@@ -76,9 +76,13 @@ void _trans_layer::register_ua(sip_ua* ua)
 
 void _trans_layer::register_transport(trsp_socket* trsp)
 {
-    transport = trsp;
+    transports.push_back(trsp);
 }
 
+void _trans_layer::clear_transports()
+{
+    transports.clear();
+}
 
 
 int _trans_layer::send_reply(trans_ticket* tt,
@@ -327,7 +331,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	memcpy(c,body.s,body.len);
     }
 
-    assert(transport);
+    assert(transport());
 
     int err = -1;
 
@@ -372,7 +376,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	ntohs(((sockaddr_in*)&remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,reply_buf);
 
-    err = transport->send(&remote_ip,reply_buf,reply_len);
+    err = transport()->send(&remote_ip,reply_buf,reply_len);
     if(err < 0){
 	delete [] reply_buf;
 	goto end;
@@ -541,9 +545,9 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
 	memcpy(c,body.s,body.len);
     }
 
-    assert(transport);
+    assert(transport());
 
-    int err = transport->send(&req->remote_ip,reply_buf,reply_len);
+    int err = transport()->send(&req->remote_ip,reply_buf,reply_len);
     delete [] reply_buf;
 
     return err;
@@ -808,7 +812,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     // Supported / Require
     // Content-Length / Content-Type
 
-    assert(transport);
+    assert(transport());
     assert(msg);
     assert(tt);
 
@@ -835,9 +839,9 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     compute_branch(branch_buf,msg->callid->value,msg->cseq->value);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
     
-    string via(transport->get_ip());
-    if(transport->get_port() != 5060)
-	via += ":" + int2str(transport->get_port());
+    string via(transport()->get_ip());
+    if(transport()->get_port() != 5060)
+	via += ":" + int2str(transport()->get_port());
 
     // add 'rport' parameter defaultwise? yes, for now
     request_len += via_len(stl2cstr(via),branch,true);
@@ -913,7 +917,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 					    get_cseq(p_msg)->num_str);
     tt->_bucket->lock();
     
-    int send_err = transport->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
+    int send_err = transport()->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
@@ -985,9 +989,9 @@ int _trans_layer::cancel(trans_ticket* tt)
     compute_branch(branch_buf,req->callid->value,get_cseq(req)->num_str);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
     
-    string via(transport->get_ip());
-    if(transport->get_port() != 5060)
-	via += ":" + int2str(transport->get_port());
+    string via(transport()->get_ip());
+    if(transport()->get_port() != 5060)
+	via += ":" + int2str(transport()->get_port());
 
     //TODO: add 'rport' parameter by default?
 
@@ -1045,7 +1049,7 @@ int _trans_layer::cancel(trans_ticket* tt)
     if(bucket != n_bucket)
 	n_bucket->lock();
 
-    int send_err = transport->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
+    int send_err = transport()->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
@@ -1619,8 +1623,8 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 
     DBG("About to send ACK\n");
 
-    assert(transport);
-    int send_err = transport->send(&inv->remote_ip,ack_buf,ack_len);
+    assert(transport());
+    int send_err = transport()->send(&inv->remote_ip,ack_buf,ack_len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete ack_buf;
@@ -1635,13 +1639,13 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 
 void _trans_layer::retransmit(sip_trans* t)
 {
-    assert(transport);
+    assert(transport());
     if(!t->retr_buf || !t->retr_len){
 	// there is nothing to re-transmit yet!!!
 	return;
     }
 
-    int send_err = transport->send(&t->retr_addr,t->retr_buf,t->retr_len);
+    int send_err = transport()->send(&t->retr_addr,t->retr_buf,t->retr_len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }
@@ -1649,8 +1653,8 @@ void _trans_layer::retransmit(sip_trans* t)
 
 void _trans_layer::retransmit(sip_msg* msg)
 {
-    assert(transport);
-    int send_err = transport->send(&msg->remote_ip,msg->buf,msg->len);
+    assert(transport());
+    int send_err = transport()->send(&msg->remote_ip,msg->buf,msg->len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }

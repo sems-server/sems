@@ -61,8 +61,11 @@ class SipCtrlInterface:
 
     AmCondition<bool> stopped;
     
-    udp_trsp_socket* udp_socket;
-    udp_trsp** udp_servers;
+    unsigned short    nr_udp_sockets;
+    udp_trsp_socket** udp_sockets;
+
+    unsigned short    nr_udp_servers;
+    udp_trsp**        udp_servers;
 
 public:
 
@@ -77,7 +80,7 @@ public:
 
     int load();
 
-    void run(const string& bind_addr, unsigned short bind_port);
+    int run();
     void stop();
     void cleanup();
 

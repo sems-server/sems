@@ -628,9 +628,9 @@ int main(int argc, char* argv[])
 
   INFO("Starting SIP stack (control interface)\n");
   sip_ctrl.load();
-  sip_ctrl.run(AmConfig::LocalSIPIP(), AmConfig::LocalSIPPort());
   
-  success = true;
+  if(sip_ctrl.run() != -1)
+    success = true;
 
   // session container stops active sessions
   INFO("Disposing session container\n");
