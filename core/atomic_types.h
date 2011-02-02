@@ -13,7 +13,7 @@
 		  ) || \
 		  (defined(__linux__) && \
 		    ( \
-		      (defined(__i386__) && (defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4) && defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8))) || \
+		      (defined(__i386__) && (defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4))) || \
 		      defined(__ia64__) || \
 		      defined(__x86_64__) || \
 		      (defined(__powerpc__) && !defined(__powerpc64__)) || \
@@ -23,7 +23,7 @@
 		  )
 #define HAVE_ATOMIC_CAS 1
 #else
-#warning Compare and Swap is not supported on this architecture
+// #warning Compare and Swap is not supported on this architecture
 #define HAVE_ATOMIC_CAS 0
 #endif
 
