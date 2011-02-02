@@ -145,7 +145,7 @@ static bool apply_args(std::map<char,string>& args)
 
     switch( it->first ){
     case 'd':
-      AmConfig::LocalIP = it->second;
+      AmConfig::LocalIP() = it->second;
       break;
 
     case 'D':
@@ -453,15 +453,15 @@ int main(int argc, char* argv[])
     goto error;
   }
 
-  AmConfig::LocalIP = getLocalIP(AmConfig::LocalIP);
-  if (AmConfig::LocalIP.empty()) {
+  AmConfig::LocalIP() = getLocalIP(AmConfig::LocalIP());
+  if (AmConfig::LocalIP().empty()) {
     ERROR("Cannot determine proper local address for media advertising!\n"
           "Try using 'ifconfig -a' to find a proper interface and configure SEMS to use it.\n");
     goto error;
   }
 
-  if (AmConfig::LocalSIPIP.empty()) {
-    AmConfig::LocalSIPIP = AmConfig::LocalIP;
+  if (AmConfig::LocalSIPIP().empty()) {
+    AmConfig::LocalSIPIP() = AmConfig::LocalIP();
   }
 
   printf("Configuration:\n"
@@ -494,10 +494,10 @@ int main(int argc, char* argv[])
 	 AmConfig::DaemonUid.empty() ? "<not set>" : AmConfig::DaemonUid.c_str(),
 	 AmConfig::DaemonGid.empty() ? "<not set>" : AmConfig::DaemonGid.c_str(),
 #endif
-	 AmConfig::LocalSIPIP.c_str(),
-	 AmConfig::PublicIP.c_str(),
-	 AmConfig::LocalSIPPort,
-	 AmConfig::LocalIP.c_str(),
+	 AmConfig::LocalSIPIP().c_str(),
+	 AmConfig::PublicIP().c_str(),
+	 AmConfig::LocalSIPPort(),
+	 AmConfig::LocalIP().c_str(),
 	 AmConfig::OutboundProxy.c_str(),
 	 AmConfig::Application.empty() ? "<not set>" : AmConfig::Application.c_str());
 
@@ -628,7 +628,7 @@ int main(int argc, char* argv[])
 
   INFO("Starting SIP stack (control interface)\n");
   sip_ctrl.load();
-  sip_ctrl.run(AmConfig::LocalSIPIP, AmConfig::LocalSIPPort);
+  sip_ctrl.run(AmConfig::LocalSIPIP(), AmConfig::LocalSIPPort());
   
   success = true;
 

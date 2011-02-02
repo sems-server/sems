@@ -283,7 +283,7 @@ void AmSession::negotiate(const string& sdp_body,
 
   lockAudio();
   try {
-    RTPStream()->setLocalIP(AmConfig::LocalIP);
+    RTPStream()->setLocalIP(AmConfig::LocalIP());
     RTPStream()->setPassiveMode(passive_mode);
     RTPStream()->setRAddr(r_host, r_port);
   } catch (const string& err_str) {
@@ -1042,7 +1042,7 @@ string AmSession::sid4dbg()
 int AmSession::sendReinvite(bool updateSDP, const string& headers, int flags) 
 {
   if (updateSDP) {
-    RTPStream()->setLocalIP(AmConfig::LocalIP);
+    RTPStream()->setLocalIP(AmConfig::LocalIP());
     string sdp_body;
     sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
     return dlg.reinvite(headers, SIP_APPLICATION_SDP, sdp_body, flags);
@@ -1057,7 +1057,7 @@ int AmSession::sendInvite(const string& headers)
 
   // Set local IP first, so that IP is set when 
   // getLocalPort/setLocalPort may bind.
-  RTPStream()->setLocalIP(AmConfig::LocalIP);
+  RTPStream()->setLocalIP(AmConfig::LocalIP());
   
   // Generate SDP.
   string sdp_body;
@@ -1100,10 +1100,10 @@ void AmSession::onFailure(AmSipDialogEventHandler::FailureCause cause,
 // address to use in SDP bodies 
 string AmSession::advertisedIP()
 {
-  string set_ip = AmConfig::PublicIP; // "public_ip" parameter. 
+  string set_ip = AmConfig::PublicIP(); // "public_ip" parameter. 
   DBG("AmConfig::PublicIP is %s.\n", set_ip.c_str());
   if (set_ip.empty())
-    return AmConfig::LocalIP;           // "listen" parameter.
+    return AmConfig::LocalIP();           // "listen" parameter.
   return set_ip;
 }  
 

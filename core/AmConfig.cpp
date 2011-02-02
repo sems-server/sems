@@ -50,6 +50,9 @@ string       AmConfig::ExcludePayloads         = "";
 int          AmConfig::LogLevel                = L_INFO;
 bool         AmConfig::LogStderr               = false;
 
+vector<AmConfig::IP_interface> AmConfig::Ifs;
+map<string,unsigned short>     AmConfig::If_names;
+
 #ifndef DISABLE_DAEMON_MODE
 bool         AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
 string       AmConfig::DaemonPidFile           = DEFAULT_DAEMON_PID_FILE;
@@ -59,15 +62,9 @@ string       AmConfig::DaemonGid               = DEFAULT_DAEMON_GID;
 
 unsigned int AmConfig::MaxShutdownTime         = DEFAULT_MAX_SHUTDOWN_TIME;
 
-string       AmConfig::LocalIP                 = "";
-string       AmConfig::PublicIP                = "";
-int          AmConfig::RtpLowPort              = RTP_LOWPORT;
-int          AmConfig::RtpHighPort             = RTP_HIGHPORT;
 int          AmConfig::SessionProcessorThreads = NUM_SESSION_PROCESSORS;
 int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
 int          AmConfig::SIPServerThreads        = NUM_SIP_SERVERS;
-int          AmConfig::LocalSIPPort            = 5060;
-string       AmConfig::LocalSIPIP              = "";
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
 bool         AmConfig::ProxyStickyAuth         = false;
@@ -101,29 +98,7 @@ AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
 bool AmConfig::IgnoreSIGCHLD      = true;
 bool AmConfig::IgnoreSIGPIPE      = true;
 
-int AmConfig::setSIPPort(const string& port) 
-{
-  if(sscanf(port.c_str(),"%u",&LocalSIPPort) != 1) {
-    return 0;
-  }
-  return 1;
-}
-
-int AmConfig::setRtpLowPort(const string& port)
-{
-  if(sscanf(port.c_str(),"%i",&RtpLowPort) != 1) {
-    return 0;
-  }
-  return 1;
-}
-
-int AmConfig::setRtpHighPort(const string& port)
-{
-  if(sscanf(port.c_str(),"%i",&RtpHighPort) != 1) {
-    return 0;
-  }
-  return 1;
-}
+static int readInterfaces(AmConfigReader& cfg);
 
 int AmConfig::setLogLevel(const string& level, bool apply)
 {
@@ -255,29 +230,9 @@ int AmConfig::readConfiguration()
   if(!ModConfigPath.empty() && (ModConfigPath[ModConfigPath.length()-1] != '/'))
     ModConfigPath += '/';
 
-  // listen, sip_ip, sip_port, and media_ip
-  if(cfg.hasParameter("sip_ip")) {
-    LocalSIPIP = cfg.getParameter("sip_ip");
-  }
-  if(cfg.hasParameter("sip_port")){
-    if(!setSIPPort(cfg.getParameter("sip_port").c_str())){
-      ERROR("invalid sip port specified\n");
-      ret = -1;
-    }		
-  }
-  if(cfg.hasParameter("media_ip")) {
-    LocalIP = cfg.getParameter("media_ip");
-  }
-
-  // public_ip
-  if(cfg.hasParameter("public_ip")){
-    string p_ip = cfg.getParameter("public_ip");
-    DBG("Setting public_ip parameter to %s.\n", p_ip.c_str());
-    PublicIP = p_ip;
-  }
-  else {
-    DBG("Config file has no public_ip parameter.");
-  }
+  // Reads IP and port parameters
+  if(readInterfaces(cfg) == -1)
+    ret = -1;
   
   // outbound_proxy
   if (cfg.hasParameter("outbound_proxy"))
@@ -407,22 +362,6 @@ int AmConfig::readConfiguration()
   MaxShutdownTime = cfg.getParameterInt("max_shutdown_time",
 					DEFAULT_MAX_SHUTDOWN_TIME);
 
-  // rtp_low_port
-  if(cfg.hasParameter("rtp_low_port")){
-    if(!setRtpLowPort(cfg.getParameter("rtp_low_port"))){
-      ERROR("invalid rtp low port specified\n");
-      ret = -1;
-    }
-  }
-
-  // rtp_high_port
-  if(cfg.hasParameter("rtp_high_port")){
-    if(!setRtpHighPort(cfg.getParameter("rtp_high_port"))){
-      ERROR("invalid rtp high port specified\n");
-      ret = -1;
-    }
-  }
-
   if(cfg.hasParameter("session_processor_threads")){
 #ifdef SESSION_THREADPOOL
     if(!setSessionProcessorThreads(cfg.getParameter("session_processor_threads"))){
@@ -529,3 +468,133 @@ int AmConfig::readConfiguration()
 
   return ret;
 }	
+
+static int readInterface(AmConfigReader& cfg, const string& i_name)
+{
+  int ret=0;
+  AmConfig::IP_interface intf;
+
+  intf.LocalSIPIP   = "";
+  intf.LocalSIPPort = 5060;
+  intf.LocalIP      = "";
+  intf.PublicIP     = "";
+  intf.RtpLowPort   = RTP_LOWPORT;
+  intf.RtpHighPort  = RTP_HIGHPORT;
+
+  string suffix;
+  if(!i_name.empty())
+    suffix = "_" + i_name;
+
+  // listen, sip_ip, sip_port, and media_ip
+  if(cfg.hasParameter("sip_ip" + suffix)) {
+    intf.LocalSIPIP = cfg.getParameter("sip_ip" + suffix);
+  }
+  else if(!suffix.empty()) {
+    ERROR("sip_ip%s parameter is required",suffix.c_str());
+    ret = -1;
+  }
+
+  if(cfg.hasParameter("sip_port" + suffix)){
+    string sip_port_str = cfg.getParameter("sip_port" + suffix);
+    if(sscanf(sip_port_str.c_str(),"%u",
+	      &(intf.LocalSIPPort)) != 1){
+      ERROR("sip_port%s: invalid sip port specified (%s)\n",
+	    suffix.c_str(),
+	    sip_port_str.c_str());
+      ret = -1;
+    }
+  }
+
+  if(cfg.hasParameter("media_ip" + suffix)) {
+    intf.LocalIP = cfg.getParameter("media_ip" + suffix);
+  }
+  else if(!suffix.empty()) {
+    ERROR("media_ip%s parameter is required",suffix.c_str());
+    ret = -1;
+  }
+
+  // public_ip
+  if(cfg.hasParameter("public_ip" + suffix)){
+    string p_ip = cfg.getParameter("public_ip" + suffix);
+    DBG("Setting public_ip%s parameter to %s.\n", suffix.c_str(), p_ip.c_str());
+    intf.PublicIP = p_ip;
+  }
+  //else {
+  //  DBG("Config file has no public_ip%s parameter.",suffix.c_str());
+  //}
+
+  // rtp_low_port
+  if(cfg.hasParameter("rtp_low_port" + suffix)){
+    string rtp_low_port_str = cfg.getParameter("rtp_low_port" + suffix);
+    if(sscanf(rtp_low_port_str.c_str(),"%u",
+	      &(intf.RtpLowPort)) != 1){
+      ERROR("rtp_low_port%s: invalid port number (%s)\n",
+	    suffix.c_str(),rtp_low_port_str.c_str());
+      ret = -1;
+    }
+  }
+
+  // rtp_high_port
+  if(cfg.hasParameter("rtp_high_port" + suffix)){
+    string rtp_high_port_str = cfg.getParameter("rtp_high_port" + suffix);
+    if(sscanf(rtp_high_port_str.c_str(),"%u",
+	      &(intf.RtpHighPort)) != 1){
+      ERROR("rtp_high_port%s: invalid port number (%s)\n",
+	    suffix.c_str(),rtp_high_port_str.c_str());
+      ret = -1;
+    }
+  }
+
+  AmConfig::Ifs.push_back(intf);
+  return ret;  
+}
+
+static int readInterfaces(AmConfigReader& cfg)
+{
+  int ret = 0;
+
+  AmConfig::Ifs.clear();
+
+  // read default params first
+  if(readInterface(cfg,"") < 0) {
+    return -1;
+  }
+  
+  vector<string> if_names;
+  if(cfg.hasParameter("additional_interfaces")) {
+    string ifs_str = cfg.getParameter("additional_interfaces");
+    if(!ifs_str.empty())
+      if_names = explode(ifs_str,",");
+  }
+
+  for(vector<string>::iterator it = if_names.begin();
+      it != if_names.end(); it++) {
+
+    if(readInterface(cfg,*it) < 0){
+      ret = -1;
+    }
+    
+    if(AmConfig::Ifs.size() > 0)
+      AmConfig::If_names[*it] = AmConfig::Ifs.size()-1;
+  }
+
+  //debug
+  if(ret != -1) {
+    for(map<string,unsigned short>::iterator it = AmConfig::If_names.begin();
+	it != AmConfig::If_names.end(); it++) {
+
+      DBG("BEGIN: interface: '%s'",it->first.c_str());
+
+      AmConfig::IP_interface& it_ref = AmConfig::Ifs[it->second];
+      DBG("\tLocalIP='%s'",it_ref.LocalIP.c_str());
+      DBG("\tPublicIP='%s'",it_ref.PublicIP.c_str());
+      DBG("\tLocalSIPIP='%s'",it_ref.LocalSIPIP.c_str());
+      DBG("\tLocalSIPPort=%u",it_ref.LocalSIPPort);
+      DBG("\tRtpLowPort=%u",it_ref.RtpLowPort);
+      DBG("\tRtpHighPort=%u",it_ref.RtpHighPort);
+    }
+  }
+
+  return ret;
+}
+

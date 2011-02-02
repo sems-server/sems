@@ -85,14 +85,14 @@ int AmRtpStream::getNextPort()
 
   port_mut.lock();
   if(next_port < 0){
-    next_port = AmConfig::RtpLowPort;
+    next_port = AmConfig::RtpLowPort();
   }
     
   port = next_port & 0xfffe;
   next_port += 2;
 
-  if(next_port >= AmConfig::RtpHighPort){
-    next_port = AmConfig::RtpLowPort;
+  if(next_port >= AmConfig::RtpHighPort()){
+    next_port = AmConfig::RtpLowPort();
   }
   port_mut.unlock();
     

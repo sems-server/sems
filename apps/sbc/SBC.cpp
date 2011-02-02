@@ -988,7 +988,7 @@ void SBCDialog::createCalleeSession()
   
   callee_dlg.local_tag    = other_id;
   callee_dlg.callid       = callid.empty() ?
-    AmSession::getNewId() + "@" + AmConfig::LocalIP : callid;
+    AmSession::getNewId() + "@" + AmConfig::LocalIP() : callid;
   
   // this will be overwritten by ConnectLeg event 
   callee_dlg.remote_party = to;

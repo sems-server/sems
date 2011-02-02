@@ -104,6 +104,33 @@ rtp_low_port=10000
 # - sets highest for RTP used port 
 rtp_high_port=60000
 
+# Additional IFs (optional): 
+#   additional_interface = <list of interfaces>
+#
+# For each additional interface, a set of parameters
+# suffixed with the interface name should be defined.
+#
+# Please note that for each additional interface,
+# 'sip_ip' and 'media_ip' are mandatory. The other
+# parameters are optional.
+# 
+# Example:
+#  additional_interfaces=intern,extern
+#  
+#  sip_ip_intern=192.168.0.5
+#  sip_port_intern=5060
+#  media_ip_intern=192.168.10.5
+#  rtp_low_port_intern=2000
+#  rtp_high_port_intern=5000
+#
+#  sip_ip_extern=213.192.59.73
+#  sip_port_extern=5060
+#  media_ip_extern=213.192.59.73
+#  rtp_low_port_extern=2000
+#  rtp_high_port_extern=5000
+#  public_ip_extern=213.192.35.73 
+#
+
 ############################################################
 # modules and application configuration
 #

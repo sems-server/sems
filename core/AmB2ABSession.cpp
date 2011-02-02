@@ -246,7 +246,7 @@ void AmB2ABCallerSession::setupCalleeSession(AmB2ABCalleeSession* callee_session
   assert(callee_session);
 
   AmSipDialog& callee_dlg = callee_session->dlg;
-  callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
+  callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP();
   callee_dlg.local_tag    = other_id; 
 
 

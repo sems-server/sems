@@ -35,6 +35,8 @@
 
 #include <string>
 using std::string;
+#include <map>
+using std::map;
 #include <utility>
 
 /**
@@ -75,27 +77,59 @@ struct AmConfig
   
   static unsigned int MaxShutdownTime;
 
-  /** local IP for SDP media advertising */
-  static string LocalIP;
-  
-  /** public IP for SDP media advertising; we actually
-   *  bind to local IP, but advertise public IP. */ 
-  static string PublicIP;
-  
-  /** Lowest local RTP port */
-  static int RtpLowPort;
-  /** Highest local RTP port */
-  static int RtpHighPort;
+  struct IP_interface {
+
+    /** local IP for SDP media advertising */
+    string LocalIP;
+    
+    /** public IP for SDP media advertising; we actually
+     *  bind to local IP, but advertise public IP. */ 
+    string PublicIP;
+    
+    /** Lowest local RTP port */
+    int RtpLowPort;
+    /** Highest local RTP port */
+    int RtpHighPort;
+    
+    /** the interface SIP requests are sent from - needed for registrar_client */
+    string LocalSIPIP;
+    /** the port SIP requests are sent from - optional (default 5060) */
+    int LocalSIPPort;
+  };
+
+  static vector<IP_interface>       Ifs;
+  static map<string,unsigned short> If_names;
+
+  static string& LocalIP() {
+    return (Ifs[0].LocalIP);
+  }
+
+  static string& PublicIP() {
+    return (Ifs[0].PublicIP);
+  }
+
+  static int& RtpLowPort() {
+    return (Ifs[0].RtpLowPort);
+  }
+
+  static int& RtpHighPort() {
+    return (Ifs[0].RtpHighPort);
+  }
+
+  static string& LocalSIPIP() {
+    return (Ifs[0].LocalSIPIP);
+  }
+
+  static int& LocalSIPPort() {
+    return (Ifs[0].LocalSIPPort);
+  }
+
   /** number of session (signaling/application) processor threads */
   static int SessionProcessorThreads;
   /** number of media processor threads */
   static int MediaProcessorThreads;
   /** number of SIP server threads */
   static int SIPServerThreads;
-  /** the interface SIP requests are sent from - needed for registrar_client */
-  static string LocalSIPIP;
-  /** the port SIP requests are sent from - optional (default 5060) */
-  static int LocalSIPPort;
   /** Outbound Proxy (optional, outgoing calls only) */
   static string OutboundProxy;
   /** force Outbound Proxy to be used for in dialog requests */
@@ -188,6 +222,7 @@ struct AmConfig
   static int setSIPServerThreads(const string& th);
   /** Setter for parameter DeadRtpTime, returns 0 on invalid value */
   static int setDeadRtpTime(const string& drt);
+
 };
 
 #endif

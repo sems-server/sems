@@ -783,7 +783,7 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
   AmSipDialog& dialout_dlg = dialout_session->dlg;
 
   dialout_dlg.local_tag    = dialout_id;
-  dialout_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP;
+  dialout_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP();
 
   if (from_header.length() > 0) {
     dialout_dlg.local_party  = from_header;
@@ -795,7 +795,7 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
 
   string body;
   int local_port = dialout_session->RTPStream()->getLocalPort();
-  dialout_session->sdp.genRequest(AmConfig::LocalIP,local_port,body);
+  dialout_session->sdp.genRequest(AmConfig::LocalIP(),local_port,body);
 
   if (extra_headers.length() == 0) {
     extra_headers = "";
@@ -885,7 +885,7 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
 
   string body;
   int local_port = RTPStream()->getLocalPort();
-  sdp.genRequest(AmConfig::LocalIP,local_port,body);
+  sdp.genRequest(AmConfig::LocalIP(),local_port,body);
   dlg.sendRequest("INVITE","application/sdp",body,"");
 
   transfer_req.reset(new AmSipRequest(req));
