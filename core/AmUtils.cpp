@@ -1237,7 +1237,7 @@ size_t skip_to_end_of_brackets(const string& s, size_t start) {
   return res;
 }
 
-bool read_regex_mapping(const string& fname, const char* separator,
+bool read_regex_mapping(const string& fname, const char* sep,
 			const char* dbg_type,
 			RegexMappingVector& result) {
   std::ifstream appcfg(fname.c_str());
@@ -1255,10 +1255,10 @@ bool read_regex_mapping(const string& fname, const char* separator,
       if (non_wsp_pos != string::npos && entry[non_wsp_pos] == '#')
 	continue;
 
-      vector<string> re_v = explode(entry, separator);
+      vector<string> re_v = explode(entry, sep);
       if (re_v.size() != 2) {
 	ERROR("Incorrect line '%s' in %s: expected format 'regexp%sstring'\n",
-	      entry.c_str(), fname.c_str(), separator);
+	      entry.c_str(), fname.c_str(), sep);
 	return false;
       }
       regex_t app_re;

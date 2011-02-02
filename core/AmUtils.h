@@ -351,7 +351,7 @@ typedef std::vector<std::pair<regex_t, string> > RegexMappingVector;
 /** read a regex=>string mapping from file
     @return true on success
  */
-bool read_regex_mapping(const string& fname, const char* separator,
+bool read_regex_mapping(const string& fname, const char* sep,
 			const char* dbg_type,
 			RegexMappingVector& result);
 
