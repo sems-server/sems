@@ -226,6 +226,10 @@ static void signal_handler(int sig)
     return;
   }
 
+  if (sig == SIGTERM) {
+    AmSessionContainer::instance()->enableUncleanShutdown();
+  }
+
   if (main_pid == getpid()) {
     if(!is_shutting_down.get()) {
       is_shutting_down.set(true);
