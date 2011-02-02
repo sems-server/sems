@@ -1,4 +1,8 @@
-=============================
+DSM quick reference
+===================
+
+Syntax
+======
 -- comment
 #include "script.dsm"
 #include "/path/to/anotherscript.dsm"
@@ -6,29 +10,60 @@ import(mod_name);
 
 [initial] state name 
 	  [ enter { 
-	      action; 
-	      action;
-	      ...
+	     <actions>
 	    } ] 
-	  [ exit { 
-	      action;
-	      action;
-	      ...
+	  [ exit {
+	     <actions>
 	    } ]
       ;
 
-transition name s1 - [exception;] [ { [not] condition; [not] condition; ... } ] [/ { action; action; ...} ]  -> s2;
+transition name s1 - [ { [not] condition; [not] condition; ... } ] [/ { <actions>} ]  -> s2;
  or 
-transition name (s1a, s1b[, s1c, ...])  - [ { [not] condition; [not] condition; ... } ] [/ { action; action; ...} ]  -> s2;
+transition name (s1a, s1b[, s1c, ...])  - [ { [not] condition; [not] condition; ... } ] [/ { <actions> } ]  -> s2;
+ or (exception transition)
+transition name s1 - exception [ { [not] condition;  ... } ] [/ { <actions>} ]  -> s2;
 
-=============================
+
+function func_name() {
+  <actions>
+};
+
+<actions> ::=
+  action;
+  action(param, param, ...);
+
+  if condition; condition; {
+   <actions>
+  } else {
+   <actions>
+  }
+
+  func_name();
+  ...
+
+
+Variables, event parameters, selects
+====================================
+
 #paramname uses the event parameter 'paramname' (from current event)
-$varname uses the variable varname (from session's variable map)
+$varname uses the variable varname (from session's variable)
 @selectname uses the "select" 'selectname' (from the session's dialog)
-=============================
-core actions:
- -- reprocess the current event after transition:
- repost()
+
+Variable arrays:
+ $myarray[0]
+ $myarray[1]
+ ...
+
+Variable structs:
+ $mystruct.member1
+ $mystruct.member2
+
+Core actions
+============
+
+DSM flow
+--------
+
 
  -- call/jump/return sub-FSM
  jumpFSM(name)
@@ -38,7 +73,42 @@ core actions:
  stop(<send bye>)
    e.g. stop(false), stop(true)
 
- playPrompt(param)
+ -- reprocess the current event after transition:
+ repost()
+
+ Variable manipulation
+ ---------------------
+
+ set($var=value)
+  e.g.  set($var="text"); set($var=$var2); set($var=#key)
+ sets($var=value)
+  e.g.  set($var="text and some $variable and some #param");
+ var($dstvar=srcvarname)
+  e.g.  var($dstvar=$var_counter)
+ param($dstvar=srcparamname)
+  e.g. param($dstvar=$myparam) (like: #($myparam) )
+ eval($var=value) 
+  evaluate expression (only simple binary + and - supported)
+  e.g.  set($var=1+5); set($var=$var2); set($var=#key)
+ append($var, value)
+ e.g. append($var, "text"); append($var, #key);
+      append($var, @select); append($var, $var2);
+ substr($var, pos)
+  e.g. substr($myvar, 5);
+ 
+ size($arrayname, $dst);
+  set variable $dst to size of array 
+  (e.g. $arrayname[0], $arrayname[1] set, $dst set to 2)
+
+ inc($var)
+ clear($var)
+ clearArray($var)
+  clears all var.* variables
+
+Playing prompts and file I/O
+----------------------------
+
+  playPrompt(param)
    from promptCollection, e.g. playPrompt("hello");
    if $prompts.default_fallback=yes, default prompt set is tried if
    prompt not found in current prompt set
@@ -81,15 +151,8 @@ core actions:
  unmute() 
    set RTP stream to unmuted (send and receive RTP packets)
 
- postEvent(sess_id[, variable_name;variable_name;...])
-   post dsm event to session sess_id; variables copied as event parameters
-   e.g. postEvent(@local_tag, PAI) : post event to ourselves
-        postEvent($some_call, var1;var2;var3)     post event with var1, var2, var3
-   * sets $errno (arg)
-
- postEvent(sess_id, var)
-   all local variables copied as event variables
-   * sets $errno (arg)
+DTMF
+----
 
  enableDTMFDetection() 
  disableDTMFDetection()
@@ -102,6 +165,8 @@ sendDTMFSequence(sequence [, duration_ms])
   send a sequence of DTMF events (RFC4733 event), e.g. 123#45*1
   duration_ms defaults to 500ms
 
+B2B call control
+----------------
  B2B.connectCallee(remote_party, remote_uri)
    connect second leg of B2B session (see AmB2BSession)
 
@@ -126,34 +191,8 @@ sendDTMFSequence(sequence [, duration_ms])
   e.g. 
   B2B.setHeaders("P-One: value\r\nP-Two: anothervalue", true)
 
- setPrompts(name) 
-   if more than one prompt sets are loaded
-
- set($var=value)
-  e.g.  set($var="text"); set($var=$var2); set($var=#key)
- sets($var=value)
-  e.g.  set($var="text and some $variable and some #param");
- var($dstvar=srcvarname)
-  e.g.  var($dstvar=$var_counter)
- param($dstvar=srcparamname)
-  e.g. param($dstvar=$myparam) (like: #($myparam) )
- eval($var=value) 
-  evaluate expression (only simple binary + and - supported)
-  e.g.  set($var=1+5); set($var=$var2); set($var=#key)
- append($var, value)
- e.g. append($var, "text"); append($var, #key);
-      append($var, @select); append($var, $var2);
- substr($var, pos)
-  e.g. substr($myvar, 5);
- 
- size($arrayname, $dst);
-  set variable $dst to size of array 
-  (e.g. $arrayname[0], $arrayname[1] set, $dst set to 2)
-
- inc($var)
- clear($var)
- clearArray($var)
-  clears all var.* variables
+ Logging
+ -------
 
  log(level, text)
    e.g. log(1, $var1)
@@ -166,6 +205,9 @@ sendDTMFSequence(sequence [, duration_ms])
  -- log everything:
  logAll(level) 
 
+ Timers
+ ------
+
  setTimer(timer_id, timeout)
    e.g. setTimer(1, $timeout)
    * sets $errno (arg,config)
@@ -174,8 +216,11 @@ sendDTMFSequence(sequence [, duration_ms])
  removeTimers()
    * sets $errno (config)
 
+ DI functions
+ ------------
   DI(factory, function [, params...])
-  e.g. DI(factory, function, $var_param, (int)int_param, "str param", @select_par, (array)arrayname, (struct)structname, (json)json_object...)
+    execute DI function
+    e.g. DI(factory, function, $var_param, (int)int_param, "str param", @select_par, (array)arrayname, (struct)structname, (json)json_object...)
        DI(user_timer, setTimer, (int)1, (int)5, @local_tag);
 
        set($sweets.candy="nice");
@@ -196,10 +241,24 @@ sendDTMFSequence(sequence [, duration_ms])
     saves result from DI call to DI_res or DI_res0, DI_res1, ...
    * sets $errno (arg,config)
 
+  Exception handling
+  ------------------
   throw(<type>[,arg1=val1;arg2=val2;...])
    e.g. throw(bad_command),  throw(bad_command,cmd=help;reason=whynot)
 
   throwOnError()
+
+ Events
+ ------
+ postEvent(sess_id[, variable_name;variable_name;...])
+   post dsm event to session sess_id; variables copied as event parameters
+   e.g. postEvent(@local_tag, PAI) : post event to ourselves
+        postEvent($some_call, var1;var2;var3)     post event with var1, var2, var3
+   * sets $errno (arg)
+
+ postEvent(sess_id, var)
+   all local variables copied as event variables
+   * sets $errno (arg)
 
   registerEventQueue(queue_name)
     register session to receive events under the name queue_name
@@ -208,8 +267,8 @@ sendDTMFSequence(sequence [, duration_ms])
   unregisterEventQueue(queue_name)
     unregister events queue queue_name
 
-============================= 
-conditions:
+Conditions
+==========
  
  test(#key == 1)
  test(#key == prefix*)
@@ -227,15 +286,16 @@ conditions:
  test(len($var) < len(@user))
 
  -- like test(expr), but only on key press
- key or keyTest(expr)
- timer or timerTest(expr)
- noAudio or noAudioTest(expr)
- separator or separatorTest(expr)
+ key(expr) or keyTest(expr)
+ timer(expr) or timerTest(expr)
+ noAudio(expr) or noAudioTest(expr)
+ separator(expr) or separatorTest(expr)
   e.g. separatorTest(#id == 5)
 
- event or eventTest(expr)
+ event(expr) or eventTest(expr)
 
- keyPress(no) 
+ keyPress(no)  
+ 
   -- bye received: 
  hangup  
 
@@ -269,7 +329,8 @@ conditions:
    BYE on other leg received
     #hdrs    - headers
 
-=============================
+Selects
+=======
 @selects :
  local_tag
  user
@@ -278,13 +339,17 @@ conditions:
  callid
  local_uri
  remote_uri
-=============================
-imports:
+
+Importing modules
+=================
+
  module imported with import(mod_name); loads mod_name.so in 
  module load path. modules provide conditions and actions.
  modules' actions/conditions-factory is checked first 
  (modules can override core conditions/actions)
-=============================
+
+Variables controlling call flow
+===============================
 special variables:
     connect_session     "0" -> after the start event (initial transition):
                                   do not connect session to 
@@ -293,6 +358,7 @@ special variables:
                             -> after the invite event:
                                   do not reply with 200 OK and do not 
                                   connect session to media processor on start
+
     
 =============================
 errors:
