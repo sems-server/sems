@@ -19,6 +19,7 @@
  *  \arg \ref Compiling 
  *  \arg \ref AppDoc
  *  \arg \ref ModuleDoc_dsm
+ *  \arg \ref ModuleDoc_sbc
  *  \arg \ref ZRTP
  *  \arg \ref signalsdoc
  *  \arg \ref Tuning
