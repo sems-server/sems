@@ -142,7 +142,7 @@ Running other applications
 
    If we want to run other applications, the load_plugins= and
    application= parameters need to be adapted. See [13]Application Modules
-   Documentation for a description of the shipped applications.
+   for a description of the shipped applications.
 
 Creating and running a simple DSM applications
 
@@ -162,13 +162,14 @@ Creating and running a simple DSM applications
 
    Then we paste this little script in
    /usr/local/lib/sems/dsm/mydsmapp.dsm :
-  initial state BEGIN {
-    playFile(/usr/local/lib/sems/audio/webconference/first_participant.wav
-  };
+  initial state BEGIN
+   enter {
+     playFile(/usr/local/lib/sems/audio/webconference/first_participant.wav);
+   };
   transition "file ends" BEGIN - noAudioTest -> TYPING;
 
   state TYPING;
-  transition "typed a key" BEGIN - keyTest(#key < 10) / {
+  transition "typed a key" TYPING - keyTest(#key < 10) / {
     set($myfile=/usr/local/lib/sems/audio/webconference/);
     append($myfile, #key);
     append($myfile, .wav);
@@ -185,22 +186,22 @@ Creating and running a simple DSM applications
      __________________________________________________________________
 
 
-    Generated on Thu Jul 1 15:32:02 2010 for SEMS by  [15]doxygen 1.6.1
+    Generated on Thu Feb 3 02:29:25 2011 for SEMS by  [15]doxygen 1.6.1
 
 References
 
-   1. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/index.html
-   2. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/pages.html
-   3. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/namespaces.html
-   4. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/annotated.html
-   5. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/files.html
-   6. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/dirs.html
-   7. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/examples.html
+   1. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/examples.html
    8. http://iptel.org/service/
    9. http://www.sip-communicator.org/
   10. http://twinklephone.com/
   11. http://www.voip-info.org/wiki/view/DID+Service+Providers
   12. http://sipgate.de/
-  13. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/AppDoc.html
-  14. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/ModuleDoc_dsm.html
+  13. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/AppDoc.html
+  14. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_dsm.html
   15. http://www.doxygen.org/index.html

@@ -10,7 +10,7 @@ SEMS Documentation
 
 News & Changes
 
-     * [8]Changelog (from 0.10.0-rc1 onwards)
+     * [8]Changelog
 
 General
 
@@ -26,62 +26,64 @@ User's documentation
 
      * [13]SEMS core configuration parameters
      * [14]Compilation instructions
-     * [15]Application Modules Documentation
+     * [15]Application Modules
      * [16]DSM: State machine notation for VoIP applications
-     * [17]ZRTP encryption
-     * [18]Tuning SEMS for high load
+     * [17]SBC (flexible B2BUA) Application
+     * [18]ZRTP encryption
+     * [19]SEMS signal handling
+     * [20]Tuning SEMS for high load
 
 Developer's documentation
 
-     * [19]SEMS Design Overview
-     * [20]Application development tutorial - find the sources in
+     * [21]SEMS Design Overview
+     * [22]Application development tutorial - find the sources in
        apps/examples/tutorial
-     * [21]Example Applications
-     * [22]Component Modules Documentation
+     * [23]Example Applications
+     * [24]Component Modules Documentation
 
 Web sites
 
-     * Main: SEMS website [23]http://iptel.org/sems
-     * sems & semsdev Lists: List server [24]http://lists.iptel.org
-     * Bugs: Bug tracker: [25]http://tracker.iptel.org/browse/SEMS
+     * Main: SEMS website [25]http://iptel.org/sems
+     * sems & semsdev Lists: List server [26]http://lists.iptel.org
+     * Bugs: Bug tracker: [27]http://bugtracker.iptel.org/sems
 
 Outdated documentation bits
 
-     * [26]Changes in SEMS from 0.9 versions to 0.10
      * installation instructions for tutorial applications:
-       [27]Application Development Tutorial
+       [28]Application Development Tutorial
      __________________________________________________________________
 
 
-    Generated on Wed Mar 17 14:34:30 2010 for SEMS by  [28]doxygen 1.6.1
+    Generated on Thu Feb 3 02:29:25 2011 for SEMS by  [29]doxygen 1.6.1
 
 References
 
-   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
-   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
-   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
-   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
-   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
-   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
-   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
-   8. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/changelog.html
-   9. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/Readme.html
-  10. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/howtostart_noproxy.html
-  11. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/howtostart_simpleproxy.html
-  12. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/howtostart_voicemail.html
-  13. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/sems.conf.sample.html
-  14. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/Compiling.html
-  15. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/AppDoc.html
-  16. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_dsm.html
-  17. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ZRTP.html
-  18. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/Tuning.html
-  19. http://www.iptel.org/files/semsng-designoverview.pdf
-  20. http://www.iptel.org/files/semsng-app_module_tutorial.pdf
-  21. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/AppDocExample.html
-  22. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ComponentDoc.html
-  23. http://iptel.org/sems
-  24. http://lists.iptel.org/
-  25. http://tracker.iptel.org/browse/SEMS
-  26. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/whatsnew_0100.html
-  27. http://www.iptel.org/sems/sems_application_development_tutorial
-  28. http://www.doxygen.org/index.html
+   1. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/examples.html
+   8. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/changelog.html
+   9. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/Readme.html
+  10. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/howtostart_noproxy.html
+  11. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/howtostart_simpleproxy.html
+  12. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/howtostart_voicemail.html
+  13. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/sems.conf.sample.html
+  14. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/Compiling.html
+  15. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/AppDoc.html
+  16. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_dsm.html
+  17. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_sbc.html
+  18. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ZRTP.html
+  19. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/signalsdoc.html
+  20. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/Tuning.html
+  21. http://www.iptel.org/files/semsng-designoverview.pdf
+  22. http://www.iptel.org/files/semsng-app_module_tutorial.pdf
+  23. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/AppDocExample.html
+  24. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ComponentDoc.html
+  25. http://iptel.org/sems
+  26. http://lists.iptel.org/
+  27. http://bugtracker.iptel.org/sems
+  28. http://www.iptel.org/sems/sems_application_development_tutorial
+  29. http://www.doxygen.org/index.html

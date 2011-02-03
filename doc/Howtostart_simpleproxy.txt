@@ -100,16 +100,16 @@ Setting up SEMS to select the application
      __________________________________________________________________
 
 
-    Generated on Thu Jul 1 15:32:02 2010 for SEMS by  [9]doxygen 1.6.1
+    Generated on Thu Feb 3 02:29:25 2011 for SEMS by  [9]doxygen 1.6.1
 
 References
 
-   1. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/index.html
-   2. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/pages.html
-   3. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/namespaces.html
-   4. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/annotated.html
-   5. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/files.html
-   6. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/dirs.html
-   7. file://localhost/home/stefan/devel/sems/git/repo/sems/doc/doxygen_doc/html/examples.html
+   1. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/examples.html
    8. http://www.kamailio.org/dokuwiki/doku.php#setup
    9. http://www.doxygen.org/index.html
