@@ -45,6 +45,7 @@ struct sip_reply;
 struct sip_header;
 struct sip_via_parm;
 struct dns_handle;
+struct trsp_socket;
 
 //
 // SIP message types:
@@ -127,6 +128,7 @@ struct sip_msg
     cstring            body;
 
     sockaddr_storage   local_ip;
+    trsp_socket*       local_socket;
 
     sockaddr_storage   remote_ip;
     dns_handle         h_dns;
@@ -134,6 +136,8 @@ struct sip_msg
     sip_msg();
     sip_msg(const char* msg_buf, int msg_len);
     ~sip_msg();
+
+    int send();
 };
 
 int parse_method(int* method, const char* beg, int len);

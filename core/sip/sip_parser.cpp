@@ -36,6 +36,8 @@
 #include "parse_from_to.h"
 #include "parse_100rel.h"
 
+#include "transport.h"
+
 #include "log.h"
 
 #include <memory>
@@ -55,7 +57,8 @@ sip_msg::sip_msg(const char* msg_buf, int msg_len)
       record_route(),
       content_type(NULL),
       content_length(NULL),
-      body()
+      body(),
+      local_socket(NULL)
 {
     u.request = 0;
     u.reply   = 0;
@@ -83,7 +86,8 @@ sip_msg::sip_msg()
       record_route(),
       content_type(NULL),
       content_length(NULL),
-      body()
+      body(),
+      local_socket(NULL)
 {
     u.request = 0;
     u.reply   = 0;
@@ -114,6 +118,12 @@ sip_msg::~sip_msg()
 	    delete u.reply;
 	}
     }
+}
+
+int sip_msg::send()
+{
+    assert(local_socket);
+    return local_socket->send(&remote_ip,buf,len);
 }
 
 

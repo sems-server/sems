@@ -331,15 +331,17 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	memcpy(c,body.s,body.len);
     }
 
-    assert(transport());
-
     int err = -1;
 
-    // TODO: inspect topmost 'Via' and select proper addr (+resolve DNS names)
+    // TODO: Inspect topmost 'Via' and select proper addr (+resolve DNS names)
     // refs: RFC3261 18.2.2; RFC3581
+
     sockaddr_storage remote_ip;
+    trsp_socket* local_socket = NULL;
+
     if (!_next_hop.len) {
 	memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
+	local_socket = req->local_socket;
 
 	if(req->via_p1->has_rport){
 
@@ -356,6 +358,8 @@ int _trans_layer::send_reply(trans_ticket* tt,
 		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
 	    }
 	    // else: use the source port from the replied request (from IP hdr)
+
+	    // TODO: use destination address from 1st Via???
 	}
     } else {
 	DBG("setting next hop '%.*s:%u'\n",
@@ -376,7 +380,16 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	ntohs(((sockaddr_in*)&remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,reply_buf);
 
-    err = transport()->send(&remote_ip,reply_buf,reply_len);
+    if(!local_socket) {
+	local_socket = find_transport(&remote_ip);
+	if(!local_socket){
+	    ERROR("Could not find transport socket\n");
+	    delete [] reply_buf;
+	    goto end;
+	}
+    }
+
+    err = local_socket->send(&remote_ip,reply_buf,reply_len);
     if(err < 0){
 	delete [] reply_buf;
 	goto end;
@@ -395,6 +408,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	t->retr_buf = reply_buf;
 	t->retr_len = reply_len;
 	memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
+	t->retr_socket = local_socket;
 
 	err = 0;
     }
@@ -545,9 +559,9 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
 	memcpy(c,body.s,body.len);
     }
 
-    assert(transport());
+    assert(req->local_socket);
 
-    int err = transport()->send(&req->remote_ip,reply_buf,reply_len);
+    int err = req->local_socket->send(&req->remote_ip,reply_buf,reply_len);
     delete [] reply_buf;
 
     return err;
@@ -722,46 +736,38 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
     string nh = c2stlstr(*next_hop);
 
     DBG("checking whether '%s' is IP address...\n", nh.c_str());
-    if (resolver::instance()->str2ip(nh.c_str(), &(msg->remote_ip), IPv4) == 1) {
-	// already a valid IP address
-	if (!next_port)
-	    ((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(5060);
-	else
-	    ((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
+    if (resolver::instance()->str2ip(nh.c_str(), &(msg->remote_ip), IPv4) != 1) {
 
-	DBG("set destination to %s:%u\n", nh.c_str(),
-	    ntohs(((sockaddr_in*)&(msg->remote_ip))->sin_port));
-
-	return 0;
-    }
+	// nh does NOT contain a valid IP address
     
-    if(!next_port){
-	// no explicit port specified,
-	// try SRV first
-	if (AmConfig::DisableDNSSRV) {
-	    DBG("no port specified, but DNS SRV disabled (skipping).\n");
-	} else {
-	    string srv_name = "_sip._udp." + nh;
+	if(!next_port){
+	    // no explicit port specified,
+	    // try SRV first
+	    if (AmConfig::DisableDNSSRV) {
+		DBG("no port specified, but DNS SRV disabled (skipping).\n");
+	    } else {
+		string srv_name = "_sip._udp." + nh;
 
-	    DBG("no port specified, looking up SRV '%s'...\n", srv_name.c_str());
+		DBG("no port specified, looking up SRV '%s'...\n", srv_name.c_str());
 
-	    if(!resolver::instance()->resolve_name(srv_name.c_str(),
-						   &(msg->h_dns),
-						   &(msg->remote_ip),IPv4)){
-		return 0;
+		if(!resolver::instance()->resolve_name(srv_name.c_str(),
+						       &(msg->h_dns),
+						       &(msg->remote_ip),IPv4)){
+		    return 0;
+		}
+
+		DBG("no SRV record for %s",srv_name.c_str());
 	    }
-
-	    DBG("no SRV record for %s",srv_name.c_str());
 	}
-    }
 
-    memset(&(msg->remote_ip),0,sizeof(sockaddr_storage));
-    int err = resolver::instance()->resolve_name(nh.c_str(),
-						 &(msg->h_dns),
-						 &(msg->remote_ip),IPv4);
-    if(err < 0){
-	ERROR("Unresolvable Request URI domain\n");
-	return -1;
+	memset(&(msg->remote_ip),0,sizeof(sockaddr_storage));
+	int err = resolver::instance()->resolve_name(nh.c_str(),
+						     &(msg->h_dns),
+						     &(msg->remote_ip),IPv4);
+	if(err < 0){
+	    ERROR("Unresolvable Request URI domain\n");
+	    return -1;
+	}
     }
 
     if(!((sockaddr_in*)&(msg->remote_ip))->sin_port) {
@@ -770,6 +776,9 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
 	((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
     }
 
+    DBG("set destination to %s:%u\n", nh.c_str(),
+	ntohs(((sockaddr_in*)&(msg->remote_ip))->sin_port));
+    
     return 0;
 }
 
@@ -812,12 +821,39 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     // Supported / Require
     // Content-Length / Content-Type
 
-    assert(transport());
+    //assert(transport());
     assert(msg);
     assert(tt);
 
     cstring next_hop;
     unsigned short next_port=0;
+
+    if (!_next_hop.len) {
+	if(set_next_hop(msg,&next_hop,&next_port) < 0){
+	    DBG("set_next_hop failed\n");
+	    return -1;
+	}
+    } else {
+	next_hop = _next_hop;
+	next_port = _next_port ? _next_port : 5060;
+    }
+
+    if(set_destination_ip(msg,&next_hop,next_port) < 0){
+     	DBG("set_destination_ip failed\n");
+     	return -1;
+    }
+
+    // no socket yet, find one
+    if(!msg->local_socket) {
+	trsp_socket* s = find_transport(&msg->remote_ip);
+	if(!s){
+	    ERROR("could not find a transport socket (dest: '%.*s')\n",
+		  next_hop.len,next_hop.s);
+	    return -1;
+	}
+
+	msg->local_socket = s;
+    }
 
     tt->_bucket = 0;
     tt->_t = 0;
@@ -839,9 +875,9 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     compute_branch(branch_buf,msg->callid->value,msg->cseq->value);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
     
-    string via(transport()->get_ip());
-    if(transport()->get_port() != 5060)
-	via += ":" + int2str(transport()->get_port());
+    string via(msg->local_socket->get_ip());
+    if(msg->local_socket->get_port() != 5060)
+	via += ":" + int2str(msg->local_socket->get_port());
 
     // add 'rport' parameter defaultwise? yes, for now
     request_len += via_len(stl2cstr(via),branch,true);
@@ -891,22 +927,9 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	return MALFORMED_SIP_MSG;
     }
 
-    if (!_next_hop.len) {
-	if(set_next_hop(msg,&next_hop,&next_port) < 0){
-	    DBG("set_next_hop failed\n");
-	    delete p_msg;
-	    return -1;
-	}
-    } else {
-	next_hop = _next_hop;
-	next_port = _next_port ? _next_port : 5060;
-    }
-
-    if(set_destination_ip(p_msg,&next_hop,next_port) < 0){
-     	DBG("set_destination_ip failed\n");
-	delete p_msg;
-     	return -1;
-    }
+    // copy msg->remote_ip
+    memcpy(&p_msg->remote_ip,&msg->remote_ip,sizeof(sockaddr_storage));
+    p_msg->local_socket = msg->local_socket;
 
     DBG("Sending to %s:%i <%.*s...>\n",
 	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
@@ -914,10 +937,10 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	50 /* preview - instead of p_msg->len */,p_msg->buf);
 
     tt->_bucket = get_trans_bucket(p_msg->callid->value,
-					    get_cseq(p_msg)->num_str);
+				   get_cseq(p_msg)->num_str);
     tt->_bucket->lock();
     
-    int send_err = transport()->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
+    int send_err = p_msg->send();
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
@@ -989,9 +1012,9 @@ int _trans_layer::cancel(trans_ticket* tt)
     compute_branch(branch_buf,req->callid->value,get_cseq(req)->num_str);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
     
-    string via(transport()->get_ip());
-    if(transport()->get_port() != 5060)
-	via += ":" + int2str(transport()->get_port());
+    string via(req->local_socket->get_ip());
+    if(req->local_socket->get_port() != 5060)
+	via += ":" + int2str(req->local_socket->get_port());
 
     //TODO: add 'rport' parameter by default?
 
@@ -1037,6 +1060,7 @@ int _trans_layer::cancel(trans_ticket* tt)
     }
 
     memcpy(&p_msg->remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
+    p_msg->local_socket = req->local_socket;
 
     DBG("Sending to %s:%i:\n<%.*s>\n",
 	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
@@ -1049,7 +1073,7 @@ int _trans_layer::cancel(trans_ticket* tt)
     if(bucket != n_bucket)
 	n_bucket->lock();
 
-    int send_err = transport()->send(&p_msg->remote_ip,p_msg->buf,p_msg->len);
+    int send_err = p_msg->send();
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
@@ -1160,7 +1184,7 @@ void _trans_layer::received_msg(sip_msg* msg)
 	    }
 	    else {
 		DBG("Found retransmission\n");
-		retransmit(t); // retransmit reply
+		t->retransmit(); // retransmit reply
 	    }
 	}
 	else {
@@ -1319,7 +1343,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		
 	    case TS_COMPLETED:
 		// retransmit non-200 ACK
-		retransmit(t);
+		t->retransmit();
 	    default:
 		goto end;
 	    }
@@ -1377,7 +1401,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		}
 
 		DBG("Received 200 reply retransmission\n");
-		retransmit(t);
+		t->retransmit();
 		goto end;
 
 	    default:
@@ -1447,6 +1471,7 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	
 	// copy destination address
 	memcpy(&t->retr_addr,&msg->remote_ip,sizeof(sockaddr_storage));
+	t->retr_socket = msg->local_socket;
 
 	// remove the message;
 	delete msg;
@@ -1623,8 +1648,8 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 
     DBG("About to send ACK\n");
 
-    assert(transport());
-    int send_err = transport()->send(&inv->remote_ip,ack_buf,ack_len);
+    assert(inv->local_socket);
+    int send_err = inv->local_socket->send(&inv->remote_ip,ack_buf,ack_len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete ack_buf;
@@ -1634,31 +1659,17 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 	t->retr_buf = ack_buf;
 	t->retr_len = ack_len;
 	memcpy(&t->retr_addr,&inv->remote_ip,sizeof(sockaddr_storage));
+	t->retr_socket = inv->local_socket;
     }
 }
 
-void _trans_layer::retransmit(sip_trans* t)
-{
-    assert(transport());
-    if(!t->retr_buf || !t->retr_len){
-	// there is nothing to re-transmit yet!!!
-	return;
-    }
-
-    int send_err = transport()->send(&t->retr_addr,t->retr_buf,t->retr_len);
-    if(send_err < 0){
-	ERROR("Error from transport layer\n");
-    }
-}
-
-void _trans_layer::retransmit(sip_msg* msg)
-{
-    assert(transport());
-    int send_err = transport()->send(&msg->remote_ip,msg->buf,msg->len);
-    if(send_err < 0){
-	ERROR("Error from transport layer\n");
-    }
-}
+// void _trans_layer::retransmit(sip_msg* msg)
+// {
+//     int send_err = msg->send();
+//     if(send_err < 0){
+// 	ERROR("Error from transport layer\n");
+//     }
+// }
 
 void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 {
@@ -1670,7 +1681,7 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
     case STIMER_A:  // Calling: (re-)send INV
 
 	n++;
-	retransmit(tr->msg);
+	tr->msg->send();
 	tr->reset_timer((n<<16) | type, T1_TIMER<<n, bucket->get_id());
 	break;
 	
@@ -1758,12 +1769,12 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	if(tr->type == TT_UAS){
 	    
 	    // re-transmit reply to INV
-	    retransmit(tr);
+	    tr->retransmit();
 	}
 	else {
 
 	    // re-transmit request
-	    retransmit(tr->msg);
+	    tr->msg->send();
 	}
 
 	if(T1_TIMER<<n > T2_TIMER) {
@@ -1800,7 +1811,7 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 			   tr->msg->callid->value,tr->msg->cseq->value);
 
 	    // and re-send
-	    retransmit(tr->msg);
+	    tr->msg->send();
 
 	    // reset counter for timer A & E
 	    timer* A_E_timer = tr->get_timer(STIMER_A);
@@ -1819,6 +1830,64 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
     }
 }
 
+/**
+ * Tries to find a registered transport socket
+ * suitable for sending to the destination supplied.
+ */
+trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
+{
+    if(transports.size() == 0)
+	return NULL;
+
+    if(transports.size() == 1)
+	return transports[0];
+    
+  int temp_sock = socket(remote_ip->ss_family, SOCK_DGRAM, 0 );
+  if (temp_sock == -1) {
+    printf( "ERROR: socket() failed: %s\n",
+	strerror(errno));
+    return NULL;
+  }
+
+  sockaddr_storage from;
+
+  socklen_t    len=sizeof(from);
+  trsp_socket* tsock=NULL;
+
+  if (connect(temp_sock, (sockaddr*)remote_ip, 
+	      remote_ip->ss_family == AF_INET ? 
+	      sizeof(sockaddr_in) : sizeof(sockaddr_in6))==-1) {
+
+      ERROR("connect failed: %s\n",
+	    strerror(errno));
+      goto error;
+  }
+
+  if (getsockname(temp_sock, (sockaddr*)&from, &len)==-1) {
+      ERROR("getsockname failed: %s\n",
+	    strerror(errno));
+      goto error;
+  }
+  close(temp_sock);
+
+  // TODO:
+  //  - if no exact IP match, try with matching the interface
+
+  for(vector<trsp_socket*>::iterator it = transports.begin();
+      it != transports.end(); ++it) {
+
+      if((*it)->match_addr(&from)){
+	  tsock = *it;
+	  break;
+      }
+  }
+
+  return tsock;
+
+ error:
+  close(temp_sock);
+  return NULL;
+}
 
 /** EMACS **
  * Local variables:

@@ -87,6 +87,12 @@ public:
     void copy_addr_to(sockaddr_storage* sa);
 
     /**
+     * Match with the given address
+     * @return true if address matches
+     */
+    bool match_addr(sockaddr_storage* other_addr);
+
+    /**
      * Sends a message.
      * @return -1 if error(s) occured.
      */

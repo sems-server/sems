@@ -126,8 +126,12 @@ public:
 
     sip_ua*              ua;
     vector<trsp_socket*> transports;
-    
-    trsp_socket* transport() { return transports[0]; }
+
+    /**
+     * Tries to find a registered transport socket
+     * suitable for sending to the destination supplied.
+     */
+    trsp_socket* find_transport(sockaddr_storage* remote_ip);
 
     /**
      * Implements the state changes for the UAC state machine
@@ -142,16 +146,6 @@ public:
      */
     int update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg);
     int update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
-
-    /**
-     * Retransmits the content of the retry buffer (replies or non-200 ACK).
-     */
-    void retransmit(sip_trans* t);
-
-    /**
-     * Retransmits a message (UAC requests).
-     */
-    void retransmit(sip_msg* msg);
 
     /**
      * Send ACK coresponding to error replies

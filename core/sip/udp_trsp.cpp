@@ -212,6 +212,7 @@ void udp_trsp::run()
 		 s_msg->len, s_msg->buf);
 	}
 	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
+	s_msg->local_socket = sock;
 
 	for (cmsgptr = CMSG_FIRSTHDR(&msg);
              cmsgptr != NULL;

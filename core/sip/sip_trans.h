@@ -35,6 +35,7 @@
 #include <sys/socket.h>
 
 struct sip_msg;
+struct trsp_socket;
 
 /**
  * Transaction types
@@ -118,6 +119,7 @@ class sip_trans
 
     /** Destination for retransmissions */
     sockaddr_storage retr_addr;
+    trsp_socket*     retr_socket;
 
     /**
      * Tells if a specific timer is set
@@ -156,6 +158,11 @@ class sip_trans
      * Resets every timer
     */
     void reset_all_timers();
+
+    /**
+     * Retransmits the content of the retry buffer (replies or non-200 ACK).
+     */
+    void retransmit();
 
     sip_trans();
     ~sip_trans();
