@@ -38,22 +38,14 @@
  *    \arg \b Bugs:  Bug tracker: http://bugtracker.iptel.org/sems
  * 
  *  \section outdated_doc Outdated documentation bits
- *  \arg \ref whatsnew_0100 
  *  \arg installation instructions for tutorial applications: 
  *     <a href="http://www.iptel.org/sems/sems_application_development_tutorial"> 
  *    Application Development Tutorial </a>
  *
  */
 
-/*! \page whatsnew_0100 Changes in SEMS from 0.9 versions to 0.10 
- * SEMS has changed a lot between 0.9 versions and 0.10 versions.
- * The file WHATSNEW_0.10 lists the most important changes:
- * \verbinclude WHATSNEW_0.10
- * 
- */
-
-/*! \page changelog Changelog (from 0.10.0-rc1 onwards)
- * CHANGELOG for SEMS from 0.10.0-rc1 onwards 
+/*! \page changelog Changelog
+ * CHANGELOG for SEMS from 0.9.0 onwards 
  * \verbinclude CHANGELOG
  * 
  */
