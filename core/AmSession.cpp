@@ -65,6 +65,7 @@ AmSession::AmSession()
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
+    rtp_interface(0),
     refresh_method(REFRESH_UPDATE_FB_REINV),
     processing_status(SESSION_PROCESSING_EVENTS),
     user_timer_ref(NULL)
@@ -283,7 +284,7 @@ void AmSession::negotiate(const string& sdp_body,
 
   lockAudio();
   try {
-    RTPStream()->setLocalIP(AmConfig::LocalIP());
+    RTPStream()->setLocalIP(localRTPIP());
     RTPStream()->setPassiveMode(passive_mode);
     RTPStream()->setRAddr(r_host, r_port);
   } catch (const string& err_str) {
@@ -1042,7 +1043,7 @@ string AmSession::sid4dbg()
 int AmSession::sendReinvite(bool updateSDP, const string& headers, int flags) 
 {
   if (updateSDP) {
-    RTPStream()->setLocalIP(AmConfig::LocalIP());
+    RTPStream()->setLocalIP(localRTPIP());
     string sdp_body;
     sdp.genResponse(advertisedIP(), RTPStream()->getLocalPort(), sdp_body);
     return dlg.reinvite(headers, SIP_APPLICATION_SDP, sdp_body, flags);
@@ -1057,7 +1058,7 @@ int AmSession::sendInvite(const string& headers)
 
   // Set local IP first, so that IP is set when 
   // getLocalPort/setLocalPort may bind.
-  RTPStream()->setLocalIP(AmConfig::LocalIP());
+  RTPStream()->setLocalIP(localRTPIP());
   
   // Generate SDP.
   string sdp_body;
@@ -1100,12 +1101,22 @@ void AmSession::onFailure(AmSipDialogEventHandler::FailureCause cause,
 // address to use in SDP bodies 
 string AmSession::advertisedIP()
 {
-  string set_ip = AmConfig::PublicIP(); // "public_ip" parameter. 
-  DBG("AmConfig::PublicIP is %s.\n", set_ip.c_str());
+  assert(rtp_interface >= 0);
+  assert((unsigned int)rtp_interface < AmConfig::Ifs.size());
+
+  string set_ip = AmConfig::Ifs[rtp_interface].PublicIP; // "public_ip" parameter. 
   if (set_ip.empty())
-    return AmConfig::LocalIP();           // "listen" parameter.
+    return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
   return set_ip;
 }  
+
+string AmSession::localRTPIP()
+{
+  assert(rtp_interface >= 0);
+  assert((unsigned int)rtp_interface < AmConfig::Ifs.size());
+  return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
+}
+
 
 // TODO: move user timers into core
 void AmSession::getUserTimerInstance() {

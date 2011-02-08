@@ -46,7 +46,8 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     reliable_1xx(AmConfig::rel100),
     rseq(0), rseq_1st(0), rseq_confirmed(false),
-    next_hop_port(0), next_hop_for_replies(false)
+    next_hop_port(0), next_hop_for_replies(false),
+    outbound_interface(-1), out_intf_for_replies(false)
 {
 }
 
@@ -577,7 +578,8 @@ int AmSipDialog::reply(const AmSipRequest& req,
     return -1;
 
   int ret = SipCtrlInterface::send(reply, next_hop_for_replies ? next_hop_ip : "",
-				   next_hop_for_replies ? next_hop_port : 0);
+				   next_hop_for_replies ? next_hop_port : 0,
+				   out_intf_for_replies ? outbound_interface : -1 );
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
@@ -635,7 +637,8 @@ void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code,
 int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
 			     const string& reason, const string& hdrs,
 			     const string& next_hop_ip,
-			     unsigned short next_hop_port)
+			     unsigned short next_hop_port,
+			     int outbound_interface)
 {
   AmSipReply reply;
 
@@ -649,7 +652,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
 
-  int ret = SipCtrlInterface::send(reply, next_hop_ip, next_hop_port);
+  int ret = SipCtrlInterface::send(reply, next_hop_ip, next_hop_port, outbound_interface);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
@@ -897,7 +900,7 @@ int AmSipDialog::sendRequest(const string& method,
     req.body = body;
   }
 
-  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port))
+  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port,outbound_interface))
     return -1;
  
   uac_trans[cseq] = AmSipTransaction(method,cseq,req.tt);
@@ -1010,7 +1013,7 @@ int AmSipDialog::send_200_ack(const AmSipTransaction& t,
     req.body = body;
   }
 
-  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port))
+  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port, outbound_interface))
     return -1;
 
   uac_trans.erase(t.cseq);

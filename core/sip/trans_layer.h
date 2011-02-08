@@ -92,7 +92,8 @@ public:
 		   int reply_code, const cstring& reason,
 		   const cstring& to_tag, const cstring& hdrs, 
 		   const cstring& body,
-		   const cstring& _next_hop, unsigned short _next_port);
+		   const cstring& _next_hop, unsigned short _next_port,
+		   int out_interface = -1);
 
     /**
      * Sends a UAC request.
@@ -102,7 +103,8 @@ public:
      * @param [out] tt transaction ticket (needed for replies & CANCEL)
      */
     int send_request(sip_msg* msg, trans_ticket* tt,
-		     const cstring& _next_hop, unsigned short _next_port);
+		     const cstring& _next_hop, unsigned short _next_port,
+		     int out_interface = -1);
 
     /**
      * Cancels a request. 

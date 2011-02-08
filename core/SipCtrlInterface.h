@@ -91,7 +91,8 @@ public:
      *            its ticket is written into req.tt.
      */
     static int send(AmSipRequest &req,
-		    const string& next_hop_ip = "", unsigned short next_hop_port = 5060);
+		    const string& next_hop_ip = "", unsigned short next_hop_port = 5060,
+		    int outbound_interface = -1);
 
     /**
      * Sends a SIP reply. 
@@ -100,7 +101,8 @@ public:
      *            ticket included in the SIP request.
      */
     static int send(const AmSipReply &rep,
-		    const string& next_hop_ip = "", unsigned short next_hop_port = 5060);
+		    const string& next_hop_ip = "", unsigned short next_hop_port = 5060,
+		    int outbound_interface = -1);
 
     /**
      * CANCELs an INVITE transaction.

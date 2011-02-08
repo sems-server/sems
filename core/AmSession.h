@@ -162,6 +162,9 @@ protected:
   /** do accept early session? */
   bool accept_early_session;
 
+  /** Local IP interface to be used for RTP streams */
+  int rtp_interface;
+
   vector<AmSessionEventHandler*> ev_handlers;
 
 public:
@@ -603,8 +606,11 @@ public:
    */
   virtual void onBeforeDestroy() { }
 
-  // The IP address to put as c= in SDP bodies and to use for Contact:.
+  // The IP address to put as c= in SDP bodies
   string advertisedIP();
+
+  // The IP address to bind the RTP stream to
+  string localRTPIP();
 
   /** format session id for debugging */
   string sid4dbg();

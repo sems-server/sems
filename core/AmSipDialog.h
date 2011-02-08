@@ -180,6 +180,9 @@ class AmSipDialog
   unsigned short next_hop_port;
   bool next_hop_for_replies;
 
+  int  outbound_interface;
+  bool out_intf_for_replies;
+
   /** enable the reliability of provisional replies? */
   enum provisional_100rel { // could be a char
     REL100_DISABLED,
@@ -308,7 +311,8 @@ class AmSipDialog
 			 const string& reason,
 			 const string& hdrs = "",
 			 const string& next_hop_ip = "",
-			 unsigned short next_hop_port = 5060);
+			 unsigned short next_hop_port = 5060,
+			 int outbound_interface = -1);
 };
 
 

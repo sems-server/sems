@@ -89,7 +89,8 @@ int _trans_layer::send_reply(trans_ticket* tt,
 			     int reply_code, const cstring& reason,
 			     const cstring& to_tag, const cstring& hdrs,
 			     const cstring& body,
-			     const cstring& _next_hop, unsigned short _next_port)
+			     const cstring& _next_hop, unsigned short _next_port,
+			     int out_interface)
 {
     // Ref.: RFC 3261 8.2.6, 12.1.1
     //
@@ -380,7 +381,11 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	ntohs(((sockaddr_in*)&remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,reply_buf);
 
-    if(!local_socket) {
+    // rco: should we overwrite the socket from the request in all cases???
+    if((out_interface >= 0) && ((unsigned int)out_interface < transports.size())){
+	local_socket = transports[out_interface];
+    }
+    else if(!local_socket) {
 	local_socket = find_transport(&remote_ip);
 	if(!local_socket){
 	    ERROR("Could not find transport socket\n");
@@ -808,7 +813,8 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 }
 
 int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
-			       const cstring& _next_hop, unsigned short _next_port)
+			       const cstring& _next_hop, unsigned short _next_port,
+			       int out_interface)
 {
     // Request-URI
     // To
@@ -821,7 +827,6 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     // Supported / Require
     // Content-Length / Content-Type
 
-    //assert(transport());
     assert(msg);
     assert(tt);
 
@@ -843,8 +848,12 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
      	return -1;
     }
 
+    // rco: should we overwrite the socket from the request in all cases???
+    if((out_interface >= 0) && ((unsigned int)out_interface < transports.size())){
+	msg->local_socket = transports[out_interface];
+    }
     // no socket yet, find one
-    if(!msg->local_socket) {
+    else if(!msg->local_socket) {
 	trsp_socket* s = find_transport(&msg->remote_ip);
 	if(!s){
 	    ERROR("could not find a transport socket (dest: '%.*s')\n",

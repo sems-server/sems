@@ -131,7 +131,8 @@ int SipCtrlInterface::cancel(trans_ticket* tt)
 }
 
 int SipCtrlInterface::send(AmSipRequest &req,
-			   const string& next_hop_ip, unsigned short next_hop_port)
+			   const string& next_hop_ip, unsigned short next_hop_port,
+			   int out_interface)
 {
     if(req.method == "CANCEL")
 	return cancel(&req.tt);
@@ -224,7 +225,8 @@ int SipCtrlInterface::send(AmSipRequest &req,
     }
 
     int res = trans_layer::instance()->send_request(msg,&req.tt,
-						    stl2cstr(next_hop_ip),next_hop_port);
+						    stl2cstr(next_hop_ip),next_hop_port,
+						    out_interface);
     delete msg;
 
     return res;
@@ -232,8 +234,6 @@ int SipCtrlInterface::send(AmSipRequest &req,
 
 int SipCtrlInterface::run()
 {
-    //AmConfig::LocalSIPIP(), AmConfig::LocalSIPPort()
-
     DBG("Starting SIP control interface\n");
 
     udp_sockets = new udp_trsp_socket*[AmConfig::Ifs.size()];
@@ -311,7 +311,8 @@ void SipCtrlInterface::cleanup()
 }
 
 int SipCtrlInterface::send(const AmSipReply &rep,
-			   const string& next_hop_ip, unsigned short next_hop_port)
+			   const string& next_hop_ip, unsigned short next_hop_port,
+			   int out_interface)
 {
     sip_msg msg;
 
@@ -411,7 +412,8 @@ int SipCtrlInterface::send(const AmSipReply &rep,
 					    rep.code,stl2cstr(rep.reason),
 					    stl2cstr(rep.local_tag),
 					    cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body),
-					    stl2cstr(next_hop_ip),next_hop_port);
+					    stl2cstr(next_hop_ip),next_hop_port,
+					    out_interface);
 
     delete [] hdrs_buf;
 
