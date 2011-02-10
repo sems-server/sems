@@ -81,7 +81,7 @@ void AmSipDialog::setStatus(int new_status) {
 
 void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
-  DBG("AmSipDialog::updateStatus(request)\n");
+  DBG("AmSipDialog::updateStatus(req = %s)\n", req.method.c_str());
 
   if ((req.method == "ACK") || (req.method == "CANCEL")) {
     if(hdl)
@@ -294,7 +294,8 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
         ((AmSipReply)reply).print().c_str());
     return;
   }
-  DBG("updateStatus(reply): transaction found!\n");
+  DBG("updateStatus(rep = %u %s): transaction found!\n",
+      reply.code, reply.reason.c_str());
 
   AmSipTransaction& t = t_it->second;
   int old_dlg_status = status;

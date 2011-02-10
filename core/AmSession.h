@@ -101,7 +101,7 @@ private:
   bool m_dtmfDetectionEnabled;
 
   enum ProcessingStatus { 
-    SESSION_PROCESSING_EVENTS,
+    SESSION_PROCESSING_EVENTS = 0,
     SESSION_WAITING_DISCONNECTED,
     SESSION_ENDED_DISCONNECTED
   };

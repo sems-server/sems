@@ -56,7 +56,6 @@ AmMutex AmSession::session_num_mut;
 
 // AmSession methods
 
-
 AmSession::AmSession()
   : AmEventQueue(this),
     dlg(this),
@@ -428,6 +427,13 @@ bool AmSession::processEventsCatchExceptions() {
     this should be called until it returns false. */
 bool AmSession::processingCycle() {
 
+  DBG("%s/%s vv %c, %s, %s, %i UACTransPending\n",
+      dlg.callid.c_str(),getLocalTag().c_str(),
+      processing_status == SESSION_PROCESSING_EVENTS ? 'P':'W',
+      AmSipDialog::status2str[dlg.getStatus()],
+      sess_stopped.get()?"stopped":"running",
+      dlg.getUACTransPending());
+
   switch (processing_status) {
   case SESSION_PROCESSING_EVENTS: 
     {
@@ -440,8 +446,9 @@ bool AmSession::processingCycle() {
       int dlg_status = dlg.getStatus();
       bool s_stopped = sess_stopped.get();
       
-      DBG("%s/%s: %s, %s, %i UACTransPending\n",
-	  dlg.callid.c_str(),getLocalTag().c_str(), 
+      DBG("%s/%s ^^ %c, %s, %s, %i UACTransPending\n",
+	  dlg.callid.c_str(),getLocalTag().c_str(),
+	  processing_status == SESSION_PROCESSING_EVENTS ? 'P':'W',
 	  AmSipDialog::status2str[dlg_status],
 	  s_stopped?"stopped":"running",
 	  dlg.getUACTransPending());
