@@ -431,8 +431,11 @@ bool AmSession::processingCycle() {
   switch (processing_status) {
   case SESSION_PROCESSING_EVENTS: 
     {
-      if (!processEventsCatchExceptions())
-	return false; // exception occured, stop processing
+      if (!processEventsCatchExceptions()) {
+	// exception occured, stop processing
+	processing_status = SESSION_ENDED_DISCONNECTED;
+	return false;
+      }
       
       int dlg_status = dlg.getStatus();
       bool s_stopped = sess_stopped.get();
