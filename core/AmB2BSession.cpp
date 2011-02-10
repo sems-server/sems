@@ -366,6 +366,10 @@ int AmB2BSession::sendEstablishedReInvite() {
 }
 
 bool AmB2BSession::refresh(int flags) {
+  // no session refresh if not connected
+  if (dlg.getStatus() != AmSipDialog::Connected)
+    return false;
+
   DBG(" *** AmB2BSession::refresh *** \n");
   // not in B2B mode
   if (other_id.empty() ||

@@ -980,6 +980,10 @@ void AmSession::updateRefreshMethod(const string& headers) {
 }
 
 bool AmSession::refresh(int flags) {
+  // no session refresh if not connected
+  if (dlg.getStatus() != AmSipDialog::Connected)
+    return false;
+
   if (refresh_method == REFRESH_UPDATE) {
     DBG("Refreshing session with UPDATE\n");
     return sendUpdate("", "", "") == 0;
