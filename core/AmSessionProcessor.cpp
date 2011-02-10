@@ -94,6 +94,8 @@ void AmSessionProcessorThread::run() {
 
     runcond.wait_for();
 
+    DBG("running processing loop\n");
+
     process_sessions_mut.lock();
     runcond.set(false);
     // get the list of session s that need processing
@@ -102,6 +104,7 @@ void AmSessionProcessorThread::run() {
     process_sessions.clear();
     process_sessions_mut.unlock();
 
+    // process control events (AmSessionProcessorThreadAddEvent)
     events.processEvents();
 
     // startup all new sessions
@@ -112,8 +115,13 @@ void AmSessionProcessorThread::run() {
 	     startup_sessions.begin(); 
 	   it != startup_sessions.end(); it++) {
 	
-	if ((*it)->startup())
+	DBG("starting up [%p/ltag %s]\n",
+	    *it, (*it)->getLocalTag().c_str());
+	if ((*it)->startup()) {
 	  sessions.push_back(*it); // startup successful
+	  // make sure this session is being processed for startup events
+	  pending_process_sessions.insert(*it);
+	}
       }
 
       startup_sessions.clear();
@@ -121,8 +129,11 @@ void AmSessionProcessorThread::run() {
 
     std::vector<AmSession*> fin_sessions;
 
+    DBG("processing events for <=%zd sessions\n",
+	pending_process_sessions.size());
+
     std::list<AmSession*>::iterator it=sessions.begin();
-    while (it != sessions.end()) {      
+    while (it != sessions.end()) {
       if ((pending_process_sessions.find(*it)!=
 	      pending_process_sessions.end()) &&
 	  (!(*it)->processingCycle())) {
@@ -139,6 +150,8 @@ void AmSessionProcessorThread::run() {
       DBG("finalizing %zd sessions\n", fin_sessions.size());
       for (std::vector<AmSession*>::iterator it=fin_sessions.begin(); 
 	   it != fin_sessions.end(); it++) {
+	DBG("finalizing session [%p/%s/%s]\n",
+	    *it, (*it)->getCallID().c_str(), (*it)->getLocalTag().c_str());
 	(*it)->finalize();
       }
     }
@@ -160,7 +173,8 @@ void AmSessionProcessorThread::process(AmEvent* e) {
     return;
   }
 
-  DBG("scheduling session [%p] for startup\n", add_ev->s);
+  DBG("scheduling session [%p/%s] for startup\n",
+      add_ev->s, add_ev->s->getCallID().c_str());
   startup_sessions.push_back(add_ev->s);
 }
 
