@@ -108,6 +108,9 @@ void AmSessionProcessorThread::run() {
     events.processEvents();
 
     // startup all new sessions
+    DBG("startup_sessions.size() == %zd [%p]\n",
+	startup_sessions.size(), &startup_sessions);
+
     if (!startup_sessions.empty()) {
       DBG("starting up %zd sessions\n", startup_sessions.size());
 
@@ -176,6 +179,9 @@ void AmSessionProcessorThread::process(AmEvent* e) {
   DBG("scheduling session [%p/%s] for startup\n",
       add_ev->s, add_ev->s->getCallID().c_str());
   startup_sessions.push_back(add_ev->s);
+
+  DBG("%zd sessions waiting for startup [%p]\n",
+      startup_sessions.size(), &startup_sessions);
 }
 
 void AmSessionProcessorThread::startSession(AmSession* s) {
