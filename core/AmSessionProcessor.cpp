@@ -108,7 +108,7 @@ void AmSessionProcessorThread::run() {
     events.processEvents();
 
     // startup all new sessions
-    if (startup_sessions.size()) {
+    if (!startup_sessions.empty()) {
       DBG("starting up %zd sessions\n", startup_sessions.size());
 
       for (std::vector<AmSession*>::iterator it=
