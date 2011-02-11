@@ -54,7 +54,6 @@ SET(doc_files
 	../doc/CHANGELOG
 	../doc/COPYING
 	../doc/Tuning.txt
-	../doc/WHATSNEW_0.10
 )
 
 SEMS_INSTALL_DOCS("${doc_files}" "${doc_dirs}")
