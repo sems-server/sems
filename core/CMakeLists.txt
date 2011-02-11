@@ -30,6 +30,7 @@ ENDIF(LIBSAMPLERATE_FOUND)
 ADD_SUBDIRECTORY(plug-in)
 
 # Create config-file from template
+CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/core/etc/app_mapping.conf.sample ${CMAKE_SOURCE_DIR}/core/etc/app_mapping.conf)
 CONFIGURE_FILE (${CMAKE_SOURCE_DIR}/core/etc/sems.conf.cmake ${CMAKE_SOURCE_DIR}/core/etc/sems.conf)
 
 # Installation of main SEMS executable
