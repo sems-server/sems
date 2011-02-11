@@ -19,5 +19,18 @@ src_ipmap
 sst_b2b.sbcprofile
 transparent.sbcprofile
 )
+
+INSTALL(PROGRAMS
+tools/sems-sbc-get-activeprofile
+tools/sems-sbc-get-regex-map-names
+tools/sems-sbc-list-profiles
+tools/sems-sbc-load-profile
+tools/sems-sbc-reload-profile
+tools/sems-sbc-reload-profiles
+tools/sems-sbc-set-activeprofile
+tools/sems-sbc-set-regex-map
+	DESTINATION ${SEMS_EXEC_PREFIX}/sbin
+	)
+
 SET(sems_module_name sbc)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/module.rules.txt)
