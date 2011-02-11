@@ -1,0 +1,67 @@
+# transparent SBC profile
+#
+# This implements a transparent B2BUA - all possible options are commented
+
+# defaults: transparent
+#RURI=$r
+#From=$f
+#To=$t
+
+#Call-ID
+#Call-ID=$ci_leg2
+
+## routing
+# outbound proxy:
+#outbound_proxy=sip:192.168.5.106:5060
+# force outbound proxy (in-dialog requests)?
+#force_outbound_proxy=yes
+# destination IP[:port] for outgoing requests
+#next_hop_ip=192.168.5.106
+#next_hop_port=5060
+# use next_hop for replies, too?
+#next_hop_for_replies=yes
+
+## filters: 
+#header_filter=blacklist
+#header_list=P-App-Param,P-App-Name
+#message_filter=transparent
+#message_list=
+#sdp_filter=whitelist
+#sdpfilter_list=g729,g723,ilbc,speex,gsm,amr
+
+## append extra headers
+#append_headers="P-Source-IP: $si\r\nP-Source-Port: $sp\r\n"
+
+## reply translations
+# translate some 6xx class replies to 4xx class:
+#reply_translations="603=>488 Not acceptable here|600=>406 Not Acceptable"
+
+## authentication:
+#enable_auth=yes
+#auth_user=$P(u)
+#auth_pwd=$P(p)
+
+## call timer
+#enable_call_timer=yes
+#call_timer=60
+# or, e.g.: call_timer=$P(t)
+
+## prepaid
+#enable_prepaid=yes
+#prepaid_accmodule=cc_acc
+#prepaid_uuid=$H(P-Caller-Uuid)
+#prepaid_acc_dest=$H(P-Acc-Dest)
+
+## session timer:
+#enable_session_timer=yes
+# if session_expires is not configured here,
+# the values from sbc.conf are used, or the
+# default values
+#session_expires=120
+#minimum_timer=90
+#session_refresh_method=UPDATE_FALLBACK_INVITE
+#accept_501_reply=yes
+
+## refuse call
+# refuse all calls with <code> <reason>
+#refuse_with="404 Not Found"
