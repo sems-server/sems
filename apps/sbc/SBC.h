@@ -116,6 +116,7 @@ class SBCDialog : public AmB2BCallerSession
 
   void stopCall();
   bool startCallTimer();
+  void stopCallTimer();
   void startPrepaidAccounting();
   void stopPrepaidAccounting();
 

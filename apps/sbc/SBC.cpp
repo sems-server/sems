@@ -806,6 +806,7 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
 void SBCDialog::onOtherBye(const AmSipRequest& req)
 {
   stopPrepaidAccounting();
+  stopCallTimer();
   AmB2BCallerSession::onOtherBye(req);
 }
 
@@ -830,6 +831,7 @@ void SBCDialog::onCancel()
 void SBCDialog::stopCall() {
   if (m_state == BB_Connected) {
     stopPrepaidAccounting();
+    stopCallTimer();
   }
   terminateOtherLeg();
   terminateLeg();
@@ -851,6 +853,13 @@ bool SBCDialog::startCallTimer() {
   }
 
   return true;
+}
+
+void SBCDialog::stopCallTimer() {
+  if (call_profile.call_timer_enabled) {
+    DBG("SBC: removing call timer\n");
+    removeTimer(SBC_TIMER_ID_CALL_TIMER);
+  }
 }
 
 void SBCDialog::startPrepaidAccounting() {
