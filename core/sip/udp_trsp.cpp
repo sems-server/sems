@@ -208,7 +208,8 @@ void udp_trsp::run()
 
 	if (SipCtrlInterface::log_raw_messages >= 0) {
 	    _LOG(SipCtrlInterface::log_raw_messages, 
-		 "recvd msg\n--++--\n%.*s--++--\n", s_msg->len, s_msg->buf);
+		 "vv M [|] u recvd msg via UDP vv\n--++--\n%.*s--++--\n",
+		 s_msg->len, s_msg->buf);
 	}
 	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
 

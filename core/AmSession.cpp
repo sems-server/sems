@@ -427,9 +427,8 @@ bool AmSession::processEventsCatchExceptions() {
     this should be called until it returns false. */
 bool AmSession::processingCycle() {
 
-  DBG("%s/%s vv %c, %s, %s, %i UACTransPending\n",
+  DBG("vv S [%s|%s] %s, %s, %i UACTransPending vv\n",
       dlg.callid.c_str(),getLocalTag().c_str(),
-      processing_status == SESSION_PROCESSING_EVENTS ? 'P':'W',
       AmSipDialog::status2str[dlg.getStatus()],
       sess_stopped.get()?"stopped":"running",
       dlg.getUACTransPending());
@@ -446,9 +445,8 @@ bool AmSession::processingCycle() {
       int dlg_status = dlg.getStatus();
       bool s_stopped = sess_stopped.get();
       
-      DBG("%s/%s ^^ %c, %s, %s, %i UACTransPending\n",
+      DBG("^^ S [%s|%s] %s, %s, %i UACTransPending ^^\n",
 	  dlg.callid.c_str(),getLocalTag().c_str(),
-	  processing_status == SESSION_PROCESSING_EVENTS ? 'P':'W',
 	  AmSipDialog::status2str[dlg_status],
 	  s_stopped?"stopped":"running",
 	  dlg.getUACTransPending());
@@ -489,9 +487,17 @@ bool AmSession::processingCycle() {
       processing_status = SESSION_ENDED_DISCONNECTED;
       return false; // exception occured, stop processing
     }
+
     bool res = dlg.getStatus() != AmSipDialog::Disconnected;
     if (!res)
       processing_status = SESSION_ENDED_DISCONNECTED;
+
+    DBG("^^ S [%s|%s] %s, %s, %i UACTransPending ^^\n",
+	dlg.callid.c_str(),getLocalTag().c_str(),
+	AmSipDialog::status2str[dlg.getStatus()],
+	sess_stopped.get()?"stopped":"running",
+	dlg.getUACTransPending());
+
     return res;
   }; break;
 
@@ -639,7 +645,7 @@ void AmSession::process(AmEvent* ev)
 {
   CALL_EVENT_H(process,ev);
 
-  DBG("AmSession::process\n");
+  DBG("AmSession processing event\n");
 
   if (ev->event_id == E_SYSTEM) {
     AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(ev);

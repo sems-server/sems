@@ -570,6 +570,9 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
     }
 
     AmSipDispatcher::instance()->handleSipMsg(req);
+
+    DBG("^^ M [%s|%s] Ru SIP request %s handled ^^\n",
+	req.callid.c_str(), req.to_tag.c_str(), req.method.c_str());
 }
 
 void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
@@ -589,6 +592,10 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     DBG("cseq = <%i>\n",reply.cseq);
 
     AmSipDispatcher::instance()->handleSipMsg(reply);
+
+    DBG("^^ M [%s|%s] ru SIP reply %u %s handled ^^\n",
+	reply.callid.c_str(), reply.local_tag.c_str(),
+	reply.code, reply.reason.c_str());
 }
 
 void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,

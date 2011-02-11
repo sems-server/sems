@@ -94,7 +94,7 @@ sip_msg::sip_msg()
 
 sip_msg::~sip_msg()
 {
-    DBG("~sip_msg()\n");
+    // DBG("~sip_msg()\n");
 
     delete [] buf;
 

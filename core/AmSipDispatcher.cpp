@@ -43,14 +43,15 @@ AmSipDispatcher* AmSipDispatcher::instance()
 void AmSipDispatcher::handleSipMsg(AmSipReply &reply)
 {
   AmSipReplyEvent* ev = new AmSipReplyEvent(reply);
+
   if(!AmEventDispatcher::instance()->post(reply.local_tag,ev)){
     if ((reply.code >= 100) && (reply.code < 300)) {
       if (AmConfig::UnhandledReplyLoglevel >= 0) {
 	_LOG(AmConfig::UnhandledReplyLoglevel,
-	     "unhandled prov/positive reply: %s\n", reply.print().c_str());
+	     "unhandled SIP reply: %s\n", reply.print().c_str());
       }
     } else {
-      ERROR("unhandled reply: %s\n", reply.print().c_str());
+      ERROR("unhandled SIP reply: %s\n", reply.print().c_str());
     }
     delete ev;
   }
@@ -75,7 +76,8 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 				     "Call leg/Transaction does not exist");
 	  }
 	  else {
-	    ERROR("received ACK for non-existing dialog (callid=%s;remote_tag=%s;local_tag=%s)\n",
+	    ERROR("received ACK for non-existing dialog "
+		  "(callid=%s;remote_tag=%s;local_tag=%s)\n",
 		  callid.c_str(),remote_tag.c_str(),local_tag.c_str());
 	  }
       }

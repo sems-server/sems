@@ -212,9 +212,9 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = (t != relayed_req.end()) && (reply.code != 100);
 
-  DBG("onSipReply: %s -> %i %s (fwd=%s)\n",
-      trans_method.c_str(), reply.code,reply.reason.c_str(),fwd?"true":"false");
-  DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
+  DBG("onSipReply: %s -> %i %s (fwd=%s), c-t=%s\n",
+      trans_method.c_str(), reply.code,reply.reason.c_str(),fwd?"true":"false",
+      reply.content_type.c_str());
   if(fwd) {
     updateRefreshMethod(reply.hdrs);
 
@@ -254,7 +254,7 @@ void AmB2BSession::onInvite2xx(const AmSipReply& reply)
 
 int AmB2BSession::relayEvent(AmEvent* ev)
 {
-  DBG("AmB2BSession::relayEvent: id=%s\n",
+  DBG("AmB2BSession::relayEvent: to other_id='%s'\n",
       other_id.c_str());
 
   if(!other_id.empty()) {
@@ -370,7 +370,7 @@ bool AmB2BSession::refresh(int flags) {
   if (dlg.getStatus() != AmSipDialog::Connected)
     return false;
 
-  DBG(" *** AmB2BSession::refresh *** \n");
+  DBG(" AmB2BSession::refresh: refreshing session\n");
   // not in B2B mode
   if (other_id.empty() ||
       // UPDATE as refresh handled like normal session

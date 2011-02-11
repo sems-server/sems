@@ -108,9 +108,6 @@ void AmSessionProcessorThread::run() {
     events.processEvents();
 
     // startup all new sessions
-    DBG("startup_sessions.size() == %zd [%p]\n",
-	startup_sessions.size(), &startup_sessions);
-
     if (!startup_sessions.empty()) {
       DBG("starting up %zd sessions\n", startup_sessions.size());
 
@@ -118,8 +115,8 @@ void AmSessionProcessorThread::run() {
 	     startup_sessions.begin(); 
 	   it != startup_sessions.end(); it++) {
 	
-	DBG("starting up [%p/ltag %s]\n",
-	    *it, (*it)->getLocalTag().c_str());
+	DBG("starting up [%s|%s]: [%p]\n",
+	    (*it)->getCallID().c_str(), (*it)->getLocalTag().c_str(),*it);
 	if ((*it)->startup()) {
 	  sessions.push_back(*it); // startup successful
 	  // make sure this session is being processed for startup events
@@ -132,7 +129,7 @@ void AmSessionProcessorThread::run() {
 
     std::vector<AmSession*> fin_sessions;
 
-    DBG("processing events for <=%zd sessions\n",
+    DBG("processing events for  up to %zd sessions\n",
 	pending_process_sessions.size());
 
     std::list<AmSession*>::iterator it=sessions.begin();
@@ -176,12 +173,7 @@ void AmSessionProcessorThread::process(AmEvent* e) {
     return;
   }
 
-  DBG("scheduling session [%p/%s] for startup\n",
-      add_ev->s, add_ev->s->getCallID().c_str());
   startup_sessions.push_back(add_ev->s);
-
-  DBG("%zd sessions waiting for startup [%p]\n",
-      startup_sessions.size(), &startup_sessions);
 }
 
 void AmSessionProcessorThread::startSession(AmSession* s) {
