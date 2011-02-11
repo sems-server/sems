@@ -91,13 +91,18 @@ bool SessionTimer::onSendRequest(const string& method,
 				 int flags,
 				 unsigned int cseq)
 {
+  if (method == "BYE") {
+    removeTimers(s);
+    return false;
+  }
+
   string m_hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED)  "timer"  CRLF;
   if  ((method != SIP_METH_INVITE) && (method != SIP_METH_UPDATE))
     goto end;
-  
+
   m_hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) + int2str(session_interval) +CRLF
     + SIP_HDR_COLSP(SIP_HDR_MIN_SE) + int2str(min_se) + CRLF;
-  
+
  end:
   hdrs += m_hdrs;
   return false;
