@@ -50,8 +50,9 @@ string       AmConfig::ExcludePayloads         = "";
 int          AmConfig::LogLevel                = L_INFO;
 bool         AmConfig::LogStderr               = false;
 
-vector<AmConfig::IP_interface> AmConfig::Ifs;
-map<string,unsigned short>     AmConfig::If_names;
+vector<AmConfig::IP_interface>  AmConfig::Ifs;
+map<string,unsigned short>      AmConfig::If_names;
+multimap<string,unsigned short> AmConfig::LocalSIPIP2If;
 
 #ifndef DISABLE_DAEMON_MODE
 bool         AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
@@ -546,7 +547,10 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
   }
 
   AmConfig::Ifs.push_back(intf);
-  return ret;  
+  AmConfig::LocalSIPIP2If.insert(std::make_pair(intf.LocalSIPIP,
+						AmConfig::Ifs.size()-1));
+
+  return ret;
 }
 
 static int readInterfaces(AmConfigReader& cfg)

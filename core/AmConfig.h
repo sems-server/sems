@@ -37,6 +37,7 @@
 using std::string;
 #include <map>
 using std::map;
+using std::multimap;
 #include <utility>
 
 /**
@@ -97,8 +98,9 @@ struct AmConfig
     int LocalSIPPort;
   };
 
-  static vector<IP_interface>       Ifs;
-  static map<string,unsigned short> If_names;
+  static vector<IP_interface>            Ifs;
+  static map<string,unsigned short>      If_names;
+  static multimap<string,unsigned short> LocalSIPIP2If;
 
   static string& LocalIP() {
     return (Ifs[0].LocalIP);
