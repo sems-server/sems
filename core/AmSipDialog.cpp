@@ -33,6 +33,9 @@
 #include "SipCtrlInterface.h"
 #include "sems.h"
 
+#include "sip/parse_route.h"
+#include "sip/parse_uri.h"
+
 const char* AmSipDialog::status2str[4]  = { 	
   "Disconnected",
   "Pending",
@@ -515,6 +518,96 @@ string AmSipDialog::getContactHdr()
   }
 
   return contact_uri;
+}
+
+/** 
+ * Computes, set and return the outbound interface
+ * based on remote_uri, next_hop_ip, outbound_proxy, route.
+ */
+int AmSipDialog::getOutboundIf()
+{
+  if (outbound_interface >= 0)
+    return outbound_interface;
+
+  if(AmConfig::Ifs.size() == 1){
+    return (outbound_interface = 0);
+  }
+
+  // Destination priority:
+  // 1. next_hop_ip
+  // 2. outbound_proxy (if 1st req or force_outbound_proxy)
+  // 3. first route
+  // 4. remote URI
+  
+  string dest_uri;
+  string dest_ip;
+  string local_ip;
+  multimap<string,unsigned short>::iterator if_it;
+
+  if(!next_hop_ip.empty()) {
+    dest_ip = next_hop_ip;
+  }
+  else if(!outbound_proxy.empty() &&
+	  (remote_tag.empty() || force_outbound_proxy)) {
+    dest_uri = outbound_proxy;
+  }
+  else if(!route.empty()){
+    // parse first route
+    sip_header fr;
+    fr.value = stl2cstr(route);
+    sip_uri* route_uri = get_first_route_uri(&fr);
+    if(!route_uri){
+      ERROR("Could not parse route (local_tag='%s';route='%s')",
+	    local_tag.c_str(),route.c_str());
+      goto error;
+    }
+
+    dest_ip = c2stlstr(route_uri->host);
+  }
+  else {
+    dest_uri = remote_uri;
+  }
+
+  if(dest_uri.empty() && dest_ip.empty()) {
+    ERROR("No destination found (local_tag='%s')",local_tag.c_str());
+    goto error;
+  }
+  
+  if(!dest_uri.empty()){
+    sip_uri d_uri;
+    if(parse_uri(&d_uri,dest_uri.c_str(),dest_uri.length()) < 0){
+      ERROR("Could not parse destination URI (local_tag='%s';dest_uri='%s')",
+	    local_tag.c_str(),dest_uri.c_str());
+      goto error;
+    }
+
+    dest_ip = c2stlstr(d_uri.host);
+  }
+
+  if(get_local_addr_for_dest(dest_ip,local_ip) < 0){
+    ERROR("No local address for dest '%s' (local_tag='%s')",dest_ip.c_str(),local_tag.c_str());
+    goto error;
+  }
+
+  if_it = AmConfig::LocalSIPIP2If.find(local_ip);
+  if(if_it == AmConfig::LocalSIPIP2If.end()){
+    ERROR("Could not find a local interface for resolved local IP (local_tag='%s';local_ip='%s')",
+	  local_tag.c_str(), local_ip.c_str());
+    goto error;
+  }
+
+  outbound_interface = if_it->second;
+  return outbound_interface;
+
+ error:
+  WARN("Error while computing outbound interface: default interface will be used instead.");
+  outbound_interface = 0;
+  return outbound_interface;
+}
+
+void AmSipDialog::resetOutboundIf()
+{
+  outbound_interface = -1;
 }
 
 string AmSipDialog::getRoute() {

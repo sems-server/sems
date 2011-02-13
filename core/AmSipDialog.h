@@ -223,6 +223,18 @@ class AmSipDialog
 
   string getContactHdr();
 
+  /** 
+   * Computes, set and return the outbound interface
+   * based on remote_uri, next_hop_ip, outbound_proxy, route.
+   */
+  int getOutboundIf();
+
+  /**
+   * Resets outbound_interface to it default value (-1).
+   */
+  void resetOutboundIf();
+
+
   /** update Status from locally originated request (e.g. INVITE) */
   void updateStatusFromLocalRequest(const AmSipRequest& req);
 
