@@ -546,6 +546,7 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
     }
   }
 
+  intf.name = i_name;
   AmConfig::Ifs.push_back(intf);
   AmConfig::LocalSIPIP2If.insert(std::make_pair(intf.LocalSIPIP,
 						AmConfig::Ifs.size()-1));
@@ -584,21 +585,37 @@ static int readInterfaces(AmConfigReader& cfg)
 
   //debug
   if(ret != -1) {
-    for(map<string,unsigned short>::iterator it = AmConfig::If_names.begin();
-	it != AmConfig::If_names.end(); it++) {
-
-      DBG("BEGIN: interface: '%s'",it->first.c_str());
-
-      AmConfig::IP_interface& it_ref = AmConfig::Ifs[it->second];
-      DBG("\tLocalIP='%s'",it_ref.LocalIP.c_str());
-      DBG("\tPublicIP='%s'",it_ref.PublicIP.c_str());
-      DBG("\tLocalSIPIP='%s'",it_ref.LocalSIPIP.c_str());
-      DBG("\tLocalSIPPort=%u",it_ref.LocalSIPPort);
-      DBG("\tRtpLowPort=%u",it_ref.RtpLowPort);
-      DBG("\tRtpHighPort=%u",it_ref.RtpHighPort);
-    }
+    AmConfig::dump_Ifs();
   }
 
   return ret;
 }
 
+void AmConfig::dump_Ifs()
+{
+  for(map<string,unsigned short>::iterator it = If_names.begin();
+      it != If_names.end(); it++) {
+    
+    INFO("Interface: '%s'",it->first.c_str());
+    
+    IP_interface& it_ref = Ifs[it->second];
+    INFO("\tLocalIP='%s'",it_ref.LocalIP.c_str());
+    INFO("\tPublicIP='%s'",it_ref.PublicIP.c_str());
+    INFO("\tLocalSIPIP='%s'",it_ref.LocalSIPIP.c_str());
+    INFO("\tLocalSIPPort=%u",it_ref.LocalSIPPort);
+    INFO("\tRtpLowPort=%u",it_ref.RtpLowPort);
+    INFO("\tRtpHighPort=%u",it_ref.RtpHighPort);
+  }
+  
+  INFO("Signaling address map:");
+  for(multimap<string,unsigned short>::iterator it = LocalSIPIP2If.begin();
+      it != LocalSIPIP2If.end(); ++it) {
+    if(Ifs[it->second].name.empty()){
+      INFO("\t%s -> default",it->first.c_str());
+    }
+    else {
+      INFO("\t%s -> %s",it->first.c_str(),
+	   Ifs[it->second].name.c_str());
+    }
+  }
+}

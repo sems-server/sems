@@ -80,6 +80,8 @@ struct AmConfig
 
   struct IP_interface {
 
+    string name;
+
     /** local IP for SDP media advertising */
     string LocalIP;
     
@@ -101,6 +103,8 @@ struct AmConfig
   static vector<IP_interface>            Ifs;
   static map<string,unsigned short>      If_names;
   static multimap<string,unsigned short> LocalSIPIP2If;
+
+  static void dump_Ifs();
 
   static string& LocalIP() {
     return (Ifs[0].LocalIP);
