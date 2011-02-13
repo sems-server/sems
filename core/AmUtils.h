@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <regex.h>
+#include <sys/socket.h>
 
 #include <string>
 using std::string;
@@ -307,6 +308,19 @@ short get_port_v6(struct sockaddr_storage* ss);
 
 int write_to_fifo(const string& fifo, const char * buf, unsigned int len);
 int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int len);
+
+/*
+ * Computes the local address for a specific destination address.
+ * This is done by opening a connected UDP socket and reading the
+ * local address with getsockname().
+ */
+int get_local_addr_for_dest(sockaddr_storage* remote_ip, sockaddr_storage* local);
+int get_local_addr_for_dest(const string& remote_ip, string& local);
+
+/**
+ * Converts an IP address contained in a sockaddr_storage into a string.
+ */
+int ip_addr_to_str(sockaddr_storage* ss, string& addr);
 
 string extract_tag(const string& addr);
 

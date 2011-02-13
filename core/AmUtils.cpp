@@ -847,6 +847,85 @@ int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int 
   return ret;
 }
 
+int get_local_addr_for_dest(sockaddr_storage* remote_ip, sockaddr_storage* local)
+{
+  int temp_sock = socket(remote_ip->ss_family, SOCK_DGRAM, 0 );
+  if (temp_sock == -1) {
+    ERROR("socket() failed: %s\n",
+	  strerror(errno));
+    return -1;
+  }
+
+  socklen_t len=sizeof(sockaddr_storage);
+  if (connect(temp_sock, (sockaddr*)remote_ip, 
+	      remote_ip->ss_family == AF_INET ? 
+	      sizeof(sockaddr_in) : sizeof(sockaddr_in6))==-1) {
+
+      ERROR("connect failed: %s\n",
+	    strerror(errno));
+      goto error;
+  }
+
+  if (getsockname(temp_sock, (sockaddr*)local, &len)==-1) {
+      ERROR("getsockname failed: %s\n",
+	    strerror(errno));
+      goto error;
+  }
+
+  close(temp_sock);
+  return 0;
+
+ error:
+  close(temp_sock);
+  return -1;
+}
+
+int get_local_addr_for_dest(const string& remote_ip, string& local)
+{
+  sockaddr_storage remote_ip_ss;
+  sockaddr_storage local_ss;
+
+  int err = inet_pton(AF_INET,remote_ip.c_str(),&((sockaddr_in*)&remote_ip_ss)->sin_addr);
+  if(err == 1){
+    remote_ip_ss.ss_family = AF_INET;
+  }
+  else if(err == 0){
+    err = inet_pton(AF_INET6,remote_ip.c_str(),&((sockaddr_in6*)&remote_ip_ss)->sin6_addr);
+    if(err == 1){
+      remote_ip_ss.ss_family = AF_INET6;
+    }
+  }
+
+  if(err == 0){
+    ERROR("Wrong address format: '%s'",remote_ip.c_str());
+    return -1;
+  }
+  else if(err == -1){
+    ERROR("While converting address: %s",strerror(errno));
+    return -1;
+  }
+
+  err = get_local_addr_for_dest(&remote_ip_ss, &local_ss);
+  if(err < 0){
+    return -1;
+  }
+
+  return ip_addr_to_str(&local_ss,local);
+}
+
+int ip_addr_to_str(sockaddr_storage* ss, string& addr)
+{
+  char ntop_buffer[INET6_ADDRSTRLEN];
+
+  if(!inet_ntop(ss->ss_family, &((sockaddr_in*)ss)->sin_addr,
+		ntop_buffer,INET6_ADDRSTRLEN)) {
+    ERROR("Could not convert address to string: %s",strerror(errno));
+    return -1;
+  }
+
+  addr = string(ntop_buffer);
+  return 0;
+}
 
 string extract_tag(const string& addr)
 {
