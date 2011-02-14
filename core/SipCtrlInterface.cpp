@@ -530,6 +530,8 @@ inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
 	
 	list<sip_header*>::iterator c_it = msg->contacts.begin();
 	reply.contact = c2stlstr((*c_it)->value);
+	++c_it;
+
 	for(;c_it!=msg->contacts.end(); ++c_it){
 	    reply.contact += "," + c2stlstr((*c_it)->value);
 	}
