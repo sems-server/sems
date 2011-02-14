@@ -31,8 +31,8 @@
 #include "AmSession.h"
 #include "AmPlayoutBuffer.h"
 
-AmRtpAudio::AmRtpAudio(AmSession* _s)
-  : AmRtpStream(_s), AmAudio(0), 
+AmRtpAudio::AmRtpAudio(AmSession* _s, int _if)
+  : AmRtpStream(_s,_if), AmAudio(0), 
     /*last_ts_i(false),*/ use_default_plc(true),
     send_only(false), playout_buffer(new AmPlayoutBuffer(this)),
     last_check(0),last_check_i(false),send_int(false)

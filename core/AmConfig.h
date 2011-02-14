@@ -98,6 +98,14 @@ struct AmConfig
     string LocalSIPIP;
     /** the port SIP requests are sent from - optional (default 5060) */
     int LocalSIPPort;
+
+    IP_interface();
+
+    int getNextRtpPort();
+
+  private:
+    int next_rtp_port;
+    AmMutex next_rtp_port_mut;
   };
 
   static vector<IP_interface>            Ifs;

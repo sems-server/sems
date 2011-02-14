@@ -75,35 +75,14 @@ void AmRtpStream::setLocalIP(const string& ip)
 #endif
 }
 
-int AmRtpStream::next_port = -1;
-AmMutex AmRtpStream::port_mut;
-
-int AmRtpStream::getNextPort()
-{
-    
-  int port=0;
-
-  port_mut.lock();
-  if(next_port < 0){
-    next_port = AmConfig::RtpLowPort();
-  }
-    
-  port = next_port & 0xfffe;
-  next_port += 2;
-
-  if(next_port >= AmConfig::RtpHighPort()){
-    next_port = AmConfig::RtpLowPort();
-  }
-  port_mut.unlock();
-    
-  return port;
-}
-
 void AmRtpStream::setLocalPort()
 {
   if(l_port)
     return;
   
+  assert(l_if >= 0);
+  assert(l_if < (int)AmConfig::Ifs.size());
+
   int sd=0;
 #ifdef SUPPORT_IPV6
   if((sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1)
@@ -125,7 +104,7 @@ void AmRtpStream::setLocalPort()
   unsigned short port = 0;
   for(;retry; --retry){
 
-    port = getNextPort();
+    port = AmConfig::Ifs[l_if].getNextRtpPort();
 #ifdef SUPPORT_IPV6
     set_port_v6(&l_saddr,port);
     if(!bind(sd,(const struct sockaddr*)&l_saddr,
@@ -424,8 +403,9 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   return res;
 }
 
-AmRtpStream::AmRtpStream(AmSession* _s) 
+AmRtpStream::AmRtpStream(AmSession* _s, int _if) 
   : r_port(0),
+    l_if(_if),
     l_port(0),
     l_sd(0), 
     r_ssrc_i(false),

@@ -93,7 +93,7 @@ class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
 			   unsigned int   rate);
 
 public:
-  AmRtpAudio(AmSession* _s=0);
+  AmRtpAudio(AmSession* _s, int _if);
   ~AmRtpAudio();
 
   bool checkInterval(unsigned int ts, unsigned int frame_size);

@@ -101,6 +101,38 @@ bool AmConfig::IgnoreSIGPIPE      = true;
 
 static int readInterfaces(AmConfigReader& cfg);
 
+AmConfig::IP_interface::IP_interface()
+  : LocalSIPIP(),
+    LocalSIPPort(5060),
+    LocalIP(),
+    PublicIP(),
+    RtpLowPort(RTP_LOWPORT),
+    RtpHighPort(RTP_HIGHPORT)
+{
+}
+
+int AmConfig::IP_interface::getNextRtpPort()
+{
+    
+  int port=0;
+
+  next_rtp_port_mut.lock();
+  if(next_rtp_port < 0){
+    next_rtp_port = RtpLowPort;
+  }
+    
+  port = next_rtp_port & 0xfffe;
+  next_rtp_port += 2;
+
+  if(next_rtp_port >= RtpHighPort){
+    next_rtp_port = RtpLowPort;
+  }
+  next_rtp_port_mut.unlock();
+    
+  return port;
+}
+
+
 int AmConfig::setLogLevel(const string& level, bool apply)
 {
   int n;

@@ -87,11 +87,6 @@ struct PacketMem {
 class AmRtpStream 
 {
 protected:
-  static int next_port;
-  static AmMutex port_mut;
-
-  static int getNextPort();
-
   /**
      Remote payload (only different from 
      int_payload if using dynamic payloads)
@@ -108,6 +103,10 @@ protected:
 
   string             r_host;
   unsigned short     r_port;
+
+  /* local interface */
+  int l_if;
+
 #ifdef SUPPORT_IPV6
   struct sockaddr_storage r_saddr;
   struct sockaddr_storage l_saddr;
@@ -191,7 +190,7 @@ public:
   int ping();
 
   /** Allocates resources for future use of RTP. */
-  AmRtpStream(AmSession* _s=0);
+  AmRtpStream(AmSession* _s, int _if);
   /** Stops the stream and frees all resources. */
   virtual ~AmRtpStream();
 
