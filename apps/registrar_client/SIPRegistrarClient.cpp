@@ -73,7 +73,7 @@ SIPRegistration::SIPRegistration(const string& handle,
   req.from_tag = handle;
   req.to       = req.from;
   req.to_tag   = "";
-  req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP(); 
+  req.callid   = AmSession::getNewId(); 
   //
 
   // clear dlg.callid? ->reregister?

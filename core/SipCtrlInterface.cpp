@@ -61,9 +61,6 @@ int SipCtrlInterface::udp_rcvbuf = -1;
 
 int SipCtrlInterface::load()
 {
-    INFO("SIP bind_addr: `%s'.\n", AmConfig::LocalSIPIP().c_str());
-    INFO("SIP bind_port: `%i'.\n", AmConfig::LocalSIPPort());
-
     if (!AmConfig::OutboundProxy.empty()) {
 	sip_uri parsed_uri;
 	if (parse_uri(&parsed_uri, (char *)AmConfig::OutboundProxy.c_str(),

@@ -673,7 +673,7 @@ void AmB2BCallerSession::createCalleeSession() {
   other_id = AmSession::getNewId();
   
   callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP();
+  callee_dlg.callid       = AmSession::getNewId();
 
   callee_dlg.local_party  = dlg.remote_party;
   callee_dlg.remote_party = dlg.local_party;

@@ -803,7 +803,7 @@ void IvrDialog::createCalleeSession()
   other_id = AmSession::getNewId();
   
   callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = AmSession::getNewId() + "@" + AmConfig::LocalIP();
+  callee_dlg.callid       = AmSession::getNewId();
   
   // this will be overwritten by ConnectLeg event 
   callee_dlg.remote_party = dlg.local_party;
