@@ -506,11 +506,14 @@ string AmSipDialog::getContactHdr()
       contact_uri += user + "@";
     }
     
+    int oif = getOutboundIf();
+    assert(oif >= 0);
+    assert(oif < (int)AmConfig::Ifs.size());
 
-    contact_uri += (AmConfig::PublicIP().empty() ? 
-		    AmConfig::LocalSIPIP() : AmConfig::PublicIP() ) 
+    contact_uri += (AmConfig::Ifs[oif].PublicIP.empty() ? 
+		    AmConfig::Ifs[oif].LocalSIPIP : AmConfig::Ifs[oif].PublicIP ) 
       + ":";
-    contact_uri += int2str(AmConfig::LocalSIPPort());
+    contact_uri += int2str(AmConfig::Ifs[oif].LocalSIPPort);
     contact_uri += ">";
 
     contact_uri += CRLF;
