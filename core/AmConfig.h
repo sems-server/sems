@@ -112,31 +112,9 @@ struct AmConfig
   static map<string,unsigned short>      If_names;
   static multimap<string,unsigned short> LocalSIPIP2If;
 
+  static int finalizeIPConfig();
+
   static void dump_Ifs();
-
-  static string& LocalIP() {
-    return (Ifs[0].LocalIP);
-  }
-
-  static string& PublicIP() {
-    return (Ifs[0].PublicIP);
-  }
-
-  static int& RtpLowPort() {
-    return (Ifs[0].RtpLowPort);
-  }
-
-  static int& RtpHighPort() {
-    return (Ifs[0].RtpHighPort);
-  }
-
-  static string& LocalSIPIP() {
-    return (Ifs[0].LocalSIPIP);
-  }
-
-  static int& LocalSIPPort() {
-    return (Ifs[0].LocalSIPPort);
-  }
 
   /** number of session (signaling/application) processor threads */
   static int SessionProcessorThreads;

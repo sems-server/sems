@@ -111,7 +111,7 @@ rtp_high_port=60000
 # suffixed with the interface name should be defined.
 #
 # Please note that for each additional interface,
-# 'sip_ip' and 'media_ip' are mandatory. The other
+# 'sip_ip' is mandatory. The other
 # parameters are optional.
 # 
 # Example:

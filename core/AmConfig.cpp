@@ -27,8 +27,10 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <net/if.h>
 #include <netdb.h>
 #include <stdio.h>
 #include "AmConfig.h"
@@ -40,6 +42,8 @@
 
 #include <cctype>
 #include <algorithm>
+
+using std::make_pair;
 
 string       AmConfig::ConfigurationFile       = CONFIG_FILE;
 string       AmConfig::ModConfigPath           = MOD_CFG_PATH;
@@ -497,8 +501,6 @@ int AmConfig::readConfiguration()
     }
   }
 
-  INFO("100rel: %d.\n", AmConfig::rel100);
-
   return ret;
 }	
 
@@ -506,13 +508,6 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
 {
   int ret=0;
   AmConfig::IP_interface intf;
-
-  intf.LocalSIPIP   = "";
-  intf.LocalSIPPort = 5060;
-  intf.LocalIP      = "";
-  intf.PublicIP     = "";
-  intf.RtpLowPort   = RTP_LOWPORT;
-  intf.RtpHighPort  = RTP_HIGHPORT;
 
   string suffix;
   if(!i_name.empty())
@@ -523,8 +518,8 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
     intf.LocalSIPIP = cfg.getParameter("sip_ip" + suffix);
   }
   else if(!suffix.empty()) {
-    ERROR("sip_ip%s parameter is required",suffix.c_str());
-    ret = -1;
+     ERROR("sip_ip%s parameter is required",suffix.c_str());
+     ret = -1;
   }
 
   if(cfg.hasParameter("sip_port" + suffix)){
@@ -541,20 +536,16 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
   if(cfg.hasParameter("media_ip" + suffix)) {
     intf.LocalIP = cfg.getParameter("media_ip" + suffix);
   }
-  else if(!suffix.empty()) {
-    ERROR("media_ip%s parameter is required",suffix.c_str());
-    ret = -1;
+  else if(!intf.LocalSIPIP.empty()) {
+    DBG("media_ip%s parameter is missing: using same as sip_ip%s",
+	suffix.c_str(),suffix.c_str());
+    intf.LocalIP = intf.LocalSIPIP;
   }
 
   // public_ip
   if(cfg.hasParameter("public_ip" + suffix)){
-    string p_ip = cfg.getParameter("public_ip" + suffix);
-    DBG("Setting public_ip%s parameter to %s.\n", suffix.c_str(), p_ip.c_str());
-    intf.PublicIP = p_ip;
+    intf.PublicIP = cfg.getParameter("public_ip" + suffix);
   }
-  //else {
-  //  DBG("Config file has no public_ip%s parameter.",suffix.c_str());
-  //}
 
   // rtp_low_port
   if(cfg.hasParameter("rtp_low_port" + suffix)){
@@ -579,9 +570,15 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
   }
 
   intf.name = i_name;
-  AmConfig::Ifs.push_back(intf);
-  AmConfig::LocalSIPIP2If.insert(std::make_pair(intf.LocalSIPIP,
-						AmConfig::Ifs.size()-1));
+
+  if(!suffix.empty()) {// !default Interface
+    AmConfig::Ifs.push_back(intf);
+  }
+  else {
+    AmConfig::Ifs[0] = intf;
+  }
+
+  AmConfig::If_names[i_name] = AmConfig::Ifs.size()-1;
 
   return ret;
 }
@@ -589,8 +586,6 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
 static int readInterfaces(AmConfigReader& cfg)
 {
   int ret = 0;
-
-  AmConfig::Ifs.clear();
 
   // read default params first
   if(readInterface(cfg,"") < 0) {
@@ -610,27 +605,161 @@ static int readInterfaces(AmConfigReader& cfg)
     if(readInterface(cfg,*it) < 0){
       ret = -1;
     }
-    
-    if(AmConfig::Ifs.size() > 0)
-      AmConfig::If_names[*it] = AmConfig::Ifs.size()-1;
-  }
-
-  //debug
-  if(ret != -1) {
-    AmConfig::dump_Ifs();
   }
 
   return ret;
 }
 
+/** Get the list of network interfaces with the associated PF_INET addresses */
+static bool getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_list)
+{
+  struct ifconf ifc;
+  struct ifreq ifrs[MAX_NET_DEVICES];
+
+  ifc.ifc_len = sizeof(struct ifreq) * MAX_NET_DEVICES;
+  ifc.ifc_req = ifrs;
+  memset(ifrs, 0, ifc.ifc_len);
+
+  if(ioctl(sd, SIOCGIFCONF, &ifc)!=0){
+    ERROR("getInterfaceList: ioctl: %s.\n", strerror(errno));
+    return false;
+  }
+
+#if !defined(BSD44SOCKETS)
+  int n_dev = ifc.ifc_len / sizeof(struct ifreq);
+  for(int i=0; i<n_dev; i++){
+    if(ifrs[i].ifr_addr.sa_family==PF_INET){
+      struct sockaddr_in* sa = (struct sockaddr_in*)&ifrs[i].ifr_addr;
+
+      // avoid dereferencing type-punned pointer below
+      struct sockaddr_in sa4;
+      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
+      if_list.push_back(make_pair((char*)ifrs[i].ifr_name,
+                                  inet_ntoa(sa4.sin_addr)));
+    }
+  }
+#else // defined(BSD44SOCKETS)
+  struct ifreq* p_ifr = ifc.ifc_req;
+  while((char*)p_ifr - (char*)ifc.ifc_req < ifc.ifc_len){
+
+    if(p_ifr->ifr_addr.sa_family == PF_INET){
+      struct sockaddr_in* sa = (struct sockaddr_in*)&p_ifr->ifr_addr;
+      if_list.push_back(make_pair((const char*)p_ifr->ifr_name,
+                                  inet_ntoa(sa->sin_addr)));
+    }
+
+    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + p_ifr->ifr_addr.sa_len);
+  }
+#endif
+
+  return true;
+}
+
+/** Get the PF_INET address associated with the network interface */
+static string getLocalIP(const string& dev_name)
+{
+  string local_ip;
+  struct ifreq ifr;
+  std::vector<std::pair<string,string> > if_list;
+
+#ifdef SUPPORT_IPV6
+  struct sockaddr_storage ss;
+  if(inet_aton_v6(dev_name.c_str(), &ss))
+#else
+    struct in_addr inp;
+  if(inet_aton(dev_name.c_str(), &inp))
+#endif
+    {
+      return dev_name;
+    }
+
+  int sd = socket(PF_INET, SOCK_DGRAM, 0);
+  if(sd == -1){
+    ERROR("socket: %s.\n", strerror(errno));
+    goto error;
+  }
+
+  if(dev_name.empty()) {
+    if (!getInterfaceList(sd, if_list)) {
+      goto error;
+    }
+  }
+  else {
+    memset(&ifr, 0, sizeof(struct ifreq));
+    strncpy(ifr.ifr_name, dev_name.c_str(), IFNAMSIZ-1);
+
+    if(ioctl(sd, SIOCGIFADDR, &ifr)!=0){
+      ERROR("ioctl(SIOCGIFADDR): %s.\n", strerror(errno));
+      goto error;
+    }
+
+    if(ifr.ifr_addr.sa_family==PF_INET){
+      struct sockaddr_in* sa = (struct sockaddr_in*)&ifr.ifr_addr;
+
+      // avoid dereferencing type-punned pointer below
+      struct sockaddr_in sa4;
+      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
+      if_list.push_back(make_pair((char*)ifr.ifr_name,
+				  inet_ntoa(sa4.sin_addr)));
+    }
+  }
+
+  for( std::vector<std::pair<string,string> >::iterator it = if_list.begin();
+       it != if_list.end(); ++it) {
+    memset(&ifr, 0, sizeof(struct ifreq));
+    strncpy(ifr.ifr_name, it->first.c_str(), IFNAMSIZ-1);
+
+    if(ioctl(sd, SIOCGIFFLAGS, &ifr)!=0){
+      ERROR("ioctl(SIOCGIFFLAGS): %s.\n", strerror(errno));
+      goto error;
+    }
+
+    if( (ifr.ifr_flags & IFF_UP) &&
+        (!dev_name.empty() || !(ifr.ifr_flags & IFF_LOOPBACK)) ) {
+      local_ip = it->second;
+      break;
+    }
+  }
+
+  if(ifr.ifr_flags & IFF_LOOPBACK){
+    WARN("Media advertising using loopback address!\n"
+         "Try to use another network interface if your SEMS "
+         "should be accessible from the rest of the world.\n");
+  }
+
+ error:
+  close(sd);
+  return local_ip;
+}
+
+int AmConfig::finalizeIPConfig()
+{
+  for(int i=0; i < (int)AmConfig::Ifs.size(); i++) {
+
+    AmConfig::Ifs[i].LocalIP = getLocalIP(AmConfig::Ifs[i].LocalIP);
+    if (AmConfig::Ifs[i].LocalIP.empty()) {
+      ERROR("Cannot determine proper local address for media advertising!\n"
+	    "Try using 'ifconfig -a' to find a proper interface and configure SEMS to use it.\n");
+      return -1;
+    }
+    
+    if (AmConfig::Ifs[i].LocalSIPIP.empty()) {
+      AmConfig::Ifs[i].LocalSIPIP = AmConfig::Ifs[i].LocalIP;
+    }
+    
+    AmConfig::LocalSIPIP2If.insert(std::make_pair(AmConfig::Ifs[i].LocalSIPIP,i));
+  }
+
+  return 0;
+}
+
 void AmConfig::dump_Ifs()
 {
-  for(map<string,unsigned short>::iterator it = If_names.begin();
-      it != If_names.end(); it++) {
+  for(int i=0; i<(int)Ifs.size(); i++) {
     
-    INFO("Interface: '%s'",it->first.c_str());
-    
-    IP_interface& it_ref = Ifs[it->second];
+    IP_interface& it_ref = Ifs[i];
+
+    INFO("Interface: '%s' (%i)",it_ref.name.c_str(),i);
     INFO("\tLocalIP='%s'",it_ref.LocalIP.c_str());
     INFO("\tPublicIP='%s'",it_ref.PublicIP.c_str());
     INFO("\tLocalSIPIP='%s'",it_ref.LocalSIPIP.c_str());
@@ -642,6 +771,7 @@ void AmConfig::dump_Ifs()
   INFO("Signaling address map:");
   for(multimap<string,unsigned short>::iterator it = LocalSIPIP2If.begin();
       it != LocalSIPIP2If.end(); ++it) {
+
     if(Ifs[it->second].name.empty()){
       INFO("\t%s -> default",it->first.c_str());
     }
