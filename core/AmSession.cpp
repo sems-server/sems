@@ -65,7 +65,7 @@ AmSession::AmSession()
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
-    rtp_interface(0),
+    rtp_interface(-1),
     refresh_method(REFRESH_UPDATE_FB_REINV),
     processing_status(SESSION_PROCESSING_EVENTS),
     user_timer_ref(NULL)
@@ -1101,19 +1101,29 @@ void AmSession::onFailure(AmSipDialogEventHandler::FailureCause cause,
 // address to use in SDP bodies 
 string AmSession::advertisedIP()
 {
+  if(rtp_interface < 0){
+    rtp_interface = dlg.getOutboundIf();
+  }
+  
   assert(rtp_interface >= 0);
   assert((unsigned int)rtp_interface < AmConfig::Ifs.size());
 
   string set_ip = AmConfig::Ifs[rtp_interface].PublicIP; // "public_ip" parameter. 
   if (set_ip.empty())
     return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
+
   return set_ip;
 }  
 
 string AmSession::localRTPIP()
 {
+  if(rtp_interface < 0){
+    rtp_interface = dlg.getOutboundIf();
+  }
+
   assert(rtp_interface >= 0);
   assert((unsigned int)rtp_interface < AmConfig::Ifs.size());
+
   return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
 }
 
