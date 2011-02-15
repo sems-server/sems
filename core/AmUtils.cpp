@@ -33,6 +33,7 @@
 #include "log.h"
 //#include "AmServer.h"
 #include "AmSipMsg.h"
+#include "sip/resolver.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -897,12 +898,27 @@ int get_local_addr_for_dest(const string& remote_ip, string& local)
   }
 
   if(err == 0){
-    ERROR("Wrong address format: '%s'",remote_ip.c_str());
-    return -1;
+    // not an IP... try a name.
+    dns_handle dh;
+    err = resolver::instance()->resolve_name(remote_ip.c_str(),&dh,&remote_ip_ss,IPv4);
   }
-  else if(err == -1){
+
+  if(err == -1){
     ERROR("While converting address: %s",strerror(errno));
     return -1;
+  }
+
+  if(remote_ip_ss.ss_family==AF_INET){
+#if defined(BSD44SOCKETS)
+    ((sockaddr_in*)&remote_ip_ss)->sin_len = sizeof(sockaddr_in);
+#endif
+    ((sockaddr_in*)&remote_ip_ss)->sin_port = htons(5060); // fake port number
+  }
+  else {
+#if defined(BSD44SOCKETS)
+    ((sockaddr_in6*)&remote_ip_ss)->sin6_len = sizeof(sockaddr_in6);
+#endif
+    ((sockaddr_in6*)&remote_ip_ss)->sin6_port = htons(5060); // fake port number
   }
 
   err = get_local_addr_for_dest(&remote_ip_ss, &local_ss);
@@ -917,10 +933,19 @@ int ip_addr_to_str(sockaddr_storage* ss, string& addr)
 {
   char ntop_buffer[INET6_ADDRSTRLEN];
 
-  if(!inet_ntop(ss->ss_family, &((sockaddr_in*)ss)->sin_addr,
-		ntop_buffer,INET6_ADDRSTRLEN)) {
-    ERROR("Could not convert address to string: %s",strerror(errno));
-    return -1;
+  if(ss->ss_family == AF_INET) {
+    if(!inet_ntop(AF_INET, &((sockaddr_in*)ss)->sin_addr,
+		  ntop_buffer,INET6_ADDRSTRLEN)) {
+      ERROR("Could not convert IPv4 address to string: %s",strerror(errno));
+      return -1;
+    }
+  }
+  else {
+    if(!inet_ntop(AF_INET6, &((sockaddr_in6*)ss)->sin6_addr,
+		  ntop_buffer,INET6_ADDRSTRLEN)) {
+      ERROR("Could not convert IPv4 address to string: %s",strerror(errno));
+      return -1;
+    }
   }
 
   addr = string(ntop_buffer);
