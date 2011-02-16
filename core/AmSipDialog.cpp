@@ -613,19 +613,22 @@ void AmSipDialog::resetOutboundIf()
   outbound_interface = -1;
 }
 
-string AmSipDialog::getRoute() {
+string AmSipDialog::getRoute() 
+{
   string res;
 
-  if(!route.empty() || (force_outbound_proxy && !outbound_proxy.empty())) {
-    res = SIP_HDR_COLSP(SIP_HDR_ROUTE);
+  if(!outbound_proxy.empty() && (force_outbound_proxy || remote_tag.empty())){
+    res += "<" + outbound_proxy + ";lr>";
 
-    if(force_outbound_proxy && !outbound_proxy.empty())
-      res += "<" + outbound_proxy + ";lr>, ";
+    if(!route.empty()) {
+      res += ",";
+    }
+  }
 
-    if (!route.empty())
-      res += route;
+  res += route;
 
-    route += CRLF;
+  if(!res.empty()) {
+    res = SIP_HDR_COLSP(SIP_HDR_ROUTE) + res + CRLF;
   }
 
   return res;
