@@ -38,6 +38,8 @@
 #include "AmUtils.h"
 #include "log.h"
 
+#include "sip/resolver.h"
+
 #define B64_FRAME_LINE_SIZE    15
 #define B64_MAX_BUF_LINES      45
 
@@ -83,7 +85,7 @@ bool AmSmtpClient::connect(const string& _server_ip, unsigned short _server_port
     sockaddr_storage _sa;
     dns_handle       _dh;
     
-    if(resolver::instance->resolve_name(server_ip.c_str(),
+    if(resolver::instance()->resolve_name(server_ip.c_str(),
 					&_dh,&_sa,IPv4) < 0) {
       ERROR("address not valid (smtp server: %s)\n",server_ip.c_str());
       return false;

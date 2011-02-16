@@ -107,7 +107,8 @@ void AmMailDeamon::run()
 		     AnswerMachineFactory::SmtpServerPort)) {
 	    
       WARN("Mail deamon could not connect to SMTP server at <%s:%i>\n",
-	   server_address.c_str(),AnswerMachineFactory::SmtpServerPort);
+	   AnswerMachineFactory::SmtpServerAddress.c_str(),
+	   AnswerMachineFactory::SmtpServerPort);
       continue;
     }
 
