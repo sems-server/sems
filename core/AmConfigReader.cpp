@@ -42,6 +42,38 @@
               while( IS_SPACE(*s) ) s++; \
           }while(false)
 
+static int fifo_get_line(FILE* fifo_stream, char* str, size_t len)
+{
+  char   c;
+  size_t l;
+  char*  s=str;
+
+  if(!len)
+    return 0;
+    
+  l=len; 
+
+  while( l && (c=fgetc(fifo_stream)) && !ferror(fifo_stream) && c!=EOF && c!='\n' ){
+    if(c!='\r'){
+      *(s++) = c;
+      l--;
+    }
+  }
+
+
+  if(l>0){
+    // We need one more character
+    // for trailing '\0'.
+    *s='\0';
+
+    return int(s-str);
+  }
+  else
+    // buffer overran.
+    return -1;
+}
+
+
 int  AmConfigReader::loadFile(const string& path)
 {
   FILE* fp = fopen(path.c_str(),"r");

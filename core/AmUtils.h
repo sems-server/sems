@@ -41,7 +41,7 @@ using std::string;
 #include <vector>
 #include <utility>
 
-#define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
+//#define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
 
 #define PARAM_HDR "P-App-Param"
 #define APPNAME_HDR "P-App-Name"
@@ -156,83 +156,6 @@ bool str2long(char*& str, long& result, char sep = ' ');
  */
 int parse_return_code(const char* lbuf, 
 		      unsigned int& res_code, string& res_msg );
-
-/**
- * Get a line from a file.
- * 
- * @param fifo_stream  file to read from.
- * @param str          [out] line buffer.
- * @param len          size of the line buffer.
- * 
- * @return -1 if buffer overruns, 
- *         else the line's length.
- */
-int fifo_get_line(FILE* fifo_stream, char* str, size_t len);
-
-/**
- * Gets one or more lines from a file.
- * It stops to read as soon as a '.' line
- * gets read or encounters EOF.
- * 
- * Syntax:
- * "[
- *   {one or more lines}
- * ]
- * ."
- * 
- * @param fifo_stream  file to read from.
- * @param str          [out] line buffer.
- * @param len          size of the line buffer.
- * 
- * @return -1 if buffer overruns, 
- *         else total length.
- */
-int fifo_get_lines(FILE* fifo_stream, char* str, size_t len);
-
-/**
- * Size of line buffer used within fifo_get_param.
- */
-//#define MAX_LINE_SIZE  256
-
-/**
- * Gets a line parameter from file pointer.
- * If line only contain '.', the parameter is empty.
- * Throws error string if failed.
- */
-int fifo_get_param(FILE* fp, string& p, char* line_buf, unsigned int size);
-
-/**
- * Gets a line from the message buffer.
- * @param msg_c [in,out] pointer to current message buffer.
- * @param str line buffer.
- * @param len line buffer size.
- * @return size read or -1 if something went wrong.
- */
-int msg_get_line(char*& msg_c, char* str, size_t len);
-
-/**
- * Gets [1..n] line(s) from the message buffer.
- * @param msg_c [in,out] pointer to current message buffer.
- * @param str line buffer.
- * @param len line buffer size.
- * @return size read or -1 if something went wrong.
- */
-int msg_get_lines(char*& msg_c, char* str, size_t len);
-
-/**
- * Size of line buffer used within msg_get_param.
- */
-//#define MSG_LINE_SIZE 1024
-
-/**
- * Gets a line parameter from message buffer.
- * If line only contain '.', the parameter is empty.
- * Throws error string if failed.
- * @param msg_c [in,out] pointer to current message buffer.
- * @param p [out] parameter to be filled.
- */
-int msg_get_param(char*& msg_c, string& p, char* line_buf, unsigned int size);
-
 /**
  * Tells if a file exists.
  * @param name file name.
@@ -256,39 +179,8 @@ string file_extension(const string& path);
  */
 string add2path(const string& path, int n_suffix, ...);
 
-/**
- * Reads a line from file and stores it in a string.
- * @param f    file to read from.
- * @param p    [out] where to store the line.
- * @param lb   line buffer.
- * @param lbs  line buffer's size.
- */
-#define READ_FIFO_PARAMETER(f,p,lb,lbs)\
-    {\
-        if( fifo_get_line(f,lb,lbs) !=-1 ){\
-            if(!strcmp(".",lb))\
-                lb[0]='\0';\
-            DBG("%s= <%s>\n",#p,lb);\
-            p  = lb;\
-        }\
-        else {\
-	    throw string("could not read from FIFO: ") + string(strerror(errno));\
-	} \
-    } 
-
 struct in_addr;
 string get_addr_str(struct in_addr in);
-
-string uri_from_name_addr(const string& name_addr);
-string get_ip_from_name(const string& name);
-
-/* Generalized hostname/IP address handling -- wherever you would use
- *   inet_aton(addr.c_str(), &sa.sin_addr)
- * instead use
- *   populate_sockaddr_in_from_name(addr, &sa)
- */
-int populate_sockaddr_in_from_name(const string& name,
-                                               struct sockaddr_in *sa);
 
 #ifdef SUPPORT_IPV6
 int inet_aton_v6(const char* name, struct sockaddr_storage* ss);
@@ -304,10 +196,6 @@ short get_port_v6(struct sockaddr_storage* ss);
 	tval.tv_usec=nusecs%1000000; \
 	select(0, NULL, NULL, NULL, &tval ); \
 	}
-
-
-int write_to_fifo(const string& fifo, const char * buf, unsigned int len);
-int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int len);
 
 /*
  * Computes the local address for a specific destination address.

@@ -228,7 +228,52 @@ void StatsUDPServer::run()
     
 }
 
+static int msg_get_line(char*& msg_c, char* str, size_t len)
+{
+  size_t l;
+  char*  s=str;
 
+  if(!len)
+    return 0;
+    
+  for(l=len; l && (*msg_c) && (*msg_c !='\n'); msg_c++ ){
+    *(s++) = *msg_c;
+    l--;
+  }
+
+  if(*msg_c)
+    msg_c++;
+
+  if(l>0){
+    // We need one more character
+    // for trailing '\0'.
+    *s='\0';
+
+    return int(s-str);
+  }
+  else {
+    ERROR("buffer too small (size=%u)\n",(unsigned int)len);
+    // buffer overran.
+    return -1;
+  }
+}
+
+static int msg_get_param(char*& msg_c, string& p, char* line_buf, unsigned int size)
+{
+  if( msg_get_line(msg_c,line_buf,size) != -1 ){
+
+    if(!strcmp(".",line_buf))
+      line_buf[0]='\0';
+
+    p = line_buf;
+  }
+  else {
+    ERROR("msg_get_line failed\n");
+    return -1;
+  }
+
+  return 0;
+}
 
 int StatsUDPServer::execute(char* msg_buf, string& reply, 
 			    struct sockaddr_in& addr)
