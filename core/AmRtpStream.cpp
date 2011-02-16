@@ -38,6 +38,8 @@
 #include "rtp/telephone_event.h"
 #include "AmJitterBuffer.h"
 
+#include "sip/resolver.h"
+
 #include "log.h"
 
 #include <assert.h>
@@ -473,37 +475,36 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
 {
   DBG("RTP remote address set to %s:%u\n",addr.c_str(),port);
 
-#ifdef SUPPORT_IPV6
   struct sockaddr_storage ss;
   memset (&ss, 0, sizeof (ss));
-  if(!inet_aton_v6(addr.c_str(),&ss)){
-    ERROR("address not valid (host: %s)\n",addr.c_str());
+
+  /* inet_aton only supports dot-notation IP address strings... but an RFC
+   * 4566 unicast-address, as found in c=, can be an FQDN (or other!).
+   */
+  dns_handle dh;
+  if (resolver::instance()->resolve_name(addr.c_str(),&dh,&ss,IPv4) < 0) {
+    WARN("Address not valid (host: %s).\n", addr.c_str());
     throw string("invalid address");
   }
-    
+
+#ifdef SUPPORT_IPV6
+
   memcpy(&r_saddr,&ss,sizeof(struct sockaddr_storage));
   set_port_v6(&r_saddr,port);
 
 #else
+
   struct sockaddr_in sa;
-  memset (&sa, 0, sizeof (sa));
+  memset (&sa, 0, sizeof(sa));
 
 #ifdef BSD44SOCKETS
   sa.sin_len = sizeof(sockaddr_in);
 #endif
   sa.sin_family = AF_INET;
   sa.sin_port = htons(port);
-    
-  /* inet_aton only supports dot-notation IP address strings... but an RFC
-   * 4566 unicast-address, as found in c=, can be an FQDN (or other!).
-   * We need to do more sophisticated parsing -- hence p_s_i_f_n().
-   */
-  if (!populate_sockaddr_in_from_name(addr, &sa)) {
-    WARN("Address not valid (host: %s).\n", addr.c_str());
-    throw string("invalid address");
-  }
 
   memcpy(&r_saddr,&sa,sizeof(struct sockaddr_in));
+  memcpy(&r_saddr.sin_addr,&((sockaddr_in*)&ss)->sin_addr,sizeof(in_addr));
 #endif
 
   r_host = addr;
