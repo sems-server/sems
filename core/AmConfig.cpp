@@ -111,7 +111,8 @@ AmConfig::IP_interface::IP_interface()
     LocalIP(),
     PublicIP(),
     RtpLowPort(RTP_LOWPORT),
-    RtpHighPort(RTP_HIGHPORT)
+    RtpHighPort(RTP_HIGHPORT),
+    next_rtp_port(-1)
 {
 }
 
