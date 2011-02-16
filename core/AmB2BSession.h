@@ -227,7 +227,7 @@ class AmB2BSession: public AmSession
 
   /** RTP streams which receive from our side and are used
       for relaying RTP from the other side */
-  AmRtpStream* relay_rtp_streams;
+  AmRtpStream** relay_rtp_streams;
   /** number of relay RTP streams */
   unsigned int relay_rtp_streams_cnt;
   /** fd of the other streams' sockets (to remove from

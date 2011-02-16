@@ -128,7 +128,7 @@ void AmRtpStream::setLocalPort()
     if(!bind(l_sd,(const struct sockaddr*)&l_saddr,
 	     sizeof(struct sockaddr_storage)))
 #else	
-      l_saddr.sin_port = htons(port);
+    l_saddr.sin_port = htons(port);
     if(!bind(l_sd,(const struct sockaddr*)&l_saddr,
 	     sizeof(struct sockaddr_in)))
 #endif
@@ -159,11 +159,15 @@ void AmRtpStream::setLocalPort()
 
   l_port = port;
   AmRtpReceiver::instance()->addStream(l_sd,this);
-  DBG("local rtp port set to %i\n",l_port);
+  DBG("added to RTP receiver (%s:%i)\n",get_addr_str(l_saddr.sin_addr).c_str(),l_port);
 }
 
 int AmRtpStream::ping()
 {
+  // TODO:
+  //  - we'd better send an empty UDP packet 
+  //    for this purpose.
+
   unsigned char ping_chr[2];
 
   ping_chr[0] = 0;
