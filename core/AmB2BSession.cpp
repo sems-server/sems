@@ -352,7 +352,7 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
       replaced_ports += (!media_index) ? int2str(it->port) : "/"+int2str(it->port);
     } catch (const string& s) {
       ERROR("setting port: '%s'\n", s.c_str());
-      return false; // TODO: or throw?
+      throw string("error setting RTP port\n");
     }
 
     media_index++;
@@ -529,7 +529,7 @@ bool AmB2BSession::updateSessionDescription(const string& content_type,
   return false;
 }
 
-int AmB2BSession::sendEstablishedReInvite() {
+int AmB2BSession::sendEstablishedReInvite() {  
   if (established_content_type.empty() || established_body.empty()) {
     ERROR("trying to re-INVITE with saved description, but none saved\n");
     return -1;
@@ -537,15 +537,20 @@ int AmB2BSession::sendEstablishedReInvite() {
 
   DBG("sending re-INVITE with saved session description\n");
 
-  const string* body = &established_body;
-  string r_body;
-  if (rtp_relay_enabled &&
-      replaceConnectionAddress(established_content_type, *body, r_body)) {
-	body = &r_body;
-  }
+  try {
+    const string* body = &established_body;
+    string r_body;
+    if (rtp_relay_enabled &&
+	replaceConnectionAddress(established_content_type, *body, r_body)) {
+      body = &r_body;
+    }
 
-  return dlg.reinvite("", established_content_type, *body,
-		      SIP_FLAGS_VERBATIM);
+    return dlg.reinvite("", established_content_type, *body,
+			SIP_FLAGS_VERBATIM);
+  } catch (const string& s) {
+    ERROR("sending established SDP reinvite: %s\n", s.c_str());
+    return -1;
+  }
 }
 
 bool AmB2BSession::refresh(int flags) {
@@ -1034,11 +1039,20 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
     const string* body = &co_ev->body;
     string r_body;
     if (rtp_relay_enabled) {
-      if (replaceConnectionAddress(co_ev->content_type, *body, r_body)) {
-	body = &r_body;
+      try {
+	if (replaceConnectionAddress(co_ev->content_type, *body, r_body)) {
+	  body = &r_body;
+	} 
+      } catch (const string& s) {
+	AmSipReply n_reply;
+	n_reply.code = 500;
+	n_reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
+	n_reply.cseq = co_ev->r_cseq;
+	n_reply.local_tag = dlg.local_tag;
+	relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
+	  throw;
       }
     }
-
 
     if (dlg.sendRequest(SIP_METH_INVITE,
 			co_ev->content_type, *body,
