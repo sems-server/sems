@@ -79,15 +79,23 @@ bool AmSmtpClient::connect(const string& _server_ip, unsigned short _server_port
   addr.sin_family = AF_INET;
   addr.sin_port = htons(server_port);
 
-  if(!inet_aton(server_ip.c_str(),&addr.sin_addr)){
-    ERROR("address not valid (smtp server: %s)\n",server_ip.c_str());
-    return -1;
+  {
+    sockaddr_storage _sa;
+    dns_handle       _dh;
+    
+    if(resolver::instance->resolve_name(server_ip.c_str(),
+					&_dh,&_sa,IPv4) < 0) {
+      ERROR("address not valid (smtp server: %s)\n",server_ip.c_str());
+      return false;
+    }
+
+    memcpy(&addr.sin_addr,&((sockaddr_in*)&_sa)->sin_addr,sizeof(in_addr));
   }
 
   sd = socket(PF_INET, SOCK_STREAM, 0);
   if(::connect(sd,(struct sockaddr *)&addr,sizeof(addr)) == -1) {
     ERROR("%s\n",strerror(errno));
-    return -1;
+    return false;
   }
     
   INFO("connected to: %s\n",server_ip.c_str());
