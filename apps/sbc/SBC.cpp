@@ -1000,9 +1000,9 @@ void SBCDialog::createCalleeSession()
 
   AmSipDialog& callee_dlg = callee_session->dlg;
 
-  callee_dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
   if (!call_profile.outbound_proxy.empty()) {
     callee_dlg.outbound_proxy = call_profile.outbound_proxy;
+    callee_dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
   }
   
   if (!call_profile.next_hop_ip.empty()) {
