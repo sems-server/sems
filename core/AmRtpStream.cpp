@@ -511,7 +511,7 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
   r_port = port;
 
 #ifndef SUPPORT_IPV6
-  mute = (sa.sin_addr.s_addr == 0);
+  mute = (r_saddr.sin_addr.s_addr == 0);
 #endif
 }
 
