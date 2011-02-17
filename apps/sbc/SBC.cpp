@@ -1017,6 +1017,9 @@ void SBCDialog::createCalleeSession()
     }
   }
 
+  if(call_profile.outbound_interface >= 0)
+    callee_dlg.outbound_interface = call_profile.outbound_interface;
+
   other_id = AmSession::getNewId();
   
   callee_dlg.local_tag    = other_id;

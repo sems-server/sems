@@ -92,6 +92,8 @@ struct SBCCallProfile {
   string force_symmetric_rtp;
   bool msgflags_symmetric_rtp;
 
+  int outbound_interface;
+
   // todo: RTP transcoding mode
 
   SBCCallProfile()
@@ -103,7 +105,8 @@ struct SBCCallProfile {
     auth_enabled(false),
     call_timer_enabled(false),
     prepaid_enabled(false),
-    rtprelay_enabled(false)
+    rtprelay_enabled(false),
+    outbound_interface(-1)
 
   { }
 
