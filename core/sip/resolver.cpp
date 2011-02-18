@@ -222,6 +222,13 @@ public:
 	//TODO: find a solution for IPv6
 	h->port = htons(e->port);
 	((sockaddr_in*)sa)->sin_port = h->port;
+
+	// check if name is an IP address
+	if(resolver::instance()->str2ip(e->target.c_str(),sa,IPv4) == 1) {
+	    h->ip_n = -1; // flag end of IP list
+	    return 0;
+	}
+
 	return resolver::instance()->resolve_name(e->target.c_str(),h,sa,IPv4);
     }
 };
