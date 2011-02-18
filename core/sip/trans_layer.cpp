@@ -32,6 +32,7 @@
 #include "trans_table.h"
 #include "parse_cseq.h"
 #include "parse_from_to.h"
+#include "parse_route.h"
 #include "parse_100rel.h"
 #include "sip_trans.h"
 #include "msg_fline.h"
@@ -572,6 +573,111 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
     return err;
 }
 
+static void prepare_strict_routing(sip_msg* msg)
+{
+    assert(!msg->route.empty());
+
+    sip_header* fr = msg->route.front();
+    assert(fr->p);
+
+    assert(!((sip_route*)(fr->p))->elmts.empty());
+    sip_nameaddr* fr_na = ((sip_route*)(fr->p))->elmts.front();
+    
+    // place a cursor at the end of the 
+    const char* c = fr_na->addr.s + fr_na->addr.len;
+    const char* end = fr->value.s + fr->value.len;
+
+    assert(c<=end);
+
+    // detect beginning of next route
+    enum {
+	RR_PARAMS=0,
+	RR_QUOTED,
+	RR_SEP_SWS,  // space(s) after ','
+	RR_NXT_ROUTE
+    };
+
+    int st = RR_PARAMS;
+    for(;c<end;c++){
+		
+	switch(st){
+	case RR_PARAMS:
+	    switch(*c){
+	    case SP:
+	    case HTAB:
+	    case CR:
+	    case LF:
+		break;
+	    case COMMA:
+		st = RR_SEP_SWS;
+		break;
+	    case DQUOTE:
+		st = RR_QUOTED;
+		break;
+	    }
+	    break;
+	case RR_QUOTED:
+	    switch(*c){
+	    case BACKSLASH:
+		c++;
+		break;
+	    case DQUOTE:
+		st = RR_PARAMS;
+		break;
+	    }
+	    break;
+	case RR_SEP_SWS:
+	    switch(*c){
+	    case SP:
+	    case HTAB:
+	    case CR:
+	    case LF:
+		break;
+	    default:
+		st = RR_NXT_ROUTE;
+		goto nxt_route;
+	    }
+	    break;
+	}
+    }
+
+ nxt_route:
+	    
+    switch(st){
+    case RR_QUOTED:
+    case RR_SEP_SWS:
+	DBG("Malformed first route header\n");
+    case RR_PARAMS:
+	// remove current route header from message
+	msg->route.pop_front();
+	DBG("route_hdrs.length() = %i\n",(int)msg->route.size());
+	{
+	    list<sip_header*>::iterator h_it = 
+		std::find(msg->hdrs.begin(),msg->hdrs.end(),fr);
+
+	    if(h_it != msg->hdrs.end()) 
+		msg->hdrs.erase(h_it);
+	}
+	DBG("delete (fr=0x%p)\n",fr);
+	delete fr;
+	break;
+		
+    case RR_NXT_ROUTE:
+	// remove current route from this header
+	fr->value.s   = c;
+	fr->value.len = end-c;
+	break;
+    }
+
+    // copy r_uri at the end of 
+    // the route set.
+    msg->hdrs.push_back(new sip_header(0,"Route",msg->u.request->ruri_str)); // BUG: must include <>!!!
+
+    // and replace the R-URI with the first route URI 
+    msg->u.request->ruri_str = fr_na->addr;
+}
+
+
 //
 // Ref. RFC 3261 "12.2.1.1 Generating the Request"
 //
@@ -582,143 +688,37 @@ int _trans_layer::set_next_hop(sip_msg* msg,
     assert(msg);
 
     list<sip_header*>& route_hdrs = msg->route; 
-    cstring& r_uri = msg->u.request->ruri_str;
-
     int err=0;
 
     if(!route_hdrs.empty()){
 	
 	sip_header* fr = route_hdrs.front();
-	
-	sip_nameaddr na;
-	const char* c = fr->value.s;
-	if(parse_nameaddr(&na, &c, fr->value.len)<0) {
+	sip_uri* route_uri = get_first_route_uri(fr);
+	if(route_uri == NULL) {
 	    
-	    DBG("Parsing name-addr failed\n");
+	    DBG("Parsing 1st route uri failed\n");
 	    return -1;
 	}
 	
-	if(parse_uri(&na.uri,na.addr.s,na.addr.len) < 0) {
-	    
-	    DBG("Parsing route uri failed\n");
-	    return -1;
-	}
-
-	bool is_lr = false;
-	if(!na.uri.params.empty()){
-	    
-	    list<sip_avp*>::iterator it = na.uri.params.begin();
-	    for(;it != na.uri.params.end(); it++){
-		
-		if( ((*it)->name.len == 2) && 
-		    (!memcmp((*it)->name.s,"lr",2)) ) {
-
-		    is_lr = true;
-		    break;
-		}
-	    }
-
-	}
-
 	if (next_hop->len == 0) {
-	    *next_hop  = na.uri.host;
-	    if(na.uri.port_str.len)
-		*next_port = na.uri.port;
-	}	    
-
-	if(!is_lr){
-	    
-	    // detect beginning of next route
-
-	    enum {
-		RR_PARAMS=0,
-		RR_QUOTED,
-		RR_SEP_SWS,  // space(s) after ','
-		RR_NXT_ROUTE
-	    };
-
-	    int st = RR_PARAMS;
-	    const char* end = fr->value.s + fr->value.len;
-	    for(;c<end;c++){
-		
-		switch(st){
-		case RR_PARAMS:
-		    switch(*c){
-		    case SP:
-		    case HTAB:
-		    case CR:
-		    case LF:
-			break;
-		    case COMMA:
-			st = RR_SEP_SWS;
-			break;
-		    case DQUOTE:
-			st = RR_QUOTED;
-			break;
-		    }
-		    break;
-		case RR_QUOTED:
-		    switch(*c){
-		    case BACKSLASH:
-			c++;
-			break;
-		    case DQUOTE:
-			st = RR_PARAMS;
-			break;
-		    }
-		    break;
-		case RR_SEP_SWS:
-		    switch(*c){
-		    case SP:
-		    case HTAB:
-		    case CR:
-		    case LF:
-			break;
-		    default:
-			st = RR_NXT_ROUTE;
-			goto nxt_route;
-		    }
-		    break;
-		}
-	    }
-
-	nxt_route:
-	    
-	    switch(st){
-	    case RR_QUOTED:
-	    case RR_SEP_SWS:
-		DBG("Malformed first route header\n");
-	    case RR_PARAMS:
-		// remove current route header from message
-		route_hdrs.pop_front();
-		DBG("route_hdrs.length() = %i\n",(int)route_hdrs.size());
-		{
-		    list<sip_header*>::iterator h_it = std::find(msg->hdrs.begin(),msg->hdrs.end(),fr);
-		    if(h_it != msg->hdrs.end()) msg->hdrs.erase(h_it);
-		}
-		DBG("delete (fr=0x%p)\n",fr);
-		delete fr;
-		break;
-		
-	    case RR_NXT_ROUTE:
-		// remove current route from this header
-		fr->value.s   = c;
-		fr->value.len = end-c;
-		break;
-	    }
-
-	    
-	    // copy r_uri at the end of 
-	    // the route set.
-	    msg->hdrs.push_back(new sip_header(0,"Route",r_uri));
-
-	    r_uri = na.addr;
+	    *next_hop  = route_uri->host;
+	    if(route_uri->port_str.len)
+		*next_port = route_uri->port;
 	}
-	
+
+	if(is_loose_route(route_uri)){
+	    // loose routing is used,
+	    // no need for further processing
+	    return 0;
+	}
+    
+	prepare_strict_routing(msg);
     }
     else {
 
 	sip_uri parsed_r_uri;
+	cstring& r_uri = msg->u.request->ruri_str;
+
 	err = parse_uri(&parsed_r_uri,r_uri.s,r_uri.len);
 	if(err < 0){
 	    ERROR("Invalid Request URI\n");
