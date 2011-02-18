@@ -12,7 +12,7 @@ set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 PROJECT (SEMS)
 
 SET(SEMS_MAJOR_VERSION 1)
-SET(SEMS_MINOR_VERSION 3)
+SET(SEMS_MINOR_VERSION 4)
 SET(SEMS_BUILD_VERSION 0)
 SET(SEMS_EXTRA_VERSION dev)
 
@@ -239,6 +239,27 @@ ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 SET(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -D_DEBUG")
+
+# compile with session thread pool support?
+#      use this for very high concurrent call count
+#      applications (e.g. for signaling only)
+#      if compiled with thread pool, there will be a
+#      thread pool of configurable size processing the
+#      signaling and application logic of the calls.
+#      if compiled without thread pool support, every
+#      session will have its own thread.
+#
+#ADD_DEFINITIONS(-DSESSION_THREADPOOL)
+
+#ADD_DEFINITIONS(-DNO_THREADID_LOG)
+#ADD_DEFINITIONS(-DLOG_LOC_DATA_ATEND)
+
+# Support for long debug messages? (useful for debugging SIP messages' contents)
+#
+# disable for slight performance gain
+ADD_DEFINITIONS(-DLOG_BUFFER_LEN=2048)
+
+#ADD_DEFINITIONS(-DDEBUG_PLAYOUTBUF)
 
 SET(CMAKE_SHARED_LIBRARY_PREFIX "")
 

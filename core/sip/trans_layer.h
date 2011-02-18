@@ -35,6 +35,9 @@
 #include <list>
 using std::list;
 
+#include <vector>
+using std::vector;
+
 struct sip_msg;
 struct sip_uri;
 struct sip_trans;
@@ -70,9 +73,14 @@ public:
 
     /**
      * Register a transport instance.
-     * This method MUST be called ONCE.
+     * This method MUST be called at least once.
      */
     void register_transport(trsp_socket* trsp);
+
+    /**
+     * Clears all registered transport instances.
+     */
+    void clear_transports();
 
     /**
      * Sends a UAS reply.
@@ -83,7 +91,9 @@ public:
     int send_reply(trans_ticket* tt,
 		   int reply_code, const cstring& reason,
 		   const cstring& to_tag, const cstring& hdrs, 
-		   const cstring& body);
+		   const cstring& body,
+		   const cstring& _next_hop, unsigned short _next_port,
+		   int out_interface = -1);
 
     /**
      * Sends a UAC request.
@@ -93,7 +103,8 @@ public:
      * @param [out] tt transaction ticket (needed for replies & CANCEL)
      */
     int send_request(sip_msg* msg, trans_ticket* tt,
-		     const cstring& _next_hop, unsigned short _next_port);
+		     const cstring& _next_hop, unsigned short _next_port,
+		     int out_interface = -1);
 
     /**
      * Cancels a request. 
@@ -115,9 +126,15 @@ public:
      */
     void timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr);
 
-    sip_ua*      ua;
-    trsp_socket* transport;
-    
+    sip_ua*              ua;
+    vector<trsp_socket*> transports;
+
+    /**
+     * Tries to find a registered transport socket
+     * suitable for sending to the destination supplied.
+     */
+    trsp_socket* find_transport(sockaddr_storage* remote_ip);
+
     /**
      * Implements the state changes for the UAC state machine
      * @return -1 if errors
@@ -131,16 +148,6 @@ public:
      */
     int update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg);
     int update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
-
-    /**
-     * Retransmits the content of the retry buffer (replies or non-200 ACK).
-     */
-    void retransmit(sip_trans* t);
-
-    /**
-     * Retransmits a message (UAC requests).
-     */
-    void retransmit(sip_msg* msg);
 
     /**
      * Send ACK coresponding to error replies

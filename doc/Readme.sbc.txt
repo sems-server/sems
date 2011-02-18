@@ -8,7 +8,7 @@ The SBC application is a highly flexible high-performance Back-to-Back
 User Agent (B2BUA). It can be employed for a variety of uses, for example 
 topology hiding, From/To modification, enforcing SIP Session Timers, 
 identity change, SIP authentication. Future uses include accounting,
-call timers, RTP call bridging, transcoding, call distribution.
+RTP call bridging, transcoding, call distribution.
 
 Features
 --------
@@ -17,6 +17,7 @@ Features
  o online reload of call profiles
  o From, To, RURI, Call-ID update
  o Header and message filter
+ o adding arbitrary headers
  o reply code translation
  o SIP authentication
  o SIP Session Timers
@@ -28,16 +29,46 @@ SBC Profiles
 All features are set in an SBC profile, which is configured in a separate
 configuration file with the extension .sbcprofile.conf. Several SBC profiles
 may be loaded at startup (load_profiles), and can be selected with the 
-active_profile configuration option
+active_profile configuration option. The active_profile option is a comma-separated
+list, the first profile that matches, i.e. is non-empty, will be used.
+
+In this list a profile may be selected
 
  o statically (active_profile=<profile_name>)
 
- o depending on user part of INVITE Request URI(active_profile=$(ruri.user))
+ o depending on user part of INVITE Request URI (active_profile=$(ruri.user))
 
  o depending on "profile" option in P-App-Param header (active_profile=$(paramhdr))
 
-By using the latter two options, the SBC profile for the call can be selected in the
-proxy.
+ o using any replacement pattern (see below), especially regex maps $M(val=>map)
+
+By using the latter options, the SBC profile for the call can also be selected in
+the proxy.
+
+Examples:
+ active_profile=auth_b2b
+ active_profile=$(paramhdr),refuse
+ active_profile=$M($si=>ipmap),$(P-SBCProfile),refuse
+
+Example: 
+  In order to have all calls coming from source IP 10.0.* going to
+  'internal1' profile, all calls coming from source IP 10.1.* going to 'internal2'
+  profile, then for calls coming from other IP addresses those to RURI-domain
+  iptel.org go to 'iptel' profile, and all other calls being refused, we could set
+  ~~~~~~~~~ sbc.conf ~~~~~~~~~
+  profiles=internal1,internal2,iptel,refuse
+  regex_maps=src_ipmap,rurimap
+  active_profile=$M($si=>src_ipmap),$M($rh=>rurimap),refuse
+  ~~~~~~~~~~~~~~~~~~ ~~~~~~~~~
+
+  ~~~~~~~~~ src_ipmap.conf ~~~
+  ^10\.0\..*=>internal1
+  ^10\.1\..*=>internal2
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ~~~~~~~~~ rurimap.conf ~~~~~
+  iptel.org=>iptel
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SBC profile reload
 ------------------
@@ -64,11 +95,11 @@ is loaded. The expected parameters to all functions are in a dictionary with
    'name' :          profile name
    'path' :          profile conf file path
    'active_profile': active profile (string)
-Return code is [200, "OK", <result dictionary>] on success, or [<error code>, <error reason>]
-on failure.
+Return code is [200, "OK", <result dictionary>] on success, or 
+[<error code>, <error reason>] on failure.
 
-RURI, From, To, etc - Replacement patterns
--------------------------------------
+Replacement patterns - active_profile, RURI, From, To, etc
+----------------------------------------------------------
 In SBC profile the appearance of the outgoing INVITE request can be set,
 by setting RURI, From and To parameters. If any of those parameters is not
 set, the corresponding value of the incoming request is used.
@@ -116,6 +147,12 @@ The patterns which can be used are the following:
 
   $ci  - Call-ID
 
+  $si  - source (remote) IP address
+  $sp  - source (remote) port
+
+  $Ri  - destination (local/received) IP address
+  $Rp  - destination (local/received) port
+
   $P(paramname) - paramname from P-App-Param
     Example:
       P-App-Param: u=myuser;p=mypwd;d=mydomain
@@ -145,9 +182,16 @@ The patterns which can be used are the following:
       next_hop_port=$Hp(P-SomeNH-URI)
 
 
+  $M(value=>regexmap) - map a value (any pattern) to a regexmap (see below)
+    Example: $M($fU=>usermap)
+
+
   \\  -> \
   \$  -> $
   \*  -> *
+  \r  -> cr  (e.g. use \r\n to separate different headers in append_headers)
+  \n  -> lf
+  \t  -> tab
 
 If a quotation mark (") is used, it needs to be escaped with a backslash in
 the sbc profile configuration file.
@@ -157,6 +201,31 @@ the sbc profile configuration file.
 If a space is contained, use quotation at the beginning and end.
  Example:
    To="\"someone\" <$aU@mytodomain.com>"
+
+Regex mappings ($M(key=>map))
+-----------------------------
+
+A regex mapping is a (sorted) list of "regular expression" => "string value" pairs.
+The regex mapping is executed with a key - any string, replacement pattern or
+combination - and the first regular expression that matches returns the "string value".
+
+Regex mappings are read from a text file, where each line corresponds to one
+regex=>value pair. The mappings to load on startup are set with the regex_maps
+config option, the file name from where it is loaded is "<mapping name>.conf" in
+the plugin config path.
+
+Mappings can also loaded into the running server by using the setRegexMap DI function
+or the included sems-sbc-*-regex-* scripts:
+
+  sems-sbc-set-regex-map <name> <file>      load a regex map from a file
+  sems-sbc-get-regex-map-names              list regex map names
+
+ Example regex map:
+   ~~~~~~~ usermap.conf ~~~~~~
+   # this is a comment
+   ^stefan=>stefansayer
+   ^frank=>frankmajer
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Setting Call-ID
 ---------------
@@ -182,7 +251,9 @@ the outbound proxy route also for in-dialog requests.
 
 The next hop (destination IP[:port] of outgoing requests) can be set with
 the next_hop_ip and next_hop_port options. next_hop_port defaults to 5060
-if not set or empty.
+if not set or empty. Usually, replies are sent back to where the request came
+from (honoring rport), but if next_hop should be used nevertheless,
+next_hop_for_replies profile option can be set to "yes".
 
 Filters
 -------
@@ -201,6 +272,17 @@ with the sdp_filter and sdpfilter_list call profile options. If sdp_filter is
 set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
 Codecs may be filtered out by their payload names in whitelist or blacklist
 modes. The payload names in the list are case-insensitive (PCMU==pcmu).
+
+Adding headers
+--------------
+Additional headers can be added to the outgoing initial INVITE by using the
+append_headers call profile option. Here, several headers can be separated with
+\r\n. All replacement patterns from above can be used.
+
+Examples:
+ append_headers="P-Received-IP: $Ri\r\nP-Received-Port: $Rp"
+ append_headers="P-Source-IP: $si\r\nP-Source-Port: $sp\r\n"
+ append_headers="P-Original-URI: $r"
 
 Response code translations
 -----------------------
@@ -282,16 +364,30 @@ points for integration into custom billing systems.
 Parallel call limits can be implemented by implementing an account specific limit to the
 accounting module.
 
+Refusing calls
+--------------
+
+In some configurations, if may be necessary to refuse calls with a certain error response
+code and reason. If the refuse_with call profile option is set, the call is refused with
+the code and reason specified. In this case, all other call profile options are ignored,
+only the append_headers option has effect.
+
+Examples:
+ refuse_with="403 Invalid Domain $rd"
+
+ refuse_with="606 Not Acceptable"
+ append_headers="P-Original-URI: $r\r\nP-Original-To: $t"
 
 Example profiles
 ----------------
- transparent   - completely transparent B2BUA
+ transparent   - completely transparent B2BUA (contains all options in comments)
  auth_b2b      - identity change and SIP authentication (obsoletes auth_b2b app)
  sst_b2b       - B2BUA with SIP Session Timers (obsoletes sst_b2b app)
  call_timer    - call timer (obsoletes call_timer app)
  prepaid       - prepaid accounting (obsoletes sw_prepaid_sip app)
  codecfilter   - let only some low bitrate codecs pass
  replytranslate - swap 603 and 488 response code in replies
+ refuse        - refuse all calls with 403 Forbidden
 
 Dependencies
 ------------
@@ -316,6 +412,6 @@ x maximum call duration timer
 - call distribution
 - select profile on monitoring in-mem DB record
 - fallback profile
-- add headers
+x add headers
 - bridging between interfaces
 - rel1xx in non-transparent mode

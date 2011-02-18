@@ -72,6 +72,9 @@ bool WebConferenceFactory::ignore_pin = false;
 
 bool WebConferenceFactory::PrivateRoomsMode = false;
 
+string WebConferenceFactory::participant_id_paramname; // default: param not used
+string WebConferenceFactory::participant_id_hdr = "X-ParticipantID"; // default header
+
 int WebConferenceFactory::onLoad()
 {
   return getInstance()->load();
@@ -89,6 +92,11 @@ int WebConferenceFactory::load()
 
   // get application specific global parameters
   configureModule(cfg);
+
+  
+  participant_id_paramname = cfg.getParameter("participant_id_param");
+  if (cfg.hasParameter("participant_id_header"))
+    participant_id_hdr = cfg.getParameter("participant_id_header");
 
   // get prompts
   AM_PROMPT_START;
@@ -243,14 +251,15 @@ bool WebConferenceFactory::isValidConference(const string& conf_id) {
 
 bool WebConferenceFactory::newParticipant(const string& conf_id, 
 					  const string& localtag, 
-					  const string& number) {
+					  const string& number,
+					  const string& participant_id) {
   rooms_mut.lock();
   if (PrivateRoomsMode && rooms.find(conf_id) == rooms.end()) {
     rooms_mut.unlock();
     return false;
   }
 
-  rooms[conf_id].newParticipant(localtag, number);
+  rooms[conf_id].newParticipant(localtag, number, participant_id);
   rooms_mut.unlock();
   return true;
 }
@@ -471,6 +480,10 @@ void WebConferenceFactory::invoke(const string& method,
     args.assertArrayFmt("s");
     listRooms(args, ret);
     ret.push(getServerInfoString().c_str());    
+  } else if(method == "findParticipant"){
+    args.assertArrayFmt("s");
+    findParticipant(args, ret);
+    ret.push(getServerInfoString().c_str());    
   } else if(method == "_list"){
     ret.push("roomCreate");
     ret.push("roomDelete");
@@ -486,6 +499,7 @@ void WebConferenceFactory::invoke(const string& method,
     ret.push("vqRoomFeedback");
     ret.push("getRoomPassword");
     ret.push("listRooms");
+    ret.push("findParticipant");
   } else
     throw AmDynInvoke::NotImplemented(method);
 }
@@ -653,6 +667,7 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   string auth_pwd    = args.get(6).asCStr();
   string callee_domain = domain;
   string headers;
+  string participant_id;
 
   if (args.size()>7) {
     try {
@@ -679,6 +694,16 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
 	callee_domain = domain;
       }
     }
+    
+    if (args.size()>9) {
+      try {
+	assertArgCStr(args.get(9));
+	participant_id = args.get(9).asCStr();
+      }
+      catch (AmArg::TypeMismatchException &e) {
+	participant_id = "";
+      }
+    }
   }
 
   string from = "sip:" + from_user + "@" + domain;
@@ -694,10 +719,10 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   rooms_mut.unlock();
 
   if (!is_valid_room) {
-      ret.push(1);
-      ret.push("wrong adminpin or inexisting room");
-      ret.push("");
-      return;
+    ret.push(1);
+    ret.push("wrong adminpin or inexisting room");
+    ret.push("");
+    return;
   }
 
   DBG("dialout webconference room '%s', from '%s', to '%s'", 
@@ -716,7 +741,7 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
     ret.push(0);
     ret.push("OK");
     ret.push(localtag.c_str());
-    newParticipant(room, localtag, to);
+    newParticipant(room, localtag, to, participant_id);
     updateStatus(room, localtag,
 		 ConferenceRoomParticipant::Connecting,
 		 "INVITE");
@@ -867,6 +892,25 @@ void WebConferenceFactory::listRooms(const AmArg& args, AmArg& ret) {
 
   ret.push(200);  
   ret.push(room_list);  
+}
+
+void WebConferenceFactory::findParticipant(const AmArg& args, AmArg& ret) {
+  string participant_id = args.get(0).asCStr();
+  AmArg r_ret;
+  r_ret.assertArray();
+  rooms_mut.lock();
+  for (map<string, ConferenceRoom>::iterator it = 
+	 rooms.begin(); it != rooms.end(); it++) {
+    for (list<ConferenceRoomParticipant>::iterator p_it=
+	   it->second.participants.begin(); p_it != it->second.participants.end(); p_it++) {
+      if (p_it->participant_id == participant_id) {
+	r_ret.push(it->first);
+	break;
+      }
+    }
+  }
+  rooms_mut.unlock();
+  ret.push(r_ret);
 }
 
 void WebConferenceFactory::vqRoomFeedback(const AmArg& args, AmArg& ret) {  

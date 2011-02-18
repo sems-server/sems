@@ -31,6 +31,7 @@ struct ConferenceRoomParticipant {
   string number;
   ParticipantStatus status;
   string last_reason; 
+  string participant_id;
 
   int muted;
   
@@ -70,7 +71,8 @@ struct ConferenceRoom {
 
   vector<string> participantLtags();
 
-  void newParticipant(const string& localtag, const string& number);
+  void newParticipant(const string& localtag, const string& number,
+		      const string& participant_id);
 
   bool updateStatus(const string& part_tag, 
 		    ConferenceRoomParticipant::ParticipantStatus newstatus, 

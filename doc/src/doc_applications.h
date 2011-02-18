@@ -1,4 +1,4 @@
-/*! \page AppDoc Application Modules Documentation
+/*! \page AppDoc Application Modules
  *  Documentation for the applications that come with SEMS. The applications 
  *  can be found in the apps/ directory and are installed by default if they do not
  *  depend on special libraries (eg. liblame). 
@@ -76,11 +76,13 @@
  *   <ul><li> \ref ModuleDoc_webconference </li></ul>
  *
  * 
- * \section Prepaid 
+ * \section Back-to-Back User Agent (B2BUA) and SBC applications
  *
- * This is a signalling-only prepaid engine.
- *
- *   <ul><li> \ref ModuleDoc_sw_prepaid_sip </li></ul>
+   SEMS has a powerful and flexible B2BUA application, called 'sbc', which
+   implements flexible routing options, header, message and codec filter, optional RTP relay, SIP authentication, Session Timers, prepaid accounting and call timer etc.
+
+    <ul><li> \ref ModuleDoc_sbc </li></ul>
+
  *
  * \section Click2Dial 
  *
@@ -140,13 +142,6 @@
  * identity and authentication is different. Can be used for example for authenting
  * to gateways.
  *
- *  <ul><li> \ref ModuleDoc_auth_b2b </li></ul>
- *
- * sst_b2b is SIP Session Timer enabled B2BUA, for making sure calls are ended 
- * properly and without overbilling, and for topology hiding.
- *
- *  <ul><li> \ref ModuleDoc_sst_b2b </li></ul>
- * 
  * \section morecomponents Other components
  *
  *  <ul><li> \ref ModuleDoc_diameter_client </li></ul>
@@ -362,6 +357,8 @@
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
+
+
 
 
 /*! \page ModuleDoc_dsm DSM: State machine notation for VoIP applications 

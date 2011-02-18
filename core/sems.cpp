@@ -51,20 +51,14 @@
 #include <grp.h>
 #include <pwd.h>
 
-#include <sys/wait.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
+//#include <sys/wait.h>
+//#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <net/if.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 #include <string>
 using std::string;
-using std::make_pair;
 
 
 const char* progname = NULL;    /**< Program name (actually argv[0])*/
@@ -145,7 +139,7 @@ static bool apply_args(std::map<char,string>& args)
 
     switch( it->first ){
     case 'd':
-      AmConfig::LocalIP = it->second;
+      AmConfig::Ifs[0].LocalIP = it->second;
       break;
 
     case 'D':
@@ -226,6 +220,10 @@ static void signal_handler(int sig)
     return;
   }
 
+  if (sig == SIGTERM) {
+    AmSessionContainer::instance()->enableUncleanShutdown();
+  }
+
   if (main_pid == getpid()) {
     if(!is_shutting_down.get()) {
       is_shutting_down.set(true);
@@ -279,127 +277,6 @@ static int write_pid_file()
 #endif /* !DISABLE_DAEMON_MODE */
 
 
-/** Get the list of network interfaces with the associated PF_INET addresses */
-static bool getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_list)
-{
-  struct ifconf ifc;
-  struct ifreq ifrs[MAX_NET_DEVICES];
-
-  ifc.ifc_len = sizeof(struct ifreq) * MAX_NET_DEVICES;
-  ifc.ifc_req = ifrs;
-  memset(ifrs, 0, ifc.ifc_len);
-
-  if(ioctl(sd, SIOCGIFCONF, &ifc)!=0){
-    ERROR("getInterfaceList: ioctl: %s.\n", strerror(errno));
-    return false;
-  }
-
-#if !defined(BSD44SOCKETS)
-  int n_dev = ifc.ifc_len / sizeof(struct ifreq);
-  for(int i=0; i<n_dev; i++){
-    if(ifrs[i].ifr_addr.sa_family==PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&ifrs[i].ifr_addr;
-
-      // avoid dereferencing type-punned pointer below
-      struct sockaddr_in sa4;
-      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
-      if_list.push_back(make_pair((char*)ifrs[i].ifr_name,
-                                  inet_ntoa(sa4.sin_addr)));
-    }
-  }
-#else // defined(BSD44SOCKETS)
-  struct ifreq* p_ifr = ifc.ifc_req;
-  while((char*)p_ifr - (char*)ifc.ifc_req < ifc.ifc_len){
-
-    if(p_ifr->ifr_addr.sa_family == PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&p_ifr->ifr_addr;
-      if_list.push_back(make_pair((const char*)p_ifr->ifr_name,
-                                  inet_ntoa(sa->sin_addr)));
-    }
-
-    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + p_ifr->ifr_addr.sa_len);
-  }
-#endif
-
-  return true;
-}
-
-/** Get the PF_INET address associated with the network interface */
-static string getLocalIP(const string& dev_name)
-{
-  string local_ip;
-  struct ifreq ifr;
-  std::vector<std::pair<string,string> > if_list;
-
-#ifdef SUPPORT_IPV6
-  struct sockaddr_storage ss;
-  if(inet_aton_v6(dev_name.c_str(), &ss))
-#else
-    struct in_addr inp;
-  if(inet_aton(dev_name.c_str(), &inp))
-#endif
-    {
-      return dev_name;
-    }
-
-  int sd = socket(PF_INET, SOCK_DGRAM, 0);
-  if(sd == -1){
-    ERROR("socket: %s.\n", strerror(errno));
-    goto error;
-  }
-
-  if(dev_name.empty()) {
-    if (!getInterfaceList(sd, if_list)) {
-      goto error;
-    }
-  }
-  else {
-    memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, dev_name.c_str(), IFNAMSIZ-1);
-
-    if(ioctl(sd, SIOCGIFADDR, &ifr)!=0){
-      ERROR("ioctl(SIOCGIFADDR): %s.\n", strerror(errno));
-      goto error;
-    }
-
-    if(ifr.ifr_addr.sa_family==PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&ifr.ifr_addr;
-
-      // avoid dereferencing type-punned pointer below
-      struct sockaddr_in sa4;
-      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
-      if_list.push_back(make_pair((char*)ifr.ifr_name,
-				  inet_ntoa(sa4.sin_addr)));
-    }
-  }
-
-  for( std::vector<std::pair<string,string> >::iterator it = if_list.begin();
-       it != if_list.end(); ++it) {
-    memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, it->first.c_str(), IFNAMSIZ-1);
-
-    if(ioctl(sd, SIOCGIFFLAGS, &ifr)!=0){
-      ERROR("ioctl(SIOCGIFFLAGS): %s.\n", strerror(errno));
-      goto error;
-    }
-
-    if( (ifr.ifr_flags & IFF_UP) &&
-        (!dev_name.empty() || !(ifr.ifr_flags & IFF_LOOPBACK)) ) {
-      local_ip = it->second;
-      break;
-    }
-  }
-
-  if(ifr.ifr_flags & IFF_LOOPBACK){
-    WARN("Media advertising using loopback address!\n"
-         "Try to use another network interface if your SEMS "
-         "should be accessible from the rest of the world.\n");
-  }
-
- error:
-  close(sd);
-  return local_ip;
-}
 
 /*
  * Main
@@ -427,6 +304,9 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  // Init default interface
+  AmConfig::Ifs.push_back(AmConfig::IP_interface());
+
   /* apply command-line options */
   if(!apply_args(args)){
     print_usage(true);
@@ -449,16 +329,8 @@ int main(int argc, char* argv[])
     goto error;
   }
 
-  AmConfig::LocalIP = getLocalIP(AmConfig::LocalIP);
-  if (AmConfig::LocalIP.empty()) {
-    ERROR("Cannot determine proper local address for media advertising!\n"
-          "Try using 'ifconfig -a' to find a proper interface and configure SEMS to use it.\n");
+  if(AmConfig::finalizeIPConfig() < 0)
     goto error;
-  }
-
-  if (AmConfig::LocalSIPIP.empty()) {
-    AmConfig::LocalSIPIP = AmConfig::LocalIP;
-  }
 
   printf("Configuration:\n"
 #ifdef _DEBUG
@@ -472,11 +344,6 @@ int main(int argc, char* argv[])
          "       daemon UID:          %s\n"
          "       daemon GID:          %s\n"
 #endif
-	 "       local SIP IP:        %s\n"
-         "       public media IP:     %s\n"
-	 "       local SIP port:      %i\n"
-	 "       local media IP:      %s\n"
-	 "       out-bound proxy:     %s\n"
 	 "       application:         %s\n"
 	 "\n",
 #ifdef _DEBUG
@@ -490,12 +357,9 @@ int main(int argc, char* argv[])
 	 AmConfig::DaemonUid.empty() ? "<not set>" : AmConfig::DaemonUid.c_str(),
 	 AmConfig::DaemonGid.empty() ? "<not set>" : AmConfig::DaemonGid.c_str(),
 #endif
-	 AmConfig::LocalSIPIP.c_str(),
-	 AmConfig::PublicIP.c_str(),
-	 AmConfig::LocalSIPPort,
-	 AmConfig::LocalIP.c_str(),
-	 AmConfig::OutboundProxy.c_str(),
 	 AmConfig::Application.empty() ? "<not set>" : AmConfig::Application.c_str());
+
+  AmConfig::dump_Ifs();
 
 #ifndef DISABLE_DAEMON_MODE
 
@@ -624,9 +488,9 @@ int main(int argc, char* argv[])
 
   INFO("Starting SIP stack (control interface)\n");
   sip_ctrl.load();
-  sip_ctrl.run(AmConfig::LocalSIPIP, AmConfig::LocalSIPPort);
   
-  success = true;
+  if(sip_ctrl.run() != -1)
+    success = true;
 
   // session container stops active sessions
   INFO("Disposing session container\n");

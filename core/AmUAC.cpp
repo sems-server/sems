@@ -54,7 +54,7 @@ AmSession* AmUAC::dialout(const string& user,
     req.from_tag   = local_tag;
   req.to       = to;
   req.to_tag   = "";
-  req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP;
+  req.callid   = AmSession::getNewId();
   req.hdrs     = hdrs;
     
   return AmSessionContainer::instance()->startSessionUAC(req, app_name, session_params);

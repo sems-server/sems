@@ -61,9 +61,6 @@ int SipCtrlInterface::udp_rcvbuf = -1;
 
 int SipCtrlInterface::load()
 {
-    INFO("SIP bind_addr: `%s'.\n", AmConfig::LocalSIPIP.c_str());
-    INFO("SIP bind_port: `%i'.\n", AmConfig::LocalSIPPort);
-
     if (!AmConfig::OutboundProxy.empty()) {
 	sip_uri parsed_uri;
 	if (parse_uri(&parsed_uri, (char *)AmConfig::OutboundProxy.c_str(),
@@ -119,7 +116,8 @@ int SipCtrlInterface::load()
 }
 
 SipCtrlInterface::SipCtrlInterface()
-    : stopped(false), udp_servers(NULL), udp_socket(NULL)
+    : stopped(false), udp_servers(NULL), udp_sockets(NULL),
+      nr_udp_sockets(0), nr_udp_servers(0)
 {
     trans_layer::instance()->register_ua(this);
 }
@@ -130,7 +128,8 @@ int SipCtrlInterface::cancel(trans_ticket* tt)
 }
 
 int SipCtrlInterface::send(AmSipRequest &req,
-			   const string& next_hop_ip, unsigned short next_hop_port)
+			   const string& next_hop_ip, unsigned short next_hop_port,
+			   int out_interface)
 {
     if(req.method == "CANCEL")
 	return cancel(&req.tt);
@@ -223,34 +222,55 @@ int SipCtrlInterface::send(AmSipRequest &req,
     }
 
     int res = trans_layer::instance()->send_request(msg,&req.tt,
-						    stl2cstr(next_hop_ip),next_hop_port);
+						    stl2cstr(next_hop_ip),next_hop_port,
+						    out_interface);
     delete msg;
 
     return res;
 }
 
-void SipCtrlInterface::run(const string& bind_addr, unsigned short bind_port)
+int SipCtrlInterface::run()
 {
     DBG("Starting SIP control interface\n");
 
-    udp_socket = new udp_trsp_socket;
-    udp_socket->bind(bind_addr,bind_port);
-
-    trans_layer::instance()->register_transport(udp_socket);
-    udp_servers = new udp_trsp*[AmConfig::SIPServerThreads];
+    udp_sockets = new udp_trsp_socket*[AmConfig::Ifs.size()];
+    udp_servers = new udp_trsp*[AmConfig::SIPServerThreads * AmConfig::Ifs.size()];
 
     wheeltimer::instance()->start();
 
-    for(int i=0; i<AmConfig::SIPServerThreads;i++){
-	udp_servers[i] = new udp_trsp(udp_socket);
-	udp_servers[i]->start();
+    // Init transport instances
+    for(unsigned int i=0; i<AmConfig::Ifs.size();i++) {
+
+	udp_trsp_socket* udp_socket = new udp_trsp_socket;
+
+	if(udp_socket->bind(AmConfig::Ifs[i].LocalSIPIP,
+			    AmConfig::Ifs[i].LocalSIPPort) < 0){
+
+	    ERROR("Could not bind SIP/UDP socket to %s:%i",
+		  AmConfig::Ifs[i].LocalSIPIP.c_str(),
+		  AmConfig::Ifs[i].LocalSIPPort);
+
+	    delete udp_socket;
+	    return -1;
+	}
+
+	trans_layer::instance()->register_transport(udp_socket);
+	udp_sockets[i] = udp_socket;
+	nr_udp_sockets++;
+
+	for(int j=0; j<AmConfig::SIPServerThreads;j++){
+	    udp_servers[i*AmConfig::SIPServerThreads + j] = new udp_trsp(udp_socket);
+	    udp_servers[i*AmConfig::SIPServerThreads + j]->start();
+	    nr_udp_servers++;
+	}
     }
-    
+
     while (!stopped.get()) {
         stopped.wait_for();
     }
 
     DBG("SIP control interface ending\n");    
+    return 0;
 }
 
 void SipCtrlInterface::stop()
@@ -263,20 +283,33 @@ void SipCtrlInterface::cleanup()
     DBG("Stopping SIP control interface threads\n");
 
     if (NULL != udp_servers) {
-	for(int i=0; i<AmConfig::SIPServerThreads;i++){
+	for(int i=0; i<nr_udp_servers;i++){
 	    udp_servers[i]->stop();
 	    udp_servers[i]->join();
 	    delete udp_servers[i];
 	}
+
+	delete [] udp_servers;
+	udp_servers = NULL;
+	nr_udp_servers = 0;
     }
 
-    trans_layer::instance()->register_transport(NULL);
- 
-    delete [] udp_servers;
-    delete udp_socket;
+    trans_layer::instance()->clear_transports();
+
+    if (NULL != udp_sockets) {
+	for(int i=0; i<nr_udp_sockets;i++){
+	    delete udp_sockets[i];
+	}
+
+	delete [] udp_sockets;
+	udp_sockets = NULL;
+	nr_udp_sockets = 0;
+    }
 }
 
-int SipCtrlInterface::send(const AmSipReply &rep)
+int SipCtrlInterface::send(const AmSipReply &rep,
+			   const string& next_hop_ip, unsigned short next_hop_port,
+			   int out_interface)
 {
     sip_msg msg;
 
@@ -371,10 +404,13 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	}
     }
 
-    int ret = trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
-			     rep.code,stl2cstr(rep.reason),
-			     stl2cstr(rep.to_tag),
-			     cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body));
+    int ret =
+	trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
+					    rep.code,stl2cstr(rep.reason),
+					    stl2cstr(rep.from_tag),
+					    cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body),
+					    stl2cstr(next_hop_ip),next_hop_port,
+					    out_interface);
 
     delete [] hdrs_buf;
 
@@ -574,6 +610,9 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
     }
 
     AmSipDispatcher::instance()->handleSipMsg(req);
+
+    DBG("^^ M [%s|%s] Ru SIP request %s handled ^^\n",
+	req.callid.c_str(), req.to_tag.c_str(), req.method.c_str());
 }
 
 void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
@@ -595,6 +634,10 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     DBG("cseq = <%i>\n",reply.cseq);
 
     AmSipDispatcher::instance()->handleSipMsg(reply);
+
+    DBG("^^ M [%s|%s] ru SIP reply %u %s handled ^^\n",
+	reply.callid.c_str(), reply.from_tag.c_str(),
+	reply.code, reply.reason.c_str());
 }
 
 void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,

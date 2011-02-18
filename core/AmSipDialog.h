@@ -135,6 +135,8 @@ private:
   int getSdpBody(string& sdp_body);
   int triggerOfferAnswer(string& content_type, string& body);
 
+  string getRoute();
+
   int rel100OnRequestIn(const AmSipRequest &req);
   int rel100OnReplyIn(const AmSipReply &reply);
   void rel100OnTimeout(const AmSipRequest &req, const AmSipReply &rpl);
@@ -173,6 +175,10 @@ private:
 
   string next_hop_ip;
   unsigned short next_hop_port;
+  bool next_hop_for_replies;
+
+  int  outbound_interface;
+  bool out_intf_for_replies;
 
   Rel100State reliable_1xx;
 
@@ -199,6 +205,18 @@ private:
   void   setStatus(Status new_status);
 
   string getContactHdr();
+
+  /** 
+   * Computes, set and return the outbound interface
+   * based on remote_uri, next_hop_ip, outbound_proxy, route.
+   */
+  int getOutboundIf();
+
+  /**
+   * Resets outbound_interface to it default value (-1).
+   */
+  void resetOutboundIf();
+
 
   /** update Status from locally originated request (e.g. INVITE) */
   void initFromLocalRequest(const AmSipRequest& req);
@@ -286,9 +304,10 @@ private:
   static int reply_error(const AmSipRequest& req,
 			 unsigned int  code,
 			 const string& reason,
-			 const string& hdrs = "");
-
-
+			 const string& hdrs = "",
+			 const string& next_hop_ip = "",
+			 unsigned short next_hop_port = 5060,
+			 int outbound_interface = -1);
 };
 
 /**

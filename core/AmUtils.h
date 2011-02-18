@@ -31,13 +31,17 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <regex.h>
+#include <sys/socket.h>
 
 #include <string>
 using std::string;
 
 #include <vector>
+#include <utility>
 
-#define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
+//#define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
 
 #define PARAM_HDR "P-App-Param"
 #define APPNAME_HDR "P-App-Name"
@@ -152,83 +156,6 @@ bool str2long(char*& str, long& result, char sep = ' ');
  */
 int parse_return_code(const char* lbuf, 
 		      unsigned int& res_code, string& res_msg );
-
-/**
- * Get a line from a file.
- * 
- * @param fifo_stream  file to read from.
- * @param str          [out] line buffer.
- * @param len          size of the line buffer.
- * 
- * @return -1 if buffer overruns, 
- *         else the line's length.
- */
-int fifo_get_line(FILE* fifo_stream, char* str, size_t len);
-
-/**
- * Gets one or more lines from a file.
- * It stops to read as soon as a '.' line
- * gets read or encounters EOF.
- * 
- * Syntax:
- * "[
- *   {one or more lines}
- * ]
- * ."
- * 
- * @param fifo_stream  file to read from.
- * @param str          [out] line buffer.
- * @param len          size of the line buffer.
- * 
- * @return -1 if buffer overruns, 
- *         else total length.
- */
-int fifo_get_lines(FILE* fifo_stream, char* str, size_t len);
-
-/**
- * Size of line buffer used within fifo_get_param.
- */
-//#define MAX_LINE_SIZE  256
-
-/**
- * Gets a line parameter from file pointer.
- * If line only contain '.', the parameter is empty.
- * Throws error string if failed.
- */
-int fifo_get_param(FILE* fp, string& p, char* line_buf, unsigned int size);
-
-/**
- * Gets a line from the message buffer.
- * @param msg_c [in,out] pointer to current message buffer.
- * @param str line buffer.
- * @param len line buffer size.
- * @return size read or -1 if something went wrong.
- */
-int msg_get_line(char*& msg_c, char* str, size_t len);
-
-/**
- * Gets [1..n] line(s) from the message buffer.
- * @param msg_c [in,out] pointer to current message buffer.
- * @param str line buffer.
- * @param len line buffer size.
- * @return size read or -1 if something went wrong.
- */
-int msg_get_lines(char*& msg_c, char* str, size_t len);
-
-/**
- * Size of line buffer used within msg_get_param.
- */
-//#define MSG_LINE_SIZE 1024
-
-/**
- * Gets a line parameter from message buffer.
- * If line only contain '.', the parameter is empty.
- * Throws error string if failed.
- * @param msg_c [in,out] pointer to current message buffer.
- * @param p [out] parameter to be filled.
- */
-int msg_get_param(char*& msg_c, string& p, char* line_buf, unsigned int size);
-
 /**
  * Tells if a file exists.
  * @param name file name.
@@ -252,39 +179,8 @@ string file_extension(const string& path);
  */
 string add2path(const string& path, int n_suffix, ...);
 
-/**
- * Reads a line from file and stores it in a string.
- * @param f    file to read from.
- * @param p    [out] where to store the line.
- * @param lb   line buffer.
- * @param lbs  line buffer's size.
- */
-#define READ_FIFO_PARAMETER(f,p,lb,lbs)\
-    {\
-        if( fifo_get_line(f,lb,lbs) !=-1 ){\
-            if(!strcmp(".",lb))\
-                lb[0]='\0';\
-            DBG("%s= <%s>\n",#p,lb);\
-            p  = lb;\
-        }\
-        else {\
-	    throw string("could not read from FIFO: ") + string(strerror(errno));\
-	} \
-    } 
-
 struct in_addr;
 string get_addr_str(struct in_addr in);
-
-string uri_from_name_addr(const string& name_addr);
-string get_ip_from_name(const string& name);
-
-/* Generalized hostname/IP address handling -- wherever you would use
- *   inet_aton(addr.c_str(), &sa.sin_addr)
- * instead use
- *   populate_sockaddr_in_from_name(addr, &sa)
- */
-int populate_sockaddr_in_from_name(const string& name,
-                                               struct sockaddr_in *sa);
 
 #ifdef SUPPORT_IPV6
 int inet_aton_v6(const char* name, struct sockaddr_storage* ss);
@@ -301,9 +197,18 @@ short get_port_v6(struct sockaddr_storage* ss);
 	select(0, NULL, NULL, NULL, &tval ); \
 	}
 
+/*
+ * Computes the local address for a specific destination address.
+ * This is done by opening a connected UDP socket and reading the
+ * local address with getsockname().
+ */
+int get_local_addr_for_dest(sockaddr_storage* remote_ip, sockaddr_storage* local);
+int get_local_addr_for_dest(const string& remote_ip, string& local);
 
-int write_to_fifo(const string& fifo, const char * buf, unsigned int len);
-int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int len);
+/**
+ * Converts an IP address contained in a sockaddr_storage into a string.
+ */
+int ip_addr_to_str(sockaddr_storage* ss, string& addr);
 
 string extract_tag(const string& addr);
 
@@ -340,6 +245,23 @@ std::vector<string> explode(const string& s, const string& delim, const bool kee
 /** add a directory to an environement variable */
 void add_env_path(const char* name, const string& path);
 
+
+size_t skip_to_end_of_brackets(const string& s, size_t start);
+
+typedef std::vector<std::pair<regex_t, string> > RegexMappingVector;
+
+/** read a regex=>string mapping from file
+    @return true on success
+ */
+bool read_regex_mapping(const string& fname, const char* sep,
+			const char* dbg_type,
+			RegexMappingVector& result);
+
+/** run a regex mapping - result is the first matching entry 
+    @return true if matched
+ */
+bool run_regex_mapping(const RegexMappingVector& mapping, const char* test_s,
+		       string& result);
 #endif
 
 // Local Variables:

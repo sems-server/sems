@@ -32,6 +32,7 @@
 #include "wheeltimer.h"
 #include "trans_table.h"
 #include "trans_layer.h"
+#include "transport.h"
 
 #include "log.h"
 
@@ -62,10 +63,11 @@ inline timer** fetch_timer(unsigned int timer_type, timer** base)
 }
 
 sip_trans::sip_trans()
-    : msg(0),
-      retr_buf(0),
-      retr_len(0),
-      last_rseq(0)
+    : msg(NULL),
+      retr_buf(NULL),
+      retr_socket(NULL),
+      retr_len(NULL),
+      last_rseq(NULL)
 {
     memset(timers,0,SIP_TRANS_TIMERS*sizeof(void*));
 }
@@ -77,6 +79,23 @@ sip_trans::~sip_trans()
     delete [] retr_buf;
     if((type == TT_UAC) && to_tag.s){
 	delete [] to_tag.s;
+    }
+}
+
+/**
+ * Retransmits the content of the retry buffer (replies or non-200 ACK).
+ */
+void sip_trans::retransmit()
+{
+    if(!retr_buf || !retr_len){
+	// there is nothing to re-transmit yet!!!
+	return;
+    }
+    assert(retr_socket);
+
+    int send_err = retr_socket->send(&retr_addr,retr_buf,retr_len);
+    if(send_err < 0){
+	ERROR("Error from transport layer\n");
     }
 }
 

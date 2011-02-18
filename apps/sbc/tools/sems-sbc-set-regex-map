@@ -1,0 +1,13 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import sys
+from xmlrpclib import *
+
+if len(sys.argv) != 3:
+	print "usage: %s <regex map name> <full regex map path>" % sys.argv[0]
+	sys.exit(1)
+
+s = ServerProxy('http://localhost:8090')
+print "Active calls: %d" % s.calls()
+p ={ 'name' : sys.argv[1], 'file' : sys.argv[2] }
+print s.setRegexMap(p)

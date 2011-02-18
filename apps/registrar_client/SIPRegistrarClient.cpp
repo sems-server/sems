@@ -73,7 +73,7 @@ SIPRegistration::SIPRegistration(const string& handle,
   req.from_tag = handle;
   req.to       = req.from;
   req.to_tag   = "";
-  req.callid   = AmSession::getNewId() + "@" + AmConfig::LocalIP; 
+  req.callid   = AmSession::getNewId(); 
   //
 
   // clear dlg.callid? ->reregister?
@@ -100,8 +100,6 @@ void SIPRegistration::doRegistration()
     dlg.remote_uri = req.r_uri;
     
     // set outbound proxy as next hop 
-    DBG("proxy is '%s' <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
-	info.proxy.c_str());
     if (!info.proxy.empty()) {
 	dlg.outbound_proxy = info.proxy;
     } else if (!AmConfig::OutboundProxy.empty()) 

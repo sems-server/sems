@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   //XmlRpc::setVerbosity(5);
 
   // Create the server socket on the specified port
-  s.bindAndListen(port);
+  s.bindAndListen(port, "");
 
   // Wait for requests indefinitely
   s.work(-1.0);

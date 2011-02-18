@@ -1,6 +1,8 @@
 
 #include "UserTimer.h"
 
+#include "sip/hash.h"
+
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -72,29 +74,30 @@ bool operator < (const AmTimer& l, const AmTimer& r)
 void UserTimer::checkTimers() {
   vector<std::pair<string, int> > expired_timers;
 
-  timers_mut.lock();
-  if(timers.empty()){
-    timers_mut.unlock();
-    return;
-  }
-  
   struct timeval cur_time;
   gettimeofday(&cur_time,NULL);
   
-  std::multiset<AmTimer>::iterator it = timers.begin();
+  // run through all buckets
+  for (unsigned int bucket=0;bucket<TIMERS_LOCKSTRIPE_BUCKETS;bucket++) {
+    // get expired timers in bucket
+    timers_mut[bucket].lock();
+    if (!timers[bucket].empty()) {
+      std::multiset<AmTimer>::iterator it = timers[bucket].begin();
   
-  while( timercmp(&it->time,&cur_time,<) 
-	 || timercmp(&it->time,&cur_time,==) ){
-    int id = it->id;
-    string session_id = it->session_id;
-    // erase
-    timers.erase(it);
-    expired_timers.push_back(make_pair(session_id, id));
+      while (timercmp(&it->time,&cur_time,<)
+	     || timercmp(&it->time,&cur_time,==)) {
+	int id = it->id;
+	string session_id = it->session_id;
+	// erase
+	timers[bucket].erase(it);
+	expired_timers.push_back(make_pair(session_id, id));
     
-    if(timers.empty()) break;
-    it = timers.begin();
+	if(timers[bucket].empty()) break;
+	it = timers[bucket].begin();
+      }
+    }
+    timers_mut[bucket].unlock();
   }
-  timers_mut.unlock();
 
   for (vector<std::pair<string, int> >::iterator e_it =
 	 expired_timers.begin(); e_it != expired_timers.end(); e_it++) {
@@ -122,31 +125,41 @@ void UserTimer::setTimer(int id, int seconds, const string& session_id) {
 void UserTimer::setTimer(int id, struct timeval* t, 
 			 const string& session_id) 
 {
-  timers_mut.lock();
+  unsigned int bucket = hash(session_id);
+
+  timers_mut[bucket].lock();
   
   // erase old timer if exists
-  unsafe_removeTimer(id, session_id);
+  unsafe_removeTimer(id, session_id, bucket);
 
   // add new
-  timers.insert(AmTimer(id, session_id, t));
+  timers[bucket].insert(AmTimer(id, session_id, t));
   
-  timers_mut.unlock();
+  timers_mut[bucket].unlock();
 }
 
 
 void UserTimer::removeTimer(int id, const string& session_id) {
-  timers_mut.lock();
-  unsafe_removeTimer(id, session_id);
-  timers_mut.unlock();
+  unsigned int bucket = hash(session_id);
+  timers_mut[bucket].lock();
+  unsafe_removeTimer(id, session_id, bucket);
+  timers_mut[bucket].unlock();
 }
 
-void UserTimer::unsafe_removeTimer(int id, const string& session_id) 
+
+unsigned int UserTimer::hash(const string& s1)
+{
+  return hashlittle(s1.c_str(),s1.length(),0)
+    & (TIMERS_LOCKSTRIPE_BUCKETS-1);
+}
+
+void UserTimer::unsafe_removeTimer(int id, const string& session_id, unsigned int bucket)
 {
   // erase old timer if exists
-  std::multiset<AmTimer>::iterator it = timers.begin(); 
-  while (it != timers.end()) {
+  std::multiset<AmTimer>::iterator it = timers[bucket].begin();
+  while (it != timers[bucket].end()) {
     if ((it->id == id)&&(it->session_id == session_id)) {
-      timers.erase(it);
+      timers[bucket].erase(it);
       break;
     }
     it++;
@@ -155,36 +168,38 @@ void UserTimer::unsafe_removeTimer(int id, const string& session_id)
 
 void UserTimer::removeTimers(const string& session_id) {
   //  DBG("removing timers for <%s>\n", session_id.c_str());
-  timers_mut.lock();
-  std::multiset<AmTimer>::iterator it = timers.begin(); 
-  while (it != timers.end()) {
+  unsigned int bucket = hash(session_id);
+  timers_mut[bucket].lock();
+  std::multiset<AmTimer>::iterator it = timers[bucket].begin();
+  while (it != timers[bucket].end()) {
     if (it->session_id == session_id) {
       std::multiset<AmTimer>::iterator d_it = it;
       it++;
-      timers.erase(d_it);
+      timers[bucket].erase(d_it);
       //  DBG("    o timer removed.\n");
     } else {
       it++;
     }
   }
-  timers_mut.unlock();
+  timers_mut[bucket].unlock();
 }
 
 void UserTimer::removeUserTimers(const string& session_id) {
   //  DBG("removing User timers for <%s>\n", session_id.c_str());
-  timers_mut.lock();
-  std::multiset<AmTimer>::iterator it = timers.begin(); 
-  while (it != timers.end()) {
+  unsigned int bucket = hash(session_id);
+  timers_mut[bucket].lock();
+  std::multiset<AmTimer>::iterator it = timers[bucket].begin();
+  while (it != timers[bucket].end()) {
     if ((it->id > 0)&&(it->session_id == session_id)) {
       std::multiset<AmTimer>::iterator d_it = it;
       it++;
-      timers.erase(d_it);
+      timers[bucket].erase(d_it);
       //  DBG("    o timer removed.\n");
     } else {
       it++;
     }
   }
-  timers_mut.unlock();
+  timers_mut[bucket].unlock();
 }
 
 void UserTimer::invoke(const string& method, const AmArg& args, AmArg& ret)

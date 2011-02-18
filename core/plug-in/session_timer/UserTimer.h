@@ -11,6 +11,10 @@
 
 #define TIMEOUT_EVENT_ID 99
 
+// 2^5 = 32 timer buckets - should alleviate any lock contention
+#define TIMERS_LOCKSTRIPE_POWER   5
+#define TIMERS_LOCKSTRIPE_BUCKETS (1<<TIMERS_LOCKSTRIPE_POWER)
+
 #ifdef SESSION_TIMER_THREAD
 #include "AmThread.h"
 #endif 
@@ -64,10 +68,12 @@ class UserTimer: public AmDynInvoke
 {
   static UserTimer* _instance;
 
-  std::multiset<AmTimer> timers;
-  AmMutex         timers_mut;
+  std::multiset<AmTimer> timers[TIMERS_LOCKSTRIPE_BUCKETS];
+  AmMutex                timers_mut[TIMERS_LOCKSTRIPE_BUCKETS];
 
-  void unsafe_removeTimer(int id, const string& session_id);
+  unsigned int hash(const string& s1);
+
+  void unsafe_removeTimer(int id, const string& session_id, unsigned int bucket);
  public:
   UserTimer();
   ~UserTimer();

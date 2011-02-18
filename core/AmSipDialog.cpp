@@ -33,6 +33,9 @@
 #include "SipCtrlInterface.h"
 #include "sems.h"
 
+#include "sip/parse_route.h"
+#include "sip/parse_uri.h"
+
 const char* __dlg_status2str[AmSipDialog::__max_Status]  = {
   "Disconnected",
   "Trying",
@@ -80,7 +83,8 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     reliable_1xx(AmConfig::rel100),
     rseq(0), rseq_1st(0), rseq_confirmed(false),
-    next_hop_port(0)
+    next_hop_port(0), next_hop_for_replies(false),
+    outbound_interface(-1), out_intf_for_replies(false)
 {
   assert(h);
   if (reliable_1xx)
@@ -118,7 +122,7 @@ void AmSipDialog::setStatus(Status new_status) {
 
 void AmSipDialog::onRxRequest(const AmSipRequest& req)
 {
-  DBG("AmSipDialog::onRxRequest(request)\n");
+  DBG("AmSipDialog::onRxRequest(req = %s)\n", req.method.c_str());
 
   if ((req.method != SIP_METH_ACK) && (req.method != SIP_METH_CANCEL)) {
 
@@ -126,14 +130,18 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
     if (r_cseq_i && req.cseq <= r_cseq){
       INFO("remote cseq lower than previous ones - refusing request\n");
       // see 12.2.2
-      reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "",
+		  next_hop_for_replies ? next_hop_ip : "",
+		  next_hop_for_replies ? next_hop_port : 0);
       return;
     }
 
     if (req.method == SIP_METH_INVITE) {
       if(pending_invites || ((oa_state != OA_None) && (oa_state != OA_Completed))) {      
 	reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
-		    "Retry-After: " + int2str(get_random() % 10) + CRLF);
+		    "Retry-After: " + int2str(get_random() % 10) + CRLF,
+		    next_hop_for_replies ? next_hop_ip : "",
+		    next_hop_for_replies ? next_hop_port : 0);
 	return;
       }
       pending_invites++;
@@ -364,7 +372,9 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
         // TODO: shouldn't this be part of a more general check in SEMS?
         if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL))
           reply_error(req, 420, SIP_REPLY_BAD_EXTENSION, 
-              SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
+		      SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF,
+		      next_hop_for_replies ? next_hop_ip : "",
+		      next_hop_for_replies ? next_hop_port : 0);
         break;
 
       default:
@@ -573,7 +583,9 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
         ((AmSipReply)reply).print().c_str());
     return;
   }
-  DBG("onRxReply(reply): transaction found!\n");
+
+  DBG("onRxReply(rep = %u %s): transaction found!\n",
+      reply.code, reply.reason.c_str());
 
   AmSipDialog::Status old_dlg_status = status;
   string trans_method = t_it->second.method;
@@ -826,10 +838,14 @@ string AmSipDialog::getContactHdr()
       contact_uri += user + "@";
     }
     
-    contact_uri += (AmConfig::PublicIP.empty() ? 
-      AmConfig::LocalSIPIP : AmConfig::PublicIP ) 
-      + ":";
-    contact_uri += int2str(AmConfig::LocalSIPPort);
+    int oif = getOutboundIf();
+    assert(oif >= 0);
+    assert(oif < (int)AmConfig::Ifs.size());
+
+    contact_uri += (AmConfig::Ifs[oif].PublicIP.empty() ? 
+		    AmConfig::Ifs[oif].LocalSIPIP : AmConfig::Ifs[oif].PublicIP );
+
+    contact_uri += ":" + int2str(AmConfig::Ifs[oif].LocalSIPPort);
     contact_uri += ">";
 
     contact_uri += CRLF;
@@ -837,6 +853,118 @@ string AmSipDialog::getContactHdr()
 
   return contact_uri;
 }
+
+/** 
+ * Computes, set and return the outbound interface
+ * based on remote_uri, next_hop_ip, outbound_proxy, route.
+ */
+int AmSipDialog::getOutboundIf()
+{
+  if (outbound_interface >= 0)
+    return outbound_interface;
+
+  if(AmConfig::Ifs.size() == 1){
+    return (outbound_interface = 0);
+  }
+
+  // Destination priority:
+  // 1. next_hop_ip
+  // 2. outbound_proxy (if 1st req or force_outbound_proxy)
+  // 3. first route
+  // 4. remote URI
+  
+  string dest_uri;
+  string dest_ip;
+  string local_ip;
+  multimap<string,unsigned short>::iterator if_it;
+
+  if(!next_hop_ip.empty()) {
+    dest_ip = next_hop_ip;
+  }
+  else if(!outbound_proxy.empty() &&
+	  (remote_tag.empty() || force_outbound_proxy)) {
+    dest_uri = outbound_proxy;
+  }
+  else if(!route.empty()){
+    // parse first route
+    sip_header fr;
+    fr.value = stl2cstr(route);
+    sip_uri* route_uri = get_first_route_uri(&fr);
+    if(!route_uri){
+      ERROR("Could not parse route (local_tag='%s';route='%s')",
+	    local_tag.c_str(),route.c_str());
+      goto error;
+    }
+
+    dest_ip = c2stlstr(route_uri->host);
+  }
+  else {
+    dest_uri = remote_uri;
+  }
+
+  if(dest_uri.empty() && dest_ip.empty()) {
+    ERROR("No destination found (local_tag='%s')",local_tag.c_str());
+    goto error;
+  }
+  
+  if(!dest_uri.empty()){
+    sip_uri d_uri;
+    if(parse_uri(&d_uri,dest_uri.c_str(),dest_uri.length()) < 0){
+      ERROR("Could not parse destination URI (local_tag='%s';dest_uri='%s')",
+	    local_tag.c_str(),dest_uri.c_str());
+      goto error;
+    }
+
+    dest_ip = c2stlstr(d_uri.host);
+  }
+
+  if(get_local_addr_for_dest(dest_ip,local_ip) < 0){
+    ERROR("No local address for dest '%s' (local_tag='%s')",dest_ip.c_str(),local_tag.c_str());
+    goto error;
+  }
+
+  if_it = AmConfig::LocalSIPIP2If.find(local_ip);
+  if(if_it == AmConfig::LocalSIPIP2If.end()){
+    ERROR("Could not find a local interface for resolved local IP (local_tag='%s';local_ip='%s')",
+	  local_tag.c_str(), local_ip.c_str());
+    goto error;
+  }
+
+  outbound_interface = if_it->second;
+  return outbound_interface;
+
+ error:
+  WARN("Error while computing outbound interface: default interface will be used instead.");
+  outbound_interface = 0;
+  return outbound_interface;
+}
+
+void AmSipDialog::resetOutboundIf()
+{
+  outbound_interface = -1;
+}
+
+string AmSipDialog::getRoute() 
+{
+  string res;
+
+  if(!outbound_proxy.empty() && (force_outbound_proxy || remote_tag.empty())){
+    res += "<" + outbound_proxy + ";lr>";
+
+    if(!route.empty()) {
+      res += ",";
+    }
+  }
+
+  res += route;
+
+  if(!res.empty()) {
+    res = SIP_HDR_COLSP(SIP_HDR_ROUTE) + res + CRLF;
+  }
+
+  return res;
+}
+
 
 int AmSipDialog::reply(const AmSipRequest& req,
 		       unsigned int  code,
@@ -882,8 +1010,10 @@ int AmSipDialog::reply(const AmSipRequest& req,
     return -1;
   }
 
-  DBG("About to send reply...\n");
-  int ret = SipCtrlInterface::send(reply);
+  int ret = SipCtrlInterface::send(reply, next_hop_for_replies ? next_hop_ip : "",
+				   next_hop_for_replies ? next_hop_port : 0,
+				   out_intf_for_replies ? outbound_interface : -1 );
+
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
@@ -939,7 +1069,10 @@ void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code,
 
 /* static */
 int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
-			     const string& reason, const string& hdrs)
+			     const string& reason, const string& hdrs,
+			     const string& next_hop_ip,
+			     unsigned short next_hop_port,
+			     int outbound_interface)
 {
   AmSipReply reply;
 
@@ -952,7 +1085,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
 
-  int ret = SipCtrlInterface::send(reply);
+  int ret = SipCtrlInterface::send(reply, next_hop_ip, next_hop_port, outbound_interface);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
@@ -1204,17 +1337,7 @@ int AmSipDialog::sendRequest(const string& method,
 
   }
 
-  if(!route.empty()) {
-
-    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE);
-    if(force_outbound_proxy && !outbound_proxy.empty()){
-      req.route += "<" + outbound_proxy + ";lr>, ";
-    }
-    req.route += route + CRLF;
-  }
-  else if (remote_tag.empty() && !outbound_proxy.empty()) {
-    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE) "<" + outbound_proxy + ";lr>" CRLF;
-  }
+  req.route = getRoute();
 
   req.content_type = content_type;
   req.body = body;
@@ -1222,7 +1345,7 @@ int AmSipDialog::sendRequest(const string& method,
   if(onTxRequest(req))
     return -1;
 
-  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port))
+  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port,outbound_interface))
     return -1;
  
   if(method != SIP_METH_ACK) {
@@ -1335,13 +1458,7 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
     req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) + int2str(AmConfig::MaxForwards) + CRLF;
   }
 
-  if(!route.empty()) {
-    req.route = SIP_HDR_COLSP(SIP_HDR_ROUTE);
-    if(force_outbound_proxy && !outbound_proxy.empty()){
-      req.route += "<" + outbound_proxy + ";lr>, ";
-    }
-    req.route += route + CRLF;
-  }
+  req.route = getRoute();
 
   req.content_type = content_type;
   req.body = body;
@@ -1349,7 +1466,7 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
   if(onTxRequest(req))
     return -1;
 
-  if (SipCtrlInterface::send(req))
+  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port, outbound_interface))
     return -1;
 
   uac_trans.erase(inv_cseq);

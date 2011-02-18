@@ -42,8 +42,6 @@
 #define MESSAGE_400 "Bad Request"
 #define MESSAGE_500 "Server Internal Error"
 
-#define separator ","
-
 typedef enum auth_result {
 	ERROR = -2 ,		/* Error occurred, a reply has been 
 						   sent out -> return 0 to the ser core */

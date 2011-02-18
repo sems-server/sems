@@ -1,0 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import sys
+from xmlrpclib import *
+
+s = ServerProxy('http://localhost:8090')
+print s.getRegexMapNames()

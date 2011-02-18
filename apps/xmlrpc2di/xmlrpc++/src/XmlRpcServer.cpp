@@ -84,7 +84,7 @@ XmlRpcServer::findMethod(const std::string& name) const
 // Create a socket, bind to the specified port, and
 // set it in listen mode to make it available for clients.
 bool 
-XmlRpcServer::bindAndListen(int port, int backlog /*= 5*/)
+XmlRpcServer::bindAndListen(int port, const std::string& bind_ip, int backlog /*= 5*/)
 {
   int fd = XmlRpcSocket::socket();
   if (fd < 0)
@@ -112,7 +112,7 @@ XmlRpcServer::bindAndListen(int port, int backlog /*= 5*/)
   }
 
   // Bind to the specified port on the default interface
-  if ( ! XmlRpcSocket::bind(fd, port))
+  if ( ! XmlRpcSocket::bind(fd, port, bind_ip))
   {
     this->close();
     XmlRpcUtil::error("XmlRpcServer::bindAndListen: Could not bind to specified port (%s).", XmlRpcSocket::getErrorMsg().c_str());

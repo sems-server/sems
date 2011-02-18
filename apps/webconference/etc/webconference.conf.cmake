@@ -5,6 +5,7 @@ join_sound=${SEMS_AUDIO_PREFIX}/sems/audio/webconference/beep.wav
 drop_sound=${SEMS_AUDIO_PREFIX}/sems/audio/webconference/beep.wav
 enter_pin=${SEMS_AUDIO_PREFIX}/sems/audio/webconference/pin_prompt.wav
 wrong_pin=${SEMS_AUDIO_PREFIX}/sems/audio/webconference/wrong_pin.wav
+wrong_pin_bye=${SEMS_AUDIO_PREFIX}/sems/audio/webconference/wrong_pin_bye.wav
 entering_conference=${SEMS_AUDIO_PREFIX}/sems/audio/webconference/entering_conference.wav
 
 #
@@ -65,6 +66,23 @@ stats_dir=/var/log/sems-webconference/
 # 
 #webconference_urlbase=https://webconference.iptel.org/openRoom.py?action=openRoom
 
+# private_rooms = [yes |no]
+#
+# In private rooms mode, participants can join rooms only if they have been 
+# opened before.
+#
+# Default: no
+#
+# private_rooms=yes
+
+# support_rooms_timeout = [yes |no]
+#
+# Support timeout for rooms? If rooms are timed out, they will be closed and
+# all participants disconnected.
+#
+# Default: no
+#
+# support_rooms_timeout=yes
 
 #
 # participants_expire = [yes | no]
@@ -112,6 +130,16 @@ stats_dir=/var/log/sems-webconference/
 # list of rooms that are openend at server startup
 #
 # predefined_rooms=discussion:some_pwd;support:other_pwd;
+
+
+# Participant ID (default: X-ParticipantID header)
+#
+# get participant ID from P-App-Param:
+#participant_id_param=participantid
+#
+# or, get participant ID from header:
+#participant_id_header=x-participantid
+
 
 ###############################################################
 # RFC4028 Session Timer

@@ -32,6 +32,7 @@
 #include "AmUriParser.h"
 #include "HeaderFilter.h"
 #include "SBCCallProfile.h"
+#include "RegexMapper.h"
 
 #include <map>
 
@@ -48,7 +49,7 @@ class SBCFactory: public AmSessionFactory,
 
   std::map<string, SBCCallProfile> call_profiles;
   
-  string active_profile;
+  vector<string> active_profile;
   AmMutex profiles_mut;
 
   void listProfiles(const AmArg& args, AmArg& ret);
@@ -57,6 +58,12 @@ class SBCFactory: public AmSessionFactory,
   void loadProfile(const AmArg& args, AmArg& ret);
   void getActiveProfile(const AmArg& args, AmArg& ret);
   void setActiveProfile(const AmArg& args, AmArg& ret);
+  void getRegexMapNames(const AmArg& args, AmArg& ret);
+  void setRegexMap(const AmArg& args, AmArg& ret);
+
+  string getActiveProfileMatch(string& profile_rule, const AmSipRequest& req,
+			       const string& app_param, AmUriParser& ruri_parser,
+			       AmUriParser& from_parser, AmUriParser& to_parser);
 
  public:
   DECLARE_MODULE_INSTANCE(SBCFactory);
@@ -69,6 +76,8 @@ class SBCFactory: public AmSessionFactory,
 
   static AmConfigReader cfg;
   static AmSessionEventHandlerFactory* session_timer_fact;
+
+  static RegexMapper regex_mappings;
 
   // DI
   // DI factory
@@ -107,6 +116,7 @@ class SBCDialog : public AmB2BCallerSession
 
   void stopCall();
   bool startCallTimer();
+  void stopCallTimer();
   void startPrepaidAccounting();
   void stopPrepaidAccounting();
 
@@ -163,4 +173,7 @@ class SBCCalleeSession
   
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
 };
+
+extern void assertEndCRLF(string& s);
+
 #endif                           

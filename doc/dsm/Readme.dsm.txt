@@ -22,6 +22,14 @@ DSMs can be defined in a hierarchical manner: Another DSM can be
 called as sub-DSM, or one can jump to another DSM, ignoring where
 we came from.
 
+In the DSM language, there is support for 
+ - functions (groups of action commands)
+ - if condition { action; action; } else { action; action; }
+ - for loops: 
+     - for ($x in range(0, 5)) { action; action; }
+     - for ($x in $myarray) { action; action; }
+     - for ($k,v in $mystruct) { action; action; }
+
 A session (call) in the DonkeySM has a set of named (string) variables.
 The variables may be used as parameter to most conditions and 
 actions, by prepending the variable name with a dollar sign. The
@@ -66,6 +74,11 @@ SystemDSMs
 
 A system DSM is executed without a corresponding call. This can be useful 
 e.g. to execute something periodically, to make a call generator etc.
+
+Another use of system DSMs is to centralize application logic that spans
+several calls. The call legs send updates in theirs states as events to
+the central system DSM, which centrally processes those events and sends
+commands as events back to the call legs, which then process those commands.
 
 Obviously, only limited functionality is available in System DSMs, all 
 call and media related functionality is not available (and will throw 
@@ -176,8 +189,6 @@ used for creating the new session. As the DSMSession is mostly an abstract
 interface, other session types can easily be implemented, and their 
 functionality be exposed to the DSM interpreter by custom actions and 
 conditions that interact with that specific session type.
-
-A set of modules exposing more of the core functionality.
 
 As the call state representation is nicely encapsulated here, this can 
 also provide an abstraction layer on which active call replication can 

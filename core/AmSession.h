@@ -101,7 +101,7 @@ private:
   bool m_dtmfDetectionEnabled;
 
   enum ProcessingStatus { 
-    SESSION_PROCESSING_EVENTS,
+    SESSION_PROCESSING_EVENTS = 0,
     SESSION_WAITING_DISCONNECTED,
     SESSION_ENDED_DISCONNECTED
   };
@@ -161,6 +161,9 @@ protected:
 
   /** do accept early session? */
   bool accept_early_session;
+
+  /** Local IP interface to be used for RTP streams */
+  int rtp_interface;
 
   vector<AmSessionEventHandler*> ev_handlers;
 
@@ -593,8 +596,11 @@ public:
    */
   virtual void onBeforeDestroy() { }
 
-  // The IP address to put as c= in SDP bodies and to use for Contact:.
+  // The IP address to put as c= in SDP bodies
   string advertisedIP();
+
+  // The IP address to bind the RTP stream to
+  string localRTPIP();
 
   /** format session id for debugging */
   string sid4dbg();
@@ -615,7 +621,9 @@ inline AmRtpAudio* AmSession::RTPStream() {
   if (NULL == _rtp_str.get()) {
     DBG("creating RTP stream instance for session [%p]\n", 
 	this);
-    _rtp_str.reset(new AmRtpAudio(this));
+    if(rtp_interface < 0)
+      rtp_interface = dlg.getOutboundIf();
+    _rtp_str.reset(new AmRtpAudio(this,rtp_interface));
   }
   return _rtp_str.get();
 }

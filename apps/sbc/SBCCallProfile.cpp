@@ -1,3 +1,28 @@
+/*
+ * Copyright (C) 2010-2011 Stefan Sayer
+ *
+ * This file is part of SEMS, a free SIP media server.
+ *
+ * SEMS is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * For a license to use the SEMS software under conditions
+ * other than those described here, or to purchase support for this
+ * software, please contact iptel.org by e-mail at the following addresses:
+ *    info@iptel.org
+ *
+ * SEMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include "SBCCallProfile.h"
 
 #include <algorithm>
@@ -27,6 +52,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   next_hop_ip = cfg.getParameter("next_hop_ip");
   next_hop_port = cfg.getParameter("next_hop_port");
+  next_hop_for_replies = cfg.getParameter("next_hop_for_replies");
 
   string hf_type = cfg.getParameter("header_filter", "transparent");
   if (hf_type=="transparent")
@@ -142,6 +168,11 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     reply_translations[from_code] = make_pair(to_code, to_reply.substr(s_pos));
   }
 
+  // append_headers=P-Received-IP: $si\r\nP-Received-Port:$sp\r\n
+  append_headers = cfg.getParameter("append_headers");
+
+  refuse_with = cfg.getParameter("refuse_with");
+
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
     ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());
@@ -149,47 +180,59 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   INFO("SBC: loaded SBC profile '%s' - MD5: %s\n", name.c_str(), md5hash.c_str());
 
-  INFO("SBC:      RURI = '%s'\n", ruri.c_str());
-  INFO("SBC:      From = '%s'\n", from.c_str());
-  INFO("SBC:      To   = '%s'\n", to.c_str());
-  if (!callid.empty()) {
-    INFO("SBC:      Call-ID   = '%s'\n", callid.c_str());
+  if (!refuse_with.empty()) {
+    INFO("SBC:      refusing calls with '%s'\n", refuse_with.c_str());
+  } else {
+    INFO("SBC:      RURI = '%s'\n", ruri.c_str());
+    INFO("SBC:      From = '%s'\n", from.c_str());
+    INFO("SBC:      To   = '%s'\n", to.c_str());
+    if (!callid.empty()) {
+      INFO("SBC:      Call-ID   = '%s'\n", callid.c_str());
+    }
+
+    INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
+    INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
+    if (!next_hop_ip.empty()) {
+      INFO("SBC:      next hop = %s%s\n", next_hop_ip.c_str(),
+	   next_hop_port.empty()? "" : (":"+next_hop_port).c_str());
+
+      if (!next_hop_for_replies.empty()) {
+	INFO("SBC:      next hop used for replies: '%s'\n", next_hop_for_replies.c_str());
+      }
+    }
+
+    INFO("SBC:      header filter  is %s, %zd items in list\n",
+	 FilterType2String(headerfilter), headerfilter_list.size());
+    INFO("SBC:      message filter is %s, %zd items in list\n",
+	 FilterType2String(messagefilter), messagefilter_list.size());
+    INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
+	 sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
+	 sdpfilter_list.size());
+
+    INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
+    INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
+    INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
+    if (call_timer_enabled) {
+      INFO("SBC:                  %s seconds\n", call_timer.c_str());
+    }
+    INFO("SBC:      prepaid %sabled\n", prepaid_enabled?"en":"dis");
+    if (prepaid_enabled) {
+      INFO("SBC:                    acc_module = '%s'\n", prepaid_accmodule.c_str());
+      INFO("SBC:                    uuid       = '%s'\n", prepaid_uuid.c_str());
+      INFO("SBC:                    acc_dest   = '%s'\n", prepaid_acc_dest.c_str());
+    }
+    if (reply_translations.size()) {
+      string reply_trans_codes;
+      for(map<unsigned int, std::pair<unsigned int, string> >::iterator it=
+	    reply_translations.begin(); it != reply_translations.end(); it++)
+	reply_trans_codes += int2str(it->first)+", ";
+      reply_trans_codes.erase(reply_trans_codes.length()-2);
+      INFO("SBC:      reply translation for  %s\n", reply_trans_codes.c_str());
+    }
   }
 
-  INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
-  INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
-  if (!next_hop_ip.empty()) {
-    INFO("SBC:      next hop = %s%s\n", next_hop_ip.c_str(),
-	 next_hop_port.empty()? "" : (":"+next_hop_port).c_str());
-  }
-
-  INFO("SBC:      header filter  is %s, %zd items in list\n",
-       FilterType2String(headerfilter), headerfilter_list.size());
-  INFO("SBC:      message filter is %s, %zd items in list\n",
-       FilterType2String(messagefilter), messagefilter_list.size());
-  INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
-       sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
-       sdpfilter_list.size());
-
-  INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
-  INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
-  INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
-  if (call_timer_enabled) {
-    INFO("SBC:                  %s seconds\n", call_timer.c_str());
-  }
-  INFO("SBC:      prepaid %sabled\n", prepaid_enabled?"en":"dis");
-  if (prepaid_enabled) {
-    INFO("SBC:                    acc_module = '%s'\n", prepaid_accmodule.c_str());
-    INFO("SBC:                    uuid       = '%s'\n", prepaid_uuid.c_str());
-    INFO("SBC:                    acc_dest   = '%s'\n", prepaid_acc_dest.c_str());
-  }
-  if (reply_translations.size()) {
-    string reply_trans_codes;
-    for(map<unsigned int, std::pair<unsigned int, string> >::iterator it=
-	  reply_translations.begin(); it != reply_translations.end(); it++)
-      reply_trans_codes += int2str(it->first)+", ";
-    reply_trans_codes.erase(reply_trans_codes.length()-2);
-    INFO("SBC:      reply translation for  %s\n", reply_trans_codes.c_str());
+  if (append_headers.size()) {
+    INFO("SBC:      append headers '%s'\n", append_headers.c_str());
   }
 
   return true;
@@ -206,6 +249,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     next_hop_ip == rhs.next_hop_ip &&
     next_hop_port == rhs.next_hop_port &&
     next_hop_port_i == rhs.next_hop_port_i &&
+    next_hop_for_replies == rhs.next_hop_for_replies &&
     headerfilter == rhs.headerfilter &&
     headerfilter_list == rhs.headerfilter_list &&
     messagefilter == rhs.messagefilter &&
@@ -216,7 +260,9 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     auth_enabled == rhs.auth_enabled &&
     call_timer_enabled == rhs.call_timer_enabled &&
     prepaid_enabled == rhs.prepaid_enabled &&
-    reply_translations == reply_translations;
+    reply_translations == rhs.reply_translations &&
+    append_headers == rhs.append_headers &&
+    refuse_with == rhs.refuse_with;
 
   if (sdpfilter_enabled) {
     res = res &&
@@ -261,6 +307,7 @@ string SBCCallProfile::print() const {
   res += "next_hop_ip:          " + next_hop_ip + "\n";
   res += "next_hop_port:        " + next_hop_port + "\n";
   res += "next_hop_port_i:      " + int2str(next_hop_port_i) + "\n";
+  res += "next_hop_for_replies: " + next_hop_for_replies + "\n";
   res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
   res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
   res += "messagefilter:        " + string(FilterType2String(messagefilter)) + "\n";
@@ -290,6 +337,7 @@ string SBCCallProfile::print() const {
 
     res += "prepaid_acc_dest:     " + reply_trans_codes +"\n";
   }
+  res += "append_headers:     " + append_headers + "\n";
   res += "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
   return res;
 }

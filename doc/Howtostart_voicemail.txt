@@ -145,8 +145,9 @@ Leaving a message
    This should be added to native SIP destinations which are not found in
    usrloc, i.e. instead of replying 480 User temporarily not available,
    and in FAILURE_ROUTE:
-       append_hf_value("P-App-Name","voicemail");
-       append_hf_value("P-App-Param","mod=%$t.voicemail%|;eml='%$t.email%|';usr=%@ruri.user%|;snd='%@from.uri%|';dom=%@ruri.host%|;uid=%$t.uid%|;did=%$t.did%|;");
+       append_hf("P-App-Name: voicemail\r\n");
+       append_hf("P-App-Param: mod=%$t.voicemail%|;eml='%$t.email%|';usr=%@ruri.
+user%|;snd='%@from.uri%|';dom=%@ruri.host%|;uid=%$t.uid%|;did=%$t.did%|;");
        rewritehostport("voicemail.domain.net:5080");
        route(FORWARD);
 
@@ -154,8 +155,9 @@ Calling voicebox
 
    This should be added to SITE-SPECIFIC route:
      if (uri=~"^sip:1000") {               # 1000 is voicebox access number
-         append_hf_value("P-App-Name","voicebox");
-         append_hf_value("P-App-Param","usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;");
+         append_hf("P-App-Name: voicebox\r\n");
+         append_hf("P-App-Param: usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng
+=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;\r\n");
          rewritehostport("voicemail.domain.net:5080");
          route(FORWARD);
      }
@@ -165,8 +167,9 @@ Recording the greeting
    This is very similar to the one above, and should be added to
    SITE_SPECIFIC as well:
      if (uri=~"^sip:1001") {               # 1001 is recod greeting number
-         append_hf_value("P-App-Name","annrecorder");
-         append_hf_value("P-App-Param","usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;typ=vm;");
+         append_hf("P-App-Name: annrecorder\r\n");
+         append_hf("P-App-Param: usr=%@from.uri.user%|;dom=%@from.uri.host%|;lng
+=%$f.lang%|;uid=%$f.uid%|;did=%$f.did%|;typ=vm;\r\n");
          rewritehostport("voicemail.domain.net:5080");
          route(FORWARD);
      }
@@ -178,17 +181,17 @@ Recording the greeting
      __________________________________________________________________
 
 
-    Generated on Wed Mar 17 14:34:30 2010 for SEMS by  [11]doxygen 1.6.1
+    Generated on Thu Feb 3 02:29:25 2011 for SEMS by  [11]doxygen 1.6.1
 
 References
 
-   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
-   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
-   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
-   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
-   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
-   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
-   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
+   1. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/examples.html
    8. http://kamailio.org/
    9. http://opensips.org/
   10. http://sip-router.org/

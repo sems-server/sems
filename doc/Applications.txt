@@ -6,7 +6,7 @@
      * [6]Directories
      * [7]Examples
 
-Application Modules Documentation
+Application Modules
 
    Documentation for the applications that come with SEMS. The
    applications can be found in the apps/ directory and are installed by
@@ -84,22 +84,25 @@ Web controlled conference rooms
    from e.g. a web control page, or some other external mechanism:
      * [21]Module Documentation: webconference Application
 
-Prepaid
+User Agent (B2BUA) and SBC applications
 
-   This is a signalling-only prepaid engine.
-     * [22]Module Documentation: prepaid_sip application plugin
+   SEMS has a powerful and flexible B2BUA application, called 'sbc', which
+   implements flexible routing options, header, message and codec filter,
+   optional RTP relay, SIP authentication, Session Timers, prepaid
+   accounting and call [22]timer etc.
+     * [23]SBC (flexible B2BUA) Application
 
 Click2Dial
 
    An xmlrpc-enabled way to initiate authenticated calls:
-     * [23]Module Documentation: click2dial application plugin
+     * [24]Module Documentation: click2dial application plugin
 
 Defining and developing applications as state machine charts
 
    The DSM module allows to define an application as simple, easy to read,
    self-documenting, concise state diagram. This state machine definition
    is then interpreted and executed by the DSM application.
-     * [24]DSM: State machine notation for VoIP applications
+     * [25]DSM: State machine notation for VoIP applications
 
 Scripting SEMS with Python
 
@@ -110,7 +113,7 @@ Scripting SEMS with Python
    applications written in python can be run (mailbox, conf_auth,
    pin_collect for example) and new applications can be prototyped and
    implemented very quickly:
-     * [25]Module Documentation: ivr Application
+     * [26]Module Documentation: ivr Application
 
    The ivr module has a simple to use, yet limited API, which uses
    hand-written wrappers for the python bindings.
@@ -118,77 +121,71 @@ Scripting SEMS with Python
    py_sems uses a binding generator to make python classes from the SEMS
    core C++ classes, thus exposing a lot more functionality natively to
    python:
-     * [26]Module Documentation: py_sems Application
+     * [27]Module Documentation: py_sems Application
 
 Registering SEMS at a SIP registrar
 
    The reg_agent module together with the registar_client module can be
    used to register at a SIP registrar.
-     * [27]Module Documentation: reg_agent Application
+     * [28]Module Documentation: reg_agent Application
 
-     * [28]Module Documentation: registrar_client Application
+     * [29]Module Documentation: registrar_client Application
 
 Various applications
 
-   xmlrpc2di ([29]Module Documentation: xmlrpc2di Application) exposes DI
+   xmlrpc2di ([30]Module Documentation: xmlrpc2di Application) exposes DI
    interfaces as XMLRPC server. This is very useful to connect SEMS with
    other software, that e.g. trigger click2dial calls, create
    registrations at SIP registrar, do monitoring, etc.
 
    callback application can save lots of mobile calls costs, it calls back
    caller and then the caller can enter a number to be connected to:
-     * [30]Module Documentation: callback application plugin
+     * [31]Module Documentation: callback application plugin
 
    auth_b2b application is identity change: A B2BUA where on the B leg the
    caller identity and authentication is different. Can be used for
    example for authenting to gateways.
-     * [31]Module Documentation: auth_b2b application plugin
-
-   sst_b2b is SIP Session Timer enabled B2BUA, for making sure calls are
-   ended properly and without overbilling, and for topology hiding.
-     * [32]Module Documentation: sst_b2b application plugin
 
 Other components
 
-     * [33]Module Documentation: diameter_client component plugin
+     * [32]Module Documentation: diameter_client component plugin
      __________________________________________________________________
 
 
-    Generated on Mon Apr 26 00:13:02 2010 for SEMS by  [34]doxygen 1.6.1
+    Generated on Thu Feb 3 02:29:25 2011 for SEMS by  [33]doxygen 1.6.1
 
 References
 
-   1. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/index.html
-   2. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/pages.html
-   3. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/namespaces.html
-   4. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/annotated.html
-   5. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/files.html
-   6. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/dirs.html
-   7. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/examples.html
-   8. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/AppDocExample.html
-   9. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_announcement.html
-  10. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_early_announce.html
-  11. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_ann_b2b.html
-  12. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_announce_transfer.html
-  13. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_announce_auth.html
-  14. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_voicemail.html
-  15. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_voicebox.html
-  16. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_annrecorder.html
-  17. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_mailbox.html
-  18. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_conference.html
-  19. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_conf_auth.html
-  20. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_pin_collect.html
-  21. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_webconference.html
-  22. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_sw_prepaid_sip.html
-  23. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_click2dial.html
-  24. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_dsm.html
-  25. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_ivr.html
-  26. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_py_sems.html
-  27. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_reg_agent.html
-  28. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_registrar_client.html
-  29. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_xmlrpc2di.html
-  30. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_callback.html
-  31. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_auth_b2b.html
-  32. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_sst_b2b.html
-  33. file://localhost/home/stefan/devel/sems/trunk/doc/doxygen_doc/html/ModuleDoc_diameter_client.html
-  34. http://www.doxygen.org/index.html
+   1. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/index.html
+   2. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/pages.html
+   3. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/namespaces.html
+   4. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/annotated.html
+   5. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/files.html
+   6. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/dirs.html
+   7. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/examples.html
+   8. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/AppDocExample.html
+   9. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_announcement.html
+  10. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_early_announce.html
+  11. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_ann_b2b.html
+  12. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_announce_transfer.html
+  13. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_announce_auth.html
+  14. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_voicemail.html
+  15. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_voicebox.html
+  16. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_annrecorder.html
+  17. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_mailbox.html
+  18. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_conference.html
+  19. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_conf_auth.html
+  20. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_pin_collect.html
+  21. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_webconference.html
+  22. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/classtimer.html
+  23. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_sbc.html
+  24. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_click2dial.html
+  25. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_dsm.html
+  26. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_ivr.html
+  27. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_py_sems.html
+  28. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_reg_agent.html
+  29. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_registrar_client.html
+  30. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_xmlrpc2di.html
+  31. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_callback.html
+  32. file://localhost/home/stefan/devel/sems/sems/doc/doxygen_doc/html/ModuleDoc_diameter_client.html
+  33. http://www.doxygen.org/index.html

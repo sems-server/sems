@@ -33,6 +33,7 @@
 #include "log.h"
 //#include "AmServer.h"
 #include "AmSipMsg.h"
+#include "sip/resolver.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -50,20 +51,7 @@
 #include <regex.h>
 #include <algorithm>
 
-#ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX 104
-#endif
-
-// timeout in us (ms/1000)
-#define SER_WRITE_TIMEOUT  250000 // 250 ms
-// write retry interval in us
-#define SER_WRITE_INTERVAL 50000  //  50 ms
-
-// timeout in us (ms/1000)
-#define SER_SIPREQ_TIMEOUT 5*60*1000*1000 // 5 minutes
-#define SER_DBREQ_TIMEOUT  250000 // 250 ms
-// read retry interval in us
-#define SER_READ_INTERVAL  50000  // 50 ms
+#include <fstream>
 
 
 static char _int2str_lookup[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', '9' };
@@ -430,142 +418,6 @@ int parse_return_code(const char* lbuf, unsigned int& res_code, string& res_msg 
   return -1;
 }
 
-int fifo_get_line(FILE* fifo_stream, char* str, size_t len)
-{
-  char   c;
-  size_t l;
-  char*  s=str;
-
-  if(!len)
-    return 0;
-    
-  l=len; 
-
-  while( l && (c=fgetc(fifo_stream)) && !ferror(fifo_stream) && c!=EOF && c!='\n' ){
-    if(c!='\r'){
-      *(s++) = c;
-      l--;
-    }
-  }
-
-
-  if(l>0){
-    // We need one more character
-    // for trailing '\0'.
-    *s='\0';
-
-    return int(s-str);
-  }
-  else
-    // buffer overran.
-    return -1;
-}
-
-int fifo_get_lines(FILE* fifo_stream, char* str, size_t len)
-{
-  int l=0,max=len;
-  char* s=str;
-
-  if(!len) 
-    return 0;
-
-  while( max>0 && (l=fifo_get_line(fifo_stream,s,max)) && l!=-1 ) {
-    if(!strcmp(".",s)) 
-      break;
-    s+=l;
-    *(s++)='\n';
-    max-=l+1;
-  }
-
-  s[0]='\0';
-
-  return (l!=-1 ? s-str : -1);
-}
-
-int fifo_get_param(FILE* fp, string& p, char* line_buf, unsigned int size)
-{
-  if( fifo_get_line(fp,line_buf,size) !=-1 ){
-    if(!strcmp(".",line_buf))
-      line_buf[0]='\0';
-
-    p = line_buf;
-  }
-  else {
-    ERROR("could not read from FIFO: %s\n",strerror(errno));
-    return -1;
-  } 
-
-  return 0;
-} 
-
-int msg_get_line(char*& msg_c, char* str, size_t len)
-{
-  size_t l;
-  char*  s=str;
-
-  if(!len)
-    return 0;
-    
-  for(l=len; l && (*msg_c) && (*msg_c !='\n'); msg_c++ ){
-    *(s++) = *msg_c;
-    l--;
-  }
-
-  if(*msg_c)
-    msg_c++;
-
-  if(l>0){
-    // We need one more character
-    // for trailing '\0'.
-    *s='\0';
-
-    return int(s-str);
-  }
-  else {
-    ERROR("buffer too small (size=%u)\n",(unsigned int)len);
-    // buffer overran.
-    return -1;
-  }
-}
-
-int msg_get_lines(char*& msg_c, char* str, size_t len)
-{
-  int l=0,max=len;
-  char* s=str;
-
-  if(!len) 
-    return 0;
-
-  while( max>0 && (l=msg_get_line(msg_c,s,max)) && l!=-1 ) {
-    if(!strcmp(".",s) || !strcmp("\r",s)) 
-      break;
-    s+=l;
-    *(s++)='\n';
-    max-=l+1;
-  }
-
-  s[0]='\0';
-
-  return (l!=-1 ? s-str : -1);
-}
-
-int msg_get_param(char*& msg_c, string& p, char* line_buf, unsigned int size)
-{
-  if( msg_get_line(msg_c,line_buf,size) != -1 ){
-
-    if(!strcmp(".",line_buf))
-      line_buf[0]='\0';
-
-    p = line_buf;
-  }
-  else {
-    ERROR("msg_get_line failed\n");
-    return -1;
-  }
-
-  return 0;
-}
-
 bool file_exists(const string& name)
 {
   FILE* test_fp = fopen(name.c_str(),"r");
@@ -586,85 +438,10 @@ string filename_from_fullpath(const string& path)
 
 string get_addr_str(struct in_addr in)
 {
-  char res[46]; // INET6_ADDRSTRLEN
-  if (inet_ntop(AF_INET, &in, res, 46))
+  char res[INET_ADDRSTRLEN];
+  if (inet_ntop(AF_INET, &in, res, INET_ADDRSTRLEN))
     return string(res);
   else return "";
-}
-
-AmMutex inet_gethostbyname;
-string get_ip_from_name(const string& name)
-{
-  inet_gethostbyname.lock();
-  struct hostent *he = gethostbyname(name.c_str());
-  if(!he){
-    inet_gethostbyname.unlock();
-    return "";
-  }
-  struct in_addr a;
-  bcopy(he->h_addr, (char *) &a, sizeof(a));
-  inet_gethostbyname.unlock();
-  return get_addr_str(a);
-}
-
-/* Takes a string representation of an IP address, or an FQDN,
- * and populates the provided struct sockaddr_in (similar to
- * inet_aton).
- * Returns the hostent for the input, or NULL on failure.
- * Almost certainly won't work with IPv6 addresses.
- */
-int populate_sockaddr_in_from_name(const string& name, struct sockaddr_in *sa) {
-
-  if (NULL == sa) {
-    return 0; 
-  }
-
-  int res = 0;
-  struct addrinfo hints;
-  struct addrinfo *result, *rp;
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family   = AF_INET;       // AF_UNSPEC for IPv4 or IPv6
-  hints.ai_socktype = SOCK_DGRAM;    // Datagram socket.
-  hints.ai_flags    = AI_ADDRCONFIG;
-  hints.ai_protocol = 0;             // Any protocol.
-
-  int s = getaddrinfo(name.c_str(), NULL, &hints, &result);
-  if (s != 0) {
-    WARN("getaddrinfo failed on %s: %s.\n",
-         name.c_str(),
-         gai_strerror(s));
-    return res;
-  }
-
-  for (rp = result; rp != NULL; rp = rp->ai_next) {
-    if ((rp->ai_addrlen  != sizeof(struct sockaddr_in)) ||   // Should not happen.
-        (rp->ai_socktype != SOCK_DGRAM) ||
-        (rp->ai_family   != AF_INET))                   // TODO: Won't behave with IPv6.
-      continue;
-    memcpy(&(sa->sin_addr),
-           &((struct sockaddr_in *)rp->ai_addr)->sin_addr,
-           sizeof(sa->sin_addr));
-    res = 1;
-    break;
-  }
-
-  freeaddrinfo(result);
-  return res;
-}
-
-string uri_from_name_addr(const string& name_addr)
-{
-  string uri = name_addr;
-  string::size_type pos = uri.find('<');
-    
-  if(pos != string::npos)
-    uri.erase(0,pos+1);
-    
-  pos = uri.find('>');
-  if(pos != string::npos)
-    uri.erase(pos,uri.length()-pos);
-    
-  return uri;
 }
 
 #ifdef SUPPORT_IPV6
@@ -763,88 +540,109 @@ string add2path( const string& path, int n_suffix, ...)
   return outpath;
 }
 
-
-int write_to_fifo(const string& fifo, const char * buf, unsigned int len)
+int get_local_addr_for_dest(sockaddr_storage* remote_ip, sockaddr_storage* local)
 {
-  int fd_fifo;
-  int retry = SER_WRITE_TIMEOUT / SER_WRITE_INTERVAL;
-
-  for(;retry>0; retry--){
-	
-    if((fd_fifo = open(fifo.c_str(),
-		       O_WRONLY | O_NONBLOCK)) == -1) {
-      ERROR("while opening %s: %s\n",
-	    fifo.c_str(),strerror(errno));
-
-      if(retry)
-	sleep_us(50000);
-    }
-    else {
-      break;
-    }
-  }
-
-  if(!retry)
+  int temp_sock = socket(remote_ip->ss_family, SOCK_DGRAM, 0 );
+  if (temp_sock == -1) {
+    ERROR("socket() failed: %s\n",
+	  strerror(errno));
     return -1;
+  }
 
-  DBG("write_to_fifo: <%s>\n",buf);
-  int l = write(fd_fifo,buf,len);
-  close(fd_fifo);
+  socklen_t len=sizeof(sockaddr_storage);
+  if (connect(temp_sock, (sockaddr*)remote_ip, 
+	      remote_ip->ss_family == AF_INET ? 
+	      sizeof(sockaddr_in) : sizeof(sockaddr_in6))==-1) {
 
-  if(l==-1)
-    ERROR("while writing: %s\n",strerror(errno));
-  else
-    DBG("Write to fifo: completed\n");
-
-  return l;
-}
-
-
-int write_to_socket(int sd, const char* to_addr, const char * buf, unsigned int len)
-{
-  int retry = SER_WRITE_TIMEOUT / SER_WRITE_INTERVAL;
-  int ret=-1;
-
-  struct sockaddr_un ser_addr;
-  memset (&ser_addr, 0, sizeof (ser_addr));
-  ser_addr.sun_family = AF_UNIX;
-  strncpy(ser_addr.sun_path,to_addr,UNIX_PATH_MAX);
-
-  DBG("sending: <%.*s>\n",len,buf);
-
-  for(;retry>0;retry--){
-	
-    if( (sendto(sd,buf,len,MSG_DONTWAIT, 
-		(struct sockaddr*)&ser_addr,
-		sizeof(struct sockaddr_un)) == -1) ) {
-
-      if(errno == EAGAIN){
-	if(retry)
-	  sleep_us(SER_WRITE_INTERVAL);
-	continue;
-      }
-
-      ERROR("while sending request to %s: %s\n",
-	    ser_addr.sun_path,strerror(errno));
+      ERROR("connect failed: %s\n",
+	    strerror(errno));
       goto error;
-    }
-    break;
   }
 
-  if(!retry){
-    ERROR("timeout while sending request to %s\n",ser_addr.sun_path);
-    goto error;
+  if (getsockname(temp_sock, (sockaddr*)local, &len)==-1) {
+      ERROR("getsockname failed: %s\n",
+	    strerror(errno));
+      goto error;
   }
 
-  DBG("write to unix socket: completed\n");
-  ret = 0;
+  close(temp_sock);
+  return 0;
 
  error:
-  //     close(sd);
-  //    return (ret == -1 ? ret : len);
-  return ret;
+  close(temp_sock);
+  return -1;
 }
 
+int get_local_addr_for_dest(const string& remote_ip, string& local)
+{
+  sockaddr_storage remote_ip_ss;
+  sockaddr_storage local_ss;
+
+  int err = inet_pton(AF_INET,remote_ip.c_str(),&((sockaddr_in*)&remote_ip_ss)->sin_addr);
+  if(err == 1){
+    remote_ip_ss.ss_family = AF_INET;
+  }
+  else if(err == 0){
+    err = inet_pton(AF_INET6,remote_ip.c_str(),&((sockaddr_in6*)&remote_ip_ss)->sin6_addr);
+    if(err == 1){
+      remote_ip_ss.ss_family = AF_INET6;
+    }
+  }
+
+  if(err == 0){
+    // not an IP... try a name.
+    dns_handle dh;
+    err = resolver::instance()->resolve_name(remote_ip.c_str(),&dh,&remote_ip_ss,IPv4);
+  }
+
+  if(err == -1){
+    ERROR("While converting address: %s",strerror(errno));
+    return -1;
+  }
+
+  if(remote_ip_ss.ss_family==AF_INET){
+#if defined(BSD44SOCKETS)
+    ((sockaddr_in*)&remote_ip_ss)->sin_len = sizeof(sockaddr_in);
+#endif
+    ((sockaddr_in*)&remote_ip_ss)->sin_port = htons(5060); // fake port number
+  }
+  else {
+#if defined(BSD44SOCKETS)
+    ((sockaddr_in6*)&remote_ip_ss)->sin6_len = sizeof(sockaddr_in6);
+#endif
+    ((sockaddr_in6*)&remote_ip_ss)->sin6_port = htons(5060); // fake port number
+  }
+
+  err = get_local_addr_for_dest(&remote_ip_ss, &local_ss);
+  if(err < 0){
+    return -1;
+  }
+
+  return ip_addr_to_str(&local_ss,local);
+}
+
+int ip_addr_to_str(sockaddr_storage* ss, string& addr)
+{
+  char ntop_buffer[INET6_ADDRSTRLEN];
+
+  if(ss->ss_family == AF_INET) {
+    if(!inet_ntop(AF_INET, &((sockaddr_in*)ss)->sin_addr,
+		  ntop_buffer,INET6_ADDRSTRLEN)) {
+      ERROR("Could not convert IPv4 address to string: %s",strerror(errno));
+      return -1;
+    }
+  }
+  else {
+    if(!inet_ntop(AF_INET6, &((sockaddr_in6*)ss)->sin6_addr,
+		  ntop_buffer,INET6_ADDRSTRLEN)) {
+      ERROR("Could not convert IPv4 address to string: %s",strerror(errno));
+      return -1;
+    }
+  }
+
+  addr = string(ntop_buffer);
+  return 0;
+}
 
 string extract_tag(const string& addr)
 {
@@ -949,7 +747,7 @@ string get_header_keyvalue(const string& param_hdr, const string& short_name, co
 }
 
 /** 
- * get value from parameter header with the name @param name 
+ * get value from parameter header with the name @param name
  * while skipping escaped values
  */
 string get_header_keyvalue(const string& param_hdr, const string& name) {
@@ -1213,4 +1011,75 @@ void add_env_path(const char* name, const string& path)
   string sol_putenv = name + string("=") + var;
   putenv(sol_putenv.c_str());
 #endif
+}
+
+/** skip to the end of a string enclosed in round brackets, skipping more 
+    bracketed items, too */
+size_t skip_to_end_of_brackets(const string& s, size_t start) {
+  size_t res = start;
+  char last_c = ' ';
+  int num_brackets = 0;
+  while (res < s.size() &&
+	 (s[res] != ')' || num_brackets || last_c == '\\')) {
+    if (last_c != '\\') {
+      if (s[res]==')' && num_brackets)
+	num_brackets--;
+      else if (s[res]=='(')
+	num_brackets++;
+    }
+    last_c = s[res];
+    res++;
+  }
+  return res;
+}
+
+bool read_regex_mapping(const string& fname, const char* sep,
+			const char* dbg_type,
+			RegexMappingVector& result) {
+  std::ifstream appcfg(fname.c_str());
+  if (!appcfg.good()) {
+    ERROR("could not load %s file at '%s'\n",
+	  dbg_type, fname.c_str());
+    return false;
+  } else {
+    while (!appcfg.eof()) {
+      string entry;
+      getline (appcfg,entry);
+      if (!entry.length())
+	continue;
+      size_t non_wsp_pos = entry.find_first_not_of(" \t");
+      if (non_wsp_pos != string::npos && entry[non_wsp_pos] == '#')
+	continue;
+
+      vector<string> re_v = explode(entry, sep);
+      if (re_v.size() != 2) {
+	ERROR("Incorrect line '%s' in %s: expected format 'regexp%sstring'\n",
+	      entry.c_str(), fname.c_str(), sep);
+	return false;
+      }
+      regex_t app_re;
+      if (regcomp(&app_re, re_v[0].c_str(), REG_EXTENDED | REG_NOSUB)) {
+	ERROR("compiling regex '%s' in %s.\n", 
+	      re_v[0].c_str(), fname.c_str());
+	return false;
+      }
+      DBG("adding %s '%s' => '%s'\n",
+	  dbg_type, re_v[0].c_str(),re_v[1].c_str());
+      result.push_back(make_pair(app_re, re_v[1]));
+    }
+  }
+  return true;
+}
+
+bool run_regex_mapping(const RegexMappingVector& mapping, const char* test_s,
+		       string& result) {
+  for (RegexMappingVector::const_iterator it = mapping.begin();
+       it != mapping.end(); it++) {
+    if (!regexec(&it->first, test_s, 0, NULL, 0)) {
+      DBG("match of '%s' to %s\n", test_s, it->second.c_str());
+      result = it->second;
+      return true;
+    }
+  }
+  return false;
 }

@@ -44,7 +44,7 @@ AmSessionContainer* AmSessionContainer::_instance=NULL;
 _MONITORING_DECLARE_INTERFACE(AmSessionContainer);
 
 AmSessionContainer::AmSessionContainer()
-  : _run_cond(false), _container_closed(false)
+  : _run_cond(false), _container_closed(false), enable_unclean_shutdown(false)
       
 {
 }
@@ -149,23 +149,27 @@ void AmSessionContainer::on_stop()
 { 
   _container_closed.set(true);
 
-  broadcastShutdown();
+  if (enable_unclean_shutdown) {
+    INFO("unclean shutdown requested - not broadcasting shutdown\n");
+  } else {
+    broadcastShutdown();
     
-  DBG("waiting for active event queues to stop...\n");
+    DBG("waiting for active event queues to stop...\n");
 
-  for (unsigned int i=0;
-       (!AmEventDispatcher::instance()->empty() &&
-	(!AmConfig::MaxShutdownTime ||
-	 i < AmConfig::MaxShutdownTime * 1000 / 10));i++)
-    usleep(10000);
+    for (unsigned int i=0;
+	 (!AmEventDispatcher::instance()->empty() &&
+	  (!AmConfig::MaxShutdownTime ||
+	   i < AmConfig::MaxShutdownTime * 1000 / 10));i++)
+      usleep(10000);
 
-  if (!AmEventDispatcher::instance()->empty()) {
-    WARN("Not all calls cleanly ended!\n");
+    if (!AmEventDispatcher::instance()->empty()) {
+      WARN("Not all calls cleanly ended!\n");
+    }
+    
+    DBG("cleaning sessions...\n");
+    while (clean_sessions()) 
+      usleep(10000);
   }
-    
-  DBG("cleaning sessions...\n");
-  while (clean_sessions()) 
-    usleep(10000);
 
   _run_cond.set(true); // so that thread stops
 }
@@ -433,4 +437,8 @@ bool AmSessionContainer::addSession(const string& local_tag,
 
   return AmEventDispatcher::instance()->
     addEventQueue(local_tag,(AmEventQueue*)session);
+}
+
+void AmSessionContainer::enableUncleanShutdown() {
+  enable_unclean_shutdown = true;
 }

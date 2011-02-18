@@ -61,8 +61,11 @@ class SipCtrlInterface:
 
     AmCondition<bool> stopped;
     
-    udp_trsp_socket* udp_socket;
-    udp_trsp** udp_servers;
+    unsigned short    nr_udp_sockets;
+    udp_trsp_socket** udp_sockets;
+
+    unsigned short    nr_udp_servers;
+    udp_trsp**        udp_servers;
 
 public:
 
@@ -77,7 +80,7 @@ public:
 
     int load();
 
-    void run(const string& bind_addr, unsigned short bind_port);
+    int run();
     void stop();
     void cleanup();
 
@@ -88,7 +91,8 @@ public:
      *            its ticket is written into req.tt.
      */
     static int send(AmSipRequest &req,
-		    const string& next_hop_ip = "", unsigned short next_hop_port = 5060);
+		    const string& next_hop_ip = "", unsigned short next_hop_port = 5060,
+		    int outbound_interface = -1);
 
     /**
      * Sends a SIP reply. 
@@ -96,7 +100,9 @@ public:
      * @param rep The reply to be sent. 'rep.tt' should be set to transaction 
      *            ticket included in the SIP request.
      */
-    static int send(const AmSipReply &rep);
+    static int send(const AmSipReply &rep,
+		    const string& next_hop_ip = "", unsigned short next_hop_port = 5060,
+		    int outbound_interface = -1);
 
     /**
      * CANCELs an INVITE transaction.

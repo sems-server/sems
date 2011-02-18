@@ -102,18 +102,13 @@ void AmMailDeamon::run()
     _run_cond.wait_for();
     sleep(5);
 
-    string server_address = get_ip_from_name(AnswerMachineFactory::SmtpServerAddress);
-    if(server_address.empty()){
-      WARN("Mail deamon could not resolv SMTP server address <%s>\n",
-	   AnswerMachineFactory::SmtpServerAddress.c_str());
-      continue;
-    }
-
     AmSmtpClient smtp;
-    if (smtp.connect(server_address,AnswerMachineFactory::SmtpServerPort)) {
+    if (smtp.connect(AnswerMachineFactory::SmtpServerAddress,
+		     AnswerMachineFactory::SmtpServerPort)) {
 	    
       WARN("Mail deamon could not connect to SMTP server at <%s:%i>\n",
-	   server_address.c_str(),AnswerMachineFactory::SmtpServerPort);
+	   AnswerMachineFactory::SmtpServerAddress.c_str(),
+	   AnswerMachineFactory::SmtpServerPort);
       continue;
     }
 

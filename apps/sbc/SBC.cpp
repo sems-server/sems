@@ -32,8 +32,6 @@ SBC - feature-wishlist
 - call distribution
 - select profile on monitoring in-mem DB record
 - fallback profile
-- add headers
-- online profile reload
  */
 #include "SBC.h"
 
@@ -54,6 +52,7 @@ using std::map;
 
 AmConfigReader SBCFactory::cfg;
 AmSessionEventHandlerFactory* SBCFactory::session_timer_fact = NULL;
+RegexMapper SBCFactory::regex_mappings;
 
 EXPORT_MODULE_FACTORY(SBCFactory);
 DEFINE_MODULE_INSTANCE(SBCFactory, MOD_NAME);
@@ -91,15 +90,40 @@ int SBCFactory::onLoad()
     }
   }
 
-  active_profile = cfg.getParameter("active_profile");
-  if (active_profile != "$(paramhdr)" &&
-      active_profile != "$(ruri.user)" &&
-      call_profiles.find(active_profile) == call_profiles.end()) {
-    ERROR("call profile active_profile '%s' not loaded!\n", active_profile.c_str());
+  active_profile = explode(cfg.getParameter("active_profile"), ",");
+  if (active_profile.empty()) {
+    ERROR("active_profile not set.\n");
     return -1;
   }
 
-  INFO("SBC: active profile: '%s'\n", active_profile.c_str());
+  string active_profile_s;
+  for (vector<string>::iterator it =
+	 active_profile.begin(); it != active_profile.end(); it++) {
+    if (it->empty())
+      continue;
+    if (((*it)[0] != '$') && call_profiles.find(*it) == call_profiles.end()) {
+      ERROR("call profile active_profile '%s' not loaded!\n", it->c_str());
+      return -1;
+    }
+    active_profile_s+=*it+",";
+  }
+  active_profile_s.erase(active_profile_s.length());
+
+  INFO("SBC: active profile: '%s'\n", active_profile_s.c_str());
+
+  vector<string> regex_maps = explode(cfg.getParameter("regex_maps"), ",");
+  for (vector<string>::iterator it =
+	 regex_maps.begin(); it != regex_maps.end(); it++) {
+    string regex_map_file_name = AmConfig::ModConfigPath + *it + ".conf";
+    RegexMappingVector v;
+    if (!read_regex_mapping(regex_map_file_name, "=>",
+			    ("SBC regex mapping " + *it+":").c_str(), v)) {
+      ERROR("reading regex mapping from '%s'\n", regex_map_file_name.c_str());
+      return -1;
+    }
+    regex_mappings.setRegexMap(*it, v);
+    INFO("loaded regex mapping '%s'\n", it->c_str());
+  }
 
   if (!AmPlugIn::registerApplication(MOD_NAME, this)) {
     ERROR("registering "MOD_NAME" application\n");
@@ -114,38 +138,106 @@ int SBCFactory::onLoad()
   return 0;
 }
 
+#define REPLACE_VALS req, app_param, ruri_parser, from_parser, to_parser
+
+/** get the first matching profile name from active profiles */
+string SBCFactory::getActiveProfileMatch(string& profile_rule, const AmSipRequest& req,
+					 const string& app_param, AmUriParser& ruri_parser,
+					 AmUriParser& from_parser, AmUriParser& to_parser) {
+  string res;
+  for (vector<string>::iterator it=
+	 active_profile.begin(); it != active_profile.end(); it++) {
+    if (it->empty())
+      continue;
+
+    if (*it == "$(paramhdr)")
+      res = get_header_keyvalue(app_param,"profile");
+    else if (*it == "$(ruri.user)")
+      res = req.user;
+    else
+      res = replaceParameters(*it, "active_profile", REPLACE_VALS);
+
+    if (!res.empty()) {
+      profile_rule = *it;    
+      break;
+    }
+  }
+  return res;
+}
 
 AmSession* SBCFactory::onInvite(const AmSipRequest& req)
 {
+  AmUriParser ruri_parser, from_parser, to_parser;
+
   profiles_mut.lock();
 
-  string profile = active_profile;
-  if (profile == "$(paramhdr)") {
-    string app_param = getHeader(req.hdrs, PARAM_HDR, true);
-    profile = get_header_keyvalue(app_param,"profile");
-  } else if (profile == "$(ruri.user)") {
-    profile = req.user;
-  }
+  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
+  
+  string profile_rule;
+  string profile = getActiveProfileMatch(profile_rule, REPLACE_VALS);
 
   map<string, SBCCallProfile>::iterator it=
     call_profiles.find(profile);
   if (it==call_profiles.end()) {
     profiles_mut.unlock();
-    ERROR("could not find call profile '%s' (active_profile = %s)\n",
-	  profile.c_str(), active_profile.c_str());
-    throw AmSession::Exception(500,"Server Internal Error");
+    ERROR("could not find call profile '%s' (matching active_profile rule: '%s')\n",
+	  profile.c_str(), profile_rule.c_str());
+    throw AmSession::Exception(500,SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  DBG("using call profile '%s'\n", profile.c_str());
+  DBG("using call profile '%s' (from matching active_profile rule '%s')\n",
+      profile.c_str(), profile_rule.c_str());
   SBCCallProfile& call_profile = it->second;
+
+  if (!call_profile.refuse_with.empty()) {
+    string refuse_with = replaceParameters(call_profile.refuse_with,
+					   "refuse_with", REPLACE_VALS);
+
+    if (refuse_with.empty()) {
+      ERROR("refuse_with empty after replacing (was '%s' in profile %s)\n",
+	    call_profile.refuse_with.c_str(), call_profile.profile_file.c_str());
+      profiles_mut.unlock();
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
+    size_t spos = refuse_with.find(' ');
+    unsigned int refuse_with_code;
+    if (spos == string::npos || spos == refuse_with.size() ||
+	str2i(refuse_with.substr(0, spos), refuse_with_code)) {
+      ERROR("invalid refuse_with '%s'->'%s' in  %s. Expected <code> <reason>\n",
+	    call_profile.refuse_with.c_str(), refuse_with.c_str(),
+	    call_profile.profile_file.c_str());
+      profiles_mut.unlock();
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+    string refuse_with_reason = refuse_with.substr(spos+1);
+
+    string hdrs = replaceParameters(call_profile.append_headers,
+				    "append_headers", REPLACE_VALS);
+    profiles_mut.unlock();
+
+    if (hdrs.size()>2)
+      assertEndCRLF(hdrs);
+
+    DBG("refusing call with %u %s\n", refuse_with_code, refuse_with_reason.c_str());
+    AmSipDialog::reply_error(req, refuse_with_code, refuse_with_reason, hdrs);
+
+    return NULL;
+  }
+
   AmConfigReader& sst_cfg = call_profile.use_global_sst_config ?
     cfg : call_profile.cfg; // override with profile config
 
   if (call_profile.sst_enabled) {
     DBG("Enabling SIP Session Timers\n");
-    if (!session_timer_fact->onInvite(req, sst_cfg)) {
+    try {
+      if (!session_timer_fact->onInvite(req, sst_cfg)) {
+	profiles_mut.unlock();
+	return NULL;
+      }
+    } catch (const AmSession::Exception& e) {
       profiles_mut.unlock();
-      return NULL;
+      throw;
     }
   }
 
@@ -157,7 +249,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req)
       profiles_mut.unlock();
       delete b2b_dlg;
       ERROR("could not get a session timer event handler\n");
-      throw AmSession::Exception(500,"Server internal error");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
     if (h->configure(sst_cfg)){
@@ -190,6 +282,11 @@ void SBCFactory::invoke(const string& method, const AmArg& args,
   } else if (method == "setActiveProfile"){
     args.assertArrayFmt("u");
     setActiveProfile(args,ret);
+  } else if (method == "getRegexMapNames"){
+    getRegexMapNames(args,ret);
+  } else if (method == "setRegexMap"){
+    args.assertArrayFmt("u");
+    setRegexMap(args,ret);
   } else if(method == "_list"){ 
     ret.push(AmArg("listProfiles"));
     ret.push(AmArg("reloadProfiles"));
@@ -197,6 +294,8 @@ void SBCFactory::invoke(const string& method, const AmArg& args,
     ret.push(AmArg("loadProfile"));
     ret.push(AmArg("getActiveProfile"));
     ret.push(AmArg("setActiveProfile"));
+    ret.push(AmArg("getRegexMapNames"));
+    ret.push(AmArg("setRegexMap"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
 }
@@ -320,7 +419,10 @@ void SBCFactory::loadProfile(const AmArg& args, AmArg& ret) {
 void SBCFactory::getActiveProfile(const AmArg& args, AmArg& ret) {
   profiles_mut.lock();
   AmArg p;
-  p["active_profile"] = active_profile;
+  for (vector<string>::iterator it=active_profile.begin();
+       it != active_profile.end(); it++) {
+    p["active_profile"].push(*it);
+  }
   profiles_mut.unlock();
   ret.push(200);
   ret.push("OK");
@@ -330,11 +432,11 @@ void SBCFactory::getActiveProfile(const AmArg& args, AmArg& ret) {
 void SBCFactory::setActiveProfile(const AmArg& args, AmArg& ret) {
   if (!args[0].hasMember("active_profile")) {
     ret.push(400);
-    ret.push("Parameters error: expected ['active_profile': <active_profile>] ");
+    ret.push("Parameters error: expected ['active_profile': <active_profile list>] ");
     return;
   }
   profiles_mut.lock();
-  active_profile = args[0]["active_profile"].asCStr();
+  active_profile = explode(args[0]["active_profile"].asCStr(), ",");
   profiles_mut.unlock();
   ret.push(200);
   ret.push("OK");
@@ -343,6 +445,39 @@ void SBCFactory::setActiveProfile(const AmArg& args, AmArg& ret) {
   ret.push(p);  
 }
 
+void SBCFactory::getRegexMapNames(const AmArg& args, AmArg& ret) {
+  AmArg p;
+  vector<string> reg_names = regex_mappings.getNames();
+  for (vector<string>::iterator it=reg_names.begin();
+       it != reg_names.end(); it++) {
+    p["regex_maps"].push(*it);
+  }
+  ret.push(200);
+  ret.push("OK");
+  ret.push(p);
+}
+
+void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
+  if (!args[0].hasMember("name") || !args[0].hasMember("file") ||
+      !isArgCStr(args[0]["name"]) || !isArgCStr(args[0]["file"])) {
+    ret.push(400);
+    ret.push("Parameters error: expected ['name': <name>, 'file': <file name>]");
+    return;
+  }
+
+  string m_name = args[0]["name"].asCStr();
+  string m_file = args[0]["file"].asCStr();
+  RegexMappingVector v;
+  if (!read_regex_mapping(m_file, "=>", "SBC regex mapping", v)) {
+    ERROR("reading regex mapping from '%s'\n", m_file.c_str());
+    ret.push(401);
+    ret.push("Error reading regex mapping from file");
+    return;
+  }
+  regex_mappings.setRegexMap(m_name, v);
+  ret.push(200);
+  ret.push("OK");
+}
 
 SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
@@ -364,13 +499,11 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   DBG("processing initial INVITE\n");
 
+  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
+
   if(dlg.reply(req, 100, "Connecting") != 0) {
     throw AmSession::Exception(500,"Failed to reply 100");
   }
-
-  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
-
-#define REPLACE_VALS req, app_param,ruri_parser, from_parser, to_parser
 
   ruri = call_profile.ruri.empty() ? 
     req.r_uri : replaceParameters(call_profile.ruri, "RURI", REPLACE_VALS);
@@ -405,6 +538,12 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       }
       call_profile.next_hop_port_i = nh_port_i;
       DBG("set next hop port to '%u'\n", call_profile.next_hop_port_i);
+
+      if (!call_profile.next_hop_for_replies.empty()) {
+	call_profile.next_hop_for_replies =
+	  replaceParameters(call_profile.next_hop_for_replies, "next_hop_for_replies",
+			    REPLACE_VALS);
+      }
     }
   }
 
@@ -426,6 +565,16 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   inplaceHeaderFilter(invite_req.hdrs,
 		      call_profile.headerfilter_list, call_profile.headerfilter);
+
+
+  if (!call_profile.append_headers.empty()) {
+    string append_headers = replaceParameters(call_profile.append_headers,
+					      "append_headers", REPLACE_VALS);
+    if (append_headers.size()>2) {
+      assertEndCRLF(append_headers);
+      invite_req.hdrs+=append_headers;
+    }
+  }
 
   if (call_profile.auth_enabled) {
     call_profile.auth_credentials.user = 
@@ -656,6 +805,7 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
 void SBCDialog::onOtherBye(const AmSipRequest& req)
 {
   stopPrepaidAccounting();
+  stopCallTimer();
   AmB2BCallerSession::onOtherBye(req);
 }
 
@@ -685,6 +835,7 @@ void SBCDialog::onCancel()
 void SBCDialog::stopCall() {
   if (m_state == BB_Connected) {
     stopPrepaidAccounting();
+    stopCallTimer();
   }
   terminateOtherLeg();
   terminateLeg();
@@ -706,6 +857,13 @@ bool SBCDialog::startCallTimer() {
   }
 
   return true;
+}
+
+void SBCDialog::stopCallTimer() {
+  if (call_profile.call_timer_enabled) {
+    DBG("SBC: removing call timer\n");
+    removeTimer(SBC_TIMER_ID_CALL_TIMER);
+  }
 }
 
 void SBCDialog::startPrepaidAccounting() {
@@ -798,7 +956,7 @@ void SBCDialog::createCalleeSession()
     if(!h) {
       ERROR("could not get a session timer event handler\n");
       delete callee_session;
-      throw AmSession::Exception(500,"Server internal error");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
     AmConfigReader& sst_cfg = call_profile.use_global_sst_config ? 
       SBCFactory::cfg: call_profile.cfg; // override with profile config
@@ -822,13 +980,19 @@ void SBCDialog::createCalleeSession()
     callee_dlg.next_hop_ip = call_profile.next_hop_ip;
     callee_dlg.next_hop_port = call_profile.next_hop_port.empty() ?
       5060 : call_profile.next_hop_port_i;
+
+    if (!call_profile.next_hop_for_replies.empty()) {
+      callee_dlg.next_hop_for_replies =
+	(call_profile.next_hop_for_replies == "yes" ||
+	 call_profile.next_hop_for_replies == "1");
+    }
   }
 
   other_id = AmSession::getNewId();
   
   callee_dlg.local_tag    = other_id;
   callee_dlg.callid       = callid.empty() ?
-    AmSession::getNewId() + "@" + AmConfig::LocalIP : callid;
+    AmSession::getNewId() : callid;
   
   // this will be overwritten by ConnectLeg event 
   callee_dlg.remote_party = to;
@@ -996,4 +1160,14 @@ int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {
     filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
   }
   return 0;
+}
+
+void assertEndCRLF(string& s) {
+  if (s[s.size()-2] != '\r' ||
+      s[s.size()-1] != '\n') {
+    while ((s[s.size()-1] == '\r') ||
+	   (s[s.size()-1] == '\n'))
+      s.erase(s.size()-1);
+    s += "\r\n";
+  }
 }

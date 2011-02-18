@@ -85,6 +85,8 @@ class XMLRPC2DIServer : public AmThread {
   XmlRpcServer* s;
 
   unsigned int port; 
+  string bind_ip;
+
   XMLRPC2DIServerCallsMethod       calls_method;
   XMLRPC2DIServerSetLoglevelMethod setloglevel_method;
   XMLRPC2DIServerGetLoglevelMethod getloglevel_method;
@@ -92,7 +94,8 @@ class XMLRPC2DIServer : public AmThread {
   void registerMethods(const std::string& iface);
 
  public: 
-  XMLRPC2DIServer(unsigned int port, 
+  XMLRPC2DIServer(unsigned int port,
+		  const string& bind_ip,
 		  bool di_export, 
 		  string direct_export,
 		  XmlRpcServer* s);

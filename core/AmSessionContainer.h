@@ -67,6 +67,9 @@ class AmSessionContainer : public AmThread
   /** We are a Singleton ! Avoid people to have their own instance. */
   AmSessionContainer();
 
+
+  bool enable_unclean_shutdown;
+
   /**
    * Tries to stop the session and queue it destruction.
    */
@@ -149,6 +152,9 @@ class AmSessionContainer : public AmThread
    * broadcasts a server shutdown system event to all sessions
    */
   void  broadcastShutdown();
+
+  /** enable unclean shutdown (will not broadcastShutdown event) */
+  void enableUncleanShutdown();
 
   _MONITORING_DEFINE_INTERFACE;
 

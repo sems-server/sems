@@ -25,6 +25,8 @@ extern "C" {
 # include <netdb.h>
 # include <errno.h>
 # include <fcntl.h>
+
+#include <arpa/inet.h>
 }
 #endif  // _WINDOWS
 
@@ -112,12 +114,21 @@ XmlRpcSocket::setReuseAddr(int fd)
 
 // Bind to a specified port
 bool 
-XmlRpcSocket::bind(int fd, int port)
+XmlRpcSocket::bind(int fd, int port, const std::string& bind_ip)
 {
   struct sockaddr_in saddr;
   memset(&saddr, 0, sizeof(saddr));
   saddr.sin_family = AF_INET;
-  saddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  if (bind_ip.empty()) {
+    saddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  } else {
+    if(inet_aton(bind_ip.c_str(),&((struct sockaddr_in*)(&saddr))->sin_addr)<0){
+      XmlRpcUtil::log(2, "XmlRpcSocket::bind: inet_aton: %s.",
+		      strerror(errno));
+	return -1;
+    }
+  }
+
   saddr.sin_port = htons((u_short) port);
   return (::bind(fd, (struct sockaddr *)&saddr, sizeof(saddr)) == 0);
 }

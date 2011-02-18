@@ -5,7 +5,7 @@
 # path (the path where this file resides)
 profiles=transparent,auth_b2b,sst_b2b
 
-# active call profile
+# active call profile - comma separated list, first non-empty is used
 #
 # o active_profile=<profile_name>  always use <profile_name>
 #
@@ -13,8 +13,16 @@ profiles=transparent,auth_b2b,sst_b2b
 #
 # o active_profile=$(paramhdr)     use  "profile" option in P-App-Param header
 #
+# o any replacement pattern
+#
 active_profile=transparent
 
+# regex_maps - comma-separated list of regex maps to load at startup, for $M()
+# 
+# regex=>value maps for which names are given here are loaded from 
+# this path, e.g. src_ipmap.conf, ruri_map.conf, usermap.conf
+#
+#regex_maps=src_ipmap,ruri_map,usermap
 
 ## RFC4028 Session Timer
 # default configuration - can be overridden by call profiles
@@ -38,8 +46,6 @@ active_profile=transparent
 # UPDATE_FALLBACK_INVITE - use UPDATE if indicated in Allow, re-INVITE otherwise
 #
 # Default: UPDATE_FALLBACK_INVITE
-#
-# Note: Session Timers are only supported in some applications
 #
 #session_refresh_method=UPDATE
 

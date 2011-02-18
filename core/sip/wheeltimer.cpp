@@ -39,7 +39,7 @@
 
 timer::~timer()
 {
-    DBG("timer::~timer(this=%p)\n",this);
+    // DBG("timer::~timer(this=%p)\n",this);
 }
 
 _wheeltimer::_wheeltimer()

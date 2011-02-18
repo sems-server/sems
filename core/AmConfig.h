@@ -31,14 +31,14 @@
 #include "AmSdp.h"
 #include "AmDtmfDetector.h"
 #include "AmSipDialog.h"
+#include "AmUtils.h"
 
 #include <string>
 using std::string;
+#include <map>
+using std::map;
+using std::multimap;
 #include <utility>
-
-#include <sys/types.h>
-#include <regex.h>
-
 
 /**
  * \brief holds the current configuration.
@@ -78,33 +78,58 @@ struct AmConfig
   
   static unsigned int MaxShutdownTime;
 
-  /** local IP for SDP media advertising */
-  static string LocalIP;
-  
-  /** public IP for SDP media advertising; we actually
-   *  bind to local IP, but advertise public IP. */ 
-  static string PublicIP;
-  
-  /** Lowest local RTP port */
-  static int RtpLowPort;
-  /** Highest local RTP port */
-  static int RtpHighPort;
+  struct IP_interface {
+
+    string name;
+
+    /** local IP for SDP media advertising */
+    string LocalIP;
+    
+    /** public IP for SDP media advertising; we actually
+     *  bind to local IP, but advertise public IP. */ 
+    string PublicIP;
+    
+    /** Lowest local RTP port */
+    int RtpLowPort;
+    /** Highest local RTP port */
+    int RtpHighPort;
+    
+    /** the interface SIP requests are sent from - needed for registrar_client */
+    string LocalSIPIP;
+    /** the port SIP requests are sent from - optional (default 5060) */
+    int LocalSIPPort;
+
+    IP_interface();
+
+    int getNextRtpPort();
+
+  private:
+    int next_rtp_port;
+    AmMutex next_rtp_port_mut;
+  };
+
+  static vector<IP_interface>            Ifs;
+  static map<string,unsigned short>      If_names;
+  static multimap<string,unsigned short> LocalSIPIP2If;
+
+  static int finalizeIPConfig();
+
+  static void dump_Ifs();
+
   /** number of session (signaling/application) processor threads */
   static int SessionProcessorThreads;
   /** number of media processor threads */
   static int MediaProcessorThreads;
   /** number of SIP server threads */
   static int SIPServerThreads;
-  /** the interface SIP requests are sent from - needed for registrar_client */
-  static string LocalSIPIP;
-  /** the port SIP requests are sent from - optional (default 5060) */
-  static int LocalSIPPort;
   /** Outbound Proxy (optional, outgoing calls only) */
   static string OutboundProxy;
   /** force Outbound Proxy to be used for in dialog requests */
   static bool ForceOutboundProxy;
   /** update ruri-host to previously resolved IP:port on SIP auth */
   static bool ProxyStickyAuth;
+  /** skip DNS SRV lookup for resolving destination address*/
+  static bool DisableDNSSRV;
   /** Server/User-Agent header (optional) */
   static string Signature;
   /** Value of Max-Forward header field for new requests */
@@ -127,8 +152,7 @@ struct AmConfig
   static ApplicationSelector AppSelect;
 
   /* this is regex->application mapping is used if  App_MAPPING */
-  typedef vector<std::pair<regex_t, string> > AppMappingVector;
-  static AppMappingVector AppMapping; 
+  static RegexMappingVector AppMapping; 
 
   static unsigned int SessionLimit;
   static unsigned int SessionLimitErrCode;
@@ -190,6 +214,7 @@ struct AmConfig
   static int setSIPServerThreads(const string& th);
   /** Setter for parameter DeadRtpTime, returns 0 on invalid value */
   static int setDeadRtpTime(const string& drt);
+
 };
 
 #endif

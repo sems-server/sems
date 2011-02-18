@@ -86,7 +86,8 @@ USE_MONITORING=yes
 
 # Support for long debug messages? (useful for debugging SIP messages' contents)
 #
-#LONG_DEBUG_MESSAGE=yes
+# disable for slight performance gain
+LONG_DEBUG_MESSAGE=yes
 
 # Is this a debug build or not?
 debug=no

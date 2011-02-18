@@ -56,7 +56,6 @@ AmMutex AmSession::session_num_mut;
 
 // AmSession methods
 
-
 AmSession::AmSession()
   : AmEventQueue(this),
     dlg(this),
@@ -66,6 +65,7 @@ AmSession::AmSession()
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
+    rtp_interface(-1),
     refresh_method(REFRESH_UPDATE_FB_REINV),
     processing_status(SESSION_PROCESSING_EVENTS),
     user_timer_ref(NULL)
@@ -293,7 +293,7 @@ void AmSession::negotiate(const string& sdp_body,
 
   lockAudio();
   try {
-    RTPStream()->setLocalIP(AmConfig::LocalIP);
+    RTPStream()->setLocalIP(localRTPIP());
     RTPStream()->setPassiveMode(passive_mode);
     RTPStream()->setRAddr(r_host, r_port);
   } catch (const string& err_str) {
@@ -438,17 +438,26 @@ bool AmSession::processEventsCatchExceptions() {
     this should be called until it returns false. */
 bool AmSession::processingCycle() {
 
+  DBG("vv S [%s|%s] %s, %s, %i UACTransPending vv\n",
+      dlg.callid.c_str(),getLocalTag().c_str(),
+      dlgStatusStr(dlg.getStatus()),
+      sess_stopped.get()?"stopped":"running",
+      dlg.getUACTransPending());
+
   switch (processing_status) {
   case SESSION_PROCESSING_EVENTS: 
     {
-      if (!processEventsCatchExceptions())
-	return false; // exception occured, stop processing
+      if (!processEventsCatchExceptions()) {
+	// exception occured, stop processing
+	processing_status = SESSION_ENDED_DISCONNECTED;
+	return false;
+      }
       
       AmSipDialog::Status dlg_status = dlg.getStatus();
       bool s_stopped = sess_stopped.get();
       
-      DBG("%s/%s: %s, %s, %i UACTransPending\n",
-	  dlg.callid.c_str(),getLocalTag().c_str(), 
+      DBG("^^ S [%s|%s] %s, %s, %i UACTransPending ^^\n",
+	  dlg.callid.c_str(),getLocalTag().c_str(),
 	  dlgStatusStr(dlg_status),
 	  s_stopped?"stopped":"running",
 	  dlg.getUACTransPending());
@@ -489,9 +498,17 @@ bool AmSession::processingCycle() {
       processing_status = SESSION_ENDED_DISCONNECTED;
       return false; // exception occured, stop processing
     }
+
     bool res = dlg.getStatus() != AmSipDialog::Disconnected;
     if (!res)
       processing_status = SESSION_ENDED_DISCONNECTED;
+
+    DBG("^^ S [%s|%s] %s, %s, %i UACTransPending ^^\n",
+	dlg.callid.c_str(),getLocalTag().c_str(),
+	dlgStatusStr(dlg.getStatus()),
+	sess_stopped.get()?"stopped":"running",
+	dlg.getUACTransPending());
+
     return res;
   }; break;
 
@@ -639,7 +656,7 @@ void AmSession::process(AmEvent* ev)
 {
   CALL_EVENT_H(process,ev);
 
-  DBG("AmSession::process\n");
+  DBG("AmSession processing event\n");
 
   if (ev->event_id == E_SYSTEM) {
     AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(ev);
@@ -701,12 +718,16 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     catch(const string& s) {
       ERROR("%s\n",s.c_str());
       setStopped();
-      AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "",
+			       dlg.next_hop_for_replies ? dlg.next_hop_ip : "",
+			       dlg.next_hop_for_replies ? dlg.next_hop_port : 0);
     }
     catch(const AmSession::Exception& e) {
       ERROR("%i %s\n",e.code,e.reason.c_str());
       setStopped();
-      AmSipDialog::reply_error(req,e.code,e.reason);
+      AmSipDialog::reply_error(req,e.code, e.reason, e.hdrs,
+			       dlg.next_hop_for_replies ? dlg.next_hop_ip : "",
+			       dlg.next_hop_for_replies ? dlg.next_hop_port : 0);
     }
   }
   else if(req.method == SIP_METH_ACK){
@@ -1059,6 +1080,10 @@ void AmSession::updateRefreshMethod(const string& headers) {
 }
 
 bool AmSession::refresh(int flags) {
+  // no session refresh if not connected
+  if (dlg.getStatus() != AmSipDialog::Connected)
+    return false;
+
   if (refresh_method == REFRESH_UPDATE) {
     DBG("Refreshing session with UPDATE\n");
     return sendUpdate("", "", "") == 0;
@@ -1154,12 +1179,32 @@ void AmSession::onFailure(AmSipDialogEventHandler::FailureCause cause,
 // address to use in SDP bodies 
 string AmSession::advertisedIP()
 {
-  string set_ip = AmConfig::PublicIP; // "public_ip" parameter. 
-  DBG("AmConfig::PublicIP is <%s>.\n", set_ip.c_str());
+  if(rtp_interface < 0){
+    rtp_interface = dlg.getOutboundIf();
+  }
+  
+  assert(rtp_interface >= 0);
+  assert((unsigned int)rtp_interface < AmConfig::Ifs.size());
+
+  string set_ip = AmConfig::Ifs[rtp_interface].PublicIP; // "public_ip" parameter. 
   if (set_ip.empty())
-    return AmConfig::LocalIP;           // "listen" parameter.
+    return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
+
   return set_ip;
 }  
+
+string AmSession::localRTPIP()
+{
+  if(rtp_interface < 0){
+    rtp_interface = dlg.getOutboundIf();
+  }
+
+  assert(rtp_interface >= 0);
+  assert((unsigned int)rtp_interface < AmConfig::Ifs.size());
+
+  return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
+}
+
 
 // TODO: move user timers into core
 void AmSession::getUserTimerInstance() {

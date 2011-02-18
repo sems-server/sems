@@ -83,6 +83,9 @@ private:
   time_t connect_ts;
   time_t disconnect_ts;
 
+  // ID from X-ParticipantID header
+  string participant_id;
+
 public:
   WebConferenceDialog(AmPromptCollection& prompts,
 		      WebConferenceFactory* my_f, 
