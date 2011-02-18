@@ -330,29 +330,6 @@ int AmSipDialog::getSdpBody(string& sdp_body)
     return 0;
 }
 
-// int AmSipDialog::triggerOfferAnswer(string& content_type, string& body)
-// {
-//   switch(status){
-  // case Early:
-  //   if(content_type != SIP_APPLICATION_SDP){ // FIXME
-  //     break;
-  //   }
-  //   return getSdpBody(body);
-
-//   case Connected:
-//     if(getSdpBody(body)){
-//       return -1;
-//     }
-    // content_type = SIP_APPLICATION_SDP; // FIXME
-    // break;
-    
-//   default:
-//     break;
-//   }
-
-//   return 0;
-// }
-
 int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
 {
   if (reliable_1xx == REL100_IGNORED)
