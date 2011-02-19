@@ -76,6 +76,22 @@ void AmSessionFactory::configureSession(AmSession* sess) {
 
 void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
 {
+  if(req.method == "OPTIONS"){
+      
+      // Basic OPTIONS support
+    if (!AmConfig::OptionsSessionLimit || 
+	(AmSession::getSessionNum() < AmConfig::OptionsSessionLimit)) {
+      AmSipDialog::reply_error(req, 200, "OK");
+    } else {
+      // return error code if near to overload
+      AmSipDialog::reply_error(req,
+			       AmConfig::OptionsSessionLimitErrCode, 
+			       AmConfig::OptionsSessionLimitErrReason);
+    }
+      return;
+
+  }
+
     ERROR("sorry, we don't support beginning a new session with "
 	  "a '%s' message\n", req.method.c_str());
     

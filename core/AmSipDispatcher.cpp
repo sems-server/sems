@@ -95,21 +95,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       
       AmSessionContainer::instance()->startSessionUAS(req);
   }
-  else if(req.method == "OPTIONS"){
-      
-      // Basic OPTIONS support
-    if (!AmConfig::OptionsSessionLimit || 
-	(AmSession::getSessionNum() < AmConfig::OptionsSessionLimit)) {
-      AmSipDialog::reply_error(req, 200, "OK");
-    } else {
-      // return error code if near to overload
-      AmSipDialog::reply_error(req,
-			       AmConfig::OptionsSessionLimitErrCode, 
-			       AmConfig::OptionsSessionLimitErrReason);
-    }
-      return;
-
-  } else if( (req.method == "CANCEL") || 
+  else if( (req.method == "CANCEL") || 
 	     (req.method == "BYE") ){
       
     // CANCEL/BYE of a (here) non-existing dialog
