@@ -705,6 +705,8 @@ void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, strin
 	    route_field += ", " + c2stlstr((*it)->value);
 	}
     }
+
+    req.via1 = c2stlstr(msg->via1->value);
 }
 
 void SipCtrlInterface::prepare_routes_uas(const list<sip_header*>& routes, string& route_field)

@@ -16,6 +16,7 @@ class _AmSipMsgInDlg
   string       contact;
   string       content_type;
 
+  string       via1;
   string       hdrs;
   string       body;
   unsigned int cseq;
