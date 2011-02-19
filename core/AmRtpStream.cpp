@@ -426,7 +426,6 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
   memset(&r_saddr,0,sizeof(struct sockaddr_in));
   memset(&l_saddr,0,sizeof(struct sockaddr_in));
 #endif
-  //sched = AmRtpScheduler::instance();
 
 #ifndef SUPPORT_IPV6
   /* By default we listen on all interfaces */
@@ -562,12 +561,14 @@ void AmRtpStream::init(const vector<SdpPayload*>& sdp_payloads)
 
 void AmRtpStream::pause()
 {
+  receiving = false;
 }
 
 void AmRtpStream::resume()
 {
   gettimeofday(&last_recv_time,NULL);
   mem.clear();
+  receiving = true;
 }
 
 void AmRtpStream::setOnHold(bool on_hold) {
@@ -697,8 +698,8 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
      AmConfig::DeadRtpTime && 
      (diff.tv_sec > 0) &&
      ((unsigned int)diff.tv_sec > AmConfig::DeadRtpTime)){
-    WARN("RTP Timeout detected. Last received packet is too old.\n");
-    DBG("diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
+    WARN("RTP Timeout detected. Last received packet is too old "
+	 "(diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
     receive_mut.unlock();
     return RTP_TIMEOUT;
   }

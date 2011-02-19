@@ -287,25 +287,32 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
   unsigned int media_index = 0;
   for (std::vector<SdpMedia>::iterator it =
 	 parser_sdp.media.begin(); it != parser_sdp.media.end(); it++) {
+
     if (media_index >= relay_rtp_streams_cnt) {
       WARN("trying to relay SDP with more media lines than "
 	    "relay streams initialized (%u)\n", relay_rtp_streams_cnt);
       break;
     }
+
     string r_addr = it->conn.address;
     if (r_addr.empty())
       r_addr = parser_sdp.conn.address;
 
-    // TODO:
-    //  - disable streams with port == 0
-
-    DBG("initializing RTP relay stream %u with remote <%s:%u>\n",
-	media_index, r_addr.c_str(), it->port);
-
-    relay_rtp_streams[media_index]->setRAddr(r_addr, it->port);
-    if (sdp.remote_active || rtp_relay_force_symmetric_rtp) {
-      relay_rtp_streams[media_index]->setPassiveMode(true);
+    if(it->port) {
+      DBG("initializing RTP relay stream %u with remote <%s:%u>\n",
+	  media_index, r_addr.c_str(), it->port);
+      
+      relay_rtp_streams[media_index]->setRAddr(r_addr, it->port);
+      if (sdp.remote_active || rtp_relay_force_symmetric_rtp) {
+	relay_rtp_streams[media_index]->setPassiveMode(true);
+      }
+      relay_rtp_streams[media_index]->resume();
     }
+    else {
+      relay_rtp_streams[media_index]->pause();
+      DBG("disabled RTP relay stream %u\n",media_index);
+    }
+
     media_index ++;
   }
   if (rtp_relay_force_symmetric_rtp) {
@@ -340,21 +347,24 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
   unsigned int media_index = 0;
   for (std::vector<SdpMedia>::iterator it =
 	 parser_sdp.media.begin(); it != parser_sdp.media.end(); it++) {
+
     if (media_index >= relay_rtp_streams_cnt) {
       WARN("trying to relay SDP with more media lines than "
 	   "relay streams initialized (%u)\n", relay_rtp_streams_cnt);
       break;
     }
-    if (!it->conn.address.empty())
-      it->conn.address = advertisedIP();
-    try {
-      it->port = relay_rtp_streams[media_index]->getLocalPort();
-      replaced_ports += (!media_index) ? int2str(it->port) : "/"+int2str(it->port);
-    } catch (const string& s) {
-      ERROR("setting port: '%s'\n", s.c_str());
-      throw string("error setting RTP port\n");
-    }
 
+    if(it->port) { // if stream active
+      if (!it->conn.address.empty())
+	it->conn.address = advertisedIP();
+      try {
+	it->port = relay_rtp_streams[media_index]->getLocalPort();
+	replaced_ports += (!media_index) ? int2str(it->port) : "/"+int2str(it->port);
+      } catch (const string& s) {
+	ERROR("setting port: '%s'\n", s.c_str());
+	throw string("error setting RTP port\n");
+      }
+    }
     media_index++;
   }
 
@@ -753,7 +763,6 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
   for (unsigned int i=0; i<relay_rtp_streams_cnt; i++) {
     other_session->relay_rtp_streams[i]->setRelayStream(relay_rtp_streams[i]);
     other_stream_fds[i] = other_session->relay_rtp_streams[i]->getLocalSocket();
-    // set local IP (todo: option for other interface!)
     relay_rtp_streams[i]->setLocalIP(advertisedIP());
     relay_rtp_streams[i]->enableRtpRelay();
   }
