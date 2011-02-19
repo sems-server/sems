@@ -573,20 +573,24 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
     return err;
 }
 
-static void prepare_strict_routing(sip_msg* msg)
+
+static void prepare_strict_routing(sip_msg* msg, string& ext_uri_buffer)
 {
-    assert(!msg->route.empty());
+    if(msg->route.empty())
+	return;
 
     sip_header* fr = msg->route.front();
-    assert(fr->p);
+    sip_uri* route_uri = get_first_route_uri(fr);
 
-    assert(!((sip_route*)(fr->p))->elmts.empty());
-    sip_nameaddr* fr_na = ((sip_route*)(fr->p))->elmts.front();
-    
-    // place a cursor at the end of the 
-    const char* c = fr_na->addr.s + fr_na->addr.len;
+    // Loose routing is used,
+    // no need for further processing
+    if(!route_uri || is_loose_route(route_uri))
+	return;
+        
+    // place a cursor at the end of the 1st name-addr
+    cstring fr_na_addr = ((sip_route*)(fr->p))->elmts.front()->addr;
+    const char* c = fr_na_addr.s + fr_na_addr.len;
     const char* end = fr->value.s + fr->value.len;
-
     assert(c<=end);
 
     // detect beginning of next route
@@ -669,12 +673,13 @@ static void prepare_strict_routing(sip_msg* msg)
 	break;
     }
 
-    // copy r_uri at the end of 
-    // the route set.
-    msg->hdrs.push_back(new sip_header(0,"Route",msg->u.request->ruri_str)); // BUG: must include <>!!!
+    // copy r_uri at the end of the route set.
+    // ext_uri_buffer must have the same scope as 'msg'
+    ext_uri_buffer = "<" + c2stlstr(msg->u.request->ruri_str) + ">";
+    msg->hdrs.push_back(new sip_header(0,"Route",stl2cstr(ext_uri_buffer)));
 
     // and replace the R-URI with the first route URI 
-    msg->u.request->ruri_str = fr_na->addr;
+    msg->u.request->ruri_str = fr_na_addr;
 }
 
 
@@ -705,14 +710,6 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 	    if(route_uri->port_str.len)
 		*next_port = route_uri->port;
 	}
-
-	if(is_loose_route(route_uri)){
-	    // loose routing is used,
-	    // no need for further processing
-	    return 0;
-	}
-    
-	prepare_strict_routing(msg);
     }
     else {
 
@@ -842,6 +839,9 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	next_hop = _next_hop;
 	next_port = _next_port ? _next_port : 5060;
     }
+
+    string uri_buffer; // must have the same scope as 'msg'
+    prepare_strict_routing(msg,uri_buffer);
 
     if(set_destination_ip(msg,&next_hop,next_port) < 0){
      	DBG("set_destination_ip failed\n");
