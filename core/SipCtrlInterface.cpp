@@ -492,6 +492,8 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	}
     }
 
+    req.via1 = c2stlstr(msg->via1->value);
+
     req.remote_ip = get_addr_str(((sockaddr_in*)&msg->remote_ip)->sin_addr).c_str();
     req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
     req.local_ip = get_addr_str(((sockaddr_in*)&msg->local_ip)->sin_addr).c_str();
@@ -705,8 +707,6 @@ void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, strin
 	    route_field += ", " + c2stlstr((*it)->value);
 	}
     }
-
-    req.via1 = c2stlstr(msg->via1->value);
 }
 
 void SipCtrlInterface::prepare_routes_uas(const list<sip_header*>& routes, string& route_field)
