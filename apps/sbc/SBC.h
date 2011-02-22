@@ -106,6 +106,8 @@ class SBCDialog : public AmB2BCallerSession
 
   unsigned int call_timer;
 
+  int outbound_interface;
+
   // prepaid
   AmDynInvoke* prepaid_acc;
   time_t prepaid_starttime;

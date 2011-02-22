@@ -177,23 +177,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   force_symmetric_rtp = cfg.getParameter("rtprelay_force_symmetric_rtp");
   msgflags_symmetric_rtp = cfg.getParameter("rtprelay_msgflags_symmetric_rtp") == "yes";
 
-  string out_if_str = cfg.getParameter("outbound_interface");
-  if(!out_if_str.empty()) {
-    if(out_if_str == "default")
-      outbound_interface = 0;
-    else {
-      map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(out_if_str);
-      if(name_it != AmConfig::If_names.end()) {
-	outbound_interface = name_it->second;
-      }
-      else {
-	ERROR("%s: '%s' does not exist as an interface. "
-	      "Please check the 'additional_interfaces' "
-	      "parameter in the main configuration file.",
-	      name.c_str(),out_if_str.c_str());
-      }
-    }
-  }
+  outbound_interface = cfg.getParameter("outbound_interface");
 
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){

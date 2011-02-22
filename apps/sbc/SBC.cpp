@@ -616,6 +616,30 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       replaceParameters(call_profile.auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
   }
 
+  if (!call_profile.outbound_interface.empty()) {
+    call_profile.outbound_interface = 
+      replaceParameters(call_profile.outbound_interface, "outbound_interface",
+			REPLACE_VALS);
+
+    if (!call_profile.outbound_interface.empty()) {
+      if (call_profile.outbound_interface == "default")
+	outbound_interface = 0;
+      else {
+	map<string,unsigned short>::iterator name_it =
+	  AmConfig::If_names.find(call_profile.outbound_interface);
+	if (name_it != AmConfig::If_names.end()) {
+	  outbound_interface = name_it->second;
+	} else {
+	  ERROR("selected outbound_interface '%s' does not exist as an interface. "
+		"Please check the 'additional_interfaces' "
+		"parameter in the main configuration file.",
+		call_profile.outbound_interface.c_str());
+	  throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+	}
+      }
+    }
+  }
+
   // get timer
   if (call_profile.call_timer_enabled || call_profile.prepaid_enabled) {
     if (!timersSupported()) {
@@ -1017,8 +1041,8 @@ void SBCDialog::createCalleeSession()
     }
   }
 
-  if(call_profile.outbound_interface >= 0)
-    callee_dlg.outbound_interface = call_profile.outbound_interface;
+  if(outbound_interface >= 0)
+    callee_dlg.outbound_interface = outbound_interface;
 
   other_id = AmSession::getNewId();
   
