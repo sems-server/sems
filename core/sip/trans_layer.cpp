@@ -1313,7 +1313,10 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    // fall through trap
 
 	case TS_PROCEEDING:
-	    goto pass_reply;
+	    if(t->msg->u.request->method != sip_request::CANCEL)
+		goto pass_reply;
+	    else
+		goto end;
 
 	case TS_COMPLETED:
 	default:
