@@ -481,7 +481,8 @@ void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
 SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
     prepaid_acc(NULL),
-    call_profile(call_profile)
+    call_profile(call_profile),
+    outbound_interface(-1)
 {
   set_sip_relay_only(false);
   dlg.reliable_1xx = REL100_IGNORED;
