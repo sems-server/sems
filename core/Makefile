@@ -3,6 +3,7 @@ LIBNAME=sems.so
 
 PLUGIN_DIR=plug-in
 SIP_STACK_DIR=sip
+TOOLS_DIR=tools
 
 SRCS=$(filter-out $(NAME).cpp, $(wildcard *.cpp))
 HDRS=$(SRCS:.cpp=.h)
@@ -16,8 +17,8 @@ all: ../Makefile.defs
 	-@$(MAKE) sip_stack && \
 	  $(MAKE) deps    && \
 	  $(MAKE) $(NAME) && \
-	  $(MAKE) modules
-
+	  $(MAKE) modules && \
+	  $(MAKE) tools
 
 .PHONY: clean
 clean:
@@ -25,6 +26,7 @@ clean:
 	rm -f lib/*.so compat/getos compat/getarch
 	$(MAKE) -C $(SIP_STACK_DIR) clean
 	$(MAKE) -C $(PLUGIN_DIR) clean
+	$(MAKE) -C $(TOOLS_DIR) clean
 
 .PHONY: sip_stack
 sip_stack:
@@ -37,6 +39,12 @@ modules:
 	-@echo ""
 	-@echo "making core modules"
 	-@cd $(PLUGIN_DIR); $(MAKE) modules
+
+.PHONY: tools
+tools:
+	-@echo ""
+	-@echo "making tools"
+	-@cd $(TOOLS_DIR); $(MAKE) all
 
 .PHONY: test
 test:
@@ -75,6 +83,7 @@ install: all mk-install-dirs \
 	install-cfg \
 	install-bin \
 	install-modules \
+	install-tools
 
 
 
@@ -98,6 +107,9 @@ install-bin: $(DESTDIR)$(bin-prefix)/$(bin-dir)
 
 install-modules: $(PLUGIN_DIR) $(DESTDIR)$(modules-prefix)/$(modules-dir)
 	$(MAKE) -C $(PLUGIN_DIR) install
+
+install-tools: $(TOOLS_DIR)
+	$(MAKE) -C $(TOOLS_DIR) install
 
 install-modules-cfg: $(PLUGIN_DIR) 
 	$(MAKE) -C $(PLUGIN_DIR) install-cfg
