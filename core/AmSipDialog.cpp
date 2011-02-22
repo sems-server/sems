@@ -329,13 +329,18 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
   switch(status){
   case Disconnecting:
     if (trans_method == SIP_METH_INVITE) {
+      // ignore provisional reply in canceled INVITE
+      if (reply.code < 200)
+	break;
 
       if(reply.code == 487){
 	// CANCEL accepted
+	DBG("CANCEL accepted, status -> Disconnected\n");
 	status = Disconnected;
       }
       else {
 	// CANCEL rejected
+	DBG("CANCEL rejected/too late - bye()\n");
 	bye();
 	// if BYE could not be sent,
 	// there is nothing we can do anymore...
@@ -776,6 +781,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	    // to send the reply on behalf of the app.
 	    DBG("ignoring bye() in Pending state: "
 		"no UAC transaction to cancel.\n");
+	    status = Disconnected;
 	}
 	return 0;
     default:
