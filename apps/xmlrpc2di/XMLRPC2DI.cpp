@@ -153,7 +153,7 @@ int XMLRPC2DI::load() {
     export_di = true;
   } 
   
-  DBG("XMLRPC Server: %snabling builtin method 'di'.\n", export_di?"E":"Not e");
+  INFO("XMLRPC Server: %snabling builtin method 'di'.\n", export_di?"E":"Not e");
 
 
   server = new XMLRPC2DIServer(XMLRPCPort, bind_ip, export_di, direct_export, s);
@@ -345,15 +345,15 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
 
 
 {	
-  DBG("XMLRPC Server: enabled builtin method 'calls'\n");
-  DBG("XMLRPC Server: enabled builtin method 'get_loglevel'\n");
-  DBG("XMLRPC Server: enabled builtin method 'set_loglevel'\n");
-  DBG("XMLRPC Server: enabled builtin method 'get_shutdownmode'\n");
-  DBG("XMLRPC Server: enabled builtin method 'set_shutdownmode'\n");
-  DBG("XMLRPC Server: enabled builtin method 'get_callsavg'\n");
-  DBG("XMLRPC Server: enabled builtin method 'get_callsmax'\n");
-  DBG("XMLRPC Server: enabled builtin method 'get_cpsavg'\n");
-  DBG("XMLRPC Server: enabled builtin method 'get_cpsmax'\n");
+  INFO("XMLRPC Server: enabled builtin method 'calls'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_loglevel'\n");
+  INFO("XMLRPC Server: enabled builtin method 'set_loglevel'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_shutdownmode'\n");
+  INFO("XMLRPC Server: enabled builtin method 'set_shutdownmode'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_callsavg'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_callsmax'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_cpsavg'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_cpsmax'\n");
 
   // export all methods via 'di' function? 
   if (di_export) {
@@ -367,9 +367,9 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
     registerMethods(*it);
   }
 
-  DBG("Initialized XMLRPC2DIServer with: \n");
-  DBG("    IP = %s             port = %u\n", 
-      bind_ip.empty()?"ANY":bind_ip.c_str(), port);
+  INFO("Initialized XMLRPC2DIServer with: \n");
+  INFO("    IP = %s             port = %u\n", 
+       bind_ip.empty()?"ANY":bind_ip.c_str(), port);
 }
 
 /** register all methods on xmlrpc server listed by the iface 
@@ -406,14 +406,14 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
       }
       
       if (!has_method) {
-	DBG("XMLRPC Server: adding method '%s'\n",
-	    method.c_str());
+	INFO("XMLRPC Server: enabling method '%s'\n",
+	     method.c_str());
 	DIMethodProxy* mp = new DIMethodProxy(method, method, di_f);
 	s->addMethod(mp);
       }
       
-      DBG("XMLRPC Server: adding method '%s.%s'\n",
-	  iface.c_str(), method.c_str());
+      INFO("XMLRPC Server: enabling method '%s.%s'\n",
+	   iface.c_str(), method.c_str());
       DIMethodProxy* mp = new DIMethodProxy(iface + "." + method, 
 					    method, di_f);
       s->addMethod(mp);
