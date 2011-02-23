@@ -1,6 +1,6 @@
 all: make_tools
 
-COREPATH ?= ../
+COREPATH ?= ../core
 include $(COREPATH)/../Makefile.defs
 
 sems-tools = sems-logfile-callextract

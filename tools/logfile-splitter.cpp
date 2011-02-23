@@ -5,6 +5,11 @@ using namespace std;
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <limits.h>
+
 std::vector<string> explode(const string& s, const string& delim, 
 			    const bool keep_empty = false);
 
@@ -15,9 +20,27 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  if (argc<3) {
-    cout << "usage: " << argv[0] << " infile callid" << endl;
+  
+  if (argc<4) {
+    cerr << "usage: " << argv[0] << " <infile> <callid> <threadid_position>" << endl;
+ 
+    cerr << " where <infile> is the log file to process" << endl;
+    cerr << "       <callid> the Call-ID to extract" << endl;
+    cerr << "       <threadid_position> the column of the thread ID in the "
+      "log, starting with 0 (i.e. number of spaces before the thread ID)" << endl;
     exit(1);
+  }
+
+  int log_offset = -1;
+  char* endptr;
+  log_offset = strtol(argv[3], &endptr, 10); // offset of thread
+  if ((errno == ERANGE && (log_offset == LONG_MAX || log_offset == LONG_MIN))
+      || (errno != 0 && log_offset == 0) || endptr == argv[3] || log_offset<0) {
+    cerr << "invalid thread column ID " << argv[3] << endl;
+    exit(1);
+  }
+
+  if (log_offset<0) {
   }
 
   ifstream f;
@@ -29,6 +52,8 @@ int main(int argc, char *argv[])
     cerr << "error opening file " << fname << endl; 
     exit(1);
   }
+
+
 
   string app_thread;
   string ltag;
@@ -43,16 +68,15 @@ int main(int argc, char *argv[])
 
     vector<string> v = explode(s, " ");
     
-    unsigned log_offset = 5; // offset of thread
-    if (v.size() < log_offset+1)
+    if (v.size() < (unsigned)log_offset+1)
       continue;
 
     string t = v[log_offset + 0]; // thread
     string delim;
-    if (v.size() > log_offset + 4) 
+    if (v.size() > (unsigned)log_offset + 4) 
       delim = v[log_offset + 4]; // vv or ^^
     string ptype;
-    if (v.size() > log_offset + 5) 
+    if (v.size() > (unsigned)log_offset + 5) 
       ptype = v[log_offset + 5]; // M or S 
 
     // cout << "thread " << t << " delim " << delim << " ptype " << ptype << endl;
@@ -65,7 +89,7 @@ int main(int argc, char *argv[])
       } else if (ptype == "S") { // app processing
 #define GET_CALL_IDENT							\
 	string call_ident;						\
-	if (v.size() > log_offset + 6)					\
+	if (v.size() > (unsigned)log_offset + 6)					\
 	  call_ident = v[log_offset + 6];				\
 	call_ident = call_ident.substr(1, call_ident.length()-2);	\
 	vector<string> ci_parts = explode(call_ident, "|", true);	\
