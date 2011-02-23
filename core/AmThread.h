@@ -164,8 +164,8 @@ public:
     bool ret = false;
 
     gettimeofday(&now, NULL);
-    timeout.tv_sec = now.tv_sec;
-    timeout.tv_nsec = (now.tv_usec + usec) * 1000;
+    timeout.tv_sec = now.tv_sec + (usec / 1000000);
+    timeout.tv_nsec = (now.tv_usec + (usec % 1000000)) * 1000;
 
     pthread_mutex_lock(&m);
     while(!t && !retcode){
