@@ -76,27 +76,35 @@ void AmSessionFactory::configureSession(AmSession* sess) {
 
 void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
 {
-  if(req.method == "OPTIONS"){
-      
-      // Basic OPTIONS support
-    if (!AmConfig::OptionsSessionLimit || 
-	(AmSession::getSessionNum() < AmConfig::OptionsSessionLimit)) {
-      AmSipDialog::reply_error(req, 200, "OK");
-    } else {
+
+  if (req.method == "OPTIONS") {
+    // Basic OPTIONS support
+    if (AmConfig::OptionsSessionLimit &&
+	(AmSession::getSessionNum() >= AmConfig::OptionsSessionLimit)) {
       // return error code if near to overload
       AmSipDialog::reply_error(req,
 			       AmConfig::OptionsSessionLimitErrCode, 
 			       AmConfig::OptionsSessionLimitErrReason);
-    }
       return;
+    }
 
+    if (AmConfig::ShutdownMode) {
+      // return error code if in shutdown mode
+      AmSipDialog::reply_error(req,
+			       AmConfig::ShutdownModeErrCode,
+			       AmConfig::ShutdownModeErrReason);
+      return;
+    }
+
+    AmSipDialog::reply_error(req, 200, "OK");
+    return;
   }
 
-    ERROR("sorry, we don't support beginning a new session with "
+  ERROR("sorry, we don't support beginning a new session with "
 	  "a '%s' message\n", req.method.c_str());
     
-    AmSipDialog::reply_error(req,501,"Not Implemented");
-    return;
+  AmSipDialog::reply_error(req,501,"Not Implemented");
+  return;
 }
 
 // void AmSessionFactory::postEvent(AmEvent* ev) {

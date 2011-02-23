@@ -94,6 +94,10 @@ unsigned int AmConfig::OptionsSessionLimit            = 0;
 unsigned int AmConfig::OptionsSessionLimitErrCode     = 503;
 string       AmConfig::OptionsSessionLimitErrReason   = "Server overload";
 
+bool         AmConfig::ShutdownMode            = false;
+unsigned int AmConfig::ShutdownModeErrCode     = 503;
+string       AmConfig::ShutdownModeErrReason   = "Server shutting down";
+
 AmSipDialog::provisional_100rel AmConfig::rel100      = REL100_SUPPORTED;
 
 vector <string> AmConfig::CodecOrder;
@@ -484,6 +488,24 @@ int AmConfig::readConfiguration()
 	ERROR("invalid options_session_limit specified.\n");
       }
       OptionsSessionLimitErrReason = limit[2];
+    }
+  }
+
+  if(cfg.hasParameter("shutdown_mode_reply")){
+    string c_reply = cfg.getParameter("shutdown_mode_reply");    
+    size_t spos = c_reply.find(" ");
+    if (spos == string::npos || spos == c_reply.length()) {
+      ERROR("invalid shutdown_mode_reply specified, expected \"<code> <reason>\","
+	    "e.g. shutdown_mode_reply=\"503 Not At The Moment, Please\".\n");
+      ret = -1;
+
+    } else {
+      if (str2i(c_reply.substr(0, spos), ShutdownModeErrCode)) {
+	ERROR("invalid shutdown_mode_reply specified, expected \"<code> <reason>\","
+	      "e.g. shutdown_mode_reply=\"503 Not At The Moment, Please\".\n");
+	ret = -1;
+      }
+      ShutdownModeErrReason = c_reply.substr(spos+1);
     }
   }
 

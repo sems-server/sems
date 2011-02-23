@@ -292,8 +292,13 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       "which                              -  print available commands\n"
       "set_loglevel <loglevel>            -  set log level\n"
       "get_loglevel                       -  get log level\n"
-      "\n"
+      "set_shutdownmode <1 or 0>          -  turns on and off shutdown mode\n"
+      "get_shutdownmode                   -  returns the shutdown mode's current state\n"
+
       "DI <factory> <function> (<args>)*  -  invoke DI command\n"
+      "\n"
+      "When in shutdown mode, SEMS will answer with the configured 5xx errorcode to\n"
+      "new INVITE and OPTIONS requests.\n"
       ;
   }
   else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "set_") {
@@ -305,12 +310,42 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
 	reply= "loglevel set to "+int2str(log_level)+".\n";
     }
 
+    else if (cmd_str.substr(4, 12) == "shutdownmode") {
+      int tmp;
+      if(sscanf(&cmd_str.c_str()[17],"%u",&tmp) != 1)
+        reply= "invalid shutdownmode\n";
+      else
+	{
+	  if(tmp)
+	    {
+	      AmConfig::ShutdownMode = true;
+	      reply= "Shutdownmode activated!\n";
+	    }
+	  else
+	    {
+	      AmConfig::ShutdownMode = false;
+	      reply= "Shutdownmode deactivated!\n";
+	    }
+	}
+    }
+
     else 	reply = "Unknown command: '" + cmd_str + "'\n";
   }
   else if (cmd_str.length() > 4 && cmd_str.substr(0, 4) == "get_") {
     // setters 
     if (cmd_str.substr(4, 8) == "loglevel") {
       reply= "loglevel is "+int2str(log_level)+".\n";
+    }
+
+    else if (cmd_str.substr(4, 12) == "shutdownmode") {
+      if(AmConfig::ShutdownMode)
+	{
+	  reply= "Shutdownmode active!\n";
+	}
+      else
+	{
+	  reply= "Shutdownmode inactive!\n";
+	}
     }
 
     else 	reply = "Unknown command: '" + cmd_str + "'\n";

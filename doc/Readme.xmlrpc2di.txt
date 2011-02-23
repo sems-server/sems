@@ -2,8 +2,8 @@ xmlrpc2di: DI call via XMLRPC
 
 This module makes the Dynamic Invocation (DI) Interfaces exported 
 by component modules accessible from XMLRPC. Additionaly the builtin 
-methods calls, get_loglevel and set_loglevel are implemented (like in the 
-stats UDP server). 
+methods "calls", "get_loglevel"/"set_loglevel" and 
+"get_shutdownmode"/"set_shutdownmode" are implemented.
 
 Additionally, it can be used as client to access XMLRPC servers. Applications
 can use the DI function newConnection to add a new server entry, and sendRequest
@@ -11,20 +11,9 @@ to send a request. If sendRequest is executed, an active server is selected from
 the list and used to send the request. If sending the request failes, the server
 is put inactive for a (configurable) while, and only then retried.
 
-This module uses the XmlRpc++ library (http://xmlrpcpp.sourceforge.net/).
-In order to compile it, the xmlrpc library is needed; install it by 
-make install-xmlrpcpp, or by hand:
-cd apps/examples/xmlrpc2di 
-wget http://switch.dl.sourceforge.net/sourceforge/xmlrpcpp/xmlrpc++0.7.tar.gz 
-&& tar xzvf xmlrpc++0.7.tar.gz
-
-A small patch set needs to be applied as well:
-patch -p0 < xmlrpcpp07_sems.patch
-
-If xmlrpcpp is extracted to a different directory, the path in
-the Makefile needs to be adapted. If your xmlrpc++ installation has the
-SSL for xmlrpc client option, you may need to add -DHAVE_XMLRPCPP_SSL 
-to module_cflags due to some ambiguity in the header.
+This module uses the XmlRpc++ library (http://xmlrpcpp.sourceforge.net/), which
+is included, as it is currently not any more maintained by the major distributions.
+Some patches have been applied to that library (multi threading, SSL etc).
 
 The XMLRPC server can be configured to run as single threaded server (if
 one request is executed, the next ones have to wait), or a multi-threaded server 
@@ -38,6 +27,8 @@ Configuration parameters
 
   function         default    description
  +---------------------------------------
+  server_ip        ANY        if set, bind only to the specific interface
+
   xmlrpc_port      8090       port to bind XMLRPC server to
 
   export_di        yes        enable 'di' function (see below)

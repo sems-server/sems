@@ -228,15 +228,6 @@ stderr=no
 #   (same as -D)
 loglevel=2
 
-# optional parameter: max_shutdown_time=<time in seconds>
-#
-# Limit on server shutdown time (time to send/resend BYE
-# to active calls). 0 to disable (infinite).
-#
-# Default: 10
-#
-#max_shutdown_time = 10
-
 # optional parameter: syslog_facility={DAEMON|USER|LOCAL[0-7]}
 #
 # - sets the log facility that is used for syslog. Using this,
@@ -265,6 +256,22 @@ loglevel=2
 # generated for each event that is posted into an event queue.
 #
 # log_events=yes
+
+# optional parameter: max_shutdown_time=<time in seconds>
+#
+# Limit on server shutdown time (time to send/resend BYE
+# to active calls). 0 to disable (infinite).
+#
+# Default: 10
+#
+#max_shutdown_time = 10
+
+# optional parameter: shutdown_mode_reply="<code> <reason>"
+#
+# Error reply that is used as reply to INVITE and OPTION
+# when SEMS is shutting down.
+#
+# Default: shutdown_mode_reply="503 Server shutting down"
 
 
 ############################################################

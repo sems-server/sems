@@ -367,6 +367,15 @@ bool AmSessionContainer::postEvent(const string& local_tag,
 AmSession* AmSessionContainer::createSession(AmSipRequest& req, 
 					     AmArg* session_params)
 {
+  if (AmConfig::ShutdownMode) {
+    _run_cond.set(true); // so that thread stops
+    DBG("Shutdown mode. Not creating session.\n");
+
+    AmSipDialog::reply_error(req,AmConfig::ShutdownModeErrCode,
+			     AmConfig::ShutdownModeErrReason);
+    return NULL;
+  }
+
   if (AmConfig::SessionLimit &&
       AmConfig::SessionLimit <= AmSession::session_num) {
       

@@ -329,14 +329,21 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
     s(s),
     // register method 'calls'
     calls_method(s),
-    // register method 'get_loglevel'
-    setloglevel_method(s),
     // register method 'set_loglevel'
-    getloglevel_method(s)
+    setloglevel_method(s),
+    // register method 'get_loglevel'
+    getloglevel_method(s),
+    // register method 'set_shutdownmode'
+    setshutdownmode_method(s),
+    // register method 'get_shutdownmode'
+    getshutdownmode_method(s)
+
 {	
   DBG("XMLRPC Server: enabled builtin method 'calls'\n");
   DBG("XMLRPC Server: enabled builtin method 'get_loglevel'\n");
   DBG("XMLRPC Server: enabled builtin method 'set_loglevel'\n");
+  DBG("XMLRPC Server: enabled builtin method 'get_shutdownmode'\n");
+  DBG("XMLRPC Server: enabled builtin method 'set_shutdownmode'\n");
 
   // export all methods via 'di' function? 
   if (di_export) {
@@ -438,6 +445,18 @@ void XMLRPC2DIServerGetLoglevelMethod::execute(XmlRpcValue& params, XmlRpcValue&
 void XMLRPC2DIServerSetLoglevelMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
   log_level = params[0];
   DBG("XMLRPC2DI: set log level to %d.\n", (int)params[0]);
+  result = "200 OK";
+}
+
+
+void XMLRPC2DIServerGetShutdownmodeMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
+  DBG("XMLRPC2DI: get_shutdownmode returns %s\n", AmConfig::ShutdownMode?"true":"false");
+  result = (bool)AmConfig::ShutdownMode;
+}
+
+void XMLRPC2DIServerSetShutdownmodeMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
+  AmConfig::ShutdownMode = params[0];
+  DBG("XMLRPC2DI: set shutdownmode to %s.\n", AmConfig::ShutdownMode?"true":"false");
   result = "200 OK";
 }
 

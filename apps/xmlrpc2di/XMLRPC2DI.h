@@ -57,6 +57,9 @@ DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerCallsMethod,       "calls");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerSetLoglevelMethod, "set_loglevel");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetLoglevelMethod, "get_loglevel");
 
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerSetShutdownmodeMethod, "set_shutdownmode");
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetShutdownmodeMethod, "get_shutdownmode");
+
 class XMLRPC2DIServerDIMethod 
 :  public XmlRpcServerMethod { 
   
@@ -90,6 +93,8 @@ class XMLRPC2DIServer : public AmThread {
   XMLRPC2DIServerCallsMethod       calls_method;
   XMLRPC2DIServerSetLoglevelMethod setloglevel_method;
   XMLRPC2DIServerGetLoglevelMethod getloglevel_method;
+  XMLRPC2DIServerSetShutdownmodeMethod setshutdownmode_method;
+  XMLRPC2DIServerGetShutdownmodeMethod getshutdownmode_method;
   XMLRPC2DIServerDIMethod*         di_method;
   void registerMethods(const std::string& iface);
 
