@@ -182,7 +182,8 @@ void udp_trsp::run()
 	return;
     }
 
-    DBG("Started UDP server listening on %s:%i\n",sock->get_ip(),sock->get_port());
+    INFO("Started SIP server UDP transport on %s:%i\n",
+	 sock->get_ip(),sock->get_port());
 
     while(true){
 

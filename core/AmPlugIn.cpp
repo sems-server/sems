@@ -168,11 +168,12 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   int err=0;
   
   if (!plugins.length()) {
-    DBG("AmPlugIn: loading modules in directory '%s':\n", directory.c_str());
+    INFO("AmPlugIn: loading modules in directory '%s':\n", directory.c_str());
 
     DIR* dir = opendir(directory.c_str());
     if (!dir){
-      ERROR("while opening plug-in directory (%s): %s\n", directory.c_str(), strerror(errno));
+      ERROR("while opening plug-in directory (%s): %s\n",
+	    directory.c_str(), strerror(errno));
       return -1;
     }
     
@@ -209,7 +210,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
     closedir(dir);
   } 
   else {
-    DBG("AmPlugIn: loading modules '%s':\n", plugins.c_str());
+    INFO("AmPlugIn: loading modules: '%s'\n", plugins.c_str());
 
     vector<string> plugins_list = explode(plugins, ";");
     for (vector<string>::iterator it = plugins_list.begin(); 

@@ -179,9 +179,8 @@ int StatsUDPServer::init()
     //sa.sin_port = htons(udp_port);
 
     return -1;
-  }
-  else{
-    DBG("socket bound at port %i\n",udp_port);
+  } else {
+    INFO("stats server listening on %s:%i\n",udp_addr.c_str(), udp_port);
     //socket_bound = true;
   }
   //}
