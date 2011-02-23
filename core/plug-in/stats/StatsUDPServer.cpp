@@ -294,6 +294,10 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       "get_loglevel                       -  get log level\n"
       "set_shutdownmode <1 or 0>          -  turns on and off shutdown mode\n"
       "get_shutdownmode                   -  returns the shutdown mode's current state\n"
+      "get_callsavg                       -  get number of active calls (average since the last query)\n"
+      "get_callsmax                       -  get maximum of active calls since the last query\n"
+      "get_cpsavg                         -  get calls per second (average since the last query)\n"
+      "get_cpsmax                         -  get maximum of CPS since the last query\n"
 
       "DI <factory> <function> (<args>)*  -  invoke DI command\n"
       "\n"
@@ -336,6 +340,15 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
     if (cmd_str.substr(4, 8) == "loglevel") {
       reply= "loglevel is "+int2str(log_level)+".\n";
     }
+
+    else if(cmd_str.substr(4, 8) == "callsavg")
+      reply = "Average active calls: " + int2str(AmSession::getAvgSessionNum()) + "\n";
+    else if(cmd_str.substr(4, 8) == "callsmax")
+      reply = "Maximum active calls: " + int2str(AmSession::getMaxSessionNum()) + "\n";
+    else if(cmd_str.substr(4, 8) == "cpsavg")
+      reply = "Average calls per second: " + int2str(AmSession::getAvgCPS()) + "\n";
+    else if(cmd_str.substr(4, 8) == "cpsmax")
+      reply = "Maximum calls per second: " + int2str(AmSession::getMaxCPS()) + "\n";
 
     else if (cmd_str.substr(4, 12) == "shutdownmode") {
       if(AmConfig::ShutdownMode)

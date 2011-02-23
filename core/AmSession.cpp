@@ -52,7 +52,21 @@
 
 volatile unsigned int AmSession::session_num = 0;
 AmMutex AmSession::session_num_mut;
+volatile unsigned int AmSession::max_session_num = 0;
+volatile unsigned long long AmSession::avg_session_num = 0;
+volatile unsigned long AmSession::max_cps = 0;
+volatile unsigned long AmSession::max_cps_counter = 0;
+volatile unsigned long AmSession::avg_cps = 0;
 
+struct timeval get_now() {
+  struct timeval res;
+  gettimeofday(&res, NULL);
+  return res;
+}
+struct timeval avg_last_timestamp = get_now();
+struct timeval avg_first_timestamp = avg_last_timestamp;
+struct timeval cps_first_timestamp = avg_last_timestamp;
+struct timeval cps_max_timestamp = avg_last_timestamp;
 
 // AmSession methods
 
@@ -370,9 +384,7 @@ bool AmSession::startup() {
   }
 #endif
 
-  session_num_mut.lock();
-  session_num++;
-  session_num_mut.unlock();
+  session_started();
 
   try {
     try {
@@ -394,9 +406,7 @@ bool AmSession::startup() {
     onBeforeDestroy();
     destroy();
     
-    session_num_mut.lock();
-    session_num--;
-    session_num_mut.unlock();
+    session_stopped();
 
     return false;
   }
@@ -514,9 +524,7 @@ void AmSession::finalize() {
   onBeforeDestroy();
   destroy();
   
-  session_num_mut.lock();
-  session_num--;
-  session_num_mut.unlock();
+  session_stopped();
 
   DBG("session is stopped.\n");
 }
@@ -541,14 +549,12 @@ void AmSession::setStopped(bool wakeup) {
 					      new AmEvent(0));
 }
 
-void AmSession::destroy()
-{
+void AmSession::destroy() {
   DBG("AmSession::destroy()\n");
   AmSessionContainer::instance()->destroySession(this);
 }
 
-string AmSession::getNewId()
-{
+string AmSession::getNewId() {
   struct timeval t;
   gettimeofday(&t,NULL);
 
@@ -560,9 +566,57 @@ string AmSession::getNewId()
 
   return id;
 }
+/* bookkeeping functions - TODO: move to monitoring */
+void AmSession::session_started() {
+  struct timeval now, delta;
 
-unsigned int AmSession::getSessionNum()
-{
+  session_num_mut.lock();
+  //avg session number
+  gettimeofday(&now, NULL);
+  timersub(&now, &avg_last_timestamp, &delta);
+  avg_session_num += session_num * (delta.tv_sec * 1000000ULL + delta.tv_usec);
+  avg_last_timestamp = now;
+
+  //current session number
+  session_num++;
+
+  //maximum session number
+  if(session_num > max_session_num) max_session_num = session_num;
+
+  //cps average
+  ++avg_cps;
+
+  //cps maximum
+  ++max_cps_counter;
+  timersub(&now, &cps_max_timestamp, &delta);
+  unsigned long long d_usec = delta.tv_sec * 1000000ULL + delta.tv_usec;
+  if (delta.tv_sec > 0) {
+    //more than 1 sec has passed
+   unsigned long long secavg = ((max_cps_counter * 1000000ULL) + d_usec - 1) / d_usec;
+    if (max_cps < secavg) {
+      max_cps = secavg;
+    }
+    cps_max_timestamp = now;
+    max_cps_counter = 0;
+  }
+
+  session_num_mut.unlock();
+}
+
+void AmSession::session_stopped() {
+  struct timeval now, delta;
+  session_num_mut.lock();
+  //avg session number
+  gettimeofday(&now, NULL);
+  timersub(&now, &avg_last_timestamp, &delta);
+  avg_session_num += session_num * (delta.tv_sec * 1000000ULL + delta.tv_usec);
+  avg_last_timestamp = now;
+  //current session number
+  session_num--;
+  session_num_mut.unlock();
+}
+
+unsigned int AmSession::getSessionNum() {
   unsigned int res = 0;
   session_num_mut.lock();
   res = session_num;
@@ -570,6 +624,88 @@ unsigned int AmSession::getSessionNum()
   return res;
 }
 
+unsigned int AmSession::getMaxSessionNum() {
+  unsigned int res = 0;
+  session_num_mut.lock();
+  res = max_session_num;
+  max_session_num = session_num;
+  session_num_mut.unlock();
+  return res;
+}
+
+unsigned int AmSession::getAvgSessionNum() {
+  unsigned int res = 0;
+  struct timeval now, delta;
+  session_num_mut.lock();
+  gettimeofday(&now, NULL);
+  timersub(&now, &avg_last_timestamp, &delta);
+  avg_session_num += session_num * (delta.tv_sec * 1000000ULL + delta.tv_usec);
+  timersub(&now, &avg_first_timestamp, &delta);
+  unsigned long long d_usec = delta.tv_sec * 1000000ULL + delta.tv_usec;
+  if (!d_usec) {
+    res = 0;
+    WARN("zero delta!\n");
+  } else {
+    //Round up
+    res = (unsigned int)((avg_session_num + d_usec - 1) / d_usec);
+  }
+  avg_session_num = 0;
+  avg_last_timestamp = now;
+  avg_first_timestamp = now;
+  session_num_mut.unlock();
+  return res;
+}
+
+unsigned int AmSession::getMaxCPS()
+{
+  unsigned int res = 0;
+  struct timeval now, delta;
+  session_num_mut.lock();
+  gettimeofday(&now, NULL);
+  timersub(&now, &cps_max_timestamp, &delta);
+  unsigned long long d_usec = delta.tv_sec * 1000000ULL + delta.tv_usec;
+  if(delta.tv_sec > 0) {
+    //more than 1 sec has passed
+    //Round up
+    unsigned long long secavg = ((max_cps_counter * 1000000ULL) + d_usec - 1) / d_usec;
+    if (max_cps < secavg) {
+      max_cps = secavg;
+    }
+    cps_max_timestamp = now;
+    max_cps_counter = 0;
+  }
+
+  res = max_cps;
+  max_cps = 0;
+  session_num_mut.unlock();
+  return res;
+}
+
+unsigned int AmSession::getAvgCPS()
+{
+  unsigned int res = 0;
+  struct timeval now, delta;
+  unsigned long n_avg_cps;
+
+  session_num_mut.lock();
+  gettimeofday(&now, NULL);
+  timersub(&now, &cps_first_timestamp, &delta);
+  cps_first_timestamp = now;
+  n_avg_cps = avg_cps;
+  avg_cps = 0;
+  session_num_mut.unlock();
+
+  unsigned long long d_usec = delta.tv_sec * 1000000ULL + delta.tv_usec;
+  if(!d_usec) {
+    res = 0;
+    WARN("zero delta!\n");
+  } else {
+    //Round up
+    res  = (unsigned int)(((n_avg_cps * 1000000ULL) +  d_usec - 1) / d_usec);
+  }
+  
+  return res;
+}
 
 void AmSession::setInbandDetector(Dtmf::InbandDetectorType t)
 { 

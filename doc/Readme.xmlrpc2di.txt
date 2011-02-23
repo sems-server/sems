@@ -2,8 +2,9 @@ xmlrpc2di: DI call via XMLRPC
 
 This module makes the Dynamic Invocation (DI) Interfaces exported 
 by component modules accessible from XMLRPC. Additionaly the builtin 
-methods "calls", "get_loglevel"/"set_loglevel" and 
-"get_shutdownmode"/"set_shutdownmode" are implemented.
+methods "calls", "get_loglevel"/"set_loglevel",  
+"get_shutdownmode"/"set_shutdownmode", and access to the statistics counters
+(get_callsavg/get_callsmax/get_cpsmax/get_cpsavg) are implemented.
 
 Additionally, it can be used as client to access XMLRPC servers. Applications
 can use the DI function newConnection to add a new server entry, and sendRequest

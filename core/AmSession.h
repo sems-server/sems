@@ -138,7 +138,15 @@ private:
   AmCondition<bool> sess_stopped;
   AmCondition<bool> detached;
 
+  static void session_started();
+  static void session_stopped();
+
   static volatile unsigned int session_num;
+  static volatile unsigned int max_session_num;
+  static volatile unsigned long long avg_session_num;
+  static volatile unsigned long max_cps;
+  static volatile unsigned long max_cps_counter;
+  static volatile unsigned long avg_cps;
   static AmMutex session_num_mut;
 
   friend class AmMediaProcessor;
@@ -402,6 +410,22 @@ public:
    * Gets the number of running sessions
    */
   static unsigned int getSessionNum();
+  /**
+   * Gets the maximum of running sessions since last query
+   */
+  static unsigned int getMaxSessionNum();
+  /**
+   * Gets the average of running sessions since last query
+   */
+  static unsigned int getAvgSessionNum();
+  /**
+   * Gets the maximum of calls per second since last query
+   */
+  static unsigned int getMaxCPS();
+  /**
+   * Gets the timeaverage of calls per second since last query
+   */
+  static unsigned int getAvgCPS();
 
   /**
    * Entry point for DTMF events

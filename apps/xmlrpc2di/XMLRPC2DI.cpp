@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 iptego GmbH
+ * Copyright (C) 2010-2011 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -336,7 +337,12 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
     // register method 'set_shutdownmode'
     setshutdownmode_method(s),
     // register method 'get_shutdownmode'
-    getshutdownmode_method(s)
+    getshutdownmode_method(s),
+    getcallsavg_method(s),
+    getcallsmax_method(s),
+    getcpsavg_method(s),
+    getcpsmax_method(s)
+
 
 {	
   DBG("XMLRPC Server: enabled builtin method 'calls'\n");
@@ -344,6 +350,10 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
   DBG("XMLRPC Server: enabled builtin method 'set_loglevel'\n");
   DBG("XMLRPC Server: enabled builtin method 'get_shutdownmode'\n");
   DBG("XMLRPC Server: enabled builtin method 'set_shutdownmode'\n");
+  DBG("XMLRPC Server: enabled builtin method 'get_callsavg'\n");
+  DBG("XMLRPC Server: enabled builtin method 'get_callsmax'\n");
+  DBG("XMLRPC Server: enabled builtin method 'get_cpsavg'\n");
+  DBG("XMLRPC Server: enabled builtin method 'get_cpsmax'\n");
 
   // export all methods via 'di' function? 
   if (di_export) {
@@ -459,6 +469,19 @@ void XMLRPC2DIServerSetShutdownmodeMethod::execute(XmlRpcValue& params, XmlRpcVa
   DBG("XMLRPC2DI: set shutdownmode to %s.\n", AmConfig::ShutdownMode?"true":"false");
   result = "200 OK";
 }
+
+#define XMLMETH_EXEC(_meth, _sess_func, _descr)				\
+  void _meth::execute(XmlRpcValue& params, XmlRpcValue& result) {	\
+  unsigned int res = AmSession::_sess_func();				\
+  result = (int)res;							\
+  DBG("XMLRPC2DI: " _descr "(): %u\n", res);				\
+}
+
+XMLMETH_EXEC(XMLRPC2DIServerGetCallsavgMethod, getAvgSessionNum, "get_callsavg");
+XMLMETH_EXEC(XMLRPC2DIServerGetCallsmaxMethod, getMaxSessionNum, "get_callsmax");
+XMLMETH_EXEC(XMLRPC2DIServerGetCpsavgMethod,   getAvgCPS, "get_cpsavg");
+XMLMETH_EXEC(XMLRPC2DIServerGetCpsmaxMethod,   getMaxCPS, "get_cpsmax");
+#undef XMLMETH_EXEC
 
 void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
   try {

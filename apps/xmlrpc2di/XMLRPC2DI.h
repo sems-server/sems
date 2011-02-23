@@ -60,6 +60,12 @@ DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetLoglevelMethod, "get_loglevel");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerSetShutdownmodeMethod, "set_shutdownmode");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetShutdownmodeMethod, "get_shutdownmode");
 
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCallsavgMethod, "get_callsavg");
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCallsmaxMethod, "get_callsmax");
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCpsavgMethod,   "get_cpsavg");
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCpsmaxMethod,   "get_cpsmax");
+
+
 class XMLRPC2DIServerDIMethod 
 :  public XmlRpcServerMethod { 
   
@@ -95,6 +101,12 @@ class XMLRPC2DIServer : public AmThread {
   XMLRPC2DIServerGetLoglevelMethod getloglevel_method;
   XMLRPC2DIServerSetShutdownmodeMethod setshutdownmode_method;
   XMLRPC2DIServerGetShutdownmodeMethod getshutdownmode_method;
+
+  XMLRPC2DIServerGetCallsavgMethod  getcallsavg_method;
+  XMLRPC2DIServerGetCallsmaxMethod  getcallsmax_method;
+  XMLRPC2DIServerGetCpsavgMethod    getcpsavg_method;
+  XMLRPC2DIServerGetCpsmaxMethod    getcpsmax_method;
+
   XMLRPC2DIServerDIMethod*         di_method;
   void registerMethods(const std::string& iface);
 
