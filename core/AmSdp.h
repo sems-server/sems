@@ -33,6 +33,7 @@
 #include <vector>
 #include <netinet/in.h>
 #include "AmPlugIn.h"
+#include <memory>
 using std::string;
 
 
@@ -157,12 +158,12 @@ class AmSdp
 
   // Remote payload type for 
   // 'telephone-event'
-  const SdpPayload *telephone_event_pt;
+  std::auto_ptr<SdpPayload> telephone_event_pt;
 
   /**
-   * Find payload by name
+   * Find payload by name, return cloned object
    */
-  const SdpPayload *findPayload(const string& name);
+  SdpPayload *findPayload(const string& name);
 
 public:
   // parsed SDP definition
@@ -226,7 +227,7 @@ public:
    */
   bool hasTelephoneEvent();
 
-  const SdpPayload *telephoneEventPayload() const { return telephone_event_pt; }
+  SdpPayload *telephoneEventPayload() const;
 };
 
 #endif

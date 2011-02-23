@@ -162,9 +162,15 @@ int AmSdp::parse()
     }
   }
   
-  telephone_event_pt = findPayload("telephone-event");
+  telephone_event_pt.reset(findPayload("telephone-event"));
     
   return ret;
+}
+
+SdpPayload* AmSdp::telephoneEventPayload() const {
+  if (telephone_event_pt.get() == NULL)
+    return NULL;
+  return new SdpPayload(*telephone_event_pt.get());
 }
 
 void AmSdp::print(string& body) const
@@ -444,10 +450,10 @@ const vector<SdpPayload*>& AmSdp::getCompatiblePayloads(AmPayloadProviderInterfa
 	
 bool AmSdp::hasTelephoneEvent()
 {
-  return telephone_event_pt != NULL;
+  return telephone_event_pt.get() != NULL;
 }
 
-const SdpPayload *AmSdp::findPayload(const string& name)
+SdpPayload *AmSdp::findPayload(const string& name)
 {
   vector<SdpMedia>::iterator m_it;
 
