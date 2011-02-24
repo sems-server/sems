@@ -29,6 +29,7 @@
 #define _SampleArray_cc_
 
 #include "log.h"
+#include <string.h>
 
 // inline bool cmp_ts(unsigned int t1, unsigned int t2)
 // {
