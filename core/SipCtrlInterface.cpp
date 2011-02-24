@@ -39,6 +39,7 @@
 #include "sip/parse_cseq.h"
 #include "sip/parse_extensions.h"
 #include "sip/parse_100rel.h"
+#include "sip/parse_route.h"
 #include "sip/trans_table.h"
 #include "sip/sip_trans.h"
 #include "sip/wheeltimer.h"
@@ -695,18 +696,42 @@ void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
 
 void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
 {
-    if(!routes.empty()){
+    if(routes.empty())
+	return;
 	
-	list<sip_header*>::const_reverse_iterator it = routes.rbegin();
-
-	route_field = c2stlstr((*it)->value);
-	++it;
-
-	for(; it != routes.rend(); ++it) {
-		
-	    route_field += ", " + c2stlstr((*it)->value);
-	}
+    list<sip_header*>::const_reverse_iterator it_rh = routes.rbegin();
+    if(parse_route(*it_rh) < 0){
+	DBG("Could not parse route header [%.*s]\n",
+	    (*it_rh)->value.len,(*it_rh)->value.s);
+	return;
     }
+    sip_route* route = (sip_route*)(*it_rh)->p;
+
+    list<route_elmt*>::const_reverse_iterator it_re = route->elmts.rbegin();
+    route_field = c2stlstr((*it_re)->route);
+    
+    while(true) {
+	
+	if(++it_re == route->elmts.rend()){
+	    if(++it_rh == routes.rend()){
+		DBG("route_field = [%s]\n",route_field.c_str());
+		return;
+	    }
+
+	    if(parse_route(*it_rh) < 0){
+		DBG("Could not parse route header [%.*s]\n",
+		    (*it_rh)->value.len,(*it_rh)->value.s);
+		return;
+	    }
+	    route = (sip_route*)(*it_rh)->p;
+	    if(route->elmts.empty())
+		return;
+	    it_re = route->elmts.rbegin();
+	}
+	
+	route_field += ", " + c2stlstr((*it_re)->route);
+    }
+
 }
 
 void SipCtrlInterface::prepare_routes_uas(const list<sip_header*>& routes, string& route_field)

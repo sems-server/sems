@@ -586,91 +586,34 @@ static void prepare_strict_routing(sip_msg* msg, string& ext_uri_buffer)
     // no need for further processing
     if(!route_uri || is_loose_route(route_uri))
 	return;
-        
-    // place a cursor at the end of the 1st name-addr
-    cstring fr_na_addr = ((sip_route*)(fr->p))->elmts.front()->addr;
-    const char* c = fr_na_addr.s + fr_na_addr.len;
-    const char* end = fr->value.s + fr->value.len;
-    assert(c<=end);
 
-    // detect beginning of next route
-    enum {
-	RR_PARAMS=0,
-	RR_QUOTED,
-	RR_SEP_SWS,  // space(s) after ','
-	RR_NXT_ROUTE
-    };
+    sip_route* route = (sip_route*)fr->p;
+    sip_nameaddr* fr_na = route->elmts.front()->addr;
+    cstring fr_na_addr = fr_na->addr;
 
-    int st = RR_PARAMS;
-    for(;c<end;c++){
-		
-	switch(st){
-	case RR_PARAMS:
-	    switch(*c){
-	    case SP:
-	    case HTAB:
-	    case CR:
-	    case LF:
-		break;
-	    case COMMA:
-		st = RR_SEP_SWS;
-		break;
-	    case DQUOTE:
-		st = RR_QUOTED;
-		break;
-	    }
-	    break;
-	case RR_QUOTED:
-	    switch(*c){
-	    case BACKSLASH:
-		c++;
-		break;
-	    case DQUOTE:
-		st = RR_PARAMS;
-		break;
-	    }
-	    break;
-	case RR_SEP_SWS:
-	    switch(*c){
-	    case SP:
-	    case HTAB:
-	    case CR:
-	    case LF:
-		break;
-	    default:
-		st = RR_NXT_ROUTE;
-		goto nxt_route;
-	    }
-	    break;
-	}
-    }
-
- nxt_route:
-	    
-    switch(st){
-    case RR_QUOTED:
-    case RR_SEP_SWS:
-	DBG("Malformed first route header\n");
-    case RR_PARAMS:
+    if(route->elmts.size() == 1){
 	// remove current route header from message
-	msg->route.pop_front();
-	DBG("route_hdrs.length() = %i\n",(int)msg->route.size());
-	{
-	    list<sip_header*>::iterator h_it = 
-		std::find(msg->hdrs.begin(),msg->hdrs.end(),fr);
+ 	msg->route.pop_front();
 
-	    if(h_it != msg->hdrs.end()) 
-		msg->hdrs.erase(h_it);
-	}
-	DBG("delete (fr=0x%p)\n",fr);
-	delete fr;
-	break;
-		
-    case RR_NXT_ROUTE:
-	// remove current route from this header
-	fr->value.s   = c;
-	fr->value.len = end-c;
-	break;
+	list<sip_header*>::iterator h_it = 
+	    std::find(msg->hdrs.begin(),msg->hdrs.end(),fr);
+
+	if(h_it != msg->hdrs.end()) 
+	    msg->hdrs.erase(h_it);
+
+ 	delete fr;
+    }
+    else if(route->elmts.size() > 1) {
+	// remove first element from the list
+	delete route->elmts.front();
+	route->elmts.pop_front();
+
+	// fetch the next route element
+	route_elmt* nxt_re = route->elmts.front();
+
+ 	// adjust route header
+ 	fr->value.len = (fr->value.s + fr->value.len) - nxt_re->route.s;
+ 	fr->value.s   = nxt_re->route.s;
     }
 
     // copy r_uri at the end of the route set.

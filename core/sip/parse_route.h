@@ -34,9 +34,21 @@
 struct sip_nameaddr;
 struct sip_uri;
 
+struct route_elmt
+{
+  sip_nameaddr* addr;
+  cstring       route;
+
+  route_elmt()
+    : addr(NULL), route()
+  {}
+
+  ~route_elmt();
+};
+
 struct sip_route: public sip_parsed_hdr
 {
-  list<sip_nameaddr*> elmts;
+  list<route_elmt*> elmts;
 
   sip_route() 
     : sip_parsed_hdr(),
@@ -45,6 +57,8 @@ struct sip_route: public sip_parsed_hdr
 
   ~sip_route();
 };
+
+int parse_route(sip_header* rh);
 
 int parse_first_route_uri(sip_header* fr);
 sip_uri* get_first_route_uri(sip_header* fr);
