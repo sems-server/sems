@@ -153,15 +153,17 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  recvd_req.find(reply_ev->reply.cseq);
 
 	if (t_req != recvd_req.end()) {
-	  AmSipReply n_reply(reply_ev->reply);
-	  // relay Contact in 300 - 305 redirect messages
 	  if ((reply_ev->reply.code >= 300) && (reply_ev->reply.code <= 305) &&
 	      !reply_ev->reply.contact.empty()) {
+	    // relay with Contact in 300 - 305 redirect messages
+	    AmSipReply n_reply(reply_ev->reply);
 	    n_reply.hdrs+=SIP_HDR_COLSP(SIP_HDR_CONTACT) +
 	      reply_ev->reply.contact+ CRLF;
+	    relaySip(t_req->second,n_reply);
+	  } else {
+	    // relay response
+	    relaySip(t_req->second,reply_ev->reply);
 	  }
-
-	  relaySip(t_req->second,n_reply);
 		
 	  if(reply_ev->reply.code >= 200){
 
