@@ -1,6 +1,5 @@
 // quick hack to separate one call per callid from a logfile
 
-using namespace std;
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -9,6 +8,7 @@ using namespace std;
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
+using namespace std;
 
 std::vector<string> explode(const string& s, const string& delim, 
 			    const bool keep_empty = false);
