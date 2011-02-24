@@ -58,7 +58,7 @@ struct amci_payload_t;
 
 class AmAudio;
 class AmSession;
-class SdpPayload;
+struct SdpPayload;
 typedef std::map<unsigned int, AmRtpPacket*, ts_less> ReceiveBuffer;
 typedef std::queue<AmRtpPacket*>  RtpEventQueue;
 

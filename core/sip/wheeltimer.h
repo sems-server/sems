@@ -43,7 +43,7 @@
 // do not change
 #define WHEELS 4
 
-struct timer;
+class timer;
 typedef void (*timer_cb)(timer*,unsigned int /*data1*/,void* /*data2*/);
 
 class base_timer

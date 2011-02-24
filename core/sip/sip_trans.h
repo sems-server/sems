@@ -35,7 +35,7 @@
 #include <sys/socket.h>
 
 struct sip_msg;
-struct trsp_socket;
+class trsp_socket;
 
 /**
  * Transaction types

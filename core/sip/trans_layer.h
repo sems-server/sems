@@ -40,7 +40,7 @@ using std::vector;
 
 struct sip_msg;
 struct sip_uri;
-struct sip_trans;
+class sip_trans;
 struct sip_header;
 struct sockaddr_storage;
 
