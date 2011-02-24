@@ -1169,7 +1169,7 @@ static bool contains(char* s, char* next_line, char c)
   while((line != next_line-1) && (*line)){
     if(*line == c)
       return true;
-    *line++;
+    line++;
   }
   return false;
 }
