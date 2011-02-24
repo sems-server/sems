@@ -140,15 +140,18 @@ long iLBC_create(const char* format_parameters, amci_codec_fmt_info_t* format_de
     while (*msep!='=' && *msep!='\0') msep++;
     msep++; mbegin=msep;
     while (*msep!='=' && *msep!='\0') msep++;
-    if ((msep-mbegin)>8) { DBG("Error in fmtp line >>'%s<<.\n", format_parameters); mode=30; }
-    memcpy(modeb, mbegin, msep-mbegin);
-    modeb[msep-mbegin]='\0';
-    if ((!(mode=atoi(modeb))) || (mode != 30 && mode!= 20)) { 
+    if ((msep-mbegin)>8) {
       DBG("Error in fmtp line >>'%s<<.\n", format_parameters); 
-      mode=30; 
+      mode=30;
+    } else {
+      memcpy(modeb, mbegin, msep-mbegin);
+      modeb[msep-mbegin]='\0';
+      if ((!(mode=atoi(modeb))) || (mode != 30 && mode!= 20)) {
+	DBG("Error in fmtp line >>'%s<<.\n", format_parameters);
+	mode=30;
+      }
     }
   }
-
   format_description[0].id = AMCI_FMT_FRAME_LENGTH ;
   format_description[0].value = mode;
   format_description[1].id = AMCI_FMT_FRAME_SIZE;
