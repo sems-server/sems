@@ -59,7 +59,7 @@ struct Attachement
 
 typedef std::vector<Attachement> Attachements;
 
-class AmMail;
+struct AmMail;
 
 /**
  * Function pointer to be called after mail processing.

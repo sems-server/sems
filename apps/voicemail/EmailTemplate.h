@@ -32,7 +32,7 @@
 #include <string>
 using std::string;
 
-class AmMail;
+struct AmMail;
 
 typedef std::map<std::string,std::string> EmailTmplDict;
 
