@@ -398,11 +398,11 @@ char*  AAAConvertAVPToString(AAA_AVP *avp, char *dest, unsigned int destLen)
 
     switch(avp->type) {
     case AAA_AVP_STRING_TYPE:
-      l+=snprintf(dest+l,destLen-l,"String: <%.*s>",avp->data.len,
+      /*l+=*/snprintf(dest+l,destLen-l,"String: <%.*s>",avp->data.len,
 		  avp->data.s);
       break;
     case AAA_AVP_INTEGER32_TYPE:
-      l+=snprintf(dest+l,destLen-l,"Int32: <%u>(%x)",
+      /*l+=*/snprintf(dest+l,destLen-l,"Int32: <%u>(%x)",
 		  (unsigned int)htonl(*((unsigned int*)avp->data.s)),
 		  (unsigned int)htonl(*((unsigned int*)avp->data.s)));
       break;
@@ -411,7 +411,7 @@ char*  AAAConvertAVPToString(AAA_AVP *avp, char *dest, unsigned int destLen)
       switch (avp->data.len) {
       case 4: i=i*0;
       case 6: i=i*2;
-	l+=snprintf(dest+l,destLen-l,"Address IPv4: <%d.%d.%d.%d>",
+	/*l+=*/snprintf(dest+l,destLen-l,"Address IPv4: <%d.%d.%d.%d>",
 		    (unsigned char)avp->data.s[i+0],
 		    (unsigned char)avp->data.s[i+1],
 		    (unsigned char)avp->data.s[i+2],
@@ -419,7 +419,7 @@ char*  AAAConvertAVPToString(AAA_AVP *avp, char *dest, unsigned int destLen)
 	break;
       case 16: i=i*0;
       case 18: i=i*2;
-	l+=snprintf(dest+l,destLen-l,
+	/*l+=*/snprintf(dest+l,destLen-l,
 		    "Address IPv6: <%x.%x.%x.%x.%x.%x.%x.%x>",
 		    ((avp->data.s[i+0]<<8)+avp->data.s[i+1]),
 		    ((avp->data.s[i+2]<<8)+avp->data.s[i+3]),
