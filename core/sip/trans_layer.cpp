@@ -1116,8 +1116,7 @@ void _trans_layer::received_msg(sip_msg* msg)
 		    DBG("trans_layer::update_uas_trans() failed!\n");
 		    // Anyway, there is nothing we can do...
 		}
-		else if((err == TS_TERMINATED) ||
-			(err == TS_REMOVED)){
+		else {
 		
 		    // do not touch the transaction anymore:
 		    // it could have been deleted !!!
@@ -1129,7 +1128,8 @@ void _trans_layer::received_msg(sip_msg* msg)
 		    //  the UA. 
 		    assert(ua);
 		    DBG("Passing ACK to the UA.\n");
-		    ua->handle_sip_request(trans_ticket(t,bucket),msg);
+		    ua->handle_sip_request(trans_ticket(), // dummy
+					   msg);
 		    
 		    DROP_MSG;
 		}
@@ -1161,7 +1161,7 @@ void _trans_layer::received_msg(sip_msg* msg)
                      inv_h = hash(msg->callid->value, get_rack(msg)->cseq_str);
                      inv_bucket = get_trans_bucket(inv_h);
                      inv_bucket->lock();
-                     if((inv_t = inv_bucket->match_request(msg)) != NULL) {
+                     if((inv_t = inv_bucket->match_1xx_prack(msg)) != NULL) {
                          assert(msg->u.request->method != 
                              inv_t->msg->u.request->method);
                          err = update_uas_request(inv_bucket,inv_t,msg);
