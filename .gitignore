@@ -14,3 +14,8 @@ getarch
 getos
 sems
 sems-stats
+sems-logfile-callextract
+
+cscope.out
+cscope.files
+semantic.cache
