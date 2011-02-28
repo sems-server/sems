@@ -18,6 +18,7 @@ sbc
 src_ipmap
 sst_b2b.sbcprofile
 transparent.sbcprofile
+symmetricrtp.sbcprofile
 )
 
 INSTALL(PROGRAMS

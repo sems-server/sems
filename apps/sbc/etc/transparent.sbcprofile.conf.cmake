@@ -20,6 +20,16 @@
 #next_hop_port=5060
 # use next_hop for replies, too?
 #next_hop_for_replies=yes
+# outbound interface to use (interface ID)
+#outbound_interface=extern
+
+## RTP relay
+# enable RTP relaying (bridging):
+#enable_rtprelay=yes
+# force symmetric RTP (start with passive mode):
+#rtprelay_force_symmetric_rtp=yes
+# use symmetric RTP indication from P-MsgFlags flag 2
+#rtprelay_msgflags_symmetric_rtp=yes
 
 ## filters: 
 #header_filter=blacklist
