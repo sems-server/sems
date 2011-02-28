@@ -52,6 +52,12 @@
  *
  *   <ul><li> \ref ModuleDoc_conference </li></ul>
  * 
+ * \subsection webconferencingappdoc  Web controlled conference  rooms
+ * 
+ *  Using the webconference application, conference rooms can be controlled
+ *  from e.g. a web control page, or some other external mechanism: 
+ * 
+ *   <ul><li> \ref ModuleDoc_webconference </li></ul>
  * \subsection conferencingauthappdoc  Authentication for conference rooms (PIN entry) 
  *
  *  There are two possibilies how a PIN entry for conference rooms (or for
@@ -68,18 +74,14 @@
  *  application: 
  * <ul><li>  \ref ModuleDoc_pin_collect </li></ul>
  *
- * \subsection webconferencingappdoc  Web controlled conference  rooms
- * 
- *  Using the webconference application, conference rooms can be controlled
- *  from e.g. a web control page, or some other external mechanism: 
- * 
- *   <ul><li> \ref ModuleDoc_webconference </li></ul>
  *
  * 
  * \section Back-to-Back User Agent (B2BUA) and SBC applications
  *
    SEMS has a powerful and flexible B2BUA application, called 'sbc', which
-   implements flexible routing options, header, message and codec filter, optional RTP relay, SIP authentication, Session Timers, prepaid accounting and call timer etc.
+   implements flexible routing options, header, message and codec filter,
+   optional RTP relay, SIP authentication, Session Timers, prepaid accounting
+   and call timer etc.
 
     <ul><li> \ref ModuleDoc_sbc </li></ul>
 
@@ -132,15 +134,14 @@
  * xmlrpc2di (\ref ModuleDoc_xmlrpc2di) exposes DI interfaces as XMLRPC server.
  * This is very useful to connect SEMS with other software, that e.g. trigger click2dial
  * calls, create registrations at SIP registrar, do monitoring, etc.  
+ * 
+ * jsonrpc (\ref ModuleDoc_jsonrpc) exposes DI interfaces as json-rpcv2 server.
  *
  * callback application can save lots of mobile calls costs, it calls back caller 
  * and then the caller can enter a number to be connected to:
  *
  *  <ul><li> \ref ModuleDoc_callback </li></ul>
  *
- * auth_b2b application is identity change: A B2BUA where on the B leg the caller
- * identity and authentication is different. Can be used for example for authenting
- * to gateways.
  *
  * \section morecomponents Other components
  *
