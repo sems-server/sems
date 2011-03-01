@@ -43,6 +43,7 @@ using std::string;
 #include "AmUtils.h"
 #include "AmEventDispatcher.h"
 #include "JsonRPCEvents.h"
+#include "sip/resolver.h"
 
 void JsonrpcPeerConnection::notifyDisconnect() {
   // let event receivers know about broken connection
@@ -73,12 +74,26 @@ JsonrpcNetstringsConnection::JsonrpcNetstringsConnection(const std::string& id)
 JsonrpcNetstringsConnection::~JsonrpcNetstringsConnection() {
 }
 
-int JsonrpcNetstringsConnection::connect(const string& host, int port, string& res_str) {  
+int JsonrpcNetstringsConnection::connect(const string& host, int port,
+					 string& res_str) {
   struct sockaddr_in sa;
-  if (!populate_sockaddr_in_from_name(host, &sa)) {
-    res_str = "populate_sockaddr_in_from_name failed\n";
-    return 300;
+  {
+    sockaddr_storage _sa;
+    dns_handle       _dh;
+
+    if(resolver::instance()->resolve_name(host.c_str(),
+					&_dh,&_sa,IPv4) < 0) {
+      res_str = "resolving '"+host+"' failed\n";
+      return 300;
+    }
+
+    memcpy(&sa.sin_addr,&((sockaddr_in*)&_sa)->sin_addr,sizeof(in_addr));
   }
+
+  // if (!populate_sockaddr_in_from_name(host, &sa)) {
+  //   res_str = "populate_sockaddr_in_from_name failed\n";
+  //   return 300;
+  // }
 
   fd = socket(PF_INET, SOCK_STREAM, 0);
   sa.sin_port = htons(port);
