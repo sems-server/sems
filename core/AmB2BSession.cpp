@@ -387,6 +387,17 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
   return true;
 }
 
+void AmB2BSession::updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq) {
+  TransMap::iterator t = relayed_req.find(old_cseq);
+  if (t != relayed_req.end()) {
+    AmSipTransaction trans = t->second;
+    relayed_req.erase(t);
+    relayed_req[new_cseq] = trans;
+    DBG("updated relayed_req (UAC trans): CSeq %u -> %u\n", old_cseq, new_cseq);
+  }
+}
+
+
 void AmB2BSession::onSipReply(const AmSipReply& reply,
 			      int old_dlg_status,
 			      const string& trans_method)
@@ -437,6 +448,7 @@ void AmB2BSession::onInvite2xx(const AmSipReply& reply)
   TransMap::iterator it = relayed_req.find(reply.cseq);
   bool req_fwded = it != relayed_req.end();
   if(!req_fwded) {
+    DBG("req not fwded\n");
     AmSession::onInvite2xx(reply);
   } else {
     DBG("no 200 ACK now: waiting for the 200 ACK from the other side...\n");

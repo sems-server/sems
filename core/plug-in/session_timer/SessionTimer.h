@@ -40,11 +40,12 @@ class AmTimeoutEvent;
 #define ID_SESSION_INTERVAL_TIMER -1
 #define ID_SESSION_REFRESH_TIMER  -2
 
-/* Session Timer defaul configuration: */
+/* Session Timer default configuration: */
 #define DEFAULT_ENABLE_SESSION_TIMER 1
 #define SESSION_EXPIRES              120  // seconds
-#define MINIMUM_TIMER                90   //seconds
+#define MINIMUM_TIMER                90   // seconds
 
+#define MAXIMUM_TIMER                900   // seconds - 15 min
 
 /** \brief Factory of the session timer event handler */
 class SessionTimerFactory: public AmSessionEventHandlerFactory
@@ -71,7 +72,9 @@ class AmSessionTimerConfig
   unsigned int SessionExpires;
   /** Session Timer: Minimum Session-Expires */
   unsigned int MinimumTimer;
-    
+
+  unsigned int MaximumTimer;
+
 public:
   AmSessionTimerConfig();
   ~AmSessionTimerConfig();
@@ -90,15 +93,21 @@ public:
   bool getEnableSessionTimer() { return EnableSessionTimer; }
   unsigned int getSessionExpires() { return SessionExpires; }
   unsigned int getMinimumTimer() { return MinimumTimer; }
+  unsigned int getMaximumTimer() { return MaximumTimer; }
 
   int readFromConfig(AmConfigReader& cfg);
 };
+
+struct SIPRequestInfo;
 
 /** \brief SessionEventHandler for implementing session timer logic for a session */
 class SessionTimer: public AmSessionEventHandler
 {
   AmSessionTimerConfig session_timer_conf;
   AmSession* s;
+
+  // map to save sent requests, so we can resent in case of 422
+  std::map<unsigned int, SIPRequestInfo> sent_requests;
 
   enum SessionRefresher {
     refresh_local,
@@ -160,5 +169,23 @@ class SessionTimer: public AmSessionEventHandler
 			   int flags);
 };
 
+
+/** \brief contains necessary information for UAC auth of a SIP request */
+struct SIPRequestInfo {
+  string method;
+  string content_type;
+  string body;
+  string hdrs;
+
+  SIPRequestInfo(const string& method,
+		 const string& content_type,
+		 const string& body,
+		 const string& hdrs)
+    : method(method), content_type(content_type),
+       body(body), hdrs(hdrs) { }
+
+  SIPRequestInfo() {}
+
+};
 
 #endif

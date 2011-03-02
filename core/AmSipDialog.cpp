@@ -185,6 +185,7 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
 		      SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF,
 		      next_hop_for_replies ? next_hop_ip : "",
 		      next_hop_for_replies ? next_hop_port : 0);
+	return 0;
         break;
 
       default:

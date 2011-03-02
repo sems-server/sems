@@ -376,6 +376,11 @@ public:
   /** set the session on/off hold */
   virtual void setOnHold(bool hold);
 
+  /** update UAC trans state reference from old_cseq to new_cseq
+      e.g. if uac_auth or session_timer have resent a UAC request
+   */
+  virtual void updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq) { }
+
   /**
    * Destroy the session.
    * It causes the session to be erased from the active session list

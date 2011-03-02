@@ -80,6 +80,52 @@ bool SessionTimer::onSipRequest(const AmSipRequest& req)
 bool SessionTimer::onSipReply(const AmSipReply& reply, int old_dlg_status,
 			      const string& trans_method)
 {
+  if (session_timer_conf.getEnableSessionTimer() &&
+      (reply.code == 422) &&
+      ((trans_method == SIP_METH_INVITE) || (trans_method == SIP_METH_UPDATE))) {
+    std::map<unsigned int, SIPRequestInfo >::iterator ri =
+      sent_requests.find(reply.cseq);
+    if (ri != sent_requests.end()) {
+      SIPRequestInfo& orig_req = ri->second;
+
+      // get Min-SE
+      unsigned int i_minse;
+      string min_se_hdr = getHeader(reply.hdrs, SIP_HDR_MIN_SE, true);
+      if (!min_se_hdr.empty()) {
+	if (str2i(strip_header_params(min_se_hdr), i_minse)) {
+	  WARN("error while parsing " SIP_HDR_MIN_SE " header value '%s'\n",
+	       strip_header_params(min_se_hdr).c_str());
+	} else {
+
+	  if (i_minse <= session_timer_conf.getMaximumTimer()) {
+	    session_interval = i_minse;
+	    unsigned int new_cseq = s->dlg.cseq;
+	    // resend request with interval i_minse
+	    if (s->dlg.sendRequest(orig_req.method,orig_req.content_type,
+				    orig_req.body, orig_req.hdrs) == 0) {
+              DBG("request with new Session Interval %u successfully sent.\n", i_minse);
+	      // undo SIP dialog status change
+	      if (s->dlg.getStatus() != old_dlg_status)
+	        s->dlg.setStatus(old_dlg_status);
+
+	      s->updateUACTransCSeq(reply.cseq, new_cseq);
+	      // processed
+	      return true;
+            } else {
+              ERROR("failed to send request with new Session Interval.\n");
+            }
+	  } else {
+	    DBG("other side requests too high Min-SE: %u (our limit %u)\n",
+		i_minse, session_timer_conf.getMaximumTimer());
+	  }
+	}
+      }
+    } else {
+      WARN("request CSeq %u not found in sent requests; unable to retry after 422\n",
+	   reply.cseq);
+    }
+  }
+
   updateTimer(s,reply);
   return false;
 }
@@ -96,10 +142,22 @@ bool SessionTimer::onSendRequest(const string& method,
     return false;
   }
 
+  if (session_timer_conf.getEnableSessionTimer() &&
+      ((method == SIP_METH_INVITE) || (method == SIP_METH_UPDATE))) {
+    // save INVITE and UPDATE so we can resend on 422 reply
+    DBG("adding %d to list of sent requests.\n", cseq);
+    sent_requests[cseq] = SIPRequestInfo(method,
+					 content_type,
+					 body,
+					 hdrs);
+  }
+
   string m_hdrs = SIP_HDR_COLSP(SIP_HDR_SUPPORTED)  "timer"  CRLF;
   if  ((method != SIP_METH_INVITE) && (method != SIP_METH_UPDATE))
     goto end;
 
+  removeHeader(hdrs, SIP_HDR_SESSION_EXPIRES);
+  removeHeader(hdrs, SIP_HDR_MIN_SE);
   m_hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) + int2str(session_interval) +CRLF
     + SIP_HDR_COLSP(SIP_HDR_MIN_SE) + int2str(min_se) + CRLF;
 
@@ -372,10 +430,11 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
 AmSessionTimerConfig::AmSessionTimerConfig()
   : EnableSessionTimer(DEFAULT_ENABLE_SESSION_TIMER), 
     SessionExpires(SESSION_EXPIRES), 
-    MinimumTimer(MINIMUM_TIMER)
+    MinimumTimer(MINIMUM_TIMER),
+    MaximumTimer(MAXIMUM_TIMER)
 {
-
 }
+
 AmSessionTimerConfig::~AmSessionTimerConfig() 
 {
 }
@@ -405,6 +464,18 @@ int AmSessionTimerConfig::readFromConfig(AmConfigReader& cfg)
       return -1;
     }
   }
+
+  if (cfg.hasParameter("maximum_timer")){
+    int maximum_timer = 0;
+    if (!str2int(cfg.getParameter("maximum_timer"), maximum_timer) ||
+	maximum_timer<=0) {
+      ERROR("invalid value for maximum_timer '%s'\n",
+	    cfg.getParameter("maximum_timer").c_str());
+      return -1;
+    }
+    MaximumTimer = (unsigned int) maximum_timer;
+  }
+
   return 0;
 }
 
