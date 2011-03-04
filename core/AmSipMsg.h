@@ -94,6 +94,13 @@ bool findHeader(const string& hdrs,const string& hdr_name, const size_t skip,
 		size_t& hdr_start);
 
 bool removeHeader(string& hdrs, const string& hdr_name);
+
+/** add an option tag @param tag to list @param hdr_name */
+void addOptionTag(string& hdrs, const string& hdr_name, const string& tag);
+
+/** remove an option tag @param tag from list @param hdr_name */
+void removeOptionTag(string& hdrs, const string& hdr_name, const string& tag);
+
 #endif /* __AMSIPMSG_H__ */
 
 

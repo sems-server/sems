@@ -37,6 +37,7 @@
 
 #define SIP_HDR_COL(_hdr)       _hdr ":"
 #define SIP_HDR_COLSP(_hdr)     SIP_HDR_COL(_hdr) " "
+#define COLSP                   ": "
 
 #define CRLF                    "\r\n"
 #define SIP_HDR_LEN(_hdr)       (sizeof(_hdr) - /*0-term*/1)

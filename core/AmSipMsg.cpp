@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "AmUtils.h"
 #include "AmSipMsg.h"
-
+#include "AmSipHeaders.h"
 
 string getHeader(const string& hdrs,const string& hdr_name, bool single)
 {
@@ -124,6 +124,65 @@ bool removeHeader(string& hdrs, const string& hdr_name) {
 
   return found;
 }
+
+void addOptionTag(string& hdrs, const string& hdr_name, const string& tag) {
+  // see if option tag already exists
+  string options = getHeader(hdrs, hdr_name);
+  if (options.size()) {
+    std::vector<string> option_entries = explode(options, ",");
+    for (std::vector<string>::iterator it=option_entries.begin();
+	 it != option_entries.end(); it++) {
+      if (trim(*it," ") == tag)
+	// found - no need to add again
+	return;
+    }
+    // tag not found - add our tag to the (first) hdr_name header
+    size_t pos1; size_t pos2; size_t hdr_start;
+    if (!findHeader(hdrs, hdr_name, 0, pos1, pos2, hdr_start)) {
+      ERROR("internal error: header '%s' disappeared in-between (hdrs = '%s'!\n",
+	    hdr_name.c_str(), hdrs.c_str());
+      hdrs += hdr_name + COLSP + tag + CRLF;
+      return;
+    }
+
+    hdrs.insert(pos1, tag+", ");
+
+  } else {
+    // hdr does not exist - add it
+    hdrs += hdr_name + COLSP + tag + CRLF;
+  }
+}
+
+void removeOptionTag(string& hdrs, const string& hdr_name, const string& tag) {
+  string options = getHeader(hdrs, hdr_name);
+
+  // does hdr hdr_name exist?
+  if (options.empty())
+    return;
+
+  // todo: optimize by doing inplace
+  std::vector<string> options_v = explode(options, ",");
+  string o_hdr;
+  bool found = false;
+  for (std::vector<string>::iterator it=options_v.begin();
+       it != options_v.end(); it++) {
+    if (trim(*it, " ")==tag) {
+      found = true;
+      continue;
+    }
+    if (it != options_v.begin())
+      o_hdr = ", ";
+    o_hdr+=*it;
+  }
+  if (!found)
+    return;
+
+  removeHeader(hdrs, hdr_name);
+  if (o_hdr.empty())
+    return;
+  hdrs += hdr_name + COLSP + o_hdr + CRLF;
+}
+
 
 /* Print Member */
 #define _PM(member, name)			\
