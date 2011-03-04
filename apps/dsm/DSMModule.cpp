@@ -44,14 +44,6 @@ SCStrArgAction::SCStrArgAction(const string& m_arg) {
     arg = trim(arg, "'");
 }
 
-string trim(string const& str,char const* sepSet)
-{
-  string::size_type const first = str.find_first_not_of(sepSet);
-  return ( first==string::npos )
-    ? std::string()  : 
-    str.substr(first, str.find_last_not_of(sepSet)-first+1);
-}
-
 bool isNumber(const std::string& s) {
   if (s.empty())
     return false;

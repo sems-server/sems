@@ -242,6 +242,14 @@ unsigned int get_random();
 /** Explode string by a separator to a vector */
 std::vector<string> explode(const string& s, const string& delim, const bool keep_empty = false);
 
+/** remove chars in sepSet from beginning and end of str */
+inline std::string trim(std::string const& str,char const* sepSet)
+{
+  std::string::size_type const first = str.find_first_not_of(sepSet);
+  return ( first==std::string::npos ) ?
+    std::string() : str.substr(first, str.find_last_not_of(sepSet)-first+1);
+}
+
 /** add a directory to an environement variable */
 void add_env_path(const char* name, const string& path);
 

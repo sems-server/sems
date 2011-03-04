@@ -81,9 +81,6 @@ typedef void* (*SCFactoryCreate)();
 #define SC_EXPORT(class_name)			\
   EXPORT_SC_FACTORY(SC_FACTORY_EXPORT,class_name)
 
-
-string trim(string const& str,char const* sepSet);
-
 class SCStrArgAction   
 : public DSMAction {
  protected:
