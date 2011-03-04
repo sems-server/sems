@@ -204,7 +204,6 @@ long speexNB_create(const char* format_parameters, amci_codec_fmt_info_t* format
 	int mode;
 	if (strcmp(param_value, "any")) {
 	  mode = strtol(param_value, &error, 10);
-	  DBG("get SDP mode param=%s\n", param_value);
 	  if (error!=NULL && error!=param_value && mode>=0 && mode<=8)
 	    ss->mode = mode;
 	}
