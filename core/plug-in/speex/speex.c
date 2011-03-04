@@ -133,7 +133,7 @@ static char* read_param(char* input, const char *param, char** param_value)
   int param_size;
 
   /* Eat spaces and semi-colons */
-  while (*input==' ' && *input==';' && *input!='"')
+  while (*input && *input==' ' && *input==';' && *input!='"')
     input++;
 
   *param_value = NULL;
@@ -148,7 +148,15 @@ static char* read_param(char* input, const char *param, char** param_value)
   *param_value = input;
   while (*input && *input!=' ' && *input!=';' && *input!='"')
     input++;
-
+  if (*input=='"')
+    {
+      *param_value = *param_value+1; /* remove " */
+      /* string will end after next: " */
+      while (*input && *input!='"' && *input!='\r' && *input!='\n')
+	input++;
+      if (*input=='"')
+	input--; /* remove " */
+    }
   if (*input)
     *input++ = 0;
     
@@ -187,7 +195,7 @@ long speexNB_create(const char* format_parameters, amci_codec_fmt_info_t* format
     strcpy(buffer, format_parameters);
 	
     while (*buffer) {
-      char* error;
+      char *error=NULL;
       char *param_value;
 	    
       /* Speex encoding mode (assume NB) */
@@ -196,7 +204,8 @@ long speexNB_create(const char* format_parameters, amci_codec_fmt_info_t* format
 	int mode;
 	if (strcmp(param_value, "any")) {
 	  mode = strtol(param_value, &error, 10);
-	  if (!*error && mode>=0 && mode<=8)
+	  DBG("get SDP mode param=%s\n", param_value);
+	  if (error!=NULL && error!=param_value && mode>=0 && mode<=8)
 	    ss->mode = mode;
 	}
 	continue;
