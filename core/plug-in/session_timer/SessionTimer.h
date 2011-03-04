@@ -33,6 +33,8 @@
 
 #define MOD_NAME "session_timer"
 
+#define TIMER_OPTION_TAG  "timer"
+
 /* Session Timer: -ssa */
 class AmTimeoutEvent;
 // these are the timer IDs for session timer
