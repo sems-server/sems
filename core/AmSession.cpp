@@ -1216,16 +1216,23 @@ void AmSession::onFailure(AmSipDialogEventHandler::FailureCause cause,
     const AmSipRequest *req, const AmSipReply *rpl)
 {
   switch (cause) {
-    case FAIL_REL100:
+    case FAIL_REL100_421:
+    case FAIL_REL100_420:
       if (rpl) {
         dlg.cancel();
         if (dlg.getStatus() < AmSipDialog::Connected)
           setStopped();
       } else if (req) {
-          dlg.reply(*req, 421, "Extension Required", "", "",
+        if (cause == FAIL_REL100_421) {
+          dlg.reply(*req, 421, SIP_REPLY_EXTENSION_REQUIRED, "", "",
               SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF);
-          if (dlg.getStatus() < AmSipDialog::Connected)
-            setStopped();
+        } else {
+          dlg.reply(*req, 420, SIP_REPLY_BAD_EXTENSION, "", "",
+              SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
+        }
+        /* finally, stop session if running */
+        if (dlg.getStatus() < AmSipDialog::Connected)
+          setStopped();
       }
       break;
     default:

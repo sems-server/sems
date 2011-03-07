@@ -110,8 +110,10 @@ class AmSipDialogEventHandler
   virtual void onPrack2xx(const AmSipReply &)=0;
 
   enum FailureCause {
-    FAIL_REL100,
-#define FAIL_REL100  AmSipDialogEventHandler::FAIL_REL100
+    FAIL_REL100_421,
+#define FAIL_REL100_421  AmSipDialogEventHandler::FAIL_REL100_421
+    FAIL_REL100_420,
+#define FAIL_REL100_420  AmSipDialogEventHandler::FAIL_REL100_420
   };
   virtual void onFailure(FailureCause cause, const AmSipRequest*, 
       const AmSipReply*)=0;

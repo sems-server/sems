@@ -52,4 +52,5 @@
 
 #define SIP_REPLY_SERVER_INTERNAL_ERROR "Server Internal Error"
 #define SIP_REPLY_BAD_EXTENSION         "Bad Extension"
+#define SIP_REPLY_EXTENSION_REQUIRED    "Extension Required"
 #endif /* __AMSIPHEADERS_H__ */

@@ -173,19 +173,17 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
               SIP_EXT_100REL))) {
           ERROR("'" SIP_EXT_100REL "' extension required, but not advertised"
             " by peer.\n");
-          if (hdl) hdl->onFailure(FAIL_REL100, &req, 0);
+          if (hdl) hdl->onFailure(FAIL_REL100_421, &req, 0);
           return 0; // has been replied
         }
         break; // 100rel required
 
       case REL100_DISABLED:
         // TODO: shouldn't this be part of a more general check in SEMS?
-        if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL))
-          reply_error(req, 420, SIP_REPLY_BAD_EXTENSION, 
-		      SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF,
-		      next_hop_for_replies ? next_hop_ip : "",
-		      next_hop_for_replies ? next_hop_port : 0);
-	return 0;
+        if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL)) {
+          if (hdl) hdl->onFailure(FAIL_REL100_420, &req, 0);
+          return 0; // has been replied
+        }
         break;
 
       default:
@@ -416,7 +414,7 @@ int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
           !reply.rseq) {
         ERROR(SIP_EXT_100REL " not supported or no positive RSeq value in "
             "(reliable) 1xx.\n");
-        if (hdl) hdl->onFailure(FAIL_REL100, 0, &reply);
+        if (hdl) hdl->onFailure(FAIL_REL100_421, 0, &reply);
       } else {
         DBG(SIP_EXT_100REL " now active.\n");
         if (hdl) hdl->onInvite1xxRel(reply);
@@ -436,7 +434,7 @@ int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
   } else if (reliable_1xx && reply.method==SIP_METH_PRACK) {
     if (300 <= reply.code) {
       // if PRACK fails, tear down session
-      if (hdl) hdl->onFailure(FAIL_REL100, 0, &reply);
+      if (hdl) hdl->onFailure(FAIL_REL100_421, 0, &reply);
     } else if (200 <= reply.code) {
       if (hdl) hdl->onPrack2xx(reply);
     } else {
