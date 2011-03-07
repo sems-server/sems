@@ -170,7 +170,7 @@ class AmB2BSession: public AmSession
   void relaySip(const AmSipRequest& orig, const AmSipReply& reply);
 
   /** Terminate our leg and forget the other. */
-  void terminateLeg();
+  virtual void terminateLeg();
 
   /** Terminate the other leg and forget it.*/
   virtual void terminateOtherLeg();
