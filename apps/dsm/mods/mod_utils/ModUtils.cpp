@@ -262,7 +262,7 @@ EXEC_ACTION_START(SCUPlayRingToneAction) {
     if (p.empty())
       continue;
     if (!str2int(p, rtparams[it-r_params.begin()])) {
-      WARN("could not decipher ringtone parameter %u: '%s', using default\n",
+      WARN("could not decipher ringtone parameter %zd: '%s', using default\n",
 	   it-r_params.begin(), p.c_str());
       continue;
     }
