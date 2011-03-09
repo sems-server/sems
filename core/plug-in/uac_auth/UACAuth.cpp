@@ -146,7 +146,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
 	  DBG("Authorization failed!\n");
 	} else {
 	  string auth_hdr = (reply.code==407) ? 
-      getHeader(reply.hdrs, SIP_HDR_PROXY_AUTHENTICATE, true) : 
+	    getHeader(reply.hdrs, SIP_HDR_PROXY_AUTHENTICATE, true) : 
 	    getHeader(reply.hdrs, SIP_HDR_WWW_AUTHENTICATE, true);
 	  string result; 
 			
@@ -156,11 +156,15 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
 	  if (do_auth(reply.code, auth_hdr,  
 		      ri->second.method,
 		      auth_uri, result)) {
-	    string hdrs = ri->second.hdrs; 
-	    // TODO: strip headers 
+	    string hdrs = ri->second.hdrs;
+	    // TODO(?): strip headers 
 	    // ((code==401) ? stripHeader(ri->second.hdrs, "Authorization")  :
 	    //	 		    stripHeader(ri->second.hdrs, "Proxy-Authorization"));
-	    hdrs += result;
+
+	    if (hdrs == "\r\n" || hdrs == "\r" || hdrs == "\n")
+	      hdrs = result;
+	    else
+	      hdrs += result;
 
 	    if (dlg->getStatus() < AmSipDialog::Connected && 
 		ri->second.method != SIP_METH_BYE) {
