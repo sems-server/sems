@@ -983,7 +983,7 @@ int _trans_layer::cancel(trans_ticket* tt)
 
     // Allocate new message
     sip_msg* p_msg = new sip_msg();
-    p_msg->buf = new char[request_len];
+    p_msg->buf = new char[request_len+1];
     p_msg->len = request_len;
 
     // generate it
@@ -1001,6 +1001,7 @@ int _trans_layer::cancel(trans_ticket* tt)
 
     *c++ = CR;
     *c++ = LF;
+    *c   = '\0';
 
     // and parse it
     char* err_msg=0;
