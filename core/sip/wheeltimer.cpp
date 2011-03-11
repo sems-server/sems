@@ -54,17 +54,17 @@ _wheeltimer::~_wheeltimer()
 void _wheeltimer::insert_timer(timer* t)
 {
     //add new timer to user request list
-    utimer_add_m.lock();
-    utimer_add.push_back(t);
-    utimer_add_m.unlock();
+    reqs_m.lock();
+    reqs_backlog.push_back(timer_req(t,true));
+    reqs_m.unlock();
 }
 
 void _wheeltimer::remove_timer(timer* t)
 {
     //add timer to remove to user request list
-    utimer_rem_m.lock();
-    utimer_rem.push_back(t);
-    utimer_rem_m.unlock();
+    reqs_m.lock();
+    reqs_backlog.push_back(timer_req(t,false));
+    reqs_m.unlock();
 }
 
 void _wheeltimer::run()
@@ -144,28 +144,21 @@ void _wheeltimer::turn_wheel()
     // Update existing timer entries
     update_wheel(i);
 	
-    // Check for timer insertion requests
-    utimer_add_m.lock();
-    std::vector<timer*> utimer_add_cp = utimer_add;
-    utimer_add.clear();
-    utimer_add_m.unlock();
+    // Swap the lists for timer insertion/deletion requests
+    reqs_m.lock();
+    reqs_process.swap(reqs_backlog);
+    reqs_m.unlock();
 
-    for (std::vector<timer*>::iterator it=
-	     utimer_add_cp.begin(); it != 
-	     utimer_add_cp.end(); it++) {
-	place_timer(*it);
-    }
-	
-    // Check for timer deletion requests
-    utimer_rem_m.lock();
-    std::vector<timer*> utimer_rem_cp = utimer_rem;
-    utimer_rem.clear();
-    utimer_rem_m.unlock();
+    while(!reqs_process.empty()) {
+	timer_req rq = reqs_process.front();
+	reqs_process.pop_front();
 
-    for (std::vector<timer*>::iterator it=
-	     utimer_rem_cp.begin(); it != 
-	     utimer_rem_cp.end(); it++) {
-	delete_timer(*it);
+	if(rq.insert) {
+	    place_timer(rq.t);
+	}
+	else {
+	    delete_timer(rq.t);
+	}
     }
 	
     //check for expired timer to process

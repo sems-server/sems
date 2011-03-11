@@ -32,7 +32,7 @@
 
 #include "../AmThread.h"
 
-#include <queue>
+#include <deque>
 
 #define BITS_PER_WHEEL 8
 #define ELMTS_PER_WHEEL (1 << BITS_PER_WHEEL)
@@ -88,23 +88,23 @@ public:
 class _wheeltimer:
     public AmThread
 {
+    struct timer_req {
+
+	timer* t;
+	bool   insert; // false -> remove
+	
+	timer_req(timer* t, bool insert)
+	    : t(t), insert(insert)
+	{}
+    };
+
     //the timer wheel
     base_timer wheels[WHEELS][ELMTS_PER_WHEEL];
 
-    // utimer remove lock
-    AmMutex    utimer_add_m;
-
-    //list with timer insertions requests
-    std::vector<timer*> utimer_add;
-
-    // utimer remove lock
-    AmMutex    utimer_rem_m;
-
-    //list with timer deletions requests
-    std::vector<timer*> utimer_rem;
-
-    //list with expired timers
-    base_timer utimer_expired;
+    // request backlog lock (insert/remove)
+    AmMutex               reqs_m;
+    std::deque<timer_req> reqs_backlog;
+    std::deque<timer_req> reqs_process;
 
     void turn_wheel();
     void update_wheel(int wheel);
