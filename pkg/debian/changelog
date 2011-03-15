@@ -1,3 +1,9 @@
+sems (1.4.0) maverick; urgency=low
+
+  * SEMS 1.4.0 release
+
+ -- Stefan Sayer <stefan@bansa>  Tue, 15 Mar 2011 11:13:05 +0100
+
 sems (1.3.0) unstable; urgency=low
 
    * 100rel (PRACK) support
