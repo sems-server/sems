@@ -50,7 +50,7 @@ CPPFLAGS += -D_DEBUG \
 #      if compiled without thread pool support, every
 #      session will have its own thread.
 #
-#USE_THREADPOOL = yes
+USE_THREADPOOL = yes
 
 # compile with spandsp DTMF detection? see soft-switch.org
 #   this needs a fairly new version of spandsp - tested with 0.0.4pre11
