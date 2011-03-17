@@ -7,13 +7,21 @@ INCLUDE_DIRECTORIES (../..)
 # issue then this name is equals to external library, our module links to.
 # E.g. the issue, then speex module should be linked to -lspeex
 
-ADD_LIBRARY(sems_dsm_${sems_dsm_module_name} SHARED ${${sems_dsm_module_name}_SRCS})
+ADD_LIBRARY(sems_dsm_${sems_dsm_module_name} MODULE ${${sems_dsm_module_name}_SRCS})
+
+IF(APPLE)
+	SET(CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS
+		"${CMAKE_SHARED_MODULE_CREATE_CXX_FLAGS} -flat_namespace -undefined suppress")
+	SET(CMAKE_SHARED_MODULE_CREATE_C_FLAGS
+		"${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -flat_namespace -undefined suppress")
+ENDIF(APPLE)
 
 # all modules should be linked against ${CMAKE_DL_LIBS} at least
 # and with additional ${sems_dsm_module_libs} if they exists
 TARGET_LINK_LIBRARIES(sems_dsm_${sems_dsm_module_name} ${CMAKE_DL_LIBS} ${sems_dsm_module_libs})
 
 SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES OUTPUT_NAME ${sems_dsm_module_name})
+SET_TARGET_PROPERTIES(sems_dsm_${sems_dsm_module_name} PROPERTIES PREFIX "")
 
 INSTALL(
 	TARGETS sems_dsm_${sems_dsm_module_name}
