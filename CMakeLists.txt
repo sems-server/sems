@@ -3,6 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 IF(COMMAND cmake_policy)
 	# Don't do automatic escaping of variables
 	CMAKE_POLICY(SET CMP0005 OLD)
+	CMAKE_POLICY(SET CMP0003 NEW)
 ENDIF(COMMAND cmake_policy)
 
 
