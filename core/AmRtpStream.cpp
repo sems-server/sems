@@ -724,12 +724,15 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
   return 1;
 }
 
+#include "rtp/rtp.h"
+
 void AmRtpStream::relay(AmRtpPacket* p) {
   if (!l_port) // not yet initialized
     return;
 
-  p->sequence = sequence++;
-  p->ssrc = l_ssrc;
+  rtp_hdr_t* hdr = (rtp_hdr_t*)p->getBuffer();
+  hdr->seq = htons(sequence++);
+  hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
 
   if(p->send(l_sd) < 0){
