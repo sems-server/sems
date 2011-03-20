@@ -844,16 +844,12 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     catch(const string& s) {
       ERROR("%s\n",s.c_str());
       setStopped();
-      AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "",
-			       dlg.next_hop_for_replies ? dlg.next_hop_ip : "",
-			       dlg.next_hop_for_replies ? dlg.next_hop_port : 0);
+      dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
     catch(const AmSession::Exception& e) {
       ERROR("%i %s\n",e.code,e.reason.c_str());
       setStopped();
-      AmSipDialog::reply_error(req,e.code, e.reason, e.hdrs,
-			       dlg.next_hop_for_replies ? dlg.next_hop_ip : "",
-			       dlg.next_hop_for_replies ? dlg.next_hop_port : 0);
+      dlg.reply(req,e.code, e.reason, e.hdrs);
     }
 
     if(detached.get() && !getStopped()){
