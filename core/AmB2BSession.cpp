@@ -785,7 +785,7 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
   for (unsigned int i=0; i<relay_rtp_streams_cnt; i++) {
     other_session->relay_rtp_streams[i]->setRelayStream(relay_rtp_streams[i]);
     other_stream_fds[i] = other_session->relay_rtp_streams[i]->getLocalSocket();
-    relay_rtp_streams[i]->setLocalIP(advertisedIP());
+    relay_rtp_streams[i]->setLocalIP(localRTPIP());
     relay_rtp_streams[i]->enableRtpRelay();
   }
 }
