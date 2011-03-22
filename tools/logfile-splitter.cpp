@@ -31,10 +31,10 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  int log_offset = -1;
+  long int log_offset = -1;
   char* endptr;
-  log_offset = strtol(argv[3], &endptr, 10); // offset of thread
-  if ((errno == ERANGE && (log_offset == LONG_MAX || log_offset == LONG_MIN))
+  log_offset = strtoll(argv[3], &endptr, 10); // offset of thread
+  if ((errno == ERANGE && (log_offset == LLONG_MAX || log_offset == LLONG_MIN))
       || (errno != 0 && log_offset == 0) || endptr == argv[3] || log_offset<0) {
     cerr << "invalid thread column ID " << argv[3] << endl;
     exit(1);
