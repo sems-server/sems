@@ -312,10 +312,10 @@ EXEC_ACTION_START(SCSysGetTimestampAction) {
   // long unsigned msecs = tv.tv_sec * 1000 + tv.tv_usec / 1000;
 
   char ms_buf[40];
-  snprintf(ms_buf, 40, "%lu", tv.tv_sec);
+  snprintf(ms_buf, 40, "%li", tv.tv_sec);
   sc_sess->var[varname+".tv_sec"] = ms_buf;
 
-  snprintf(ms_buf, 40, "%lu", tv.tv_usec);
+  snprintf(ms_buf, 40, "%li", (long int)tv.tv_usec);
   sc_sess->var[varname+".tv_usec"] = ms_buf;
 
   DBG("got timestamp $%s=%s, $%s=%s, \n",
@@ -343,10 +343,10 @@ EXEC_ACTION_START(SCSysSubTimestampAction) {
   timersub(&tv1,&tv2,&diff);
 
   char ms_buf[40];
-  snprintf(ms_buf, 40, "%lu", diff.tv_sec);
+  snprintf(ms_buf, 40, "%li", diff.tv_sec);
   sc_sess->var[t1+".tv_sec"] = ms_buf;
 
-  snprintf(ms_buf, 40, "%lu", diff.tv_usec);
+  snprintf(ms_buf, 40, "%li", (long int)diff.tv_usec);
   sc_sess->var[t1+".tv_usec"] = ms_buf;
 
   // may be overflowing - use only if timestamps known
