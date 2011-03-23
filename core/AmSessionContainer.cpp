@@ -247,13 +247,14 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
       
       try {
 	session->start();
-      } catch (const string& err) {
+      } catch (...) {
 	AmEventDispatcher::instance()->
 	  delEventQueue(session->getLocalTag(),
 			session->getCallID(),
 			session->getRemoteTag());
-	
+
 	delete session;
+	session = NULL;
 	throw;
       }
 
