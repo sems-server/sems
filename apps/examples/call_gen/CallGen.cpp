@@ -255,7 +255,7 @@ void CallGenFactory::createCall(const AmArg& args) {
   AmArg* c_args = new AmArg(args);
   
   DBG("placing new call to %s\n", call_ruri.c_str());
-  /* AmSession* s = */ AmUAC::dialout("callgen", // user
+  /* string tag = */ AmUAC::dialout("callgen", // user
 				APP_NAME,  
 				call_ruri,
 				"<" + from +  ">", from, 

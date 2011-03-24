@@ -31,15 +31,15 @@
 #include "AmSessionContainer.h"
 #include "AmConfig.h"
 
-AmSession* AmUAC::dialout(const string& user,
-			  const string& app_name,
-			  const string& r_uri, 
-			  const string& from,
-			  const string& from_uri,
-			  const string& to,
-			  const string& local_tag,
-			  const string& hdrs,
-			  AmArg*  session_params) {
+string AmUAC::dialout(const string& user,
+		      const string& app_name,
+		      const string& r_uri, 
+		      const string& from,
+		      const string& from_uri,
+		      const string& to,
+		      const string& local_tag,
+		      const string& hdrs,
+		      AmArg*  session_params) {
  
   AmSipRequest req;
 

@@ -87,7 +87,20 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
 {
   DBG("AmSipDialog::updateStatus(req = %s)\n", req.method.c_str());
 
-  if ((req.method == "ACK") || (req.method == "CANCEL")) {
+  if (req.method == "ACK") {
+    if(hdl)
+      hdl->onSipRequest(req);
+    return;
+  }
+
+  if (req.method == "CANCEL") {
+
+    TransMap::iterator t_it = uas_trans.find(req.cseq);
+    if(t_it == uas_trans.end()){
+      reply_error(req,481,SIP_REPLY_NOT_EXIST);
+      return;
+    }
+
     if(hdl)
       hdl->onSipRequest(req);
     return;
@@ -236,8 +249,9 @@ int AmSipDialog::updateStatusReply(const AmSipRequest& req, unsigned int code)
   TransMap::iterator t_it = uas_trans.find(req.cseq);
   if(t_it == uas_trans.end()){
     ERROR("could not find any transaction matching request\n");
-    ERROR("method=%s; callid=%s; local_tag=%s; remote_tag=%s; cseq=%i\n",
-	  req.method.c_str(),callid.c_str(),local_tag.c_str(),
+    ERROR("reply code=%i; method=%s; callid=%s; local_tag=%s; "
+	  "remote_tag=%s; cseq=%i\n",
+	  code,req.method.c_str(),callid.c_str(),local_tag.c_str(),
 	  remote_tag.c_str(),req.cseq);
     return -1;
   }
