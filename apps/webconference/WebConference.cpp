@@ -731,13 +731,12 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   AmArg* a = new AmArg();
   a->setBorrowedPointer(new UACAuthCred("", auth_user, auth_pwd));
 
-  AmSession* s = AmUAC::dialout(room.c_str(), APP_NAME,  to,  
-				"<" + from +  ">", from, "<" + to + ">", 
-				string(""), // callid
-				headers,    // headers
-				a);
-  if (s) {
-    string localtag = s->getLocalTag();
+  string localtag = AmUAC::dialout(room.c_str(), APP_NAME,  to,  
+				   "<" + from +  ">", from, "<" + to + ">", 
+				   string(""), // callid
+				   headers,    // headers
+				   a);
+  if (!localtag.empty()) {
     ret.push(0);
     ret.push("OK");
     ret.push(localtag.c_str());

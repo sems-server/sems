@@ -87,6 +87,12 @@ class AmSessionContainer : public AmThread
 
   static void dispose();
 
+  enum AddSessionStatus {
+    ShutDown,
+    Inserted,
+    AlreadyExist
+  };
+
   /**
    * Creates a new session.
    * @param req local request
@@ -99,17 +105,17 @@ class AmSessionContainer : public AmThread
    * Adds a session to the container (UAS only).
    * @return true if the session is new within the container.
    */
-  bool addSession(const string& callid,
-		  const string& remote_tag,
-		  const string& local_tag,
-		  AmSession* session);
+  AddSessionStatus addSession(const string& callid,
+			      const string& remote_tag,
+			      const string& local_tag,
+			      AmSession* session);
 
   /**
    * Adds a session to the container.
    * @return true if the session is new within the container.
    */
-  bool addSession(const string& local_tag,
- 		  AmSession* session);
+  AddSessionStatus addSession(const string& local_tag,
+			      AmSession* session);
 
   /** 
    * Constructs a new session and adds it to the active session container. 
@@ -121,8 +127,8 @@ class AmSessionContainer : public AmThread
    * Constructs a new session and adds it to the active session container. 
    * @param req client's request
    */
-  AmSession* startSessionUAC(AmSipRequest& req, 
-			     AmArg* session_params = NULL);
+  string startSessionUAC(AmSipRequest& req, 
+			 AmArg* session_params = NULL);
 
   /**
    * Detroys a session.

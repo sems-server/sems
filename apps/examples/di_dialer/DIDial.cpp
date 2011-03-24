@@ -132,11 +132,11 @@ string DIDial::dialout(const string& application,
   DBG("dialout application '%s', user '%s', from '%s', to '%s'\n", 
       application.c_str(), user.c_str(), from.c_str(), to.c_str());
 
-  AmSession* s = AmUAC::dialout(user.c_str(), application,  to,  
+  string tag = AmUAC::dialout(user.c_str(), application,  to,  
 				"<" + from +  ">", from, "<" + to + ">", 
 				string(""), string(""), extra_params);
-  if (s)
-    return s->getLocalTag();
+  if (!tag.empty())
+    return tag;
   else 
     return "<failed>";  
 }
@@ -162,15 +162,15 @@ string DIDial::dialout_auth(const string& application,
   } else {
     a->setBorrowedPointer(new UACAuthCred(a_realm, a_user, a_pwd));
   }
-  AmSession* s = AmUAC::dialout(user.c_str(), application,  to,  
+  string tag = AmUAC::dialout(user.c_str(), application,  to,  
 				"<" + from +  ">", from, "<" + to + ">", 
 				string(""), // callid
 				string(""), // xtra hdrs
 				a);
   delete a;
 
-  if (s)
-    return s->getLocalTag();
+  if (!tag.empty())
+    return tag;
   else 
     return "<failed>\n";
 }
@@ -195,14 +195,14 @@ string DIDial::dialout_auth_b2b(const string& application,
   a.push(a_pwd.c_str());
   a.push(callee_ruri.c_str());
 
-  AmSession* s = AmUAC::dialout(
+  string tag = AmUAC::dialout(
       announcement.c_str(), application,  caller_ruri,
       "<" + from +  ">", from, "<" + to + ">", 
       string(""), // callid
       string(""), //xtra hdrs
       &a);
-  if (s)
-    return s->getLocalTag();
+  if (!tag.empty())
+    return tag;
   else 
     return "<failed>\n";
 }
@@ -223,7 +223,7 @@ string DIDial::dialout_pin(const string& application,
 					  it->second.user, 
 					  it->second.pwd));
     
-    AmSession* s = AmUAC::dialout(user.c_str(), application,  
+    string tag = AmUAC::dialout(user.c_str(), application,  
 				  "sip:"+to_user+"@"+it->second.realm,  
 				  "<sip:" + it->second.user+"@"+it->second.realm + ">", 
 				  "sip:"+it->second.user+"@"+it->second.realm, 
@@ -231,8 +231,8 @@ string DIDial::dialout_pin(const string& application,
 				  string(""), // callid
 				  string(""), // xtra hdrs
 				  a);
-    if (s)
-      return s->getLocalTag();
+    if (!tag.empty())
+      return tag;
     else 
       return "<failed>\n";
   } else 

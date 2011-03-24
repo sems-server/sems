@@ -205,23 +205,38 @@ void AmSessionContainer::destroySession(AmSession* s)
     }
 }
 
-AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session_params) {
+string AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session_params) {
 
-  AmSession* session = NULL;
+  auto_ptr<AmSession> session;
   try {
-    if((session = createSession(req, session_params)) != 0) {
+    session.reset(createSession(req, session_params));
+    if(session.get() != 0) {
+
       session->dlg.updateStatusFromLocalRequest(req);
       session->setCallgroup(req.from_tag);
 
       session->setNegotiateOnReply(true);
 
-      if (!addSession("","",req.from_tag,session)) {
+      switch(addSession(req.from_tag,session.get())) {
+	
+      case AmSessionContainer::Inserted:
+	// successful case
+	break;
+	
+      case AmSessionContainer::ShutDown:
+	throw AmSession::Exception(AmConfig::ShutdownModeErrCode,
+				   AmConfig::ShutdownModeErrReason);
+	
+      case AmSessionContainer::AlreadyExist:
+	throw AmSession::Exception(482,
+				   SIP_REPLY_LOOP_DETECTED);
+	
+      default:
 	ERROR("adding session to session container\n");
-	delete session;
-	return NULL;
+	throw string(SIP_REPLY_SERVER_INTERNAL_ERROR);
       }
-
-      MONITORING_LOG5(session->getLocalTag().c_str(), 
+      
+      MONITORING_LOG5(req.from_tag, 
 		      "app", req.cmd.c_str(),
 		      "dir", "out",
 		      "from", req.from.c_str(),
@@ -229,59 +244,49 @@ AmSession* AmSessionContainer::startSessionUAC(AmSipRequest& req, AmArg* session
 		      "ruri", req.r_uri.c_str());
       
       if (int err = session->sendInvite(req.hdrs)) {
-	ERROR("INVITE could not be sent: error code = %d.\n", 
-	      err);
-	AmEventDispatcher::instance()->
-	  delEventQueue(session->getLocalTag(),
-			session->getCallID(),
-			session->getRemoteTag());	
-	MONITORING_MARK_FINISHED(session->getLocalTag().c_str());
-	delete session;
+	ERROR("INVITE could not be sent: error code = %d.\n", err);
+	AmEventDispatcher::instance()->delEventQueue(req.from_tag);
+	MONITORING_MARK_FINISHED(req.from_tag.c_str());
 	return NULL;
       }
-
+      
       if (AmConfig::LogSessions) {      
 	INFO("Starting UAC session %s app %s\n",
-	     session->getLocalTag().c_str(), req.cmd.c_str());
+	     req.from_tag.c_str(), req.cmd.c_str());
       }
-      
       try {
 	session->start();
       } catch (...) {
-	AmEventDispatcher::instance()->
-	  delEventQueue(session->getLocalTag(),
-			session->getCallID(),
-			session->getRemoteTag());
-
-	delete session;
-	session = NULL;
+	AmEventDispatcher::instance()->delEventQueue(req.from_tag);
 	throw;
       }
-
     }
   } 
   catch(const AmSession::Exception& e){
     ERROR("%i %s\n",e.code,e.reason.c_str());
-    AmSipDialog::reply_error(req,e.code,e.reason);
+    return "";
   }
   catch(const string& err){
     ERROR("startSession: %s\n",err.c_str());
-    AmSipDialog::reply_error(req,500,err);
+    return "";
   }
   catch(...){
     ERROR("unexpected exception\n");
-    AmSipDialog::reply_error(req,500,"unexpected exception");
+    return "";
   }
 
-  return session;
+  session.release();
+  return req.from_tag;
 }
 
 void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 {
   try {
       // Call-ID and From-Tag are unknown: it's a new session
-      AmSession* session;
-      if((session = createSession(req)) != 0){
+      auto_ptr<AmSession> session;
+
+      session.reset(createSession(req));
+      if(session.get() != 0){
 
 	// update session's local tag (ID) if not already set
 	session->setLocalTag();
@@ -294,9 +299,23 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	       local_tag.c_str(), req.cmd.c_str());
 	}
 
-	if (!addSession(req.callid,req.from_tag,local_tag,session)) {
+	switch(addSession(req.callid,req.from_tag,local_tag,
+			  session.get())) {
+
+	case AmSessionContainer::Inserted:
+	  // successful case
+	  break;
+	  
+	case AmSessionContainer::ShutDown:
+	  throw AmSession::Exception(AmConfig::ShutdownModeErrCode,
+				     AmConfig::ShutdownModeErrReason);
+	  
+	case AmSessionContainer::AlreadyExist:
+	  throw AmSession::Exception(482,
+				     SIP_REPLY_LOOP_DETECTED);
+	  
+	default:
 	  ERROR("adding session to session container\n");
-	  delete session;
 	  throw string(SIP_REPLY_SERVER_INTERNAL_ERROR);
 	}
 
@@ -309,17 +328,15 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 
 	try {
 	  session->start();
-	} catch (const string& err) {
+	  session.release();
+	} catch (...) {
 	  AmEventDispatcher::instance()->
-	    delEventQueue(session->getLocalTag(),
-			  session->getCallID(),
-			  session->getRemoteTag());
-	  
-	  delete session;
+	    delEventQueue(req.callid,req.from_tag,local_tag);
 	  throw;
 	}
 
 	session->postEvent(new AmSipRequestEvent(req));
+	session.release();
       }
   } 
   catch(const AmSession::Exception& e){
@@ -426,27 +443,37 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
   return session;
 }
 
-bool AmSessionContainer::addSession(const string& callid,
-				    const string& remote_tag,
-				    const string& local_tag,
-				    AmSession* session)
+AmSessionContainer::AddSessionStatus 
+AmSessionContainer::addSession(const string& callid,
+			       const string& remote_tag,
+			       const string& local_tag,
+			       AmSession* session)
 {
   if(_container_closed.get())
-    return false;
+    return ShutDown;
   
-  return AmEventDispatcher::instance()->
-    addEventQueue(local_tag,(AmEventQueue*)session,
-		  callid,remote_tag);
+  if(AmEventDispatcher::instance()->
+     addEventQueue(local_tag,(AmEventQueue*)session,
+		   callid,remote_tag)) {
+    return Inserted;
+  }
+
+  return AlreadyExist;
 }
 
-bool AmSessionContainer::addSession(const string& local_tag,
-				    AmSession* session)
+AmSessionContainer::AddSessionStatus 
+AmSessionContainer::addSession(const string& local_tag,
+			       AmSession* session)
 {
   if(_container_closed.get()) 
-    return false;
+    return ShutDown;
 
-  return AmEventDispatcher::instance()->
-    addEventQueue(local_tag,(AmEventQueue*)session);
+  if(AmEventDispatcher::instance()->
+     addEventQueue(local_tag,(AmEventQueue*)session)){
+    return Inserted;
+  }
+
+  return AlreadyExist;
 }
 
 void AmSessionContainer::enableUncleanShutdown() {

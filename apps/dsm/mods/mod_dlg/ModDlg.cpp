@@ -282,13 +282,13 @@ EXEC_ACTION_START(DLGDialoutAction) {
  
   DBG("sess_params: '%s'\n", AmArg::print(*sess_params).c_str());
 
-  AmSession* new_sess = AmUAC::dialout(user, app_name, r_uri, from, from_uri, to, ltag, hdrs, sess_params);
+  string new_sess_tag = AmUAC::dialout(user, app_name, r_uri, from, from_uri, to, ltag, hdrs, sess_params);
 
- if (NULL != new_sess) {
-   sc_sess->var[arrayname + "_ltag"] = new_sess->getLocalTag();
- } else {
-   sc_sess->var[arrayname + "_ltag"] = "";
-   sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
- }
+  if (!new_sess_tag.empty()) {
+    sc_sess->var[arrayname + "_ltag"] = new_sess_tag;
+  } else {
+    sc_sess->var[arrayname + "_ltag"] = "";
+    sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+  }
 
 } EXEC_ACTION_END;

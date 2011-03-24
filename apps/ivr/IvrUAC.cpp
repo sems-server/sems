@@ -49,7 +49,6 @@ static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
 		       &from, &from_uri, &to))
     return NULL;
 
-  //AmSession* newSession = 
   AmUAC::dialout(user, app_name, r_uri, 
 		 from, from_uri, to);
 
