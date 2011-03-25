@@ -328,7 +328,6 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 
 	try {
 	  session->start();
-	  session.release();
 	} catch (...) {
 	  AmEventDispatcher::instance()->
 	    delEventQueue(req.callid,req.from_tag,local_tag);
