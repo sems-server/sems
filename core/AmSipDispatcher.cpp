@@ -92,7 +92,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
   }
   else if(req.method == "CANCEL"){
       
-    if(ev_disp->postSipRequest(callid, remote_tag, req)){
+    if(ev_disp->postSipRequest(req)){
       return;
     }
   
