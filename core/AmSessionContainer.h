@@ -87,6 +87,12 @@ class AmSessionContainer : public AmThread
 
   static void dispose();
 
+  enum AddSessionStatus {
+    ShutDown,
+    Inserted,
+    AlreadyExist
+  };
+
   /**
    * Creates a new session.
    * @param req local request
@@ -100,17 +106,18 @@ class AmSessionContainer : public AmThread
    * Adds a session to the container (UAS only).
    * @return true if the session is new within the container.
    */
-  bool addSession(const string& callid,
-		  const string& remote_tag,
-		  const string& local_tag,
-		  AmSession* session);
+  AddSessionStatus addSession(const string& callid,
+			      const string& remote_tag,
+			      const string& local_tag,
+			      const string& via_branch,
+			      AmSession* session);
 
   /**
    * Adds a session to the container.
    * @return true if the session is new within the container.
    */
-  bool addSession(const string& local_tag,
- 		  AmSession* session);
+  AddSessionStatus addSession(const string& local_tag,
+			      AmSession* session);
 
   /** 
    * Constructs a new session and adds it to the active session container. 
@@ -122,9 +129,9 @@ class AmSessionContainer : public AmThread
    * Constructs a new session and adds it to the active session container. 
    * @param req client's request
    */
-  AmSession* startSessionUAC(AmSipRequest& req,
+  string startSessionUAC(AmSipRequest& req, 
 			     const string& app_name,
-			     AmArg* session_params = NULL);
+			 AmArg* session_params = NULL);
 
   /**
    * Detroys a session.
@@ -135,7 +142,9 @@ class AmSessionContainer : public AmThread
    * post an event into the event queue of the identified dialog.
    * @return false if session doesn't exist 
    */
-  bool postEvent(const string& callid, const string& remote_tag,
+  bool postEvent(const string& callid, 
+		 const string& remote_tag,
+		 const string& via_branch,
 		 AmEvent* event);
 
   /**

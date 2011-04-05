@@ -76,7 +76,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 				     "Call leg/Transaction does not exist");
 	  }
 	  else {
-	    ERROR("received ACK for non-existing dialog "
+	    WARN("received ACK for non-existing dialog "
 		  "(callid=%s;remote_tag=%s;local_tag=%s)\n",
 		  callid.c_str(),remote_tag.c_str(),local_tag.c_str());
 	  }
@@ -85,36 +85,25 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       return;
   }
 
-  if(ev_disp->postSipRequest(callid, remote_tag, req)){
-	  
-      return;
-  }
-  
   DBG("method: `%s' [%zd].\n", req.method.c_str(), req.method.length());
   if(req.method == "INVITE"){
       
       AmSessionContainer::instance()->startSessionUAS(req);
   }
-  else if(req.method == "OPTIONS"){
+  else if(req.method == "CANCEL"){
       
-      // Basic OPTIONS support
-    if (!AmConfig::OptionsSessionLimit || 
-	(AmSession::getSessionNum() < AmConfig::OptionsSessionLimit)) {
-      AmSipDialog::reply_error(req, 200, "OK");
-    } else {
-      // return error code if near to overload
-      AmSipDialog::reply_error(req,
-			       AmConfig::OptionsSessionLimitErrCode, 
-			       AmConfig::OptionsSessionLimitErrReason);
-    }
+    if(ev_disp->postSipRequest(req)){
       return;
-
-  } else if( (req.method == "CANCEL") || 
-	     (req.method == "BYE") ){
-      
-    // CANCEL/BYE of a (here) non-existing dialog
-    AmSipDialog::reply_error(req,481,
-			     "Call leg/Transaction does not exist");
+    }
+  
+    // CANCEL of a (here) non-existing dialog
+    AmSipDialog::reply_error(req,481,SIP_REPLY_NOT_EXIST);
+    return;
+  } 
+  else if(req.method == "BYE"){
+    
+    // BYE of a (here) non-existing dialog
+    AmSipDialog::reply_error(req,481,SIP_REPLY_NOT_EXIST);
     return;
 
   } else {

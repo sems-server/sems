@@ -38,15 +38,15 @@ using std::string;
 /** \brief API for UAC support */
 class AmUAC {
  public:
-  static AmSession* dialout(const string& user,
-			    const string& app_name,
-			    const string& r_uri, 
-			    const string& from,
-			    const string& from_uri,
-			    const string& to,
-			    const string& local_tag = "",
-			    const string& hdrs = "",
-			    AmArg*  session_params = NULL);
+  static string dialout(const string& user,
+			const string& app_name,
+			const string& r_uri, 
+			const string& from,
+			const string& from_uri,
+			const string& to,
+			const string& local_tag = "",
+			const string& hdrs = "",
+			AmArg*  session_params = NULL);
 
 };
 

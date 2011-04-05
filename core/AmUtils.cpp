@@ -596,7 +596,7 @@ int get_local_addr_for_dest(const string& remote_ip, string& local)
   }
 
   if(err == -1){
-    ERROR("While converting address: %s",strerror(errno));
+    ERROR("While converting address: '%s'",remote_ip.c_str());
     return -1;
   }
 

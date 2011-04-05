@@ -363,18 +363,17 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
               SIP_EXT_100REL))) {
           ERROR("'" SIP_EXT_100REL "' extension required, but not advertised"
             " by peer.\n");
-          if (hdl) hdl->onFailure(FAIL_REL100, &req, 0);
+          if (hdl) hdl->onFailure(FAIL_REL100_421, &req, 0);
           return 0; // has been replied
         }
         break; // 100rel required
 
       case REL100_DISABLED:
         // TODO: shouldn't this be part of a more general check in SEMS?
-        if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL))
-          reply_error(req, 420, SIP_REPLY_BAD_EXTENSION, 
-		      SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF,
-		      next_hop_for_replies ? next_hop_ip : "",
-		      next_hop_for_replies ? next_hop_port : 0);
+        if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL)) {
+          if (hdl) hdl->onFailure(FAIL_REL100_420, &req, 0);
+          return 0; // has been replied
+        }
         break;
 
       default:
@@ -466,8 +465,9 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
   TransMap::iterator t_it = uas_trans.find(reply.cseq);
   if(t_it == uas_trans.end()){
     ERROR("could not find any transaction matching request\n");
-    ERROR("method=%s; callid=%s; local_tag=%s; remote_tag=%s; cseq=%i\n",
-	  reply.cseq_method.c_str(),callid.c_str(),local_tag.c_str(),
+    ERROR("reply code=%i; method=%s; callid=%s; local_tag=%s; "
+	  "remote_tag=%s; cseq=%i\n",
+	  code,reply.cseq_method.c_str(),callid.c_str(),local_tag.c_str(),
 	  remote_tag.c_str(),reply.cseq);
     return -1;
   }
@@ -616,7 +616,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	  DBG("received 2xx reply without to-tag "
 	      "(callid=%s): sending BYE\n",reply.callid.c_str());
 
-	  sendRequest("BYE");
+	  sendRequest(SIP_METH_BYE);
 	}
 	else {
 	  remote_tag = reply.to_tag;
@@ -648,11 +648,15 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
     case Cancelling:
       if(reply.code >= 300){
 	// CANCEL accepted
+	DBG("CANCEL accepted, status -> Disconnected\n");
 	status = Disconnected;
       }
       else {
 	// CANCEL rejected
-	sendRequest("BYE");
+	DBG("CANCEL rejected/too late - bye()\n");
+	bye();
+	// if BYE could not be sent,
+	// there is nothing we can do anymore...
       }
       break;
 
@@ -671,8 +675,14 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 
   int cont = rel100OnReplyIn(reply);
   if(reply.code >= 200){
-    if((reply.code < 300) && (reply.cseq_method == SIP_METH_INVITE)) {
-      hdl->onInvite2xx(reply);
+    if((reply.code < 300) && (trans_method == SIP_METH_INVITE)) {
+
+	if(hdl) {
+	    hdl->onInvite2xx(reply);
+	}
+	else {
+	    send_200_ack(reply.cseq);
+	}
     }
     else {
       uac_trans.erase(t_it);
@@ -742,7 +752,7 @@ int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
           !reply.rseq) {
         ERROR(SIP_EXT_100REL " not supported or no positive RSeq value in "
             "(reliable) 1xx.\n");
-        if (hdl) hdl->onFailure(FAIL_REL100, 0, &reply);
+        if (hdl) hdl->onFailure(FAIL_REL100_421, 0, &reply);
       } else {
         DBG(SIP_EXT_100REL " now active.\n");
         if (hdl) hdl->onInvite1xxRel(reply);
@@ -762,7 +772,7 @@ int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
   } else if (reliable_1xx && reply.cseq_method==SIP_METH_PRACK) {
     if (300 <= reply.code) {
       // if PRACK fails, tear down session
-      if (hdl) hdl->onFailure(FAIL_REL100, 0, &reply);
+      if (hdl) hdl->onFailure(FAIL_REL100_421, 0, &reply);
     } else if (200 <= reply.code) {
       if (hdl) hdl->onPrack2xx(reply);
     } else {
@@ -843,7 +853,7 @@ string AmSipDialog::getContactHdr()
     assert(oif < (int)AmConfig::Ifs.size());
 
     contact_uri += (AmConfig::Ifs[oif].PublicIP.empty() ? 
-		    AmConfig::Ifs[oif].LocalSIPIP : AmConfig::Ifs[oif].PublicIP );
+		    AmConfig::Ifs[oif].LocalSIPIP : AmConfig::Ifs[oif].PublicIP ) 
 
     contact_uri += ":" + int2str(AmConfig::Ifs[oif].LocalSIPPort);
     contact_uri += ">";
@@ -1104,8 +1114,16 @@ int AmSipDialog::bye(const string& hdrs, int flags)
     case Trying:
     case Proceeding:
     case Early:
-      return cancel();
-
+	if(getUACTransPending())
+	    return cancel();
+	else {
+	    // missing AmSipRequest to be able
+	    // to send the reply on behalf of the app.
+	    DBG("ignoring bye() in Pending state: "
+		"no UAC transaction to cancel.\n");
+	    status = Disconnected;
+	}
+	return 0;
     default:
       DBG("bye(): we are not connected "
 	  "(status=%i). do nothing!\n",status);
@@ -1381,9 +1399,9 @@ void AmSipDialog::rel100OnRequestOut(const string &method, string &hdrs)
 }
 
 
-string AmSipDialog::get_uac_trans_method(unsigned int cseq)
+string AmSipDialog::get_uac_trans_method(unsigned int t_cseq)
 {
-  TransMap::iterator t = uac_trans.find(cseq);
+  TransMap::iterator t = uac_trans.find(t_cseq);
 
   if (t != uac_trans.end())
     return t->second.method;
@@ -1391,9 +1409,9 @@ string AmSipDialog::get_uac_trans_method(unsigned int cseq)
   return "";
 }
 
-AmSipTransaction* AmSipDialog::get_uac_trans(unsigned int cseq)
+AmSipTransaction* AmSipDialog::get_uac_trans(unsigned int t_cseq)
 {
-    TransMap::iterator t = uac_trans.find(cseq);
+    TransMap::iterator t = uac_trans.find(t_cseq);
     
     if (t != uac_trans.end())
 	return &(t->second);

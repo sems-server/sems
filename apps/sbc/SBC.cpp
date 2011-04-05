@@ -26,7 +26,6 @@
 /* 
 SBC - feature-wishlist
 - accounting (MySQL DB, cassandra DB)
-- RTP forwarding mode (bridging)
 - RTP transcoding mode (bridging)
 - overload handling (parallel call to target thresholds)
 - call distribution
@@ -482,7 +481,8 @@ void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
 SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
     prepaid_acc(NULL),
-    call_profile(call_profile)
+    call_profile(call_profile),
+    outbound_interface(-1)
 {
   set_sip_relay_only(false);
   dlg.reliable_1xx = REL100_IGNORED;
@@ -547,9 +547,43 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     }
   }
 
+  if (call_profile.rtprelay_enabled) {
+    DBG("Enabling RTP relay mode for SBC call\n");
+
+    // force symmetric RTP?
+    if (!call_profile.force_symmetric_rtp.empty()) {
+      string force_symmetric_rtp =
+	replaceParameters(call_profile.force_symmetric_rtp, "force_symmetric_rtp",
+			  REPLACE_VALS);
+      if (!force_symmetric_rtp.empty() && force_symmetric_rtp != "no"
+	  && force_symmetric_rtp != "0") {
+	DBG("forcing symmetric RTP (passive mode)\n");
+	rtp_relay_force_symmetric_rtp = true;
+      }
+    }
+    // enable symmetric RTP by P-MsgFlags?
+    if (!rtp_relay_force_symmetric_rtp) {
+      if (call_profile.msgflags_symmetric_rtp) {
+	string str_msg_flags = getHeader(req.hdrs,"P-MsgFlags", true);
+	unsigned int msg_flags = 0;
+	if(reverse_hex2int(str_msg_flags,msg_flags)){
+	  ERROR("while parsing 'P-MsgFlags' header\n");
+	  msg_flags = 0;
+	}
+	if (msg_flags & FL_FORCE_ACTIVE) {
+	  DBG("P-MsgFlags indicates forced symmetric RTP (passive mode)");
+	  rtp_relay_force_symmetric_rtp = true;
+	}
+      }
+    }
+
+    enableRtpRelay(req);
+  }
+
   m_state = BB_Dialing;
 
   invite_req = req;
+  est_invite_cseq = req.cseq;
 
   removeHeader(invite_req.hdrs,PARAM_HDR);
   removeHeader(invite_req.hdrs,"P-App-Name");
@@ -581,6 +615,30 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       replaceParameters(call_profile.auth_credentials.user, "auth_user", REPLACE_VALS);
     call_profile.auth_credentials.pwd = 
       replaceParameters(call_profile.auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
+  }
+
+  if (!call_profile.outbound_interface.empty()) {
+    call_profile.outbound_interface = 
+      replaceParameters(call_profile.outbound_interface, "outbound_interface",
+			REPLACE_VALS);
+
+    if (!call_profile.outbound_interface.empty()) {
+      if (call_profile.outbound_interface == "default")
+	outbound_interface = 0;
+      else {
+	map<string,unsigned short>::iterator name_it =
+	  AmConfig::If_names.find(call_profile.outbound_interface);
+	if (name_it != AmConfig::If_names.end()) {
+	  outbound_interface = name_it->second;
+	} else {
+	  ERROR("selected outbound_interface '%s' does not exist as an interface. "
+		"Please check the 'additional_interfaces' "
+		"parameter in the main configuration file.",
+		call_profile.outbound_interface.c_str());
+	  throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+	}
+      }
+    }
   }
 
   // get timer
@@ -971,9 +1029,9 @@ void SBCDialog::createCalleeSession()
 
   AmSipDialog& callee_dlg = callee_session->dlg;
 
-  callee_dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
   if (!call_profile.outbound_proxy.empty()) {
     callee_dlg.outbound_proxy = call_profile.outbound_proxy;
+    callee_dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
   }
   
   if (!call_profile.next_hop_ip.empty()) {
@@ -987,6 +1045,9 @@ void SBCDialog::createCalleeSession()
 	 call_profile.next_hop_for_replies == "1");
     }
   }
+
+  if(outbound_interface >= 0)
+    callee_dlg.outbound_interface = outbound_interface;
 
   other_id = AmSession::getNewId();
   
@@ -1014,6 +1075,14 @@ void SBCDialog::createCalleeSession()
 		  "from", callee_dlg.local_party.c_str(),
 		  "to",   callee_dlg.remote_party.c_str(),
 		  "ruri", callee_dlg.remote_uri.c_str());
+
+  try {
+    initializeRTPRelay(callee_session);
+  }
+  catch (...) {
+    delete callee_session;
+    throw;
+  }
 
   callee_session->start();
   

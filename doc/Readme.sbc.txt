@@ -7,8 +7,8 @@ Overview
 The SBC application is a highly flexible high-performance Back-to-Back
 User Agent (B2BUA). It can be employed for a variety of uses, for example 
 topology hiding, From/To modification, enforcing SIP Session Timers, 
-identity change, SIP authentication. Future uses include accounting,
-RTP call bridging, transcoding, call distribution.
+identity change, SIP authentication, RTP relaying. Future uses include
+accounting, transcoding, call distribution.
 
 Features
 --------
@@ -16,6 +16,7 @@ Features
  o flexible call profile based configuration
  o online reload of call profiles
  o From, To, RURI, Call-ID update
+ o RTP bridging
  o Header and message filter
  o adding arbitrary headers
  o reply code translation
@@ -23,6 +24,7 @@ Features
  o SIP Session Timers
  o call timer
  o prepaid accounting
+
 
 SBC Profiles
 ------------
@@ -273,6 +275,32 @@ set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
 Codecs may be filtered out by their payload names in whitelist or blacklist
 modes. The payload names in the list are case-insensitive (PCMU==pcmu).
 
+RTP relay
+---------
+RTP can be bridged through the SBC. Where without rtprelay, A call would go only
+with the signaling through the SBC, in rtprelay mode, the connection address in
+SDP messages will be replaced to the one of SEMS, such that caller and callee
+send RTP media to SEMS. SEMS then relays the RTP packets between the two sides.
+
+RTP relay can be enabled by setting
+  enable_rtprelay=yes
+
+The SBC detects if UAs indicate that they are behind NAT by setting a=direction:active
+in SDP, and goes into passive mode until it receives the first packet from the NATed
+client, from which it learns the remote address. This mechanism is called "symmetric
+RTP".
+
+Symmetric RTP (starting in passive mode) can also be forced by setting the
+ rtprelay_force_symmetric_rtp=yes
+sbc profile option. Symmetric RTP is enabled if rtprelay_force_symmetric_rtp
+evaluates to anything other than "" (empty string), "0" or "no".
+
+Some ser/sip-router/kamailio/*ser configurations add flag 2 in a header P-MsgFlags
+header to the INVITE to indicate forcing of symmetric RTP. With the sbc profile
+option
+ rtprelay_msgflags_symmetric_rtp=yes
+the SBC honors this and sets symmetric RTP accordingly.
+
 Adding headers
 --------------
 Additional headers can be added to the outgoing initial INVITE by using the
@@ -388,6 +416,7 @@ Example profiles
  codecfilter   - let only some low bitrate codecs pass
  replytranslate - swap 603 and 488 response code in replies
  refuse        - refuse all calls with 403 Forbidden
+ symmetricrtp  - RTP relay with symmetric RTP for NAT handling
 
 Dependencies
 ------------
@@ -406,12 +435,12 @@ x SIP authentication
 x session timers
 x maximum call duration timer
 - accounting (MySQL DB, cassandra DB)
-- RTP forwarding mode (bridging)
+x RTP forwarding mode (bridging)
 - RTP transcoding mode (bridging)
 - overload handling (parallel call to target thresholds)
 - call distribution
 - select profile on monitoring in-mem DB record
-- fallback profile
+x fallback profile
 x add headers
 - bridging between interfaces
 - rel1xx in non-transparent mode

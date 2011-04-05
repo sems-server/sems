@@ -16,8 +16,7 @@ all: ../Makefile.defs
 	-@$(MAKE) sip_stack && \
 	  $(MAKE) deps    && \
 	  $(MAKE) $(NAME) && \
-	  $(MAKE) modules
-
+	  $(MAKE) modules 
 
 .PHONY: clean
 clean:
@@ -74,8 +73,7 @@ install: all mk-install-dirs \
 	install-modules-cfg \
 	install-cfg \
 	install-bin \
-	install-modules \
-
+	install-modules
 
 
 # note: on solaris 8 sed: ? or \(...\)* (a.s.o) do not work

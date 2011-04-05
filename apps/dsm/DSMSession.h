@@ -92,7 +92,7 @@ typedef map<string, string> VarMapT;
 typedef map<string, AmArg>  AVarMapT;
 
 class DSMDisposable;
-class AmPlaylistItem;
+struct AmPlaylistItem;
 
 class DSMSession {
 

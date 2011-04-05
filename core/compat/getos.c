@@ -32,7 +32,7 @@
 # warning "Could not detect the OS"
 #endif
 
-main()
+int main()
 {
   printf(OS "\n");
 }

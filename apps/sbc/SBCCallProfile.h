@@ -88,7 +88,12 @@ struct SBCCallProfile {
 
   string refuse_with;
 
-  // todo: RTP forwarding mode
+  bool rtprelay_enabled;
+  string force_symmetric_rtp;
+  bool msgflags_symmetric_rtp;
+
+  string outbound_interface;
+
   // todo: RTP transcoding mode
 
   SBCCallProfile()
@@ -99,7 +104,9 @@ struct SBCCallProfile {
     sst_enabled(false),
     auth_enabled(false),
     call_timer_enabled(false),
-    prepaid_enabled(false)
+    prepaid_enabled(false),
+    rtprelay_enabled(false)
+
   { }
 
   ~SBCCallProfile()

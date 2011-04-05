@@ -155,7 +155,7 @@ class SIPRegistration : //public AmSipDialogEventHandler,
   const string& getEventSink() { return sess_link; }
 };
 
-class SIPNewRegistrationEvent;
+struct SIPNewRegistrationEvent;
 class SIPRemoveRegistrationEvent;
 
 class SIPRegistrarClient  : public AmThread,

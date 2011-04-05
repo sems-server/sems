@@ -32,6 +32,8 @@
 #include "AmSipDialog.h"
 #include "sip/hash.h"
 
+#define MAX_RELAY_STREAMS 3 // voice, video, rtt
+
 enum { B2BTerminateLeg,
        B2BConnectLeg,
        B2BSipRequest,
@@ -140,6 +142,10 @@ class AmB2BSession: public AmSession
   /** Requests received for relaying */
   std::map<int,AmSipRequest> recvd_req;
 
+  /** CSeq of the INVITE that established this call */
+  unsigned int est_invite_cseq;
+  auto_ptr<AmSdp> invite_sdp;
+
   /** content-type of established session */
   string established_content_type;
   /** body of established session */
@@ -164,12 +170,15 @@ class AmB2BSession: public AmSession
   void relaySip(const AmSipRequest& orig, const AmSipReply& reply);
 
   /** Terminate our leg and forget the other. */
-  void terminateLeg();
+  virtual void terminateLeg();
 
   /** Terminate the other leg and forget it.*/
   virtual void terminateOtherLeg();
 
+
   /** @see AmSession */
+  virtual void updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq);
+
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onInvite2xx(const AmSipReply& reply);
@@ -201,7 +210,8 @@ class AmB2BSession: public AmSession
   virtual bool onOtherReply(const AmSipReply& reply);
 
   /** filter body ( b2b_mode == SDPFilter */
-  virtual int filterBody(string& content_type, string& body, bool is_a2b);
+  virtual int filterBody(string& content_type, string& body,
+			 AmSdp& filter_sdp, bool is_a2b);
 
   /** filter SDP body ( b2b_mode == SDPFilter */
   virtual int filterBody(AmSdp& sdp, bool is_a2b);
@@ -211,9 +221,43 @@ class AmB2BSession: public AmSession
 
   virtual ~AmB2BSession();
 
+  /** flag to enable RTP relay mode */
+  bool rtp_relay_enabled;
+  /** force symmetric RTP */
+  bool rtp_relay_force_symmetric_rtp;
+
+
+  /** RTP streams which receive from our side and are used
+      for relaying RTP from the other side */
+  AmRtpStream** relay_rtp_streams;
+  /** number of relay RTP streams */
+  unsigned int relay_rtp_streams_cnt;
+  /** fd of the other streams' sockets (to remove from
+      RtpReceiver at end of relaying) */
+  int other_stream_fds[MAX_RELAY_STREAMS];
+  /** clear our and the other side's RTP streams from RTPReceiver */
+  void clearRtpReceiverRelay();
+  /** update remote connection in relay_streams */
+  void updateRelayStreams(const string& content_type, const string& body,
+			  AmSdp& parser_sdp);
+  /** replace connection with our address */
+  bool replaceConnectionAddress(const string& content_type, const string& body,
+				string& r_body);
+
  public:
   void set_sip_relay_only(bool r);
   B2BMode getB2BMode() const;
+
+  /** set RTP relay mode enabled for initial INVITE */
+  void enableRtpRelay(const AmSipRequest& initial_invite_req);
+  /** set RTP relay mode enabled */
+  void enableRtpRelay();
+  /** set RTP relay mode disabled */
+  void disableRtpRelay();
+  /** link RTP streams of other_session to our streams */
+  void setupRelayStreams(AmB2BSession* from_session);
+  bool getRtpRelayEnabled() const { return rtp_relay_enabled; }
+  bool getRtpRelayForceSymmetricRtp() const { return rtp_relay_force_symmetric_rtp; }
 };
 
 class AmB2BCalleeSession;
@@ -272,6 +316,11 @@ class AmB2BCallerSession: public AmB2BSession
   AmSipRequest* getInviteReq() { return &invite_req; }
 
   void set_sip_relay_early_media_sdp(bool r);
+
+  /** initialize RTP relay mode, if rtp_relay_enabled
+      must be called *before* callee_session is started
+   */
+  void initializeRTPRelay(AmB2BCalleeSession* callee_session);
 };
 
 /** \brief Callee leg of a B2B session */

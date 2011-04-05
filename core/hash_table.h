@@ -39,7 +39,7 @@
 using std::list;
 using std::map;
 
-struct sip_trans;
+class sip_trans;
 struct sip_msg;
 
 

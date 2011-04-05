@@ -150,6 +150,7 @@ int AmSdp::parse(const char* _sdp_msg)
     }
   }
   
+    
   return ret;
 }
 
@@ -201,7 +202,13 @@ void AmSdp::print(string& body) const
   //mime_type = "application/sdp";
 }
 
-const SdpPayload *AmSdp::telephoneEventPayload() const {
+bool AmSdp::hasTelephoneEvent() const
+{
+  return telephoneEventPayload() != NULL;
+}
+
+const SdpPayload* AmSdp::telephoneEventPayload() const
+{
   return findPayload("telephone-event");
 }
 
@@ -918,7 +925,7 @@ static bool contains(char* s, char* next_line, char c)
   while((line != next_line-1) && (*line)){
     if(*line == c)
       return true;
-    *line++;
+    line++;
   }
   return false;
 }

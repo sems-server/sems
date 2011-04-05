@@ -34,7 +34,7 @@
 
 #endif
 
-main()
+int main()
 {
   printf(ARCH "\n");
 }

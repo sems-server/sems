@@ -1,4 +1,39 @@
 Changelog for SEMS 
+Version 1.4.0
+ - SBC
+    - topo hiding B2BUA
+    - flexible call profile based configuration
+    - online reload of call profiles
+    - From, To, RURI, Call-ID update
+    - RTP bridging
+    - Header and message filter
+    - codec filter
+    - adding arbitrary headers
+    - reply code translation
+    - SIP authentication
+    - SIP Session Timers
+    - call timer
+    - prepaid accounting
+
+ - DSM
+    - language: - if / else constructs
+                - functions
+                - for loops
+
+    - utils: RingTone
+    - mod_groups (call queues, conference interaction etc)
+
+ - multi homed support (SIP and RTP)
+
+ - MWI support for voicemail via PUBLISH
+
+ - XMLRPC bind to specific address
+
+ - webconference: private/reserved rooms mode
+
+ - proxy sticky auth
+
+ - many bug fixes and performance improvements
 
 Version 1.3.0
  - SIP stack moved into the core (no need to load sipctrl any more)

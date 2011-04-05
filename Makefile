@@ -8,7 +8,7 @@ all: modules
 COREPATH=core
 include Makefile.defs
 
-subdirs = core apps
+subdirs = core apps tools
 
 .PHONY: clean
 clean:

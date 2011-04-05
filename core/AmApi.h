@@ -182,7 +182,7 @@ class AmSessionFactory: public AmPluginFactory
 
   /**
    * Method to receive any out-of-dialog request 
-   * other than INVITE, REFER and OPTIONS
+   * other than INVITE and REFER
    *
    * Warning:
    *   This method should not make any expensive

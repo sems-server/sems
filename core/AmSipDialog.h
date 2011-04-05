@@ -166,6 +166,8 @@ private:
   string remote_tag;
   string local_tag;
 
+  string first_branch;
+
   string remote_party; // To/From
   string local_party;  // To/From
 
@@ -176,6 +178,9 @@ private:
   string next_hop_ip;
   unsigned short next_hop_port;
   bool next_hop_for_replies;
+
+  int  outbound_interface;
+  bool out_intf_for_replies;
 
   int  outbound_interface;
   bool out_intf_for_replies;
@@ -288,9 +293,9 @@ private:
   /**
    * @return the method of the corresponding uac request
    */
-  string get_uac_trans_method(unsigned int cseq);
+  string get_uac_trans_method(unsigned int t_cseq);
 
-  AmSipTransaction* get_uac_trans(unsigned int cseq);
+  AmSipTransaction* get_uac_trans(unsigned int t_cseq);
 
   /**
    * This method should only be used to send responses
@@ -367,9 +372,12 @@ class AmSipDialogEventHandler
   virtual void onPrack2xx(const AmSipReply &)=0;
 
   enum FailureCause {
-    FAIL_REL100,
-#define FAIL_REL100  AmSipDialogEventHandler::FAIL_REL100
+    FAIL_REL100_421,
+#define FAIL_REL100_421  AmSipDialogEventHandler::FAIL_REL100_421
+    FAIL_REL100_420,
+#define FAIL_REL100_420  AmSipDialogEventHandler::FAIL_REL100_420
   };
+
   virtual void onFailure(FailureCause cause, const AmSipRequest*, 
       const AmSipReply*)=0;
 

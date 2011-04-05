@@ -59,4 +59,47 @@ FCTMF_SUITE_BGN(test_headers) {
       fct_chk(get_header_keyvalue("u=sayer;d=iptel.org;p=abcdef", "d") == "iptel.org");
     } FCT_TEST_END();
 
+    FCT_TEST_BGN(addOptionTag) {
+      string hdrs =
+	"Supported: timer" CRLF
+	"Session-Expires: 110;refresher=uas" CRLF
+	"Supported: timer" CRLF;
+
+      string hdrs1;
+      addOptionTag(hdrs1, "Supported", "blub");
+      // DBG("hdrs1 '%s'\n", hdrs1.c_str());
+      fct_chk(hdrs1.find("Supported: blub") != string::npos);
+
+      hdrs1 = hdrs;
+      addOptionTag(hdrs1, "Supported", "something");
+      // DBG("hdrs1 '%s'\n", hdrs1.c_str());
+      fct_chk(hdrs1.find("something") != string::npos);
+
+      hdrs1 = hdrs;
+      addOptionTag(hdrs1, "Supported", "timer");
+      // DBG("hdrs1 '%s'\n", hdrs1.c_str());
+      fct_chk(hdrs1 == hdrs);
+
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(removeOptionTag) {
+      string hdrs =
+	"Supported: timer" CRLF;
+
+      string hdrs1 = hdrs;
+      removeOptionTag(hdrs1, "Supported", "notexisting");
+      // DBG("hdrs1 = '%s'\n", hdrs1.c_str());
+      fct_chk(hdrs1 == hdrs); // dont touch
+
+      hdrs1 = hdrs;
+      removeOptionTag(hdrs1, "Supported", "timer");
+      // DBG("hdrs1 = '%s'\n", hdrs1.c_str());
+      fct_chk(hdrs1.empty() == true); // last one
+
+      hdrs1 = hdrs + "Supported: timer" CRLF;
+      removeOptionTag(hdrs1, "Supported", "timer");
+      // DBG("hdrs1 = '%s'\n", hdrs1.c_str());
+      fct_chk(hdrs1.empty()== true); // last one
+
+    } FCT_TEST_END();
 } FCTMF_SUITE_END();

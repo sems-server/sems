@@ -14,6 +14,7 @@
 <li> \ref sbc_profile_codecfilter </li>
 <li> \ref sbc_profile_replytranslate </li>
 <li> \ref sbc_profile_refuse </li>
+<li> \ref sbc_profile_symmetricrtp </li>
 </ul>
 
  *  Back to \ref AppDoc, to \ref AppDocExample.
@@ -110,6 +111,18 @@
 
    \section refuse_sbcprofile refuse.sbcprofile.conf
    \verbinclude refuse.sbcprofile.conf
+   
+   \section Links
+   Back to \ref ModuleDoc_sbc, \ref AppDoc, to \ref AppDocExample.
+ */
+
+
+/*! \page sbc_profile_symmetricrtp SBC example profile: Symmetric RTP
+
+  This sbc profile implements RTP relay with forced symmetric RTP.
+
+   \section symmetricrtp_sbcprofile symmetricrtp.sbcprofile.conf
+   \verbinclude symmetricrtp.sbcprofile.conf
    
    \section Links
    Back to \ref ModuleDoc_sbc, \ref AppDoc, to \ref AppDocExample.

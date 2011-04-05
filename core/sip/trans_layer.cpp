@@ -32,6 +32,7 @@
 #include "trans_table.h"
 #include "parse_cseq.h"
 #include "parse_from_to.h"
+#include "parse_route.h"
 #include "parse_100rel.h"
 #include "sip_trans.h"
 #include "msg_fline.h"
@@ -572,6 +573,59 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
     return err;
 }
 
+
+static void prepare_strict_routing(sip_msg* msg, string& ext_uri_buffer)
+{
+    if(msg->route.empty())
+	return;
+
+    sip_header* fr = msg->route.front();
+    sip_uri* route_uri = get_first_route_uri(fr);
+
+    // Loose routing is used,
+    // no need for further processing
+    if(!route_uri || is_loose_route(route_uri))
+	return;
+
+    sip_route* route = (sip_route*)fr->p;
+    sip_nameaddr* fr_na = route->elmts.front()->addr;
+    cstring fr_na_addr = fr_na->addr;
+
+    if(route->elmts.size() == 1){
+	// remove current route header from message
+ 	msg->route.pop_front();
+
+	list<sip_header*>::iterator h_it = 
+	    std::find(msg->hdrs.begin(),msg->hdrs.end(),fr);
+
+	if(h_it != msg->hdrs.end()) 
+	    msg->hdrs.erase(h_it);
+
+ 	delete fr;
+    }
+    else if(route->elmts.size() > 1) {
+	// remove first element from the list
+	delete route->elmts.front();
+	route->elmts.pop_front();
+
+	// fetch the next route element
+	route_elmt* nxt_re = route->elmts.front();
+
+ 	// adjust route header
+ 	fr->value.len = (fr->value.s + fr->value.len) - nxt_re->route.s;
+ 	fr->value.s   = nxt_re->route.s;
+    }
+
+    // copy r_uri at the end of the route set.
+    // ext_uri_buffer must have the same scope as 'msg'
+    ext_uri_buffer = "<" + c2stlstr(msg->u.request->ruri_str) + ">";
+    msg->hdrs.push_back(new sip_header(0,"Route",stl2cstr(ext_uri_buffer)));
+
+    // and replace the R-URI with the first route URI 
+    msg->u.request->ruri_str = fr_na_addr;
+}
+
+
 //
 // Ref. RFC 3261 "12.2.1.1 Generating the Request"
 //
@@ -582,143 +636,29 @@ int _trans_layer::set_next_hop(sip_msg* msg,
     assert(msg);
 
     list<sip_header*>& route_hdrs = msg->route; 
-    cstring& r_uri = msg->u.request->ruri_str;
-
     int err=0;
 
     if(!route_hdrs.empty()){
 	
 	sip_header* fr = route_hdrs.front();
-	
-	sip_nameaddr na;
-	const char* c = fr->value.s;
-	if(parse_nameaddr(&na, &c, fr->value.len)<0) {
+	sip_uri* route_uri = get_first_route_uri(fr);
+	if(route_uri == NULL) {
 	    
-	    DBG("Parsing name-addr failed\n");
+	    DBG("Parsing 1st route uri failed\n");
 	    return -1;
 	}
 	
-	if(parse_uri(&na.uri,na.addr.s,na.addr.len) < 0) {
-	    
-	    DBG("Parsing route uri failed\n");
-	    return -1;
-	}
-
-	bool is_lr = false;
-	if(!na.uri.params.empty()){
-	    
-	    list<sip_avp*>::iterator it = na.uri.params.begin();
-	    for(;it != na.uri.params.end(); it++){
-		
-		if( ((*it)->name.len == 2) && 
-		    (!memcmp((*it)->name.s,"lr",2)) ) {
-
-		    is_lr = true;
-		    break;
-		}
-	    }
-
-	}
-
 	if (next_hop->len == 0) {
-	    *next_hop  = na.uri.host;
-	    if(na.uri.port_str.len)
-		*next_port = na.uri.port;
-	}	    
-
-	if(!is_lr){
-	    
-	    // detect beginning of next route
-
-	    enum {
-		RR_PARAMS=0,
-		RR_QUOTED,
-		RR_SEP_SWS,  // space(s) after ','
-		RR_NXT_ROUTE
-	    };
-
-	    int st = RR_PARAMS;
-	    const char* end = fr->value.s + fr->value.len;
-	    for(;c<end;c++){
-		
-		switch(st){
-		case RR_PARAMS:
-		    switch(*c){
-		    case SP:
-		    case HTAB:
-		    case CR:
-		    case LF:
-			break;
-		    case COMMA:
-			st = RR_SEP_SWS;
-			break;
-		    case DQUOTE:
-			st = RR_QUOTED;
-			break;
-		    }
-		    break;
-		case RR_QUOTED:
-		    switch(*c){
-		    case BACKSLASH:
-			c++;
-			break;
-		    case DQUOTE:
-			st = RR_PARAMS;
-			break;
-		    }
-		    break;
-		case RR_SEP_SWS:
-		    switch(*c){
-		    case SP:
-		    case HTAB:
-		    case CR:
-		    case LF:
-			break;
-		    default:
-			st = RR_NXT_ROUTE;
-			goto nxt_route;
-		    }
-		    break;
-		}
-	    }
-
-	nxt_route:
-	    
-	    switch(st){
-	    case RR_QUOTED:
-	    case RR_SEP_SWS:
-		DBG("Malformed first route header\n");
-	    case RR_PARAMS:
-		// remove current route header from message
-		route_hdrs.pop_front();
-		DBG("route_hdrs.length() = %i\n",(int)route_hdrs.size());
-		{
-		    list<sip_header*>::iterator h_it = std::find(msg->hdrs.begin(),msg->hdrs.end(),fr);
-		    if(h_it != msg->hdrs.end()) msg->hdrs.erase(h_it);
-		}
-		DBG("delete (fr=0x%p)\n",fr);
-		delete fr;
-		break;
-		
-	    case RR_NXT_ROUTE:
-		// remove current route from this header
-		fr->value.s   = c;
-		fr->value.len = end-c;
-		break;
-	    }
-
-	    
-	    // copy r_uri at the end of 
-	    // the route set.
-	    msg->hdrs.push_back(new sip_header(0,"Route",r_uri));
-
-	    r_uri = na.addr;
+	    *next_hop  = route_uri->host;
+	    if(route_uri->port_str.len)
+		*next_port = route_uri->port;
 	}
-	
     }
     else {
 
 	sip_uri parsed_r_uri;
+	cstring& r_uri = msg->u.request->ruri_str;
+
 	err = parse_uri(&parsed_r_uri,r_uri.s,r_uri.len);
 	if(err < 0){
 	    ERROR("Invalid Request URI\n");
@@ -842,6 +782,9 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	next_hop = _next_hop;
 	next_port = _next_port ? _next_port : 5060;
     }
+
+    string uri_buffer; // must have the same scope as 'msg'
+    prepare_strict_routing(msg,uri_buffer);
 
     if(set_destination_ip(msg,&next_hop,next_port) < 0){
      	DBG("set_destination_ip failed\n");
@@ -1041,7 +984,7 @@ int _trans_layer::cancel(trans_ticket* tt)
 
     // Allocate new message
     sip_msg* p_msg = new sip_msg();
-    p_msg->buf = new char[request_len];
+    p_msg->buf = new char[request_len+1];
     p_msg->len = request_len;
 
     // generate it
@@ -1059,6 +1002,7 @@ int _trans_layer::cancel(trans_ticket* tt)
 
     *c++ = CR;
     *c++ = LF;
+    *c   = '\0';
 
     // and parse it
     char* err_msg=0;
@@ -1174,8 +1118,7 @@ void _trans_layer::received_msg(sip_msg* msg)
 		    DBG("trans_layer::update_uas_trans() failed!\n");
 		    // Anyway, there is nothing we can do...
 		}
-		else if((err == TS_TERMINATED) ||
-			(err == TS_REMOVED)){
+		else {
 		
 		    // do not touch the transaction anymore:
 		    // it could have been deleted !!!
@@ -1187,7 +1130,8 @@ void _trans_layer::received_msg(sip_msg* msg)
 		    //  the UA. 
 		    assert(ua);
 		    DBG("Passing ACK to the UA.\n");
-		    ua->handle_sip_request(trans_ticket(t,bucket),msg);
+		    ua->handle_sip_request(trans_ticket(), // dummy
+					   msg);
 		    
 		    DROP_MSG;
 		}
@@ -1219,7 +1163,7 @@ void _trans_layer::received_msg(sip_msg* msg)
                      inv_h = hash(msg->callid->value, get_rack(msg)->cseq_str);
                      inv_bucket = get_trans_bucket(inv_h);
                      inv_bucket->lock();
-                     if((inv_t = inv_bucket->match_request(msg)) != NULL) {
+                     if((inv_t = inv_bucket->match_1xx_prack(msg)) != NULL) {
                          assert(msg->u.request->method != 
                              inv_t->msg->u.request->method);
                          err = update_uas_request(inv_bucket,inv_t,msg);
@@ -1314,7 +1258,10 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    // fall through trap
 
 	case TS_PROCEEDING:
-	    goto pass_reply;
+	    if(t->msg->u.request->method != sip_request::CANCEL)
+		goto pass_reply;
+	    else
+		goto end;
 
 	case TS_COMPLETED:
 	default:
@@ -1366,7 +1313,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    switch(t->state){
 		
 	    case TS_CALLING:
-	    case TS_PROCEEDING:
+	    case TS_PROCEEDING: // first 2xx reply
 
 		// TODO:
 		//  we should take care of 200 ACK re-transmissions
@@ -1394,7 +1341,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		
 		goto pass_reply;
 		
-	    case TS_TERMINATED_200:
+	    case TS_TERMINATED_200: // subsequent 2xx reply (no ACK sent)
 		
 		if( (to_tag.len != t->to_tag.len) ||
 		    (memcmp(to_tag.s,t->to_tag.s,to_tag.len) != 0) ){
@@ -1595,7 +1542,7 @@ int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg
 	t->clear_timer(STIMER_H);
         return t->state;
 	    
-    case TS_COMPLETED:
+    case TS_COMPLETED: // non-2xx-ACK
 	t->state = TS_CONFIRMED;
 
 	t->clear_timer(STIMER_G);
@@ -1604,10 +1551,10 @@ int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg
 	t->reset_timer(STIMER_I,I_TIMER,bucket->get_id());
 	
 	// drop through
-    case TS_CONFIRMED:
+    case TS_CONFIRMED: // non-2xx-ACK re-transmission
 	return t->state;
 	    
-    case TS_TERMINATED_200:
+    case TS_TERMINATED_200: // 2xx-ACK
 	// remove transaction
 	bucket->remove(t);
 	return TS_REMOVED;

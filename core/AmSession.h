@@ -138,7 +138,15 @@ private:
   AmCondition<bool> sess_stopped;
   AmCondition<bool> processing_media;
 
+  static void session_started();
+  static void session_stopped();
+
   static volatile unsigned int session_num;
+  static volatile unsigned int max_session_num;
+  static volatile unsigned long long avg_session_num;
+  static volatile unsigned long max_cps;
+  static volatile unsigned long max_cps_counter;
+  static volatile unsigned long avg_cps;
   static AmMutex session_num_mut;
 
   friend class AmMediaProcessor;
@@ -339,6 +347,9 @@ public:
   /** Gets the Session's local tag */
   const string& getLocalTag() const;
 
+  /** Gets the branch param of the first via in the original INVITE*/
+  const string& getFirstBranch() const;
+
   /** Sets the Session's local tag if not set already */
   void setLocalTag();
 
@@ -380,8 +391,12 @@ public:
   /** set the session on/off hold */
   virtual void setOnHold(bool hold);
 
-  /* ----         Householding                              ---- */
+  /** update UAC trans state reference from old_cseq to new_cseq
+      e.g. if uac_auth or session_timer have resent a UAC request
+   */
+  virtual void updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq) { }
 
+  /* ----         Householding                              ---- */
   /**
    * Destroy the session.
    * It causes the session to be erased from the active session list
@@ -404,8 +419,29 @@ public:
    */
   bool getStopped() { return sess_stopped.get(); }
 
-  /* ----         DTMF                          ---- */
+  /* ----         Statistics                    ---- */
+  /**
+   * Gets the number of running sessions
+   */
+  static unsigned int getSessionNum();
+  /**
+   * Gets the maximum of running sessions since last query
+   */
+  static unsigned int getMaxSessionNum();
+  /**
+   * Gets the average of running sessions since last query
+   */
+  static unsigned int getAvgSessionNum();
+  /**
+   * Gets the maximum of calls per second since last query
+   */
+  static unsigned int getMaxCPS();
+  /**
+   * Gets the timeaverage of calls per second since last query
+   */
+  static unsigned int getAvgCPS();
 
+  /* ----         DTMF                          ---- */
   /**
    * Entry point for DTMF events
    */

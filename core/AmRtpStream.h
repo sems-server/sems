@@ -58,7 +58,7 @@ struct amci_payload_t;
 
 class AmAudio;
 class AmSession;
-class SdpPayload;
+struct SdpPayload;
 typedef std::map<unsigned int, AmRtpPacket*, ts_less> ReceiveBuffer;
 typedef std::queue<AmRtpPacket*>  RtpEventQueue;
 
@@ -86,9 +86,6 @@ struct PacketMem {
  */
 class AmRtpStream 
 {
-  static int next_port;
-  static AmMutex port_mut;
-
 protected:
   // get the next available port within configured range
   static int getNextPort();
@@ -157,13 +154,20 @@ protected:
   bool           passive;      // passive mode ?
 
   /** Payload type for telephone event */
-  auto_ptr<const SdpPayload> remote_telephone_event_pt;
-  auto_ptr<const SdpPayload> local_telephone_event_pt;
+  const SdpPayload* remote_telephone_event_pt;
+  const SdpPayload* local_telephone_event_pt;
 
   PacketMem       mem;
   ReceiveBuffer   receive_buf;
   RtpEventQueue   rtp_ev_qu;
   AmMutex         receive_mut;
+
+  /** if relay_stream is initialized, received RTP is relayed there */
+  bool            relay_enabled;
+  /** pointer to relay stream.
+      NOTE: This may only be accessed in initialization
+      or by the AmRtpReceiver thread while relaying!  */
+  AmRtpStream*    relay_stream;
 
   /* get next packet in buffer */
   int nextPacket(AmRtpPacket*& p);
@@ -187,6 +191,11 @@ protected:
   pair<int, unsigned int> current_send_dtmf;
   unsigned int current_send_dtmf_ts;
   int send_dtmf_end_repeat;
+
+  /** handle symmetric RTP - if in passive mode, update raddr from rp */
+  void handleSymmetricRtp(AmRtpPacket* rp);
+
+  void relay(AmRtpPacket* p);
 
 public:
 
@@ -222,6 +231,12 @@ public:
   AmRtpStream(AmSession* _s, int _if);
   /** Stops the stream and frees all resources. */
   virtual ~AmRtpStream();
+
+  /** returns the socket descriptor for local socket (initialized or not) */
+  int hasLocalSocket();
+
+  /** initializes and gets the socket descriptor for local socket */
+  int getLocalSocket();
 
   /**
    * This function must be called before setLocalPort, because
@@ -319,14 +334,16 @@ public:
    */
   void clearRTPTimeout(struct timeval* recv_time);
 
-  virtual unsigned int bytes2samples(unsigned int) const = 0;
+  virtual unsigned int bytes2samples(unsigned int) const;
 
-  /** 
-   * Get a compatible payload from SDP offer/response. 
-   * @return empty vector if error encountered.
-   */
-  //const std::vector<SdpPayload*>& getCompatiblePayloads(AmPayloadProviderInterface* payload_provider,
-  //							int media_type, string& addr, int& port);
+  /** set relay stream for  RTP relaying */
+  void setRelayStream(AmRtpStream* stream);
+
+  /** ensable RTP relaying through relay stream */
+  void enableRtpRelay();
+
+  /** disable RTP relaying through relay stream */
+  void disableRtpRelay();
 
 };
 

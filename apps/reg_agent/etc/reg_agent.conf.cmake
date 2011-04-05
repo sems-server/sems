@@ -4,13 +4,16 @@
 # refreshed if necessary.
 #
 #
+# See also proxy_sticky_auth configuration in sems.conf
+# for some (broken) registrars.
 
 #domain=mydomain.net
 #user=myuser
+#pwd=verysecret
+# optional (defaults to user):
 #display_name=myuser
 #auth_user=myuser
-#pwd=verysecret
-# optional:
+# optional (defaults to resolved by domain):
 #proxy=sip.mydomain.net:5060
 
 #
@@ -18,17 +21,17 @@
 #
 #domain1=iptel.org
 #user1=xyz
-#display_name1=xyz
-#auth_user1=xyz
 #pwd1=ppp
 # optional:
+#display_name1=xyz
+#auth_user1=xyz
 #proxy1=sip.iptel.org:5060
 
 #domain2=iptel.org
 #user2=xyz
-#display_name2=xyz
-#auth_user2=xyz
 #pwd2=ppp
 # optional:
+#display_name2=xyz
+#auth_user2=xyz
 #proxy2=sip.iptel.org:5060
 

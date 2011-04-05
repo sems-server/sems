@@ -24,6 +24,10 @@ public:
     // in this bucket
     sip_trans* match_request(sip_msg* msg);
 
+    // Match a PRACK request against transactions
+    // in this bucket
+    sip_trans* match_1xx_prack(sip_msg* msg);
+
     // Match a reply to UAC transactions
     // in this bucket
     sip_trans* match_reply(sip_msg* msg);
@@ -32,7 +36,6 @@ public:
 
 private:
     sip_trans* match_200_ack(sip_trans* t,sip_msg* msg);
-    sip_trans* match_1xx_prack(sip_trans* t,sip_msg* msg);
 };
 
 trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num);

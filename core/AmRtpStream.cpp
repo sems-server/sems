@@ -77,13 +77,14 @@ void AmRtpStream::setLocalIP(const string& ip)
 #endif
 }
 
-void AmRtpStream::setLocalPort()
+int AmRtpStream::hasLocalSocket() {
+  return l_sd;
+}
+
+int AmRtpStream::getLocalSocket()
 {
-  if(l_port)
-    return;
-  
-  assert(l_if >= 0);
-  assert(l_if < (int)AmConfig::Ifs.size());
+  if (l_sd)
+    return l_sd;
 
   int sd=0;
 #ifdef SUPPORT_IPV6
@@ -101,6 +102,21 @@ void AmRtpStream::setLocalPort()
     close(sd);
     throw string ("while setting socket non blocking.");
   }
+
+  l_sd = sd;
+  return l_sd;
+}
+
+void AmRtpStream::setLocalPort()
+{
+  if(l_port)
+    return;
+  
+  assert(l_if >= 0);
+  assert(l_if < (int)AmConfig::Ifs.size());
+
+  if (!getLocalSocket())
+    return;
   
   int retry = 10;
   unsigned short port = 0;
@@ -109,11 +125,11 @@ void AmRtpStream::setLocalPort()
     port = AmConfig::Ifs[l_if].getNextRtpPort();
 #ifdef SUPPORT_IPV6
     set_port_v6(&l_saddr,port);
-    if(!bind(sd,(const struct sockaddr*)&l_saddr,
+    if(!bind(l_sd,(const struct sockaddr*)&l_saddr,
 	     sizeof(struct sockaddr_storage)))
 #else	
-      l_saddr.sin_port = htons(port);
-    if(!bind(sd,(const struct sockaddr*)&l_saddr,
+    l_saddr.sin_port = htons(port);
+    if(!bind(l_sd,(const struct sockaddr*)&l_saddr,
 	     sizeof(struct sockaddr_in)))
 #endif
       {
@@ -122,31 +138,36 @@ void AmRtpStream::setLocalPort()
     else {
       DBG("bind: %s\n",strerror(errno));		
     }
-      
   }
 
+  int true_opt = 1;
   if (!retry){
     ERROR("could not find a free RTP port\n");
-    close(sd);
+    close(l_sd);
+    l_sd = 0;
     throw string("could not find a free RTP port");
   }
 
-  if(setsockopt(sd, SOL_SOCKET, SO_REUSEADDR,
+  if(setsockopt(l_sd, SOL_SOCKET, SO_REUSEADDR,
 		(void*)&true_opt, sizeof (true_opt)) == -1) {
 
     ERROR("%s\n",strerror(errno));
-    close(sd);
+    close(l_sd);
+    l_sd = 0;
     throw string ("while setting local address reusable.");
   }
-    
-  l_sd = sd;
+
   l_port = port;
   AmRtpReceiver::instance()->addStream(l_sd,this);
-  DBG("local rtp port set to %i\n",l_port);
+  DBG("added to RTP receiver (%s:%i)\n",get_addr_str(l_saddr.sin_addr).c_str(),l_port);
 }
 
 int AmRtpStream::ping()
 {
+  // TODO:
+  //  - we'd better send an empty UDP packet 
+  //    for this purpose.
+
   unsigned char ping_chr[2];
 
   ping_chr[0] = 0;
@@ -190,7 +211,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
     case DTMF_SEND_SENDING: {
       if (ts_less()(ts, current_send_dtmf_ts + current_send_dtmf.second)) {
 	// send packet
-	if (!remote_telephone_event_pt.get()) 
+	if (!remote_telephone_event_pt) 
 	  return;
 
 	dtmf_payload_t dtmf;
@@ -221,7 +242,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
       } else {
 	send_dtmf_end_repeat++;
 	// send packet with end bit set, duration = event duration
-	if (!remote_telephone_event_pt.get()) 
+	if (!remote_telephone_event_pt) 
 	  return;
 
 	dtmf_payload_t dtmf;
@@ -325,7 +346,6 @@ int AmRtpStream::send_raw( char* packet, unsigned int length )
   return length;
 }
 
-
 // returns 
 // @param ts              [out] timestamp of the received packet, 
 //                              in audio buffer relative time
@@ -343,31 +363,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   if (!rp)
     return 0;
 
-#ifndef SUPPORT_IPV6
-  if(passive) {
-    // #ifdef SUPPORT_IPV6
-    //     struct sockaddr_storage recv_addr;
-    // #else
-    struct sockaddr_in recv_addr;
-    rp->getAddr(&recv_addr);
-
-    // symmetric RTP
-    if ((recv_addr.sin_port != r_saddr.sin_port)
-	|| (recv_addr.sin_addr.s_addr 
-	    != r_saddr.sin_addr.s_addr)) {
-		
-      string addr_str = get_addr_str(recv_addr.sin_addr);
-      int port = ntohs(recv_addr.sin_port);
-      setRAddr(addr_str,port);
-      DBG("Symmetric RTP: setting new remote address: %s:%i\n",
-	  addr_str.c_str(),port);
-      // avoid comparing each time sender address
-    } else {
-      DBG("Symmetric RTP: remote end sends RTP from advertised address. Leaving passive mode.\n");
-    }
-    passive = false;
-  }
-#endif
+  handleSymmetricRtp(rp);
 
   /* do we have a new talk spurt? */
   begin_talk = ((last_payload == 13) || rp->marker);
@@ -418,7 +414,11 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     hold(false),
     receiving(true),
     monitor_rtp_timeout(true),
-    dtmf_sending_state(DTMF_SEND_NONE)
+    dtmf_sending_state(DTMF_SEND_NONE),
+    remote_telephone_event_pt(NULL),
+    local_telephone_event_pt(NULL),
+    relay_stream(NULL),
+    relay_enabled(false)
 {
 
 #ifdef SUPPORT_IPV6
@@ -428,7 +428,6 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
   memset(&r_saddr,0,sizeof(struct sockaddr_in));
   memset(&l_saddr,0,sizeof(struct sockaddr_in));
 #endif
-  //sched = AmRtpScheduler::instance();
 
 #ifndef SUPPORT_IPV6
   /* By default we listen on all interfaces */
@@ -512,6 +511,33 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
 
 #ifndef SUPPORT_IPV6
   mute = (r_saddr.sin_addr.s_addr == 0);
+#endif
+}
+
+void AmRtpStream::handleSymmetricRtp(AmRtpPacket* rp) {
+#ifndef SUPPORT_IPV6
+  if(passive) {
+    // #ifdef SUPPORT_IPV6
+    //     struct sockaddr_storage recv_addr;
+    // #else
+    struct sockaddr_in recv_addr;
+    rp->getAddr(&recv_addr);
+
+    // symmetric RTP
+    if ((recv_addr.sin_port != r_saddr.sin_port)
+	|| (recv_addr.sin_addr.s_addr != r_saddr.sin_addr.s_addr)) {
+      string addr_str = get_addr_str(recv_addr.sin_addr);
+      int port = ntohs(recv_addr.sin_port);
+      setRAddr(addr_str,port);
+      DBG("Symmetric RTP: setting new remote address: %s:%i\n",
+	  addr_str.c_str(),port);
+    } else {
+      DBG("Symmetric RTP: remote end sends RTP from advertised address."
+	  " Leaving passive mode.\n");
+    }
+    // avoid comparing each time sender address
+    passive = false;
+  }
 #endif
 }
 
@@ -603,15 +629,14 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
   payload = local_media.payloads[0].payload_type;
   last_payload = payload;
 
-  const SdpPayload *telephone_event_payload = remote.telephoneEventPayload();
-  if(telephone_event_payload) {
+  if(remote_telephone_event_pt = remote.telephoneEventPayload()) {
       DBG("remote party supports telephone events (pt=%i)\n",
 	  telephone_event_payload->payload_type);
-      remote_telephone_event_pt.reset(telephone_event_payload);
   } else {
     DBG("remote party doesn't support telephone events\n");
   }
-  local_telephone_event_pt.reset(local.telephoneEventPayload());
+
+  local_telephone_event_pt = local.telephoneEventPayload();
 
   resume();
 
@@ -627,12 +652,14 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
 
 void AmRtpStream::pause()
 {
+  receiving = false;
 }
 
 void AmRtpStream::resume()
 {
   gettimeofday(&last_recv_time,NULL);
   mem.clear();
+  receiving = true;
 }
 
 void AmRtpStream::setOnHold(bool on_hold) {
@@ -656,6 +683,16 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   memcpy(&last_recv_time, &p->recv_time, sizeof(struct timeval));
 
   if (!receiving && !passive) {
+    mem.freePacket(p);
+    return;
+  }
+
+  if (relay_enabled) {
+    handleSymmetricRtp(p);
+
+    if (NULL != relay_stream) {
+      relay_stream->relay(p);
+    }
     mem.freePacket(p);
     return;
   }
@@ -731,6 +768,11 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 void AmRtpStream::clearRTPTimeout(struct timeval* recv_time) {
  memcpy(&last_recv_time, recv_time, sizeof(struct timeval));
 }
+
+unsigned int AmRtpStream::bytes2samples(unsigned int) const {
+  ERROR("bytes2samples called on AmRtpStream\n");
+  return 0;
+}
  
 int AmRtpStream::nextPacket(AmRtpPacket*& p)
 {
@@ -747,8 +789,8 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
      AmConfig::DeadRtpTime && 
      (diff.tv_sec > 0) &&
      ((unsigned int)diff.tv_sec > AmConfig::DeadRtpTime)){
-    WARN("RTP Timeout detected. Last received packet is too old.\n");
-    DBG("diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
+    WARN("RTP Timeout detected. Last received packet is too old "
+	 "(diff.tv_sec = %i\n",(unsigned int)diff.tv_sec);
     receive_mut.unlock();
     return RTP_TIMEOUT;
   }
@@ -773,7 +815,23 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
   return 1;
 }
 
-int AmRtpStream::getLocalTelephoneEventRate()
+#include "rtp/rtp.h"
+
+void AmRtpStream::relay(AmRtpPacket* p) {
+  if (!l_port) // not yet initialized
+    return;
+
+  rtp_hdr_t* hdr = (rtp_hdr_t*)p->getBuffer();
+  hdr->seq = htons(sequence++);
+  hdr->ssrc = htonl(l_ssrc);
+  p->setAddr(&r_saddr);
+
+  if(p->send(l_sd) < 0){
+    ERROR("while sending RTP packet.\n");
+  }
+}
+
+int AmRtpStream::getTelephoneEventRate()
 {
   int retval = 0;
   if (local_telephone_event_pt.get())
@@ -788,6 +846,21 @@ void AmRtpStream::sendDtmf(int event, unsigned int duration_ms) {
   dtmf_send_queue_mut.unlock();
   DBG("enqueued DTMF event %i duration %u\n", event, duration_ms);
 }
+
+void AmRtpStream::setRelayStream(AmRtpStream* stream) {
+  relay_stream = stream;
+  DBG("set relay stream [%p] for RTP instance [%p]\n",
+      stream, this);
+}
+
+void AmRtpStream::enableRtpRelay() {
+  relay_enabled = true;
+}
+
+void AmRtpStream::disableRtpRelay() {
+  relay_enabled = false;
+}
+
 
 PacketMem::PacketMem() {
   memset(used, 0, sizeof(used));

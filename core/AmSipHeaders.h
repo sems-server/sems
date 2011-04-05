@@ -39,6 +39,7 @@
 
 #define SIP_HDR_COL(_hdr)       _hdr ":"
 #define SIP_HDR_COLSP(_hdr)     SIP_HDR_COL(_hdr) " "
+#define COLSP                   ": "
 
 #define CRLF                    "\r\n"
 #define SIP_HDR_LEN(_hdr)       (sizeof(_hdr) - /*0-term*/1)
@@ -53,4 +54,8 @@
 
 #define SIP_REPLY_SERVER_INTERNAL_ERROR "Server Internal Error"
 #define SIP_REPLY_BAD_EXTENSION         "Bad Extension"
+#define SIP_REPLY_EXTENSION_REQUIRED    "Extension Required"
+#define SIP_REPLY_LOOP_DETECTED         "Loop Detected"
+#define SIP_REPLY_NOT_EXIST             "Call Leg/Transaction Does Not Exist"
+
 #endif /* __AMSIPHEADERS_H__ */

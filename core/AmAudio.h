@@ -49,8 +49,8 @@ using std::string;
 
 #define SYSTEM_SAMPLERATE 8000 // fixme: sr per session
 
-class SdpPayload;
-class CodecContainer;
+struct SdpPayload;
+struct CodecContainer;
 
 /** \brief Audio Event */
 class AmAudioEvent: public AmEvent

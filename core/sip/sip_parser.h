@@ -45,7 +45,7 @@ struct sip_reply;
 struct sip_header;
 struct sip_via_parm;
 struct dns_handle;
-struct trsp_socket;
+class trsp_socket;
 
 //
 // SIP message types:

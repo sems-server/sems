@@ -33,6 +33,7 @@
 #include <vector>
 #include <netinet/in.h>
 #include "AmPlugIn.h"
+#include <memory>
 using std::string;
 
 
@@ -154,7 +155,7 @@ class AmSdp
 {
 
   /**
-   * Find payload by name
+   * Find payload by name, return cloned object
    */
   const SdpPayload *findPayload(const string& name) const;
 
@@ -193,8 +194,13 @@ public:
    */
   void print(string& body) const;
 
-  /** get telephone event payload (new object) */
+  /** get telephone event payload */
   const SdpPayload *telephoneEventPayload() const;
+
+  /**
+   * Test if remote UA supports 'telefone_event'.
+   */
+  //bool hasTelephoneEvent();
 };
 
 #endif

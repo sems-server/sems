@@ -39,6 +39,7 @@
 #include "sip/parse_cseq.h"
 #include "sip/parse_extensions.h"
 #include "sip/parse_100rel.h"
+#include "sip/parse_route.h"
 #include "sip/trans_table.h"
 #include "sip/sip_trans.h"
 #include "sip/wheeltimer.h"
@@ -476,6 +477,7 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.to_tag   = c2stlstr(((sip_from_to*)msg->to->p)->tag);
     req.cseq     = get_cseq(msg)->num;
     req.cseq_method = c2stlstr(get_cseq(msg)->method_str);
+    req.via_branch = c2stlstr(msg->via_p1->branch);
     req.body     = c2stlstr(msg->body);
 
     if (msg->rack) {
@@ -497,6 +499,8 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 		+ c2stlstr((*it)->value) + CRLF;
 	}
     }
+
+    req.via1 = c2stlstr(msg->via1->value);
 
     req.remote_ip = get_addr_str(((sockaddr_in*)&msg->remote_ip)->sin_addr).c_str();
     req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
@@ -693,25 +697,52 @@ void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
     return;
   }
 
-  AmEventDispatcher::instance()->post(c2stlstr(tr->to_tag), tmo_evt);
+  if(!AmEventDispatcher::instance()->post(c2stlstr(tr->to_tag), tmo_evt)){
+      ERROR("Could not post timeout event (sess. id: %.*s)\n",tr->to_tag.len,tr->to_tag.s);
+      delete tmo_evt;
+  }
 }
 
 #undef DBG_PARAM
 
 void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
 {
-    if(!routes.empty()){
+    if(routes.empty())
+	return;
 	
-	list<sip_header*>::const_reverse_iterator it = routes.rbegin();
-
-	route_field = c2stlstr((*it)->value);
-	++it;
-
-	for(; it != routes.rend(); ++it) {
-		
-	    route_field += ", " + c2stlstr((*it)->value);
-	}
+    list<sip_header*>::const_reverse_iterator it_rh = routes.rbegin();
+    if(parse_route(*it_rh) < 0){
+	DBG("Could not parse route header [%.*s]\n",
+	    (*it_rh)->value.len,(*it_rh)->value.s);
+	return;
     }
+    sip_route* route = (sip_route*)(*it_rh)->p;
+
+    list<route_elmt*>::const_reverse_iterator it_re = route->elmts.rbegin();
+    route_field = c2stlstr((*it_re)->route);
+    
+    while(true) {
+	
+	if(++it_re == route->elmts.rend()){
+	    if(++it_rh == routes.rend()){
+		DBG("route_field = [%s]\n",route_field.c_str());
+		return;
+	    }
+
+	    if(parse_route(*it_rh) < 0){
+		DBG("Could not parse route header [%.*s]\n",
+		    (*it_rh)->value.len,(*it_rh)->value.s);
+		return;
+	    }
+	    route = (sip_route*)(*it_rh)->p;
+	    if(route->elmts.empty())
+		return;
+	    it_re = route->elmts.rbegin();
+	}
+	
+	route_field += ", " + c2stlstr((*it_re)->route);
+    }
+
 }
 
 void SipCtrlInterface::prepare_routes_uas(const list<sip_header*>& routes, string& route_field)

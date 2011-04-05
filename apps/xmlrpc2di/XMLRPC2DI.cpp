@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 iptego GmbH
+ * Copyright (C) 2010-2011 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -152,7 +153,7 @@ int XMLRPC2DI::load() {
     export_di = true;
   } 
   
-  DBG("XMLRPC Server: %snabling builtin method 'di'.\n", export_di?"E":"Not e");
+  INFO("XMLRPC Server: %snabling builtin method 'di'.\n", export_di?"E":"Not e");
 
 
   server = new XMLRPC2DIServer(XMLRPCPort, bind_ip, export_di, direct_export, s);
@@ -329,14 +330,30 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
     s(s),
     // register method 'calls'
     calls_method(s),
-    // register method 'get_loglevel'
-    setloglevel_method(s),
     // register method 'set_loglevel'
-    getloglevel_method(s)
+    setloglevel_method(s),
+    // register method 'get_loglevel'
+    getloglevel_method(s),
+    // register method 'set_shutdownmode'
+    setshutdownmode_method(s),
+    // register method 'get_shutdownmode'
+    getshutdownmode_method(s),
+    getcallsavg_method(s),
+    getcallsmax_method(s),
+    getcpsavg_method(s),
+    getcpsmax_method(s)
+
+
 {	
-  DBG("XMLRPC Server: enabled builtin method 'calls'\n");
-  DBG("XMLRPC Server: enabled builtin method 'get_loglevel'\n");
-  DBG("XMLRPC Server: enabled builtin method 'set_loglevel'\n");
+  INFO("XMLRPC Server: enabled builtin method 'calls'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_loglevel'\n");
+  INFO("XMLRPC Server: enabled builtin method 'set_loglevel'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_shutdownmode'\n");
+  INFO("XMLRPC Server: enabled builtin method 'set_shutdownmode'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_callsavg'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_callsmax'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_cpsavg'\n");
+  INFO("XMLRPC Server: enabled builtin method 'get_cpsmax'\n");
 
   // export all methods via 'di' function? 
   if (di_export) {
@@ -350,9 +367,9 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
     registerMethods(*it);
   }
 
-  DBG("Initialized XMLRPC2DIServer with: \n");
-  DBG("    IP = %s             port = %u\n", 
-      bind_ip.empty()?"ANY":bind_ip.c_str(), port);
+  INFO("Initialized XMLRPC2DIServer with: \n");
+  INFO("    IP = %s             port = %u\n", 
+       bind_ip.empty()?"ANY":bind_ip.c_str(), port);
 }
 
 /** register all methods on xmlrpc server listed by the iface 
@@ -389,14 +406,14 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
       }
       
       if (!has_method) {
-	DBG("XMLRPC Server: adding method '%s'\n",
-	    method.c_str());
+	INFO("XMLRPC Server: enabling method '%s'\n",
+	     method.c_str());
 	DIMethodProxy* mp = new DIMethodProxy(method, method, di_f);
 	s->addMethod(mp);
       }
       
-      DBG("XMLRPC Server: adding method '%s.%s'\n",
-	  iface.c_str(), method.c_str());
+      INFO("XMLRPC Server: enabling method '%s.%s'\n",
+	   iface.c_str(), method.c_str());
       DIMethodProxy* mp = new DIMethodProxy(iface + "." + method, 
 					    method, di_f);
       s->addMethod(mp);
@@ -440,6 +457,31 @@ void XMLRPC2DIServerSetLoglevelMethod::execute(XmlRpcValue& params, XmlRpcValue&
   DBG("XMLRPC2DI: set log level to %d.\n", (int)params[0]);
   result = "200 OK";
 }
+
+
+void XMLRPC2DIServerGetShutdownmodeMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
+  DBG("XMLRPC2DI: get_shutdownmode returns %s\n", AmConfig::ShutdownMode?"true":"false");
+  result = (bool)AmConfig::ShutdownMode;
+}
+
+void XMLRPC2DIServerSetShutdownmodeMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
+  AmConfig::ShutdownMode = params[0];
+  DBG("XMLRPC2DI: set shutdownmode to %s.\n", AmConfig::ShutdownMode?"true":"false");
+  result = "200 OK";
+}
+
+#define XMLMETH_EXEC(_meth, _sess_func, _descr)				\
+  void _meth::execute(XmlRpcValue& params, XmlRpcValue& result) {	\
+  unsigned int res = AmSession::_sess_func();				\
+  result = (int)res;							\
+  DBG("XMLRPC2DI: " _descr "(): %u\n", res);				\
+}
+
+XMLMETH_EXEC(XMLRPC2DIServerGetCallsavgMethod, getAvgSessionNum, "get_callsavg");
+XMLMETH_EXEC(XMLRPC2DIServerGetCallsmaxMethod, getMaxSessionNum, "get_callsmax");
+XMLMETH_EXEC(XMLRPC2DIServerGetCpsavgMethod,   getAvgCPS, "get_cpsavg");
+XMLMETH_EXEC(XMLRPC2DIServerGetCpsmaxMethod,   getMaxCPS, "get_cpsmax");
+#undef XMLMETH_EXEC
 
 void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
   try {
