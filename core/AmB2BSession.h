@@ -209,11 +209,11 @@ class AmB2BSession: public AmSession
    */
   virtual bool onOtherReply(const AmSipReply& reply);
 
-  /** filter body ( b2b_mode == SDPFilter */
+  /** filter body ( b2b_mode == SDPFilter ) */
   virtual int filterBody(string& content_type, string& body,
 			 AmSdp& filter_sdp, bool is_a2b);
 
-  /** filter SDP body ( b2b_mode == SDPFilter */
+  /** filter SDP body ( b2b_mode == SDPFilter ) */
   virtual int filterBody(AmSdp& sdp, bool is_a2b);
 
   AmB2BSession();

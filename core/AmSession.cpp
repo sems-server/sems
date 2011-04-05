@@ -259,78 +259,6 @@ AmPayloadProviderInterface* AmSession::getPayloadProvider() {
   return AmPlugIn::instance();
 }
 
-// todo: - move this back into AmRtpAudio
-//       - simplify payloads handling and move to AmRtpAudio
-//         entirely
-// AmAudioRtpFormat* AmSession::getNewRtpFormat() {
-//   return new AmAudioRtpFormat(m_payloads);
-// }
-
-/*
-void AmSession::negotiate(const string& sdp_body,
-			  bool force_symmetric_rtp,
-			  string* sdp_reply)
-{
-  string r_host = "";
-  int    r_port = 0;
-
-  sdp.setBody(sdp_body.c_str());
-
-  if(sdp.parse())
-    throw AmSession::Exception(400,"session description parsing failed");
-
-  if(sdp.media.empty())
-    throw AmSession::Exception(400,"no media line found in SDP message");
-    
-  m_payloads = sdp.getCompatiblePayloads(getPayloadProvider(), MT_AUDIO, r_host, r_port);
-
-  if (m_payloads.size() == 0)
-    throw AmSession::Exception(488,"could not find compatible payload");
-    
-  const SdpPayload *telephone_event_payload = sdp.telephoneEventPayload();
-  if(telephone_event_payload)
-    {
-      DBG("remote party supports telephone events (pt=%i)\n",
-	  telephone_event_payload->payload_type);
-	
-      lockAudio();
-      RTPStream()->setTelephoneEventPT(telephone_event_payload);
-      unlockAudio();
-    }
-  else {
-    DBG("remote party doesn't support telephone events\n");
-  }
-
-  bool passive_mode = false;
-  if( sdp.remote_active || force_symmetric_rtp) {
-    DBG("The other UA is NATed: switched to passive mode.\n");
-    DBG("remote_active = %i; force_symmetric_rtp = %i\n",
-	sdp.remote_active, force_symmetric_rtp);
-
-    passive_mode = true;
-  }
-
-  lockAudio();
-  try {
-    RTPStream()->setLocalIP(localRTPIP());
-    RTPStream()->setPassiveMode(passive_mode);
-    RTPStream()->setRAddr(r_host, r_port);
-  } catch (const string& err_str) {
-    unlockAudio();
-    throw AmSession::Exception(400, err_str);
-  } catch (...) {
-    unlockAudio();
-    throw;
-  }
-  unlockAudio();
-
-  if(sdp_reply)
-    sdp.genResponse(advertisedIP(), 
-		    RTPStream()->getLocalPort(), 
-		    *sdp_reply, AmConfig::SingleCodecInOK);
-}
-*/
-
 #ifdef SESSION_THREADPOOL
 void AmSession::start() {
   AmSessionProcessorThread* processor_thread = 
@@ -910,89 +838,6 @@ void AmSession::onSipReply(const AmSipReply& reply,
     DBG("Dialog status stays %s (stopped=%s)\n", 
 	dlgStatusStr(old_dlg_status), 
 	sess_stopped.get() ? "true" : "false");
-
-
-  /*  if (negotiate_onreply) {    
-    if(old_dlg_status < AmSipDialog::Connected){
-      
-      switch(dlg.getStatus()){
-	
-      case AmSipDialog::Connected:
-	
-	try {
-	  RTPStream()->setMonitorRTPTimeout(true);
-
-	  acceptAudio(reply.body,reply.hdrs);
-
-	  if(!getStopped()){
-	    
-	    onSessionStart(reply);
-		  
-	    if(input || output || local_input || local_output)
-	      AmMediaProcessor::instance()->addSession(this,
-						       callgroup); 
-	    else { 
-	      DBG("no audio input and output set. "
-		  "Session will not be attached to MediaProcessor.\n");
-	    }
-	  }
-
-	}catch(const AmSession::Exception& e){
-	  ERROR("could not connect audio!!!\n");
-	  ERROR("%i %s\n",e.code,e.reason.c_str());
-	  dlg.bye();
-	  setStopped();
-	  break;
-	}
-	break;
-	
-      case AmSipDialog::Trying:
-      case AmSipDialog::Proceeding:
-      case AmSipDialog::Early:
-	
-	switch(reply.code){
-	  // todo: 180 with body (remote rbt)
-	case 180: { 
-
-	  onRinging(reply);
-
-	  RTPStream()->setMonitorRTPTimeout(false);
-
-	  if(input || output || local_input || local_output)
-	    AmMediaProcessor::instance()->addSession(this,
-						     callgroup); 
-	} break;
-	case 183: {
-	  if (accept_early_session) {
-	    try {
-
-	      setMute(true);
-
-	      acceptAudio(reply.body,reply.hdrs);
-	    
-	      onEarlySessionStart(reply);
-
-	      RTPStream()->setMonitorRTPTimeout(false);
-	      
-	      // ping the other side to open fw/NAT/symmetric RTP
-	      RTPStream()->ping();
-
-	      if(input || output || local_input || local_output)
-		AmMediaProcessor::instance()->addSession(this,
-							 callgroup); 
-	    } catch(const AmSession::Exception& e){
-	      ERROR("%i %s\n",e.code,e.reason.c_str());
-	    } // exceptions are not critical here
-	  }
-	} break;
-	default:  break;// continue waiting.
-	}
-
-      default: break;
-      } // switch dlg status
-    } // status < Connected
-  } //if negotiate_onreply
-  */
 }
 
 
@@ -1038,7 +883,6 @@ void AmSession::onBye(const AmSipRequest& req)
 
 void AmSession::onCancel(const AmSipRequest& req)
 {
-  dlg.reply(req,200,"OK");
   // TODO: if dialog is not yet finally replied,
   //       answer the INVITE transaction with 487
 }

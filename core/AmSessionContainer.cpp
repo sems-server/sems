@@ -210,7 +210,8 @@ string AmSessionContainer::startSessionUAC(AmSipRequest& req, const string& app_
 
   auto_ptr<AmSession> session;
   try {
-    if((session = createSession(req, app_name, session_params)) != 0) {
+    session.reset(createSession(req, app_name, session_params));
+    if(session.get() != 0) {
       session->dlg.initFromLocalRequest(req);
       session->setCallgroup(req.from_tag);
       
@@ -476,10 +477,6 @@ AmSessionContainer::addSession(const string& local_tag,
   }
 
   return AlreadyExist;
-}
-
-void AmSessionContainer::enableUncleanShutdown() {
-  enable_unclean_shutdown = true;
 }
 
 void AmSessionContainer::enableUncleanShutdown() {

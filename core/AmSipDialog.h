@@ -182,9 +182,6 @@ private:
   int  outbound_interface;
   bool out_intf_for_replies;
 
-  int  outbound_interface;
-  bool out_intf_for_replies;
-
   Rel100State reliable_1xx;
 
   unsigned rseq;          // RSeq for next request

@@ -156,10 +156,10 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
     
     // target refresh requests
     if (req.from_uri.length() && 
-	(req.method == "INVITE" || 
-	 req.method == "UPDATE" ||
-	 req.method == "SUBSCRIBE" ||
-	 req.method == "NOTIFY")) {
+	(req.method == SIP_METH_INVITE || 
+	 req.method == SIP_METH_UPDATE ||
+	 req.method == SIP_METH_SUBSCRIBE ||
+	 req.method == SIP_METH_NOTIFY)) {
 
       // refresh the target
       remote_uri = req.from_uri;
@@ -180,21 +180,23 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 
   switch(status){
   case Disconnected:
-    if(req.method == "INVITE")
+    if(req.method == SIP_METH_INVITE)
       status = Trying;
     break;
   case Connected:
-    if(req.method == "BYE")
+    if(req.method == SIP_METH_BYE)
       status = Disconnecting;
     break;
 
   case Trying:
   case Proceeding:
   case Early:
-    if(req.method == "BYE")
+    if(req.method == SIP_METH_BYE)
       status = Disconnecting;
-    else if(req.method == "CANCEL")
+    else if(req.method == SIP_METH_CANCEL){
       status = Cancelling;
+      reply(req,200,"OK");
+    }
     break;
 
   default: break;
@@ -210,7 +212,7 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
     const char* err_txt=NULL;
     int err_code = onRxSdp(req.body,&err_txt);
     if(err_code){
-      if( req.method != SIP_METH_ACK ){ // INVITE || UPDATE
+      if( req.method != SIP_METH_ACK ){ // INVITE || UPDATE || PRACK
 	reply(req,err_code,err_txt);
       }
       else { // ACK
@@ -467,7 +469,7 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
     ERROR("could not find any transaction matching request\n");
     ERROR("reply code=%i; method=%s; callid=%s; local_tag=%s; "
 	  "remote_tag=%s; cseq=%i\n",
-	  code,reply.cseq_method.c_str(),callid.c_str(),local_tag.c_str(),
+	  reply.code,reply.cseq_method.c_str(),callid.c_str(),local_tag.c_str(),
 	  remote_tag.c_str(),reply.cseq);
     return -1;
   }
@@ -852,9 +854,8 @@ string AmSipDialog::getContactHdr()
     assert(oif >= 0);
     assert(oif < (int)AmConfig::Ifs.size());
 
-    contact_uri += (AmConfig::Ifs[oif].PublicIP.empty() ? 
-		    AmConfig::Ifs[oif].LocalSIPIP : AmConfig::Ifs[oif].PublicIP ) 
-
+    contact_uri += AmConfig::Ifs[oif].PublicIP.empty() ? 
+		   AmConfig::Ifs[oif].LocalSIPIP : AmConfig::Ifs[oif].PublicIP;
     contact_uri += ":" + int2str(AmConfig::Ifs[oif].LocalSIPPort);
     contact_uri += ">";
 

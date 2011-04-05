@@ -211,8 +211,8 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 void AmB2BSession::onSipRequest(const AmSipRequest& req)
 {
   bool fwd = sip_relay_only &&
-    (req.method != "BYE") &&
-    (req.method != "CANCEL");
+    (req.method != SIP_METH_BYE) &&
+    (req.method != SIP_METH_CANCEL);
 
   if(!fwd)
     AmSession::onSipRequest(req);
@@ -270,8 +270,7 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
 
   if (parser_sdp.media.empty()) {
     // SDP has not yet been parsed
-    parser_sdp.setBody(body.c_str());
-    if (parser_sdp.parse()) {
+    if (parser_sdp.parse(body.c_str())) {
       DBG("SDP parsing failed!\n");
       return;
     }
@@ -339,8 +338,7 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
     return false;
 
   AmSdp parser_sdp;
-  parser_sdp.setBody(body.c_str());
-  if (parser_sdp.parse()) {
+  if (parser_sdp.parse(body.c_str())) {
     DBG("SDP parsing failed!\n");
     return false;
   }
@@ -418,7 +416,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
     // filter relayed INVITE/UPDATE body
     if (b2b_mode != B2BMode_Transparent &&
 	(reply.cseq_method == SIP_METH_INVITE || reply.cseq_method == SIP_METH_UPDATE)) {
-      filterBody(n_reply.content_type, n_reply.body, a_leg);
+      filterBody(n_reply.content_type, n_reply.body, filter_sdp, a_leg);
     }
     
     if (rtp_relay_enabled &&
@@ -727,8 +725,7 @@ int AmB2BSession::filterBody(string& content_type, string& body, AmSdp& filter_s
     return 0;
 
   if (content_type == SIP_APPLICATION_SDP) {
-    filter_sdp.setBody(body.c_str());
-    int res = filter_sdp.parse();
+    int res = filter_sdp.parse(body.c_str());
     if (0 != res) {
       DBG("SDP parsing failed!\n");
       return res;
@@ -1084,7 +1081,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 	n_reply.code = 500;
 	n_reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
 	n_reply.cseq = co_ev->r_cseq;
-	n_reply.local_tag = dlg.local_tag;
+	n_reply.to_tag = dlg.local_tag;
 	relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
 	  throw;
       }

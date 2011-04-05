@@ -350,7 +350,7 @@ void EarlyAnnounceDialog::onBye(const AmSipRequest& req)
   setStopped();
 }
 
-void EarlyAnnounceDialog::onCancel()
+void EarlyAnnounceDialog::onCancel(const AmSipRequest& req)
 {
   dlg.reply(invite_req,487,"Call terminated");
   setStopped();

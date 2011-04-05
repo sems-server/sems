@@ -202,10 +202,10 @@ void AmSdp::print(string& body) const
   //mime_type = "application/sdp";
 }
 
-bool AmSdp::hasTelephoneEvent() const
-{
-  return telephoneEventPayload() != NULL;
-}
+// bool AmSdp::hasTelephoneEvent() const
+// {
+//   return telephoneEventPayload() != NULL;
+// }
 
 const SdpPayload* AmSdp::telephoneEventPayload() const
 {

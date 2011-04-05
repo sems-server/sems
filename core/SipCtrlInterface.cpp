@@ -408,7 +408,7 @@ int SipCtrlInterface::send(const AmSipReply &rep,
     int ret =
 	trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
 					    rep.code,stl2cstr(rep.reason),
-					    stl2cstr(rep.from_tag),
+					    stl2cstr(rep.to_tag),
 					    cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body),
 					    stl2cstr(next_hop_ip),next_hop_port,
 					    out_interface);

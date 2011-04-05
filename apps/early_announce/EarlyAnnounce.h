@@ -77,7 +77,7 @@ public:
   void onInvite(const AmSipRequest& req);
   void onEarlySessionStart();
   void onBye(const AmSipRequest& req);
-  void onCancel();
+  void onCancel(const AmSipRequest& req);
   void onDtmf(int event, int duration_msec) {}
 
   void process(AmEvent* event);

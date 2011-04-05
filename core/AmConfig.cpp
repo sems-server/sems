@@ -100,7 +100,7 @@ bool         AmConfig::ShutdownMode            = false;
 unsigned int AmConfig::ShutdownModeErrCode     = 503;
 string       AmConfig::ShutdownModeErrReason   = "Server shutting down";
 
-AmSipDialog::provisional_100rel AmConfig::rel100      = REL100_SUPPORTED;
+AmSipDialog::Rel100State AmConfig::rel100      = REL100_SUPPORTED;
 
 vector <string> AmConfig::CodecOrder;
 

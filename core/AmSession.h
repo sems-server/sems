@@ -646,11 +646,6 @@ public:
    */
   static string getNewId();
 
-  /**
-   * Gets the number of running sessions
-   */
-  static unsigned int getSessionNum();
-
 };
 
 inline AmRtpAudio* AmSession::RTPStream() {

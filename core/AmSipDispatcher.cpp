@@ -71,7 +71,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       if(!ev_disp->post(local_tag,ev)) {
 
 	  delete ev;
-	  if(req.method != "ACK") {
+	  if(req.method != SIP_METH_ACK) {
 	    AmSipDialog::reply_error(req,481,
 				     "Call leg/Transaction does not exist");
 	  }
@@ -86,11 +86,11 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
   }
 
   DBG("method: `%s' [%zd].\n", req.method.c_str(), req.method.length());
-  if(req.method == "INVITE"){
+  if(req.method == SIP_METH_INVITE){
       
       AmSessionContainer::instance()->startSessionUAS(req);
   }
-  else if(req.method == "CANCEL"){
+  else if(req.method == SIP_METH_CANCEL){
       
     if(ev_disp->postSipRequest(req)){
       return;
@@ -100,9 +100,10 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
     AmSipDialog::reply_error(req,481,SIP_REPLY_NOT_EXIST);
     return;
   } 
-  else if(req.method == "BYE"){
+  else if(req.method == SIP_METH_BYE ||
+	  req.method == SIP_METH_PRACK){
     
-    // BYE of a (here) non-existing dialog
+    // BYE/PRACK of a (here) non-existing dialog
     AmSipDialog::reply_error(req,481,SIP_REPLY_NOT_EXIST);
     return;
 

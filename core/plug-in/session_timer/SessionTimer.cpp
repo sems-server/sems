@@ -81,7 +81,8 @@ bool SessionTimer::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_d
 {
   if (session_timer_conf.getEnableSessionTimer() &&
       (reply.code == 422) &&
-      ((trans_method == SIP_METH_INVITE) || (trans_method == SIP_METH_UPDATE))) {
+      ((reply.cseq_method == SIP_METH_INVITE) || 
+       (reply.cseq_method == SIP_METH_UPDATE))) {
     std::map<unsigned int, SIPRequestInfo >::iterator ri =
       sent_requests.find(reply.cseq);
     if (ri != sent_requests.end()) {
