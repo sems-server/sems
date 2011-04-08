@@ -35,7 +35,7 @@ typedef struct {
 // Constructor
 static PyObject* IvrSipRequest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-  static char *kwlist[] = {"ivr_req", NULL};
+  static char *kwlist[] = {(char*)"ivr_req", NULL};
   IvrSipRequest *self;
 
   self = (IvrSipRequest *)type->tp_alloc(type, 0);
@@ -64,7 +64,7 @@ static PyObject* IvrSipRequest_new(PyTypeObject *type, PyObject *args, PyObject 
 
 static PyObject* IvrSipRequest_newRef(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-  static char *kwlist[] = {"ivr_req", NULL};
+  static char *kwlist[] = {(char*)"ivr_req", NULL};
   IvrSipRequest *self;
 
   self = (IvrSipRequest *)type->tp_alloc(type, 0);
@@ -153,23 +153,20 @@ def_IvrSipRequest_SETTER(IvrSipRequest_sethdrs,   hdrs)
 #undef def_IvrSipRequest_SETTER
 
 static PyGetSetDef IvrSipRequest_getset[] = {
-  {"method",        (getter)IvrSipRequest_getmethod, NULL, "method", NULL},
-  {"user",          (getter)IvrSipRequest_getuser, NULL, "local user", NULL},
-  {"domain",        (getter)IvrSipRequest_getdomain, NULL, "local domain", NULL},
-
-  {"r_uri",         (getter)IvrSipRequest_getr_uri, NULL, "port", NULL},
-  {"from_uri",      (getter)IvrSipRequest_getfrom_uri, NULL, "port", NULL},
-  {"from",          (getter)IvrSipRequest_getfrom, NULL, "port", NULL},
-  {"to",            (getter)IvrSipRequest_getto, NULL, "port", NULL},
-
-
-  {"callid",        (getter)IvrSipRequest_getcallid, NULL, "call id", NULL},
-  {"from_tag",      (getter)IvrSipRequest_getfrom_tag, NULL, "remote tag", NULL},
-  {"to_tag",        (getter)IvrSipRequest_getto_tag, NULL, "local tag", NULL},
-  {"route",       (getter)IvrSipRequest_getroute, NULL, "record routing", NULL},
-  {"cseq",    (getter)IvrSipRequest_getcseq, NULL, "CSeq for next request", NULL},
-  {"body",    (getter)IvrSipRequest_getbody, NULL, "Body", NULL},
-  {"hdrs",    (getter)IvrSipRequest_gethdrs, (setter)IvrSipRequest_sethdrs, "Additional headers", NULL},
+  {(char*)"method", (getter)IvrSipRequest_getmethod, NULL, (char*)"method", NULL},
+  {(char*)"user",   (getter)IvrSipRequest_getuser, NULL, (char*)"local user", NULL},
+  {(char*)"domain", (getter)IvrSipRequest_getdomain, NULL, (char*)"local domain", NULL},
+  {(char*)"r_uri",  (getter)IvrSipRequest_getr_uri, NULL, (char*)"port", NULL},
+  {(char*)"from_uri", (getter)IvrSipRequest_getfrom_uri, NULL, (char*)"port", NULL},
+  {(char*)"from",   (getter)IvrSipRequest_getfrom, NULL, (char*)"port", NULL},
+  {(char*)"to",     (getter)IvrSipRequest_getto, NULL, (char*)"port", NULL},
+  {(char*)"callid",  (getter)IvrSipRequest_getcallid, NULL, (char*)"call id", NULL},
+  {(char*)"from_tag", (getter)IvrSipRequest_getfrom_tag, NULL, (char*)"remote tag", NULL},
+  {(char*)"to_tag", (getter)IvrSipRequest_getto_tag, NULL, (char*)"local tag", NULL},
+  {(char*)"route",  (getter)IvrSipRequest_getroute, NULL, (char*)"record routing", NULL},
+  {(char*)"cseq",   (getter)IvrSipRequest_getcseq, NULL, (char*)"CSeq for next request", NULL},
+  {(char*)"body",   (getter)IvrSipRequest_getbody, NULL, (char*)"Body", NULL},
+  {(char*)"hdrs",   (getter)IvrSipRequest_gethdrs, (setter)IvrSipRequest_sethdrs, (char*)"Additional headers", NULL},
   {NULL}  /* Sentinel */
 };
 

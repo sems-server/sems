@@ -121,7 +121,7 @@ class IvrDialog : public AmB2BCallerSession
   PyObject  *py_mod;
   PyObject  *py_dlg;
 
-  bool callPyEventHandler(char* name, char* fmt, ...);
+  bool callPyEventHandler(const char* name, const char* fmt, ...);
     
   void process(AmEvent* event);
 

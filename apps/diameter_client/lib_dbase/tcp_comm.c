@@ -192,7 +192,7 @@ dia_tcp_conn* tcp_create_connection(const char* host, int port,
     return conn_st;
   }
 
-  meth=TLSv1_client_method();
+  meth=(SSL_METHOD *)TLSv1_client_method();
   conn_st->ctx = SSL_CTX_new(meth);
 
   if (!conn_st->ctx) {

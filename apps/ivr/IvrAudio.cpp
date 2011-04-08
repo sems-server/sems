@@ -223,7 +223,7 @@ static PyObject* IvrAudioFile_exportRaw(IvrAudioFile* self, PyObject*)
     
   self->af->rewind();
 
-  return PyFile_FromFile(self->af->getfp(),"","rwb",NULL);
+  return PyFile_FromFile(self->af->getfp(),(char*)"",(char*)"rwb",NULL);
 }
 
 
@@ -289,9 +289,9 @@ static int IvrAudioFile_setloop(IvrAudioFile* self, PyObject* value, void*)
 }
 
 static PyGetSetDef IvrAudioFile_getseters[] = {
-  {"loop", 
+  {(char*)"loop", 
    (getter)IvrAudioFile_getloop, (setter)IvrAudioFile_setloop,
-   "repeat mode",
+   (char*)"repeat mode",
    NULL},
   {NULL}  /* Sentinel */
 };
