@@ -302,7 +302,8 @@ IvrDialog* IvrFactory::newDlg(const string& name)
   IvrDialog* dlg = new IvrDialog();
 
   PyObject* c_dlg = PyCObject_FromVoidPtr(dlg,NULL);
-  PyObject* dlg_inst = PyObject_CallMethod(mod_desc.dlg_class,"__new__","OO",
+  PyObject* dlg_inst = PyObject_CallMethod(mod_desc.dlg_class,
+					   (char*)"__new__",(char*)"OO",
 					   mod_desc.dlg_class,c_dlg);
   Py_DECREF(c_dlg);
 
@@ -653,7 +654,7 @@ PyObject_VaCallMethod(PyObject *o, char *name, char *format, va_list va)
   return retval;
 }
 
-bool IvrDialog::callPyEventHandler(char* name, char* fmt, ...)
+bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
 {
   bool ret=false;
   va_list va;
@@ -661,7 +662,7 @@ bool IvrDialog::callPyEventHandler(char* name, char* fmt, ...)
   PYLOCK;
 
   va_start(va, fmt);
-  PyObject* o = PyObject_VaCallMethod(py_dlg,name,fmt,va);
+  PyObject* o = PyObject_VaCallMethod(py_dlg,(char*)name,(char*)fmt,va);
   va_end(va);
 
   if(!o) {

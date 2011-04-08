@@ -46,7 +46,7 @@ class AmSessionEventHandlerFactory;
 class AmDynInvokeFactory;
 class AmLoggingFacility;
 class AmSipRequest;
-class SdpPayload;
+struct SdpPayload;
 
 struct amci_exports_t;
 struct amci_codec_t;

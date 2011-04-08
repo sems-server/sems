@@ -23,7 +23,7 @@ typedef struct {
 // Constructor
 static PyObject* IvrDialogBase_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-  static char *kwlist[] = {"ivr_dlg", NULL};
+  static char *kwlist[] = {(char*)"ivr_dlg", NULL};
   IvrDialogBase *self;
 
   self = (IvrDialogBase *)type->tp_alloc(type, 0);
@@ -184,7 +184,7 @@ static PyObject* IvrDialogBase_dropSession(IvrDialogBase* self, PyObject*)
 
 static PyObject* IvrDialogBase_bye(IvrDialogBase* self, PyObject* args)
 {
-  char* hdrs = "";
+  char* hdrs = (char*)"";
 
   assert(self->p_dlg);
 
@@ -603,13 +603,13 @@ static PyMethodDef IvrDialogBase_methods[] = {
 };
 
 static PyGetSetDef IvrDialogBase_getset[] = {
-  {"dialog", 
+  {(char*)"dialog", 
    (getter)IvrDialogBase_getdialog, NULL,
-   "the dialog property",
+   (char*)"the dialog property",
    NULL},
-  {"invite_req", 
+  {(char*)"invite_req", 
    (getter)IvrDialogBase_getinvite_req, NULL,
-   "the initial invite request",
+   (char*)"the initial invite request",
    NULL},
   {NULL}  /* Sentinel */
 };

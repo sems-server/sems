@@ -13,7 +13,7 @@ typedef struct {
 // Constructor
 static PyObject* IvrSipDialog_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-  static char *kwlist[] = {"ivr_dlg", NULL};
+  static char *kwlist[] = {(char*)"ivr_dlg", NULL};
   IvrSipDialog *self;
 
   self = (IvrSipDialog *)type->tp_alloc(type, 0);
@@ -92,19 +92,19 @@ IvrSipDialog_getcseq(IvrSipDialog *self, void *closure)
 }
 
 static PyGetSetDef IvrSipDialog_getset[] = {
-  {"user",        (getter)IvrSipDialog_getuser, NULL, "local user", NULL},
-  {"domain",      (getter)IvrSipDialog_getdomain, NULL, "local domain", NULL},
-  {"local_uri",   (getter)IvrSipDialog_getlocal_uri, NULL, "local uri", NULL},
-  {"remote_uri",  (getter)IvrSipDialog_getremote_uri, (setter)IvrSipDialog_setremote_uri, "remote uri", NULL},
-  {"contact_uri", (getter)IvrSipDialog_getcontact_uri, NULL, "pre-calculated contact uri", NULL},
-  {"callid",      (getter)IvrSipDialog_getcallid, NULL, "call id", NULL},
-  {"remote_tag",  (getter)IvrSipDialog_getremote_tag, NULL, "remote tag", NULL},
-  {"local_tag",   (getter)IvrSipDialog_getlocal_tag, NULL, "local tag", NULL},
-  {"remote_party",(getter)IvrSipDialog_getremote_party, NULL, "To/From", NULL},
-  {"local_party", (getter)IvrSipDialog_getlocal_party, NULL, "To/From", NULL},
-  {"route",       (getter)IvrSipDialog_getroute, NULL, "record routing", NULL},
-  {"outbound_proxy", (getter)IvrSipDialog_getoutbound_proxy, NULL, "outbound proxy", NULL},
-  {"cseq",    (getter)IvrSipDialog_getcseq, NULL, "CSeq for next request", NULL},
+  {(char*)"user",        (getter)IvrSipDialog_getuser, NULL, (char*)"local user", NULL},
+  {(char*)"domain",      (getter)IvrSipDialog_getdomain, NULL, (char*)"local domain", NULL},
+  {(char*)"local_uri",   (getter)IvrSipDialog_getlocal_uri, NULL, (char*)"local uri", NULL},
+  {(char*)"remote_uri",  (getter)IvrSipDialog_getremote_uri, (setter)IvrSipDialog_setremote_uri, (char*)"remote uri", NULL},
+  {(char*)"contact_uri", (getter)IvrSipDialog_getcontact_uri, NULL, (char*)"pre-calculated contact uri", NULL},
+  {(char*)"callid",      (getter)IvrSipDialog_getcallid, NULL, (char*)"call id", NULL},
+  {(char*)"remote_tag",  (getter)IvrSipDialog_getremote_tag, NULL, (char*)"remote tag", NULL},
+  {(char*)"local_tag",   (getter)IvrSipDialog_getlocal_tag, NULL, (char*)"local tag", NULL},
+  {(char*)"remote_party",(getter)IvrSipDialog_getremote_party, NULL, (char*)"To/From", NULL},
+  {(char*)"local_party", (getter)IvrSipDialog_getlocal_party, NULL, (char*)"To/From", NULL},
+  {(char*)"route",       (getter)IvrSipDialog_getroute, NULL, (char*)"record routing", NULL},
+  {(char*)"outbound_proxy", (getter)IvrSipDialog_getoutbound_proxy, NULL, (char*)"outbound proxy", NULL},
+  {(char*)"cseq",    (getter)IvrSipDialog_getcseq, NULL, (char*)"CSeq for next request", NULL},
   {NULL}  /* Sentinel */
 };
 
