@@ -33,7 +33,7 @@ typedef struct {
 // Constructor
 static PyObject* IvrSipReply_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-  static char *kwlist[] = {"ivr_req", NULL};
+  static char *kwlist[] = {(char*)"ivr_req", NULL};
   IvrSipReply *self;
 
   self = (IvrSipReply *)type->tp_alloc(type, 0);
@@ -95,15 +95,15 @@ IvrSipReply_getcode(IvrSipReply *self, void *closure)
 }
 
 static PyGetSetDef IvrSipReply_getset[] = {
-  {"code",          (getter)IvrSipReply_getcode, NULL, "code", NULL},
-  {"reason",        (getter)IvrSipReply_getreason, NULL, "reason", NULL},
-  {"next_request_uri",        (getter)IvrSipReply_getnext_request_uri, NULL, "next_request_uri", NULL},
-  {"route",          (getter)IvrSipReply_getroute, NULL, "route", NULL},
-  {"hdrs",         (getter)IvrSipReply_gethdrs, NULL, "hdrs", NULL},
-  {"body",      (getter)IvrSipReply_getbody, NULL, "body", NULL},
-  {"remote_tag",          (getter)IvrSipReply_getremote_tag, NULL, "remote_tag", NULL},
-  {"local_tag",            (getter)IvrSipReply_getlocal_tag, NULL, "local_tag", NULL},
-  {"cseq",    (getter)IvrSipReply_getcseq, NULL, "CSeq for next request", NULL},
+  {(char*)"code",     (getter)IvrSipReply_getcode, NULL, (char*)"code", NULL},
+  {(char*)"reason",   (getter)IvrSipReply_getreason, NULL, (char*)"reason", NULL},
+  {(char*)"next_request_uri",(getter)IvrSipReply_getnext_request_uri, NULL, (char*)"next_request_uri", NULL},
+  {(char*)"route",    (getter)IvrSipReply_getroute, NULL, (char*)"route", NULL},
+  {(char*)"hdrs",     (getter)IvrSipReply_gethdrs, NULL, (char*)"hdrs", NULL},
+  {(char*)"body",     (getter)IvrSipReply_getbody, NULL, (char*)"body", NULL},
+  {(char*)"remote_tag", (getter)IvrSipReply_getremote_tag, NULL, (char*)"remote_tag", NULL},
+  {(char*)"local_tag",   (getter)IvrSipReply_getlocal_tag, NULL, (char*)"local_tag", NULL},
+  {(char*)"cseq",     (getter)IvrSipReply_getcseq, NULL, (char*)"cseq", NULL},
   {NULL}  /* Sentinel */
 };
 

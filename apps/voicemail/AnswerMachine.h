@@ -50,7 +50,7 @@ using std::vector;
 #define SMTP_ADDRESS_IP     "localhost"
 #define SMTP_PORT           25
 
-class AmMail;
+struct AmMail;
 
 #define MODE_VOICEMAIL 0
 #define MODE_BOX       1
