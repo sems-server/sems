@@ -311,7 +311,7 @@ int JsonrpcNetstringsConnection::netstringsBlockingWrite() {
   rcvd_size = 0;
   size_t ns_total_len = msg_size+msg_size_s.length()+2;
   while (rcvd_size != ns_total_len) {
-    size_t written = send(fd, &ns_begin[rcvd_size], ns_total_len - rcvd_size, MSG_NOSIGNAL);
+    size_t written = send(fd, &ns_begin[rcvd_size], ns_total_len - rcvd_size, 0);
     if ((written<0 && (errno==EAGAIN || errno==EWOULDBLOCK)) ||
 	written==0) {
 	usleep(SEND_SLEEP);

@@ -93,7 +93,7 @@ class AmSipDialog
 
   /** enable the reliability of provisional replies? */
   enum Rel100State {
-    REL100_DISABLED,
+    REL100_DISABLED=0,
 #define REL100_DISABLED         AmSipDialog::REL100_DISABLED
     REL100_SUPPORTED,
 #define REL100_SUPPORTED        AmSipDialog::REL100_SUPPORTED

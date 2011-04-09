@@ -54,22 +54,6 @@ const char* dlgStatusStr(AmSipDialog::Status st)
     return __dlg_status2str[st];
 }
 
-static inline string get_100rel_hdr(unsigned char reliable_1xx)
-{
-  switch(reliable_1xx) {
-  case AmSipDialog::REL100_SUPPORTED:
-      return SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
-  case AmSipDialog::REL100_REQUIRE:
-      return SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
-  default:
-      ERROR("BUG: unexpected reliability switch value of '%d'.\n",
-          reliable_1xx);
-  case 0:
-      break;
-  }
-  return "";
-}
-
 const char* AmSipDialog::getStatusStr()
 {
   return dlgStatusStr(status);
@@ -713,9 +697,11 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
           }
           break;
 
-          case 0:
+	  case REL100_IGNORED:
+          case REL100_DISABLED:
             // 100rel support disabled
             break;
+
           default:
             ERROR("BUG: unexpected value `%d' for " SIP_EXT_100REL " switch.", 
                 reliable_1xx);
@@ -1343,9 +1329,9 @@ int AmSipDialog::sendRequest(const string& method,
   if(!m_hdrs.empty())
     req.hdrs = m_hdrs;
   
-  if((method == "INVITE") && reliable_1xx){
-    req.hdrs += get_100rel_hdr(reliable_1xx);
-  }
+  // if((method == "INVITE") && reliable_1xx){
+  //   req.hdrs += get_100rel_hdr(reliable_1xx);
+  // }
 
   if (!(flags&SIP_FLAGS_VERBATIM)) {
     // add Signature
