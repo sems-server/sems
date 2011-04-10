@@ -901,7 +901,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 
 int AmB2BCallerSession::relayEvent(AmEvent* ev)
 {
-  if(other_id.empty()){
+  if(other_id.empty() && !getStopped()){
 
     bool create_callee = false;
     B2BSipEvent* sip_ev = dynamic_cast<B2BSipEvent*>(ev);
