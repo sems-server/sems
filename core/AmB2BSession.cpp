@@ -843,8 +843,18 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 
     AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
 
+    if(other_id.empty()){
+      DBG("Discarding B2BSipReply from other leg (other_id empty)\n");
+      DBG("reply code=%i; method=%s; callid=%s; local_tag=%s; "
+	  "remote_tag=%s; cseq=%i\n",
+	  reply.code,reply.method.c_str(),reply.callid.c_str(),reply.local_tag.c_str(),
+	  reply.remote_tag.c_str(),reply.cseq);
+      return;
+    }
+
     if(other_id != reply.local_tag){
-      DBG("Dialog mismatch!\n");
+      DBG("Dialog mismatch! (oi=%s;lt=%s)\n",
+	  other_id.c_str(),reply.local_tag.c_str());
       return;
     }
 
