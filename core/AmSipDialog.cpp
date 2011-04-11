@@ -346,12 +346,12 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
       if (reply.code < 200)
 	break;
 
-      if(reply.code == 487){
+      if(reply.code >= 400){
 	// CANCEL accepted
 	DBG("CANCEL accepted, status -> Disconnected\n");
 	status = Disconnected;
       }
-      else {
+      else if(reply.code < 300){
 	// CANCEL rejected
 	DBG("CANCEL rejected/too late - bye()\n");
 	bye();
