@@ -510,6 +510,13 @@ void AmB2BSession::onSessionTimeout() {
   AmSession::onSessionTimeout();
 }
 
+void AmB2BSession::onNoAck(unsigned int cseq)
+{
+  DBG("OnNoAck(%u): terminate other leg.\n",cseq);
+  terminateOtherLeg();
+  AmSession::onNoAck(cseq);
+}
+
 void AmB2BSession::saveSessionDescription(const string& content_type,
 					  const string& body) {
   DBG("saving session description (%s, %.*s...)\n",
