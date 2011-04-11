@@ -185,6 +185,7 @@ class AmB2BSession: public AmSession
   void onInvite2xx(const AmSipReply& reply);
 
   void onSessionTimeout();
+  void onNoAck(unsigned int cseq);
 
   /** send re-INVITE with established session description 
    *  @return 0 on success
