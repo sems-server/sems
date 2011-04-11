@@ -878,11 +878,8 @@ void SBCDialog::onBye(const AmSipRequest& req)
 void SBCDialog::onCancel()
 {
   if(dlg.getStatus() == AmSipDialog::Pending) {
-    DBG("Wait for leg B to terminate");
-  } else {
-    DBG("Canceling leg A on CANCEL since dialog is not pending");
+    stopCall();
     dlg.reply(invite_req, 487, "Request terminated");
-    setStopped();
   }
 }
 
