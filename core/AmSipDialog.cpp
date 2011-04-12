@@ -781,13 +781,22 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 int AmSipDialog::bye(const string& hdrs, int flags)
 {
     switch(status){
+
     case Disconnecting:
     case Connected:
+        for (TransMap::iterator it=uac_trans.begin();
+	     it != uac_trans.end(); it++) {
+	  if (it->second.method == "INVITE"){
+	    // finish any UAC transaction before sending BYE
+	    send_200_ack(it->second);
+	  }
+	}
 	status = Disconnected;
 	return sendRequest("BYE", "", "", hdrs, flags);
+
     case Pending:
 	status = Disconnecting;
-	if(getUACTransPending())
+	if(getUACInvTransPending())
 	    return cancel();
 	else {
 	    // missing AmSipRequest to be able
@@ -798,7 +807,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	}
 	return 0;
     default:
-	if(getUACTransPending())
+	if(getUACInvTransPending())
 	    return cancel();
 	else {
 	    DBG("bye(): we are not connected "
