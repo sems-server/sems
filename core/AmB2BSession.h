@@ -308,6 +308,7 @@ class AmB2BCallerSession: public AmB2BSession
 
   // @see AmSession
   void onSessionStart(const AmSipRequest& req);
+  void onCancel();
 
   // @see AmB2BSession
   void terminateLeg();

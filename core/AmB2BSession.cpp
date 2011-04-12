@@ -939,6 +939,15 @@ void AmB2BCallerSession::onSessionStart(const AmSipRequest& req)
   AmB2BSession::onSessionStart(req);
 }
 
+void AmB2BCallerSession::onCancel()
+{
+  if(dlg.getStatus() == AmSipDialog::Pending) {
+    terminateOtherLeg();
+    terminateLeg();
+    dlg.reply(invite_req, 487, "Request terminated");
+  }
+}
+
 void AmB2BCallerSession::connectCallee(const string& remote_party,
 				       const string& remote_uri,
 				       bool relayed_invite)
