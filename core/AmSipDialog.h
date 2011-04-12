@@ -195,6 +195,9 @@ private:
   AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();
 
+  /** @return transaction coresponding to cseq or NULL */
+  AmSipTransaction* getUACTrans(unsigned int cseq);
+
   /** @return whether UAC transaction is pending */
   bool   getUACTransPending();
 

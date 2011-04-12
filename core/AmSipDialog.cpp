@@ -822,6 +822,14 @@ void AmSipDialog::rel100OnTimeout(const AmSipRequest &req,
   }
 }
 
+AmSipTransaction* AmSipDialog::getUACTrans(unsigned int cseq)
+{
+  TransMap::iterator it = uac_trans.find(cseq);
+  if(it == uac_trans.end())
+    return NULL;
+  
+  return &(it->second);
+}
 
 bool AmSipDialog::getUACTransPending() {
   return !uac_trans.empty();
