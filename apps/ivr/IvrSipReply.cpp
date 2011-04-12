@@ -101,8 +101,8 @@ static PyGetSetDef IvrSipReply_getset[] = {
   {(char*)"route",    (getter)IvrSipReply_getroute, NULL, (char*)"route", NULL},
   {(char*)"hdrs",     (getter)IvrSipReply_gethdrs, NULL, (char*)"hdrs", NULL},
   {(char*)"body",     (getter)IvrSipReply_getbody, NULL, (char*)"body", NULL},
-  {(char*)"from_tag", (getter)IvrSipReply_getfrom_tag, NULL, (char*)"from_tag", NULL},
-  {(char*)"to_tag",   (getter)IvrSipReply_getto_tag, NULL, (char*)"to_tag", NULL},
+  {(char*)"remote_tag", (getter)IvrSipReply_getremote_tag, NULL, (char*)"remote_tag", NULL},
+  {(char*)"local_tag",   (getter)IvrSipReply_getlocal_tag, NULL, (char*)"local_tag", NULL},
   {(char*)"cseq",     (getter)IvrSipReply_getcseq, NULL, (char*)"cseq", NULL},
   {NULL}  /* Sentinel */
 };
