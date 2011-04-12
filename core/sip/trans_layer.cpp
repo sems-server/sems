@@ -1213,8 +1213,8 @@ void _trans_layer::received_msg(sip_msg* msg)
 		bucket->unlock();
 		
 		// pass to UA
-		assert(ua);
-		ua->handle_sip_reply(msg);
+		//assert(ua);
+		//ua->handle_sip_reply(msg);
 		
 		DROP_MSG;
 	    }
