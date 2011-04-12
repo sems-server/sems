@@ -492,7 +492,9 @@ void AmB2BSession::terminateLeg()
     clearRtpReceiverRelay();
 
   if ((dlg.getStatus() == AmSipDialog::Pending) 
-      || (dlg.getStatus() == AmSipDialog::Connected))
+      || (dlg.getStatus() == AmSipDialog::Connected)
+      || ((dlg.getStatus() == AmSipDialog::Disconnected)
+  	  && dlg.getUACInvTransPending()))
     dlg.bye("", SIP_FLAGS_VERBATIM);
 }
 
