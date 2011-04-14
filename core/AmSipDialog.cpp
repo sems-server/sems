@@ -789,7 +789,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	     it != uac_trans.end(); it++) {
 	  if (it->second.method == "INVITE"){
 	    // finish any UAC transaction before sending BYE
-	    send_200_ack(it->second);
+	    send_200_ack(it->second.cseq);
 	  }
 	}
 	status = Disconnected;
