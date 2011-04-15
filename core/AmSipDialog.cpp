@@ -449,6 +449,7 @@ int AmSipDialog::onTxRequest(AmSipRequest& req)
 int AmSipDialog::onTxReply(AmSipReply& reply)
 {
   // update Dialog status
+  Status status_backup = status;
   switch(status){
 
   case Connected:
@@ -524,13 +525,12 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
     }
   }
 
+
   if (has_sdp && (onTxSdp(reply.body) != 0)) {
     
-    DBG("onTxSdp() failed (replying 500 internal error)\n");
-    reply.code = 500;
-    reply.reason = "internal error";
-    reply.body = "";
-    reply.content_type = "";
+    DBG("onTxSdp() failed\n");
+    status = status_backup;
+    return -1;
   }
 
   if ((reply.code >= 200) && 
