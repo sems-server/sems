@@ -626,6 +626,12 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
 
   // TODO: take the first *supported* payload
   //       (align with the SDP answer algo)
+  if(local_media.payloads.empty()) {
+
+    ERROR("local_media.payloads.empty()\n");
+    return -1;
+  }
+
   payload = local_media.payloads[0].payload_type;
   last_payload = payload;
 
