@@ -952,8 +952,9 @@ int _trans_layer::cancel(trans_ticket* tt)
 	break;
 
     default:
-	assert(0);
-	break;
+	bucket->unlock();
+	ERROR("Trying to cancel a request while in unknown state\n");
+	return -1;
     }
 
     cstring cancel_str("CANCEL");
