@@ -876,18 +876,8 @@ void SBCDialog::onBye(const AmSipRequest& req)
 
 void SBCDialog::onCancel()
 {
-  switch(dlg.getStatus()){
-  case AmSipDialog::Trying:
-  case AmSipDialog::Proceeding:
-  case AmSipDialog::Cancelling:
-    DBG("Wait for leg B to terminate");
-    break;
-  default:
-    DBG("Canceling leg A on CANCEL since dialog is not pending");
-    dlg.reply(invite_req, 487, "Request terminated");
-    setStopped();
-    break;
-  }
+  dlg.reply(invite_req, 487, "Request terminated");
+  stopCall();
 }
 
 void SBCDialog::stopCall() {

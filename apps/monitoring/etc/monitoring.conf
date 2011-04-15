@@ -4,7 +4,7 @@
 # run garbage collection on expired session info? 
 # Default: no
 #
-#run_garbage_collector = yes
+run_garbage_collector = yes
 
 #garbage_collector_interval=10
 #

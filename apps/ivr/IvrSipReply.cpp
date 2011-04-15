@@ -97,7 +97,7 @@ IvrSipReply_getcode(IvrSipReply *self, void *closure)
 static PyGetSetDef IvrSipReply_getset[] = {
   {(char*)"code",     (getter)IvrSipReply_getcode, NULL, (char*)"code", NULL},
   {(char*)"reason",   (getter)IvrSipReply_getreason, NULL, (char*)"reason", NULL},
-  //{"next_request_uri",(getter)IvrSipReply_getnext_request_uri, NULL, "next_request_uri", NULL},
+  {(char*)"next_request_uri",(getter)IvrSipReply_getnext_request_uri, NULL, (char*)"next_request_uri", NULL},
   {(char*)"route",    (getter)IvrSipReply_getroute, NULL, (char*)"route", NULL},
   {(char*)"hdrs",     (getter)IvrSipReply_gethdrs, NULL, (char*)"hdrs", NULL},
   {(char*)"body",     (getter)IvrSipReply_getbody, NULL, (char*)"body", NULL},

@@ -883,8 +883,8 @@ void AmSession::onBye(const AmSipRequest& req)
 
 void AmSession::onCancel(const AmSipRequest& req)
 {
-  // TODO: if dialog is not yet finally replied,
-  //       answer the INVITE transaction with 487
+  dlg.reply(invite_req, 487, "Request terminated");
+  setStopped();
 }
 
 void AmSession::onSystemEvent(AmSystemEvent* ev) {

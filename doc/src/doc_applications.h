@@ -146,6 +146,8 @@
  * \section morecomponents Other components
  *
  *  <ul><li> \ref ModuleDoc_diameter_client </li></ul>
+ *
+ *  <ul><li> \ref ModuleDoc_monitoring </li></ul>
  */
 
 
@@ -313,7 +315,7 @@
 /*! \page ModuleDoc_sst_b2b Module Documentation: sst_b2b application plugin
  *  \section Readme_sst_b2b Readme file
  *  \verbinclude Readme.sst_b2b.txt
- *  
+ *
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
@@ -321,11 +323,19 @@
 /*! \page ModuleDoc_diameter_client Module Documentation: diameter_client component plugin
  *  \section Readme_diameter_client Readme file
  *  \verbinclude Readme.diameter_client.txt
- *  
+ *
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
  */
 
+
+/*! \page ModuleDoc_monitoring Module Documentation: monitoring in-memory DB component plugin
+ *  \section Readme_monitoring Readme file
+ *  \verbinclude Readme.monitoring.txt
+ *
+ *  \section Links
+ *  Back to \ref AppDoc, to \ref AppDocExample.
+ */
 
 /*! \page ModuleDoc_sw_prepaid_sip Module Documentation: prepaid_sip application plugin
  *  \section Readme_prepaid_sip Readme file

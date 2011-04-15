@@ -17,7 +17,7 @@ export DH_VERBOSE=1
 #  force no striping (always include debug symbols for now)
 export DEB_BUILD_OPTIONS:="$(DEB_BUILD_OPTIONS) nostrip"
 
-PYTHON_MODULES=ivr py_sems conf_auth mailbox pin_collect
+PYTHON_MODULES=ivr conf_auth mailbox pin_collect
 
 EXCLUDED_MODULES=gateway examples mp3
 

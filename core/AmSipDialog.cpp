@@ -625,6 +625,16 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	status = Connected;
 	route = reply.route;
 	remote_uri = reply.to_uri;
+
+	if(reply.to_tag.empty()){
+	  DBG("received 2xx reply without to-tag "
+	      "(callid=%s): sending BYE\n",reply.callid.c_str());
+
+	  sendRequest(SIP_METH_BYE);
+	}
+	else {
+	  remote_tag = reply.to_tag;
+	}
       }
       else { // error reply
 	status = Disconnected;
@@ -637,7 +647,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	DBG("CANCEL accepted, status -> Disconnected\n");
 	status = Disconnected;
       }
-      else {
+      else if(reply.code < 300){
 	// CANCEL rejected
 	DBG("CANCEL rejected/too late - bye()\n");
 	bye();
@@ -1095,25 +1105,35 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 {
     switch(status){
 
+    case Disconnecting:
     case Connected:
+        for (TransMap::iterator it=uac_trans.begin();
+	     it != uac_trans.end(); it++) {
+	  if (it->second.method == "INVITE"){
+	    // finish any UAC transaction before sending BYE
+	    send_200_ack(it->second.cseq);
+	  }
+	}
+	status = Disconnected;
 	return sendRequest("BYE", "", "", hdrs, flags);
 
     case Trying:
     case Proceeding:
     case Early:
-	if(getUACTransPending())
+	if(getUACInvTransPending())
 	    return cancel();
 	else {
 	    // missing AmSipRequest to be able
 	    // to send the reply on behalf of the app.
-	    DBG("ignoring bye() in Pending state: "
-		"no UAC transaction to cancel.\n");
+	    ERROR("ignoring bye() in Pending state: "
+		  "no UAC transaction to cancel.\n");
 	    status = Disconnected;
 	}
 	return 0;
+
     default:
-      DBG("bye(): we are not connected "
-	  "(status=%i). do nothing!\n",status);
+        DBG("bye(): we are not connected "
+	    "(status=%i). do nothing!\n",status);
 	return 0;
     }	
 }

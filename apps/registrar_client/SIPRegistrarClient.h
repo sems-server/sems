@@ -30,7 +30,7 @@
 
 #include "AmApi.h"
 #include "AmSession.h"
-#include "ContactInfo.h"
+#include "AmUriParser.h"
 
 #include "ampi/SIPRegistrarClientAPI.h"
 #include "ampi/UACAuthAPI.h"
@@ -79,8 +79,8 @@ class SIPRegistration : //public AmSipDialogEventHandler,
 
   AmSipRequest req;
 
-  ContactInfo server_contact;
-  ContactInfo local_contact;
+  AmUriParser server_contact;
+  AmUriParser local_contact;
 
   time_t reg_begin;	
   unsigned int reg_expires;

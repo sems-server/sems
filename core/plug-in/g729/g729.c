@@ -223,7 +223,7 @@ g729_destroy(long h_codec)
 {
     struct G729_codec *codec = (struct G729_codec *) h_codec;
 
-    if (h_codec)
+    if (!h_codec)
       return;
 
     stream_destroy(&codec->dec);

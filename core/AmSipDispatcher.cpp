@@ -51,7 +51,7 @@ void AmSipDispatcher::handleSipMsg(AmSipReply &reply)
 	     "unhandled SIP reply: %s\n", reply.print().c_str());
       }
     } else {
-      ERROR("unhandled SIP reply: %s\n", reply.print().c_str());
+      WARN("unhandled SIP reply: %s\n", reply.print().c_str());
     }
     delete ev;
   }

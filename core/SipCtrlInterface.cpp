@@ -698,7 +698,7 @@ void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
   }
 
   if(!AmEventDispatcher::instance()->post(c2stlstr(tr->to_tag), tmo_evt)){
-      ERROR("Could not post timeout event (sess. id: %.*s)\n",tr->to_tag.len,tr->to_tag.s);
+      DBG("Could not post timeout event (sess. id: %.*s)\n",tr->to_tag.len,tr->to_tag.s);
       delete tmo_evt;
   }
 }

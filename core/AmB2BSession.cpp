@@ -497,6 +497,7 @@ void AmB2BSession::terminateLeg()
     break;
 
   default:
+    DBG("terminateLeg() not sending any BYE or CANCEL\n");
     break;
   }
 }
@@ -513,6 +514,13 @@ void AmB2BSession::onSessionTimeout() {
   DBG("Session Timer: Timeout, ending other leg.");
   terminateOtherLeg();
   AmSession::onSessionTimeout();
+}
+
+void AmB2BSession::onNoAck(unsigned int cseq)
+{
+  DBG("OnNoAck(%u): terminate other leg.\n",cseq);
+  terminateOtherLeg();
+  AmSession::onNoAck(cseq);
 }
 
 void AmB2BSession::saveSessionDescription(const string& content_type,
@@ -846,8 +854,18 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 
     AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
 
+    if(other_id.empty()){
+      DBG("Discarding B2BSipReply from other leg (other_id empty)\n");
+      DBG("reply code=%i; method=%s; callid=%s; from_tag=%s; "
+	  "to_tag=%s; cseq=%i\n",
+	  reply.code,reply.method.c_str(),reply.callid.c_str(),reply.from_tag.c_str(),
+	  reply.to_tag.c_str(),reply.cseq);
+      return;
+    }
+
     if(other_id != reply.from_tag){// was: local_tag
-      DBG("Dialog mismatch!\n");
+      DBG("Dialog mismatch! (oi=%s;ft=%s)\n",
+	  other_id.c_str(),reply.from_tag.c_str());
       return;
     }
 
@@ -905,7 +923,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 
 int AmB2BCallerSession::relayEvent(AmEvent* ev)
 {
-  if(other_id.empty()){
+  if(other_id.empty() && !getStopped()){
 
     bool create_callee = false;
     B2BSipEvent* sip_ev = dynamic_cast<B2BSipEvent*>(ev);
@@ -930,6 +948,13 @@ void AmB2BCallerSession::onInvite(const AmSipRequest& req)
 {
   invite_req = req;
   AmB2BSession::onInvite(req);
+}
+
+void AmB2BCallerSession::onCancel(const AmSipRequest& cancel)
+{
+  dlg.reply(invite_req, 487, "Request terminated");
+  terminateOtherLeg();
+  terminateLeg();
 }
 
 void AmB2BCallerSession::connectCallee(const string& remote_party,
