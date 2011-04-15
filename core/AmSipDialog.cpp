@@ -1134,7 +1134,15 @@ int AmSipDialog::bye(const string& hdrs, int flags)
     case Early:
 	if(getUACInvTransPending())
 	    return cancel();
-	else {
+	else {  
+	    for (TransMap::iterator it=uas_trans.begin();
+		 it != uas_trans.end(); it++) {
+	      if (it->second.method == "INVITE"){
+		// let quit this call by sending final reply
+		return reply(it->second.cseq,500,"Internal error");
+	      }
+	    }
+
 	    // missing AmSipRequest to be able
 	    // to send the reply on behalf of the app.
 	    ERROR("ignoring bye() in Pending state: "
