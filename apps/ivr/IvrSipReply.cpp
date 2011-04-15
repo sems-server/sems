@@ -75,7 +75,7 @@ IvrSipReply_dealloc(IvrSipReply* self)
 								
 								
 def_IvrSipReply_GETTER(IvrSipReply_getreason,     reason)
-//def_IvrSipReply_GETTER(IvrSipReply_getnext_request_uri, next_request_uri)
+def_IvrSipReply_GETTER(IvrSipReply_getcontact,    contact)
 def_IvrSipReply_GETTER(IvrSipReply_gethdrs,       hdrs)
 def_IvrSipReply_GETTER(IvrSipReply_getfrom_tag,   from_tag)
 def_IvrSipReply_GETTER(IvrSipReply_getto_tag,     to_tag)
@@ -97,7 +97,7 @@ IvrSipReply_getcode(IvrSipReply *self, void *closure)
 static PyGetSetDef IvrSipReply_getset[] = {
   {(char*)"code",     (getter)IvrSipReply_getcode, NULL, (char*)"code", NULL},
   {(char*)"reason",   (getter)IvrSipReply_getreason, NULL, (char*)"reason", NULL},
-  {(char*)"next_request_uri",(getter)IvrSipReply_getnext_request_uri, NULL, (char*)"next_request_uri", NULL},
+  {(char*)"contact",(getter)IvrSipReply_getcontact, NULL, (char*)"contact", NULL},
   {(char*)"route",    (getter)IvrSipReply_getroute, NULL, (char*)"route", NULL},
   {(char*)"hdrs",     (getter)IvrSipReply_gethdrs, NULL, (char*)"hdrs", NULL},
   {(char*)"body",     (getter)IvrSipReply_getbody, NULL, (char*)"body", NULL},

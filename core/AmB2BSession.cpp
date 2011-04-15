@@ -858,7 +858,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
       DBG("Discarding B2BSipReply from other leg (other_id empty)\n");
       DBG("reply code=%i; method=%s; callid=%s; from_tag=%s; "
 	  "to_tag=%s; cseq=%i\n",
-	  reply.code,reply.method.c_str(),reply.callid.c_str(),reply.from_tag.c_str(),
+	  reply.code,reply.cseq_method.c_str(),reply.callid.c_str(),reply.from_tag.c_str(),
 	  reply.to_tag.c_str(),reply.cseq);
       return;
     }

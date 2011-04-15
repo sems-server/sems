@@ -132,7 +132,7 @@ class SBCDialog : public AmB2BCallerSession
   void process(AmEvent* ev);
   void onBye(const AmSipRequest& req);
   void onInvite(const AmSipRequest& req);
-  void onCancel();
+  void onCancel(const AmSipRequest& cancel);
 
  protected:
   int relayEvent(AmEvent* ev);
