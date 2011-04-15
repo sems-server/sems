@@ -159,7 +159,7 @@ void AnnouncementDialog::onSessionStart() {
 void AnnouncementDialog::onBye(const AmSipRequest& req)
 {
   DBG("onBye: stopSession\n");
-  setStopped();
+  AmSession::onBye(req);
 }
 
 
