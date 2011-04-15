@@ -592,11 +592,11 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	  remote_tag = reply.to_tag;
 	}
       }
-      else { // error reply
+
+      if(reply.code >= 300) {// error reply
 	status = Disconnected;
       }
-      
-      if(cancel_pending){
+      else if(cancel_pending){
 	cancel_pending = false;
 	bye();
       }
