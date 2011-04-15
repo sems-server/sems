@@ -142,8 +142,7 @@ private:
   void rel100OnTimeout(const AmSipRequest &req, const AmSipReply &rpl);
 
   void rel100OnRequestOut(const string &method, string &hdrs);
-  void rel100OnReplyOut(const AmSipRequest &req, unsigned int code, 
-			string &hdrs);
+  void rel100OnReplyOut(AmSipReply& reply);
 
   /** @return 0 on success */
   int sendRequest(const string& method, 
@@ -231,8 +230,17 @@ private:
 
   void uasTimeout(AmSipTimeoutEvent* to_ev);
     
-  /** @return 0 on success */
+  /** @return 0 on success (deprecated) */
   int reply(const AmSipRequest& req,
+	    unsigned int  code, 
+	    const string& reason,
+	    const string& content_type = "",
+	    const string& body = "",
+	    const string& hdrs = "",
+	    int flags = 0);
+
+  /** @return 0 on success */
+  int reply(unsigned int  req_cseq,
 	    unsigned int  code, 
 	    const string& reason,
 	    const string& content_type = "",
@@ -339,13 +347,7 @@ class AmSipDialogEventHandler
 			     unsigned int cseq)=0;
     
   /** Hook called before a reply is sent */
-  virtual void onSendReply(const AmSipRequest& req,
-			   unsigned int  code,
-			   const string& reason,
-			   const string& content_type,
-			   const string& body,
-			   string& hdrs,
-			   int flags)=0;
+  virtual void onSendReply(AmSipReply& reply, int flags)=0;
 
   /** Hook called when a local INVITE request has been replied with 2xx */
   virtual void onInvite2xx(const AmSipReply& reply)=0;

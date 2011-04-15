@@ -448,19 +448,6 @@ int AmSipDialog::onTxRequest(AmSipRequest& req)
 // UAS behavior for locally sent replies
 int AmSipDialog::onTxReply(AmSipReply& reply)
 {
-  TransMap::iterator t_it = uas_trans.find(reply.cseq);
-  if(t_it == uas_trans.end()){
-    ERROR("could not find any transaction matching request\n");
-    ERROR("reply code=%i; method=%s; callid=%s; local_tag=%s; "
-	  "remote_tag=%s; cseq=%i\n",
-	  reply.code,reply.cseq_method.c_str(),callid.c_str(),local_tag.c_str(),
-	  remote_tag.c_str(),reply.cseq);
-    return -1;
-  }
-  DBG("reply: transaction found!\n");
-    
-  AmSipTransaction& t = t_it->second;
-
   // update Dialog status
   switch(status){
 
@@ -545,19 +532,16 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
     reply.body = "";
     reply.content_type = "";
   }
-  
+
   if ((reply.code >= 200) && 
-      ((t.method != "INVITE") || (reply.cseq_method != "CANCEL"))) {
+      ((reply.cseq_method != "CANCEL"))) {
     
-    DBG("reply.cseq_method = %s; t.method = %s\n",
-	reply.cseq_method.c_str(),t.method.c_str());
-    
-    if(t.method == "INVITE")
+    if(reply.cseq_method == "INVITE") 
       pending_invites--;
     
-    uas_trans.erase(t_it);
+    uas_trans.erase(reply.cseq);
   }
-  
+    
   return 0;
 }
   
@@ -980,7 +964,6 @@ string AmSipDialog::getRoute()
   return res;
 }
 
-
 int AmSipDialog::reply(const AmSipRequest& req,
 		       unsigned int  code,
 		       const string& reason,
@@ -989,22 +972,44 @@ int AmSipDialog::reply(const AmSipRequest& req,
 		       const string& hdrs,
 		       int flags)
 {
+  return reply(req.cseq,code,reason,content_type,body,hdrs,flags);
+}
+
+int AmSipDialog::reply(unsigned int  req_cseq,
+		       unsigned int  code,
+		       const string& reason,
+		       const string& content_type,
+		       const string& body,
+		       const string& hdrs,
+		       int flags)
+{
+  TransMap::const_iterator t_it = uas_trans.find(req_cseq);
+  if(t_it == uas_trans.end()){
+    ERROR("could not find any transaction matching request cseq\n");
+    ERROR("request cseq=%i; reply code=%i; callid=%s; local_tag=%s; "
+	  "remote_tag=%s\n",
+	  req_cseq,code,callid.c_str(),
+	  local_tag.c_str(),remote_tag.c_str());
+    return -1;
+  }
+  DBG("reply: transaction found!\n");
+    
   string m_hdrs = hdrs;
-
-  hdl->onSendReply(req,code,reason,
-		   content_type,body,m_hdrs,flags);
-
-  rel100OnReplyOut(req, code, m_hdrs);
-
+  const AmSipTransaction& t = t_it->second;
   AmSipReply reply;
 
   reply.code = code;
   reply.reason = reason;
-  reply.tt = req.tt;
+  reply.tt = t.tt;
   reply.to_tag = local_tag;
   reply.hdrs = m_hdrs;
-  reply.cseq = req.cseq;
-  reply.cseq_method = req.method;
+  reply.cseq = t.cseq;
+  reply.cseq_method = t.method;
+  reply.content_type = content_type;
+  reply.body = body;
+
+  hdl->onSendReply(reply,flags);
+  rel100OnReplyOut(reply);
 
   if (!flags&SIP_FLAGS_VERBATIM) {
     // add Signature
@@ -1012,13 +1017,10 @@ int AmSipDialog::reply(const AmSipRequest& req,
       reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
   }
 
-  if (code < 300 && req.method != "CANCEL" && req.method != "BYE"){
+  if (code < 300 && t.method != "CANCEL" && t.method != "BYE"){
     /* if 300<=code<400, explicit contact setting should be done */
     reply.contact = getContactHdr();
   }
-
-  reply.content_type = content_type;
-  reply.body = body;
 
   if(onTxReply(reply)){
     DBG("onTxReply failed\n");
@@ -1031,31 +1033,33 @@ int AmSipDialog::reply(const AmSipRequest& req,
 
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
-	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
+	  reply.code,reply.reason.c_str(),reply.cseq_method.c_str(),
+	  reply.callid.c_str(),reply.cseq);
   }
   return ret;
 }
 
 
-void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code, 
-    string &hdrs)
+void AmSipDialog::rel100OnReplyOut(AmSipReply& reply)
 {
   if (reliable_1xx == REL100_IGNORED)
     return;
 
-  if (req.method == SIP_METH_INVITE) {
-    if (100 < code && code < 200) {
+  if (reply.cseq_method == SIP_METH_INVITE) {
+    if (100 < reply.code && reply.code < 200) {
       switch (reliable_1xx) {
         case REL100_SUPPORTED:
-          if (! key_in_list(getHeader(hdrs, SIP_HDR_REQUIRE), SIP_EXT_100REL))
-            hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
+          if (! key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
+			    SIP_EXT_100REL))
+            reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SUPPORTED) SIP_EXT_100REL CRLF;
           break;
         case REL100_REQUIRE:
           // add Require HF
-          if (! key_in_list(getHeader(hdrs, SIP_HDR_REQUIRE), SIP_EXT_100REL))
-            hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
+          if (! key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
+			    SIP_EXT_100REL))
+            reply.hdrs += SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF;
           // add RSeq HF
-          if (getHeader(hdrs, SIP_HDR_RSEQ).length())
+          if (getHeader(reply.hdrs, SIP_HDR_RSEQ).length())
             // already added (by app?)
             break;
           if (! rseq) { // only init rseq if 1xx is used
@@ -1069,12 +1073,12 @@ void AmSipDialog::rel100OnReplyOut(const AmSipRequest &req, unsigned int code,
                   "PRACKed");
             rseq ++;
           }
-          hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(rseq) + CRLF;
+          reply.hdrs += SIP_HDR_COLSP(SIP_HDR_RSEQ) + int2str(rseq) + CRLF;
           break;
         default:
           break;
       }
-    } else if (code < 300 && reliable_1xx == REL100_REQUIRE) { //code = 2xx
+    } else if (reply.code < 300 && reliable_1xx == REL100_REQUIRE) { //code = 2xx
       if (rseq && !rseq_confirmed) 
         // reliable 1xx is pending, 2xx'ing not allowed yet
         throw AmSession::Exception(491, "last reliable 1xx not yet PRACKed");

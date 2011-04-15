@@ -165,30 +165,27 @@ bool SessionTimer::onSendRequest(const string& method,
 }
 
 
-bool SessionTimer::onSendReply(const AmSipRequest& req,
-			       unsigned int  code,const string& reason,
-			       const string& content_type,const string& body,
-			       string& hdrs,
-			       int flags)
+bool SessionTimer::onSendReply(AmSipReply& reply, int flags)
 {
   // only in 2xx responses to INV/UPD
-  if  (((req.method != SIP_METH_INVITE) && (req.method != SIP_METH_UPDATE)) ||
-       (code < 200) || (code >= 300))
+  if  (((reply.cseq_method != SIP_METH_INVITE) && 
+	(reply.cseq_method != SIP_METH_UPDATE)) ||
+       (reply.code < 200) || (reply.code >= 300))
     return false;
 
-  addOptionTag(hdrs, SIP_HDR_SUPPORTED, TIMER_OPTION_TAG);
+  addOptionTag(reply.hdrs, SIP_HDR_SUPPORTED, TIMER_OPTION_TAG);
 
   if (((session_refresher_role==UAC) && (session_refresher==refresh_remote))
       || ((session_refresher_role==UAS) && remote_timer_aware)) {
-    addOptionTag(hdrs, SIP_HDR_REQUIRE, TIMER_OPTION_TAG);
+    addOptionTag(reply.hdrs, SIP_HDR_REQUIRE, TIMER_OPTION_TAG);
   } else {
-    removeOptionTag(hdrs, SIP_HDR_REQUIRE, TIMER_OPTION_TAG);
+    removeOptionTag(reply.hdrs, SIP_HDR_REQUIRE, TIMER_OPTION_TAG);
   }
 
   // remove (possibly existing) Session-Expires header
-  removeHeader(hdrs, SIP_HDR_SESSION_EXPIRES);
+  removeHeader(reply.hdrs, SIP_HDR_SESSION_EXPIRES);
 
-  hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) +
+  reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) +
     int2str(session_interval) + ";refresher="+
     (session_refresher_role==UAC ? "uac":"uas")+CRLF;
 

@@ -876,7 +876,7 @@ void SBCDialog::onBye(const AmSipRequest& req)
 
 void SBCDialog::onCancel()
 {
-  dlg.reply(invite_req, 487, "Request terminated");
+  dlg.reply(cancel.cseq, 487, "Request terminated");
   stopCall();
 }
 

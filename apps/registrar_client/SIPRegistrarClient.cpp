@@ -152,16 +152,10 @@ void SIPRegistration::onSendRequest(const string& method,
 		       hdrs,flags,cseq);
 }
 	
-void SIPRegistration::onSendReply(const AmSipRequest& req,
-				  unsigned int  code,
-				  const string& reason,
-				  const string& content_type,
-				  const string& body,
-				  string& hdrs,
-				  int flags) {
+void SIPRegistration::onSendReply(AmSipReply& reply, int flags) 
+{
   if (seh)
-    seh->onSendReply(req,code,reason,
-		     content_type,body,hdrs,flags);
+    seh->onSendReply(reply,flags);
 }
 
 SIPRegistration::RegistrationState SIPRegistration::getState() {

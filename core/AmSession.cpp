@@ -881,9 +881,9 @@ void AmSession::onBye(const AmSipRequest& req)
   setStopped();
 }
 
-void AmSession::onCancel(const AmSipRequest& req)
+void AmSession::onCancel(const AmSipRequest& cancel)
 {
-  dlg.reply(invite_req, 487, "Request terminated");
+  dlg.reply(cancel.cseq, 487, "Request terminated");
   setStopped();
 }
 
@@ -900,11 +900,9 @@ void AmSession::onSendRequest(const string& method, const string& content_type,
   CALL_EVENT_H(onSendRequest,method,content_type,body,hdrs,flags,cseq);
 }
 
-void AmSession::onSendReply(const AmSipRequest& req, unsigned int  code, 
-			    const string& reason, const string& content_type,
-			    const string& body, string& hdrs, int flags)
+void AmSession::onSendReply(AmSipReply& reply, int flags)
 {
-  CALL_EVENT_H(onSendReply,req,code,reason,content_type,body,hdrs,flags);
+  CALL_EVENT_H(onSendReply,reply,flags);
 }
 
 /** Hook called when an SDP offer is required */

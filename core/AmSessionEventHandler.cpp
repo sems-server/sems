@@ -69,13 +69,7 @@ bool AmSessionEventHandler::onSendRequest(const string& method,
   return false;
 }
 
-bool AmSessionEventHandler::onSendReply(const AmSipRequest& req,
-					unsigned int  code,
-					const string& reason,
-					const string& content_type,
-					const string& body,
-					string& hdrs,
-					int flags)
+bool AmSessionEventHandler::onSendReply(AmSipReply& reply, int flags)
 {
   return false;
 }

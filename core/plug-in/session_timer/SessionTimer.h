@@ -161,13 +161,7 @@ class SessionTimer: public AmSessionEventHandler
 			     int flags,
 			     unsigned int cseq);
 
-  virtual bool onSendReply(const AmSipRequest& req,
-			   unsigned int  code,
-			   const string& reason,
-			   const string& content_type,
-			   const string& body,
-			   string& hdrs,
-			   int flags);
+  virtual bool onSendReply(AmSipReply& reply, int flags);
 };
 
 

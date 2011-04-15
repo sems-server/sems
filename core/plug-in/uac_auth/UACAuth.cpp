@@ -222,11 +222,7 @@ bool UACAuth::onSendRequest(const string& method,
 }
 
 
-bool UACAuth::onSendReply(const AmSipRequest& req,
-			  unsigned int  code,const string& reason,
-			  const string& content_type,const string& body,
-			  string& hdrs,
-			  int flags)
+bool UACAuth::onSendReply(AmSipReply& reply, int flags)
 {
   return false;
 }

@@ -111,13 +111,7 @@ class SIPRegistration : //public AmSipDialogEventHandler,
 		     int flags,
 		     unsigned int cseq);
 	
-  void onSendReply(const AmSipRequest& req,
-		   unsigned int  code,
-		   const string& reason,
-		   const string& content_type,
-		   const string& body,
-		   string& hdrs,
-		   int flags);
+  void onSendReply(AmSipReply& reply, int flags);
 
   // DialogControl if
   AmSipDialog* getDlg() { return &dlg; }

@@ -610,13 +610,7 @@ public:
 			     unsigned int cseq);
 
   /** Called by AmSipDialog when a reply is sent */
-  virtual void onSendReply(const AmSipRequest& req,
-			   unsigned int  code,
-			   const string& reason,
-			   const string& content_type,
-			   const string& body,
-			   string& hdrs,
-			   int flags);
+  virtual void onSendReply(AmSipReply& reply, int flags);
 
   /** Hook called when an SDP offer is required */
   virtual bool getSdpOffer(AmSdp& offer);
