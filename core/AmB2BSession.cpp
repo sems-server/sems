@@ -74,7 +74,12 @@ AmB2BSession::~AmB2BSession()
   }
 
   DBG("relayed_req.size() = %u\n",(unsigned int)relayed_req.size());
+
+  map<int,AmSipRequest>::iterator it = recvd_req.begin();
   DBG("recvd_req.size() = %u\n",(unsigned int)recvd_req.size());
+  for(;it != recvd_req.end(); ++it){
+    DBG("  <%i,%s>\n",it->first,it->second.method.c_str());
+  }
 }
 
 void AmB2BSession::set_sip_relay_only(bool r) { 
@@ -224,6 +229,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
     return;
 
   case B2BTerminateLeg:
+    DBG("terminateLeg()\n");
     terminateLeg();
     break;
   }
@@ -956,6 +962,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	  // 	DBG("received %i from other leg: other_id=%s; reply.local_tag=%s\n",
 	  // 	    reply.code,other_id.c_str(),reply.local_tag.c_str());
 	  
+	  // TODO: terminated my own leg instead? (+ clear_other())
 	  terminateOtherLeg();
 	}
 
