@@ -122,7 +122,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  // don't relay INVITE if INV trans pending
 	  AmSipReply n_reply;
 	  n_reply.code = 491;
-	  n_reply.reason = "Request Pending";
+	  n_reply.reason = SIP_REPLY_PENDING;
 	  n_reply.cseq = req_ev->req.cseq;
 	  relayEvent(new B2BSipReplyEvent(n_reply, true, SIP_METH_INVITE));
 	  return;
