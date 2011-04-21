@@ -1020,10 +1020,15 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 
   if(!processing_media.get() && !getStopped()) {
 
-    if(dlg.getStatus() == AmSipDialog::Connected)
+    DBG("status = %s\n",dlg.getStatusStr());
+    if(dlg.getStatus() == AmSipDialog::Connected){
+      DBG("Calling onSessionStart()\n");
       onSessionStart();
-    else if(dlg.getStatus() == AmSipDialog::Early)
+    }
+    else if(dlg.getStatus() == AmSipDialog::Early){
+      DBG("Calling onEarlySessionStart()\n");
       onEarlySessionStart();
+    }
 
     if(input || output || local_input || local_output) {
       startMediaProcessing();
