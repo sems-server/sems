@@ -457,6 +457,18 @@ void AmB2BSession::onInvite2xx(const AmSipReply& reply)
   }
 }
 
+int AmB2BSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
+{
+  string debug_str;
+  local_sdp.print(debug_str);
+  DBG("Local SDP:\n%s",debug_str.c_str());
+
+  remote_sdp.print(debug_str);
+  DBG("Remote SDP:\n%s",debug_str.c_str());
+
+  return 0;
+}
+
 int AmB2BSession::relayEvent(AmEvent* ev)
 {
   DBG("AmB2BSession::relayEvent: to other_id='%s'\n",

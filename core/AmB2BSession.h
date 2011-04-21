@@ -183,6 +183,8 @@ class AmB2BSession: public AmSession
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onInvite2xx(const AmSipReply& reply);
 
+  int onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp);
+
   void onSessionTimeout();
   void onNoAck(unsigned int cseq);
 
