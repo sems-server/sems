@@ -130,9 +130,10 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 
 	relaySip(req_ev->req);
       }
-      else if( (req_ev->req.method == "BYE") ||
-	       (req_ev->req.method == "CANCEL") ) {
-		
+      
+      if( (req_ev->req.method == SIP_METH_BYE) ||
+	  (req_ev->req.method == SIP_METH_CANCEL) ) {
+	
 	onOtherBye(req_ev->req);
       }
     }
@@ -211,14 +212,18 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 void AmB2BSession::onSipRequest(const AmSipRequest& req)
 {
   bool fwd = sip_relay_only &&
-    (req.method != SIP_METH_BYE) &&
     (req.method != SIP_METH_CANCEL);
 
   if(!fwd)
     AmSession::onSipRequest(req);
   else {
     updateRefreshMethod(req.hdrs);
-    recvd_req.insert(std::make_pair(req.cseq,req));
+
+    if(req.method != SIP_METH_ACK)
+      recvd_req.insert(std::make_pair(req.cseq,req));
+
+    if(req.method == SIP_METH_BYE)
+      onBye(req);
   }
 
   B2BSipRequestEvent* r_ev = new B2BSipRequestEvent(req,fwd);

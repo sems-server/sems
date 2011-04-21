@@ -799,7 +799,7 @@ void SBCDialog::onSipRequest(const AmSipRequest& req) {
   // todo: this is a hack, replace this by calling proper session 
   // event handler in AmB2BSession
   bool fwd = sip_relay_only &&
-    (req.method != "BYE") &&
+    //(req.method != "BYE") &&
     (req.method != "CANCEL");
   if (fwd) {
       CALL_EVENT_H(onSipRequest,req);
@@ -870,7 +870,10 @@ void SBCDialog::onOtherBye(const AmSipRequest& req)
 
 void SBCDialog::onBye(const AmSipRequest& req)
 {
-  stopCall();
+  DBG("onBye()\n");
+  stopPrepaidAccounting();
+  stopCallTimer();
+  terminateLeg();
 }
 
 
@@ -1147,7 +1150,7 @@ void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
   // todo: this is a hack, replace this by calling proper session 
   // event handler in AmB2BSession
   bool fwd = sip_relay_only &&
-    (req.method != "BYE") &&
+    //(req.method != "BYE") &&
     (req.method != "CANCEL");
   if (fwd) {
       CALL_EVENT_H(onSipRequest,req);
