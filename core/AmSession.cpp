@@ -1004,6 +1004,24 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 {
   DBG("AmSession::onSdpCompleted(...) ...\n");
 
+  if(local_sdp.media.empty() || remote_sdp.media.empty()) {
+
+    ERROR("Invalid SDP");
+
+    string debug_str;
+    local_sdp.print(debug_str);
+    ERROR("Local SDP:\n%s",
+	  debug_str.empty() ? "<empty>"
+	  : debug_str.c_str());
+    
+    remote_sdp.print(debug_str);
+    ERROR("Remote SDP:\n%s",
+	  debug_str.empty() ? "<empty>"
+	  : debug_str.c_str());
+
+    return -1;
+  }
+
   lockAudio();
   // TODO: 
   //   - get the right media ID
