@@ -164,10 +164,10 @@ class AmB2BSession: public AmSession
   virtual int relayEvent(AmEvent* ev);
 
   /** send a relayed SIP Request */
-  void relaySip(const AmSipRequest& req);
+  int relaySip(const AmSipRequest& req);
 
   /** send a relayed SIP Reply */
-  void relaySip(const AmSipRequest& orig, const AmSipReply& reply);
+  int relaySip(const AmSipRequest& orig, const AmSipReply& reply);
 
   /** Terminate our leg and forget the other. */
   virtual void terminateLeg();
