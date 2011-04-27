@@ -240,7 +240,7 @@ private:
 	    int flags = 0);
 
   /** @return 0 on success */
-  int reply(unsigned int  req_cseq,
+  int reply(const AmSipTransaction& t,
 	    unsigned int  code, 
 	    const string& reason,
 	    const string& content_type = "",

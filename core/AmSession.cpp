@@ -883,7 +883,7 @@ void AmSession::onBye(const AmSipRequest& req)
 
 void AmSession::onCancel(const AmSipRequest& cancel)
 {
-  dlg.reply(cancel.cseq, 487, "Request terminated");
+  dlg.bye();
   setStopped();
 }
 

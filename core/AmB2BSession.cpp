@@ -1012,7 +1012,6 @@ void AmB2BCallerSession::onInvite(const AmSipRequest& req)
 
 void AmB2BCallerSession::onCancel(const AmSipRequest& cancel)
 {
-  dlg.reply(cancel.cseq, 487, "Request terminated");
   terminateOtherLeg();
   terminateLeg();
 }

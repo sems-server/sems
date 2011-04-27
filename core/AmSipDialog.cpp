@@ -972,10 +972,11 @@ int AmSipDialog::reply(const AmSipRequest& req,
 		       const string& hdrs,
 		       int flags)
 {
-  return reply(req.cseq,code,reason,content_type,body,hdrs,flags);
+  return reply(AmSipTransaction(req.method,req.cseq,req.tt),
+	       code,reason,content_type,body,hdrs,flags);
 }
 
-int AmSipDialog::reply(unsigned int  req_cseq,
+int AmSipDialog::reply(const AmSipTransaction& t,
 		       unsigned int  code,
 		       const string& reason,
 		       const string& content_type,
@@ -983,19 +984,19 @@ int AmSipDialog::reply(unsigned int  req_cseq,
 		       const string& hdrs,
 		       int flags)
 {
-  TransMap::const_iterator t_it = uas_trans.find(req_cseq);
+  TransMap::const_iterator t_it = uas_trans.find(t.cseq);
   if(t_it == uas_trans.end()){
     ERROR("could not find any transaction matching request cseq\n");
     ERROR("request cseq=%i; reply code=%i; callid=%s; local_tag=%s; "
 	  "remote_tag=%s\n",
-	  req_cseq,code,callid.c_str(),
+	  t.cseq,code,callid.c_str(),
 	  local_tag.c_str(),remote_tag.c_str());
     return -1;
   }
   DBG("reply: transaction found!\n");
     
   string m_hdrs = hdrs;
-  const AmSipTransaction& t = t_it->second;
+  //const AmSipTransaction& t = t_it->second;
   AmSipReply reply;
 
   reply.code = code;
@@ -1139,7 +1140,8 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 		 it != uas_trans.end(); it++) {
 	      if (it->second.method == "INVITE"){
 		// let quit this call by sending final reply
-		return reply(it->second.cseq,500,"Internal error");
+		return reply(it->second,
+			     487,"Request terminated");
 	      }
 	    }
 
