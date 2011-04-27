@@ -395,17 +395,12 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	}
     }
 
-    err = local_socket->send(&remote_ip,reply_buf,reply_len);
-    if(err < 0){
-	delete [] reply_buf;
-	goto end;
-    }
-
     err = update_uas_reply(bucket,t,reply_code);
     if(err < 0){
 	
 	ERROR("Invalid state change\n");
 	delete [] reply_buf;
+	goto end;
     }
     else if(err != TS_TERMINATED) {
 	if (t->retr_buf) 
@@ -424,6 +419,11 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	//    now wait for 200 ACK
 	delete [] reply_buf;
 	err = 0;
+    }
+
+    err = local_socket->send(&remote_ip,reply_buf,reply_len);
+    if(err < 0){
+	delete [] reply_buf;
     }
     
  end:
