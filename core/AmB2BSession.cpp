@@ -487,13 +487,11 @@ void AmB2BSession::onInvite2xx(const AmSipReply& reply)
 
 int AmB2BSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
 {
-  string debug_str;
-  local_sdp.print(debug_str);
-  DBG("Local SDP:\n%s",debug_str.c_str());
-
-  remote_sdp.print(debug_str);
-  DBG("Remote SDP:\n%s",debug_str.c_str());
-
+  if(!sip_relay_only){
+    return AmSession::onSdpCompleted(local_sdp,remote_sdp);
+  }
+  
+  DBG("sip_relay_only = true: doing nothing!\n");
   return 0;
 }
 
