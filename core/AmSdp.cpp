@@ -759,12 +759,15 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       {
 	next = parse_until(media_line, ' ');
 	string proto(media_line, int(next-media_line)-1);
-	if(transport_type(proto) < 0){
-	  ERROR("parse_sdp_media: Unknown transport protocol\n");
-	  state = FMT;
-	  break;
-	}
+	// if(transport_type(proto) < 0){
+	//   ERROR("parse_sdp_media: Unknown transport protocol\n");
+	//   state = FMT;
+	//   break;
+	// }
 	m.transport = transport_type(proto);
+	if(m.transport < 0){
+	  DBG("Unknown transport protocol: %s\n",proto.c_str());
+	}
 	media_line = next;
 	state = FMT;
 	break;
