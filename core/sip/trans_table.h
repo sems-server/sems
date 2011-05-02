@@ -3,6 +3,7 @@
 
 #include "hash_table.h"
 #include "cstring.h"
+#include "sip_trans.h"
 
 #define H_TABLE_POWER   10
 #define H_TABLE_ENTRIES (1<<H_TABLE_POWER)

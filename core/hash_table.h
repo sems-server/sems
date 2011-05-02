@@ -39,9 +39,6 @@
 using std::list;
 using std::map;
 
-class sip_trans;
-struct sip_msg;
-
 
 template<class Value>
 class ht_bucket: public AmMutex
