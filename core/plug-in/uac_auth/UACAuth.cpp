@@ -187,7 +187,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
 	    if (dlg->sendRequest(ri->second.method,
 				 ri->second.content_type,
 				 ri->second.body, 
-				 hdrs) == 0) {
+				 hdrs, SIP_FLAGS_VERBATIM) == 0) {
 	      processed = true;
               DBG("authenticated request successfully sent.\n");
 	      // undo SIP dialog status change
