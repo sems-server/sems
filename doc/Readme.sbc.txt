@@ -257,6 +257,9 @@ if not set or empty. Usually, replies are sent back to where the request came
 from (honoring rport), but if next_hop should be used nevertheless,
 next_hop_for_replies profile option can be set to "yes".
 
+These two settings apply only for the UAC side, i.e. the outgoing side of
+the initial INVITE.
+
 Filters
 -------
 Headers and messages may be filtered. A filter can be set to 
