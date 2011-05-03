@@ -41,6 +41,7 @@ struct RegInfo {
   string auth_user;
   string passwd;
   string proxy;
+  string contact;
 
   string handle;
 };

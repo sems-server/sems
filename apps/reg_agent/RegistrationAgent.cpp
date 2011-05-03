@@ -42,6 +42,7 @@
 #define CFG_PARAM_AUTH    "auth_user"
 #define CFG_PARAM_PASS    "pwd"
 #define CFG_PARAM_PROXY   "proxy"
+#define CFG_PARAM_CONTACT "contact"
 
 #define MAX_ACCOUNTS      100
 
@@ -72,6 +73,7 @@ int RegistrationAgentFactory::onLoad()
     ri.auth_user = cfg.getParameter(CFG_PARAM_AUTH+idx_str,"");
     ri.passwd = cfg.getParameter(CFG_PARAM_PASS+idx_str,"");
     ri.proxy = cfg.getParameter(CFG_PARAM_PROXY+idx_str,"");
+    ri.contact = cfg.getParameter(CFG_PARAM_CONTACT+idx_str,"");
 
     if (!ri.domain.length() || !ri.user.length()) {
       // not including the passwd: might be IP based registration
@@ -85,9 +87,9 @@ int RegistrationAgentFactory::onLoad()
       ri.auth_user = ri.user;
 
     dialer.add_reg(ri);
-    DBG("Adding registration account #%d (%s %s %s %s %s)\n", i, 
+    DBG("Adding registration account #%d (%s %s %s %s %s %s)\n", i,
         ri.domain.c_str(), ri.user.c_str(), ri.display_name.c_str(), 
-        ri.auth_user.c_str(), ri.proxy.c_str());
+        ri.auth_user.c_str(), ri.proxy.c_str(), ri.contact.c_str());
 
     i ++;
     idx_str = int2str(i);
@@ -130,10 +132,11 @@ void RegThread::create_registration(RegInfo& ri) {
       di_args.push(ri.domain.c_str());
       di_args.push(ri.user.c_str());
       di_args.push(ri.display_name.c_str()); // display name
-      di_args.push(ri.auth_user.c_str());  // auth_user
-      di_args.push(ri.passwd.c_str());    // pwd
-      di_args.push("reg_agent"); //sess_link
-      di_args.push(ri.proxy.c_str()); 
+      di_args.push(ri.auth_user.c_str());    // auth_user
+      di_args.push(ri.passwd.c_str());       // pwd
+      di_args.push("reg_agent");             //sess_link
+      di_args.push(ri.proxy.c_str());
+      di_args.push(ri.contact.c_str());
 			
       uac_auth_i->invoke("createRegistration", di_args, reg_handle);
       if (reg_handle.size()) 
