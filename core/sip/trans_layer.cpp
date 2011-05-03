@@ -1271,7 +1271,8 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     to_tag = ((sip_from_to*)msg->to->p)->tag;
     if((t->msg->u.request->method != sip_request::CANCEL) && !to_tag.len){
 	if (!trans_layer::accept_fr_without_totag) {
-	    DBG("To-tag missing in final reply (see sems.conf?)\n");
+	    DBG("To-tag missing in final reply (see "
+		"sems.conf: accept_fr_without_totag?)\n");
 	    return -1;
 	}
     }
