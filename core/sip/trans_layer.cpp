@@ -1800,7 +1800,7 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
     
   int temp_sock = socket(remote_ip->ss_family, SOCK_DGRAM, 0 );
   if (temp_sock == -1) {
-    printf( "ERROR: socket() failed: %s\n",
+    ERROR( "ERROR: socket() failed: %s\n",
 	strerror(errno));
     return NULL;
   }
