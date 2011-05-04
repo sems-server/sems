@@ -59,9 +59,10 @@ struct SIPRegistrationInfo {
   { }
 };
 
-class SIPRegistration : public AmSipDialogEventHandler,
-			public DialogControl,
-			public CredentialHolder
+class AmSIPRegistration 
+: public AmSipDialogEventHandler,
+  public DialogControl,
+  public CredentialHolder
 	
 {
 	
@@ -85,10 +86,10 @@ class SIPRegistration : public AmSipDialogEventHandler,
   time_t reg_send_begin; 
 
  public:
-  SIPRegistration(const string& handle,
-		  const SIPRegistrationInfo& info,
-		  const string& sess_link);
-  ~SIPRegistration();
+  AmSIPRegistration(const string& handle,
+		    const SIPRegistrationInfo& info,
+		    const string& sess_link);
+  ~AmSIPRegistration();
 
   void setSessionEventHandler(AmSessionEventHandler* new_seh);
 

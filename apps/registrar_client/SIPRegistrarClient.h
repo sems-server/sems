@@ -49,14 +49,14 @@ class SIPRegistrarClient  : public AmThread,
 {
   // registrations container
   AmMutex                       reg_mut;
-  std::map<std::string, SIPRegistration*> registrations;
+  std::map<std::string, AmSIPRegistration*> registrations;
 
   void add_reg(const string& reg_id, 
-	       SIPRegistration* new_reg);
-  SIPRegistration* remove_reg(const string& reg_id);
-  SIPRegistration* remove_reg_unsafe(const string& reg_id);
-  SIPRegistration* get_reg(const string& reg_id);
-  SIPRegistration* get_reg_unsafe(const string& reg_id);
+	       AmSIPRegistration* new_reg);
+  AmSIPRegistration* remove_reg(const string& reg_id);
+  AmSIPRegistration* remove_reg_unsafe(const string& reg_id);
+  AmSIPRegistration* get_reg(const string& reg_id);
+  AmSIPRegistration* get_reg_unsafe(const string& reg_id);
 
   void onSipReplyEvent(AmSipReplyEvent* ev);	
   void onNewRegistration(SIPNewRegistrationEvent* new_reg);
