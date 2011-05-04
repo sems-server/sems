@@ -105,6 +105,9 @@ class UACAuth : public AmSessionEventHandler
   UACAuthCred* credential;
   AmSipDialog* dlg;
 
+  string nonce; // last nonce received from server
+  unsigned int nonce_count;
+
   std::string find_attribute(const std::string& name, const std::string& header);
   bool parse_header(const std::string& auth_hdr, UACAuthDigestChallenge& challenge);
 
@@ -116,10 +119,12 @@ class UACAuth : public AmSessionEventHandler
 		     UACAuthDigestChallenge& challenge,
 		     HASHHEX hentity,
 		     HASHHEX HA2Hex );
+
+  void uac_calc_hentity( const std::string& body, HASHHEX hentity );
 	
   void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
 			  UACAuthDigestChallenge& challenge,
-			  const std::string& nc, const std::string& cnonce,
+			  const std::string& cnonce, const string& qop_value, 
 			  HASHHEX response);
 	
   /** 
@@ -127,7 +132,8 @@ class UACAuth : public AmSessionEventHandler
    *  @return true if successful 
    */
   bool do_auth(const unsigned int code, const string& auth_hdr,  
-	       const string& method, const string& uri, string& result);
+	       const string& method, const string& uri, 
+	       const string& body, string& result);
 	
  public:
 	
