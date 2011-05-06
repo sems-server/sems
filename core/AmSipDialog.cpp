@@ -324,21 +324,23 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
   // responses to INVITE
 
   if ( (reply.code > 100) 
-       && (reply.code < 300) 
-       && !reply.remote_tag.empty() 
+       && (reply.code < 300) {
+
+    if(!reply.remote_tag.empty() 
        && (remote_tag.empty() ||
 	   ((status < Connected) && (reply.code >= 200))) ) {  
 
-    remote_tag = reply.remote_tag;
-  }
+      remote_tag = reply.remote_tag;
+    }
 
-  // allow route overwriting
-  if ((status < Connected) && !reply.route.empty()) {
+    // allow route overwriting
+    if ((status < Connected) && !reply.route.empty()) {
       route = reply.route;
-  }
+    }
 
-  if (reply.next_request_uri.length())
-    remote_uri = reply.next_request_uri;
+    if (reply.next_request_uri.length())
+      remote_uri = reply.next_request_uri;
+  }
 
   switch(status){
   case Disconnecting:
