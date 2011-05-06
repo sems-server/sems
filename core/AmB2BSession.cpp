@@ -528,13 +528,15 @@ void AmB2BSession::saveSessionDescription(const string& content_type,
 
   const char* cmp_body_begin = body.c_str();
   size_t cmp_body_length = body.length();
-  if (content_type == SIP_APPLICATION_SDP) {
-    // for SDP, skip v and o line
-    // (o might change even if SDP unchanged)
+
 #define skip_line						\
     while (cmp_body_length-- && *cmp_body_begin != '\n')	\
       cmp_body_begin++;						\
     cmp_body_begin++;						\
+
+  if (body.length() && content_type == SIP_APPLICATION_SDP) {
+    // for SDP, skip v and o line
+    // (o might change even if SDP unchanged)
 
     skip_line;
     skip_line;
@@ -547,7 +549,7 @@ bool AmB2BSession::updateSessionDescription(const string& content_type,
 					    const string& body) {
   const char* cmp_body_begin = body.c_str();
   size_t cmp_body_length = body.length();
-  if (content_type == SIP_APPLICATION_SDP) {
+  if (body.length() && content_type == SIP_APPLICATION_SDP) {
     // for SDP, skip v and o line
     // (o might change even if SDP unchanged)
     skip_line;
