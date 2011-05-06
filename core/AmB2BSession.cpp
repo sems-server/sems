@@ -530,9 +530,11 @@ void AmB2BSession::saveSessionDescription(const string& content_type,
   size_t cmp_body_length = body.length();
 
 #define skip_line						\
+  if (cmp_body_length) {					\
     while (cmp_body_length-- && *cmp_body_begin != '\n')	\
       cmp_body_begin++;						\
     cmp_body_begin++;						\
+  }
 
   if (body.length() && content_type == SIP_APPLICATION_SDP) {
     // for SDP, skip v and o line
