@@ -323,7 +323,7 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
   // responses to INVITE
 
   if ( (reply.code > 100) 
-       && (reply.code < 300) {
+       && (reply.code < 300) ) {
 
     if(!reply.remote_tag.empty() 
        && (remote_tag.empty() ||
