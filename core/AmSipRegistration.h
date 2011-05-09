@@ -85,6 +85,8 @@ class AmSIPRegistration
   unsigned int reg_expires;
   time_t reg_send_begin; 
 
+  unsigned int expires_interval;
+
  public:
   AmSIPRegistration(const string& handle,
 		    const SIPRegistrationInfo& info,
@@ -92,6 +94,8 @@ class AmSIPRegistration
   ~AmSIPRegistration();
 
   void setSessionEventHandler(AmSessionEventHandler* new_seh);
+
+  void setExpiresInterval(unsigned int desired_expires);
 
   void doRegistration();
   void doUnregister();
@@ -152,6 +156,7 @@ class AmSIPRegistration
 
   SIPRegistrationInfo& getInfo() { return info; }
   const string& getEventSink() { return sess_link; }
+  const string& getHandle() { return req.from_tag; }
 };
 
 

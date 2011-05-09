@@ -42,7 +42,8 @@ AmSIPRegistration::AmSIPRegistration(const string& handle,
     sess_link(sess_link),
     reg_send_begin(0),
     waiting_result(false),
-    seh(NULL)
+    seh(NULL),
+    expires_interval(3600)
 {
   req.cmd      = "sems";
   req.user     = info.user;
@@ -75,6 +76,10 @@ void AmSIPRegistration::setSessionEventHandler(AmSessionEventHandler* new_seh) {
   seh = new_seh;
 }
  
+void AmSIPRegistration::setExpiresInterval(unsigned int desired_expires) {
+  expires_interval = desired_expires;
+}
+
 void AmSIPRegistration::doRegistration() 
 {
   waiting_result = true;
@@ -95,7 +100,9 @@ void AmSIPRegistration::doRegistration()
       + info.contact + ">" + CRLF;
   }
     
-  if (dlg.sendRequest(req.method, "", "", "Expires: 3600\n") < 0)
+  if (dlg.sendRequest(req.method, "", "",
+		      SIP_HDR_COLSP(SIP_HDR_EXPIRES)+
+		      int2str(expires_interval)+CRLF) < 0)
     ERROR("failed to send registration.\n");
     
   // save TS
@@ -124,7 +131,8 @@ void AmSIPRegistration::doUnregister()
     dlg.contact_uri += info.contact + ">" + CRLF;
   }
     
-  if (dlg.sendRequest(req.method, "", "", "Expires: 0\n") < 0)
+  if (dlg.sendRequest(req.method, "", "",
+		      SIP_HDR_COLSP(SIP_HDR_EXPIRES) "0" CRLF) < 0)
     ERROR("failed to send deregistration.\n");
 
   // save TS
