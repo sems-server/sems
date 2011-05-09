@@ -1125,13 +1125,18 @@ void _trans_layer::received_msg(sip_msg* msg)
 		    // should we forward the ACK to SEMS-App upstream? Yes
 		    bucket->unlock();
 		    
-		    //  let's pass the request to
-		    //  the UA. 
-		    assert(ua);
-		    DBG("Passing ACK to the UA.\n");
-		    ua->handle_sip_request(trans_ticket(), // dummy
-					   msg);
-		    
+		    if(err == TS_REMOVED) {
+			//  let's pass the request to
+			//  the UA, iff it was a 200-ACK
+			assert(ua);
+			DBG("Passing ACK to the UA.\n");
+			ua->handle_sip_request(trans_ticket(), // dummy
+					       msg);
+		    }
+		    else {
+			DBG("Absorbing non-200-ACK\n");
+		    }
+
 		    DROP_MSG;
 		}
 	    }
