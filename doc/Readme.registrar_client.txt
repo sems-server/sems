@@ -22,6 +22,9 @@ args:
 	   CStr pwd       : password
 	   CStr sess_link : local tag of session or name of factory that receives
                         events about the status of the registration
+   optional:
+           CStr proxy     : proxy to be used for registration
+           CStr contact   : contact to register
 
 returns: CStr handle  : used to remove the registration or correlate events
 

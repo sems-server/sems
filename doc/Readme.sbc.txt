@@ -248,14 +248,20 @@ Outbound proxy and next hop
 
 An outbound proxy may be set with the outbound_proxy option. If this is
 not set, the outbound_proxy option of sems.conf is used, if that one is set.
-Setting an outbound proxy will add a route header. force_outbound_proxy forces
-the outbound proxy route also for in-dialog requests.
+Setting an outbound proxy will add a route header.
+
+force_outbound_proxy forces the outbound proxy as first route and request URI
+also for in-dialog requests. Note that this is NOT RFC3261 compliant (section
+2.2 Requests within a Dialog, 12.2.1 UAC Behavior).
 
 The next hop (destination IP[:port] of outgoing requests) can be set with
 the next_hop_ip and next_hop_port options. next_hop_port defaults to 5060
 if not set or empty. Usually, replies are sent back to where the request came
 from (honoring rport), but if next_hop should be used nevertheless,
 next_hop_for_replies profile option can be set to "yes".
+
+These two settings apply only for the UAC side, i.e. the outgoing side of
+the initial INVITE.
 
 Filters
 -------

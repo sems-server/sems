@@ -79,6 +79,10 @@ SIPRegistration::SIPRegistration(const string& handle,
   // clear dlg.callid? ->reregister?
   dlg.initFromLocalRequest(req);
   dlg.cseq = 50;
+  if(!info.contact.empty()) {
+      dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<sip:";
+      dlg.contact_uri += info.contact + ">" + CRLF;
+  }
 }
 
 SIPRegistration::~SIPRegistration() {
@@ -102,12 +106,16 @@ void SIPRegistration::doRegistration()
     // set outbound proxy as next hop 
     if (!info.proxy.empty()) {
 	dlg.outbound_proxy = info.proxy;
-    } else if (!AmConfig::OutboundProxy.empty()) 
+    } else if (!AmConfig::OutboundProxy.empty()) {
 	dlg.outbound_proxy = AmConfig::OutboundProxy;
-    //else 
-    //    dlg.outbound_proxy = "";
+    }
+
+    if(!info.contact.empty()) {
+      dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<"
+        + info.contact + ">" + CRLF;
+    }
     
-    if (dlg.sendRequest(req.method, "", "", "Expires: 1000\n") < 0)
+    if (dlg.sendRequest(req.method, "", "", "Expires: 3600\n") < 0)
       ERROR("failed to send registration.\n");
     
     // save TS
@@ -131,6 +139,10 @@ void SIPRegistration::doUnregister()
 	dlg.outbound_proxy = AmConfig::OutboundProxy;
     //else 
     //    dlg.outbound_proxy = "";
+    if(!info.contact.empty()) {
+        dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<";
+        dlg.contact_uri += info.contact + ">" + CRLF;
+    }
     
     if (dlg.sendRequest(req.method, "", "", "Expires: 0\n") < 0)
       ERROR("failed to send deregistration.\n");
@@ -587,13 +599,14 @@ string SIPRegistrarClient::createRegistration(const string& domain,
 					      const string& auth_user,
 					      const string& pwd,
 					      const string& sess_link,
-					      const string& proxy) {
+					      const string& proxy,
+                                              const string& contact) {
 	
   string handle = AmSession::getNewId();
   instance()->
     postEvent(new SIPNewRegistrationEvent(SIPRegistrationInfo(domain, user, 
 							      name, auth_user, pwd, 
-							      proxy),
+							      proxy, contact),
 					  handle, sess_link));
   return handle;
 }
@@ -634,6 +647,7 @@ void SIPRegistrarClient::listRegistrations(AmArg& res) {
     r["auth_user"] = it->second->getInfo().auth_user;
     r["proxy"] = it->second->getInfo().proxy;
     r["event_sink"] = it->second->getEventSink();
+    r["contact"] = it->second->getInfo().contact;
     res.push(r);
   }
 
@@ -645,9 +659,11 @@ void SIPRegistrarClient::invoke(const string& method, const AmArg& args,
 				AmArg& ret)
 {
   if(method == "createRegistration"){
-    string proxy;
+    string proxy, contact;
     if (args.size() > 6)
       proxy = args.get(6).asCStr();
+    if (args.size() > 7)
+      contact = args.get(7).asCStr();
 
     ret.push(createRegistration(args.get(0).asCStr(),
 				args.get(1).asCStr(),
@@ -655,7 +671,7 @@ void SIPRegistrarClient::invoke(const string& method, const AmArg& args,
 				args.get(3).asCStr(),
 				args.get(4).asCStr(),
 				args.get(5).asCStr(),
-				proxy
+				proxy, contact
 				).c_str());
   }
   else if(method == "removeRegistration"){

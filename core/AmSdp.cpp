@@ -249,9 +249,11 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
 	{
 	  s = is_eql_next(s);
 	  next = get_next_line(s);
-	  string version(s, int(next-s)-2);
-	  str2i(version, sdp_msg->version);
-	  //DBG("parse_sdp_line_ex: found version\n");
+	  if (int(next-s)-2 >= 0) {
+	    string version(s, int(next-s)-2);
+	    str2i(version, sdp_msg->version);
+	    //DBG("parse_sdp_line_ex: found version\n");
+	  }
 	  s = next;
 	  state = SDP_DESCR;
 	  break;
@@ -269,8 +271,10 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
 	  //DBG("parse_sdp_line_ex: found session\n");
 	  s = is_eql_next(s);
 	  next = get_next_line(s);
-	  string sessionName(s, int(next-s)-2);
-	  sdp_msg->sessionName = sessionName;
+	  if (int(next-s)-2 >= 0) {
+	    string sessionName(s, int(next-s)-2);
+	    sdp_msg->sessionName = sessionName;
+	  }
 	  s = next;
 	  break;
 	}
@@ -279,7 +283,9 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
 	//DBG("parse_sdp_line_ex: found uri\n");
 	  s = is_eql_next(s);
 	  next = get_next_line(s);
-	  sdp_msg->uri = string(s, int(next-s)-2);
+	  if (int(next-s)-2 >= 0) {
+	    sdp_msg->uri = string(s, int(next-s)-2);
+	  }
 	  s = next;
       } break;
 
@@ -319,8 +325,11 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
       default:
 	{
 	  next = get_next_line(s);
-	  string line(s, int(next-s)-2);
-	  DBG("parse_sdp_line: skipping unknown Session description %s=\n", (char*)line.c_str());
+	  if (int(next-s)-2 >= 0) {
+	    string line(s, int(next-s)-2);
+	    DBG("parse_sdp_line: skipping unknown Session description %s=\n",
+		(char*)line.c_str());
+	  }
 	  s = next;
 	  break;
 	}
@@ -367,9 +376,11 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
       default :
 	{
 	  next = get_next_line(s);
-	  string line(s, int(next-s)-2);
-	  DBG("parse_sdp_line: skipping unknown Media description '%s'\n", 
-	      (char*)line.c_str());
+	  if (int(next-s)-2 >= 0) {
+	    string line(s, int(next-s)-2);
+	    DBG("parse_sdp_line: skipping unknown Media description '%s'\n",
+		(char*)line.c_str());
+	  }
 	  s = next;
 	  break;
 	}
@@ -517,12 +528,15 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       {
 	next = parse_until(media_line, ' ');
 	string proto(media_line, int(next-media_line)-1);
-	if(transport_type(proto) < 0){
-	  ERROR("parse_sdp_media: Unknown transport protocol\n");
-	  state = FMT;
-	  break;
-	}
+	// if(transport_type(proto) < 0){
+	//   ERROR("parse_sdp_media: Unknown transport protocol\n");
+	//   state = FMT;
+	//   break;
+	// }
 	m.transport = transport_type(proto);
+	if(m.transport < 0){
+	  DBG("Unknown transport protocol: %s\n",proto.c_str());
+	}
 	media_line = next;
 	state = FMT;
 	break;

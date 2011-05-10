@@ -1,8 +1,9 @@
 Readme for reg_agent module
 
-This module uses the registrar_client to register the contact
-sems@<local_ip>:<sip_port> at a SIP registrar. The accounts 
-(identities) are set in the config file.
+This module uses the registrar_client to register SEMS
+at a SIP registrar. The accounts  (identities) are set in
+the config file.
+
 If the registration is not successful, it tries to 
 re-register.
 

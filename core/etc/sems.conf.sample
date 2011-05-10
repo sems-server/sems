@@ -457,7 +457,7 @@ use_default_signature=yes
 #
 # Accept final replies without To-tag? [yes|no]
 #
-#accept_fr_without_totag=yes
+accept_fr_without_totag=yes
 
 #
 # Log raw messages?  [no|debug|info|warn|error]

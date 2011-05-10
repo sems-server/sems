@@ -155,7 +155,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 				
 	  if (do_auth(reply.code, auth_hdr,  
 		      ri->second.method,
-		      auth_uri, result)) {
+		      auth_uri, ri->second.body, result)) {
 	    string hdrs = ri->second.hdrs;
 	    // TODO(?): strip headers 
 	    // ((code==401) ? stripHeader(ri->second.hdrs, "Authorization")  :
@@ -187,7 +187,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 	    if (dlg->sendRequest(ri->second.method,
 				 ri->second.content_type,
 				 ri->second.body, 
-				 hdrs) == 0) {
+				 hdrs, SIP_FLAGS_VERBATIM) == 0) {
 	      processed = true;
               DBG("authenticated request successfully sent.\n");
 	      // undo SIP dialog status change
@@ -270,11 +270,14 @@ bool UACAuth::parse_header(const string& auth_hdr, UACAuthDigestChallenge& chall
   challenge.opaque = find_attribute("opaque", auth_hdr);
   challenge.algorithm = find_attribute("algorithm", auth_hdr);
   challenge.qop = find_attribute("qop", auth_hdr);
+  
   return (challenge.realm.length() && challenge.nonce.length());
 }
 
 bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,  
-		      const string& method, const string& uri, string& result) {
+		      const string& method, const string& uri, 
+		      const string& body, string& result) 
+{
   if (!auth_hdr.length()) {
     ERROR("empty auth header.\n");
     return false;
@@ -291,8 +294,10 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
     return false;
   }
 
-  DBG("realm='%s', nonce='%s'\n", challenge.realm.c_str(), 
-      challenge.nonce.c_str());
+  DBG("realm='%s', nonce='%s', qop='%s'\n", 
+      challenge.realm.c_str(), 
+      challenge.nonce.c_str(),
+      challenge.qop.c_str());
 
   if (credential->realm.length() 
       && (credential->realm != challenge.realm)) {
@@ -302,23 +307,60 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
  
   HASHHEX ha1;
   HASHHEX ha2;
+  HASHHEX hentity;
   HASHHEX response;
+  bool    qop_auth=false;
+  bool    qop_auth_int=false;
+  string  cnonce;
+  string  qop_value;
+
+  if(!challenge.qop.empty()){
+
+    qop_auth = key_in_list(challenge.qop,"auth");
+    qop_auth_int = key_in_list(challenge.qop,"auth-int");
+
+    if(qop_auth || qop_auth_int) {
+
+      cnonce = int2hex(get_random(),true);
+
+      if(challenge.nonce == nonce)
+	nonce_count++;
+      else
+	nonce_count = 1;
+
+      if(qop_auth_int){
+	uac_calc_hentity(body,hentity);
+	qop_value = "auth-int";
+      }
+      else
+	qop_value = "auth";
+    }
+  }
 
   /* do authentication */
-  uac_calc_HA1( challenge, ""/*cnonce*/, ha1);
-  uac_calc_HA2( method, uri, challenge, 0/*hentity*/, ha2);
-  uac_calc_response( ha1, ha2, challenge, ""/*nc*/, "" /*cnonce*/, response);
+  uac_calc_HA1( challenge, cnonce, ha1);
+  uac_calc_HA2( method, uri, challenge, qop_auth_int ? hentity : NULL, ha2);
+  uac_calc_response( ha1, ha2, challenge, cnonce, qop_value, response);
   DBG("calculated response = %s\n", response);
 
   // compile auth response
-  result = ((code==401) ? SIP_HDR_COLSP(SIP_HDR_AUTHORIZATION) "Digest username=\"" : 
-	    SIP_HDR_COLSP(SIP_HDR_PROXY_AUTHORIZATION) "Digest username=\"")
-    + credential->user + "\", realm=\"" + challenge.realm + "\", nonce=\""+challenge.nonce + 
-    "\", uri=\""+uri+"\", ";
+  result = ((code==401) ? SIP_HDR_COLSP(SIP_HDR_AUTHORIZATION) : 
+	    SIP_HDR_COLSP(SIP_HDR_PROXY_AUTHORIZATION));
+
+  result += "Digest username=\"" + credential->user + "\", "
+    "realm=\"" + challenge.realm + "\", "
+    "nonce=\"" + challenge.nonce + "\", "
+    "uri=\"" + uri + "\", ";
+
   if (challenge.opaque.length())
-    result+="opaque=\""+challenge.opaque+"\", ";
+    result += "opaque=\"" + challenge.opaque + "\", ";
   
-  result+="response=\""+string((char*)response)+"\", algorithm=MD5\n";
+  if (!qop_value.empty())
+    result += "qop=\"" + qop_value + "\", "
+      "cnonce=\"" + cnonce + "\", "
+      "nc=\"" + int2hex(nonce_count,true) + "\", ";
+
+  result += "response=\"" + string((char*)response) + "\", algorithm=MD5\n";
 
   DBG("Auth req hdr: '%s'\n", result.c_str());
   
@@ -406,7 +448,7 @@ void UACAuth::uac_calc_HA2( const string& method, const string& uri,
   MD5Update(&Md5Ctx, hc, 1);
   w_MD5Update(&Md5Ctx, uri);
 
-  if ( challenge.qop == "auth-int" ) 
+  if ( hentity != 0 ) 
     {
       MD5Update(&Md5Ctx, hc, 1);
       MD5Update(&Md5Ctx, hentity, HASHHEXLEN);
@@ -416,15 +458,27 @@ void UACAuth::uac_calc_HA2( const string& method, const string& uri,
   cvt_hex(HA2, HA2Hex);
 }
 
+/*
+ * calculate H(body)
+ */
 
+void UACAuth::uac_calc_hentity( const string& body, HASHHEX hentity )
+{
+  MD5_CTX Md5Ctx;
+  HASH    h;
+
+  MD5Init(&Md5Ctx);
+  w_MD5Update(&Md5Ctx, body);
+  MD5Final(h, &Md5Ctx);
+  cvt_hex(h,hentity);
+}
 
 /* 
  * calculate request-digest/response-digest as per HTTP Digest spec 
  */
 void UACAuth::uac_calc_response( HASHHEX ha1, HASHHEX ha2,
-				 UACAuthDigestChallenge& challenge,
-				 const string& nc, const string& cnonce,
-				 HASHHEX response)
+				 UACAuthDigestChallenge& challenge, const string& cnonce,
+				 const string& qop_value, HASHHEX response)
 {
   unsigned char hc[1]; hc[0]=':';
   MD5_CTX Md5Ctx;
@@ -436,17 +490,15 @@ void UACAuth::uac_calc_response( HASHHEX ha1, HASHHEX ha2,
   w_MD5Update(&Md5Ctx, challenge.nonce);
   MD5Update(&Md5Ctx, hc, 1);
 
-  if (challenge.qop.length()
-      && challenge.qop == "auth_int")
-    {
+  if (!qop_value.empty()) {
       
-      w_MD5Update(&Md5Ctx, nc);
-      MD5Update(&Md5Ctx, hc, 1);
-      w_MD5Update(&Md5Ctx, cnonce);
-      MD5Update(&Md5Ctx, hc, 1);
-      w_MD5Update(&Md5Ctx, "" /*challenge.qop*/);
-      MD5Update(&Md5Ctx, hc, 1);
-    };
+    w_MD5Update(&Md5Ctx, int2hex(nonce_count,true));
+    MD5Update(&Md5Ctx, hc, 1);
+    w_MD5Update(&Md5Ctx, cnonce);
+    MD5Update(&Md5Ctx, hc, 1);
+    w_MD5Update(&Md5Ctx, qop_value);
+    MD5Update(&Md5Ctx, hc, 1);
+  };
 
   MD5Update(&Md5Ctx, ha2, HASHHEXLEN);
   MD5Final(RespHash, &Md5Ctx);

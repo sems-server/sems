@@ -66,18 +66,19 @@ void trsp_socket::copy_addr_to(sockaddr_storage* sa)
 bool trsp_socket::match_addr(sockaddr_storage* other_addr)
 {
     
-    if(addr.ss_family != other_addr->ss_family) return false;
+    if(addr.ss_family != other_addr->ss_family)
+	return false;
 
     if(addr.ss_family == AF_INET){
 	if( !memcmp(&((sockaddr_in*)&addr)->sin_addr, 
 		    &((sockaddr_in*)other_addr)->sin_addr, 
-		    sizeof(sockaddr_in)) )
+		    sizeof(in_addr)) )
 	    return true;
     }
     else if(addr.ss_family == AF_INET6) {
 	if( !memcmp(&((sockaddr_in6*)&addr)->sin6_addr, 
 		    &((sockaddr_in6*)other_addr)->sin6_addr, 
-		    sizeof(sockaddr_in6)) )
+		    sizeof(in6_addr)) )
 	    return true;
     }
     

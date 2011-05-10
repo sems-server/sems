@@ -1127,13 +1127,18 @@ void _trans_layer::received_msg(sip_msg* msg)
 		    // should we forward the ACK to SEMS-App upstream? Yes
 		    bucket->unlock();
 		    
-		    //  let's pass the request to
-		    //  the UA. 
-		    assert(ua);
-		    DBG("Passing ACK to the UA.\n");
-		    ua->handle_sip_request(trans_ticket(), // dummy
-					   msg);
-		    
+		    if(err == TS_REMOVED) {
+			//  let's pass the request to
+			//  the UA, iff it was a 200-ACK
+			assert(ua);
+			DBG("Passing ACK to the UA.\n");
+			ua->handle_sip_request(trans_ticket(), // dummy
+					       msg);
+		    }
+		    else {
+			DBG("Absorbing non-200-ACK\n");
+		    }
+
 		    DROP_MSG;
 		}
 	    }
@@ -1271,9 +1276,12 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     }
     
     to_tag = ((sip_from_to*)msg->to->p)->tag;
-    if((t->msg->u.request->method != sip_request::CANCEL) && !to_tag.len){
+    if((t->msg->u.request->method != sip_request::CANCEL) && 
+       (reply_code < 300) &&
+       !to_tag.len){
 	if (!trans_layer::accept_fr_without_totag) {
-	    DBG("To-tag missing in final reply (see sems.conf?)\n");
+	    DBG("To-tag missing in final reply (see "
+		"sems.conf: accept_fr_without_totag?)\n");
 	    return -1;
 	}
     }
@@ -1802,7 +1810,7 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
     
   int temp_sock = socket(remote_ip->ss_family, SOCK_DGRAM, 0 );
   if (temp_sock == -1) {
-    printf( "ERROR: socket() failed: %s\n",
+    ERROR( "ERROR: socket() failed: %s\n",
 	strerror(errno));
     return NULL;
   }
