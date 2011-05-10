@@ -93,8 +93,8 @@ public:
 #endif
 
   ConferenceFactory(const string& _app_name);
-  virtual AmSession* onInvite(const AmSipRequest&);
-  virtual AmSession* onRefer(const AmSipRequest& req);
+  virtual AmSession* onInvite(const AmSipRequest&, const string& app_name);
+  virtual AmSession* onRefer(const AmSipRequest& req, const string& app_name);
   virtual int onLoad();
 };
 

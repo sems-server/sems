@@ -72,7 +72,7 @@ int EchoFactory::onLoad()
   return 0;
 }
 
-AmSession* EchoFactory::onInvite(const AmSipRequest& req)
+AmSession* EchoFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   if (NULL != session_timer_f) {
     if (!session_timer_f->onInvite(req, conf))

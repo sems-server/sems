@@ -353,7 +353,7 @@ void WebConferenceFactory::setupSessionTimer(AmSession* s) {
 }
 
 // incoming calls 
-AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req)
+AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   if (NULL != session_timer_f) {
     if (!session_timer_f->onInvite(req, cfg))
@@ -380,7 +380,7 @@ AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req)
 }
 
 // outgoing calls 
-AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req,
+AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name,
 					  AmArg& session_params)
 {
   UACAuthCred* cred = NULL;

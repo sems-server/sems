@@ -125,7 +125,7 @@ int CallBackFactory::onLoad()
 }
 
 // incoming calls 
-AmSession* CallBackFactory::onInvite(const AmSipRequest& req)
+AmSession* CallBackFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   // or req.from -> with display name ? 
   DBG("received INVITE from '%s'\n", req.from_uri.c_str());
@@ -156,7 +156,7 @@ AmSession* CallBackFactory::onInvite(const AmSipRequest& req)
 }
 
 // outgoing calls 
-AmSession* CallBackFactory::onInvite(const AmSipRequest& req,
+AmSession* CallBackFactory::onInvite(const AmSipRequest& req, const string& app_name,
 				     AmArg& session_params)
 {
   UACAuthCred* cred = NULL;

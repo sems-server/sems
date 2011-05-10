@@ -683,24 +683,26 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
 #undef FALLBACK_OR_EXCEPTION
 }
  
-AmSession* DSMFactory::onInvite(const AmSipRequest& req)
+AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   string start_diag;
   map<string, string> vars;
 
-  //if (req.cmd == MOD_NAME) {
-  if (InboundStartDiag.empty()) {
-    ERROR("no inbound calls allowed\n");
-    throw AmSession::Exception(488, "Not Acceptable Here");
-  }
-  if (InboundStartDiag=="$(mon_select)") {
-    runMonitorAppSelect(req, start_diag, vars);
+  if (app_name == MOD_NAME) {
+    if (InboundStartDiag.empty()) {
+      ERROR("no inbound calls allowed\n");
+      throw AmSession::Exception(488, "Not Acceptable Here");
+    }
+    if (InboundStartDiag=="$(mon_select)") {
+      runMonitorAppSelect(req, start_diag, vars);
+    } else {
+      start_diag = InboundStartDiag;
+    }
   } else {
-    start_diag = InboundStartDiag;
+    start_diag = app_name;
   }
-  //} else {
-  //start_diag = req.cmd;
-  //}
+
+  DBG("start_diag = %s\n",start_diag.c_str());
 
   // determine run configuration for script
   DSMScriptConfig call_config;
@@ -728,20 +730,20 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req)
 }
 
 // outgoing call
-AmSession* DSMFactory::onInvite(const AmSipRequest& req,
+AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name,
 				AmArg& session_params) 
 {
 
   string start_diag;
 
-  //if (req.cmd == MOD_NAME) {
-  if (OutboundStartDiag.empty()) {
-    ERROR("no outbound calls allowed\n");
-    throw AmSession::Exception(488, "Not Acceptable Here");
+  if (app_name == MOD_NAME) {
+    if (OutboundStartDiag.empty()) {
+      ERROR("no outbound calls allowed\n");
+      throw AmSession::Exception(488, "Not Acceptable Here");
+    }
+  } else {
+    start_diag = app_name;
   }
-  //} else {
-  //start_diag = req.cmd;
-  //}
 
   UACAuthCred* cred = NULL;
   map<string, string> vars;

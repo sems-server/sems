@@ -204,14 +204,14 @@ void AnnRecorderFactory::getAppParams(const AmSipRequest& req, map<string, strin
   params["type"] = typ;
 }
 
-AmSession* AnnRecorderFactory::onInvite(const AmSipRequest& req)
+AmSession* AnnRecorderFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   map<string, string> params;
   getAppParams(req, params);
   return new AnnRecorderDialog(params, prompts, NULL);
 }
 
-AmSession* AnnRecorderFactory::onInvite(const AmSipRequest& req,
+AmSession* AnnRecorderFactory::onInvite(const AmSipRequest& req, const string& app_name,
 					 AmArg& session_params)
 {
   UACAuthCred* cred = NULL;

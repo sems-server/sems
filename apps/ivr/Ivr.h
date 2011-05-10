@@ -108,7 +108,7 @@ class IvrFactory: public AmSessionFactory
   IvrFactory(const string& _app_name);
 
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name);
 
   void addDeferredThread(PyObject* pyCallable);
 

@@ -102,7 +102,7 @@ string Click2DialFactory::getAnnounceFile(const AmSipRequest& req)
 }
 
 
-AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, AmArg& session_params)
+AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, const string& app_name, AmArg& session_params)
 {
   UACAuthCred* cred = NULL;
   string callee_uri, a_realm, a_user, a_pwd;
@@ -180,7 +180,7 @@ AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, AmArg& session_p
 }
 
 
-AmSession* Click2DialFactory::onInvite(const AmSipRequest& req)
+AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   return new C2DCallerDialog(req, getAnnounceFile(req), NULL, NULL);
 }

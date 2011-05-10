@@ -68,7 +68,7 @@ public:
 
   VoiceboxFactory(const string& _app_name);
 
-  AmSession* onInvite(const AmSipRequest&);
+  AmSession* onInvite(const AmSipRequest&, const string& app_name);
 //   AmSession* onInvite(const AmSipRequest& req,
 // 		      AmArg& session_params);
   int onLoad();

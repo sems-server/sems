@@ -52,8 +52,8 @@ class Click2DialFactory: public AmSessionFactory
     Click2DialFactory(const string& _app_name);
 
     int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
-    AmSession* onInvite(const AmSipRequest& req, AmArg& session_params);
+    AmSession* onInvite(const AmSipRequest& req, const string& app_name);
+    AmSession* onInvite(const AmSipRequest& req, const string& app_name, AmArg& session_params);
 };
 
 class C2DCallerDialog: public AmB2BCallerSession, public CredentialHolder

@@ -558,7 +558,7 @@ void IvrFactory::setupSessionTimer(AmSession* s) {
  * Load a script using user name from URI.
  * Note: there is no default script.
  */
-AmSession* IvrFactory::onInvite(const AmSipRequest& req)
+AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   // if(req.cmd != MOD_NAME)
   //   return newDlg(req.cmd);

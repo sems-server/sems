@@ -206,7 +206,7 @@ void AmSessionContainer::destroySession(AmSession* s)
     }
 }
 
-string AmSessionContainer::startSessionUAC(AmSipRequest& req, const string& app_name, AmArg* session_params) {
+string AmSessionContainer::startSessionUAC(const AmSipRequest& req, string& app_name, AmArg* session_params) {
 
   auto_ptr<AmSession> session;
   try {
@@ -282,8 +282,9 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
   try {
       // Call-ID and From-Tag are unknown: it's a new session
       auto_ptr<AmSession> session;
+      string app_name;
 
-      session.reset(createSession(req));
+      session.reset(createSession(req,app_name));
       if(session.get() != 0){
 
 	// update session's local tag (ID) if not already set
@@ -380,8 +381,8 @@ bool AmSessionContainer::postEvent(const string& local_tag,
 
 }
 
-AmSession* AmSessionContainer::createSession(AmSipRequest& req,
-					     const string& app_name,
+AmSession* AmSessionContainer::createSession(const AmSipRequest& req,
+					     string& app_name,
 					     AmArg* session_params)
 {
   if (AmConfig::ShutdownMode) {
@@ -408,7 +409,7 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
   if(!app_name.empty())
       session_factory = AmPlugIn::instance()->getFactory4App(app_name);
   else
-      session_factory = AmPlugIn::instance()->findSessionFactory(req);
+      session_factory = AmPlugIn::instance()->findSessionFactory(req,app_name);
 
   if(!session_factory) {
 
@@ -421,14 +422,14 @@ AmSession* AmSessionContainer::createSession(AmSipRequest& req,
   AmSession* session = NULL;
   if (req.method == "INVITE") {
     if (NULL != session_params) 
-      session = session_factory->onInvite(req, *session_params);
+      session = session_factory->onInvite(req, app_name, *session_params);
     else 
-      session = session_factory->onInvite(req);
+      session = session_factory->onInvite(req, app_name);
   } else if (req.method == "REFER") {
     if (NULL != session_params) 
-      session = session_factory->onRefer(req, *session_params);
+      session = session_factory->onRefer(req, app_name, *session_params);
     else 
-      session = session_factory->onRefer(req);
+      session = session_factory->onRefer(req, app_name);
   }
 
   if(!session) {

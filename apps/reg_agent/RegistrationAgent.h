@@ -70,7 +70,7 @@ class RegistrationAgentFactory: public AmSessionFactory
   RegistrationAgentFactory(const string& _app_name);
 	
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name);
   void postEvent(AmEvent* ev);
 };
 

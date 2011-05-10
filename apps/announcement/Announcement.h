@@ -49,8 +49,8 @@ public:
   AnnouncementFactory(const string& _app_name);
 
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req);
-  AmSession* onInvite(const AmSipRequest& req,
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      AmArg& session_params);
 
 };

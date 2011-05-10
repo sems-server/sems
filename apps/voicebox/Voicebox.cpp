@@ -289,7 +289,7 @@ int VoiceboxFactory::onLoad()
 }
 
 // incoming calls 
-AmSession* VoiceboxFactory::onInvite(const AmSipRequest& req)
+AmSession* VoiceboxFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   string user;
   string pin;

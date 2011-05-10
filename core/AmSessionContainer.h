@@ -98,8 +98,8 @@ class AmSessionContainer : public AmThread
    * @param req local request
    * @return a new session or NULL on error.
    */
-  AmSession* createSession(AmSipRequest& req, 
-			   const string& app_name = "",
+  AmSession* createSession(const AmSipRequest& req, 
+			   string& app_name,
 			   AmArg* session_params = NULL);
 
   /**
@@ -129,8 +129,8 @@ class AmSessionContainer : public AmThread
    * Constructs a new session and adds it to the active session container. 
    * @param req client's request
    */
-  string startSessionUAC(AmSipRequest& req, 
-			     const string& app_name,
+  string startSessionUAC(const AmSipRequest& req, 
+			 string& app_name,
 			 AmArg* session_params = NULL);
 
   /**

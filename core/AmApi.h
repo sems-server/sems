@@ -143,7 +143,7 @@ class AmSessionFactory: public AmPluginFactory
    *   This method should not make any expensive
    *   processing as it would block the server.
    */
-  virtual AmSession* onInvite(const AmSipRequest& req)=0;
+  virtual AmSession* onInvite(const AmSipRequest& req, const string& app_name)=0;
 
   /**
    * Creates a dialog state on new request. Passes with 
@@ -155,7 +155,7 @@ class AmSessionFactory: public AmPluginFactory
    *   This method should not make any expensive
    *   processing as it would block the server.
    */
-  virtual AmSession* onInvite(const AmSipRequest& req, 
+  virtual AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 			      AmArg& session_params);
 
   /**
@@ -166,7 +166,7 @@ class AmSessionFactory: public AmPluginFactory
    *   This method should not make any expensive
    *   processing as it would block the server.
    */
-  virtual AmSession* onRefer(const AmSipRequest& req);
+  virtual AmSession* onRefer(const AmSipRequest& req, const string& app_name);
 
   /**
    * Creates a dialog state on new REFER with local-tag.
@@ -177,7 +177,7 @@ class AmSessionFactory: public AmPluginFactory
    *   This method should not make any expensive
    *   processing as it would block the server.
    */
-  virtual AmSession* onRefer(const AmSipRequest& req, 
+  virtual AmSession* onRefer(const AmSipRequest& req, const string& app_name,
 			     AmArg& session_params);
 
   /**

@@ -73,7 +73,7 @@ int AnnounceB2BFactory::onLoad()
   return 0;
 }
 
-AmSession* AnnounceB2BFactory::onInvite(const AmSipRequest& req)
+AmSession* AnnounceB2BFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   string announce_path = AnnouncePath;
   string announce_file = announce_path + req.domain

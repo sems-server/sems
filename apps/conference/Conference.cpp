@@ -308,7 +308,7 @@ int ConferenceFactory::onLoad()
   return 0;
 }
 
-AmSession* ConferenceFactory::onInvite(const AmSipRequest& req)
+AmSession* ConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   if ((ConferenceFactory::MaxParticipants > 0) &&
       (AmConferenceStatus::getConferenceSize(req.user) >=
@@ -353,7 +353,7 @@ void ConferenceFactory::setupSessionTimer(AmSession* s) {
   }
 }
 
-AmSession* ConferenceFactory::onRefer(const AmSipRequest& req)
+AmSession* ConferenceFactory::onRefer(const AmSipRequest& req, const string& app_name)
 {
   if(req.to_tag.empty())
     throw AmSession::Exception(488,"Not accepted here");

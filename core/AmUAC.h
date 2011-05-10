@@ -39,7 +39,7 @@ using std::string;
 class AmUAC {
  public:
   static string dialout(const string& user,
-			const string& app_name,
+			string& app_name,
 			const string& r_uri, 
 			const string& from,
 			const string& from_uri,

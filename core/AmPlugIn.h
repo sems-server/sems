@@ -229,7 +229,7 @@ class AmPlugIn : public AmPayloadProviderInterface
    * Find the proper SessionFactory
    * for the given request.
    */
-  AmSessionFactory* findSessionFactory(AmSipRequest& req);
+  AmSessionFactory* findSessionFactory(const AmSipRequest& req, string& app_name);
 
   /**
    * Session event handler lookup function

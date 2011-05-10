@@ -136,8 +136,8 @@ public:
 
 
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req);
-  AmSession* onInvite(const AmSipRequest& req,
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      AmArg& session_params);
   // DI
   // DI factory

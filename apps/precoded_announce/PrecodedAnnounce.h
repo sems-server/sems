@@ -42,7 +42,7 @@ public:
     PrecodedFactory(const string& _app_name);
 
     int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+    AmSession* onInvite(const AmSipRequest& req, const string& app_name);
 };
 
 class PrecodedDialog : public AmSession

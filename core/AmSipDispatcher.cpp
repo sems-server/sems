@@ -109,7 +109,8 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 
   } else {
 
-      AmSessionFactory* sess_fact = AmPlugIn::instance()->findSessionFactory(req);
+      string app_name;
+      AmSessionFactory* sess_fact = AmPlugIn::instance()->findSessionFactory(req,app_name);
       if(!sess_fact){
 
 	  AmSipDialog::reply_error(req,404,"Not found");

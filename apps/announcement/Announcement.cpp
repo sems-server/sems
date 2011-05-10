@@ -92,12 +92,12 @@ string AnnouncementFactory::getAnnounceFile(const AmSipRequest& req) {
   return announce_file;
 }
 
-AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req)
+AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
   return new AnnouncementDialog(getAnnounceFile(req), NULL);
 }
 
-AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req,
+AmSession* AnnouncementFactory::onInvite(const AmSipRequest& req, const string& app_name,
 					 AmArg& session_params)
 {
   UACAuthCred* cred = NULL;

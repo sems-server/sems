@@ -53,7 +53,7 @@ int PrecodedFactory::onLoad()
     return 0;
 }
 
-AmSession* PrecodedFactory::onInvite(const AmSipRequest& req)
+AmSession* PrecodedFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
     return new PrecodedDialog(&precoded_file);
 }

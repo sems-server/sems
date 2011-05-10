@@ -32,7 +32,7 @@
 #include "AmConfig.h"
 
 string AmUAC::dialout(const string& user,
-		      const string& app_name,
+		      string& app_name,
 		      const string& r_uri, 
 		      const string& from,
 		      const string& from_uri,
