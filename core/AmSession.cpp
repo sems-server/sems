@@ -799,9 +799,11 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     return;
   }
   else if( req.method == SIP_METH_BYE ){
+    dlg.reply(req,200,"OK");
     onBye(req);
   }
   else if( req.method == SIP_METH_CANCEL ){
+    dlg.reply(req,200,"OK");
     onCancel(req);
   } 
   else if( req.method == SIP_METH_INFO ){
@@ -877,7 +879,6 @@ void AmSession::onInvite(const AmSipRequest& req)
 
 void AmSession::onBye(const AmSipRequest& req)
 {
-  dlg.reply(req,200,"OK");
   setStopped();
 }
 
