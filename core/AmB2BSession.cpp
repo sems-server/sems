@@ -531,18 +531,19 @@ void AmB2BSession::terminateLeg()
   if (rtp_relay_enabled)
     clearRtpReceiverRelay();
 
-  switch(dlg.getStatus()){
-  case AmSipDialog::Trying:
-  case AmSipDialog::Proceeding:
-  case AmSipDialog::Early:
-  case AmSipDialog::Connected:
-    dlg.bye("", SIP_FLAGS_VERBATIM);
-    break;
+  // switch(dlg.getStatus()){
+  // case AmSipDialog::Trying:
+  // case AmSipDialog::Proceeding:
+  // case AmSipDialog::Early:
+  // case AmSipDialog::Connected:
+  dlg.bye("", SIP_FLAGS_VERBATIM);
+  //   break;
 
-  default:
-    DBG("terminateLeg() not sending any BYE or CANCEL\n");
-    break;
-  }
+  // default:
+  //   DBG("terminateLeg() not sending any BYE or CANCEL (state=%s)\n",
+  // 	dlg.getStatusStr());
+  //   break;
+  // }
 }
 
 void AmB2BSession::terminateOtherLeg()

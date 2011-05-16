@@ -1133,6 +1133,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
     case Trying:
     case Proceeding:
     case Early:
+    case Cancelling:
 	if(getUACInvTransPending())
 	    return cancel();
 	else {  
@@ -1147,8 +1148,9 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 
 	    // missing AmSipRequest to be able
 	    // to send the reply on behalf of the app.
-	    ERROR("ignoring bye() in Pending state: "
-		  "no UAC transaction to cancel.\n");
+	    ERROR("ignoring bye() in %s state: "
+		  "no UAC transaction to cancel.\n",
+		  getStatusStr());
 	    status = Disconnected;
 	}
 	return 0;
