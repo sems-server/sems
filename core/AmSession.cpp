@@ -803,7 +803,6 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     onBye(req);
   }
   else if( req.method == SIP_METH_CANCEL ){
-    dlg.reply(req,200,"OK");
     onCancel(req);
   } 
   else if( req.method == SIP_METH_INFO ){
