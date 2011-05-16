@@ -92,16 +92,13 @@ void DSMCall::onInvite(const AmSipRequest& req) {
     
   bool run_session_invite = engine.onInvite(req, this);
 
-  if (run_invite_event) {
-    if (!engine.init(this, this, startDiagName, DSMCondition::Invite))
-      run_session_invite =false;
+  if (!engine.init(this, this, startDiagName, DSMCondition::Invite))
+    run_session_invite =false;
 
-    if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
-      DBG("session choose to not connect media\n");
-      run_session_invite = false;     // don't accept audio 
-    }    
-
-  }
+  if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
+    DBG("session choose to not connect media\n");
+    run_session_invite = false;     // don't accept audio 
+  }    
 
   if (run_session_invite) 
     AmB2BCallerSession::onInvite(req);
