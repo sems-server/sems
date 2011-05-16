@@ -163,6 +163,9 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "invite") 
     return new TestDSMCondition(params, DSMCondition::Invite);  
 
+  if (cmd == "earlySession")
+    return new TestDSMCondition(params, DSMCondition::EarlySession);
+
   if (cmd == "sessionStart") 
     return new TestDSMCondition(params, DSMCondition::SessionStart);  
 
