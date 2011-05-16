@@ -731,7 +731,8 @@ void WebConferenceFactory::dialout(const AmArg& args, AmArg& ret) {
   AmArg* a = new AmArg();
   a->setBorrowedPointer(new UACAuthCred("", auth_user, auth_pwd));
 
-  string localtag = AmUAC::dialout(room.c_str(), APP_NAME,  to,  
+  string app_name = APP_NAME;
+  string localtag = AmUAC::dialout(room.c_str(), app_name,  to,  
 				   "<" + from +  ">", from, "<" + to + ">", 
 				   string(""), // callid
 				   headers,    // headers

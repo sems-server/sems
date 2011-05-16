@@ -209,9 +209,10 @@ void CallBackFactory::createCall(const string& number) {
   string luser = "cb";
   string to = "sip:"+ number + "@" + gw_domain;
   string from = "sip:"+ gw_user + "@" + gw_domain;
+  string app_name = string(MOD_NAME);
 
   AmUAC::dialout(luser, 
-		 MOD_NAME,  
+		 app_name,  
 		 to,  
 		 "<" + from +  ">", from, 
 		 "<" + to + ">", 

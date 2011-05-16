@@ -49,7 +49,9 @@ static PyObject* IvrUAC_dialout(IvrUAC* self, PyObject* args)
 		       &from, &from_uri, &to))
     return NULL;
 
-  AmUAC::dialout(user, app_name, r_uri, 
+  string app_name_s(app_name);
+
+  AmUAC::dialout(user, app_name_s, r_uri, 
 		 from, from_uri, to);
 
   Py_INCREF(Py_None);
