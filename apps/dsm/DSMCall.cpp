@@ -147,13 +147,14 @@ void DSMCall::onOutgoingInvite(const string& headers) {
   // todo: local ringbacktone
 }
 
-void DSMCall::onEarlySessionStart(const AmSipReply& reply) {
-  map<string, string> params;
-  params["code"] = int2str(reply.code);
-  params["reason"] = reply.reason;
-  params["has_body"] = reply.body.empty() ?
-    "false" : "true";
-  engine.runEvent(this, this, DSMCondition::EarlySession, &params);
+void DSMCall::onEarlySessionStart() {
+  // map<string, string> params;
+  // params["code"] = int2str(reply.code);
+  // params["reason"] = reply.reason;
+  // params["has_body"] = reply.body.empty() ?
+  //   "false" : "true";
+  engine.runEvent(this, this, DSMCondition::EarlySession, NULL// , &params
+		  );
 
   if (checkVar(DSM_CONNECT_EARLY_SESSION, DSM_CONNECT_EARLY_SESSION_FALSE)) {
     DBG("call does not connect early session\n");
@@ -162,7 +163,7 @@ void DSMCall::onEarlySessionStart(const AmSipReply& reply) {
       setInput(&playlist);
 
     if (!getOutput())
-      setOutput(&playlist);    
+      setOutput(&playlist);
   }
 }
 
@@ -182,19 +183,6 @@ int DSMCall::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
   answer.print(invite_req.body);
   return AmB2BCallerSession::onSdpCompleted(offer,answer);
 }
-
-/*
-void DSMCall::onSessionStart(const AmSipReply& rep)
-{
-  if (process_sessionstart) {
-    process_sessionstart = false;
-    DBG("DSMCall::onSessionStart (SEMS originator mode)\n");
-    invite_req.body = rep.body;
- 
-    startSession();    
-  }
-}
-*/
 
 void DSMCall::startSession(){
   engine.init(this, this, startDiagName, DSMCondition::SessionStart);
@@ -249,10 +237,13 @@ void DSMCall::onBye(const AmSipRequest& req)
   engine.runEvent(this, this, DSMCondition::Hangup, &params);
 }
 
-void DSMCall::onCancel() {
+void DSMCall::onCancel(const AmSipRequest& cancel) {
   DBG("onCancel\n");
-  if (dlg.getStatus() < AmSipDialog::Connected) 
+  if (dlg.getStatus() < AmSipDialog::Connected) {
+    //TODO: pass the cancel request as a parameter?
+    DBG("hangup event!!!\n");
     engine.runEvent(this, this, DSMCondition::Hangup, NULL);
+  }
   else {
     DBG("ignoring onCancel event in established dialog\n");
   }

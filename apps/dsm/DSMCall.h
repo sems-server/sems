@@ -74,11 +74,11 @@ public:
   void onInvite(const AmSipRequest& req);
   void onOutgoingInvite(const string& headers);
   void onRinging(const AmSipReply& reply);
-  void onEarlySessionStart(const AmSipReply& reply);
+  void onEarlySessionStart();
   void onSessionStart();
   int  onSdpCompleted(const AmSdp& offer, const AmSdp& answer);
   void startSession();
-  void onCancel();
+  void onCancel(const AmSipRequest& cancel);
   void onBye(const AmSipRequest& req);
   void onDtmf(int event, int duration_msec);
   void onBeforeDestroy();
