@@ -277,7 +277,7 @@ int AmSipDialog::onTxSdp(const string& body)
 
   case OA_OfferRecved:
     oa_state = OA_Completed;
-    return hdl->onSdpCompleted(sdp_local, sdp_remote);
+    break;
 
   case OA_OfferSent:
     // There is already a pending offer!!!
@@ -532,7 +532,6 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
       has_sdp = true;
     }
   }
-
 
   if (has_sdp && (onTxSdp(reply.body) != 0)) {
     
@@ -994,6 +993,8 @@ int AmSipDialog::reply(const AmSipTransaction& t,
     reply.contact = getContactHdr();
   }
 
+
+  OAState old_oa_state = oa_state;
   if(onTxReply(reply)){
     DBG("onTxReply failed\n");
     return -1;
@@ -1008,6 +1009,13 @@ int AmSipDialog::reply(const AmSipTransaction& t,
 	  reply.code,reply.reason.c_str(),reply.cseq_method.c_str(),
 	  reply.callid.c_str(),reply.cseq);
   }
+  else {
+    if((old_oa_state != oa_state) &&
+       (oa_state == OA_Completed)) {
+      return hdl->onSdpCompleted(sdp_local, sdp_remote);
+    }
+  }
+
   return ret;
 }
 
@@ -1365,17 +1373,26 @@ int AmSipDialog::sendRequest(const string& method,
   req.content_type = content_type;
   req.body = body;
 
+  OAState old_oa_state = oa_state;
   if(onTxRequest(req))
     return -1;
 
-  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port,outbound_interface))
+  if(SipCtrlInterface::send(req, next_hop_ip, next_hop_port,outbound_interface)) {
+    ERROR("Could not send request: method=%s; call-id=%s; cseq=%i\n",
+	  req.method.c_str(),req.callid.c_str(),req.cseq);
     return -1;
+  }
  
   if(method != SIP_METH_ACK) {
     uac_trans[req_cseq] = AmSipTransaction(method,req_cseq,req.tt);
   }
   else {
     uac_trans.erase(req_cseq);
+  }
+
+  if((old_oa_state != oa_state) &&
+     (oa_state == OA_Completed)) {
+    return hdl->onSdpCompleted(sdp_local, sdp_remote);
   }
 
   return 0;
