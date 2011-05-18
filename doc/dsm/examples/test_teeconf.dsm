@@ -8,13 +8,16 @@
 import(mod_uri);
 import(mod_conference);
 
-initial state begin 
-  enter {
+initial state START;
+
+state begin;
+
+transition "begin" START - sessionStart / {
     setInOutPlaylist();
     conference.setPlayoutType(adaptive);
     uri.parse(@remote_uri, rparty.);
     repost();
-  };
+} -> begin;
 
 transition "tee participant" begin - test($rparty.user==5)  / {
   -- speak and listen in chan2

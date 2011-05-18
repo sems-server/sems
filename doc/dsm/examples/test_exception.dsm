@@ -1,9 +1,14 @@
 
-initial state lobby
-  enter { 
-    playFile(wav/default_en.wav) 
-    throw(bla,blub=blu;i=somevalue); 
-  };
+initial state START;
+
+
+transition "got to lobby" START - sessionStart -> lobby;
+state lobby
+      enter { 
+       playFile(wav/default_en.wav);
+       throw(bla,blub=blu;i=somevalue); 
+};
+
 transition "thrown error" lobby - exception; test(#blub=="blu"); / 
     log(1, #i); stop(true) -> end;
 

@@ -1,8 +1,12 @@
 import(mod_conference)
 
-initial state lobby 
-  enter { playFile(wav/default_en.wav) };
+initial state START;
 
+state lobby;
+
+transition "start to lobby" START - sessionStart / { 
+	   playFile(wav/default_en.wav); 
+} -> lobby;
 
 state room;
 

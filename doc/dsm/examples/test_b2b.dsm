@@ -1,7 +1,11 @@
 import(mod_conference)
 
-initial state lobby 
-  enter { playFile(wav/welcome.wav) };
+initial state START;
+
+transition "sess start" START - sessionStart / { 
+	   playFile(wav/welcome.wav) 
+} -> lobby;
+state lobby;
 
 transition "bye in lobby recvd" lobby - hangup / stop(false) -> end;
 
