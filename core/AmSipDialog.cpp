@@ -676,43 +676,6 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
       uac_trans.erase(t_it);
     }
   }
-  else { // reply.code < 200
-    if(reply.cseq_method == SIP_METH_INVITE) {
-          switch (reliable_1xx) {
-          case REL100_SUPPORTED:
-            if (key_in_list(getHeader(reply.hdrs, SIP_HDR_REQUIRE), 
-                SIP_EXT_100REL))
-              reliable_1xx = REL100_REQUIRE;
-            else
-              break;
-
-          case REL100_REQUIRE: {
-            if (! reply.rseq) {
-              ERROR("no RSeq value (or unsupported 0) in reliable 1xx.\n");
-              cancel();
-              //TODO: notify & stop the session somehow...
-              break;
-            }
-            string cseq_val = int2str(reply.cseq) + " " + reply.cseq_method;
-            prack(reply,"","","");
-            DBG(SIP_EXT_100REL " now active.\n");
-          }
-          break;
-
-	  case REL100_IGNORED:
-          case REL100_DISABLED:
-            // 100rel support disabled
-            break;
-
-          default:
-            ERROR("BUG: unexpected value `%d' for " SIP_EXT_100REL " switch.", 
-                reliable_1xx);
-#ifndef NDEBUG
-            abort();
-#endif
-          } // switch reliable 1xx
-    }
-  }
 
   if(cont && hdl)
     hdl->onSipReply(reply, old_dlg_status);
