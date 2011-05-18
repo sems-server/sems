@@ -71,6 +71,7 @@ public:
 	  UACAuthCred* credentials = NULL);
   ~DSMCall();
 
+  void onStart();
   void onInvite(const AmSipRequest& req);
   void onOutgoingInvite(const string& headers);
   void onRinging(const AmSipReply& reply);

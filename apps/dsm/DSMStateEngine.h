@@ -59,6 +59,7 @@ class DSMCondition
   enum EventType {
     Any,
 
+    Start,
     Invite,
     SessionStart,
     Ringing,

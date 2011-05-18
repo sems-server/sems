@@ -7,24 +7,23 @@
 import(mod_dlg);
 
 initial state START ;
-transition "on invite" START - invite -> runinvite;
-
-state runinvite 
-      enter { 
+transition "on invite" START - invite / { 
        log(2, run invite!); 
-       dlg.reply(100, trying...);
        -- we don't want to have the default 200 OK reply
-       set(connect_session=0);
+       dlg.reply(100, trying...);
        setTimer(1, 2);
+} -> runinvite;
+
+state runinvite;
+
+transition "go early" runinvite - timerTest(#id==1) -> reply_183;
+state reply_183
+      enter {
+        -- this triggers "on sess start" transition
+        dlg.acceptInvite(183, progress);
 };
 
-transition "go early" runinvite - timerTest(#id==1) / {
-        dlg.acceptInvite(183, progress);
-} -> replied_183;
-
-state replied_183;
-
-transition "on sess start" runinvite - earlySession -> play_early_msg;
+transition "on sess start" reply_183 - earlySession -> play_early_msg;
 state play_early_msg
       enter {
        log(2, run start!);
@@ -32,30 +31,29 @@ state play_early_msg
        playFile(wav/default_en.wav);
 };
 
-transition "play file failed" runinvite - exception; test(#type==file) / {
+transition "play file failed" play_early_msg - exception; test(#type==file) / {
         log(1, Error playing file!); 
         dlg.reply(500, server error); 
         stop 
 } -> FIN;
 
-transition "early message ended" replied_183 - noAudioTest / {
+transition "early message ended" play_early_msg - noAudioTest -> recording;
+state recording
+      enter {
         dlg.acceptInvite(200, ok);
         recordFile(/tmp/test.wav);
         setTimer(3,10);
-} -> recording;
+};
 
-state recording;
-
-transition "recording failed" replied_183 - exception; / 
+transition "recording failed" recording - exception; / 
    log(1, Error recording!); stop(true) -> FIN;
 
-transition "bye in early" (replied_183, play_early_msg, runinvite) - hangup / {
+transition "bye in early" (runinvite, reply_183, play_early_msg, recording) - hangup / {
 	log(2, hangup event received);
         stop(false)
 } -> FIN;
 
 transition "recording timer" recording - timerTest(#id==3) / stop -> FIN;
-
 transition "bye in recording" recording - hangup / stop -> FIN;
 
 state FIN;

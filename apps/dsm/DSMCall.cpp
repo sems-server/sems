@@ -79,6 +79,11 @@ bool checkParam(const string& par_name, const string& par_val, map<string, strin
   return (it != params->end()) && (it->second == par_val);
 }
 
+void DSMCall::onStart()
+{
+  engine.init(this, this, startDiagName, DSMCondition::Start);
+}
+
 void DSMCall::onInvite(const AmSipRequest& req) {
   // make B2B dialogs work in onInvite as well
   invite_req = req;
@@ -92,10 +97,13 @@ void DSMCall::onInvite(const AmSipRequest& req) {
     
   bool run_session_invite = engine.onInvite(req, this);
 
-  if (!engine.init(this, this, startDiagName, DSMCondition::Invite))
-    run_session_invite =false;
+  DBG("before runEvent(this, this, DSMCondition::Invite);\n");
+  AmSipDialog::Status old_st = dlg.getStatus();
+  engine.runEvent(this, this, DSMCondition::Invite, NULL);
 
-  if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
+  if ( old_st != dlg.getStatus()
+       //checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)
+      ) {
     DBG("session choose to not connect media\n");
     run_session_invite = false;     // don't accept audio 
   }    
@@ -114,30 +122,24 @@ void DSMCall::onOutgoingInvite(const string& headers) {
   // TODO: construct correct request of outgoing INVITE
   AmSipRequest req;
   req.hdrs = headers;
+
   bool run_session_invite = engine.onInvite(req, this);
-
-  if (run_invite_event) {
-    if (!engine.init(this, this, startDiagName, DSMCondition::Invite))
-      run_session_invite =false;
-
-    if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
-      DBG("session choose to not connect media\n");
-      // TODO: set flag to not connect RTP on session start
-      run_session_invite = false;     // don't accept audio 
-    }    
-
-    if (checkVar(DSM_ACCEPT_EARLY_SESSION, DSM_ACCEPT_EARLY_SESSION_FALSE)) {
-      DBG("session choose to not accept early session\n");
-      accept_early_session = false;
-    } else {
-      DBG("session choose to accept early session\n");
-      accept_early_session = true;
-    }
-
+  if (checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
+    DBG("session choose to not connect media\n");
+    // TODO: set flag to not connect RTP on session start
+    run_session_invite = false;     // don't accept audio 
+  }    
+  
+  if (checkVar(DSM_ACCEPT_EARLY_SESSION, DSM_ACCEPT_EARLY_SESSION_FALSE)) {
+    DBG("session choose to not accept early session\n");
+    accept_early_session = false;
+  } else {
+    DBG("session choose to accept early session\n");
+    accept_early_session = true;
   }
 }
 
- void DSMCall::onRinging(const AmSipReply& reply) {
+void DSMCall::onRinging(const AmSipReply& reply) {
   map<string, string> params;
   params["code"] = int2str(reply.code);
   params["reason"] = reply.reason;
@@ -148,13 +150,7 @@ void DSMCall::onOutgoingInvite(const string& headers) {
 }
 
 void DSMCall::onEarlySessionStart() {
-  // map<string, string> params;
-  // params["code"] = int2str(reply.code);
-  // params["reason"] = reply.reason;
-  // params["has_body"] = reply.body.empty() ?
-  //   "false" : "true";
-  engine.runEvent(this, this, DSMCondition::EarlySession, NULL// , &params
-		  );
+  engine.runEvent(this, this, DSMCondition::EarlySession, NULL);
 
   if (checkVar(DSM_CONNECT_EARLY_SESSION, DSM_CONNECT_EARLY_SESSION_FALSE)) {
     DBG("call does not connect early session\n");
@@ -185,8 +181,8 @@ int DSMCall::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
 }
 
 void DSMCall::startSession(){
-  engine.init(this, this, startDiagName, DSMCondition::SessionStart);
 
+  engine.runEvent(this, this, DSMCondition::SessionStart, NULL);
   setReceiving(true);
 
   if (!checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)) {
