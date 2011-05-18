@@ -1192,7 +1192,6 @@ int AmSipDialog::invite(const string& hdrs,
 {
   if(status == Disconnected) {
     int res = sendRequest("INVITE", content_type, body, hdrs);
-    status = Trying;
     return res;
   }
   else {
