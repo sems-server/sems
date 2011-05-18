@@ -1180,7 +1180,7 @@ int AmSipDialog::reinvite(const string& hdrs,
   }
   else {
     DBG("reinvite(): we are not connected "
-	"(status=%i). do nothing!\n",status);
+	"(status=%s). do nothing!\n",getStatusStr());
   }
 
   return -1;
@@ -1192,11 +1192,13 @@ int AmSipDialog::invite(const string& hdrs,
 {
   if(status == Disconnected) {
     int res = sendRequest("INVITE", content_type, body, hdrs);
+    DBG("TODO: is status already 'trying'? status=%s\n",getStatusStr());
+    //status = Trying;
     return res;
   }
   else {
-    DBG("invite(): we are already connected."
-	"(status=%i). do nothing!\n",status);
+    DBG("invite(): we are already connected "
+	"(status=%s). do nothing!\n",getStatusStr());
   }
 
   return -1;
@@ -1207,18 +1209,20 @@ int AmSipDialog::update(const string &cont_type,
                         const string &hdrs)
 {
   switch(status){
+  case Connected://if Connected, we should send a re-INVITE instead...
+    DBG("re-INVITE should be used instead (see RFC3311, section 5.1)\n");
   case Trying:
   case Proceeding:
   case Early:
-  case Connected://if Connected, we should send a re-INVITE instead...
     return sendRequest(SIP_METH_UPDATE, cont_type, body, hdrs);
 
   default:
   case Cancelling:
   case Disconnected:
   case Disconnecting:
-    DBG("update(): dialog not connected (status=%i). do nothing!\n",status);
-  }	
+    DBG("update(): dialog not connected "
+	"(status=%s). do nothing!\n",getStatusStr());
+  }
 
   return -1;
 }
@@ -1234,7 +1238,7 @@ int AmSipDialog::refer(const string& refer_to,
   }
   else {
     DBG("refer(): we are not Connected."
-	"(status=%i). do nothing!\n",status);
+	"(status=%s). do nothing!\n",getStatusStr());
 
     return 0;
   }	
