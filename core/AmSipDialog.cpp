@@ -457,6 +457,14 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
     break;
 
   case Cancelling:
+    if( (reply.cseq_method == "INVITE") &&
+	(reply.code < 200) ) {
+      // refuse local provisional replies 
+      // when state is Cancelling
+      return -1;
+    }
+    // else continue with final
+    // reply processing
   case Proceeding:
   case Trying:
   case Early:
