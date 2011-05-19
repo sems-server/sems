@@ -186,7 +186,7 @@ XmlRpcDispatch::waitForAndProcessEvents(double timeout)
     unsigned poll_mask=0; 
     if (it->getMask() & ReadableEvent) poll_mask |= POLLIN;
     if (it->getMask() & WritableEvent) poll_mask |= POLLOUT;
-    if (it->getMask() & Exception)     poll_mask |= POLLERR;
+    if (it->getMask() & Exception)     poll_mask |= POLLERR|POLLNVAL|POLLHUP;
     fds[i].events = poll_mask;
     fds[i].revents = 0;
   }
@@ -228,7 +228,7 @@ XmlRpcDispatch::waitForAndProcessEvents(double timeout)
         newMask |= src->handleEvent(WritableEvent);
         ++nset;
       }
-    if (fds[i].revents & POLLERR)
+    if (fds[i].revents & POLLERR|POLLNVAL|POLLHUP)
       {
         newMask |= src->handleEvent(Exception);
         ++nset;
