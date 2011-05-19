@@ -86,13 +86,30 @@ sip_port=5080
 # optional parameter: force_outbound_proxy={yes|no}
 #
 # - forces SEMS to send any request to the outbound proxy in any
-#   situation. This option will only have an effect if the 
-#   outbound_proxy option has been set.
+#   situation, by adding an extra first Route to the outbound_proxy.
+#   This option will only have an effect if the outbound_proxy
+#   option has been set, and it will break 3261 compatibility
+#   in some cases; better use next_hop_ip/next_hop_port.
 #
 #   default: no
 #
 # Example:
 #   force_outbound_proxy=yes
+
+# optional parameter: next_hop_ip
+# - if this is set, all outgoing requests will be sent to
+#   this IP, regardless of R-URI etc.
+#
+#next_hop_ip=192.168.5.106
+
+# optional parameter: next_hop_port
+# defaults to 5060
+#next_hop_port=5060
+
+# optional parameter:next_hop_for_replies
+# - use next_hop for replies, too?
+#
+#next_hop_for_replies=yes
 
 # optional parameter: rtp_low_port=<port>
 #

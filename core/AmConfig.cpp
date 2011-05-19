@@ -72,6 +72,9 @@ int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
 int          AmConfig::SIPServerThreads        = NUM_SIP_SERVERS;
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
+string       AmConfig::NextHopIP               = "";
+unsigned int AmConfig::NextHopPort             = 0;
+bool         AmConfig::NextHopForReplies       = false;
 bool         AmConfig::ProxyStickyAuth         = false;
 bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
@@ -283,6 +286,18 @@ int AmConfig::readConfiguration()
   // force_outbound_proxy
   if(cfg.hasParameter("force_outbound_proxy")) {
     ForceOutboundProxy = (cfg.getParameter("force_outbound_proxy") == "yes");
+  }
+
+  if(cfg.hasParameter("next_hop_ip")) {
+    NextHopIP = cfg.getParameter("next_hop_ip");
+  }
+
+  if(cfg.hasParameter("next_hop_port")) {
+    NextHopPort = cfg.getParameterInt("next_hop_port", 0);
+  }
+
+  if(cfg.hasParameter("next_hop_for_replies")) {
+    NextHopForReplies = (cfg.getParameter("next_hop_for_replies") == "yes");
   }
 
   if(cfg.hasParameter("proxy_sticky_auth")) {
