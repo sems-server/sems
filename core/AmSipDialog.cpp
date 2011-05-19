@@ -49,7 +49,9 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     reliable_1xx(AmConfig::rel100),
     rseq(0), rseq_1st(0), rseq_confirmed(false),
-    next_hop_port(0), next_hop_for_replies(false),
+    next_hop_port(AmConfig::NextHopPort),
+    next_hop_ip(AmConfig::NextHopIP),
+    next_hop_for_replies(AmConfig::NextHopForReplies),
     outbound_interface(-1), out_intf_for_replies(false)
 {
 }
