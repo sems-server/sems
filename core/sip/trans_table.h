@@ -20,9 +20,9 @@ public:
     typedef ht_bucket<sip_trans>::value_list trans_list;
 
     
-    // Match a request to UAS transactions
+    // Match a request to UAS/UAC transactions
     // in this bucket
-    sip_trans* match_request(sip_msg* msg);
+    sip_trans* match_request(sip_msg* msg, unsigned int ttype);
 
     // Match a PRACK request against transactions
     // in this bucket
@@ -32,7 +32,7 @@ public:
     // in this bucket
     sip_trans* match_reply(sip_msg* msg);
 
-    sip_trans* add_trans(sip_msg* msg, int ttype);
+    sip_trans* add_trans(sip_msg* msg, unsigned int ttype);
 
 private:
     sip_trans* match_200_ack(sip_trans* t,sip_msg* msg);
