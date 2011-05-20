@@ -57,7 +57,7 @@ trans_bucket::~trans_bucket()
 {
 }
 
-sip_trans* trans_bucket::match_request(sip_msg* msg)
+sip_trans* trans_bucket::match_request(sip_msg* msg, unsigned int ttype)
 {
     // assert(msg && msg->cseq && msg->callid);
     // sip_cseq* cseq  = dynamic_cast<sip_cseq*>(msg->cseq->p);
@@ -93,7 +93,8 @@ sip_trans* trans_bucket::match_request(sip_msg* msg)
 	trans_list::iterator it = elmts.begin();
 	for(;it!=elmts.end();++it) {
 	    
-	    if( (*it)->msg->type != SIP_REQUEST ){
+	    if( ((*it)->msg->type != SIP_REQUEST) ||
+		((*it)->type != ttype)){
 		continue;
 	    }
 
@@ -168,10 +169,11 @@ sip_trans* trans_bucket::match_request(sip_msg* msg)
 	    // Cseq (number only)
 	    // top Via
 	    // + To-tag of reply
-	    
-	    if( ((*it)->type != TT_UAS) || 
-		((*it)->msg->type != SIP_REQUEST))
+
+	    if( ((*it)->msg->type != SIP_REQUEST) ||
+		((*it)->type != ttype)){
 		continue;
+	    }
 
 	    if( (msg->u.request->method != (*it)->msg->u.request->method) &&
 		( (msg->u.request->method != sip_request::ACK) ||
@@ -394,7 +396,7 @@ sip_trans* trans_bucket::match_1xx_prack(sip_msg* msg)
     return NULL;
 }
 
-sip_trans* trans_bucket::add_trans(sip_msg* msg, int ttype)
+sip_trans* trans_bucket::add_trans(sip_msg* msg, unsigned int ttype)
 {
     sip_trans* t = new sip_trans();
 

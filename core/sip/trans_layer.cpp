@@ -1105,7 +1105,7 @@ void _trans_layer::received_msg(sip_msg* msg)
     switch(msg->type){
     case SIP_REQUEST: 
 	
-	if((t = bucket->match_request(msg)) != NULL){
+	if((t = bucket->match_request(msg,TT_UAS)) != NULL){
 	    if(msg->u.request->method != t->msg->u.request->method){
 		
 		// ACK matched INVITE transaction
@@ -1417,7 +1417,7 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
     }
     else {
 	// 200 ACK
-	t = bucket->match_request(msg);
+	t = bucket->match_request(msg,TT_UAC);
 	if(t == NULL){
 	    DBG("While sending 200 ACK: no matching transaction\n");
 	    return -1;
