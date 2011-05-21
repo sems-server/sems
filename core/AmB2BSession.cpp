@@ -44,7 +44,7 @@ AmB2BSession::AmB2BSession()
     rtp_relay_enabled(false),
     rtp_relay_force_symmetric_rtp(false),
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
-    est_invite_cseq(0)
+    est_invite_cseq(0),est_invite_other_cseq(0)
 {
   for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
     other_stream_fds[i] = 0;
@@ -56,7 +56,7 @@ AmB2BSession::AmB2BSession(const string& other_local_tag)
     rtp_relay_enabled(false),
     rtp_relay_force_symmetric_rtp(false),
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
-    est_invite_cseq(0)
+    est_invite_cseq(0),est_invite_other_cseq(0)
 {
   for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
     other_stream_fds[i] = 0;
@@ -439,7 +439,15 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
     }
   } else {
     AmSession::onSipReply(reply, old_dlg_status, trans_method);
-    relayEvent(new B2BSipReplyEvent(reply, false, trans_method));
+
+    AmSipReply n_reply = reply;
+    if(est_invite_cseq == reply.cseq){
+      n_reply.cseq = est_invite_other_cseq;
+    }
+    else {
+      // the reply here will not have the proper cseq for the other side.
+    }
+    relayEvent(new B2BSipReplyEvent(n_reply, false, trans_method));
   }
 }
 
@@ -1143,6 +1151,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 
     // save CSeq of establising INVITE
     est_invite_cseq = dlg.cseq - 1;
+    est_invite_other_cseq = co_ev->r_cseq;
 
     return;
   }    

@@ -144,6 +144,7 @@ class AmB2BSession: public AmSession
 
   /** CSeq of the INVITE that established this call */
   unsigned int est_invite_cseq;
+  unsigned int est_invite_other_cseq;
   auto_ptr<AmSdp> invite_sdp;
 
   /** content-type of established session */
