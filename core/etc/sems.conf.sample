@@ -30,7 +30,7 @@
 #  media_ip=10.0.0.34
 #  media_ip=eth0
 
-# optional parameter: sip_ip=<ip_address>
+# optional parameter: sip_ip=<ip_address>|<device>
 #
 # - this informs SEMS about the SIP IP where its SIP stack is 
 #   bound to or should be bound to. This also sets 
@@ -42,6 +42,7 @@
 #
 # Example:
 #  sip_ip=10.0.0.34
+#  sip_ip=en0
 #
 
 # optional parameter: public_ip=<ip_address>
