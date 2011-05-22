@@ -228,7 +228,7 @@ XmlRpcDispatch::waitForAndProcessEvents(double timeout)
         newMask |= src->handleEvent(WritableEvent);
         ++nset;
       }
-    if (fds[i].revents & POLLERR|POLLNVAL|POLLHUP)
+    if (fds[i].revents & (POLLERR|POLLNVAL|POLLHUP))
       {
         newMask |= src->handleEvent(Exception);
         ++nset;
