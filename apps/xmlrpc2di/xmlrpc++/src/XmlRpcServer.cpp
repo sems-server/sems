@@ -175,7 +175,9 @@ XmlRpcServer::acceptConnection()
   if (s < 0)
   {
     //this->close();
-    XmlRpcUtil::error("XmlRpcServer::acceptConnection: Could not accept connection (%s).", XmlRpcSocket::getErrorMsg().c_str());
+    if (s != EAGAIN && s != EWOULDBLOCK) {
+      XmlRpcUtil::error("XmlRpcServer::acceptConnection: Could not accept connection (%s).", XmlRpcSocket::getErrorMsg().c_str());
+    }
   }
   else if ( ! XmlRpcSocket::setNonBlocking(s))
   {

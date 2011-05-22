@@ -97,8 +97,10 @@ void MultithreadXmlRpcServer::acceptConnection()
   int s = XmlRpcSocket::accept(this->getfd()); 
   if (s < 0) 
     { 
-      ERROR("MultithreadXmlRpcServer::acceptConnection: Could not accept connection (%s).", 
+      if (s != EAGAIN && s != EWOULDBLOCK) {
+	ERROR("MultithreadXmlRpcServer::acceptConnection: Could not accept connection (%s).",
 			XmlRpcSocket::getErrorMsg().c_str()); 
+      }
       
     }
   else if ( ! XmlRpcSocket::setNonBlocking(s))
