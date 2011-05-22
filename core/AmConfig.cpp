@@ -778,6 +778,9 @@ int AmConfig::finalizeIPConfig()
     if (AmConfig::Ifs[i].LocalSIPIP.empty()) {
       AmConfig::Ifs[i].LocalSIPIP = AmConfig::Ifs[i].LocalIP;
     }
+    else {
+      AmConfig::Ifs[i].LocalSIPIP = getLocalIP(AmConfig::Ifs[i].LocalSIPIP);
+    }
     
     AmConfig::LocalSIPIP2If.insert(std::make_pair(AmConfig::Ifs[i].LocalSIPIP,i));
   }
