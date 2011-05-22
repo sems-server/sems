@@ -21,8 +21,10 @@
 # optional parameter: media_ip=<ip_address>|<device>
 # 
 # - this informs SEMS about the IP address or interface that 
-#   SEMS uses to send and receive media.  If not set, defaults 
-#   to first non-loopback interface.
+#   SEMS uses to send and receive media.  
+# - If neither 'media_ip' nor 'sip_ip' are set, defaults 
+#   to first non-loopback interface. If 'sip_ip' is set,
+#   'media_ip' defaults to 'sip_ip.
 #
 # Examples: 
 #  media_ip=10.0.0.34
@@ -33,8 +35,10 @@
 # - this informs SEMS about the SIP IP where its SIP stack is 
 #   bound to or should be bound to. This also sets 
 #   the value used for contact header in outgoing calls and 
-#   registrations. If not set, defaults to first non-loopback
-#   interface.
+#   registrations.
+# - If neither 'media_ip' nor 'sip_ip' are set, defaults 
+#   to first non-loopback interface. If 'media_ip' is set,
+#   'sip_ip' defaults to 'media_ip.
 #
 # Example:
 #  sip_ip=10.0.0.34
@@ -125,11 +129,15 @@ rtp_high_port=60000
 #   additional_interfaces = <list of interfaces>
 #
 # For each additional interface, a set of parameters
-# suffixed with the interface name should be defined.
+# suffixed with the interface name should be listed
+# with the 'additional_interfaces' parameter.
 #
 # Please note that for each additional interface,
-# 'sip_ip' is mandatory. The other
-# parameters are optional.
+# 'sip_ip_[if_name]' is mandatory. The other
+# parameters are optional. 'media_ip_[if_name]'
+# is derived from 'sip_ip_[if_name]' if not set.
+# 'public_ip_[ip_name]' is also based on 'sip_ip_[if_name]'
+# if not set explicitly.
 # 
 # Example:
 #  additional_interfaces=intern,extern

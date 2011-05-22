@@ -575,7 +575,7 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
     intf.LocalIP = cfg.getParameter("media_ip" + suffix);
   }
   else if(!intf.LocalSIPIP.empty()) {
-    DBG("media_ip%s parameter is missing: using same as sip_ip%s",
+    WARN("media_ip%s parameter is missing: using same as sip_ip%s",
 	suffix.c_str(),suffix.c_str());
     intf.LocalIP = intf.LocalSIPIP;
   }
@@ -757,12 +757,6 @@ static string getLocalIP(const string& dev_name)
       local_ip = it->second;
       break;
     }
-  }
-
-  if(ifr.ifr_flags & IFF_LOOPBACK){
-    WARN("Media advertising using loopback address!\n"
-         "Try to use another network interface if your SEMS "
-         "should be accessible from the rest of the world.\n");
   }
 
  error:
