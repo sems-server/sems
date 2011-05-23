@@ -7,7 +7,8 @@
  *  \arg \ref changelog 
  *
  *  \section general General
- *  \arg \ref Readme 
+ *  \arg \ref Readme
+ *  \arg <a href="http://ftp.iptel.org/pub/sems/sayer_sems_mar10.pdf">VoIP services with SEMS - presentation slides</a>
  * 
  *  \section howtostart How to get started
  *  \arg \ref howtostart_noproxy
