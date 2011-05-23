@@ -13,16 +13,8 @@ modules are needed, e.g. the conference module:
 accepts the usual BASEDIR (default "") and PREFIX (default "/usr/local")
 variables.
 
- $ make install-ser-config 
-accepts SERPREFIX variable (default /opt/ser-sems), which should be the 
-installation path of the used ser-sems.
-
  $ make tar
 make a source tarball (.tar.gz) 
-
- $ make bundle
-make a source tarball bundle  (.tar.gz), a combination of SEMS and SER
-for SEMS.
 
  $ make doc
 make doxygen documentation (output in doc/doxygen_doc)
