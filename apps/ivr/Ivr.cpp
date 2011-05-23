@@ -566,10 +566,7 @@ void IvrFactory::setupSessionTimer(AmSession* s) {
  */
 AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name)
 {
-  // if(req.cmd != MOD_NAME)
-  //   return newDlg(req.cmd);
-  // else
-  return newDlg(req.user);
+  return newDlg(app_name);
 }
 
 IvrDialog::IvrDialog()
@@ -695,7 +692,8 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
 
 void IvrDialog::onInvite(const AmSipRequest& req)
 {
-  callPyEventHandler("onInvite","(s)",req.hdrs.c_str());
+  if(callPyEventHandler("onInvite","(s)",req.hdrs.c_str()))
+    AmB2BCallerSession::onInvite(req);
 }
 
 void IvrDialog::onSessionStart()

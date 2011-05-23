@@ -6,7 +6,7 @@ from ivr import *
 
 class IvrDialog(IvrDialogBase):
     
-    def onSessionStart(self, hdrs):
+    def onSessionStart(self):
 
         info("starting b2bua app ...")
         self.setNoRelayonly()        

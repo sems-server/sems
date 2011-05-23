@@ -26,7 +26,7 @@ db = MySQLdb.connection(host="127.0.0.1", user="root", passwd="sa07", db="busine
 class IvrDialog(IvrDialogBase) :
     ttsfile = None
 
-    def onSessionStart( self, hdrs ) :
+    def onSessionStart(self) :
         db.query("select bal_int, bal_decimal from accounts where user='%s'" % self.dialog.user)
         r = db.store_result()
         res = r.fetch_row(1)

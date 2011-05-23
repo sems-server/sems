@@ -7,7 +7,7 @@ import os
 
 class IvrDialog(IvrDialogBase):
 
-	def onSessionStart(self, hdrs):
+	def onSessionStart(self):
 
 		info("starting tmpfile.py")
 		f = open("/tmp/default_en.wav")

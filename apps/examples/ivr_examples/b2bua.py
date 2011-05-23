@@ -5,11 +5,11 @@ from log import *
 from ivr import *
 
 WELLCOME_MSG = "wav/default_en.wav"
-CALLEE_URI = "sip:gong@iptel.org"
+CALLEE_URI = "sip:music@iptel.org"
 
 class IvrDialog(IvrDialogBase):
     
-    def onSessionStart(self, hdrs):
+    def onSessionStart(self):
 
         info("starting b2bua test ...")
 

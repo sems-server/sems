@@ -6,7 +6,7 @@ from log import *
 from ivr import *
 class IvrDialog(IvrDialogBase):
 
-	def onSessionStart(self, hdrs):
+	def onSessionStart(self):
 		self.voice_msg = IvrAudioFile()
 		self.voice_msg.open("play.mp3", AUDIO_READ, False)
 		self.enqueue(self.voice_msg, None)

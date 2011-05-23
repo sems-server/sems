@@ -6,7 +6,7 @@ from ivr import *
 
 class IvrDialog(IvrDialogBase) :
 
-    def onSessionStart( self, hdrs ) :
+    def onSessionStart(self) :
         self.audio_pl = IvrAudioFile()
         self.audio_pl.open("wav/default_en.wav", AUDIO_READ)
 
