@@ -360,7 +360,6 @@ bool IvrFactory::loadScript(const string& path)
   modName = PyString_FromString(path.c_str());
   
   mod     = PyImport_Import(modName);
-  Py_DECREF(modName);
   if (NULL != config) {
     // remove config ivr ivr_module while loading
     PyObject_DelAttrString(ivr_module, "config");
@@ -371,14 +370,21 @@ bool IvrFactory::loadScript(const string& path)
     PyErr_Print();
     WARN("IvrFactory: Failed to load \"%s\"\n", path.c_str());
 
+    // before python 2.4,
+    // it can happen that the module
+    // is still in the dictionnary.
     dict = PyImport_GetModuleDict();
     Py_INCREF(dict);
-    PyDict_DelItemString(dict,path.c_str());
+    if(PyDict_Contains(dict,modName)){
+      PyDict_DelItem(dict,modName);
+    }
     Py_DECREF(dict);
+    Py_DECREF(modName);
 
     return false;
   }
 
+  Py_DECREF(modName);
   dict = PyModule_GetDict(mod);
   dlg_class = PyDict_GetItemString(dict, "IvrDialog");
 
