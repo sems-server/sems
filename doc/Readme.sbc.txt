@@ -442,5 +442,5 @@ x RTP forwarding mode (bridging)
 - select profile on monitoring in-mem DB record
 x fallback profile
 x add headers
-- bridging between interfaces
+x bridging between interfaces
 - rel1xx in non-transparent mode
