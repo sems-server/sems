@@ -237,8 +237,26 @@ EXEC_ACTION_START(SCPostEventAction){
     else {
       vector<string> vars = explode(var, ";");
       for (vector<string>::iterator it =
-	     vars.begin(); it != vars.end(); it++)
-	ev->params[*it] = sc_sess->var[*it];
+	     vars.begin(); it != vars.end(); it++) {
+	string varname = *it;
+
+	if (varname.length() && varname[varname.length()-1]=='.') {
+	  DBG("adding postEvent param %s (struct)\n", varname.c_str());
+	
+	  map<string, string>::iterator lb = sc_sess->var.lower_bound(varname);
+	  while (lb != sc_sess->var.end()) {
+	    if ((lb->first.length() < varname.length()) ||
+		strncmp(lb->first.c_str(), varname.c_str(), varname.length()))
+	      break;
+	    ev->params[lb->first] = lb->second;
+	    lb++;
+	  }
+	} else {
+	  DBG("adding postEvent param %s=%s\n",
+	      it->c_str(), sc_sess->var[*it].c_str());
+	  ev->params[*it] = sc_sess->var[*it];
+	}
+      }
     }
   }
 
