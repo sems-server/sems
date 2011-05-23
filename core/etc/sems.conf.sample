@@ -129,6 +129,12 @@ rtp_high_port=60000
 # Additional IFs (optional): 
 #   additional_interfaces = <list of interfaces>
 #
+# additional_interfaces must be set if more than one
+# interface is to be used for the same purpose (e.g.
+# more than one interface for SIP). Configure additional
+# interfaces if networks should be bridged or separate
+# networks should be served.
+#
 # For each additional interface, a set of parameters
 # suffixed with the interface name should be listed
 # with the 'additional_interfaces' parameter.
