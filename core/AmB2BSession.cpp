@@ -1030,7 +1030,7 @@ void AmB2BCallerSession::onInvite2xx(const AmSipReply& reply)
   invite_req.cseq = reply.cseq;
   est_invite_cseq = reply.cseq;
 
-  AmB2BSession::inInvite2xx(reply);
+  AmB2BSession::onInvite2xx(reply);
 }
 
 void AmB2BCallerSession::onCancel()
