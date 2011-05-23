@@ -1305,8 +1305,8 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		goto pass_reply;
 		
 	    case TS_COMPLETED:
-		// retransmit non-200 ACK
-		t->retransmit();
+		// generate a new non-200 ACK
+		send_non_200_ack(msg,t);
 	    default:
 		goto end;
 	    }
@@ -1621,24 +1621,10 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     int send_err = inv->local_socket->send(&inv->remote_ip,ack_buf,ack_len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
-	delete ack_buf;
     }
-    else {
-	delete [] t->retr_buf;
-	t->retr_buf = ack_buf;
-	t->retr_len = ack_len;
-	memcpy(&t->retr_addr,&inv->remote_ip,sizeof(sockaddr_storage));
-	t->retr_socket = inv->local_socket;
-    }
-}
+    delete ack_buf;
 
-// void _trans_layer::retransmit(sip_msg* msg)
-// {
-//     int send_err = msg->send();
-//     if(send_err < 0){
-// 	ERROR("Error from transport layer\n");
-//     }
-// }
+}
 
 void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 {
