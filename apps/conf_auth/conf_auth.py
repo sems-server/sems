@@ -56,7 +56,7 @@ class IvrDialog(IvrDialogBase):
 		print " next_hop:     ", self.dialog.next_hop
 		print " cseq:        ", self.dialog.cseq
 
-	def onSessionStart(self, hdrs):
+	def onSessionStart(self):
 		self.sessionInfo()
 		self.setNoRelayonly()
 		self.welcome_msg = IvrAudioFile.tts("Welcome to the conferencing server. "+ \

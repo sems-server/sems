@@ -49,7 +49,7 @@ class IvrDialog(IvrDialogBase):
 		debug(" next_hop:    " + self.dialog.next_hop)
 		debug(" cseq:        " + str(self.dialog.cseq))
 
-	def onSessionStart(self,hdrs):
+	def onSessionStart(self):
 		self.sessionInfo()
 		self.setNoRelayonly()
 		
