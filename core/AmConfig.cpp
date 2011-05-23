@@ -72,6 +72,9 @@ int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
 int          AmConfig::SIPServerThreads        = NUM_SIP_SERVERS;
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
+string       AmConfig::NextHopIP               = "";
+unsigned int AmConfig::NextHopPort             = 0;
+bool         AmConfig::NextHopForReplies       = false;
 bool         AmConfig::ProxyStickyAuth         = false;
 bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
@@ -285,6 +288,18 @@ int AmConfig::readConfiguration()
   // force_outbound_proxy
   if(cfg.hasParameter("force_outbound_proxy")) {
     ForceOutboundProxy = (cfg.getParameter("force_outbound_proxy") == "yes");
+  }
+
+  if(cfg.hasParameter("next_hop_ip")) {
+    NextHopIP = cfg.getParameter("next_hop_ip");
+  }
+
+  if(cfg.hasParameter("next_hop_port")) {
+    NextHopPort = cfg.getParameterInt("next_hop_port", 0);
+  }
+
+  if(cfg.hasParameter("next_hop_for_replies")) {
+    NextHopForReplies = (cfg.getParameter("next_hop_for_replies") == "yes");
   }
 
   if(cfg.hasParameter("proxy_sticky_auth")) {
@@ -565,7 +580,7 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
     intf.LocalIP = cfg.getParameter("media_ip" + suffix);
   }
   else if(!intf.LocalSIPIP.empty()) {
-    DBG("media_ip%s parameter is missing: using same as sip_ip%s",
+    WARN("media_ip%s parameter is missing: using same as sip_ip%s",
 	suffix.c_str(),suffix.c_str());
     intf.LocalIP = intf.LocalSIPIP;
   }
@@ -749,12 +764,6 @@ static string getLocalIP(const string& dev_name)
     }
   }
 
-  if(ifr.ifr_flags & IFF_LOOPBACK){
-    WARN("Media advertising using loopback address!\n"
-         "Try to use another network interface if your SEMS "
-         "should be accessible from the rest of the world.\n");
-  }
-
  error:
   close(sd);
   return local_ip;
@@ -773,6 +782,9 @@ int AmConfig::finalizeIPConfig()
     
     if (AmConfig::Ifs[i].LocalSIPIP.empty()) {
       AmConfig::Ifs[i].LocalSIPIP = AmConfig::Ifs[i].LocalIP;
+    }
+    else {
+      AmConfig::Ifs[i].LocalSIPIP = getLocalIP(AmConfig::Ifs[i].LocalSIPIP);
     }
     
     AmConfig::LocalSIPIP2If.insert(std::make_pair(AmConfig::Ifs[i].LocalSIPIP,i));

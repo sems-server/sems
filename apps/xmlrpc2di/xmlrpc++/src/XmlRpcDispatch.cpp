@@ -3,6 +3,7 @@
 #include "XmlRpcSource.h"
 #include "XmlRpcUtil.h"
 
+#include <poll.h>
 #include <errno.h>
 #include <math.h>
 #include <sys/timeb.h>
@@ -175,94 +176,79 @@ XmlRpcDispatch::getTime()
 bool
 XmlRpcDispatch::waitForAndProcessEvents(double timeout)
 {
-#if defined(_WINDOWS) && 0
-
-  int nHandles = 0;
-  SourceList::iterator it;
-  for (it=_sources.begin(); it!=_sources.end(); ++it) {
-    int fd = it->getSource()->getfd();
-    int mask = 0;
-    if (it->getMask() & ReadableEvent) mask = (FD_READ | FD_CLOSE | FD_ACCEPT);
-    if (it->getMask() & WritableEvent) mask |= (FD_WRITE | FD_CLOSE);
-
-#else   // Posix
-
   // Construct the sets of descriptors we are interested in
-  fd_set inFd, outFd, excFd;
-  FD_ZERO(&inFd);
-  FD_ZERO(&outFd);
-  FD_ZERO(&excFd);
+  struct pollfd* fds = new struct pollfd[_sources.size()];
 
-  int maxFd = -1;
+  unsigned int i=0;
   SourceList::iterator it;
-  for (it=_sources.begin(); it!=_sources.end(); ++it) {
-    int fd = it->getSource()->getfd();
-    if (it->getMask() & ReadableEvent) FD_SET(fd, &inFd);
-    if (it->getMask() & WritableEvent) FD_SET(fd, &outFd);
-    if (it->getMask() & Exception)     FD_SET(fd, &excFd);
-    if (it->getMask() && fd > maxFd)   maxFd = fd;
+  for (it=_sources.begin(); it!=_sources.end(); ++it, i++) {
+    fds[i].fd = it->getSource()->getfd();
+    unsigned poll_mask=0; 
+    if (it->getMask() & ReadableEvent) poll_mask |= POLLIN;
+    if (it->getMask() & WritableEvent) poll_mask |= POLLOUT;
+    if (it->getMask() & Exception)     poll_mask |= POLLERR|POLLNVAL|POLLHUP;
+    fds[i].events = poll_mask;
+    fds[i].revents = 0;
   }
 
   // Check for events
   int nEvents;
   if (_endTime < 0.0)
-    nEvents = select(maxFd+1, &inFd, &outFd, &excFd, NULL);
+    nEvents = poll(fds,_sources.size(), NULL);
   else 
   {
-    struct timeval tv;
-    tv.tv_sec = (int)floor(timeout);
-    tv.tv_usec = ((int)floor(1000000.0 * (timeout-floor(timeout)))) % 1000000;
-    nEvents = select(maxFd+1, &inFd, &outFd, &excFd, &tv);
+    int to_ms = (int)floor(1000.0 * timeout);
+    nEvents = poll(fds,_sources.size(), to_ms);
   }
 
   if (nEvents < 0 && errno != EINTR)
   {
-    XmlRpcUtil::error("Error in XmlRpcDispatch::work: error in select (%d).", nEvents);
+    XmlRpcUtil::error("Error in XmlRpcDispatch::work: error in poll (%d).", nEvents);
+    delete [] fds;
     return false;
   }
 
   // Process events
-  for (it=_sources.begin(); it != _sources.end(); )
+  i = 0;
+  for (it=_sources.begin(); it != _sources.end(); i++)
   {
     SourceList::iterator thisIt = it++;
     XmlRpcSource* src = thisIt->getSource();
-    int fd = src->getfd();
 
-    if (fd <= maxFd) {
-      // handleEvent is called once per event type signalled
-      unsigned newMask = 0;
-      int nset = 0;
-      if (FD_ISSET(fd, &inFd))
+    // handleEvent is called once per event type signalled
+    unsigned newMask = 0;
+    int nset = 0;
+    if (fds[i].revents & POLLIN)
       {
         newMask |= src->handleEvent(ReadableEvent);
         ++nset;
       }
-      if (FD_ISSET(fd, &outFd))
+    if (fds[i].revents & POLLOUT)
       {
         newMask |= src->handleEvent(WritableEvent);
         ++nset;
       }
-      if (FD_ISSET(fd, &excFd))
+    if (fds[i].revents & (POLLERR|POLLNVAL|POLLHUP))
       {
         newMask |= src->handleEvent(Exception);
         ++nset;
       }
 
-      // Some event occurred
-      if (nset)
+    // Some event occurred
+    if (nset)
       {
         if (newMask)
           thisIt->getMask() = newMask;
         else       // Stop monitoring this one
-        {
-          _sources.erase(thisIt);
-          if ( ! src->getKeepOpen())
-            src->close();
-        }
+	  {
+	    _sources.erase(thisIt);
+	    if ( ! src->getKeepOpen())
+	      src->close();
+	  }
       }
-    }
+    
   }
-#endif
 
+  delete [] fds;
   return true;
 }

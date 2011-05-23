@@ -10,36 +10,67 @@
 #include "XmlRpcUtil.h" 
 #include "XmlRpcException.h" 
 #include "MultithreadXmlRpcServer.h" 
- 
+#include "AmUtils.h"
+#include "AmEventDispatcher.h"
 #include "log.h"
  
 using namespace XmlRpc; 
 WorkerThread::WorkerThread(MultithreadXmlRpcServer* chief) 
-  : runcond(false), chief(chief) {
+  : running(true), runcond(false), chief(chief) {
 } 
  
 // call this method before calling run 
 void WorkerThread::addXmlRpcSource(XmlRpcSource* source,unsigned eventMask) 
 { 
   dispatcher.addSource(source,eventMask); 
-  runcond.set(true);
+  wakeup();
 }  
- 
+
+void WorkerThread::wakeup() {
+  runcond.set(true);
+}
+
 void WorkerThread::run() 
 { 
+  running.set(true);
+
+  string eventqueue_name = "MT_XMLRPC_SERVER_" + long2str((unsigned long)pthread_self());
+
+  // register us as SIP event receiver for MOD_NAME
+  AmEventDispatcher::instance()->addEventQueue(eventqueue_name, this);
+
   chief->reportBack(this);
 
-  while (!is_stopped()) {
+  while (running.get()) {
     runcond.wait_for();
     dispatcher.work(-1.0); 
   
     dispatcher.clear(); // close socket and others ...  
     runcond.set(false);
+
     /* tell chief we can work again */
     chief->reportBack(this);
   }
+
+  AmEventDispatcher::instance()->delEventQueue(eventqueue_name);
   DBG("WorkerThread stopped.\n");
 } 
+
+void WorkerThread::postEvent(AmEvent* ev) {
+
+  if (ev->event_id == E_SYSTEM) {
+    AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(ev);
+    if (sys_ev) {
+      if (sys_ev->sys_event == AmSystemEvent::ServerShutdown) {
+	DBG("XMLRPC worker thread received system Event: ServerShutdown, stopping\n");
+	running.set(false);
+	runcond.set(true);
+      }
+      return;
+    }
+  }
+  WARN("unknown event received\n");
+}
 
 void WorkerThread::on_stop() {
 }
@@ -66,8 +97,10 @@ void MultithreadXmlRpcServer::acceptConnection()
   int s = XmlRpcSocket::accept(this->getfd()); 
   if (s < 0) 
     { 
-      ERROR("MultithreadXmlRpcServer::acceptConnection: Could not accept connection (%s).", 
+      if (s != EAGAIN && s != EWOULDBLOCK) {
+	ERROR("MultithreadXmlRpcServer::acceptConnection: Could not accept connection (%s).",
 			XmlRpcSocket::getErrorMsg().c_str()); 
+      }
       
     }
   else if ( ! XmlRpcSocket::setNonBlocking(s))

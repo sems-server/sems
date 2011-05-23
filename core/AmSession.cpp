@@ -1274,7 +1274,7 @@ bool AmSession::removeTimers() {
   DBG("removing timers\n");
   AmArg di_args,ret;
   di_args.push(getLocalTag().c_str());
-  user_timer_ref->invoke("removeTimers", di_args, ret);
+  user_timer_ref->invoke("removeUserTimers", di_args, ret);
 
   return true;
 }

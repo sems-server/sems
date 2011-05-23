@@ -11,6 +11,7 @@
 #include <AmThread.h> 
 #include "XmlRpcServer.h" 
 #include "XmlRpcDispatch.h" 
+#include "AmEventQueue.h"
 
 #include <queue>
 #include <vector>
@@ -18,17 +19,27 @@
 namespace XmlRpc { 
   class MultithreadXmlRpcServer;
 
-  class WorkerThread : public AmThread {
+  class WorkerThread
+    : public AmThread,
+    public AmEventQueueInterface
+  {
+
     MultithreadXmlRpcServer* chief;
     AmCondition<bool> runcond;
+
+    AmCondition<bool> running;
 
   public: 
     WorkerThread(MultithreadXmlRpcServer* chief);
 
     void addXmlRpcSource(XmlRpcSource* source,unsigned eventMask); // call this method to make it run 
+    void wakeup();
+
 
     void run(); 
     void on_stop(); 
+
+    void postEvent(AmEvent* ev);
   private:  
     XmlRpcDispatch dispatcher;  
   }; 
@@ -37,7 +48,8 @@ namespace XmlRpc {
 #define MAX_THREAD_SIZE 8  
  
   //! Multi-threaded sever class to handle XML RPC requests 
-  class MultithreadXmlRpcServer : public XmlRpcServer { 
+  class MultithreadXmlRpcServer
+    : public XmlRpcServer { 
   public: 
     //! Create a server object. 
     MultithreadXmlRpcServer();

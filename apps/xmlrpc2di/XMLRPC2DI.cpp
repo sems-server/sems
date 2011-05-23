@@ -31,6 +31,7 @@
 #include "AmUtils.h"
 #include "AmArg.h"
 #include "AmSession.h"
+#include "AmEventDispatcher.h"
 #include "TOXmlRpcClient.h"
 
 #define MOD_NAME "xmlrpc2di"
@@ -325,7 +326,8 @@ XMLRPC2DIServer::XMLRPC2DIServer(unsigned int port,
 				 bool di_export, 
 				 string direct_export,
 				 XmlRpcServer* s) 
-  : port(port),
+  : AmEventQueue(this),
+    port(port),
     bind_ip(bind_ip),
     s(s),
     // register method 'calls'
@@ -434,12 +436,43 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
 void XMLRPC2DIServer::run() {
   DBG("Binding XMLRPC2DIServer to port %u \n", port);
   s->bindAndListen(port, bind_ip);
+
+  // register us as SIP event receiver for MOD_NAME
+  AmEventDispatcher::instance()->addEventQueue(MOD_NAME, this);
+
   DBG("starting XMLRPC2DIServer...\n");
-  s->work(-1.0);
+  running.set(true);
+  do {
+    s->work(DEF_XMLRPCSERVER_WORK_INTERVAL);
+    processEvents();
+  } 
+  while(running.get());
+
+  AmEventDispatcher::instance()->delEventQueue(MOD_NAME);
+  DBG("Exiting XMLRPC2DIServer.\n");
 }
+
+void XMLRPC2DIServer::process(AmEvent* ev) {
+  if (ev->event_id == E_SYSTEM) {
+    AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(ev);
+    if(sys_ev){	
+      DBG("XMLRPC2DIServer received system Event\n");
+      if (sys_ev->sys_event == AmSystemEvent::ServerShutdown) {
+	DBG("XMLRPC2DIServer received system Event: ServerShutdown, "
+	    "stopping thread\n");
+	running.set(false);
+      }
+      return;
+    }
+  }
+  WARN("unknown event received\n");
+}
+
 void XMLRPC2DIServer::on_stop() {
-  DBG("sorry, don't know how to stop the server.\n");
+  DBG("on_stop().\n");
+  running.set(false);
 }
+
 void XMLRPC2DIServerCallsMethod::execute(XmlRpcValue& params, XmlRpcValue& result) {
   int res = AmSession::getSessionNum();
   DBG("XMLRPC2DI: calls = %d\n", res);

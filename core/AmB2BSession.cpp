@@ -114,6 +114,7 @@ void AmB2BSession::process(AmEvent* event)
 
 void AmB2BSession::onB2BEvent(B2BEvent* ev)
 {
+  DBG("AmB2BSession::onB2BEvent\n");
   switch(ev->event_id){
 
   case B2BSipRequest:
@@ -215,13 +216,17 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	     reply_ev->reply.cseq_method == SIP_METH_UPDATE)) {
 	  if (updateSessionDescription(reply_ev->reply.content_type,
 				       reply_ev->reply.body)) {
-	    if (dlg.getUACInvTransPending()) {
-	      DBG("changed session, but UAC INVITE trans pending\n");
-	      // todo(?): save until trans is finished?
-	      return;
+	    if (reply_ev->reply.cseq != est_invite_cseq) {
+	      if (dlg.getUACInvTransPending()) {
+		DBG("changed session, but UAC INVITE trans pending\n");
+		// todo(?): save until trans is finished?
+		return;
+	      }
+	      DBG("session description changed - refreshing\n");
+	      sendEstablishedReInvite();
+	    } else {
+	      DBG("reply to establishing INVITE request - not refreshing\n");
 	    }
-	    DBG("session description changed - refreshing\n");
-	    sendEstablishedReInvite();
 	  }
 	}
       }
@@ -942,6 +947,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	if(reply.code < 200){
 	  if ((!sip_relay_only) && sip_relay_early_media_sdp &&
 	      reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
+	    DBG("sending re-INVITE to caller with early media SDP\n");
 	    if (reinviteCaller(reply)) {
 	      ERROR("re-INVITEing caller for early session failed - "
 		    "stopping this and other leg\n");
@@ -954,8 +960,10 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	} else if(reply.code < 300){
 	  
 	  callee_status  = Connected;
-	  
+	  DBG("setting callee status to connected\n");
 	  if (!sip_relay_only) {
+	    DBG("received 200 class reply to establishing INVITE: "
+		"switching to SIP relay only mode, sending re-INVITE to caller\n");
 	    sip_relay_only = true;
 	    if (reinviteCaller(reply)) {
 	      ERROR("re-INVITEing caller failed - stopping this and other leg\n");
@@ -1012,10 +1020,20 @@ int AmB2BCallerSession::relayEvent(AmEvent* ev)
 void AmB2BCallerSession::onInvite(const AmSipRequest& req)
 {
   invite_req = req;
+  est_invite_cseq = req.cseq;
+
   AmB2BSession::onInvite(req);
 }
 
-void AmB2BCallerSession::onCancel(const AmSipRequest& cancel)
+void AmB2BCallerSession::onInvite2xx(const AmSipReply& reply)
+{
+  invite_req.cseq = reply.cseq;
+  est_invite_cseq = reply.cseq;
+
+  AmB2BSession::inInvite2xx(reply);
+}
+
+void AmB2BCallerSession::onCancel()
 {
   terminateOtherLeg();
   terminateLeg();

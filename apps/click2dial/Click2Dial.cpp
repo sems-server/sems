@@ -200,6 +200,9 @@ void C2DCallerDialog::onSessionStart(const AmSipReply& rep)
 {
   setReceiving(false);
   invite_req.body = rep.body;
+  invite_req.content_type = rep.content_type;
+  invite_req.cseq = rep.cseq;
+  est_invite_cseq = rep.cseq;
 
   if(wav_file.open(filename,AmAudioFile::Read))
     throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
@@ -209,8 +212,22 @@ void C2DCallerDialog::onSessionStart(const AmSipReply& rep)
 
 void C2DCallerDialog::onSessionStart(const AmSipRequest& req)
 {
+  ERROR("incoming calls not supported in click2dial app!\n");
+  dlg.bye();
+  setStopped();
 }
 
+void C2DCallerDialog::updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq) {
+  if (old_cseq == invite_req.cseq) {
+    DBG("updating invite_req.cseq %u -> %u\n", old_cseq, new_cseq);
+    invite_req.cseq = new_cseq;
+  }
+  if (old_cseq == est_invite_cseq) {
+    DBG("updating est_invite_cseq %u -> %u\n", old_cseq, new_cseq);
+    est_invite_cseq = new_cseq;
+  }
+
+}
 
 void C2DCallerDialog::process(AmEvent* event)
 {
