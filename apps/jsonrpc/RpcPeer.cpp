@@ -112,6 +112,15 @@ int JsonrpcNetstringsConnection::connect(const string& host, int port,
     res_str = "error setting socket non-blocking";
     return 300;
   }
+
+#ifndef MSG_NOSIGNAL
+  int onoff=0;
+  if (setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &onoff, sizeof(onoff))) {
+    res_str = "error in setsockopt: "+string(strerror(errno));
+    ::close(fd);
+    return 300;
+  }  
+#endif
   
   if (::connect(fd, (const struct sockaddr *)&sa,
               sizeof(sa)) ==-1 && errno != EINPROGRESS) {
@@ -311,7 +320,13 @@ int JsonrpcNetstringsConnection::netstringsBlockingWrite() {
   rcvd_size = 0;
   size_t ns_total_len = msg_size+msg_size_s.length()+2;
   while (rcvd_size != ns_total_len) {
-    size_t written = send(fd, &ns_begin[rcvd_size], ns_total_len - rcvd_size, MSG_NOSIGNAL);
+    size_t written = send(fd, &ns_begin[rcvd_size], ns_total_len - rcvd_size, 
+#ifdef MSG_NOSIGNAL
+			  MSG_NOSIGNAL
+#else
+			  0
+#endif
+			  );
     if ((written<0 && (errno==EAGAIN || errno==EWOULDBLOCK)) ||
 	written==0) {
 	usleep(SEND_SLEEP);
