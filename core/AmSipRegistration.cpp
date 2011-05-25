@@ -42,6 +42,7 @@ AmSIPRegistration::AmSIPRegistration(const string& handle,
     sess_link(sess_link),
     reg_send_begin(0),
     waiting_result(false),
+    unregistering(false),
     seh(NULL),
     expires_interval(3600)
 {
@@ -70,6 +71,12 @@ AmSIPRegistration::~AmSIPRegistration() {
   setSessionEventHandler(NULL);
 }
 
+void AmSIPRegistration::setRegistrationInfo(const SIPRegistrationInfo& _info) {
+  DBG("updating registration info for '%s@%s'\n",
+      _info.user.c_str(), _info.domain.c_str());
+  info = _info;
+}
+
 void AmSIPRegistration::setSessionEventHandler(AmSessionEventHandler* new_seh) {
   if (seh)
     delete seh;
@@ -85,6 +92,8 @@ bool AmSIPRegistration::doRegistration()
   bool res = true;
 
   waiting_result = true;
+  unregistering = false;
+
   req.to_tag     = "";
   dlg.remote_tag = "";
   req.r_uri    = "sip:"+info.domain;
@@ -120,6 +129,8 @@ bool AmSIPRegistration::doUnregister()
   bool res = true;
 
   waiting_result = true;
+  unregistering = true;
+
   req.to_tag     = "";
   dlg.remote_tag = "";
   req.r_uri      = "sip:"+info.domain;
@@ -181,6 +192,10 @@ AmSIPRegistration::RegistrationState AmSIPRegistration::getState() {
   return RegisterExpired;
 }
 
+bool AmSIPRegistration::getUnregistering() {
+  return unregistering;
+}
+
 unsigned int AmSIPRegistration::getExpiresLeft() {
   long diff = reg_begin + reg_expires  - time(NULL);
   if (diff < 0) 
@@ -236,62 +251,23 @@ void AmSIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status, 
   if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status, trans_method))
     return;
 
-  waiting_result = false;
+  if (reply.code>=200)
+    waiting_result = false;
 
   if ((reply.code>=200)&&(reply.code<300)) {
-    DBG("positive reply to REGISTER!\n");
-    size_t end  = 0;
-    string local_contact_hdr = dlg.getContactHdr();
-    local_contact.parse_contact(local_contact_hdr, (size_t)0, end);
-    local_contact.dump();
 
     string contacts = reply.contact;
     if (contacts.empty()) 
       contacts = getHeader(reply.hdrs, "Contact", "m", true);
-    bool found = false;
 
-    if (!contacts.length()) {
-      DBG("received positive reply to de-Register \n");
+    if (unregistering) {
+      DBG("received positive reply to De-REGISTER\n");
+
       active = false;
       remove = true;
-    } else {
-      end = 0;
-      while (!found) {
-	if (contacts.length() == end)
-	  break;
-
-	if (!server_contact.parse_contact(contacts, end, end)) {
-	  ERROR("while parsing contact\n");
-	  break;
-	}
-	server_contact.dump();
-				
-	if (server_contact.isEqual(local_contact)) {
-	  DBG("contact found\n");
-	  found = active = true;
-	  //bool str2i(const string& str, unsigned int& result);
-					
-	  if (str2i(server_contact.params["expires"], reg_expires)) {
-	    ERROR("could not extract expires value.\n");
-	    reg_expires = 500;
-	  }
-	  DBG("got an expires of %d\n", reg_expires);
-	  // save TS
-	  reg_begin = time(0);
-
-	  if (sess_link.length()) {
-	    DBG("posting SIPRegistrationEvent to '%s'\n", sess_link.c_str());
-	    AmSessionContainer::instance()->
-	      postEvent(sess_link,
-			new SIPRegistrationEvent(SIPRegistrationEvent::RegisterSuccess,
-						 req.from_tag,
-						 reply.code, reply.reason));
-	  }
-	  break;
-	}
+      if (!contacts.length()) {
+	DBG("no contacts registered any more\n");
       }
-    }
-    if (!found) {
       if (sess_link.length()) {
 	AmSessionContainer::instance()->
 	  postEvent(sess_link,
@@ -299,9 +275,70 @@ void AmSIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status, 
 					     req.from_tag,
 					     reply.code, reply.reason));
       }
-      DBG("no matching Contact - deregistered.\n");
-      active = false;
-      remove = true;
+
+    } else {
+      DBG("positive reply to REGISTER!\n");
+
+      size_t end  = 0;
+      string local_contact_hdr = dlg.getContactHdr();
+      local_contact.parse_contact(local_contact_hdr, (size_t)0, end);
+      local_contact.dump();
+
+      bool found = false;
+
+      if (!contacts.length()) {
+	// should not happen - positive reply without contact
+	DBG("no contacts registered any more\n");
+	active = false;
+	remove = true;
+      } else {
+	end = 0;
+	while (!found) {
+	  if (contacts.length() == end)
+	    break;
+
+	  if (!server_contact.parse_contact(contacts, end, end)) {
+	    ERROR("while parsing contact\n");
+	    break;
+	  }
+	  server_contact.dump();
+
+	  if (server_contact.isEqual(local_contact)) {
+	    DBG("contact found\n");
+	    found = active = true;
+
+	    if (str2i(server_contact.params["expires"], reg_expires)) {
+	      ERROR("could not extract expires value, default to 300.\n");
+	      reg_expires = 300;
+	    }
+	    DBG("got an expires of %d\n", reg_expires);
+	    // save TS
+	    reg_begin = time(0);
+
+	    if (sess_link.length()) {
+	      DBG("posting SIPRegistrationEvent to '%s'\n", sess_link.c_str());
+	      AmSessionContainer::instance()->
+		postEvent(sess_link,
+			  new SIPRegistrationEvent(SIPRegistrationEvent::RegisterSuccess,
+						   req.from_tag,
+						   reply.code, reply.reason));
+	    }
+	    break;
+	  }
+	}
+      }
+      if (!found) {
+	if (sess_link.length()) {
+	  AmSessionContainer::instance()->
+	    postEvent(sess_link,
+		      new SIPRegistrationEvent(SIPRegistrationEvent::RegisterNoContact,
+					       req.from_tag,
+					       reply.code, reply.reason));
+	}
+	DBG("no matching Contact - deregistered.\n");
+	active = false;
+	remove = true;
+      }
     }
 		
   } else if (reply.code >= 300) {

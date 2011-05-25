@@ -93,6 +93,8 @@ class AmSIPRegistration
 		    const string& sess_link);
   ~AmSIPRegistration();
 
+  void setRegistrationInfo(const SIPRegistrationInfo& _info);
+
   void setSessionEventHandler(AmSessionEventHandler* new_seh);
 
   void setExpiresInterval(unsigned int desired_expires);
@@ -143,6 +145,8 @@ class AmSIPRegistration
   bool remove;
   /** are we waiting for the response to a register? */
   bool waiting_result;
+  /** are we unregistering? */
+  bool unregistering;
 
   enum RegistrationState {
     RegisterPending = 0,
@@ -155,6 +159,8 @@ class AmSIPRegistration
   unsigned int getExpiresLeft();
   /** return the expires TS for the registration */
   time_t getExpiresTS();
+
+  bool getUnregistering();
 
   SIPRegistrationInfo& getInfo() { return info; }
   const string& getEventSink() { return sess_link; }
