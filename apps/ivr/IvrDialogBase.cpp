@@ -94,73 +94,6 @@ static PyObject* IvrDialogBase_onRtpTimeout(IvrDialogBase* self, PyObject*)
   return Py_None;
 }
 
-// static PyObject* IvrDialogBase_onSessionStart(IvrDialogBase* self, PyObject*)
-// {
-//     DBG("no script implementation for onSessionStart(self,hdrs) !!!\n");
-
-//     PyErr_SetNone(PyExc_NotImplementedError);
-//     return NULL; // no return value
-// }
-
-// static PyObject* IvrDialogBase_onBye(IvrDialogBase* self, PyObject*)
-// {
-//     DBG("no script implementation for onBye(self) !!!\n");
-
-//     PyErr_SetNone(PyExc_NotImplementedError);
-//     return NULL; // no return value
-// }
-
-// static PyObject* IvrDialogBase_onEmptyQueue(IvrDialogBase* self, PyObject*)
-// {
-//     DBG("no script implementation for onEmptyQueue(self) !!!\n");
-
-//     PyErr_SetNone(PyExc_NotImplementedError);
-//     return NULL; // no return value
-// }
-
-// static PyObject* IvrDialogBase_onDtmf(IvrDialogBase* self, PyObject* args)
-// {
-//     int key, duration;
-//     if(!PyArg_ParseTuple(args,"ii",&key,&duration))
-// 	return NULL;
-
-//     DBG("IvrDialogBase_onDtmf(%i,%i)\n",key,duration);
-
-//     Py_INCREF(Py_None);
-//     return Py_None;
-// }
-
-// static PyObject* IvrDialogBase_onTimer(IvrDialogBase* self, PyObject* args)
-// {
-//     DBG("IvrDialog::onTimer: no script implementation!!!\n");
-
-//     PyErr_SetNone(PyExc_NotImplementedError);
-//     return NULL; // no return value
-// }
-
-// static PyObject* IvrDialogBase_onOtherBye(IvrDialogBase* self, PyObject*)
-// {
-//     DBG("IvrDialogBase_onOtherBye()\n");
-
-//     Py_INCREF(Py_None);
-//     return Py_None;
-// }
-
-// static PyObject* IvrDialogBase_onOtherReply(IvrDialogBase* self, PyObject* args)
-// {
-//     DBG("IvrDialogBase_onOtherReply()\n");
-
-//     int code;
-//     char* reason;
-
-//     if(!PyArg_ParseTuple(args,"is",&code,&reason))
-// 	return NULL;
-    
-
-//     Py_INCREF(Py_None);
-//     return Py_None;
-// }
-
 //
 // Call control
 //
@@ -500,6 +433,18 @@ IvrDialogBase_refer(IvrDialogBase *self, PyObject* args)
     
 }
 
+static PyObject* 
+IvrDialogBase_getAppParam(IvrDialogBase *self, PyObject* args)
+{
+  const char* param_name;
+  if(!PyArg_ParseTuple(args,"s",&param_name))
+    return NULL;
+
+  string app_param = self->p_dlg->getAppParam(param_name);
+  return PyString_FromString(app_param.c_str());
+}
+
+
 static PyMethodDef IvrDialogBase_methods[] = {
     
 
@@ -598,6 +543,10 @@ static PyMethodDef IvrDialogBase_methods[] = {
   {"removeTimers", (PyCFunction)IvrDialogBase_removeTimers, METH_NOARGS,
    "remove all timers"
   },    
+  // App params
+  {"getAppParam", (PyCFunction)IvrDialogBase_getAppParam, METH_VARARGS,
+   "retrieves an application parameter"
+  },
 
   {NULL}  /* Sentinel */
 };

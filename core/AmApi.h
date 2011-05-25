@@ -136,18 +136,19 @@ class AmSessionFactory: public AmPluginFactory
   AmSessionFactory(const string& name);
 
   /**
-   * Creates a dialog state on new request.
+   * Creates a dialog state on new UAS request.
    * @return 0 if the request is not acceptable.
    *
    * Warning:
    *   This method should not make any expensive
    *   processing as it would block the server.
    */
-  virtual AmSession* onInvite(const AmSipRequest& req, const string& app_name)=0;
+  virtual AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+			      const map<string,string>& app_params)=0;
 
   /**
-   * Creates a dialog state on new request. Passes with 
-   * parameters to the new session.
+   * Creates a dialog state on new UAC request. 
+   * @param session_params parameters passed to the new session by the caller.
    * 
    * @return 0 if the request is not acceptable.
    *
@@ -166,7 +167,8 @@ class AmSessionFactory: public AmPluginFactory
    *   This method should not make any expensive
    *   processing as it would block the server.
    */
-  virtual AmSession* onRefer(const AmSipRequest& req, const string& app_name);
+  virtual AmSession* onRefer(const AmSipRequest& req, const string& app_name,
+			     const map<string,string>& app_params);
 
   /**
    * Creates a dialog state on new REFER with local-tag.

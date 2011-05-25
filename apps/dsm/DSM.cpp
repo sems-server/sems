@@ -683,7 +683,8 @@ void DSMFactory::runMonitorAppSelect(const AmSipRequest& req, string& start_diag
 #undef FALLBACK_OR_EXCEPTION
 }
  
-AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				const map<string,string>& app_params)
 {
   string start_diag;
   map<string, string> vars;

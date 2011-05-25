@@ -105,28 +105,6 @@ extern "C" {
     return Py_None;
   }
 
-  static PyObject* ivr_getSessionParam(PyObject*, PyObject* args)
-  {
-    char* headers;
-    char* header_name;
-    if(!PyArg_ParseTuple(args,"ss",&headers,&header_name))
-      return NULL;
-
-    string res;
-    string iptel_app_param = getHeader(headers, PARAM_HDR, true);
-    if (iptel_app_param.length()) {
-      res = get_header_keyvalue(iptel_app_param,header_name);
-    } else {
-      INFO("Use of P-%s is deprecated. \n", header_name);
-      INFO("Use '%s: %s=<addr>' instead.\n", PARAM_HDR, header_name);
-
-      res = getHeader(headers,string("P-") + header_name, true);
-    }
-
-	 
-    return PyString_FromString(res.c_str());
-  }
-
   static PyObject* ivr_createThread(PyObject*, PyObject* args)
   {
     PyObject* py_thread_object = NULL;
@@ -155,7 +133,6 @@ extern "C" {
   static PyMethodDef ivr_methods[] = {
     {"log", (PyCFunction)ivr_log, METH_VARARGS,"Log a message using Sems' logging system"},
     {"getHeader", (PyCFunction)ivr_getHeader, METH_VARARGS,"Python getHeader wrapper"},
-    {"getSessionParam", (PyCFunction)ivr_getSessionParam, METH_VARARGS,"Python getSessionParam wrapper"},
     {"createThread", (PyCFunction)ivr_createThread, METH_VARARGS, "Create another interpreter thread"},
     {"setIgnoreSigchld", (PyCFunction)ivr_ignoreSigchld, METH_VARARGS, "ignore SIGCHLD signal"},
     {NULL}  /* Sentinel */
@@ -561,10 +538,11 @@ void IvrFactory::setupSessionTimer(AmSession* s) {
 }
 
 /**
- * Load a script using user name from URI.
+ * Load a script using the app_name.
  * Note: there is no default script.
  */
-AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* IvrFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				const map<string,string>& app_params)
 {
   return newDlg(app_name);
 }

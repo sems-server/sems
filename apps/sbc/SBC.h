@@ -72,7 +72,8 @@ class SBCFactory: public AmSessionFactory,
   ~SBCFactory();
 
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req, const string& app_name);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      const map<string,string>& app_params);
 
   static AmConfigReader cfg;
   static AmSessionEventHandlerFactory* session_timer_fact;

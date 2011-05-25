@@ -109,7 +109,8 @@ void RegistrationAgentFactory::postEvent(AmEvent* ev) {
   dialer.postEvent(ev);
 }
 
-AmSession* RegistrationAgentFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* RegistrationAgentFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					      const map<string,string>& app_params)
 {
   return NULL;
 }

@@ -40,6 +40,7 @@ using std::string;
 
 #include <vector>
 #include <utility>
+#include <map>
 
 //#define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
 
@@ -233,6 +234,9 @@ string get_header_keyvalue(const string& param_hdr, const string& short_name, co
 
 /** get the value of key @param name from P-Iptel-Param header in hdrs */
 string get_session_param(const string& hdrs, const string& name);
+
+/** parse the P-App-Param header and extracts the parameters into a map */
+void parse_app_params(const string& hdrs, std::map<string,string>& app_params);
 
 /** support for thread-safe pseudo-random numbers  - init function */
 void init_random();

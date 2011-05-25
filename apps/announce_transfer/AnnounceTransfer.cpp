@@ -68,7 +68,8 @@ int AnnounceTransferFactory::onLoad()
   return 0;
 }
 
-AmSession* AnnounceTransferFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* AnnounceTransferFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					     const map<string,string>& app_params)
 {
   string announce_path = AnnouncePath;
   string announce_file = announce_path + req.domain 

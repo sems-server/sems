@@ -419,17 +419,22 @@ AmSession* AmSessionContainer::createSession(const AmSipRequest& req,
       return NULL;
   }
 
+  map<string,string> app_params;
+  parse_app_params(req.hdrs,app_params);
+
   AmSession* session = NULL;
   if (req.method == "INVITE") {
-    if (NULL != session_params) 
+    if (NULL != session_params) {
       session = session_factory->onInvite(req, app_name, *session_params);
-    else 
-      session = session_factory->onInvite(req, app_name);
+    }
+    else {
+      session = session_factory->onInvite(req, app_name, app_params);
+    }
   } else if (req.method == "REFER") {
     if (NULL != session_params) 
       session = session_factory->onRefer(req, app_name, *session_params);
     else 
-      session = session_factory->onRefer(req, app_name);
+      session = session_factory->onRefer(req, app_name, app_params);
   }
 
   if(!session) {
@@ -441,6 +446,10 @@ AmSession* AmSessionContainer::createSession(const AmSipRequest& req,
     //  ... and do nothing !
 
     DBG("onInvite/onRefer returned NULL\n");
+  }
+  else {
+    // save session parameters
+    session->app_params = app_params;
   }
 
   return session;

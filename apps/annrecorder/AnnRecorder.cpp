@@ -204,7 +204,8 @@ void AnnRecorderFactory::getAppParams(const AmSipRequest& req, map<string, strin
   params["type"] = typ;
 }
 
-AmSession* AnnRecorderFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* AnnRecorderFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					const map<string,string>& app_params)
 {
   map<string, string> params;
   getAppParams(req, params);

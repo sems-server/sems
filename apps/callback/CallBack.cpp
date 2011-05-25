@@ -125,7 +125,8 @@ int CallBackFactory::onLoad()
 }
 
 // incoming calls 
-AmSession* CallBackFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* CallBackFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				     const map<string,string>& app_params)
 {
   // or req.from -> with display name ? 
   DBG("received INVITE from '%s'\n", req.from_uri.c_str());

@@ -492,6 +492,16 @@ void AmSession::setStopped(bool wakeup) {
 					      new AmEvent(0));
 }
 
+string AmSession::getAppParam(const string& param_name) const
+{
+  map<string,string>::const_iterator param_it;
+  param_it = app_params.find(param_name);
+  if(param_it != app_params.end())
+    return param_it->second;
+  else
+    return "";
+}
+
 void AmSession::destroy() {
   DBG("AmSession::destroy()\n");
   AmSessionContainer::instance()->destroySession(this);

@@ -44,7 +44,8 @@ public:
   AnnounceTransferFactory(const string& _app_name);
 
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req, const string& app_name);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      const map<string,string>& app_params);
 };
 
 /** \brief session logic implementation for announce_transfer sessions */

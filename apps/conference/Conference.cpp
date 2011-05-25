@@ -308,7 +308,8 @@ int ConferenceFactory::onLoad()
   return 0;
 }
 
-AmSession* ConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* ConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				       const map<string,string>& app_params)
 {
   if ((ConferenceFactory::MaxParticipants > 0) &&
       (AmConferenceStatus::getConferenceSize(req.user) >=

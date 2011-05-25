@@ -353,7 +353,8 @@ void WebConferenceFactory::setupSessionTimer(AmSession* s) {
 }
 
 // incoming calls 
-AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					  const map<string,string>& app_params)
 {
   if (NULL != session_timer_f) {
     if (!session_timer_f->onInvite(req, cfg))

@@ -41,7 +41,8 @@ class EchoFactory: public AmSessionFactory
 public:
   EchoFactory(const string& _app_name);
   virtual int onLoad();
-  virtual AmSession* onInvite(const AmSipRequest& req, const string& app_name);
+  virtual AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+			      const map<string,string>& app_params);
 };
 
 /** \brief echo session logic implementation */

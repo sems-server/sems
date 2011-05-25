@@ -498,7 +498,8 @@ int AnswerMachineFactory::onLoad()
   return 0;
 }
 
-AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* AnswerMachineFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					  const map<string,string>& app_params)
 {
   string language;
   string email;

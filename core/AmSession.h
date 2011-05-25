@@ -160,6 +160,13 @@ private:
   AmDynInvoke* user_timer_ref;
   
   void getUserTimerInstance();
+
+  /** Application parameters passed through P-App-Param HF */
+  map<string,string> app_params;
+
+  /** Sets the application parameters from the original request */
+  void setAppParams(const AmSipRequest& req);
+
 protected:
 
   /** this is the group the media is processed with 
@@ -172,6 +179,7 @@ protected:
   /** Local IP interface to be used for RTP streams */
   int rtp_interface;
 
+  /** Session event handlers (ex: session timer, UAC auth, etc...) */
   vector<AmSessionEventHandler*> ev_handlers;
 
 public:
@@ -396,6 +404,12 @@ public:
   virtual void updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq) { }
 
   /* ----         Householding                              ---- */
+
+  /**
+   * Get a session parameter ('P-App-Param' HF, etc...)
+   */
+  string getAppParam(const string& param_name) const;
+
   /**
    * Destroy the session.
    * It causes the session to be erased from the active session list

@@ -277,7 +277,8 @@ void EarlyAnnounceDialog::onInvite(const AmSipRequest& req)
 }
 
 
-AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* EarlyAnnounceFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					  const map<string,string>& app_params)
 {
 
 #ifdef USE_MYSQL

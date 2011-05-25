@@ -164,7 +164,8 @@ string SBCFactory::getActiveProfileMatch(string& profile_rule, const AmSipReques
   return res;
 }
 
-AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name)
+AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				const map<string,string>& app_params)
 {
   AmUriParser ruri_parser, from_parser, to_parser;
 

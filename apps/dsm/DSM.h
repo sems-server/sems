@@ -136,7 +136,8 @@ public:
 
 
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req, const string& app_name);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      const map<string,string>& app_params);
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      AmArg& session_params);
   // DI
