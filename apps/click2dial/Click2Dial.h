@@ -74,6 +74,7 @@ class C2DCallerDialog: public AmB2BCallerSession, public CredentialHolder
     void createCalleeSession();
     inline UACAuthCred* getCredentials() { return cred.get(); }
     void onB2BEvent(B2BEvent*);
+    void updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq);
 };
 
 class C2DCalleeDialog : public AmB2BCalleeSession, public CredentialHolder

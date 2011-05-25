@@ -218,11 +218,12 @@ How to get started with SEMS:
 Creating packages on debian (ubuntu, ...):
 
    install debian package build tools:
-   $ apt-get install debhelper devscripts
+   $ sudo apt-get install debhelper devscripts
 
    install dependencies:
-   $  apt-get install g++ make libspandsp-dev flite-dev libspeex-dev \
-         libssl-dev python-dev python-sip4-dev openssl
+   $  sudo apt-get install g++ make libspandsp-dev flite-dev libspeex-dev \
+         libssl-dev python-dev python-sip4-dev openssl sip4 libev-dev \
+         libmysql++-dev
    
    get the source: 
    $ wget ftp.iptel.org/pub/sems/sems-x.y.z.tar.gz ; tar xzvf sems-x.y.z.tar.gz
@@ -234,7 +235,7 @@ Creating packages on debian (ubuntu, ...):
    build package:
    $ dpkg-buildpackage -rfakeroot -us -uc
 
-   install package in .. using dpkg.
+   install sems and sems-python-modules packages in .. using dpkg.
 
 Installed files using 'make install':
 

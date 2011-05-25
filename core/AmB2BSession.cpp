@@ -44,7 +44,7 @@ AmB2BSession::AmB2BSession()
     rtp_relay_enabled(false),
     rtp_relay_force_symmetric_rtp(false),
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
-    est_invite_cseq(0)
+    est_invite_cseq(0),est_invite_other_cseq(0)
 {
   for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
     other_stream_fds[i] = 0;
@@ -56,7 +56,7 @@ AmB2BSession::AmB2BSession(const string& other_local_tag)
     rtp_relay_enabled(false),
     rtp_relay_force_symmetric_rtp(false),
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
-    est_invite_cseq(0)
+    est_invite_cseq(0),est_invite_other_cseq(0)
 {
   for (unsigned int i=0; i<MAX_RELAY_STREAMS; i++)
     other_stream_fds[i] = 0;
@@ -109,6 +109,7 @@ void AmB2BSession::process(AmEvent* event)
 
 void AmB2BSession::onB2BEvent(B2BEvent* ev)
 {
+  DBG("AmB2BSession::onB2BEvent\n");
   switch(ev->event_id){
 
   case B2BSipRequest:
@@ -187,13 +188,17 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	     reply_ev->reply.method == SIP_METH_UPDATE)) {
 	  if (updateSessionDescription(reply_ev->reply.content_type,
 				       reply_ev->reply.body)) {
-	    if (dlg.getUACInvTransPending()) {
-	      DBG("changed session, but UAC INVITE trans pending\n");
-	      // todo(?): save until trans is finished?
-	      return;
+	    if (reply_ev->reply.cseq != est_invite_cseq) {
+	      if (dlg.getUACInvTransPending()) {
+		DBG("changed session, but UAC INVITE trans pending\n");
+		// todo(?): save until trans is finished?
+		return;
+	      }
+	      DBG("session description changed - refreshing\n");
+	      sendEstablishedReInvite();
+	    } else {
+	      DBG("reply to establishing INVITE request - not refreshing\n");
 	    }
-	    DBG("session description changed - refreshing\n");
-	    sendEstablishedReInvite();
 	  }
 	}
       }
@@ -439,7 +444,15 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
     }
   } else {
     AmSession::onSipReply(reply, old_dlg_status, trans_method);
-    relayEvent(new B2BSipReplyEvent(reply, false, trans_method));
+
+    AmSipReply n_reply = reply;
+    if(est_invite_cseq == reply.cseq){
+      n_reply.cseq = est_invite_other_cseq;
+    }
+    else {
+      // the reply here will not have the proper cseq for the other side.
+    }
+    relayEvent(new B2BSipReplyEvent(n_reply, false, trans_method));
   }
 }
 
@@ -528,14 +541,20 @@ void AmB2BSession::saveSessionDescription(const string& content_type,
 
   const char* cmp_body_begin = body.c_str();
   size_t cmp_body_length = body.length();
-  if (content_type == SIP_APPLICATION_SDP) {
+
+#define skip_line						\
+    while (cmp_body_length && *cmp_body_begin != '\n') {	\
+      cmp_body_begin++;						\
+      cmp_body_length--;					\
+    }								\
+    if (cmp_body_length) {					\
+      cmp_body_begin++;						\
+      cmp_body_length--;					\
+    }
+
+  if (body.length() && content_type == SIP_APPLICATION_SDP) {
     // for SDP, skip v and o line
     // (o might change even if SDP unchanged)
-#define skip_line						\
-    while (cmp_body_length-- && *cmp_body_begin != '\n')	\
-      cmp_body_begin++;						\
-    cmp_body_begin++;						\
-
     skip_line;
     skip_line;
   }
@@ -547,7 +566,7 @@ bool AmB2BSession::updateSessionDescription(const string& content_type,
 					    const string& body) {
   const char* cmp_body_begin = body.c_str();
   size_t cmp_body_length = body.length();
-  if (content_type == SIP_APPLICATION_SDP) {
+  if (body.length() && content_type == SIP_APPLICATION_SDP) {
     // for SDP, skip v and o line
     // (o might change even if SDP unchanged)
     skip_line;
@@ -875,6 +894,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	if(reply.code < 200){
 	  if ((!sip_relay_only) && sip_relay_early_media_sdp &&
 	      reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
+	    DBG("sending re-INVITE to caller with early media SDP\n");
 	    if (reinviteCaller(reply)) {
 	      ERROR("re-INVITEing caller for early session failed - "
 		    "stopping this and other leg\n");
@@ -887,8 +907,10 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	} else if(reply.code < 300){
 	  
 	  callee_status  = Connected;
-	  
+	  DBG("setting callee status to connected\n");
 	  if (!sip_relay_only) {
+	    DBG("received 200 class reply to establishing INVITE: "
+		"switching to SIP relay only mode, sending re-INVITE to caller\n");
 	    sip_relay_only = true;
 	    if (reinviteCaller(reply)) {
 	      ERROR("re-INVITEing caller failed - stopping this and other leg\n");
@@ -944,7 +966,19 @@ int AmB2BCallerSession::relayEvent(AmEvent* ev)
 void AmB2BCallerSession::onSessionStart(const AmSipRequest& req)
 {
   invite_req = req;
+  est_invite_cseq = req.cseq;
+
   AmB2BSession::onSessionStart(req);
+}
+
+void AmB2BCallerSession::onSessionStart(const AmSipReply& rep)
+{
+  invite_req.body = rep.body;
+  invite_req.content_type = rep.content_type;
+  invite_req.cseq = rep.cseq;
+  est_invite_cseq = rep.cseq;
+
+  AmB2BSession::onSessionStart(rep);
 }
 
 void AmB2BCallerSession::onCancel()
@@ -1136,6 +1170,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 
     // save CSeq of establising INVITE
     est_invite_cseq = dlg.cseq - 1;
+    est_invite_other_cseq = co_ev->r_cseq;
 
     return;
   }    

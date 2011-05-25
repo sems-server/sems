@@ -49,7 +49,9 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     reliable_1xx(AmConfig::rel100),
     rseq(0), rseq_1st(0), rseq_confirmed(false),
-    next_hop_port(0), next_hop_for_replies(false),
+    next_hop_port(AmConfig::NextHopPort),
+    next_hop_ip(AmConfig::NextHopIP),
+    next_hop_for_replies(AmConfig::NextHopForReplies),
     outbound_interface(-1), out_intf_for_replies(false)
 {
 }
@@ -324,21 +326,23 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
   // responses to INVITE
 
   if ( (reply.code > 100) 
-       && (reply.code < 300) 
-       && !reply.remote_tag.empty() 
+       && (reply.code < 300) ) {
+
+    if(!reply.remote_tag.empty() 
        && (remote_tag.empty() ||
 	   ((status < Connected) && (reply.code >= 200))) ) {  
 
-    remote_tag = reply.remote_tag;
-  }
+      remote_tag = reply.remote_tag;
+    }
 
-  // allow route overwriting
-  if ((status < Connected) && !reply.route.empty()) {
+    // allow route overwriting
+    if ((status < Connected) && !reply.route.empty()) {
       route = reply.route;
-  }
+    }
 
-  if (reply.next_request_uri.length())
-    remote_uri = reply.next_request_uri;
+    if (reply.next_request_uri.length())
+      remote_uri = reply.next_request_uri;
+  }
 
   switch(status){
   case Disconnecting:

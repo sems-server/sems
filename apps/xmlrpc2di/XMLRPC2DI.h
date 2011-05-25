@@ -41,6 +41,8 @@ using std::string;
 
 #include <time.h>
 
+#define DEF_XMLRPCSERVER_WORK_INTERVAL .200 /* 200 ms */
+
 #define DEF_XMLRPCSERVERMETHOD(cls_name, func_name)		\
   class cls_name						\
   :  public XmlRpcServerMethod {				\
@@ -90,11 +92,17 @@ struct DIMethodProxy : public XmlRpcServerMethod
   void execute(XmlRpcValue& params, XmlRpcValue& result);
 };
 
-class XMLRPC2DIServer : public AmThread {
+class XMLRPC2DIServer
+: public AmThread,
+  public AmEventQueue,
+  public AmEventHandler
+{
   XmlRpcServer* s;
 
   unsigned int port; 
   string bind_ip;
+
+  AmSharedVar<bool> running;
 
   XMLRPC2DIServerCallsMethod       calls_method;
   XMLRPC2DIServerSetLoglevelMethod setloglevel_method;
@@ -109,6 +117,8 @@ class XMLRPC2DIServer : public AmThread {
 
   XMLRPC2DIServerDIMethod*         di_method;
   void registerMethods(const std::string& iface);
+
+  void process(AmEvent* ev);
 
  public: 
   XMLRPC2DIServer(unsigned int port,

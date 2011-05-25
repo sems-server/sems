@@ -144,6 +144,7 @@ class AmB2BSession: public AmSession
 
   /** CSeq of the INVITE that established this call */
   unsigned int est_invite_cseq;
+  unsigned int est_invite_other_cseq;
   auto_ptr<AmSdp> invite_sdp;
 
   /** content-type of established session */
@@ -309,6 +310,7 @@ class AmB2BCallerSession: public AmB2BSession
 
   // @see AmSession
   void onSessionStart(const AmSipRequest& req);
+  void onSessionStart(const AmSipReply& rep);
   void onCancel();
 
   // @see AmB2BSession

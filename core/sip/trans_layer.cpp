@@ -898,7 +898,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	delete p_msg;
     }
     else {
-
+	DBG("update_uac_request tt->_t =%p\n", tt->_t);
 	send_err = update_uac_request(tt->_bucket,tt->_t,p_msg);
 	if(send_err < 0){
 	    ERROR("Could not update UAC state for request.\n");
@@ -1105,14 +1105,14 @@ void _trans_layer::received_msg(sip_msg* msg)
     switch(msg->type){
     case SIP_REQUEST: 
 	
-	if((t = bucket->match_request(msg)) != NULL){
+	if((t = bucket->match_request(msg,TT_UAS)) != NULL){
 	    if(msg->u.request->method != t->msg->u.request->method){
 		
 		// ACK matched INVITE transaction
-		DBG("ACK matched INVITE transaction\n");
+		DBG("ACK matched INVITE transaction %p\n", t);
 		
 		err = update_uas_request(bucket,t,msg);
-		DBG("update_uas_request(bucket,t,msg) = %i\n",err);
+		DBG("update_uas_request(bucket,t=%p,msg) = %i\n",t, err);
 		if(err<0){
 		    DBG("trans_layer::update_uas_trans() failed!\n");
 		    // Anyway, there is nothing we can do...
@@ -1125,13 +1125,18 @@ void _trans_layer::received_msg(sip_msg* msg)
 		    // should we forward the ACK to SEMS-App upstream? Yes
 		    bucket->unlock();
 		    
-		    //  let's pass the request to
-		    //  the UA. 
-		    assert(ua);
-		    DBG("Passing ACK to the UA.\n");
-		    ua->handle_sip_request(trans_ticket(), // dummy
-					   msg);
-		    
+		    if(err == TS_REMOVED) {
+			//  let's pass the request to
+			//  the UA, iff it was a 200-ACK
+			assert(ua);
+			DBG("Passing ACK to the UA.\n");
+			ua->handle_sip_request(trans_ticket(), // dummy
+					       msg);
+		    }
+		    else {
+			DBG("Absorbing non-200-ACK\n");
+		    }
+
 		    DROP_MSG;
 		}
 	    }
@@ -1239,7 +1244,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     cstring to_tag;
     int     reply_code = msg->u.reply->code;
 
-    DBG("reply code = %i\n",msg->u.reply->code);
+    DBG("update_uac_reply(reply code = %i, trans=%p)\n",msg->u.reply->code, t);
 
     if(reply_code < 200){
 
@@ -1301,8 +1306,8 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		goto pass_reply;
 		
 	    case TS_COMPLETED:
-		// retransmit non-200 ACK
-		t->retransmit();
+		// generate a new non-200 ACK
+		send_non_200_ack(msg,t);
 	    default:
 		goto end;
 	    }
@@ -1409,15 +1414,17 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 {
     if(msg->u.request->method != sip_request::ACK){
 	t = bucket->add_trans(msg,TT_UAC);
+
+	DBG("update_uac_request(t=%p)\n", t);
     }
     else {
 	// 200 ACK
-	t = bucket->match_request(msg);
+	t = bucket->match_request(msg,TT_UAC);
 	if(t == NULL){
 	    DBG("While sending 200 ACK: no matching transaction\n");
 	    return -1;
 	}
-
+	DBG("update_uac_request(200 ACK, t=%p)\n", t);
 	// clear old retransmission buffer
 	delete [] t->retr_buf;
 	
@@ -1464,6 +1471,8 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 
 int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
 {
+    DBG("update_uas_reply(t=%p)\n", t);
+
     if(t->reply_status >= 200){
 	ERROR("Transaction has already been closed with a final reply\n");
 	return -1;
@@ -1530,6 +1539,8 @@ int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply
 
 int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
 {
+    DBG("update_uas_request(t=%p)\n", t);
+
     if(msg->u.request->method != sip_request::ACK &&
             msg->u.request->method != sip_request::PRACK){
 	ERROR("Bug? Recvd non PR-/ACK request for existing UAS transact.!?\n");
@@ -1611,24 +1622,10 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     int send_err = inv->local_socket->send(&inv->remote_ip,ack_buf,ack_len);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
-	delete ack_buf;
     }
-    else {
-	delete [] t->retr_buf;
-	t->retr_buf = ack_buf;
-	t->retr_len = ack_len;
-	memcpy(&t->retr_addr,&inv->remote_ip,sizeof(sockaddr_storage));
-	t->retr_socket = inv->local_socket;
-    }
-}
+    delete ack_buf;
 
-// void _trans_layer::retransmit(sip_msg* msg)
-// {
-//     int send_err = msg->send();
-//     if(send_err < 0){
-// 	ERROR("Error from transport layer\n");
-//     }
-// }
+}
 
 void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 {

@@ -21,23 +21,28 @@
 # optional parameter: media_ip=<ip_address>|<device>
 # 
 # - this informs SEMS about the IP address or interface that 
-#   SEMS uses to send and receive media.  If not set, defaults 
-#   to first non-loopback interface.
+#   SEMS uses to send and receive media.  
+# - If neither 'media_ip' nor 'sip_ip' are set, defaults 
+#   to first non-loopback interface. If 'sip_ip' is set,
+#   'media_ip' defaults to 'sip_ip.
 #
 # Examples: 
 #  media_ip=10.0.0.34
 #  media_ip=eth0
 
-# optional parameter: sip_ip=<ip_address>
+# optional parameter: sip_ip=<ip_address>|<device>
 #
 # - this informs SEMS about the SIP IP where its SIP stack is 
 #   bound to or should be bound to. This also sets 
 #   the value used for contact header in outgoing calls and 
-#   registrations. If not set, defaults to first non-loopback
-#   interface.
+#   registrations.
+# - If neither 'media_ip' nor 'sip_ip' are set, defaults 
+#   to first non-loopback interface. If 'media_ip' is set,
+#   'sip_ip' defaults to 'media_ip.
 #
 # Example:
 #  sip_ip=10.0.0.34
+#  sip_ip=en0
 #
 
 # optional parameter: public_ip=<ip_address>
@@ -86,13 +91,30 @@ sip_port=5080
 # optional parameter: force_outbound_proxy={yes|no}
 #
 # - forces SEMS to send any request to the outbound proxy in any
-#   situation. This option will only have an effect if the 
-#   outbound_proxy option has been set.
+#   situation, by adding an extra first Route to the outbound_proxy.
+#   This option will only have an effect if the outbound_proxy
+#   option has been set, and it will break 3261 compatibility
+#   in some cases; better use next_hop_ip/next_hop_port.
 #
 #   default: no
 #
 # Example:
 #   force_outbound_proxy=yes
+
+# optional parameter: next_hop_ip
+# - if this is set, all outgoing requests will be sent to
+#   this IP, regardless of R-URI etc.
+#
+#next_hop_ip=192.168.5.106
+
+# optional parameter: next_hop_port
+# defaults to 5060
+#next_hop_port=5060
+
+# optional parameter:next_hop_for_replies
+# - use next_hop for replies, too?
+#
+#next_hop_for_replies=yes
 
 # optional parameter: rtp_low_port=<port>
 #
@@ -107,12 +129,22 @@ rtp_high_port=60000
 # Additional IFs (optional): 
 #   additional_interfaces = <list of interfaces>
 #
+# additional_interfaces must be set if more than one
+# interface is to be used for the same purpose (e.g.
+# more than one interface for SIP). Configure additional
+# interfaces if networks should be bridged or separate
+# networks should be served.
+#
 # For each additional interface, a set of parameters
-# suffixed with the interface name should be defined.
+# suffixed with the interface name should be listed
+# with the 'additional_interfaces' parameter.
 #
 # Please note that for each additional interface,
-# 'sip_ip' is mandatory. The other
-# parameters are optional.
+# 'sip_ip_[if_name]' is mandatory. The other
+# parameters are optional. 'media_ip_[if_name]'
+# is derived from 'sip_ip_[if_name]' if not set.
+# 'public_ip_[ip_name]' is also based on 'sip_ip_[if_name]'
+# if not set explicitly.
 # 
 # Example:
 #  additional_interfaces=intern,extern

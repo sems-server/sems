@@ -93,7 +93,6 @@ void MsgStorage::invoke(const string& method,
     userdir_open(args.get(0).asCStr(),	      
       args.get(1).asCStr(),
       ret);
-#if 0
   } else if(method == "userdir_close"){
     ret.push(userdir_close(args.get(0).asCStr(),
       args.get(1).asCStr()));
@@ -101,7 +100,6 @@ void MsgStorage::invoke(const string& method,
     userdir_getcount(args.get(0).asCStr(),
       args.get(1).asCStr(),
       ret);
-#endif
   } else if(method == "events_subscribe"){
     events_subscribe(args.get(0).asDynInv(),
 		     args.get(1).asCStr());
@@ -114,10 +112,8 @@ void MsgStorage::invoke(const string& method,
     ret.push("msg_delete");
     
     ret.push("userdir_open");
-#if 0
     ret.push("userdir_close");
     ret.push("userdir_getcount");
-#endif
 
     ret.push("events_subscribe");
     ret.push("events_unsubscribe");
@@ -268,7 +264,6 @@ void MsgStorage::userdir_open(string domain, string user, AmArg& ret) {
   ret.push(msglist);
 }
 
-#if 0
 int MsgStorage::userdir_close(string domain, string user) {   
   // TODO: unblock the directory from delete (decrease lock)
   return 0; 
@@ -276,8 +271,8 @@ int MsgStorage::userdir_close(string domain, string user) {
 
 void MsgStorage::userdir_getcount(string domain, string user, AmArg& ret) { 
   // TODO: return some useful value
+  ret.push(-1);
 }
-#endif
 
 void MsgStorage::events_subscribe(AmDynInvoke* event_sink, string method)
 {
