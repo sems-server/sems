@@ -97,8 +97,8 @@ class AmSIPRegistration
 
   void setExpiresInterval(unsigned int desired_expires);
 
-  void doRegistration();
-  void doUnregister();
+  bool doRegistration();
+  bool doUnregister();
 	
   bool timeToReregister(time_t now_sec);
   bool registerExpired(time_t now_sec);
@@ -152,7 +152,9 @@ class AmSIPRegistration
   /** return the state of the registration */
   RegistrationState getState(); 
   /** return the expires left for the registration */
-  unsigned int getExpiresLeft(); 
+  unsigned int getExpiresLeft();
+  /** return the expires TS for the registration */
+  time_t getExpiresTS();
 
   SIPRegistrationInfo& getInfo() { return info; }
   const string& getEventSink() { return sess_link; }

@@ -80,8 +80,10 @@ void AmSIPRegistration::setExpiresInterval(unsigned int desired_expires) {
   expires_interval = desired_expires;
 }
 
-void AmSIPRegistration::doRegistration() 
+bool AmSIPRegistration::doRegistration() 
 {
+  bool res = true;
+
   waiting_result = true;
   req.to_tag     = "";
   dlg.remote_tag = "";
@@ -102,17 +104,21 @@ void AmSIPRegistration::doRegistration()
     
   if (dlg.sendRequest(req.method, "", "",
 		      SIP_HDR_COLSP(SIP_HDR_EXPIRES)+
-		      int2str(expires_interval)+CRLF) < 0)
+		      int2str(expires_interval)+CRLF) < 0) {
     ERROR("failed to send registration.\n");
+    res = false;
+    waiting_result = false;
+  }
     
   // save TS
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  reg_send_begin  = now.tv_sec;
+  reg_send_begin  = time(NULL);
+  return res;
 }
 
-void AmSIPRegistration::doUnregister() 
+bool AmSIPRegistration::doUnregister()
 {
+  bool res = true;
+
   waiting_result = true;
   req.to_tag     = "";
   dlg.remote_tag = "";
@@ -132,13 +138,15 @@ void AmSIPRegistration::doUnregister()
   }
     
   if (dlg.sendRequest(req.method, "", "",
-		      SIP_HDR_COLSP(SIP_HDR_EXPIRES) "0" CRLF) < 0)
+		      SIP_HDR_COLSP(SIP_HDR_EXPIRES) "0" CRLF) < 0) {
     ERROR("failed to send deregistration.\n");
+    res = false;
+    waiting_result = false;
+  }
 
   // save TS
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  reg_send_begin  = now.tv_sec;
+  reg_send_begin  = time(NULL);
+  return res;
 }
 
 void AmSIPRegistration::onSendRequest(const string& method,
@@ -174,14 +182,15 @@ AmSIPRegistration::RegistrationState AmSIPRegistration::getState() {
 }
 
 unsigned int AmSIPRegistration::getExpiresLeft() {
-  struct timeval now;
-  gettimeofday(&now, NULL);
-	
-  int diff = reg_begin + reg_expires  - now.tv_sec;
+  long diff = reg_begin + reg_expires  - time(NULL);
   if (diff < 0) 
     return 0;
   else 
     return diff;
+}
+
+time_t AmSIPRegistration::getExpiresTS() {
+  return reg_begin + reg_expires;
 }
 	
 void AmSIPRegistration::onRegisterExpired() {
@@ -268,9 +277,7 @@ void AmSIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status, 
 	  }
 	  DBG("got an expires of %d\n", reg_expires);
 	  // save TS
-	  struct timeval now;
-	  gettimeofday(&now, NULL);
-	  reg_begin = now.tv_sec;
+	  reg_begin = time(0);
 
 	  if (sess_link.length()) {
 	    DBG("posting SIPRegistrationEvent to '%s'\n", sess_link.c_str());
