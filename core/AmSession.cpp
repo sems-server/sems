@@ -226,7 +226,7 @@ const string& AmSession::getFirstBranch() const
 void AmSession::setUri(const string& uri)
 {
   DBG("AmSession::setUri(%s)\n",uri.c_str());
-  sdp.uri = uri;
+  /* TODO: sdp.uri = uri;*/
 }
 
 void AmSession::setLocalTag()

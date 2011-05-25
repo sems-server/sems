@@ -349,8 +349,15 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
 	  media_index, r_addr.c_str(), it->port);
       
       relay_rtp_streams[media_index]->setRAddr(r_addr, it->port);
-      if (sdp.remote_active || rtp_relay_force_symmetric_rtp) {
+      if ((it->dir == SdpMedia::DirActive) || rtp_relay_force_symmetric_rtp) {
+
 	relay_rtp_streams[media_index]->setPassiveMode(true);
+
+	if (rtp_relay_force_symmetric_rtp) {
+	  DBG("Symmetric RTP: forced passive mode (#stream = %i)\n",media_index);
+	} else {
+	  DBG("Symmetric RTP: remote NATed, passive mode enabled (#stream = %i)\n",media_index);
+	}
       }
       relay_rtp_streams[media_index]->resume();
     }
@@ -361,12 +368,6 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
 
     media_index ++;
   }
-  if (rtp_relay_force_symmetric_rtp) {
-    DBG("Symmetric RTP: forced passive mode\n");
-  } else if (sdp.remote_active) {
-    DBG("Symmetric RTP: remote NATed, RTP stream set to passive mode\n");
-  }
-
 }
 
 bool AmB2BSession::replaceConnectionAddress(const string& content_type,
@@ -1121,10 +1122,10 @@ void AmB2BCallerSession::createCalleeSession() {
     throw;
   }
 
-  callee_session->start();
-
   AmSessionContainer* sess_cont = AmSessionContainer::instance();
   sess_cont->addSession(other_id,callee_session);
+
+  callee_session->start();
 }
 
 AmB2BCalleeSession* AmB2BCallerSession::newCalleeSession()

@@ -161,7 +161,6 @@ private:
   
   void getUserTimerInstance();
 protected:
-  AmSdp               sdp;
 
   /** this is the group the media is processed with 
       - by default local tag */
