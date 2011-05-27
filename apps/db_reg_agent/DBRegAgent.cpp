@@ -567,10 +567,24 @@ void DBRegAgent::updateDBRegistration(long subscriber_id, int last_code,
     query << update_query;
 
     mysqlpp::SimpleResult res = query.execute();
-    if (!res || !res.rows()) {
+    if (!res) {
       WARN("updating registration in DB with query '%s' failed: '%s'\n",
 	   update_query.c_str(), res.info());
+    } else {
+      if (!res.rows()) {
+	// should not happen - DB entry is created on load or on createRegistration
+	DBG("creating registration DB entry for subscriber %ld\n", subscriber_id);
+	createDBRegistration(subscriber_id, DBConnection);
+
+	query << update_query;
+	mysqlpp::SimpleResult res = query.execute();
+	if (!res || !res.rows()) {
+	  WARN("updating registration in DB with query '%s' failed: '%s'\n",
+	       update_query.c_str(), res.info());
+	}
+      }
     }
+
   }  catch (const mysqlpp::Exception& er) {
     // Catch-all for any MySQL++ exceptions
     ERROR("MySQL++ error: %s\n", er.what());
@@ -799,7 +813,8 @@ void DBRegAgent::DIcreateRegistration(int subscriber_id, const string& user,
       pass.c_str(), realm.c_str());
 
   createRegistration(subscriber_id, user, pass, realm);
-  scheduleRegistration(subscriber_id);  
+  createDBRegistration(subscriber_id, StatusDBConnection);
+  scheduleRegistration(subscriber_id);
   ret.push(200);
   ret.push("OK");
 }
