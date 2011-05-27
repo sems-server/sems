@@ -919,11 +919,6 @@ void AnswerMachineDialog::saveMessage()
   email_dict["vmsg_length"] = rec_len_s;
 
   if(!rec_size){
-    if (unlink(msg_filename.c_str()) < 0) {
-      WARN("unlink(%s) failed: %s\n", 
-	   msg_filename.c_str(), strerror(errno));
-    }
-
     // record in box empty messages as well
     if (AnswerMachineFactory::SaveEmptyMsg &&
 	((vm_mode == MODE_BOX) || 
@@ -944,7 +939,8 @@ void AnswerMachineDialog::saveMessage()
 	FILE* m_fp = a_msg.getfp();
 
 	if (vm_mode == MODE_BOTH) {
-	  // copy file to new tmpfile
+	  // copy file to new tmpfile - msg_storage closes the fp,
+	  // but we may want to send an email, too
 	  m_fp = tmpfile();
 	  if(!m_fp){
 	    ERROR("could not create temporary file: %s\n",
