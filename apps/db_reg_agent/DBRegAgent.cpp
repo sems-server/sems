@@ -33,8 +33,8 @@
 EXPORT_MODULE_FACTORY(DBRegAgent);
 DEFINE_MODULE_INSTANCE(DBRegAgent, MOD_NAME);
 
-mysqlpp::Connection DBRegAgent::DBConnection(mysqlpp::use_exceptions);
-mysqlpp::Connection DBRegAgent::StatusDBConnection(mysqlpp::use_exceptions);
+mysqlpp::Connection DBRegAgent::MainDBConnection(mysqlpp::use_exceptions);
+mysqlpp::Connection DBRegAgent::ProcessorDBConnection(mysqlpp::use_exceptions);
 
 string DBRegAgent::joined_query;
 string DBRegAgent::registrations_table = "registrations";
@@ -46,7 +46,10 @@ bool DBRegAgent::enable_ratelimiting = false;
 unsigned int DBRegAgent::ratelimit_rate = 0;
 unsigned int DBRegAgent::ratelimit_per = 0;
 
-static void _timer_cb(RegTimer* timer, long subscriber_id, void* data2) {
+bool DBRegAgent::delete_removed_registrations = true;
+unsigned int DBRegAgent::error_retry_interval = 300;
+
+static void _timer_cb(RegTimer* timer, long subscriber_id, int data2) {
   DBRegAgent::instance()->timer_cb(timer, subscriber_id, data2);
 }
 
@@ -121,6 +124,14 @@ int DBRegAgent::onLoad()
     }    
   }
 
+  delete_removed_registrations =
+    cfg.getParameter("delete_removed_registrations", "yes") == "yes";
+
+  error_retry_interval = cfg.getParameterInt("error_retry_interval", 300);
+  if (!error_retry_interval) {
+    WARN("disabled retry on errors!\n");
+  }
+
   string mysql_server, mysql_user, mysql_passwd, mysql_db;
 
   mysql_server = cfg.getParameter("mysql_server", "localhost");
@@ -141,19 +152,23 @@ int DBRegAgent::onLoad()
 
   try {
 
-    DBConnection.set_option(new mysqlpp::ReconnectOption(true));
-    DBConnection.connect(mysql_db.c_str(), mysql_server.c_str(),
+    MainDBConnection.set_option(new mysqlpp::ReconnectOption(true));
+    // matched instead of changed rows in result, so we know when to create DB entry
+    MainDBConnection.set_option(new mysqlpp::FoundRowsOption(true));
+    MainDBConnection.connect(mysql_db.c_str(), mysql_server.c_str(),
                       mysql_user.c_str(), mysql_passwd.c_str());
-    if (!DBConnection) {
-      ERROR("Database connection failed: %s\n", DBConnection.error());
+    if (!MainDBConnection) {
+      ERROR("Database connection failed: %s\n", MainDBConnection.error());
       return -1;
     }
 
-    StatusDBConnection.set_option(new mysqlpp::ReconnectOption(true));
-    StatusDBConnection.connect(mysql_db.c_str(), mysql_server.c_str(),
+    ProcessorDBConnection.set_option(new mysqlpp::ReconnectOption(true));
+    // matched instead of changed rows in result, so we know when to create DB entry
+    ProcessorDBConnection.set_option(new mysqlpp::FoundRowsOption(true));
+    ProcessorDBConnection.connect(mysql_db.c_str(), mysql_server.c_str(),
                       mysql_user.c_str(), mysql_passwd.c_str());
-    if (!StatusDBConnection) {
-      ERROR("Database connection failed: %s\n", StatusDBConnection.error());
+    if (!ProcessorDBConnection) {
+      ERROR("Database connection failed: %s\n", ProcessorDBConnection.error());
       return -1;
     }
 
@@ -189,7 +204,7 @@ int DBRegAgent::onLoad()
   }
 
   DBG("starting registration timer thread...\n");
-  registration_timer.start();
+  registration_scheduler.start();
 
   // run_tests();
 
@@ -202,7 +217,7 @@ bool DBRegAgent::loadRegistrations() {
   try {
     time_t now_time = time(NULL);
 
-    mysqlpp::Query query = DBRegAgent::DBConnection.query();
+    mysqlpp::Query query = DBRegAgent::MainDBConnection.query();
 
     string query_string, table;
 
@@ -226,7 +241,7 @@ bool DBRegAgent::loadRegistrations() {
       else {
 	DBG("registration status entry for id %ld does not exist, creating...\n",
 	    subscriber_id);
-	createDBRegistration(subscriber_id, StatusDBConnection);
+	createDBRegistration(subscriber_id, ProcessorDBConnection);
       }
 
       DBG("got subscriber '%s@%s' status %i\n",
@@ -478,6 +493,7 @@ void DBRegAgent::process(AmEvent* ev) {
   ERROR("unknown event received!\n");
 }
 
+// uses ProcessorDBConnection
 void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_ev) {
   switch (reg_action_ev->action) {
   case RegistrationActionEvent::Register:
@@ -491,7 +507,8 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
 	    reg_action_ev->subscriber_id);
       } else {
 	if (!it->second->doRegistration()) {
-	  updateDBRegistration(reg_action_ev->subscriber_id,
+	  updateDBRegistration(ProcessorDBConnection,
+			       reg_action_ev->subscriber_id,
 			       480, "unable to send request",
 			       true, REG_STATUS_FAILED);
 	}
@@ -509,7 +526,8 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
 	    reg_action_ev->subscriber_id);
       } else {
 	if (!it->second->doUnregister()) {
-	  updateDBRegistration(reg_action_ev->subscriber_id,
+	  updateDBRegistration(ProcessorDBConnection,
+			       reg_action_ev->subscriber_id,
 			       480, "unable to send request",
 			       true, REG_STATUS_FAILED);
 	}
@@ -540,7 +558,28 @@ void DBRegAgent::createDBRegistration(long subscriber_id, mysqlpp::Connection& c
   }
 }
 
-void DBRegAgent::updateDBRegistration(long subscriber_id, int last_code,
+void DBRegAgent::deleteDBRegistration(long subscriber_id, mysqlpp::Connection& conn) {
+  string insert_query = "delete from "+registrations_table+
+    " where subscriber_id=" +  long2str(subscriber_id)+";";
+
+  try {
+    mysqlpp::Query query = conn.query();
+    query << insert_query;
+
+    mysqlpp::SimpleResult res = query.execute();
+    if (!res) {
+      WARN("removing registration in DB with query '%s' failed: '%s'\n",
+	   insert_query.c_str(), res.info());
+    }
+  }  catch (const mysqlpp::Exception& er) {
+    // Catch-all for any MySQL++ exceptions
+    ERROR("MySQL++ error: %s\n", er.what());
+    return;
+  }
+}
+
+void DBRegAgent::updateDBRegistration(mysqlpp::Connection& db_connection,
+				      long subscriber_id, int last_code,
 				      const string& last_reason,
 				      bool update_status, int status,
 				      bool update_ts, unsigned int expiry) {
@@ -563,7 +602,7 @@ void DBRegAgent::updateDBRegistration(long subscriber_id, int last_code,
     DBG("updating registration in DB with query '%s'\n",
 	update_query.c_str());
 
-    mysqlpp::Query query = DBRegAgent::DBConnection.query();
+    mysqlpp::Query query = db_connection.query();
     query << update_query;
 
     mysqlpp::SimpleResult res = query.execute();
@@ -574,7 +613,7 @@ void DBRegAgent::updateDBRegistration(long subscriber_id, int last_code,
       if (!res.rows()) {
 	// should not happen - DB entry is created on load or on createRegistration
 	DBG("creating registration DB entry for subscriber %ld\n", subscriber_id);
-	createDBRegistration(subscriber_id, DBConnection);
+	createDBRegistration(subscriber_id, db_connection);
 
 	query << update_query;
 	mysqlpp::SimpleResult res = query.execute();
@@ -593,6 +632,7 @@ void DBRegAgent::updateDBRegistration(long subscriber_id, int last_code,
 
 }
 
+// uses MainDBConnection
 void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
   if (!ev) return;
 
@@ -636,6 +676,7 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
       int status = 0;
       bool update_ts = false;
       unsigned int expiry = 0;
+      bool delete_status = false;
 
       if (ev->reply.code >= 300) {
 	if (current_state == AmSIPRegistration::RegisterPending) {
@@ -645,7 +686,17 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
 	  DBG("registration failed - mark in DB\n");
 	  update_status = true;
 	  status = REG_STATUS_FAILED;
-	  // todo: schedule for retry?
+	  if (error_retry_interval) {
+	    if (registration->getUnregistering()) {
+	      // schedule deregister after error_retry_interval
+	      setRegistrationTimer(subscriber_id, error_retry_interval,
+				   RegistrationActionEvent::Deregister);
+	    } else {
+	      // schedule register-refresh after error_retry_interval
+	      setRegistrationTimer(subscriber_id, error_retry_interval,
+				   RegistrationActionEvent::Register);
+	    }
+	  }
 	}
       } else if (ev->reply.code >= 200) {
 	// positive reply
@@ -658,14 +709,24 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
 	  update_ts = true;
 	  expiry = registration->getExpiresLeft();
 	} else {
-	  update_status = true;
-	  status = REG_STATUS_REMOVED;
+	  if (delete_removed_registrations) {
+	    delete_status = true;
+	  } else {
+	    update_status = true;
+	    status = REG_STATUS_REMOVED;
+	  }
 	}
       }
 
-      DBG("update DB with reply %u %s\n", ev->reply.code, ev->reply.reason.c_str());
-      updateDBRegistration(subscriber_id, ev->reply.code, ev->reply.reason,
-			   update_status, status, update_ts, expiry);
+      if (!delete_status) {
+	DBG("update DB with reply %u %s\n", ev->reply.code, ev->reply.reason.c_str());
+	updateDBRegistration(MainDBConnection,
+			     subscriber_id, ev->reply.code, ev->reply.reason,
+			     update_status, status, update_ts, expiry);
+      } else {
+	DBG("delete DB registration of subscriber %ld\n", subscriber_id);
+	deleteDBRegistration(subscriber_id, MainDBConnection);
+      }
 
     } else {
       ERROR("internal: inconsistent registration list\n");
@@ -682,6 +743,8 @@ void DBRegAgent::run() {
   DBG("DBRegAgent thread: waiting 2 sec for server startup ...\n");
   sleep(2);
   
+  mysqlpp::Connection::thread_start();
+
   if (enable_ratelimiting) {
     DBG("starting processor thread\n");
     registration_processor.start();
@@ -705,12 +768,43 @@ void DBRegAgent::run() {
   DBG("removing "MOD_NAME" registrations from Event Dispatcher...\n");
   AmEventDispatcher::instance()->delEventQueue(MOD_NAME);
 
+  mysqlpp::Connection::thread_end();
+
   DBG("DBRegAgent thread stopped.\n");
 }
 
 void DBRegAgent::on_stop() {
   DBG("DBRegAgent on_stop()...\n");
   running = false;
+}
+
+void DBRegAgent::setRegistrationTimer(long subscriber_id, unsigned int timeout,
+				      RegistrationActionEvent::RegAction reg_action) {
+  DBG("setting Register timer for subscription %ld, timeout %u, reg_action %u\n",
+      subscriber_id, timeout, reg_action);
+
+  RegTimer* timer = NULL;
+  map<long, RegTimer*>::iterator it=registration_timers.find(subscriber_id);
+  if (it==registration_timers.end()) {
+    DBG("timer object for subscription %ld not found\n", subscriber_id);
+    timer = new RegTimer();
+    timer->data1 = subscriber_id;
+    timer->cb = _timer_cb;
+    DBG("created timer object [%p] for subscription %ld\n", timer, subscriber_id);
+  } else {
+    timer = it->second;
+    DBG("removing scheduled timer...\n");
+    registration_scheduler.remove_timer(timer);
+  }
+
+  timer->data2 = reg_action;
+  timer->expires = time(0) + timeout;
+
+  DBG("placing timer for %ld in T-%u\n", subscriber_id, timeout);
+  registration_scheduler.insert_timer(timer);
+
+  registration_timers.insert(std::make_pair(subscriber_id, timer));
+
 }
 
 void DBRegAgent::setRegistrationTimer(long subscriber_id,
@@ -726,13 +820,14 @@ void DBRegAgent::setRegistrationTimer(long subscriber_id,
     timer->data1 = subscriber_id;
     timer->cb = _timer_cb;
     DBG("created timer object [%p] for subscription %ld\n", timer, subscriber_id);
+    registration_timers.insert(std::make_pair(subscriber_id, timer));
   } else {
     timer = it->second;
-    DBG("removing timer...\n");
-    registration_timer.remove_timer(timer);
+    DBG("removing scheduled timer...\n");
+    registration_scheduler.remove_timer(timer);
   }
 
-  registration_timers.insert(std::make_pair(subscriber_id, timer));
+  timer->data2 = RegistrationActionEvent::Register;
 
   if (minimum_reregister_interval>0.0) {
     time_t t_expiry_max = reg_start_ts;
@@ -748,7 +843,7 @@ void DBRegAgent::setRegistrationTimer(long subscriber_id,
 	t_expiry_min, t_expiry_max, reg_start_ts, expiry,
 	reregister_interval, minimum_reregister_interval);
   
-    registration_timer.insert_timer_leastloaded(timer, t_expiry_min, t_expiry_max);
+    registration_scheduler.insert_timer_leastloaded(timer, t_expiry_min, t_expiry_max);
     
   } else {
     time_t t_expiry = reg_start_ts;
@@ -759,7 +854,7 @@ void DBRegAgent::setRegistrationTimer(long subscriber_id,
 	t_expiry, reg_start_ts, expiry, reregister_interval);
 
     timer->expires = t_expiry;    
-    registration_timer.insert_timer(timer);
+    registration_scheduler.insert_timer(timer);
   }
 }
 
@@ -771,7 +866,8 @@ void DBRegAgent::clearRegistrationTimer(long subscriber_id) {
     DBG("timer object for subscription %ld not found\n", subscriber_id);
       return;
   }
-  registration_timer.remove_timer(it->second);
+  DBG("removing timer [%p] from scheduler\n", it->second);
+  registration_scheduler.remove_timer(it->second);
 
   DBG("deleting timer object [%p]\n", it->second);
   delete it->second;
@@ -785,7 +881,7 @@ void DBRegAgent::removeRegistrationTimer(long subscriber_id) {
   map<long, RegTimer*>::iterator it=registration_timers.find(subscriber_id);
   if (it==registration_timers.end()) {
     DBG("timer object for subscription %ld not found\n", subscriber_id);
-      return;
+    return;
   }
 
   DBG("deleting timer object [%p]\n", it->second);
@@ -794,14 +890,21 @@ void DBRegAgent::removeRegistrationTimer(long subscriber_id) {
   registration_timers.erase(it);
 }
 
-void DBRegAgent::timer_cb(RegTimer* timer, long subscriber_id, void* data2) {
-  DBG("re-registration timer expired: subscriber %ld, timer=[%p]\n", subscriber_id, timer);
-
-  scheduleRegistration(subscriber_id);
+void DBRegAgent::timer_cb(RegTimer* timer, long subscriber_id, int reg_action) {
+  DBG("re-registration timer expired: subscriber %ld, timer=[%p], action %d\n",
+      subscriber_id, timer, reg_action);
 
   registrations_mut.lock();
   removeRegistrationTimer(subscriber_id);
   registrations_mut.unlock();
+  switch (reg_action) {
+  case RegistrationActionEvent::Register:
+    scheduleRegistration(subscriber_id); break;
+  case RegistrationActionEvent::Deregister:
+    scheduleDeregistration(subscriber_id); break;
+  default: ERROR("internal: unknown reg_action %d for subscriber %ld timer event\n",
+		 reg_action, subscriber_id);
+  };
 }
 
 
@@ -813,7 +916,6 @@ void DBRegAgent::DIcreateRegistration(int subscriber_id, const string& user,
       pass.c_str(), realm.c_str());
 
   createRegistration(subscriber_id, user, pass, realm);
-  createDBRegistration(subscriber_id, StatusDBConnection);
   scheduleRegistration(subscriber_id);
   ret.push(200);
   ret.push("OK");
@@ -834,6 +936,11 @@ void DBRegAgent::DIremoveRegistration(int subscriber_id, AmArg& ret) {
   DBG("DI method: removeRegistration(%i)\n",
       subscriber_id);
   scheduleDeregistration(subscriber_id);
+
+  registrations_mut.lock();
+  clearRegistrationTimer(subscriber_id);
+  registrations_mut.unlock();
+
   ret.push(200);
   ret.push("OK");
 }
@@ -913,6 +1020,8 @@ void DBRegAgentProcessorThread::run() {
   // register us as SIP event receiver for MOD_NAME_processor
   AmEventDispatcher::instance()->addEventQueue(MOD_NAME "_processor",this);
 
+  mysqlpp::Connection::thread_start();
+
   // initialize ratelimit
   gettimeofday(&last_check, NULL);
   allowance = DBRegAgent::ratelimit_rate;
@@ -925,6 +1034,9 @@ void DBRegAgentProcessorThread::run() {
       processSingleEvent();
     }
   }
+
+  mysqlpp::Connection::thread_end();
+
  DBG("DBRegAgentProcessorThread thread stopped\n"); 
 }
 
@@ -969,32 +1081,32 @@ void DBRegAgent::run_tests() {
   RegTimer rt;
   rt.expires = now.tv_sec + 10; 
   rt.cb=test_cb;
-  registration_timer.insert_timer(&rt);
+  registration_scheduler.insert_timer(&rt);
 
   RegTimer rt2;
   rt2.expires = now.tv_sec + 5; 
   rt2.cb=test_cb;
-  registration_timer.insert_timer(&rt2);
+  registration_scheduler.insert_timer(&rt2);
 
   RegTimer rt3;
   rt3.expires = now.tv_sec + 15; 
   rt3.cb=test_cb;
-  registration_timer.insert_timer(&rt3);
+  registration_scheduler.insert_timer(&rt3);
 
   RegTimer rt4;
   rt4.expires = now.tv_sec - 1; 
   rt4.cb=test_cb;
-  registration_timer.insert_timer(&rt4);
+  registration_scheduler.insert_timer(&rt4);
 
   RegTimer rt5;
   rt5.expires = now.tv_sec + 100000; 
   rt5.cb=test_cb;
-  registration_timer.insert_timer(&rt5);
+  registration_scheduler.insert_timer(&rt5);
 
   RegTimer rt6;
   rt6.expires = now.tv_sec + 100; 
   rt6.cb=test_cb;
-  registration_timer.insert_timer_leastloaded(&rt6, now.tv_sec+5, now.tv_sec+50);
+  registration_scheduler.insert_timer_leastloaded(&rt6, now.tv_sec+5, now.tv_sec+50);
 
 
   sleep(30);
@@ -1003,7 +1115,7 @@ void DBRegAgent::run_tests() {
   RegTimer rt7;
   rt6.expires = now.tv_sec + 980; 
   rt6.cb=test_cb;
-  registration_timer.insert_timer_leastloaded(&rt6, now.tv_sec+9980, now.tv_sec+9990);
+  registration_scheduler.insert_timer_leastloaded(&rt6, now.tv_sec+9980, now.tv_sec+9990);
 
    vector<RegTimer*> rts;
 
@@ -1012,7 +1124,7 @@ void DBRegAgent::run_tests() {
      rts.push_back(t);
      t->expires = now.tv_sec + i;
      t->cb=test_cb;
-     registration_timer.insert_timer_leastloaded(t, now.tv_sec, now.tv_sec+1000);
+     registration_scheduler.insert_timer_leastloaded(t, now.tv_sec, now.tv_sec+1000);
    }
 
   sleep(200);

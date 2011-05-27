@@ -41,7 +41,7 @@
 #define TIMER_RESOLUTION 100000
 
 class RegTimer;
-typedef void (*timer_cb)(RegTimer*, long /*data1*/,void* /*data2*/);
+typedef void (*timer_cb)(RegTimer*, long /*data1*/,int /*data2*/);
 
 class RegTimerBucket;
 
@@ -51,7 +51,7 @@ class RegTimer {
 
     timer_cb       cb;
     long           data1;
-    void*          data2;
+    int            data2;
 
     RegTimer()
       : expires(0), cb(0), data1(0), data2(0) { }

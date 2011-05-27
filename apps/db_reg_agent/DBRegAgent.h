@@ -67,7 +67,7 @@ using std::queue;
 
 struct RegistrationActionEvent : public AmEvent {
 
-  enum RegAction { Register, Deregister };
+  enum RegAction { Register=0, Deregister };
 
 RegistrationActionEvent(RegAction action, int subscriber_id)
   : AmEvent(RegistrationActionEventID),
@@ -124,26 +124,32 @@ class DBRegAgent
   static unsigned int ratelimit_rate;
   static unsigned int ratelimit_per;
 
+  static bool delete_removed_registrations;
+
+  static unsigned int error_retry_interval;
+
   map<long, AmSIPRegistration*> registrations;
   map<string, long>             registration_ltags;
   map<long, RegTimer*>          registration_timers;
   AmMutex registrations_mut;
 
   // connection used in main DBRegAgent thread
-  static mysqlpp::Connection DBConnection;
+  static mysqlpp::Connection MainDBConnection;
 
-  // connection used in other threads
-  static mysqlpp::Connection StatusDBConnection;
+  // connection used in other thread (processor thread)
+  static mysqlpp::Connection ProcessorDBConnection;
 
   int onLoad();
 
-  RegistrationTimer registration_timer;
+  RegistrationTimer registration_scheduler;
   DBRegAgentProcessorThread registration_processor;
 
   bool loadRegistrations();
 
   void createDBRegistration(long subscriber_id, mysqlpp::Connection& conn);
-  void updateDBRegistration(long subscriber_id, int last_code,
+  void deleteDBRegistration(long subscriber_id, mysqlpp::Connection& conn);
+  void updateDBRegistration(mysqlpp::Connection& db_connection,
+			    long subscriber_id, int last_code,
 			    const string& last_reason,
 			    bool update_status = false, int status = 0,
 			    bool update_ts=false, unsigned int expiry = 0);
@@ -168,7 +174,11 @@ class DBRegAgent
   /** schedule this subscriber to de-REGISTER imminently*/
   void scheduleDeregistration(long subscriber_id);
 
-  /** create a timer for that registration 
+  /** create a timer for the registration - fixed expiry + action */
+  void setRegistrationTimer(long subscriber_id, unsigned int timeout,
+			    RegistrationActionEvent::RegAction reg_action);
+
+  /** create a registration refresh timer for that registration 
       @param subscriber_id - ID of subscription
       @param expiry        - SIP registration expiry time
       @param reg_start_ts  - start TS of the SIP registration
@@ -223,7 +233,7 @@ class DBRegAgent
   void invoke(const string& method, 
 	      const AmArg& args, AmArg& ret);
   /** re-registration timer callback */
-  void timer_cb(RegTimer* timer, long subscriber_id, void* data2);
+  void timer_cb(RegTimer* timer, long subscriber_id, int data2);
 
   friend class DBRegAgentProcessorThread;
 };
