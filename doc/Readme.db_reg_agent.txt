@@ -48,7 +48,8 @@ as the name of the registration status table (registrations_table).
 Clocks of SEMS host and DB host must be synchronized in order for restart without
 massive re-registration to work.
 
-Example tables structure:
+Example tables structure (note that registrations.contacts is not necessary if
+save_contacts=no):
 
 CREATE TABLE IF NOT EXISTS `registrations` (
   `subscriber_id` int(11) NOT NULL,
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS `registrations` (
   `expiry` datetime,
   `last_code` smallint(2),
   `last_reason` varchar(256),
+  `contacts` varchar(512),
   PRIMARY KEY (`subscriber_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -67,3 +69,4 @@ CREATE TABLE IF NOT EXISTS `subscribers` (
   `realm` varchar(256) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   PRIMARY KEY (`subscriber_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+

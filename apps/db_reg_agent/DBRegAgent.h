@@ -125,6 +125,7 @@ class DBRegAgent
   static unsigned int ratelimit_per;
 
   static bool delete_removed_registrations;
+  static bool save_contacts;
 
   static unsigned int error_retry_interval;
 
@@ -152,7 +153,8 @@ class DBRegAgent
 			    long subscriber_id, int last_code,
 			    const string& last_reason,
 			    bool update_status = false, int status = 0,
-			    bool update_ts=false, unsigned int expiry = 0);
+			    bool update_ts=false, unsigned int expiry = 0,
+			    bool update_contacts=false, const string& contacts = "");
 
   /** create registration in our list */
   void createRegistration(long subscriber_id,

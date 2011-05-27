@@ -47,6 +47,8 @@ unsigned int DBRegAgent::ratelimit_rate = 0;
 unsigned int DBRegAgent::ratelimit_per = 0;
 
 bool DBRegAgent::delete_removed_registrations = true;
+bool DBRegAgent::save_contacts = true;
+
 unsigned int DBRegAgent::error_retry_interval = 300;
 
 static void _timer_cb(RegTimer* timer, long subscriber_id, int data2) {
@@ -126,6 +128,9 @@ int DBRegAgent::onLoad()
 
   delete_removed_registrations =
     cfg.getParameter("delete_removed_registrations", "yes") == "yes";
+
+  save_contacts =
+    cfg.getParameter("save_contacts", "yes") == "yes";
 
   error_retry_interval = cfg.getParameterInt("error_retry_interval", 300);
   if (!error_retry_interval) {
@@ -582,44 +587,49 @@ void DBRegAgent::updateDBRegistration(mysqlpp::Connection& db_connection,
 				      long subscriber_id, int last_code,
 				      const string& last_reason,
 				      bool update_status, int status,
-				      bool update_ts, unsigned int expiry) {
-
-  string update_query = "update "+registrations_table+" set "
-    "last_code="+ int2str(last_code) +", "
-    "last_reason=\""+last_reason+"\"";
-
-  if (update_status) {
-    update_query += ", registration_status="+int2str(status);
-  }
-
-  if (update_ts) {
-    update_query += ", last_registration=NOW(), "
-      "expiry=TIMESTAMPADD(SECOND,"+int2str(expiry)+", NOW())";
-  }
-
-  update_query += " where " COLNAME_SUBSCRIBER_ID "="+long2str(subscriber_id) + ";";
+				      bool update_ts, unsigned int expiry,
+				      bool update_contacts, const string& contacts) {
   try {
-    DBG("updating registration in DB with query '%s'\n",
-	update_query.c_str());
 
     mysqlpp::Query query = db_connection.query();
-    query << update_query;
+
+    query << "update "+registrations_table+" set last_code="+ int2str(last_code) +", ";
+    query << "last_reason=";
+    query << mysqlpp::quote << last_reason;
+
+    if (update_status) {
+      query <<  ", registration_status="+int2str(status);
+    }
+
+    if (update_ts) {
+      query << ", last_registration=NOW(), "
+	"expiry=TIMESTAMPADD(SECOND,"+int2str(expiry)+", NOW())";
+    }
+
+    if (update_contacts) {
+      query << ", contacts=" << mysqlpp::quote << contacts;
+    }
+
+    query << " where " COLNAME_SUBSCRIBER_ID "="+long2str(subscriber_id) + ";";
+    string query_str = query.str();
+    DBG("updating registration in DB with query '%s'\n", query_str.c_str());
 
     mysqlpp::SimpleResult res = query.execute();
     if (!res) {
       WARN("updating registration in DB with query '%s' failed: '%s'\n",
-	   update_query.c_str(), res.info());
+	   query_str.c_str(), res.info());
     } else {
       if (!res.rows()) {
 	// should not happen - DB entry is created on load or on createRegistration
 	DBG("creating registration DB entry for subscriber %ld\n", subscriber_id);
 	createDBRegistration(subscriber_id, db_connection);
+	query.reset();
+	query << query_str;
 
-	query << update_query;
 	mysqlpp::SimpleResult res = query.execute();
 	if (!res || !res.rows()) {
 	  WARN("updating registration in DB with query '%s' failed: '%s'\n",
-	       update_query.c_str(), res.info());
+	       query_str.c_str(), res.info());
 	}
       }
     }
@@ -722,7 +732,8 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
 	DBG("update DB with reply %u %s\n", ev->reply.code, ev->reply.reason.c_str());
 	updateDBRegistration(MainDBConnection,
 			     subscriber_id, ev->reply.code, ev->reply.reason,
-			     update_status, status, update_ts, expiry);
+			     update_status, status, update_ts, expiry,
+			     save_contacts, ev->reply.contact);
       } else {
 	DBG("delete DB registration of subscriber %ld\n", subscriber_id);
 	deleteDBRegistration(subscriber_id, MainDBConnection);
