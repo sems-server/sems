@@ -581,10 +581,24 @@ void DBRegAgent::updateDBRegistration(long subscriber_id, int last_code,
 
 void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
   if (!ev) return;
-  DBG("received SIP reply event for '%s'\n", ev->reply.local_tag.c_str());
 
+  DBG("received SIP reply event for '%s'\n", 
+#ifdef HAS_OFFER_ANSWER
+      ev->reply.from_tag.c_str()
+#else
+      ev->reply.local_tag.c_str()
+#endif
+      );
   registrations_mut.lock();
-  map<string, long>::iterator it=registration_ltags.find(ev->reply.local_tag);
+
+  string local_tag =
+#ifdef HAS_OFFER_ANSWER
+    ev->reply.from_tag;
+#else
+    ev->reply.local_tag;
+#endif
+    
+  map<string, long>::iterator it=registration_ltags.find(local_tag);
   if (it!=registration_ltags.end()) {
     long subscriber_id = it->second;
     map<long, AmSIPRegistration*>::iterator r_it=registrations.find(subscriber_id);
@@ -596,8 +610,11 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
       }
 
       // AmSIPRegistration::RegistrationState state_before = r_it->second->getState();
+#ifdef HAS_OFFER_ANSWER
+      registration->getDlg()->onRxReply(ev->reply);
+#else
       registration->getDlg()->updateStatus(ev->reply);
-
+#endif
       AmSIPRegistration::RegistrationState current_state = registration->getState();
 
       //update registrations set 
