@@ -46,7 +46,6 @@ AmSIPRegistration::AmSIPRegistration(const string& handle,
     seh(NULL),
     expires_interval(3600)
 {
-  req.cmd      = "sems";
   req.user     = info.user;
   req.method   = "REGISTER";
   req.r_uri    = "sip:"+info.domain;
@@ -59,7 +58,7 @@ AmSIPRegistration::AmSIPRegistration(const string& handle,
   //
 
   // clear dlg.callid? ->reregister?
-  dlg.updateStatusFromLocalRequest(req);
+  dlg.initFromLocalRequest(req);
   dlg.cseq = 50;
   if(!info.contact.empty()) {
     dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<sip:";
@@ -171,16 +170,10 @@ void AmSIPRegistration::onSendRequest(const string& method,
 		       hdrs,flags,cseq);
 }
 	
-void AmSIPRegistration::onSendReply(const AmSipRequest& req,
-				    unsigned int  code,
-				    const string& reason,
-				    const string& content_type,
-				    const string& body,
-				    string& hdrs,
+void AmSIPRegistration::onSendReply(AmSipReply& reply,
 				    int flags) {
   if (seh)
-    seh->onSendReply(req,code,reason,
-		     content_type,body,hdrs,flags);
+    seh->onSendReply(reply,flags);
 }
 
 AmSIPRegistration::RegistrationState AmSIPRegistration::getState() {
@@ -246,9 +239,10 @@ bool AmSIPRegistration::registerExpired(time_t now_sec) {
   return ((reg_begin+reg_expires) < (unsigned int)now_sec);	
 }
 
-void AmSIPRegistration::onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method)
+void AmSIPRegistration::onSipReply(const AmSipReply& reply, 
+				   AmSipDialog::Status old_dlg_status)
 {
-  if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status, trans_method))
+  if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status))
     return;
 
   if (reply.code>=200)

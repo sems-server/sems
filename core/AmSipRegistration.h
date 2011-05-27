@@ -116,20 +116,14 @@ class AmSIPRegistration
 		     int flags,
 		     unsigned int cseq);
 	
-  void onSendReply(const AmSipRequest& req,
-		   unsigned int  code,
-		   const string& reason,
-		   const string& content_type,
-		   const string& body,
-		   string& hdrs,
-		   int flags);
+  void onSendReply(AmSipReply& req, int flags);
 
   // DialogControl if
   AmSipDialog* getDlg() { return &dlg; }
   // CredentialHolder	
   UACAuthCred* getCredentials() { return &cred; }
 
-  void onSipReply(const AmSipReply& reply, int old_dlg_status, const string& trans_method);
+  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSipRequest(const AmSipRequest& req) {}
   void onInvite2xx(const AmSipReply&) {}
   void onNoAck(unsigned int) {}
@@ -138,6 +132,9 @@ class AmSIPRegistration
   void onPrack2xx(const AmSipReply &){}
   void onFailure(AmSipDialogEventHandler::FailureCause cause, 
       const AmSipRequest*, const AmSipReply*){}
+  bool getSdpOffer(AmSdp&) {return false;}
+  bool getSdpAnswer(const AmSdp&, AmSdp&) {return false;}
+  int  onSdpCompleted(const AmSdp&, const AmSdp&) {return -1;}
 
   /** is this registration registered? */
   bool active; 
