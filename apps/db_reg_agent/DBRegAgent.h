@@ -56,6 +56,7 @@ using std::queue;
 #define COLNAME_USER             "user"
 #define COLNAME_PASS             "pass"
 #define COLNAME_REALM            "realm"
+#define COLNAME_CONTACT          "contact"
 
 #define COLNAME_STATUS           "registration_status"
 #define COLNAME_EXPIRY           "expiry"
@@ -127,6 +128,10 @@ class DBRegAgent
   static bool delete_removed_registrations;
   static bool save_contacts;
 
+  static bool db_read_contact;
+
+  static string contact_hostport;
+
   static unsigned int error_retry_interval;
 
   map<long, AmSIPRegistration*> registrations;
@@ -160,12 +165,14 @@ class DBRegAgent
   void createRegistration(long subscriber_id,
 			  const string& user,
 			  const string& pass,
-			  const string& realm);
+			  const string& realm,
+			  const string& contact);
   /** update registration in our list */
   void updateRegistration(long subscriber_id,
 			  const string& user,
 			  const string& pass,
-			  const string& realm);
+			  const string& realm,
+			  const string& contact);
 
   /** remove registration */
   void removeRegistration(long subscriber_id);
@@ -215,10 +222,10 @@ class DBRegAgent
 
   void DIcreateRegistration(int subscriber_id, const string& user, 
 			    const string& pass, const string& realm,
-			    AmArg& ret);
+			    const string& contact, AmArg& ret);
   void DIupdateRegistration(int subscriber_id, const string& user, 
 			    const string& pass, const string& realm,
-			    AmArg& ret);
+			    const string& contact, AmArg& ret);
   void DIremoveRegistration(int subscriber_id, AmArg& ret);
 
 

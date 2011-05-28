@@ -48,6 +48,8 @@ unsigned int DBRegAgent::ratelimit_per = 0;
 
 bool DBRegAgent::delete_removed_registrations = true;
 bool DBRegAgent::save_contacts = true;
+bool DBRegAgent::db_read_contact = false;
+string DBRegAgent::contact_hostport;
 
 unsigned int DBRegAgent::error_retry_interval = 300;
 
@@ -131,6 +133,11 @@ int DBRegAgent::onLoad()
 
   save_contacts =
     cfg.getParameter("save_contacts", "yes") == "yes";
+
+  db_read_contact =
+    cfg.getParameter("db_read_contact", "no") == "yes";
+
+  contact_hostport = cfg.getParameter("contact_hostport");
 
   error_retry_interval = cfg.getParameterInt("error_retry_interval", 300);
   if (!error_retry_interval) {
@@ -241,6 +248,11 @@ bool DBRegAgent::loadRegistrations() {
       int status = 0; 
       long subscriber_id = row[COLNAME_SUBSCRIBER_ID];
 
+      string contact_uri;
+      if (db_read_contact && row[COLNAME_CONTACT] != mysqlpp::null) {
+	contact_uri = (string) row[COLNAME_CONTACT];
+      }
+
       if (row[COLNAME_STATUS] != mysqlpp::null)
 	status = row[COLNAME_STATUS];
       else {
@@ -261,7 +273,8 @@ bool DBRegAgent::loadRegistrations() {
 	  createRegistration(subscriber_id,
 			     (string)row[COLNAME_USER],
 			     (string)row[COLNAME_PASS],
-			     (string)row[COLNAME_REALM]
+			     (string)row[COLNAME_REALM],
+			     contact_uri
 			     );
 	  scheduleRegistration(subscriber_id);
 	}; break;
@@ -271,7 +284,8 @@ bool DBRegAgent::loadRegistrations() {
 	  createRegistration(subscriber_id,
 			     (string)row[COLNAME_USER],
 			     (string)row[COLNAME_PASS],
-			     (string)row[COLNAME_REALM]
+			     (string)row[COLNAME_REALM],
+			     contact_uri
 			     );
 
 	  time_t dt_expiry = now_time;
@@ -325,14 +339,21 @@ bool DBRegAgent::loadRegistrations() {
 void DBRegAgent::createRegistration(long subscriber_id,
 				    const string& user,
 				    const string& pass,
-				    const string& realm) {
+				    const string& realm,
+				    const string& contact) {
+
+  string contact_uri = contact;
+  if (contact_uri.empty() && !contact_hostport.empty()) {
+    contact_uri = "sip:"+ user + "@" + contact_hostport;
+  }
+
   string handle = AmSession::getNewId();
   SIPRegistrationInfo reg_info(realm, user,
 			       user, // name
 			       user, // auth_user
 			       pass,
 			       "", // proxy
-			       "" // contact
+			       contact_uri // contact
 			       );
 
   registrations_mut.lock();
@@ -392,7 +413,8 @@ void DBRegAgent::createRegistration(long subscriber_id,
 void DBRegAgent::updateRegistration(long subscriber_id,
 				    const string& user,
 				    const string& pass,
-				    const string& realm) {
+				    const string& realm,
+				    const string& contact) {
 
   registrations_mut.lock();
   map<long, AmSIPRegistration*>::iterator it=registrations.find(subscriber_id);
@@ -400,7 +422,7 @@ void DBRegAgent::updateRegistration(long subscriber_id,
     registrations_mut.unlock();
     WARN("updateRegistration - registration %ld %s@%s unknown, creating\n",
 	 subscriber_id, user.c_str(), realm.c_str());
-    createRegistration(subscriber_id, user, pass, realm);
+    createRegistration(subscriber_id, user, pass, realm, contact);
     scheduleRegistration(subscriber_id);
     return;
   }
@@ -410,7 +432,7 @@ void DBRegAgent::updateRegistration(long subscriber_id,
 						      user, // auth_user
 						      pass,
 						      "",   // proxy
-						      "")); // contact
+						      contact)); // contact
   registrations_mut.unlock();
 }
 
@@ -921,12 +943,13 @@ void DBRegAgent::timer_cb(RegTimer* timer, long subscriber_id, int reg_action) {
 
 void DBRegAgent::DIcreateRegistration(int subscriber_id, const string& user, 
 				      const string& pass, const string& realm,
+				      const string& contact,
 				      AmArg& ret) {
-  DBG("DI method: createRegistration(%i, %s, %s, %s)\n",
+  DBG("DI method: createRegistration(%i, %s, %s, %s, %s)\n",
       subscriber_id, user.c_str(),
-      pass.c_str(), realm.c_str());
+      pass.c_str(), realm.c_str(), contact.c_str());
 
-  createRegistration(subscriber_id, user, pass, realm);
+  createRegistration(subscriber_id, user, pass, realm, contact);
   scheduleRegistration(subscriber_id);
   ret.push(200);
   ret.push("OK");
@@ -934,11 +957,12 @@ void DBRegAgent::DIcreateRegistration(int subscriber_id, const string& user,
 
 void DBRegAgent::DIupdateRegistration(int subscriber_id, const string& user, 
 				      const string& pass, const string& realm,
+				      const string& contact,
 				      AmArg& ret) {
   DBG("DI method: updateRegistration(%i, %s, %s, %s)\n",
       subscriber_id, user.c_str(),
       pass.c_str(), realm.c_str());
-  updateRegistration(subscriber_id, user, pass, realm);
+  updateRegistration(subscriber_id, user, pass, realm, contact);
   ret.push(200);
   ret.push("OK");
 }
@@ -963,14 +987,24 @@ void DBRegAgent::invoke(const string& method,
 {
   if (method == "createRegistration"){
     args.assertArrayFmt("isss"); // subscriber_id, user, pass, realm
+    string contact;
+    if (args.size() > 4) {
+      assertArgCStr(args.get(4));
+      contact = args.get(4).asCStr();
+    }
     DIcreateRegistration(args.get(0).asInt(), args.get(1).asCStr(), 
 			 args.get(2).asCStr(),args.get(3).asCStr(),
-			 ret);
+			 contact, ret);
   } else if (method == "updateRegistration"){
     args.assertArrayFmt("isss"); // subscriber_id, user, pass, realm
-    DIupdateRegistration(args.get(0).asInt(), args.get(1).asCStr(), 
+    string contact;
+    if (args.size() > 4) {
+      assertArgCStr(args.get(4));
+      contact = args.get(4).asCStr();
+    }
+    DIupdateRegistration(args.get(0).asInt(), args.get(1).asCStr(),
 			 args.get(2).asCStr(),args.get(3).asCStr(),
-			 ret);
+			 contact, ret);
   } else if (method == "removeRegistration"){
     args.assertArrayFmt("i"); // subscriber_id
     DIremoveRegistration(args.get(0).asInt(), ret);
