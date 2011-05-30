@@ -542,6 +542,11 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
 			       reg_action_ev->subscriber_id,
 			       480, "unable to send request",
 			       true, REG_STATUS_FAILED);
+	  if (error_retry_interval) {
+	    // schedule register-refresh after error_retry_interval
+	    setRegistrationTimer(reg_action_ev->subscriber_id, error_retry_interval,
+				 RegistrationActionEvent::Register);
+	  }
 	}
       }
       registrations_mut.unlock();
@@ -561,6 +566,11 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
 			       reg_action_ev->subscriber_id,
 			       480, "unable to send request",
 			       true, REG_STATUS_FAILED);
+	  if (error_retry_interval) {
+	    // schedule register-refresh after error_retry_interval
+	    setRegistrationTimer(reg_action_ev->subscriber_id, error_retry_interval,
+				 RegistrationActionEvent::Deregister);
+	  }
 	}
       }
       registrations_mut.unlock();
@@ -698,14 +708,13 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
 	ERROR("Internal error: registration object missing\n");
 	return;
       }
+      unsigned int cseq_before = registration->getDlg()->cseq;
 
-      // AmSIPRegistration::RegistrationState state_before = r_it->second->getState();
 #ifdef HAS_OFFER_ANSWER
       registration->getDlg()->onRxReply(ev->reply);
 #else
       registration->getDlg()->updateStatus(ev->reply);
 #endif
-      AmSIPRegistration::RegistrationState current_state = registration->getState();
 
       //update registrations set 
       bool update_status = false;
@@ -716,7 +725,10 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
       bool auth_pending = false;
 
       if (ev->reply.code >= 300) {
-	if (current_state == AmSIPRegistration::RegisterPending) {
+	// auth response codes
+	if ((ev->reply.code == 401 || ev->reply.code == 407) &&
+	    // processing reply triggered sending request: resent by auth
+	    (cseq_before != registration->getDlg()->cseq)) {
 	  DBG("received negative reply, but still in pending state (auth).\n");
 	  auth_pending = true;
 	} else {
