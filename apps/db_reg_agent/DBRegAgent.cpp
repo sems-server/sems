@@ -50,6 +50,7 @@ bool DBRegAgent::delete_removed_registrations = true;
 bool DBRegAgent::save_contacts = true;
 bool DBRegAgent::db_read_contact = false;
 string DBRegAgent::contact_hostport;
+bool DBRegAgent::save_auth_replies = false;
 
 unsigned int DBRegAgent::error_retry_interval = 300;
 
@@ -136,6 +137,9 @@ int DBRegAgent::onLoad()
 
   db_read_contact =
     cfg.getParameter("db_read_contact", "no") == "yes";
+
+  save_auth_replies =
+    cfg.getParameter("save_auth_replies", "no") == "yes";
 
   contact_hostport = cfg.getParameter("contact_hostport");
 
@@ -709,10 +713,12 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
       bool update_ts = false;
       unsigned int expiry = 0;
       bool delete_status = false;
+      bool auth_pending = false;
 
       if (ev->reply.code >= 300) {
 	if (current_state == AmSIPRegistration::RegisterPending) {
 	  DBG("received negative reply, but still in pending state (auth).\n");
+	  auth_pending = true;
 	} else {
 	  // registration failed - mark in DB
 	  DBG("registration failed - mark in DB\n");
@@ -751,11 +757,16 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
       }
 
       if (!delete_status) {
-	DBG("update DB with reply %u %s\n", ev->reply.code, ev->reply.reason.c_str());
-	updateDBRegistration(MainDBConnection,
-			     subscriber_id, ev->reply.code, ev->reply.reason,
-			     update_status, status, update_ts, expiry,
-			     save_contacts, ev->reply.contact);
+	if (auth_pending && !save_auth_replies) {
+	  DBG("not updating DB with auth reply %u %s\n",
+	      ev->reply.code, ev->reply.reason.c_str());
+	} else {
+	  DBG("update DB with reply %u %s\n", ev->reply.code, ev->reply.reason.c_str());
+	  updateDBRegistration(MainDBConnection,
+			       subscriber_id, ev->reply.code, ev->reply.reason,
+			       update_status, status, update_ts, expiry,
+			       save_contacts, ev->reply.contact);
+	}
       } else {
 	DBG("delete DB registration of subscriber %ld\n", subscriber_id);
 	deleteDBRegistration(subscriber_id, MainDBConnection);

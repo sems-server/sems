@@ -132,6 +132,8 @@ class DBRegAgent
 
   static string contact_hostport;
 
+  static bool save_auth_replies;
+
   static unsigned int error_retry_interval;
 
   map<long, AmSIPRegistration*> registrations;
