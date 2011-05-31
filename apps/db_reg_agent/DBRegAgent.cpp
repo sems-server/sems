@@ -322,10 +322,22 @@ bool DBRegAgent::loadRegistrations() {
 	}; break;
       case REG_STATUS_REMOVED:
 	{
-	  DBG("ignoring removed registration %ld %s@%s",
-	      subscriber_id,
+	  DBG("ignoring removed registration %ld %s@%s", subscriber_id,
 	      ((string)row[COLNAME_USER]).c_str(), ((string)row[COLNAME_REALM]).c_str());
 	} break;
+
+      case REG_STATUS_TO_BE_REMOVED:
+	{
+	  DBG("Scheduling Deregister of registration %ld %s@%s", subscriber_id,
+	      ((string)row[COLNAME_USER]).c_str(), ((string)row[COLNAME_REALM]).c_str());
+	  createRegistration(subscriber_id,
+			     (string)row[COLNAME_USER],
+			     (string)row[COLNAME_PASS],
+			     (string)row[COLNAME_REALM],
+			     contact_uri
+			     );
+	  scheduleDeregistration(subscriber_id);
+	};
       }
     }
 
@@ -565,7 +577,7 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
 	  updateDBRegistration(ProcessorDBConnection,
 			       reg_action_ev->subscriber_id,
 			       480, "unable to send request",
-			       true, REG_STATUS_FAILED);
+			       true, REG_STATUS_TO_BE_REMOVED);
 	  if (error_retry_interval) {
 	    // schedule register-refresh after error_retry_interval
 	    setRegistrationTimer(reg_action_ev->subscriber_id, error_retry_interval,

@@ -45,12 +45,14 @@ using std::queue;
 #define REG_STATUS_ACTIVE        2
 #define REG_STATUS_FAILED        3
 #define REG_STATUS_REMOVED       4
+#define REG_STATUS_TO_BE_REMOVED 5
 
 #define REG_STATUS_INACTIVE_S      "0"
 #define REG_STATUS_PENDING_S       "1"
 #define REG_STATUS_ACTIVE_S        "2"
 #define REG_STATUS_FAILED_S        "3"
 #define REG_STATUS_REMOVED_S       "4"
+#define REG_STATUS_TO_BE_REMOVED_S "5"
 
 #define COLNAME_SUBSCRIBER_ID    "subscriber_id"
 #define COLNAME_USER             "user"

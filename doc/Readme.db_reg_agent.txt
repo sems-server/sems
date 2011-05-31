@@ -30,8 +30,12 @@ DI control functions
  updateRegistration(int subscriber_id, string user, string pass, string realm [, string contact])
  removeRegistration(int subscriber_id)
 
+In order to be restart-safe also when sending requests is delayed through ratelimiting,
+it is recommended to set the registration_status in the DB to 5
+(REG_STATUS_TO_BE_REMOVED) before calling removeRegistration.
+
 After removing a registration by issuing removeRegistration, the subcriber entry will
-be present with the status REMOVED. 
+be present with the status REMOVED, if delete_removed_registrations=no.
 
 Registration status (registration_status column)
 ------------------------------------------------
@@ -40,6 +44,7 @@ Registration status (registration_status column)
  REG_STATUS_ACTIVE        2
  REG_STATUS_FAILED        3
  REG_STATUS_REMOVED       4
+ REG_STATUS_TO_BE_REMOVED 5
 
 Configuring contact
 -------------------
@@ -90,3 +95,8 @@ CREATE TABLE IF NOT EXISTS `subscribers` (
   PRIMARY KEY (`subscriber_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
+
+Todo
+----
+o (optionally) create DB entries on DI functions
+o print WARN message when ratelimit is hit
