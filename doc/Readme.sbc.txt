@@ -85,8 +85,8 @@ is provided and installed to trigger the reload (through XMLRPC):
   sems-sbc-get-activeprofile                    get active_profile
   sems-sbc-set-activeprofile <active_profile>   set active_profile
 
-The xmlrpc2di module must be loaded and XMLRPC control server bound to port 8090 for
-the scripts to work.
+The xmlrpc2di module must be loaded, XMLRPC control server bound to port 8090, and
+direct_export in xmlrpc2di.conf must include sbc for the scripts to work.
 
 For tracking file revisions and changes, the MD5 hash sum is printed on profile load and
 reload, and returned as information by the scripts and the DI management commands. An MD5
