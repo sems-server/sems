@@ -133,7 +133,7 @@ int main(int argc, char** argv)
     if(msg_size == -1)
       fprintf(stderr,"recv: %s\n",strerror(errno));
     else
-      printf("received:\n%.*s",msg_size-1,rcv_buf);
+      printf("received:\n%.*s\n",msg_size-1,rcv_buf);
   }
     
   close(sd);
