@@ -1073,7 +1073,7 @@ void DBRegAgentProcessorThread::rateLimitWait() {
   struct timeval time_passed;
   gettimeofday(&current, 0);
   timersub(&current, &last_check, &time_passed);
-  last_check = current;
+  memcpy(&last_check, &current, sizeof(struct timeval));
   double seconds_passed = (double)time_passed.tv_sec +
     (double)time_passed.tv_usec / 1000000.0;
   allowance += seconds_passed * 
@@ -1087,6 +1087,7 @@ void DBRegAgentProcessorThread::rateLimitWait() {
     DBG("not enough allowance (%f), sleeping %d useconds\n", allowance, sleep_time);
     usleep(sleep_time);
     allowance=0.0;
+    gettimeofday(&last_check, 0);
   } else {
     allowance -= 1.0;
   }
