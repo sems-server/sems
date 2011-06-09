@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+	       xmlns:mx="library://ns.adobe.com/flex/mx"
+	       xmlns:s="library://ns.adobe.com/flex/spark"
+	       creationComplete="onCreationComplete(event);">
+
+  <!-- UI Definitions -->
+  <s:Panel title="Sono"
+           width="75%" height="75%"
+           horizontalCenter="0" verticalCenter="0"> 
+    <s:VGroup left="10" right="10" top="10" bottom="10">
+      <mx:HBox>
+	<mx:TextInput id="connectUrl" text="rtmp://localhost:1935"/>
+	<mx:Button id="bConnect" label="Connect" 
+		   click="onConnectClick(event);"/>
+      </mx:HBox>
+      <mx:Label id="lStatus" text="status: none"/>
+    </s:VGroup>
+  </s:Panel>
+  
+  <!-- Script -->
+  <fx:Script source="sono.as"/>
+  
+</s:Application>
