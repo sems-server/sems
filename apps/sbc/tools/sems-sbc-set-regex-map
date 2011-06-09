@@ -10,4 +10,4 @@ if len(sys.argv) != 3:
 s = ServerProxy('http://localhost:8090')
 print "Active calls: %d" % s.calls()
 p ={ 'name' : sys.argv[1], 'file' : sys.argv[2] }
-print s.setRegexMap(p)
+print s.di('sbc','setRegexMap',p)

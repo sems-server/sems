@@ -4,4 +4,4 @@
 from xmlrpclib import *
 s = ServerProxy('http://localhost:8090')
 print "Active calls: %d" % s.calls()
-print s.getActiveProfile()
+print s.di('sbc','getActiveProfile')
