@@ -4,4 +4,4 @@
 from xmlrpclib import *
 s = ServerProxy('http://localhost:8090')
 print s.calls()
-print s.reloadProfiles()
+print s.di('sbc','reloadProfiles')
