@@ -33,7 +33,7 @@
 using std::string;
 
 
-#define MAX_CONFIG_LINE 512
+#define MAX_CONFIG_LINE 2048
 /**
  * \brief configuration file reader
  * 
