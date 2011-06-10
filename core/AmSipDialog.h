@@ -208,6 +208,11 @@ private:
 
   void   setStatus(Status new_status);
 
+  /** get offer/answer state */
+  OAState get_OA_state();
+  /** set offer/answer state (handle with caution!) */
+  void set_OA_state(OAState new_oa_state);
+
   string getContactHdr();
 
   /** 
@@ -388,6 +393,8 @@ class AmSipDialogEventHandler
 };
 
 const char* dlgStatusStr(AmSipDialog::Status st);
+
+const char* getOAStatusStr(AmSipDialog::OAState st);
 
 
 

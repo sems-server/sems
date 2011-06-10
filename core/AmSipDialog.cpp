@@ -59,6 +59,20 @@ const char* AmSipDialog::getStatusStr()
   return dlgStatusStr(status);
 }
 
+const char* __dlg_oa_status2str[AmSipDialog::__max_OA]  = {
+    "None",
+    "OfferRecved",
+    "OfferSent",
+    "Completed"
+};
+
+const char* getOAStatusStr(AmSipDialog::OAState st) {
+  if((st < 0) || (st >= AmSipDialog::__max_OA))
+    return "Invalid";
+  else
+    return __dlg_oa_status2str[st];
+}
+
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
   : status(Disconnected),oa_state(OA_None),
     cseq(10),r_cseq_i(false),hdl(h),
@@ -100,10 +114,20 @@ AmSipDialog::~AmSipDialog()
 }
 
 void AmSipDialog::setStatus(Status new_status) {
-  DBG("setting  SIP dialog status: %s->%s\n",
+  DBG("setting SIP dialog status: %s->%s\n",
       getStatusStr(), dlgStatusStr(new_status));
 
   status = new_status;
+}
+
+AmSipDialog::OAState AmSipDialog::get_OA_state() {
+  return oa_state;
+}
+
+void AmSipDialog::set_OA_state(OAState new_oa_state) {
+  DBG("setting SIP dialog O/A status: %s->%s\n",
+      getOAStatusStr(oa_state), getOAStatusStr(new_oa_state));
+  oa_state = new_oa_state;
 }
 
 void AmSipDialog::onRxRequest(const AmSipRequest& req)
@@ -283,6 +307,7 @@ int AmSipDialog::onTxSdp(const string& body)
 
   case OA_OfferSent:
     // There is already a pending offer!!!
+    DBG("There is already a pending offer, onTxSdp fails\n");
     return -1;
 
   default:
@@ -1374,7 +1399,7 @@ int AmSipDialog::sendRequest(const string& method,
 
   req.content_type = content_type;
   req.body = body;
-
+  DBG("req.body = '%s'\n", req.body.c_str());
   OAState old_oa_state = oa_state;
   if(onTxRequest(req))
     return -1;
