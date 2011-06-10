@@ -126,6 +126,7 @@ class DBRegAgent
   static bool enable_ratelimiting;
   static unsigned int ratelimit_rate;
   static unsigned int ratelimit_per;
+  static bool ratelimit_slowstart;
 
   static bool delete_removed_registrations;
   static bool save_contacts;

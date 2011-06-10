@@ -45,6 +45,7 @@ double DBRegAgent::minimum_reregister_interval = -1;
 bool DBRegAgent::enable_ratelimiting = false;
 unsigned int DBRegAgent::ratelimit_rate = 0;
 unsigned int DBRegAgent::ratelimit_per = 0;
+bool DBRegAgent::ratelimit_slowstart = false;
 
 bool DBRegAgent::delete_removed_registrations = true;
 bool DBRegAgent::save_contacts = true;
@@ -127,7 +128,9 @@ int DBRegAgent::onLoad()
     if (!ratelimit_rate || !ratelimit_per) {
       ERROR("ratelimit_rate and ratelimit_per must be > 0\n");
       return -1;
-    }    
+    }
+    ratelimit_slowstart = cfg.getParameter("ratelimit_slowstart") == "yes";
+
   }
 
   delete_removed_registrations =
@@ -1108,7 +1111,10 @@ void DBRegAgentProcessorThread::run() {
 
   // initialize ratelimit
   gettimeofday(&last_check, NULL);
-  allowance = DBRegAgent::ratelimit_rate;
+  if (DBRegAgent::ratelimit_slowstart)
+    allowance = 0.0;
+  else
+    allowance = DBRegAgent::ratelimit_rate;
 
   reg_agent = DBRegAgent::instance();
   while (!stopped) {
