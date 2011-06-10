@@ -15,7 +15,7 @@ Features
  o B2BUA
  o flexible call profile based configuration
  o online reload of call profiles
- o From, To, RURI, Call-ID update
+ o From, To, RURI, Contact, Call-ID update
  o RTP bridging
  o Header and message filter
  o adding arbitrary headers
@@ -100,8 +100,8 @@ is loaded. The expected parameters to all functions are in a dictionary with
 Return code is [200, "OK", <result dictionary>] on success, or 
 [<error code>, <error reason>] on failure.
 
-Replacement patterns - active_profile, RURI, From, To, etc
-----------------------------------------------------------
+Replacement patterns - active_profile, RURI, From, To, Contact, etc
+-------------------------------------------------------------------
 In SBC profile the appearance of the outgoing INVITE request can be set,
 by setting RURI, From and To parameters. If any of those parameters is not
 set, the corresponding value of the incoming request is used.

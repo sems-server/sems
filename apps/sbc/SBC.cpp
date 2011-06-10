@@ -515,6 +515,11 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   to = call_profile.to.empty() ? 
     req.to : replaceParameters(call_profile.to, "To", REPLACE_VALS);
 
+  if (!call_profile.contact.empty()) {
+    call_profile.contact =
+      replaceParameters(call_profile.contact, "Contact", REPLACE_VALS);
+  }
+
   callid = call_profile.callid.empty() ?
     "" : replaceParameters(call_profile.callid, "Call-ID", REPLACE_VALS);
 
@@ -1096,6 +1101,9 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
     b2b_mode = B2BMode_SDPFilter;
   }
 
+  if (!call_profile.contact.empty()) {
+    dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
+  }
 }
 
 SBCCalleeSession::~SBCCalleeSession() {

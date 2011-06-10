@@ -44,6 +44,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   ruri = cfg.getParameter("RURI");
   from = cfg.getParameter("From");
   to = cfg.getParameter("To");
+  contact = cfg.getParameter("Contact");
 
   callid = cfg.getParameter("Call-ID");
 
@@ -192,6 +193,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      RURI = '%s'\n", ruri.c_str());
     INFO("SBC:      From = '%s'\n", from.c_str());
     INFO("SBC:      To   = '%s'\n", to.c_str());
+    if (!contact.empty()) {
+      INFO("SBC:      Contact   = '%s'\n", contact.c_str());
+    }
     if (!callid.empty()) {
       INFO("SBC:      Call-ID   = '%s'\n", callid.c_str());
     }
@@ -260,6 +264,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     ruri == rhs.ruri &&
     from == rhs.from &&
     to == rhs.to &&
+    contact == rhs.contact &&
     callid == rhs.callid &&
     outbound_proxy == rhs.outbound_proxy &&
     force_outbound_proxy == rhs.force_outbound_proxy &&
@@ -321,6 +326,7 @@ string SBCCallProfile::print() const {
   res += "ruri:                 " + ruri + "\n";
   res += "from:                 " + from + "\n";
   res += "to:                   " + to + "\n";
+  res += "contact:              " + contact + "\n";
   res += "callid:               " + callid + "\n";
   res += "outbound_proxy:       " + outbound_proxy + "\n";
   res += "force_outbound_proxy: " + string(force_outbound_proxy?"true":"false") + "\n";

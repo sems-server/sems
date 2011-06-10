@@ -47,6 +47,7 @@ struct SBCCallProfile {
   string ruri;       /* updated if set */
   string from;       /* updated if set */
   string to;         /* updated if set */
+  string contact;
 
   string callid;
 
