@@ -134,6 +134,8 @@ class DBRegAgent
 
   static string contact_hostport;
 
+  static string outbound_proxy;
+
   static bool save_auth_replies;
 
   static unsigned int error_retry_interval;

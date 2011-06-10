@@ -50,6 +50,7 @@ bool DBRegAgent::delete_removed_registrations = true;
 bool DBRegAgent::save_contacts = true;
 bool DBRegAgent::db_read_contact = false;
 string DBRegAgent::contact_hostport;
+string DBRegAgent::outbound_proxy;
 bool DBRegAgent::save_auth_replies = false;
 
 unsigned int DBRegAgent::error_retry_interval = 300;
@@ -142,6 +143,8 @@ int DBRegAgent::onLoad()
     cfg.getParameter("save_auth_replies", "no") == "yes";
 
   contact_hostport = cfg.getParameter("contact_hostport");
+
+  outbound_proxy = cfg.getParameter("outbound_proxy");
 
   error_retry_interval = cfg.getParameterInt("error_retry_interval", 300);
   if (!error_retry_interval) {
@@ -368,7 +371,7 @@ void DBRegAgent::createRegistration(long subscriber_id,
 			       user, // name
 			       user, // auth_user
 			       pass,
-			       "", // proxy
+			       outbound_proxy, // proxy
 			       contact_uri // contact
 			       );
 
@@ -447,7 +450,7 @@ void DBRegAgent::updateRegistration(long subscriber_id,
 						      user, // name
 						      user, // auth_user
 						      pass,
-						      "",   // proxy
+						      outbound_proxy,   // proxy
 						      contact)); // contact
   registrations_mut.unlock();
 }
