@@ -237,7 +237,7 @@ bool DBRegAgent::loadRegistrations() {
 
     string query_string, table;
 
-    query_string = joined_query + ";";
+    query_string = joined_query;
 
     DBG("querying all registrations with : '%s'\n",
 	query_string.c_str());
