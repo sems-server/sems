@@ -143,6 +143,11 @@ void AmThread::stop()
 {
   _m_td.lock();
 
+  if(is_stopped()){
+    _m_td.unlock();
+    return;
+  }
+
   // gives the thread a chance to clean up
   DBG("Thread %lu (%lu) calling on_stop, give it a chance to clean up.\n", 
       (unsigned long int) _pid, (unsigned long int) _td);
