@@ -19,3 +19,4 @@ sems-logfile-callextract
 cscope.out
 cscope.files
 semantic.cache
+apps/rtmp/flash_phone/*.swf
