@@ -226,6 +226,7 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 	reply(req,err_code,err_txt);
       }
       else { // ACK
+	// TODO: only if reply to initial INVITE (if re-INV, app should decide)
 	DBG("error %i with SDP received in ACK request: sending BYE\n",err_code);
 	bye();
       }
@@ -684,6 +685,21 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
     if((reply.cseq_method == "BYE") && (reply.code >= 200)){
       //TODO: support the auth case here (401/403)
       status = Disconnected;
+    }
+  }
+
+  if((reply.cseq_method == SIP_METH_INVITE || 
+      reply.cseq_method == SIP_METH_UPDATE || 
+      reply.cseq_method == SIP_METH_PRACK) &&
+     !reply.body.empty() && 
+     (reply.content_type == SIP_APPLICATION_SDP)) {
+
+    const char* err_txt=NULL;
+    int err_code = onRxSdp(reply.body,&err_txt);
+    if(err_code){
+      // TODO: only if initial INVITE (if re-INV, app should decide)
+      DBG("error %i with SDP received in %i reply: sending ACK+BYE\n",err_code,reply.code);
+      bye();
     }
   }
 
