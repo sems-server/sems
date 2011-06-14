@@ -340,10 +340,15 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
       } else if (c == '=') {
 	p2 = pos; st = pS2;
       } else if (c == ';') {
-	if ((st == pS2) ||(st == pS1)) {
+	if (st == pS1) {
+	  params[line.substr(p1, pos-p1)] = "";
+	  st = pS0;
+	  p1 = pos;
+	} else if (st == pS2) {
 	  params[line.substr(p1, p2-p1)] 
 	    = line.substr(p2+1, pos-p2-1);
 	  st = pS0;
+	  p1 = pos;
 	}
       } else {
 	if (st == pS0) {
@@ -391,7 +396,11 @@ void AmUriParser::dump() {
   DBG(" uri_hdr   '%s'\n", uri_headers.c_str());
   DBG(" uri_param '%s'\n", uri_param.c_str());
   for (map<string, string>::iterator it = params.begin(); 
-       it != params.end(); it++) 
-    DBG(" param     '%s'='%s'\n", it->first.c_str(), it->second.c_str()) ;
+       it != params.end(); it++) {
+    if (it->second.empty())
+      DBG(" param     '%s'\n", it->first.c_str());
+    else
+      DBG(" param     '%s'='%s'\n", it->first.c_str(), it->second.c_str());
+  }
   DBG("-------------------- \n");
 }
