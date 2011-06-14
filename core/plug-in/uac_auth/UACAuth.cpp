@@ -361,7 +361,7 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
     result += "opaque=\"" + challenge.opaque + "\", ";
   
   if (!qop_value.empty())
-    result += "qop=\"" + qop_value + "\", "
+    result += "qop=" + qop_value + ", "
       "cnonce=\"" + cnonce + "\", "
       "nc=\"" + int2hex(nonce_count,true) + "\", ";
 
