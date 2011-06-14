@@ -34,8 +34,8 @@
 #include "log.h"
 #include "AmThread.h"
 
-#define TIMER_BUCKET_LENGTH 10    // 10 sec
-#define TIMER_BUCKETS       1000  // 1000 buckets
+#define TIMER_BUCKET_LENGTH 10     // 10 sec
+#define TIMER_BUCKETS       40000  // 40000 buckets (400000 sec, 111 hrs)
 
 // 100 ms == 100000 us
 #define TIMER_RESOLUTION 100000

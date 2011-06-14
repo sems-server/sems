@@ -45,8 +45,11 @@ int RegistrationTimer::get_bucket_index(time_t tv) {
   int bucket_index =  (tv - buckets_start_time);
   bucket_index /= TIMER_BUCKET_LENGTH;
   
-  if (bucket_index > TIMER_BUCKETS) // too far in the future
+  if (bucket_index > TIMER_BUCKETS) { // too far in the future
+    ERROR("requested timer too far in the future (index %d vs %d TIMER_BUCKETS)\n",
+	  bucket_index, TIMER_BUCKETS);
     return -2;
+  }
 
   bucket_index += current_bucket;
   bucket_index %= TIMER_BUCKETS; // circular array
@@ -225,8 +228,14 @@ bool RegistrationTimer::insert_timer_leastloaded(RegTimer* timer,
   int from_index = get_bucket_index(from_time);
   int to_index = get_bucket_index(to_time);
 
-  if (from_index < 0 && to_index < 0)
+  if (from_index < 0 && to_index < 0) {
+    ERROR("could not find timer bucket indices - "
+	  "from_index = %d, to_index = %d, from_time = %ld, to_time %ld, "
+	  "current_bucket_start = %ld\n",
+	  from_index, to_index, from_time, to_time, current_bucket_start);
+    buckets_mut.unlock();
     return false;
+  }
 
   int res_index = from_index;
   if (from_index < 0) {
