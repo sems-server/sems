@@ -189,19 +189,7 @@ int AmRtpAudio::setCurrentPayload(int payload)
   else {
     return 0;
   }
-
-  // int res = 
-  //   ((AmAudioRtpFormat *) fmt.get())->setCurrentPayload(payload);
-  // if (!res) {
-  //   amci_codec_t* codec = fmt->getCodec();
-  //   use_default_plc = !(codec && codec->plc);
-  // }
-  // return res;
 }
-
-//int AmRtpAudio::getCurrentPayload() {
-  //return ((AmAudioRtpFormat *) fmt.get())->getCurrentPayload();
-//}
 
 unsigned int AmRtpAudio::conceal_loss(unsigned int ts_diff, unsigned char *buffer)
 {

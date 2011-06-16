@@ -325,8 +325,12 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
   if(!size)
     return -1;
 
-  return compile_and_send(payload, false, ts, buffer, size);
-
+  PayloadMappingTable::iterator it = pl_map.find(payload);
+  if ((it == pl_map.end()) || (it->second.remote_pt < 0)) {
+    return -1;
+  }
+  
+  return compile_and_send(it->second.remote_pt, false, ts, buffer, size);
 }
 
 int AmRtpStream::send_raw( char* packet, unsigned int length )
@@ -595,7 +599,7 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
 
   // second pass on remote SDP
   sdp_it = remote_media.payloads.begin();
-  while(sdp_it != remote_media.payloads.begin()) {
+  while(sdp_it != remote_media.payloads.end()) {
 
     PayloadMappingTable::iterator pmt_it = pl_map.end();
     if(sdp_it->encoding_name.empty()){ // must be a static payload
@@ -615,6 +619,7 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
     if(pmt_it != pl_map.end()){
       pmt_it->second.remote_pt = sdp_it->payload_type;
     }
+    ++sdp_it;
   }
 
   //TODO: support mute, on_hold & sendrecv/sendonly/recvonly/inactive
