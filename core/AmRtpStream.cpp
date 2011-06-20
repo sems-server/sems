@@ -327,6 +327,7 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
 
   PayloadMappingTable::iterator it = pl_map.find(payload);
   if ((it == pl_map.end()) || (it->second.remote_pt < 0)) {
+    ERROR("sending packet with unsupported remote payload type\n");
     return -1;
   }
   
@@ -608,7 +609,8 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
     }
     else {
       for(p_it = payloads.begin(); p_it != payloads.end(); ++p_it){
-	if((p_it->name == sdp_it->encoding_name) && 
+
+	if(!strcasecmp(p_it->name.c_str(),sdp_it->encoding_name.c_str()) && 
 	   (p_it->clock_rate == (unsigned int)sdp_it->clock_rate)){
 	  pmt_it = pl_map.find(p_it->pt);
 	  break;
