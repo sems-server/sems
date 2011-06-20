@@ -84,9 +84,13 @@ class CallGenFactory
 public:
   static string DigitsDir;
   static AmFileCache play_file;
+  static string from_host;
   CallGenFactory(const string& _app_name);
-  AmSession* onInvite(const AmSipRequest& req, AmArg& args);
-  AmSession* onInvite(const AmSipRequest& req);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      const map<string,string>& app_params);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      AmArg& args);
+
   int onLoad();
 
   // DI API
@@ -142,7 +146,7 @@ public:
   ~CallGenDialog();
 
   void onInvite(const AmSipRequest& r);
-  void onSessionStart(const AmSipReply& rep);
+  void onSessionStart();
   void onBye(const AmSipRequest& req);
   void process(AmEvent* event);
 };

@@ -48,6 +48,7 @@ EXPORT_PLUGIN_CLASS_FACTORY(CallGenFactory,APP_NAME);
 
 string      CallGenFactory::DigitsDir;
 AmFileCache CallGenFactory::play_file;
+string      CallGenFactory::from_host;
 
 CallGenFactory::CallGenFactory(const string& _app_name)
   : AmSessionFactory(_app_name),
@@ -85,6 +86,8 @@ int CallGenFactory::load() {
 	  play_fname.c_str());
     return -1;
   }
+
+  from_host = cfg.getParameter("from_host", "callgen.example.net");
 
   // get prompts
   AM_PROMPT_START;
@@ -161,14 +164,15 @@ void CallGenFactory::on_stop(){
   ERROR("not stoppable!\n");
 }
 
-AmSession* CallGenFactory::onInvite(const AmSipRequest& req)
-{
-  ERROR("DUH - need session params!.\n");
+AmSession* CallGenFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				    const map<string,string>& app_params) {
+  ERROR("incoming calls not supported!\n");
   return NULL;
 }
 
 // outgoing calls 
-AmSession* CallGenFactory::onInvite(const AmSipRequest& req, AmArg& args)
+AmSession* CallGenFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				    AmArg& args)
 {  
   size_t cnt = 0; 
   cnt++; // int    ncalls           = args.get(cnt++).asInt();
@@ -244,7 +248,7 @@ void CallGenFactory::createCall(const AmArg& args) {
   cnt++; // int    call_time_base   = args.get(cnt++).asInt();
   cnt++; // int    call_time_rand   = args.get(cnt++).asInt();
 
-  string from = "sip:callgen@"+AmConfig::LocalSIPIP;
+  string from = "sip:callgen@"+from_host;
   string call_ruri = "sip:"+ruri_user;
 
   for (int i=0;i<ruri_rand_digits;i++) 
@@ -390,7 +394,7 @@ void CallGenDialog::report(CallGenEvent what) {
 					 disconnect_ts);
 }
 
-void CallGenDialog::onSessionStart(const AmSipReply& rep) { 
+void CallGenDialog::onSessionStart() {
   time(&connect_ts);  
 
   report(CGConnect);
@@ -413,6 +417,7 @@ void CallGenDialog::onSessionStart(const AmSipReply& rep) {
     call_timer+=rand()%call_time_rand;
 
   if (call_timer > 0) {
+    DBG("setting timer %d %d\n", CALL_TIMER, call_timer);
     if (!setTimer(CALL_TIMER, call_timer)) {
       ERROR("could not load user_timer from session_timer plug-in\n");
       return;
