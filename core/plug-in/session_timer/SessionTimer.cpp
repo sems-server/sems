@@ -410,7 +410,15 @@ void SessionTimer::removeTimers(AmSession* s)
 
 void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev) 
 {
+
   int timer_id = timeout_ev->data.get(0).asInt();
+
+  if (s->dlg.getStatus() == AmSipDialog::Disconnecting ||
+      s->dlg.getStatus() == AmSipDialog::Disconnected) {
+    DBG("ignoring SST timeout event %i in Disconnecting/-ed session\n",
+	timer_id);
+    return;
+  }
 
   if (timer_id == ID_SESSION_REFRESH_TIMER) {
     if (session_refresher == refresh_local) {
