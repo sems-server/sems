@@ -138,7 +138,10 @@ private:
   int call_time_base; 
   int call_time_rand;
 
+  bool timer_started;
+
   void report(CallGenEvent what);
+  void setCallTimer();
 
 public:
   CallGenDialog(AmPromptCollection& prompts, 
@@ -146,6 +149,7 @@ public:
   ~CallGenDialog();
 
   void onInvite(const AmSipRequest& r);
+  void onEarlySessionStart();
   void onSessionStart();
   void onBye(const AmSipRequest& req);
   void process(AmEvent* event);

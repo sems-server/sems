@@ -371,7 +371,8 @@ CallGenDialog::CallGenDialog(AmPromptCollection& prompts,
     play_rand_digits(play_rand_digits), 
     call_time_base(call_time_base), 
     call_time_rand(call_time_rand),
-    play_file(&CallGenFactory::play_file)
+    play_file(&CallGenFactory::play_file),
+    timer_started(false)
 {
 }
 
@@ -394,6 +395,29 @@ void CallGenDialog::report(CallGenEvent what) {
 					 disconnect_ts);
 }
 
+void CallGenDialog::setCallTimer() {
+  if (timer_started)
+    return;
+  timer_started = true;
+
+  int call_timer = call_time_base;
+  if (call_time_rand>0)
+    call_timer+=rand()%call_time_rand;
+
+  if (call_timer > 0) {
+    DBG("setting timer %d %d\n", CALL_TIMER, call_timer);
+    if (!setTimer(CALL_TIMER, call_timer)) {
+      ERROR("could not load user_timer from session_timer plug-in\n");
+      return;
+    }
+  }
+
+}
+
+void CallGenDialog::onEarlySessionStart() {
+  setCallTimer();
+}
+
 void CallGenDialog::onSessionStart() {
   time(&connect_ts);  
 
@@ -412,17 +436,8 @@ void CallGenDialog::onSessionStart() {
 //   prompts.addToPlaylist(PLAY_FILE,  (long)this, play_list);
 
   setInOut(&play_list, &play_list);
-  int call_timer = call_time_base;
-  if (call_time_rand>0)
-    call_timer+=rand()%call_time_rand;
 
-  if (call_timer > 0) {
-    DBG("setting timer %d %d\n", CALL_TIMER, call_timer);
-    if (!setTimer(CALL_TIMER, call_timer)) {
-      ERROR("could not load user_timer from session_timer plug-in\n");
-      return;
-    }
-  }
+  setCallTimer();
 }
 
 void CallGenDialog::process(AmEvent* event)
