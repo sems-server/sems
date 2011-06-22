@@ -1157,8 +1157,12 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	    send_200_ack(it->second.cseq);
 	  }
 	}
-	status = Disconnected;
-	return sendRequest("BYE", "", "", hdrs, flags);
+	if (status != Disconnecting) {
+	  status = Disconnected;
+	  return sendRequest("BYE", "", "", hdrs, flags);
+	} else {
+	  return 0;
+	}
 
     case Trying:
     case Proceeding:
@@ -1187,7 +1191,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 
     default:
         DBG("bye(): we are not connected "
-	    "(status=%i). do nothing!\n",status);
+	    "(status=%s). do nothing!\n",getStatusStr());
 	return 0;
     }	
 }
