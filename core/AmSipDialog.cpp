@@ -239,7 +239,8 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 
 int AmSipDialog::onRxSdp(const string& body, const char** err_txt)
 {
-  DBG("entering onRxSdp()\n");
+  DBG("entering onRxSdp(), oa_state=%s\n", getOAStatusStr(oa_state));
+  OAState old_oa_state = oa_state;
 
   int err_code = 0;
   assert(err_txt);
@@ -262,10 +263,15 @@ int AmSipDialog::onRxSdp(const string& body, const char** err_txt)
       break;
       
     case OA_OfferSent:
-      oa_state = OA_Completed;
+      if (getStatus() != AmSipDialog::Early)
+	oa_state = OA_Completed;
       if(hdl->onSdpCompleted(sdp_local, sdp_remote)){
-	err_code = 500;
-	*err_txt = "internal error";
+	if (getStatus() != AmSipDialog::Early) {
+	  err_code = 500;
+	  *err_txt = "internal error";
+	} else {
+	  WARN("ignoring failed onSdpCompleted for early dialog SDP\n");
+	}
       }
       break;
 
@@ -283,6 +289,8 @@ int AmSipDialog::onRxSdp(const string& body, const char** err_txt)
   if(err_code != 0) {
     oa_state = OA_None;
   }
+
+  DBG("oa_state: %s -> %s\n", getOAStatusStr(old_oa_state), getOAStatusStr(oa_state));
 
   return err_code;
 }
