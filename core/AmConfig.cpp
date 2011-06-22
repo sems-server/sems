@@ -105,6 +105,8 @@ AmSipDialog::provisional_100rel AmConfig::rel100      = REL100_SUPPORTED;
 
 vector <string> AmConfig::CodecOrder;
 
+bool AmConfig::WaitForByeTransaction = false;
+
 Dtmf::InbandDetectorType 
 AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
 bool AmConfig::IgnoreSIGCHLD      = true;
@@ -450,6 +452,10 @@ int AmConfig::readConfiguration()
       ERROR("invalid sip_server_threads value specified");
       ret = -1;
     }
+  }
+
+  if(cfg.hasParameter("wait_for_bye_transaction")){
+    WaitForByeTransaction = (cfg.getParameter("wait_for_bye_transaction") == "yes");
   }
 
   // single codec in 200 OK

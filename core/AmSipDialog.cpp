@@ -363,6 +363,11 @@ void AmSipDialog::updateStatus(const AmSipReply& reply)
 	// there is nothing we can do anymore...
       }
     }
+
+    if((trans_method == "BYE") && (reply.code >= 200)){
+      // final reply to BYE: Disconnecting -> Disconnected
+      status = Disconnected;
+    }
     break;
 
   case Pending:
@@ -795,7 +800,10 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	    send_200_ack(it->second);
 	  }
 	}
-	status = Disconnected;
+	if (AmConfig::WaitForByeTransaction)
+	  status = Disconnecting;
+	else
+	  status = Disconnected;
 	return sendRequest("BYE", "", "", hdrs, flags);
 
     case Pending:

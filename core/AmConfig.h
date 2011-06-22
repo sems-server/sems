@@ -143,6 +143,8 @@ struct AmConfig
   /** If 200 OK reply should be limited to preferred codec only */
   static bool SingleCodecInOK;
   static vector <string> CodecOrder;
+
+  static bool WaitForByeTransaction;
   
   enum ApplicationSelector {
     App_RURIUSER,

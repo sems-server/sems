@@ -426,6 +426,16 @@ use_default_signature=yes
 #
 # dtmf_detector=spandsp
 
+# optional parameter: wait_for_bye_transaction={yes|no}
+#
+# when SEMS stops a call sending BYE as UAC, this option sets whether
+# SEMS waits for the BYE transaction to finish before forgetting the call.
+# This may be necessary e.g. to authenticate the BYE request.
+#
+# default: no
+#
+# wait_for_bye_transaction=yes
+
 # optional parameter: unhandled_reply_loglevel={error|warn|info|debug|no}
 # 
 # the default application logic implemented in the applications is to stop 
