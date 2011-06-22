@@ -125,8 +125,9 @@ bool SessionTimer::onSipReply(const AmSipReply& reply, int old_dlg_status,
 	   reply.cseq);
     }
   }
-
-  updateTimer(s,reply);
+  if ((trans_method == SIP_METH_INVITE) || (trans_method == SIP_METH_UPDATE)) {
+      updateTimer(s,reply);
+  }
   return false;
 }
 
