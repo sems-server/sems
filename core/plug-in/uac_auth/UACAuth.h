@@ -107,34 +107,46 @@ class UACAuth : public AmSessionEventHandler
   UACAuthCred* credential;
   AmSipDialog* dlg;
 
+  UACAuthDigestChallenge challenge;
+  unsigned int challenge_code;
+
   string nonce; // last nonce received from server
   unsigned int nonce_count;
 
   std::string find_attribute(const std::string& name, const std::string& header);
   bool parse_header(const std::string& auth_hdr, UACAuthDigestChallenge& challenge);
 
-  void uac_calc_HA1(UACAuthDigestChallenge& challenge,
+  void uac_calc_HA1(const UACAuthDigestChallenge& challenge,
 		    std::string cnonce,
 		    HASHHEX sess_key);
 
   void uac_calc_HA2( const std::string& method, const std::string& uri,
-		     UACAuthDigestChallenge& challenge,
+		     const UACAuthDigestChallenge& challenge,
 		     HASHHEX hentity,
 		     HASHHEX HA2Hex );
 
   void uac_calc_hentity( const std::string& body, HASHHEX hentity );
 	
   void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
-			  UACAuthDigestChallenge& challenge,
+			  const UACAuthDigestChallenge& challenge,
 			  const std::string& cnonce, const string& qop_value, 
 			  HASHHEX response);
 	
-  /** 
-   *  do auth on cmd with nonce in auth_hdr if possible 
-   *  @return true if successful 
+  /**
+   *  do auth on cmd with nonce in auth_hdr if possible
+   *  @return true if successful
    */
   bool do_auth(const unsigned int code, const string& auth_hdr,  
 	       const string& method, const string& uri, 
+	       const string& body, string& result);
+
+  /**
+   *  do auth on cmd with saved challenge
+   *  @return true if successful
+   */
+  bool do_auth(const UACAuthDigestChallenge& challenge,
+	       const unsigned int code,
+	       const string& method, const string& uri,
 	       const string& body, string& result);
 	
  public:

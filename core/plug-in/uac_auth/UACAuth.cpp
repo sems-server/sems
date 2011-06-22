@@ -149,10 +149,10 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 	    getHeader(reply.hdrs, SIP_HDR_PROXY_AUTHENTICATE, true) : 
 	    getHeader(reply.hdrs, SIP_HDR_WWW_AUTHENTICATE, true);
 	  string result; 
-			
+
 	  string auth_uri; 
 	  auth_uri = dlg->remote_uri;
-				
+
 	  if (do_auth(reply.code, auth_hdr,  
 		      ri->second.method,
 		      auth_uri, ri->second.body, result)) {
@@ -191,7 +191,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 	    if (dlg->sendRequest(ri->second.method,
 				 ri->second.content_type,
 				 ri->second.body, 
-				 hdrs, SIP_FLAGS_VERBATIM) == 0) {
+				 hdrs, SIP_FLAGS_VERBATIM | SIP_FLAGS_NOAUTH) == 0) {
 	      processed = true;
               DBG("authenticated request successfully sent.\n");
 	      // undo SIP dialog status change
@@ -217,6 +217,20 @@ bool UACAuth::onSendRequest(const string& method,
 			    int flags,
 			    unsigned int cseq)
 {
+  // add authentication header if nonce is already there
+  string result;
+  if (!(flags & SIP_FLAGS_NOAUTH) &&
+      !challenge.nonce.empty() &&
+      do_auth(challenge, challenge_code,
+	      method,
+	      dlg->remote_uri, body, result)) {
+    // add headers
+    if (hdrs == "\r\n" || hdrs == "\r" || hdrs == "\n")
+      hdrs = result;
+    else
+      hdrs += result;
+  }
+
   DBG("adding %d to list of sent requests.\n", cseq);
   sent_requests[cseq] = SIPRequestInfo(method, 
 				       content_type,
@@ -280,20 +294,30 @@ bool UACAuth::parse_header(const string& auth_hdr, UACAuthDigestChallenge& chall
 }
 
 bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,  
-		      const string& method, const string& uri, 
-		      const string& body, string& result) 
+		      const string& method, const string& uri,
+		      const string& body, string& result)
 {
   if (!auth_hdr.length()) {
     ERROR("empty auth header.\n");
     return false;
   }
 
-  UACAuthDigestChallenge challenge;
   if (!parse_header(auth_hdr, challenge)) {
     ERROR("error parsing auth header '%s'\n", auth_hdr.c_str());
     return false;
   }
-  
+
+  challenge_code = code;
+
+  return do_auth(challenge, code, method, uri, body, result);
+}
+
+
+bool UACAuth::do_auth(const UACAuthDigestChallenge& challenge,
+		      const unsigned int code,
+		      const string& method, const string& uri, 
+		      const string& body, string& result) 
+{
   if ((challenge.algorithm.length()) && (challenge.algorithm != "MD5")) {
     DBG("unsupported algorithm: '%s'\n", challenge.algorithm.c_str());
     return false;
@@ -405,7 +429,7 @@ static inline void cvt_hex(HASH bin, HASHHEX hex)
 /* 
  * calculate H(A1)
  */
-void UACAuth::uac_calc_HA1(UACAuthDigestChallenge& challenge,
+void UACAuth::uac_calc_HA1(const UACAuthDigestChallenge& challenge,
 			   string cnonce,
 			   HASHHEX sess_key)
 {
@@ -440,7 +464,7 @@ void UACAuth::uac_calc_HA1(UACAuthDigestChallenge& challenge,
  * calculate H(A2)
  */
 void UACAuth::uac_calc_HA2( const string& method, const string& uri,
-			    UACAuthDigestChallenge& challenge,
+			    const UACAuthDigestChallenge& challenge,
 			    HASHHEX hentity,
 			    HASHHEX HA2Hex )
 {
@@ -481,9 +505,9 @@ void UACAuth::uac_calc_hentity( const string& body, HASHHEX hentity )
 /* 
  * calculate request-digest/response-digest as per HTTP Digest spec 
  */
-void UACAuth::uac_calc_response( HASHHEX ha1, HASHHEX ha2,
-				 UACAuthDigestChallenge& challenge, const string& cnonce,
-				 const string& qop_value, HASHHEX response)
+void UACAuth::uac_calc_response(HASHHEX ha1, HASHHEX ha2,
+				const UACAuthDigestChallenge& challenge, const string& cnonce,
+				const string& qop_value, HASHHEX response)
 {
   unsigned char hc[1]; hc[0]=':';
   MD5_CTX Md5Ctx;

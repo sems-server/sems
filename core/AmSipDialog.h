@@ -44,6 +44,8 @@ using std::string;
 #define SIP_FLAGS_VERBATIM     1 // send request verbatim, 
                                  // i.e. modify as little as possible
 
+#define SIP_FLAGS_NOAUTH       1<<1 // don't add authentication header
+
 class AmSipTimeoutEvent;
 class AmSipDialogEventHandler;
 
