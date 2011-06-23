@@ -930,7 +930,8 @@ bool AmSession::getSdpOffer(AmSdp& offer)
   offer.conn.addrType = AT_V4;
   offer.conn.address = advertisedIP();
 
-  // TODO: support multiple media types
+  // TODO: support mutiple media types
+  offer.media.clear();
   offer.media.push_back(SdpMedia());
   SdpMedia& offer_media = offer.media[0];
 
@@ -964,6 +965,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
   // TODO: support multiple media types
   const vector<SdpMedia>::const_iterator m_it = offer.media.begin();
 
+  answer.media.clear();
   answer.media.push_back(SdpMedia());
   SdpMedia& answer_media = answer.media[0];
  
