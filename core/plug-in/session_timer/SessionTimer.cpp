@@ -125,7 +125,7 @@ bool SessionTimer::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_d
 	   reply.cseq);
     }
   }
-  if ((trans_method == SIP_METH_INVITE) || (trans_method == SIP_METH_UPDATE)) {
+  if ((reply.cseq_method == SIP_METH_INVITE) || (reply.cseq_method == SIP_METH_UPDATE)) {
       updateTimer(s,reply);
   }
   return false;
