@@ -8,20 +8,16 @@ import flash.media.Microphone;
 private static const NOT_CONNECTED:uint = 1;
 private static const CONNECTING:uint    = 2;
 private static const CONNECTED:uint     = 3;
-private static const STREAMING:uint     = 4;
 
+[Bindable]
 private var g_state:uint = NOT_CONNECTED;
+
+[Bindable]
+private var g_dial_state:uint = NOT_CONNECTED;
 
 private var g_netConnection:NetConnection;
 private var g_micStream:NetStream;
 private var g_inStream:NetStream;
-
-
-private function onCreationComplete(event:Event): void
-{
-    g_netConnection = new NetConnection();
-    g_netConnection.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
-}
 
 
 // bConnect button has been clicked
@@ -29,14 +25,14 @@ private function onConnectClick(evt:Event): void
 {
     try {
 	if(g_state != NOT_CONNECTED) {
-	    if(g_micStream)
-		g_micStream.close();
-	    if(g_inStream)
-		g_inStream.close();
+	    disconnectStreams();
 	    g_netConnection.close();
 	    g_state = NOT_CONNECTED;
 	}
 	else {
+	    g_netConnection = new NetConnection();
+	    g_netConnection.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
+
 	    g_netConnection.connect(connectUrl.text);
 	    g_state = CONNECTING;
 	    lStatus.text = "status: connecting...";
@@ -45,13 +41,22 @@ private function onConnectClick(evt:Event): void
     catch(err:Error){
 	Alert.show("Error: " + err.message,"Connect error");
 	g_state = NOT_CONNECTED;
+	g_dial_state = NOT_CONNECTED;
     }
+}
 
-    if(g_state == NOT_CONNECTED) {
-	bConnect.label = "Connect";
+// bDial button has been clicked
+private function onDialClick(evt:Event): void 
+{
+    if(g_state != CONNECTED)
+	return;
+
+    if(g_dial_state == NOT_CONNECTED) {
+	connectStreams();
     }
     else {
-	bConnect.label = "Disconnect";
+	//TODO: terminate call
+	disconnectStreams();
     }
 }
 
@@ -63,22 +68,24 @@ private function netStatusHandler(event:NetStatusEvent): void
     case "NetConnection.Connect.Success":
 	lStatus.text = event.info.level + ": connected";
 	g_state = CONNECTED;
-	connectStreams();
 	break;
 
     case "NetConnection.Connect.Closed":
 	lStatus.text = event.info.level + ": disconnected";
 	g_state = NOT_CONNECTED;
+	g_dial_state = NOT_CONNECTED;
 	break;
 
 	// error events:
     case "NetConnection.Connect.Failed":
 	lStatus.text = event.info.level + ": connection failed";
 	g_state = NOT_CONNECTED;
+	g_dial_state = NOT_CONNECTED;
 	break;
     case "NetConnection.Connect.Rejected":
 	lStatus.text = event.info.level + ": connection rejected";
 	g_state = NOT_CONNECTED;
+	g_dial_state = NOT_CONNECTED;
 	break;
 
 	// unkown event:
@@ -87,13 +94,6 @@ private function netStatusHandler(event:NetStatusEvent): void
 	    + event.info.description + " [" 
 	    + event.info.code + "]" ;
 	break;
-    }
-
-    if(g_state != NOT_CONNECTED){
-	bConnect.label = "Disconnect";
-    }
-    else {
-	bConnect.label = "Connect";
     }
 }
 
@@ -116,10 +116,21 @@ private function connectStreams():void
     micro.rate = 8; // narrowband
 
     g_micStream.attachAudio(micro);
-    g_micStream.publish("sip:music@iptel.org","live");
+    g_micStream.publish(dialUri.text,"live");
 
     g_inStream = new NetStream(g_netConnection);
-    g_inStream.bufferTimeMax = 0.2;
     g_inStream.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
-    g_inStream.play("sip:music@iptel.org","live");
+
+    //g_inStream.bufferTimeMax = 0.2;
+    g_inStream.play(dialUri.text,"live");
+
+    g_dial_state = CONNECTING;
+}
+
+private function disconnectStreams():void
+{
+    if(g_micStream) g_micStream.close();
+    if(g_inStream) g_inStream.close();
+
+    g_dial_state = NOT_CONNECTED;
 }

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
 	       xmlns:mx="library://ns.adobe.com/flex/mx"
-	       xmlns:s="library://ns.adobe.com/flex/spark"
-	       creationComplete="onCreationComplete(event);">
+	       xmlns:s="library://ns.adobe.com/flex/spark">
 
   <!-- UI Definitions -->
   <s:Panel title="Sono"
@@ -11,10 +10,17 @@
     <s:VGroup left="10" right="10" top="10" bottom="10">
       <mx:HBox>
 	<mx:TextInput id="connectUrl" text="rtmp://localhost:1935"/>
-	<mx:Button id="bConnect" label="Connect" 
+	<mx:Button id="bConnect" label="{g_state==NOT_CONNECTED?'Connect':'Disconnect'}"
 		   click="onConnectClick(event);"/>
       </mx:HBox>
+      <mx:HBox>
+	<mx:TextInput id="dialUri" text="sip:music@iptel.org"/>
+	<mx:Button id="bDial" label="{g_dial_state==NOT_CONNECTED?'Dial':'Hangup'}" 
+		   click="onDialClick(event);"
+		   enabled="{g_state == CONNECTED}"/>
+      </mx:HBox>
       <mx:Label id="lStatus" text="status: none"/>
+      <!--<mx:Panel id="dbgPanel"/>-->
     </s:VGroup>
   </s:Panel>
   
