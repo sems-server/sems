@@ -156,7 +156,7 @@ public:
   }
   
   /** Waits for the condition to be true or a timeout. */
-  bool wait_for_to(unsigned long usec)
+  bool wait_for_to(unsigned long msec)
   {
     struct timeval now;
     struct timespec timeout;
@@ -164,8 +164,12 @@ public:
     bool ret = false;
 
     gettimeofday(&now, NULL);
-    timeout.tv_sec = now.tv_sec + (usec / 1000000);
-    timeout.tv_nsec = (now.tv_usec + (usec % 1000000)) * 1000;
+    timeout.tv_sec = now.tv_sec + (msec / 1000);
+    timeout.tv_nsec = (now.tv_usec + (msec % 1000)*1000)*1000;
+    if(timeout.tv_nsec >= 1000000000){
+      timeout.tv_sec++;
+      timeout.tv_nsec -= 1000000000;
+    }
 
     pthread_mutex_lock(&m);
     while(!t && !retcode){
