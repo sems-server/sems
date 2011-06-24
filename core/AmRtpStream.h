@@ -154,8 +154,8 @@ protected:
   bool           passive;      // passive mode ?
 
   /** Payload type for telephone event */
-  const SdpPayload* remote_telephone_event_pt;
-  const SdpPayload* local_telephone_event_pt;
+  auto_ptr<const SdpPayload> remote_telephone_event_pt;
+  auto_ptr<const SdpPayload> local_telephone_event_pt;
 
   PacketMem       mem;
   ReceiveBuffer   receive_buf;

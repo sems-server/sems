@@ -211,7 +211,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
     case DTMF_SEND_SENDING: {
       if (ts_less()(ts, current_send_dtmf_ts + current_send_dtmf.second)) {
 	// send packet
-	if (!remote_telephone_event_pt) 
+	if (!remote_telephone_event_pt.get())
 	  return;
 
 	dtmf_payload_t dtmf;
@@ -242,7 +242,7 @@ void AmRtpStream::sendDtmfPacket(unsigned int ts) {
       } else {
 	send_dtmf_end_repeat++;
 	// send packet with end bit set, duration = event duration
-	if (!remote_telephone_event_pt) 
+	if (!remote_telephone_event_pt.get())
 	  return;
 
 	dtmf_payload_t dtmf;
@@ -379,7 +379,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
     return RTP_EMPTY;
   }
 
-  if (local_telephone_event_pt && 
+  if (local_telephone_event_pt.get() &&
       rp->payload == local_telephone_event_pt->payload_type)
     {
       dtmf_payload_t* dpl = (dtmf_payload_t*)rp->getData();
@@ -420,8 +420,6 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     receiving(true),
     monitor_rtp_timeout(true),
     dtmf_sending_state(DTMF_SEND_NONE),
-    remote_telephone_event_pt(NULL),
-    local_telephone_event_pt(NULL),
     relay_stream(NULL),
     relay_enabled(false)
 {
@@ -642,14 +640,15 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
   payload = local_media.payloads[0].payload_type;
   last_payload = payload;
 
-  if((remote_telephone_event_pt = remote.telephoneEventPayload())) {
+  remote_telephone_event_pt.reset(remote.telephoneEventPayload());
+  if (remote_telephone_event_pt.get()) {
       DBG("remote party supports telephone events (pt=%i)\n",
 	  remote_telephone_event_pt->payload_type);
   } else {
     DBG("remote party doesn't support telephone events\n");
   }
 
-  local_telephone_event_pt = local.telephoneEventPayload();
+  local_telephone_event_pt.reset(local.telephoneEventPayload());
 
   resume();
 
@@ -712,7 +711,7 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 
   receive_mut.lock();
   // free packet on double packet for TS received
-  if(!(local_telephone_event_pt && 
+  if(!(local_telephone_event_pt.get() &&
        (p->payload == local_telephone_event_pt->payload_type))) {
     if (receive_buf.find(p->timestamp) != receive_buf.end()) {
       mem.freePacket(receive_buf[p->timestamp]);
@@ -765,7 +764,7 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   } else {
 #endif // WITH_ZRTP
 
-    if(local_telephone_event_pt && 
+    if(local_telephone_event_pt.get() &&
        (p->payload == local_telephone_event_pt->payload_type)) {
       rtp_ev_qu.push(p);
     } else {
@@ -846,10 +845,9 @@ void AmRtpStream::relay(AmRtpPacket* p) {
 
 int AmRtpStream::getLocalTelephoneEventRate()
 {
-  int retval = 0;
-  if (local_telephone_event_pt)
-    retval = local_telephone_event_pt->clock_rate;
-  return retval;
+  if (local_telephone_event_pt.get())
+    return local_telephone_event_pt->clock_rate;
+  return 0;
 }
 
 void AmRtpStream::sendDtmf(int event, unsigned int duration_ms) {
