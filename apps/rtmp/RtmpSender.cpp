@@ -46,9 +46,9 @@ void RtmpSender::run()
   while(running.get()){
     
     //wait for some work
-    // (at most 5s)
-    DBG("waiting for work...\n");
-    has_work.wait_for();//_to(5000*1000);
+    // (at most 1s)
+    //DBG("waiting for work...\n");
+    has_work.wait_for();//_to(1000);
 
     // send packets in the queue
     m_q_send.lock();

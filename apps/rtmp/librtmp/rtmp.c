@@ -2890,7 +2890,7 @@ int RTMP_ReadPacket(RTMP *r, RTMPPacket *packet)
       header += 2;
     }
 
-  RTMP_Log(RTMP_LOGDEBUG, "%s, m_nChannel: %0x", __FUNCTION__, packet->m_nChannel);
+  RTMP_Log(RTMP_LOGDEBUG2, "%s, m_nChannel: %0x", __FUNCTION__, packet->m_nChannel);
   nSize = packetSize[packet->m_headerType];
 
   if (nSize == RTMP_LARGE_HEADER_SIZE) {

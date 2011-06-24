@@ -42,6 +42,8 @@ SAVC(videoFunction);
 SAVC(objectEncoding);
 SAVC(_result);
 SAVC(createStream);
+SAVC(closeStream);
+SAVC(deleteStream);
 SAVC(getStreamLength);
 SAVC(play);
 SAVC(fmsVer);
@@ -60,7 +62,8 @@ RtmpConnection::RtmpConnection(int fd)
     arglen(0), argc(0),
     filetime(0), /* time of last download we started */
     filename(), /* name of last download */
-    //play_stream_id(0),
+    play_stream_id(0),
+    publish_stream_id(0),
     sender(NULL),
     session(NULL)
 {}
@@ -109,8 +112,14 @@ void RtmpConnection::run()
   }
   sender->start();
 
-  while(RTMP_IsConnected(&rtmp) &&
-  	RTMP_ReadPacket(&rtmp,&packet)) {
+  while(RTMP_IsConnected(&rtmp)) {
+
+    if(!RTMP_ReadPacket(&rtmp,&packet)) {
+      if(RTMP_IsTimedout(&rtmp))
+	continue;
+      else
+	break;
+    }
 
     if(!RTMPPacket_IsReady(&packet))
       continue;
@@ -124,16 +133,7 @@ void RtmpConnection::run()
     }
   }
 
-
-  m_session.lock();
-  DBG("message loop finished: erasing session ptr... (s=%p)\n",session);
-
-  if(session){
-    //TODO: terminate session
-    session->setConnectionPtr(NULL);
-    session = NULL;
-  }
-  m_session.unlock();
+  detachSession();
 
   // terminate the sender thread
   sender->stop();
@@ -150,8 +150,8 @@ void RtmpConnection::on_stop()
 
 int RtmpConnection::processPacket(RTMPPacket* packet)
 {
-  DBG("received packet type %02X, size %u bytes, Stream ID %i",
-      packet->m_packetType, packet->m_nBodySize, packet->m_nInfoField2);
+  //DBG("received packet type %02X, size %u bytes, Stream ID %i",
+  //    packet->m_packetType, packet->m_nBodySize, packet->m_nInfoField2);
 
   switch (packet->m_packetType) {
   case 0x01:
@@ -186,7 +186,7 @@ int RtmpConnection::processPacket(RTMPPacket* packet)
     // note(rco): librtmp writes the absolute timestamp into every packet
     //            after parsing it.
     //
-    DBG("audio packet: ts = %8i\n",packet->m_nTimeStamp);
+    //DBG("audio packet: ts = %8i\n",packet->m_nTimeStamp);
     rxAudio(packet);
     break;
 
@@ -354,15 +354,10 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
   else if (AVMATCH(&method, &av_getStreamLength))
     {
       // TODO: find value for live streams (0?, -1?)
-      SendResultNumber(txn, 10.0);
+      SendResultNumber(txn, 0.0);
     }
   else if (AVMATCH(&method, &av_play))
     {
-      //char *file, *p, *q, *cmd, *ptr;
-      //AVal *argv, av;
-      //int len, argc;
-      //uint32_t now;
-      //RTMPPacket pc = {0};
       AMFProp_GetString(AMF_GetProp(&obj, NULL, 3), &rtmp.Link.playpath);
 
       DBG("playpath = <%.*s>\n",
@@ -412,13 +407,34 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 	}
       
       string uri(rtmp.Link.playpath.av_val,rtmp.Link.playpath.av_len);
-      startSession(uri.c_str(),packet->m_nInfoField2);
+      play_stream_id = packet->m_nInfoField2;
+      startSession(uri.c_str(),play_stream_id);
     }
   else if(AVMATCH(&method, &av_publish))
     {
       DBG("Client is now publishing (Stream ID = %i)\n",
 	  packet->m_nInfoField2);
-      //publish_stream_id = packet->m_nInfoField2;
+      publish_stream_id = packet->m_nInfoField2;
+    }
+  else if(AVMATCH(&method, &av_closeStream))
+    {
+      // - compare StreamID with play_stream_id
+      //   - if matched: stop session
+      DBG("received closeStream with StreamID=%i\n",packet->m_nInfoField2);
+      if((packet->m_nInfoField2 == (int)play_stream_id) ||
+	 packet->m_nInfoField2 == (int)publish_stream_id) {
+	DBG("closeStream corresponds to [play|publish]_stream_id = %i\n",packet->m_nInfoField2);
+	detachSession();
+	play_stream_id = 0;
+	publish_stream_id = 0;
+      }
+    }
+  else if(AVMATCH(&method, &av_deleteStream))
+    {
+      //TODO: find out what to do here...
+      // - fetch streamID
+      // - compare with play_stream_id
+      //   - if matched: stop session
     }
 
   AMF_Reset(&obj);
@@ -1013,4 +1029,17 @@ RtmpSession* RtmpConnection::startSession(const char* uri, unsigned int stream_i
   m_session.unlock();
 
   return pn_session;
+}
+
+void RtmpConnection::detachSession()
+{
+  m_session.lock();
+  DBG("detaching session: erasing session ptr... (s=%p)\n",session);
+
+  if(session){
+    //TODO: terminate session
+    session->setConnectionPtr(NULL);
+    session = NULL;
+  }
+  m_session.unlock();
 }

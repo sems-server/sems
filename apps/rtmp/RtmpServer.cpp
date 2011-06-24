@@ -62,6 +62,8 @@ void _RtmpServer::run()
   fds[0].events = POLLIN | POLLERR;
   fds_num++;
 
+  RTMP_LogSetLevel(RTMP_LOGDEBUG);
+
   INFO("RTMP server started (%s:%i)\n",
        inet_ntoa(listen_addr.sin_addr),
        ntohs(listen_addr.sin_port));

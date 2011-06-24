@@ -28,7 +28,10 @@ class RtmpConnection
   AVal     filename;	/* name of last download */
 
   // Stream ID with play() invoke
-  //unsigned int play_stream_id;
+  unsigned int play_stream_id;
+
+  // Stream ID with publish() invoke
+  unsigned int publish_stream_id;
   
   // Owned by the connection
   // used also by the session
@@ -54,6 +57,7 @@ protected:
 
 private:
   RtmpSession* startSession(const char* uri, unsigned int stream_id);
+  void detachSession();
 
   int processPacket(RTMPPacket *packet);
   int invoke(RTMPPacket *packet, unsigned int offset);
