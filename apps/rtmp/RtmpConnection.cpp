@@ -143,6 +143,7 @@ void RtmpConnection::run()
 
   RTMP_Close(&rtmp);
   DBG("connection closed\n");
+  AmThreadWatcher::instance()->add(this);
 }
 
 void RtmpConnection::on_stop()

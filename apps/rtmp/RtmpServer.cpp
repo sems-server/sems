@@ -99,7 +99,6 @@ void _RtmpServer::run()
 	    }
 	    RtmpConnection * conn = new RtmpConnection(new_fd);
 	    conn->start();
-	    AmThreadWatcher::instance()->add(conn);
 	  } else {
 	    // POLLERR or POLLHUP
 	    ERROR("on socket %i",fds[i].fd);
