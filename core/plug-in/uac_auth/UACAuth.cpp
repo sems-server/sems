@@ -105,7 +105,9 @@ UACAuth::UACAuth(AmSipDialog* dlg,
 		 UACAuthCred* cred)
   : dlg(dlg),
     credential(cred),
-    AmSessionEventHandler()
+    AmSessionEventHandler(),
+    nonce_count(0),
+    nonce_reuse(false)
 { 	  
 }
 
@@ -139,12 +141,15 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
 	// 				credential->realm.c_str(),
 	// 				credential->user.c_str(),
 	// 				credential->pwd.c_str());
-	if (((reply.code == 401) && 
+	if (!nonce_reuse &&
+	    (((reply.code == 401) &&
 	     getHeader(ri->second.hdrs, SIP_HDR_AUTHORIZATION, true).length()) ||
 	    ((reply.code == 407) && 
-	     getHeader(ri->second.hdrs, SIP_HDR_PROXY_AUTHORIZATION, true).length())) {
+	     getHeader(ri->second.hdrs, SIP_HDR_PROXY_AUTHORIZATION, true).length()))) {
 	  DBG("Authorization failed!\n");
 	} else {
+	  nonce_reuse = false;
+
 	  string auth_hdr = (reply.code==407) ? 
 	    getHeader(reply.hdrs, SIP_HDR_PROXY_AUTHENTICATE, true) : 
 	    getHeader(reply.hdrs, SIP_HDR_WWW_AUTHENTICATE, true);
@@ -157,9 +162,13 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
 		      ri->second.method,
 		      auth_uri, ri->second.body, result)) {
 	    string hdrs = ri->second.hdrs;
-	    // TODO(?): strip headers 
-	    // ((code==401) ? stripHeader(ri->second.hdrs, "Authorization")  :
-	    //	 		    stripHeader(ri->second.hdrs, "Proxy-Authorization"));
+
+	    // strip other auth headers
+	    if (reply.code == 401) {
+	      removeHeader(hdrs, SIP_HDR_AUTHORIZATION);
+	    } else {
+	      removeHeader(hdrs, SIP_HDR_PROXY_AUTHORIZATION);
+	    }
 
 	    if (hdrs == "\r\n" || hdrs == "\r" || hdrs == "\n")
 	      hdrs = result;
@@ -225,6 +234,10 @@ bool UACAuth::onSendRequest(const string& method,
       hdrs = result;
     else
       hdrs += result;
+
+    nonce_reuse = true;
+  } else {
+    nonce_reuse = false;
   }
 
   DBG("adding %d to list of sent requests.\n", cseq);

@@ -111,6 +111,8 @@ class UACAuth : public AmSessionEventHandler
   string nonce; // last nonce received from server
   unsigned int nonce_count;
 
+  bool nonce_reuse; // reused nonce?
+
   std::string find_attribute(const std::string& name, const std::string& header);
   bool parse_header(const std::string& auth_hdr, UACAuthDigestChallenge& challenge);
 
