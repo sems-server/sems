@@ -991,9 +991,11 @@ RtmpSession* RtmpConnection::startSession(const char* uri, unsigned int stream_i
 
   dialout_dlg.local_tag    = dialout_id;
   dialout_dlg.callid       = AmSession::getNewId();
-  dialout_dlg.local_party  = "RTMP Gateway <sems@frafos.com>";
-  dialout_dlg.remote_party = uri;
+  dialout_dlg.local_party  = "\"RTMP Gateway\" <sip:sems@mediaslug>";
+  dialout_dlg.remote_party = "<" + string(uri) + ">";
   dialout_dlg.remote_uri   = uri;
+
+  n_session->setCallgroup(dialout_id);
   
   switch(AmSessionContainer::instance()->addSession(dialout_id,
 						    n_session.get())){
