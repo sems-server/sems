@@ -649,7 +649,7 @@ void _resolver::run()
 	timeval tv_now;
 	gettimeofday(&tv_now,NULL);
 
-	DBG("starting DNS cache garbage collection");
+	//DBG("starting DNS cache garbage collection");
 	for(unsigned long i=0; i<cache.get_size(); i++){
 
 	    dns_bucket* bucket = cache.get_bucket(i);
