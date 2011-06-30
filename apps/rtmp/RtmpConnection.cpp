@@ -54,9 +54,6 @@ SAVC(description);
 SAVC(secureToken);
 SAVC(publish);
 
-#define SendStreamBegin()    SendCtrl(0, 1, 0)
-#define SendStreamEOF()      SendCtrl(1, 1, 0)
-
 RtmpConnection::RtmpConnection(int fd)
   : sock_fd(fd), streamID(0),
     arglen(0), argc(0),
@@ -694,6 +691,16 @@ int RtmpConnection::SendPlayStop()
 
   packet.m_nBodySize = enc - packet.m_body;
   return sender->push_back(packet);
+}
+
+int RtmpConnection::SendStreamBegin()
+{
+  return SendCtrl(0, 1, 0);
+}
+
+int RtmpConnection::SendStreamEOF()
+{
+  return SendCtrl(1, 1, 0);
 }
 
 int RtmpConnection::SendPause(int DoPause, int iTime)

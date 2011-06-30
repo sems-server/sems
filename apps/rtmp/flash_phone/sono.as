@@ -88,6 +88,15 @@ private function netStatusHandler(event:NetStatusEvent): void
 	g_dial_state = NOT_CONNECTED;
 	break;
 
+    case "NetStream.Play.Start":
+	lStatus.text = event.info.level + ": " + event.info.description;
+	break;
+
+    case "NetStream.Play.Stop":
+	lStatus.text = event.info.level + ": " + event.info.description;
+	disconnectStreams();
+	break;
+
 	// unkown event:
     default:
 	lStatus.text = event.info.level + ": " 

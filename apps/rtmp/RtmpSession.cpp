@@ -19,6 +19,8 @@ void RtmpSession::onBeforeDestroy()
 {
   m_rtmp_conn.lock();
   if(rtmp_connection){
+    rtmp_connection->SendStreamEOF();
+    rtmp_connection->SendPlayStop();
     rtmp_connection->setSessionPtr(NULL);
     rtmp_connection = NULL;
   }
@@ -33,6 +35,12 @@ void RtmpSession::onSessionStart()
   RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT);
   DBG("plugging rtmp_audio into in&out\n");
   setInOut(rtmp_audio,rtmp_audio);
+}
+
+void RtmpSession::onBye(const AmSipRequest& req)
+{
+  DBG("onBye(...)\n");
+  AmSession::onBye(req);
 }
 
 void RtmpSession::bufferPacket(const RTMPPacket& p)

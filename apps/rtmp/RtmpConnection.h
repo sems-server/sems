@@ -51,6 +51,11 @@ public:
   void setSessionPtr(RtmpSession* s);
   RtmpSender* getSenderPtr() { return sender; }
 
+  int SendPlayStart();
+  int SendPlayStop();
+  int SendStreamBegin();
+  int SendStreamEOF();
+
 protected:
   void run();
   void on_stop();
@@ -70,8 +75,6 @@ private:
   int SendCtrl(short nType, unsigned int nObject, unsigned int nTime);
   int SendResultNumber(double txn, double ID);
   int SendConnectResult(double txn);
-  int SendPlayStart();
-  int SendPlayStop();
   int SendPause(int DoPause, int iTime);
   int SendChangeChunkSize();
 

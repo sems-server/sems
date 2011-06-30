@@ -23,6 +23,7 @@ public:
 
   // @see AmSession
   void onSessionStart();
+  void onBye(const AmSipRequest& req);
   void onBeforeDestroy();
   void onAudioEvent(AmAudioEvent* audio_ev);
 
