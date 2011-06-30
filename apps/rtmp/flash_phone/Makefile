@@ -1,11 +1,12 @@
 
-FLEX_SDK=/opt/flex_sdk_4.1/bin
+FLEX_SDK=/opt/flex_sdk_4.5/bin
 
 MXMLC=$(FLEX_SDK)/mxmlc
 MXMLC_OPTS= \
 	--strict=true \
 	--as3=true \
-	--target-player="10.1.0"
+	--target-player="10.3.0" \
+	-swf-version=12
 
 APP=sono
 SOURCES= $(APP).mxml $(wildcard *.as)

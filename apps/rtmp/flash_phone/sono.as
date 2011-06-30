@@ -99,31 +99,35 @@ private function netStatusHandler(event:NetStatusEvent): void
 
 private function connectStreams():void
 {
-    if(!Microphone.isSupported)
+    if(!Microphone.isSupported){
+	//TODO: report error
 	return; // no microphone!!!
+    }
 
     g_micStream = new NetStream(g_netConnection);
     g_micStream.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
 
-    var micro:Microphone = Microphone.getMicrophone();
-    
+    var micro:Microphone = Microphone.getEnhancedMicrophone();
+
+    if(micro == null){
+	//TODO: report error
+	return;
+    }
+
     micro.codec = SoundCodec.SPEEX;
-    micro.setUseEchoSuppression(true);
     micro.setSilenceLevel(0);
     micro.encodeQuality = 8; // 0 - 10
     micro.gain = 50; // 0 - 100
     micro.framesPerPacket = 1; // default=2
-    micro.rate = 8; // narrowband
-
+    micro.rate = 16; // wideband
+    
     g_micStream.attachAudio(micro);
     g_micStream.publish(dialUri.text,"live");
 
     g_inStream = new NetStream(g_netConnection);
     g_inStream.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
-
-    //g_inStream.bufferTimeMax = 0.2;
+    
     g_inStream.play(dialUri.text,"live");
-
     g_dial_state = CONNECTING;
 }
 
