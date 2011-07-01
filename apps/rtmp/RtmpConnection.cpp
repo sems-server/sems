@@ -55,7 +55,7 @@ SAVC(secureToken);
 SAVC(publish);
 
 RtmpConnection::RtmpConnection(int fd)
-  : sock_fd(fd), streamID(0),
+  : streamID(0),
     arglen(0), argc(0),
     filetime(0), /* time of last download we started */
     filename(), /* name of last download */
@@ -63,14 +63,14 @@ RtmpConnection::RtmpConnection(int fd)
     publish_stream_id(0),
     sender(NULL),
     session(NULL)
-{}
+{
+  memset(&rtmp,0,sizeof(RTMP));
+  RTMP_Init(&rtmp);
+  rtmp.m_sb.sb_socket = fd;
+}
 
 RtmpConnection::~RtmpConnection()
 {
-  if(sock_fd > 0){
-    ::close(sock_fd);
-    sock_fd = 0;
-  }
 }
 
 void RtmpConnection::setSessionPtr(RtmpSession* s)
@@ -84,15 +84,9 @@ void RtmpConnection::setSessionPtr(RtmpSession* s)
 void RtmpConnection::run()
 {
   RTMPPacket packet;
-
-  memset(&rtmp,0,sizeof(RTMP));
   memset(&packet,0,sizeof(RTMPPacket));
 
-  DBG("Starting connection (%zd;%zd)\n",
-      sizeof(RTMP),sizeof(RTMPPacket));
-
-  RTMP_Init(&rtmp);
-  rtmp.m_sb.sb_socket = sock_fd;
+  DBG("Starting connection (socket=%i)\n",rtmp.m_sb.sb_socket);
 
   if (!RTMP_Serve(&rtmp)) {
     ERROR("Handshake failed\n");

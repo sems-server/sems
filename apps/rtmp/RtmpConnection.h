@@ -18,7 +18,6 @@ class RtmpConnection
     VideoRecv=0x08
   };
 
-  int      sock_fd;
   RTMP     rtmp;
 
   int      streamID;

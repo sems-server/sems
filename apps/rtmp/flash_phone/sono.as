@@ -142,8 +142,15 @@ private function connectStreams():void
 
 private function disconnectStreams():void
 {
-    if(g_micStream) g_micStream.close();
-    if(g_inStream) g_inStream.close();
+    if(g_micStream) { 
+	g_micStream.close();
+	g_micStream = null;
+    }
+
+    if(g_inStream) {
+	g_inStream.close();
+	g_inStream = null;
+    }
 
     g_dial_state = NOT_CONNECTED;
 }
