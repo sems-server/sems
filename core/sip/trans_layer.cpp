@@ -1625,7 +1625,7 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }
-    delete ack_buf;
+    delete[] ack_buf;
 
 }
 
