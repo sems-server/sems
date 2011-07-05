@@ -319,20 +319,23 @@ int mISDNChannel::call() {
         if (m_Presentation_r >= 0)    {
                 ie[1] = 0x00 + (m_TON_r<<4) + m_NPI_r;
                 ie[2] = 0x80 + (m_Presentation_r<<5) + m_Screening_r;
-    		for (i=0; i<=m_caller.size(); i++)  
-    		    ie[3+i] = m_caller[i] & 0x7f;
+		for (i=0; i<m_caller.size(); i++)
+		    ie[3+i] = m_caller[i] & 0x7f;
+		ie[3+m_caller.size()] = 0;
         } else {
                 ie[1] = 0x80 + (m_TON_r<<4) + m_NPI_r;
-	        for (i=0; i<=m_caller.size(); i++) 
-	    	    ie[2+i] = m_caller[i] & 0x7f;
+		for (i=0; i<m_caller.size(); i++)
+		    ie[2+i] = m_caller[i] & 0x7f;
+		ie[2+m_caller.size()] = 0;
         }
         ret = mISDN_AddIE(qi, p, IE_CALLING_PN, ie);
         if (ret<0) { ERROR("mISDNChannel::call Add IE_CALLING_PN error %d\n", ret);return FAIL; }
 	p += ret;
         ie[0] =m_called.size() + 1;
         ie[1] = 0x80 + (m_TON_d << 4) + m_NPI_d;        /* Ext = '1'B, Type = '000'B, Plan = '0001'B. */
-        for (i=0; i<=m_called.size(); i++) 
+        for (i=0; i<m_called.size(); i++)
                 ie[2+i] = m_called[i] & 0x7f;
+	ie[2+m_called.size()] = 0;
         ret = mISDN_AddIE(qi, p, IE_CALLED_PN, ie);
         if (ret<0) { ERROR("mISDNChannel::call Add IE_CALLED_PN error %d\n", ret);return FAIL; }
 	p += ret;
