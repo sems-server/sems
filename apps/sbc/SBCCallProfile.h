@@ -75,6 +75,9 @@ struct SBCCallProfile {
   bool auth_enabled;
   UACAuthCred auth_credentials;
 
+  bool auth_aleg_enabled;
+  UACAuthCred auth_aleg_credentials;
+
   bool call_timer_enabled;
   string call_timer;
 

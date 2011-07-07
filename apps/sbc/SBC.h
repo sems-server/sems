@@ -89,7 +89,7 @@ class SBCFactory: public AmSessionFactory,
 
 };
 
-class SBCDialog : public AmB2BCallerSession
+class SBCDialog : public AmB2BCallerSession, public CredentialHolder
 {
   enum {
     BB_Init = 0,
@@ -115,6 +115,9 @@ class SBCDialog : public AmB2BCallerSession
   struct timeval prepaid_acc_start;
   int prepaid_credit;
 
+  // auth
+  AmSessionEventHandler* auth;
+
   SBCCallProfile call_profile;
 
   void stopCall();
@@ -135,11 +138,17 @@ class SBCDialog : public AmB2BCallerSession
   void onInvite(const AmSipRequest& req);
   void onCancel(const AmSipRequest& cancel);
 
+  UACAuthCred* getCredentials();
+
+  void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
+
  protected:
   int relayEvent(AmEvent* ev);
 
+  void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
-  void onSipRequest(const AmSipRequest& req);  
+  void onSendRequest(const string& method, const string& content_type,
+		     const string& body, string& hdrs, int flags, unsigned int cseq);
 
   bool onOtherReply(const AmSipReply& reply);
   void onOtherBye(const AmSipRequest& req);

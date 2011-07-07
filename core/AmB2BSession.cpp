@@ -424,11 +424,13 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
 }
 
 void AmB2BSession::updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq) {
+  if (old_cseq == new_cseq)
+    return;
+
   TransMap::iterator t = relayed_req.find(old_cseq);
   if (t != relayed_req.end()) {
-    AmSipTransaction trans = t->second;
+    relayed_req[new_cseq] = t->second;
     relayed_req.erase(t);
-    relayed_req[new_cseq] = trans;
     DBG("updated relayed_req (UAC trans): CSeq %u -> %u\n", old_cseq, new_cseq);
   }
 }

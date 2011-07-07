@@ -243,6 +243,22 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
 
   SBCDialog* b2b_dlg = new SBCDialog(call_profile);
 
+  if (call_profile.auth_aleg_enabled) {
+    // adding auth handler
+    AmSessionEventHandlerFactory* uac_auth_f =
+      AmPlugIn::instance()->getFactory4Seh("uac_auth");
+    if (NULL == uac_auth_f)  {
+      INFO("uac_auth module not loaded. uac auth for caller session NOT enabled.\n");
+    } else {
+      AmSessionEventHandler* h = uac_auth_f->getHandler(b2b_dlg);
+
+      // we cannot use the generic AmSessionEventHandler hooks,
+      // because the hooks don't work in AmB2BSession
+      b2b_dlg->setAuthHandler(h);
+      DBG("uac auth enabled for caller session.\n");
+    }
+  }
+
   if (call_profile.sst_enabled) {
     AmSessionEventHandler* h = session_timer_fact->getHandler(b2b_dlg);
     if(!h) {
@@ -482,6 +498,7 @@ void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
 SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
     prepaid_acc(NULL),
+    auth(NULL),
     call_profile(call_profile),
     outbound_interface(-1)
 {
@@ -492,6 +509,12 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
 
 SBCDialog::~SBCDialog()
 {
+  if (auth)
+    delete auth;
+}
+
+UACAuthCred* SBCDialog::getCredentials() {
+  return &call_profile.auth_aleg_credentials;
 }
 
 void SBCDialog::onInvite(const AmSipRequest& req)
@@ -617,10 +640,17 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   }
 
   if (call_profile.auth_enabled) {
-    call_profile.auth_credentials.user = 
+    call_profile.auth_credentials.user =
       replaceParameters(call_profile.auth_credentials.user, "auth_user", REPLACE_VALS);
-    call_profile.auth_credentials.pwd = 
+    call_profile.auth_credentials.pwd =
       replaceParameters(call_profile.auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
+  }
+
+  if (call_profile.auth_aleg_enabled) {
+    call_profile.auth_aleg_credentials.user =
+      replaceParameters(call_profile.auth_aleg_credentials.user, "auth_aleg_user", REPLACE_VALS);
+    call_profile.auth_aleg_credentials.pwd =
+      replaceParameters(call_profile.auth_aleg_credentials.pwd, "auth_aleg_pwd", REPLACE_VALS);
   }
 
   if (!call_profile.outbound_interface.empty()) {
@@ -836,7 +866,32 @@ void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
       CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
-  AmB2BCallerSession::onSipReply(reply,old_dlg_status);
+  if (NULL == auth) {
+    AmB2BCallerSession::onSipReply(reply, old_dlg_status);
+    return;
+  }
+
+  // only for SIP authenticated
+  unsigned int cseq_before = dlg.cseq;
+  if (!auth->onSipReply(reply, old_dlg_status)) {
+      AmB2BCallerSession::onSipReply(reply, old_dlg_status);
+  } else {
+    if (cseq_before != dlg.cseq) {
+      DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
+          "updating relayed_req map\n", reply.cseq, cseq_before);
+      updateUACTransCSeq(reply.cseq, cseq_before);
+    }
+  }
+}
+
+void SBCDialog::onSendRequest(const string& method, const string& content_type,
+			      const string& body, string& hdrs, int flags, unsigned int cseq) {
+  if (NULL != auth) {
+    DBG("auth->onSendRequest cseq = %d\n", cseq);
+    auth->onSendRequest(method, content_type, body, hdrs, flags, cseq);
+  }
+
+  AmB2BCallerSession::onSendRequest(method, content_type, body, hdrs, flags, cseq);
 }
 
 bool SBCDialog::onOtherReply(const AmSipReply& reply)
@@ -1190,8 +1245,9 @@ void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status o
     CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
-  if (NULL == auth) {    
-    AmB2BCalleeSession::onSipReply(reply,old_dlg_status);
+
+  if (NULL == auth) {
+    AmB2BCalleeSession::onSipReply(reply, old_dlg_status);
     return;
   }
   
@@ -1201,13 +1257,8 @@ void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status o
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
-          "updating relayed_req map\n", 
-	  reply.cseq, cseq_before);
-      TransMap::iterator it=relayed_req.find(reply.cseq);
-      if (it != relayed_req.end()) {
-	relayed_req[cseq_before] = it->second;
-	relayed_req.erase(it);
-      }
+          "updating relayed_req map\n", reply.cseq, cseq_before);
+      updateUACTransCSeq(reply.cseq, cseq_before);
     }
   }
 }
@@ -1217,12 +1268,10 @@ void SBCCalleeSession::onSendRequest(const string& method, const string& content
 {
   if (NULL != auth) {
     DBG("auth->onSendRequest cseq = %d\n", cseq);
-    auth->onSendRequest(method, content_type,
-			body, hdrs, flags, cseq);
+    auth->onSendRequest(method, content_type, body, hdrs, flags, cseq);
   }
   
-  AmB2BCalleeSession::onSendRequest(method, content_type,
-				     body, hdrs, flags, cseq);
+  AmB2BCalleeSession::onSendRequest(method, content_type, body, hdrs, flags, cseq);
 }
 
 int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {
