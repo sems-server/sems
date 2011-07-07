@@ -110,7 +110,30 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   }
 
   sst_enabled = cfg.getParameter("enable_session_timer", "no") == "yes";
+  if (cfg.hasParameter("enable_aleg_session_timer")) {
+    sst_aleg_enabled = cfg.getParameter("enable_aleg_session_timer", "no") == "yes";
+  } else {
+    sst_aleg_enabled = sst_enabled;
+  }
   use_global_sst_config = !cfg.hasParameter("session_expires");
+  use_aleg_sst_config = cfg.hasParameter("aleg_session_expires");
+
+  if (sst_aleg_enabled) {
+    aleg_sst_cfg.setParameter("enable_session_timer", "yes");
+    // create aleg_sst_cfg with values from aleg_*
+#define CP_SST_CFGVAR(cfgkey)						\
+    if (cfg.hasParameter("aleg_" cfgkey)) {				\
+      aleg_sst_cfg.setParameter(cfgkey,					\
+				cfg.getParameter("aleg_" cfgkey));	\
+    }
+    CP_SST_CFGVAR("session_expires");
+    CP_SST_CFGVAR("minimum_timer");
+    CP_SST_CFGVAR("maximum_timer");
+    CP_SST_CFGVAR("session_refresh_method");
+    CP_SST_CFGVAR("accept_501_reply");
+#undef CP_SST_CFGVAR
+  }
+
   
   auth_enabled = cfg.getParameter("enable_auth", "no") == "yes";
   auth_credentials.user = cfg.getParameter("auth_user");
@@ -234,7 +257,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       }
     }
 
-    INFO("SBC:      SST %sabled\n", sst_enabled?"en":"dis");
+    INFO("SBC:      SST on A leg %sabled\n", sst_aleg_enabled?"en":"dis");
+    INFO("SBC:      SST on B leg %sabled\n", sst_enabled?"en":"dis");
+
     INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
     INFO("SBC:      SIP auth for A leg %sabled\n", auth_aleg_enabled?"en":"dis");
     INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
@@ -283,7 +308,9 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     messagefilter_list == rhs.messagefilter_list &&
     sdpfilter_enabled == rhs.sdpfilter_enabled &&
     sst_enabled == rhs.sst_enabled &&
+    sst_aleg_enabled == rhs.sst_aleg_enabled &&
     use_global_sst_config == rhs.use_global_sst_config &&
+    use_aleg_sst_config == rhs.use_aleg_sst_config &&
     auth_enabled == rhs.auth_enabled &&
     auth_aleg_enabled == rhs.auth_aleg_enabled &&
     call_timer_enabled == rhs.call_timer_enabled &&
@@ -353,7 +380,9 @@ string SBCCallProfile::print() const {
   res += "sdpfilter:            " + string(FilterType2String(sdpfilter)) + "\n";
   res += "sdpfilter_list:       " + stringset_print(sdpfilter_list) + "\n";
   res += "sst_enabled:          " + string(sst_enabled?"true":"false") + "\n";
+  res += "sst_aleg_enabled:     " + string(sst_aleg_enabled?"true":"false") + "\n";
   res += "use_global_sst_config:" + string(use_global_sst_config?"true":"false") + "\n";
+  res += "use_aleg_sst_config:" + string(use_aleg_sst_config?"true":"false") + "\n";
   res += "auth_enabled:         " + string(auth_enabled?"true":"false") + "\n";
   res += "auth_user:            " + auth_credentials.user+"\n";
   res += "auth_pwd:             " + auth_credentials.pwd+"\n";

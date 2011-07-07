@@ -50,6 +50,7 @@ class AmConfigReader
   int  loadFile(const string& path);
   /** get md5 hash of file contents */
   bool getMD5(const string& path, string& md5hash, bool lowercase = true);
+  void setParameter(const string& param, const string& val);
   bool hasParameter(const string& param);
   const string& getParameter(const string& param, const string& defval = "");
   unsigned int getParameterInt(const string& param, unsigned int defval = 0);

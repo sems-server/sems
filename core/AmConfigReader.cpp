@@ -208,6 +208,10 @@ bool AmConfigReader::getMD5(const string& path, string& md5hash, bool lowercase)
     return true;
 }
 
+void AmConfigReader::setParameter(const string& param, const string& val) {
+  keys[param] = val;
+}
+
 bool AmConfigReader::hasParameter(const string& param)
 {
   return (keys.find(param) != keys.end());

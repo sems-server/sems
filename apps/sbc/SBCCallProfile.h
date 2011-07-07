@@ -70,7 +70,11 @@ struct SBCCallProfile {
   set<string> sdpfilter_list;
 
   bool sst_enabled;
+  bool sst_aleg_enabled;
   bool use_global_sst_config;
+  bool use_aleg_sst_config;
+  AmConfigReader aleg_sst_cfg;
+
 
   bool auth_enabled;
   UACAuthCred auth_credentials;

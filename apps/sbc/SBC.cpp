@@ -225,15 +225,19 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
     return NULL;
   }
 
-  AmConfigReader& sst_cfg = call_profile.use_global_sst_config ?
-    cfg : call_profile.cfg; // override with profile config
+  AmConfigReader* sst_cfg = &call_profile.cfg;
+  if (call_profile.use_aleg_sst_config) {
+    sst_cfg = &call_profile.aleg_sst_cfg; // override with aleg sst config (aleg_*)
+  } else if (call_profile.use_global_sst_config) {
+    sst_cfg = &cfg; // global config
+  }
 
-  if (call_profile.sst_enabled) {
-    DBG("Enabling SIP Session Timers\n");
+  if (call_profile.sst_aleg_enabled) {
+    DBG("Enabling SIP Session Timers (A leg)\n");
     try {
-      if (!session_timer_fact->onInvite(req, sst_cfg)) {
+      if (!session_timer_fact->onInvite(req, *sst_cfg)) {
 	profiles_mut.unlock();
-	return NULL;
+	throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       }
     } catch (const AmSession::Exception& e) {
       profiles_mut.unlock();
@@ -259,7 +263,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
     }
   }
 
-  if (call_profile.sst_enabled) {
+  if (call_profile.sst_aleg_enabled) {
     AmSessionEventHandler* h = session_timer_fact->getHandler(b2b_dlg);
     if(!h) {
       profiles_mut.unlock();
@@ -268,7 +272,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
-    if (h->configure(sst_cfg)){
+    if (h->configure(*sst_cfg)){
       ERROR("Could not configure the session timer: disabling session timers.\n");
       delete h;
     } else {
@@ -621,7 +625,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     b2b_mode = B2BMode_SDPFilter;
   }
 
-  if (call_profile.sst_enabled) {
+  if (call_profile.sst_aleg_enabled) {
     removeHeader(invite_req.hdrs,SIP_HDR_SESSION_EXPIRES);
     removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
   }
@@ -1071,7 +1075,7 @@ void SBCDialog::createCalleeSession()
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
     AmConfigReader& sst_cfg = call_profile.use_global_sst_config ? 
-      SBCFactory::cfg: call_profile.cfg; // override with profile config
+      SBCFactory::cfg : call_profile.cfg; // override with profile config
 
     if(h->configure(sst_cfg)){
       ERROR("Could not configure the session timer: disabling session timers.\n");
