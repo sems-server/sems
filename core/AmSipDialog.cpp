@@ -706,7 +706,8 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
     int err_code = onRxSdp(reply.body,&err_txt);
     if(err_code){
       // TODO: only if initial INVITE (if re-INV, app should decide)
-      DBG("error %i with SDP received in %i reply: sending ACK+BYE\n",err_code,reply.code);
+      DBG("error %i (%s) with SDP received in %i reply: sending ACK+BYE\n",
+	  err_code,err_txt?err_txt:"none",reply.code);
       bye();
     }
   }
