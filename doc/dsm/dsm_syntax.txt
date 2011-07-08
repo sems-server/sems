@@ -270,6 +270,9 @@ B2B call control
 Conditions
 ==========
  
+Conditions are combined as AND, i.e. a transition is executed if all conditions match.
+
+Generic conditions (regardless of the type of the event):
  test(#key == 1)
  test(#key == prefix*)
  test(#key != 1)
@@ -285,42 +288,79 @@ Conditions
  test(len($var) < len(#key))
  test(len($var) < len(@user))
 
- -- like test(expr), but only on key press
+Other conditions only match on the type of event and when the expression expr in the
+brackets match.
+
+ hangup
+   bye/cancel received
+   parameters:
+      #headers - headers of the BYE/CANCEL request
+
  key(expr) or keyTest(expr)
+   parameters:
+      #key - Key pressed (0 - 11, * is 10, # is 11)
+      #duration - duration of key press
+
  timer(expr) or timerTest(expr)
+   parameters:
+      #id - Timer ID
+
  noAudio(expr) or noAudioTest(expr)
+   parameters:
+      #type - "cleared" (audio cleared) or "noAudio" (playlist empty)
+
  separator(expr) or separatorTest(expr)
-  e.g. separatorTest(#id == 5)
+   parameters:
+      #id - Separator ID
+   e.g. separatorTest(#id == 5)
 
  event(expr) or eventTest(expr)
+  generic event, e.g. passed from DI or another call with postEvent
+  parameters depend on the DI call/the ones passed with postEvent
 
- keyPress(no)  
- 
-  -- bye received: 
- hangup  
+ keyPress(key)
+  alias to key(#key==key)
 
-  -- event is invite (only with run_invite_event):
  invite
-  -- event is ringing, 180 (only with run_invite_event):
+   invite received/sent (only with run_invite_event):
+   parameters: none
+
  ringing
-  -- event is early session, 183 (only with run_invite_event):
+   ringing reply, 180 (only with run_invite_event):
+   parameters:
+      #code     - SIP response code, e.g. 180
+      #reason   - SIP reason string, e.g. "Ringing"
+      #has_body - "true" or "false" 
+
  early
-  -- event is failed call (only with run_invite_event):
+   early session, 183 (only with run_invite_event):
+   parameters: none
+
  failed
-  -- event is start of session (with run_invite_event, otherwise its always true):
+   outgoing call failed (only with run_invite_event):
+   parameters:
+      #code     - SIP response code, e.g. 404
+      #reason   - SIP reason string, e.g. "Not found"
+
  sessionStart
+   start of session (with run_invite_event):
+   parameters: none
 
- -- event is startup
  startup
+   startup of a system DSM
+   parameters: none
 
- -- event is reload
- startup
+ reload
+   reload (system DSM)
 
- -- event is system event
  system
+   system event - shutdown or SIGNAL sent (kill <pid>)
+   parameters:
+      #type     - system event type, e.g. ServerShutdown, User1, User2
 
- B2B.otherReply 
-   Reply on other leg received (see AmB2BSession)
+ B2B.otherReply
+   Reply on other B2B leg received
+   parameters:
     #code    - reply code
     #reason  - reply reason
     #hdrs    - headers
@@ -329,16 +369,59 @@ Conditions
    BYE on other leg received
     #hdrs    - headers
 
+ sipRequest
+   SIP request received - only executed if enable_request_events=="true"
+   parameters:
+    #method        - SIP method
+    #r_uri         - request URI
+    #from          - From
+    #to            - To
+    #hdrs          - Headers (apart from dialog-IDs)
+    #content_type  - Content-Type
+    #body          - body of message
+    #cseq          - CSeq
+
+ sipReply
+   SIP reply received - only executed if enable_reply_events=="true"
+   parameters:
+    #code          - response code
+    #reason        - reason string
+    #hdrs          - Headers (apart from dialog-IDs)
+    #content_type  - Content-Type
+    #body          - body of message
+    #cseq          - CSeq
+
+    #dlg_status     - SIP dialog status (Disconnected, Trying, ...)
+    #old_dlg_status - old SIP dialog status (before this reply)
+
+
+ jsonRpcRequest - json-rpc request received
+   parameters:
+   #ev_type   - JsonRpcRequest
+   #method    - RPC method
+   #is_notify - "true" or "false"
+   #id        - request ID (if present)
+
+   #params.*  - parameters array
+
+ jsonRpcResponse - json-rpc response received
+   #ev_type  - JsonRpcResponse
+   #id       - response ID
+   #is_error - "true" or "false"
+   #udata    - user data that was saved when sending the request
+
+   #result.* or #error.* - response data array (or error data)
+
 Selects
 =======
-@selects :
- local_tag
- user
- domain
- remote_tag
- callid
- local_uri
- remote_uri
+selects :
+ @local_tag
+ @user
+ @domain
+ @remote_tag
+ @callid
+ @local_uri
+ @remote_uri
 
 Importing modules
 =================
@@ -358,6 +441,8 @@ special variables:
                             -> after the invite event:
                                   do not reply with 200 OK and do not 
                                   connect session to media processor on start
+   enable_request_events  "true"  - run events on receiving a request
+                          "false" - don't run events on receiveing request 
 
     
 =============================
