@@ -1,0 +1,135 @@
+-- This small DSM collects the extension via key input and
+-- connects to the extension in B2B mode.
+--
+-- Set run_invite_event=no in dsm.conf. Make necessary prompts by make in wav/
+-- The domain part of the extension to call is set below.
+
+initial state START
+  enter {
+     -- directory for prompts, may also be e.g. in $config.prompts_dir
+     set($prompts_dir="wav/");
+
+     -- the prompt we play at the beginning
+     sets($prompt_name=$(prompts_dir)enter_extension.wav);
+     playFile($prompt_name);
+
+     -- 60 seconds to enter extension, if not we hang up
+     setTimer(1, 60);
+
+     -- evaluate directly transition, to go to COLLECTING state
+     repost();
+  };
+
+-- immediately to COLLECTING state
+transition "go to collecting" START --> COLLECTING;
+
+-- state for collecting extension digits
+state COLLECTING
+  enter {
+    -- set 10 seconds 'hint' timer
+    setTimer(2, 10);
+  };
+
+-- digit key pressed
+transition "key press" COLLECTING - key(#key<10) / {
+    -- break any possibly playing prompt
+    closePlaylist();
+    -- add key to extension
+    append($extension, #key);
+} -> COLLECTING;
+
+transition "hint timer hit" COLLECTING - timer(#id==2) / {
+     -- 'please enter the extension'
+     sets($prompt_name=$(prompts_dir)enter_extension.wav);
+     playFile($prompt_name);
+} -> COLLECTING;
+
+transition "timeout timer hit" COLLECTING - timer(#id==1) / {
+     -- 'sorry you have problems. please call customer service'
+     sets($prompt_name=$(prompts_dir)sorry_problems.wav);
+     playFile($prompt_name);
+} -> PLAY_AND_BYE;
+
+-- connect (# or *) pressed, but no extension entered
+transition "connect key, but empty extension" COLLECTING - key(#key>9); test(len($extension)==0) / {
+     -- 'please enter the extension'
+     sets($prompt_name=$(prompts_dir)enter_extension.wav);
+     playFile($prompt_name);
+} -> COLLECTING;
+
+-- connect (# or *) pressed
+transition "connect key press" COLLECTING - key(#key>9) / {
+    -- break any possibly playing prompt
+    closePlaylist();
+
+    -- 'now connecting'
+    sets($prompt_name=$(prompts_dir)connecting.wav);
+    playFile($prompt_name);
+    
+    -- prefixing with 000777 (iptel.org webconference direct dialin)
+    set($remote="sip:000777");
+    -- room
+    append($remote, $extension);
+    -- at domain
+    append($remote, @);
+    append($remote, "iptel.org");
+
+    log(3,$remote);
+
+    -- connect in B2BUA mode
+    B2B.connectCallee($remote, $remote);
+} -> CONNECTING;
+
+state CONNECTING;
+
+-- received BYE from caller
+transition "bye while connecting" CONNECTING - hangup / { 
+   log(1, bye while connecting);
+   B2B.terminateOtherLeg(); 
+   stop(false);
+} -> END;
+
+-- provisional reply in callee leg
+transition "provisional reply" CONNECTING - B2B.otherReply(#code < 200)  / { 
+   log(3, received provisional reply)
+   log(3, #code)
+   log(3, #reason)
+} -> CONNECTING;
+
+-- positive reply in callee leg
+transition "positive reply" CONNECTING - B2B.otherReply(#code < 300)  / { 
+   log(3, received positive reply)
+   log(3, #code)
+   log(3, #reason)
+} -> CONNECTED;
+
+-- negative reply in callee leg, try again
+transition "negative reply" CONNECTING - B2B.otherReply()  / { 
+   log(3, received negative reply)
+   log(3, #code)
+   log(3, #reason)
+
+   -- 'connecting extension failed, please enter another extension'
+   sets($prompt_name=$(prompts_dir)failed_enter_extension.wav);
+   playFile($prompt_name);
+
+   -- remove old timers
+   removeTimer(1);
+   removeTimer(2);
+
+   -- collect a new one
+   clear($extension);
+} -> COLLECTING;
+
+state CONNECTED;
+transition "bye recvd" CONNECTED - hangup / B2B.terminateOtherLeg(); stop(false) -> END;
+transition "bye on other leg" CONNECTED - B2B.otherBye() / stop(true) -> END;
+
+state PLAY_AND_BYE;
+transition "file ended" PLAY_AND_BYE - noAudio / stop(true) -> END;
+
+-- caller hangs up while entering extension
+transition "hangup while entering" (COLLECTING, PLAY_AND_BYE) - hangup / stop(false) -> END;
+
+state END;
+
