@@ -293,8 +293,8 @@ void DSMCall::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 
     params["cseq"] = int2str(reply.cseq);
 
-    params["dlg_status"] = int2str(dlg.getStatus());
-    params["old_dlg_status"] = int2str(old_dlg_status);
+    params["dlg_status"] = dlgStatusStr(dlg.getStatus());
+    params["old_dlg_status"] = dlgStatusStr(old_dlg_status);
 
     // pass AmSipReply for use by mod_dlg (? sending ACK?)
     DSMSipReply* dsm_reply = new DSMSipReply(&reply);
