@@ -1,0 +1,1 @@
+Please enter the extension you want to connect, followed by the pound key.
