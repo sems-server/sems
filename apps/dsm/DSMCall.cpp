@@ -238,7 +238,9 @@ void DSMCall::onCancel(const AmSipRequest& cancel) {
   if (dlg.getStatus() < AmSipDialog::Connected) {
     //TODO: pass the cancel request as a parameter?
     DBG("hangup event!!!\n");
-    engine.runEvent(this, this, DSMCondition::Hangup, NULL);
+    map<string, string> params;
+    params["headers"] = cancel.hdrs;
+    engine.runEvent(this, this, DSMCondition::Hangup, &params);
   }
   else {
     DBG("ignoring onCancel event in established dialog\n");
