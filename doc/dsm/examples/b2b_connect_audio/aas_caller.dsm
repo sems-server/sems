@@ -1,0 +1,71 @@
+-- example for a B2B call connected through audio. On SIP level it is two
+-- separate calls to SEMS. mod_conference is used to connect audio through
+-- the same conference room. The B leg is authenticated (SIP auth).
+--
+-- Important: set run_invite_event=yes in dsm.conf and register_apps=aas_callee,aas_caller
+
+import(mod_dlg);
+import(mod_conference);
+
+initial state START;
+transition "got INVITE in caller leg" START - invite -> RUN_INVITE;
+
+state RUN_INVITE enter {
+  set($connect_session=0);
+  dlg.acceptInvite(183, Session Progress);
+
+  setInOutPlaylist();
+  -- caller (from) in 
+  set(b_leg_caller=outgoinguser);
+  set(b_leg_auth_user=outgoinguser);
+  set(b_leg_auth_pwd=outgoingpwd);
+  -- callee
+  set(b_leg_callee=music);
+
+  -- caller and callee domain
+  set(b_leg_domain=iptel.org);
+  -- from aas_callee.dsm
+  set(b_leg_app=aas_callee);
+
+  
+  set(b_leg_var.a_ltag=@local_tag);
+  dlg.dialout(b_leg);
+
+  log(2,$b_leg_ltag);
+  setTimer(1, 10);
+};
+
+transition "cancel" (START, RUN_INVITE) - hangup / {
+ set($a_status=DISCONNECT);
+ postEvent($b_leg_ltag, a_status);  
+
+ dlg.reply(487, Canceled);
+ stop(false); 
+} -> END;
+
+transition "Callee Answered" (START, RUN_INVITE) - test(#b_status==CONNECTED) / {
+  closePlaylist(false);
+  dlg.acceptInvite(200, OK);
+  log(1, @local_tag);
+  conference.join(@local_tag);
+} -> CONNECTED;
+
+transition "Callee failed" (START, RUN_INVITE) - test(#b_status==FAILED) / {
+  dlg.reply(#code, #reason);
+  stop(false);
+} -> END;
+
+state CONNECTED;
+
+transition "hangup" CONNECTED - hangup / {
+  set($a_status=DISCONNECT);
+  postEvent($b_leg_ltag, a_status);  
+  stop(false);
+} -> END;
+
+transition "disconnect on other side" CONNECTED - event(#b_status==DISCONNECT) / {
+  -- send BYE and stop call
+  stop(true);
+} -> END;
+
+state END;
