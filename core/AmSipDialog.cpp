@@ -74,7 +74,7 @@ const char* getOAStatusStr(AmSipDialog::OAState st) {
 }
 
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
-  : status(Disconnected),oa_state(OA_None),
+  : status(Disconnected),oa_trans(),
     cseq(10),r_cseq_i(false),hdl(h),
     pending_invites(0),cancel_pending(false),
     outbound_proxy(AmConfig::OutboundProxy),
@@ -121,13 +121,13 @@ void AmSipDialog::setStatus(Status new_status) {
 }
 
 AmSipDialog::OAState AmSipDialog::get_OA_state() {
-  return oa_state;
+  return oa_trans.state;
 }
 
 void AmSipDialog::set_OA_state(OAState new_oa_state) {
   DBG("setting SIP dialog O/A status: %s->%s\n",
-      getOAStatusStr(oa_state), getOAStatusStr(new_oa_state));
-  oa_state = new_oa_state;
+      getOAStatusStr(oa_trans.state), getOAStatusStr(new_oa_state));
+  oa_trans.state = new_oa_state;
 }
 
 void AmSipDialog::onRxRequest(const AmSipRequest& req)
@@ -147,7 +147,7 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
     }
 
     if (req.method == SIP_METH_INVITE) {
-      if(pending_invites || ((oa_state != OA_None) && (oa_state != OA_Completed))) {      
+      if(pending_invites || ((oa_trans.state != OA_None) && (oa_trans.state != OA_Completed))) {      
 	reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
 		    "Retry-After: " + int2str(get_random() % 10) + CRLF,
 		    next_hop_for_replies ? next_hop_ip : "",
@@ -155,9 +155,6 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 	return;
       }
       pending_invites++;
-
-      // Reset Offer/Answer state
-      oa_state = OA_None;
     }
     
     r_cseq = req.cseq;
@@ -220,7 +217,7 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
      (req.content_type == SIP_APPLICATION_SDP)) {
 
     const char* err_txt=NULL;
-    int err_code = onRxSdp(req.body,&err_txt);
+    int err_code = onRxSdp(req.cseq,req.body,&err_txt);
     if(err_code){
       if( req.method != SIP_METH_ACK ){ // INVITE || UPDATE || PRACK
 	reply(req,err_code,err_txt);
@@ -233,45 +230,54 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
     }
   }
 
+  if((req.method == SIP_METH_ACK) &&
+     (req.cseq == oa_trans.cseq)){
+    // 200 ACK received:
+    //  -> reset OA state
+    DBG("200 ACK received: resetting OA state");
+    oa_trans = OATrans();
+  }
+
   if(rel100OnRequestIn(req) && hdl)
     hdl->onSipRequest(req);
 }
 
-int AmSipDialog::onRxSdp(const string& body, const char** err_txt)
+int AmSipDialog::onRxSdp(unsigned int m_cseq, const string& body, const char** err_txt)
 {
-  DBG("entering onRxSdp(), oa_state=%s\n", getOAStatusStr(oa_state));
-  OAState old_oa_state = oa_state;
+  DBG("entering onRxSdp(), oa_state=%s\n", getOAStatusStr(oa_trans.state));
+  OAState old_oa_state = oa_trans.state;
 
   int err_code = 0;
   assert(err_txt);
 
-  if(sdp_remote.parse(body.c_str())){
+  if(oa_trans.sdp_remote.parse(body.c_str())){
     err_code = 400;
     *err_txt = "session description parsing failed";
   }
-  else if(sdp_remote.media.empty()){
+  else if(oa_trans.sdp_remote.media.empty()){
     err_code = 400;
     *err_txt = "no media line found in SDP message";
   }
 
   if(err_code == 0) {
 
-    switch(oa_state) {
+    switch(oa_trans.state) {
     case OA_None:
     case OA_Completed:
-      oa_state = OA_OfferRecved;
+      oa_trans.state = OA_OfferRecved;
+      oa_trans.cseq = m_cseq;
       break;
       
     case OA_OfferSent:
-      if (getStatus() != AmSipDialog::Early)
-	oa_state = OA_Completed;
-      if(hdl->onSdpCompleted(sdp_local, sdp_remote)){
-	if (getStatus() != AmSipDialog::Early) {
-	  err_code = 500;
-	  *err_txt = "internal error";
-	} else {
-	  WARN("ignoring failed onSdpCompleted for early dialog SDP\n");
-	}
+      oa_trans.state = OA_Completed;
+
+      if(hdl->onSdpCompleted(oa_trans.sdp_local, oa_trans.sdp_remote)){
+	err_code = 500;
+	*err_txt = "internal error";
+      }
+      else {
+	sdp_local = oa_trans.sdp_local;
+	sdp_remote = oa_trans.sdp_remote;
       }
       break;
 
@@ -287,15 +293,15 @@ int AmSipDialog::onRxSdp(const string& body, const char** err_txt)
   }
 
   if(err_code != 0) {
-    oa_state = OA_None;
+    oa_trans.state = OA_None;
   }
 
-  DBG("oa_state: %s -> %s\n", getOAStatusStr(old_oa_state), getOAStatusStr(oa_state));
+  DBG("oa_state: %s -> %s\n", getOAStatusStr(old_oa_state), getOAStatusStr(oa_trans.state));
 
   return err_code;
 }
 
-int AmSipDialog::onTxSdp(const string& body)
+int AmSipDialog::onTxSdp(unsigned int m_cseq, const string& body)
 {
   // assume that the payload is ok if it is not empty.
   // (do not parse again self-generated SDP)
@@ -303,15 +309,16 @@ int AmSipDialog::onTxSdp(const string& body)
     return -1;
   }
 
-  switch(oa_state) {
+  switch(oa_trans.state) {
 
   case OA_None:
   case OA_Completed:
-    oa_state = OA_OfferSent;
+    oa_trans.state = OA_OfferSent;
+    oa_trans.cseq = m_cseq;
     break;
 
   case OA_OfferRecved:
-    oa_state = OA_Completed;
+    oa_trans.state = OA_Completed;
     break;
 
   case OA_OfferSent:
@@ -328,11 +335,11 @@ int AmSipDialog::onTxSdp(const string& body)
 
 int AmSipDialog::getSdpBody(string& sdp_body)
 {
-    switch(oa_state){
+    switch(oa_trans.state){
     case OA_None:
     case OA_Completed:
-      if(hdl->getSdpOffer(sdp_local)){
-	sdp_local.print(sdp_body);
+      if(hdl->getSdpOffer(oa_trans.sdp_local)){
+	oa_trans.sdp_local.print(sdp_body);
       }
       else {
 	DBG("No SDP Offer.\n");
@@ -340,8 +347,8 @@ int AmSipDialog::getSdpBody(string& sdp_body)
       }
       break;
     case OA_OfferRecved:
-      if(hdl->getSdpAnswer(sdp_remote,sdp_local)){
-	sdp_local.print(sdp_body);
+      if(hdl->getSdpAnswer(oa_trans.sdp_remote,oa_trans.sdp_local)){
+	oa_trans.sdp_local.print(sdp_body);
       }
       else {
 	DBG("No SDP Answer.\n");
@@ -463,7 +470,7 @@ int AmSipDialog::onTxRequest(AmSipRequest& req)
   if (!generate_sdp && !has_sdp && 
       ((req.method == SIP_METH_PRACK) ||
        (req.method == SIP_METH_ACK))) {
-    generate_sdp = (oa_state == OA_OfferRecved);
+    generate_sdp = (oa_trans.state == OA_OfferRecved);
   }
 
   if (generate_sdp) {
@@ -473,7 +480,7 @@ int AmSipDialog::onTxRequest(AmSipRequest& req)
     }
   }
 
-  if(has_sdp && (onTxSdp(req.body) != 0)){
+  if(has_sdp && (onTxSdp(req.cseq,req.body) != 0)){
     DBG("onTxSdp() failed\n");
     return -1;
   }
@@ -547,7 +554,8 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
 	
 	// either offer received or no offer at all:
 	//  -> force SDP
-	generate_sdp = (oa_state == OA_OfferRecved) || (oa_state == OA_None);
+	generate_sdp = (oa_trans.state == OA_OfferRecved) 
+	  || (oa_trans.state == OA_None);
       }
     }
     else if (reply.cseq_method == SIP_METH_UPDATE) {
@@ -557,7 +565,7 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
 	
 	// offer received:
 	//  -> force SDP
-	generate_sdp = (oa_state == OA_OfferRecved);
+	generate_sdp = (oa_trans.state == OA_OfferRecved);
       }
     }
   }
@@ -569,7 +577,7 @@ int AmSipDialog::onTxReply(AmSipReply& reply)
     }
   }
 
-  if (has_sdp && (onTxSdp(reply.body) != 0)) {
+  if (has_sdp && (onTxSdp(reply.cseq,reply.body) != 0)) {
     
     DBG("onTxSdp() failed\n");
     status = status_backup;
@@ -724,7 +732,16 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	}
     }
     else {
+      // error reply or method != INVITE
       uac_trans.erase(t_it);
+
+      if(reply.cseq == oa_trans.cseq){
+	// transaction has been removed:
+	//  -> cleanup OA state
+	DBG("after %u reply to %s: resetting OA state\n",
+	    reply.code, trans_method.c_str());
+	oa_trans = OATrans();
+      }
     }
   }
 
@@ -796,6 +813,10 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
   switch(to_ev->type){
   case AmSipTimeoutEvent::noACK:
     DBG("Timeout: missing ACK\n");
+    if(to_ev->cseq == oa_trans.cseq){
+      DBG("ACK timeout: resetting OA state\n");
+      oa_trans = OATrans();
+    }
     if(hdl) hdl->onNoAck(to_ev->cseq);
     break;
 
@@ -828,9 +849,9 @@ void AmSipDialog::rel100OnTimeout(const AmSipRequest &req,
   }
 }
 
-AmSipTransaction* AmSipDialog::getUACTrans(unsigned int cseq)
+AmSipTransaction* AmSipDialog::getUACTrans(unsigned int t_cseq)
 {
-  TransMap::iterator it = uac_trans.find(cseq);
+  TransMap::iterator it = uac_trans.find(t_cseq);
   if(it == uac_trans.end())
     return NULL;
   
@@ -1046,7 +1067,7 @@ int AmSipDialog::reply(const AmSipTransaction& t,
   }
 
 
-  OAState old_oa_state = oa_state;
+  OAState old_oa_state = oa_trans.state;
   if(onTxReply(reply)){
     DBG("onTxReply failed\n");
     return -1;
@@ -1060,15 +1081,29 @@ int AmSipDialog::reply(const AmSipTransaction& t,
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),reply.cseq_method.c_str(),
 	  reply.callid.c_str(),reply.cseq);
+
+    return ret;
   }
-  else {
-    if((old_oa_state != oa_state) &&
-       (oa_state == OA_Completed)) {
-      return hdl->onSdpCompleted(sdp_local, sdp_remote);
+
+  if((old_oa_state != oa_trans.state) &&
+     (oa_trans.state == OA_Completed)) {
+
+    ret = hdl->onSdpCompleted(oa_trans.sdp_local, oa_trans.sdp_remote);
+    if(!ret){
+      sdp_local = oa_trans.sdp_local;
+      sdp_remote = oa_trans.sdp_remote;
     }
   }
 
-  return ret;
+  if((uas_trans.find(reply.cseq) == uas_trans.end()) &&
+     (reply.cseq == oa_trans.cseq)){
+    // transaction has been removed:
+    //  -> cleanup OA state
+    DBG("transaction finished by final reply %u: resetting OA state\n", reply.cseq);
+    oa_trans = OATrans();
+  }
+  
+  return 0;
 }
 
 
@@ -1385,7 +1420,7 @@ int AmSipDialog::sendRequest(const string& method,
   string m_hdrs = hdrs;
 
   if(hdl)
-    hdl->onSendRequest(method,content_type,body,m_hdrs,flags,cseq);
+    hdl->onSendRequest(method,content_type,body,m_hdrs,flags,req_cseq);
 
   rel100OnRequestOut(method, m_hdrs);
 
@@ -1429,7 +1464,7 @@ int AmSipDialog::sendRequest(const string& method,
   req.content_type = content_type;
   req.body = body;
   DBG("req.body = '%s'\n", req.body.c_str());
-  OAState old_oa_state = oa_state;
+  OAState old_oa_state = oa_trans.state;
   if(onTxRequest(req))
     return -1;
 
@@ -1446,9 +1481,12 @@ int AmSipDialog::sendRequest(const string& method,
     uac_trans.erase(req_cseq);
   }
 
-  if((old_oa_state != oa_state) &&
-     (oa_state == OA_Completed)) {
-    return hdl->onSdpCompleted(sdp_local, sdp_remote);
+  if((old_oa_state != oa_trans.state) &&
+     (oa_trans.state == OA_Completed)) {
+    if(hdl->onSdpCompleted(oa_trans.sdp_local, oa_trans.sdp_remote))
+      return -1;
+    sdp_local = oa_trans.sdp_local;
+    sdp_remote = oa_trans.sdp_remote;
   }
 
   return 0;
@@ -1566,6 +1604,13 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
     return -1;
 
   uac_trans.erase(inv_cseq);
+
+  if(inv_cseq == oa_trans.cseq){
+    // transaction has been removed:
+    //  -> cleanup OA state
+    DBG("200 ACK sent: resetting OA state\n");
+    oa_trans = OATrans();
+  }
 
   return 0;
 }

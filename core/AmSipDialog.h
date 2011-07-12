@@ -93,6 +93,20 @@ class AmSipDialog
     __max_OA
   };
 
+  struct OATrans {
+    OAState      state;
+    unsigned int cseq;
+    AmSdp        sdp_remote;
+    AmSdp        sdp_local;
+
+    OATrans()
+      : state(OA_None), 
+	cseq(0),
+	sdp_remote(),
+	sdp_local()
+    {};
+  };
+
   /** enable the reliability of provisional replies? */
   enum Rel100State {
     REL100_DISABLED=0,
@@ -121,8 +135,9 @@ private:
   // while in 'Trying' state
   bool         cancel_pending;
 
-  // Offer/answer
-  OAState oa_state;
+  // Current offer/answer transaction
+  OATrans oa_trans;
+
   AmSdp   sdp_local;
   AmSdp   sdp_remote;
 
@@ -131,8 +146,8 @@ private:
   int onTxReply(AmSipReply& reply);
   int onTxRequest(AmSipRequest& req);
 
-  int onRxSdp(const string& body, const char** err_txt);
-  int onTxSdp(const string& body);
+  int onRxSdp(unsigned int m_cseq, const string& body, const char** err_txt);
+  int onTxSdp(unsigned int m_cseq, const string& body);
 
   int getSdpBody(string& sdp_body);
   int triggerOfferAnswer(string& content_type, string& body);
@@ -197,7 +212,7 @@ private:
   ~AmSipDialog();
 
   /** @return transaction coresponding to cseq or NULL */
-  AmSipTransaction* getUACTrans(unsigned int cseq);
+  AmSipTransaction* getUACTrans(unsigned int t_cseq);
 
   /** @return whether UAC transaction is pending */
   bool   getUACTransPending();
@@ -351,7 +366,7 @@ class AmSipDialogEventHandler
 			     const string& body,
 			     string& hdrs,
 			     int flags,
-			     unsigned int cseq)=0;
+			     unsigned int req_cseq)=0;
     
   /** Hook called before a reply is sent */
   virtual void onSendReply(AmSipReply& reply, int flags)=0;
@@ -360,7 +375,7 @@ class AmSipDialogEventHandler
   virtual void onInvite2xx(const AmSipReply& reply)=0;
 
   /** Hook called when a UAS INVITE transaction did not receive the ACK */
-  virtual void onNoAck(unsigned int cseq)=0;
+  virtual void onNoAck(unsigned int ack_cseq)=0;
 
   /** Hook called when a UAS INVITE transaction did not receive the PRACK */
   virtual void onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)=0;
