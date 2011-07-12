@@ -26,6 +26,8 @@ public:
   void onBye(const AmSipRequest& req);
   void onBeforeDestroy();
   void onAudioEvent(AmAudioEvent* audio_ev);
+  void onSipReply(const AmSipReply& reply,
+		  AmSipDialog::Status old_dlg_status);
 
   // forwards the packet the RtmpAudio
   void bufferPacket(const RTMPPacket& p);

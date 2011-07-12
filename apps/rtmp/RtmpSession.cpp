@@ -35,12 +35,25 @@ void RtmpSession::onSessionStart()
   RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT);
   DBG("plugging rtmp_audio into in&out\n");
   setInOut(rtmp_audio,rtmp_audio);
+  // m_rtmp_conn.lock();
+  // if(rtmp_connection)
+  //   rtmp_connection->SendCallStatus(200);
+  // m_rtmp_conn.unlock();
 }
 
 void RtmpSession::onBye(const AmSipRequest& req)
 {
   DBG("onBye(...)\n");
   AmSession::onBye(req);
+}
+
+void RtmpSession::onSipReply(const AmSipReply& reply,
+			     AmSipDialog::Status old_dlg_status)
+{
+  m_rtmp_conn.lock();
+  if(rtmp_connection)
+    rtmp_connection->SendCallStatus(reply.code);
+  m_rtmp_conn.unlock();
 }
 
 void RtmpSession::bufferPacket(const RTMPPacket& p)

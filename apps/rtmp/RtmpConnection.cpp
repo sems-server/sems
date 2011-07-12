@@ -697,6 +697,39 @@ int RtmpConnection::SendStreamEOF()
   return SendCtrl(1, 1, 0);
 }
 
+static const AVal av_Sono_Call_Status = _AVC("Sono.Call.Status");
+SAVC(status_code);
+
+int RtmpConnection::SendCallStatus(int status)
+{
+  RTMPPacket packet;
+  char pbuf[384], *pend = pbuf+sizeof(pbuf);
+
+  packet.m_nChannel   = CONTROL_CHANNEL;
+  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
+  packet.m_packetType = INVOKE_PTYPE;
+  packet.m_nTimeStamp = 0;
+  packet.m_nInfoField2 = 0;
+  packet.m_hasAbsTimestamp = 0;
+  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
+
+  char *enc = packet.m_body;
+  enc = AMF_EncodeString(enc, pend, &av_onStatus);
+  enc = AMF_EncodeNumber(enc, pend, 0);
+
+  *enc++ = AMF_NULL;//rco: needed!
+  *enc++ = AMF_OBJECT;
+  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
+  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av_Sono_Call_Status);
+  enc = AMF_EncodeNamedNumber(enc, pend, &av_status_code, status);
+  *enc++ = 0;
+  *enc++ = 0;
+  *enc++ = AMF_OBJECT_END;
+
+  packet.m_nBodySize = enc - packet.m_body;
+  return sender->push_back(packet);
+}
+
 int RtmpConnection::SendPause(int DoPause, int iTime)
 {
   RTMPPacket packet;

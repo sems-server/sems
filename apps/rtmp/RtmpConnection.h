@@ -55,6 +55,8 @@ public:
   int SendStreamBegin();
   int SendStreamEOF();
 
+  int SendCallStatus(int status);
+
 protected:
   void run();
   void on_stop();

@@ -14,7 +14,7 @@
 		   click="onConnectClick(event);"/>
       </mx:HBox>
       <mx:HBox>
-	<mx:TextInput id="dialUri" text="sip:music@iptel.org"/>
+	<mx:TextInput id="dialUri" text="sip:123@10.36.2.21:5080"/>
 	<mx:Button id="bDial" label="{g_dial_state==NOT_CONNECTED?'Dial':'Hangup'}" 
 		   click="onDialClick(event);"
 		   enabled="{g_state == CONNECTED}"/>

@@ -97,6 +97,10 @@ private function netStatusHandler(event:NetStatusEvent): void
 	disconnectStreams();
 	break;
 
+    case "Sono.Call.Status":
+	lStatus.text = event.info.level + ": " + event.info.status_code;
+	break;
+
 	// unkown event:
     default:
 	lStatus.text = event.info.level + ": " 
