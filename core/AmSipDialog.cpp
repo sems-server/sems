@@ -148,7 +148,7 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 
     if (req.method == SIP_METH_INVITE) {
       if(pending_invites || ((oa_trans.state != OA_None) && (oa_trans.state != OA_Completed))) {      
-	reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
+	reply_error(req, 491, SIP_REPLY_PENDING,
 		    "Retry-After: " + int2str(get_random() % 10) + CRLF,
 		    next_hop_for_replies ? next_hop_ip : "",
 		    next_hop_for_replies ? next_hop_port : 0);
