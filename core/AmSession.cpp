@@ -840,15 +840,16 @@ void AmSession::onSipReply(const AmSipReply& reply,
 
   updateRefreshMethod(reply.hdrs);
 
+  if (dlg.getStatus() < AmSipDialog::Connected &&
+      reply.code == 180) {
+    onRinging(reply);
+  }
+
   if (old_dlg_status != dlg.getStatus()) {
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
 	dlgStatusStr(old_dlg_status), 
 	dlgStatusStr(dlg.getStatus()),
 	sess_stopped.get() ? "true" : "false");
-    if (dlg.getStatus() < AmSipDialog::Connected &&
-	reply.code == 180) {
-      onRinging(reply);
-    }
   } else {
     DBG("Dialog status stays %s (stopped=%s)\n", 
 	dlgStatusStr(old_dlg_status), 
