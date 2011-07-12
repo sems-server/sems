@@ -710,13 +710,21 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
      !reply.body.empty() && 
      (reply.content_type == SIP_APPLICATION_SDP)) {
 
-    const char* err_txt=NULL;
-    int err_code = onRxSdp(reply.body,&err_txt);
-    if(err_code){
-      // TODO: only if initial INVITE (if re-INV, app should decide)
-      DBG("error %i (%s) with SDP received in %i reply: sending ACK+BYE\n",
-	  err_code,err_txt?err_txt:"none",reply.code);
-      bye();
+    if((oa_trans.state == OA_Completed) &&
+       (reply.cseq == oa_trans.cseq)) {
+      
+      DBG("ignoring subsequent SDP reply within the same transaction\n");
+      DBG("this usually happens when 183 and 200 have SDP\n");
+    }
+    else {
+      const char* err_txt=NULL;
+      int err_code = onRxSdp(reply.cseq,reply.body,&err_txt);
+      if(err_code){
+	// TODO: only if initial INVITE (if re-INV, app should decide)
+	DBG("error %i (%s) with SDP received in %i reply: sending ACK+BYE\n",
+	    err_code,err_txt?err_txt:"none",reply.code);
+	bye();
+      }
     }
   }
 
