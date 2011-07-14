@@ -175,8 +175,6 @@ public:
   // us to do passive RTP ?
   bool remote_active;
 
-  unsigned int accepted_media;   // index of the media which we accept (todo: multi stream)
-
   SdpOrigin        l_origin;      // local origin (o= )
     
   AmSdp();
@@ -201,6 +199,11 @@ public:
    * Test if remote UA supports 'telefone_event'.
    */
   //bool hasTelephoneEvent();
+
+  /**
+   * Clear all parsed values.
+   */
+  void clear();
 };
 
 #endif

@@ -112,8 +112,8 @@ string SdpAttribute::print() const {
 // class AmSdp: Methods
 //
 AmSdp::AmSdp()
-  : remote_active(false),
-    accepted_media(0)
+  : version(0),
+    remote_active(false)
 {
   l_origin.user = "sems";
   l_origin.sessId = get_random();
@@ -127,15 +127,14 @@ AmSdp::AmSdp(const AmSdp& p_sdp_msg)
     sessionName(p_sdp_msg.sessionName),
     conn(p_sdp_msg.conn),
     media(p_sdp_msg.media),
-    remote_active(false),
-    accepted_media(0)
+    remote_active(false)
 {
 }
 
 int AmSdp::parse(const char* _sdp_msg)
 {
   char* s = (char*)_sdp_msg;
-  media.clear();
+  clear();
   
   bool ret = parse_sdp_line_ex(this,s);
   
@@ -237,6 +236,20 @@ const SdpPayload *AmSdp::findPayload(const string& name) const
     }
   return NULL;
 }
+
+void AmSdp::clear()
+{
+  version = 0;
+  origin  = SdpOrigin();
+  sessionName.clear();
+  uri.clear();
+  conn = SdpConnection();
+  attributes.clear();
+  media.clear();
+  remote_active = false;
+  l_origin = SdpOrigin();
+}
+
 
 //parser
 static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
@@ -1087,3 +1100,4 @@ static bool attr_check(std::string attr)
     return false;
     }
 }
+
