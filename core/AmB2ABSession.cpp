@@ -333,7 +333,7 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
   AmB2ABSession::onB2ABEvent(ev);
 }
 
-void AmB2ABCalleeSession::onEarlySessionStart(const AmSipReply& rep) {
+void AmB2ABCalleeSession::onEarlySessionStart() {
   DBG("onEarlySessionStart of callee session\n");
   connectSession();
   is_connected = true;
@@ -341,7 +341,7 @@ void AmB2ABCalleeSession::onEarlySessionStart(const AmSipReply& rep) {
 }
 
 
-void AmB2ABCalleeSession::onSessionStart(const AmSipReply& rep) {
+void AmB2ABCalleeSession::onSessionStart() {
   DBG("onSessionStart of callee session\n");
   if (!is_connected) {
     is_connected = true;
