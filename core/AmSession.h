@@ -541,24 +541,6 @@ public:
   virtual void onCancel(const AmSipRequest& req);
 
   /**
-   * onSessionStart will be called after call setup.
-   *
-   * Throw AmSession::Exception if you want to 
-   * signal any error.
-   * 
-   * Warning:
-   *   Sems will NOT send any BYE on his own.
-   */
-  virtual void onSessionStart() {}
-
-  /**
-   * onEarlySessionStart will be called when
-   * the media session is setup with the dialog
-   * in Early state.
-   */
-  virtual void onEarlySessionStart() {}
-
-  /**
    * onRinging will be called after 180 is received. 
    * If local audio is set up, session is added to media processor.
    */
@@ -631,7 +613,14 @@ public:
   /** Hook called when an SDP offer is required */
   virtual bool getSdpAnswer(const AmSdp& offer, AmSdp& answer);
 
+  /** Hook called when an SDP OA transaction has been completed */
   virtual int onSdpCompleted(const AmSdp& offer, const AmSdp& answer);
+
+  /** Hook called when an early session starts (SDP OA completed + dialog in early state) */
+  virtual void onEarlySessionStart();
+
+  /** Hook called when the session creation is completed (INV trans replied with 200) */
+  virtual void onSessionStart();
 
   /** 
    * called in the session thread before the session is destroyed,

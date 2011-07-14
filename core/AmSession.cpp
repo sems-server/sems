@@ -124,11 +124,29 @@ void AmSession::changeCallgroup(const string& cg) {
   AmMediaProcessor::instance()->changeCallgroup(this, cg);
 }
 
-void AmSession::startMediaProcessing() {
-  AmMediaProcessor::instance()->addSession(this, callgroup);
+void AmSession::startMediaProcessing() 
+{
+  if(getStopped() || processing_media.get())
+    return;
+
+  bool in_out_set = false;
+  lockAudio();
+  in_out_set = input || output || local_input || local_output;
+  unlockAudio();
+  if(in_out_set) {
+    AmMediaProcessor::instance()->addSession(this, callgroup);
+  }
+  else {
+    DBG("no audio input and output set. "
+	"Session will not be attached to MediaProcessor.\n");
+  }
 }
 
-void AmSession::stopMediaProcessing() {
+void AmSession::stopMediaProcessing() 
+{
+  if(!processing_media.get())
+    return;
+
   AmMediaProcessor::instance()->removeSession(this);
 }
 
@@ -1040,12 +1058,12 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
     return -1;
   }
 
-  lockAudio();
   // TODO: 
   //   - get the right media ID
   //   - check if the stream coresponding to the media ID 
   //     should be created or updated   
   //
+  lockAudio();
   int ret = RTPStream()->init(getPayloadProvider(),0,local_sdp,remote_sdp);
   unlockAudio();
   
@@ -1054,28 +1072,18 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
     return -1;
   }
 
-  if(!processing_media.get() && !getStopped()) {
-
-    DBG("status = %s\n",dlg.getStatusStr());
-    if(dlg.getStatus() == AmSipDialog::Connected){
-      DBG("Calling onSessionStart()\n");
-      onSessionStart();
-    }
-    else if(dlg.getStatus() == AmSipDialog::Early){
-      DBG("Calling onEarlySessionStart()\n");
-      onEarlySessionStart();
-    }
-
-    if(input || output || local_input || local_output) {
-      startMediaProcessing();
-    }
-    else {
-      DBG("no audio input and output set. "
-	  "Session will not be attached to MediaProcessor.\n");
-    }
-  }
 
   return 0;
+}
+
+void AmSession::onEarlySessionStart()
+{
+  startMediaProcessing();
+}
+
+void AmSession::onSessionStart()
+{
+  startMediaProcessing();
 }
 
 void AmSession::onRtpTimeout()
