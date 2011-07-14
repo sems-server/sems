@@ -126,15 +126,17 @@ class AmSIPRegistration
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSipRequest(const AmSipRequest& req) {}
   void onInvite2xx(const AmSipReply&) {}
+  void onInvite1xxRel(const AmSipReply &){}
   void onNoAck(unsigned int) {}
   void onNoPrack(const AmSipRequest &, const AmSipReply &) {}
-  void onInvite1xxRel(const AmSipReply &){}
   void onPrack2xx(const AmSipReply &){}
   void onFailure(AmSipDialogEventHandler::FailureCause cause, 
       const AmSipRequest*, const AmSipReply*){}
   bool getSdpOffer(AmSdp&) {return false;}
   bool getSdpAnswer(const AmSdp&, AmSdp&) {return false;}
   int  onSdpCompleted(const AmSdp&, const AmSdp&) {return -1;}
+  void onEarlySessionStart() {}
+  void onSessionStart() {}
 
   /** is this registration registered? */
   bool active; 
