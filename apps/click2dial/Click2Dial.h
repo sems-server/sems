@@ -70,8 +70,9 @@ class C2DCallerDialog: public AmB2BCallerSession, public CredentialHolder
       const string& callee_uri, UACAuthCred* credentials = NULL);
 
     void process(AmEvent* event);
-    void onSessionStart(const AmSipRequest& req);
-    void onSessionStart(const AmSipReply& rep);
+    void onInvite(const AmSipRequest& req);
+    void onInvite2xx(const AmSipReply& reply);
+    void onSessionStart();
     void createCalleeSession();
     inline UACAuthCred* getCredentials() { return cred.get(); }
     void onB2BEvent(B2BEvent*);

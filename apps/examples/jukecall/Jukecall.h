@@ -41,7 +41,8 @@ public:
 
   int onLoad();
 
-  AmSession* onInvite(const AmSipRequest& req);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      const map<string,string>& app_params);
 };
 
 class JukecallSession 
@@ -71,7 +72,7 @@ public:
   JukecallSession();
   ~JukecallSession();
 
-  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart();
   void process(AmEvent* event);
 
   void onDtmf(int event, int duration_msec);

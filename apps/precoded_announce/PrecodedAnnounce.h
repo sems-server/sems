@@ -60,7 +60,7 @@ protected:
   PrecodedDialog(AmPrecodedFile* file_def);
   ~PrecodedDialog();
   
-  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart();
   void onBye(const AmSipRequest& req);
 
   AmPayloadProviderInterface* getPayloadProvider();

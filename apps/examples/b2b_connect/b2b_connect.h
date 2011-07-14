@@ -62,7 +62,7 @@ class b2b_connectDialog : public AmB2ABCallerSession
   b2b_connectDialog();
   ~b2b_connectDialog();
   
-  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart();
   void onB2ABEvent(B2ABEvent* ev);
   void process(AmEvent* ev);
   void onDtmf(int event, int duration);

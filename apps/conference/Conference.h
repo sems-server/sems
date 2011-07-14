@@ -152,7 +152,8 @@ public:
   void process(AmEvent* ev);
   void onStart();
   void onDtmf(int event, int duration);
-  void onSessionStart(const AmSipRequest& req);
+  void onInvite(const AmSipRequest& req);
+  void onSessionStart();
   void onBye(const AmSipRequest& req);
 
   void onSipRequest(const AmSipRequest& req);

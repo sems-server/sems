@@ -343,6 +343,8 @@ void EarlyAnnounceDialog::onEarlySessionStart()
     throw string("EarlyAnnounceDialog::onEarlySessionStart: Cannot open file");
     
   setOutput(&wav_file);
+
+  AmB2BCallerSession::onEarlySessionStart();
 }
 
 void EarlyAnnounceDialog::onBye(const AmSipRequest& req)

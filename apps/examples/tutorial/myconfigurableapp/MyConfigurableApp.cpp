@@ -33,7 +33,8 @@ int MyConfigurableAppFactory::onLoad()
     return 0;
 }
 
-AmSession* MyConfigurableAppFactory::onInvite(const AmSipRequest& req)
+AmSession* MyConfigurableAppFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					      const map<string,string>& app_params)
 {
     return new MyConfigurableAppDialog();
 }
@@ -46,10 +47,12 @@ MyConfigurableAppDialog::~MyConfigurableAppDialog()
 {
 }
 
-void MyConfigurableAppDialog::onSessionStart(const AmSipRequest& req)
+void MyConfigurableAppDialog::onSessionStart()
 {
     DBG("MyConfigurableAppDialog::onSessionStart - file is '%s'\n", 
 	MyConfigurableAppFactory::AnnouncementFile.c_str());
+
+    AmSession::onSessionStart();
 }
 
 void MyConfigurableAppDialog::onBye(const AmSipRequest& req)

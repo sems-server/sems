@@ -54,7 +54,8 @@ public:
   ServiceLineFactory(const string& _app_name);
 
   int onLoad();
-  AmSession* onInvite(const AmSipRequest& req);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      const map<string,string>& app_params);
 };
 
 class ServiceLineCallerDialog: public AmB2ABCallerSession
@@ -75,7 +76,7 @@ public:
     
   void process(AmEvent* event);
   void onDtmf(int event, int duration);
-  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart();
 
   virtual AmB2ABCalleeSession* createCalleeSession();
 };

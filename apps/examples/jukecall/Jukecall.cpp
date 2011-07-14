@@ -51,7 +51,8 @@ int JukecallFactory::onLoad()
   return 0;
 }
 
-AmSession* JukecallFactory::onInvite(const AmSipRequest& req)
+AmSession* JukecallFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				     const map<string,string>& app_params)
 {
   if (req.user.length() <= 3) {
     throw AmSession::Exception(403, "Need a number to call");
@@ -71,11 +72,11 @@ JukecallSession::~JukecallSession()
 {
 }
 
-void JukecallSession::onSessionStart(const AmSipRequest& req)
+void JukecallSession::onSessionStart()
 {
   if (state != JC_none) {
     // reinvite
-    AmB2ABCallerSession::onSessionStart(req);
+    AmB2ABCallerSession::onSessionStart();
     return;
   }
 
@@ -91,6 +92,8 @@ void JukecallSession::onSessionStart(const AmSipRequest& req)
   setOutput(&initial_announcement);
 
   state = JC_initial_announcement;
+
+  AmB2ABCallerSession::onSessionStart();
 }
 
 void JukecallSession::onDtmf(int event, int duration_msec) {

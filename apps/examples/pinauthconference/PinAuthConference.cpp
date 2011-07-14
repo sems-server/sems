@@ -83,14 +83,16 @@ int PinAuthConferenceFactory::onLoad()
   return 0;
 }
 
-// incoming calls - req is INVITE
-AmSession* PinAuthConferenceFactory::onInvite(const AmSipRequest& req)
+// incoming calls
+AmSession* PinAuthConferenceFactory::onInvite(const AmSipRequest&, const string& app_name,
+					      const map<string,string>& app_params)
 {
   return new PinAuthConferenceDialog(prompts);
 }
 
-// outgoing calls - rep is 200 class response to INVITE
-AmSession* PinAuthConferenceFactory::onInvite(const AmSipReply& rep)
+// outgoing calls
+AmSession* PinAuthConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					      AmArg& session_params)
 {
   return new PinAuthConferenceDialog(prompts);
 }
@@ -134,7 +136,7 @@ void PinAuthConferenceDialog::connectConference(const string& room) {
   setInOut(&play_list,&play_list);
 }
 
-void PinAuthConferenceDialog::onSessionStart(const AmSipRequest& req)
+void PinAuthConferenceDialog::onSessionStart()
 { 
   state = EnteringPin;
 
@@ -142,6 +144,8 @@ void PinAuthConferenceDialog::onSessionStart(const AmSipRequest& req)
 
   // set the playlist as input and output
   setInOut(&play_list,&play_list);
+
+  AmSession::onSessionStart();
 }
  
 void PinAuthConferenceDialog::onBye(const AmSipRequest& req)

@@ -31,7 +31,8 @@ int MyJukeboxFactory::onLoad()
     return 0;
 }
 
-AmSession* MyJukeboxFactory::onInvite(const AmSipRequest& req)
+AmSession* MyJukeboxFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				      const map<string,string>& app_params)
 {
     return new MyJukeboxDialog();
 }
@@ -51,7 +52,7 @@ MyJukeboxDialog::~MyJukeboxDialog()
     delete *it;
 }
 
-void MyJukeboxDialog::onSessionStart(const AmSipRequest& req)
+void MyJukeboxDialog::onSessionStart()
 {
     DBG("MyJukeboxDialog::onSessionStart - jukedir is '%s'\n", 
 	MyJukeboxFactory::JukeboxDir.c_str());

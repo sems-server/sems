@@ -15,7 +15,8 @@ public:
     MyAnnounceAppFactory(const string& _app_name);
 
     int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+    AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+			const map<string,string>& app_params);
 };
 
 class MyAnnounceAppDialog : public AmSession
@@ -27,7 +28,7 @@ class MyAnnounceAppDialog : public AmSession
     MyAnnounceAppDialog();
     ~MyAnnounceAppDialog();
 
-    void onSessionStart(const AmSipRequest& req);
+    void onSessionStart();
     void onBye(const AmSipRequest& req);
 };
 

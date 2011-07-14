@@ -120,6 +120,8 @@ void AnnounceCallerDialog::onSessionStart()
     throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
     
   setOutput(&wav_file);
+
+  AmB2BCallerSession::onSessionStart();
 }
 
 void AnnounceCallerDialog::process(AmEvent* event)

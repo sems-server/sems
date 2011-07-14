@@ -19,7 +19,8 @@ public:
     MyJukeboxFactory(const string& _app_name);
 
     int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+    AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+			const map<string,string>& app_params);
 };
 
 class MyJukeboxDialog : public AmSession
@@ -32,7 +33,7 @@ class MyJukeboxDialog : public AmSession
     MyJukeboxDialog();
     ~MyJukeboxDialog();
 
-    void onSessionStart(const AmSipRequest& req);
+    void onSessionStart();
     void onDtmf(int event, int duration);
     void process(AmEvent* ev);
     void onBye(const AmSipRequest& req);

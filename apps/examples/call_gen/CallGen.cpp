@@ -416,6 +416,8 @@ void CallGenDialog::setCallTimer() {
 
 void CallGenDialog::onEarlySessionStart() {
   setCallTimer();
+
+  AmSession::onEarlySessionStart();
 }
 
 void CallGenDialog::onSessionStart() {
@@ -438,6 +440,8 @@ void CallGenDialog::onSessionStart() {
   setInOut(&play_list, &play_list);
 
   setCallTimer();
+
+  AmSession::onSessionStart();
 }
 
 void CallGenDialog::process(AmEvent* event)

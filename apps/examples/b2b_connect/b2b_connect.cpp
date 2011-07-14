@@ -141,9 +141,9 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
 
 }
 
-void b2b_connectDialog::onSessionStart(const AmSipRequest& req)
+void b2b_connectDialog::onSessionStart()
 {
-  AmB2ABCallerSession::onSessionStart(req);
+  AmB2ABCallerSession::onSessionStart();
 }
 
 void b2b_connectDialog::onB2ABEvent(B2ABEvent* ev)

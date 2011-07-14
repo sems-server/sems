@@ -129,6 +129,8 @@ void AnnounceTransferDialog::onSessionStart()
     status = Announcing;
     startSession();
   }
+
+  AmSession::onSessionStart();
 }
 
 void AnnounceTransferDialog::startSession() {

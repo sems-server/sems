@@ -57,7 +57,8 @@ int MyCCFactory::onLoad()
   return 0;
 }
 
-AmSession* MyCCFactory::onInvite(const AmSipRequest& req)
+AmSession* MyCCFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				 const map<string,string>& app_params)
 {
 
     AmDynInvoke* cc_acc = cc_acc_fact->getInstance();
@@ -97,16 +98,18 @@ void MyCCDialog::addToPlaylist(string fname) {
   }
 }
 
-void MyCCDialog::onSessionStart(const AmSipRequest& req)
+void MyCCDialog::onSessionStart()
 {
     DBG("MyCCDialog::onSessionStart");
     
-    AmB2BCallerSession::onSessionStart(req);
+    AmB2BCallerSession::onSessionStart();
 
     setInOut(&playlist, &playlist);
     addToPlaylist(MyCCFactory::InitialAnnouncement);
 
     setDtmfDetectionEnabled(true);
+
+    AmB2BCallerSession::onSessionStart();
 }
 
 void MyCCDialog::onDtmf(int event, int duration) {

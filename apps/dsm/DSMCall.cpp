@@ -160,6 +160,8 @@ void DSMCall::onEarlySessionStart() {
 
     if (!getOutput())
       setOutput(&playlist);
+
+    AmB2BCallerSession::onEarlySessionStart();
   }
 }
 
@@ -167,10 +169,11 @@ void DSMCall::onSessionStart()
 {
   if (process_sessionstart) {
     process_sessionstart = false;
-    AmB2BCallerSession::onSessionStart();
 
     DBG("DSMCall::onSessionStart\n");
     startSession();
+
+    AmB2BCallerSession::onSessionStart();
   }
 }
 

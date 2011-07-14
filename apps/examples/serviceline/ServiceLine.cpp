@@ -95,7 +95,8 @@ int ServiceLineFactory::onLoad()
   return 0;
 }
 
-AmSession* ServiceLineFactory::onInvite(const AmSipRequest& req)
+AmSession* ServiceLineFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					const map<string,string>& app_params)
 {
   string announce_path = AnnouncePath;
   string announce_file = announce_path + req.domain
@@ -122,12 +123,11 @@ ServiceLineCallerDialog::ServiceLineCallerDialog(const string& filename)
 {
 }
 
-void ServiceLineCallerDialog::onSessionStart(const AmSipRequest& req)
+void ServiceLineCallerDialog::onSessionStart()
 {
-
   if (started) {
     // reinvite
-    AmB2ABCallerSession::onSessionStart(req);
+    AmB2ABCallerSession::onSessionStart();
     return;
   }
   started = true;
@@ -137,6 +137,8 @@ void ServiceLineCallerDialog::onSessionStart(const AmSipRequest& req)
   
   setInOut(&playlist, &playlist);
   playlist.addToPlaylist(new AmPlaylistItem(&wav_file, NULL));
+
+  AmB2ABCallerSession::onSessionStart();
 }
 
 void ServiceLineCallerDialog::process(AmEvent* event)

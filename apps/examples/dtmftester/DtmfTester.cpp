@@ -89,13 +89,14 @@ string DtmfTesterFactory::getAnnounceFile(const AmSipRequest& req) {
   return announce_file;
 }
 
-AmSession* DtmfTesterFactory::onInvite(const AmSipRequest& req)
+AmSession* DtmfTesterFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				       const map<string,string>& app_params)
 {
   return new DtmfTesterDialog(getAnnounceFile(req), NULL);
 }
 
-AmSession* DtmfTesterFactory::onInvite(const AmSipRequest& req,
-					 AmArg& session_params)
+AmSession* DtmfTesterFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				       AmArg& session_params)
 {
   UACAuthCred* cred = NULL;
   if (session_params.getType() == AmArg::AObject) {
@@ -141,16 +142,12 @@ DtmfTesterDialog::~DtmfTesterDialog()
 
 }
 
-void DtmfTesterDialog::onSessionStart(const AmSipRequest& req)
+void DtmfTesterDialog::onSessionStart()
 {
   DBG("DtmfTesterDialog::onSessionStart\n");
   startSession();
-}
-
-void DtmfTesterDialog::onSessionStart(const AmSipReply& rep)
-{
-  DBG("DtmfTesterDialog::onSessionStart (SEMS originator mode)\n");
-  startSession();
+  
+  AmSession::onSessionStart();
 }
 
 void DtmfTesterDialog::startSession(){

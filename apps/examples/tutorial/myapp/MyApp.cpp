@@ -15,7 +15,8 @@ int MyAppFactory::onLoad()
     return 0;
 }
 
-AmSession* MyAppFactory::onInvite(const AmSipRequest& req)
+AmSession* MyAppFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				  const map<string,string>& app_params)
 {
     return new MyAppDialog();
 }
@@ -28,7 +29,7 @@ MyAppDialog::~MyAppDialog()
 {
 }
 
-void MyAppDialog::onSessionStart(const AmSipRequest& req)
+void MyAppDialog::onSessionStart()
 {
     DBG("MyAppDialog::onSessionStart: Hello World!\n");
 }

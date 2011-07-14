@@ -67,7 +67,8 @@ public:
     AnnounceAuthFactory(const string& _app_name);
 
     int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+    AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+			const map<string,string>& app_params);
 };
 
 class AnnounceAuthDialog : public AmSession,
@@ -84,14 +85,13 @@ class AnnounceAuthDialog : public AmSession,
 					   const string& auth_pwd);
     ~AnnounceAuthDialog();
 
-    void onSessionStart(const AmSipRequest& req);
-    void onSessionStart(const AmSipReply& rep);
+    void onSessionStart();
     void startSession();
     void onBye(const AmSipRequest& req);
     void onDtmf(int event, int duration_msec) {}
 
     void process(AmEvent* event);
-	inline UACAuthCred* getCredentials();
+    inline UACAuthCred* getCredentials();
 };
 
 

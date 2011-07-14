@@ -155,6 +155,8 @@ void AnnouncementDialog::onSessionStart() {
     wav_file.loop.set(true);
 
   setOutput(&wav_file);
+
+  AmSession::onSessionStart();
 }
 
 void AnnouncementDialog::onBye(const AmSipRequest& req)

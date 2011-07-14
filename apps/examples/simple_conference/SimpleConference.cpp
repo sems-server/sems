@@ -43,13 +43,15 @@ int SimpleConferenceFactory::onLoad()
 }
 
 // incoming calls - req is INVITE
-AmSession* SimpleConferenceFactory::onInvite(const AmSipRequest& req)
+AmSession* SimpleConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					     const map<string,string>& app_params)
 {
   return new SimpleConferenceDialog();
 }
 
 // outgoing calls - rep is 200 class response to INVITE
-AmSession* SimpleConferenceFactory::onInvite(const AmSipReply& rep)
+AmSession* SimpleConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					     AmArg& session_params)
 {
   return new SimpleConferenceDialog();
 }
@@ -67,7 +69,7 @@ SimpleConferenceDialog::~SimpleConferenceDialog()
   play_list.close(false);
 }
 
-void SimpleConferenceDialog::onSessionStart(const AmSipRequest& req)
+void SimpleConferenceDialog::onSessionStart()
 {
   // set the conference id ('conference room') to user part of ruri
   conf_id = dlg.user;
@@ -92,6 +94,8 @@ void SimpleConferenceDialog::onSessionStart(const AmSipRequest& req)
   // people in the conference (important if we have multiple
   // MediaProcessor threads
   setCallgroup(conf_id);
+
+  AmSession::onSessionStart();
 }
 
 void SimpleConferenceDialog::onBye(const AmSipRequest& req)

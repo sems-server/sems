@@ -279,6 +279,8 @@ void AnnRecorderDialog::onSessionStart()
   // set the playlist as input and output
   setInOut(&playlist,&playlist);  
   state = S_WAIT_START;
+
+  AmSession::onSessionStart();
 }
 
 void AnnRecorderDialog::enqueueCurrent() {

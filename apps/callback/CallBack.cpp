@@ -257,6 +257,8 @@ void CallBackDialog::onSessionStart()
   prompts.addToPlaylist(WELCOME_PROMPT,  (long)this, play_list);
   // set the playlist as input and output
   setInOut(&play_list,&play_list);
+
+  AmB2ABCallerSession::onSessionStart();
 }
  
 void CallBackDialog::onDtmf(int event, int duration)

@@ -890,6 +890,7 @@ void AnswerMachineDialog::onSessionStart()
   sprintf(now, "%d", (int) time(NULL));
   email_dict["ts"] = now;
 
+  AmSession::onSessionStart();
 }
 
 void AnswerMachineDialog::onBye(const AmSipRequest& req)

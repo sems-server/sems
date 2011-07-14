@@ -75,7 +75,8 @@ int CacheAnnounceFactory::onLoad()
     return 0;
 }
 
-AmSession* CacheAnnounceFactory::onInvite(const AmSipRequest& req)
+AmSession* CacheAnnounceFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					  const map<string,string>& app_params)
 {
     return new CacheAnnounceDialog(&ann_cache);
 }
@@ -89,24 +90,20 @@ CacheAnnounceDialog::~CacheAnnounceDialog()
 {
 }
 
-void CacheAnnounceDialog::onSessionStart(const AmSipRequest& req)
+void CacheAnnounceDialog::onSessionStart()
 {
     DBG("CacheAnnounceDialog::onSessionStart\n");
     startSession();
-}
 
-void CacheAnnounceDialog::onSessionStart(const AmSipReply& rep)
-{
-    DBG("CacheAnnounceDialog::onSessionStart (SEMS originator mode)\n");
-    startSession();
+    AmSession::onSessionStart();
 }
 
 void CacheAnnounceDialog::startSession(){
     setDtmfDetectionEnabled(false);
 
-	wav_file.reset(new AmCachedAudioFile(announce));
+    wav_file.reset(new AmCachedAudioFile(announce));
     if (!wav_file->is_good())
-		throw AmSession::Exception(500, "Internal Err");
+      throw AmSession::Exception(500, "Internal Err");
 
     setOutput(wav_file.get());
 }

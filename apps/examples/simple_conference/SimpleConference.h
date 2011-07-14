@@ -47,8 +47,10 @@ class SimpleConferenceFactory : public AmSessionFactory
 {
 public:
   SimpleConferenceFactory(const string& _app_name);
-  AmSession* onInvite(const AmSipRequest&);
-  AmSession* onInvite(const AmSipReply&);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      const map<string,string>& app_params);
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      AmArg& session_params);
   int onLoad();
 };
 
@@ -71,7 +73,7 @@ public:
   ~SimpleConferenceDialog();
 
   void process(AmEvent* ev);
-  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart();
   void onDtmf(int event, int duration);
   void onBye(const AmSipRequest& req);
 };

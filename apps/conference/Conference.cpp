@@ -404,8 +404,11 @@ ConferenceDialog::~ConferenceDialog()
 void ConferenceDialog::onStart() {
 }
 
-void ConferenceDialog::onSessionStart(const AmSipRequest& req)
+void ConferenceDialog::onInvite(const AmSipRequest& req)
 {
+  if(dlg.getStatus() == AmSipDialog::Connected)
+    return;
+
   int i, len;
   string lonely_user_file;
 
@@ -482,14 +485,12 @@ void ConferenceDialog::onSessionStart(const AmSipRequest& req)
 
   DBG("Using LonelyUserFile <%s>\n",
       ConferenceFactory::LonelyUserFile.c_str());
-	
-  setupAudio();
 }
 
-// void ConferenceDialog::onSessionStart(const AmSipReply& reply)
-// {
-//     setupAudio();
-// }
+void ConferenceDialog::onSessionStart()
+{
+  setupAudio();
+}
 
 void ConferenceDialog::setupAudio()
 {

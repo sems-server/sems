@@ -50,7 +50,8 @@ public:
     CacheAnnounceFactory(const string& _app_name);
 
     int onLoad();
-    AmSession* onInvite(const AmSipRequest& req);
+    AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+			const map<string,string>& app_params);
 };
 
 class CacheAnnounceDialog : public AmSession
@@ -62,8 +63,7 @@ class CacheAnnounceDialog : public AmSession
     CacheAnnounceDialog(AmFileCache* announce);
     ~CacheAnnounceDialog();
 
-    void onSessionStart(const AmSipRequest& req);
-    void onSessionStart(const AmSipReply& rep);
+    void onSessionStart();
     void startSession();
     void onBye(const AmSipRequest& req);
     void onDtmf(int event, int duration_msec) {}

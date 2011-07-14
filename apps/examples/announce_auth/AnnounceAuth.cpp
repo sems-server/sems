@@ -88,7 +88,8 @@ int AnnounceAuthFactory::onLoad()
     return 0;
 }
 
-AmSession* AnnounceAuthFactory::onInvite(const AmSipRequest& req)
+AmSession* AnnounceAuthFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					 const map<string,string>& app_params)
 {
     string announce_path = AnnouncePath;
     string announce_file = announce_path + req.domain 
@@ -139,19 +140,16 @@ AnnounceAuthDialog::~AnnounceAuthDialog()
 {
 }
 
-void AnnounceAuthDialog::onSessionStart(const AmSipRequest& req)
+void AnnounceAuthDialog::onSessionStart()
 {
     DBG("AnnounceAuthDialog::onSessionStart\n");
     startSession();
+
+    AmSession::onSessionStart();
 }
 
-void AnnounceAuthDialog::onSessionStart(const AmSipReply& rep)
+void AnnounceAuthDialog::startSession()
 {
-    DBG("AnnounceAuthDialog::onSessionStart (SEMS originator mode)\n");
-    startSession();
-}
-
-void AnnounceAuthDialog::startSession(){
     // disable DTMF detection - don't use DTMF here
     setDtmfDetectionEnabled(false);
 

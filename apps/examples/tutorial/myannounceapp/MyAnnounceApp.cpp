@@ -33,7 +33,8 @@ int MyAnnounceAppFactory::onLoad()
     return 0;
 }
 
-AmSession* MyAnnounceAppFactory::onInvite(const AmSipRequest& req)
+AmSession* MyAnnounceAppFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					  const map<string,string>& app_params)
 {
     return new MyAnnounceAppDialog();
 }
@@ -46,7 +47,7 @@ MyAnnounceAppDialog::~MyAnnounceAppDialog()
 {
 }
 
-void MyAnnounceAppDialog::onSessionStart(const AmSipRequest& req)
+void MyAnnounceAppDialog::onSessionStart()
 {
     DBG("MyAnnounceAppDialog::onSessionStart - file is '%s'\n", 
 	MyAnnounceAppFactory::AnnouncementFile.c_str());
@@ -56,6 +57,7 @@ void MyAnnounceAppDialog::onSessionStart(const AmSipRequest& req)
     
     setOutput(&wav_file);
 
+    AmSession::onSessionStart();
 }
 
 void MyAnnounceAppDialog::onBye(const AmSipRequest& req)

@@ -89,7 +89,7 @@ AmAudioRtpFormat* PrecodedDialog::getNewRtpFormat() {
   return new AmPrecodedRtpFormat(*precoded_payload, m_payloads);
 }
 
-void PrecodedDialog::onSessionStart(const AmSipRequest& req)
+void PrecodedDialog::onSessionStart()
 {
   AmPrecodedFileInstance* file = file_def->getFileInstance(current_payload, 
 							   m_payloads);
@@ -105,6 +105,8 @@ void PrecodedDialog::onSessionStart(const AmSipRequest& req)
  
   setOutput(file);
   setReceiving(false);
+
+  AmSession::onSessionStart();
 }
 
 void PrecodedDialog::onBye(const AmSipRequest& req)

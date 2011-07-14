@@ -89,6 +89,8 @@ void VoiceboxDialog::onSessionStart() {
 
   // set the playlist as input and output
   setInOut(&play_list,&play_list);
+
+  AmSession::onSessionStart();
 }
 
 void VoiceboxDialog::onBye(const AmSipRequest& req)
