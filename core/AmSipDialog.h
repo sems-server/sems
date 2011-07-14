@@ -105,6 +105,9 @@ class AmSipDialog
 	sdp_remote(),
 	sdp_local()
     {};
+
+    void clear();
+    void clearTransitionalState();
   };
 
   /** enable the reliability of provisional replies? */
@@ -141,6 +144,9 @@ private:
   AmSdp   sdp_local;
   AmSdp   sdp_remote;
 
+  Status  saved_status;
+  OAState saved_oa_state;
+
   AmSipDialogEventHandler* hdl;
 
   int onTxReply(AmSipReply& reply);
@@ -148,9 +154,16 @@ private:
 
   int onRxSdp(unsigned int m_cseq, const string& body, const char** err_txt);
   int onTxSdp(unsigned int m_cseq, const string& body);
+  int onSdpCompleted();
+
+  // Allows for saving dlg & OA states
+  void saveStates();
+  // Checks dlg & OA states against saved state
+  // and take appropriate action 
+  // (onSdpCompleted and/or onSessionStart/onEarlySessionStart)
+  int checkStateChange();
 
   int getSdpBody(string& sdp_body);
-  int triggerOfferAnswer(string& content_type, string& body);
 
   string getRoute();
 
@@ -371,8 +384,14 @@ class AmSipDialogEventHandler
   /** Hook called before a reply is sent */
   virtual void onSendReply(AmSipReply& reply, int flags)=0;
 
+  /** Hook called when a provisional reply is received with 100rel active */
+  virtual void onInvite1xxRel(const AmSipReply &)=0;
+
   /** Hook called when a local INVITE request has been replied with 2xx */
   virtual void onInvite2xx(const AmSipReply& reply)=0;
+
+  /** Hook called when an answer for a locally sent PRACK is received */
+  virtual void onPrack2xx(const AmSipReply &)=0;
 
   /** Hook called when a UAS INVITE transaction did not receive the ACK */
   virtual void onNoAck(unsigned int ack_cseq)=0;
@@ -386,14 +405,14 @@ class AmSipDialogEventHandler
   /** Hook called when an SDP offer is required */
   virtual bool getSdpAnswer(const AmSdp& offer, AmSdp& answer)=0;
 
-  /** Hook called when the SDP transaction has been completed */
+  /** Hook called when an SDP OA transaction has been completed */
   virtual int onSdpCompleted(const AmSdp& local, const AmSdp& remote)=0;
 
-  /** Hook called when a privisional reply is received with 100rel active */
-  virtual void onInvite1xxRel(const AmSipReply &)=0;
+  /** Hook called when an early session starts (SDP OA completed + dialog in early state) */
+  virtual void onEarlySessionStart()=0;
 
-  /** Hook called when an answer for a locally sent PRACK is received */
-  virtual void onPrack2xx(const AmSipReply &)=0;
+  /** Hook called when the session creation is completed (INV trans replied with 200) */
+  virtual void onSessionStart()=0;
 
   enum FailureCause {
     FAIL_REL100_421,
