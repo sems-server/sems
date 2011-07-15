@@ -92,7 +92,11 @@ static PyObject* IvrAudioFile_open(IvrAudioFile* self, PyObject* args)
     return NULL;
   }
 
-  if(self->af->open(filename,open_mode,is_tmp)){
+  int i;
+  Py_BEGIN_ALLOW_THREADS;
+  i = self->af->open(filename,open_mode,is_tmp);
+  Py_END_ALLOW_THREADS;
+  if(i){
     PyErr_SetString(PyExc_IOError,"Could not open file");
     return NULL;
   }
@@ -130,7 +134,11 @@ static PyObject* IvrAudioFile_fpopen(IvrAudioFile* self, PyObject* args)
     return NULL;
   }
 
-  if(self->af->fpopen(filename,open_mode,fp)){
+  int i;
+  Py_BEGIN_ALLOW_THREADS;
+  i = self->af->fpopen(filename,open_mode,fp);
+  Py_END_ALLOW_THREADS;
+  if(i){
     PyErr_SetString(PyExc_IOError,"Could not open file");
     return NULL;
   }
@@ -150,10 +158,12 @@ static PyObject* IvrAudioFile_rewind(IvrAudioFile* self, PyObject* args)
   if(!PyArg_ParseTuple(args,"|i",&rew_time))
     return NULL;
 
+  Py_BEGIN_ALLOW_THREADS;
   if (rew_time != 0)
     self->af->rewind(rew_time);
   else
     self->af->rewind();
+  Py_END_ALLOW_THREADS;
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -181,8 +191,12 @@ static PyObject* IvrAudioFile_tts(PyObject* cls, PyObject* args)
   *self->filename = string(TTS_CACHE_PATH) + AmSession::getNewId() + string(".wav");
   self->del_file = true;
   flite_text_to_speech(text,self->tts_voice,self->filename->c_str());
-    
-  if(self->af->open(self->filename->c_str(),AmAudioFile::Read)){
+
+  int i;
+  Py_BEGIN_ALLOW_THREADS;
+  i=self->af->open(self->filename->c_str(),AmAudioFile::Read);
+  Py_END_ALLOW_THREADS;
+  if(i){
     Py_DECREF(tts_file);
     PyErr_SetString(PyExc_IOError,"could not open TTS file");
     return NULL;
@@ -194,7 +208,9 @@ static PyObject* IvrAudioFile_tts(PyObject* cls, PyObject* args)
     
 static PyObject* IvrAudioFile_close(IvrAudioFile* self, PyObject*)
 {
+  Py_BEGIN_ALLOW_THREADS;
   self->af->close();
+  Py_END_ALLOW_THREADS;
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -218,11 +234,12 @@ static PyObject* IvrAudioFile_setRecordTime(IvrAudioFile* self, PyObject* args)
 
 static PyObject* IvrAudioFile_exportRaw(IvrAudioFile* self, PyObject*)
 {
+  Py_BEGIN_ALLOW_THREADS;
   if(self->af->getMode() == AmAudioFile::Write)
     self->af->on_close();
     
   self->af->rewind();
-
+  Py_END_ALLOW_THREADS;
   return PyFile_FromFile(self->af->getfp(),(char*)"",(char*)"rwb",NULL);
 }
 
