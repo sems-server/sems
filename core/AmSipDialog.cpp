@@ -698,6 +698,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	  status = Proceeding;
 	else {
 	  status = Early;
+	  remote_tag = reply.to_tag;
 	}
       }
       else if(reply.code < 300){
@@ -1428,6 +1429,7 @@ int AmSipDialog::prack(const AmSipReply &reply1xx,
   case Trying:
   case Proceeding:
   case Cancelling:
+  case Early:
   case Connected:
     break;
   case Disconnected:
