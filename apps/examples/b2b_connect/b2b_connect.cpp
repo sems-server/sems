@@ -220,7 +220,7 @@ void b2b_connectDialog::onBye(const AmSipRequest& req)
 }
 
 
-void b2b_connectDialog::onCancel()
+void b2b_connectDialog::onCancel(const AmSipRequest& req)
 {
   if(dlg.getStatus() == AmSipDialog::Pending) {
     DBG("Wait for leg B to terminate");

@@ -25,7 +25,7 @@ static    GWSession* CallFromOutside(std::string &fromnumber, std::string &tonum
 //virtual void onDtmf(int event, int duration);
 //virtual void onStart(){}
   void onInvite(const AmSipRequest& req);
-  void onCancel();
+  void onCancel(const AmSipRequest& req);
   void onSessionStart(const AmSipRequest& req);
   void onSessionStart(const AmSipReply& reply);
 //virtual void onEarlySessionStart(const AmSipReply& reply){}

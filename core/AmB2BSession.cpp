@@ -1032,7 +1032,7 @@ void AmB2BCallerSession::onInvite2xx(const AmSipReply& reply)
   AmB2BSession::onInvite2xx(reply);
 }
 
-void AmB2BCallerSession::onCancel()
+void AmB2BCallerSession::onCancel(const AmSipRequest& req)
 {
   terminateOtherLeg();
   terminateLeg();

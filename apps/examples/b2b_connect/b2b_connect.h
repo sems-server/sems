@@ -68,7 +68,7 @@ class b2b_connectDialog : public AmB2ABCallerSession
   void onDtmf(int event, int duration);
   void onBye(const AmSipRequest& req);
   void onInvite(const AmSipRequest& req);
-  void onCancel();
+  void onCancel(const AmSipRequest& req);
   
 
  protected:

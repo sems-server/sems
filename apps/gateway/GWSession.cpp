@@ -65,10 +65,10 @@ void GWSession::onBye(const AmSipRequest& req) {
         AmSession::onBye(req);
 		
 }
-void GWSession::onCancel() {
+void GWSession::onCancel(const AmSipRequest& req) {
 	DBG("GWSession::onCancel\n");
 	int ret=((mISDNChannel*)m_OtherLeg)->hangup();
-        AmSession::onCancel();
+        AmSession::onCancel(req);
 		
 }
 
