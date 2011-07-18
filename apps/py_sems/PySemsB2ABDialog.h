@@ -37,10 +37,13 @@ class PySemsB2ABDialog : public AmB2ABCallerSession,
   PySemsB2ABDialog();
   virtual ~PySemsB2ABDialog();
 
-  void onSessionStart(const AmSipRequest& req);
+  void onEarlySessionStart();
+  void onSessionStart();
 
   // @see AmEventHandler
   void process(AmEvent* event);
+
+  void onBeforeDestroy();
 
   AmB2ABCalleeSession* createCalleeSession();
 };

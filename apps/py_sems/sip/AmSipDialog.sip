@@ -9,11 +9,13 @@ class AmSipDialog
 
 public:
     enum Status {
-	
-	Disconnected=0,
-	Pending,
-	Connected,
-	Disconnecting
+    Disconnected=0,
+    Trying,
+    Proceeding,
+    Cancelling,
+    Early,
+    Connected,
+    Disconnecting
     };
 
     string user;         // local user
@@ -40,8 +42,8 @@ public:
     int    getStatus();
     string getContactHdr();
 
-    void updateStatus(const AmSipRequest& /* req */);
-    void updateStatus(const AmSipReply& /* reply */);
+    void onRxRequest(const AmSipRequest& /* req */);
+    void onRxReply(const AmSipReply& /* reply */);
 
     int reply(const AmSipRequest& /* req */,
  	      unsigned int  /* code */, 

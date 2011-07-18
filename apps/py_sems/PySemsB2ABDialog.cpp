@@ -28,11 +28,21 @@ PySemsB2ABDialog::~PySemsB2ABDialog()
 {
 }
 
-void PySemsB2ABDialog::onSessionStart(const AmSipRequest& req)
+void PySemsB2ABDialog::onBeforeDestroy() {
+  AmB2ABCallerSession::onBeforeDestroy();
+}
+
+void PySemsB2ABDialog::onEarlySessionStart() {
+  DBG("PySemsB2ABDialog::onEarlySessionStart\n");
+  setInOut(&playlist,&playlist);
+  AmB2ABCallerSession::onEarlySessionStart();
+}
+
+void PySemsB2ABDialog::onSessionStart()
 {
   DBG("PySemsB2ABDialog::onSessionStart\n");
   setInOut(&playlist,&playlist);
-  AmB2ABCallerSession::onSessionStart(req);
+  AmB2ABCallerSession::onSessionStart();
 }
 
 AmB2ABCalleeSession* PySemsB2ABDialog::createCalleeSession() {

@@ -36,7 +36,7 @@ class PySemsB2BDialog : public AmB2BCallerSession,
   PySemsB2BDialog();
   virtual ~PySemsB2BDialog();
 
-  void onSessionStart(const AmSipRequest& req);
+  void onSessionStart();
 
   // @see AmEventHandler
   void process(AmEvent* event);

@@ -36,15 +36,13 @@ public:
     fprintf(stderr,"------------- dealloc_PySemsB2ABDialog ----------\n");
 %End
 
-    int acceptAudio(const string& /* body */,
-		    const string& /* hdrs */,
-		    string* /Out/ /* sdp_reply */);
-
     void setStopped();
+    virtual void onBeforeDestroy();
 
     virtual void onInvite(const AmSipRequest& /* req */);
-    virtual void onSessionStart(const AmSipRequest& /* req */);
-    virtual void onCancel();
+    virtual void onCancel(const AmSipRequest& /* req */);
+    virtual void onSessionStart();
+    virtual void onEarlySessionStart();
 
     virtual void onBye(const AmSipRequest& /* req */);
     virtual void onDtmf(int /* event */, int /* duration_msec */);

@@ -30,11 +30,11 @@ PySemsB2BDialog::~PySemsB2BDialog()
 {
 }
 
-void PySemsB2BDialog::onSessionStart(const AmSipRequest& req)
+void PySemsB2BDialog::onSessionStart()
 {
   DBG("PySemsB2BDialog::onSessionStart\n");
   setInOut(&playlist,&playlist);
-  AmB2BCallerSession::onSessionStart(req);
+  AmB2BCallerSession::onSessionStart();
 }
 
 void PySemsB2BDialog::process(AmEvent* event) 

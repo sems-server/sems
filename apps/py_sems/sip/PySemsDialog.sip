@@ -17,15 +17,11 @@ public:
     fprintf(stderr,"------------- dealloc_PySemsDialog ----------\n");
 %End
 
-    int acceptAudio(const string& /* body */,
-		    const string& /* hdrs */,
-		    string* /Out/ /* sdp_reply */);
-
     void setStopped();
 
     virtual void onInvite(const AmSipRequest& /* req */);
     virtual void onSessionStart(const AmSipRequest& /* req */);
-    virtual void onCancel();
+    virtual void onCancel(const AmSipRequest& /* req */);
 
     virtual void onBye(const AmSipRequest& /* req */);
     virtual void onDtmf(int /* event */, int /* duration_msec */);
