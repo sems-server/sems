@@ -1062,10 +1062,10 @@ void _trans_layer::received_msg(sip_msg* msg)
 	DBG("parse_sip_msg returned %i\n",err);
 
 	if(!err_msg){
-
 	    err_msg = (char*)"unknown parsing error";
-	    DBG("parsing error: %s\n",err_msg);
 	}
+
+	DBG("parsing error: %s\n",err_msg);
 
 	DBG("Message was: \"%.*s\"\n",msg->len,msg->buf);
 
