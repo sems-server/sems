@@ -348,16 +348,13 @@ SIP Session Timer configuration
 -------------------------------
 If SIP Session Timers are enabled for a profile, the session timers values
 (session_refresh, minimum_timer etc) can be configured either in sbc.conf
-or in the profile configuration. The profile SST configuration is used if
-session_expires is set in the profile configuration file. 
+or in the profile configuration, which overrides the sbc.conf configuration.
 
-Note that for performance reasons the whole SST configuration is in this
-case used from the profile configuration (it is not overwritten value-by-value).
-
-SIP Session Timers may be configured for each leg individually. SST may be dis-
-abled on the A (caller) leg by setting enable_aleg_session_timer=no. If
-enable_session_timer=yes and enable_aleg_session_timer not set, SST is enabled for
-both legs. Likewise, if aleg_session_expires is not set, the SST configuration of
+SIP Session Timers may be configured for each leg individually.
+enable_session_timer overrides enable_aleg_session_timer if that one is not set:
+SST may be disabled on the A (caller) leg by setting enable_aleg_session_timer=no.
+If enable_session_timer=yes and enable_aleg_session_timer not set, SST is enabled for
+both legs. Likewise, if aleg_session_expires etc. is not set, the SST configuration of
 the B leg is used (session_expires, minimum_timer etc).
 
 Prepaid

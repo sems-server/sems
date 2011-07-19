@@ -212,6 +212,10 @@ void AmConfigReader::setParameter(const string& param, const string& val) {
   keys[param] = val;
 }
 
+void AmConfigReader::eraseParameter(const string& param) {
+  keys.erase(param);
+}
+
 bool AmConfigReader::hasParameter(const string& param)
 {
   return (keys.find(param) != keys.end());

@@ -187,7 +187,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
 
   DBG("using call profile '%s' (from matching active_profile rule '%s')\n",
       profile.c_str(), profile_rule.c_str());
-  SBCCallProfile& call_profile = it->second;
+  const SBCCallProfile& call_profile = it->second;
 
   if (!call_profile.refuse_with.empty()) {
     string refuse_with = replaceParameters(call_profile.refuse_with,
@@ -225,17 +225,45 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
     return NULL;
   }
 
-  AmConfigReader* sst_cfg = &call_profile.cfg;
-  if (call_profile.use_aleg_sst_config) {
-    sst_cfg = &call_profile.aleg_sst_cfg; // override with aleg sst config (aleg_*)
-  } else if (call_profile.use_global_sst_config) {
-    sst_cfg = &cfg; // global config
+  // copy so call profile's object does not get modified
+  AmConfigReader sst_a_cfg = call_profile.sst_a_cfg;
+
+  bool sst_a_enabled;
+
+  string enable_aleg_session_timer =
+    replaceParameters(call_profile.sst_aleg_enabled, "enable_aleg_session_timer", REPLACE_VALS);
+
+  if (enable_aleg_session_timer.empty()) {
+    string sst_enabled =
+      replaceParameters(call_profile.sst_enabled, "enable_session_timer", REPLACE_VALS);
+    sst_a_enabled = sst_enabled == "yes";
+  } else {
+    sst_a_enabled = enable_aleg_session_timer == "yes";
   }
 
-  if (call_profile.sst_aleg_enabled) {
+  if (sst_a_enabled) {
     DBG("Enabling SIP Session Timers (A leg)\n");
+
+#define SST_CFG_REPLACE_PARAMS(cfgkey)					\
+    if (sst_a_cfg.hasParameter(cfgkey)) {					\
+      string newval = replaceParameters(sst_a_cfg.getParameter(cfgkey),	\
+					cfgkey, REPLACE_VALS);		\
+      if (newval.empty()) {						\
+	sst_a_cfg.eraseParameter(cfgkey);					\
+      } else{								\
+	sst_a_cfg.setParameter(cfgkey,newval);				\
+      }									\
+    }
+
+    SST_CFG_REPLACE_PARAMS("session_expires");
+    SST_CFG_REPLACE_PARAMS("minimum_timer");
+    SST_CFG_REPLACE_PARAMS("maximum_timer");
+    SST_CFG_REPLACE_PARAMS("session_refresh_method");
+    SST_CFG_REPLACE_PARAMS("accept_501_reply");
+#undef SST_CFG_REPLACE_PARAMS
+
     try {
-      if (!session_timer_fact->onInvite(req, *sst_cfg)) {
+      if (!session_timer_fact->onInvite(req, sst_a_cfg)) {
 	profiles_mut.unlock();
 	throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       }
@@ -263,7 +291,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
     }
   }
 
-  if (call_profile.sst_aleg_enabled) {
+  if (sst_a_enabled) {
     AmSessionEventHandler* h = session_timer_fact->getHandler(b2b_dlg);
     if(!h) {
       profiles_mut.unlock();
@@ -272,7 +300,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
-    if (h->configure(*sst_cfg)){
+    if (h->configure(sst_a_cfg)){
       ERROR("Could not configure the session timer: disabling session timers.\n");
       delete h;
     } else {
@@ -613,6 +641,30 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     enableRtpRelay(req);
   }
 
+  call_profile.sst_enabled =
+    replaceParameters(call_profile.sst_enabled, "enable_session_timer", REPLACE_VALS);
+
+  if (call_profile.sst_enabled == "yes") {
+    AmConfigReader& sst_cfg = call_profile.sst_b_cfg;
+#define SST_CFG_REPLACE_PARAMS(cfgkey)					\
+    if (sst_cfg.hasParameter(cfgkey)) {					\
+      string newval = replaceParameters(sst_cfg.getParameter(cfgkey),	\
+					cfgkey, REPLACE_VALS);		\
+      if (newval.empty()) {						\
+	sst_cfg.eraseParameter(cfgkey);					\
+      } else{								\
+	sst_cfg.setParameter(cfgkey,newval);				\
+      }									\
+    }
+
+    SST_CFG_REPLACE_PARAMS("session_expires");
+    SST_CFG_REPLACE_PARAMS("minimum_timer");
+    SST_CFG_REPLACE_PARAMS("maximum_timer");
+    SST_CFG_REPLACE_PARAMS("session_refresh_method");
+    SST_CFG_REPLACE_PARAMS("accept_501_reply");
+#undef SST_CFG_REPLACE_PARAMS
+  }
+
   m_state = BB_Dialing;
 
   invite_req = req;
@@ -625,7 +677,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     b2b_mode = B2BMode_SDPFilter;
   }
 
-  if (call_profile.sst_aleg_enabled) {
+  if (call_profile.sst_enabled == "yes") {
     removeHeader(invite_req.hdrs,SIP_HDR_SESSION_EXPIRES);
     removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
   }
@@ -1067,17 +1119,15 @@ void SBCDialog::createCalleeSession()
     }
   }
 
-  if (call_profile.sst_enabled) {
+  if (call_profile.sst_enabled == "yes") {
     AmSessionEventHandler* h = SBCFactory::session_timer_fact->getHandler(callee_session);
     if(!h) {
       ERROR("could not get a session timer event handler\n");
       delete callee_session;
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
-    AmConfigReader& sst_cfg = call_profile.use_global_sst_config ? 
-      SBCFactory::cfg : call_profile.cfg; // override with profile config
 
-    if(h->configure(sst_cfg)){
+    if(h->configure(call_profile.sst_b_cfg)){
       ERROR("Could not configure the session timer: disabling session timers.\n");
       delete h;
     } else {

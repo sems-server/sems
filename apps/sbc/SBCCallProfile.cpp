@@ -24,7 +24,7 @@
  */
 
 #include "SBCCallProfile.h"
-
+#include "SBC.h"
 #include <algorithm>
 
 #include "log.h"
@@ -34,6 +34,7 @@
 
 bool SBCCallProfile::readFromConfiguration(const string& name,
 					   const string profile_file_name) {
+  AmConfigReader cfg;
   if (cfg.loadFile(profile_file_name)) {
     ERROR("reading SBC call profile from '%s'\n", profile_file_name.c_str());
     return false;
@@ -109,31 +110,42 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     }
   }
 
-  sst_enabled = cfg.getParameter("enable_session_timer", "no") == "yes";
+  sst_enabled = cfg.getParameter("enable_session_timer");
   if (cfg.hasParameter("enable_aleg_session_timer")) {
-    sst_aleg_enabled = cfg.getParameter("enable_aleg_session_timer", "no") == "yes";
+    sst_aleg_enabled = cfg.getParameter("enable_aleg_session_timer");
   } else {
     sst_aleg_enabled = sst_enabled;
   }
-  use_global_sst_config = !cfg.hasParameter("session_expires");
-  use_aleg_sst_config = cfg.hasParameter("aleg_session_expires");
 
-  if (sst_aleg_enabled) {
-    aleg_sst_cfg.setParameter("enable_session_timer", "yes");
-    // create aleg_sst_cfg with values from aleg_*
-#define CP_SST_CFGVAR(cfgkey)						\
-    if (cfg.hasParameter("aleg_" cfgkey)) {				\
-      aleg_sst_cfg.setParameter(cfgkey,					\
-				cfg.getParameter("aleg_" cfgkey));	\
+#define CP_SST_CFGVAR(cfgprefix, cfgkey, dstcfg)			\
+    if (cfg.hasParameter(cfgprefix cfgkey)) {				\
+      dstcfg.setParameter(cfgkey, cfg.getParameter(cfgprefix cfgkey));	\
+    } else if (cfg.hasParameter(cfgkey)) {				\
+      dstcfg.setParameter(cfgkey, cfg.getParameter(cfgkey));		\
+    } else if (SBCFactory::cfg.hasParameter(cfgkey)) {			\
+      dstcfg.setParameter(cfgkey, SBCFactory::cfg.getParameter(cfgkey)); \
     }
-    CP_SST_CFGVAR("session_expires");
-    CP_SST_CFGVAR("minimum_timer");
-    CP_SST_CFGVAR("maximum_timer");
-    CP_SST_CFGVAR("session_refresh_method");
-    CP_SST_CFGVAR("accept_501_reply");
-#undef CP_SST_CFGVAR
+
+  if (sst_enabled != "no") {
+    sst_b_cfg.setParameter("enable_session_timer", "yes");
+    // create sst_cfg with values from aleg_*
+    CP_SST_CFGVAR("", "session_expires", sst_b_cfg);
+    CP_SST_CFGVAR("", "minimum_timer", sst_b_cfg);
+    CP_SST_CFGVAR("", "maximum_timer", sst_b_cfg);
+    CP_SST_CFGVAR("", "session_refresh_method", sst_b_cfg);
+    CP_SST_CFGVAR("", "accept_501_reply", sst_b_cfg);
   }
 
+  if (sst_aleg_enabled != "no") {
+    sst_a_cfg.setParameter("enable_session_timer", "yes");
+    // create sst_a_cfg superimposing values from aleg_*
+    CP_SST_CFGVAR("aleg_", "session_expires", sst_a_cfg);
+    CP_SST_CFGVAR("aleg_", "minimum_timer", sst_a_cfg);
+    CP_SST_CFGVAR("aleg_", "maximum_timer", sst_a_cfg);
+    CP_SST_CFGVAR("aleg_", "session_refresh_method", sst_a_cfg);
+    CP_SST_CFGVAR("aleg_", "accept_501_reply", sst_a_cfg);
+  }
+#undef CP_SST_CFGVAR
   
   auth_enabled = cfg.getParameter("enable_auth", "no") == "yes";
   auth_credentials.user = cfg.getParameter("auth_user");
@@ -257,8 +269,34 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       }
     }
 
-    INFO("SBC:      SST on A leg %sabled\n", sst_aleg_enabled?"en":"dis");
-    INFO("SBC:      SST on B leg %sabled\n", sst_enabled?"en":"dis");
+    INFO("SBC:      SST on A leg enabled: '%s'\n", sst_aleg_enabled.empty() ?
+	 "no" : sst_aleg_enabled.c_str());
+    if (sst_aleg_enabled != "no") {
+      INFO("SBC:              session_expires=%s\n",
+	   sst_a_cfg.getParameter("session_expires").c_str());
+      INFO("SBC:              minimum_timer=%s\n",
+	   sst_a_cfg.getParameter("minimum_timer").c_str());
+      INFO("SBC:              maximum_timer=%s\n",
+	   sst_a_cfg.getParameter("maximum_timer").c_str());
+      INFO("SBC:              session_refresh_method=%s\n",
+	   sst_a_cfg.getParameter("session_refresh_method").c_str());
+      INFO("SBC:              accept_501_reply=%s\n",
+	   sst_a_cfg.getParameter("accept_501_reply").c_str());
+    }
+    INFO("SBC:      SST on B leg enabled: '%s'\n", sst_enabled.empty() ?
+	 "no" : sst_enabled.c_str());
+    if (sst_enabled != "no") {
+      INFO("SBC:              session_expires=%s\n",
+	   sst_b_cfg.getParameter("session_expires").c_str());
+      INFO("SBC:              minimum_timer=%s\n",
+	   sst_b_cfg.getParameter("minimum_timer").c_str());
+      INFO("SBC:              maximum_timer=%s\n",
+	   sst_b_cfg.getParameter("maximum_timer").c_str());
+      INFO("SBC:              session_refresh_method=%s\n",
+	   sst_b_cfg.getParameter("session_refresh_method").c_str());
+      INFO("SBC:              accept_501_reply=%s\n",
+	   sst_b_cfg.getParameter("accept_501_reply").c_str());
+    }
 
     INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
     INFO("SBC:      SIP auth for A leg %sabled\n", auth_aleg_enabled?"en":"dis");
@@ -309,8 +347,6 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     sdpfilter_enabled == rhs.sdpfilter_enabled &&
     sst_enabled == rhs.sst_enabled &&
     sst_aleg_enabled == rhs.sst_aleg_enabled &&
-    use_global_sst_config == rhs.use_global_sst_config &&
-    use_aleg_sst_config == rhs.use_aleg_sst_config &&
     auth_enabled == rhs.auth_enabled &&
     auth_aleg_enabled == rhs.auth_aleg_enabled &&
     call_timer_enabled == rhs.call_timer_enabled &&
@@ -379,10 +415,8 @@ string SBCCallProfile::print() const {
   res += "sdpfilter_enabled:    " + string(sdpfilter_enabled?"true":"false") + "\n";
   res += "sdpfilter:            " + string(FilterType2String(sdpfilter)) + "\n";
   res += "sdpfilter_list:       " + stringset_print(sdpfilter_list) + "\n";
-  res += "sst_enabled:          " + string(sst_enabled?"true":"false") + "\n";
-  res += "sst_aleg_enabled:     " + string(sst_aleg_enabled?"true":"false") + "\n";
-  res += "use_global_sst_config:" + string(use_global_sst_config?"true":"false") + "\n";
-  res += "use_aleg_sst_config:" + string(use_aleg_sst_config?"true":"false") + "\n";
+  res += "sst_enabled:          " + sst_enabled + "\n";
+  res += "sst_aleg_enabled:     " + sst_aleg_enabled + "\n";
   res += "auth_enabled:         " + string(auth_enabled?"true":"false") + "\n";
   res += "auth_user:            " + auth_credentials.user+"\n";
   res += "auth_pwd:             " + auth_credentials.pwd+"\n";

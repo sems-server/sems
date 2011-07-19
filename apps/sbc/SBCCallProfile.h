@@ -39,8 +39,6 @@ using std::map;
 using std::set;
 
 struct SBCCallProfile {
-
-  AmConfigReader cfg;
   string md5hash;
   string profile_file;
 
@@ -69,11 +67,10 @@ struct SBCCallProfile {
   FilterType sdpfilter;
   set<string> sdpfilter_list;
 
-  bool sst_enabled;
-  bool sst_aleg_enabled;
-  bool use_global_sst_config;
-  bool use_aleg_sst_config;
-  AmConfigReader aleg_sst_cfg;
+  string sst_enabled;
+  string sst_aleg_enabled;
+  AmConfigReader sst_a_cfg;    // SST config (A leg)
+  AmConfigReader sst_b_cfg;    // SST config (B leg)
 
 
   bool auth_enabled;
@@ -109,7 +106,6 @@ struct SBCCallProfile {
     messagefilter(Transparent),
     sdpfilter_enabled(false),
     sdpfilter(Transparent),
-    sst_enabled(false),
     auth_enabled(false),
     call_timer_enabled(false),
     prepaid_enabled(false),
