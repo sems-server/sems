@@ -1021,6 +1021,14 @@ void DBRegAgent::DIremoveRegistration(int subscriber_id, AmArg& ret) {
   ret.push("OK");
 }
 
+void DBRegAgent::DIrefreshRegistration(int subscriber_id, AmArg& ret) {
+  DBG("DI method: refreshRegistration(%i)\n", subscriber_id);
+  scheduleRegistration(subscriber_id);
+
+  ret.push(200);
+  ret.push("OK");
+}
+
 // ///////// DI API ///////////////////
 
 void DBRegAgent::invoke(const string& method,
@@ -1049,10 +1057,14 @@ void DBRegAgent::invoke(const string& method,
   } else if (method == "removeRegistration"){
     args.assertArrayFmt("i"); // subscriber_id
     DIremoveRegistration(args.get(0).asInt(), ret);
-  } else if(method == "_list"){ 
+  } else if (method == "refreshRegistration"){
+    args.assertArrayFmt("i"); // subscriber_id
+    DIrefreshRegistration(args.get(0).asInt(), ret);
+  }  else if(method == "_list"){
     ret.push(AmArg("createRegistration"));
     ret.push(AmArg("updateRegistration"));
     ret.push(AmArg("removeRegistration"));
+    ret.push(AmArg("refreshRegistration"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
 }

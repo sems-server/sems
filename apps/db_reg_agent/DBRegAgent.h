@@ -234,6 +234,7 @@ class DBRegAgent
 			    const string& pass, const string& realm,
 			    const string& contact, AmArg& ret);
   void DIremoveRegistration(int subscriber_id, AmArg& ret);
+  void DIrefreshRegistration(int subscriber_id, AmArg& ret);
 
 
  public:

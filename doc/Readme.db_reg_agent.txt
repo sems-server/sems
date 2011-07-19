@@ -28,6 +28,7 @@ DI control functions
 
  createRegistration(int subscriber_id, string user, string pass, string realm [, string contact])
  updateRegistration(int subscriber_id, string user, string pass, string realm [, string contact])
+ refreshRegistration(int subscriber_id)
  removeRegistration(int subscriber_id)
 
 In order to be restart-safe also when sending requests is delayed through ratelimiting,
