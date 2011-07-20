@@ -38,6 +38,14 @@ it is recommended to set the registration_status in the DB to 5
 After removing a registration by issuing removeRegistration, the subcriber entry will
 be present with the status REMOVED, if delete_removed_registrations=no.
 
+If a registration is not found (subscriber_id unknown) when updateRegistration
+is executed, a warning is be printed to log and the registration will be created.
+
+updateRegistration triggers immediate re-Registration if the user or the realm has
+changed, in that case the old binding is not deregistered; if this is desired, then
+removeRegistation should be called first and the status should be checked in the
+database until it appears as de-register.
+
 Registration status (registration_status column)
 ------------------------------------------------
  REG_STATUS_INACTIVE      0

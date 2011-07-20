@@ -449,6 +449,10 @@ void DBRegAgent::updateRegistration(long subscriber_id,
     return;
   }
 
+  bool need_reregister = it->second->getInfo().domain != realm ||
+    it->second->getInfo().user != user;
+  string old_realm = it->second->getInfo().domain;
+  string old_user = it->second->getInfo().user;
   it->second->setRegistrationInfo(SIPRegistrationInfo(realm, user,
 						      user, // name
 						      user, // auth_user
@@ -456,6 +460,12 @@ void DBRegAgent::updateRegistration(long subscriber_id,
 						      outbound_proxy,   // proxy
 						      contact)); // contact
   registrations_mut.unlock();
+  if (need_reregister) {
+    DBG("user/realm for registration %ld changed (%s@%s -> %s@%s). "
+	"Triggering immediate re-registration\n",
+	subscriber_id, old_user.c_str(), old_realm.c_str(), user.c_str(), realm.c_str());
+    scheduleRegistration(subscriber_id);
+  }
 }
 
 /** remove registration from our list */

@@ -74,6 +74,24 @@ void AmSIPRegistration::setRegistrationInfo(const SIPRegistrationInfo& _info) {
   DBG("updating registration info for '%s@%s'\n",
       _info.user.c_str(), _info.domain.c_str());
   info = _info;
+
+  req.user     = info.user;
+  req.r_uri    = "sip:"+info.domain;
+  req.from     = info.name+" <sip:"+info.user+"@"+info.domain+">";
+  req.from_uri = "sip:"+info.user+"@"+info.domain;
+  req.to       = req.from;
+  req.to_tag   = "";
+
+  // to trigger setting dlg identifiers
+  dlg.callid.clear();
+  dlg.contact_uri.clear();
+
+  dlg.initFromLocalRequest(req);
+
+  if(!info.contact.empty()) {
+    dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<sip:";
+    dlg.contact_uri += info.contact + ">" + CRLF;
+  }
 }
 
 void AmSIPRegistration::setSessionEventHandler(AmSessionEventHandler* new_seh) {
