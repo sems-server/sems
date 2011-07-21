@@ -112,8 +112,12 @@ EchoDialog::~EchoDialog()
 
 void EchoDialog::onSessionStart()
 {
+  DBG("EchoDialog::onSessionStart\n");
+
   RTPStream()->setPlayoutType(playout_type);
   setInOut(&echo,&echo);
+
+  AmSession::onSessionStart();
 }
 
 void EchoDialog::onBye(const AmSipRequest& req)
