@@ -194,7 +194,7 @@ XmlRpcDispatch::waitForAndProcessEvents(double timeout)
   // Check for events
   int nEvents;
   if (_endTime < 0.0)
-    nEvents = poll(fds,_sources.size(), 0);
+    nEvents = poll(fds,_sources.size(), -1);
   else 
   {
     int to_ms = (int)floor(1000.0 * timeout);
