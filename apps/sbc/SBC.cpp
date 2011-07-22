@@ -104,9 +104,10 @@ int SBCFactory::onLoad()
       ERROR("call profile active_profile '%s' not loaded!\n", it->c_str());
       return -1;
     }
-    active_profile_s+=*it+",";
+    active_profile_s+=*it;
+    if (it != active_profile.end()-1)
+      active_profile_s+=", ";
   }
-  active_profile_s.erase(active_profile_s.length());
 
   INFO("SBC: active profile: '%s'\n", active_profile_s.c_str());
 
