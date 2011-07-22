@@ -157,8 +157,7 @@ int WebConferenceFactory::load()
   if (!feedback_filename.empty()) {
     feedback_file.open(feedback_filename.c_str(), std::ios::out|std::ios::app);
     if (!feedback_file.good()) {
-      ERROR("opening feedback file '%s'\n", 
-	    feedback_filename.c_str());
+      WARN("opening feedback file '%s' failed\n", feedback_filename.c_str());
     } else {
       DBG("successfully opened feedback file '%s'\n", 
 	    feedback_filename.c_str());
