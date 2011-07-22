@@ -96,7 +96,7 @@ int RegistrationAgentFactory::onLoad()
   } while (i < MAX_ACCOUNTS);
 
   if (i <= 0) {
-    ERROR("no complete account provided: '" MOD_NAME "' module remains "
+    WARN("no complete account provided: '" MOD_NAME "' module remains "
         "inactive, which might not be what you want!\n");
   } else {
     dialer.start();
