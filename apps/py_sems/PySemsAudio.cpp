@@ -4,12 +4,13 @@
 
 #include "log.h"
 
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
+#  include "flite.h"
+#  define TTS_CACHE_PATH "/tmp/"
 
-#define TTS_CACHE_PATH "/tmp/"
 extern "C" cst_voice *register_cmu_us_kal();
 
-#endif //ivr_with_tts
+#endif //PY_SEMS_WITH_TTS
 
 
 static PyObject* PySemsAudioFile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -27,7 +28,7 @@ static PyObject* PySemsAudioFile_new(PyTypeObject *type, PyObject *args, PyObjec
       return NULL;
     }
 
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
     flite_init();
     self->tts_voice = register_cmu_us_kal();
     self->filename = new string();
@@ -44,7 +45,7 @@ static void PySemsAudioFile_dealloc(PySemsAudioFile* self)
   delete self->af;
   self->af = NULL;
 
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
   if(self->del_file && !self->filename->empty())
     unlink(self->filename->c_str());
   delete self->filename;
@@ -140,7 +141,7 @@ static PyObject* PySemsAudioFile_rewind(PySemsAudioFile* self, PyObject* args)
   return Py_None;
 }
 
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
 static PyObject* PySemsAudioFile_tts(PyObject* cls, PyObject* args)
 {
   char* text;
@@ -231,7 +232,7 @@ static PyMethodDef PySemsAudioFile_methods[] = {
    "creates a new Python file with the actual file"
    " and eventually flushes headers (audio->on_stop)"
   },
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
   {"tts", (PyCFunction)PySemsAudioFile_tts, METH_CLASS | METH_VARARGS,
    "text to speech"
   },
