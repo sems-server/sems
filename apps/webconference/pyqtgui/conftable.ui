@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>miff</string>
+   <string>conference call</string>
   </property>
   <property name="autoFillBackground" >
    <bool>true</bool>

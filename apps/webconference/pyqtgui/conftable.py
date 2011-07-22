@@ -61,7 +61,7 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "miff", None, QtGui.QApplication.UnicodeUTF8))
+        MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "conference call", None, QtGui.QApplication.UnicodeUTF8))
         self.buttonNew.setText(QtGui.QApplication.translate("MainWindow", "Call someone", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("MainWindow", "iptel.org\n"
 "webconference", None, QtGui.QApplication.UnicodeUTF8))
