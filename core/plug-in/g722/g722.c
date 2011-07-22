@@ -18,20 +18,18 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-
-#include <string.h>
-#include <stdlib.h>
-
 #include "amci.h"
 #include "codecs.h"
-#include <math.h>
-typedef unsigned char uint8_t;
-typedef signed short int16_t;
-
 
 #include <spandsp.h>
 #include "../../log.h"
 
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+
+typedef unsigned char uint8_t;
+typedef signed short int16_t;
 
 int Pcm16_2_G722NB( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 		     unsigned int channels, unsigned int rate, long h_codec );
