@@ -28,10 +28,6 @@
 #include "AmB2BSession.h"
 #include "AmPlaylist.h"
 
-#ifdef PY_SEMS_WITH_TTS
-#include "flite.h"
-#endif
-
 #include <string>
 #include <map>
 using std::string;

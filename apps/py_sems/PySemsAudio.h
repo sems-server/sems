@@ -10,7 +10,7 @@
 #define AUDIO_READ  1
 #define AUDIO_WRITE 2
 
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
 #include "flite.h"
 #endif
 
@@ -20,7 +20,7 @@ typedef struct {
   PyObject_HEAD
   AmAudioFile* af;
 
-#ifdef IVR_WITH_TTS
+#ifdef PY_SEMS_WITH_TTS
   cst_voice* tts_voice;
   string*    filename;
   bool       del_file;
