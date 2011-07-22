@@ -198,8 +198,10 @@ class DBRegAgent
       @param subscriber_id - ID of subscription
       @param expiry        - SIP registration expiry time
       @param reg_start_ts  - start TS of the SIP registration
+      @param now_time      - current time
    */
-  void setRegistrationTimer(long subscriber_id, time_t expiry, time_t reg_start_ts);
+  void setRegistrationTimer(long subscriber_id,
+			    time_t expiry, time_t reg_start_ts, time_t now_time);
 
   /** clear re-registration timer and remove timer object */
   void clearRegistrationTimer(long subscriber_id);

@@ -239,25 +239,25 @@ bool RegistrationTimer::insert_timer_leastloaded(RegTimer* timer,
 
   int res_index = from_index;
   if (from_index < 0) {
-    // use to_index (should not occur)
-    res_index = to_index;
-  } else {
-    // find least loaded bucket
-    size_t least_load = buckets[from_index].timers.size();
-
-    int i = from_index;
-    while  (i != to_index) {
-      if (buckets[i].timers.size() <= least_load) {
-	least_load = buckets[i].timers.size();
-	res_index = i;
-      }
-
-      i++;
-      i %= TIMER_BUCKETS;
-    }
-    DBG("found bucket %i with least load %zd (between %i and %i)\n",
-	res_index, least_load, from_index, to_index);
+    // use now .. to_index
+    DBG("from_time (%ld) in the past - searching load loaded from now()\n", from_time);
+    from_index  = current_bucket;
   }
+  // find least loaded bucket
+  size_t least_load = buckets[from_index].timers.size();
+
+  int i = from_index;
+  while  (i != to_index) {
+    if (buckets[i].timers.size() <= least_load) {
+      least_load = buckets[i].timers.size();
+      res_index = i;
+    }
+
+    i++;
+    i %= TIMER_BUCKETS;
+  }
+  DBG("found bucket %i with least load %zd (between %i and %i)\n",
+      res_index, least_load, from_index, to_index);
 
   // update expires to some random value inside the selected bucket
   int diff = (unsigned)res_index - current_bucket;

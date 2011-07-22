@@ -322,7 +322,7 @@ bool DBRegAgent::loadRegistrations() {
 	    DBG("scheduling imminent re-registration for subscriber %ld\n", subscriber_id);
 	    scheduleRegistration(subscriber_id);
 	  } else {
-	    setRegistrationTimer(subscriber_id, dt_expiry, dt_registration_ts);
+	    setRegistrationTimer(subscriber_id, dt_expiry, dt_registration_ts, now_time);
 	  }
 	  
 	}; break;
@@ -779,7 +779,9 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
       } else if (ev->reply.code >= 200) {
 	// positive reply
 	if (!registration->getUnregistering()) {
-	  setRegistrationTimer(subscriber_id, registration->getExpiresTS(), time(0));
+	  time_t now_time = time(0);
+	  setRegistrationTimer(subscriber_id, registration->getExpiresTS(),
+			       now_time, now_time);
 
 	  update_status = true;
 	  status = REG_STATUS_ACTIVE;
@@ -892,7 +894,8 @@ void DBRegAgent::setRegistrationTimer(long subscriber_id, unsigned int timeout,
 }
 
 void DBRegAgent::setRegistrationTimer(long subscriber_id,
-				      time_t expiry, time_t reg_start_ts) {
+				      time_t expiry, time_t reg_start_ts,
+				      time_t now_time) {
   DBG("setting re-Register timer for subscription %ld, expiry %ld, reg_start_t %ld\n",
       subscriber_id, expiry, reg_start_ts);
 
@@ -920,19 +923,45 @@ void DBRegAgent::setRegistrationTimer(long subscriber_id,
       t_expiry_max+=(expiry - reg_start_ts) * reregister_interval;
     if (expiry > reg_start_ts)
       t_expiry_min+=(expiry - reg_start_ts) * minimum_reregister_interval;
+
+    if (t_expiry_max < now_time) {
+      // calculated interval completely in the past - immediate re-registration
+      // by setting the timer to now
+      t_expiry_max = now_time;
+    }
+
+    if (t_expiry_min > t_expiry_max)
+      t_expiry_min = t_expiry_max;
+
     timer->expires = t_expiry_max;
-    DBG("calculated re-registration at TS %ld .. %ld"
-	"(reg_start_ts=%ld, reg_expiry=%ld, reregister_interval=%f, "
-	"minimum_reregister_interval=%f)\n",
-	t_expiry_min, t_expiry_max, reg_start_ts, expiry,
-	reregister_interval, minimum_reregister_interval);
+
+    if (t_expiry_max == now_time) {
+      // immediate re-registration
+      DBG("calculated re-registration at TS <now> (%ld)"
+	  "(reg_start_ts=%ld, reg_expiry=%ld, reregister_interval=%f, "
+	  "minimum_reregister_interval=%f)\n",
+	  t_expiry_max, reg_start_ts, expiry,
+	  reregister_interval, minimum_reregister_interval);
+      registration_scheduler.insert_timer(timer);
+    } else {
+      DBG("calculated re-registration at TS %ld .. %ld"
+	  "(reg_start_ts=%ld, reg_expiry=%ld, reregister_interval=%f, "
+	  "minimum_reregister_interval=%f)\n",
+	  t_expiry_min, t_expiry_max, reg_start_ts, expiry,
+	  reregister_interval, minimum_reregister_interval);
   
-    registration_scheduler.insert_timer_leastloaded(timer, t_expiry_min, t_expiry_max);
-    
+      registration_scheduler.insert_timer_leastloaded(timer, t_expiry_min, t_expiry_max);
+    }
   } else {
     time_t t_expiry = reg_start_ts;
     if (expiry > reg_start_ts)
       t_expiry+=(expiry - reg_start_ts) * reregister_interval;
+
+    if (t_expiry < now_time) {
+      t_expiry = now_time;
+      DBG("re-registering at TS <now> (%ld)\n", now_time);
+    }
+
     DBG("calculated re-registration at TS %ld "
 	"(reg_start_ts=%ld, reg_expiry=%ld, reregister_interval=%f)\n",
 	t_expiry, reg_start_ts, expiry, reregister_interval);
