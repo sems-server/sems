@@ -194,7 +194,8 @@ plugin_path=/usr/local/lib/sems/plug-in/
 # This has only effect it load_plugins is not set.
 #
 # o precoded_announce: no precoded sample files present
-exclude_plugins=precoded_announce
+# o py_sems: conflicts with ivr (in some cases)
+exclude_plugins=precoded_announce;py_sems
 
 # optional parameter: application
 # 
