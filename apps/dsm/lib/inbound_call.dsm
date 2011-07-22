@@ -21,7 +21,5 @@ transition replay the_secret_room - timerTest(#id == 1) / { stopRecord(); playFi
 state the_replay;
 transition fin the_replay - noAudioTest() / stop(true) -> end;
 
-transition "bye recvd" start - hangup() / stop(false) -> end;
-transition "bye recvd" the_replay - hangup() / stop(false) -> end;
-transition "bye recvd" the_secret_room - hangup() / stop(false) -> end;
+transition "bye recvd" (start, the_replay, the_secret_room, end) - hangup() / stop(false) -> end;
 
