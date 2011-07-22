@@ -23,8 +23,11 @@ from participant import *
 from callbox import *
 from account import *
 
-# URI for XMLRPC webconference control, set to your server
+# URI for XMLRPC webconference control, set to your server, e.g. for local host:
+#CONTROL_URI="http://127.0.0.1:8090/"
 CONTROL_URI="https://webconference.iptel.org/control"
+
+print "Server Control URI: '%s' - change CONTROL_URI to use local SEMS instance" % CONTROL_URI
 
 # refresh in ms
 REFRESH_INTERVAL=1000
@@ -109,7 +112,7 @@ class StartQT4(QtGui.QMainWindow):
 			self.roomname = ""
 			for n in range(6):
 				self.roomname+=str(random.randint(0,9))
-			code, result, adminpin, serverstatus = self.s.roomCreate(self.roomname)
+			code, result, adminpin, serverstatus = self.s.di('webconference', 'roomCreate', self.roomname)
 			print "server status: %s " % serverstatus
 			if code == 0:
 				self.adminpin = adminpin
@@ -127,7 +130,7 @@ class StartQT4(QtGui.QMainWindow):
 		self.timer.start(REFRESH_INTERVAL)
 		
 	def timer_hit(self):
-		res = self.s.roomInfo(self.roomname, self.adminpin)
+		res = self.s.di('webconference', 'roomInfo', self.roomname, self.adminpin)
 		if res[0] != 0:
 			print "oh my god, can't see this room!"
 			return
@@ -139,7 +142,7 @@ class StartQT4(QtGui.QMainWindow):
 		self.last_res = participants
 		
 		for part in participants:
-			call_tag, number, status, reason, muted = part		
+			call_tag, number, status, reason, muted, participant_id = part
 			found = False
 			for p in self.participants:
 				if p.callid == call_tag:
@@ -170,7 +173,7 @@ class StartQT4(QtGui.QMainWindow):
 			return
 		
 		print "now calling %s " % dlg_cb.num.text() 
-		res = self.s.dialout(self.roomname, self.adminpin, str(dlg_cb.num.text()),
+		res = self.s.di('webconference', 'dialout', self.roomname, self.adminpin, str(dlg_cb.num.text()),
 				self.call_user, self.call_domain, self.call_auth_user, self.call_pwd)
 		if res[0] != 0:
 			print "oh, my dear, calling failed with code %d " % res[0]
@@ -183,14 +186,14 @@ class StartQT4(QtGui.QMainWindow):
 		
 	def part_ciao(self, id):
 		print "ciao: ", id 
-		self.s.kickout(self.roomname, self.adminpin, self.participants[id].callid)
+		self.s.di('webconference', 'kickout', self.roomname, self.adminpin, self.participants[id].callid)
 		
 	def part_muted(self, id, s):
 		print "mute: ", id, " is ", s
 		if s:
-			self.s.mute(self.roomname, self.adminpin, self.participants[id].callid)
+			self.s.di('webconference', 'mute', self.roomname, self.adminpin, self.participants[id].callid)
 		else:
-			self.s.unmute(self.roomname, self.adminpin, self.participants[id].callid)
+			self.s.di('webconference', 'unmute', self.roomname, self.adminpin, self.participants[id].callid)
 		
 		
 
