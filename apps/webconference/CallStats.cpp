@@ -56,8 +56,7 @@ void WCCCallStats::load() {
       DBG("read statistics: %u total %u failed %u seconds (%u min)\n", 
 	  total, failed, seconds, seconds/60);
     } else {
-      ERROR("opening/reading stats from '%s'\n", 
-	    filename.c_str());
+      WARN("opening/reading stats from '%s' failed\n", filename.c_str());
     }
   } catch (std::exception& e) {
       ERROR("opening/reading stats from '%s': %s\n", 
