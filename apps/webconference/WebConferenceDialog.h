@@ -43,7 +43,7 @@ class WebConferenceDialog
 {
 public:
   enum WebConferenceState {
-    None,
+    None = 0,
     EnteringPin,
     EnteringConference,
     InConference,
@@ -97,9 +97,11 @@ public:
 
   void process(AmEvent* ev);
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
-  void onSessionStart(const AmSipRequest& req);
-  void onSessionStart(const AmSipReply& rep);
-  void onEarlySessionStart(const AmSipReply& rep);
+
+  void onInvite(const AmSipRequest& req);
+
+  void onSessionStart();
+  void onEarlySessionStart();
   void onRinging(const AmSipReply& rep);
 
   void onDtmf(int event, int duration);
