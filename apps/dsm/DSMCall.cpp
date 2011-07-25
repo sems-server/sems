@@ -172,9 +172,9 @@ void DSMCall::onSessionStart()
 
     DBG("DSMCall::onSessionStart\n");
     startSession();
-
-    AmB2BCallerSession::onSessionStart();
   }
+
+  AmB2BCallerSession::onSessionStart();
 }
 
 int DSMCall::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
