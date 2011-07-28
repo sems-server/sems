@@ -1,10 +1,12 @@
-#CFGOPTION_SEMS_ANNOUNCEPATH
-announce_path=${SEMS_AUDIO_PREFIX}/sems/audio/
-#ENDCFGOPTION
+# File to be played:
+#  1) [announce_path]/[Domain]/[User].wav
+#  2) [announce_path]/[User].wav
+#  3) [announce_path]/[default_announce]
+# first found is played
 
-#CFGOPTION_SEMS_ANNOUNCEMENT
+announce_path=${SEMS_AUDIO_PREFIX}/sems/audio/
+
 default_announce=default_en.wav
-#ENDCFGOPTION
 
 # optional parameter: loop
 #  set to "true" to make the announcement loop

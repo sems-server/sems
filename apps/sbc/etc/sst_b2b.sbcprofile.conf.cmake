@@ -47,6 +47,7 @@ enable_session_timer=yes
 # default values
 #session_expires=120
 #minimum_timer=90
+#maximum_timer=900
 #session_refresh_method=UPDATE_FALLBACK_INVITE
 #accept_501_reply=yes
 
