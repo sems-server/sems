@@ -16,6 +16,10 @@
 #
 # minimum_timer=90
 
+# -  maximum Timer value we want to accept
+#
+#maximum_timer=900
+
 # session refresh (Session Timer, RFC4028) method
 #
 # INVITE                 - use re-INVITE
