@@ -1,4 +1,4 @@
-set (audio_files
+set (mailbox_audio_files
 	and.wav
 	beep.wav
 	bye.wav
@@ -25,3 +25,4 @@ PYTHON_SOURCES_COMPILE(imap_mailbox/__init__.py ivr/imap_mailbox)
 PYTHON_SOURCES_COMPILE(imap_mailbox/imap4ext.py ivr/imap_mailbox)
 
 SEMS_INSTALL_CONFIGS("mailbox;mailbox_query")
+SEMS_INSTALL_AUDIO("${sems_module_name}" "${${sems_module_name}_audio_files}")
