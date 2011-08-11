@@ -58,6 +58,17 @@ int RegistrationTimer::get_bucket_index(time_t tv) {
 }
 
 void RegistrationTimer::place_timer(RegTimer* timer, int bucket_index) {
+  if (bucket_index < 0) {
+    ERROR("trying to place_timer with negative index (%i)\n", bucket_index);
+    return;
+  }
+
+  if (bucket_index > TIMER_BUCKETS) {
+    ERROR("trying to place_timer with too high index (%i vs %i)\n",
+	  bucket_index, TIMER_BUCKETS);
+    return;
+  }
+
   std::list<RegTimer*>::iterator it = buckets[bucket_index].timers.begin();
   while (it != buckets[bucket_index].timers.end() &&
 	 (timer->expires > (*it)->expires))
