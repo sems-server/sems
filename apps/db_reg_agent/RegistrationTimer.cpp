@@ -237,13 +237,13 @@ bool RegistrationTimer::insert_timer_leastloaded(RegTimer* timer,
     return false;
   }
 
-  int res_index = from_index;
   if (from_index < 0) {
     // use now .. to_index
     DBG("from_time (%ld) in the past - searching load loaded from now()\n", from_time);
     from_index  = current_bucket;
   }
   // find least loaded bucket
+  int res_index = from_index;
   size_t least_load = buckets[from_index].timers.size();
 
   int i = from_index;
