@@ -105,6 +105,15 @@ CREATE TABLE IF NOT EXISTS `subscribers` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
 
 
+Error handling
+--------------
+
+If a REGISTER or de-REGISTER could not be sent, the status in the database
+is set to 480 "unable to send request".
+
+Failed REGISTERs are re-tried after retry_interval. Failed de-REGISTERs are
+not retried.
+
 Todo
 ----
 o (optionally) create DB entries on DI functions

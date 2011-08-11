@@ -68,6 +68,8 @@ using std::queue;
 
 #define RegistrationActionEventID 117
 
+#define ERR_REASON_UNABLE_TO_SEND_REQUEST  "unable to send request"
+
 struct RegistrationActionEvent : public AmEvent {
 
   enum RegAction { Register=0, Deregister };
@@ -129,6 +131,7 @@ class DBRegAgent
   static bool ratelimit_slowstart;
 
   static bool delete_removed_registrations;
+  static bool delete_failed_deregistrations;
   static bool save_contacts;
 
   static bool db_read_contact;

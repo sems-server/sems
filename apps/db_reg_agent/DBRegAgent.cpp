@@ -48,6 +48,7 @@ unsigned int DBRegAgent::ratelimit_per = 0;
 bool DBRegAgent::ratelimit_slowstart = false;
 
 bool DBRegAgent::delete_removed_registrations = true;
+bool DBRegAgent::delete_failed_deregistrations = false;
 bool DBRegAgent::save_contacts = true;
 bool DBRegAgent::db_read_contact = false;
 string DBRegAgent::contact_hostport;
@@ -135,6 +136,9 @@ int DBRegAgent::onLoad()
 
   delete_removed_registrations =
     cfg.getParameter("delete_removed_registrations", "yes") == "yes";
+
+  delete_failed_deregistrations =
+    cfg.getParameter("delete_failed_deregistrations", "no") == "yes";
 
   save_contacts =
     cfg.getParameter("save_contacts", "yes") == "yes";
@@ -449,8 +453,9 @@ void DBRegAgent::updateRegistration(long subscriber_id,
     return;
   }
 
-  bool need_reregister = it->second->getInfo().domain != realm ||
-    it->second->getInfo().user != user;
+  bool need_reregister = it->second->getInfo().domain != realm
+    || it->second->getInfo().user != user;
+
   string old_realm = it->second->getInfo().domain;
   string old_user = it->second->getInfo().user;
   it->second->setRegistrationInfo(SIPRegistrationInfo(realm, user,
@@ -568,7 +573,7 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
 	if (!it->second->doRegistration()) {
 	  updateDBRegistration(ProcessorDBConnection,
 			       reg_action_ev->subscriber_id,
-			       480, "unable to send request",
+			       480, ERR_REASON_UNABLE_TO_SEND_REQUEST,
 			       true, REG_STATUS_FAILED);
 	  if (error_retry_interval) {
 	    // schedule register-refresh after error_retry_interval
@@ -590,14 +595,24 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
 	    reg_action_ev->subscriber_id);
       } else {
 	if (!it->second->doUnregister()) {
-	  updateDBRegistration(ProcessorDBConnection,
-			       reg_action_ev->subscriber_id,
-			       480, "unable to send request",
-			       true, REG_STATUS_TO_BE_REMOVED);
-	  if (error_retry_interval) {
-	    // schedule register-refresh after error_retry_interval
-	    setRegistrationTimer(reg_action_ev->subscriber_id, error_retry_interval,
-				 RegistrationActionEvent::Deregister);
+	  if (delete_removed_registrations && delete_failed_deregistrations) {
+	    DBG("sending de-Register failed - deleting registration %i "
+		"(delete_failed_deregistrations=yes)\n", reg_action_ev->subscriber_id);
+	    deleteDBRegistration(reg_action_ev->subscriber_id, ProcessorDBConnection);
+	  } else {
+	    DBG("failed sending de-register, updating DB with REG_STATUS_TO_BE_REMOVED "
+		ERR_REASON_UNABLE_TO_SEND_REQUEST "for subscriber %i\n",
+		reg_action_ev->subscriber_id);
+	    updateDBRegistration(ProcessorDBConnection,
+				 reg_action_ev->subscriber_id,
+				 480, ERR_REASON_UNABLE_TO_SEND_REQUEST,
+				 true, REG_STATUS_TO_BE_REMOVED);
+	    // don't re-try de-registrations if sending failed
+	  // if (error_retry_interval) {
+	  //   // schedule register-refresh after error_retry_interval
+	  //   setRegistrationTimer(reg_action_ev->subscriber_id, error_retry_interval,
+	  // 			 RegistrationActionEvent::Deregister);
+	  // }
 	  }
 	}
       }
@@ -753,26 +768,33 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
       bool auth_pending = false;
 
       if (ev->reply.code >= 300) {
-	// auth response codes
+	// REGISTER or de-REGISTER failed
 	if ((ev->reply.code == 401 || ev->reply.code == 407) &&
+	    // auth response codes
 	    // processing reply triggered sending request: resent by auth
 	    (cseq_before != registration->getDlg()->cseq)) {
 	  DBG("received negative reply, but still in pending state (auth).\n");
 	  auth_pending = true;
 	} else {
-	  // registration failed - mark in DB
-	  DBG("registration failed - mark in DB\n");
-	  update_status = true;
-	  status = REG_STATUS_FAILED;
-	  if (error_retry_interval) {
-	    if (registration->getUnregistering()) {
-	      // schedule deregister after error_retry_interval
-	      setRegistrationTimer(subscriber_id, error_retry_interval,
-				   RegistrationActionEvent::Deregister);
-	    } else {
+	  if (!registration->getUnregistering()) {
+	    // REGISTER failed - mark in DB
+	    DBG("registration failed - mark in DB\n");
+	    update_status = true;
+	    status = REG_STATUS_FAILED;
+	    if (error_retry_interval) {
 	      // schedule register-refresh after error_retry_interval
 	      setRegistrationTimer(subscriber_id, error_retry_interval,
 				   RegistrationActionEvent::Register);
+	    }
+	  } else {
+	    // de-REGISTER failed
+	    if (delete_removed_registrations && delete_failed_deregistrations) {
+	      DBG("de-Register failed - deleting registration %ld "
+		  "(delete_failed_deregistrations=yes)\n", subscriber_id);
+	      delete_status = true;
+	    } else {
+	      update_status = true;
+	      status = REG_STATUS_TO_BE_REMOVED;
 	    }
 	  }
 	}
@@ -1042,6 +1064,7 @@ void DBRegAgent::DIupdateRegistration(int subscriber_id, const string& user,
   DBG("DI method: updateRegistration(%i, %s, %s, %s)\n",
       subscriber_id, user.c_str(),
       pass.c_str(), realm.c_str());
+
   updateRegistration(subscriber_id, user, pass, realm, contact);
   ret.push(200);
   ret.push("OK");
