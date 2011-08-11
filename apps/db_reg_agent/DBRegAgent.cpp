@@ -454,7 +454,8 @@ void DBRegAgent::updateRegistration(long subscriber_id,
   }
 
   bool need_reregister = it->second->getInfo().domain != realm
-    || it->second->getInfo().user != user;
+    || it->second->getInfo().user != user
+    || it->second->getInfo().contact != contact;
 
   string old_realm = it->second->getInfo().domain;
   string old_user = it->second->getInfo().user;
@@ -1065,7 +1066,13 @@ void DBRegAgent::DIupdateRegistration(int subscriber_id, const string& user,
       subscriber_id, user.c_str(),
       pass.c_str(), realm.c_str());
 
-  updateRegistration(subscriber_id, user, pass, realm, contact);
+  string contact_uri = contact;
+  if (contact_uri.empty() && !contact_hostport.empty()) {
+    contact_uri = "sip:"+ user + "@" + contact_hostport;
+  }
+
+  updateRegistration(subscriber_id, user, pass, realm, contact_uri);
+
   ret.push(200);
   ret.push("OK");
 }
