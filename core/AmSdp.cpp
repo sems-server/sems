@@ -514,10 +514,13 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
     case MEDIA: 
       {
       next = parse_until(media_line, ' ');
-      string media(media_line, int(next-media_line)-1);
-      if(media_type(media) < 0 )
-	ERROR("parse_sdp_media: Unknown media type\n");
+      string media;
+      if (next > media_line)
+	media = string(media_line, int(next-media_line)-1);
       m.type = media_type(media);
+      if(m.type < 0) {
+	ERROR("parse_sdp_media: Unknown media type\n");
+      }
       media_line = next;
       state = PORT;
       break;
@@ -529,17 +532,23 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       if(contains(media_line, next, '/')){
 	//port number
 	next = parse_until(media_line, '/');
-	string port(media_line, int(next-media_line)-1);
+	string port;
+	if (next > media_line)
+	  port = string(media_line, int(next-media_line)-1);
 	str2i(port, m.port);	
 	//number of ports
 	media_line = next;
 	next = parse_until(media_line, ' ');
-       	string nports(media_line, int(next-media_line)-1);
+	string nports;
+	if (next > media_line)
+	  nports = string(media_line, int(next-media_line)-1);
 	str2i(nports, m.nports);
       }else{
 	//port number 
 	next = parse_until(media_line, ' ');
-	const string port(media_line, int(next-media_line)-1);
+	string port;
+	if (next > media_line)
+	  port = string(media_line, int(next-media_line)-1);
 	str2i(port, m.port);
 	media_line = next;
       }
@@ -549,7 +558,9 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
     case PROTO:
       {
 	next = parse_until(media_line, ' ');
-	string proto(media_line, int(next-media_line)-1);
+	string proto;
+	if (next > media_line)
+	  proto = string(media_line, int(next-media_line)-1);
 	// if(transport_type(proto) < 0){
 	//   ERROR("parse_sdp_media: Unknown transport protocol\n");
 	//   state = FMT;
@@ -567,21 +578,28 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       {
 	if (contains(media_line, line_end, ' ')) {
 	  next = parse_until(media_line, ' ');
-	//if(next < line_end){
-	  string value(media_line, int(next-media_line)-1);
+	  string value;
+	  if (next > media_line)
+	    value = string(media_line, int(next-media_line)-1);
+
+	  if (!value.empty()) {
+	    payload.type = m.type;
+	    str2i(value, payload_type);
+	    payload.payload_type = payload_type;
+	    m.payloads.push_back(payload);
+	  }
+
 	  media_line = next;
-	  payload.type = m.type;
-	  str2i(value, payload_type);
-	  payload.payload_type = payload_type;
-	  m.payloads.push_back(payload);
 	  state = FMT;
 	} else {
 	  string last_value;
-	  if (*line_end == '\0') {
-	    // last line in message
-	    last_value = string(media_line, int(line_end-media_line));
-	  } else {
-	    last_value = string(media_line, int(line_end-media_line)-1);
+	  if (line_end>media_line) {
+	    if (*line_end == '\0') {
+	      // last line in message
+	      last_value = string(media_line, int(line_end-media_line));
+	    } else {
+	      last_value = string(media_line, int(line_end-media_line)-1);
+	    }
 	  }
 	  if (!last_value.empty()) {
 	    payload.type = m.type;
