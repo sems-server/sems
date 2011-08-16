@@ -85,6 +85,22 @@ void fix_missing_encodings(SdpMedia& m) {
   }
 }
 
+void fix_incomplete_silencesupp(SdpMedia& m) {
+  for (std::vector<SdpAttribute>::iterator a_it =
+	 m.attributes.begin(); a_it != m.attributes.end(); a_it++) {
+    if (a_it->attribute == "silenceSupp") {
+      vector<string> parts = explode(a_it->value, " ");
+      if (parts.size() < 5) {
+	string val_before = a_it->value;
+	for (int i=parts.size();i<5;i++)
+	  a_it->value += " -";
+	DBG("fixed SDP attribute silenceSupp:'%s' -> '%s'\n",
+	    val_before.c_str(), a_it->value.c_str());
+      }
+    }
+  }
+}
+
 int normalizeSDP(AmSdp& sdp) {
   for (std::vector<SdpMedia>::iterator m_it=
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
@@ -93,6 +109,10 @@ int normalizeSDP(AmSdp& sdp) {
 
     // fill missing encoding names (a= lines)
     fix_missing_encodings(*m_it);
+
+    // fix incomplete silenceSupp attributes (see RFC3108)
+    // (only media level - RFC3108 4.)
+    fix_incomplete_silencesupp(*m_it);
   }
   return 0;
 }
