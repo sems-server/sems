@@ -174,14 +174,16 @@ void AmSdp::print(string& body) const
 	  out_buf += " " + int2str(pl_it->payload_type);
 
 	  // "a=rtpmap:" line
-	  options += "a=rtpmap:" + int2str(pl_it->payload_type) + " " 
+	  if (!pl_it->encoding_name.empty()) {
+	    options += "a=rtpmap:" + int2str(pl_it->payload_type) + " "
 	      + pl_it->encoding_name + "/" + int2str(pl_it->clock_rate);
 
-	  if(pl_it->encoding_param > 0){
+	    if(pl_it->encoding_param > 0){
 	      options += "/" + int2str(pl_it->encoding_param);
-	  }
+	    }
 
-	  options += "\r\n";
+	    options += "\r\n";
+	  }
 	  
 	  // "a=fmtp:" line
 	  if(pl_it->sdp_format_parameters.size()){
