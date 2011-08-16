@@ -162,6 +162,12 @@ void AmSdp::print(string& body) const
       "c=IN IP4 "+conn.address+"\r\n"
       "t=0 0\r\n";
 
+  // add attributes (session level)
+  for (std::vector<SdpAttribute>::const_iterator a_it=
+	 attributes.begin(); a_it != attributes.end(); a_it++) {
+    out_buf += a_it->print();
+  }
+
   for(std::vector<SdpMedia>::const_iterator media_it = media.begin();
       media_it != media.end(); media_it++) {
       
@@ -204,6 +210,13 @@ void AmSdp::print(string& body) const
 	  break;
       default: break;
       }
+
+      // add attributes (media level)
+      for (std::vector<SdpAttribute>::const_iterator a_it=
+	     media_it->attributes.begin(); a_it != media_it->attributes.end(); a_it++) {
+	out_buf += a_it->print();
+      }
+
   }
 
   body = out_buf;
@@ -1114,7 +1127,7 @@ static bool attr_check(std::string attr)
     return true;
   else
     {
-    DBG("sdp_parse_attr: Unknown attribute name used:%s, plz see RFC4566\n", 
+    DBG("sdp_parse_attr: Unknown attribute name used: %s, plz see RFC4566\n",
 	(char*)attr.c_str());
     return false;
     }
