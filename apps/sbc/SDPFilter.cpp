@@ -26,7 +26,8 @@
 #include "SDPFilter.h"
 #include <algorithm>
 #include "log.h"
-
+#include "AmUtils.h"
+#include "RTPParameters.h"
 
 int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilter_list) {
 
@@ -57,5 +58,41 @@ int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilte
     media.payloads = new_pl;    
   }
 
+  return 0;
+}
+
+void fix_missing_encodings(SdpMedia& m) {
+  for (std::vector<SdpPayload>::iterator p_it=
+	 m.payloads.begin(); p_it!=m.payloads.end(); p_it++) {
+    SdpPayload& p = *p_it;
+    if (!p.encoding_name.empty())
+      continue;
+    if (p.payload_type > (IANA_RTP_PAYLOADS_SIZE-1) || p.payload_type < 0)
+      continue; // todo: throw out this payload
+    if (IANA_RTP_PAYLOADS[p.payload_type].payload_name[0]=='\0')
+      continue; // todo: throw out this payload
+
+    p.encoding_name = IANA_RTP_PAYLOADS[p.payload_type].payload_name;
+    p.clock_rate = IANA_RTP_PAYLOADS[p.payload_type].clock_rate;
+    if (IANA_RTP_PAYLOADS[p.payload_type].channels > 1)
+      p.encoding_param = IANA_RTP_PAYLOADS[p.payload_type].channels;
+
+    DBG("named SDP payload type %d with %s/%d%s\n",
+	p.payload_type, IANA_RTP_PAYLOADS[p.payload_type].payload_name,
+	IANA_RTP_PAYLOADS[p.payload_type].clock_rate,
+	IANA_RTP_PAYLOADS[p.payload_type].channels > 1 ?
+	("/"+int2str(IANA_RTP_PAYLOADS[p.payload_type].channels)).c_str() : "");
+  }
+}
+
+int normalizeSDP(AmSdp& sdp) {
+  for (std::vector<SdpMedia>::iterator m_it=
+	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
+    if (m_it->type != MT_AUDIO && m_it->type != MT_VIDEO)
+      continue;
+
+    // fill missing encoding names (a= lines)
+    fix_missing_encodings(*m_it);
+  }
   return 0;
 }

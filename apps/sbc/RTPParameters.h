@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Stefan Sayer
+ * Copyright (C) 2011 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -23,21 +23,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _SDPFilter_h_
-#define _SDPFilter_h_
+#ifndef _RTPParameters_h_
+#define _RTPParameters_h_
 
-#include "HeaderFilter.h" // filtertype
-#include "AmSdp.h"
+struct iana_rtp_payload {
+  const char* payload_name;
+  bool is_audio;
+  unsigned int clock_rate;
+  unsigned int channels;
+};
 
-#include <string>
-using std::string;
-
-#include <set>
-
-
-int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilter_list);
-
-/** normalize SDP, fixing some common issues */
-int normalizeSDP(AmSdp& sdp);
+#define IANA_RTP_PAYLOADS_SIZE 35
+extern const iana_rtp_payload IANA_RTP_PAYLOADS[IANA_RTP_PAYLOADS_SIZE];
 
 #endif
