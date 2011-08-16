@@ -785,7 +785,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       }
     case FMT:
       {
-	if(contains(media_line, line_end, ' ')){
+	if (contains(media_line, line_end, ' ')) {
 	  next = parse_until(media_line, ' ');
 	//if(next < line_end){
 	  string value(media_line, int(next-media_line)-1);
@@ -795,22 +795,21 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 	  payload.payload_type = payload_type;
 	  m.payloads.push_back(payload);
 	  state = FMT;
-	  //check if this lines is also the last
-	}else if (*(line_end-1) == '\0'){
-	  string last_value(media_line, int(line_end-media_line)-1);
-	  payload.type = m.type;
-	  str2i(last_value, payload_type);
-	  payload.payload_type = payload_type;
-	  m.payloads.push_back(payload);
+	} else {
+	  string last_value;
+	  if (*line_end == '\0') {
+	    // last line in message
+	    last_value = string(media_line, int(line_end-media_line));
+	  } else {
+	    last_value = string(media_line, int(line_end-media_line)-1);
+	  }
+	  if (!last_value.empty()) {
+	    payload.type = m.type;
+	    str2i(last_value, payload_type);
+	    payload.payload_type = payload_type;
+	    m.payloads.push_back(payload);
+	  }
 	  parsing = 0;
-	  //if not
-	}else{
-	  string last_value(media_line, int(line_end-media_line)-1);
-	  payload.type = m.type;
-	  str2i(last_value, payload_type);
-	  payload.payload_type = payload_type;
-	  m.payloads.push_back(payload);
-	  parsing=0;
 	}
 	break;
       }
