@@ -52,7 +52,7 @@ dlg.dialout(string arrayname)
    arrayname_hdrs      headers for new call
 
    arrayname_var.*     variables for new call, e.g.
-                       arrayname_var.somevar will be set as $somevar
+                       arrayname_var.somevar will be set as $arrayname_var.somevar
 
   returns $arrayname_ltag (if successful) and sets ERRNO.
    
