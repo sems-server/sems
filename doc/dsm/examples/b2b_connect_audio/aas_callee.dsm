@@ -6,12 +6,12 @@ initial state START;
 -- post state to other leg
 transition "early in callee leg" START - early / {
   set($b_status=EARLY);
-  postEvent($b_leg_var.a_ltag, b_status);
+  postEvent($a_ltag, b_status);
 } -> START;
 
 transition "ringing in callee leg" START - ringing / {
   set($b_status=RINGING);
-  postEvent($b_leg_var.a_ltag, b_status);
+  postEvent($a_ltag, b_status);
 } -> START;
 
 transition "failed callee leg" START - failed / {
@@ -19,18 +19,18 @@ transition "failed callee leg" START - failed / {
   -- copy code and reason to other leg so it can be used as reply code
   set($code=#code);
   set($reason=#reason);
-  postEvent($b_leg_var.a_ltag, b_status;code;reason);
+  postEvent($a_ltag, b_status;code;reason);
 
   stop(false);
 } -> END;
 
 transition "session starts in callee leg" START - sessionStart / {
   set($b_status=CONNECTED);
-  postEvent($b_leg_var.a_ltag, b_status);
+  postEvent($a_ltag, b_status);
 
   -- join conference room with A leg ltag
-  log(1, $b_leg_var.a_ltag);
-  conference.join($b_leg_var.a_ltag);
+  log(1, $a_ltag);
+  conference.join($a_ltag);
 } -> CONNECTED;
 
 -- audio is connected
@@ -38,7 +38,7 @@ state CONNECTED;
 
 transition "disconnect" CONNECTED - hangup / {
   set($b_status=DISCONNECT);
-  postEvent($b_leg_var.a_ltag, b_status);
+  postEvent($a_ltag, b_status);
   -- stop the call
   stop(false);
 } -> END;

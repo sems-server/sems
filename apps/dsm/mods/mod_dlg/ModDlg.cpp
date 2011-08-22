@@ -271,7 +271,7 @@ EXEC_ACTION_START(DLGDialoutAction) {
     if (!has_auth) // sess_params is variable struct
       (*sess_params)[varname] = lb->second;
     else // variable struct is in sess_params array
-      var_struct[lb->first] = lb->second;
+      var_struct[varname] = lb->second;
 
     lb++;
     has_vars = true;
