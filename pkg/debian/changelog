@@ -1,3 +1,18 @@
+sems (1.4.2) natty; urgency=low
+
+  * SEMS 1.4.2 release
+	 * auth'ed BYE (wait_for_bye_transaction)
+	 * fixes SIP auth for qop header format
+	 * xmlrpc: fix busyloop with keep-alive
+	 * a few minor SST issues
+	 * builds on Ubuntu 11.4 (build-deps)
+	 * ivr: release GIL on blocking file I/O
+	 * SBC: fix codec filter for unnamed payloads<96
+	 * fixed DSM variables to outgoing call
+	 * some examples and documentation added
+
+ -- Stefan <stefan@tibee>  Thu, 25 Aug 2011 17:42:07 +0200
+
 sems (1.4.1) maverick; urgency=low
 
   * SEMS 1.4.1 release
