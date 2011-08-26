@@ -3,7 +3,7 @@ XMLRPCPP_DIR = ../../../xmlrpc2di/xmlrpc++
 
 plug_in_name = cc_acc_xmlrpc
 
-module_ldflags =
+module_ldflags = -lssl
 module_cflags  = -I$(XMLRPCPP_DIR)/src
 
 module_extra_objs = $(XMLRPCPP_DIR)/libXmlRpc.a
