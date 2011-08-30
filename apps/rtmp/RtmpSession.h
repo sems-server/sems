@@ -18,7 +18,7 @@ class RtmpSession
   AmMutex         m_rtmp_conn;
 
 public:
-  RtmpSession(RtmpConnection* c, unsigned int stream_id);
+  RtmpSession(RtmpConnection* c);
   ~RtmpSession();
 
   // @see AmSession
@@ -34,6 +34,9 @@ public:
 
   // sets the connection pointer
   void setConnectionPtr(RtmpConnection* c);
+
+  // sets the outgoing stream ID for RTMP audio packets
+  void setPlayStreamID(unsigned int stream_id);
 };
 
 #endif

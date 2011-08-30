@@ -2,10 +2,9 @@
 #include "RtmpAudio.h"
 #include "RtmpConnection.h"
 
-RtmpSession::RtmpSession(RtmpConnection* c, unsigned int stream_id)
+RtmpSession::RtmpSession(RtmpConnection* c)
   : AmSession(), 
-    rtmp_audio(new RtmpAudio(c->getSenderPtr(),
-			     stream_id)),
+    rtmp_audio(new RtmpAudio(c->getSenderPtr())),
     rtmp_connection(c)
 {
 }
@@ -39,6 +38,8 @@ void RtmpSession::onSessionStart()
   // if(rtmp_connection)
   //   rtmp_connection->SendCallStatus(200);
   // m_rtmp_conn.unlock();
+
+  AmSession::onSessionStart();
 }
 
 void RtmpSession::onBye(const AmSipRequest& req)
@@ -78,6 +79,12 @@ void RtmpSession::setConnectionPtr(RtmpConnection* c)
   m_rtmp_conn.unlock();
 }
 
+// sets the outgoing stream ID for RTMP audio packets
+void  RtmpSession::setPlayStreamID(unsigned int stream_id)
+{
+  rtmp_audio->setPlayStreamID(stream_id);
+}
+
 void RtmpSession::onAudioEvent(AmAudioEvent* audio_ev)
 {
   if (audio_ev->event_id == AmAudioEvent::cleared)
@@ -85,3 +92,4 @@ void RtmpSession::onAudioEvent(AmAudioEvent* audio_ev)
   
   AmSession::onAudioEvent(audio_ev);
 }
+

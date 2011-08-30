@@ -62,7 +62,7 @@ protected:
   void on_stop();
 
 private:
-  RtmpSession* startSession(const char* uri, unsigned int stream_id);
+  RtmpSession* startSession(const char* uri);
   void detachSession();
 
   int processPacket(RTMPPacket *packet);

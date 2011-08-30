@@ -48,7 +48,7 @@ class RtmpAudio
   void process_recv_queue(unsigned int ref_ts);
 
 public:
-  RtmpAudio(RtmpSender* s, unsigned int play_stream_id);
+  RtmpAudio(RtmpSender* s);
   ~RtmpAudio();
 
   /* @see AmAudio */
@@ -69,6 +69,13 @@ public:
    * or changed.
    */
   void setSenderPtr(RtmpSender* s);
+
+  /* 
+   * Called by RtmpSession when 
+   * the client has called the play 
+   * method to propagate the stream ID.
+   */
+  void setPlayStreamID(unsigned int stream_id);
 };
 
 #endif

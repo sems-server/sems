@@ -38,8 +38,8 @@ static void dump_audio(unsigned char* buffer, unsigned int size)
 }
 
 
-RtmpAudio::RtmpAudio(RtmpSender* s, unsigned int play_stream_id)
-  : playout_buffer(this), sender(s), play_stream_id(play_stream_id),
+RtmpAudio::RtmpAudio(RtmpSender* s)
+  : playout_buffer(this), sender(s), play_stream_id(0),
     recv_offset_i(false), recv_rtp_offset(0), recv_rtmp_offset(0),
     send_offset_i(false), send_rtmp_offset(0)
 {
@@ -206,7 +206,7 @@ int RtmpAudio::write(unsigned int user_ts, unsigned int size)
 {
   m_sender.lock();
 
-  if(!sender) {
+  if(!sender || !play_stream_id) {
     m_sender.unlock();
     return 0;
   }
@@ -343,5 +343,12 @@ void RtmpAudio::setSenderPtr(RtmpSender* s)
   m_sender.lock();
   DBG("sender ptr = %p\n",s);
   sender = s;
+  m_sender.unlock();
+}
+
+void RtmpAudio::setPlayStreamID(unsigned int stream_id)
+{
+  m_sender.lock();
+  play_stream_id = stream_id;
   m_sender.unlock();
 }

@@ -6,8 +6,9 @@ import flash.media.Microphone;
 
 // application states
 private static const NOT_CONNECTED:uint = 1;
-private static const CONNECTING:uint    = 2;
-private static const CONNECTED:uint     = 3;
+private static const DIALING:uint       = 2;
+private static const CONNECTING:uint    = 3;
+private static const CONNECTED:uint     = 4;
 
 [Bindable]
 private var g_state:uint = NOT_CONNECTED;
@@ -52,10 +53,16 @@ private function onDialClick(evt:Event): void
 	return;
 
     if(g_dial_state == NOT_CONNECTED) {
-	connectStreams();
+	//TODO: no responder yet: let's see if it's useful or not
+	g_netConnection.call('dial',null,dialUri.text);
+	g_dial_state = DIALING;
+	lStatus.text = "status: dialing...";
+	//connectStreams();
     }
     else {
-	//TODO: terminate call
+	//TODO: no responder yet: let's see if it's useful or not
+	//g_netConnection.call('hangup',null);
+	//lStatus.text = "status: hanging up...";
 	disconnectStreams();
     }
 }
@@ -99,6 +106,21 @@ private function netStatusHandler(event:NetStatusEvent): void
 
     case "Sono.Call.Status":
 	lStatus.text = event.info.level + ": " + event.info.status_code;
+	if(g_dial_state == DIALING){
+	    //TODO: sort this mess out on the server side ;-)
+	    //      all we need here is error or connect streams (server side ringing)
+	    if(event.info.status_code >= 300){
+		// Error
+	    }
+	    else if ((event.info.status_code >= 200) ||
+		     (event.info.status_code >= 183)){
+		// Success
+		connectStreams();
+	    }
+	    else if (event.info.status_code == 180){
+		// Ringing
+	    }
+	}
 	break;
 
 	// unkown event:
@@ -135,12 +157,12 @@ private function connectStreams():void
     micro.rate = 16; // wideband
     
     g_micStream.attachAudio(micro);
-    g_micStream.publish(dialUri.text,"live");
+    g_micStream.publish("dummy","live");
 
     g_inStream = new NetStream(g_netConnection);
     g_inStream.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
     
-    g_inStream.play(dialUri.text,"live");
+    g_inStream.play("dummy","live");
     g_dial_state = CONNECTING;
 }
 

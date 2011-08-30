@@ -28,6 +28,7 @@
      av.av_len = strlen(av.av_val); \
    }
 
+// standard flash methods and params
 SAVC(app);
 SAVC(connect);
 SAVC(flashVer);
@@ -53,6 +54,9 @@ SAVC(code);
 SAVC(description);
 SAVC(secureToken);
 SAVC(publish);
+
+// custom methods and params
+SAVC(dial);
 
 RtmpConnection::RtmpConnection(int fd)
   : streamID(0),
@@ -398,9 +402,14 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 	  }
 	}
       
-      string uri(rtmp.Link.playpath.av_val,rtmp.Link.playpath.av_len);
       play_stream_id = packet->m_nInfoField2;
-      startSession(uri.c_str(),play_stream_id);
+      m_session.lock();
+      if(session) {
+	session->setPlayStreamID(play_stream_id);
+	SendStreamBegin();
+	SendPlayStart();
+      }
+      m_session.unlock();
     }
   else if(AVMATCH(&method, &av_publish))
     {
@@ -419,6 +428,8 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 	detachSession();
 	play_stream_id = 0;
 	publish_stream_id = 0;
+	SendStreamEOF();
+	SendPlayStop();
       }
     }
   else if(AVMATCH(&method, &av_deleteStream))
@@ -427,6 +438,12 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
       // - fetch streamID
       // - compare with play_stream_id
       //   - if matched: stop session
+    }
+  else if(AVMATCH(&method, &av_dial))
+    {
+      AVal uri;
+      AMFProp_GetString(AMF_GetProp(&obj, NULL, 3), &uri);
+      startSession(uri.av_val);
     }
 
   AMF_Reset(&obj);
@@ -1009,7 +1026,7 @@ void RtmpConnection::rxAudio(RTMPPacket *packet)
   m_session.unlock();
 }
 
-RtmpSession* RtmpConnection::startSession(const char* uri, unsigned int stream_id)
+RtmpSession* RtmpConnection::startSession(const char* uri)
 {
   m_session.lock();
 
@@ -1020,7 +1037,7 @@ RtmpSession* RtmpConnection::startSession(const char* uri, unsigned int stream_i
 
   string dialout_id = AmSession::getNewId();
 
-  auto_ptr<RtmpSession> n_session(new RtmpSession(this,stream_id));
+  auto_ptr<RtmpSession> n_session(new RtmpSession(this));
   AmSipDialog& dialout_dlg = n_session->dlg;
 
   dialout_dlg.local_tag    = dialout_id;
@@ -1050,15 +1067,6 @@ RtmpSession* RtmpConnection::startSession(const char* uri, unsigned int stream_i
     ERROR("dialout_dlg.sendRequest() returned an error\n");
     AmSessionContainer::instance()->destroySession(pn_session);
     return NULL;
-  }
-
-  if(pn_session){
-    SendStreamBegin();
-    SendPlayStart();
-  }
-  else {
-    SendStreamEOF();
-    SendPlayStop();
   }
 
   pn_session->start();
