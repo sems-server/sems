@@ -10,6 +10,12 @@ private static const DIALING:uint       = 2;
 private static const CONNECTING:uint    = 3;
 private static const CONNECTED:uint     = 4;
 
+// call states (from RtmpSession.cpp)
+private static const CALL_NOT_CONNECTED:uint = 0;
+private static const CALL_IN_PROGRESS:uint   = 1;
+private static const CALL_CONNECTED:uint     = 2;
+private static const CALL_DISCONNECTING:uint = 3;
+
 [Bindable]
 private var g_state:uint = NOT_CONNECTED;
 
@@ -57,7 +63,6 @@ private function onDialClick(evt:Event): void
 	g_netConnection.call('dial',null,dialUri.text);
 	g_dial_state = DIALING;
 	lStatus.text = "status: dialing...";
-	//connectStreams();
     }
     else {
 	disconnectStreams();
@@ -74,53 +79,55 @@ private function netStatusHandler(event:NetStatusEvent): void
 
 	// status events:
     case "NetConnection.Connect.Success":
-	lStatus.text = event.info.level + ": connected";
+	lStatus.text = event.info.level + ": connected to server";
 	g_state = CONNECTED;
 	break;
 
     case "NetConnection.Connect.Closed":
-	lStatus.text = event.info.level + ": disconnected";
+	lStatus.text = event.info.level + ": disconnected from server";
 	g_state = NOT_CONNECTED;
 	g_dial_state = NOT_CONNECTED;
 	break;
 
 	// error events:
     case "NetConnection.Connect.Failed":
-	lStatus.text = event.info.level + ": connection failed";
+	lStatus.text = event.info.level + ": connection to server failed";
 	g_state = NOT_CONNECTED;
 	g_dial_state = NOT_CONNECTED;
 	break;
     case "NetConnection.Connect.Rejected":
-	lStatus.text = event.info.level + ": connection rejected";
+	lStatus.text = event.info.level + ": connection to server rejected";
 	g_state = NOT_CONNECTED;
 	g_dial_state = NOT_CONNECTED;
 	break;
 
     case "NetStream.Play.Start":
-	lStatus.text = event.info.level + ": " + event.info.description;
+	//lStatus.text = event.info.level + ": " + event.info.description;
 	break;
 
     case "NetStream.Play.Stop":
-	lStatus.text = event.info.level + ": " + event.info.description;
+	//lStatus.text = event.info.level + ": " + event.info.description;
 	disconnectStreams();
 	break;
 
     case "Sono.Call.Status":
-	lStatus.text = event.info.level + ": " + event.info.status_code;
-	if(g_dial_state == DIALING){
-	    //TODO: sort this mess out on the server side ;-)
-	    //      all we need here is error or connect streams (server side ringing)
-	    if(event.info.status_code >= 300){
-		// Error
-	    }
-	    else if ((event.info.status_code >= 200) ||
-		     (event.info.status_code >= 183)){
-		// Success
-		connectStreams();
-	    }
-	    else if (event.info.status_code == 180){
-		// Ringing
-	    }
+	//lStatus.text = event.info.level + ": " + event.info.status_code;
+	switch(event.info.status_code){
+	case CALL_NOT_CONNECTED:
+	case CALL_DISCONNECTING:
+	    g_dial_state = NOT_CONNECTED;
+	    disconnectStreams();
+	    lStatus.text = "status: call disconnected";
+	    break;
+	case CALL_IN_PROGRESS:
+	    g_dial_state = DIALING;
+	    lStatus.text = "status: dialing...";
+	    break;
+	case CALL_CONNECTED:
+	    g_dial_state = CONNECTED;
+	    connectStreams();
+	    lStatus.text = "status: call connected";
+	    break;
 	}
 	break;
 
@@ -178,6 +185,4 @@ private function disconnectStreams():void
 	g_inStream.close();
 	g_inStream = null;
     }
-
-    //g_dial_state = NOT_CONNECTED;
 }

@@ -2,6 +2,21 @@
 #include "RtmpAudio.h"
 #include "RtmpConnection.h"
 
+#define RTMP_CALL_NOT_CONNECTED 0
+#define RTMP_CALL_IN_PROGRESS   1
+#define RTMP_CALL_CONNECTED     2
+#define RTMP_CALL_DISCONNECTING 3
+
+const unsigned int __dlg_status2rtmp_call[AmSipDialog::__max_Status]  = {
+  RTMP_CALL_NOT_CONNECTED, // Disconnected
+  RTMP_CALL_IN_PROGRESS, //"Trying",
+  RTMP_CALL_IN_PROGRESS, //"Proceeding",
+  RTMP_CALL_DISCONNECTING, //"Cancelling",
+  RTMP_CALL_IN_PROGRESS, //"Early",
+  RTMP_CALL_CONNECTED, //"Connected",
+  RTMP_CALL_DISCONNECTING //"Disconnecting"
+};
+
 RtmpSession::RtmpSession(RtmpConnection* c)
   : AmSession(), 
     rtmp_audio(new RtmpAudio(c->getSenderPtr())),
@@ -18,8 +33,6 @@ void RtmpSession::onBeforeDestroy()
 {
   m_rtmp_conn.lock();
   if(rtmp_connection){
-    //rtmp_connection->SendStreamEOF();
-    //rtmp_connection->SendPlayStop();
     rtmp_connection->setSessionPtr(NULL);
     rtmp_connection = NULL;
   }
@@ -50,7 +63,8 @@ void RtmpSession::onSipReply(const AmSipReply& reply,
   m_rtmp_conn.lock();
   if(rtmp_connection){
     DBG("Dialog status: %s\n",dlg.getStatusStr());
-    rtmp_connection->SendCallStatus(reply.code);
+    unsigned int rtmp_call_status = __dlg_status2rtmp_call[dlg.getStatus()];
+    rtmp_connection->SendCallStatus(rtmp_call_status);
   }
   m_rtmp_conn.unlock();
 
