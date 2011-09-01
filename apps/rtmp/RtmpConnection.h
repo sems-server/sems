@@ -63,7 +63,10 @@ protected:
 
 private:
   RtmpSession* startSession(const char* uri);
+  void disconnectSession();
   void detachSession();
+
+  void stopStream(unsigned int stream_id);
 
   int processPacket(RTMPPacket *packet);
   int invoke(RTMPPacket *packet, unsigned int offset);

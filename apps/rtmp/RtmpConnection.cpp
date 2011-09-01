@@ -57,6 +57,7 @@ SAVC(publish);
 
 // custom methods and params
 SAVC(dial);
+SAVC(hangup);
 
 RtmpConnection::RtmpConnection(int fd)
   : streamID(0),
@@ -419,31 +420,26 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
     }
   else if(AVMATCH(&method, &av_closeStream))
     {
-      // - compare StreamID with play_stream_id
-      //   - if matched: stop session
       DBG("received closeStream with StreamID=%i\n",packet->m_nInfoField2);
-      if((packet->m_nInfoField2 == (int)play_stream_id) ||
-	 packet->m_nInfoField2 == (int)publish_stream_id) {
-	DBG("closeStream corresponds to [play|publish]_stream_id = %i\n",packet->m_nInfoField2);
-	detachSession();
-	play_stream_id = 0;
-	publish_stream_id = 0;
-	SendStreamEOF();
-	SendPlayStop();
-      }
+      stopStream(packet->m_nInfoField2);
     }
   else if(AVMATCH(&method, &av_deleteStream))
     {
-      //TODO: find out what to do here...
-      // - fetch streamID
-      // - compare with play_stream_id
+      // - compare StreamID with play_stream_id
       //   - if matched: stop session
+      unsigned int stream_id = (unsigned int)AMFProp_GetNumber(AMF_GetProp(&obj, NULL, 3));
+      DBG("received deleteStream with StreamID=%i\n",stream_id);
+      stopStream(stream_id);
     }
   else if(AVMATCH(&method, &av_dial))
     {
       AVal uri;
       AMFProp_GetString(AMF_GetProp(&obj, NULL, 3), &uri);
       startSession(uri.av_val);
+    }
+  else if(AVMATCH(&method, &av_hangup))
+    {
+      disconnectSession();
     }
 
   AMF_Reset(&obj);
@@ -1082,9 +1078,29 @@ void RtmpConnection::detachSession()
   DBG("detaching session: erasing session ptr... (s=%p)\n",session);
 
   if(session){
-    //TODO: terminate session
     session->setConnectionPtr(NULL);
     session = NULL;
   }
   m_session.unlock();
+}
+
+void RtmpConnection::disconnectSession()
+{
+  m_session.lock();
+  if(session){
+    session->disconnect();
+  }
+  m_session.unlock();
+}
+
+void RtmpConnection::stopStream(unsigned int stream_id)
+{
+  if(stream_id == play_stream_id){
+    play_stream_id = 0;
+    SendStreamEOF();
+    SendPlayStop();
+  }
+  else if(stream_id == publish_stream_id) {
+    publish_stream_id = 0;
+  }
 }

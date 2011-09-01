@@ -6,6 +6,20 @@
 
 #include "librtmp/rtmp.h"
 
+class RtmpSessionEvent
+  : public AmEvent
+{
+public:
+  enum EvType {
+    Disconnect
+  };
+
+  RtmpSessionEvent(EvType t)
+    : AmEvent((int)t) {}
+
+  EvType getEvType() { return (EvType)event_id; }
+};
+
 class RtmpAudio;
 class RtmpConnection;
 
@@ -25,9 +39,11 @@ public:
   void onSessionStart();
   void onBye(const AmSipRequest& req);
   void onBeforeDestroy();
-  void onAudioEvent(AmAudioEvent* audio_ev);
   void onSipReply(const AmSipReply& reply,
 		  AmSipDialog::Status old_dlg_status);
+
+  // @see AmEventHandler
+  void process(AmEvent*);
 
   // forwards the packet the RtmpAudio
   void bufferPacket(const RTMPPacket& p);
@@ -37,6 +53,9 @@ public:
 
   // sets the outgoing stream ID for RTMP audio packets
   void setPlayStreamID(unsigned int stream_id);
+
+  // Sends the disconnect event to the session to terminate it
+  void disconnect();
 };
 
 #endif

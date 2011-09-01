@@ -60,10 +60,11 @@ private function onDialClick(evt:Event): void
 	//connectStreams();
     }
     else {
-	//TODO: no responder yet: let's see if it's useful or not
-	//g_netConnection.call('hangup',null);
-	//lStatus.text = "status: hanging up...";
 	disconnectStreams();
+	//TODO: no responder yet: let's see if it's useful or not
+	g_netConnection.call('hangup',null);
+	lStatus.text = "status: hanging up...";
+	g_dial_state = NOT_CONNECTED;
     }
 }
 
@@ -178,5 +179,5 @@ private function disconnectStreams():void
 	g_inStream = null;
     }
 
-    g_dial_state = NOT_CONNECTED;
+    //g_dial_state = NOT_CONNECTED;
 }
