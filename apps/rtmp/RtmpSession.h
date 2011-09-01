@@ -31,6 +31,9 @@ class RtmpSession
   RtmpConnection* rtmp_connection;
   AmMutex         m_rtmp_conn;
 
+private:
+  void sendCallState();
+
 public:
   RtmpSession(RtmpConnection* c);
   ~RtmpSession();

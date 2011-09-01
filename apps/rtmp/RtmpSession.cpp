@@ -33,6 +33,17 @@ RtmpSession::~RtmpSession()
   delete rtmp_audio;
 }
 
+void RtmpSession::sendCallState()
+{
+  m_rtmp_conn.lock();
+  if(rtmp_connection){
+    DBG("Dialog status: %s\n",dlg.getStatusStr());
+    unsigned int rtmp_call_status = __dlg_status2rtmp_call[dlg.getStatus()];
+    rtmp_connection->SendCallStatus(rtmp_call_status);
+  }
+  m_rtmp_conn.unlock();
+}
+
 void RtmpSession::onBeforeDestroy()
 {
   m_rtmp_conn.lock();
@@ -71,21 +82,14 @@ void RtmpSession::onSessionStart()
 
 void RtmpSession::onBye(const AmSipRequest& req)
 {
-  DBG("onBye(...)\n");
+  sendCallState();
   AmSession::onBye(req);
 }
 
 void RtmpSession::onSipReply(const AmSipReply& reply,
 			     AmSipDialog::Status old_dlg_status)
 {
-  m_rtmp_conn.lock();
-  if(rtmp_connection){
-    DBG("Dialog status: %s\n",dlg.getStatusStr());
-    unsigned int rtmp_call_status = __dlg_status2rtmp_call[dlg.getStatus()];
-    rtmp_connection->SendCallStatus(rtmp_call_status);
-  }
-  m_rtmp_conn.unlock();
-
+  sendCallState();
   AmSession::onSipReply(reply,old_dlg_status);
 }
 
