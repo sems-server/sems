@@ -20,11 +20,8 @@ class RtmpConnection
 
   RTMP     rtmp;
 
-  int      streamID;
-  int      arglen;
-  int      argc;
-  uint32_t filetime;	/* time of last download we started */
-  AVal     filename;	/* name of last download */
+  // Previous stream ID sent to the client for createStream
+  int      prev_stream_id;
 
   // Stream ID with play() invoke
   unsigned int play_stream_id;
@@ -81,9 +78,6 @@ private:
   int SendConnectResult(double txn);
   int SendPause(int DoPause, int iTime);
   int SendChangeChunkSize();
-
-  char* dumpAMF(AMFObject *obj, char *ptr, AVal *argv);
-  int   countAMF(AMFObject *obj);
 };
 
 #endif

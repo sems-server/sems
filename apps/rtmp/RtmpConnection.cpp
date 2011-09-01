@@ -60,10 +60,7 @@ SAVC(dial);
 SAVC(hangup);
 
 RtmpConnection::RtmpConnection(int fd)
-  : streamID(0),
-    arglen(0), argc(0),
-    filetime(0), /* time of last download we started */
-    filename(), /* name of last download */
+  : prev_stream_id(0),
     play_stream_id(0),
     publish_stream_id(0),
     sender(NULL),
@@ -287,36 +284,26 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 	      pval.av_val = NULL;
 	      if (!rtmp.Link.app.av_val)
 	        rtmp.Link.app.av_val = (char*)"";
-	      arglen += 6 + pval.av_len;
-	      argc += 2;
 	    }
 	  else if (AVMATCH(&pname, &av_flashVer))
 	    {
 	      rtmp.Link.flashVer = pval;
 	      pval.av_val = NULL;
-	      arglen += 6 + pval.av_len;
-	      argc += 2;
 	    }
 	  else if (AVMATCH(&pname, &av_swfUrl))
 	    {
 	      rtmp.Link.swfUrl = pval;
 	      pval.av_val = NULL;
-	      arglen += 6 + pval.av_len;
-	      argc += 2;
 	    }
 	  else if (AVMATCH(&pname, &av_tcUrl))
 	    {
 	      rtmp.Link.tcUrl = pval;
 	      pval.av_val = NULL;
-	      arglen += 6 + pval.av_len;
-	      argc += 2;
 	    }
 	  else if (AVMATCH(&pname, &av_pageUrl))
 	    {
 	      rtmp.Link.pageUrl = pval;
 	      pval.av_val = NULL;
-	      arglen += 6 + pval.av_len;
-	      argc += 2;
 	    }
 	  else if (AVMATCH(&pname, &av_audioCodecs))
 	    {
@@ -331,22 +318,12 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 	      rtmp.m_fEncoding = cobj.o_props[i].p_vu.p_number;
 	    }
 	}
-      /* Still have more parameters? Copy them */
-      if (obj.o_num > 3)
-	{
-	  int i = obj.o_num - 3;
-	  rtmp.Link.extras.o_num = i;
-	  rtmp.Link.extras.o_props = (AMFObjectProperty*)malloc(i*sizeof(AMFObjectProperty));
-	  memcpy(rtmp.Link.extras.o_props, obj.o_props+3, i*sizeof(AMFObjectProperty));
-	  obj.o_num = 3;
-	  arglen += countAMF(&rtmp.Link.extras);
-	}
       SendConnectResult(txn);
     }
   else if (AVMATCH(&method, &av_createStream))
     {
-      SendResultNumber(txn, ++streamID);
-      DBG("createStream: new channel %i",streamID);
+      SendResultNumber(txn, ++prev_stream_id);
+      DBG("createStream: new channel %i",prev_stream_id);
     }
   else if (AVMATCH(&method, &av_getStreamLength))
     {
@@ -395,12 +372,6 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 		  rtmp.Link.pageUrl.av_len,
 		  rtmp.Link.pageUrl.av_val);
 	    }
-
-	  if (rtmp.Link.extras.o_num) {
-	    //DBG("parsing extras\n");
-	    //ptr = dumpAMF(&rtmp.Link.extras, ptr, argv);
-	    AMF_Reset(&rtmp.Link.extras);
-	  }
 	}
       
       play_stream_id = packet->m_nInfoField2;
@@ -529,100 +500,6 @@ int RtmpConnection::SendResultNumber(double txn, double ID)
   return sender->push_back(packet);
 }
 
-int RtmpConnection::countAMF(AMFObject *obj)
-{
-  int i, len;
-
-  for (i=0, len=0; i < obj->o_num; i++)
-    {
-      AMFObjectProperty *p = &obj->o_props[i];
-      len += 4;
-      argc+= 2;
-      if (p->p_name.av_val)
-	len += 1;
-      len += 2;
-      if (p->p_name.av_val)
-	len += p->p_name.av_len + 1;
-      switch(p->p_type)
-	{
-	case AMF_BOOLEAN:
-	  len += 1;
-	  break;
-	case AMF_STRING:
-	  len += p->p_vu.p_aval.av_len;
-	  break;
-	case AMF_NUMBER:
-	  len += 40;
-	  break;
-	case AMF_OBJECT:
-	  len += 9;
-	  len += countAMF(&p->p_vu.p_object);
-	  argc += 2;
-	  break;
-	case AMF_NULL:
-	default:
-	  break;
-	}
-    }
-  return len;
-}
-
-char* RtmpConnection::dumpAMF(AMFObject *obj, char *ptr, AVal *argv)
-{
-  int i, len, ac = argc;
-  const char opt[] = "NBSO Z";
-
-  for (i=0, len=0; i < obj->o_num; i++)
-    {
-      AMFObjectProperty *p = &obj->o_props[i];
-      argv[ac].av_val = ptr+1;
-      argv[ac++].av_len = 2;
-      ptr += sprintf(ptr, " -C ");
-      argv[ac].av_val = ptr;
-      if (p->p_name.av_val)
-	*ptr++ = 'N';
-      *ptr++ = opt[p->p_type];
-      *ptr++ = ':';
-      if (p->p_name.av_val)
-	ptr += sprintf(ptr, "%.*s:", p->p_name.av_len, p->p_name.av_val);
-      switch(p->p_type)
-	{
-	case AMF_BOOLEAN:
-	  *ptr++ = p->p_vu.p_number != 0 ? '1' : '0';
-	  argv[ac].av_len = ptr - argv[ac].av_val;
-	  break;
-	case AMF_STRING:
-	  memcpy(ptr, p->p_vu.p_aval.av_val, p->p_vu.p_aval.av_len);
-	  ptr += p->p_vu.p_aval.av_len;
-	  argv[ac].av_len = ptr - argv[ac].av_val;
-	  break;
-	case AMF_NUMBER:
-	  ptr += sprintf(ptr, "%f", p->p_vu.p_number);
-	  argv[ac].av_len = ptr - argv[ac].av_val;
-	  break;
-	case AMF_OBJECT:
-	  *ptr++ = '1';
-	  argv[ac].av_len = ptr - argv[ac].av_val;
-	  ac++;
-	  argc = ac;
-	  ptr = dumpAMF(&p->p_vu.p_object, ptr, argv);
-	  ac = argc;
-	  argv[ac].av_val = ptr+1;
-	  argv[ac++].av_len = 2;
-	  argv[ac].av_val = ptr+4;
-	  argv[ac].av_len = 3;
-	  ptr += sprintf(ptr, " -C O:0");
-	  break;
-	case AMF_NULL:
-	default:
-	  argv[ac].av_len = ptr - argv[ac].av_val;
-	  break;
-	}
-      ac++;
-    }
-  argc = ac;
-  return ptr;
-}
 
 SAVC(onStatus);
 SAVC(status);
