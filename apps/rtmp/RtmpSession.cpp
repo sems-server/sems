@@ -2,10 +2,14 @@
 #include "RtmpAudio.h"
 #include "RtmpConnection.h"
 
+// call states for the RTMP client
 #define RTMP_CALL_NOT_CONNECTED 0
 #define RTMP_CALL_IN_PROGRESS   1
 #define RTMP_CALL_CONNECTED     2
 #define RTMP_CALL_DISCONNECTING 3
+
+// request the client to connect the streams
+#define RTMP_CALL_CONNECT_STREAMS 4
 
 const unsigned int __dlg_status2rtmp_call[AmSipDialog::__max_Status]  = {
   RTMP_CALL_NOT_CONNECTED, // Disconnected
@@ -43,11 +47,25 @@ void RtmpSession::onBeforeDestroy()
 
 void RtmpSession::onSessionStart()
 {
+  bool start_session = true;
+
+  m_rtmp_conn.lock();
+  if(rtmp_connection)
+    rtmp_connection->SendCallStatus(RTMP_CALL_CONNECT_STREAMS);
+  else
+    start_session = false;
+  m_rtmp_conn.unlock();
+
+  if(!start_session) {
+    setStopped();
+    return;
+  }
+
   DBG("enabling adaptive buffer\n");
   RTPStream()->setPlayoutType(ADAPTIVE_PLAYOUT);
   DBG("plugging rtmp_audio into in&out\n");
   setInOut(rtmp_audio,rtmp_audio);
-
+  
   AmSession::onSessionStart();
 }
 

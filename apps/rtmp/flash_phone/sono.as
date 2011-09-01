@@ -16,6 +16,9 @@ private static const CALL_IN_PROGRESS:uint   = 1;
 private static const CALL_CONNECTED:uint     = 2;
 private static const CALL_DISCONNECTING:uint = 3;
 
+// media streams request (from RtmpSession.cpp)
+private static const CALL_CONNECT_STREAMS:uint = 4; 
+
 [Bindable]
 private var g_state:uint = NOT_CONNECTED;
 
@@ -125,8 +128,10 @@ private function netStatusHandler(event:NetStatusEvent): void
 	    break;
 	case CALL_CONNECTED:
 	    g_dial_state = CONNECTED;
-	    connectStreams();
 	    lStatus.text = "status: call connected";
+	    break;
+	case CALL_CONNECT_STREAMS:
+	    connectStreams();
 	    break;
 	}
 	break;
