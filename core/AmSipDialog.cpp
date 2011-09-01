@@ -1453,15 +1453,19 @@ int AmSipDialog::cancel()
     for(TransMap::reverse_iterator t = uac_trans.rbegin();
 	t != uac_trans.rend(); t++) {
 	
-	if(t->second.method == "INVITE"){
+	if(t->second.method == SIP_METH_INVITE){
 	  
 	  if(status == Trying){
 	    cancel_pending=true;
 	    return 0;
 	  }
-	  else {
+	  else if(status != Cancelling){
 	    status = Cancelling;
 	    return SipCtrlInterface::cancel(&t->second.tt);
+	  }
+	  else {
+	    ERROR("INVITE transaction has already been cancelled\n");
+	    return -1;
 	  }
 	}
     }
