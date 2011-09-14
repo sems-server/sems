@@ -32,7 +32,7 @@
 
 
 void replaceParsedParam(const string& s, size_t p,
-			AmUriParser& parsed, string& res) {
+			const AmUriParser& parsed, string& res) {
   switch (s[p+1]) {
   case 'u': { // URI
     res+=parsed.uri_user+"@"+parsed.uri_host;
@@ -49,6 +49,11 @@ void replaceParsedParam(const string& s, size_t p,
   case 'p': res+=parsed.uri_port; break; // port
   case 'H': res+=parsed.uri_headers; break; // Headers
   case 'P': res+=parsed.uri_param; break; // Params
+  // case 't': { // tag
+  //   map<string, string>::const_iterator it = parsed.params.find("tag");
+  //   if (it != parsed.params.end())
+  //     res+=it->second;
+  // } break;
   default: WARN("unknown replace pattern $%c%c\n",
 		s[p], s[p+1]); break;
   };
@@ -93,6 +98,11 @@ string replaceParameters(const string& s,
 	case 'f': { // from
 	  if ((s.length() == p+1) || (s[p+1] == '.')) {
 	    res += req.from;
+	    break;
+	  }
+
+	  if (s[p+1]=='t') { // $ft - from tag
+	    res += req.from_tag;
 	    break;
 	  }
 

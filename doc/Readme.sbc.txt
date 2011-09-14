@@ -127,6 +127,7 @@ The patterns which can be used are the following:
   $fp  - From port
   $fH  - From headers
   $fP  - From Params
+  $ft  - From tag
 
   $tu  - To URI
   $fU  - To User
