@@ -140,7 +140,8 @@ rtp_high_port=60000
 # with the 'additional_interfaces' parameter.
 #
 # Please note that for each additional interface,
-# 'sip_ip_[if_name]' is mandatory. The other
+# 'sip_ip_[if_name]' is mandatory (but can be the interface
+# name, then the first assigned IP is used). The other
 # parameters are optional. 'media_ip_[if_name]'
 # is derived from 'sip_ip_[if_name]' if not set.
 # 'public_ip_[ip_name]' is also based on 'sip_ip_[if_name]'
