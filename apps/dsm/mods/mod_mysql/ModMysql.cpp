@@ -63,7 +63,7 @@ DSMAction* SCMysqlModule::getAction(const string& from_str) {
   DEF_CMD("mysql.playDBAudio",        SCMyPlayDBAudioAction);
   DEF_CMD("mysql.getFileFromDB",      SCMyGetFileFromDBAction);
   DEF_CMD("mysql.putFileToDB",        SCMyPutFileToDBAction);
-
+  DEF_CMD("mysql.escape",             SCMyEscapeAction);
   return NULL;
 }
 
@@ -607,4 +607,27 @@ EXEC_ACTION_START(SCMyPutFileToDBAction) {
     sc_sess->SET_STRERROR(e.what());
     sc_sess->var["db.ereason"] = e.what();
   }
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(SCMyEscapeAction, '=', false);
+EXEC_ACTION_START(SCMyEscapeAction) {
+  mysqlpp::Connection* conn =
+    getMyDSMSessionConnection(sc_sess);
+
+  if (NULL == conn)
+    return false;
+
+  mysqlpp::Query query = conn->query();
+
+  string val = resolveVars(par2, sess, sc_sess, event_params);
+
+  string dstvar = par1;
+  if (dstvar.size() && dstvar[0] == '$') {
+    dstvar = dstvar.substr(1);
+  }
+  string res;
+  query.escape_string(&res, val.c_str(), val.length());
+  sc_sess->var[dstvar] = res;
+  DBG("escaped: $%s = escape(%s) = %s\n",
+      dstvar.c_str(), val.c_str(), res.c_str());
 } EXEC_ACTION_END;

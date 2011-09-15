@@ -90,5 +90,6 @@ DEF_ACTION_1P(SCMyUseResultAction);
 DEF_ACTION_2P(SCMyPlayDBAudioAction);
 DEF_ACTION_2P(SCMyGetFileFromDBAction);
 DEF_ACTION_2P(SCMyPutFileToDBAction);
+DEF_ACTION_2P(SCMyEscapeAction);
 
 #endif
