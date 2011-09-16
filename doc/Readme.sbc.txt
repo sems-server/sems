@@ -24,7 +24,7 @@ Features
  o SIP Session Timers
  o call timer
  o prepaid accounting
-
+ o CDR generation
 
 SBC Profiles
 ------------
@@ -401,6 +401,38 @@ points for integration into custom billing systems.
 
 Parallel call limits can be implemented by implementing an account specific limit to the
 accounting module.
+
+CDR generation
+--------------
+CDR generation can be enabled with the enable_cdr option. 
+
+For writing CDRs, a separate module is used. This allows to plug several types
+of CDR generation modules. The accounting module is selected with the 
+cdr_module option.
+
+A syslog_cdr module is available, which writes CDRs to syslog(3) to be processed
+by standard syslog utils, e.g. syslog-ng.
+
+Available in the CDR are 
+ - A leg local tag
+ - Call-ID
+ - From Tag (remote tag A leg)
+ - To Tag (remote tag B leg)
+ - start TS
+ - connect TS (0 if not connected)
+ - end TS (0 if not connected)
+
+Additionally, values may be configured in the profile to pass to CDR generation; all
+values starting with "cdr_" are passed to the CDR generation. 
+
+ Example:
+    enable_cdr=yes
+    cdr_module=cdr
+    cdr_Calling-Station-Id=$fU
+    cdr_Called-Station-Id=$tU
+    cdr_Sip-From-Tag=$ft
+
+See also syslog_cdr module documentation.
 
 Refusing calls
 --------------
