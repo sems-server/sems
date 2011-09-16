@@ -172,6 +172,28 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     return false;
   }
 
+  cdr_enabled = cfg.getParameter("enable_cdr", "no") == "yes";
+  cdr_module = cfg.getParameter("cdr_module");
+  if (cdr_enabled) {
+    if ((cdr_module.find('$') == string::npos) &&
+	(NULL == AmPlugIn::instance()->getFactory4Di(cdr_module))) {
+      ERROR("CDR generation module '%s' used in call profile "
+	    "'%s' is not loaded\n", cdr_module.c_str(), name.c_str());
+      return false;
+    }
+
+    for (std::map<string,string>::const_iterator it =
+	   cfg.begin(); it != cfg.end(); it++) {
+      if (it->first.substr(0, 4) != "cdr_")
+	continue;
+
+      if (it->first.size() <= 4 || it->first == "cdr_module")
+	continue;
+
+      cdr_values[it->first.substr(4)] = it->second;
+    }
+  }
+
   vector<string> reply_translations_v =
     explode(cfg.getParameter("reply_translations"), "|");
   for (vector<string>::iterator it =
@@ -310,6 +332,22 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       INFO("SBC:                    uuid       = '%s'\n", prepaid_uuid.c_str());
       INFO("SBC:                    acc_dest   = '%s'\n", prepaid_acc_dest.c_str());
     }
+
+    INFO("SBC:      CDR generation %sabled\n", cdr_enabled?"en":"dis");
+    if (cdr_enabled) {
+      INFO("SBC:                    cdr_module = '%s'\n", cdr_module.c_str());
+
+      string cdr_combined_values;
+      for (map<string, string>::iterator it =
+	     cdr_values.begin(); it != cdr_values.end(); it++) {
+	cdr_combined_values = it->first+",";
+      }
+      if (cdr_combined_values.size()) {
+	cdr_combined_values.erase(cdr_combined_values.size()-1,1);
+	INFO("SBC:                    values = '%s'\n", cdr_combined_values.c_str());
+      }
+    }
+
     if (reply_translations.size()) {
       string reply_trans_codes;
       for(map<unsigned int, std::pair<unsigned int, string> >::iterator it=

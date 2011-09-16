@@ -87,6 +87,10 @@ struct SBCCallProfile {
   string prepaid_uuid;
   string prepaid_acc_dest;
 
+  bool cdr_enabled;
+  string cdr_module;
+  map<string, string> cdr_values;
+
   map<unsigned int, std::pair<unsigned int, string> > reply_translations;
 
   string append_headers;

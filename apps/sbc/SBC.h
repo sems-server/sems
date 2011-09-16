@@ -113,20 +113,47 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   AmDynInvoke* prepaid_acc;
   time_t prepaid_starttime;
   struct timeval prepaid_acc_start;
+  struct timeval prepaid_acc_end;
+
   int prepaid_credit;
+
+  // cdr
+  AmDynInvoke* cdr_module;
 
   // auth
   AmSessionEventHandler* auth;
 
   SBCCallProfile call_profile;
 
+  /** handler called when the second leg is connected */
+  void onCallConnected();
+
+  /** handler called when call si stopped */
+  void onCallStopped();
+
+  /** stop call (both legs, CDR, prepaid etc) */
   void stopCall();
+
+  /* set call timer (if enabled) */
   bool startCallTimer();
+  /* clear call timer */
   void stopCallTimer();
+
+  /** initialize prepaid module interface @return sucess or not*/
+  bool getPrepaidInterface();
+  /* start prepaid accounting (set timer) */
   void startPrepaidAccounting();
+  /* stop prepaid accounting (account) */
   void stopPrepaidAccounting();
 
-  bool getPrepaidInterface();
+  /** initialize CDR module interface @return sucess or not*/
+  bool getCDRInterface();
+  /** create a CDR (start it) */
+  void CDRStart();
+  /** record connection of sencond leg in CDR */
+  void CDRConnect();
+  /** end CDR */
+  void CDREnd();
 
  public:
 

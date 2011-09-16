@@ -531,6 +531,7 @@ void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
 SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
     prepaid_acc(NULL),
+    cdr_module(NULL),
     auth(NULL),
     call_profile(call_profile),
     outbound_interface(-1)
@@ -756,6 +757,11 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     }
   }
 
+  // prepaid
+  if (call_profile.prepaid_enabled || call_profile.cdr_enabled) {
+    prepaid_starttime = time(NULL);
+  }
+
   if (call_profile.prepaid_enabled) {
     call_profile.prepaid_accmodule =
       replaceParameters(call_profile.prepaid_accmodule, "prepaid_accmodule", REPLACE_VALS);
@@ -769,8 +775,6 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
     call_profile.prepaid_acc_dest =
       replaceParameters(call_profile.prepaid_acc_dest, "prepaid_acc_dest", REPLACE_VALS);
-
-    prepaid_starttime = time(NULL);
 
     AmArg di_args,ret;
     di_args.push(call_profile.prepaid_uuid);
@@ -788,6 +792,25 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       throw AmSession::Exception(402,"Insufficient Credit");
     }
   }
+
+  // CDR
+  if (call_profile.cdr_enabled) {
+    call_profile.cdr_module =
+      replaceParameters(call_profile.cdr_module, "cdr_module", REPLACE_VALS);
+
+    if (!getCDRInterface()) {
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
+    for (map<string, string>::iterator it = call_profile.cdr_values.begin();
+	 it != call_profile.cdr_values.end(); it++) {
+      it->second =
+	replaceParameters(it->second, it->first.c_str(), REPLACE_VALS);
+    }
+
+    CDRStart();
+  }
+
 
 #undef REPLACE_VALS
 
@@ -812,6 +835,26 @@ bool SBCDialog::getPrepaidInterface() {
   prepaid_acc = pp_fact->getInstance();
   if(NULL == prepaid_acc) {
     ERROR("could not get a prepaid acc reference\n");
+    return false;
+  }
+  return true;
+}
+
+bool SBCDialog::getCDRInterface() {
+  if (call_profile.cdr_module.empty()) {
+    ERROR("using CDR but empty cdr_module!\n");
+    return false;
+  }
+  AmDynInvokeFactory* cdr_fact =
+    AmPlugIn::instance()->getFactory4Di(call_profile.cdr_module);
+  if (NULL == cdr_fact) {
+    ERROR("cdr_module '%s' not loaded\n",
+	  call_profile.cdr_module.c_str());
+    return false;
+  }
+  cdr_module = cdr_fact->getInstance();
+  if(NULL == cdr_module) {
+    ERROR("could not get a cdr reference\n");
     return false;
   }
   return true;
@@ -965,27 +1008,49 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
     }
     else if(reply.code < 300) {
       if(getCalleeStatus()  == Connected) {
-        m_state = BB_Connected;
-
-	if (!startCallTimer())
-	  return ret;
-
-	startPrepaidAccounting();
+	onCallConnected();
       }
-    }
-    else {
+    } else {
       DBG("Callee final error with code %d\n",reply.code);
+      onCallStopped();
       ret = AmB2BCallerSession::onOtherReply(reply);
     }
   }
   return ret;
 }
 
+void SBCDialog::onCallConnected() {
+  m_state = BB_Connected;
+
+  if (!startCallTimer())
+    return;
+
+  if (call_profile.prepaid_enabled || call_profile.cdr_enabled) {
+    gettimeofday(&prepaid_acc_start, NULL);
+  }
+
+  startPrepaidAccounting();
+
+  CDRConnect();
+}
+
+void SBCDialog::onCallStopped() {
+  if (call_profile.prepaid_enabled || call_profile.cdr_enabled) {
+    gettimeofday(&prepaid_acc_end, NULL);
+  }
+
+  if (m_state == BB_Connected) {
+    stopPrepaidAccounting();
+    stopCallTimer();
+  }
+
+  CDREnd();
+}
 
 void SBCDialog::onOtherBye(const AmSipRequest& req)
 {
-  stopPrepaidAccounting();
-  stopCallTimer();
+  onCallStopped();
+
   AmB2BCallerSession::onOtherBye(req);
 }
 
@@ -993,9 +1058,7 @@ void SBCDialog::onOtherBye(const AmSipRequest& req)
 void SBCDialog::onBye(const AmSipRequest& req)
 {
   DBG("onBye()\n");
-  stopPrepaidAccounting();
-  stopCallTimer();
-  terminateLeg();
+  stopCall();
 }
 
 
@@ -1006,12 +1069,9 @@ void SBCDialog::onCancel(const AmSipRequest& cancel)
 }
 
 void SBCDialog::stopCall() {
-  if (m_state == BB_Connected) {
-    stopPrepaidAccounting();
-    stopCallTimer();
-  }
   terminateOtherLeg();
   terminateLeg();
+  onCallStopped();
 }
 
 /** @return whether successful */
@@ -1019,8 +1079,7 @@ bool SBCDialog::startCallTimer() {
   if ((call_profile.call_timer_enabled || call_profile.prepaid_enabled) &&
       (!AmSession::timersSupported())) {
     ERROR("internal implementation error: timers not supported\n");
-    terminateOtherLeg();
-    terminateLeg();
+    stopCall();
     return false;
   }
 
@@ -1049,8 +1108,6 @@ void SBCDialog::startPrepaidAccounting() {
     terminateLeg();
     return;
   }
-
-  gettimeofday(&prepaid_acc_start, NULL);
 
   DBG("SBC: starting prepaid timer of %d seconds\n", prepaid_credit);
   {
@@ -1082,26 +1139,77 @@ void SBCDialog::stopPrepaidAccounting() {
       return;
     }
 
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    timersub(&now, &prepaid_acc_start, &now);
-    if(now.tv_usec > 500000)
-      now.tv_sec++;
-    DBG("Call lasted %ld seconds\n", now.tv_sec);
+    struct timeval diff;
+    timersub(&prepaid_acc_end, &prepaid_acc_start, &diff);
+    if(diff.tv_usec > 500000)
+      diff.tv_sec++;
+    DBG("Call lasted %ld seconds\n", diff.tv_sec);
 
     AmArg di_args,ret;
     di_args.push(call_profile.prepaid_uuid);     // prepaid_uuid
-    di_args.push((int)now.tv_sec);               // call duration
+    di_args.push((int)diff.tv_sec);              // call duration
     di_args.push(call_profile.prepaid_acc_dest); // accounting destination
     di_args.push((int)prepaid_starttime);        // call start time (INVITE)
     di_args.push((int)prepaid_acc_start.tv_sec); // call connect time
-    di_args.push((int)time(NULL));               // call end time
+    di_args.push((int)prepaid_acc_end.tv_sec);   // call end time
     di_args.push(getCallID());                   // Call-ID
     di_args.push(getLocalTag());                 // ltag
-    di_args.push(other_id);
+    di_args.push(other_id);                      // 2nd leg ltag
 
     prepaid_acc->invoke("subtractCredit", di_args, ret);
   }
+}
+
+#define CHECK_CDR_MODULE						\
+  if (NULL == cdr_module) {						\
+    ERROR("Internal error, trying to use CDR, but no cdr_module\n");	\
+    terminateOtherLeg();						\
+    terminateLeg();							\
+    return;								\
+  }
+
+void SBCDialog::CDRStart() {
+
+  if (!call_profile.cdr_enabled) return;
+  CHECK_CDR_MODULE;
+
+  AmArg di_args,ret;
+  di_args.push(getLocalTag());
+  di_args.push(getCallID());
+  di_args.push(dlg.remote_tag);
+  di_args.push((int)prepaid_starttime);
+  di_args.push(AmArg());
+  AmArg& vals = di_args.get(4);
+  vals.assertStruct();
+  for (map<string, string>::iterator it = call_profile.cdr_values.begin();
+       it != call_profile.cdr_values.end(); it++) {
+    vals[it->first] = it->second;
+  }
+
+  cdr_module->invoke("start", di_args, ret);
+}
+
+void SBCDialog::CDRConnect() {
+  if (!call_profile.cdr_enabled) return;
+  CHECK_CDR_MODULE;
+
+  AmArg di_args,ret;
+  di_args.push(getLocalTag());                 // ltag
+  di_args.push(getCallID());                   // Call-ID
+  di_args.push(other_id);                      // other leg ltag
+  di_args.push((int)prepaid_acc_start.tv_sec); // call connect time
+  cdr_module->invoke("connect", di_args, ret);
+}
+
+void SBCDialog::CDREnd() {
+  if (!call_profile.cdr_enabled) return;
+  CHECK_CDR_MODULE;
+
+  AmArg di_args,ret;
+  di_args.push(getLocalTag());                 // ltag
+  di_args.push(getCallID());                   // Call-ID
+  di_args.push((int)prepaid_acc_end.tv_sec);   // call end time
+  cdr_module->invoke("end", di_args, ret);
 }
 
 void SBCDialog::createCalleeSession()
