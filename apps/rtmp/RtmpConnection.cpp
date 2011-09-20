@@ -430,9 +430,31 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
     }
   else if(AVMATCH(&method, &av_dial))
     {
-      AVal uri;
-      AMFProp_GetString(AMF_GetProp(&obj, NULL, 3), &uri);
-      startSession(uri.av_val);
+      AVal uri={0,0};
+
+      if(obj.o_num > 3){
+	AMFProp_GetString(AMF_GetProp(&obj, NULL, 3), &uri);
+      }
+
+      if(!uri.av_len){
+	// missing URI parameter
+	SendErrorResult(txn,"Sono.Call.NoUri");
+      }
+      else {
+	m_session.lock();
+
+	if(session){
+	  SendErrorResult(txn,"Sono.Call.Existing");
+	}
+	else {
+	  session = startSession(uri.av_val);
+	  if(!session) {
+	    SendErrorResult(txn,"Sono.Call.Failed");
+	  }
+	}
+	
+	m_session.unlock();
+      }
     }
   else if(AVMATCH(&method, &av_hangup))
     {

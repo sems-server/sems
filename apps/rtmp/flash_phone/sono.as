@@ -56,6 +56,17 @@ private function onConnectClick(evt:Event): void
     }
 }
 
+private function onDialResult(res:Object):void
+{
+    
+}
+
+private function onDialFault(error:Object):void
+{
+    g_dial_state = NOT_CONNECTED;
+    lStatus.text = "status: dial failed (" + error.code + ")";
+}
+
 // bDial button has been clicked
 private function onDialClick(evt:Event): void 
 {
@@ -63,8 +74,9 @@ private function onDialClick(evt:Event): void
 	return;
 
     if(g_dial_state == NOT_CONNECTED) {
-	//TODO: no responder yet: let's see if it's useful or not
-	g_netConnection.call('dial',null,dialUri.text);
+	g_netConnection.call('dial',
+			     new Responder(onDialResult,onDialFault),
+			     dialUri.text);
 	g_dial_state = DIALING;
 	lStatus.text = "status: dialing...";
     }
