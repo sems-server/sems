@@ -699,7 +699,7 @@ static bool getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
 }
 
 /** Get the PF_INET address associated with the network interface */
-static string getLocalIP(const string& dev_name)
+string fixIface2IP(const string& dev_name)
 {
   string local_ip;
   struct ifreq ifr;
@@ -773,7 +773,7 @@ int AmConfig::finalizeIPConfig()
 {
   for(int i=0; i < (int)AmConfig::Ifs.size(); i++) {
 
-    AmConfig::Ifs[i].LocalIP = getLocalIP(AmConfig::Ifs[i].LocalIP);
+    AmConfig::Ifs[i].LocalIP = fixIface2IP(AmConfig::Ifs[i].LocalIP);
     if (AmConfig::Ifs[i].LocalIP.empty()) {
       ERROR("Cannot determine proper local address for media advertising!\n"
 	    "Try using 'ifconfig -a' to find a proper interface and configure SEMS to use it.\n");
@@ -784,7 +784,7 @@ int AmConfig::finalizeIPConfig()
       AmConfig::Ifs[i].LocalSIPIP = AmConfig::Ifs[i].LocalIP;
     }
     else {
-      AmConfig::Ifs[i].LocalSIPIP = getLocalIP(AmConfig::Ifs[i].LocalSIPIP);
+      AmConfig::Ifs[i].LocalSIPIP = fixIface2IP(AmConfig::Ifs[i].LocalSIPIP);
     }
     
     AmConfig::LocalSIPIP2If.insert(std::make_pair(AmConfig::Ifs[i].LocalSIPIP,i));

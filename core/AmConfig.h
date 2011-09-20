@@ -229,6 +229,9 @@ struct AmConfig
 
 };
 
+/** Get the PF_INET address associated with the network interface */
+string fixIface2IP(const string& dev_name);
+
 #endif
 
 // Local Variables:
