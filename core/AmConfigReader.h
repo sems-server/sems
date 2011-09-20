@@ -34,6 +34,8 @@ using std::string;
 
 
 #define MAX_CONFIG_LINE 2048
+#define CONFIG_FILE_SUFFIX ".conf"
+
 /**
  * \brief configuration file reader
  * 
@@ -48,6 +50,8 @@ class AmConfigReader
 
  public:
   int  loadFile(const string& path);
+  int  loadPluginConf(const string& mod_name);
+
   /** get md5 hash of file contents */
   bool getMD5(const string& path, string& md5hash, bool lowercase = true);
   void setParameter(const string& param, const string& val);

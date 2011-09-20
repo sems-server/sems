@@ -181,6 +181,12 @@ int  AmConfigReader::loadFile(const string& path)
   return -1;
 }
 
+int  AmConfigReader::loadPluginConf(const string& mod_name)
+{
+  return loadFile(add2path(AmConfig::ModConfigPath,1,
+			   string(mod_name + CONFIG_FILE_SUFFIX).c_str()));
+}
+
 bool AmConfigReader::getMD5(const string& path, string& md5hash, bool lowercase) {
     std::ifstream data_file(path.c_str(), std::ios::in | std::ios::binary);
     if (!data_file) {
