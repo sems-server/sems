@@ -2,15 +2,6 @@
 #include "RtmpAudio.h"
 #include "RtmpConnection.h"
 
-// call states for the RTMP client
-#define RTMP_CALL_NOT_CONNECTED 0
-#define RTMP_CALL_IN_PROGRESS   1
-#define RTMP_CALL_CONNECTED     2
-#define RTMP_CALL_DISCONNECTING 3
-
-// request the client to connect the streams
-#define RTMP_CALL_CONNECT_STREAMS 4
-
 const unsigned int __dlg_status2rtmp_call[AmSipDialog::__max_Status]  = {
   RTMP_CALL_NOT_CONNECTED, // Disconnected
   RTMP_CALL_IN_PROGRESS, //"Trying",
@@ -30,6 +21,7 @@ RtmpSession::RtmpSession(RtmpConnection* c)
 
 RtmpSession::~RtmpSession()
 {
+  clearConnection();
   delete rtmp_audio;
 }
 
@@ -44,7 +36,7 @@ void RtmpSession::sendCallState()
   m_rtmp_conn.unlock();
 }
 
-void RtmpSession::onBeforeDestroy()
+void RtmpSession::clearConnection()
 {
   m_rtmp_conn.lock();
   if(rtmp_connection){
@@ -52,7 +44,11 @@ void RtmpSession::onBeforeDestroy()
     rtmp_connection = NULL;
   }
   m_rtmp_conn.unlock();
+}
 
+void RtmpSession::onBeforeDestroy()
+{
+  clearConnection();
   AmSession::onBeforeDestroy();
 }
 
@@ -89,17 +85,52 @@ void RtmpSession::onBye(const AmSipRequest& req)
 void RtmpSession::onSipReply(const AmSipReply& reply,
 			     AmSipDialog::Status old_dlg_status)
 {
-  sendCallState();
   AmSession::onSipReply(reply,old_dlg_status);
+
+  sendCallState();
+
+  if(dlg.getStatus() == AmSipDialog::Disconnected) {
+    setStopped();
+  }
+}
+
+void RtmpSession::onInvite(const AmSipRequest& req)
+{
+  DBG("status str: %s\n",dlg.getStatusStr());
+
+  if(dlg.getStatus() != AmSipDialog::Trying){
+    AmSession::onInvite(req);
+    return;
+  }
+
+  //TODO: start client response timer
+  m_rtmp_conn.lock();
+  rtmp_connection->NotifyIncomingCall(req.user);
+  m_rtmp_conn.unlock();
+
+  dlg.reply(req,180,"Ringing");
 }
 
 void RtmpSession::process(AmEvent* ev)
 {
   RtmpSessionEvent* rtmp_ev = dynamic_cast<RtmpSessionEvent*>(ev);
   if(rtmp_ev){
-    dlg.bye();
-    setStopped();
-    return;
+    switch(rtmp_ev->getEvType()){
+    case RtmpSessionEvent::Disconnect:
+      dlg.bye();
+      setStopped();
+      return;
+    case RtmpSessionEvent::Accept:
+      AmSipTransaction* inv_trans = dlg.getPendingUASInv();
+      if(!inv_trans){
+	//Error: no pending INVITE
+	sendCallState();
+	return;
+      }
+      dlg.reply(*inv_trans,200,"OK");
+      sendCallState();
+      return;
+    }
   }
 
   AmSession::process(ev);
@@ -135,4 +166,9 @@ void  RtmpSession::setPlayStreamID(unsigned int stream_id)
 void RtmpSession::disconnect()
 {
   postEvent(new RtmpSessionEvent(RtmpSessionEvent::Disconnect));
+}
+
+void RtmpSession::accept()
+{
+  postEvent(new RtmpSessionEvent(RtmpSessionEvent::Accept));
 }

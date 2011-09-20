@@ -11,7 +11,8 @@ class RtmpSessionEvent
 {
 public:
   enum EvType {
-    Disconnect
+    Disconnect,
+    Accept
   };
 
   RtmpSessionEvent(EvType t)
@@ -33,6 +34,7 @@ class RtmpSession
 
 private:
   void sendCallState();
+  void clearConnection();
 
 public:
   RtmpSession(RtmpConnection* c);
@@ -44,6 +46,8 @@ public:
   void onBeforeDestroy();
   void onSipReply(const AmSipReply& reply,
 		  AmSipDialog::Status old_dlg_status);
+
+  void onInvite(const AmSipRequest& req);
 
   // @see AmEventHandler
   void process(AmEvent*);
@@ -59,6 +63,9 @@ public:
 
   // Sends the disconnect event to the session to terminate it
   void disconnect();
+
+  // Sends the accept event to the session
+  void accept();
 };
 
 #endif

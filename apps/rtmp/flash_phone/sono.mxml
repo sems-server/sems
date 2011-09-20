@@ -18,9 +18,12 @@
 	<mx:Button id="bDial" label="{g_dial_state==NOT_CONNECTED?'Dial':'Hangup'}" 
 		   click="onDialClick(event);"
 		   enabled="{g_state == CONNECTED}"/>
+	<mx:Button id="bAccept" label="Accept"
+		   click="onAcceptClick(event);"
+		   visible="{g_dial_state == INCOMING_CALL}"
+		   enabled="{bAccept.visible == true}"/>
       </mx:HBox>
       <mx:Label id="lStatus" text="status: none"/>
-      <!--<mx:Panel id="dbgPanel"/>-->
     </s:VGroup>
   </s:Panel>
   

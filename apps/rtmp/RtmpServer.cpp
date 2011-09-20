@@ -13,6 +13,9 @@
 
 #define CONN_BACKLOG 4
 
+#define SAv4(addr) \
+            ((struct sockaddr_in*)addr)
+
 
 _RtmpServer::_RtmpServer()
   : AmThread(), fds_num(0)
@@ -27,46 +30,60 @@ _RtmpServer::~_RtmpServer()
   }
 }
 
-void _RtmpServer::run()
+int _RtmpServer::listen(const char* addr, unsigned short port)
 {
   int listen_fd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
   if(listen_fd < 0){
     ERROR("socket() failed: %s\n",strerror(errno));
-    return;
+    return -1;
   }
   int onoff=1;
   if(setsockopt(listen_fd,SOL_SOCKET,SO_REUSEADDR,&onoff,sizeof(onoff))<0){
     ERROR("setsockopt(...,SO_REUSEADDR,...) failed: %s\n",strerror(errno));
     close(listen_fd);
-    return;
+    return -1;
   }
 
-  struct sockaddr_in listen_addr;
-  listen_addr.sin_family = AF_INET;
-  listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  listen_addr.sin_port = htons(DEFAULT_RTMP_PORT);
+  memset(&listen_addr,0,sizeof(listen_addr));
 
-  if(bind(listen_fd,(const sockaddr*)&listen_addr,sizeof(listen_addr)) < 0){
+  listen_addr.ss_family = AF_INET;
+#if defined(BSD44SOCKETS)
+  listen_addr.ss_len = sizeof(struct sockaddr_in);
+#endif
+  SAv4(&listen_addr)->sin_port = htons(port);
+
+  if(inet_aton(addr,&SAv4(&listen_addr)->sin_addr)<0){
+	
+    ERROR("inet_aton: %s\n",strerror(errno));
+    return -1;
+  }
+
+  if(bind(listen_fd,(const sockaddr*)&listen_addr,sizeof(struct sockaddr_in)) < 0){
     ERROR("bind() failed: %s\n",strerror(errno));
     close(listen_fd);
-    return;
+    return -1;
   }
 
-  if(listen(listen_fd,CONN_BACKLOG)<0){
+  if(::listen(listen_fd,CONN_BACKLOG)<0){
     ERROR("listen() failed: %s\n",strerror(errno));
     close(listen_fd);
-    return;
+    return -1;
   }
 
   fds[0].fd = listen_fd;
   fds[0].events = POLLIN | POLLERR;
   fds_num++;
 
+  return 0;
+}
+
+void _RtmpServer::run()
+{
   RTMP_LogSetLevel(RTMP_LOGDEBUG);
 
   INFO("RTMP server started (%s:%i)\n",
-       inet_ntoa(listen_addr.sin_addr),
-       ntohs(listen_addr.sin_port));
+       inet_ntoa(SAv4(&listen_addr)->sin_addr),
+       ntohs(SAv4(&listen_addr)->sin_port));
 
   while(fds_num){
     int ret = poll(fds,fds_num,500/*ms*/);

@@ -42,6 +42,7 @@ SAVC(videoCodecs);
 SAVC(videoFunction);
 SAVC(objectEncoding);
 SAVC(_result);
+SAVC(_error);
 SAVC(createStream);
 SAVC(closeStream);
 SAVC(deleteStream);
@@ -54,21 +55,42 @@ SAVC(code);
 SAVC(description);
 SAVC(secureToken);
 SAVC(publish);
+SAVC(onStatus);
+SAVC(status);
+SAVC(error);
+static const AVal av_NetStream_Play_Start = _AVC("NetStream.Play.Start");
+static const AVal av_Started_playing = _AVC("Started playing");
+static const AVal av_NetStream_Play_Stop = _AVC("NetStream.Play.Stop");
+static const AVal av_Stopped_playing = _AVC("Stopped playing");
+SAVC(details);
+SAVC(clientid);
+SAVC(pause);
 
 // custom methods and params
 SAVC(dial);
 SAVC(hangup);
+SAVC(register);
+SAVC(accept);
+static const AVal av_Sono_Call_Incoming = _AVC("Sono.Call.Incoming");
+SAVC(uri);
+static const AVal av_Sono_Call_Status = _AVC("Sono.Call.Status");
+SAVC(status_code);
+
+
 
 RtmpConnection::RtmpConnection(int fd)
   : prev_stream_id(0),
     play_stream_id(0),
     publish_stream_id(0),
     sender(NULL),
-    session(NULL)
+    session(NULL),
+    registered(false),
+    rtmp_cfg(RtmpFactory_impl::instance()->getConfig())
 {
   memset(&rtmp,0,sizeof(RTMP));
   RTMP_Init(&rtmp);
   rtmp.m_sb.sb_socket = fd;
+  ident = AmSession::getNewId();
 }
 
 RtmpConnection::~RtmpConnection()
@@ -126,6 +148,10 @@ void RtmpConnection::run()
     }
   }
 
+  if(registered){
+    RtmpFactory_impl::instance()->removeConnection(ident);
+    registered = false;
+  }
   detachSession();
 
   // terminate the sender thread
@@ -412,6 +438,36 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
     {
       disconnectSession();
     }
+  else if(AVMATCH(&method, &av_register))
+    {
+      if(registered){
+	RtmpFactory_impl::instance()->removeConnection(ident);
+	registered = false;
+      }
+
+      if(RtmpFactory_impl::instance()->addConnection(ident,this) < 0) {
+	ERROR("could not register RTMP connection (ident='%s')\n",ident.c_str());
+	ident.clear();
+	SendErrorResult(txn,"Sono.Registration.Failed");
+      }
+      else {
+	registered = true;
+	DBG("RTMP connection registered (ident='%s')\n",ident.c_str());
+	SendRegisterResult(txn,ident.c_str());
+      }
+
+    }
+  else if(AVMATCH(&method, &av_accept))
+    {
+      m_session.lock();
+      if(session) {
+	session->accept();
+      }
+      else {
+	//TODO: send errror
+      }
+      m_session.unlock();
+    }
 
   AMF_Reset(&obj);
   return ret;
@@ -448,8 +504,7 @@ int RtmpConnection::SendConnectResult(double txn)
 
   *enc++ = AMF_OBJECT;
 
-  STR2AVAL(av, "status");
-  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av);
+  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
   STR2AVAL(av, "NetConnection.Connect.Success");
   enc = AMF_EncodeNamedString(enc, pend, &av_code, &av);
   STR2AVAL(av, "Connection succeeded.");
@@ -467,6 +522,72 @@ int RtmpConnection::SendConnectResult(double txn)
   *enc++ = 0;
   *enc++ = 0;
   *enc++ = AMF_OBJECT_END;
+  *enc++ = 0;
+  *enc++ = 0;
+  *enc++ = AMF_OBJECT_END;
+
+  packet.m_nBodySize = enc - packet.m_body;
+
+  return sender->push_back(packet);
+}
+
+int RtmpConnection::SendRegisterResult(double txn, const char* str)
+{
+  RTMPPacket packet;
+  char pbuf[512], *pend = pbuf+sizeof(pbuf);
+
+  packet.m_nChannel   = CONTROL_CHANNEL;
+  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
+  packet.m_packetType = INVOKE_PTYPE;
+  packet.m_nTimeStamp = 0;
+  packet.m_nInfoField2 = 0;
+  packet.m_hasAbsTimestamp = 0;
+  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
+
+  AVal av;
+  char *enc = packet.m_body;
+
+  enc = AMF_EncodeString(enc, pend, &av__result);
+  enc = AMF_EncodeNumber(enc, pend, txn);
+  *enc++ = AMF_NULL;
+  *enc++ = AMF_OBJECT;
+
+  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
+  STR2AVAL(av, str);
+  enc = AMF_EncodeNamedString(enc, pend, &av_uri, &av);
+  *enc++ = 0;
+  *enc++ = 0;
+  *enc++ = AMF_OBJECT_END;
+
+  packet.m_nBodySize = enc - packet.m_body;
+
+  return sender->push_back(packet);
+}
+
+int RtmpConnection::SendErrorResult(double txn, const char* str)
+{
+  RTMPPacket packet;
+  char pbuf[512], *pend = pbuf+sizeof(pbuf);
+
+  packet.m_nChannel   = CONTROL_CHANNEL;
+  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
+  packet.m_packetType = INVOKE_PTYPE;
+  packet.m_nTimeStamp = 0;
+  packet.m_nInfoField2 = 0;
+  packet.m_hasAbsTimestamp = 0;
+  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
+
+  AVal av;
+  char *enc = packet.m_body;
+
+  enc = AMF_EncodeString(enc, pend, &av__error);
+  enc = AMF_EncodeNumber(enc, pend, txn);
+  *enc++ = AMF_NULL;
+  *enc++ = AMF_OBJECT;
+
+  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_error);
+  STR2AVAL(av, str);
+  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av);
   *enc++ = 0;
   *enc++ = 0;
   *enc++ = AMF_OBJECT_END;
@@ -500,16 +621,6 @@ int RtmpConnection::SendResultNumber(double txn, double ID)
   return sender->push_back(packet);
 }
 
-
-SAVC(onStatus);
-SAVC(status);
-static const AVal av_NetStream_Play_Start = _AVC("NetStream.Play.Start");
-static const AVal av_Started_playing = _AVC("Started playing");
-static const AVal av_NetStream_Play_Stop = _AVC("NetStream.Play.Stop");
-static const AVal av_Stopped_playing = _AVC("Stopped playing");
-SAVC(details);
-SAVC(clientid);
-SAVC(pause);
 
 int RtmpConnection::SendPlayStart()
 {
@@ -587,9 +698,6 @@ int RtmpConnection::SendStreamEOF()
   return SendCtrl(1, 1, 0);
 }
 
-static const AVal av_Sono_Call_Status = _AVC("Sono.Call.Status");
-SAVC(status_code);
-
 int RtmpConnection::SendCallStatus(int status)
 {
   RTMPPacket packet;
@@ -612,6 +720,37 @@ int RtmpConnection::SendCallStatus(int status)
   enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
   enc = AMF_EncodeNamedString(enc, pend, &av_code, &av_Sono_Call_Status);
   enc = AMF_EncodeNamedNumber(enc, pend, &av_status_code, status);
+  *enc++ = 0;
+  *enc++ = 0;
+  *enc++ = AMF_OBJECT_END;
+
+  packet.m_nBodySize = enc - packet.m_body;
+  return sender->push_back(packet);
+}
+
+int RtmpConnection::NotifyIncomingCall(const string& uri)
+{
+  RTMPPacket packet;
+  char pbuf[384], *pend = pbuf+sizeof(pbuf);
+
+  packet.m_nChannel   = CONTROL_CHANNEL;
+  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
+  packet.m_packetType = INVOKE_PTYPE;
+  packet.m_nTimeStamp = 0;
+  packet.m_nInfoField2 = 0;
+  packet.m_hasAbsTimestamp = 0;
+  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
+
+  char *enc = packet.m_body;
+  enc = AMF_EncodeString(enc, pend, &av_onStatus);
+  enc = AMF_EncodeNumber(enc, pend, 0);
+
+  *enc++ = AMF_NULL;//rco: needed!
+  *enc++ = AMF_OBJECT;
+  AVal tmp_uri = _AVC(uri.c_str());
+  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
+  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av_Sono_Call_Incoming);
+  enc = AMF_EncodeNamedString(enc, pend, &av_uri, &tmp_uri);
   *enc++ = 0;
   *enc++ = 0;
   *enc++ = AMF_OBJECT_END;
@@ -901,26 +1040,32 @@ void RtmpConnection::rxAudio(RTMPPacket *packet)
 
 RtmpSession* RtmpConnection::startSession(const char* uri)
 {
-  m_session.lock();
-
-  if(session){
-    WARN("session already running: doing nothing!\n");
-    return NULL;
-  }
-
-  string dialout_id = AmSession::getNewId();
-
   auto_ptr<RtmpSession> n_session(new RtmpSession(this));
   AmSipDialog& dialout_dlg = n_session->dlg;
 
+  string dialout_id = AmSession::getNewId();
   dialout_dlg.local_tag    = dialout_id;
   dialout_dlg.callid       = AmSession::getNewId();
-  dialout_dlg.local_party  = "\"RTMP Gateway\" <sip:sems@mediaslug>";
+
   dialout_dlg.remote_party = "<" + string(uri) + ">";
   dialout_dlg.remote_uri   = uri;
 
-  n_session->setCallgroup(dialout_id);
+  dialout_dlg.local_party  = "\"" + rtmp_cfg.FromName + "\" "
+    "<sip:" + ident + "@";
+
+  if(!rtmp_cfg.FromDomain.empty()){
+    dialout_dlg.local_party += rtmp_cfg.FromDomain;
+  }
+  else {
+    int out_if = dialout_dlg.getOutboundIf();
+    dialout_dlg.local_party += AmConfig::Ifs[out_if].LocalSIPIP;
+    if(AmConfig::Ifs[out_if].LocalSIPPort != 5060)
+      dialout_dlg.local_party += ":" + int2str(AmConfig::Ifs[out_if].LocalSIPPort);
+  }
+
+  dialout_dlg.local_party += ">";
   
+  n_session->setCallgroup(dialout_id);
   switch(AmSessionContainer::instance()->addSession(dialout_id,
 						    n_session.get())){
   case AmSessionContainer::ShutDown:
@@ -943,9 +1088,6 @@ RtmpSession* RtmpConnection::startSession(const char* uri)
   }
 
   pn_session->start();
-  session = pn_session;
-  m_session.unlock();
-
   return pn_session;
 }
 

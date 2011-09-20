@@ -5,7 +5,8 @@ import flash.net.NetStream;
 import flash.media.Microphone;
 
 // application states
-private static const NOT_CONNECTED:uint = 1;
+private static const NOT_CONNECTED:uint = 0;
+private static const INCOMING_CALL:uint = 1;
 private static const DIALING:uint       = 2;
 private static const CONNECTING:uint    = 3;
 private static const CONNECTED:uint     = 4;
@@ -76,6 +77,26 @@ private function onDialClick(evt:Event): void
     }
 }
 
+private function onAcceptClick(evt:Event): void
+{
+    if(g_dial_state != INCOMING_CALL)
+	return;
+
+    g_dial_state = CONNECTING;
+    g_netConnection.call('accept',null);
+    lStatus.text = "status: accepted incoming call...";
+}
+
+private function onRegisterResult(res:Object): void
+{
+    lStatus.text = "onRegisterResult: " + String(res.uri);
+}
+
+private function onRegisterFault(error:Object): void
+{
+    lStatus.text = "onRegisterFault: " + error.code;
+}
+
 private function netStatusHandler(event:NetStatusEvent): void 
 {
     switch(event.info.code){
@@ -84,6 +105,9 @@ private function netStatusHandler(event:NetStatusEvent): void
     case "NetConnection.Connect.Success":
 	lStatus.text = event.info.level + ": connected to server";
 	g_state = CONNECTED;
+
+	g_netConnection.call('register',
+			     new Responder(onRegisterResult,onRegisterFault));
 	break;
 
     case "NetConnection.Connect.Closed":
@@ -136,6 +160,11 @@ private function netStatusHandler(event:NetStatusEvent): void
 	}
 	break;
 
+    case "Sono.Call.Incoming":
+	g_dial_state = INCOMING_CALL;
+	lStatus.text = "status: incoming call...";
+	break;
+
 	// unkown event:
     default:
 	lStatus.text = event.info.level + ": " 
@@ -176,7 +205,7 @@ private function connectStreams():void
     g_inStream.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
     
     g_inStream.play("dummy","live");
-    g_dial_state = CONNECTING;
+    g_dial_state = CONNECTED;
 }
 
 private function disconnectStreams():void
