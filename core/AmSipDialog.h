@@ -224,14 +224,20 @@ private:
   AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();
 
-  /** @return transaction coresponding to cseq or NULL */
+  /** @return UAC transaction coresponding to cseq or NULL */
   AmSipTransaction* getUACTrans(unsigned int t_cseq);
 
   /** @return whether UAC transaction is pending */
   bool   getUACTransPending();
 
-  /** @return whether INVITE transaction is pending */
+  /** @return whether UAC INVITE transaction is pending */
   bool   getUACInvTransPending();
+
+  /** @return UAS transaction coresponding to cseq or NULL */
+  AmSipTransaction* getUASTrans(unsigned int t_cseq);
+
+  /** @return a pending UAS INVITE transaction or NULL */
+  AmSipTransaction* getPendingUASInv();
 
   Status getStatus() { return status; }
   const char* getStatusStr();
@@ -332,13 +338,6 @@ private:
   /** @return 0 on success */
   int transfer(const string& target);
   int drop();
-
-  /**
-   * @return the method of the corresponding uac request
-   */
-  string get_uac_trans_method(unsigned int t_cseq);
-
-  AmSipTransaction* get_uac_trans(unsigned int t_cseq);
 
   /**
    * This method should only be used to send responses

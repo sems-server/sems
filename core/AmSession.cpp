@@ -880,7 +880,7 @@ void AmSession::onSipReply(const AmSipReply& reply,
 
 void AmSession::onInvite2xx(const AmSipReply& reply)
 {
-  if(dlg.get_uac_trans(reply.cseq))
+  if(dlg.getUACTrans(reply.cseq))
     dlg.send_200_ack(reply.cseq);
 }
 

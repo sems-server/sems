@@ -951,10 +951,29 @@ bool AmSipDialog::getUACTransPending() {
 bool AmSipDialog::getUACInvTransPending() {
   for (TransMap::iterator it=uac_trans.begin();
        it != uac_trans.end(); it++) {
-    if (it->second.method == "INVITE")
+    if (it->second.method == SIP_METH_INVITE)
       return true;
   }
   return false;
+}
+
+AmSipTransaction* AmSipDialog::getUASTrans(unsigned int t_cseq)
+{
+  TransMap::iterator it = uas_trans.find(t_cseq);
+  if(it == uas_trans.end())
+    return NULL;
+  
+  return &(it->second);
+}
+
+AmSipTransaction* AmSipDialog::getPendingUASInv()
+{
+  for (TransMap::iterator it=uas_trans.begin();
+       it != uas_trans.end(); it++) {
+    if (it->second.method == SIP_METH_INVITE)
+      return &(it->second);
+  }
+  return NULL;
 }
 
 string AmSipDialog::getContactHdr()
@@ -1587,27 +1606,6 @@ void AmSipDialog::rel100OnRequestOut(const string &method, string &hdrs)
     case 0:
       break;
   }
-}
-
-
-string AmSipDialog::get_uac_trans_method(unsigned int t_cseq)
-{
-  TransMap::iterator t = uac_trans.find(t_cseq);
-
-  if (t != uac_trans.end())
-    return t->second.method;
-
-  return "";
-}
-
-AmSipTransaction* AmSipDialog::get_uac_trans(unsigned int t_cseq)
-{
-    TransMap::iterator t = uac_trans.find(t_cseq);
-    
-    if (t != uac_trans.end())
-	return &(t->second);
-    
-    return NULL;
 }
 
 int AmSipDialog::drop()
