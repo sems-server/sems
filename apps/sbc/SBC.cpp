@@ -541,6 +541,9 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
 {
   set_sip_relay_only(false);
   dlg.reliable_1xx = REL100_IGNORED;
+
+  memset(&prepaid_acc_start, 0, sizeof(struct timeval));
+  memset(&prepaid_acc_end, 0, sizeof(struct timeval));
 }
 
 
@@ -1273,72 +1276,74 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
     (*cc_mod)->invoke("start", di_args, ret);
 
     // evaluate ret
-    for (size_t i=0;i<ret.size();i++) {
-      if (!isArgArray(ret[i]) || !ret[i].size())
-	continue;
-      if (!isArgInt(ret[i][SBC_CC_ACTION])) {
-	ERROR("in call control module '%s' - action type not int\n",
+    if (isArgArray(ret)) {
+      for (size_t i=0;i<ret.size();i++) {
+	if (!isArgArray(ret[i]) || !ret[i].size())
+	  continue;
+	if (!isArgInt(ret[i][SBC_CC_ACTION])) {
+	  ERROR("in call control module '%s' - action type not int\n",
+		cc_if.cc_name.c_str());
+	  continue;
+	}
+	switch (ret[i][SBC_CC_ACTION].asInt()) {
+	case SBC_CC_DROP_ACTION: {
+	  DBG("dropping call on call control action DROP from '%s'\n",
 	      cc_if.cc_name.c_str());
-	continue;
-      }
-      switch (ret[i][SBC_CC_ACTION].asInt()) {
-      case SBC_CC_DROP_ACTION: {
-	DBG("dropping call on call control action DROP from '%s'\n",
-	    cc_if.cc_name.c_str());
-	dlg.setStatus(AmSipDialog::Disconnected);
-	return false;
-      }
+	  dlg.setStatus(AmSipDialog::Disconnected);
+	  return false;
+	}
 
-      case SBC_CC_REFUSE_ACTION: {
-	if (ret[i].size() < 3 ||
-	    !isArgInt(ret[i][SBC_CC_REFUSE_CODE]) ||
-	    !isArgCStr(ret[i][SBC_CC_REFUSE_REASON])) {
-	  ERROR("in call control module '%s' - REFUSE action parameters missing/wrong: '%s'\n",
-		cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
+	case SBC_CC_REFUSE_ACTION: {
+	  if (ret[i].size() < 3 ||
+	      !isArgInt(ret[i][SBC_CC_REFUSE_CODE]) ||
+	      !isArgCStr(ret[i][SBC_CC_REFUSE_REASON])) {
+	    ERROR("in call control module '%s' - REFUSE action parameters missing/wrong: '%s'\n",
+		  cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
+	    continue;
+	  }
+	  string headers;
+	  if (ret[i].size() > SBC_CC_REFUSE_HEADERS) {
+	    for (size_t h=0;h<ret[i][SBC_CC_REFUSE_HEADERS].size();h++)
+	      headers += string(ret[i][SBC_CC_REFUSE_HEADERS][h].asCStr()) + CRLF;
+	  }
+
+	  DBG("replying with %d %s on call control action REFUSE from '%s'\n",
+	      ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
+	      cc_if.cc_name.c_str());
+
+	  dlg.reply(req,
+		    ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
+		    headers);
+	  return false;
+	}
+
+	case SBC_CC_SET_CALL_TIMER_ACTION: {
+	  if (cc_timer_id > SBC_TIMER_ID_CALL_TIMERS_END) {
+	    ERROR("too many call timers - ignoring timer\n");
+	    continue;
+	  }
+
+	  if (ret[i].size() < 2 ||
+	      !isArgInt(ret[i][SBC_CC_TIMER_TIMEOUT])) {
+	    ERROR("in call control module '%s' - SET_CALL_TIMER action parameters missing: '%s'\n",
+		  cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
+	    continue;
+	  }
+
+	  DBG("saving call timer %i: timeout %i\n",
+	      cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt());
+	  call_timers.push_back(std::make_pair(cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt()));
+	  cc_timer_id++;
+	} break;
+
+	default: {
+	  ERROR("unknown call control action: '%s'\n", AmArg::print(ret[i]).c_str());
 	  continue;
 	}
-	string headers;
-	if (ret[i].size() > SBC_CC_REFUSE_HEADERS) {
-	  for (size_t h=0;h<ret[i][SBC_CC_REFUSE_HEADERS].size();h++)
-	    headers += string(ret[i][SBC_CC_REFUSE_HEADERS][h].asCStr()) + CRLF;
+
 	}
 
-	DBG("replying with %d %s on call control action REFUSE from '%s'\n",
-	    ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-	    cc_if.cc_name.c_str());
-
-	dlg.reply(req,
-		  ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-		  headers);
-	return false;
       }
-
-      case SBC_CC_SET_CALL_TIMER_ACTION: {
-	if (cc_timer_id > SBC_TIMER_ID_CALL_TIMERS_END) {
-	  ERROR("too many call timers - ignoring timer\n");
-	  continue;
-	}
-
-	if (ret[i].size() < 2 ||
-	    !isArgInt(ret[i][SBC_CC_TIMER_TIMEOUT])) {
-	  ERROR("in call control module '%s' - SET_CALL_TIMER action parameters missing: '%s'\n",
-		cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
-	  continue;
-	}
-
-	DBG("saving call timer %i: timeout %i\n",
-	    cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt());
-	call_timers.push_back(std::make_pair(cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt()));
-	cc_timer_id++;
-      } break;
-
-      default: {
-	ERROR("unknown call control action: '%s'\n", AmArg::print(ret[i]).c_str());
-	continue;
-      }
-
-      }
-
     }
 
     cc_mod++;
