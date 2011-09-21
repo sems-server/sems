@@ -944,6 +944,20 @@ void SBCDialog::process(AmEvent* ev)
     }
   }
 
+  SBCCallTimerEvent* ct_event;
+  if (ev->event_id == SBCCallTimerEvent_ID &&
+      (ct_event = dynamic_cast<SBCCallTimerEvent*>(ev)) != NULL) {
+    switch (ct_event->timer_action) {
+    case SBCCallTimerEvent::Remove: removeTimer(ct_event->timer_id); return;
+    case SBCCallTimerEvent::Set:    setTimer(ct_event->timer_id, ct_event->timeout); return;
+    case SBCCallTimerEvent::Reset:
+      removeTimer(ct_event->timer_id);
+      setTimer(ct_event->timer_id, ct_event->timeout);
+      return;
+    default: ERROR("unknown timer_action in sbc call timer event\n");
+    }
+  }
+
   AmB2BCallerSession::process(ev);
 }
 
@@ -1257,6 +1271,7 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
     di_args.push(cc_timer_id); // current timer ID
 
     (*cc_mod)->invoke("start", di_args, ret);
+
     // evaluate ret
     for (size_t i=0;i<ret.size();i++) {
       if (!isArgArray(ret[i]) || !ret[i].size())

@@ -16,4 +16,22 @@
 //     set timer
 #define SBC_CC_TIMER_TIMEOUT       1
 
+/** post an SBCCallTimerEvent to an SBC call in order to set or reset call timer */
+#define SBCCallTimerEvent_ID -563
+struct SBCCallTimerEvent : public AmEvent {
+  enum TimerAction {
+    Remove = 0,
+    Set,
+    Reset
+  };
+
+  TimerAction timer_action;
+  int timeout;
+  int timer_id;
+
+ SBCCallTimerEvent(TimerAction timer_action, int timer_id, int timeout = 0)
+    : AmEvent(SBCCallTimerEvent_ID),
+    timer_id(timer_id), timer_action(timer_action), timeout(timeout) { }
+};
+
 #endif
