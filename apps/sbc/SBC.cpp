@@ -1124,7 +1124,10 @@ void SBCDialog::onOtherBye(const AmSipRequest& req)
 void SBCDialog::onBye(const AmSipRequest& req)
 {
   DBG("onBye()\n");
-  stopCall();
+
+  onCallStopped();
+
+  AmB2BCallerSession::onBye(req);
 }
 
 

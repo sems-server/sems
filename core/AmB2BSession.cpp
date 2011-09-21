@@ -1038,6 +1038,14 @@ void AmB2BCallerSession::onCancel(const AmSipRequest& req)
   terminateLeg();
 }
 
+void AmB2BCallerSession::onBye(const AmSipRequest& req)
+{
+  if (rtp_relay_enabled)
+    clearRtpReceiverRelay();
+
+  AmB2BSession::onBye(req);
+}
+
 void AmB2BCallerSession::connectCallee(const string& remote_party,
 				       const string& remote_uri,
 				       bool relayed_invite)
