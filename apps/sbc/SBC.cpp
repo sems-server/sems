@@ -34,6 +34,8 @@ SBC - feature-wishlist
  */
 #include "SBC.h"
 
+#include "ampi/SBCCallControlAPI.h"
+
 #include "log.h"
 #include "AmUtils.h"
 #include "AmAudio.h"
@@ -534,7 +536,8 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
     cdr_module(NULL),
     auth(NULL),
     call_profile(call_profile),
-    outbound_interface(-1)
+    outbound_interface(-1),
+    cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
 {
   set_sip_relay_only(false);
   dlg.reliable_1xx = REL100_IGNORED;
@@ -558,6 +561,38 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   DBG("processing initial INVITE\n");
 
   string app_param = getHeader(req.hdrs, PARAM_HDR, true);
+
+  // process call control
+  if (call_profile.cc_interfaces.size()) {
+    for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+	 cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+      CCInterface& cc_if = *cc_it;
+      cc_if.cc_module =
+	replaceParameters(cc_if.cc_module, "cc_module", REPLACE_VALS);
+    }
+
+    if (!getCCInterfaces()) {
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
+    for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+	 cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+      CCInterface& cc_if = *cc_it;
+
+      DBG("processing replacements for call control interface '%s'\n", cc_if.cc_name.c_str());
+
+      for (map<string, string>::iterator it = cc_if.cc_values.begin();
+	   it != cc_if.cc_values.end(); it++) {
+	it->second =
+	  replaceParameters(it->second, it->first.c_str(), REPLACE_VALS);
+      }
+    }
+
+    if (!CCStart(req)) {
+      setStopped();
+      return;
+    }
+  }
 
   if(dlg.reply(req, 100, "Connecting") != 0) {
     throw AmSession::Exception(500,"Failed to reply 100");
@@ -759,7 +794,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   // prepaid
   if (call_profile.prepaid_enabled || call_profile.cdr_enabled) {
-    prepaid_starttime = time(NULL);
+    gettimeofday(&prepaid_starttime, NULL);
   }
 
   if (call_profile.prepaid_enabled) {
@@ -779,7 +814,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     AmArg di_args,ret;
     di_args.push(call_profile.prepaid_uuid);
     di_args.push(call_profile.prepaid_acc_dest);
-    di_args.push((int)prepaid_starttime);
+    di_args.push((int)prepaid_starttime.tv_sec);
     di_args.push(getCallID());
     di_args.push(getLocalTag());
     prepaid_acc->invoke("getCredit", di_args, ret);
@@ -810,7 +845,6 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
     CDRStart();
   }
-
 
 #undef REPLACE_VALS
 
@@ -860,6 +894,31 @@ bool SBCDialog::getCDRInterface() {
   return true;
 }
 
+bool SBCDialog::getCCInterfaces() {
+  for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+       cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+    string& cc_module = cc_it->cc_module;
+    if (cc_module.empty()) {
+      ERROR("using call control but empty cc_module for '%s'!\n", cc_it->cc_name.c_str());
+      return false;
+    }
+
+    AmDynInvokeFactory* cc_fact = AmPlugIn::instance()->getFactory4Di(cc_module);
+    if (NULL == cc_fact) {
+      ERROR("cc_module '%s' not loaded\n", cc_module.c_str());
+      return false;
+    }
+
+    AmDynInvoke* cc_di = cc_fact->getInstance();
+    if(NULL == cc_di) {
+      ERROR("could not get a DI reference\n");
+      return false;
+    }
+    cc_modules.push_back(cc_di);
+  }
+  return true;
+}
+
 void SBCDialog::process(AmEvent* ev)
 {
 
@@ -877,6 +936,11 @@ void SBCDialog::process(AmEvent* ev)
       stopCall();
       ev->processed = true;
       return;
+    } else if (timer_id >= SBC_TIMER_ID_CALL_TIMERS_START &&
+	       timer_id <= SBC_TIMER_ID_CALL_TIMERS_END) {
+      DBG("timer %d timeout, stopping call\n", timer_id);
+      stopCall();
+      ev->processed = true;
     }
   }
 
@@ -1008,7 +1072,7 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
     }
     else if(reply.code < 300) {
       if(getCalleeStatus()  == Connected) {
-	onCallConnected();
+	onCallConnected(reply);
       }
     } else {
       DBG("Callee final error with code %d\n",reply.code);
@@ -1019,7 +1083,7 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
   return ret;
 }
 
-void SBCDialog::onCallConnected() {
+void SBCDialog::onCallConnected(const AmSipReply& reply) {
   m_state = BB_Connected;
 
   if (!startCallTimer())
@@ -1032,6 +1096,7 @@ void SBCDialog::onCallConnected() {
   startPrepaidAccounting();
 
   CDRConnect();
+  CCConnect(reply);
 }
 
 void SBCDialog::onCallStopped() {
@@ -1045,6 +1110,7 @@ void SBCDialog::onCallStopped() {
   }
 
   CDREnd();
+  CCEnd();
 }
 
 void SBCDialog::onOtherBye(const AmSipRequest& req)
@@ -1088,6 +1154,12 @@ bool SBCDialog::startCallTimer() {
     setTimer(SBC_TIMER_ID_CALL_TIMER, call_timer);
   }
 
+  for (vector<pair<int, unsigned int> >::iterator it=
+	 call_timers.begin(); it != call_timers.end(); it++) {
+    DBG("SBC: starting call timer %i of %u seconds\n", it->first, it->second);
+    setTimer(it->first, it->second);
+  }
+
   return true;
 }
 
@@ -1118,7 +1190,7 @@ void SBCDialog::startPrepaidAccounting() {
     AmArg di_args,ret;
     di_args.push(call_profile.prepaid_uuid);     // prepaid_uuid
     di_args.push(call_profile.prepaid_acc_dest); // accounting destination
-    di_args.push((int)prepaid_starttime);        // call start time (INVITE)
+    di_args.push((int)prepaid_starttime.tv_sec); // call start time (INVITE)
     di_args.push((int)prepaid_acc_start.tv_sec); // call connect time
     di_args.push(getCallID());                   // Call-ID
     di_args.push(getLocalTag());                 // ltag
@@ -1149,7 +1221,7 @@ void SBCDialog::stopPrepaidAccounting() {
     di_args.push(call_profile.prepaid_uuid);     // prepaid_uuid
     di_args.push((int)diff.tv_sec);              // call duration
     di_args.push(call_profile.prepaid_acc_dest); // accounting destination
-    di_args.push((int)prepaid_starttime);        // call start time (INVITE)
+    di_args.push((int)prepaid_starttime.tv_sec); // call start time (INVITE)
     di_args.push((int)prepaid_acc_start.tv_sec); // call connect time
     di_args.push((int)prepaid_acc_end.tv_sec);   // call end time
     di_args.push(getCallID());                   // Call-ID
@@ -1157,6 +1229,137 @@ void SBCDialog::stopPrepaidAccounting() {
     di_args.push(other_id);                      // 2nd leg ltag
 
     prepaid_acc->invoke("subtractCredit", di_args, ret);
+  }
+}
+
+bool SBCDialog::CCStart(const AmSipRequest& req) {
+  vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
+
+  for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+       cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+    CCInterface& cc_if = *cc_it;
+
+    AmArg di_args,ret;
+    di_args.push(getLocalTag());
+    di_args.push((ArgObject*)&call_profile);
+    di_args.push((int)prepaid_starttime.tv_sec);
+    di_args.push((int)prepaid_starttime.tv_usec);
+    di_args.push(AmArg());
+    AmArg& vals = di_args.get(4);
+    vals.assertStruct();
+    for (map<string, string>::iterator it = cc_if.cc_values.begin();
+	 it != cc_if.cc_values.end(); it++) {
+      vals[it->first] = it->second;
+    }
+    di_args.push(cc_timer_id); // current timer ID
+
+    (*cc_mod)->invoke("start", di_args, ret);
+    // evaluate ret
+    for (size_t i=0;i<ret.size();i++) {
+      if (!isArgArray(ret[i]) || !ret[i].size())
+	continue;
+      if (!isArgInt(ret[i][SBC_CC_ACTION])) {
+	ERROR("in call control module '%s' - action type not int\n",
+	      cc_if.cc_name.c_str());
+	continue;
+      }
+      switch (ret[i][SBC_CC_ACTION].asInt()) {
+      case SBC_CC_DROP_ACTION: {
+	DBG("dropping call on call control action DROP from '%s'\n",
+	    cc_if.cc_name.c_str());
+	dlg.setStatus(AmSipDialog::Disconnected);
+	return false;
+      }
+
+      case SBC_CC_REFUSE_ACTION: {
+	if (ret[i].size() < 3 ||
+	    !isArgInt(ret[i][SBC_CC_REFUSE_CODE]) ||
+	    !isArgCStr(ret[i][SBC_CC_REFUSE_REASON])) {
+	  ERROR("in call control module '%s' - REFUSE action parameters missing/wrong: '%s'\n",
+		cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
+	  continue;
+	}
+	string headers;
+	if (ret[i].size() > SBC_CC_REFUSE_HEADERS) {
+	  for (size_t h=0;h<ret[i][SBC_CC_REFUSE_HEADERS].size();h++)
+	    headers += string(ret[i][SBC_CC_REFUSE_HEADERS][h].asCStr()) + CRLF;
+	}
+
+	DBG("replying with %d %s on call control action REFUSE from '%s'\n",
+	    ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
+	    cc_if.cc_name.c_str());
+
+	dlg.reply(req,
+		  ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
+		  headers);
+	return false;
+      }
+
+      case SBC_CC_SET_CALL_TIMER_ACTION: {
+	if (cc_timer_id > SBC_TIMER_ID_CALL_TIMERS_END) {
+	  ERROR("too many call timers - ignoring timer\n");
+	  continue;
+	}
+
+	if (ret[i].size() < 2 ||
+	    !isArgInt(ret[i][SBC_CC_TIMER_TIMEOUT])) {
+	  ERROR("in call control module '%s' - SET_CALL_TIMER action parameters missing: '%s'\n",
+		cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
+	  continue;
+	}
+
+	DBG("saving call timer %i: timeout %i\n",
+	    cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt());
+	call_timers.push_back(std::make_pair(cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt()));
+	cc_timer_id++;
+      } break;
+
+      default: {
+	ERROR("unknown call control action: '%s'\n", AmArg::print(ret[i]).c_str());
+	continue;
+      }
+
+      }
+
+    }
+
+    cc_mod++;
+  }
+  return true;
+}
+
+void SBCDialog::CCConnect(const AmSipReply& reply) {
+  vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
+
+  for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+       cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+    //    CCInterface& cc_if = *cc_it;
+
+    AmArg di_args,ret;
+    di_args.push(getLocalTag());                 // call ltag
+    di_args.push(other_id);                      // other leg ltag
+    di_args.push((int)prepaid_acc_start.tv_sec);
+    di_args.push((int)prepaid_acc_start.tv_usec);
+    (*cc_mod)->invoke("connect", di_args, ret);
+
+    cc_mod++;
+  }
+}
+
+void SBCDialog::CCEnd() {
+  vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
+
+  for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+       cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+    //    CCInterface& cc_if = *cc_it;
+
+    AmArg di_args,ret;
+    di_args.push(getLocalTag());                 // call ltag
+    di_args.push((int)prepaid_acc_end.tv_sec);
+    di_args.push((int)prepaid_acc_end.tv_usec);
+    (*cc_mod)->invoke("end", di_args, ret);
+
+    cc_mod++;
   }
 }
 
@@ -1177,7 +1380,7 @@ void SBCDialog::CDRStart() {
   di_args.push(getLocalTag());
   di_args.push(getCallID());
   di_args.push(dlg.remote_tag);
-  di_args.push((int)prepaid_starttime);
+  di_args.push((int)prepaid_starttime.tv_sec);
   di_args.push(AmArg());
   AmArg& vals = di_args.get(4);
   vals.assertStruct();

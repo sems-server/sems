@@ -172,6 +172,41 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     return false;
   }
 
+  if (!cfg.getParameter("call_control").empty()) {
+    vector<string> cc_sections = explode(cfg.getParameter("call_control"), ",");
+    for (vector<string>::iterator it =
+	   cc_sections.begin(); it != cc_sections.end(); it++) {
+      DBG("reading call control '%s'\n", it->c_str());
+      cc_interfaces.push_back(CCInterface(*it));
+      CCInterface& cc_if = cc_interfaces.back();
+
+      cc_if.cc_module = cfg.getParameter(*it + "_module");
+
+      // check if module is loaded
+      if ((cc_if.cc_module.find('$') == string::npos) &&
+	  (NULL == AmPlugIn::instance()->getFactory4Di(cc_if.cc_module))) {
+	ERROR("Call control module '%s' used in call profile "
+	      "'%s' is not loaded\n", cc_if.cc_module.c_str(), name.c_str());
+	return false;
+      }
+
+      size_t cc_name_prefix_len = it->length()+1;
+
+      // read interface values
+      for (std::map<string,string>::const_iterator cfg_it =
+	     cfg.begin(); cfg_it != cfg.end(); cfg_it++) {
+	if (cfg_it->first.substr(0, cc_name_prefix_len) != *it+"_")
+	  continue;
+
+	if (cfg_it->first.size() <= cc_name_prefix_len ||
+	    cfg_it->first == *it+"_module")
+	  continue;
+
+	cc_if.cc_values[cfg_it->first.substr(cc_name_prefix_len)] = cfg_it->second;
+      }
+    }
+  }
+
   cdr_enabled = cfg.getParameter("enable_cdr", "no") == "yes";
   cdr_module = cfg.getParameter("cdr_module");
   if (cdr_enabled) {
@@ -345,6 +380,16 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       if (cdr_combined_values.size()) {
 	cdr_combined_values.erase(cdr_combined_values.size()-1,1);
 	INFO("SBC:                    values = '%s'\n", cdr_combined_values.c_str());
+      }
+    }
+
+    if (cc_interfaces.size()) {
+      string cc_if_names;
+      for (  vector<CCInterface>::iterator it =
+	       cc_interfaces.begin(); it != cc_interfaces.end(); it++) {
+	cc_if_names = it->cc_name+",";
+	cc_if_names.erase(cc_if_names.size()-1,1);
+	INFO("SBC:      Call Control interfaces: %s\n", cc_if_names.c_str());
       }
     }
 

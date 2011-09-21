@@ -38,6 +38,9 @@
 
 using std::string;
 
+#define SBC_TIMER_ID_CALL_TIMERS_START   10
+#define SBC_TIMER_ID_CALL_TIMERS_END     99
+
 #define SBC_TIMER_ID_CALL_TIMER         1
 #define SBC_TIMER_ID_PREPAID_TIMEOUT    2
 
@@ -106,12 +109,13 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   string callid;
 
   unsigned int call_timer;
+  vector<pair<int, unsigned int> > call_timers;
 
   int outbound_interface;
 
   // prepaid
   AmDynInvoke* prepaid_acc;
-  time_t prepaid_starttime;
+  struct timeval prepaid_starttime;
   struct timeval prepaid_acc_start;
   struct timeval prepaid_acc_end;
 
@@ -120,13 +124,18 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   // cdr
   AmDynInvoke* cdr_module;
 
+  // call control
+  vector<AmDynInvoke*> cc_modules;
+  // current timer ID - cc module setting timer will use this
+  int cc_timer_id;
+
   // auth
   AmSessionEventHandler* auth;
 
   SBCCallProfile call_profile;
 
   /** handler called when the second leg is connected */
-  void onCallConnected();
+  void onCallConnected(const AmSipReply& reply);
 
   /** handler called when call si stopped */
   void onCallStopped();
@@ -150,10 +159,19 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   bool getCDRInterface();
   /** create a CDR (start it) */
   void CDRStart();
-  /** record connection of sencond leg in CDR */
+  /** record connection of second leg in CDR */
   void CDRConnect();
   /** end CDR */
   void CDREnd();
+
+  /** initialize call control module interfaces @return sucess or not*/
+  bool getCCInterfaces();
+  /** call is started */
+  bool CCStart(const AmSipRequest& req);
+  /** connection of second leg */
+  void CCConnect(const AmSipReply& reply);
+  /** end call */
+  void CCEnd();
 
  public:
 
