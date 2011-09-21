@@ -83,11 +83,6 @@ private function onConnectClick(evt:Event): void
     }
 }
 
-private function onDialResult(res:Object):void
-{
-    
-}
-
 private function onDialFault(error:Object):void
 {
     g_dial_state = NOT_CONNECTED;
@@ -102,14 +97,13 @@ private function onDialClick(evt:Event): void
 
     if(g_dial_state == NOT_CONNECTED) {
 	g_netConnection.call('dial',
-			     new Responder(onDialResult,onDialFault),
+			     new Responder(null,onDialFault),
 			     dialUri.text);
 	g_dial_state = DIALING;
 	lStatus.text = "status: dialing...";
     }
     else {
 	disconnectStreams();
-	//TODO: no responder yet: let's see if it's useful or not
 	g_netConnection.call('hangup',null);
 	lStatus.text = "status: hanging up...";
 	g_dial_state = NOT_CONNECTED;
