@@ -91,7 +91,12 @@ class RtmpConnection
   // Is the connection registered in RtmpFactory?
   bool         registered;
 
-  const RtmpConfig& rtmp_cfg;
+  // registrar_client instance
+  AmDynInvoke* di_reg_client;
+  // handle from registrar_client
+  string       reg_handle;
+
+  const RtmpConfig* rtmp_cfg;
 
 public:
   RtmpConnection(int fd);
@@ -116,6 +121,14 @@ private:
   RtmpSession* startSession(const char* uri);
   void disconnectSession();
   void detachSession();
+
+  void createRegistration(const string& domain,
+			  const string& user,
+			  const string& display_name,
+			  const string& auth_user = "",
+			  const string& passwd = "");
+  void removeRegistration();
+  
 
   void stopStream(unsigned int stream_id);
 

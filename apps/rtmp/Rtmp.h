@@ -39,11 +39,17 @@ class RtmpConnection;
 
 struct RtmpConfig
 {
-  string FromName;
-  string FromDomain;
-  bool   AllowExternalRegister;
+  // RTMP server params
   string ListenAddress;
   unsigned int ListenPort;
+
+  // Outbound call params
+  string FromName;
+  string FromDomain;
+
+  // Registration related params
+  bool   AllowExternalRegister;
+  string ImplicitRegistrar;
 
   RtmpConfig();
 };
@@ -59,10 +65,11 @@ class RtmpFactory
   // to enable inbound calls to RTMP clients
   map<string,RtmpConnection*> connections;
   AmMutex                     m_connections;
+  
+  // registrar_client instance pointer
+  AmDynInvoke* di_reg_client;
 
 protected:
-  // @see AmEventProcessingThread
-  void onEvent(AmEvent* ev);
 
 public:
   RtmpFactory();
@@ -75,7 +82,8 @@ public:
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      const map<string,string>& app_params);
 
-  const RtmpConfig& getConfig() { return cfg; }
+  const RtmpConfig* getConfig() { return &cfg; }
+  AmDynInvoke* getRegClient() { return di_reg_client; }
   
   int addConnection(const string& ident, RtmpConnection*);
   void removeConnection(const string& ident);

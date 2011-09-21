@@ -116,12 +116,16 @@ RtmpConnection::RtmpConnection(int fd)
     sender(NULL),
     session(NULL),
     registered(false),
-    rtmp_cfg(RtmpFactory_impl::instance()->getConfig())
+    di_reg_client(NULL),
+    rtmp_cfg(NULL)
 {
   memset(&rtmp,0,sizeof(RTMP));
   RTMP_Init(&rtmp);
   rtmp.m_sb.sb_socket = fd;
+
   ident = AmSession::getNewId();
+  di_reg_client = RtmpFactory_impl::instance()->getRegClient();
+  rtmp_cfg = RtmpFactory_impl::instance()->getConfig();
 }
 
 RtmpConnection::~RtmpConnection()
@@ -181,6 +185,7 @@ void RtmpConnection::run()
 
   if(registered){
     RtmpFactory_impl::instance()->removeConnection(ident);
+    removeRegistration();
     registered = false;
   }
   detachSession();
@@ -507,6 +512,12 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 	registered = true;
 	DBG("RTMP connection registered (ident='%s')\n",ident.c_str());
 	SendRegisterResult(txn,ident.c_str());
+	
+	if(di_reg_client &&
+	   !rtmp_cfg->ImplicitRegistrar.empty()) {
+	  createRegistration(rtmp_cfg->ImplicitRegistrar,
+			     ident,rtmp_cfg->FromName);
+	}
       }
 
     }
@@ -1103,11 +1114,11 @@ RtmpSession* RtmpConnection::startSession(const char* uri)
   dialout_dlg.remote_party = "<" + string(uri) + ">";
   dialout_dlg.remote_uri   = uri;
 
-  dialout_dlg.local_party  = "\"" + rtmp_cfg.FromName + "\" "
+  dialout_dlg.local_party  = "\"" + rtmp_cfg->FromName + "\" "
     "<sip:" + ident + "@";
 
-  if(!rtmp_cfg.FromDomain.empty()){
-    dialout_dlg.local_party += rtmp_cfg.FromDomain;
+  if(!rtmp_cfg->FromDomain.empty()){
+    dialout_dlg.local_party += rtmp_cfg->FromDomain;
   }
   else {
     int out_if = dialout_dlg.getOutboundIf();
@@ -1163,6 +1174,35 @@ void RtmpConnection::disconnectSession()
     session->disconnect();
   }
   m_session.unlock();
+}
+
+void RtmpConnection::createRegistration(const string& domain,
+					const string& user,
+					const string& display_name,
+					const string& auth_user,
+					const string& passwd)
+{
+  if(!di_reg_client) return;
+
+  AmArg di_args,ret;
+  di_args.push(domain.c_str());
+  di_args.push(user.c_str());
+  di_args.push(display_name.c_str());  // display name
+  di_args.push(auth_user.c_str());     // auth_user
+  di_args.push(passwd.c_str());        // pwd
+  di_args.push(FACTORY_Q_NAME);
+  
+  di_reg_client->invoke("createRegistration", di_args, ret);
+  reg_handle = ret.get(0).asCStr();
+}
+
+void RtmpConnection::removeRegistration()
+{
+  if(!di_reg_client || reg_handle.empty()) return;
+  AmArg di_args,ret;
+  di_args.push(reg_handle.c_str());
+  di_reg_client->invoke("removeRegistration", di_args, ret);
+  reg_handle.clear();
 }
 
 void RtmpConnection::stopStream(unsigned int stream_id)

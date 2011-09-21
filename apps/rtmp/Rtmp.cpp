@@ -29,13 +29,16 @@
 #include "RtmpSession.h"
 #include "RtmpConnection.h"
 #include "AmConfigReader.h"
+#include "AmEventDispatcher.h"
+#include "ampi/SIPRegistrarClientAPI.h"
 
 RtmpConfig::RtmpConfig()
-  : FromName("RTMP Gateway"),
+  : ListenAddress("0.0.0.0"),
+    ListenPort(DEFAULT_RTMP_PORT),
+    FromName("RTMP Gateway"),
     FromDomain(),
     AllowExternalRegister(false),
-    ListenAddress("0.0.0.0"),
-    ListenPort(DEFAULT_RTMP_PORT)
+    ImplicitRegistrar()
 {
 }
 
@@ -45,7 +48,8 @@ extern "C" void* FACTORY_SESSION_EXPORT()
 }
 
 RtmpFactory::RtmpFactory()
-  : AmSessionFactory(MOD_NAME)
+  : AmSessionFactory(MOD_NAME),
+    di_reg_client(NULL)
 {
 }
 
@@ -62,6 +66,20 @@ int RtmpFactory::onLoad()
   }
   else {
 
+    if(cfg_file.hasParameter("listen_address")){
+      cfg.ListenAddress = fixIface2IP(cfg_file.getParameter("listen_address"));
+    }
+
+    if(cfg_file.hasParameter("listen_port")){
+      string listen_port_str = cfg_file.getParameter("listen_port");
+      if(sscanf(listen_port_str.c_str(),"%u",
+		&(cfg.ListenPort)) != 1){
+	ERROR("listen_port: invalid RTMP port specified (%s), using default\n",
+	      listen_port_str.c_str());
+	cfg.ListenPort = DEFAULT_RTMP_PORT;
+      }
+    }
+
     if(cfg_file.hasParameter("from_name")){
       cfg.FromName = cfg_file.getParameter("from_name");
     }
@@ -75,18 +93,8 @@ int RtmpFactory::onLoad()
 	cfg_file.getParameter("allow_external_register") == string("yes");
     }
 
-    if(cfg_file.hasParameter("listen_address")){
-      cfg.ListenAddress = cfg_file.getParameter("listen_address");
-    }
-
-    if(cfg_file.hasParameter("listen_port")){
-      string listen_port_str = cfg_file.getParameter("listen_port");
-      if(sscanf(listen_port_str.c_str(),"%u",
-		&(cfg.ListenPort)) != 1){
-	ERROR("listen_port: invalid RTMP port specified (%s), using default\n",
-	      listen_port_str.c_str());
-	cfg.ListenPort = DEFAULT_RTMP_PORT;
-      }
+    if(cfg_file.hasParameter("implicit_registrar")){
+      cfg.ImplicitRegistrar = cfg_file.getParameter("implicit_registrar");
     }
   }
 
@@ -100,6 +108,19 @@ int RtmpFactory::onLoad()
   }
   rtmp_server->start();
   
+  AmDynInvokeFactory* di_reg_client_f = AmPlugIn::instance()->
+    getFactory4Di("registrar_client");
+  if(di_reg_client_f)
+    di_reg_client = di_reg_client_f->getInstance();
+
+  if(di_reg_client) {
+    // start the event processing
+    AmEventDispatcher::instance()->addEventQueue(FACTORY_Q_NAME,this);
+    start(); 
+  }
+  else {
+    INFO("'registrar_client' not found: registration disabled.\n");
+  }
 
   return 0;
 }
