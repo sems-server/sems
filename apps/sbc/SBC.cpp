@@ -1360,6 +1360,7 @@ void SBCDialog::CCConnect(const AmSipReply& reply) {
 
     AmArg di_args,ret;
     di_args.push(getLocalTag());                 // call ltag
+    di_args.push((ArgObject*)&call_profile);
     di_args.push(other_id);                      // other leg ltag
     di_args.push((int)prepaid_acc_start.tv_sec);
     di_args.push((int)prepaid_acc_start.tv_usec);
@@ -1378,6 +1379,7 @@ void SBCDialog::CCEnd() {
 
     AmArg di_args,ret;
     di_args.push(getLocalTag());                 // call ltag
+    di_args.push((ArgObject*)&call_profile);
     di_args.push((int)prepaid_acc_end.tv_sec);
     di_args.push((int)prepaid_acc_end.tv_usec);
     (*cc_mod)->invoke("end", di_args, ret);

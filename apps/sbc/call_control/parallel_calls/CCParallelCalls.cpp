@@ -33,6 +33,8 @@
 
 #include <string.h>
 
+#define SBCVAR_PARALLEL_CALLS_UUID "pcalls_uuid"
+
 class CCParallelCallsFactory : public AmDynInvokeFactory
 {
 public:
@@ -93,38 +95,25 @@ void CCParallelCalls::invoke(const string& method, const AmArg& args, AmArg& ret
     if(method == "start"){
 
       // ltag, call profile, start_ts_sec, start_ts_usec, [[key: val], ...], timer_id
-      args.assertArrayFmt("soiiui"); 
+      args.assertArrayFmt("soiiui");
+      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
 
-      // INFO("--------------------------------------------------------------\n");
-      // INFO("Got call control start ltag '%s' start_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args.get(2).asInt(), args.get(3).asInt());
-      // INFO("---- dumping CC values ----\n");
-      // for (AmArg::ValueStruct::const_iterator it =
-      // 	     args.get(4).begin(); it != args.get(4).end(); it++) {
-      // 	INFO("    CDR value '%s' = '%s'\n", it->first.c_str(), it->second.asCStr());
-      // }
-      // INFO("--------------------------------------------------------------\n");
-
-      start(args[0].asCStr(), args[2].asInt(), args[3].asInt(), args[4],
+      start(args[0].asCStr(), call_profile, args[2].asInt(), args[3].asInt(), args[4],
 	    args[5].asInt(),  ret);
 
     } else if(method == "connect"){
-      // ltag, other_ltag, connect_ts_sec, connect_ts_usec
-      args.assertArrayFmt("ssii"); 
+      // ltag, call_profile, other_ltag, connect_ts_sec, connect_ts_usec
+      args.assertArrayFmt("sosii");
+      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
 
-      // INFO("--------------------------------------------------------------\n");
-      // INFO("Got CDR connect ltag '%s' other_ltag '%s', connect_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args.get(1).asCStr(), args.get(2).asInt(),
-      // 	   args.get(3).asInt());
-      // INFO("--------------------------------------------------------------\n");
-      connect(args.get(0).asCStr(), args.get(1).asCStr(),
-	      args.get(2).asInt(), args.get(3).asInt());
+      connect(args.get(0).asCStr(), call_profile, args.get(2).asCStr(),
+	      args.get(3).asInt(), args.get(4).asInt());
     } else if(method == "end"){
-      // INFO("--------------------------------------------------------------\n");
-      // INFO("Got CDR end ltag %s end_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args.get(1).Int(), args.get(2).asInt());
-      // INFO("--------------------------------------------------------------\n");
-      end(args.get(0).asCStr(), args.get(1).asInt(), args.get(2).asInt());
+      // ltag, end_ts_sec, end_ts_usec
+      args.assertArrayFmt("soii"); 
+      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+
+      end(args.get(0).asCStr(), call_profile, args.get(2).asInt(), args.get(3).asInt());
     } else if(method == "_list"){
       ret.push("start");
       ret.push("connect");
@@ -134,8 +123,10 @@ void CCParallelCalls::invoke(const string& method, const AmArg& args, AmArg& ret
 	throw AmDynInvoke::NotImplemented(method);
 }
 
-void CCParallelCalls::start(const string& ltag, int start_ts_sec, int start_ts_usec,
+void CCParallelCalls::start(const string& ltag, SBCCallProfile* call_profile,
+			    int start_ts_sec, int start_ts_usec,
 			    const AmArg& values, int timer_id, AmArg& res) {
+  if (!call_profile) return;
 
   if (!values.hasMember("uuid") || !isArgCStr(values["uuid"]) ||
       !strlen(values["uuid"].asCStr())) {
@@ -149,6 +140,8 @@ void CCParallelCalls::start(const string& ltag, int start_ts_sec, int start_ts_u
   }
 
   string uuid = values["uuid"].asCStr();
+
+  call_profile->cc_vars[SBCVAR_PARALLEL_CALLS_UUID] = uuid;
 
   unsigned int max_calls = 1; // default
   if (values.hasMember("max_calls") && isArgCStr(values["max_calls"])) {
@@ -182,9 +175,6 @@ void CCParallelCalls::start(const string& ltag, int start_ts_sec, int start_ts_u
     }
   }
 
-  if (!do_limit) {
-    call_control_uuids[ltag] = uuid;
-  }
   call_control_calls_mut.unlock();
 
   DBG("uuid %s has %u active calls (limit = %s)\n",
@@ -200,31 +190,32 @@ void CCParallelCalls::start(const string& ltag, int start_ts_sec, int start_ts_u
 
 }
 
-void CCParallelCalls::connect(const string& ltag, const string& other_tag,
+void CCParallelCalls::connect(const string& ltag, SBCCallProfile* call_profile,
+			      const string& other_tag,
 			      int connect_ts_sec, int connect_ts_usec) {
-  // connect code here
-
+  if (!call_profile) return;
 }
 
-void CCParallelCalls::end(const string& ltag,
+void CCParallelCalls::end(const string& ltag, SBCCallProfile* call_profile,
 			  int end_ts_sec, int end_ts_usec) {
-  // end code here
+  if (!call_profile) return;
+
+  SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(SBCVAR_PARALLEL_CALLS_UUID);
+  if (vars_it == call_profile->cc_vars.end() || !isArgCStr(vars_it->second)) {
+    ERROR("internal: could not find UUID for ending call '%s'\n", ltag.c_str());
+    return;
+  }
+  string uuid = vars_it->second.asCStr();
+  call_profile->cc_vars.erase(SBCVAR_PARALLEL_CALLS_UUID);
+
   unsigned int new_call_count  = 0;
-  string uuid = "<unknown>";
 
   call_control_calls_mut.lock();
-
-  map<string, string>::iterator it=call_control_uuids.find(ltag);
-  if (it!=call_control_uuids.end()) {
-    uuid = it->second;
-    if (call_control_calls[it->second] > 1) {
-      new_call_count = --call_control_calls[it->second];
-    }  else {
-      call_control_calls.erase(it->second);
-    }
-    call_control_uuids.erase(it);
+  if (call_control_calls[uuid] > 1) {
+    new_call_count = --call_control_calls[uuid];
+  }  else {
+    call_control_calls.erase(uuid);
   }
-
   call_control_calls_mut.unlock();
 
   DBG("uuid '%s' now has %u active calls\n", uuid.c_str(), new_call_count);

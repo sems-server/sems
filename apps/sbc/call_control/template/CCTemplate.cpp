@@ -92,8 +92,6 @@ void CCTemplate::invoke(const string& method, const AmArg& args, AmArg& ret)
 
     if(method == "start"){
 
-      // ltag, call profile, start_ts_sec, start_ts_usec, [[key: val], ...], timer_id
-      args.assertArrayFmt("soiiui"); 
 
       // INFO("--------------------------------------------------------------\n");
       // INFO("Got call control start ltag '%s' start_ts %i.%i\n",
@@ -105,26 +103,36 @@ void CCTemplate::invoke(const string& method, const AmArg& args, AmArg& ret)
       // }
       // INFO("--------------------------------------------------------------\n");
 
-      start(args[0].asCStr(), args[2].asInt(), args[3].asInt(), args[4],
+      // ltag, call profile, start_ts_sec, start_ts_usec, [[key: val], ...], timer_id
+      args.assertArrayFmt("soiiui");
+      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+
+      start(args[0].asCStr(), call_profile, args[2].asInt(), args[3].asInt(), args[4],
 	    args[5].asInt(),  ret);
 
     } else if(method == "connect"){
-      // ltag, other_ltag, connect_ts_sec, connect_ts_usec
-      args.assertArrayFmt("ssii"); 
-
       // INFO("--------------------------------------------------------------\n");
       // INFO("Got CDR connect ltag '%s' other_ltag '%s', connect_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args.get(1).asCStr(), args.get(2).asInt(),
-      // 	   args.get(3).asInt());
+      // 	   args.get(0).asCStr(), args.get(2).asCStr(), args.get(3).asInt(),
+      // 	   args.get(4).asInt());
       // INFO("--------------------------------------------------------------\n");
-      connect(args.get(0).asCStr(), args.get(1).asCStr(),
-	      args.get(2).asInt(), args.get(3).asInt());
+      // ltag, call_profile, other_ltag, connect_ts_sec, connect_ts_usec
+      args.assertArrayFmt("sosii");
+      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+
+      connect(args.get(0).asCStr(), call_profile, args.get(2).asCStr(),
+	      args.get(3).asInt(), args.get(4).asInt());
     } else if(method == "end"){
       // INFO("--------------------------------------------------------------\n");
       // INFO("Got CDR end ltag %s end_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args.get(1).Int(), args.get(2).asInt());
+      // 	   args.get(0).asCStr(), args.get(2).Int(), args.get(3).asInt());
       // INFO("--------------------------------------------------------------\n");
-      end(args.get(0).asCStr(), args.get(1).asInt(), args.get(2).asInt());
+
+      // ltag, end_ts_sec, end_ts_usec
+      args.assertArrayFmt("soii"); 
+      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+
+      end(args.get(0).asCStr(), call_profile, args.get(2).asInt(), args.get(3).asInt());
     } else if(method == "_list"){
       ret.push("start");
       ret.push("connect");
@@ -134,7 +142,8 @@ void CCTemplate::invoke(const string& method, const AmArg& args, AmArg& ret)
 	throw AmDynInvoke::NotImplemented(method);
 }
 
-void CCTemplate::start(const string& ltag, int start_ts_sec, int start_ts_usec,
+void CCTemplate::start(const string& ltag, SBCCallProfile* call_profile,
+		       int start_ts_sec, int start_ts_usec,
 		       const AmArg& values, int timer_id, AmArg& res) {
   // start code here
   res.push(AmArg());
@@ -153,13 +162,14 @@ void CCTemplate::start(const string& ltag, int start_ts_sec, int start_ts_usec,
   // res_cmd[SBC_CC_TIMER_TIMEOUT] = 5;
 }
 
-void CCTemplate::connect(const string& ltag, const string& other_tag,
+void CCTemplate::connect(const string& ltag, SBCCallProfile* call_profile,
+			 const string& other_tag,
 			 int connect_ts_sec, int connect_ts_usec) {
   // connect code here
 
 }
 
-void CCTemplate::end(const string& ltag,
+void CCTemplate::end(const string& ltag, SBCCallProfile* call_profile,
 		     int end_ts_sec, int end_ts_usec) {
   // end code here
 

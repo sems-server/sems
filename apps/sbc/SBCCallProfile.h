@@ -38,6 +38,9 @@ using std::string;
 using std::map;
 using std::set;
 
+typedef map<string, AmArg>   SBCVarMapT;
+typedef SBCVarMapT::iterator SBCVarMapIteratorT;
+
 struct CCInterface {
   string cc_name;
   string cc_module;
@@ -82,7 +85,6 @@ struct SBCCallProfile
   AmConfigReader sst_a_cfg;    // SST config (A leg)
   AmConfigReader sst_b_cfg;    // SST config (B leg)
 
-
   bool auth_enabled;
   UACAuthCred auth_credentials;
 
@@ -98,6 +100,8 @@ struct SBCCallProfile
   string prepaid_acc_dest;
 
   vector<CCInterface> cc_interfaces;
+
+  SBCVarMapT cc_vars;
 
   bool cdr_enabled;
   string cdr_module;
