@@ -38,7 +38,20 @@ using std::string;
 using std::map;
 using std::set;
 
-struct SBCCallProfile {
+typedef map<string, AmArg>   SBCVarMapT;
+typedef SBCVarMapT::iterator SBCVarMapIteratorT;
+
+struct CCInterface {
+  string cc_name;
+  string cc_module;
+  map<string, string> cc_values;
+
+  CCInterface(string cc_name)
+  : cc_name(cc_name) { }
+};
+
+struct SBCCallProfile
+  : public ArgObject {
   string md5hash;
   string profile_file;
 
@@ -72,7 +85,6 @@ struct SBCCallProfile {
   AmConfigReader sst_a_cfg;    // SST config (A leg)
   AmConfigReader sst_b_cfg;    // SST config (B leg)
 
-
   bool auth_enabled;
   UACAuthCred auth_credentials;
 
@@ -86,6 +98,10 @@ struct SBCCallProfile {
   string prepaid_accmodule;
   string prepaid_uuid;
   string prepaid_acc_dest;
+
+  vector<CCInterface> cc_interfaces;
+
+  SBCVarMapT cc_vars;
 
   bool cdr_enabled;
   string cdr_module;
