@@ -38,6 +38,9 @@ using std::map;
  */
 class CCParallelCalls : public AmDynInvoke
 {
+  static unsigned int refuse_code;
+  static string refuse_reason;
+
   // this map contains # of calls per uuid
   map<string, unsigned int> call_control_calls;
   AmMutex call_control_calls_mut;

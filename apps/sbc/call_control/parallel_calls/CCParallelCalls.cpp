@@ -35,36 +35,8 @@
 
 #define SBCVAR_PARALLEL_CALLS_UUID "pcalls_uuid"
 
-class CCParallelCallsFactory : public AmDynInvokeFactory
-{
-public:
-    CCParallelCallsFactory(const string& name)
-	: AmDynInvokeFactory(name) {}
-
-    AmDynInvoke* getInstance(){
-	return CCParallelCalls::instance();
-    }
-
-    int onLoad(){
-      if (CCParallelCalls::instance()->onLoad())
-	return -1;
-
-      DBG("template call control loaded.\n");
-
-      return 0;
-    }
-};
-
-EXPORT_PLUGIN_CLASS_FACTORY(CCParallelCallsFactory,MOD_NAME);
-
-CCParallelCalls* CCParallelCalls::_instance=0;
-
-CCParallelCalls* CCParallelCalls::instance()
-{
-    if(!_instance)
-	_instance = new CCParallelCalls();
-    return _instance;
-}
+unsigned int CCParallelCalls::refuse_code = 402;
+string CCParallelCalls::refuse_reason = "Too Many Simultaneous Calls";
 
 CCParallelCalls::CCParallelCalls()
 {
@@ -73,17 +45,24 @@ CCParallelCalls::CCParallelCalls()
 CCParallelCalls::~CCParallelCalls() { }
 
 int CCParallelCalls::onLoad() {
-  // AmConfigReader cfg;
+  AmConfigReader cfg;
 
-  // if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
-  //   INFO(MOD_NAME "configuration  file (%s) not found, "
-  // 	 "assuming default configuration is fine\n",
-  // 	 (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str());
-  //   return 0;
-  // }
+  if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
+    INFO(MOD_NAME "configuration  file (%s) not found, "
+  	 "assuming default configuration is fine\n",
+  	 (AmConfig::ModConfigPath + string(MOD_NAME ".conf")).c_str());
+    return 0;
+  }
+  
+  refuse_reason = cfg.hasParameter("refuse_reason") ?
+    cfg.getParameter("refuse_reason") : refuse_reason;
 
-  // syslog_prefix = cfg.hasParameter("cdr_prefix") ? 
-  //   cfg.getParameter("cdr_prefix") : syslog_prefix;
+  if (cfg.hasParameter("refuse_code")) {
+    if (str2i(cfg.getParameter("refuse_code"), refuse_code)) {
+      ERROR("refuse_code '%s' not understood\n", cfg.getParameter("refuse_code").c_str());
+      return -1;
+    }
+  }
 
   return 0;
 }
@@ -184,8 +163,8 @@ void CCParallelCalls::start(const string& ltag, SBCCallProfile* call_profile,
     res.push(AmArg());
     AmArg& res_cmd = res[0];
     res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
-    res_cmd[SBC_CC_REFUSE_CODE] = 402;
-    res_cmd[SBC_CC_REFUSE_REASON] = "Too many Simultaneous Calls";
+    res_cmd[SBC_CC_REFUSE_CODE] = (int)refuse_code;
+    res_cmd[SBC_CC_REFUSE_REASON] = refuse_reason;
   }
 
 }
@@ -220,3 +199,33 @@ void CCParallelCalls::end(const string& ltag, SBCCallProfile* call_profile,
 
   DBG("uuid '%s' now has %u active calls\n", uuid.c_str(), new_call_count);
 }
+
+CCParallelCalls* CCParallelCalls::_instance=0;
+
+CCParallelCalls* CCParallelCalls::instance()
+{
+    if(!_instance)
+	_instance = new CCParallelCalls();
+    return _instance;
+}
+
+class CCParallelCallsFactory : public AmDynInvokeFactory
+{
+public:
+    CCParallelCallsFactory(const string& name)
+      : AmDynInvokeFactory(name) { }
+
+    AmDynInvoke* getInstance(){
+	return CCParallelCalls::instance();
+    }
+
+    int onLoad(){
+      if (CCParallelCalls::instance()->onLoad())
+	return -1;
+
+      DBG("parallel call control loaded.\n");
+
+      return 0;
+    }
+};
+EXPORT_PLUGIN_CLASS_FACTORY(CCParallelCallsFactory,MOD_NAME);
