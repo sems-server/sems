@@ -1307,13 +1307,13 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 	      headers += string(ret[i][SBC_CC_REFUSE_HEADERS][h].asCStr()) + CRLF;
 	  }
 
-	  DBG("replying with %d %s on call control action REFUSE from '%s'\n",
+	  DBG("replying with %d %s on call control action REFUSE from '%s' headers='%s'\n",
 	      ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-	      cc_if.cc_name.c_str());
+	      cc_if.cc_name.c_str(), headers.c_str());
 
 	  dlg.reply(req,
 		    ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-		    headers);
+		    "", "", headers);
 	  return false;
 	}
 
