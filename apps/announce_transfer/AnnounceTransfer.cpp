@@ -189,8 +189,9 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
 }
 
 void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status) {
+  AmSipTransaction* trans = dlg.getUACTrans(rep.cseq);
   if ((status==Transfering ||status==Hangup)  && 
-      dlg.get_uac_trans_method(rep.cseq) == "REFER") {
+      trans && trans->method == "REFER") {
     if (rep.code >= 300) {
       DBG("refer not accepted, stop session.\n");
       dlg.bye();
