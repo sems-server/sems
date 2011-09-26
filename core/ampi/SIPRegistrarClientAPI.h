@@ -43,7 +43,7 @@ struct SIPRegistrationEvent : public AmEvent {
   };
 };
 
-const char* getSIPRegistationStateString(unsigned int s) {
+inline const char* getSIPRegistationStateString(unsigned int s) {
   switch (s) {
   case 0: return "RegisterPending";
   case 1: return "RegisterActive";
