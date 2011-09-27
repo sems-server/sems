@@ -1,6 +1,8 @@
 #ifndef _SBCCallControlAPI_h_
 #define _SBCCallControlAPI_h_
 
+#define CC_INTERFACE_MAND_VALUES_METHOD "getMandatoryValues"
+
 #define SBC_CC_DROP_ACTION              0
 #define SBC_CC_REFUSE_ACTION            1
 #define SBC_CC_SET_CALL_TIMER_ACTION    2
