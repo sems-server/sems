@@ -143,6 +143,9 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   /** handler called when SST timeout occured */
   void onSessionTimeout();
 
+  /** handler called when no ACK received */
+  void onNoAck(unsigned int cseq);
+
   /** stop call (both legs, CDR, prepaid etc) */
   void stopCall();
 

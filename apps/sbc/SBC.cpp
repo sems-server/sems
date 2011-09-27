@@ -1145,6 +1145,12 @@ void SBCDialog::onSessionTimeout() {
   AmB2BCallerSession::onSessionTimeout();
 }
 
+void SBCDialog::onNoAck(unsigned int cseq) {
+  onCallStopped();
+
+  AmB2BCallerSession::onNoAck(cseq);
+}
+
 void SBCDialog::onBye(const AmSipRequest& req)
 {
   DBG("onBye()\n");
