@@ -1,0 +1,126 @@
+SBC call control modules
+========================
+
+General
+=======
+
+Call control (CC) modules for the sbc application implement business logic which controls
+how the SBC operates. For example, a CCmodule can implement concurrent call limits, call
+limits per user, enforce other policies, or implement routing logic.
+
+Multiple CC modules may be applied for one call. The data that the CC modules get from the
+call may be freely configured.
+
+User documentation 
+==================
+
+Call control modules may be applied to a call by specifying call_control=... in the SBC profile.
+
+For each item in call_control, the specific information is then read; for example, if
+ call_control=cc_pcalls,cc_timer
+is configured, "cc_pcalls" and "cc_timer" sections are read.
+
+Each CC module section must at least specify the CC interface name (usually the module name), e.g.:
+ cc_pcalls_module=cc_pcalls
+
+Additionally, the data that is passed to the CC module is specified, this can contain the usual
+substitution patterns, e.g.:
+ cc_pcalls_uuid=$H(P-UUID)
+ cc_pcalls_max_calls=$H(P-Call-Limit)
+will pass the contents of the Header named "P-UUID" as value "uuid" and the contents of "P-Call-Limit"
+as "max_calls".
+
+Several CC modules are implemented
+  o cc_pcalls         - parallel calls limiting
+  o cc_call_timer     - call timer (maximum call duration)
+  o cc_prepaid        - prepaid billing with storing balances in memory
+  o cc_prepaid_xmlrpc - prepaid billing querying balances from external server with XMLRPC
+
+See their respective documentation for details.
+
+
+Developer documentation 
+=======================
+
+The functions of CC modules are invoked
+ - at the beginning of a call: "start" function
+ - when the call is connected: "connect" function
+ - when the call is ended: "end" function
+
+In the start function, CC modules can
+ - modify values in the used call profile instance (RURI, From, To etc)
+ - set timers
+ - drop the call
+ - refuse the call with a code and reason
+
+SBC CC API
+----------
+
+ampi/SBCCallControlAPI.h should be included, which defines necessary constants.
+If the call profile is to be modified, SBCCallProfile.h should be included.
+
+The CC modules must implement a DI API, which must implement at least the functions "start",
+"connect", "end".
+
+  function: start
+  Parameters: string                  ltag             local tag (ID) of the call (A leg)
+              SBCCallProfile Object   call_profile     used call profile instance
+              int                     start_ts_sec     start TS (seconds since epoch)
+              int                     start_ts_usec    start TS usec
+              ValueStruct             values           configured values (struct of key:string value)
+              int                     timer_id         ID of first timer if set with timer action
+   
+  Return values
+              Array of actions:
+                  int                 action           action to take
+                  ...                 parameters       parameters to action
+ 
+      Actions
+               SBC_CC_DROP_ACTION                       drop the call (no reply sent)
+                  Parameters: none
+
+               SBC_CC_REFUSE_ACTION                     refuse the call with code and reason
+                  Parameters: int    code
+                              string reason
+
+               SBC_CC_SET_CALL_TIMER_ACTION             set a timer; the id of the first timer will be timer_id
+                  Parameters: int    timeout
+ 
+Storing call related information
+--------------------------------
+
+The SBC call profile object contains named general purpose variables of variant type (AmArg) for
+general purpose CC module use.
+
+Synopsis:
+
+  setting a variable:
+    call_profile->cc_vars["mycc::myvar"] = "myvalue";
+
+  checking for presence of a variable:
+    SBCVarMapIteratorT vars_it = call_profile->cc_vars.find("mycc::myvar");
+    if (vars_it == call_profile->cc_vars.end() || !isArgCStr(vars_it->second)) {
+      ERROR("internal: could not find mycc:myvar for call '%s'\n", ltag.c_str());
+      return;
+    }
+    string myvar = vars_it->second.asCStr();
+
+  removing a variable:
+    call_profile->cc_vars.erase("mycc::myvar");
+
+CC variables may be prefixed by the CC module name as name space (e.g. cc_name::var_name).
+
+
+Verifying correct configuration
+-------------------------------
+A DI function "getMandatoryValues" (CC_INTERFACE_MAND_VALUES_METHOD) can be implemented.
+
+This function should return a list of strings, which will be checked with the sbc profile. If
+there are configuration values missing in the sbc profile, the profile is not loaded.
+
+Sample CC module
+----------------
+
+A sample CC module "cc_template" can be found in apps/sbc/call_control/template. For implementing
+a new call control module, this code should be taken, the class names changed and the code customized
+it.
