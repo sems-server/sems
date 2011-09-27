@@ -315,6 +315,8 @@ class AmB2BCallerSession: public AmB2BSession
   void onCancel(const AmSipRequest& req);
   void onBye(const AmSipRequest& req);
 
+  void onSystemEvent(AmSystemEvent* ev);
+
   // @see AmB2BSession
   void terminateLeg();
   void terminateOtherLeg();

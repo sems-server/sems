@@ -1038,6 +1038,14 @@ void AmB2BCallerSession::onCancel(const AmSipRequest& req)
   terminateLeg();
 }
 
+void AmB2BCallerSession::onSystemEvent(AmSystemEvent* ev) {
+  if (ev->sys_event == AmSystemEvent::ServerShutdown) {
+    terminateOtherLeg();
+  }
+
+  AmB2BSession::onSystemEvent(ev);
+}
+
 void AmB2BCallerSession::onBye(const AmSipRequest& req)
 {
   if (rtp_relay_enabled)
