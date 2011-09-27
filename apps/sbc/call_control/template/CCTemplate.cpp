@@ -128,7 +128,7 @@ void CCTemplate::invoke(const string& method, const AmArg& args, AmArg& ret)
       // 	   args.get(0).asCStr(), args.get(2).Int(), args.get(3).asInt());
       // INFO("--------------------------------------------------------------\n");
 
-      // ltag, end_ts_sec, end_ts_usec
+      // ltag, call_profile, end_ts_sec, end_ts_usec
       args.assertArrayFmt("soii"); 
       SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
 

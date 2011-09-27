@@ -88,7 +88,7 @@ void CCParallelCalls::invoke(const string& method, const AmArg& args, AmArg& ret
       connect(args.get(0).asCStr(), call_profile, args.get(2).asCStr(),
 	      args.get(3).asInt(), args.get(4).asInt());
     } else if(method == "end"){
-      // ltag, end_ts_sec, end_ts_usec
+      // ltag, call_profile, end_ts_sec, end_ts_usec
       args.assertArrayFmt("soii"); 
       SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
 
