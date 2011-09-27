@@ -567,6 +567,12 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
+  // prepaid
+  if (call_profile.cc_interfaces.size() ||
+      call_profile.prepaid_enabled || call_profile.cdr_enabled) {
+    gettimeofday(&prepaid_starttime, NULL);
+  }
+
   // process call control
   if (call_profile.cc_interfaces.size()) {
     for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
@@ -795,11 +801,6 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       // time=0
       throw AmSession::Exception(503, "Service Unavailable");
     }
-  }
-
-  // prepaid
-  if (call_profile.prepaid_enabled || call_profile.cdr_enabled) {
-    gettimeofday(&prepaid_starttime, NULL);
   }
 
   if (call_profile.prepaid_enabled) {
@@ -1108,7 +1109,8 @@ void SBCDialog::onCallConnected(const AmSipReply& reply) {
   if (!startCallTimer())
     return;
 
-  if (call_profile.prepaid_enabled || call_profile.cdr_enabled) {
+  if (call_profile.cc_interfaces.size() ||
+      call_profile.prepaid_enabled || call_profile.cdr_enabled) {
     gettimeofday(&prepaid_acc_start, NULL);
   }
 
@@ -1119,7 +1121,8 @@ void SBCDialog::onCallConnected(const AmSipReply& reply) {
 }
 
 void SBCDialog::onCallStopped() {
-  if (call_profile.prepaid_enabled || call_profile.cdr_enabled) {
+  if (call_profile.cc_interfaces.size() ||
+      call_profile.prepaid_enabled || call_profile.cdr_enabled) {
     gettimeofday(&prepaid_acc_end, NULL);
   }
 
