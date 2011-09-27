@@ -137,8 +137,11 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   /** handler called when the second leg is connected */
   void onCallConnected(const AmSipReply& reply);
 
-  /** handler called when call si stopped */
+  /** handler called when call is stopped */
   void onCallStopped();
+
+  /** handler called when SST timeout occured */
+  void onSessionTimeout();
 
   /** stop call (both legs, CDR, prepaid etc) */
   void stopCall();

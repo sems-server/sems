@@ -1,7 +1,7 @@
 plug_in_name = sbc
 
 module_ldflags =
-module_cflags  = -DMOD_NAME=\"$(plug_in_name)\"
+module_cflags  =
 
 extra_target = make_call_control_mods
 extra_install = install_tools install_call_control_mods

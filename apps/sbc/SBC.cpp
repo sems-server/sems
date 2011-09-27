@@ -51,6 +51,8 @@ SBC - feature-wishlist
 
 using std::map;
 
+#define MOD_NAME "sbc"
+
 AmConfigReader SBCFactory::cfg;
 AmSessionEventHandlerFactory* SBCFactory::session_timer_fact = NULL;
 RegexMapper SBCFactory::regex_mappings;
@@ -1137,6 +1139,11 @@ void SBCDialog::onOtherBye(const AmSipRequest& req)
   AmB2BCallerSession::onOtherBye(req);
 }
 
+void SBCDialog::onSessionTimeout() {
+  onCallStopped();
+
+  AmB2BCallerSession::onSessionTimeout();
+}
 
 void SBCDialog::onBye(const AmSipRequest& req)
 {
