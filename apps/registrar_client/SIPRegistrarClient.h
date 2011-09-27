@@ -95,7 +95,8 @@ class SIPRegistrarClient  : public AmThread,
 			    const string& pwd,
 			    const string& sess_link,
 			    const string& proxy,
-			    const string& contact);
+			    const string& contact,
+			    const string& handle);
   void removeRegistration(const string& handle);
 
   bool hasRegistration(const string& handle);
