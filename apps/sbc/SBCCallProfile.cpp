@@ -32,6 +32,8 @@
 #include "AmPlugIn.h"
 #include "AmConfig.h"
 
+#include "ampi/SBCCallControlAPI.h"
+
 bool SBCCallProfile::readFromConfiguration(const string& name,
 					   const string profile_file_name) {
   AmConfigReader cfg;
@@ -214,13 +216,15 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 	cc_if.cc_values[cfg_it->first.substr(cc_name_prefix_len)] = cfg_it->second;
       }
 
-      for (size_t i=0;i<mandatory_values.size();i++) {
-	if (!isArgCStr(mandatory_values[i])) continue;
-	if (cc_if.cc_values.find(mandatory_values[i].asCStr()) == cc_if.cc_values.end()) {
-	  ERROR("value '%s' for SBC profile '%s' in '%s' not defined. set %s_%s=...\n",
-		mandatory_values[i].asCStr(), name.c_str(), profile_file_name.c_str(),
-		it->c_str(), mandatory_values[i].asCStr());
-	  return false;
+      if (isArgArray(mandatory_values)) {
+	for (size_t i=0;i<mandatory_values.size();i++) {
+	  if (!isArgCStr(mandatory_values[i])) continue;
+	  if (cc_if.cc_values.find(mandatory_values[i].asCStr()) == cc_if.cc_values.end()) {
+	    ERROR("value '%s' for SBC profile '%s' in '%s' not defined. set %s_%s=...\n",
+		  mandatory_values[i].asCStr(), name.c_str(), profile_file_name.c_str(),
+		  it->c_str(), mandatory_values[i].asCStr());
+	    return false;
+	  }
 	}
       }
     }
