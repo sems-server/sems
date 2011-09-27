@@ -1160,11 +1160,18 @@ void SBCDialog::onBye(const AmSipRequest& req)
   AmB2BCallerSession::onBye(req);
 }
 
-
 void SBCDialog::onCancel(const AmSipRequest& cancel)
 {
   dlg.bye();
   stopCall();
+}
+
+void SBCDialog::onSystemEvent(AmSystemEvent* ev) {
+  if (ev->sys_event == AmSystemEvent::ServerShutdown) {
+    onCallStopped();
+  }
+
+  AmB2BCallerSession::onSystemEvent(ev);
 }
 
 void SBCDialog::stopCall() {

@@ -189,6 +189,8 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   void onInvite(const AmSipRequest& req);
   void onCancel(const AmSipRequest& cancel);
 
+  void onSystemEvent(AmSystemEvent* ev);
+
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
