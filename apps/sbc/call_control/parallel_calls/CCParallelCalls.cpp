@@ -93,6 +93,8 @@ void CCParallelCalls::invoke(const string& method, const AmArg& args, AmArg& ret
       SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
 
       end(args.get(0).asCStr(), call_profile, args.get(2).asInt(), args.get(3).asInt());
+    } else if(method == CC_INTERFACE_MAND_VALUES_METHOD){
+      ret.push("uuid");
     } else if(method == "_list"){
       ret.push("start");
       ret.push("connect");

@@ -41,6 +41,8 @@ using std::set;
 typedef map<string, AmArg>   SBCVarMapT;
 typedef SBCVarMapT::iterator SBCVarMapIteratorT;
 
+#define CC_INTERFACE_MAND_VALUES_METHOD "getMandatoryValues"
+
 struct CCInterface {
   string cc_name;
   string cc_module;

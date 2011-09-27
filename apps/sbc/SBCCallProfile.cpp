@@ -182,12 +182,21 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
       cc_if.cc_module = cfg.getParameter(*it + "_module");
 
-      // check if module is loaded
-      if ((cc_if.cc_module.find('$') == string::npos) &&
-	  (NULL == AmPlugIn::instance()->getFactory4Di(cc_if.cc_module))) {
-	ERROR("Call control module '%s' used in call profile "
-	      "'%s' is not loaded\n", cc_if.cc_module.c_str(), name.c_str());
-	return false;
+      AmArg mandatory_values;
+
+      // check if module is loaded and if, get mandatory config values
+      if (cc_if.cc_module.find('$') == string::npos) {
+	AmDynInvokeFactory* df = AmPlugIn::instance()->getFactory4Di(cc_if.cc_module);
+	if (NULL == df) {
+	  ERROR("Call control module '%s' used in call profile "
+		"'%s' is not loaded\n", cc_if.cc_module.c_str(), name.c_str());
+	  return false;
+	}
+	AmDynInvoke* di = df->getInstance();
+	AmArg args;
+	try {
+	  di->invoke(CC_INTERFACE_MAND_VALUES_METHOD, args, mandatory_values);
+	} catch (AmDynInvoke::NotImplemented& ni) { }
       }
 
       size_t cc_name_prefix_len = it->length()+1;
@@ -203,6 +212,16 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 	  continue;
 
 	cc_if.cc_values[cfg_it->first.substr(cc_name_prefix_len)] = cfg_it->second;
+      }
+
+      for (size_t i=0;i<mandatory_values.size();i++) {
+	if (!isArgCStr(mandatory_values[i])) continue;
+	if (cc_if.cc_values.find(mandatory_values[i].asCStr()) == cc_if.cc_values.end()) {
+	  ERROR("value '%s' for SBC profile '%s' in '%s' not defined. set %s_%s=...\n",
+		mandatory_values[i].asCStr(), name.c_str(), profile_file_name.c_str(),
+		it->c_str(), mandatory_values[i].asCStr());
+	  return false;
+	}
       }
     }
   }
