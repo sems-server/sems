@@ -358,23 +358,39 @@ If enable_session_timer=yes and enable_aleg_session_timer not set, SST is enable
 both legs. Likewise, if aleg_session_expires etc. is not set, the SST configuration of
 the B leg is used (session_expires, minimum_timer etc).
 
-Prepaid
--------
-Prepaid accounting can be enabled with the enable_prepaid option. The credit
-of an account is fetched when the initial INVITE is processed,
+Call control modules
+--------------------
+Call control (CC) modules for the sbc application implement business logic which controls
+how the SBC operates. For example, a CCmodule can implement concurrent call limits, call
+limits per user, enforce other policies, or implement routing logic.
+
+Multiple CC modules may be applied for one call. The data that the CC modules get from the
+call may be freely configured.
+
+Example: 
+  Limiting From-User to 5 parallel calls, and 90 seconds maximum call duration:
+    call_control=pcalls,call_timer
+    pcalls_module=cc_pcalls
+    pcalls_uuid=$fU
+    pcalls_max_calls=5
+    call_timer_module=cc_call_timer
+    call_timer_timer=90
+
+See also Readme.sbc_call_control.txt.
+
+Call control: Prepaid
+---------------------
+Prepaid accounting can be enabled with using a prepaid call control module.
+The credit of an account is fetched when the initial INVITE is processed,
 and a timer is set once the call is connected. When the call ends, the credit
 is subtracted from the user.
 
 For accounting, a separate module is used. This allows to plug several types
-of accounting modules. The accounting module is selected with the 
-prepaid_accmodule option.
-
-The account which is billed is taken from the prepaid_uuid option. The billing
-destination is set with the prepaid_acc_dest option. 
+of accounting modules.
 
  Example:
-    enable_prepaid=yes
-    prepaid_accmodule=cc_acc
+    call_control=prepaid
+    prepaid_module=cc_prepaid
     prepaid_uuid=$H(P-Caller-Uuid)
     prepaid_acc_dest=$H(P-Acc-Dest)
 
@@ -386,21 +402,32 @@ are presented in unix timestamp value (seconds since epoch). start_ts is
 the initial INVITE timestamp, connect_ts the connect (200 OK) timestamp,
 end_ts the BYE timestamp.
 
-Accounting interface:
-  getCredit(string uuid, string acc_dest, int start_ts, string call_id, string ltag)
-      result: int credit
+The cc_prepaid and cc_prepaid_xmlrpc modules may be used for accounting modules, or
+as starting points for integration into custom billing systems.
 
-  connectCall(string uuid, string acc_dest, int start_ts, int connect_ts,
-              string call_id, string ltag, string b_ltag)
+Call control: Parallel calls limit
+----------------------------------
+Parallel call limits can be enforced by using the parallel calls call control module.
 
-  subtractCredit(string uuid, int call_duration, string acc_dest, int start_ts,
-                 int connect_ts, int end_ts, string call_id, string ltag, string b_ltag)
+ Example (limit From-User to max 5 calls):
+    call_control=pcalls
+    pcalls_module=cc_pcalls
+    pcalls_uuid=$fU
+    pcalls_max_calls=5
 
-The cc_acc and cc_acc_xmlrpc modules may be used for accounting modules, or as starting
-points for integration into custom billing systems.
+Call control: Call Timer
+------------------------
+A maximum call duration timer can be set with the call timer call control module.
 
-Parallel call limits can be implemented by implementing an account specific limit to the
-accounting module.
+ Example (timer taken from P-Timer header):
+    call_control=call_timer
+    call_timer_module=cc_call_timer
+    call_timer_timer=$H(P-Timer)
+
+ Example (maximum 90 seconds):
+    call_control=call_timer
+    call_timer_module=cc_call_timer
+    call_timer_timer=90
 
 CDR generation
 --------------

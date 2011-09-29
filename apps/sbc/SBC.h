@@ -41,9 +41,6 @@ using std::string;
 #define SBC_TIMER_ID_CALL_TIMERS_START   10
 #define SBC_TIMER_ID_CALL_TIMERS_END     99
 
-#define SBC_TIMER_ID_PREPAID_TIMEOUT    2
-
-
 class SBCFactory: public AmSessionFactory,
     public AmDynInvoke,
     public AmDynInvokeFactory
@@ -110,19 +107,14 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   vector<pair<int, unsigned int> > call_timers;
 
   int outbound_interface;
-
-  // prepaid
-  AmDynInvoke* prepaid_acc;
-  struct timeval prepaid_starttime;
-  struct timeval prepaid_acc_start;
-  struct timeval prepaid_acc_end;
-
-  int prepaid_credit;
-
   // call control
   vector<AmDynInvoke*> cc_modules;
   // current timer ID - cc module setting timer will use this
   int cc_timer_id;
+
+  struct timeval call_start_ts;
+  struct timeval call_connect_ts;
+  struct timeval call_end_ts;
 
   // auth
   AmSessionEventHandler* auth;
@@ -141,20 +133,13 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   /** handler called when no ACK received */
   void onNoAck(unsigned int cseq);
 
-  /** stop call (both legs, CC, prepaid etc) */
+  /** stop call (both legs, CC) */
   void stopCall();
 
   /* set call timer (if enabled) */
   bool startCallTimer();
   /* clear call timer */
   void stopCallTimer();
-
-  /** initialize prepaid module interface @return sucess or not*/
-  bool getPrepaidInterface();
-  /* start prepaid accounting (set timer) */
-  void startPrepaidAccounting();
-  /* stop prepaid accounting (account) */
-  void stopPrepaidAccounting();
 
   /** initialize call control module interfaces @return sucess or not*/
   bool getCCInterfaces();

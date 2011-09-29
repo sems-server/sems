@@ -91,11 +91,6 @@ struct SBCCallProfile
   bool auth_aleg_enabled;
   UACAuthCred auth_aleg_credentials;
 
-  bool prepaid_enabled;
-  string prepaid_accmodule;
-  string prepaid_uuid;
-  string prepaid_acc_dest;
-
   vector<CCInterface> cc_interfaces;
 
   SBCVarMapT cc_vars;
@@ -120,7 +115,6 @@ struct SBCCallProfile
     sdpfilter_enabled(false),
     sdpfilter(Transparent),
     auth_enabled(false),
-    prepaid_enabled(false),
     rtprelay_enabled(false)
 
   { }

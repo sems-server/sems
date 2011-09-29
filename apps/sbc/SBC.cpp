@@ -534,7 +534,6 @@ void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
 
 SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
-    prepaid_acc(NULL),
     auth(NULL),
     call_profile(call_profile),
     outbound_interface(-1),
@@ -543,8 +542,8 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   set_sip_relay_only(false);
   dlg.reliable_1xx = REL100_IGNORED;
 
-  memset(&prepaid_acc_start, 0, sizeof(struct timeval));
-  memset(&prepaid_acc_end, 0, sizeof(struct timeval));
+  memset(&call_connect_ts, 0, sizeof(struct timeval));
+  memset(&call_end_ts, 0, sizeof(struct timeval));
 }
 
 
@@ -566,9 +565,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
-  // prepaid
-  if (call_profile.cc_interfaces.size() || call_profile.prepaid_enabled) {
-    gettimeofday(&prepaid_starttime, NULL);
+  // get start time for call control
+  if (call_profile.cc_interfaces.size()) {
+    gettimeofday(&call_start_ts, NULL);
   }
 
   // process call control
@@ -779,71 +778,12 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     }
   }
 
-  // get timer
-  if (call_profile.prepaid_enabled) {
-    if (!timersSupported()) {
-      ERROR("load session_timer module for call timers\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-  }
-
-  if (call_profile.prepaid_enabled) {
-    call_profile.prepaid_accmodule =
-      replaceParameters(call_profile.prepaid_accmodule, "prepaid_accmodule", REPLACE_VALS);
-
-    if (!getPrepaidInterface()) {
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    call_profile.prepaid_uuid =
-      replaceParameters(call_profile.prepaid_uuid, "prepaid_uuid", REPLACE_VALS);
-
-    call_profile.prepaid_acc_dest =
-      replaceParameters(call_profile.prepaid_acc_dest, "prepaid_acc_dest", REPLACE_VALS);
-
-    AmArg di_args,ret;
-    di_args.push(call_profile.prepaid_uuid);
-    di_args.push(call_profile.prepaid_acc_dest);
-    di_args.push((int)prepaid_starttime.tv_sec);
-    di_args.push(getCallID());
-    di_args.push(getLocalTag());
-    prepaid_acc->invoke("getCredit", di_args, ret);
-    prepaid_credit = ret.get(0).asInt();
-    if(prepaid_credit < 0) {
-      ERROR("Failed to fetch credit from accounting module\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-    if (prepaid_credit == 0) {
-      throw AmSession::Exception(402,"Insufficient Credit");
-    }
-  }
-
 #undef REPLACE_VALS
 
   DBG("SBC: connecting to '%s'\n",ruri.c_str());
   DBG("     From:  '%s'\n",from.c_str());
   DBG("     To:  '%s'\n",to.c_str());
   connectCallee(to, ruri, true);
-}
-
-bool SBCDialog::getPrepaidInterface() {
-  if (call_profile.prepaid_accmodule.empty()) {
-    ERROR("using prepaid but empty prepaid_accmodule!\n");
-    return false;
-  }
-  AmDynInvokeFactory* pp_fact =
-    AmPlugIn::instance()->getFactory4Di(call_profile.prepaid_accmodule);
-  if (NULL == pp_fact) {
-    ERROR("prepaid_accmodule '%s' not loaded\n",
-	  call_profile.prepaid_accmodule.c_str());
-    return false;
-  }
-  prepaid_acc = pp_fact->getInstance();
-  if(NULL == prepaid_acc) {
-    ERROR("could not get a prepaid acc reference\n");
-    return false;
-  }
-  return true;
 }
 
 bool SBCDialog::getCCInterfaces() {
@@ -877,13 +817,8 @@ void SBCDialog::process(AmEvent* ev)
   AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(ev);
   if(plugin_event && plugin_event->name == "timer_timeout") {
     int timer_id = plugin_event->data.get(0).asInt();
-    if (timer_id == SBC_TIMER_ID_PREPAID_TIMEOUT) {
-      DBG("timer timeout, no more credit\n");
-      stopCall();
-      ev->processed = true;
-      return;
-    } else if (timer_id >= SBC_TIMER_ID_CALL_TIMERS_START &&
-	       timer_id <= SBC_TIMER_ID_CALL_TIMERS_END) {
+    if (timer_id >= SBC_TIMER_ID_CALL_TIMERS_START &&
+	timer_id <= SBC_TIMER_ID_CALL_TIMERS_END) {
       DBG("timer %d timeout, stopping call\n", timer_id);
       stopCall();
       ev->processed = true;
@@ -1049,22 +984,19 @@ void SBCDialog::onCallConnected(const AmSipReply& reply) {
   if (!startCallTimer())
     return;
 
-  if (call_profile.cc_interfaces.size() || call_profile.prepaid_enabled) {
-    gettimeofday(&prepaid_acc_start, NULL);
+  if (call_profile.cc_interfaces.size()) {
+    gettimeofday(&call_connect_ts, NULL);
   }
-
-  startPrepaidAccounting();
 
   CCConnect(reply);
 }
 
 void SBCDialog::onCallStopped() {
-  if (call_profile.cc_interfaces.size() || call_profile.prepaid_enabled) {
-    gettimeofday(&prepaid_acc_end, NULL);
+  if (call_profile.cc_interfaces.size()) {
+    gettimeofday(&call_end_ts, NULL);
   }
 
   if (m_state == BB_Connected) {
-    stopPrepaidAccounting();
     stopCallTimer();
   }
 
@@ -1121,7 +1053,7 @@ void SBCDialog::stopCall() {
 
 /** @return whether successful */
 bool SBCDialog::startCallTimer() {
-  if (call_profile.prepaid_enabled && (!AmSession::timersSupported())) {
+  if (call_timers.size() && (!AmSession::timersSupported())) {
     ERROR("internal implementation error: timers not supported\n");
     stopCall();
     return false;
@@ -1144,68 +1076,6 @@ void SBCDialog::stopCallTimer() {
   }
 }
 
-void SBCDialog::startPrepaidAccounting() {
-  if (!call_profile.prepaid_enabled)
-    return;
-
-  if (NULL == prepaid_acc) {
-    ERROR("Internal error, trying to use prepaid, but no prepaid_acc\n");
-    terminateOtherLeg();
-    terminateLeg();
-    return;
-  }
-
-  DBG("SBC: starting prepaid timer of %d seconds\n", prepaid_credit);
-  {
-    setTimer(SBC_TIMER_ID_PREPAID_TIMEOUT, prepaid_credit);
-  }
-
-  {
-    AmArg di_args,ret;
-    di_args.push(call_profile.prepaid_uuid);     // prepaid_uuid
-    di_args.push(call_profile.prepaid_acc_dest); // accounting destination
-    di_args.push((int)prepaid_starttime.tv_sec); // call start time (INVITE)
-    di_args.push((int)prepaid_acc_start.tv_sec); // call connect time
-    di_args.push(getCallID());                   // Call-ID
-    di_args.push(getLocalTag());                 // ltag
-    di_args.push(other_id);                      // other leg ltag
-
-    prepaid_acc->invoke("connectCall", di_args, ret);
-  }
-}
-
-void SBCDialog::stopPrepaidAccounting() {
-  if (!call_profile.prepaid_enabled)
-    return;
-
-  if(prepaid_acc_start.tv_sec != 0 || prepaid_acc_start.tv_usec != 0) {
-
-    if (NULL == prepaid_acc) {
-      ERROR("Internal error, trying to subtractCredit, but no prepaid_acc\n");
-      return;
-    }
-
-    struct timeval diff;
-    timersub(&prepaid_acc_end, &prepaid_acc_start, &diff);
-    if(diff.tv_usec > 500000)
-      diff.tv_sec++;
-    DBG("Call lasted %ld seconds\n", diff.tv_sec);
-
-    AmArg di_args,ret;
-    di_args.push(call_profile.prepaid_uuid);     // prepaid_uuid
-    di_args.push((int)diff.tv_sec);              // call duration
-    di_args.push(call_profile.prepaid_acc_dest); // accounting destination
-    di_args.push((int)prepaid_starttime.tv_sec); // call start time (INVITE)
-    di_args.push((int)prepaid_acc_start.tv_sec); // call connect time
-    di_args.push((int)prepaid_acc_end.tv_sec);   // call end time
-    di_args.push(getCallID());                   // Call-ID
-    di_args.push(getLocalTag());                 // ltag
-    di_args.push(other_id);                      // 2nd leg ltag
-
-    prepaid_acc->invoke("subtractCredit", di_args, ret);
-  }
-}
-
 bool SBCDialog::CCStart(const AmSipRequest& req) {
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
@@ -1217,8 +1087,8 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
     di_args.push(getLocalTag());
     di_args.push((ArgObject*)&call_profile);
     di_args.push(AmArg());
-    di_args.back().push((int)prepaid_starttime.tv_sec);
-    di_args.back().push((int)prepaid_starttime.tv_usec);
+    di_args.back().push((int)call_start_ts.tv_sec);
+    di_args.back().push((int)call_start_ts.tv_usec);
     for (int i=0;i<4;i++)
       di_args.back().push((int)0);
 
@@ -1321,10 +1191,10 @@ void SBCDialog::CCConnect(const AmSipReply& reply) {
     di_args.push(getLocalTag());                 // call ltag
     di_args.push((ArgObject*)&call_profile);     // call profile
     di_args.push(AmArg());                       // timestamps
-    di_args.back().push((int)prepaid_starttime.tv_sec);
-    di_args.back().push((int)prepaid_starttime.tv_usec);
-    di_args.back().push((int)prepaid_acc_start.tv_sec);
-    di_args.back().push((int)prepaid_acc_start.tv_usec);
+    di_args.back().push((int)call_start_ts.tv_sec);
+    di_args.back().push((int)call_start_ts.tv_usec);
+    di_args.back().push((int)call_connect_ts.tv_sec);
+    di_args.back().push((int)call_connect_ts.tv_usec);
     for (int i=0;i<2;i++)
       di_args.back().push((int)0);
     di_args.push(other_id);                      // other leg ltag
@@ -1346,12 +1216,12 @@ void SBCDialog::CCEnd() {
     di_args.push(getLocalTag());                 // call ltag
     di_args.push((ArgObject*)&call_profile);
     di_args.push(AmArg());                       // timestamps
-    di_args.back().push((int)prepaid_starttime.tv_sec);
-    di_args.back().push((int)prepaid_starttime.tv_usec);
-    di_args.back().push((int)prepaid_acc_start.tv_sec);
-    di_args.back().push((int)prepaid_acc_start.tv_usec);
-    di_args.back().push((int)prepaid_acc_end.tv_sec);
-    di_args.back().push((int)prepaid_acc_end.tv_usec);
+    di_args.back().push((int)call_start_ts.tv_sec);
+    di_args.back().push((int)call_start_ts.tv_usec);
+    di_args.back().push((int)call_connect_ts.tv_sec);
+    di_args.back().push((int)call_connect_ts.tv_usec);
+    di_args.back().push((int)call_end_ts.tv_sec);
+    di_args.back().push((int)call_end_ts.tv_usec);
     (*cc_mod)->invoke("end", di_args, ret);
 
     cc_mod++;

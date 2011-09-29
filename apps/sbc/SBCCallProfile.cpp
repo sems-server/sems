@@ -157,20 +157,6 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   auth_aleg_credentials.user = cfg.getParameter("auth_aleg_user");
   auth_aleg_credentials.pwd = cfg.getParameter("auth_aleg_pwd");
 
-  prepaid_enabled = cfg.getParameter("enable_prepaid", "no") == "yes";
-  prepaid_accmodule = cfg.getParameter("prepaid_accmodule");
-  prepaid_uuid = cfg.getParameter("prepaid_uuid");
-  prepaid_acc_dest = cfg.getParameter("prepaid_acc_dest");
-
-  // check for acc module if configured statically
-  if (prepaid_enabled &&
-      (prepaid_accmodule.find('$') == string::npos) &&
-      (NULL == AmPlugIn::instance()->getFactory4Di(prepaid_accmodule))) {
-    ERROR("prepaid accounting module '%s' used in call profile "
-	  "'%s' is not loaded\n", prepaid_accmodule.c_str(), name.c_str());
-    return false;
-  }
-
   if (!cfg.getParameter("call_control").empty()) {
     vector<string> cc_sections = explode(cfg.getParameter("call_control"), ",");
     for (vector<string>::iterator it =
@@ -356,13 +342,6 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
     INFO("SBC:      SIP auth for A leg %sabled\n", auth_aleg_enabled?"en":"dis");
 
-    INFO("SBC:      prepaid %sabled\n", prepaid_enabled?"en":"dis");
-    if (prepaid_enabled) {
-      INFO("SBC:                    acc_module = '%s'\n", prepaid_accmodule.c_str());
-      INFO("SBC:                    uuid       = '%s'\n", prepaid_uuid.c_str());
-      INFO("SBC:                    acc_dest   = '%s'\n", prepaid_acc_dest.c_str());
-    }
-
     if (cc_interfaces.size()) {
       string cc_if_names;
       for (  vector<CCInterface>::iterator it =
@@ -412,7 +391,6 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     sst_aleg_enabled == rhs.sst_aleg_enabled &&
     auth_enabled == rhs.auth_enabled &&
     auth_aleg_enabled == rhs.auth_aleg_enabled &&
-    prepaid_enabled == rhs.prepaid_enabled &&
     reply_translations == rhs.reply_translations &&
     append_headers == rhs.append_headers &&
     refuse_with == rhs.refuse_with &&
@@ -435,13 +413,6 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
       auth_aleg_credentials.user == rhs.auth_aleg_credentials.user &&
       auth_aleg_credentials.pwd == rhs.auth_aleg_credentials.pwd;
   }
-  if (prepaid_enabled) {
-    res = res &&
-      prepaid_accmodule == rhs.prepaid_accmodule &&
-      prepaid_uuid == rhs.prepaid_uuid &&
-      prepaid_acc_dest == rhs.prepaid_acc_dest;
-  }
-
   return res;
 }
 
@@ -481,10 +452,6 @@ string SBCCallProfile::print() const {
   res += "auth_aleg_enabled:    " + string(auth_aleg_enabled?"true":"false") + "\n";
   res += "auth_aleg_user:       " + auth_aleg_credentials.user+"\n";
   res += "auth_aleg_pwd:        " + auth_aleg_credentials.pwd+"\n";
-  res += "prepaid_enabled:      " + string(prepaid_enabled?"true":"false") + "\n";
-  res += "prepaid_accmodule:    " + prepaid_accmodule + "\n";
-  res += "prepaid_uuid:         " + prepaid_uuid + "\n";
-  res += "prepaid_acc_dest:     " + prepaid_acc_dest + "\n";
   res += "rtprelay_enabled:     " + string(rtprelay_enabled?"true":"false") + "\n";
   res += "force_symmetric_rtp:  " + force_symmetric_rtp;
   res += "msgflags_symmetric_rtp: " + string(msgflags_symmetric_rtp?"true":"false") + "\n";
@@ -498,7 +465,7 @@ string SBCCallProfile::print() const {
 	int2str(it->second.first)+" " + it->second.second+", ";
     reply_trans_codes.erase(reply_trans_codes.length()-2);
 
-    res += "prepaid_acc_dest:     " + reply_trans_codes +"\n";
+    res += "reply_trans_codes:     " + reply_trans_codes +"\n";
   }
   res += "append_headers:     " + append_headers + "\n";
   res += "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
