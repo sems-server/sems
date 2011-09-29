@@ -73,26 +73,27 @@ void CCParallelCalls::invoke(const string& method, const AmArg& args, AmArg& ret
 
     if(method == "start"){
 
-      // ltag, call profile, start_ts_sec, start_ts_usec, [[key: val], ...], timer_id
-      args.assertArrayFmt("soiiui");
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+      // ltag, call profile, timestamps, [[key: val], ...], timer_id
+      args.assertArrayFmt("soaui");
+      SBCCallProfile* call_profile =
+	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-      start(args[0].asCStr(), call_profile, args[2].asInt(), args[3].asInt(), args[4],
-	    args[5].asInt(),  ret);
+      start(args[CC_API_PARAMS_LTAG].asCStr(), call_profile,
+	    args[CC_API_PARAMS_CFGVALUES], ret);
 
     } else if(method == "connect"){
-      // ltag, call_profile, other_ltag, connect_ts_sec, connect_ts_usec
-      args.assertArrayFmt("sosii");
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+      // no action
 
-      connect(args.get(0).asCStr(), call_profile, args.get(2).asCStr(),
-	      args.get(3).asInt(), args.get(4).asInt());
     } else if(method == "end"){
-      // ltag, call_profile, end_ts_sec, end_ts_usec
-      args.assertArrayFmt("soii"); 
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
 
-      end(args.get(0).asCStr(), call_profile, args.get(2).asInt(), args.get(3).asInt());
+      // ltag, call_profile, end_ts_sec, end_ts_usec
+      args.assertArrayFmt("soa"); 
+      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
+      SBCCallProfile* call_profile =
+	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
+
+      end(args[CC_API_PARAMS_LTAG].asCStr(), call_profile);
+
     } else if(method == CC_INTERFACE_MAND_VALUES_METHOD){
       ret.push("uuid");
     } else if(method == "_list"){
@@ -105,8 +106,7 @@ void CCParallelCalls::invoke(const string& method, const AmArg& args, AmArg& ret
 }
 
 void CCParallelCalls::start(const string& ltag, SBCCallProfile* call_profile,
-			    int start_ts_sec, int start_ts_usec,
-			    const AmArg& values, int timer_id, AmArg& res) {
+			    const AmArg& values, AmArg& res) {
   if (!call_profile) return;
 
   if (!values.hasMember("uuid") || !isArgCStr(values["uuid"]) ||
@@ -171,14 +171,7 @@ void CCParallelCalls::start(const string& ltag, SBCCallProfile* call_profile,
 
 }
 
-void CCParallelCalls::connect(const string& ltag, SBCCallProfile* call_profile,
-			      const string& other_tag,
-			      int connect_ts_sec, int connect_ts_usec) {
-  if (!call_profile) return;
-}
-
-void CCParallelCalls::end(const string& ltag, SBCCallProfile* call_profile,
-			  int end_ts_sec, int end_ts_usec) {
+void CCParallelCalls::end(const string& ltag, SBCCallProfile* call_profile) {
   if (!call_profile) return;
 
   SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(SBCVAR_PARALLEL_CALLS_UUID);

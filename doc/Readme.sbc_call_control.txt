@@ -62,13 +62,15 @@ If the call profile is to be modified, SBCCallProfile.h should be included.
 The CC modules must implement a DI API, which must implement at least the functions "start",
 "connect", "end".
 
+
   function: start
   Parameters: string                  ltag             local tag (ID) of the call (A leg)
               SBCCallProfile Object   call_profile     used call profile instance
-              int                     start_ts_sec     start TS (seconds since epoch)
-              int                     start_ts_usec    start TS usec
-              ValueStruct             values           configured values (struct of key:string value)
-              int                     timer_id         ID of first timer if set with timer action
+              Array of int            timestamps       start/connect/end timestamp
+              ValueStruct             values           configured values
+                                                       (struct of key:string value)
+              int                     timer_id         ID of first timer if set with timer
+                                                       action
    
   Return values
               Array of actions:
@@ -83,8 +85,32 @@ The CC modules must implement a DI API, which must implement at least the functi
                   Parameters: int    code
                               string reason
 
-               SBC_CC_SET_CALL_TIMER_ACTION             set a timer; the id of the first timer will be timer_id
+               SBC_CC_SET_CALL_TIMER_ACTION             set a timer; the id of the first
+                                                        timer will be timer_id
                   Parameters: int    timeout
+
+  function: connect
+  Parameters: string                  ltag             local tag (ID) of the call (A leg)
+              SBCCallProfile Object   call_profile     used call profile instance
+              Array of int            timestamps       start/connect/end timestamp
+              string                  other ltag       local tag (ID) of B leg
+
+
+  function: end
+  Parameters: string                  ltag             local tag (ID) of the call (A leg)
+              SBCCallProfile Object   call_profile     used call profile instance
+              Array of int            timestamps       start/connect/end timestamp
+
+
+  timestamps Array of int
+  -----------------------
+       0           CC_API_TS_START_SEC                start TS sec (seconds since epoch)
+       1           CC_API_TS_START_USEC               start TS usec
+       2           CC_API_TS_CONNECT_SEC              connect TS sec (seconds since epoch)
+       3           CC_API_TS_CONNECT_USEC             connect TS usec
+       4           CC_API_TS_END_SEC                  end TS sec (seconds since epoch)
+       5           CC_API_TS_END_USEC                 end TS usec
+
  
 Storing call related information
 --------------------------------

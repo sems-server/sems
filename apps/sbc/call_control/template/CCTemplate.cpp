@@ -53,7 +53,7 @@ public:
     }
 };
 
-EXPORT_PLUGIN_CLASS_FACTORY(CCTemplateFactory,"cc_template");
+EXPORT_PLUGIN_CLASS_FACTORY(CCTemplateFactory, MOD_NAME);
 
 CCTemplate* CCTemplate::_instance=0;
 
@@ -95,44 +95,67 @@ void CCTemplate::invoke(const string& method, const AmArg& args, AmArg& ret)
 
       // INFO("--------------------------------------------------------------\n");
       // INFO("Got call control start ltag '%s' start_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args.get(2).asInt(), args.get(3).asInt());
+      // 	   args.get(0).asCStr(), args[2][0].asInt(), args[2][1].asInt());
       // INFO("---- dumping CC values ----\n");
       // for (AmArg::ValueStruct::const_iterator it =
-      // 	     args.get(4).begin(); it != args.get(4).end(); it++) {
+      // 	     args.get(CC_API_PARAMS_CFGVALUES).begin();
+      //               it != args.get(CC_API_PARAMS_CFGVALUES).end(); it++) {
       // 	INFO("    CDR value '%s' = '%s'\n", it->first.c_str(), it->second.asCStr());
       // }
       // INFO("--------------------------------------------------------------\n");
 
-      // ltag, call profile, start_ts_sec, start_ts_usec, [[key: val], ...], timer_id
-      args.assertArrayFmt("soiiui");
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+      // ltag, call profile, timestamps, [[key: val], ...], timer_id
+      args.assertArrayFmt("soaui");
+      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
+      SBCCallProfile* call_profile =
+	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-      start(args[0].asCStr(), call_profile, args[2].asInt(), args[3].asInt(), args[4],
-	    args[5].asInt(),  ret);
+      start(args[CC_API_PARAMS_LTAG].asCStr(),
+	    call_profile,
+	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_SEC].asInt(),
+	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_USEC].asInt(),
+	    args[CC_API_PARAMS_CFGVALUES],
+	    args[CC_API_PARAMS_TIMERID].asInt(),  ret);
 
     } else if(method == "connect"){
       // INFO("--------------------------------------------------------------\n");
       // INFO("Got CDR connect ltag '%s' other_ltag '%s', connect_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args.get(2).asCStr(), args.get(3).asInt(),
-      // 	   args.get(4).asInt());
+      // 	   args[CC_API_PARAMS_LTAG].asCStr(),
+      //           args[CC_API_PARAMS_OTHERID].asCStr(),
+      //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
+      //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt());
       // INFO("--------------------------------------------------------------\n");
       // ltag, call_profile, other_ltag, connect_ts_sec, connect_ts_usec
-      args.assertArrayFmt("sosii");
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+      args.assertArrayFmt("soas");
+      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
+      SBCCallProfile* call_profile =
+	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-      connect(args.get(0).asCStr(), call_profile, args.get(2).asCStr(),
-	      args.get(3).asInt(), args.get(4).asInt());
+      connect(args[CC_API_PARAMS_LTAG].asCStr(),
+	      call_profile,
+	      args[CC_API_PARAMS_OTHERID].asCStr(),
+	      args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
+	      args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt());
+
     } else if(method == "end"){
       // INFO("--------------------------------------------------------------\n");
       // INFO("Got CDR end ltag %s end_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args.get(2).Int(), args.get(3).asInt());
+      // 	   args[CC_API_PARAMS_LTAG].asCStr(),
+      //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
+      //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt());
       // INFO("--------------------------------------------------------------\n");
 
       // ltag, call_profile, end_ts_sec, end_ts_usec
-      args.assertArrayFmt("soii"); 
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+      args.assertArrayFmt("soa"); 
+      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
+      SBCCallProfile* call_profile =
+	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-      end(args.get(0).asCStr(), call_profile, args.get(2).asInt(), args.get(3).asInt());
+      end(args[CC_API_PARAMS_LTAG].asCStr(),
+	      call_profile,
+	      args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
+	      args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt()
+	      );
     } else if(method == "_list"){
       ret.push("start");
       ret.push("connect");

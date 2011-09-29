@@ -1285,15 +1285,20 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
     AmArg di_args,ret;
     di_args.push(getLocalTag());
     di_args.push((ArgObject*)&call_profile);
-    di_args.push((int)prepaid_starttime.tv_sec);
-    di_args.push((int)prepaid_starttime.tv_usec);
     di_args.push(AmArg());
-    AmArg& vals = di_args.get(4);
+    di_args.back().push((int)prepaid_starttime.tv_sec);
+    di_args.back().push((int)prepaid_starttime.tv_usec);
+    for (int i=0;i<4;i++)
+      di_args.back().push((int)0);
+
+    di_args.push(AmArg());
+    AmArg& vals = di_args.back();
     vals.assertStruct();
     for (map<string, string>::iterator it = cc_if.cc_values.begin();
 	 it != cc_if.cc_values.end(); it++) {
       vals[it->first] = it->second;
     }
+
     di_args.push(cc_timer_id); // current timer ID
 
     (*cc_mod)->invoke("start", di_args, ret);
@@ -1383,10 +1388,16 @@ void SBCDialog::CCConnect(const AmSipReply& reply) {
 
     AmArg di_args,ret;
     di_args.push(getLocalTag());                 // call ltag
-    di_args.push((ArgObject*)&call_profile);
+    di_args.push((ArgObject*)&call_profile);     // call profile
+    di_args.push(AmArg());                       // timestamps
+    di_args.back().push((int)prepaid_starttime.tv_sec);
+    di_args.back().push((int)prepaid_starttime.tv_usec);
+    di_args.back().push((int)prepaid_acc_start.tv_sec);
+    di_args.back().push((int)prepaid_acc_start.tv_usec);
+    for (int i=0;i<2;i++)
+      di_args.back().push((int)0);
     di_args.push(other_id);                      // other leg ltag
-    di_args.push((int)prepaid_acc_start.tv_sec);
-    di_args.push((int)prepaid_acc_start.tv_usec);
+
     (*cc_mod)->invoke("connect", di_args, ret);
 
     cc_mod++;
@@ -1403,8 +1414,13 @@ void SBCDialog::CCEnd() {
     AmArg di_args,ret;
     di_args.push(getLocalTag());                 // call ltag
     di_args.push((ArgObject*)&call_profile);
-    di_args.push((int)prepaid_acc_end.tv_sec);
-    di_args.push((int)prepaid_acc_end.tv_usec);
+    di_args.push(AmArg());                       // timestamps
+    di_args.back().push((int)prepaid_starttime.tv_sec);
+    di_args.back().push((int)prepaid_starttime.tv_usec);
+    di_args.back().push((int)prepaid_acc_start.tv_sec);
+    di_args.back().push((int)prepaid_acc_start.tv_usec);
+    di_args.back().push((int)prepaid_acc_end.tv_sec);
+    di_args.back().push((int)prepaid_acc_end.tv_usec);
     (*cc_mod)->invoke("end", di_args, ret);
 
     cc_mod++;

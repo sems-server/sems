@@ -106,26 +106,32 @@ void SyslogCDR::invoke(const string& method, const AmArg& args, AmArg& ret)
 
     if(method == "start"){
 
-      // ltag, call profile, start_ts_sec, start_ts_usec, [[key: val], ...], timer_id
-      args.assertArrayFmt("soiiui");
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+      // ltag, call profile, timestamps, [[key: val], ...], timer_id
+      args.assertArrayFmt("soaui");
+      SBCCallProfile* call_profile =
+	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-      start(args[0].asCStr(), call_profile, args[2].asInt(), args[3].asInt(), args[4],
-	    args[5].asInt(),  ret);
+      start(args[CC_API_PARAMS_LTAG].asCStr(),
+	    call_profile, args[CC_API_PARAMS_CFGVALUES]);
 
     } else if(method == "connect"){
-      // ltag, call_profile, other_ltag, connect_ts_sec, connect_ts_usec
-      args.assertArrayFmt("sosii");
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
-
-      connect(args.get(0).asCStr(), call_profile, args.get(2).asCStr(),
-	      args.get(3).asInt(), args.get(4).asInt());
+      // no action needed
     } else if(method == "end"){
-      // ltag, call_profile, end_ts_sec, end_ts_usec
-      args.assertArrayFmt("soii"); 
-      SBCCallProfile* call_profile = dynamic_cast<SBCCallProfile*>(args[1].asObject());
+      // ltag, call_profile, timestamps
+      args.assertArrayFmt("soa");
+      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
+      SBCCallProfile* call_profile =
+	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-      end(args.get(0).asCStr(), call_profile, args.get(2).asInt(), args.get(3).asInt());
+      end(args[CC_API_PARAMS_LTAG].asCStr(),
+	  call_profile,
+	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_SEC].asInt(),
+	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_USEC].asInt(),
+	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
+	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt(),
+	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
+	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt()
+	  );
     } else if(method == CC_INTERFACE_MAND_VALUES_METHOD){
       // ret.push("Call-ID");
       // ret.push("From-tag");
@@ -149,68 +155,19 @@ string timeString(time_t tv_sec) {
 }
 
 void SyslogCDR::start(const string& ltag, SBCCallProfile* call_profile,
-		      int start_ts_sec, int start_ts_usec,
-		      const AmArg& values, int timer_id, AmArg& res) {
+		      const AmArg& values) {
   if (!call_profile) return;
-  /*
-// #define CHECK_PARAMETER(pname)						\
-//   if (!values.hasMember(pname) || !isArgCStr(values[pname]) ||		\
-//       !strlen(values[pname].asCStr())) {				\
-//     ERROR("configuration error: " pname " missing for SyslogCDR call control!\n"); \
-//     res.push(AmArg());							\
-//     AmArg& res_cmd = res[0];						\
-//     res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;			\
-//     res_cmd[SBC_CC_REFUSE_CODE] = 500;					\
-//     res_cmd[SBC_CC_REFUSE_REASON] = SIP_REPLY_SERVER_INTERNAL_ERROR;	\
-//     return;								\
-//   }
-//   CHECK_PARAMETER("Call-ID");
-//   CHECK_PARAMETER("From-tag");
-// #undef CHECK_PARAMETER
-*/
 
-  call_profile->cc_vars["cdr::t::start"] = start_ts_sec;
-  call_profile->cc_vars["cdr::t::start_us"] = start_ts_usec;
   call_profile->cc_vars["cdr::v"] = values;
 }
 
-
-void SyslogCDR::connect(const string& ltag, SBCCallProfile* call_profile,
-			const string& other_tag,
-			int connect_ts_sec, int connect_ts_usec) {
-  if (!call_profile) return;
-
-  call_profile->cc_vars["cdr::t::connect"] = connect_ts_sec;
-  call_profile->cc_vars["cdr::t::connect_us"] = connect_ts_usec;
-}
-
-
 void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
+		    int start_ts_sec, int start_ts_usec,
+		    int connect_ts_sec, int connect_ts_usec,
 		    int end_ts_sec, int end_ts_usec) {
   if (!call_profile) return;
 
-  int start_ts_sec=0, start_ts_usec=0, connect_ts_sec=0, connect_ts_usec=0;
-
   static const int log2syslog_level[] = { LOG_ERR, LOG_WARNING, LOG_INFO, LOG_DEBUG };
-
-  // for (SBCVarMapIteratorT vars_it = call_profile->cc_vars.begin(); vars_it != call_profile->cc_vars.end(); vars_it++) {
-  //   ERROR ("cc_vars '%s' = '%s'\n", vars_it->first.c_str(), AmArg::print(vars_it->second).c_str());
-  // }
-
-
-#define GET_INT_VAR(vname, vdst)					\
-  {									\
-    SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(vname);	\
-    if (vars_it != call_profile->cc_vars.end() && isArgInt(vars_it->second)) { \
-      vdst = vars_it->second.asInt();					\
-    }									\
-  }
-
-  GET_INT_VAR("cdr::t::start", start_ts_sec);
-  GET_INT_VAR("cdr::t::start_us", start_ts_usec);
-  GET_INT_VAR("cdr::t::connect", connect_ts_sec);
-  GET_INT_VAR("cdr::t::connect_us", connect_ts_usec);
-#undef GET_INT_VAR
 
   struct timeval start;
   start.tv_sec = connect_ts_sec;
