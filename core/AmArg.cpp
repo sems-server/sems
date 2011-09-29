@@ -230,8 +230,24 @@ const size_t AmArg::size() const {
   throw TypeMismatchException();
 }
 
-AmArg& AmArg::get(size_t idx) {
+AmArg& AmArg::back() {
   assertArray();  
+  if (!v_array->size())
+    throw OutOfBoundsException();
+
+  return (*v_array)[v_array->size()-1];
+}
+
+AmArg& AmArg::back() const {
+  assertArray();
+  if (!v_array->size())
+    throw OutOfBoundsException();
+
+  return (*v_array)[v_array->size()-1];
+}
+
+AmArg& AmArg::get(size_t idx) {
+  assertArray();
   if (idx >= v_array->size())
     throw OutOfBoundsException();
     
@@ -239,7 +255,7 @@ AmArg& AmArg::get(size_t idx) {
 }
 
 AmArg& AmArg::get(size_t idx) const {
-  assertArray();  
+  assertArray();
   if (idx >= v_array->size())
     throw OutOfBoundsException();
     

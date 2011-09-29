@@ -285,6 +285,12 @@ class AmArg
   /** throws OutOfBoundsException if array too small */
   AmArg& get(size_t idx) const;
 
+  /** throws OutOfBoundsException if array too small */
+  AmArg& back();
+
+  /** throws OutOfBoundsException if array too small */
+  AmArg& back() const;
+
   /** resizes array if too small */
   AmArg& operator[](size_t idx);
   /** throws OutOfBoundsException if array too small */
