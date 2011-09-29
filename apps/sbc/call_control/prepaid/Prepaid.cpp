@@ -74,7 +74,7 @@ Prepaid::Prepaid()
 Prepaid::~Prepaid() { }
 
 int Prepaid::onLoad() {
-  AmConfigReader cfg;
+  // AmConfigReader cfg;
 
   // if(cfg.loadFile(AmConfig::ModConfigPath + string(MOD_NAME ".conf"))) {
   //   INFO(MOD_NAME "configuration  file (%s) not found, "
