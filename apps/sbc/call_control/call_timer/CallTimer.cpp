@@ -144,6 +144,15 @@ void CallTimer::start(const AmArg& values, int timer_id, AmArg& res) {
   }
   DBG("got timer value '%i'\n", timer);
 
+  if (timer==0) {
+    res.push(AmArg());
+    AmArg& res_cmd = res.back();
+    res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
+    res_cmd[SBC_CC_REFUSE_CODE] = 503;
+    res_cmd[SBC_CC_REFUSE_REASON] = "Service Unavailable";
+    return;
+  }
+
   if (timer<0) {
     ERROR("configuration error: timer missing for call timer call control!\n");
     res.push(AmArg());
