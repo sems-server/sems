@@ -33,7 +33,7 @@
 
 #include <string.h>
 
-#define SBCVAR_PARALLEL_CALLS_UUID "pcalls_uuid"
+#define SBCVAR_PARALLEL_CALLS_UUID "pcalls::uuid"
 
 unsigned int CCParallelCalls::refuse_code = 402;
 string CCParallelCalls::refuse_reason = "Too Many Simultaneous Calls";
