@@ -100,10 +100,6 @@ struct SBCCallProfile
 
   SBCVarMapT cc_vars;
 
-  bool cdr_enabled;
-  string cdr_module;
-  map<string, string> cdr_values;
-
   map<unsigned int, std::pair<unsigned int, string> > reply_translations;
 
   string append_headers;

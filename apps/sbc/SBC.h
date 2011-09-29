@@ -119,9 +119,6 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
 
   int prepaid_credit;
 
-  // cdr
-  AmDynInvoke* cdr_module;
-
   // call control
   vector<AmDynInvoke*> cc_modules;
   // current timer ID - cc module setting timer will use this
@@ -144,7 +141,7 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   /** handler called when no ACK received */
   void onNoAck(unsigned int cseq);
 
-  /** stop call (both legs, CDR, prepaid etc) */
+  /** stop call (both legs, CC, prepaid etc) */
   void stopCall();
 
   /* set call timer (if enabled) */
@@ -158,15 +155,6 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   void startPrepaidAccounting();
   /* stop prepaid accounting (account) */
   void stopPrepaidAccounting();
-
-  /** initialize CDR module interface @return sucess or not*/
-  bool getCDRInterface();
-  /** create a CDR (start it) */
-  void CDRStart();
-  /** record connection of second leg in CDR */
-  void CDRConnect();
-  /** end CDR */
-  void CDREnd();
 
   /** initialize call control module interfaces @return sucess or not*/
   bool getCCInterfaces();
