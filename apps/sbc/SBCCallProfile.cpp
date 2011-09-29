@@ -157,9 +157,6 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   auth_aleg_credentials.user = cfg.getParameter("auth_aleg_user");
   auth_aleg_credentials.pwd = cfg.getParameter("auth_aleg_pwd");
 
-  call_timer_enabled = cfg.getParameter("enable_call_timer", "no") == "yes";
-  call_timer = cfg.getParameter("call_timer");
-
   prepaid_enabled = cfg.getParameter("enable_prepaid", "no") == "yes";
   prepaid_accmodule = cfg.getParameter("prepaid_accmodule");
   prepaid_uuid = cfg.getParameter("prepaid_uuid");
@@ -380,10 +377,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
     INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
     INFO("SBC:      SIP auth for A leg %sabled\n", auth_aleg_enabled?"en":"dis");
-    INFO("SBC:      call timer %sabled\n", call_timer_enabled?"en":"dis");
-    if (call_timer_enabled) {
-      INFO("SBC:                  %s seconds\n", call_timer.c_str());
-    }
+
     INFO("SBC:      prepaid %sabled\n", prepaid_enabled?"en":"dis");
     if (prepaid_enabled) {
       INFO("SBC:                    acc_module = '%s'\n", prepaid_accmodule.c_str());
@@ -455,7 +449,6 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     sst_aleg_enabled == rhs.sst_aleg_enabled &&
     auth_enabled == rhs.auth_enabled &&
     auth_aleg_enabled == rhs.auth_aleg_enabled &&
-    call_timer_enabled == rhs.call_timer_enabled &&
     prepaid_enabled == rhs.prepaid_enabled &&
     reply_translations == rhs.reply_translations &&
     append_headers == rhs.append_headers &&
@@ -478,10 +471,6 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     res = res &&
       auth_aleg_credentials.user == rhs.auth_aleg_credentials.user &&
       auth_aleg_credentials.pwd == rhs.auth_aleg_credentials.pwd;
-  }
-  if (call_timer_enabled) {
-    res = res &&
-      call_timer == rhs.call_timer;
   }
   if (prepaid_enabled) {
     res = res &&
@@ -529,8 +518,6 @@ string SBCCallProfile::print() const {
   res += "auth_aleg_enabled:    " + string(auth_aleg_enabled?"true":"false") + "\n";
   res += "auth_aleg_user:       " + auth_aleg_credentials.user+"\n";
   res += "auth_aleg_pwd:        " + auth_aleg_credentials.pwd+"\n";
-  res += "call_timer_enabled:   " + string(call_timer_enabled?"true":"false") + "\n";
-  res += "call_timer:           " + call_timer + "\n";
   res += "prepaid_enabled:      " + string(prepaid_enabled?"true":"false") + "\n";
   res += "prepaid_accmodule:    " + prepaid_accmodule + "\n";
   res += "prepaid_uuid:         " + prepaid_uuid + "\n";

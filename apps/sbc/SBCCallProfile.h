@@ -91,9 +91,6 @@ struct SBCCallProfile
   bool auth_aleg_enabled;
   UACAuthCred auth_aleg_credentials;
 
-  bool call_timer_enabled;
-  string call_timer;
-
   bool prepaid_enabled;
   string prepaid_accmodule;
   string prepaid_uuid;
@@ -127,7 +124,6 @@ struct SBCCallProfile
     sdpfilter_enabled(false),
     sdpfilter(Transparent),
     auth_enabled(false),
-    call_timer_enabled(false),
     prepaid_enabled(false),
     rtprelay_enabled(false)
 

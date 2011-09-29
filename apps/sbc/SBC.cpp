@@ -782,24 +782,10 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   }
 
   // get timer
-  if (call_profile.call_timer_enabled || call_profile.prepaid_enabled) {
+  if (call_profile.prepaid_enabled) {
     if (!timersSupported()) {
       ERROR("load session_timer module for call timers\n");
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-  }
-
-  if (call_profile.call_timer_enabled) {
-    call_profile.call_timer =
-      replaceParameters(call_profile.call_timer, "call_timer", REPLACE_VALS);
-    if (str2i(call_profile.call_timer, call_timer)) {
-      ERROR("invalid call_timer value '%s'\n", call_profile.call_timer.c_str());
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    if (!call_timer) {
-      // time=0
-      throw AmSession::Exception(503, "Service Unavailable");
     }
   }
 
@@ -931,13 +917,7 @@ void SBCDialog::process(AmEvent* ev)
   AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(ev);
   if(plugin_event && plugin_event->name == "timer_timeout") {
     int timer_id = plugin_event->data.get(0).asInt();
-    if (timer_id == SBC_TIMER_ID_CALL_TIMER &&
-	getCalleeStatus() == Connected) {
-      DBG("SBC: %us call timer hit - ending call\n", call_timer);
-      stopCall();
-      ev->processed = true;
-      return;
-    } else if (timer_id == SBC_TIMER_ID_PREPAID_TIMEOUT) {
+    if (timer_id == SBC_TIMER_ID_PREPAID_TIMEOUT) {
       DBG("timer timeout, no more credit\n");
       stopCall();
       ev->processed = true;
@@ -1185,16 +1165,10 @@ void SBCDialog::stopCall() {
 
 /** @return whether successful */
 bool SBCDialog::startCallTimer() {
-  if ((call_profile.call_timer_enabled || call_profile.prepaid_enabled) &&
-      (!AmSession::timersSupported())) {
+  if (call_profile.prepaid_enabled && (!AmSession::timersSupported())) {
     ERROR("internal implementation error: timers not supported\n");
     stopCall();
     return false;
-  }
-
-  if (call_profile.call_timer_enabled) {
-    DBG("SBC: starting call timer of %u seconds\n", call_timer);
-    setTimer(SBC_TIMER_ID_CALL_TIMER, call_timer);
   }
 
   for (vector<pair<int, unsigned int> >::iterator it=
@@ -1207,9 +1181,10 @@ bool SBCDialog::startCallTimer() {
 }
 
 void SBCDialog::stopCallTimer() {
-  if (call_profile.call_timer_enabled) {
-    DBG("SBC: removing call timer\n");
-    removeTimer(SBC_TIMER_ID_CALL_TIMER);
+  for (vector<pair<int, unsigned int> >::iterator it=
+	 call_timers.begin(); it != call_timers.end(); it++) {
+    DBG("SBC: removing call timer %i\n", it->first);
+    removeTimer(it->first);
   }
 }
 

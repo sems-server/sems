@@ -41,7 +41,6 @@ using std::string;
 #define SBC_TIMER_ID_CALL_TIMERS_START   10
 #define SBC_TIMER_ID_CALL_TIMERS_END     99
 
-#define SBC_TIMER_ID_CALL_TIMER         1
 #define SBC_TIMER_ID_PREPAID_TIMEOUT    2
 
 
@@ -108,7 +107,6 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   string to;
   string callid;
 
-  unsigned int call_timer;
   vector<pair<int, unsigned int> > call_timers;
 
   int outbound_interface;
