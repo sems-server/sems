@@ -3,6 +3,23 @@
 
 #define CC_INTERFACE_MAND_VALUES_METHOD "getMandatoryValues"
 
+
+#define CC_API_PARAMS_LTAG              0
+#define CC_API_PARAMS_CALL_PROFILE      1
+#define CC_API_PARAMS_TIMESTAMPS        2
+
+#define CC_API_PARAMS_CFGVALUES         3
+#define CC_API_PARAMS_TIMERID           4
+
+#define CC_API_PARAMS_OTHERID           3
+
+#define CC_API_TS_START_SEC             0
+#define CC_API_TS_START_USEC            1
+#define CC_API_TS_CONNECT_SEC           2
+#define CC_API_TS_CONNECT_USEC          3
+#define CC_API_TS_END_SEC               4
+#define CC_API_TS_END_USEC              5
+
 #define SBC_CC_DROP_ACTION              0
 #define SBC_CC_REFUSE_ACTION            1
 #define SBC_CC_SET_CALL_TIMER_ACTION    2
