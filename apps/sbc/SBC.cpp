@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Stefan Sayer
+ * Copyright (C) 2010-2011 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -1084,6 +1084,7 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
     CCInterface& cc_if = *cc_it;
 
     AmArg di_args,ret;
+    di_args.push(cc_if.cc_name);
     di_args.push(getLocalTag());
     di_args.push((ArgObject*)&call_profile);
     di_args.push(AmArg());
@@ -1102,7 +1103,23 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 
     di_args.push(cc_timer_id); // current timer ID
 
-    (*cc_mod)->invoke("start", di_args, ret);
+    try {
+      (*cc_mod)->invoke("start", di_args, ret);
+    } catch (const AmArg::OutOfBoundsException& e) {
+      ERROR("OutOfBoundsException executing call control interface start "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+      dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      return false;
+    } catch (const AmArg::TypeMismatchException& e) {
+      ERROR("TypeMismatchException executing call control interface start "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+      dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      return false;
+    }
 
     // evaluate ret
     if (isArgArray(ret)) {
@@ -1185,9 +1202,10 @@ void SBCDialog::CCConnect(const AmSipReply& reply) {
 
   for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
        cc_it != call_profile.cc_interfaces.end(); cc_it++) {
-    //    CCInterface& cc_if = *cc_it;
+    CCInterface& cc_if = *cc_it;
 
     AmArg di_args,ret;
+    di_args.push(cc_if.cc_name);                // cc name
     di_args.push(getLocalTag());                 // call ltag
     di_args.push((ArgObject*)&call_profile);     // call profile
     di_args.push(AmArg());                       // timestamps
@@ -1199,7 +1217,24 @@ void SBCDialog::CCConnect(const AmSipReply& reply) {
       di_args.back().push((int)0);
     di_args.push(other_id);                      // other leg ltag
 
-    (*cc_mod)->invoke("connect", di_args, ret);
+
+    try {
+      (*cc_mod)->invoke("connect", di_args, ret);
+    } catch (const AmArg::OutOfBoundsException& e) {
+      ERROR("OutOfBoundsException executing call control interface connect "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+      stopCall();
+      return;
+    } catch (const AmArg::TypeMismatchException& e) {
+      ERROR("TypeMismatchException executing call control interface connect "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+      stopCall();
+      return;
+    }
 
     cc_mod++;
   }
@@ -1210,9 +1245,10 @@ void SBCDialog::CCEnd() {
 
   for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
        cc_it != call_profile.cc_interfaces.end(); cc_it++) {
-    //    CCInterface& cc_if = *cc_it;
+    CCInterface& cc_if = *cc_it;
 
     AmArg di_args,ret;
+    di_args.push(cc_if.cc_name);
     di_args.push(getLocalTag());                 // call ltag
     di_args.push((ArgObject*)&call_profile);
     di_args.push(AmArg());                       // timestamps
@@ -1222,7 +1258,20 @@ void SBCDialog::CCEnd() {
     di_args.back().push((int)call_connect_ts.tv_usec);
     di_args.back().push((int)call_end_ts.tv_sec);
     di_args.back().push((int)call_end_ts.tv_usec);
-    (*cc_mod)->invoke("end", di_args, ret);
+
+    try {
+      (*cc_mod)->invoke("end", di_args, ret);
+    } catch (const AmArg::OutOfBoundsException& e) {
+      ERROR("OutOfBoundsException executing call control interface end "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+    } catch (const AmArg::TypeMismatchException& e) {
+      ERROR("TypeMismatchException executing call control interface end "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+    }
 
     cc_mod++;
   }

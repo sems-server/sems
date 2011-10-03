@@ -105,9 +105,6 @@ void SyslogCDR::invoke(const string& method, const AmArg& args, AmArg& ret)
   // DBG("SyslogCDR: %s(%s)\n", method.c_str(), AmArg::print(args).c_str());
 
     if(method == "start"){
-
-      // ltag, call profile, timestamps, [[key: val], ...], timer_id
-      args.assertArrayFmt("soaui");
       SBCCallProfile* call_profile =
 	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
@@ -117,9 +114,6 @@ void SyslogCDR::invoke(const string& method, const AmArg& args, AmArg& ret)
     } else if(method == "connect"){
       // no action needed
     } else if(method == "end"){
-      // ltag, call_profile, timestamps
-      args.assertArrayFmt("soa");
-      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
       SBCCallProfile* call_profile =
 	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 

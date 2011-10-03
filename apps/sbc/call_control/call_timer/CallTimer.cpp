@@ -96,38 +96,24 @@ int CallTimer::onLoad() {
 
 void CallTimer::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
-  DBG("CallTimer: %s(%s)\n", method.c_str(), AmArg::print(args).c_str());
+  // DBG("CallTimer: %s(%s)\n", method.c_str(), AmArg::print(args).c_str());
 
-    if(method == "start"){
+  if (method == "start"){
 
-      // INFO("--------------------------------------------------------------\n");
-      // INFO("Got call control start ltag '%s' start_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args[2][0].asInt(), args[2][1].asInt());
-      // INFO("---- dumping CC values ----\n");
-      // for (AmArg::ValueStruct::const_iterator it =
-      // 	     args.get(CC_API_PARAMS_CFGVALUES).begin();
-      //               it != args.get(CC_API_PARAMS_CFGVALUES).end(); it++) {
-      // 	INFO("    CDR value '%s' = '%s'\n", it->first.c_str(), it->second.asCStr());
-      // }
-      // INFO("--------------------------------------------------------------\n");
+    start(args[CC_API_PARAMS_CFGVALUES],
+	  args[CC_API_PARAMS_TIMERID].asInt(),  ret);
 
-      // ltag, call profile, timestamps, [[key: val], ...], timer_id
-      args.assertArrayFmt("soaui");
-
-      start(args[CC_API_PARAMS_CFGVALUES],
-	    args[CC_API_PARAMS_TIMERID].asInt(),  ret);
-
-    } else if(method == "connect"){
-      // unused
-    } else if(method == "end"){
-      // unused
-    } else if(method == "_list"){
-      ret.push("start");
-      ret.push("connect");
-      ret.push("end");
-    }
-    else
-	throw AmDynInvoke::NotImplemented(method);
+  } else if (method == "connect"){
+    // unused
+  } else if (method == "end"){
+    // unused
+  } else if (method == "_list"){
+    ret.push("start");
+    ret.push("connect");
+    ret.push("end");
+  }
+  else
+    throw AmDynInvoke::NotImplemented(method);
 }
 
 void CallTimer::start(const AmArg& values, int timer_id, AmArg& res) {

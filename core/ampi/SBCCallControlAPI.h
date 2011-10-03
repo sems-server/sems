@@ -4,14 +4,15 @@
 #define CC_INTERFACE_MAND_VALUES_METHOD "getMandatoryValues"
 
 
-#define CC_API_PARAMS_LTAG              0
-#define CC_API_PARAMS_CALL_PROFILE      1
-#define CC_API_PARAMS_TIMESTAMPS        2
+#define CC_API_PARAMS_CC_NAMESPACE      0
+#define CC_API_PARAMS_LTAG              1
+#define CC_API_PARAMS_CALL_PROFILE      2
+#define CC_API_PARAMS_TIMESTAMPS        3
 
-#define CC_API_PARAMS_CFGVALUES         3
-#define CC_API_PARAMS_TIMERID           4
+#define CC_API_PARAMS_CFGVALUES         4
+#define CC_API_PARAMS_TIMERID           5
 
-#define CC_API_PARAMS_OTHERID           3
+#define CC_API_PARAMS_OTHERID           4
 
 #define CC_API_TS_START_SEC             0
 #define CC_API_TS_START_USEC            1

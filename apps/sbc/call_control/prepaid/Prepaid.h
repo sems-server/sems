@@ -54,13 +54,13 @@ class Prepaid : public AmDynInvoke
   int setCredit(string pin, int amount);
 
 
-  void start(const string& ltag, SBCCallProfile* call_profile,
+  void start(const string& cc_name, const string& ltag, SBCCallProfile* call_profile,
 	     int start_ts_sec, int start_ts_usec, const AmArg& values,
 	     int timer_id, AmArg& res);
-  void connect(const string& ltag, SBCCallProfile* call_profile,
+  void connect(const string& cc_name, const string& ltag, SBCCallProfile* call_profile,
 	       const string& other_ltag,
 	       int connect_ts_sec, int connect_ts_usec);
-  void end(const string& ltag, SBCCallProfile* call_profile,
+  void end(const string& cc_name, const string& ltag, SBCCallProfile* call_profile,
 	   int start_ts_sec, int start_ts_usec,
 	   int connect_ts_sec, int connect_ts_usec,
 	   int end_ts_sec, int end_ts_usec);

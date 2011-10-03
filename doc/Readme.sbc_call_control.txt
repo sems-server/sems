@@ -64,7 +64,9 @@ The CC modules must implement a DI API, which must implement at least the functi
 
 
   function: start
-  Parameters: string                  ltag             local tag (ID) of the call (A leg)
+  Parameters: string                  cc_namespace     name of call control section
+                                                       (as configured, e.g. variable namespace to use)
+              string                  ltag             local tag (ID) of the call (A leg)
               SBCCallProfile Object   call_profile     used call profile instance
               Array of int            timestamps       start/connect/end timestamp
               ValueStruct             values           configured values
@@ -90,14 +92,18 @@ The CC modules must implement a DI API, which must implement at least the functi
                   Parameters: int    timeout
 
   function: connect
-  Parameters: string                  ltag             local tag (ID) of the call (A leg)
+  Parameters: string                  cc_namespace     name of call control section
+                                                       (as configured, e.g. variable namespace to use)
+              string                  ltag             local tag (ID) of the call (A leg)
               SBCCallProfile Object   call_profile     used call profile instance
               Array of int            timestamps       start/connect/end timestamp
               string                  other ltag       local tag (ID) of B leg
 
 
   function: end
-  Parameters: string                  ltag             local tag (ID) of the call (A leg)
+  Parameters: string                  cc_namespace     name of call control section
+                                                       (as configured, e.g. variable namespace to use)
+              string                  ltag             local tag (ID) of the call (A leg)
               SBCCallProfile Object   call_profile     used call profile instance
               Array of int            timestamps       start/connect/end timestamp
 
@@ -134,7 +140,9 @@ Synopsis:
   removing a variable:
     call_profile->cc_vars.erase("mycc::myvar");
 
-CC variables may be prefixed by the CC module name as name space (e.g. cc_name::var_name).
+If several invocations of the same call control module should be independent from each other,
+CC variables may be prefixed by the CC namespace
+(e.g. args[CC_API_PARAMS_CC_NAMESPACE + "::" + var_name).
 
 
 Verifying correct configuration

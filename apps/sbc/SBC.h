@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Stefan Sayer
+ * Copyright (C) 2010-2011 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *

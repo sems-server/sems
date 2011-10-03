@@ -38,7 +38,7 @@ using namespace XmlRpc;
 
 #include <string.h>
 
-#define SBCVAR_PREPAID_XMLRPC_UUID "prepaid_xmlrpc::uuid"
+#define SBCVAR_PREPAID_XMLRPC_UUID "uuid"
 
 class PrepaidXMLRPCFactory : public AmDynInvokeFactory
 {
@@ -100,110 +100,79 @@ int PrepaidXMLRPC::onLoad() {
 
 void PrepaidXMLRPC::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
-  DBG("PrepaidXMLRPC: %s(%s)\n", method.c_str(), AmArg::print(args).c_str());
+  // DBG("PrepaidXMLRPC: %s(%s)\n", method.c_str(), AmArg::print(args).c_str());
 
-    if(method == "start"){
+  if(method == "start"){
+    args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
+    SBCCallProfile* call_profile =
+      dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-
-      // INFO("--------------------------------------------------------------\n");
-      // INFO("Got call control start ltag '%s' start_ts %i.%i\n",
-      // 	   args.get(0).asCStr(), args[2][0].asInt(), args[2][1].asInt());
-      // INFO("---- dumping CC values ----\n");
-      // for (AmArg::ValueStruct::const_iterator it =
-      // 	     args.get(CC_API_PARAMS_CFGVALUES).begin();
-      //               it != args.get(CC_API_PARAMS_CFGVALUES).end(); it++) {
-      // 	INFO("    CDR value '%s' = '%s'\n", it->first.c_str(), it->second.asCStr());
-      // }
-      // INFO("--------------------------------------------------------------\n");
-
-      // ltag, call profile, timestamps, [[key: val], ...], timer_id
-      args.assertArrayFmt("soaui");
-      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
-      SBCCallProfile* call_profile =
-	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
-
-      start(args[CC_API_PARAMS_LTAG].asCStr(),
-	    call_profile,
-	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_SEC].asInt(),
-	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_USEC].asInt(),
-	    args[CC_API_PARAMS_CFGVALUES],
-	    args[CC_API_PARAMS_TIMERID].asInt(),  ret);
-
-    } else if(method == "connect"){
-      // INFO("--------------------------------------------------------------\n");
-      // INFO("Got CDR connect ltag '%s' other_ltag '%s', connect_ts %i.%i\n",
-      // 	   args[CC_API_PARAMS_LTAG].asCStr(),
-      //           args[CC_API_PARAMS_OTHERID].asCStr(),
-      //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
-      //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt());
-      // INFO("--------------------------------------------------------------\n");
-      // ltag, call_profile, other_ltag, connect_ts_sec, connect_ts_usec
-      args.assertArrayFmt("soas");
-      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
-      SBCCallProfile* call_profile =
-	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
-
-      connect(args[CC_API_PARAMS_LTAG].asCStr(),
-	      call_profile,
-	      args[CC_API_PARAMS_OTHERID].asCStr(),
-	      args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
-	      args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt());
-
-    } else if(method == "end"){
-      // INFO("--------------------------------------------------------------\n");
-      // INFO("Got CDR end ltag %s end_ts %i.%i\n",
-      // 	   args[CC_API_PARAMS_LTAG].asCStr(),
-      //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
-      //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt());
-      // INFO("--------------------------------------------------------------\n");
-
-      // ltag, call_profile, end_ts_sec, end_ts_usec
-      args.assertArrayFmt("soa"); 
-      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
-      SBCCallProfile* call_profile =
-	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
-
-      end(args[CC_API_PARAMS_LTAG].asCStr(),
+    start(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
+	  args[CC_API_PARAMS_LTAG].asCStr(),
 	  call_profile,
 	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_SEC].asInt(),
 	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_USEC].asInt(),
-	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
-	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt(),
-	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
-	  args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt()
-	  );
-    } else if(method == CC_INTERFACE_MAND_VALUES_METHOD){
+	  args[CC_API_PARAMS_CFGVALUES],
+	  args[CC_API_PARAMS_TIMERID].asInt(),  ret);
 
-      ret.push("uuid");
+  } else if(method == "connect"){
+    SBCCallProfile* call_profile =
+      dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-    } else if (method == "getCredit"){
-      assertArgCStr(args.get(0));
-      bool found;
-      ret.push(getCredit(args.get(0).asCStr(), found));
-      ret.push(found);
-    } else if (method == "subtractCredit"){
-      assertArgCStr(args.get(0));
-      assertArgInt(args.get(1));
-      bool found;
-      ret.push(subtractCredit(args.get(0).asCStr(),
-			      args.get(1).asInt(),
-			      found));
-      ret.push(found);
-    } else if (method == "_list"){
-      ret.push("start");
-      ret.push("connect");
-      ret.push("end");
+    connect(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
+	    args[CC_API_PARAMS_LTAG].asCStr(),
+	    call_profile,
+	    args[CC_API_PARAMS_OTHERID].asCStr(),
+	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
+	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt());
 
-      ret.push("getCredit");
-      ret.push("subtractCredit");
-    }
-    else
-	throw AmDynInvoke::NotImplemented(method);
+  } else if(method == "end"){
+    SBCCallProfile* call_profile =
+      dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
+
+    end(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
+	args[CC_API_PARAMS_LTAG].asCStr(),
+	call_profile,
+	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_SEC].asInt(),
+	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_START_USEC].asInt(),
+	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
+	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt(),
+	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
+	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt()
+	);
+  } else if(method == CC_INTERFACE_MAND_VALUES_METHOD){
+
+    ret.push("uuid");
+
+  } else if (method == "getCredit"){
+    assertArgCStr(args.get(0));
+    bool found;
+    ret.push(getCredit(args.get(0).asCStr(), found));
+    ret.push(found);
+  } else if (method == "subtractCredit"){
+    assertArgCStr(args.get(0));
+    assertArgInt(args.get(1));
+    bool found;
+    ret.push(subtractCredit(args.get(0).asCStr(),
+			    args.get(1).asInt(),
+			    found));
+    ret.push(found);
+  } else if (method == "_list"){
+    ret.push("start");
+    ret.push("connect");
+    ret.push("end");
+
+    ret.push("getCredit");
+    ret.push("subtractCredit");
+  }
+  else
+    throw AmDynInvoke::NotImplemented(method);
 }
 
-void PrepaidXMLRPC::start(const string& ltag, SBCCallProfile* call_profile,
-		       int start_ts_sec, int start_ts_usec,
-		       const AmArg& values, int timer_id, AmArg& res) {
+void PrepaidXMLRPC::start(const string& cc_name, const string& ltag,
+			  SBCCallProfile* call_profile,
+			  int start_ts_sec, int start_ts_usec,
+			  const AmArg& values, int timer_id, AmArg& res) {
 
   if (!call_profile) return;
 
@@ -221,7 +190,7 @@ void PrepaidXMLRPC::start(const string& ltag, SBCCallProfile* call_profile,
 
   string uuid = values["uuid"].asCStr();
 
-  call_profile->cc_vars[SBCVAR_PREPAID_XMLRPC_UUID] = uuid;
+  call_profile->cc_vars[cc_name+"::"+SBCVAR_PREPAID_XMLRPC_UUID] = uuid;
 
   bool found;
   int credit = getCredit(uuid, found);
@@ -246,21 +215,23 @@ void PrepaidXMLRPC::start(const string& ltag, SBCCallProfile* call_profile,
   res_cmd[SBC_CC_TIMER_TIMEOUT] = credit;
 }
 
-void PrepaidXMLRPC::connect(const string& ltag, SBCCallProfile* call_profile,
-		      const string& other_tag,
-		      int connect_ts_sec, int connect_ts_usec) {
+void PrepaidXMLRPC::connect(const string& cc_name,
+			    const string& ltag, SBCCallProfile* call_profile,
+			    const string& other_tag,
+			    int connect_ts_sec, int connect_ts_usec) {
   // DBG("call '%s' gets connected\n", ltag.c_str());
 }
 
-void PrepaidXMLRPC::end(const string& ltag, SBCCallProfile* call_profile,
-		  int start_ts_sec, int start_ts_usec,
-		  int connect_ts_sec, int connect_ts_usec,
-		  int end_ts_sec, int end_ts_usec) {
+void PrepaidXMLRPC::end(const string& cc_name, const string& ltag,
+			SBCCallProfile* call_profile,
+			int start_ts_sec, int start_ts_usec,
+			int connect_ts_sec, int connect_ts_usec,
+			int end_ts_sec, int end_ts_usec) {
 
   if (!call_profile) return;
 
   // get uuid
-  SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(SBCVAR_PREPAID_XMLRPC_UUID);
+  SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(cc_name+"::"+SBCVAR_PREPAID_XMLRPC_UUID);
   if (vars_it == call_profile->cc_vars.end() || !isArgCStr(vars_it->second)) {
     ERROR("internal: could not find UUID for call '%s' - "
 	  "not accounting (start_ts %i.%i, connect_ts %i.%i, end_ts %i.%i)\n",
@@ -271,7 +242,7 @@ void PrepaidXMLRPC::end(const string& ltag, SBCCallProfile* call_profile,
   }
 
   string uuid = vars_it->second.asCStr();
-  call_profile->cc_vars.erase(SBCVAR_PREPAID_XMLRPC_UUID);
+  call_profile->cc_vars.erase(cc_name+"::"+SBCVAR_PREPAID_XMLRPC_UUID);
 
   if (!connect_ts_sec || !end_ts_sec) {
     DBG("call not connected - uuid '%s' ltag '%s'\n", uuid.c_str(), ltag.c_str());

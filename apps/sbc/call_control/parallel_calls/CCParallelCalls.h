@@ -47,9 +47,11 @@ class CCParallelCalls : public AmDynInvoke
 
   static CCParallelCalls* _instance;
 
-  void start(const string& ltag, SBCCallProfile* call_profile,
+  void start(const string& cc_namespace,
+	     const string& ltag, SBCCallProfile* call_profile,
 	     const AmArg& values, AmArg& res);
-  void end(const string& ltag, SBCCallProfile* call_profile);
+  void end(const string& cc_namespace,
+	   const string& ltag, SBCCallProfile* call_profile);
 
  public:
   CCParallelCalls();

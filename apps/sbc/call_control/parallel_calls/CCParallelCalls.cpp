@@ -33,7 +33,7 @@
 
 #include <string.h>
 
-#define SBCVAR_PARALLEL_CALLS_UUID "pcalls::uuid"
+#define SBCVAR_PARALLEL_CALLS_UUID "uuid"
 
 unsigned int CCParallelCalls::refuse_code = 402;
 string CCParallelCalls::refuse_reason = "Too Many Simultaneous Calls";
@@ -71,41 +71,38 @@ void CCParallelCalls::invoke(const string& method, const AmArg& args, AmArg& ret
 {
   // DBG("CCParallelCalls: %s(%s)\n", method.c_str(), AmArg::print(args).c_str());
 
-    if(method == "start"){
+  if(method == "start"){
+    SBCCallProfile* call_profile =
+      dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-      // ltag, call profile, timestamps, [[key: val], ...], timer_id
-      args.assertArrayFmt("soaui");
-      SBCCallProfile* call_profile =
-	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
+    start(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
+	  args[CC_API_PARAMS_LTAG].asCStr(), call_profile,
+	  args[CC_API_PARAMS_CFGVALUES], ret);
+    
+  } else if(method == "connect"){
+    // no action
 
-      start(args[CC_API_PARAMS_LTAG].asCStr(), call_profile,
-	    args[CC_API_PARAMS_CFGVALUES], ret);
+  } else if(method == "end"){
+    args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
+    SBCCallProfile* call_profile =
+      dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-    } else if(method == "connect"){
-      // no action
+    end(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
+	args[CC_API_PARAMS_LTAG].asCStr(), call_profile);
 
-    } else if(method == "end"){
-
-      // ltag, call_profile, end_ts_sec, end_ts_usec
-      args.assertArrayFmt("soa"); 
-      args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
-      SBCCallProfile* call_profile =
-	dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
-
-      end(args[CC_API_PARAMS_LTAG].asCStr(), call_profile);
-
-    } else if(method == CC_INTERFACE_MAND_VALUES_METHOD){
-      ret.push("uuid");
-    } else if(method == "_list"){
-      ret.push("start");
-      ret.push("connect");
-      ret.push("end");
-    }
-    else
-	throw AmDynInvoke::NotImplemented(method);
+  } else if(method == CC_INTERFACE_MAND_VALUES_METHOD){
+    ret.push("uuid");
+  } else if(method == "_list"){
+    ret.push("start");
+    ret.push("connect");
+    ret.push("end");
+  }
+  else
+    throw AmDynInvoke::NotImplemented(method);
 }
 
-void CCParallelCalls::start(const string& ltag, SBCCallProfile* call_profile,
+void CCParallelCalls::start(const string& cc_namespace,
+			    const string& ltag, SBCCallProfile* call_profile,
 			    const AmArg& values, AmArg& res) {
   if (!call_profile) return;
 
@@ -122,7 +119,7 @@ void CCParallelCalls::start(const string& ltag, SBCCallProfile* call_profile,
 
   string uuid = values["uuid"].asCStr();
 
-  call_profile->cc_vars[SBCVAR_PARALLEL_CALLS_UUID] = uuid;
+  call_profile->cc_vars[cc_namespace+"::"+SBCVAR_PARALLEL_CALLS_UUID] = uuid;
 
   unsigned int max_calls = 1; // default
   if (values.hasMember("max_calls") && isArgCStr(values["max_calls"])) {
@@ -171,16 +168,17 @@ void CCParallelCalls::start(const string& ltag, SBCCallProfile* call_profile,
 
 }
 
-void CCParallelCalls::end(const string& ltag, SBCCallProfile* call_profile) {
+void CCParallelCalls::end(const string& cc_namespace, const string& ltag,
+			  SBCCallProfile* call_profile) {
   if (!call_profile) return;
 
-  SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(SBCVAR_PARALLEL_CALLS_UUID);
+  SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(cc_namespace+"::"+SBCVAR_PARALLEL_CALLS_UUID);
   if (vars_it == call_profile->cc_vars.end() || !isArgCStr(vars_it->second)) {
     ERROR("internal: could not find UUID for ending call '%s'\n", ltag.c_str());
     return;
   }
   string uuid = vars_it->second.asCStr();
-  call_profile->cc_vars.erase(SBCVAR_PARALLEL_CALLS_UUID);
+  call_profile->cc_vars.erase(cc_namespace+"::"+SBCVAR_PARALLEL_CALLS_UUID);
 
   unsigned int new_call_count  = 0;
 
