@@ -38,30 +38,6 @@
 #include <map>
 #include <memory>
 
-class CDRWriterThread;
-
-#define CDR_EVENT_ID 7253872 // doesn't really matter
-
-struct CDR {
-  string ltag;
-  string callid;
-  string from_tag;
-  string to_tag;
-  int start_ts;
-  int start_ts_usec;
-  int connect_ts;
-  int connect_ts_usec;  
-  int end_ts;
-  int end_ts_usec;
-  std::map<string, string> values;
-
-CDR()
-: start_ts(0), connect_ts(0), end_ts(0) { }
-
-  string print_csv();
-  string print_headers();
-};
-
 /**
  * accounting for generating CDR lines in CSV format in syslog
  */
@@ -73,8 +49,8 @@ class SyslogCDR : public AmDynInvoke
   string syslog_prefix;
   vector<string> cdr_format;
 
-  map<string, CDR*> cdrs;
-  AmMutex cdrs_mut;
+  /* map<string, CDR*> cdrs; */
+  /* AmMutex cdrs_mut; */
 
   void start(const string& ltag, SBCCallProfile* call_profile,
 	     const AmArg& values);
