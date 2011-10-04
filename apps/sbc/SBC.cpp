@@ -557,11 +557,38 @@ UACAuthCred* SBCDialog::getCredentials() {
   return &call_profile.auth_aleg_credentials;
 }
 
+void SBCDialog::fixupCCInterface(const string& val, CCInterface& cc_if) {
+  DBG("instantiating CC interface from '%s'\n", val.c_str());
+  vector<string> cc_params = explode(val, ";");
+  if (cc_params.size()) {
+    vector<string>::iterator it=cc_params.begin();
+    cc_if.cc_module = *it;
+    DBG("    module='%s'\n", it->c_str());
+    it++;
+    while (it != cc_params.end()) {
+      size_t epos = it->find('=');
+      string p, v;
+      if (epos != string::npos) {
+	p = it->substr(0, epos);
+	if (it->length()>epos+1)
+	  v = it->substr(epos+1);
+      } else {
+	p = *it;
+      }
+      DBG("    '%s'='%s'\n", p.c_str(), v.c_str());
+      cc_if.cc_values.insert(make_pair(p,v));
+      it++;
+    }
+  } else {
+    cc_if.cc_module = "";
+  }
+}
+
 void SBCDialog::onInvite(const AmSipRequest& req)
 {
   AmUriParser ruri_parser, from_parser, to_parser;
 
-  DBG("processing initial INVITE\n");
+  DBG("processing initial INVITE %s\n", req.r_uri.c_str());
 
   string app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
@@ -572,22 +599,58 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   // process call control
   if (call_profile.cc_interfaces.size()) {
-    for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+    unsigned int cc_dynif_count = 0;
+
+    // fix up replacements in cc list
+    CCInterfaceListIteratorT cc_rit = call_profile.cc_interfaces.begin();
+    while (cc_rit != call_profile.cc_interfaces.end()) {
+      CCInterfaceListIteratorT curr_if = cc_rit;
+      cc_rit++;
+      //      CCInterfaceListIteratorT next_cc = cc_rit+1;
+      if (curr_if->cc_name.find('$') != string::npos) {
+	vector<string> dyn_ccinterfaces =
+	  explode(replaceParameters(curr_if->cc_name, "cc_interfaces", REPLACE_VALS), ",");
+	if (!dyn_ccinterfaces.size()) {
+	  DBG("call_control '%s' did not produce any call control instances\n",
+	      curr_if->cc_name.c_str());
+	  call_profile.cc_interfaces.erase(curr_if);
+	} else {
+	  // fill first CC interface (replacement item)
+	  vector<string>::iterator it=dyn_ccinterfaces.begin();
+	  curr_if->cc_name = "cc_dyn_"+int2str(cc_dynif_count++);
+	  fixupCCInterface(trim(*it, " \t"), *curr_if);
+	  it++;
+
+	  // insert other CC interfaces (in order!)
+	  while (it != dyn_ccinterfaces.end()) {
+	    CCInterfaceListIteratorT new_cc =
+	      call_profile.cc_interfaces.insert(cc_rit, CCInterface());
+	    fixupCCInterface(trim(*it, " \t"), *new_cc);
+	    new_cc->cc_name = "cc_dyn_"+int2str(cc_dynif_count++);
+	    it++;
+	  }
+	}
+      }
+    }
+
+    // fix up module names
+    for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
 	 cc_it != call_profile.cc_interfaces.end(); cc_it++) {
-      CCInterface& cc_if = *cc_it;
-      cc_if.cc_module =
-	replaceParameters(cc_if.cc_module, "cc_module", REPLACE_VALS);
+      cc_it->cc_module =
+	replaceParameters(cc_it->cc_module, "cc_module", REPLACE_VALS);
     }
 
     if (!getCCInterfaces()) {
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
-    for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+    // fix up variables
+    for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
 	 cc_it != call_profile.cc_interfaces.end(); cc_it++) {
       CCInterface& cc_if = *cc_it;
 
-      DBG("processing replacements for call control interface '%s'\n", cc_if.cc_name.c_str());
+      DBG("processing replacements for call control interface '%s'\n",
+	  cc_if.cc_name.c_str());
 
       for (map<string, string>::iterator it = cc_if.cc_values.begin();
 	   it != cc_if.cc_values.end(); it++) {
@@ -787,7 +850,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 }
 
 bool SBCDialog::getCCInterfaces() {
-  for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+  for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
        cc_it != call_profile.cc_interfaces.end(); cc_it++) {
     string& cc_module = cc_it->cc_module;
     if (cc_module.empty()) {
@@ -1079,7 +1142,7 @@ void SBCDialog::stopCallTimer() {
 bool SBCDialog::CCStart(const AmSipRequest& req) {
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
-  for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+  for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
        cc_it != call_profile.cc_interfaces.end(); cc_it++) {
     CCInterface& cc_if = *cc_it;
 
@@ -1200,7 +1263,7 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 void SBCDialog::CCConnect(const AmSipReply& reply) {
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
-  for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+  for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
        cc_it != call_profile.cc_interfaces.end(); cc_it++) {
     CCInterface& cc_if = *cc_it;
 
@@ -1243,7 +1306,7 @@ void SBCDialog::CCConnect(const AmSipReply& reply) {
 void SBCDialog::CCEnd() {
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
-  for (vector<CCInterface>::iterator cc_it=call_profile.cc_interfaces.begin();
+  for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
        cc_it != call_profile.cc_interfaces.end(); cc_it++) {
     CCInterface& cc_if = *cc_it;
 

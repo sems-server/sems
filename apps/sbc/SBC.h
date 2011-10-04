@@ -121,6 +121,8 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
 
   SBCCallProfile call_profile;
 
+  void fixupCCInterface(const string& val, CCInterface& cc_if);
+
   /** handler called when the second leg is connected */
   void onCallConnected(const AmSipReply& reply);
 

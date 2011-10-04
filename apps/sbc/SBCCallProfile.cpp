@@ -170,7 +170,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       AmArg mandatory_values;
 
       // check if module is loaded and if, get mandatory config values
-      if (cc_if.cc_module.find('$') == string::npos) {
+      if (cc_if.cc_module.find('$') == string::npos && 
+	  cc_if.cc_name.find('$') == string::npos) {
 	AmDynInvokeFactory* df = AmPlugIn::instance()->getFactory4Di(cc_if.cc_module);
 	if (NULL == df) {
 	  ERROR("Call control module '%s' used in call profile "
@@ -344,11 +345,11 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
     if (cc_interfaces.size()) {
       string cc_if_names;
-      for (  vector<CCInterface>::iterator it =
-	       cc_interfaces.begin(); it != cc_interfaces.end(); it++) {
+      for (CCInterfaceListIteratorT it =
+	     cc_interfaces.begin(); it != cc_interfaces.end(); it++) {
 	cc_if_names = it->cc_name+",";
 	cc_if_names.erase(cc_if_names.size()-1,1);
-	INFO("SBC:      Call Control interfaces: %s\n", cc_if_names.c_str());
+	INFO("SBC:      Call Control: %s\n", cc_if_names.c_str());
       }
     }
 

@@ -33,6 +33,7 @@
 #include <set>
 #include <string>
 #include <map>
+#include <list>
 
 using std::string;
 using std::map;
@@ -48,7 +49,11 @@ struct CCInterface {
 
   CCInterface(string cc_name)
   : cc_name(cc_name) { }
+  CCInterface() { }
 };
+
+typedef std::list<CCInterface> CCInterfaceListT;
+typedef CCInterfaceListT::iterator CCInterfaceListIteratorT;
 
 struct SBCCallProfile
   : public ArgObject {
@@ -91,7 +96,7 @@ struct SBCCallProfile
   bool auth_aleg_enabled;
   UACAuthCred auth_aleg_credentials;
 
-  vector<CCInterface> cc_interfaces;
+  CCInterfaceListT cc_interfaces;
 
   SBCVarMapT cc_vars;
 
