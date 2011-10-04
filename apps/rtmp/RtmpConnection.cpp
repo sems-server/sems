@@ -756,18 +756,19 @@ void RtmpConnection::createRegistration(const string& domain,
   di_args.push(auth_user.c_str());     // auth_user
   di_args.push(passwd.c_str());        // pwd
   di_args.push(FACTORY_Q_NAME);
+  di_args.push("");
+  di_args.push("");
+  di_args.push(ident.c_str());
   
   di_reg_client->invoke("createRegistration", di_args, ret);
-  reg_handle = ret.get(0).asCStr();
 }
 
 void RtmpConnection::removeRegistration()
 {
-  if(!di_reg_client || reg_handle.empty()) return;
+  if(!di_reg_client || ident.empty()) return;
   AmArg di_args,ret;
-  di_args.push(reg_handle.c_str());
+  di_args.push(ident.c_str());
   di_reg_client->invoke("removeRegistration", di_args, ret);
-  reg_handle.clear();
 }
 
 void RtmpConnection::stopStream(unsigned int stream_id)
