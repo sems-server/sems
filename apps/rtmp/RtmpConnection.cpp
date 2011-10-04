@@ -36,6 +36,7 @@
 #include "RtmpSender.h"
 #include "RtmpAudio.h"
 #include "RtmpSession.h"
+#include "RtmpUtils.h"
 
 #include "AmSessionContainer.h"
 #include "log.h"
@@ -46,67 +47,6 @@
 
 /* interval we disallow duplicate requests, in msec */
 #define DUPTIME       5000
-
-#define INVOKE_PTYPE    0x14
-
-#define CONTROL_CHANNEL 0x03
-
-#define _AVC(s) {(char*)s,sizeof(s)-1}
-#define SAVC(x) static const AVal av_##x = {(char*)#x,sizeof(#x)-1}
-#define STR2AVAL(av,str) \
-   { \
-     av.av_val = (char*)str; \
-     av.av_len = strlen(av.av_val); \
-   }
-
-// standard flash methods and params
-SAVC(app);
-SAVC(connect);
-SAVC(flashVer);
-SAVC(swfUrl);
-SAVC(pageUrl);
-SAVC(tcUrl);
-SAVC(fpad);
-SAVC(capabilities);
-SAVC(audioCodecs);
-SAVC(videoCodecs);
-SAVC(videoFunction);
-SAVC(objectEncoding);
-SAVC(_result);
-SAVC(_error);
-SAVC(createStream);
-SAVC(closeStream);
-SAVC(deleteStream);
-SAVC(getStreamLength);
-SAVC(play);
-SAVC(fmsVer);
-SAVC(mode);
-SAVC(level);
-SAVC(code);
-SAVC(description);
-SAVC(secureToken);
-SAVC(publish);
-SAVC(onStatus);
-SAVC(status);
-SAVC(error);
-static const AVal av_NetStream_Play_Start = _AVC("NetStream.Play.Start");
-static const AVal av_Started_playing = _AVC("Started playing");
-static const AVal av_NetStream_Play_Stop = _AVC("NetStream.Play.Stop");
-static const AVal av_Stopped_playing = _AVC("Stopped playing");
-SAVC(details);
-SAVC(clientid);
-SAVC(pause);
-
-// custom methods and params
-SAVC(dial);
-SAVC(hangup);
-SAVC(register);
-SAVC(accept);
-static const AVal av_Sono_Call_Incoming = _AVC("Sono.Call.Incoming");
-SAVC(uri);
-static const AVal av_Sono_Call_Status = _AVC("Sono.Call.Status");
-SAVC(status_code);
-
 
 
 RtmpConnection::RtmpConnection(int fd)
@@ -380,17 +320,17 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 	      rtmp.m_fEncoding = cobj.o_props[i].p_vu.p_number;
 	    }
 	}
-      SendConnectResult(txn);
+      sender->SendConnectResult(txn);
     }
   else if (AVMATCH(&method, &av_createStream))
     {
-      SendResultNumber(txn, ++prev_stream_id);
+      sender->SendResultNumber(txn, ++prev_stream_id);
       DBG("createStream: new channel %i",prev_stream_id);
     }
   else if (AVMATCH(&method, &av_getStreamLength))
     {
       // TODO: find value for live streams (0?, -1?)
-      SendResultNumber(txn, 0.0);
+      sender->SendResultNumber(txn, 0.0);
     }
   else if (AVMATCH(&method, &av_play))
     {
@@ -440,8 +380,8 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
       m_session.lock();
       if(session) {
 	session->setPlayStreamID(play_stream_id);
-	SendStreamBegin();
-	SendPlayStart();
+	sender->SendStreamBegin();
+	sender->SendPlayStart();
       }
       m_session.unlock();
     }
@@ -474,18 +414,18 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
 
       if(!uri.av_len){
 	// missing URI parameter
-	SendErrorResult(txn,"Sono.Call.NoUri");
+	sender->SendErrorResult(txn,"Sono.Call.NoUri");
       }
       else {
 	m_session.lock();
 
 	if(session){
-	  SendErrorResult(txn,"Sono.Call.Existing");
+	  sender->SendErrorResult(txn,"Sono.Call.Existing");
 	}
 	else {
 	  session = startSession(uri.av_val);
 	  if(!session) {
-	    SendErrorResult(txn,"Sono.Call.Failed");
+	    sender->SendErrorResult(txn,"Sono.Call.Failed");
 	  }
 	}
 	
@@ -498,28 +438,25 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
     }
   else if(AVMATCH(&method, &av_register))
     {
-      if(registered){
-	RtmpFactory_impl::instance()->removeConnection(ident);
-	registered = false;
+      if(!registered){
+	if(RtmpFactory_impl::instance()->addConnection(ident,this) < 0) {
+	  ERROR("could not register RTMP connection (ident='%s')\n",ident.c_str());
+	  sender->SendErrorResult(txn,"Sono.Registration.Failed");
+	}
+	else {
+	  registered = true;
+	  DBG("RTMP connection registered (ident='%s')\n",ident.c_str());
+	  sender->SendRegisterResult(txn,ident.c_str());
+	}
       }
 
-      if(RtmpFactory_impl::instance()->addConnection(ident,this) < 0) {
-	ERROR("could not register RTMP connection (ident='%s')\n",ident.c_str());
-	ident.clear();
-	SendErrorResult(txn,"Sono.Registration.Failed");
-      }
-      else {
-	registered = true;
-	DBG("RTMP connection registered (ident='%s')\n",ident.c_str());
-	SendRegisterResult(txn,ident.c_str());
-	
+      if(registered){
 	if(di_reg_client &&
 	   !rtmp_cfg->ImplicitRegistrar.empty()) {
 	  createRegistration(rtmp_cfg->ImplicitRegistrar,
 			     ident,rtmp_cfg->FromName);
 	}
       }
-
     }
   else if(AVMATCH(&method, &av_accept))
     {
@@ -537,317 +474,14 @@ RtmpConnection::invoke(RTMPPacket *packet, unsigned int offset)
   return ret;
 }
 
-int RtmpConnection::SendConnectResult(double txn)
-{
-  RTMPPacket packet;
-  char pbuf[384], *pend = pbuf+sizeof(pbuf);
-  AMFObject obj;
-  AMFObjectProperty p, op;
-  AVal av;
-
-  packet.m_nChannel   = CONTROL_CHANNEL;
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = INVOKE_PTYPE;
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  char *enc = packet.m_body;
-  enc = AMF_EncodeString(enc, pend, &av__result);
-  enc = AMF_EncodeNumber(enc, pend, txn);
-  *enc++ = AMF_OBJECT;
-
-  STR2AVAL(av, "FMS/3,5,1,525");
-  enc = AMF_EncodeNamedString(enc, pend, &av_fmsVer, &av);
-  enc = AMF_EncodeNamedNumber(enc, pend, &av_capabilities, 31.0);
-  enc = AMF_EncodeNamedNumber(enc, pend, &av_mode, 1.0);
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-
-  *enc++ = AMF_OBJECT;
-
-  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
-  STR2AVAL(av, "NetConnection.Connect.Success");
-  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av);
-  STR2AVAL(av, "Connection succeeded.");
-  enc = AMF_EncodeNamedString(enc, pend, &av_description, &av);
-  enc = AMF_EncodeNamedNumber(enc, pend, &av_objectEncoding, rtmp.m_fEncoding);
-  STR2AVAL(p.p_name, "version");
-  STR2AVAL(p.p_vu.p_aval, "3,5,1,525");
-  p.p_type = AMF_STRING;
-  obj.o_num = 1;
-  obj.o_props = &p;
-  op.p_type = AMF_OBJECT;
-  STR2AVAL(op.p_name, "data");
-  op.p_vu.p_object = obj;
-  enc = AMFProp_Encode(&op, enc, pend);
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-
-  packet.m_nBodySize = enc - packet.m_body;
-
-  return sender->push_back(packet);
-}
-
-int RtmpConnection::SendRegisterResult(double txn, const char* str)
-{
-  RTMPPacket packet;
-  char pbuf[512], *pend = pbuf+sizeof(pbuf);
-
-  packet.m_nChannel   = CONTROL_CHANNEL;
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = INVOKE_PTYPE;
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  AVal av;
-  char *enc = packet.m_body;
-
-  enc = AMF_EncodeString(enc, pend, &av__result);
-  enc = AMF_EncodeNumber(enc, pend, txn);
-  *enc++ = AMF_NULL;
-  *enc++ = AMF_OBJECT;
-
-  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
-  STR2AVAL(av, str);
-  enc = AMF_EncodeNamedString(enc, pend, &av_uri, &av);
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-
-  packet.m_nBodySize = enc - packet.m_body;
-
-  return sender->push_back(packet);
-}
-
-int RtmpConnection::SendErrorResult(double txn, const char* str)
-{
-  RTMPPacket packet;
-  char pbuf[512], *pend = pbuf+sizeof(pbuf);
-
-  packet.m_nChannel   = CONTROL_CHANNEL;
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = INVOKE_PTYPE;
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  AVal av;
-  char *enc = packet.m_body;
-
-  enc = AMF_EncodeString(enc, pend, &av__error);
-  enc = AMF_EncodeNumber(enc, pend, txn);
-  *enc++ = AMF_NULL;
-  *enc++ = AMF_OBJECT;
-
-  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_error);
-  STR2AVAL(av, str);
-  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av);
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-
-  packet.m_nBodySize = enc - packet.m_body;
-
-  return sender->push_back(packet);
-}
-
-int RtmpConnection::SendResultNumber(double txn, double ID)
-{
-  RTMPPacket packet;
-  char pbuf[256], *pend = pbuf+sizeof(pbuf);
-
-  packet.m_nChannel   = CONTROL_CHANNEL;
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = INVOKE_PTYPE;
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  char *enc = packet.m_body;
-  enc = AMF_EncodeString(enc, pend, &av__result);
-  enc = AMF_EncodeNumber(enc, pend, txn);
-  *enc++ = AMF_NULL;
-  enc = AMF_EncodeNumber(enc, pend, ID);
-
-  packet.m_nBodySize = enc - packet.m_body;
-
-  return sender->push_back(packet);
-}
-
-
-int RtmpConnection::SendPlayStart()
-{
-  RTMPPacket packet;
-  char pbuf[384], *pend = pbuf+sizeof(pbuf);
-
-  packet.m_nChannel   = CONTROL_CHANNEL;
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = INVOKE_PTYPE;
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  char *enc = packet.m_body;
-  enc = AMF_EncodeString(enc, pend, &av_onStatus);
-  enc = AMF_EncodeNumber(enc, pend, 0);
-
-  *enc++ = AMF_NULL;//rco: seems to be needed
-  *enc++ = AMF_OBJECT;
-
-  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
-  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av_NetStream_Play_Start);
-  enc = AMF_EncodeNamedString(enc, pend, &av_description, &av_Started_playing);
-  enc = AMF_EncodeNamedString(enc, pend, &av_details, &rtmp.Link.playpath);
-  enc = AMF_EncodeNamedString(enc, pend, &av_clientid, &av_clientid);
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-
-  packet.m_nBodySize = enc - packet.m_body;
-  return sender->push_back(packet);
-}
-
-int RtmpConnection::SendPlayStop()
-{
-  RTMPPacket packet;
-  char pbuf[384], *pend = pbuf+sizeof(pbuf);
-
-  packet.m_nChannel   = CONTROL_CHANNEL;
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = INVOKE_PTYPE;
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  char *enc = packet.m_body;
-  enc = AMF_EncodeString(enc, pend, &av_onStatus);
-  enc = AMF_EncodeNumber(enc, pend, 0);
-
-  *enc++ = AMF_NULL;//rco: needed!
-  *enc++ = AMF_OBJECT;
-
-  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
-  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av_NetStream_Play_Stop);
-  enc = AMF_EncodeNamedString(enc, pend, &av_description, &av_Stopped_playing);
-  enc = AMF_EncodeNamedString(enc, pend, &av_details, &rtmp.Link.playpath);
-  enc = AMF_EncodeNamedString(enc, pend, &av_clientid, &av_clientid);
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-
-  packet.m_nBodySize = enc - packet.m_body;
-  return sender->push_back(packet);
-}
-
-int RtmpConnection::SendStreamBegin()
-{
-  return SendCtrl(0, 1, 0);
-}
-
-int RtmpConnection::SendStreamEOF()
-{
-  return SendCtrl(1, 1, 0);
-}
-
 int RtmpConnection::SendCallStatus(int status)
 {
-  RTMPPacket packet;
-  char pbuf[384], *pend = pbuf+sizeof(pbuf);
-
-  packet.m_nChannel   = CONTROL_CHANNEL;
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = INVOKE_PTYPE;
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  char *enc = packet.m_body;
-  enc = AMF_EncodeString(enc, pend, &av_onStatus);
-  enc = AMF_EncodeNumber(enc, pend, 0);
-
-  *enc++ = AMF_NULL;//rco: needed!
-  *enc++ = AMF_OBJECT;
-  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
-  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av_Sono_Call_Status);
-  enc = AMF_EncodeNamedNumber(enc, pend, &av_status_code, status);
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-
-  packet.m_nBodySize = enc - packet.m_body;
-  return sender->push_back(packet);
+  return sender->SendCallStatus(status);
 }
 
 int RtmpConnection::NotifyIncomingCall(const string& uri)
 {
-  RTMPPacket packet;
-  char pbuf[384], *pend = pbuf+sizeof(pbuf);
-
-  packet.m_nChannel   = CONTROL_CHANNEL;
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = INVOKE_PTYPE;
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  char *enc = packet.m_body;
-  enc = AMF_EncodeString(enc, pend, &av_onStatus);
-  enc = AMF_EncodeNumber(enc, pend, 0);
-
-  *enc++ = AMF_NULL;//rco: needed!
-  *enc++ = AMF_OBJECT;
-  AVal tmp_uri = _AVC(uri.c_str());
-  enc = AMF_EncodeNamedString(enc, pend, &av_level, &av_status);
-  enc = AMF_EncodeNamedString(enc, pend, &av_code, &av_Sono_Call_Incoming);
-  enc = AMF_EncodeNamedString(enc, pend, &av_uri, &tmp_uri);
-  *enc++ = 0;
-  *enc++ = 0;
-  *enc++ = AMF_OBJECT_END;
-
-  packet.m_nBodySize = enc - packet.m_body;
-  return sender->push_back(packet);
-}
-
-int RtmpConnection::SendPause(int DoPause, int iTime)
-{
-  RTMPPacket packet;
-  char pbuf[256], *pend = pbuf + sizeof(pbuf);
-  char *enc;
-
-  packet.m_nChannel = 0x08;	/* video channel */
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = 0x14;	/* invoke */
-  packet.m_nTimeStamp = 0;
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  enc = packet.m_body;
-  enc = AMF_EncodeString(enc, pend, &av_pause);
-  enc = AMF_EncodeNumber(enc, pend, ++rtmp.m_numInvokes);
-  *enc++ = AMF_NULL;
-  enc = AMF_EncodeBoolean(enc, pend, DoPause);
-  enc = AMF_EncodeNumber(enc, pend, (double)iTime);
-
-  packet.m_nBodySize = enc - packet.m_body;
-
-  DBG("%d, pauseTime=%d", DoPause, iTime);
-  return sender->push_back(packet);
+  return sender->NotifyIncomingCall(uri);
 }
 
 void RtmpConnection::HandleCtrl(const RTMPPacket *packet)
@@ -894,7 +528,7 @@ void RtmpConnection::HandleCtrl(const RTMPPacket *packet)
 	case 6:		/* server ping. reply with pong. */
 	  tmp = AMF_DecodeInt32(packet->m_body + 2);
 	  DBG("Ping %d", tmp);
-	  SendCtrl(0x07, tmp, 0);
+	  sender->SendCtrl(0x07, tmp, 0);
 	  break;
 
 	/* FMS 3.5 servers send the following two controls to let the client
@@ -941,12 +575,12 @@ void RtmpConnection::HandleCtrl(const RTMPPacket *packet)
 	  if (!rtmp.m_pausing)
 	    {
 	      rtmp.m_pauseStamp = rtmp.m_channelTimestamp[rtmp.m_mediaChannel];
-	      SendPause(TRUE, rtmp.m_pauseStamp);
+	      sender->SendPause(TRUE, rtmp.m_pauseStamp);
 	      rtmp.m_pausing = 1;
 	    }
 	  else if (rtmp.m_pausing == 2)
 	    {
-	      SendPause(FALSE, rtmp.m_pauseStamp);
+	      sender->SendPause(FALSE, rtmp.m_pauseStamp);
 	      rtmp.m_pausing = 3;
 	    }
 	  break;
@@ -985,75 +619,6 @@ void RtmpConnection::HandleCtrl(const RTMPPacket *packet)
     }
 }
 
-/*
-from http://jira.red5.org/confluence/display/docs/Ping:
-
-Ping is the most mysterious message in RTMP and till now we haven't fully interpreted it yet. In summary, Ping message is used as a special command that are exchanged between client and server. This page aims to document all known Ping messages. Expect the list to grow.
-
-The type of Ping packet is 0x4 and contains two mandatory parameters and two optional parameters. The first parameter is the type of Ping and in short integer. The second parameter is the target of the ping. As Ping is always sent in Channel 2 (control channel) and the target object in RTMP header is always 0 which means the Connection object, it's necessary to put an extra parameter to indicate the exact target object the Ping is sent to. The second parameter takes this responsibility. The value has the same meaning as the target object field in RTMP header. (The second value could also be used as other purposes, like RTT Ping/Pong. It is used as the timestamp.) The third and fourth parameters are optional and could be looked upon as the parameter of the Ping packet. Below is an unexhausted list of Ping messages.
-
-    * type 0: Clear the stream. No third and fourth parameters. The second parameter could be 0. After the connection is established, a Ping 0,0 will be sent from server to client. The message will also be sent to client on the start of Play and in response of a Seek or Pause/Resume request. This Ping tells client to re-calibrate the clock with the timestamp of the next packet server sends.
-    * type 1: Tell the stream to clear the playing buffer.
-    * type 3: Buffer time of the client. The third parameter is the buffer time in millisecond.
-    * type 4: Reset a stream. Used together with type 0 in the case of VOD. Often sent before type 0.
-    * type 6: Ping the client from server. The second parameter is the current time.
-    * type 7: Pong reply from client. The second parameter is the time the server sent with his ping request.
-    * type 26: SWFVerification request
-    * type 27: SWFVerification response
-*/
-int
-RtmpConnection::SendCtrl(short nType, unsigned int nObject, unsigned int nTime)
-{
-  RTMPPacket packet;
-  char pbuf[256], *pend = pbuf + sizeof(pbuf);
-  int nSize;
-  char *buf;
-
-  DBG("sending ctrl. type: 0x%04x", (unsigned short)nType);
-
-  packet.m_nChannel = 0x02;	/* control channel (ping) */
-  packet.m_headerType = RTMP_PACKET_SIZE_MEDIUM;
-  packet.m_packetType = 0x04;	/* ctrl */
-  packet.m_nTimeStamp = 0;	/* RTMP_GetTime(); */
-  packet.m_nInfoField2 = 0;
-  packet.m_hasAbsTimestamp = 0;
-  packet.m_body = pbuf + RTMP_MAX_HEADER_SIZE;
-
-  switch(nType) {
-  case 0x03: nSize = 10; break;	/* buffer time */
-  case 0x1A: nSize = 3; break;	/* SWF verify request */
-  case 0x1B: nSize = 44; break;	/* SWF verify response */
-  default: nSize = 6; break;
-  }
-
-  packet.m_nBodySize = nSize;
-
-  buf = packet.m_body;
-  buf = AMF_EncodeInt16(buf, pend, nType);
-
-  if (nType == 0x1B)
-    {
-#ifdef CRYPTO
-      memcpy(buf, rtmp.Link.SWFVerificationResponse, 42);
-      DBG("Sending SWFVerification response: ");
-      RTMP_LogHex(RTMP_LOGDEBUG, (uint8_t *)packet.m_body, packet.m_nBodySize);
-#endif
-    }
-  else if (nType == 0x1A)
-    {
-	  *buf = nObject & 0xff;
-	}
-  else
-    {
-      if (nSize > 2)
-	buf = AMF_EncodeInt32(buf, pend, nObject);
-
-      if (nSize > 6)
-	buf = AMF_EncodeInt32(buf, pend, nTime);
-    }
-
-  return sender->push_back(packet);
-}
 
 //#define DUMP_AUDIO 1
 
@@ -1209,8 +774,8 @@ void RtmpConnection::stopStream(unsigned int stream_id)
 {
   if(stream_id == play_stream_id){
     play_stream_id = 0;
-    SendStreamEOF();
-    SendPlayStop();
+    sender->SendStreamEOF();
+    sender->SendPlayStop();
   }
   else if(stream_id == publish_stream_id) {
     publish_stream_id = 0;

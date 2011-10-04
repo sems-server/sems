@@ -30,7 +30,9 @@
 
 #include "AmThread.h"
 #include <queue>
+#include <string>
 using std::queue;
+using std::string;
 
 #include "librtmp/rtmp.h"
 
@@ -57,9 +59,25 @@ protected:
 public:
   RtmpSender(RTMP* r);
   ~RtmpSender();
-
+  
   // adds a packet to the sender queue
   int push_back(const RTMPPacket& p);
+
+  int SendCtrl(short nType, unsigned int nObject, unsigned int nTime);
+  int SendResultNumber(double txn, double ID);
+  int SendConnectResult(double txn);
+  int SendRegisterResult(double txn, const char* str);
+  int SendErrorResult(double txn, const char* str);
+  int SendPause(int DoPause, int iTime);
+
+  int SendPlayStart();
+  int SendPlayStop();
+  int SendStreamBegin();
+  int SendStreamEOF();
+
+  int SendCallStatus(int status);
+  int NotifyIncomingCall(const string& uri);
+
 };
 
 #endif

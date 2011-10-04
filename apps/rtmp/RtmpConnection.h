@@ -45,7 +45,7 @@ using std::string;
 // request the client to connect the streams
 #define RTMP_CALL_CONNECT_STREAMS 4
 
-
+class SIPRegistrationEvent;
 class RtmpSession;
 class RtmpSender;
 class RtmpAudio;
@@ -105,13 +105,10 @@ public:
   void setSessionPtr(RtmpSession* s);
   RtmpSender* getSenderPtr() { return sender; }
 
-  int SendPlayStart();
-  int SendPlayStop();
-  int SendStreamBegin();
-  int SendStreamEOF();
-
   int SendCallStatus(int status);
   int NotifyIncomingCall(const string& uri);
+
+  void onRegEvent(SIPRegistrationEvent* sip_reg_ev);
 
 protected:
   void run();
@@ -140,13 +137,6 @@ private:
 
   void HandleCtrl(const RTMPPacket *packet);
 
-  int SendCtrl(short nType, unsigned int nObject, unsigned int nTime);
-  int SendResultNumber(double txn, double ID);
-  int SendConnectResult(double txn);
-  int SendRegisterResult(double txn, const char* str);
-  int SendErrorResult(double txn, const char* str);
-  int SendPause(int DoPause, int iTime);
-  int SendChangeChunkSize();
 };
 
 #endif
