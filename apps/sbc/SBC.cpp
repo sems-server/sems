@@ -1080,6 +1080,8 @@ void SBCDialog::onCallStopped() {
     stopCallTimer();
   }
 
+  m_state = BB_Teardown;
+
   CCEnd();
 }
 
