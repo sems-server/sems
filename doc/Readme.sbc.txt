@@ -361,11 +361,12 @@ the B leg is used (session_expires, minimum_timer etc).
 Call control modules
 --------------------
 Call control (CC) modules for the sbc application implement business logic which controls
-how the SBC operates. For example, a CCmodule can implement concurrent call limits, call
+how the SBC operates. For example, a CC module can implement concurrent call limits, call
 limits per user, enforce other policies, or implement routing logic.
 
 Multiple CC modules may be applied for one call. The data that the CC modules get from the
-call may be freely configured.
+call may be freely configured. Call control modules may also be applied through message parts
+(replacement patterns).
 
 Example: 
   Limiting From-User to 5 parallel calls, and 90 seconds maximum call duration:
@@ -375,6 +376,19 @@ Example:
     pcalls_max_calls=5
     call_timer_module=cc_call_timer
     call_timer_timer=90
+
+Example:
+  Applying 90 seconds maximum call duration and other call control from a header:
+    call_control=call_timer,$H(P-CallControl)
+    call_timer_module=cc_call_timer
+    call_timer_timer=90
+
+   SIP message:
+    INVITE sip:foo@bar.net SIP/2.0
+    From: sip:a@example.com;tag=1234
+    To: b@example.com
+    P-CallControl: cc_pcalls;uuid=$rU, cc_pcalls;uuid=a_user
+    ...
 
 See also Readme.sbc_call_control.txt.
 

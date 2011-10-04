@@ -30,6 +30,21 @@ substitution patterns, e.g.:
 will pass the contents of the Header named "P-UUID" as value "uuid" and the contents of "P-Call-Limit"
 as "max_calls".
 
+Alternatively, call control can also be set through message parts by using replacement patterns.
+Example:
+   call_control=cc_pcalls,$H(P-Call-Control)
+
+The header 'P-Call-Control' is a comma separated list of call control configurations, with key,value pairs
+appended, i.e. of the form module_name;param=val;param=val. 
+Example: 
+  P-Call-Control: cc_prepaid;uuid=joe, cc_pcalls;uuid=joe;max_calls=10
+
+As usual with multi-value headers, several separate headers may be used, so the above example is
+equivalent to:
+  P-Call-Control: cc_prepaid;uuid=joe
+  P-Call-Control: cc_pcalls;uuid=joe;max_calls=10
+
+
 Several CC modules are implemented
   o cc_pcalls         - parallel calls limiting
   o cc_call_timer     - call timer (maximum call duration)
@@ -141,7 +156,7 @@ Synopsis:
     call_profile->cc_vars.erase("mycc::myvar");
 
 If several invocations of the same call control module should be independent from each other,
-CC variables may be prefixed by the CC namespace
+CC variables should be prefixed by the CC namespace
 (e.g. args[CC_API_PARAMS_CC_NAMESPACE + "::" + var_name).
 
 
