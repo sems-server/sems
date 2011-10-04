@@ -104,7 +104,7 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   string to;
   string callid;
 
-  vector<pair<int, unsigned int> > call_timers;
+  map<int, unsigned int> call_timers;
 
   int outbound_interface;
   // call control

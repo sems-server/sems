@@ -891,14 +891,31 @@ void SBCDialog::process(AmEvent* ev)
   SBCCallTimerEvent* ct_event;
   if (ev->event_id == SBCCallTimerEvent_ID &&
       (ct_event = dynamic_cast<SBCCallTimerEvent*>(ev)) != NULL) {
-    switch (ct_event->timer_action) {
-    case SBCCallTimerEvent::Remove: removeTimer(ct_event->timer_id); return;
-    case SBCCallTimerEvent::Set:    setTimer(ct_event->timer_id, ct_event->timeout); return;
-    case SBCCallTimerEvent::Reset:
-      removeTimer(ct_event->timer_id);
-      setTimer(ct_event->timer_id, ct_event->timeout);
-      return;
-    default: ERROR("unknown timer_action in sbc call timer event\n");
+    switch (m_state) {
+    case BB_Connected: {
+      switch (ct_event->timer_action) {
+      case SBCCallTimerEvent::Remove: removeTimer(ct_event->timer_id); return;
+      case SBCCallTimerEvent::Set:    setTimer(ct_event->timer_id, ct_event->timeout); return;
+      case SBCCallTimerEvent::Reset:
+	removeTimer(ct_event->timer_id);
+	setTimer(ct_event->timer_id, ct_event->timeout);
+	return;
+      default: ERROR("unknown timer_action in sbc call timer event\n"); return;
+      }
+    }
+
+    case BB_Init:
+    case BB_Dialing: {
+      switch (ct_event->timer_action) {
+      case SBCCallTimerEvent::Remove: call_timers.erase(ct_event->timer_id); return;
+      case SBCCallTimerEvent::Set:
+      case SBCCallTimerEvent::Reset:
+	call_timers[ct_event->timer_id] = ct_event->timeout; return;
+      default: ERROR("unknown timer_action in sbc call timer event\n"); return;
+      }
+    } break;
+
+    default: break;
     }
   }
 
@@ -1122,7 +1139,7 @@ bool SBCDialog::startCallTimer() {
     return false;
   }
 
-  for (vector<pair<int, unsigned int> >::iterator it=
+  for (map<int, unsigned int>::iterator it=
 	 call_timers.begin(); it != call_timers.end(); it++) {
     DBG("SBC: starting call timer %i of %u seconds\n", it->first, it->second);
     setTimer(it->first, it->second);
@@ -1132,7 +1149,7 @@ bool SBCDialog::startCallTimer() {
 }
 
 void SBCDialog::stopCallTimer() {
-  for (vector<pair<int, unsigned int> >::iterator it=
+  for (map<int, unsigned int>::iterator it=
 	 call_timers.begin(); it != call_timers.end(); it++) {
     DBG("SBC: removing call timer %i\n", it->first);
     removeTimer(it->first);
@@ -1241,7 +1258,7 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 
 	  DBG("saving call timer %i: timeout %i\n",
 	      cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt());
-	  call_timers.push_back(std::make_pair(cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt()));
+	  call_timers[cc_timer_id] = ret[i][SBC_CC_TIMER_TIMEOUT].asInt();
 	  cc_timer_id++;
 	} break;
 
