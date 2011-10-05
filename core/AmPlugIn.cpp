@@ -201,7 +201,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       string plugin_file = directory + "/" + plugin_name;
 
       DBG("loading %s ...\n",plugin_file.c_str());
-      if( (err = loadPlugIn(plugin_file)) < 0 ) {
+      if( (err = loadPlugIn(plugin_file, plugin_name)) < 0 ) {
         ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
         return -1;
       }
@@ -228,7 +228,7 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 
       plugin_file = directory + "/"  + plugin_file;
       DBG("loading %s...\n",plugin_file.c_str());
-      if( (err = loadPlugIn(plugin_file)) < 0 ) {
+      if( (err = loadPlugIn(plugin_file, plugin_file)) < 0 ) {
         ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
         // be strict here: if plugin not loaded, stop!
         return err; 
@@ -314,9 +314,36 @@ int AmPlugIn::load(const string& directory, const string& plugins)
   return 0;
 }
 
-int AmPlugIn::loadPlugIn(const string& file)
+void AmPlugIn::set_load_rtld_global(const string& plugin_name) {
+  rtld_global_plugins.insert(plugin_name);
+}
+
+int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name)
 {
-  void* h_dl = dlopen(file.c_str(),RTLD_NOW | RTLD_GLOBAL);
+  int dlopen_flags = RTLD_NOW;
+
+  char* pname = strdup(plugin_name.c_str());
+  char* bname = basename(pname);
+
+  // dsm, ivr and py_sems need RTLD_GLOBAL
+  if (!strcmp(bname, "dsm.so") || !strcmp(bname, "ivr.so") ||
+      !strcmp(bname, "py_sems.so")) {
+      dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
+      DBG("using RTLD_NOW | RTLD_GLOBAL to dlopen '%s'\n", file.c_str());
+  }
+
+  // possibly others
+  for (std::set<string>::iterator it=rtld_global_plugins.begin();
+       it!=rtld_global_plugins.end();it++) {
+    if (!strcmp(bname, it->c_str())) {
+      dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
+      DBG("using RTLD_NOW | RTLD_GLOBAL to dlopen '%s'\n", file.c_str());
+      break;
+    }
+  }
+  free(pname);
+
+  void* h_dl = dlopen(file.c_str(),dlopen_flags);
 
   if(!h_dl){
     ERROR("AmPlugIn::loadPlugIn: %s: %s\n",file.c_str(),dlerror());

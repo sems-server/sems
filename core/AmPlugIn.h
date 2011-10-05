@@ -88,6 +88,7 @@ class AmPlugIn : public AmPayloadProviderInterface
  private:
   static AmPlugIn* _instance;
 
+  std::set<string>                  rtld_global_plugins;
   vector<void*> dlls;
 
   std::map<int,amci_codec_t*>       codecs;
@@ -112,7 +113,7 @@ class AmPlugIn : public AmPayloadProviderInterface
   virtual ~AmPlugIn();
 
   /** @return -1 if failed, else 0. */
-  int loadPlugIn(const string& file);
+  int loadPlugIn(const string& file, const string& plugin_name);
 
   int loadAudioPlugIn(amci_exports_t* exports);
   int loadAppPlugIn(AmPluginFactory* cb);
@@ -126,6 +127,8 @@ class AmPlugIn : public AmPayloadProviderInterface
   int addCodec(amci_codec_t* c);
   int addPayload(amci_payload_t* p);
   int addFileFormat(amci_inoutfmt_t* f);
+
+  void set_load_rtld_global(const string& plugin_name);
 
   static AmPlugIn* instance();
   static void dispose();

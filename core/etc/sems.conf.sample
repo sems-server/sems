@@ -198,6 +198,10 @@ plugin_path=/usr/local/lib/sems/plug-in/
 # o py_sems: conflicts with ivr (in some cases)
 exclude_plugins=precoded_announce;py_sems
 
+# optional: load_plugins_rtld_global=<modules list>
+#
+# load these plugins with RTLD_GLOBAL (by default py_sems, dsm, ivr)
+
 # optional parameter: application
 # 
 # This controls which application is to be executed if there 

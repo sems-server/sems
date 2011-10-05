@@ -318,6 +318,16 @@ int AmConfig::readConfiguration()
   if (cfg.hasParameter("load_plugins"))
     LoadPlugins = cfg.getParameter("load_plugins");
 
+  if (cfg.hasParameter("load_plugins_rtld_global")) {
+    vector<string> rtld_global_plugins =
+      explode(cfg.getParameter("load_plugins_rtld_global"), ",");
+    for (vector<string>::iterator it=
+	   rtld_global_plugins.begin(); it != rtld_global_plugins.end(); it++) {
+      AmPlugIn::instance()->set_load_rtld_global(*it);
+    }
+  }
+
+
   // exclude_plugins
   if (cfg.hasParameter("exclude_plugins"))
     ExcludePlugins = cfg.getParameter("exclude_plugins");
