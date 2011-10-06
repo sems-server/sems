@@ -92,9 +92,9 @@ int SyslogCDR::onLoad() {
     cdr_format = explode(cfg.getParameter("cdr_format"), ",");
   }
 
-  if (level > 3) {
-    WARN("log level > 3 not supported\n");
-    level = 3;
+  if (level > 4) {
+    WARN("log level > 4 not supported\n");
+    level = 4;
   }
 
   return 0;
@@ -161,7 +161,7 @@ void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
 		    int end_ts_sec, int end_ts_usec) {
   if (!call_profile) return;
 
-  static const int log2syslog_level[] = { LOG_ERR, LOG_WARNING, LOG_INFO, LOG_DEBUG };
+  static const int log2syslog_level[] = { LOG_ERR, LOG_WARNING, LOG_INFO, LOG_DEBUG, LOG_NOTICE };
 
   struct timeval start;
   start.tv_sec = connect_ts_sec;
