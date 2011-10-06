@@ -54,7 +54,7 @@ public:
     }
 };
 
-EXPORT_PLUGIN_CLASS_FACTORY(SyslogCDRFactory,"syslog_cdr");
+EXPORT_PLUGIN_CLASS_FACTORY(SyslogCDRFactory,"cc_syslog_cdr");
 
 SyslogCDR* SyslogCDR::_instance=0;
 
