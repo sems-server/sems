@@ -452,7 +452,7 @@ by standard syslog utils, e.g. syslog-ng.
 
  Example:
   call_control=cdr
-  cdr_module=syslog_cdr
+  cdr_module=cc_syslog_cdr
   cdr_Calling-Station-Id=$fU
   cdr_Called-Station-Id=$tU
   cdr_Sip-From-Tag=$ft
