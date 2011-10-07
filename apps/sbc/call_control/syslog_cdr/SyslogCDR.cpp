@@ -66,7 +66,7 @@ SyslogCDR* SyslogCDR::instance()
 }
 
 SyslogCDR::SyslogCDR()
-  : level(2), syslog_prefix("CDR: ")
+  : level(2), syslog_prefix("CDR: "), quoting_enabled(true)
 {
 }
 
@@ -91,6 +91,9 @@ int SyslogCDR::onLoad() {
   if (cfg.hasParameter("cdr_format")) {
     cdr_format = explode(cfg.getParameter("cdr_format"), ",");
   }
+
+  quoting_enabled = cfg.hasParameter("quoting_enabled") ?
+    cfg.getParameter("quoting_enabled") == "yes" : quoting_enabled;
 
   if (level > 4) {
     WARN("log level > 4 not supported\n");
@@ -155,13 +158,65 @@ void SyslogCDR::start(const string& ltag, SBCCallProfile* call_profile,
   call_profile->cc_vars["cdr::v"] = values;
 }
 
+string getTimeDiffString(int from_ts_sec, int from_ts_usec,
+			 int to_ts_sec, int to_ts_usec,
+			 bool ms_precision) {
+  string res;
+
+  struct timeval start;
+  start.tv_sec = from_ts_sec;
+  start.tv_usec = from_ts_usec;
+  struct timeval diff;
+  diff.tv_sec = to_ts_sec;
+  diff.tv_usec = to_ts_usec;
+  if (!from_ts_sec || !to_ts_sec || timercmp(&start, &diff, >)) {
+    diff.tv_sec = diff.tv_usec = 0;
+  } else {
+    timersub(&diff,&start,&diff);
+  }
+
+  if (ms_precision) {
+    diff.tv_usec /= 1000;
+    string msecs = int2str((unsigned int)diff.tv_usec);
+    if (msecs.length()==1)
+      msecs = "00"+msecs;
+    else if (msecs.length()==2)
+      msecs = "0"+msecs;
+
+    res+=int2str((unsigned int)diff.tv_sec)+"."+ msecs;
+      
+  } else {
+    if (diff.tv_usec>=500000)
+      diff.tv_sec++;
+    res += int2str((unsigned int)diff.tv_sec);
+  }
+  return res;
+}
+
+string do_quote(string s) {
+  string res = "\"";
+  for (string::iterator it = s.begin();it!=s.end();it++) {
+    if (*it == '"') {
+      res +="\"\"";
+    } else {
+      res += *it;
+    }
+  }
+  res += "\"";
+  return res;
+}
+
+// inlining (?)
+#define csv_quote(_str) (quoting_enabled?do_quote(_str) : _str)
+
 void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
 		    int start_ts_sec, int start_ts_usec,
 		    int connect_ts_sec, int connect_ts_usec,
 		    int end_ts_sec, int end_ts_usec) {
   if (!call_profile) return;
 
-  static const int log2syslog_level[] = { LOG_ERR, LOG_WARNING, LOG_INFO, LOG_DEBUG, LOG_NOTICE };
+  static const int log2syslog_level[] = { LOG_ERR, LOG_WARNING, LOG_INFO,
+					  LOG_DEBUG, LOG_NOTICE };
 
   struct timeval start;
   start.tv_sec = connect_ts_sec;
@@ -188,49 +243,74 @@ void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
     for (vector<string>::iterator it=cdr_format.begin(); it != cdr_format.end(); it++) {
       if (it->size() && (*it)[0]=='$') {
 	if (*it == "$ltag") {
-	  cdr+=ltag+",";
+	  cdr+=csv_quote(ltag) +",";
 	} else if (*it == "$start_ts") {
-	  cdr+=int2str(start_ts_sec)+"."+int2str(start_ts_usec)+",";
+	  cdr+=csv_quote(int2str(start_ts_sec)+"."+int2str(start_ts_usec)) +",";
 	} else if (*it == "$connect_ts") {
-	  cdr+=int2str(connect_ts_sec)+"."+int2str(connect_ts_usec)+",";
+	  cdr+=csv_quote(int2str(connect_ts_sec)+"."+int2str(connect_ts_usec)) +",";
 	} else if (*it == "$end_ts") {
-	  cdr+=int2str(end_ts_sec)+"."+int2str(end_ts_usec)+",";
+	  cdr+=csv_quote(int2str(end_ts_sec)+"."+int2str(end_ts_usec)) +",";
 	} else if (*it == "$duration") {
-	  cdr+=int2str((unsigned int)diff.tv_sec)+"."+
-	    int2str((unsigned int)diff.tv_usec)+",";
+	  cdr+=csv_quote(getTimeDiffString(start_ts_sec, start_ts_usec,
+					   end_ts_sec, end_ts_usec, true)) +",";
+	} else if (*it == "$duration_sec") {
+	  cdr+=csv_quote(getTimeDiffString(start_ts_sec, start_ts_usec,
+					   end_ts_sec, end_ts_usec, false)) +",";
+	} else if (*it == "$bill_duration") {
+	  cdr+=csv_quote(getTimeDiffString(connect_ts_sec, connect_ts_usec,
+					   end_ts_sec, end_ts_usec, true)) +",";
+	} else if (*it == "$bill_duration_sec") {
+	  cdr+=csv_quote(getTimeDiffString(connect_ts_sec, connect_ts_usec,
+					   end_ts_sec, end_ts_usec, false)) +",";
+	} else if (*it == "$setup_duration") {
+	  if (!connect_ts_sec) {
+	    cdr+=csv_quote(getTimeDiffString(start_ts_sec, start_ts_usec,
+					     end_ts_sec, end_ts_usec, true)) +",";
+	  } else {
+	    cdr+=csv_quote(getTimeDiffString(start_ts_sec, start_ts_usec,
+					     connect_ts_sec, connect_ts_usec, true)) +",";
+	  }
+	} else if (*it == "$setup_duration_sec") {
+	  if (!connect_ts_sec) {
+	    cdr+=csv_quote(getTimeDiffString(start_ts_sec, start_ts_usec,
+					     end_ts_sec, end_ts_usec, false)) +",";
+	  } else {
+	    cdr+=csv_quote(getTimeDiffString(start_ts_sec, start_ts_usec,
+					     connect_ts_sec, connect_ts_usec, false)) +",";
+	  }
 	} else if (*it == "$start_tm") {
-	  cdr+=timeString(start_ts_sec)+",";
+	  cdr+=csv_quote(timeString(start_ts_sec)) +",";
 	} else if (*it == "$connect_tm") {
-	  cdr+=timeString(connect_ts_sec)+",";
+	  cdr+=csv_quote(timeString(connect_ts_sec)) +",";
 	} else if (*it == "$end_tm") {
-	  cdr+=timeString(end_ts_sec)+",";
+	  cdr+=csv_quote(timeString(end_ts_sec)) +",";
 	} else {
 	  ERROR("in configuration: unknown value '%s' in cdr_format\n",
 		it->c_str());
 	}
       } else {
 	if (!values.hasMember(*it)) {
-	    cdr+=",";
+	  cdr+=csv_quote(string("")) + ",";
 	} else {
 	  if (isArgCStr(values[*it])) {
-	    cdr+=string(values[*it].asCStr())+",";
+	    cdr+=csv_quote(string(values[*it].asCStr())) +",";
 	  } else {
-	    cdr+=AmArg::print(values[*it])+",";
+	    cdr+=csv_quote(AmArg::print(values[*it])) +",";
 	  }
 	}
       }
     }
   } else {
     // default format: ltag, start_ts, connect_ts, end_ts, <other data...>
-    cdr = ltag + "," +
-      int2str(start_ts_sec)+"."+int2str(start_ts_usec)+","+
-      int2str(connect_ts_sec)+"."+int2str(connect_ts_usec)+","+
-      int2str(end_ts_sec)+"."+int2str(end_ts_usec)+",";
+    cdr = csv_quote(ltag) + "," +
+      csv_quote(int2str(start_ts_sec)+"."+int2str(start_ts_usec)) +","+
+      csv_quote(int2str(connect_ts_sec)+"."+int2str(connect_ts_usec)) +","+
+      csv_quote(int2str(end_ts_sec)+"."+int2str(end_ts_usec)) +",";
     for (AmArg::ValueStruct::const_iterator i=values.begin(); i!=values.end();i++) {
       if (isArgCStr(i->second)) {
-	cdr+=string(i->second.asCStr())+",";
+	cdr+=csv_quote(string(i->second.asCStr())) +",";
       } else {
-	cdr+=AmArg::print(i->second)+",";
+	cdr+=csv_quote(AmArg::print(i->second)) +",";
       }
     }
   }

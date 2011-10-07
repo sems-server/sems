@@ -49,6 +49,8 @@ class SyslogCDR : public AmDynInvoke
   string syslog_prefix;
   vector<string> cdr_format;
 
+  bool quoting_enabled;
+
   /* map<string, CDR*> cdrs; */
   /* AmMutex cdrs_mut; */
 
