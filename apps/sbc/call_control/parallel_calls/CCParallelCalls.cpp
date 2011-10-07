@@ -104,17 +104,24 @@ void CCParallelCalls::invoke(const string& method, const AmArg& args, AmArg& ret
 void CCParallelCalls::start(const string& cc_namespace,
 			    const string& ltag, SBCCallProfile* call_profile,
 			    const AmArg& values, AmArg& res) {
-  if (!call_profile) return;
+#define REFUSE_WITH_SERVER_INTERNAL_ERROR				\
+  res.push(AmArg());							\
+  AmArg& res_cmd = res[0];						\
+  res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;			\
+  res_cmd[SBC_CC_REFUSE_CODE] = 500;					\
+  res_cmd[SBC_CC_REFUSE_REASON] = SIP_REPLY_SERVER_INTERNAL_ERROR;	\
+  return;
+
+  if (!call_profile) {
+    ERROR("internal: call_profile object not found in parameters\n");
+    REFUSE_WITH_SERVER_INTERNAL_ERROR;
+    return;
+  }
 
   if (!values.hasMember("uuid") || !isArgCStr(values["uuid"]) ||
       !strlen(values["uuid"].asCStr())) {
     ERROR("configuration error: uuid missing for parallel calls call control!\n");
-    res.push(AmArg());
-    AmArg& res_cmd = res[0];
-    res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
-    res_cmd[SBC_CC_REFUSE_CODE] = 500;
-    res_cmd[SBC_CC_REFUSE_REASON] = SIP_REPLY_SERVER_INTERNAL_ERROR;
-    return;
+    REFUSE_WITH_SERVER_INTERNAL_ERROR;
   }
 
   string uuid = values["uuid"].asCStr();
@@ -125,12 +132,7 @@ void CCParallelCalls::start(const string& cc_namespace,
   if (values.hasMember("max_calls") && isArgCStr(values["max_calls"])) {
     if (str2i(values["max_calls"].asCStr(), max_calls)) {
       ERROR("max_calls '%s' could not be interpreted!\n", values["max_calls"].asCStr());
-      res.push(AmArg());
-      AmArg& res_cmd = res[0];
-      res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
-      res_cmd[SBC_CC_REFUSE_CODE] = 500;
-      res_cmd[SBC_CC_REFUSE_REASON] = SIP_REPLY_SERVER_INTERNAL_ERROR;
-      return;
+      REFUSE_WITH_SERVER_INTERNAL_ERROR;
     }
   }
 
@@ -166,13 +168,18 @@ void CCParallelCalls::start(const string& cc_namespace,
     res_cmd[SBC_CC_REFUSE_REASON] = refuse_reason;
   }
 
+#undef REFUSE_WITH_SERVER_INTERNAL_ERROR
 }
 
 void CCParallelCalls::end(const string& cc_namespace, const string& ltag,
 			  SBCCallProfile* call_profile) {
-  if (!call_profile) return;
+  if (!call_profile) {
+    ERROR("internal: call_profile object not found in parameters\n");
+    return;
+  }
 
-  SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(cc_namespace+"::"+SBCVAR_PARALLEL_CALLS_UUID);
+  SBCVarMapIteratorT vars_it =
+    call_profile->cc_vars.find(cc_namespace+"::"+SBCVAR_PARALLEL_CALLS_UUID);
   if (vars_it == call_profile->cc_vars.end() || !isArgCStr(vars_it->second)) {
     ERROR("internal: could not find UUID for ending call '%s'\n", ltag.c_str());
     return;
