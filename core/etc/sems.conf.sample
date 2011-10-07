@@ -200,7 +200,8 @@ exclude_plugins=precoded_announce;py_sems
 
 # optional: load_plugins_rtld_global=<modules list>
 #
-# load these plugins with RTLD_GLOBAL (by default py_sems, dsm, ivr)
+# load these plugins with RTLD_GLOBAL (by default py_sems,
+# dsm, ivr, sbc, diameter_client, registrar_client, uac_auth)
 
 # optional parameter: application
 # 
