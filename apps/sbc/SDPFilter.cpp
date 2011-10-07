@@ -101,7 +101,7 @@ void fix_incomplete_silencesupp(SdpMedia& m) {
   }
 }
 
-int normalizeSDP(AmSdp& sdp) {
+int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
   for (std::vector<SdpMedia>::iterator m_it=
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
     if (m_it->type != MT_AUDIO && m_it->type != MT_VIDEO)
@@ -114,5 +114,15 @@ int normalizeSDP(AmSdp& sdp) {
     // (only media level - RFC3108 4.)
     fix_incomplete_silencesupp(*m_it);
   }
+
+  if (anonymize_sdp) {
+    // Clear s-Line in SDP:
+    sdp.sessionName.clear();
+    // Clear u-Line in SDP:
+    sdp.uri.clear();
+    // Clear origin user
+    sdp.origin.user = "-";
+  }
+
   return 0;
 }

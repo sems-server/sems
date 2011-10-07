@@ -963,7 +963,7 @@ int SBCDialog::relayEvent(AmEvent* ev) {
 int SBCDialog::filterBody(AmSdp& sdp, bool is_a2b) {
   if (call_profile.sdpfilter_enabled) {
     // normalize SDP
-    normalizeSDP(sdp);
+    normalizeSDP(sdp, call_profile.anonymize_sdp);
     // filter SDP
     if (call_profile.sdpfilter != Transparent) {
       filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
@@ -1591,7 +1591,7 @@ void SBCCalleeSession::onSendRequest(const string& method, const string& content
 int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {
   if (call_profile.sdpfilter_enabled) {
     // normalize SDP
-    normalizeSDP(sdp);
+    normalizeSDP(sdp, call_profile.anonymize_sdp);
     // filter SDP
     if (call_profile.sdpfilter != Transparent) {
       filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);

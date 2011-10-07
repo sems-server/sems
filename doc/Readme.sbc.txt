@@ -283,6 +283,8 @@ set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
 Codecs may be filtered out by their payload names in whitelist or blacklist
 modes. The payload names in the list are case-insensitive (PCMU==pcmu).
 
+The s, u and o-lines of the SDP can be anonymized with the setting sdp_anonymize=yes.
+
 RTP relay
 ---------
 RTP can be bridged through the SBC. Where without rtprelay, A call would go only

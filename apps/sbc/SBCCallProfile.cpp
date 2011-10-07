@@ -110,7 +110,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       std::transform(c.begin(), c.end(), c.begin(), ::tolower);
       sdpfilter_list.insert(c);
     }
+    anonymize_sdp = cfg.getParameter("sdp_anonymize", "no") == "yes";
   }
+
 
   sst_enabled = cfg.getParameter("enable_session_timer");
   if (cfg.hasParameter("enable_aleg_session_timer")) {
@@ -296,9 +298,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 	 FilterType2String(headerfilter), headerfilter_list.size());
     INFO("SBC:      message filter is %s, %zd items in list\n",
 	 FilterType2String(messagefilter), messagefilter_list.size());
-    INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
+    INFO("SBC:      SDP filter is %sabled, %s, %zd items in list, %sanonymizing SDP\n",
 	 sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
-	 sdpfilter_list.size());
+	 sdpfilter_list.size(), anonymize_sdp?"":"not ");
 
     INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
     if (rtprelay_enabled) {

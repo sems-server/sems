@@ -84,6 +84,7 @@ struct SBCCallProfile
   bool sdpfilter_enabled;
   FilterType sdpfilter;
   set<string> sdpfilter_list;
+  bool anonymize_sdp;
 
   string sst_enabled;
   string sst_aleg_enabled;
