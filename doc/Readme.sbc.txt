@@ -128,6 +128,7 @@ The patterns which can be used are the following:
   $fH  - From headers
   $fP  - From Params
   $ft  - From tag
+  $fn  - From display name
 
   $tu  - To URI
   $fU  - To User

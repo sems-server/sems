@@ -49,6 +49,8 @@ void replaceParsedParam(const string& s, size_t p,
   case 'p': res+=parsed.uri_port; break; // port
   case 'H': res+=parsed.uri_headers; break; // Headers
   case 'P': res+=parsed.uri_param; break; // Params
+  case 'n': res+=parsed.display_name; break; // Params
+
   // case 't': { // tag
   //   map<string, string>::const_iterator it = parsed.params.find("tag");
   //   if (it != parsed.params.end())
