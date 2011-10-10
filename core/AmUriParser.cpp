@@ -48,34 +48,55 @@ bool AmUriParser::isEqual(const AmUriParser& c) const {
  */
 static inline int skip_name(const string& s, unsigned int pos)
 {
-  size_t i;
-  int last_wsp, quoted = 0;
-	
-  for(i = pos; i < s.length(); i++) {
-    char c = s[i];
-    if (!quoted) {
-      if ((c == ' ') || (c == '\t')) {
-	last_wsp = i;
-      } else {
-	if (c == '<') {
-	  return i;
-	}
+  size_t i = pos;
+  // skip leading WSP
+  while (i<s.length() && (s[i]==' ' || s[i]=='\t'))
+    i++;
+  if (i==s.length())
+    return i;
 
-	if (c == '\"') {
-	  quoted = 1;
+  if (s[i] == '"') {
+    // quoted
+    i++;
+    int escaped = 0;
+    while (i<s.length()) {
+      if (escaped) {
+	escaped = 0;
+      } else {
+	if (s[i] == '\\') {
+	  escaped = 1;
+	} else {
+	  if (s[i] == '"') {
+	    // name ended
+	    i++;
+	    while (i<s.length() && (s[i]==' ' || s[i]=='\t'))
+	      i++;
+	    return i;
+	  }
+	  if (s[i] == '\\') {
+	    escaped = 1;
+	  }
 	}
       }
-    } else {
-      if ((c == '\"') && (s[i-1] != '\\')) quoted = 0;
+      i++;
     }
-  }
-
-  if (quoted) {
-    ERROR("skip_name(): Closing quote missing in name part of URI\n");
+    DBG("unclosed quoted name in URI '%s'\n", s.substr(pos).c_str());
     return -1;
-  } 
-
-  return pos; // no name to skip
+  } else {
+    while (i<s.length()) {
+      if (s[i]=='<') {
+	// start of URI
+	return i;
+      }
+      // was addr-spec not nameaddr
+      if (s[i]=='@') {
+	return pos;
+      }
+      i++;
+    }
+    DBG("addr-spec not found in URI '%s'\n",  s.substr(pos).c_str());
+    return -1;
+  }
 }
 
 #define ST1 1 /* Basic state */
@@ -377,6 +398,39 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
 bool AmUriParser::parse_contact(const string& line, size_t pos, size_t& end) {
   int p0 = skip_name(line, pos);
   if (p0 < 0) { return false; }
+
+  if (p0-pos) {
+    // fix display name
+    int dn_start = pos;
+    while (dn_start<p0 && line[dn_start]==' ')
+      dn_start++;
+
+    int dn_end = p0;
+    while (dn_end>dn_start && line[dn_end-1]==' ')
+      dn_end--;
+    display_name = line.substr(dn_start, dn_end-dn_start);
+
+    if (display_name.size() &&
+	display_name[0]=='"' && display_name[display_name.length()-1] == '"') {
+      // unquote
+      display_name.erase(0,1);
+      display_name.erase(display_name.size()-1,1);
+      char last_c = ' ';
+      size_t i=0;
+      // unescape
+      while (i<display_name.size()) {
+	if ((last_c=='\\') &&
+	    (display_name[i]=='"' ||display_name[i]=='\\')) {
+	  display_name.erase(i-1, 1);
+	  last_c = ' ';
+	} else {
+	  last_c = display_name[i];
+	  i++;
+	}
+      }
+    }
+  }
+
   int p1 = skip_uri(line, p0);
   if (p1 < 0) { return false; }
   //  if (p1 < 0) return false;
@@ -389,16 +443,17 @@ bool AmUriParser::parse_contact(const string& line, size_t pos, size_t& end) {
 
 void AmUriParser::dump() {
   DBG("--- Uri Info --- \n");
-  DBG(" uri       '%s'\n", uri.c_str());
-  DBG(" uri_user  '%s'\n", uri_user.c_str());
-  DBG(" uri_host  '%s'\n", uri_host.c_str());
-  DBG(" uri_port  '%s'\n", uri_port.c_str());
-  DBG(" uri_hdr   '%s'\n", uri_headers.c_str());
-  DBG(" uri_param '%s'\n", uri_param.c_str());
+  DBG(" uri           '%s'\n", uri.c_str());
+  DBG(" display_name  '%s'\n", display_name.c_str());
+  DBG(" uri_user      '%s'\n", uri_user.c_str());
+  DBG(" uri_host      '%s'\n", uri_host.c_str());
+  DBG(" uri_port      '%s'\n", uri_port.c_str());
+  DBG(" uri_hdr       '%s'\n", uri_headers.c_str());
+  DBG(" uri_param     '%s'\n", uri_param.c_str());
   for (map<string, string>::iterator it = params.begin(); 
        it != params.end(); it++) {
     if (it->second.empty())
-      DBG(" param     '%s'\n", it->first.c_str());
+      DBG(" param         '%s'\n", it->first.c_str());
     else
       DBG(" param     '%s'='%s'\n", it->first.c_str(), it->second.c_str());
   }

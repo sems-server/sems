@@ -109,11 +109,12 @@ string replaceParameters(const string& s,
 	  }
 
 	  if (from_parser.uri.empty()) {
-	    from_parser.uri = req.from;
-	    if (!from_parser.parse_uri()) {
+	    size_t end;
+	    if (!from_parser.parse_contact(req.from, 0, end)) {
 	      WARN("Error parsing From URI '%s'\n", req.from.c_str());
 	      break;
 	    }
+	    from_parser.dump();
 	  }
 
 	  replaceParsedParam(s, p, from_parser, res);
@@ -127,8 +128,8 @@ string replaceParameters(const string& s,
 	  }
 
 	  if (to_parser.uri.empty()) {
-	    to_parser.uri = req.to;
-	    if (!to_parser.parse_uri()) {
+	    size_t end;
+	    if (!to_parser.parse_contact(req.to, 0, end)) {
 	      WARN("Error parsing To URI '%s'\n", req.to.c_str());
 	      break;
 	    }
@@ -199,14 +200,14 @@ string replaceParameters(const string& s,
 #define case_HDR(pv_char, pv_name, hdr_name)				\
 	  case pv_char: {						\
 	    AmUriParser uri_parser;					\
-	    uri_parser.uri = getHeader(req.hdrs, hdr_name);		\
+	    string m_uri = getHeader(req.hdrs, hdr_name);		\
 	    if ((s.length() == p+1) || (s[p+1] == '.')) {		\
-	      res += uri_parser.uri;					\
+	      res += m_uri;						\
 	      break;							\
 	    }								\
-									\
-	    if (!uri_parser.parse_uri()) {				\
-	      WARN("Error parsing " pv_name " URI '%s'\n", uri_parser.uri.c_str()); \
+	    size_t end;							\
+	    if (!uri_parser.parse_contact(m_uri, 0, end)) {		\
+	      WARN("Error parsing " pv_name " URI '%s'\n", m_uri.c_str()); \
 	      break;							\
 	    }								\
 	    if (s[p+1] == 'i') {					\
@@ -271,15 +272,16 @@ string replaceParameters(const string& s,
 	  } else {
 	    // parse URI and use component
 	    AmUriParser uri_parser;
-	    uri_parser.uri = getHeader(req.hdrs, hdr_name);
+	    string m_uri = getHeader(req.hdrs, hdr_name);
 	    if ((s[p+1] == '.')) {
-	      res += uri_parser.uri;
+	      res += m_uri;
 	      break;
 	    }
 
-	    if (!uri_parser.parse_uri()) {
+	    size_t end;
+	    if (!uri_parser.parse_contact(m_uri, 0, end)) {
 	      WARN("Error parsing header %s URI '%s'\n",
-		   hdr_name.c_str(), uri_parser.uri.c_str());
+		   hdr_name.c_str(), m_uri.c_str());
 	      break;
 	    }
 	    replaceParsedParam(s, p, uri_parser, res);
