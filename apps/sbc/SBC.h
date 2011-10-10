@@ -151,6 +151,7 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   void CCConnect(const AmSipReply& reply);
   /** end call */
   void CCEnd();
+  void CCEnd(const CCInterfaceListIteratorT& end_interface);
 
  public:
 

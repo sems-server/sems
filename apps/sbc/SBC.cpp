@@ -1193,6 +1193,12 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
       dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+
+      // call 'end' of call control modules up to here
+      call_end_ts.tv_sec = call_start_ts.tv_sec;
+      call_end_ts.tv_usec = call_start_ts.tv_usec;
+      CCEnd(cc_it);
+
       return false;
     } catch (const AmArg::TypeMismatchException& e) {
       ERROR("TypeMismatchException executing call control interface start "
@@ -1200,6 +1206,12 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
       dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+
+      // call 'end' of call control modules up to here
+      call_end_ts.tv_sec = call_start_ts.tv_sec;
+      call_end_ts.tv_usec = call_start_ts.tv_usec;
+      CCEnd(cc_it);
+
       return false;
     }
 
@@ -1218,6 +1230,12 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 	  DBG("dropping call on call control action DROP from '%s'\n",
 	      cc_if.cc_name.c_str());
 	  dlg.setStatus(AmSipDialog::Disconnected);
+
+	  // call 'end' of call control modules up to here
+	  call_end_ts.tv_sec = call_start_ts.tv_sec;
+	  call_end_ts.tv_usec = call_start_ts.tv_usec;
+	  CCEnd(cc_it);
+
 	  return false;
 	}
 
@@ -1242,6 +1260,11 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 	  dlg.reply(req,
 		    ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
 		    "", "", headers);
+
+	  // call 'end' of call control modules up to here
+	  call_end_ts.tv_sec = call_start_ts.tv_sec;
+	  call_end_ts.tv_usec = call_start_ts.tv_usec;
+	  CCEnd(cc_it);
 	  return false;
 	}
 
@@ -1323,10 +1346,14 @@ void SBCDialog::CCConnect(const AmSipReply& reply) {
 }
 
 void SBCDialog::CCEnd() {
+  CCEnd(call_profile.cc_interfaces.end());
+}
+
+void SBCDialog::CCEnd(const CCInterfaceListIteratorT& end_interface) {
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
   for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
-       cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+       cc_it != end_interface; cc_it++) {
     CCInterface& cc_if = *cc_it;
 
     AmArg di_args,ret;
