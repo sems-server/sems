@@ -26,15 +26,15 @@ namespace XmlRpc {
       XmlRpcUtil::log(2,"XmlRpcSource::close: done closing socket %d.", _fd);
       _fd = -1;
     }
-    if (_deleteOnClose) {
-      XmlRpcUtil::log(2,"XmlRpcSource::close: deleting this");
-      _deleteOnClose = false;
-      delete this;
-    }
     if (_ssl_ssl != (SSL *) NULL) {
       SSL_shutdown (_ssl_ssl);
       SSL_free (_ssl_ssl);
       SSL_CTX_free (_ssl_ctx);
+    }
+    if (_deleteOnClose) {
+      XmlRpcUtil::log(2,"XmlRpcSource::close: deleting this");
+      _deleteOnClose = false;
+      delete this;
     }
   }
 
