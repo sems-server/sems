@@ -81,6 +81,12 @@ class AmPluginFactory
    * @return 1 on error.
    */
   virtual int onLoad()=0;
+
+
+  /**
+   * Enables the plug-in to deinitialize once the server is stopped.
+   */
+  virtual void onUnload() { };
 };
 
 /**

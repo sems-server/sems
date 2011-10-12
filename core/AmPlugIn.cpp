@@ -115,6 +115,9 @@ static void delete_plugin_factory(std::pair<string, AmPluginFactory*> pf)
 {
   if ((deleted_factories.find(pf.second) == deleted_factories.end()) &&
       (deleted_factories_names.find(pf.first) == deleted_factories_names.end())) {
+    DBG("onUnload of plugin '%s'\n", pf.first.c_str());
+    pf.second->onUnload();
+
     DBG("deleting plug-in factory: %s\n", pf.first.c_str());
     deleted_factories.insert(pf.second);
     deleted_factories_names.insert(pf.first);

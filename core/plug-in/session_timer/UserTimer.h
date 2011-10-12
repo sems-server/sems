@@ -74,11 +74,14 @@ class UserTimer: public AmDynInvoke
   unsigned int hash(const string& s1);
 
   void unsafe_removeTimer(int id, const string& session_id, unsigned int bucket);
+
  public:
   UserTimer();
   ~UserTimer();
 
   static UserTimer* instance();
+
+  bool _running;
 
   /** set timer with ID id, fire after s seconds event in 
       session session_id  */
