@@ -25,6 +25,15 @@ public:
 #endif
     return 0;
   }
+
+#ifdef SESSION_TIMER_THREAD
+  void onUnload() {
+    DBG("stopping userTimer thread\n");
+    UserTimer::instance()->_running = false;
+    usleep(10 * SESSION_TIMER_GRANULARITY * 1000);
+    UserTimer::instance()->stop();
+  }
+#endif
 };
 
 
@@ -56,7 +65,8 @@ UserTimer* UserTimer::instance()
 
 #ifdef SESSION_TIMER_THREAD
 void UserTimer::run() {
-  while(1){
+  _running = true;
+  while(_running){
     usleep(SESSION_TIMER_GRANULARITY * 1000);
     checkTimers();
   }
@@ -215,6 +225,9 @@ void UserTimer::invoke(const string& method, const AmArg& args, AmArg& ret)
   }
   else if(method == "removeUserTimers"){
     removeUserTimers(args.get(0).asCStr());
+  }
+  else if(method == "stop"){
+    _running = false;
   }
   else
     throw AmDynInvoke::NotImplemented(method);
