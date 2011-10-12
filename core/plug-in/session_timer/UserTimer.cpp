@@ -29,9 +29,8 @@ public:
 #ifdef SESSION_TIMER_THREAD
   void onUnload() {
     DBG("stopping userTimer thread\n");
+    AmThreadWatcher::instance()->add(UserTimer::instance());
     UserTimer::instance()->_running = false;
-    usleep(10 * SESSION_TIMER_GRANULARITY * 1000);
-    UserTimer::instance()->stop();
   }
 #endif
 };
