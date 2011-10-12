@@ -203,7 +203,9 @@ void RegistrationTimer::run()
   gettimeofday(&now, NULL);
   timeradd(&tick,&now,&next_tick);
 
-  while(true){
+  _timer_thread_running = true;
+
+  while(_timer_thread_running){
 
     gettimeofday(&now,NULL);
 

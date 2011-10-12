@@ -108,6 +108,7 @@ class RegistrationTimer
 				time_t to_time);
 
   RegistrationTimer(); 
+  bool _timer_thread_running;
 };
 
 #endif

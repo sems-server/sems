@@ -550,6 +550,7 @@ void DBRegAgent::process(AmEvent* ev) {
       DBG("Session received system Event\n");
       if (sys_ev->sys_event == AmSystemEvent::ServerShutdown) {
 	running = false;
+	registration_scheduler._timer_thread_running = false;
       }
       return;
     }
