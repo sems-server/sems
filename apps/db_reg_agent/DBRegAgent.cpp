@@ -388,6 +388,7 @@ void DBRegAgent::createRegistration(long subscriber_id,
       registrations_mut.unlock();
       WARN("registration with ID %ld already exists, removing\n", subscriber_id);
       removeRegistration(subscriber_id);
+      clearRegistrationTimer(subscriber_id);
       registrations_mut.lock();
     }
 
@@ -820,6 +821,12 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
 	    status = REG_STATUS_REMOVED;
 	  }
 	}
+      }
+
+      if (registration->getUnregistering()) {
+	registrations_mut.unlock();
+	removeRegistration(subscriber_id);
+	registrations_mut.lock();
       }
 
       if (!delete_status) {
