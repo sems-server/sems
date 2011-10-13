@@ -239,6 +239,13 @@ int DBRegAgent::onLoad()
   return 0;
 }
 
+void DBRegAgent::onUnload() {
+  DBG("closing main DB connection\n");
+  MainDBConnection.disconnect();
+  DBG("closing auxiliary DB connection\n");
+  ProcessorDBConnection.disconnect();
+}
+
 bool DBRegAgent::loadRegistrations() {
   try {
     time_t now_time = time(NULL);

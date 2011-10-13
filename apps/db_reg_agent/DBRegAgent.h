@@ -157,6 +157,8 @@ class DBRegAgent
 
   int onLoad();
 
+  void onUnload();
+
   RegistrationTimer registration_scheduler;
   DBRegAgentProcessorThread registration_processor;
 
