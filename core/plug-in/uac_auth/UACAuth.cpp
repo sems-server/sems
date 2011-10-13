@@ -206,7 +206,8 @@ bool UACAuth::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
               ERROR("failed to send authenticated request.\n");
             }
 	  }
-	} 
+	}
+	sent_requests.erase(ri);
       }
   } else if (reply.code >= 200) {
     sent_requests.erase(reply.cseq); // now we dont need it any more
