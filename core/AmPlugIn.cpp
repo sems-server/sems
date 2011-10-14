@@ -43,6 +43,7 @@
 #include <dlfcn.h>
 #include <string.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include <set>
 #include <vector>
