@@ -730,8 +730,8 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	      attr_line = next;
 	      rtpmap_st = ENC_PARAM;
 	      //last line check
-	    }else if (*(line_end-1) == '\0') {
-	      string clk_rate(attr_line, int(line_end-attr_line)-1);
+	    }else if (*line_end == '\0') {
+	      string clk_rate(attr_line, int(line_end-attr_line));
 	      str2i(clk_rate, clock_rate);
 	      parsing = 0;
 	      //more lines to come
