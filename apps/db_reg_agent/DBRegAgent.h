@@ -74,12 +74,12 @@ struct RegistrationActionEvent : public AmEvent {
 
   enum RegAction { Register=0, Deregister };
 
-RegistrationActionEvent(RegAction action, int subscriber_id)
+RegistrationActionEvent(RegAction action, long subscriber_id)
   : AmEvent(RegistrationActionEventID),
     action(action), subscriber_id(subscriber_id) { }
 
   RegAction action;
-  int subscriber_id;
+  long subscriber_id;
 };
 
 class DBRegAgent;
