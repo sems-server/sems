@@ -144,7 +144,7 @@ void CallGenFactory::checkTarget() {
   if (!target_args)
     return;
 
-  DBG("%d active calls, %d current target, %d already scheduled\n", 
+  DBG("%zd active calls, %d current target, %d already scheduled\n",
       active_calls.size(), target_args->get(0).asInt(), scheduled);
 
   int missing_calls = 
@@ -332,12 +332,12 @@ void CallGenFactory::callGenStats(const AmArg& args, AmArg& ret) {
     target = target_args->get(0).asInt();
 
   string res = "CallGen statistics: \n " +
-    int2str(active_calls.size()) + " active calls\n " +
+    int2str((unsigned int)active_calls.size()) + " active calls\n " +
     int2str(target) + " current target\n " +
     int2str(scheduled) +" scheduled\n ";
 
   calls_list_mut.lock();
-  res += int2str(past_calls.size()) + " total calls\n ";
+  res += int2str((unsigned int)past_calls.size()) + " total calls\n ";
   calls_list_mut.unlock();
   ret.push(res.c_str());
 }
