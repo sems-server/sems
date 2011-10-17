@@ -928,8 +928,13 @@ void parse_app_params(const string& hdrs, map<string,string>& app_params)
   for (vector<string>::iterator it=items.begin(); 
        it != items.end(); it++) {
     vector<string> kv = explode(*it, "=");
-    if (kv.size()==2) 
+    if (kv.size() == 2) {
       app_params.insert(make_pair(kv[0], kv[1]));
+    } else {
+      if (kv.size() == 1) {
+	app_params.insert(make_pair(*it, string()));
+      }
+    }
   }
 }
 
