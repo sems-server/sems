@@ -572,12 +572,12 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
   switch (reg_action_ev->action) {
   case RegistrationActionEvent::Register:
     {
-      DBG("REGISTER of registration %i\n", reg_action_ev->subscriber_id);
+      DBG("REGISTER of registration %ld\n", reg_action_ev->subscriber_id);
       registrations_mut.lock();
       map<long, AmSIPRegistration*>::iterator it=
 	registrations.find(reg_action_ev->subscriber_id);
       if (it==registrations.end()) {
-	DBG("ignoring scheduled REGISTER of unknown registration %i\n",
+	DBG("ignoring scheduled REGISTER of unknown registration %ld\n",
 	    reg_action_ev->subscriber_id);
       } else {
 	if (!it->second->doRegistration()) {
@@ -596,22 +596,22 @@ void DBRegAgent::onRegistrationActionEvent(RegistrationActionEvent* reg_action_e
     } break;
   case RegistrationActionEvent::Deregister:
     {
-      DBG("De-REGISTER of registration %i\n", reg_action_ev->subscriber_id);
+      DBG("De-REGISTER of registration %ld\n", reg_action_ev->subscriber_id);
       registrations_mut.lock();
       map<long, AmSIPRegistration*>::iterator it=
 	registrations.find(reg_action_ev->subscriber_id);
       if (it==registrations.end()) {
-	DBG("ignoring scheduled De-REGISTER of unknown registration %i\n",
+	DBG("ignoring scheduled De-REGISTER of unknown registration %ld\n",
 	    reg_action_ev->subscriber_id);
       } else {
 	if (!it->second->doUnregister()) {
 	  if (delete_removed_registrations && delete_failed_deregistrations) {
-	    DBG("sending de-Register failed - deleting registration %i "
+	    DBG("sending de-Register failed - deleting registration %ld "
 		"(delete_failed_deregistrations=yes)\n", reg_action_ev->subscriber_id);
 	    deleteDBRegistration(reg_action_ev->subscriber_id, ProcessorDBConnection);
 	  } else {
 	    DBG("failed sending de-register, updating DB with REG_STATUS_TO_BE_REMOVED "
-		ERR_REASON_UNABLE_TO_SEND_REQUEST "for subscriber %i\n",
+		ERR_REASON_UNABLE_TO_SEND_REQUEST "for subscriber %ld\n",
 		reg_action_ev->subscriber_id);
 	    updateDBRegistration(ProcessorDBConnection,
 				 reg_action_ev->subscriber_id,
