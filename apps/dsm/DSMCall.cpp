@@ -234,6 +234,11 @@ void DSMCall::onBye(const AmSipRequest& req)
   params["headers"] = req.hdrs;
  
   engine.runEvent(this, this, DSMCondition::Hangup, &params);
+
+  if (rtp_relay_enabled)
+    clearRtpReceiverRelay();
+
+  dlg.reply(req,200,"OK");
 }
 
 void DSMCall::onCancel(const AmSipRequest& cancel) {
