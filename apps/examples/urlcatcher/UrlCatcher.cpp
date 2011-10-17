@@ -60,11 +60,11 @@ int UrlCatcherFactory::onLoad()
 }
 
 
-AmSession* UrlCatcherFactory::onInvite(const AmSipRequest& req)
+AmSession* UrlCatcherFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				       const map<string,string>& app_params)
 {
   AmSdp sdp;
-  sdp.setBody(req.body.c_str());
-  if (sdp.parse()) {
+  if (sdp.parse(req.body.c_str())) {
     ERROR("SDP parsing error\n");
     throw AmSession::Exception(404, "Not Found Here (SDP parse error)");
   }
