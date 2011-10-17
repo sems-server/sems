@@ -67,11 +67,10 @@ int b2b_connectFactory::onLoad()
 }
 
 
-AmSession* b2b_connectFactory::onInvite(const AmSipRequest& req)
+AmSession* b2b_connectFactory::onInvite(const AmSipRequest& req, const string& app_name,
+					const map<string,string>& app_params)
 {
-  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
-
-  if (!app_param.length()) {
+  if (!app_params.size())  {
     throw  AmSession::Exception(500, "b2b_connect: parameters not found");
   }
 
@@ -98,16 +97,15 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
     return;
   }
 
-  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
   string remote_party, remote_uri;
 
-  if (!app_param.length()) {
-    throw AmSession::Exception(500, "b2b_connect: parameters not found");
-  }
+  domain = getAppParam("d");
+  user = getAppParam("u");
+  password = getAppParam("p");
 
-  domain = get_header_keyvalue(app_param,"d");
-  user = get_header_keyvalue(app_param,"u");
-  password = get_header_keyvalue(app_param,"p");
+  if (domain.empty() || user.empty()) {
+    throw AmSession::Exception(500, "b2b_connect: domain parameters not found");
+  }
 
   from = "sip:"+user+"@"+domain;
   if (b2b_connectFactory::TransparentDestination) {
@@ -129,7 +127,6 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
     removeHeader(invite_req.hdrs, "Max-Forwards");
   }
 
-  dlg.updateStatus(req);
   recvd_req.insert(std::make_pair(req.cseq,req));
   
   connectCallee(remote_party, remote_uri, from, from, 
@@ -138,7 +135,6 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
   MONITORING_LOG(other_id.c_str(), 
 		 "app", MOD_NAME);
   
-
 }
 
 void b2b_connectDialog::onSessionStart()
@@ -151,7 +147,7 @@ void b2b_connectDialog::onB2ABEvent(B2ABEvent* ev)
   if (ev->event_id == B2ABConnectOtherLegException) {
     B2ABConnectOtherLegExceptionEvent* ex_ev = 
       dynamic_cast<B2ABConnectOtherLegExceptionEvent*>(ev);
-    if (ex_ev && dlg.getStatus() == AmSipDialog::Pending) {
+    if (ex_ev && dlg.getStatus() < AmSipDialog::Connected) {
       DBG("callee leg creation failed with exception '%d %s'\n",
 	  ex_ev->code, ex_ev->reason.c_str());
       dlg.reply(invite_req, ex_ev->code, ex_ev->reason);
@@ -163,7 +159,7 @@ void b2b_connectDialog::onB2ABEvent(B2ABEvent* ev)
   if (ev->event_id == B2ABConnectOtherLegFailed) {
     B2ABConnectOtherLegFailedEvent* f_ev = 
       dynamic_cast<B2ABConnectOtherLegFailedEvent*>(ev);
-    if (f_ev && dlg.getStatus() == AmSipDialog::Pending) {
+    if (f_ev && dlg.getStatus() < AmSipDialog::Connected) {
       DBG("callee leg creation failed with reply '%d %s'\n",
 	  f_ev->code, f_ev->reason.c_str());
       dlg.reply(invite_req, f_ev->code, f_ev->reason);
@@ -222,7 +218,7 @@ void b2b_connectDialog::onBye(const AmSipRequest& req)
 
 void b2b_connectDialog::onCancel(const AmSipRequest& req)
 {
-  if(dlg.getStatus() == AmSipDialog::Pending) {
+  if(dlg.getStatus() < AmSipDialog::Connected) {
     DBG("Wait for leg B to terminate");
   }
   else {
@@ -281,7 +277,7 @@ void b2b_connectCalleeSession::onSipReply(const AmSipReply& reply,
 
   AmB2ABCalleeSession::onSipReply(reply, old_dlg_status);
  
-  if ((old_dlg_status == AmSipDialog::Pending)&&
+  if ((old_dlg_status < AmSipDialog::Connected) &&
       (dlg.getStatus() == AmSipDialog::Disconnected)) {
     DBG("status change Pending -> Disconnected. Stopping session.\n");
     setStopped();
