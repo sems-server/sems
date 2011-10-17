@@ -266,7 +266,7 @@ void AmSession::negotiate(const string& sdp_body,
     throw AmSession::Exception(400,"session description parsing failed");
 
   if(sdp.media.empty())
-    throw AmSession::Exception(400,"no media line found in SDP message");
+    throw AmSession::Exception(488,"no media line found in SDP message");
     
   m_payloads = sdp.getCompatiblePayloads(getPayloadProvider(), MT_AUDIO, r_host, r_port);
 
@@ -1028,7 +1028,8 @@ void AmSession::onInvite(const AmSipRequest& req)
   }catch(const AmSession::Exception& e){
 
     ERROR("%i %s\n",e.code,e.reason.c_str());
-    setStopped();
+    if (dlg.getStatus() < AmSipDialog::Connected)
+      setStopped();
     dlg.reply(req,e.code,e.reason);
   }
 }
