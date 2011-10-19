@@ -91,6 +91,7 @@ void AmSipDialog::OATrans::clearTransitionalState()
 
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
   : status(Disconnected),oa_trans(),
+    early_session_started(false),session_started(false),
     cseq(10),r_cseq_i(false),hdl(h),
     pending_invites(0),cancel_pending(false),
     outbound_proxy(AmConfig::OutboundProxy),
@@ -381,29 +382,19 @@ int AmSipDialog::checkStateChange()
      (oa_trans.state == OA_Completed)) {
 
     ret = onSdpCompleted();
-  }
+    if(ret) return ret;
 
-  if(saved_status != getStatus()){
-    switch(getStatus()){
-    case Early:
-      if(oa_trans.state == OA_Completed){
-	hdl->onEarlySessionStart();
-      }
-      break;
-    case Connected:
-      if(oa_trans.state == OA_Completed){
-	hdl->onSessionStart();
-      }
-      else {
-	// Anything we should do about it???
-	DBG("SIP dialog transitioned to Connected without a valid media session setup.\n");
-      }
-      break;
-    default:
-      break;
+    if((getStatus() == Early) && !early_session_started) {
+      hdl->onEarlySessionStart();
+      early_session_started = true;
+    }
+
+    if((getStatus() == Connected) && !session_started) {
+      hdl->onSessionStart();
+      session_started = true;
     }
   }
-  
+
   return ret;
 }
 
@@ -1192,7 +1183,8 @@ int AmSipDialog::reply(const AmSipTransaction& t,
   ret = checkStateChange();
 
   if((uas_trans.find(reply.cseq) == uas_trans.end()) &&
-     (reply.cseq == oa_trans.cseq)){
+     (reply.cseq == oa_trans.cseq) &&
+     (reply.cseq_method != SIP_METH_INVITE)){
     // transaction has been removed:
     //  -> cleanup OA state
     DBG("transaction finished by final reply %u: resetting OA state\n", reply.cseq);

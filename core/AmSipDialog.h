@@ -147,6 +147,9 @@ private:
   Status  saved_status;
   OAState saved_oa_state;
 
+  bool early_session_started;
+  bool session_started;
+
   AmSipDialogEventHandler* hdl;
 
   int onTxReply(AmSipReply& reply);
