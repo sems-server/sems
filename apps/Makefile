@@ -23,7 +23,7 @@ else
  ifneq ($(local_exclude_app_modules),)
    exclude_app_modules = $(local_exclude_app_modules)
  else
-   exclude_app_modules += mp3 examples py_sems xmlrpc2di gateway jsonrpc twit
+   exclude_app_modules += mp3 examples py_sems xmlrpc2di gateway jsonrpc twit db_reg_agent
 
    ifneq ($(USE_MONITORING), yes)
    exclude_app_modules += monitoring

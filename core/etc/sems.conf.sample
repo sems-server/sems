@@ -196,7 +196,8 @@ plugin_path=/usr/local/lib/sems/plug-in/
 #
 # o precoded_announce: no precoded sample files present
 # o py_sems: conflicts with ivr (in some cases)
-exclude_plugins=precoded_announce;py_sems
+# o db_reg_agent: needs DB tables
+exclude_plugins=precoded_announce;py_sems;db_reg_agent
 
 # optional: load_plugins_rtld_global=<modules list>
 #
