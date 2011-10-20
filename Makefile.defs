@@ -93,8 +93,9 @@ LDFLAGS += -lm
 GETOS=$(COREPATH)/compat/getos
 GETARCH=$(COREPATH)/compat/getarch
 
-OS   := $(shell $(CC) $(EXTRA_CFLAGS) -o $(GETOS) $(GETOS).c && $(GETOS))
-ARCH := $(shell $(CC) $(EXTRA_CFLAGS) -o $(GETARCH) $(GETARCH).c && $(GETARCH))
+
+OS   := $(shell if [ -f $(GETOS) ] ; then $(GETOS); else  $(CC) $(EXTRA_CFLAGS) -o $(GETOS) $(GETOS).c && $(GETOS); fi)
+ARCH := $(shell if [ -f $(GETARCH) ] ; then $(GETARCH); else $(CC) $(EXTRA_CFLAGS) -o $(GETARCH) $(GETARCH).c && $(GETARCH); fi)
 
 ifdef USE_THREADPOOL
 CPPFLAGS += -DSESSION_THREADPOOL

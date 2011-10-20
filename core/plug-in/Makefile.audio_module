@@ -1,5 +1,7 @@
 COREPATH ?=../..
-include $(COREPATH)/../Makefile.defs
+DEFSPATH ?=$(COREPATH)/..
+
+include $(DEFSPATH)/Makefile.defs
 
 LIB_LDFLAGS  += $(module_ldflags)
 CPPFLAGS += -I $(COREPATH) -I $(COREPATH)/amci 
@@ -42,14 +44,18 @@ install: $(lib_name) $(extra_install)
 .PHONY: install-cfg
 install-cfg : $(extra_install_cfg)
 
-%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module $(COREPATH)/../Makefile.defs
+%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module $(DEFSPATH)/Makefile.defs
 	$(CC) -MM $< $(CPPFLAGS) $(CFLAGS) > $@
 
-%.o: %.c %.d $(COREPATH)/../Makefile.defs
+%.o: %.c %.d $(DEFSPATH)/Makefile.defs
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(lib_full_name): $(lib_name)
+ifneq ($(lib_full_name),$(lib_name))
+ifneq ($(lib_full_name),./$(lib_name))
 	cp $(lib_name) $(lib_full_name)
+endif
+endif
 
 $(lib_name): $(objs)  Makefile
 	$(LD) -o $(lib_name) $(objs) $(LIB_LDFLAGS)

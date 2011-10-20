@@ -34,6 +34,7 @@ ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	INSTALL_PROGRAM += -s
 endif
 
+
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
@@ -70,7 +71,8 @@ install: build
 	dh_testdir
 	dh_testroot
 	dh_clean -k
-	dh_installdirs
+	dh_install
+#	dh_installdirs
 
 # Add here commands to install the package into debian/sems
 	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
@@ -86,9 +88,6 @@ install: build
 		DESTDIR=$(CURDIR)/debian/sems \
 		prefix=/usr \
 		cfg-target=/etc/sems/
-
-# fix etc/ser dir location
-#	mv -f $(CURDIR)/debian/ser/usr/etc $(CURDIR)/debian/ser
 
 # install only the python modules
 	USE_SPANDSP=yes LONG_DEBUG_MESSAGE=yes CPPFLAGS="$(CPPFLAGS)" \
@@ -131,6 +130,11 @@ binary-common:
 	dh_strip
 	dh_compress 
 	dh_fixperms
+
+#       fixperms (rightly) sets 644 to getos/getarch (should it be somewhere else?)
+	chmod 755 $(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getos
+	chmod 755 $(CURDIR)/debian/libsems1-dev/usr/include/sems/compat/getarch
+
 #	dh_makeshlibs
 	dh_installdeb
 #	dh_perl

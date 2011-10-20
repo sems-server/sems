@@ -1,0 +1,15 @@
+
+MyApp
+
+This is an empty template for a SEMS application plug-in written in C++.
+
+It can reside out of the SEMS source tree and just needs the libsems1-dev
+package installed to be compiled. For this to work, in the Makefile the
+following needs to be defined:
+ plug_in_name = myapp
+ COREPATH ?=/usr/include/sems
+ DEFSPATH ?=/usr/include/sems
+ app_module_dir=.
+ include $(COREPATH)/plug-in/Makefile.app_module
+
+
