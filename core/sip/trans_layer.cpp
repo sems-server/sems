@@ -901,7 +901,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	DBG("update_uac_request tt->_t =%p\n", tt->_t);
 	send_err = update_uac_request(tt->_bucket,tt->_t,p_msg);
 	if(send_err < 0){
-	    ERROR("Could not update UAC state for request.\n");
+	    DBG("Could not update UAC state for request\n");
 	    delete p_msg;
 	}
     }
@@ -1038,7 +1038,7 @@ int _trans_layer::cancel(trans_ticket* tt)
 	sip_trans* t=NULL;
 	send_err = update_uac_request(bucket,t,p_msg);
 	if(send_err<0){
-	    ERROR("Could not update state for UAC transaction\n");
+	    DBG("Could not update state for UAC transaction\n");
 	    delete p_msg;
 	}
     }
@@ -1423,7 +1423,7 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	// 200 ACK
 	t = bucket->match_request(msg,TT_UAC);
 	if(t == NULL){
-	    DBG("While sending 200 ACK: no matching transaction\n");
+	    WARN("While sending 200 ACK: no matching transaction\n");
 	    return -1;
 	}
 	DBG("update_uac_request(200 ACK, t=%p)\n", t);
