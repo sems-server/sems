@@ -1,4 +1,4 @@
-ifeq ($(makefile_defs),1)
+ifeq ($(makefile_defs),"1")
 else
 makefile_defs=1
 export makefile_defs
