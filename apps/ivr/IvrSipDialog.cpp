@@ -79,16 +79,22 @@ def_IvrSipDialog_GETTER(IvrSipDialog_getoutbound_proxy, outbound_proxy)
 
 def_IvrSipDialog_SETTER(IvrSipDialog_setremote_uri,   remote_uri)
 
-// static PyObject*
-// IvrSipDialog_getuser(IvrSipDialog *self, void *closure)
-// {
-//   return PyString_FromString(self->p_dlg->user.c_str());
-// }
-
 static PyObject*
 IvrSipDialog_getcseq(IvrSipDialog *self, void *closure)
 {
   return PyInt_FromLong(self->p_dlg->cseq);
+}
+
+static PyObject*
+IvrSipDialog_getstatus(IvrSipDialog *self, void *closure)
+{
+  return PyInt_FromLong((int)self->p_dlg->getStatus());
+}
+
+static PyObject*
+IvrSipDialog_getstatusstr(IvrSipDialog *self, void *closure)
+{
+  return PyString_FromString((char*)self->p_dlg->getStatusStr());
 }
 
 static PyGetSetDef IvrSipDialog_getset[] = {
@@ -105,6 +111,11 @@ static PyGetSetDef IvrSipDialog_getset[] = {
   {(char*)"route",       (getter)IvrSipDialog_getroute, NULL, (char*)"record routing", NULL},
   {(char*)"outbound_proxy", (getter)IvrSipDialog_getoutbound_proxy, NULL, (char*)"outbound proxy", NULL},
   {(char*)"cseq",    (getter)IvrSipDialog_getcseq, NULL, (char*)"CSeq for next request", NULL},
+
+  {(char*)"status_str",    (getter)IvrSipDialog_getstatusstr, NULL, (char*)"Dialog status "
+   "(Disconnected, Trying, Proceeding, Cancelling, Early, Connected, Disconnecting)", NULL},
+  {(char*)"status",    (getter)IvrSipDialog_getstatus, NULL, (char*)"Dialog status (0..6)", NULL},
+
   {NULL}  /* Sentinel */
 };
 
