@@ -16,7 +16,7 @@ twit_posting_msg = config['twit_posting_msg']
 
 class IvrDialog(IvrDialogBase) :
 
-	def onSessionStart( self, hdrs ) :
+	def onSessionStart( self ) :
 		self.t_msg = 'mirps! mirps! from iptel: '
 		account_found = False
 		if self.dialog.user.find(';')>=0:
