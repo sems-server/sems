@@ -406,6 +406,8 @@ void ConferenceDialog::onStart() {
 
 void ConferenceDialog::onInvite(const AmSipRequest& req)
 {
+  AmSession::onInvite(req);
+  
   if(dlg.getStatus() == AmSipDialog::Connected)
     return;
 
@@ -490,6 +492,7 @@ void ConferenceDialog::onInvite(const AmSipRequest& req)
 void ConferenceDialog::onSessionStart()
 {
   setupAudio();
+  AmSession::onSessionStart();
 }
 
 void ConferenceDialog::setupAudio()
