@@ -62,8 +62,13 @@ DSMAction* MonitoringModule::getAction(const string& from_str) {
   }
 
   DEF_CMD("monitoring.log", MonLogAction);
+  DEF_CMD("monitoring.set", MonLogAction);
+  DEF_CMD("monitoring.add", MonLogAddAction);
   DEF_CMD("monitoring.logAdd", MonLogAddAction);
   DEF_CMD("monitoring.logVars", MonLogVarsAction);
+
+  DEF_CMD("monitoring.setGlobal", MonLogGlobalAction);
+  DEF_CMD("monitoring.addGlobal", MonLogAddGlobalAction);
 
   return NULL;
 }
@@ -115,4 +120,40 @@ bool MonLogVarsAction::execute(AmSession* sess,   DSMSession* sc_sess,
 }
 
 
+CONST_ACTION_2P(MonLogGlobalAction, ',', true);
+EXEC_ACTION_START(MonLogGlobalAction) {
+  string id = resolveVars(par1, sess, sc_sess, event_params);
+  string prop;
+  string val;
+
+  size_t c = par2.find(',');
+  if (c != string::npos) {
+    prop = resolveVars(par2.substr(0, c), sess, sc_sess, event_params);
+    val = resolveVars(par2.substr(c+1), sess, sc_sess, event_params);
+  } else {
+    prop = resolveVars(par2);
+  }
+
+  MONITORING_LOG(id.c_str(), prop.c_str(), val.c_str());
+
+} EXEC_ACTION_END;
+
+
+CONST_ACTION_2P(MonLogAddGlobalAction, ',', true);
+EXEC_ACTION_START(MonLogAddGlobalAction) {
+  string id = resolveVars(par1, sess, sc_sess, event_params);
+  string prop;
+  string val;
+
+  size_t c = par2.find(',');
+  if (c != string::npos) {
+    prop = resolveVars(par2.substr(0, c), sess, sc_sess, event_params);
+    val = resolveVars(par2.substr(c+1), sess, sc_sess, event_params);
+  } else {
+    prop = resolveVars(par2);
+  }
+
+  MONITORING_LOG_ADD(id.c_str(), prop.c_str(), val.c_str());
+
+} EXEC_ACTION_END;
 

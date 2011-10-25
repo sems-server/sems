@@ -44,4 +44,6 @@ DEF_ACTION_2P(MonLogAction);
 DEF_ACTION_2P(MonLogAddAction);
 DEF_ACTION_1P(MonLogVarsAction);
 
+DEF_ACTION_2P(MonLogGlobalAction);
+DEF_ACTION_2P(MonLogAddGlobalAction);
 #endif
