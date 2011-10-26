@@ -777,7 +777,8 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
      !reply.body.empty() && 
      (reply.content_type == SIP_APPLICATION_SDP)) {
 
-    if((oa_trans.state == OA_Completed) &&
+    if(((oa_trans.state == OA_Completed) ||
+	(oa_trans.state == OA_OfferRecved)) &&
        (reply.cseq == oa_trans.cseq)) {
       
       DBG("ignoring subsequent SDP reply within the same transaction\n");
