@@ -406,8 +406,6 @@ void ConferenceDialog::onStart() {
 
 void ConferenceDialog::onInvite(const AmSipRequest& req)
 {
-  AmSession::onInvite(req);
-  
   if(dlg.getStatus() == AmSipDialog::Connected)
     return;
 
@@ -487,11 +485,22 @@ void ConferenceDialog::onInvite(const AmSipRequest& req)
 
   DBG("Using LonelyUserFile <%s>\n",
       ConferenceFactory::LonelyUserFile.c_str());
+
+  AmSession::onInvite(req);  
 }
 
 void ConferenceDialog::onSessionStart()
 {
   setupAudio();
+
+  if(dialedout) {
+    // send connect event
+    AmSessionContainer::instance()
+      ->postEvent(dialout_channel->getConfID(),
+		  new DialoutConfEvent(DoConfConnect,
+				       dialout_channel->getConfID()));
+  }
+
   AmSession::onSessionStart();
 }
 
@@ -890,106 +899,63 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
 
 void ConferenceDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
 {
-  //int status = dlg.getStatus();
   AmSession::onSipReply(reply, old_dlg_status);
 
   DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i\n",
       reply.code,reply.reason.c_str(),dlg.getStatus());
     
-  if(!dialedout && 
-     !transfer_req.get())
+  if(!dialedout /*&& !transfer_req.get()*/)
     return;
 
-  /*
-  if(status < AmSipDialog::Connected){
+  if((old_dlg_status < AmSipDialog::Connected) &&
+     (reply.cseq_method == SIP_METH_INVITE)){
 
     switch(dlg.getStatus()){
 
-    case AmSipDialog::Connected:
-
-      // connected!
-      try {
-
-	acceptAudio(reply.body,reply.hdrs);
-
-	if(getDetached() && !getStopped()){
-		    
-	  setupAudio();
-		    
-	  if(getInput() || getOutput())
-	    AmMediaProcessor::instance()->addSession(this,
-						     getCallgroup()); 
-	  else { 
-	    ERROR("missing audio input and/or ouput.\n");
-	    return;
-	  }
-
-	  if(!transfer_req.get()){
-
-	    // send connect event
-	    AmSessionContainer::instance()
-	      ->postEvent(dialout_channel->getConfID(),
-			  new DialoutConfEvent(DoConfConnect,
-					       dialout_channel->getConfID()));
-	  }
-	  else {
-	    dlg.reply(*(transfer_req.get()),202,"Accepted");
-	    transfer_req.reset(0);
-	    connectMainChannel();
-	  }
-	} 
-	
-      }
-      catch(const AmSession::Exception& e){
-	ERROR("%i %s\n",e.code,e.reason.c_str());
-	dlg.bye();
-	setStopped();
-      }
-      break;
-
-    case AmSipDialog::Pending:
+    case AmSipDialog::Proceeding:
+    case AmSipDialog::Early:
 
       switch(reply.code){
       case 180:
+      case 183: break;//TODO: remote ring tone.
 
-	// send ringing event
-	AmSessionContainer::instance()
-	  ->postEvent(dialout_channel->getConfID(),
-		      new DialoutConfEvent(DoConfRinging,
-					   dialout_channel->getConfID()));
+	if(dialout_channel.get()){
+	  // send ringing event
+	  AmSessionContainer::instance()
+	    ->postEvent(dialout_channel->getConfID(),
+			new DialoutConfEvent(DoConfRinging,
+					     dialout_channel->getConfID()));
+	}
 		
 	break;
-      case 183: break;//TODO: remote ring tone.
       default:  break;// continue waiting.
       }
       break;
 
     case AmSipDialog::Disconnected:
 
-      if(!transfer_req.get()){
-
+      // if(!transfer_req.get()){
+      
+      if(dialout_channel.get()){
 	disconnectDialout();
-	//switch(reply.code){
-	//default:
-	    
 	AmSessionContainer::instance()
 	  ->postEvent(dialout_channel->getConfID(),
 		      new DialoutConfEvent(DoConfError,
 					   dialout_channel->getConfID()));
-	//}
       }
-      else {
-		
-	dlg.reply(*(transfer_req.get()),reply.code,reply.reason);
-	transfer_req.reset(0);
-	setStopped();
-      }
+      setStopped();
+
+      // }
+      // else {
+      // 	dlg.reply(*(transfer_req.get()),reply.code,reply.reason);
+      // 	transfer_req.reset(0);
+      // 	setStopped();
+      // }
       break;
 
     default: break;
     }
   }
-  */
 }
 
 #ifdef WITH_SAS_TTS
