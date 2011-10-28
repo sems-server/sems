@@ -894,9 +894,16 @@ void SBCDialog::process(AmEvent* ev)
     switch (m_state) {
     case BB_Connected: {
       switch (ct_event->timer_action) {
-      case SBCCallTimerEvent::Remove: removeTimer(ct_event->timer_id); return;
-      case SBCCallTimerEvent::Set:    setTimer(ct_event->timer_id, ct_event->timeout); return;
+      case SBCCallTimerEvent::Remove:
+	DBG("removing timer %d on call timer request\n", ct_event->timer_id);
+	removeTimer(ct_event->timer_id); return;
+      case SBCCallTimerEvent::Set:
+	DBG("setting timer %d to %d on call timer request\n",
+	    ct_event->timer_id, ct_event->timeout);
+	setTimer(ct_event->timer_id, ct_event->timeout); return;
       case SBCCallTimerEvent::Reset:
+	DBG("resetting timer %d to %d on call timer request\n",
+	    ct_event->timer_id, ct_event->timeout);
 	removeTimer(ct_event->timer_id);
 	setTimer(ct_event->timer_id, ct_event->timeout);
 	return;
