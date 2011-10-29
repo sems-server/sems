@@ -131,7 +131,7 @@ EXEC_ACTION_START(MonLogGlobalAction) {
     prop = resolveVars(par2.substr(0, c), sess, sc_sess, event_params);
     val = resolveVars(par2.substr(c+1), sess, sc_sess, event_params);
   } else {
-    prop = resolveVars(par2);
+    prop = resolveVars(par2, sess, sc_sess, event_params);
   }
 
   MONITORING_LOG(id.c_str(), prop.c_str(), val.c_str());
@@ -150,7 +150,7 @@ EXEC_ACTION_START(MonLogAddGlobalAction) {
     prop = resolveVars(par2.substr(0, c), sess, sc_sess, event_params);
     val = resolveVars(par2.substr(c+1), sess, sc_sess, event_params);
   } else {
-    prop = resolveVars(par2);
+    prop = resolveVars(par2, sess, sc_sess, event_params);
   }
 
   MONITORING_LOG_ADD(id.c_str(), prop.c_str(), val.c_str());
