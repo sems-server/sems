@@ -18,3 +18,11 @@ AmEvent* AmEvent::clone() {
   return new AmEvent(*this);
 }
 
+
+
+AmPluginEvent::AmPluginEvent(const string& n, const AmArg& d)
+  : AmEvent(E_PLUGIN), name(n), data(d) {}
+
+AmPluginEvent::AmPluginEvent(const string& n)
+  : AmEvent(E_PLUGIN), name(n), data() {}
+

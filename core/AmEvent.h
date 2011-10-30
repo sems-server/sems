@@ -60,11 +60,9 @@ struct AmPluginEvent: public AmEvent
   string      name;
   AmArg       data;
 
-  AmPluginEvent(const string& n)
-    : AmEvent(E_PLUGIN), name(n), data() {}
+  AmPluginEvent(const string& n);
 
-  AmPluginEvent(const string& n, const AmArg& d)
-    : AmEvent(E_PLUGIN), name(n), data(d) {}
+  AmPluginEvent(const string& n, const AmArg& d);
 };
 
 /**
