@@ -32,7 +32,7 @@ AmSystemEvent::AmSystemEvent(const AmSystemEvent& rhs)
 
 AmEvent* AmSystemEvent::clone() {  return new AmSystemEvent(*this); };
 
-static const char* AmSystemEvent::getDescription(EvType t) {
+const char* AmSystemEvent::getDescription(EvType t) {
   switch (t) {
   case ServerShutdown: return "ServerShutdown";
   case User1: return "User1";
