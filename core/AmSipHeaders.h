@@ -49,6 +49,7 @@
 #define SIP_EXT_100REL          "100rel"
 
 #define SIP_HDR_SESSION_EXPIRES_COMPACT "x"
+#define SIP_HDR_SUPPORTED_COMPACT "k"
 
 #define SIP_IS_200_CLASS(code)  ((code >= 200) && (code < 300))
 
