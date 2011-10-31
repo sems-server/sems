@@ -79,6 +79,7 @@ AmSession::AmSession()
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
+    passive_mode(false),
     rtp_interface(-1),
     refresh_method(REFRESH_UPDATE_FB_REINV),
     processing_status(SESSION_PROCESSING_EVENTS),
@@ -287,7 +288,6 @@ void AmSession::negotiate(const string& sdp_body,
     DBG("remote party doesn't support telephone events\n");
   }
 
-  bool passive_mode = false;
   if( sdp.remote_active || force_symmetric_rtp) {
     DBG("The other UA is NATed: switched to passive mode.\n");
     DBG("remote_active = %i; force_symmetric_rtp = %i\n",

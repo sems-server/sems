@@ -157,6 +157,9 @@ private:
 
   auto_ptr<AmRtpAudio> _rtp_str;
 
+  /** set up RTP stream as passive? (comedia style NAT aware) */
+  bool passive_mode;
+
   AmDynInvoke* user_timer_ref;
   
   void getUserTimerInstance();
