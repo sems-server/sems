@@ -406,8 +406,10 @@ void ConferenceDialog::onStart() {
 
 void ConferenceDialog::onInvite(const AmSipRequest& req)
 {
-  if(dlg.getStatus() == AmSipDialog::Connected)
+  if(dlg.getStatus() == AmSipDialog::Connected){
+    AmSession::onInvite(req);  
     return;
+  }
 
   int i, len;
   string lonely_user_file;
