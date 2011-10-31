@@ -270,7 +270,8 @@ void SessionTimer::updateTimer(AmSession* s, const AmSipRequest& req) {
   if((req.method == SIP_METH_INVITE)||(req.method == SIP_METH_UPDATE)){
     
     remote_timer_aware = 
-      key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED), TIMER_OPTION_TAG, true);
+      key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED, SIP_HDR_SUPPORTED_COMPACT),
+		  TIMER_OPTION_TAG, true);
     
     // determine session interval
     string sess_expires_hdr = getHeader(req.hdrs, SIP_HDR_SESSION_EXPIRES,

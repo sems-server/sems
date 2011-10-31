@@ -172,7 +172,7 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
   if (req.method == SIP_METH_INVITE) {
     switch(reliable_1xx) {
       case REL100_SUPPORTED: /* if support is on, enforce if asked by UAC */
-        if (key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED), 
+        if (key_in_list(getHeader(req.hdrs, SIP_HDR_SUPPORTED, SIP_HDR_SUPPORTED_COMPACT),
               SIP_EXT_100REL) ||
             key_in_list(getHeader(req.hdrs, SIP_HDR_REQUIRE), 
               SIP_EXT_100REL)) {
@@ -182,7 +182,7 @@ int AmSipDialog::rel100OnRequestIn(const AmSipRequest& req)
         break;
 
       case REL100_REQUIRE: /* if support is required, reject if UAC doesn't */
-        if (! (key_in_list(getHeader(req.hdrs,SIP_HDR_SUPPORTED), 
+        if (! (key_in_list(getHeader(req.hdrs,SIP_HDR_SUPPORTED, SIP_HDR_SUPPORTED_COMPACT),
               SIP_EXT_100REL) ||
             key_in_list(getHeader(req.hdrs, SIP_HDR_REQUIRE), 
               SIP_EXT_100REL))) {
