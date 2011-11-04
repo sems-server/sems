@@ -1274,20 +1274,27 @@ int AmSipDialog::bye(const string& hdrs, int flags)
     switch(status){
 
     case Disconnecting:
-    case Connected:
-        for (TransMap::iterator it=uac_trans.begin();
-	     it != uac_trans.end(); it++) {
-	  if (it->second.method == "INVITE"){
-	    // finish any UAC transaction before sending BYE
-	    send_200_ack(it->second.cseq);
-	  }
+    case Connected: {
+      // collect INVITE UAC transactions
+      vector<unsigned int> ack_trans;
+      for (TransMap::iterator it=uac_trans.begin(); it != uac_trans.end(); it++) {
+	if (it->second.method == "INVITE"){
+	  ack_trans.push_back(it->second.cseq);
 	}
-	if (status != Disconnecting) {
-	  status = Disconnected;
-	  return sendRequest("BYE", "", "", hdrs, flags);
-	} else {
-	  return 0;
-	}
+      }
+      // finish any UAC transaction before sending BYE
+      for (vector<unsigned int>::iterator it=
+	     ack_trans.begin(); it != ack_trans.end(); it++) {
+	send_200_ack(*it);
+      }
+
+      if (status != Disconnecting) {
+	status = Disconnected;
+	return sendRequest("BYE", "", "", hdrs, flags);
+      } else {
+	return 0;
+      }
+    }
 
     case Trying:
     case Proceeding:
