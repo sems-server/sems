@@ -484,10 +484,10 @@ public:
   /**
      set a Timer
      @param timer_id the ID of the timer (<0 for system timers)
-     @param timeout timeout in seconds
+     @param timeout timeout in seconds (fractal value allowed)
      @return true on success
   */
-  virtual bool setTimer(int timer_id, unsigned int timeout);
+  virtual bool setTimer(int timer_id, double timeout);
 
   /**
      remove a Timer

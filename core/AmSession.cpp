@@ -1258,17 +1258,25 @@ bool AmSession::timersSupported() {
   return NULL != AmPlugIn::instance()->getFactory4Di("user_timer") ;
 }
 
-bool AmSession::setTimer(int timer_id, unsigned int timeout) {
+bool AmSession::setTimer(int timer_id, double timeout) {
+  if (timeout <= 0.005) {
+    DBG("setting timer %d with immediate timeout - posting Event\n", timer_id);
+    AmPluginEvent* ev = new AmPluginEvent("timer_timeout");
+    ev->data.push(timer_id);
+    postEvent(ev);
+    return true;
+  }
+
   if (NULL == user_timer_ref)
     getUserTimerInstance();
 
   if (NULL == user_timer_ref)
     return false;
 
-  DBG("setting timer %d with timeout %u\n", timer_id, timeout);
+  DBG("setting timer %d with timeout %f\n", timer_id, timeout);
   AmArg di_args,ret;
   di_args.push((int)timer_id);
-  di_args.push((int)timeout);           // in seconds
+  di_args.push((double)timeout);           // in seconds
   di_args.push(getLocalTag().c_str());
   user_timer_ref->invoke("setTimer", di_args, ret);
 

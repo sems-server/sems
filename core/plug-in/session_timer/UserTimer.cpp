@@ -5,6 +5,7 @@
 
 #include <sys/time.h>
 #include <unistd.h>
+#include <math.h>
 
 #define SESSION_TIMER_GRANULARITY 100 // check every 100 millisec
 
@@ -131,6 +132,18 @@ void UserTimer::setTimer(int id, int seconds, const string& session_id) {
   setTimer(id, &tval, session_id);
 }
 
+void UserTimer::setTimer(int id, double seconds, const string& session_id) {
+  struct timeval tval;
+  gettimeofday(&tval,NULL);
+
+  struct timeval diff;
+  diff.tv_sec = trunc(seconds);
+  diff.tv_usec = 1000000.0*(double)seconds - 1000000.0*trunc(seconds);
+  timeradd(&tval, &diff, &tval);
+
+  setTimer(id, &tval, session_id);
+}
+
 void UserTimer::setTimer(int id, struct timeval* t, 
 			 const string& session_id) 
 {
@@ -214,9 +227,17 @@ void UserTimer::removeUserTimers(const string& session_id) {
 void UserTimer::invoke(const string& method, const AmArg& args, AmArg& ret)
 {
   if(method == "setTimer"){
-    setTimer(args.get(0).asInt(),
-	     args.get(1).asInt(),
-	     args.get(2).asCStr());
+    if (isArgInt(args.get(1))) {
+      setTimer(args.get(0).asInt(),
+	       args.get(1).asInt(),
+	       args.get(2).asCStr());
+    } else if (isArgDouble(args.get(1))) {
+      setTimer(args.get(0).asInt(),
+	       args.get(1).asDouble(),
+	       args.get(2).asCStr());
+      } else {
+	ERROR("unsupported timeout type in '%s'\n", AmArg::print(args).c_str());
+      }
   }
   else if(method == "removeTimer"){
     removeTimer(args.get(0).asInt(),

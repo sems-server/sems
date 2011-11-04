@@ -83,9 +83,13 @@ class UserTimer: public AmDynInvoke
 
   bool _running;
 
-  /** set timer with ID id, fire after s seconds event in 
+  /** set timer with ID id, fire after s seconds event in
       session session_id  */
   void setTimer(int id, int seconds, const string& session_id);
+  /** set timer with ID id, fire after s seconds event in 
+      session session_id  */
+  void setTimer(int id, double seconds, const string& session_id);
+
   /** set timer with ID id, fire at time t event in session session_id */
   void setTimer(int id, struct timeval* t, const string& session_id);
 
