@@ -46,10 +46,10 @@ struct SBCCallTimerEvent : public AmEvent {
   };
 
   TimerAction timer_action;
-  int timeout;
+  double timeout;
   int timer_id;
 
- SBCCallTimerEvent(TimerAction timer_action, int timer_id, int timeout = 0)
+ SBCCallTimerEvent(TimerAction timer_action, int timer_id, double timeout = 0)
     : AmEvent(SBCCallTimerEvent_ID),
     timer_id(timer_id), timer_action(timer_action), timeout(timeout) { }
 };

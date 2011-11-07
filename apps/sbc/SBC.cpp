@@ -898,11 +898,11 @@ void SBCDialog::process(AmEvent* ev)
 	DBG("removing timer %d on call timer request\n", ct_event->timer_id);
 	removeTimer(ct_event->timer_id); return;
       case SBCCallTimerEvent::Set:
-	DBG("setting timer %d to %d on call timer request\n",
+	DBG("setting timer %d to %f on call timer request\n",
 	    ct_event->timer_id, ct_event->timeout);
 	setTimer(ct_event->timer_id, ct_event->timeout); return;
       case SBCCallTimerEvent::Reset:
-	DBG("resetting timer %d to %d on call timer request\n",
+	DBG("resetting timer %d to %f on call timer request\n",
 	    ct_event->timer_id, ct_event->timeout);
 	removeTimer(ct_event->timer_id);
 	setTimer(ct_event->timer_id, ct_event->timeout);
@@ -1148,9 +1148,9 @@ bool SBCDialog::startCallTimer() {
     return false;
   }
 
-  for (map<int, unsigned int>::iterator it=
+  for (map<int, double>::iterator it=
 	 call_timers.begin(); it != call_timers.end(); it++) {
-    DBG("SBC: starting call timer %i of %u seconds\n", it->first, it->second);
+    DBG("SBC: starting call timer %i of %f seconds\n", it->first, it->second);
     setTimer(it->first, it->second);
   }
 
@@ -1158,7 +1158,7 @@ bool SBCDialog::startCallTimer() {
 }
 
 void SBCDialog::stopCallTimer() {
-  for (map<int, unsigned int>::iterator it=
+  for (map<int, double>::iterator it=
 	 call_timers.begin(); it != call_timers.end(); it++) {
     DBG("SBC: removing call timer %i\n", it->first);
     removeTimer(it->first);
@@ -1282,15 +1282,21 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 	  }
 
 	  if (ret[i].size() < 2 ||
-	      !isArgInt(ret[i][SBC_CC_TIMER_TIMEOUT])) {
+	      (!(isArgInt(ret[i][SBC_CC_TIMER_TIMEOUT]) ||
+		 isArgDouble(ret[i][SBC_CC_TIMER_TIMEOUT])))) {
 	    ERROR("in call control module '%s' - SET_CALL_TIMER action parameters missing: '%s'\n",
 		  cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
 	    continue;
 	  }
 
-	  DBG("saving call timer %i: timeout %i\n",
-	      cc_timer_id, ret[i][SBC_CC_TIMER_TIMEOUT].asInt());
-	  call_timers[cc_timer_id] = ret[i][SBC_CC_TIMER_TIMEOUT].asInt();
+	  double timeout;
+	  if (isArgInt(ret[i][SBC_CC_TIMER_TIMEOUT]))
+	    timeout = ret[i][SBC_CC_TIMER_TIMEOUT].asInt();
+	  else
+	    timeout = ret[i][SBC_CC_TIMER_TIMEOUT].asDouble();
+
+	  DBG("saving call timer %i: timeout %f\n", cc_timer_id, timeout);
+	  call_timers[cc_timer_id] = timeout;
 	  cc_timer_id++;
 	} break;
 
