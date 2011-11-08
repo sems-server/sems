@@ -27,6 +27,9 @@ SystemDSM::SystemDSM(const DSMScriptConfig& config,
 }
 
 SystemDSM::~SystemDSM() {
+  for (std::set<DSMDisposable*>::iterator it=
+	 gc_trash.begin(); it != gc_trash.end(); it++)
+    delete *it;
 }
 
 void SystemDSM::run() {
@@ -141,6 +144,16 @@ void SystemDSM::process(AmEvent* event) {
 
 }
 
+  /** transfer ownership of object to this session instance */
+void SystemDSM::transferOwnership(DSMDisposable* d) {
+  gc_trash.insert(d);
+}
+
+  /** release ownership of object from this session instance */
+void SystemDSM::releaseOwnership(DSMDisposable* d) {
+  gc_trash.erase(d);
+}
+
 #define NOT_IMPLEMENTED(_func)					\
 void SystemDSM::_func {						\
   throw DSMException("core", "cause", "not implemented");	\
@@ -179,8 +192,6 @@ NOT_IMPLEMENTED(B2BaddReceivedRequest(const AmSipRequest& req));
 NOT_IMPLEMENTED(B2BsetHeaders(const string& hdr, bool replaceCRLF));
 NOT_IMPLEMENTED(B2BclearHeaders());
 NOT_IMPLEMENTED(B2BaddHeader(const string& hdr));
-NOT_IMPLEMENTED(transferOwnership(DSMDisposable* d));
-NOT_IMPLEMENTED(releaseOwnership(DSMDisposable* d));
 
 #undef NOT_IMPLEMENTED
 #undef NOT_IMPLEMENTED_UINT

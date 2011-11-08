@@ -38,6 +38,9 @@ class SystemDSM
   string startDiagName;
   bool reload;
 
+  // owned by this instance
+  std::set<DSMDisposable*> gc_trash;
+
  public:
 
   SystemDSM(const DSMScriptConfig& config,
