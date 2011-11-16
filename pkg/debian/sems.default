@@ -5,17 +5,20 @@
 # Note: the #DEBCONF-xxx-START and DEBCONF-xxx-END lines are used for
 # debconf configuration, please don't remove or alter them.
 
-# ser configuration file
+# SEMS configuration file
 #DEBCONF-CFG_FILE-START
 SEMS_CFG_FILE="/etc/sems/sems.conf"
 #DEBCONF-CFG_FILE-END
 
-# user to run ser as
+# WARN:  if SEMS_USER/SEMS_GROUP is set, dumping core
+#        might not work any more on linux
+
+# user to run SEMS as
 #DEBCONF-USER-START
 SEMS_USER="sems"
 #DEBCONF-USER-END
 
-# group to run ser as
+# group to run SEMS as
 #DEBCONF-GROUP-START
 SEMS_GROUP="sems"
 #DEBCONF-GROUP-END

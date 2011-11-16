@@ -19,7 +19,8 @@ Default: sems
 Description: User to run SEMS as
  Set the user which SEMS should run as. Default is 'sems' user.
  .
- Note: if you want sems to be able to dump a core file in case of crash, you have to run it as root user.
+ Note: if you want sems to be able to dump a core file in case of crash, you may have to run it as root user.
+ Leave this free to run as root user.
  .
  Enter "!" to not modify this option.
 
@@ -28,6 +29,9 @@ Type: string
 Default: sems
 Description: Group to run SEMS as
  Set the group which SEMS should run as. Default is 'sems' group.
+ .
+ Note: if you want sems to be able to dump a core file in case of crash, you may have to run it as root user.
+ Leave this free to run as root user.
  .
  Enter "!" to not modify this option.
 
