@@ -60,6 +60,9 @@
 #include <string>
 using std::string;
 
+#if defined(__linux__)
+#include <sys/prctl.h>
+#endif
 
 const char* progname = NULL;    /**< Program name (actually argv[0])*/
 int main_pid = 0;               /**< Main process PID */
@@ -405,6 +408,14 @@ int main(int argc, char* argv[])
 	goto error;
       }
     }
+
+#if defined(__linux__)
+    if(!AmConfig::DaemonUid.empty() || !AmConfig::DaemonGid.empty()){
+      if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) < 0) {
+	WARN("unable to set daemon to dump core after setuid/setgid\n");
+      }
+    }
+#endif
 
     /* fork to become!= group leader*/
     int pid;
