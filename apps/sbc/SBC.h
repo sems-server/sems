@@ -139,9 +139,9 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   void stopCall();
 
   /* set call timer (if enabled) */
-  bool startCallTimer();
+  bool startCallTimers();
   /* clear call timer */
-  void stopCallTimer();
+  void stopCallTimers();
 
   /** initialize call control module interfaces @return sucess or not*/
   bool getCCInterfaces();
@@ -168,6 +168,13 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
+
+  /** save call timer; only effective before call is connected */
+  void saveCallTimer(int timer, double timeout);
+  /** clear saved call timer, only effective before call is connected */
+  void clearCallTimer(int timer);
+  /** clear all saved call timer, only effective before call is connected */
+  void clearCallTimers();
 
  protected:
   int relayEvent(AmEvent* ev);

@@ -914,10 +914,10 @@ void SBCDialog::process(AmEvent* ev)
     case BB_Init:
     case BB_Dialing: {
       switch (ct_event->timer_action) {
-      case SBCCallTimerEvent::Remove: call_timers.erase(ct_event->timer_id); return;
+      case SBCCallTimerEvent::Remove: clearCallTimer(ct_event->timer_id); return;
       case SBCCallTimerEvent::Set:
       case SBCCallTimerEvent::Reset:
-	call_timers[ct_event->timer_id] = ct_event->timeout; return;
+	saveCallTimer(ct_event->timer_id, ct_event->timeout); return;
       default: ERROR("unknown timer_action in sbc call timer event\n"); return;
       }
     } break;
@@ -1068,7 +1068,7 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
 void SBCDialog::onCallConnected(const AmSipReply& reply) {
   m_state = BB_Connected;
 
-  if (!startCallTimer())
+  if (!startCallTimers())
     return;
 
   if (call_profile.cc_interfaces.size()) {
@@ -1084,7 +1084,7 @@ void SBCDialog::onCallStopped() {
   }
 
   if (m_state == BB_Connected) {
-    stopCallTimer();
+    stopCallTimers();
   }
 
   m_state = BB_Teardown;
@@ -1140,8 +1140,20 @@ void SBCDialog::stopCall() {
   onCallStopped();
 }
 
+void SBCDialog::saveCallTimer(int timer, double timeout) {
+  call_timers[timer] = timeout;
+}
+
+void SBCDialog::clearCallTimer(int timer) {
+  call_timers.erase(timer);
+}
+
+void SBCDialog::clearCallTimers() {
+  call_timers.clear();
+}
+
 /** @return whether successful */
-bool SBCDialog::startCallTimer() {
+bool SBCDialog::startCallTimers() {
   if (call_timers.size() && (!AmSession::timersSupported())) {
     ERROR("internal implementation error: timers not supported\n");
     stopCall();
@@ -1157,7 +1169,7 @@ bool SBCDialog::startCallTimer() {
   return true;
 }
 
-void SBCDialog::stopCallTimer() {
+void SBCDialog::stopCallTimers() {
   for (map<int, double>::iterator it=
 	 call_timers.begin(); it != call_timers.end(); it++) {
     DBG("SBC: removing call timer %i\n", it->first);
@@ -1296,7 +1308,7 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 	    timeout = ret[i][SBC_CC_TIMER_TIMEOUT].asDouble();
 
 	  DBG("saving call timer %i: timeout %f\n", cc_timer_id, timeout);
-	  call_timers[cc_timer_id] = timeout;
+	  saveCallTimer(cc_timer_id, timeout);
 	  cc_timer_id++;
 	} break;
 
