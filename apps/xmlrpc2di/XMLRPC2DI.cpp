@@ -158,6 +158,10 @@ int XMLRPC2DI::load() {
 
 
   server = new XMLRPC2DIServer(XMLRPCPort, bind_ip, export_di, direct_export, s);
+  if (!server->initialize()) {
+    return -1;
+  }
+
   server->start();
   return 0;
 }
@@ -431,11 +435,17 @@ void XMLRPC2DIServer::registerMethods(const std::string& iface) {
 	  iface.c_str());
   }
 }
-  
+
+bool XMLRPC2DIServer::initialize() {
+  DBG("Binding XMLRPC2DIServer to port %u \n", port);
+  if (!s->bindAndListen(port, bind_ip)) {
+    ERROR("Binding XMLRPC2DIServer to %s:%u\n", bind_ip.c_str(), port);
+    return false;
+  }
+  return true;
+}
 
 void XMLRPC2DIServer::run() {
-  DBG("Binding XMLRPC2DIServer to port %u \n", port);
-  s->bindAndListen(port, bind_ip);
 
   // register us as SIP event receiver for MOD_NAME
   AmEventDispatcher::instance()->addEventQueue(MOD_NAME, this);

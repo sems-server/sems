@@ -126,6 +126,9 @@ class XMLRPC2DIServer
 		  bool di_export, 
 		  string direct_export,
 		  XmlRpcServer* s);
+
+  bool initialize();
+
   void run();
   void on_stop();
   
