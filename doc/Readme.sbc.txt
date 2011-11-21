@@ -1,6 +1,6 @@
 SBC module
 
-Copyright (C) 2010 Stefan Sayer
+Copyright (C) 2010-2011 Stefan Sayer
 
 Overview
 --------
@@ -347,6 +347,37 @@ Reliable 1xx (PRACK)
 
 Reliable 1xx (PRACK) extension (3262) is supported in a transparent mode,
 i.e. the RSeq header is relayed and RAck CSeq is translated properly.
+
+SIP authentication
+------------------
+The SBC can perform SIP digest authentication. To use SIP authentication, the
+uac_auth module needs to be loaded.
+
+SIP authentication is enabled by the following parameters, separately for both
+call legs:
+
+# Authentication for B leg (second/callee leg):
+   enable_auth       "yes" or "no"
+   auth_user         authentication user
+   auth_pwd          authentication password
+# Authentication for A leg (first/caller leg):
+   enable_aleg_auth  "yes" or "no"
+   auth_aleg_user    authentication user
+   auth_aleg_pwd     authentication password
+
+
+Note: The 'A' leg is always the first leg, the one from the caller. 'B' leg is
+the one to callee:
+ caller <--- A (first) leg ---> SEMS <--- B (second) leg ---> callee
+
+Example:
+  enable_auth=yes
+  auth_user=$H(P-Auth-B-User)
+  auth_pwd=$H(P-Auth-B-Pwd)
+  enable_aleg_auth=yes
+  auth_aleg_user=$H(P-Auth-A-User)
+  auth_aleg_pwd=$H(P-Auth-A-Pwd)
+
 
 SIP Session Timer configuration
 -------------------------------
