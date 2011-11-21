@@ -127,17 +127,33 @@ int main(int argc, char** argv)
     
   if(err == -1){
     fprintf(stderr,"sendto: %s\n",strerror(errno));
-  }
-  else {
-    int msg_size = recv(sd,rcv_buf,MSG_BUF_SIZE,0);
-    if(msg_size == -1)
-      fprintf(stderr,"recv: %s\n",strerror(errno));
-    else
-      printf("received:\n%.*s",msg_size-1,rcv_buf);
+  } else {
+    err = 0;
+    struct timeval timeout = {5,0};
+    fd_set rcv_fd;
+    FD_ZERO(&rcv_fd);
+    FD_SET(sd, &rcv_fd);
+
+    int select_result = select(sd+1, &rcv_fd, NULL, NULL, &timeout);
+    if(select_result == -1) {
+      fprintf(stderr,"select: %s\n",strerror(errno));
+      err = 1;
+    } else if(select_result == 0) {
+      fprintf(stderr,"read timeout!\n");
+      err = 1;
+    } else {
+      int msg_size = recv(sd,rcv_buf,MSG_BUF_SIZE,0);
+      if(msg_size == -1) {
+        fprintf(stderr,"recv: %s\n",strerror(errno));
+	err = 2;
+      } else {
+        printf("received:\n%.*s\n",msg_size-1,rcv_buf);
+      }
+    }
   }
     
   close(sd);
-  return 0;
+  return err;
 }
 
 
