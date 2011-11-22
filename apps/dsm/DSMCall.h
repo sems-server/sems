@@ -84,6 +84,8 @@ public:
   void onDtmf(int event, int duration_msec);
   void onBeforeDestroy();
 
+  void onSessionTimeout();
+  void onRtpTimeout();
   void onRemoteDisappeared(const AmSipReply& reply);
 
   void onSipRequest(const AmSipRequest& req);

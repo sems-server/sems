@@ -193,6 +193,12 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "remoteDisappeared") 
     return new TestDSMCondition(params, DSMCondition::RemoteDisappeared);  
 
+  if (cmd == "sessionTimeout")
+    return new TestDSMCondition(params, DSMCondition::SessionTimeout);
+
+  if (cmd == "rtpTimeout")
+    return new TestDSMCondition(params, DSMCondition::RtpTimeout);
+
   if (cmd == "jsonRpcRequest") 
     return new TestDSMCondition(params, DSMCondition::JsonRpcRequest);  
 

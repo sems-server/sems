@@ -327,6 +327,18 @@ brackets match.
 
    set #processed="true" if you don't want default behaviour (clear call)
 
+ sessionTimeout(expr)
+   session expired (SST)
+   parameters: none
+
+   set #processed="true" if you don't want default behaviour (clear call)
+
+ rtpTimeout(expr)
+   RTP timeout detected
+   parameters: none
+
+   set #processed="true" if you don't want default behaviour (clear call)
+
  invite
    invite received/sent (only with run_invite_event):
    parameters: none

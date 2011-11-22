@@ -364,6 +364,32 @@ void DSMCall::onRemoteDisappeared(const AmSipReply& reply) {
   AmB2BCallerSession::onRemoteDisappeared(reply);
 }
 
+void DSMCall::onSessionTimeout() {
+  map<string, string> params;
+
+  engine.runEvent(this, this, DSMCondition::SessionTimeout, &params);
+
+  if (checkParam(DSM_PROCESSED, DSM_TRUE, &params)) {
+    DBG("DSM script processed onSessionTimeout, returning\n");
+    return;
+  }
+
+  AmB2BCallerSession::onSessionTimeout();
+}
+
+void DSMCall::onRtpTimeout() {
+  map<string, string> params;
+
+  engine.runEvent(this, this, DSMCondition::RtpTimeout, &params);
+
+  if (checkParam(DSM_PROCESSED, DSM_TRUE, &params)) {
+    DBG("DSM script processed onRtpTimeout, returning\n");
+    return;
+  }
+
+  AmB2BCallerSession::onRtpTimeout();
+}
+
 void DSMCall::onSystemEvent(AmSystemEvent* ev) {
   map<string, string> params;
   params["type"] = AmSystemEvent::getDescription(ev->sys_event);

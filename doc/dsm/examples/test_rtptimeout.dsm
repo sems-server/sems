@@ -1,0 +1,13 @@
+import(mod_dlg);
+
+initial state START 
+  enter { playFile(wav/default_en.wav) };
+
+transition "remote unreachable"  START - rtpTimeout / {
+  log(1, "oh, that's sad, the far end seems to have disappeared...");
+-- handle it ourselves
+  set(#processed="true");  
+  stop(true);
+} -> END;
+
+state END;
