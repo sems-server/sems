@@ -190,6 +190,9 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "sipReply") 
     return new TestDSMCondition(params, DSMCondition::SipReply);  
 
+  if (cmd == "remoteDisappeared") 
+    return new TestDSMCondition(params, DSMCondition::RemoteDisappeared);  
+
   if (cmd == "jsonRpcRequest") 
     return new TestDSMCondition(params, DSMCondition::JsonRpcRequest);  
 

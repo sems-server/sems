@@ -126,6 +126,7 @@ class AmSIPRegistration
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSipRequest(const AmSipRequest& req) {}
   void onInvite2xx(const AmSipReply&) {}
+  void onRemoteDisappeared(const AmSipReply&) {}
   void onInvite1xxRel(const AmSipReply &){}
   void onNoAck(unsigned int) {}
   void onNoPrack(const AmSipRequest &, const AmSipReply &) {}

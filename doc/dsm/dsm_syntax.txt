@@ -321,19 +321,25 @@ brackets match.
  keyPress(key)
   alias to key(#key==key)
 
+ remoteDisappeared(expr)
+   remote end in an established call is unreachable (408/481 received)
+   parameters: see sipReply (below), except #old_dlg_status
+
+   set #processed="true" if you don't want default behaviour (clear call)
+
  invite
    invite received/sent (only with run_invite_event):
    parameters: none
 
  ringing
-   ringing reply, 180 (only with run_invite_event):
+   outgoing call: ringing reply, 180 (only with run_invite_event):
    parameters:
       #code     - SIP response code, e.g. 180
       #reason   - SIP reason string, e.g. "Ringing"
       #has_body - "true" or "false" 
 
  early
-   early session, 183 (only with run_invite_event):
+   outgoing call: early session, 183 (only with run_invite_event):
    parameters: none
 
  failed

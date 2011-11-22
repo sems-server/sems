@@ -182,9 +182,12 @@ class AmB2BSession: public AmSession
 
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
+
   void onInvite2xx(const AmSipReply& reply);
 
   int onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp);
+
+  void onRemoteDisappeared(const AmSipReply& reply);
 
   void onSessionTimeout();
   void onNoAck(unsigned int cseq);
@@ -314,6 +317,8 @@ class AmB2BCallerSession: public AmB2BSession
   void onInvite2xx(const AmSipReply& reply);
   void onCancel(const AmSipRequest& req);
   void onBye(const AmSipRequest& req);
+
+  void onRemoteDisappeared(const AmSipReply& reply);
 
   void onSystemEvent(AmSystemEvent* ev);
 

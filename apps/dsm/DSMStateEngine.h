@@ -75,6 +75,10 @@ class DSMCondition
     B2BOtherReply,
     B2BOtherBye,
 
+    SessionTimeout,
+    RtpTimeout,
+    RemoteDisappeared,
+
     Key,
     Timer,
 

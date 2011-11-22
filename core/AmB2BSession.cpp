@@ -559,9 +559,15 @@ void AmB2BSession::terminateOtherLeg()
 }
 
 void AmB2BSession::onSessionTimeout() {
-  DBG("Session Timer: Timeout, ending other leg.");
+  DBG("Session Timer: Timeout, ending other leg\n");
   terminateOtherLeg();
   AmSession::onSessionTimeout();
+}
+
+void AmB2BSession::onRemoteDisappeared(const AmSipReply& reply) {
+  DBG("remote unreachable, ending other leg\n");
+  terminateOtherLeg();
+  AmSession::onRemoteDisappeared(reply);
 }
 
 void AmB2BSession::onNoAck(unsigned int cseq)
@@ -1044,6 +1050,14 @@ void AmB2BCallerSession::onSystemEvent(AmSystemEvent* ev) {
   }
 
   AmB2BSession::onSystemEvent(ev);
+}
+
+void AmB2BCallerSession::onRemoteDisappeared(const AmSipReply& reply) {
+  DBG("remote unreachable, ending B2BUA call\n");
+  if (rtp_relay_enabled)
+    clearRtpReceiverRelay();
+
+  AmB2BSession::onRemoteDisappeared(reply);
 }
 
 void AmB2BCallerSession::onBye(const AmSipRequest& req)

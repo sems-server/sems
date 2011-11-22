@@ -334,6 +334,36 @@ void DSMCall::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
   }
 }
 
+void DSMCall::onRemoteDisappeared(const AmSipReply& reply) {
+  map<string, string> params;
+  params["code"] = int2str(reply.code);
+  params["reason"] = reply.reason;
+  params["hdrs"] = reply.hdrs;
+  params["content_type"] = reply.content_type;
+  params["body"] = reply.body;
+
+  params["cseq"] = int2str(reply.cseq);
+
+  params["dlg_status"] = dlgStatusStr(dlg.getStatus());
+
+  // pass AmSipReply for use by modules
+  DSMSipReply* dsm_reply = new DSMSipReply(&reply);
+  avar[DSM_AVAR_REPLY] = AmArg(dsm_reply);
+
+  engine.runEvent(this, this, DSMCondition::RemoteDisappeared, &params);
+
+  delete dsm_reply;
+  avar.erase(DSM_AVAR_REPLY);
+
+  if (checkParam(DSM_PROCESSED, DSM_TRUE, &params)) {
+    DBG("DSM script processed SIP onRemoteDisappeared reply '%u %s', returning\n",
+	reply.code, reply.reason.c_str());
+    return;
+  }
+
+  AmB2BCallerSession::onRemoteDisappeared(reply);
+}
+
 void DSMCall::onSystemEvent(AmSystemEvent* ev) {
   map<string, string> params;
   params["type"] = AmSystemEvent::getDescription(ev->sys_event);

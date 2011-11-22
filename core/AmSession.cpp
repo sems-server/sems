@@ -884,6 +884,13 @@ void AmSession::onInvite2xx(const AmSipReply& reply)
     dlg.send_200_ack(reply.cseq);
 }
 
+void AmSession::onRemoteDisappeared(const AmSipReply&) {
+  // see 3261 - 12.2.1.2: should end dialog on 408/481
+  DBG("Remote end unreachable - ending session\n");
+  dlg.bye();
+  setStopped();
+}
+
 void AmSession::onNoAck(unsigned int cseq)
 {
   if (dlg.getStatus() == AmSipDialog::Connected)

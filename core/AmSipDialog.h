@@ -386,6 +386,9 @@ class AmSipDialogEventHandler
   /** Hook called before a reply is sent */
   virtual void onSendReply(AmSipReply& reply, int flags)=0;
 
+  /** Hook called when the remote side is unreachable - 408/481 reply received */
+  virtual void onRemoteDisappeared(const AmSipReply &)=0;
+
   /** Hook called when a provisional reply is received with 100rel active */
   virtual void onInvite1xxRel(const AmSipReply &)=0;
 

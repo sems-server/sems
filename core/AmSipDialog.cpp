@@ -808,8 +808,7 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	else {
 	    send_200_ack(reply.cseq);
 	}
-    }
-    else {
+    } else {
       // error reply or method != INVITE
       uac_trans.erase(t_it);
 
@@ -820,13 +819,17 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	    reply.code, trans_method.c_str());
 	oa_trans.clearTransitionalState();
       }
+
+      if ((reply.code == 408 || reply.code == 481) && (status == Connected)) {
+	hdl->onRemoteDisappeared(reply);
+      }
+
     }
   }
 
   if(cont && hdl)
     hdl->onSipReply(reply, saved_status);
 }
-
 
 int AmSipDialog::rel100OnReplyIn(const AmSipReply &reply)
 {

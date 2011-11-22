@@ -551,6 +551,9 @@ public:
    */
   virtual void onBye(const AmSipRequest& req);
 
+  /** remote side is unreachable - 408/481 reply received */
+  virtual void onRemoteDisappeared(const AmSipReply&);
+
   /** Entry point for SIP Requests   */
   virtual void onSipRequest(const AmSipRequest& req);
 
@@ -560,10 +563,9 @@ public:
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);
 
-
   virtual void onInvite1xxRel(const AmSipReply &);
 
-  /** Hook called when an answer for a locally sent PRACK is received */
+  /** answer for a locally sent PRACK is received */
   virtual void onPrack2xx(const AmSipReply &);
 
   virtual void onFailure(AmSipDialogEventHandler::FailureCause cause, 

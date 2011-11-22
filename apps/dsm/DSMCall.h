@@ -84,6 +84,8 @@ public:
   void onDtmf(int event, int duration_msec);
   void onBeforeDestroy();
 
+  void onRemoteDisappeared(const AmSipReply& reply);
+
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 

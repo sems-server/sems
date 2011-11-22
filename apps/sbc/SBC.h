@@ -135,6 +135,9 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   /** handler called when no ACK received */
   void onNoAck(unsigned int cseq);
 
+  /** handler called when we receive 408/481 */
+  void onRemoteUnreachable(const AmSipReply& reply);
+
   /** stop call (both legs, CC) */
   void stopCall();
 
