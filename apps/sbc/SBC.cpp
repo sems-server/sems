@@ -1111,11 +1111,11 @@ void SBCDialog::onNoAck(unsigned int cseq) {
   AmB2BCallerSession::onNoAck(cseq);
 }
 
-void SBCDialog::onRemoteUnreachable(const AmSipReply& reply)  {
+void SBCDialog::onRemoteDisappeared(const AmSipReply& reply)  {
   DBG("Remote unreachable - ending SBC call\n");
   onCallStopped();
 
-  AmB2BCallerSession::onRemoteUnreachable(reply);
+  AmB2BCallerSession::onRemoteDisappeared(reply);
 }
 
 void SBCDialog::onBye(const AmSipRequest& req)
