@@ -23,21 +23,6 @@
 #include <set>
 
 /**
- * Timer Event: Name
- */
-#define TIMEOUTEVENT_NAME "timer_timeout"
-
-/**
- * \brief User Timer Event
- * data[0]: int timer_id
- */
-class AmTimeoutEvent : public AmPluginEvent 
-{
- public:
-  AmTimeoutEvent(int timer_id);
-};
-
-/**
  * \brief Timer struct containing the alarm time.
  */
 struct AmTimer

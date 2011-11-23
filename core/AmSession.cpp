@@ -36,6 +36,7 @@
 #include "AmMediaProcessor.h"
 #include "AmDtmfDetector.h"
 #include "AmPlayoutBuffer.h"
+#include "AmAppTimer.h"
 
 #ifdef WITH_ZRTP
 #include "AmZRTP.h"
@@ -1274,49 +1275,24 @@ bool AmSession::setTimer(int timer_id, double timeout) {
     return true;
   }
 
-  if (NULL == user_timer_ref)
-    getUserTimerInstance();
-
-  if (NULL == user_timer_ref)
-    return false;
-
   DBG("setting timer %d with timeout %f\n", timer_id, timeout);
-  AmArg di_args,ret;
-  di_args.push((int)timer_id);
-  di_args.push((double)timeout);           // in seconds
-  di_args.push(getLocalTag().c_str());
-  user_timer_ref->invoke("setTimer", di_args, ret);
+  AmAppTimer::instance()->setTimer(getLocalTag(), timer_id, timeout);
 
   return true;
 }
 
 bool AmSession::removeTimer(int timer_id) {
-  if (NULL == user_timer_ref)
-    getUserTimerInstance();
-
-  if (NULL == user_timer_ref)
-    return false;
 
   DBG("removing timer %d\n", timer_id);
-  AmArg di_args,ret;
-  di_args.push((int)timer_id);
-  di_args.push(getLocalTag().c_str());
-  user_timer_ref->invoke("removeTimer", di_args, ret);
+  AmAppTimer::instance()->removeTimer(getLocalTag(), timer_id);
 
   return true;
 }
 
 bool AmSession::removeTimers() {
-  if (NULL == user_timer_ref)
-    getUserTimerInstance();
-
-  if (NULL == user_timer_ref)
-    return false;
 
   DBG("removing timers\n");
-  AmArg di_args,ret;
-  di_args.push(getLocalTag().c_str());
-  user_timer_ref->invoke("removeUserTimers", di_args, ret);
+  AmAppTimer::instance()->removeTimers(getLocalTag());
 
   return true;
 }

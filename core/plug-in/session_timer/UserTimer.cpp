@@ -39,13 +39,6 @@ public:
 
 EXPORT_PLUGIN_CLASS_FACTORY(UserTimerFactory,"user_timer");
 
-AmTimeoutEvent::AmTimeoutEvent(int timer_id)
-  : AmPluginEvent(TIMEOUTEVENT_NAME)
-{
-  data.push(AmArg(timer_id));
-}
-
-
 UserTimer::UserTimer()
 {
 }

@@ -34,6 +34,7 @@
 #include "AmRtpReceiver.h"
 #include "AmEventDispatcher.h"
 #include "AmSessionProcessor.h"
+#include "AmAppTimer.h"
 
 #ifdef WITH_ZRTP
 # include "AmZRTP.h"
@@ -482,6 +483,9 @@ int main(int argc, char* argv[])
     goto error;
   }
 #endif
+
+  INFO("Starting application timer scheduler\n");
+  AmAppTimer::instance()->start();
 
   INFO("Starting session container\n");
   AmSessionContainer::instance()->start();

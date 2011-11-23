@@ -61,6 +61,10 @@ void _wheeltimer::insert_timer(timer* t)
 
 void _wheeltimer::remove_timer(timer* t)
 {
+    if (t == NULL){
+	return;
+    }
+
     //add timer to remove to user request list
     reqs_m.lock();
     reqs_backlog.push_back(timer_req(t,false));
@@ -171,12 +175,12 @@ void _wheeltimer::process_current_timers()
     
     while(t){
 
-	t->cb(t,t->data1,t->data2);
-
 	timer* t1 = (timer*)t->next;
 
 	t->next = NULL;
 	t->prev = NULL;
+
+	t->cb(t,t->data1,t->data2);
 
 	t = t1;
     }

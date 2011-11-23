@@ -31,7 +31,7 @@
 #define _wheeltimer_h_
 
 #include "../AmThread.h"
-
+#include <sys/types.h>
 #include <deque>
 
 #define BITS_PER_WHEEL 8

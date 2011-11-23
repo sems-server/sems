@@ -24,6 +24,12 @@ AmPluginEvent::AmPluginEvent(const string& n, const AmArg& d)
 AmPluginEvent::AmPluginEvent(const string& n)
   : AmEvent(E_PLUGIN), name(n), data() {}
 
+AmTimeoutEvent::AmTimeoutEvent(int timer_id)
+  : AmPluginEvent(TIMEOUTEVENT_NAME)
+{
+  data.push(AmArg(timer_id));
+}
+
 AmSystemEvent::AmSystemEvent(EvType e)
   : AmEvent(E_SYSTEM), sys_event(e) { }
 
