@@ -1,6 +1,7 @@
 set (sbc_SRCS
 HeaderFilter.cpp
 ParamReplacer.cpp
+RTPParameters.cpp
 RegexMapper.cpp
 SBC.cpp
 SBCCallProfile.cpp
