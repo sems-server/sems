@@ -25,6 +25,7 @@ void print_usage(const char * progname)
 	  " -s <server>  : server name|ip (default: 127.0.0.1)\n"
 	  " -p <port>    : server port (default: 5040)\n"
 	  " -c <cmd>     : command (default: calls)\n"
+	  " -t <seconds> : timeout (default: 5s)\n"
 	  "\n"
 	  "Tips: \n"
 	  " o quote the command if it has arguments (e.g. %s -c \"set_loglevel 1\")\n"
@@ -77,7 +78,7 @@ int main(int argc, char** argv)
     
   std::map<char,string> args;
 
-  if(parse_args(argc, argv, "h","spc", args)){
+  if(parse_args(argc, argv, "h","spct", args)){
     print_usage(argv[0]);
     return -1;
   }
@@ -85,6 +86,7 @@ int main(int argc, char** argv)
   string server="127.0.0.1";
   string port="5040";
   string cmd="calls";
+  unsigned short timeout_s = 5;
 
   for(std::map<char,string>::iterator it = args.begin(); 
       it != args.end(); ++it){
@@ -97,6 +99,10 @@ int main(int argc, char** argv)
     case 's': { server=it->second; } break;
     case 'p': { port=it->second; } break;
     case 'c': { cmd=it->second; } break;
+    case 't': { if (str2i(it->second.c_str(),&timeout_s)<0) {
+	  fprintf(stderr,"timeout '%s' not understood\n",it->second.c_str());
+	  return -1;
+	} } break;
     }
   }
 
@@ -130,6 +136,7 @@ int main(int argc, char** argv)
   } else {
     err = 0;
     struct timeval timeout = {5,0};
+    timeout.tv_sec = timeout_s;
     fd_set rcv_fd;
     FD_ZERO(&rcv_fd);
     FD_SET(sd, &rcv_fd);
