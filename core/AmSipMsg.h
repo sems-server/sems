@@ -1,5 +1,6 @@
 #ifndef __AMSIPMSG_H__
 #define __AMSIPMSG_H__
+#include "AmArg.h"
 
 #include <string>
 using std::string;
@@ -8,6 +9,7 @@ using std::string;
 
 /* enforce common naming in Req&Rpl */
 class _AmSipMsgInDlg
+  : public AmObject
 {
  public:
   string from;

@@ -72,6 +72,7 @@ typedef std::map<int,AmSipTransaction> TransMap;
  * \brief implements the dialog state machine
  */
 class AmSipDialog
+  : public AmObject
 {
  public:
   enum Status {	

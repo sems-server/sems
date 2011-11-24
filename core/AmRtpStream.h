@@ -84,7 +84,8 @@ struct PacketMem {
  *
  * Rtp stream high level interface.
  */
-class AmRtpStream 
+class AmRtpStream
+  : public AmObject
 {
 protected:
   // get the next available port within configured range

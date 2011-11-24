@@ -212,6 +212,7 @@ public:
  */
 
 class AmAudio
+  : public AmObject
 {
 private:
   int rec_time; // in samples

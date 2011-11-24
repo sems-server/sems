@@ -69,6 +69,7 @@ class AmDtmfEvent;
  * The session is identified by Call-ID, From-Tag and To-Tag.
  */
 class AmSession : 
+  public AmObject,
 #ifndef SESSION_THREADPOOL
   public AmThread,
 #endif
