@@ -383,25 +383,14 @@ AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req, const string&
 AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req, const string& app_name,
 					  AmArg& session_params)
 {
-  UACAuthCred* cred = NULL;
-  if (session_params.getType() == AmArg::AObject) {
-    AmObject* cred_obj = session_params.asObject();
-    if (cred_obj)
-      cred = dynamic_cast<UACAuthCred*>(cred_obj);
-  }
-
+  UACAuthCred* cred = AmUACAuth::unpackCredentials(session_params);
   AmSession* s = new WebConferenceDialog(prompts, getInstance(), cred); 
 
-  AmSessionEventHandlerFactory* uac_auth_f = 
-    AmPlugIn::instance()->getFactory4Seh("uac_auth");
-  if (uac_auth_f != NULL) {
-    DBG("UAC Auth enabled for new announcement session.\n");
-    AmSessionEventHandler* h = uac_auth_f->getHandler(s);
-    if (h != NULL )
-      s->addHandler(h);
+  if (NULL == cred) {
+    WARN("discarding unknown session parameters.\n");
   } else {
-    ERROR("uac_auth interface not accessible. Load uac_auth for authenticated dialout.\n");
-  }		
+    AmUACAuth::enable(s);
+  }
 
   s->setUri(getAccessUri(req.user));
 

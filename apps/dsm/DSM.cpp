@@ -756,11 +756,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name,
   } else if (session_params.getType() == AmArg::Array) {
     DBG("session params is array - size %zd\n", session_params.size());
     // Creds
-    if (session_params.get(0).getType() == AmArg::AObject) {
-      AmObject* cred_obj = session_params.get(0).asObject();
-      if (cred_obj)
-	cred = dynamic_cast<UACAuthCred*>(cred_obj);
-    }
+    cred = AmUACAuth::unpackCredentials(session_params.get(0));
     // Creds + vars
     if (session_params.size()>1 && 
 	session_params.get(1).getType() == AmArg::Struct) {
@@ -795,17 +791,7 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name,
   if (NULL == cred) {
     DBG("outgoing DSM call will not be authenticated.\n");
   } else {
-    AmSessionEventHandlerFactory* uac_auth_f = 
-      AmPlugIn::instance()->getFactory4Seh("uac_auth");
-    if (uac_auth_f != NULL) {
-      DBG("UAC Auth enabled for new DSM session.\n");
-      AmSessionEventHandler* h = uac_auth_f->getHandler(s);
-      if (h != NULL )
-	s->addHandler(h);
-    } else {
-      ERROR("uac_auth interface not accessible. "
-	    "Load uac_auth for authenticated dialout.\n");
-    }		
+    AmUACAuth::enable(s);
   }
 
   return s;

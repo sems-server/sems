@@ -32,7 +32,7 @@
 #include "AmAudioFile.h"
 #include "AmB2BSession.h"
 
-#include "ampi/UACAuthAPI.h"
+#include "AmUACAuth.h"
 
 #include <string>
 using std::string;

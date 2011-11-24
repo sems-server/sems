@@ -31,7 +31,7 @@
 #include "AmConfigReader.h"
 #include "AmPlaylist.h"
 
-#include "ampi/UACAuthAPI.h"
+#include "AmUACAuth.h"
 
 #include <string>
 using std::string;

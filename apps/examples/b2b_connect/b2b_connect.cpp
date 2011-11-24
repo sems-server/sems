@@ -225,25 +225,10 @@ void b2b_connectDialog::onCancel(const AmSipRequest& req)
 
 AmB2ABCalleeSession* b2b_connectDialog::createCalleeSession()
 {
-  b2b_connectCalleeSession* sess = new b2b_connectCalleeSession(getLocalTag(),
-								connector, 
-								user, password);
+  b2b_connectCalleeSession* sess =
+    new b2b_connectCalleeSession(getLocalTag(), connector, user, password);
 
-  AmSessionEventHandlerFactory* uac_auth_f = 
-    AmPlugIn::instance()->getFactory4Seh("uac_auth");
-  
-  if (NULL != uac_auth_f) {
-    DBG("UAC Auth enabled for new b2b_connect session.\n");
-    AmSessionEventHandler* h = uac_auth_f->getHandler(sess);
-    if (h != NULL )
-      sess->addHandler(h);
-    else {
-      ERROR("unable to set SIP UAC auth for new session.");
-    } 
-  } else {
-    ERROR("unable to get SIP UAC auth."
-          "(uac_auth module loaded?)\n");
-  }
+  AmUACAuth::enable(sess);
 
   return sess;
 }

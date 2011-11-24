@@ -32,7 +32,7 @@
 #include "AmConferenceChannel.h"
 #include "AmPlaylist.h"
 #include "AmPromptCollection.h"
-#include "ampi/UACAuthAPI.h"
+#include "AmUACAuth.h"
 #include "AmRingTone.h"
 
 class WebConferenceFactory;

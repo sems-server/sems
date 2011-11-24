@@ -167,8 +167,9 @@ AmSession* CallBackFactory::onInvite(const AmSipRequest& req, const string& app_
       cred = dynamic_cast<UACAuthCred*>(cred_obj);
   }
 
-  AmSession* s = new CallBackDialog(prompts, cred); 
-  addAuthHandler(s);
+  AmSession* s = new CallBackDialog(prompts, cred);
+  AmUACAuth::enable(s);
+  
   return s;
 }
 
@@ -315,7 +316,7 @@ void CallBackDialog::process(AmEvent* ev)
 // need this to pass credentials...
 AmB2ABCalleeSession* CallBackDialog::createCalleeSession() {
   CallBackCalleeDialog* sess = new CallBackCalleeDialog(getLocalTag(), connector, cred);
-  addAuthHandler(sess);
+  AmUACAuth::enable(sess);
   return sess;
 }
 
@@ -332,17 +333,3 @@ CallBackCalleeDialog::CallBackCalleeDialog(const string& other_tag,
 CallBackCalleeDialog::~CallBackCalleeDialog() {
 }
 
-
-void addAuthHandler(AmSession* s) {
-  AmSessionEventHandlerFactory* uac_auth_f = 
-    AmPlugIn::instance()->getFactory4Seh("uac_auth");
-  if (uac_auth_f != NULL) {
-    DBG("UAC Auth enabled for new session.\n");
-    AmSessionEventHandler* h = uac_auth_f->getHandler(s);
-    if (h != NULL )
-      s->addHandler(h);
-  } else {
-    ERROR("uac_auth interface not accessible. "
-	  "Load uac_auth for authenticated calls.\n");
-  }		
-}

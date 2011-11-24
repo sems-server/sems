@@ -29,7 +29,7 @@
 #define _B2B_CONNECT_H
 
 #include "AmB2ABSession.h"
-#include "ampi/UACAuthAPI.h"
+#include "AmUACAuth.h"
 
 using std::string;
 

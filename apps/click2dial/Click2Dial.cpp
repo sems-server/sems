@@ -155,24 +155,9 @@ AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, const string& ap
     return NULL;
   }
 
-  AmSessionEventHandlerFactory* uac_auth_f =
-    AmPlugIn::instance()->getFactory4Seh("uac_auth");
-  if(uac_auth_f != NULL) {
-    DBG("UAC Auth enabled for new announcement session.\n");
-    AmSessionEventHandler *h = uac_auth_f->getHandler(s);
-    if (h != NULL) {
-      s->addHandler(h);
-    }
-    else {
-      ERROR("Failed to get authentication event handler");
-      delete s;
-      return NULL;
-    }
-  }
-  else {
-    ERROR("uac_auth interface not accessible. "
-      "Load uac_auth for authenticated dialout.\n");
-
+  if (!AmUACAuth::enable(s)) {
+    ERROR("Failed to get authentication event handler");
+    delete s;
     return NULL;
   }
 

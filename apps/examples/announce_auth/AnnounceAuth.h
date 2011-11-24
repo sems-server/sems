@@ -30,68 +30,66 @@
 #include "AmSession.h"
 #include "AmAudioFile.h"
 #include "AmConfigReader.h"
-
-#include "ampi/UACAuthAPI.h"
+#include "AmUACAuth.h"
 
 #include <string>
 using std::string;
 
 class DialerThread : public AmThread {
-	string r_uri;
-	string from;
-	string from_uri;
-	string to;
+  string r_uri;
+  string from;
+  string from_uri;
+  string to;
 protected:
-	void run();
-	void on_stop();
+  void run();
+  void on_stop();
 public:
-	void set_dial(const string& r, const string& f, 
-				  const string& fu, const string& t);
+  void set_dial(const string& r, const string& f, 
+		const string& fu, const string& t);
 
 
 };
 
 class AnnounceAuthFactory: public AmSessionFactory
 {
-	DialerThread dialer;    
-	AmSessionEventHandlerFactory* uac_auth_f;
+  DialerThread dialer;    
 
-	string auth_realm;
-	string auth_user;
-	string auth_pwd;
+  string auth_realm;
+  string auth_user;
+  string auth_pwd;
 
 public:
-    static string AnnouncePath;
-    static string AnnounceFile;
+  static string AnnouncePath;
+  static string AnnounceFile;
 
-    AnnounceAuthFactory(const string& _app_name);
+  AnnounceAuthFactory(const string& _app_name);
 
-    int onLoad();
-    AmSession* onInvite(const AmSipRequest& req, const string& app_name,
-			const map<string,string>& app_params);
+  int onLoad();
+  AmSession* onInvite(const AmSipRequest& req, const string& app_name,
+		      const map<string,string>& app_params);
 };
 
 class AnnounceAuthDialog : public AmSession,
-						   public CredentialHolder
+			   public CredentialHolder
 {
-    AmAudioFile wav_file;
-    string filename;
-    UACAuthCred credentials;
+  AmAudioFile wav_file;
+  string filename;
+  UACAuthCred credentials;
 
- public:
-	AnnounceAuthDialog(const string& filename,
-					   const string& auth_realm, 
-					   const string& auth_user,
-					   const string& auth_pwd);
-    ~AnnounceAuthDialog();
+public:
+  AnnounceAuthDialog(const string& filename,
+		     const string& auth_realm, 
+		     const string& auth_user,
+		     const string& auth_pwd);
+  ~AnnounceAuthDialog();
 
-    void onSessionStart();
-    void startSession();
-    void onBye(const AmSipRequest& req);
-    void onDtmf(int event, int duration_msec) {}
+  void onSessionStart();
+  void startSession();
+  void onBye(const AmSipRequest& req);
+  void onDtmf(int event, int duration_msec) {}
 
-    void process(AmEvent* event);
-    inline UACAuthCred* getCredentials();
+  void process(AmEvent* event);
+  inline UACAuthCred* getCredentials();
 };
 
 

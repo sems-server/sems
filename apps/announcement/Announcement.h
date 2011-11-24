@@ -30,7 +30,7 @@
 #include "AmAudioFile.h"
 #include "AmConfigReader.h"
 
-#include "ampi/UACAuthAPI.h"
+#include "AmUACAuth.h"
 
 #include <string>
 using std::string;

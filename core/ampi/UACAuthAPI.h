@@ -46,11 +46,10 @@ class UACAuthCred
   string realm;
   string user;
   string pwd;
-  UACAuthCred() { }
+  UACAuthCred();
   UACAuthCred(const string& realm,
 	      const string& user,
-	      const string& pwd)
-    : realm(realm), user(user), pwd(pwd) { }
+	      const string& pwd);
 };
 
 class CredentialHolder {

@@ -28,8 +28,7 @@
 #define _DSM_CALL_H
 #include "AmB2BSession.h"
 #include "AmPromptCollection.h"
-
-#include "ampi/UACAuthAPI.h"
+#include "AmUACAuth.h"
 
 #include "DSMSession.h"
 #include "DSMStateEngine.h"

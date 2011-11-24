@@ -125,8 +125,8 @@ void RegThread::create_registration(RegInfo& ri) {
   if (di_f == NULL) {
     ERROR("unable to get a registrar_client\n");
   } else {
-    AmDynInvoke* uac_auth_i = di_f->getInstance();
-    if (uac_auth_i!=NULL) {
+    AmDynInvoke* registrar_client_i = di_f->getInstance();
+    if (registrar_client_i!=NULL) {
 
       DBG("calling createRegistration\n");
       AmArg di_args, reg_handle;
@@ -139,7 +139,7 @@ void RegThread::create_registration(RegInfo& ri) {
       di_args.push(ri.proxy.c_str());
       di_args.push(ri.contact.c_str());
 			
-      uac_auth_i->invoke("createRegistration", di_args, reg_handle);
+      registrar_client_i->invoke("createRegistration", di_args, reg_handle);
       if (reg_handle.size()) 
 	ri.handle = reg_handle.get(0).asCStr();
     }
@@ -153,12 +153,12 @@ bool RegThread::check_registration(const RegInfo& ri) {
   if (di_f == NULL) {
     ERROR("unable to get a registrar_client\n");
   } else {
-    AmDynInvoke* uac_auth_i = di_f->getInstance();
-    if (uac_auth_i!=NULL) {
+    AmDynInvoke* registrar_client_i = di_f->getInstance();
+    if (registrar_client_i!=NULL) {
 
       AmArg di_args, res;
       di_args.push(ri.handle.c_str());
-      uac_auth_i->invoke("getRegistrationState", di_args, res);
+      registrar_client_i->invoke("getRegistrationState", di_args, res);
       if (res.size()) {
 	if (!res.get(0).asInt())
 	  return false; // does not exist

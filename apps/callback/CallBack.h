@@ -30,7 +30,7 @@
 #include "AmAudio.h"
 #include "AmPlaylist.h"
 #include "AmPromptCollection.h"
-#include "ampi/UACAuthAPI.h"
+#include "AmUACAuth.h"
 
 #include <map>
 #include <string>
@@ -132,7 +132,6 @@ public:
   UACAuthCred* getCredentials() { return cred; }
 };
 
-void addAuthHandler(AmSession* s);
 #endif
 // Local Variables:
 // mode:C++

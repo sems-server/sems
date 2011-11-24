@@ -176,21 +176,8 @@ AmB2ABCalleeSession* ServiceLineCallerDialog::createCalleeSession() {
   ServiceLineCalleeDialog* sess = 
     new ServiceLineCalleeDialog(getLocalTag(), connector);
 
-  AmSessionEventHandlerFactory* uac_auth_f = 
-    AmPlugIn::instance()->getFactory4Seh("uac_auth");
-  
-  if (NULL != uac_auth_f) {
-    DBG("UAC Auth enabled for new serviceline session.\n");
-    AmSessionEventHandler* h = uac_auth_f->getHandler(sess);
-    if (h != NULL )
-      sess->addHandler(h);
-    else {
-      ERROR("unable to set SIP UAC auth for new session.");
-    } 
-  } else {
-    ERROR("unable to get SIP UAC auth."
-	  "(uac_auth module loaded?)\n");
-  }
+  AmUACAuth::enable(sess);
+
   return sess;
 }
 
