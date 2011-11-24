@@ -181,7 +181,7 @@ static T* getDSMConfChannel(DSMSession* sc_sess, const char* key_name) {
   if (sc_sess->avar.find(key_name) == sc_sess->avar.end()) {
     return NULL;
   }
-  ArgObject* ao = NULL; T* res = NULL;
+  AmObject* ao = NULL; T* res = NULL;
   try {
     if (!isArgAObject(sc_sess->avar[key_name])) {
       return NULL;

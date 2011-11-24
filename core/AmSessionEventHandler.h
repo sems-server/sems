@@ -47,7 +47,7 @@ class AmConfigReader;
  *  Signaling plugins must inherit from this class.
  */
 class AmSessionEventHandler
-  : public ArgObject
+  : public AmObject
 {
 public:
   bool destroy;

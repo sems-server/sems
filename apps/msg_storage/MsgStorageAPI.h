@@ -15,7 +15,7 @@
 #include "AmArg.h"
 
 class MessageDataFile 
-: public ArgObject {
+: public AmObject {
  public:
   FILE* fp;
   MessageDataFile(FILE* fp) 

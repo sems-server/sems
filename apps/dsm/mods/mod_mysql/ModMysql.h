@@ -53,7 +53,7 @@ class SCMysqlModule
 
 class DSMMyConnection 
 : public mysqlpp::Connection,
-  public ArgObject,
+  public AmObject,
   public DSMDisposable 
 {
  public:
@@ -65,7 +65,7 @@ class DSMMyConnection
 
 class DSMMyStoreQueryResult 
 : public mysqlpp::StoreQueryResult,
-  public ArgObject,
+  public AmObject,
   public DSMDisposable 
 {
  public:

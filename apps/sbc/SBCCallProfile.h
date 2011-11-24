@@ -56,7 +56,7 @@ typedef std::list<CCInterface> CCInterfaceListT;
 typedef CCInterfaceListT::iterator CCInterfaceListIteratorT;
 
 struct SBCCallProfile
-  : public ArgObject {
+  : public AmObject {
   string md5hash;
   string profile_file;
 

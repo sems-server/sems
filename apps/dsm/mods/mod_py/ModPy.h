@@ -51,9 +51,9 @@ class SCPyModule
   static PyThreadState* tstate;
 };
 
-/** smart ArgObject that "owns" a python dictionary reference */
+/** smart AmObject that "owns" a python dictionary reference */
 struct SCPyDictArg
-  : public ArgObject, 
+  : public AmObject, 
   public DSMDisposable   
 {
   SCPyDictArg();

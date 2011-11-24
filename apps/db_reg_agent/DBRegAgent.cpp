@@ -419,7 +419,7 @@ void DBRegAgent::createRegistration(long subscriber_id,
       if (!ret.size()) {
 	ERROR("Can not add auth handler to new registration!\n");
       } else {
-	ArgObject* p = ret.get(0).asObject();
+	AmObject* p = ret.get(0).asObject();
 	if (p != NULL) {
 	  AmSessionEventHandler* h = dynamic_cast<AmSessionEventHandler*>(p);	
 	  if (h != NULL)

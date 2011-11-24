@@ -408,7 +408,7 @@ VECTOR_GETTER(string, asStringVector, asCStr)
 VECTOR_GETTER(int, asIntVector, asInt)
 VECTOR_GETTER(bool, asBoolVector, asBool)
 VECTOR_GETTER(double, asDoubleVector, asDouble)
-VECTOR_GETTER(ArgObject*, asArgObjectVector, asObject)
+VECTOR_GETTER(AmObject*, asAmObjectVector, asObject)
 #undef  VECTOR_GETTER
 
 vector<ArgBlob> AmArg::asArgBlobVector() const {		

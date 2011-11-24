@@ -750,14 +750,14 @@ AmSession* DSMFactory::onInvite(const AmSipRequest& req, const string& app_name,
   map<string, string> vars;
   // Creds
   if (session_params.getType() == AmArg::AObject) {
-    ArgObject* cred_obj = session_params.asObject();
+    AmObject* cred_obj = session_params.asObject();
     if (cred_obj)
       cred = dynamic_cast<UACAuthCred*>(cred_obj);
   } else if (session_params.getType() == AmArg::Array) {
     DBG("session params is array - size %zd\n", session_params.size());
     // Creds
     if (session_params.get(0).getType() == AmArg::AObject) {
-      ArgObject* cred_obj = session_params.get(0).asObject();
+      AmObject* cred_obj = session_params.get(0).asObject();
       if (cred_obj)
 	cred = dynamic_cast<UACAuthCred*>(cred_obj);
     }

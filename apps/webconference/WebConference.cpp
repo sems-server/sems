@@ -385,7 +385,7 @@ AmSession* WebConferenceFactory::onInvite(const AmSipRequest& req, const string&
 {
   UACAuthCred* cred = NULL;
   if (session_params.getType() == AmArg::AObject) {
-    ArgObject* cred_obj = session_params.asObject();
+    AmObject* cred_obj = session_params.asObject();
     if (cred_obj)
       cred = dynamic_cast<UACAuthCred*>(cred_obj);
   }

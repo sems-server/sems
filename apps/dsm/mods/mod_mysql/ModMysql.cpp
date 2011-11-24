@@ -89,17 +89,17 @@ mysqlpp::Connection* getMyDSMSessionConnection(DSMSession* sc_sess) {
     sc_sess->SET_STRERROR("No connection to database");
     return NULL;
   }
-  ArgObject* ao = NULL; mysqlpp::Connection* res = NULL;
+  AmObject* ao = NULL; mysqlpp::Connection* res = NULL;
   try {
     if (!isArgAObject(sc_sess->avar[MY_AKEY_CONNECTION])) {
       sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
-      sc_sess->SET_STRERROR("No connection to database (not ArgObject)");
+      sc_sess->SET_STRERROR("No connection to database (not AmObject)");
       return NULL;
     }
     ao = sc_sess->avar[MY_AKEY_CONNECTION].asObject();
   } catch (...){
     sc_sess->SET_ERRNO(DSM_ERRNO_MY_CONNECTION);
-    sc_sess->SET_STRERROR("No connection to database (not ArgObject)");
+    sc_sess->SET_STRERROR("No connection to database (not AmObject)");
     return NULL;
   }
 
@@ -117,7 +117,7 @@ mysqlpp::StoreQueryResult* getMyDSMQueryResult(DSMSession* sc_sess) {
     sc_sess->SET_STRERROR("No result available");
     return NULL;
   }
-  ArgObject* ao = NULL; mysqlpp::StoreQueryResult* res = NULL;
+  AmObject* ao = NULL; mysqlpp::StoreQueryResult* res = NULL;
   try {
     assertArgAObject(sc_sess->avar[MY_AKEY_RESULT]);
     ao = sc_sess->avar[MY_AKEY_RESULT].asObject();

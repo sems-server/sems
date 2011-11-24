@@ -1188,7 +1188,7 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
     AmArg di_args,ret;
     di_args.push(cc_if.cc_name);
     di_args.push(getLocalTag());
-    di_args.push((ArgObject*)&call_profile);
+    di_args.push((AmObject*)&call_profile);
     di_args.push(AmArg());
     di_args.back().push((int)call_start_ts.tv_sec);
     di_args.back().push((int)call_start_ts.tv_usec);
@@ -1338,7 +1338,7 @@ void SBCDialog::CCConnect(const AmSipReply& reply) {
     AmArg di_args,ret;
     di_args.push(cc_if.cc_name);                // cc name
     di_args.push(getLocalTag());                 // call ltag
-    di_args.push((ArgObject*)&call_profile);     // call profile
+    di_args.push((AmObject*)&call_profile);     // call profile
     di_args.push(AmArg());                       // timestamps
     di_args.back().push((int)call_start_ts.tv_sec);
     di_args.back().push((int)call_start_ts.tv_usec);
@@ -1385,7 +1385,7 @@ void SBCDialog::CCEnd(const CCInterfaceListIteratorT& end_interface) {
     AmArg di_args,ret;
     di_args.push(cc_if.cc_name);
     di_args.push(getLocalTag());                 // call ltag
-    di_args.push((ArgObject*)&call_profile);
+    di_args.push((AmObject*)&call_profile);
     di_args.push(AmArg());                       // timestamps
     di_args.back().push((int)call_start_ts.tv_sec);
     di_args.back().push((int)call_start_ts.tv_usec);

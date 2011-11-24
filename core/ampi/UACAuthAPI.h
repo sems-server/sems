@@ -34,14 +34,14 @@
 using std::string;
 
 class DialogControl 
-: public ArgObject 
+: public AmObject 
 {
  public:
   virtual AmSipDialog* getDlg()=0;
 };
 
 class UACAuthCred 
-: public ArgObject {
+: public AmObject {
  public:
   string realm;
   string user;

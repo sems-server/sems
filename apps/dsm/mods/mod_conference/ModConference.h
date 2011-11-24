@@ -43,7 +43,7 @@ DECLARE_MODULE(MOD_CLS_NAME);
 /** holds a conference channel  */
 class DSMConfChannel 
 : public DSMDisposable,
-  public ArgObject {
+  public AmObject {
   std::auto_ptr<AmConferenceChannel> chan;
 
  public:
@@ -56,7 +56,7 @@ class DSMConfChannel
 /** hold conference channel and audio queue */
 class DSMTeeConfChannel
 : public DSMDisposable,
-  public ArgObject {
+  public AmObject {
   std::auto_ptr<AmConferenceChannel> chan;
   AmAudioQueue audio_queue;
 
@@ -71,7 +71,7 @@ class DSMTeeConfChannel
 
 template<class T> class DSMDisposableT
 : public DSMDisposable,
-  public ArgObject {
+  public AmObject {
   std::auto_ptr<T> pobj;
 
  public:

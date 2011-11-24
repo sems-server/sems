@@ -182,7 +182,7 @@ class DSMDisposableAudioFile
 };
 
 class DSMSipRequest
-: public ArgObject {
+: public AmObject {
  public: 
   const AmSipRequest* req;
 
@@ -192,7 +192,7 @@ class DSMSipRequest
 };
 
 class DSMSipReply
-: public ArgObject {
+: public AmObject {
  public: 
   const AmSipReply* reply;
 

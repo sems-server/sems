@@ -43,10 +43,10 @@ using std::string;
 #include "log.h"
 
 /** base for Objects as @see AmArg parameter, not owned by AmArg (!) */
-class ArgObject {
+class AmObject {
  public:
-  ArgObject() { }
-  virtual ~ArgObject() { }
+  AmObject() { }
+  virtual ~AmObject() { }
 };
 
 struct ArgBlob {  
@@ -80,7 +80,7 @@ class AmDynInvoke;
 
 /** \brief variable type argument for DynInvoke APIs */
 class AmArg
-: public ArgObject
+: public AmObject
 {
  public:
   // type enum
@@ -120,7 +120,7 @@ class AmArg
     bool           v_bool;
     double         v_double;
     const char*    v_cstr;
-    ArgObject*     v_obj;
+    AmObject*     v_obj;
     AmDynInvoke*   v_inv;
     ArgBlob*       v_blob;
     ValueArray*    v_array;
@@ -170,7 +170,7 @@ class AmArg
     v_blob = new ArgBlob(v);
   }
 
-  AmArg(ArgObject* v) 
+  AmArg(AmObject* v) 
     : type(AObject),
     v_obj(v) 
    { }
@@ -244,7 +244,7 @@ class AmArg
   if (!isArgStruct(a))				\
 	_THROW_TYPE_MISMATCH(Struct,a);
 
-  void setBorrowedPointer(ArgObject* v) {
+  void setBorrowedPointer(AmObject* v) {
     invalidate();
     type = AObject;
     v_obj = v;
@@ -254,7 +254,7 @@ class AmArg
   int         asBool()   const { return v_bool; }
   double      asDouble() const { return v_double; }
   const char* asCStr()   const { return v_cstr; }
-  ArgObject*  asObject() const { return v_obj; }
+  AmObject*  asObject() const { return v_obj; }
   AmDynInvoke* asDynInv() const { return v_inv; }
   ArgBlob*    asBlob()   const { return v_blob; }
   ValueStruct* asStruct() const { return v_struct; }
@@ -263,7 +263,7 @@ class AmArg
   vector<int>        asIntVector()       const; 
   vector<bool>       asBoolVector()      const; 
   vector<double>     asDoubleVector()    const; 
-  vector<ArgObject*> asArgObjectVector() const; 
+  vector<AmObject*> asAmObjectVector() const; 
   vector<ArgBlob>    asArgBlobVector()   const; 
 
   // operations on arrays

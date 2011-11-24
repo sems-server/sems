@@ -150,7 +150,7 @@ SCPyDictArg::~SCPyDictArg() {
 PyObject* getPyLocals(DSMSession* sc_sess) {
   map<string, AmArg>::iterator l_it;
   SCPyDictArg* py_arg = NULL;
-  ArgObject* py_locals_obj;
+  AmObject* py_locals_obj;
 
   if (((l_it=sc_sess->avar.find("py_locals")) != sc_sess->avar.end()) && 
       (l_it->second.getType() == AmArg::AObject) && 
