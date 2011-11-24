@@ -39,6 +39,9 @@
 class AmTimeoutEvent;
 // these are the timer IDs for session timer
 // Caution: do not use these for other purposes
+#define ID_SESSION_TIMER_TIMERS_START -2
+#define ID_SESSION_TIMER_TIMERS_END -1
+
 #define ID_SESSION_INTERVAL_TIMER -1
 #define ID_SESSION_REFRESH_TIMER  -2
 
