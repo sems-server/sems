@@ -172,7 +172,7 @@ AmSession* CallBackFactory::onInvite(const AmSipRequest& req, const string& app_
   return s;
 }
 
-// this could have been made easier with a user_timer. 
+// this could have been made easier with a timer... 
 void CallBackFactory::run() {
   DBG("running CallBack thread.\n");
   while (true) {

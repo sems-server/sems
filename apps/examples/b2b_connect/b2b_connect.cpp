@@ -38,7 +38,6 @@ EXPORT_SESSION_FACTORY(b2b_connectFactory,MOD_NAME);
 
 b2b_connectFactory::b2b_connectFactory(const string& _app_name)
 : AmSessionFactory(_app_name)
-// , user_timer_fact(NULL)
 {
 }
 
@@ -58,11 +57,6 @@ int b2b_connectFactory::onLoad()
   if (cfg.getParameter("transparent_ruri")=="true")
     TransparentDestination = true;
   
-//   if (!AmSession::timersSupported()) {
-//     ERROR("load session_timer plug-in for timers\n");
-//     return -1;
-//   }
-
   return 0;
 }
 

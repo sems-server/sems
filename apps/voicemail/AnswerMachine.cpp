@@ -451,11 +451,6 @@ int AnswerMachineFactory::onLoad()
   MaxRecordTime   = cfg.getParameterInt("max_record_time",DEFAULT_RECORD_TIME);
   RecFileExt      = cfg.getParameter("rec_file_ext",DEFAULT_AUDIO_EXT);
 
-  if (!AmSession::timersSupported()) {	
-    ERROR("load session_timer plug-in (for timers support)\n");
-    return -1;
-  }
-
   MessageStorage = NULL;
   MessageStorage = AmPlugIn::instance()->getFactory4Di("msg_storage");
   if(NULL == MessageStorage){

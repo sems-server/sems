@@ -221,7 +221,7 @@ B2B call control
   DI(factory, function [, params...])
     execute DI function
     e.g. DI(factory, function, $var_param, (int)int_param, "str param", @select_par, (array)arrayname, (struct)structname, (json)json_object...)
-       DI(user_timer, setTimer, (int)1, (int)5, @local_tag);
+       DI(monitoring, set, "mytable", @local_tag, (int)1);
 
        set($sweets.candy="nice");
        set($sweets.fruit="superb");

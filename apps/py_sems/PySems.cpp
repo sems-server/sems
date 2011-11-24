@@ -227,11 +227,6 @@ AmSession* PySemsFactory::newDlg(const string& name)
 
   PySemsScriptDesc& mod_desc = mod_it->second;
 
-  if (!AmSession::timersSupported()) {
-    ERROR("load session_timer plugin for timers\n");
-    throw AmSession::Exception(500,SIP_REPLY_SERVER_INTERNAL_ERROR);
-  }
-	
   PyObject* dlg_inst = PyObject_Call(mod_desc.dlg_class,PyTuple_New(0),NULL);
   if(!dlg_inst){
 	
@@ -400,11 +395,6 @@ bool PySemsFactory::loadScript(const string& path)
  */
 int PySemsFactory::onLoad()
 {
-  if (!AmSession::timersSupported()) {
-    ERROR("load session_timer plug-in (for timers)\n");
-    return -1;
-  }
-
   AmConfigReader cfg;
 
   if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1,MOD_NAME ".conf")))

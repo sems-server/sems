@@ -44,10 +44,6 @@ int MyCCFactory::onLoad()
   EnterNumber         = cfg.getParameter("enter_number", "/tmp/enter_number.wav"); 
   ConnectSuffix       = cfg.getParameter("connect_suffix", "@127.0.0.1"); 
 
-  if (!AmSession::timersSupported()) {
-    ERROR("load session_timer plug-in for timers\n");
-    return -1;
-  }
   cc_acc_fact = AmPlugIn::instance()->getFactory4Di("cc_acc");
   if(!cc_acc_fact){
     ERROR("could not load cc_acc accounting, please provide a module\n");

@@ -401,11 +401,6 @@ bool IvrFactory::loadScript(const string& path)
  */
 int IvrFactory::onLoad()
 {
-  if (!AmSession::timersSupported()) {	
-    ERROR("load session_timer plug-in (for timers)\n");
-    return -1;
-  }
-
   if(cfg.loadFile(add2path(AmConfig::ModConfigPath,1,MOD_NAME ".conf")))
     return -1;
 

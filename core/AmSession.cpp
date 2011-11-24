@@ -82,8 +82,7 @@ AmSession::AmSession()
     accept_early_session(false),
     rtp_interface(-1),
     refresh_method(REFRESH_UPDATE_FB_REINV),
-    processing_status(SESSION_PROCESSING_EVENTS),
-    user_timer_ref(NULL)
+    processing_status(SESSION_PROCESSING_EVENTS)
 #ifdef WITH_ZRTP
   ,  zrtp_session(NULL), zrtp_audio(NULL), enable_zrtp(true)
 #endif
@@ -1250,27 +1249,15 @@ string AmSession::localRTPIP()
   return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
 }
 
-
-// TODO: move user timers into core
-void AmSession::getUserTimerInstance() {
-  AmDynInvokeFactory* fact = 
-    AmPlugIn::instance()->getFactory4Di("user_timer");
-
-  if (!fact)
-    return;
-
-  user_timer_ref = fact->getInstance();
-}
-
 bool AmSession::timersSupported() {
-  return NULL != AmPlugIn::instance()->getFactory4Di("user_timer") ;
+  WARN("this function is deprecated; application timers are always supported\n");
+  return true;
 }
 
 bool AmSession::setTimer(int timer_id, double timeout) {
   if (timeout <= 0.005) {
     DBG("setting timer %d with immediate timeout - posting Event\n", timer_id);
-    AmPluginEvent* ev = new AmPluginEvent("timer_timeout");
-    ev->data.push(timer_id);
+    AmTimeoutEvent* ev = new AmTimeoutEvent(timer_id);
     postEvent(ev);
     return true;
   }

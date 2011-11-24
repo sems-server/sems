@@ -104,12 +104,6 @@ int AnnRecorderFactory::onLoad()
   AM_PROMPT_ADD(BEEP, ANNREC_ANNOUNCE_PATH BEEP".wav");
   AM_PROMPT_END(prompts, cfg, MOD_NAME);
 
-
-  if (!AmSession::timersSupported()) {
-    ERROR("sorry, could not load user_timer from session_timer plug-in\n");
-    return -1;
-  }
-
   message_storage_fact = AmPlugIn::instance()->getFactory4Di("msg_storage");
   if(!message_storage_fact) {
     ERROR("sorry, could not get msg_storage, please load a suitable plug-in\n");

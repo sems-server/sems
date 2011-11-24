@@ -157,10 +157,6 @@ private:
 
   auto_ptr<AmRtpAudio> _rtp_str;
 
-  AmDynInvoke* user_timer_ref;
-  
-  void getUserTimerInstance();
-
   /** Application parameters passed through P-App-Param HF */
   map<string,string> app_params;
 
@@ -476,8 +472,8 @@ public:
 
   /* ---- general purpose application level timers ------------ */
 
-  /** check for support of timers
-    @return true if application level timers are supported
+  /** Deprecated: check for support of timers
+    @return always true
    */
   static bool timersSupported();
 

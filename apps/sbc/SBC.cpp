@@ -1161,12 +1161,6 @@ void SBCDialog::clearCallTimers() {
 
 /** @return whether successful */
 bool SBCDialog::startCallTimers() {
-  if (call_timers.size() && (!AmSession::timersSupported())) {
-    ERROR("internal implementation error: timers not supported\n");
-    stopCall();
-    return false;
-  }
-
   for (map<int, double>::iterator it=
 	 call_timers.begin(); it != call_timers.end(); it++) {
     DBG("SBC: starting call timer %i of %f seconds\n", it->first, it->second);

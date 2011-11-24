@@ -407,7 +407,7 @@ void CallGenDialog::setCallTimer() {
   if (call_timer > 0) {
     DBG("setting timer %d %d\n", CALL_TIMER, call_timer);
     if (!setTimer(CALL_TIMER, call_timer)) {
-      ERROR("could not load user_timer from session_timer plug-in\n");
+      ERROR("internal: setting timer!\n");
       return;
     }
   }
