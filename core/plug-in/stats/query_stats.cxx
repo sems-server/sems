@@ -116,13 +116,12 @@ int main(int argc, char** argv)
     return -1;
   }
 
-
   addr.sin_family = AF_INET;
   addr.sin_port = htons(addr.sin_port);
 
   msg_buf = cmd;    
-  printf("sending '%s\\n' to %s:%s\n", msg_buf.c_str(), 
-	 server.c_str(), port.c_str());
+  printf("sending '%s\\n' to %s:%u\n", msg_buf.c_str(),
+	 server.c_str(), addr.sin_port);
 
   msg_buf += "\n";
 
