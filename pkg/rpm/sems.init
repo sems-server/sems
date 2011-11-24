@@ -53,7 +53,7 @@ start() {
 		return 0
 	fi
 
-        daemon $sems -P $pidfile -f $conffile $OPTIONS
+        daemon $sems -P $pidfile -u sems -g sems -f $conffile $OPTIONS
         RETVAL=$?
         echo
         [ $RETVAL = 0 ] && touch $lockfile
