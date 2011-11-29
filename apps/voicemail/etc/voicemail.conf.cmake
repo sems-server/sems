@@ -67,7 +67,7 @@ max_record_time=30
 #
 # Default:
 #  try_personal_greeting=no
-
+try_personal_greeting=yes
 
 #
 # These settings are needed if you keep audio and template files in MySQL database:

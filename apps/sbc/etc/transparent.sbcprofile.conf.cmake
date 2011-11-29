@@ -7,6 +7,8 @@
 #From=$f
 #To=$t
 
+#Contact=<sip:$Ri>
+
 #Call-ID
 #Call-ID=$ci_leg2
 
@@ -38,6 +40,7 @@
 #message_list=
 #sdp_filter=whitelist
 #sdpfilter_list=g729,g723,ilbc,speex,gsm,amr
+#sdp_anonymize=yes
 
 ## append extra headers
 #append_headers="P-Source-IP: $si\r\nP-Source-Port: $sp\r\n"
@@ -50,6 +53,11 @@
 #enable_auth=yes
 #auth_user=$P(u)
 #auth_pwd=$P(p)
+
+## authentication for A (caller) leg:
+#enable_aleg_auth=yes
+#auth_aleg_user=$P(au)
+#auth_aleg_pwd=$P(ap)
 
 ## call timer
 #enable_call_timer=yes
@@ -71,6 +79,14 @@
 #minimum_timer=90
 #session_refresh_method=UPDATE_FALLBACK_INVITE
 #accept_501_reply=yes
+
+##separate SST configuration for A (caller) leg, optional:
+#enable_aleg_session_timer=yes
+#aleg_session_expires=120
+#aleg_minimum_timer=90
+#aleg_maximum_timer=900
+#aleg_session_refresh_method=UPDATE_FALLBACK_INVITE
+#aleg_accept_501_reply=yes
 
 ## refuse call
 # refuse all calls with <code> <reason>

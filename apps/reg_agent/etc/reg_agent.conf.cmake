@@ -15,6 +15,8 @@
 #auth_user=myuser
 # optional (defaults to resolved by domain):
 #proxy=sip.mydomain.net:5060
+# optional (default to <user>@<publicip/localip>):
+#contact=sip:myuser@10.0.0.2
 
 #
 # For multiple registrations add more entries
@@ -26,6 +28,7 @@
 #display_name1=xyz
 #auth_user1=xyz
 #proxy1=sip.iptel.org:5060
+#contact1=sip:xyz@10.0.0.3
 
 #domain2=iptel.org
 #user2=xyz

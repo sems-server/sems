@@ -31,6 +31,11 @@ enable_auth=yes
 auth_user=$P(u)
 auth_pwd=$P(p)
 
+## authentication for A (caller) leg:
+#enable_aleg_auth=yes
+#auth_aleg_user=$P(au)
+#auth_aleg_pwd=$P(ap)
+
 header_filter=blacklist
 header_list=P-App-Param,P-App-Name
 message_filter=transparent

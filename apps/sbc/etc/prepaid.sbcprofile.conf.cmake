@@ -6,7 +6,7 @@
 # This application is known from the sw_prepaid_sip app.
 # See the explanation below.
 
-RURI=$H(P-Proxy);sw_prepaid
+RURI=$H(P-Proxy);cc_prepaid
 #From=$f
 To=<$H(P-R-Uri)>
 
@@ -26,17 +26,18 @@ To=<$H(P-R-Uri)>
 #message_list=
 
 ## prepaid
-enable_prepaid=yes
-prepaid_accmodule=cc_acc
+call_control=prepaid
+prepaid_module=cc_prepaid
 prepaid_uuid=$H(P-Caller-Uuid)
 prepaid_acc_dest=$H(P-Acc-Dest)
 
 ## call timer
-#enable_call_timer=yes
+#call_control=prepaid;timer
 # maximum call time in seconds.
 # take the timer value from "t" parameter of P-App-Param,
 # e.g. P-App-Param: t=120
-#call_timer=$P(t)
+#timer_module=cc_call_timer
+#timer_timer=$P(t)
 #
 # Kamailio/sip-router script: 
 #  remove_hf("P-App-Param");
@@ -44,23 +45,7 @@ prepaid_acc_dest=$H(P-Acc-Dest)
 #  t_relay_to_udp("10.0.0.3","5070");
 #
 #For a static value, set it like this
-#call_timer=120
-
-## authentication:
-#enable_auth=yes
-#auth_user=$P(u)
-#auth_pwd=$P(p)
-
-## session timer:
-#enable_session_timer=yes
-# if session_expires is not configured here,
-# the values from sbc.conf are used, or the
-# default values
-#session_expires=120
-#minimum_timer=90
-#session_refresh_method=UPDATE_FALLBACK_INVITE
-#accept_501_reply=yes
-
+#timer_timeout=120
 
 #######################################################################
 #######################################################################

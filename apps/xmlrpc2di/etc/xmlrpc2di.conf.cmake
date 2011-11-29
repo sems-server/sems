@@ -5,7 +5,6 @@
 # port to bind XMLRPC server to 
 xmlrpc_port=8090
 
-
 # run multi-threaded server? 
 # Default: yes
 # 
@@ -25,6 +24,7 @@ xmlrpc_port=8090
 # export under their proper function names
 # defaults to: none
 # direct_export=di_dial;registrar_client
+direct_export=sbc
 
 # run the XMLRPC server at all (default: yes)
 #

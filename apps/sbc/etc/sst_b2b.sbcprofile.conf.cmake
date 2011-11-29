@@ -51,6 +51,14 @@ enable_session_timer=yes
 #session_refresh_method=UPDATE_FALLBACK_INVITE
 #accept_501_reply=yes
 
+#separate SST configuration for A (caller) leg:
+#enable_aleg_session_timer=$H(P-Enable-A-SST)
+#aleg_session_expires=$H(P-A-SST-Timer)
+#aleg_minimum_timer=90
+#aleg_maximum_timer=900
+#aleg_session_refresh_method=UPDATE_FALLBACK_INVITE
+#aleg_accept_501_reply=yes
+
 #
 #This application can be routed through for achieving 
 #two things: 

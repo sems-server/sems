@@ -29,28 +29,6 @@
 sdp_filter=whitelist
 sdpfilter_list=g729,g723,ilbc,speex,gsm,amr
 
-## authentication:
-#enable_auth=yes
-#auth_user=$P(u)
-#auth_pwd=$P(p)
-
-## call timer
-#enable_call_timer=yes
-#call_timer=60
-# or, e.g.: call_timer=$P(t)
-
-## prepaid
-#enable_prepaid=yes
-#prepaid_accmodule=cc_acc
-#prepaid_uuid=$H(P-Caller-Uuid)
-#prepaid_acc_dest=$H(P-Acc-Dest)
-
-## session timer:
-#enable_session_timer=yes
-# if session_expires is not configured here,
-# the values from sbc.conf are used, or the
-# default values
-#session_expires=120
-#minimum_timer=90
-#session_refresh_method=UPDATE_FALLBACK_INVITE
-#accept_501_reply=yes
+# anonymize SDP or not (u, s, o lines)
+#
+#sdp_anonymize=yes
