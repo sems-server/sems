@@ -223,6 +223,13 @@ ELSE(LIBEV_FOUND)
 	MESSAGE(STATUS "Using libev: NO")
 ENDIF(LIBEV_FOUND)
 
+# Let's try to find librtmp development files
+FIND_PACKAGE(Librtmp)
+IF(RTMP_FOUND)
+	MESSAGE(STATUS "Using librtmp: YES")
+ELSE(RTMP_FOUND)
+	MESSAGE(STATUS "Using librtmp: NO")
+ENDIF(RTMP_FOUND)
 
 INCLUDE_DIRECTORIES (${SEMS_SOURCE_DIR}/core/ampi)
 INCLUDE_DIRECTORIES (${SEMS_SOURCE_DIR}/core/amci)
