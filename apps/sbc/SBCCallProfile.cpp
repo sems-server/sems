@@ -131,6 +131,12 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     }
 
   if (sst_enabled != "no") {
+    if (NULL == SBCFactory::session_timer_fact) {
+      ERROR("session_timer module not loaded thus SST not supported, but "
+	    "required for profile '%s' (%s)\n", name.c_str(), profile_file_name.c_str());
+      return false;
+    }
+
     sst_b_cfg.setParameter("enable_session_timer", "yes");
     // create sst_cfg with values from aleg_*
     CP_SST_CFGVAR("", "session_expires", sst_b_cfg);

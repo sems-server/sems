@@ -79,8 +79,8 @@ int SBCFactory::onLoad()
 
   session_timer_fact = AmPlugIn::instance()->getFactory4Seh("session_timer");
   if(!session_timer_fact) {
-    ERROR("could not load session_timer from session_timer plug-in\n");
-    return -1;
+    WARN("session_timer plug-in not loaded - "
+	 "SIP Session Timers will not be supported\n");
   }
 
   vector<string> profiles_names = explode(cfg.getParameter("profiles"), ",");
@@ -268,6 +268,11 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
 #undef SST_CFG_REPLACE_PARAMS
 
     try {
+      if (NULL == session_timer_fact) {
+	ERROR("session_timer module not loaded - unable to create call with SST\n");
+	throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      }
+
       if (!session_timer_fact->onInvite(req, sst_a_cfg)) {
 	profiles_mut.unlock();
 	throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
@@ -297,6 +302,11 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
   }
 
   if (sst_a_enabled) {
+    if (NULL == session_timer_fact) {
+      ERROR("session_timer module not loaded - unable to create call with SST\n");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
     AmSessionEventHandler* h = session_timer_fact->getHandler(b2b_dlg);
     if(!h) {
       profiles_mut.unlock();
@@ -1433,6 +1443,11 @@ void SBCDialog::createCalleeSession()
   }
 
   if (call_profile.sst_enabled == "yes") {
+    if (NULL == SBCFactory::session_timer_fact) {
+      ERROR("session_timer module not loaded - unable to create call with SST\n");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
     AmSessionEventHandler* h = SBCFactory::session_timer_fact->getHandler(callee_session);
     if(!h) {
       ERROR("could not get a session timer event handler\n");
