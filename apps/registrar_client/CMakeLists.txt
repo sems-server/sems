@@ -1,5 +1,4 @@
 set (registrar_client_SRCS
-ContactInfo.cpp
 SIPRegistrarClient.cpp
 )
 
