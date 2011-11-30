@@ -781,6 +781,10 @@ void AmRtpStream::clearRTPTimeout(struct timeval* recv_time) {
  memcpy(&last_recv_time, recv_time, sizeof(struct timeval));
 }
 
+void AmRtpStream::clearRTPTimeout() {
+  gettimeofday(&last_recv_time,NULL);
+}
+
 unsigned int AmRtpStream::bytes2samples(unsigned int) const {
   ERROR("bytes2samples called on AmRtpStream\n");
   return 0;

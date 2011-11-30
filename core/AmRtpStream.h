@@ -335,6 +335,11 @@ public:
    */
   void clearRTPTimeout(struct timeval* recv_time);
 
+  /*
+   * clear RTP timeout to current time
+   */
+  void clearRTPTimeout();
+
   virtual unsigned int bytes2samples(unsigned int) const;
 
   /** set relay stream for  RTP relaying */
