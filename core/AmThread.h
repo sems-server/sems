@@ -207,7 +207,7 @@ public:
   virtual void onIdle() {}
 
   /** Start it ! */
-  void start(bool realtime = false);
+  void start();
   /** Stop it ! */
   void stop();
   /** @return true if this thread doesn't run. */

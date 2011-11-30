@@ -58,84 +58,45 @@ AmThread::AmThread()
 {
 }
 
-// int thread_nr=0;
-// AmMutex thread_nr_mut;
-
 void * AmThread::_start(void * _t)
 {
   AmThread* _this = (AmThread*)_t;
   _this->_pid = (unsigned long) _this->_td;
   DBG("Thread %lu is starting.\n", (unsigned long) _this->_pid);
-  _this->_stopped.set(false);
   _this->run();
 
   DBG("Thread %lu is ending.\n", (unsigned long) _this->_pid);
   _this->_stopped.set(true);
     
-  //thread_nr_mut.lock();
-  //INFO("threads = %i\n",--thread_nr);
-  //thread_nr_mut.unlock();
-
   return NULL;
 }
 
-void AmThread::start(bool realtime)
+void AmThread::start()
 {
-  // start thread realtime...seems to not improve any thing
-  //
-  //     if (realtime) {
-  // 	pthread_attr_t attributes;	
-  // 	pthread_attr_init(&attributes);
-  // 	struct sched_param rt_param;
-	
-  // 	if (pthread_attr_setschedpolicy (&attributes, SCHED_FIFO)) {
-  // 	    ERROR ("cannot set FIFO scheduling class for RT thread");
-  // 	}
-    
-  // 	if (pthread_attr_setscope (&attributes, PTHREAD_SCOPE_SYSTEM)) {
-  // 	    ERROR ("Cannot set scheduling scope for RT thread");
-  // 	}
-	
-  // 	memset (&rt_param, 0, sizeof (rt_param));
-  // 	rt_param.sched_priority = 80;
-
-  // 	if (pthread_attr_setschedparam (&attributes, &rt_param)) {
-  // 	    ERROR ("Cannot set scheduling priority for RT thread (%s)", strerror (errno));
-  // 	}
-  // 	int res;
-  // 	_pid = 0;
-  // 	res = pthread_create(&_td,&attributes,_start,this);
-  // 	if (res != 0) {
-  // 	    ERROR("pthread create of RT thread failed with code %s\n", strerror(res));
-  // 	    ERROR("Trying to start normal thread...\n");
-  // 	    _pid = 0;
-  // 	    res = pthread_create(&_td,NULL,_start,this);
-  // 	    if (res != 0) {
-  // 		ERROR("pthread create failed with code %i\n", res);
-  // 	    }	
-  // 	}	
-  // 	DBG("Thread %ld is just created.\n", (unsigned long int) _pid);
-  // 	return;
-  //     }
-
   pthread_attr_t attr;
   pthread_attr_init(&attr);
   pthread_attr_setstacksize(&attr,1024*1024);// 1 MB
 
   int res;
   _pid = 0;
+
   // unless placed here, a call seq like run(); join(); will not wait to join
   // b/c creating the thread can take too long
-  this->_stopped.set(false);
+  this->_stopped.lock();
+  if(!(this->_stopped.unsafe_get())){
+    this->_stopped.unlock();
+    ERROR("thread already running\n");
+    return;
+  }
+  this->_stopped.unsafe_set(false);
+  this->_stopped.unlock();
+
   res = pthread_create(&_td,&attr,_start,this);
   pthread_attr_destroy(&attr);
   if (res != 0) {
     ERROR("pthread create failed with code %i\n", res);
     throw string("thread could not be started");
   }	
-  //     thread_nr_mut.lock();
-  //     INFO("threads = %i\n",++thread_nr);
-  //     thread_nr_mut.unlock();
   //DBG("Thread %lu is just created.\n", (unsigned long int) _pid);
 }
 
