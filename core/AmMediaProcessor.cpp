@@ -395,6 +395,7 @@ void AmMediaProcessorThread::process(AmEvent* e)
   case AmMediaProcessor::InsertSession:
     DBG("Session inserted to the scheduler\n");
     sessions.insert(sr->s);
+    sr->s->RTPStream()->clearRTPTimeout();
     break;
 
   case AmMediaProcessor::RemoveSession:{
