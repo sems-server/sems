@@ -71,13 +71,7 @@ public:
   virtual bool onSipReqTimeout(const AmSipRequest &);
   virtual bool onSipRplTimeout(const AmSipRequest &, const AmSipReply &);
 
-  virtual bool onSendRequest(const string& method, 
-			     const string& content_type,
-			     const string& body,
-			     string& hdrs,
-			     int flags,
-			     unsigned int cseq);
-
+  virtual bool onSendRequest(AmSipRequest& req, int flags);
   virtual bool onSendReply(AmSipReply& reply, int flags);
 };
 

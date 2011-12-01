@@ -109,13 +109,7 @@ class AmSIPRegistration
 
   bool registerSendTimeout(time_t now_sec);
 
-  void onSendRequest(const string& method,
-		     const string& content_type,
-		     const string& body,
-		     string& hdrs,
-		     int flags,
-		     unsigned int cseq);
-	
+  void onSendRequest(AmSipRequest& req, int flags);
   void onSendReply(AmSipReply& req, int flags);
 
   // DialogControl if

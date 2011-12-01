@@ -596,12 +596,7 @@ public:
   virtual void onSessionTimeout();
 
   /* Called by AmSipDialog when a request is sent */
-  virtual void onSendRequest(const string& method,
-			     const string& content_type,
-			     const string& body,
-			     string& hdrs,
-			     int flags,
-			     unsigned int cseq);
+  virtual void onSendRequest(AmSipRequest& req, int flags);
 
   /** Called by AmSipDialog when a reply is sent */
   virtual void onSendReply(AmSipReply& reply, int flags);

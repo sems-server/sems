@@ -177,15 +177,10 @@ bool AmSIPRegistration::doUnregister()
   return res;
 }
 
-void AmSIPRegistration::onSendRequest(const string& method,
-				      const string& content_type,
-				      const string& body,
-				      string& hdrs,
-				      int flags,
-				      unsigned int cseq) {
+void AmSIPRegistration::onSendRequest(AmSipRequest& req, int flags) 
+{
   if (seh)
-    seh->onSendRequest(method, content_type, body,
-		       hdrs,flags,cseq);
+    seh->onSendRequest(req,flags);
 }
 	
 void AmSIPRegistration::onSendReply(AmSipReply& reply,

@@ -936,10 +936,9 @@ void AmSession::onSystemEvent(AmSystemEvent* ev) {
   }
 }
 
-void AmSession::onSendRequest(const string& method, const string& content_type,
-			      const string& body, string& hdrs, int flags, unsigned int cseq)
+void AmSession::onSendRequest(AmSipRequest& req, int flags)
 {
-  CALL_EVENT_H(onSendRequest,method,content_type,body,hdrs,flags,cseq);
+  CALL_EVENT_H(onSendRequest,req,flags);
 }
 
 void AmSession::onSendReply(AmSipReply& reply, int flags)

@@ -30,6 +30,7 @@
 
 #include "AmApi.h"
 #include "AmSession.h"
+#include "AmOfferAnswer.h"
 #include "ampi/UACAuthAPI.h"
 
 #include <string>
@@ -85,13 +86,13 @@ struct SIPRequestInfo {
   string content_type;
   string body;
   string hdrs;
-  AmSipDialog::OAState oa_state;
+  AmOfferAnswer::OAState oa_state;
 
   SIPRequestInfo(const string& method, 
 		 const string& content_type,
 		 const string& body,
 		 const string& hdrs,
-		 AmSipDialog::OAState oa_state)
+		 AmOfferAnswer::OAState oa_state)
     : method(method), content_type(content_type),
     body(body), hdrs(hdrs), oa_state(oa_state) { }
 

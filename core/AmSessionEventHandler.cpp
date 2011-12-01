@@ -59,12 +59,7 @@ bool AmSessionEventHandler::onSipRplTimeout(const AmSipRequest &,
   return false;
 }
 
-bool AmSessionEventHandler::onSendRequest(const string& method, 
-					  const string& content_type,
-					  const string& body,
-					  string& hdrs,
-					  int flags,
-					  unsigned int cseq)
+bool AmSessionEventHandler::onSendRequest(AmSipRequest& req, int flags)
 {
   return false;
 }

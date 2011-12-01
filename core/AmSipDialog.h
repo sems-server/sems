@@ -30,6 +30,7 @@
 
 #include "AmSipMsg.h"
 #include "AmSdp.h"
+#include "AmOfferAnswer.h"
 
 #include <string>
 #include <vector>
@@ -86,31 +87,6 @@ class AmSipDialog
     __max_Status
   };
 
-  enum OAState {
-    OA_None=0,
-    OA_OfferRecved,
-    OA_OfferSent,
-    OA_Completed,
-    __max_OA
-  };
-
-  struct OATrans {
-    OAState      state;
-    unsigned int cseq;
-    AmSdp        sdp_remote;
-    AmSdp        sdp_local;
-
-    OATrans()
-      : state(OA_None), 
-	cseq(0),
-	sdp_remote(),
-	sdp_local()
-    {};
-
-    void clear();
-    void clearTransitionalState();
-  };
-
   /** enable the reliability of provisional replies? */
   enum Rel100State {
     REL100_DISABLED=0,
@@ -139,14 +115,8 @@ private:
   // while in 'Trying' state
   bool         cancel_pending;
 
-  // Current offer/answer transaction
-  OATrans oa_trans;
-
   AmSdp   sdp_local;
   AmSdp   sdp_remote;
-
-  Status  saved_status;
-  OAState saved_oa_state;
 
   bool early_session_started;
   bool session_started;
@@ -156,26 +126,13 @@ private:
   int onTxReply(AmSipReply& reply);
   int onTxRequest(AmSipRequest& req);
 
-  int onRxSdp(unsigned int m_cseq, const string& body, const char** err_txt);
-  int onTxSdp(unsigned int m_cseq, const string& body);
-  int onSdpCompleted();
-
-  // Allows for saving dlg & OA states
-  void saveStates();
-  // Checks dlg & OA states against saved state
-  // and take appropriate action 
-  // (onSdpCompleted and/or onSessionStart/onEarlySessionStart)
-  int checkStateChange();
-
-  int getSdpBody(string& sdp_body);
-
   string getRoute();
 
-  int rel100OnRequestIn(const AmSipRequest &req);
-  int rel100OnReplyIn(const AmSipReply &reply);
-  void rel100OnTimeout(const AmSipRequest &req, const AmSipReply &rpl);
+  int rel100OnRequestIn(const AmSipRequest& req);
+  int rel100OnReplyIn(const AmSipReply& reply);
+  void rel100OnTimeout(const AmSipRequest& req, const AmSipReply& rpl);
 
-  void rel100OnRequestOut(const string &method, string &hdrs);
+  void rel100OnRequestOut(AmSipRequest& req);
   void rel100OnReplyOut(AmSipReply& reply);
 
   /** @return 0 on success */
@@ -225,6 +182,9 @@ private:
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
 
+  // Current offer/answer transaction
+  AmOfferAnswer oa;
+
   AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();
 
@@ -248,12 +208,9 @@ private:
 
   void   setStatus(Status new_status);
 
-  /** get offer/answer state */
-  OAState get_OA_state();
-  /** set offer/answer state (handle with caution!) */
-  void set_OA_state(OAState new_oa_state);
-
   string getContactHdr();
+
+  AmSipDialogEventHandler* getDialogEventHandler() { return hdl; }
 
   /** 
    * Computes, set and return the outbound interface
@@ -272,6 +229,15 @@ private:
 
   void onRxRequest(const AmSipRequest& req);
   void onRxReply(const AmSipReply& reply);
+
+  /** 
+   * Calls onSdpCompleted on the session event handler
+   * and executes onSessionStart/onEarlySessionStart when required.
+   */
+  int onSdpCompleted();
+
+  bool getSdpOffer(AmSdp& offer);
+  bool getSdpAnswer(const AmSdp& offer, AmSdp& answer);
 
   void uasTimeout(AmSipTimeoutEvent* to_ev);
     
@@ -377,12 +343,7 @@ class AmSipDialogEventHandler
 			  AmSipDialog::Status old_dlg_status)=0;
 
   /** Hook called before a request is sent */
-  virtual void onSendRequest(const string& method,
-			     const string& content_type,
-			     const string& body,
-			     string& hdrs,
-			     int flags,
-			     unsigned int req_cseq)=0;
+  virtual void onSendRequest(AmSipRequest& req, int flags)=0;
     
   /** Hook called before a reply is sent */
   virtual void onSendReply(AmSipReply& reply, int flags)=0;
@@ -435,9 +396,6 @@ class AmSipDialogEventHandler
 };
 
 const char* dlgStatusStr(AmSipDialog::Status st);
-
-const char* getOAStatusStr(AmSipDialog::OAState st);
-
 
 
 #endif
