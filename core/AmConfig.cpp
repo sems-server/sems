@@ -39,6 +39,7 @@
 #include "AmConfigReader.h"
 #include "AmUtils.h"
 #include "AmSession.h"
+#include "Am100rel.h"
 
 #include <cctype>
 #include <algorithm>
@@ -103,7 +104,7 @@ bool         AmConfig::ShutdownMode            = false;
 unsigned int AmConfig::ShutdownModeErrCode     = 503;
 string       AmConfig::ShutdownModeErrReason   = "Server shutting down";
 
-AmSipDialog::Rel100State AmConfig::rel100      = REL100_SUPPORTED;
+Am100rel::State AmConfig::rel100 = Am100rel::REL100_SUPPORTED;
 
 vector <string> AmConfig::CodecOrder;
 
@@ -542,11 +543,11 @@ int AmConfig::readConfiguration()
   if (cfg.hasParameter("100rel")) {
     string rel100s = cfg.getParameter("100rel");
     if (rel100s == "disabled" || rel100s == "off") {
-      rel100 = AmSipDialog::REL100_DISABLED;
+      rel100 = Am100rel::REL100_DISABLED;
     } else if (rel100s == "supported") {
-      rel100 = AmSipDialog::REL100_SUPPORTED;
+      rel100 = Am100rel::REL100_SUPPORTED;
     } else if (rel100s == "require") {
-      rel100 = AmSipDialog::REL100_REQUIRE;
+      rel100 = Am100rel::REL100_REQUIRE;
     } else {
       ERROR("unknown setting for '100rel' config option: '%s'.\n",
 	    rel100s.c_str());

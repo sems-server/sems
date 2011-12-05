@@ -31,6 +31,7 @@
 #include "AmSipMsg.h"
 #include "AmSdp.h"
 #include "AmOfferAnswer.h"
+#include "Am100rel.h"
 
 #include <string>
 #include <vector>
@@ -87,21 +88,6 @@ class AmSipDialog
     __max_Status
   };
 
-  /** enable the reliability of provisional replies? */
-  enum Rel100State {
-    REL100_DISABLED=0,
-#define REL100_DISABLED         AmSipDialog::REL100_DISABLED
-    REL100_SUPPORTED,
-#define REL100_SUPPORTED        AmSipDialog::REL100_SUPPORTED
-    REL100_REQUIRE,
-    //REL100_PREFERED, //TODO
-#define REL100_REQUIRE          AmSipDialog::REL100_REQUIRE
-    REL100_IGNORED,
-#define REL100_IGNORED          AmSipDialog::REL100_IGNORED
-    REL100_MAX
-#define REL100_MAX              AmSipDialog::REL100_MAX
-  };
-
 private:
   Status status;
 
@@ -122,18 +108,11 @@ private:
   bool session_started;
 
   AmSipDialogEventHandler* hdl;
-
+  
   int onTxReply(AmSipReply& reply);
   int onTxRequest(AmSipRequest& req);
 
   string getRoute();
-
-  int rel100OnRequestIn(const AmSipRequest& req);
-  int rel100OnReplyIn(const AmSipReply& reply);
-  void rel100OnTimeout(const AmSipRequest& req, const AmSipReply& rpl);
-
-  void rel100OnRequestOut(AmSipRequest& req);
-  void rel100OnReplyOut(AmSipReply& reply);
 
   /** @return 0 on success */
   int sendRequest(const string& method, 
@@ -172,18 +151,15 @@ private:
   int  outbound_interface;
   bool out_intf_for_replies;
 
-  Rel100State reliable_1xx;
-
-  unsigned rseq;          // RSeq for next request
-  bool rseq_confirmed;    // latest RSeq is confirmed
-  unsigned rseq_1st;      // value of first RSeq (init value)
-
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
 
   // Current offer/answer transaction
   AmOfferAnswer oa;
+
+  // Reliable provisional reply support
+  Am100rel rel100;
 
   AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();

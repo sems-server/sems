@@ -550,7 +550,7 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
 {
   set_sip_relay_only(false);
-  dlg.reliable_1xx = REL100_IGNORED;
+  dlg.rel100.setState(Am100rel::REL100_IGNORED);
 
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
@@ -1044,14 +1044,13 @@ void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
   }
 }
 
-void SBCDialog::onSendRequest(const string& method, const string& content_type,
-			      const string& body, string& hdrs, int flags, unsigned int cseq) {
+void SBCDialog::onSendRequest(AmSipRequest& req, int flags) {
   if (NULL != auth) {
-    DBG("auth->onSendRequest cseq = %d\n", cseq);
-    auth->onSendRequest(method, content_type, body, hdrs, flags, cseq);
+    DBG("auth->onSendRequest cseq = %d\n", req.cseq);
+    auth->onSendRequest(req, flags);
   }
 
-  AmB2BCallerSession::onSendRequest(method, content_type, body, hdrs, flags, cseq);
+  AmB2BCallerSession::onSendRequest(req, flags);
 }
 
 bool SBCDialog::onOtherReply(const AmSipReply& reply)
@@ -1532,7 +1531,7 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
     call_profile(call_profile),
     AmB2BCalleeSession(caller)
 {
-  dlg.reliable_1xx = REL100_IGNORED;
+  dlg.rel100.setState(Am100rel::REL100_IGNORED);
 
   if (call_profile.sdpfilter_enabled) {
     b2b_mode = B2BMode_SDPFilter;
@@ -1645,15 +1644,14 @@ void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status o
   }
 }
 
-void SBCCalleeSession::onSendRequest(const string& method, const string& content_type,
-				     const string& body, string& hdrs, int flags, unsigned int cseq)
+void SBCCalleeSession::onSendRequest(AmSipRequest& req, int flags)
 {
   if (NULL != auth) {
-    DBG("auth->onSendRequest cseq = %d\n", cseq);
-    auth->onSendRequest(method, content_type, body, hdrs, flags, cseq);
+    DBG("auth->onSendRequest cseq = %d\n", req.cseq);
+    auth->onSendRequest(req, flags);
   }
   
-  AmB2BCalleeSession::onSendRequest(method, content_type, body, hdrs, flags, cseq);
+  AmB2BCalleeSession::onSendRequest(req, flags);
 }
 
 int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {
