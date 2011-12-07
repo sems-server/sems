@@ -200,6 +200,8 @@ void C2DCallerDialog::onSessionStart(const AmSipReply& rep)
 {
   setReceiving(false);
   invite_req.body = rep.body;
+  invite_req.content_type = rep.content_type;
+  invite_req.cseq = rep.cseq;
 
   if(wav_file.open(filename,AmAudioFile::Read))
     throw string("AnnouncementDialog::onSessionStart: Cannot open file\n");
