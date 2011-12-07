@@ -168,7 +168,7 @@ AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, const string& ap
 AmSession* Click2DialFactory::onInvite(const AmSipRequest& req, const string& app_name,
 				       const map<string,string>& app_params)
 {
-  return new C2DCallerDialog(req, getAnnounceFile(req), NULL, NULL);
+  return new C2DCallerDialog(req, getAnnounceFile(req), "", NULL);
 }
 
 
