@@ -155,12 +155,24 @@ int AmSdp::parse(const char* _sdp_msg)
 
 void AmSdp::print(string& body) const
 {
-  string out_buf =
-      "v="+int2str(version)+"\r\n"
-      "o="+origin.user+" "+int2str(origin.sessId)+" "+int2str(origin.sessV)+" IN IP4 "+conn.address+"\r\n"
-      "s="+sessionName+"\r\n"
-      "c=IN IP4 "+conn.address+"\r\n"
-      "t=0 0\r\n";
+  string out_buf = "v="+int2str(version)+"\r\n"
+    "o="+origin.user+" "+int2str(origin.sessId)+" "+
+    int2str(origin.sessV)+" IN IP4 ";
+  if (!origin.conn.address.empty())
+    out_buf += origin.conn.address+"\r\n";
+  else if (!conn.address.empty())
+    out_buf += conn.address+"\r\n";
+  else if (media.size() && !media[0].conn.address.empty())
+    out_buf += media[0].conn.address+"\r\n";
+  else
+    out_buf += "0.0.0.0\r\n";
+
+  out_buf +=
+    "s="+sessionName+"\r\n";
+  if (!conn.address.empty())
+    out_buf += "c=IN IP4 "+conn.address+"\r\n";
+
+  out_buf += "t=0 0\r\n";
 
   // add attributes (session level)
   for (std::vector<SdpAttribute>::const_iterator a_it=
@@ -178,6 +190,8 @@ void AmSdp::print(string& body) const
 	  pl_it != media_it->payloads.end(); pl_it++) {
 
 	  out_buf += " " + int2str(pl_it->payload_type);
+	  if (!media_it->conn.address.empty())
+	    options += "c=IN IP4 "+media_it->conn.address+"\r\n";
 
 	  // "a=rtpmap:" line
 	  if (!pl_it->encoding_name.empty()) {
@@ -963,10 +977,10 @@ static void parse_sdp_origin(AmSdp* sdp_msg, char* s)
 	  next = parse_until(origin_line, ' ');
 	  //check if line contains more values than allowed
 	  if(next > line_end){
-	    string unicast_addr(origin_line, int(line_end-origin_line)-1);
+	    origin.conn.address = string(origin_line, int(line_end-origin_line)-1);
 	  }else{
 	    DBG("parse_sdp_origin: 'o=' contains more values than allowed; these values will be ignored\n");  
-	    string unicast_addr(origin_line, int(next-origin_line)-1);
+	    origin.conn.address = string(origin_line, int(next-origin_line)-1);
 	  }
 	  parsing = 0;
 	  break;
