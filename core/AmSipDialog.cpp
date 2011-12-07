@@ -112,7 +112,14 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   if (r_cseq_i && req.cseq <= r_cseq){
     INFO("remote cseq lower than previous ones - refusing request\n");
     // see 12.2.2
-    reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "",
+    string hdrs;
+    if (req.method == "NOTIFY") {
+      // clever trick to not break subscription dialog usage
+      // for implementations which follow 3265 instead of 5057
+      hdrs = SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER)  "0"  CRLF;
+    }
+
+    reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, hdrs,
 		next_hop_for_replies ? next_hop_ip : "",
 		next_hop_for_replies ? next_hop_port : 0);
     return;
@@ -121,7 +128,7 @@ void AmSipDialog::updateStatus(const AmSipRequest& req)
   if (req.method == "INVITE") {
     if (pending_invites) {
       reply_error(req,500, SIP_REPLY_SERVER_INTERNAL_ERROR,
-		  "Retry-After: " + int2str(get_random() % 10) + CRLF,
+		  SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER) + int2str(get_random() % 10) + CRLF,
 		  next_hop_for_replies ? next_hop_ip : "",
 		  next_hop_for_replies ? next_hop_port : 0);
       return;
