@@ -245,7 +245,7 @@ string AmSessionContainer::startSessionUAC(const AmSipRequest& req, string& app_
 	ERROR("INVITE could not be sent: error code = %d.\n", err);
 	AmEventDispatcher::instance()->delEventQueue(req.from_tag);
 	MONITORING_MARK_FINISHED(req.from_tag.c_str());
-	return NULL;
+	return "";
       }
       
       if (AmConfig::LogSessions) {      
