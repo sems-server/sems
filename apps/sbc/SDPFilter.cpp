@@ -116,8 +116,8 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
   }
 
   if (anonymize_sdp) {
-    // Clear s-Line in SDP:
-    sdp.sessionName.clear();
+    // Clear s-Line with call:
+    sdp.sessionName = "call";
     // Clear u-Line in SDP:
     sdp.uri.clear();
     // Clear origin user
