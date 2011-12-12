@@ -136,3 +136,9 @@ Adding participants with "Transfer" REFER:
  here is in no way standard conform and should only be used between two SEMS instances
  placed behind the same last record-routing proxy.
 
+"Listen only" participant:
+--------------------------
+If INVITE request to conference has P-App-Param header parameter
+Listen-Only with any value, audio from this participant is not mixed into
+the conference.
+

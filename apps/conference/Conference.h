@@ -127,6 +127,8 @@ class ConferenceDialog : public AmSession
   string                        extra_headers;
   string                        language;
 
+  bool                          listen_only;
+
   auto_ptr<AmSipRequest>        transfer_req;
 
 

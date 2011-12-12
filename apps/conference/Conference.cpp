@@ -415,11 +415,13 @@ void ConferenceDialog::onInvite(const AmSipRequest& req)
   string lonely_user_file;
 
   string app_param_hdr = getHeader(req.hdrs, PARAM_HDR, true);
+  string listen_only_str = "";
   if (app_param_hdr.length()) {
     from_header = get_header_keyvalue(app_param_hdr, "Dialout-From");
     extra_headers = get_header_keyvalue(app_param_hdr, "Dialout-Extra");
     dialout_suffix = get_header_keyvalue(app_param_hdr, "Dialout-Suffix");      
-    language = get_header_keyvalue(app_param_hdr, "Language");      
+    language = get_header_keyvalue(app_param_hdr, "Language");
+    listen_only_str = get_header_keyvalue(app_param_hdr, "Listen-Only");
   } else {
     from_header = getHeader(req.hdrs, "P-Dialout-From", true);
     extra_headers = getHeader(req.hdrs, "P-Dialout-Extra", true);
@@ -453,6 +455,8 @@ void ConferenceDialog::onInvite(const AmSipRequest& req)
   }
     
   allow_dialout = dialout_suffix.length() > 0;
+
+  listen_only = listen_only_str.length() > 0;
 
   if (!language.empty()) {
 
@@ -530,15 +534,24 @@ void ConferenceDialog::setupAudio()
   if(dialout_channel.get()){
 
     DBG("adding dialout_channel to the playlist (dialedout = %i)\n",dialedout);
-    play_list.addToPlaylist(new AmPlaylistItem(dialout_channel.get(),
-					       dialout_channel.get()));
+    if (listen_only)
+	play_list.addToPlaylist(new AmPlaylistItem(dialout_channel.get(),
+						   (AmAudio*)NULL));
+    else
+	play_list.addToPlaylist(new AmPlaylistItem(dialout_channel.get(),
+						   dialout_channel.get()));
   }
   else {
 
     channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag()));
 
-    play_list.addToPlaylist(new AmPlaylistItem(channel.get(),
-					       channel.get()));
+    if (listen_only) {
+	play_list.addToPlaylist(new AmPlaylistItem(channel.get(),
+						   (AmAudio*)NULL));
+    }
+    else
+	play_list.addToPlaylist(new AmPlaylistItem(channel.get(),
+						   channel.get()));
   }
 
   setInOut(&play_list,&play_list);
