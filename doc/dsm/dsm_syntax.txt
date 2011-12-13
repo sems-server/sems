@@ -82,7 +82,7 @@ DSM flow
  set($var=value)
   e.g.  set($var="text"); set($var=$var2); set($var=#key)
  sets($var=value)
-  e.g.  set($var="text and some $variable and some #param");
+  e.g.  sets($var="text and some $variable and some #param");
  var($dstvar=srcvarname)
   e.g.  var($dstvar=$var_counter)
  param($dstvar=srcparamname)
