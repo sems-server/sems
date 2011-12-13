@@ -1007,7 +1007,20 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
   answer_media.port = RTPStream()->getLocalPort();
   answer_media.nports = 0;
   answer_media.transport = TP_RTPAVP;
-  answer_media.dir = SdpMedia::DirBoth;
+
+  switch(m_it->dir){
+  case SdpMedia::DirBoth:
+    answer_media.dir = SdpMedia::DirBoth;
+    break;
+  case SdpMedia::DirActive:
+    answer_media.dir = SdpMedia::DirPassive;
+    break;
+  case SdpMedia::DirPassive:
+    answer_media.dir = SdpMedia::DirActive;
+    break;
+  }
+
+  RTPStream()->setPassiveMode(answer_media.dir == SdpMedia::DirPassive);
 
   // Calculate the intersection with the offered set of payloads
 

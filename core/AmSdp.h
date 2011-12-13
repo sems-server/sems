@@ -171,10 +171,6 @@ public:
   std::vector<SdpMedia> media;  // m= ... [a=rtpmap:...]+
   //TODO: t= lines
 
-  // Is remote host requesting 
-  // us to do passive RTP ?
-  bool remote_active;
-
   SdpOrigin        l_origin;      // local origin (o= )
     
   AmSdp();

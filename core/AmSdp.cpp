@@ -112,8 +112,7 @@ string SdpAttribute::print() const {
 // class AmSdp: Methods
 //
 AmSdp::AmSdp()
-  : version(0),
-    remote_active(false)
+  : version(0)
 {
   l_origin.user = "sems";
   l_origin.sessId = get_random();
@@ -126,8 +125,7 @@ AmSdp::AmSdp(const AmSdp& p_sdp_msg)
     l_origin(p_sdp_msg.l_origin),
     sessionName(p_sdp_msg.sessionName),
     conn(p_sdp_msg.conn),
-    media(p_sdp_msg.media),
-    remote_active(false)
+    media(p_sdp_msg.media)
 {
 }
 
@@ -275,7 +273,6 @@ void AmSdp::clear()
   conn = SdpConnection();
   attributes.clear();
   media.clear();
-  remote_active = false;
   l_origin = SdpOrigin();
 }
 
