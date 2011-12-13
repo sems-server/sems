@@ -623,10 +623,9 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
   }
 
   //TODO: support mute, on_hold & sendrecv/sendonly/recvonly/inactive
-  //      support for passive-mode
 
   setLocalIP(local.conn.address);
-  //setPassiveMode(remote_active);
+  setPassiveMode(remote_media.dir == SdpMedia::DirActive);
   setRAddr(remote.conn.address, remote_media.port);
 
   // TODO: take the first *supported* payload

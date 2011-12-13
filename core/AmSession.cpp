@@ -1020,8 +1020,6 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
     break;
   }
 
-  RTPStream()->setPassiveMode(answer_media.dir == SdpMedia::DirPassive);
-
   // Calculate the intersection with the offered set of payloads
 
   vector<SdpPayload>::const_iterator it = m_it->payloads.begin();
