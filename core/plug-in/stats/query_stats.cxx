@@ -115,13 +115,13 @@ int main(int argc, char** argv)
     fprintf(stderr,"port '%s' is not a valid integer\n",port.c_str());
     return -1;
   }
-
+  unsigned short port_i = addr.sin_port;
   addr.sin_family = AF_INET;
   addr.sin_port = htons(addr.sin_port);
 
   msg_buf = cmd;    
-  printf("sending '%s\\n' to %s:%u\n", msg_buf.c_str(),
-	 server.c_str(), addr.sin_port);
+  printf("sending '%s\\n' to %s:%d\n", msg_buf.c_str(),
+	 server.c_str(), port_i);
 
   msg_buf += "\n";
 
