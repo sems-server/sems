@@ -178,7 +178,8 @@ string str_between(const string s, char b, char e) {
 }
 
 EXEC_ACTION_START(SCMyConnectAction) {
-  string db_url = arg.length()?arg:sc_sess->var["config.db_url"];
+  string f_arg = resolveVars(arg, sess, sc_sess, event_params);
+  string db_url = f_arg.length()?f_arg:sc_sess->var["config.db_url"];
   if (db_url.empty() || db_url.length() < 11 || db_url.substr(0, 8) != "mysql://") {
     ERROR("missing correct db_url config or connect parameter\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
