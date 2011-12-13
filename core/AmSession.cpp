@@ -998,6 +998,13 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
         && (m_it->port != 0) ) {
 
       RTPStream()->getSdpAnswer(*m_it,answer_media);
+      if(answer_media.payloads.empty() ||
+	 ((answer_media.payloads.size() == 1) &&
+	  (answer_media.payloads[0].encoding_name != "telephone-event"))
+	 ){
+	// no compatible media found
+	throw Exception(488,"no compatible payload");
+      }
       audio_1st_stream = false;
     }
     else {
