@@ -550,12 +550,19 @@ void AmRtpStream::setPassiveMode(bool p)
   DBG("The other UA is NATed: switched to passive mode.\n");
 }
 
+void AmRtpStream::getSdp(SdpMedia& m)
+{
+  m.port = getLocalPort();
+  m.nports = 0;
+  m.transport = TP_RTPAVP;
+  m.send = !hold;
+  m.recv = receiving;
+  m.dir = SdpMedia::DirBoth;
+}
+
 void AmRtpStream::getSdpOffer(SdpMedia& offer)
 {
-  offer.port = getLocalPort();
-  offer.nports = 0;
-  offer.transport = TP_RTPAVP;
-  offer.dir = SdpMedia::DirBoth;
+  getSdp(offer);
 
   // TODO: transfer ownership of the payload provider also into AmRtpStream
   session->getPayloadProvider()->getPayloads(offer.payloads);
@@ -563,21 +570,7 @@ void AmRtpStream::getSdpOffer(SdpMedia& offer)
 
 void AmRtpStream::getSdpAnswer(const SdpMedia& offer, SdpMedia& answer)
 {
-  answer.port = getLocalPort();
-  answer.nports = 0;
-  answer.transport = TP_RTPAVP;
-
-  switch(offer.dir){
-  case SdpMedia::DirBoth:
-    answer.dir = SdpMedia::DirBoth;
-    break;
-  case SdpMedia::DirActive:
-    answer.dir = SdpMedia::DirPassive;
-    break;
-  case SdpMedia::DirPassive:
-    answer.dir = SdpMedia::DirActive;
-    break;
-  }
+  getSdp(answer);
 
   // TODO: transfer ownership of the payload provider also into AmRtpStream
   offer.calcAnswer(session->getPayloadProvider(),answer);
@@ -682,7 +675,24 @@ int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
 
   local_telephone_event_pt.reset(local.telephoneEventPayload());
 
-  resume();
+  if(remote_media.send) {
+    resume();
+  }
+  else {
+    pause();
+  }
+
+  if(remote_media.recv && !hold
+     && (remote_media.port != 0)
+#ifndef SUPPORT_IPV6
+     && (r_saddr.sin_addr.s_addr != 0)
+#endif
+     ) {
+    mute = false;
+  }
+  else {
+    mute = true;
+  }
 
 #ifdef WITH_ZRTP  
   if( session->zrtp_audio  ) {

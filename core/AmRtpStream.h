@@ -198,6 +198,9 @@ protected:
 
   void relay(AmRtpPacket* p);
 
+  /** Sets generic parameters on SDP media */
+  void getSdp(SdpMedia& m);
+
 public:
 
   AmRtpPacket* newPacket();

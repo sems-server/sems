@@ -223,6 +223,23 @@ void AmSdp::print(string& body) const
       default: break;
       }
 
+      if(media_it->send){
+	if(media_it->recv){
+	  out_buf += "a=sendrecv\r\n";
+	}
+	else {
+	  out_buf += "a=sendonly\r\n";
+	}
+      }
+      else {
+	if(media_it->recv){
+	  out_buf += "a=recvonly\r\n";
+	}
+	else {
+	  out_buf += "a=inactive\r\n";
+	}
+      }
+
       // add attributes (media level)
       for (std::vector<SdpAttribute>::const_iterator a_it=
 	     media_it->attributes.begin(); a_it != media_it->attributes.end(); a_it++) {
@@ -279,6 +296,21 @@ void AmSdp::clear()
 void SdpMedia::calcAnswer(const AmPayloadProviderInterface* payload_prov,
 			  SdpMedia& answer) const
 {
+  if(!recv) answer.send = false;
+  if(!send) answer.recv = false;
+
+  switch(dir){
+  case SdpMedia::DirBoth:
+    answer.dir = SdpMedia::DirBoth;
+    break;
+  case SdpMedia::DirActive:
+    answer.dir = SdpMedia::DirPassive;
+    break;
+  case SdpMedia::DirPassive:
+    answer.dir = SdpMedia::DirActive;
+    break;
+  }
+
   // Calculate the intersection with the offered set of payloads
   vector<SdpPayload>::const_iterator it = payloads.begin();
   for(; it!= payloads.end(); ++it) {
@@ -306,7 +338,7 @@ void SdpMedia::calcAnswer(const AmPayloadProviderInterface* payload_prov,
 		it->encoding_name,it->clock_rate,it->encoding_param));
       }
     }
-  }  
+  }
 }
 
 //parser
@@ -883,8 +915,19 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 	    DBG("found media attr 'direction', but value is not"
 		" followed by cr\n");
 	}
-
-    }else{
+    } else if (attr == "sendrecv") {
+      media.send = true;
+      media.recv = true;
+    } else if (attr == "sendonly") {
+      media.send = true;
+      media.recv = false;
+    } else if (attr == "recvonly") {
+      media.send = false;
+      media.recv = true;
+    } else if (attr == "inactive") {
+      media.send = false;
+      media.recv = false;
+    } else {
       attr_check(attr);
       next = parse_until(attr_line, '\r');
       if(next < line_end){

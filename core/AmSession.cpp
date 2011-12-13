@@ -993,7 +993,9 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
     answer.media.push_back(SdpMedia());
     SdpMedia& answer_media = answer.media.back();
 
-    if(m_it->type == MT_AUDIO && audio_1st_stream) {
+    if( m_it->type == MT_AUDIO 
+        && audio_1st_stream 
+        && (m_it->port != 0) ) {
 
       RTPStream()->getSdpAnswer(*m_it,answer_media);
       audio_1st_stream = false;
@@ -1004,7 +1006,11 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
       answer_media.port = 0;
       answer_media.nports = 0;
       answer_media.transport = TP_RTPAVP;
+      answer_media.send = false;
+      answer_media.recv = false;
       answer_media.payloads.clear();
+      if(!m_it->payloads.empty())
+	answer_media.payloads.push_back(m_it->payloads.front());
       answer_media.attributes.clear();
     }
   }

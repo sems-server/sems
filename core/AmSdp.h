@@ -141,15 +141,20 @@ struct SdpMedia
   SdpConnection conn; // c=
   Direction     dir;  // a=direction
 
+  // sendrecv|sendonly|recvonly|inactive
+  bool          send;
+  bool          recv;
+
   std::vector<SdpPayload> payloads;
 
   std::vector<SdpAttribute> attributes; // unknown attributes
 
-  SdpMedia() : conn() {}
+  SdpMedia() : conn(),send(true),recv(true) {}
 
   /**
-   * Checks which payloads are compatible with the payload provider
-   * and inserts them into the answer.
+   * Checks which payloads are compatible with the payload provider,
+   * inserts them into the answer, compute send/recv attributes
+   * and direction according to the offer.
    */
   void calcAnswer(const AmPayloadProviderInterface* payload_prov, 
 		  SdpMedia& answer) const;
