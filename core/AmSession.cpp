@@ -1016,8 +1016,12 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
       answer_media.send = false;
       answer_media.recv = false;
       answer_media.payloads.clear();
-      if(!m_it->payloads.empty())
-	answer_media.payloads.push_back(m_it->payloads.front());
+      if(!m_it->payloads.empty()) {
+	SdpPayload dummy_pl = m_it->payloads.front();
+	dummy_pl.encoding_name.clear();
+	dummy_pl.sdp_format_parameters.clear();
+	answer_media.payloads.push_back(dummy_pl);
+      }
       answer_media.attributes.clear();
     }
   }
