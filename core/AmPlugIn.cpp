@@ -432,23 +432,23 @@ amci_inoutfmt_t* AmPlugIn::fileFormat(const string& fmt_name, const string& ext)
 
 amci_codec_t* AmPlugIn::codec(int id)
 {
-  std::map<int,amci_codec_t*>::iterator it = codecs.find(id);
+  std::map<int,amci_codec_t*>::const_iterator it = codecs.find(id);
   if(it != codecs.end())
     return it->second;
 
   return 0;
 }
 
-amci_payload_t*  AmPlugIn::payload(int payload_id)
+amci_payload_t*  AmPlugIn::payload(int payload_id) const
 {
-  std::map<int,amci_payload_t*>::iterator it = payloads.find(payload_id);
+  std::map<int,amci_payload_t*>::const_iterator it = payloads.find(payload_id);
   if(it != payloads.end())
     return it->second;
 
   return 0;
 }
 
-int AmPlugIn::getDynPayload(const string& name, int rate, int encoding_param) {
+int AmPlugIn::getDynPayload(const string& name, int rate, int encoding_param) const {
   // find a dynamic payload by name/rate and encoding_param (channels, if > 0)
   for(std::map<int, amci_payload_t*>::const_iterator pl_it = payloads.begin();
       pl_it != payloads.end(); ++pl_it)
@@ -465,7 +465,7 @@ int AmPlugIn::getDynPayload(const string& name, int rate, int encoding_param) {
 }
 
 /** return 0, or -1 in case of error. */
-void AmPlugIn::getPayloads(vector<SdpPayload>& pl_vec)
+void AmPlugIn::getPayloads(vector<SdpPayload>& pl_vec) const
 {
   pl_vec.clear();
   for (std::map<int,int>::const_iterator it = payload_order.begin(); it != payload_order.end(); ++it) {

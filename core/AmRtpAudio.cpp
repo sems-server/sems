@@ -139,10 +139,18 @@ int AmRtpAudio::write(unsigned int user_ts, unsigned int size)
   return send(user_ts,(unsigned char*)samples,size);
 }
 
-// int AmRtpAudio::init(AmPayloadProviderInterface* payload_provider,
-// 		     const SdpMedia& remote_media, 
-// 		     const SdpConnection& conn, 
-// 		     bool remote_active)
+void AmRtpAudio::getSdpOffer(SdpMedia& offer)
+{
+  offer.type = MT_AUDIO;
+  AmRtpStream::getSdpOffer(offer);
+}
+
+void AmRtpAudio::getSdpAnswer(const SdpMedia& offer, SdpMedia& answer)
+{
+  answer.type = MT_AUDIO;
+  AmRtpStream::getSdpAnswer(offer,answer);
+}
+
 int AmRtpAudio::init(AmPayloadProviderInterface* payload_provider,
 		      unsigned char media_i, 
 		      const AmSdp& local,

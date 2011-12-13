@@ -65,19 +65,19 @@ class AmPayloadProviderInterface {
    * @param payload_id Payload ID.
    * @return NULL if failed .
    */
-  virtual amci_payload_t*  payload(int payload_id) = 0;
+  virtual amci_payload_t*  payload(int payload_id) const = 0;
 
   /** 
    * Payload lookup function by name & rate
    * @param name Payload ID.
    * @return -1 if failed, else the internal payload id.
    */
-  virtual int getDynPayload(const string& name, int rate, int encoding_param) = 0;
+  virtual int getDynPayload(const string& name, int rate, int encoding_param) const = 0;
   
   /**
    * List all the payloads available for a media type
    */
-  virtual void getPayloads(vector<SdpPayload>& pl_vec) = 0;
+  virtual void getPayloads(vector<SdpPayload>& pl_vec) const = 0;
 };
 
 /**
@@ -146,17 +146,17 @@ class AmPlugIn : public AmPayloadProviderInterface
    * @param payload_id Payload ID.
    * @return NULL if failed .
    */
-  amci_payload_t*  payload(int payload_id);
+  amci_payload_t*  payload(int payload_id) const;
 
   /** 
    * Payload lookup function by name & rate
    * @param name Payload ID.
    * @return -1 if failed, else the internal payload id.
    */
-  int getDynPayload(const string& name, int rate, int encoding_param);
+  int getDynPayload(const string& name, int rate, int encoding_param) const;
 
   /** return 0, or -1 in case of error. */
-  void getPayloads(vector<SdpPayload>& pl_vec);
+  void getPayloads(vector<SdpPayload>& pl_vec) const;
 
   /** @return the suported payloads. */
   const std::map<int,amci_payload_t*>& getPayloads() { return payloads; }

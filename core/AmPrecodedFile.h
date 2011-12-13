@@ -110,10 +110,10 @@ class AmPrecodedFile
 
   int open(const std::string& filename);
 
-  amci_payload_t*  payload(int payload_id);
-  int getDynPayload(const string& name, int rate, int encoding_param);
+  amci_payload_t*  payload(int payload_id) const;
+  int getDynPayload(const string& name, int rate, int encoding_param) const;
 
-  void getPayloads(vector<SdpPayload>& pl_vec);
+  void getPayloads(vector<SdpPayload>& pl_vec) const;
 
   AmPrecodedFileInstance* getFileInstance(int payload_id, const vector<SdpPayload*>&  m_payloads);
 };

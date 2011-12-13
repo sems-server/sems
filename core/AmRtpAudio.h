@@ -116,10 +116,9 @@ public:
 	  unsigned int nb_samples);
 
   // AmRtpStream interface
-  // int init(AmPayloadProviderInterface* payload_provider,
-  // 	   const SdpMedia& remote_media, 
-  // 	   const SdpConnection& conn, 
-  // 	   bool remote_active);
+  void getSdpOffer(SdpMedia& offer);
+  void getSdpAnswer(const SdpMedia& offer, SdpMedia& answer);
+
   int init(AmPayloadProviderInterface* payload_provider,
 	   unsigned char media_i, 
 	   const AmSdp& local,

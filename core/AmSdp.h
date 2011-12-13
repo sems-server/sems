@@ -146,6 +146,13 @@ struct SdpMedia
   std::vector<SdpAttribute> attributes; // unknown attributes
 
   SdpMedia() : conn() {}
+
+  /**
+   * Checks which payloads are compatible with the payload provider
+   * and inserts them into the answer.
+   */
+  void calcAnswer(const AmPayloadProviderInterface* payload_prov, 
+		  SdpMedia& answer) const;
 };
 
 /**

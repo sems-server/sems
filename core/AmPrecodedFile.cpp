@@ -206,17 +206,17 @@ int AmPrecodedFile::open(const std::string& filename) {
   return 0; // OK
 }
 
-amci_payload_t* AmPrecodedFile::payload(int payload_id) {
-  std::map<int,precoded_payload_t>::iterator it = 
+amci_payload_t* AmPrecodedFile::payload(int payload_id) const {
+  std::map<int,precoded_payload_t>::const_iterator it = 
     payloads.find(payload_id);
 
   if(it != payloads.end())
-    return &it->second;
+    return (amci_payload_t*)&it->second;
 
   return NULL;
 }
 
-int AmPrecodedFile::getDynPayload(const string& name, int rate, int encoding_param) {
+int AmPrecodedFile::getDynPayload(const string& name, int rate, int encoding_param) const {
   // find a dynamic payload by name/rate and encoding_param (channels, if > 0)
   for(std::map<int, precoded_payload_t>::const_iterator pl_it = payloads.begin();
       pl_it != payloads.end(); ++pl_it)
@@ -234,9 +234,9 @@ int AmPrecodedFile::getDynPayload(const string& name, int rate, int encoding_par
 }
 
 
-void AmPrecodedFile::getPayloads(vector<SdpPayload>& pl_vec)
+void AmPrecodedFile::getPayloads(vector<SdpPayload>& pl_vec) const
 {
-  for(std::map<int,precoded_payload_t>::iterator pl_it = payloads.begin();
+  for(std::map<int,precoded_payload_t>::const_iterator pl_it = payloads.begin();
       pl_it != payloads.end(); ++pl_it) {
     pl_vec.push_back(SdpPayload(pl_it->first, pl_it->second.name, pl_it->second.sample_rate, 0));
   }

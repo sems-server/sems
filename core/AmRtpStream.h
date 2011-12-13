@@ -288,16 +288,25 @@ public:
   void sendDtmf(int event, unsigned int duration_ms);
 
   /**
+   * Generate an SDP offer based on the stream capabilities.
+   * @param offer the local offer to be filled/completed.
+   */
+  virtual void getSdpOffer(SdpMedia& offer);
+
+  /**
+   * Generate an answer for the given SDP media based on the stream capabilities.
+   * @param offer the remote offer.
+   * @param answer the local answer to be filled/completed.
+   */
+  virtual void getSdpAnswer(const SdpMedia& offer, SdpMedia& answer);
+
+  /**
    * Enables RTP stream.
    * @param sdp_payload payload from the SDP message.
    * @warning start() must have been called so that play and record work.
    * @warning It should be called only if the stream has been completly initialized,
    * @warning and only once per session. Use resume() then.
    */
-  // virtual int init(AmPayloadProviderInterface* payload_provider,
-  // 		   const SdpMedia& remote_media, 
-  // 		   const SdpConnection& conn, 
-  // 		   bool remote_active);
   virtual int init(AmPayloadProviderInterface* payload_provider,
 		   unsigned char media_i, 
 		   const AmSdp& local,

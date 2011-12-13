@@ -276,6 +276,38 @@ void AmSdp::clear()
   l_origin = SdpOrigin();
 }
 
+void SdpMedia::calcAnswer(const AmPayloadProviderInterface* payload_prov,
+			  SdpMedia& answer) const
+{
+  // Calculate the intersection with the offered set of payloads
+  vector<SdpPayload>::const_iterator it = payloads.begin();
+  for(; it!= payloads.end(); ++it) {
+    amci_payload_t* a_pl = NULL;
+    if(it->payload_type < DYNAMIC_PAYLOAD_TYPE_START) {
+      // try static payloads
+      a_pl = payload_prov->payload(it->payload_type);
+    }
+
+    if( a_pl) {
+      answer.payloads.push_back(SdpPayload(a_pl->payload_id,a_pl->name,a_pl->sample_rate,0));
+    }
+    else {
+      // Try dynamic payloads
+      // and give a chance to broken
+      // implementation using a static payload number
+      // for dynamic ones.
+
+      int int_pt = payload_prov->
+	getDynPayload(it->encoding_name,
+		      it->clock_rate,
+		      it->encoding_param);
+      if(int_pt != -1){
+	answer.payloads.push_back(SdpPayload(int_pt,
+		it->encoding_name,it->clock_rate,it->encoding_param));
+      }
+    }
+  }  
+}
 
 //parser
 static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)

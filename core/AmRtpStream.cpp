@@ -550,6 +550,39 @@ void AmRtpStream::setPassiveMode(bool p)
   DBG("The other UA is NATed: switched to passive mode.\n");
 }
 
+void AmRtpStream::getSdpOffer(SdpMedia& offer)
+{
+  offer.port = getLocalPort();
+  offer.nports = 0;
+  offer.transport = TP_RTPAVP;
+  offer.dir = SdpMedia::DirBoth;
+
+  // TODO: transfer ownership of the payload provider also into AmRtpStream
+  session->getPayloadProvider()->getPayloads(offer.payloads);
+}
+
+void AmRtpStream::getSdpAnswer(const SdpMedia& offer, SdpMedia& answer)
+{
+  answer.port = getLocalPort();
+  answer.nports = 0;
+  answer.transport = TP_RTPAVP;
+
+  switch(offer.dir){
+  case SdpMedia::DirBoth:
+    answer.dir = SdpMedia::DirBoth;
+    break;
+  case SdpMedia::DirActive:
+    answer.dir = SdpMedia::DirPassive;
+    break;
+  case SdpMedia::DirPassive:
+    answer.dir = SdpMedia::DirActive;
+    break;
+  }
+
+  // TODO: transfer ownership of the payload provider also into AmRtpStream
+  offer.calcAnswer(session->getPayloadProvider(),answer);
+}
+
 int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
 		      unsigned char media_i, 
 		      const AmSdp& local,

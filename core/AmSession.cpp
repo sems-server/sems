@@ -951,7 +951,6 @@ void AmSession::onSendReply(AmSipReply& reply, int flags)
 bool AmSession::getSdpOffer(AmSdp& offer)
 {
   DBG("AmSession::getSdpOffer(...) ...\n");
-  // TODO: move this code to AmRtpStream
 
   offer.version = 0;
   offer.origin.user = "sems";
@@ -962,21 +961,13 @@ bool AmSession::getSdpOffer(AmSdp& offer)
   offer.conn.addrType = AT_V4;
   offer.conn.address = advertisedIP();
 
-  // TODO: support mutiple media types
+  // TODO: support mutiple media types (needs multiples RTP streams)
+  // TODO: support update instead of clearing everything
   offer.media.clear();
+
   offer.media.push_back(SdpMedia());
-  SdpMedia& offer_media = offer.media[0];
-
-  // TODO: move following code to AmRtpStream
-
-  offer_media.type = MT_AUDIO;
-  offer_media.port = RTPStream()->getLocalPort();
-  offer_media.nports = 0;
-  offer_media.transport = TP_RTPAVP;
-  offer_media.dir = SdpMedia::DirBoth;
-
-  getPayloadProvider()->getPayloads(offer_media.payloads);
-
+  RTPStream()->getSdpOffer(offer.media.back());
+  
   return true;
 }
 
@@ -993,62 +984,28 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
   answer.conn.network = NT_IN;
   answer.conn.addrType = AT_V4;
   answer.conn.address = advertisedIP();
-
-  // TODO: support multiple media types
-  const vector<SdpMedia>::const_iterator m_it = offer.media.begin();
-
   answer.media.clear();
-  answer.media.push_back(SdpMedia());
-  SdpMedia& answer_media = answer.media[0];
- 
-  // TODO: move rest of the function to AmRtpStream
 
-  answer_media.type = MT_AUDIO;
-  answer_media.port = RTPStream()->getLocalPort();
-  answer_media.nports = 0;
-  answer_media.transport = TP_RTPAVP;
+  bool audio_1st_stream = true;
+  for(vector<SdpMedia>::const_iterator m_it = offer.media.begin();
+      m_it != offer.media.end(); ++m_it) {
 
-  switch(m_it->dir){
-  case SdpMedia::DirBoth:
-    answer_media.dir = SdpMedia::DirBoth;
-    break;
-  case SdpMedia::DirActive:
-    answer_media.dir = SdpMedia::DirPassive;
-    break;
-  case SdpMedia::DirPassive:
-    answer_media.dir = SdpMedia::DirActive;
-    break;
-  }
+    answer.media.push_back(SdpMedia());
+    SdpMedia& answer_media = answer.media.back();
 
-  // Calculate the intersection with the offered set of payloads
+    if(m_it->type == MT_AUDIO && audio_1st_stream) {
 
-  vector<SdpPayload>::const_iterator it = m_it->payloads.begin();
-  for(; it!= m_it->payloads.end(); ++it) {
-    amci_payload_t* a_pl = NULL;
-    if(it->payload_type < DYNAMIC_PAYLOAD_TYPE_START) {
-      // try static payloads
-      a_pl = getPayloadProvider()->payload(it->payload_type);
-    }
-
-    if( a_pl) {
-      answer_media.payloads.push_back(SdpPayload(a_pl->payload_id,a_pl->name,a_pl->sample_rate,0));
+      RTPStream()->getSdpAnswer(*m_it,answer_media);
+      audio_1st_stream = false;
     }
     else {
-      // Try dynamic payloads
-      // and give a chance to broken
-      // implementation using a static payload number
-      // for dynamic ones.
-
-      int int_pt = getPayloadProvider()->
-	getDynPayload(it->encoding_name,
-		      it->clock_rate,
-		      it->encoding_param);
-      if(int_pt != -1){
-	answer_media.payloads.push_back(SdpPayload(int_pt,
-						   it->encoding_name,
-						   it->clock_rate,
-						   it->encoding_param));
-      }
+      
+      answer_media.type = m_it->type;
+      answer_media.port = 0;
+      answer_media.nports = 0;
+      answer_media.transport = TP_RTPAVP;
+      answer_media.payloads.clear();
+      answer_media.attributes.clear();
     }
   }
 
