@@ -118,6 +118,9 @@ AnnouncementDialog::AnnouncementDialog(const string& filename,
 				       UACAuthCred* credentials)
   : filename(filename), cred(credentials)
 {
+  // we can drop all received packets
+  // this disables DTMF detection as well
+  setReceiving(false);
 }
 
 AnnouncementDialog::~AnnouncementDialog()
@@ -126,10 +129,6 @@ AnnouncementDialog::~AnnouncementDialog()
 
 void AnnouncementDialog::onSessionStart() {
   DBG("AnnouncementDialog::onSessionStart()...\n");
-
-  // we can drop all received packets
-  // this disables DTMF detection as well
-  setReceiving(false);
 
   if(wav_file.open(filename,AmAudioFile::Read)) {
     ERROR("Couldn't open file %s.\n", filename.c_str());
