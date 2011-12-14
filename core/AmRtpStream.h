@@ -182,6 +182,15 @@ protected:
   /** symmetric RTP */
   bool           passive;      // passive mode ?
 
+  /** mute && port == 0 */
+  bool           hold;
+
+  /** marker flag */
+  bool           begin_talk;
+
+  /** do check rtp timeout */
+  bool           monitor_rtp_timeout;
+
   /** Payload type for telephone event */
   auto_ptr<const SdpPayload> remote_telephone_event_pt;
   auto_ptr<const SdpPayload> local_telephone_event_pt;
@@ -210,7 +219,12 @@ protected:
   /** Payload provider */
   AmPayloadProvider* payload_provider;
 
-  /* get next packet in buffer */
+  // get the next available port within configured range
+  static int getNextPort();
+
+  /** Insert an RTP packet to the buffer queue */
+  void bufferPacket(AmRtpPacket* p);
+  /* Get next packet from the buffer queue */
   int nextPacket(AmRtpPacket*& p);
   
   /** handle symmetric RTP - if in passive mode, update raddr from rp */
@@ -221,28 +235,20 @@ protected:
   /** Sets generic parameters on SDP media */
   void getSdp(SdpMedia& m);
 
-  // get the next available port within configured range
-  static int getNextPort();
+  /** Clear RTP timeout at time recv_time */
+  void clearRTPTimeout(struct timeval* recv_time);
 
 public:
 
-  AmRtpPacket* newPacket();
-  void freePacket(AmRtpPacket* p);
-  
   /** Mute */
   bool mute;
-  /** mute && port == 0 */
-  bool hold;
-  /** marker flag */
-  bool begin_talk;
-  /** do check rtp timeout */
-  bool monitor_rtp_timeout;
 
   /** should we receive packets? if not -> drop */
   bool receiving;
 
   /** Allocates resources for future use of RTP. */
   AmRtpStream(AmSession* _s, int _if);
+
   /** Stops the stream and frees all resources. */
   virtual ~AmRtpStream();
 
@@ -258,6 +264,8 @@ public:
 
   int receive( unsigned char* buffer, unsigned int size,
 	       unsigned int& ts, int& payload );
+
+  void recvPacket();
 
   /** ping the remote side, to open NATs and enable symmetric RTP */
   int ping();
@@ -343,8 +351,7 @@ public:
    * @warning It is necessary to call getSdpOffer/getSdpAnswer prior to init(...)
    * @warning so that the internal SDP media line index is set properly.
    */
-  virtual int init(const AmSdp& local,
-		   const AmSdp& remote);
+  virtual int init(const AmSdp& local, const AmSdp& remote);
 
   /**
    * Stops RTP stream.
@@ -367,23 +374,10 @@ public:
   /** getter for monitor_rtp_timeout */
   bool getMonitorRTPTimeout() { return monitor_rtp_timeout; }
 
-  /**
-   * Insert an RTP packet to the buffer.
-   * Note: memory is owned by this instance.
-   */
-  void bufferPacket(AmRtpPacket* p);
-
-  /*
-   * clear RTP timeout at time recv_time 
-   */
-  void clearRTPTimeout(struct timeval* recv_time);
-
   /*
    * clear RTP timeout to current time
    */
   void clearRTPTimeout();
-
-  virtual unsigned int bytes2samples(unsigned int) const;
 
   /** set relay stream for  RTP relaying */
   void setRelayStream(AmRtpStream* stream);

@@ -122,29 +122,7 @@ void AmRtpReceiver::run()
       streams_mut.lock();
       Streams::iterator it = streams.find(tmp_fds[i].fd);
       if(it != streams.end()) {
-	AmRtpPacket* p = it->second->newPacket();
-	if (!p) {
-	  // drop received data
- 	  AmRtpPacket dummy;
- 	  dummy.recv(tmp_fds[i].fd);
-	  streams_mut.unlock();
-	  continue;
-	}
-
-	if(p->recv(tmp_fds[i].fd) > 0){
-	  int parse_res = p->parse();
-	  gettimeofday(&p->recv_time,NULL);
-		
-	  if (parse_res == -1) {
-	    DBG("error while parsing RTP packet.\n");
-	    it->second->clearRTPTimeout(&p->recv_time);
-	    it->second->freePacket(p);	  
-	  } else {
-	    it->second->bufferPacket(p);
-	  }
-	} else {
-	  it->second->freePacket(p);
-	}
+	it->second->recvPacket();
       }
       streams_mut.unlock();      
     }

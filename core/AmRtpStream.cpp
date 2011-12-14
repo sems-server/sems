@@ -574,8 +574,6 @@ int AmRtpStream::init(const AmSdp& local,
     ++sdp_it;
   }
 
-  //TODO: support mute, on_hold & sendrecv/sendonly/recvonly/inactive
-
   setLocalIP(local.conn.address);
   setPassiveMode(remote_media.dir == SdpMedia::DirActive);
   setRAddr(remote.conn.address, remote_media.port);
@@ -648,14 +646,6 @@ void AmRtpStream::setOnHold(bool on_hold) {
 
 bool AmRtpStream::getOnHold() {
   return hold;
-}
-
-AmRtpPacket* AmRtpStream::newPacket() {
-  return mem.newPacket();
-}
-
-void AmRtpStream::freePacket(AmRtpPacket* p) {
-  return mem.freePacket(p);
 }
 
 void AmRtpStream::bufferPacket(AmRtpPacket* p)
@@ -746,18 +736,13 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 }
 
 void AmRtpStream::clearRTPTimeout(struct timeval* recv_time) {
- memcpy(&last_recv_time, recv_time, sizeof(struct timeval));
+  memcpy(&last_recv_time, recv_time, sizeof(struct timeval));
 }
 
 void AmRtpStream::clearRTPTimeout() {
   gettimeofday(&last_recv_time,NULL);
 }
 
-unsigned int AmRtpStream::bytes2samples(unsigned int) const {
-  ERROR("bytes2samples called on AmRtpStream\n");
-  return 0;
-}
- 
 int AmRtpStream::nextPacket(AmRtpPacket*& p)
 {
   if (!receiving && !passive)
@@ -797,6 +782,32 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
   receive_mut.unlock();
 
   return 1;
+}
+
+void AmRtpStream::recvPacket()
+{
+  AmRtpPacket* p = mem.newPacket();
+  if (!p) {
+    // drop received data
+    AmRtpPacket dummy;
+    dummy.recv(l_sd);
+    return;
+  }
+  
+  if(p->recv(l_sd) > 0){
+    int parse_res = p->parse();
+    gettimeofday(&p->recv_time,NULL);
+    
+    if (parse_res == -1) {
+      DBG("error while parsing RTP packet.\n");
+      clearRTPTimeout(&p->recv_time);
+      mem.freePacket(p);	  
+    } else {
+      bufferPacket(p);
+    }
+  } else {
+    mem.freePacket(p);
+  }
 }
 
 #include "rtp/rtp.h"
