@@ -68,8 +68,7 @@ class AmPrecodedRtpFormat : public AmAudioRtpFormat {
   precoded_payload_t& precoded_payload;
   
  public:
-  AmPrecodedRtpFormat(precoded_payload_t& precoded_payload,
-		      const vector<SdpPayload *>& payloads);
+  AmPrecodedRtpFormat(precoded_payload_t& precoded_payload);
   ~AmPrecodedRtpFormat();
 
  protected:
@@ -80,12 +79,10 @@ class AmPrecodedFileInstance
 : public AmAudioFile {
  
   precoded_payload_t& precoded_payload;
-  const vector<SdpPayload*>&  payloads;
   amci_inoutfmt_t m_iofmt;
 
  public:
- AmPrecodedFileInstance(precoded_payload_t& precoded_payload, 
-			const vector<SdpPayload*>&  payloads);
+ AmPrecodedFileInstance(precoded_payload_t& precoded_payload);
  ~AmPrecodedFileInstance();
 
  AmPrecodedRtpFormat* getRtpFormat();
@@ -111,8 +108,7 @@ class AmPrecodedFile
   /** need to call after open() */
   void initPlugin();
 
-  AmPrecodedFileInstance* getFileInstance(int payload_id, 
-			     const vector<SdpPayload*>&  m_payloads);
+  AmPrecodedFileInstance* getFileInstance(int payload_id);
 
   /** from @AmPayloadProvider */
   amci_payload_t*  payload(int payload_id) const;

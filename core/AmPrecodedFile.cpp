@@ -58,9 +58,8 @@ void AmPrecodedFile::initPlugin() {
     AmPlugIn::instance()->addPayload(&it->second);
 }
 
-AmPrecodedRtpFormat::AmPrecodedRtpFormat(precoded_payload_t& precoded_payload,
-					 const vector<SdpPayload *>& payloads)
-  : AmAudioRtpFormat(/*payloads*/), precoded_payload(precoded_payload)
+AmPrecodedRtpFormat::AmPrecodedRtpFormat(precoded_payload_t& precoded_payload)
+  : AmAudioRtpFormat(), precoded_payload(precoded_payload)
 {
   channels = precoded_payload.channels;
   rate = precoded_payload.sample_rate;
@@ -120,9 +119,8 @@ int precoded_file_close(FILE* fp, struct amci_file_desc_t* fmt_desc, int options
   return 0;
 }
 
-AmPrecodedFileInstance::AmPrecodedFileInstance(precoded_payload_t& precoded_payload, 
-					       const vector<SdpPayload*>&  payloads) 
-  : AmAudioFile(), precoded_payload(precoded_payload), payloads(payloads)
+AmPrecodedFileInstance::AmPrecodedFileInstance(precoded_payload_t& precoded_payload) 
+  : AmAudioFile(), precoded_payload(precoded_payload)
 {
   memset(&m_iofmt, 0, sizeof(amci_inoutfmt_t));
   m_iofmt.open = &precoded_file_open;
@@ -142,7 +140,7 @@ int AmPrecodedFileInstance::open() {
 }
 
 AmPrecodedRtpFormat* AmPrecodedFileInstance::getRtpFormat() {
-  return new AmPrecodedRtpFormat(precoded_payload, payloads);
+  return new AmPrecodedRtpFormat(precoded_payload);
 }
 
 AmPrecodedFile::AmPrecodedFile() 
@@ -242,11 +240,9 @@ void AmPrecodedFile::getPayloads(vector<SdpPayload>& pl_vec) const
   }
 }
 
-AmPrecodedFileInstance* AmPrecodedFile::getFileInstance(int payload_id, 
-							const vector<SdpPayload*>&  m_payloads) {
+AmPrecodedFileInstance* AmPrecodedFile::getFileInstance(int payload_id) {
   std::map<int,precoded_payload_t>::iterator it=payloads.find(payload_id);
   if (it != payloads.end()) 
-    return new AmPrecodedFileInstance(it->second, m_payloads);
-
+    return new AmPrecodedFileInstance(it->second);
   return NULL;
 }

@@ -48,22 +48,15 @@ public:
 
 class PrecodedDialog : public AmSession
 {
-    
   AmPrecodedFile* file_def;
-
   int current_payload;
 
-protected:
-  AmAudioRtpFormat* getNewRtpFormat();
-
- public:
+public:
   PrecodedDialog(AmPrecodedFile* file_def);
   ~PrecodedDialog();
   
   void onSessionStart();
   void onBye(const AmSipRequest& req);
-
-  AmPayloadProviderInterface* getPayloadProvider();
 };
 
 #endif
