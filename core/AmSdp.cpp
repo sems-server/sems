@@ -1187,7 +1187,7 @@ static void parse_sdp_origin(AmSdp* sdp_msg, char* s)
 	  next = parse_until(origin_line, ' ');
 	  //check if line contains more values than allowed
 	  if(next > line_end){
-	    origin.conn.address = string(origin_line, int(line_end-origin_line)-1);
+	    origin.conn.address = string(origin_line, int(line_end-origin_line)-2);
 	  }else{
 	    DBG("parse_sdp_origin: 'o=' contains more values than allowed; these values will be ignored\n");  
 	    origin.conn.address = string(origin_line, int(next-origin_line)-1);
