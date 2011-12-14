@@ -82,8 +82,6 @@ class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
   bool         last_check_i;
   bool         send_int;
 
-  bool         send_only;
-
   //
   // Default packet loss concealment functions
   //
@@ -103,10 +101,6 @@ public:
   int getCurrentPayload();
 
   int receive(unsigned int wallclock_ts);
-
-  void setSendOnly(bool so){
-    send_only = so;
-  }
 
   // AmAudio interface
   int read(unsigned int user_ts, unsigned int size);

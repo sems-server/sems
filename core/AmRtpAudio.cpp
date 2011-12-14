@@ -34,7 +34,7 @@
 AmRtpAudio::AmRtpAudio(AmSession* _s, int _if)
   : AmRtpStream(_s,_if), AmAudio(0), 
     /*last_ts_i(false),*/ use_default_plc(true),
-    send_only(false), playout_buffer(new AmPlayoutBuffer(this)),
+    playout_buffer(new AmPlayoutBuffer(this)),
     last_check(0),last_check_i(false),send_int(false)
 {
 #ifdef USE_SPANDSP_PLC
@@ -93,9 +93,7 @@ int AmRtpAudio::receive(unsigned int wallclock_ts)
     if(size <= 0)
       break;
 
-    if (// don't process if we don't need to 
-	send_only || 
-	// ignore CN
+    if (// ignore CN
 	COMFORT_NOISE_PAYLOAD_TYPE == payload  || 
 	// ignore packet if payload not found
 	setCurrentPayload(payload)
