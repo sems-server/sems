@@ -34,6 +34,7 @@
 #include "SampleArray.h"
 #include "AmRtpPacket.h"
 #include "AmEvent.h"
+#include "AmDtmfSender.h"
 
 #include <netinet/in.h>
 
@@ -54,13 +55,13 @@ using std::pair;
 #define RTP_UNKNOWN_PL  -5 // unknown payload
 
 
-struct amci_payload_t;
-
-class AmAudio;
-class AmSession;
+/**
+ * Forward declarations
+ */
+class  AmAudio;
+class  AmSession;
 struct SdpPayload;
-typedef std::map<unsigned int, AmRtpPacket*, ts_less> ReceiveBuffer;
-typedef std::queue<AmRtpPacket*>  RtpEventQueue;
+struct amci_payload_t;
 
 /**
  * This provides the memory for the receive buffer.
@@ -78,6 +79,17 @@ struct PacketMem {
   inline void clear();
 };
 
+/** \brief event fired on RTP timeout */
+class AmRtpTimeoutEvent
+  : public AmEvent
+{
+	
+public:
+  AmRtpTimeoutEvent() 
+    : AmEvent(0) { }
+  ~AmRtpTimeoutEvent() { }
+};
+
 
 /**
  * \brief RTP implementation
@@ -88,8 +100,6 @@ class AmRtpStream
   : public AmObject
 {
 protected:
-  // get the next available port within configured range
-  static int getNextPort();
 
   // payload collection
   struct Payload {
@@ -99,14 +109,6 @@ protected:
     int           codec_id;
   };
 
-  typedef std::vector<Payload> PayloadCollection;
-  
-  // list of locally supported payloads
-  PayloadCollection payloads;
-
-  // current payload (index into @payloads)
-  int payload;
-
   struct PayloadMapping {
     // remote payload type
     int8_t remote_pt;
@@ -115,7 +117,16 @@ protected:
     uint8_t index;
   };
 
-  typedef std::map<unsigned char, PayloadMapping> PayloadMappingTable;
+  typedef std::map<unsigned int, AmRtpPacket*, ts_less> ReceiveBuffer;
+  typedef std::queue<AmRtpPacket*>                      RtpEventQueue;
+  typedef std::vector<Payload>                          PayloadCollection;
+  typedef std::map<unsigned char, PayloadMapping>       PayloadMappingTable;
+  
+  // list of locally supported payloads
+  PayloadCollection payloads;
+
+  // current payload (index into @payloads)
+  int payload;
 
   // mapping from local payload type to PayloadMapping
   PayloadMappingTable pl_map;
@@ -129,12 +140,19 @@ protected:
   */
   int         last_payload;
 
+  /** Remote host information */
   string             r_host;
   unsigned short     r_port;
 
-  /* local interface */
+  /** 
+   * Local interface used for this stream
+   * (index into @AmConfig::Ifs)
+   */
   int l_if;
 
+  /**
+   * Local and remote host addresses
+   */
 #ifdef SUPPORT_IPV6
   struct sockaddr_storage r_saddr;
   struct sockaddr_storage l_saddr;
@@ -142,11 +160,17 @@ protected:
   struct sockaddr_in r_saddr;
   struct sockaddr_in l_saddr;
 #endif
+
+  /** Local port */
   unsigned short     l_port;
+
+  /** Local socket */
   int                l_sd;
 
+  /** Timestamp of the last received RTP packet */
   struct timeval last_recv_time;
 
+  /** Local and remote SSRC information */
   unsigned int   l_ssrc;
   unsigned int   r_ssrc;
   bool           r_ssrc_i;
@@ -158,6 +182,12 @@ protected:
   auto_ptr<const SdpPayload> remote_telephone_event_pt;
   auto_ptr<const SdpPayload> local_telephone_event_pt;
 
+  /** DTMF sender */
+  AmDtmfSender   dtmf_sender;
+
+  /**
+   * Receive buffer, queue and mutex
+   */
   PacketMem       mem;
   ReceiveBuffer   receive_buf;
   RtpEventQueue   rtp_ev_qu;
@@ -170,31 +200,15 @@ protected:
       or by the AmRtpReceiver thread while relaying!  */
   AmRtpStream*    relay_stream;
 
-  /* get next packet in buffer */
-  int nextPacket(AmRtpPacket*& p);
-  
+  /** Session owning this stream */
   AmSession*         session;
 
-  int compile_and_send(const int payload, bool marker, 
-		       unsigned int ts, unsigned char* buffer, 
-		       unsigned int size);
-
-
-  void sendDtmfPacket(unsigned int ts);
-  //       event, duration
-  std::queue<pair<int, unsigned int> > dtmf_send_queue;
-  AmMutex dtmf_send_queue_mut;
-  enum dtmf_sending_state_t {
-    DTMF_SEND_NONE,      // not sending event
-    DTMF_SEND_SENDING,   // sending event
-    DTMF_SEND_ENDING     // sending end of event
-  } dtmf_sending_state;
-  pair<int, unsigned int> current_send_dtmf;
-  unsigned int current_send_dtmf_ts;
-  int send_dtmf_end_repeat;
   /** Payload provider */
   AmPayloadProvider* payload_provider;
 
+  /* get next packet in buffer */
+  int nextPacket(AmRtpPacket*& p);
+  
   /** handle symmetric RTP - if in passive mode, update raddr from rp */
   void handleSymmetricRtp(AmRtpPacket* rp);
 
@@ -202,6 +216,9 @@ protected:
 
   /** Sets generic parameters on SDP media */
   void getSdp(SdpMedia& m);
+
+  // get the next available port within configured range
+  static int getNextPort();
 
 public:
 
@@ -217,9 +234,13 @@ public:
   /** do check rtp timeout */
   bool monitor_rtp_timeout;
 
-
   /** should we receive packets? if not -> drop */
   bool receiving;
+
+  /** Allocates resources for future use of RTP. */
+  AmRtpStream(AmSession* _s, int _if);
+  /** Stops the stream and frees all resources. */
+  virtual ~AmRtpStream();
 
   int send( unsigned int ts,
 	    unsigned char* buffer,
@@ -227,16 +248,15 @@ public:
   
   int send_raw( char* packet, unsigned int length );
 
+  int compile_and_send( const int payload, bool marker, 
+		        unsigned int ts, unsigned char* buffer, 
+		        unsigned int size );
+
   int receive( unsigned char* buffer, unsigned int size,
-	       unsigned int& ts, int& payload);
+	       unsigned int& ts, int& payload );
 
   /** ping the remote side, to open NATs and enable symmetric RTP */
   int ping();
-
-  /** Allocates resources for future use of RTP. */
-  AmRtpStream(AmSession* _s, int _if);
-  /** Stops the stream and frees all resources. */
-  virtual ~AmRtpStream();
 
   /** returns the socket descriptor for local socket (initialized or not) */
   int hasLocalSocket();
@@ -366,17 +386,6 @@ public:
   /** disable RTP relaying through relay stream */
   void disableRtpRelay();
 
-};
-
-/** \brief event fired on RTP timeout */
-class AmRtpTimeoutEvent
-  : public AmEvent
-{
-	
-public:
-  AmRtpTimeoutEvent() 
-    : AmEvent(0) { }
-  ~AmRtpTimeoutEvent() { }
 };
 
 #endif
