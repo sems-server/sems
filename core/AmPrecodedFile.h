@@ -97,7 +97,7 @@ class AmPrecodedFileInstance
 };
 
 class AmPrecodedFile 
-: public AmPayloadProviderInterface {
+: public AmPayloadProvider {
 
   std::map<int,precoded_payload_t>  payloads;
 
@@ -105,17 +105,19 @@ class AmPrecodedFile
   AmPrecodedFile();
   ~AmPrecodedFile();
 
+  /** Open the file */
+  int open(const std::string& filename);
+
   /** need to call after open() */
   void initPlugin();
 
-  int open(const std::string& filename);
+  AmPrecodedFileInstance* getFileInstance(int payload_id, 
+			     const vector<SdpPayload*>&  m_payloads);
 
+  /** from @AmPayloadProvider */
   amci_payload_t*  payload(int payload_id) const;
   int getDynPayload(const string& name, int rate, int encoding_param) const;
-
   void getPayloads(vector<SdpPayload>& pl_vec) const;
-
-  AmPrecodedFileInstance* getFileInstance(int payload_id, const vector<SdpPayload*>&  m_payloads);
 };
 
 #endif

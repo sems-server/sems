@@ -293,7 +293,7 @@ void AmSdp::clear()
   l_origin = SdpOrigin();
 }
 
-void SdpMedia::calcAnswer(const AmPayloadProviderInterface* payload_prov,
+void SdpMedia::calcAnswer(const AmPayloadProvider* payload_prov,
 			  SdpMedia& answer) const
 {
   if(!recv) answer.send = false;

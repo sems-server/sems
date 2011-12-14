@@ -441,6 +441,9 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
   l_ssrc = get_random();
   sequence = get_random();
   gettimeofday(&last_recv_time,NULL);
+
+  // by default the system codecs
+  payload_provider = AmPlugIn::instance();
 }
 
 AmRtpStream::~AmRtpStream()
@@ -563,21 +566,16 @@ void AmRtpStream::getSdp(SdpMedia& m)
 void AmRtpStream::getSdpOffer(SdpMedia& offer)
 {
   getSdp(offer);
-
-  // TODO: transfer ownership of the payload provider also into AmRtpStream
-  session->getPayloadProvider()->getPayloads(offer.payloads);
+  payload_provider->getPayloads(offer.payloads);
 }
 
 void AmRtpStream::getSdpAnswer(const SdpMedia& offer, SdpMedia& answer)
 {
   getSdp(answer);
-
-  // TODO: transfer ownership of the payload provider also into AmRtpStream
-  offer.calcAnswer(session->getPayloadProvider(),answer);
+  offer.calcAnswer(payload_provider,answer);
 }
 
-int AmRtpStream::init(AmPayloadProviderInterface* payload_provider,
-		      unsigned char media_i, 
+int AmRtpStream::init(unsigned char media_i, 
 		      const AmSdp& local,
 		      const AmSdp& remote)
 {
@@ -894,6 +892,11 @@ int AmRtpStream::getLocalTelephoneEventRate()
   if (local_telephone_event_pt.get())
     return local_telephone_event_pt->clock_rate;
   return 0;
+}
+
+void AmRtpStream::setPayloadProvider(AmPayloadProvider* pl_prov)
+{
+  payload_provider = pl_prov;
 }
 
 void AmRtpStream::sendDtmf(int event, unsigned int duration_ms) {

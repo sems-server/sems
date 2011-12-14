@@ -156,7 +156,7 @@ struct SdpMedia
    * inserts them into the answer, compute send/recv attributes
    * and direction according to the offer.
    */
-  void calcAnswer(const AmPayloadProviderInterface* payload_prov, 
+  void calcAnswer(const AmPayloadProvider* payload_prov, 
 		  SdpMedia& answer) const;
 };
 

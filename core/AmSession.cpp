@@ -272,11 +272,6 @@ int AmSession::getRPort()
   return RTPStream()->getRPort();
 }
 
-AmPayloadProviderInterface* AmSession::getPayloadProvider() {
-  // by default the system codecs
-  return AmPlugIn::instance();
-}
-
 #ifdef SESSION_THREADPOOL
 void AmSession::start() {
   AmSessionProcessorThread* processor_thread = 
@@ -1056,7 +1051,7 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
   //     should be created or updated   
   //
   lockAudio();
-  int ret = RTPStream()->init(getPayloadProvider(),0,local_sdp,remote_sdp);
+  int ret = RTPStream()->init(0,local_sdp,remote_sdp);
   unlockAudio();
   
   if(ret){

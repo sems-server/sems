@@ -371,12 +371,6 @@ public:
   /** Gets the port number of the remote part of the session */
   int getRPort();
 
-  /** Set whether on positive reply session should be negotiated */
-  //void setNegotiateOnReply(bool n) { negotiate_onreply = n; }
-
-  /** get the payload provider for the session */
-  virtual AmPayloadProviderInterface* getPayloadProvider();
-
   /* ----         Call control                         ---- */
 
   /** refresh the session - re-INVITE or UPDATE*/

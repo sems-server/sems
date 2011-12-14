@@ -119,8 +119,7 @@ public:
   void getSdpOffer(SdpMedia& offer);
   void getSdpAnswer(const SdpMedia& offer, SdpMedia& answer);
 
-  int init(AmPayloadProviderInterface* payload_provider,
-	   unsigned char media_i, 
+  int init(unsigned char media_i, 
 	   const AmSdp& local,
 	   const AmSdp& remote);
 

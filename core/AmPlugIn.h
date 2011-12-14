@@ -55,10 +55,10 @@ struct amci_inoutfmt_t;
 struct amci_subtype_t;
 
 /** Interface that a payload provider needs to implement */
-class AmPayloadProviderInterface {
+class AmPayloadProvider {
  public: 
-  AmPayloadProviderInterface() { }
-  virtual ~AmPayloadProviderInterface() { }
+  AmPayloadProvider() { }
+  virtual ~AmPayloadProvider() { }
   
   /** 
    * Payload lookup function.
@@ -83,7 +83,7 @@ class AmPayloadProviderInterface {
 /**
  * \brief Container for loaded Plug-ins.
  */
-class AmPlugIn : public AmPayloadProviderInterface
+class AmPlugIn : public AmPayloadProvider
 {
  private:
   static AmPlugIn* _instance;

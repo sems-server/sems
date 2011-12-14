@@ -192,6 +192,8 @@ protected:
   pair<int, unsigned int> current_send_dtmf;
   unsigned int current_send_dtmf_ts;
   int send_dtmf_end_repeat;
+  /** Payload provider */
+  AmPayloadProvider* payload_provider;
 
   /** handle symmetric RTP - if in passive mode, update raddr from rp */
   void handleSymmetricRtp(AmRtpPacket* rp);
@@ -283,6 +285,8 @@ public:
 
   int getLocalTelephoneEventRate();
 
+  void setPayloadProvider(AmPayloadProvider* pl_prov);
+
   /**
    * send a DTMF as RTP payload (RFC4733)
    * @param event event ID (e.g. key press), see rfc
@@ -310,8 +314,7 @@ public:
    * @warning It should be called only if the stream has been completly initialized,
    * @warning and only once per session. Use resume() then.
    */
-  virtual int init(AmPayloadProviderInterface* payload_provider,
-		   unsigned char media_i, 
+  virtual int init(unsigned char media_i, 
 		   const AmSdp& local,
 		   const AmSdp& remote);
 

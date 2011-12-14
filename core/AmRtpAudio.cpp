@@ -151,13 +151,12 @@ void AmRtpAudio::getSdpAnswer(const SdpMedia& offer, SdpMedia& answer)
   AmRtpStream::getSdpAnswer(offer,answer);
 }
 
-int AmRtpAudio::init(AmPayloadProviderInterface* payload_provider,
-		      unsigned char media_i, 
-		      const AmSdp& local,
-		      const AmSdp& remote)
+int AmRtpAudio::init(unsigned char media_i, 
+		     const AmSdp& local,
+		     const AmSdp& remote)
 {
   DBG("AmRtpAudio::init(...)\n");
-  if(AmRtpStream::init(payload_provider,media_i,local,remote)){
+  if(AmRtpStream::init(media_i,local,remote)){
     return -1;
   }
 
