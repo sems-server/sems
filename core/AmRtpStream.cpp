@@ -345,7 +345,8 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     receiving(true),
     monitor_rtp_timeout(true),
     relay_stream(NULL),
-    relay_enabled(false)
+    relay_enabled(false),
+    sdp_media_index(-1)
 {
 
 #ifdef SUPPORT_IPV6
@@ -487,31 +488,34 @@ void AmRtpStream::getSdp(SdpMedia& m)
   m.dir = SdpMedia::DirBoth;
 }
 
-void AmRtpStream::getSdpOffer(SdpMedia& offer)
+void AmRtpStream::getSdpOffer(unsigned int index, SdpMedia& offer)
 {
+  sdp_media_index = index;
   getSdp(offer);
+  offer.payloads.clear();
   payload_provider->getPayloads(offer.payloads);
 }
 
-void AmRtpStream::getSdpAnswer(const SdpMedia& offer, SdpMedia& answer)
+void AmRtpStream::getSdpAnswer(unsigned int index, const SdpMedia& offer, SdpMedia& answer)
 {
+  sdp_media_index = index;
   getSdp(answer);
   offer.calcAnswer(payload_provider,answer);
 }
 
-int AmRtpStream::init(unsigned char media_i, 
-		      const AmSdp& local,
+int AmRtpStream::init(const AmSdp& local,
 		      const AmSdp& remote)
 {
-  if((media_i >= local.media.size()) ||
-     (media_i >= remote.media.size()) ) {
+  if((sdp_media_index < 0) ||
+     ((unsigned)sdp_media_index >= local.media.size()) ||
+     ((unsigned)sdp_media_index >= remote.media.size()) ) {
 
-    ERROR("Media index %i is invalid, either within local or remote SDP (or both)",media_i);
+    ERROR("Media index %i is invalid, either within local or remote SDP (or both)",sdp_media_index);
     return -1;
   }
 
-  const SdpMedia& local_media = local.media[media_i];
-  const SdpMedia& remote_media = remote.media[media_i];
+  const SdpMedia& local_media = local.media[sdp_media_index];
+  const SdpMedia& remote_media = remote.media[sdp_media_index];
 
   payloads.clear();
   pl_map.clear();
@@ -597,14 +601,14 @@ int AmRtpStream::init(unsigned char media_i,
 
   local_telephone_event_pt.reset(local.telephoneEventPayload());
 
-  if(remote_media.send) {
+  if(local_media.recv) {
     resume();
   }
   else {
     pause();
   }
 
-  if(remote_media.recv && !hold
+  if(local_media.send && !hold
      && (remote_media.port != 0)
 #ifndef SUPPORT_IPV6
      && (r_saddr.sin_addr.s_addr != 0)

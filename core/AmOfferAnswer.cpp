@@ -342,7 +342,8 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
 	// either offer received or no offer at all:
 	//  -> force SDP
 	generate_sdp = (state == OA_OfferRecved) 
-	  || (state == OA_None);
+	  || (state == OA_None)
+	  || (state == OA_Completed);
       }
     }
     else if (reply.cseq_method == SIP_METH_UPDATE) {

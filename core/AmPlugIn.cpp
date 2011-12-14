@@ -467,7 +467,6 @@ int AmPlugIn::getDynPayload(const string& name, int rate, int encoding_param) co
 /** return 0, or -1 in case of error. */
 void AmPlugIn::getPayloads(vector<SdpPayload>& pl_vec) const
 {
-  pl_vec.clear();
   for (std::map<int,int>::const_iterator it = payload_order.begin(); it != payload_order.end(); ++it) {
     std::map<int,amci_payload_t*>::const_iterator pl_it = payloads.find(it->second);
     if(pl_it != payloads.end()){

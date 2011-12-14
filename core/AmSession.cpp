@@ -957,10 +957,18 @@ bool AmSession::getSdpOffer(AmSdp& offer)
 
   // TODO: support mutiple media types (needs multiples RTP streams)
   // TODO: support update instead of clearing everything
-  offer.media.clear();
 
-  offer.media.push_back(SdpMedia());
-  RTPStream()->getSdpOffer(offer.media.back());
+  if(RTPStream()->getSdpMediaIndex() < 0)
+    offer.media.clear();
+
+  if(!offer.media.size()) {
+    offer.media.push_back(SdpMedia());
+    RTPStream()->getSdpOffer(0,offer.media.back());
+  }
+  else {
+    RTPStream()->getSdpOffer(RTPStream()->getSdpMediaIndex(),
+			     offer.media.back());
+  }
   
   return true;
 }
@@ -981,6 +989,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
   answer.media.clear();
 
   bool audio_1st_stream = true;
+  unsigned int media_index = 0;
   for(vector<SdpMedia>::const_iterator m_it = offer.media.begin();
       m_it != offer.media.end(); ++m_it) {
 
@@ -991,7 +1000,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
         && audio_1st_stream 
         && (m_it->port != 0) ) {
 
-      RTPStream()->getSdpAnswer(*m_it,answer_media);
+      RTPStream()->getSdpAnswer(media_index,*m_it,answer_media);
       if(answer_media.payloads.empty() ||
 	 ((answer_media.payloads.size() == 1) &&
 	  (answer_media.payloads[0].encoding_name == "telephone-event"))
@@ -1018,6 +1027,8 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
       }
       answer_media.attributes.clear();
     }
+
+    media_index++;
   }
 
   return true;
@@ -1045,13 +1056,8 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
     return -1;
   }
 
-  // TODO: 
-  //   - get the right media ID
-  //   - check if the stream coresponding to the media ID 
-  //     should be created or updated   
-  //
   lockAudio();
-  int ret = RTPStream()->init(0,local_sdp,remote_sdp);
+  int ret = RTPStream()->init(local_sdp,remote_sdp);
   unlockAudio();
   
   if(ret){

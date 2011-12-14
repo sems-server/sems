@@ -139,24 +139,25 @@ int AmRtpAudio::write(unsigned int user_ts, unsigned int size)
   return send(user_ts,(unsigned char*)samples,size);
 }
 
-void AmRtpAudio::getSdpOffer(SdpMedia& offer)
+void AmRtpAudio::getSdpOffer(unsigned int index, SdpMedia& offer)
 {
   offer.type = MT_AUDIO;
-  AmRtpStream::getSdpOffer(offer);
+  AmRtpStream::getSdpOffer(index,offer);
 }
 
-void AmRtpAudio::getSdpAnswer(const SdpMedia& offer, SdpMedia& answer)
+void AmRtpAudio::getSdpAnswer(unsigned int index, 
+			      const SdpMedia& offer, 
+			      SdpMedia& answer)
 {
   answer.type = MT_AUDIO;
-  AmRtpStream::getSdpAnswer(offer,answer);
+  AmRtpStream::getSdpAnswer(index,offer,answer);
 }
 
-int AmRtpAudio::init(unsigned char media_i, 
-		     const AmSdp& local,
+int AmRtpAudio::init(const AmSdp& local,
 		     const AmSdp& remote)
 {
   DBG("AmRtpAudio::init(...)\n");
-  if(AmRtpStream::init(media_i,local,remote)){
+  if(AmRtpStream::init(local,remote)){
     return -1;
   }
 

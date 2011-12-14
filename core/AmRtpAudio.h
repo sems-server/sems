@@ -116,11 +116,10 @@ public:
 	  unsigned int nb_samples);
 
   // AmRtpStream interface
-  void getSdpOffer(SdpMedia& offer);
-  void getSdpAnswer(const SdpMedia& offer, SdpMedia& answer);
+  void getSdpOffer(unsigned int index, SdpMedia& offer);
+  void getSdpAnswer(unsigned int index, const SdpMedia& offer, SdpMedia& answer);
 
-  int init(unsigned char media_i, 
-	   const AmSdp& local,
+  int init(const AmSdp& local,
 	   const AmSdp& remote);
 
   void setPlayoutType(PlayoutType type);
