@@ -237,8 +237,6 @@ void DSMCall::onBye(const AmSipRequest& req)
 
   if (rtp_relay_enabled)
     clearRtpReceiverRelay();
-
-  dlg.reply(req,200,"OK");
 }
 
 void DSMCall::onCancel(const AmSipRequest& cancel) {
