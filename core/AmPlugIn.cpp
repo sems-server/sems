@@ -128,7 +128,7 @@ static void delete_plugin_factory(std::pair<string, AmPluginFactory*> pf)
 
 AmPlugIn::~AmPlugIn()
 {
-  std::for_each(name2app.begin(), name2app.end(), delete_plugin_factory);
+  std::for_each(module_objects.begin(), module_objects.end(), delete_plugin_factory);
   std::for_each(name2seh.begin(), name2seh.end(), delete_plugin_factory);
   std::for_each(name2base.begin(), name2base.end(), delete_plugin_factory);
   std::for_each(name2di.begin(), name2di.end(), delete_plugin_factory);
@@ -609,6 +609,7 @@ int AmPlugIn::loadAppPlugIn(AmPluginFactory* f)
   name2app.insert(std::make_pair(sf->getName(),sf));
   DBG("application '%s' loaded.\n",sf->getName().c_str());
 
+  module_objects.insert(std::make_pair(sf->getName(),sf));
   name2app_mut.unlock();
 
   return 0;
