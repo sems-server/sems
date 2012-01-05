@@ -122,7 +122,7 @@ transition "negative reply" CONNECTING - B2B.otherReply()  / {
 } -> COLLECTING;
 
 state CONNECTED;
-transition "bye recvd" CONNECTED - hangup / B2B.terminateOtherLeg(); stop(false) -> END;
+transition "bye recvd" CONNECTED - hangup / stop(false) -> END;
 transition "bye on other leg" CONNECTED - B2B.otherBye() / stop(true) -> END;
 
 state PLAY_AND_BYE;

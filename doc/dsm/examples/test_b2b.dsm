@@ -45,7 +45,8 @@ transition "negative reply" waitconnect - B2B.otherReply()  / {
 } -> end;
 
 state conn;
-transition "bye recvd" conn - hangup / B2B.terminateOtherLeg(); stop(false) -> end;
+
+transition "bye recvd" conn - hangup / stop(false) -> end;
 transition "bye on other leg" conn - B2B.otherBye() / stop(true) -> end;
 
 state end;

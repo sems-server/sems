@@ -171,7 +171,10 @@ B2B call control
    connect second leg of B2B session (see AmB2BSession)
 
  B2B.terminateOtherLeg
-   disconnect second leg of B2B session (see AmB2BSession)
+   disconnect second leg of B2B session (see AmB2BSession),
+   e.g. to connect to a new destination
+   note: don't use this when receiving BYE in an established
+         B2BUA call, as the BYE is sent end-to-end
 
  B2B.sendReinvite(generate_sdp [, string extra_headers])
    send a reinvite in caller leg (first leg), e.g. to 
