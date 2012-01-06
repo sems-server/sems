@@ -124,6 +124,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  n_reply.code = 491;
 	  n_reply.reason = "Request Pending";
 	  n_reply.cseq = req_ev->req.cseq;
+	  n_reply.local_tag = dlg.local_tag;
 	  relayEvent(new B2BSipReplyEvent(n_reply, true, SIP_METH_INVITE));
 	  return;
 	}
