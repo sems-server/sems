@@ -135,6 +135,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  n_reply.code = 491;
 	  n_reply.reason = SIP_REPLY_PENDING;
 	  n_reply.cseq = req_ev->req.cseq;
+	  n_reply.from_tag = dlg.local_tag;
 	  relayEvent(new B2BSipReplyEvent(n_reply, true, SIP_METH_INVITE));
 	  return;
 	}
@@ -145,6 +146,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  n_reply.code = 500;
 	  n_reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
 	  n_reply.cseq = req_ev->req.cseq;
+	  n_reply.from_tag = dlg.local_tag;
 	  relayEvent(new B2BSipReplyEvent(n_reply, true, req_ev->req.method));
 	  return;
 	}
@@ -1217,7 +1219,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 	n_reply.code = 500;
 	n_reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
 	n_reply.cseq = co_ev->r_cseq;
-	n_reply.to_tag = dlg.local_tag;
+	n_reply.from_tag = dlg.local_tag;
 	relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
 	  throw;
       }
@@ -1232,7 +1234,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
       n_reply.code = 400;
       n_reply.reason = "Bad Request";
       n_reply.cseq = co_ev->r_cseq;
-      n_reply.to_tag = dlg.local_tag;
+      n_reply.from_tag = dlg.local_tag;
       relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
 
       if (co_ev->relayed_invite)
