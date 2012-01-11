@@ -57,7 +57,7 @@ bool DLGModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
   // save inivital invite to last_req 
   // todo: save this in avar
  sess->last_req.reset(new AmSipRequest(req));
-  return true;
+ return true;
 }
 
 // todo: convert errors to exceptions
@@ -74,13 +74,6 @@ void replyRequest(DSMSession* sc_sess, AmSession* sess,
     return;
   }
 
-  if (!sc_sess->last_req.get()) {
-    ERROR("no last request to reply\n");
-    sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
-    sc_sess->SET_STRERROR("no last request to reply");
-    return;
-  }
-
   if (sess->dlg.reply(req, code_i, reason)) {
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
     sc_sess->SET_STRERROR("error sending reply");
@@ -90,6 +83,14 @@ void replyRequest(DSMSession* sc_sess, AmSession* sess,
 
 CONST_ACTION_2P(DLGReplyAction, ',', true);
 EXEC_ACTION_START(DLGReplyAction) {
+
+  if (!sc_sess->last_req.get()) {
+    ERROR("no last request to reply\n");
+    sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
+    sc_sess->SET_STRERROR("no last request to reply");
+    return;
+  }
+
   replyRequest(sc_sess, sess, event_params, par1, par2, *sc_sess->last_req.get());
 } EXEC_ACTION_END;
 
