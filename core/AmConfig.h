@@ -120,6 +120,8 @@ struct AmConfig
   static int SessionProcessorThreads;
   /** number of media processor threads */
   static int MediaProcessorThreads;
+  /** number of RTP receiver threads */
+  static int RTPReceiverThreads;
   /** number of SIP server threads */
   static int SIPServerThreads;
   /** Outbound Proxy (optional, outgoing calls only) */
@@ -222,6 +224,8 @@ struct AmConfig
   static int setSessionProcessorThreads(const string& th);
   /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */
   static int setMediaProcessorThreads(const string& th);
+  /** Setter for parameter RTPReceiverThreads, returns 0 on invalid value */
+  static int setRTPReceiverThreads(const string& th);
   /** Setter for parameter SIPServerThreads, returns 0 on invalid value */
   static int setSIPServerThreads(const string& th);
   /** Setter for parameter DeadRtpTime, returns 0 on invalid value */

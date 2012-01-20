@@ -29,6 +29,8 @@
 #define _AmRtpReceiver_h_
 
 #include "AmThread.h"
+#include "atomic_types.h"
+#include "singleton.h"
 
 #include <sys/select.h>
 
@@ -36,6 +38,7 @@
 using std::greater;
 
 class AmRtpStream;
+class _AmRtpReceiver;
 
 /**
  * \brief receiver for RTP for all streams.
@@ -44,35 +47,67 @@ class AmRtpStream;
  * that are registered to it. It places the received packets in 
  * the stream's buffer. 
  */
-class AmRtpReceiver: public AmThread {
+class AmRtpReceiverThread: public AmThread {
 
-  typedef std::map<int, AmRtpStream*, greater<int> > Streams;
+  struct StreamInfo {
+    unsigned int index; // index into fds table
+    AmRtpStream* stream;
 
-  static AmRtpReceiver* _instance;
-    
+    StreamInfo(unsigned int i, AmRtpStream* s)
+      : index(i), stream(s) {}
+  };
+
+  typedef std::map<int, StreamInfo, greater<int> > Streams;
+
   Streams  streams;
   AmMutex  streams_mut;
 
-  //fd_set   fds;
   struct pollfd* fds;
   unsigned int   nfds;
-  AmMutex        fds_mut;
     
-  AmRtpReceiver();
-  ~AmRtpReceiver();
+  AmRtpReceiverThread();
+  ~AmRtpReceiverThread();
     
   void run();
   void on_stop();
   AmSharedVar<bool> stop_requested;
 
-public:
-  static AmRtpReceiver* instance();
-  static bool haveInstance();
   void addStream(int sd, AmRtpStream* stream);
   void removeStream(int sd);
 
-  static void dispose();
+  void stop_and_wait();
+
+  friend class _AmRtpReceiver;
 };
+
+class _AmRtpReceiver
+{
+  // static AmRtpReceiver* _instance;
+
+  AmRtpReceiverThread* receivers;
+  unsigned int         n_receivers;
+
+  atomic_int next_index;
+
+protected:    
+  _AmRtpReceiver();
+  ~_AmRtpReceiver();
+
+  void dispose();
+
+public:
+  // static AmRtpReceiver* instance();
+  // static bool haveInstance();
+  // static void dispose();
+
+  void start();
+
+  // returns the receiver thread index
+  unsigned int addStream(int sd, AmRtpStream* stream);
+  void removeStream(int sd, unsigned int thread_index);
+};
+
+typedef singleton<_AmRtpReceiver> AmRtpReceiver;
 
 #endif
 

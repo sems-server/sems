@@ -70,6 +70,7 @@ unsigned int AmConfig::MaxShutdownTime         = DEFAULT_MAX_SHUTDOWN_TIME;
 
 int          AmConfig::SessionProcessorThreads = NUM_SESSION_PROCESSORS;
 int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
+int          AmConfig::RTPReceiverThreads      = NUM_RTP_RECEIVERS;
 int          AmConfig::SIPServerThreads        = NUM_SIP_SERVERS;
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
@@ -219,6 +220,13 @@ int AmConfig::setSessionProcessorThreads(const string& th) {
 
 int AmConfig::setMediaProcessorThreads(const string& th) {
   if(sscanf(th.c_str(),"%u",&MediaProcessorThreads) != 1) {
+    return 0;
+  }
+  return 1;
+}
+
+int AmConfig::setRTPReceiverThreads(const string& th) {
+  if(sscanf(th.c_str(),"%u",&RTPReceiverThreads) != 1) {
     return 0;
   }
   return 1;
@@ -454,6 +462,13 @@ int AmConfig::readConfiguration()
   if(cfg.hasParameter("media_processor_threads")){
     if(!setMediaProcessorThreads(cfg.getParameter("media_processor_threads"))){
       ERROR("invalid media_processor_threads value specified");
+      ret = -1;
+    }
+  }
+
+  if(cfg.hasParameter("rtp_receiver_threads")){
+    if(!setRTPReceiverThreads(cfg.getParameter("rtp_receiver_threads"))){
+      ERROR("invalid rtp_receiver_threads value specified");
       ret = -1;
     }
   }
