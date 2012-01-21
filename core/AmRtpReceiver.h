@@ -102,9 +102,8 @@ public:
 
   void start();
 
-  // returns the receiver thread index
-  unsigned int addStream(int sd, AmRtpStream* stream);
-  void removeStream(int sd, unsigned int thread_index);
+  void addStream(int sd, AmRtpStream* stream);
+  void removeStream(int sd);
 };
 
 typedef singleton<_AmRtpReceiver> AmRtpReceiver;

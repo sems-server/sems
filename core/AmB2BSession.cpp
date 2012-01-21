@@ -46,7 +46,7 @@ AmB2BSession::AmB2BSession()
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
     est_invite_cseq(0),est_invite_other_cseq(0)
 {
-  memset(other_streams,0,sizeof(OtherStreamInfo)*MAX_RELAY_STREAMS);
+  memset(other_stream_fds,0,sizeof(int)*MAX_RELAY_STREAMS);
 }
 
 AmB2BSession::AmB2BSession(const string& other_local_tag)
@@ -57,7 +57,7 @@ AmB2BSession::AmB2BSession(const string& other_local_tag)
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
     est_invite_cseq(0),est_invite_other_cseq(0)
 {
-  memset(other_streams,0,sizeof(OtherStreamInfo)*MAX_RELAY_STREAMS);
+  memset(other_stream_fds,0,sizeof(int)*MAX_RELAY_STREAMS);
 }
 
 AmB2BSession::~AmB2BSession()
@@ -869,9 +869,7 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
   // link the other streams as our relay streams
   for (unsigned int i=0; i<relay_rtp_streams_cnt; i++) {
     other_session->relay_rtp_streams[i]->setRelayStream(relay_rtp_streams[i]);
-    other_streams[i].fd = other_session->relay_rtp_streams[i]->getLocalSocket();
-    other_streams[i].recver_index = 
-             other_session->relay_rtp_streams[i]->getReceiverIndex();
+    other_stream_fds[i] = other_session->relay_rtp_streams[i]->getLocalSocket();
     relay_rtp_streams[i]->setLocalIP(localRTPIP());
     relay_rtp_streams[i]->enableRtpRelay();
   }
@@ -880,15 +878,13 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
 void AmB2BSession::clearRtpReceiverRelay() {
   for (unsigned int i=0; i<relay_rtp_streams_cnt; i++) {
     // clear the other call's RTP relay streams from RTP receiver
-    if (other_streams[i].fd) {
-      AmRtpReceiver::instance()->removeStream(other_streams[i].fd,
-					      other_streams[i].recver_index);
-      memset(&(other_streams[i]),0,sizeof(OtherStreamInfo));
+    if (other_stream_fds[i]) {
+      AmRtpReceiver::instance()->removeStream(other_stream_fds[i]);
+      other_stream_fds[i] = 0;
     }
     // clear our relay streams from RTP receiver
     if (relay_rtp_streams[i]->hasLocalSocket()) {
-      AmRtpReceiver::instance()->removeStream(relay_rtp_streams[i]->getLocalSocket(),
-					      relay_rtp_streams[i]->getReceiverIndex());
+      AmRtpReceiver::instance()->removeStream(relay_rtp_streams[i]->getLocalSocket());
     }
   }
 }

@@ -240,13 +240,9 @@ class AmB2BSession: public AmSession
   /** number of relay RTP streams */
   unsigned int relay_rtp_streams_cnt;
 
-  struct OtherStreamInfo {
-    int          fd;
-    unsigned int recver_index;
-  };
-  /** fd of the other streams' sockets (to remove from
+  /** fds of the other streams' sockets (to remove from
       RtpReceiver at end of relaying) */
-  OtherStreamInfo other_streams[MAX_RELAY_STREAMS];
+  int other_stream_fds[MAX_RELAY_STREAMS];
 
   /** clear our and the other side's RTP streams from RTPReceiver */
   void clearRtpReceiverRelay();

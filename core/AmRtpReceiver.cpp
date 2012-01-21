@@ -195,15 +195,14 @@ void _AmRtpReceiver::start()
     receivers[i].start();
 }
 
-unsigned int _AmRtpReceiver::addStream(int sd, AmRtpStream* stream)
+void _AmRtpReceiver::addStream(int sd, AmRtpStream* stream)
 {
-  unsigned int i = next_index.inc() % n_receivers;
+  unsigned int i = sd % n_receivers;
   receivers[i].addStream(sd,stream);
-  return i;
 }
 
-void _AmRtpReceiver::removeStream(int sd, unsigned int thread_index)
+void _AmRtpReceiver::removeStream(int sd)
 {
-  assert(thread_index < n_receivers);
-  receivers[thread_index].removeStream(sd);
+  unsigned int i = sd % n_receivers;
+  receivers[i].removeStream(sd);
 }

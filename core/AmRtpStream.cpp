@@ -158,8 +158,8 @@ void AmRtpStream::setLocalPort()
   }
 
   l_port = port;
-  recver_index = AmRtpReceiver::instance()->addStream(l_sd,this);
-  DBG("added to RTP receiver #%i (%s:%i)\n", recver_index,
+  AmRtpReceiver::instance()->addStream(l_sd, this);
+  DBG("added stream [%p] to RTP receiver (%s:%i)\n", this,
       get_addr_str(l_saddr.sin_addr).c_str(),l_port);
 }
 
@@ -376,7 +376,7 @@ AmRtpStream::~AmRtpStream()
 {
   if(l_sd){
     if (AmRtpReceiver::haveInstance())
-      AmRtpReceiver::instance()->removeStream(l_sd,recver_index);
+      AmRtpReceiver::instance()->removeStream(l_sd);
     close(l_sd);
   }
 }

@@ -171,9 +171,6 @@ protected:
   /** Local socket */
   int                l_sd;
 
-  /** Receiver thread index */
-  unsigned int       recver_index;
-
   /** Timestamp of the last received RTP packet */
   struct timeval last_recv_time;
 
@@ -278,9 +275,6 @@ public:
 
   /** initializes and gets the socket descriptor for local socket */
   int getLocalSocket();
-
-  /** returns the receiver thread index */
-  unsigned int getReceiverIndex() { return recver_index; }
 
   /**
    * This function must be called before setLocalPort, because
