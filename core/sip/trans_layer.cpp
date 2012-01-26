@@ -747,9 +747,10 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     msg.cseq = req->cseq;
     msg.callid = req->callid;
 
-    ua->handle_sip_reply(&msg);
-
     bucket->remove(t);
+    bucket->unlock();
+
+    ua->handle_sip_reply(&msg);
 }
 
 int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
@@ -1204,10 +1205,18 @@ void _trans_layer::received_msg(sip_msg* msg)
 	    // Reply matched UAC transaction
 	    
 	    DBG("Reply matched an existing transaction\n");
-	    if(update_uac_reply(bucket,t,msg) < 0){
+	    int res = update_uac_reply(bucket,t,msg);
+	    if(res < 0){
 		ERROR("update_uac_trans() failed, so what happens now???\n");
 		break;
 	    }
+	    if (res) {
+		bucket->unlock();
+		ua->handle_sip_reply(msg);
+		DROP_MSG;
+		//return; - part of DROP_MSG
+	    }
+
 	    // do not touch the transaction anymore:
 	    // it could have been deleted !!!
 	}
@@ -1406,8 +1415,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     }
 
  pass_reply:
-    assert(ua);
-    ua->handle_sip_reply(msg);
+    return 1;
  end:
     return 0;
 }
@@ -1648,7 +1656,9 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	tr->clear_timer(STIMER_B);
 	if(tr->state == TS_CALLING) {
 	    DBG("Transaction timeout!\n");
+	    // unlocks the bucket
 	    timeout(bucket,tr);
+	    return;
 	}
 	else {
 	    DBG("Transaction timeout timer hit while state=0x%x",tr->state);
@@ -1664,8 +1674,9 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	case TS_TRYING:
 	case TS_PROCEEDING:
 	    DBG("Transaction timeout!\n");
+	    // unlocks the bucket
 	    timeout(bucket,tr);
-	    break;
+	    return;
 	}
 	break;
 
@@ -1751,7 +1762,7 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	    // get the next ip
 	    if(tr->msg->h_dns.next_ip(&sa) < 0){
 		tr->clear_timer(STIMER_M);
-		return;
+		break;
 	    }
 
 	    //If a SRV record is involved, the port number
@@ -1786,6 +1797,8 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	ERROR("Invalid timer type %i\n",t->type);
 	break;
     }
+
+    bucket->unlock();
 }
 
 /**
