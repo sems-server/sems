@@ -430,7 +430,7 @@ unsigned int hash(const cstring& ci, const cstring& cs)
     h = hashlittle(ci.s,ci.len,h);
     h = hashlittle(cs.s,cs.len,h);
 
-    return h & (H_TABLE_ENTRIES-1);
+    return h;
 }
 
 char _tag_lookup[] = {
@@ -514,20 +514,12 @@ trans_bucket* get_trans_bucket(const cstring& callid, const cstring& cseq_num)
 
 trans_bucket* get_trans_bucket(unsigned int h)
 {
-    assert(h < H_TABLE_ENTRIES);
     return _trans_table[h];
 }
 
 void dumps_transactions()
 {
-    for(int i=0; i<H_TABLE_ENTRIES; i++){
-
-	trans_bucket* bucket = get_trans_bucket(i);
-
-	bucket->lock();
-	bucket->dump();
-	bucket->unlock();
-    }
+    _trans_table.dump();
 }
 
 

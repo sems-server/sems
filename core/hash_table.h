@@ -224,7 +224,9 @@ public:
 
     void dump() const {
 	for(unsigned long l=0; l<size; l++){
+	    _table[l]->lock();
 	    _table[l]->dump();
+	    _table[l]->unlock();
 	}
     }
 
