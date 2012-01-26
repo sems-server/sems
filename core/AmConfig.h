@@ -108,9 +108,18 @@ struct AmConfig
     AmMutex next_rtp_port_mut;
   };
 
-  static vector<IP_interface>            Ifs;
-  static map<string,unsigned short>      If_names;
-  static multimap<string,unsigned short> LocalSIPIP2If;
+  static vector<IP_interface>       Ifs;
+  static map<string,unsigned short> If_names;
+  static map<string,unsigned short> LocalSIPIP2If;
+
+  struct SysIntf {
+    string       name;
+    list<string> addrs;
+    // identical to those returned by SIOCGIFFLAGS
+    unsigned int flags;
+  };
+
+  static list<SysIntf> SysIfs;
 
   static int finalizeIPConfig();
 
