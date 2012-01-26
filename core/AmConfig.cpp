@@ -738,6 +738,32 @@ static bool fillSysIntfList()
   }
 
   freeifaddrs(ifap);
+
+  // add addresses from SysIntfList, if not present
+  for(unsigned int idx = 0; idx < AmConfig::Ifs.size(); idx++) {
+
+    list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
+    for(;intf_it != AmConfig::SysIfs.end(); ++intf_it) {
+
+      list<string>::iterator addr_it = std::find(intf_it->addrs.begin(),
+						 intf_it->addrs.end(),
+						 AmConfig::Ifs[idx].LocalSIPIP);
+      // address not in this interface
+      if(addr_it == intf_it->addrs.end())
+	continue;
+
+      // address is primary
+      if(addr_it == intf_it->addrs.begin())
+	continue;
+
+      if(AmConfig::LocalSIPIP2If.find(intf_it->addrs.front())
+	 == AmConfig::LocalSIPIP2If.end()) {
+	
+	AmConfig::LocalSIPIP2If[intf_it->addrs.front()] = idx;
+      }
+    }
+  }
+
   return true;
 }
 
