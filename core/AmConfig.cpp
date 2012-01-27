@@ -59,7 +59,7 @@ bool         AmConfig::LogStderr               = false;
 
 vector<AmConfig::IP_interface>  AmConfig::Ifs;
 map<string,unsigned short>      AmConfig::If_names;
-map<string,unsigned short>      AmConfig::LocalSIPIP2If;
+multimap<string,unsigned short> AmConfig::LocalSIPIP2If;
 list<AmConfig::SysIntf>         AmConfig::SysIfs;
 
 #ifndef DISABLE_DAEMON_MODE
@@ -716,8 +716,6 @@ static bool fillSysIntfList()
       return false;
     }
 
-    DBG("iface='%s';ip='%s'\n",p_if->ifa_name,host);
-
     string iface_name(p_if->ifa_name);
     list<AmConfig::SysIntf>::iterator intf_it;
     for(intf_it = AmConfig::SysIfs.begin();
@@ -734,35 +732,11 @@ static bool fillSysIntfList()
       intf_it->flags = p_if->ifa_flags;
     }
 
+    DBG("iface='%s';ip='%s';flags=0x%x\n",p_if->ifa_name,host,p_if->ifa_flags);
     intf_it->addrs.push_back(host);
   }
 
   freeifaddrs(ifap);
-
-  // add addresses from SysIntfList, if not present
-  for(unsigned int idx = 0; idx < AmConfig::Ifs.size(); idx++) {
-
-    list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
-    for(;intf_it != AmConfig::SysIfs.end(); ++intf_it) {
-
-      list<string>::iterator addr_it = std::find(intf_it->addrs.begin(),
-						 intf_it->addrs.end(),
-						 AmConfig::Ifs[idx].LocalSIPIP);
-      // address not in this interface
-      if(addr_it == intf_it->addrs.end())
-	continue;
-
-      // address is primary
-      if(addr_it == intf_it->addrs.begin())
-	continue;
-
-      if(AmConfig::LocalSIPIP2If.find(intf_it->addrs.front())
-	 == AmConfig::LocalSIPIP2If.end()) {
-	
-	AmConfig::LocalSIPIP2If[intf_it->addrs.front()] = idx;
-      }
-    }
-  }
 
   return true;
 }
@@ -822,17 +796,26 @@ int AmConfig::finalizeIPConfig()
     else {
       AmConfig::Ifs[i].LocalSIPIP = fixIface2IP(AmConfig::Ifs[i].LocalSIPIP);
     }
-    
-    if(AmConfig::LocalSIPIP2If.find(AmConfig::Ifs[i].LocalSIPIP) == AmConfig::LocalSIPIP2If.end()) {
-      AmConfig::LocalSIPIP2If.insert(std::make_pair(AmConfig::Ifs[i].LocalSIPIP,i));
-    }
-    else {
-      map<string,unsigned short>::iterator it = AmConfig::LocalSIPIP2If.find(AmConfig::Ifs[i].LocalSIPIP);
-      const AmConfig::IP_interface& new_intf = AmConfig::Ifs[i];
-      const AmConfig::IP_interface& old_intf = AmConfig::Ifs[it->second];
-      ERROR("Configuration for interface '%s' uses the same IP address as '%s'\n",
-	    new_intf.name.empty() ? "default" : new_intf.name.c_str(),
-	    old_intf.name.empty() ? "default" : old_intf.name.c_str() );
+
+    list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
+    for(;intf_it != AmConfig::SysIfs.end(); ++intf_it) {
+
+      list<string>::iterator addr_it = std::find(intf_it->addrs.begin(),
+						 intf_it->addrs.end(),
+						 AmConfig::Ifs[i].LocalSIPIP);
+      // address not in this interface
+      if(addr_it == intf_it->addrs.end())
+	continue;
+
+      for(addr_it = intf_it->addrs.begin(); 
+	  addr_it != intf_it->addrs.end(); ++addr_it) {
+
+	if(AmConfig::LocalSIPIP2If.find(*addr_it)
+	   == AmConfig::LocalSIPIP2If.end()) {
+	
+	  AmConfig::LocalSIPIP2If.insert(make_pair(*addr_it,i));
+	}
+      }
     }
   }
 
@@ -855,7 +838,7 @@ void AmConfig::dump_Ifs()
   }
   
   INFO("Signaling address map:");
-  for(map<string,unsigned short>::iterator it = LocalSIPIP2If.begin();
+  for(multimap<string,unsigned short>::iterator it = LocalSIPIP2If.begin();
       it != LocalSIPIP2If.end(); ++it) {
 
     if(Ifs[it->second].name.empty()){

@@ -1851,6 +1851,7 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
   }
 
   sockaddr_storage from;
+  string local_ip;
 
   socklen_t    len=sizeof(from);
   trsp_socket* tsock=NULL;
@@ -1871,15 +1872,29 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
   }
   close(temp_sock);
 
-  // TODO:
-  //  - if no exact IP match, try with matching the interface
-
+  // try exact match
   for(vector<trsp_socket*>::iterator it = transports.begin();
       it != transports.end(); ++it) {
 
       if((*it)->match_addr(&from)){
 	  tsock = *it;
 	  break;
+      }
+  }
+
+  if(tsock != NULL)
+      return tsock;
+
+  // try with alternative address
+  if(ip_addr_to_str(&from,local_ip) == 0) {
+      map<string,unsigned short>::iterator if_it = AmConfig::LocalSIPIP2If.find(local_ip);
+      if(if_it == AmConfig::LocalSIPIP2If.end()){
+	  ERROR("Could not find a local interface for "
+		"resolved local IP (local_ip='%s')",
+		local_ip.c_str());
+      }
+      else {
+	  tsock = transports[if_it->second];
       }
   }
 

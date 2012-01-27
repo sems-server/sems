@@ -110,7 +110,6 @@ struct AmConfig
 
   static vector<IP_interface>       Ifs;
   static map<string,unsigned short> If_names;
-  static map<string,unsigned short> LocalSIPIP2If;
 
   struct SysIntf {
     string       name;
@@ -120,6 +119,7 @@ struct AmConfig
   };
 
   static list<SysIntf> SysIfs;
+  static multimap<string,unsigned short> LocalSIPIP2If;
 
   static int finalizeIPConfig();
 
