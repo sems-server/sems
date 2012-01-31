@@ -341,9 +341,10 @@ int _trans_layer::send_reply(trans_ticket* tt,
     sockaddr_storage remote_ip;
     trsp_socket* local_socket = NULL;
 
+    local_socket = req->local_socket;
+
     if (!_next_hop.len) {
 	memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
-	local_socket = req->local_socket;
 
 	if(req->via_p1->has_rport){
 
@@ -385,14 +386,6 @@ int _trans_layer::send_reply(trans_ticket* tt,
     // rco: should we overwrite the socket from the request in all cases???
     if((out_interface >= 0) && ((unsigned int)out_interface < transports.size())){
 	local_socket = transports[out_interface];
-    }
-    else if(!local_socket) {
-	local_socket = find_transport(&remote_ip);
-	if(!local_socket){
-	    ERROR("Could not find transport socket\n");
-	    delete [] reply_buf;
-	    goto end;
-	}
     }
 
     err = update_uas_reply(bucket,t,reply_code);
