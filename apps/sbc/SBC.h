@@ -107,6 +107,9 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   map<int, double> call_timers;
 
   int outbound_interface;
+
+  int rtprelay_interface;
+
   // call control
   vector<AmDynInvoke*> cc_modules;
   // current timer ID - cc module setting timer will use this

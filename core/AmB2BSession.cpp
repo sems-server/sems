@@ -43,6 +43,7 @@ AmB2BSession::AmB2BSession()
     b2b_mode(B2BMode_Transparent),
     rtp_relay_enabled(false),
     rtp_relay_force_symmetric_rtp(false),
+    relay_rtp_interface(-1),
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
     est_invite_cseq(0),est_invite_other_cseq(0)
 {
@@ -325,7 +326,12 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
 
     relay_rtp_streams = new AmRtpStream*[relay_rtp_streams_cnt];
     for(unsigned int i=0; i<relay_rtp_streams_cnt; i++){
-      relay_rtp_streams[i] = new AmRtpStream(NULL,dlg.getOutboundIf());
+      // create relay stream on set interface, else dlg interface
+      int used_relay_interface = relay_rtp_interface<0 ?
+	dlg.getOutboundIf() : relay_rtp_interface;
+      DBG("using relay interface %i (relay_rtp_interface=%i)\n",
+	  used_relay_interface, relay_rtp_interface);
+      relay_rtp_streams[i] = new AmRtpStream(NULL, used_relay_interface);
     }
     DBG("Created %u RTP relay streams\n", relay_rtp_streams_cnt);
   }
@@ -382,11 +388,20 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
     return false;
   }
 
-  // place advertisedIP() in connection address
-  if (!parser_sdp.conn.address.empty())
-    parser_sdp.conn.address = advertisedIP();
+  string relay_address;
+  if (relay_rtp_interface >= 0 && (unsigned)relay_rtp_interface < AmConfig::Ifs.size()) {
+    relay_address = AmConfig::Ifs[relay_rtp_interface].PublicIP.empty() ?
+      AmConfig::Ifs[relay_rtp_interface].LocalIP :
+      AmConfig::Ifs[relay_rtp_interface].PublicIP;
+  } else {
+    relay_address = advertisedIP();
+  }
 
-  DBG("new connection address: %s",parser_sdp.conn.address.c_str());
+  // place relay_address in connection address
+  if (!parser_sdp.conn.address.empty()) {
+    parser_sdp.conn.address = relay_address;
+    DBG("new connection address: %s",parser_sdp.conn.address.c_str());
+  }
 
   string replaced_ports;
 
@@ -401,8 +416,10 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
     }
 
     if(it->port) { // if stream active
-      if (!it->conn.address.empty())
-	it->conn.address = advertisedIP();
+      if (!it->conn.address.empty()) {
+	it->conn.address = relay_address;
+	DBG("new stram connection address: %s",it->conn.address.c_str());
+      }
       try {
 	it->port = relay_rtp_streams[media_index]->getLocalPort();
 	replaced_ports += (!media_index) ? int2str(it->port) : "/"+int2str(it->port);
@@ -418,7 +435,7 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
   parser_sdp.print(r_body);
 
   DBG("replaced connection address in SDP with %s:%s.\n",
-      advertisedIP().c_str(), replaced_ports.c_str());
+      relay_address.c_str(), replaced_ports.c_str());
 
   return true;
 }
@@ -862,7 +879,9 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
 	relay_rtp_streams_cnt);
     relay_rtp_streams = new AmRtpStream*[relay_rtp_streams_cnt];
     for(unsigned int i=0; i<relay_rtp_streams_cnt; i++){
-      relay_rtp_streams[i] = new AmRtpStream(NULL,dlg.getOutboundIf());
+      // create relay stream on set interface, else dlg interface
+      relay_rtp_streams[i] = new AmRtpStream(NULL, relay_rtp_interface<0 ?
+					     dlg.getOutboundIf() : relay_rtp_interface);
     }
   }
 
@@ -873,6 +892,13 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
     relay_rtp_streams[i]->setLocalIP(localRTPIP());
     relay_rtp_streams[i]->enableRtpRelay();
   }
+}
+
+void AmB2BSession::setRtpRelayInterface(int relay_interface) {
+  DBG("setting RTP relay interface for session '%s' to %i\n",
+      getLocalTag().c_str(), relay_interface);
+  relay_rtp_interface = relay_interface;
+  rtp_interface = relay_interface;
 }
 
 void AmB2BSession::clearRtpReceiverRelay() {

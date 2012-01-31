@@ -239,8 +239,9 @@ class AmB2BSession: public AmSession
   AmRtpStream** relay_rtp_streams;
   /** number of relay RTP streams */
   unsigned int relay_rtp_streams_cnt;
-
-  /** fds of the other streams' sockets (to remove from
+  /** interface where relay streams are created */
+  int relay_rtp_interface;
+  /** fd of the other streams' sockets (to remove from
       RtpReceiver at end of relaying) */
   int other_stream_fds[MAX_RELAY_STREAMS];
 
@@ -267,6 +268,7 @@ class AmB2BSession: public AmSession
   void setupRelayStreams(AmB2BSession* from_session);
   bool getRtpRelayEnabled() const { return rtp_relay_enabled; }
   bool getRtpRelayForceSymmetricRtp() const { return rtp_relay_force_symmetric_rtp; }
+  void setRtpRelayInterface(int relay_interface);
 };
 
 class AmB2BCalleeSession;

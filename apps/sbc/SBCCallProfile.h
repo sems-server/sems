@@ -111,6 +111,9 @@ struct SBCCallProfile
   string force_symmetric_rtp;
   bool msgflags_symmetric_rtp;
 
+  string rtprelay_interface;
+  string aleg_rtprelay_interface;
+
   string outbound_interface;
 
   // todo: RTP transcoding mode
