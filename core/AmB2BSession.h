@@ -232,7 +232,10 @@ class AmB2BSession: public AmSession
   bool rtp_relay_enabled;
   /** force symmetric RTP */
   bool rtp_relay_force_symmetric_rtp;
-
+  /** transparent seqno for RTP relay */
+  bool rtp_relay_transparent_seqno;
+  /** transparent SSRC for RTP relay */
+  bool rtp_relay_transparent_ssrc;
 
   /** RTP streams which receive from our side and are used
       for relaying RTP from the other side */
@@ -269,6 +272,8 @@ class AmB2BSession: public AmSession
   bool getRtpRelayEnabled() const { return rtp_relay_enabled; }
   bool getRtpRelayForceSymmetricRtp() const { return rtp_relay_force_symmetric_rtp; }
   void setRtpRelayInterface(int relay_interface);
+  void setRtpRelayTransparentSeqno(bool transparent);
+  void setRtpRelayTransparentSSRC(bool transparent);
 };
 
 class AmB2BCalleeSession;

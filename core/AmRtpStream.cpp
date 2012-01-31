@@ -347,7 +347,9 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     monitor_rtp_timeout(true),
     relay_stream(NULL),
     relay_enabled(false),
-    sdp_media_index(-1)
+    sdp_media_index(-1),
+    relay_transparent_ssrc(true),
+    relay_transparent_seqno(true)
 {
 
 #ifdef SUPPORT_IPV6
@@ -818,8 +820,10 @@ void AmRtpStream::relay(AmRtpPacket* p) {
     return;
 
   rtp_hdr_t* hdr = (rtp_hdr_t*)p->getBuffer();
-  hdr->seq = htons(sequence++);
-  hdr->ssrc = htonl(l_ssrc);
+  if (!relay_transparent_seqno)
+    hdr->seq = htons(sequence++);
+  if (!relay_transparent_ssrc)
+    hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
 
   if(p->send(l_sd) < 0){
@@ -850,11 +854,25 @@ void AmRtpStream::setRelayStream(AmRtpStream* stream) {
 }
 
 void AmRtpStream::enableRtpRelay() {
+  DBG("enabled RTP relay for RTP stream instance [%p]\n", this);
   relay_enabled = true;
 }
 
 void AmRtpStream::disableRtpRelay() {
+  DBG("disabled RTP relay for RTP stream instance [%p]\n", this);
   relay_enabled = false;
+}
+
+void AmRtpStream::setRtpRelayTransparentSeqno(bool transparent) {
+  DBG("%sabled RTP relay transparent seqno for RTP stream instance [%p]\n",
+      transparent ? "en":"dis", this);
+  relay_transparent_seqno = transparent;
+}
+
+void AmRtpStream::setRtpRelayTransparentSSRC(bool transparent) {
+  DBG("%sabled RTP relay transparent SSRC for RTP stream instance [%p]\n",
+      transparent ? "en":"dis", this);
+  relay_transparent_ssrc = transparent;
 }
 
 

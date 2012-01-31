@@ -45,6 +45,7 @@ AmB2BSession::AmB2BSession()
     rtp_relay_force_symmetric_rtp(false),
     relay_rtp_interface(-1),
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
+    rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
     est_invite_cseq(0),est_invite_other_cseq(0)
 {
   memset(other_stream_fds,0,sizeof(int)*MAX_RELAY_STREAMS);
@@ -332,6 +333,8 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
       DBG("using relay interface %i (relay_rtp_interface=%i)\n",
 	  used_relay_interface, relay_rtp_interface);
       relay_rtp_streams[i] = new AmRtpStream(NULL, used_relay_interface);
+      relay_rtp_streams[i]->setRtpRelayTransparentSeqno(rtp_relay_transparent_seqno);
+      relay_rtp_streams[i]->setRtpRelayTransparentSSRC(rtp_relay_transparent_ssrc);
     }
     DBG("Created %u RTP relay streams\n", relay_rtp_streams_cnt);
   }
@@ -882,6 +885,8 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
       // create relay stream on set interface, else dlg interface
       relay_rtp_streams[i] = new AmRtpStream(NULL, relay_rtp_interface<0 ?
 					     dlg.getOutboundIf() : relay_rtp_interface);
+      relay_rtp_streams[i]->setRtpRelayTransparentSeqno(rtp_relay_transparent_seqno);
+      relay_rtp_streams[i]->setRtpRelayTransparentSSRC(rtp_relay_transparent_ssrc);
     }
   }
 
@@ -899,6 +904,14 @@ void AmB2BSession::setRtpRelayInterface(int relay_interface) {
       getLocalTag().c_str(), relay_interface);
   relay_rtp_interface = relay_interface;
   rtp_interface = relay_interface;
+}
+
+void AmB2BSession::setRtpRelayTransparentSeqno(bool transparent) {
+  rtp_relay_transparent_seqno = transparent;
+}
+
+void AmB2BSession::setRtpRelayTransparentSSRC(bool transparent) {
+  rtp_relay_transparent_ssrc = transparent;
 }
 
 void AmB2BSession::clearRtpReceiverRelay() {

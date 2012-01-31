@@ -805,6 +805,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       }
     }
 
+    setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
+    setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+
     enableRtpRelay(req);
   }
 
@@ -1535,6 +1538,9 @@ void SBCDialog::createCalleeSession()
 
   if(rtprelay_interface >= 0)
     callee_session->setRtpRelayInterface(rtprelay_interface);
+
+  callee_session->setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
+  callee_session->setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
   other_id = AmSession::getNewId();
   

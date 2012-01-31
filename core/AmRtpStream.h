@@ -212,6 +212,10 @@ protected:
       NOTE: This may only be accessed in initialization
       or by the AmRtpReceiver thread while relaying!  */
   AmRtpStream*    relay_stream;
+  /** control transparency for RTP seqno in RTP relay mode */
+  bool            relay_transparent_seqno;
+  /** control transparency for RTP ssrc in RTP relay mode */
+  bool            relay_transparent_ssrc;
 
   /** Session owning this stream */
   AmSession*         session;
@@ -388,6 +392,11 @@ public:
   /** disable RTP relaying through relay stream */
   void disableRtpRelay();
 
+  /** enable or disable transparent RTP seqno for relay */
+  void setRtpRelayTransparentSeqno(bool transparent);
+
+  /** enable or disable transparent SSRC seqno for relay */
+  void setRtpRelayTransparentSSRC(bool transparent);
 };
 
 #endif
