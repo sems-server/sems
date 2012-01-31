@@ -727,14 +727,32 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
     return 0;
 }
 
+static void translate_string(sip_msg* dst_msg, cstring& dst,
+			     sip_msg* src_msg, cstring& src)
+{
+    dst.s = (char*)src.s + (dst_msg->buf - src_msg->buf);
+    dst.len = src.len;
+}
+
+static void translate_hdr(sip_msg* dst_msg, sip_header*& dst, 
+			  sip_msg* src_msg, sip_header* src)
+{
+    dst = new sip_header();
+    dst_msg->hdrs.push_back(dst);
+    dst->type = src->type;
+    translate_string(dst_msg,dst->name,src_msg,src->name);
+    translate_string(dst_msg,dst->value,src_msg,src->value);
+    dst->p = NULL;
+}
+
 void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 {
     t->reset_all_timers();
     t->state = TS_TERMINATED;
 
     // send 408 to 'ua'
-    sip_msg  msg;
     sip_msg* req = t->msg;
+    sip_msg  msg(req->buf,req->len);
 
     msg.type = SIP_REPLY;
     msg.u.reply = new sip_reply();
@@ -742,10 +760,22 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     msg.u.reply->code = 408;
     msg.u.reply->reason = cstring("Timeout");
 
-    msg.from = req->from;
-    msg.to = req->to;
-    msg.cseq = req->cseq;
-    msg.callid = req->callid;
+    translate_hdr(&msg,msg.from, req,req->from);
+    msg.from->p = new sip_from_to();
+    parse_from_to((sip_from_to*)msg.from->p,
+		  msg.from->value.s,msg.from->value.len);
+
+    translate_hdr(&msg,msg.to, req,req->to);
+    msg.to->p = new sip_from_to();
+    parse_from_to((sip_from_to*)msg.to->p,
+		  msg.to->value.s,msg.to->value.len);
+
+    translate_hdr(&msg,msg.cseq, req,req->cseq);
+    msg.cseq->p = new sip_cseq();
+    parse_cseq((sip_cseq*)msg.cseq->p,
+	       msg.cseq->value.s,msg.cseq->value.len);
+
+    translate_hdr(&msg,msg.callid, req,req->callid);
 
     bucket->remove(t);
     bucket->unlock();
