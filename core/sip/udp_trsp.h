@@ -45,7 +45,7 @@ using std::string;
 class udp_trsp_socket: public trsp_socket
 {
 public:
-    udp_trsp_socket() : trsp_socket() {}
+    udp_trsp_socket(unsigned short if_num) : trsp_socket(if_num) {}
     ~udp_trsp_socket() {}
 
     /**
