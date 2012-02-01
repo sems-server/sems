@@ -160,7 +160,7 @@ void AmRtpStream::setLocalPort()
   l_port = port;
   AmRtpReceiver::instance()->addStream(l_sd, this);
   DBG("added stream [%p] to RTP receiver (%s:%i)\n", this,
-      get_addr_str(l_saddr.sin_addr).c_str(),l_port);
+      get_addr_str((sockaddr_storage*)&l_saddr).c_str(),l_port);
 }
 
 int AmRtpStream::ping()
@@ -460,7 +460,7 @@ void AmRtpStream::handleSymmetricRtp(AmRtpPacket* rp) {
     // symmetric RTP
     if ((recv_addr.sin_port != r_saddr.sin_port)
 	|| (recv_addr.sin_addr.s_addr != r_saddr.sin_addr.s_addr)) {
-      string addr_str = get_addr_str(recv_addr.sin_addr);
+      string addr_str = get_addr_str((sockaddr_storage*)&recv_addr);
       int port = ntohs(recv_addr.sin_port);
       setRAddr(addr_str,port);
       DBG("Symmetric RTP: setting new remote address: %s:%i\n",

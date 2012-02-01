@@ -436,13 +436,21 @@ string filename_from_fullpath(const string& path)
   return "";
 }
 
-string get_addr_str(struct in_addr in)
+string get_addr_str(const sockaddr_storage* addr)
 {
-  char res[INET_ADDRSTRLEN];
-  if (inet_ntop(AF_INET, &in, res, INET_ADDRSTRLEN))
-    return string(res);
-  else return "";
+  char host[NI_MAXHOST];
+
+  int s = getnameinfo((sockaddr*)addr, (addr->ss_family == AF_INET) ? 
+		      sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
+		      host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+  if (s != 0) {
+    ERROR("getnameinfo() failed: %s\n", gai_strerror(s));
+    return "";
+  }
+  
+  return host;
 }
+
 
 #ifdef SUPPORT_IPV6
 #include <netdb.h>

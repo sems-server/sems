@@ -144,7 +144,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     assert(req->via_p1);
 
     unsigned int new_via1_len = copy_hdr_len(req->via1);
-    string remote_ip_str = get_addr_str(((sockaddr_in*)&req->remote_ip)->sin_addr).c_str();
+    string remote_ip_str = get_addr_str(&req->remote_ip).c_str();
     new_via1_len += 10/*;received=*/ + remote_ip_str.length();
 
     // needed if rport parameter was present but empty
@@ -415,7 +415,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     }
 
     DBG("Sending to %s:%i <%.*s...>\n",
-	get_addr_str(((sockaddr_in*)&remote_ip)->sin_addr).c_str(),
+	get_addr_str(&remote_ip).c_str(),
 	ntohs(((sockaddr_in*)&remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,reply_buf);
 
@@ -944,7 +944,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     p_msg->local_socket = msg->local_socket;
 
     DBG("Sending to %s:%i <%.*s...>\n",
-	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
+	get_addr_str(&p_msg->remote_ip).c_str(),
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,p_msg->buf);
 
@@ -1078,7 +1078,7 @@ int _trans_layer::cancel(trans_ticket* tt)
     p_msg->local_socket = req->local_socket;
 
     DBG("Sending to %s:%i:\n<%.*s>\n",
-	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
+	get_addr_str(&p_msg->remote_ip).c_str(),
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
 
