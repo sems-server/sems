@@ -197,8 +197,6 @@ class trans_ticket
     trans_bucket* _bucket;
     
     friend class _trans_layer;
-    friend class AmSipDialog;
-    friend class SipCtrlInterface; //TODO: make _t, _bucket public??
 
 public:
     trans_ticket()

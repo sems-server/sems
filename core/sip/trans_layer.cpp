@@ -34,19 +34,20 @@
 #include "parse_from_to.h"
 #include "parse_route.h"
 #include "parse_100rel.h"
+#include "parse_extensions.h"
 #include "sip_trans.h"
 #include "msg_fline.h"
 #include "msg_hdrs.h"
 #include "udp_trsp.h"
 #include "resolver.h"
-#include "log.h"
+#include "sip_ua.h"
 
 #include "wheeltimer.h"
 #include "sip_timers.h"
 
-#include "SipCtrlInterface.h"
+#include "log.h"
+
 #include "AmUtils.h"
-#include "AmSipMsg.h"
 #include "AmConfig.h"
 #include "AmSipEvent.h"
 
@@ -155,6 +156,9 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	}
     }
 
+    unsigned int rel100_ext = 0;
+    unsigned int rseq = 0;
+    
     // copy necessary headers
     for(list<sip_header*>::iterator it = req->hdrs.begin();
 	it != req->hdrs.end(); ++it) {
@@ -191,6 +195,38 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	case sip_header::H_CSEQ:
 	case sip_header::H_RECORD_ROUTE:
 	    reply_len += copy_hdr_len(*it);
+	    break;
+
+	case sip_header::H_REQUIRE:
+	    if (rel100_ext)
+		// there was already a(nother?) Require HF
+		continue;
+	    if(!parse_extensions(&rel100_ext, (*it)->value.s, (*it)->value.len)) {
+		ERROR("failed to parse(own?) 'Require' hdr.\n");
+		continue;
+	    }
+
+	    rel100_ext = rel100_ext & SIP_EXTENSION_100REL;
+
+	    if (rel100_ext && rseq) { // our RSeq's are never 0
+		t->last_rseq = rseq;
+		continue; // the end.
+	    }
+	    break;
+
+	case sip_header::H_RSEQ:
+	    if (rseq) {
+		ERROR("multiple 'RSeq' headers in reply.\n");
+		continue;
+	    }
+	    if (!parse_rseq(&rseq, (*it)->value.s, (*it)->value.len)) {
+		ERROR("failed to parse (own?) 'RSeq' hdr.\n");
+		continue;
+	    }
+	    if (rel100_ext) {
+		t->last_rseq = rseq;
+		continue; // the end.
+	    }
 	    break;
 	}
     }
