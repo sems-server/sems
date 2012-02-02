@@ -184,11 +184,11 @@ void RestModule::start(const string& cc_name, const string& ltag,
     string url;
     bool ignore_errors = true;
 
-    if (!values.hasMember("base_url")) 
-      throw string("configuration error: base_url must be configured for REST queries\n");
+    if (!values.hasMember("url")) 
+      throw string("configuration error: url must be configured for REST queries\n");
       
-    if (!isArgCStr(values["base_url"]) || !strlen(values["base_url"].asCStr())) {
-      throw string("configuration error: invalid value of base_url\n");
+    if (!isArgCStr(values["url"]) || !strlen(values["url"].asCStr())) {
+      throw string("configuration error: invalid value of url\n");
     }
 
     /*FIXME
@@ -201,12 +201,25 @@ void RestModule::start(const string& cc_name, const string& ltag,
       ignore_errors = values["ignore_errors"].asBool();
     }*/
 
-    url = values["base_url"].asCStr();
-    DBG("REST: base_url = %s\n", url.c_str());
+    url = values["url"].asCStr();
+    DBG("REST: url = %s\n", url.c_str());
 
     RestParams params(url, ignore_errors);
     params.getIfSet("ruri", call_profile->ruri);
+    params.getIfSet("from", call_profile->from);
+    params.getIfSet("to", call_profile->to);
+    params.getIfSet("contact", call_profile->contact);
+    params.getIfSet("call-id", call_profile->callid);
+    params.getIfSet("outbound_proxy", call_profile->outbound_proxy);
+    params.getIfSet("force_outbound_proxy", call_profile->force_outbound_proxy);
+    params.getIfSet("next_hop_ip", call_profile->next_hop_ip);
+    params.getIfSet("next_hop_port", call_profile->next_hop_port);
+    params.getIfSet("next_hop_for_replies", call_profile->next_hop_for_replies);
+
+    // TODO: headerfilter, messagefilter
+
     // TODO: other params
+
   }
   catch (string &err) {
     ERROR(err.c_str());

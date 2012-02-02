@@ -16,10 +16,25 @@ static void trim_spaces(string &s)
   else s.erase(s.begin(), s.end());
 }
 
+static bool str2bool(const string &s)
+{
+  if (s.empty()) return true; // understand as just bool option which should be true
+  if ((s == "yes") || (s == "1") || (s == "true")) return true;
+  else return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void RestParams::getIfSet(const char *param_name, string &dst)
 {
   map<string, string>::iterator i = params.find(param_name);
   if (i != params.end()) dst = i->second;
+}
+
+void RestParams::getIfSet(const char *param_name, bool &dst)
+{
+  map<string, string>::iterator i = params.find(param_name);
+  if (i != params.end()) dst = str2bool(i->second);
 }
 
 void RestParams::handleParamLine(const string &line, size_t begin, size_t end)

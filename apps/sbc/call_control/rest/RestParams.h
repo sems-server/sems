@@ -23,6 +23,7 @@ class RestParams {
     
     // sets dst to value of given parameter if the parameter is set
     void getIfSet(const char *param_name, string &dst);
+    void getIfSet(const char *param_name, bool &dst);
 };
 
 #endif
