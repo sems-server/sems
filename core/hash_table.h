@@ -179,7 +179,7 @@ public:
 	
 	for(typename value_map::const_iterator it = elmts.begin(); it != elmts.end(); ++it) {
 	    
-	    (*it)->dump();
+	    it->second->dump();
 	}
     }
 
