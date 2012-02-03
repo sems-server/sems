@@ -241,7 +241,7 @@ int SipCtrlInterface::run()
     // Init transport instances
     for(unsigned int i=0; i<AmConfig::Ifs.size();i++) {
 
-	udp_trsp_socket* udp_socket = new udp_trsp_socket;
+	udp_trsp_socket* udp_socket = new udp_trsp_socket(i);
 
 	if(udp_socket->bind(AmConfig::Ifs[i].LocalSIPIP,
 			    AmConfig::Ifs[i].LocalSIPPort) < 0){
@@ -461,6 +461,8 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
     req.local_ip = get_addr_str(&msg->local_ip).c_str();
     req.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
+
+    req.local_if = msg->local_socket->get_if();
 }
 
 inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
@@ -549,7 +551,9 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 
     req.tt = tt;
 
-    DBG("Received new request\n");
+    DBG("Received new request from <%s:%i> on intf #%i\n",
+	req.remote_ip.c_str(),req.remote_port,req.local_if);
+
     if (SipCtrlInterface::log_parsed_messages) {
 	//     DBG_PARAM(req.cmd);
 	DBG_PARAM(req.method);

@@ -223,8 +223,7 @@ class AmB2BSession: public AmSession
   /** filter SDP body ( b2b_mode == SDPFilter ) */
   virtual int filterBody(AmSdp& sdp, bool is_a2b);
 
-  AmB2BSession();
-  AmB2BSession(const string& other_local_tag);
+  AmB2BSession(const string& other_local_tag = "");
 
   virtual ~AmB2BSession();
 
@@ -242,8 +241,7 @@ class AmB2BSession: public AmSession
   AmRtpStream** relay_rtp_streams;
   /** number of relay RTP streams */
   unsigned int relay_rtp_streams_cnt;
-  /** interface where relay streams are created */
-  int relay_rtp_interface;
+
   /** fd of the other streams' sockets (to remove from
       RtpReceiver at end of relaying) */
   int other_stream_fds[MAX_RELAY_STREAMS];

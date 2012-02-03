@@ -46,7 +46,22 @@
 // Global transaction table
 //
 
-hash_table<trans_bucket> _trans_table(H_TABLE_ENTRIES);
+class trans_table
+    : public hash_table<trans_bucket>
+{
+public:
+    trans_table(unsigned long size)
+	: hash_table<trans_bucket>(size) 
+    {}
+
+    ~trans_table()
+    {
+	DBG("** Dumping transaction table: **\n");
+	dump();
+    }
+};
+
+trans_table _trans_table(H_TABLE_ENTRIES);
 
 trans_bucket::trans_bucket(unsigned long id)
     : ht_bucket<sip_trans>::ht_bucket(id)

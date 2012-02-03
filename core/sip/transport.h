@@ -56,8 +56,11 @@ protected:
     // bound port number
     unsigned short   port;
 
+    // interface number
+    unsigned short   if_num;
+
 public:
-    trsp_socket();
+    trsp_socket(unsigned short if_num);
     virtual ~trsp_socket();
 
     /**
@@ -80,6 +83,11 @@ public:
      *  Getter for the socket descriptor
      */
     int get_sd();
+
+    /**
+     * Getter for the interface number
+     */
+    unsigned short get_if();
 
     /**
      * Copy the internal address into the given one (sa).

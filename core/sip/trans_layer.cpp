@@ -131,6 +131,11 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	return -1;
     }
 
+    if(t->reply_status >= 200){
+	ERROR("Transaction has already been closed with a final reply\n");
+	return -1;
+    }
+
     sip_msg* req = t->msg;
     assert(req);
 
@@ -424,36 +429,27 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	local_socket = transports[out_interface];
     }
 
-    err = update_uas_reply(bucket,t,reply_code);
-    if(err < 0){
-	
-	ERROR("Invalid state change\n");
-	delete [] reply_buf;
-	goto end;
-    }
-    else if(err != TS_TERMINATED) {
-	if (t->retr_buf) 
-		delete [] t->retr_buf;
-
-	t->retr_buf = reply_buf;
-	t->retr_len = reply_len;
-	memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
-	t->retr_socket = local_socket;
-
-	err = 0;
-    }
-    else {
-	// Transaction has been deleted
-	// -> should not happen, as we 
-	//    now wait for 200 ACK
-	delete [] reply_buf;
-	err = 0;
-    }
-
     err = local_socket->send(&remote_ip,reply_buf,reply_len);
     if(err < 0){
 	delete [] reply_buf;
+	// set timer to capture retransmissions
+	// and delete transaction afterwards
+	t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
+	goto end;
     }
+
+    if (t->retr_buf) {
+	// delete old retry-buffer 
+	// before overwriting it
+	delete [] t->retr_buf;
+    }
+
+    t->retr_buf = reply_buf;
+    t->retr_len = reply_len;
+    memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
+    t->retr_socket = local_socket;
+
+    update_uas_reply(bucket,t,reply_code);
     
  end:
     bucket->unlock();
@@ -1082,12 +1078,6 @@ int _trans_layer::cancel(trans_ticket* tt)
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
 
-    trans_bucket* n_bucket = get_trans_bucket(p_msg->callid->value,
-					      get_cseq(p_msg)->num_str);
-    
-    if(bucket != n_bucket)
-	n_bucket->lock();
-
     int send_err = p_msg->send();
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
@@ -1103,9 +1093,6 @@ int _trans_layer::cancel(trans_ticket* tt)
 	}
     }
 
-    if(bucket != n_bucket)
-	n_bucket->unlock();
-    
     bucket->unlock();
     return send_err;
 }
@@ -1538,14 +1525,9 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
     return 0;
 }
 
-int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
+void _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
 {
     DBG("update_uas_reply(t=%p)\n", t);
-
-    if(t->reply_status >= 200){
-	ERROR("Transaction has already been closed with a final reply\n");
-	return -1;
-    }
 
     t->reply_status = reply_code;
 
@@ -1568,10 +1550,6 @@ int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply
 	if(t->msg->u.request->method == sip_request::INVITE){
 
 	    // final reply
-
-	    //bucket->remove_trans(t);
-	    //return TS_TERMINATED;
-
 	    //
 	    // In this stack, the transaction layer
 	    // takes care of re-transmiting the 200 reply
@@ -1602,8 +1580,6 @@ int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply
 	    t->state = TS_PROCEEDING;
         }
     }
-	
-    return t->state;
 }
 
 int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)

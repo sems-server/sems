@@ -34,8 +34,8 @@
 #include <netinet/in.h>
 #include <string.h> // memset, strerror, ...
 
-trsp_socket::trsp_socket()
-    : sd(0), ip(), port(0)
+trsp_socket::trsp_socket(unsigned short if_num)
+    : sd(0), ip(), port(0), if_num(if_num)
 {
     memset(&addr,0,sizeof(sockaddr_storage));
 }
@@ -88,6 +88,11 @@ bool trsp_socket::match_addr(sockaddr_storage* other_addr)
 int trsp_socket::get_sd()
 {
     return sd;
+}
+
+unsigned short trsp_socket::get_if()
+{
+    return if_num;
 }
 
 int trsp_socket::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
