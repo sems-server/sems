@@ -29,7 +29,18 @@
 #include "AmApi.h"
 #include "RedisConnectionPool.h"
 
+#include "hiredis.h"
+
 #include "SBCCallProfile.h"
+
+
+#define CMD_PASS           0
+#define CMD_DROP           1
+#define CMD_REFUSE         2
+
+#define RWT_E_OK           0
+#define RWT_E_CONNECTION  -1
+#define RWT_E_WRITE       -2
 
 /**
  * REDIS blacklist query call control module
@@ -37,6 +48,9 @@
 class CCBLRedis : public AmDynInvoke
 {
   static CCBLRedis* _instance;
+
+  bool full_logging;
+  int handle_redis_reply(redisContext* redis_context, redisReply* reply, bool& hit);
 
   void start(const string& cc_name, const string& ltag, SBCCallProfile* call_profile,
 	     int start_ts_sec, int start_ts_usec, const AmArg& values,

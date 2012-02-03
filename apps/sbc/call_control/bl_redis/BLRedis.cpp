@@ -79,6 +79,8 @@ int CCBLRedis::onLoad() {
   string redis_connections = "10";
   string redis_max_conn_wait = "1000";
 
+  full_logging = false;
+
   if(cfg.loadPluginConf(MOD_NAME)) {
     INFO(MOD_NAME "configuration  file not found, assuming default "
 	 "configuration is fine\n");
@@ -89,6 +91,7 @@ int CCBLRedis::onLoad() {
       cfg.getParameter("redis_reconnect_timers", redis_reconnect_timers);
     redis_connections = cfg.getParameter("redis_connections", redis_connections);
     redis_max_conn_wait = cfg.getParameter("redis_max_conn_wait", redis_max_conn_wait);
+    full_logging = cfg.getParameter("redis_full_logging", "no")=="yes";
   }
 
   unsigned int i_redis_connections;
@@ -135,21 +138,6 @@ void CCBLRedis::invoke(const string& method, const AmArg& args, AmArg& ret)
   DBG("CCBLRedis: %s(%s)\n", method.c_str(), AmArg::print(args).c_str());
 
   if(method == "start"){
-    // INFO("--------------------------------------------------------------\n");
-    // INFO("Got call control start ltag '%s' start_ts %i.%i\n",
-    // 	   args.get(0).asCStr(), args[2][0].asInt(), args[2][1].asInt());
-    // INFO("---- dumping CC values ----\n");
-    // for (AmArg::ValueStruct::const_iterator it =
-    // 	     args.get(CC_API_PARAMS_CFGVALUES).begin();
-    //               it != args.get(CC_API_PARAMS_CFGVALUES).end(); it++) {
-    // 	INFO("    CDR value '%s' = '%s'\n", it->first.c_str(), it->second.asCStr());
-    // }
-    // INFO("--------------------------------------------------------------\n");
-
-    // cc_name, ltag, call profile, timestamps, [[key: val], ...], timer_id
-    //args.assertArrayFmt("ssoaui");
-    //args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
-
     SBCCallProfile* call_profile =
       dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
@@ -162,48 +150,28 @@ void CCBLRedis::invoke(const string& method, const AmArg& args, AmArg& ret)
 	  args[CC_API_PARAMS_TIMERID].asInt(),  ret);
 
   } else if(method == "connect"){
-    // INFO("--------------------------------------------------------------\n");
-    // INFO("Got CDR connect ltag '%s' other_ltag '%s', connect_ts %i.%i\n",
-    // 	   args[CC_API_PARAMS_LTAG].asCStr(),
-    //           args[CC_API_PARAMS_OTHERID].asCStr(),
-    //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
-    //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt());
-    // INFO("--------------------------------------------------------------\n");
-    // cc_name, ltag, call_profile, other_ltag, connect_ts_sec, connect_ts_usec
-    // args.assertArrayFmt("ssoas");
-    // args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
 
-    SBCCallProfile* call_profile =
-      dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
+    // SBCCallProfile* call_profile =
+    //   dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-    connect(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
-	    args[CC_API_PARAMS_LTAG].asCStr(),
-	    call_profile,
-	    args[CC_API_PARAMS_OTHERID].asCStr(),
-	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
-	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt());
+    // connect(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
+    // 	    args[CC_API_PARAMS_LTAG].asCStr(),
+    // 	    call_profile,
+    // 	    args[CC_API_PARAMS_OTHERID].asCStr(),
+    // 	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_SEC].asInt(),
+    // 	    args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_CONNECT_USEC].asInt());
 
   } else if(method == "end"){
-    // INFO("--------------------------------------------------------------\n");
-    // INFO("Got CDR end ltag %s end_ts %i.%i\n",
-    // 	   args[CC_API_PARAMS_LTAG].asCStr(),
-    //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
-    //           args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt());
-    // INFO("--------------------------------------------------------------\n");
 
-    // cc_name, ltag, call_profile, end_ts_sec, end_ts_usec
-    // args.assertArrayFmt("ssoa"); 
-    // args[CC_API_PARAMS_TIMESTAMPS].assertArrayFmt("iiiiii");
+    // SBCCallProfile* call_profile =
+    //   dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
 
-    SBCCallProfile* call_profile =
-      dynamic_cast<SBCCallProfile*>(args[CC_API_PARAMS_CALL_PROFILE].asObject());
-
-    end(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
-	args[CC_API_PARAMS_LTAG].asCStr(),
-	call_profile,
-	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
-	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt()
-	);
+    // end(args[CC_API_PARAMS_CC_NAMESPACE].asCStr(),
+    // 	args[CC_API_PARAMS_LTAG].asCStr(),
+    // 	call_profile,
+    // 	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_SEC].asInt(),
+    // 	args[CC_API_PARAMS_TIMESTAMPS][CC_API_TS_END_USEC].asInt()
+    // 	);
   } else if(method == "_list"){
     ret.push("start");
     ret.push("connect");
@@ -213,6 +181,96 @@ void CCBLRedis::invoke(const string& method, const AmArg& args, AmArg& ret)
     throw AmDynInvoke::NotImplemented(method);
 }
 
+
+int CCBLRedis::handle_redis_reply(redisContext* redis_context, redisReply* reply, bool& hit) {
+
+  hit = false;
+
+  if (!reply)  {
+    switch (redis_context->err) {
+    case REDIS_ERR_IO:
+      ERROR("I/O error: %s\n", strerror(errno));
+      return RWT_E_CONNECTION;
+
+    case REDIS_ERR_EOF: // silently reconnect
+      return RWT_E_CONNECTION;
+
+    case REDIS_ERR_PROTOCOL:
+      ERROR("REDIS Protocol error detected\n");
+      return RWT_E_CONNECTION;
+    case REDIS_ERR_OTHER:
+      return RWT_E_CONNECTION;
+    }
+  }
+
+  switch (reply->type) {
+  case REDIS_REPLY_ERROR:
+    ERROR("REDIS ERROR: %s\n", reply->str);
+    return RWT_E_WRITE;
+
+  case REDIS_REPLY_STATUS:
+  case REDIS_REPLY_STRING:
+    if (reply->len>=0) {
+      if (full_logging) {
+	DBG("REDIS: %.*s\n", reply->len, reply->str);
+      }
+      hit = true;
+    } break;
+
+  case REDIS_REPLY_INTEGER:
+    if (full_logging) {
+      DBG("REDIS: %lld\n", reply->integer);
+    }
+    // TODO: add other return codes/cmd
+    if (reply->integer) {
+      hit = true;
+    } break;
+
+  case REDIS_REPLY_ARRAY: {
+    for (size_t i=0;i<reply->elements;i++) {
+      switch(reply->element[i]->type) {
+      case REDIS_REPLY_ERROR: ERROR("REDIS ERROR: %.*s\n", reply->element[i]->len,
+				    reply->element[i]->str);
+	return RWT_E_WRITE;
+
+      case REDIS_REPLY_INTEGER:
+	if (full_logging) {
+	  DBG("REDIS: %lld\n", reply->element[i]->integer);
+	} 
+	if (reply->element[i]->integer) {
+	  hit = true;
+	}
+	break;
+
+      case REDIS_REPLY_NIL: 
+	if (full_logging) {
+	  DBG("REDIS: nil\n");
+	} break;
+
+      case REDIS_REPLY_STATUS:
+      case REDIS_REPLY_STRING:
+	if (full_logging) {
+	  if (reply->element[i]->len >= 0) {
+	    DBG("REDIS: %.*s\n", reply->element[i]->len, reply->element[i]->str); 
+	  }
+	}
+	if (reply->element[i]->len >= 0) {
+	  hit = true;
+	}
+	break;
+      default:
+	ERROR("unknown REDIS reply %d!",reply->element[i]->type); break;
+      }
+    }
+  }; break;
+
+  default: ERROR("unknown REDIS reply %d!", reply->type); break;
+  }
+
+  return RWT_E_OK;
+}
+
+
 void CCBLRedis::start(const string& cc_name, const string& ltag,
 		       SBCCallProfile* call_profile,
 		       int start_ts_sec, int start_ts_usec,
@@ -221,31 +279,74 @@ void CCBLRedis::start(const string& cc_name, const string& ltag,
   res.push(AmArg());
   AmArg& res_cmd = res[0];
 
+#define MAX_ARGV_ITEMS    20
+  const char* argv[MAX_ARGV_ITEMS];
+  size_t argvlen[MAX_ARGV_ITEMS];
   
-  redisContext* c = connection_pool.getActiveConnection();
-  if (NULL == c) {
-   INFO("no connection to REDIS\n");
+  unsigned int argv_max = 0;
+
+  if (!values.hasMember("argc") ||
+      str2i(values["argc"].asCStr(), argv_max) || (!argv_max)) {
+    ERROR("deciphering argc\n");
     res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
     res_cmd[SBC_CC_REFUSE_CODE] = 500;
     res_cmd[SBC_CC_REFUSE_REASON] = "Server Internal Error";  
     return;
   }
 
-  DBG("using redis connection [%p]\n", c);
+  unsigned int argv_index=0;
+  string query;
+  for (; argv_index<argv_max;argv_index++) {
+    argv[argv_index] = values["argv_"+int2str(argv_index)].asCStr();
+    argvlen[argv_index] = strlen(argv[argv_index]);
+    if (query.length())
+      query+=" ";
+    query+=string(argv[argv_index], argvlen[argv_index]);
+  }
 
-  connection_pool.returnConnection(c);
+  DBG("query to REDIS: '%s'\n", query.c_str());
 
-  // Drop:
-  // res_cmd[SBC_CC_ACTION] = SBC_CC_DROP_ACTION;
+  bool hit = false;
 
-  // res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
-  // res_cmd[SBC_CC_REFUSE_CODE] = 404;
-  // res_cmd[SBC_CC_REFUSE_REASON] = "No, not here";  
+  for (int retries = 0;retries<10;retries++) {
+    redisContext* redis_context = connection_pool.getActiveConnection();
+    if (NULL == redis_context) {
+      INFO("no connection to REDIS\n");
+      res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
+      res_cmd[SBC_CC_REFUSE_CODE] = 500;
+      res_cmd[SBC_CC_REFUSE_REASON] = "Server Internal Error";
+      return;
+    }
 
-  // Set Timer:
-  // DBG("my timer ID will be %i\n", timer_id);
-  // res_cmd[SBC_CC_ACTION] = SBC_CC_SET_CALL_TIMER_ACTION;
-  // res_cmd[SBC_CC_TIMER_TIMEOUT] = 5;
+    DBG("using redis connection [%p]\n", redis_context);
+
+    redisReply* reply = (redisReply *)
+      redisCommandArgv(redis_context, argv_index, argv, argvlen);
+
+    int ret = handle_redis_reply(redis_context, reply, hit);
+
+    if (ret == RWT_E_CONNECTION) {
+      WARN("connection [%p] failed - retrying\n", redis_context);
+      connection_pool.returnFailedConnection(redis_context);
+      continue;
+    }
+
+    connection_pool.returnConnection(redis_context);
+    break;
+  }
+
+  if (hit) {
+    if (values.hasMember("action") && isArgCStr(values["action"]) && 
+	values["action"] == "drop") {
+      DBG("Blacklist: Dropping call\n");
+      res_cmd[SBC_CC_ACTION] = SBC_CC_DROP_ACTION;
+    } else {
+      DBG("Blacklist: Refusing call\n");
+      res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
+      res_cmd[SBC_CC_REFUSE_CODE] = 403;
+      res_cmd[SBC_CC_REFUSE_REASON] = "Unauthorized";  
+    }
+  }
 }
 
 void CCBLRedis::connect(const string& cc_name, const string& ltag,
