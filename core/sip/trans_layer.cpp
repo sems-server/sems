@@ -1078,12 +1078,6 @@ int _trans_layer::cancel(trans_ticket* tt)
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
 
-    trans_bucket* n_bucket = get_trans_bucket(p_msg->callid->value,
-					      get_cseq(p_msg)->num_str);
-    
-    if(bucket != n_bucket)
-	n_bucket->lock();
-
     int send_err = p_msg->send();
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
@@ -1099,9 +1093,6 @@ int _trans_layer::cancel(trans_ticket* tt)
 	}
     }
 
-    if(bucket != n_bucket)
-	n_bucket->unlock();
-    
     bucket->unlock();
     return send_err;
 }
