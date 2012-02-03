@@ -175,6 +175,25 @@ void RestModule::invoke(const string& method, const AmArg& args, AmArg& ret)
     throw AmDynInvoke::NotImplemented(method);
 }
 
+static RestParams::Format getFormat(const AmArg &values, RestParams::Format _default)
+{
+  if (!values.hasMember("format")) return _default;
+
+  const AmArg &a = values["format"];
+  if (!isArgCStr(a)) throw string("configuration error: wrong arg type\n");
+
+  const char *str = a.asCStr();
+  if (str) {
+    if (strcmp(str, "text") == 0) return RestParams::TEXT;
+    if (strcmp(str, "json") == 0) return RestParams::JSON;
+    if (strcmp(str, "xml") == 0) return RestParams::XML;
+  }
+
+  throw string("invalid format parameter value\n");
+  
+  return _default;
+}
+
 void RestModule::start(const string& cc_name, const string& ltag,
 		       SBCCallProfile* call_profile,
 		       int start_ts_sec, int start_ts_usec,
@@ -195,45 +214,45 @@ void RestModule::start(const string& cc_name, const string& ltag,
     url = values["url"].asCStr();
 
     RestParams params;
-    params.retrieve(url); // handle errors here if needed
+    if (params.retrieve(url, getFormat(values, RestParams::TEXT))) {
+      // parameters successfully read from server
 
-    params.getIfSet("ruri", call_profile->ruri);
-    params.getIfSet("from", call_profile->from);
-    params.getIfSet("to", call_profile->to);
-    params.getIfSet("contact", call_profile->contact);
-    params.getIfSet("call-id", call_profile->callid);
-    params.getIfSet("outbound_proxy", call_profile->outbound_proxy);
-    params.getIfSet("force_outbound_proxy", call_profile->force_outbound_proxy);
-    params.getIfSet("next_hop_ip", call_profile->next_hop_ip);
-    params.getIfSet("next_hop_port", call_profile->next_hop_port);
-    params.getIfSet("next_hop_for_replies", call_profile->next_hop_for_replies);
+      params.getIfSet("ruri", call_profile->ruri);
+      params.getIfSet("from", call_profile->from);
+      params.getIfSet("to", call_profile->to);
+      params.getIfSet("contact", call_profile->contact);
+      params.getIfSet("call-id", call_profile->callid);
+      params.getIfSet("outbound_proxy", call_profile->outbound_proxy);
+      params.getIfSet("force_outbound_proxy", call_profile->force_outbound_proxy);
+      params.getIfSet("next_hop_ip", call_profile->next_hop_ip);
+      params.getIfSet("next_hop_port", call_profile->next_hop_port);
+      params.getIfSet("next_hop_for_replies", call_profile->next_hop_for_replies);
 
-    // TODO: headerfilter, messagefilter
-    // sdpfilter, anonymize_sdp
+      // TODO: headerfilter, messagefilter
+      // sdpfilter, anonymize_sdp
 
-    params.getIfSet("sst_enabled", call_profile->sst_enabled);
-    //doesn't work:params.getIfSet("sst_aleg_enabled", call_profile->sst_aleg_enabled);
+      params.getIfSet("sst_enabled", call_profile->sst_enabled);
+      //doesn't work:params.getIfSet("sst_aleg_enabled", call_profile->sst_aleg_enabled);
 
-    // TODO: autho, auth_aleg, reply translations
+      // TODO: autho, auth_aleg, reply translations
 
-    params.getIfSet("append_headers", call_profile->append_headers); // CRLF is handled in SBC
+      params.getIfSet("append_headers", call_profile->append_headers); // CRLF is handled in SBC
 
-    //doesn't work: params.getIfSet("refuse_with", call_profile->refuse_with);
+      //doesn't work: params.getIfSet("refuse_with", call_profile->refuse_with);
 
-    // TODO: rtprelay, symmetric_rtp, ...
-    params.getIfSet("rtprelay_interface", call_profile->rtprelay_interface);
-    params.getIfSet("aleg_rtprelay_interface", call_profile->aleg_rtprelay_interface);
+      // TODO: rtprelay, symmetric_rtp, ...
+      params.getIfSet("rtprelay_interface", call_profile->rtprelay_interface);
+      params.getIfSet("aleg_rtprelay_interface", call_profile->aleg_rtprelay_interface);
 
-    params.getIfSet("outbound_interface", call_profile->outbound_interface);
+      params.getIfSet("outbound_interface", call_profile->outbound_interface);
+    }
   }
   catch (string &err) {
     ERROR(err.c_str());
     res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
     res_cmd[SBC_CC_REFUSE_CODE] = 500;
     res_cmd[SBC_CC_REFUSE_REASON] = "REST configuration error";
-    return;
   }
-
 }
 
 void RestModule::connect(const string& cc_name, const string& ltag,

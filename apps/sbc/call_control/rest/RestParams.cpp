@@ -2,6 +2,7 @@
 #include "log.h"
 #include <curl/curl.h>
 #include <map>
+#include "jsonArg.h"
 
 using namespace std;
 
@@ -16,25 +17,33 @@ static void trim_spaces(string &s)
   else s.erase(s.begin(), s.end());
 }
 
-static bool str2bool(const string &s)
+static bool str2bool(const char *s)
 {
-  if (s.empty()) return true; // understand as just bool option which should be true
-  if ((s == "yes") || (s == "1") || (s == "true")) return true;
-  else return false;
+  if ((!s) || (!*s)) return true; // understand as just bool option which should be true
+  if (strcasecmp(s, "yes") == 0) return true;
+  if (strcasecmp(s, "true") == 0) return true;
+  if (strcmp(s, "1") == 0) return true;
+  
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void RestParams::getIfSet(const char *param_name, string &dst)
 {
-  map<string, string>::iterator i = params.find(param_name);
-  if (i != params.end()) dst = i->second;
+  if (params.hasMember(param_name)) {
+    const AmArg &a = params[param_name];
+    if (isArgCStr(a)) dst = a.asCStr();
+  }
 }
 
 void RestParams::getIfSet(const char *param_name, bool &dst)
 {
-  map<string, string>::iterator i = params.find(param_name);
-  if (i != params.end()) dst = str2bool(i->second);
+  if (params.hasMember(param_name)) {
+    const AmArg &a = params[param_name];
+    if (isArgCStr(a)) dst = str2bool(a.asCStr());
+    if (isArgBool(a)) dst = a.asBool();
+  }
 }
 
 void RestParams::handleParamLine(const string &line, size_t begin, size_t end)
@@ -53,16 +62,16 @@ void RestParams::handleParamLine(const string &line, size_t begin, size_t end)
 
   if (name.size() > 0) {
     DBG("REST: param %s='%s'\n", name.c_str(), value.c_str());
-    params[name] = value;
+    params.push(name, AmArg(value));
   }
 }
     
 bool RestParams::readFromText(const string &data)
 {
-  // TODO: read as XML instead of this internal format
   size_t first = 0;
   size_t last;
 
+  params.assertStruct();
   while (true) { 
     last = data.find('\n', first);
     if (last == string::npos) {
@@ -72,12 +81,14 @@ bool RestParams::readFromText(const string &data)
     else handleParamLine(data, first, last);
     first = last + 1;
   }
+
+  string dbg = arg2json(params);
   return true;
 }
 
 bool RestParams::readFromJson(const string &data)
 {
-  return false; // not implemented yet
+  return json2arg(data, params);
 }
 
 bool RestParams::readFromXML(const string &data)

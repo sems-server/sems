@@ -9,7 +9,7 @@ class RestParams {
     enum Format { JSON, XML, TEXT };
 
   protected:
-    map<string, string> params;
+    AmArg params;
 
     // parsing data
     void handleParamLine(const string &line, size_t begin, size_t end);
