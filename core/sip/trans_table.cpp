@@ -56,6 +56,7 @@ public:
 
     ~trans_table()
     {
+	DBG("** Dumping transaction table: **\n");
 	dump();
     }
 };
