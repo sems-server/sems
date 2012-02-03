@@ -38,25 +38,15 @@
 // AmB2BSession methods
 //
 
-AmB2BSession::AmB2BSession()
-  : sip_relay_only(true),
+AmB2BSession::AmB2BSession(const string& other_local_tag)
+  : other_id(other_local_tag),
+    sip_relay_only(true),
     b2b_mode(B2BMode_Transparent),
     rtp_relay_enabled(false),
     rtp_relay_force_symmetric_rtp(false),
     relay_rtp_interface(-1),
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
     rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
-    est_invite_cseq(0),est_invite_other_cseq(0)
-{
-  memset(other_stream_fds,0,sizeof(int)*MAX_RELAY_STREAMS);
-}
-
-AmB2BSession::AmB2BSession(const string& other_local_tag)
-  : other_id(other_local_tag),
-    sip_relay_only(true),
-    rtp_relay_enabled(false),
-    rtp_relay_force_symmetric_rtp(false),
-    relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
     est_invite_cseq(0),est_invite_other_cseq(0)
 {
   memset(other_stream_fds,0,sizeof(int)*MAX_RELAY_STREAMS);

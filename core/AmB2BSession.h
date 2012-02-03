@@ -223,8 +223,7 @@ class AmB2BSession: public AmSession
   /** filter SDP body ( b2b_mode == SDPFilter ) */
   virtual int filterBody(AmSdp& sdp, bool is_a2b);
 
-  AmB2BSession();
-  AmB2BSession(const string& other_local_tag);
+  AmB2BSession(const string& other_local_tag = "");
 
   virtual ~AmB2BSession();
 
