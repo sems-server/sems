@@ -108,8 +108,17 @@ struct AmConfig
     AmMutex next_rtp_port_mut;
   };
 
-  static vector<IP_interface>            Ifs;
-  static map<string,unsigned short>      If_names;
+  static vector<IP_interface>       Ifs;
+  static map<string,unsigned short> If_names;
+
+  struct SysIntf {
+    string       name;
+    list<string> addrs;
+    // identical to those returned by SIOCGIFFLAGS
+    unsigned int flags;
+  };
+
+  static list<SysIntf> SysIfs;
   static multimap<string,unsigned short> LocalSIPIP2If;
 
   static int finalizeIPConfig();
@@ -120,6 +129,8 @@ struct AmConfig
   static int SessionProcessorThreads;
   /** number of media processor threads */
   static int MediaProcessorThreads;
+  /** number of RTP receiver threads */
+  static int RTPReceiverThreads;
   /** number of SIP server threads */
   static int SIPServerThreads;
   /** Outbound Proxy (optional, outgoing calls only) */
@@ -222,6 +233,8 @@ struct AmConfig
   static int setSessionProcessorThreads(const string& th);
   /** Setter for parameter MediaProcessorThreads, returns 0 on invalid value */
   static int setMediaProcessorThreads(const string& th);
+  /** Setter for parameter RTPReceiverThreads, returns 0 on invalid value */
+  static int setRTPReceiverThreads(const string& th);
   /** Setter for parameter SIPServerThreads, returns 0 on invalid value */
   static int setSIPServerThreads(const string& th);
   /** Setter for parameter DeadRtpTime, returns 0 on invalid value */

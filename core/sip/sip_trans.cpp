@@ -154,13 +154,15 @@ void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
 	if(bucket->exist(tr)){
 	    DBG("Transaction timer expired: type=%c, trans=%p, eta=%i, t=%i\n",
 		timer_name(t->type),tr,t->expires,wheeltimer::instance()->wall_clock);
+
+	    // timer_expired unlocks the bucket
 	    trans_layer::instance()->timer_expired(t,bucket,tr);
 	}
 	else {
 	    WARN("Ignoring expired timer (%p): transaction"
 		 " %p does not exist anymore\n",t,tr);
+	    bucket->unlock();
 	}
-	bucket->unlock();
     }
     else {
 	ERROR("Invalid bucket id\n");

@@ -29,6 +29,7 @@
 #include "AmRtpStream.h"
 #include "AmRtpPacket.h"
 #include "log.h"
+#include "AmConfig.h"
 
 #include <errno.h>
 
@@ -47,65 +48,78 @@
 #define RTP_POLL_TIMEOUT 50 /*50 ms*/
 
 
-AmRtpReceiver* AmRtpReceiver::_instance=0;
+// AmRtpReceiver* AmRtpReceiver::_instance=0;
 
-AmRtpReceiver* AmRtpReceiver::instance()
+// AmRtpReceiver* AmRtpReceiver::instance()
+// {
+//   if(!_instance)
+//     _instance = new AmRtpReceiver();
+
+//   return _instance;
+// }
+
+// bool AmRtpReceiver::haveInstance() {
+//   return NULL != _instance;
+// }
+
+_AmRtpReceiver::_AmRtpReceiver()
 {
-  if(!_instance)
-    _instance = new AmRtpReceiver();
-
-  return _instance;
+  n_receivers = AmConfig::RTPReceiverThreads;
+  receivers = new AmRtpReceiverThread[n_receivers];
 }
 
-bool AmRtpReceiver::haveInstance() {
-  return NULL != _instance;
+_AmRtpReceiver::~_AmRtpReceiver()
+{
+  delete [] receivers;
 }
 
-AmRtpReceiver::AmRtpReceiver()
+AmRtpReceiverThread::AmRtpReceiverThread()
   : stop_requested(false)
 {
   fds  = new struct pollfd[MAX_RTP_SESSIONS];
   nfds = 0;
 }
 
-AmRtpReceiver::~AmRtpReceiver()
+AmRtpReceiverThread::~AmRtpReceiverThread()
 {
   delete [] (fds);
   INFO("RTP receiver has been recycled.\n");
 }
 
-void AmRtpReceiver::on_stop()
+void AmRtpReceiverThread::on_stop()
 {
   INFO("requesting RTP receiver to stop.\n");
   stop_requested.set(true);
 }
 
-void AmRtpReceiver::dispose() 
+void AmRtpReceiverThread::stop_and_wait()
 {
-  if(_instance != NULL) {
-    if(!_instance->is_stopped()) {
-      _instance->stop();
-
-      while(!_instance->is_stopped()) 
-	usleep(10000);
-    }
-    // todo: add locking here
-    delete _instance;
-    _instance = NULL;
+  if(!is_stopped()) {
+    stop();
+    
+    while(!is_stopped()) 
+      usleep(10000);
   }
 }
 
-void AmRtpReceiver::run()
+void _AmRtpReceiver::dispose() 
+{
+  for(unsigned int i=0; i<n_receivers; i++){
+    receivers[i].stop_and_wait();
+  }
+}
+
+void AmRtpReceiverThread::run()
 {
   unsigned int   tmp_nfds = 0;
   struct pollfd* tmp_fds  = new struct pollfd[MAX_RTP_SESSIONS];
 
   while(!stop_requested.get()){
 	
-    fds_mut.lock();
+    streams_mut.lock();
     tmp_nfds = nfds;
     memcpy(tmp_fds,fds,nfds*sizeof(struct pollfd));
-    fds_mut.unlock();
+    streams_mut.unlock();
 
     int ret = poll(tmp_fds,tmp_nfds,RTP_POLL_TIMEOUT);
     if(ret < 0)
@@ -122,29 +136,7 @@ void AmRtpReceiver::run()
       streams_mut.lock();
       Streams::iterator it = streams.find(tmp_fds[i].fd);
       if(it != streams.end()) {
-	AmRtpPacket* p = it->second->newPacket();
-	if (!p) {
-	  // drop received data
- 	  AmRtpPacket dummy;
- 	  dummy.recv(tmp_fds[i].fd);
-	  streams_mut.unlock();
-	  continue;
-	}
-
-	if(p->recv(tmp_fds[i].fd) > 0){
-	  int parse_res = p->parse();
-	  gettimeofday(&p->recv_time,NULL);
-		
-	  if (parse_res == -1) {
-	    DBG("error while parsing RTP packet.\n");
-	    it->second->clearRTPTimeout(&p->recv_time);
-	    it->second->freePacket(p);	  
-	  } else {
-	    it->second->bufferPacket(p);
-	  }
-	} else {
-	  it->second->freePacket(p);
-	}
+	it->second.stream->recvPacket();
       }
       streams_mut.unlock();      
     }
@@ -153,12 +145,12 @@ void AmRtpReceiver::run()
   delete[] (tmp_fds);
 }
 
-void AmRtpReceiver::addStream(int sd, AmRtpStream* stream)
+void AmRtpReceiverThread::addStream(int sd, AmRtpStream* stream)
 {
-  fds_mut.lock();
+  streams_mut.lock();
 
   if(nfds >= MAX_RTP_SESSIONS){
-    fds_mut.unlock();
+    streams_mut.unlock();
     ERROR("maximum number of sessions reached (%i)\n",
 	  MAX_RTP_SESSIONS);
     throw string("maximum number of sessions reached");
@@ -167,32 +159,50 @@ void AmRtpReceiver::addStream(int sd, AmRtpStream* stream)
   fds[nfds].fd      = sd;
   fds[nfds].events  = POLLIN;
   fds[nfds].revents = 0;
+
+  streams.insert(std::make_pair(sd,StreamInfo(nfds,stream)));
   nfds++;
 
-  fds_mut.unlock();
-
-  streams_mut.lock();
-  streams.insert(std::make_pair(sd,stream));
   streams_mut.unlock();
 }
 
-void AmRtpReceiver::removeStream(int sd)
+void AmRtpReceiverThread::removeStream(int sd)
 {
-  fds_mut.lock();
-  for(unsigned int i=0; i<nfds; i++){
+  streams_mut.lock();
 
-    if(fds[i].fd == sd){
+  Streams::iterator sit = streams.find(sd);
+  if(sit == streams.end()) {
+    streams_mut.unlock();
+    return;
+  }
 
-      if(--nfds && (i < nfds)){
-	fds[i] = fds[nfds];
-      }
-
-      break;
+  unsigned int i = sit->second.index;
+  if(--nfds && (i < nfds)) {
+    fds[i] = fds[nfds];
+    sit = streams.find(fds[nfds].fd);
+    if(sit != streams.end()) {
+      sit->second.index = i;
     }
   }
-  fds_mut.unlock();
-
-  streams_mut.lock();
   streams.erase(sd);
+
   streams_mut.unlock();
+}
+
+void _AmRtpReceiver::start()
+{
+  for(unsigned int i=0; i<n_receivers; i++)
+    receivers[i].start();
+}
+
+void _AmRtpReceiver::addStream(int sd, AmRtpStream* stream)
+{
+  unsigned int i = sd % n_receivers;
+  receivers[i].addStream(sd,stream);
+}
+
+void _AmRtpReceiver::removeStream(int sd)
+{
+  unsigned int i = sd % n_receivers;
+  receivers[i].removeStream(sd);
 }

@@ -32,7 +32,9 @@
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <netdb.h>
+#include <ifaddrs.h>
 #include <stdio.h>
+
 #include "AmConfig.h"
 #include "sems.h"
 #include "log.h"
@@ -58,6 +60,7 @@ bool         AmConfig::LogStderr               = false;
 vector<AmConfig::IP_interface>  AmConfig::Ifs;
 map<string,unsigned short>      AmConfig::If_names;
 multimap<string,unsigned short> AmConfig::LocalSIPIP2If;
+list<AmConfig::SysIntf>         AmConfig::SysIfs;
 
 #ifndef DISABLE_DAEMON_MODE
 bool         AmConfig::DaemonMode              = DEFAULT_DAEMON_MODE;
@@ -70,6 +73,7 @@ unsigned int AmConfig::MaxShutdownTime         = DEFAULT_MAX_SHUTDOWN_TIME;
 
 int          AmConfig::SessionProcessorThreads = NUM_SESSION_PROCESSORS;
 int          AmConfig::MediaProcessorThreads   = NUM_MEDIA_PROCESSORS;
+int          AmConfig::RTPReceiverThreads      = NUM_RTP_RECEIVERS;
 int          AmConfig::SIPServerThreads        = NUM_SIP_SERVERS;
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
@@ -219,6 +223,13 @@ int AmConfig::setSessionProcessorThreads(const string& th) {
 
 int AmConfig::setMediaProcessorThreads(const string& th) {
   if(sscanf(th.c_str(),"%u",&MediaProcessorThreads) != 1) {
+    return 0;
+  }
+  return 1;
+}
+
+int AmConfig::setRTPReceiverThreads(const string& th) {
+  if(sscanf(th.c_str(),"%u",&RTPReceiverThreads) != 1) {
     return 0;
   }
   return 1;
@@ -458,6 +469,13 @@ int AmConfig::readConfiguration()
     }
   }
 
+  if(cfg.hasParameter("rtp_receiver_threads")){
+    if(!setRTPReceiverThreads(cfg.getParameter("rtp_receiver_threads"))){
+      ERROR("invalid rtp_receiver_threads value specified");
+      ret = -1;
+    }
+  }
+
   if(cfg.hasParameter("sip_server_threads")){
     if(!setSIPServerThreads(cfg.getParameter("sip_server_threads"))){
       ERROR("invalid sip_server_threads value specified");
@@ -664,47 +682,61 @@ static int readInterfaces(AmConfigReader& cfg)
   return ret;
 }
 
-/** Get the list of network interfaces with the associated PF_INET addresses */
-static bool getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_list)
+/** Get the list of network interfaces with the associated addresses & flags */
+static bool fillSysIntfList()
 {
-  struct ifconf ifc;
-  struct ifreq ifrs[MAX_NET_DEVICES];
-
-  ifc.ifc_len = sizeof(struct ifreq) * MAX_NET_DEVICES;
-  ifc.ifc_req = ifrs;
-  memset(ifrs, 0, ifc.ifc_len);
-
-  if(ioctl(sd, SIOCGIFCONF, &ifc)!=0){
-    ERROR("getInterfaceList: ioctl: %s.\n", strerror(errno));
+  struct ifaddrs *ifap = NULL;
+  
+  if(getifaddrs(&ifap) < 0){
+    ERROR("getifaddrs() failed: %s",strerror(errno));
     return false;
   }
 
-#if !defined(BSD44SOCKETS)
-  int n_dev = ifc.ifc_len / sizeof(struct ifreq);
-  for(int i=0; i<n_dev; i++){
-    if(ifrs[i].ifr_addr.sa_family==PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&ifrs[i].ifr_addr;
+  char host[NI_MAXHOST];
+  for(struct ifaddrs *p_if = ifap; p_if != NULL; p_if = p_if->ifa_next) {
 
-      // avoid dereferencing type-punned pointer below
-      struct sockaddr_in sa4;
-      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
-      if_list.push_back(make_pair((char*)ifrs[i].ifr_name,
-                                  inet_ntoa(sa4.sin_addr)));
+    if(p_if->ifa_addr == NULL)
+      continue;
+    
+    if( (p_if->ifa_addr->sa_family != AF_INET) //&&
+        //(p_if->ifa_addr->sa_family != AF_INET6) 
+	)
+      continue;
+
+    if( !(p_if->ifa_flags & IFF_UP) || !(p_if->ifa_flags & IFF_RUNNING) )
+      continue;
+
+    int s = getnameinfo(p_if->ifa_addr,
+			(p_if->ifa_addr->sa_family == AF_INET) ? 
+			sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
+			host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+    if (s != 0) {
+      ERROR("getnameinfo() failed: %s\n", gai_strerror(s));
+      freeifaddrs(ifap);
+      return false;
     }
-  }
-#else // defined(BSD44SOCKETS)
-  struct ifreq* p_ifr = ifc.ifc_req;
-  while((char*)p_ifr - (char*)ifc.ifc_req < ifc.ifc_len){
 
-    if(p_ifr->ifr_addr.sa_family == PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&p_ifr->ifr_addr;
-      if_list.push_back(make_pair((const char*)p_ifr->ifr_name,
-                                  inet_ntoa(sa->sin_addr)));
+    string iface_name(p_if->ifa_name);
+    list<AmConfig::SysIntf>::iterator intf_it;
+    for(intf_it = AmConfig::SysIfs.begin();
+	intf_it != AmConfig::SysIfs.end(); ++intf_it) {
+
+      if(intf_it->name == iface_name)
+	break;
     }
 
-    p_ifr = (struct ifreq*)(((char*)p_ifr) + IFNAMSIZ + p_ifr->ifr_addr.sa_len);
+    if(intf_it == AmConfig::SysIfs.end()){
+      intf_it = AmConfig::SysIfs.insert(AmConfig::SysIfs.end(),
+					AmConfig::SysIntf());
+      intf_it->name  = iface_name;
+      intf_it->flags = p_if->ifa_flags;
+    }
+
+    DBG("iface='%s';ip='%s';flags=0x%x\n",p_if->ifa_name,host,p_if->ifa_flags);
+    intf_it->addrs.push_back(host);
   }
-#endif
+
+  freeifaddrs(ifap);
 
   return true;
 }
@@ -713,8 +745,6 @@ static bool getInterfaceList(int sd, std::vector<std::pair<string,string> >& if_
 string fixIface2IP(const string& dev_name)
 {
   string local_ip;
-  struct ifreq ifr;
-  std::vector<std::pair<string,string> > if_list;
 
 #ifdef SUPPORT_IPV6
   struct sockaddr_storage ss;
@@ -727,61 +757,30 @@ string fixIface2IP(const string& dev_name)
       return dev_name;
     }
 
-  int sd = socket(PF_INET, SOCK_DGRAM, 0);
-  if(sd == -1){
-    ERROR("socket: %s.\n", strerror(errno));
-    goto error;
-  }
+  for(list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
+      intf_it != AmConfig::SysIfs.end(); ++intf_it) {
+      
+    if((!dev_name.empty() && (intf_it->name == dev_name))
+       || !(intf_it->flags & IFF_LOOPBACK)) {
 
-  if(dev_name.empty()) {
-    if (!getInterfaceList(sd, if_list)) {
-      goto error;
-    }
-  }
-  else {
-    memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, dev_name.c_str(), IFNAMSIZ-1);
-
-    if(ioctl(sd, SIOCGIFADDR, &ifr)!=0){
-      ERROR("ioctl(SIOCGIFADDR): %s.\n", strerror(errno));
-      goto error;
-    }
-
-    if(ifr.ifr_addr.sa_family==PF_INET){
-      struct sockaddr_in* sa = (struct sockaddr_in*)&ifr.ifr_addr;
-
-      // avoid dereferencing type-punned pointer below
-      struct sockaddr_in sa4;
-      memcpy(&sa4, sa, sizeof(struct sockaddr_in));
-      if_list.push_back(make_pair((char*)ifr.ifr_name,
-				  inet_ntoa(sa4.sin_addr)));
-    }
-  }
-
-  for( std::vector<std::pair<string,string> >::iterator it = if_list.begin();
-       it != if_list.end(); ++it) {
-    memset(&ifr, 0, sizeof(struct ifreq));
-    strncpy(ifr.ifr_name, it->first.c_str(), IFNAMSIZ-1);
-
-    if(ioctl(sd, SIOCGIFFLAGS, &ifr)!=0){
-      ERROR("ioctl(SIOCGIFFLAGS): %s.\n", strerror(errno));
-      goto error;
-    }
-
-    if( (ifr.ifr_flags & IFF_UP) &&
-        (!dev_name.empty() || !(ifr.ifr_flags & IFF_LOOPBACK)) ) {
-      local_ip = it->second;
+      if(intf_it->addrs.empty()){
+	ERROR("No IP address for interface '%s'\n",intf_it->name.c_str());
+	return "";
+      }
+      
+      DBG("dev_name = '%s'\n",dev_name.c_str());
+      local_ip = intf_it->addrs.front();
       break;
     }
-  }
+  }    
 
- error:
-  close(sd);
   return local_ip;
 }
 
 int AmConfig::finalizeIPConfig()
 {
+  fillSysIntfList();
+
   for(int i=0; i < (int)AmConfig::Ifs.size(); i++) {
 
     AmConfig::Ifs[i].LocalIP = fixIface2IP(AmConfig::Ifs[i].LocalIP);
@@ -797,8 +796,27 @@ int AmConfig::finalizeIPConfig()
     else {
       AmConfig::Ifs[i].LocalSIPIP = fixIface2IP(AmConfig::Ifs[i].LocalSIPIP);
     }
-    
-    AmConfig::LocalSIPIP2If.insert(std::make_pair(AmConfig::Ifs[i].LocalSIPIP,i));
+
+    list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
+    for(;intf_it != AmConfig::SysIfs.end(); ++intf_it) {
+
+      list<string>::iterator addr_it = std::find(intf_it->addrs.begin(),
+						 intf_it->addrs.end(),
+						 AmConfig::Ifs[i].LocalSIPIP);
+      // address not in this interface
+      if(addr_it == intf_it->addrs.end())
+	continue;
+
+      for(addr_it = intf_it->addrs.begin(); 
+	  addr_it != intf_it->addrs.end(); ++addr_it) {
+
+	if(AmConfig::LocalSIPIP2If.find(*addr_it)
+	   == AmConfig::LocalSIPIP2If.end()) {
+	
+	  AmConfig::LocalSIPIP2If.insert(make_pair(*addr_it,i));
+	}
+      }
+    }
   }
 
   return 0;

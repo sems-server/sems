@@ -875,7 +875,9 @@ void WebConferenceFactory::listRooms(const AmArg& args, AmArg& ret) {
   rooms_mut.lock();
   for (map<string, ConferenceRoom>::iterator it = 
 	 rooms.begin(); it != rooms.end(); it++) {
-    room_list.push(it->first.c_str());
+    if (!it->second.expired()) {
+      room_list.push(it->first.c_str());
+    }
   }
   rooms_mut.unlock();
 

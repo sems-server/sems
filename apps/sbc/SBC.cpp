@@ -547,6 +547,7 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
     auth(NULL),
     call_profile(call_profile),
     outbound_interface(-1),
+    rtprelay_interface(-1),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
 {
   set_sip_relay_only(false);
@@ -755,6 +756,57 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 	}
       }
     }
+
+    if (!call_profile.aleg_rtprelay_interface.empty()) {
+      call_profile.aleg_rtprelay_interface =
+	replaceParameters(call_profile.aleg_rtprelay_interface, "aleg_rtprelay_interface",
+			  REPLACE_VALS);
+      if (!call_profile.aleg_rtprelay_interface.empty()) {
+	if (call_profile.aleg_rtprelay_interface == "default") {
+	  setRtpRelayInterface(0);
+	} else {
+	  map<string,unsigned short>::iterator name_it =
+	    AmConfig::If_names.find(call_profile.aleg_rtprelay_interface);
+	  if (name_it != AmConfig::If_names.end()) {
+	    setRtpRelayInterface(name_it->second);
+	  } else {
+	    ERROR("selected aleg_rtprelay_interface '%s' does not exist as an interface. "
+		  "Please check the 'additional_interfaces' "
+		  "parameter in the main configuration file.",
+		  call_profile.aleg_rtprelay_interface.c_str());
+	    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+	  }
+	}
+	DBG("using RTP relay interface %i for A leg\n", relay_rtp_interface);
+      }
+    }
+
+    if (!call_profile.rtprelay_interface.empty()) {
+      call_profile.rtprelay_interface =
+	replaceParameters(call_profile.rtprelay_interface, "rtprelay_interface",
+			  REPLACE_VALS);
+      if (!call_profile.rtprelay_interface.empty()) {
+	if (call_profile.rtprelay_interface == "default") {
+	  rtprelay_interface = 0;
+	} else {
+	  map<string,unsigned short>::iterator name_it =
+	    AmConfig::If_names.find(call_profile.rtprelay_interface);
+	  if (name_it != AmConfig::If_names.end()) {
+	    rtprelay_interface = name_it->second;
+	  } else {
+	    ERROR("selected rtprelay_interface '%s' does not exist as an interface. "
+		  "Please check the 'additional_interfaces' "
+		  "parameter in the main configuration file.",
+		  call_profile.rtprelay_interface.c_str());
+	    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+	  }
+	}
+	DBG("configured RTP relay interface %i for B leg\n", rtprelay_interface);
+      }
+    }
+
+    setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
+    setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
     enableRtpRelay(req);
   }
@@ -1483,6 +1535,12 @@ void SBCDialog::createCalleeSession()
 
   if(outbound_interface >= 0)
     callee_dlg.outbound_interface = outbound_interface;
+
+  if(rtprelay_interface >= 0)
+    callee_session->setRtpRelayInterface(rtprelay_interface);
+
+  callee_session->setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
+  callee_session->setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
   other_id = AmSession::getNewId();
   

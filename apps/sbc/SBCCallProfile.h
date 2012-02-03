@@ -110,6 +110,11 @@ struct SBCCallProfile
   bool rtprelay_enabled;
   string force_symmetric_rtp;
   bool msgflags_symmetric_rtp;
+  bool rtprelay_transparent_seqno;
+  bool rtprelay_transparent_ssrc;
+
+  string rtprelay_interface;
+  string aleg_rtprelay_interface;
 
   string outbound_interface;
 
@@ -121,8 +126,10 @@ struct SBCCallProfile
     sdpfilter_enabled(false),
     sdpfilter(Transparent),
     auth_enabled(false),
-    rtprelay_enabled(false)
-
+    next_hop_port_i(0),
+    rtprelay_enabled(false),
+    rtprelay_transparent_seqno(true),
+    rtprelay_transparent_ssrc(true)
   { }
 
   ~SBCCallProfile()

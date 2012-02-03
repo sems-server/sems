@@ -267,6 +267,14 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   force_symmetric_rtp = cfg.getParameter("rtprelay_force_symmetric_rtp");
   msgflags_symmetric_rtp = cfg.getParameter("rtprelay_msgflags_symmetric_rtp") == "yes";
 
+  rtprelay_interface = cfg.getParameter("rtprelay_interface");
+  aleg_rtprelay_interface = cfg.getParameter("aleg_rtprelay_interface");
+
+  rtprelay_transparent_seqno =
+    cfg.getParameter("rtprelay_transparent_seqno", "yes") == "yes";
+  rtprelay_transparent_ssrc =
+    cfg.getParameter("rtprelay_transparent_ssrc", "yes") == "yes";
+
   outbound_interface = cfg.getParameter("outbound_interface");
 
   md5hash = "<unknown>";
@@ -317,6 +325,17 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       if (msgflags_symmetric_rtp) {
 	INFO("SBC:      P-MsgFlags symmetric RTP detection enabled\n");
       }
+      if (!aleg_rtprelay_interface.empty()) {
+	INFO("SBC:      RTP Relay interface A leg '%s'\n", aleg_rtprelay_interface.c_str());
+      }
+      if (!rtprelay_interface.empty()) {
+	INFO("SBC:      RTP Relay interface B leg '%s'\n", rtprelay_interface.c_str());
+      }
+
+      INFO("SBC:      RTP Relay %s seqno\n",
+	   rtprelay_transparent_seqno?"transparent":"opaque");
+      INFO("SBC:      RTP Relay %s SSRC\n",
+	   rtprelay_transparent_ssrc?"transparent":"opaque");
     }
 
     INFO("SBC:      SST on A leg enabled: '%s'\n", sst_aleg_enabled.empty() ?
