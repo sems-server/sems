@@ -35,6 +35,8 @@
 #include <string.h>
 #include <curl/curl.h>
 
+using namespace std;
+
 class RestModuleFactory : public AmDynInvokeFactory
 {
 public:
@@ -217,9 +219,22 @@ void RestModule::start(const string& cc_name, const string& ltag,
     params.getIfSet("next_hop_for_replies", call_profile->next_hop_for_replies);
 
     // TODO: headerfilter, messagefilter
+    // sdpfilter, anonymize_sdp
 
-    // TODO: other params
+    params.getIfSet("sst_enabled", call_profile->sst_enabled);
+    //doesn't work:params.getIfSet("sst_aleg_enabled", call_profile->sst_aleg_enabled);
 
+    // TODO: autho, auth_aleg, reply translations
+
+    params.getIfSet("append_headers", call_profile->append_headers); // CRLF is handled in SBC
+
+    //doesn't work: params.getIfSet("refuse_with", call_profile->refuse_with);
+
+    // TODO: rtprelay, symmetric_rtp, ...
+    params.getIfSet("rtprelay_interface", call_profile->rtprelay_interface);
+    params.getIfSet("aleg_rtprelay_interface", call_profile->aleg_rtprelay_interface);
+
+    params.getIfSet("outbound_interface", call_profile->outbound_interface);
   }
   catch (string &err) {
     ERROR(err.c_str());

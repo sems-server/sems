@@ -12,7 +12,23 @@ be replaced formatted like:
     parameter 2 name = parameter 2 value
     ...
 
-Currently are supported following parameters:
+Following parameters are supported now: 
+
+    ruri, from, to, contact, call-id, outbound_proxy, force_outbound_proxy,
+    next_hop_ip, next_hop_port, next_hop_for_replies, 
+
+    append_headers, 
+
+    sst_enabled
+
+    rtprelay_interface, aleg_rtprelay_interface,
+
+    outbound_interface
+
+These are unsupported (see todo):
+
+    refuse_with, sst_aleg_enabled,
+
 
 Module parameters
 -----------------
@@ -38,3 +54,15 @@ from = sip:fero@vku-test.com
 next_hop_ip = 192.168.1.202
 next_hop_port = 5062
 
+TODO
+----
+ - configurable data format:
+   - json
+   - XML
+   - text
+ - test
+ - support for other call profile parameters
+ - changing some call profile parameters doesn't take effect because they are
+   evaluated before call control modules are called ... might be fixed by calling
+   the call control modules at the very beginning of processing
+   (SBCFactory::onInvite)
