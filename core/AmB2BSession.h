@@ -241,8 +241,7 @@ class AmB2BSession: public AmSession
   AmRtpStream** relay_rtp_streams;
   /** number of relay RTP streams */
   unsigned int relay_rtp_streams_cnt;
-  /** interface where relay streams are created */
-  int relay_rtp_interface;
+
   /** fd of the other streams' sockets (to remove from
       RtpReceiver at end of relaying) */
   int other_stream_fds[MAX_RELAY_STREAMS];

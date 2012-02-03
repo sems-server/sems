@@ -777,7 +777,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 	    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 	  }
 	}
-	DBG("using RTP relay interface %i for A leg\n", relay_rtp_interface);
+	DBG("using RTP interface %i for A leg\n", rtp_interface);
       }
     }
 
