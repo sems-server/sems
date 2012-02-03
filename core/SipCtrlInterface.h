@@ -72,7 +72,6 @@ public:
     static string outbound_host;
     static unsigned int outbound_port;
     static bool log_parsed_messages;
-    static int log_raw_messages;
     static int udp_rcvbuf;
 
     SipCtrlInterface();

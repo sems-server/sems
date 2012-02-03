@@ -34,6 +34,8 @@
 #include <netinet/in.h>
 #include <string.h> // memset, strerror, ...
 
+int trsp_socket::log_level_raw_msgs = L_DBG;
+
 trsp_socket::trsp_socket(unsigned short if_num)
     : sd(0), ip(), port(0), if_num(if_num)
 {
@@ -97,9 +99,8 @@ unsigned short trsp_socket::get_if()
 
 int trsp_socket::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
 {
-    if ((SipCtrlInterface::log_raw_messages >= 0)
-	&& (SipCtrlInterface::log_raw_messages <= log_level)) {
-	_LOG(SipCtrlInterface::log_raw_messages, 
+    if (log_level_raw_msgs >= 0) {
+	_LOG(log_level_raw_msgs, 
 	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
     }
 

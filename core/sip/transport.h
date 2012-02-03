@@ -43,6 +43,9 @@ using std::string;
 
 class trsp_socket
 {
+public:
+    static int log_level_raw_msgs;
+    
 protected:
     // socket descriptor
     int sd;

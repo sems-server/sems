@@ -55,7 +55,6 @@
 #include "AmEventDispatcher.h"
 #include "AmSipEvent.h"
 
-int SipCtrlInterface::log_raw_messages = 3;
 bool SipCtrlInterface::log_parsed_messages = true;
 int SipCtrlInterface::udp_rcvbuf = -1;
 
@@ -82,14 +81,14 @@ int SipCtrlInterface::load()
 
 	if (cfg.hasParameter("log_raw_messages")) {
 	    string msglog = cfg.getParameter("log_raw_messages");
-	    if (msglog == "no") log_raw_messages = -1;
-	    else if (msglog == "error") log_raw_messages = 0;
-	    else if (msglog == "warn")  log_raw_messages = 1;
-	    else if (msglog == "info")  log_raw_messages = 2;
-	    else if (msglog == "debug") log_raw_messages = 3;
+	    if (msglog == "no") trsp_socket::log_level_raw_msgs = -1;
+	    else if (msglog == "error") trsp_socket::log_level_raw_msgs = L_ERR;
+	    else if (msglog == "warn")  trsp_socket::log_level_raw_msgs = L_WARN;
+	    else if (msglog == "info")  trsp_socket::log_level_raw_msgs = L_INFO;
+	    else if (msglog == "debug") trsp_socket::log_level_raw_msgs = L_DBG;
 	}
 	DBG("log_raw_messages level = %d\n", 
-	    log_raw_messages);
+	    trsp_socket::log_level_raw_msgs);
 
 	if (cfg.hasParameter("log_parsed_messages")) {
 	    log_parsed_messages = cfg.getParameter("log_parsed_messages")=="yes";
