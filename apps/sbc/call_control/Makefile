@@ -3,7 +3,7 @@ COREPATH = ../../../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_cc_modules ?= template
+exclude_cc_modules ?= template bl_redis
 
 $(info exclude_cc_modules: $(exclude_cc_modules))
 cc_modules = $(filter-out $(subst ;, ,$(exclude_cc_modules))\

@@ -10,6 +10,10 @@ REDIS blacklist call control module
  Any non-zero value/non-empty string value returned will be evaluated as blacklist
  hit.
 
+Requirements:
+  hiredis - C REDIS client library, from github.com/antirez/hiredis.git ,
+            e.g. $ git clone git://github.com/antirez/hiredis.git
+
 Parameters:
 
 argc      - number of arguments
