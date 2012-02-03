@@ -1044,6 +1044,8 @@ int AmSipDialog::sendRequest(const string& method,
   if((method!=SIP_METH_BYE)&&(method!=SIP_METH_CANCEL))
     req.contact = getContactHdr();
     
+  req.hdrs = hdrs;
+
   if (!(flags&SIP_FLAGS_VERBATIM)) {
     // add Signature
     if (AmConfig::Signature.length())
