@@ -408,7 +408,11 @@ int _trans_layer::send_reply(trans_ticket* tt,
 		// use port from 'sent-by' via address
 		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
 	    }
-	    // else: use the source port from the replied request (from IP hdr)
+	    else {
+		// use 5060
+		((sockaddr_in*)&remote_ip)->sin_port = htons(5060);
+	    }
+	}
 
 	if(local_socket->is_opt_set(trsp_socket::force_via_address)) {
 	    DBG("force_via_address\n");
