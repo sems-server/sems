@@ -184,7 +184,6 @@ void RestModule::start(const string& cc_name, const string& ltag,
 
   try {
     string url;
-    bool ignore_errors = true;
 
     if (!values.hasMember("url")) 
       throw string("configuration error: url must be configured for REST queries\n");
@@ -193,20 +192,11 @@ void RestModule::start(const string& cc_name, const string& ltag,
       throw string("configuration error: invalid value of url\n");
     }
 
-    /*FIXME
-      if (values.hasMember("ignore_errors")) {
-
-      if (!isArgBool(values["ignore_errors"])) {
-	throw string("configuration error: invalid value of parameter ignore_errors\n");
-      }
-
-      ignore_errors = values["ignore_errors"].asBool();
-    }*/
-
     url = values["url"].asCStr();
-    DBG("REST: url = %s\n", url.c_str());
 
-    RestParams params(url, ignore_errors);
+    RestParams params;
+    params.retrieve(url); // handle errors here if needed
+
     params.getIfSet("ruri", call_profile->ruri);
     params.getIfSet("from", call_profile->from);
     params.getIfSet("to", call_profile->to);

@@ -57,7 +57,7 @@ void RestParams::handleParamLine(const string &line, size_t begin, size_t end)
   }
 }
     
-void RestParams::processData(const string &data)
+bool RestParams::readFromText(const string &data)
 {
   // TODO: read as XML instead of this internal format
   size_t first = 0;
@@ -72,15 +72,36 @@ void RestParams::processData(const string &data)
     else handleParamLine(data, first, last);
     first = last + 1;
   }
+  return true;
 }
 
-RestParams::RestParams(const string &url, bool _ignore_errors): 
-  ignore_errors(_ignore_errors)
+bool RestParams::readFromJson(const string &data)
+{
+  return false; // not implemented yet
+}
+
+bool RestParams::readFromXML(const string &data)
+{
+  // TODO
+  ERROR("REST: trying to decode XML data - not implemented yet!\n");
+  return false;
+}
+
+bool RestParams::retrieve(const string &url, Format fmt)
 {
   string data;
+    
+  DBG("REST: reading from url %s\n", url.c_str());
 
-  retrieve(url, data);
-  processData(data);
+  if (!get(url, data)) return false;
+
+  switch (fmt) {
+    case TEXT: return readFromText(data);
+    case JSON: return readFromJson(data);
+    case XML: return readFromXML(data);
+  }
+
+  return false;
 }
 
 static size_t store_data_cb(void *contents, size_t size, size_t nmemb, void *userp)
@@ -98,7 +119,7 @@ static size_t store_data_cb(void *contents, size_t size, size_t nmemb, void *use
   return realsize;
 }
 
-void RestParams::retrieve(const string &url, string &data)
+bool RestParams::get(const string &url, string &data)
 {
   // based on http://curl.haxx.se/libcurl/c/getinmemory.html
   CURL *curl_handle = curl_easy_init();
@@ -118,18 +139,18 @@ void RestParams::retrieve(const string &url, string &data)
   
   curl_easy_cleanup(curl_handle);
 
-  long code = 0;
-  if (res == 0) curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
-  if ((res != 0) || (code < 200) || (code > 299)) {
-    DBG("libcurl returned %d, response code: %ld\n", res, code);
-
-    if (!ignore_errors) {
-      string s("error returned when reading data from ");
-      s += url;
-      s += "\n";
-      throw s;
-    }
-
-    data.clear(); // no data available
+  if (res != 0) {
+    // really ignore these errors?
+    DBG("libcurl returned error %d\n", res);
+    return false;
   }
+
+  long code = 0;
+  curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
+  if ((code < 200) || (code > 299)) {
+    DBG("non-ok response code when downloading data: %ld\n", code);
+    return false;
+  }
+
+  return true;
 }
