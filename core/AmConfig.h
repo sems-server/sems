@@ -99,6 +99,9 @@ struct AmConfig
     /** the port SIP requests are sent from - optional (default 5060) */
     int LocalSIPPort;
 
+    /** options for the signaling socket (@see trsp_socket::socket_options) */
+    unsigned int SigSockOpts;
+
     IP_interface();
 
     int getNextRtpPort();

@@ -44,6 +44,10 @@ using std::string;
 class trsp_socket
 {
 public:
+    enum socket_options {
+	force_via_address = (1 << 0)
+    };
+
     static int log_level_raw_msgs;
     
 protected:
@@ -62,8 +66,11 @@ protected:
     // interface number
     unsigned short   if_num;
 
+    // ORed field of socket_option
+    unsigned int socket_options;
+
 public:
-    trsp_socket(unsigned short if_num);
+    trsp_socket(unsigned short if_num, unsigned int opts);
     virtual ~trsp_socket();
 
     /**
@@ -91,6 +98,11 @@ public:
      * Getter for the interface number
      */
     unsigned short get_if();
+
+    /**
+     * Checks for socket options
+     */
+    bool is_opt_set(unsigned int mask);
 
     /**
      * Copy the internal address into the given one (sa).

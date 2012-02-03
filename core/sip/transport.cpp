@@ -27,7 +27,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include "transport.h"
-#include "../SipCtrlInterface.h"
 #include "../log.h"
 
 #include <assert.h>
@@ -36,8 +35,8 @@
 
 int trsp_socket::log_level_raw_msgs = L_DBG;
 
-trsp_socket::trsp_socket(unsigned short if_num)
-    : sd(0), ip(), port(0), if_num(if_num)
+trsp_socket::trsp_socket(unsigned short if_num, unsigned int opts)
+    : sd(0), ip(), port(0), if_num(if_num), socket_options(opts)
 {
     memset(&addr,0,sizeof(sockaddr_storage));
 }
@@ -54,6 +53,12 @@ const char* trsp_socket::get_ip()
 unsigned short trsp_socket::get_port()
 {
     return port;
+}
+
+bool trsp_socket::is_opt_set(unsigned int mask)
+{
+    DBG("trsp_socket::socket_options = 0x%x\n",socket_options);
+    return (socket_options & mask) == mask;
 }
 
 void trsp_socket::copy_addr_to(sockaddr_storage* sa)

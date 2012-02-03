@@ -382,7 +382,13 @@ int _trans_layer::send_reply(trans_ticket* tt,
     sockaddr_storage remote_ip;
     trsp_socket* local_socket = NULL;
 
-    local_socket = req->local_socket;
+    // rco: should we overwrite the socket from the request in all cases???
+    if((out_interface >= 0) && ((unsigned int)out_interface < transports.size())){
+	local_socket = transports[out_interface];
+    }
+    else {
+	local_socket = req->local_socket;
+    }
 
     if (!_next_hop.len) {
 	memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
@@ -394,6 +400,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
 		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->rport_i);
 	    }
 	    // else: use the source port from the replied request (from IP hdr)
+	    //       (already set).
 	}
 	else {
 	
@@ -403,7 +410,15 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	    }
 	    // else: use the source port from the replied request (from IP hdr)
 
-	    // TODO: use destination address from 1st Via???
+	if(local_socket->is_opt_set(trsp_socket::force_via_address)) {
+	    DBG("force_via_address\n");
+	    string via_host = c2stlstr(req->via_p1->host);
+	    if (resolver::instance()->str2ip(via_host.c_str(), &remote_ip,
+					     (address_type)(IPv4 | IPv6)) != 1) {
+		ERROR("Invalid via_host '%s'\n", via_host.c_str());
+		delete [] reply_buf;
+		goto end;
+	    }
 	}
     } else {
 	DBG("setting next hop '%.*s:%u'\n",
@@ -423,11 +438,6 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	get_addr_str(&remote_ip).c_str(),
 	ntohs(((sockaddr_in*)&remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,reply_buf);
-
-    // rco: should we overwrite the socket from the request in all cases???
-    if((out_interface >= 0) && ((unsigned int)out_interface < transports.size())){
-	local_socket = transports[out_interface];
-    }
 
     err = local_socket->send(&remote_ip,reply_buf,reply_len);
     if(err < 0){

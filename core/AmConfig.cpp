@@ -42,6 +42,7 @@
 #include "AmUtils.h"
 #include "AmSession.h"
 #include "Am100rel.h"
+#include "sip/transport.h"
 
 #include <cctype>
 #include <algorithm>
@@ -126,6 +127,7 @@ AmConfig::IP_interface::IP_interface()
     PublicIP(),
     RtpLowPort(RTP_LOWPORT),
     RtpHighPort(RTP_HIGHPORT),
+    SigSockOpts(0),
     next_rtp_port(-1)
 {
 }
@@ -639,6 +641,22 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
 	    suffix.c_str(),rtp_high_port_str.c_str());
       ret = -1;
     }
+  }
+
+  if(cfg.hasParameter("sig_sock_opts" + suffix)){
+    vector<string> opt_strs = explode(cfg.getParameter("sig_sock_opts" + suffix),",");
+    unsigned int opts = 0;
+    for(vector<string>::iterator it_opt = opt_strs.begin();
+	it_opt != opt_strs.end(); ++it_opt) {
+      if(*it_opt == "force_via_address") {
+	opts |= trsp_socket::force_via_address;
+      }
+      else {
+	WARN("unknown signaling socket option '%s' set on interface '%s'\n",
+	     it_opt->c_str(),i_name.c_str());
+      }
+    }
+    intf.SigSockOpts = opts;
   }
 
   intf.name = i_name;

@@ -240,7 +240,8 @@ int SipCtrlInterface::run()
     // Init transport instances
     for(unsigned int i=0; i<AmConfig::Ifs.size();i++) {
 
-	udp_trsp_socket* udp_socket = new udp_trsp_socket(i);
+	udp_trsp_socket* udp_socket = 
+	    new udp_trsp_socket(i,AmConfig::Ifs[i].SigSockOpts);
 
 	if(udp_socket->bind(AmConfig::Ifs[i].LocalSIPIP,
 			    AmConfig::Ifs[i].LocalSIPPort) < 0){
