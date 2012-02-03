@@ -41,6 +41,7 @@
 #endif
 
 #include "SipCtrlInterface.h"
+#include "sip/trans_table.h"
 
 #include "log.h"
 
@@ -510,6 +511,10 @@ int main(int argc, char* argv[])
   // session container stops active sessions
   INFO("Disposing session container\n");
   AmSessionContainer::dispose();
+
+  DBG("** Transaction table dump: **\n");
+  dumps_transactions();
+  DBG("*****************************\n");
 
   INFO("Disposing RTP receiver\n");
   AmRtpReceiver::dispose();
