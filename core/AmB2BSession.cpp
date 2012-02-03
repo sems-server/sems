@@ -38,25 +38,14 @@
 // AmB2BSession methods
 //
 
-AmB2BSession::AmB2BSession()
-  : sip_relay_only(true),
-    b2b_mode(B2BMode_Transparent),
-    rtp_relay_enabled(false),
-    rtp_relay_force_symmetric_rtp(false),
-    relay_rtp_interface(-1),
-    relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
-    rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
-    est_invite_cseq(0),est_invite_other_cseq(0)
-{
-  memset(other_stream_fds,0,sizeof(int)*MAX_RELAY_STREAMS);
-}
-
 AmB2BSession::AmB2BSession(const string& other_local_tag)
   : other_id(other_local_tag),
     sip_relay_only(true),
+    b2b_mode(B2BMode_Transparent),
     rtp_relay_enabled(false),
     rtp_relay_force_symmetric_rtp(false),
     relay_rtp_streams(NULL), relay_rtp_streams_cnt(0),
+    rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
     est_invite_cseq(0),est_invite_other_cseq(0)
 {
   memset(other_stream_fds,0,sizeof(int)*MAX_RELAY_STREAMS);
@@ -328,10 +317,10 @@ void AmB2BSession::updateRelayStreams(const string& content_type, const string& 
     relay_rtp_streams = new AmRtpStream*[relay_rtp_streams_cnt];
     for(unsigned int i=0; i<relay_rtp_streams_cnt; i++){
       // create relay stream on set interface, else dlg interface
-      int used_relay_interface = relay_rtp_interface<0 ?
-	dlg.getOutboundIf() : relay_rtp_interface;
-      DBG("using relay interface %i (relay_rtp_interface=%i)\n",
-	  used_relay_interface, relay_rtp_interface);
+      int used_relay_interface = rtp_interface<0 ?
+	dlg.getOutboundIf() : rtp_interface;
+      DBG("using relay interface %i (rtp_interface=%i)\n",
+	  used_relay_interface, rtp_interface);
       relay_rtp_streams[i] = new AmRtpStream(NULL, used_relay_interface);
       relay_rtp_streams[i]->setRtpRelayTransparentSeqno(rtp_relay_transparent_seqno);
       relay_rtp_streams[i]->setRtpRelayTransparentSSRC(rtp_relay_transparent_ssrc);
@@ -392,10 +381,10 @@ bool AmB2BSession::replaceConnectionAddress(const string& content_type,
   }
 
   string relay_address;
-  if (relay_rtp_interface >= 0 && (unsigned)relay_rtp_interface < AmConfig::Ifs.size()) {
-    relay_address = AmConfig::Ifs[relay_rtp_interface].PublicIP.empty() ?
-      AmConfig::Ifs[relay_rtp_interface].LocalIP :
-      AmConfig::Ifs[relay_rtp_interface].PublicIP;
+  if (rtp_interface >= 0 && (unsigned)rtp_interface < AmConfig::Ifs.size()) {
+    relay_address = AmConfig::Ifs[rtp_interface].PublicIP.empty() ?
+      AmConfig::Ifs[rtp_interface].LocalIP :
+      AmConfig::Ifs[rtp_interface].PublicIP;
   } else {
     relay_address = advertisedIP();
   }
@@ -883,8 +872,8 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
     relay_rtp_streams = new AmRtpStream*[relay_rtp_streams_cnt];
     for(unsigned int i=0; i<relay_rtp_streams_cnt; i++){
       // create relay stream on set interface, else dlg interface
-      relay_rtp_streams[i] = new AmRtpStream(NULL, relay_rtp_interface<0 ?
-					     dlg.getOutboundIf() : relay_rtp_interface);
+      relay_rtp_streams[i] = new AmRtpStream(NULL, rtp_interface<0 ?
+					     dlg.getOutboundIf() : rtp_interface);
       relay_rtp_streams[i]->setRtpRelayTransparentSeqno(rtp_relay_transparent_seqno);
       relay_rtp_streams[i]->setRtpRelayTransparentSSRC(rtp_relay_transparent_ssrc);
     }
@@ -902,7 +891,6 @@ void AmB2BSession::setupRelayStreams(AmB2BSession* other_session) {
 void AmB2BSession::setRtpRelayInterface(int relay_interface) {
   DBG("setting RTP relay interface for session '%s' to %i\n",
       getLocalTag().c_str(), relay_interface);
-  relay_rtp_interface = relay_interface;
   rtp_interface = relay_interface;
 }
 

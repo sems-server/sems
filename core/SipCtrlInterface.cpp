@@ -37,7 +37,6 @@
 #include "sip/parse_header.h"
 #include "sip/parse_from_to.h"
 #include "sip/parse_cseq.h"
-#include "sip/parse_extensions.h"
 #include "sip/parse_100rel.h"
 #include "sip/parse_route.h"
 #include "sip/trans_table.h"
@@ -242,7 +241,7 @@ int SipCtrlInterface::run()
     // Init transport instances
     for(unsigned int i=0; i<AmConfig::Ifs.size();i++) {
 
-	udp_trsp_socket* udp_socket = new udp_trsp_socket;
+	udp_trsp_socket* udp_socket = new udp_trsp_socket(i);
 
 	if(udp_socket->bind(AmConfig::Ifs[i].LocalSIPIP,
 			    AmConfig::Ifs[i].LocalSIPPort) < 0){
@@ -340,50 +339,6 @@ int SipCtrlInterface::send(const AmSipReply &rep,
 	    return -1;
 	}
     }
-
-
-    /* check if we need to store RSeq. */
-    // FIXME: shouldn't the global "100rel==on?" check be present here??
-    if(100 < rep.code && rep.code < 200 && rep.cseq_method == SIP_METH_INVITE) {
-        unsigned ext = 0;
-        unsigned rseq = 0;
-        for(list<sip_header*>::iterator it = msg.hdrs.begin();
-                !(ext && rseq) && it != msg.hdrs.end(); ++it) {
-            // check if there's a Require field containing 100rel; if there
-            // is, look for RSeq and store it's value in transaction;
-            DBG("HT:%d, ext:%d, rseq:%d.\n", (*it)->type, ext, rseq);
-            switch ((*it)->type) {
-            case sip_header::H_REQUIRE:
-                if (ext)
-                    // there was alrady a(nother?) Require HF
-                    continue;
-                if(!parse_extensions(&ext, (*it)->value.s, (*it)->value.len)) {
-                    ERROR("failed to parse(own?)'" SIP_HDR_REQUIRE "' hdr.\n");
-                    continue;
-                }
-                if (rseq) { // our RSeq's are never 0
-                    rep.tt._t->last_rseq = rseq;
-                    continue; // the end.
-                }
-                break;
-
-            case sip_header::H_RSEQ:
-                if (rseq) {
-                    ERROR("multiple '" SIP_HDR_RSEQ "' headers in reply.\n");
-                    continue;
-                }
-                if (! parse_rseq(&rseq, (*it)->value.s, (*it)->value.len)) {
-                    ERROR("failed to parse (own?) '" SIP_HDR_RSEQ "' hdr.\n");
-                    continue;
-                }
-                if (ext) {
-                    rep.tt._t->last_rseq = rseq;
-                    continue; // the end.
-                }
-            }
-        }
-    }
-
 
     unsigned int hdrs_len = copy_hdrs_len(msg.hdrs);
 
@@ -502,10 +457,12 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 
     req.via1 = c2stlstr(msg->via1->value);
 
-    req.remote_ip = get_addr_str(((sockaddr_in*)&msg->remote_ip)->sin_addr).c_str();
+    req.remote_ip = get_addr_str(&msg->remote_ip).c_str();
     req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
-    req.local_ip = get_addr_str(((sockaddr_in*)&msg->local_ip)->sin_addr).c_str();
+    req.local_ip = get_addr_str(&msg->local_ip).c_str();
     req.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
+
+    req.local_if = msg->local_socket->get_if();
 }
 
 inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
@@ -570,9 +527,9 @@ inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
         }
     }
 
-    reply.remote_ip = get_addr_str(((sockaddr_in*)&msg->remote_ip)->sin_addr).c_str();
+    reply.remote_ip = get_addr_str(&msg->remote_ip).c_str();
     reply.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
-    reply.local_ip = get_addr_str(((sockaddr_in*)&msg->local_ip)->sin_addr).c_str();
+    reply.local_ip = get_addr_str(&msg->local_ip).c_str();
     reply.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
 
     return true;
@@ -594,7 +551,9 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 
     req.tt = tt;
 
-    DBG("Received new request\n");
+    DBG("Received new request from <%s:%i> on intf #%i\n",
+	req.remote_ip.c_str(),req.remote_port,req.local_if);
+
     if (SipCtrlInterface::log_parsed_messages) {
 	//     DBG_PARAM(req.cmd);
 	DBG_PARAM(req.method);

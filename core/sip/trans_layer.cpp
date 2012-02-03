@@ -34,19 +34,20 @@
 #include "parse_from_to.h"
 #include "parse_route.h"
 #include "parse_100rel.h"
+#include "parse_extensions.h"
 #include "sip_trans.h"
 #include "msg_fline.h"
 #include "msg_hdrs.h"
 #include "udp_trsp.h"
 #include "resolver.h"
-#include "log.h"
+#include "sip_ua.h"
 
 #include "wheeltimer.h"
 #include "sip_timers.h"
 
-#include "SipCtrlInterface.h"
+#include "log.h"
+
 #include "AmUtils.h"
-#include "AmSipMsg.h"
 #include "AmConfig.h"
 #include "AmSipEvent.h"
 
@@ -130,6 +131,11 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	return -1;
     }
 
+    if(t->reply_status >= 200){
+	ERROR("Transaction has already been closed with a final reply\n");
+	return -1;
+    }
+
     sip_msg* req = t->msg;
     assert(req);
 
@@ -143,7 +149,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     assert(req->via_p1);
 
     unsigned int new_via1_len = copy_hdr_len(req->via1);
-    string remote_ip_str = get_addr_str(((sockaddr_in*)&req->remote_ip)->sin_addr).c_str();
+    string remote_ip_str = get_addr_str(&req->remote_ip).c_str();
     new_via1_len += 10/*;received=*/ + remote_ip_str.length();
 
     // needed if rport parameter was present but empty
@@ -155,6 +161,9 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	}
     }
 
+    unsigned int rel100_ext = 0;
+    unsigned int rseq = 0;
+    
     // copy necessary headers
     for(list<sip_header*>::iterator it = req->hdrs.begin();
 	it != req->hdrs.end(); ++it) {
@@ -191,6 +200,38 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	case sip_header::H_CSEQ:
 	case sip_header::H_RECORD_ROUTE:
 	    reply_len += copy_hdr_len(*it);
+	    break;
+
+	case sip_header::H_REQUIRE:
+	    if (rel100_ext)
+		// there was already a(nother?) Require HF
+		continue;
+	    if(!parse_extensions(&rel100_ext, (*it)->value.s, (*it)->value.len)) {
+		ERROR("failed to parse(own?) 'Require' hdr.\n");
+		continue;
+	    }
+
+	    rel100_ext = rel100_ext & SIP_EXTENSION_100REL;
+
+	    if (rel100_ext && rseq) { // our RSeq's are never 0
+		t->last_rseq = rseq;
+		continue; // the end.
+	    }
+	    break;
+
+	case sip_header::H_RSEQ:
+	    if (rseq) {
+		ERROR("multiple 'RSeq' headers in reply.\n");
+		continue;
+	    }
+	    if (!parse_rseq(&rseq, (*it)->value.s, (*it)->value.len)) {
+		ERROR("failed to parse (own?) 'RSeq' hdr.\n");
+		continue;
+	    }
+	    if (rel100_ext) {
+		t->last_rseq = rseq;
+		continue; // the end.
+	    }
 	    break;
 	}
     }
@@ -379,7 +420,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     }
 
     DBG("Sending to %s:%i <%.*s...>\n",
-	get_addr_str(((sockaddr_in*)&remote_ip)->sin_addr).c_str(),
+	get_addr_str(&remote_ip).c_str(),
 	ntohs(((sockaddr_in*)&remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,reply_buf);
 
@@ -388,36 +429,27 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	local_socket = transports[out_interface];
     }
 
-    err = update_uas_reply(bucket,t,reply_code);
-    if(err < 0){
-	
-	ERROR("Invalid state change\n");
-	delete [] reply_buf;
-	goto end;
-    }
-    else if(err != TS_TERMINATED) {
-	if (t->retr_buf) 
-		delete [] t->retr_buf;
-
-	t->retr_buf = reply_buf;
-	t->retr_len = reply_len;
-	memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
-	t->retr_socket = local_socket;
-
-	err = 0;
-    }
-    else {
-	// Transaction has been deleted
-	// -> should not happen, as we 
-	//    now wait for 200 ACK
-	delete [] reply_buf;
-	err = 0;
-    }
-
     err = local_socket->send(&remote_ip,reply_buf,reply_len);
     if(err < 0){
 	delete [] reply_buf;
+	// set timer to capture retransmissions
+	// and delete transaction afterwards
+	t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
+	goto end;
     }
+
+    if (t->retr_buf) {
+	// delete old retry-buffer 
+	// before overwriting it
+	delete [] t->retr_buf;
+    }
+
+    t->retr_buf = reply_buf;
+    t->retr_len = reply_len;
+    memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
+    t->retr_socket = local_socket;
+
+    update_uas_reply(bucket,t,reply_code);
     
  end:
     bucket->unlock();
@@ -908,7 +940,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     p_msg->local_socket = msg->local_socket;
 
     DBG("Sending to %s:%i <%.*s...>\n",
-	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
+	get_addr_str(&p_msg->remote_ip).c_str(),
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,p_msg->buf);
 
@@ -1042,15 +1074,9 @@ int _trans_layer::cancel(trans_ticket* tt)
     p_msg->local_socket = req->local_socket;
 
     DBG("Sending to %s:%i:\n<%.*s>\n",
-	get_addr_str(((sockaddr_in*)&p_msg->remote_ip)->sin_addr).c_str(),
+	get_addr_str(&p_msg->remote_ip).c_str(),
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
-
-    trans_bucket* n_bucket = get_trans_bucket(p_msg->callid->value,
-					      get_cseq(p_msg)->num_str);
-    
-    if(bucket != n_bucket)
-	n_bucket->lock();
 
     int send_err = p_msg->send();
     if(send_err < 0){
@@ -1067,9 +1093,6 @@ int _trans_layer::cancel(trans_ticket* tt)
 	}
     }
 
-    if(bucket != n_bucket)
-	n_bucket->unlock();
-    
     bucket->unlock();
     return send_err;
 }
@@ -1502,14 +1525,9 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
     return 0;
 }
 
-int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
+void _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
 {
     DBG("update_uas_reply(t=%p)\n", t);
-
-    if(t->reply_status >= 200){
-	ERROR("Transaction has already been closed with a final reply\n");
-	return -1;
-    }
 
     t->reply_status = reply_code;
 
@@ -1532,10 +1550,6 @@ int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply
 	if(t->msg->u.request->method == sip_request::INVITE){
 
 	    // final reply
-
-	    //bucket->remove_trans(t);
-	    //return TS_TERMINATED;
-
 	    //
 	    // In this stack, the transaction layer
 	    // takes care of re-transmiting the 200 reply
@@ -1566,8 +1580,6 @@ int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply
 	    t->state = TS_PROCEEDING;
         }
     }
-	
-    return t->state;
 }
 
 int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)

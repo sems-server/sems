@@ -180,8 +180,7 @@ string file_extension(const string& path);
  */
 string add2path(const string& path, int n_suffix, ...);
 
-struct in_addr;
-string get_addr_str(struct in_addr in);
+string get_addr_str(const sockaddr_storage* addr);
 
 #ifdef SUPPORT_IPV6
 int inet_aton_v6(const char* name, struct sockaddr_storage* ss);

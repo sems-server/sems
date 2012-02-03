@@ -166,6 +166,7 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
       remote_party = req.from;
       local_party  = req.to;
       route        = req.route;
+      outbound_interface = req.local_if;
     }
   }
 

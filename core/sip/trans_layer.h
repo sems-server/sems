@@ -147,7 +147,7 @@ public:
      * Implements the state changes for the UAS state machine
      */
     int update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg);
-    int update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
+    void update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
 
     /**
      * Send ACK coresponding to error replies
@@ -197,8 +197,6 @@ class trans_ticket
     trans_bucket* _bucket;
     
     friend class _trans_layer;
-    friend class AmSipDialog;
-    friend class SipCtrlInterface; //TODO: make _t, _bucket public??
 
 public:
     trans_ticket()

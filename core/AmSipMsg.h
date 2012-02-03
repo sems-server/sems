@@ -77,6 +77,8 @@ class AmSipRequest : public _AmSipMsgInDlg
   unsigned int rack_cseq;
   string via_branch;
 
+  unsigned short local_if;
+
   AmSipRequest() : _AmSipMsgInDlg() { }
   ~AmSipRequest() { }
   
