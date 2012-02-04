@@ -149,8 +149,12 @@ int _trans_layer::send_reply(trans_ticket* tt,
     assert(req->via_p1);
 
     unsigned int new_via1_len = copy_hdr_len(req->via1);
-    string remote_ip_str = get_addr_str(&req->remote_ip).c_str();
-    new_via1_len += 10/*;received=*/ + remote_ip_str.length();
+    string remote_ip_str = get_addr_str(&req->remote_ip);
+
+    bool append_received = !(remote_ip_str == req->via_p1->host);
+    if(append_received) {
+	new_via1_len += 10/*;received=*/ + remote_ip_str.length();
+    }
 
     // needed if rport parameter was present but empty
     string remote_port_str;
@@ -303,11 +307,15 @@ int _trans_layer::send_reply(trans_ticket* tt,
 		    c += len;
 		}
 
-		memcpy(c,";received=",10);
-		c += 10;
+		if(append_received) {
+		    memcpy(c,";received=",10);
+		    c += 10;
+		}
 
-		memcpy(c,remote_ip_str.c_str(),remote_ip_str.length());
-		c += remote_ip_str.length();
+		if(!remote_ip_str.empty()) {
+		    memcpy(c,remote_ip_str.c_str(),remote_ip_str.length());
+		    c += remote_ip_str.length();
+		}
 
 		//copy the rest of the first Via header 
 		len = req->via1->value.s + req->via1->value.len - req->via_p1->eop;
