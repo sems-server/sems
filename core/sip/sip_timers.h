@@ -64,7 +64,10 @@ enum sip_timer_type {
     // Transport address failover timer:
     // - used to cycle throught multiple addresses
     //   in case the R-URI resolves to multiple addresses
-    STIMER_M
+    STIMER_M,
+
+    // INVITE client transaction
+    STIMER_C   // Proceeding -> Terminated
 };
 
 
@@ -80,6 +83,9 @@ enum sip_timer_type {
 #define A_TIMER  T1_TIMER
 //type 0x02
 #define B_TIMER  64*T1_TIMER
+
+//type 0x0d
+#define C_TIMER  (3*60*1000)
 
 //type 0x03
 #define D_TIMER  64*T1_TIMER
@@ -116,6 +122,7 @@ enum sip_timer_type {
 // Transport address failover timer:
 // - used to cycle throught multiple addresses
 //   in case the R-URI resolves to multiple addresses
+//type 0x0c
 #define M_TIMER  (B_TIMER/4)
 
 #endif
