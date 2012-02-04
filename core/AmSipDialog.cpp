@@ -68,7 +68,6 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     next_hop_port(AmConfig::NextHopPort),
     next_hop_ip(AmConfig::NextHopIP),
-    next_hop_for_replies(AmConfig::NextHopForReplies),
     outbound_interface(-1), out_intf_for_replies(false)
 {
   assert(h);
@@ -120,9 +119,7 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 
       INFO("remote cseq lower than previous ones - refusing request\n");
       // see 12.2.2
-      reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, hdrs,
-		  next_hop_for_replies ? next_hop_ip : "",
-		  next_hop_for_replies ? next_hop_port : 0);
+      reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, hdrs);
       return;
     }
 
@@ -133,9 +130,8 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 	   (oa.getState() != AmOfferAnswer::OA_Completed))) {
 
 	reply_error(req, 491, SIP_REPLY_PENDING,
-		    SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER) + int2str(get_random() % 10) + CRLF,
-		    next_hop_for_replies ? next_hop_ip : "",
-		    next_hop_for_replies ? next_hop_port : 0);
+		    SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER) 
+		    + int2str(get_random() % 10) + CRLF);
 	return;
       }
       pending_invites++;
@@ -751,8 +747,6 @@ int AmSipDialog::reply(const AmSipTransaction& t,
 /* static */
 int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
 			     const string& reason, const string& hdrs,
-			     const string& next_hop_ip,
-			     unsigned short next_hop_port,
 			     int outbound_interface)
 {
   AmSipReply reply;

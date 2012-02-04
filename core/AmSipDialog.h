@@ -146,7 +146,6 @@ private:
 
   string next_hop_ip;
   unsigned short next_hop_port;
-  bool next_hop_for_replies;
 
   int  outbound_interface;
   bool out_intf_for_replies;
@@ -298,8 +297,6 @@ private:
 			 unsigned int  code,
 			 const string& reason,
 			 const string& hdrs = "",
-			 const string& next_hop_ip = "",
-			 unsigned short next_hop_port = 5060,
 			 int outbound_interface = -1);
 };
 

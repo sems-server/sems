@@ -144,8 +144,6 @@ struct AmConfig
   static string NextHopIP;
   /** force next hop port */
   static unsigned int NextHopPort;
-  /** force next hop for replies, too */
-  static bool NextHopForReplies;
   /** update ruri-host to previously resolved IP:port on SIP auth */
   static bool ProxyStickyAuth;
   /** skip DNS SRV lookup for resolving destination address*/

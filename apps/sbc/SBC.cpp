@@ -1525,12 +1525,6 @@ void SBCDialog::createCalleeSession()
     callee_dlg.next_hop_ip = call_profile.next_hop_ip;
     callee_dlg.next_hop_port = call_profile.next_hop_port.empty() ?
       5060 : call_profile.next_hop_port_i;
-
-    if (!call_profile.next_hop_for_replies.empty()) {
-      callee_dlg.next_hop_for_replies =
-	(call_profile.next_hop_for_replies == "yes" ||
-	 call_profile.next_hop_for_replies == "1");
-    }
   }
 
   if(outbound_interface >= 0)
