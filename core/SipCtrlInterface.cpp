@@ -307,8 +307,7 @@ void SipCtrlInterface::cleanup()
     }
 }
 
-int SipCtrlInterface::send(const AmSipReply &rep,
-			   int out_interface)
+int SipCtrlInterface::send(const AmSipReply &rep)
 {
     sip_msg msg;
 
@@ -363,8 +362,8 @@ int SipCtrlInterface::send(const AmSipReply &rep,
 	trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
 					    rep.code,stl2cstr(rep.reason),
 					    stl2cstr(rep.to_tag),
-					    cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body),
-					    out_interface);
+					    cstring(hdrs_buf,hdrs_len), 
+					    stl2cstr(rep.body));
 
     delete [] hdrs_buf;
 

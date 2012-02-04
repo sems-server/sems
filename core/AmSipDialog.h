@@ -147,8 +147,7 @@ private:
   string next_hop_ip;
   unsigned short next_hop_port;
 
-  int  outbound_interface;
-  bool out_intf_for_replies;
+  int outbound_interface;
 
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;
@@ -296,8 +295,7 @@ private:
   static int reply_error(const AmSipRequest& req,
 			 unsigned int  code,
 			 const string& reason,
-			 const string& hdrs = "",
-			 int outbound_interface = -1);
+			 const string& hdrs = "");
 };
 
 /**

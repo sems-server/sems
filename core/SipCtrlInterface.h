@@ -100,7 +100,7 @@ public:
      * @param rep The reply to be sent. 'rep.tt' should be set to transaction 
      *            ticket included in the SIP request.
      */
-    static int send(const AmSipReply &rep, int outbound_interface = -1);
+    static int send(const AmSipReply &rep);
 
     /**
      * CANCELs an INVITE transaction.

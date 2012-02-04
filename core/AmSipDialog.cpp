@@ -68,7 +68,7 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     next_hop_port(AmConfig::NextHopPort),
     next_hop_ip(AmConfig::NextHopIP),
-    outbound_interface(-1), out_intf_for_replies(false)
+    outbound_interface(-1)
 {
   assert(h);
 }
@@ -720,8 +720,7 @@ int AmSipDialog::reply(const AmSipTransaction& t,
     return -1;
   }
 
-  int ret = SipCtrlInterface::send(reply, out_intf_for_replies ? 
-				   outbound_interface : -1 );
+  int ret = SipCtrlInterface::send(reply);
 
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
@@ -746,8 +745,7 @@ int AmSipDialog::reply(const AmSipTransaction& t,
 
 /* static */
 int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
-			     const string& reason, const string& hdrs,
-			     int outbound_interface)
+			     const string& reason, const string& hdrs)
 {
   AmSipReply reply;
 
@@ -760,7 +758,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
 
-  int ret = SipCtrlInterface::send(reply, outbound_interface);
+  int ret = SipCtrlInterface::send(reply);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
