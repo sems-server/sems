@@ -92,7 +92,6 @@ public:
 		   int reply_code, const cstring& reason,
 		   const cstring& to_tag, const cstring& hdrs, 
 		   const cstring& body,
-		   const cstring& _next_hop, unsigned short _next_port,
 		   int out_interface = -1);
 
     /**

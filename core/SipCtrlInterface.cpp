@@ -308,7 +308,6 @@ void SipCtrlInterface::cleanup()
 }
 
 int SipCtrlInterface::send(const AmSipReply &rep,
-			   const string& next_hop_ip, unsigned short next_hop_port,
 			   int out_interface)
 {
     sip_msg msg;
@@ -365,7 +364,6 @@ int SipCtrlInterface::send(const AmSipReply &rep,
 					    rep.code,stl2cstr(rep.reason),
 					    stl2cstr(rep.to_tag),
 					    cstring(hdrs_buf,hdrs_len), stl2cstr(rep.body),
-					    stl2cstr(next_hop_ip),next_hop_port,
 					    out_interface);
 
     delete [] hdrs_buf;

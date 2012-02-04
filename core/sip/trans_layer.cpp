@@ -91,7 +91,6 @@ int _trans_layer::send_reply(trans_ticket* tt,
 			     int reply_code, const cstring& reason,
 			     const cstring& to_tag, const cstring& hdrs,
 			     const cstring& body,
-			     const cstring& _next_hop, unsigned short _next_port,
 			     int out_interface)
 {
     // Ref.: RFC 3261 8.2.6, 12.1.1
@@ -151,7 +150,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     unsigned int new_via1_len = copy_hdr_len(req->via1);
     string remote_ip_str = get_addr_str(&req->remote_ip);
 
-    bool append_received = !(remote_ip_str == req->via_p1->host);
+    bool append_received = !(req->via_p1->host == remote_ip_str);
     if(append_received) {
 	new_via1_len += 10/*;received=*/ + remote_ip_str.length();
     }
@@ -398,52 +397,38 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	local_socket = req->local_socket;
     }
 
-    if (!_next_hop.len) {
-	memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
+    memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
 
-	if(req->via_p1->has_rport){
-
-	    if(req->via_p1->rport_i){
-		// use 'rport'
-		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->rport_i);
-	    }
-	    // else: use the source port from the replied request (from IP hdr)
-	    //       (already set).
+    if(req->via_p1->has_rport){
+	
+	if(req->via_p1->rport_i){
+	    // use 'rport'
+	    ((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->rport_i);
+	}
+	// else: use the source port from the replied request (from IP hdr)
+	//       (already set).
+    }
+    else {
+	
+	if(req->via_p1->port_i){
+	    // use port from 'sent-by' via address
+	    ((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
 	}
 	else {
-	
-	    if(req->via_p1->port_i){
-		// use port from 'sent-by' via address
-		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
-	    }
-	    else {
-		// use 5060
-		((sockaddr_in*)&remote_ip)->sin_port = htons(5060);
-	    }
+	    // use 5060
+	    ((sockaddr_in*)&remote_ip)->sin_port = htons(5060);
 	}
-
-	if(local_socket->is_opt_set(trsp_socket::force_via_address)) {
-	    DBG("force_via_address\n");
-	    string via_host = c2stlstr(req->via_p1->host);
-	    if (resolver::instance()->str2ip(via_host.c_str(), &remote_ip,
-					     (address_type)(IPv4 | IPv6)) != 1) {
-		ERROR("Invalid via_host '%s'\n", via_host.c_str());
-		delete [] reply_buf;
-		goto end;
-	    }
-	}
-    } else {
-	DBG("setting next hop '%.*s:%u'\n",
-	    _next_hop.len, _next_hop.s, _next_port ? _next_port : 5060);
-	// use _next_hop:_next_port
-	if (resolver::instance()->str2ip(_next_hop.s, &remote_ip,
+    }
+    
+    if(local_socket->is_opt_set(trsp_socket::force_via_address)) {
+	DBG("force_via_address\n");
+	string via_host = c2stlstr(req->via_p1->host);
+	if (resolver::instance()->str2ip(via_host.c_str(), &remote_ip,
 					 (address_type)(IPv4 | IPv6)) != 1) {
-	    ERROR("Invalid next_hop_ip '%.*s'\n", _next_hop.len, _next_hop.s);
+	    ERROR("Invalid via_host '%s'\n", via_host.c_str());
 	    delete [] reply_buf;
 	    goto end;
 	}
-	// default port to 5060
-	((sockaddr_in*)&remote_ip)->sin_port = htons(_next_port ? _next_port : 5060);
     }
 
     DBG("Sending to %s:%i <%.*s...>\n",

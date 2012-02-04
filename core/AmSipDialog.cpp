@@ -724,9 +724,8 @@ int AmSipDialog::reply(const AmSipTransaction& t,
     return -1;
   }
 
-  int ret = SipCtrlInterface::send(reply, next_hop_for_replies ? next_hop_ip : "",
-				   next_hop_for_replies ? next_hop_port : 0,
-				   out_intf_for_replies ? outbound_interface : -1 );
+  int ret = SipCtrlInterface::send(reply, out_intf_for_replies ? 
+				   outbound_interface : -1 );
 
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
@@ -767,7 +766,7 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
 
-  int ret = SipCtrlInterface::send(reply, next_hop_ip, next_hop_port, outbound_interface);
+  int ret = SipCtrlInterface::send(reply, outbound_interface);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),req.method.c_str(),req.callid.c_str(),req.cseq);
