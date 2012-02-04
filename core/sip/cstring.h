@@ -31,7 +31,6 @@
 #define _CSTRING_H
 
 #include <string.h>
-#include <string>
 
 struct cstring 
 {
@@ -66,10 +65,6 @@ struct cstring
 
     bool operator == (const cstring& rhs_str) {
       return memcmp(rhs_str.s,s,len <= rhs_str.len ? len : rhs_str.len) == 0;
-    }
-
-    bool operator == (const std::string& rhs_str) {
-      return rhs_str.compare(1,rhs_str.size(),s,len) == 0;
     }
 
     bool operator == (const char* rhs_str) {

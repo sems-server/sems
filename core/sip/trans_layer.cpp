@@ -150,7 +150,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     unsigned int new_via1_len = copy_hdr_len(req->via1);
     string remote_ip_str = get_addr_str(&req->remote_ip);
 
-    bool append_received = !(req->via_p1->host == remote_ip_str);
+    bool append_received = !(req->via_p1->host == remote_ip_str.c_str());
     if(append_received) {
 	new_via1_len += 10/*;received=*/ + remote_ip_str.length();
     }
@@ -307,14 +307,14 @@ int _trans_layer::send_reply(trans_ticket* tt,
 		}
 
 		if(append_received) {
+
 		    memcpy(c,";received=",10);
 		    c += 10;
-		}
 
-		if(!remote_ip_str.empty()) {
 		    memcpy(c,remote_ip_str.c_str(),remote_ip_str.length());
 		    c += remote_ip_str.length();
 		}
+
 
 		//copy the rest of the first Via header 
 		len = req->via1->value.s + req->via1->value.len - req->via_p1->eop;
