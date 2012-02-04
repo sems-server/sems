@@ -53,6 +53,7 @@ public:
 protected:
   void run();
   void on_stop();
+  void dispose();
 };
 
 typedef singleton<_RtmpServer> RtmpServer;
