@@ -26,6 +26,8 @@
 #include "HeaderFilter.h"
 #include "sip/parse_common.h"
 #include "log.h"
+#include <algorithm>
+
 const char* FilterType2String(FilterType ft) {
     switch(ft) {
     case Transparent: return "transparent";
@@ -151,6 +153,7 @@ int inplaceHeaderFilter(string& hdrs, const set<string>& headerfilter_list, Filt
 	    return res;
 	}
 	string hdr_name = hdrs.substr(start_pos, name_end-start_pos);
+	transform(hdr_name.begin(), hdr_name.end(), hdr_name.begin(), ::tolower);
 	bool erase = false;
 	if (f_type == Whitelist) {
 	    erase = headerfilter_list.find(hdr_name)==headerfilter_list.end();

@@ -71,8 +71,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   }
   
   vector<string> elems = explode(cfg.getParameter("header_list"), ",");
-  for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++)
+  for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++) {
+    transform(it->begin(), it->end(), it->begin(), ::tolower);
     headerfilter_list.insert(*it);
+  }
 
   string mf_type = cfg.getParameter("message_filter", "transparent");
   if (mf_type=="transparent")
