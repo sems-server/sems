@@ -301,6 +301,14 @@ int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_
     return 0;
 }
 
+void free_gen_params(list<sip_avp*>* params)
+{
+    while(!params->empty()) {
+	delete params->front();
+	params->pop_front();
+    }
+}
+
 /** EMACS **
  * Local variables:
  * mode: c++
