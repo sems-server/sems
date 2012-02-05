@@ -18,6 +18,7 @@ Following parameters are supported now:
     next_hop_ip, next_hop_port, next_hop_for_replies, 
 
     append_headers, 
+    header_filter, header_list
 
     sst_enabled
 
