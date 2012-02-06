@@ -276,7 +276,7 @@ void RestModule::start(const string& cc_name, const string& ltag,
     }
   }
   catch (string &err) {
-    ERROR(err.c_str());
+    ERROR("%s", err.c_str());
     res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
     res_cmd[SBC_CC_REFUSE_CODE] = 500;
     res_cmd[SBC_CC_REFUSE_REASON] = "REST configuration error";
