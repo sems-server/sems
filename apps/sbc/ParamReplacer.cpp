@@ -343,7 +343,8 @@ string replaceParameters(const string& s,
 	  }
 
 	  char operation = s[p+1];
-	  if (operation != 'U' && operation != 'l') {
+	  if (operation != 'U' && operation != 'l'
+	      && operation != 's' && operation != '5') {
 	    WARN("Error parsing $_%c string modifier: unknown operator '%c'\n",
 		 operation, operation);
 	  }
