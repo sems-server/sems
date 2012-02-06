@@ -42,6 +42,14 @@ using std::string;
 #include <utility>
 #include <map>
 
+#include "md5.h"
+
+#define HASHLEN 16
+typedef unsigned char HASH[HASHLEN];
+
+#define HASHHEXLEN 32
+typedef unsigned char HASHHEX[HASHHEXLEN+1];
+
 //#define FIFO_PERM S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH
 
 #define PARAM_HDR "P-App-Param"
@@ -273,6 +281,14 @@ bool read_regex_mapping(const string& fname, const char* sep,
  */
 bool run_regex_mapping(const RegexMappingVector& mapping, const char* test_s,
 		       string& result);
+
+
+/** convert a binary MD5 hash to hex representation */
+void cvt_hex(HASH bin, HASHHEX hex);
+
+/** get an MD5 hash of a string */
+string calculateMD5(const string& input);
+
 #endif
 
 // Local Variables:

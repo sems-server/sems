@@ -189,6 +189,11 @@ The patterns which can be used are the following:
   $M(value=>regexmap) - map a value (any pattern) to a regexmap (see below)
     Example: $M($fU=>usermap)
 
+  $_*(value) - string modifiers: 
+   $_u(value)   - value to uppercase (e.g.: $_u($fh) From host in uppercase)
+   $_l(value)   - value to lowercase (e.g.: $_l($fh) From host in lowercase)
+   $_s(value)   - length of value (e.g.: $_s($fU) string length of From user)
+   $_5(value)   - MD5 of value
 
   \\  -> \
   \$  -> $

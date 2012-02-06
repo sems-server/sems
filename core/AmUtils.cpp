@@ -1108,3 +1108,45 @@ bool run_regex_mapping(const RegexMappingVector& mapping, const char* test_s,
   }
   return false;
 }
+
+// These function comes basically from ser's uac module 
+void cvt_hex(HASH bin, HASHHEX hex)
+{
+  unsigned short i;
+  unsigned char j;
+
+  for (i = 0; i<HASHLEN; i++)
+    {
+      j = (bin[i] >> 4) & 0xf;
+      if (j <= 9)
+	{
+	  hex[i * 2] = (j + '0');
+	} else {
+	  hex[i * 2] = (j + 'a' - 10);
+	}
+
+      j = bin[i] & 0xf;
+
+      if (j <= 9)
+	{
+	  hex[i * 2 + 1] = (j + '0');
+	} else {
+	  hex[i * 2 + 1] = (j + 'a' - 10);
+	}
+    };
+
+  hex[HASHHEXLEN] = '\0';
+}
+
+/** get an MD5 hash of a string */
+string calculateMD5(const string& input) {
+  MD5_CTX Md5Ctx;
+  HASH H;
+  HASHHEX HH;
+
+  MD5Init(&Md5Ctx);
+  MD5Update(&Md5Ctx, (unsigned char*)input.c_str(), input.length());
+  MD5Final(H, &Md5Ctx);
+  cvt_hex(H, HH);
+  return string((const char*)HH);
+}

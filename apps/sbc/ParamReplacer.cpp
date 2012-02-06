@@ -29,7 +29,7 @@
 #include "AmSipHeaders.h"
 #include "AmUtils.h"
 #include "SBC.h" // for RegexMapper SBCFactory::regex_mappings
-
+#include <algorithm>
 
 void replaceParsedParam(const string& s, size_t p,
 			const AmUriParser& parsed, string& res) {
@@ -333,6 +333,62 @@ string replaceParameters(const string& s,
 		map_val_replaced.c_str(), map_val.c_str(), mapping_name.c_str());
 	  }
  
+	  skip_chars = skip_p-p;
+	} break;
+
+	case '_': { // modify
+	  if (s.length()<p+4) { // $_O()
+	    WARN("Error parsing $_ modifier replacement (short string)\n");
+	    break;
+	  }
+
+	  char operation = s[p+1];
+	  if (operation != 'U' && operation != 'l') {
+	    WARN("Error parsing $_%c string modifier: unknown operator '%c'\n",
+		 operation, operation);
+	  }
+
+	  if (s[p+2] != '(') {
+	    WARN("Error parsing $U upcase replacement (missing '(')\n");
+	    break;
+	  }
+
+	  size_t skip_p = p+3;
+	  skip_p = skip_to_end_of_brackets(s, skip_p);
+
+	  if (skip_p==s.length()) {
+	    WARN("Error parsing $_ modifier (unclosed brackets)\n");
+	    skip_chars = skip_p-p;
+	    break;
+	  }
+
+	  string br_str = s.substr(p+3, skip_p-p-3);
+	  string br_str_replaced = replaceParameters(br_str, "$_*(...)",
+						     req, app_param,
+						     ruri_parser, from_parser, to_parser);
+	  br_str = br_str_replaced;
+	  switch(operation) {
+	  case 'u': // uppercase
+	    transform(br_str_replaced.begin(), br_str_replaced.end(),
+		      br_str_replaced.begin(), ::toupper); break;
+	  case 'l': // lowercase
+	    transform(br_str_replaced.begin(), br_str_replaced.end(),
+		      br_str_replaced.begin(), ::tolower); break;
+
+	  case 's': // size (string length)
+	    br_str_replaced = int2str((unsigned int)br_str.length());
+	    break;
+
+	  case '5': // md5
+	    br_str_replaced = calculateMD5(br_str);
+	    break;
+
+	  default: break;
+	  }
+	  DBG("applied operator '%c': '%s' => '%s'\n", operation,
+	      br_str.c_str(), br_str_replaced.c_str());
+	  res+=br_str_replaced;
+
 	  skip_chars = skip_p-p;
 	} break;
 

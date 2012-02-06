@@ -32,16 +32,11 @@
 #include "AmSession.h"
 #include "AmOfferAnswer.h"
 #include "ampi/UACAuthAPI.h"
+#include "AmUtils.h"
 
 #include <string>
 using std::string;
 #include <map>
-
-#define HASHLEN 16
-typedef unsigned char HASH[HASHLEN];
-
-#define HASHHEXLEN 32
-typedef unsigned char HASHHEX[HASHHEXLEN+1];
 
 /** \brief Challenge in uac auth */
 struct UACAuthDigestChallenge {

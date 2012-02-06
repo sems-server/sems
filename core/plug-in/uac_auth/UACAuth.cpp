@@ -410,36 +410,6 @@ bool UACAuth::do_auth(const UACAuthDigestChallenge& challenge,
   return true;
 }
 
-// These functions come basically from ser's uac module 
-static inline void cvt_hex(HASH bin, HASHHEX hex)
-{
-  unsigned short i;
-  unsigned char j;
-
-  for (i = 0; i<HASHLEN; i++)
-    {
-      j = (bin[i] >> 4) & 0xf;
-      if (j <= 9)
-	{
-	  hex[i * 2] = (j + '0');
-	} else {
-	  hex[i * 2] = (j + 'a' - 10);
-	}
-
-      j = bin[i] & 0xf;
-
-      if (j <= 9)
-	{
-	  hex[i * 2 + 1] = (j + '0');
-	} else {
-	  hex[i * 2 + 1] = (j + 'a' - 10);
-	}
-    };
-
-  hex[HASHHEXLEN] = '\0';
-}
-
-
 /* 
  * calculate H(A1)
  */
