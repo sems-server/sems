@@ -49,6 +49,9 @@ class CCBLRedis : public AmDynInvoke
 {
   static CCBLRedis* _instance;
 
+  bool   pass_on_bl_unavailable;
+  unsigned int max_retries;
+
   bool full_logging;
   int handle_redis_reply(redisContext* redis_context, redisReply* reply, bool& hit);
 

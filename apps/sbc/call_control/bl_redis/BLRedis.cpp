@@ -30,6 +30,7 @@
 #include "BLRedis.h"
 
 #include "ampi/SBCCallControlAPI.h"
+#include "AmSipHeaders.h"
 
 #include <string.h>
 
@@ -78,6 +79,7 @@ int CCBLRedis::onLoad() {
   string redis_reconnect_timers = "5,10,20,50,100,500,1000";
   string redis_connections = "10";
   string redis_max_conn_wait = "1000";
+  pass_on_bl_unavailable = false;
 
   full_logging = false;
 
@@ -92,6 +94,8 @@ int CCBLRedis::onLoad() {
     redis_connections = cfg.getParameter("redis_connections", redis_connections);
     redis_max_conn_wait = cfg.getParameter("redis_max_conn_wait", redis_max_conn_wait);
     full_logging = cfg.getParameter("redis_full_logging", "no")=="yes";
+
+    pass_on_bl_unavailable = cfg.getParameter("pass_on_bl_unavailable", "no")=="yes";
   }
 
   unsigned int i_redis_connections;
@@ -129,6 +133,9 @@ int CCBLRedis::onLoad() {
 			     reconnect_timers, i_redis_max_conn_wait);
   connection_pool.add_connections(i_redis_connections);
   connection_pool.start();
+
+  DBG("setting max number max_retries to %u (as connections)\n", i_redis_connections);
+  max_retries = i_redis_connections;
 
   return 0;
 }
@@ -290,7 +297,7 @@ void CCBLRedis::start(const string& cc_name, const string& ltag,
     ERROR("deciphering argc\n");
     res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
     res_cmd[SBC_CC_REFUSE_CODE] = 500;
-    res_cmd[SBC_CC_REFUSE_REASON] = "Server Internal Error";  
+    res_cmd[SBC_CC_REFUSE_REASON] = SIP_REPLY_SERVER_INTERNAL_ERROR;
     return;
   }
 
@@ -308,13 +315,16 @@ void CCBLRedis::start(const string& cc_name, const string& ltag,
 
   bool hit = false;
 
-  for (int retries = 0;retries<10;retries++) {
+  unsigned int retries = 0;
+  for (;retries<max_retries;retries++) {
     redisContext* redis_context = connection_pool.getActiveConnection();
     if (NULL == redis_context) {
       INFO("no connection to REDIS\n");
-      res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
-      res_cmd[SBC_CC_REFUSE_CODE] = 500;
-      res_cmd[SBC_CC_REFUSE_REASON] = "Server Internal Error";
+      if (!pass_on_bl_unavailable) {
+	res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
+	res_cmd[SBC_CC_REFUSE_CODE] = 500;
+	res_cmd[SBC_CC_REFUSE_REASON] = SIP_REPLY_SERVER_INTERNAL_ERROR;
+      }
       return;
     }
 
@@ -334,6 +344,16 @@ void CCBLRedis::start(const string& cc_name, const string& ltag,
     connection_pool.returnConnection(redis_context);
     break;
   }
+
+  if (retries == max_retries) {
+    if (!pass_on_bl_unavailable) {
+      res_cmd[SBC_CC_ACTION] = SBC_CC_REFUSE_ACTION;
+      res_cmd[SBC_CC_REFUSE_CODE] = 500;
+      res_cmd[SBC_CC_REFUSE_REASON] = SIP_REPLY_SERVER_INTERNAL_ERROR;
+    }
+    return;
+  }
+
 
   if (hit) {
     if (values.hasMember("action") && isArgCStr(values["action"]) && 
