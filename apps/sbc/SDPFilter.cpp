@@ -105,12 +105,10 @@ void filter_alines(SdpMedia& m) {
   std::vector<SdpAttribute> new_alines;
   for (std::vector<SdpAttribute>::iterator a_it =
 	 m.attributes.begin(); a_it != m.attributes.end(); a_it++) {
+    // Various Attributes are added by the SDP-Parser itself, such as rtpmap, ftmp, etc.
     if ((a_it->attribute == "silenceSupp")
-     || (a_it->attribute == "rtpmap")
-     || (a_it->attribute == "fmtp")
      || (a_it->attribute == "ptime")) {
       new_alines.push_back(*a_it);
-      DBG("Left SDP-Attribute: '%s':'%s'\n", a_it->attribute.c_str(), a_it->value.c_str());
     } else {
       DBG("Dropped SDP-Attribute: '%s':'%s'\n", a_it->attribute.c_str(), a_it->value.c_str());
     }
