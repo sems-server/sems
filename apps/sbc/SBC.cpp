@@ -903,6 +903,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     }
   }
 
+  dlg.setOAEnabled(false);
+
 #undef REPLACE_VALS
 
   DBG("SBC: connecting to '%s'\n",ruri.c_str());
@@ -1529,6 +1531,8 @@ void SBCDialog::createCalleeSession()
 
   if(outbound_interface >= 0)
     callee_dlg.outbound_interface = outbound_interface;
+
+  callee_dlg.setOAEnabled(false);
 
   if(rtprelay_interface >= 0)
     callee_session->setRtpRelayInterface(rtprelay_interface);

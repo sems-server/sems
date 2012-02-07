@@ -124,6 +124,7 @@ private:
 
   // Current offer/answer transaction
   AmOfferAnswer oa;
+  bool offeranswer_enabled;
 
   // Reliable provisional reply support
   Am100rel rel100;
@@ -215,6 +216,7 @@ private:
 
   AmOfferAnswer::OAState getOAState();
   void setOAState(AmOfferAnswer::OAState n_st);
+  void setOAEnabled(bool oa_enabled);
 
   void setRel100State(Am100rel::State rel100_state);
 
