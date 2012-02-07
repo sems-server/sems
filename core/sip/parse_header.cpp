@@ -327,7 +327,6 @@ int parse_headers(list<sip_header*>& hdrs, char** c, char* end)
 	    switch(**c){
 	    case HCOLON:
 		st = H_VALUE_SWS;
-		begin = *c+1;
 		break;
 
 	    case SP:
