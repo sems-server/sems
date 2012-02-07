@@ -91,8 +91,17 @@ using std::list;
 #define IS_USER(c) \
    (IS_UNRESERVED(c) || IS_USER_UNRESERVED(c)) // Escaped chars missing
 
-#define SIPVER_len 7 // "SIP" "/" 1*DIGIT 1*DIGIT
+//
+// SIP version constants
+//
 
+#define SIP_str    "SIP"
+#define SUP_SIPVER "/2.0"
+
+#define SIP_len        (sizeof(SIP_str)-/*0-term*/1)
+#define SUP_SIPVER_len (sizeof(SUP_SIPVER)-/*0-term*/1)
+
+#define SIPVER_len (SIP_len+SUP_SIPVER_len)
 
 //
 // Common states: (>100)
