@@ -551,7 +551,7 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
 {
   set_sip_relay_only(false);
-  dlg.rel100.setState(Am100rel::REL100_IGNORED);
+  dlg.setRel100State(Am100rel::REL100_IGNORED);
 
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
@@ -1583,7 +1583,7 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
     call_profile(call_profile),
     AmB2BCalleeSession(caller)
 {
-  dlg.rel100.setState(Am100rel::REL100_IGNORED);
+  dlg.setRel100State(Am100rel::REL100_IGNORED);
 
   if (call_profile.sdpfilter_enabled) {
     b2b_mode = B2BMode_SDPFilter;
