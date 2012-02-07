@@ -71,6 +71,9 @@ struct SdpConnection
   string address;
 
   SdpConnection() : address() {}
+
+  /** pretty print */
+  string debugPrint() const;
 };
 
 /** \brief o=... line in SDP */
@@ -150,6 +153,9 @@ struct SdpMedia
   std::vector<SdpAttribute> attributes; // unknown attributes
 
   SdpMedia() : conn(),send(true),recv(true) {}
+
+  /** pretty print */
+  string debugPrint() const;
 
   /**
    * Checks which payloads are compatible with the payload provider,
