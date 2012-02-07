@@ -38,6 +38,6 @@ using std::string;
 int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilter_list);
 
 /** normalize SDP, fixing some common issues */
-int normalizeSDP(AmSdp& sdp, bool anonymize_sdp);
+int normalizeSDP(AmSdp& sdp, bool anonymize_sdp, bool filter_sdp_alines);
 
 #endif

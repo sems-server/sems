@@ -113,6 +113,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       sdpfilter_list.insert(c);
     }
     anonymize_sdp = cfg.getParameter("sdp_anonymize", "no") == "yes";
+    filter_sdp_alines = cfg.getParameter("filter_sdp_alines", "no") == "yes";
   }
 
 

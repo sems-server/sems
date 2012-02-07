@@ -101,7 +101,24 @@ void fix_incomplete_silencesupp(SdpMedia& m) {
   }
 }
 
-int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
+void filter_alines(SdpMedia& m) {
+  std::vector<SdpAttribute> new_alines;
+  for (std::vector<SdpAttribute>::iterator a_it =
+	 m.attributes.begin(); a_it != m.attributes.end(); a_it++) {
+    if ((a_it->attribute == "silenceSupp")
+     || (a_it->attribute == "rtpmap")
+     || (a_it->attribute == "fmtp")
+     || (a_it->attribute == "ptime")) {
+      new_alines.push_back(*a_it);
+      DBG("Left SDP-Attribute: '%s':'%s'\n", a_it->attribute.c_str(), a_it->value.c_str());
+    } else {
+      DBG("Dropped SDP-Attribute: '%s':'%s'\n", a_it->attribute.c_str(), a_it->value.c_str());
+    }
+  }
+  m.attributes = new_alines;
+}
+
+int normalizeSDP(AmSdp& sdp, bool anonymize_sdp, bool filter_sdp_alines) {
   for (std::vector<SdpMedia>::iterator m_it=
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
     if (m_it->type != MT_AUDIO && m_it->type != MT_VIDEO)
@@ -113,6 +130,10 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
     // fix incomplete silenceSupp attributes (see RFC3108)
     // (only media level - RFC3108 4.)
     fix_incomplete_silencesupp(*m_it);
+
+    // Filter SDP A-Lines, if wanted:
+    if (filter_sdp_alines)
+      filter_alines(*m_it);
   }
 
   if (anonymize_sdp) {
@@ -123,6 +144,7 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
     // Clear origin user
     sdp.origin.user = "-";
   }
+
 
   return 0;
 }
