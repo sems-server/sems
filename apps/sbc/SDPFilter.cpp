@@ -101,22 +101,50 @@ void fix_incomplete_silencesupp(SdpMedia& m) {
   }
 }
 
-void filter_alines(SdpMedia& m) {
+std::vector<SdpAttribute> filterAlinesInternal(std::vector<SdpAttribute> list, 
+  FilterType sdpalinesfilter, const std::set<string>& sdpalinesfilter_list) {
+
   std::vector<SdpAttribute> new_alines;
   for (std::vector<SdpAttribute>::iterator a_it =
-	 m.attributes.begin(); a_it != m.attributes.end(); a_it++) {
-    // Various Attributes are added by the SDP-Parser itself, such as rtpmap, ftmp, etc.
-    if ((a_it->attribute == "silenceSupp")
-     || (a_it->attribute == "ptime")) {
-      new_alines.push_back(*a_it);
-    } else {
-      DBG("Dropped SDP-Attribute: '%s':'%s'\n", a_it->attribute.c_str(), a_it->value.c_str());
-    }
+    list.begin(); a_it != list.end(); a_it++) {
+    
+    // Case insensitive search:
+    string c = a_it->attribute;
+    std::transform(c.begin(), c.end(), c.begin(), ::tolower);
+    
+    // Check, if this should be filtered:
+    bool is_filtered =  (sdpalinesfilter == Whitelist) ^
+      (sdpalinesfilter_list.find(c) != sdpalinesfilter_list.end());
+
+    DBG("%s (%s) is_filtered: %s\n", a_it->attribute.c_str(), c.c_str(), 
+     	  is_filtered?"true":"false");
+ 
+    // If it is not filtered, just add it to the list:
+    if (!is_filtered)
+	new_alines.push_back(*a_it);
   }
-  m.attributes = new_alines;
+  return new_alines;
 }
 
-int normalizeSDP(AmSdp& sdp, bool anonymize_sdp, bool filter_sdp_alines) {
+int filterSDPalines(AmSdp& sdp, FilterType sdpalinesfilter, const std::set<string>& sdpalinesfilter_list) {
+  // If not Black- or Whitelist, simply return
+  if (sdpalinesfilter == Transparent)
+    return 0;
+  
+  // We start with per Session-alines
+  sdp.attributes = filterAlinesInternal(sdp.attributes, sdpalinesfilter, sdpalinesfilter_list);
+
+  for (std::vector<SdpMedia>::iterator m_it =
+	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
+    SdpMedia& media = *m_it;
+    // todo: what if no payload supported any more?
+    media.attributes = filterAlinesInternal(media.attributes, sdpalinesfilter, sdpalinesfilter_list);
+  }
+
+  return 0;
+}
+
+int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
   for (std::vector<SdpMedia>::iterator m_it=
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
     if (m_it->type != MT_AUDIO && m_it->type != MT_VIDEO)
@@ -128,10 +156,6 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp, bool filter_sdp_alines) {
     // fix incomplete silenceSupp attributes (see RFC3108)
     // (only media level - RFC3108 4.)
     fix_incomplete_silencesupp(*m_it);
-
-    // Filter SDP A-Lines, if wanted:
-    if (filter_sdp_alines)
-      filter_alines(*m_it);
   }
 
   if (anonymize_sdp) {
@@ -146,3 +170,5 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp, bool filter_sdp_alines) {
 
   return 0;
 }
+
+

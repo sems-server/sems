@@ -113,9 +113,26 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       sdpfilter_list.insert(c);
     }
     anonymize_sdp = cfg.getParameter("sdp_anonymize", "no") == "yes";
-    filter_sdp_alines = cfg.getParameter("filter_sdp_alines", "no") == "yes";
   }
 
+  string cfg_sdp_alines_filter = cfg.getParameter("sdp_alines_filter");
+  if (cfg_sdp_alines_filter=="whitelist") {
+    sdpalinesfilter_enabled = true;
+    sdpalinesfilter = Whitelist;
+  } else if (cfg_sdp_alines_filter=="blacklist") {
+    sdpalinesfilter_enabled = true;
+    sdpalinesfilter = Blacklist;
+  } else {
+    sdpalinesfilter_enabled = false;
+  }
+  if (sdpalinesfilter_enabled) {
+    vector<string> c_elems = explode(cfg.getParameter("sdp_alinesfilter_list"), ",");
+    for (vector<string>::iterator it=c_elems.begin(); it != c_elems.end(); it++) {
+      string c = *it;
+      std::transform(c.begin(), c.end(), c.begin(), ::tolower);
+      sdpalinesfilter_list.insert(c);
+    }
+  }
 
   sst_enabled = cfg.getParameter("enable_session_timer");
   if (cfg.hasParameter("enable_aleg_session_timer")) {
@@ -318,6 +335,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      SDP filter is %sabled, %s, %zd items in list, %sanonymizing SDP\n",
 	 sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
 	 sdpfilter_list.size(), anonymize_sdp?"":"not ");
+    INFO("SBC:      SDP alines-filter is %sabled, %s, %zd items in list\n",
+	 sdpalinesfilter_enabled?"en":"dis", FilterType2String(sdpalinesfilter),
+	 sdpalinesfilter_list.size());
 
     INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
     if (rtprelay_enabled) {
@@ -475,6 +495,8 @@ string SBCCallProfile::print() const {
   res += "sdpfilter_enabled:    " + string(sdpfilter_enabled?"true":"false") + "\n";
   res += "sdpfilter:            " + string(FilterType2String(sdpfilter)) + "\n";
   res += "sdpfilter_list:       " + stringset_print(sdpfilter_list) + "\n";
+  res += "sdpalinesfilter:      " + string(FilterType2String(sdpalinesfilter)) + "\n";
+  res += "sdpalinesfilter_list: " + stringset_print(sdpalinesfilter_list) + "\n";
   res += "sst_enabled:          " + sst_enabled + "\n";
   res += "sst_aleg_enabled:     " + sst_aleg_enabled + "\n";
   res += "auth_enabled:         " + string(auth_enabled?"true":"false") + "\n";
