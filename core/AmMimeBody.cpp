@@ -16,24 +16,99 @@ using std::auto_ptr;
 #define BOUNDARY_len (sizeof(BOUNDARY_str)-/*0-term*/1)
 
 AmMimeBody::AmMimeBody()
-  : mp_boundary(NULL),
-    content_len(0),
+  : content_len(0),
     payload(NULL)
 {
 }
 
+AmMimeBody::AmMimeBody(const AmMimeBody& body)
+  : ct(body.ct),
+    hdrs(body.hdrs),
+    content_len(0),
+    payload(NULL)
+{
+  if(body.payload && body.content_len) {
+    setPayload(body.payload,body.content_len);
+  }
+  
+  for(Parts::const_iterator it = body.parts.begin();
+      it != body.parts.end(); ++it) {
+    parts.push_back(new AmMimeBody(**it));
+  }
+}
+
 AmMimeBody::~AmMimeBody()
 {
-  clearCTParams();
   clearParts();
   clearPayload();
 }
 
-void AmMimeBody::clearCTParams()
+const AmMimeBody& AmMimeBody::operator = (const AmMimeBody& r_body)
 {
-  while(!ct_params.empty()){
-    delete ct_params.front();
-    ct_params.pop_front();
+  ct = r_body.ct;
+  hdrs = r_body.hdrs;
+
+  if(r_body.payload && r_body.content_len) {
+    setPayload(r_body.payload,r_body.content_len);
+  }
+  else {
+    clearPayload();
+  }
+
+  clearParts();
+  for(Parts::const_iterator it = r_body.parts.begin();
+      it != r_body.parts.end(); ++it) {
+    parts.push_back(new AmMimeBody(**it));
+  }
+
+  return r_body;
+}
+
+AmContentType::AmContentType()
+  : mp_boundary(NULL)
+{
+}
+
+AmContentType::AmContentType(const AmContentType& ct)
+  : type(ct.type),
+    subtype(ct.subtype),
+    mp_boundary(NULL)
+{
+  for(Params::const_iterator it = ct.params.begin();
+      it != ct.params.end(); ++it) {
+    params.push_back(new Param(**it));
+    if((*it)->type == Param::BOUNDARY)
+      mp_boundary = params.back();
+  }
+}
+
+AmContentType::~AmContentType()
+{
+  clearParams();
+}
+
+const AmContentType& AmContentType::operator = (const AmContentType& r_ct)
+{
+  type = r_ct.type;
+  subtype = r_ct.subtype;
+
+  clearParams();
+  for(Params::const_iterator it = r_ct.params.begin();
+      it != r_ct.params.end(); ++it) {
+    params.push_back(new Param(**it));
+    if((*it)->type == Param::BOUNDARY)
+      mp_boundary = params.back();
+  }
+
+  return r_ct;
+}
+
+void AmContentType::clearParams()
+{
+  mp_boundary = NULL;
+  while(!params.empty()){
+    delete params.front();
+    params.pop_front();
   }
 }
 
@@ -51,7 +126,7 @@ void AmMimeBody::clearPayload()
   payload = NULL;  
 }
 
-int AmMimeBody::parseCT(const string& ct)
+int AmContentType::parse(const string& ct)
 {
   enum {
     CT_TYPE=0,
@@ -75,12 +150,12 @@ int AmMimeBody::parseCT(const string& ct)
       case_CR_LF;
       case SP:
       case HTAB:
-	ct_type = string(beg,c-beg);
+	type = string(beg,c-beg);
 	st = CT_SLASH_SWS;
 	break;
 	
       case SLASH:
-	ct_type = string(beg,c-beg);
+	type = string(beg,c-beg);
 	st = CT_SUBTYPE_SWS;
 	break;
       }
@@ -125,8 +200,8 @@ int AmMimeBody::parseCT(const string& ct)
       case SP:
       case HTAB:
       case SEMICOLON:
-	ct_subtype = string(beg,c-beg);
-	return parseCTParams(c,end);
+	subtype = string(beg,c-beg);
+	return parseParams(c,end);
       }
       break;
 
@@ -142,7 +217,7 @@ int AmMimeBody::parseCT(const string& ct)
 	  return -1;
 	}
 	else {
-	  ct_type = string(beg,(c-(st==ST_CRLF?2:1))-beg);
+	  type = string(beg,(c-(st==ST_CRLF?2:1))-beg);
 	  saved_st = CT_SLASH_SWS;
 	}
 	break;
@@ -158,13 +233,13 @@ int AmMimeBody::parseCT(const string& ct)
 	break;
 
       case CT_SUBTYPE:
-	ct_subtype = string(beg,(c-(st==ST_CRLF?2:1))-beg);
+	subtype = string(beg,(c-(st==ST_CRLF?2:1))-beg);
 	if(!IS_WSP(*c)){
 	  // should not happen: parse_headers() should already 
 	  //                    have triggered an error
 	  return 0;
 	}
-	return parseCTParams(c,end);
+	return parseParams(c,end);
       }
       
       st = saved_st;
@@ -181,62 +256,65 @@ int AmMimeBody::parseCT(const string& ct)
     return -1;
     
   case CT_SUBTYPE:
-    ct_subtype = string(beg,c-beg);
+    subtype = string(beg,c-beg);
     break;
   }
   
   return 0;
 }
 
-int  AmMimeBody::parseCTParams(const char* c, const char* end)
+int  AmContentType::parseParams(const char* c, const char* end)
 {
-  list<sip_avp*> params;
-  if(parse_gen_params(&params, &c, end-c, '\0') < 0) {
-    if(!params.empty()) free_gen_params(&params);
+  list<sip_avp*> avp_params;
+  if(parse_gen_params(&avp_params, &c, end-c, '\0') < 0) {
+    if(!avp_params.empty()) free_gen_params(&avp_params);
     return -1;
   }
   
-  for(list<sip_avp*>::iterator it_ct_param = params.begin();
-      it_ct_param != params.end();++it_ct_param) {
+  for(list<sip_avp*>::iterator it_ct_param = avp_params.begin();
+      it_ct_param != avp_params.end();++it_ct_param) {
 
     DBG("parsed new content-type parameter: <%.*s>=<%.*s>",
 	(*it_ct_param)->name.len,(*it_ct_param)->name.s,
 	(*it_ct_param)->value.len,(*it_ct_param)->value.s);
 
-    CTParam* p = new CTParam(c2stlstr((*it_ct_param)->name),
- 			     c2stlstr((*it_ct_param)->value));
+    Param* p = new Param(c2stlstr((*it_ct_param)->name),
+			 c2stlstr((*it_ct_param)->value));
 
-    if(parseCTParamType(p)) {
-      free_gen_params(&params);
+    if(p->parseType()) {
+      free_gen_params(&avp_params);
       delete p;
       return -1;
     }
-    ct_params.push_back(p);
+    
+    if(p->type == Param::BOUNDARY)
+      mp_boundary = p;
+
+    params.push_back(p);
   }
 
-  free_gen_params(&params);
+  free_gen_params(&avp_params);
   return 0;
 }
 
-int AmMimeBody::parseCTParamType(CTParam* p)
+int AmContentType::Param::parseType()
 {
-  const char* c = p->name.c_str();
-  unsigned  len = p->name.length();
+  const char* c = name.c_str();
+  unsigned  len = name.length();
   
   switch(len){
   case BOUNDARY_len:
     if(!lower_cmp(c,BOUNDARY_str,len)){
-      if(p->value.empty()) {
+      if(value.empty()) {
 	DBG("Content-Type boundary parameter is missing a value\n");
 	return -1;
       }
-      p->type = CTParam::BOUNDARY;
-      mp_boundary = p;
+      type = Param::BOUNDARY;
     }
-    else p->type = CTParam::OTHER;
+    else type = Param::OTHER;
     break;
   default:
-    p->type = CTParam::OTHER;
+    type = Param::OTHER;
     break;
   }
 
@@ -258,12 +336,13 @@ int AmMimeBody::findNextBoundary(unsigned char** beg, unsigned char** end)
     B_MATCHED
   };
 
-  if(!mp_boundary)
+  if(!ct.mp_boundary)
     return -1;
 
   unsigned char* c = *beg;
-  unsigned char* b = (unsigned char*)mp_boundary->value.c_str();
-  unsigned char* b_end = b + mp_boundary->value.length();
+  unsigned char* b_ini = (unsigned char*)ct.mp_boundary->value.c_str();
+  unsigned char* b = b_ini;
+  unsigned char* b_end = b + ct.mp_boundary->value.length();
 
   int st=B_START;
 
@@ -289,14 +368,13 @@ int AmMimeBody::findNextBoundary(unsigned char** beg, unsigned char** end)
 		 switch(*c){			\
 		 case _ch_:			\
 		   st = _st1_;			\
-		   break;				\
-		 default:				\
-		   b = (unsigned char*)			\
-		     mp_boundary->value.c_str();	\
-		   is_final = false;			\
-		   st = B_START;			\
-		   break;				\
-		 }					\
+		   break;			\
+		 default:			\
+		   b = b_ini;			\
+		   is_final = false;		\
+		   st = B_START;		\
+		   break;			\
+		 }				\
 		 break
 
 
@@ -338,7 +416,7 @@ int AmMimeBody::findNextBoundary(unsigned char** beg, unsigned char** end)
 	}
       }
       else {
-	b = (unsigned char*)mp_boundary->value.c_str();
+	b = b_ini;
 	st = B_START;
       }
       break;
@@ -355,7 +433,7 @@ int AmMimeBody::findNextBoundary(unsigned char** beg, unsigned char** end)
 	break;
 
       default:
-	b = (unsigned char*)mp_boundary->value.c_str();
+	b = b_ini;
 	st = B_START;
 	break;
       }
@@ -415,8 +493,8 @@ int AmMimeBody::parseSinglePart(unsigned char* buf, unsigned int len)
   }
   else {
     DBG("Either no Content-Type, or subpart parsing failed.\n");
-    sub_part->setCTType("");
-    sub_part->setCTSubType("");
+    sub_part->ct.setType("");
+    sub_part->ct.setSubType("");
     sub_part->setPayload((unsigned char*)c,end-c);
   }
 
@@ -427,16 +505,16 @@ int AmMimeBody::parseSinglePart(unsigned char* buf, unsigned int len)
   return 0;
 }
 
-int AmMimeBody::parseMultipart(unsigned char* buf, unsigned int len)
+int AmMimeBody::parseMultipart(const unsigned char* buf, unsigned int len)
 {
-  if(!mp_boundary) {
+  if(!ct.mp_boundary) {
     DBG("boundary parameter missing in a multipart MIME body\n");
     return -1;
   }
 
-  unsigned char* buf_end   = buf + len;
-  unsigned char* part_end  = buf;
-  unsigned char* next_part = buf_end;
+  unsigned char* buf_end   = (unsigned char*)buf + len;
+  unsigned char* part_end  = (unsigned char*)buf;
+  unsigned char* next_part = (unsigned char*)buf_end;
 
   int err = findNextBoundary(&part_end,&next_part);
   if(err < 0) {
@@ -472,13 +550,14 @@ int AmMimeBody::parseMultipart(unsigned char* buf, unsigned int len)
   return 0;
 }
 
-int AmMimeBody::parse(const string& ct, unsigned char* buf, unsigned int len)
+int AmMimeBody::parse(const string& content_type,
+		      const unsigned char* buf, 
+		      unsigned int len)
 {
-  if(parseCT(ct) < 0)
+  if(ct.parse(content_type) < 0)
     return -1;
   
-  if( !lower_cmp_n(ct_type.c_str(),ct_type.length(),
-		   MULTIPART,sizeof(MULTIPART)-1) ) {
+  if(ct.isType(MULTIPART)) {
 
     DBG("parsing multi-part body\n");
     return parseMultipart(buf,len);
@@ -491,24 +570,193 @@ int AmMimeBody::parse(const string& ct, unsigned char* buf, unsigned int len)
   return 0;
 }
 
-void AmMimeBody::setCTType(const string& type)
+void AmMimeBody::convertToMultipart()
 {
-  ct_type = type;
+  AmContentType n_ct;
+  n_ct.parse(MULTIPART_MIXED); // never fails
+
+  AmMimeBody* n_part = new AmMimeBody(*this);
+  n_part->ct = ct;
+
+  parts.push_back(n_part);
+  ct = n_ct;
 }
 
-void AmMimeBody::setCTSubType(const string& subtype)
+void AmContentType::setType(const string& t)
 {
-  ct_subtype = subtype;
+  type = t;
 }
+
+void AmContentType::setSubType(const string& st)
+{
+  subtype = st;
+}
+
+bool AmContentType::isType(const string& t) const
+{
+  return !lower_cmp_n(t.c_str(),t.length(),
+		      type.c_str(),type.length());
+}
+
+bool AmContentType::isSubType(const string& st) const
+{
+  return !lower_cmp_n(st.c_str(),st.length(),
+		      subtype.c_str(),subtype.length());
+}
+
 
 void AmMimeBody::setHeaders(const string& hdrs)
 {
   this->hdrs = hdrs;
 }
 
-void AmMimeBody::setPayload(unsigned char* buf, unsigned int len)
+AmMimeBody* AmMimeBody::addPart(const string& content_type)
 {
-  payload = new unsigned char [len];
+  AmMimeBody* body = NULL;
+  if(ct.type.empty() && ct.subtype.empty()) {
+    // fill *this* body
+    if(ct.parse(content_type)) {
+      DBG("could not parse content-type\n");
+      return NULL;
+    }
+    
+    body = this;
+  }
+  else if(!ct.isType(MULTIPART)) {
+    // convert to multipart
+    convertToMultipart();
+    body = new AmMimeBody();
+    if(body->ct.parse(content_type)) {
+      DBG("parsing new content-type failed\n");
+      delete body;
+      return NULL;
+    }
+
+    // add new part
+    parts.push_back(body);
+  }
+  
+  return body;
+}
+
+void AmMimeBody::setPayload(const unsigned char* buf, unsigned int len)
+{
+  if(payload)
+    clearPayload();
+
+  payload = new unsigned char [len+1];
   memcpy(payload,buf,len);
   content_len = len;
+
+  // zero-term for the SDP parser
+  payload[len] = '\0';
+}
+
+bool AmMimeBody::empty() const
+{
+  return (!payload || !content_len)
+    && parts.empty();
+}
+
+bool AmContentType::hasContentType(const string& content_type) const
+{
+  if(content_type.empty() && type.empty() && subtype.empty())
+    return true;
+
+  if(content_type.empty() != (type.empty() && subtype.empty()))
+    return false;
+
+  // Quick & dirty comparison, might not always be correct
+  string cmp_ct = type + "/" + subtype;
+  return !lower_cmp_n(cmp_ct.c_str(),cmp_ct.length(),
+		      content_type.c_str(),content_type.length());
+}
+
+string AmContentType::getStr() const 
+{
+  if(type.empty() && subtype.empty())
+    return "";
+
+  return type + "/" + subtype; 
+}
+
+string AmContentType::getHdr() const
+{
+  string ct = getStr();
+  if(ct.empty())
+    return ct;
+
+  for(Params::const_iterator it = params.begin();
+      it != params.end(); ++it) {
+    
+    ct += ";" + (*it)->name + "=" + (*it)->value;
+  }
+
+  return ct;
+}
+
+bool AmMimeBody::isContentType(const string& content_type) const
+{
+  return ct.hasContentType(content_type);
+}
+
+AmMimeBody* AmMimeBody::hasContentType(const string& content_type)
+{
+  if(isContentType(content_type)) {
+    return this;
+  }
+  else if(ct.isType(MULTIPART)) {
+    for(Parts::iterator it = parts.begin();
+	it != parts.end(); ++it) {
+      
+      if((*it)->hasContentType(content_type)) {
+	return *it;
+      }
+    }
+  }
+
+  return NULL;
+}
+
+const AmMimeBody* AmMimeBody::hasContentType(const string& content_type) const
+{
+  if(isContentType(content_type)) {
+    return this;
+  }
+  else if(ct.isType(MULTIPART)) {
+    for(Parts::const_iterator it = parts.begin();
+	it != parts.end(); ++it) {
+      
+      if((*it)->hasContentType(content_type)) {
+	return *it;
+      }
+    }
+  }
+
+  return NULL;
+}
+
+void AmMimeBody::print(string& buf) const
+{
+  if(empty())
+    return;
+
+  if(content_len) {
+    buf += string((const char*)payload,content_len);
+  }
+  else {
+    for(Parts::const_iterator it = parts.begin();
+	it != parts.end(); ++it) {
+
+      buf += "--" + ct.mp_boundary->value + CRLF;
+      buf += SIP_HDR_CONTENT_TYPE COLSP + (*it)->getCTHdr() + CRLF;
+      buf += (*it)->hdrs + CRLF;
+      (*it)->print(buf);
+      buf += CRLF;
+    }
+
+    if(!parts.empty()) {
+      buf += "--" + ct.mp_boundary->value + "--" CRLF;
+    }
+  }
 }
