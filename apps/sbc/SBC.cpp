@@ -843,7 +843,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs,PARAM_HDR);
   removeHeader(invite_req.hdrs,"P-App-Name");
 
-  if (call_profile.sdpfilter_enabled) {
+  if (call_profile.sdpfilter_enabled || call_profile.payload_order.size()) {
     b2b_mode = B2BMode_SDPFilter;
   }
 
@@ -1037,6 +1037,7 @@ int SBCDialog::filterBody(AmSdp& sdp, bool is_a2b) {
     if (call_profile.sdpfilter != Transparent) {
       filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
     }
+    call_profile.orderSDP(sdp);
   }
   return 0;
 }
@@ -1585,7 +1586,7 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
 {
   dlg.rel100.setState(Am100rel::REL100_IGNORED);
 
-  if (call_profile.sdpfilter_enabled) {
+  if (call_profile.sdpfilter_enabled || call_profile.payload_order.size()) {
     b2b_mode = B2BMode_SDPFilter;
   }
 
@@ -1714,6 +1715,7 @@ int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {
     if (call_profile.sdpfilter != Transparent) {
       filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
     }
+    call_profile.orderSDP(sdp);
   }
   return 0;
 }

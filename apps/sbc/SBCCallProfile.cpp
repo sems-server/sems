@@ -279,6 +279,12 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   outbound_interface = cfg.getParameter("outbound_interface");
 
+  if (!readPayloadOrder(cfg.getParameter("payload_order"))) return false;
+  if (payload_order.size() && (!sdpfilter_enabled)) {
+    sdpfilter_enabled = true;
+    sdpfilter = Transparent;
+  }
+
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
     ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());
@@ -396,6 +402,26 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      append headers '%s'\n", append_headers.c_str());
   }
 
+  if (payload_order.size() > 0) {
+    INFO("SBC:      payload order:\n");
+    for (vector<PayloadDesc>::iterator i = payload_order.begin(); i != payload_order.end(); ++i)
+    INFO("SBC:         - %s\n", i->print().c_str());
+  }
+
+  return true;
+}
+
+static bool payloadDescsEqual(const vector<PayloadDesc> &a, const vector<PayloadDesc> &b)
+{
+  // not sure if this function is really needed (seems that vectors can be
+  // compared using builtin operator== but anyway ...)
+  if (a.size() != b.size()) return false;
+  vector<PayloadDesc>::const_iterator ia = a.begin();
+  vector<PayloadDesc>::const_iterator ib = b.begin();
+  for (; ia != a.end(); ++ia, ++ib) {
+    if (!(*ia == *ib)) return false;
+  }
+
   return true;
 }
 
@@ -443,6 +469,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
       auth_aleg_credentials.user == rhs.auth_aleg_credentials.user &&
       auth_aleg_credentials.pwd == rhs.auth_aleg_credentials.pwd;
   }
+  res = res && payloadDescsEqual(payload_order, rhs.payload_order);
   return res;
 }
 
@@ -485,6 +512,12 @@ string SBCCallProfile::print() const {
   res += "rtprelay_enabled:     " + string(rtprelay_enabled?"true":"false") + "\n";
   res += "force_symmetric_rtp:  " + force_symmetric_rtp;
   res += "msgflags_symmetric_rtp: " + string(msgflags_symmetric_rtp?"true":"false") + "\n";
+  res += "payload_order:        ";
+  for (vector<PayloadDesc>::const_iterator i = payload_order.begin(); i != payload_order.end(); ++i) {
+    if (i != payload_order.begin()) res += ",";
+    res += i->print();
+  }
+  res += "\n";
 
 
   if (reply_translations.size()) {
@@ -502,3 +535,87 @@ string SBCCallProfile::print() const {
   return res;
 }
 
+bool SBCCallProfile::readPayloadOrder(const std::string &src)
+{
+  vector<string> elems = explode(src, ",");
+  for (vector<string>::iterator it=elems.begin(); it != elems.end(); ++it) {
+    PayloadDesc payload;
+    if (!payload.read(*it)) return false;
+    payload_order.push_back(payload);
+  }
+  return true;
+}
+
+void SBCCallProfile::orderSDP(AmSdp& sdp)
+{
+  if (payload_order.size() < 1) return; // nothing to do - no predefined order
+
+  DBG("ordering SDP\n");
+  for (vector<SdpMedia>::iterator m_it =
+	 sdp.media.begin(); m_it != sdp.media.end(); ++m_it) {
+    SdpMedia& media = *m_it;
+
+    int pos = 0;
+    unsigned idx;
+    unsigned cnt = media.payloads.size();
+
+    // TODO: optimize
+    // for each predefined payloads in their order
+    for (vector<PayloadDesc>::iterator i = payload_order.begin(); i != payload_order.end(); ++i) {
+      // try to find this payload in SDP 
+      // (not needed to go through already sorted members and current
+      // destination pos)
+      for (idx = pos + 1; idx < cnt; idx++) {
+        if (i->match(media.payloads[idx])) {
+          // found, exchange elements at pos and idx
+          SdpPayload p = media.payloads[idx]; 
+          media.payloads[idx] = media.payloads[pos];
+          media.payloads[pos] = p;
+	
+	  ++pos; // next payload index
+          break;
+	}
+      }
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+bool PayloadDesc::match(const SdpPayload &p) const
+{
+  //FIXME: payload names case sensitive?
+  if ((name.size() > 0) && (name != p.encoding_name)) return false;
+  if (clock_rate && (p.clock_rate > 0) && clock_rate != (unsigned)p.clock_rate) return false;
+  return true;
+}
+
+bool PayloadDesc::read(const std::string &s)
+{
+  vector<string> elems = explode(s, "/");
+  if (elems.size() > 1) {
+    name = elems[0];
+    str2i(elems[1], clock_rate);
+  }
+  else if (elems.size() > 0) {
+    name = elems[0];
+    clock_rate = 0;
+  }
+  return true;
+}
+
+string PayloadDesc::print() const
+{
+    std::string s(name); 
+    s += " / "; 
+    if (!clock_rate) s += "whatever rate";
+    else s += int2str(clock_rate); 
+    return s; 
+}
+    
+bool PayloadDesc::operator==(const PayloadDesc &other) const
+{
+  if (name != other.name) return false;
+  if (clock_rate != other.clock_rate) return false;
+  return true;
+}

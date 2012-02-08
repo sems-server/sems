@@ -55,6 +55,26 @@ struct CCInterface {
 typedef std::list<CCInterface> CCInterfaceListT;
 typedef CCInterfaceListT::iterator CCInterfaceListIteratorT;
 
+class PayloadDesc {
+  protected:
+    std::string name;
+    unsigned clock_rate; // 0 means "doesn't matter"
+
+  public:
+    bool match(const SdpPayload &p) const;
+    std::string print() const;
+    bool operator==(const PayloadDesc &other) const;
+
+    /* FIXME: really want all of this?
+     * reads from format: name/clock_rate, nothing need to be set
+     * for example: 
+     *	  PCMU
+     *	  bla/48000
+     *	  /48000
+     * */
+    bool read(const std::string &s);
+};
+
 struct SBCCallProfile
   : public AmObject {
   string md5hash;
@@ -117,6 +137,10 @@ struct SBCCallProfile
   string aleg_rtprelay_interface;
 
   string outbound_interface;
+
+  std::vector<PayloadDesc> payload_order;
+  bool readPayloadOrder(const std::string &src);
+  void orderSDP(AmSdp& sdp); // do the SDP changes
 
   // todo: RTP transcoding mode
 
