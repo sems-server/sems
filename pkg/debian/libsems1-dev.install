@@ -8,4 +8,6 @@ core/ampi usr/include/sems/
 core/amci usr/include/sems/
 core/compat/*.h usr/include/sems/compat/
 core/compat/*.c usr/include/sems/compat/
+core/compat/getos usr/include/sems/compat/
+core/compat/getarch usr/include/sems/compat/
 core/rtp usr/include/sems/
