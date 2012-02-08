@@ -551,7 +551,7 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
 {
   set_sip_relay_only(false);
-  dlg.rel100.setState(Am100rel::REL100_IGNORED);
+  dlg.setRel100State(Am100rel::REL100_IGNORED);
 
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
@@ -843,7 +843,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   removeHeader(invite_req.hdrs,PARAM_HDR);
   removeHeader(invite_req.hdrs,"P-App-Name");
 
-  if (call_profile.sdpfilter_enabled || call_profile.payload_order.size()) {
+  if ((call_profile.sdpfilter_enabled) || 
+      (call_profile.sdpalinesfilter_enabled) || 
+      call_profile.payload_order.size()) {
     b2b_mode = B2BMode_SDPFilter;
   }
 
@@ -902,6 +904,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       }
     }
   }
+
+  dlg.setOAEnabled(false);
 
 #undef REPLACE_VALS
 
@@ -1038,6 +1042,12 @@ int SBCDialog::filterBody(AmSdp& sdp, bool is_a2b) {
       filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
     }
     call_profile.orderSDP(sdp);
+  }
+  if (call_profile.sdpalinesfilter_enabled) {
+    // filter SDP "a=lines"
+    if (call_profile.sdpalinesfilter != Transparent) {
+      filterSDPalines(sdp, call_profile.sdpalinesfilter, call_profile.sdpalinesfilter_list);
+    }
   }
   return 0;
 }
@@ -1531,6 +1541,8 @@ void SBCDialog::createCalleeSession()
   if(outbound_interface >= 0)
     callee_dlg.outbound_interface = outbound_interface;
 
+  callee_dlg.setOAEnabled(false);
+
   if(rtprelay_interface >= 0)
     callee_session->setRtpRelayInterface(rtprelay_interface);
 
@@ -1584,9 +1596,11 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
     call_profile(call_profile),
     AmB2BCalleeSession(caller)
 {
-  dlg.rel100.setState(Am100rel::REL100_IGNORED);
+  dlg.setRel100State(Am100rel::REL100_IGNORED);
 
-  if (call_profile.sdpfilter_enabled || call_profile.payload_order.size()) {
+  if ((call_profile.sdpfilter_enabled) || 
+      (call_profile.sdpalinesfilter_enabled) || 
+      call_profile.payload_order.size()) {
     b2b_mode = B2BMode_SDPFilter;
   }
 
@@ -1716,6 +1730,12 @@ int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {
       filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
     }
     call_profile.orderSDP(sdp);
+  }
+  if (call_profile.sdpalinesfilter_enabled) {
+    // filter SDP "a=lines"
+    if (call_profile.sdpalinesfilter != Transparent) {
+      filterSDPalines(sdp, call_profile.sdpalinesfilter, call_profile.sdpalinesfilter_list);
+    }
   }
   return 0;
 }

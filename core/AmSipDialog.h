@@ -122,6 +122,13 @@ private:
 		  int flags,
 		  unsigned int req_cseq);
 
+  // Current offer/answer transaction
+  AmOfferAnswer oa;
+  bool offeranswer_enabled;
+
+  // Reliable provisional reply support
+  Am100rel rel100;
+
  public:
   string user;         // local user
   string domain;       // local domain
@@ -152,12 +159,6 @@ private:
   unsigned int cseq; // Local CSeq for next request
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
-
-  // Current offer/answer transaction
-  AmOfferAnswer oa;
-
-  // Reliable provisional reply support
-  Am100rel rel100;
 
   AmSipDialog(AmSipDialogEventHandler* h);
   ~AmSipDialog();
@@ -213,8 +214,14 @@ private:
   bool getSdpOffer(AmSdp& offer);
   bool getSdpAnswer(const AmSdp& offer, AmSdp& answer);
 
+  AmOfferAnswer::OAState getOAState();
+  void setOAState(AmOfferAnswer::OAState n_st);
+  void setOAEnabled(bool oa_enabled);
+
+  void setRel100State(Am100rel::State rel100_state);
+
   void uasTimeout(AmSipTimeoutEvent* to_ev);
-    
+
   /** @return 0 on success (deprecated) */
   int reply(const AmSipRequest& req,
 	    unsigned int  code, 

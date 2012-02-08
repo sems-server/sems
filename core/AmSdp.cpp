@@ -95,6 +95,21 @@ inline string transport_p_2_str(int tp)
   }
 }
 
+string SdpConnection::debugPrint() const {
+  return addr_t_2_str(addrType) + " " + address;
+}
+
+string SdpMedia::debugPrint() const {
+  string payload_list;
+  for(std::vector<SdpPayload>::const_iterator it=
+	payloads.begin(); it!= payloads.end(); it++) {
+    if (it != payloads.begin())
+      payload_list+=" ";
+    payload_list+=int2str(it->payload_type);
+  }
+  return "port "+int2str(port) + ", payloads: "+payload_list;
+}
+
 bool SdpPayload::operator == (int r)
 {
   DBG("pl == r: payload_type = %i; r = %i\n", payload_type, r);
@@ -349,7 +364,7 @@ static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
   register parse_st state;
   //default state
   state=SDP_DESCR;
-  DBG("parse_sdp_line_ex: parsing sdp message\n");
+  DBG("parsing SDP message...\n");
 
   while(*s != '\0'){
     switch(state){
@@ -568,11 +583,13 @@ static void parse_sdp_connection(AmSdp* sdp_msg, char* s, char t)
       }
     }
   }
-  if(t == 'd')
+  if(t == 'd') {
     sdp_msg->conn = c;
-  if(t == 'm'){
+    DBG("SDP: got session level connection: %s\n", c.debugPrint().c_str());
+  } else if(t == 'm'){
     SdpMedia& media = sdp_msg->media.back();
     media.conn = c;
+    DBG("SDP: got media level connection: %s\n", c.debugPrint().c_str());
   }
 
   //DBG("parse_sdp_line_ex: parse_sdp_connection: done parsing sdp connection\n");
@@ -703,10 +720,12 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
   }
   sdp_msg->media.push_back(m);
 
+  DBG("SDP: got media: %s\n", m.debugPrint().c_str());
   //DBG("parse_sdp_line_ex: parse_sdp_media: done parsing media description \n");
   return;
 }
 
+// session level attribute
 static void parse_session_attr(AmSdp* sdp_msg, char* s, char** next) {
   *next = get_next_line(s);
   if (*next == s) {
@@ -730,17 +749,17 @@ static void parse_session_attr(AmSdp* sdp_msg, char* s, char** next) {
   if (col == attr_end) {
     // property attribute
     sdp_msg->attributes.push_back(SdpAttribute(string(s, attr_end-s+1)));
-    DBG("got session attribute '%.*s\n", (int)(attr_end-s+1), s);
+    // DBG("got session attribute '%.*s\n", (int)(attr_end-s+1), s);
   } else {
     // value attribute
     sdp_msg->attributes.push_back(SdpAttribute(string(s, col-s-1),
 					       string(col, attr_end-col+1)));
-    DBG("got session attribute '%.*s:%.*s'\n", (int)(col-s-1), s, (int)(attr_end-col+1), col);
-
+    // DBG("got session attribute '%.*s:%.*s'\n", (int)(col-s-1), s, (int)(attr_end-col+1), col);
   }
 
 }
 
+// media level attribute
 static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
 {
   if(sdp_msg->media.empty()){
@@ -765,197 +784,196 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
   unsigned int payload_type, clock_rate, encoding_param = 0;
   string encoding_name, params;
 
-  if(contains(attr_line, line_end, ':')){
+  string attr;
+  if (!contains(attr_line, line_end, ':')) {
+    next = parse_until(attr_line, '\r');
+    if (next >= line_end) {
+      DBG("found attribute line '%s', which is not followed by cr\n", attr_line);
+      next = line_end;
+    }
+    attr = string(attr_line, int(next-attr_line)-1);
+    attr_check(attr);
+    parsing = 0;
+  } else {
     next = parse_until(attr_line, ':');
-    string attr(attr_line, int(next-attr_line)-1);
+    attr = string(attr_line, int(next-attr_line)-1);
     attr_line = next;
-    if(attr == "rtpmap"){
-      while(parsing){
-	switch(rtpmap_st){
-	case TYPE:
-	  {
-	    next = parse_until(attr_line, ' ');
-	    string type(attr_line, int(next-attr_line)-1);
-	    str2i(type,payload_type);
-	    attr_line = next;
-	    rtpmap_st = ENC_NAME;
-	    break;
-	  }
-	case ENC_NAME:
-	  {
-	    if(contains(s, line_end, '/')){
-	      next = parse_until(attr_line, '/');
-	      string enc_name(attr_line, int(next-attr_line)-1);
-	      encoding_name = enc_name;
-	      attr_line = next;
-	      rtpmap_st = CLK_RATE;
-	      break;
-	    }else{
-	      rtpmap_st = ENC_PARAM;
-	      break;
-	    }
-	  }
-	case CLK_RATE:
-	  {
-	    // check for posible encoding parameters after clock rate
-	    if(contains(attr_line, line_end, '/')){
-	      next = parse_until(attr_line, '/');
-	      string clk_rate(attr_line, int(next-attr_line)-1);
-	      str2i(clk_rate, clock_rate);
-	      attr_line = next;
-	      rtpmap_st = ENC_PARAM;
-	      //last line check
-	    }else if (*line_end == '\0') {
-	      string clk_rate(attr_line, int(line_end-attr_line));
-	      str2i(clk_rate, clock_rate);
-	      parsing = 0;
-	      //more lines to come
-	    }else{
-	      string clk_rate(attr_line, int(line_end-attr_line)-1);
-	      str2i(clk_rate, clock_rate);
-	      parsing=0;
-	    }
-	    
-	    break;
-	  }
-	case ENC_PARAM:
-	  {
-	    next = parse_until(attr_line, ' ');
-	    if(next < line_end){
-	      string value(attr_line, int(next-attr_line)-1);
-	      str2i(value, encoding_param);
-	      attr_line = next;
-	      rtpmap_st = ENC_PARAM;
-	    }else{
-	      string last_value(attr_line, int(line_end-attr_line)-1);
-	      str2i(last_value, encoding_param);
-	      parsing = 0;
-	    }
-	    break;
-	  }
+  }
+
+  if(attr == "rtpmap"){
+    while(parsing){
+      switch(rtpmap_st){
+      case TYPE:
+	{
+	  next = parse_until(attr_line, ' ');
+	  string type(attr_line, int(next-attr_line)-1);
+	  str2i(type,payload_type);
+	  attr_line = next;
+	  rtpmap_st = ENC_NAME;
 	  break;
 	}
-      }
-      
-      //DBG("found media attr 'rtpmap' type '%d'\n", payload_type);
-      
-      vector<SdpPayload>::iterator pl_it;
-      
-      for( pl_it=media.payloads.begin();
-	   (pl_it != media.payloads.end())
-	     && (pl_it->payload_type != int(payload_type));
-	   ++pl_it);
-
-      if(pl_it != media.payloads.end()){
-	*pl_it = SdpPayload( int(payload_type),
-			     encoding_name,
-			     int(clock_rate),
-			     int(encoding_param));
-      }
-      
-
-    } else if(attr == "fmtp"){
-      while(parsing){
-	switch(fmtp_st){
-	case FORMAT:
-	  {
-	    next = parse_until(attr_line, ' ');
-	    string fmtp_format(attr_line, int(next-attr_line)-1);
-	    str2i(fmtp_format, payload_type);
+      case ENC_NAME:
+	{
+	  if(contains(s, line_end, '/')){
+	    next = parse_until(attr_line, '/');
+	    string enc_name(attr_line, int(next-attr_line)-1);
+	    encoding_name = enc_name;
 	    attr_line = next;
-	    fmtp_st = FORMAT_PARAM;
+	    rtpmap_st = CLK_RATE;
+	    break;
+	  } else {
+	    rtpmap_st = ENC_PARAM;
 	    break;
 	  }
-	case FORMAT_PARAM:
-	  { 
-	    line_end--;
-	    while (is_wsp(*line_end))
-	      line_end--;
-
-	    params = string(attr_line, line_end-attr_line+1);
+	}
+      case CLK_RATE:
+	{
+	  // check for posible encoding parameters after clock rate
+	  if(contains(attr_line, line_end, '/')){
+	    next = parse_until(attr_line, '/');
+	    string clk_rate(attr_line, int(next-attr_line)-1);
+	    str2i(clk_rate, clock_rate);
+	    attr_line = next;
+	    rtpmap_st = ENC_PARAM;
+	    //last line check
+	  }else if (*line_end == '\0') {
+	    string clk_rate(attr_line, int(line_end-attr_line));
+	    str2i(clk_rate, clock_rate);
+	    parsing = 0;
+	    //more lines to come
+	  }else{
+	    string clk_rate(attr_line, int(line_end-attr_line)-1);
+	    str2i(clk_rate, clock_rate);
+	    parsing=0;
+	  }
+	    
+	  break;
+	}
+      case ENC_PARAM:
+	{
+	  next = parse_until(attr_line, ' ');
+	  if(next < line_end){
+	    string value(attr_line, int(next-attr_line)-1);
+	    str2i(value, encoding_param);
+	    attr_line = next;
+	    rtpmap_st = ENC_PARAM;
+	  }else{
+	    string last_value(attr_line, int(line_end-attr_line)-1);
+	    str2i(last_value, encoding_param);
 	    parsing = 0;
 	  }
 	  break;
 	}
+	break;
       }
-
-      //DBG("found media attr 'fmtp' for payload '%d': '%s'\n", 
-      //  payload_type, params.c_str());
-
-      vector<SdpPayload>::iterator pl_it;
+    }
       
-      for(pl_it=media.payloads.begin();
-	   (pl_it != media.payloads.end())
-	     && (pl_it->payload_type != int(payload_type));
-	   pl_it++);
+    //DBG("found media attr 'rtpmap' type '%d'\n", payload_type);
+      
+    vector<SdpPayload>::iterator pl_it;
+      
+    for( pl_it=media.payloads.begin();
+	 (pl_it != media.payloads.end())
+	   && (pl_it->payload_type != int(payload_type));
+	 ++pl_it);
 
-      if(pl_it != media.payloads.end())
-	pl_it->sdp_format_parameters = params;
+    if(pl_it != media.payloads.end()){
+      *pl_it = SdpPayload( int(payload_type),
+			   encoding_name,
+			   int(clock_rate),
+			   int(encoding_param));
+    }
 
-    } else if (attr == "direction") {
-	next = parse_until(attr_line, '\r');
-	if(next < line_end){
-	    string value(attr_line, int(next-attr_line)-1);
-	    if (value == "active") {
-		media.dir=SdpMedia::DirActive;
-		//DBG("found media attr 'direction' value '%s'\n",
-		//    (char*)value.c_str());
-	    } else if (value == "passive") {
-		media.dir=SdpMedia::DirPassive;
-		//DBG("found media attr 'direction' value '%s'\n",
-		//    (char*)value.c_str());
-	    } else if (attr == "both") {
-		media.dir=SdpMedia::DirBoth;
-		//DBG("found media attr 'direction' value '%s'\n",
-		//    (char*)value.c_str());
-	    } //else
-	      //DBG("found media attr 'direction' with unknown value '%s'\n",
-	      //    (char*)value.c_str());
-	} else {
-	    DBG("found media attr 'direction', but value is not"
-		" followed by cr\n");
+  } else if(attr == "fmtp"){
+    while(parsing){
+      switch(fmtp_st){
+      case FORMAT:
+	{
+	  next = parse_until(attr_line, ' ');
+	  string fmtp_format(attr_line, int(next-attr_line)-1);
+	  str2i(fmtp_format, payload_type);
+	  attr_line = next;
+	  fmtp_st = FORMAT_PARAM;
+	  break;
 	}
-    } else if (attr == "sendrecv") {
-      media.send = true;
-      media.recv = true;
-    } else if (attr == "sendonly") {
-      media.send = true;
-      media.recv = false;
-    } else if (attr == "recvonly") {
-      media.send = false;
-      media.recv = true;
-    } else if (attr == "inactive") {
-      media.send = false;
-      media.recv = false;
-    } else {
-      attr_check(attr);
-      next = parse_until(attr_line, '\r');
-      if(next < line_end){
-	  string value(attr_line, int(next-attr_line)-1);
-	  DBG("found media attr '%s' value '%s'\n",
-	      (char*)attr.c_str(), (char*)value.c_str());
-	  media.attributes.push_back(SdpAttribute(attr, value));
-      } else {
-	  DBG("found media attr '%s', but value is not followed by cr\n",
-	      (char *)attr.c_str());
+      case FORMAT_PARAM:
+	{ 
+	  line_end--;
+	  while (is_wsp(*line_end))
+	    line_end--;
+
+	  params = string(attr_line, line_end-attr_line+1);
+	  parsing = 0;
+	}
+	break;
       }
     }
 
+    //DBG("found media attr 'fmtp' for payload '%d': '%s'\n", 
+    //  payload_type, params.c_str());
 
-  } else {
+    vector<SdpPayload>::iterator pl_it;
+      
+    for(pl_it=media.payloads.begin();
+	(pl_it != media.payloads.end())
+	  && (pl_it->payload_type != int(payload_type));
+	pl_it++);
+
+    if(pl_it != media.payloads.end())
+      pl_it->sdp_format_parameters = params;
+
+  } else if (attr == "direction") {
+    if (parsing) {
       next = parse_until(attr_line, '\r');
       if(next < line_end){
-	  string attr(attr_line, int(next-attr_line)-1);
-	  attr_check(attr);
-	  DBG("found media attr '%s'\n", (char*)attr.c_str());
-	  media.attributes.push_back(SdpAttribute(attr));
+	string value(attr_line, int(next-attr_line)-1);
+	if (value == "active") {
+	  media.dir=SdpMedia::DirActive;
+	  // DBG("found media attr 'direction' value '%s'\n", (char*)value.c_str());
+	} else if (value == "passive") {
+	  media.dir=SdpMedia::DirPassive;
+	  //DBG("found media attr 'direction' value '%s'\n", (char*)value.c_str());
+	} else if (attr == "both") {
+	  media.dir=SdpMedia::DirBoth;
+	  //DBG("found media attr 'direction' value '%s'\n", (char*)value.c_str());
+	} 
       } else {
-	  DBG("found media attr line '%s', which is not followed by cr\n",
-	      attr_line);
+	DBG("found media attribute 'direction', but value is not followed by cr\n");
       }
-  }
+    } else {
+      DBG("ignoring direction attribute without value\n");
+    }
+  } else if (attr == "sendrecv") {
+    media.send = true;
+    media.recv = true;
+  } else if (attr == "sendonly") {
+    media.send = true;
+    media.recv = false;
+  } else if (attr == "recvonly") {
+    media.send = false;
+    media.recv = true;
+  } else if (attr == "inactive") {
+    media.send = false;
+    media.recv = false;
+  } else {
+    attr_check(attr);
+    string value;
+    if (parsing) {
+      next = parse_until(attr_line, '\r');
+      if(next >= line_end){
+	DBG("found media attribute '%s', but value is not followed by cr\n",
+	    (char *)attr.c_str());
+      }
+      value = string (attr_line, int(next-attr_line)-1);
+    }
 
-  return;
+    // if (value.empty()) {
+    //   DBG("got media attribute '%s'\n", attr.c_str());
+    // } else {
+    //   DBG("got media attribute '%s':'%s'\n", attr.c_str(), value.c_str());
+    // }
+    media.attributes.push_back(SdpAttribute(attr, value));
+  }
 }
 
 static void parse_sdp_origin(AmSdp* sdp_msg, char* s)
@@ -1211,11 +1229,9 @@ static bool attr_check(std::string attr)
     return true;
   else if(attr == "passive")
     return true;
-  else
-    {
-    DBG("sdp_parse_attr: Unknown attribute name used: %s, plz see RFC4566\n",
-	(char*)attr.c_str());
+  else {
+    DBG("unknown attribute: %s\n", (char*)attr.c_str());
     return false;
-    }
+  }
 }
 

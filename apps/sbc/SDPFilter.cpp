@@ -101,6 +101,49 @@ void fix_incomplete_silencesupp(SdpMedia& m) {
   }
 }
 
+std::vector<SdpAttribute> filterAlinesInternal(std::vector<SdpAttribute> list, 
+  FilterType sdpalinesfilter, const std::set<string>& sdpalinesfilter_list) {
+
+  std::vector<SdpAttribute> new_alines;
+  for (std::vector<SdpAttribute>::iterator a_it =
+    list.begin(); a_it != list.end(); a_it++) {
+    
+    // Case insensitive search:
+    string c = a_it->attribute;
+    std::transform(c.begin(), c.end(), c.begin(), ::tolower);
+    
+    // Check, if this should be filtered:
+    bool is_filtered =  (sdpalinesfilter == Whitelist) ^
+      (sdpalinesfilter_list.find(c) != sdpalinesfilter_list.end());
+
+    DBG("%s (%s) is_filtered: %s\n", a_it->attribute.c_str(), c.c_str(), 
+     	  is_filtered?"true":"false");
+ 
+    // If it is not filtered, just add it to the list:
+    if (!is_filtered)
+	new_alines.push_back(*a_it);
+  }
+  return new_alines;
+}
+
+int filterSDPalines(AmSdp& sdp, FilterType sdpalinesfilter, const std::set<string>& sdpalinesfilter_list) {
+  // If not Black- or Whitelist, simply return
+  if (sdpalinesfilter == Transparent)
+    return 0;
+  
+  // We start with per Session-alines
+  sdp.attributes = filterAlinesInternal(sdp.attributes, sdpalinesfilter, sdpalinesfilter_list);
+
+  for (std::vector<SdpMedia>::iterator m_it =
+	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
+    SdpMedia& media = *m_it;
+    // todo: what if no payload supported any more?
+    media.attributes = filterAlinesInternal(media.attributes, sdpalinesfilter, sdpalinesfilter_list);
+  }
+
+  return 0;
+}
+
 int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
   for (std::vector<SdpMedia>::iterator m_it=
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
@@ -124,5 +167,8 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
     sdp.origin.user = "-";
   }
 
+
   return 0;
 }
+
+

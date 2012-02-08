@@ -112,11 +112,12 @@ void AmRtpStream::setLocalPort()
   if(l_port)
     return;
   
-  assert(l_if >= 0);
-  assert(l_if < (int)AmConfig::Ifs.size());
-
   if (!getLocalSocket())
     return;
+
+  if(l_if < 0) {
+    l_if = session->dlg.getOutboundIf();
+  }
   
   int retry = 10;
   unsigned short port = 0;

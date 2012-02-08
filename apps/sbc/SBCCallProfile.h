@@ -106,6 +106,10 @@ struct SBCCallProfile
   set<string> sdpfilter_list;
   bool anonymize_sdp;
 
+  bool sdpalinesfilter_enabled;
+  FilterType sdpalinesfilter;
+  set<string> sdpalinesfilter_list;
+
   string sst_enabled;
   string sst_aleg_enabled;
   AmConfigReader sst_a_cfg;    // SST config (A leg)
@@ -149,6 +153,8 @@ struct SBCCallProfile
     messagefilter(Transparent),
     sdpfilter_enabled(false),
     sdpfilter(Transparent),
+    sdpalinesfilter_enabled(false),
+    sdpalinesfilter(Transparent),
     auth_enabled(false),
     next_hop_port_i(0),
     rtprelay_enabled(false),

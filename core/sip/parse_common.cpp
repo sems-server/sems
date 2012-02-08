@@ -57,7 +57,10 @@ int parse_sip_version(const char* beg, int len)
 	return MALFORMED_SIP_MSG;
     }
 
-    if(memcmp(c,SIP,SIP_len) != 0){
+    if( ((c[0] != 'S')&&(c[0] != 's')) || 
+	((c[1] != 'I')&&(c[1] != 'i')) ||
+	((c[2] != 'P')&&(c[2] != 'p')) ) {
+
 	DBG("SIP-Version does not begin with \"SIP\"\n");
 	return MALFORMED_SIP_MSG;
     }

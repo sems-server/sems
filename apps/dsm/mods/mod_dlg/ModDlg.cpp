@@ -88,7 +88,7 @@ EXEC_ACTION_START(DLGReplyAction) {
     ERROR("no last request to reply\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
     sc_sess->SET_STRERROR("no last request to reply");
-    return;
+    return false;
   }
 
   replyRequest(sc_sess, sess, event_params, par1, par2, *sc_sess->last_req.get());

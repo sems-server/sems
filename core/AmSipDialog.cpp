@@ -61,6 +61,7 @@ const char* AmSipDialog::getStatusStr()
 
 AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
   : status(Disconnected),oa(this),rel100(this,h),
+    offeranswer_enabled(true),
     early_session_started(false),session_started(false),
     cseq(10),r_cseq_i(false),hdl(h),
     pending_invites(0),cancel_pending(false),
@@ -124,16 +125,20 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
     }
 
     if (req.method == SIP_METH_INVITE) {
-      if( pending_invites ||
+      bool pending = pending_invites;
+      if (offeranswer_enabled) {
 	  // not sure this is needed here: could be in AmOfferAnswer as well
-	  ((oa.getState() != AmOfferAnswer::OA_None) && 
-	   (oa.getState() != AmOfferAnswer::OA_Completed))) {
+	pending |= ((oa.getState() != AmOfferAnswer::OA_None) &&
+		    (oa.getState() != AmOfferAnswer::OA_Completed));
+      }
 
+      if (pending) {
 	reply_error(req, 491, SIP_REPLY_PENDING,
 		    SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER) 
 		    + int2str(get_random() % 10) + CRLF);
 	return;
       }
+
       pending_invites++;
     }
     
@@ -189,8 +194,10 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 
   default: break;
   }
-  
-  oa.onRequestIn(req);
+
+  if (offeranswer_enabled) {
+    oa.onRequestIn(req);
+  }
 
   if(rel100.onRequestIn(req) && hdl)
     hdl->onSipRequest(req);
@@ -228,6 +235,25 @@ bool AmSipDialog::getSdpOffer(AmSdp& offer)
 bool AmSipDialog::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 {
   return hdl->getSdpAnswer(offer,answer);
+}
+
+AmOfferAnswer::OAState AmSipDialog::getOAState() {
+  return oa.getState();
+}
+
+void AmSipDialog::setOAState(AmOfferAnswer::OAState n_st) {
+  oa.setState(n_st);
+}
+
+void AmSipDialog::setRel100State(Am100rel::State rel100_state) {
+  DBG("setting 100rel state for '%s' to %i\n", local_tag.c_str(), rel100_state);
+  rel100.setState(rel100_state);
+}
+
+void AmSipDialog::setOAEnabled(bool oa_enabled) {
+  DBG("%sabling offer_answer on SIP dialog '%s'\n",
+      oa_enabled?"en":"dis", local_tag.c_str());
+  offeranswer_enabled = oa_enabled;
 }
 
 /**
@@ -429,7 +455,9 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
     }
   }
 
-  oa.onReplyIn(reply);
+  if (offeranswer_enabled) {
+    oa.onReplyIn(reply);
+  }
 
   if(rel100.onReplyIn(reply) && hdl)
     hdl->onSipReply(reply, saved_status);
@@ -462,7 +490,9 @@ void AmSipDialog::uasTimeout(AmSipTimeoutEvent* to_ev)
   switch(to_ev->type){
   case AmSipTimeoutEvent::noACK:
     DBG("Timeout: missing ACK\n");
-    oa.onNoAck(to_ev->cseq);
+    if (offeranswer_enabled) {
+      oa.onNoAck(to_ev->cseq);
+    }
     if(hdl) hdl->onNoAck(to_ev->cseq);
     break;
 
@@ -711,7 +741,10 @@ int AmSipDialog::reply(const AmSipTransaction& t,
     reply.contact = getContactHdr();
   }
 
-  oa.onReplyOut(reply);
+  if (offeranswer_enabled) {
+    oa.onReplyOut(reply);
+  }
+
   rel100.onReplyOut(reply);
   hdl->onSendReply(reply,flags);
 
@@ -739,7 +772,11 @@ int AmSipDialog::reply(const AmSipTransaction& t,
     uas_trans.erase(reply.cseq);
   }
 
-  return oa.onReplySent(reply);
+  if (offeranswer_enabled) {
+    return oa.onReplySent(reply);
+  }
+
+  return ret;
 }
 
 
@@ -1052,7 +1089,7 @@ int AmSipDialog::sendRequest(const string& method,
   req.body = body;
   DBG("req.body = '%s'\n", req.body.c_str());
 
-  if(oa.onRequestOut(req))
+  if (offeranswer_enabled && oa.onRequestOut(req))
     return -1;
 
   rel100.onRequestOut(req);
@@ -1075,7 +1112,11 @@ int AmSipDialog::sendRequest(const string& method,
     uac_trans.erase(req_cseq);
   }
 
-  return oa.onRequestSent(req);
+  if (offeranswer_enabled) {
+    return oa.onRequestSent(req);
+  }
+
+  return 0;
 }
 
 int AmSipDialog::drop()
@@ -1131,8 +1172,8 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
 
   req.content_type = content_type;
   req.body = body;
-  
-  if(oa.onRequestOut(req))
+
+  if (offeranswer_enabled && oa.onRequestOut(req))
     return -1;
 
   if(hdl)
@@ -1143,7 +1184,11 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
     return -1;
 
   uac_trans.erase(inv_cseq);
-  return oa.onRequestSent(req);
+  if (offeranswer_enabled) {
+    return oa.onRequestSent(req);
+  }
+
+  return 0;
 }
 
 
