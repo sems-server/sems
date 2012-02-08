@@ -98,8 +98,6 @@ sip_msg::sip_msg()
 
 sip_msg::~sip_msg()
 {
-    // DBG("~sip_msg()\n");
-
     delete [] buf;
 
     list<sip_header*>::iterator it;
@@ -419,9 +417,9 @@ static int parse_first_line(sip_msg* msg, char** c)
     return UNEXPECTED_EOT;
 }
 
-int parse_headers(sip_msg* msg, char** c)
+int parse_headers(sip_msg* msg, char** c, char* end)
 {
-    int err = parse_headers(msg->hdrs,c);
+    int err = parse_headers(msg->hdrs,c,end);
     if(!err) {
 	for(list<sip_header*>::iterator it = msg->hdrs.begin();
 	    it != msg->hdrs.end(); ++it) {
@@ -499,7 +497,7 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
 	return MALFORMED_FLINE;
     }
 
-    err = parse_headers(msg,&c);
+    err = parse_headers(msg,&c,c+msg->len);
 
     if(!err){
 	msg->body.set(c,msg->len - (c - msg->buf));

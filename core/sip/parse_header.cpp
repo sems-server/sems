@@ -260,7 +260,7 @@ void add_parsed_header(list<sip_header*>& hdrs, sip_header* hdr)
     hdrs.push_back(hdr);
 }
 
-int parse_headers(list<sip_header*>& hdrs, char** c)
+int parse_headers(list<sip_header*>& hdrs, char** c, char* end)
 {
     //
     // Header states
@@ -278,7 +278,7 @@ int parse_headers(list<sip_header*>& hdrs, char** c)
     char* begin = *c;
     auto_ptr<sip_header> hdr(new sip_header());
 
-    for(;**c;(*c)++){
+    for(;**c && (*c < end);(*c)++){
 
 	switch(st){
 
