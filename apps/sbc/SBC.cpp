@@ -1381,20 +1381,6 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 	  saveCallTimer(cc_timer_id, timeout);
 	  cc_timer_id++;
 	} break;
-	case SBC_CC_SET_RURI_ACTION: {
-	  if (ret[i].size() < 1 ||
-	      !isArgCStr(ret[i][SBC_CC_SET_RURI]) || 
-              !strlen(ret[i][SBC_CC_SET_RURI].asCStr())
-                ) {
-	    ERROR("in call control module '%s' - RURI action parameters missing/wrong: '%s'\n",
-		  cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
-	    continue;
-	  }
-          DBG("in call control module '%s' - SBC_CC_SET_RURI_ACTION - setting URI to '%s'\n",
-            cc_if.cc_name.c_str(), ret[i][SBC_CC_SET_RURI].asCStr());
-          call_profile.ruri = string(ret[i][SBC_CC_SET_RURI].asCStr());
-	} break;
-
 	default: {
 	  ERROR("unknown call control action: '%s'\n", AmArg::print(ret[i]).c_str());
 	  continue;
