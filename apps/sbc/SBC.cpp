@@ -680,159 +680,38 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500,"Failed to reply 100");
   }
 
-  ruri = call_profile.ruri.empty() ? 
-    req.r_uri : replaceParameters(call_profile.ruri, "RURI", REPLACE_VALS);
-
-  from = call_profile.from.empty() ? 
-    req.from : replaceParameters(call_profile.from, "From", REPLACE_VALS);
-
-  to = call_profile.to.empty() ? 
-    req.to : replaceParameters(call_profile.to, "To", REPLACE_VALS);
-
-  if (!call_profile.contact.empty()) {
-    call_profile.contact =
-      replaceParameters(call_profile.contact, "Contact", REPLACE_VALS);
+  if (!call_profile.evaluate(REPLACE_VALS)) {
+    ERROR("call profile evaluation failed\n");
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  callid = call_profile.callid.empty() ?
-    "" : replaceParameters(call_profile.callid, "Call-ID", REPLACE_VALS);
-
-  if (!call_profile.outbound_proxy.empty()) {
-      call_profile.outbound_proxy =
-      replaceParameters(call_profile.outbound_proxy, "outbound_proxy", REPLACE_VALS);
-      DBG("set outbound proxy to '%s'\n", call_profile.outbound_proxy.c_str());
-  }
-
-  if (!call_profile.next_hop_ip.empty()) {
-    call_profile.next_hop_ip =
-      replaceParameters(call_profile.next_hop_ip, "next_hop_ip", REPLACE_VALS);
-    DBG("set next hop ip to '%s'\n", call_profile.next_hop_ip.c_str());
-
-    if (!call_profile.next_hop_port.empty()) {
-      call_profile.next_hop_port =
-	replaceParameters(call_profile.next_hop_port, "next_hop_port", REPLACE_VALS);
-      unsigned int nh_port_i;
-      if (str2i(call_profile.next_hop_port, nh_port_i)) {
-	ERROR("next hop port '%s' not understood\n", call_profile.next_hop_port.c_str());
-	throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-      }
-      call_profile.next_hop_port_i = nh_port_i;
-      DBG("set next hop port to '%u'\n", call_profile.next_hop_port_i);
-
-      if (!call_profile.next_hop_for_replies.empty()) {
-	call_profile.next_hop_for_replies =
-	  replaceParameters(call_profile.next_hop_for_replies, "next_hop_for_replies",
-			    REPLACE_VALS);
-      }
-    }
-  }
+  ruri = call_profile.ruri.empty() ? req.r_uri : call_profile.ruri;
+  from = call_profile.from.empty() ? req.from : call_profile.from;
+  to = call_profile.to.empty() ? req.to : call_profile.to;
+  callid = call_profile.callid;
 
   if (call_profile.rtprelay_enabled) {
     DBG("Enabling RTP relay mode for SBC call\n");
 
-    // force symmetric RTP?
-    if (!call_profile.force_symmetric_rtp.empty()) {
-      string force_symmetric_rtp =
-	replaceParameters(call_profile.force_symmetric_rtp, "force_symmetric_rtp",
-			  REPLACE_VALS);
-      if (!force_symmetric_rtp.empty() && force_symmetric_rtp != "no"
-	  && force_symmetric_rtp != "0") {
-	DBG("forcing symmetric RTP (passive mode)\n");
-	rtp_relay_force_symmetric_rtp = true;
-      }
-    }
-    // enable symmetric RTP by P-MsgFlags?
-    if (!rtp_relay_force_symmetric_rtp) {
-      if (call_profile.msgflags_symmetric_rtp) {
-	string str_msg_flags = getHeader(req.hdrs,"P-MsgFlags", true);
-	unsigned int msg_flags = 0;
-	if(reverse_hex2int(str_msg_flags,msg_flags)){
-	  ERROR("while parsing 'P-MsgFlags' header\n");
-	  msg_flags = 0;
-	}
-	if (msg_flags & FL_FORCE_ACTIVE) {
-	  DBG("P-MsgFlags indicates forced symmetric RTP (passive mode)");
-	  rtp_relay_force_symmetric_rtp = true;
-	}
-      }
+    if (call_profile.force_symmetric_rtp_value) {
+      DBG("forcing symmetric RTP (passive mode)\n");
+      rtp_relay_force_symmetric_rtp = true;
     }
 
-    if (!call_profile.aleg_rtprelay_interface.empty()) {
-      call_profile.aleg_rtprelay_interface =
-	replaceParameters(call_profile.aleg_rtprelay_interface, "aleg_rtprelay_interface",
-			  REPLACE_VALS);
-      if (!call_profile.aleg_rtprelay_interface.empty()) {
-	if (call_profile.aleg_rtprelay_interface == "default") {
-	  setRtpRelayInterface(0);
-	} else {
-	  map<string,unsigned short>::iterator name_it =
-	    AmConfig::If_names.find(call_profile.aleg_rtprelay_interface);
-	  if (name_it != AmConfig::If_names.end()) {
-	    setRtpRelayInterface(name_it->second);
-	  } else {
-	    ERROR("selected aleg_rtprelay_interface '%s' does not exist as an interface. "
-		  "Please check the 'additional_interfaces' "
-		  "parameter in the main configuration file.",
-		  call_profile.aleg_rtprelay_interface.c_str());
-	    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-	  }
-	}
-	DBG("using RTP interface %i for A leg\n", rtp_interface);
-      }
+    if (call_profile.aleg_rtprelay_interface_value != -1) {
+      setRtpRelayInterface(call_profile.aleg_rtprelay_interface_value);
+      DBG("using RTP interface %i for A leg\n", rtp_interface);
     }
 
-    if (!call_profile.rtprelay_interface.empty()) {
-      call_profile.rtprelay_interface =
-	replaceParameters(call_profile.rtprelay_interface, "rtprelay_interface",
-			  REPLACE_VALS);
-      if (!call_profile.rtprelay_interface.empty()) {
-	if (call_profile.rtprelay_interface == "default") {
-	  rtprelay_interface = 0;
-	} else {
-	  map<string,unsigned short>::iterator name_it =
-	    AmConfig::If_names.find(call_profile.rtprelay_interface);
-	  if (name_it != AmConfig::If_names.end()) {
-	    rtprelay_interface = name_it->second;
-	  } else {
-	    ERROR("selected rtprelay_interface '%s' does not exist as an interface. "
-		  "Please check the 'additional_interfaces' "
-		  "parameter in the main configuration file.",
-		  call_profile.rtprelay_interface.c_str());
-	    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-	  }
-	}
-	DBG("configured RTP relay interface %i for B leg\n", rtprelay_interface);
-      }
+    if (call_profile.rtprelay_interface_value != -1) {
+      rtprelay_interface = call_profile.rtprelay_interface_value;
+      DBG("configured RTP relay interface %i for B leg\n", rtprelay_interface);
     }
 
     setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
     setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
     enableRtpRelay(req);
-  }
-
-  call_profile.sst_enabled =
-    replaceParameters(call_profile.sst_enabled, "enable_session_timer", REPLACE_VALS);
-
-  if (call_profile.sst_enabled == "yes") {
-    AmConfigReader& sst_cfg = call_profile.sst_b_cfg;
-#define SST_CFG_REPLACE_PARAMS(cfgkey)					\
-    if (sst_cfg.hasParameter(cfgkey)) {					\
-      string newval = replaceParameters(sst_cfg.getParameter(cfgkey),	\
-					cfgkey, REPLACE_VALS);		\
-      if (newval.empty()) {						\
-	sst_cfg.eraseParameter(cfgkey);					\
-      } else{								\
-	sst_cfg.setParameter(cfgkey,newval);				\
-      }									\
-    }
-
-    SST_CFG_REPLACE_PARAMS("session_expires");
-    SST_CFG_REPLACE_PARAMS("minimum_timer");
-    SST_CFG_REPLACE_PARAMS("maximum_timer");
-    SST_CFG_REPLACE_PARAMS("session_refresh_method");
-    SST_CFG_REPLACE_PARAMS("accept_501_reply");
-#undef SST_CFG_REPLACE_PARAMS
   }
 
   m_state = BB_Dialing;
@@ -849,7 +728,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     b2b_mode = B2BMode_SDPFilter;
   }
 
-  if (call_profile.sst_enabled == "yes") {
+  if (call_profile.sst_enabled_value) {
     removeHeader(invite_req.hdrs,SIP_HDR_SESSION_EXPIRES);
     removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
   }
@@ -857,53 +736,14 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   inplaceHeaderFilter(invite_req.hdrs,
 		      call_profile.headerfilter_list, call_profile.headerfilter);
 
-
-  if (!call_profile.append_headers.empty()) {
-    string append_headers = replaceParameters(call_profile.append_headers,
-					      "append_headers", REPLACE_VALS);
-    if (append_headers.size()>2) {
-      assertEndCRLF(append_headers);
-      invite_req.hdrs+=append_headers;
-    }
+  if (!call_profile.append_headers.size() > 2) {
+    string append_headers = call_profile.append_headers;
+    assertEndCRLF(append_headers);
+    invite_req.hdrs+=append_headers;
   }
 
-  if (call_profile.auth_enabled) {
-    call_profile.auth_credentials.user =
-      replaceParameters(call_profile.auth_credentials.user, "auth_user", REPLACE_VALS);
-    call_profile.auth_credentials.pwd =
-      replaceParameters(call_profile.auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
-  }
-
-  if (call_profile.auth_aleg_enabled) {
-    call_profile.auth_aleg_credentials.user =
-      replaceParameters(call_profile.auth_aleg_credentials.user, "auth_aleg_user", REPLACE_VALS);
-    call_profile.auth_aleg_credentials.pwd =
-      replaceParameters(call_profile.auth_aleg_credentials.pwd, "auth_aleg_pwd", REPLACE_VALS);
-  }
-
-  if (!call_profile.outbound_interface.empty()) {
-    call_profile.outbound_interface = 
-      replaceParameters(call_profile.outbound_interface, "outbound_interface",
-			REPLACE_VALS);
-
-    if (!call_profile.outbound_interface.empty()) {
-      if (call_profile.outbound_interface == "default")
-	outbound_interface = 0;
-      else {
-	map<string,unsigned short>::iterator name_it =
-	  AmConfig::If_names.find(call_profile.outbound_interface);
-	if (name_it != AmConfig::If_names.end()) {
-	  outbound_interface = name_it->second;
-	} else {
-	  ERROR("selected outbound_interface '%s' does not exist as an interface. "
-		"Please check the 'additional_interfaces' "
-		"parameter in the main configuration file.",
-		call_profile.outbound_interface.c_str());
-	  throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-	}
-      }
-    }
-  }
+  if (call_profile.outbound_interface_value != -1)
+    outbound_interface = call_profile.outbound_interface_value;
 
   dlg.setOAEnabled(false);
 
@@ -1504,7 +1344,7 @@ void SBCDialog::createCalleeSession()
     }
   }
 
-  if (call_profile.sst_enabled == "yes") {
+  if (call_profile.sst_enabled_value) {
     if (NULL == SBCFactory::session_timer_fact) {
       ERROR("session_timer module not loaded - unable to create call with SST\n");
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);

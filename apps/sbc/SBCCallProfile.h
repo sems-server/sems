@@ -29,6 +29,7 @@
 #include "AmConfigReader.h"
 #include "HeaderFilter.h"
 #include "ampi/UACAuthAPI.h"
+#include "ParamReplacer.h"
 
 #include <set>
 #include <string>
@@ -111,6 +112,7 @@ struct SBCCallProfile
   set<string> sdpalinesfilter_list;
 
   string sst_enabled;
+  bool sst_enabled_value;
   string sst_aleg_enabled;
   AmConfigReader sst_a_cfg;    // SST config (A leg)
   AmConfigReader sst_b_cfg;    // SST config (B leg)
@@ -133,14 +135,18 @@ struct SBCCallProfile
 
   bool rtprelay_enabled;
   string force_symmetric_rtp;
+  bool force_symmetric_rtp_value;
   bool msgflags_symmetric_rtp;
   bool rtprelay_transparent_seqno;
   bool rtprelay_transparent_ssrc;
 
   string rtprelay_interface;
+  int rtprelay_interface_value;
   string aleg_rtprelay_interface;
+  int aleg_rtprelay_interface_value;
 
   string outbound_interface;
+  int outbound_interface_value;
 
   std::vector<PayloadDesc> payload_order;
   bool readPayloadOrder(const std::string &src);
@@ -157,9 +163,14 @@ struct SBCCallProfile
     sdpalinesfilter(Transparent),
     auth_enabled(false),
     next_hop_port_i(0),
+    sst_enabled_value(false),
     rtprelay_enabled(false),
+    force_symmetric_rtp_value(false),
     rtprelay_transparent_seqno(true),
-    rtprelay_transparent_ssrc(true)
+    rtprelay_transparent_ssrc(true),
+    rtprelay_interface_value(-1),
+    aleg_rtprelay_interface_value(-1),
+    outbound_interface_value(-1)
   { }
 
   ~SBCCallProfile()
@@ -169,6 +180,12 @@ struct SBCCallProfile
 
   bool operator==(const SBCCallProfile& rhs) const;
   string print() const;
+
+  bool evaluate(const AmSipRequest& req,
+      const string& app_param,
+      AmUriParser& ruri_parser, AmUriParser& from_parser,
+      AmUriParser& to_parser);
+
 };
 
 #endif // _SBCCallProfile_h

@@ -558,6 +558,175 @@ string SBCCallProfile::print() const {
   return res;
 }
 
+/* translates string value into bool, returns false on error */
+static bool str2bool(const string &s, bool &dst)
+{
+  // TODO: optimize
+  if ((s == "yes") || (s == "true") || (s == "1")) {
+    dst = true;
+    return true;
+  }
+  if ((s == "no") || (s == "false") || (s == "0")) {
+    dst = false;
+    return true;
+  }
+  return false;
+}
+
+bool SBCCallProfile::evaluate(const AmSipRequest& req,
+    const string& app_param,
+    AmUriParser& ruri_parser, AmUriParser& from_parser,
+    AmUriParser& to_parser)
+{
+  #define REPLACE_VALS req, app_param, ruri_parser, from_parser, to_parser
+
+  // FIXME: r_type in replaceParameters is just for debug output?
+
+  #define REPLACE_STR(what) do { \
+    what = replaceParameters(what, #what, REPLACE_VALS); \
+    DBG(#what " = '%s'\n", what.c_str()); \
+  } while(0)
+
+  #define REPLACE_NONEMPTY_STR(what) do { \
+    if (!what.empty()) { \
+      REPLACE_STR(what); \
+    } \
+  } while(0)
+  
+  #define REPLACE_NUM(what, dst_num) do { \
+    if (!what.empty()) { \
+      what = replaceParameters(what, #what, REPLACE_VALS); \
+      unsigned int num; \
+      if (str2i(what, num)) { \
+	ERROR(#what " '%s' not understood\n", what.c_str()); \
+        return false; \
+      } \
+      DBG(#what " = '%s'\n", what.c_str()); \
+      dst_num = num; \
+    } \
+  } while(0)
+  
+  #define REPLACE_BOOL(what, dst_value) do { \
+    if (!what.empty()) { \
+      what = replaceParameters(what, #what, REPLACE_VALS); \
+      if (!what.empty()) { \
+        if (!str2bool(what, dst_value)) { \
+  	ERROR(#what " '%s' not understood\n", what.c_str()); \
+          return false; \
+        } \
+      } \
+      DBG(#what " = '%s'\n", dst_value ? "yes" : "no"); \
+    } \
+  } while(0)
+
+  #define REPLACE_IFACE(what, iface) do { \
+    if (!what.empty()) { \
+      what = replaceParameters(what, #what, REPLACE_VALS); \
+      DBG("set " #what " to '%s'\n", what.c_str()); \
+      if (!what.empty()) { \
+        if (what == "default") iface = 0; \
+        else { \
+          map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(what); \
+          if (name_it != AmConfig::If_names.end()) iface = name_it->second; \
+          else { \
+            ERROR("selected " #what " '%s' does not exist as an interface. " \
+                "Please check the 'additional_interfaces' " \
+                "parameter in the main configuration file.", \
+                what.c_str()); \
+            return false; \
+          } \
+        } \
+      } \
+    } \
+  } while(0)
+
+
+  REPLACE_NONEMPTY_STR(ruri);
+  REPLACE_NONEMPTY_STR(from);
+  REPLACE_NONEMPTY_STR(to);
+  REPLACE_NONEMPTY_STR(contact);
+  REPLACE_NONEMPTY_STR(callid);
+
+  REPLACE_NONEMPTY_STR(outbound_proxy);
+
+  if (!next_hop_ip.empty()) {
+    REPLACE_STR(next_hop_ip);
+    REPLACE_NUM(next_hop_port, next_hop_port_i);
+    REPLACE_NONEMPTY_STR(next_hop_for_replies);
+  }
+
+  if (rtprelay_enabled) {
+    // evaluate other RTP relay related params only if enabled
+    // FIXME: really not evaluate rtprelay_enabled itself?
+    REPLACE_NONEMPTY_STR(force_symmetric_rtp);
+    REPLACE_BOOL(force_symmetric_rtp, force_symmetric_rtp_value);
+
+    // enable symmetric RTP by P-MsgFlags?
+    // SBC need not to know if it is from P-MsgFlags or from profile parameter
+    if (msgflags_symmetric_rtp) {
+      string str_msg_flags = getHeader(req.hdrs,"P-MsgFlags", true);
+      unsigned int msg_flags = 0;
+      if(reverse_hex2int(str_msg_flags,msg_flags)){
+        ERROR("while parsing 'P-MsgFlags' header\n");
+        msg_flags = 0;
+      }
+      if (msg_flags & FL_FORCE_ACTIVE) {
+        DBG("P-MsgFlags indicates forced symmetric RTP (passive mode)");
+        force_symmetric_rtp_value = true;
+      }
+    }
+
+    REPLACE_IFACE(rtprelay_interface, rtprelay_interface_value);
+    REPLACE_IFACE(aleg_rtprelay_interface, aleg_rtprelay_interface_value);
+  }
+
+  REPLACE_BOOL(sst_enabled, sst_enabled_value);
+  if (sst_enabled_value) {
+    AmConfigReader& sst_cfg = sst_b_cfg;
+#define SST_CFG_REPLACE_PARAMS(cfgkey)					\
+    if (sst_cfg.hasParameter(cfgkey)) {					\
+      string newval = replaceParameters(sst_cfg.getParameter(cfgkey),	\
+					cfgkey, REPLACE_VALS);		\
+      if (newval.empty()) {						\
+	sst_cfg.eraseParameter(cfgkey);					\
+      } else{								\
+	sst_cfg.setParameter(cfgkey,newval);				\
+      }									\
+    }
+
+    SST_CFG_REPLACE_PARAMS("session_expires");
+    SST_CFG_REPLACE_PARAMS("minimum_timer");
+    SST_CFG_REPLACE_PARAMS("maximum_timer");
+    SST_CFG_REPLACE_PARAMS("session_refresh_method");
+    SST_CFG_REPLACE_PARAMS("accept_501_reply");
+#undef SST_CFG_REPLACE_PARAMS
+  }
+
+  REPLACE_NONEMPTY_STR(append_headers);
+
+  if (auth_enabled) {
+    auth_credentials.user = replaceParameters(auth_credentials.user, "auth_user", REPLACE_VALS);
+    auth_credentials.pwd = replaceParameters(auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
+  }
+  
+  if (auth_aleg_enabled) {
+    auth_aleg_credentials.user = replaceParameters(auth_aleg_credentials.user, "auth_aleg_user", REPLACE_VALS);
+    auth_aleg_credentials.pwd = replaceParameters(auth_aleg_credentials.pwd, "auth_aleg_pwd", REPLACE_VALS);
+  }
+
+  REPLACE_IFACE(outbound_interface, outbound_interface_value);
+
+  #undef REPLACE_VALS
+  #undef REPLACE_STR
+  #undef REPLACE_NONEMPTY_STR
+  #undef REPLACE_NUM
+  #undef REPLACE_BOOL
+  #undef REPLACE_IFACE
+
+  return true;
+}
+
+
 bool SBCCallProfile::readPayloadOrder(const std::string &src)
 {
   vector<string> elems = explode(src, ",");
