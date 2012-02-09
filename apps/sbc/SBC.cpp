@@ -698,12 +698,12 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       rtp_relay_force_symmetric_rtp = true;
     }
 
-    if (call_profile.aleg_rtprelay_interface_value != -1) {
+    if (call_profile.aleg_rtprelay_interface_value >= 0) {
       setRtpRelayInterface(call_profile.aleg_rtprelay_interface_value);
       DBG("using RTP interface %i for A leg\n", rtp_interface);
     }
 
-    if (call_profile.rtprelay_interface_value != -1) {
+    if (call_profile.rtprelay_interface_value >= 0) {
       rtprelay_interface = call_profile.rtprelay_interface_value;
       DBG("configured RTP relay interface %i for B leg\n", rtprelay_interface);
     }
@@ -736,13 +736,13 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   inplaceHeaderFilter(invite_req.hdrs,
 		      call_profile.headerfilter_list, call_profile.headerfilter);
 
-  if (!call_profile.append_headers.size() > 2) {
+  if (call_profile.append_headers.size() > 2) {
     string append_headers = call_profile.append_headers;
     assertEndCRLF(append_headers);
     invite_req.hdrs+=append_headers;
   }
 
-  if (call_profile.outbound_interface_value != -1)
+  if (call_profile.outbound_interface_value >= 0)
     outbound_interface = call_profile.outbound_interface_value;
 
   dlg.setOAEnabled(false);
