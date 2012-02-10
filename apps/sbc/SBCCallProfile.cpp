@@ -59,13 +59,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   next_hop_for_replies = cfg.getParameter("next_hop_for_replies");
 
   string hf_type = cfg.getParameter("header_filter", "transparent");
-  if (hf_type=="transparent")
-    headerfilter = Transparent;
-  else if (hf_type=="whitelist")
-    headerfilter = Whitelist;
-  else if (hf_type=="blacklist")
-    headerfilter = Blacklist;
-  else {
+  headerfilter = String2FilterType(hf_type.c_str());
+  if (Undefined == headerfilter) {
     ERROR("invalid header_filter mode '%s'\n", hf_type.c_str());
     return false;
   }
@@ -77,13 +72,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   }
 
   string mf_type = cfg.getParameter("message_filter", "transparent");
-  if (mf_type=="transparent")
-    messagefilter = Transparent;
-  else if (mf_type=="whitelist")
-    messagefilter = Whitelist;
-  else if (hf_type=="blacklist")
-    messagefilter = Blacklist;
-  else {
+  messagefilter = String2FilterType(mf_type.c_str());
+  if (messagefilter == Undefined) {
     ERROR("invalid message_filter mode '%s'\n", mf_type.c_str());
     return false;
   }
@@ -93,18 +83,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     messagefilter_list.insert(*it);
 
   string sdp_filter = cfg.getParameter("sdp_filter");
-  if (sdp_filter=="transparent") {
-    sdpfilter_enabled = true;
-    sdpfilter = Transparent;
-  } else if (sdp_filter=="whitelist") {
-    sdpfilter_enabled = true;
-    sdpfilter = Whitelist;
-  } else if (sdp_filter=="blacklist") {
-    sdpfilter_enabled = true;
-    sdpfilter = Blacklist;
-  } else {
-    sdpfilter_enabled = false;
-  }
+  sdpfilter = String2FilterType(sdp_filter.c_str());
+  sdpfilter_enabled = sdpfilter != Undefined;
+
   if (sdpfilter_enabled) {
     vector<string> c_elems = explode(cfg.getParameter("sdpfilter_list"), ",");
     for (vector<string>::iterator it=c_elems.begin(); it != c_elems.end(); it++) {
@@ -115,16 +96,11 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     anonymize_sdp = cfg.getParameter("sdp_anonymize", "no") == "yes";
   }
 
-  string cfg_sdp_alines_filter = cfg.getParameter("sdp_alines_filter");
-  if (cfg_sdp_alines_filter=="whitelist") {
-    sdpalinesfilter_enabled = true;
-    sdpalinesfilter = Whitelist;
-  } else if (cfg_sdp_alines_filter=="blacklist") {
-    sdpalinesfilter_enabled = true;
-    sdpalinesfilter = Blacklist;
-  } else {
-    sdpalinesfilter_enabled = false;
-  }
+  string cfg_sdp_alines_filter = cfg.getParameter("sdp_alines_filter", "transparent");
+  sdpalinesfilter = String2FilterType(cfg_sdp_alines_filter.c_str());
+  sdpalinesfilter_enabled =
+    (sdpalinesfilter!=Undefined) && (sdpalinesfilter!=Transparent);
+
   if (sdpalinesfilter_enabled) {
     vector<string> c_elems = explode(cfg.getParameter("sdp_alinesfilter_list"), ",");
     for (vector<string>::iterator it=c_elems.begin(); it != c_elems.end(); it++) {

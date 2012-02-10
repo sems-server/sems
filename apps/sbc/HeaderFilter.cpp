@@ -37,6 +37,26 @@ const char* FilterType2String(FilterType ft) {
     };
 }
 
+FilterType String2FilterType(const char* ft) {
+    if (!ft)
+	return Undefined;
+
+    if (!strcasecmp(ft,"transparent"))
+	return Transparent;
+
+    if (!strcasecmp(ft,"whitelist"))
+	return Whitelist;
+
+    if (!strcasecmp(ft,"blacklist"))
+	return Blacklist;
+
+    return Undefined;
+}
+
+bool isActiveFilter(FilterType ft) {
+    return (ft != Undefined) && (ft != Transparent);
+}
+
 int skip_header(const std::string& hdr, size_t start_pos, 
 		 size_t& name_end, size_t& val_begin,
 		 size_t& val_end, size_t& hdr_end) {
@@ -141,7 +161,7 @@ int skip_header(const std::string& hdr, size_t start_pos,
 }
 
 int inplaceHeaderFilter(string& hdrs, const set<string>& headerfilter_list, FilterType f_type) {
-    if (!hdrs.length() || f_type == Transparent)
+   if (!hdrs.length() || !isActiveFilter(f_type))
 	return 0;
 
     int res = 0;
