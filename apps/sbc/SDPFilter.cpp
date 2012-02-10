@@ -31,7 +31,7 @@
 
 int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilter_list) {
 
-  if (sdpfilter == Transparent)
+  if (!isActiveFilter(sdpfilter))
     return 0;
 
   for (std::vector<SdpMedia>::iterator m_it =
@@ -126,19 +126,22 @@ std::vector<SdpAttribute> filterAlinesInternal(std::vector<SdpAttribute> list,
   return new_alines;
 }
 
-int filterSDPalines(AmSdp& sdp, FilterType sdpalinesfilter, const std::set<string>& sdpalinesfilter_list) {
+int filterSDPalines(AmSdp& sdp, FilterType sdpalinesfilter,
+		    const std::set<string>& sdpalinesfilter_list) {
   // If not Black- or Whitelist, simply return
-  if (sdpalinesfilter == Transparent)
+  if (!isActiveFilter(sdpalinesfilter))
     return 0;
   
   // We start with per Session-alines
-  sdp.attributes = filterAlinesInternal(sdp.attributes, sdpalinesfilter, sdpalinesfilter_list);
+  sdp.attributes =
+    filterAlinesInternal(sdp.attributes, sdpalinesfilter, sdpalinesfilter_list);
 
   for (std::vector<SdpMedia>::iterator m_it =
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
     SdpMedia& media = *m_it;
     // todo: what if no payload supported any more?
-    media.attributes = filterAlinesInternal(media.attributes, sdpalinesfilter, sdpalinesfilter_list);
+    media.attributes =
+      filterAlinesInternal(media.attributes, sdpalinesfilter, sdpalinesfilter_list);
   }
 
   return 0;

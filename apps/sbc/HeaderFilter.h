@@ -31,7 +31,14 @@ using std::string;
 #include <set>
 using std::set;
 
-enum FilterType { Transparent=0, Whitelist, Blacklist };
+enum FilterType { Transparent=0, Whitelist, Blacklist, Undefined };
+
+/** string to Filter type, Undefined if not found */
+FilterType String2FilterType(const char* ft);
+
+/** return whether filter active (wl or bl) */
+bool isActiveFilter(FilterType ft);
+
 const char* FilterType2String(FilterType ft);
 int skip_header(const std::string& hdr, size_t start_pos, 
 		 size_t& name_end, size_t& val_begin, size_t& val_end, size_t& hdr_end);

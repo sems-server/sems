@@ -42,3 +42,10 @@ Exported parameters:
     aleg_rtprelay_interface
     outbound_interface
 
+    headerfilter   ("transparent", "whitelist", "blacklist")
+    header_list    Note: Headers separated by Pipe ('|'), e.g.:
+      P-Call-Control: ctl;headerfilter=blacklist;header_list=P-Call-Control|User-Agent
+
+    messagefilter ("transparent", "whitelist", "blacklist")
+    message_list   Note: Methods separated by Pipe ('|'), e.g.:
+      P-Call-Control: ctl;messagefilter=blacklist;message_list=OPTIONS|MESSAGE

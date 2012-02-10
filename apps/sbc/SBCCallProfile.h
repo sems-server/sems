@@ -125,12 +125,12 @@ struct SBCCallProfile
   // todo: RTP transcoding mode
 
   SBCCallProfile()
-  : headerfilter(Transparent),
-    messagefilter(Transparent),
+  : headerfilter(Undefined),
+    messagefilter(Undefined),
     sdpfilter_enabled(false),
-    sdpfilter(Transparent),
+    sdpfilter(Undefined),
     sdpalinesfilter_enabled(false),
-    sdpalinesfilter(Transparent),
+    sdpalinesfilter(Undefined),
     auth_enabled(false),
     next_hop_port_i(0),
     rtprelay_enabled(false),
