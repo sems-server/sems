@@ -58,11 +58,13 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   next_hop_port = cfg.getParameter("next_hop_port");
   next_hop_for_replies = cfg.getParameter("next_hop_for_replies");
 
-  string hf_type = cfg.getParameter("header_filter", "transparent");
-  headerfilter = String2FilterType(hf_type.c_str());
-  if (Undefined == headerfilter) {
-    ERROR("invalid header_filter mode '%s'\n", hf_type.c_str());
-    return false;
+  if (cfg.hasParameter("header_filter")) {
+    string hf_type = cfg.getParameter("header_filter");
+    headerfilter = String2FilterType(hf_type.c_str());
+    if (Undefined == headerfilter) {
+      ERROR("invalid header_filter mode '%s'\n", hf_type.c_str());
+      return false;
+    }
   }
   
   vector<string> elems = explode(cfg.getParameter("header_list"), ",");
@@ -71,13 +73,15 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     headerfilter_list.insert(*it);
   }
 
-  string mf_type = cfg.getParameter("message_filter", "transparent");
-  messagefilter = String2FilterType(mf_type.c_str());
-  if (messagefilter == Undefined) {
-    ERROR("invalid message_filter mode '%s'\n", mf_type.c_str());
-    return false;
+  if (cfg.hasParameter("message_filter")) {
+    string mf_type = cfg.getParameter("message_filter");
+    messagefilter = String2FilterType(mf_type.c_str());
+    if (messagefilter == Undefined) {
+      ERROR("invalid message_filter mode '%s'\n", mf_type.c_str());
+      return false;
+    }
   }
-  
+
   elems = explode(cfg.getParameter("message_list"), ",");
   for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++)
     messagefilter_list.insert(*it);
@@ -311,14 +315,18 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     }
 
     INFO("SBC:      header filter  is %s, %zd items in list\n",
-	 FilterType2String(headerfilter), headerfilter_list.size());
+	 isActiveFilter(headerfilter) ? FilterType2String(headerfilter) : "disabled",
+	 headerfilter_list.size());
     INFO("SBC:      message filter is %s, %zd items in list\n",
-	 FilterType2String(messagefilter), messagefilter_list.size());
+	 isActiveFilter(messagefilter) ? FilterType2String(messagefilter) : "disabled",
+	 messagefilter_list.size());
     INFO("SBC:      SDP filter is %sabled, %s, %zd items in list, %sanonymizing SDP\n",
-	 sdpfilter_enabled?"en":"dis", FilterType2String(sdpfilter),
+	 sdpfilter_enabled?"en":"dis",
+	 isActiveFilter(sdpfilter) ? FilterType2String(sdpfilter) : "inactive",
 	 sdpfilter_list.size(), anonymize_sdp?"":"not ");
     INFO("SBC:      SDP alines-filter is %sabled, %s, %zd items in list\n",
-	 sdpalinesfilter_enabled?"en":"dis", FilterType2String(sdpalinesfilter),
+	 sdpalinesfilter_enabled?"en":"dis",
+	 isActiveFilter(sdpalinesfilter) ? FilterType2String(sdpalinesfilter) : "inactive",
 	 sdpalinesfilter_list.size());
 
     INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
