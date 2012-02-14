@@ -14,7 +14,7 @@
 #display_name=myuser
 #auth_user=myuser
 # optional (defaults to resolved by domain):
-#proxy=sip.mydomain.net:5060
+#proxy=sip:sip.mydomain.net:5060
 # optional (default to <user>@<publicip/localip>):
 #contact=sip:myuser@10.0.0.2
 
@@ -27,7 +27,7 @@
 # optional:
 #display_name1=xyz
 #auth_user1=xyz
-#proxy1=sip.iptel.org:5060
+#proxy1=sip:sip.iptel.org:5060
 #contact1=sip:xyz@10.0.0.3
 
 #domain2=iptel.org
@@ -36,5 +36,5 @@
 # optional:
 #display_name2=xyz
 #auth_user2=xyz
-#proxy2=sip.iptel.org:5060
+#proxy2=sip:sip.iptel.org:5060
 
