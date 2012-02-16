@@ -32,6 +32,14 @@
 #rtprelay_force_symmetric_rtp=yes
 # use symmetric RTP indication from P-MsgFlags flag 2
 #rtprelay_msgflags_symmetric_rtp=yes
+# RTP interface to use for A leg
+#aleg_rtprelay_interface=intern
+# RTP interface to use for B leg
+#rtprelay_interface=default
+# use transparent RTP seqno? [yes]
+#rtprelay_transparent_seqno=no
+# use transparent RTP SSRC? [yes]
+#rtprelay_transparent_ssrc=no
 
 ## filters: 
 #header_filter=blacklist
@@ -40,6 +48,10 @@
 #message_list=
 #sdp_filter=whitelist
 #sdpfilter_list=g729,g723,ilbc,speex,gsm,amr
+# Filter A-Lines: Either black or whitelist
+#sdp_alines_filter=whitelist
+# Lines to be filtered, separated by ","
+#sdp_alinesfilter_list=crypto,x-cap
 #sdp_anonymize=yes
 
 ## append extra headers

@@ -65,6 +65,8 @@
 #define NUM_SESSION_PROCESSORS 10
 // threads to start for RTP processing
 #define NUM_MEDIA_PROCESSORS 1
+// number of RTP receiver threads
+#define NUM_RTP_RECEIVERS 1
 // number of SIP servers to start
 #define NUM_SIP_SERVERS 4
 
