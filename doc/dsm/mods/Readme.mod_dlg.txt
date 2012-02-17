@@ -3,7 +3,12 @@
 * set connect_session to 0 with set(connect_session=0)
   if you want to reply with other than the standard 200 OK 
   to initial INVITE received.
-* for processing of other requests, use enable_request_events and replyRequest
+* for processing of other requests, use set($enable_request_events="true") and replyRequest
+* for processing of other requests, use set($enable_reply_events="true") and replyRequest
+
+* Request/Reply body handling with 
+ dlg.requestHasContentType condition and dlg.getRequestBody action
+ dlg.replyHasContentType condition and dlg.getReplyBody action
 
 dlg.reply(code,reason);
  reply to the request in DSMSession::last_req 
@@ -56,6 +61,20 @@ dlg.dialout(string arrayname)
 
   returns $arrayname_ltag (if successful) and sets ERRNO.
    
+Request/Reply Body handling in sipRequest/sipReply events:
 
+actions (applicable only in sipRequest/sipReply event handling blocks):
+dlg.getRequestBody(content_type, dstvar)  - get body of content_type in $dstvar
+dlg.getReplyBody(content_type, dstvar)    - get body of content_type in $dstvar
 
+conditions: 
+  dlg.replyHasContentType(content_type) and dlg.requestHasContentType(content_type)
 
+  checks whether request/reply has a certain content type
+
+ example: 
+
+transition "msg recvd" A - sipRequest; dlg.requestHasContentType(application/ISUP) / {
+  dlg.getRequestBody(application/ISUP, isup_body);
+  ... do sth with $isup_body ...
+} -> B;

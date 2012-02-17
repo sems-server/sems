@@ -40,4 +40,9 @@ DEF_ACTION_2P(DLGAcceptInviteAction);
 DEF_ACTION_2P(DLGConnectCalleeRelayedAction);
 DEF_ACTION_1P(DLGByeAction);
 DEF_ACTION_1P(DLGDialoutAction);
+
+DEF_SCCondition(DLGReplyHasContentTypeCondition);
+DEF_SCCondition(DLGRequestHasContentTypeCondition);
+DEF_ACTION_2P(DLGGetRequestBodyAction);
+DEF_ACTION_2P(DLGGetReplyBodyAction);
 #endif

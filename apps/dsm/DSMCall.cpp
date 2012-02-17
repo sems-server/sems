@@ -273,13 +273,6 @@ void DSMCall::onSipRequest(const AmSipRequest& req) {
     params["from"] = req.from;
     params["to"] = req.to;
     params["hdrs"] = req.hdrs;
-
-    //TODO: find some sort of solution for this one....
-    //      Stefan? any clue?????
-    //
-    //params["content_type"] = req.content_type;
-    //params["body"] = req.body;
-
     params["cseq"] = int2str(req.cseq);
 
     // pass AmSipRequest for use by mod_dlg
