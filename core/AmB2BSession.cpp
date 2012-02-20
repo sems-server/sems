@@ -35,6 +35,21 @@
 #include <assert.h>
 
 //
+// helper functions
+//
+
+/** count active and inactive media streams in given SDP */
+static void countStreams(const AmSdp &sdp, int &active, int &inactive)
+{
+  active = 0;
+  inactive = 0;
+  for (vector<SdpMedia>::const_iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+    if (m->port == 0) inactive++;
+    else active++;
+  }
+}
+
+//
 // AmB2BSession methods
 //
 
@@ -267,6 +282,25 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 	req.method.c_str(), req.content_type.c_str());
     // todo: handle filtering errors
     filterBody(r_ev->req.content_type, r_ev->req.body, *req_sdp.get(), a_leg);
+
+    int active, inactive;
+    countStreams(*req_sdp, active, inactive);
+    if ((inactive > 0) && (active == 0)) {
+      // no active streams remaining => reply 488 (FIXME: does it matter if we
+      // filtered them out or they were already inactive?)
+
+      DBG("all streams are marked as inactive\n");
+      dlg.reply(req, 488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
+
+      // cleanup
+      delete r_ev;
+      if(req.method != SIP_METH_ACK) {
+        std::map<int,AmSipRequest>::iterator r = recvd_req.find(req.cseq);
+        if (r != recvd_req.end()) recvd_req.erase(r);
+      }
+
+      return;
+    }
   }
 
   if (rtp_relay_enabled &&
@@ -1102,6 +1136,19 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
   if(callee_status != None)
     terminateOtherLeg();
 
+  if (b2b_mode == B2BMode_SDPFilter) {
+    AmSdp filter_sdp;
+    filterBody(invite_req.content_type, invite_req.body, filter_sdp, true);
+    int active, inactive;
+    countStreams(filter_sdp, active, inactive);
+    if ((inactive > 0) && (active == 0)) {
+      // no active streams remaining => reply 488 (FIXME: does it matter if we
+      // filtered them out or they were already inactive?)
+      DBG("all streams are marked as inactive\n");
+      throw AmSession::Exception(488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
+    }
+  }
+
   if (relayed_invite) {
     // relayed INVITE - we need to add the original INVITE to
     // list of received (relayed) requests
@@ -1112,11 +1159,6 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
   }
 
   B2BConnectEvent* ev = new B2BConnectEvent(remote_party,remote_uri);
-
-  if (b2b_mode == B2BMode_SDPFilter) {
-    AmSdp filter_sdp;
-    filterBody(invite_req.content_type, invite_req.body, filter_sdp, true);
-  }
 
   ev->content_type = invite_req.content_type;
   ev->body         = invite_req.body;

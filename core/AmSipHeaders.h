@@ -62,5 +62,6 @@
 #define SIP_REPLY_LOOP_DETECTED         "Loop Detected"
 #define SIP_REPLY_NOT_EXIST             "Call Leg/Transaction Does Not Exist"
 #define SIP_REPLY_PENDING               "Request Pending"
+#define SIP_REPLY_NOT_ACCEPTABLE_HERE   "Not Acceptable Here"
 
 #endif /* __AMSIPHEADERS_H__ */

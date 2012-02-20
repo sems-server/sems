@@ -54,8 +54,15 @@ int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilte
       if (!is_filtered)
 	new_pl.push_back(*p_it);
     }
-    // todo: what if no payload supported any more?
-    media.payloads = new_pl;    
+    if (new_pl.empty()) {
+      // in case of SDP offer we could remove media line but in case of answer
+      // we should just reject the stream by setting port to 0 (at least one
+      // format must be given; see RFC 3264, sect. 6)
+      media.port = 0;
+      if (media.payloads.size() > 1) 
+        media.payloads.erase(media.payloads.begin() + 1, media.payloads.end());
+    }
+    else media.payloads = new_pl;    
   }
 
   return 0;
