@@ -101,7 +101,11 @@ void MWI::publish(const string& user, const string& domain)
 
   body += "Message-Account: sip:" + user + "@" + domain + "\r\n";
   body += "Voice-Message: " + vm_buf + " (" + vm_buf + ")\r\n";
-    
+
+  AmMimeBody sms_body;
+  sms_body.addPart("application/simple-message-summary");
+  sms_body.setPayload((const unsigned char*)body.c_str(),body.length());
+
   AmSipDialog tmp_d(NULL);
   tmp_d.local_party = string("<sip:mwi-publisher@") + presence_server + ">";
   tmp_d.remote_party = domain.c_str();
@@ -109,7 +113,7 @@ void MWI::publish(const string& user, const string& domain)
   tmp_d.remote_uri = "sip:" + user + "@" + domain;
   tmp_d.callid = AmSession::getNewId() + "@" + presence_server;
   tmp_d.local_tag = AmSession::getNewId();
-  tmp_d.sendRequest("PUBLISH", "application/simple-message-summary", body, headers);              
+  tmp_d.sendRequest(SIP_METH_NOTIFY, &sms_body, headers);     
 };
 
 void MWI::invoke(const string& method, const AmArg& args, AmArg& ret)

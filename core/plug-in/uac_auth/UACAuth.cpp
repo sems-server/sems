@@ -132,7 +132,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
   if (reply.code==407 || reply.code==401) {
     DBG("SIP reply with code %d cseq %d .\n", reply.code, reply.cseq);
 		
-    std::map<unsigned int, SIPRequestInfo >::iterator ri = 
+    std::map<unsigned int, SIPRequestInfo>::iterator ri = 
       sent_requests.find(reply.cseq);
     if (ri!= sent_requests.end())
       {
@@ -160,7 +160,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 
 	  if (do_auth(reply.code, auth_hdr,  
 		      ri->second.method,
-		      auth_uri, ri->second.body, result)) {
+		      auth_uri, &(ri->second.body), result)) {
 	    string hdrs = ri->second.hdrs;
 
 	    // strip other auth headers
@@ -198,8 +198,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 
 	    // resend request 
 	    if (dlg->sendRequest(ri->second.method,
-				 ri->second.content_type,
-				 ri->second.body, 
+				 &(ri->second.body),
 				 hdrs, SIP_FLAGS_VERBATIM | SIP_FLAGS_NOAUTH) == 0) {
 	      processed = true;
               DBG("authenticated request successfully sent.\n");
@@ -221,8 +220,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 }
 
 bool UACAuth::onSendRequest(const string& method, 
-			    const string& content_type,
-			    const string& body,
+			    const AmMimeBody* body,
 			    string& hdrs,
 			    int flags,
 			    unsigned int cseq)
@@ -232,8 +230,7 @@ bool UACAuth::onSendRequest(const string& method,
   if (!(flags & SIP_FLAGS_NOAUTH) &&
       !challenge.nonce.empty() &&
       do_auth(challenge, challenge_code,
-	      method,
-	      dlg->remote_uri, body, result)) {
+	      method, dlg->remote_uri, body, result)) {
     // add headers
     if (hdrs == "\r\n" || hdrs == "\r" || hdrs == "\n")
       hdrs = result;
@@ -247,7 +244,6 @@ bool UACAuth::onSendRequest(const string& method,
 
   DBG("adding %d to list of sent requests.\n", cseq);
   sent_requests[cseq] = SIPRequestInfo(method, 
-				       content_type,
 				       body,
 				       hdrs,
 				       dlg->getOAState());
@@ -309,7 +305,7 @@ bool UACAuth::parse_header(const string& auth_hdr, UACAuthDigestChallenge& chall
 
 bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,  
 		      const string& method, const string& uri,
-		      const string& body, string& result)
+		      const AmMimeBody* body, string& result)
 {
   if (!auth_hdr.length()) {
     ERROR("empty auth header.\n");
@@ -330,7 +326,7 @@ bool UACAuth::do_auth(const unsigned int code, const string& auth_hdr,
 bool UACAuth::do_auth(const UACAuthDigestChallenge& challenge,
 		      const unsigned int code,
 		      const string& method, const string& uri, 
-		      const string& body, string& result) 
+		      const AmMimeBody* body, string& result) 
 {
   if ((challenge.algorithm.length()) && (challenge.algorithm != "MD5")) {
     DBG("unsupported algorithm: '%s'\n", challenge.algorithm.c_str());
@@ -347,7 +343,7 @@ bool UACAuth::do_auth(const UACAuthDigestChallenge& challenge,
     DBG("authentication realm mismatch ('%s' vs '%s').\n", 
  	credential->realm.c_str(),challenge.realm.c_str());
   }
- 
+
   HASHHEX ha1;
   HASHHEX ha2;
   HASHHEX hentity;
@@ -372,7 +368,9 @@ bool UACAuth::do_auth(const UACAuthDigestChallenge& challenge,
 	nonce_count = 1;
 
       if(qop_auth_int){
-	uac_calc_hentity(body,hentity);
+	string body_str;
+	if(body) body->print(body_str);
+	uac_calc_hentity(body_str,hentity);
 	qop_value = "auth-int";
       }
       else

@@ -78,18 +78,19 @@ class UACAuthFactory
 /** \brief contains necessary information for UAC auth of a SIP request */
 struct SIPRequestInfo {
   string method;
-  string content_type;
-  string body;
+  AmMimeBody body;
   string hdrs;
   AmOfferAnswer::OAState oa_state;
 
   SIPRequestInfo(const string& method, 
-		 const string& content_type,
-		 const string& body,
+		 const AmMimeBody* body,
 		 const string& hdrs,
 		 AmOfferAnswer::OAState oa_state)
-    : method(method), content_type(content_type),
-    body(body), hdrs(hdrs), oa_state(oa_state) { }
+    : method(method), hdrs(hdrs), 
+      oa_state(oa_state) 
+  {
+    if(body) this->body = *body;
+  }
 
   SIPRequestInfo() {}
 
@@ -136,7 +137,7 @@ class UACAuth : public AmSessionEventHandler
    */
   bool do_auth(const unsigned int code, const string& auth_hdr,  
 	       const string& method, const string& uri, 
-	       const string& body, string& result);
+	       const AmMimeBody* body, string& result);
 
   /**
    *  do auth on cmd with saved challenge
@@ -145,7 +146,7 @@ class UACAuth : public AmSessionEventHandler
   bool do_auth(const UACAuthDigestChallenge& challenge,
 	       const unsigned int code,
 	       const string& method, const string& uri,
-	       const string& body, string& result);
+	       const AmMimeBody* body, string& result);
 	
  public:
 	
@@ -159,8 +160,7 @@ class UACAuth : public AmSessionEventHandler
   virtual bool onSipReply(const AmSipReply&, AmSipDialog::Status old_dlg_status);
 	
   virtual bool onSendRequest(const string& method, 
-			     const string& content_type,
-			     const string& body,
+			     const AmMimeBody* body,
 			     string& hdrs,
 			     int flags,
 			     unsigned int cseq);

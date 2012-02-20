@@ -268,8 +268,11 @@ int EarlyAnnounceFactory::onLoad()
 
 void EarlyAnnounceDialog::onInvite(const AmSipRequest& req) 
 {
+  AmMimeBody sdp_body;
+  sdp_body.addPart(SIP_APPLICATION_SDP);
+
   if(dlg.reply(req,183,"Session Progress",
-	       "application/sdp") != 0){
+	       &sdp_body) != 0){
     throw AmSession::Exception(500,"could not reply");
   } else {
     invite_req = req;

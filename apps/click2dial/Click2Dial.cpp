@@ -191,7 +191,6 @@ void C2DCallerDialog::onInvite(const AmSipRequest& req)
 void C2DCallerDialog::onInvite2xx(const AmSipReply& reply)
 {
   invite_req.body = reply.body;
-  invite_req.content_type = reply.content_type;
   invite_req.cseq = reply.cseq;
   est_invite_cseq = reply.cseq;
 }

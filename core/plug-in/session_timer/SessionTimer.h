@@ -158,8 +158,7 @@ class SessionTimer: public AmSessionEventHandler
   virtual bool onSipReply(const AmSipReply&, AmSipDialog::Status old_dlg_status);
 
   virtual bool onSendRequest(const string& method, 
-			     const string& content_type,
-			     const string& body,
+			     const AmMimeBody* body,
 			     string& hdrs,
 			     int flags,
 			     unsigned int cseq);
@@ -171,16 +170,16 @@ class SessionTimer: public AmSessionEventHandler
 /** \brief contains necessary information for UAC auth of a SIP request */
 struct SIPRequestInfo {
   string method;
-  string content_type;
-  string body;
+  AmMimeBody body;
   string hdrs;
 
   SIPRequestInfo(const string& method,
-		 const string& content_type,
-		 const string& body,
+		 const AmMimeBody* body,
 		 const string& hdrs)
-    : method(method), content_type(content_type),
-       body(body), hdrs(hdrs) { }
+    : method(method), hdrs(hdrs) 
+  { 
+    if(body) this->body = *body;
+  }
 
   SIPRequestInfo() {}
 
