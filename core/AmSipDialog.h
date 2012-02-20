@@ -116,8 +116,7 @@ private:
 
   /** @return 0 on success */
   int sendRequest(const string& method, 
-		  const string& content_type,
-		  const string& body,
+		  const AmMimeBody* body,
 		  const string& hdrs,
 		  int flags,
 		  unsigned int req_cseq);
@@ -226,8 +225,7 @@ private:
   int reply(const AmSipRequest& req,
 	    unsigned int  code, 
 	    const string& reason,
-	    const string& content_type = "",
-	    const string& body = "",
+	    const AmMimeBody* body = NULL,
 	    const string& hdrs = "",
 	    int flags = 0);
 
@@ -235,22 +233,19 @@ private:
   int reply(const AmSipTransaction& t,
 	    unsigned int  code, 
 	    const string& reason,
-	    const string& content_type = "",
-	    const string& body = "",
+	    const AmMimeBody* body = NULL,
 	    const string& hdrs = "",
 	    int flags = 0);
 
   /** @return 0 on success */
   int sendRequest(const string& method, 
-		  const string& content_type = "",
-		  const string& body = "",
+		  const AmMimeBody* body = NULL,
 		  const string& hdrs = "",
 		  int flags = 0);
 
   /** @return 0 on success */
   int send_200_ack(unsigned int inv_cseq,
-		   const string& content_type = "",
-		   const string& body = "",
+		   const AmMimeBody* body = NULL,
 		   const string& hdrs = "",
 		   int flags = 0);
     
@@ -262,25 +257,21 @@ private:
 
   /** @return 0 on success */
   int prack(const AmSipReply &reply1xx,
-            const string &cont_type, 
-            const string &body, 
+	    const AmMimeBody* body,
             const string &hdrs);
 
   /** @return 0 on success */
-  int update(const string &cont_type, 
-            const string &body, 
+  int update(const AmMimeBody* body, 
             const string &hdrs);
 
   /** @return 0 on success */
-  int reinvite(const string& hdrs,  
-	       const string& content_type,
-	       const string& body,
+  int reinvite(const string& hdrs,
+	       const AmMimeBody* body,
 	       int flags = 0);
 
   /** @return 0 on success */
   int invite(const string& hdrs,  
-	     const string& content_type,
-	     const string& body);
+	     const AmMimeBody* body);
 
   /** @return 0 on success */
   int refer(const string& refer_to,
