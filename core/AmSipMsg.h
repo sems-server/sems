@@ -1,6 +1,7 @@
 #ifndef __AMSIPMSG_H__
 #define __AMSIPMSG_H__
 #include "AmArg.h"
+#include "AmMimeBody.h"
 
 #include <string>
 using std::string;
@@ -29,10 +30,9 @@ class _AmSipMsgInDlg
   string route;
   string contact;
 
-  string content_type;
   string hdrs;
 
-  string body;
+  AmMimeBody body;
 
   // transaction ticket from sip stack
   trans_ticket tt;
