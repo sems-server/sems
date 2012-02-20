@@ -80,7 +80,7 @@ def_IvrSipReply_GETTER(IvrSipReply_gethdrs,       hdrs)
 def_IvrSipReply_GETTER(IvrSipReply_getfrom_tag,   from_tag)
 def_IvrSipReply_GETTER(IvrSipReply_getto_tag,     to_tag)
 def_IvrSipReply_GETTER(IvrSipReply_getroute,      route)
-def_IvrSipReply_GETTER(IvrSipReply_getbody,       body)
+//def_IvrSipReply_GETTER(IvrSipReply_getbody,       body)
 
 static PyObject*
 IvrSipReply_getcseq(IvrSipReply *self, void *closure)
@@ -100,7 +100,7 @@ static PyGetSetDef IvrSipReply_getset[] = {
   {(char*)"contact",(getter)IvrSipReply_getcontact, NULL, (char*)"contact", NULL},
   {(char*)"route",    (getter)IvrSipReply_getroute, NULL, (char*)"route", NULL},
   {(char*)"hdrs",     (getter)IvrSipReply_gethdrs, NULL, (char*)"hdrs", NULL},
-  {(char*)"body",     (getter)IvrSipReply_getbody, NULL, (char*)"body", NULL},
+  //{(char*)"body",     (getter)IvrSipReply_getbody, NULL, (char*)"body", NULL},
   {(char*)"from_tag", (getter)IvrSipReply_getfrom_tag, NULL, (char*)"from_tag", NULL},
   {(char*)"to_tag",   (getter)IvrSipReply_getto_tag, NULL, (char*)"to_tag", NULL},
   {(char*)"cseq",     (getter)IvrSipReply_getcseq, NULL, (char*)"cseq", NULL},
