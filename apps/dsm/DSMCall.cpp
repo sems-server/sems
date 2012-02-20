@@ -179,7 +179,18 @@ void DSMCall::onSessionStart()
 
 int DSMCall::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
 {
-  answer.print(invite_req.body);
+  AmMimeBody* sdp_body = invite_req.body.hasContentType(SIP_APPLICATION_SDP);
+  if(!sdp_body) {
+    sdp_body = invite_req.body.addPart(SIP_APPLICATION_SDP);
+  }
+
+  if(sdp_body) {
+    string sdp_buf;
+    answer.print(sdp_buf);
+    sdp_body->setPayload((const unsigned char*)sdp_buf.c_str(),
+			 sdp_buf.length());
+  }
+
   return AmB2BCallerSession::onSdpCompleted(offer,answer);
 }
 
@@ -263,8 +274,11 @@ void DSMCall::onSipRequest(const AmSipRequest& req) {
     params["to"] = req.to;
     params["hdrs"] = req.hdrs;
 
-    params["content_type"] = req.content_type;
-    params["body"] = req.body;
+    //TODO: find some sort of solution for this one....
+    //      Stefan? any clue?????
+    //
+    //params["content_type"] = req.content_type;
+    //params["body"] = req.body;
 
     params["cseq"] = int2str(req.cseq);
 
@@ -294,9 +308,6 @@ void DSMCall::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
     params["code"] = int2str(reply.code);
     params["reason"] = reply.reason;
     params["hdrs"] = reply.hdrs;
-    params["content_type"] = reply.content_type;
-    params["body"] = reply.body;
-
     params["cseq"] = int2str(reply.cseq);
 
     params["dlg_status"] = dlgStatusStr(dlg.getStatus());
@@ -337,9 +348,6 @@ void DSMCall::onRemoteDisappeared(const AmSipReply& reply) {
   params["code"] = int2str(reply.code);
   params["reason"] = reply.reason;
   params["hdrs"] = reply.hdrs;
-  params["content_type"] = reply.content_type;
-  params["body"] = reply.body;
-
   params["cseq"] = int2str(reply.cseq);
 
   params["dlg_status"] = dlgStatusStr(dlg.getStatus());
