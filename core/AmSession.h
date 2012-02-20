@@ -377,7 +377,7 @@ public:
   virtual bool refresh(int flags = 0);
 
   /** send an UPDATE in the session */
-  virtual int sendUpdate(const string &cont_type, const string &body, const string &hdrs);
+  virtual int sendUpdate(const AmMimeBody* body, const string &hdrs);
 
   /** send a Re-INVITE (if connected) */
   virtual int sendReinvite(bool updateSDP = true, const string& headers = "",

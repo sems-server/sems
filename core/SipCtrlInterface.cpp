@@ -30,6 +30,7 @@
 
 #include "AmUtils.h"
 #include "AmSipMsg.h"
+#include "AmMimeBody.h"
 #include "AmSipHeaders.h"
 
 #include "sip/trans_layer.h"
@@ -207,21 +208,21 @@ int SipCtrlInterface::send(AmSipRequest &req,
 	}
     }
 
+    string body;
+    string content_type;
+
     if(!req.body.empty()){
-
-	if(req.content_type.empty()){
-	    ERROR("Body in request without content type\n");
-	}
-	else {
-	    msg->content_type = new sip_header(0,"Content-Type",stl2cstr(req.content_type));
-	    msg->hdrs.push_back(msg->content_type);
-
-	    msg->body = stl2cstr(req.body);
-	}
+	content_type = req.body.getCTHdr();
+	msg->content_type = new sip_header(0,SIP_HDR_CONTENT_TYPE,
+					   stl2cstr(content_type));
+	msg->hdrs.push_back(msg->content_type);
+	req.body.print(body);
+	msg->body = stl2cstr(body);
     }
 
     int res = trans_layer::instance()->send_request(msg,&req.tt,
-						    stl2cstr(next_hop_ip),next_hop_port,
+						    stl2cstr(next_hop_ip),
+						    next_hop_port,
 						    out_interface);
     delete msg;
 
@@ -331,17 +332,18 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	}
     }
 
-    if(!rep.body.empty()) {
-	if(rep.content_type.empty()){
-	    ERROR("Reply does not contain a Content-Type whereby body is not empty\n");
-	    return -1;
-	}
-    }
-
     unsigned int hdrs_len = copy_hdrs_len(msg.hdrs);
 
+    string body;
+    string content_type;
     if(!rep.body.empty()) {
-	hdrs_len += content_type_len(stl2cstr(rep.content_type));
+	content_type = rep.body.getCTHdr();
+	rep.body.print(body);
+    	if(content_type.empty()){
+    	    ERROR("Reply does not contain a Content-Type whereby body is not empty\n");
+    	    return -1;
+    	}
+	hdrs_len += content_type_len(stl2cstr(content_type));
     }
 
     char* hdrs_buf = NULL;
@@ -354,7 +356,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 	copy_hdrs_wr(&c,msg.hdrs);
 		
 	if(!rep.body.empty()) {
-	    content_type_wr(&c,stl2cstr(rep.content_type));
+	    content_type_wr(&c,stl2cstr(content_type));
 	}
     }
 
@@ -363,7 +365,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 					    rep.code,stl2cstr(rep.reason),
 					    stl2cstr(rep.to_tag),
 					    cstring(hdrs_buf,hdrs_len), 
-					    stl2cstr(rep.body));
+					    stl2cstr(body));
 
     delete [] hdrs_buf;
 
@@ -377,8 +379,6 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     assert(msg);
     assert(msg->from && msg->from->p);
     assert(msg->to && msg->to->p);
-    
-    //AmSipRequest req;
     
     req.method   = c2stlstr(msg->u.request->method_str);
     req.user     = c2stlstr(msg->u.request->ruri.user);
@@ -430,7 +430,6 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.cseq     = get_cseq(msg)->num;
     req.cseq_method = c2stlstr(get_cseq(msg)->method_str);
     req.via_branch = c2stlstr(msg->via_p1->branch);
-    req.body     = c2stlstr(msg->body);
 
     if (msg->rack) {
         req.rseq = get_rack(msg)->rseq;
@@ -438,8 +437,18 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	req.rack_cseq = get_rack(msg)->cseq;
     }
 
-    if (msg->content_type)
- 	req.content_type = c2stlstr(msg->content_type->value);
+    if (msg->content_type) {
+
+	if(req.body.parse(c2stlstr(msg->content_type->value),
+			  (unsigned char*)msg->body.s,
+			  msg->body.len) < 0) {
+	    DBG("could not parse MIME body\n");
+	}
+	else {
+	    DBG("MIME body successfully parsed\n");
+	    // some debug infos?
+	}
+    }
 
     prepare_routes_uas(msg->record_route, req.route);
 	
@@ -464,9 +473,19 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 
 inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
 {
-    reply.content_type = msg->content_type ? c2stlstr(msg->content_type->value): "";
+    if (msg->content_type) {
 
-    reply.body = msg->body.len ? c2stlstr(msg->body) : "";
+	if(reply.body.parse(c2stlstr(msg->content_type->value),
+			    (unsigned char*)msg->body.s,
+			    msg->body.len) < 0) {
+	    DBG("could not parse MIME body\n");
+	}
+	else {
+	    DBG("MIME body successfully parsed\n");
+	    // some debug infos?
+	}
+    }
+
     reply.cseq = get_cseq(msg)->num;
     reply.cseq_method = c2stlstr(get_cseq(msg)->method_str);
 
@@ -566,7 +585,7 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 	DBG("cseq = <%i>\n",req.cseq);
 	DBG_PARAM(req.route);
 	DBG("hdrs = <%s>\n",req.hdrs.c_str());
-	DBG("body = <%s>\n",req.body.c_str());
+	DBG("body-ct = <%s>\n",req.body.getCTStr().c_str());
     }
 
     AmSipDispatcher::instance()->handleSipMsg(req);
@@ -592,6 +611,9 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     DBG_PARAM(reply.contact);
     DBG_PARAM(reply.to_uri);
     DBG("cseq = <%i>\n",reply.cseq);
+    DBG_PARAM(reply.route);
+    DBG("hdrs = <%s>\n",reply.hdrs.c_str());
+    DBG("body-ct = <%s>\n",reply.body.getCTStr().c_str());
 
     AmSipDispatcher::instance()->handleSipMsg(reply);
 
@@ -679,7 +701,7 @@ void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, strin
     
     while(true) {
 	
-	if(++it_re == route->elmts.rend()){
+	if(++it_re == route->elmts.rend()) {
 	    if(++it_rh == routes.rend()){
 		DBG("route_field = [%s]\n",route_field.c_str());
 		return;

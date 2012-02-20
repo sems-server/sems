@@ -128,7 +128,7 @@ bool AmSIPRegistration::doRegistration()
       + info.contact + ">" + CRLF;
   }
     
-  if (dlg.sendRequest(req.method, "", "",
+  if (dlg.sendRequest(req.method, NULL,
 		      SIP_HDR_COLSP(SIP_HDR_EXPIRES)+
 		      int2str(expires_interval)+CRLF) < 0) {
     ERROR("failed to send registration.\n");
@@ -165,7 +165,7 @@ bool AmSIPRegistration::doUnregister()
     dlg.contact_uri += info.contact + ">" + CRLF;
   }
     
-  if (dlg.sendRequest(req.method, "", "",
+  if (dlg.sendRequest(req.method, NULL,
 		      SIP_HDR_COLSP(SIP_HDR_EXPIRES) "0" CRLF) < 0) {
     ERROR("failed to send deregistration.\n");
     res = false;
