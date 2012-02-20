@@ -98,8 +98,6 @@ sip_msg::sip_msg()
 
 sip_msg::~sip_msg()
 {
-    // DBG("~sip_msg()\n");
-
     delete [] buf;
 
     list<sip_header*>::iterator it;
@@ -419,6 +417,74 @@ static int parse_first_line(sip_msg* msg, char** c)
     return UNEXPECTED_EOT;
 }
 
+int parse_headers(sip_msg* msg, char** c, char* end)
+{
+    int err = parse_headers(msg->hdrs,c,end);
+    if(!err) {
+	for(list<sip_header*>::iterator it = msg->hdrs.begin();
+	    it != msg->hdrs.end(); ++it) {
+
+	    sip_header* hdr = *it;
+	    switch(hdr->type) {
+
+	    case sip_header::H_CALL_ID:  
+		msg->callid = hdr; 
+		break;
+
+	    case sip_header::H_CONTACT:
+		msg->contacts.push_back(hdr);
+		break;
+
+	    case sip_header::H_CONTENT_LENGTH:
+		msg->content_length = hdr;
+		break;
+
+	    case sip_header::H_CONTENT_TYPE:
+		msg->content_type = hdr;
+		break;
+
+	    case sip_header::H_FROM:
+		msg->from = hdr;
+		break;
+
+	    case sip_header::H_TO:
+		msg->to = hdr;
+		break;
+
+	    case sip_header::H_VIA:
+		if(!msg->via1)
+		    msg->via1 = hdr;
+		break;
+
+	    // case sip_header::H_RSEQ:
+	    // 	msg->rseq = hdr;
+	    // 	break;
+
+	    case sip_header::H_RACK:
+		if(msg->type == SIP_REQUEST && 
+		   msg->u.request->method == sip_request::PRACK) {
+		    
+		    msg->rack = hdr;
+		}
+		break;
+
+	    case sip_header::H_CSEQ:
+		msg->cseq = hdr;
+		break;
+
+	    case sip_header::H_ROUTE:
+		msg->route.push_back(hdr);
+		break;
+
+	    case sip_header::H_RECORD_ROUTE:
+		msg->record_route.push_back(hdr);
+		break;
+	    }
+	}
+    }
+
+    return err;
+}
 
 int parse_sip_msg(sip_msg* msg, char*& err_msg)
 {
@@ -431,7 +497,7 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
 	return MALFORMED_FLINE;
     }
 
-    err = parse_headers(msg,&c);
+    err = parse_headers(msg,&c,c+msg->len);
 
     if(!err){
 	msg->body.set(c,msg->len - (c - msg->buf));

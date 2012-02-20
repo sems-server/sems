@@ -36,23 +36,12 @@
 #include <memory>
 using std::auto_ptr;
 
-//
-// SIP version constants
-//
-
-const char* SIP = "SIP";
-#define SIP_len 3
-
-const char* SUP_SIPVER = "2.0";
-#define SUP_SIPVER_len 3
-
-
 int parse_sip_version(const char* beg, int len)
 {
     const char* c = beg;
     //char* end = c+len;
 
-    if(len!=7){
+    if(len!=SIPVER_len){
 	DBG("SIP-Version string length != SIPVER_len\n");
 	return MALFORMED_SIP_MSG;
     }
@@ -65,11 +54,6 @@ int parse_sip_version(const char* beg, int len)
 	return MALFORMED_SIP_MSG;
     }
     c += SIP_len;
-
-    if(*c++ != '/'){
-	DBG("SIP-Version has no \"/\" after \"SIP\"\n");
-	return MALFORMED_SIP_MSG;
-    }
 
     if(memcmp(c,SUP_SIPVER,SUP_SIPVER_len) != 0){
 	DBG("Unsupported or malformed SIP-Version\n");
@@ -315,6 +299,14 @@ int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_
     }
 
     return 0;
+}
+
+void free_gen_params(list<sip_avp*>* params)
+{
+    while(!params->empty()) {
+	delete params->front();
+	params->pop_front();
+    }
 }
 
 /** EMACS **

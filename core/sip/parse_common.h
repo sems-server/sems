@@ -91,8 +91,17 @@ using std::list;
 #define IS_USER(c) \
    (IS_UNRESERVED(c) || IS_USER_UNRESERVED(c)) // Escaped chars missing
 
-#define SIPVER_len 7 // "SIP" "/" 1*DIGIT 1*DIGIT
+//
+// SIP version constants
+//
 
+#define SIP_str    "SIP"
+#define SUP_SIPVER "/2.0"
+
+#define SIP_len        (sizeof(SIP_str)-/*0-term*/1)
+#define SUP_SIPVER_len (sizeof(SUP_SIPVER)-/*0-term*/1)
+
+#define SIPVER_len (SIP_len+SUP_SIPVER_len)
 
 //
 // Common states: (>100)
@@ -155,7 +164,6 @@ inline int lower_cmp(const char* l, const char* r, int len)
     const char* end = l+len;
 
     while(l!=end){
-	//if( LOWER_B(*l) != *r ){
 	if( LOWER_B(*l) != LOWER_B(*r) ){
 	    return 1;
 	}
@@ -167,7 +175,14 @@ inline int lower_cmp(const char* l, const char* r, int len)
 
 int parse_sip_version(const char* beg, int len);
 
+/** 
+ * Parse a list of Attribute-Value pairs separated by semi-colons 
+ * until stop_char or the end of the string is reached.
+ */
 int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_char);
+
+/** Free the parameters in the list (NOT the list itself) */
+void free_gen_params(list<sip_avp*>* params);
 
 #endif
 

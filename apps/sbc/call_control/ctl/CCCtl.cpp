@@ -160,7 +160,6 @@ void CCCtl::start(const string& cc_name, const string& ltag,
   SET_TO_CALL_PROFILE("sst_enabled", sst_enabled);
   SET_TO_CALL_PROFILE("sst_aleg_enabled", sst_aleg_enabled);
 
-  assertEndCRLF(call_profile->append_headers);
   ADD_TO_CALL_PROFILE("append_headers", append_headers);
   assertEndCRLF(call_profile->append_headers);
 

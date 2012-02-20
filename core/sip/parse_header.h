@@ -79,9 +79,8 @@ struct sip_header
     ~sip_header();
 };
 
-struct sip_msg;
-
-int parse_headers(sip_msg* msg, char** c);
+int parse_headers(list<sip_header*>& hdrs, char** c, char* end);
+void free_headers(list<sip_header*>& hdrs);
 
 #endif
 

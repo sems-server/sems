@@ -95,7 +95,7 @@ static int parse_transport(sip_transport* t, const char** c, int len)
 	TR_OTHER
     };
 
-    if(len < SIPVER_len + 2){ // at least "SIP/2.0/?"
+    if(len < (int)SIPVER_len + 2){ // at least "SIP/2.0/?"
 	DBG("Transport protocol is too small\n");
 	return MALFORMED_SIP_MSG;
     }

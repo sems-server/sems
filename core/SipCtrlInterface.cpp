@@ -149,10 +149,10 @@ int SipCtrlInterface::send(AmSipRequest &req,
     // Max-Forwards
     
     char* c = (char*)req.from.c_str();
-    int err = parse_headers(msg,&c);
+    int err = parse_headers(msg,&c,c+req.from.length());
 
     c = (char*)req.to.c_str();
-    err = err || parse_headers(msg,&c);
+    err = err || parse_headers(msg,&c,c+req.to.length());
 
     if(err){
 	ERROR("Malformed To or From header\n");
@@ -172,7 +172,7 @@ int SipCtrlInterface::send(AmSipRequest &req,
     if(!req.contact.empty()){
 
 	c = (char*)req.contact.c_str();
-	err = parse_headers(msg,&c);
+	err = parse_headers(msg,&c,c+req.contact.length());
 	if(err){
 	    ERROR("Malformed Contact header\n");
 	    delete msg;
@@ -183,7 +183,7 @@ int SipCtrlInterface::send(AmSipRequest &req,
     if(!req.route.empty()){
 	
  	c = (char*)req.route.c_str();
-	err = parse_headers(msg,&c);
+	err = parse_headers(msg,&c,c+req.route.length());
 	
 	if(err){
 	    ERROR("Route headers parsing failed\n");
@@ -197,7 +197,7 @@ int SipCtrlInterface::send(AmSipRequest &req,
 	
  	c = (char*)req.hdrs.c_str();
 	
- 	err = parse_headers(msg,&c);
+ 	err = parse_headers(msg,&c,c+req.hdrs.length());
 	
 	if(err){
 	    ERROR("Additional headers parsing failed\n");
@@ -314,7 +314,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
     if(!rep.hdrs.empty()) {
 
 	char* c = (char*)rep.hdrs.c_str();
-	int err = parse_headers(&msg,&c);
+	int err = parse_headers(&msg,&c,c+rep.hdrs.length());
 	if(err){
 	    ERROR("Malformed additional header\n");
 	    return -1;
@@ -324,7 +324,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
     if(!rep.contact.empty()){
 
 	char* c = (char*)rep.contact.c_str();
-	int err = parse_headers(&msg,&c);
+	int err = parse_headers(&msg,&c,c+rep.contact.length());
 	if(err){
 	    ERROR("Malformed Contact header\n");
 	    return -1;

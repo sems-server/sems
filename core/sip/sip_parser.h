@@ -141,6 +141,7 @@ struct sip_msg
 };
 
 int parse_method(int* method, const char* beg, int len);
+int parse_headers(sip_msg* msg, char** c, char* end);
 int parse_sip_msg(sip_msg* msg, char*& err_msg);
 
 #define get_contact(msg) (msg->contacts.empty() ? NULL : (*msg->contacts.begin()))
