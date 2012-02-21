@@ -5,6 +5,7 @@ COREPATH=.
 
 PLUGIN_DIR=plug-in
 SIP_STACK_DIR=sip
+RESAMPLE_DIR=resample
 
 SRCS=$(filter-out $(NAME).cpp, $(wildcard *.cpp))
 HDRS=$(SRCS:.cpp=.h)
@@ -58,6 +59,24 @@ CPPFLAGS += -DUSE_LIBSAMPLERATE
 LDFLAGS +=-lsamplerate
 endif
 
+ifdef USE_INTERNAL_RESAMPLER
+
+CPPFLAGS += -DUSE_INTERNAL_RESAMPLER
+OBJS += $(RESAMPLE_DIR)/libresample.a
+
+.PHONY: resample_lib
+resample_lib:
+	-@echo ""
+	-@echo "making internal resampler"
+	-@cd $(RESAMPLE_DIR); $(MAKE) all
+
+else
+
+.PHONY: resample_lib
+resample_lib:
+
+endif
+
 ifdef USE_SPANDSP
 CPPFLAGS += -DUSE_SPANDSP -D__STDC_LIMIT_MACROS
 
@@ -74,7 +93,7 @@ endif
 %.o : %.cpp ../Makefile.defs
 	$(CXX) -MMD -c -o $@ $< $(CPPFLAGS) $(CXXFLAGS)
 
-$(NAME): sip_stack core ../Makefile.defs
+$(NAME): sip_stack resample_lib core ../Makefile.defs
 	-@echo ""
 	-@echo "making $(NAME) executable"
 	$(LD) -o $(NAME) $(OBJS) $(LDFLAGS) $(EXTRA_LDFLAGS)

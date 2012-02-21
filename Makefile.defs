@@ -61,6 +61,11 @@ CPPFLAGS += -D_DEBUG \
 #
 #USE_LIBSAMPLERATE = yes
 
+# compile with internal resampler?
+#
+#
+USE_INTERNAL_RESAMPLER = yes
+
 #
 # ZRTP support? (see zfoneproject.com)
 #WITH_ZRTP = yes
@@ -104,7 +109,6 @@ endif
 ifndef USE_SPANDSP
 exclude_core_modules += g722
 endif
-
 
 ifdef USE_MONITORING
 CPPFLAGS += -DUSE_MONITORING
@@ -215,7 +219,6 @@ ifeq ($(ARCH),iphone)
 LDFLAGS += -lgcc_eh
 endif
 
-
 ifdef WITH_ZRTP
 LDFLAGS +=-lzrtp -lbn
 endif
@@ -315,7 +318,7 @@ export bin-target cfg-target app-cfg-target modules-target audio-target lib-targ
 export INSTALL TAR INSTALL-TOUCH INSTALL-CFG INSTALL-BIN INSTALL-MODULES INSTALL-DOC INSTALL-AUDIO
 
 export USE_SPANDSP LIBSPANDSP_STATIC LIBSPANDSP_LDIR 
-export USE_LIBSAMPLERATE
+export USE_LIBSAMPLERATE USE_INTERNAL_RESAMPLER
 export WITH_ZRTP
 export USE_MONITORING
 export exclude_core_modules exclude_app_modules
