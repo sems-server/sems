@@ -93,9 +93,10 @@ amci_codec_t _codec_tevent = {
 };
 
 amci_payload_t _payload_tevent = { 
-  -1,
+  101,
   "telephone-event",
   8000, // telephone-event has always SR 8000 
+  8000,
   -1,
   CODEC_TELEPHONE_EVENT,
   -1 
@@ -470,7 +471,7 @@ void AmPlugIn::getPayloads(vector<SdpPayload>& pl_vec) const
   for (std::map<int,int>::const_iterator it = payload_order.begin(); it != payload_order.end(); ++it) {
     std::map<int,amci_payload_t*>::const_iterator pl_it = payloads.find(it->second);
     if(pl_it != payloads.end()){
-      pl_vec.push_back(SdpPayload(pl_it->first, pl_it->second->name, pl_it->second->sample_rate, 0));
+      pl_vec.push_back(SdpPayload(pl_it->first, pl_it->second->name, pl_it->second->advertised_sample_rate, 0));
     } else {
       ERROR("Payload %d (from the payload_order map) was not found in payloads map!\n", it->second);
     }

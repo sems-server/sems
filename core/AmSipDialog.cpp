@@ -69,7 +69,8 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     next_hop_port(AmConfig::NextHopPort),
     next_hop_ip(AmConfig::NextHopIP),
-    outbound_interface(-1)
+    outbound_interface(-1),
+    sdp_local(), sdp_remote()
 {
   assert(h);
 }

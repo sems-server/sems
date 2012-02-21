@@ -29,6 +29,8 @@
 #include "AmPlugIn.h"
 #include "AmUtils.h"
 #include "AmSdp.h"
+#include "AmRtpStream.h"
+#include "AmConfig.h"
 #include "amci/codecs.h"
 #include "log.h"
 
@@ -49,106 +51,36 @@ struct CodecContainer
   long h_codec;
 };
 
-// AmAudioRtpFormat::AmAudioRtpFormat(const vector<SdpPayload *>& payloads)
-//   : AmAudioFormat(), m_payloads(payloads), m_currentPayload(-1)
-// {
-  // for (vector<SdpPayload *>::iterator it = m_payloads.begin();
-  // 	  it != m_payloads.end(); ++it)
-  // {
-  //   m_sdpPayloadByPayload[(*it)->payload_type] = *it;
-  // }
-  // setCurrentPayload(m_payloads[0]->payload_type);
-// }
-
 AmAudioRtpFormat::AmAudioRtpFormat()
+  : AmAudioFormat(), codec_id(-1)
 {
   
 }
 
-int AmAudioRtpFormat::setCodecId(int codec_id)
+int AmAudioRtpFormat::setCurrentPayload(Payload pl)
 {
-  this->codec_id = codec_id;
-  return 0;
-}
-
-#if 0
-int AmAudioRtpFormat::setCurrentPayload(int payload)
-{
-  if (m_currentPayload != payload)
-  {
-    std::map<int, SdpPayload *>::iterator p = 
-      m_sdpPayloadByPayload.find(payload);
-    if (p == m_sdpPayloadByPayload.end())
-    {
-      ERROR("Could not find payload <%i>\n", payload);
-      return -1;
-    }
-    std::map<int, amci_payload_t *>::iterator pp = 
-      m_payloadPByPayload.find(payload);
-    if (pp == m_payloadPByPayload.end())
-    {
-      m_currentPayloadP = AmPlugIn::instance()->payload(p->second->int_pt);
-      if (m_currentPayloadP == NULL)
-      {
-	ERROR("Could not find payload <%i>\n", payload);
-	return -1;
-      }
-      m_payloadPByPayload[payload] = m_currentPayloadP;
-    }
-    else
-      m_currentPayloadP = pp->second;
-    m_currentPayload = payload;
-    sdp_format_parameters = p->second->sdp_format_parameters;
-
-    std::map<int, CodecContainer *>::iterator c = 
-      m_codecContainerByPayload.find(payload);
-    if (c == m_codecContainerByPayload.end())
-    {
-      codec = NULL;
-      getCodec();
-      if (codec)
-      {
-	CodecContainer *cc = new CodecContainer();
-	cc->codec = codec;
-	cc->frame_size = frame_size;
-	cc->frame_length = frame_length;
-	cc->frame_encoded_size = frame_encoded_size;
-	cc->h_codec = h_codec;
-	m_codecContainerByPayload[payload] = cc;
-      }
-    }
-    else
-    {
-      codec = c->second->codec;
-      frame_size = c->second->frame_size;
-      frame_length = c->second->frame_length;
-      frame_encoded_size = c->second->frame_encoded_size;
-      h_codec = c->second->h_codec;
-    }
-    if (m_currentPayloadP && codec) {
-      channels = m_currentPayloadP->channels;
-      rate = m_currentPayloadP->sample_rate;
-    } else {
-      ERROR("Could not find payload <%i>\n", payload);
-      return -1;
+  if (this->codec_id != pl.codec_id) {
+    this->codec_id = pl.codec_id;
+    this->channels = 1;
+    this->rate = pl.clock_rate;
+    DBG("fmt.rate = %d", this->rate);
+    this->advertized_rate = pl.advertised_clock_rate;
+    DBG("fmt.advertized_rate = %d", this->advertized_rate);
+    this->frame_size = 20*this->advertized_rate/1000;
+    if (this->codec != NULL) {
+      destroyCodec();
     }
   }
   return 0;
 }
-#endif
 
 AmAudioRtpFormat::~AmAudioRtpFormat()
 {
-  // for (std::map<int, CodecContainer *>::iterator it = 
-  // 	 m_codecContainerByPayload.begin(); 
-  //      it != m_codecContainerByPayload.end(); ++it)
-  //   delete it->second;
 }
 
 AmAudioFormat::AmAudioFormat()
-  : channels(-1), rate(-1), codec(NULL),
-    //frame_length(20), 
-    frame_size(20*SYSTEM_SAMPLERATE/1000), frame_encoded_size(320)
+  : channels(-1), rate(-1), advertized_rate(-1), codec(NULL),
+    frame_size(20*SYSTEM_SAMPLECLOCK_RATE/1000), frame_encoded_size(320)
 {
 
 }
@@ -157,7 +89,7 @@ AmAudioSimpleFormat::AmAudioSimpleFormat(int codec_id)
   : AmAudioFormat(), codec_id(codec_id)
 {
   codec = getCodec();
-  rate = SYSTEM_SAMPLERATE;
+  rate = SYSTEM_SAMPLECLOCK_RATE;
   channels = 1;
 }
 
@@ -265,25 +197,123 @@ long AmAudioFormat::getHCodec()
   return h_codec;
 }
 
+#ifdef USE_LIBSAMPLERATE
+AmLibSamplerateResamplingState::AmLibSamplerateResamplingState()
+  : resample_state(NULL), resample_buf_samples(0), resample_out_buf_samples(0)
+{
+}
+
+AmLibSamplerateResamplingState::~AmLibSamplerateResamplingState()
+{
+  if (NULL != resample_state) {
+    src_delete(resample_state);
+    resample_state=NULL;
+  }
+}
+
+unsigned int AmLibSamplerateResamplingState::resample(unsigned char* samples, unsigned int s, double ratio)
+{
+  DBG("resampling packet of size %d with ratio %f", s, ratio);
+  if (!resample_state) {
+    int src_error;
+    // for better quality but more CPU usage, use SRC_SINC_ converters
+    resample_state = src_new(SRC_LINEAR, 1, &src_error);
+    if (!resample_state) {
+      ERROR("samplerate initialization error: ");
+    }
+  }
+
+  if (resample_state) {
+    if (resample_buf_samples + PCM16_B2S(s) > PCM16_B2S(AUDIO_BUFFER_SIZE) * 2) {
+      WARN("resample input buffer overflow! (%lu)\n", resample_buf_samples + PCM16_B2S(s));
+    } else if (resample_out_buf_samples + (PCM16_B2S(s) * ratio) + 20 > PCM16_B2S(AUDIO_BUFFER_SIZE)) {
+      WARN("resample: possible output buffer overflow! (%lu)\n", (resample_out_buf_samples + (size_t) ((PCM16_B2S(s) * ratio)) + 20));
+    } else {
+      signed short* samples_s = (signed short*)samples;
+      src_short_to_float_array(samples_s, &resample_in[resample_buf_samples], PCM16_B2S(s));
+      resample_buf_samples += PCM16_B2S(s);
+    }
+
+    SRC_DATA src_data;
+    src_data.data_in = resample_in;
+    src_data.input_frames = resample_buf_samples;
+    src_data.data_out = &resample_out[resample_out_buf_samples];
+    src_data.output_frames = PCM16_B2S(AUDIO_BUFFER_SIZE);
+    src_data.src_ratio = ratio;
+    src_data.end_of_input = 0;
+
+    int src_err = src_process(resample_state, &src_data);
+    if (src_err) {
+      DBG("resample error: '%s'\n", src_strerror(src_err));
+    }else {
+      signed short* samples_s = (signed short*)(unsigned char*)samples;
+      resample_out_buf_samples += src_data.output_frames_gen;
+      s *= ratio;
+      src_float_to_short_array(resample_out, samples_s, PCM16_B2S(s));
+      DBG("resample: output_frames_gen = %ld", src_data.output_frames_gen);
+
+      if (resample_buf_samples !=  (unsigned int)src_data.input_frames_used) {
+	memmove(resample_in, &resample_in[src_data.input_frames_used],
+		(resample_buf_samples - src_data.input_frames_used) * sizeof(float));
+      }
+      resample_buf_samples = resample_buf_samples - src_data.input_frames_used;
+
+      if (resample_out_buf_samples != s) {
+	memmove(resample_out, &resample_out[PCM16_B2S(s)], (resample_out_buf_samples - PCM16_B2S(s)) * sizeof(float));
+      }
+      resample_out_buf_samples -= PCM16_B2S(s);
+    }
+  }
+
+  DBG("resample: output size is %d", s);
+  return s;
+}
+#endif
+
+#ifdef USE_INTERNAL_RESAMPLER
+AmInternalResamplerState::AmInternalResamplerState()
+  : rstate(NULL)
+{
+  rstate = ResampleFactory::createResampleObj(true, 4.0, ResampleFactory::INTERPOL_SINC, ResampleFactory::SAMPLE_MONO);
+}
+
+AmInternalResamplerState::~AmInternalResamplerState()
+{
+  if (rstate != NULL)
+    ResampleFactory::destroyResampleObj(rstate);
+}
+
+unsigned int AmInternalResamplerState::resample(unsigned char *samples, unsigned int s, double ratio)
+{
+  if (rstate == NULL) {
+    ERROR("Uninitialized resampling state");
+    return s;
+  }
+
+  //DBG("Resampling with ration %f", ratio);
+  //DBG("Putting %d samples in the buffer", PCM16_B2S(s));
+  rstate->put_samples((signed short *)samples, PCM16_B2S(s));
+  s = rstate->resample((signed short *)samples, ratio, PCM16_B2S(s) * ratio);
+  //DBG("Returning %d samples", s);
+  return PCM16_S2B(s);
+}
+#endif
+
 AmAudio::AmAudio()
   : fmt(new AmAudioSimpleFormat(CODEC_PCM16)),
     max_rec_time(-1),
-    rec_time(0)
-#ifdef USE_LIBSAMPLERATE 
-  , resample_state(NULL),
-    resample_buf_samples(0)
-#endif
+    rec_time(0),
+    input_resampling_state(NULL),
+    output_resampling_state(NULL)
 {
 }
 
 AmAudio::AmAudio(AmAudioFormat *_fmt)
   : fmt(_fmt),
     max_rec_time(-1),
-    rec_time(0)
-#ifdef USE_LIBSAMPLERATE 
-  , resample_state(NULL),
-    resample_buf_samples(0)
-#endif
+    rec_time(0),
+    input_resampling_state(NULL),
+    output_resampling_state(NULL)
 {
 }
 
@@ -305,10 +335,18 @@ void AmAudio::close()
 {
 }
 
+
 // returns bytes read, else -1 if error (0 is OK)
-int AmAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples)
+int AmAudio::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples)
 {
-  int size = calcBytesToRead(nb_samples);
+  int size = 0;
+  if (output_sample_rate < fmt->rate) {
+    int rfactor = fmt->rate / output_sample_rate;
+    size = calcBytesToRead(nb_samples * rfactor);
+  } else {
+    int rdivisor = output_sample_rate / fmt->rate;
+    size = calcBytesToRead(nb_samples / rdivisor);
+  }
 
   size = read(user_ts,size);
   //DBG("size = %d\n",size);
@@ -322,7 +360,9 @@ int AmAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_sa
     return -1; 
   }
   size = downMix(size);
-    
+
+  size = resampleOutput((unsigned char*)samples,size, fmt->rate, output_sample_rate);
+  
   if(size>0)
     memcpy(buffer,(unsigned char*)samples,size);
 
@@ -330,7 +370,7 @@ int AmAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_sa
 }
 
 // returns bytes written, else -1 if error (0 is OK)
-int AmAudio::put(unsigned int user_ts, unsigned char* buffer, unsigned int size)
+int AmAudio::put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size)
 {
   if(!size){
     return 0;
@@ -339,6 +379,7 @@ int AmAudio::put(unsigned int user_ts, unsigned char* buffer, unsigned int size)
   if(max_rec_time > -1 && rec_time >= max_rec_time)
     return -1;
 
+  size = resampleInput((unsigned char*)samples, size, input_sample_rate, fmt->rate);
 
   memcpy((unsigned char*)samples,buffer,size);
 
@@ -346,7 +387,8 @@ int AmAudio::put(unsigned int user_ts, unsigned char* buffer, unsigned int size)
   if(s>0){
     //DBG("%s\n",typeid(this).name());
     incRecordTime(bytes2samples(size));
-    return write(user_ts,(unsigned int)s);
+    unsigned int wr_ts = user_ts * ((double) fmt->advertized_rate / (double) SYSTEM_SAMPLECLOCK_RATE);
+    return write(wr_ts,(unsigned int)s);
   }
   else{
     return s;
@@ -398,10 +440,10 @@ int AmAudio::encode(unsigned int size)
 {
   int s = size;
 
-//   if(!fmt.get()){
-//     DBG("no encode fmt\n");
-//     return 0;
-//   }
+  //   if(!fmt.get()){
+  //     DBG("no encode fmt\n");
+  //     return 0;
+  //   }
 
   amci_codec_t* codec = fmt->getCodec();
   long h_codec = fmt->getHCodec();
@@ -425,7 +467,7 @@ unsigned int AmAudio::downMix(unsigned int size)
     samples.swap();
   }
 
-#ifdef USE_LIBSAMPLERATE 
+#if 0
   if (fmt->rate != SYSTEM_SAMPLERATE) {
     if (!resample_state) {
       int src_error;
@@ -476,6 +518,63 @@ unsigned int AmAudio::downMix(unsigned int size)
   return s;
 }
 
+unsigned int AmAudio::resampleInput(unsigned char* buffer, unsigned int s, int input_sample_rate, int output_sample_rate)
+{
+  if ((input_sample_rate == output_sample_rate) && !input_resampling_state.get()) {
+    return s;
+  }
+
+  if (!input_resampling_state.get()) {
+#ifdef USE_INTERNAL_RESAMPLER
+    if (AmConfig::ResamplingImplementationType == AmAudio::INTERNAL_RESAMPLER) {
+      DBG("using internal resampler for input");
+      input_resampling_state.reset(new AmInternalResamplerState());
+    } else
+#endif
+#ifdef USE_LIBSAMPLERATE
+      if (AmConfig::ResamplingImplementationType == AmAudio::LIBSAMPLERATE) {
+	input_resampling_state.reset(new AmLibSamplerateResamplingState());
+      } else
+#endif
+	{
+	  return s;
+	}
+  }
+
+  return resample(*input_resampling_state, buffer, s, input_sample_rate, output_sample_rate);
+}
+
+unsigned int AmAudio::resampleOutput(unsigned char* buffer, unsigned int s, int input_sample_rate, int output_sample_rate)
+{
+  if ((input_sample_rate == output_sample_rate) && !output_resampling_state.get()) {
+    return s;
+  }
+
+  if (!output_resampling_state.get()) {
+#ifdef USE_INTERNAL_RESAMPLER
+    if (AmConfig::ResamplingImplementationType == AmAudio::INTERNAL_RESAMPLER) {
+      DBG("using internal resampler for output");
+      output_resampling_state.reset(new AmInternalResamplerState());
+    } else
+#endif
+#ifdef USE_LIBSAMPLERATE
+      if (AmConfig::ResamplingImplementationType == AmAudio::LIBSAMPLERATE) {
+	output_resampling_state.reset(new AmLibSamplerateResamplingState());
+      } else
+#endif
+	{
+	  return s;
+	}
+  }
+
+  return resample(*output_resampling_state, buffer, s, input_sample_rate, output_sample_rate);
+}
+
+unsigned int AmAudio::resample(AmResamplingState& rstate, unsigned char* buffer, unsigned int s, int input_sample_rate, int output_sample_rate)
+{
+  return rstate.resample((unsigned char*) buffer, s, ((double) output_sample_rate) / ((double) input_sample_rate));
+}
+
 unsigned int AmAudio::getFrameSize()
 {
 
@@ -483,6 +582,23 @@ unsigned int AmAudio::getFrameSize()
     fmt.reset(new AmAudioSimpleFormat(CODEC_PCM16));
 
   return fmt->frame_size;
+}
+
+int AmAudio::getSampleRate()
+{
+  if (!fmt.get())
+    fmt.reset(new AmAudioSimpleFormat(CODEC_PCM16));
+
+  return fmt->rate;
+}
+
+unsigned int AmAudio::getSampleRateDivisor()
+{
+
+  if (!fmt.get())
+    fmt.reset(new AmAudioSimpleFormat(CODEC_PCM16));
+
+  return (SYSTEM_SAMPLECLOCK_RATE / fmt->rate);
 }
 
 unsigned int AmAudio::calcBytesToRead(unsigned int nb_samples) const
@@ -509,6 +625,7 @@ int AmAudio::incRecordTime(unsigned int samples)
 DblBuffer::DblBuffer()
   : active_buf(0)
 { 
+  memset(samples, 0, AUDIO_BUFFER_SIZE * 2);
 }
 
 DblBuffer::operator unsigned char*()

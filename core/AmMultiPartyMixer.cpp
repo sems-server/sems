@@ -35,46 +35,99 @@
 
 // the internal delay of the mixer (between put and get)
 #define MIXER_DELAY_MS 20
-#define MIXER_DELAY    MIXER_DELAY_MS*SYSTEM_SAMPLERATE/1000
+
+struct MixerBufferState
+{
+  typedef std::map<int,SampleArrayShort*> ChannelMap;
+
+  unsigned int sample_rate;
+  unsigned int last_ts;
+  ChannelMap channels;
+  SampleArrayInt *mixed_channel;
+
+  MixerBufferState(unsigned int sample_rate, std::set<int>& channelids);
+  MixerBufferState(const MixerBufferState& other);
+  ~MixerBufferState();
+
+  void add_channel(unsigned int channel_id);
+  void remove_channel(unsigned int channel_id);
+  SampleArrayShort* get_channel(unsigned int channel_id);
+  void fix_channels(std::set<int>& curchannelids);
+  void free_channels();
+};
+
+void DEBUG_MIXER_BUFFER_STATE(const MixerBufferState& mbs, const string& context)
+{
+  DBG("XXDebugMixerXX: dump of MixerBufferState %s", context.c_str());
+  DBG("XXDebugMixerXX: sample_rate = %u", mbs.sample_rate);
+  DBG("XXDebugMixerXX: last_ts = %u", mbs.last_ts);
+  for (MixerBufferState::ChannelMap::const_iterator it = mbs.channels.begin(); it != mbs.channels.end(); it++) {
+    DBG("XXDebugMixerXX: channel #%d present", it->first);
+  }
+  DBG("XXDebugMixerXX: end of MixerBufferState dump");
+}
 
 AmMultiPartyMixer::AmMultiPartyMixer()
-  : channels(),
-    cur_channel_id(0),
-    scaling_factor(16)
+  : sampleratemap(), samplerates(),
+    channelids(), scaling_factor(16),
+    buffer_state(), audio_mut()
 {
 }
 
 AmMultiPartyMixer::~AmMultiPartyMixer()
 {
+  for (std::deque<MixerBufferState>::iterator it = buffer_state.begin();
+       it != buffer_state.end(); it++) {
+    it->free_channels();
+  }
 }
 
-unsigned int AmMultiPartyMixer::addChannel()
+unsigned int AmMultiPartyMixer::addChannel(unsigned int external_sample_rate)
 {
-  for(;channels.find(cur_channel_id) != channels.end();cur_channel_id++)
-    DBG("trying to add channel: #%i\n",cur_channel_id);
+  unsigned int cur_channel_id = 0;
 
-  DBG("added channel: #%i\n",cur_channel_id);
-  channels.insert(std::make_pair(cur_channel_id,new SampleArrayShort()));
+  audio_mut.lock();
+  ChannelIdSet::reverse_iterator rit = channelids.rbegin();
+  if (rit != channelids.rend()) {
+    cur_channel_id = *rit + 1;
+  }
 
-  return cur_channel_id++;
+  channelids.insert(cur_channel_id);
+
+  for (std::deque<MixerBufferState>::iterator it = buffer_state.begin(); it != buffer_state.end(); it++) {
+    //DBG("XXDebugMixerXX: AmMultiPartyMixer::addChannel(): processing buffer state with sample rate %d", it->sample_rate);
+    if (it->sample_rate >= external_sample_rate) {
+      it->add_channel(cur_channel_id);
+      break;
+    }
+  }
+
+  //DBG("XXDebugMixerXX: added channel: #%i\n",cur_channel_id);
+
+  sampleratemap.insert(std::make_pair(cur_channel_id,external_sample_rate));
+  samplerates.insert(external_sample_rate);
+
+  audio_mut.unlock();
+  return cur_channel_id;
 }
 
 void AmMultiPartyMixer::removeChannel(unsigned int channel_id)
 {
-  delete get_channel(channel_id);
-  channels.erase(channel_id);
-  DBG("removed channel: #%i\n",channel_id);
-}
-
-SampleArrayShort* AmMultiPartyMixer::get_channel(unsigned int channel_id)
-{
-  ChannelMap::iterator channel_it = channels.find(channel_id);
-  if(channel_it == channels.end()){
-    ERROR("channel #%i does not exist\n",channel_id);
-    return NULL;
+  audio_mut.lock();
+  for (std::deque<MixerBufferState>::iterator it = buffer_state.begin(); it != buffer_state.end(); it++) {
+    it->remove_channel(channel_id);
   }
-    
-  return channel_it->second;
+
+  channelids.erase(channel_id);
+
+  SampleRateMap::iterator sit = sampleratemap.find(channel_id);
+  if (sit != sampleratemap.end()) {
+	SampleRateSet::iterator it = samplerates.find(sit->second);
+	samplerates.erase(it);
+	sampleratemap.erase(channel_id);
+  }
+  //DBG("XXDebugMixerXX: removed channel: #%i\n",channel_id);
+  audio_mut.unlock();
 }
 
 void AmMultiPartyMixer::PutChannelPacket(unsigned int   channel_id,
@@ -82,50 +135,87 @@ void AmMultiPartyMixer::PutChannelPacket(unsigned int   channel_id,
 					 unsigned char* buffer, 
 					 unsigned int   size)
 {
-  if(!size) return;
+  if(!size)
+    return;
   assert(size <= AUDIO_BUFFER_SIZE);
-    
+
+  std::deque<MixerBufferState>::iterator bstate = findOrCreateBufferState(GetCurrentSampleRate());
+
   SampleArrayShort* channel = 0;
-  if((channel = get_channel(channel_id)) != 0){
+  if((channel = bstate->get_channel(channel_id)) != 0) {
 
     unsigned samples = PCM16_B2S(size);
-    unsigned int put_ts = ts + MIXER_DELAY;
+    unsigned int put_ts = ts + (MIXER_DELAY_MS * SYSTEM_SAMPLECLOCK_RATE / 1000);
+    put_ts *= (double) GetCurrentSampleRate() / (double) SYSTEM_SAMPLECLOCK_RATE;
 
     channel->put(put_ts,(short*)buffer,samples);
-    mixed_channel.get(put_ts,tmp_buffer,samples);
-	
-    mix_add(tmp_buffer,tmp_buffer,(short*)buffer,samples);
-    mixed_channel.put(put_ts,tmp_buffer,samples);
-  }
-  else {
-    ERROR("MultiPartyMixer::PutChannelPacket: "
-	  "channel #%i doesn't exist\n",channel_id);
-  }
+    bstate->mixed_channel->get(put_ts,tmp_buffer,samples);
 
+    mix_add(tmp_buffer,tmp_buffer,(short*)buffer,samples);
+    bstate->mixed_channel->put(put_ts,tmp_buffer,samples);
+    bstate->last_ts = ts + (MIXER_DELAY_MS * SYSTEM_SAMPLECLOCK_RATE / 1000) + (PCM16_B2S(size) * SYSTEM_SAMPLECLOCK_RATE / GetCurrentSampleRate());
+  } else {
+    /*
+    ERROR("XXDebugMixerXX: MultiPartyMixer::PutChannelPacket: "
+	  "channel #%i doesn't exist\n",channel_id);
+    DBG("XXDebugMixer:: PutChannelPacket failed ts=%u", ts);
+    for (std::deque<MixerBufferState>::iterator it = buffer_state.begin(); it != buffer_state.end(); it++) {
+      DEBUG_MIXER_BUFFER_STATE(*it, "on PutChannelPacket failure");
+      }*/
+  }
 }
 
 void AmMultiPartyMixer::GetChannelPacket(unsigned int   channel_id,
 					 unsigned int   ts, 
 					 unsigned char* buffer, 
-					 unsigned int   size)
+					 unsigned int&  size,
+					 unsigned int&  output_sample_rate)
 {
-  if(!size) return;
+  if (!size)
+    return;
   assert(size <= AUDIO_BUFFER_SIZE);
 
+  unsigned int last_ts = ts + (PCM16_B2S(size) * (double) SYSTEM_SAMPLECLOCK_RATE / (double) GetCurrentSampleRate());
+  std::deque<MixerBufferState>::iterator bstate = findBufferStateForReading(GetCurrentSampleRate(), last_ts);
+
   SampleArrayShort* channel = 0;
-  if((channel = get_channel(channel_id)) != 0){
+  if(bstate != buffer_state.end() && (channel = bstate->get_channel(channel_id)) != 0) {
 
-    unsigned int samples = PCM16_B2S(size);
+    unsigned int samples = PCM16_B2S(size) * (double) bstate->sample_rate / (double) GetCurrentSampleRate();
+    assert(samples <= PCM16_B2S(AUDIO_BUFFER_SIZE));
 
-    mixed_channel.get(ts,tmp_buffer,samples);
-    channel->get(ts,(short*)buffer,samples);
+    int cur_ts = ts * (double) bstate->sample_rate / (double) SYSTEM_SAMPLECLOCK_RATE;
+    bstate->mixed_channel->get(cur_ts,tmp_buffer,samples);
+    channel->get(cur_ts,(short*)buffer,samples);
 
     mix_sub(tmp_buffer,tmp_buffer,(short*)buffer,samples);
     scale((short*)buffer,tmp_buffer,samples);
-  }
-  else {
-    ERROR("MultiPartyMixer::GetChannelPacket: "
+    size = PCM16_S2B(samples);
+    output_sample_rate = bstate->sample_rate;
+  } else if (bstate != buffer_state.end()) {
+    memset(buffer,0,size);
+    output_sample_rate = GetCurrentSampleRate();
+    //DBG("XXDebugMixerXX: GetChannelPacket returned zeroes, ts=%u, last_ts=%u, output_sample_rate=%u", ts, last_ts, output_sample_rate);
+  } else {
+    /*
+    ERROR("XXDebugMixerXX: MultiPartyMixer::GetChannelPacket: "
 	  "channel #%i doesn't exist\n",channel_id);
+    DBG("XXDebugMixerXX: GetChannelPacket failed, ts=%u", ts);
+    for (std::deque<MixerBufferState>::iterator it = buffer_state.begin(); it != buffer_state.end(); it++) {
+      DEBUG_MIXER_BUFFER_STATE(*it, "on GetChannelPacket failure");
+      }*/
+  }
+
+  cleanupBufferStates(last_ts);
+}
+
+int AmMultiPartyMixer::GetCurrentSampleRate()
+{
+  SampleRateSet::reverse_iterator sit = samplerates.rbegin();
+  if (sit != samplerates.rend()) {
+	return *sit;
+  } else {
+	return -1;
   }
 }
 
@@ -169,4 +259,126 @@ void AmMultiPartyMixer::scale(short* buffer,int* tmp_buf,unsigned int size)
     *(buffer++) = short(s);
     tmp_buf++;
   }
+}
+
+std::deque<MixerBufferState>::iterator AmMultiPartyMixer::findOrCreateBufferState(unsigned int sample_rate)
+{
+  for (std::deque<MixerBufferState>::iterator it = buffer_state.begin(); it != buffer_state.end(); it++) {
+    if (it->sample_rate == sample_rate) {
+      it->fix_channels(channelids);
+      //DEBUG_MIXER_BUFFER_STATE(*it, "returned to PutChannelPacket");
+      return it;
+    }
+  }
+
+  //DBG("XXDebugMixerXX: Creating buffer state (from PutChannelPacket)");
+  buffer_state.push_back(MixerBufferState(sample_rate, channelids));
+  std::deque<MixerBufferState>::reverse_iterator rit = buffer_state.rbegin();
+  DEBUG_MIXER_BUFFER_STATE(*((rit + 1).base()), "returned to PutChannelPacket");
+  return (rit + 1).base();
+}
+
+std::deque<MixerBufferState>::iterator AmMultiPartyMixer::findBufferStateForReading(unsigned int sample_rate, unsigned int last_ts)
+{
+  for (std::deque<MixerBufferState>::iterator it = buffer_state.begin(); it != buffer_state.end(); it++) {
+    if (last_ts <= it->last_ts) {
+      it->fix_channels(channelids);
+      //DEBUG_MIXER_BUFFER_STATE(*it, "returned to PutChannelPacket");
+      return it;
+    }
+  }
+
+  //DBG("XXDebugMixerXX: Creating buffer state (from GetChannelPacket)");
+  buffer_state.push_back(MixerBufferState(sample_rate, channelids));
+  std::deque<MixerBufferState>::reverse_iterator rit = buffer_state.rbegin();
+  DEBUG_MIXER_BUFFER_STATE(*((rit + 1).base()), "returned to PutChannelPacket");
+  return (rit + 1).base();
+}
+
+void AmMultiPartyMixer::cleanupBufferStates(unsigned int last_ts)
+{
+  while (!buffer_state.empty() 
+	 && (buffer_state.front().last_ts != 0 && buffer_state.front().last_ts < last_ts) 
+	 && (unsigned int)GetCurrentSampleRate() != buffer_state.front().sample_rate) {
+
+    DEBUG_MIXER_BUFFER_STATE(buffer_state.front(), "freed in cleanupBufferStates");
+    buffer_state.front().free_channels();
+    buffer_state.pop_front();
+  }
+}
+
+void AmMultiPartyMixer::lock()
+{
+  audio_mut.lock();
+}
+
+void AmMultiPartyMixer::unlock()
+{
+  audio_mut.unlock();
+}
+
+MixerBufferState::MixerBufferState(unsigned int sample_rate, std::set<int>& channelids)
+  : sample_rate(sample_rate), last_ts(0), channels(), mixed_channel(NULL)
+{
+  for (std::set<int>::iterator it = channelids.begin(); it != channelids.end(); it++) {
+    channels.insert(std::make_pair(*it,new SampleArrayShort()));
+  }
+
+  mixed_channel = new SampleArrayInt();
+}
+
+MixerBufferState::MixerBufferState(const MixerBufferState& other)
+  : sample_rate(other.sample_rate), last_ts(other.last_ts), 
+    channels(other.channels), mixed_channel(other.mixed_channel)
+{
+}
+
+MixerBufferState::~MixerBufferState()
+{
+}
+
+void MixerBufferState::add_channel(unsigned int channel_id)
+{
+  if (channels.find(channel_id) == channels.end())
+    channels.insert(std::make_pair(channel_id,new SampleArrayShort()));
+}
+
+void MixerBufferState::remove_channel(unsigned int channel_id)
+{
+  ChannelMap::iterator channel_it = channels.find(channel_id);
+  if (channel_it != channels.end()) {
+    delete channel_it->second;
+    channels.erase(channel_it);
+  }
+}
+
+SampleArrayShort* MixerBufferState::get_channel(unsigned int channel_id)
+{
+  ChannelMap::iterator channel_it = channels.find(channel_id);
+  if(channel_it == channels.end()){
+    ERROR("XXMixerDebugXX: channel #%i does not exist\n",channel_id);
+    return NULL;
+  }
+
+  return channel_it->second;
+}
+
+void MixerBufferState::fix_channels(std::set<int>& curchannelids)
+{
+  for (std::set<int>::iterator it = curchannelids.begin(); it != curchannelids.end(); it++) {
+    if (channels.find(*it) == channels.end()) {
+      DBG("XXMixerDebugXX: fixing channel #%d", *it);
+      channels.insert(std::make_pair(*it,new SampleArrayShort()));
+    }
+  }
+}
+
+void MixerBufferState::free_channels()
+{
+  for (ChannelMap::iterator it = channels.begin(); it != channels.end(); it++) {
+    if (it->second != NULL)
+      delete it->second;
+  }
+
+  delete mixed_channel;
 }

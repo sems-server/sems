@@ -386,8 +386,8 @@ AmRtpStream::~AmRtpStream()
 
 int AmRtpStream::getLocalPort()
 {
-  if (hold)
-    return 0;
+  //  if (hold)
+  //    return 0;
 
   if(!l_port)
     setLocalPort();
@@ -543,6 +543,7 @@ int AmRtpStream::init(const AmSdp& local,
     p_it->name       = a_pl->name;
     p_it->codec_id   = a_pl->codec_id;
     p_it->clock_rate = a_pl->sample_rate;
+    p_it->advertised_clock_rate = a_pl->advertised_sample_rate;
 
     pl_map[sdp_it->payload_type].index     = i;
     pl_map[sdp_it->payload_type].remote_pt = -1;
@@ -565,7 +566,7 @@ int AmRtpStream::init(const AmSdp& local,
       for(p_it = payloads.begin(); p_it != payloads.end(); ++p_it){
 
 	if(!strcasecmp(p_it->name.c_str(),sdp_it->encoding_name.c_str()) && 
-	   (p_it->clock_rate == (unsigned int)sdp_it->clock_rate)){
+	   (p_it->advertised_clock_rate == (unsigned int)sdp_it->clock_rate)){
 	  pmt_it = pl_map.find(p_it->pt);
 	  break;
 	}

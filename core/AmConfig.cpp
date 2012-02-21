@@ -117,6 +117,20 @@ AmConfig::DefaultDTMFDetector     = Dtmf::SEMSInternal;
 bool AmConfig::IgnoreSIGCHLD      = true;
 bool AmConfig::IgnoreSIGPIPE      = true;
 
+#ifdef USE_LIBSAMPLERATE
+#ifndef USE_INTERNAL_RESAMPLER
+AmAudio::ResamplingImplementationType AmConfig::ResamplingImplementationType = AmAudio::LIBSAMPLERATE;
+#endif
+#endif
+#ifdef USE_INTERNAL_RESAMPLER
+AmAudio::ResamplingImplementationType AmConfig::ResamplingImplementationType = AmAudio::INTERNAL_RESAMPLER;
+#endif
+#ifndef USE_LIBSAMPLERATE
+#ifndef USE_INTERNAL_RESAMPLER
+AmAudio::ResamplingImplementationType AmConfig::ResamplingImplementationType = AmAudio::UNAVAILABLE;
+#endif
+#endif
+
 static int readInterfaces(AmConfigReader& cfg);
 
 AmConfig::IP_interface::IP_interface()
@@ -568,6 +582,13 @@ int AmConfig::readConfiguration()
 	    rel100s.c_str());
       ret = -1;
     }
+  }
+
+  if (cfg.hasParameter("resampling_library")) {
+	string resamplings = cfg.getParameter("resampling_library");
+	if (resamplings == "libsamplerate") {
+	  ResamplingImplementationType = AmAudio::LIBSAMPLERATE;
+	}
   }
 
   return ret;

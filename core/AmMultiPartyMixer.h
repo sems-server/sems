@@ -37,6 +37,9 @@
 #endif
 
 #include <map>
+#include <set>
+
+struct MixerBufferState;
 
 /**
  * \brief Mixer for one conference.
@@ -46,19 +49,25 @@
  */
 class AmMultiPartyMixer
 {
-  typedef std::map<int,SampleArrayShort*> ChannelMap;
+  typedef std::set<int> ChannelIdSet;
+  typedef std::map<int,int> SampleRateMap;
+  typedef std::multiset<int> SampleRateSet;
+
+
   //typedef std::map<int,unsigned int>    ChannelOff;
 
-  ChannelMap       channels;
-  //ChannelOff       ch_offsets;
-  //ChannelOff       ch_last_ts;
-  unsigned int     cur_channel_id;
+  SampleRateMap    sampleratemap;
+  SampleRateSet    samplerates;
+  ChannelIdSet     channelids;
+  std::deque<MixerBufferState> buffer_state;
 
-  SampleArrayInt   mixed_channel;
+  AmMutex          audio_mut;
   int              scaling_factor; 
   int              tmp_buffer[AUDIO_BUFFER_SIZE/2];
 
-  SampleArrayShort* get_channel(unsigned int channel_id);
+  std::deque<MixerBufferState>::iterator findOrCreateBufferState(unsigned int sample_rate);
+  std::deque<MixerBufferState>::iterator findBufferStateForReading(unsigned int sample_rate, unsigned int last_ts);
+  void cleanupBufferStates(unsigned int last_ts);
 
   void mix_add(int* dest,int* src1,short* src2,unsigned int size);
   void mix_sub(int* dest,int* src1,short* src2,unsigned int size);
@@ -68,7 +77,7 @@ public:
   AmMultiPartyMixer();
   ~AmMultiPartyMixer();
     
-  unsigned int addChannel();
+  unsigned int addChannel(unsigned int external_sample_rate);
   void removeChannel(unsigned int channel_id);
 
   void PutChannelPacket(unsigned int   channel_id,
@@ -79,7 +88,13 @@ public:
   void GetChannelPacket(unsigned int   channel,
 			unsigned int   ts,
 			unsigned char* buffer, 
-			unsigned int   size);
+			unsigned int&  size,
+			unsigned int& output_sample_rate);
+
+  int GetCurrentSampleRate();
+
+  void lock();
+  void unlock();
 };
 
 #endif

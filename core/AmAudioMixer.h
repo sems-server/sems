@@ -59,10 +59,10 @@ class AmAudioMixer
   std::set<AmAudio*> sinks;
 
  public:
-  AmAudioMixer();
+  AmAudioMixer(int external_sample_rate);
   ~AmAudioMixer();
   
-  AmAudio* addSource();
+  AmAudio* addSource(int external_sample_rate);
   void releaseSource(AmAudio* s);
 
   void addSink(AmAudio* s);
@@ -78,8 +78,8 @@ class AmAudioMixerConnector
   AmAudio* mix_channel;
 
  protected:
-  int get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples);
-  int put(unsigned int user_ts, unsigned char* buffer, unsigned int size);
+  int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples);
+  int put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size);
 
   // dummies for AmAudio's pure virtual methods
   int read(unsigned int user_ts, unsigned int size){ return -1; }

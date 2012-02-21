@@ -272,7 +272,7 @@ class AmSemsInbandDtmfDetector
   void isdn_audio_calc_dtmf(const signed short* buf, int len, unsigned int ts);
 
  public:
-  AmSemsInbandDtmfDetector(AmKeyPressSink *keysink);
+  AmSemsInbandDtmfDetector(AmKeyPressSink *keysink, int sample_rate);
   ~AmSemsInbandDtmfDetector();
   /**
    * Entry point for audio stream
@@ -302,7 +302,7 @@ class AmSpanDSPInbandDtmfDetector
 /*   void dtmf_rx_f(const char* digits, int len); */
 
  public: 
-  AmSpanDSPInbandDtmfDetector(AmKeyPressSink *keysink);
+  AmSpanDSPInbandDtmfDetector(AmKeyPressSink *keysink, int sample_rate);
   ~AmSpanDSPInbandDtmfDetector();
 
   /**
@@ -456,7 +456,7 @@ class AmDtmfDetector
   void checkTimeout();
   void putDtmfAudio(const unsigned char *, int size, int user_ts);
 
-  void setInbandDetector(Dtmf::InbandDetectorType t);
+  void setInbandDetector(Dtmf::InbandDetectorType t, int sample_rate);
   friend class AmSipDtmfDetector;
   friend class AmRtpDtmfDetector;
   friend class AmInbandDtmfDetector;

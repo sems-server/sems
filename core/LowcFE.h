@@ -30,17 +30,17 @@
 
 typedef float Float;
 
-#define PITCH_MIN     40                            /* minimum allowed pitch, 200 Hz */
-#define PITCH_MAX     120                           /* maximum allowed pitch, 66 Hz */
-#define PITCHDIFF     (PITCH_MAX - PITCH_MIN)
+#define PITCH_MIN  ((unsigned int) (sample_rate / 200))  /* minimum allowed pitch, 200 Hz */
+#define PITCH_MAX  ((unsigned int) (sample_rate / 66.6)) /* maximum allowed pitch, 66 Hz */
+#define PITCHDIFF  (PITCH_MAX - PITCH_MIN)
 #define POVERLAPMAX   (PITCH_MAX >> 2)              /* maximum pitch OLA window */
 #define HISTORYLEN    (PITCH_MAX * 3 + POVERLAPMAX) /* history buff length*/
 #define NDEC          2                             /* 2:1 decimation */
-#define CORRLEN       20 * SYSTEM_SAMPLERATE / 1000 /* 20 msec correlation length */
+#define CORRLEN       20 * sample_rate / 1000 /* 20 msec correlation length */
 #define CORRBUFLEN    (CORRLEN + PITCH_MAX)         /* correlation buffer length */
-#define CORRMINPOWER  ((Float)250.)                 /* minimum power */
+#define CORRMINPOWER  (((Float)250.) * (sample_rate / 8000))                 /* minimum power */
 #define EOVERLAPINCR  32                            /* end OLA increment per frame,4 ms */
-#define FRAMESZ       (10 * SYSTEM_SAMPLERATE / 1000) /* 10 msec */
+#define FRAMESZ       (10 * sample_rate / 1000) /* 10 msec */
 #define ATTENFAC      ((Float).2)                   /* attenu. factor per 10 ms frame */
 #define ATTENINCR     (ATTENFAC/(Float)(FRAMESZ))   /* attenuation per sample */
 
@@ -48,11 +48,13 @@ typedef float Float;
 class LowcFE {
 
  public:
-  LowcFE();
+  LowcFE(unsigned int sample_rate);
+  ~LowcFE();
   void dofe(short *s); /* synthesize speech for erasure */
   void addtohistory(short *s); /* add a good frame to history buf */
 
  protected:
+  unsigned int sample_rate;
   int erasecnt; /* consecutive erased frames */
   int poverlap; /* overlap based on pitch */
   int poffset; /* offset into pitch period */
@@ -60,9 +62,9 @@ class LowcFE {
   int pitchblen; /* current pitch buffer length */
   Float *pitchbufend; /* end of pitch buffer */
   Float *pitchbufstart; /* start of pitch buffer */
-  Float pitchbuf[HISTORYLEN]; /* buffer for cycles of speech */
-  Float lastq[POVERLAPMAX]; /* saved last quarter wavelength */
-  short history[HISTORYLEN]; /* history buffer */
+  Float *pitchbuf; /* buffer for cycles of speech */
+  Float *lastq; /* saved last quarter wavelength */
+  short *history; /* history buffer */
 
   void scalespeech(short *out);
   void getfespeech(short *out, int sz);

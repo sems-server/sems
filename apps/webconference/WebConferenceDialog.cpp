@@ -91,7 +91,7 @@ void WebConferenceDialog::connectConference(const string& room) {
 
   // get a channel from the status 
   if (channel.get() == NULL) 
-    channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag()));
+    channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag(),RTPStream()->getSampleRate()));
   else 
     AmConferenceStatus::postConferenceEvent(conf_id,
 					    ConfNewParticipant,getLocalTag());

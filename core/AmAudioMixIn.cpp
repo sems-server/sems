@@ -42,17 +42,17 @@ AmAudioMixIn::AmAudioMixIn(AmAudio* A, AmAudioFile* B,
 AmAudioMixIn::~AmAudioMixIn() { }
 
 int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer, 
-		      unsigned int nb_samples) {
+		      int output_sample_rate, unsigned int nb_samples) {
   if (!mixing) {
     if (!next_start_ts_i) {
       next_start_ts_i = true;
       next_start_ts = IS_IMMEDIATE_START ? 
-	user_ts : user_ts + s*DEFAULT_SAMPLE_RATE;
+	user_ts : user_ts + s*output_sample_rate;
     }
     if (!ts_less()(user_ts, next_start_ts)) {
       DBG("starting mix-in\n");
       mixing = true;
-      next_start_ts = user_ts + s*DEFAULT_SAMPLE_RATE;
+      next_start_ts = user_ts + s*output_sample_rate;
     }
   } 
   
@@ -63,13 +63,13 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
 
   if (!mixing || NULL == B) {
     B_mut.unlock();
-    return A->get(user_ts, buffer, nb_samples);
+    return A->get(user_ts, buffer, output_sample_rate, nb_samples);
   } else {
     if (l < 0.01) { // epsilon 
       // only play back from B
-      int res = B->get(user_ts, buffer, nb_samples);
+      int res = B->get(user_ts, buffer, output_sample_rate, nb_samples);
       if (res <= 0) { // B empty
-	res = A->get(user_ts, buffer, nb_samples);
+	res = A->get(user_ts, buffer, output_sample_rate, nb_samples);
 	mixing = false;
 	if (IS_ONLY_ONCE)
 	  B = NULL;
@@ -82,7 +82,7 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
       int res = 0;
       short* pdest = (short*)buffer;
       // get audio from A
-      int len = A->get(user_ts, (unsigned char*)mix_buf, nb_samples);
+      int len = A->get(user_ts, (unsigned char*)mix_buf, output_sample_rate, nb_samples);
 
       if ((len<0) && !IS_FINISH_B_MIX) { // A finished
 	B_mut.unlock();
@@ -104,7 +104,7 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
 	       (nb_samples<<1) - len_from_a);
       
       // add audio from B
-      len = B->get(user_ts, (unsigned char*)mix_buf, nb_samples);
+      len = B->get(user_ts, (unsigned char*)mix_buf, output_sample_rate, nb_samples);
       if (len<0) { // B finished
 	mixing = false;
 	
@@ -126,7 +126,7 @@ int AmAudioMixIn::get(unsigned int user_ts, unsigned char* buffer,
   }
 }
 
-int AmAudioMixIn::put(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
+int AmAudioMixIn::put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size) {
   ERROR("writing not supported\n");
   return -1;
 }

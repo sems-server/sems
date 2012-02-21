@@ -92,6 +92,19 @@ public:
 
 
 /**
+ * \brief represents one admissible payload type
+ *
+ *
+ */
+struct Payload {
+  unsigned char pt;
+  string        name;
+  unsigned int  clock_rate;
+  unsigned int  advertised_clock_rate; // differs for G722
+  int           codec_id;
+};
+
+/**
  * \brief RTP implementation
  *
  * Rtp stream high level interface.
@@ -102,12 +115,13 @@ class AmRtpStream
 protected:
 
   // payload collection
-  struct Payload {
-    unsigned char pt;
-    string        name;
-    unsigned int  clock_rate;
-    int           codec_id;
-  };
+  typedef std::vector<Payload> PayloadCollection;
+  
+  // list of locally supported payloads
+  PayloadCollection payloads;
+
+  // current payload (index into @payloads)
+  int payload;
 
   struct PayloadMapping {
     // remote payload type
@@ -119,15 +133,8 @@ protected:
 
   typedef std::map<unsigned int, AmRtpPacket*, ts_less> ReceiveBuffer;
   typedef std::queue<AmRtpPacket*>                      RtpEventQueue;
-  typedef std::vector<Payload>                          PayloadCollection;
   typedef std::map<unsigned char, PayloadMapping>       PayloadMappingTable;
   
-  // list of locally supported payloads
-  PayloadCollection payloads;
-
-  // current payload (index into @payloads)
-  int payload;
-
   // mapping from local payload type to PayloadMapping
   PayloadMappingTable pl_map;
 

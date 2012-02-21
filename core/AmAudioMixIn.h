@@ -31,8 +31,8 @@
 
 
 #define MAX_PACKETLENGTH_MS   80
-#define MAX_BUF_SAMPLES  SYSTEM_SAMPLERATE * MAX_PACKETLENGTH_MS / 1000
-#define DEFAULT_SAMPLE_RATE SYSTEM_SAMPLERATE // eh...
+#define MAX_BUF_SAMPLES  SYSTEM_SAMPLECLOCK_RATE * MAX_PACKETLENGTH_MS / 1000
+#define DEFAULT_SAMPLE_RATE SYSTEM_SAMPLECLOCK_RATE // eh...
 
 /**
  * \brief \ref AmAudio to mix in every n seconds a file
@@ -81,8 +81,8 @@ class AmAudioMixIn : public AmAudio {
   int write(unsigned int user_ts, unsigned int size){ return -1; }
     
   // override AmAudio
-  int get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples);
-  int put(unsigned int user_ts, unsigned char* buffer, unsigned int size);
+  int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples);
+  int put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size);
 };
 
 

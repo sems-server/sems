@@ -676,7 +676,7 @@ unsigned int AmSession::getAvgCPS()
 
 void AmSession::setInbandDetector(Dtmf::InbandDetectorType t)
 { 
-  m_dtmfDetector.setInbandDetector(t); 
+  m_dtmfDetector.setInbandDetector(t, RTPStream()->getSampleRate()); 
 }
 
 void AmSession::postDtmfEvent(AmDtmfEvent *evt)
@@ -953,8 +953,8 @@ bool AmSession::getSdpOffer(AmSdp& offer)
 
   offer.version = 0;
   offer.origin.user = "sems";
-  offer.origin.sessId = 1;
-  offer.origin.sessV = 1;
+  //offer.origin.sessId = 1;
+  //offer.origin.sessV = 1;
   offer.sessionName = "sems";
   offer.conn.network = NT_IN;
   offer.conn.addrType = AT_V4;
@@ -978,6 +978,24 @@ bool AmSession::getSdpOffer(AmSdp& offer)
   return true;
 }
 
+struct codec_priority_cmp
+{
+public:
+  codec_priority_cmp() {}
+
+  bool operator()(const SdpPayload& left, const SdpPayload& right)
+  {
+    for (vector<string>::iterator it = AmConfig::CodecOrder.begin(); it != AmConfig::CodecOrder.end(); it++) {
+      if (strcasecmp(left.encoding_name.c_str(),it->c_str())==0 && strcasecmp(right.encoding_name.c_str(), it->c_str())!=0)
+	return true;
+      if (strcasecmp(right.encoding_name.c_str(),it->c_str())==0)
+	return false;
+    }
+
+    return false;
+  }
+};
+
 /** Hook called when an SDP answer is required */
 bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 {
@@ -985,14 +1003,14 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 
   answer.version = 0;
   answer.origin.user = "sems";
-  answer.origin.sessId = 1;
-  answer.origin.sessV = 1;
+  //answer.origin.sessId = 1;
+  //answer.origin.sessV = 1;
   answer.sessionName = "sems";
   answer.conn.network = NT_IN;
   answer.conn.addrType = AT_V4;
   answer.conn.address = advertisedIP();
   answer.media.clear();
-
+  
   bool audio_1st_stream = true;
   unsigned int media_index = 0;
   for(vector<SdpMedia>::const_iterator m_it = offer.media.begin();
@@ -1033,8 +1051,13 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
       answer_media.attributes.clear();
     }
 
+    // sort payload type in the answer according to the priority given in the codec_order configuration key
+    std::stable_sort(answer_media.payloads.begin(),answer_media.payloads.end(),codec_priority_cmp());
+
     media_index++;
   }
+
+
 
   return true;
 }
@@ -1061,10 +1084,27 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
     return -1;
   }
 
+  bool set_on_hold = false;
+  if (!remote_sdp.media.empty()) {
+    vector<SdpAttribute>::const_iterator pos =
+      std::find(remote_sdp.media[0].attributes.begin(), remote_sdp.media[0].attributes.end(), SdpAttribute("sendonly"));
+    set_on_hold = pos != remote_sdp.media[0].attributes.end();
+  }
+
   lockAudio();
+
+  // TODO: 
+  //   - get the right media ID
+  //   - check if the stream coresponding to the media ID 
+  //     should be created or updated   
+  //
   int ret = RTPStream()->init(local_sdp,remote_sdp);
   unlockAudio();
-  
+
+  if (!processing_media.get()) {
+    setInbandDetector(AmConfig::DefaultDTMFDetector);
+  }
+
   if(ret){
     ERROR("while initializing RTP stream\n");
     return -1;

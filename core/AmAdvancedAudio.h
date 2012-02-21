@@ -110,8 +110,8 @@ class AmAudioFrontlist : public AmPlaylist {
   void setBackAudio(AmAudio* new_ba);
 
  protected:
-  int put(unsigned int user_ts, unsigned char* buffer, unsigned int size);
-  int get(unsigned int user_ts, unsigned char* buffer, unsigned int size);
+  int put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size);
+  int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int size);
 };
 
 

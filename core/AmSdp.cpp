@@ -95,6 +95,24 @@ inline string transport_p_2_str(int tp)
   }
 }
 
+bool SdpConnection::operator == (const SdpConnection& other) const
+{
+  return network == other.network && addrType == other.addrType 
+    && address == other.address;
+}
+
+bool SdpOrigin::operator == (const SdpOrigin& other) const
+{
+  return user == other.user && sessId == other.sessId 
+    && sessV == other.sessV && conn == other.conn;
+}
+
+bool SdpPayload::operator == (const SdpPayload& other) const
+{
+  return payload_type == other.payload_type && encoding_name == other.encoding_name 
+    && clock_rate == other.clock_rate && encoding_param == other.encoding_param;
+}
+
 string SdpConnection::debugPrint() const {
   return addr_t_2_str(addrType) + " " + address;
 }
@@ -116,31 +134,75 @@ bool SdpPayload::operator == (int r)
   return payload_type == r;
 }
 
-string SdpAttribute::print() const {
+string SdpAttribute::print() const
+{
   if (value.empty())
     return "a="+attribute+CRLF;
   else
     return "a="+attribute+":"+value+CRLF;
 }
 
+bool SdpAttribute::operator==(const SdpAttribute& other) const
+{
+  return attribute==other.attribute && (value.empty() || (value==other.value));
+}
+
+bool SdpMedia::operator == (const SdpMedia& other) const
+{
+  if (payloads.empty()) {
+    if (!other.payloads.empty())
+      return false;
+
+  } else if (other.payloads.empty()) {
+    return false;
+
+  } else {    
+    std::pair<vector<SdpPayload>::const_iterator, vector<SdpPayload>::const_iterator> pl_mismatch 
+      = std::mismatch(payloads.begin(), payloads.end(), other.payloads.begin());
+
+    if (pl_mismatch.first != payloads.end() || pl_mismatch.second != other.payloads.end())
+      return false;
+  }
+
+  if (attributes.empty()) {
+    if (!other.attributes.empty()) {
+      return false;
+    }
+  } else {
+    std::pair<vector<SdpAttribute>::const_iterator, vector<SdpAttribute>::const_iterator> a_mismatch 
+      = std::mismatch(attributes.begin(), attributes.end(), other.attributes.begin());
+
+    if (a_mismatch.first != attributes.end() || a_mismatch.second != other.attributes.end())
+      return false;
+  }
+
+  return type == other.type && port == other.port && nports == other.nports 
+    && transport == other.transport && conn == other.conn && dir == other.dir
+    && send == other.send && recv == other.recv;
+}
+
 //
 // class AmSdp: Methods
 //
 AmSdp::AmSdp()
-  : version(0)
+  : origin(),
+    sessionName(),
+    conn(),
+    media(),
+    version(0)
 {
-  l_origin.user = "sems";
-  l_origin.sessId = get_random();
-  l_origin.sessV = get_random();
+  origin.user = "sems";
+  origin.sessId = get_random();
+  origin.sessV = get_random();
 }
 
 AmSdp::AmSdp(const AmSdp& p_sdp_msg)
   : version(p_sdp_msg.version),
     origin(p_sdp_msg.origin),
-    l_origin(p_sdp_msg.l_origin),
     sessionName(p_sdp_msg.sessionName),
     conn(p_sdp_msg.conn),
-    media(p_sdp_msg.media)
+    media(p_sdp_msg.media),
+    attributes(p_sdp_msg.attributes)
 {
 }
 
@@ -228,6 +290,22 @@ void AmSdp::print(string& body) const
 
       out_buf += "\r\n" + options;
 
+      options = "";
+
+      for (std::vector<SdpAttribute>::const_iterator a_it = media_it->attributes.begin();
+	   a_it != media_it->attributes.end(); a_it++) {
+
+	if (a_it->value.empty()) {
+	  options += "a=" + a_it->attribute;
+	} else {
+	  options += "a=" + a_it->attribute + ":" + a_it->value;
+	}
+	options +="\r\n";
+      }
+
+      out_buf += options;
+
+
       switch(media_it->dir){
       case SdpMedia::DirActive:
 	  out_buf += "a=direction:active\r\n";
@@ -294,6 +372,42 @@ const SdpPayload *AmSdp::findPayload(const string& name) const
 	}
     }
   return NULL;
+}
+
+bool AmSdp::operator == (const AmSdp& other) const
+{
+  if (attributes.empty()) {
+    if (!other.attributes.empty())
+      return false;
+
+  } else if (other.attributes.empty()) {
+    return false;
+
+  } else {
+    std::pair<vector<SdpAttribute>::const_iterator, vector<SdpAttribute>::const_iterator> a_mismatch
+      = std::mismatch(attributes.begin(), attributes.end(), other.attributes.begin());
+
+    if (a_mismatch.first != attributes.end() || a_mismatch.second != other.attributes.end())
+      return false;
+  }
+   
+  if (media.empty()) {
+    if (!other.media.empty())
+      return false;
+
+  } else if (other.media.empty()) {
+    return false;
+
+  } else {
+    std::pair<vector<SdpMedia>::const_iterator, vector<SdpMedia>::const_iterator> m_mismatch
+      = std::mismatch(media.begin(), media.end(), other.media.begin());
+
+    if (m_mismatch.first != media.end() || m_mismatch.second != other.media.end())
+      return false;
+  }
+
+  return version == other.version && origin == other.origin 
+    && sessionName == other.sessionName && uri == other.uri && conn == other.conn;
 }
 
 void AmSdp::clear()

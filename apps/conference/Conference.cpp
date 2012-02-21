@@ -544,7 +544,7 @@ void ConferenceDialog::setupAudio()
   }
   else {
 
-    channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag()));
+    channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag(),RTPStream()->getSampleRate()));
 
     if (listen_only) {
 	play_list.addToPlaylist(new AmPlaylistItem(channel.get(),
@@ -798,14 +798,14 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
 
   uri = "sip:" + uri_user + dialout_suffix;
 
-  dialout_channel.reset(AmConferenceStatus::getChannel(getLocalTag(),getLocalTag()));
+  dialout_channel.reset(AmConferenceStatus::getChannel(getLocalTag(),getLocalTag(),RTPStream()->getSampleRate()));
 
   dialout_id = AmSession::getNewId();
     
   ConferenceDialog* dialout_session = 
     new ConferenceDialog(conf_id,
 			 AmConferenceStatus::getChannel(getLocalTag(),
-							dialout_id));
+							dialout_id,RTPStream()->getSampleRate()));
 
   ConferenceFactory::setupSessionTimer(dialout_session);
 
@@ -865,7 +865,7 @@ void ConferenceDialog::connectMainChannel()
   if(!channel.get())
     channel.reset(AmConferenceStatus
 		  ::getChannel(conf_id,
-			       getLocalTag()));
+			       getLocalTag(),RTPStream()->getSampleRate()));
 
   play_list.addToPlaylist(new AmPlaylistItem(channel.get(),
 					     channel.get()));

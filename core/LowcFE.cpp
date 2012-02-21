@@ -60,10 +60,22 @@ void LowcFE::zeros(short *s, int cnt)
     s[i] = 0;
 }
 
-LowcFE::LowcFE()
-  : erasecnt(0), pitchbufend(0)
+LowcFE::LowcFE(unsigned int sample_rate)
+  : erasecnt(0), pitchbufend(0), sample_rate(sample_rate)
 {
+  pitchbuf = new Float[HISTORYLEN];
+  lastq = new Float[POVERLAPMAX];
+  history = new short[HISTORYLEN];
+  memset(pitchbuf, 0, sizeof(Float) * HISTORYLEN);
+  memset(lastq, 0, sizeof(Float) * POVERLAPMAX);
   zeros(history, HISTORYLEN);
+}
+
+LowcFE::~LowcFE()
+{
+  delete[] history;
+  delete[] lastq;
+  delete[] pitchbuf;
 }
 
 /*
@@ -94,7 +106,7 @@ void LowcFE::addtohistory(short *s)
      * to smooth the transition between the synthetic
      * and real signal.
      */
-    int olen = poverlap + (erasecnt - 1) * EOVERLAPINCR;
+    unsigned int olen = poverlap + (erasecnt - 1) * EOVERLAPINCR;
     if (olen > FRAMESZ)
       olen = FRAMESZ;
     getfespeech(overlapbuf, olen);
@@ -270,7 +282,7 @@ void LowcFE::getfespeech(short *out, int sz)
 void LowcFE::scalespeech(short *out)
 {
   Float g = (Float)1. - (erasecnt - 1) * ATTENFAC;
-  for (int i = 0; i < FRAMESZ; i++) {
+  for (unsigned int i = 0; i < FRAMESZ; i++) {
     out[i] = (short)(out[i] * g);
     g -= ATTENINCR;
   }

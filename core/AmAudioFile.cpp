@@ -421,6 +421,10 @@ int AmAudioFile::write(unsigned int user_ts, unsigned int size)
     return -1;
   }
 
+  if (getMode() != AmAudioFile::Write) {
+    return size;
+  }
+
   int s = fwrite((void*)((unsigned char*)samples),1,size,fp);
   if(s>0)
     data_size += s;

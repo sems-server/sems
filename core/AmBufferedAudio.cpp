@@ -76,15 +76,15 @@ void AmBufferedAudio::clearBufferEOF() {
   err_code = 0;
 }
 
-int AmBufferedAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples) {
+int AmBufferedAudio::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples) {
   if (!output_buffer_size) 
-    return AmAudio::get(user_ts, buffer, nb_samples);
+    return AmAudio::get(user_ts, buffer, output_sample_rate, nb_samples);
 
   if (w-r < low_buffer_thresh && !eof) {
     input_get_audio(user_ts);
   }
   
-  size_t nget = PCM16_S2B(nb_samples);
+  size_t nget = PCM16_S2B(nb_samples * output_sample_rate / fmt->rate);
   if (w-r < nget) 
     nget = w-r;
 
@@ -97,10 +97,13 @@ int AmBufferedAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned i
     return 0;
   }
  
-  memcpy(buffer, &output_buffer[r], nget);
-
+  memcpy((unsigned char*)samples,&output_buffer[r],nget);
   r+=nget;
-  return nget;
+
+  int size = resampleOutput(samples,nget,fmt->rate,output_sample_rate);
+  memcpy(buffer, (unsigned char*)samples,size);
+
+  return size;
 }
 
 void AmBufferedAudio::input_get_audio(unsigned int user_ts) {

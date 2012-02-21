@@ -42,18 +42,19 @@ using std::multiset;
 #define EXP_THRESHOLD 20
 #define SHR_THRESHOLD 180
 
-#define WSOLA_START_OFF  10 * SYSTEM_SAMPLERATE / 1000
+#define WSOLA_START_OFF  10 * sample_rate / 1000
 #define WSOLA_SCALED_WIN 50
 
 // the maximum packet size that will be processed (80ms)
-#define MAX_PACKET_SAMPLES 80 * SYSTEM_SAMPLERATE / 1000
+#define MAX_PACKET_SAMPLES 80 * SYSTEM_SAMPLECLOCK_RATE / 1000
 // search segments of size TEMPLATE_SEG samples (10 ms)
-#define TEMPLATE_SEG   10 * SYSTEM_SAMPLERATE / 1000
+#define TEMPLATE_SEG   10 * sample_rate / 1000
+#define STATIC_TEMPLATE_SEG   10 * SYSTEM_SAMPLECLOCK_RATE / 1000
 
 // Maximum value: AUDIO_BUFFER_SIZE / 2
 // Note: plc result get stored in our back buffer
 // maximum of 80ms PLC
-#define PLC_MAX_SAMPLES (4*20*SYSTEM_SAMPLERATE / 1000) 
+#define PLC_MAX_SAMPLES (4*20*sample_rate / 1000)
 
 class AmPLCBuffer;
 
@@ -70,6 +71,8 @@ class AmPlayoutBuffer
   unsigned int last_ts;
   bool         last_ts_i;
 
+  unsigned int sample_rate;
+
   /** the offset RTP receive TS <-> audio_buffer TS */ 
   unsigned int   recv_offset;
   /** the recv_offset initialized ?  */ 
@@ -81,7 +84,7 @@ class AmPlayoutBuffer
   virtual void write_buffer(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len);
   virtual void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
  public:
-  AmPlayoutBuffer(AmPLCBuffer *plcbuffer);
+  AmPlayoutBuffer(AmPLCBuffer *plcbuffer, unsigned int sample_rate);
   virtual ~AmPlayoutBuffer() {}
 
   virtual void write(u_int32_t ref_ts, u_int32_t ts, int16_t* buf, u_int32_t len, bool begin_talk);
@@ -112,14 +115,14 @@ class AmAdaptivePlayout: public AmPlayoutBuffer
   // strech buffer
   short p_buf[MAX_PACKET_SAMPLES*4];
   // merging buffer (merge segment from strech + original seg)
-  short merge_buf[TEMPLATE_SEG];
+  short merge_buf[STATIC_TEMPLATE_SEG];
 
   u_int32_t time_scale(u_int32_t ts, float factor, u_int32_t packet_len);
   u_int32_t next_delay(u_int32_t ref_ts, u_int32_t ts);
 
  public:
 
-  AmAdaptivePlayout(AmPLCBuffer *);
+  AmAdaptivePlayout(AmPLCBuffer *, unsigned int sample_rate);
 
   /** write len samples beginning from timestamp ts from buf */
   void direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len);
@@ -145,7 +148,7 @@ class AmJbPlayout : public AmPlayoutBuffer
   void prepare_buffer(unsigned int ts, unsigned int ms);
 
  public:
-  AmJbPlayout(AmPLCBuffer *plcbuffer);
+  AmJbPlayout(AmPLCBuffer *plcbuffer, unsigned int sample_rate);
 
   u_int32_t read(u_int32_t ts, int16_t* buf, u_int32_t len);
   void write(u_int32_t ref_ts, u_int32_t rtp_ts, int16_t* buf, u_int32_t len, bool begin_talk);

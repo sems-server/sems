@@ -185,21 +185,21 @@ AmDtmfDetector::AmDtmfDetector(AmSession *session)
     m_currentEvent(-1),
     m_current_eventid_i(false)
 {
-#ifndef USE_SPANDSP
-  setInbandDetector(Dtmf::SEMSInternal);
-#else
-  setInbandDetector(AmConfig::DefaultDTMFDetector);
-#endif
+  //#ifndef USE_SPANDSP
+  //  setInbandDetector(Dtmf::SEMSInternal, m_session->RTPStream()->getSampleRate());
+  //#else
+  //  setInbandDetector(AmConfig::DefaultDTMFDetector, m_session->RTPStream()->getSampleRate());
+  //#endif
 }
 
-void AmDtmfDetector::setInbandDetector(Dtmf::InbandDetectorType t) {
+void AmDtmfDetector::setInbandDetector(Dtmf::InbandDetectorType t, int sample_rate) {
 #ifndef USE_SPANDSP
   if (t == Dtmf::SpanDSP) {
     ERROR("trying to use spandsp DTMF detector without support for it"
 	  "recompile with -D USE_SPANDSP\n");
   }
   if (!m_inbandDetector.get())
-    m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this));
+    m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this, sample_rate));
 
   return;
 #else
@@ -207,10 +207,10 @@ void AmDtmfDetector::setInbandDetector(Dtmf::InbandDetectorType t) {
   if ((t != m_inband_type) || (!m_inbandDetector.get())) {
     if (t == Dtmf::SEMSInternal) {
       DBG("Setting internal DTMF detector\n");
-      m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this));
+      m_inbandDetector.reset(new AmSemsInbandDtmfDetector(this, sample_rate));
     } else { // if t == SpanDSP
       DBG("Setting spandsp DTMF detector\n");
-      m_inbandDetector.reset(new AmSpanDSPInbandDtmfDetector(this));
+      m_inbandDetector.reset(new AmSpanDSPInbandDtmfDetector(this, sample_rate));
     }
     m_inband_type = t;
   }
@@ -539,12 +539,12 @@ static char dtmf_matrix[4][4] =
     {'*', '0', '#', 'D'}
   };
 
-AmSemsInbandDtmfDetector::AmSemsInbandDtmfDetector(AmKeyPressSink *keysink)
+AmSemsInbandDtmfDetector::AmSemsInbandDtmfDetector(AmKeyPressSink *keysink, int sample_rate)
   : AmInbandDtmfDetector(keysink),
     m_last(' '),
     m_idx(0),
     m_count(0),
-    SAMPLERATE(SYSTEM_SAMPLERATE)
+    SAMPLERATE(sample_rate)
 {
   /* precalculate 2 * cos (2 PI k / N) */
   for(unsigned i = 0; i < NELEMSOF(rel_cos2pik); i++) {
@@ -718,7 +718,7 @@ int AmSemsInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned i
 
 #ifdef USE_SPANDSP
 
-AmSpanDSPInbandDtmfDetector::AmSpanDSPInbandDtmfDetector(AmKeyPressSink *keysink)
+AmSpanDSPInbandDtmfDetector::AmSpanDSPInbandDtmfDetector(AmKeyPressSink *keysink, int sample_rate)
   : AmInbandDtmfDetector(keysink) 
 {
 #ifdef HAVE_OLD_SPANDSP_CALLBACK

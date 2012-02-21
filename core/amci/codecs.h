@@ -56,5 +56,26 @@
 
 #define CODEC_G722_NB 13
 
+
 #define CODEC_G729    14
+
+#define CODEC_ULAW16 14
+#define CODEC_ALAW16 15
+
+#define CODEC_ULAW32 16
+#define CODEC_ALAW32 17
+
+#define CODEC_ULAW48 18
+#define CODEC_ALAW48 19
+
+#define CODEC_CELT32 20
+#define CODEC_CELT44 21
+#define CODEC_CELT48 22
+
+#define CODEC_CELT32_2 23
+#define CODEC_CELT44_2 24
+#define CODEC_CELT48_2 25
+
+#define CODEC_SPEEX_WB 26
+
 #endif

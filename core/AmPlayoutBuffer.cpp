@@ -42,13 +42,14 @@
 
 #define PI 3.14 
 
-#define MAX_DELAY SYSTEM_SAMPLERATE*1 /* 1 second */
+#define MAX_DELAY sample_rate*1 /* 1 second */
 
-AmPlayoutBuffer::AmPlayoutBuffer(AmPLCBuffer *plcbuffer)
-  : r_ts(0),w_ts(0), 
+AmPlayoutBuffer::AmPlayoutBuffer(AmPLCBuffer *plcbuffer, unsigned int sample_rate)
+  : r_ts(0),w_ts(0), sample_rate(sample_rate),
     last_ts_i(false), recv_offset_i(false), 
     m_plcbuffer(plcbuffer)
 {
+  buffer.clear_all();
 }
 
 void AmPlayoutBuffer::direct_write_buffer(unsigned int ts, ShortSample* buf, unsigned int len)
@@ -156,14 +157,15 @@ void AmPlayoutBuffer::buffer_get(unsigned int ts, ShortSample* buf, unsigned int
 //  http://www-ise.stanford.edu/yiliang/publications/ 
 //  http://citeseer.ist.psu.edu/liang02adaptive.html 
 // 
-AmAdaptivePlayout::AmAdaptivePlayout(AmPLCBuffer *plcbuffer)
-  : AmPlayoutBuffer(plcbuffer),
+AmAdaptivePlayout::AmAdaptivePlayout(AmPLCBuffer *plcbuffer, unsigned int sample_rate)
+  : AmPlayoutBuffer(plcbuffer, sample_rate),
     idx(0),
     loss_rate(ORDER_STAT_LOSS_RATE),
     wsola_off(WSOLA_START_OFF),
     shr_threshold(SHR_THRESHOLD),
     plc_cnt(0),
-    short_scaled(WSOLA_SCALED_WIN)
+    short_scaled(WSOLA_SCALED_WIN),
+    fec(sample_rate)
 {
   memset(n_stat,0,sizeof(int32_t)*ORDER_STAT_WIN_SIZE);
 }
@@ -351,7 +353,7 @@ void AmAdaptivePlayout::direct_write_buffer(unsigned int ts, ShortSample* buf, u
  *  * to TEMPLATE_SEG samples frame starting from ts
  * 
  */
-short* find_best_corr(short *ts, short *sr_beg, short* sr_end)
+short* find_best_corr(short *ts, short *sr_beg, short* sr_end, unsigned int sample_rate)
 {
   // find best correlation
   float corr=0.f,best_corr=0.f;
@@ -361,7 +363,7 @@ short* find_best_corr(short *ts, short *sr_beg, short* sr_end)
   for(sr = sr_beg; sr != sr_end; sr++){
 	
     corr=0.f;
-    for(int i=0; i<TEMPLATE_SEG; i++)
+    for(unsigned int i=0; i<TEMPLATE_SEG; i++)
       corr += float(sr[i]) * float(ts[i]);
 
     if((best_sr == 0) || (corr > best_corr)){
@@ -446,12 +448,12 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
       break;
 
     // find best correlation to tmpl in srch_beg..srch_end
-    srch = find_best_corr(tmpl,srch_beg,srch_end);
+    srch = find_best_corr(tmpl,srch_beg,srch_end,sample_rate);
 
     // merge original segment (starting from tmpl) and 
     // best correlation (starting from srch) into merge_buf 
-    float f,v;
-    for(int k=0; k<TEMPLATE_SEG; k++){
+    float f = 0.5,v = 0.5;
+    for(unsigned int k=0; k<TEMPLATE_SEG; k++){
 
       f = 0.5 - 0.5 * cos( PI*float(k) / float(TEMPLATE_SEG) );
       v = (float)srch[k] * f + (float)tmpl[k] * (1.0 - f);
@@ -512,8 +514,8 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
  *
  *****************************************************************/
 
-AmJbPlayout::AmJbPlayout(AmPLCBuffer *plcbuffer)
-  : AmPlayoutBuffer(plcbuffer)
+AmJbPlayout::AmJbPlayout(AmPLCBuffer *plcbuffer, unsigned int sample_rate)
+  : AmPlayoutBuffer(plcbuffer, sample_rate)
 {
 }
 

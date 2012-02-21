@@ -69,11 +69,11 @@ int AmAudioQueue::write(unsigned int user_ts, unsigned int size) {
     if (it->audio == NULL)
       continue;
     if (it->put) {
-      if ((size_trav = it->audio->put(user_ts, samples, size_trav)) < 0)
+      if ((size_trav = it->audio->put(user_ts, samples, fmt->rate, size_trav)) < 0)
 	break;
     }
     if (it->get) {
-      if ((size_trav = it->audio->get(user_ts, samples, size_trav >> 1)) < 0)
+      if ((size_trav = it->audio->get(user_ts, samples, fmt->rate, size_trav >> 1)) < 0)
 	break;
     }
   }
@@ -88,11 +88,11 @@ int AmAudioQueue::read(unsigned int user_ts, unsigned int size) {
     if (it->audio == NULL)
       continue;
     if (it->put) {
-      if ((size_trav = it->audio->put(user_ts, samples, size_trav)) < 0)
+      if ((size_trav = it->audio->put(user_ts, samples, fmt->rate, size_trav)) < 0)
 	break;
     }
     if (it->get) {
-      if ((size_trav = it->audio->get(user_ts, samples, size_trav >> 1)) < 0)
+      if ((size_trav = it->audio->get(user_ts, samples, fmt->rate, size_trav >> 1)) < 0)
 	break;
     }
   }
@@ -233,7 +233,7 @@ int AmAudioDelay::write(unsigned int user_ts, unsigned int size) {
 }
 
 int AmAudioDelay::read(unsigned int user_ts, unsigned int size) { 
-  sarr.read((unsigned int) (user_ts  - delay*(float)SYSTEM_SAMPLERATE), (short*)  ((unsigned char*) samples), size >> 1); 
+  sarr.read((unsigned int) (user_ts  - delay*(float)SYSTEM_SAMPLECLOCK_RATE), (short*)  ((unsigned char*) samples), size >> 1); 
   return size;
 }
 
@@ -260,31 +260,31 @@ void AmAudioFrontlist::setBackAudio(AmAudio* new_ba) {
   ba_mut.unlock();
 }
 
-int AmAudioFrontlist::put(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
+int AmAudioFrontlist::put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size) {
   // stay consistent with Playlist - if empty return size
   int res = size; 
   ba_mut.lock();
 
   if (isEmpty()) {
     if (back_audio) 
-      res = back_audio->put(user_ts, buffer, size);
+      res = back_audio->put(user_ts, buffer, input_sample_rate, size);
   } else {
-    res = AmPlaylist::put(user_ts, buffer, size);
+    res = AmPlaylist::put(user_ts, buffer, input_sample_rate, size);
   }
 
   ba_mut.unlock();
   return res;
 }
 
-int AmAudioFrontlist::get(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
+int AmAudioFrontlist::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int size) {
   // stay consistent with Playlist - if empty return size
   int res = size; 
 
   ba_mut.lock();
   if (isEmpty() && back_audio) {
-      res = back_audio->get(user_ts, buffer, size);
+      res = back_audio->get(user_ts, buffer, output_sample_rate, size);
   } else {
-    res = AmPlaylist::get(user_ts, buffer, size);
+    res = AmPlaylist::get(user_ts, buffer, output_sample_rate, size);
   }
   ba_mut.unlock();
   return res;

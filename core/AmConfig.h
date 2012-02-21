@@ -32,6 +32,7 @@
 #include "AmDtmfDetector.h"
 #include "AmSipDialog.h"
 #include "AmUtils.h"
+#include "AmAudio.h"
 
 #include <string>
 using std::string;
@@ -205,6 +206,8 @@ struct AmConfig
   static bool LogEvents;
 
   static int UnhandledReplyLoglevel;
+
+  static AmAudio::ResamplingImplementationType ResamplingImplementationType;
 
   /** Read global configuration file and insert values. Maybe overwritten by
    * command line arguments */

@@ -33,8 +33,8 @@
 #include "AmThread.h"
 #include "SampleArray.h"
 
-#define INITIAL_JITTER	    80 * SYSTEM_SAMPLERATE / 1000 // 80 miliseconds
-#define MAX_JITTER	    2  * SYSTEM_SAMPLERATE // 2 seconds
+#define INITIAL_JITTER	    80 * SYSTEM_SAMPLECLOCK_RATE / 1000 // 80 miliseconds
+#define MAX_JITTER	    2  * SYSTEM_SAMPLECLOCK_RATE // 2 seconds
 #define RESYNC_THRESHOLD    5 // resync backward if RESYNC_THRESHOLD packets arrive late
 
 class Packet {

@@ -41,7 +41,7 @@ AmMutex                         AmConferenceStatus::cid2s_mut;
 // static methods
 //
 AmConferenceChannel* AmConferenceStatus::getChannel(const string& cid, 
-						    const string& local_tag)
+						    const string& local_tag, int input_sample_rate)
 {
   AmConferenceStatus*  st = 0;
   AmConferenceChannel* ch = 0;
@@ -59,7 +59,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& cid,
     cid2status[cid] = st;
   }
 
-  ch = st->getChannel(local_tag);
+  ch = st->getChannel(local_tag, input_sample_rate);
   cid2s_mut.unlock();
 
   return ch;
@@ -148,7 +148,7 @@ void AmConferenceStatus::postConferenceEvent(int event_id, const string& sess_id
   sessions_mut.unlock();
 }
 
-AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
+AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id, int input_sample_rate)
 {
   AmConferenceChannel* ch = 0;
 
@@ -173,7 +173,7 @@ AmConferenceChannel* AmConferenceStatus::getChannel(const string& sess_id)
 									     conf_id,sess_id));
     }
 
-    unsigned int ch_id = mixer.addChannel();
+    unsigned int ch_id = mixer.addChannel(input_sample_rate);
     SessInfo* si = new SessInfo(sess_id,ch_id);
 
     sessions[sess_id] = ch_id;

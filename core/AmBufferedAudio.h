@@ -53,7 +53,7 @@ class AmBufferedAudio : public AmAudio {
   void setBufferSize(size_t _output_buffer_size, size_t _low_buffer_thresh, size_t _full_buffer_thresh);
 
  public:
-  virtual int get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples);
+  virtual int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples);
 
 };
 #endif

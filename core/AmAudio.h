@@ -40,17 +40,25 @@ using std::auto_ptr;
 using std::string;
 #include <map>
 
-#ifdef USE_LIBSAMPLERATE 
+#ifdef USE_LIBSAMPLERATE
 #include <samplerate.h>
+#endif
+
+#ifdef USE_INTERNAL_RESAMPLER
+#include "resample/resample.h"
 #endif
 
 #define PCM16_B2S(b) ((b) >> 1)
 #define PCM16_S2B(s) ((s) << 1)
 
-#define SYSTEM_SAMPLERATE 8000 // fixme: sr per session
+//#define SYSTEM_SAMPLERATE 8000 // fixme: sr per session
+#ifndef SYSTEM_SAMPLECLOCK_RATE
+#define SYSTEM_SAMPLECLOCK_RATE 32000
+#endif
 
 struct SdpPayload;
 struct CodecContainer;
+struct Payload;
 
 /** \brief Audio Event */
 class AmAudioEvent: public AmEvent
@@ -112,6 +120,10 @@ public:
   int channels;
   /** Sampling rate. */
   int rate;
+
+  /** Sampling rate as advertized in SDP (differs from actual rate for G722) **/
+  int advertized_rate;
+
   /* frame length in ms (frame based codecs) - unused */
   //int frame_length;
   /* frame size in samples */
@@ -198,11 +210,49 @@ public:
   /**
    * changes payload. returns != 0 on error.
    */
-  //int setCurrentPayload(int payload);
-  //int getCurrentPayload() { return m_currentPayload; };
-
-  int setCodecId(int codec_id);
+  int setCurrentPayload(Payload pl);
 };
+
+/**
+ * \brief keeps the resampling state for one direction (input or output)
+ */
+class AmResamplingState
+{
+public:
+  virtual unsigned int resample(unsigned char* samples, unsigned int size, double ratio) = 0;
+  virtual ~AmResamplingState() {}
+};
+
+#ifdef USE_LIBSAMPLERATE
+class AmLibSamplerateResamplingState: public AmResamplingState
+{
+private:
+  SRC_STATE* resample_state;
+  float resample_in[PCM16_B2S(AUDIO_BUFFER_SIZE)*2];
+  float resample_out[PCM16_B2S(AUDIO_BUFFER_SIZE)];
+  size_t resample_buf_samples;
+  size_t resample_out_buf_samples;
+public:
+  AmLibSamplerateResamplingState();
+  virtual ~AmLibSamplerateResamplingState();
+
+  virtual unsigned int resample(unsigned char* samples, unsigned int size, double ratio);
+};
+#endif
+
+#ifdef USE_INTERNAL_RESAMPLER
+class AmInternalResamplerState: public AmResamplingState
+{
+private:
+  Resample *rstate;
+
+public:
+  AmInternalResamplerState();
+  virtual ~AmInternalResamplerState();
+
+  virtual unsigned int resample(unsigned char* samples, unsigned int size, double ratio);
+};
+#endif
 
 /**
  * \brief base for classes that input or output audio.
@@ -218,12 +268,12 @@ private:
   int rec_time; // in samples
   int max_rec_time;
 
-#ifdef USE_LIBSAMPLERATE 
-  SRC_STATE* resample_state;
-  float resample_in[PCM16_B2S(AUDIO_BUFFER_SIZE)*2];
-  float resample_out[PCM16_B2S(AUDIO_BUFFER_SIZE)];
-  size_t resample_buf_samples;
-#endif
+public:
+  enum ResamplingImplementationType {
+	LIBSAMPLERATE,
+	INTERNAL_RESAMPLER,
+	UNAVAILABLE
+  };
 
 protected:
   /** Sample buffer. */
@@ -231,6 +281,10 @@ protected:
   
   /** Audio format. @see AmAudioFormat */
   auto_ptr<AmAudioFormat> fmt;
+  
+  /** Resampling states. @see AmResamplingState */
+  auto_ptr<AmResamplingState> input_resampling_state;
+  auto_ptr<AmResamplingState> output_resampling_state;
 
   AmAudio();
   AmAudio(AmAudioFormat *);
@@ -270,6 +324,33 @@ protected:
   unsigned int downMix(unsigned int size);
 
   /**
+   * Resamples from the given input sample rate to the given output sample rate
+   * using the input resampling state. The input resampling state is created if
+   * it does not exist.
+   *
+   */
+  unsigned int resampleInput(unsigned char *buffer, unsigned int size, int input_sample_rate, int output_sample_rate);
+
+  /**
+   * Resamples from the given input sample rate to the given output sample rate
+   * using the output resampling state. The output resampling state is created if
+   * it does not exist.
+   *
+   */
+  unsigned int resampleOutput(unsigned char *buffer, unsigned int size, int input_sample_rate, int output_sample_rate);
+
+  /**
+   * Resamples from the given input sample rate to the given output sample rate using
+   * the given resampling state.
+   * <ul><li>input = front buffer</li><li>output = back buffer</li></ul>
+   * @param rstate resampling state to be used
+   * @param size [in] size in bytes
+   * @param output_sample_rate desired output sample rate
+   * @return new size in bytes
+   */
+  unsigned int resample(AmResamplingState& rstate, unsigned char *buffer, unsigned int size, int input_sample_rate, int output_sample_rate);
+   
+  /**
    * Get the number of bytes to read from encoded, depending on the format.
    */
   unsigned int calcBytesToRead(unsigned int needed_samples) const;
@@ -294,7 +375,7 @@ public:
    * </pre>           whereby the format with/from which the codec works is the reference one.
    * @return # bytes read, else -1 if error (0 is OK) 
    */
-  virtual int get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples);
+  virtual int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples);
 
   /** 
    * Put some samples to the output stream.
@@ -303,9 +384,11 @@ public:
    * </pre>           whereby the format with/from which the codec works is the reference one.
    * @return # bytes written, else -1 if error (0 is OK) 
    */
-  virtual int put(unsigned int user_ts, unsigned char* buffer, unsigned int size);
+  virtual int put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size);
   
   unsigned int getFrameSize();
+  int getSampleRate();
+  unsigned int getSampleRateDivisor();
 
   void setRecordTime(unsigned int ms);
   int  incRecordTime(unsigned int samples);

@@ -68,12 +68,13 @@ class AmPLCBuffer {
  */
 class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
 {
+  PlayoutType m_playout_type;
   auto_ptr<AmPlayoutBuffer> playout_buffer;
 
 #ifdef USE_SPANDSP_PLC
     plc_state_t* plc_state;
 #else 
-    LowcFE       fec;
+    std::auto_ptr<LowcFE>       fec;
 #endif
 
   bool         use_default_plc;
@@ -94,7 +95,7 @@ public:
   AmRtpAudio(AmSession* _s, int _if);
   ~AmRtpAudio();
 
-  bool checkInterval(unsigned int ts, unsigned int frame_size);
+  bool checkInterval(unsigned int ts);
   bool sendIntReached();
 
   int setCurrentPayload(int payload);
@@ -107,7 +108,7 @@ public:
   int write(unsigned int user_ts, unsigned int size);
 
   int get(unsigned int user_ts, unsigned char* buffer, 
-	  unsigned int nb_samples);
+	  int output_sample_rate, unsigned int nb_samples);
 
   // AmRtpStream interface
   void getSdpOffer(unsigned int index, SdpMedia& offer);

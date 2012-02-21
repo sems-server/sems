@@ -94,7 +94,7 @@ class AmConferenceStatus
   AmConferenceStatus(const string& conference_id);
   ~AmConferenceStatus();
 
-  AmConferenceChannel* getChannel(const string& sess_id);
+  AmConferenceChannel* getChannel(const string& sess_id, int input_sample_rate);
 
   int releaseChannel(unsigned int ch_id);
 
@@ -105,7 +105,8 @@ public:
   AmMultiPartyMixer* getMixer()  { return &mixer; }
 
   static AmConferenceChannel* getChannel(const string& cid, 
-					 const string& local_tag);
+					 const string& local_tag,
+                                         int input_sample_rate);
 
   static void releaseChannel(const string& cid, unsigned int ch_id);
 

@@ -27,8 +27,8 @@
 
 #include "AmAudioMixer.h"
 
-AmAudioMixer::AmAudioMixer() {
-  sink_channel = mixer.addChannel();
+AmAudioMixer::AmAudioMixer(int external_sample_rate) {
+  sink_channel = mixer.addChannel(external_sample_rate);
   sink_connector = 
     new AmAudioMixerConnector(mixer, sink_channel, NULL, 
 			      &srcsink_mut, &sinks);
@@ -44,9 +44,9 @@ AmAudioMixer::~AmAudioMixer() {
   delete sink_connector;
 }
 
-AmAudio* AmAudioMixer::addSource() {
+AmAudio* AmAudioMixer::addSource(int external_sample_rate) {
   srcsink_mut.lock();
-  unsigned int src_channel = mixer.addChannel();
+  unsigned int src_channel = mixer.addChannel(external_sample_rate);
   // the first source will process the media in the mixer channel
   AmAudioMixerConnector* conn = 
     new AmAudioMixerConnector(mixer, src_channel, 
@@ -83,16 +83,17 @@ void AmAudioMixer::releaseSink(AmAudio* s) {
   srcsink_mut.unlock();
 }
 
-int AmAudioMixerConnector::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples) {
+int AmAudioMixerConnector::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples) {
   // in fact GCP here only needed for the mixed channel
-  mixer.GetChannelPacket(channel, user_ts, buffer, nb_samples);
+  unsigned int mixer_sample_rate;
+  mixer.GetChannelPacket(channel, user_ts, buffer, nb_samples, mixer_sample_rate);
 
   if ((audio_mut != NULL) && (sinks != NULL)) {
     audio_mut->lock();
     // write to all sinks
     for (std::set<AmAudio*>::iterator it=sinks->begin(); 
 	 it != sinks->end(); it++) {
-      (*it)->put(user_ts, buffer, nb_samples);
+      (*it)->put(user_ts, buffer, output_sample_rate, nb_samples);
     }
     audio_mut->unlock();
   }
@@ -100,13 +101,13 @@ int AmAudioMixerConnector::get(unsigned int user_ts, unsigned char* buffer, unsi
   return nb_samples;
 }
 
-int AmAudioMixerConnector::put(unsigned int user_ts, unsigned char* buffer, unsigned int size) {
+int AmAudioMixerConnector::put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size) {
   mixer.PutChannelPacket(channel, user_ts, buffer, size);
 
   if (mix_channel != NULL) {
     // we are processing the media of the mixed channel as well
     ShortSample mix_buffer[SIZE_MIX_BUFFER];    
-    mix_channel->get(user_ts, (unsigned char*)mix_buffer, size);
+    mix_channel->get(user_ts, (unsigned char*)mix_buffer, input_sample_rate, size);
   }
   return size;
 }

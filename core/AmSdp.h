@@ -72,6 +72,7 @@ struct SdpConnection
 
   SdpConnection() : address() {}
 
+  bool operator == (const SdpConnection& other) const;
   /** pretty print */
   string debugPrint() const;
 };
@@ -83,6 +84,15 @@ struct SdpOrigin
   unsigned int sessId;
   unsigned int sessV;
   SdpConnection conn;
+
+  SdpOrigin() : user(), conn() {}
+
+  SdpOrigin(const SdpOrigin& other)
+    : user(other.user), sessId(other.sessId), sessV(other.sessV),
+      conn(other.conn)
+  {}
+
+  bool operator == (const SdpOrigin& other) const;
 };
 /** 
  * \brief sdp payload
@@ -107,7 +117,16 @@ struct SdpPayload
   SdpPayload(int pt, const string& name, int rate, int param) 
     : int_pt(-1), payload_type(pt), encoding_name(name), clock_rate(rate), encoding_param(param) {}
 
+  SdpPayload(const SdpPayload& other)
+    : type(other.type), int_pt(other.int_pt), payload_type(other.payload_type),
+      encoding_name(other.encoding_name), clock_rate(other.clock_rate),
+      format(other.format), sdp_format_parameters(other.sdp_format_parameters),
+      encoding_param(other.encoding_param)
+  {}
+
   bool operator == (int r);
+
+  bool operator == (const SdpPayload& other) const;
 };
 
 /** \brief a=... line in SDP */
@@ -125,7 +144,12 @@ struct SdpAttribute
   SdpAttribute(const string& attribute)
     : attribute(attribute) { }
 
+  SdpAttribute(const SdpAttribute& other)
+    : attribute(other.attribute), value(other.value) {}
+
   string print() const;
+
+  bool operator == (const SdpAttribute& other) const;
 };
 
 /** \brief m=... line in SDP */
@@ -151,6 +175,8 @@ struct SdpMedia
   std::vector<SdpPayload> payloads;
 
   std::vector<SdpAttribute> attributes; // unknown attributes
+
+  bool operator == (const SdpMedia& other) const;
 
   SdpMedia() : conn(),send(true),recv(true) {}
 
@@ -213,6 +239,8 @@ public:
    * Test if remote UA supports 'telefone_event'.
    */
   //bool hasTelephoneEvent();
+
+  bool operator == (const AmSdp& other) const;
 
   /**
    * Clear all parsed values.
