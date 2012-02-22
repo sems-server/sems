@@ -188,7 +188,7 @@ public:
 	// which have not been chosen yet
 	int srv_lst_size=0;
 	unsigned int used_mask=(1<<i);
-	while( (p==((srv_entry*)ip_vec[i])->p) ){
+	while( p==((srv_entry*)ip_vec[i])->p ){
 	    
 	    if(!(used_mask & h->srv_used)){
 		w_sum += ((srv_entry*)ip_vec[i])->w;
