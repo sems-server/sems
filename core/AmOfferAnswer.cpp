@@ -125,10 +125,11 @@ int AmOfferAnswer::onRequestIn(const AmSipRequest& req)
       req.method == SIP_METH_UPDATE || 
       req.method == SIP_METH_ACK ||
       req.method == SIP_METH_PRACK) &&
-     !req.body.empty() && 
-     (req.content_type == SIP_APPLICATION_SDP)) {
+     !req.body.empty() ) {
 
-    err_code = onRxSdp(req.cseq,req.body,&err_txt);
+    const AmMimeBody* sdp_body = req.body.hasContentType(SIP_APPLICATION_SDP);
+    if(sdp_body)
+      err_code = onRxSdp(req.cseq,*sdp_body,&err_txt);
   }
 
   if(checkStateChange()){
@@ -163,27 +164,28 @@ int AmOfferAnswer::onReplyIn(const AmSipReply& reply)
   const char* err_txt  = NULL;
   int         err_code = 0;
 
-  saveState();
-
   if((reply.cseq_method == SIP_METH_INVITE || 
       reply.cseq_method == SIP_METH_UPDATE || 
       reply.cseq_method == SIP_METH_PRACK) &&
-     !reply.body.empty() && 
-     (reply.content_type == SIP_APPLICATION_SDP)) {
+     !reply.body.empty() ) {
 
-    if(((state == OA_Completed) ||
-	(state == OA_OfferRecved)) &&
-       (reply.cseq == cseq)) {
-      
-      DBG("ignoring subsequent SDP reply within the same transaction\n");
-      DBG("this usually happens when 183 and 200 have SDP\n");
-    }
-    else {
-      err_code = onRxSdp(reply.cseq,reply.body,&err_txt);
+    const AmMimeBody* sdp_body = reply.body.hasContentType(SIP_APPLICATION_SDP);
+    if(sdp_body) {
+
+      if(((state == OA_Completed) ||
+	  (state == OA_OfferRecved)) &&
+	 (reply.cseq == cseq)) {
+	
+	DBG("ignoring subsequent SDP reply within the same transaction\n");
+	DBG("this usually happens when 183 and 200 have SDP\n");
+      }
+      else {
+	saveState();
+	err_code = onRxSdp(reply.cseq,reply.body,&err_txt);
+	checkStateChange();
+      }
     }
   }
-
-  checkStateChange();
 
   if( (reply.code >= 300) &&
       (reply.cseq_method != SIP_METH_INVITE) &&
@@ -207,7 +209,7 @@ int AmOfferAnswer::onReplyIn(const AmSipReply& reply)
   return 0;
 }
 
-int AmOfferAnswer::onRxSdp(unsigned int m_cseq, const string& body, const char** err_txt)
+int AmOfferAnswer::onRxSdp(unsigned int m_cseq, const AmMimeBody& body, const char** err_txt)
 {
   DBG("entering onRxSdp(), oa_state=%s\n", getOAStateStr(state));
   OAState old_oa_state = state;
@@ -215,13 +217,17 @@ int AmOfferAnswer::onRxSdp(unsigned int m_cseq, const string& body, const char**
   int err_code = 0;
   assert(err_txt);
 
-  if(sdp_remote.parse(body.c_str())){
+  if(sdp_remote.parse((const char*)body.getPayload())){
     err_code = 400;
     *err_txt = "session description parsing failed";
   }
   else if(sdp_remote.media.empty()){
     err_code = 400;
     *err_txt = "no media line found in SDP message";
+  }
+
+  if(err_code != 0) {
+    sdp_remote.clear();
   }
 
   if(err_code == 0) {
@@ -248,16 +254,12 @@ int AmOfferAnswer::onRxSdp(unsigned int m_cseq, const string& body, const char**
     }
   }
 
-  if(err_code != 0) {
-    clear();
-  }
-
   DBG("oa_state: %s -> %s\n", getOAStateStr(old_oa_state), getOAStateStr(state));
 
   return err_code;
 }
 
-int AmOfferAnswer::onTxSdp(unsigned int m_cseq, const string& body)
+int AmOfferAnswer::onTxSdp(unsigned int m_cseq, const AmMimeBody& body)
 {
   // assume that the payload is ok if it is not empty.
   // (do not parse again self-generated SDP)
@@ -291,11 +293,9 @@ int AmOfferAnswer::onTxSdp(unsigned int m_cseq, const string& body)
 
 int AmOfferAnswer::onRequestOut(AmSipRequest& req)
 {
-  bool generate_sdp = req.body.empty() 
-    && (req.content_type == SIP_APPLICATION_SDP);
-
-  bool has_sdp = !req.body.empty() 
-    && (req.content_type == SIP_APPLICATION_SDP);
+  AmMimeBody* sdp_body = req.body.hasContentType(SIP_APPLICATION_SDP);
+  bool generate_sdp = sdp_body && !sdp_body->getLen();
+  bool has_sdp = sdp_body && sdp_body->getLen();
 
   if (!generate_sdp && !has_sdp && 
       ((req.method == SIP_METH_PRACK) ||
@@ -306,8 +306,10 @@ int AmOfferAnswer::onRequestOut(AmSipRequest& req)
   saveState();
 
   if (generate_sdp) {
-    if (!getSdpBody(req.body)){
-      req.content_type = SIP_APPLICATION_SDP;
+    string sdp_buf;
+    if (!getSdpBody(sdp_buf)){
+      sdp_body->setPayload((const unsigned char*)sdp_buf.c_str(),
+			   sdp_buf.length());
       has_sdp = true;
     }
     else {
@@ -325,11 +327,9 @@ int AmOfferAnswer::onRequestOut(AmSipRequest& req)
 
 int AmOfferAnswer::onReplyOut(AmSipReply& reply)
 {
-  bool generate_sdp = reply.body.empty() 
-    && (reply.content_type == SIP_APPLICATION_SDP);
-
-  bool has_sdp = !reply.body.empty() 
-    && (reply.content_type == SIP_APPLICATION_SDP);
+  AmMimeBody* sdp_body = reply.body.hasContentType(SIP_APPLICATION_SDP);
+  bool generate_sdp = sdp_body && !sdp_body->getLen();
+  bool has_sdp = sdp_body && sdp_body->getLen();
 
   if (!has_sdp && !generate_sdp) {
     // let's see whether we should force SDP or not.
@@ -361,13 +361,24 @@ int AmOfferAnswer::onReplyOut(AmSipReply& reply)
   saveState();
 
   if (generate_sdp) {
-    if(!getSdpBody(reply.body)) {
-      reply.content_type = SIP_APPLICATION_SDP;
-      has_sdp = true;
-    }
-    else {
+
+    string sdp_buf;
+    if(getSdpBody(sdp_buf)) {
       return -1;
     }
+
+    if(!sdp_body){
+      if( (sdp_body = 
+	   reply.body.addPart(SIP_APPLICATION_SDP)) 
+	  == NULL ) {
+	DBG("AmMimeBody::addPart() failed\n");
+	return -1;
+      }
+    }
+
+    sdp_body->setPayload((const unsigned char*)sdp_buf.c_str(),
+			 sdp_buf.length());
+    has_sdp = true;
   }
 
   if (has_sdp && (onTxSdp(reply.cseq,reply.body) != 0)) {

@@ -822,7 +822,7 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
   dialout_dlg.remote_party = uri;
   dialout_dlg.remote_uri   = uri;
 
-  dialout_dlg.sendRequest(SIP_METH_INVITE,"","",
+  dialout_dlg.sendRequest(SIP_METH_INVITE,NULL,
 			  extra_headers);
 
   dialout_session->start();

@@ -53,12 +53,15 @@ using std::list;
 #define LF        (0x0a) // '\n'
 #define SP        (0x20) // ' '
 #define HTAB      (0x09) // '\t'
-#define IS_WSP(c) (0x20==(c)||0x09==(c))
+#define IS_WSP(c) (SP==(c) || HTAB==(c))
 
 #define HCOLON    (':')
+#define SEMICOLON (';')
 #define COMMA     (',')
 #define DQUOTE    ('"')
+#define SLASH     ('/')
 #define BACKSLASH ('\\')
+#define HYPHEN    ('-')
 
 #define IS_ALPHA(c) (IS_IN(c,0x41,0x5a) || IS_IN(c,0x61,0x7a))
 #define IS_DIGIT(c) IS_IN(c,0x30,0x39)
@@ -171,6 +174,14 @@ inline int lower_cmp(const char* l, const char* r, int len)
     }
 
     return 0;
+}
+
+inline int lower_cmp_n(const char* l, int llen, const char* r, int rlen)
+{
+    if(llen != rlen)
+	return 1;
+
+    return lower_cmp(l,r,rlen);
 }
 
 int parse_sip_version(const char* beg, int len);

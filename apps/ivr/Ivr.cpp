@@ -678,7 +678,18 @@ void IvrDialog::onSessionStart()
 
 int IvrDialog::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
 {
-  answer.print(invite_req.body);
+  AmMimeBody* sdp_body = invite_req.body.hasContentType(SIP_APPLICATION_SDP);
+  if(!sdp_body) {
+    sdp_body = invite_req.body.addPart(SIP_APPLICATION_SDP);
+  }
+
+  if(sdp_body) {
+    string sdp_buf;
+    answer.print(sdp_buf);
+    sdp_body->setPayload((const unsigned char*)sdp_buf.c_str(),
+			 sdp_buf.length());
+  }
+
   return AmB2BCallerSession::onSdpCompleted(offer,answer);
 }
 

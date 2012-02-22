@@ -909,7 +909,7 @@ void SBCDialog::onSipRequest(const AmSipRequest& req) {
        call_profile.messagefilter_list.end());
     if (is_filtered) {
       DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
-      dlg.reply(req, 405, "Method Not Allowed", "", "", "", SIP_FLAGS_VERBATIM);
+      dlg.reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
       return;
     }
   }
@@ -923,7 +923,7 @@ void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
   bool fwd = t != relayed_req.end();
 
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
-  DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
+  DBG("onSipReply: content-type = %s\n",reply.body.getCTStr().c_str());
   if (fwd) {
       CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
@@ -1190,7 +1190,7 @@ bool SBCDialog::CCStart(const AmSipRequest& req) {
 
 	  dlg.reply(req,
 		    ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-		    "", "", headers);
+		    NULL, headers);
 
 	  // call 'end' of call control modules up to here
 	  call_end_ts.tv_sec = call_start_ts.tv_sec;
@@ -1511,7 +1511,7 @@ void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
        call_profile.messagefilter_list.end());
     if (is_filtered) {
       DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
-      dlg.reply(req, 405, "Method Not Allowed", "", "", "", SIP_FLAGS_VERBATIM);
+      dlg.reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
       return;
     }
   }
@@ -1525,7 +1525,7 @@ void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status o
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = t != relayed_req.end();
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
-  DBG("onSipReply: content-type = %s\n",reply.content_type.c_str());
+  DBG("onSipReply: content-type = %s\n",reply.body.getCTStr().c_str());
   if(fwd) {
     CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }

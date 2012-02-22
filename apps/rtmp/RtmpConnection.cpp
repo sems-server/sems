@@ -708,9 +708,12 @@ RtmpSession* RtmpConnection::startSession(const char* uri)
   case AmSessionContainer::Inserted:
     break;
   }
+  
+  AmMimeBody sdp_body;
+  sdp_body.addPart(SIP_APPLICATION_SDP);
 
   RtmpSession* pn_session = n_session.release();
-  if(dialout_dlg.sendRequest(SIP_METH_INVITE,"application/sdp") < 0) {
+  if(dialout_dlg.sendRequest(SIP_METH_INVITE,&sdp_body) < 0) {
     ERROR("dialout_dlg.sendRequest() returned an error\n");
     AmSessionContainer::instance()->destroySession(pn_session);
     return NULL;

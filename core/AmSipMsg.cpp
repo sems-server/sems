@@ -210,8 +210,9 @@ string AmSipRequest::print() const
   _PM(contact, "m");
 
   _PMB(hdrs, "hdr");
-  _PM(content_type, "c");
-  _PMB(body, "body");
+  //TODO: find some good debug info to print here
+  //_PM(content_type, "c");
+  //_PMB(body, "body");
 
   _PM(user, "user");
   _PM(domain, "domain");
@@ -239,8 +240,9 @@ string AmSipReply::print() const
   _PM(contact, "m");
 
   _PMB(hdrs, "hdr");
-  _PM(content_type, "c");
-  _PMB(body, "body");
+  //TODO: find some good debug info to print here
+  //_PM(content_type, "c");
+  //_PMB(body, "body");
 
   _PM(contact, "contact");
 

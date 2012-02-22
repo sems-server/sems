@@ -49,9 +49,21 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("dlg.connectCalleeRelayed", DLGConnectCalleeRelayedAction);
   DEF_CMD("dlg.dialout", DLGDialoutAction);
 
+  DEF_CMD("dlg.getRequestBody", DLGGetRequestBodyAction)
+  DEF_CMD("dlg.getReplyBody", DLGGetReplyBodyAction)
 } MOD_ACTIONEXPORT_END;
 
-MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
+//MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
+
+
+MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
+  if (cmd == "dlg.replyHasContentType")
+    return new DLGReplyHasContentTypeCondition(params, false);
+
+  if (cmd == "dlg.requestHasContentType")
+    return new DLGRequestHasContentTypeCondition(params, false);
+
+} MOD_CONDITIONEXPORT_END;
 
 bool DLGModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
   // save inivital invite to last_req 
@@ -136,12 +148,9 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
   }
 
   try {
-    string sdp_reply;
-
-    // sess->acceptAudio(sc_sess->last_req.get()->body,
-    // 		      sc_sess->last_req.get()->hdrs,&sdp_reply);
+    AmMimeBody sdp_body;
     if(sess->dlg.reply(*sc_sess->last_req.get(),code_i, reason,
-		 "application/sdp",sdp_reply) != 0)
+		       sdp_body.addPart(SIP_APPLICATION_SDP)) != 0)
       throw AmSession::Exception(500,"could not send response");
 	
   }catch(const AmSession::Exception& e){
@@ -292,4 +301,96 @@ EXEC_ACTION_START(DLGDialoutAction) {
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
   }
 
+} EXEC_ACTION_END;
+
+MATCH_CONDITION_START(DLGReplyHasContentTypeCondition) {
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REPLY);
+  if (it == sc_sess->avar.end()) {
+    ERROR("DSM script error: dlg.replyHasContentType condition used for "
+	  "other event than sipReply event\n");
+    return false;
+  }
+
+  DSMSipReply* dsm_reply = NULL;
+  if (!isArgAObject(sc_sess->avar[DSM_AVAR_REPLY]) ||
+      (NULL ==
+       (dsm_reply = dynamic_cast<DSMSipReply*>(sc_sess->avar[DSM_AVAR_REPLY].asObject())))) {
+    ERROR("internal: DSM could not get DSMSipReply\n");
+    return false;
+  }
+
+  bool res = dsm_reply->reply->body.hasContentType(arg);
+
+  DBG("checking for content_type '%s': %s\n", arg.c_str(), res?"has it":"doesn't have it");
+  return res;
+} MATCH_CONDITION_END;
+
+MATCH_CONDITION_START(DLGRequestHasContentTypeCondition) {
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REQUEST);
+  if (it == sc_sess->avar.end()) {
+    ERROR("DSM script error: dlg.requestHasContentType condition used for "
+	  "other event than sipRequest event\n");
+    return false;
+  }
+
+  DSMSipRequest* dsm_req = NULL;
+  if (!isArgAObject(sc_sess->avar[DSM_AVAR_REQUEST]) ||
+      (NULL ==
+       (dsm_req = dynamic_cast<DSMSipRequest*>(sc_sess->avar[DSM_AVAR_REQUEST].asObject())))) {
+    ERROR("internal: DSM could not get DSMSipRequest\n");
+    return false;
+  }
+
+  bool res = dsm_req->req->body.hasContentType(arg);
+
+  DBG("checking for content_type '%s': %s\n", arg.c_str(), res?"has it":"doesn't have it");
+  return res;
+} MATCH_CONDITION_END;
+
+CONST_ACTION_2P(DLGGetRequestBodyAction, ',', false);
+EXEC_ACTION_START(DLGGetRequestBodyAction) {
+  DSMSipRequest* sip_req;
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REQUEST);
+  if (it == sc_sess->avar.end() ||
+      !isArgAObject(it->second) ||
+      !(sip_req = dynamic_cast<DSMSipRequest*>(it->second.asObject()))) {
+    throw DSMException("dlg", "cause", "no request");
+  }
+
+  string content_type = resolveVars(par1, sess, sc_sess, event_params);
+  string dstvar = resolveVars(par2, sess, sc_sess, event_params);
+
+  const AmMimeBody* msg_body = sip_req->req->body.hasContentType(content_type);
+  if (NULL == msg_body) {
+    DBG("body with content_type %s not found\n", content_type.c_str());
+    sc_sess->var.erase(dstvar);
+  } else {
+    sc_sess->var[dstvar] = string((const char*)msg_body->getPayload());
+    DBG("set $%s='%s'\n", dstvar.c_str(), sc_sess->var[dstvar].c_str());
+  }
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(DLGGetReplyBodyAction, ',', false);
+EXEC_ACTION_START(DLGGetReplyBodyAction) {
+  DSMSipReply* sip_req;
+
+  AVarMapT::iterator it = sc_sess->avar.find(DSM_AVAR_REPLY);
+  if (it == sc_sess->avar.end() ||
+      !isArgAObject(it->second) ||
+      !(sip_req = dynamic_cast<DSMSipReply*>(it->second.asObject()))) {
+    throw DSMException("dlg", "cause", "no reply");
+  }
+
+  string content_type = resolveVars(par1, sess, sc_sess, event_params);
+  string dstvar = resolveVars(par2, sess, sc_sess, event_params);
+
+  const AmMimeBody* msg_body = sip_req->reply->body.hasContentType(content_type);
+  if (NULL == msg_body) {
+    DBG("body with content_type %s not found\n", content_type.c_str());
+    sc_sess->var.erase(dstvar);
+  } else {
+    sc_sess->var[dstvar] = string((const char*)msg_body->getPayload());
+    DBG("set $%s='%s'\n", dstvar.c_str(), sc_sess->var[dstvar].c_str());
+  }
 } EXEC_ACTION_END;

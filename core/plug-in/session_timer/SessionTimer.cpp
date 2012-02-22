@@ -105,8 +105,8 @@ bool SessionTimer::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_d
 	    session_interval = i_minse;
 	    unsigned int new_cseq = s->dlg.cseq;
 	    // resend request with interval i_minse
-	    if (s->dlg.sendRequest(orig_req.method,orig_req.content_type,
-				    orig_req.body, orig_req.hdrs) == 0) {
+	    if (s->dlg.sendRequest(orig_req.method, &orig_req.body,
+				   orig_req.hdrs) == 0) {
               DBG("request with new Session Interval %u successfully sent.\n", i_minse);
 	      // undo SIP dialog status change
 	      if (s->dlg.getStatus() != old_dlg_status)
@@ -136,8 +136,7 @@ bool SessionTimer::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_d
 }
 
 bool SessionTimer::onSendRequest(const string& method, 
-				 const string& content_type,
-				 const string& body,
+				 const AmMimeBody* body,
 				 string& hdrs,
 				 int flags,
 				 unsigned int cseq)
@@ -152,7 +151,6 @@ bool SessionTimer::onSendRequest(const string& method,
     // save INVITE and UPDATE so we can resend on 422 reply
     DBG("adding %d to list of sent requests.\n", cseq);
     sent_requests[cseq] = SIPRequestInfo(method,
-					 content_type,
 					 body,
 					 hdrs);
   }

@@ -816,7 +816,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
     catch(const AmSession::Exception& e) {
       ERROR("%i %s\n",e.code,e.reason.c_str());
       setStopped();
-      dlg.reply(req,e.code, e.reason, e.hdrs);
+      dlg.reply(req, e.code, e.reason, NULL, e.hdrs);
     }
   }
   else if(req.method == SIP_METH_ACK){
@@ -831,8 +831,13 @@ void AmSession::onSipRequest(const AmSipRequest& req)
   } 
   else if( req.method == SIP_METH_INFO ){
 
-    if (req.content_type == "application/dtmf-relay") {
-      postDtmfEvent(new AmSipDtmfEvent(req.body));
+    const AmMimeBody* dtmf_body = 
+      req.body.hasContentType("application/dtmf-relay");
+
+    if (dtmf_body) {
+      string dtmf_body_str((const char*)dtmf_body->getPayload(),
+			   dtmf_body->getLen());
+      postDtmfEvent(new AmSipDtmfEvent(dtmf_body_str));
       dlg.reply(req, 200, "OK");
     } else {
       dlg.reply(req, 415, "Unsupported Media Type");
@@ -1108,7 +1113,7 @@ bool AmSession::refresh(int flags) {
 
   if (refresh_method == REFRESH_UPDATE) {
     DBG("Refreshing session with UPDATE\n");
-    return sendUpdate("", "", "") == 0;
+    return sendUpdate( NULL, "") == 0;
   } else {
 
     if (dlg.getUACInvTransPending()) {
@@ -1121,16 +1126,16 @@ bool AmSession::refresh(int flags) {
   }
 }
 
-int AmSession::sendUpdate(const string &cont_type, const string &body,
-			   const string &hdrs)
+int AmSession::sendUpdate(const AmMimeBody* body,
+			  const string &hdrs)
 {
-  return dlg.update(cont_type, body, hdrs);
+  return dlg.update(body, hdrs);
 }
 
 void AmSession::onInvite1xxRel(const AmSipReply &reply)
 {
   // TODO: SDP
-  if (dlg.prack(reply, /*cont. type*/"", /*body*/"", /*headers*/"") < 0)
+  if (dlg.prack(reply, NULL, /*headers*/"") < 0)
     ERROR("failed to send PRACK request in session '%s'.\n",sid4dbg().c_str());
 }
 
@@ -1151,10 +1156,13 @@ string AmSession::sid4dbg()
 int AmSession::sendReinvite(bool updateSDP, const string& headers, int flags) 
 {
   if(updateSDP){
-    return dlg.reinvite(headers, SIP_APPLICATION_SDP, "", flags);
+    // Forces SDP offer/answer 
+    AmMimeBody sdp;
+    sdp.addPart(SIP_APPLICATION_SDP);
+    return dlg.reinvite(headers, &sdp, flags);
   }
   else {
-    return dlg.reinvite(headers, "", "", flags);
+    return dlg.reinvite(headers, NULL, flags);
   }
 }
 
@@ -1162,8 +1170,10 @@ int AmSession::sendInvite(const string& headers)
 {
   onOutgoingInvite(headers);
 
-  // Forces SDP offer/answer 
-  return dlg.invite(headers, SIP_APPLICATION_SDP, "");
+  // Forces SDP offer/answer
+  AmMimeBody sdp;
+  sdp.addPart(SIP_APPLICATION_SDP);
+  return dlg.invite(headers, &sdp);
 }
 
 void AmSession::setOnHold(bool hold)
@@ -1188,10 +1198,10 @@ void AmSession::onFailure(AmSipDialogEventHandler::FailureCause cause,
           setStopped();
       } else if (req) {
         if (cause == FAIL_REL100_421) {
-          dlg.reply(*req, 421, SIP_REPLY_EXTENSION_REQUIRED, "", "",
+          dlg.reply(*req, 421, SIP_REPLY_EXTENSION_REQUIRED, NULL,
               SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF);
         } else {
-          dlg.reply(*req, 420, SIP_REPLY_BAD_EXTENSION, "", "",
+          dlg.reply(*req, 420, SIP_REPLY_BAD_EXTENSION, NULL,
               SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
         }
         /* finally, stop session if running */

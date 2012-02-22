@@ -58,8 +58,8 @@ private:
   int  checkStateChange();
 
   /** SDP handling */
-  int  onRxSdp(unsigned int m_cseq, const string& body, const char** err_txt);
-  int  onTxSdp(unsigned int m_cseq, const string& body);
+  int  onRxSdp(unsigned int m_cseq, const AmMimeBody& body, const char** err_txt);
+  int  onTxSdp(unsigned int m_cseq, const AmMimeBody& body);
   int  getSdpBody(string& sdp_body);
 
 public:

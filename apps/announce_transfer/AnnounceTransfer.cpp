@@ -149,19 +149,21 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
       if (strip_header_params(getHeader(req.hdrs,"Event", "o", true)) != "refer") 
 	throw AmSession::Exception(481, "Subscription does not exist");
 
-      if ((strip_header_params(req.content_type) != "message/sipfrag"))
+      if (!req.body.isContentType("message/sipfrag"))
 	throw AmSession::Exception(415, "Unsupported Media Type");
 
-      if (req.body.length()<8)
+      string body((const char*)req.body.getPayload(),
+		  req.body.getLen());
+
+      if (body.length()<8)
 	throw AmSession::Exception(400, "Short Body");
 			
-      string sipfrag_sline = req.body.substr(8, req.body.find("\n") - 8);
+      string sipfrag_sline = body.substr(8, body.find("\n") - 8);
       DBG("extracted start line from sipfrag '%s'\n", sipfrag_sline.c_str());
       unsigned int code;
       string res_msg;
-
 			
-      if ((req.body.length() < 11)
+      if ((body.length() < 11)
 	  || (parse_return_code(sipfrag_sline.c_str(), code, res_msg))) {
 	throw AmSession::Exception(400, "Bad Request");				
       }
@@ -179,9 +181,9 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
 	  dlg.bye();
 	setStopped();
       }
-      dlg.reply(req, 200, "OK", "", "");
+      dlg.reply(req, 200, "OK", NULL);
     } catch (const AmSession::Exception& e) {
-      dlg.reply(req, e.code, e.reason, "", "");
+      dlg.reply(req, e.code, e.reason, NULL);
     }
   } else {
     AmSession::onSipRequest(req);
