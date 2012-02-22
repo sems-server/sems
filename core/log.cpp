@@ -124,10 +124,10 @@ void SyslogLogFac::log(int level, pid_t pid, pthread_t tid, const char* func, co
 
 # ifndef NO_THREADID_LOG
 #  ifdef LOG_LOC_DATA_ATEND
-  syslog(log2syslog_level[level], "%s: %s [#%lx] [%s %s:%d]",
+  syslog(log2syslog_level[level], "%s: %s [#%p] [%s %s:%d]",
       log_level2str[level], msg, tid, func, file, line);
 #  else
-  syslog(log2syslog_level[level], "[#%lx] [%s, %s:%d] %s: %s",
+  syslog(log2syslog_level[level], "[#%p] [%s, %s:%d] %s: %s",
 	 tid, func, file, line, log_level2str[level], msg);
 #  endif
 # else /* NO_THREADID_LOG */
