@@ -743,7 +743,7 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
 						     &(msg->remote_ip),IPv4);
 	if(err < 0){
 	    ERROR("Unresolvable Request URI domain\n");
-	    return -1;
+	    return -478;
 	}
     }
 
@@ -849,9 +849,10 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     string uri_buffer; // must have the same scope as 'msg'
     prepare_strict_routing(msg,uri_buffer);
 
-    if(set_destination_ip(msg,&next_hop,next_port) < 0){
+    int res = set_destination_ip(msg,&next_hop,next_port);
+    if(res < 0){
      	DBG("set_destination_ip failed\n");
-     	return -1;
+     	return res;
     }
 
     // rco: should we overwrite the socket from the request in all cases???

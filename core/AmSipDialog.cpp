@@ -754,7 +754,6 @@ int AmSipDialog::reply(const AmSipTransaction& t,
   }
 
   int ret = SipCtrlInterface::send(reply);
-
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s; call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),reply.cseq_method.c_str(),
@@ -1097,10 +1096,11 @@ int AmSipDialog::sendRequest(const string& method,
     hdl->onSendRequest(req,flags);
 
   onTxRequest(req);
-  if(SipCtrlInterface::send(req, next_hop_ip, next_hop_port,outbound_interface)) {
+  int res = SipCtrlInterface::send(req, next_hop_ip, next_hop_port,outbound_interface);
+  if(res) {
     ERROR("Could not send request: method=%s; call-id=%s; cseq=%i\n",
 	  req.method.c_str(),req.callid.c_str(),req.cseq);
-    return -1;
+    return res;
   }
  
   if(method != SIP_METH_ACK) {
@@ -1180,8 +1180,9 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
     hdl->onSendRequest(req,flags);
 
   //onTxRequest(req); // not needed right now in the ACK case
-  if (SipCtrlInterface::send(req, next_hop_ip, next_hop_port, outbound_interface))
-    return -1;
+  int res = SipCtrlInterface::send(req, next_hop_ip, next_hop_port, outbound_interface);
+  if (res)
+    return res;
 
   uac_trans.erase(inv_cseq);
   if (offeranswer_enabled) {

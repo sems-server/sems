@@ -49,6 +49,23 @@ static void countStreams(const AmSdp &sdp, int &active, int &inactive)
   }
 }
 
+static void errCode2RelayedReply(AmSipReply &reply, int err_code, unsigned default_code = 500)
+{
+  // FIXME: use cleaner method to propagate error codes/reasons, 
+  // do it everywhere in the code
+  if ((err_code < -399) && (err_code > -700)) {
+    reply.code = -err_code;
+  }
+  else reply.code = default_code;
+
+  // TODO: optimize with a table
+  switch (reply.code) {
+    case 400: reply.reason = "Bad Request"; break;
+    case 478: reply.reason = "Unresolvable destination"; break;
+    default: reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
+  }
+}
+
 //
 // AmB2BSession methods
 //
@@ -144,11 +161,11 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	  return;
 	}
 
-	if(relaySip(req_ev->req) < 0) {
+        int res = relaySip(req_ev->req);
+	if(res < 0) {
 	  // reply relayed request internally
 	  AmSipReply n_reply;
-	  n_reply.code = 500;
-	  n_reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
+          errCode2RelayedReply(n_reply, res, 500);
 	  n_reply.cseq = req_ev->req.cseq;
 	  n_reply.from_tag = dlg.local_tag;
 	  relayEvent(new B2BSipReplyEvent(n_reply, true, req_ev->req.method));
@@ -1292,14 +1309,13 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
       }
     }
 
-    if (dlg.sendRequest(SIP_METH_INVITE,
+    int res = dlg.sendRequest(SIP_METH_INVITE,
 			co_ev->content_type, *body,
-			co_ev->hdrs, SIP_FLAGS_VERBATIM) < 0) {
-
-      DBG("sending INVITE failed, relaying back 400 Bad Request\n");
+			co_ev->hdrs, SIP_FLAGS_VERBATIM);
+    if (res < 0) {
+      DBG("sending INVITE failed, relaying back error reply\n");
       AmSipReply n_reply;
-      n_reply.code = 400;
-      n_reply.reason = "Bad Request";
+      errCode2RelayedReply(n_reply, res, 400);
       n_reply.cseq = co_ev->r_cseq;
       n_reply.from_tag = dlg.local_tag;
       relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
