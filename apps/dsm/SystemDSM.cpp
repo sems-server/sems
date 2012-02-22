@@ -175,7 +175,7 @@ NOT_IMPLEMENTED(setInputPlaylist());
 NOT_IMPLEMENTED(setOutputPlaylist());
 
 NOT_IMPLEMENTED(addToPlaylist(AmPlaylistItem* item));
-NOT_IMPLEMENTED(closePlaylist(bool notify));
+NOT_IMPLEMENTED(flushPlaylist());
 NOT_IMPLEMENTED(setPromptSet(const string& name));
 NOT_IMPLEMENTED(addSeparator(const string& name, bool front));
 NOT_IMPLEMENTED(connectMedia());

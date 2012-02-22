@@ -752,7 +752,7 @@ AnswerMachineDialog::AnswerMachineDialog(const string& user,
 
 AnswerMachineDialog::~AnswerMachineDialog()
 {
-  playlist.close(false);
+  playlist.flush();
 }
 
 void AnswerMachineDialog::process(AmEvent* event)
@@ -763,37 +763,7 @@ void AnswerMachineDialog::process(AmEvent* event)
     switch(ae->event_id){
 
     case AmAudioEvent::noAudio:
-
-      switch(status){
-
-      case 0: {
-	// announcement mode - no recording
-	if (MODE_ANN == vm_mode) {
-	  dlg.bye();
-	  setStopped();
-	  return;
-	}
-
-	playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
-		
-	setTimer(RECORD_TIMER, AnswerMachineFactory::MaxRecordTime);
-
-	status = 1;
-      } break;
-
-      case 1:
-	a_beep.rewind();
-	playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
-	status = 2;
-	break;
-
-      case 2:
-	dlg.bye();
-	saveMessage();
-	setStopped();
-	break;
-
-      }
+      onNoAudio();
       break;
 
     case AmAudioEvent::cleared:
@@ -812,11 +782,45 @@ void AnswerMachineDialog::process(AmEvent* event)
   if(plugin_event && plugin_event->name == "timer_timeout" &&
      plugin_event->data.get(0).asInt() == RECORD_TIMER) {
 
-    // clear list
-    playlist.close();
+    playlist.flush();
+    onNoAudio();
   }
   else
     AmSession::process(event);
+}
+
+void AnswerMachineDialog::onNoAudio()
+{
+  switch(status){
+    
+  case 0: {
+    // announcement mode - no recording
+    if (MODE_ANN == vm_mode) {
+      dlg.bye();
+      setStopped();
+      return;
+    }
+    
+    playlist.addToPlaylist(new AmPlaylistItem(NULL,&a_msg));
+    
+    setTimer(RECORD_TIMER, AnswerMachineFactory::MaxRecordTime);
+    
+    status = 1;
+  } break;
+
+  case 1:
+    a_beep.rewind();
+    playlist.addToPlaylist(new AmPlaylistItem(&a_beep,NULL));
+    status = 2;
+    break;
+    
+  case 2:
+    dlg.bye();
+    saveMessage();
+    setStopped();
+    break;
+    
+  }
 }
 
 void AnswerMachineDialog::onSessionStart()

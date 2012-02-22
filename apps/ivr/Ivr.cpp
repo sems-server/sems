@@ -554,7 +554,7 @@ IvrDialog::~IvrDialog()
 {
   DBG("----------- IvrDialog::~IvrDialog() ------------- \n");
 
-  playlist.close(false);
+  playlist.flush();
   
   PYLOCK;
   Py_XDECREF(py_mod);

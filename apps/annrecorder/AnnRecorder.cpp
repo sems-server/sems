@@ -292,7 +292,7 @@ void AnnRecorderDialog::onDtmf(int event, int duration_msec) {
   switch (state) {
   case S_WAIT_START: { 
     DBG("received key %d in state S_WAIT_START: start recording\n", event); 
-    playlist.close(false);
+    playlist.flush();
 
     wav_file.close();
     msg_filename = "/tmp/" + getLocalTag() + ".wav";
@@ -312,14 +312,14 @@ void AnnRecorderDialog::onDtmf(int event, int duration_msec) {
   case S_RECORDING: {
     DBG("received key %d in state S_RECORDING: replay recording\n", event); 
     prompts.addToPlaylist(BEEP,  (long)this, playlist);
-    playlist.close(false);
+    playlist.flush();
     replayRecording();
     
   } break;
 
   case S_CONFIRM: { 
     DBG("received key %d in state S_CONFIRM save or redo\n", event); 
-    playlist.close(false);
+    playlist.flush();
 
     wav_file.close();
     if (event == 1) {

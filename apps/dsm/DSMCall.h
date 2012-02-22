@@ -101,7 +101,7 @@ public:
 
   // DSMSession interface
   void playPrompt(const string& name, bool loop = false);
-  void closePlaylist(bool notify);
+  void flushPlaylist();
   void addToPlaylist(AmPlaylistItem* item);
   void playFile(const string& name, bool loop, bool front=false);
   void recordFile(const string& name);

@@ -108,7 +108,7 @@ int CCAcc::subtractCredit(string pin, int amount) {
     credits_mut.unlock();
     return -1;
   }
-  if (it->second - amount < 0) {
+  if ((int)it->second - amount < 0) {
     credits[pin] = 0;
   } else {
     credits[pin] = it->second - amount;

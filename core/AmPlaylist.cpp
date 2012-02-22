@@ -46,19 +46,13 @@ void AmPlaylist::gotoNextItem(bool notify)
   bool had_item = false;
   if(cur_item){
 
-    // 	if(cur_item->play)
-    // 	    cur_item->play->close();
-
-    // 	if(cur_item->record)
-    // 	    cur_item->record->close();
-
     delete cur_item;
     cur_item = 0;
     had_item = true;
   }
 
   updateCurrentItem();
-  if(notify && had_item && !cur_item){
+  if(notify && had_item && !cur_item && ev_q){
     DBG("posting AmAudioEvent::noAudio event!\n");
     ev_q->postEvent(new AmAudioEvent(AmAudioEvent::noAudio));
   }
@@ -76,7 +70,7 @@ int AmPlaylist::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb
 	(ret = cur_item->play->get(user_ts,buffer,nb_samples)) <= 0){
 
     DBG("get: gotoNextItem\n");
-    gotoNextItem();
+    gotoNextItem(true);
   }
 
   if(!cur_item || !cur_item->play) {
@@ -99,7 +93,7 @@ int AmPlaylist::put(unsigned int user_ts, unsigned char* buffer, unsigned int si
 	(ret = cur_item->record->put(user_ts,buffer,size)) < 0){
 
     DBG("put: gotoNextItem\n");
-    gotoNextItem();
+    gotoNextItem(true);
   }
 
   if(!cur_item || !cur_item->record)
@@ -114,11 +108,6 @@ AmPlaylist::AmPlaylist(AmEventQueue* q)
     ev_q(q), cur_item(0)
 {
   
-}
-
-AmPlaylist::~AmPlaylist()
-{
-  close(false);
 }
 
 void AmPlaylist::addToPlaylist(AmPlaylistItem* item)
@@ -143,7 +132,14 @@ void AmPlaylist::addToPlayListFront(AmPlaylistItem* item)
   cur_mut.unlock();
 }
 
-void AmPlaylist::close(bool notify)
+void AmPlaylist::close()
+{
+  DBG("flushing playlist before closing\n");
+  flush();
+  AmAudio::close();
+}
+
+void AmPlaylist::flush()
 {
   cur_mut.lock();
   if(!cur_item && !items.empty()){
@@ -152,7 +148,7 @@ void AmPlaylist::close(bool notify)
   }
 
   while(cur_item)
-    gotoNextItem(notify);
+    gotoNextItem(false);
   cur_mut.unlock();
 }
 

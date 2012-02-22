@@ -127,6 +127,8 @@ class AnswerMachineDialog : public AmSession
     void saveMessage();
     void saveBox(FILE* fp);
 
+    void onNoAudio();
+
  public:
   AnswerMachineDialog(const string& user, 
 		      const string& sender, 

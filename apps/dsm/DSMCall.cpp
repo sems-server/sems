@@ -521,9 +521,9 @@ void DSMCall::playPrompt(const string& name, bool loop) {
   }
 }
 
-void DSMCall::closePlaylist(bool notify) {
-  DBG("close playlist\n");
-  playlist.close(notify);  
+void DSMCall::flushPlaylist() {
+  DBG("flush playlist\n");
+  playlist.flush();  
 }
 
 void DSMCall::addToPlaylist(AmPlaylistItem* item) {

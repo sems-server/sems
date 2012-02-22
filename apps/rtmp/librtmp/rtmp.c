@@ -1235,7 +1235,8 @@ RTMP_ClientPacket(RTMP *r, RTMPPacket *packet)
       RTMP_Log(RTMP_LOGDEBUG, "%s, unknown packet type received: 0x%02x", __FUNCTION__,
 	  packet->m_packetType);
 #ifdef _DEBUG
-      RTMP_LogHex(RTMP_LOGDEBUG, packet->m_body, packet->m_nBodySize);
+      RTMP_LogHex(RTMP_LOGDEBUG, (const uint8_t*)packet->m_body, 
+		  packet->m_nBodySize);
 #endif
     }
 

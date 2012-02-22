@@ -45,7 +45,7 @@ using std::string;
 // request the client to connect the streams
 #define RTMP_CALL_CONNECT_STREAMS 4
 
-class SIPRegistrationEvent;
+struct SIPRegistrationEvent;
 class RtmpSession;
 class RtmpSender;
 class RtmpAudio;

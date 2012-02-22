@@ -111,7 +111,7 @@ class DSMSession {
   virtual void setOutputPlaylist() = 0;
 
   virtual void addToPlaylist(AmPlaylistItem* item) = 0;
-  virtual void closePlaylist(bool notify) = 0;
+  virtual void flushPlaylist() = 0;
   virtual void setPromptSet(const string& name) = 0;
   virtual void addSeparator(const string& name, bool front = false) = 0;
   virtual void connectMedia() = 0;

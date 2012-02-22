@@ -390,7 +390,7 @@ ConferenceDialog::~ConferenceDialog()
   DBG("ConferenceDialog::~ConferenceDialog()\n");
 
   // clean playlist items
-  play_list.close(false);
+  play_list.flush();
 
 #ifdef WITH_SAS_TTS
   // garbage collect tts files - TODO: delete files
@@ -529,7 +529,7 @@ void ConferenceDialog::setupAudio()
   }
 
 
-  play_list.close();// !!!
+  play_list.flush();
 
   if(dialout_channel.get()){
 
@@ -660,7 +660,7 @@ void ConferenceDialog::process(AmEvent* ev)
 
 	state = CS_dialout_connected;
 
-	play_list.close(); // !!!
+	play_list.flush();
 	play_list.addToPlaylist(new AmPlaylistItem(dialout_channel.get(),
 						   dialout_channel.get()));
 	break;
@@ -671,7 +671,7 @@ void ConferenceDialog::process(AmEvent* ev)
 	  RingTone.reset(new AmRingTone(0,2000,4000,440,480)); // US
 
 	DBG("adding ring tone to the playlist (dialedout = %i)\n",dialedout);
-	play_list.close();
+	play_list.flush();
 	play_list.addToPlaylist(new AmPlaylistItem(RingTone.get(),NULL));
 	break;
 
@@ -682,7 +682,6 @@ void ConferenceDialog::process(AmEvent* ev)
 	  ErrorTone.reset(new AmRingTone(2000,250,250,440,480));
 
 	DBG("adding error tone to the playlist (dialedout = %i)\n",dialedout);
-	//play_list.close();
 	play_list.addToPlayListFront(new AmPlaylistItem(ErrorTone.get(),NULL));
 	break;
 		
@@ -860,7 +859,7 @@ void ConferenceDialog::connectMainChannel()
   dialedout = false;
   dialout_channel.reset(NULL);
     
-  play_list.close();
+  play_list.flush();
 
   if(!channel.get())
     channel.reset(AmConferenceStatus
@@ -873,7 +872,7 @@ void ConferenceDialog::connectMainChannel()
 
 void ConferenceDialog::closeChannels()
 {
-  play_list.close();
+  play_list.flush();
   setInOut(NULL,NULL);
   channel.reset(NULL);
   dialout_channel.reset(NULL);

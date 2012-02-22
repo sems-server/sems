@@ -293,6 +293,7 @@ AmAudio::~AmAudio()
   if (NULL != resample_state) 
     src_delete(resample_state);
 #endif
+  close();
 }
 
 void AmAudio::setFormat(AmAudioFormat* new_fmt) {

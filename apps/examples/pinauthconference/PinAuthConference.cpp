@@ -106,7 +106,7 @@ PinAuthConferenceDialog::PinAuthConferenceDialog(AmPromptCollection& prompts)
 
 PinAuthConferenceDialog::~PinAuthConferenceDialog()
 {
-  play_list.close(false);
+  play_list.flush();
   prompts.cleanup((long)this);
 }
 
@@ -126,7 +126,7 @@ void PinAuthConferenceDialog::connectConference(const string& room) {
   channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag()));
 
   // clear the playlist
-  play_list.close(false);
+  play_list.flush();
 
   // add the channel to our playlist
   play_list.addToPlaylist(new AmPlaylistItem(channel.get(),
@@ -150,7 +150,7 @@ void PinAuthConferenceDialog::onSessionStart()
  
 void PinAuthConferenceDialog::onBye(const AmSipRequest& req)
 {
-  play_list.close();
+  play_list.flush();
   setInOut(NULL,NULL);
   channel.reset(NULL);
   setStopped();
@@ -224,7 +224,7 @@ void PinAuthConferenceDialog::onDtmf(int event, int duration)
       } else {
 	state = EnteringConference;
 	setInOut(NULL, NULL);
-	play_list.close();
+	play_list.flush();
 	for (size_t i=0;i<pin_str.length();i++) {
 	  string num = "";
 	  num[0] = pin_str[i];

@@ -45,7 +45,7 @@ MyJukeboxDialog::MyJukeboxDialog()
 MyJukeboxDialog::~MyJukeboxDialog()
 {
   // clean playlist items
-  playlist.close(false);
+  playlist.flush();
   // clean used AmAudioFile objects
   for (vector<AmAudioFile*>::iterator it=
 	 used_audio_files.begin(); it != used_audio_files.end();it++)

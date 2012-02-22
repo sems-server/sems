@@ -218,17 +218,12 @@ extern "C" {
     return Py_None;
   }
 
-  static PyObject* closePlaylist(PyObject*, PyObject* args)
+  static PyObject* flushPlaylist(PyObject*, PyObject* args)
   {
-    int notify = 0;
-
-    if(!PyArg_ParseTuple(args,"i",&notify))
-      return NULL;
-
     GET_SESS_PTR;
     
-    DBG("playFile(notify=%s)\n", notify?"true":"false");
-    sess->closePlaylist(notify);
+    DBG("flushPlaylist()\n");
+    sess->flushPlaylist();
     Py_INCREF(Py_None);
     return Py_None;
   }
@@ -347,7 +342,7 @@ extern "C" {
     {"getRecordLength",  (PyCFunction)getRecordLength, METH_NOARGS,"get the length of the current recording"},
     {"getRecordDataSize",(PyCFunction)getRecordDataSize, METH_NOARGS,"get the data size of the current recording"},
     {"stopRecord",      (PyCFunction)stopRecord, METH_NOARGS,"stop the running recording"},
-    {"closePlaylist",   (PyCFunction)closePlaylist, METH_VARARGS,"close the playlist"},
+    {"flushPlaylist",   (PyCFunction)flushPlaylist, METH_NOARGS,"flush the playlist"},
     {"setPromptSet",    (PyCFunction)setPromptSet, METH_VARARGS,"set prompt set"},
     {"addSeparator",    (PyCFunction)addSeparator, METH_VARARGS,"add a named separator to playlist"},
     {"connectMedia",    (PyCFunction)connectMedia, METH_NOARGS,"connect media (RTP processing)"},

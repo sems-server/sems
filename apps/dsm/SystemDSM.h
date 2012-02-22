@@ -66,7 +66,7 @@ class SystemDSM
    void setOutputPlaylist();
 
    void addToPlaylist(AmPlaylistItem* item);
-   void closePlaylist(bool notify);
+   void flushPlaylist();
    void setPromptSet(const string& name);
    void addSeparator(const string& name, bool front = false);
    void connectMedia();

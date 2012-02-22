@@ -74,7 +74,7 @@ VoiceboxDialog::VoiceboxDialog(const string& user,
 VoiceboxDialog::~VoiceboxDialog()
 {
   // empty playlist items
-  play_list.close(false);
+  play_list.flush();
   prompts->cleanup((long)this);
 }
 
@@ -144,7 +144,7 @@ void VoiceboxDialog::onDtmf(int event, int duration)
       event, duration);
   
   if (EnteringPin == state) {
-    play_list.close(false);
+    play_list.flush();
     // check pin
     if (event<10) {
       entered_pin += int2str(event);
@@ -154,7 +154,7 @@ void VoiceboxDialog::onDtmf(int event, int duration)
     if (event==10 || event==11) { // # and * keys
       if (entered_pin.compare(pin)) { // wrong pin
 	entered_pin.clear();
-	play_list.close(false);       
+	play_list.flush();
 	prompts->addToPlaylist("pin_prompt", (long)this, play_list, true);
       }
     }
@@ -166,11 +166,11 @@ void VoiceboxDialog::onDtmf(int event, int duration)
 
   if (MsgAction == state) {      
     if ((unsigned int)event == VoiceboxFactory::repeat_key) {
-      play_list.close(false);
+      play_list.flush();
       repeatCurMessage();
     } else if ((unsigned int)event == VoiceboxFactory::save_key) {
       state = Prompting;
-      play_list.close(false);
+      play_list.flush();
       enqueueBack("msg_saved");
       saveCurMessage();
       edited_msgs.push_back(*cur_msg);
@@ -181,7 +181,7 @@ void VoiceboxDialog::onDtmf(int event, int duration)
       }
     } else if ((unsigned int)event == VoiceboxFactory::delete_key) { 
       state = Prompting;
-      play_list.close(false);
+      play_list.flush();
       enqueueBack("msg_deleted");
       deleteCurMessage(); 
       advanceMessage();
@@ -448,7 +448,7 @@ bool VoiceboxDialog::enqueueCurMessage() {
 }
 
 void VoiceboxDialog::repeatCurMessage() {
-  play_list.close(false);
+  play_list.flush();
   message.rewind();
   play_list.addToPlaylist(new AmPlaylistItem(&message, NULL));
   enqueueBack("msg_menu");

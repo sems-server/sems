@@ -181,7 +181,7 @@ static PyObject* IvrDialogBase_flush(IvrDialogBase* self, PyObject* args)
 {
   assert(self->p_dlg);
 
-  self->p_dlg->playlist.close();
+  self->p_dlg->playlist.flush();
     
   Py_INCREF(Py_None);
   return Py_None;

@@ -235,7 +235,6 @@ CallBackDialog::CallBackDialog(AmPromptCollection& prompts,
 CallBackDialog::~CallBackDialog()
 {
   prompts.cleanup((long)this);
-  play_list.close(false);
 }
 
 
@@ -280,7 +279,7 @@ void CallBackDialog::onDtmf(int event, int duration)
 	prompts.addToPlaylist(WELCOME_PROMPT,  (long)this, play_list);
       } else {
 	state = CBTellingNumber;
-	play_list.close();
+	play_list.flush();
 	for (size_t i=0;i<call_number.length();i++) {
 	  string num = "";
 	  num[0] = call_number[i]; // this works? 

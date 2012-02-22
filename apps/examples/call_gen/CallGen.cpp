@@ -379,7 +379,7 @@ CallGenDialog::CallGenDialog(AmPromptCollection& prompts,
 CallGenDialog::~CallGenDialog()
 {
   prompts.cleanup((long)this);
-  play_list.close(false);
+  play_list.flush();
   report(CGDestroy);
 }
 
@@ -452,7 +452,7 @@ void CallGenDialog::process(AmEvent* event)
     time(&disconnect_ts);
     report(CGDisconnect);
 
-    play_list.close();
+    play_list.flush();
     setInOut(NULL,NULL);
     setStopped();
     dlg.bye();
@@ -466,7 +466,7 @@ void CallGenDialog::onBye(const AmSipRequest& req) {
   time(&disconnect_ts);
   report(CGDisconnect);
 
-  play_list.close();
+  play_list.flush();
   setInOut(NULL,NULL);
   setStopped();
 }

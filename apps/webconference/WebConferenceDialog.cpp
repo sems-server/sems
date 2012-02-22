@@ -68,7 +68,7 @@ WebConferenceDialog::~WebConferenceDialog()
   }
 
   prompts.cleanup((long)this);
-  play_list.close(false);
+  play_list.flush();
   if (is_dialout || (InConference == state)) {
     factory->updateStatus(is_dialout?dlg.user:conf_id, 
 			  getLocalTag(), 
@@ -97,7 +97,7 @@ void WebConferenceDialog::connectConference(const string& room) {
 					    ConfNewParticipant,getLocalTag());
 
   // clear the playlist
-  play_list.close();
+  play_list.flush();
 
   // add the channel to our playlist
   play_list.addToPlaylist(new AmPlaylistItem(channel.get(), channel.get()));
@@ -273,7 +273,7 @@ void WebConferenceDialog::onBye(const AmSipRequest& req)
 }
 
 void WebConferenceDialog::disconnectConference() {
-  play_list.close();
+  play_list.flush();
   setInOut(NULL,NULL);
   channel.reset(NULL);
   setStopped();
@@ -369,7 +369,7 @@ void WebConferenceDialog::onDtmf(int event, int duration) {
       pin_str += int2str(event);
       DBG("added '%s': PIN is now '%s'.\n", 
 	  int2str(event).c_str(), pin_str.c_str());
-      play_list.close(false);
+      play_list.flush();
     } else if (event==10 || event==11) {
       // pound and star key
       if (!pin_str.length() || !factory->isValidConference(pin_str)) {
@@ -378,7 +378,7 @@ void WebConferenceDialog::onDtmf(int event, int duration) {
       } else {
 	state = EnteringConference;
 	setInOut(NULL, NULL);
-	play_list.close();
+	play_list.flush();
 	for (size_t i=0;i<pin_str.length();i++) {
 	  string num = "";
 	  num[0] = pin_str[i];

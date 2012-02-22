@@ -115,7 +115,7 @@ void MyCCDialog::onDtmf(int event, int duration) {
   case CC_Collecting_PIN: {
     // flush the playlist (stop playing) 
     // if a key is entered
-    playlist.close(); 
+    playlist.flush(); 
     
     if(event <10) {
       pin +=int2str(event);
@@ -141,7 +141,7 @@ void MyCCDialog::onDtmf(int event, int duration) {
   case CC_Collecting_Number: {
     // flush the playlist (stop playing) 
     // if a key is entered
-    playlist.close(); 
+    playlist.flush(); 
     if(event <10) {
       number +=int2str(event);
       DBG("number is now '%s'\n", number.c_str());
