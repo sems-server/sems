@@ -64,7 +64,7 @@ void AmAudioQueue::setOwning(bool _owning) {
 
 int AmAudioQueue::write(unsigned int user_ts, unsigned int size) {
   inputQueue_mut.lock();
-  unsigned int size_trav = size;
+  int size_trav = (int)size;
   for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin(); it != inputQueue.end(); it++) {
     if (it->audio == NULL)
       continue;
@@ -83,7 +83,7 @@ int AmAudioQueue::write(unsigned int user_ts, unsigned int size) {
 
 int AmAudioQueue::read(unsigned int user_ts, unsigned int size) {
   outputQueue_mut.lock();
-  unsigned int size_trav = size;
+  int size_trav = (int)size;
   for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin(); it != outputQueue.end(); it++) {
     if (it->audio == NULL)
       continue;
