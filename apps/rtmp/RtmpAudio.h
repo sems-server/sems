@@ -79,8 +79,10 @@ public:
   ~RtmpAudio();
 
   /* @see AmAudio */
-  int get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples);
-  int put(unsigned int user_ts, unsigned char* buffer, unsigned int size);
+  int get(unsigned int user_ts, unsigned char* buffer, 
+	  int output_sample_rate, unsigned int nb_samples);
+  int put(unsigned int user_ts, unsigned char* buffer, 
+	  int output_sample_rate, unsigned int size);
   int read(unsigned int user_ts, unsigned int size);
   int write(unsigned int user_ts, unsigned int size);
 

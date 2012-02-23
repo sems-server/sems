@@ -31,6 +31,7 @@
 #include "amci/codecs.h"
 
 #define SPEEX_WB_SAMPLES_PER_FRAME 320
+#define SPEEX_WB_SAMPLE_RATE 16000
 
 #include <fcntl.h>
 
@@ -66,7 +67,8 @@ static void dump_audio(unsigned char* buffer, unsigned int size)
 
 
 RtmpAudio::RtmpAudio(RtmpSender* s)
-  : playout_buffer(this), sender(s), play_stream_id(0),
+  : playout_buffer(this,SPEEX_WB_SAMPLE_RATE), 
+    sender(s), play_stream_id(0),
     recv_offset_i(false), recv_rtp_offset(0), recv_rtmp_offset(0),
     send_offset_i(false), send_rtmp_offset(0)
 {
@@ -179,7 +181,8 @@ int RtmpAudio::wb_encode(unsigned int size)
 
 
 // returns bytes read, else -1 if error (0 is OK)
-int RtmpAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_samples)
+int RtmpAudio::get(unsigned int user_ts, unsigned char* buffer, 
+		   int output_sample_rate, unsigned int nb_samples)
 {
   // - buffer RTMP audio
   // - read from RTMP recv buffer
@@ -192,6 +195,8 @@ int RtmpAudio::get(unsigned int user_ts, unsigned char* buffer, unsigned int nb_
 	 (ShortSample*)buffer,
 	 nb_samples);
 
+  
+
   return PCM16_S2B(rlen);
 }
 
@@ -202,7 +207,8 @@ int RtmpAudio::read(unsigned int user_ts, unsigned int size)
 }
 
 // returns bytes written, else -1 if error (0 is OK)
-int RtmpAudio::put(unsigned int user_ts, unsigned char* buffer, unsigned int size)
+int RtmpAudio::put(unsigned int user_ts, unsigned char* buffer, 
+		   int input_sample_rate, unsigned int size)
 {
   //dump_audio((unsigned char*)buffer,size);
   //DBG("size = %i\n",size);
