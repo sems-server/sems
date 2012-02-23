@@ -129,7 +129,8 @@ class DSMAction
   virtual ~DSMAction() { /* DBG("dest action\n"); */ }
 
   /** @return whether state engine is to be modified (via getSEAction) */
-  virtual bool execute(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event, \
+  virtual bool execute(AmSession* sess, DSMSession* sc_sess, 
+		       DSMCondition::EventType event,
 		       map<string,string>* event_params) = 0;
 
   /** @return state engine modification */

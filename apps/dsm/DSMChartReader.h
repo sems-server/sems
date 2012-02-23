@@ -39,7 +39,11 @@ class NamedAction : public DSMAction {
   NamedAction(const string& m_name) {
     name = m_name;
   }
-  void execute(AmSession* sess) { };
+  bool execute(AmSession* sess, DSMSession* sc_sess, 
+	       DSMCondition::EventType event, 
+	       map<string,string>* event_params) {
+    return false;
+  };
 };
 
 class AttribInitial : public DSMElement {
