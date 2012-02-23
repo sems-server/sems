@@ -354,7 +354,8 @@ void ConferenceFactory::setupSessionTimer(AmSession* s) {
   }
 }
 
-AmSession* ConferenceFactory::onRefer(const AmSipRequest& req, const string& app_name)
+AmSession* ConferenceFactory::onRefer(const AmSipRequest& req, const string& app_name,
+				      const map<string,string>& app_params)
 {
   if(req.to_tag.empty())
     throw AmSession::Exception(488,"Not accepted here");

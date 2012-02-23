@@ -95,7 +95,8 @@ public:
   ConferenceFactory(const string& _app_name);
   virtual AmSession* onInvite(const AmSipRequest&, const string& app_name,
 			      const map<string,string>& app_params);
-  virtual AmSession* onRefer(const AmSipRequest& req, const string& app_name);
+  virtual AmSession* onRefer(const AmSipRequest& req, const string& app_name,
+			     const map<string,string>& app_params);
   virtual int onLoad();
 };
 
