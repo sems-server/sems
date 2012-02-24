@@ -113,7 +113,7 @@ Playing prompts and file I/O
    if $prompts.default_fallback=yes, default prompt set is tried if
    prompt not found in current prompt set
    Throws "prompt" exeption with #name if prompt not found.
-
+ playPromptFront(param) - play a prompt at first item in the playlist
  playPromptLooped(param)
 
  setPromptSet(name)
@@ -128,6 +128,9 @@ Playing prompts and file I/O
    e.g. playFileFront($myfile, true); will play the file at first
    position in the playlist, and looped.
    Throws "file" exeption with #path if file can not be opened
+
+ playSilence(millisec)      - play silence for millisec ms
+ playSilenceFront(millisec) - play silence for millisec ms at first position in playlist
 
  recordFile(filename)
    Throws "file" exeption with #path if file can not be opened for recording
@@ -338,7 +341,9 @@ brackets match.
 
  rtpTimeout(expr)
    RTP timeout detected
-   parameters: none
+
+   #type           - "rtp_timeout"
+   #timeout_value  - RTP timeout value (as configured)
 
    set #processed="true" if you don't want default behaviour (clear call)
 
@@ -432,6 +437,11 @@ brackets match.
    #udata    - user data that was saved when sending the request
 
    #result.* or #error.* - response data array (or error data)
+
+conference events:
+  generic events with 
+   #type     - "conference_event"
+   #id       - event ID
 
 Selects
 =======

@@ -55,8 +55,9 @@ class SystemDSM
   void process(AmEvent* event);
 
 // DSMSession interface
-   void playPrompt(const string& name, bool loop = false);
+   void playPrompt(const string& name, bool loop = false, bool front = false);
    void playFile(const string& name, bool loop, bool front = false);
+   void playSilence(unsigned int length, bool front = false);
    void recordFile(const string& name);
    unsigned int getRecordLength();
    unsigned int getRecordDataSize();
@@ -65,7 +66,7 @@ class SystemDSM
    void setInputPlaylist();
    void setOutputPlaylist();
 
-   void addToPlaylist(AmPlaylistItem* item);
+   void addToPlaylist(AmPlaylistItem* item, bool front = false);
    void flushPlaylist();
    void setPromptSet(const string& name);
    void addSeparator(const string& name, bool front = false);

@@ -224,6 +224,18 @@ void DSMStateEngine::onBeforeDestroy(DSMSession* sc_sess, AmSession* sess) {
     (*it)->onBeforeDestroy(sc_sess, sess);
 }
 
+void DSMStateEngine::processSdpOffer(AmSdp& offer) {
+  for (vector<DSMModule*>::iterator it =
+	 mods.begin(); it != mods.end(); it++)
+    (*it)->processSdpOffer(offer);
+}
+
+void DSMStateEngine::processSdpAnswer(const AmSdp& offer, AmSdp& answer) {
+  for (vector<DSMModule*>::iterator it =
+	 mods.begin(); it != mods.end(); it++)
+    (*it)->processSdpAnswer(offer, answer);
+}
+
 bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from, 
 				vector<DSMElement*>::iterator to, 
 				AmSession* sess,  DSMSession* sc_sess, DSMCondition::EventType event,

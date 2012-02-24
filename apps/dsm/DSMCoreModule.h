@@ -48,6 +48,7 @@ class DSMCoreModule
 };
 
 DEF_ACTION_1P(SCPlayPromptAction);
+DEF_ACTION_1P(SCPlayPromptFrontAction);
 DEF_ACTION_1P(SCPlayPromptLoopedAction);
 DEF_ACTION_1P(SCRecordFileAction);
 DEF_ACTION_1P(SCStopRecordAction);
@@ -98,6 +99,8 @@ DEF_ACTION_2P(SCGetParamAction);
 DEF_ACTION_2P(SCSetVarAction);
 DEF_ACTION_2P(SCPlayFileAction);
 DEF_ACTION_2P(SCPlayFileFrontAction);
+DEF_ACTION_1P(SCPlaySilenceAction);
+DEF_ACTION_1P(SCPlaySilenceFrontAction);
 DEF_ACTION_2P(SCPostEventAction);
 
 DEF_ACTION_2P(SCB2BConnectCalleeAction);

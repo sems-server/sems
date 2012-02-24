@@ -164,8 +164,9 @@ void SystemDSM::_func {						\
     throw DSMException("core", "cause", "not implemented");		\
   }
 
-NOT_IMPLEMENTED(playPrompt(const string& name, bool loop));
+NOT_IMPLEMENTED(playPrompt(const string& name, bool loop, bool front));
 NOT_IMPLEMENTED(playFile(const string& name, bool loop, bool front));
+NOT_IMPLEMENTED(playSilence(unsigned int length, bool front));
 NOT_IMPLEMENTED(recordFile(const string& name));
 NOT_IMPLEMENTED_UINT(getRecordLength());
 NOT_IMPLEMENTED_UINT(getRecordDataSize());
@@ -174,7 +175,7 @@ NOT_IMPLEMENTED(setInOutPlaylist());
 NOT_IMPLEMENTED(setInputPlaylist());
 NOT_IMPLEMENTED(setOutputPlaylist());
 
-NOT_IMPLEMENTED(addToPlaylist(AmPlaylistItem* item));
+NOT_IMPLEMENTED(addToPlaylist(AmPlaylistItem* item, bool front));
 NOT_IMPLEMENTED(flushPlaylist());
 NOT_IMPLEMENTED(setPromptSet(const string& name));
 NOT_IMPLEMENTED(addSeparator(const string& name, bool front));

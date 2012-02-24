@@ -30,6 +30,7 @@
 #include "DSMElemContainer.h"
 #include "AmSipMsg.h"
 #include "AmArg.h"
+#include "AmSdp.h"
 
 class AmSession;
 class DSMSession;
@@ -95,7 +96,9 @@ class DSMCondition
 
     Startup,
     Reload,
-    System
+    System,
+
+    RTPTimeout
   };
 
   bool invert; 
@@ -290,6 +293,9 @@ class DSMStateEngine {
   /** @return whether call should be accepted */
   bool onInvite(const AmSipRequest& req, DSMSession* sess);
   void onBeforeDestroy(DSMSession* sc_sess, AmSession* sess);
+
+  void processSdpOffer(AmSdp& offer);
+  void processSdpAnswer(const AmSdp& offer, AmSdp& answer);
 };
 
 extern void varPrintArg(const AmArg& a, map<string, string>& dst, const string& name);

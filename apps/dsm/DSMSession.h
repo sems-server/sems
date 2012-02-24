@@ -100,8 +100,9 @@ class DSMSession {
   DSMSession();
   virtual ~DSMSession();
 
-  virtual void playPrompt(const string& name, bool loop = false) = 0;
+  virtual void playPrompt(const string& name, bool loop = false, bool front = false) = 0;
   virtual void playFile(const string& name, bool loop, bool front = false) = 0;
+  virtual void playSilence(unsigned int length, bool front = false) = 0;
   virtual void recordFile(const string& name) = 0;
   virtual unsigned int getRecordLength() = 0;
   virtual unsigned int getRecordDataSize() = 0;
@@ -110,7 +111,7 @@ class DSMSession {
   virtual void setInputPlaylist() = 0;
   virtual void setOutputPlaylist() = 0;
 
-  virtual void addToPlaylist(AmPlaylistItem* item) = 0;
+  virtual void addToPlaylist(AmPlaylistItem* item, bool front = false) = 0;
   virtual void flushPlaylist() = 0;
   virtual void setPromptSet(const string& name) = 0;
   virtual void addSeparator(const string& name, bool front = false) = 0;

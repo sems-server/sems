@@ -52,6 +52,8 @@ class DSMModule {
   virtual int preload() { return 0; }
   virtual bool onInvite(const AmSipRequest& req, DSMSession* sess) { return true; }
   virtual void onBeforeDestroy(DSMSession* sc_sess, AmSession* sess) { }
+  virtual void processSdpOffer(AmSdp& offer) { }
+  virtual void processSdpAnswer(const AmSdp& offer, AmSdp& answer) { }
 };
 
 typedef map<string,string> EventParamT;

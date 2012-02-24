@@ -55,9 +55,12 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("stop", SCStopAction);
 
   DEF_CMD("playPrompt", SCPlayPromptAction);
+  DEF_CMD("playPromptFront", SCPlayPromptFrontAction);
   DEF_CMD("playPromptLooped", SCPlayPromptLoopedAction);
   DEF_CMD("playFile", SCPlayFileAction);
   DEF_CMD("playFileFront", SCPlayFileFrontAction);
+  DEF_CMD("playSilence", SCPlaySilenceAction);
+  DEF_CMD("playSilenceFront", SCPlaySilenceFrontAction);
   DEF_CMD("recordFile", SCRecordFileAction);
   DEF_CMD("stopRecord", SCStopRecordAction);
   DEF_CMD("getRecordLength", SCGetRecordLengthAction);
@@ -214,11 +217,18 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "system")
     return new TestDSMCondition(params, DSMCondition::System);
 
+  if (cmd == "rtpTimeout")
+    return new TestDSMCondition(params, DSMCondition::RTPTimeout);
+
   return NULL;
 }
 
 EXEC_ACTION_START(SCPlayPromptAction) {
   sc_sess->playPrompt(resolveVars(arg, sess, sc_sess, event_params));
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCPlayPromptFrontAction) {
+  sc_sess->playPrompt(resolveVars(arg, sess, sc_sess, event_params), false, true);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCSetPromptsAction) {
@@ -294,6 +304,24 @@ EXEC_ACTION_START(SCPlayFileFrontAction) {
   DBG("par1 = '%s', par2 = %s\n", par1.c_str(), par2.c_str());
   sc_sess->playFile(resolveVars(par1, sess, sc_sess, event_params), 
 		    loop, true);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCPlaySilenceAction) {
+  int length;
+  string length_str = resolveVars(arg, sess, sc_sess, event_params);
+  if (!str2int(length_str, length)) {
+    throw DSMException("core", "cause", "cannot parse number");
+  }
+  sc_sess->playSilence(length);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCPlaySilenceFrontAction) {
+  int length;
+  string length_str = resolveVars(arg, sess, sc_sess, event_params);
+  if (!str2int(length_str, length)) {
+    throw DSMException("core", "cause", "cannot parse number");
+  }
+  sc_sess->playSilence(length, true);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCRecordFileAction) {
