@@ -127,14 +127,17 @@ bool sys_get_parent_dir(const char* path, char* parentPath) {
 
 bool sys_mkdir_recursive(const char* p) {
   if (!file_exists(p)) {
-    char parent_dir[strlen(p)+1];
+    char* parent_dir = new char[strlen(p)+1];
     bool has_parent = sys_get_parent_dir(p, parent_dir);
     if (has_parent) {
       bool parent_exists = sys_mkdir_recursive(parent_dir);
       if (parent_exists) {
-	return sys_mkdir(p);
+	bool ret = sys_mkdir(p);
+	delete [] parent_dir;
+	return ret;
       }
     }
+    delete [] parent_dir;
     return false;
   }
   return true;
