@@ -219,34 +219,30 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
   return processed;
 }
 
-bool UACAuth::onSendRequest(const string& method, 
-			    const AmMimeBody* body,
-			    string& hdrs,
-			    int flags,
-			    unsigned int cseq)
+bool UACAuth::onSendRequest(AmSipRequest& req, int flags)
 {
   // add authentication header if nonce is already there
   string result;
   if (!(flags & SIP_FLAGS_NOAUTH) &&
       !challenge.nonce.empty() &&
       do_auth(challenge, challenge_code,
-	      method, dlg->remote_uri, body, result)) {
+	      req.method, dlg->remote_uri, &req.body, result)) {
     // add headers
-    if (hdrs == "\r\n" || hdrs == "\r" || hdrs == "\n")
-      hdrs = result;
+    if (req.hdrs == "\r\n" || req.hdrs == "\r" || req.hdrs == "\n")
+      req.hdrs = result;
     else
-      hdrs += result;
+      req.hdrs += result;
 
     nonce_reuse = true;
   } else {
     nonce_reuse = false;
   }
 
-  DBG("adding %d to list of sent requests.\n", cseq);
-  sent_requests[cseq] = SIPRequestInfo(method, 
-				       body,
-				       hdrs,
-				       dlg->getOAState());
+  DBG("adding %d to list of sent requests.\n", req.cseq);
+  sent_requests[req.cseq] = SIPRequestInfo(req.method, 
+					   &req.body,
+					   req.hdrs,
+					   dlg->getOAState());
   return false;
 }
 
