@@ -186,12 +186,22 @@ string replaceParameters(const string& s,
 	    break;
 	  }
 
-	  if (s[p+1] == 'i') { // $si source IP address
+	  if (s[p+1] == 'i') { // $Ri received IP address
 	    res += req.local_ip.c_str();
 	    break;
-	  } else if (s[p+1] == 'p') { // $sp source port
+	  } else if (s[p+1] == 'p') { // $Rp received port
 	    res += int2str(req.local_port);
 	    break;
+	  } else if (s[p+1] == 'f') { // $Rf received interface id
+	    res += int2str(req.local_if);
+	  } else if (s[p+1] == 'n') { // $Rn received interface name
+	    if ((req.local_if >= 0) && req.local_if < AmConfig::Ifs.size()) {
+	      res += AmConfig::Ifs[req.local_if].name;
+	    }
+	  } else if (s[p+1] == 'I') { // $RI received interface public IP
+	    if ((req.local_if >= 0) && req.local_if < AmConfig::Ifs.size()) {
+	      res += AmConfig::Ifs[req.local_if].PublicIP;
+	    }
 	  }
 	  WARN("unknown replacement $R%c\n", s[p+1]);
 	}; break;

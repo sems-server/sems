@@ -156,6 +156,9 @@ The patterns which can be used are the following:
 
   $Ri  - destination (local/received) IP address
   $Rp  - destination (local/received) port
+  $Rf  - local/received interface id (0=default)
+  $Rn  - local/received interface name ('default', 'intern', ... as set in sems.conf)
+  $RI  - local/received interface public IP (as set in sems.conf)
 
   $P(paramname) - paramname from P-App-Param
     Example:
