@@ -227,6 +227,13 @@ bool AmConfigReader::hasParameter(const string& param)
   return (keys.find(param) != keys.end());
 }
 
+string __empty_string("");
+
+const string& AmConfigReader::getParameter(const string& param)
+{
+  return getParameter(param,__empty_string);
+}
+
 const string& AmConfigReader::getParameter(const string& param, const string& defval)
 {
   std::map<std::string,std::string>::iterator it = keys.find(param);

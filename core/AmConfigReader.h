@@ -57,7 +57,9 @@ class AmConfigReader
   void setParameter(const string& param, const string& val);
   void eraseParameter(const string& param);
   bool hasParameter(const string& param);
-  const string& getParameter(const string& param, const string& defval = "");
+
+  const string& getParameter(const string& param);
+  const string& getParameter(const string& param, const string& defval);
   unsigned int getParameterInt(const string& param, unsigned int defval = 0);
 
   std::map<string,string>::const_iterator begin() const
