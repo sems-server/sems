@@ -18,12 +18,20 @@ dlg.reply(code,reason);
 dlg.replyRequest(code,reason);
  request processing in script; use with set($enable_request_events="true");
  reply to any request (in avar[DSM_AVAR_REQUEST]) with code and reason
+
+ headers can be added by setting $dlg.reply.hdrs, e.g.
+    set($dlg.reply.hdrs="P-Prompt-Type: Charging-info\\r\\nP-Prompt-Content: 5\\r\\n");
+    dlg.acceptInvite(183, "progress");
+
  * sets $errno (arg,general)
  * throws exception if request not found (i.e. called from other event than
    sipRequest)
 
 dlg.acceptInvite([code, reason]);
  e.g. dlg.acceptInvite(183, progress);
+  headers can be added by setting $dlg.reply.hdrs, e.g.
+    set($dlg.reply.hdrs="P-Prompt-Type: Charging-info\r\nP-Prompt-Content: 5\r\n");
+    dlg.acceptInvite(183, "progress");
  * sets $errno (arg,general)
  
  accept audio stream from last_req (INVITE), and reply with 200 OK (default)

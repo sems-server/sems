@@ -72,6 +72,23 @@ bool DLGModule::onInvite(const AmSipRequest& req, DSMSession* sess) {
  return true;
 }
 
+string replaceLineEnds(string input)
+{
+  string result;
+  size_t last = 0;
+  size_t pos;
+  while ((pos = input.find("\\r\\n", last)) != string::npos) {
+    result += input.substr(last, pos-last);
+    result += "\r\n";
+    last = pos + 4;
+  }
+  if (!input.substr(last).empty()) {
+    result += input.substr(last);
+    result += "\r\n";
+  }
+  return result;
+}
+
 // todo: convert errors to exceptions
 void replyRequest(DSMSession* sc_sess, AmSession* sess, 
 		  EventParamT* event_params,
@@ -79,6 +96,7 @@ void replyRequest(DSMSession* sc_sess, AmSession* sess,
 		  const AmSipRequest& req) {
   string code = resolveVars(par1, sess, sc_sess, event_params);
   string reason = resolveVars(par2, sess, sc_sess, event_params);
+  string hdrs = replaceLineEnds(resolveVars("$dlg.reply.hdrs", sess, sc_sess, event_params));
   unsigned int code_i;
   if (str2i(code, code_i)) {
     ERROR("decoding reply code '%s'\n", code.c_str());
@@ -86,7 +104,9 @@ void replyRequest(DSMSession* sc_sess, AmSession* sess,
     return;
   }
 
-  if (sess->dlg.reply(req, code_i, reason)) {
+  DBG("replying with %i %s, hdrs='%s'\n", code_i, reason.c_str(), hdrs.c_str());
+
+  if (sess->dlg.reply(req, code_i, reason, NULL, hdrs)) {
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
     sc_sess->SET_STRERROR("error sending reply");
   } else
@@ -127,7 +147,7 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
   unsigned int code_i=200;
   string reason = "OK";
   string code = resolveVars(par1, sess, sc_sess, event_params);
-  DBG("replying with code %s\n", code.c_str());
+  string hdrs = replaceLineEnds(resolveVars("$dlg.reply.hdrs", sess, sc_sess, event_params));
 
   if (code.length()) {
     reason = resolveVars(par2, sess, sc_sess, event_params);
@@ -140,6 +160,8 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
     }
   }
 
+  DBG("replying with %i %s, hdrs='%s'\n", code_i, reason.c_str(), hdrs.c_str());
+
   if (!sc_sess->last_req.get()) {
     ERROR("no last request to reply\n");
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
@@ -150,9 +172,9 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
   try {
     AmMimeBody sdp_body;
     if(sess->dlg.reply(*sc_sess->last_req.get(),code_i, reason,
-		       sdp_body.addPart(SIP_APPLICATION_SDP)) != 0)
+		       sdp_body.addPart(SIP_APPLICATION_SDP), hdrs) != 0)
       throw AmSession::Exception(500,"could not send response");
-	
+
   }catch(const AmSession::Exception& e){
 
     ERROR("%i %s\n",e.code,e.reason.c_str());
