@@ -91,12 +91,16 @@ string resolveVars(const string ts, AmSession* sess,
 
     switch(s[0]) {
     case '$': {
+      if (s.substr(1, 1)=="$")
+	return "$";
       map<string, string>::iterator it = sc_sess->var.find(s.substr(1));
       if (it != sc_sess->var.end())
 	return it->second;
       return "";
     }
     case '#': 
+      if (s.substr(1, 1)=="#")
+	return "#";
       if (event_params) {
 	map<string, string>::iterator it = event_params->find(s.substr(1));
 	if (it != event_params->end())
@@ -105,6 +109,8 @@ string resolveVars(const string ts, AmSession* sess,
       }else 
 	return string();
     case '@': {
+      if (s.substr(1, 1)=="@")
+	return "@";
       if (s.length() < 2)
 	return "@";
 

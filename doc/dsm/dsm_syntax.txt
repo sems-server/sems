@@ -49,6 +49,10 @@ Variables, event parameters, selects
 $varname uses the variable varname (from session's variable)
 @selectname uses the "select" 'selectname' (from the session's dialog)
 
+ use ## for #  (e.g. set($hash=##); )
+     $$ for $  (e.g. set($dol=$$); )
+     @@ for @  (e.g. set($at=@@); )
+
 Variable arrays:
  $myarray[0]
  $myarray[1]
