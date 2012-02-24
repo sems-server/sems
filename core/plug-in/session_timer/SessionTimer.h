@@ -157,12 +157,7 @@ class SessionTimer: public AmSessionEventHandler
   virtual bool onSipRequest(const AmSipRequest&);
   virtual bool onSipReply(const AmSipReply&, AmSipDialog::Status old_dlg_status);
 
-  virtual bool onSendRequest(const string& method, 
-			     const AmMimeBody* body,
-			     string& hdrs,
-			     int flags,
-			     unsigned int cseq);
-
+  virtual bool onSendRequest(AmSipRequest& req, int flags);
   virtual bool onSendReply(AmSipReply& reply, int flags);
 };
 

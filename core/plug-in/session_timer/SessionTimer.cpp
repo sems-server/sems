@@ -135,33 +135,29 @@ bool SessionTimer::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_d
   return false;
 }
 
-bool SessionTimer::onSendRequest(const string& method, 
-				 const AmMimeBody* body,
-				 string& hdrs,
-				 int flags,
-				 unsigned int cseq)
+bool SessionTimer::onSendRequest(AmSipRequest& req, int flags)
 {
-  if (method == "BYE") {
+  if (req.method == "BYE") {
     removeTimers(s);
     return false;
   }
 
   if (session_timer_conf.getEnableSessionTimer() &&
-      ((method == SIP_METH_INVITE) || (method == SIP_METH_UPDATE))) {
+      ((req.method == SIP_METH_INVITE) || (req.method == SIP_METH_UPDATE))) {
     // save INVITE and UPDATE so we can resend on 422 reply
-    DBG("adding %d to list of sent requests.\n", cseq);
-    sent_requests[cseq] = SIPRequestInfo(method,
-					 body,
-					 hdrs);
+    DBG("adding %d to list of sent requests.\n", req.cseq);
+    sent_requests[req.cseq] = SIPRequestInfo(req.method,
+					     &req.body,
+					     req.hdrs);
   }
 
-  addOptionTag(hdrs, SIP_HDR_SUPPORTED, TIMER_OPTION_TAG);
-  if  ((method != SIP_METH_INVITE) && (method != SIP_METH_UPDATE))
+  addOptionTag(req.hdrs, SIP_HDR_SUPPORTED, TIMER_OPTION_TAG);
+  if  ((req.method != SIP_METH_INVITE) && (req.method != SIP_METH_UPDATE))
     return false; // session-expires / min-se only in INV/UPD
 
-  removeHeader(hdrs, SIP_HDR_SESSION_EXPIRES);
-  removeHeader(hdrs, SIP_HDR_MIN_SE);
-  hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) + int2str(session_interval) + CRLF
+  removeHeader(req.hdrs, SIP_HDR_SESSION_EXPIRES);
+  removeHeader(req.hdrs, SIP_HDR_MIN_SE);
+  req.hdrs += SIP_HDR_COLSP(SIP_HDR_SESSION_EXPIRES) + int2str(session_interval) + CRLF
     + SIP_HDR_COLSP(SIP_HDR_MIN_SE) + int2str(min_se) + CRLF;
 
   return false;
