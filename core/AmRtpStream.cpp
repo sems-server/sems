@@ -529,7 +529,7 @@ int AmRtpStream::init(const AmSdp& local,
   vector<SdpPayload>::const_iterator sdp_it = local_media.payloads.begin();
   vector<Payload>::iterator p_it = payloads.begin();
 
-  // first pass on local SDP
+  // first pass on local SDP - fill pl_map with intersection of codecs
   while(p_it != payloads.end()) {
 
     amci_payload_t* a_pl = payload_provider->payload(sdp_it->payload_type);
@@ -552,7 +552,7 @@ int AmRtpStream::init(const AmSdp& local,
     ++i;
   }
 
-  // second pass on remote SDP
+  // second pass on remote SDP - initialize payload IDs used by remote (remote_pt)
   sdp_it = remote_media.payloads.begin();
   while(sdp_it != remote_media.payloads.end()) {
 
@@ -572,7 +572,8 @@ int AmRtpStream::init(const AmSdp& local,
       }
     }
 
-    if(pmt_it != pl_map.end()){
+    // initialize remote_pt if not already there
+    if(pmt_it != pl_map.end() && (pmt_it->second.remote_pt < 0)){
       pmt_it->second.remote_pt = sdp_it->payload_type;
     }
     ++sdp_it;
