@@ -90,6 +90,16 @@ Actions:
 
   filename is there to detect file type
 
+-- play a file from DB, looped 
+  mysql.playDBAudioLooped(string query, string filename)
+
+  filename is there to detect file type
+
+-- play a file from DB, at the front in the playlist 
+  mysql.playDBAudioFront(string query, string filename)
+
+  filename is there to detect file type
+
 -- get a file from DB to local fs
   mysql.getFileFromDB(string query, string filename)
 

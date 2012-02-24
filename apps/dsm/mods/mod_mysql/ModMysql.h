@@ -88,6 +88,8 @@ DEF_SCCondition(MyConnectedCondition);
 DEF_ACTION_1P(SCMySaveResultAction);
 DEF_ACTION_1P(SCMyUseResultAction);
 DEF_ACTION_2P(SCMyPlayDBAudioAction);
+DEF_ACTION_2P(SCMyPlayDBAudioFrontAction);
+DEF_ACTION_2P(SCMyPlayDBAudioLoopedAction);
 DEF_ACTION_2P(SCMyGetFileFromDBAction);
 DEF_ACTION_2P(SCMyPutFileToDBAction);
 DEF_ACTION_2P(SCMyEscapeAction);
