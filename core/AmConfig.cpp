@@ -619,6 +619,7 @@ static int readInterface(AmConfigReader& cfg, const string& i_name)
     AmConfig::Ifs.push_back(intf);
   }
   else {
+    intf.name = "default";
     AmConfig::Ifs[0] = intf;
   }
 
