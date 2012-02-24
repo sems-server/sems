@@ -148,15 +148,21 @@ Playing prompts and file I/O
    set playlist as input and output
  addSeparator(id [, bool front])
    fires event when playlist hits it ; front=[true|false]
- connectMedia() 
-   set playlist as input and output of session, and connect to mediaprocessor 
- disconnectMedia() 
-   disconnect from mediaprocessor
+ connectMedia()     - set playlist as input and output of session,
+                      and start processing of RTP and audio 
+                     (connect to mediaprocessor)
+ disconnectMedia()  - stop processing of RTP and audio (disconnect from mediaprocessor)
 
- mute() 
-   set RTP stream to muted (don't send and receive RTP packets)
- unmute() 
-   set RTP stream to unmuted (send and receive RTP packets)
+ enableReceiving()  - enable processing of received RTP
+ disableReceiving() - disable processing of received RTP
+
+ enableForceDTMFReceiving()  - enable/disable RTP DTMF packets processing even 
+ disableForceDTMFReceiving()   if received RTP is not processed, e.g. after
+                               disableReceiving() or in passive mode
+                               (only for RFC2833/4733 DTMF, *no* in-band)
+
+ mute()             - set RTP stream to muted (don't send RTP packets)
+ unmute()           - set RTP stream to unmuted (do send RTP packets)
 
 DTMF
 ----

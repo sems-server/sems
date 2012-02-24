@@ -250,6 +250,9 @@ public:
   /** should we receive packets? if not -> drop */
   bool receiving;
 
+  /** should we receive RFC-2833-style DTMF even when receiving is disabled? */
+  bool force_receive_dtmf;
+
   /** Allocates resources for future use of RTP. */
   AmRtpStream(AmSession* _s, int _if);
 

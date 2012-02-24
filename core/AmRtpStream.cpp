@@ -658,6 +658,15 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   memcpy(&last_recv_time, &p->recv_time, sizeof(struct timeval));
 
   if (!receiving && !passive) {
+    if (force_receive_dtmf && local_telephone_event_pt.get() &&
+        p->payload == local_telephone_event_pt->payload_type)
+    {
+      dtmf_payload_t* dpl = (dtmf_payload_t*)p->getData();
+
+      DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
+          dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration),p->timestamp);
+      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), p->timestamp));
+    }
     mem.freePacket(p);
     return;
   }

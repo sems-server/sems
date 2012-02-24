@@ -70,6 +70,10 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("addSeparator", SCAddSeparatorAction);
   DEF_CMD("connectMedia", SCConnectMediaAction);
   DEF_CMD("disconnectMedia", SCDisconnectMediaAction);
+  DEF_CMD("enableReceiving", SCEnableReceivingAction);
+  DEF_CMD("disableReceiving", SCDisableReceivingAction);
+  DEF_CMD("enableForceDTMFReceiving", SCEnableForceDTMFReceiving);
+  DEF_CMD("disableForceDTMFReceiving", SCDisableForceDTMFReceiving);
   DEF_CMD("mute", SCMuteAction);
   DEF_CMD("unmute", SCUnmuteAction);
   DEF_CMD("enableDTMFDetection", SCEnableDTMFDetection);
@@ -361,6 +365,26 @@ EXEC_ACTION_START(SCConnectMediaAction) {
 
 EXEC_ACTION_START(SCDisconnectMediaAction) {
   sc_sess->disconnectMedia();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCEnableReceivingAction) {
+  DBG("enabling RTP receving in session\nb");
+  sess->setReceiving(true);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCDisableReceivingAction) {
+  DBG("disabling RTP receving in session\nb");
+  sess->setReceiving(false);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCEnableForceDTMFReceiving) {
+  DBG("enabling forced DTMF RTP receving in session\nb");
+  sess->setForceDtmfReceiving(true);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCDisableForceDTMFReceiving) {
+  DBG("disabling forced DTMF RTP receving in session\nb");
+  sess->setForceDtmfReceiving(false);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCMuteAction) {
