@@ -161,7 +161,9 @@ void CCCtl::start(const string& cc_name, const string& ltag,
   SET_TO_CALL_PROFILE("sst_aleg_enabled", sst_aleg_enabled);
 
   ADD_TO_CALL_PROFILE("append_headers", append_headers);
-  assertEndCRLF(call_profile->append_headers);
+
+  if (call_profile->append_headers.size() > 2)
+      assertEndCRLF(call_profile->append_headers);
 
   ENABLE_IN_CALL_PROFILE("rtprelay_enabled", rtprelay_enabled);
   SET_TO_CALL_PROFILE("rtprelay_interface", rtprelay_interface);
