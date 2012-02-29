@@ -222,16 +222,14 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 
 	    if( (t_req->second.method == SIP_METH_INVITE) &&
 		(reply_ev->reply.code >= 300)){
-	      
-	      terminateLeg();
+	      DBG("relayed INVITE failed with %u %s\n",
+		  reply_ev->reply.code, reply_ev->reply.reason.c_str());
 	    }
-	    DBG("recvd_req.erase(<%u,%s>)\n",
-		t_req->first, t_req->second.method.c_str());
+	    DBG("recvd_req.erase(<%u,%s>)\n", t_req->first, t_req->second.method.c_str());
 	    recvd_req.erase(t_req);
 	  } 
 	} else {
-	  ERROR("Request with CSeq %u not found in recvd_req.\n",
-		reply_ev->reply.cseq);
+	  ERROR("Request with CSeq %u not found in recvd_req.\n", reply_ev->reply.cseq);
 	}
       } else {
 	// check whether not-forwarded (locally initiated)
@@ -1058,7 +1056,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
       return;
     }
 
-    DBG("%u reply received from other leg\n", reply.code);
+    DBG("%u %s reply received from other leg\n", reply.code, reply.reason.c_str());
       
     switch(callee_status){
     case NoReply:
