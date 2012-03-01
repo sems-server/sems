@@ -3,16 +3,15 @@ lib_name = lib_dbase.a
 .PHONY: all
 all: $(lib_name) 
 
-MCOREPATH ?=../../../core
-include $(MCOREPATH)/../Makefile.defs
-
+COREPATH = ../../../core
+include $(COREPATH)/../Makefile.defs
 
 srcs     = $(wildcard *.c)
 hrds     = $(wildcard *.h)
 objs     = $(srcs:.c=.o) 
 depends  = $(srcs:.c=.d)
 
-cflags  ?= $(CPPFLAGS) $(C_FLAGS) -I $(MCOREPATH) -Wall $(module_cflags) 
+cflags  ?= $(CPPFLAGS) $(CFLAGS) -I $(COREPATH)
 
 WITH_OPENSSL = 1
 
@@ -28,21 +27,12 @@ RANLIB		= ranlib
 clean:
 	-@rm -f $(objs) $(depends) $(lib_name)
 
-.PHONY: deps
-deps: $(depends)
+-include $(depends)
 
-%.d: %.c %.h Makefile 
-	$(CC) -MM $< $(cflags) > $@
+%.o: %.c Makefile
+	$(CC) -MMD $(cflags) -c $< -o $@ -fPIC
 
-%.o: %.c %.d
-	$(CC) $(cflags) -c $< -o $@ -fPIC
-
-$(lib_name): deps $(objs)  Makefile
+$(lib_name): $(objs)  Makefile
 		if [ -f $(lib_name) ]; then rm $(RMFLAGS) $(lib_name) ; fi
 		$(AR) $(ARFLAGS) $(lib_name) $(objs)
 		$(RANLIB) $(lib_name)
-
-ifeq ($(lib_name),$(MAKECMDGOALS))
-include $(depends)
-endif
-

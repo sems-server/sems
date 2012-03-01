@@ -3,10 +3,10 @@ else
 makefile_defs="1"
 export makefile_defs
 
-GIT = $(shell which git)
+GIT := $(shell which git)
 
 ifneq ($(GIT),)
-   SCM_REV = $(shell if git --help describe |grep dirty 2>&1 >/dev/null ; \
+   SCM_REV := $(shell if git --help describe |grep dirty 2>&1 >/dev/null ; \
         then git describe --always --dirty 2>/dev/null; \
         else git describe --always 2>/dev/null; fi)
 endif
@@ -17,10 +17,10 @@ PATCHLEVEL = 5
 SUBLEVEL = 0
 
 ifneq ($(SCM_REV),)
-RELEASE = $(SCM_REV)
+RELEASE := $(SCM_REV)
 else
-REL_VERSION=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
-RELEASE=$(REL_VERSION)$(EXTRAVERSION)
+REL_VERSION := $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
+RELEASE := $(REL_VERSION)$(EXTRAVERSION)
 endif
 
 CPPFLAGS += -D_DEBUG \
@@ -101,23 +101,10 @@ ifdef USE_THREADPOOL
 CPPFLAGS += -DSESSION_THREADPOOL
 endif
 
-ifdef USE_SPANDSP
-ifneq ($(spandsp_defs), 1)
-spandsp_defs=1
-export spandsp_defs
-CPPFLAGS += -DUSE_SPANDSP -D__STDC_LIMIT_MACROS
-endif
-else
+ifndef USE_SPANDSP
 exclude_core_modules += g722
 endif
 
-ifdef USE_LIBSAMPLERATE
-ifneq ($(libsrc_defs), 1)
-libsrc_defs=1
-export libsrc_defs
-CPPFLAGS += -DUSE_LIBSAMPLERATE
-endif
-endif
 
 ifdef USE_MONITORING
 CPPFLAGS += -DUSE_MONITORING
@@ -228,17 +215,6 @@ ifeq ($(ARCH),iphone)
 LDFLAGS += -lgcc_eh
 endif
 
-ifdef USE_SPANDSP
-ifdef LIBSPANDSP_STATIC
-LDFLAGS += $(LIBSPANDSP_LDIR)libspandsp.a
-else
-LDFLAGS += -lspandsp
-endif
-endif
-
-ifdef USE_LIBSAMPLERATE
-LDFLAGS +=-lsamplerate
-endif
 
 ifdef WITH_ZRTP
 LDFLAGS +=-lzrtp -lbn

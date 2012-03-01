@@ -24,16 +24,11 @@ depends  = $(srcs:.c=.d)
 
 .DEFAULT_GOAL := all
 .PHONY: all
-all:
-	-@$(MAKE) deps    && \
-	  $(MAKE) $(lib_full_name)
+all: $(lib_full_name)
 
 .PHONY: clean
 clean: $(extra_clean)
 	@rm -f $(objs) $(depends) $(lib_name)
-
-.PHONY: deps
-deps: $(depends)
 
 .PHONY: install
 install: $(lib_name) $(extra_install)
@@ -44,11 +39,10 @@ install: $(lib_name) $(extra_install)
 .PHONY: install-cfg
 install-cfg : $(extra_install_cfg)
 
-%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.audio_module $(DEFSPATH)/Makefile.defs
-	$(CC) -MM $< $(CPPFLAGS) $(CFLAGS) > $@
+-include $(depends)
 
-%.o: %.c %.d $(DEFSPATH)/Makefile.defs
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+%.o: %.c $(DEFSPATH)/Makefile.defs
+	$(CC) -MMD $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(lib_full_name): $(lib_name)
 ifneq ($(lib_full_name),$(lib_name))
@@ -59,8 +53,3 @@ endif
 
 $(lib_name): $(objs)  Makefile
 	$(LD) -o $(lib_name) $(objs) $(LIB_LDFLAGS)
-
-ifeq ($(lib_full_name),$(MAKECMDGOALS))
-include $(depends)
-endif
-

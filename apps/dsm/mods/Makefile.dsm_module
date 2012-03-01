@@ -26,22 +26,14 @@ objs     = $(srcs:.cpp=.o)
 depends  = $(srcs:.cpp=.d)
 
 .PHONY: all
-all: $(extra_target)
-	-@$(MAKE) deps    && \
-	  $(MAKE) $(lib_full_name)
+all: $(extra_target) $(lib_full_name)
 
 .PHONY: module_package
-module_package: $(extra_target)
-	-@$(MAKE) deps    && \
-	  $(MAKE) $(lib_name)
-
+module_package: $(extra_target) $(lib_name)
 
 .PHONY: clean
 clean: $(extra_clean)
 	-@rm -f $(objs) $(depends) $(lib_name)
-
-.PHONY: deps
-deps: $(depends) $(extra_depends)
 
 .PHONY: install
 install: all $(extra_install)
@@ -89,29 +81,16 @@ $(plug_in_name)_lib:
 		fi ; \
 	done
 
-%.d: %.cpp Makefile $(COREPATH)/plug-in/Makefile.app_module $(COREPATH)/../Makefile.defs
-	$(CXX) -MM $< $(CXXFLAGS) $(CPPFLAGS) > $@
+-include $(depends)
 
-%.d: %.c Makefile $(COREPATH)/plug-in/Makefile.app_module $(COREPATH)/../Makefile.defs
-	$(CC) -MM $< $(CFLAGS) $(CPPFLAGS) > $@
+%.o: %.cpp $(COREPATH)/../Makefile.defs
+	$(CXX) -MMD $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
-%.o: %.cpp %.d $(COREPATH)/../Makefile.defs
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
-
-%.o: %.c %.d $(COREPATH)/../Makefile.defs
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-
+%.o: %.c $(COREPATH)/../Makefile.defs
+	$(CC) -MMD $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
 
 $(lib_name): $(objs) $(module_extra_objs) Makefile
 	$(LD) -o $(lib_name) $(objs) $(module_extra_objs) $(LIB_LDFLAGS)
-
-ifeq ($(lib_full_name),$(MAKECMDGOALS))
-include $(depends)
-endif
-
-ifeq (,$(MAKECMDGOALS))
-include $(depends)
-endif

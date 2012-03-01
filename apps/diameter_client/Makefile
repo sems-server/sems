@@ -12,7 +12,7 @@ module_cflags  = -I $(DIAMETER_BASE_LIBDIR)
 
 ifdef WITH_OPENSSL
 module_ldflags += -lssl -lcrypto
-module_cflags += -DWITH_OPENSSL
+#module_cflags += -DWITH_OPENSSL
 endif
 
 module_extra_objs = $(DIAMETER_BASE_LIBDIR)$(DIAMETER_BASE_LIBNAME)
@@ -22,7 +22,7 @@ COREPATH ?=../../core
 include $(COREPATH)/plug-in/Makefile.app_module
 
 $(DIAMETER_BASE_LIBDIR)$(DIAMETER_BASE_LIBNAME):
-	make -C $(DIAMETER_BASE_LIBDIR) 
+	$(MAKE) -C $(DIAMETER_BASE_LIBDIR) 
 
 baseclean:
-	make -C $(DIAMETER_BASE_LIBDIR) clean
+	$(MAKE) -C $(DIAMETER_BASE_LIBDIR) clean
