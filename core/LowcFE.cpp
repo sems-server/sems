@@ -193,7 +193,7 @@ int LowcFE::findpitch()
   rp = r;
   energy = 0.f;
   corr = 0.f;
-  for (i = 0; i < CORRLEN; i += NDEC) {
+  for (i = 0; i < (int)(CORRLEN); i += NDEC) {
     energy += rp[i] * rp[i];
     corr += rp[i] * l[i];
   }
@@ -204,12 +204,12 @@ int LowcFE::findpitch()
   corr = corr / (Float)sqrt(scale);
   bestcorr = corr;
   bestmatch = 0;
-  for (j = NDEC; j <= PITCHDIFF; j += NDEC) {
+  for (j = NDEC; j <= (int)(PITCHDIFF); j += NDEC) {
     energy -= rp[0] * rp[0];
     energy += rp[CORRLEN] * rp[CORRLEN];
     rp += NDEC;
     corr = 0.f;
-    for (i = 0; i < CORRLEN; i += NDEC)
+    for (i = 0; i < (int)(CORRLEN); i += NDEC)
       corr += rp[i] * l[i];
     scale = energy;
     if (scale < CORRMINPOWER)
@@ -225,12 +225,12 @@ int LowcFE::findpitch()
   if (j < 0)
     j = 0;
   k = bestmatch + (NDEC - 1);
-  if (k > PITCHDIFF)
+  if (k > (int)(PITCHDIFF))
     k = PITCHDIFF;
   rp = &r[j];
   energy = 0.f;
   corr = 0.f;
-  for (i = 0; i < CORRLEN; i++) {
+  for (i = 0; i < (int)(CORRLEN); i++) {
     energy += rp[i] * rp[i];
     corr += rp[i] * l[i];
   }
@@ -246,7 +246,7 @@ int LowcFE::findpitch()
     energy += rp[CORRLEN] * rp[CORRLEN];
     rp++;
     corr = 0.f;
-    for (i = 0; i < CORRLEN; i++)
+    for (i = 0; i < (int)(CORRLEN); i++)
       corr += rp[i] * l[i];
     scale = energy;
     if (scale < CORRMINPOWER)
