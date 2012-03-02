@@ -107,7 +107,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
     return;
 
   } else {
-
+    try {
       AmSessionFactory* sess_fact = AmPlugIn::instance()->findSessionFactory(req);
       if(!sess_fact){
 
@@ -116,5 +116,14 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
       }
 
       sess_fact->onOoDRequest(req);
+    } catch (const AmSession::Exception& e) {
+      AmSipDialog::reply_error(req,e.code, e.reason);
+      return;
+    } catch (...) {
+      ERROR("Server internal Error: unhandled exception while handling out-of-dialog '%s'\n",
+	    req.method.c_str());
+      AmSipDialog::reply_error(req,500,SIP_REPLY_SERVER_INTERNAL_ERROR);
+      return;
+    }
   }
 }
