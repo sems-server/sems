@@ -115,7 +115,7 @@ class AmPlugIn : public AmPayloadProvider
   virtual ~AmPlugIn();
 
   /** @return -1 if failed, else 0. */
-  int loadPlugIn(const string& file, const string& plugin_name);
+  int loadPlugIn(const string& file, const string& plugin_name, AmPluginFactory*& plugin);
 
   int loadAudioPlugIn(amci_exports_t* exports);
   int loadAppPlugIn(AmPluginFactory* cb);
@@ -124,6 +124,7 @@ class AmPlugIn : public AmPayloadProvider
   int loadDiPlugIn(AmPluginFactory* cb);
   int loadLogFacPlugIn(AmPluginFactory* f);
 
+  int initLoggingModules();
  public:
 
   int addCodec(amci_codec_t* c);
@@ -142,6 +143,9 @@ class AmPlugIn : public AmPayloadProvider
    * @return -1 if failed, else 0.
    */
   int load(const string& directory, const string& plugins);
+
+  /** register logging plugins to receive logging messages */
+  void registerLoggingPlugins();
 
   /** 
    * Payload lookup function.

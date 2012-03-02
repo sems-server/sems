@@ -478,6 +478,8 @@ int main(int argc, char* argv[])
   if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
     goto error;
 
+  AmPlugIn::instance()->registerLoggingPlugins();
+
 #ifdef WITH_ZRTP
   if (AmZRTP::init()) {
     ERROR("Cannot initialize ZRTP\n");

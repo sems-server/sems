@@ -172,6 +172,8 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 {
   int err=0;
   
+  vector<AmPluginFactory*> loaded_plugins;
+
   if (!plugins.length()) {
     INFO("AmPlugIn: loading modules in directory '%s':\n", directory.c_str());
 
@@ -206,10 +208,13 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       string plugin_file = directory + "/" + plugin_name;
 
       DBG("loading %s ...\n",plugin_file.c_str());
-      if( (err = loadPlugIn(plugin_file, plugin_name)) < 0 ) {
+      AmPluginFactory* plugin = NULL;
+      if( (err = loadPlugIn(plugin_file, plugin_name, plugin)) < 0 ) {
         ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
         return -1;
       }
+      if (NULL != plugin)
+	loaded_plugins.push_back(plugin);
     }
     
     closedir(dir);
@@ -233,98 +238,47 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 
       plugin_file = directory + "/"  + plugin_file;
       DBG("loading %s...\n",plugin_file.c_str());
-      if( (err = loadPlugIn(plugin_file, plugin_file)) < 0 ) {
+      AmPluginFactory* plugin = NULL;
+      if( (err = loadPlugIn(plugin_file, plugin_file, plugin)) < 0 ) {
         ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
         // be strict here: if plugin not loaded, stop!
         return err; 
       }
+      if (NULL != plugin)
+	loaded_plugins.push_back(plugin);
     }
   }
 
   DBG("AmPlugIn: modules loaded.\n");
-
-  std::map<string,AmSessionFactory*> app_load = name2app;
-  
-  set<string> loaded_modules;
-
-  DBG("AmPlugIn: Initializing plugins...\n");
-
-  // initialize base components
-  for(std::map<std::string,AmPluginFactory*>::iterator it = name2base.begin();
-      it != name2base.end(); it++){
-    if (loaded_modules.find(it->first) != loaded_modules.end())
-      continue;
-
-    err = it->second->onLoad();
+  DBG("Initializing %zd plugins...\n", loaded_plugins.size());
+  for (vector<AmPluginFactory*>::iterator it =
+	 loaded_plugins.begin(); it != loaded_plugins.end(); it++) {
+    int err = (*it)->onLoad();
     if(err)
       return err;
-
-    loaded_modules.insert(it->first);
   }
 
+  return 0;
+}
 
-  // initialize session event handlers
-  for(std::map<std::string,AmSessionEventHandlerFactory*>::iterator it = name2seh.begin();
-      it != name2seh.end(); it++){
-    if (loaded_modules.find(it->first) != loaded_modules.end())
-      continue;
-
-    err = it->second->onLoad();
-    if(err)
-      return err;
-    loaded_modules.insert(it->first);
-  }
-
-  // initialize DI component plugins
-  for(std::map<std::string,AmDynInvokeFactory*>::iterator it = name2di.begin();
-      it != name2di.end(); it++){
-    if (loaded_modules.find(it->first) != loaded_modules.end())
-      continue;
-
-    err = it->second->onLoad();
-    if(err)
-      return err;
-    loaded_modules.insert(it->first);
-  }
-
+void AmPlugIn::registerLoggingPlugins() {
   // init logging facilities
   for(std::map<std::string,AmLoggingFacility*>::iterator it = name2logfac.begin();
       it != name2logfac.end(); it++){
-
-    if (!(loaded_modules.find(it->first) != loaded_modules.end())) {
-      err = it->second->onLoad();
-      if(err)
-	return err;
-      loaded_modules.insert(it->first);
-    }
     // register for receiving logging messages
     register_log_hook(it->second);
-  }
-  
-  // application plugins
-  for(std::map<std::string,AmSessionFactory*>::iterator it = app_load.begin();
-      it != app_load.end(); it++){
-    if (loaded_modules.find(it->first) != loaded_modules.end())
-      continue;
-
-    err = it->second->onLoad();
-    if(err) 
-      return err;
-
-    loaded_modules.insert(it->first);
-  }
-
-  DBG("AmPlugIn: Initialized plugins.\n");
-
-  return 0;
+  }  
 }
 
 void AmPlugIn::set_load_rtld_global(const string& plugin_name) {
   rtld_global_plugins.insert(plugin_name);
 }
 
-int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name)
+int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name,
+			 AmPluginFactory*& plugin)
 {
+
+  plugin = NULL; // default: not loaded
   int dlopen_flags = RTLD_NOW;
 
   char* pname = strdup(plugin_name.c_str());
@@ -368,29 +322,34 @@ int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name)
     goto end;
   }
 
-  if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EXPORT_STR)) != NULL){
-    if(loadAppPlugIn((AmPluginFactory*)fc()))
+  if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EXPORT_STR)) != NULL){  
+    plugin = (AmPluginFactory*)fc();
+    if(loadAppPlugIn(plugin))
       goto error;
     has_sym=true;
   }
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EVENT_HANDLER_EXPORT_STR)) != NULL){
-    if(loadSehPlugIn((AmPluginFactory*)fc()))
+    plugin = (AmPluginFactory*)fc();
+    if(loadSehPlugIn(plugin))
       goto error;
     has_sym=true;
   }
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_PLUGIN_EXPORT_STR)) != NULL){
-    if(loadBasePlugIn((AmPluginFactory*)fc()))
+    plugin = (AmPluginFactory*)fc();
+    if(loadBasePlugIn(plugin))
       goto error;
     has_sym=true;
   }
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_PLUGIN_CLASS_EXPORT_STR)) != NULL){
-    if(loadDiPlugIn((AmPluginFactory*)fc()))
+    plugin = (AmPluginFactory*)fc();
+    if(loadDiPlugIn(plugin))
       goto error;
     has_sym=true;
   }
 
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_LOG_FACILITY_EXPORT_STR)) != NULL){
-    if(loadLogFacPlugIn((AmPluginFactory*)fc()))
+    plugin = (AmPluginFactory*)fc();
+    if(loadLogFacPlugIn(plugin))
       goto error;
     has_sym=true;
   }
@@ -406,6 +365,7 @@ int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name)
 
  error:
   dlclose(h_dl);
+  plugin = NULL;
   return -1;
 }
 
