@@ -77,6 +77,17 @@ int SBCFactory::onLoad()
     return -1;
   }
 
+  string load_cc_plugins = cfg.getParameter("load_cc_plugins");
+  if (!load_cc_plugins.empty()) {
+    INFO("loading call control plugins '%s' from '%s'\n",
+	 load_cc_plugins.c_str(), AmConfig::PlugInPath.c_str());
+    if (AmPlugIn::instance()->load(AmConfig::PlugInPath, load_cc_plugins) < 0) {
+      ERROR("loading call control plugins '%s' from '%s'\n",
+	    load_cc_plugins.c_str(), AmConfig::PlugInPath.c_str());
+      return -1;
+    }
+  }
+
   session_timer_fact = AmPlugIn::instance()->getFactory4Seh("session_timer");
   if(!session_timer_fact) {
     WARN("session_timer plug-in not loaded - "
@@ -350,6 +361,9 @@ void SBCFactory::invoke(const string& method, const AmArg& args,
   } else if (method == "setRegexMap"){
     args.assertArrayFmt("u");
     setRegexMap(args,ret);
+  } else if (method == "loadCallcontrolModules"){
+    args.assertArrayFmt("s");
+    loadCallcontrolModules(args,ret);
   } else if(method == "_list"){ 
     ret.push(AmArg("listProfiles"));
     ret.push(AmArg("reloadProfiles"));
@@ -359,6 +373,7 @@ void SBCFactory::invoke(const string& method, const AmArg& args,
     ret.push(AmArg("setActiveProfile"));
     ret.push(AmArg("getRegexMapNames"));
     ret.push(AmArg("setRegexMap"));
+    ret.push(AmArg("loadCallcontrolModules"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
 }
@@ -538,6 +553,24 @@ void SBCFactory::setRegexMap(const AmArg& args, AmArg& ret) {
     return;
   }
   regex_mappings.setRegexMap(m_name, v);
+  ret.push(200);
+  ret.push("OK");
+}
+
+void SBCFactory::loadCallcontrolModules(const AmArg& args, AmArg& ret) {
+  string load_cc_plugins = args[0].asCStr();
+  if (!load_cc_plugins.empty()) {
+    INFO("loading call control plugins '%s' from '%s'\n",
+	 load_cc_plugins.c_str(), AmConfig::PlugInPath.c_str());
+    if (AmPlugIn::instance()->load(AmConfig::PlugInPath, load_cc_plugins) < 0) {
+      ERROR("loading call control plugins '%s' from '%s'\n",
+	    load_cc_plugins.c_str(), AmConfig::PlugInPath.c_str());
+      
+      ret.push(500);
+      ret.push("Failed - please see server logs\n");
+      return;
+    }
+  }
   ret.push(200);
   ret.push("OK");
 }

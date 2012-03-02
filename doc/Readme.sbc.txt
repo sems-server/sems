@@ -406,6 +406,10 @@ Call control (CC) modules for the sbc application implement business logic which
 how the SBC operates. For example, a CC module can implement concurrent call limits, call
 limits per user, enforce other policies, or implement routing logic.
 
+Call control (CC) modules should be loaded using the load_cc_plugins option in sbc.conf,
+or loaded later into the server by the sems-sbc-loadcallcontrol-modules script
+(loadCallcontrolModules DI function).
+
 Multiple CC modules may be applied for one call. The data that the CC modules get from the
 call may be freely configured. Call control modules may also be applied through message parts
 (replacement patterns).

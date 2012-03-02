@@ -1,0 +1,12 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import sys
+from xmlrpclib import *
+
+if len(sys.argv) != 2:
+	print "usage: %s <semicolon separated list of plugins to load>" % sys.argv[0]
+	sys.exit(1)
+
+s = ServerProxy('http://localhost:8090')
+print "Active calls: %d" % s.calls()
+print s.di('sbc','loadCallcontrolModules',sys.argv[1])

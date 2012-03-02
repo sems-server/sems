@@ -59,6 +59,7 @@ class SBCFactory: public AmSessionFactory,
   void setActiveProfile(const AmArg& args, AmArg& ret);
   void getRegexMapNames(const AmArg& args, AmArg& ret);
   void setRegexMap(const AmArg& args, AmArg& ret);
+  void loadCallcontrolModules(const AmArg& args, AmArg& ret);
 
   string getActiveProfileMatch(string& profile_rule, const AmSipRequest& req,
 			       const string& app_param, AmUriParser& ruri_parser,
