@@ -36,6 +36,7 @@
 
 #include "AmDtmfDetector.h"
 #include "rtp/telephone_event.h"
+#include "amci/codecs.h"
 #include "AmJitterBuffer.h"
 
 #include "sip/resolver.h"
@@ -557,6 +558,10 @@ int AmRtpStream::init(const AmSdp& local,
   sdp_it = remote_media.payloads.begin();
   while(sdp_it != remote_media.payloads.end()) {
 
+    // TODO: match not only on encoding name
+    //       but also on parameters, if necessary
+    //       Some codecs define multiple payloads
+    //       with different encoding parameters
     PayloadMappingTable::iterator pmt_it = pl_map.end();
     if(sdp_it->encoding_name.empty()){ // must be a static payload
 
@@ -573,6 +578,9 @@ int AmRtpStream::init(const AmSdp& local,
       }
     }
 
+    // TODO: remove following code once proper 
+    //       payload matching is implemented
+    //
     // initialize remote_pt if not already there
     if(pmt_it != pl_map.end() && (pmt_it->second.remote_pt < 0)){
       pmt_it->second.remote_pt = sdp_it->payload_type;
@@ -584,15 +592,18 @@ int AmRtpStream::init(const AmSdp& local,
   setPassiveMode(remote_media.dir == SdpMedia::DirActive);
   setRAddr(remote.conn.address, remote_media.port);
 
-  // TODO: take the first *supported* payload
-  //       (align with the SDP answer algo)
   if(local_media.payloads.empty()) {
 
     ERROR("local_media.payloads.empty()\n");
     return -1;
   }
 
-  payload = local_media.payloads[0].payload_type;
+  payload = getDefaultPT();
+  if(payload < 0) {
+    ERROR("could not set a default payload\n");
+    return -1;
+  }
+  DBG("default payload selected = %i\n",payload);
   last_payload = payload;
 
   remote_telephone_event_pt.reset(remote.telephoneEventPayload());
@@ -756,6 +767,26 @@ void AmRtpStream::clearRTPTimeout(struct timeval* recv_time) {
 
 void AmRtpStream::clearRTPTimeout() {
   gettimeofday(&last_recv_time,NULL);
+}
+
+int AmRtpStream::getDefaultPT()
+{
+  for(PayloadCollection::iterator it = payloads.begin();
+      it != payloads.end(); ++it){
+
+    // skip telephone-events payload
+    if(it->codec_id == CODEC_TELEPHONE_EVENT)
+      continue;
+
+    // skip incompatible payloads
+    PayloadMappingTable::iterator pl_it = pl_map.find(it->pt);
+    if ((pl_it == pl_map.end()) || (pl_it->second.remote_pt < 0))
+      continue;
+
+    return it->pt;
+  }
+
+  return -1;
 }
 
 int AmRtpStream::nextPacket(AmRtpPacket*& p)

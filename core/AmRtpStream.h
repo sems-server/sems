@@ -249,6 +249,12 @@ protected:
   /** Clear RTP timeout at time recv_time */
   void clearRTPTimeout(struct timeval* recv_time);
 
+  /** 
+   * Select a compatible default payload 
+   * @return -1 if none available.
+   */
+  int getDefaultPT();
+
 public:
 
   /** Mute */

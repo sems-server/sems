@@ -167,7 +167,13 @@ int AmRtpAudio::init(const AmSdp& local,
   }
 
   AmAudioRtpFormat* fmt_p = new AmAudioRtpFormat();
-  fmt_p->setCurrentPayload(payloads[0]);
+
+  PayloadMappingTable::iterator pl_it = pl_map.find(payload);
+  if ((pl_it == pl_map.end()) || (pl_it->second.remote_pt < 0)) {
+    ERROR("no default payload has been set\n");
+    return -1;
+  }
+  fmt_p->setCurrentPayload(payloads[pl_it->second.index]);
   fmt.reset(fmt_p);
 
   fec.reset(new LowcFE(fmt->rate));
