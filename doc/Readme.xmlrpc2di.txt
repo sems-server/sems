@@ -1,7 +1,7 @@
 xmlrpc2di: DI call via XMLRPC
 
-This module makes the Dynamic Invocation (DI) Interfaces exported 
-by component modules accessible from XMLRPC. Additionaly the builtin 
+This module makes the "Dynamic Invocation (DI)" Interfaces (internal module APIs)
+exported by component modules accessible from XMLRPC. Additionaly the builtin 
 methods "calls", "get_loglevel"/"set_loglevel",  
 "get_shutdownmode"/"set_shutdownmode", and access to the statistics counters
 (get_callsavg/get_callsmax/get_cpsmax/get_cpsavg) are implemented.
@@ -35,7 +35,9 @@ Configuration parameters
   export_di        yes        enable 'di' function (see below)
 
   direct_export    none       search these interfaces for methods 
-                              to export
+                              to export. load xmlrpc module after other
+                              modules (i.e. in sems.conf: load_plugins=mymod;xmlrpc2di)
+                              if you want to direct_export them.
 
   run_server       yes        start an XMLRPC server
 
