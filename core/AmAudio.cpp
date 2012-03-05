@@ -341,11 +341,11 @@ int AmAudio::get(unsigned int user_ts, unsigned char* buffer, int output_sample_
 {
   int size = 0;
   if (output_sample_rate < fmt->rate) {
-    int rfactor = fmt->rate / output_sample_rate;
-    size = calcBytesToRead(nb_samples * rfactor);
+    float rfactor = (float)fmt->rate / (float)output_sample_rate;
+    size = calcBytesToRead((int)((float)nb_samples * rfactor));
   } else {
-    int rdivisor = output_sample_rate / fmt->rate;
-    size = calcBytesToRead(nb_samples / rdivisor);
+    float rdivisor = (float)output_sample_rate / (float)fmt->rate;
+    size = calcBytesToRead((int)((float)nb_samples / rdivisor));
   }
 
   size = read(user_ts,size);
@@ -465,55 +465,7 @@ unsigned int AmAudio::downMix(unsigned int size)
   if(fmt->channels == 2){
     stereo2mono(samples.back_buffer(),(unsigned char*)samples,s);
     samples.swap();
-  }
-
-#if 0
-  if (fmt->rate != SYSTEM_SAMPLERATE) {
-    if (!resample_state) {
-      int src_error;
-      // for better quality but more CPU usage, use SRC_SINC_ converters
-      resample_state = src_new(SRC_LINEAR, 1, &src_error);
-      if (!resample_state) {
-	ERROR("samplerate initialization error: ");
-      }
-    }
-
-    if (resample_state) {
-      if (resample_buf_samples + PCM16_B2S(s) > PCM16_B2S(AUDIO_BUFFER_SIZE) * 2) {
-	WARN("resample input buffer overflow! (%d)\n",
-	     resample_buf_samples + PCM16_B2S(s));
-      } else {
-	signed short* samples_s = (signed short*)(unsigned char*)samples;
-	src_short_to_float_array(samples_s, &resample_in[resample_buf_samples], PCM16_B2S(s));
-	resample_buf_samples += PCM16_B2S(s);
-      }
-      
-      SRC_DATA src_data;
-      src_data.data_in = resample_in;
-      src_data.input_frames = resample_buf_samples;
-      src_data.data_out = resample_out;
-      src_data.output_frames = PCM16_B2S(AUDIO_BUFFER_SIZE);
-      src_data.src_ratio = (double)SYSTEM_SAMPLERATE / (double)fmt->rate;
-      src_data.end_of_input = 0;
-
-      int src_err = src_process(resample_state, &src_data);
-      if (src_err) {
-	DBG("resample error: '%s'\n", src_strerror(src_err));
-      }else {
-	signed short* samples_s = (signed short*)(unsigned char*)samples;
-	src_float_to_short_array(resample_out, samples_s, src_data.output_frames_gen);
-	s = PCM16_S2B(src_data.output_frames_gen);
-
-	if (resample_buf_samples !=  (unsigned int)src_data.input_frames_used) {
-	  memmove(resample_in, &resample_in[src_data.input_frames_used], 
-		  (resample_buf_samples - src_data.input_frames_used) * sizeof(float));
-	}
-	resample_buf_samples = resample_buf_samples - src_data.input_frames_used;
-      }
-    }
-  }
-#endif
- 
+  } 
 
   return s;
 }
