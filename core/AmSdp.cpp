@@ -450,7 +450,10 @@ void SdpMedia::calcAnswer(const AmPayloadProvider* payload_prov,
     }
 
     if( a_pl) {
-      answer.payloads.push_back(SdpPayload(a_pl->payload_id,a_pl->name,a_pl->sample_rate,0));
+      answer.payloads.push_back(SdpPayload(a_pl->payload_id,
+					   a_pl->name,
+					   a_pl->advertised_sample_rate,
+					   0));
     }
     else {
       // Try dynamic payloads
@@ -463,8 +466,7 @@ void SdpMedia::calcAnswer(const AmPayloadProvider* payload_prov,
 		      it->clock_rate,
 		      it->encoding_param);
       if(int_pt != -1){
-	answer.payloads.push_back(SdpPayload(int_pt,
-		it->encoding_name,it->clock_rate,it->encoding_param));
+	answer.payloads.push_back(*it);
       }
     }
   }

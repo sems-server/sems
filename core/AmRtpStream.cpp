@@ -533,18 +533,25 @@ int AmRtpStream::init(const AmSdp& local,
   // first pass on local SDP - fill pl_map with intersection of codecs
   while(p_it != payloads.end()) {
 
-    amci_payload_t* a_pl = payload_provider->payload(sdp_it->payload_type);
+    int int_pt = payload_provider->getDynPayload(sdp_it->encoding_name,
+						 sdp_it->clock_rate,
+						 sdp_it->encoding_param);
+    amci_payload_t* a_pl = NULL;
+    if(int_pt >= 0) 
+      a_pl = payload_provider->payload(int_pt);
+
     if(a_pl == NULL){
-      ERROR("No internal payload corresponding to type %i\n",
-	    sdp_it->payload_type);
+      ERROR("No internal payload corresponding to type %s/%i\n",
+	    sdp_it->encoding_name.c_str(),
+	    sdp_it->clock_rate);
       return -1;//TODO
     };
     
     p_it->pt         = sdp_it->payload_type;
-    p_it->name       = a_pl->name;
+    p_it->name       = sdp_it->encoding_name;
     p_it->codec_id   = a_pl->codec_id;
     p_it->clock_rate = a_pl->sample_rate;
-    p_it->advertised_clock_rate = a_pl->advertised_sample_rate;
+    p_it->advertised_clock_rate = sdp_it->clock_rate;
 
     pl_map[sdp_it->payload_type].index     = i;
     pl_map[sdp_it->payload_type].remote_pt = -1;
