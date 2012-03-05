@@ -413,8 +413,8 @@ int AmPlugIn::getDynPayload(const string& name, int rate, int encoding_param) co
   // find a dynamic payload by name/rate and encoding_param (channels, if > 0)
   for(std::map<int, amci_payload_t*>::const_iterator pl_it = payloads.begin();
       pl_it != payloads.end(); ++pl_it)
-    if( (name == pl_it->second->name)
-	&& (rate == pl_it->second->sample_rate) ) {
+    if( (!strcasecmp(name.c_str(),pl_it->second->name)
+	 && (rate == pl_it->second->advertised_sample_rate)) ) {
       if ((encoding_param > 0) && (pl_it->second->channels > 0) && 
 	  (encoding_param != pl_it->second->channels))
 	continue;
