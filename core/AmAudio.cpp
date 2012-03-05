@@ -61,12 +61,13 @@ int AmAudioRtpFormat::setCurrentPayload(Payload pl)
 {
   if (this->codec_id != pl.codec_id) {
     this->codec_id = pl.codec_id;
+    DBG("fmt.codec_id = %d", this->codec_id);
     this->channels = 1;
     this->rate = pl.clock_rate;
     DBG("fmt.rate = %d", this->rate);
     this->advertized_rate = pl.advertised_clock_rate;
     DBG("fmt.advertized_rate = %d", this->advertized_rate);
-    this->frame_size = 20*this->advertized_rate/1000;
+    this->frame_size = 20*this->rate/1000;
     if (this->codec != NULL) {
       destroyCodec();
     }
@@ -379,15 +380,19 @@ int AmAudio::put(unsigned int user_ts, unsigned char* buffer, int input_sample_r
   if(max_rec_time > -1 && rec_time >= max_rec_time)
     return -1;
 
-  size = resampleInput((unsigned char*)samples, size, input_sample_rate, fmt->rate);
-
   memcpy((unsigned char*)samples,buffer,size);
+  size = resampleInput((unsigned char*)samples, size, input_sample_rate, fmt->rate);
 
   int s = encode(size);
   if(s>0){
     //DBG("%s\n",typeid(this).name());
     incRecordTime(bytes2samples(size));
-    unsigned int wr_ts = user_ts * ((double) fmt->advertized_rate / (double) SYSTEM_SAMPLECLOCK_RATE);
+
+    unsigned int wr_ts = user_ts * ((double) (fmt->advertized_rate > 0 ?
+					      fmt->advertized_rate
+					      : fmt->rate)
+				    / (double) SYSTEM_SAMPLECLOCK_RATE);
+
     return write(wr_ts,(unsigned int)s);
   }
   else{
