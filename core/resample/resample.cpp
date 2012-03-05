@@ -226,7 +226,7 @@ int ResampleSincMono::resample(signed short *dst, float rate, unsigned num_sampl
 	int done = 0;
 
 	increment_fixed = (1.0/rate) * 4294967296.0;
-	current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000) | (curfrc & 0xffffffff);
+	current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000LL) | (curfrc & 0xffffffff);
 
 	if(pad_samples) {
 		if(num_samples < pad_samples) {
@@ -304,7 +304,7 @@ int ResampleSincMono::resample(signed short *dst, float rate, unsigned num_sampl
 
 			num_samples--; done++;
 		}
-		current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000);
+		current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000LL);
 	}
 
 	this->current = (current_fixed>>32) & 0xffffffff;
@@ -457,7 +457,7 @@ int ResampleSincStereo::resample(signed short *dst, float rate, unsigned num_sam
 	int done = 0;
 
 	increment_fixed = (1.0/rate) * 4294967296.0;
-	current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000) | (curfrc & 0xffffffff);
+	current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000LL) | (curfrc & 0xffffffff);
 
 	if(pad_samples) {
 		if(num_samples < pad_samples) {
@@ -545,7 +545,7 @@ int ResampleSincStereo::resample(signed short *dst, float rate, unsigned num_sam
 
 			num_samples--; done++;
 		}
-		current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000);
+		current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000LL);
 	}
 
 	this->current = (current_fixed>>32) & 0xffffffff;
@@ -589,7 +589,7 @@ int ResampleLinMono::resample(signed short *dst, float rate, unsigned num_sample
 	int done = 0;
 
 	increment_fixed = (1.0/rate) * 4294967296.0;
-	current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000) | (curfrc & 0xffffffff);
+	current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000LL) | (curfrc & 0xffffffff);
 
 	if(pad_samples) {
 		if(num_samples < pad_samples) {
@@ -655,7 +655,7 @@ int ResampleLinMono::resample(signed short *dst, float rate, unsigned num_sample
 
 			num_samples--; done++;
 		}
-		current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000);
+		current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000LL);
 	}
 
 	this->current = (current_fixed>>32) & 0xffffffff;
@@ -700,7 +700,7 @@ int ResampleLinStereo::resample(signed short *dst, float rate, unsigned num_samp
 	int done = 0;
 
 	increment_fixed = (1.0/rate) * 4294967296.0;
-	current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000) | (curfrc & 0xffffffff);
+	current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000LL) | (curfrc & 0xffffffff);
 
 	if(pad_samples) {
 		if(num_samples < pad_samples) {
@@ -776,7 +776,7 @@ int ResampleLinStereo::resample(signed short *dst, float rate, unsigned num_samp
 
 			num_samples--; done++;
 		}
-		current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000);
+		current_fixed = (((unsigned long long)current<<32)&0xFFFFFFFF00000000LL);
 	}
 
 	this->current = (current_fixed>>32) & 0xffffffff;
