@@ -88,21 +88,21 @@ static unsigned int speexNB_samples2bytes(long, unsigned int);
 BEGIN_EXPORTS("speex", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY)
 
 BEGIN_CODECS
-CODEC(CODEC_SPEEX_NB, Pcm16_2_SpeexNB, SpeexNB_2_Pcm16, AMCI_NO_CODEC_PLC, 
-      speexNB_create, speexNB_destroy, 
-      speexNB_bytes2samples, speexNB_samples2bytes)
 #if SYSTEM_SAMPLECLOCK_RATE >=16000
 CODEC(CODEC_SPEEX_WB, Pcm16_2_SpeexNB, SpeexNB_2_Pcm16, AMCI_NO_CODEC_PLC, 
       speexWB_create, speexNB_destroy, 
       speexNB_bytes2samples, speexNB_samples2bytes)
 #endif
+CODEC(CODEC_SPEEX_NB, Pcm16_2_SpeexNB, SpeexNB_2_Pcm16, AMCI_NO_CODEC_PLC, 
+      speexNB_create, speexNB_destroy, 
+      speexNB_bytes2samples, speexNB_samples2bytes)
 END_CODECS
   
 BEGIN_PAYLOADS
-PAYLOAD(-1, "speex", 8000, 8000, 1, CODEC_SPEEX_NB, AMCI_PT_AUDIO_FRAME)
 #if SYSTEM_SAMPLECLOCK_RATE >=16000
 PAYLOAD(-1, "speex", 16000, 16000, 1, CODEC_SPEEX_WB, AMCI_PT_AUDIO_FRAME)
 #endif
+PAYLOAD(-1, "speex", 8000, 8000, 1, CODEC_SPEEX_NB, AMCI_PT_AUDIO_FRAME)
 END_PAYLOADS
   
 BEGIN_FILE_FORMATS
