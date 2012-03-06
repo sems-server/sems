@@ -78,4 +78,9 @@
 
 #define CODEC_SPEEX_WB 26
 
+#define CODEC_SILK_NB 27
+#define CODEC_SILK_MB 28
+#define CODEC_SILK_WB 29
+#define CODEC_SILK_UB 30
+
 #endif
