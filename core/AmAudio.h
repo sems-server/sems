@@ -121,9 +121,6 @@ public:
   /** Sampling rate. */
   int rate;
 
-  /** Sampling rate as advertized in SDP (differs from actual rate for G722) **/
-  int advertized_rate;
-
   /* frame length in ms (frame based codecs) - unused */
   //int frame_length;
   /* frame size in samples */
@@ -139,6 +136,12 @@ public:
   /** @return The format's codec pointer. */
   virtual amci_codec_t*    getCodec();
   void resetCodec();
+
+  /** return the real sampling rate */
+  virtual int getRate() { return rate; }
+
+  /** return the timestamp sampling rate */
+  virtual int getTSRate() { return rate; }
 
   /** @return Handler returned by the codec's init function.*/
   long             getHCodec();
@@ -185,27 +188,19 @@ public:
 /** \brief RTP audio format */
 class AmAudioRtpFormat: public AmAudioFormat
 {
-  // vector<SdpPayload *> m_payloads;
-  // int m_currentPayload;
-  // amci_payload_t *m_currentPayloadP;
-  // std::map<int, SdpPayload *> m_sdpPayloadByPayload;
-  // std::map<int, amci_payload_t *> m_payloadPByPayload;
-  // std::map<int, CodecContainer *> m_codecContainerByPayload;
-
   int codec_id;
+
+  /** Sampling rate as advertized in SDP (differs from actual rate for G722) **/
+  int advertized_rate;
 
 protected:
   virtual int getCodecId();
 
 public:
-  /**
-   * Constructor for payload based formats.
-   * All the information are taken from the 
-   * payload description in the originating plug-in.
-   */
-  //AmAudioRtpFormat(const vector<SdpPayload *>& payloads);
   AmAudioRtpFormat();
   ~AmAudioRtpFormat();
+
+  virtual int getTSRate() { return advertized_rate; }
 
   /**
    * changes payload. returns != 0 on error.

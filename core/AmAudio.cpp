@@ -52,7 +52,9 @@ struct CodecContainer
 };
 
 AmAudioRtpFormat::AmAudioRtpFormat()
-  : AmAudioFormat(), codec_id(-1)
+  : AmAudioFormat(), 
+    codec_id(-1),
+    advertized_rate(-1)
 {
   
 }
@@ -80,7 +82,7 @@ AmAudioRtpFormat::~AmAudioRtpFormat()
 }
 
 AmAudioFormat::AmAudioFormat()
-  : channels(-1), rate(-1), advertized_rate(-1), codec(NULL),
+  : channels(-1), rate(-1), codec(NULL),
     frame_size(20*SYSTEM_SAMPLECLOCK_RATE/1000), frame_encoded_size(320)
 {
 
@@ -340,17 +342,13 @@ void AmAudio::close()
 // returns bytes read, else -1 if error (0 is OK)
 int AmAudio::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples)
 {
-  int size = 0;
-  if (output_sample_rate < fmt->rate) {
-    float rfactor = (float)fmt->rate / (float)output_sample_rate;
-    size = calcBytesToRead((int)((float)nb_samples * rfactor));
-  } else {
-    float rdivisor = (float)output_sample_rate / (float)fmt->rate;
-    size = calcBytesToRead((int)((float)nb_samples / rdivisor));
-  }
+  int size = calcBytesToRead((int)((float)nb_samples * (float)fmt->rate
+				   / (float)output_sample_rate));
 
-  size = read(user_ts,size);
-  //DBG("size = %d\n",size);
+  unsigned int rd_ts = user_ts * ((double)fmt->getTSRate()
+				  / (double)SYSTEM_SAMPLECLOCK_RATE);
+
+  size = read(rd_ts,size);
   if(size <= 0){
     return size;
   }
@@ -385,13 +383,11 @@ int AmAudio::put(unsigned int user_ts, unsigned char* buffer, int input_sample_r
 
   int s = encode(size);
   if(s>0){
-    //DBG("%s\n",typeid(this).name());
+
     incRecordTime(bytes2samples(size));
 
-    unsigned int wr_ts = user_ts * ((double) (fmt->advertized_rate > 0 ?
-					      fmt->advertized_rate
-					      : fmt->rate)
-				    / (double) SYSTEM_SAMPLECLOCK_RATE);
+    unsigned int wr_ts = user_ts * ((double)fmt->getTSRate()
+				    / (double)SYSTEM_SAMPLECLOCK_RATE);
 
     return write(wr_ts,(unsigned int)s);
   }
@@ -602,12 +598,5 @@ void DblBuffer::swap()
 
 int AmAudioRtpFormat::getCodecId()
 {
-  // if(!m_currentPayloadP){
-  //   ERROR("AmAudioRtpFormat::getCodecId: could not find payload %i\n", m_currentPayload);
-  //   return -1;
-  // }
-  // else 
-  //   return m_currentPayloadP->codec_id;
-
   return codec_id;
 }

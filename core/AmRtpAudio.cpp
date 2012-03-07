@@ -56,7 +56,7 @@ bool AmRtpAudio::checkInterval(unsigned int ts)
     last_check   = ts;
   }
   else {
-    if(((ts - last_check) / getSampleRateDivisor()) >= getFrameSize()){
+    if(resampleTS(ts - last_check) >= getFrameSize()){
       send_int = true;
       last_check = ts;
     }
@@ -85,7 +85,7 @@ int AmRtpAudio::receive(unsigned int wallclock_ts)
   int size;
   unsigned int rtp_ts;
   int new_payload = -1;
-  wallclock_ts /= getSampleRateDivisor();
+  wallclock_ts = resampleTS(wallclock_ts);
 
   while(true) {
     size = AmRtpStream::receive((unsigned char*)samples,
@@ -110,8 +110,11 @@ int AmRtpAudio::receive(unsigned int wallclock_ts)
       return -1;
     }
 
-    unsigned int adjusted_rtp_ts = rtp_ts * ((double)fmt->rate / (double)fmt->advertized_rate);
-    playout_buffer->write(wallclock_ts, adjusted_rtp_ts, (ShortSample*)((unsigned char *)samples),
+    unsigned int adjusted_rtp_ts = (double)rtp_ts * 
+      ((double)fmt->getRate() / (double)fmt->getTSRate());
+
+    playout_buffer->write(wallclock_ts, adjusted_rtp_ts,
+			  (ShortSample*)((unsigned char *)samples),
 			  PCM16_B2S(size), begin_talk);
   }
   return size;
