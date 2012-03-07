@@ -830,10 +830,14 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
 	}
       }
 
-      if (registration->getUnregistering()) {
-	registrations_mut.unlock();
-	removeRegistration(subscriber_id);
-	registrations_mut.lock();
+      // skip provisional replies & auth
+      if (ev->reply.code >= 200 && !auth_pending) {
+	// remove unregistered
+	if (registration->getUnregistering()) {
+	  registrations_mut.unlock();
+	  removeRegistration(subscriber_id);
+	  registrations_mut.lock();
+	}
       }
 
       if (!delete_status) {
