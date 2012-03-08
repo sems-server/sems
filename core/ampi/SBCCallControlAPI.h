@@ -54,4 +54,17 @@ struct SBCCallTimerEvent : public AmEvent {
     timer_id(timer_id), timer_action(timer_action), timeout(timeout) { }
 };
 
+#define SBCControlEvent_ID -564
+struct SBCControlEvent : public AmEvent {
+  string cmd;
+  AmArg params;
+
+  SBCControlEvent(const string& cmd, const AmArg& params)
+    : AmEvent(SBCControlEvent_ID), cmd(cmd), params(params) { }
+
+  SBCControlEvent(const string& cmd)
+    : AmEvent(SBCControlEvent_ID), cmd(cmd) { }
+
+};
+
 #endif

@@ -25,6 +25,7 @@ Features
  o call timer
  o prepaid accounting
  o CDR generation
+ o call teardown from external control through RPC
 
 SBC Profiles
 ------------
@@ -84,6 +85,9 @@ is provided and installed to trigger the reload (through XMLRPC):
                                                 profile or file path changed)
   sems-sbc-get-activeprofile                    get active_profile
   sems-sbc-set-activeprofile <active_profile>   set active_profile
+
+  sems-sbc-teardown-call <call_ltag>            tear down call (use e.g. monitoring's
+                                                sems-list-active-calls to get the ltag)
 
 The xmlrpc2di module must be loaded and the XMLRPC control server bound to port 8090 for
 the scripts to work.

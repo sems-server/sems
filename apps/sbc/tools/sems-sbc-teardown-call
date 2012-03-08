@@ -1,0 +1,19 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import sys
+from xmlrpclib import *
+
+if len(sys.argv) != 2:
+	print "usage: %s <ltag/ID of call to tear down>" % sys.argv[0]
+	sys.exit(1)
+
+s = ServerProxy('http://localhost:8090')
+print "Active calls: %d" % s.calls()
+res = s.di('sbc', 'postControlCmd', sys.argv[1], "teardown")
+
+if res[0] >= 200 and res[0] < 300:
+  print "OK"
+  sys.exit(0)
+else:
+  print "Error: %s" % str(res)
+  sys.exit(2)

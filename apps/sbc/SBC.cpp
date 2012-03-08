@@ -363,6 +363,9 @@ void SBCFactory::invoke(const string& method, const AmArg& args,
   } else if (method == "loadCallcontrolModules"){
     args.assertArrayFmt("s");
     loadCallcontrolModules(args,ret);
+  } else if (method == "postControlCmd"){
+    args.assertArrayFmt("ss"); // at least call-ltag, cmd
+    postControlCmd(args,ret);
   } else if(method == "_list"){ 
     ret.push(AmArg("listProfiles"));
     ret.push(AmArg("reloadProfiles"));
@@ -373,6 +376,7 @@ void SBCFactory::invoke(const string& method, const AmArg& args,
     ret.push(AmArg("getRegexMapNames"));
     ret.push(AmArg("setRegexMap"));
     ret.push(AmArg("loadCallcontrolModules"));
+    ret.push(AmArg("postControlCmd"));
   }  else
     throw AmDynInvoke::NotImplemented(method);
 }
@@ -572,6 +576,22 @@ void SBCFactory::loadCallcontrolModules(const AmArg& args, AmArg& ret) {
   }
   ret.push(200);
   ret.push("OK");
+}
+
+void SBCFactory::postControlCmd(const AmArg& args, AmArg& ret) {
+  SBCControlEvent* evt;
+  if (args.size()<3) {
+    evt = new SBCControlEvent(args[1].asCStr());
+  } else {
+    evt = new SBCControlEvent(args[1].asCStr(), args[2]);
+  }
+  if (!AmSessionContainer::instance()->postEvent(args[0].asCStr(), evt)) {
+    ret.push(404);
+    ret.push("Not found");
+  } else {
+    ret.push(202);
+    ret.push("Accepted");
+  }
 }
 
 SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
@@ -864,7 +884,23 @@ void SBCDialog::process(AmEvent* ev)
     }
   }
 
+  SBCControlEvent* ctl_event;
+  if (ev->event_id == SBCControlEvent_ID &&
+      (ctl_event = dynamic_cast<SBCControlEvent*>(ev)) != NULL) {
+    onControlCmd(ctl_event->cmd, ctl_event->params);
+    return;
+  }
+
   AmB2BCallerSession::process(ev);
+}
+
+void SBCDialog::onControlCmd(string& cmd, AmArg& params) {
+  if (cmd == "teardown") {
+    DBG("teardown requested from control cmd\n");
+    stopCall();
+    return;
+  }
+  DBG("ignoring unknown control cmd : '%s'\n", cmd.c_str());
 }
 
 int SBCDialog::relayEvent(AmEvent* ev) {
@@ -1525,6 +1561,17 @@ int SBCCalleeSession::relayEvent(AmEvent* ev) {
   return AmB2BCalleeSession::relayEvent(ev);
 }
 
+void SBCCalleeSession::process(AmEvent* ev) {
+  SBCControlEvent* ctl_event;
+  if (ev->event_id == SBCControlEvent_ID &&
+      (ctl_event = dynamic_cast<SBCControlEvent*>(ev)) != NULL) {
+    onControlCmd(ctl_event->cmd, ctl_event->params);
+    return;
+  }
+
+  AmB2BCalleeSession::process(ev);
+}
+
 void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
   // AmB2BSession does not call AmSession::onSipRequest for 
   // forwarded requests - so lets call event handlers here
@@ -1588,6 +1635,15 @@ void SBCCalleeSession::onSendRequest(AmSipRequest& req, int flags)
   }
   
   AmB2BCalleeSession::onSendRequest(req, flags);
+}
+
+void SBCCalleeSession::onControlCmd(string& cmd, AmArg& params) {
+  if (cmd == "teardown") {
+    DBG("relaying teardown control cmd to A leg\n");
+    relayEvent(new SBCControlEvent(cmd, params));
+    return;
+  }
+  DBG("ignoring unknown control cmd : '%s'\n", cmd.c_str());
 }
 
 int SBCCalleeSession::filterBody(AmSdp& sdp, bool is_a2b) {

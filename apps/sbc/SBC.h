@@ -60,6 +60,7 @@ class SBCFactory: public AmSessionFactory,
   void getRegexMapNames(const AmArg& args, AmArg& ret);
   void setRegexMap(const AmArg& args, AmArg& ret);
   void loadCallcontrolModules(const AmArg& args, AmArg& ret);
+  void postControlCmd(const AmArg& args, AmArg& ret);
 
   string getActiveProfileMatch(string& profile_rule, const AmSipRequest& req,
 			       const string& app_param, AmUriParser& ruri_parser,
@@ -193,6 +194,8 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   bool onOtherReply(const AmSipReply& reply);
   void onOtherBye(const AmSipRequest& req);
 
+  void onControlCmd(string& cmd, AmArg& params);
+
   int filterBody(AmSdp& sdp, bool is_a2b);
 
   void createCalleeSession();
@@ -213,12 +216,16 @@ class SBCCalleeSession
 
   /* bool onOtherReply(const AmSipReply& reply); */
 
+  void onControlCmd(string& cmd, AmArg& params);
+
   int filterBody(AmSdp& sdp, bool is_a2b);
 
  public:
   SBCCalleeSession(const AmB2BCallerSession* caller,
 		   const SBCCallProfile& call_profile); 
   ~SBCCalleeSession();
+
+  void process(AmEvent* ev);
 
   inline UACAuthCred* getCredentials();
   
