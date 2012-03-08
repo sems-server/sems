@@ -1,0 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from xmlrpclib import *
+s = ServerProxy('http://localhost:8090')
+print "Active calls: %d" % s.calls()
+print s.di('monitoring','list')

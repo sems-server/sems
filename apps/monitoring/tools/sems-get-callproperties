@@ -1,0 +1,12 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from xmlrpclib import *
+import sys
+
+if len(sys.argv) != 2:
+        print "usage: %s <ltag/ID of call to list>" % sys.argv[0]
+        sys.exit(1)
+
+s = ServerProxy('http://localhost:8090')
+print "Active calls: %d" % s.calls()
+print s.di('monitoring','get', sys.argv[1])
