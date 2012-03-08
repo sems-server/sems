@@ -30,7 +30,6 @@ SBC - feature-wishlist
 - overload handling (parallel call to target thresholds)
 - call distribution
 - select profile on monitoring in-mem DB record
-- fallback profile
  */
 #include "SBC.h"
 
