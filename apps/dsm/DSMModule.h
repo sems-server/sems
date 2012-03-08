@@ -132,8 +132,7 @@ class SCStrArgAction
 
 /* bool xsplit(const string& arg, char sep, bool optional, string& par1, string& par2); */
 
-#define CONST_ACTION_2P(CL_name, sep, optional)				\
-  CL_name::CL_name(const string& arg) {					\
+#define SPLIT_ARGS(sep, optional)					\
     size_t p = 0;							\
     char last_c = ' ';							\
     bool quot=false;							\
@@ -196,9 +195,14 @@ class SCStrArgAction
       ERROR("expected two parameters separated with '%c' in expression '%s' for %s\n", \
 	    sep,arg.c_str(),typeid(this).name());			\
       return;								\
-    }									\
-  }									\
-  
+    }
+
+
+#define CONST_ACTION_2P(CL_name, _sep, _optional)			\
+  CL_name::CL_name(const string& arg) {					\
+    SPLIT_ARGS(_sep, _optional);					\
+  }
+
 
 #define EXEC_ACTION_START(act_name)					\
   bool act_name::execute(AmSession* sess, DSMSession* sc_sess,		\
@@ -243,7 +247,24 @@ void splitCmd(const string& from_str,
     bool match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event, \
 	       map<string,string>* event_params);			\
   };
-  
+
+#define DEF_CONDITION_2P(cond_name)					\
+  class cond_name							\
+  : public DSMCondition {						\
+    string par1;							\
+    string par2;							\
+    bool inv;								\
+  public:								\
+    cond_name(const string& arg, bool inv);				\
+    bool match(AmSession* sess, DSMSession* sc_sess, DSMCondition::EventType event, \
+	       map<string,string>* event_params);			\
+  };
+
+#define CONST_CONDITION_2P(cond_name, _sep, _optional)			\
+  cond_name::cond_name(const string& arg, bool inv)			\
+  : inv(inv) {								\
+    SPLIT_ARGS(_sep, _optional);					\
+  }
 
 #define MATCH_CONDITION_START(cond_clsname)				\
   bool cond_clsname::match(AmSession* sess, DSMSession* sc_sess,	\
