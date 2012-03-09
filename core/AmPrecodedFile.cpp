@@ -33,11 +33,14 @@
 #include <libgen.h>
 
 unsigned int precoded_bytes2samples(long h_codec, unsigned int num_bytes) {
-  return ((AmAudioFormat*)h_codec)->frame_size;
+
+  return ((precoded_payload_t*)h_codec)->frame_ms
+    * ((precoded_payload_t*)h_codec)->sample_rate
+    / 1000;
 }
 
 unsigned int precoded_samples2bytes(long h_codec, unsigned int num_samples) {
-  return ((AmAudioFormat*)h_codec)->frame_encoded_size;
+  return ((precoded_payload_t*)h_codec)->frame_bytes;
 }
 
 amci_codec_t _codec_precoded = { 
@@ -64,22 +67,18 @@ AmPrecodedRtpFormat::AmPrecodedRtpFormat(precoded_payload_t& precoded_payload)
   channels = precoded_payload.channels;
   rate = precoded_payload.sample_rate;
   // frame_size is in samples, precoded_payload.frame_size in millisec
-  frame_size = precoded_payload.frame_ms * precoded_payload.sample_rate / 1000;
+  //frame_size = precoded_payload.frame_ms * precoded_payload.sample_rate / 1000;
   //frame_length = precoded_payload.frame_ms;
-  frame_encoded_size = precoded_payload.frame_bytes;
-  h_codec = (long)this;
+  //frame_encoded_size = precoded_payload.frame_bytes;
+  h_codec = (long)&(this->precoded_payload);
 }
 
 AmPrecodedRtpFormat::~AmPrecodedRtpFormat() {
 }
 
-int AmPrecodedRtpFormat::getCodecId() { 
-  return PRECODED_CODEC_ID; 
-}
-
-
 AmPrecodedFileFormat::AmPrecodedFileFormat(precoded_payload_t& precoded_payload)
-  : AmAudioFileFormat(""), precoded_payload(precoded_payload) {
+  : AmAudioFileFormat(""), precoded_payload(precoded_payload) 
+{
   subtype.type = 0;
   subtype.name = precoded_payload.name;
   subtype.sample_rate = precoded_payload.sample_rate;
@@ -91,16 +90,12 @@ AmPrecodedFileFormat::AmPrecodedFileFormat(precoded_payload_t& precoded_payload)
   codec = getCodec();
 
   // used in precoded_bytes2samples()/precoded_samples2bytes()
-  frame_size = precoded_payload.frame_ms * precoded_payload.sample_rate / 1000;
-  frame_encoded_size = precoded_payload.frame_bytes;
-  h_codec = (long)this;
+  //frame_size = precoded_payload.frame_ms * precoded_payload.sample_rate / 1000;
+  //frame_encoded_size = precoded_payload.frame_bytes;
+  h_codec = (long)&(this->precoded_payload);
 }
 
 AmPrecodedFileFormat::~AmPrecodedFileFormat() { 
-}
-
-int AmPrecodedFileFormat::getCodecId() { 
-  return PRECODED_CODEC_ID; 
 }
 
 int precoded_file_open(FILE* fp, struct amci_file_desc_t* fmt_desc, int options, long h_codec)

@@ -31,6 +31,68 @@
 #include "AmSession.h"
 #include "AmPlayoutBuffer.h"
 
+AmAudioRtpFormat::AmAudioRtpFormat()
+  : AmAudioFormat(-1),
+    advertized_rate(-1)
+{
+}
+
+AmAudioRtpFormat::~AmAudioRtpFormat()
+{
+}
+
+int AmAudioRtpFormat::setCurrentPayload(Payload pl)
+{
+  if (this->codec_id != pl.codec_id) {
+    this->codec_id = pl.codec_id;
+    DBG("fmt.codec_id = %d", this->codec_id);
+    this->channels = 1;
+    this->rate = pl.clock_rate;
+    DBG("fmt.rate = %d", this->rate);
+    this->advertized_rate = pl.advertised_clock_rate;
+    DBG("fmt.advertized_rate = %d", this->advertized_rate);
+    this->frame_size = 20*this->rate/1000;
+    if (this->codec != NULL) {
+      destroyCodec();
+    }
+  }
+  return 0;
+}
+
+void AmAudioRtpFormat::initCodec()
+{
+  amci_codec_fmt_info_t fmt_i[4];
+
+  fmt_i[0].id=0;
+
+  if( codec && codec->init ) {
+    if ((h_codec = (*codec->init)(sdp_format_parameters.c_str(), fmt_i)) == -1) {
+      ERROR("could not initialize codec %i\n",codec->id);
+    } else {
+      string s; 
+      int i=0;
+      while (fmt_i[i].id) {
+	switch (fmt_i[i].id) {
+	case AMCI_FMT_FRAME_LENGTH : {
+	  //frame_length=fmt_i[i].value; 
+	} break;
+	case AMCI_FMT_FRAME_SIZE: {
+	  frame_size=fmt_i[i].value; 
+	} break;
+	case AMCI_FMT_ENCODED_FRAME_SIZE: {
+	//   frame_encoded_size=fmt_i[i].value; 
+	} break;
+	default: {
+	  DBG("Unknown codec format descriptor: %d\n", fmt_i[i].id);
+	} break;
+	}
+	i++;
+      }
+    }  
+  } 
+}
+
+
 AmRtpAudio::AmRtpAudio(AmSession* _s, int _if)
   : AmRtpStream(_s,_if), AmAudio(0), 
     /*last_ts_i(false),*/ use_default_plc(true),
@@ -48,7 +110,7 @@ AmRtpAudio::~AmRtpAudio() {
 #endif // USE_SPANDSP_PLC
 }
 
-bool AmRtpAudio::checkInterval(unsigned int ts)
+bool AmRtpAudio::checkInterval(unsigned long long ts)
 {
   if(!last_check_i){
     send_int     = true;
@@ -56,7 +118,7 @@ bool AmRtpAudio::checkInterval(unsigned int ts)
     last_check   = ts;
   }
   else {
-    if(resampleTS(ts - last_check) >= getFrameSize()){
+    if(scaleSystemTS(ts - last_check) >= getFrameSize()){
       send_int = true;
       last_check = ts;
     }
@@ -80,12 +142,12 @@ unsigned int AmRtpAudio::bytes2samples(unsigned int bytes) const
 /* 
    @param wallclock_ts [in]    the current ts in the audio buffer 
 */
-int AmRtpAudio::receive(unsigned int wallclock_ts) 
+int AmRtpAudio::receive(unsigned long long system_ts) 
 {
   int size;
   unsigned int rtp_ts;
   int new_payload = -1;
-  wallclock_ts = resampleTS(wallclock_ts);
+  unsigned int wallclock_ts = scaleSystemTS(system_ts);
 
   while(true) {
     size = AmRtpStream::receive((unsigned char*)samples,
@@ -110,8 +172,19 @@ int AmRtpAudio::receive(unsigned int wallclock_ts)
       return -1;
     }
 
-    unsigned int adjusted_rtp_ts = (double)rtp_ts * 
-      ((double)fmt->getRate() / (double)fmt->getTSRate());
+    // This only works because the possible ratio (Rate/TSRate)
+    // is 2. Rate and TSRate are only different in case of g722.
+    // For g722, TSRate=8000 and Rate=16000
+    //
+    AmAudioRtpFormat* rtp_fmt = (AmAudioRtpFormat*)fmt.get();
+    unsigned long long adjusted_rtp_ts = rtp_ts;
+
+    if(rtp_fmt->getRate() != rtp_fmt->getTSRate()) {
+      adjusted_rtp_ts =
+	(unsigned long long)rtp_ts *
+	(unsigned long long)rtp_fmt->getRate()
+	/ (unsigned long long)rtp_fmt->getTSRate();
+    }
 
     playout_buffer->write(wallclock_ts, adjusted_rtp_ts,
 			  (ShortSample*)((unsigned char *)samples),
@@ -120,31 +193,51 @@ int AmRtpAudio::receive(unsigned int wallclock_ts)
   return size;
 }
 
-int AmRtpAudio::get(unsigned int ref_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples)
+int AmRtpAudio::get(unsigned long long system_ts, unsigned char* buffer, 
+		    int output_sample_rate, unsigned int nb_samples)
 {
-  assert(getSampleRate()==output_sample_rate); // resampling should not be done here
+  unsigned int user_ts = scaleSystemTS(system_ts);
 
-  ref_ts /= getSampleRateDivisor();
+  u_int32_t size =
+    PCM16_S2B(playout_buffer->read(user_ts,
+				   (ShortSample*)((unsigned char*)samples),
+				   nb_samples));
+  if(output_sample_rate != getSampleRate()) {
+    size = resampleOutput((unsigned char*)samples, size,
+			  getSampleRate(), output_sample_rate);
+  }
   
-  int size = read(ref_ts,PCM16_S2B(nb_samples));
   memcpy(buffer,(unsigned char*)samples,size);
+
   return size;
 }
 
-int AmRtpAudio::read(unsigned int ref_ts, unsigned int size)
+int AmRtpAudio::put(unsigned long long system_ts, unsigned char* buffer, 
+		    int input_sample_rate, unsigned int size)
 {
-  u_int32_t rlen = 
-    playout_buffer
-    ->read(ref_ts,
-	   (ShortSample*)((unsigned char*)samples),
-	   PCM16_B2S(size));
+  if(!size){
+    return 0;
+  }
 
-  return PCM16_S2B(rlen);
-}
+  memcpy((unsigned char*)samples,buffer,size);
+  size = resampleInput((unsigned char*)samples, size, 
+		       input_sample_rate, getSampleRate());
 
-int AmRtpAudio::write(unsigned int user_ts, unsigned int size)
-{
-  return send(user_ts,(unsigned char*)samples,size);
+  int s = encode(size);
+  if(s<=0){
+    return s;
+  }
+
+  AmAudioRtpFormat* rtp_fmt = (AmAudioRtpFormat*)fmt.get();
+
+  // pre-division by 100 is important
+  // so that the first multiplication
+  // does not overflow the 64bit int
+  unsigned long long user_ts =
+    system_ts * ((unsigned long long)rtp_fmt->getTSRate() / 100)
+    / (WALLCLOCK_RATE/100);
+
+  return send((unsigned int)user_ts,(unsigned char*)samples,s);
 }
 
 void AmRtpAudio::getSdpOffer(unsigned int index, SdpMedia& offer)
@@ -179,17 +272,24 @@ int AmRtpAudio::init(const AmSdp& local,
   fmt_p->setCurrentPayload(payloads[pl_it->second.index]);
   fmt.reset(fmt_p);
 
-  fec.reset(new LowcFE(fmt->rate));
-
+  fec.reset(new LowcFE(getSampleRate()));
 
   if (m_playout_type == SIMPLE_PLAYOUT) {
-    playout_buffer.reset(new AmPlayoutBuffer(this,fmt->rate));
+    playout_buffer.reset(new AmPlayoutBuffer(this,getSampleRate()));
   } else if (m_playout_type == ADAPTIVE_PLAYOUT) {
-    playout_buffer.reset(new AmAdaptivePlayout(this,fmt->rate));
+    playout_buffer.reset(new AmAdaptivePlayout(this,getSampleRate()));
   } else {
-    playout_buffer.reset(new AmJbPlayout(this,fmt->rate));
+    playout_buffer.reset(new AmJbPlayout(this,getSampleRate()));
   }
   return 0;
+}
+
+unsigned int AmRtpAudio::getFrameSize()
+{
+  if (!fmt.get())
+    return 0;
+
+  return ((AmAudioRtpFormat*)fmt.get())->getFrameSize();
 }
 
 int AmRtpAudio::setCurrentPayload(int payload)
@@ -230,13 +330,13 @@ unsigned int AmRtpAudio::conceal_loss(unsigned int ts_diff, unsigned char *buffe
 
     assert(codec && codec->plc);
     s = (*codec->plc)(buffer, PCM16_S2B(ts_diff),
-		      fmt->channels,fmt->rate,h_codec);
+		      fmt->channels,getSampleRate(),h_codec);
 
     DBG("codec specific PLC (ts_diff = %i; s = %i)\n",ts_diff,s);
   }
   else {
     s = default_plc(buffer, PCM16_S2B(ts_diff),
-		    fmt->channels,fmt->rate);
+		    fmt->channels,getSampleRate());
 
     DBG("default PLC (ts_diff = %i; s = %i)\n",ts_diff,s);
   }
@@ -274,7 +374,7 @@ void AmRtpAudio::add_to_history(int16_t *buffer, unsigned int size)
 #else // USE_SPANDSP_PLC
   int16_t* buf_offset = buffer;
 
-  unsigned int sample_rate = fmt->rate;
+  unsigned int sample_rate = getSampleRate();
 
   for(unsigned int i=0; i<(PCM16_B2S(size)/FRAMESZ); i++){
     fec->addtohistory(buf_offset);
@@ -291,7 +391,7 @@ void AmRtpAudio::setPlayoutType(PlayoutType type)
 	session->lockAudio();
 	m_playout_type = type;
 	if (fmt.get())
-	  playout_buffer.reset(new AmAdaptivePlayout(this,fmt->rate));
+	  playout_buffer.reset(new AmAdaptivePlayout(this,getSampleRate()));
 	session->unlockAudio();
 	DBG("Adaptive playout buffer activated\n");
       }
@@ -299,7 +399,7 @@ void AmRtpAudio::setPlayoutType(PlayoutType type)
 	session->lockAudio();
 	m_playout_type = type;
 	if (fmt.get())
-	  playout_buffer.reset(new AmJbPlayout(this,fmt->rate));
+	  playout_buffer.reset(new AmJbPlayout(this,getSampleRate()));
 	session->unlockAudio();
 	DBG("Adaptive jitter buffer activated\n");
       }
@@ -307,7 +407,7 @@ void AmRtpAudio::setPlayoutType(PlayoutType type)
 	session->lockAudio();
 	m_playout_type = type;
 	if (fmt.get())
-	  playout_buffer.reset(new AmPlayoutBuffer(this,fmt->rate));
+	  playout_buffer.reset(new AmPlayoutBuffer(this,getSampleRate()));
 	session->unlockAudio();
 	DBG("Simple playout buffer activated\n");
       }

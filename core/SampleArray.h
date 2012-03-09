@@ -28,11 +28,20 @@
 
 /* MUST be a power of 2 */
 #define SIZE_MIX_BUFFER   (1<<14)
-/** \brief comparator for timestamps */
+/** \brief comparator for user timestamps */
 struct ts_less
 {
   bool operator()(const unsigned int& l, 
 		  const unsigned int& r) const;
+};
+
+/** \brief comparator for system timestamps 
+ * Note that system timestamps overflow at 48 bit boundaries.
+ */
+struct sys_ts_less
+{
+  bool operator()(const unsigned long long& l, 
+		  const unsigned long long& r) const;
 };
 
 /** \brief timed array of samples */

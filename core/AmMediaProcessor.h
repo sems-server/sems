@@ -53,7 +53,7 @@ class AmMediaProcessorThread :
   unsigned char   buffer[AUDIO_BUFFER_SIZE];
   set<AmSession*> sessions;
   
-  void processAudio(unsigned int ts);
+  void processAudio(unsigned long long ts);
   /**
    * Process pending DTMF events
    */

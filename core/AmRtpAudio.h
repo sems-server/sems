@@ -63,6 +63,35 @@ class AmPLCBuffer {
   virtual ~AmPLCBuffer() { }
 };
 
+
+/** \brief RTP audio format */
+class AmAudioRtpFormat: public AmAudioFormat
+{
+  /** Sampling rate as advertized in SDP (differs from actual rate for G722) **/
+  unsigned int advertized_rate;
+
+protected:
+  /* frame size in samples */
+  unsigned int frame_size;
+
+  /** from AmAudioFormat */
+  void initCodec();
+
+public:
+  AmAudioRtpFormat();
+  ~AmAudioRtpFormat();
+
+  /** return the timestamp sampling rate */
+  unsigned int getTSRate() { return advertized_rate; }
+  unsigned int getFrameSize() { return frame_size; }
+
+  /**
+   * changes payload. returns != 0 on error.
+   */
+  int setCurrentPayload(Payload pl);
+};
+
+
 /** 
  * \brief binds together a \ref AmRtpStream and an \ref AmAudio for a session 
  */
@@ -79,9 +108,9 @@ class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
 
   bool         use_default_plc;
 
-  unsigned int last_check;
-  bool         last_check_i;
-  bool         send_int;
+  unsigned long long last_check;
+  bool               last_check_i;
+  bool               send_int;
 
   //
   // Default packet loss concealment functions
@@ -95,20 +124,24 @@ public:
   AmRtpAudio(AmSession* _s, int _if);
   ~AmRtpAudio();
 
-  bool checkInterval(unsigned int ts);
+  unsigned int getFrameSize();
+
+  bool checkInterval(unsigned long long ts);
   bool sendIntReached();
 
   int setCurrentPayload(int payload);
   int getCurrentPayload();
 
-  int receive(unsigned int wallclock_ts);
+  int receive(unsigned long long system_ts);
 
   // AmAudio interface
-  int read(unsigned int user_ts, unsigned int size);
-  int write(unsigned int user_ts, unsigned int size);
-
-  int get(unsigned int user_ts, unsigned char* buffer, 
+  int get(unsigned long long system_ts, unsigned char* buffer, 
 	  int output_sample_rate, unsigned int nb_samples);
+
+  int put(unsigned long long system_ts, unsigned char* buffer, 
+	  int input_sample_rate, unsigned int size);
+
+  unsigned int bytes2samples(unsigned int) const;
 
   // AmRtpStream interface
   void getSdpOffer(unsigned int index, SdpMedia& offer);
@@ -119,13 +152,17 @@ public:
 
   void setPlayoutType(PlayoutType type);
 
-  virtual unsigned int bytes2samples(unsigned int) const;
 
+  // AmPLCBuffer interface
   void add_to_history(int16_t *buffer, unsigned int size);
 
   // Conceals packet loss into the out_buffer
   // @return length in bytes of the recivered segment
   unsigned int conceal_loss(unsigned int ts_diff, unsigned char *out_buffer);
+
+protected:
+  int read(unsigned int user_ts, unsigned int size) { return 0; }
+  int write(unsigned int user_ts, unsigned int size) { return 0; }
 };
 
 #endif

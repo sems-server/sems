@@ -447,30 +447,3 @@ void AmSessionAudioConnector::waitReleased() {
   released.wait_for();
 }
 
-// ----------------------- AudioDelayBridge -----------------
-/** BRIDGE_DELAY is needed because of possible different packet sizes */ 
-#define BRIDGE_DELAY 30 * SYSTEM_SAMPLECLOCK_RATE/1000 // 30ms
-
-/* AudioBridge */
-AmAudioDelayBridge::AmAudioDelayBridge()
-  : AmAudio(new AmAudioSimpleFormat(CODEC_PCM16))
-{
-  sarr.clear_all();
-}
-
-AmAudioDelayBridge::~AmAudioDelayBridge() { 
-}
-
-int AmAudioDelayBridge::write(unsigned int user_ts, unsigned int size) {  
-  //	DBG("bridge write %u - this = %lu\n", user_ts + BRIDGE_DELAY, (unsigned long) this);
-  sarr.write(user_ts + BRIDGE_DELAY, (short*) ((unsigned char*) samples), size >> 1); 
-  return size; 
-}
-
-int AmAudioDelayBridge::read(unsigned int user_ts, unsigned int size) { 
-  //	DBG("bridge read %u - this = %lu\n", user_ts, (unsigned long) this);
-  sarr.read(user_ts, (short*) ((unsigned char*) samples), size >> 1); 
-  return size;
-}
-
-

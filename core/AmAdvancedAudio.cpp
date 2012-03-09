@@ -34,7 +34,7 @@ using std::set;
 
 /* AudioQueue */
 AmAudioQueue::AmAudioQueue() 
-  : AmAudio(new AmAudioSimpleFormat(CODEC_PCM16)), // we get and put in this (internal) fmt
+  : AmAudio(new AmAudioFormat(CODEC_PCM16)), // we get and put in this (internal) fmt
     owning(true)
 {
 }
@@ -62,37 +62,53 @@ void AmAudioQueue::setOwning(bool _owning) {
   owning = _owning;
 }
 
-int AmAudioQueue::write(unsigned int user_ts, unsigned int size) {
-  inputQueue_mut.lock();
-  int size_trav = (int)size;
-  for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin(); it != inputQueue.end(); it++) {
-    if (it->audio == NULL)
-      continue;
-    if (it->put) {
-      if ((size_trav = it->audio->put(user_ts, samples, fmt->rate, size_trav)) < 0)
-	break;
-    }
-    if (it->get) {
-      if ((size_trav = it->audio->get(user_ts, samples, fmt->rate, size_trav >> 1)) < 0)
-	break;
-    }
-  }
-  inputQueue_mut.unlock();
-  return size_trav;
+int AmAudioQueue::put(unsigned long long system_ts, unsigned char* buffer, 
+		      int input_sample_rate, unsigned int size)
+{
+   inputQueue_mut.lock();
+   int size_trav = (int)size;
+   for (std::list<AudioQueueEntry>::iterator it = inputQueue.begin(); 
+	it != inputQueue.end(); it++) {
+     if (it->audio == NULL)
+       continue;
+     if (it->put) {
+       size_trav = it->audio->put(system_ts, buffer, 
+				  input_sample_rate, size_trav);
+       if (size_trav < 0)
+	 break;
+     }
+     if (it->get) {
+       input_sample_rate = it->audio->getSampleRate();
+       size_trav = it->audio->get(system_ts, buffer,
+				  input_sample_rate, size_trav>>1);
+       if (size_trav < 0)
+	 break;
+     }
+   }
+   inputQueue_mut.unlock();
+   return size_trav;
 }
 
-int AmAudioQueue::read(unsigned int user_ts, unsigned int size) {
+int AmAudioQueue::get(unsigned long long system_ts, unsigned char* buffer, 
+		      int output_sample_rate, unsigned int nb_samples)
+{
   outputQueue_mut.lock();
-  int size_trav = (int)size;
-  for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin(); it != outputQueue.end(); it++) {
+  int size_trav = (int)(nb_samples << 1);
+  for (std::list<AudioQueueEntry>::iterator it = outputQueue.begin();
+       it != outputQueue.end(); it++) {
     if (it->audio == NULL)
       continue;
     if (it->put) {
-      if ((size_trav = it->audio->put(user_ts, samples, fmt->rate, size_trav)) < 0)
+      size_trav = it->audio->put(system_ts, samples, 
+				 output_sample_rate, size_trav);
+      if (size_trav < 0)
 	break;
     }
     if (it->get) {
-      if ((size_trav = it->audio->get(user_ts, samples, fmt->rate, size_trav >> 1)) < 0)
+      output_sample_rate = it->audio->getSampleRate();
+      size_trav = it->audio->get(system_ts, samples,
+				 output_sample_rate, size_trav>>1);
+      if (size_trav < 0)
 	break;
     }
   }
@@ -197,8 +213,8 @@ int AmAudioQueue::removeAudio(AmAudio* audio) {
 
 
 /* AudioBridge */
-AmAudioBridge::AmAudioBridge()
-  : AmAudio(new AmAudioSimpleFormat(CODEC_PCM16))
+AmAudioBridge::AmAudioBridge(unsigned int sample_rate)
+  : AmAudio(new AmAudioFormat(CODEC_PCM16,sample_rate))
 {
   sarr.clear_all();
 }
@@ -217,8 +233,8 @@ int AmAudioBridge::read(unsigned int user_ts, unsigned int size) {
 }
 
 /* AudioDelay */
-AmAudioDelay::AmAudioDelay(float delay_sec)
-  : AmAudio(new AmAudioSimpleFormat(CODEC_PCM16))
+AmAudioDelay::AmAudioDelay(float delay_sec, unsigned int sample_rate)
+  : AmAudio(new AmAudioFormat(CODEC_PCM16,sample_rate))
 {
   sarr.clear_all();
   delay = delay_sec;
@@ -227,13 +243,14 @@ AmAudioDelay::AmAudioDelay(float delay_sec)
 AmAudioDelay::~AmAudioDelay() { 
 }
 
-int AmAudioDelay::write(unsigned int user_ts, unsigned int size) {  
+int AmAudioDelay::write(unsigned int user_ts, unsigned int size) {
   sarr.write(user_ts,(short*) ((unsigned char*) samples), size >> 1); 
   return size; 
 }
 
-int AmAudioDelay::read(unsigned int user_ts, unsigned int size) { 
-  sarr.read((unsigned int) (user_ts  - delay*(float)SYSTEM_SAMPLECLOCK_RATE), (short*)  ((unsigned char*) samples), size >> 1); 
+int AmAudioDelay::read(unsigned int user_ts, unsigned int size) {
+  sarr.read((unsigned int) (user_ts  - delay*(float)getSampleRate()),
+	    (short*) ((unsigned char*) samples), size >> 1); 
   return size;
 }
 
@@ -260,48 +277,54 @@ void AmAudioFrontlist::setBackAudio(AmAudio* new_ba) {
   ba_mut.unlock();
 }
 
-int AmAudioFrontlist::put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size) {
+int AmAudioFrontlist::put(unsigned long long system_ts, unsigned char* buffer, 
+			  int input_sample_rate, unsigned int size) {
+
   // stay consistent with Playlist - if empty return size
   int res = size; 
   ba_mut.lock();
 
   if (isEmpty()) {
     if (back_audio) 
-      res = back_audio->put(user_ts, buffer, input_sample_rate, size);
+      res = back_audio->put(system_ts, buffer, input_sample_rate, size);
   } else {
-    res = AmPlaylist::put(user_ts, buffer, input_sample_rate, size);
+    res = AmPlaylist::put(system_ts, buffer, input_sample_rate, size);
   }
 
   ba_mut.unlock();
   return res;
 }
 
-int AmAudioFrontlist::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int size) {
+int AmAudioFrontlist::get(unsigned long long system_ts, unsigned char* buffer, 
+			  int output_sample_rate, unsigned int nb_samples) {
+
   // stay consistent with Playlist - if empty return size
-  int res = size; 
+  int res = nb_samples; 
 
   ba_mut.lock();
   if (isEmpty() && back_audio) {
-      res = back_audio->get(user_ts, buffer, output_sample_rate, size);
+      res = back_audio->get(system_ts, buffer, output_sample_rate, nb_samples);
   } else {
-    res = AmPlaylist::get(user_ts, buffer, output_sample_rate, size);
+    res = AmPlaylist::get(system_ts, buffer, output_sample_rate, nb_samples);
   }
   ba_mut.unlock();
   return res;
 }
 
 
-int AmNullAudio::write(unsigned int user_ts, unsigned int size) {
-  // need to stop at some point? 
+int AmNullAudio::put(unsigned long long system_ts, unsigned char* buffer,
+		     int output_sample_rate, unsigned int size)
+{
+  // need to stop at some point?
   if (write_msec < 0)
     return size;
 
   if (!write_end_ts_i) {
     write_end_ts_i = true;
-    write_end_ts = user_ts + write_msec*fmt->rate/1000;
+    write_end_ts = system_ts + (write_msec*WALLCLOCK_RATE)/1000;
   }
 
-  if (!ts_less()(user_ts, write_end_ts)) {
+  if (!sys_ts_less()(system_ts, write_end_ts)) {
     DBG("%dms of silence ended (write)\n", write_msec);
     return -1;
   }
@@ -309,8 +332,12 @@ int AmNullAudio::write(unsigned int user_ts, unsigned int size) {
   return size;
 }
 
-int AmNullAudio::read(unsigned int user_ts, unsigned int size) {
-  // need to stop at some point? 
+int AmNullAudio::get(unsigned long long system_ts, unsigned char* buffer, 
+		     int output_sample_rate, unsigned int nb_samples)
+{
+  int size = (int)(nb_samples << 1);
+
+  // need to stop at some point?
   if (read_msec < 0) {
     memset((unsigned char*) samples, 0, size);
     return size;
@@ -318,10 +345,10 @@ int AmNullAudio::read(unsigned int user_ts, unsigned int size) {
 
   if (!read_end_ts_i) {
     read_end_ts_i = true;
-    read_end_ts = user_ts + read_msec*fmt->rate/1000; 
+    read_end_ts = system_ts + (read_msec*WALLCLOCK_RATE)/1000;
   }
 
-  if (!ts_less()(user_ts, read_end_ts)) {
+  if (!sys_ts_less()(system_ts, read_end_ts)) {
     DBG("%dms of silence ended (read)\n", read_msec);
     return -1;
   }

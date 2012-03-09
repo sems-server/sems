@@ -169,7 +169,8 @@ int AmAudioFile::fpopen(const string& filename, OpenMode mode, FILE* n_fp)
   return fpopen_int(f_name, mode, n_fp, subtype);
 }
 
-int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, const string& subtype)
+int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, 
+			    FILE* n_fp, const string& subtype)
 {
 
   AmAudioFileFormat* f_fmt = fileName2Fmt(filename, subtype);
@@ -191,10 +192,10 @@ int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, c
 
   if(open_mode == AmAudioFile::Write){
 
-    if (f_fmt->channels<0 || f_fmt->rate<0) {
+    if (f_fmt->channels<0 || f_fmt->getRate()<0) {
       if (f_fmt->channels<0)
 	ERROR("channel count must be set for output file.\n");
-      if (f_fmt->rate<0)
+      if (f_fmt->getRate()<0)
 	ERROR("sampling rate must be set for output file.\n");
       close();
       return -1;
@@ -203,7 +204,7 @@ int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, c
 
   fd.subtype = f_fmt->getSubtypeId();
   fd.channels = f_fmt->channels;
-  fd.rate = f_fmt->rate;
+  fd.rate = f_fmt->getRate();
 
   if( iofmt->open && 
       !(ret = (*iofmt->open)(fp, &fd, mode, f_fmt->getHCodecNoInit())) ) {
@@ -211,7 +212,7 @@ int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, c
     if (mode == AmAudioFile::Read) {
       f_fmt->setSubtypeId(fd.subtype);
       f_fmt->channels = fd.channels;
-      f_fmt->rate = fd.rate;
+      f_fmt->setRate(fd.rate);
       data_size = fd.data_size;
 
       setBufferSize(fd.buffer_size, fd.buffer_thresh, fd.buffer_full_thresh);
@@ -239,7 +240,7 @@ int AmAudioFile::fpopen_int(const string& filename, OpenMode mode, FILE* n_fp, c
 
 
 AmAudioFile::AmAudioFile()
-  : AmBufferedAudio(0, 0, 0), data_size(0), 
+  : AmBufferedAudio(0, 0, 0), data_size(0),
     fp(0), begin(0), loop(false), autorewind(false),
     on_close_done(false),
     close_on_exit(true)
@@ -260,7 +261,7 @@ void AmAudioFile::rewind()
 void AmAudioFile::rewind(unsigned int msec)
 {
   long fpos = ftell(fp);
-  long int k = fmt->calcBytesToRead((fmt->rate/1000)*msec);
+  long int k = fmt->calcBytesToRead(((getSampleRate()/100)*msec)/10);
   
   if(fpos > begin + k) {
     DBG("Rewinding %d milliseconds (%ld bytes)\n", msec, k);
@@ -275,7 +276,7 @@ void AmAudioFile::rewind(unsigned int msec)
 void AmAudioFile::forward(unsigned int msec)
 {
   long fpos = ftell(fp);
-  long int k = fmt->calcBytesToRead((fmt->rate/1000)*msec);
+  long int k = fmt->calcBytesToRead(((getSampleRate()/100)*msec)/10);
   
   if(fpos <= (data_size - k)) {
     DBG("Forwarding %d milliseconds (%ld bytes)\n", msec, k);
@@ -296,7 +297,7 @@ void AmAudioFile::on_close()
 
     if(f_fmt){
       amci_file_desc_t fmt_desc = { f_fmt->getSubtypeId(), 
-				    f_fmt->rate, 
+				    f_fmt->getRate(), 
 				    f_fmt->channels, 
 				    data_size };
 	    
@@ -312,7 +313,7 @@ void AmAudioFile::on_close()
       DBG("After close:\n");
       DBG("fmt::subtype = %i\n",f_fmt->getSubtypeId());
       DBG("fmt::channels = %i\n",f_fmt->channels);
-      DBG("fmt::rate = %i\n",f_fmt->rate);
+      DBG("fmt::rate = %i\n",f_fmt->getRate());
     }
 
     on_close_done = true;
@@ -431,12 +432,12 @@ int AmAudioFile::write(unsigned int user_ts, unsigned int size)
   return (!ferror(fp) ? s : -1);
 }
 
-int AmAudioFile::getLength() 
+int AmAudioFile::getLength()
 { 
   if (!data_size || !fmt.get())
     return 0;
 
   return 
-    fmt->bytes2samples(data_size) /
-    (fmt->rate/1000); 
+    fmt->bytes2samples(data_size)*1000
+    / fmt->getRate();
 }

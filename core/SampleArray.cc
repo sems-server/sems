@@ -43,6 +43,11 @@ inline bool ts_less::operator()(const unsigned int& l,
   return (l - r > (unsigned int)(1<<31));
 }
 
+inline bool sys_ts_less::operator()(const unsigned long long& l, 
+				    const unsigned long long& r) const
+{
+  return (((l - r) & 0xFFFFFFFFFFFFLL) > (1LL<<47));
+}
 
 template <typename T>
 SampleArray<T>::SampleArray()
@@ -125,7 +130,7 @@ void SampleArray<T>::put(unsigned int ts, T* buffer, unsigned int size)
   }
 
   if(ts_less()(ts,last_ts-SIZE_MIX_BUFFER)){
-    DBG("throwing away too old packet.\n");
+    DBG("throwing away too old packet (ts=%u; last_ts=%u).\n",ts,last_ts);
     return;
   }
 

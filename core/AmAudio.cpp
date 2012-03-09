@@ -51,55 +51,23 @@ struct CodecContainer
   long h_codec;
 };
 
-AmAudioRtpFormat::AmAudioRtpFormat()
-  : AmAudioFormat(), 
-    codec_id(-1),
-    advertized_rate(-1)
-{
-  
-}
-
-int AmAudioRtpFormat::setCurrentPayload(Payload pl)
-{
-  if (this->codec_id != pl.codec_id) {
-    this->codec_id = pl.codec_id;
-    DBG("fmt.codec_id = %d", this->codec_id);
-    this->channels = 1;
-    this->rate = pl.clock_rate;
-    DBG("fmt.rate = %d", this->rate);
-    this->advertized_rate = pl.advertised_clock_rate;
-    DBG("fmt.advertized_rate = %d", this->advertized_rate);
-    this->frame_size = 20*this->rate/1000;
-    if (this->codec != NULL) {
-      destroyCodec();
-    }
-  }
-  return 0;
-}
-
-AmAudioRtpFormat::~AmAudioRtpFormat()
-{
-}
-
-AmAudioFormat::AmAudioFormat()
-  : channels(-1), rate(-1), codec(NULL),
-    frame_size(20*SYSTEM_SAMPLECLOCK_RATE/1000), frame_encoded_size(320)
-{
-
-}
-
-AmAudioSimpleFormat::AmAudioSimpleFormat(int codec_id)
-  : AmAudioFormat(), codec_id(codec_id)
+AmAudioFormat::AmAudioFormat(int codec_id, int rate)
+  : channels(1),
+    codec_id(codec_id),
+    rate(rate),
+    codec(NULL)
 {
   codec = getCodec();
-  rate = SYSTEM_SAMPLECLOCK_RATE;
-  channels = 1;
 }
-
 
 AmAudioFormat::~AmAudioFormat()
 {
   destroyCodec();
+}
+
+void AmAudioFormat::setRate(unsigned int sample_rate)
+{
+  rate = sample_rate;
 }
 
 unsigned int AmAudioFormat::calcBytesToRead(unsigned int needed_samples) const
@@ -136,32 +104,11 @@ bool AmAudioFormat::operator != (const AmAudioFormat& r) const
 void AmAudioFormat::initCodec()
 {
   amci_codec_fmt_info_t fmt_i[4];
-
   fmt_i[0].id=0;
 
   if( codec && codec->init ) {
     if ((h_codec = (*codec->init)(sdp_format_parameters.c_str(), fmt_i)) == -1) {
       ERROR("could not initialize codec %i\n",codec->id);
-    } else {
-      string s; 
-      int i=0;
-      while (fmt_i[i].id) {
-	switch (fmt_i[i].id) {
-	case AMCI_FMT_FRAME_LENGTH : {
-	  //frame_length=fmt_i[i].value; 
-	} break;
-	case AMCI_FMT_FRAME_SIZE: {
-	  frame_size=fmt_i[i].value; 
-	} break;
-	case AMCI_FMT_ENCODED_FRAME_SIZE: {
-	  frame_encoded_size=fmt_i[i].value; 
-	} break;
-	default: {
-	  DBG("Unknown codec format descriptor: %d\n", fmt_i[i].id);
-	} break;
-	}
-	i++;
-      }
     }  
   } 
 }
@@ -182,11 +129,8 @@ void AmAudioFormat::resetCodec() {
 
 amci_codec_t* AmAudioFormat::getCodec()
 {
-
   if(!codec){
-    int codec_id = getCodecId();
     codec = AmPlugIn::instance()->codec(codec_id);
-
     initCodec();
   }
     
@@ -303,7 +247,7 @@ unsigned int AmInternalResamplerState::resample(unsigned char *samples, unsigned
 #endif
 
 AmAudio::AmAudio()
-  : fmt(new AmAudioSimpleFormat(CODEC_PCM16)),
+  : fmt(new AmAudioFormat(CODEC_PCM16)),
     max_rec_time(-1),
     rec_time(0),
     input_resampling_state(NULL),
@@ -340,14 +284,14 @@ void AmAudio::close()
 
 
 // returns bytes read, else -1 if error (0 is OK)
-int AmAudio::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples)
+int AmAudio::get(unsigned long long system_ts, unsigned char* buffer, 
+		 int output_sample_rate, unsigned int nb_samples)
 {
-  int size = calcBytesToRead((int)((float)nb_samples * (float)fmt->rate
+  int size = calcBytesToRead((int)((float)nb_samples * (float)getSampleRate()
 				   / (float)output_sample_rate));
 
-  unsigned int rd_ts = user_ts * ((double)fmt->getTSRate()
-				  / (double)SYSTEM_SAMPLECLOCK_RATE);
-
+  unsigned int rd_ts = scaleSystemTS(system_ts);
+  //DBG("\tread(rd_ts = %10.u; size = %u)\n",rd_ts,size);
   size = read(rd_ts,size);
   if(size <= 0){
     return size;
@@ -360,7 +304,8 @@ int AmAudio::get(unsigned int user_ts, unsigned char* buffer, int output_sample_
   }
   size = downMix(size);
 
-  size = resampleOutput((unsigned char*)samples,size, fmt->rate, output_sample_rate);
+  size = resampleOutput((unsigned char*)samples, size, 
+			getSampleRate(), output_sample_rate);
   
   if(size>0)
     memcpy(buffer,(unsigned char*)samples,size);
@@ -369,7 +314,8 @@ int AmAudio::get(unsigned int user_ts, unsigned char* buffer, int output_sample_
 }
 
 // returns bytes written, else -1 if error (0 is OK)
-int AmAudio::put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size)
+int AmAudio::put(unsigned long long system_ts, unsigned char* buffer, 
+		 int input_sample_rate, unsigned int size)
 {
   if(!size){
     return 0;
@@ -379,16 +325,16 @@ int AmAudio::put(unsigned int user_ts, unsigned char* buffer, int input_sample_r
     return -1;
 
   memcpy((unsigned char*)samples,buffer,size);
-  size = resampleInput((unsigned char*)samples, size, input_sample_rate, fmt->rate);
+  size = resampleInput((unsigned char*)samples, size, 
+		       input_sample_rate, getSampleRate());
 
   int s = encode(size);
   if(s>0){
 
     incRecordTime(bytes2samples(size));
 
-    unsigned int wr_ts = user_ts * ((double)fmt->getTSRate()
-				    / (double)SYSTEM_SAMPLECLOCK_RATE);
-
+    unsigned int wr_ts = scaleSystemTS(system_ts);
+    //DBG("write(wr_ts = %10.u; s = %u)\n",wr_ts,s);
     return write(wr_ts,(unsigned int)s);
   }
   else{
@@ -429,7 +375,7 @@ int AmAudio::decode(unsigned int size)
 
   if(codec->decode){
     s = (*codec->decode)(samples.back_buffer(),samples,s,
-			 fmt->channels,fmt->rate,h_codec);
+			 fmt->channels,getSampleRate(),h_codec);
     if(s<0) return s;
     samples.swap();
   }
@@ -441,18 +387,13 @@ int AmAudio::encode(unsigned int size)
 {
   int s = size;
 
-  //   if(!fmt.get()){
-  //     DBG("no encode fmt\n");
-  //     return 0;
-  //   }
-
   amci_codec_t* codec = fmt->getCodec();
   long h_codec = fmt->getHCodec();
 
   assert(codec);
   if(codec->encode){
     s = (*codec->encode)(samples.back_buffer(),samples,(unsigned int) size,
-			 fmt->channels,fmt->rate,h_codec);
+			 fmt->channels,getSampleRate(),h_codec);
     if(s<0) return s;
     samples.swap();
   }
@@ -499,7 +440,8 @@ unsigned int AmAudio::resampleInput(unsigned char* buffer, unsigned int s, int i
 
 unsigned int AmAudio::resampleOutput(unsigned char* buffer, unsigned int s, int input_sample_rate, int output_sample_rate)
 {
-  if ((input_sample_rate == output_sample_rate) && !output_resampling_state.get()) {
+  if ((input_sample_rate == output_sample_rate) 
+      && !output_resampling_state.get()) {
     return s;
   }
 
@@ -528,30 +470,24 @@ unsigned int AmAudio::resample(AmResamplingState& rstate, unsigned char* buffer,
   return rstate.resample((unsigned char*) buffer, s, ((double) output_sample_rate) / ((double) input_sample_rate));
 }
 
-unsigned int AmAudio::getFrameSize()
-{
-
-  if (!fmt.get())
-    fmt.reset(new AmAudioSimpleFormat(CODEC_PCM16));
-
-  return fmt->frame_size;
-}
-
 int AmAudio::getSampleRate()
 {
   if (!fmt.get())
-    fmt.reset(new AmAudioSimpleFormat(CODEC_PCM16));
+    return 0;
 
-  return fmt->rate;
+  return fmt->getRate();
 }
 
-unsigned int AmAudio::getSampleRateDivisor()
+unsigned int AmAudio::scaleSystemTS(unsigned long long system_ts)
 {
-
-  if (!fmt.get())
-    fmt.reset(new AmAudioSimpleFormat(CODEC_PCM16));
-
-  return (SYSTEM_SAMPLECLOCK_RATE / fmt->rate);
+  // pre-division by 100 is important
+  // so that the first multiplication
+  // does not overflow the 64bit int
+  unsigned long long user_ts =
+    system_ts * ((unsigned long long)getSampleRate() / 100)
+    / (WALLCLOCK_RATE / 100);
+		 
+  return (unsigned int)user_ts;
 }
 
 unsigned int AmAudio::calcBytesToRead(unsigned int nb_samples) const
@@ -566,7 +502,7 @@ unsigned int AmAudio::bytes2samples(unsigned int bytes) const
 
 void AmAudio::setRecordTime(unsigned int ms)
 {
-  max_rec_time = ms * (fmt->rate / 1000);
+  max_rec_time = (ms * (getSampleRate() / 100)) / 10;
 }
 
 int AmAudio::incRecordTime(unsigned int samples)
@@ -594,9 +530,4 @@ unsigned char* DblBuffer::back_buffer()
 void DblBuffer::swap()
 {
   active_buf = !active_buf;
-}
-
-int AmAudioRtpFormat::getCodecId()
-{
-  return codec_id;
 }

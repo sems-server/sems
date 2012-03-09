@@ -57,7 +57,8 @@ struct AudioQueueEntry {
  * and written through the whole input queue.
  */
 
-class AmAudioQueue : public AmAudio {
+class AmAudioQueue : public AmAudio 
+{
 
   AmMutex inputQueue_mut;
   std::list<AudioQueueEntry> inputQueue;
@@ -65,7 +66,8 @@ class AmAudioQueue : public AmAudio {
   std::list<AudioQueueEntry> outputQueue;
 
   bool owning;
- public:
+
+public:
   AmAudioQueue();
   ~AmAudioQueue();
 
@@ -83,9 +85,16 @@ class AmAudioQueue : public AmAudio {
   int removeAudio(AmAudio* audio);
   void setOwning(bool _owning);
 
- protected:
-  int write(unsigned int user_ts, unsigned int size);
-  int read(unsigned int user_ts, unsigned int size);
+  /** AmAudio interface */
+  int get(unsigned long long system_ts, unsigned char* buffer, 
+	  int output_sample_rate, unsigned int nb_samples);
+  int put(unsigned long long system_ts, unsigned char* buffer, 
+	  int input_sample_rate, unsigned int size);
+
+protected:
+  /** Fake implementation to satifsy AmAudio */
+  int write(unsigned int user_ts, unsigned int size) { return 0; }
+  int read(unsigned int user_ts, unsigned int size) { return 0; }
 };
 
 /**
@@ -98,20 +107,23 @@ class AmAudioQueue : public AmAudio {
  * while in a conference.
  *
  */
-class AmAudioFrontlist : public AmPlaylist {
+class AmAudioFrontlist : public AmPlaylist 
+{
   AmMutex ba_mut;
   AmAudio* back_audio;
- public:
 
+public:
   AmAudioFrontlist(AmEventQueue* q);
   AmAudioFrontlist(AmEventQueue* q, AmAudio* back_audio);
   ~AmAudioFrontlist();
 
   void setBackAudio(AmAudio* new_ba);
 
- protected:
-  int put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size);
-  int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int size);
+  int put(unsigned long long system_ts, unsigned char* buffer, 
+	  int input_sample_rate, unsigned int size);
+
+  int get(unsigned long long user_ts, unsigned char* buffer, 
+	  int output_sample_rate, unsigned int size);
 };
 
 
@@ -121,12 +133,14 @@ class AmAudioFrontlist : public AmPlaylist {
  *  AmAudioBridge simply connects input and output
  *  This is useful e.g. at the end of a AudioQueue
  */
-class AmAudioBridge : public AmAudio {
+class AmAudioBridge : public AmAudio 
+{
   SampleArrayShort sarr;
- public:
-  AmAudioBridge();
+
+public:
+  AmAudioBridge(unsigned int sample_rate = SYSTEM_SAMPLECLOCK_RATE);
   ~AmAudioBridge();
- protected:
+
   int write(unsigned int user_ts, unsigned int size);
   int read(unsigned int user_ts, unsigned int size);
 };
@@ -135,36 +149,41 @@ class AmAudioBridge : public AmAudio {
  * \brief \ref AmAudio that delays output from input
  * delays delay_sec seconds (up to ~2)
  */
-class AmAudioDelay : public AmAudio {
+class AmAudioDelay : public AmAudio 
+{
   SampleArrayShort sarr;
   float delay;
- public:
-  AmAudioDelay(float delay_sec);
+
+public:
+  AmAudioDelay(float delay_sec = 0.0,
+	       unsigned int sample_rate = SYSTEM_SAMPLECLOCK_RATE);
   ~AmAudioDelay();
- protected:
+
+  void setDelay(float delay) { this->delay = delay; }
+
   int write(unsigned int user_ts, unsigned int size);
   int read(unsigned int user_ts, unsigned int size);
 };
 
 /** 
- * AmNullAudio plays silence, and recording goes to void. 
- * it can be parametrized with a maximum length (in milliseconds), 
+ * AmNullAudio plays silence, and recording goes to void.
+ * it can be parametrized with a maximum length (in milliseconds),
  * after which it is ended.
  * Read and write length can also be set after creation (and possibly even
  * when in use).
  */
-class AmNullAudio 
-: public AmAudio {
+class AmNullAudio : public AmAudio 
+{
   int read_msec;
   int write_msec;
 
   bool read_end_ts_i;
-  unsigned int read_end_ts;
+  unsigned long long read_end_ts;
 
   bool write_end_ts_i;
-  unsigned int write_end_ts;
+  unsigned long long write_end_ts;
 
- public:
+public:
   AmNullAudio(int read_msec = -1, int write_msec = -1)
     : read_msec(read_msec), write_msec(write_msec),
     read_end_ts_i(false), write_end_ts_i(false) { }
@@ -175,9 +194,16 @@ class AmNullAudio
   /** (re) set maximum write length*/
   void setWriteLength(int n_msec);
 
- protected:
-  int write(unsigned int user_ts, unsigned int size);
-  int read(unsigned int user_ts, unsigned int size);
+  /** AmAudio interface */
+  int get(unsigned long long system_ts, unsigned char* buffer, 
+	  int output_sample_rate, unsigned int nb_samples);
+  int put(unsigned long long system_ts, unsigned char* buffer, 
+	  int input_sample_rate, unsigned int size);
+
+protected:
+  /** Fake implementation to satifsy AmAudio */
+  int write(unsigned int user_ts, unsigned int size) { return 0; }
+  int read(unsigned int user_ts, unsigned int size) { return 0; }
 };
 
 #endif // _AmAdvancedAudio_h_

@@ -61,7 +61,7 @@ class AmAudioMixIn : public AmAudio {
 
   AmMutex B_mut;
 
-  unsigned int next_start_ts;
+  unsigned long long next_start_ts;
   bool next_start_ts_i;
 
   short mix_buf[MAX_BUF_SAMPLES];  // 240
@@ -81,8 +81,11 @@ class AmAudioMixIn : public AmAudio {
   int write(unsigned int user_ts, unsigned int size){ return -1; }
     
   // override AmAudio
-  int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples);
-  int put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size);
+  int get(unsigned long long system_ts, unsigned char* buffer,
+	  int output_sample_rate, unsigned int nb_samples);
+
+  int put(unsigned long long system_ts, unsigned char* buffer,
+	  int input_sample_rate, unsigned int size);
 };
 
 

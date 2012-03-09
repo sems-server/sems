@@ -253,23 +253,8 @@ class AmB2ABCalleeSession: public AmB2ABSession
   AmCondition<bool>* released;
 };
 
-
-
-/**
- * \brief \ref AmAudio that connects input and output with delay
- *
- *  AmAudioDelayBridge simply connects input and output 
- *  with a fixed packet size delay.
- */
-class AmAudioDelayBridge : public AmAudio {
-  SampleArrayShort sarr;
- public:
-  AmAudioDelayBridge();
-  ~AmAudioDelayBridge();
- protected:
-  int write(unsigned int user_ts, unsigned int size);
-  int read(unsigned int user_ts, unsigned int size);
-};
+/** BRIDGE_DELAY is needed because of possible different packet sizes */ 
+#define BRIDGE_DELAY (30.0/1000.0) // 30ms
 
 /**
  * \brief connects the audio of two sessions together
@@ -277,7 +262,7 @@ class AmAudioDelayBridge : public AmAudio {
 class AmSessionAudioConnector {
 
  private:
-  AmAudioDelayBridge audio_connectors[2];
+  AmAudioDelay audio_connectors[2];
   string tag_sess[2];
   bool connected[2];
   AmMutex tag_mut;
@@ -287,9 +272,12 @@ class AmSessionAudioConnector {
  public:
   /** create a connector, connect audio to sess */
   AmSessionAudioConnector() 
-    : released(true) {
-    connected[0] = false; 
+    : released(true) 
+  {
+    connected[0] = false;
     connected[1] = false;
+    audio_connectors[0].setDelay(BRIDGE_DELAY);
+    audio_connectors[1].setDelay(BRIDGE_DELAY);
   }
 
   ~AmSessionAudioConnector() {}

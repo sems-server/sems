@@ -53,9 +53,6 @@ class AmMultiPartyMixer
   typedef std::map<int,int> SampleRateMap;
   typedef std::multiset<int> SampleRateSet;
 
-
-  //typedef std::map<int,unsigned int>    ChannelOff;
-
   SampleRateMap    sampleratemap;
   SampleRateSet    samplerates;
   ChannelIdSet     channelids;
@@ -66,7 +63,8 @@ class AmMultiPartyMixer
   int              tmp_buffer[AUDIO_BUFFER_SIZE/2];
 
   std::deque<MixerBufferState>::iterator findOrCreateBufferState(unsigned int sample_rate);
-  std::deque<MixerBufferState>::iterator findBufferStateForReading(unsigned int sample_rate, unsigned int last_ts);
+  std::deque<MixerBufferState>::iterator findBufferStateForReading(unsigned int sample_rate, 
+								   unsigned long long last_ts);
   void cleanupBufferStates(unsigned int last_ts);
 
   void mix_add(int* dest,int* src1,short* src2,unsigned int size);
@@ -81,15 +79,15 @@ public:
   void removeChannel(unsigned int channel_id);
 
   void PutChannelPacket(unsigned int   channel_id,
-			unsigned int   ts, 
+			unsigned long long system_ts,
 			unsigned char* buffer, 
 			unsigned int   size);
 
   void GetChannelPacket(unsigned int   channel,
-			unsigned int   ts,
+			unsigned long long system_ts,
 			unsigned char* buffer, 
 			unsigned int&  size,
-			unsigned int& output_sample_rate);
+			unsigned int&  output_sample_rate);
 
   int GetCurrentSampleRate();
 

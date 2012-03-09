@@ -227,11 +227,12 @@ void AmMediaProcessorThread::run()
 {
   stop_requested = false;
   struct timeval now,next_tick,diff,tick;
+
   // wallclock time
-  unsigned int ts = 0;
+  unsigned long long ts = 0;//4294417296;
 
   tick.tv_sec  = 0;
-  tick.tv_usec = 10000; // 10 ms
+  tick.tv_usec = 1000*WC_INC_MS;
 
   gettimeofday(&now,NULL);
   timeradd(&tick,&now,&next_tick);
@@ -256,7 +257,7 @@ void AmMediaProcessorThread::run()
     events.processEvents();
     processDtmfEvents();
 
-    ts += 10 * SYSTEM_SAMPLECLOCK_RATE / 1000; // 10 ms
+    ts = (ts + WC_INC) & WALLCLOCK_MASK;
     timeradd(&tick,&next_tick,&next_tick);
   }
 }
@@ -274,7 +275,7 @@ void AmMediaProcessorThread::processDtmfEvents()
     }
 }
 
-void AmMediaProcessorThread::processAudio(unsigned int ts)
+void AmMediaProcessorThread::processAudio(unsigned long long ts)
 {
   // receiving
   for(set<AmSession*>::iterator it = sessions.begin();
@@ -313,7 +314,9 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 	      break;
 	    }
 	  } else {
-	    got_audio = s->RTPStream()->get(ts,buffer,s->RTPStream()->getSampleRate(),s->RTPStream()->getFrameSize());
+	    got_audio = s->RTPStream()->get(ts,buffer,
+					    s->RTPStream()->getSampleRate(),
+					    s->RTPStream()->getFrameSize());
 	    
 	    if (s->isDtmfDetectionEnabled() && got_audio > 0)
 	      s->putDtmfAudio(buffer, got_audio, ts);
@@ -323,7 +326,9 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 	// input is local - get audio from local_in
 	AmAudio* local_input = s->getLocalInput(); 
 	if (local_input) {
-	  got_audio = local_input->get(ts,buffer,s->RTPStream()->getSampleRate(),s->RTPStream()->getFrameSize());
+	  got_audio = local_input->get(ts,buffer,
+				       s->RTPStream()->getSampleRate(),
+				       s->RTPStream()->getFrameSize());
 	}
       }
 
@@ -331,7 +336,9 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
       if (got_audio >= 0) {
 	AmAudio* input = s->getInput();
 	if (input) {
-	  int ret = input->put(ts,buffer,s->RTPStream()->getSampleRate(),got_audio);
+	  int ret = input->put(ts,buffer,
+			       s->RTPStream()->getSampleRate(),
+			       got_audio);
 	  if(ret < 0){
 	    DBG("input->put() returned: %i\n",ret);
 	    postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
@@ -353,7 +360,9 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
 	    
     if(output && s->RTPStream()->sendIntReached()){
 		
-      int size = output->get(ts,buffer,s->RTPStream()->getSampleRate(), s->RTPStream()->getFrameSize());
+      int size = output->get(ts,buffer,
+			     s->RTPStream()->getSampleRate(),
+			     s->RTPStream()->getFrameSize());
       if(size <= 0){
 	DBG("output->get() returned: %i\n",size);
 	postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s)); 
@@ -361,15 +370,17 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
       else {
 	if (!s->getAudioLocal(AM_AUDIO_OUT)) {
 	  // audio should go to RTP
-	  if(!s->RTPStream()->mute){	     
-	    if(s->RTPStream()->put(ts,buffer,s->RTPStream()->getSampleRate(),size)<0)
+	  if(!s->RTPStream()->mute){
+	    if(s->RTPStream()->put(ts,buffer,
+				   s->RTPStream()->getSampleRate(),size)<0)
 	      postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
 	  }
 	} else {
 	  // output is local - audio should go in local_out
-	  AmAudio* local_output = s->getLocalOutput(); 
+	  AmAudio* local_output = s->getLocalOutput();
 	  if (local_output) {
-	    if (local_output->put(ts,buffer,s->RTPStream()->getSampleRate(),size) < 0) {
+	    if (local_output->put(ts,buffer,
+				  s->RTPStream()->getSampleRate(),size) < 0) {
 	      postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
 	    }
 	  }
@@ -377,7 +388,7 @@ void AmMediaProcessorThread::processAudio(unsigned int ts)
       }
     }
     s->unlockAudio();
-  }	
+  }
 }
 
 void AmMediaProcessorThread::process(AmEvent* e)

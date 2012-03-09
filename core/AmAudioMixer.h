@@ -78,8 +78,10 @@ class AmAudioMixerConnector
   AmAudio* mix_channel;
 
  protected:
-  int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples);
-  int put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size);
+  int get(unsigned long long system_ts, unsigned char* buffer, 
+	  int output_sample_rate, unsigned int nb_samples);
+  int put(unsigned long long system_ts, unsigned char* buffer, 
+	  int input_sample_rate, unsigned int size);
 
   // dummies for AmAudio's pure virtual methods
   int read(unsigned int user_ts, unsigned int size){ return -1; }

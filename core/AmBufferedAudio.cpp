@@ -27,8 +27,9 @@
 
 #include "AmBufferedAudio.h"
 
-AmBufferedAudio::AmBufferedAudio(size_t output_buffer_size, 
-				 size_t low_buffer_thresh, size_t full_buffer_thresh) 
+AmBufferedAudio::AmBufferedAudio(size_t output_buffer_size,
+				 size_t low_buffer_thresh,
+				 size_t full_buffer_thresh)
   : output_buffer_size(output_buffer_size), 
     low_buffer_thresh(low_buffer_thresh), full_buffer_thresh(full_buffer_thresh),
     r(0), w(0), eof(false), err_code(0)
@@ -76,15 +77,17 @@ void AmBufferedAudio::clearBufferEOF() {
   err_code = 0;
 }
 
-int AmBufferedAudio::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples) {
+int AmBufferedAudio::get(unsigned long long system_ts, unsigned char* buffer, 
+			 int output_sample_rate, unsigned int nb_samples) 
+{
   if (!output_buffer_size) 
-    return AmAudio::get(user_ts, buffer, output_sample_rate, nb_samples);
+    return AmAudio::get(system_ts, buffer, output_sample_rate, nb_samples);
 
   if (w-r < low_buffer_thresh && !eof) {
-    input_get_audio(user_ts);
+    input_get_audio(system_ts);
   }
   
-  size_t nget = PCM16_S2B(nb_samples * output_sample_rate / fmt->rate);
+  size_t nget = PCM16_S2B(nb_samples * getSampleRate() / output_sample_rate);
   if (w-r < nget) 
     nget = w-r;
 
@@ -100,7 +103,7 @@ int AmBufferedAudio::get(unsigned int user_ts, unsigned char* buffer, int output
   memcpy((unsigned char*)samples,&output_buffer[r],nget);
   r+=nget;
 
-  int size = resampleOutput(samples,nget,fmt->rate,output_sample_rate);
+  int size = resampleOutput(samples,nget,getSampleRate(),output_sample_rate);
   memcpy(buffer, (unsigned char*)samples,size);
 
   return size;

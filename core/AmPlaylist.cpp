@@ -58,7 +58,8 @@ void AmPlaylist::gotoNextItem(bool notify)
   }
 }
 
-int AmPlaylist::get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples)
+int AmPlaylist::get(unsigned long long system_ts, unsigned char* buffer, 
+		    int output_sample_rate, unsigned int nb_samples)
 {
   int ret = -1;
 
@@ -67,7 +68,9 @@ int AmPlaylist::get(unsigned int user_ts, unsigned char* buffer, int output_samp
 
   while(cur_item && 
 	cur_item->play && 
-	(ret = cur_item->play->get(user_ts,buffer,output_sample_rate,nb_samples)) <= 0){
+	(ret = cur_item->play->get(system_ts,buffer,
+				   output_sample_rate,
+				   nb_samples)) <= 0) {
 
     DBG("get: gotoNextItem\n");
     gotoNextItem(true);
@@ -82,7 +85,8 @@ int AmPlaylist::get(unsigned int user_ts, unsigned char* buffer, int output_samp
   return ret;
 }
 
-int AmPlaylist::put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size)
+int AmPlaylist::put(unsigned long long system_ts, unsigned char* buffer, 
+		    int input_sample_rate, unsigned int size)
 {
   int ret = -1;
 
@@ -90,7 +94,9 @@ int AmPlaylist::put(unsigned int user_ts, unsigned char* buffer, int input_sampl
   updateCurrentItem();
   while(cur_item && 
 	cur_item->record &&
-	(ret = cur_item->record->put(user_ts,buffer,input_sample_rate,size)) < 0){
+	(ret = cur_item->record->put(system_ts,buffer,
+				     input_sample_rate,
+				     size)) < 0) {
 
     DBG("put: gotoNextItem\n");
     gotoNextItem(true);
@@ -104,7 +110,7 @@ int AmPlaylist::put(unsigned int user_ts, unsigned char* buffer, int input_sampl
 }
 
 AmPlaylist::AmPlaylist(AmEventQueue* q)
-  : AmAudio(new AmAudioSimpleFormat(CODEC_PCM16)),
+  : AmAudio(new AmAudioFormat(CODEC_PCM16)),
     ev_q(q), cur_item(0)
 {
   

@@ -128,7 +128,7 @@ AmCachedAudioFile::AmCachedAudioFile(AmFileCache* cache)
 
   fd.subtype = f_fmt->getSubtypeId();
   fd.channels = f_fmt->channels;
-  fd.rate = f_fmt->rate;
+  fd.rate = f_fmt->getRate();
 
   long unsigned int ofpos = fpos;
 
@@ -137,7 +137,7 @@ AmCachedAudioFile::AmCachedAudioFile(AmFileCache* cache)
 				 &fd,AmAudioFile::Read,f_fmt->getHCodecNoInit())) ) {
     f_fmt->setSubtypeId(fd.subtype);
     f_fmt->channels = fd.channels;
-    f_fmt->rate = fd.rate;
+    f_fmt->setRate(fd.rate);
 
     begin = fpos = ofpos;
   }

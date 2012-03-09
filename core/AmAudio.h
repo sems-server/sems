@@ -30,6 +30,7 @@
 
 #include "AmThread.h"
 #include "amci/amci.h"
+#include "amci/codecs.h"
 #include "AmEventQueue.h"
 
 #include <stdio.h>
@@ -55,6 +56,24 @@ using std::string;
 #ifndef SYSTEM_SAMPLECLOCK_RATE
 #define SYSTEM_SAMPLECLOCK_RATE 32000
 #endif
+
+// Wallclock definitions:
+//
+// The wallclock is defined such that:
+//  - it is the highest clock rate is the system
+//  - any supported sample rate must be smaller
+//  - the difference between scaled down timers
+//    is always consistent with respect to overflows.
+//  - supported sample rates are multiples of 100
+//    (44100 is supported, 44110 is not)
+#define WALLCLOCK_RATE 102400LL
+//
+// Wallclock overflow mask
+#define WALLCLOCK_MASK 0xFFFFFFFFFFFFLL // 48 bit mask
+//
+// Wallclock increments
+#define WC_INC_MS 10LL /* 10 ms */
+#define WC_INC ((WALLCLOCK_RATE*WC_INC_MS)/1000LL)
 
 struct SdpPayload;
 struct CodecContainer;
@@ -118,30 +137,23 @@ class AmAudioFormat
 public:
   /** Number of channels. */
   int channels;
-  /** Sampling rate. */
-  int rate;
-
-  /* frame length in ms (frame based codecs) - unused */
-  //int frame_length;
-  /* frame size in samples */
-  int frame_size;
-  /* encoded frame size in bytes - unused */
-  int frame_encoded_size;
 
   string sdp_format_parameters;
     
-  AmAudioFormat();
+  AmAudioFormat(int codec_id = CODEC_PCM16,
+		int rate = SYSTEM_SAMPLECLOCK_RATE);
+
   virtual ~AmAudioFormat();
 
   /** @return The format's codec pointer. */
-  virtual amci_codec_t*    getCodec();
+  virtual amci_codec_t* getCodec();
   void resetCodec();
 
-  /** return the real sampling rate */
-  virtual int getRate() { return rate; }
+  /** return the sampling rate */
+  int getRate() { return rate; }
 
-  /** return the timestamp sampling rate */
-  virtual int getTSRate() { return rate; }
+  /** set the sampling rate */
+  void setRate(unsigned int sample_rate);
 
   /** @return Handler returned by the codec's init function.*/
   long             getHCodec();
@@ -156,7 +168,11 @@ public:
   bool operator != (const AmAudioFormat& r) const;
 
 protected:
-  virtual int getCodecId()=0;
+  /** Codec id: @see amci/codecs.h */
+  int codec_id;
+
+  /** Sampling rate. */
+  int rate;
 
   /** ==0 if not yet initialized. */
   amci_codec_t*   codec;
@@ -166,46 +182,10 @@ protected:
   /** Calls amci_codec_t::destroy() */
   void destroyCodec();
   /** Calls amci_codec_t::init() */
-  void initCodec();
+  virtual void initCodec();
 
 private:
   void operator = (const AmAudioFormat& r);
-};
-
-/** \brief simple \ref AmAudioFormat audio format */
-class AmAudioSimpleFormat: public AmAudioFormat
-{
-  int codec_id;
-
-protected:
-  virtual int getCodecId() { return codec_id; }
-
-public:
-  AmAudioSimpleFormat(int codec_id);
-};
-
-
-/** \brief RTP audio format */
-class AmAudioRtpFormat: public AmAudioFormat
-{
-  int codec_id;
-
-  /** Sampling rate as advertized in SDP (differs from actual rate for G722) **/
-  int advertized_rate;
-
-protected:
-  virtual int getCodecId();
-
-public:
-  AmAudioRtpFormat();
-  ~AmAudioRtpFormat();
-
-  virtual int getTSRate() { return advertized_rate; }
-
-  /**
-   * changes payload. returns != 0 on error.
-   */
-  int setCurrentPayload(Payload pl);
 };
 
 /**
@@ -284,7 +264,6 @@ protected:
   AmAudio();
   AmAudio(AmAudioFormat *);
 
-
   /** Gets 'size' bytes directly from stream (Read,Pull). */
   virtual int read(unsigned int user_ts, unsigned int size) = 0;
   /** Puts 'size' bytes directly from stream (Write,Push). */
@@ -355,9 +334,13 @@ protected:
    */
   unsigned int bytes2samples(unsigned int bytes) const;
 
-public:
-  //bool begin_talk;
+  /**
+   * Scale a system timestamp down dependent on the sample rate.
+   */
+  unsigned int scaleSystemTS(unsigned long long system_ts);
 
+public:
+  /** Destructor */
   virtual ~AmAudio();
 
   /** Closes the audio pipe. */
@@ -370,7 +353,8 @@ public:
    * </pre>           whereby the format with/from which the codec works is the reference one.
    * @return # bytes read, else -1 if error (0 is OK) 
    */
-  virtual int get(unsigned int user_ts, unsigned char* buffer, int output_sample_rate, unsigned int nb_samples);
+  virtual int get(unsigned long long system_ts, unsigned char* buffer, 
+		  int output_sample_rate, unsigned int nb_samples);
 
   /** 
    * Put some samples to the output stream.
@@ -379,11 +363,10 @@ public:
    * </pre>           whereby the format with/from which the codec works is the reference one.
    * @return # bytes written, else -1 if error (0 is OK) 
    */
-  virtual int put(unsigned int user_ts, unsigned char* buffer, int input_sample_rate, unsigned int size);
+  virtual int put(unsigned long long system_ts, unsigned char* buffer, 
+		  int input_sample_rate, unsigned int size);
   
-  unsigned int getFrameSize();
-  int getSampleRate();
-  unsigned int getSampleRateDivisor();
+  int  getSampleRate();
 
   void setRecordTime(unsigned int ms);
   int  incRecordTime(unsigned int samples);
