@@ -248,6 +248,18 @@ void WebConferenceDialog::onBye(const AmSipRequest& req)
   disconnectConference();
 }
 
+void WebConferenceDialog::onRtpTimeout() {
+  DBG("RTP timeout, removing from conference\n");
+  disconnectConference();
+  AmSession::onRtpTimeout();
+}
+
+void WebConferenceDialog::onSessionTimeout() {
+  DBG("Session Timer: Timeout, removing from conference.\n");
+  disconnectConference();
+  AmSession::onSessionTimeout();
+}
+
 void WebConferenceDialog::disconnectConference() {
   play_list.close();
   setInOut(NULL,NULL);

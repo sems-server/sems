@@ -105,6 +105,9 @@ public:
   void onDtmf(int event, int duration);
   void onBye(const AmSipRequest& req);
 
+  void onSessionTimeout();
+  void onRtpTimeout();
+
   UACAuthCred* getCredentials() { return cred; }
 
 };
