@@ -1126,7 +1126,8 @@ void AmSession::onSessionStart()
 
 void AmSession::onRtpTimeout()
 {
-  DBG("stopping Session.\n");
+  DBG("RTP timeout, stopping Session\n");
+  dlg.bye();
   setStopped();
 }
 
