@@ -141,7 +141,7 @@ public:
   string sdp_format_parameters;
     
   AmAudioFormat(int codec_id = CODEC_PCM16,
-		int rate = SYSTEM_SAMPLECLOCK_RATE);
+		unsigned int rate = SYSTEM_SAMPLECLOCK_RATE);
 
   virtual ~AmAudioFormat();
 
@@ -150,7 +150,7 @@ public:
   void resetCodec();
 
   /** return the sampling rate */
-  int getRate() { return rate; }
+  unsigned int getRate() { return rate; }
 
   /** set the sampling rate */
   void setRate(unsigned int sample_rate);
@@ -172,7 +172,7 @@ protected:
   int codec_id;
 
   /** Sampling rate. */
-  int rate;
+  unsigned int rate;
 
   /** ==0 if not yet initialized. */
   amci_codec_t*   codec;

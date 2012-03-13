@@ -51,7 +51,7 @@ struct CodecContainer
   long h_codec;
 };
 
-AmAudioFormat::AmAudioFormat(int codec_id, int rate)
+AmAudioFormat::AmAudioFormat(int codec_id, unsigned int rate)
   : channels(1),
     codec_id(codec_id),
     rate(rate),
