@@ -75,7 +75,7 @@ USE_INTERNAL_RESAMPLER = yes
 # exclude some modules from compilation?
 # e.g. python modules:
 
-exclude_core_modules = g729
+exclude_core_modules = g729 silk
 #exclude_apps_modules = py_sems ivr mailbox pin_collect conf_auth mp3 examples
 
 # build in support for monitoring?
