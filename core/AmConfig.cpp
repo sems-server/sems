@@ -356,7 +356,7 @@ int AmConfig::readConfiguration()
     ExcludePlugins = cfg.getParameter("exclude_plugins");
 
   // exclude_plugins
-  if (cfg.hasParameter("exclude_payload"))
+  if (cfg.hasParameter("exclude_payloads"))
     ExcludePayloads = cfg.getParameter("exclude_payloads");
 
   // user_agent
