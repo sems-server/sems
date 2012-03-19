@@ -33,7 +33,6 @@
 #include "AmRtpAudio.h"
 
 #include "librtmp/rtmp.h"
-#include <speex/speex.h>
 
 #include <queue>
 using std::queue;
@@ -44,11 +43,6 @@ class RtmpAudio
   : public AmAudio,
     public AmPLCBuffer
 {
-  struct SpeexState {
-    void *state;
-    SpeexBits bits;
-  };
-
   RtmpSender* sender;
   AmMutex     m_sender;
 
@@ -65,26 +59,18 @@ class RtmpAudio
   bool         send_offset_i;
   unsigned int send_rtmp_offset;
 
-  SpeexState dec_state;
-  SpeexState enc_state;
-
-  void init_codec();
-  int wb_decode(unsigned int size);
-  int wb_encode(unsigned int size);
-
   void process_recv_queue(unsigned int ref_ts);
+  int send(unsigned int user_ts, unsigned int size);
 
 public:
   RtmpAudio(RtmpSender* s);
   ~RtmpAudio();
 
   /* @see AmAudio */
-  int get(unsigned int user_ts, unsigned char* buffer, 
+  int get(unsigned long long system_ts, unsigned char* buffer, 
 	  int output_sample_rate, unsigned int nb_samples);
-  int put(unsigned int user_ts, unsigned char* buffer, 
+  int put(unsigned long long system_ts, unsigned char* buffer, 
 	  int output_sample_rate, unsigned int size);
-  int read(unsigned int user_ts, unsigned int size);
-  int write(unsigned int user_ts, unsigned int size);
 
   void bufferPacket(const RTMPPacket& p);
 
@@ -105,6 +91,10 @@ public:
    * method to propagate the stream ID.
    */
   void setPlayStreamID(unsigned int stream_id);
+
+protected:
+  int read(unsigned int user_ts, unsigned int size)  { return 0; }
+  int write(unsigned int user_ts, unsigned int size) { return 0; }
 };
 
 #endif

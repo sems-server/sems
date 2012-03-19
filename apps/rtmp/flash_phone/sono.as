@@ -30,6 +30,7 @@ import flash.events.Event;
 import flash.net.NetConnection;
 import flash.net.NetStream;
 import flash.media.Microphone;
+import flash.media.MicrophoneEnhancedMode;
 
 // application states
 private static const NOT_CONNECTED:uint = 0;
@@ -217,7 +218,15 @@ private function connectStreams():void
     g_micStream = new NetStream(g_netConnection);
     g_micStream.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
 
-    var micro:Microphone = Microphone.getEnhancedMicrophone();
+    var micro:Microphone = null;
+    if(Microphone['getEnhancedMicrophone'] != undefined) {
+	micro = Microphone['getEnhancedMicrophone'](-1);
+	lStatus.text = "Enhanced mike";
+    }
+    else {
+	micro = Microphone.getMicrophone(-1);
+	lStatus.text = "Normal mike";
+    }
 
     if(micro == null){
 	//TODO: report error

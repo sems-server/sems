@@ -67,179 +67,75 @@ static void dump_audio(unsigned char* buffer, unsigned int size)
 
 
 RtmpAudio::RtmpAudio(RtmpSender* s)
-  : playout_buffer(this,SPEEX_WB_SAMPLE_RATE), 
+  : AmAudio(new AmAudioFormat(CODEC_SPEEX_WB,SPEEX_WB_SAMPLE_RATE)),
+    playout_buffer(this,SPEEX_WB_SAMPLE_RATE), 
     sender(s), play_stream_id(0),
     recv_offset_i(false), recv_rtp_offset(0), recv_rtmp_offset(0),
     send_offset_i(false), send_rtmp_offset(0)
 {
-  init_codec();
 }
 
 RtmpAudio::~RtmpAudio()
 {
-  speex_encoder_destroy(enc_state.state);
-  speex_bits_destroy(&enc_state.bits);
-
-  speex_decoder_destroy(dec_state.state);
-  speex_bits_destroy(&dec_state.bits);
 }
-
-void RtmpAudio::init_codec()
-{
-  int val;
-
-  enc_state.state = speex_encoder_init(&speex_wb_mode);
-  speex_bits_init(&enc_state.bits);
-
-  val = 8;
-  speex_encoder_ctl(enc_state.state, SPEEX_SET_QUALITY, &val);
-
-  dec_state.state = speex_decoder_init(&speex_wb_mode);
-  speex_bits_init(&dec_state.bits);
-}
-
-
-int RtmpAudio::wb_decode(unsigned int size)
-{
-  // - decode into back-buffer
-  // - down-sample from back-buffer into front-buffer
-
-  short* pcm = (short*)samples.back_buffer();
-  speex_bits_read_from(&dec_state.bits, (char*)(unsigned char*)samples, size);
-
-  /* We don't know where frame boundaries are,
-     but the minimum frame size is 43 */
-  int out_size = 0;
-  while (speex_bits_remaining(&dec_state.bits)>40) {
-
-    switch(speex_decode_int(dec_state.state, &dec_state.bits, pcm)) {
-	
-    case -2:
-      ERROR("Corrupted stream!\n");
-      return -1;
-	
-    case -1: goto downsample;
-    default: break;
-    }
-
-    pcm      += SPEEX_WB_SAMPLES_PER_FRAME;
-    out_size += SPEEX_WB_SAMPLES_PER_FRAME*sizeof(short)/2;
-  }
-
- downsample:
-  
-  short* in  = (short*)samples.back_buffer();
-  short* out = (short*)(unsigned char*)samples;
-
-  for(int i=0; i<out_size;i++){
-    out[i] = in[i<<1];
-  }
-
-  return out_size;
-}
-
-int RtmpAudio::wb_encode(unsigned int size)
-{
-  //TODO:
-  // - up-sample into back-buffer
-  // - encode into front-buffer
-  
-  //DBG("size = %i\n",size);
-  short* out = (short*)samples.back_buffer();
-  short* in  = (short*)(unsigned char*)samples;
-
-  for(unsigned int i=0; i<size;i++){
-    out[i<<1]     = in[i];
-    out[(i<<1)+1] = in[i];
-  }
-  size *= 2;
-  //DBG("size = %i\n",size);
-  
-  div_t blocks = div(size, sizeof(short)*SPEEX_WB_SAMPLES_PER_FRAME);
-  if (blocks.rem) {
-    ERROR("non integral number of blocks %d.%d\n", blocks.quot, blocks.rem);
-    return -1;
-  }
-  //DBG("blocks.quot = %i; blocks.rem = %i\n",blocks.quot,blocks.rem);
-    
-  in = (short*)samples.back_buffer();
-  speex_bits_reset(&enc_state.bits);
-
-  while (blocks.quot--) {
-
-    speex_encode_int(enc_state.state, in, &enc_state.bits);
-    in += SPEEX_WB_SAMPLES_PER_FRAME;
-  }
-    
-  int out_size = speex_bits_write(&enc_state.bits, 
-				  (char*)(unsigned char*)samples, 
-				  AUDIO_BUFFER_SIZE);
-
-  //DBG("returning %u encoded bytes\n",out_size);
-  return out_size;
-}
-
 
 // returns bytes read, else -1 if error (0 is OK)
-int RtmpAudio::get(unsigned int user_ts, unsigned char* buffer, 
+int RtmpAudio::get(unsigned long long system_ts, unsigned char* buffer, 
 		   int output_sample_rate, unsigned int nb_samples)
 {
   // - buffer RTMP audio
   // - read from RTMP recv buffer
 
+  unsigned int user_ts = scaleSystemTS(system_ts);
+
   //DBG("get(%u, %u)\n",user_ts,nb_samples);
   process_recv_queue(user_ts);
 
-  u_int32_t rlen = playout_buffer.
-    read(user_ts,
-	 (ShortSample*)buffer,
-	 nb_samples);
-
+  u_int32_t size =
+    PCM16_S2B(playout_buffer.read(user_ts,
+				  (ShortSample*)((unsigned char*)samples),
+				  nb_samples));
+  if(output_sample_rate != getSampleRate()) {
+    size = resampleOutput((unsigned char*)samples, size,
+			  getSampleRate(), output_sample_rate);
+  }
   
+  memcpy(buffer,(unsigned char*)samples,size);
 
-  return PCM16_S2B(rlen);
-}
-
-int RtmpAudio::read(unsigned int user_ts, unsigned int size)
-{
-  assert(0);
-  return 0;
+  return size;
 }
 
 // returns bytes written, else -1 if error (0 is OK)
-int RtmpAudio::put(unsigned int user_ts, unsigned char* buffer, 
+int RtmpAudio::put(unsigned long long system_ts, unsigned char* buffer, 
 		   int input_sample_rate, unsigned int size)
 {
-  //dump_audio((unsigned char*)buffer,size);
-  //DBG("size = %i\n",size);
-
   if(!size){
     return 0;
   }
 
-  // TODO: check if still necessary
-  if(size>640)
-    size = 640;
+  //dump_audio((unsigned char*)buffer,size);
 
   // copy into internal buffer
   memcpy((unsigned char*)samples,buffer,size);
+  size = resampleInput((unsigned char*)samples, size, 
+		       input_sample_rate, getSampleRate());
 
-  // encode
-  int s = wb_encode(size);
-  if(s>0){
-    // send
-    return write(user_ts,(unsigned int)s);
-  }
-  else{
+  int s = encode(size);
+  //DBG("s = %i\n",s);
+  
+  if(s<=0){
     return s;
   }
+
+  return send(scaleSystemTS(system_ts),(unsigned int)s);
 }
 
-int RtmpAudio::write(unsigned int user_ts, unsigned int size)
+int RtmpAudio::send(unsigned int user_ts, unsigned int size)
 {
   m_sender.lock();
 
   if(!sender || !play_stream_id) {
+    //DBG("!sender || !play_stream_id");
     m_sender.unlock();
     return 0;
   }
@@ -263,7 +159,8 @@ int RtmpAudio::write(unsigned int user_ts, unsigned int size)
     send_offset_i = true;
   }
   
-  unsigned int rtmp_ts = (user_ts - send_rtmp_offset) / (8000/1000);
+  unsigned int rtmp_ts = (user_ts - send_rtmp_offset) 
+    / (SPEEX_WB_SAMPLE_RATE/1000);
   packet.m_nTimeStamp  = rtmp_ts;
 
   RTMPPacket_Alloc(&packet,size+1);
@@ -332,7 +229,7 @@ void RtmpAudio::process_recv_queue(unsigned int ref_ts)
       size = p.m_nBodySize-1;
       memcpy((unsigned char*)samples, p.m_body+1, size);
 
-      size = wb_decode(size);
+      size = decode(size);
       if(size <= 0){
 	ERROR("decode() returned %i\n",size);
 	return;
@@ -348,9 +245,9 @@ void RtmpAudio::process_recv_queue(unsigned int ref_ts)
 	begin_talk = true;
       }
 
-      unsigned int rtp_ts = (p.m_nTimeStamp - recv_rtmp_offset) * (8000/1000);
+      unsigned int rtp_ts = (p.m_nTimeStamp - recv_rtmp_offset) * (SPEEX_WB_SAMPLE_RATE/1000);
 
-      playout_buffer.write(ref_ts, rtp_ts, (ShortSample*)((unsigned char *)samples), 
+      playout_buffer.write(ref_ts, rtp_ts, (ShortSample*)((unsigned char *)samples),
 			   PCM16_B2S(size), begin_talk);
       
       RTMPPacket_Free(&p);    
@@ -382,6 +279,7 @@ void RtmpAudio::setSenderPtr(RtmpSender* s)
 void RtmpAudio::setPlayStreamID(unsigned int stream_id)
 {
   m_sender.lock();
+  DBG("play_stream_id = %i\n",stream_id);
   play_stream_id = stream_id;
   m_sender.unlock();
 }

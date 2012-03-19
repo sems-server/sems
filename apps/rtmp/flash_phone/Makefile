@@ -15,7 +15,8 @@ MXMLC=$(FLEX_SDK)/bin/mxmlc
 MXMLC_OPTS= \
 	--strict=true \
 	--as3=true \
-	--target-player="10.3"
+	-target-player 11.0 \
+	-swf-version=13
 
 APP=sono
 SOURCES= $(APP).mxml $(wildcard *.as)
