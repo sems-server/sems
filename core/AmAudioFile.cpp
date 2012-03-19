@@ -192,11 +192,11 @@ int AmAudioFile::fpopen_int(const string& filename, OpenMode mode,
 
   if(open_mode == AmAudioFile::Write){
 
-    if (f_fmt->channels<0 || f_fmt->getRate()<0) {
+    if (f_fmt->channels<0 /*|| f_fmt->getRate()<0*/) {
       if (f_fmt->channels<0)
 	ERROR("channel count must be set for output file.\n");
-      if (f_fmt->getRate()<0)
-	ERROR("sampling rate must be set for output file.\n");
+      // if (f_fmt->getRate()<0)
+      // 	ERROR("sampling rate must be set for output file.\n");
       close();
       return -1;
     }
