@@ -45,8 +45,6 @@
 
 #define CODEC_TELEPHONE_EVENT 6
 
-#define CODEC_SPEEX_NB 7
-
 #define CODEC_G726_16 8
 #define CODEC_G726_24 9
 #define CODEC_G726_32 10
@@ -76,11 +74,13 @@
 #define CODEC_CELT44_2 24
 #define CODEC_CELT48_2 25
 
-#define CODEC_SPEEX_WB 26
+#define CODEC_SPEEX_NB 26
+#define CODEC_SPEEX_WB 27
+#define CODEC_SPEEX_UB 28
 
-#define CODEC_SILK_NB 27
-#define CODEC_SILK_MB 28
-#define CODEC_SILK_WB 29
-#define CODEC_SILK_UB 30
+#define CODEC_SILK_NB 30
+#define CODEC_SILK_MB 31
+#define CODEC_SILK_WB 32
+#define CODEC_SILK_UB 33
 
 #endif

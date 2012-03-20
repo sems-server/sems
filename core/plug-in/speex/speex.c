@@ -19,9 +19,9 @@
 
 #include "amci.h"
 #include "codecs.h"
-#include "speex/speex.h"
 #include "../../log.h"
 
+#include <speex/speex.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,6 +30,7 @@
 #define SPEEX_FRAME_MS			 20
 #define SPEEX_NB_SAMPLES_PER_FRAME 	160
 #define SPEEX_WB_SAMPLES_PER_FRAME 	320
+#define SPEEX_UB_SAMPLES_PER_FRAME 	640
 
 /* Default encoder settings */
 #define NB_MODE		  5
@@ -73,32 +74,38 @@
   4		+17600				+352
 */
 
-int Pcm16_2_SpeexNB( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-		     unsigned int channels, unsigned int rate, long h_codec );
-int SpeexNB_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-		     unsigned int channels, unsigned int rate, long h_codec );
+int Pcm16_2_Speex( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
+		   unsigned int channels, unsigned int rate, long h_codec );
+int Speex_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
+		   unsigned int channels, unsigned int rate, long h_codec );
 
 long speexNB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
 long speexWB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
-void speexNB_destroy(long handle);
+long speexUB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description);
+void speex_destroy(long handle);
 
-static unsigned int speexNB_bytes2samples(long, unsigned int);
-static unsigned int speexNB_samples2bytes(long, unsigned int);
+/* static unsigned int speex_bytes2samples(long, unsigned int); */
+/* static unsigned int speex_samples2bytes(long, unsigned int); */
 
 BEGIN_EXPORTS("speex", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY)
 
 BEGIN_CODECS
-#if SYSTEM_SAMPLECLOCK_RATE >=16000
-CODEC(CODEC_SPEEX_WB, Pcm16_2_SpeexNB, SpeexNB_2_Pcm16, AMCI_NO_CODEC_PLC, 
-      speexWB_create, speexNB_destroy, 
-      speexNB_bytes2samples, speexNB_samples2bytes)
+#if SYSTEM_SAMPLECLOCK_RATE >=32000
+CODEC(CODEC_SPEEX_UB, Pcm16_2_Speex, Speex_2_Pcm16, AMCI_NO_CODEC_PLC, 
+      speexUB_create, speex_destroy, NULL, NULL)
 #endif
-CODEC(CODEC_SPEEX_NB, Pcm16_2_SpeexNB, SpeexNB_2_Pcm16, AMCI_NO_CODEC_PLC, 
-      speexNB_create, speexNB_destroy, 
-      speexNB_bytes2samples, speexNB_samples2bytes)
+#if SYSTEM_SAMPLECLOCK_RATE >=16000
+CODEC(CODEC_SPEEX_WB, Pcm16_2_Speex, Speex_2_Pcm16, AMCI_NO_CODEC_PLC, 
+      speexWB_create, speex_destroy, NULL, NULL)
+#endif
+CODEC(CODEC_SPEEX_NB, Pcm16_2_Speex, Speex_2_Pcm16, AMCI_NO_CODEC_PLC, 
+      speexNB_create, speex_destroy, NULL, NULL)
 END_CODECS
-  
+
 BEGIN_PAYLOADS
+#if SYSTEM_SAMPLECLOCK_RATE >=32000
+PAYLOAD(-1, "speex", 32000, 32000, 1, CODEC_SPEEX_UB, AMCI_PT_AUDIO_FRAME)
+#endif
 #if SYSTEM_SAMPLECLOCK_RATE >=16000
 PAYLOAD(-1, "speex", 16000, 16000, 1, CODEC_SPEEX_WB, AMCI_PT_AUDIO_FRAME)
 #endif
@@ -113,28 +120,17 @@ END_EXPORTS
 typedef struct {
   void *state;
   SpeexBits bits;
-#ifndef NOFPU
-  float pool[AUDIO_BUFFER_SIZE];
-#endif
 } OneWay;
 
 typedef struct {
-  OneWay *encoder;
-  OneWay *decoder;
-    
+  OneWay encoder;
+  OneWay decoder;
+
   /* Encoder settings */
-  int frames_per_packet;
-  int mode;				/* 0..15 */
-    
-  /* Decoder settings */
-  int perceptual;			/* 0,1 */
+  unsigned int frames_per_packet; /* in samples */
+  unsigned int frame_size;
 
-  /* is wideband mode */
-  int is_wb;                            /* 0,1 */
 } SpeexState;
-
-/* See table, above */
-static const int nb_encoded_frame_bits[] = { 5, 43, 119, 160, 220, 300, 364, 492, 79 };
 
 /*
   Search for a parameter assignement in input string.
@@ -178,9 +174,10 @@ static char* read_param(char* input, const char *param, char** param_value)
 }
 
 #define BLEN 63
-
+#if 0
 void decode_format_parameters(const char* format_parameters, SpeexState* ss) {
   /* See draft-herlein-avt-rtp-speex-00.txt */
+  /* TODO: change according to RFC 5574 */
   if (format_parameters && strlen(format_parameters)<=BLEN){
 	
     char buffer2[BLEN+1];
@@ -192,24 +189,16 @@ void decode_format_parameters(const char* format_parameters, SpeexState* ss) {
       char *error=NULL;
       char *param_value;
 	    
-      /* Speex encoding mode (assume NB) */
+      /* Speex encoding mode */
       buffer=read_param(buffer, "mode", &param_value);
       if (param_value) {
 	int mode;
 	if (strcmp(param_value, "any")) {
 	  mode = strtol(param_value, &error, 10);
-	  if (error!=NULL && error!=param_value && mode>=0 && mode<=8)
+	  if (error!=NULL && error!=param_value && mode>=0 && mode<=10)
 		DBG("Using speex sub mode %d", mode);
 	    ss->mode = mode;
 	}
-	continue;
-      }
-
-      /* Perceptual enhancement */
-      buffer=read_param(buffer, "penh", &param_value);
-      if (param_value) {
-	if (!strcmp(param_value,"no"))
-	  ss->perceptual=0;
 	continue;
       }
 
@@ -227,113 +216,97 @@ void decode_format_parameters(const char* format_parameters, SpeexState* ss) {
     }
   }
 }
+#endif
 
-long speexNB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
+long speex_create(unsigned int sample_rate, 
+		  const char* format_parameters, 
+		  amci_codec_fmt_info_t* format_description)
 {
-  SpeexState* ss;
-  int bits;
-        
-  ss = (SpeexState*) calloc(1, sizeof(SpeexState));
-    
-  if (!ss)
-    return -1;
+  int speex_mode = 0, on=1, quality=0;
+  SpeexState* ss=NULL;
 
-  /* narrowband mode */
-  ss-> is_wb = 0;
-    
+  switch(sample_rate) {
+  case 8000:
+    speex_mode = SPEEX_MODEID_NB;
+    quality = 6;
+    break;
+#if SYSTEM_SAMPLECLOCK_RATE >=16000
+  case 16000:
+    speex_mode = SPEEX_MODEID_WB;
+    quality = 8;
+    break;
+#endif
+#if SYSTEM_SAMPLECLOCK_RATE >=32000
+  case 32000:
+    speex_mode = SPEEX_MODEID_UWB;
+    quality = 8;
+    break;
+#endif
+  default:
+    ERROR("Unsupported sample rate for Speex codec (%u)\n", sample_rate);
+    return 0;
+  }
+
+  ss = (SpeexState*)malloc(sizeof(SpeexState));
+  if (!ss) {
+    ERROR("Could not allocate SpeexState\n");
+    return 0;
+  }
+
   /* Note that
      1) SEMS ignore a=ptime: SDP parameter so we can choose the one we like
      2) Multiple frames in a packet don't need to be byte-aligned
   */
   ss->frames_per_packet = FRAMES_PER_PACKET;
 
-  /* Compression mode (see table) */
-  ss->mode = NB_MODE;
-    
-
-  /* Perceptual enhancement. Turned on by default */
-  ss->perceptual = 1;
-
   /* decode the format parameters */
-  decode_format_parameters(format_parameters, ss);
-    
-  /* Meaningful bits in one packet */
-  bits = nb_encoded_frame_bits[ss->mode] * ss->frames_per_packet;
+  /* decode_format_parameters(format_parameters, ss); */
+
+  speex_bits_init(&ss->encoder.bits);
+  ss->encoder.state = speex_encoder_init(speex_lib_get_mode(speex_mode));
+  speex_encoder_ctl(ss->encoder.state, SPEEX_SET_QUALITY, &quality);
+
+  speex_bits_init(&ss->decoder.bits);
+  ss->decoder.state = speex_decoder_init(speex_lib_get_mode(speex_mode));
+  speex_decoder_ctl(ss->decoder.state, SPEEX_SET_ENH, &on);
     
   format_description[0].id = AMCI_FMT_FRAME_LENGTH;
   format_description[0].value = SPEEX_FRAME_MS * ss->frames_per_packet;
     
+  ss->frame_size = SPEEX_FRAME_MS * (sample_rate / 1000);
   format_description[1].id = AMCI_FMT_FRAME_SIZE;
-  format_description[1].value = SPEEX_NB_SAMPLES_PER_FRAME * ss->frames_per_packet;
-    
-  format_description[2].id = AMCI_FMT_ENCODED_FRAME_SIZE;
-  format_description[2].value = bits/8 + (bits % 8 ? 1 : 0) + 1;
-
-  DBG("set AMCI_FMT_FRAME_LENGTH to %d\n", format_description[0].value);
-  DBG("set AMCI_FMT_FRAME_SIZE to %d\n", format_description[1].value);
-  DBG("set AMCI_FMT_ENCODED_FRAME_SIZE to %d\n", format_description[2].value);
-    
-  format_description[3].id = 0;
-    
-  DBG("SpeexState %p inserted with mode %d and %d frames per packet,\n",
-      ss, ss->mode, ss->frames_per_packet);
-    
-  return (long)ss;
-}
-
-long speexWB_create(const char* format_parameters, amci_codec_fmt_info_t* format_description)
-{
-  SpeexState* ss;
-  int bits;
-        
-  ss = (SpeexState*) calloc(1, sizeof(SpeexState));
-    
-  if (!ss)
-    return -1;
-
-  /* wideband mode */
-  ss-> is_wb = 1;
-    
-  /* Note that
-     1) SEMS ignore a=ptime: SDP parameter so we can choose the one we like
-     2) Multiple frames in a packet don't need to be byte-aligned
-  */
-  ss->frames_per_packet = FRAMES_PER_PACKET;
-
-  /* Compression mode (see table) */
-  ss->mode = WB_MODE;  
-
-  /* Perceptual enhancement. Turned on by default */
-  ss->perceptual = 1;
-
-  /* decode the format parameters */
-  decode_format_parameters(format_parameters, ss);
-    
-  /* Meaningful bits in one packet */
-  bits = nb_encoded_frame_bits[ss->mode] * ss->frames_per_packet;
-    
-  format_description[0].id = AMCI_FMT_FRAME_LENGTH;
-  format_description[0].value = SPEEX_FRAME_MS * ss->frames_per_packet;
-    
-  format_description[1].id = AMCI_FMT_FRAME_SIZE;
-  format_description[1].value = SPEEX_WB_SAMPLES_PER_FRAME * ss->frames_per_packet;
-    
-/*   format_description[2].id = AMCI_FMT_ENCODED_FRAME_SIZE; */
-/*   format_description[2].value = bits/8 + (bits % 8 ? 1 : 0) + 1; */
-
-  DBG("set AMCI_FMT_FRAME_LENGTH to %d\n", format_description[0].value);
-  DBG("set AMCI_FMT_FRAME_SIZE to %d\n", format_description[1].value);
-/*   DBG("set AMCI_FMT_ENCODED_FRAME_SIZE to %d\n", format_description[2].value); */
+  format_description[1].value = ss->frame_size * ss->frames_per_packet;
     
   format_description[2].id = 0;
-    
-  DBG("SpeexState %p inserted with mode %d and %d frames per packet,\n", 
-      ss, ss->mode, ss->frames_per_packet);
-    
+
+  DBG("set AMCI_FMT_FRAME_LENGTH to %d\n", format_description[0].value);
+  DBG("set AMCI_FMT_FRAME_SIZE to %d\n", format_description[1].value);
+
+  DBG("SpeexState %p inserted with %d frames per packet,\n", 
+      ss, ss->frames_per_packet);
+
   return (long)ss;
 }
 
-void speexNB_destroy(long handle)
+long speexNB_create(const char* format_parameters, 
+		    amci_codec_fmt_info_t* format_description)
+{
+  return speex_create(8000,format_parameters,format_description);
+}
+
+long speexWB_create(const char* format_parameters, 
+		    amci_codec_fmt_info_t* format_description)
+{
+  return speex_create(16000,format_parameters,format_description);
+}
+
+long speexUB_create(const char* format_parameters, 
+		    amci_codec_fmt_info_t* format_description)
+{
+  return speex_create(32000,format_parameters,format_description);
+}
+
+void speex_destroy(long handle)
 {
   SpeexState* ss = (SpeexState*) handle;
     
@@ -342,150 +315,68 @@ void speexNB_destroy(long handle)
   if (!ss)
     return;
     
-  if (ss->encoder) {
-    speex_encoder_destroy(ss->encoder->state);
-    speex_bits_destroy(&ss->encoder->bits);
-    free(ss->encoder);
-  }
+  speex_encoder_destroy(ss->encoder.state);
+  speex_bits_destroy(&ss->encoder.bits);
     
-  if (ss->decoder) {
-    speex_decoder_destroy(ss->decoder->state);
-    speex_bits_destroy(&ss->decoder->bits);
-    free(ss->decoder);
-  }
+  speex_decoder_destroy(ss->decoder.state);
+  speex_bits_destroy(&ss->decoder.bits);
     
   free(ss);
 }
 
-static unsigned int speexNB_bytes2samples(long h_codec, unsigned int num_bytes) {
-  SpeexState* ss = (SpeexState*) h_codec;
-  if (!ss)
-    return 0;
-
-  if (ss->is_wb) {
-    return SPEEX_WB_SAMPLES_PER_FRAME * num_bytes / WB_BYTES_PER_FRAME;
-  } else {
-    return SPEEX_NB_SAMPLES_PER_FRAME * num_bytes / BYTES_PER_FRAME;
-  }
-}
-
-static unsigned int speexNB_samples2bytes(long h_codec, unsigned int num_samples) {
-  SpeexState* ss = (SpeexState*) h_codec;
-  if (!ss)
-    return 0;
-
-  if (ss->is_wb) {
-    return WB_BYTES_PER_FRAME * num_samples / SPEEX_WB_SAMPLES_PER_FRAME;
-  } else {
-    return BYTES_PER_FRAME * num_samples / SPEEX_NB_SAMPLES_PER_FRAME;
-  }
-}
-
-
-int Pcm16_2_SpeexNB( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-		     unsigned int channels, unsigned int rate, long h_codec )
+int Pcm16_2_Speex( unsigned char* out_buf, unsigned char* in_buf, 
+		   unsigned int size,
+		   unsigned int channels, unsigned int rate, long h_codec )
 {
   SpeexState* ss;
-  OneWay *encoder;
   short* pcm = (short*) in_buf;
   char* buffer = (char*)out_buf;
   div_t blocks;
     
   ss = (SpeexState*) h_codec;
     
-  if (!ss || channels!=1 || !(rate==8000 || rate==16000))
+  if (!ss || channels!=1)
     return -1;
-    
-  /* encoder init */
-  if (!(encoder=ss->encoder)) {
-    ss->encoder = encoder = (OneWay*) calloc(1, sizeof(OneWay));
-    if (!encoder)
-      return -1;
-    if (ss->is_wb)
-      encoder->state = speex_encoder_init(&speex_wb_mode);
-    else
-      encoder->state = speex_encoder_init(&speex_nb_mode);
 
-    speex_bits_init(&encoder->bits);
-    speex_encoder_ctl(encoder->state, SPEEX_SET_MODE, &ss->mode);
-  }
-    
-  int samples_per_frame = ss->is_wb ?
-    SPEEX_WB_SAMPLES_PER_FRAME : SPEEX_NB_SAMPLES_PER_FRAME;
-
-  blocks = div(size, sizeof(short)*samples_per_frame);
+  blocks = div(size>>1, ss->frame_size);
   if (blocks.rem) {
-    ERROR("Pcm16_2_Speex: not integral number of blocks %d.%d\n", blocks.quot, blocks.rem);
+    ERROR("Pcm16_2_Speex: not integral number of blocks %d.%d\n", 
+	  blocks.quot, blocks.rem);
     return -1;
   }
     
   /* For each chunk of ss->frame_size bytes, encode a single frame */
-  speex_bits_reset(&encoder->bits);
+  speex_bits_reset(&ss->encoder.bits);
   while (blocks.quot--) {
-
-#ifdef NOFPU
-    speex_encode_int(encoder->state, pcm, &encoder->bits);
-    pcm+=samples_per_frame;
-#else
-    int i;
-    for (i=0; i<samples_per_frame; i++)
-      encoder->pool[i] = (float)*pcm++;
-    speex_encode(encoder->state, encoder->pool, &encoder->bits);
-#endif
+    speex_encode_int(ss->encoder.state, pcm, &ss->encoder.bits);
+    pcm += ss->frame_size;
   }
     
-  buffer += speex_bits_write(&encoder->bits, buffer, AUDIO_BUFFER_SIZE);
-
+  buffer += speex_bits_write(&ss->encoder.bits, buffer, AUDIO_BUFFER_SIZE);
   return buffer - (char*)out_buf;
 }
 
-int SpeexNB_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
-		     unsigned int channels, unsigned int rate, long h_codec )
+int Speex_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, 
+		   unsigned int size,
+		   unsigned int channels, unsigned int rate, long h_codec )
 {
   SpeexState* ss;
-  OneWay *decoder;
   short* pcm = (short*) out_buf;
   int frames_out  = 0;
 
   ss = (SpeexState*) h_codec;
-  if (!ss || channels!=1 || !(rate==8000 || rate==16000))
+  if (!ss || channels!=1)
     return -1;
     
-  /* Decoder init */
-  if (!(decoder=ss->decoder)) {
-    decoder = ss->decoder = (OneWay*) calloc(1, sizeof(OneWay));
-    if (!decoder)
-      return -1;
+  speex_bits_read_from(&ss->decoder.bits, (char*)in_buf, size);
 
-    if (ss->is_wb)
-      decoder->state = speex_decoder_init(&speex_wb_mode);
-    else
-      decoder->state = speex_decoder_init(&speex_nb_mode);
-
-    speex_decoder_ctl(decoder->state, SPEEX_SET_ENH, &ss->perceptual);
-    speex_bits_init(&decoder->bits);
-  }
-    
-  speex_bits_read_from(&decoder->bits, (char*)in_buf, size);
-
-  int samples_per_frame = ss->is_wb ?
-    SPEEX_WB_SAMPLES_PER_FRAME : SPEEX_NB_SAMPLES_PER_FRAME;
-    
   /* We don't know where frame boundaries are,
      but the minimum frame size is 43 */
-  while (speex_bits_remaining(&decoder->bits)>40) {
+  while (speex_bits_remaining(&ss->decoder.bits)>40) {
     int ret;
 	
-#ifdef NOFPU
-    ret = speex_decode_int(decoder->state, &decoder->bits, pcm);
-    pcm+=samples_per_frame;
-#else
-    int i;
-    ret = speex_decode(decoder->state, &decoder->bits, decoder->pool);
-    for (i=0; i<samples_per_frame; i++) {
-      *pcm++ = (short) decoder->pool[i];
-    }
-#endif    
+    ret = speex_decode_int(ss->decoder.state, &ss->decoder.bits, pcm);
+    pcm+= ss->frame_size;
 	
     if (ret==-2) {
       ERROR("while calling speex_decode\n");
@@ -497,5 +388,5 @@ int SpeexNB_2_Pcm16( unsigned char* out_buf, unsigned char* in_buf, unsigned int
     frames_out++;  
   }
     
-  return frames_out*samples_per_frame*sizeof(short);
+  return frames_out*ss->frame_size*sizeof(short);
 }
