@@ -198,6 +198,9 @@ int AmRtpAudio::get(unsigned long long system_ts, unsigned char* buffer,
 {
   unsigned int user_ts = scaleSystemTS(system_ts);
 
+  nb_samples = (unsigned int)((float)nb_samples * (float)getSampleRate()
+			     / (float)output_sample_rate);
+
   u_int32_t size =
     PCM16_S2B(playout_buffer->read(user_ts,
 				   (ShortSample*)((unsigned char*)samples),

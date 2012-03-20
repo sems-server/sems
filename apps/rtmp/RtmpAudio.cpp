@@ -91,10 +91,14 @@ int RtmpAudio::get(unsigned long long system_ts, unsigned char* buffer,
   //DBG("get(%u, %u)\n",user_ts,nb_samples);
   process_recv_queue(user_ts);
 
+  nb_samples = (unsigned int)((float)nb_samples * (float)getSampleRate()
+			     / (float)output_sample_rate);
+
   u_int32_t size =
     PCM16_S2B(playout_buffer.read(user_ts,
 				  (ShortSample*)((unsigned char*)samples),
 				  nb_samples));
+
   if(output_sample_rate != getSampleRate()) {
     size = resampleOutput((unsigned char*)samples, size,
 			  getSampleRate(), output_sample_rate);
