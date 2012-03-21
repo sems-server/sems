@@ -290,22 +290,6 @@ void AmSdp::print(string& body) const
 
       out_buf += "\r\n" + options;
 
-      options = "";
-
-      for (std::vector<SdpAttribute>::const_iterator a_it = media_it->attributes.begin();
-	   a_it != media_it->attributes.end(); a_it++) {
-
-	if (a_it->value.empty()) {
-	  options += "a=" + a_it->attribute;
-	} else {
-	  options += "a=" + a_it->attribute + ":" + a_it->value;
-	}
-	options +="\r\n";
-      }
-
-      out_buf += options;
-
-
       switch(media_it->dir){
       case SdpMedia::DirActive:
 	  out_buf += "a=direction:active\r\n";
@@ -342,13 +326,7 @@ void AmSdp::print(string& body) const
   }
 
   body = out_buf;
-  //mime_type = "application/sdp";
 }
-
-// bool AmSdp::hasTelephoneEvent() const
-// {
-//   return telephoneEventPayload() != NULL;
-// }
 
 const SdpPayload* AmSdp::telephoneEventPayload() const
 {
