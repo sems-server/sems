@@ -245,7 +245,7 @@ int AmRtpAudio::put(unsigned long long system_ts, unsigned char* buffer,
 
 void AmRtpAudio::getSdpOffer(unsigned int index, SdpMedia& offer)
 {
-  offer.type = MT_AUDIO;
+  if (offer.type != MT_AUDIO) return;
   AmRtpStream::getSdpOffer(index,offer);
 }
 
