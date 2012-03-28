@@ -14,14 +14,14 @@ Example:
   ...
   P-Call-Control: ctl;RURI=sip:music@iptel.org
   P-Call-Control: ctl;rtprelay_enabled=yes
-  P-Call-Control: ctl;append_headers=P-My-Caller: $fU
+  P-Call-Control: ctl;append_headers="P-My-Caller: $fU;param=first"
 
  Invite outgoing: 
   INVITE sip:music@iptel.org
   To: <sip:38@192.168.5.110>
   From: "" <sip:stefan@192.168.5.110>;tag=64015874f26373e6
   ...
-  P-My-Caller: stefan
+  P-My-Caller: stefan;param=first
   ...
 
 Exported parameters:
