@@ -621,7 +621,7 @@ UACAuthCred* SBCDialog::getCredentials() {
 }
 
 void SBCDialog::fixupCCInterface(const string& val, CCInterface& cc_if) {
-  INFO("instantiating CC interface from '%s'\n", val.c_str());
+  DBG("instantiating CC interface from '%s'\n", val.c_str());
   size_t spos, last = val.length() - 1;
   if (last < 0) {
       spos = string::npos;
@@ -630,34 +630,34 @@ void SBCDialog::fixupCCInterface(const string& val, CCInterface& cc_if) {
       spos = val.find(";", 0);
       cc_if.cc_module = val.substr(0, spos);
   }
-  INFO("    module='%s'\n", cc_if.cc_module.c_str());
+  DBG("    module='%s'\n", cc_if.cc_module.c_str());
   while (spos < last) {
       size_t epos = val.find("=", spos + 1);
       if (epos == string::npos) {
 	  cc_if.cc_values.insert(make_pair(val.substr(spos + 1), ""));
-	  INFO("    '%s'='%s'\n", val.substr(spos + 1).c_str(), "");
+	  DBG("    '%s'='%s'\n", val.substr(spos + 1).c_str(), "");
 	  return;
       }
       if (epos == last) {
 	  cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), ""));
-	  INFO("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), "");
+	  DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), "");
 	  return;
       }
       // if value starts with " char, it continues until another " is found
       if (val[epos + 1] == '"') {
 	  if (epos + 1 == last) {
 	      cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), ""));
-	      INFO("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), "");
+	      DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), "");
 	      return;
 	  }
 	  size_t qpos = val.find('"', epos + 2);
 	  if (qpos == string::npos) {
 	      cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos -1), val.substr(epos + 2)));
-	      INFO("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 2).c_str());
+	      DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 2).c_str());
 	      return;
 	  }
 	  cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), val.substr(epos + 2, qpos - epos - 2)));
-	  INFO("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 2, qpos - epos - 2).c_str());
+	  DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 2, qpos - epos - 2).c_str());
 	  if (qpos < last) {
 	      spos = val.find(";", qpos + 1);
 	  } else {
@@ -667,11 +667,11 @@ void SBCDialog::fixupCCInterface(const string& val, CCInterface& cc_if) {
 	  size_t new_spos = val.find(";", epos + 1);
 	  if (new_spos == string::npos) {
 	      cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), val.substr(epos + 1)));
-	      INFO("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 1).c_str());
+	      DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 1).c_str());
 	      return;
 	  }
 	  cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), val.substr(epos + 1, new_spos - epos - 1)));
-	  INFO("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 1, new_spos - epos - 1).c_str());
+	  DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 1, new_spos - epos - 1).c_str());
 	  spos = new_spos;
       }
   }
