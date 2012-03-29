@@ -262,19 +262,27 @@ static int parse_first_line(sip_msg* msg, char** c)
 
 	switch(st){
 
-#define case_SIPVER(ch,st1,st2,else_st) \
-	case st1:\
-	    if(**c == (ch)){\
-		st = st2;\
-	    }\
-	    else {\
-		st = else_st;\
-	    }\
-	    break
-            
-	case_SIPVER('S',FL_SIPVER1,FL_SIPVER2,FL_METH;(*c)--);
-	case_SIPVER('I',FL_SIPVER2,FL_SIPVER3,FL_METH;(*c)--);
-	case_SIPVER('P',FL_SIPVER3,FL_SIPVER4,FL_METH;(*c)--);
+#define case_SIPVER(ch1,ch2,st1,st2)		\
+	    case st1:				\
+		switch(**c){			\
+		case ch1:			\
+		case ch2:			\
+		    st = st2;			\
+		    break;			\
+		default:			\
+		    if(!is_request){		\
+			st = FL_METH;		\
+			(*c)--;			\
+		    }				\
+		    else {			\
+			st = FL_ERR;		\
+		    }				\
+		}				\
+		break
+
+	case_SIPVER('S','s',FL_SIPVER1,FL_SIPVER2);
+	case_SIPVER('I','i',FL_SIPVER2,FL_SIPVER3);
+	case_SIPVER('P','p',FL_SIPVER3,FL_SIPVER4);
 
 	case FL_SIPVER4:     // '/'
 	    if(**c == '/'){
@@ -289,10 +297,21 @@ static int parse_first_line(sip_msg* msg, char** c)
 	    }
 	    break;
 
-	case_SIPVER('2',FL_SIPVER_DIG1,FL_SIPVER_SEP,FL_ERR);
-	case_SIPVER('.',FL_SIPVER_SEP,FL_SIPVER_DIG2,FL_ERR);
-
 #undef case_SIPVER
+#define case_SIPVER(ch1,st1,st2)		\
+	    case st1:				\
+		switch(**c){			\
+		case ch1:			\
+		    st = st2;			\
+		    break;			\
+		default:			\
+		    st = FL_ERR;		\
+		    break;			\
+		}				\
+		break
+
+	case_SIPVER('2',FL_SIPVER_DIG1,FL_SIPVER_SEP);
+	case_SIPVER('.',FL_SIPVER_SEP,FL_SIPVER_DIG2);
 
 	case FL_SIPVER_DIG2:
 	    if(**c == '0'){
