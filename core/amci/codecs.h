@@ -83,4 +83,6 @@
 #define CODEC_SILK_WB 32
 #define CODEC_SILK_UB 33
 
+#define CODEC_iSAC_WB 40
+
 #endif
