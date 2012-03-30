@@ -913,6 +913,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     sip_msg* p_msg = new sip_msg();
     p_msg->buf = new char[request_len+1];
     p_msg->len = request_len;
+    p_msg->h_dns = msg->h_dns;
 
     // generate it
     char* c = p_msg->buf;
