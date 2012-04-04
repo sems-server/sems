@@ -498,6 +498,19 @@ int dns_handle::next_ip(sockaddr_storage* sa)
 	return ip_e->next_ip(this,sa);
 }
 
+const dns_handle& dns_handle::operator = (const dns_handle& rh)
+{
+    memcpy(this,(const void*)&rh,sizeof(dns_handle));
+    
+    if(srv_e)
+	inc_ref(srv_e);
+    
+    if(ip_e)
+	inc_ref(ip_e);
+    
+    return *this;
+}
+
 
 _resolver::_resolver()
     : cache(DNS_CACHE_SIZE)
