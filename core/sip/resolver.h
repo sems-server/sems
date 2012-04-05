@@ -114,6 +114,7 @@ struct dns_handle
     bool eoip();
 
     int next_ip(sockaddr_storage* sa);
+    const dns_handle& operator = (const dns_handle& rh);
 
 private:
     friend class _resolver;
