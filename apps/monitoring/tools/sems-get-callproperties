@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from xmlrpclib import *
 import sys
+import pprint
 
 if len(sys.argv) != 2:
         print "usage: %s <ltag/ID of call to list>" % sys.argv[0]
@@ -9,4 +10,6 @@ if len(sys.argv) != 2:
 
 s = ServerProxy('http://localhost:8090')
 print "Active calls: %d" % s.calls()
-print s.di('monitoring','get', sys.argv[1])
+pp = pprint.PrettyPrinter(indent=4)
+res = s.di('monitoring','get', sys.argv[1])
+pp.pprint(res)
