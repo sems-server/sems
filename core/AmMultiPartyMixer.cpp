@@ -146,7 +146,7 @@ void AmMultiPartyMixer::PutChannelPacket(unsigned int   channel_id,
 
     unsigned samples = PCM16_B2S(size);
     unsigned long long put_ts = system_ts + (MIXER_DELAY_MS * WALLCLOCK_RATE / 1000);
-    unsigned long long user_put_ts = put_ts * (GetCurrentSampleRate()/100) / (SYSTEM_SAMPLECLOCK_RATE/100);
+    unsigned long long user_put_ts = put_ts * (GetCurrentSampleRate()/100) / (WALLCLOCK_RATE/100);
 
     channel->put(user_put_ts,(short*)buffer,samples);
     bstate->mixed_channel->get(user_put_ts,tmp_buffer,samples);
@@ -184,7 +184,7 @@ void AmMultiPartyMixer::GetChannelPacket(unsigned int   channel_id,
     unsigned int samples = PCM16_B2S(size) * (bstate->sample_rate/100) / (GetCurrentSampleRate()/100);
     assert(samples <= PCM16_B2S(AUDIO_BUFFER_SIZE));
 
-    unsigned long long cur_ts = system_ts * (bstate->sample_rate/100) / (double) SYSTEM_SAMPLECLOCK_RATE;
+    unsigned long long cur_ts = system_ts * (bstate->sample_rate/100) / (WALLCLOCK_RATE/100);
     bstate->mixed_channel->get(cur_ts,tmp_buffer,samples);
     channel->get(cur_ts,(short*)buffer,samples);
 
