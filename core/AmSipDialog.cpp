@@ -112,17 +112,22 @@ void AmSipDialog::onRxRequest(const AmSipRequest& req)
 
     // Sanity checks
     if (r_cseq_i && req.cseq <= r_cseq){
-      string hdrs;
-      if (req.method == "NOTIFY") {
-	// clever trick to not break subscription dialog usage
-	// for implementations which follow 3265 instead of 5057
-	hdrs = SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER)  "0"  CRLF;
+      string hdrs; bool i = false;
+      if (req.method == SIP_METH_NOTIFY) {
+	if (AmConfig::IgnoreNotifyLowerCSeq)
+	  i = true;
+	else
+	  // clever trick to not break subscription dialog usage
+	  // for implementations which follow 3265 instead of 5057
+	  hdrs = SIP_HDR_COLSP(SIP_HDR_RETRY_AFTER)  "0"  CRLF;
       }
 
-      INFO("remote cseq lower than previous ones - refusing request\n");
-      // see 12.2.2
-      reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, hdrs);
-      return;
+      if (!i) {
+	INFO("remote cseq lower than previous ones - refusing request\n");
+	// see 12.2.2
+	reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, hdrs);
+	return;
+      }
     }
 
     if (req.method == SIP_METH_INVITE) {

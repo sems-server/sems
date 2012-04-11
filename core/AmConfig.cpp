@@ -80,6 +80,7 @@ string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
 string       AmConfig::NextHop                 = "";
 bool         AmConfig::ProxyStickyAuth         = false;
+bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
 unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
@@ -322,6 +323,10 @@ int AmConfig::readConfiguration()
 
   if(cfg.hasParameter("proxy_sticky_auth")) {
     ProxyStickyAuth = (cfg.getParameter("proxy_sticky_auth") == "yes");
+  }
+
+  if(cfg.hasParameter("ignore_notify_lower_cseq")) {
+    IgnoreNotifyLowerCSeq = (cfg.getParameter("ignore_notify_lower_cseq") == "yes");
   }
 
   if(cfg.hasParameter("disable_dns_srv")) {

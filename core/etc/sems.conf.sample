@@ -494,6 +494,13 @@ use_default_signature=yes
 #
 # proxy_sticky_auth=yes
 
+# Ignore too low CSeq for NOTIFYs? [yes | no]
+#
+# May be necessary to interwork with simplistic/old SIP event notification 
+# implementations.
+#
+#ignore_notify_lower_cseq=yes
+
 #
 # Accept final replies without To-tag? [yes|no]
 #
