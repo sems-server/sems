@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "parse_next_hop.h"
 #include "parse_common.h"
 
@@ -16,9 +17,9 @@ int parse_next_hop(const cstring& next_hop,
 
   const char* c = next_hop.s;
   const char* end = c + next_hop.len;
-  const char* beg;
+  const char* beg = NULL;
 
-  host_port hp;
+  host_port hp = {};
 
   for(;c<end; c++) {
 
