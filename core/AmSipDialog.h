@@ -150,8 +150,7 @@ private:
   string outbound_proxy;
   bool   force_outbound_proxy;
 
-  string next_hop_ip;
-  unsigned short next_hop_port;
+  string next_hop;
 
   int outbound_interface;
 

@@ -246,8 +246,7 @@ void RestModule::start(const string& cc_name, const string& ltag,
       params.getIfSet("call-id", call_profile->callid);
       params.getIfSet("outbound_proxy", call_profile->outbound_proxy);
       params.getIfSet("force_outbound_proxy", call_profile->force_outbound_proxy);
-      params.getIfSet("next_hop_ip", call_profile->next_hop_ip);
-      params.getIfSet("next_hop_port", call_profile->next_hop_port);
+      params.getIfSet("next_hop", call_profile->next_hop);
       params.getIfSet("next_hop_for_replies", call_profile->next_hop_for_replies);
 
       string hf_type, hf_list;

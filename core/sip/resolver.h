@@ -33,6 +33,7 @@
 #include "hash_table.h"
 #include "atomic_types.h"
 #include "parse_dns.h"
+#include "parse_next_hop.h"
 
 #include <string>
 #include <vector>
@@ -102,8 +103,43 @@ public:
 
 typedef hash_table<dns_bucket> dns_cache;
 
+struct ip_entry
+    : public dns_base_entry
+{
+    address_type  type;
+
+    union {
+	in_addr       addr;
+	in6_addr      addr6;
+    };
+
+    virtual void to_sa(sockaddr_storage* sa);
+};
+
+struct ip_port_entry
+    : public ip_entry
+{
+    unsigned short port;
+
+    virtual void to_sa(sockaddr_storage* sa);
+};
+
+class dns_ip_entry
+    : public dns_entry
+{
+public:
+    dns_ip_entry()
+	: dns_entry()
+    {}
+
+    void init(){};
+    dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end);
+    int next_ip(dns_handle* h, sockaddr_storage* sa);
+
+    int fill_ip_list(const list<host_port>& ip_list);
+};
+
 class dns_srv_entry;
-class dns_ip_entry;
 
 struct dns_handle
 {
@@ -125,7 +161,7 @@ private:
     dns_srv_entry* srv_e;
     int            srv_n;
     unsigned int   srv_used;
-    unsigned short  port;
+    unsigned short port;
 
     dns_ip_entry*  ip_e;
     int            ip_n;
@@ -139,10 +175,6 @@ public:
 		     dns_handle* h,
 		     sockaddr_storage* sa,
 		     const address_type types);
-
-    int str2ip(const char* name,
-	       sockaddr_storage* sa,
-	       const address_type types);
 
 protected:
     _resolver();
@@ -160,6 +192,11 @@ private:
 };
 
 typedef singleton<_resolver> resolver;
+
+/** Converts a string into an IP structure*/
+int str2ip(const char* name,
+	   sockaddr_storage* sa,
+	   const address_type types);
 
 #endif
 

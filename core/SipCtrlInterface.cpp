@@ -128,7 +128,7 @@ int SipCtrlInterface::cancel(trans_ticket* tt)
 }
 
 int SipCtrlInterface::send(AmSipRequest &req,
-			   const string& next_hop_ip, unsigned short next_hop_port,
+			   const string& next_hop,
 			   int out_interface)
 {
     if(req.method == "CANCEL")
@@ -221,8 +221,7 @@ int SipCtrlInterface::send(AmSipRequest &req,
     }
 
     int res = trans_layer::instance()->send_request(msg,&req.tt,
-						    stl2cstr(next_hop_ip),
-						    next_hop_port,
+						    stl2cstr(next_hop),
 						    out_interface);
     delete msg;
 

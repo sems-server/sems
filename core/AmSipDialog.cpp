@@ -35,6 +35,7 @@
 
 #include "sip/parse_route.h"
 #include "sip/parse_uri.h"
+#include "sip/parse_next_hop.h"
 
 const char* __dlg_status2str[AmSipDialog::__max_Status]  = {
   "Disconnected",
@@ -67,8 +68,7 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     pending_invites(0),cancel_pending(false),
     outbound_proxy(AmConfig::OutboundProxy),
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
-    next_hop_port(AmConfig::NextHopPort),
-    next_hop_ip(AmConfig::NextHopIP),
+    next_hop(AmConfig::NextHop),
     outbound_interface(-1),
     sdp_local(), sdp_remote()
 {
@@ -590,7 +590,7 @@ int AmSipDialog::getOutboundIf()
   }
 
   // Destination priority:
-  // 1. next_hop_ip
+  // 1. next_hop
   // 2. outbound_proxy (if 1st req or force_outbound_proxy)
   // 3. first route
   // 4. remote URI
@@ -600,8 +600,12 @@ int AmSipDialog::getOutboundIf()
   string local_ip;
   multimap<string,unsigned short>::iterator if_it;
 
-  if(!next_hop_ip.empty()) {
-    dest_ip = next_hop_ip;
+  list<host_port> ip_list;
+  if(!next_hop.empty() && 
+     !parse_next_hop(stl2cstr(next_hop),ip_list) &&
+     !ip_list.empty()) {
+
+    dest_ip = c2stlstr(ip_list.front().host);
   }
   else if(!outbound_proxy.empty() &&
 	  (remote_tag.empty() || force_outbound_proxy)) {
@@ -1091,7 +1095,7 @@ int AmSipDialog::sendRequest(const string& method,
     hdl->onSendRequest(req,flags);
 
   onTxRequest(req);
-  int res = SipCtrlInterface::send(req, next_hop_ip, next_hop_port,outbound_interface);
+  int res = SipCtrlInterface::send(req, next_hop, outbound_interface);
   if(res) {
     ERROR("Could not send request: method=%s; call-id=%s; cseq=%i\n",
 	  req.method.c_str(),req.callid.c_str(),req.cseq);
@@ -1174,7 +1178,7 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
     hdl->onSendRequest(req,flags);
 
   //onTxRequest(req); // not needed right now in the ACK case
-  int res = SipCtrlInterface::send(req, next_hop_ip, next_hop_port, outbound_interface);
+  int res = SipCtrlInterface::send(req, next_hop, outbound_interface);
   if (res)
     return res;
 

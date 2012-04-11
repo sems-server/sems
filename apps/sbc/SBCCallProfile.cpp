@@ -54,8 +54,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   force_outbound_proxy = cfg.getParameter("force_outbound_proxy") == "yes";
   outbound_proxy = cfg.getParameter("outbound_proxy");
 
-  next_hop_ip = cfg.getParameter("next_hop_ip");
-  next_hop_port = cfg.getParameter("next_hop_port");
+  next_hop = cfg.getParameter("next_hop");
   next_hop_for_replies = cfg.getParameter("next_hop_for_replies");
 
   if (cfg.hasParameter("header_filter")) {
@@ -305,9 +304,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
     INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
     INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
-    if (!next_hop_ip.empty()) {
-      INFO("SBC:      next hop = %s%s\n", next_hop_ip.c_str(),
-	   next_hop_port.empty()? "" : (":"+next_hop_port).c_str());
+    if (!next_hop.empty()) {
+      INFO("SBC:      next hop = %s\n", next_hop.c_str());
 
       if (!next_hop_for_replies.empty()) {
 	INFO("SBC:      next hop used for replies: '%s'\n", next_hop_for_replies.c_str());
@@ -439,9 +437,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     callid == rhs.callid &&
     outbound_proxy == rhs.outbound_proxy &&
     force_outbound_proxy == rhs.force_outbound_proxy &&
-    next_hop_ip == rhs.next_hop_ip &&
-    next_hop_port == rhs.next_hop_port &&
-    next_hop_port_i == rhs.next_hop_port_i &&
+    next_hop == rhs.next_hop &&
     next_hop_for_replies == rhs.next_hop_for_replies &&
     headerfilter == rhs.headerfilter &&
     headerfilter_list == rhs.headerfilter_list &&
@@ -495,9 +491,7 @@ string SBCCallProfile::print() const {
   res += "callid:               " + callid + "\n";
   res += "outbound_proxy:       " + outbound_proxy + "\n";
   res += "force_outbound_proxy: " + string(force_outbound_proxy?"true":"false") + "\n";
-  res += "next_hop_ip:          " + next_hop_ip + "\n";
-  res += "next_hop_port:        " + next_hop_port + "\n";
-  res += "next_hop_port_i:      " + int2str(next_hop_port_i) + "\n";
+  res += "next_hop:             " + next_hop + "\n";
   res += "next_hop_for_replies: " + next_hop_for_replies + "\n";
   res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
   res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
@@ -633,9 +627,8 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
 
   REPLACE_NONEMPTY_STR(outbound_proxy);
 
-  if (!next_hop_ip.empty()) {
-    REPLACE_STR(next_hop_ip);
-    REPLACE_NUM(next_hop_port, next_hop_port_i);
+  if (!next_hop.empty()) {
+    REPLACE_STR(next_hop);
     REPLACE_NONEMPTY_STR(next_hop_for_replies);
   }
 

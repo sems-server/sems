@@ -90,8 +90,7 @@ public:
      *            its ticket is written into req.tt.
      */
     static int send(AmSipRequest &req,
-		    const string& next_hop_ip = "", 
-		    unsigned short next_hop_port = 5060,
+		    const string& next_hop = "",
 		    int outbound_interface = -1);
 
     /**

@@ -1469,10 +1469,8 @@ void SBCDialog::createCalleeSession()
     callee_dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
   }
   
-  if (!call_profile.next_hop_ip.empty()) {
-    callee_dlg.next_hop_ip = call_profile.next_hop_ip;
-    callee_dlg.next_hop_port = call_profile.next_hop_port.empty() ?
-      5060 : call_profile.next_hop_port_i;
+  if (!call_profile.next_hop.empty()) {
+    callee_dlg.next_hop = call_profile.next_hop;
   }
 
   if(outbound_interface >= 0)

@@ -75,15 +75,6 @@ sems_get16(const u_char *src)
        return (dst);
 }
 
-struct ip_entry
-    : public dns_base_entry
-{
-    address_type  type;
-    in_addr       addr;
-
-    void to_sa(sockaddr_storage* sa);
-};
-
 struct srv_entry
     : public dns_base_entry
 {
@@ -94,40 +85,67 @@ struct srv_entry
     string       target;
 };
 
-class dns_ip_entry
-    : public dns_entry
+int dns_ip_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
 {
-public:
-    dns_ip_entry() 
-	: dns_entry()
-    {}
+    if(h->ip_e != this){
+	if(h->ip_e) dec_ref(h->ip_e);
+	h->ip_e = this;
+	h->ip_n = 0;
+    }
+    
+    int& index = h->ip_n;
+    if(index >= (int)ip_vec.size()) return -1;
+    
+    //copy address
+    ((ip_entry*)ip_vec[index++])->to_sa(sa);
+    
+    // reached the end?
+    if(index >= (int)ip_vec.size()) { 
+	index = -1;
+    }
+    
+    return 0;
+}
 
-    void init(){};
+int dns_ip_entry::fill_ip_list(const list<host_port>& ip_list)
+{
+    int res;
+    string ip;
+    ip_port_entry e;
 
-    dns_base_entry* get_rr(dns_record* rr, u_char* begin, u_char* end);
+    for(list<host_port>::const_iterator it = ip_list.begin();
+	it != ip_list.end(); ++it) {
 
-    int next_ip(dns_handle* h, sockaddr_storage* sa)
-    {
-	if(h->ip_e != this){
-	    if(h->ip_e) dec_ref(h->ip_e);
-	    h->ip_e = this;
-	    h->ip_n = 0;
+	e.port = it->port;
+	ip = c2stlstr(it->host);
+
+	res = inet_pton(AF_INET6,ip.c_str(),&e.addr6);
+	if(res == 1) {
+	    e.type = IPv6;
+	    ip_vec.push_back(new ip_port_entry(e));
+	    continue;
 	}
-
-	int& index = h->ip_n;
-	if(index >= (int)ip_vec.size()) return -1;
-
-	//copy address
-	((ip_entry*)ip_vec[index++])->to_sa(sa);
-
-	// reached the end?
-	if(index >= (int)ip_vec.size()) { 
-	    index = -1;
+	else if(res < 0){
+	    DBG("inet_pton(AF_INET6,%s,...): %s\n",
+		ip.c_str(), strerror(errno));
 	}
 	
-	return 0;
+	res = inet_pton(AF_INET,ip.c_str(),&e.addr);
+	if(res < 0){
+	    DBG("inet_pton(AF_INET,%s,...): %s\n",
+		ip.c_str(), strerror(errno));
+	}
+	else if(res == 0){
+	    DBG("<%s> is not a valid IP address\n",ip.c_str());
+	    return -1;
+	}
+
+	e.type = IPv4;
+	ip_vec.push_back(new ip_port_entry(e));
     }
-};
+
+    return 0;
+}
 
 static bool srv_less(const dns_base_entry* le, const dns_base_entry* re)
 {
@@ -245,7 +263,7 @@ public:
 	((sockaddr_in*)sa)->sin_port = h->port;
 
 	// check if name is an IP address
-	if(resolver::instance()->str2ip(e->target.c_str(),sa,IPv4) == 1) {
+	if(str2ip(e->target.c_str(),sa,IPv4) == 1) {
 	    h->ip_n = -1; // flag end of IP list
 	    return 0;
 	}
@@ -380,9 +398,44 @@ static void dns_error(int error, const char* domain)
 
 void ip_entry::to_sa(sockaddr_storage* sa)
 {
-    sockaddr_in* sa_in = (sockaddr_in*)sa;
-    sa_in->sin_family = AF_INET;
-    memcpy(&(sa_in->sin_addr),&addr,sizeof(in_addr));
+    switch(type){
+    case IPv4:
+	{
+	    sockaddr_in* sa_in = (sockaddr_in*)sa;
+	    sa_in->sin_family = AF_INET;
+	    memcpy(&(sa_in->sin_addr),&addr,sizeof(in_addr));
+	} break;
+    case IPv6:
+	{
+	    sockaddr_in6* sa_in6 = (sockaddr_in6*)sa;
+	    sa_in6->sin6_family = AF_INET6;
+	    memcpy(&(sa_in6->sin6_addr),&addr6,sizeof(in6_addr));
+	} break;
+    default:
+	break;
+    }
+}
+
+void ip_port_entry::to_sa(sockaddr_storage* sa)
+{
+    switch(type){
+    case IPv4:
+	{
+	    sockaddr_in* sa_in = (sockaddr_in*)sa;
+	    sa_in->sin_family = AF_INET;
+	    memcpy(&(sa_in->sin_addr),&addr,sizeof(in_addr));
+	    sa_in->sin_port = htons(port);
+	} break;
+    case IPv6:
+	{
+	    sockaddr_in6* sa_in6 = (sockaddr_in6*)sa;
+	    sa_in6->sin6_family = AF_INET6;
+	    memcpy(&(sa_in6->sin6_addr),&addr6,sizeof(in6_addr));
+	    sa_in6->sin6_port = htons(port);
+	} break;
+    default:
+	break;
+    }
 }
 
 dns_base_entry* dns_ip_entry::get_rr(dns_record* rr, u_char* begin, u_char* end)
@@ -623,9 +676,9 @@ int _resolver::resolve_name(const char* name,
     return -1;
 }
 
-int _resolver::str2ip(const char* name,
-		      sockaddr_storage* sa,
-		      const address_type types)
+int str2ip(const char* name,
+	   sockaddr_storage* sa,
+	   const address_type types)
 {
     if(types & IPv4){
 	int ret = inet_pton(AF_INET,name,&((sockaddr_in*)sa)->sin_addr);

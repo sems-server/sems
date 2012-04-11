@@ -154,8 +154,7 @@ void CCCtl::start(const string& cc_name, const string& ltag,
   SET_TO_CALL_PROFILE("outbound_proxy", outbound_proxy);
   ENABLE_IN_CALL_PROFILE("force_outbound_proxy", force_outbound_proxy);
 
-  SET_TO_CALL_PROFILE("next_hop_ip", next_hop_ip);
-  SET_TO_CALL_PROFILE("next_hop_port", next_hop_port);
+  SET_TO_CALL_PROFILE("next_hop", next_hop);
 
   SET_TO_CALL_PROFILE("sst_enabled", sst_enabled);
   SET_TO_CALL_PROFILE("sst_aleg_enabled", sst_aleg_enabled);

@@ -35,6 +35,7 @@
 #include "parse_route.h"
 #include "parse_100rel.h"
 #include "parse_extensions.h"
+#include "parse_next_hop.h"
 #include "sip_trans.h"
 #include "msg_fline.h"
 #include "msg_hdrs.h"
@@ -423,8 +424,8 @@ int _trans_layer::send_reply(trans_ticket* tt,
     if(local_socket->is_opt_set(trsp_socket::force_via_address)) {
 	DBG("force_via_address\n");
 	string via_host = c2stlstr(req->via_p1->host);
-	if (resolver::instance()->str2ip(via_host.c_str(), &remote_ip,
-					 (address_type)(IPv4 | IPv6)) != 1) {
+	if (str2ip(via_host.c_str(), &remote_ip,
+			     (address_type)(IPv4 | IPv6)) != 1) {
 	    ERROR("Invalid via_host '%s'\n", via_host.c_str());
 	    delete [] reply_buf;
 	    goto end;
@@ -713,7 +714,7 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
     string nh = c2stlstr(*next_hop);
 
     DBG("checking whether '%s' is IP address...\n", nh.c_str());
-    if (resolver::instance()->str2ip(nh.c_str(), &(msg->remote_ip), IPv4) != 1) {
+    if (str2ip(nh.c_str(), &(msg->remote_ip), IPv4) != 1) {
 
 	// nh does NOT contain a valid IP address
     
@@ -816,7 +817,7 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 }
 
 int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
-			       const cstring& _next_hop, unsigned short _next_port,
+			       const cstring& _next_hop,
 			       int out_interface)
 {
     // Request-URI
@@ -836,23 +837,50 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     cstring next_hop;
     unsigned short next_port=0;
 
-    if (!_next_hop.len) {
+    int res=0;
+    if (_next_hop.len) {
+
+	list<host_port> dest_list;
+	res = parse_next_hop(_next_hop,dest_list);
+	if(res) {
+	    DBG("parse_next_hop failed (%i)\n",res);
+	    return res;
+	}
+
+	DBG("dest_list.size() = %lu\n",dest_list.size());
+
+	if(dest_list.size() == 1) {
+	    next_hop = dest_list.front().host;
+	    next_port = dest_list.front().port ? dest_list.front().port : 5060;
+	}
+	else if(dest_list.size() > 1) {
+	    dns_ip_entry* e = new dns_ip_entry();
+	    if(e->fill_ip_list(dest_list) < 0) {
+		delete e;
+		return -1;
+	    }
+
+	    inc_ref(e);
+	    e->next_ip(&msg->h_dns,&msg->remote_ip);
+	    DBG("destination set to <%s>\n",get_addr_str(&msg->remote_ip).c_str());
+	}
+    }
+    else {
 	if(set_next_hop(msg,&next_hop,&next_port) < 0){
 	    DBG("set_next_hop failed\n");
 	    return -1;
 	}
-    } else {
-	next_hop = _next_hop;
-	next_port = _next_port ? _next_port : 5060;
     }
 
     string uri_buffer; // must have the same scope as 'msg'
     prepare_strict_routing(msg,uri_buffer);
 
-    int res = set_destination_ip(msg,&next_hop,next_port);
-    if(res < 0){
-     	DBG("set_destination_ip failed\n");
-     	return res;
+    if(next_hop.len) {
+	res = set_destination_ip(msg,&next_hop,next_port);
+	if(res < 0){
+	    DBG("set_destination_ip failed\n");
+	    return res;
+	}
     }
 
     // rco: should we overwrite the socket from the request in all cases???
