@@ -15,7 +15,7 @@ clean:
 COREPATH = ..
 include $(COREPATH)/../Makefile.defs
 
-CPPFLAGS += -I$(COREPATH)
+CPPFLAGS += -I$(COREPATH) -fno-strict-aliasing
 
 # implicit rules
 %.o : %.cpp $(COREPATH)/../Makefile.defs

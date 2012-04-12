@@ -847,8 +847,6 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    return res;
 	}
 
-	DBG("dest_list.size() = %lu\n", (long unsigned int)dest_list.size());
-
 	if(dest_list.size() == 1) {
 	    next_hop = dest_list.front().host;
 	    next_port = dest_list.front().port ? dest_list.front().port : 5060;
