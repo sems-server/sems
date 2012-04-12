@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "parse_next_hop.h"
 #include "parse_common.h"
+#include "log.h"
 
 int parse_next_hop(const cstring& next_hop,
 		   list<host_port>& dest_list)
@@ -85,9 +86,7 @@ int parse_next_hop(const cstring& next_hop,
 	break;
       default:
 	// syntax error
-	fprintf(stderr,
-		"error: unexpected character '%c' in IPL_HOST_SEP state.\n",
-		*c);
+	DBG("error: unexpected character '%c' in IPL_HOST_SEP state.\n",*c);
 	return -1;
       }
       break;
@@ -103,9 +102,7 @@ int parse_next_hop(const cstring& next_hop,
 	break;
       default:
 	if(*c < '0' && *c > '9'){
-	  fprintf(stderr,
-		  "error: unexpected character '%c' in IPL_PORT state.\n",
-		  *c);
+	  DBG("error: unexpected character '%c' in IPL_PORT state.\n",*c);
 	  return -1;
 	}
 	hp.port = hp.port*10 + (*c - '0');
