@@ -775,6 +775,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       WARN("Error parsing R-URI '%s'\n", ruri.c_str());
     }
     else {
+      ruri_parser.uri_port.clear();
+      ruri_parser.uri_host = call_profile.ruri_host;
       ruri = ruri_parser.uri_str();
     }
   }
