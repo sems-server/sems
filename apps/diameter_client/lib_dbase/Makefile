@@ -16,7 +16,7 @@ cflags  ?= $(CPPFLAGS) $(CFLAGS) -I $(COREPATH)
 WITH_OPENSSL = 1
 
 ifdef WITH_OPENSSL
-cflags+=  -D WITH_OPENSSL
+cflags+=  -D WITH_OPENSSL -Wno-deprecated-declarations
 endif
 
 AR		= ar

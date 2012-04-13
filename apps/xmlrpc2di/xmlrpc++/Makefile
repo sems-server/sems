@@ -2,7 +2,7 @@
 CXX		= g++
 SRC		= ./src
 SHARED		= -shared
-CPPFLAGS	= -I$(SRC) -fPIC
+CPPFLAGS	= -I$(SRC) -fPIC -Wno-deprecated-declarations
 DEBUG		= -g
 OPTIMIZE	= -O2
 GCCWARN		= -Wall #-Wstrict-prototypes
