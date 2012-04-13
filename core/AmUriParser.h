@@ -51,6 +51,9 @@ struct AmUriParser {
   bool parse_uri();
   bool parse_params(const string& line, int& pos);
   void dump();
+  string uri_str();
+  string nameaddr_str();
+  
   AmUriParser() { }
 };
 

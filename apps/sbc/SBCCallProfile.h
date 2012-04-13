@@ -82,6 +82,7 @@ struct SBCCallProfile
   string profile_file;
 
   string ruri;       /* updated if set */
+  string ruri_host;  /* updated if set */
   string from;       /* updated if set */
   string to;         /* updated if set */
   string contact;

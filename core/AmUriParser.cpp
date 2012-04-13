@@ -459,3 +459,29 @@ void AmUriParser::dump() {
   }
   DBG("-------------------- \n");
 }
+
+string AmUriParser::uri_str()
+{
+  string res = uri_host;
+
+  if(!uri_user.empty()) {
+    res = uri_user + "@" + res;
+  }
+
+  if(!uri_port.empty()) {
+    res += ":" + uri_port;
+  }
+
+  if(!uri_param.empty()) {
+    res += ";" + uri_param;
+  }
+
+  res = "sip:" + res;
+
+  return res;
+}
+
+string AmUriParser::nameaddr_str()
+{
+  return "\"" + display_name + "\" <" + uri_str() + ">";
+}

@@ -769,6 +769,15 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   }
 
   ruri = call_profile.ruri.empty() ? req.r_uri : call_profile.ruri;
+  if(!call_profile.ruri_host.empty()){
+    ruri_parser.uri = ruri;
+    if(!ruri_parser.parse_uri()) {
+      WARN("Error parsing R-URI '%s'\n", ruri.c_str());
+    }
+    else {
+      ruri = ruri_parser.uri_str();
+    }
+  }
   from = call_profile.from.empty() ? req.from : call_profile.from;
   to = call_profile.to.empty() ? req.to : call_profile.to;
   callid = call_profile.callid;

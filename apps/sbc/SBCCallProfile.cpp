@@ -45,6 +45,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   profile_file = profile_file_name;
 
   ruri = cfg.getParameter("RURI");
+  ruri_host = cfg.getParameter("RURI_host");
   from = cfg.getParameter("From");
   to = cfg.getParameter("To");
   contact = cfg.getParameter("Contact");
@@ -292,7 +293,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   if (!refuse_with.empty()) {
     INFO("SBC:      refusing calls with '%s'\n", refuse_with.c_str());
   } else {
-    INFO("SBC:      RURI = '%s'\n", ruri.c_str());
+    INFO("SBC:      RURI      = '%s'\n", ruri.c_str());
+    INFO("SBC:      RURI-host = '%s'\n", ruri_host.c_str());
     INFO("SBC:      From = '%s'\n", from.c_str());
     INFO("SBC:      To   = '%s'\n", to.c_str());
     if (!contact.empty()) {
@@ -431,6 +433,7 @@ static bool payloadDescsEqual(const vector<PayloadDesc> &a, const vector<Payload
 bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
   bool res =
     ruri == rhs.ruri &&
+    ruri_host == rhs.ruri_host &&
     from == rhs.from &&
     to == rhs.to &&
     contact == rhs.contact &&
@@ -485,6 +488,7 @@ string SBCCallProfile::print() const {
   string res = 
     "SBC call profile dump: ~~~~~~~~~~~~~~~~~\n";
   res += "ruri:                 " + ruri + "\n";
+  res += "ruri_host:            " + ruri_host + "\n";
   res += "from:                 " + from + "\n";
   res += "to:                   " + to + "\n";
   res += "contact:              " + contact + "\n";
@@ -620,6 +624,7 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
 
 
   REPLACE_NONEMPTY_STR(ruri);
+  REPLACE_NONEMPTY_STR(ruri_host);
   REPLACE_NONEMPTY_STR(from);
   REPLACE_NONEMPTY_STR(to);
   REPLACE_NONEMPTY_STR(contact);
