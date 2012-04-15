@@ -2,7 +2,7 @@ Source: sems
 Section: net
 Priority: optional
 Maintainer: Stefan Sayer <stefan.sayer@gmail.com>
-Build-Depends: debhelper (>= 4), libspeex-dev, flite-dev, libspandsp-dev, libssl-dev, python-dev, sip4, python-sip4-dev, openssl, libev-dev, libmysql++-dev
+Build-Depends: debhelper (>= 4), libspeex-dev, flite-dev, libspandsp-dev, libssl-dev, python-dev, sip4, python-sip4-dev, openssl, libev-dev, libmysql++-dev, libxml2-dev, libcurl4-openssl-dev | libcurl4-gnutls-dev
 Standards-Version: 3.5.2
 
 Package: sems
