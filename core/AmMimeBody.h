@@ -1,6 +1,8 @@
 #ifndef _AmMimeBody_h_
 #define _AmMimeBody_h_
 
+#include "AmArg.h"
+
 #include <string>
 #include <list>
 #include <map>
@@ -64,6 +66,7 @@ struct AmContentType
 };
 
 class AmMimeBody
+: public AmObject
 {
 public:
   typedef list<AmMimeBody*>  Parts;
