@@ -100,7 +100,7 @@ void DSMCall::onInvite(const AmSipRequest& req) {
     
   bool run_session_invite = engine.onInvite(req, this);
 
-  avar[DSM_AVAR_REQUEST] = AmArg(sip_req);
+  avar[DSM_AVAR_REQUEST] = AmArg(&req);
 
   DBG("before runEvent(this, this, DSMCondition::Invite);\n");
   AmSipDialog::Status old_st = dlg.getStatus();
