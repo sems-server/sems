@@ -283,6 +283,11 @@ B2B call control
   unregisterEventQueue(queue_name)
     unregister events queue queue_name
 
+ Garbage collector:
+  trackObject(varname)    - track object referenced with varname, i.e. enable garbage
+                            collection with the current call/systemDSM
+  releaseObject(varname)  - release object referenced with varname from garbage collector
+
 Conditions
 ==========
  
