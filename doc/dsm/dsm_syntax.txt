@@ -445,6 +445,12 @@ brackets match.
 
    #params.*  - parameters array
 
+subscription - SIP subscription status
+   #status   - status: "active", "pending", "failed", "terminated", "timeout"
+   #code     - SIP response code (if failed)
+   #reason   - SIP response reason (if failed)
+   NOTIFY body in avar[DSM_AVAR_SIPSUBSCRIPTION_BODY] (if #status=="active")
+
  jsonRpcResponse - json-rpc response received
    #ev_type  - JsonRpcResponse
    #id       - response ID

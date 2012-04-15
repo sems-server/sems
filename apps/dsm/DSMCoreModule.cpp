@@ -216,6 +216,9 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "jsonRpcResponse") 
     return new TestDSMCondition(params, DSMCondition::JsonRpcResponse);  
 
+  if (cmd == "subscription")
+    return new TestDSMCondition(params, DSMCondition::SIPSubscription);
+
   if (cmd == "startup")
     return new TestDSMCondition(params, DSMCondition::Startup);
 

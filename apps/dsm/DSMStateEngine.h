@@ -98,6 +98,8 @@ class DSMCondition
     Reload,
     System,
 
+    SIPSubscription,
+
     RTPTimeout
   };
 

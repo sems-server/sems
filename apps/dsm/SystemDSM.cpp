@@ -6,6 +6,7 @@
 
 #include "DSMStateDiagramCollection.h"
 #include "../apps/jsonrpc/JsonRPCEvents.h" // todo!
+#include "AmSipSubscription.h"
 
 SystemDSM::SystemDSM(const DSMScriptConfig& config,
 		     const string& startDiagName,
@@ -130,10 +131,28 @@ void SystemDSM::process(AmEvent* event) {
 
   }
 
+  if (event->event_id == E_SIP_SUBSCRIPTION) {
+    SIPSubscriptionEvent* sub_ev = dynamic_cast<SIPSubscriptionEvent*>(event);
+    if (sub_ev) {
+      DBG("SystemDSM received SIP Subscription Event\n");
+      map<string, string> params;
+      params["status"] = sub_ev->getStatusText();
+      params["code"] = int2str(sub_ev->code);
+      params["reason"] = sub_ev->reason;
+      params["expires"] = int2str(sub_ev->expires);
+      params["has_body"] = sub_ev->notify_body.get()?"true":"false";
+      if (sub_ev->notify_body.get()) {
+	avar[DSM_AVAR_SIPSUBSCRIPTION_BODY] = AmArg(sub_ev->notify_body.get());
+      }
+      engine.runEvent(&dummy_session, this, DSMCondition::SIPSubscription, &params);
+      avar.erase(DSM_AVAR_SIPSUBSCRIPTION_BODY);
+    }
+  }
+
   if (event->event_id == E_SYSTEM) {
     AmSystemEvent* sys_ev = dynamic_cast<AmSystemEvent*>(event);
     if(sys_ev){	
-      DBG("SystemDSM received system Event\n");      
+      DBG("SystemDSM received system Event\n");
       map<string, string> params;
       params["type"] = AmSystemEvent::getDescription(sys_ev->sys_event);
       engine.runEvent(&dummy_session, this, DSMCondition::System, &params);

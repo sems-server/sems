@@ -66,6 +66,8 @@ using std::map;
 #define DSM_AVAR_JSONRPCRESPONSEDATA "JsonRpcResponseParameters"
 #define DSM_AVAR_JSONRPCRESPONSEUDATA "JsonRpcResponseUData"
 
+#define DSM_AVAR_SIPSUBSCRIPTION_BODY "SipSubscriptionBody"
+
 #define DSM_ERRNO_FILE        "file"
 #define DSM_ERRNO_UNKNOWN_ARG "arg"
 #define DSM_ERRNO_SCRIPT      "script"
