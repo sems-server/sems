@@ -4,7 +4,7 @@ COREPATH = $(DSMPATH)/../../core
 
 include $(COREPATH)/../Makefile.defs
 
-exclude_dsm_modules ?= mod_mysql mod_aws mod_curl
+exclude_dsm_modules ?= mod_mysql mod_aws mod_curl mod_xml
 
 ifneq ($(USE_MONITORING), yes)
 exclude_dsm_modules += mod_monitoring

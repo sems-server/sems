@@ -437,6 +437,12 @@
  *  \verbinclude Readme.mod_aws.txt
  *  </p>
  * 
+
+   \subsection dsm_mod_xml mod_xml - XML utility functions
+   <p>
+   \verbinclude Readme.mod_xml.txt
+   </p>
+
  * 
  *  \section Links
  *  Back to \ref AppDoc, to \ref AppDocExample.
