@@ -733,10 +733,14 @@ void DSMCall::addSeparator(const string& name, bool front) {
 }
 
 void DSMCall::transferOwnership(DSMDisposable* d) {
+  if (d == NULL)
+    return;
   gc_trash.insert(d);
 }
 
 void DSMCall::releaseOwnership(DSMDisposable* d) {
+  if (d == NULL)
+    return;
   gc_trash.erase(d);
 }
 
