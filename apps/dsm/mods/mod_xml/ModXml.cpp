@@ -32,10 +32,16 @@
 
 SC_EXPORT(MOD_CLS_NAME);
 
+void xml_err_func(void *ctx, const char *msg, ...);
+xmlGenericErrorFunc handler = (xmlGenericErrorFunc)xml_err_func;
+int xml_log_level = L_ERR;
+
 int MOD_CLS_NAME::preload() {
   DBG("initializing libxml2...\n");
   xmlInitParser();
-
+  initGenericErrorDefaultFunc(&handler);
+  handler = (xmlGenericErrorFunc)xml_err_func;
+  xmlSetGenericErrorFunc(NULL, &xml_err_func);
   return 0;
 }
 
@@ -45,6 +51,8 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("xml.evalXPath", MODXMLEvalXPathAction);
   DEF_CMD("xml.XPathResultCount", MODXMLXPathResultNodeCount);
+
+  DEF_CMD("xml.setLoglevel", MODXMLSetLogLevelAction);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -66,6 +74,17 @@ ModXmlXPathObj::~ModXmlXPathObj() {
     DBG("freeing XML xpath ctx [%p]\n", xpathCtx);
     xmlXPathFreeContext(xpathCtx);
   }
+}
+
+#define TMP_BUF_SIZE 256
+void xml_err_func(void *ctx, const char *msg, ...) {
+   char _string[TMP_BUF_SIZE];
+   va_list arg_ptr;
+   va_start(arg_ptr, msg);
+   vsnprintf(_string, TMP_BUF_SIZE, msg, arg_ptr);
+   va_end(arg_ptr);
+
+   _LOG(xml_log_level, "%s", _string);
 }
 
 CONST_ACTION_2P(MODXMLParseSIPMsgBodyAction, ',', false);
@@ -94,6 +113,8 @@ EXEC_ACTION_START(MODXMLParseSIPMsgBodyAction) {
     EXEC_ACTION_STOP;
   }
 
+  xmlSetGenericErrorFunc(NULL, &xml_err_func);
+
   xmlDocPtr doc =
     xmlReadMemory((const char*)b, msgbody->getLen(), "noname.xml", NULL, 0);
   if (doc == NULL) {
@@ -102,6 +123,8 @@ EXEC_ACTION_START(MODXMLParseSIPMsgBodyAction) {
     sc_sess->SET_STRERROR("failed parsing XML document from " + msgbody_var);
     EXEC_ACTION_STOP;
   }
+
+  xmlSetGenericErrorFunc(doc, &xml_err_func);
 
   ModXmlDoc* xml_doc = new ModXmlDoc(doc);
   sc_sess->avar[dstname] = xml_doc;
@@ -115,6 +138,8 @@ EXEC_ACTION_START(MODXMLParseAction) {
   string xml_doc = resolveVars(par1, sess, sc_sess, event_params);
   string dstname = resolveVars(par2, sess, sc_sess, event_params);
 
+  xmlSetGenericErrorFunc(NULL, &xml_err_func);
+
   xmlDocPtr doc =
     xmlReadMemory(xml_doc.c_str(), xml_doc.length(), "noname.xml", NULL, 0);
   if (doc == NULL) {
@@ -123,6 +148,7 @@ EXEC_ACTION_START(MODXMLParseAction) {
     sc_sess->SET_STRERROR("failed parsing XML document from " + xml_doc);
     EXEC_ACTION_STOP;
   }
+  xmlSetGenericErrorFunc(doc, &xml_err_func);
 
   ModXmlDoc* xml_doc_var = new ModXmlDoc(doc);
   sc_sess->avar[dstname] = xml_doc_var;
@@ -154,6 +180,8 @@ EXEC_ACTION_START(MODXMLEvalXPathAction) {
   string xpath_expr  = resolveVars(par1, sess, sc_sess, event_params);
   string xml_doc_var = resolveVars(par2, sess, sc_sess, event_params);
 
+  xmlSetGenericErrorFunc(NULL, &xml_err_func);
+
   ModXmlDoc* xml_doc = getXMLElemFromVariable<ModXmlDoc>(sc_sess, xml_doc_var);
   if (NULL == xml_doc)
     EXEC_ACTION_STOP;
@@ -167,6 +195,7 @@ EXEC_ACTION_START(MODXMLEvalXPathAction) {
     sc_sess->SET_STRERROR("unable to create new XPath context");
     EXEC_ACTION_STOP;
   }
+  xmlSetGenericErrorFunc(xpathCtx, &xml_err_func);
 
   string xml_doc_ns = sc_sess->var[xml_doc_var+".ns"];
   vector<string> ns_entries = explode(xml_doc_ns, " ");
@@ -209,7 +238,6 @@ EXEC_ACTION_START(MODXMLEvalXPathAction) {
 
 } EXEC_ACTION_END;
 
-
 CONST_ACTION_2P(MODXMLXPathResultNodeCount, '=', false);
 EXEC_ACTION_START(MODXMLXPathResultNodeCount) {
   string cnt_var  = par1;
@@ -233,4 +261,20 @@ EXEC_ACTION_START(MODXMLXPathResultNodeCount) {
   sc_sess->var[cnt_var] = int2str(res);
   DBG("set count $%s=%u\n", cnt_var.c_str(), res);
   
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(MODXMLSetLogLevelAction) {
+  string xml_log_level_s = resolveVars(arg, sess, sc_sess, event_params);
+  if (xml_log_level_s == "error")
+    xml_log_level = L_ERR;
+  else if (xml_log_level_s == "warn")
+    xml_log_level = L_WARN;
+  else if (xml_log_level_s == "info")
+    xml_log_level = L_INFO;
+  else if (xml_log_level_s == "debug")
+    xml_log_level = L_DBG;
+  else {
+    ERROR("script writer error: '%s' is no valid log level (error, warn, info, debug)\n",
+	  xml_log_level_s.c_str());
+  }
 } EXEC_ACTION_END;

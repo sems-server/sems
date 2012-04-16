@@ -47,6 +47,7 @@ DEF_ACTION_2P(MODXMLParseSIPMsgBodyAction);
 DEF_ACTION_2P(MODXMLParseAction);
 DEF_ACTION_2P(MODXMLEvalXPathAction);
 DEF_ACTION_2P(MODXMLXPathResultNodeCount);
+DEF_ACTION_1P(MODXMLSetLogLevelAction);
 
 class ModXmlDoc 
 : public DSMDisposable,

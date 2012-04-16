@@ -27,4 +27,6 @@ xml.XPathResultCount($cntvar=xpath_object)
   Example:
     xml.XPathResultCount($rescnt="substatus.xpath");
 
-
+xml.setLoglevel(level)
+ set libxml2 error logging level. Default: error
+ Valid: error, warn, info, debug
