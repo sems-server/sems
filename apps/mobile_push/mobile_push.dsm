@@ -1,0 +1,175 @@
+--
+-- This DSM app 
+--   o plays early media from a file in the DB
+--   o sends a HTTP request to a web server
+--   o SUBSCRIBEs to registration state 
+--   o if registration becomes active (at least one active contact), it sends back "300 Multiple Choices"
+--   o otherwise (timeout) it sends back "480 Not found"
+
+-- Parameters (P-App-Param):
+--    audio_id   - indicating audio file in DB
+--    expiration - subscription expiration/waiting time (default: 60)
+--    caller     - caller passed to notification web app
+--    callee     - callee passed to notification web app
+--    domain     - domain passed to notification web app
+--
+--  Example: P-App-Param: audio_id=rbt;expiration=30;caller=+43111111111;callee=+432222222222;domain=sip.sipwise.com
+-- 
+-- Example DB: 
+--  CREATE TABLE `audio_files` (
+--    `id` varchar(20) DEFAULT NULL,
+--    `data` mediumblob
+--  ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+import(mod_utils);
+import(mod_dlg);
+import(mod_subscription);
+import(mod_xml);
+import(mod_mysql);
+import(mod_curl);
+
+initial state START;
+
+transition "DB exception" START - exception / {
+  log(1, "Error in initializing mobile push:");
+  logAll(1);
+  dlg.reply(500, "Server Internal Error");
+  stop(false);
+} -> END;
+
+transition "invite" START - invite / {
+  if test($config.enable_rbt=="yes") {
+    if test($audio_id != "") {
+      mysql.connect();
+      throwOnError();
+      -- play waiting file from DB
+      if test($config.play_looped=="yes") {
+        mysql.playDBAudioLooped(SELECT data FROM provisioning.audio_files WHERE id="$audio_id", rbt.wav);
+      } else {
+        mysql.playDBAudio(SELECT data FROM provisioning.audio_files WHERE id="$audio_id", rbt.wav);
+      }
+      throwOnError();
+      mysql.disconnect();
+    }
+  }
+
+  -- send 183 with early media
+  dlg.acceptInvite(183, "Progress");
+  -- no default 200 OK
+  set($connect_session=0);
+
+  -- start RTP processing 
+  connectMedia();
+
+  -- create subscription to reg event
+  set($r.domain=@domain);
+  set($r.user=@user);
+  set($r.from_user=$config.subscription_user);
+  set($r.pwd=$config.subscription_pwd);
+  set($r.event="reg");
+  if test($config.proxy != "") {
+    set($r.proxy=$config.proxy);
+  }
+  if test($config.use_subscription_id == "yes") {
+    utils.getNewId(r.id);
+  }
+  if test($expiration != "") {
+    set($r.expires=$expiration);
+  } else {
+    set($r.expires=60);
+  }
+
+  subscription.create(r);
+
+  if test($r.handle == "") {
+    log(1, "Subscription creation failed!");
+    logVars(1);
+    dlg.reply(500, "Server Internal Error");
+    stop(false);
+    throw(subscription);
+  }
+
+  -- send HTTP request
+  if test($config.use_post=="yes") {
+    curl.postDiscardResult($config.push_server_url, $caller;$callee;$domain)
+  } else {
+    curl.getForm($config.push_server_url, $caller;$callee;$domain)
+  }
+
+  -- set Timer on our side, too (server subscription timing could be broken...)
+  setTimer(1, $r.expires);
+
+} -> WAITING;
+
+state WAITING;
+
+transition "subscription failed" WAITING - subscription(#status=="failed") / {
+  log(1, "Subscription failed:");
+  logParams(1);
+  logVars(1); 
+  dlg.reply(500, "Server Internal Error");
+  stop(false);
+} -> END;
+
+function evaluateRegNotifyBody() {
+  xml.parseSIPMsgBody("SipSubscriptionBody", "substatus");
+  -- namespaces to be used:
+  set($substatus.ns="a=urn:ietf:params:xml:ns:reginfo")
+  -- look for an active contact
+  xml.evalXPath("/a:reginfo/a:registration/a:contact[@state='active']", "substatus");
+  xml.XPathResultCount($active_contacts="substatus.xpath");
+};
+
+function releaseRegEvalObjects() {
+  freeObject("substatus");
+  freeObject("substatus.xpath");
+};
+
+function replyWith300() {
+  set($dlg.reply.hdrs="Contact: ");
+  append($dlg.reply.hdrs, @local_uri);
+  append($dlg.reply.hdrs, $config.extra_3xx_uri_append);
+  dlg.reply(300, "Multiple Choices");
+  stop(false);
+};
+
+transition "NOTIFY received, with body" WAITING - subscription(#status!="terminated"); test(#has_body=="true") / {
+  evaluateRegNotifyBody();
+
+  if test($active_contacts != 0) {
+    replyWith300();
+    subscription.remove($r.handle);
+  }
+
+  releaseRegEvalObjects();
+} -> WAITING;
+
+transition "NOTIFY received, no body" WAITING - subscription(#status!="terminated")  / {
+  log(3, "subscription active");
+  logParams(3);
+} -> WAITING;
+
+transition "NOTIFY received, terminated (but with body)" WAITING - subscription(#status=="terminated"); test(#has_body=="true") / {
+  evaluateRegNotifyBody();
+
+  if test($active_contacts != 0) {
+    replyWith300();
+  } else {
+    dlg.reply(480, "Not found");
+    stop(false);
+  }
+  releaseRegEvalObjects();
+} -> END;
+
+transition "NOTIFY received, subscription terminated" WAITING - subscription(#status=="terminated") / {
+  dlg.reply(480, "Not found");
+  stop(false);
+} -> END;
+
+transition "timer hit" WAITING - timer(#id==1) / {
+  subscription.remove($r.handle);
+  dlg.reply(480, "Not found");
+  stop(false);
+} -> END;
+
+state END;
