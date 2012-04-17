@@ -69,6 +69,9 @@ transition "invite" START - invite / {
   -- start RTP processing 
   connectMedia();
 
+  -- no need to process incoming RTP (also no RTP timeout needed)
+  pauseReceiving();
+
   -- create subscription to reg event
   set($r.domain=@domain);
   set($r.user=@user);
@@ -110,6 +113,8 @@ transition "invite" START - invite / {
 } -> WAITING;
 
 state WAITING;
+
+transition "RTP timeout - ignore" WAITING - rtpTimeout / set(#processed=true) -> WAITING;
 
 transition "subscription failed" WAITING - subscription(#status=="failed") / {
   log(1, "Subscription failed:");
