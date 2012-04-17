@@ -968,6 +968,7 @@ bool AmSession::getSdpOffer(AmSdp& offer)
 
   if(!offer.media.size()) {
     offer.media.push_back(SdpMedia());
+    offer.media.back().type=MT_AUDIO;
     RTPStream()->getSdpOffer(0,offer.media.back());
   }
   else {
