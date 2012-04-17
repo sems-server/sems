@@ -30,6 +30,13 @@ import(mod_curl);
 
 initial state START;
 
+transition "SIP dialog error" START - exception; test(#type=="dlg") / {
+  log(1, "Error in accepting call:");
+  logParams(1);
+  set($connect_session=0);
+  stop(false);
+} -> END;
+
 transition "DB exception" START - exception / {
   log(1, "Error in initializing mobile push:");
   logAll(1);
@@ -55,6 +62,7 @@ transition "invite" START - invite / {
 
   -- send 183 with early media
   dlg.acceptInvite(183, "Progress");
+  throwOnError();
   -- no default 200 OK
   set($connect_session=0);
 
