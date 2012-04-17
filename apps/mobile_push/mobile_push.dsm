@@ -152,6 +152,7 @@ transition "NOTIFY received, with body" WAITING - subscription(#status!="termina
   if test($active_contacts != 0) {
     replyWith300();
     subscription.remove($r.handle);
+    stop(false);
   }
 
   releaseRegEvalObjects();
@@ -169,9 +170,9 @@ transition "NOTIFY received, terminated (but with body)" WAITING - subscription(
     replyWith300();
   } else {
     dlg.reply(480, "Not found");
-    stop(false);
   }
   releaseRegEvalObjects();
+  stop(false);
 } -> END;
 
 transition "NOTIFY received, subscription terminated" WAITING - subscription(#status=="terminated") / {
