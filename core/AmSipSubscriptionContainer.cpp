@@ -52,16 +52,24 @@ string _AmSipSubscriptionContainer::createSubscription(const AmSipSubscriptionIn
 						       unsigned int wanted_expires) {
   initialize();
   string handle = AmSession::getNewId();
-  subscriptions[handle] = new AmSipSubscription(handle, info, sess_link);
-  subscriptions[handle]->setExpiresInterval(wanted_expires);
+  AmSipSubscription* new_sub = new AmSipSubscription(handle, info, sess_link);
+  new_sub->setExpiresInterval(wanted_expires);
+
+  subscriptions_mut.lock();
+  subscriptions[handle] = new_sub;
+  subscriptions_mut.unlock();
+
   AmEventDispatcher::instance()->addEventQueue(handle, this);
-  if (!subscriptions[handle]->doSubscribe()) {
+  if (!new_sub->doSubscribe()) {
     DBG("subscribe failed - removing subscription\b");
     AmEventDispatcher::instance()->delEventQueue(handle);
-    delete subscriptions[handle];
+    subscriptions_mut.lock();
     subscriptions.erase(handle);
+    subscriptions_mut.unlock();
+    delete new_sub;
     return "";
   }
+
   return handle;
 }
 
