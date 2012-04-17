@@ -470,3 +470,12 @@ void CallGenDialog::onBye(const AmSipRequest& req) {
   setInOut(NULL,NULL);
   setStopped();
 }
+
+void CallGenDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status) {
+  AmSession::onSipReply(reply, old_dlg_status);
+  if ((old_dlg_status < AmSipDialog::Connected) &&
+      dlg.getStatus() == AmSipDialog::Disconnected) {
+    DBG("SIP dialog status change: < Connected -> Disconnected, stopping call\n");
+    setStopped();
+  }
+}
