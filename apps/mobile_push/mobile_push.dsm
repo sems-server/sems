@@ -185,4 +185,9 @@ transition "timer hit" WAITING - timer(#id==1) / {
   stop(false);
 } -> END;
 
+transition "CANCEL received" WAITING - hangup / {
+  subscription.remove($r.handle);
+  stop(false);
+} -> END;
+
 state END;
