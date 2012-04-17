@@ -44,6 +44,9 @@ _AmSipSubscriptionContainer::~_AmSipSubscriptionContainer() {
 void _AmSipSubscriptionContainer::initialize() {
   if (!initialized) {
     // AmEventDispatcher::instance()->addEventQueue(SUBSCRIPTION_CONTAINER_EVQ_ID, this);
+    initialized = true;
+    DBG("Starting SIP Subscription client thread ([%p])\n", this);
+    start();
   }
 }
 
@@ -102,9 +105,9 @@ void _AmSipSubscriptionContainer::removeSubscription(const string& sub_handle) {
   subscriptions_mut.unlock();
 }
 
-// AmEventQueueInterface
-void _AmSipSubscriptionContainer::postEvent(AmEvent* event) {
-  auto_ptr<AmEvent> l_event(event);
+// AmEventProcessingThread
+void _AmSipSubscriptionContainer::onEvent(AmEvent* event) {
+  //  auto_ptr<AmEvent> l_event(event);
 
   AmSipRequestEvent* sip_req_ev = dynamic_cast<AmSipRequestEvent*>(event);
   if (sip_req_ev) {

@@ -30,11 +30,10 @@
 #define _AmSipSubscriptionContainer_h_
 
 #include "AmSipSubscription.h"
-#include "AmEventQueue.h"
-#include "AmThread.h"
+#include "AmEventProcessingThread.h"
 
 class _AmSipSubscriptionContainer 
-: public AmEventQueueInterface
+: public AmEventProcessingThread
 {
   AmSipSubscriptionMap subscriptions;
   AmMutex subscriptions_mut;
@@ -50,8 +49,8 @@ class _AmSipSubscriptionContainer
   bool refreshSubscription(const string& sub_handle, unsigned int wanted_expires=0);
   void removeSubscription(const string& sub_handle);
 
-  // AmEventQueueInterface
-  void postEvent(AmEvent* event);
+  // AmEventProcessingThread
+  void onEvent(AmEvent* event);
 };
 
 typedef singleton<_AmSipSubscriptionContainer> AmSipSubscriptionContainer;
