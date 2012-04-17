@@ -30,6 +30,8 @@
 
 #define MOD_CLS_NAME DLGModule 
 
+#define DSM_ERRNO_DLG "dlg"
+
 DECLARE_MODULE_BEGIN(MOD_CLS_NAME);
 bool onInvite(const AmSipRequest& req, DSMSession* sess);
 DECLARE_MODULE_END;

@@ -180,6 +180,9 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
     ERROR("%i %s\n",e.code,e.reason.c_str());
     sess->setStopped();
     sess->dlg.reply(*sc_sess->last_req.get(),e.code,e.reason);
+
+    sc_sess->SET_ERRNO(DSM_ERRNO_DLG);
+    sc_sess->SET_STRERROR("Error accepting call: "+ int2str(e.code) + " "+ e.reason);
   }
 } EXEC_ACTION_END;
 

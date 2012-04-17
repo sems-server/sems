@@ -35,7 +35,7 @@ dlg.acceptInvite([code, reason]);
  * sets $errno (arg,general)
  
  accept audio stream from last_req (INVITE), and reply with 200 OK (default)
- or code, reason
+ or code, reason. sets "dlg" type errno if negotiation fails.
  
 dlg.bye([headers])
  send BYE. useful for example for continuing processing after call has ended.
