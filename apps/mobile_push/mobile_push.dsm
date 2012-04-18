@@ -101,6 +101,7 @@ transition "invite" START - invite / {
   }
 
   -- send HTTP request
+  set($curl.timeout=15);
   if test($config.use_post=="yes") {
     curl.postDiscardResult($config.push_server_url, $caller;$callee;$domain)
   } else {
