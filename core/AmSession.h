@@ -39,6 +39,7 @@
 #include "AmSipEvent.h"
 #include "AmApi.h"
 #include "AmSessionEventHandler.h"
+#include "AmMediaProcessor.h"
 
 #ifdef WITH_ZRTP
 #include "zrtp/zrtp.h"
@@ -59,9 +60,6 @@ class AmDtmfEvent;
 /* definition imported from Ser parser/msg_parser.h */
 #define FL_FORCE_ACTIVE 2
 
-#define AM_AUDIO_IN  0
-#define AM_AUDIO_OUT 1
-
 
 /**
  * \brief Implements the default behavior of one session
@@ -75,18 +73,11 @@ class AmSession :
 #endif
   public AmEventQueue, 
   public AmEventHandler,
-  public AmSipDialogEventHandler
+  public AmSipDialogEventHandler,
+  public AmMediaSession
 {
   AmMutex      audio_mut;
-  // remote (to/from RTP) audio inout
-  AmAudio*     input;
-  AmAudio*     output;
 
-  // local (to/from audio dev) audio inout
-  AmAudio*     local_input;
-  AmAudio*     local_output;
-
-  bool use_local_audio[2];
 protected:
   vector<SdpPayload *>  m_payloads;
   //bool         negotiate_onreply;
@@ -137,7 +128,6 @@ private:
 
 
   AmCondition<bool> sess_stopped;
-  AmCondition<bool> processing_media;
 
   static void session_started();
   static void session_stopped();
@@ -178,6 +168,8 @@ protected:
 
   /** Session event handlers (ex: session timer, UAC auth, etc...) */
   vector<AmSessionEventHandler*> ev_handlers;
+
+  AmAudio *input, *output;
 
 public:
 
@@ -244,12 +236,6 @@ public:
   /** stop processing media - remove from media processor */
   void stopMediaProcessing();
 
-  /** Is the session being processed in  media processor? */
-  bool getProcessingMedia() { return processing_media.get(); }
-
-  /** Is the session detached from media processor? */
-  bool getDetached() { return !processing_media.get(); }
-
   /**
    * Set the call group for this call; calls in the same
    * group are processed by the same media processor thread.
@@ -293,7 +279,7 @@ public:
    * Audio output getter.
    * Note: audio must be locked!
    */
-  AmAudio* getOutput(){ return output;}
+  AmAudio* getOutput() { return output; }
 
   /**
    * Audio input & output set methods.
@@ -303,36 +289,13 @@ public:
   void setOutput(AmAudio* out);
   void setInOut(AmAudio* in, AmAudio* out);
 
-
-  /**
-   * Local audio input getter .
-   * Note: audio must be locked!
-   */
-  AmAudio* getLocalInput() { return local_input; }
-  /**
-   * Local audio output getter.
-   * Note: audio must be locked!
-   */
-  AmAudio* getLocalOutput() { return local_output;}
-
-  /**
-   * Local audio input & output set methods.
-   * Note: audio will be locked by the methods.
-   */
-  void setLocalInput(AmAudio* in);
-  void setLocalOutput(AmAudio* out);
-  void setLocalInOut(AmAudio* in, AmAudio* out);
-
-  /** this switches between local and remote 
-   * audio inout 
-   */
-  void setAudioLocal(unsigned int dir, bool local);
-  bool getAudioLocal(unsigned int dir);
+  /** checks if input/output is set, might be overidden! */
+  virtual bool isAudioSet();
 
   /**
    * Clears input & ouput (no need to lock)
    */
-  void clearAudio();
+  virtual void clearAudio();
 
   /** setter for rtp_str->mute */
   void setMute(bool mute) { RTPStream()->mute = mute; }
@@ -453,8 +416,6 @@ public:
    * Entry point for DTMF events
    */
   void postDtmfEvent(AmDtmfEvent *);
-
-  void processDtmfEvents();
 
   void setInbandDetector(Dtmf::InbandDetectorType t);
   bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
@@ -632,6 +593,14 @@ public:
    * Creates a new Id which can be used within sessions.
    */
   static string getNewId();
+
+  /* ----------------- media processing interface ------------------- */
+
+  public: 
+    virtual int readStreams(unsigned long long ts, unsigned char *buffer);
+    virtual int writeStreams(unsigned long long ts, unsigned char *buffer);
+    virtual void clearRTPTimeout() { RTPStream()->clearRTPTimeout(); }
+    virtual void processDtmfEvents();
 
 };
 

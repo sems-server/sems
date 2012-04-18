@@ -50,7 +50,6 @@
 #include <assert.h>
 #include <sys/time.h>
 
-
 volatile unsigned int AmSession::session_num = 0;
 AmMutex AmSession::session_num_mut;
 volatile unsigned int AmSession::max_session_num = 0;
@@ -74,9 +73,8 @@ struct timeval cps_max_timestamp = avg_last_timestamp;
 AmSession::AmSession()
   : AmEventQueue(this),
     dlg(this),
-    processing_media(false),
+    input(NULL), output(NULL),
     sess_stopped(false),
-    input(0), output(0), local_input(0), local_output(0),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
     m_dtmfDetectionEnabled(true),
     accept_early_session(false),
@@ -91,8 +89,6 @@ AmSession::AmSession()
   , _pid(this)
 #endif
 {
-  use_local_audio[AM_AUDIO_IN] = false;
-  use_local_audio[AM_AUDIO_OUT] = false;
 }
 
 AmSession::~AmSession()
@@ -126,14 +122,10 @@ void AmSession::changeCallgroup(const string& cg) {
 
 void AmSession::startMediaProcessing() 
 {
-  if(getStopped() || processing_media.get())
+  if(getStopped() || isProcessingMedia())
     return;
 
-  bool in_out_set = false;
-  lockAudio();
-  in_out_set = input || output || local_input || local_output;
-  unlockAudio();
-  if(in_out_set) {
+  if(isAudioSet()) {
     AmMediaProcessor::instance()->addSession(this, callgroup);
   }
   else {
@@ -144,7 +136,7 @@ void AmSession::startMediaProcessing()
 
 void AmSession::stopMediaProcessing() 
 {
-  if(!processing_media.get())
+  if(!isProcessingMedia())
     return;
 
   AmMediaProcessor::instance()->removeSession(this);
@@ -177,38 +169,13 @@ void AmSession::setInOut(AmAudio* in,AmAudio* out)
   output = out;
   unlockAudio();
 }
-
-void AmSession::setLocalInput(AmAudio* in)
+  
+bool AmSession::isAudioSet()
 {
   lockAudio();
-  local_input = in;
+  bool set = input || output;
   unlockAudio();
-}
-
-void AmSession::setLocalOutput(AmAudio* out)
-{
-  lockAudio();
-  local_output = out;
-  unlockAudio();
-}
-
-void AmSession::setLocalInOut(AmAudio* in,AmAudio* out)
-{
-  lockAudio();
-  local_input = in;
-  local_output = out;
-  unlockAudio();
-}
-
-void AmSession::setAudioLocal(unsigned int dir, 
-			      bool local) {
-  assert(dir<2);
-  use_local_audio[dir] = local;
-}
-
-bool AmSession::getAudioLocal(unsigned int dir) { 
-  assert(dir<2); 
-  return use_local_audio[dir]; 
+  return set;
 }
 
 void AmSession::lockAudio()
@@ -493,7 +460,7 @@ void AmSession::finalize() {
 {
   DBG("AmSession::stop()\n");
 
-  if (!getDetached())
+  if (!isDetached())
     AmMediaProcessor::instance()->clearSession(this);
   else
     clearAudio();
@@ -724,22 +691,16 @@ void AmSession::onDtmf(int event, int duration_msec)
 void AmSession::clearAudio()
 {
   lockAudio();
-  if(input){
+
+  if (input) {
     input->close();
-    input = 0;
+    input = NULL;
   }
-  if(output){
+  if (output) {
     output->close();
-    output = 0;
+    output = NULL;
   }
-  if(local_input){
-    local_input->close();
-    local_input = 0;
-  }
-  if(local_output){
-    local_output->close();
-    local_output = 0;
-  }
+
   unlockAudio();
   DBG("Audio cleared !!!\n");
   postEvent(new AmAudioEvent(AmAudioEvent::cleared));
@@ -1102,7 +1063,7 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
   int ret = RTPStream()->init(local_sdp,remote_sdp);
   unlockAudio();
 
-  if (!processing_media.get()) {
+  if (!isProcessingMedia()) {
     setInbandDetector(AmConfig::DefaultDTMFDetector);
   }
 
@@ -1409,6 +1370,47 @@ void AmSession::onZRTPEvent(zrtp_event_t event, zrtp_stream_ctx_t *stream_ctx) {
 }
  
 #endif
+
+int AmSession::readStreams(unsigned long long ts, unsigned char *buffer) 
+{ 
+  int res = 0;
+  lockAudio();
+
+  AmRtpAudio *stream = RTPStream();
+  unsigned int f_size = stream->getFrameSize();
+  if (stream->checkInterval(ts)) {
+    int got = stream->get(ts, buffer, stream->getSampleRate(), f_size);
+    if (got < 0) res = -1;
+    if (got > 0) {
+      if (isDtmfDetectionEnabled())
+        putDtmfAudio(buffer, got, ts);
+
+      if (input) res = input->put(ts, buffer, stream->getSampleRate(), got);
+    }
+  }
+  
+  unlockAudio();
+  return res;
+}
+
+int AmSession::writeStreams(unsigned long long ts, unsigned char *buffer) 
+{ 
+  int res = 0;
+  lockAudio();
+
+  AmRtpAudio *stream = RTPStream();
+  if (stream->sendIntReached()) { // FIXME: shouldn't depend on checkInterval call before!
+    unsigned int f_size = stream->getFrameSize();
+    int got = 0;
+    if (output) got = output->get(ts, buffer, stream->getSampleRate(), f_size);
+    if (got < 0) res = -1;
+    if (got > 0) res = stream->put(ts, buffer, stream->getSampleRate(), got);
+  }
+  
+  unlockAudio();
+  return res;
+
+}
 
 /** EMACS **
  * Local variables:

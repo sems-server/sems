@@ -33,6 +33,79 @@
 #include "AmConfig.h"
 
 #include "ampi/SBCCallControlAPI.h"
+#include "RTPParameters.h"
+#include "SDPFilter.h"
+
+typedef vector<SdpPayload>::iterator PayloadIterator;
+static string payload2str(const SdpPayload &p);
+
+
+//////////////////////////////////////////////////////////////////////////////////
+// helper defines for parameter evaluation
+
+#define REPLACE_VALS req, app_param, ruri_parser, from_parser, to_parser
+
+// FIXME: r_type in replaceParameters is just for debug output?
+
+#define REPLACE_STR(what) do { \
+  what = replaceParameters(what, #what, REPLACE_VALS); \
+  DBG(#what " = '%s'\n", what.c_str()); \
+} while(0)
+
+#define REPLACE_NONEMPTY_STR(what) do { \
+  if (!what.empty()) { \
+    REPLACE_STR(what); \
+  } \
+} while(0)
+
+#define REPLACE_NUM(what, dst_num) do { \
+  if (!what.empty()) { \
+    what = replaceParameters(what, #what, REPLACE_VALS); \
+    unsigned int num; \
+    if (str2i(what, num)) { \
+      ERROR(#what " '%s' not understood\n", what.c_str()); \
+      return false; \
+    } \
+    DBG(#what " = '%s'\n", what.c_str()); \
+    dst_num = num; \
+  } \
+} while(0)
+
+#define REPLACE_BOOL(what, dst_value) do { \
+  if (!what.empty()) { \
+    what = replaceParameters(what, #what, REPLACE_VALS); \
+    if (!what.empty()) { \
+      if (!str2bool(what, dst_value)) { \
+      ERROR(#what " '%s' not understood\n", what.c_str()); \
+        return false; \
+      } \
+    } \
+    DBG(#what " = '%s'\n", dst_value ? "yes" : "no"); \
+  } \
+} while(0)
+
+#define REPLACE_IFACE(what, iface) do { \
+  if (!what.empty()) { \
+    what = replaceParameters(what, #what, REPLACE_VALS); \
+    DBG("set " #what " to '%s'\n", what.c_str()); \
+    if (!what.empty()) { \
+      if (what == "default") iface = 0; \
+      else { \
+        map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(what); \
+        if (name_it != AmConfig::If_names.end()) iface = name_it->second; \
+        else { \
+          ERROR("selected " #what " '%s' does not exist as an interface. " \
+              "Please check the 'additional_interfaces' " \
+              "parameter in the main configuration file.", \
+              what.c_str()); \
+          return false; \
+        } \
+      } \
+    } \
+  } \
+} while(0)
+
+//////////////////////////////////////////////////////////////////////////////////
 
 bool SBCCallProfile::readFromConfiguration(const string& name,
 					   const string profile_file_name) {
@@ -277,11 +350,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   outbound_interface = cfg.getParameter("outbound_interface");
 
-  if (!readPayloadOrder(cfg.getParameter("payload_order"))) return false;
-  if (payload_order.size() && (!sdpfilter_enabled)) {
-    sdpfilter_enabled = true;
-    sdpfilter = Transparent;
-  }
+  if (!codec_prefs.readConfig(cfg)) return false;
+  if (!transcoder.readConfig(cfg)) return false;
 
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
@@ -407,11 +477,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      append headers '%s'\n", append_headers.c_str());
   }
 
-  if (payload_order.size() > 0) {
-    INFO("SBC:      payload order:\n");
-    for (vector<PayloadDesc>::iterator i = payload_order.begin(); i != payload_order.end(); ++i)
-    INFO("SBC:         - %s\n", i->print().c_str());
-  }
+  codec_prefs.infoPrint();
+  transcoder.infoPrint();
 
   return true;
 }
@@ -473,7 +540,8 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
       auth_aleg_credentials.user == rhs.auth_aleg_credentials.user &&
       auth_aleg_credentials.pwd == rhs.auth_aleg_credentials.pwd;
   }
-  res = res && payloadDescsEqual(payload_order, rhs.payload_order);
+  res = res && (codec_prefs == rhs.codec_prefs);
+  res = res && (transcoder == rhs.transcoder);
   return res;
 }
 
@@ -517,13 +585,9 @@ string SBCCallProfile::print() const {
   res += "rtprelay_enabled:     " + string(rtprelay_enabled?"true":"false") + "\n";
   res += "force_symmetric_rtp:  " + force_symmetric_rtp;
   res += "msgflags_symmetric_rtp: " + string(msgflags_symmetric_rtp?"true":"false") + "\n";
-  res += "payload_order:        ";
-  for (vector<PayloadDesc>::const_iterator i = payload_order.begin(); i != payload_order.end(); ++i) {
-    if (i != payload_order.begin()) res += ",";
-    res += i->print();
-  }
-  res += "\n";
-
+  
+  res += codec_prefs.print();
+  res += transcoder.print();
 
   if (reply_translations.size()) {
     string reply_trans_codes;
@@ -555,74 +619,39 @@ static bool str2bool(const string &s, bool &dst)
   return false;
 }
 
+static bool isTranscoderNeeded(const AmSipRequest& req, vector<PayloadDesc> &caps, bool default_value)
+{
+  const AmMimeBody* body = req.body.hasContentType(SIP_APPLICATION_SDP);
+  if (!body) return default_value;
+
+  AmSdp sdp;
+  int res = sdp.parse((const char *)body->getPayload());
+  if (res != 0) {
+    DBG("SDP parsing failed!\n");
+    return default_value;
+  }
+  
+  // not nice, but we need to compare codec names and thus normalized SDP is
+  // required
+  normalizeSDP(sdp, false);
+
+  // go through payloads and try find one of the supported ones
+  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) { 
+    for (vector<SdpPayload>::iterator p = m->payloads.begin(); p != m->payloads.end(); ++p) {
+      for (vector<PayloadDesc>::iterator i = caps.begin(); i != caps.end(); ++i) {
+        if (i->match(*p)) return false; // found compatible codec
+      }
+    }
+  }
+
+  return true; // no compatible codec found, transcoding needed
+}
+
 bool SBCCallProfile::evaluate(const AmSipRequest& req,
     const string& app_param,
     AmUriParser& ruri_parser, AmUriParser& from_parser,
     AmUriParser& to_parser)
 {
-  #define REPLACE_VALS req, app_param, ruri_parser, from_parser, to_parser
-
-  // FIXME: r_type in replaceParameters is just for debug output?
-
-  #define REPLACE_STR(what) do { \
-    what = replaceParameters(what, #what, REPLACE_VALS); \
-    DBG(#what " = '%s'\n", what.c_str()); \
-  } while(0)
-
-  #define REPLACE_NONEMPTY_STR(what) do { \
-    if (!what.empty()) { \
-      REPLACE_STR(what); \
-    } \
-  } while(0)
-  
-  #define REPLACE_NUM(what, dst_num) do { \
-    if (!what.empty()) { \
-      what = replaceParameters(what, #what, REPLACE_VALS); \
-      unsigned int num; \
-      if (str2i(what, num)) { \
-	ERROR(#what " '%s' not understood\n", what.c_str()); \
-        return false; \
-      } \
-      DBG(#what " = '%s'\n", what.c_str()); \
-      dst_num = num; \
-    } \
-  } while(0)
-  
-  #define REPLACE_BOOL(what, dst_value) do { \
-    if (!what.empty()) { \
-      what = replaceParameters(what, #what, REPLACE_VALS); \
-      if (!what.empty()) { \
-        if (!str2bool(what, dst_value)) { \
-  	ERROR(#what " '%s' not understood\n", what.c_str()); \
-          return false; \
-        } \
-      } \
-      DBG(#what " = '%s'\n", dst_value ? "yes" : "no"); \
-    } \
-  } while(0)
-
-  #define REPLACE_IFACE(what, iface) do { \
-    if (!what.empty()) { \
-      what = replaceParameters(what, #what, REPLACE_VALS); \
-      DBG("set " #what " to '%s'\n", what.c_str()); \
-      if (!what.empty()) { \
-        if (what == "default") iface = 0; \
-        else { \
-          map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(what); \
-          if (name_it != AmConfig::If_names.end()) iface = name_it->second; \
-          else { \
-            ERROR("selected " #what " '%s' does not exist as an interface. " \
-                "Please check the 'additional_interfaces' " \
-                "parameter in the main configuration file.", \
-                what.c_str()); \
-            return false; \
-          } \
-        } \
-      } \
-    } \
-  } while(0)
-
-
   REPLACE_NONEMPTY_STR(ruri);
   REPLACE_NONEMPTY_STR(ruri_host);
   REPLACE_NONEMPTY_STR(from);
@@ -698,30 +727,86 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
 
   REPLACE_IFACE(outbound_interface, outbound_interface_value);
 
-  #undef REPLACE_VALS
-  #undef REPLACE_STR
-  #undef REPLACE_NONEMPTY_STR
-  #undef REPLACE_NUM
-  #undef REPLACE_BOOL
-  #undef REPLACE_IFACE
+  if (!transcoder.evaluate(REPLACE_VALS)) return false;
+  if (!codec_prefs.evaluate(REPLACE_VALS)) return false;
+
+  // TODO: activate filter if transcoder or codec_prefs is set?
+/*  if ((!aleg_payload_order.empty() || !bleg_payload_order.empty()) && (!sdpfilter_enabled)) {
+    sdpfilter_enabled = true;
+    sdpfilter = Transparent;
+  }*/
 
   return true;
 }
 
 
-bool SBCCallProfile::readPayloadOrder(const std::string &src)
+static bool readPayloadList(std::vector<PayloadDesc> &dst, const std::string &src)
 {
+  dst.clear();
   vector<string> elems = explode(src, ",");
   for (vector<string>::iterator it=elems.begin(); it != elems.end(); ++it) {
     PayloadDesc payload;
     if (!payload.read(*it)) return false;
-    payload_order.push_back(payload);
+    dst.push_back(payload);
   }
   return true;
 }
 
-void SBCCallProfile::orderSDP(AmSdp& sdp)
+static bool readPayload(SdpPayload &p, const string &src)
 {
+  vector<string> elems = explode(src, "/");
+
+  if (elems.size() < 1) return false;
+
+  if (elems.size() > 2) str2int(elems[1], p.encoding_param);
+  if (elems.size() > 1) str2int(elems[1], p.clock_rate);
+  else p.clock_rate = 8000; // default value
+  p.encoding_name = elems[0];
+  
+  string pname = p.encoding_name;
+  transform(pname.begin(), pname.end(), pname.begin(), ::tolower);
+
+  // fix static payload type numbers
+  // (http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xml)
+  for (int i = 0; i < IANA_RTP_PAYLOADS_SIZE; i++) {
+    string s = IANA_RTP_PAYLOADS[i].payload_name;
+    transform(s.begin(), s.end(), s.begin(), ::tolower);
+    if (p.encoding_name == s && 
+        (unsigned)p.clock_rate == IANA_RTP_PAYLOADS[i].clock_rate && 
+        (p.encoding_param == -1 || ((unsigned)p.encoding_param == IANA_RTP_PAYLOADS[i].channels))) 
+      p.payload_type = i;
+  }
+
+  return true;
+}
+
+static string payload2str(const SdpPayload &p)
+{
+  string s(p.encoding_name);
+  s += "/";
+  s += int2str(p.clock_rate);
+  return s;
+}
+
+static bool read(const std::string &src, vector<SdpPayload> &codecs)
+{
+  vector<string> elems = explode(src, ",");
+
+  for (vector<string>::iterator it=elems.begin(); it != elems.end(); ++it) {
+    SdpPayload p;
+    if (!readPayload(p, *it)) return false;
+    codecs.push_back(p);
+  }
+  return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void SBCCallProfile::CodecPreferences::orderSDP(AmSdp& sdp, bool a_leg)
+{
+  // get order of payloads for the other leg!
+  std::vector<PayloadDesc> &payload_order = a_leg ? bleg_payload_order: aleg_payload_order;
+
   if (payload_order.size() < 1) return; // nothing to do - no predefined order
 
   DBG("ordering SDP\n");
@@ -729,7 +814,7 @@ void SBCCallProfile::orderSDP(AmSdp& sdp)
 	 sdp.media.begin(); m_it != sdp.media.end(); ++m_it) {
     SdpMedia& media = *m_it;
 
-    int pos = 0;
+    unsigned pos = 0;
     unsigned idx;
     unsigned cnt = media.payloads.size();
 
@@ -737,14 +822,16 @@ void SBCCallProfile::orderSDP(AmSdp& sdp)
     // for each predefined payloads in their order
     for (vector<PayloadDesc>::iterator i = payload_order.begin(); i != payload_order.end(); ++i) {
       // try to find this payload in SDP 
-      // (not needed to go through already sorted members and current
-      // destination pos)
-      for (idx = pos + 1; idx < cnt; idx++) {
+      // (not needed to go through already sorted members)
+      for (idx = pos; idx < cnt; idx++) {
         if (i->match(media.payloads[idx])) {
-          // found, exchange elements at pos and idx
-          SdpPayload p = media.payloads[idx]; 
-          media.payloads[idx] = media.payloads[pos];
-          media.payloads[pos] = p;
+          // found, insert found element at pos and delete the occurence on idx
+          // (can not swap these elements to avoid changing order of codecs
+          // which are not in the payload_order list)
+          if (idx != pos) {
+            media.payloads.insert(media.payloads.begin() + pos, media.payloads[idx]);
+            media.payloads.erase(media.payloads.begin() + idx + 1);
+          }
 	
 	  ++pos; // next payload index
           break;
@@ -754,12 +841,197 @@ void SBCCallProfile::orderSDP(AmSdp& sdp)
   }
 }
 
+bool SBCCallProfile::CodecPreferences::shouldOrderPayloads(bool a_leg)
+{
+  // returns true if order of payloads for the other leg is set! (i.e. if we
+  // have to order payloads)
+  if (a_leg) return !bleg_payload_order.empty();
+  else return !aleg_payload_order.empty();
+}
+
+bool SBCCallProfile::CodecPreferences::readConfig(AmConfigReader &cfg)
+{
+  // store string values for later evaluation
+  bleg_payload_order_str = cfg.getParameter("codec_preference");
+  bleg_prefer_existing_payloads_str = cfg.getParameter("prefer_existing_codecs");
+  
+  aleg_payload_order_str = cfg.getParameter("codec_preference_aleg");
+  aleg_prefer_existing_payloads_str = cfg.getParameter("prefer_existing_codecs_aleg");
+
+  return true;
+}
+
+void SBCCallProfile::CodecPreferences::infoPrint() const
+{
+  INFO("SBC:      A leg codec preference: %s\n", aleg_payload_order_str.c_str());
+  INFO("SBC:      A leg prefer existing codecs: %s\n", aleg_prefer_existing_payloads_str.c_str());
+  INFO("SBC:      B leg codec preference: %s\n", bleg_payload_order_str.c_str());
+  INFO("SBC:      B leg prefer existing codecs: %s\n", bleg_prefer_existing_payloads_str.c_str());
+}
+
+bool SBCCallProfile::CodecPreferences::operator==(const CodecPreferences& rhs) const
+{
+  if (!payloadDescsEqual(aleg_payload_order, rhs.aleg_payload_order)) return false;
+  if (!payloadDescsEqual(bleg_payload_order, rhs.bleg_payload_order)) return false;
+  if (aleg_prefer_existing_payloads != rhs.aleg_prefer_existing_payloads) return false;
+  if (bleg_prefer_existing_payloads != rhs.bleg_prefer_existing_payloads) return false;
+  return true;
+}
+
+string SBCCallProfile::CodecPreferences::print() const
+{
+  string res;
+
+  res += "codec_preference:     ";
+  for (vector<PayloadDesc>::const_iterator i = bleg_payload_order.begin(); i != bleg_payload_order.end(); ++i) {
+    if (i != bleg_payload_order.begin()) res += ",";
+    res += i->print();
+  }
+  res += "\n";
+  
+  res += "prefer_existing_codecs: ";
+  if (bleg_prefer_existing_payloads) res += "yes\n"; 
+  else res += "no\n";
+
+  res += "codec_preference_aleg:    ";
+  for (vector<PayloadDesc>::const_iterator i = aleg_payload_order.begin(); i != aleg_payload_order.end(); ++i) {
+    if (i != aleg_payload_order.begin()) res += ",";
+    res += i->print();
+  }
+  res += "\n";
+  
+  res += "prefer_existing_codecs_aleg: ";
+  if (aleg_prefer_existing_payloads) res += "yes\n"; 
+  else res += "no\n";
+
+  return res;
+}
+
+bool SBCCallProfile::CodecPreferences::evaluate(const AmSipRequest& req,
+    const string& app_param,
+    AmUriParser& ruri_parser, AmUriParser& from_parser,
+    AmUriParser& to_parser)
+{
+  REPLACE_BOOL(aleg_prefer_existing_payloads_str, aleg_prefer_existing_payloads);
+  REPLACE_BOOL(bleg_prefer_existing_payloads_str, bleg_prefer_existing_payloads);
+  
+  REPLACE_NONEMPTY_STR(aleg_payload_order_str);
+  REPLACE_NONEMPTY_STR(bleg_payload_order_str);
+
+  if (!readPayloadList(bleg_payload_order, bleg_payload_order_str)) return false;
+  if (!readPayloadList(aleg_payload_order, aleg_payload_order_str)) return false;
+
+  return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+bool SBCCallProfile::TranscoderSettings::readTranscoderMode(const std::string &src)
+{
+  static const string always("always");
+  static const string never("never");
+  static const string on_missing_compatible("on_missing_compatible");
+
+  if (src == always) { transcoder_mode = Always; return true; }
+  if (src == never) { transcoder_mode = Never; return true; }
+  if (src == on_missing_compatible) { transcoder_mode = OnMissingCompatible; return true; }
+  if (src.empty()) { transcoder_mode = Never; return true; } // like default value
+  ERROR("unknown value of enable_transcoder option: %s\n", src.c_str());
+
+  return false;
+}
+
+void SBCCallProfile::TranscoderSettings::infoPrint() const
+{
+  if (audio_codecs.size() > 0) {
+    INFO("SBC:      transcode audio:\n");
+    for (vector<SdpPayload>::const_iterator i = audio_codecs.begin(); i != audio_codecs.end(); ++i)
+      INFO("SBC:         - %s\n", payload2str(*i).c_str());
+  }
+  if (callee_codec_capabilities.size() > 0) {
+    INFO("SBC:      callee codec capabilities:\n");
+    for (vector<PayloadDesc>::const_iterator i = callee_codec_capabilities.begin(); 
+        i != callee_codec_capabilities.end(); ++i)
+    {
+      INFO("SBC:         - %s\n", i->print().c_str());
+    }
+  }
+  string s("?");
+  switch (transcoder_mode) {
+    case Always: s = "always"; break;
+    case Never: s = "never"; break;
+    case OnMissingCompatible: s = "on_missing_compatible"; break;
+  }
+  INFO("SBC:      enable transcoder: %s\n", s.c_str());
+}
+
+bool SBCCallProfile::TranscoderSettings::readConfig(AmConfigReader &cfg)
+{
+  // store string values for later evaluation
+  audio_codecs_str = cfg.getParameter("transcoder_codecs");
+  callee_codec_capabilities_str = cfg.getParameter("callee_codeccaps");
+  transcoder_mode_str = cfg.getParameter("enable_transcoder");
+
+  return true;
+}
+
+bool SBCCallProfile::TranscoderSettings::operator==(const TranscoderSettings& rhs) const
+{
+  // TODO:transcoder_audio_codecs, mode, ...
+  return true;
+}
+
+string SBCCallProfile::TranscoderSettings::print() const
+{
+  string res;
+  // TODO: transcoder_audio_codecs, mode, ...
+  return res;
+}
+  
+bool SBCCallProfile::TranscoderSettings::evaluate(const AmSipRequest& req,
+    const string& app_param,
+    AmUriParser& ruri_parser, AmUriParser& from_parser,
+    AmUriParser& to_parser)
+{
+  REPLACE_NONEMPTY_STR(transcoder_mode_str);
+  REPLACE_NONEMPTY_STR(audio_codecs_str);
+  REPLACE_NONEMPTY_STR(callee_codec_capabilities_str);
+
+  if (!read(audio_codecs_str, audio_codecs)) return false;
+
+  // TODO: verify that transcoder_audio_codecs are really supported natively!
+  
+  if (!readPayloadList(callee_codec_capabilities, callee_codec_capabilities_str)) 
+    return false;
+  
+  if (!readTranscoderMode(transcoder_mode_str)) return false;
+
+  // enable transcoder according to transcoder mode and optionally request's SDP
+  switch (transcoder_mode) {
+    case Always: enabled = true; break;
+    case Never: enabled = false; break;
+    case OnMissingCompatible: 
+      enabled = isTranscoderNeeded(req, callee_codec_capabilities, 
+                                 true /* if SDP can't be analyzed, enable transcoder */); 
+      break;
+  }
+
+  if (enabled && audio_codecs.empty()) {
+    ERROR("transcoder is enabled but no transcoder codecs selected ... disabling it\n");
+    enabled = false;
+  }
+
+  return true;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 
 bool PayloadDesc::match(const SdpPayload &p) const
 {
-  //FIXME: payload names case sensitive?
-  if ((name.size() > 0) && (name != p.encoding_name)) return false;
+  string enc_name = p.encoding_name;
+  transform(enc_name.begin(), enc_name.end(), enc_name.begin(), ::tolower);
+      
+  if ((name.size() > 0) && (name != enc_name)) return false;
   if (clock_rate && (p.clock_rate > 0) && clock_rate != (unsigned)p.clock_rate) return false;
   return true;
 }
@@ -775,6 +1047,7 @@ bool PayloadDesc::read(const std::string &s)
     name = elems[0];
     clock_rate = 0;
   }
+  transform(name.begin(), name.end(), name.begin(), ::tolower);
   return true;
 }
 

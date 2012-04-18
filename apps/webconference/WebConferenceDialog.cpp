@@ -34,7 +34,8 @@ WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
 					 UACAuthCred* cred)
   : play_list(this), separator(this, 0), prompts(prompts), state(None),
     factory(my_f), cred(cred), muted(false), 
-    connect_ts(-1), disconnect_ts(-1) 
+    connect_ts(-1), disconnect_ts(-1),
+    local_input(NULL)
 {
   // with SIP credentials -> outgoing ('dialout') call
   is_dialout = (cred != NULL);
@@ -165,8 +166,7 @@ void WebConferenceDialog::onSessionStart() {
       setMute(false);
       DBG("########## dialout: connect to conference '%s' #########\n", dlg.user.c_str()); 
       state = InConference;
-      setAudioLocal(AM_AUDIO_IN, false);
-      setAudioLocal(AM_AUDIO_OUT, false);
+      setLocalInput(NULL);
       time(&connect_ts);
       connectConference(dlg.user);
     }
@@ -184,8 +184,6 @@ void WebConferenceDialog::onRinging(const AmSipReply& rep) {
       RingTone.reset(new AmRingTone(0,2000,4000,440,480)); // US
 
     setLocalInput(RingTone.get());
-    setAudioLocal(AM_AUDIO_IN, true);
-    setAudioLocal(AM_AUDIO_OUT, true);
 
     if (None == state) {
       connectConference(dlg.user);
@@ -200,8 +198,7 @@ void WebConferenceDialog::onEarlySessionStart() {
 
     DBG("########## dialout: connect early session to conference '%s'  #########\n", 
 	dlg.user.c_str());
-    setAudioLocal(AM_AUDIO_IN, false);
-    setAudioLocal(AM_AUDIO_OUT, false);
+    setLocalInput(NULL);
     if (None == state) {
       connectConference(dlg.user);
     }
@@ -434,13 +431,13 @@ void WebConferenceDialog::onMuted(bool mute) {
       
     case InConferenceRinging: {
       if (muted) {
-	setLocalInOut(NULL, NULL);
+	setLocalInput(NULL);
       } else {
 	if(!RingTone.get())
 	  RingTone.reset(new AmRingTone(0,2000,4000,440,480)); // US
     
-	setLocalInOut(RingTone.get(), NULL);
-	if (getDetached())
+	setLocalInput(RingTone.get());
+	if (isDetached())
 	  AmMediaProcessor::instance()->addSession(this, callgroup); 
       }
     } break;
@@ -448,5 +445,55 @@ void WebConferenceDialog::onMuted(bool mute) {
 	
     }
   }
+}
+
+void WebConferenceDialog::setLocalInput(AmAudio* in)
+{
+  lockAudio();
+  local_input = in;
+  unlockAudio();
+}
+
+int WebConferenceDialog::readStreams(unsigned long long ts, unsigned char *buffer) 
+{ 
+  int res = 0;
+  lockAudio();
+
+  AmRtpAudio *stream = RTPStream();
+  unsigned int f_size = stream->getFrameSize();
+  if (stream->checkInterval(ts)) {
+    int got = 0;
+    if (local_input) got = local_input->get(ts, buffer, stream->getSampleRate(), f_size);
+    else got = stream->get(ts, buffer, stream->getSampleRate(), f_size);
+    if (got < 0) res = -1;
+    if (got > 0) {
+      if (isDtmfDetectionEnabled())
+        putDtmfAudio(buffer, got, ts);
+
+      if (input) res = input->put(ts, buffer, stream->getSampleRate(), got);
+    }
+  }
+  
+  unlockAudio();
+  return res;
+}
+
+bool WebConferenceDialog::isAudioSet()
+{
+  lockAudio();
+  bool set = input || output || local_input;
+  unlockAudio();
+  return set;
+}
+
+void WebConferenceDialog::clearAudio()
+{
+  lockAudio();
+  if (local_input) {
+    local_input->close();
+    local_input = NULL;
+  }
+  unlockAudio();
+  AmSession::clearAudio(); // locking second time but called not so often?
 }
 

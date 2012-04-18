@@ -48,11 +48,12 @@ using std::pair;
 
 // return values of AmRtpStream::receive
 #define RTP_EMPTY        0 // no rtp packet available
-#define RTP_PARSE_ERROR -1 // error while parsing rtp packet
-#define RTP_TIMEOUT     -2 // last received packet is too old
-#define RTP_DTMF        -3 // dtmf packet has been received
-#define RTP_BUFFER_SIZE -4 // buffer overrun
-#define RTP_UNKNOWN_PL  -5 // unknown payload
+#define RTP_ERROR       -1 // generic error
+#define RTP_PARSE_ERROR -2 // error while parsing rtp packet
+#define RTP_TIMEOUT     -3 // last received packet is too old
+#define RTP_DTMF        -4 // dtmf packet has been received
+#define RTP_BUFFER_SIZE -5 // buffer overrun
+#define RTP_UNKNOWN_PL  -6 // unknown payload
 
 
 /**
@@ -90,6 +91,26 @@ public:
   ~AmRtpTimeoutEvent() { }
 };
 
+/** helper class for assigning boolean floag to a payload ID
+ * it is used to check if the payload should be relayed or not */
+class PayloadMask
+{
+  private:
+    unsigned char bits[16];
+
+  public:
+    // clear flag for all payloads
+    void clear();
+
+    // set given flag (TODO: once it shows to be working, change / and % to >> and &)
+    void set(unsigned char payload_id) { if (payload_id < 128) bits[payload_id / 8] |= 1 << (payload_id % 8); }
+
+    // get given flag
+    bool get(unsigned char payload_id) { if (payload_id > 127) return false; return (bits[payload_id / 8] & (1 << (payload_id % 8))); }
+    
+    PayloadMask() { clear(); }
+    PayloadMask(const PayloadMask &src);
+};
 
 /**
  * \brief represents one admissible payload type
@@ -249,6 +270,12 @@ protected:
   /** Clear RTP timeout at time recv_time */
   void clearRTPTimeout(struct timeval* recv_time);
 
+  PayloadMask relay_payloads;
+  bool offer_answer_used;
+
+  /** set to true if any data received */
+  bool active;
+
   /** 
    * Select a compatible default payload 
    * @return -1 if none available.
@@ -340,6 +367,7 @@ public:
   void setPayloadProvider(AmPayloadProvider* pl_prov);
 
   int getSdpMediaIndex() { return sdp_media_index; }
+  void forceSdpMediaIndex(int idx) { sdp_media_index = idx; offer_answer_used = false; }
   int getPayloadType() { return payload; }
 
   /**
@@ -404,6 +432,7 @@ public:
 
   /** ensable RTP relaying through relay stream */
   void enableRtpRelay();
+  void enableRtpRelay(const PayloadMask &_relay_payloads, AmRtpStream *_relay_stream);
 
   /** disable RTP relaying through relay stream */
   void disableRtpRelay();

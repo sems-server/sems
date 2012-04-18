@@ -111,6 +111,9 @@ class AmRtpAudio: public AmRtpStream, public AmAudio, public AmPLCBuffer
   unsigned long long last_check;
   bool               last_check_i;
   bool               send_int;
+  
+  unsigned long long last_send_ts;
+  bool               last_send_ts_i;
 
   //
   // Default packet loss concealment functions
@@ -128,6 +131,7 @@ public:
 
   bool checkInterval(unsigned long long ts);
   bool sendIntReached();
+  bool sendIntReached(unsigned long long ts);
 
   int setCurrentPayload(int payload);
   int getCurrentPayload();

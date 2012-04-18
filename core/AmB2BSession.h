@@ -31,6 +31,7 @@
 #include "AmSession.h"
 #include "AmSipDialog.h"
 #include "sip/hash.h"
+#include "AmB2BMedia.h"
 
 #define MAX_RELAY_STREAMS 3 // voice, video, rtt
 
@@ -114,9 +115,18 @@ struct B2BConnectEvent: public B2BEvent
 class AmB2BSession: public AmSession
 {
  public:
-  enum B2BMode {
-    B2BMode_Transparent,  // relay message bodies
-    B2BMode_SDPFilter     // reconstruct SDP
+
+  enum RTPRelayMode {
+    /* audio will go directly between caller and callee
+     * SDP bodies of relayed requests are filtered */  
+    RTP_Direct,
+
+    /* audio will be realyed through us
+     * SDP bodies of relayed requests are filtered and connection addresses are
+     * replaced by us,
+     * additionally transcoding might be used depending on payload IDs */  
+    RTP_Relay
+
   };
 
  protected:
@@ -129,7 +139,6 @@ class AmB2BSession: public AmSession
    */
   bool sip_relay_only;
 
-  B2BMode b2b_mode;
   bool a_leg;
 
   /** 
@@ -144,7 +153,6 @@ class AmB2BSession: public AmSession
   /** CSeq of the INVITE that established this call */
   unsigned int est_invite_cseq;
   unsigned int est_invite_other_cseq;
-  auto_ptr<AmSdp> invite_sdp;
 
   /** body of established session */
   AmMimeBody established_body;
@@ -213,19 +221,20 @@ class AmB2BSession: public AmSession
    */
   virtual bool onOtherReply(const AmSipReply& reply);
 
-  /** filter body ( b2b_mode == SDPFilter ) */
-  virtual int filterBody(AmMimeBody& body,
-			 AmSdp& filter_sdp, bool is_a2b);
-
-  /** filter SDP body ( b2b_mode == SDPFilter ) */
-  virtual int filterBody(AmSdp& sdp, bool is_a2b);
+  /** filter body of request to be relayed
+   * use a_leg member to see the direction */
+  virtual void filterBody(AmSipRequest &req, AmSdp &sdp) { /* don't filter by default */ }
+  
+  /** filter body of reply to be relayed
+   * use a_leg member to see the direction */
+  virtual void filterBody(AmSipReply &reply, AmSdp &sdp) { /* don't filter by default */ }
 
   AmB2BSession(const string& other_local_tag = "");
 
   virtual ~AmB2BSession();
 
   /** flag to enable RTP relay mode */
-  bool rtp_relay_enabled;
+  RTPRelayMode rtp_relay_mode;
   /** force symmetric RTP */
   bool rtp_relay_force_symmetric_rtp;
   /** transparent seqno for RTP relay */
@@ -233,42 +242,40 @@ class AmB2BSession: public AmSession
   /** transparent SSRC for RTP relay */
   bool rtp_relay_transparent_ssrc;
 
-  /** RTP streams which receive from our side and are used
-      for relaying RTP from the other side */
-  AmRtpStream** relay_rtp_streams;
-  /** number of relay RTP streams */
-  unsigned int relay_rtp_streams_cnt;
-
-  /** fd of the other streams' sockets (to remove from
-      RtpReceiver at end of relaying) */
-  int other_stream_fds[MAX_RELAY_STREAMS];
-
   /** clear our and the other side's RTP streams from RTPReceiver */
   void clearRtpReceiverRelay();
   /** update remote connection in relay_streams */
   void updateRelayStreams(const AmMimeBody& body,
 			  AmSdp& parser_sdp);
+
   /** replace connection with our address */
   bool replaceConnectionAddress(const AmMimeBody& body, 
 				AmMimeBody& r_body);
 
  public:
   void set_sip_relay_only(bool r);
-  B2BMode getB2BMode() const;
 
-  /** set RTP relay mode enabled for initial INVITE */
-  void enableRtpRelay(const AmSipRequest& initial_invite_req);
-  /** set RTP relay mode enabled */
-  void enableRtpRelay();
-  /** set RTP relay mode disabled */
-  void disableRtpRelay();
+  /** set RTP relay mode (possibly initiaze by given INVITE) */
+  void setRtpRelayMode(RTPRelayMode mode);
+
   /** link RTP streams of other_session to our streams */
-  void setupRelayStreams(AmB2BSession* from_session);
-  bool getRtpRelayEnabled() const { return rtp_relay_enabled; }
+  RTPRelayMode getRtpRelayMode() const { return rtp_relay_mode; }
   bool getRtpRelayForceSymmetricRtp() const { return rtp_relay_force_symmetric_rtp; }
   void setRtpRelayInterface(int relay_interface);
   void setRtpRelayTransparentSeqno(bool transparent);
   void setRtpRelayTransparentSSRC(bool transparent);
+  
+  int getRtpRelayInterface() { return rtp_interface<0 ? dlg.getOutboundIf() : rtp_interface; }
+  bool getRtpRelayTransparentSeqno() { return rtp_relay_transparent_seqno; }
+  bool getRtpRelayTransparentSSRC() { return rtp_relay_transparent_ssrc; }
+
+  /* -------------- media processing -------------- */
+
+  protected:
+    AmB2BMedia *media_session;
+
+  public:
+    void setMediaSession(AmB2BMedia *new_session);
 };
 
 class AmB2BCalleeSession;
@@ -329,7 +336,7 @@ class AmB2BCallerSession: public AmB2BSession
   // @see AmB2BSession
   void terminateLeg();
   void terminateOtherLeg();
-  void onB2BEvent(B2BEvent* ev);
+  virtual void onB2BEvent(B2BEvent* ev);
 
   AmSipRequest* getInviteReq() { return &invite_req; }
 
@@ -350,7 +357,7 @@ class AmB2BCalleeSession: public AmB2BSession
 
   virtual ~AmB2BCalleeSession();
 
-  void onB2BEvent(B2BEvent* ev);
+  virtual void onB2BEvent(B2BEvent* ev);
 };
 
 #endif

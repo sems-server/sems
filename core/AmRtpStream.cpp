@@ -57,8 +57,22 @@
 #include "zrtp/zrtp.h"
 #endif
 
+#include "rtp/rtp.h"
+
 #include <set>
 using std::set;
+
+void PayloadMask::clear()
+{
+  memset(bits, 0, sizeof(bits));
+}
+
+PayloadMask::PayloadMask(const PayloadMask &src)
+{
+  memcpy(bits, src.bits, sizeof(bits));
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
  * This function must be called before setLocalPort, because
@@ -255,7 +269,7 @@ int AmRtpStream::send( unsigned int ts, unsigned char* buffer, unsigned int size
 
   PayloadMappingTable::iterator it = pl_map.find(payload);
   if ((it == pl_map.end()) || (it->second.remote_pt < 0)) {
-    ERROR("sending packet with unsupported remote payload type\n");
+    ERROR("sending packet with unsupported remote payload type %d\n", payload);
     return -1;
   }
   
@@ -343,6 +357,8 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     r_ssrc_i(false),
     session(_s),
     passive(false),
+    offer_answer_used(true),
+    active(false), // do not return any data unless something really received
     mute(false),
     hold(false),
     receiving(true),
@@ -531,7 +547,7 @@ int AmRtpStream::init(const AmSdp& local,
   vector<Payload>::iterator p_it = payloads.begin();
 
   // first pass on local SDP - fill pl_map with intersection of codecs
-  while(p_it != payloads.end()) {
+  while(sdp_it != local_media.payloads.end()) {
 
     int int_pt = payload_provider->getDynPayload(sdp_it->encoding_name,
 						 sdp_it->clock_rate,
@@ -541,10 +557,18 @@ int AmRtpStream::init(const AmSdp& local,
       a_pl = payload_provider->payload(int_pt);
 
     if(a_pl == NULL){
-      ERROR("No internal payload corresponding to type %s/%i\n",
-	    sdp_it->encoding_name.c_str(),
-	    sdp_it->clock_rate);
-      return -1;//TODO
+      if (relay_payloads.get(sdp_it->payload_type)) {
+        // this payload should be relayed, ignore
+        ++sdp_it;
+        continue;
+      } else {
+        ERROR("No internal payload corresponding to type %s/%i (ignoring)\n",
+              sdp_it->encoding_name.c_str(),
+              sdp_it->clock_rate);
+	// ignore this payload
+        ++sdp_it;
+        continue;
+      }
     };
     
     p_it->pt         = sdp_it->payload_type;
@@ -560,6 +584,10 @@ int AmRtpStream::init(const AmSdp& local,
     ++sdp_it;
     ++i;
   }
+
+  // remove payloads which were not initialised (because of unknown payloads
+  // which are to be relayed)
+  if (p_it != payloads.end()) payloads.erase(p_it, payloads.end());
 
   // second pass on remote SDP - initialize payload IDs used by remote (remote_pt)
   sdp_it = remote_media.payloads.begin();
@@ -649,6 +677,7 @@ int AmRtpStream::init(const AmSdp& local,
   }
 #endif
 
+  active = false; // mark as nothing received yet
   return 0;
 }
 
@@ -691,14 +720,18 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   }
 
   if (relay_enabled) {
-    handleSymmetricRtp(p);
+    if (relay_payloads.get(p->payload)) {
+      active = false;
+      handleSymmetricRtp(p);
 
-    if (NULL != relay_stream) {
-      relay_stream->relay(p);
+      if (NULL != relay_stream) {
+        relay_stream->relay(p);
+      }
+      mem.freePacket(p);
+      return;
     }
-    mem.freePacket(p);
-    return;
   }
+  active = true;
 
   receive_mut.lock();
   // free packet on double packet for TS received
@@ -863,8 +896,6 @@ void AmRtpStream::recvPacket()
   }
 }
 
-#include "rtp/rtp.h"
-
 void AmRtpStream::relay(AmRtpPacket* p) {
   if (!l_port) // not yet initialized
     return;
@@ -911,6 +942,13 @@ void AmRtpStream::enableRtpRelay() {
 void AmRtpStream::disableRtpRelay() {
   DBG("disabled RTP relay for RTP stream instance [%p]\n", this);
   relay_enabled = false;
+}
+  
+void AmRtpStream::enableRtpRelay(const PayloadMask &_relay_payloads, AmRtpStream *_relay_stream)
+{
+  relay_payloads = _relay_payloads;
+  relay_stream = _relay_stream;
+  relay_enabled = true;
 }
 
 void AmRtpStream::setRtpRelayTransparentSeqno(bool transparent) {

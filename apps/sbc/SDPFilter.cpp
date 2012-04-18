@@ -180,5 +180,3 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
 
   return 0;
 }
-
-

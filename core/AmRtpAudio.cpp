@@ -135,6 +135,12 @@ bool AmRtpAudio::sendIntReached()
   return send_int;
 }
 
+bool AmRtpAudio::sendIntReached(unsigned long long ts)
+{
+  if (!last_send_ts_i) return true;
+  else return (scaleSystemTS(ts - last_send_ts) >= getFrameSize());
+}
+
 unsigned int AmRtpAudio::bytes2samples(unsigned int bytes) const
 {
   return AmAudio::bytes2samples(bytes);
@@ -147,6 +153,12 @@ int AmRtpAudio::receive(unsigned long long system_ts)
   int size;
   unsigned int rtp_ts;
   int new_payload = -1;
+
+  if(!fmt.get()) {
+    DBG("audio format not initialized\n");
+    return RTP_ERROR;
+  }
+
   unsigned int wallclock_ts = scaleSystemTS(system_ts);
 
   while(true) {
@@ -196,6 +208,38 @@ int AmRtpAudio::receive(unsigned long long system_ts)
 int AmRtpAudio::get(unsigned long long system_ts, unsigned char* buffer, 
 		    int output_sample_rate, unsigned int nb_samples)
 {
+  if (!(receiving || getPassiveMode())) return 0; // like nothing received
+  if (!active) return 0;
+    
+  int ret = receive(system_ts);
+  if(ret < 0){
+    switch(ret){
+
+      case RTP_DTMF:
+      case RTP_UNKNOWN_PL:
+      case RTP_PARSE_ERROR:
+        return 0; // like nothing received
+        break;
+
+      case RTP_TIMEOUT:
+        //FIXME: postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
+        // post to the session (FIXME: is session always set? seems to be...)
+        session->postEvent(new AmRtpTimeoutEvent());
+        return -1;
+        break;
+
+      case RTP_BUFFER_SIZE:
+      default:
+        ERROR("AmRtpAudio::receive() returned %i\n",ret);
+        //FIXME: postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
+        //       or AmMediaProcessor::instance()->clearSession(session);
+        return -1;
+        break;
+    }
+
+    return 0; // like nothing received?
+  }
+
   unsigned int user_ts = scaleSystemTS(system_ts);
 
   nb_samples = (unsigned int)((float)nb_samples * (float)getSampleRate()
@@ -218,9 +262,14 @@ int AmRtpAudio::get(unsigned long long system_ts, unsigned char* buffer,
 int AmRtpAudio::put(unsigned long long system_ts, unsigned char* buffer, 
 		    int input_sample_rate, unsigned int size)
 {
+  last_send_ts_i = true;
+  last_send_ts = system_ts;
+
   if(!size){
     return 0;
   }
+
+  if (mute) return 0;
 
   memcpy((unsigned char*)samples,buffer,size);
   size = resampleInput((unsigned char*)samples, size, 
@@ -264,7 +313,7 @@ int AmRtpAudio::init(const AmSdp& local,
   if(AmRtpStream::init(local,remote)){
     return -1;
   }
-
+    
   AmAudioRtpFormat* fmt_p = new AmAudioRtpFormat();
 
   PayloadMappingTable::iterator pl_it = pl_map.find(payload);

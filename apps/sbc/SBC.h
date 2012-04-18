@@ -194,9 +194,10 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   bool onOtherReply(const AmSipReply& reply);
   void onOtherBye(const AmSipRequest& req);
 
-  void onControlCmd(string& cmd, AmArg& params);
+  virtual void filterBody(AmSipRequest &req, AmSdp &sdp);
+  virtual void filterBody(AmSipReply &reply, AmSdp &sdp);
 
-  int filterBody(AmSdp& sdp, bool is_a2b);
+  void onControlCmd(string& cmd, AmArg& params);
 
   void createCalleeSession();
 };
@@ -207,6 +208,8 @@ class SBCCalleeSession
   AmSessionEventHandler* auth;
   SBCCallProfile call_profile;
 
+  void appendTranscoderCodecs(AmSdp &sdp);
+  
  protected:
   int relayEvent(AmEvent* ev);
 
@@ -216,9 +219,10 @@ class SBCCalleeSession
 
   /* bool onOtherReply(const AmSipReply& reply); */
 
-  void onControlCmd(string& cmd, AmArg& params);
+  virtual void filterBody(AmSipRequest &req, AmSdp &sdp);
+  virtual void filterBody(AmSipReply &reply, AmSdp &sdp);
 
-  int filterBody(AmSdp& sdp, bool is_a2b);
+  void onControlCmd(string& cmd, AmArg& params);
 
  public:
   SBCCalleeSession(const AmB2BCallerSession* caller,

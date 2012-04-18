@@ -40,9 +40,9 @@
 struct SchedRequest :
   public AmEvent
 {
-  AmSession* s;
+  AmMediaSession* s;
 
-  SchedRequest(int id, AmSession* s)
+  SchedRequest(int id, AmMediaSession* s)
     : AmEvent(id), s(s) {}
 };
 
@@ -80,10 +80,10 @@ AmMediaProcessor* AmMediaProcessor::instance()
   return _instance;
 }
 
-void AmMediaProcessor::addSession(AmSession* s, 
+void AmMediaProcessor::addSession(AmMediaSession* s, 
 				  const string& callgroup)
 {
-  s->processing_media.set(true);
+  s->onMediaProcessingStarted();
  
   // evaluate correct scheduler
   unsigned int sched_thread = 0;
@@ -119,24 +119,24 @@ void AmMediaProcessor::addSession(AmSession* s,
     postRequest(new SchedRequest(InsertSession,s));
 }
 
-void AmMediaProcessor::clearSession(AmSession* s) {
+void AmMediaProcessor::clearSession(AmMediaSession* s) {
   removeFromProcessor(s, ClearSession);
 }
 
-void AmMediaProcessor::removeSession(AmSession* s) {
+void AmMediaProcessor::removeSession(AmMediaSession* s) {
   removeFromProcessor(s, RemoveSession);
 }
 
 /* FIXME: implement Call Group ts offsets for soft changing of 
 	call groups 
 */
-void AmMediaProcessor::changeCallgroup(AmSession* s, 
+void AmMediaProcessor::changeCallgroup(AmMediaSession* s, 
 				       const string& new_callgroup) {
   removeFromProcessor(s, SoftRemoveSession);
   addSession(s, new_callgroup);
 }
 
-void AmMediaProcessor::removeFromProcessor(AmSession* s, 
+void AmMediaProcessor::removeFromProcessor(AmMediaSession* s, 
 					   unsigned int r_type) {
   DBG("AmMediaProcessor::removeSession\n");
   group_mut.lock();
@@ -145,7 +145,7 @@ void AmMediaProcessor::removeFromProcessor(AmSession* s,
   unsigned int sched_thread = callgroup2thread[callgroup];
   DBG("  callgroup is '%s', thread %u\n", callgroup.c_str(), sched_thread);
   // erase callgroup membership entry
-  std::multimap<std::string, AmSession*>::iterator it = 
+  std::multimap<std::string, AmMediaSession*>::iterator it = 
     callgroupmembers.lower_bound(callgroup);
   while ((it != callgroupmembers.end()) &&
          (it != callgroupmembers.upper_bound(callgroup))) {
@@ -267,10 +267,10 @@ void AmMediaProcessorThread::run()
  */
 void AmMediaProcessorThread::processDtmfEvents()
 {
-  for(set<AmSession*>::iterator it = sessions.begin();
+  for(set<AmMediaSession*>::iterator it = sessions.begin();
       it != sessions.end(); it++)
     {
-      AmSession* s = (*it);
+      AmMediaSession* s = (*it);
       s->processDtmfEvents();
     }
 }
@@ -278,116 +278,19 @@ void AmMediaProcessorThread::processDtmfEvents()
 void AmMediaProcessorThread::processAudio(unsigned long long ts)
 {
   // receiving
-  for(set<AmSession*>::iterator it = sessions.begin();
-      it != sessions.end(); it++){
-
-    AmSession* s = (*it);
-
-    // complete frame time reached? 
-    if (s->RTPStream()->checkInterval(ts)) {
-      s->lockAudio();
-
-      int got_audio = -1;
-
-      // get/receive audio
-      if (!s->getAudioLocal(AM_AUDIO_IN)) {
-	// input is not local - receive from rtp stream
-	if (s->RTPStream()->receiving || s->RTPStream()->getPassiveMode()) {
-	  int ret = s->RTPStream()->receive(ts);
-	  if(ret < 0){
-	    switch(ret){
-	      
-	    case RTP_DTMF:
-	    case RTP_UNKNOWN_PL:
-	    case RTP_PARSE_ERROR:
-	      break;
-	      
-	    case RTP_TIMEOUT:
-	      postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
-	      s->postEvent(new AmRtpTimeoutEvent());
-	      break;
-	      
-	    case RTP_BUFFER_SIZE:
-	    default:
-	      ERROR("AmRtpAudio::receive() returned %i\n",ret);
-	      postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-	      break;
-	    }
-	  } else {
-	    got_audio = s->RTPStream()->get(ts,buffer,
-					    s->RTPStream()->getSampleRate(),
-					    s->RTPStream()->getFrameSize());
-	    
-	    if (s->isDtmfDetectionEnabled() && got_audio > 0)
-	      s->putDtmfAudio(buffer, got_audio, ts);
-	  }
-	}
-      } else {
-	// input is local - get audio from local_in
-	AmAudio* local_input = s->getLocalInput(); 
-	if (local_input) {
-	  got_audio = local_input->get(ts,buffer,
-				       s->RTPStream()->getSampleRate(),
-				       s->RTPStream()->getFrameSize());
-	}
-      }
-
-      // process received audio
-      if (got_audio >= 0) {
-	AmAudio* input = s->getInput();
-	if (input) {
-	  int ret = input->put(ts,buffer,
-			       s->RTPStream()->getSampleRate(),
-			       got_audio);
-	  if(ret < 0){
-	    DBG("input->put() returned: %i\n",ret);
-	    postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-	  }
-	}
-      }
-
-      s->unlockAudio();
-    }
+  for(set<AmMediaSession*>::iterator it = sessions.begin();
+      it != sessions.end(); it++)
+  {
+    if ((*it)->readStreams(ts, buffer) < 0)
+      postRequest(new SchedRequest(AmMediaProcessor::ClearSession, *it));
   }
 
   // sending
-  for(set<AmSession*>::iterator it = sessions.begin();
-      it != sessions.end(); it++){
-
-    AmSession* s = (*it);
-    s->lockAudio();
-    AmAudio* output = s->getOutput();
-	    
-    if(output && s->RTPStream()->sendIntReached()){
-		
-      int size = output->get(ts,buffer,
-			     s->RTPStream()->getSampleRate(),
-			     s->RTPStream()->getFrameSize());
-      if(size <= 0){
-	DBG("output->get() returned: %i\n",size);
-	postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s)); 
-      }
-      else {
-	if (!s->getAudioLocal(AM_AUDIO_OUT)) {
-	  // audio should go to RTP
-	  if(!s->RTPStream()->mute){
-	    if(s->RTPStream()->put(ts,buffer,
-				   s->RTPStream()->getSampleRate(),size)<0)
-	      postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-	  }
-	} else {
-	  // output is local - audio should go in local_out
-	  AmAudio* local_output = s->getLocalOutput();
-	  if (local_output) {
-	    if (local_output->put(ts,buffer,
-				  s->RTPStream()->getSampleRate(),size) < 0) {
-	      postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-	    }
-	  }
-	}
-      }
-    }
-    s->unlockAudio();
+  for(set<AmMediaSession*>::iterator it = sessions.begin();
+      it != sessions.end(); it++)
+  {
+    if ((*it)->writeStreams(ts, buffer) < 0)
+      postRequest(new SchedRequest(AmMediaProcessor::ClearSession, *it));
   }
 }
 
@@ -404,27 +307,27 @@ void AmMediaProcessorThread::process(AmEvent* e)
   case AmMediaProcessor::InsertSession:
     DBG("Session inserted to the scheduler\n");
     sessions.insert(sr->s);
-    sr->s->RTPStream()->clearRTPTimeout();
+    sr->s->clearRTPTimeout();
     break;
 
   case AmMediaProcessor::RemoveSession:{
-    AmSession* s = sr->s;
-    set<AmSession*>::iterator s_it = sessions.find(s);
+    AmMediaSession* s = sr->s;
+    set<AmMediaSession*>::iterator s_it = sessions.find(s);
     if(s_it != sessions.end()){
       sessions.erase(s_it);
-      s->processing_media.set(false);
+      s->onMediaProcessingTerminated();
       DBG("Session removed from the scheduler\n");
     }
   }
     break;
 
   case AmMediaProcessor::ClearSession:{
-    AmSession* s = sr->s;
-    set<AmSession*>::iterator s_it = sessions.find(s);
+    AmMediaSession* s = sr->s;
+    set<AmMediaSession*>::iterator s_it = sessions.find(s);
     if(s_it != sessions.end()){
       sessions.erase(s_it);
       s->clearAudio();
-      s->processing_media.set(false);
+      s->onMediaProcessingTerminated();
       DBG("Session removed from the scheduler\n");
     }
   }
@@ -432,8 +335,8 @@ void AmMediaProcessorThread::process(AmEvent* e)
 
 
   case AmMediaProcessor::SoftRemoveSession:{
-    AmSession* s = sr->s;
-    set<AmSession*>::iterator s_it = sessions.find(s);
+    AmMediaSession* s = sr->s;
+    set<AmMediaSession*>::iterator s_it = sessions.find(s);
     if(s_it != sessions.end()){
       sessions.erase(s_it);
       DBG("Session removed softly from the scheduler\n");
