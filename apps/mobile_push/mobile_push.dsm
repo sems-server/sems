@@ -139,10 +139,21 @@ function releaseRegEvalObjects() {
 };
 
 function replyWith300() {
-  set($dlg.reply.hdrs="Contact: ");
-  append($dlg.reply.hdrs, @local_uri);
-  append($dlg.reply.hdrs, $config.extra_3xx_uri_append);
-  dlg.reply(300, "Multiple Choices");
+  if test($has_replied!="yes") {
+    set($dlg.reply.hdrs="Contact: ");
+    append($dlg.reply.hdrs, @local_uri);
+    append($dlg.reply.hdrs, $config.extra_3xx_uri_append);
+    dlg.reply(300, "Multiple Choices");
+    set($has_replied="yes");
+  }
+  stop(false);
+};
+
+function replyWith480() {
+  if test($has_replied!="yes") {
+    dlg.reply(480, "Not found");
+    set($has_replied="yes");
+  }
   stop(false);
 };
 
@@ -152,7 +163,6 @@ transition "NOTIFY received, with body" WAITING - subscription(#status!="termina
   if test($active_contacts != 0) {
     replyWith300();
     subscription.remove($r.handle);
-    stop(false);
   }
 
   releaseRegEvalObjects();
@@ -169,21 +179,18 @@ transition "NOTIFY received, terminated (but with body)" WAITING - subscription(
   if test($active_contacts != 0) {
     replyWith300();
   } else {
-    dlg.reply(480, "Not found");
+    replyWith480();
   }
   releaseRegEvalObjects();
-  stop(false);
 } -> END;
 
 transition "NOTIFY received, subscription terminated" WAITING - subscription(#status=="terminated") / {
-  dlg.reply(480, "Not found");
-  stop(false);
+  replyWith480();
 } -> END;
 
 transition "timer hit" WAITING - timer(#id==1) / {
   subscription.remove($r.handle);
-  dlg.reply(480, "Not found");
-  stop(false);
+  replyWith480();
 } -> END;
 
 transition "CANCEL received" WAITING - hangup / {
