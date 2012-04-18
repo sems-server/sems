@@ -130,6 +130,7 @@ void _AmSipSubscriptionContainer::onEvent(AmEvent* event) {
       DBG("subscription '%s' terminated - removing\n", it->second->getDescription().c_str());
       delete it->second;
       subscriptions.erase(it);
+      AmEventDispatcher::instance()->delEventQueue(ltag);
     }
     subscriptions_mut.unlock();
     return;
@@ -154,6 +155,7 @@ void _AmSipSubscriptionContainer::onEvent(AmEvent* event) {
       DBG("subscription '%s' terminated - removing\n", it->second->getDescription().c_str());
       delete it->second;
       subscriptions.erase(it);
+      AmEventDispatcher::instance()->delEventQueue(ltag);
     }
     subscriptions_mut.unlock();
     return;
