@@ -1,0 +1,11 @@
+[Unit]
+Description=SIP Media Server
+After=network.target
+
+[Service]
+Type=simple
+User=sems
+Group=sems
+EnvironmentFile=-/etc/sysconfig/sems
+PIDFile=/var/run/sems/sems.pid
+ExecStart=/usr/sbin/sems -E -u sems -g sems -P /var/run/sems/sems.pid $OPTIONS
