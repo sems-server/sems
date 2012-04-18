@@ -3,6 +3,8 @@ DBRegAgent.cpp
 RegistrationTimer.cpp
 )
 
+INCLUDE_DIRECTORIES(/usr/include/mysql)
+INCLUDE_DIRECTORIES(${MYSQLPP_INCLUDE_DIR}/mysql++)
 ADD_DEFINITIONS(-DHAS_OFFER_ANSWER)
 SET(sems_module_libs ${sems_module_libs} mysqlpp)
 

@@ -24,6 +24,13 @@ active_profile=transparent
 #
 #regex_maps=src_ipmap,ruri_map,usermap
 
+# load_cc_plugins - semicolon-separated list of call-control plugins to load
+#                   here the module names (.so names) must be specified, without .so
+#                   analogous to load_plugins in sems.conf
+#
+# e.g. load_cc_plugins=cc_pcalls;cc_ctl
+#load_cc_plugins=cc_pcalls;cc_ctl
+
 ## RFC4028 Session Timer
 # default configuration - can be overridden by call profiles
 
