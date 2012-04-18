@@ -1,0 +1,105 @@
+this is a small set of scripts and config files to do load tests on the
+mobile-push application. It uses another SEMS instance to register/deregister
+users using db_reg_agent module, and place calls using call_gen application.
+
+both sems instances are expected to run on 192.168.5.110 - if that IP is
+different, it needs to be changed in some (many) places.
+
+1. create users 400..499 (pwd 400..499) in kamailio with
+   for ((i=400;i<500;i++)); do kamctl add $i $i; done
+ 
+ 1.b for Kamailio from packages (default config), 
+  - enable:
+     #!define WITH_MYSQL
+     #!define WITH_PRESENCE
+   undefine WITH_AUTH
+
+  - add to presence loading section:
+  #!ifdef WITH_PRESENCE
+   loadmodule "presence.so"
+   loadmodule "presence_xml.so"
+
+   # reginfo related
+   loadmodule "presence_reginfo.so"
+   loadmodule "pua.so"
+   loadmodule "pua_reginfo.so"  
+  #!endif
+
+  -  add to presence config section:
+   #!ifdef WITH_PRESENCE
+   # ----- presence params -----
+   modparam("presence", "db_url", DBURL)
+
+   # ----- presence_xml params -----
+   modparam("presence_xml", "db_url", DBURL)
+   modparam("presence_xml", "force_active", 1)
+
+   # reginfo related
+   modparam("pua_reginfo", "default_domain", "192.168.5.110")
+   modparam("pua_reginfo", "publish_reginfo", 1)
+   modparam("pua_reginfo", "server_address", "sip:reginfo@192.168.5.110")
+
+  - remove auth check in request_route (easier)
+   # authentication
+   #       if (!is_method("SUBSCRIBE|NOTIFY")) {
+   #        route(AUTH);
+   #       }
+
+  - add SERVICES route to route calls to sems:
+        # dispatch requests to foreign domains
+        route(SIPOUT);
+
+        route(SERVICES);
+
+        ...
+
+        route[SERVICES] {
+        
+        if (method=="INVITE") {
+          if ((uri=~"sip:38") || (uri=~"sip:4"))
+          {
+
+                # $ru = "sip:" + $rU + "@" + "192.168.5.110:5080";
+                append_hf("P-App-Param: audio_id=connecting;caller=+492222222222;callee=+491111111111;domain=sip.sipwise.com\r\n");
+                append_hf("P-hint: services\r\n");
+                t_relay_to("192.168.5.110:5080");
+                exit();
+          }
+        }
+       }
+
+
+2. create database tables for sems with:
+
+CREATE TABLE `registrations` (
+  `subscriber_id` int(11) NOT NULL,
+  `registration_status` tinyint(1) NOT NULL DEFAULT '0',
+  `last_registration` datetime NOT NULL,
+  `expiry` datetime NOT NULL,
+  `last_code` smallint(2) NOT NULL,
+  `last_reason` varchar(256) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `contacts` varchar(512) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  PRIMARY KEY (`subscriber_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+CREATE TABLE `subscribers` (
+  `subscriber_id` int(10) NOT NULL AUTO_INCREMENT,
+  `user` varchar(256) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `pass` varchar(256) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `realm` varchar(256) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `contact` varchar(256) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  PRIMARY KEY (`subscriber_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=20005 DEFAULT CHARSET=latin1;
+
+3. set mysql pwd in db_reg_agent.conf
+
+4. start load gen sems instance with the configuration given here.
+   (git clone git://git.sip-router.org/sems ; cp -R sems_cfg/* sems ;  cd sems ; make -C apps/xmlrpc2di ;
+    make -C apps/examples/call_gen; make -C apps/db_reg_agent; make -C core ; cd core ; 
+    ./sems -f etc/sems.conf -D 3 -E )
+
+5. run reg_client.py, which will very quickly register and deregister subscribers
+   by calling removeRegistration/createRegistration on the load gen sems instance
+
+6. run call_gen.py to set a target of 100 calls (or run sth like
+s.createCalls(1, 1, 0, '4', '192.168.5.110', 2, 0, 30, 40) to create one call for testing first
