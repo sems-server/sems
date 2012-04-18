@@ -160,6 +160,8 @@ Playing prompts and file I/O
  disableForceDTMFReceiving()   if received RTP is not processed, e.g. after
                                disableReceiving() or in passive mode
                                (only for RFC2833/4733 DTMF, *no* in-band)
+ monitorRTPTimeout(enabled=false)
+   set call to monitor RTP timeout (enabled="true" or "false")
 
  mute()             - set RTP stream to muted (don't send RTP packets)
  unmute()           - set RTP stream to unmuted (do send RTP packets)

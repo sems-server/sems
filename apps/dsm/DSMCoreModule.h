@@ -63,13 +63,13 @@ DEF_ACTION_1P(SCEnableReceivingAction);
 DEF_ACTION_1P(SCDisableReceivingAction);
 DEF_ACTION_1P(SCEnableForceDTMFReceiving);
 DEF_ACTION_1P(SCDisableForceDTMFReceiving);
+DEF_ACTION_1P(SCMonitorRTPTimeoutAction);
 DEF_ACTION_1P(SCMuteAction);
 DEF_ACTION_1P(SCUnmuteAction);
 DEF_ACTION_1P(SCEnableDTMFDetection);
 DEF_ACTION_1P(SCDisableDTMFDetection);
 DEF_ACTION_2P(SCSendDTMFAction);
 DEF_ACTION_2P(SCSendDTMFSequenceAction);
-
 
 DEF_ACTION_1P(SCSetPromptsAction);
 DEF_ACTION_2P(SCAddSeparatorAction);

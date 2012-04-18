@@ -74,6 +74,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("disableReceiving", SCDisableReceivingAction);
   DEF_CMD("enableForceDTMFReceiving", SCEnableForceDTMFReceiving);
   DEF_CMD("disableForceDTMFReceiving", SCDisableForceDTMFReceiving);
+  DEF_CMD("monitorRTPTimeout", SCMonitorRTPTimeoutAction);
   DEF_CMD("mute", SCMuteAction);
   DEF_CMD("unmute", SCUnmuteAction);
   DEF_CMD("enableDTMFDetection", SCEnableDTMFDetection);
@@ -392,6 +393,12 @@ EXEC_ACTION_START(SCEnableForceDTMFReceiving) {
 EXEC_ACTION_START(SCDisableForceDTMFReceiving) {
   DBG("disabling forced DTMF RTP receving in session\nb");
   sess->setForceDtmfReceiving(false);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCMonitorRTPTimeoutAction) {
+  string e = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("setting RTP stream to %smonitor RTP timeout\n", e=="true"?"":"not");
+  sess->RTPStream()->setMonitorRTPTimeout(e=="true");
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCMuteAction) {
