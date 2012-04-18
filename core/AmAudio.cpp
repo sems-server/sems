@@ -266,10 +266,6 @@ AmAudio::AmAudio(AmAudioFormat *_fmt)
 
 AmAudio::~AmAudio()
 {
-#ifdef USE_LIBSAMPLERATE 
-  if (NULL != resample_state) 
-    src_delete(resample_state);
-#endif
   close();
 }
 
