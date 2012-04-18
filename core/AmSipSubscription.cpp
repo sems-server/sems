@@ -161,18 +161,8 @@ bool AmSipSubscription::doUnsubscribe()
     return true;
   }
 
-  req.to_tag     = "";
-  dlg.remote_tag = "";
   dlg.remote_uri = req.r_uri;
     
-  // set outbound proxy as next hop 
-  if (!info.proxy.empty()) {
-    dlg.outbound_proxy = info.proxy;
-  } else if (!AmConfig::OutboundProxy.empty()) 
-    dlg.outbound_proxy = AmConfig::OutboundProxy;
-  //else 
-  //    dlg.outbound_proxy = "";
-
   string hdrs;
   hdrs += SIP_HDR_COLSP(SIP_HDR_EVENT) + info.event;
   if (!info.id.empty())
