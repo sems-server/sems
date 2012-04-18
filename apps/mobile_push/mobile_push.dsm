@@ -70,7 +70,7 @@ transition "invite" START - invite / {
   connectMedia();
 
   -- no need to process incoming RTP (also no RTP timeout needed)
-  pauseReceiving();
+  disableReceiving();
 
   -- create subscription to reg event
   set($r.domain=@domain);
