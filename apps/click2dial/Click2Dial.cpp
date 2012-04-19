@@ -236,8 +236,13 @@ void C2DCallerDialog::process(AmEvent* event)
 
 void C2DCallerDialog::createCalleeSession()
 {
-  UACAuthCred* c = new UACAuthCred(cred.get()->realm,
-    cred.get()->user, cred.get()->pwd);
+
+  UACAuthCred* c;
+  if (cred.get()){
+    c = new UACAuthCred(cred->realm, cred->user, cred->pwd);
+  } else {
+    c = new UACAuthCred();
+  }
 
   AmB2BCalleeSession* callee_session = new C2DCalleeDialog(this, c);
   AmSipDialog& callee_dlg = callee_session->dlg;
