@@ -196,6 +196,7 @@ transition "timer hit" WAITING - timer(#id==1) / {
 
 transition "CANCEL received" WAITING - hangup / {
   subscription.remove($r.handle);
+  dlg.reply(487, "Request Terminated");
   stop(false);
 } -> END;
 
