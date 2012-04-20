@@ -846,7 +846,8 @@ void SBCCallProfile::CodecPreferences::orderSDP(AmSdp& sdp, bool a_leg)
           }
 	
 	  ++pos; // next payload index
-          break;
+          // do not terminate the inner loop because one PayloadDesc can match
+          // more payloads!
 	}
       }
     }
