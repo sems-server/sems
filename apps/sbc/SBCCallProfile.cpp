@@ -894,7 +894,7 @@ string SBCCallProfile::CodecPreferences::print() const
 {
   string res;
 
-  res += "codec_preference:     ";
+  res += "codec_preference: ";
   for (vector<PayloadDesc>::const_iterator i = bleg_payload_order.begin(); i != bleg_payload_order.end(); ++i) {
     if (i != bleg_payload_order.begin()) res += ",";
     res += i->print();
@@ -955,26 +955,9 @@ bool SBCCallProfile::TranscoderSettings::readTranscoderMode(const std::string &s
 
 void SBCCallProfile::TranscoderSettings::infoPrint() const
 {
-  if (audio_codecs.size() > 0) {
-    INFO("SBC:      transcode audio:\n");
-    for (vector<SdpPayload>::const_iterator i = audio_codecs.begin(); i != audio_codecs.end(); ++i)
-      INFO("SBC:         - %s\n", payload2str(*i).c_str());
-  }
-  if (callee_codec_capabilities.size() > 0) {
-    INFO("SBC:      callee codec capabilities:\n");
-    for (vector<PayloadDesc>::const_iterator i = callee_codec_capabilities.begin(); 
-        i != callee_codec_capabilities.end(); ++i)
-    {
-      INFO("SBC:         - %s\n", i->print().c_str());
-    }
-  }
-  string s("?");
-  switch (transcoder_mode) {
-    case Always: s = "always"; break;
-    case Never: s = "never"; break;
-    case OnMissingCompatible: s = "on_missing_compatible"; break;
-  }
-  INFO("SBC:      enable transcoder: %s\n", s.c_str());
+  INFO("SBC:      transcoder audio codecs: %s\n", audio_codecs_str.c_str());
+  INFO("SBC:      callee codec capabilities: %s\n", callee_codec_capabilities_str.c_str());
+  INFO("SBC:      enable transcoder: %s\n", transcoder_mode_str.c_str());
 }
 
 bool SBCCallProfile::TranscoderSettings::readConfig(AmConfigReader &cfg)
@@ -989,14 +972,41 @@ bool SBCCallProfile::TranscoderSettings::readConfig(AmConfigReader &cfg)
 
 bool SBCCallProfile::TranscoderSettings::operator==(const TranscoderSettings& rhs) const
 {
-  // TODO:transcoder_audio_codecs, mode, ...
-  return true;
+  bool res = (transcoder_mode == rhs.transcoder_mode);
+  res = res && (enabled == rhs.enabled);
+  res = res && (payloadDescsEqual(callee_codec_capabilities, rhs.callee_codec_capabilities));
+  res = res && (audio_codecs == rhs.audio_codecs);
+  return res;
 }
 
 string SBCCallProfile::TranscoderSettings::print() const
 {
-  string res;
-  // TODO: transcoder_audio_codecs, mode, ...
+  string res("transcoder audio codecs:");
+  for (vector<SdpPayload>::const_iterator i = audio_codecs.begin(); i != audio_codecs.end(); ++i) {
+    res += " ";
+    res += payload2str(*i);
+  }
+
+  res += "\ncallee codec capabilities:";
+  for (vector<PayloadDesc>::const_iterator i = callee_codec_capabilities.begin(); 
+      i != callee_codec_capabilities.end(); ++i)
+  {
+    res += " ";
+    res += i->print();
+  }
+
+  string s("?");
+  switch (transcoder_mode) {
+    case Always: s = "always"; break;
+    case Never: s = "never"; break;
+    case OnMissingCompatible: s = "on_missing_compatible"; break;
+  }
+  res += "\nenable transcoder: " + s;
+  
+  res += "\ntranscoder currently enabled: ";
+  if (enabled) res += "yes\n";
+  else res += "no\n";
+  
   return res;
 }
   

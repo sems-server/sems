@@ -170,6 +170,7 @@ struct SBCCallProfile
     string print() const;
 
     bool isActive() { return enabled; }
+    TranscoderSettings(): enabled(false), transcoder_mode(Never) { }
   } transcoder;
 
   struct CodecPreferences {
