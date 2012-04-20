@@ -792,10 +792,22 @@ static bool read(const std::string &src, vector<SdpPayload> &codecs)
 {
   vector<string> elems = explode(src, ",");
 
+  AmPlugIn* plugin = AmPlugIn::instance();
+
   for (vector<string>::iterator it=elems.begin(); it != elems.end(); ++it) {
     SdpPayload p;
     if (!readPayload(p, *it)) return false;
-    codecs.push_back(p);
+    int payload_id = plugin->getDynPayload(p.encoding_name, p.clock_rate, 0);
+    amci_payload_t* payload = plugin->payload(payload_id);
+    if(!payload) {
+      ERROR("Ignoring unknown payload found in call profile: %s/%i\n",
+	    p.encoding_name.c_str(), p.clock_rate);
+    }
+    else {
+      p.int_pt = payload_id;
+      p.payload_type = payload->payload_id;
+      codecs.push_back(p);
+    }
   }
   return true;
 }
