@@ -201,6 +201,12 @@ int AmRtpAudio::receive(unsigned long long system_ts)
     playout_buffer->write(wallclock_ts, adjusted_rtp_ts,
 			  (ShortSample*)((unsigned char *)samples),
 			  PCM16_B2S(size), begin_talk);
+
+    if(!active) {
+      DBG("switching to active-mode\t(ts=%u;stream=%p)\n",
+	  rtp_ts,this);
+      active = true;
+    }
   }
   return size;
 }
@@ -209,9 +215,10 @@ int AmRtpAudio::get(unsigned long long system_ts, unsigned char* buffer,
 		    int output_sample_rate, unsigned int nb_samples)
 {
   if (!(receiving || getPassiveMode())) return 0; // like nothing received
-  if (!active) return 0;
-    
+
   int ret = receive(system_ts);
+  if (!active) return 0;
+
   if(ret < 0){
     switch(ret){
 

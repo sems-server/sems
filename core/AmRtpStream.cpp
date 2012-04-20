@@ -721,7 +721,11 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 
   if (relay_enabled) {
     if (relay_payloads.get(p->payload)) {
-      active = false;
+      if(active){
+	DBG("switching to relay-mode\t(ts=%u;stream=%p)\n",
+	    p->timestamp,this);
+	active = false;
+      }
       handleSymmetricRtp(p);
 
       if (NULL != relay_stream) {
@@ -731,7 +735,6 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
       return;
     }
   }
-  active = true;
 
   receive_mut.lock();
   // free packet on double packet for TS received
