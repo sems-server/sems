@@ -60,18 +60,16 @@ string _AmSipSubscriptionContainer::createSubscription(const AmSipSubscriptionIn
 
   subscriptions_mut.lock();
   subscriptions[handle] = new_sub;
-  subscriptions_mut.unlock();
-
   AmEventDispatcher::instance()->addEventQueue(handle, this);
   if (!new_sub->doSubscribe()) {
     DBG("subscribe failed - removing subscription\b");
     AmEventDispatcher::instance()->delEventQueue(handle);
-    subscriptions_mut.lock();
     subscriptions.erase(handle);
     subscriptions_mut.unlock();
     delete new_sub;
     return "";
   }
+  subscriptions_mut.unlock();
 
   return handle;
 }
