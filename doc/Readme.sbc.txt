@@ -297,39 +297,63 @@ modes. The payload names in the list are case-insensitive (PCMU==pcmu).
 
 The s, u and o-lines of the SDP can be anonymized with the setting sdp_anonymize=yes.
 
-Codec reordering
+Codec preference
 ----------------
-Payloads within SDP body might be reordered according to value of payload_order call
-profile option. Payload names are case-insensitive, clock rate is considered if
-given.
+Payloads within SDP body might be reordered by SBC so clients might be forced to
+use prioritzed codecs. 
+
+The priority is given in each call leg independently via codec_preference and
+codec_preference_aleg call profile options. These options contain list of codecs
+ordered by priorities separated by coma. Payload names are case-insensitive,
+clock rate is considered if given.
+
+Codecs are ordered when filtering is done, for SDP offer and for SDP answer as
+well. Ordering is applied on each media stream in the SDP. Codecs present in SDP
+which are not listed in codec_preference resp. codec_preference_aleg preserve
+their order.
 
 for example:
-  payload_order=G723/16000,PCMA,g726-16,PCMU
+  codec_preference=speex,pcmu/16000,pcma/8000
 
   incoming SDP:
-        a=rtpmap:8 PCMA/8000
+
         a=rtpmap:0 PCMU/8000
-        a=rtpmap:2 G726-32/8000
-        a=rtpmap:4 G723/8000
-        a=rtpmap:18 G729a/8000
-        a=rtpmap:96 G726-40/8000
-        a=rtpmap:97 G726-24/8000
-        a=rtpmap:98 G726-16/8000
+        a=rtpmap:8 PCMA/8000
+        a=rtpmap:97 speex/8000
+        a=rtpmap:3 GSM/8000
+        a=rtpmap:103 G726-24/8000
+        a=rtpmap:104 G726-32/8000
+        a=rtpmap:105 G726-40/8000
+        a=rtpmap:98 speex/16000
+        a=rtpmap:99 speex/32000
+        a=rtpmap:102 G726-16/8000
         a=rtpmap:101 telephone-event/8000
 
   outgoing SDP:
-        a=rtpmap:0 PCMU/8000
-        a=rtpmap:98 G726-16/8000
+        a=rtpmap:97 speex/8000
+        a=rtpmap:98 speex/16000
+        a=rtpmap:99 speex/32000
         a=rtpmap:8 PCMA/8000
-        a=rtpmap:4 G723/8000
-        a=rtpmap:18 G729a/8000
-        a=rtpmap:96 G726-40/8000
-        a=rtpmap:97 G726-24/8000
-        a=rtpmap:2 G726-32/8000
+        a=rtpmap:0 PCMU/8000
+        a=rtpmap:3 GSM/8000
+        a=rtpmap:103 G726-24/8000
+        a=rtpmap:104 G726-32/8000
+        a=rtpmap:105 G726-40/8000
+        a=rtpmap:102 G726-16/8000
         a=rtpmap:101 telephone-event/8000
 
-Please note that codecs are ordered when filtering is done, for SDP offer and
-for SDP answer as well.
+Call profile options for choosing codec preferences:
+
+  codec_preference
+
+    List of codec preferences describing how to reorder codecs in SDP sent from
+    caller to callee.
+
+  codec_preference_aleg
+    
+    List of codec preferences describing how to reorder codecs in SDP sent from
+    callee to caller.
+
 
 RTP relay
 ---------
@@ -340,29 +364,6 @@ send RTP media to SEMS. SEMS then relays the RTP packets between the two sides.
 
 RTP relay can be enabled by setting
   enable_rtprelay=yes
-
-The SBC is able to do transcoding together with relaying. 
-
-To trigger transcoding configure transcoder_audio_codecs to a set of codecs
-which are understand by SEMS. These codecs are appended to the end (advertising
-that their priority is lower) of outgoing SDP and allow to the other party to
-choose from more codecs than used in the original SDP. 
-
-  for example:
-
-    Caller understands only PCMA codec, callee: understands only PCMU codec.
-
-    transcoder_audio_codecs=PCMU,PCMA
-    incoming SDP offer: PCMA
-    outgoing SDP offer: PCMA, PCMU
-    incoming SDP answer: PCMU
-    outgoing SDP answer: PCMU, PCMA
-
-    Caller generates RTP with PCMA payload, SEMS in between transcodes to PCMU
-    and sends PCMU RTP to the callee.
-
-    Callee generates RTP with PCMU payload, SEMS in between transcodes to PCMA
-    and sends PCMA RTP to the caller.
 
 The SBC detects if UAs indicate that they are behind NAT by setting a=direction:active
 in SDP, and goes into passive mode until it receives the first packet from the NATed
@@ -380,13 +381,87 @@ option
  rtprelay_msgflags_symmetric_rtp=yes
 the SBC honors this and sets symmetric RTP accordingly.
 
+
+The SBC is able to do transcoding together with relaying. 
+
+To trigger transcoding you have to configure transcoder_codecs to a set of codecs
+which are understand by SEMS and enable transcoder via enable_transcoder
+call profile option. 
+
+Transcoder codecs are appended to the end of outgoing SDP (advertising that
+their priority is lower than priority of original codecs) and allow to the other
+party to choose from more codecs than used in the original SDP. 
+
+  for example:
+
+    Caller understands only PCMA codec, callee: understands only PCMU codec.
+
+    transcoder_codecs=PCMU,PCMA
+    incoming SDP offer: PCMA
+    outgoing SDP offer: PCMA, PCMU
+    incoming SDP answer: PCMU
+    outgoing SDP answer: PCMU, PCMA
+
+    Caller generates RTP with PCMA payload, SEMS in between transcodes to PCMU
+    and sends PCMU RTP to the callee.
+
+    Callee generates RTP with PCMU payload, SEMS in between transcodes to PCMA
+    and sends PCMA RTP to the caller.
+
+In case of another codec preference you can configure codec_preference resp.
+codec_preference_aleg as described above and choose if codecs should be ordered
+before adding transcoder codecs or after using prefer_existing_codecs resp.
+prefer_existing_codecs_aleg call profile options.
+
+Transcoding related call profile options:
+
+  enable_transcoder
+
+    Possible values: always, on_missing_compatible, never
+
+    The value "on_missing_compatible" causes that transcoder is enabled only in
+    case it seems to be necessary. See the option callee_codeccaps below.
+
+  callee_codeccaps
+
+    Callee's codec capabilities used when enable_transcoder is set to
+    "on_missing_compatible". In this case the set of codecs in input SDP of
+    initial INVITE is compared to the list of codecs given by this option. If
+    there is no match, transcoder is activated.
+
+  transcoder_codecs
+
+    List of codecs which can be transcoded.
+
+  prefer_existing_codecs
+
+    Describes if codecs present in SDP from caller are preferred to added
+    transcoder codecs.
+
+    If this parameter is set to "yes" transcoder codecs are added at the end of
+    codec lists in SDP body AFTER ordering using codec_preference is done.
+
+    If this parameter is set to something else, transcoder codecs are added BEFORE
+    ordering using codec_preference is done and thus may become preferred ones.
+
+  prefer_existing_codecs_aleg
+    
+    Describes if codecs present in SDP from callee are preferred to added
+    transcoder codecs.
+
+    If this parameter is set to "yes" transcoder codecs are added at the end of
+    codec lists in SDP body AFTER ordering using codec_preference_aleg is done.
+
+    If this parameter is set to something else, transcoder codecs are added BEFORE
+    ordering using codec_preference_aleg is done and thus may become preferred ones.
+
+
 Warning: 
  - currently only audio streams are relayed through or transcoded
- - setting transcoder_audio_codecs causes automatical enabling of RTP relay
  - usage of transparent vs. non-transparent SSRC and sequence numbers is a bit
    tricky when transcoding is possible and let on correct user configuration for
    now (sometimes one of the variants is more suitable, unless we will be
-   handling SSRC changes in incoming RTP neither of them will be working for
+   propagating SSRC changes in incoming RTP neither of them will be working for
    100%)
  - handling of "on hold" streams when transcoding is in use can cause RTP media
    send in hold state (sendonly stream) though they need not to be sent (caused
