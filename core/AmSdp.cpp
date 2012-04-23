@@ -1089,32 +1089,28 @@ static void parse_sdp_attr(AmSdp* sdp_msg, char* s)
     }else{
       attr_check(attr);
       next = parse_until(attr_line, '\r');
-      if(next < line_end){
-	  string value(attr_line, int(next-attr_line)-1);
-	  DBG("found media attr '%s' value '%s'\n",
-	      (char*)attr.c_str(), (char*)value.c_str());
-	  media.attributes.push_back(SdpAttribute(attr, value));
-      } else {
+      if(next >= line_end){
 	  DBG("found media attr '%s', but value is not followed by cr\n",
 	      (char *)attr.c_str());
       }
+      string value(attr_line, int(next-attr_line)-1);
+      DBG("found media attr '%s' value '%s'\n",
+	  (char*)attr.c_str(), (char*)value.c_str());
+      media.attributes.push_back(SdpAttribute(attr, value));
     }
 
 
   } else {
       next = parse_until(attr_line, '\r');
-      if(next < line_end){
-	  string attr(attr_line, int(next-attr_line)-1);
-	  attr_check(attr);
-	  DBG("found media attr '%s'\n", (char*)attr.c_str());
-	  media.attributes.push_back(SdpAttribute(attr));
-      } else {
+      if(next >= line_end){
 	  DBG("found media attr line '%s', which is not followed by cr\n",
 	      attr_line);
       }
+      string attr(attr_line, int(next-attr_line)-1);
+      attr_check(attr);
+      DBG("found media attr '%s'\n", (char*)attr.c_str());
+      media.attributes.push_back(SdpAttribute(attr));
   }
-
-  return;
 }
 
 static void parse_sdp_origin(AmSdp* sdp_msg, char* s)
@@ -1379,7 +1375,7 @@ static bool attr_check(std::string attr)
     return true;
   else
     {
-    DBG("sdp_parse_attr: Unknown attribute name used:%s, plz see RFC4566\n", 
+    DBG("sdp_parse_attr: Unknown attribute name used: %s, plz see RFC4566\n",
 	(char*)attr.c_str());
     return false;
     }
