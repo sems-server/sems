@@ -32,6 +32,8 @@ callgen - simple call generator
   int    call_time_base   - call timer, base value
   int    call_time_rand   - call timer, random add (total = base + rand)
 
+ [int    ncalls_per_sec   - n calls to schedule per sec ]
+
  method: callGenStats - return some statistics
 
 

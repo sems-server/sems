@@ -298,14 +298,25 @@ void CallGenFactory::scheduleCalls(const AmArg& args, AmArg& ret) {
   int    ncalls           = args.get(cnt++).asInt();
   int    wait_time_base   = args.get(cnt++).asInt();
   int    wait_time_rand   = args.get(cnt++).asInt();
+  int    ncalls_per_sec   = 1;
+  if (args.size()>8)
+    ncalls_per_sec = args[8].asInt();
+
   DBG("scheduling %d calls...\n", ncalls);
   
   time_t now;
   time(&now);
   actions_mut.lock();
-  for (int i=0;i<ncalls;i++) {
-    actions.insert(std::make_pair(now, args));
-    
+  int i=0;
+
+  while (i<ncalls) {
+    for (int j=0;j<ncalls_per_sec;j++) {
+      actions.insert(std::make_pair(now, args));
+      i++;
+      if (i==ncalls)
+	break;
+    }
+
     int wait_nsec = wait_time_base;
     if (wait_time_rand>0)
       wait_nsec+=(rand()%wait_time_rand);
@@ -383,9 +394,8 @@ CallGenDialog::~CallGenDialog()
   report(CGDestroy);
 }
 
-void CallGenDialog::onInvite(const AmSipRequest& r) {
+void CallGenDialog::onStart() {
   report(CGCreate);
-  AmSession::onInvite(r);
 }
 
 void CallGenDialog::report(CallGenEvent what) {

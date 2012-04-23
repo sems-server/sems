@@ -148,7 +148,7 @@ public:
 		int play_rand_digits, int call_time_base, int call_time_rand);
   ~CallGenDialog();
 
-  void onInvite(const AmSipRequest& r);
+  void onStart();
   void onEarlySessionStart();
   void onSessionStart();
   void onBye(const AmSipRequest& req);
