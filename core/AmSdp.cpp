@@ -265,8 +265,6 @@ void AmSdp::print(string& body) const
 	  pl_it != media_it->payloads.end(); pl_it++) {
 
 	  out_buf += " " + int2str(pl_it->payload_type);
-	  if (!media_it->conn.address.empty())
-	    options += "c=IN IP4 "+media_it->conn.address+"\r\n";
 
 	  // "a=rtpmap:" line
 	  if (!pl_it->encoding_name.empty()) {
@@ -287,6 +285,9 @@ void AmSdp::print(string& body) const
 	  }
 	  
       }
+
+      if (!media_it->conn.address.empty())
+        out_buf += "\r\nc=IN IP4 "+media_it->conn.address;
 
       out_buf += "\r\n" + options;
 
