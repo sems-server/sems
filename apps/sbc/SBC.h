@@ -90,6 +90,17 @@ class SBCFactory: public AmSessionFactory,
 
 };
 
+class PayloadIdMapping
+{
+  private:
+    std::map<int, int> mapping;
+      
+  public:
+    void map(int stream_index, int payload_index, int payload_id);
+    int get(int stream_index, int payload_index);
+    void reset();
+};
+
 class SBCDialog : public AmB2BCallerSession, public CredentialHolder
 {
   enum {
@@ -123,6 +134,12 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
 
   // auth
   AmSessionEventHandler* auth;
+
+  /** Storage for remembered payload IDs from SDP offer to be put correctly into
+   * SDP answer (we avoid with this parsing SDP offer again when processing the
+   * answer). We can not use call_profile.transcoder.audio_codecs for storing
+   * the payload IDs because they need to be remembered per media stream. */
+  PayloadIdMapping transcoder_payload_mapping;
 
   SBCCallProfile call_profile;
 
@@ -196,6 +213,7 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
 
   virtual void filterBody(AmSipRequest &req, AmSdp &sdp);
   virtual void filterBody(AmSipReply &reply, AmSdp &sdp);
+  virtual bool updateLocalSdp(AmSdp &sdp);
 
   void onControlCmd(string& cmd, AmArg& params);
 
@@ -206,10 +224,9 @@ class SBCCalleeSession
 : public AmB2BCalleeSession, public CredentialHolder
 {
   AmSessionEventHandler* auth;
+  PayloadIdMapping transcoder_payload_mapping;
   SBCCallProfile call_profile;
 
-  void appendTranscoderCodecs(AmSdp &sdp);
-  
  protected:
   int relayEvent(AmEvent* ev);
 
@@ -221,6 +238,7 @@ class SBCCalleeSession
 
   virtual void filterBody(AmSipRequest &req, AmSdp &sdp);
   virtual void filterBody(AmSipReply &reply, AmSdp &sdp);
+  virtual bool updateLocalSdp(AmSdp &sdp);
 
   void onControlCmd(string& cmd, AmArg& params);
 

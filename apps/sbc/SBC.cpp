@@ -62,7 +62,7 @@ DEFINE_MODULE_INSTANCE(SBCFactory, MOD_NAME);
 
 // helper functions
 
-static bool containsPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload)
+static const SdpPayload *findPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload)
 {
   string pname = payload.encoding_name;
   transform(pname.begin(), pname.end(), pname.begin(), ::tolower);
@@ -74,20 +74,48 @@ static bool containsPayload(const std::vector<SdpPayload>& payloads, const SdpPa
     if (p->clock_rate != payload.clock_rate) continue;
     if ((p->encoding_param >= 0) && (payload.encoding_param >= 0) && 
         (p->encoding_param != payload.encoding_param)) continue;
-    return true;
+    return &(*p);
   }
-  return false;
+  return NULL;
 }
 
-static void appendTranscoderCodecs(AmSdp &sdp, MediaType mtype, std::vector<SdpPayload> &transcoder_codecs)
+static bool containsPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload)
+{
+  return findPayload(payloads, payload) != NULL;
+}
+
+static void savePayloadIDs(AmSdp &sdp, MediaType mtype, 
+    std::vector<SdpPayload> &transcoder_codecs,
+    PayloadIdMapping &mapping)
+{
+  unsigned stream_idx = 0;
+  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+    if (m->type != mtype) continue;
+
+    unsigned idx = 0;
+    for (vector<SdpPayload>::iterator p = transcoder_codecs.begin(); 
+        p != transcoder_codecs.end(); ++p, ++idx) 
+    {
+      if (p->payload_type < 0) {
+        const SdpPayload *pp = findPayload(m->payloads, *p);
+        if (pp && (pp->payload_type >= 0)) 
+          mapping.map(stream_idx, idx, pp->payload_type);
+      }
+    }
+
+    stream_idx++; // count chosen media type only
+  }
+}
+
+static void appendTranscoderCodecs(AmSdp &sdp, MediaType mtype, std::vector<SdpPayload> &transcoder_codecs, 
+    PayloadIdMapping &transcoder_payload_mapping)
 {
   // append codecs for transcoding, remember the added ones to be able to filter
   // them out from relayed reply!
 
   // important: normalized SDP should get here
 
-  // FIXME: only first matching media stream?
-
+  unsigned stream_idx = 0;
   vector<SdpPayload>::const_iterator p;
   for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
 
@@ -103,29 +131,50 @@ static void appendTranscoderCodecs(AmSdp &sdp, MediaType mtype, std::vector<SdpP
       // in original SDP
       int id = 96;
       bool transcodable = false;
+      PayloadMask used_payloads;
       for (p = m->payloads.begin(); p != m->payloads.end(); ++p) {
         if (p->payload_type >= id) id = p->payload_type + 1;
         if (containsPayload(transcoder_codecs, *p)) transcodable = true;
+        used_payloads.set(p->payload_type);
       }
 
       if (transcodable) {
         // there are some transcodable codecs present in the SDP, we can safely
         // add the other transcoder codecs to the SDP
-        for (p = transcoder_codecs.begin(); p != transcoder_codecs.end(); ++p) {
+        unsigned idx = 0;
+        for (p = transcoder_codecs.begin(); p != transcoder_codecs.end(); ++p, ++idx) {
           // add all payloads which are not already there
           if (!containsPayload(m->payloads, *p)) {
             m->payloads.push_back(*p);
-            if (p->payload_type < 0) m->payloads.back().payload_type = id++;
+            int &pid = m->payloads.back().payload_type;
+            if (pid < 0) {
+              // try to use remembered ID
+              pid = transcoder_payload_mapping.get(stream_idx, idx);
+            }
+
+            if ((pid < 0) || used_payloads.get(pid)) {
+              // payload ID is not set or is already used in current SDP, we
+              // need to assign a new one
+              pid = id++;
+            }
           }
         }
         if (id > 128) ERROR("assigned too high payload type number (%d), see RFC 3551\n", id);
       }
+    
+      stream_idx++; // count chosen media type only
     }
   }
+
+  // remembered payload IDs should be used just once, in SDP answer
+  // unfortunatelly the SDP answer might be present in 1xx and in 2xx as well so
+  // we can't clear it here
+  // on other hand it might be useful to use the same payload ID if offer/answer
+  // is repeated in the other direction next time
 }
 
 // do the filtering, returns true if SDP was changed
-static bool doFiltering(AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg)
+static bool doFiltering(AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, PayloadIdMapping &transcoder_payload_mapping)
 {
   bool changed = false;
 
@@ -148,7 +197,7 @@ static bool doFiltering(AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg)
   if (call_profile.transcoder.isActive()) {
     if (!changed) // otherwise already normalized
       normalizeSDP(sdp, call_profile.anonymize_sdp);
-    appendTranscoderCodecs(sdp, MT_AUDIO, call_profile.transcoder.audio_codecs);
+    appendTranscoderCodecs(sdp, MT_AUDIO, call_profile.transcoder.audio_codecs, transcoder_payload_mapping);
     changed = true;
   }
   
@@ -187,7 +236,8 @@ static bool doFiltering(AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg)
   return changed;
 }
 
-static int filterBody(AmMimeBody *body, AmSdp& sdp, SBCCallProfile &call_profile, bool a_leg) 
+static int filterBody(AmMimeBody *body, AmSdp& sdp, SBCCallProfile &call_profile, bool a_leg, 
+    PayloadIdMapping &transcoder_payload_mapping) 
 {
   int res = sdp.parse((const char *)body->getPayload());
   if (0 != res) {
@@ -195,7 +245,7 @@ static int filterBody(AmMimeBody *body, AmSdp& sdp, SBCCallProfile &call_profile
     return res;
   }
 
-  if (doFiltering(sdp, call_profile, a_leg)) {
+  if (doFiltering(sdp, call_profile, a_leg, transcoder_payload_mapping)) {
     string n_body;
     sdp.print(n_body);
     body->setPayload((const unsigned char*)n_body.c_str(),
@@ -204,7 +254,8 @@ static int filterBody(AmMimeBody *body, AmSdp& sdp, SBCCallProfile &call_profile
   return 0;
 }
 
-static void filterBody(AmSipRequest &req, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg)
+static void filterBody(AmSipRequest &req, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, 
+    PayloadIdMapping &transcoder_payload_mapping)
 {
   AmMimeBody* body = req.body.hasContentType(SIP_APPLICATION_SDP);
 
@@ -216,21 +267,47 @@ static void filterBody(AmSipRequest &req, AmSdp &sdp, SBCCallProfile &call_profi
        req.method == SIP_METH_ACK)) {
 
     // todo: handle filtering errors
-    filterBody(body, sdp, call_profile, a_leg);
+    filterBody(body, sdp, call_profile, a_leg, transcoder_payload_mapping);
   }
 }
 
-static void filterBody(AmSipReply &reply, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg)
+static void filterBody(AmSipReply &reply, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, 
+    PayloadIdMapping &transcoder_payload_mapping)
 {
   AmMimeBody* body = reply.body.hasContentType(SIP_APPLICATION_SDP);
 
   DBG("filtering body of relayed reply %d\n", reply.code);
   if (body &&
       (reply.cseq_method == SIP_METH_INVITE || reply.cseq_method == SIP_METH_UPDATE)) {
-    filterBody(body, sdp, call_profile, a_leg);
+    filterBody(body, sdp, call_profile, a_leg, transcoder_payload_mapping);
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////
+
+// map stream index and transcoder payload index (two dimensions) into one under
+// presumption that there will be less than 128 payloads for transcoding
+// (might be handy to remember mapping only for dynamic ones (96-127)
+#define MAP_INDEXES(stream_idx, payload_idx) ((stream_idx) * 128 + payload_idx)
+
+void PayloadIdMapping::map(int stream_index, int payload_index, int payload_id)
+{
+  mapping[MAP_INDEXES(stream_index, payload_index)] = payload_id;
+}
+
+int PayloadIdMapping::get(int stream_index, int payload_index)
+{
+  std::map<int, int>::iterator i = mapping.find(MAP_INDEXES(stream_index, payload_index));
+  if (i != mapping.end()) return i->second;
+  else return -1;
+}
+
+void PayloadIdMapping::reset()
+{
+  mapping.clear();
+}
+
+#undef MAP_INDEXES
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1153,12 +1230,12 @@ int SBCDialog::relayEvent(AmEvent* ev) {
 
 void SBCDialog::filterBody(AmSipRequest &req, AmSdp &sdp)
 {
-  ::filterBody(req, sdp, call_profile, a_leg);
+  ::filterBody(req, sdp, call_profile, a_leg, transcoder_payload_mapping);
 }
 
 void SBCDialog::filterBody(AmSipReply &reply, AmSdp &sdp)
 {
-  ::filterBody(reply, sdp, call_profile, a_leg);
+  ::filterBody(reply, sdp, call_profile, a_leg, transcoder_payload_mapping);
 }
 
 
@@ -1697,6 +1774,14 @@ void SBCDialog::createCalleeSession()
   sess_cont->addSession(other_id,callee_session);
 }
 
+bool SBCDialog::updateLocalSdp(AmSdp &sdp)
+{
+  // remember transcodable payload IDs
+  if (call_profile.transcoder.isActive())
+    savePayloadIDs(sdp, MT_AUDIO, call_profile.transcoder.audio_codecs, transcoder_payload_mapping);
+  return AmB2BCallerSession::updateLocalSdp(sdp);
+}
+
 SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
 				   const SBCCallProfile& call_profile) 
   : auth(NULL),
@@ -1843,12 +1928,12 @@ void SBCCalleeSession::onControlCmd(string& cmd, AmArg& params) {
 
 void SBCCalleeSession::filterBody(AmSipRequest &req, AmSdp &sdp)
 {
-  ::filterBody(req, sdp, call_profile, a_leg);
+  ::filterBody(req, sdp, call_profile, a_leg, transcoder_payload_mapping);
 }
 
 void SBCCalleeSession::filterBody(AmSipReply &reply, AmSdp &sdp)
 {
-  ::filterBody(reply, sdp, call_profile, a_leg);
+  ::filterBody(reply, sdp, call_profile, a_leg, transcoder_payload_mapping);
 }
 
 void assertEndCRLF(string& s) {
@@ -1859,4 +1944,12 @@ void assertEndCRLF(string& s) {
       s.erase(s.size()-1);
     s += "\r\n";
   }
+}
+  
+bool SBCCalleeSession::updateLocalSdp(AmSdp &sdp)
+{
+  // remember transcodable payload IDs
+  if (call_profile.transcoder.isActive())
+    savePayloadIDs(sdp, MT_AUDIO, call_profile.transcoder.audio_codecs, transcoder_payload_mapping);
+  return AmB2BCalleeSession::updateLocalSdp(sdp);
 }

@@ -1022,8 +1022,6 @@ bool SBCCallProfile::TranscoderSettings::evaluate(const AmSipRequest& req,
 
   if (!read(audio_codecs_str, audio_codecs)) return false;
 
-  // TODO: verify that transcoder_audio_codecs are really supported natively!
-  
   if (!readPayloadList(callee_codec_capabilities, callee_codec_capabilities_str)) 
     return false;
   

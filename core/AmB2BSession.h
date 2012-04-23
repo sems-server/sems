@@ -249,8 +249,11 @@ class AmB2BSession: public AmSession
 			  AmSdp& parser_sdp);
 
   /** replace connection with our address */
-  bool replaceConnectionAddress(const AmMimeBody& body, 
-				AmMimeBody& r_body);
+  bool updateLocalBody(const AmMimeBody& body, AmMimeBody& r_body);
+
+  /** Called when SDP relayed from other leg should be sent to the remote party.
+   * Default implementation updates connection address and ports. */
+  virtual bool updateLocalSdp(AmSdp &sdp);
 
  public:
   void set_sip_relay_only(bool r);

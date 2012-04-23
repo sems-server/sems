@@ -371,19 +371,8 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
   relayEvent(r_ev);
 }
 
-bool AmB2BSession::replaceConnectionAddress(const AmMimeBody& body, 
-					    AmMimeBody& r_body) {
-  if(!body.isContentType(SIP_APPLICATION_SDP)) {
-    DBG("body is not an SDP\n");
-    return false;
-  }
-
-  AmSdp parser_sdp;
-  if (parser_sdp.parse((const char*)body.getPayload())) {
-    DBG("SDP parsing failed!\n");
-    return false;
-  } 
-  
+bool AmB2BSession::updateLocalSdp(AmSdp &sdp)
+{
   // FIXME: rename this method to updateMediaSession and do the stuff only for
   // rtp_relay_mode == RTP_Relay
 
@@ -403,23 +392,44 @@ bool AmB2BSession::replaceConnectionAddress(const AmMimeBody& body,
       relay_address = advertisedIP();
     }
 
-    media_session->replaceConnectionAddress(parser_sdp, a_leg, relay_address);
+    media_session->replaceConnectionAddress(sdp, a_leg, relay_address);
 
     // We are handling relayed request or reply.  The SDP in request/reply being
     // relayed describes local side of current leg (doesn't matter if it was offer
     // or answer) of the RTP stream. We need to update media session with it.
 
-    media_session->updateLocalSdp(a_leg, parser_sdp);
+    media_session->updateLocalSdp(a_leg, sdp);
+    return true;
   }
 
-  // regenerate SDP
-  string n_body;
-  parser_sdp.print(n_body);
-  r_body.parse(body.getCTStr(),
-	       (const unsigned char*)n_body.c_str(),
-	       n_body.length());
+  return false;
+}
 
-  return true;
+bool AmB2BSession::updateLocalBody(const AmMimeBody& body, 
+					    AmMimeBody& r_body) {
+  if(!body.isContentType(SIP_APPLICATION_SDP)) {
+    DBG("body is not an SDP\n");
+    return false;
+  }
+
+  AmSdp parser_sdp;
+  if (parser_sdp.parse((const char*)body.getPayload())) {
+    DBG("SDP parsing failed!\n");
+    return false;
+  } 
+  
+  if (updateLocalSdp(parser_sdp)) {
+    // regenerate SDP
+    string n_body;
+    parser_sdp.print(n_body);
+    r_body.parse(body.getCTStr(),
+        (const unsigned char*)n_body.c_str(),
+        n_body.length());
+
+    return true;
+  }
+
+  return false;
 }
 
 void AmB2BSession::updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq) {
@@ -652,7 +662,7 @@ int AmB2BSession::sendEstablishedReInvite() {
     AmMimeBody* body = &established_body; // contains only SDP
     AmMimeBody r_body;
     if (rtp_relay_mode != RTP_Direct &&
-	replaceConnectionAddress(established_body, r_body)) {
+	updateLocalBody(established_body, r_body)) {
       body = &r_body; // should we keep the old one intact???
     }
 
@@ -717,7 +727,7 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
         (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
          req.method == SIP_METH_ACK || req.method == SIP_METH_PRACK)) {
       body = req.body.hasContentType(SIP_APPLICATION_SDP);
-      if (replaceConnectionAddress(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
+      if (updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
         body = &r_body;
       }
       else {
@@ -791,7 +801,7 @@ int AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
       (orig.method == SIP_METH_INVITE || orig.method == SIP_METH_UPDATE ||
        orig.method == SIP_METH_ACK || orig.method == SIP_METH_PRACK)) {
     body = reply.body.hasContentType(SIP_APPLICATION_SDP);
-    if (body && replaceConnectionAddress(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
+    if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
       body = &r_body;
     }
     else {
@@ -1200,7 +1210,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
     if (rtp_relay_mode == RTP_Relay) {
       try {
 	body = co_ev->body.hasContentType(SIP_APPLICATION_SDP);
-	if (replaceConnectionAddress(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
+	if (updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
 	  body = &r_body;
 	}
 	else {
