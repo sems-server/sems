@@ -226,10 +226,11 @@ void AmB2BMedia::clearRTPTimeout()
 
 void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const string &relay_address) 
 {
+  static const string void_addr("0.0.0.0");
   mutex.lock();
 
   // place relay_address in connection address
-  if (!parser_sdp.conn.address.empty()) {
+  if (!parser_sdp.conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
     parser_sdp.conn.address = relay_address;
     DBG("new connection address: %s",parser_sdp.conn.address.c_str());
   }
@@ -245,7 +246,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
     if (it->type != MT_AUDIO) continue;
 
     if(it->port) { // if stream active
-      if (!it->conn.address.empty()) {
+      if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
         it->conn.address = relay_address;
         DBG("new stream connection address: %s",it->conn.address.c_str());
       }
