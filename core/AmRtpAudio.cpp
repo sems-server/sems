@@ -155,7 +155,7 @@ int AmRtpAudio::receive(unsigned long long system_ts)
   unsigned int rtp_ts;
   int new_payload = -1;
 
-  if(!fmt.get()) {
+  if(!fmt.get() || (!playout_buffer.get())) {
     DBG("audio format not initialized\n");
     return RTP_ERROR;
   }
