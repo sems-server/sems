@@ -59,6 +59,29 @@ FCTMF_SUITE_BGN(test_headers) {
       fct_chk(get_header_keyvalue("u=sayer;d=iptel.org;p=abcdef", "d") == "iptel.org");
     } FCT_TEST_END();
 
+
+    FCT_TEST_BGN(getHeader_allow) {
+      fct_chk(getHeader("Subject: Performance Test\n"
+			"Allow: INVITE,ACK,OPTIONS,CANCEL,BYE,UPDATE,PRACK,INFO,SUBSCRIBE,NOTIFY,REFER,MESSAGE,PUBLISH", "Allow") == "INVITE,ACK,OPTIONS,CANCEL,BYE,UPDATE,PRACK,INFO,SUBSCRIBE,NOTIFY,REFER,MESSAGE,PUBLISH");
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(getHeader_allow_substr) {
+      fct_chk(getHeader("Subject: Performance Test\n"
+			"Allow-Events: telephone-event,refer\n"
+			"Allow: INVITE,ACK,OPTIONS,CANCEL,BYE,UPDATE,PRACK,INFO,SUBSCRIBE,NOTIFY,REFER,MESSAGE,PUBLISH", "Allow") == "INVITE,ACK,OPTIONS,CANCEL,BYE,UPDATE,PRACK,INFO,SUBSCRIBE,NOTIFY,REFER,MESSAGE,PUBLISH");
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(getHeader_allow3) {
+      fct_chk(getHeader("Subject: Performance Test\n"
+			"Allow  : INVITE,ACK,OPTIONS,CANCEL,BYE,UPDATE,PRACK,INFO,SUBSCRIBE,NOTIFY,REFER,MESSAGE,PUBLISH", "Allow") == "INVITE,ACK,OPTIONS,CANCEL,BYE,UPDATE,PRACK,INFO,SUBSCRIBE,NOTIFY,REFER,MESSAGE,PUBLISH");
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(getHeader_allow4) {
+      fct_chk(getHeader("Subject: Performance Test\n"
+			"Allow-Events : telephone-event,refer\n"
+			"Allow  : INVITE,ACK,OPTIONS,CANCEL,BYE,UPDATE,PRACK,INFO,SUBSCRIBE,NOTIFY,REFER,MESSAGE,PUBLISH", "Allow") == "INVITE,ACK,OPTIONS,CANCEL,BYE,UPDATE,PRACK,INFO,SUBSCRIBE,NOTIFY,REFER,MESSAGE,PUBLISH");
+    } FCT_TEST_END();
+
     FCT_TEST_BGN(addOptionTag) {
       string hdrs =
 	"Supported: timer" CRLF

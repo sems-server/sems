@@ -66,8 +66,16 @@ bool findHeader(const string& hdrs,const string& hdr_name, const size_t skip,
       hdrs_c++;
     }
 
-    if(hdr_c == hdr_end)
-      break;
+    if(hdr_c == hdr_end) {
+      // matched whole of needle.
+      // ...all of current header?
+      const char* srccol = hdrs_c;
+      while (*srccol==' ' || *srccol=='\t')
+	srccol++;
+      if (*srccol == ':')
+	break; // was end of current hdr
+      // current hdr just starts with hdr, continue search
+    }
 
     while((hdrs_c != hdrs_end) && (*hdrs_c != '\n'))
       hdrs_c++;
