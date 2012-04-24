@@ -805,8 +805,11 @@ static bool read(const std::string &src, vector<SdpPayload> &codecs)
 	    p.encoding_name.c_str(), p.clock_rate);
     }
     else {
-      p.int_pt = payload_id;
-      p.payload_type = payload->payload_id;
+      if(payload_id < DYNAMIC_PAYLOAD_TYPE_START)
+	p.payload_type = payload->payload_id;
+      else
+	p.payload_type = -1;
+
       codecs.push_back(p);
     }
   }
