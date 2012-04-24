@@ -53,9 +53,9 @@ enum NetworkType { NT_OTHER=0, NT_IN };
 /** address type */
 enum AddressType { AT_NONE=0, AT_V4, AT_V6 }; 
 /** media type */
-enum MediaType { MT_NONE=0, MT_AUDIO, MT_VIDEO, MT_APPLICATION, MT_TEXT, MT_MESSAGE };
+enum MediaType { MT_NONE=0, MT_AUDIO, MT_VIDEO, MT_APPLICATION, MT_TEXT, MT_MESSAGE, MT_IMAGE };
 /** transport protocol */
-enum TransProt { TP_NONE=0, TP_RTPAVP, TP_UDP, TP_RTPSAVP };
+enum TransProt { TP_NONE=0, TP_RTPAVP, TP_UDP, TP_RTPSAVP, TP_UDPTL };
 
 /** \brief c=... line in SDP*/
 struct SdpConnection
@@ -167,7 +167,8 @@ struct SdpMedia
   enum Direction {
     DirBoth=0,
     DirActive=1,
-    DirPassive=2
+    DirPassive=2,
+    DirUndefined=3
   };
 
   int           type;
@@ -176,6 +177,7 @@ struct SdpMedia
   int           transport;
   SdpConnection conn; // c=
   Direction     dir;  // a=direction
+  string        fmt;  // format in case proto != RTP/AVP or RTP/SAVP
 
   // sendrecv|sendonly|recvonly|inactive
   bool          send;
@@ -187,7 +189,7 @@ struct SdpMedia
 
   bool operator == (const SdpMedia& other) const;
 
-  SdpMedia() : conn(),send(true),recv(true) {}
+  SdpMedia() : conn(), dir(DirUndefined), type(MT_NONE), transport(TP_NONE), send(true), recv(true) {}
 
   /** pretty print */
   string debugPrint() const;
