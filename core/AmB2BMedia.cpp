@@ -2,6 +2,7 @@
 #include "AmAudio.h"
 #include "amci/codecs.h"
 #include <string.h>
+#include <strings.h>
 #include "AmB2BSession.h"
 #include "AmRtpReceiver.h"
 
@@ -195,11 +196,13 @@ void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other)
     PayloadMask mask;
 
     // walk through the media line and add all payload IDs to the bit mask
-    for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin(); 
+    for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin();
         i != m.payloads.end(); ++i) 
     {
-      mask.set(i->payload_type);
-      TRACE("marking payload %d for relay\n", i->payload_type);
+      if(strcasecmp("telephone-event",i->encoding_name.c_str()) != 0){
+	mask.set(i->payload_type);
+	TRACE("marking payload %d for relay\n", i->payload_type);
+      }
     }
 
     stream->enableRtpRelay(mask, other);

@@ -321,8 +321,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
     return RTP_EMPTY;
   }
 
-  if (local_telephone_event_pt.get() &&
-      rp->payload == local_telephone_event_pt->payload_type)
+  if (rp->payload == getLocalTelephoneEventPT())
     {
       dtmf_payload_t* dpl = (dtmf_payload_t*)rp->getData();
 
@@ -709,8 +708,8 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   memcpy(&last_recv_time, &p->recv_time, sizeof(struct timeval));
 
   if (!receiving && !passive) {
-    if (force_receive_dtmf && local_telephone_event_pt.get() &&
-        p->payload == local_telephone_event_pt->payload_type)
+    if (force_receive_dtmf &&
+        p->payload == getLocalTelephoneEventPT())
     {
       dtmf_payload_t* dpl = (dtmf_payload_t*)p->getData();
 
@@ -723,7 +722,12 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   }
 
   if (relay_enabled) {
-    if (relay_payloads.get(p->payload)) {
+    // Relay DTMF packets if current audio payload
+    // is also relayed.
+    // Else, check whether or not we should relay this payload
+    if ((p->payload == getLocalTelephoneEventPT() &&
+	 !active) || relay_payloads.get(p->payload)) {
+
       if(active){
 	DBG("switching to relay-mode\t(ts=%u;stream=%p)\n",
 	    p->timestamp,this);
@@ -740,13 +744,13 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   }
 
   receive_mut.lock();
+  // NOTE: useless, as DTMF events are pushed into 'rtp_ev_qu'
   // free packet on double packet for TS received
-  if(!(local_telephone_event_pt.get() &&
-       (p->payload == local_telephone_event_pt->payload_type))) {
-    if (receive_buf.find(p->timestamp) != receive_buf.end()) {
-      mem.freePacket(receive_buf[p->timestamp]);
-    }
-  }  
+  // if(p->payload == getLocalTelephoneEventPT()) {
+  //   if (receive_buf.find(p->timestamp) != receive_buf.end()) {
+  //     mem.freePacket(receive_buf[p->timestamp]);
+  //   }
+  // }  
 
 #ifdef WITH_ZRTP
   if (session->zrtp_audio) {
@@ -764,8 +768,7 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 	  ERROR("parsing decoded packet!\n");
 	  mem.freePacket(p);
 	} else {
-          if(local_telephone_event_pt.get() && 
-	     (p->payload == local_telephone_event_pt->payload_type)) {
+          if(p->payload == getLocalTelephoneEventPT()) {
             rtp_ev_qu.push(p);
           } else {
 	    receive_buf[p->timestamp] = p;
@@ -794,8 +797,7 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
   } else {
 #endif // WITH_ZRTP
 
-    if(local_telephone_event_pt.get() &&
-       (p->payload == local_telephone_event_pt->payload_type)) {
+    if(p->payload == getLocalTelephoneEventPT()) {
       rtp_ev_qu.push(p);
     } else {
       receive_buf[p->timestamp] = p;
@@ -923,6 +925,13 @@ int AmRtpStream::getLocalTelephoneEventRate()
   if (local_telephone_event_pt.get())
     return local_telephone_event_pt->clock_rate;
   return 0;
+}
+
+int AmRtpStream::getLocalTelephoneEventPT()
+{
+  if(local_telephone_event_pt.get())
+    return local_telephone_event_pt->payload_type;
+  return -1;
 }
 
 void AmRtpStream::setPayloadProvider(AmPayloadProvider* pl_prov)

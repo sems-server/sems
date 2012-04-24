@@ -362,6 +362,7 @@ public:
 
   unsigned int get_ssrc() { return l_ssrc; }
 
+  int getLocalTelephoneEventPT();
   int getLocalTelephoneEventRate();
 
   void setPayloadProvider(AmPayloadProvider* pl_prov);
