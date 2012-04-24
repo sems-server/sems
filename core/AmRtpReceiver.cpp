@@ -149,6 +149,13 @@ void AmRtpReceiverThread::addStream(int sd, AmRtpStream* stream)
 {
   streams_mut.lock();
 
+  if(streams.find(sd) != streams.end()) {
+    ERROR("trying to insert existing stream [%p] with sd=%i\n",
+	  stream,sd);
+    streams_mut.unlock();
+    return;
+  }
+
   if(nfds >= MAX_RTP_SESSIONS){
     streams_mut.unlock();
     ERROR("maximum number of sessions reached (%i)\n",

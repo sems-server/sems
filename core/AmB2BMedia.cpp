@@ -173,14 +173,18 @@ void AudioStreamData::clear()
 
 void AudioStreamData::stopStreamProcessing()
 {
-  if (stream->hasLocalSocket())
+  if (stream->hasLocalSocket()){
+    DBG("remove stream [%p] from RTP receiver\n", stream);
     AmRtpReceiver::instance()->removeStream(stream->getLocalSocket());
+  }
 }
 
 void AudioStreamData::resumeStreamProcessing()
 {
-  if (stream->hasLocalSocket())
+  if (stream->hasLocalSocket()){
+    DBG("resume stream [%p] into RTP receiver\n",stream);
     AmRtpReceiver::instance()->addStream(stream->getLocalSocket(), stream);
+  }
 }
 
 void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other)
