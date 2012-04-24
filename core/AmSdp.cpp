@@ -23,6 +23,9 @@
 using std::string;
 using std::map;
 
+#include <cctype>
+#include <algorithm>
+
 // Not on Solaris!
 #if !defined (__SVR4) && !defined (__sun)
 #include "strings.h"
@@ -42,8 +45,8 @@ static char* parse_until(char* s, char* end, char c);
 static bool contains(char* s, char* next_line, char c);
 static bool is_wsp(char s);
 
-static int media_type(std::string media);
-static int transport_type(std::string transport);
+static MediaType media_type(std::string media);
+static TransProt transport_type(std::string transport);
 static bool attr_check(std::string attr);
 
 enum parse_st {SDP_DESCR, SDP_MEDIA};
@@ -81,6 +84,7 @@ inline string media_t_2_str(int mt)
   case MT_APPLICATION: return "application";
   case MT_TEXT: return "text";
   case MT_MESSAGE: return "message";
+  case MT_IMAGE: return "image";
   default: return "<unknown media type>";
   }
 }
@@ -91,6 +95,7 @@ inline string transport_p_2_str(int tp)
   case TP_RTPAVP: return "RTP/AVP";
   case TP_UDP: return "udp";
   case TP_RTPSAVP: return "RTP/SAVP";
+  case TP_UDPTL: return "udptl";
   default: return "<unknown media type>";
   }
 }
@@ -205,9 +210,10 @@ void AmSdp::print(string& body) const
       
       out_buf += "m=" + media_t_2_str(media_it->type) + " " + int2str(media_it->port) + " " + transport_p_2_str(media_it->transport);
 
-      string options;
-      for(std::vector<SdpPayload>::const_iterator pl_it = media_it->payloads.begin();
-	  pl_it != media_it->payloads.end(); pl_it++) {
+      if (media_it->transport == TP_RTPAVP || media_it->transport == TP_RTPSAVP) {
+	string options;
+	for(std::vector<SdpPayload>::const_iterator pl_it = media_it->payloads.begin();
+	    pl_it != media_it->payloads.end(); pl_it++) {
 
 	  out_buf += " " + int2str(pl_it->payload_type);
 
@@ -215,30 +221,32 @@ void AmSdp::print(string& body) const
 	    options += "c=IN IP4 "+media_it->conn.address+"\r\n";
 
 	  if (pl_it->encoding_name.empty()) // don't add rtpmap if no encoding name given
-	      continue;
+	    continue;
 
 	  // "a=rtpmap:" line	  
 	  options += "a=rtpmap:" + int2str(pl_it->payload_type) + " " 
-	      + pl_it->encoding_name + "/" + int2str(pl_it->clock_rate);
+	    + pl_it->encoding_name + "/" + int2str(pl_it->clock_rate);
 
 	  if(pl_it->encoding_param > 0){
-	      options += "/" + int2str(pl_it->encoding_param);
+	    options += "/" + int2str(pl_it->encoding_param);
 	  }
 
 	  options += "\r\n";
 	  
 	  // "a=fmtp:" line
 	  if(pl_it->sdp_format_parameters.size()){
-	      options += "a=fmtp:" + int2str(pl_it->payload_type) + " "
-		  + pl_it->sdp_format_parameters + "\r\n";
+	    options += "a=fmtp:" + int2str(pl_it->payload_type) + " "
+	      + pl_it->sdp_format_parameters + "\r\n";
 	  }
 	  
+	}
+
+	out_buf += "\r\n" + options;
+
+      } else {
+	// for other transports (UDP/UDPTL) just print out fmt
+	out_buf += " " + media_it->fmt + "\r\n";
       }
-
-      out_buf += "\r\n" + options;
-
-      if(remote_active /* dir == SdpMedia::DirActive */)
-	  out_buf += "a=direction:passive\r\n";
 
       // add attributes (media level)
       for (std::vector<SdpAttribute>::const_iterator a_it=
@@ -246,6 +254,12 @@ void AmSdp::print(string& body) const
 	out_buf += a_it->print();
       }
 
+      switch (media_it->dir) {
+      case SdpMedia::DirActive:  out_buf += "a=direction:active\r\n"; break;
+      case SdpMedia::DirPassive: out_buf += "a=direction:passive\r\n"; break;
+      case SdpMedia::DirBoth:  out_buf += "a=direction:both\r\n"; break;
+      case SdpMedia::DirUndefined: break;
+      }
   }
 
   body = out_buf;
@@ -742,7 +756,6 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
   SdpPayload payload;
   unsigned int payload_type;
   DBG("parse_sdp_line_ex: parse_sdp_media: parsing media description...\n");
-  m.dir = SdpMedia::DirBoth;
 
   while(parsing){
     switch(state){
@@ -753,7 +766,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       if (next > media_line)
 	media = string(media_line, int(next-media_line)-1);
       m.type = media_type(media);
-      if(m.type < 0) {
+      if(m.type == MT_NONE) {
 	ERROR("parse_sdp_media: Unknown media type\n");
       }
       media_line = next;
@@ -802,7 +815,7 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
 	//   break;
 	// }
 	m.transport = transport_type(proto);
-	if(m.transport < 0){
+	if(m.transport == TP_NONE){
 	  DBG("Unknown transport protocol: %s\n",proto.c_str());
 	}
 	media_line = next;
@@ -811,41 +824,49 @@ static void parse_sdp_media(AmSdp* sdp_msg, char* s)
       }
     case FMT:
       {
-	if (contains(media_line, line_end, ' ')) {
-	  next = parse_until(media_line, ' ');
-	  string value;
-	  if (next > media_line)
-	    value = string(media_line, int(next-media_line)-1);
+	if (m.transport == TP_RTPAVP || m.transport == TP_RTPSAVP) {
+	  if (contains(media_line, line_end, ' ')) {
+	    next = parse_until(media_line, ' ');
+	    string value;
+	    if (next > media_line)
+	      value = string(media_line, int(next-media_line)-1);
 
-	  if (!value.empty()) {
-	    payload.type = m.type;
-	    str2i(value, payload_type);
-	    payload.payload_type = payload_type;
-	    m.payloads.push_back(payload);
-	  }
-
-	  media_line = next;
-	  state = FMT;
-	} else {
-	  string last_value;
-	  if (line_end>media_line) {
-	    if (*line_end == '\0') {
-	      // last line in message
-	      last_value = string(media_line, int(line_end-media_line));
-	    } else {
-	      last_value = string(media_line, int(line_end-media_line)-1);
+	    if (!value.empty()) {
+	      payload.type = m.type;
+	      str2i(value, payload_type);
+	      payload.payload_type = payload_type;
+	      m.payloads.push_back(payload);
 	    }
+	    media_line = next;
+	  } else {
+	    string last_value;
+	    if (line_end>media_line) {
+	      if (*line_end == '\0') {
+		// last line in message
+		last_value = string(media_line, int(line_end-media_line));
+	      } else {
+		last_value = string(media_line, int(line_end-media_line)-1);
+	      }
+	    }
+	    if (!last_value.empty()) {
+	      payload.type = m.type;
+	      str2i(last_value, payload_type);
+	      payload.payload_type = payload_type;
+	      m.payloads.push_back(payload);
+	    }
+	    parsing = 0;
 	  }
-	  if (!last_value.empty()) {
-	    payload.type = m.type;
-	    str2i(last_value, payload_type);
-	    payload.payload_type = payload_type;
-	    m.payloads.push_back(payload);
-	  }
+	} else {
+	  line_end--;
+	  while (line_end > media_line &&
+		 (*line_end == '\r' || *line_end == '\n'))
+	    line_end--;
+	  if (line_end>media_line)
+	    m.fmt = string(media_line, line_end-media_line+1);
+	  DBG("set media fmt to '%s'\n", m.fmt.c_str());
 	  parsing = 0;
 	}
-	break;
-      }
+      } break;
     }
   }
   sdp_msg->media.push_back(m);
@@ -1278,32 +1299,39 @@ inline char* get_next_line(char* s)
 /*
  *Check if known media type is used
  */
-static int media_type(std::string media)
+static MediaType media_type(std::string media)
 {
   if(media == "audio")
-    return 1;
+    return MT_AUDIO;
   else if(media == "video")
-    return 2;
+    return MT_VIDEO;
   else if(media == "application")
-    return 3;
+    return MT_APPLICATION;
   else if(media == "text")
-    return 4;
+    return MT_TEXT;
   else if(media == "message")
-    return 5;
+    return MT_MESSAGE;
+  else if(media == "image")
+    return MT_IMAGE;
   else 
-    return -1;
+    return MT_NONE;
 }
 
-static int transport_type(std::string transport)
+static TransProt transport_type(string transport)
 {
-  if(transport == "RTP/AVP")
-    return 1;
-  else if(transport == "UDP")
-    return 2;
-  else if(transport == "RTP/SAVP")
-    return 3;
+  string transport_uc = transport;
+  std::transform(transport_uc.begin(), transport_uc.end(), transport_uc.begin(), toupper);
+
+  if(transport_uc == "RTP/AVP")
+    return TP_RTPAVP;
+  else if(transport_uc == "UDP")
+    return TP_UDP;
+  else if(transport_uc == "RTP/SAVP")
+    return TP_RTPSAVP;
+  else if(transport_uc == "UDPTL")
+    return TP_UDPTL;
   else 
-    return -1;
+    return TP_NONE;
 }
 
 /*
