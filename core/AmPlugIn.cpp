@@ -682,14 +682,14 @@ int AmPlugIn::addPayload(amci_payload_t* p)
       ERROR("payload id (%i) already supported\n",p->payload_id);
       return -1;
     }
-    payloads.insert(std::make_pair(p->payload_id,p));
-    id = p->payload_id;
   }
   else {
-    payloads.insert(std::make_pair(dynamic_pl,p));
-    id = dynamic_pl;
+    p->payload_id = dynamic_pl;
     dynamic_pl++;
   }
+
+  payloads.insert(std::make_pair(p->payload_id,p));
+  id = p->payload_id;
 
   for (i = 0; i < AmConfig::CodecOrder.size(); i++) {
       if (p->name == AmConfig::CodecOrder[i]) break;
