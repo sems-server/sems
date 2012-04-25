@@ -629,6 +629,7 @@ void SBCFactory::invoke(const string& method, const AmArg& args,
     ret.push(AmArg("setRegexMap"));
     ret.push(AmArg("loadCallcontrolModules"));
     ret.push(AmArg("postControlCmd"));
+    ret.push(AmArg("printCallStats"));
   } else if(method == "printCallStats"){ 
     B2BMediaStatistics::instance()->getReport(args, ret);
   }  else

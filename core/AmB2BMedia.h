@@ -20,6 +20,7 @@ class B2BMediaStatistics
 
   public:
     void reportCodecWriteUsage(string &dst);
+    void reportCodecReadUsage(string &dst);
     void getReport(const AmArg &args, AmArg &ret);
 
     static B2BMediaStatistics *instance();

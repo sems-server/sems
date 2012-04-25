@@ -187,6 +187,9 @@ struct AmConfig
   static unsigned int ShutdownModeErrCode;
   static string ShutdownModeErrReason;
 
+  static string OptionsTranscoderOutStatsHdr;
+  static string OptionsTranscoderInStatsHdr;
+
   static Am100rel::State rel100;
 
   /** Time of no RTP after which Session is regarded as dead, 0 for no Timeout */

@@ -107,6 +107,9 @@ bool         AmConfig::AcceptForkedDialogs     = true;
 bool         AmConfig::ShutdownMode            = false;
 unsigned int AmConfig::ShutdownModeErrCode     = 503;
 string       AmConfig::ShutdownModeErrReason   = "Server shutting down";
+  
+string AmConfig::OptionsTranscoderOutStatsHdr; // empty by default
+string AmConfig::OptionsTranscoderInStatsHdr; // empty by default
 
 Am100rel::State AmConfig::rel100 = Am100rel::REL100_SUPPORTED;
 
@@ -568,6 +571,9 @@ int AmConfig::readConfiguration()
       ShutdownModeErrReason = c_reply.substr(spos+1);
     }
   }
+
+  OptionsTranscoderOutStatsHdr = cfg.getParameter("options_transcoder_out_stats_hdr");
+  OptionsTranscoderInStatsHdr = cfg.getParameter("options_transcoder_in_stats_hdr");
 
   if (cfg.hasParameter("100rel")) {
     string rel100s = cfg.getParameter("100rel");

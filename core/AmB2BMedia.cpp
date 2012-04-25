@@ -65,10 +65,35 @@ B2BMediaStatistics *B2BMediaStatistics::instance()
     
 void B2BMediaStatistics::reportCodecWriteUsage(string &dst)
 {
+  if (codec_write_usage.empty()) {
+    dst = "pcma=0"; // to be not empty
+    return;
+  }
+
   bool first = true;
   dst.clear();
   for (map<string, int>::iterator i = codec_write_usage.begin();
       i != codec_write_usage.end(); ++i) 
+  {
+    if (first) first = false;
+    else dst += ",";
+    dst += i->first;
+    dst += "=";
+    dst += int2str(i->second);
+  }
+}
+
+void B2BMediaStatistics::reportCodecReadUsage(string &dst)
+{
+  if (codec_read_usage.empty()) {
+    dst = "pcma=0"; // to be not empty
+    return;
+  }
+
+  bool first = true;
+  dst.clear();
+  for (map<string, int>::iterator i = codec_read_usage.begin();
+      i != codec_read_usage.end(); ++i) 
   {
     if (first) first = false;
     else dst += ",";

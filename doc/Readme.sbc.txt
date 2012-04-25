@@ -455,6 +455,25 @@ Transcoding related call profile options:
     If this parameter is set to something else, transcoder codecs are added BEFORE
     ordering using codec_preference_aleg is done and thus may become preferred ones.
 
+Transcoder statistics can be checked via "printCallStats" SBC DI method or can
+be put into additional headers within reply generated to OPTIONS request. To
+achive that set global options: options_transcoder_out_stats_hdr and
+options_transcoder_in_stats_hdr. 
+
+  With this settings:
+
+    options_transcoder_out_stats_hdr=P-Transcoder-Stats-Out
+    options_transcoder_in_stats_hdr=P-Transcoder-Stats-In
+
+  the OPTIONS reply will contain these headers with statistics:
+
+    P-Transcoder-Stats-In: pcma=1,pcmu=0,speex=1
+    P-Transcoder-Stats-Out: pcma=1,pcmu=0,speex=1
+
+The statistics are separated for codecs used for reading (data are read using
+that codecs) and for codecs used for writing (data are sent using that codecs).
+Note that relaying can be active in one direction and transcoding in the other
+so the in/out (read/write) numbers need not to match.
 
 Warning: 
  - currently only audio streams are relayed through or transcoded
@@ -466,7 +485,10 @@ Warning:
  - handling of "on hold" streams when transcoding is in use can cause RTP media
    send in hold state (sendonly stream) though they need not to be sent (caused
    by buffering strategy)
-
+ - the statistics are just approximation of real situation because multiple
+   codecs can be used in one stream at the same time but only one (the last used
+   one) is reported
+   
 Adding headers
 --------------
 Additional headers can be added to the outgoing initial INVITE by using the
@@ -697,7 +719,7 @@ x session timers
 x maximum call duration timer
 - accounting (MySQL DB, cassandra DB)
 x RTP forwarding mode (bridging)
-- RTP transcoding mode (bridging)
+x RTP transcoding mode (bridging)
 - overload handling (parallel call to target thresholds)
 - call distribution
 - select profile on monitoring in-mem DB record

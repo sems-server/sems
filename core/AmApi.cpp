@@ -29,6 +29,7 @@
 #include "AmApi.h"
 #include "log.h"
 #include "AmSession.h"
+#include "AmB2BMedia.h" // just because of statistics in reply to OPTIONS
 
 AmDynInvoke::AmDynInvoke() {}
 AmDynInvoke::~AmDynInvoke() {}
@@ -78,6 +79,23 @@ void AmSessionFactory::configureSession(AmSession* sess) {
 
 void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
 {
+  string hdrs;
+  if (!AmConfig::OptionsTranscoderInStatsHdr.empty()) {
+    string usage;
+    B2BMediaStatistics::instance()->reportCodecReadUsage(usage);
+
+    hdrs += AmConfig::OptionsTranscoderInStatsHdr + ": ";
+    hdrs += usage;
+    hdrs += CRLF;
+  }
+  if (!AmConfig::OptionsTranscoderOutStatsHdr.empty()) {
+    string usage;
+    B2BMediaStatistics::instance()->reportCodecWriteUsage(usage);
+
+    hdrs += AmConfig::OptionsTranscoderOutStatsHdr + ": ";
+    hdrs += usage;
+    hdrs += CRLF;
+  }
 
   if (req.method == "OPTIONS") {
     // Basic OPTIONS support
@@ -85,20 +103,22 @@ void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
 	(AmSession::getSessionNum() >= AmConfig::OptionsSessionLimit)) {
       // return error code if near to overload
       AmSipDialog::reply_error(req,
-			       AmConfig::OptionsSessionLimitErrCode, 
-			       AmConfig::OptionsSessionLimitErrReason);
+          AmConfig::OptionsSessionLimitErrCode, 
+          AmConfig::OptionsSessionLimitErrReason,
+          hdrs);
       return;
     }
 
     if (AmConfig::ShutdownMode) {
       // return error code if in shutdown mode
       AmSipDialog::reply_error(req,
-			       AmConfig::ShutdownModeErrCode,
-			       AmConfig::ShutdownModeErrReason);
+          AmConfig::ShutdownModeErrCode,
+          AmConfig::ShutdownModeErrReason,
+          hdrs);
       return;
     }
 
-    AmSipDialog::reply_error(req, 200, "OK");
+    AmSipDialog::reply_error(req, 200, "OK", hdrs);
     return;
   }
 
