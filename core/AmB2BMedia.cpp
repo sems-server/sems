@@ -35,6 +35,29 @@ void B2BMediaStatistics::decCodecWriteUsage(const string &codec_name)
   mutex.unlock();
 }
 
+void B2BMediaStatistics::incCodecReadUsage(const string &codec_name)
+{
+  if (codec_name.empty()) return;
+
+  mutex.lock();
+  map<string, int>::iterator i = codec_read_usage.find(codec_name);
+  if (i != codec_read_usage.end()) i->second++;
+  else codec_read_usage[codec_name] = 1;
+  mutex.unlock();
+}
+
+void B2BMediaStatistics::decCodecReadUsage(const string &codec_name)
+{
+  if (codec_name.empty()) return;
+
+  mutex.lock();
+  map<string, int>::iterator i = codec_read_usage.find(codec_name);
+  if (i != codec_read_usage.end()) {
+    if (i->second > 0) i->second--;
+  }
+  mutex.unlock();
+}
+
 B2BMediaStatistics *B2BMediaStatistics::instance()
 {
   return &b2b_stats;
@@ -67,6 +90,17 @@ void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
     write_usage.push(avp);
   }
   ret["write"] = write_usage;
+  
+  AmArg read_usage;
+  for (map<string, int>::iterator i = codec_read_usage.begin();
+      i != codec_read_usage.end(); ++i) 
+  {
+    AmArg avp;
+    avp["codec"] = i->first;
+    avp["count"] = i->second;
+    read_usage.push(avp);
+  }
+  ret["read"] = read_usage;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -205,9 +239,14 @@ void AudioStreamData::resetStats()
     outgoing_payload = UNDEFINED_PAYLOAD;
     outgoing_payload_name.clear();
   }
+  if (incoming_payload != UNDEFINED_PAYLOAD) {
+    b2b_stats.decCodecReadUsage(incoming_payload_name);
+    incoming_payload = UNDEFINED_PAYLOAD;
+    incoming_payload_name.clear();
+  }
 }
 
-void AudioStreamData::updateStats()
+void AudioStreamData::updateSendStats()
 {
   if (!initialized) {
     resetStats();
@@ -224,13 +263,40 @@ void AudioStreamData::updateStats()
     
     if (payload != UNDEFINED_PAYLOAD) {
       // remember payload name (in lowercase to simulate case insensitivity)
-      outgoing_payload_name = stream->getPayloadName();
+      outgoing_payload_name = stream->getPayloadName(payload);
       transform(outgoing_payload_name.begin(), outgoing_payload_name.end(), 
           outgoing_payload_name.begin(), ::tolower);
       b2b_stats.incCodecWriteUsage(outgoing_payload_name);
     }
     else outgoing_payload_name.clear();
     outgoing_payload = payload;
+  }
+}
+
+void AudioStreamData::updateRecvStats(AmRtpStream *s)
+{
+  if (!initialized) {
+    resetStats();
+    return;
+  }
+
+  int payload = s->getLastPayload();
+  if (payload != incoming_payload) { 
+    // payload used to send has changed
+
+    // decrement usage of previous payload if set
+    if (incoming_payload != UNDEFINED_PAYLOAD) 
+      b2b_stats.decCodecReadUsage(incoming_payload_name);
+    
+    if (payload != UNDEFINED_PAYLOAD) {
+      // remember payload name (in lowercase to simulate case insensitivity)
+      incoming_payload_name = stream->getPayloadName(payload);
+      transform(incoming_payload_name.begin(), incoming_payload_name.end(), 
+          incoming_payload_name.begin(), ::tolower);
+      b2b_stats.incCodecReadUsage(incoming_payload_name);
+    }
+    else incoming_payload_name.clear();
+    incoming_payload = payload;
   }
 }
 
@@ -249,14 +315,16 @@ int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, A
       AmRtpAudio *src_stream = src.getStream();
       if (src_stream->checkInterval(ts)) {
         got = src_stream->get(ts, buffer, sample_rate, f_size);
-        if ((got > 0) && dtmf_queue) 
-          dtmf_queue->putDtmfAudio(buffer, got, ts);
+        if (got > 0) {
+          updateRecvStats(src_stream);
+          if (dtmf_queue) dtmf_queue->putDtmfAudio(buffer, got, ts);
+        }
       }
     }
     if (got < 0) return -1;
     if (got > 0) {
       // we have data to be sent
-      updateStats();
+      updateSendStats();
       return stream->put(ts, buffer, sample_rate, got);
     }
   }

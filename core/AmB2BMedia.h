@@ -15,6 +15,7 @@ class B2BMediaStatistics
 {
   private:
     std::map<string, int> codec_write_usage;
+    std::map<string, int> codec_read_usage;
     AmMutex mutex;
 
   public:
@@ -24,6 +25,8 @@ class B2BMediaStatistics
     static B2BMediaStatistics *instance();
     void incCodecWriteUsage(const string &codec_name);
     void decCodecWriteUsage(const string &codec_name);
+    void incCodecReadUsage(const string &codec_name);
+    void decCodecReadUsage(const string &codec_name);
 };
 
 /** \brief Storage for several data items required to be held with one RTP
@@ -60,8 +63,11 @@ class AudioStreamData {
 
     // for performance monitoring
     int outgoing_payload;
+    int incoming_payload;
     string outgoing_payload_name;
-    void updateStats();
+    string incoming_payload_name;
+    void updateSendStats();
+    void updateRecvStats(AmRtpStream *s);
     void resetStats();
 
   public:

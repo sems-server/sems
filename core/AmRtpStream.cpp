@@ -966,12 +966,12 @@ void AmRtpStream::setRtpRelayTransparentSSRC(bool transparent) {
   relay_transparent_ssrc = transparent;
 }
 
-string AmRtpStream::getPayloadName()
+string AmRtpStream::getPayloadName(int payload_type)
 {
   for(PayloadCollection::iterator it = payloads.begin();
       it != payloads.end(); ++it){
 
-    if (it->pt == payload) return it->name;
+    if (it->pt == payload_type) return it->name;
   }
 
   return string("");
