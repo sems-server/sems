@@ -203,7 +203,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       dstcfg.setParameter(cfgkey, SBCFactory::cfg.getParameter(cfgkey)); \
     }
 
-  if (sst_enabled != "no") {
+  if (sst_enabled.size() && sst_enabled != "no") {
     if (NULL == SBCFactory::session_timer_fact) {
       ERROR("session_timer module not loaded thus SST not supported, but "
 	    "required for profile '%s' (%s)\n", name.c_str(), profile_file_name.c_str());
@@ -219,7 +219,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     CP_SST_CFGVAR("", "accept_501_reply", sst_b_cfg);
   }
 
-  if (sst_aleg_enabled != "no") {
+  if (sst_aleg_enabled.size() && sst_aleg_enabled != "no") {
     sst_a_cfg.setParameter("enable_session_timer", "yes");
     // create sst_a_cfg superimposing values from aleg_*
     CP_SST_CFGVAR("aleg_", "session_expires", sst_a_cfg);
@@ -423,7 +423,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
     INFO("SBC:      SST on A leg enabled: '%s'\n", sst_aleg_enabled.empty() ?
 	 "no" : sst_aleg_enabled.c_str());
-    if (sst_aleg_enabled != "no") {
+    if (sst_aleg_enabled.size() && sst_aleg_enabled != "no") {
       INFO("SBC:              session_expires=%s\n",
 	   sst_a_cfg.getParameter("session_expires").c_str());
       INFO("SBC:              minimum_timer=%s\n",
@@ -437,7 +437,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     }
     INFO("SBC:      SST on B leg enabled: '%s'\n", sst_enabled.empty() ?
 	 "no" : sst_enabled.c_str());
-    if (sst_enabled != "no") {
+    if (sst_enabled.size() && sst_enabled != "no") {
       INFO("SBC:              session_expires=%s\n",
 	   sst_b_cfg.getParameter("session_expires").c_str());
       INFO("SBC:              minimum_timer=%s\n",
