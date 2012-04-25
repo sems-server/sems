@@ -110,6 +110,8 @@ string       AmConfig::ShutdownModeErrReason   = "Server shutting down";
   
 string AmConfig::OptionsTranscoderOutStatsHdr; // empty by default
 string AmConfig::OptionsTranscoderInStatsHdr; // empty by default
+string AmConfig::TranscoderOutStatsHdr; // empty by default
+string AmConfig::TranscoderInStatsHdr; // empty by default
 
 Am100rel::State AmConfig::rel100 = Am100rel::REL100_SUPPORTED;
 
@@ -574,6 +576,8 @@ int AmConfig::readConfiguration()
 
   OptionsTranscoderOutStatsHdr = cfg.getParameter("options_transcoder_out_stats_hdr");
   OptionsTranscoderInStatsHdr = cfg.getParameter("options_transcoder_in_stats_hdr");
+  TranscoderOutStatsHdr = cfg.getParameter("transcoder_out_stats_hdr");
+  TranscoderInStatsHdr = cfg.getParameter("transcoder_in_stats_hdr");
 
   if (cfg.hasParameter("100rel")) {
     string rel100s = cfg.getParameter("100rel");

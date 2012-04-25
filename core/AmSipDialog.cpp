@@ -37,6 +37,29 @@
 #include "sip/parse_uri.h"
 #include "sip/parse_next_hop.h"
 
+#include "AmB2BMedia.h" // just because of statistics
+
+static void addTranscoderStats(string &hdrs)
+{
+  // add transcoder statistics into request/reply headers
+  if (!AmConfig::TranscoderOutStatsHdr.empty()) {
+    string usage;
+    B2BMediaStatistics::instance()->reportCodecWriteUsage(usage);
+
+    hdrs += AmConfig::TranscoderOutStatsHdr + ": ";
+    hdrs += usage;
+    hdrs += CRLF;
+  }
+  if (!AmConfig::TranscoderInStatsHdr.empty()) {
+    string usage;
+    B2BMediaStatistics::instance()->reportCodecReadUsage(usage);
+
+    hdrs += AmConfig::TranscoderInStatsHdr + ": ";
+    hdrs += usage;
+    hdrs += CRLF;
+  }
+}
+
 const char* __dlg_status2str[AmSipDialog::__max_Status]  = {
   "Disconnected",
   "Trying",
@@ -745,6 +768,8 @@ int AmSipDialog::reply(const AmSipTransaction& t,
       reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
   }
 
+  addTranscoderStats(reply.hdrs); // add transcoder statistics into reply headers
+
   if (code < 300 && t.method != "CANCEL" && t.method != "BYE"){
     /* if 300<=code<400, explicit contact setting should be done */
     reply.contact = getContactHdr();
@@ -802,6 +827,8 @@ int AmSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
 
   if (AmConfig::Signature.length())
     reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
+
+  addTranscoderStats(reply.hdrs); // add transcoder statistics into reply headers
 
   int ret = SipCtrlInterface::send(reply);
   if(ret){
@@ -1084,6 +1111,8 @@ int AmSipDialog::sendRequest(const string& method,
     req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) + int2str(AmConfig::MaxForwards) + CRLF;
 
   }
+
+  addTranscoderStats(req.hdrs); // add transcoder statistics into request headers
 
   req.route = getRoute();
 

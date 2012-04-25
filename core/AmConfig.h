@@ -187,8 +187,18 @@ struct AmConfig
   static unsigned int ShutdownModeErrCode;
   static string ShutdownModeErrReason;
 
+  /** header containing the transcoder's outgoing codec statistics which should
+   * be present in replies to OPTIONS requests */
   static string OptionsTranscoderOutStatsHdr;
+  /** header containing the transcoder's incoming codec statistics which should
+   * be present in replies to OPTIONS requests */
   static string OptionsTranscoderInStatsHdr;
+  /** header containing the transcoder's outgoing codec statistics which should
+   * be present in every message leaving server */
+  static string TranscoderOutStatsHdr;
+  /** header containing the transcoder's incoming codec statistics which should
+   * be present in every message leaving server */
+  static string TranscoderInStatsHdr;
 
   static Am100rel::State rel100;
 
