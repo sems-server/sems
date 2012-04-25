@@ -166,8 +166,34 @@ int AmRtpAudio::receive(unsigned long long system_ts)
     size = AmRtpStream::receive((unsigned char*)samples,
 				(unsigned int)AUDIO_BUFFER_SIZE, rtp_ts,
 				new_payload);
-    if(size <= 0)
+    if(size <= 0) {
+
+      switch(size){
+
+      case 0: break;
+	
+      case RTP_DTMF:
+      case RTP_UNKNOWN_PL:
+      case RTP_PARSE_ERROR:
+        continue;
+
+      case RTP_TIMEOUT:
+        //FIXME: postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
+        // post to the session (FIXME: is session always set? seems to be...)
+        session->postEvent(new AmRtpTimeoutEvent());
+        return -1;
+
+      case RTP_BUFFER_SIZE:
+      default:
+        ERROR("AmRtpStream::receive() returned %i\n",size);
+        //FIXME: postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
+        //       or AmMediaProcessor::instance()->clearSession(session);
+        return -1;
+        break;
+      }
+      
       break;
+    }
 
     if (// don't process if we don't need to
 	// ignore CN
@@ -218,35 +244,10 @@ int AmRtpAudio::get(unsigned long long system_ts, unsigned char* buffer,
   if (!(receiving || getPassiveMode())) return 0; // like nothing received
 
   int ret = receive(system_ts);
+  if(ret < 0)
+    return ret; // like nothing received?
+
   if (!active) return 0;
-
-  if(ret < 0){
-    switch(ret){
-
-      case RTP_DTMF:
-      case RTP_UNKNOWN_PL:
-      case RTP_PARSE_ERROR:
-        return 0; // like nothing received
-        break;
-
-      case RTP_TIMEOUT:
-        //FIXME: postRequest(new SchedRequest(AmMediaProcessor::RemoveSession,s));
-        // post to the session (FIXME: is session always set? seems to be...)
-        session->postEvent(new AmRtpTimeoutEvent());
-        return -1;
-        break;
-
-      case RTP_BUFFER_SIZE:
-      default:
-        ERROR("AmRtpAudio::receive() returned %i\n",ret);
-        //FIXME: postRequest(new SchedRequest(AmMediaProcessor::ClearSession,s));
-        //       or AmMediaProcessor::instance()->clearSession(session);
-        return -1;
-        break;
-    }
-
-    return 0; // like nothing received?
-  }
 
   unsigned int user_ts = scaleSystemTS(system_ts);
 
