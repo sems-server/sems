@@ -76,40 +76,41 @@ enum sip_timer_type {
  */
 
 #define T1_TIMER  500 /* 500 ms */
-#define T2_TIMER 4000 /*   4 s  */
+#define DEFAULT_T2_TIMER 4000 /*   4 s  */
 #define T4_TIMER 5000 /*   5 s  */
 
 //type 0x01
-#define A_TIMER  T1_TIMER
+#define DEFAULT_A_TIMER  T1_TIMER
+
 //type 0x02
-#define B_TIMER  64*T1_TIMER
+#define DEFAULT_B_TIMER  64*T1_TIMER
 
 //type 0x0d
-#define C_TIMER  (3*60*1000)
+#define DEFAULT_C_TIMER  (3*60*1000)
 
 //type 0x03
-#define D_TIMER  64*T1_TIMER
+#define DEFAULT_D_TIMER  64*T1_TIMER
 
 //type 0x04
-#define E_TIMER  T1_TIMER
+#define DEFAULT_E_TIMER  T1_TIMER
+
 //type 0x05
-#define F_TIMER  64*T1_TIMER
+#define DEFAULT_F_TIMER  64*T1_TIMER
 
 //type 0x06
-#define K_TIMER  T4_TIMER
-
+#define DEFAULT_K_TIMER  T4_TIMER
 
 //type 0x07
-#define G_TIMER  T1_TIMER
+#define DEFAULT_G_TIMER  T1_TIMER
+
 //type 0x08
-#define H_TIMER  64*T1_TIMER
+#define DEFAULT_H_TIMER  64*T1_TIMER
 
 //type 0x09
-#define I_TIMER  T4_TIMER
+#define DEFAULT_I_TIMER  T4_TIMER
 
 //type 0x0a
-#define J_TIMER  64*T1_TIMER
-
+#define DEFAULT_J_TIMER  64*T1_TIMER
 
 // Following timer values are not defined by
 // RFC 3261.
@@ -117,16 +118,34 @@ enum sip_timer_type {
 // Used to handle 200 ACKs automatically
 // in INVITE client transactions.
 //type 0x0b
-#define L_TIMER  64*T1_TIMER
+#define DEFAULT_L_TIMER  64*T1_TIMER
 
 // Transport address failover timer:
 // - used to cycle throught multiple addresses
 //   in case the R-URI resolves to multiple addresses
 //type 0x0c
-#define M_TIMER  (B_TIMER/4)
+#define DEFAULT_M_TIMER  (DEFAULT_B_TIMER/4)
 
+#define A_TIMER sip_timers['A'-'A']
+#define B_TIMER sip_timers['B'-'A']
+#define C_TIMER sip_timers['C'-'A']
+#define D_TIMER sip_timers['D'-'A']
+#define E_TIMER sip_timers['E'-'A']
+#define F_TIMER sip_timers['F'-'A']
+#define G_TIMER sip_timers['G'-'A']
+#define H_TIMER sip_timers['H'-'A']
+#define I_TIMER sip_timers['I'-'A']
+#define J_TIMER sip_timers['J'-'A']
+#define K_TIMER sip_timers['K'-'A']
+#define L_TIMER sip_timers['L'-'A']
+#define M_TIMER sip_timers['M'-'A']
+
+#define n_sip_timers 'M'-'A'+1
+extern unsigned int sip_timers[n_sip_timers];
 #endif
 
+#define T2_TIMER sip_timer_t2
+extern unsigned int sip_timer_t2;
 
 /** EMACS **
  * Local variables:

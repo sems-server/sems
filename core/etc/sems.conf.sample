@@ -453,6 +453,34 @@ use_default_signature=yes
 #   default settings (i.e. leave out) for these should be OK
 #   for most applications
 
+# SIP timers configuration (in milliseconds)
+#
+# sip_timer_a=<n millisec>
+# sip_timer_b=<n millisec>
+# ...
+# sip_timer_m=<n millisec>
+#
+# timers A to J as in RFC3261.
+# Timer L: handle 200 ACKs automatically in INVITE client trans.
+# Timer M: cycle throught multiple addresses in case the R-URI
+#          resolves to multiple addresses
+#
+# Warning: Timer values are not checked whether they are appropriate!
+#          Leave to default values if in doubt.
+#
+# Example:
+#  # equivalent to fr_timer=20 in sip-router
+#  sip_timer_b=20000
+#  sip_timer_f=20000
+
+# sip_timer_t2=<n millisec)   T2 timer configuration
+#  (Cap for re-send request/response backoff)
+#
+# Warning: Timer values are not checked whether they are appropriate!
+#          Leave to default values if in doubt.
+#
+#sip_timer_t2=4000
+
 # skip DNS SRV lookup? [yes, no]
 #
 # according to RFC, if no port is specified, destination IP address

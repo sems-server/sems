@@ -1729,7 +1729,7 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 
 	n++;
 	tr->msg->send();
-	tr->reset_timer((n<<16) | type, T1_TIMER<<n, bucket->get_id());
+	tr->reset_timer((n<<16) | type, A_TIMER<<n, bucket->get_id());
 	break;
 	
     case STIMER_B:  // Calling: -> Terminated
@@ -1832,7 +1832,7 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	break;
 
     case STIMER_E:  // Trying/Proceeding: (re-)send request
-    case STIMER_G:  // Completed: (re-)send response
+    case STIMER_G:  { // Completed: (re-)send response
 
 	n++; // re-transmission counter
 
@@ -1852,13 +1852,16 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	    tr->msg->send();
 	}
 
-	if(T1_TIMER<<n > T2_TIMER) {
+	unsigned int retr_timer = (type == STIMER_E) ?
+	    E_TIMER << n : G_TIMER << n;
+
+	if(retr_timer<<n > T2_TIMER) {
 	    tr->reset_timer((n<<16) | type, T2_TIMER, bucket->get_id());
 	}
 	else {
-	    tr->reset_timer((n<<16) | type, T1_TIMER<<n, bucket->get_id());
+	    tr->reset_timer((n<<16) | type, retr_timer, bucket->get_id());
 	}
-	break;
+    } break;
 
     case STIMER_M:
 	{
