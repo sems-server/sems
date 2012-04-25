@@ -72,6 +72,7 @@ void B2BMediaStatistics::reportCodecWriteUsage(string &dst)
 
   bool first = true;
   dst.clear();
+  mutex.lock();
   for (map<string, int>::iterator i = codec_write_usage.begin();
       i != codec_write_usage.end(); ++i) 
   {
@@ -81,6 +82,7 @@ void B2BMediaStatistics::reportCodecWriteUsage(string &dst)
     dst += "=";
     dst += int2str(i->second);
   }
+  mutex.unlock();
 }
 
 void B2BMediaStatistics::reportCodecReadUsage(string &dst)
@@ -92,6 +94,7 @@ void B2BMediaStatistics::reportCodecReadUsage(string &dst)
 
   bool first = true;
   dst.clear();
+  mutex.lock();
   for (map<string, int>::iterator i = codec_read_usage.begin();
       i != codec_read_usage.end(); ++i) 
   {
@@ -101,11 +104,13 @@ void B2BMediaStatistics::reportCodecReadUsage(string &dst)
     dst += "=";
     dst += int2str(i->second);
   }
+  mutex.unlock();
 }
     
 void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
 {
   AmArg write_usage;
+  mutex.lock();
   for (map<string, int>::iterator i = codec_write_usage.begin();
       i != codec_write_usage.end(); ++i) 
   {
@@ -114,7 +119,6 @@ void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
     avp["count"] = i->second;
     write_usage.push(avp);
   }
-  ret["write"] = write_usage;
   
   AmArg read_usage;
   for (map<string, int>::iterator i = codec_read_usage.begin();
@@ -125,6 +129,9 @@ void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
     avp["count"] = i->second;
     read_usage.push(avp);
   }
+  mutex.unlock();
+
+  ret["write"] = write_usage;
   ret["read"] = read_usage;
 }
 
