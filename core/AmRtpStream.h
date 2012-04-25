@@ -369,6 +369,7 @@ public:
   int getSdpMediaIndex() { return sdp_media_index; }
   void forceSdpMediaIndex(int idx) { sdp_media_index = idx; offer_answer_used = false; }
   int getPayloadType() { return payload; }
+  string getPayloadName();
 
   /**
    * send a DTMF as RTP payload (RFC4733)

@@ -5,11 +5,76 @@
 #include "AmB2BSession.h"
 #include "AmRtpReceiver.h"
 
+#include <algorithm>
+
 #define TRACE DBG
+#define UNDEFINED_PAYLOAD (-1)
+
+static B2BMediaStatistics b2b_stats;
+
+void B2BMediaStatistics::incCodecWriteUsage(const string &codec_name)
+{
+  if (codec_name.empty()) return;
+
+  mutex.lock();
+  map<string, int>::iterator i = codec_write_usage.find(codec_name);
+  if (i != codec_write_usage.end()) i->second++;
+  else codec_write_usage[codec_name] = 1;
+  mutex.unlock();
+}
+
+void B2BMediaStatistics::decCodecWriteUsage(const string &codec_name)
+{
+  if (codec_name.empty()) return;
+
+  mutex.lock();
+  map<string, int>::iterator i = codec_write_usage.find(codec_name);
+  if (i != codec_write_usage.end()) {
+    if (i->second > 0) i->second--;
+  }
+  mutex.unlock();
+}
+
+B2BMediaStatistics *B2BMediaStatistics::instance()
+{
+  return &b2b_stats;
+}
+    
+void B2BMediaStatistics::reportCodecWriteUsage(string &dst)
+{
+  bool first = true;
+  dst.clear();
+  for (map<string, int>::iterator i = codec_write_usage.begin();
+      i != codec_write_usage.end(); ++i) 
+  {
+    if (first) first = false;
+    else dst += ",";
+    dst += i->first;
+    dst += "=";
+    dst += int2str(i->second);
+  }
+}
+    
+void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
+{
+  AmArg write_usage;
+  for (map<string, int>::iterator i = codec_write_usage.begin();
+      i != codec_write_usage.end(); ++i) 
+  {
+    AmArg avp;
+    avp["codec"] = i->first;
+    avp["count"] = i->second;
+    write_usage.push(avp);
+  }
+  ret["write"] = write_usage;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
 
 AudioStreamData::AudioStreamData(AmB2BSession *session):
   in(NULL), initialized(false),
-  dtmf_detector(NULL), dtmf_queue(NULL)
+  dtmf_detector(NULL), dtmf_queue(NULL),
+  outgoing_payload(UNDEFINED_PAYLOAD)
 {
   stream = new AmRtpAudio(session, session->getRtpRelayInterface());
   stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
@@ -18,6 +83,7 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
 
 void AudioStreamData::clear()
 {
+  resetStats();
   if (in) {
     in->close();
     delete in;
@@ -115,6 +181,7 @@ bool AudioStreamData::initStream(AmSession *session,
 
 bool AudioStreamData::resetInitializedStream()
 {
+  resetStats();
   if (initialized) {
     initialized = false;
 
@@ -129,6 +196,42 @@ bool AudioStreamData::resetInitializedStream()
     return true;
   }
   return false;
+}
+
+void AudioStreamData::resetStats()
+{
+  if (outgoing_payload != UNDEFINED_PAYLOAD) {
+    b2b_stats.decCodecWriteUsage(outgoing_payload_name);
+    outgoing_payload = UNDEFINED_PAYLOAD;
+    outgoing_payload_name.clear();
+  }
+}
+
+void AudioStreamData::updateStats()
+{
+  if (!initialized) {
+    resetStats();
+    return;
+  }
+
+  int payload = stream->getPayloadType();
+  if (payload != outgoing_payload) { 
+    // payload used to send has changed
+
+    // decrement usage of previous payload if set
+    if (outgoing_payload != UNDEFINED_PAYLOAD) 
+      b2b_stats.decCodecWriteUsage(outgoing_payload_name);
+    
+    if (payload != UNDEFINED_PAYLOAD) {
+      // remember payload name (in lowercase to simulate case insensitivity)
+      outgoing_payload_name = stream->getPayloadName();
+      transform(outgoing_payload_name.begin(), outgoing_payload_name.end(), 
+          outgoing_payload_name.begin(), ::tolower);
+      b2b_stats.incCodecWriteUsage(outgoing_payload_name);
+    }
+    else outgoing_payload_name.clear();
+    outgoing_payload = payload;
+  }
 }
 
 int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, AudioStreamData &src)
@@ -151,7 +254,11 @@ int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, A
       }
     }
     if (got < 0) return -1;
-    if (got > 0) return stream->put(ts, buffer, sample_rate, got);
+    if (got > 0) {
+      // we have data to be sent
+      updateStats();
+      return stream->put(ts, buffer, sample_rate, got);
+    }
   }
   return 0;
 }

@@ -7,7 +7,24 @@
 #include "AmMediaProcessor.h"
 #include "AmDtmfDetector.h"
 
+#include <map>
+
 class AmB2BSession;
+
+class B2BMediaStatistics
+{
+  private:
+    std::map<string, int> codec_write_usage;
+    AmMutex mutex;
+
+  public:
+    void reportCodecWriteUsage(string &dst);
+    void getReport(const AmArg &args, AmArg &ret);
+
+    static B2BMediaStatistics *instance();
+    void incCodecWriteUsage(const string &codec_name);
+    void decCodecWriteUsage(const string &codec_name);
+};
 
 /** \brief Storage for several data items required to be held with one RTP
  * stream for B2B media processing.
@@ -40,6 +57,12 @@ class AudioStreamData {
      * Each stream can use different sampling rate and thus DTMF detection need
      * to be done independently for each stream. */
     AmDtmfEventQueue *dtmf_queue;
+
+    // for performance monitoring
+    int outgoing_payload;
+    string outgoing_payload_name;
+    void updateStats();
+    void resetStats();
 
   public:
     /** Creates data based on associated signaling leg data. */

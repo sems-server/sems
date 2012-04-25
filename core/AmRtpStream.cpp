@@ -966,6 +966,17 @@ void AmRtpStream::setRtpRelayTransparentSSRC(bool transparent) {
   relay_transparent_ssrc = transparent;
 }
 
+string AmRtpStream::getPayloadName()
+{
+  for(PayloadCollection::iterator it = payloads.begin();
+      it != payloads.end(); ++it){
+
+    if (it->pt == payload) return it->name;
+  }
+
+  return string("");
+}
+
 
 PacketMem::PacketMem() {
   memset(used, 0, sizeof(used));
