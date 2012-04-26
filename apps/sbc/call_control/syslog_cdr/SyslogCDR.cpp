@@ -285,8 +285,29 @@ void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
 	} else if (*it == "$end_tm") {
 	  cdr+=csv_quote(timeString(end_ts_sec)) +",";
 	} else {
-	  ERROR("in configuration: unknown value '%s' in cdr_format\n",
-		it->c_str());
+	  string varname = it->substr(1);
+	  string prop;
+	  size_t ppos = varname.find('.');
+	  if (ppos != string::npos) {
+	    prop = varname.substr(ppos+1);
+	    varname = varname.substr(0, ppos);
+	  }
+	  SBCVarMapIteratorT var_it = call_profile->cc_vars.find(varname);
+	  if (var_it == call_profile->cc_vars.end()) {
+	    DBG("unknown variable '%s' in cdr_format\n", it->c_str());
+	  } else {
+	    AmArg* v = &var_it->second;
+	    if (!prop.empty()) {
+	      try {
+		v = &var_it->second[prop];
+	      }	catch(...) { }
+	    }
+	    if (isArgCStr((*v))) {
+	      cdr+=string(v->asCStr())+",";
+	    } else {
+	      cdr+=AmArg::print(*v)+",";
+	    }
+	  }
 	}
       } else {
 	if (!values.hasMember(*it)) {
