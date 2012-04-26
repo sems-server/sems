@@ -176,8 +176,8 @@ void AmSipDtmfDetector::process(AmSipDtmfEvent *evt)
 //
 // AmDtmfDetector methods
 //
-AmDtmfDetector::AmDtmfDetector(AmSession *session)
-  : m_session(session), m_rtpDetector(this),
+AmDtmfDetector::AmDtmfDetector(AmDtmfSink *dtmf_sink)
+  : m_dtmfSink(dtmf_sink), m_rtpDetector(this),
     m_sipDetector(this),
     m_eventPending(false), m_sipEventReceived(false),
     m_inbandEventReceived(false), m_rtpEventReceived(false),
@@ -366,7 +366,7 @@ void AmDtmfDetector::reportEvent()
 
   long duration = (m_lastReportTime.tv_sec - m_startTime.tv_sec) * 1000 +
     (m_lastReportTime.tv_usec - m_startTime.tv_usec) / 1000;
-  m_session->postDtmfEvent(new AmDtmfEvent(m_currentEvent, duration));
+  m_dtmfSink->postDtmfEvent(new AmDtmfEvent(m_currentEvent, duration));
   m_eventPending = false;
   m_sipEventReceived = false;
   m_rtpEventReceived = false;

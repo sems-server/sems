@@ -74,7 +74,8 @@ class AmSession :
   public AmEventQueue, 
   public AmEventHandler,
   public AmSipDialogEventHandler,
-  public AmMediaSession
+  public AmMediaSession,
+  public AmDtmfSink
 {
   AmMutex      audio_mut;
 

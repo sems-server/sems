@@ -379,6 +379,18 @@ class AmRtpDtmfDetector
 };
 
 /**
+ * \brief DTMF sink class
+ *
+ * This class is an interface for components that whish to
+ * receive DTMF event notification.
+ */
+class AmDtmfSink
+{
+public:
+  virtual void postDtmfEvent(AmDtmfEvent *) = 0;
+};
+
+/**
  * \brief DTMF detector class
  *
  * This class collects DTMF info from three sources: RTP (RFC 2833), 
@@ -395,7 +407,7 @@ class AmDtmfDetector
   /**
    * Session this class belongs to.
    */
-  AmSession *m_session;
+  AmDtmfSink *m_dtmfSink;
   AmRtpDtmfDetector m_rtpDetector;
   AmSipDtmfDetector m_sipDetector;
   std::auto_ptr<AmInbandDtmfDetector> m_inbandDetector;
@@ -450,7 +462,7 @@ class AmDtmfDetector
    * Constructor
    * @param session is the owner of this class instance
    */
-  AmDtmfDetector(AmSession *session);
+  AmDtmfDetector(AmDtmfSink *dtmf_sink);
   virtual ~AmDtmfDetector() {}
 
   void checkTimeout();
