@@ -9,3 +9,6 @@ Group=sems
 EnvironmentFile=-/etc/sysconfig/sems
 PIDFile=/var/run/sems/sems.pid
 ExecStart=/usr/sbin/sems -E -u sems -g sems -P /var/run/sems/sems.pid $OPTIONS
+
+[Install]
+WantedBy=multi-user.target
