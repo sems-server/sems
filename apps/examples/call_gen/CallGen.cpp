@@ -299,10 +299,10 @@ void CallGenFactory::scheduleCalls(const AmArg& args, AmArg& ret) {
   int    wait_time_base   = args.get(cnt++).asInt();
   int    wait_time_rand   = args.get(cnt++).asInt();
   int    ncalls_per_sec   = 1;
-  if (args.size()>8)
-    ncalls_per_sec = args[8].asInt();
+  if (args.size()>9)
+    ncalls_per_sec = args[9].asInt();
 
-  DBG("scheduling %d calls...\n", ncalls);
+  DBG("scheduling %d calls (%d/s)\n", ncalls, ncalls_per_sec);
   
   time_t now;
   time(&now);
