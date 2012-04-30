@@ -159,9 +159,9 @@ ifeq ($(ARCH),sparc)
 endif
 
 # need OS specific for this ?
-CXX = g++
-CC = gcc
-LD = $(CC)
+CXX ?= g++
+CC ?= gcc
+LD ?= $(CC)
 
 CXXFLAGS += -Wall -Wno-reorder -fPIC -g $(EXTRA_CXXFLAGS)
 CFLAGS   += -Wall -fPIC -g $(EXTRA_CFLAGS)
