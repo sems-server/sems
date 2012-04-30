@@ -101,15 +101,11 @@ sip_port=5080
 # Example:
 #   force_outbound_proxy=yes
 
-# optional parameter: next_hop_ip
+# optional parameter: next_hop=ip[:port]
 # - if this is set, all outgoing requests will be sent to
 #   this IP, regardless of R-URI etc.
-#
-#next_hop_ip=192.168.5.106
-
-# optional parameter: next_hop_port
-# defaults to 5060
-#next_hop_port=5060
+# next_hop=192.168.5.1
+# next_hop=192.168.5.1:5080
 
 # optional parameter:next_hop_for_replies
 # - use next_hop for replies, too?
