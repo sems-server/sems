@@ -141,7 +141,7 @@ void CallGenFactory::checkTarget() {
   if (!target_args)
     return;
 
-  DBG("%d active calls, %d current target, %d already scheduled\n", 
+  DBG("%zd active calls, %d current target, %d already scheduled\n", 
       active_calls.size(), target_args->get(0).asInt(), scheduled);
 
   int missing_calls = 
@@ -244,7 +244,8 @@ void CallGenFactory::createCall(const AmArg& args) {
   cnt++; // int    call_time_base   = args.get(cnt++).asInt();
   cnt++; // int    call_time_rand   = args.get(cnt++).asInt();
 
-  string from = "sip:callgen@"+AmConfig::LocalSIPIP;
+  string from = "sip:callgen@"+ (AmConfig::Ifs.size() ?
+				 AmConfig::Ifs[0].LocalSIPIP : "localhost");
   string call_ruri = "sip:"+ruri_user;
 
   for (int i=0;i<ruri_rand_digits;i++) 
@@ -328,12 +329,12 @@ void CallGenFactory::callGenStats(const AmArg& args, AmArg& ret) {
     target = target_args->get(0).asInt();
 
   string res = "CallGen statistics: \n " +
-    int2str(active_calls.size()) + " active calls\n " +
+    int2str((int)active_calls.size()) + " active calls\n " +
     int2str(target) + " current target\n " +
     int2str(scheduled) +" scheduled\n ";
 
   calls_list_mut.lock();
-  res += int2str(past_calls.size()) + " total calls\n ";
+  res += int2str((int)past_calls.size()) + " total calls\n ";
   calls_list_mut.unlock();
   ret.push(res.c_str());
 }
