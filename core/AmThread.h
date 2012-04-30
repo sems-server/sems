@@ -167,6 +167,11 @@ public:
     timeout.tv_sec = now.tv_sec + (usec / 1000000);
     timeout.tv_nsec = (now.tv_usec + (usec % 1000000)) * 1000;
 
+    if(timeout.tv_nsec >= 1000000000){
+      timeout.tv_sec++;
+      timeout.tv_nsec -= 1000000000;
+    }
+
     pthread_mutex_lock(&m);
     while(!t && !retcode){
       retcode = pthread_cond_timedwait(&cond,&m, &timeout);
