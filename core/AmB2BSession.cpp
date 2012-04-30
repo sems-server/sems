@@ -464,6 +464,10 @@ void AmB2BSession::onInvite2xx(const AmSipReply& reply)
   }
 }
 
+void AmB2BSession::onOutboundCallFailed(const AmSipReply& reply) {
+  // in B2B session failed B leg is handled in A leg - ignore here
+}
+
 int AmB2BSession::relayEvent(AmEvent* ev)
 {
   DBG("AmB2BSession::relayEvent: to other_id='%s'\n",

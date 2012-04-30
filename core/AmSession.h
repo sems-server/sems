@@ -562,6 +562,9 @@ public:
    */
   virtual void onBye(const AmSipRequest& req);
 
+  /** onOutboundCallFailed is called when an outbound call fails */
+  virtual void onOutboundCallFailed(const AmSipReply& reply);
+
   /** Entry point for SIP Requests   */
   virtual void onSipRequest(const AmSipRequest& req);
 

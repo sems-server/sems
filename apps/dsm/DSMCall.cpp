@@ -320,16 +320,16 @@ void DSMCall::onSipReply(const AmSipReply& reply, int old_dlg_status, const stri
 
   AmB2BCallerSession::onSipReply(reply,old_dlg_status,trans_method);
 
-  if ((old_dlg_status < AmSipDialog::Connected) && 
-      (dlg.getStatus() == AmSipDialog::Disconnected)) {
-    DBG("Outbound call failed with reply %d %s.\n", 
-	reply.code, reply.reason.c_str());
-    map<string, string> params;
-    params["code"] = int2str(reply.code);
-    params["reason"] = reply.reason;
-    engine.runEvent(this, this, DSMCondition::FailedCall, &params);
-    setStopped();
-  }
+}
+
+void DSMCall::onOutboundCallFailed(const AmSipReply& reply) {
+  DBG("Outbound call failed with reply %d %s.\n",
+      reply.code, reply.reason.c_str());
+  map<string, string> params;
+  params["code"] = int2str(reply.code);
+  params["reason"] = reply.reason;
+  engine.runEvent(this, this, DSMCondition::FailedCall, &params);
+  setStopped();
 }
 
 void DSMCall::onSystemEvent(AmSystemEvent* ev) {

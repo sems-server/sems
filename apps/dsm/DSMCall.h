@@ -80,6 +80,7 @@ public:
   void startSession();
   void onCancel();
   void onBye(const AmSipRequest& req);
+  void onOutboundCallFailed(const AmSipReply& reply);
   void onDtmf(int event, int duration_msec);
   void onBeforeDestroy();
 

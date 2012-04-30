@@ -968,34 +968,26 @@ void ConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status, c
       }
       break;
 
-    case AmSipDialog::Disconnected:
-
-      if(!transfer_req.get()){
-
-	disconnectDialout();
-	//switch(reply.code){
-	//default:
-	    
-	AmSessionContainer::instance()
-	  ->postEvent(dialout_channel->getConfID(),
-		      new DialoutConfEvent(DoConfError,
-					   dialout_channel->getConfID()));
-	//}
-      }
-      else {
-		
-	dlg.reply(*(transfer_req.get()),reply.code,reply.reason);
-	transfer_req.reset(0);
-	setStopped();
-      }
-      break;
-
-	    
-
     default: break;
     }
 
+  }
+}
 
+void ConferenceDialog::onOutboundCallFailed(const AmSipReply& reply) {
+  DBG("Outbound call failed with reply %d %s.\n", 
+      reply.code, reply.reason.c_str());
+
+  if(!transfer_req.get()){
+    disconnectDialout();
+    AmSessionContainer::instance()
+      ->postEvent(dialout_channel->getConfID(),
+		  new DialoutConfEvent(DoConfError,
+				       dialout_channel->getConfID()));
+  } else {
+    dlg.reply(*(transfer_req.get()),reply.code,reply.reason);
+    transfer_req.reset(0);
+    setStopped();
   }
 }
 

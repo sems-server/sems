@@ -206,12 +206,6 @@ void WebConferenceDialog::onSipReply(const AmSipReply& reply, int old_dlg_status
       AmSipDialog::status2str[old_dlg_status],
       AmSipDialog::status2str[dlg.getStatus()]);
 
-  if ((old_dlg_status < AmSipDialog::Connected) && 
-      (dlg.getStatus() == AmSipDialog::Disconnected)) {
-    DBG("Call failed.\n");
-    setStopped();
-  }
-
   // update status to map
   if (is_dialout) {
     // map AmSipDialog state to WebConferenceState

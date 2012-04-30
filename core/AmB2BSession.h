@@ -185,6 +185,7 @@ class AmB2BSession: public AmSession
 		  int old_dlg_status, const string& trans_method);
   void onInvite2xx(const AmSipReply& reply);
 
+  void onOutboundCallFailed(const AmSipReply& reply);
   void onSessionTimeout();
   void onNoAck(unsigned int cseq);
 

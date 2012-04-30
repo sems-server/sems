@@ -154,6 +154,7 @@ public:
   void onSessionStart(const AmSipRequest& req);
   void onBye(const AmSipRequest& req);
 
+  void onOutboundCallFailed(const AmSipReply& reply);
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipReply& reply, int old_dlg_status,
 		  const string& trans_method);
