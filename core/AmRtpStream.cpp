@@ -83,11 +83,11 @@ void AmRtpStream::setLocalIP(const string& ip)
 {
 #ifdef SUPPORT_IPV6
   if (!inet_aton_v6(ip.c_str(), &l_saddr)) {
-    throw string ("Invalid IPv6 address.");
+    throw string ("Invalid IPv6 address: ") + ip;
   }
 #else
   if (!inet_aton(ip.c_str(), (in_addr*)&l_saddr.sin_addr.s_addr)) {
-    throw string ("Invalid IPv4 address.");
+    throw string ("Invalid IPv4 address: ") + ip;
   }
 #endif
 }
@@ -435,7 +435,7 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
   dns_handle dh;
   if (resolver::instance()->resolve_name(addr.c_str(),&dh,&ss,IPv4) < 0) {
     WARN("Address not valid (host: %s).\n", addr.c_str());
-    throw string("invalid address");
+    throw string("invalid address") + addr;
   }
 
 #ifdef SUPPORT_IPV6
