@@ -623,9 +623,11 @@ int AmRtpStream::init(const AmSdp& local,
     ++sdp_it;
   }
 
-  setLocalIP(local.conn.address);
+  if (local.conn.address.empty()) setLocalIP(local_media.conn.address);
+  else setLocalIP(local.conn.address);
   setPassiveMode(remote_media.dir == SdpMedia::DirActive);
-  setRAddr(remote.conn.address, remote_media.port);
+  if (remote.conn.address.empty()) setRAddr(remote_media.conn.address, remote_media.port);
+  else setRAddr(remote.conn.address, remote_media.port);
 
   if(local_media.payloads.empty()) {
 
