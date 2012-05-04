@@ -152,7 +152,7 @@ public:
   void getSdpAnswer(unsigned int index, const SdpMedia& offer, SdpMedia& answer);
 
   int init(const AmSdp& local,
-	   const AmSdp& remote);
+	   const AmSdp& remote, bool force_symmetric_rtp = false);
 
   void setPlayoutType(PlayoutType type);
 

@@ -315,10 +315,10 @@ void AmRtpAudio::getSdpAnswer(unsigned int index,
 }
 
 int AmRtpAudio::init(const AmSdp& local,
-		     const AmSdp& remote)
+		     const AmSdp& remote, bool force_symmetric_rtp)
 {
   DBG("AmRtpAudio::init(...)\n");
-  if(AmRtpStream::init(local,remote)){
+  if(AmRtpStream::init(local,remote,force_symmetric_rtp)){
     return -1;
   }
     

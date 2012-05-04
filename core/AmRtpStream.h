@@ -401,7 +401,7 @@ public:
    * @warning It is necessary to call getSdpOffer/getSdpAnswer prior to init(...)
    * @warning so that the internal SDP media line index is set properly.
    */
-  virtual int init(const AmSdp& local, const AmSdp& remote);
+  virtual int init(const AmSdp& local, const AmSdp& remote, bool force_passive_mode = false);
 
   /**
    * Stops RTP stream.

@@ -525,7 +525,8 @@ void AmRtpStream::getSdpAnswer(unsigned int index, const SdpMedia& offer, SdpMed
 }
 
 int AmRtpStream::init(const AmSdp& local,
-		      const AmSdp& remote)
+		      const AmSdp& remote,
+                      bool force_passive_mode)
 {
   if((sdp_media_index < 0) ||
      ((unsigned)sdp_media_index >= local.media.size()) ||
@@ -625,7 +626,7 @@ int AmRtpStream::init(const AmSdp& local,
 
   if (local.conn.address.empty()) setLocalIP(local_media.conn.address);
   else setLocalIP(local.conn.address);
-  setPassiveMode(remote_media.dir == SdpMedia::DirActive);
+  setPassiveMode(remote_media.dir == SdpMedia::DirActive || force_passive_mode);
   if (remote.conn.address.empty()) setRAddr(remote_media.conn.address, remote_media.port);
   else setRAddr(remote.conn.address, remote_media.port);
 

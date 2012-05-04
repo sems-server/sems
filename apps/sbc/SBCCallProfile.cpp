@@ -666,7 +666,9 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
     REPLACE_NONEMPTY_STR(next_hop_for_replies);
   }
 
-  if (rtprelay_enabled) {
+  if (!transcoder.evaluate(REPLACE_VALS)) return false;
+
+  if (rtprelay_enabled || transcoder.isActive()) {
     // evaluate other RTP relay related params only if enabled
     // FIXME: really not evaluate rtprelay_enabled itself?
     REPLACE_NONEMPTY_STR(force_symmetric_rtp);
@@ -727,7 +729,6 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
 
   REPLACE_IFACE(outbound_interface, outbound_interface_value);
 
-  if (!transcoder.evaluate(REPLACE_VALS)) return false;
   if (!codec_prefs.evaluate(REPLACE_VALS)) return false;
 
   // TODO: activate filter if transcoder or codec_prefs is set?

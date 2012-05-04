@@ -145,6 +145,7 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
   stream = new AmRtpAudio(session, session->getRtpRelayInterface());
   stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
   stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
+  force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
 }
 
 void AudioStreamData::clear()
@@ -222,7 +223,7 @@ bool AudioStreamData::initStream(AmSession *session,
 
   // TODO: try to init only in case there are some payloads which can't be relayed
   stream->forceSdpMediaIndex(media_idx);
-  if (stream->init(local_sdp, remote_sdp) == 0) {
+  if (stream->init(local_sdp, remote_sdp, force_symmetric_rtp) == 0) {
     stream->setPlayoutType(playout_type);
     initialized = true;
     if (session->isDtmfDetectionEnabled()) {

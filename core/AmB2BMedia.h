@@ -52,6 +52,9 @@ class AudioStreamData {
      * transcoding purposes). */
     bool initialized;
 
+    /** remembered value of the option from AmB2BSession */
+    bool force_symmetric_rtp;
+
     /** DTMF detector used by dtmf_queue */
     AmDtmfDetector *dtmf_detector;
     
