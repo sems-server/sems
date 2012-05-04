@@ -1,3 +1,60 @@
+sems (1.4.3) natty; urgency=low
+
+  * SEMS 1.4.3 release
+
+  SEMS 1.4 series bugfix release, should be a drop-in replacement to 1.4 installations.
+  For details of the changes see the changelog below.
+
+  If you are using custom applications which create outbound calls,
+  please specifically test the behavior with the commit
+   26fdaa8e b/f: stopping failed outbound calls
+
+  Many thanks to everyone who reported issues and contributed with patches.
+  $ git cherry -v 1.4.2 origin/1.4
+  + 8a6f63b6eb1e5a016e929549af897e93b56c5df0 1.4 branch build version
+  + 564bb0dced7bc8e64068e8e495dc70129a4b1a92 fix linking libssl for XMLRPC client
+  + 9d4437e9cb4856829415f1f6e2908361cd572e7b b/f: distinct COREPATH for sbc tools
+  + 23694e99b4572d4c2b22f89857b6aaa442e8bee9 b/f: fixed mem leak accumulating sip requests on failed auth
+  + 7fd59bf2f318634c7d250df18ab5a31391a664dd enable unloading of module for cleaner shutdown
+  + 37ae9dbee4f63ae40fecd67bfce9cc2837aa9395 b/f: don't wait in user timer destruction
+  + f81ce844a9997fad8ce9987ce9046cb7440e9d3d b/f: on receiving re-INVITE without SDP, reply 488 and continue call
+  + 0fbb1f9efeccf675340321a0d6af34946c1b9422 b/f: remember passive_mode for keeping symmetric RTP in a session
+  + e78fe72fb69989317d61771b661bded8fac350dc b/f: support compact Supported header (k:)
+  + a03278d09f744008d115ff9379be7139263466c3 b/f: in bye() don't do send_200_ack while iterating over uac_trans
+  + f755fac491982ddeca84e5cab03b64a02e5251a5 introduce timeout for sems-stats management utility
+  + 97f3dcc3eab7806c3ea7aef6655671d9e731357c b/f: xmlrpc2di - detect unsuccessful bind on startup
+  + 7c87e3c238e4be09a8fe0d5246d5a51df5bd52eb Fix unresolved symbol in sbc module when compiled with cmake
+  + 44889f80bb840e90308af40a94d2cae995ff4400 b/f: reset RTP-received timestamp when (re)starting process RTP stream
+  + 5139d4cb19d58643341c46d770f2b08369d162fc b/f: use proper failure return value
+  + 49d90444fec9f6ef64d45122af95d9d5181716a7 b/f: use proper empty string value
+  + 620f03ba84e7526f5a2a82e9be09050d0ebfe96b b/f: click2dial: save content_type, cseq to connect callee
+  + 4e023507b6207ff84dcf30ed1c4d5c4a3f3825b1 add Retry-After: 0 to NOTIFY 500 response on low CSeq
+  + 8dac2df1b8f22acf98d5b16df961edc3582d1969 b/f: fix SBC SDP filter with connection per media only
+  + 32461b9a6ee112e1c557f9eee8a7198c135d2df1 b/f: fixing b6d5f726 (fix SBC SDP filter)
+  + dde27343e5376751ddb544c85f086e0dc95e40f1 b/f: B2BUA: fixed replies for error handling
+  + c49cc6bd175c3b5cc7e2d5688095c5ab8f09c29c b/f: make listRooms return only non-expired rooms
+  + a7516d000029195706c198e5f3373cee16729249 b/f: on RTP timeout, end dialog with sending BYE
+  + bed6c2545a14b62adb746bb08a3d5554e40cded1 b/f: in webconference app, handle session timer timeout and RTP timeout
+  + c096050398a9ada71407a942359d659227dcd521 Drop privileges for SEMS process
+  + ff94051b845fabed3b81b96e96a2d15f11084cb3 Missing include for close(FILE *)
+  + b74432b69f925b1502631b168320cc7f6dc18cbc Fix c/p typo in cmake-files
+  + 13c6e3f26d43edfca3fc16b0f61387e67750552c Add libzrtp support to the CMakeFile
+  + 78126830bfa36f67fb3e7495093fe4f363bd8520 Add systemd-related files to the pkg/rpm dir
+  + 1d86e099d358733e2ef123caef58cdafd67bc78f click2dial: b/f: fix crash when using without credentials
+  + 8c10653865e5f0b446f8783a30b67b062f897dcb b/f: T38 streams in SBC/B2B (udptl transport); proper media direction passthrough
+  + ddb20bd27800c9a9badb02bf0ee44461f7db827b b/f: support values at end of SDP without CR (master 8ec8a910a2)
+  + 427a5a77295ae31b4b8694e330f1eb4c1c661612 b/f: getHeader: find correct hdr also if it's substring of another hdr
+  + ead6c3efbc9920a1120272a144ce776e473b5db3 Add [Install] directive for systemd
+  + e6b3af38395d933ae37c406fef1e326fe059b1fb b/f: AmCondition::wait_for_to nsec overflow
+  + 26fdaa8eaf35e058c735af9ebb8ada38e4267d3c b/f: stopping failed outbound calls
+  + 0ad56907a9844a9632c377715ba38a2c5ebcab6b core: handle exceptions in out-of-dlg messages gracefully
+  + 2aa0bc2a33449a154e643209b4a5415b1b186123 core: name default interface as "default"
+  + 7b5cf590d3298c657540323641d74c9d75de4c93 c/f: make callgen compile using proper IP for From host
+  + a83b8e1e21619ac106d24d8f7a57b2fdaddae027 c/f: make it possible to pass CXX / CC from env vars
+  + 0d66e620efb16bbc387619ccb2d6d285dbf14824 c/f: revert a83b8e1 as it can cause some issues with the linker
+
+ -- Stefan <stefan@tibee>  Fri, 04 May 2012 11:46:50 +0200
+
 sems (1.4.2) natty; urgency=low
 
   * SEMS 1.4.2 release
