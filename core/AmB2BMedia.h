@@ -55,6 +55,12 @@ class AudioStreamData {
     /** remembered value of the option from AmB2BSession */
     bool force_symmetric_rtp;
 
+    /** Enables inband dtmf detection */
+    bool enable_dtmf_transcoding;
+
+    /** Low fidelity payloads for which inband DTMF transcoding should be used */
+    vector<SdpPayload> lowfi_payloads;
+  
     /** DTMF detector used by dtmf_queue */
     AmDtmfDetector *dtmf_detector;
     
@@ -106,7 +112,7 @@ class AudioStreamData {
      * transcoding). 
      *
      * Returns false if the initialization failed. */
-    bool initStream(AmSession *session, PlayoutType playout_type, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
+    bool initStream(AmDtmfSink* dtmf_sink, PlayoutType playout_type, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
 
     /** Discards initialization flag and DTMF related members if the stream was
      * already initialized. In such case true is returned. If the stream wasn't
@@ -118,6 +124,9 @@ class AudioStreamData {
 
     /** Processes raw DTMF events in own queue. */
     void processDtmfEvents() { if (dtmf_queue) dtmf_queue->processEvents(); }
+
+    /** Sends DTMF */
+    void sendDtmf(int event, unsigned int duration_ms);
 
     /** Writes data to won stream. Data are read either from local alternative
      * input (in) or from stream given by src parameter. 
@@ -325,6 +334,9 @@ class AmB2BMedia: public AmMediaSession
     /** Calls processDtmfEvent on both AmB2BSessions for which this AmB2BMedia
      * instance manages media. */
     virtual void processDtmfEvents();
+
+    /** Sends DTMF using the given call leg */
+    void sendDtmf(bool a_leg, int event, unsigned int duration_ms);
 
     /** Release all RTP streams of both legs and both AmB2BSessions as well. 
      *

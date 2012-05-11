@@ -241,6 +241,12 @@ class AmB2BSession: public AmSession
   bool rtp_relay_transparent_seqno;
   /** transparent SSRC for RTP relay */
   bool rtp_relay_transparent_ssrc;
+  /** If true, transcoded audio is injected into 
+      the inband DTMF detector */
+  bool enable_dtmf_transcoding;
+  /** Low fidelity payloads for which inband DTMF 
+      transcoding should be used */
+  vector<SdpPayload> lowfi_payloads;
 
   /** clear our and the other side's RTP streams from RTPReceiver */
   void clearRtpReceiverRelay();
@@ -264,9 +270,15 @@ class AmB2BSession: public AmSession
   /** link RTP streams of other_session to our streams */
   RTPRelayMode getRtpRelayMode() const { return rtp_relay_mode; }
   bool getRtpRelayForceSymmetricRtp() const { return rtp_relay_force_symmetric_rtp; }
+  bool getEnableDtmfTranscoding() const { return enable_dtmf_transcoding; }
+  void getLowFiPLs(vector<SdpPayload>& lowfi_payloads) const;
+
   void setRtpRelayInterface(int relay_interface);
   void setRtpRelayTransparentSeqno(bool transparent);
   void setRtpRelayTransparentSSRC(bool transparent);
+
+  void setEnableDtmfTranscoding(bool enable);
+  void setLowFiPLs(const vector<SdpPayload>& lowfi_payloads);
   
   int getRtpRelayInterface() { return rtp_interface<0 ? dlg.getOutboundIf() : rtp_interface; }
   bool getRtpRelayTransparentSeqno() { return rtp_relay_transparent_seqno; }

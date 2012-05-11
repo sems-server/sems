@@ -1061,6 +1061,19 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
     setRtpRelayMode(RTP_Relay);
+
+    if(call_profile.transcoder.isActive()) {
+      switch(call_profile.transcoder.dtmf_mode) {
+      case SBCCallProfile::TranscoderSettings::DTMFAlways:
+	enable_dtmf_transcoding = true; break;
+      case SBCCallProfile::TranscoderSettings::DTMFNever:
+	enable_dtmf_transcoding = false; break;
+      case SBCCallProfile::TranscoderSettings::DTMFLowFiCodecs:
+	enable_dtmf_transcoding = false;
+	lowfi_payloads = call_profile.transcoder.lowfi_codecs;
+	break;
+      };
+    }
   }
 
   m_state = BB_Dialing;
@@ -1393,6 +1406,15 @@ void SBCDialog::onCancel(const AmSipRequest& cancel)
 {
   dlg.bye();
   stopCall();
+}
+
+void SBCDialog::onDtmf(int event, int duration)
+{
+  if(media_session) {
+    DBG("received DTMF on %c-leg (%i;%i)\n",
+	a_leg ? 'A': 'B', event, duration);
+    media_session->sendDtmf(!a_leg,event,duration);
+  }
 }
 
 void SBCDialog::onSystemEvent(AmSystemEvent* ev) {
@@ -1801,6 +1823,15 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
 SBCCalleeSession::~SBCCalleeSession() {
   if (auth) 
     delete auth;
+}
+
+void SBCCalleeSession::onDtmf(int event, int duration)
+{
+  if(media_session) {
+    DBG("received DTMF on %c-leg (%i;%i)\n",
+	a_leg ? 'A': 'B', event, duration);
+    media_session->sendDtmf(!a_leg,event,duration);
+  }
 }
 
 inline UACAuthCred* SBCCalleeSession::getCredentials() {

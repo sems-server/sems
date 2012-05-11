@@ -141,12 +141,15 @@ void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
 AudioStreamData::AudioStreamData(AmB2BSession *session):
   in(NULL), initialized(false),
   dtmf_detector(NULL), dtmf_queue(NULL),
-  outgoing_payload(UNDEFINED_PAYLOAD)
+  outgoing_payload(UNDEFINED_PAYLOAD),
+  enable_dtmf_transcoding(false)
 {
   stream = new AmRtpAudio(session, session->getRtpRelayInterface());
   stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
   stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
   force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
+  enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
+  session->getLowFiPLs(lowfi_payloads);
 }
 
 void AudioStreamData::clear()
@@ -203,6 +206,7 @@ void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other)
     for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin();
         i != m.payloads.end(); ++i) 
     {
+      // do not mark telephone-event payload for relay
       if(strcasecmp("telephone-event",i->encoding_name.c_str()) != 0){
 	mask.set(i->payload_type);
 	TRACE("marking payload %d for relay\n", i->payload_type);
@@ -219,7 +223,7 @@ void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other)
   resumeStreamProcessing();
 }
     
-bool AudioStreamData::initStream(AmSession *session, 
+bool AudioStreamData::initStream(AmDtmfSink *dtmf_sink, 
     PlayoutType playout_type,
     AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx)
 {
@@ -233,10 +237,24 @@ bool AudioStreamData::initStream(AmSession *session,
   if (stream->init(local_sdp, remote_sdp, force_symmetric_rtp) == 0) {
     stream->setPlayoutType(playout_type);
     initialized = true;
-    if (session->isDtmfDetectionEnabled()) {
-      dtmf_detector = new AmDtmfDetector(session);
+    if (dtmf_sink) {
+      dtmf_detector = new AmDtmfDetector(dtmf_sink);
       dtmf_queue = new AmDtmfEventQueue(dtmf_detector);
       dtmf_detector->setInbandDetector(AmConfig::DefaultDTMFDetector, stream->getSampleRate());
+
+      if(!enable_dtmf_transcoding && lowfi_payloads.size()) {
+	string selected_payload_name = stream->getPayloadName(stream->getPayloadType());
+	for(vector<SdpPayload>::iterator it = lowfi_payloads.begin();
+	    it != lowfi_payloads.end(); ++it){
+	  DBG("checking %s/%i PL type against %s/%i\n",
+	      selected_payload_name.c_str(), stream->getPayloadType(),
+	      it->encoding_name.c_str(), it->payload_type);
+	  if(selected_payload_name == it->encoding_name) {
+	    enable_dtmf_transcoding = true;
+	    break;
+	  }
+	}
+      }
     }
   } else {
     ERROR("stream initialization failed\n");
@@ -270,6 +288,11 @@ bool AudioStreamData::resetInitializedStream()
     return true;
   }
   return false;
+}
+
+void AudioStreamData::sendDtmf(int event, unsigned int duration_ms)
+{
+  stream->sendDtmf(event,duration_ms);
 }
 
 void AudioStreamData::resetStats()
@@ -357,7 +380,9 @@ int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, A
         got = src_stream->get(ts, buffer, sample_rate, f_size);
         if (got > 0) {
           updateRecvStats(src_stream);
-          if (dtmf_queue) dtmf_queue->putDtmfAudio(buffer, got, ts);
+          if (dtmf_queue && enable_dtmf_transcoding) { 
+	    dtmf_queue->putDtmfAudio(buffer, got, ts);
+	  }
         }
       }
     }
@@ -404,6 +429,22 @@ void AmB2BMedia::processDtmfEvents()
 
   if (a) a->processDtmfEvents();
   if (b) b->processDtmfEvents();
+  mutex.unlock();
+}
+
+void AmB2BMedia::sendDtmf(bool a_leg, int event, unsigned int duration_ms)
+{
+  mutex.lock();
+  if(!audio.size())
+    return;
+
+  // send the DTMFs using the first available stream
+  if(a_leg) {
+    audio[0].a.sendDtmf(event,duration_ms);
+  }
+  else {
+    audio[0].b.sendDtmf(event,duration_ms);
+  }
   mutex.unlock();
 }
 
@@ -536,9 +577,15 @@ bool AmB2BMedia::updateStreams(bool a_leg, bool init_relay, bool init_transcodin
     // initialize the stream for current leg if asked to do so
     if (init_transcoding) {
       if (a_leg) {
-        ok = ok && pair.a.initStream(a, playout_type, a_leg_local_sdp, a_leg_remote_sdp, media_idx);
+        ok = ok && pair.a.initStream(b, playout_type, 
+				     a_leg_local_sdp, 
+				     a_leg_remote_sdp, 
+				     media_idx);
       } else {
-        ok = ok && pair.b.initStream(b, playout_type, b_leg_local_sdp, b_leg_remote_sdp, media_idx);
+        ok = ok && pair.b.initStream(a, playout_type, 
+				     b_leg_local_sdp, 
+				     b_leg_remote_sdp, 
+				     media_idx);
       }
     }
 

@@ -188,6 +188,8 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   void onInvite(const AmSipRequest& req);
   void onCancel(const AmSipRequest& cancel);
 
+  void onDtmf(int event, int duration);
+
   void onSystemEvent(AmSystemEvent* ev);
 
   UACAuthCred* getCredentials();
@@ -246,6 +248,8 @@ class SBCCalleeSession
   SBCCalleeSession(const AmB2BCallerSession* caller,
 		   const SBCCallProfile& call_profile); 
   ~SBCCalleeSession();
+
+  void onDtmf(int event, int duration);
 
   void process(AmEvent* ev);
 

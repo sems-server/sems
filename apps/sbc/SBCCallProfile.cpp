@@ -958,6 +958,21 @@ bool SBCCallProfile::TranscoderSettings::readTranscoderMode(const std::string &s
   return false;
 }
 
+bool SBCCallProfile::TranscoderSettings::readDTMFMode(const std::string &src)
+{
+  static const string always("always");
+  static const string never("never");
+  static const string lowfi_codec("lowfi_codec");
+
+  if (src == always) { dtmf_mode = DTMFAlways; return true; }
+  if (src == never) { dtmf_mode = DTMFNever; return true; }
+  if (src == lowfi_codec) { dtmf_mode = DTMFLowFiCodecs; return true; }
+  if (src.empty()) { dtmf_mode = DTMFNever; return true; } // like default value
+  ERROR("unknown value of dtmf_transcoding_mode option: %s\n", src.c_str());
+
+  return false;
+}
+
 void SBCCallProfile::TranscoderSettings::infoPrint() const
 {
   INFO("SBC:      transcoder audio codecs: %s\n", audio_codecs_str.c_str());
@@ -971,6 +986,8 @@ bool SBCCallProfile::TranscoderSettings::readConfig(AmConfigReader &cfg)
   audio_codecs_str = cfg.getParameter("transcoder_codecs");
   callee_codec_capabilities_str = cfg.getParameter("callee_codeccaps");
   transcoder_mode_str = cfg.getParameter("enable_transcoder");
+  dtmf_mode_str = cfg.getParameter("dtmf_transcoding");
+  lowfi_codecs_str = cfg.getParameter("lowfi_codecs");
 
   return true;
 }
@@ -1023,6 +1040,7 @@ bool SBCCallProfile::TranscoderSettings::evaluate(const AmSipRequest& req,
   REPLACE_NONEMPTY_STR(transcoder_mode_str);
   REPLACE_NONEMPTY_STR(audio_codecs_str);
   REPLACE_NONEMPTY_STR(callee_codec_capabilities_str);
+  REPLACE_NONEMPTY_STR(lowfi_codecs_str);  
 
   if (!read(audio_codecs_str, audio_codecs)) return false;
 
@@ -1030,6 +1048,10 @@ bool SBCCallProfile::TranscoderSettings::evaluate(const AmSipRequest& req,
     return false;
   
   if (!readTranscoderMode(transcoder_mode_str)) return false;
+
+  if (!readDTMFMode(dtmf_mode_str)) return false;
+
+  if (!read(lowfi_codecs_str, lowfi_codecs)) return false;
 
   // enable transcoder according to transcoder mode and optionally request's SDP
   switch (transcoder_mode) {
