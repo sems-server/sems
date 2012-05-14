@@ -827,6 +827,8 @@ string get_header_keyvalue_single(const string& param_hdr, const string& name) {
 	    st = ST_CMPKEY;
 	  k_begin = p;
 	  corr = 1;
+	} else {
+	  st = ST_FINDBGN;
 	}
       }
     } break;
