@@ -421,7 +421,7 @@ public:
   void setInbandDetector(Dtmf::InbandDetectorType t);
   bool isDtmfDetectionEnabled() { return m_dtmfDetectionEnabled; }
   void setDtmfDetectionEnabled(bool e) { m_dtmfDetectionEnabled = e; }
-  void putDtmfAudio(const unsigned char *buf, int size, int user_ts);
+  void putDtmfAudio(const unsigned char *buf, int size, unsigned long long system_ts);
 
   /**
    * send a DTMF as RTP payload (RFC4733)

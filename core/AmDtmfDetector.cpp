@@ -55,9 +55,9 @@ void AmDtmfEventQueue::processEvents()
   AmEventQueue::processEvents();
 }
 
-void AmDtmfEventQueue::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
+void AmDtmfEventQueue::putDtmfAudio(const unsigned char *buf, int size, unsigned long long system_ts)
 {
-  m_detector->putDtmfAudio(buf, size, user_ts);
+  m_detector->putDtmfAudio(buf, size, system_ts);
 }
 
 //
@@ -273,8 +273,14 @@ void AmDtmfDetector::registerKeyReleased(int event, Dtmf::EventSource source,
     m_current_eventid = event_id;
   }
 
-  memcpy(&m_startTime, &start, sizeof(struct timeval));
-  memcpy(&m_lastReportTime, &stop, sizeof(struct timeval));
+  if(timercmp(&start,&stop,<)){
+    memcpy(&m_startTime, &start, sizeof(struct timeval));
+    memcpy(&m_lastReportTime, &stop, sizeof(struct timeval));
+  }
+  else {
+    memcpy(&m_startTime, &stop, sizeof(struct timeval));
+    memcpy(&m_lastReportTime, &start, sizeof(struct timeval));
+  }
   switch (source)
     {
     case Dtmf::SOURCE_SIP:
@@ -376,9 +382,9 @@ void AmDtmfDetector::reportEvent()
   m_reportLock.unlock();
 }
 
-void AmDtmfDetector::putDtmfAudio(const unsigned char *buf, int size, int user_ts)
+void AmDtmfDetector::putDtmfAudio(const unsigned char *buf, int size, unsigned long long system_ts)
 {
-  m_inbandDetector->streamPut(buf, size, user_ts);
+  m_inbandDetector->streamPut(buf, size, system_ts);
 }
 
 // AmRtpDtmfDetector methods
@@ -653,7 +659,8 @@ void AmSemsInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
 	if (what != m_last)
 	  {
 	    m_startTime.tv_sec = m_last_ts / SAMPLERATE;
-	    m_startTime.tv_usec = (m_last_ts * 1000 / SAMPLERATE) % 1000;
+	    m_startTime.tv_usec = ((m_last_ts * 10000) / (SAMPLERATE/100)) 
+	      % 1000000;
 	  }
       } else
 	what = '.';
@@ -674,7 +681,7 @@ void AmSemsInbandDtmfDetector::isdn_audio_eval_dtmf_relative()
         {
 	  struct timeval stop;
 	  stop.tv_sec = m_last_ts / SAMPLERATE;
-	  stop.tv_usec = (m_last_ts * 1000 / SAMPLERATE) % 1000;
+	  stop.tv_usec = ((m_last_ts * 10000) / (SAMPLERATE/100)) % 1000000;
 	  m_keysink->registerKeyReleased(m_lastCode, Dtmf::SOURCE_INBAND, m_startTime, stop);
         }
       m_count = 0;
@@ -710,9 +717,13 @@ void AmSemsInbandDtmfDetector::isdn_audio_calc_dtmf(const signed short* buf, int
   }
 }
 
-int AmSemsInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts)
+int AmSemsInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned long long system_ts)
 {
-  isdn_audio_calc_dtmf((const signed short *)samples, size / 2, user_ts);
+  unsigned long long user_ts =
+    system_ts * ((unsigned long long)SAMPLERATE / 100)
+    / (WALLCLOCK_RATE / 100);
+
+  isdn_audio_calc_dtmf((const signed short *)samples, size / 2, (unsigned int)user_ts);
   return size;
 }
 
@@ -747,7 +758,7 @@ AmSpanDSPInbandDtmfDetector::~AmSpanDSPInbandDtmfDetector() {
 #endif
 }
 
-int AmSpanDSPInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned int user_ts) {
+int AmSpanDSPInbandDtmfDetector::streamPut(const unsigned char* samples, unsigned int size, unsigned long long system_ts) {
   dtmf_rx(rx_state, (const int16_t*) samples, size/2);
   return size;
 }
