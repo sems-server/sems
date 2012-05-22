@@ -24,6 +24,7 @@
  *  \arg \ref ZRTP
  *  \arg \ref signalsdoc
  *  \arg \ref Tuning
+ *  \arg \ref Monitoring
  *
  *  \section developerdoc Developer's documentation
  *   \arg <a href="http://www.iptel.org/files/semsng-designoverview.pdf">
@@ -125,7 +126,20 @@ On top of that, you save lots of memory (mostly the stack memory), also, because
  */
 
 
+/*! \page Monitoring Monitoring SEMS
+  
+  <p>The number of active calls can be fetched from SEMS if a suitable RPC module is loaded, either the stats module, the xmlrpc2di module
+  (\ref ModuleDoc_xmlrpc2di), or the json-rpc (\ref ModuleDoc_jsonrpc) module.
+  </p>
 
+  <p>More detailed call monitoring can be perfomed using the monitoring module (\ref ModuleDoc_monitoring) and an RPC module
+  </p>
+  
+  <p>A perl script to monitor active calls using munin:
+  </p>
+
+   \verbinclude munin-sems-stats-monitoring.pl
+ */
 
 
 
