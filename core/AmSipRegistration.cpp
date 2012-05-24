@@ -75,6 +75,10 @@ void AmSIPRegistration::setRegistrationInfo(const SIPRegistrationInfo& _info) {
       _info.user.c_str(), _info.domain.c_str());
   info = _info;
 
+  cred.realm = info.domain;
+  cred.user = info.user;
+  cred.pwd = info.pwd;
+
   req.user     = info.user;
   req.r_uri    = "sip:"+info.domain;
   req.from     = info.name+" <sip:"+info.user+"@"+info.domain+">";
