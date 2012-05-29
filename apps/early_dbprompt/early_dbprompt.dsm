@@ -1,0 +1,65 @@
+--
+-- This DSM app 
+--   o plays early media from a file in the DB
+--   o replies with final reply code/reason from P-App-Param
+--
+-- Parameters (P-App-Param):
+--    audio_id   - indicating audio file in DB; must be wav 16 bit pcm format (with wav header)
+--    fr_code    - final reply code
+--    fr_reason  - final reply reason
+--
+--  Example: P-App-Param: audio_id=rbt;fr_code=404;fr_reason="Not found"
+
+import(mod_utils);
+import(mod_dlg);
+import(mod_mysql);
+
+initial state START;
+
+transition "DB exception" START - exception / {
+  log(1, "Error in initializing :");
+  logAll(1);
+
+  -- reply with fr_code/reason immediately 
+  dlg.reply($fr_code, $fr_reason);
+
+  -- alternatively, reply with 500:
+  -- dlg.reply(500, "Server Internal Error");
+  stop(false);
+} -> END;
+
+transition "invite" START - invite / {
+  if test($audio_id != "") {
+    mysql.connect();
+    throwOnError();
+    -- play waiting file from DB
+    mysql.playDBAudio(SELECT data FROM provisioning.audio_files WHERE id="$audio_id", rbt.wav);
+    throwOnError();
+    mysql.disconnect();
+  }
+
+  -- send 183 with early media
+  dlg.acceptInvite(183, "Progress");
+
+  -- no default 200 OK
+  set($connect_session=0);
+
+  -- start RTP processing 
+  connectMedia();
+} -> WAITING;
+
+state WAITING;
+
+transition "CANCEL received" WAITING - hangup / {
+  dlg.reply(487, "Request Terminated");
+  removeTimers();
+  stop(false);
+} -> END;
+
+transition "end of prompt" WAITING - noAudio / {
+  dlg.reply($fr_code, $fr_reason);
+  removeTimers();
+  stop(false);
+} -> END;
+
+state END;
