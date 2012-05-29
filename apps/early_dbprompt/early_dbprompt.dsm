@@ -4,11 +4,12 @@
 --   o replies with final reply code/reason from P-App-Param
 --
 -- Parameters (P-App-Param):
---    audio_id   - indicating audio file in DB; must be wav 16 bit pcm format (with wav header)
---    fr_code    - final reply code
---    fr_reason  - final reply reason
+--    audio_id    - indicating audio file in DB; must be wav 16 bit pcm format (with wav header)
+--    fr_code     - final reply code
+--    fr_reason   - final reply reason
+--    play_looped - "yes" to play the prompt in loop
 --
---  Example: P-App-Param: audio_id=rbt;fr_code=404;fr_reason="Not found"
+--  Example: P-App-Param: audio_id=rbt;play_looped=yes;fr_code=404;fr_reason="Not found"
 
 import(mod_utils);
 import(mod_dlg);
@@ -33,7 +34,11 @@ transition "invite" START - invite / {
     mysql.connect();
     throwOnError();
     -- play waiting file from DB
-    mysql.playDBAudio(SELECT data FROM provisioning.audio_files WHERE id="$audio_id", rbt.wav);
+    if test($play_looped=="yes") {
+      mysql.playDBAudioLooped(SELECT data FROM provisioning.audio_files WHERE id="$audio_id", rbt.wav);
+    } else {
+      mysql.playDBAudio(SELECT data FROM provisioning.audio_files WHERE id="$audio_id", rbt.wav);
+    }
     throwOnError();
     mysql.disconnect();
   }
