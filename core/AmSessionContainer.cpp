@@ -193,10 +193,7 @@ void AmSessionContainer::stopAndQueue(AmSession* s)
 void AmSessionContainer::destroySession(AmSession* s)
 {
     AmEventQueueInterface* q = AmEventDispatcher::instance()->
-	delEventQueue(s->getLocalTag(),
-		      s->getCallID(),
-		      s->getRemoteTag(),
-		      s->getFirstBranch());
+      delEventQueue(s->getLocalTag());
     
     if(q) {
 	stopAndQueue(s);
@@ -328,8 +325,7 @@ void AmSessionContainer::startSessionUAS(AmSipRequest& req)
 	  session->start();
 	} catch (...) {
 	  AmEventDispatcher::instance()->
-	    delEventQueue(req.callid,req.from_tag,local_tag,
-			  req.via_branch);
+	    delEventQueue(local_tag);
 	  throw;
 	}
 

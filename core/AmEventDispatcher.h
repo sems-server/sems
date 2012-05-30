@@ -38,8 +38,22 @@ class AmEventDispatcher
 {
 public:
 
-    typedef std::map<string, AmEventQueueInterface*> EvQueueMap;
-    typedef EvQueueMap::iterator                     EvQueueMapIter;
+    struct QueueEntry {
+      AmEventQueueInterface* q;
+      string                 id;
+
+      QueueEntry()
+	: q(NULL), id() {}
+
+      QueueEntry(AmEventQueueInterface* q)
+        : q(q), id() {} 
+
+      QueueEntry(AmEventQueueInterface* q, string id)
+	: q(q), id(id){} 
+    };
+
+    typedef std::map<string, QueueEntry> EvQueueMap;
+    typedef EvQueueMap::iterator         EvQueueMapIter;
     
     typedef std::map<string,string>  Dictionnary;
     typedef Dictionnary::iterator    DictIter;
@@ -96,12 +110,9 @@ public:
 
     AmEventQueueInterface* delEventQueue(const string& local_tag);
 
-    AmEventQueueInterface* delEventQueue(const string& local_tag,
-					 const string& callid, 
-					 const string& remote_tag,
-					 const string& via_branch);
-
     bool empty();
+
+    void dump();
 };
 
 #endif
