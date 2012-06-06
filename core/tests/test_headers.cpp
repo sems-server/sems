@@ -45,6 +45,7 @@ FCTMF_SUITE_BGN(test_headers) {
 
       fct_chk(get_header_keyvalue(getHeader("P-App-Param: product_id=1;productid=1;bla=blub ", "P-App-Param"), "product_id") == "1");
       fct_chk(get_header_keyvalue(getHeader("P-App-Param: product_id=11;productid=1;bla=blub ", "P-App-Param"), "product_id") == "11");
+      fct_chk(get_header_keyvalue(getHeader("P-App-Param: ;u=user;d=domain", "P-App-Param"), "u") == "user");
 
 
       fct_chk(get_header_keyvalue(getHeader("P-My-Test: mykey=myval; myotherfunkykey=myval;andsomemore", "P-My-Test", true), "mykey") == "myval" );
