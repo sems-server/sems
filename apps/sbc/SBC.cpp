@@ -115,6 +115,8 @@ static void appendTranscoderCodecs(AmSdp &sdp, MediaType mtype, std::vector<SdpP
 
   // important: normalized SDP should get here
 
+  DBG("going to append transcoder codecs into SDP\n");
+
   unsigned stream_idx = 0;
   vector<SdpPayload>::const_iterator p;
   for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
@@ -160,6 +162,10 @@ static void appendTranscoderCodecs(AmSdp &sdp, MediaType mtype, std::vector<SdpP
           }
         }
         if (id > 128) ERROR("assigned too high payload type number (%d), see RFC 3551\n", id);
+      }
+      else {
+        // no compatible codecs found
+        DBG("can not transcode stream %d - no compatible codecs with transcoder_codecs found\n", stream_idx + 1);
       }
     
       stream_idx++; // count chosen media type only

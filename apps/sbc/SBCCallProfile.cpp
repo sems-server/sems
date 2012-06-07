@@ -1063,6 +1063,8 @@ bool SBCCallProfile::TranscoderSettings::evaluate(const AmSipRequest& req,
       break;
   }
 
+  DBG("transcoder is %s\n", enabled ? "enabled": "disabled");
+
   if (enabled && audio_codecs.empty()) {
     ERROR("transcoder is enabled but no transcoder codecs selected ... disabling it\n");
     enabled = false;
