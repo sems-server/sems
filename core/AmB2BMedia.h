@@ -30,6 +30,14 @@ class B2BMediaStatistics
     void decCodecReadUsage(const string &codec_name);
 };
 
+/** \brief Class for computing mask of payloads to relay
+ *
+ * */
+class RelayController {
+  public:
+    virtual void computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask) = 0;
+};
+
 /** \brief Storage for several data items required to be held with one RTP
  * stream for B2B media processing.
  *
@@ -106,7 +114,7 @@ class AudioStreamData {
      *
      * Removes the stream from AmRtpReceiver before updating and returns it back
      * once done. */
-    void setStreamRelay(const SdpMedia &m, AmRtpStream *other);
+    void setStreamRelay(const SdpMedia &m, AmRtpStream *other, RelayController &rc);
 
     /** Initializes RTP stream with local and remote media (needed for
      * transcoding). 
@@ -142,7 +150,6 @@ class AudioStreamData {
     AmRtpAudio *getStream() { return stream; }
     bool isInitialized() { return initialized; }
 };
-
 
 /** \brief Class for control over media relaying and transcoding in a B2B session.
  *
@@ -274,7 +281,7 @@ class AmB2BMedia: public AmMediaSession
      * Method initializes relay & transcoding settings if told to do so. 
      *
      * Returns false if update failed. */
-    bool updateStreams(bool a_leg, bool init_relay, bool init_transcoding);
+    bool updateStreams(bool a_leg, bool init_relay, bool init_transcoding, RelayController &rc);
 
     /** initialize given stream (prepares for transcoding) */
     void initStream(AudioStreamData &data, AmSession *session, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
@@ -306,7 +313,7 @@ class AmB2BMedia: public AmMediaSession
 
     /** Store remote SDP for given leg and update media session appropriately. 
      * Returns false if update failed. */
-    bool updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp);
+    bool updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl = NULL);
     
     /** Store local SDP for given leg and update media session appropriately. 
      * Returns false if update failed. */

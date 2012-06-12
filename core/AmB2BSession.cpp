@@ -324,7 +324,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
       // We have to update media session before filtering because we may want to
       // use the codec later filtered out for transcoding.
       if (parseSdp(sdp, req)) {
-        if (!media_session->updateRemoteSdp(a_leg, sdp)) {
+        if (!updateRemoteSdp(sdp)) {
           ERROR("media update failed, reply internal error\n");
           dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
@@ -370,6 +370,12 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 
   DBG("relaying B2B SIP request %s %s\n", r_ev->req.method.c_str(), r_ev->req.r_uri.c_str());
   relayEvent(r_ev);
+}
+
+bool AmB2BSession::updateRemoteSdp(AmSdp &sdp)
+{
+  if (media_session) return media_session->updateRemoteSdp(a_leg, sdp);
+  else return true; // ignore missing media session or create if rtp_relay_mode == RTP_Relay?
 }
 
 bool AmB2BSession::updateLocalSdp(AmSdp &sdp)
@@ -464,13 +470,12 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
 
     AmSdp sdp;
   
-    if ((rtp_relay_mode == RTP_Relay) && media_session && 
+    if ((rtp_relay_mode == RTP_Relay) &&
         (reply.code >= 180  && reply.code < 300)) 
     {
       // We have to update media session before filtering because we may want to
       // use the codec later filtered out for transcoding.
-      if (parseSdp(sdp, reply))
-        media_session->updateRemoteSdp(a_leg, sdp);
+      if (parseSdp(sdp, reply)) updateRemoteSdp(sdp);
     }
 
     // filter relayed INVITE/UPDATE body
@@ -1178,7 +1183,7 @@ void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) 
     // invite_sdp. The best way would be to propagate SDP as parameter of
     // initializeRTPRelay method.
     AmSdp sdp;
-    if (parseSdp(sdp, invite_req)) media_session->updateRemoteSdp(a_leg, sdp);
+    if (parseSdp(sdp, invite_req)) updateRemoteSdp(sdp);
   }
 }
 

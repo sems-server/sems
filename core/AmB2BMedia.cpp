@@ -11,7 +11,36 @@
 #define TRACE DBG
 #define UNDEFINED_PAYLOAD (-1)
 
+/** class for computing payloads for relay the simpliest way - allow relaying of
+ * all payloads supported by remote party */
+class SimpleRelayController: public RelayController {
+  public:
+    virtual void computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask);
+};
+
 static B2BMediaStatistics b2b_stats;
+static SimpleRelayController simple_relay_ctrl;
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void SimpleRelayController::computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask)
+{
+  enable = false;
+
+  // walk through the media line and add all payload IDs to the bit mask
+  for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin();
+      i != m.payloads.end(); ++i)
+  {
+    // do not mark telephone-event payload for relay
+    if(strcasecmp("telephone-event",i->encoding_name.c_str()) != 0){
+      mask.set(i->payload_type);
+      enable = true;
+      TRACE("marking payload %d for relay\n", i->payload_type);
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////////
 
 void B2BMediaStatistics::incCodecWriteUsage(const string &codec_name)
 {
@@ -190,7 +219,7 @@ void AudioStreamData::resumeStreamProcessing()
   }
 }
 
-void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other)
+void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other, RelayController &rc)
 {
   // We are in locked section, so the stream can not change under our hands
   // remove the stream from processing to avoid changing relay params under the
@@ -201,19 +230,12 @@ void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other)
 
   if ((m.payloads.size() > 0) && other) {
     PayloadMask mask;
+    bool enabled;
 
-    // walk through the media line and add all payload IDs to the bit mask
-    for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin();
-        i != m.payloads.end(); ++i) 
-    {
-      // do not mark telephone-event payload for relay
-      if(strcasecmp("telephone-event",i->encoding_name.c_str()) != 0){
-	mask.set(i->payload_type);
-	TRACE("marking payload %d for relay\n", i->payload_type);
-      }
-    }
+    rc.computeRelayMask(m, enabled, mask);
+    if (enabled) stream->enableRtpRelay(mask, other);
+    else stream->disableRtpRelay();
 
-    stream->enableRtpRelay(mask, other);
   }
   else {
     // nothing to relay
@@ -541,7 +563,7 @@ bool AmB2BMedia::resetInitializedStreams(bool a_leg)
   return res;
 }
 
-bool AmB2BMedia::updateStreams(bool a_leg, bool init_relay, bool init_transcoding)
+bool AmB2BMedia::updateStreams(bool a_leg, bool init_relay, bool init_transcoding, RelayController &rc)
 {
   unsigned stream_idx = 0;
   unsigned media_idx = 0;
@@ -570,8 +592,8 @@ bool AmB2BMedia::updateStreams(bool a_leg, bool init_relay, bool init_transcodin
       // initialize RTP relay stream and payloads in the other leg (!)
       // Payloads present in this SDP can be relayed directly by the AmRtpStream
       // of the other leg to the AmRtpStream of this leg.
-      if (a_leg) pair.b.setStreamRelay(*m, pair.a.getStream());
-      else pair.a.setStreamRelay(*m, pair.b.getStream());
+      if (a_leg) pair.b.setStreamRelay(*m, pair.a.getStream(), rc);
+      else pair.a.setStreamRelay(*m, pair.b.getStream(), rc);
     }
 
     // initialize the stream for current leg if asked to do so
@@ -595,12 +617,14 @@ bool AmB2BMedia::updateStreams(bool a_leg, bool init_relay, bool init_transcodin
   return ok;
 }
 
-bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp)
+bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl)
 {
   bool ok = true;
   mutex.lock();
 
   bool initialize_streams;
+
+  if (!ctrl) ctrl = &simple_relay_ctrl;
 
   if (a_leg) a_leg_remote_sdp = remote_sdp;
   else b_leg_remote_sdp = remote_sdp;
@@ -620,7 +644,7 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp)
 
   ok = ok && updateStreams(a_leg, 
       true /* needed to initialize relay stuff on every remote SDP change */, 
-      initialize_streams);
+      initialize_streams, *ctrl);
 
   if (ok) updateProcessingState(); // start media processing if possible
 
@@ -654,7 +678,7 @@ bool AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
 
   ok = ok && updateStreams(a_leg, 
       false /* local SDP change has no effect on relay */, 
-      initialize_streams);
+      initialize_streams, simple_relay_ctrl);
 
   if (ok) updateProcessingState(); // start media processing if possible
 

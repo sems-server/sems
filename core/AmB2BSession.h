@@ -261,6 +261,10 @@ class AmB2BSession: public AmSession
    * Default implementation updates connection address and ports. */
   virtual bool updateLocalSdp(AmSdp &sdp);
 
+  /** Passes remote SDP to AmB2BMediaSession, might be redefined to provide
+   * another functionality than just simply passing SDP */
+  virtual bool updateRemoteSdp(AmSdp &sdp);
+
  public:
   void set_sip_relay_only(bool r);
 

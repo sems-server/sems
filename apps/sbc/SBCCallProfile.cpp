@@ -978,6 +978,8 @@ void SBCCallProfile::TranscoderSettings::infoPrint() const
   INFO("SBC:      transcoder audio codecs: %s\n", audio_codecs_str.c_str());
   INFO("SBC:      callee codec capabilities: %s\n", callee_codec_capabilities_str.c_str());
   INFO("SBC:      enable transcoder: %s\n", transcoder_mode_str.c_str());
+  INFO("SBC:      norelay audio codecs: %s\n", audio_codecs_norelay_str.c_str());
+  INFO("SBC:      norelay audio codecs (aleg): %s\n", audio_codecs_norelay_aleg_str.c_str());
 }
 
 bool SBCCallProfile::TranscoderSettings::readConfig(AmConfigReader &cfg)
@@ -988,6 +990,8 @@ bool SBCCallProfile::TranscoderSettings::readConfig(AmConfigReader &cfg)
   transcoder_mode_str = cfg.getParameter("enable_transcoder");
   dtmf_mode_str = cfg.getParameter("dtmf_transcoding");
   lowfi_codecs_str = cfg.getParameter("lowfi_codecs");
+  audio_codecs_norelay_str = cfg.getParameter("prefer_transcoding_for_codecs");
+  audio_codecs_norelay_aleg_str = cfg.getParameter("prefer_transcoding_for_codecs_aleg");
 
   return true;
 }
@@ -1039,10 +1043,14 @@ bool SBCCallProfile::TranscoderSettings::evaluate(const AmSipRequest& req,
 {
   REPLACE_NONEMPTY_STR(transcoder_mode_str);
   REPLACE_NONEMPTY_STR(audio_codecs_str);
+  REPLACE_NONEMPTY_STR(audio_codecs_norelay_str);
+  REPLACE_NONEMPTY_STR(audio_codecs_norelay_aleg_str);
   REPLACE_NONEMPTY_STR(callee_codec_capabilities_str);
   REPLACE_NONEMPTY_STR(lowfi_codecs_str);  
 
   if (!read(audio_codecs_str, audio_codecs)) return false;
+  if (!read(audio_codecs_norelay_str, audio_codecs_norelay)) return false;
+  if (!read(audio_codecs_norelay_aleg_str, audio_codecs_norelay_aleg)) return false;
 
   if (!readPayloadList(callee_codec_capabilities, callee_codec_capabilities_str)) 
     return false;

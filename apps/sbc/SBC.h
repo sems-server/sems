@@ -216,6 +216,7 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   virtual void filterBody(AmSipRequest &req, AmSdp &sdp);
   virtual void filterBody(AmSipReply &reply, AmSdp &sdp);
   virtual bool updateLocalSdp(AmSdp &sdp);
+  virtual bool updateRemoteSdp(AmSdp &sdp);
 
   void onControlCmd(string& cmd, AmArg& params);
 
@@ -241,6 +242,7 @@ class SBCCalleeSession
   virtual void filterBody(AmSipRequest &req, AmSdp &sdp);
   virtual void filterBody(AmSipReply &reply, AmSdp &sdp);
   virtual bool updateLocalSdp(AmSdp &sdp);
+  virtual bool updateRemoteSdp(AmSdp &sdp);
 
   void onControlCmd(string& cmd, AmArg& params);
 
