@@ -182,6 +182,15 @@ protected:
      */
     int set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port);    
 
+    /**
+     * If the destination has multiple IPs (SRV records),
+     * try the next destination IP.
+     * @return 0 if the message has been re-sent.
+     *        -1 if no additional destination has been found.
+     */
+    int try_next_ip(trans_bucket* bucket, sip_trans* tr);
+
+
     /** Avoid external instantiation. @see singleton. */
     _trans_layer();
     ~_trans_layer();

@@ -1383,7 +1383,12 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     if(t->msg->u.request->method == sip_request::INVITE){
     
 	if(reply_code >= 300){
-	    
+	
+	    if(reply_code == 503) {
+		if(!try_next_ip(bucket,t))
+		    goto end;
+	    }
+    
 	    // Final error reply
 	    switch(t->state){
 		
@@ -1477,6 +1482,11 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	}
     }
     else { // non-INVITE transaction
+
+	if(reply_code == 503) {
+	    if(!try_next_ip(bucket,t))
+		goto end;
+	}
 
 	// Final reply
 	switch(t->state){
@@ -1864,42 +1874,7 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
     } break;
 
     case STIMER_M:
-	{
-	    sockaddr_storage sa;
-	    memset(&sa,0,sizeof(sockaddr_storage));
-
-	    // get the next ip
-	    if(tr->msg->h_dns.next_ip(&sa) < 0){
-		tr->clear_timer(STIMER_M);
-		break;
-	    }
-
-	    //If a SRV record is involved, the port number
-	    // should have been set by h_dns.next_ip(...).
-	    if(!((sockaddr_in*)&sa)->sin_port){
-		//Else, we copy the old port number
-		((sockaddr_in*)&sa)->sin_port = ((sockaddr_in*)&tr->msg->remote_ip)->sin_port;
-	    }
-
-	    // copy the new address back
-	    memcpy(&tr->msg->remote_ip,&sa,sizeof(sockaddr_storage));
-
-	    // create new branch tag
-	    compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
-			   tr->msg->callid->value,tr->msg->cseq->value);
-
-	    // and re-send
-	    tr->msg->send();
-
-	    // reset counter for timer A & E
-	    timer* A_E_timer = tr->get_timer(STIMER_A);
-	    tr->reset_timer(A_E_timer->type & 0xFFFF,A_TIMER,bucket->get_id());
-
-	    if(!tr->msg->h_dns.eoip())
-		tr->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
-	    else
-		tr->clear_timer(STIMER_M);
-	}
+	try_next_ip(bucket,tr);
 	break;
 
     default:
@@ -1982,6 +1957,46 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
  error:
   close(temp_sock);
   return NULL;
+}
+
+int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
+{
+    sockaddr_storage sa;
+    memset(&sa,0,sizeof(sockaddr_storage));
+    
+    // get the next ip
+    if(tr->msg->h_dns.next_ip(&sa) < 0){
+	tr->clear_timer(STIMER_M);
+	return -1;
+    }
+    
+    //If a SRV record is involved, the port number
+    // should have been set by h_dns.next_ip(...).
+    if(!((sockaddr_in*)&sa)->sin_port){
+	//Else, we copy the old port number
+	((sockaddr_in*)&sa)->sin_port = ((sockaddr_in*)&tr->msg->remote_ip)->sin_port;
+    }
+    
+    // copy the new address back
+    memcpy(&tr->msg->remote_ip,&sa,sizeof(sockaddr_storage));
+    
+    // create new branch tag
+    compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
+		   tr->msg->callid->value,tr->msg->cseq->value);
+    
+    // and re-send
+    tr->msg->send();
+    
+    // reset counter for timer A & E
+    timer* A_E_timer = tr->get_timer(STIMER_A);
+    tr->reset_timer(A_E_timer->type & 0xFFFF,A_TIMER,bucket->get_id());
+    
+    if(!tr->msg->h_dns.eoip())
+	tr->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
+    else
+	tr->clear_timer(STIMER_M);
+
+    return 0;
 }
 
 /** EMACS **
