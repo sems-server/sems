@@ -733,7 +733,7 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
         (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
          req.method == SIP_METH_ACK || req.method == SIP_METH_PRACK)) {
       body = req.body.hasContentType(SIP_APPLICATION_SDP);
-      if (updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
+      if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
         body = &r_body;
       }
       else {
@@ -1230,7 +1230,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
     if (rtp_relay_mode == RTP_Relay) {
       try {
 	body = co_ev->body.hasContentType(SIP_APPLICATION_SDP);
-	if (updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
+	if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
 	  body = &r_body;
 	}
 	else {
