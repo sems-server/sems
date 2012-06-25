@@ -507,6 +507,8 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
   static const string void_addr("0.0.0.0");
   mutex.lock();
 
+  SdpConnection orig_conn = parser_sdp.conn; // needed for the 'quick workaround' for non-audio media
+
   // place relay_address in connection address
   if (!parser_sdp.conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
     parser_sdp.conn.address = relay_address;
@@ -521,7 +523,14 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
   for (; (it != parser_sdp.media.end()) && (streams != audio.end()) ; ++it) {
   
     // FIXME: only audio streams are handled for now
-    if (it->type != MT_AUDIO) continue;
+    if (it->type != MT_AUDIO) {
+      // quick workaround to allow direct connection of non-audio streams (i.e.
+      // those which are not relayed or transcoded): propagate connection
+      // address - might work but need not (to be tested with real clients
+      // instead of simulators)
+      if (it->conn.address.empty()) it->conn = orig_conn;
+      continue;
+    }
 
     if(it->port) { // if stream active
       if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {

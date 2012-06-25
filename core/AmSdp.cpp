@@ -265,8 +265,9 @@ void AmSdp::print(string& body) const
       
       out_buf += "m=" + media_t_2_str(media_it->type) + " " + int2str(media_it->port) + " " + transport_p_2_str(media_it->transport);
 
+      string options;
+
       if (media_it->transport == TP_RTPAVP || media_it->transport == TP_RTPSAVP) {
-	string options;
 	for(std::vector<SdpPayload>::const_iterator pl_it = media_it->payloads.begin();
 	    pl_it != media_it->payloads.end(); pl_it++) {
 
@@ -291,6 +292,12 @@ void AmSdp::print(string& body) const
 	  }
 	  
 	}
+      }
+      else {
+        // for other transports (UDP/UDPTL) just print out fmt
+        out_buf += " " + media_it->fmt;
+        // ... and continue with c=, attributes, ...
+      }
 
       if (!media_it->conn.address.empty())
         out_buf += "\r\nc=IN IP4 "+media_it->conn.address;
@@ -335,10 +342,6 @@ void AmSdp::print(string& body) const
       case SdpMedia::DirPassive: out_buf += "a=direction:passive\r\n"; break;
       case SdpMedia::DirBoth:  out_buf += "a=direction:both\r\n"; break;
       case SdpMedia::DirUndefined: break;
-      }
-    } else {
-        // for other transports (UDP/UDPTL) just print out fmt
-        out_buf += " " + media_it->fmt + "\r\n";
       }
   }
 
