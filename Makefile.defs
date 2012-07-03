@@ -3,18 +3,18 @@ else
 makefile_defs="1"
 export makefile_defs
 
-#GIT := $(shell which git)
+GIT := $(shell which git)
 
-#ifneq ($(GIT),)
-#   SCM_REV := $(shell if git --help describe |grep dirty 2>&1 >/dev/null ; \
-#        then git describe --always --dirty 2>/dev/null; \
-#        else git describe --always 2>/dev/null; fi)
-#endif
+ifneq ($(GIT),)
+   SCM_REV := $(shell if git --help describe |grep dirty 2>&1 >/dev/null ; \
+        then git describe --always --dirty 2>/dev/null; \
+        else git describe --always 2>/dev/null; fi)
+endif
 
 #version number
 VERSION = 1
 PATCHLEVEL = 5
-SUBLEVEL = 0
+SUBLEVEL = 1
 
 ifneq ($(SCM_REV),)
 RELEASE := $(SCM_REV)
