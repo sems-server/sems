@@ -1,4 +1,43 @@
 Changelog for SEMS 
+
+Version 1.5.0
+ - Core
+    - configurable SIP timers (global)
+    - timer C support (mainly for SBC)
+    - SUBSCRIBE/NOTIFY support
+    - multi-mime bodies
+    - wideband / multiple sample frequency support
+    - multiple destinations (faked SRV record)
+    - DNS SRV: support for 503 replies
+    - multi-threaded RTP receiver
+    - complete rework of offer/answer mechanisms
+
+ - Codecs:
+    - iSAC
+    - SILK
+    - SPEEX 16kHz, 32kHz
+    - G722
+    - L16
+
+ - SBC
+    - audio & dtmf transcoder
+    - call-control modules
+    - lots of small improvements
+
+ - Monitoring
+    - munin plugin
+
+ - DSM
+    - mod_xml: XML handling
+    - mod_curl: HTTP requests
+    - mod_subscription: SUBSCRIBE/NOTIFY
+    - mod_regex: regular expressions
+    - lots of small improvements
+
+ - App Plug-ins
+    - db_reg_agent: register SIP accounts from a DB
+    - rtmp: RTMP gateway
+
 Version 1.4.0
  - SBC
     - topo hiding B2BUA
