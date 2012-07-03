@@ -172,20 +172,28 @@ endif
 TARGET=
 LIB_LDFLAGS = -shared
 
+ifeq ($(LD), clang)
+LDFLAG_DYN=
+LDFLAG_PTHREAD=
+else
+LDFLAG_DYN = -rdynamic
+LDFLAG_PTHREAD = -lpthread
+endif
+
 ifeq ($(OS), linux)
-	LDFLAGS +=  -ldl -rdynamic -lpthread
+	LDFLAGS +=  -ldl $(LDFLAG_DYN) $(LDFLAG_PTHREAD)
 else
 ifeq ($(OS), freebsd)
-	LDFLAGS += -rdynamic -pthread
+	LDFLAGS += $(LDFLAG_DYN) $(LDFLAG_PTHREAD)
 else
 ifeq ($(OS), openbsd)
-	LDFLAGS += -rdynamic -pthread
+	LDFLAGS += $(LDFLAG_DYN) $(LDFLAG_PTHREAD)
 else
 ifeq ($(OS), netbsd)
-	LDFLAGS += -rdynamic -pthread
+	LDFLAGS += $(LDFLAG_DYN) $(LDFLAG_PTHREAD)
 else
 ifeq ($(OS), macosx)
-	LDFLAGS += -rdynamic -pthread
+	LDFLAGS += $(LDFLAG_DYN) $(LDFLAG_PTHREAD)
 	LIB_LDFLAGS = -flat_namespace -undefined suppress -bundle
 	CXXFLAGS += -fno-common
 	CFLAGS += -fno-common
@@ -202,7 +210,7 @@ ifeq ($(OS), macosx)
 	endif	      
 else
 ifeq ($(OS), solaris)
-       	LDFLAGS+= -fPIC -ldl -lsocket -lnsl -lpthread
+       	LDFLAGS+= -fPIC -ldl -lsocket -lnsl $(LDFLAG_PTHREAD)
 	TARGET=solaris
 	# These don't build on Solaris because of missing Python, invalid make args, or other.
 	exclude_app_modules += py_sems py_comp pin_collect mailbox ivr diameter_client conf_auth mp3 cc_acc_xmlrpc xmlrpc2di
