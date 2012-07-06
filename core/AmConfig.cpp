@@ -820,7 +820,7 @@ string fixIface2IP(const string& dev_name)
       intf_it != AmConfig::SysIfs.end(); ++intf_it) {
       
     if((!dev_name.empty() && (intf_it->name == dev_name))
-       || !(intf_it->flags & IFF_LOOPBACK)) {
+       || (dev_name.empty() && !(intf_it->flags & IFF_LOOPBACK))) {
 
       if(intf_it->addrs.empty()){
 	ERROR("No IP address for interface '%s'\n",intf_it->name.c_str());
