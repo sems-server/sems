@@ -8,6 +8,9 @@ User=sems
 Group=sems
 EnvironmentFile=-/etc/sysconfig/sems
 PIDFile=/var/run/sems/sems.pid
+Restart=always
+StartLimitInterval=10
+StartLimitBurst=5
 ExecStart=/usr/sbin/sems -E -u sems -g sems -P /var/run/sems/sems.pid $OPTIONS
 
 [Install]
