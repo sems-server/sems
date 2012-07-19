@@ -24,7 +24,7 @@
 prog=sems
 sems=/usr/sbin/$prog
 
-pidfile=/var/run/$prog.pid
+pidfile=/var/run/$prog/$prog.pid
 lockfile=/var/lock/subsys/$prog
 conffile=/etc/$prog/$prog.conf
 
