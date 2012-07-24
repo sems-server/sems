@@ -42,17 +42,6 @@ static const string empty;
 // helper functions
 //
 
-/** count active and inactive media streams in given SDP */
-static void countStreams(const AmSdp &sdp, int &active, int &inactive)
-{
-  active = 0;
-  inactive = 0;
-  for (vector<SdpMedia>::const_iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
-    if (m->port == 0) inactive++;
-    else active++;
-  }
-}
-
 static void errCode2RelayedReply(AmSipReply &reply, int err_code, unsigned default_code = 500)
 {
   // FIXME: use cleaner method to propagate error codes/reasons, 
@@ -66,6 +55,7 @@ static void errCode2RelayedReply(AmSipReply &reply, int err_code, unsigned defau
   switch (reply.code) {
     case 400: reply.reason = "Bad Request"; break;
     case 478: reply.reason = "Unresolvable destination"; break;
+    case 488: reply.reason = SIP_REPLY_NOT_ACCEPTABLE_HERE; break;
     default: reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
   }
 }
@@ -128,6 +118,27 @@ void AmB2BSession::process(AmEvent* event)
   AmSession::process(event);
 }
 
+void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward, int err_code)
+{
+  AmSipReply n_reply;
+  errCode2RelayedReply(n_reply, err_code, 500);
+  n_reply.cseq = cseq;
+  n_reply.from_tag = dlg.local_tag;
+  DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
+  relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+}
+
+void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward, int sip_code, const char *reason)
+{
+  AmSipReply n_reply;
+  n_reply.code = sip_code;
+  n_reply.reason = reason;
+  n_reply.cseq = cseq;
+  n_reply.from_tag = dlg.local_tag;
+  DBG("relaying B2B SIP reply %d %s\n", sip_code, reason);
+  relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+}
+
 void AmB2BSession::onB2BEvent(B2BEvent* ev)
 {
   DBG("AmB2BSession::onB2BEvent\n");
@@ -147,25 +158,14 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	if (req_ev->req.method == SIP_METH_INVITE &&
 	    dlg.getUACInvTransPending()) {
 	  // don't relay INVITE if INV trans pending
-	  AmSipReply n_reply;
-	  n_reply.code = 491;
-	  n_reply.reason = SIP_REPLY_PENDING;
-	  n_reply.cseq = req_ev->req.cseq;
-	  n_reply.from_tag = dlg.local_tag;
-	  DBG("relaying B2B SIP reply 491 " SIP_REPLY_PENDING "\n");
-	  relayEvent(new B2BSipReplyEvent(n_reply, true, SIP_METH_INVITE));
+          relayError(req_ev->req.method, req_ev->req.cseq, true, 491, SIP_REPLY_PENDING);
 	  return;
 	}
 
         int res = relaySip(req_ev->req);
 	if(res < 0) {
 	  // reply relayed request internally
-	  AmSipReply n_reply;
-          errCode2RelayedReply(n_reply, res, 500);
-	  n_reply.cseq = req_ev->req.cseq;
-	  n_reply.from_tag = dlg.local_tag;
-	  DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-	  relayEvent(new B2BSipReplyEvent(n_reply, true, req_ev->req.method));
+          relayError(req_ev->req.method, req_ev->req.cseq, true, res);
 	  return;
 	}
       }
@@ -306,20 +306,10 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
   else {
     updateRefreshMethod(req.hdrs);
 
-    if(req.method != SIP_METH_ACK)
-      recvd_req.insert(std::make_pair(req.cseq,req));
-
     if(req.method == SIP_METH_BYE)
       onBye(req);
-  }
 
-  B2BSipRequestEvent* r_ev = new B2BSipRequestEvent(req,fwd);
-  
-  if (fwd) {
     AmSdp sdp;
-
-    // FIXME: update media session only in case of forwarding like when handling
-    // replies, right?
     if ((rtp_relay_mode == RTP_Relay) && media_session) {
       // We have to update media session before filtering because we may want to
       // use the codec later filtered out for transcoding.
@@ -328,44 +318,31 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
           ERROR("media update failed, reply internal error\n");
           dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
-          // cleanup
-          delete r_ev;
-          if(req.method != SIP_METH_ACK) {
-            std::map<int,AmSipRequest>::iterator r = recvd_req.find(req.cseq);
-            if (r != recvd_req.end()) recvd_req.erase(r);
-          }
-
           return;
         }
       }
     }
+  }
 
-    // filter relayed INVITE/UPDATE body
-    DBG("filtering body for request '%s' (c/t '%s')\n",
-	req.method.c_str(), req.body.getCTStr().c_str());
-    // todo: handle filtering errors
+  B2BSipRequestEvent* r_ev = new B2BSipRequestEvent(req,fwd);
 
-    filterBody(r_ev->req, sdp);
-
-    int active, inactive;
-    countStreams(sdp, active, inactive);
-    if ((inactive > 0) && (active == 0)) {
-      // no active streams remaining => reply 488 (FIXME: does it matter if we
-      // filtered them out or they were already inactive?)
-
-      DBG("all streams are marked as inactive, reply 488 "
-	  SIP_REPLY_NOT_ACCEPTABLE_HERE"\n");
-      dlg.reply(req, 488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
-
-      // cleanup
-      delete r_ev;
-      if(req.method != SIP_METH_ACK) {
-        std::map<int,AmSipRequest>::iterator r = recvd_req.find(req.cseq);
-        if (r != recvd_req.end()) recvd_req.erase(r);
-      }
-
-      return;
+  if (fwd) {
+    DBG("relaying B2B SIP request (fwd) %s %s\n", r_ev->req.method.c_str(), r_ev->req.r_uri.c_str());
+    int res = relayEvent(r_ev);
+    if (res == 0) {
+      // successfuly relayed, store the request
+      if(req.method != SIP_METH_ACK)
+        recvd_req.insert(std::make_pair(req.cseq,req));
     }
+    else {
+      // relay failed, generate error reply
+      ERROR("relay failed, replying error\n");
+      AmSipReply n_reply;
+      errCode2RelayedReply(n_reply, res, 500);
+      dlg.reply(req, n_reply.code, n_reply.reason);
+    }
+
+    return;
   }
 
   DBG("relaying B2B SIP request %s %s\n", r_ev->req.method.c_str(), r_ev->req.r_uri.c_str());
@@ -478,9 +455,6 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
       if (parseSdp(sdp, reply)) updateRemoteSdp(sdp);
     }
 
-    // filter relayed INVITE/UPDATE body
-    filterBody(n_reply, sdp);
-    
     DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
     relayEvent(new B2BSipReplyEvent(n_reply, true, t->second.method));
 
@@ -1069,22 +1043,6 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
 {
   if(callee_status != None)
     terminateOtherLeg();
-  
-  // FIXME: this is just a hack to have unfiltered INVITE body for updating
-  // media session later on
-  AmMimeBody backup = invite_req.body; 
-
-  AmSdp filter_sdp;
-  filterBody(invite_req, filter_sdp); // FIXME: a_leg == true here, right?
-  
-  int active, inactive;
-  countStreams(filter_sdp, active, inactive);
-  if ((inactive > 0) && (active == 0)) {
-    // no active streams remaining => reply 488 (FIXME: does it matter if we
-    // filtered them out or they were already inactive?)
-    DBG("all streams are marked as inactive\n");
-    throw AmSession::Exception(488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
-  }
 
   if (relayed_invite) {
     // relayed INVITE - we need to add the original INVITE to
@@ -1101,8 +1059,6 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
   ev->hdrs         = invite_req.hdrs;
   ev->relayed_invite = relayed_invite;
   ev->r_cseq       = invite_req.cseq;
-
-  invite_req.body = backup;
 
   DBG("relaying B2B connect event to %s\n", remote_uri.c_str());
   relayEvent(ev);
@@ -1237,14 +1193,8 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 	  body = &co_ev->body;
 	}
       } catch (const string& s) {
-	AmSipReply n_reply;
-	n_reply.code = 500;
-	n_reply.reason = SIP_REPLY_SERVER_INTERNAL_ERROR;
-	n_reply.cseq = co_ev->r_cseq;
-	n_reply.from_tag = dlg.local_tag;
-	DBG("relaying B2B SIP reply 500" SIP_REPLY_SERVER_INTERNAL_ERROR "\n");
-	relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
-	  throw;
+        relayError(SIP_METH_INVITE, co_ev->r_cseq, co_ev->relayed_invite, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+        throw;
       }
     }
 
@@ -1252,12 +1202,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 			co_ev->hdrs, SIP_FLAGS_VERBATIM);
     if (res < 0) {
       DBG("sending INVITE failed, relaying back error reply\n");
-      AmSipReply n_reply;
-      errCode2RelayedReply(n_reply, res, 400);
-      n_reply.cseq = co_ev->r_cseq;
-      n_reply.from_tag = dlg.local_tag;
-      DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-      relayEvent(new B2BSipReplyEvent(n_reply, co_ev->relayed_invite, SIP_METH_INVITE));
+      relayError(SIP_METH_INVITE, co_ev->r_cseq, co_ev->relayed_invite, res);
 
       if (co_ev->relayed_invite)
 	relayed_req.erase(dlg.cseq);

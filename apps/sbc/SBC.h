@@ -34,6 +34,8 @@
 #include "SBCCallProfile.h"
 #include "RegexMapper.h"
 
+#include "CallLeg.h"
+
 #include <map>
 
 using std::string;
@@ -101,7 +103,7 @@ class PayloadIdMapping
     void reset();
 };
 
-class SBCDialog : public AmB2BCallerSession, public CredentialHolder
+class SBCDialog : public CallLeg, public CredentialHolder
 {
   enum {
     BB_Init = 0,
@@ -118,10 +120,6 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   string callid;
 
   map<int, double> call_timers;
-
-  int outbound_interface;
-
-  int rtprelay_interface;
 
   // call control
   vector<AmDynInvoke*> cc_modules;
@@ -146,10 +144,10 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   void fixupCCInterface(const string& val, CCInterface& cc_if);
 
   /** handler called when the second leg is connected */
-  void onCallConnected(const AmSipReply& reply);
+  virtual void onCallConnected(const AmSipReply& reply);
 
   /** handler called when call is stopped */
-  void onCallStopped();
+  virtual void onCallStopped();
 
   /** handler called when SST timeout occured */
   void onSessionTimeout();
@@ -177,6 +175,8 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   /** end call */
   void CCEnd();
   void CCEnd(const CCInterfaceListIteratorT& end_interface);
+
+  void connectCallee(const string& remote_party, const string& remote_uri, const string &from, const AmSipRequest &invite_req);
 
  public:
 
@@ -210,11 +210,8 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(AmSipRequest& req, int flags);
 
-  bool onOtherReply(const AmSipReply& reply);
   void onOtherBye(const AmSipRequest& req);
 
-  virtual void filterBody(AmSipRequest &req, AmSdp &sdp);
-  virtual void filterBody(AmSipReply &reply, AmSdp &sdp);
   virtual bool updateLocalSdp(AmSdp &sdp);
   virtual bool updateRemoteSdp(AmSdp &sdp);
 
@@ -224,7 +221,7 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
 };
 
 class SBCCalleeSession 
-: public AmB2BCalleeSession, public CredentialHolder
+: public CallLeg, public CredentialHolder
 {
   AmSessionEventHandler* auth;
   PayloadIdMapping transcoder_payload_mapping;
@@ -239,15 +236,13 @@ class SBCCalleeSession
 
   /* bool onOtherReply(const AmSipReply& reply); */
 
-  virtual void filterBody(AmSipRequest &req, AmSdp &sdp);
-  virtual void filterBody(AmSipReply &reply, AmSdp &sdp);
   virtual bool updateLocalSdp(AmSdp &sdp);
   virtual bool updateRemoteSdp(AmSdp &sdp);
 
   void onControlCmd(string& cmd, AmArg& params);
 
  public:
-  SBCCalleeSession(const AmB2BCallerSession* caller,
+  SBCCalleeSession(const SBCDialog* caller,
 		   const SBCCallProfile& call_profile); 
   ~SBCCalleeSession();
 
@@ -258,6 +253,8 @@ class SBCCalleeSession
   inline UACAuthCred* getCredentials();
   
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
+  void setLocalParty(const string &party, const string &uri) { dlg.local_party = party; dlg.local_uri = uri; }
+  void setRemoteParty(const string &party, const string &uri) { dlg.remote_party = party; dlg.remote_uri = uri; }
 };
 
 extern void assertEndCRLF(string& s);

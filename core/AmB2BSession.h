@@ -175,6 +175,9 @@ class AmB2BSession: public AmSession
   /** send a relayed SIP Reply */
   int relaySip(const AmSipRequest& orig, const AmSipReply& reply);
 
+  void relayError(const string &method, unsigned cseq, bool forward, int sip_code, const char *reason);
+  void relayError(const string &method, unsigned cseq, bool forward, int err_code);
+
   /** Terminate our leg and forget the other. */
   virtual void terminateLeg();
 
@@ -220,14 +223,6 @@ class AmB2BSession: public AmSession
    * @return false if reply was not processed
    */
   virtual bool onOtherReply(const AmSipReply& reply);
-
-  /** filter body of request to be relayed
-   * use a_leg member to see the direction */
-  virtual void filterBody(AmSipRequest &req, AmSdp &sdp) { /* don't filter by default */ }
-  
-  /** filter body of reply to be relayed
-   * use a_leg member to see the direction */
-  virtual void filterBody(AmSipReply &reply, AmSdp &sdp) { /* don't filter by default */ }
 
   AmB2BSession(const string& other_local_tag = "");
 

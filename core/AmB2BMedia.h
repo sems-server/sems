@@ -92,6 +92,10 @@ class AudioStreamData {
     /** Creates data based on associated signaling leg data. */
     AudioStreamData(AmB2BSession *session);
 
+    /** we want to preserve existing streams (relay streams already set, ports
+     * already used in outgoing SDP */
+    void changeSession(AmB2BSession *session);
+
     /** Frees all allocated data. 
      *
      * Stream and its peer (relay stream) must be removed from processing before
@@ -174,6 +178,10 @@ class AudioStreamData {
  * relaying RTP packets.
  *
  * TODO:
+ *  - prepare the class for NULL B/A(?) leg
+ *  - prepare the class for changing B and A leg
+ *  - handle offer/answer correctly (refused new offer means old offer/answer is
+ *    still valid)
  *  - handle "on hold" streams - probably should be controlled by signaling
  *    (AmB2BSession) - either we should not send audio or we should send hold
  *    music
@@ -288,6 +296,8 @@ class AmB2BMedia: public AmMediaSession
 
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
+
+    void setBLeg(AmB2BSession *new_b);
 
     //void updateRelayPayloads(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp);
 

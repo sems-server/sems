@@ -62,6 +62,17 @@ DEFINE_MODULE_INSTANCE(SBCFactory, MOD_NAME);
 
 // helper functions
 
+/** count active and inactive media streams in given SDP */
+static void countStreams(const AmSdp &sdp, int &active, int &inactive)
+{
+  active = 0;
+  inactive = 0;
+  for (vector<SdpMedia>::const_iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+    if (m->port == 0) inactive++;
+    else active++;
+  }
+}
+
 static const SdpPayload *findPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload)
 {
   string pname = payload.encoding_name;
@@ -260,7 +271,7 @@ static int filterBody(AmMimeBody *body, AmSdp& sdp, SBCCallProfile &call_profile
   return 0;
 }
 
-static void filterBody(AmSipRequest &req, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, 
+static int filterBody(AmSipRequest &req, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, 
     PayloadIdMapping &transcoder_payload_mapping)
 {
   AmMimeBody* body = req.body.hasContentType(SIP_APPLICATION_SDP);
@@ -274,7 +285,20 @@ static void filterBody(AmSipRequest &req, AmSdp &sdp, SBCCallProfile &call_profi
 
     // todo: handle filtering errors
     filterBody(body, sdp, call_profile, a_leg, transcoder_payload_mapping);
+
+    // temporary hack - will be migrated deeper inside
+    int active, inactive;
+    countStreams(sdp, active, inactive);
+    if ((inactive > 0) && (active == 0)) {
+      // no active streams remaining => reply 488 (FIXME: does it matter if we
+      // filtered them out or they were already inactive?)
+
+      DBG("all streams are marked as inactive, reply 488 "
+          SIP_REPLY_NOT_ACCEPTABLE_HERE"\n");
+      return -488;
+    }
   }
+  return 0;
 }
 
 static void filterBody(AmSipReply &reply, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, 
@@ -922,12 +946,14 @@ SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
     auth(NULL),
     call_profile(call_profile),
-    outbound_interface(-1),
-    rtprelay_interface(-1),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
 {
   set_sip_relay_only(false);
   dlg.setRel100State(Am100rel::REL100_IGNORED);
+
+  // better here than in onInvite
+  // or do we really want to start with OA when handling initial INVITE?
+  dlg.setOAEnabled(false);
 
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
@@ -1121,11 +1147,6 @@ void SBCDialog::onInvite(const AmSipRequest& req)
       DBG("using RTP interface %i for A leg\n", rtp_interface);
     }
 
-    if (call_profile.rtprelay_interface_value >= 0) {
-      rtprelay_interface = call_profile.rtprelay_interface_value;
-      DBG("configured RTP relay interface %i for B leg\n", rtprelay_interface);
-    }
-
     setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
     setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
@@ -1147,7 +1168,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 
   m_state = BB_Dialing;
 
-  invite_req = req;
+  // prepare request to relay to the B leg(s)
+
+  AmSipRequest invite_req(req);
   est_invite_cseq = req.cseq;
 
   removeHeader(invite_req.hdrs,PARAM_HDR);
@@ -1166,18 +1189,48 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     assertEndCRLF(append_headers);
     invite_req.hdrs+=append_headers;
   }
-
-  if (call_profile.outbound_interface_value >= 0)
-    outbound_interface = call_profile.outbound_interface_value;
-
-  dlg.setOAEnabled(false); // ???
+  
+  AmSdp sdp;
+  int res = filterBody(invite_req, sdp, call_profile, a_leg, transcoder_payload_mapping);
+  if (res < 0) {
+    // FIXME: quick hack, throw the exception from the filtering function for
+    // requests
+    throw AmSession::Exception(488, SIP_REPLY_NOT_ACCEPTABLE_HERE);
+  }
 
 #undef REPLACE_VALS
 
   DBG("SBC: connecting to '%s'\n",ruri.c_str());
   DBG("     From:  '%s'\n",from.c_str());
   DBG("     To:  '%s'\n",to.c_str());
-  connectCallee(to, ruri, true);
+
+  // we evaluated the settings, now we can initialize internals (like RTP relay)
+  // we have to use original request (not the altered one) because for example
+  // codecs filtered out might be used in direction to caller
+  CallLeg::onInvite(req); 
+  
+  connectCallee(to, ruri, from, invite_req); // connect to the B leg(s) using modified request
+}
+
+void SBCDialog::connectCallee(const string& remote_party, const string& remote_uri,
+    const string &from, const AmSipRequest &invite)
+{
+  // FIXME: no fork for now
+
+  SBCCalleeSession* callee_session = new SBCCalleeSession(this, call_profile);
+  callee_session->setLocalParty(from, from);
+  callee_session->setRemoteParty(remote_party, remote_uri);
+
+  DBG("Created B2BUA callee leg, From: %s\n", from.c_str());
+
+  // FIXME: inconsistent with other filtering stuff - here goes the INVITE
+  // already filtered so need not to be catched (can not) in relayEvent because
+  // it is sent other way
+  addCallee(callee_session, invite);
+  
+  // we could start in SIP relay mode from the beginning if only one B leg, but
+  // serial fork might mess it
+  // set_sip_relay_only(true);
 }
 
 bool SBCDialog::getCCInterfaces() {
@@ -1264,7 +1317,7 @@ void SBCDialog::process(AmEvent* ev)
     return;
   }
 
-  AmB2BCallerSession::process(ev);
+  CallLeg::process(ev);
 }
 
 void SBCDialog::onControlCmd(string& cmd, AmArg& params) {
@@ -1276,53 +1329,69 @@ void SBCDialog::onControlCmd(string& cmd, AmArg& params) {
   DBG("ignoring unknown control cmd : '%s'\n", cmd.c_str());
 }
 
-int SBCDialog::relayEvent(AmEvent* ev) {
-  if (isActiveFilter(call_profile.headerfilter) && (ev->event_id == B2BSipRequest)) {
-    // header filter
-    B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
-    assert(req_ev);
-    inplaceHeaderFilter(req_ev->req.hdrs,
-			call_profile.headerfilter_list, call_profile.headerfilter);
-  } else {
-    if (ev->event_id == B2BSipReply) {
-      if (isActiveFilter(call_profile.headerfilter) ||
-	  call_profile.reply_translations.size()) {
-	B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
-	assert(reply_ev);
-	// header filter
-	if (isActiveFilter(call_profile.headerfilter)) {
-	  inplaceHeaderFilter(reply_ev->reply.hdrs,
-			      call_profile.headerfilter_list,
-			      call_profile.headerfilter);
-	}
+int SBCDialog::relayEvent(AmEvent* ev)
+{
+    switch (ev->event_id) {
+      case B2BSipRequest:
+        {
+          B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
 
-	// reply translations
-	map<unsigned int, pair<unsigned int, string> >::iterator it =
-	  call_profile.reply_translations.find(reply_ev->reply.code);
-	if (it != call_profile.reply_translations.end()) {
-	  DBG("translating reply %u %s => %u %s\n",
-	      reply_ev->reply.code, reply_ev->reply.reason.c_str(),
-	      it->second.first, it->second.second.c_str());
-	  reply_ev->reply.code = it->second.first;
-	  reply_ev->reply.reason = it->second.second;
-	}
-      }
+          if (isActiveFilter(call_profile.headerfilter)) {
+            //B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
+            // header filter
+            assert(req_ev);
+            inplaceHeaderFilter(req_ev->req.hdrs,
+                call_profile.headerfilter_list, call_profile.headerfilter);
+          }
+
+          DBG("filtering body for request '%s' (c/t '%s')\n",
+              req_ev->req.method.c_str(), req_ev->req.body.getCTStr().c_str());
+          // todo: handle filtering errors
+
+          AmSdp sdp;
+          int res = filterBody(req_ev->req, sdp, call_profile, a_leg, transcoder_payload_mapping);
+          if (res < 0) return res;
+        }
+        break;
+
+      case B2BSipReply:
+        {
+          B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
+
+          if (isActiveFilter(call_profile.headerfilter) ||
+              call_profile.reply_translations.size()) {
+            assert(reply_ev);
+            // header filter
+            if (isActiveFilter(call_profile.headerfilter)) {
+              inplaceHeaderFilter(reply_ev->reply.hdrs,
+                  call_profile.headerfilter_list,
+                  call_profile.headerfilter);
+            }
+
+            // reply translations
+            map<unsigned int, pair<unsigned int, string> >::iterator it =
+              call_profile.reply_translations.find(reply_ev->reply.code);
+            if (it != call_profile.reply_translations.end()) {
+              DBG("translating reply %u %s => %u %s\n",
+                  reply_ev->reply.code, reply_ev->reply.reason.c_str(),
+                  it->second.first, it->second.second.c_str());
+              reply_ev->reply.code = it->second.first;
+              reply_ev->reply.reason = it->second.second;
+            }
+          }
+
+          DBG("filtering body for reply '%s' (c/t '%s')\n",
+              reply_ev->trans_method.c_str(), reply_ev->reply.body.getCTStr().c_str());
+
+          AmSdp sdp;
+          filterBody(reply_ev->reply, sdp, call_profile, a_leg, transcoder_payload_mapping);
+        }
+
+        break;
     }
-  }
 
-  return AmB2BCallerSession::relayEvent(ev);
+  return CallLeg::relayEvent(ev);
 }
-
-void SBCDialog::filterBody(AmSipRequest &req, AmSdp &sdp)
-{
-  ::filterBody(req, sdp, call_profile, a_leg, transcoder_payload_mapping);
-}
-
-void SBCDialog::filterBody(AmSipReply &reply, AmSdp &sdp)
-{
-  ::filterBody(reply, sdp, call_profile, a_leg, transcoder_payload_mapping);
-}
-
 
 void SBCDialog::onSipRequest(const AmSipRequest& req) {
   // AmB2BSession does not call AmSession::onSipRequest for 
@@ -1347,7 +1416,7 @@ void SBCDialog::onSipRequest(const AmSipRequest& req) {
     }
   }
 
-  AmB2BCallerSession::onSipRequest(req);
+  CallLeg::onSipRequest(req);
 }
 
 void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
@@ -1362,14 +1431,14 @@ void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
   }
 
   if (NULL == auth) {
-    AmB2BCallerSession::onSipReply(reply, old_dlg_status);
+    CallLeg::onSipReply(reply, old_dlg_status);
     return;
   }
 
   // only for SIP authenticated
   unsigned int cseq_before = dlg.cseq;
   if (!auth->onSipReply(reply, old_dlg_status)) {
-      AmB2BCallerSession::onSipReply(reply, old_dlg_status);
+      CallLeg::onSipReply(reply, old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
@@ -1385,28 +1454,7 @@ void SBCDialog::onSendRequest(AmSipRequest& req, int flags) {
     auth->onSendRequest(req, flags);
   }
 
-  AmB2BCallerSession::onSendRequest(req, flags);
-}
-
-bool SBCDialog::onOtherReply(const AmSipReply& reply)
-{
-  bool ret = false;
-
-  if ((m_state == BB_Dialing) && (reply.cseq == invite_req.cseq)) {
-    if (reply.code < 200) {
-      DBG("Callee is trying... code %d\n", reply.code);
-    }
-    else if(reply.code < 300) {
-      if(getCalleeStatus()  == Connected) {
-	onCallConnected(reply);
-      }
-    } else {
-      DBG("Callee final error with code %d\n",reply.code);
-      onCallStopped();
-      ret = AmB2BCallerSession::onOtherReply(reply);
-    }
-  }
-  return ret;
+  CallLeg::onSendRequest(req, flags);
 }
 
 void SBCDialog::onCallConnected(const AmSipReply& reply) {
@@ -1440,26 +1488,26 @@ void SBCDialog::onOtherBye(const AmSipRequest& req)
 {
   onCallStopped();
 
-  AmB2BCallerSession::onOtherBye(req);
+  CallLeg::onOtherBye(req);
 }
 
 void SBCDialog::onSessionTimeout() {
   onCallStopped();
 
-  AmB2BCallerSession::onSessionTimeout();
+  CallLeg::onSessionTimeout();
 }
 
 void SBCDialog::onNoAck(unsigned int cseq) {
   onCallStopped();
 
-  AmB2BCallerSession::onNoAck(cseq);
+  CallLeg::onNoAck(cseq);
 }
 
 void SBCDialog::onRemoteDisappeared(const AmSipReply& reply)  {
   DBG("Remote unreachable - ending SBC call\n");
   onCallStopped();
 
-  AmB2BCallerSession::onRemoteDisappeared(reply);
+  CallLeg::onRemoteDisappeared(reply);
 }
 
 void SBCDialog::onBye(const AmSipRequest& req)
@@ -1468,7 +1516,7 @@ void SBCDialog::onBye(const AmSipRequest& req)
 
   onCallStopped();
 
-  AmB2BCallerSession::onBye(req);
+  CallLeg::onBye(req);
 }
 
 void SBCDialog::onCancel(const AmSipRequest& cancel)
@@ -1491,7 +1539,7 @@ void SBCDialog::onSystemEvent(AmSystemEvent* ev) {
     onCallStopped();
   }
 
-  AmB2BCallerSession::onSystemEvent(ev);
+  CallLeg::onSystemEvent(ev);
 }
 
 void SBCDialog::stopCall() {
@@ -1764,116 +1812,12 @@ void SBCDialog::CCEnd(const CCInterfaceListIteratorT& end_interface) {
   }
 }
 
-void SBCDialog::createCalleeSession()
-{
-  SBCCalleeSession* callee_session = new SBCCalleeSession(this, call_profile);
-  
-  if (call_profile.auth_enabled) {
-    // adding auth handler
-    AmSessionEventHandlerFactory* uac_auth_f = 
-      AmPlugIn::instance()->getFactory4Seh("uac_auth");
-    if (NULL == uac_auth_f)  {
-      INFO("uac_auth module not loaded. uac auth NOT enabled.\n");
-    } else {
-      AmSessionEventHandler* h = uac_auth_f->getHandler(callee_session);
-      
-      // we cannot use the generic AmSessionEventHandler hooks, 
-      // because the hooks don't work in AmB2BSession
-      callee_session->setAuthHandler(h);
-      DBG("uac auth enabled for callee session.\n");
-    }
-  }
-
-  if (call_profile.sst_enabled_value) {
-    if (NULL == SBCFactory::session_timer_fact) {
-      ERROR("session_timer module not loaded - unable to create call with SST\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    AmSessionEventHandler* h = SBCFactory::session_timer_fact->getHandler(callee_session);
-    if(!h) {
-      ERROR("could not get a session timer event handler\n");
-      delete callee_session;
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    if(h->configure(call_profile.sst_b_cfg)){
-      ERROR("Could not configure the session timer: disabling session timers.\n");
-      delete h;
-    } else {
-      callee_session->addHandler(h);
-    }
-  }
-
-  AmSipDialog& callee_dlg = callee_session->dlg;
-
-  if (!call_profile.outbound_proxy.empty()) {
-    callee_dlg.outbound_proxy = call_profile.outbound_proxy;
-    callee_dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
-  }
-  
-  if (!call_profile.next_hop.empty()) {
-    callee_dlg.next_hop = call_profile.next_hop;
-  }
-
-  if(outbound_interface >= 0)
-    callee_dlg.outbound_interface = outbound_interface;
-
-  callee_dlg.setOAEnabled(false); // ???
-
-  if(rtprelay_interface >= 0)
-    callee_session->setRtpRelayInterface(rtprelay_interface);
-
-  callee_session->setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
-  callee_session->setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
-
-  other_id = AmSession::getNewId();
-  
-  callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = callid.empty() ?
-    AmSession::getNewId() : callid;
-  
-  // this will be overwritten by ConnectLeg event 
-  callee_dlg.remote_party = to;
-  callee_dlg.remote_uri   = ruri;
-
-  callee_dlg.local_party  = from; 
-  callee_dlg.local_uri    = from; 
-  
-  DBG("Created B2BUA callee leg, From: %s\n",
-      from.c_str());
-
-  if (AmConfig::LogSessions) {
-    INFO("Starting B2B callee session %s\n",
-	 callee_session->getLocalTag().c_str()/*, invite_req.cmd.c_str()*/);
-  }
-
-  MONITORING_LOG4(other_id.c_str(),
-		  "dir",  "out",
-		  "from", callee_dlg.local_party.c_str(),
-		  "to",   callee_dlg.remote_party.c_str(),
-		  "ruri", callee_dlg.remote_uri.c_str());
-
-  try {
-    initializeRTPRelay(callee_session);
-  }
-  catch (...) {
-    delete callee_session;
-    throw;
-  }
-
-  callee_session->start();
-  
-  AmSessionContainer* sess_cont = AmSessionContainer::instance();
-  sess_cont->addSession(other_id,callee_session);
-}
-
 bool SBCDialog::updateLocalSdp(AmSdp &sdp)
 {
   // remember transcodable payload IDs
   if (call_profile.transcoder.isActive())
     savePayloadIDs(sdp, MT_AUDIO, call_profile.transcoder.audio_codecs, transcoder_payload_mapping);
-  return AmB2BCallerSession::updateLocalSdp(sdp);
+  return CallLeg::updateLocalSdp(sdp);
 }
 
 bool SBCDialog::updateRemoteSdp(AmSdp &sdp)
@@ -1884,20 +1828,88 @@ bool SBCDialog::updateRemoteSdp(AmSdp &sdp)
   }
 
   // call original implementation because our special conditions above are not met
-  return AmB2BCallerSession::updateRemoteSdp(sdp);
+  return CallLeg::updateRemoteSdp(sdp);
 }
 
-SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
-				   const SBCCallProfile& call_profile) 
+
+
+SBCCalleeSession::SBCCalleeSession(const SBCDialog* caller,
+				   const SBCCallProfile& _call_profile)
   : auth(NULL),
-    call_profile(call_profile),
-    AmB2BCalleeSession(caller)
+    call_profile(_call_profile),
+    CallLeg(caller)
 {
   dlg.setRel100State(Am100rel::REL100_IGNORED);
 
   if (!call_profile.contact.empty()) {
     dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
   }
+
+  // moved from createCalleeSession
+  
+  if (call_profile.auth_enabled) {
+    // adding auth handler
+    AmSessionEventHandlerFactory* uac_auth_f = 
+      AmPlugIn::instance()->getFactory4Seh("uac_auth");
+    if (NULL == uac_auth_f)  {
+      INFO("uac_auth module not loaded. uac auth NOT enabled.\n");
+    } else {
+      AmSessionEventHandler* h = uac_auth_f->getHandler(this);
+      
+      // we cannot use the generic AmSessionEventHandler hooks, 
+      // because the hooks don't work in AmB2BSession
+      setAuthHandler(h);
+      DBG("uac auth enabled for callee session.\n");
+    }
+  }
+
+  if (call_profile.sst_enabled_value) {
+    if (NULL == SBCFactory::session_timer_fact) {
+      ERROR("session_timer module not loaded - unable to create call with SST\n");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
+    AmSessionEventHandler* h = SBCFactory::session_timer_fact->getHandler(this);
+    if(!h) {
+      ERROR("could not get a session timer event handler\n");
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+
+    if(h->configure(call_profile.sst_b_cfg)){
+      ERROR("Could not configure the session timer: disabling session timers.\n");
+      delete h;
+    } else {
+      addHandler(h);
+    }
+  }
+
+  if (!call_profile.outbound_proxy.empty()) {
+    dlg.outbound_proxy = call_profile.outbound_proxy;
+    dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
+  }
+  
+  if (!call_profile.next_hop.empty()) {
+    dlg.next_hop = call_profile.next_hop;
+  }
+
+  // was read from caller but reading directly from profile now
+  if (call_profile.outbound_interface_value >= 0)
+    dlg.outbound_interface = call_profile.outbound_interface_value;
+  
+  dlg.setOAEnabled(false); // ???
+
+  // was read from caller but reading directly from profile now
+  if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
+    if (call_profile.rtprelay_interface_value >= 0)
+      setRtpRelayInterface(call_profile.rtprelay_interface_value);
+  }
+
+  setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
+  setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+
+  // was read from caller but reading directly from profile now
+  if (!call_profile.callid.empty()) dlg.callid = call_profile.callid;
+  
 }
 
 SBCCalleeSession::~SBCCalleeSession() {
@@ -1918,41 +1930,68 @@ inline UACAuthCred* SBCCalleeSession::getCredentials() {
   return &call_profile.auth_credentials;
 }
 
-int SBCCalleeSession::relayEvent(AmEvent* ev) {
-  if (isActiveFilter(call_profile.headerfilter) && ev->event_id == B2BSipRequest) {
-    // header filter
-    B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
-    assert(req_ev);
-    inplaceHeaderFilter(req_ev->req.hdrs,
-			call_profile.headerfilter_list, call_profile.headerfilter);
-  } else {
-    if (ev->event_id == B2BSipReply) {
-      if (isActiveFilter(call_profile.headerfilter) ||
-	  (call_profile.reply_translations.size())) {
-	B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
-	assert(reply_ev);
+int SBCCalleeSession::relayEvent(AmEvent* ev)
+{
+    switch (ev->event_id) {
+      case B2BSipRequest:
+        {
+          B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
 
-	// header filter
-	if (isActiveFilter(call_profile.headerfilter)) {
-	  inplaceHeaderFilter(reply_ev->reply.hdrs,
-			      call_profile.headerfilter_list,
-			      call_profile.headerfilter);
-	}
-	// reply translations
-	map<unsigned int, pair<unsigned int, string> >::iterator it =
-	  call_profile.reply_translations.find(reply_ev->reply.code);
-	if (it != call_profile.reply_translations.end()) {
-	  DBG("translating reply %u %s => %u %s\n",
-	      reply_ev->reply.code, reply_ev->reply.reason.c_str(),
-	      it->second.first, it->second.second.c_str());
-	  reply_ev->reply.code = it->second.first;
-	  reply_ev->reply.reason = it->second.second;
-	}
-      }
+          if (isActiveFilter(call_profile.headerfilter)) {
+            //B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
+            // header filter
+            assert(req_ev);
+            inplaceHeaderFilter(req_ev->req.hdrs,
+                call_profile.headerfilter_list, call_profile.headerfilter);
+          }
+
+          DBG("filtering body for request '%s' (c/t '%s')\n",
+              req_ev->req.method.c_str(), req_ev->req.body.getCTStr().c_str());
+          // todo: handle filtering errors
+
+          AmSdp sdp;
+          int res = filterBody(req_ev->req, sdp, call_profile, a_leg, transcoder_payload_mapping);
+          if (res < 0) return res;
+        }
+        break;
+
+      case B2BSipReply:
+        {
+          B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
+
+          if (isActiveFilter(call_profile.headerfilter) ||
+              call_profile.reply_translations.size()) {
+            assert(reply_ev);
+            // header filter
+            if (isActiveFilter(call_profile.headerfilter)) {
+              inplaceHeaderFilter(reply_ev->reply.hdrs,
+                  call_profile.headerfilter_list,
+                  call_profile.headerfilter);
+            }
+
+            // reply translations
+            map<unsigned int, pair<unsigned int, string> >::iterator it =
+              call_profile.reply_translations.find(reply_ev->reply.code);
+            if (it != call_profile.reply_translations.end()) {
+              DBG("translating reply %u %s => %u %s\n",
+                  reply_ev->reply.code, reply_ev->reply.reason.c_str(),
+                  it->second.first, it->second.second.c_str());
+              reply_ev->reply.code = it->second.first;
+              reply_ev->reply.reason = it->second.second;
+            }
+          }
+
+          DBG("filtering body for reply '%s' (c/t '%s')\n",
+              reply_ev->trans_method.c_str(), reply_ev->reply.body.getCTStr().c_str());
+
+          AmSdp sdp;
+          filterBody(reply_ev->reply, sdp, call_profile, a_leg, transcoder_payload_mapping);
+        }
+
+        break;
     }
-  }
 
-  return AmB2BCalleeSession::relayEvent(ev);
+  return CallLeg::relayEvent(ev);
 }
 
 void SBCCalleeSession::process(AmEvent* ev) {
@@ -1963,7 +2002,7 @@ void SBCCalleeSession::process(AmEvent* ev) {
     return;
   }
 
-  AmB2BCalleeSession::process(ev);
+  CallLeg::process(ev);
 }
 
 void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
@@ -1989,7 +2028,7 @@ void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
     }
   }
 
-  AmB2BCalleeSession::onSipRequest(req);
+  CallLeg::onSipRequest(req);
 }
 
 void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
@@ -2005,13 +2044,13 @@ void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status o
 
 
   if (NULL == auth) {
-    AmB2BCalleeSession::onSipReply(reply, old_dlg_status);
+    CallLeg::onSipReply(reply, old_dlg_status);
     return;
   }
   
   unsigned int cseq_before = dlg.cseq;
   if (!auth->onSipReply(reply, old_dlg_status)) {
-      AmB2BCalleeSession::onSipReply(reply, old_dlg_status);
+      CallLeg::onSipReply(reply, old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
@@ -2028,7 +2067,7 @@ void SBCCalleeSession::onSendRequest(AmSipRequest& req, int flags)
     auth->onSendRequest(req, flags);
   }
   
-  AmB2BCalleeSession::onSendRequest(req, flags);
+  CallLeg::onSendRequest(req, flags);
 }
 
 void SBCCalleeSession::onControlCmd(string& cmd, AmArg& params) {
@@ -2038,16 +2077,6 @@ void SBCCalleeSession::onControlCmd(string& cmd, AmArg& params) {
     return;
   }
   DBG("ignoring unknown control cmd : '%s'\n", cmd.c_str());
-}
-
-void SBCCalleeSession::filterBody(AmSipRequest &req, AmSdp &sdp)
-{
-  ::filterBody(req, sdp, call_profile, a_leg, transcoder_payload_mapping);
-}
-
-void SBCCalleeSession::filterBody(AmSipReply &reply, AmSdp &sdp)
-{
-  ::filterBody(reply, sdp, call_profile, a_leg, transcoder_payload_mapping);
 }
 
 void assertEndCRLF(string& s) {
@@ -2065,7 +2094,7 @@ bool SBCCalleeSession::updateLocalSdp(AmSdp &sdp)
   // remember transcodable payload IDs
   if (call_profile.transcoder.isActive())
     savePayloadIDs(sdp, MT_AUDIO, call_profile.transcoder.audio_codecs, transcoder_payload_mapping);
-  return AmB2BCalleeSession::updateLocalSdp(sdp);
+  return CallLeg::updateLocalSdp(sdp);
 }
 
 bool SBCCalleeSession::updateRemoteSdp(AmSdp &sdp)
@@ -2076,5 +2105,5 @@ bool SBCCalleeSession::updateRemoteSdp(AmSdp &sdp)
   }
 
   // call original implementation because our special conditions above are not met
-  return AmB2BCalleeSession::updateRemoteSdp(sdp);
+  return CallLeg::updateRemoteSdp(sdp);
 }

@@ -181,6 +181,12 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
   session->getLowFiPLs(lowfi_payloads);
 }
 
+void AudioStreamData::changeSession(AmB2BSession *session)
+{
+  // TODO
+}
+
+
 void AudioStreamData::clear()
 {
   resetStats();
@@ -429,6 +435,29 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
 { 
 }
  
+void AmB2BMedia::setBLeg(AmB2BSession *new_b)
+{
+  mutex.lock();
+
+  b = new_b;
+
+  // update all streams
+  for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
+    // stop processing first to avoid unexpected results
+    i->a.stopStreamProcessing();
+    i->b.stopStreamProcessing();
+  
+    // replace session
+    i->b.changeSession(new_b);
+
+    // return back for processing
+    i->a.resumeStreamProcessing();
+    i->b.resumeStreamProcessing();
+  }
+
+  mutex.unlock();
+}
+
 int AmB2BMedia::writeStreams(unsigned long long ts, unsigned char *buffer)
 {
   int res = 0;
