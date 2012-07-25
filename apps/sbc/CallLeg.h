@@ -47,7 +47,15 @@ struct ConnectLegEvent: public B2BEvent
 
 /** composed AmB2BCalleeSession & AmB2BCallerSession
  * represents indepenedently A or B leg of a call,
- * old clases left for compatibility */
+ * old clases left for compatibility
+ *
+ * Notes:
+ *
+ *  - we use the relayEvent implementation from AmB2BSession - it can happen that we have
+ *  no peer (i.e. we are a standalone call leg, for example parked one) => do
+ *  not create other call leg automatically
+ *
+ * */
 class CallLeg: public AmB2BSession
 {
   public:
@@ -102,8 +110,6 @@ class CallLeg: public AmB2BSession
 
   protected:
     CallStatus call_status; //< status of the call (replaces callee's status)
-
-    int relayEvent(AmEvent* ev);
 
     /** Method called if given B leg couldn't establish the call (refused with
      * failure response)

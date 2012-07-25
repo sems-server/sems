@@ -348,17 +348,6 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
 }
 
 // was for caller only
-int CallLeg::relayEvent(AmEvent* ev)
-{
-  // it can happen that we have no peer (i.e. we are a standalone call leg, for
-  // example parked one) => do not create other call leg automatically
-
-  // TODO: body filtering should be done here
-
-  return AmB2BSession::relayEvent(ev);
-}
-
-// was for caller only
 void CallLeg::onInvite(const AmSipRequest& req)
 {
   // do not call AmB2BSession::onInvite(req); we changed the behavior
