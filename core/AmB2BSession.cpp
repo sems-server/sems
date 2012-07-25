@@ -120,23 +120,27 @@ void AmB2BSession::process(AmEvent* event)
 
 void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward, int err_code)
 {
-  AmSipReply n_reply;
-  errCode2RelayedReply(n_reply, err_code, 500);
-  n_reply.cseq = cseq;
-  n_reply.from_tag = dlg.local_tag;
-  DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
-  relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+  if (method != "ACK") {
+    AmSipReply n_reply;
+    errCode2RelayedReply(n_reply, err_code, 500);
+    n_reply.cseq = cseq;
+    n_reply.from_tag = dlg.local_tag;
+    DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
+    relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+  }
 }
 
 void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward, int sip_code, const char *reason)
 {
-  AmSipReply n_reply;
-  n_reply.code = sip_code;
-  n_reply.reason = reason;
-  n_reply.cseq = cseq;
-  n_reply.from_tag = dlg.local_tag;
-  DBG("relaying B2B SIP reply %d %s\n", sip_code, reason);
-  relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+  if (method != "ACK") {
+    AmSipReply n_reply;
+    n_reply.code = sip_code;
+    n_reply.reason = reason;
+    n_reply.cseq = cseq;
+    n_reply.from_tag = dlg.local_tag;
+    DBG("relaying B2B SIP reply %d %s\n", sip_code, reason);
+    relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
+  }
 }
 
 void AmB2BSession::onB2BEvent(B2BEvent* ev)
