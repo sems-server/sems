@@ -395,6 +395,10 @@ void CallLeg::onInvite2xx(const AmSipReply& reply)
 // was for caller only
 void CallLeg::onCancel(const AmSipRequest& req)
 {
+  // initial INVITE handling
+  if (a_leg) terminateNotConnectedLegs();
+
+  // FIXME: expected for CANCELed re-INVITEs (in both directions)?
   terminateOtherLeg();
   terminateLeg();
 }
