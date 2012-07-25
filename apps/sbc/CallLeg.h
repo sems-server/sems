@@ -51,9 +51,12 @@ struct ConnectLegEvent: public B2BEvent
  *
  * Notes:
  *
- *  - we use the relayEvent implementation from AmB2BSession - it can happen that we have
- *  no peer (i.e. we are a standalone call leg, for example parked one) => do
- *  not create other call leg automatically
+ *  - we use the relayEvent implementation from AmB2BSession - it can happen
+ *  that we have no peer (i.e. we are a standalone call leg, for example parked
+ *  one) => do not create other call leg automatically
+ *
+ *  - we use onSystemEvent implementation from AmB2BSession - the other leg
+ *  receives and handles the same shutdown event, right?
  *
  * */
 class CallLeg: public AmB2BSession
@@ -104,7 +107,6 @@ class CallLeg: public AmB2BSession
     virtual void onCancel(const AmSipRequest& req);
     virtual void onBye(const AmSipRequest& req);
     virtual void onRemoteDisappeared(const AmSipReply& reply);
-    virtual void onSystemEvent(AmSystemEvent* ev);
 
     //int reinviteCaller(const AmSipReply& callee_reply);
 

@@ -410,17 +410,6 @@ void CallLeg::terminateLeg()
 }
 
 // was for caller only
-void CallLeg::onSystemEvent(AmSystemEvent* ev) {
-  // FIXME: really needed? the other leg receives and handles the same event or not?
-  //
-  // if (ev->sys_event == AmSystemEvent::ServerShutdown) {
-  //   terminateOtherLeg();
-  // }
-
-  AmB2BSession::onSystemEvent(ev);
-}
-
-// was for caller only
 void CallLeg::onRemoteDisappeared(const AmSipReply& reply) {
   DBG("remote unreachable, ending B2BUA call\n");
   // FIXME: shouldn't be cleared in AmB2BSession as well?
