@@ -337,7 +337,7 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
   }
   
   // always relayed INVITE - store it
-  relayed_req[dlg.cseq] = AmSipTransaction(SIP_METH_INVITE, co_ev->r_cseq, trans_ticket());
+  relayed_req[dlg.cseq - 1] = AmSipTransaction(SIP_METH_INVITE, co_ev->r_cseq, trans_ticket());
 
   if (refresh_method != REFRESH_UPDATE)
     saveSessionDescription(co_ev->body);
