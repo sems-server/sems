@@ -241,6 +241,16 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
         }
         // we can relay this reply because it is from the same B leg from which
         // we already relayed something
+        // FIXME: but we shouldn't relay the body until we are connected because
+        // fork still can happen, right? (so no early media support? or we would
+        // just destroy the before-fork-media-session and use the
+        // after-fork-one? but problem could be with two B legs trying to do
+        // early media)
+        if (!sip_relay_only && !reply.body.empty()) {
+          DBG("not going to relay 1xx body\n");
+          static const AmMimeBody empty_body;
+          reply.body = empty_body;
+        }
       }
     } else if (reply.code < 300) { // 2xx replies
       call_status = Connected;
