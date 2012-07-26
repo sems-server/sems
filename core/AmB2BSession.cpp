@@ -389,6 +389,10 @@ bool AmB2BSession::updateLocalSdp(AmSdp &sdp)
     media_session->updateLocalSdp(a_leg, sdp);
     return true;
   }
+  else {
+    // report missing media session (here we get for rtp_relay_mode == RTP_Relay)
+    ERROR("BUG: media session is missing, can't update local SDP\n");
+  }
 
   return false;
 }
