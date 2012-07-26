@@ -71,6 +71,19 @@ class CallLeg: public AmB2BSession
 
   private:
 
+    /** information needed in A leg for a B leg */
+    struct BLegInfo {
+      /** local tag of the B leg */
+      string id;
+
+      /** once the B leg gets connected to the A leg A leg starts to use its
+       * corresponding media_session created when the B leg is added to the list
+       * of B legs */
+      AmB2BMedia *media_session;
+
+      void releaseMediaSession() { if (media_session) { if (media_session->releaseReference()) delete media_session; media_session = NULL; } }
+    };
+
     /** List of legs which can be connected to this leg, it is valid for A leg until first
      * 2xx response which moves the A leg to Connected state and terminates all
      * other B legs.
@@ -78,7 +91,7 @@ class CallLeg: public AmB2BSession
      * Please note that the A/B role may change during the call leg life. For
      * example when a B leg is parked and then 'rings back on timer' it becomes
      * A leg, i.e. it creates new B leg(s) for itself. */
-    std::vector<std::string> other_legs;
+    std::vector<BLegInfo> b_legs;
 
     // methods just for make this stuff more readable, not intended to be
     // overriden, override onB2BEvent instead!
