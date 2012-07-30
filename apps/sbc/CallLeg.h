@@ -71,6 +71,9 @@ class CallLeg: public AmB2BSession
 
   private:
 
+    AmSdp initial_sdp;
+    bool initial_sdp_stored;
+
     /** information needed in A leg for a B leg */
     struct BLegInfo {
       /** local tag of the B leg */

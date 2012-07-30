@@ -88,6 +88,9 @@ class AudioStreamData {
     void updateRecvStats(AmRtpStream *s);
     void resetStats();
 
+    /** create the stream and take settings from the session */
+    void initialize(AmB2BSession *session);
+
   public:
     /** Creates data based on associated signaling leg data. */
     AudioStreamData(AmB2BSession *session);
@@ -294,10 +297,12 @@ class AmB2BMedia: public AmMediaSession
     /** initialize given stream (prepares for transcoding) */
     void initStream(AudioStreamData &data, AmSession *session, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
 
+    void createStreams(const AmSdp &sdp);
+
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
 
-    void setBLeg(AmB2BSession *new_b);
+    void changeSession(bool a_leg, AmB2BSession *new_session);
 
     //void updateRelayPayloads(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp);
 

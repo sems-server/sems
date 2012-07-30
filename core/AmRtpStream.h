@@ -445,6 +445,11 @@ public:
 
   /** enable or disable transparent SSRC seqno for relay */
   void setRtpRelayTransparentSSRC(bool transparent);
+
+  /** Quick hack to assign existing stream to another session. The stream should
+   * not be reinitialised implicitly (it might be used for media traffic
+   * already). */
+  void changeSession(AmSession *_s) { session = _s; }
 };
 
 #endif

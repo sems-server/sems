@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-#define TRACE DBG
+#define TRACE INFO
 #define UNDEFINED_PAYLOAD (-1)
 
 /** class for computing payloads for relay the simpliest way - allow relaying of
@@ -167,11 +167,7 @@ void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
 
 //////////////////////////////////////////////////////////////////////////////////
 
-AudioStreamData::AudioStreamData(AmB2BSession *session):
-  in(NULL), initialized(false),
-  dtmf_detector(NULL), dtmf_queue(NULL),
-  outgoing_payload(UNDEFINED_PAYLOAD),
-  enable_dtmf_transcoding(false)
+void AudioStreamData::initialize(AmB2BSession *session)
 {
   stream = new AmRtpAudio(session, session->getRtpRelayInterface());
   stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
@@ -181,9 +177,48 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
   session->getLowFiPLs(lowfi_payloads);
 }
 
+AudioStreamData::AudioStreamData(AmB2BSession *session):
+  in(NULL), initialized(false),
+  dtmf_detector(NULL), dtmf_queue(NULL),
+  outgoing_payload(UNDEFINED_PAYLOAD),
+  force_symmetric_rtp(false),
+  enable_dtmf_transcoding(false)
+{
+  if (session) initialize(session);
+  else stream = NULL; // not initialized yet
+}
+
 void AudioStreamData::changeSession(AmB2BSession *session)
 {
-  // TODO
+  if (!stream) {
+    // the stream was not created yet
+    TRACE("delayed stream initialization for session %p\n", session);
+    if (session) initialize(session);
+  }
+  else {
+    // the stream is already created
+
+    if (session) {
+      // session might be NULL, AmRtpAudio doesn't handle NULL session so putting
+      // NULL there shows if it is tried to be used (shouldn't be if the stream is
+      // removed from processing)
+      // note that we can not leave the original session there because it need not
+      // to exist any more
+      stream->changeSession(session);
+
+      /*if (session) {
+        // session is going to be set
+
+        // FIXME: do we really want to reinitialize stream?
+        bool was_initialized = resetInitializedStream();
+        force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
+        enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
+        session->getLowFiPLs(lowfi_payloads);
+        if (was_initialized) initStream(...)
+      }*/
+    }
+    else clear(); // free the stream and other stuff because it can't be used anyway
+  }
 }
 
 
@@ -207,11 +242,12 @@ void AudioStreamData::clear()
     delete dtmf_queue;
     dtmf_queue = NULL;
   }
+  initialized = false;
 }
 
 void AudioStreamData::stopStreamProcessing()
 {
-  if (stream->hasLocalSocket()){
+  if (stream && stream->hasLocalSocket()){
     DBG("remove stream [%p] from RTP receiver\n", stream);
     AmRtpReceiver::instance()->removeStream(stream->getLocalSocket());
   }
@@ -219,7 +255,7 @@ void AudioStreamData::stopStreamProcessing()
 
 void AudioStreamData::resumeStreamProcessing()
 {
-  if (stream->hasLocalSocket()){
+  if (stream && stream->hasLocalSocket()){
     DBG("resume stream [%p] into RTP receiver\n",stream);
     AmRtpReceiver::instance()->addStream(stream->getLocalSocket(), stream);
   }
@@ -227,6 +263,12 @@ void AudioStreamData::resumeStreamProcessing()
 
 void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other, RelayController &rc)
 {
+  if (!stream) return;
+  if (!other) {
+    ERROR("BUG: trying to set relay stream to NULL\n");
+    return;
+  }
+
   // We are in locked section, so the stream can not change under our hands
   // remove the stream from processing to avoid changing relay params under the
   // hands of an AmRtpReceiver process.
@@ -255,6 +297,11 @@ bool AudioStreamData::initStream(AmDtmfSink *dtmf_sink,
     PlayoutType playout_type,
     AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx)
 {
+  if (!stream) {
+    ERROR("BUG: trying to initialize stream before creation\n");
+    return true; //?
+  }
+
   bool ok = true;
 
   // remove from processing to safely update the stream
@@ -320,7 +367,7 @@ bool AudioStreamData::resetInitializedStream()
 
 void AudioStreamData::sendDtmf(int event, unsigned int duration_ms)
 {
-  stream->sendDtmf(event,duration_ms);
+  if (stream) stream->sendDtmf(event,duration_ms);
 }
 
 void AudioStreamData::resetStats()
@@ -435,11 +482,12 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
 { 
 }
  
-void AmB2BMedia::setBLeg(AmB2BSession *new_b)
+void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
 {
   mutex.lock();
 
-  b = new_b;
+  if (a_leg) a = new_session;
+  else b = new_session;
 
   // update all streams
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
@@ -448,7 +496,10 @@ void AmB2BMedia::setBLeg(AmB2BSession *new_b)
     i->b.stopStreamProcessing();
   
     // replace session
-    i->b.changeSession(new_b);
+    if (a_leg) i->a.changeSession(new_session);
+    else i->b.changeSession(new_session);
+
+    // TODO: needed to enable/disable RTP packet relay if session is set/cleared
 
     // return back for processing
     i->a.resumeStreamProcessing();
@@ -531,6 +582,29 @@ void AmB2BMedia::clearRTPTimeout()
   mutex.unlock();
 }
 
+void AmB2BMedia::createStreams(const AmSdp &sdp)
+{
+  TRACE("create media streams\n");
+
+  AudioStreamIterator streams = audio.begin();
+  vector<SdpMedia>::const_iterator m = sdp.media.begin();
+
+  // check already existing streams
+  for (; (m != sdp.media.end()) && (streams != audio.end()); ++m) {
+    if (m->type != MT_AUDIO) continue;
+    ++streams;
+  }
+
+  // create all the missing streams
+  for (; m != sdp.media.end(); ++m) {
+    if (m->type != MT_AUDIO) continue;
+
+    AudioStreamPair pair(a, b);
+    audio.push_back(pair);
+  }
+}
+
+
 void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const string &relay_address) 
 {
   static const string void_addr("0.0.0.0");
@@ -543,6 +617,8 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
     parser_sdp.conn.address = relay_address;
     DBG("new connection address: %s",parser_sdp.conn.address.c_str());
   }
+
+  createStreams(parser_sdp);
 
   string replaced_ports;
 

@@ -278,7 +278,11 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       setMediaSession(b_legs.begin()->media_session);
       b_legs.begin()->releaseMediaSession(); // remove reference hold by BLegInfo
       b_legs.clear(); // no need to remember the connected leg here
-      INFO("connecting media session: %s to %s\n", dlg.local_tag.c_str(), other_id.c_str());
+      if (media_session) {
+        INFO("connecting media session: %s to %s\n", dlg.local_tag.c_str(), other_id.c_str());
+        media_session->changeSession(a_leg, this);
+        if (initial_sdp_stored) updateRemoteSdp(initial_sdp);
+      }
 
       onCallConnected(reply);
       set_sip_relay_only(true); // relay only from now on
@@ -387,15 +391,13 @@ void CallLeg::onInvite(const AmSipRequest& req)
     // list of received (relayed) requests
     recvd_req.insert(std::make_pair(req.cseq, req));
 
+    initial_sdp_stored = false;
     if (rtp_relay_mode == RTP_Relay) {
-      // TODO: setMediaSession(new AmB2BMedia(this, NULL));
-
-      AmSdp sdp;
       const AmMimeBody* sdp_body = req.body.hasContentType(SIP_APPLICATION_SDP);
       DBG("SDP %sfound in initial INVITE\n", sdp_body ? "": "not ");
-      if (sdp_body && (sdp.parse((const char *)sdp_body->getPayload()) == 0)) {
-        DBG("updating remote SDP\n");
-        updateRemoteSdp(sdp);
+      if (sdp_body && (initial_sdp.parse((const char *)sdp_body->getPayload()) == 0)) {
+        DBG("storing remote SDP for later\n");
+        initial_sdp_stored = true;
       }
     }
   }
@@ -459,9 +461,9 @@ void CallLeg::addCallee(CallLeg *callee, const AmSipRequest &relayed_invite)
   b.id = callee->getLocalTag();
 
   if ((rtp_relay_mode == RTP_Relay)) {
-    // FIXME: do not initialise the media session with A leg to avoid
-    // unnecessary A leg RTP stream creation in every B leg's media session
-    b.media_session = new AmB2BMedia(this, callee);
+    // do not initialise the media session with A leg to avoid unnecessary A leg
+    // RTP stream creation in every B leg's media session
+    b.media_session = new AmB2BMedia(NULL, callee);
     b.media_session->addReference(); // new reference for me
     callee->setMediaSession(b.media_session);
   }
