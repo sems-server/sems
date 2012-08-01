@@ -79,6 +79,9 @@ class AudioStreamData {
      * to be done independently for each stream. */
     AmDtmfEventQueue *dtmf_queue;
 
+    PayloadMask relay_mask;
+    bool relay_enabled;
+
     // for performance monitoring
     int outgoing_payload;
     int incoming_payload;
@@ -91,6 +94,8 @@ class AudioStreamData {
     /** create the stream and take settings from the session */
     void initialize(AmB2BSession *session);
 
+    void clearDtmfSink();
+
   public:
     /** Creates data based on associated signaling leg data. */
     AudioStreamData(AmB2BSession *session);
@@ -98,6 +103,9 @@ class AudioStreamData {
     /** we want to preserve existing streams (relay streams already set, ports
      * already used in outgoing SDP */
     void changeSession(AmB2BSession *session);
+
+    /** release old and store new DTMF sink */
+    void setDtmfSink(AmDtmfSink *dtmf_sink);
 
     /** Frees all allocated data. 
      *
@@ -121,21 +129,20 @@ class AudioStreamData {
      *
      * Removes the stream from AmRtpReceiver before updating and returns it back
      * once done. */
-    void setStreamRelay(const SdpMedia &m, AmRtpStream *other, RelayController &rc);
+    //void setStreamRelay(const SdpMedia &m, AmRtpStream *other, RelayController &rc);
+    void setRelayStream(AmRtpStream *other);
 
-    /** Initializes RTP stream with local and remote media (needed for
-     * transcoding). 
+    /** computes and stores payloads that can be relayed based on the
+     * corresponding 'peer session' remote media line (i.e. what accepts the
+     * other remote end directly) */
+    void setRelayPayloads(const SdpMedia &m, RelayController *ctrl) { ctrl->computeRelayMask(m, relay_enabled, relay_mask); }
+
+    /** initialize given stream for transcoding & regular audio processing
      *
-     * Returns false if the initialization failed. */
-    bool initStream(AmDtmfSink* dtmf_sink, PlayoutType playout_type, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
-
-    /** Discards initialization flag and DTMF related members if the stream was
-     * already initialized. In such case true is returned. If the stream wasn't
-     * initialized yet this method returns false.
-     * 
-     * Each time SDP is changed the stream has to be reinitialized with new one
-     * (needed to have SDP of both sides to that). */
-    bool resetInitializedStream();
+     * Returns false if the initialization failed (might happen for example if
+     * we are not able to handle the remote payloads by ourselves; anyway
+     * relaying could be still available in this case). */
+    bool initStream(PlayoutType playout_type, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
 
     /** Processes raw DTMF events in own queue. */
     void processDtmfEvents() { if (dtmf_queue) dtmf_queue->processEvents(); }
@@ -181,8 +188,6 @@ class AudioStreamData {
  * relaying RTP packets.
  *
  * TODO:
- *  - prepare the class for NULL B/A(?) leg
- *  - prepare the class for changing B and A leg
  *  - handle offer/answer correctly (refused new offer means old offer/answer is
  *    still valid)
  *  - handle "on hold" streams - probably should be controlled by signaling
@@ -199,8 +204,6 @@ class AudioStreamData {
  *  - reference counting using atomic variables instead of locking
  *
  *  - RTCP
- *
- *  - independent clear of one call leg (to be able to connect another callleg)
  *
  *  - correct sampling periods when relaying/transcoding according to values
  *    advertised in local SDP (i.e. the relayed one)
@@ -241,7 +244,8 @@ class AmB2BMedia: public AmMediaSession
      * instead of the other stream. */
     struct AudioStreamPair {
       AudioStreamData a, b;
-      AudioStreamPair(AmB2BSession *_a, AmB2BSession *_b): a(_a), b(_b) { }
+      int media_idx;
+      AudioStreamPair(AmB2BSession *_a, AmB2BSession *_b, int _media_idx): a(_a), b(_b), media_idx(_media_idx) { }
     };
 
     typedef std::vector<AudioStreamPair>::iterator AudioStreamIterator;
@@ -258,6 +262,13 @@ class AmB2BMedia: public AmMediaSession
     // needed for updating relayed payloads
     AmSdp a_leg_local_sdp, a_leg_remote_sdp;
     AmSdp b_leg_local_sdp, b_leg_remote_sdp;
+    bool have_a_leg_local_sdp, have_a_leg_remote_sdp;
+    bool have_b_leg_local_sdp, have_b_leg_remote_sdp;
+
+    /** RTP streams were activated (i.e. are processed by AmRtpReceiver)
+     * Note that they need NOT to be processed by MediaProcessor
+     * (isProcessingMedia). */
+    bool processing_started;
 
     AmMutex mutex;
     int ref_cnt;
@@ -272,32 +283,8 @@ class AmB2BMedia: public AmMediaSession
 
     std::vector<AudioStreamPair> audio;
 
-    /** Starts media processing if have all required information. */
-    void updateProcessingState();
-
-    /** Clears a_initialized/b_initialized flag if already initialized. Returns
-     * true if something was really cleared. */
-    bool resetInitializedStreams(bool a_leg);
-    bool resetInitializedStream(AudioStreamData &data);
-
-    /** Mark streams in given leg as uninitialized (needed for in-dialog media
-     * updates) */
-    void clearStreamInitialization(bool a_leg);
-
-    /** Updates streams in given leg. 
-     *
-     * Creates them if they don't exist and initializes if they need to be
-     * initialized. 
-     *
-     * Method initializes relay & transcoding settings if told to do so. 
-     *
-     * Returns false if update failed. */
-    bool updateStreams(bool a_leg, bool init_relay, bool init_transcoding, RelayController &rc);
-
-    /** initialize given stream (prepares for transcoding) */
-    void initStream(AudioStreamData &data, AmSession *session, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
-
     void createStreams(const AmSdp &sdp);
+    void onSdpUpdate();
 
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
