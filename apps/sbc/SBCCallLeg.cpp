@@ -18,6 +18,8 @@
 
 using namespace std;
 
+#define TRACE INFO
+
 // helper functions
 
 /** count active and inactive media streams in given SDP */
@@ -76,200 +78,6 @@ static void savePayloadIDs(AmSdp &sdp, MediaType mtype,
   }
 }
 
-static void appendTranscoderCodecs(AmSdp &sdp, MediaType mtype, std::vector<SdpPayload> &transcoder_codecs, 
-    PayloadIdMapping &transcoder_payload_mapping)
-{
-  // append codecs for transcoding, remember the added ones to be able to filter
-  // them out from relayed reply!
-
-  // important: normalized SDP should get here
-
-  DBG("going to append transcoder codecs into SDP\n");
-
-  unsigned stream_idx = 0;
-  vector<SdpPayload>::const_iterator p;
-  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
-
-    // handle audio transcoder codecs
-    if (m->type == mtype) {
-      // transcoder codecs can be added only if there are common payloads with
-      // the remote (only those allowed for transcoder)
-      // if there are no such common payloads adding transcoder codecs can't help
-      // because we won't be able to transcode later on!
-      // (we have to check for each media stream independently)
-
-      // find first unused dynamic payload number & detect transcodable codecs
-      // in original SDP
-      int id = 96;
-      bool transcodable = false;
-      PayloadMask used_payloads;
-      for (p = m->payloads.begin(); p != m->payloads.end(); ++p) {
-        if (p->payload_type >= id) id = p->payload_type + 1;
-        if (containsPayload(transcoder_codecs, *p)) transcodable = true;
-        used_payloads.set(p->payload_type);
-      }
-
-      if (transcodable) {
-        // there are some transcodable codecs present in the SDP, we can safely
-        // add the other transcoder codecs to the SDP
-        unsigned idx = 0;
-        for (p = transcoder_codecs.begin(); p != transcoder_codecs.end(); ++p, ++idx) {
-          // add all payloads which are not already there
-          if (!containsPayload(m->payloads, *p)) {
-            m->payloads.push_back(*p);
-            int &pid = m->payloads.back().payload_type;
-            if (pid < 0) {
-              // try to use remembered ID
-              pid = transcoder_payload_mapping.get(stream_idx, idx);
-            }
-
-            if ((pid < 0) || used_payloads.get(pid)) {
-              // payload ID is not set or is already used in current SDP, we
-              // need to assign a new one
-              pid = id++;
-            }
-          }
-        }
-        if (id > 128) ERROR("assigned too high payload type number (%d), see RFC 3551\n", id);
-      }
-      else {
-        // no compatible codecs found
-        DBG("can not transcode stream %d - no compatible codecs with transcoder_codecs found\n", stream_idx + 1);
-      }
-    
-      stream_idx++; // count chosen media type only
-    }
-  }
-
-  // remembered payload IDs should be used just once, in SDP answer
-  // unfortunatelly the SDP answer might be present in 1xx and in 2xx as well so
-  // we can't clear it here
-  // on other hand it might be useful to use the same payload ID if offer/answer
-  // is repeated in the other direction next time
-}
-
-// do the filtering, returns true if SDP was changed
-static bool doFiltering(AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, PayloadIdMapping &transcoder_payload_mapping)
-{
-  bool changed = false;
-
-  bool prefer_existing_codecs = call_profile.codec_prefs.preferExistingCodecs(a_leg);
-
-  if (prefer_existing_codecs) {
-    // We have to order payloads before adding transcoder codecs to leave
-    // transcoding as the last chance (existing codecs are preferred thus
-    // relaying will be used if possible).
-    if (call_profile.codec_prefs.shouldOrderPayloads(a_leg)) {
-      normalizeSDP(sdp, call_profile.anonymize_sdp);
-      call_profile.codec_prefs.orderSDP(sdp, a_leg);
-      changed = true;
-    }
-  }
-
-  // Add transcoder codecs before filtering because otherwise SDP filter could
-  // inactivate some media lines which shouldn't be inactivated.
-
-  if (call_profile.transcoder.isActive()) {
-    if (!changed) // otherwise already normalized
-      normalizeSDP(sdp, call_profile.anonymize_sdp);
-    appendTranscoderCodecs(sdp, MT_AUDIO, call_profile.transcoder.audio_codecs, transcoder_payload_mapping);
-    changed = true;
-  }
-  
-  if (!prefer_existing_codecs) {
-    // existing codecs are not preferred - reorder AFTER adding transcoder
-    // codecs so it might happen that transcoding will be forced though relaying
-    // would be possible
-    if (call_profile.codec_prefs.shouldOrderPayloads(a_leg)) {
-      if (!changed) normalizeSDP(sdp, call_profile.anonymize_sdp);
-      call_profile.codec_prefs.orderSDP(sdp, a_leg);
-      changed = true;
-    }
-  }
-  
-  // It doesn't make sense to filter out codecs allowed for transcoding and thus
-  // if the filter filters them out it can be considered as configuration
-  // problem, right? 
-  // => So we wouldn't try to avoid filtering out transcoder codecs what would
-  // just complicate things.
-
-  if (call_profile.sdpfilter_enabled) {
-    if (!changed) // otherwise already normalized
-      normalizeSDP(sdp, call_profile.anonymize_sdp);
-    if (isActiveFilter(call_profile.sdpfilter)) {
-      filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
-    }
-    changed = true;
-  }
-  if (call_profile.sdpalinesfilter_enabled &&
-      isActiveFilter(call_profile.sdpalinesfilter)) {
-    // filter SDP "a=lines"
-    filterSDPalines(sdp, call_profile.sdpalinesfilter, call_profile.sdpalinesfilter_list);
-    changed = true;
-  }
-
-  return changed;
-}
-
-static int filterBody(AmMimeBody *body, AmSdp& sdp, SBCCallProfile &call_profile, bool a_leg, 
-    PayloadIdMapping &transcoder_payload_mapping) 
-{
-  int res = sdp.parse((const char *)body->getPayload());
-  if (0 != res) {
-    DBG("SDP parsing failed!\n");
-    return res;
-  }
-
-  if (doFiltering(sdp, call_profile, a_leg, transcoder_payload_mapping)) {
-    string n_body;
-    sdp.print(n_body);
-    body->setPayload((const unsigned char*)n_body.c_str(),
-			 n_body.length());
-  }
-  return 0;
-}
-
-static int filterBody(AmSipRequest &req, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, 
-    PayloadIdMapping &transcoder_payload_mapping)
-{
-  AmMimeBody* body = req.body.hasContentType(SIP_APPLICATION_SDP);
-
-  DBG("filtering SDP for request '%s'\n",
-      req.method.c_str());
-  if (body && 
-      (req.method == SIP_METH_INVITE || 
-       req.method == SIP_METH_UPDATE ||
-       req.method == SIP_METH_ACK)) {
-
-    // todo: handle filtering errors
-    filterBody(body, sdp, call_profile, a_leg, transcoder_payload_mapping);
-
-    // temporary hack - will be migrated deeper inside
-    int active, inactive;
-    countStreams(sdp, active, inactive);
-    if ((inactive > 0) && (active == 0)) {
-      // no active streams remaining => reply 488 (FIXME: does it matter if we
-      // filtered them out or they were already inactive?)
-
-      DBG("all streams are marked as inactive, reply 488 "
-          SIP_REPLY_NOT_ACCEPTABLE_HERE"\n");
-      return -488;
-    }
-  }
-  return 0;
-}
-
-static void filterBody(AmSipReply &reply, AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, 
-    PayloadIdMapping &transcoder_payload_mapping)
-{
-  AmMimeBody* body = reply.body.hasContentType(SIP_APPLICATION_SDP);
-
-  DBG("filtering body of relayed reply %d\n", reply.code);
-  if (body &&
-      (reply.cseq_method == SIP_METH_INVITE || reply.cseq_method == SIP_METH_UPDATE)) {
-    filterBody(body, sdp, call_profile, a_leg, transcoder_payload_mapping);
-  }
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -286,7 +94,7 @@ class SBCRelayController: public RelayController {
 
 void SBCRelayController::computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask)
 {
-  DBG("entering SBCRelayController::computeRelayMask(%s)\n", aleg ? "A leg" : "B leg");
+  TRACE("entering SBCRelayController::computeRelayMask(%s)\n", aleg ? "A leg" : "B leg");
 
   PayloadMask m1, m2;
   bool use_m1 = false;
@@ -311,13 +119,13 @@ void SBCRelayController::computeRelayMask(const SdpMedia &m, bool &enable, Paylo
     if(strcasecmp("telephone-event",p->encoding_name.c_str()) == 0) continue;
 
     // mark every codec for relay in m2
-    DBG("m2: marking payload %d for relay\n", p->payload_type);
+    TRACE("m2: marking payload %d for relay\n", p->payload_type);
     m2.set(p->payload_type);
 
     if (!containsPayload(norelay_payloads, *p)) {
       // this payload can be relayed
 
-      DBG("m1: marking payload %d for relay\n", p->payload_type);
+      TRACE("m1: marking payload %d for relay\n", p->payload_type);
       m1.set(p->payload_type);
 
       if (!use_m1 && containsPayload(transcoder_settings->audio_codecs, *p)) {
@@ -329,7 +137,7 @@ void SBCRelayController::computeRelayMask(const SdpMedia &m, bool &enable, Paylo
     }
   }
 
-  DBG("using %s\n", use_m1 ? "m1" : "m2");
+  TRACE("using %s\n", use_m1 ? "m1" : "m2");
   if (use_m1) mask = m1;
   else mask = m2;
 }
@@ -480,8 +288,7 @@ int SBCCallLeg::relayEvent(AmEvent* ev)
               req_ev->req.method.c_str(), req_ev->req.body.getCTStr().c_str());
           // todo: handle filtering errors
 
-          AmSdp sdp;
-          int res = filterBody(req_ev->req, sdp, call_profile, a_leg, transcoder_payload_mapping);
+          int res = filterSdp(req_ev->req.body, req_ev->req.method);
           if (res < 0) return res;
         }
         break;
@@ -515,8 +322,7 @@ int SBCCallLeg::relayEvent(AmEvent* ev)
           DBG("filtering body for reply '%s' (c/t '%s')\n",
               reply_ev->trans_method.c_str(), reply_ev->reply.body.getCTStr().c_str());
 
-          AmSdp sdp;
-          filterBody(reply_ev->reply, sdp, call_profile, a_leg, transcoder_payload_mapping);
+          filterSdp(reply_ev->reply.body, reply_ev->reply.cseq_method);
         }
 
         break;
@@ -946,8 +752,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     invite_req.hdrs+=append_headers;
   }
   
-  AmSdp sdp;
-  int res = filterBody(invite_req, sdp, call_profile, a_leg, transcoder_payload_mapping);
+  int res = filterSdp(invite_req.body, invite_req.method);
   if (res < 0) {
     // FIXME: quick hack, throw the exception from the filtering function for
     // requests
@@ -1360,6 +1165,180 @@ void SBCCallLeg::CCEnd(const CCInterfaceListIteratorT& end_interface) {
   }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////
+// body filtering
 
+// do the filtering, returns true if SDP was changed
+bool SBCCallLeg::doFiltering(AmSdp &sdp)
+{
+  bool changed = false;
 
+  bool prefer_existing_codecs = call_profile.codec_prefs.preferExistingCodecs(a_leg);
+
+  if (prefer_existing_codecs) {
+    // We have to order payloads before adding transcoder codecs to leave
+    // transcoding as the last chance (existing codecs are preferred thus
+    // relaying will be used if possible).
+    if (call_profile.codec_prefs.shouldOrderPayloads(a_leg)) {
+      normalizeSDP(sdp, call_profile.anonymize_sdp);
+      call_profile.codec_prefs.orderSDP(sdp, a_leg);
+      changed = true;
+    }
+  }
+
+  // Add transcoder codecs before filtering because otherwise SDP filter could
+  // inactivate some media lines which shouldn't be inactivated.
+
+  if (call_profile.transcoder.isActive()) {
+    if (!changed) // otherwise already normalized
+      normalizeSDP(sdp, call_profile.anonymize_sdp);
+    appendTranscoderCodecs(sdp);
+    changed = true;
+  }
+
+  if (!prefer_existing_codecs) {
+    // existing codecs are not preferred - reorder AFTER adding transcoder
+    // codecs so it might happen that transcoding will be forced though relaying
+    // would be possible
+    if (call_profile.codec_prefs.shouldOrderPayloads(a_leg)) {
+      if (!changed) normalizeSDP(sdp, call_profile.anonymize_sdp);
+      call_profile.codec_prefs.orderSDP(sdp, a_leg);
+      changed = true;
+    }
+  }
+
+  // It doesn't make sense to filter out codecs allowed for transcoding and thus
+  // if the filter filters them out it can be considered as configuration
+  // problem, right?
+  // => So we wouldn't try to avoid filtering out transcoder codecs what would
+  // just complicate things.
+
+  if (call_profile.sdpfilter_enabled) {
+    if (!changed) // otherwise already normalized
+      normalizeSDP(sdp, call_profile.anonymize_sdp);
+    if (isActiveFilter(call_profile.sdpfilter)) {
+      filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
+    }
+    changed = true;
+  }
+  if (call_profile.sdpalinesfilter_enabled &&
+      isActiveFilter(call_profile.sdpalinesfilter)) {
+    // filter SDP "a=lines"
+    filterSDPalines(sdp, call_profile.sdpalinesfilter, call_profile.sdpalinesfilter_list);
+    changed = true;
+  }
+
+  return changed;
+}
+
+int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
+{
+  AmMimeBody* sdp_body = body.hasContentType(SIP_APPLICATION_SDP);
+
+  DBG("filtering body\n");
+  if (sdp_body &&
+      (method == SIP_METH_INVITE ||
+       method == SIP_METH_UPDATE ||
+       //method == SIP_METH_PRACK || //FIXME
+       method == SIP_METH_ACK))
+  {
+    AmSdp sdp;
+    int res = sdp.parse((const char *)sdp_body->getPayload());
+    if (0 != res) {
+      DBG("SDP parsing failed!\n");
+      return res;
+    }
+
+    if (doFiltering(sdp)) {
+      string n_body;
+      sdp.print(n_body);
+      sdp_body->setPayload((const unsigned char*)n_body.c_str(), n_body.length());
+    }
+
+    // temporary hack - will be migrated deeper inside
+    int active, inactive;
+    countStreams(sdp, active, inactive);
+    if ((inactive > 0) && (active == 0)) {
+      // no active streams remaining => reply 488 (FIXME: does it matter if we
+      // filtered them out or they were already inactive?)
+
+      DBG("all streams are marked as inactive, reply 488 "
+          SIP_REPLY_NOT_ACCEPTABLE_HERE"\n");
+      return -488;
+    }
+  }
+  return 0;
+}
+
+void SBCCallLeg::appendTranscoderCodecs(AmSdp &sdp)
+{
+  // append codecs for transcoding, remember the added ones to be able to filter
+  // them out from relayed reply!
+
+  // important: normalized SDP should get here
+
+  TRACE("going to append transcoder codecs into SDP\n");
+  const std::vector<SdpPayload> &transcoder_codecs = call_profile.transcoder.audio_codecs;
+
+  unsigned stream_idx = 0;
+  vector<SdpPayload>::const_iterator p;
+  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+
+    // handle audio transcoder codecs
+    if (m->type == MT_AUDIO) {
+      // transcoder codecs can be added only if there are common payloads with
+      // the remote (only those allowed for transcoder)
+      // if there are no such common payloads adding transcoder codecs can't help
+      // because we won't be able to transcode later on!
+      // (we have to check for each media stream independently)
+
+      // find first unused dynamic payload number & detect transcodable codecs
+      // in original SDP
+      int id = 96;
+      bool transcodable = false;
+      PayloadMask used_payloads;
+      for (p = m->payloads.begin(); p != m->payloads.end(); ++p) {
+        if (p->payload_type >= id) id = p->payload_type + 1;
+        if (containsPayload(transcoder_codecs, *p)) transcodable = true;
+        used_payloads.set(p->payload_type);
+      }
+
+      if (transcodable) {
+        // there are some transcodable codecs present in the SDP, we can safely
+        // add the other transcoder codecs to the SDP
+        unsigned idx = 0;
+        for (p = transcoder_codecs.begin(); p != transcoder_codecs.end(); ++p, ++idx) {
+          // add all payloads which are not already there
+          if (!containsPayload(m->payloads, *p)) {
+            m->payloads.push_back(*p);
+            int &pid = m->payloads.back().payload_type;
+            if (pid < 0) {
+              // try to use remembered ID
+              pid = transcoder_payload_mapping.get(stream_idx, idx);
+            }
+
+            if ((pid < 0) || used_payloads.get(pid)) {
+              // payload ID is not set or is already used in current SDP, we
+              // need to assign a new one
+              pid = id++;
+            }
+          }
+        }
+        if (id > 128) ERROR("assigned too high payload type number (%d), see RFC 3551\n", id);
+      }
+      else {
+        // no compatible codecs found
+        TRACE("can not transcode stream %d - no compatible codecs with transcoder_codecs found\n", stream_idx + 1);
+      }
+
+      stream_idx++; // count chosen media type only
+    }
+  }
+
+  // remembered payload IDs should be used just once, in SDP answer
+  // unfortunatelly the SDP answer might be present in 1xx and in 2xx as well so
+  // we can't clear it here
+  // on other hand it might be useful to use the same payload ID if offer/answer
+  // is repeated in the other direction next time
+}
 
