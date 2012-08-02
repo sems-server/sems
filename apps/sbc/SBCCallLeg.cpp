@@ -1239,7 +1239,7 @@ int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
   if (sdp_body &&
       (method == SIP_METH_INVITE ||
        method == SIP_METH_UPDATE ||
-       //method == SIP_METH_PRACK || //FIXME
+       method == SIP_METH_PRACK ||
        method == SIP_METH_ACK))
   {
     AmSdp sdp;
