@@ -34,6 +34,9 @@ int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilte
   if (!isActiveFilter(sdpfilter))
     return 0;
 
+  bool media_line_filtered_out = false;
+  bool media_line_left = false;
+
   for (std::vector<SdpMedia>::iterator m_it =
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
     SdpMedia& media = *m_it;
@@ -59,10 +62,18 @@ int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilte
       // we should just reject the stream by setting port to 0 (at least one
       // format must be given; see RFC 3264, sect. 6)
       media.port = 0;
-      if (media.payloads.size() > 1) 
+      media_line_filtered_out = true;
+      if (media.payloads.size() > 1)
         media.payloads.erase(media.payloads.begin() + 1, media.payloads.end());
     }
-    else media.payloads = new_pl;    
+    else {
+      media.payloads = new_pl;
+      media_line_left = true;
+    }
+  }
+  if ((!media_line_left) && media_line_filtered_out) {
+    DBG("all streams were marked as inactive\n");
+    return -488;
   }
 
   return 0;

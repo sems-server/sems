@@ -22,17 +22,6 @@ using namespace std;
 
 // helper functions
 
-/** count active and inactive media streams in given SDP */
-static void countStreams(const AmSdp &sdp, int &active, int &inactive)
-{
-  active = 0;
-  inactive = 0;
-  for (vector<SdpMedia>::const_iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
-    if (m->port == 0) inactive++;
-    else active++;
-  }
-}
-
 static const SdpPayload *findPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload)
 {
   string pname = payload.encoding_name;
@@ -1143,11 +1132,27 @@ void SBCCallLeg::CCEnd(const CCInterfaceListIteratorT& end_interface) {
 //////////////////////////////////////////////////////////////////////////////////////////
 // body filtering
 
-// do the filtering, returns true if SDP was changed
-bool SBCCallLeg::doFiltering(AmSdp &sdp)
+int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
 {
-  bool changed = false;
+  DBG("filtering body\n");
 
+  AmMimeBody* sdp_body = body.hasContentType(SIP_APPLICATION_SDP);
+  if (!sdp_body) return 0;
+
+  // filter body for given methods only
+  if (!(method == SIP_METH_INVITE ||
+       method == SIP_METH_UPDATE ||
+       method == SIP_METH_PRACK ||
+       method == SIP_METH_ACK)) return 0;
+
+  AmSdp sdp;
+  int res = sdp.parse((const char *)sdp_body->getPayload());
+  if (0 != res) {
+    DBG("SDP parsing failed during body filtering!\n");
+    return res;
+  }
+
+  bool changed = false;
   bool prefer_existing_codecs = call_profile.codec_prefs.preferExistingCodecs(a_leg);
 
   if (prefer_existing_codecs) {
@@ -1192,7 +1197,7 @@ bool SBCCallLeg::doFiltering(AmSdp &sdp)
     if (!changed) // otherwise already normalized
       normalizeSDP(sdp, call_profile.anonymize_sdp);
     if (isActiveFilter(call_profile.sdpfilter)) {
-      filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
+      res = filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
     }
     changed = true;
   }
@@ -1203,46 +1208,13 @@ bool SBCCallLeg::doFiltering(AmSdp &sdp)
     changed = true;
   }
 
-  return changed;
-}
-
-int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
-{
-  AmMimeBody* sdp_body = body.hasContentType(SIP_APPLICATION_SDP);
-
-  DBG("filtering body\n");
-  if (sdp_body &&
-      (method == SIP_METH_INVITE ||
-       method == SIP_METH_UPDATE ||
-       method == SIP_METH_PRACK ||
-       method == SIP_METH_ACK))
-  {
-    AmSdp sdp;
-    int res = sdp.parse((const char *)sdp_body->getPayload());
-    if (0 != res) {
-      DBG("SDP parsing failed!\n");
-      return res;
-    }
-
-    if (doFiltering(sdp)) {
-      string n_body;
-      sdp.print(n_body);
-      sdp_body->setPayload((const unsigned char*)n_body.c_str(), n_body.length());
-    }
-
-    // temporary hack - will be migrated deeper inside
-    int active, inactive;
-    countStreams(sdp, active, inactive);
-    if ((inactive > 0) && (active == 0)) {
-      // no active streams remaining => reply 488 (FIXME: does it matter if we
-      // filtered them out or they were already inactive?)
-
-      DBG("all streams are marked as inactive, reply 488 "
-          SIP_REPLY_NOT_ACCEPTABLE_HERE"\n");
-      return -488;
-    }
+  if (changed) {
+    string n_body;
+    sdp.print(n_body);
+    sdp_body->setPayload((const unsigned char*)n_body.c_str(), n_body.length());
   }
-  return 0;
+
+  return res;
 }
 
 void SBCCallLeg::appendTranscoderCodecs(AmSdp &sdp)
