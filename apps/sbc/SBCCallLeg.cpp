@@ -160,25 +160,71 @@ SBCCallLeg::SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_pro
     CallLeg(caller)
 {
   dlg.setRel100State(Am100rel::REL100_IGNORED);
+  dlg.setOAEnabled(false);
+}
+
+void SBCCallLeg::onStart()
+{
+  // this should be the first thing called in session's thread
+  CallLeg::onStart();
+  if (!a_leg) applyBProfile(); // A leg needs to evaluate profile first
+}
+
+void SBCCallLeg::applyAProfile()
+{
+  // apply A leg configuration (but most of the configuration is applied in
+  // SBCFactory::onInvite)
+
+  if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
+    DBG("Enabling RTP relay mode for SBC call\n");
+
+    if (call_profile.force_symmetric_rtp_value) {
+      DBG("forcing symmetric RTP (passive mode)\n");
+      rtp_relay_force_symmetric_rtp = true;
+    }
+
+    if (call_profile.aleg_rtprelay_interface_value >= 0) {
+      setRtpRelayInterface(call_profile.aleg_rtprelay_interface_value);
+      DBG("using RTP interface %i for A leg\n", rtp_interface);
+    }
+
+    setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
+    setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+
+    setRtpRelayMode(RTP_Relay);
+
+    if(call_profile.transcoder.isActive()) {
+      switch(call_profile.transcoder.dtmf_mode) {
+      case SBCCallProfile::TranscoderSettings::DTMFAlways:
+        enable_dtmf_transcoding = true; break;
+      case SBCCallProfile::TranscoderSettings::DTMFNever:
+        enable_dtmf_transcoding = false; break;
+      case SBCCallProfile::TranscoderSettings::DTMFLowFiCodecs:
+        enable_dtmf_transcoding = false;
+        lowfi_payloads = call_profile.transcoder.lowfi_codecs;
+        break;
+      };
+    }
+  }
+}
+
+void SBCCallLeg::applyBProfile()
+{
 
   if (!call_profile.contact.empty()) {
     dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
   }
 
-  // moved from createCalleeSession
-  // FIXME: Stefan wants to move to ConnectLegEvent handling to be done in
-  // callee's thread
-  
   if (call_profile.auth_enabled) {
     // adding auth handler
-    AmSessionEventHandlerFactory* uac_auth_f = 
+    AmSessionEventHandlerFactory* uac_auth_f =
       AmPlugIn::instance()->getFactory4Seh("uac_auth");
     if (NULL == uac_auth_f)  {
       INFO("uac_auth module not loaded. uac auth NOT enabled.\n");
     } else {
       AmSessionEventHandler* h = uac_auth_f->getHandler(this);
-      
-      // we cannot use the generic AmSessionEventHandler hooks, 
+
+      // we cannot use the generic AmSessionEventHandler hooks,
       // because the hooks don't work in AmB2BSession
       setAuthHandler(h);
       DBG("uac auth enabled for callee session.\n");
@@ -188,12 +234,14 @@ SBCCallLeg::SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_pro
   if (call_profile.sst_enabled_value) {
     if (NULL == SBCFactory::session_timer_fact) {
       ERROR("session_timer module not loaded - unable to create call with SST\n");
+      // FIXME: terminateOtherLeg?
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
     AmSessionEventHandler* h = SBCFactory::session_timer_fact->getHandler(this);
     if(!h) {
       ERROR("could not get a session timer event handler\n");
+      // FIXME: terminateOtherLeg?
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
 
@@ -209,7 +257,7 @@ SBCCallLeg::SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_pro
     dlg.outbound_proxy = call_profile.outbound_proxy;
     dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
   }
-  
+
   if (!call_profile.next_hop.empty()) {
     dlg.next_hop = call_profile.next_hop;
   }
@@ -217,8 +265,6 @@ SBCCallLeg::SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_pro
   // was read from caller but reading directly from profile now
   if (call_profile.outbound_interface_value >= 0)
     dlg.outbound_interface = call_profile.outbound_interface_value;
-  
-  dlg.setOAEnabled(false); // ???
 
   // was read from caller but reading directly from profile now
   if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
@@ -231,7 +277,6 @@ SBCCallLeg::SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_pro
 
   // was read from caller but reading directly from profile now
   if (!call_profile.callid.empty()) dlg.callid = call_profile.callid;
-  
 }
 
 int SBCCallLeg::relayEvent(AmEvent* ev)
@@ -644,6 +689,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
+  string ruri, to, from;
   ruri = call_profile.ruri.empty() ? req.r_uri : call_profile.ruri;
   if(!call_profile.ruri_host.empty()){
     ruri_parser.uri = ruri;
@@ -658,39 +704,8 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   }
   from = call_profile.from.empty() ? req.from : call_profile.from;
   to = call_profile.to.empty() ? req.to : call_profile.to;
-  callid = call_profile.callid;
 
-  if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
-    DBG("Enabling RTP relay mode for SBC call\n");
-
-    if (call_profile.force_symmetric_rtp_value) {
-      DBG("forcing symmetric RTP (passive mode)\n");
-      rtp_relay_force_symmetric_rtp = true;
-    }
-
-    if (call_profile.aleg_rtprelay_interface_value >= 0) {
-      setRtpRelayInterface(call_profile.aleg_rtprelay_interface_value);
-      DBG("using RTP interface %i for A leg\n", rtp_interface);
-    }
-
-    setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
-    setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
-
-    setRtpRelayMode(RTP_Relay);
-
-    if(call_profile.transcoder.isActive()) {
-      switch(call_profile.transcoder.dtmf_mode) {
-      case SBCCallProfile::TranscoderSettings::DTMFAlways:
-	enable_dtmf_transcoding = true; break;
-      case SBCCallProfile::TranscoderSettings::DTMFNever:
-	enable_dtmf_transcoding = false; break;
-      case SBCCallProfile::TranscoderSettings::DTMFLowFiCodecs:
-	enable_dtmf_transcoding = false;
-	lowfi_payloads = call_profile.transcoder.lowfi_codecs;
-	break;
-      };
-    }
-  }
+  applyAProfile();
 
   m_state = BB_Dialing;
 

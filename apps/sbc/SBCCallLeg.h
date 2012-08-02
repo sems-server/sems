@@ -25,11 +25,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   int m_state;
 
-  string ruri;
-  string from;
-  string to;
-  string callid;
-
   map<int, double> call_timers;
 
   // call control
@@ -92,6 +87,12 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void appendTranscoderCodecs(AmSdp &sdp);
   void savePayloadIDs(AmSdp &sdp);
 
+  /** apply A leg configuration from call profile */
+  void applyAProfile();
+
+  /** apply B leg configuration from call profile */
+  void applyBProfile();
+
  public:
 
   SBCCallLeg(const SBCCallProfile& call_profile);
@@ -106,6 +107,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onDtmf(int event, int duration);
 
   void onSystemEvent(AmSystemEvent* ev);
+
+  virtual void onStart();
 
   UACAuthCred* getCredentials();
 
