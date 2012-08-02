@@ -91,13 +91,14 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   bool doFiltering(AmSdp &sdp);
   int filterSdp(AmMimeBody &body, const string &method);
   void appendTranscoderCodecs(AmSdp &sdp);
+  void savePayloadIDs(AmSdp &sdp);
 
  public:
 
   SBCCallLeg(const SBCCallProfile& call_profile);
   SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_profile);
   ~SBCCallLeg();
-  
+
   void process(AmEvent* ev);
   void onBye(const AmSipRequest& req);
   void onInvite(const AmSipRequest& req);

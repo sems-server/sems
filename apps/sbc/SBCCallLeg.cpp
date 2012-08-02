@@ -55,30 +55,6 @@ static bool containsPayload(const std::vector<SdpPayload>& payloads, const SdpPa
   return findPayload(payloads, payload) != NULL;
 }
 
-static void savePayloadIDs(AmSdp &sdp, MediaType mtype, 
-    std::vector<SdpPayload> &transcoder_codecs,
-    PayloadIdMapping &mapping)
-{
-  unsigned stream_idx = 0;
-  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
-    if (m->type != mtype) continue;
-
-    unsigned idx = 0;
-    for (vector<SdpPayload>::iterator p = transcoder_codecs.begin(); 
-        p != transcoder_codecs.end(); ++p, ++idx) 
-    {
-      if (p->payload_type < 0) {
-        const SdpPayload *pp = findPayload(m->payloads, *p);
-        if (pp && (pp->payload_type >= 0)) 
-          mapping.map(stream_idx, idx, pp->payload_type);
-      }
-    }
-
-    stream_idx++; // count chosen media type only
-  }
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 class SBCRelayController: public RelayController {
@@ -419,8 +395,7 @@ void SBCCallLeg::onDtmf(int event, int duration)
 bool SBCCallLeg::updateLocalSdp(AmSdp &sdp)
 {
   // remember transcodable payload IDs
-  if (call_profile.transcoder.isActive())
-    savePayloadIDs(sdp, MT_AUDIO, call_profile.transcoder.audio_codecs, transcoder_payload_mapping);
+  if (call_profile.transcoder.isActive()) savePayloadIDs(sdp);
   return CallLeg::updateLocalSdp(sdp);
 }
 
@@ -1340,5 +1315,27 @@ void SBCCallLeg::appendTranscoderCodecs(AmSdp &sdp)
   // we can't clear it here
   // on other hand it might be useful to use the same payload ID if offer/answer
   // is repeated in the other direction next time
+}
+
+void SBCCallLeg::savePayloadIDs(AmSdp &sdp)
+{
+  unsigned stream_idx = 0;
+  std::vector<SdpPayload> &transcoder_codecs = call_profile.transcoder.audio_codecs;
+  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+    if (m->type != MT_AUDIO) continue;
+
+    unsigned idx = 0;
+    for (vector<SdpPayload>::iterator p = transcoder_codecs.begin();
+        p != transcoder_codecs.end(); ++p, ++idx)
+    {
+      if (p->payload_type < 0) {
+        const SdpPayload *pp = findPayload(m->payloads, *p);
+        if (pp && (pp->payload_type >= 0))
+          transcoder_payload_mapping.map(stream_idx, idx, pp->payload_type);
+      }
+    }
+
+    stream_idx++; // count chosen media type only
+  }
 }
 
