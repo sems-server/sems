@@ -36,7 +36,6 @@
 #include "iLBC_define.h"
 #include "iLBC_encode.h"
 #include "iLBC_decode.h"
-#include "constants.h"
 /**
  * @file plug-in/ilbc/ilbc.c
  * iLBC support 
@@ -54,9 +53,6 @@
 /** @def ILBC30 subtype declaration. */
 #define ILBC30  30 
 #define ILBC20  20
-
-extern const iLBC_ULP_Inst_t ULP_20msTbl;
-extern const iLBC_ULP_Inst_t ULP_30msTbl;
 
 static int iLBC_2_Pcm16_Ext( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			     unsigned int channels, unsigned int rate, long h_codec, int mode );
