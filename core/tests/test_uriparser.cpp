@@ -56,7 +56,7 @@ FCTMF_SUITE_BGN(test_uriparser) {
       AmUriParser p;
       size_t end;
       fct_chk( p.parse_contact("hu <sip:u@d;tag=123>", 0, end) );
-      DBG("DN:: '%s'\n", p.display_name.c_str());
+      // DBG("DN:: '%s'\n", p.display_name.c_str());
       fct_chk( p.display_name=="hu");
       fct_chk( p.uri_user=="u");
       fct_chk( p.uri_host=="d");
@@ -66,7 +66,7 @@ FCTMF_SUITE_BGN(test_uriparser) {
       AmUriParser p;
       size_t end;
       fct_chk( p.parse_contact("  hu bar <sip:u@d;tag=123>", 0, end) );
-      DBG("DN:: '%s'\n", p.display_name.c_str());
+      // DBG("DN:: '%s'\n", p.display_name.c_str());
 
       fct_chk( p.display_name=="hu bar");
       fct_chk( p.uri_user=="u");
