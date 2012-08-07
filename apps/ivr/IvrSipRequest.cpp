@@ -120,7 +120,6 @@ def_IvrSipRequest_GETTER(IvrSipRequest_getcallid,       callid)
 def_IvrSipRequest_GETTER(IvrSipRequest_getfrom_tag,     from_tag)
 def_IvrSipRequest_GETTER(IvrSipRequest_getto_tag,       to_tag)
 def_IvrSipRequest_GETTER(IvrSipRequest_getroute,        route)
-//def_IvrSipRequest_GETTER(IvrSipRequest_getbody,         body)
 def_IvrSipRequest_GETTER(IvrSipRequest_gethdrs,         hdrs)
 
 #undef def_IvrSipRequest_GETTER
@@ -134,6 +133,18 @@ static PyObject*
 IvrSipRequest_getcseq(IvrSipRequest *self, void *closure)
 {
   return PyInt_FromLong(self->p_req->cseq);
+}
+
+static PyObject*
+IvrSipRequest_getbody(IvrSipRequest *self, void *closure)
+{
+  if(self->p_req->body.getLen())
+  {
+    string body;
+    self->p_req->body.print(body);
+    return PyString_FromString(body.c_str());
+  }
+  return PyString_FromString("");
 }
 
 #define def_IvrSipRequest_SETTER(setter_name, attr)			\
@@ -165,7 +176,7 @@ static PyGetSetDef IvrSipRequest_getset[] = {
   {(char*)"to_tag", (getter)IvrSipRequest_getto_tag, NULL, (char*)"local tag", NULL},
   {(char*)"route",  (getter)IvrSipRequest_getroute, NULL, (char*)"record routing", NULL},
   {(char*)"cseq",   (getter)IvrSipRequest_getcseq, NULL, (char*)"CSeq for next request", NULL},
-  //{(char*)"body",   (getter)IvrSipRequest_getbody, NULL, (char*)"Body", NULL},
+  {(char*)"body",   (getter)IvrSipRequest_getbody, NULL, (char*)"Body", NULL},
   {(char*)"hdrs",   (getter)IvrSipRequest_gethdrs, (setter)IvrSipRequest_sethdrs, (char*)"Additional headers", NULL},
   {NULL}  /* Sentinel */
 };
