@@ -288,7 +288,7 @@ int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name,
   if (!strcmp(bname, "dsm.so") || !strcmp(bname, "ivr.so") ||
       !strcmp(bname, "py_sems.so") || !strcmp(bname, "sbc.so") ||
       !strcmp(bname, "diameter_client.so") || !strcmp(bname, "registrar_client.so") ||
-      !strcmp(bname, "uac_auth.so")
+      !strcmp(bname, "uac_auth.so") || !strcmp(bname, "msg_storage.so")
       ) {
       dlopen_flags = RTLD_NOW | RTLD_GLOBAL;
       DBG("using RTLD_NOW | RTLD_GLOBAL to dlopen '%s'\n", file.c_str());
