@@ -323,7 +323,7 @@ AAAMessage* ServerConnection::ReqEvent2AAAMessage(DiameterRequestEvent* re) {
     }
 
     AAA_AVP *avp;
-    if( (avp=AAACreateAVP(avp_id, (AAA_AVPFlag)flags, vendor, data->data,
+    if( (avp=AAACreateAVP(avp_id, (AAA_AVPFlag)flags, vendor, (const char*)data->data,
 			  data->len, AVP_DUPLICATE_DATA)) == 0) {
       ERROR( M_NAME ": addDataAVP() no more free memory!\n");
       continue;
