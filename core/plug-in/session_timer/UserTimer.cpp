@@ -228,6 +228,17 @@ void UserTimer::invoke(const string& method, const AmArg& args, AmArg& ret)
       setTimer(args.get(0).asInt(),
 	       args.get(1).asDouble(),
 	       args.get(2).asCStr());
+    } else if (isArgBlob(args.get(1))) {
+      ArgBlob* blob = args.get(1).asBlob();
+      if(blob->len != sizeof(struct timeval)) {
+	ERROR("unsupported data in blob in '%s', expected struct timeval\n",
+	      AmArg::print(args).c_str());
+      }
+      else {
+      setTimer(args.get(0).asInt(),
+	       (struct timeval*)blob->data,
+	       args.get(2).asCStr());
+      }
       } else {
 	ERROR("unsupported timeout type in '%s'\n", AmArg::print(args).c_str());
       }
