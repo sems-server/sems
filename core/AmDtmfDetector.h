@@ -388,6 +388,7 @@ class AmDtmfSink
 {
 public:
   virtual void postDtmfEvent(AmDtmfEvent *) = 0;
+  virtual ~AmDtmfSink() { }
 };
 
 /**

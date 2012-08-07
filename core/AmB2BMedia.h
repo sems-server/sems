@@ -36,6 +36,7 @@ class B2BMediaStatistics
 class RelayController {
   public:
     virtual void computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask) = 0;
+    virtual ~RelayController() { }
 };
 
 /** \brief Storage for several data items required to be held with one RTP
