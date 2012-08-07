@@ -51,7 +51,7 @@ class AmObject {
 
 struct ArgBlob {  
 
-  char* data;
+  void* data;
   int   len;
   
   ArgBlob() 
@@ -61,14 +61,14 @@ struct ArgBlob {
 
   ArgBlob(const ArgBlob& a) {
     len = a.len;
-    data = (char*)malloc(len);
+    data = malloc(len);
     if (data)
       memcpy(data, a.data, len);
   }
   
-  ArgBlob(const char* _data, int _len) {
+  ArgBlob(const void* _data, int _len) {
     len = _len;
-    data = (char*)malloc(len);
+    data = malloc(len);
     if (data)
       memcpy(data, _data, len);
   }

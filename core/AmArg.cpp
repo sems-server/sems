@@ -439,6 +439,8 @@ string AmArg::print(const AmArg &a) {
       return "<Object>";
     case ADynInv:
       return "<DynInv>";
+    case Blob:
+      s = "<Blob of size:" + int2str(a.asBlob()->len) + ">";
     case Array:
       s = "[";
       for (size_t i = 0; i < a.size(); i ++)
