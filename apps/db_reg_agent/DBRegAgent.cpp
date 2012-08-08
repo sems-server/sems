@@ -240,6 +240,19 @@ int DBRegAgent::onLoad()
 }
 
 void DBRegAgent::onUnload() {
+  if (running) {
+    running = false;
+    DBG("unclean shutdown. Waiting for processing thread to stop.\n");
+    for (int i=0;i<20;i++) {
+      if (shutdown_finished)
+	break;
+      usleep(2000); // 2ms
+    }
+    if (!shutdown_finished) {
+      WARN("processing thread could not be stopped, process will probably crash\n");
+    }
+  }
+
   DBG("closing main DB connection\n");
   MainDBConnection.disconnect();
   DBG("closing auxiliary DB connection\n");
@@ -878,6 +891,7 @@ void DBRegAgent::run() {
     registration_processor.start();
   }
 
+  shutdown_finished = false;
   DBG("running DBRegAgent thread...\n");
   while (running) {
     processEvents();
@@ -899,6 +913,7 @@ void DBRegAgent::run() {
   mysqlpp::Connection::thread_end();
 
   DBG("DBRegAgent thread stopped.\n");
+  shutdown_finished = true;
 }
 
 void DBRegAgent::on_stop() {
