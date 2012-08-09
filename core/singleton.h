@@ -14,14 +14,12 @@ public:
   static singleton<T>* instance() 
   {
     _inst_m.lock();
-    if(!_instance) {
+    if(NULL == _instance) {
       _instance = new singleton<T>();
     }
-
-    singleton<T>* ret = _instance;
     _inst_m.unlock();
 
-    return ret;
+    return _instance;
   }
 
   static bool haveInstance()
