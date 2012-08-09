@@ -476,6 +476,7 @@ void DBRegAgent::updateRegistration(long subscriber_id,
 
   bool need_reregister = it->second->getInfo().domain != realm
     || it->second->getInfo().user != user
+    || it->second->getInfo().pwd  != pass
     || it->second->getInfo().contact != contact;
 
   string old_realm = it->second->getInfo().domain;
