@@ -623,14 +623,25 @@ int AmRtpStream::init(const AmSdp& local,
     ++sdp_it;
   }
 
-  if (local.conn.address.empty()) setLocalIP(local_media.conn.address);
-  else setLocalIP(local.conn.address);
+  // set local address - media c-line having precedence over session c-line
+  if (local_media.conn.address.empty())
+    setLocalIP(local.conn.address);
+  else
+    setLocalIP(local_media.conn.address);
+
   setPassiveMode(remote_media.dir == SdpMedia::DirActive || force_passive_mode);
-  if (remote.conn.address.empty()) setRAddr(remote_media.conn.address, remote_media.port);
-  else setRAddr(remote.conn.address, remote_media.port);
+
+  // set remote address - media c-line having precedence over session c-line
+  if (remote.conn.address.empty() && remote_media.conn.address.empty()) {
+    WARN("no c= line given globally or in m= section in remote SDP\n");
+    return -1;
+  }
+  if (remote_media.conn.address.empty())
+    setRAddr(remote.conn.address, remote_media.port);
+  else
+    setRAddr(remote_media.conn.address, remote_media.port);
 
   if(local_media.payloads.empty()) {
-
     ERROR("local_media.payloads.empty()\n");
     return -1;
   }
