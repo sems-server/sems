@@ -196,6 +196,7 @@ void RegistrationTimer::run_timers() {
 void RegistrationTimer::run()
 {
   struct timeval now,next_tick,diff,tick;
+  _shutdown_finished = false;
 
   tick.tv_sec = 0;
   tick.tv_usec = TIMER_RESOLUTION;
@@ -227,6 +228,9 @@ void RegistrationTimer::run()
     run_timers();
     timeradd(&tick,&next_tick,&next_tick);
   }
+
+  DBG("RegistrationTimer thread finishing.\n");
+  _shutdown_finished = true;
 }
 
 void RegistrationTimer::on_stop() {

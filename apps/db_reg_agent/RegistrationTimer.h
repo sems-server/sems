@@ -109,6 +109,7 @@ class RegistrationTimer
 
   RegistrationTimer(); 
   bool _timer_thread_running;
+  bool _shutdown_finished;
 };
 
 #endif

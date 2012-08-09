@@ -242,13 +242,15 @@ int DBRegAgent::onLoad()
 void DBRegAgent::onUnload() {
   if (running) {
     running = false;
+    registration_scheduler._timer_thread_running = false;
     DBG("unclean shutdown. Waiting for processing thread to stop.\n");
-    for (int i=0;i<20;i++) {
-      if (shutdown_finished)
+    for (int i=0;i<400;i++) {
+      if (shutdown_finished && registration_scheduler._shutdown_finished)
 	break;
       usleep(2000); // 2ms
     }
-    if (!shutdown_finished) {
+
+    if (!shutdown_finished || !registration_scheduler._shutdown_finished) {
       WARN("processing thread could not be stopped, process will probably crash\n");
     }
   }
@@ -880,7 +882,7 @@ void DBRegAgent::onSipReplyEvent(AmSipReplyEvent* ev) {
 }
 
 void DBRegAgent::run() {
-  running = true;
+  running = shutdown_finished = true;
 
   DBG("DBRegAgent thread: waiting 2 sec for server startup ...\n");
   sleep(2);
@@ -892,8 +894,8 @@ void DBRegAgent::run() {
     registration_processor.start();
   }
 
-  shutdown_finished = false;
   DBG("running DBRegAgent thread...\n");
+  shutdown_finished = false;
   while (running) {
     processEvents();
 
