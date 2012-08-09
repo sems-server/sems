@@ -1060,20 +1060,23 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
   //   - check if the stream coresponding to the media ID 
   //     should be created or updated   
   //
-  int ret = RTPStream()->init(local_sdp,remote_sdp);
+  int ret = 0;
+  try {
+    ret = RTPStream()->init(local_sdp,remote_sdp);
+  } catch (const string& s) {
+    ERROR("Error while initializing RTP stream: '%s'\n", s.c_str());
+    ret = -1;
+  } catch (...) {
+    ERROR("Error while initializing RTP stream (unknown exception in AmRTPStream::init)\n");
+    ret = -1;
+  }
   unlockAudio();
 
   if (!isProcessingMedia()) {
     setInbandDetector(AmConfig::DefaultDTMFDetector);
   }
 
-  if(ret){
-    ERROR("while initializing RTP stream\n");
-    return -1;
-  }
-
-
-  return 0;
+  return ret;
 }
 
 void AmSession::onEarlySessionStart()
