@@ -184,7 +184,7 @@ static inline int skip_uri(const string& s, unsigned int pos)
 enum {
   uS0=       0, // start
   uSPROT,       // protocol
-  uSUHOST,      // user / host
+  uSUSER,      // user 
   uSHOST,       // host
   uSHOSTWSP,    // wsp after host
   uSPORT,       // port
@@ -220,24 +220,18 @@ bool AmUriParser::parse_uri() {
 	if ((eq<=4)&&(toupper(c) ==sip_prot[eq])) 
 	  eq++; 
 	if (eq==4) { // found sip:
-	  st = uSUHOST; p1 = pos;
+	  uri.find('@', pos+1) == string::npos? st = uSHOST : st = uSUSER; p1 = pos;
 	};
       } break;
       }; 
     } break;
     case uSPROT: { 
-      if (c ==  ':')  { st = uSUHOST; p1 = pos;} 
+      if (c ==  ':')  { uri.find('@', pos+1) == string::npos? st = uSHOST : st = uSUSER; p1 = pos;} 
     } break;
-    case uSUHOST: {
+    case uSUSER: {
       switch(c) {
       case '@':  { uri_user = uri.substr(p1+1, pos-p1-1);
 	  st = uSHOST; p1 = pos; }; break;
-      case ':': { uri_host = uri.substr(p1+1, pos-p1-1);
-	  st = uSPORT; p1 = pos;  }; break;
-      case '?': { uri_host = uri.substr(p1+1, pos-p1-1);
-	  st = uSHDR;  p1 = pos; }; break;
-      case ';': { uri_host = uri.substr(p1+1, pos-p1-1);
-	  st = uSPARAM;p1 = pos; }; break;
       case '>': { uri_host = uri.substr(p1+1, pos-p1-1);
 	  st = uS6;    p1 = pos; }; break;
       };
@@ -325,7 +319,7 @@ bool AmUriParser::parse_uri() {
     pos++;
   }
   switch(st) {
-  case uSUHOST:
+  case uSUSER:
   case uSHOST:  uri_host = uri.substr(p1+1, pos-p1-1); break;
   case uSPORT:  uri_port = uri.substr(p1+1, pos-p1-1); break;
   case uSHDR:   uri_headers = uri.substr(p1+1, pos-p1-1); break;
