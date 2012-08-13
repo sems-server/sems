@@ -2,6 +2,7 @@
 #define __SBCCALL_LEG_H
 
 #include "SBC.h"
+#include "ExtendedCCInterface.h"
 
 class PayloadIdMapping
 {
@@ -29,6 +30,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   // call control
   vector<AmDynInvoke*> cc_modules;
+  vector<ExtendedCCInterface*> cc_ext;
+
   // current timer ID - cc module setting timer will use this
   int cc_timer_id;
 
@@ -92,6 +95,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   /** apply B leg configuration from call profile */
   void applyBProfile();
+
+  virtual void onCallStatusChange();
 
  public:
 

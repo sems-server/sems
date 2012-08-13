@@ -794,6 +794,21 @@ bool SBCCallLeg::getCCInterfaces() {
       return false;
     }
     cc_modules.push_back(cc_di);
+
+    // extended CC interface
+    try {
+      AmArg args, ret;
+      cc_di->invoke("getExtendedInterfaceHandler", args, ret);
+      ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
+      if (iface) {
+        INFO("extended CC interface offered by cc_module '%s'\n", cc_module.c_str());
+        cc_ext.push_back(iface);
+      }
+      else WARN("BUG: returned invalid extended CC interface by cc_module '%s'\n", cc_module.c_str());
+    }
+    catch (...) {
+      INFO("extended CC interface not supported by cc_module '%s'\n", cc_module.c_str());
+    }
   }
   return true;
 }
@@ -1145,6 +1160,13 @@ void SBCCallLeg::CCEnd(const CCInterfaceListIteratorT& end_interface) {
     }
 
     cc_mod++;
+  }
+}
+
+void SBCCallLeg::onCallStatusChange()
+{
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    (*i)->onStateChange(this, &call_profile);
   }
 }
 
