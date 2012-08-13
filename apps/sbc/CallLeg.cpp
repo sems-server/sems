@@ -116,7 +116,7 @@ void CallLeg::terminateOtherLeg()
   
   AmB2BSession::terminateOtherLeg();
 
-  call_status = Disconnected; // no B legs should be remaining
+  updateCallStatus(Disconnected); // no B legs should be remaining
 }
 
 void CallLeg::terminateOtherLeg(const string &id)
@@ -189,6 +189,40 @@ void CallLeg::onBLegRefused(const AmSipReply& reply)
   terminateOtherLeg(reply.from_tag);
 }
 
+int CallLeg::relaySipReply(AmSipReply &reply)
+{
+  std::map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply.cseq);
+
+  if (t_req == recvd_req.end()) {
+    ERROR("Request with CSeq %u not found in recvd_req.\n", reply.cseq);
+    return 0; // ignore?
+  }
+
+  int res;
+
+  if ((reply.code >= 300) && (reply.code <= 305) && !reply.contact.empty()) {
+    // relay with Contact in 300 - 305 redirect messages
+    AmSipReply n_reply(reply);
+    n_reply.hdrs += SIP_HDR_COLSP(SIP_HDR_CONTACT) + reply.contact + CRLF;
+
+    res = relaySip(t_req->second, n_reply);
+  }
+  else res = relaySip(t_req->second, reply) < 0; // relay response directly
+
+  if (reply.code >= 200){
+    DBG("recvd_req.erase(<%u,%s>)\n", t_req->first, t_req->second.method.c_str());
+    recvd_req.erase(t_req);
+  }
+  return res;
+}
+
+void CallLeg::terminateCall()
+{
+  terminateNotConnectedLegs();
+  terminateOtherLeg();
+  terminateLeg();
+}
+
 // was for caller only
 void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 {
@@ -236,9 +270,13 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 
     if (reply.code < 200) { // 1xx replies
       if (call_status == NoReply) {
-        call_status = Ringing;
+        if (relaySipReply(reply) != 0) {
+          terminateCall();
+          return;
+        }
         other_id = reply.from_tag;
         DBG("1xx reply received in NoReply state, changing status to Ringing and remembering the other leg ID (%s)\n", other_id.c_str());
+        updateCallStatus(Ringing);
       }
       else {
         if (other_id != reply.from_tag) {
@@ -259,9 +297,12 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
           static const AmMimeBody empty_body;
           reply.body = empty_body;
         }
+        if (relaySipReply(reply) != 0) {
+          terminateCall();
+          return;
+        }
       }
     } else if (reply.code < 300) { // 2xx replies
-      call_status = Connected;
       other_id = reply.from_tag;
       INFO("setting call status to connected with leg %s\n", other_id.c_str());
 
@@ -286,6 +327,12 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 
       onCallConnected(reply);
       set_sip_relay_only(true); // relay only from now on
+
+      if (relaySipReply(reply) != 0) {
+        terminateCall();
+        return;
+      }
+      updateCallStatus(Connected);
     } else { // 3xx-6xx replies
       if (other_id == reply.from_tag) clear_other();
 
@@ -301,20 +348,14 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 
       // FIXME: call this from ternimateLeg or let the successors override terminateLeg instead?
       onCallStopped();
-     
+
       // no other B legs, terminate
       setStopped(); // would be called in onOtherReply
+
+      relaySipReply(reply);
+      updateCallStatus(Disconnected);
     }
-      
-    // FIXME: really call only for initial INVITE?
-    // FIXME: eliminate this call because onOtherReply is a bit foggy and rather
-    // redefine onB2BEvent than introducing a half-defined method
-    // if (!processed) processed = onOtherReply(reply);
-    
-    // relay current reply upstream to let know that we are
-    // ringing, connected or terminated
-    ev->forward = true; // hack which could work?
-    AmB2BSession::onB2BEvent(ev);
+
     return; // relayed reply to initial request is processed
   }
 
@@ -435,7 +476,7 @@ void CallLeg::onCancel(const AmSipRequest& req)
 void CallLeg::terminateLeg()
 {
   AmB2BSession::terminateLeg();
-  call_status = Disconnected;
+  updateCallStatus(Disconnected);
 }
 
 // was for caller only
@@ -496,6 +537,6 @@ void CallLeg::addCallee(CallLeg *callee, const AmSipRequest &relayed_invite)
   // explicitly)
   AmSessionContainer::instance()->postEvent(b.id, new ConnectLegEvent(relayed_invite));
 
-  if (call_status == Disconnected) call_status = NoReply;
+  if (call_status == Disconnected) updateCallStatus(NoReply);
 }
 

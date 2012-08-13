@@ -71,6 +71,8 @@ class CallLeg: public AmB2BSession
 
   private:
 
+    CallStatus call_status; //< status of the call (replaces callee's status)
+
     AmSdp initial_sdp;
     bool initial_sdp_stored;
 
@@ -102,6 +104,8 @@ class CallLeg: public AmB2BSession
     void onB2BConnect(ConnectLegEvent *e);
     void onB2BConnectMedia(ConnectMediaEvent *e);
 
+    int relaySipReply(AmSipReply &reply);
+
     /** terminate all other B legs than the connected one (should not be used
      * directly by successors, right?) */
     void terminateNotConnectedLegs();
@@ -110,7 +114,11 @@ class CallLeg: public AmB2BSession
      * be used directly by successors, right?) */
     void terminateOtherLeg(const string &id);
 
+    void updateCallStatus(CallStatus new_status) { call_status = new_status; onCallStatusChange(); }
+    virtual void onCallStatusChange() { }
+
   public:
+    void terminateCall();
 
     // @see AmB2BSession
     virtual void terminateLeg();
@@ -125,9 +133,6 @@ class CallLeg: public AmB2BSession
     virtual void onRemoteDisappeared(const AmSipReply& reply);
 
     //int reinviteCaller(const AmSipReply& callee_reply);
-
-  protected:
-    CallStatus call_status; //< status of the call (replaces callee's status)
 
     /** Method called if given B leg couldn't establish the call (refused with
      * failure response)
