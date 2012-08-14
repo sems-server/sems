@@ -210,6 +210,11 @@ void SBCCallLeg::applyAProfile()
 
 void SBCCallLeg::applyBProfile()
 {
+  // CC interfaces and variables should be already "evaluated" by A leg, we just
+  // need to load the DI interfaces for us
+  if (!getCCInterfaces()) {
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+  }
 
   if (!call_profile.contact.empty()) {
     dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
@@ -814,16 +819,18 @@ bool SBCCallLeg::getCCInterfaces() {
 }
 
 void SBCCallLeg::onCallConnected(const AmSipReply& reply) {
-  m_state = BB_Connected;
+  if (a_leg) { // FIXME: really?
+    m_state = BB_Connected;
 
-  if (!startCallTimers())
-    return;
+    if (!startCallTimers())
+      return;
 
-  if (call_profile.cc_interfaces.size()) {
-    gettimeofday(&call_connect_ts, NULL);
+    if (call_profile.cc_interfaces.size()) {
+      gettimeofday(&call_connect_ts, NULL);
+    }
+
+    CCConnect(reply);
   }
-
-  CCConnect(reply);
 }
 
 void SBCCallLeg::onCallStopped() {
