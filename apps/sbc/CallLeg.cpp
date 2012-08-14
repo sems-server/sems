@@ -453,7 +453,8 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 {
   AmB2BSession::onSipReply(reply, old_dlg_status);
 
-  // update internal state and call related callbacks
+  // update internal state and call related callbacks based on received reply
+  // (i.e. B leg in case of initial INVITE)
   if (reply.cseq == est_invite_cseq) {
     // reply to the initial request
     if ((reply.code > 100) && (reply.code < 200)) {
@@ -466,7 +467,12 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
       }
     }
     else if (reply.code >= 300) {
-      if (call_status != Disconnected) updateCallStatus(Disconnected);
+      if ((call_status != Disconnected) || (dlg.getStatus() != old_dlg_status)) {
+        // in case of canceling it happens that B leg is already in Disconnected
+        // status (terminateLeg called) but later comes the 487 reply and
+        // updates dlg, we need to call callbacks on that change!
+        updateCallStatus(Disconnected);
+      }
     }
   }
 
