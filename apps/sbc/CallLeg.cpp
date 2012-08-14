@@ -6,6 +6,8 @@
 #include "AmUtils.h"
 #include "AmRtpReceiver.h"
 
+#define TRACE INFO
+
 // helper functions
 
 static const char *callStatus2str(const CallLeg::CallStatus state)
@@ -13,7 +15,7 @@ static const char *callStatus2str(const CallLeg::CallStatus state)
   static const char *disconnected = "Disconnected";
   static const char *noreply = "NoReply";
   static const char *ringing = "Ringing";
-  static const char *connected = "connected";
+  static const char *connected = "Connected";
   static const char *unknown = "???";
 
   switch (state) {
@@ -304,7 +306,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       }
     } else if (reply.code < 300) { // 2xx replies
       other_id = reply.from_tag;
-      INFO("setting call status to connected with leg %s\n", other_id.c_str());
+      TRACE("setting call status to connected with leg %s\n", other_id.c_str());
 
       // terminate all other legs than the connected one (determined by other_id)
       terminateNotConnectedLegs();
@@ -320,7 +322,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       b_legs.begin()->releaseMediaSession(); // remove reference hold by BLegInfo
       b_legs.clear(); // no need to remember the connected leg here
       if (media_session) {
-        INFO("connecting media session: %s to %s\n", dlg.local_tag.c_str(), other_id.c_str());
+        TRACE("connecting media session: %s to %s\n", dlg.local_tag.c_str(), other_id.c_str());
         media_session->changeSession(a_leg, this);
         if (initial_sdp_stored) updateRemoteSdp(initial_sdp);
       }
@@ -423,6 +425,9 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
 void CallLeg::onInvite(const AmSipRequest& req)
 {
   // do not call AmB2BSession::onInvite(req); we changed the behavior
+  // this method is not called for re-INVITEs because once connected we are in
+  // sip_relay_only mode and the re-INVITEs are relayed instead of processing
+  // (see AmB2BSession::onSipRequest)
 
   if (call_status == Disconnected) { // for initial INVITE only
     est_invite_cseq = req.cseq; // remember initial CSeq
@@ -444,6 +449,29 @@ void CallLeg::onInvite(const AmSipRequest& req)
   }
 }
 
+void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
+{
+  AmB2BSession::onSipReply(reply, old_dlg_status);
+
+  // update internal state and call related callbacks
+  if (reply.cseq == est_invite_cseq) {
+    // reply to the initial request
+    if ((reply.code > 100) && (reply.code < 200)) {
+      if (call_status != Ringing) updateCallStatus(Ringing);
+    }
+    else if ((reply.code >= 200) && (reply.code < 300)) {
+      if (call_status != Connected) {
+        onCallConnected(reply);
+        updateCallStatus(Connected);
+      }
+    }
+    else if (reply.code >= 300) {
+      if (call_status != Disconnected) updateCallStatus(Disconnected);
+    }
+  }
+
+}
+
 // was for caller only
 void CallLeg::onInvite2xx(const AmSipReply& reply)
 {
@@ -462,40 +490,49 @@ void CallLeg::onInvite2xx(const AmSipReply& reply)
   // AmB2BSession::onInvite2xx(reply);
 }
 
-// was for caller only
 void CallLeg::onCancel(const AmSipRequest& req)
 {
   // initial INVITE handling
-  if (a_leg) terminateNotConnectedLegs();
-
-  // FIXME: expected for CANCELed re-INVITEs (in both directions)?
-  terminateOtherLeg();
-  terminateLeg();
+  if ((call_status == Ringing) || (call_status == NoReply)) {
+    if (a_leg) {
+      // terminate whole B2B call if the caller receives CANCEL
+      terminateNotConnectedLegs();
+      terminateOtherLeg();
+      terminateLeg();
+    }
+    // else { } ... ignore for B leg
+  }
+  // FIXME: was it really expected to terminate the call for CANCELed re-INVITEs
+  // (in both directions) as well?
 }
 
 void CallLeg::terminateLeg()
 {
   AmB2BSession::terminateLeg();
-  updateCallStatus(Disconnected);
+  if (call_status != Disconnected) updateCallStatus(Disconnected);
 }
 
 // was for caller only
-void CallLeg::onRemoteDisappeared(const AmSipReply& reply) {
-  DBG("remote unreachable, ending B2BUA call\n");
-  // FIXME: shouldn't be cleared in AmB2BSession as well?
-  clearRtpReceiverRelay();
+void CallLeg::onRemoteDisappeared(const AmSipReply& reply) 
+{
+  if (call_status == Connected) {
+    // only in case we are really connected (called on timeout or 481 from the remote)
 
-  AmB2BSession::onRemoteDisappeared(reply);
+    DBG("remote unreachable, ending B2BUA call\n");
+    clearRtpReceiverRelay(); // FIXME: shouldn't be cleared in AmB2BSession as well?
+    AmB2BSession::onRemoteDisappeared(reply); // terminates the other leg
+    updateCallStatus(Disconnected);
+  }
 }
 
 // was for caller only
 void CallLeg::onBye(const AmSipRequest& req)
 {
-  // FIXME: shouldn't be cleared in AmB2BSession as well?
-  clearRtpReceiverRelay();
+  clearRtpReceiverRelay(); // FIXME: shouldn't be cleared in AmB2BSession as well?
   AmB2BSession::onBye(req);
+  updateCallStatus(Disconnected); // shouldn't we wait for BYE response?
 }
-    
+
 void CallLeg::addCallee(CallLeg *callee, const AmSipRequest &relayed_invite)
 {
   BLegInfo b;
@@ -512,7 +549,7 @@ void CallLeg::addCallee(CallLeg *callee, const AmSipRequest &relayed_invite)
   b_legs.push_back(b);
 
   if (AmConfig::LogSessions) {
-    INFO("Starting B2B callee session %s\n",
+    TRACE("Starting B2B callee session %s\n",
 	 callee->getLocalTag().c_str()/*, invite_req.cmd.c_str()*/);
   }
 
@@ -540,3 +577,13 @@ void CallLeg::addCallee(CallLeg *callee, const AmSipRequest &relayed_invite)
   if (call_status == Disconnected) updateCallStatus(NoReply);
 }
 
+void CallLeg::updateCallStatus(CallStatus new_status)
+{
+  TRACE("%s leg changing status from %s to %s\n", 
+      a_leg ? "A" : "B",
+      callStatus2str(call_status),
+      callStatus2str(new_status));
+
+  call_status = new_status;
+  onCallStatusChange();
+}

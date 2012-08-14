@@ -114,7 +114,7 @@ class CallLeg: public AmB2BSession
      * be used directly by successors, right?) */
     void terminateOtherLeg(const string &id);
 
-    void updateCallStatus(CallStatus new_status) { call_status = new_status; onCallStatusChange(); }
+    void updateCallStatus(CallStatus new_status);
     virtual void onCallStatusChange() { }
 
   public:
@@ -131,6 +131,8 @@ class CallLeg: public AmB2BSession
     virtual void onCancel(const AmSipRequest& req);
     virtual void onBye(const AmSipRequest& req);
     virtual void onRemoteDisappeared(const AmSipReply& reply);
+
+    virtual void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 
     //int reinviteCaller(const AmSipReply& callee_reply);
 
