@@ -927,6 +927,8 @@ void SBCCallLeg::stopCallTimers() {
 }
 
 bool SBCCallLeg::CCStart(const AmSipRequest& req) {
+  if (!a_leg) return true; // preserve original behavior of the CC interface
+
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
   for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
@@ -1076,6 +1078,8 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 }
 
 void SBCCallLeg::CCConnect(const AmSipReply& reply) {
+  if (!a_leg) return; // preserve original behavior of the CC interface
+
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
   for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
@@ -1123,11 +1127,9 @@ void SBCCallLeg::CCEnd() {
 }
 
 void SBCCallLeg::CCEnd(const CCInterfaceListIteratorT& end_interface) {
+  if (!a_leg) return; // preserve original behavior of the CC interface
+
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
-  if (cc_mod == cc_modules.end()) {
-    // FIXME: callee has not the modules (only in the call_profile!)
-    return;
-  }
 
   for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
        cc_it != end_interface; cc_it++) {
