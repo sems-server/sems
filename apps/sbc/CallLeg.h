@@ -6,7 +6,8 @@
 // TODO: global event numbering
 enum {
   ConnectMedia = B2BMsgBody + 16,
-  ConnectLeg
+  ConnectLeg,
+  ReconnectLeg
 };
 
 struct ConnectMediaEvent: public B2BEvent
@@ -42,6 +43,28 @@ struct ConnectLegEvent: public B2BEvent
     hdrs(relayed_invite.hdrs),
     r_cseq(relayed_invite.cseq)
   {}
+};
+
+struct ReconnectLegEvent: public B2BEvent
+{
+  AmMimeBody body;
+  string hdrs;
+
+  unsigned int r_cseq;
+
+  AmB2BMedia *media; // avoid direct access to this
+  string session_tag;
+
+  ReconnectLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m)
+    : B2BEvent(ReconnectLeg),
+    body(relayed_invite.body),
+    hdrs(relayed_invite.hdrs),
+    r_cseq(relayed_invite.cseq),
+    media(m),
+    session_tag(tag)
+  { if (media) media->addReference(); }
+
+  virtual ~ReconnectLegEvent() { if (media && media->releaseReference()) delete media; }
 };
 
 
@@ -102,6 +125,7 @@ class CallLeg: public AmB2BSession
     // overriden, override onB2BEvent instead!
     void onB2BReply(B2BSipReplyEvent *e);
     void onB2BConnect(ConnectLegEvent *e);
+    void onB2BReconnect(ReconnectLegEvent *e);
     void onB2BConnectMedia(ConnectMediaEvent *e);
 
     int relaySipReply(AmSipReply &reply);
@@ -149,7 +173,12 @@ class CallLeg: public AmB2BSession
     /** handler called when call is stopped */
     virtual void onCallStopped() { }
 
+    /** add given call leg as our B leg */
     void addCallee(CallLeg *callee, const AmSipRequest &relayed_invite);
+
+    /** add given already existing session as our B leg */
+    void addCallee(const string &session_tag, const AmSipRequest &relayed_invite);
+
     bool haveBLeg() { return !(other_id.empty() && b_legs.empty()); }
 
   public:

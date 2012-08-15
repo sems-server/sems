@@ -169,8 +169,13 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
   if (ev->event_id == ConnectLeg) {
     onB2BConnect(dynamic_cast<ConnectLegEvent*>(ev));
     return;
-  }    
-  
+  }
+
+  if (ev->event_id == ReconnectLeg) {
+    onB2BReconnect(dynamic_cast<ReconnectLegEvent*>(ev));
+    return;
+  }
+
   if (ev->event_id == B2BSipRequest) {
     if (a_leg && (!sip_relay_only)) {
       // disable forwarding of relayed request if we are not connected [yet]
@@ -421,6 +426,74 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
   est_invite_other_cseq = co_ev->r_cseq;
 }
 
+void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
+{
+  if (!ev) {
+    ERROR("BUG: invalid argument given\n");
+    return;
+  }
+
+  // release old signaling and media session
+  terminateOtherLeg();
+  clearRtpReceiverRelay();
+
+  other_id = ev->session_tag;
+  a_leg = false; // we are B leg regardless what we were up to now
+  // FIXME: What about calling SBC CC modules in this case? Original CC
+  // interface is called from A leg only and it might happen that we were call
+  // leg A before.
+
+
+  // use new media session if given
+  if (ev->media) {
+    rtp_relay_mode = RTP_Relay;
+    setMediaSession(ev->media);
+    media_session->changeSession(a_leg, this);
+  }
+  else rtp_relay_mode = RTP_Direct;
+
+  MONITORING_LOG3(getLocalTag().c_str(),
+      "b2b_leg", other_id.c_str(),
+      "to", dlg.remote_party.c_str(),
+      "ruri", dlg.remote_uri.c_str());
+
+  AmMimeBody r_body(ev->body);
+  const AmMimeBody* body = &ev->body;
+  if (rtp_relay_mode == RTP_Relay) {
+    try {
+      body = ev->body.hasContentType(SIP_APPLICATION_SDP);
+      if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
+        body = &r_body;
+      }
+      else {
+        body = &ev->body;
+      }
+    } catch (const string& s) {
+      relayError(SIP_METH_INVITE, ev->r_cseq, true, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      throw;
+    }
+  }
+
+  // generate re-INVITE
+  int res = dlg.sendRequest(SIP_METH_INVITE, body, ev->hdrs, SIP_FLAGS_VERBATIM);
+  if (res < 0) {
+    DBG("sending re-INVITE failed, relaying back error reply\n");
+    relayError(SIP_METH_INVITE, ev->r_cseq, true, res);
+
+    setStopped();
+    return;
+  }
+
+  // always relayed INVITE - store it
+  relayed_req[dlg.cseq - 1] = AmSipTransaction(SIP_METH_INVITE, ev->r_cseq, trans_ticket());
+
+  if (refresh_method != REFRESH_UPDATE) saveSessionDescription(ev->body);
+
+  // save CSeq of establising INVITE
+  est_invite_cseq = dlg.cseq - 1;
+  est_invite_other_cseq = ev->r_cseq;
+}
+
 // was for caller only
 void CallLeg::onInvite(const AmSipRequest& req)
 {
@@ -592,4 +665,36 @@ void CallLeg::updateCallStatus(CallStatus new_status)
 
   call_status = new_status;
   onCallStatusChange();
+}
+
+void CallLeg::addCallee(const string &session_tag, const AmSipRequest &relayed_invite)
+{
+  // add existing session as our B leg
+
+  BLegInfo b;
+  b.id = session_tag;
+  if ((rtp_relay_mode == RTP_Relay)) {
+    // do not initialise the media session with A leg to avoid unnecessary A leg
+    // RTP stream creation in every B leg's media session
+    b.media_session = new AmB2BMedia(NULL, NULL);
+    b.media_session->addReference(); // new reference for me
+  }
+  else b.media_session = NULL;
+
+  // generate connect event to the newly added leg
+  TRACE("relaying re-connect leg event to the B leg\n");
+  ReconnectLegEvent *ev = new ReconnectLegEvent(getLocalTag(), relayed_invite, b.media_session);
+  // TODO: what about the RTP relay and other settings? send them as well?
+  if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
+    // session doesn't exist - can't connect
+    INFO("the B leg to connect to (%s) doesn't exist\n", session_tag.c_str());
+    if (b.media_session) delete b.media_session;
+    return;
+  }
+
+  b_legs.push_back(b);
+  if (call_status == Disconnected) updateCallStatus(NoReply);
+
+  // TODO: start a timer here to handle the case when the other leg can't reply
+  // the reconnect event
 }
