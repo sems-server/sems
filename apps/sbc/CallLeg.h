@@ -150,6 +150,7 @@ class CallLeg: public AmB2BSession
     virtual void onCallStopped() { }
 
     void addCallee(CallLeg *callee, const AmSipRequest &relayed_invite);
+    bool haveBLeg() { return !(other_id.empty() && b_legs.empty()); }
 
   public:
     /** creates A leg */

@@ -159,6 +159,8 @@ SBCCallLeg::SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_pro
     call_profile(_call_profile),
     CallLeg(caller)
 {
+  call_profile.cc_vars.clear(); // we do not want to inherit these from caller do we?
+
   dlg.setRel100State(Am100rel::REL100_IGNORED);
   dlg.setOAEnabled(false);
 }
@@ -752,9 +754,18 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   // we evaluated the settings, now we can initialize internals (like RTP relay)
   // we have to use original request (not the altered one) because for example
   // codecs filtered out might be used in direction to caller
-  CallLeg::onInvite(req); 
+  CallLeg::onInvite(req);
 
-  connectCallee(to, ruri, from, invite_req); // connect to the B leg(s) using modified request
+  // call extend call controls
+  InitialInviteHandlerParams params(to, ruri, from, &req, &invite_req);
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    (*i)->onInitialInvite(this, &call_profile, params);
+  }
+
+  if (!haveBLeg()) {
+    // no CC module connected a callee yet
+    connectCallee(to, ruri, from, invite_req); // connect to the B leg(s) using modified request
+  }
 }
 
 void SBCCallLeg::connectCallee(const string& remote_party, const string& remote_uri,

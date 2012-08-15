@@ -126,6 +126,10 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** clear all saved call timer, only effective before call is connected */
   void clearCallTimers();
 
+  // from SBCCalleeSession
+  void setLocalParty(const string &party, const string &uri) { dlg.local_party = party; dlg.local_uri = uri; }
+  void setRemoteParty(const string &party, const string &uri) { dlg.remote_party = party; dlg.remote_uri = uri; }
+
  protected:
   int relayEvent(AmEvent* ev);
 
@@ -141,10 +145,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onControlCmd(string& cmd, AmArg& params);
 
   void createCalleeSession();
-
-  // from SBCCalleeSession
-  void setLocalParty(const string &party, const string &uri) { dlg.local_party = party; dlg.local_uri = uri; }
-  void setRemoteParty(const string &party, const string &uri) { dlg.remote_party = party; dlg.remote_uri = uri; }
 };
 
 #endif
