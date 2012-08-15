@@ -279,7 +279,7 @@ void AudioStreamData::setDtmfSink(AmDtmfSink *dtmf_sink)
 {
   clearDtmfSink();
 
-  if (dtmf_sink) {
+  if (dtmf_sink && stream) {
     dtmf_detector = new AmDtmfDetector(dtmf_sink);
     dtmf_queue = new AmDtmfEventQueue(dtmf_detector);
     dtmf_detector->setInbandDetector(AmConfig::DefaultDTMFDetector, stream->getSampleRate());
@@ -467,11 +467,9 @@ void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
     // replace session
     if (a_leg) {
       i->a.changeSession(new_session);
-      i->b.setDtmfSink(new_session);
     }
     else {
       i->b.changeSession(new_session);
-      i->a.setDtmfSink(new_session);
     }
 
     if (processing_started) {
@@ -484,8 +482,16 @@ void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
       // needed to reinitialize audio processing in case the stream itself has
       // changed (FIXME: ugly again - see above and local/remote SDP might
       // already change since previous initialization!)
-      if (a_leg) i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
-      else i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
+      if (a_leg) {
+        i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
+        i->a.setDtmfSink(b);
+        i->b.setDtmfSink(new_session);
+      }
+      else {
+        i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
+        i->b.setDtmfSink(a);
+        i->a.setDtmfSink(new_session);
+      }
     }
 
     // return back for processing if needed
