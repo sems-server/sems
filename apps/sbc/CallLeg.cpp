@@ -44,7 +44,7 @@ CallLeg::CallLeg(const string& other_local_tag):
 // callee
 CallLeg::CallLeg(const CallLeg* caller):
   AmB2BSession(caller->getLocalTag()),
-  call_status(Disconnected)
+  call_status(NoReply) // we already have the other leg
 {
   a_leg = false;
 
@@ -281,9 +281,15 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
           terminateCall();
           return;
         }
-        other_id = reply.from_tag;
-        DBG("1xx reply received in NoReply state, changing status to Ringing and remembering the other leg ID (%s)\n", other_id.c_str());
-        updateCallStatus(Ringing);
+        if (!reply.to_tag.empty()) {
+          other_id = reply.from_tag;
+          TRACE("1xx reply with to-tag received in NoReply state, changing status to Ringing and remembering the other leg ID (%s)\n", other_id.c_str());
+          if (relaySipReply(reply) != 0) {
+            terminateCall();
+            return;
+          }
+          updateCallStatus(Ringing);
+        }
       }
       else {
         if (other_id != reply.from_tag) {
@@ -528,10 +534,11 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 
   // update internal state and call related callbacks based on received reply
   // (i.e. B leg in case of initial INVITE)
-  if (reply.cseq == est_invite_cseq) {
+  if ((reply.cseq == est_invite_cseq) && (reply.cseq_method == SIP_METH_INVITE)) {
     // reply to the initial request
     if ((reply.code > 100) && (reply.code < 200)) {
-      if (call_status != Ringing) updateCallStatus(Ringing);
+      if (((call_status == Disconnected) || (call_status == NoReply)) && (!reply.to_tag.empty()))
+        updateCallStatus(Ringing);
     }
     else if ((reply.code >= 200) && (reply.code < 300)) {
       if (call_status != Connected) {
