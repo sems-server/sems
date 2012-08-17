@@ -130,6 +130,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void setLocalParty(const string &party, const string &uri) { dlg.local_party = party; dlg.local_uri = uri; }
   void setRemoteParty(const string &party, const string &uri) { dlg.remote_party = party; dlg.remote_uri = uri; }
 
+  void addCallee(CallLeg *callee, const AmSipRequest &invite) { CallLeg::addCallee(callee, invite); }
+  void addCallee(const string &session_tag, const AmSipRequest &invite) { CallLeg::addCallee(session_tag, invite); }
+
  protected:
   int relayEvent(AmEvent* ev);
 

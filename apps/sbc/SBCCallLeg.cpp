@@ -762,7 +762,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     (*i)->onInitialInvite(this, &call_profile, params);
   }
 
-  if (!haveBLeg()) {
+  if (getCallStatus() == Disconnected) {
     // no CC module connected a callee yet
     connectCallee(to, ruri, from, invite_req); // connect to the B leg(s) using modified request
   }

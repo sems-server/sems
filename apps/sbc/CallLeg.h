@@ -67,7 +67,6 @@ struct ReconnectLegEvent: public B2BEvent
   virtual ~ReconnectLegEvent() { if (media && media->releaseReference()) delete media; }
 };
 
-
 /** composed AmB2BCalleeSession & AmB2BCallerSession
  * represents indepenedently A or B leg of a call,
  * old clases left for compatibility
@@ -138,12 +137,42 @@ class CallLeg: public AmB2BSession
      * be used directly by successors, right?) */
     void terminateOtherLeg(const string &id);
 
-    void updateCallStatus(CallStatus new_status);
-    virtual void onCallStatusChange() { }
-
-  public:
     void terminateCall();
 
+    void updateCallStatus(CallStatus new_status);
+
+    //////////////////////////////////////////////////////////////////////
+    // callbacks (intended to be redefined in successors but should not be
+    // called by them directly)
+
+    /* handler called when call status changes */
+    virtual void onCallStatusChange() { }
+
+    /** handler called when the second leg is connected */
+    virtual void onCallConnected(const AmSipReply& reply) { }
+
+    /** handler called when call is stopped */
+    virtual void onCallStopped() { }
+
+    /** Method called if given B leg couldn't establish the call (refused with
+     * failure response)
+     *
+     * Redefine to implement serial fork or handle redirect. */
+    virtual void onBLegRefused(const AmSipReply& reply) { }
+
+  protected:
+
+    // functions offered to successors
+
+    /** add given call leg as our B leg */
+    void addCallee(CallLeg *callee, const AmSipRequest &relayed_invite);
+
+    /** add given already existing session as our B leg */
+    void addCallee(const string &session_tag, const AmSipRequest &relayed_invite);
+
+    CallStatus getCallStatus() { return call_status; }
+
+  public:
     // @see AmB2BSession
     virtual void terminateLeg();
     virtual void terminateOtherLeg();
@@ -160,42 +189,12 @@ class CallLeg: public AmB2BSession
 
     //int reinviteCaller(const AmSipReply& callee_reply);
 
-    /** Method called if given B leg couldn't establish the call (refused with
-     * failure response)
-     *
-     * Redefine to implement serial fork or handle redirect, 
-     * currently only terminates the other leg. */
-    virtual void onBLegRefused(const AmSipReply& reply);
-
-    /** handler called when the second leg is connected */
-    virtual void onCallConnected(const AmSipReply& reply) { }
-
-    /** handler called when call is stopped */
-    virtual void onCallStopped() { }
-
-    /** add given call leg as our B leg */
-    void addCallee(CallLeg *callee, const AmSipRequest &relayed_invite);
-
-    /** add given already existing session as our B leg */
-    void addCallee(const string &session_tag, const AmSipRequest &relayed_invite);
-
-    bool haveBLeg() { return !(other_id.empty() && b_legs.empty()); }
-
   public:
     /** creates A leg */
     CallLeg();
 
     /** creates B leg using given session as A leg */
     CallLeg(const CallLeg* caller);
-
-    /** Initialize RTP relay according to the "src".
-     * Previously was initializeRTPRelay which initialised the session given as parameter
-     * according settings in this instance (i.e. the opposite stuff)!
-     *
-     * original comment: initialize RTP relay mode, if rtp_relay_enabled
-     * must be called *before* callee_session is started
-     */
-    void initRTPRelay(const CallLeg* src);
 
 };
 

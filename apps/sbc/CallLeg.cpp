@@ -191,11 +191,6 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
   AmB2BSession::onB2BEvent(ev);
 }
 
-void CallLeg::onBLegRefused(const AmSipReply& reply)
-{
-  terminateOtherLeg(reply.from_tag);
-}
-
 int CallLeg::relaySipReply(AmSipReply &reply)
 {
   std::map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply.cseq);
@@ -351,6 +346,8 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 
       // clean up the other leg; 
       // eventually do serial fork, handle redirect or whatever else
+      terminateOtherLeg(reply.from_tag);
+
       onBLegRefused(reply);
 
       if (!b_legs.empty()) {
