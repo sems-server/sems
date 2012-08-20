@@ -156,39 +156,60 @@ void CallLeg::terminateNotConnectedLegs()
   if (found) b_legs.push_back(b);
 }
 
+void CallLeg::removeBLeg(const string &id)
+{
+  if (other_id == id) clear_other();
+
+  // remove the call leg from list of B legs
+  for (vector<BLegInfo>::iterator i = b_legs.begin(); i != b_legs.end(); ++i) {
+    if (i->id == id) {
+      i->releaseMediaSession();
+      b_legs.erase(i);
+      return;
+    }
+  }
+}
+
 // composed for caller and callee already
 void CallLeg::onB2BEvent(B2BEvent* ev)
 {
-  // was handled for caller only
-  if (ev->event_id == B2BSipReply) {
-    onB2BReply(dynamic_cast<B2BSipReplyEvent*>(ev));
-    return;
-  }
+  switch (ev->event_id) {
 
-  // was only for callee:
-  if (ev->event_id == ConnectLeg) {
-    onB2BConnect(dynamic_cast<ConnectLegEvent*>(ev));
-    return;
-  }
+    case B2BSipReply:
+      onB2BReply(dynamic_cast<B2BSipReplyEvent*>(ev));
+      break;
 
-  if (ev->event_id == ReconnectLeg) {
-    onB2BReconnect(dynamic_cast<ReconnectLegEvent*>(ev));
-    return;
-  }
+    case ConnectLeg:
+      onB2BConnect(dynamic_cast<ConnectLegEvent*>(ev));
+      break;
 
-  if (ev->event_id == B2BSipRequest) {
-    if (a_leg && (!sip_relay_only)) {
-      // disable forwarding of relayed request if we are not connected [yet]
-      // (only we known that, the B leg has just delayed information about being
-      // connected to us and thus it can't set)
-      // Need not to be done if we have only one possible B leg so instead of
-      // checking call_status we can check if sip_relay_only is set or not
-      B2BSipRequestEvent *req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
-      if (req_ev) req_ev->forward = false;
-    }
-  }
+    case ReconnectLeg:
+      onB2BReconnect(dynamic_cast<ReconnectLegEvent*>(ev));
+      break;
 
-  AmB2BSession::onB2BEvent(ev);
+    case ReplaceLeg:
+      onB2BReplace(dynamic_cast<ReplaceLegEvent*>(ev));
+      break;
+
+    case ReplaceInProgress:
+      onB2BReplaceInProgress(dynamic_cast<ReplaceInProgressEvent*>(ev));
+      break;
+
+    case B2BSipRequest:
+      if (a_leg && (!sip_relay_only)) {
+        // disable forwarding of relayed request if we are not connected [yet]
+        // (only we known that, the B leg has just delayed information about being
+        // connected to us and thus it can't set)
+        // Need not to be done if we have only one possible B leg so instead of
+        // checking call_status we can check if sip_relay_only is set or not
+        B2BSipRequestEvent *req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
+        if (req_ev) req_ev->forward = false;
+      }
+      // continue handling in AmB2bSession
+
+    default:
+      AmB2BSession::onB2BEvent(ev);
+  }
 }
 
 int CallLeg::relaySipReply(AmSipReply &reply)
@@ -497,6 +518,53 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   est_invite_other_cseq = ev->r_cseq;
 }
 
+void CallLeg::onB2BReplace(ReplaceLegEvent *e)
+{
+  if (!e) {
+    ERROR("BUG: invalid argument given\n");
+    return;
+  }
+
+  ReconnectLegEvent *reconnect = e->getReconnectEvent();
+  if (!reconnect) {
+    ERROR("BUG: invalid ReconnectLegEvent\n");
+    return;
+  }
+
+  string id(other_id);
+  if (id.empty()) {
+    // try it with the first B leg?
+    if (b_legs.empty()) {
+      ERROR("BUG: there is no B leg to connect our replacement to\n");
+      return;
+    }
+    id = b_legs[0].id;
+  }
+
+  // send session ID of the other leg to the originator
+  AmSessionContainer::instance()->postEvent(reconnect->session_tag, new ReplaceInProgressEvent(id));
+
+  // send the ReconnectLegEvent to the other leg
+  AmSessionContainer::instance()->postEvent(id, reconnect);
+
+  // remove the B leg from our B leg list
+  removeBLeg(id);
+
+  // commit suicide if our last B leg is stolen
+  if (b_legs.empty() && other_id.empty()) terminateLeg();
+}
+
+void CallLeg::onB2BReplaceInProgress(ReplaceInProgressEvent *e)
+{
+  for (vector<BLegInfo>::iterator i = b_legs.begin(); i != b_legs.end(); ++i) {
+    if (i->id.empty()) {
+      // replace the temporary (invalid) session with the correct one
+      i->id = e->dst_session;
+      return;
+    }
+  }
+}
+
 // was for caller only
 void CallLeg::onInvite(const AmSipRequest& req)
 {
@@ -701,4 +769,34 @@ void CallLeg::addCallee(const string &session_tag, const AmSipRequest &relayed_i
 
   // TODO: start a timer here to handle the case when the other leg can't reply
   // the reconnect event
+}
+
+void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite)
+{
+  // add existing session as our B leg
+
+  BLegInfo b;
+  b.id.clear(); // this is an invalid local tag (temporarily)
+  if ((rtp_relay_mode == RTP_Relay)) {
+    // do not initialise the media session with A leg to avoid unnecessary A leg
+    // RTP stream creation in every B leg's media session
+    b.media_session = new AmB2BMedia(NULL, NULL);
+    b.media_session->addReference(); // new reference for me
+  }
+  else b.media_session = NULL;
+
+  ReplaceLegEvent *ev = new ReplaceLegEvent(getLocalTag(), relayed_invite, b.media_session);
+  // TODO: what about the RTP relay and other settings? send them as well?
+  if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
+    // session doesn't exist - can't connect
+    INFO("the call leg to be replaced (%s) doesn't exist\n", session_tag.c_str());
+    if (b.media_session) delete b.media_session;
+    return;
+  }
+
+  b_legs.push_back(b);
+  if (call_status == Disconnected) updateCallStatus(NoReply); // we are something like connected to another leg
+
+  // TODO: start a timer here to handle the case when the other leg can't reply
+  // the replace event
 }

@@ -7,27 +7,9 @@
 enum {
   ConnectMedia = B2BMsgBody + 16,
   ConnectLeg,
-  ReconnectLeg
-};
-
-struct ConnectMediaEvent: public B2BEvent
-{
-  string remote_party;
-  string remote_uri;
-
-  AmMimeBody body;
-  string hdrs;
-  
-  bool relayed_invite;
-  unsigned int r_cseq;
-
-  ConnectMediaEvent(AmB2BMedia *media)
-    : B2BEvent(ConnectMedia),
-    remote_party(remote_party),
-    remote_uri(remote_uri),
-    relayed_invite(false),
-    r_cseq(0)
-  {}
+  ReconnectLeg,
+  ReplaceLeg,
+  ReplaceInProgress
 };
 
 struct ConnectLegEvent: public B2BEvent
@@ -65,6 +47,29 @@ struct ReconnectLegEvent: public B2BEvent
   { if (media) media->addReference(); }
 
   virtual ~ReconnectLegEvent() { if (media && media->releaseReference()) delete media; }
+};
+
+/** Call leg receiving ReplaceLegEvent should replace itself with call leg from
+ * the event parameters. (it terminates itself and forwards ReconnectLegEvent to
+ * the call leg identified by other_id) */
+struct ReplaceLegEvent: public B2BEvent
+{
+  private:
+    ReconnectLegEvent *ev;
+
+  public:
+    ReplaceLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m)
+      : B2BEvent(ReplaceLeg) { ev = new ReconnectLegEvent(tag, relayed_invite, m); }
+    ReconnectLegEvent *getReconnectEvent() { ReconnectLegEvent *e = ev; ev = NULL; return e; }
+    virtual ~ReplaceLegEvent() { if (ev) delete ev; }
+};
+
+struct ReplaceInProgressEvent: public B2BEvent
+{
+  string dst_session; // session to be connected to
+
+  ReplaceInProgressEvent(const string &_dst_session):
+      B2BEvent(ReplaceInProgress), dst_session(_dst_session) { }
 };
 
 /** composed AmB2BCalleeSession & AmB2BCallerSession
@@ -125,7 +130,8 @@ class CallLeg: public AmB2BSession
     void onB2BReply(B2BSipReplyEvent *e);
     void onB2BConnect(ConnectLegEvent *e);
     void onB2BReconnect(ReconnectLegEvent *e);
-    void onB2BConnectMedia(ConnectMediaEvent *e);
+    void onB2BReplace(ReplaceLegEvent *e);
+    void onB2BReplaceInProgress(ReplaceInProgressEvent *e);
 
     int relaySipReply(AmSipReply &reply);
 
@@ -136,6 +142,8 @@ class CallLeg: public AmB2BSession
     /** terminate given leg and remove it from list of other legs  (should not
      * be used directly by successors, right?) */
     void terminateOtherLeg(const string &id);
+
+    void removeBLeg(const string &id);
 
     void terminateCall();
 
@@ -169,6 +177,10 @@ class CallLeg: public AmB2BSession
 
     /** add given already existing session as our B leg */
     void addCallee(const string &session_tag, const AmSipRequest &relayed_invite);
+
+    /** Replace given already existing session in a B2B call. We become new
+     * A leg there regardless if we are replacing original A or B leg. */
+    void replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite);
 
     CallStatus getCallStatus() { return call_status; }
 

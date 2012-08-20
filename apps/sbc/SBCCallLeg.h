@@ -132,6 +132,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   void addCallee(CallLeg *callee, const AmSipRequest &invite) { CallLeg::addCallee(callee, invite); }
   void addCallee(const string &session_tag, const AmSipRequest &invite) { CallLeg::addCallee(session_tag, invite); }
+  void replaceExistingLeg(const string &session_tag, const AmSipRequest &invite) { CallLeg::replaceExistingLeg(session_tag, invite); }
 
  protected:
   int relayEvent(AmEvent* ev);
