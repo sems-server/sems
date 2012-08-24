@@ -2,15 +2,17 @@
 #define __AMB2BCALL_H
 
 #include "AmB2BSession.h"
+#include "AmSessionContainer.h"
 
 // TODO: global event numbering
 enum {
-  ConnectMedia = B2BMsgBody + 16,
-  ConnectLeg,
+  ConnectLeg = B2BMsgBody + 16,
   ReconnectLeg,
   ReplaceLeg,
   ReplaceInProgress
 };
+
+#define LAST_B2B_CALL_LEG_EVENT_ID ReplaceInProgress
 
 struct ConnectLegEvent: public B2BEvent
 {
@@ -27,7 +29,29 @@ struct ConnectLegEvent: public B2BEvent
   {}
 };
 
-struct ReconnectLegEvent: public B2BEvent
+/** B2B event which sends another event back if it was or was not processed.
+ * (note that the back events need to be created in advance because we can not
+ * use overriden virtual methods in destructor (which is the only place which
+ * will be called for sure) */
+struct ReliableB2BEvent: public B2BEvent
+{
+  private:
+    bool processed;
+
+    B2BEvent *unprocessed_reply; //< reply to be sent back if the original event was not processed
+    B2BEvent *processed_reply; //< event sent back if the original event was processed
+    string sender; // sender will be filled when sending the event out
+
+  public:
+
+    ReliableB2BEvent(int ev_id, B2BEvent *_processed, B2BEvent *_unprocessed):
+      B2BEvent(ev_id), processed(false), processed_reply(_processed), unprocessed_reply(_unprocessed) { }
+    void markAsProcessed() { processed = true; }
+    void setSender(const string &tag) { sender = tag; }
+    virtual ~ReliableB2BEvent();
+};
+
+struct ReconnectLegEvent: public ReliableB2BEvent
 {
   AmMimeBody body;
   string hdrs;
@@ -38,28 +62,29 @@ struct ReconnectLegEvent: public B2BEvent
   string session_tag;
 
   ReconnectLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m)
-    : B2BEvent(ReconnectLeg),
+    : ReliableB2BEvent(ReconnectLeg, NULL, new B2BEvent(B2BTerminateLeg) /* TODO: choose a better one */),
     body(relayed_invite.body),
     hdrs(relayed_invite.hdrs),
     r_cseq(relayed_invite.cseq),
     media(m),
     session_tag(tag)
-  { if (media) media->addReference(); }
+  { if (media) media->addReference(); setSender(tag); }
 
   virtual ~ReconnectLegEvent() { if (media && media->releaseReference()) delete media; }
 };
 
+
 /** Call leg receiving ReplaceLegEvent should replace itself with call leg from
  * the event parameters. (it terminates itself and forwards ReconnectLegEvent to
  * the call leg identified by other_id) */
-struct ReplaceLegEvent: public B2BEvent
+struct ReplaceLegEvent: public ReliableB2BEvent
 {
   private:
     ReconnectLegEvent *ev;
 
   public:
     ReplaceLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m)
-      : B2BEvent(ReplaceLeg) { ev = new ReconnectLegEvent(tag, relayed_invite, m); }
+      : ReliableB2BEvent(ReplaceLeg, NULL, new B2BEvent(B2BTerminateLeg)) { ev = new ReconnectLegEvent(tag, relayed_invite, m); setSender(tag); }
     ReconnectLegEvent *getReconnectEvent() { ReconnectLegEvent *e = ev; ev = NULL; return e; }
     virtual ~ReplaceLegEvent() { if (ev) delete ev; }
 };

@@ -28,6 +28,22 @@ static const char *callStatus2str(const CallLeg::CallStatus state)
   return unknown;
 }
 
+ReliableB2BEvent::~ReliableB2BEvent()
+{
+  TRACE("reliable event was %sprocessed, sending %p to %s\n",
+      processed ? "" : "NOT ",
+      processed ? processed_reply : unprocessed_reply,
+      sender.c_str());
+  if (processed) {
+    if (unprocessed_reply) delete unprocessed_reply;
+    if (processed_reply) AmSessionContainer::instance()->postEvent(sender, processed_reply);
+  }
+  else {
+    if (processed_reply) delete processed_reply;
+    if (unprocessed_reply) AmSessionContainer::instance()->postEvent(sender, unprocessed_reply);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #if 0
@@ -457,6 +473,8 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
     return;
   }
 
+  ev->markAsProcessed();
+
   // release old signaling and media session
   terminateOtherLeg();
   clearRtpReceiverRelay();
@@ -524,6 +542,8 @@ void CallLeg::onB2BReplace(ReplaceLegEvent *e)
     ERROR("BUG: invalid argument given\n");
     return;
   }
+
+  e->markAsProcessed();
 
   ReconnectLegEvent *reconnect = e->getReconnectEvent();
   if (!reconnect) {
@@ -717,7 +737,7 @@ void CallLeg::addCallee(CallLeg *callee, const AmSipRequest &relayed_invite)
   sess_cont->addSession(b.id, callee);
 
   // generate connect event to the newly added leg
-  DBG("relaying connect leg event to the B leg\n");
+  TRACE("relaying connect leg event to the B leg\n");
   // other stuff than relayed INVITE should be set directly when creating callee
   // (remote_uri, remote_party is not propagated and thus B2BConnectEvent is not
   // used because it would just overwrite already set things. Note that in many
@@ -766,9 +786,6 @@ void CallLeg::addCallee(const string &session_tag, const AmSipRequest &relayed_i
 
   b_legs.push_back(b);
   if (call_status == Disconnected) updateCallStatus(NoReply);
-
-  // TODO: start a timer here to handle the case when the other leg can't reply
-  // the reconnect event
 }
 
 void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite)
@@ -796,7 +813,5 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &
 
   b_legs.push_back(b);
   if (call_status == Disconnected) updateCallStatus(NoReply); // we are something like connected to another leg
-
-  // TODO: start a timer here to handle the case when the other leg can't reply
-  // the replace event
 }
+
