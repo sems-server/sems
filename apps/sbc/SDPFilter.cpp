@@ -37,32 +37,33 @@ int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilte
   for (std::vector<SdpMedia>::iterator m_it =
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
     SdpMedia& media = *m_it;
-
-    std::vector<SdpPayload> new_pl;
-    for (std::vector<SdpPayload>::iterator p_it =
-	   media.payloads.begin(); p_it != media.payloads.end(); p_it++) {
+    if (media.transport == TP_RTPAVP || media.transport == TP_RTPSAVP) {
+      std::vector<SdpPayload> new_pl;
+      for (std::vector<SdpPayload>::iterator p_it =
+	     media.payloads.begin(); p_it != media.payloads.end(); p_it++) {
       
-      string c = p_it->encoding_name;
-      std::transform(c.begin(), c.end(), c.begin(), ::tolower);
+        string c = p_it->encoding_name;
+        std::transform(c.begin(), c.end(), c.begin(), ::tolower);
       
-      bool is_filtered =  (sdpfilter == Whitelist) ^
-	(sdpfilter_list.find(c) != sdpfilter_list.end());
+        bool is_filtered =  (sdpfilter == Whitelist) ^
+	  (sdpfilter_list.find(c) != sdpfilter_list.end());
 
-      // DBG("%s (%s) is_filtered: %s\n", p_it->encoding_name.c_str(), c.c_str(), 
-      // 	  is_filtered?"true":"false");
+        // DBG("%s (%s) is_filtered: %s\n", p_it->encoding_name.c_str(), c.c_str(), 
+        // 	  is_filtered?"true":"false");
 
-      if (!is_filtered)
-	new_pl.push_back(*p_it);
+        if (!is_filtered)
+  	  new_pl.push_back(*p_it);
+      }
+      if (new_pl.empty()) {
+        // in case of SDP offer we could remove media line but in case of answer
+        // we should just reject the stream by setting port to 0 (at least one
+        // format must be given; see RFC 3264, sect. 6)
+        media.port = 0;
+        if (media.payloads.size() > 1) 
+          media.payloads.erase(media.payloads.begin() + 1, media.payloads.end());
+      }
+      else media.payloads = new_pl;    
     }
-    if (new_pl.empty()) {
-      // in case of SDP offer we could remove media line but in case of answer
-      // we should just reject the stream by setting port to 0 (at least one
-      // format must be given; see RFC 3264, sect. 6)
-      media.port = 0;
-      if (media.payloads.size() > 1) 
-        media.payloads.erase(media.payloads.begin() + 1, media.payloads.end());
-    }
-    else media.payloads = new_pl;    
   }
 
   return 0;
