@@ -132,6 +132,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     }
 
     if(t->reply_status >= 200){
+	bucket->unlock();
 	ERROR("Transaction has already been closed with a final reply\n");
 	return -1;
     }
