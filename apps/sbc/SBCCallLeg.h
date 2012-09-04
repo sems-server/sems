@@ -126,7 +126,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** clear all saved call timer, only effective before call is connected */
   void clearCallTimers();
 
-  // from SBCCalleeSession
+  // SBC interface usable from CC modules
+
   void setLocalParty(const string &party, const string &uri) { dlg.local_party = party; dlg.local_uri = uri; }
   void setRemoteParty(const string &party, const string &uri) { dlg.remote_party = party; dlg.remote_uri = uri; }
 
@@ -134,17 +135,27 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void addCallee(const string &session_tag, const AmSipRequest &invite) { CallLeg::addCallee(session_tag, invite); }
   void replaceExistingLeg(const string &session_tag, const AmSipRequest &invite) { CallLeg::replaceExistingLeg(session_tag, invite); }
 
- protected:
-  int relayEvent(AmEvent* ev);
+  SBCCallProfile &getCallProfile() { return call_profile; }
 
+  // media interface must be accessible from CC modules
+  AmB2BMedia *getMediaSession() { return media_session; }
+  virtual bool updateLocalSdp(AmSdp &sdp);
+  virtual bool updateRemoteSdp(AmSdp &sdp);
+  void changeRtpMode(RTPRelayMode new_mode);
+
+  bool reinvite(const AmSdp &sdp, unsigned &request_cseq);
+
+  virtual void terminateLeg();
+  int relayEvent(AmEvent* ev);
   void onSipRequest(const AmSipRequest& req);
+  bool isALeg() { return a_leg; }
+
+ protected:
+
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(AmSipRequest& req, int flags);
 
   void onOtherBye(const AmSipRequest& req);
-
-  virtual bool updateLocalSdp(AmSdp &sdp);
-  virtual bool updateRemoteSdp(AmSdp &sdp);
 
   void onControlCmd(string& cmd, AmArg& params);
 

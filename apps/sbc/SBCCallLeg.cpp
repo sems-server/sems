@@ -352,6 +352,10 @@ SBCCallLeg::~SBCCallLeg()
 {
   if (auth)
     delete auth;
+
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    (*i)->onDestroyLeg(this);
+  }
 }
 
 UACAuthCred* SBCCallLeg::getCredentials() {
@@ -382,6 +386,10 @@ void SBCCallLeg::onSipRequest(const AmSipRequest& req) {
     }
   }
 
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->onInDialogRequest(this, req) == StopProcessing) return;
+  }
+
   CallLeg::onSipRequest(req);
 }
 
@@ -397,22 +405,23 @@ void SBCCallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg
       CALL_EVENT_H(onSipReply,reply, old_dlg_status);
   }
 
-  if (NULL == auth) {
-    CallLeg::onSipReply(reply, old_dlg_status);
-    return;
-  }
-
-  // only for SIP authenticated
-  unsigned int cseq_before = dlg.cseq;
-  if (!auth->onSipReply(reply, old_dlg_status)) {
-      CallLeg::onSipReply(reply, old_dlg_status);
-  } else {
-    if (cseq_before != dlg.cseq) {
-      DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
-          "updating relayed_req map\n", reply.cseq, cseq_before);
-      updateUACTransCSeq(reply.cseq, cseq_before);
+  if (NULL != auth) {
+    // only for SIP authenticated
+    unsigned int cseq_before = dlg.cseq;
+    if (auth->onSipReply(reply, old_dlg_status)) {
+      if (cseq_before != dlg.cseq) {
+        DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
+            "updating relayed_req map\n", reply.cseq, cseq_before);
+        updateUACTransCSeq(reply.cseq, cseq_before);
+      }
     }
   }
+
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->onInDialogReply(this, reply) == StopProcessing) return;
+  }
+
+  CallLeg::onSipReply(reply, old_dlg_status);
 }
 
 void SBCCallLeg::onSendRequest(AmSipRequest& req, int flags) {
@@ -473,6 +482,10 @@ void SBCCallLeg::onControlCmd(string& cmd, AmArg& params) {
 
 
 void SBCCallLeg::process(AmEvent* ev) {
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->onEvent(this, ev) == StopProcessing) return;
+  }
+
   if (a_leg) {
     // was for caller (SBCDialog):
     AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(ev);
@@ -759,7 +772,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   // call extend call controls
   InitialInviteHandlerParams params(to, ruri, from, &req, &invite_req);
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    (*i)->onInitialInvite(this, &call_profile, params);
+    (*i)->onInitialInvite(this, params);
   }
 
   if (getCallStatus() == Disconnected) {
@@ -1186,7 +1199,7 @@ void SBCCallLeg::CCEnd(const CCInterfaceListIteratorT& end_interface) {
 void SBCCallLeg::onCallStatusChange()
 {
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    (*i)->onStateChange(this, &call_profile);
+    (*i)->onStateChange(this);
   }
 }
 
@@ -1372,3 +1385,38 @@ void SBCCallLeg::savePayloadIDs(AmSdp &sdp)
   }
 }
 
+void SBCCallLeg::terminateLeg()
+{
+  CallLeg::terminateLeg();
+
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    (*i)->onTerminateLeg(this);
+  }
+}
+
+bool SBCCallLeg::reinvite(const AmSdp &sdp, unsigned &request_cseq)
+{
+  request_cseq = 0;
+
+  AmMimeBody body;
+  AmMimeBody *sdp_body = body.addPart(SIP_APPLICATION_SDP);
+  if (!sdp_body) return false;
+
+  string body_str;
+  sdp.print(body_str);
+  sdp_body->parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
+
+  if (dlg.reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) return false;
+  request_cseq = dlg.cseq - 1;
+  return true;
+}
+
+void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
+{
+  // we don't need to send reINVITE from here, expecting caller knows what is he
+  // doing (it is probably processing or generating its own reINVITE)
+  // Switch from RTP_Direct to RTP_Relay is safe (no audio loss), the other can
+  // be lossy because already existing media object would be destroyed.
+  // FIXME: use AmB2BMedia in all RTP relay modes to avoid these problems?
+  ERROR("BUG: not implemented yet\n");
+}
