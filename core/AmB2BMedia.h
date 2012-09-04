@@ -163,6 +163,10 @@ class AudioStreamData {
     int getLocalPort() { if (stream) return stream->getLocalPort(); else return 0; }
     AmRtpAudio *getStream() { return stream; }
     bool isInitialized() { return initialized; }
+    void getSdpOffer(int media_idx, SdpMedia &m) { if (stream) stream->getSdpOffer(media_idx, m); }
+    void getSdpAnswer(int media_idx, const SdpMedia &offer, SdpMedia &answer) { if (stream) stream->getSdpAnswer(media_idx, offer, answer); }
+    void mute(bool set_mute) { if (stream) stream->setOnHold(set_mute); }
+    void setInput(AmAudio *_in) { in = _in; }
 };
 
 /** \brief Class for control over media relaying and transcoding in a B2B session.
@@ -286,6 +290,8 @@ class AmB2BMedia: public AmMediaSession
     void createStreams(const AmSdp &sdp);
     void onSdpUpdate();
 
+    void setMuteFlag(bool a_leg, bool set);
+
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
 
@@ -365,6 +371,11 @@ class AmB2BMedia: public AmMediaSession
      * processor would be better? */
     virtual void onMediaProcessingTerminated();
 
+    bool createHoldRequest(AmSdp &sdp, bool a_leg);
+    void mute(bool a_leg) { setMuteFlag(a_leg, true); }
+    void unmute(bool a_leg) { setMuteFlag(a_leg, false); }
+    void setFirstStreamInput(bool a_leg, AmAudio *in);
+    void createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con);
 };
 
 #endif

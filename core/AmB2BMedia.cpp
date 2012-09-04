@@ -219,8 +219,8 @@ void AudioStreamData::clear()
 {
   resetStats();
   if (in) {
-    in->close();
-    delete in;
+    //in->close();
+    //delete in;
     in = NULL;
   }
   if (stream) {
@@ -805,4 +805,123 @@ void AmB2BMedia::onMediaProcessingTerminated()
   if (releaseReference()) { 
     delete this; // this should really work :-D
   }
+}
+
+bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg)
+{
+  AmB2BSession *session = (a_leg ? a : b);
+
+  // session is needed to fill all the stuff and to have the streams initialised correctly
+  if (!session) return false;
+
+  sdp.clear();
+
+  // FIXME: use original origin and continue in versioning? (the one used in
+  // previous SDPs if any)
+  // stolen from AmSession
+  sdp.version = 0;
+  sdp.origin.user = "sems";
+  //offer.origin.sessId = 1;
+  //offer.origin.sessV = 1;
+  sdp.sessionName = "sems";
+  sdp.conn.network = NT_IN;
+  sdp.conn.addrType = AT_V4;
+  sdp.conn.address = session->advertisedIP();
+
+  // possible params:
+  //  - use 0.0.0.0 connection address or sendonly stream
+  // create hold request based on current streams
+  mutex.lock();
+
+  // FIXME: if we don't have local port numbers we should assign them
+
+  for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
+    // TODO: put disabled media stream for non-audio media? (we would need to
+    // remember what type of media was it etc.)
+
+    TRACE("generating SDP offer from stream %d\n", i->media_idx);
+    sdp.media.push_back(SdpMedia());
+    SdpMedia &m = sdp.media.back();
+    m.type = MT_AUDIO;
+    if (a_leg) i->a.getSdpOffer(i->media_idx, m);
+    else i->b.getSdpOffer(i->media_idx, m);
+
+    m.send = true; // always? (what if there is no 'hold music' to play?
+    m.recv = false;
+  }
+
+  mutex.unlock();
+
+  TRACE("hold SDP offer generated\n");
+
+  return true;
+}
+
+void AmB2BMedia::setMuteFlag(bool a_leg, bool set)
+{
+  for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
+    if (a_leg) i->a.mute(set);
+    else i->b.mute(set);
+  }
+}
+
+void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
+{
+  //for ( i != audio.end(); ++i) {
+  if (!audio.empty()) {
+    AudioStreamIterator i = audio.begin();
+    if (a_leg) i->a.setInput(in);
+    else i->b.setInput(in);
+  }
+}
+
+void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con)
+{
+  // because of possible RTP relaying our payloads need not to match the remote
+  // party's payloads (i.e. we might need not understand the remote party's
+  // codecs)
+  // As a quick hack we may use just copy of the original SDP with all streams
+  // deactivated to avoid sending RTP to us (twinkle requires at least one
+  // non-disabled stream in the response so we can not set all ports to 0 to
+  // signalize that we don't want to receive anything)
+
+  static const string zero_ip("0.0.0.0");
+
+  mutex.lock();
+
+  answer = offer;
+  answer.media.clear();
+
+  if (use_zero_con) answer.conn.address = zero_ip;
+  else {
+    if (a_leg) { if (a) answer.conn.address = a->advertisedIP(); }
+    else { if (b) answer.conn.address = b->advertisedIP(); }
+
+    if (answer.conn.address.empty()) answer.conn.address = zero_ip; // we need something there
+  }
+
+  AudioStreamIterator i = audio.begin();
+  vector<SdpMedia>::const_iterator m;
+  for (m = offer.media.begin(); m != offer.media.end(); ++m) {
+    answer.media.push_back(SdpMedia());
+    SdpMedia &media = answer.media.back();
+    media.type = m->type;
+
+    if (media.type != MT_AUDIO) { media = *m ; media.port = 0; continue; } // copy whole media line except port
+    if (media.port == 0) { media = *m; ++i; continue; } // copy whole inactive media line
+
+    if (a_leg) i->a.getSdpAnswer(i->media_idx, *m, media);
+    else i->b.getSdpAnswer(i->media_idx, *m, media);
+
+    media.send = false; // should be already because the stream should be on hold
+    media.recv = false; // what we would do with received data?
+
+    if (media.payloads.empty()) {
+      // we have to add something there
+      if (!m->payloads.empty()) media.payloads.push_back(m->payloads[0]);
+    }
+    break;
+  }
+
+  mutex.unlock();
 }
