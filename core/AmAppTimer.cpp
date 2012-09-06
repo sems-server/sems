@@ -121,10 +121,21 @@ app_timer* _AmAppTimer::create_timer(const string& q_id, int id, unsigned int ex
   return timer;
 }
 
+#define MAX_TIMER_SECONDS 365*24*3600 // one year, well below 1<<31
+
 void _AmAppTimer::setTimer(const string& eventqueue_name, int timer_id, double timeout) {
 
   // microseconds
-  unsigned int expires = timeout*1000.0*1000.0 / (double)TIMER_RESOLUTION;
+  unsigned int expires;
+  if (timeout < 0) { // in the past
+    expires = 0;
+  } else if (timeout > MAX_TIMER_SECONDS) { // more than one year
+    ERROR("Application requesting timer %d for '%s' with timeout %f, "
+	  "clipped to maximum of one year\n", timer_id, eventqueue_name.c_str(), timeout);
+    expires = (double)MAX_TIMER_SECONDS*1000.0*1000.0 / (double)TIMER_RESOLUTION;
+  } else {
+    expires = timeout*1000.0*1000.0 / (double)TIMER_RESOLUTION;
+  }
 
   expires += wall_clock;
 
