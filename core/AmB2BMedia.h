@@ -371,7 +371,7 @@ class AmB2BMedia: public AmMediaSession
      * processor would be better? */
     virtual void onMediaProcessingTerminated();
 
-    bool createHoldRequest(AmSdp &sdp, bool a_leg);
+    bool createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly);
     void mute(bool a_leg) { setMuteFlag(a_leg, true); }
     void unmute(bool a_leg) { setMuteFlag(a_leg, false); }
     void setFirstStreamInput(bool a_leg, AmAudio *in);

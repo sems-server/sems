@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-#define TRACE INFO
+#define TRACE DBG
 #define UNDEFINED_PAYLOAD (-1)
 
 /** class for computing payloads for relay the simpliest way - allow relaying of
@@ -20,6 +20,8 @@ class SimpleRelayController: public RelayController {
 
 static B2BMediaStatistics b2b_stats;
 static SimpleRelayController simple_relay_ctrl;
+
+static const string zero_ip("0.0.0.0");
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -807,7 +809,7 @@ void AmB2BMedia::onMediaProcessingTerminated()
   }
 }
 
-bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg)
+bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly)
 {
   AmB2BSession *session = (a_leg ? a : b);
 
@@ -826,7 +828,8 @@ bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg)
   sdp.sessionName = "sems";
   sdp.conn.network = NT_IN;
   sdp.conn.addrType = AT_V4;
-  sdp.conn.address = session->advertisedIP();
+  if (zero_connection) sdp.conn.address = zero_ip;
+  else sdp.conn.address = session->advertisedIP();
 
   // possible params:
   //  - use 0.0.0.0 connection address or sendonly stream
@@ -847,7 +850,7 @@ bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg)
     else i->b.getSdpOffer(i->media_idx, m);
 
     m.send = true; // always? (what if there is no 'hold music' to play?
-    m.recv = false;
+    if (sendonly) m.recv = false;
   }
 
   mutex.unlock();
@@ -884,8 +887,6 @@ void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer,
   // deactivated to avoid sending RTP to us (twinkle requires at least one
   // non-disabled stream in the response so we can not set all ports to 0 to
   // signalize that we don't want to receive anything)
-
-  static const string zero_ip("0.0.0.0");
 
   mutex.lock();
 
