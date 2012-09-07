@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define TRACE INFO
+#define TRACE DBG
 
 // helper functions
 
@@ -154,15 +154,28 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile)
 }
 
 // B leg constructor (from SBCCalleeSession)
-SBCCallLeg::SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_profile)
+SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, const AmSipRequest &original_invite)
   : auth(NULL),
-    call_profile(_call_profile),
+    call_profile(caller->getCallProfile()),
     CallLeg(caller)
 {
-  call_profile.cc_vars.clear(); // we do not want to inherit these from caller do we?
+  // FIXME: do we want to inherit cc_vars from caller?
+  // Can be pretty dangerous when caller stored pointer to object - we should
+  // not probably operate on it! But on other hand it could be handy for
+  // something, so just take care when using stored objects...
+  // call_profile.cc_vars.clear();
 
   dlg.setRel100State(Am100rel::REL100_IGNORED);
   dlg.setOAEnabled(false);
+
+  // CC interfaces and variables should be already "evaluated" by A leg, we just
+  // need to load the DI interfaces for us (later they will be initialized with
+  // original INVITE so it must be done in A leg's thread!)
+  if (!getCCInterfaces()) {
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+  }
+
+  initCCModules(original_invite);
 }
 
 void SBCCallLeg::onStart()
@@ -212,12 +225,6 @@ void SBCCallLeg::applyAProfile()
 
 void SBCCallLeg::applyBProfile()
 {
-  // CC interfaces and variables should be already "evaluated" by A leg, we just
-  // need to load the DI interfaces for us
-  if (!getCCInterfaces()) {
-    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-  }
-
   if (!call_profile.contact.empty()) {
     dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
   }
@@ -709,6 +716,8 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
+  initCCModules(req);
+
   string ruri, to, from;
   ruri = call_profile.ruri.empty() ? req.r_uri : call_profile.ruri;
   if(!call_profile.ruri_host.empty()){
@@ -777,16 +786,16 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
 
   if (getCallStatus() == Disconnected) {
     // no CC module connected a callee yet
-    connectCallee(to, ruri, from, invite_req); // connect to the B leg(s) using modified request
+    connectCallee(to, ruri, from, req, invite_req); // connect to the B leg(s) using modified request
   }
 }
 
 void SBCCallLeg::connectCallee(const string& remote_party, const string& remote_uri,
-    const string &from, const AmSipRequest &invite)
+    const string &from, const AmSipRequest &original_invite, const AmSipRequest &invite)
 {
   // FIXME: no fork for now
 
-  SBCCallLeg* callee_session = new SBCCallLeg(this, call_profile);
+  SBCCallLeg* callee_session = new SBCCallLeg(this, original_invite);
   callee_session->setLocalParty(from, from);
   callee_session->setRemoteParty(remote_party, remote_uri);
 
@@ -830,13 +839,13 @@ bool SBCCallLeg::getCCInterfaces() {
       cc_di->invoke("getExtendedInterfaceHandler", args, ret);
       ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
       if (iface) {
-        INFO("extended CC interface offered by cc_module '%s'\n", cc_module.c_str());
+        DBG("extended CC interface offered by cc_module '%s'\n", cc_module.c_str());
         cc_ext.push_back(iface);
       }
       else WARN("BUG: returned invalid extended CC interface by cc_module '%s'\n", cc_module.c_str());
     }
     catch (...) {
-      INFO("extended CC interface not supported by cc_module '%s'\n", cc_module.c_str());
+      DBG("extended CC interface not supported by cc_module '%s'\n", cc_module.c_str());
     }
   }
   return true;
@@ -1419,4 +1428,11 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
   // be lossy because already existing media object would be destroyed.
   // FIXME: use AmB2BMedia in all RTP relay modes to avoid these problems?
   ERROR("BUG: not implemented yet\n");
+}
+
+void SBCCallLeg::initCCModules(const AmSipRequest &original_invite)
+{
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    (*i)->init(this, original_invite);
+  }
 }

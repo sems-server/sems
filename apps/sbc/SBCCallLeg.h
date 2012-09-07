@@ -85,7 +85,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void CCEnd();
   void CCEnd(const CCInterfaceListIteratorT& end_interface);
 
-  void connectCallee(const string& remote_party, const string& remote_uri, const string &from, const AmSipRequest &invite_req);
+  void connectCallee(const string& remote_party, const string& remote_uri, const string &from,
+      const AmSipRequest &original_invite, const AmSipRequest &invite_req);
   int filterSdp(AmMimeBody &body, const string &method);
   void appendTranscoderCodecs(AmSdp &sdp);
   void savePayloadIDs(AmSdp &sdp);
@@ -101,7 +102,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
  public:
 
   SBCCallLeg(const SBCCallProfile& call_profile);
-  SBCCallLeg(const SBCCallLeg* caller, const SBCCallProfile& _call_profile);
+  SBCCallLeg(SBCCallLeg* caller, const AmSipRequest &original_invite);
   ~SBCCallLeg();
 
   void process(AmEvent* ev);
@@ -118,6 +119,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
+  void initCCModules(const AmSipRequest &original_invite);
 
   /** save call timer; only effective before call is connected */
   void saveCallTimer(int timer, double timeout);
@@ -131,7 +133,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void setLocalParty(const string &party, const string &uri) { dlg.local_party = party; dlg.local_uri = uri; }
   void setRemoteParty(const string &party, const string &uri) { dlg.remote_party = party; dlg.remote_uri = uri; }
 
-  void addCallee(CallLeg *callee, const AmSipRequest &invite) { CallLeg::addCallee(callee, invite); }
+  void addCallee(SBCCallLeg *callee, const AmSipRequest &invite) { CallLeg::addCallee(callee, invite); }
   void addCallee(const string &session_tag, const AmSipRequest &invite) { CallLeg::addCallee(session_tag, invite); }
   void replaceExistingLeg(const string &session_tag, const AmSipRequest &invite) { CallLeg::replaceExistingLeg(session_tag, invite); }
 
