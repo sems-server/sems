@@ -1000,28 +1000,40 @@ string AmRtpStream::getPayloadName(int payload_type)
   return string("");
 }
 
-
-PacketMem::PacketMem() {
+PacketMem::PacketMem()
+  : cur_idx(0), n_used(0)
+{
   memset(used, 0, sizeof(used));
 }
 
-inline AmRtpPacket* PacketMem::newPacket() {
-  for (int i=0;i<MAX_PACKETS;i++)
-    if (!used[i]) {
-      used[i]=true;
-      return &packets[i];
-    }
-  
-  return NULL;
+inline AmRtpPacket* PacketMem::newPacket() 
+{
+  if(n_used == MAX_PACKETS)
+    return NULL; // full
+
+  while(used[cur_idx])
+    cur_idx = (cur_idx + 1) & MAX_PACKETS_MASK;
+
+  used[cur_idx] = true;
+  n_used++;
+
+  AmRtpPacket* p = &packets[cur_idx];
+  cur_idx = (cur_idx + 1) & MAX_PACKETS_MASK;
+
+  return p;
 }
 
-inline void PacketMem::freePacket(AmRtpPacket* p) {
+inline void PacketMem::freePacket(AmRtpPacket* p) 
+{
   if (!p)  return;
 
   used[p-packets] = false;
+  n_used--;
 }
 
-inline void PacketMem::clear() {
+inline void PacketMem::clear() 
+{
   memset(used, 0, sizeof(used));
+  n_used = cur_idx = 0;
 }
  

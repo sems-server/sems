@@ -68,7 +68,9 @@ struct amci_payload_t;
  * This provides the memory for the receive buffer.
  */
 struct PacketMem {
-#define MAX_PACKETS 32
+#define MAX_PACKETS_BITS 5
+#define MAX_PACKETS (1<<MAX_PACKETS_BITS)
+#define MAX_PACKETS_MASK (MAX_PACKETS-1)
 
   AmRtpPacket packets[MAX_PACKETS];
   bool        used[MAX_PACKETS];
@@ -78,6 +80,10 @@ struct PacketMem {
   inline AmRtpPacket* newPacket();
   inline void freePacket(AmRtpPacket* p);
   inline void clear();
+
+private:
+  unsigned int cur_idx;
+  unsigned int n_used;
 };
 
 /** \brief event fired on RTP timeout */
