@@ -205,6 +205,12 @@ protected:
   /** Local socket */
   int                l_sd;
 
+  /** Local RTCP port */
+  unsigned int l_rtcp_port;
+
+  /** Local RTCP socket */
+  int          l_rtcp_sd;
+
   /** Timestamp of the last received RTP packet */
   struct timeval last_recv_time;
 
@@ -256,9 +262,6 @@ protected:
 
   /** Payload provider */
   AmPayloadProvider* payload_provider;
-
-  // get the next available port within configured range
-  static int getNextPort();
 
   /** Insert an RTP packet to the buffer queue */
   void bufferPacket(AmRtpPacket* p);
@@ -318,7 +321,9 @@ public:
   int receive( unsigned char* buffer, unsigned int size,
 	       unsigned int& ts, int& payload );
 
-  void recvPacket();
+  void recvPacket(int fd);
+
+  void recvRtcpPacket();
 
   /** ping the remote side, to open NATs and enable symmetric RTP */
   int ping();

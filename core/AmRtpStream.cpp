@@ -101,7 +101,7 @@ int AmRtpStream::getLocalSocket()
   if (l_sd)
     return l_sd;
 
-  int sd=0;
+  int sd=0, rctp_sd=0;
 #ifdef SUPPORT_IPV6
   if((sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1)
 #else
@@ -111,6 +111,17 @@ int AmRtpStream::getLocalSocket()
 	ERROR("%s\n",strerror(errno));
 	throw string ("while creating new socket.");
       } 
+
+#ifdef SUPPORT_IPV6
+  if((rtcp_sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1)
+#else
+    if((rtcp_sd = socket(PF_INET,SOCK_DGRAM,0)) == -1)
+#endif
+      {
+	ERROR("%s\n",strerror(errno));
+	throw string ("while creating new RTCP socket.");
+      } 
+
   int true_opt = 1;
   if(ioctl(sd, FIONBIO , &true_opt) == -1){
     ERROR("%s\n",strerror(errno));
@@ -118,7 +129,15 @@ int AmRtpStream::getLocalSocket()
     throw string ("while setting socket non blocking.");
   }
 
+  if(ioctl(rtcp_sd, FIONBIO , &true_opt) == -1){
+    ERROR("%s\n",strerror(errno));
+    close(sd);
+    throw string ("while setting socket non blocking.");
+  }
+
   l_sd = sd;
+  l_rtcp_sd = rtcp_sd;
+
   return l_sd;
 }
 
@@ -127,43 +146,63 @@ void AmRtpStream::setLocalPort()
   if(l_port)
     return;
   
-  if (!getLocalSocket())
-    return;
-
   if(l_if < 0) {
     l_if = session->dlg.getOutboundIf();
   }
   
   int retry = 10;
-  unsigned short port = 0;
+  unsigned short port = 0, rtcp_port = 0;
   for(;retry; --retry){
+
+    if (!getLocalSocket())
+      return;
 
     port = AmConfig::Ifs[l_if].getNextRtpPort();
 #ifdef SUPPORT_IPV6
+    set_port_v6(&l_saddr,port+1);
+    if(bind(l_rtcp_sd,(const struct sockaddr*)&l_saddr,
+	     sizeof(struct sockaddr_storage)))
+#else	
+    l_saddr.sin_port = htons(port+1);
+    if(bind(l_rtcp_sd,(const struct sockaddr*)&l_saddr,
+	     sizeof(struct sockaddr_in)))
+#endif
+    {
+      DBG("RTCP bind: %s\n",strerror(errno));
+      goto try_another_port;
+    }
+
+#ifdef SUPPORT_IPV6
     set_port_v6(&l_saddr,port);
-    if(!bind(l_sd,(const struct sockaddr*)&l_saddr,
+    if(bind(l_sd,(const struct sockaddr*)&l_saddr,
 	     sizeof(struct sockaddr_storage)))
 #else	
     l_saddr.sin_port = htons(port);
-    if(!bind(l_sd,(const struct sockaddr*)&l_saddr,
+    if(bind(l_sd,(const struct sockaddr*)&l_saddr,
 	     sizeof(struct sockaddr_in)))
 #endif
-      {
-	break;
-      }
-    else {
+    {
       DBG("bind: %s\n",strerror(errno));		
+      goto try_another_port;
     }
+
+    // both bind() succeeded!
+    break;
+
+  try_another_port:
+      close(l_sd);
+      l_sd = 0;
+      close(l_rtcp_sd);
+      l_rtcp_sd = 0;
   }
 
   int true_opt = 1;
   if (!retry){
     ERROR("could not find a free RTP port\n");
-    close(l_sd);
-    l_sd = 0;
     throw string("could not find a free RTP port");
   }
 
+  // rco: does that make sense after bind() ????
   if(setsockopt(l_sd, SOL_SOCKET, SO_REUSEADDR,
 		(void*)&true_opt, sizeof (true_opt)) == -1) {
 
@@ -174,9 +213,11 @@ void AmRtpStream::setLocalPort()
   }
 
   l_port = port;
+  l_rtcp_port = port+1;
   AmRtpReceiver::instance()->addStream(l_sd, this);
-  DBG("added stream [%p] to RTP receiver (%s:%i)\n", this,
-      get_addr_str((sockaddr_storage*)&l_saddr).c_str(),l_port);
+  AmRtpReceiver::instance()->addStream(l_rtcp_sd, this);
+  DBG("added stream [%p] to RTP receiver (%s:%i/%i)\n", this,
+      get_addr_str((sockaddr_storage*)&l_saddr).c_str(),l_port,l_rtcp_port);
 }
 
 int AmRtpStream::ping()
@@ -889,8 +930,13 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
   return 1;
 }
 
-void AmRtpStream::recvPacket()
+void AmRtpStream::recvPacket(int fd)
 {
+  if(fd == l_rtcp_sd){
+    recvRtcpPacket();
+    return;
+  }
+
   AmRtpPacket* p = mem.newPacket();
   if (!p) {
     // drop received data
@@ -912,6 +958,39 @@ void AmRtpStream::recvPacket()
     }
   } else {
     mem.freePacket(p);
+  }
+}
+
+void AmRtpStream::recvRtcpPacket()
+{
+  unsigned char buffer[4096];
+
+  int recved_bytes = recv(l_rtcp_sd,buffer,sizeof(buffer),0);
+  if(recved_bytes < 0) {
+    ERROR("rtcp recv(%d): %s",l_rtcp_sd,strerror(errno));
+    return;
+  }
+
+  if(!relay_enabled || !relay_stream ||
+     !relay_stream->l_sd)
+    return;
+
+  if((size_t)recved_bytes > sizeof(buffer)) {
+    ERROR("recved huge RTCP packet (%d)",recved_bytes);
+    return;
+  }
+
+  struct sockaddr_in rtcp_raddr;
+  memcpy(&rtcp_raddr,&relay_stream->r_saddr,sizeof(struct sockaddr_in));
+  rtcp_raddr.sin_port = htons(relay_stream->l_rtcp_port);
+
+  int err = sendto(relay_stream->l_sd,buffer,recved_bytes,0,
+	       (const struct sockaddr *)&rtcp_raddr,
+	       sizeof(struct sockaddr_in));
+  
+  if(err == -1){
+    ERROR("could not relay RTCP packet: %s\n",strerror(errno));
+    return;
   }
 }
 

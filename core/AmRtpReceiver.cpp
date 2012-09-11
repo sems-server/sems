@@ -136,7 +136,7 @@ void AmRtpReceiverThread::run()
       streams_mut.lock();
       Streams::iterator it = streams.find(tmp_fds[i].fd);
       if(it != streams.end()) {
-	it->second.stream->recvPacket();
+	it->second.stream->recvPacket(tmp_fds[i].fd);
       }
       streams_mut.unlock();      
     }
