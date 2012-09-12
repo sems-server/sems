@@ -130,6 +130,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   next_hop = cfg.getParameter("next_hop");
   next_hop_for_replies = cfg.getParameter("next_hop_for_replies");
+  next_hop_1st_req = cfg.getParameter("next_hop_1st_req") == "yes";
 
   if (cfg.hasParameter("header_filter")) {
     string hf_type = cfg.getParameter("header_filter");
@@ -377,7 +378,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
     INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
     if (!next_hop.empty()) {
-      INFO("SBC:      next hop = %s\n", next_hop.c_str());
+      INFO("SBC:      next hop = %s (%s)\n", next_hop.c_str(),
+	   next_hop_1st_req ? "1st req" : "all reqs");
 
       if (!next_hop_for_replies.empty()) {
 	INFO("SBC:      next hop used for replies: '%s'\n", next_hop_for_replies.c_str());
@@ -509,6 +511,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     force_outbound_proxy == rhs.force_outbound_proxy &&
     next_hop == rhs.next_hop &&
     next_hop_for_replies == rhs.next_hop_for_replies &&
+    next_hop_1st_req == rhs.next_hop_1st_req &&
     headerfilter == rhs.headerfilter &&
     headerfilter_list == rhs.headerfilter_list &&
     messagefilter == rhs.messagefilter &&
@@ -574,6 +577,7 @@ string SBCCallProfile::print() const {
   res += "sdpfilter_list:       " + stringset_print(sdpfilter_list) + "\n";
   res += "sdpalinesfilter:      " + string(FilterType2String(sdpalinesfilter)) + "\n";
   res += "sdpalinesfilter_list: " + stringset_print(sdpalinesfilter_list) + "\n";
+  res += "next_hop_1st_req:     " + string(next_hop_1st_req ? "true":"false") + "\n";
   res += "sst_enabled:          " + sst_enabled + "\n";
   res += "sst_aleg_enabled:     " + sst_aleg_enabled + "\n";
   res += "auth_enabled:         " + string(auth_enabled?"true":"false") + "\n";

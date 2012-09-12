@@ -80,6 +80,7 @@ int          AmConfig::SIPServerThreads        = NUM_SIP_SERVERS;
 string       AmConfig::OutboundProxy           = "";
 bool         AmConfig::ForceOutboundProxy      = false;
 string       AmConfig::NextHop                 = "";
+bool         AmConfig::NextHop1stReq           = false;
 bool         AmConfig::ProxyStickyAuth         = false;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 bool         AmConfig::DisableDNSSRV           = false;
@@ -325,6 +326,7 @@ int AmConfig::readConfiguration()
 
   if(cfg.hasParameter("next_hop")) {
     NextHop = cfg.getParameter("next_hop");
+    NextHop1stReq = (cfg.getParameter("next_hop_1st_req") == "yes");
   }
 
   if(cfg.hasParameter("proxy_sticky_auth")) {

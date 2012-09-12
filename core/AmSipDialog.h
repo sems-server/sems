@@ -151,6 +151,7 @@ private:
   bool   force_outbound_proxy;
 
   string next_hop;
+  bool next_hop_1st_req;
 
   int outbound_interface;
 

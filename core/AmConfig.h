@@ -143,6 +143,8 @@ struct AmConfig
   static bool ForceOutboundProxy;
   /** force next hop IP[:port] */
   static string NextHop;
+  /** use next hop only on 1st request within a dialog */
+  static bool NextHop1stReq;
   /** update ruri-host to previously resolved IP:port on SIP auth */
   static bool ProxyStickyAuth;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */

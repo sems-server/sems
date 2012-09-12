@@ -92,6 +92,7 @@ AmSipDialog::AmSipDialog(AmSipDialogEventHandler* h)
     outbound_proxy(AmConfig::OutboundProxy),
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     next_hop(AmConfig::NextHop),
+    next_hop_1st_req(AmConfig::NextHop1stReq),
     outbound_interface(-1),
     sdp_local(), sdp_remote()
 {
@@ -1132,7 +1133,9 @@ int AmSipDialog::sendRequest(const string& method,
     hdl->onSendRequest(req,flags);
 
   onTxRequest(req);
-  int res = SipCtrlInterface::send(req, next_hop, outbound_interface);
+  int res = SipCtrlInterface::send(req, 
+				   remote_tag.empty() ? next_hop : "", 
+				   outbound_interface);
   if(res) {
     ERROR("Could not send request: method=%s; call-id=%s; cseq=%i\n",
 	  req.method.c_str(),req.callid.c_str(),req.cseq);
@@ -1215,7 +1218,9 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
     hdl->onSendRequest(req,flags);
 
   //onTxRequest(req); // not needed right now in the ACK case
-  int res = SipCtrlInterface::send(req, next_hop, outbound_interface);
+  int res = SipCtrlInterface::send(req, 
+				   remote_tag.empty() ? next_hop : "",
+				   outbound_interface);
   if (res)
     return res;
 

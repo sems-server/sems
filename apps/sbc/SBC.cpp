@@ -1814,6 +1814,7 @@ void SBCDialog::createCalleeSession()
   
   if (!call_profile.next_hop.empty()) {
     callee_dlg.next_hop = call_profile.next_hop;
+    callee_dlg.next_hop_1st_req = call_profile.next_hop_1st_req;
   }
 
   if(outbound_interface >= 0)
