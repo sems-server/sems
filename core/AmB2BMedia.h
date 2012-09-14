@@ -82,6 +82,8 @@ class AudioStreamData {
     PayloadMask relay_mask;
     bool relay_enabled;
 
+    bool muted;
+
     // for performance monitoring
     int outgoing_payload;
     int incoming_payload;
@@ -165,7 +167,7 @@ class AudioStreamData {
     bool isInitialized() { return initialized; }
     void getSdpOffer(int media_idx, SdpMedia &m) { if (stream) stream->getSdpOffer(media_idx, m); }
     void getSdpAnswer(int media_idx, const SdpMedia &offer, SdpMedia &answer) { if (stream) stream->getSdpAnswer(media_idx, offer, answer); }
-    void mute(bool set_mute) { if (stream) stream->setOnHold(set_mute); }
+    void mute(bool set_mute);
     void setInput(AmAudio *_in) { in = _in; }
 };
 

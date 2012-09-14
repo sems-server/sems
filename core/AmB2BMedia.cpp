@@ -184,7 +184,8 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
   dtmf_detector(NULL), dtmf_queue(NULL),
   outgoing_payload(UNDEFINED_PAYLOAD),
   force_symmetric_rtp(false),
-  enable_dtmf_transcoding(false)
+  enable_dtmf_transcoding(false),
+  muted(false)
 {
   if (session) initialize(session);
   else stream = NULL; // not initialized yet
@@ -255,6 +256,12 @@ void AudioStreamData::setRelayStream(AmRtpStream *other)
     ERROR("BUG: trying to set relay for NULL stream\n");
     return;
   }
+
+  // FIXME: muted stream should not relay to the other?
+  /* if (muted) {
+    stream->disableRtpRelay();
+    return;
+  }*/
 
   if (relay_enabled && other) {
     stream->enableRtpRelay(relay_mask, other);
@@ -330,6 +337,7 @@ bool AudioStreamData::initStream(PlayoutType playout_type,
     // to be relayed this needs not to be an error)
     ok = false;
   }
+  stream->setOnHold(muted);
 
   return ok;
 }
@@ -410,6 +418,7 @@ void AudioStreamData::updateRecvStats(AmRtpStream *s)
 int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, AudioStreamData &src)
 {
   if (!initialized) return 0;
+  if (stream->getOnHold()) return 0; // ignore hold streams?
 
   unsigned int f_size = stream->getFrameSize();
   if (stream->sendIntReached(ts)) {
@@ -440,6 +449,14 @@ int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, A
   return 0;
 }
 
+void AudioStreamData::mute(bool set_mute)
+{
+  if (stream) {
+    stream->setOnHold(set_mute);
+    if (muted != set_mute) stream->clearRTPTimeout();
+  }
+  muted = set_mute;
+}
 //////////////////////////////////////////////////////////////////////////////////
 
 AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b): 
