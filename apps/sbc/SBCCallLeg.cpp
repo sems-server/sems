@@ -1459,7 +1459,6 @@ void SBCCallLeg::initCCModules(const AmSipRequest &original_invite)
 void SBCCallLeg::onB2BEvent(B2BEvent* ev)
 {
   if (ev->event_id == ChangeRtpModeEventId) {
-    INFO("*** B2B request to change RTP mode\n");
     ChangeRtpModeEvent *e = dynamic_cast<ChangeRtpModeEvent*>(ev);
     if (e) {
       if (e->new_mode == rtp_relay_mode) return; // requested mode is set already
