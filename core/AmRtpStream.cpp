@@ -915,6 +915,8 @@ void AmRtpStream::relay(AmRtpPacket* p) {
     hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
 
+  if ((mute) || (hold)) return;
+
   if(p->send(l_sd) < 0){
     ERROR("while sending RTP packet.\n");
   }
