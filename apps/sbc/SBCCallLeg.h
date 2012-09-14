@@ -3,6 +3,7 @@
 
 #include "SBC.h"
 #include "ExtendedCCInterface.h"
+#include "sbc_events.h"
 
 class PayloadIdMapping
 {
@@ -106,6 +107,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   ~SBCCallLeg();
 
   void process(AmEvent* ev);
+  void onB2BEvent(B2BEvent* ev);
   void onBye(const AmSipRequest& req);
   void onInvite(const AmSipRequest& req);
   void onCancel(const AmSipRequest& cancel);

@@ -1422,12 +1422,31 @@ bool SBCCallLeg::reinvite(const AmSdp &sdp, unsigned &request_cseq)
 
 void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
 {
+  if (new_mode == rtp_relay_mode) return; // requested mode is set already
+
+  if (getCallStatus() != CallLeg::Connected /*other_id.empty()*/) {
+    ERROR("BUG: changeRtpMode supported for established calls only\n");
+    return;
+  }
+
   // we don't need to send reINVITE from here, expecting caller knows what is he
   // doing (it is probably processing or generating its own reINVITE)
   // Switch from RTP_Direct to RTP_Relay is safe (no audio loss), the other can
   // be lossy because already existing media object would be destroyed.
   // FIXME: use AmB2BMedia in all RTP relay modes to avoid these problems?
-  ERROR("BUG: not implemented yet\n");
+  switch (rtp_relay_mode) {
+    case RTP_Relay:
+      clearRtpReceiverRelay();
+      break;
+
+    case RTP_Direct:
+      // create new blablabla
+      setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
+      break;
+  }
+
+  relayEvent(new ChangeRtpModeEvent(new_mode, getMediaSession()));
+  setRtpRelayMode(new_mode);
 }
 
 void SBCCallLeg::initCCModules(const AmSipRequest &original_invite)
@@ -1435,4 +1454,30 @@ void SBCCallLeg::initCCModules(const AmSipRequest &original_invite)
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     (*i)->init(this, original_invite);
   }
+}
+
+void SBCCallLeg::onB2BEvent(B2BEvent* ev)
+{
+  if (ev->event_id == ChangeRtpModeEventId) {
+    INFO("*** B2B request to change RTP mode\n");
+    ChangeRtpModeEvent *e = dynamic_cast<ChangeRtpModeEvent*>(ev);
+    if (e) {
+      if (e->new_mode == rtp_relay_mode) return; // requested mode is set already
+
+      switch (rtp_relay_mode) {
+        case RTP_Relay:
+          clearRtpReceiverRelay();
+          break;
+
+        case RTP_Direct:
+          // create new blablabla
+          setMediaSession(e->media);
+          media_session->changeSession(a_leg, this);
+          break;
+      }
+      setRtpRelayMode(e->new_mode);
+    }
+  }
+
+  CallLeg::onB2BEvent(ev);
 }
