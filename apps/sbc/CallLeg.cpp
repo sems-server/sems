@@ -6,7 +6,7 @@
 #include "AmUtils.h"
 #include "AmRtpReceiver.h"
 
-#define TRACE INFO
+#define TRACE DBG
 
 // helper functions
 
