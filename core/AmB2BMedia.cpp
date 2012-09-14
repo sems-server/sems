@@ -876,6 +876,8 @@ void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
     if (a_leg) i->a.setInput(in);
     else i->b.setInput(in);
   }
+  else ERROR("BUG: can't set %s leg's first stream input, no streams\n", a_leg ? "A": "B");
+  // FIXME: start processing if not started and streams in this leg are fully initialized ?
 }
 
 void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con)
@@ -909,7 +911,7 @@ void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer,
     media.type = m->type;
 
     if (media.type != MT_AUDIO) { media = *m ; media.port = 0; continue; } // copy whole media line except port
-    if (media.port == 0) { media = *m; ++i; continue; } // copy whole inactive media line
+    if (m->port == 0) { media = *m; ++i; continue; } // copy whole inactive media line
 
     if (a_leg) i->a.getSdpAnswer(i->media_idx, *m, media);
     else i->b.getSdpAnswer(i->media_idx, *m, media);
