@@ -68,9 +68,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** handler called when we receive 408/481 */
   void onRemoteDisappeared(const AmSipReply& reply);
 
-  /** stop call (both legs, CC) */
-  void stopCall();
-
   /* set call timer (if enabled) */
   bool startCallTimers();
   /* clear call timer */
@@ -140,6 +137,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void replaceExistingLeg(const string &session_tag, const AmSipRequest &invite) { CallLeg::replaceExistingLeg(session_tag, invite); }
 
   SBCCallProfile &getCallProfile() { return call_profile; }
+  CallStatus getCallStatus() { return CallLeg::getCallStatus(); }
+  const string &getOtherId() { return other_id; }
+  void clearOther() { clear_other(); }
 
   // media interface must be accessible from CC modules
   AmB2BMedia *getMediaSession() { return media_session; }
@@ -150,6 +150,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   bool reinvite(const AmSdp &sdp, unsigned &request_cseq);
 
   virtual void terminateLeg();
+  void stopCall(); /** stop call (both legs, CC) */
+
   int relayEvent(AmEvent* ev);
   void onSipRequest(const AmSipRequest& req);
   bool isALeg() { return a_leg; }
