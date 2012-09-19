@@ -9,10 +9,11 @@ enum {
   ConnectLeg = B2BMsgBody + 16,
   ReconnectLeg,
   ReplaceLeg,
-  ReplaceInProgress
+  ReplaceInProgress,
+  DisconnectLeg
 };
 
-#define LAST_B2B_CALL_LEG_EVENT_ID ReplaceInProgress
+#define LAST_B2B_CALL_LEG_EVENT_ID DisconnectLeg
 
 struct ConnectLegEvent: public B2BEvent
 {
@@ -97,6 +98,11 @@ struct ReplaceInProgressEvent: public B2BEvent
       B2BEvent(ReplaceInProgress), dst_session(_dst_session) { }
 };
 
+struct DisconnectLegEvent: public B2BEvent
+{
+  DisconnectLegEvent(): B2BEvent(DisconnectLeg) { }
+};
+
 /** composed AmB2BCalleeSession & AmB2BCallerSession
  * represents indepenedently A or B leg of a call,
  * old clases left for compatibility
@@ -157,6 +163,7 @@ class CallLeg: public AmB2BSession
     void onB2BReconnect(ReconnectLegEvent *e);
     void onB2BReplace(ReplaceLegEvent *e);
     void onB2BReplaceInProgress(ReplaceInProgressEvent *e);
+    void onB2BDisconnect(DisconnectLegEvent* ev);
 
     int relaySipReply(AmSipReply &reply);
 

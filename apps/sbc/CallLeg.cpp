@@ -211,6 +211,10 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
       onB2BReplaceInProgress(dynamic_cast<ReplaceInProgressEvent*>(ev));
       break;
 
+    case DisconnectLeg:
+      onB2BDisconnect(dynamic_cast<DisconnectLegEvent *>(ev));
+      break;
+
     case B2BSipRequest:
       if (a_leg && (!sip_relay_only)) {
         // disable forwarding of relayed request if we are not connected [yet]
@@ -583,6 +587,22 @@ void CallLeg::onB2BReplaceInProgress(ReplaceInProgressEvent *e)
       return;
     }
   }
+}
+
+void CallLeg::onB2BDisconnect(DisconnectLegEvent* ev)
+{
+  if (!ev) {
+    ERROR("BUG: invalid argument given\n");
+    return;
+  }
+
+  clearRtpReceiverRelay();
+  clear_other();
+  updateCallStatus(Disconnected);
+
+  // FIXME: call CC modules (i.e. calling an method overridden in successors)?
+  // FIXME: start hold music here?
+  // TODO: generate hold re-INVITE (what body? MoH?)
 }
 
 // was for caller only
