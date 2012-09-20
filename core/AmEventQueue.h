@@ -71,14 +71,18 @@ public:
   AmEventQueue(AmEventHandler* handler);
   virtual ~AmEventQueue();
 
-  virtual void postEvent(AmEvent*);
+  void postEvent(AmEvent*);
   void processEvents();
   void waitForEvent();
-  void wakeup();
   void processSingleEvent();
   bool eventPending();
 
   void setEventNotificationSink(AmEventNotificationSink* _wakeup_handler);
+
+  // return true to continue processing
+  virtual bool startup() { return true; }
+  virtual bool processingCycle() { processEvents(); return true; }
+  virtual void finalize() {}
 };
 
 #endif
