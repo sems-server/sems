@@ -60,7 +60,8 @@ CallLeg::CallLeg(const string& other_local_tag):
 // callee
 CallLeg::CallLeg(const CallLeg* caller):
   AmB2BSession(caller->getLocalTag()),
-  call_status(NoReply) // we already have the other leg
+  call_status(NoReply), // we already have the other leg
+  hold_request_cseq(0)
 {
   a_leg = false;
 
@@ -111,7 +112,8 @@ CallLeg::CallLeg(const CallLeg* caller):
 // caller
 CallLeg::CallLeg(): 
   AmB2BSession(),
-  call_status(Disconnected)
+  call_status(Disconnected),
+  hold_request_cseq(0)
 {
   a_leg = true;
 
@@ -596,13 +598,37 @@ void CallLeg::onB2BDisconnect(DisconnectLegEvent* ev)
     return;
   }
 
-  clearRtpReceiverRelay();
+  TRACE("disconnecting call %s leg from the other\n", getLocalTag().c_str());
   clear_other();
   updateCallStatus(Disconnected);
 
-  // FIXME: call CC modules (i.e. calling an method overridden in successors)?
-  // FIXME: start hold music here?
-  // TODO: generate hold re-INVITE (what body? MoH?)
+  // put the remote on hold (we have no 'other leg', we can do what we want)
+
+  if (media_session && media_session->isMuted(a_leg)) return; // already on hold
+
+  TRACE("putting %s on hold\n", getLocalTag().c_str());
+
+  if (getRtpRelayMode() != AmB2BSession::RTP_Relay)
+    setRtpRelayMode(RTP_Relay);
+
+  if (!media_session)
+    setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
+
+  AmSdp sdp;
+  // FIXME: mark the media line as inactive rather than sendonly?
+  media_session->createHoldRequest(sdp, a_leg, false /*mark_zero_connection*/, true /*mark_sendonly*/);
+  updateLocalSdp(sdp);
+
+  // generate re-INVITE with hold request
+  //reinvite(sdp, hold_request_cseq);
+  AmMimeBody body;
+  string body_str;
+  sdp.print(body_str);
+  body.parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
+  if (dlg.reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+    ERROR("re-INVITE failed\n");
+  }
+  hold_request_cseq = dlg.cseq - 1;
 }
 
 // was for caller only
@@ -660,7 +686,11 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
       }
     }
   }
-
+  if ((reply.cseq == hold_request_cseq) && (reply.cseq_method == SIP_METH_INVITE)) {
+    if (reply.code < 200) { return; /* wait for final reply */ }
+    if (reply.code < 300) { dlg.send_200_ack(reply.cseq); hold_request_cseq = 0; }
+    else { hold_request_cseq = 0; }
+  }
 }
 
 // was for caller only
