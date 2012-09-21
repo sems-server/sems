@@ -466,8 +466,9 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
   have_a_leg_local_sdp(false), have_a_leg_remote_sdp(false),
   have_b_leg_local_sdp(false), have_b_leg_remote_sdp(false),
   processing_started(false),
-  playout_type(ADAPTIVE_PLAYOUT)
-  //playout_type(SIMPLE_PLAYOUT)
+  playout_type(ADAPTIVE_PLAYOUT),
+  //playout_type(SIMPLE_PLAYOUT),
+  a_leg_muted(false), b_leg_muted(false)
 { 
 }
  
@@ -853,7 +854,11 @@ bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection,
   // create hold request based on current streams
   mutex.lock();
 
-  // FIXME: if we don't have local port numbers we should assign them
+  if (audio.empty()) {
+    // create one dummy stream to create valid SDP
+    AudioStreamPair pair(a, b, 0);
+    audio.push_back(pair);
+  }
 
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     // TODO: put disabled media stream for non-audio media? (we would need to
@@ -879,14 +884,19 @@ bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection,
 
 void AmB2BMedia::setMuteFlag(bool a_leg, bool set)
 {
+  mutex.lock();
+  if (a_leg) a_leg_muted = set;
+  else b_leg_muted = set;
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     if (a_leg) i->a.mute(set);
     else i->b.mute(set);
   }
+  mutex.unlock();
 }
 
 void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
 {
+  mutex.lock();
   //for ( i != audio.end(); ++i) {
   if (!audio.empty()) {
     AudioStreamIterator i = audio.begin();
@@ -895,6 +905,7 @@ void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
   }
   else ERROR("BUG: can't set %s leg's first stream input, no streams\n", a_leg ? "A": "B");
   // FIXME: start processing if not started and streams in this leg are fully initialized ?
+  mutex.unlock();
 }
 
 void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con)

@@ -289,6 +289,8 @@ class AmB2BMedia: public AmMediaSession
 
     std::vector<AudioStreamPair> audio;
 
+    bool a_leg_muted, b_leg_muted;
+
     void createStreams(const AmSdp &sdp);
     void onSdpUpdate();
 
@@ -376,6 +378,7 @@ class AmB2BMedia: public AmMediaSession
     bool createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly);
     void mute(bool a_leg) { setMuteFlag(a_leg, true); }
     void unmute(bool a_leg) { setMuteFlag(a_leg, false); }
+    bool isMuted(bool a_leg) { if (a_leg) return a_leg_muted; else return b_leg_muted; }
     void setFirstStreamInput(bool a_leg, AmAudio *in);
     void createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con);
 };
