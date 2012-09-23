@@ -31,6 +31,7 @@
 #define _sip_trans_h
 
 #include "cstring.h"
+#include "wheeltimer.h"
 
 #include <sys/socket.h>
 
@@ -70,12 +71,28 @@ enum {
  */
 #define SIP_TRANS_TIMERS 3
 
-class timer;
+class sip_trans;
 
+class trans_timer
+    : protected timer
+{
+public:
+    unsigned int type;
+    unsigned int bucket_id;
+    sip_trans*   t;
+
+    trans_timer(unsigned int timer_type, unsigned int expires,
+		int bucket_id, sip_trans* t)
+        : timer(expires), type(timer_type),
+	  bucket_id(bucket_id), t(t)
+    {}
+
+    void fire();
+};
 
 class sip_trans
 {
-    timer* timers[SIP_TRANS_TIMERS];
+    trans_timer* timers[SIP_TRANS_TIMERS];
 
     /**
      * Resets a specific timer
@@ -83,7 +100,7 @@ class sip_trans
      * @param t the new timer
      * @param timer_type @see sip_timer_type
     */
-    void reset_timer(timer* t, unsigned int timer_type);    
+    void reset_timer(trans_timer* t, unsigned int timer_type);
 
  public:
     /** Transaction type */
@@ -133,7 +150,7 @@ class sip_trans
      *
      * @param timer_type @see sip_timer_type
      */
-    timer* get_timer(unsigned int timer_type);
+    trans_timer* get_timer(unsigned int timer_type);
 
     
     /**

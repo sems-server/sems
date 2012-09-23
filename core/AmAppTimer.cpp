@@ -32,30 +32,17 @@
 
 using std::map;
 
-void app_timer_cb(timer* t, unsigned int data1, void* data2) {
-  AmAppTimer::instance()->app_timer_cb(t, data1, data2);
-}
-
 app_timer::app_timer(const string& q_id, int timer_id, unsigned int expires)
-  : timer(timer_id<0 ? 1 : 0, expires, (timer_cb)app_timer_cb,
-	  abs(timer_id), strdup(q_id.c_str())) { }
+  : timer(expires),
+    timer_id(timer_id), q_id(q_id)
+{ }
 
-app_timer::~app_timer() {
-  if (NULL != data2) {
-    free(data2);
-    //    delete[] data2;
-  }
-}
+app_timer::~app_timer() 
+{ }
 
-int app_timer::get_id() {
-  return type == 1 ? -data1 : data1;
-}
-
-string app_timer::get_q_id() {
-  if (NULL != data2)
-    return string((char*)data2);
-  else
-    return string();
+void app_timer::fire() 
+{
+  AmAppTimer::instance()->app_timer_cb(this);
 }
 
 _AmAppTimer::_AmAppTimer() {
@@ -64,17 +51,8 @@ _AmAppTimer::_AmAppTimer() {
 _AmAppTimer::~_AmAppTimer() {
 }
 
-void _AmAppTimer::app_timer_cb(timer* t, unsigned int data1, void* data2) {
-  if (NULL == t)
-    return;
-
-  app_timer* at = dynamic_cast<app_timer*>(t);
-  if (NULL == at) {
-    ERROR("internal: wrong timer object\n");
-    //   delete t; // ???
-    return;
-  }
-
+void _AmAppTimer::app_timer_cb(app_timer* at)
+{
   app_timer* at_local = erase_timer(at->get_q_id(), at->get_id());
 
   if (NULL != at_local) {

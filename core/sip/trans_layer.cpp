@@ -1730,7 +1730,8 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
 
 }
 
-void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
+void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
+				 sip_trans* tr)
 {
     int n = t->type >> 16;
     int type = t->type & 0xFFFF;
@@ -1880,7 +1881,7 @@ void _trans_layer::timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr)
 	break;
 
     default:
-	ERROR("Invalid timer type %i\n",t->type);
+	ERROR("Invalid timer type %i\n",type);
 	break;
     }
 
@@ -1989,7 +1990,7 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
     tr->msg->send();
     
     // reset counter for timer A & E
-    timer* A_E_timer = tr->get_timer(STIMER_A);
+    trans_timer* A_E_timer = tr->get_timer(STIMER_A);
     tr->reset_timer(A_E_timer->type & 0xFFFF,A_TIMER,bucket->get_id());
     
     if(!tr->msg->h_dns.eoip())

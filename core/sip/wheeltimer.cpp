@@ -180,7 +180,7 @@ void _wheeltimer::process_current_timers()
 	t->next = NULL;
 	t->prev = NULL;
 
-	t->cb(t,t->data1,t->data2);
+	t->fire();
 
 	t = t1;
     }

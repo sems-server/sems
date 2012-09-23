@@ -33,12 +33,20 @@
 using std::string;
 
 #include <map>
-class app_timer : public timer {
+class app_timer : public timer 
+{
+  string q_id;
+  int    timer_id;
+
  public:
   app_timer(const string& q_id, int timer_id, unsigned int expires);
   ~app_timer();
-  int get_id();
-  string get_q_id();
+
+  int get_id() { return timer_id; }
+  string get_q_id() { return q_id; }
+
+  // timer interface
+  void fire();
 };
 
 
@@ -63,7 +71,7 @@ class _AmAppTimer : public _wheeltimer {
   /** remove all timers for event queue eventqueue_name */
   void removeTimers(const string& eventqueue_name);
 
-  void app_timer_cb(timer* t, unsigned int data1, void* data2);
+  void app_timer_cb(app_timer* at);
 };
 
 typedef singleton<_AmAppTimer> AmAppTimer;

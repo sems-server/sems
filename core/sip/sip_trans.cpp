@@ -49,7 +49,7 @@ int _timer_type_lookup[] = {
     1,     // STIMER_C; shares the same slot at STIMER_B (INV trans only)
 };
 
-inline timer** fetch_timer(unsigned int timer_type, timer** base)
+inline trans_timer** fetch_timer(unsigned int timer_type, trans_timer** base)
 {
     timer_type &= 0xFFFF;
 
@@ -115,7 +115,7 @@ bool sip_trans::is_timer_set(unsigned int timer_type)
  *
  * @param timer_type @see sip_timer_type
  */
-timer* sip_trans::get_timer(unsigned int timer_type)
+trans_timer* sip_trans::get_timer(unsigned int timer_type)
 {
     return *fetch_timer(timer_type,timers);
 }
@@ -131,37 +131,37 @@ char _timer_name_lookup[] = {'0','A','B','D','E','F','K','G','H','I','J','L','M'
  * @param t the new timer
  * @param timer_type @see sip_timer_type
  */
-void sip_trans::reset_timer(timer* t, unsigned int timer_type)
+void sip_trans::reset_timer(trans_timer* t, unsigned int timer_type)
 {
-    timer** tp = fetch_timer(timer_type,timers);
+    trans_timer** tp = fetch_timer(timer_type,timers);
     
     if(*tp != NULL){
 
 	DBG("Clearing old timer of type %c (this=%p)\n",timer_name((*tp)->type),*tp);
-	wheeltimer::instance()->remove_timer(*tp);
+	wheeltimer::instance()->remove_timer((timer*)*tp);
     }
 
     *tp = t;
 
     if(t)
-	wheeltimer::instance()->insert_timer(t);
+	wheeltimer::instance()->insert_timer((timer*)t);
 }
 
-void trans_timer_cb(timer* t, unsigned int bucket_id, sip_trans* tr)
+void trans_timer::fire()
 {
     trans_bucket* bucket = get_trans_bucket(bucket_id);
     if(bucket){
 	bucket->lock();
-	if(bucket->exist(tr)){
+	if(bucket->exist(t)){
 	    DBG("Transaction timer expired: type=%c, trans=%p, eta=%i, t=%i\n",
-		timer_name(t->type),tr,t->expires,wheeltimer::instance()->wall_clock);
+		timer_name(type),t,expires,wheeltimer::instance()->wall_clock);
 
 	    // timer_expired unlocks the bucket
-	    trans_layer::instance()->timer_expired(t,bucket,tr);
+	    trans_layer::instance()->timer_expired(this,bucket,t);
 	}
 	else {
 	    WARN("Ignoring expired timer (%p): transaction"
-		 " %p does not exist anymore\n",t,tr);
+		 " %p does not exist anymore\n",this,t);
 	    bucket->unlock();
 	}
     }
@@ -187,16 +187,15 @@ void sip_trans::reset_timer(unsigned int timer_type, unsigned int expire_delay /
     DBG("New timer of type %c at time=%i (repeated=%i)\n",
 	timer_name(timer_type),expires,timer_type>>16);
 
-    timer* t = new timer(timer_type,expires,
-			 (timer_cb)trans_timer_cb,
-			 bucket_id,this);
+    trans_timer* t = new trans_timer(timer_type,expires,
+				     bucket_id,this);
 
     reset_timer(t,timer_type);
 }
 
 void sip_trans::clear_timer(unsigned int timer_type)
 {
-    reset_timer((timer*)NULL,timer_type);
+    reset_timer((trans_timer*)NULL,timer_type);
 }
 
 void sip_trans::reset_all_timers()
@@ -204,7 +203,7 @@ void sip_trans::reset_all_timers()
     for(int i=0; i<SIP_TRANS_TIMERS; i++){
 	
 	if(timers[i]){
-	    wheeltimer::instance()->remove_timer(timers[i]);
+	    wheeltimer::instance()->remove_timer((timer*)timers[i]);
 	    timers[i] = NULL;
 	}
     }

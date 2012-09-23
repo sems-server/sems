@@ -46,9 +46,9 @@ struct sockaddr_storage;
 
 class trans_ticket;
 class trans_bucket;
+class trans_timer;
 class trsp_socket;
 class sip_ua;
-class timer;
 
 /** 
  * The transaction layer object.
@@ -123,7 +123,7 @@ public:
      * At this place, the bucket is already locked, so
      * please be quick.
      */
-    void timer_expired(timer* t, trans_bucket* bucket, sip_trans* tr);
+    void timer_expired(trans_timer* t, trans_bucket* bucket, sip_trans* tr);
 
     sip_ua*              ua;
     vector<trsp_socket*> transports;
