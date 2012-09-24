@@ -156,6 +156,15 @@ void trans_timer::fire()
 	    DBG("Transaction timer expired: type=%c, trans=%p, eta=%i, t=%i\n",
 		timer_name(type),t,expires,wheeltimer::instance()->wall_clock);
 
+	    trans_timer* tt = t->get_timer(this->type & 0xFFFF);
+	    if(tt != this) {
+		// timer has been reset while very close to firing!!!
+		// 1. it is not yet deleted in the wheeltimer
+		// 2. we have already set a new one
+		// -> anyway, don't fire the old one !!!
+		return;
+	    }
+
 	    // timer_expired unlocks the bucket
 	    trans_layer::instance()->timer_expired(this,bucket,t);
 	}
