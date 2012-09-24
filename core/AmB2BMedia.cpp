@@ -472,10 +472,19 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
   a_leg_on_hold(false), b_leg_on_hold(false)
 { 
 }
- 
+
 void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
 {
   mutex.lock();
+  changeSessionUnsafe(a_leg, new_session);
+  mutex.unlock();
+}
+
+void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
+{
+  TRACE("changing %s leg session to %p\n", a_leg ? "A" : "B", new_session);
+  if (a_leg) a = new_session;
+  else b = new_session;
 
   // update all streams
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
@@ -497,21 +506,27 @@ void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
       // needed to reinitialize relay streams because the streams could change
       // and they are in use already (FIXME: ugly here, needs explicit knowledge
       // what AudioStreamData::changeSesion does)
-      i->a.setRelayStream(i->b.getStream());
-      i->b.setRelayStream(i->a.getStream());
+      if (a) i->a.setRelayStream(i->b.getStream());
+      if (b) i->b.setRelayStream(i->a.getStream());
 
       // needed to reinitialize audio processing in case the stream itself has
       // changed (FIXME: ugly again - see above and local/remote SDP might
       // already change since previous initialization!)
       if (a_leg) {
-        i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
-        i->a.setDtmfSink(b);
-        i->b.setDtmfSink(new_session);
+        if (a) { // we have the session
+          TRACE("init A stream stuff\n");
+          i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
+          i->a.setDtmfSink(b);
+          i->b.setDtmfSink(new_session);
+        }
       }
       else {
-        i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
-        i->b.setDtmfSink(a);
-        i->a.setDtmfSink(new_session);
+        if (b) { // we have the session
+          TRACE("init B stream stuff\n");
+          i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
+          i->b.setDtmfSink(a);
+          i->a.setDtmfSink(new_session);
+        }
       }
     }
 
@@ -521,11 +536,7 @@ void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
       i->b.resumeStreamProcessing();
     }
   }
-
-  if (a_leg) a = new_session;
-  else b = new_session;
-
-  mutex.unlock();
+  TRACE("session changed\n");
 }
 
 int AmB2BMedia::writeStreams(unsigned long long ts, unsigned char *buffer)
@@ -569,23 +580,27 @@ void AmB2BMedia::sendDtmf(bool a_leg, int event, unsigned int duration_ms)
   mutex.unlock();
 }
 
-void AmB2BMedia::clearAudio()
+void AmB2BMedia::clearAudio(bool a_leg)
 {
+  TRACE("clear %s leg audio\n", a_leg ? "A" : "B");
   mutex.lock();
 
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     // remove streams from AmRtpReceiver first!
-    i->a.stopStreamProcessing();
-    i->b.stopStreamProcessing();
-    i->a.clear();
-    i->b.clear();
+    if (a_leg) {
+      i->a.stopStreamProcessing();
+      i->a.clear();
+    }
+    else {
+      i->b.stopStreamProcessing();
+      i->b.clear();
+    }
   }
-  audio.clear();
-  processing_started = false;
 
   // forget sessions to avoid using them once clearAudio is called
-  a = NULL;
-  b = NULL;
+  changeSessionUnsafe(a_leg, NULL);
+
+  if (!a && !b) audio.clear(); // both legs cleared
 
   mutex.unlock();
 }
@@ -698,10 +713,16 @@ void AmB2BMedia::onSdpUpdate()
 
   // if we have all necessary information we can initialize streams and start
   // their processing
-  if (!(have_a_leg_local_sdp &&
-        have_a_leg_remote_sdp &&
-        have_b_leg_local_sdp &&
-        have_b_leg_remote_sdp)) return; // have not all info yet
+  if (audio.empty()) return; // no streams
+
+  bool have_a = have_a_leg_local_sdp && have_a_leg_remote_sdp;
+  bool have_b = have_b_leg_local_sdp && have_b_leg_remote_sdp;
+
+  if (!(
+      (have_a && have_b) ||
+      (have_a && audio[0].a.getInput()) ||
+      (have_b && audio[0].b.getInput())
+      )) return;
 
   // clear all the stored flags (re-INVITEs or UPDATEs will negotiate new remote
   // & local SDPs so the current ones are not interesting later)
@@ -719,13 +740,19 @@ void AmB2BMedia::onSdpUpdate()
     i->a.stopStreamProcessing();
     i->b.stopStreamProcessing();
 
-    i->a.setDtmfSink(b);
-    i->a.setRelayStream(i->b.getStream());
-    i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
+    if (have_a) {
+      TRACE("initializing stream in A leg\n");
+      i->a.setDtmfSink(b);
+      i->a.setRelayStream(i->b.getStream());
+      i->a.initStream(playout_type, a_leg_local_sdp, a_leg_remote_sdp, i->media_idx);
+    }
 
-    i->b.setDtmfSink(a);
-    i->b.setRelayStream(i->a.getStream());
-    i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
+    if (have_b) {
+      TRACE("initializing stream in B leg\n");
+      i->b.setDtmfSink(a);
+      i->b.setRelayStream(i->a.getStream());
+      i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
+    }
 
     i->a.resumeStreamProcessing();
     i->b.resumeStreamProcessing();
@@ -810,16 +837,21 @@ bool AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
   return ok;
 }
 
-void AmB2BMedia::stop()
+void AmB2BMedia::stop(bool a_leg)
 {
-  clearAudio();
-  if (isProcessingMedia()) 
+  TRACE("stop %s leg\n", a_leg ? "A" : "B");
+  clearAudio(a_leg);
+  // remove from processor only if both A and B leg stopped
+  if (isProcessingMedia() && (!a) && (!b)) {
+    processing_started = false;
     AmMediaProcessor::instance()->removeSession(this);
+  }
 }
 
 void AmB2BMedia::onMediaProcessingTerminated() 
 { 
   AmMediaSession::onMediaProcessingTerminated();
+  processing_started = false;
   clearAudio();
 
   // release reference held by AmMediaProcessor
@@ -903,6 +935,10 @@ void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
     AudioStreamIterator i = audio.begin();
     if (a_leg) i->a.setInput(in);
     else i->b.setInput(in);
+    if (!processing_started) {
+      // try to start it
+      onSdpUpdate();
+    }
   }
   else ERROR("BUG: can't set %s leg's first stream input, no streams\n", a_leg ? "A": "B");
   // FIXME: start processing if not started and streams in this leg are fully initialized ?

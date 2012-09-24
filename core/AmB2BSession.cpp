@@ -855,9 +855,7 @@ void AmB2BSession::clearRtpReceiverRelay() {
 
     case RTP_Relay:
       if (media_session) { 
-        AmMediaProcessor::instance()->removeSession(media_session);
-
-        media_session->stop();
+        media_session->stop(a_leg);
         if (media_session->releaseReference()) delete media_session;
         media_session = NULL;
       }

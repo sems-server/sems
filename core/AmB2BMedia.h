@@ -169,6 +169,7 @@ class AudioStreamData {
     void getSdpAnswer(int media_idx, const SdpMedia &offer, SdpMedia &answer) { if (stream) stream->getSdpAnswer(media_idx, offer, answer); }
     void mute(bool set_mute);
     void setInput(AmAudio *_in) { in = _in; }
+    AmAudio *getInput() { return in; }
 };
 
 /** \brief Class for control over media relaying and transcoding in a B2B session.
@@ -296,6 +297,7 @@ class AmB2BMedia: public AmMediaSession
     void onSdpUpdate();
 
     void setMuteFlag(bool a_leg, bool set);
+    void changeSessionUnsafe(bool a_leg, AmB2BSession *new_session);
 
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
@@ -332,11 +334,11 @@ class AmB2BMedia: public AmMediaSession
      * Returns false if update failed. */
     bool updateLocalSdp(bool a_leg, const AmSdp &local_sdp);
 
-    /** Clear audio and stop processing. 
+    /** Clear audio for given leg and stop processing if both legs stopped. 
      *
      * Releases all RTP streams and removes itself from media processor if still
      * there. */
-    void stop();
+    void stop(bool a_leg);
 
     // ---- AmMediaSession interface for processing audio in a standard way ----
 
@@ -363,7 +365,10 @@ class AmB2BMedia: public AmMediaSession
      * Though readStreams(), writeStreams() or processDtmfEvents() can be called
      * after call to clearAudio, they will do nothing because all relevant
      * information will be rlready eleased. */
-    virtual void clearAudio();
+    virtual void clearAudio() { clearAudio(true); clearAudio(false); }
+
+    /** release RTP streams for one leg */
+    void clearAudio(bool a_leg);
 
     /** Clear RTP timeout of all streams in both call legs. */
     virtual void clearRTPTimeout();
