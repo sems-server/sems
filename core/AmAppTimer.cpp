@@ -25,25 +25,32 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "AmSessionContainer.h"
+#include "AmEventDispatcher.h"
 
 #include "AmAppTimer.h"
 #include "log.h"
 
 using std::map;
 
-app_timer::app_timer(const string& q_id, int timer_id, unsigned int expires)
-  : timer(expires),
-    timer_id(timer_id), q_id(q_id)
-{ }
-
-app_timer::~app_timer() 
-{ }
-
-void app_timer::fire() 
+class app_timer : public timer 
 {
-  AmAppTimer::instance()->app_timer_cb(this);
-}
+  string q_id;
+  int    timer_id;
+
+ public:
+  app_timer(const string& q_id, int timer_id, unsigned int expires)
+    : timer(expires), timer_id(timer_id), q_id(q_id) {}
+
+  ~app_timer() {}
+
+  int get_id() { return timer_id; }
+  string get_q_id() { return q_id; }
+
+  // timer interface
+  void fire() {
+    AmAppTimer::instance()->app_timer_cb(this);
+  }
+};
 
 _AmAppTimer::_AmAppTimer() {
 }
@@ -53,27 +60,36 @@ _AmAppTimer::~_AmAppTimer() {
 
 void _AmAppTimer::app_timer_cb(app_timer* at)
 {
+  user_timers_mut.lock();
   app_timer* at_local = erase_timer(at->get_q_id(), at->get_id());
 
   if (NULL != at_local) {
+
     if (at_local != at) {
       DBG("timer was reset while expiring - not firing timer\n");
+      // we'd better re-insert at_local into user_timers
+      // what happens else, when at_local get fired ???
+      user_timers[at->get_q_id()][at->get_id()] = at_local;
     } else {
       DBG("timer fired: %d for '%s'\n", at->get_id(), at->get_q_id().c_str());
-      AmSessionContainer::instance()->postEvent(at->get_q_id(),
-						new AmTimeoutEvent(at->get_id()));
+      AmEventDispatcher::instance()->post(at->get_q_id(),
+					  new AmTimeoutEvent(at->get_id()));
       delete at;
     }
+
   } else {
-    DBG("timer %d for '%s' already removed\n", at->get_id(), at->get_q_id().c_str());
+    DBG("timer %d for '%s' already removed\n",
+	at->get_id(), at->get_q_id().c_str());
     // will be deleted by wheeltimer
   }
+
+  user_timers_mut.unlock();
 }
 
-app_timer* _AmAppTimer::erase_timer(const string& q_id, int id) {
+app_timer* _AmAppTimer::erase_timer(const string& q_id, int id) 
+{
   app_timer* res = NULL;
 
-  user_timers_mut.lock();
   map<string, map<int, app_timer*> >::iterator it=user_timers.find(q_id);
   if (it != user_timers.end()) {
     map<int, app_timer*>::iterator t_it = it->second.find(id);
@@ -84,18 +100,20 @@ app_timer* _AmAppTimer::erase_timer(const string& q_id, int id) {
 	user_timers.erase(it);
     }
   }
-  user_timers_mut.unlock();
+
   return res;
 }
 
-app_timer* _AmAppTimer::create_timer(const string& q_id, int id, unsigned int expires) {
+app_timer* _AmAppTimer::create_timer(const string& q_id, int id, 
+				     unsigned int expires) 
+{
   app_timer* timer = new app_timer(q_id, id, expires);
   if (!timer)
     return NULL;
 
-  user_timers_mut.lock();
+  //user_timers_mut.lock();
   user_timers[q_id][id] = timer;
-  user_timers_mut.unlock();
+  //user_timers_mut.unlock();
   return timer;
 }
 
@@ -117,6 +135,7 @@ void _AmAppTimer::setTimer(const string& eventqueue_name, int timer_id, double t
 
   expires += wall_clock;
 
+  user_timers_mut.lock();
   app_timer* t = erase_timer(eventqueue_name, timer_id);
   if (NULL != t) {
     remove_timer(t);
@@ -125,20 +144,25 @@ void _AmAppTimer::setTimer(const string& eventqueue_name, int timer_id, double t
   if (NULL != t) {
     insert_timer(t);
   }
+  user_timers_mut.unlock();
 }
 
-void _AmAppTimer::removeTimer(const string& eventqueue_name, int timer_id) {
+void _AmAppTimer::removeTimer(const string& eventqueue_name, int timer_id) 
+{
+  user_timers_mut.lock();
   app_timer* t = erase_timer(eventqueue_name, timer_id);
   if (NULL != t) {
     remove_timer(t);
   }
+  user_timers_mut.unlock();
 }
 
-void _AmAppTimer::removeTimers(const string& eventqueue_name) {
+void _AmAppTimer::removeTimers(const string& eventqueue_name) 
+{
   user_timers_mut.lock();
-  map<string, map<int, app_timer*> >::iterator it=user_timers.find(eventqueue_name);
+  TimerQueues::iterator it=user_timers.find(eventqueue_name);
   if (it != user_timers.end()) {
-    for (map<int, app_timer*>::iterator t_it =
+    for (AppTimers::iterator t_it =
 	   it->second.begin(); t_it != it->second.end(); t_it++) {
       if (NULL != t_it->second)
 	remove_timer(t_it->second);

@@ -33,32 +33,26 @@
 using std::string;
 
 #include <map>
-class app_timer : public timer 
+
+class app_timer;
+
+class _AmAppTimer 
+  : public _wheeltimer 
 {
-  string q_id;
-  int    timer_id;
-
- public:
-  app_timer(const string& q_id, int timer_id, unsigned int expires);
-  ~app_timer();
-
-  int get_id() { return timer_id; }
-  string get_q_id() { return q_id; }
-
-  // timer interface
-  void fire();
-};
-
-
-class _AmAppTimer : public _wheeltimer {
+  typedef std::map<int, app_timer*>   AppTimers;
+  typedef std::map<string, AppTimers> TimerQueues;
 
   AmMutex user_timers_mut;
-  std::map<string, std::map<int, app_timer*> > user_timers;
+  TimerQueues user_timers;
 
   /** creates timer object and inserts it into our container */
   app_timer* create_timer(const string& q_id, int id, unsigned int expires);
   /** erases timer - does not delete timer object @return timer object pointer, if found */
   app_timer* erase_timer(const string& q_id, int id);
+
+  /* callback used by app_timer */
+  void app_timer_cb(app_timer* at);
+  friend class app_timer;
 
  public:
   _AmAppTimer();
@@ -71,7 +65,6 @@ class _AmAppTimer : public _wheeltimer {
   /** remove all timers for event queue eventqueue_name */
   void removeTimers(const string& eventqueue_name);
 
-  void app_timer_cb(app_timer* at);
 };
 
 typedef singleton<_AmAppTimer> AmAppTimer;
