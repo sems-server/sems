@@ -604,7 +604,7 @@ void CallLeg::onB2BDisconnect(DisconnectLegEvent* ev)
 
   // put the remote on hold (we have no 'other leg', we can do what we want)
 
-  if (media_session && media_session->isMuted(a_leg)) return; // already on hold
+  if (media_session && media_session->isOnHold(a_leg)) return; // already on hold
 
   TRACE("putting %s on hold\n", getLocalTag().c_str());
 

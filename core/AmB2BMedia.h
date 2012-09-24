@@ -290,6 +290,7 @@ class AmB2BMedia: public AmMediaSession
     std::vector<AudioStreamPair> audio;
 
     bool a_leg_muted, b_leg_muted;
+    bool a_leg_on_hold, b_leg_on_hold;
 
     void createStreams(const AmSdp &sdp);
     void onSdpUpdate();
@@ -375,10 +376,14 @@ class AmB2BMedia: public AmMediaSession
      * processor would be better? */
     virtual void onMediaProcessingTerminated();
 
+    bool isOnHold(bool a_leg) { if (a_leg) return a_leg_on_hold; else return b_leg_on_hold; }
+    void setHoldFlag(bool a_leg, bool hold) { if (a_leg) a_leg_on_hold = hold; else b_leg_on_hold = hold; }
     bool createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly);
+
     void mute(bool a_leg) { setMuteFlag(a_leg, true); }
     void unmute(bool a_leg) { setMuteFlag(a_leg, false); }
     bool isMuted(bool a_leg) { if (a_leg) return a_leg_muted; else return b_leg_muted; }
+
     void setFirstStreamInput(bool a_leg, AmAudio *in);
     void createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con);
 };
