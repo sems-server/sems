@@ -33,17 +33,29 @@
 using std::string;
 
 #include <map>
+#include <set>
 
 class app_timer;
+class direct_app_timer;
+
+class DirectAppTimer
+{
+public:
+  virtual void fire()=0;
+};
 
 class _AmAppTimer 
   : public _wheeltimer 
 {
   typedef std::map<int, app_timer*>   AppTimers;
   typedef std::map<string, AppTimers> TimerQueues;
+  typedef std::map<DirectAppTimer*,direct_app_timer*> DirectTimers;
 
   AmMutex user_timers_mut;
   TimerQueues user_timers;
+
+  AmMutex direct_timers_mut;
+  DirectTimers direct_timers;
 
   /** creates timer object and inserts it into our container */
   app_timer* create_timer(const string& q_id, int id, unsigned int expires);
@@ -53,6 +65,10 @@ class _AmAppTimer
   /* callback used by app_timer */
   void app_timer_cb(app_timer* at);
   friend class app_timer;
+
+  /* callback used by direct_app_timer */
+  void direct_app_timer_cb(direct_app_timer* t);
+  friend class direct_app_timer;
 
  public:
   _AmAppTimer();
@@ -65,6 +81,15 @@ class _AmAppTimer
   /** remove all timers for event queue eventqueue_name */
   void removeTimers(const string& eventqueue_name);
 
+  /* set a timer which directly calls your handler */
+  void setTimer(DirectAppTimer* t, double timeout);
+  /* remove a timer which directly calls your handler */
+  void removeTimer(DirectAppTimer* t);
+
+  /* ONLY use this from inside the timer handler of a direct timer */
+  void setTimer_unsafe(DirectAppTimer* t, double timeout);
+  /* ONLY use this from inside the timer handler of a direct timer */
+  void removeTimer_unsafe(DirectAppTimer* t);
 };
 
 typedef singleton<_AmAppTimer> AmAppTimer;

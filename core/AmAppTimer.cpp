@@ -52,6 +52,22 @@ class app_timer : public timer
   }
 };
 
+class direct_app_timer
+  : public timer
+{
+public:
+  DirectAppTimer* dt;
+  
+  direct_app_timer(DirectAppTimer* dt, unsigned int expires)
+    : timer(expires), dt(dt) {}
+
+  ~direct_app_timer() {}
+
+  void fire() {
+    AmAppTimer::instance()->direct_app_timer_cb(this);
+  }
+};
+
 _AmAppTimer::_AmAppTimer() {
 }
 
@@ -86,6 +102,32 @@ void _AmAppTimer::app_timer_cb(app_timer* at)
   user_timers_mut.unlock();
 }
 
+void _AmAppTimer::direct_app_timer_cb(direct_app_timer* t)
+{
+  DirectAppTimer* dt = t->dt;
+
+  direct_timers_mut.lock();
+  DirectTimers::iterator dt_it = direct_timers.find(dt);
+  if(dt_it != direct_timers.end()){
+    if(dt_it->second != t) {
+      // timer has been re-initialized
+      // with the same pointer... do not trigger!
+      // it will be deleted later by the wheeltimer
+    }
+    else {
+      // everything ok:
+
+      // remove stuff
+      direct_timers.erase(dt_it);
+      delete t;
+
+      // finally fire this timer!
+      dt->fire();
+    }
+  }
+  direct_timers_mut.unlock();
+}
+
 app_timer* _AmAppTimer::erase_timer(const string& q_id, int id) 
 {
   app_timer* res = NULL;
@@ -111,9 +153,8 @@ app_timer* _AmAppTimer::create_timer(const string& q_id, int id,
   if (!timer)
     return NULL;
 
-  //user_timers_mut.lock();
   user_timers[q_id][id] = timer;
-  //user_timers_mut.unlock();
+
   return timer;
 }
 
@@ -172,5 +213,44 @@ void _AmAppTimer::removeTimers(const string& eventqueue_name)
   user_timers_mut.unlock();
 }
 
+void _AmAppTimer::setTimer_unsafe(DirectAppTimer* t, double timeout)
+{
+  unsigned int expires = timeout*1000.0*1000.0 / (double)TIMER_RESOLUTION;
+  expires += wall_clock;
 
+  direct_app_timer* dt = new direct_app_timer(t,expires);
+  if(!dt) return;
 
+  DirectTimers::iterator dt_it = direct_timers.find(t);
+  if(dt_it != direct_timers.end()){
+    remove_timer(dt_it->second);
+    dt_it->second = dt;
+  }
+  else {
+    direct_timers[t] = dt;
+  }
+  insert_timer(dt);
+}
+
+void _AmAppTimer::setTimer(DirectAppTimer* t, double timeout)
+{
+  direct_timers_mut.lock();
+  setTimer_unsafe(t,timeout);
+  direct_timers_mut.unlock();
+}
+
+void _AmAppTimer::removeTimer_unsafe(DirectAppTimer* t)
+{
+  DirectTimers::iterator dt_it = direct_timers.find(t);
+  if(dt_it != direct_timers.end()){
+    remove_timer(dt_it->second);
+    direct_timers.erase(dt_it);
+  }
+}
+
+void _AmAppTimer::removeTimer(DirectAppTimer* t)
+{
+  direct_timers_mut.lock();
+  removeTimer_unsafe(t);
+  direct_timers_mut.unlock();
+}
