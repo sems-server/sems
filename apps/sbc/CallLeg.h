@@ -219,6 +219,8 @@ class CallLeg: public AmB2BSession
 
     CallStatus getCallStatus() { return call_status; }
 
+    virtual void clear_other();
+
   public:
     // @see AmB2BSession
     virtual void terminateLeg();
@@ -232,6 +234,7 @@ class CallLeg: public AmB2BSession
     virtual void onBye(const AmSipRequest& req);
     virtual void onRemoteDisappeared(const AmSipReply& reply);
 
+    virtual void onSipRequest(const AmSipRequest& req);
     virtual void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 
     //int reinviteCaller(const AmSipReply& callee_reply);

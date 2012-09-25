@@ -176,7 +176,7 @@ void CallLeg::terminateNotConnectedLegs()
 
 void CallLeg::removeBLeg(const string &id)
 {
-  if (other_id == id) clear_other();
+  if (other_id == id) other_id.clear();
 
   // remove the call leg from list of B legs
   for (vector<BLegInfo>::iterator i = b_legs.begin(); i != b_legs.end(); ++i) {
@@ -385,7 +385,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       }
       updateCallStatus(Connected);
     } else { // 3xx-6xx replies
-      if (other_id == reply.from_tag) clear_other();
+      if (other_id == reply.from_tag) other_id.clear();
 
       // clean up the other leg; 
       // eventually do serial fork, handle redirect or whatever else
@@ -600,7 +600,6 @@ void CallLeg::onB2BDisconnect(DisconnectLegEvent* ev)
 
   TRACE("disconnecting call %s leg from the other\n", getLocalTag().c_str());
   clear_other();
-  updateCallStatus(Disconnected);
 
   // put the remote on hold (we have no 'other leg', we can do what we want)
 
@@ -657,6 +656,18 @@ void CallLeg::onInvite(const AmSipRequest& req)
       }
     }
   }
+}
+
+void CallLeg::onSipRequest(const AmSipRequest& req)
+{
+  // we need to handle cases if there is no other leg (for example call parking)
+  if (getCallStatus() == Disconnected) {
+    TRACE("handling request %s in disconnected state", req.method.c_str());
+    // this is not correct but what is?
+    AmSession::onSipRequest(req);
+    if (req.method == SIP_METH_BYE) terminateLeg(); // is this needed?
+  }
+  else AmB2BSession::onSipRequest(req);
 }
 
 void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
@@ -863,5 +874,13 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &
 
   b_legs.push_back(b);
   if (call_status == Disconnected) updateCallStatus(NoReply); // we are something like connected to another leg
+}
+
+void CallLeg::clear_other()
+{
+  removeBLeg(other_id);
+  AmB2BSession::clear_other();
+  // we need to set correct call status
+  if ((getCallStatus() == Connected) || (b_legs.empty())) updateCallStatus(Disconnected);
 }
 
