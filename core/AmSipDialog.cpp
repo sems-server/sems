@@ -406,6 +406,9 @@ void AmSipDialog::onRxReply(const AmSipReply& reply)
 	else {
 	  status = Early;
 	  remote_tag = reply.to_tag;
+	  route = reply.route;
+	  if(!reply.to_uri.empty())
+	    remote_uri = reply.to_uri;
 	}
       }
       else if(reply.code < 300){
