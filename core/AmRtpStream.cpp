@@ -101,7 +101,7 @@ int AmRtpStream::getLocalSocket()
   if (l_sd)
     return l_sd;
 
-  int sd=0, rctp_sd=0;
+  int sd=0, rtcp_sd=0;
 #ifdef SUPPORT_IPV6
   if((sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1)
 #else
@@ -151,7 +151,7 @@ void AmRtpStream::setLocalPort()
   }
   
   int retry = 10;
-  unsigned short port = 0, rtcp_port = 0;
+  unsigned short port = 0;
   for(;retry; --retry){
 
     if (!getLocalSocket())
