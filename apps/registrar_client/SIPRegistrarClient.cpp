@@ -340,7 +340,8 @@ string SIPRegistrarClient::createRegistration(const string& domain,
 							      name, auth_user, pwd, 
 							      proxy, contact),
 					  l_handle, sess_link));
-  return handle;
+
+  return l_handle;
 }
 
 void SIPRegistrarClient::removeRegistration(const string& handle) {
