@@ -927,15 +927,17 @@ bool AmSession::getSdpOffer(AmSdp& offer)
   if(RTPStream()->getSdpMediaIndex() < 0)
     offer.media.clear();
 
+  unsigned int media_idx = 0;
   if(!offer.media.size()) {
     offer.media.push_back(SdpMedia());
     offer.media.back().type=MT_AUDIO;
-    RTPStream()->getSdpOffer(0,offer.media.back());
   }
   else {
-    RTPStream()->getSdpOffer(RTPStream()->getSdpMediaIndex(),
-			     offer.media.back());
+    media_idx = RTPStream()->getSdpMediaIndex();
   }
+
+  RTPStream()->setLocalIP(advertisedIP());
+  RTPStream()->getSdpOffer(media_idx,offer.media.back());
   
   return true;
 }
@@ -985,6 +987,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
         && audio_1st_stream 
         && (m_it->port != 0) ) {
 
+      RTPStream()->setLocalIP(advertisedIP());
       RTPStream()->getSdpAnswer(media_index,*m_it,answer_media);
       if(answer_media.payloads.empty() ||
 	 ((answer_media.payloads.size() == 1) &&
@@ -1018,8 +1021,6 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 
     media_index++;
   }
-
-
 
   return true;
 }
