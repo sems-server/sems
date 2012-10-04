@@ -297,10 +297,11 @@ int AmOfferAnswer::onRequestOut(AmSipRequest& req)
   bool generate_sdp = sdp_body && !sdp_body->getLen();
   bool has_sdp = sdp_body && sdp_body->getLen();
 
-  if (!generate_sdp && !has_sdp && 
+  if (!sdp_body &&
       ((req.method == SIP_METH_PRACK) ||
        (req.method == SIP_METH_ACK))) {
     generate_sdp = (state == OA_OfferRecved);
+    sdp_body = req.body.addPart(SIP_APPLICATION_SDP);
   }
 
   saveState();
