@@ -96,6 +96,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void applyBProfile();
 
   virtual void onCallStatusChange();
+  virtual void onBLegRefused(const AmSipReply& reply);
 
  public:
 

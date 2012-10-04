@@ -1212,6 +1212,13 @@ void SBCCallLeg::onCallStatusChange()
   }
 }
 
+void SBCCallLeg::onBLegRefused(const AmSipReply& reply)
+{
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->onBLegRefused(this, reply) == StopProcessing) return;
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////
 // body filtering
 

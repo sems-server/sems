@@ -43,6 +43,10 @@ class ExtendedCCInterface
     /** called when the call leg is being destroyed, useful to cleanup used resources */
     virtual void onDestroyLeg(SBCCallLeg *call) { }
 
+    /** one of existing B legs is refused,
+     * handle redirect here or do serial fork or ... */
+    virtual CCChainProcessing onBLegRefused(SBCCallLeg *call, const AmSipReply& reply) { return ContinueProcessing; }
+
     // dialog state changes
     // TODO
 
