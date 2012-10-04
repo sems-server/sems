@@ -1239,18 +1239,6 @@ string AmSession::advertisedIP()
   return set_ip;
 }  
 
-string AmSession::localRTPIP()
-{
-  if(rtp_interface < 0){
-    rtp_interface = dlg.getOutboundIf();
-  }
-
-  assert(rtp_interface >= 0);
-  assert((unsigned int)rtp_interface < AmConfig::Ifs.size());
-
-  return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
-}
-
 bool AmSession::timersSupported() {
   WARN("this function is deprecated; application timers are always supported\n");
   return true;

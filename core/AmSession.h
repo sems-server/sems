@@ -584,9 +584,6 @@ public:
   // The IP address to put as c= in SDP bodies
   string advertisedIP();
 
-  // The IP address to bind the RTP stream to
-  string localRTPIP();
-
   /** format session id for debugging */
   string sid4dbg();
 
