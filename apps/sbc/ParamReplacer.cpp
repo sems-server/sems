@@ -65,7 +65,8 @@ string replaceParameters(const string& s,
 			 const char* r_type,
 			 const AmSipRequest& req,
 			 const string& app_param,
-			 AmUriParser& ruri_parser, AmUriParser& from_parser,
+			 AmUriParser& ruri_parser, 
+			 AmUriParser& from_parser,
 			 AmUriParser& to_parser) {
   string res;
   bool is_replaced = false;
