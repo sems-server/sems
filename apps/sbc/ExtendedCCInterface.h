@@ -32,9 +32,9 @@ class ExtendedCCInterface
     // call state changes
 
     /** First method called from extended CC module interface.
-     * It should initialize CC module internals (initial INVITE can be used for
-     * evaluating CC module parameters. */
-    virtual void init(SBCCallLeg *call, const AmSipRequest &invite) { }
+     * It should initialize CC module internals (values from sbcprofile.conf can
+     * be used for evaluating CC module parameters). */
+    virtual void init(SBCCallLeg *call, const map<string, string> &values) { }
 
     virtual void onStateChange(SBCCallLeg *call) { };
 

@@ -154,7 +154,7 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile)
 }
 
 // B leg constructor (from SBCCalleeSession)
-SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, const AmSipRequest &original_invite)
+SBCCallLeg::SBCCallLeg(SBCCallLeg* caller)
   : auth(NULL),
     call_profile(caller->getCallProfile()),
     CallLeg(caller)
@@ -175,7 +175,7 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, const AmSipRequest &original_invite)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCModules(original_invite);
+  initCCModules();
 }
 
 void SBCCallLeg::onStart()
@@ -716,7 +716,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCModules(req);
+  initCCModules();
 
   string ruri, to, from;
   ruri = call_profile.ruri.empty() ? req.r_uri : call_profile.ruri;
@@ -795,7 +795,7 @@ void SBCCallLeg::connectCallee(const string& remote_party, const string& remote_
 {
   // FIXME: no fork for now
 
-  SBCCallLeg* callee_session = new SBCCallLeg(this, original_invite);
+  SBCCallLeg* callee_session = new SBCCallLeg(this);
   callee_session->setLocalParty(from, from);
   callee_session->setRemoteParty(remote_party, remote_uri);
 
@@ -832,21 +832,6 @@ bool SBCCallLeg::getCCInterfaces() {
       return false;
     }
     cc_modules.push_back(cc_di);
-
-    // extended CC interface
-    try {
-      AmArg args, ret;
-      cc_di->invoke("getExtendedInterfaceHandler", args, ret);
-      ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
-      if (iface) {
-        DBG("extended CC interface offered by cc_module '%s'\n", cc_module.c_str());
-        cc_ext.push_back(iface);
-      }
-      else WARN("BUG: returned invalid extended CC interface by cc_module '%s'\n", cc_module.c_str());
-    }
-    catch (...) {
-      DBG("extended CC interface not supported by cc_module '%s'\n", cc_module.c_str());
-    }
   }
   return true;
 }
@@ -1456,10 +1441,35 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
   setRtpRelayMode(new_mode);
 }
 
-void SBCCallLeg::initCCModules(const AmSipRequest &original_invite)
+void SBCCallLeg::initCCModules()
 {
-  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    (*i)->init(this, original_invite);
+  // init extended call control modules
+  vector<AmDynInvoke*>::iterator cc_mod = cc_modules.begin();
+  for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
+       cc_it != call_profile.cc_interfaces.end(); cc_it++)
+  {
+    CCInterface& cc_if = *cc_it;
+    string& cc_module = cc_it->cc_module;
+
+    // get extended CC interface
+    try {
+      AmArg args, ret;
+      (*cc_mod)->invoke("getExtendedInterfaceHandler", args, ret);
+      ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
+      if (iface) {
+        DBG("extended CC interface offered by cc_module '%s'\n", cc_module.c_str());
+        cc_ext.push_back(iface);
+
+        // module initialization
+        iface->init(this, cc_if.cc_values);
+      }
+      else WARN("BUG: returned invalid extended CC interface by cc_module '%s'\n", cc_module.c_str());
+    }
+    catch (...) {
+      DBG("extended CC interface not supported by cc_module '%s'\n", cc_module.c_str());
+    }
+
+    ++cc_mod;
   }
 }
 

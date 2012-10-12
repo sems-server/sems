@@ -101,7 +101,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
  public:
 
   SBCCallLeg(const SBCCallProfile& call_profile);
-  SBCCallLeg(SBCCallLeg* caller, const AmSipRequest &original_invite);
+  SBCCallLeg(SBCCallLeg* caller);
   ~SBCCallLeg();
 
   void process(AmEvent* ev);
@@ -119,7 +119,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
-  void initCCModules(const AmSipRequest &original_invite);
+  void initCCModules();
 
   /** save call timer; only effective before call is connected */
   void saveCallTimer(int timer, double timeout);
