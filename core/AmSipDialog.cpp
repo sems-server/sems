@@ -731,7 +731,9 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
   req.r_uri = remote_uri;
 
   req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
-  if(!local_tag.empty())
+  if(!ext_local_tag.empty())
+    req.from += ";tag=" + ext_local_tag;
+  else if(!local_tag.empty())
     req.from += ";tag=" + local_tag;
     
   req.to = SIP_HDR_COLSP(SIP_HDR_TO) + remote_party;

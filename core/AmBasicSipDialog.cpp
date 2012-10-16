@@ -484,7 +484,8 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
   reply.code = code;
   reply.reason = reason;
   reply.tt = req.tt;
-  reply.to_tag = local_tag;
+  if(code > 100)
+    reply.to_tag = ext_local_tag.empty() ? local_tag : ext_local_tag;
   reply.hdrs = m_hdrs;
   reply.cseq = req.cseq;
   reply.cseq_method = req.method;
@@ -565,7 +566,9 @@ int AmBasicSipDialog::sendRequest(const string& method,
   req.r_uri = remote_uri;
 
   req.from = SIP_HDR_COLSP(SIP_HDR_FROM) + local_party;
-  if(!local_tag.empty())
+  if(!ext_local_tag.empty())
+    req.from += ";tag=" + ext_local_tag;
+  else if(!local_tag.empty())
     req.from += ";tag=" + local_tag;
     
   req.to = SIP_HDR_COLSP(SIP_HDR_TO) + remote_party;
