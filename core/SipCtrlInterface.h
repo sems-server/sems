@@ -89,9 +89,8 @@ public:
      * @param req The request to send. If the request creates a transaction, 
      *            its ticket is written into req.tt.
      */
-    static int send(AmSipRequest &req,
-		    const string& next_hop = "",
-		    int outbound_interface = -1);
+    static int send(AmSipRequest &req, const string& dialog_id,
+		    const string& next_hop = "", int outbound_interface = -1);
 
     /**
      * Sends a SIP reply. 
@@ -112,7 +111,7 @@ public:
      * From sip_ua
      */
     void handle_sip_request(const trans_ticket& tt, sip_msg* msg);
-    void handle_sip_reply(sip_msg* msg);
+    void handle_sip_reply(const string& dialog_id, sip_msg* msg);
     void handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
         sip_trans *tr, trans_bucket *buk=0);
 };

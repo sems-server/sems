@@ -814,14 +814,16 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 
     translate_hdr(&msg,msg.callid, req,req->callid);
 
+    string dialog_id(t->dialog_id.s,t->dialog_id.len);
     bucket->remove(t);
     bucket->unlock();
 
-    ua->handle_sip_reply(&msg);
+    ua->handle_sip_reply(dialog_id,&msg);
 }
 
-int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
-			       const cstring& _next_hop,
+int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt, 
+			       const cstring& dialog_id,
+			       const cstring& _next_hop, 
 			       int out_interface)
 {
     // Request-URI
@@ -998,6 +1000,11 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	if(send_err < 0){
 	    DBG("Could not update UAC state for request\n");
 	    delete p_msg;
+	}
+	else if(dialog_id.len && !(tt->_t->dialog_id.len)) {
+	    tt->_t->dialog_id.s = new char[dialog_id.len];
+	    tt->_t->dialog_id.len = dialog_id.len;
+	    memcpy((void*)tt->_t->dialog_id.s,dialog_id.s,dialog_id.len);
 	}
     }
 
@@ -1296,8 +1303,9 @@ void _trans_layer::received_msg(sip_msg* msg)
 		break;
 	    }
 	    if (res) {
+		string dialog_id(t->dialog_id.s, t->dialog_id.len);
 		bucket->unlock();
-		ua->handle_sip_reply(msg);
+		ua->handle_sip_reply(dialog_id, msg);
 		DROP_MSG;
 		//return; - part of DROP_MSG
 	    }

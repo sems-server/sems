@@ -101,9 +101,8 @@ public:
      * @param [in]  msg Pre-built message.
      * @param [out] tt transaction ticket (needed for replies & CANCEL)
      */
-    int send_request(sip_msg* msg, trans_ticket* tt,
-		     const cstring& _next_hop,
-		     int out_interface = -1);
+    int send_request(sip_msg* msg, trans_ticket* tt, const cstring& dialog_id,
+		     const cstring& _next_hop, int out_interface = -1);
 
     /**
      * Cancels a request. 

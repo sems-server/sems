@@ -36,7 +36,7 @@ class AmSipDispatcher
 
   public:
     void handleSipMsg(AmSipRequest &);
-    void handleSipMsg(AmSipReply &);
+    void handleSipMsg(const string& dialog_id, AmSipReply &);
 
     static AmSipDispatcher* instance();
 };

@@ -127,9 +127,8 @@ int SipCtrlInterface::cancel(trans_ticket* tt)
     return trans_layer::instance()->cancel(tt);
 }
 
-int SipCtrlInterface::send(AmSipRequest &req,
-			   const string& next_hop,
-			   int out_interface)
+int SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
+			   const string& next_hop, int out_interface)
 {
     if(req.method == "CANCEL")
 	return cancel(&req.tt);
@@ -221,6 +220,7 @@ int SipCtrlInterface::send(AmSipRequest &req,
     }
 
     int res = trans_layer::instance()->send_request(msg,&req.tt,
+						    stl2cstr(dialog_id),
 						    stl2cstr(next_hop),
 						    out_interface);
     delete msg;
@@ -596,7 +596,7 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 	req.callid.c_str(), req.to_tag.c_str(), req.method.c_str());
 }
 
-void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
+void SipCtrlInterface::handle_sip_reply(const string& dialog_id, sip_msg* msg)
 {
     assert(msg->from && msg->from->p);
     assert(msg->to && msg->to->p);
@@ -617,7 +617,7 @@ void SipCtrlInterface::handle_sip_reply(sip_msg* msg)
     DBG("hdrs = <%s>\n",reply.hdrs.c_str());
     DBG("body-ct = <%s>\n",reply.body.getCTStr().c_str());
 
-    AmSipDispatcher::instance()->handleSipMsg(reply);
+    AmSipDispatcher::instance()->handleSipMsg(dialog_id, reply);
 
     DBG("^^ M [%s|%s] ru SIP reply %u %s handled ^^\n",
 	reply.callid.c_str(), reply.from_tag.c_str(),

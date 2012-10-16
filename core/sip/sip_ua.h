@@ -41,7 +41,7 @@ public:
     virtual ~sip_ua() {}
 
     virtual void handle_sip_request(const trans_ticket& tt, sip_msg* msg)=0;
-    virtual void handle_sip_reply(sip_msg* msg)=0;
+  virtual void handle_sip_reply(const string& dialog_id, sip_msg* msg)=0;
 
     //virtual void handle_request_timeout(const sip_msg *msg)=0;
     virtual void handle_reply_timeout(AmSipTimeoutEvent::EvType evt,

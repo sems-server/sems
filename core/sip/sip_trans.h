@@ -124,6 +124,9 @@ class sip_trans
     /** used by UAS only; keeps RSeq of last sent reliable 1xx */
     unsigned int last_rseq;
 
+    /** Dialog-ID used for UAC transactions */
+    cstring dialog_id;
+
     /**
      * Retransmission buffer
      *  - UAC transaction: ACK
