@@ -188,16 +188,18 @@ int _trans_layer::send_reply(trans_ticket* tt,
 
 	case sip_header::H_TO:
 	    assert((*it)->p);
-	    if(! ((sip_from_to*)(*it)->p)->tag.len ) {
-
-		reply_len += 5/* ';tag=' */
-		    + to_tag.len; 
-	    }
-	    else {
-		// To-tag present in request
-		have_to_tag = true;
-
-		t->to_tag = ((sip_from_to*)(*it)->p)->tag;
+	    if(to_tag.len) {
+		if(! ((sip_from_to*)(*it)->p)->tag.len ) {
+		    
+		    reply_len += 5/* ';tag=' */
+			+ to_tag.len; 
+		}
+		else {
+		    // To-tag present in request
+		    have_to_tag = true;
+		    
+		    t->to_tag = ((sip_from_to*)(*it)->p)->tag;
+		}
 	    }
 	    reply_len += copy_hdr_len(*it);
 	    break;
@@ -334,7 +336,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
 	    break;
 
 	case sip_header::H_TO:
-	    if(have_to_tag){
+	    if(!to_tag.len || have_to_tag){
 		copy_hdr_wr(&c,*it);
 	    }
 	    else {
