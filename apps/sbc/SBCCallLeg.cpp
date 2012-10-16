@@ -1416,8 +1416,8 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
 {
   if (new_mode == rtp_relay_mode) return; // requested mode is set already
 
-  if (getCallStatus() != CallLeg::Connected /*other_id.empty()*/) {
-    ERROR("BUG: changeRtpMode supported for established calls only\n");
+  if (!((getCallStatus() == CallLeg::Connected) || (getCallStatus() == CallLeg::Disconnected))) {
+    ERROR("BUG: changeRtpMode supported for established/disconnected calls only\n");
     return;
   }
 
@@ -1437,7 +1437,8 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
       break;
   }
 
-  relayEvent(new ChangeRtpModeEvent(new_mode, getMediaSession()));
+  if (!other_id.empty())
+    relayEvent(new ChangeRtpModeEvent(new_mode, getMediaSession()));
   setRtpRelayMode(new_mode);
 }
 
