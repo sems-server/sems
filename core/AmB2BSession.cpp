@@ -305,6 +305,20 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
   bool fwd = sip_relay_only &&
     (req.method != SIP_METH_CANCEL);
 
+  AmSdp sdp;
+  if ((rtp_relay_mode == RTP_Relay) && media_session) {
+    // We have to update media session before filtering because we may want to
+    // use the codec later filtered out for transcoding.
+    if (parseSdp(sdp, req)) {
+      if (!updateRemoteSdp(sdp)) {
+        ERROR("media update failed, reply internal error\n");
+        dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+
+        return;
+      }
+    }
+  }
+
   if(!fwd)
     AmSession::onSipRequest(req);
   else {
@@ -312,20 +326,6 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 
     if(req.method == SIP_METH_BYE)
       onBye(req);
-
-    AmSdp sdp;
-    if ((rtp_relay_mode == RTP_Relay) && media_session) {
-      // We have to update media session before filtering because we may want to
-      // use the codec later filtered out for transcoding.
-      if (parseSdp(sdp, req)) {
-        if (!updateRemoteSdp(sdp)) {
-          ERROR("media update failed, reply internal error\n");
-          dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-
-          return;
-        }
-      }
-    }
   }
 
   B2BSipRequestEvent* r_ev = new B2BSipRequestEvent(req,fwd);
@@ -447,21 +447,21 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
       reply.cseq_method.c_str(), reply.code,reply.reason.c_str(),
       fwd?"true":"false",reply.body.getCTStr().c_str());
 
+  AmSdp sdp;
+
+  if ((rtp_relay_mode == RTP_Relay) &&
+      (reply.code >= 180  && reply.code < 300)) 
+  {
+    // We have to update media session before filtering because we may want to
+    // use the codec later filtered out for transcoding.
+    if (parseSdp(sdp, reply)) updateRemoteSdp(sdp);
+  }
+
   if(fwd) {
     updateRefreshMethod(reply.hdrs);
 
     AmSipReply n_reply = reply;
     n_reply.cseq = t->second.cseq;
-
-    AmSdp sdp;
-  
-    if ((rtp_relay_mode == RTP_Relay) &&
-        (reply.code >= 180  && reply.code < 300)) 
-    {
-      // We have to update media session before filtering because we may want to
-      // use the codec later filtered out for transcoding.
-      if (parseSdp(sdp, reply)) updateRemoteSdp(sdp);
-    }
 
     DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
     relayEvent(new B2BSipReplyEvent(n_reply, true, t->second.method));
