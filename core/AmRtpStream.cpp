@@ -437,7 +437,7 @@ AmRtpStream::~AmRtpStream()
   if(l_sd){
     if (AmRtpReceiver::haveInstance()){
       AmRtpReceiver::instance()->removeStream(l_sd);
-      AmRtpReceiver::instance()->removeStream(l_rctp_sd);
+      AmRtpReceiver::instance()->removeStream(l_rtcp_sd);
     }
     close(l_sd);
     close(l_rtcp_sd);
