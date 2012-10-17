@@ -125,6 +125,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   callid = cfg.getParameter("Call-ID");
 
+  transparent_dlg_id = cfg.getParameter("transparent_dlg_id") == "yes";
+
   force_outbound_proxy = cfg.getParameter("force_outbound_proxy") == "yes";
   outbound_proxy = cfg.getParameter("outbound_proxy");
 

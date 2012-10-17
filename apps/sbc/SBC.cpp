@@ -1107,6 +1107,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   from = call_profile.from.empty() ? req.from : call_profile.from;
   to = call_profile.to.empty() ? req.to : call_profile.to;
   callid = call_profile.callid;
+  if(call_profile.transparent_dlg_id && callid.empty()){
+    callid = req.callid;
+  }
 
   if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
     DBG("Enabling RTP relay mode for SBC call\n");
@@ -1278,19 +1281,31 @@ void SBCDialog::onControlCmd(string& cmd, AmArg& params) {
   DBG("ignoring unknown control cmd : '%s'\n", cmd.c_str());
 }
 
-int SBCDialog::relayEvent(AmEvent* ev) {
-  if (isActiveFilter(call_profile.headerfilter) && (ev->event_id == B2BSipRequest)) {
+int SBCDialog::relayEvent(AmEvent* ev) 
+{
+  if (isActiveFilter(call_profile.headerfilter) && 
+      (ev->event_id == B2BSipRequest)) {
+
     // header filter
     B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
     assert(req_ev);
     inplaceHeaderFilter(req_ev->req.hdrs,
-			call_profile.headerfilter_list, call_profile.headerfilter);
+			call_profile.headerfilter_list, 
+			call_profile.headerfilter);
   } else {
+
     if (ev->event_id == B2BSipReply) {
+
+      B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
+      assert(reply_ev);
+
+      if(call_profile.transparent_dlg_id &&
+	 (reply_ev->reply.to_tag == dlg.ext_local_tag))
+	reply_ev->reply.to_tag = dlg.local_tag;
+      
       if (isActiveFilter(call_profile.headerfilter) ||
 	  call_profile.reply_translations.size()) {
-	B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
-	assert(reply_ev);
+
 	// header filter
 	if (isActiveFilter(call_profile.headerfilter)) {
 	  inplaceHeaderFilter(reply_ev->reply.hdrs,
@@ -1301,6 +1316,7 @@ int SBCDialog::relayEvent(AmEvent* ev) {
 	// reply translations
 	map<unsigned int, pair<unsigned int, string> >::iterator it =
 	  call_profile.reply_translations.find(reply_ev->reply.code);
+
 	if (it != call_profile.reply_translations.end()) {
 	  DBG("translating reply %u %s => %u %s\n",
 	      reply_ev->reply.code, reply_ev->reply.reason.c_str(),
@@ -1395,6 +1411,11 @@ bool SBCDialog::onOtherReply(const AmSipReply& reply)
   bool ret = false;
 
   if ((m_state == BB_Dialing) && (reply.cseq == invite_req.cseq)) {
+
+    if(call_profile.transparent_dlg_id && !reply.to_tag.empty()){
+      dlg.ext_local_tag = reply.to_tag;
+    }
+
     if (reply.code < 200) {
       DBG("Callee is trying... code %d\n", reply.code);
     }
@@ -1835,6 +1856,9 @@ void SBCDialog::createCalleeSession()
   callee_dlg.local_tag    = other_id;
   callee_dlg.callid       = callid.empty() ?
     AmSession::getNewId() : callid;
+
+  if(call_profile.transparent_dlg_id)
+    callee_dlg.ext_local_tag = dlg.remote_tag;
   
   // this will be overwritten by ConnectLeg event 
   callee_dlg.remote_party = to;
@@ -1922,19 +1946,29 @@ inline UACAuthCred* SBCCalleeSession::getCredentials() {
   return &call_profile.auth_credentials;
 }
 
-int SBCCalleeSession::relayEvent(AmEvent* ev) {
+int SBCCalleeSession::relayEvent(AmEvent* ev) 
+{
   if (isActiveFilter(call_profile.headerfilter) && ev->event_id == B2BSipRequest) {
+
     // header filter
     B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
     assert(req_ev);
     inplaceHeaderFilter(req_ev->req.hdrs,
-			call_profile.headerfilter_list, call_profile.headerfilter);
+			call_profile.headerfilter_list, 
+			call_profile.headerfilter);
   } else {
+
     if (ev->event_id == B2BSipReply) {
+
+      B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
+      assert(reply_ev);
+
+      if(call_profile.transparent_dlg_id && 
+	 (reply_ev->reply.to_tag == dlg.ext_local_tag))
+	reply_ev->reply.to_tag = dlg.local_tag;
+
       if (isActiveFilter(call_profile.headerfilter) ||
 	  (call_profile.reply_translations.size())) {
-	B2BSipReplyEvent* reply_ev = dynamic_cast<B2BSipReplyEvent*>(ev);
-	assert(reply_ev);
 
 	// header filter
 	if (isActiveFilter(call_profile.headerfilter)) {
@@ -1942,9 +1976,11 @@ int SBCCalleeSession::relayEvent(AmEvent* ev) {
 			      call_profile.headerfilter_list,
 			      call_profile.headerfilter);
 	}
+
 	// reply translations
 	map<unsigned int, pair<unsigned int, string> >::iterator it =
 	  call_profile.reply_translations.find(reply_ev->reply.code);
+
 	if (it != call_profile.reply_translations.end()) {
 	  DBG("translating reply %u %s => %u %s\n",
 	      reply_ev->reply.code, reply_ev->reply.reason.c_str(),

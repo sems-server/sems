@@ -89,6 +89,8 @@ struct SBCCallProfile
 
   string callid;
 
+  bool transparent_dlg_id;
+
   string outbound_proxy;
   bool force_outbound_proxy;
 
@@ -224,7 +226,8 @@ struct SBCCallProfile
   // todo: RTP transcoding mode
 
   SBCCallProfile()
-  : headerfilter(Undefined),
+  : transparent_dlg_id(false),
+    headerfilter(Undefined),
     messagefilter(Undefined),
     sdpfilter_enabled(false),
     sdpfilter(Undefined),
