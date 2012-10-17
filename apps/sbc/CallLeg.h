@@ -230,12 +230,15 @@ class CallLeg: public AmB2BSession
      * Redefine to implement serial fork or handle redirect. */
     virtual void onBLegRefused(const AmSipReply& reply) { }
 
+    /** add newly created callee with prepared ConnectLegEvent */
+    void addNewCallee(CallLeg *callee, ConnectLegEvent *e);
+
   protected:
 
     // functions offered to successors
 
     /** add given call leg as our B leg */
-    void addCallee(CallLeg *callee, const AmSipRequest &relayed_invite);
+    void addCallee(CallLeg *callee, const AmSipRequest &relayed_invite) { addNewCallee(callee, new ConnectLegEvent(relayed_invite)); }
 
     /** add given already existing session as our B leg */
     void addCallee(const string &session_tag, const AmSipRequest &relayed_invite);
@@ -245,7 +248,7 @@ class CallLeg: public AmB2BSession
      * Can be used in A leg and B leg as well.
      * Additional headers may be specified - these are used in outgoing INVITE
      * to the callee's destination. */
-    void addCallee(CallLeg *callee, const string &hdrs);
+    void addCallee(CallLeg *callee, const string &hdrs) { addNewCallee(callee, new ConnectLegEvent(hdrs, established_body)); }
 
     /** Replace given already existing session in a B2B call. We become new
      * A leg there regardless if we are replacing original A or B leg. */

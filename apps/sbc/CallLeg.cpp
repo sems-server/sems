@@ -789,52 +789,7 @@ void CallLeg::onBye(const AmSipRequest& req)
   updateCallStatus(Disconnected); // shouldn't we wait for BYE response?
 }
 
-void CallLeg::addCallee(CallLeg *callee, const AmSipRequest &relayed_invite)
-{
-  OtherLegInfo b;
-  b.id = callee->getLocalTag();
-
-  if ((rtp_relay_mode == RTP_Relay)) {
-    // do not initialise the media session with A leg to avoid unnecessary A leg
-    // RTP stream creation in every B leg's media session
-    if (a_leg) b.media_session = new AmB2BMedia(NULL, callee);
-    else b.media_session = new AmB2BMedia(callee, NULL);
-    b.media_session->addReference(); // new reference for me
-    callee->setMediaSession(b.media_session);
-  }
-  else b.media_session = NULL;
-  other_legs.push_back(b);
-
-  if (AmConfig::LogSessions) {
-    TRACE("Starting B2B callee session %s\n",
-	 callee->getLocalTag().c_str()/*, invite_req.cmd.c_str()*/);
-  }
-
-  AmSipDialog& callee_dlg = callee->dlg;
-  MONITORING_LOG4(b.id.c_str(),
-		  "dir",  "out",
-		  "from", callee_dlg.local_party.c_str(),
-		  "to",   callee_dlg.remote_party.c_str(),
-		  "ruri", callee_dlg.remote_uri.c_str());
-
-  callee->start();
-
-  AmSessionContainer* sess_cont = AmSessionContainer::instance();
-  sess_cont->addSession(b.id, callee);
-
-  // generate connect event to the newly added leg
-  TRACE("relaying connect leg event to the new leg\n");
-  // other stuff than relayed INVITE should be set directly when creating callee
-  // (remote_uri, remote_party is not propagated and thus B2BConnectEvent is not
-  // used because it would just overwrite already set things. Note that in many
-  // classes derived from AmB2BCaller[Callee]Session was a lot of things set
-  // explicitly)
-  AmSessionContainer::instance()->postEvent(b.id, new ConnectLegEvent(relayed_invite));
-
-  if (call_status == Disconnected) updateCallStatus(NoReply);
-}
-
-void CallLeg::addCallee(CallLeg *callee, const string &hdrs)
+void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e)
 {
   OtherLegInfo b;
   b.id = callee->getLocalTag();
@@ -869,8 +824,13 @@ void CallLeg::addCallee(CallLeg *callee, const string &hdrs)
 
   // generate connect event to the newly added leg
   // Warning: correct callee's role must be already set (in constructor or so)
-  TRACE("relaying connect leg event to the other leg\n");
-  AmSessionContainer::instance()->postEvent(b.id, new ConnectLegEvent(hdrs, established_body));
+  TRACE("relaying connect leg event to the new leg\n");
+  // other stuff than relayed INVITE should be set directly when creating callee
+  // (remote_uri, remote_party is not propagated and thus B2BConnectEvent is not
+  // used because it would just overwrite already set things. Note that in many
+  // classes derived from AmB2BCaller[Callee]Session was a lot of things set
+  // explicitly)
+  AmSessionContainer::instance()->postEvent(b.id, e);
 
   if (call_status == Disconnected) updateCallStatus(NoReply);
 }
