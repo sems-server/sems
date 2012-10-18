@@ -33,7 +33,7 @@ struct ConnectLegEvent: public B2BEvent
   { }
 
   // constructor from generated INVITE (for example blind call transfer)
-  ConnectLegEvent(const string &_hdrs, const AmMimeBody _body):
+  ConnectLegEvent(const string &_hdrs, const AmMimeBody &_body):
     B2BEvent(ConnectLeg),
     body(_body),
     hdrs(_hdrs),
@@ -70,20 +70,35 @@ struct ReconnectLegEvent: public ReliableB2BEvent
   string hdrs;
 
   unsigned int r_cseq;
+  bool relayed_invite;
 
   AmB2BMedia *media; // avoid direct access to this
   string session_tag;
-  enum { A, B } role; // reconnect as A or B leg
+  enum Role { A, B } role; // reconnect as A or B leg
 
-  ReconnectLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m)
-    : ReliableB2BEvent(ReconnectLeg, NULL, new B2BEvent(B2BTerminateLeg) /* TODO: choose a better one */),
+  void setMedia(AmB2BMedia *m) { media = m; if (media) media->addReference(); }
+
+  ReconnectLegEvent(const string &tag, const AmSipRequest &relayed_invite):
+    ReliableB2BEvent(ReconnectLeg, NULL, new B2BEvent(B2BTerminateLeg) /* TODO: choose a better one */),
     body(relayed_invite.body),
     hdrs(relayed_invite.hdrs),
     r_cseq(relayed_invite.cseq),
-    media(m),
+    relayed_invite(true),
+    media(NULL),
     session_tag(tag),
     role(B) // we have relayed_invite (only in A leg) thus reconnect as regular B leg
-  { if (media) media->addReference(); setSender(tag); }
+  { setSender(tag); }
+
+  ReconnectLegEvent(Role _role, const string &tag, const string &_hdrs, const AmMimeBody &_body):
+    ReliableB2BEvent(ReconnectLeg, NULL, new B2BEvent(B2BTerminateLeg) /* TODO: choose a better one */),
+    body(_body),
+    hdrs(_hdrs),
+    r_cseq(0),
+    relayed_invite(false),
+    media(NULL),
+    session_tag(tag),
+    role(_role)
+  { setSender(tag); }
 
   virtual ~ReconnectLegEvent() { if (media && media->releaseReference()) delete media; }
 };
@@ -98,8 +113,15 @@ struct ReplaceLegEvent: public ReliableB2BEvent
     ReconnectLegEvent *ev;
 
   public:
-    ReplaceLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m)
-      : ReliableB2BEvent(ReplaceLeg, NULL, new B2BEvent(B2BTerminateLeg)) { ev = new ReconnectLegEvent(tag, relayed_invite, m); setSender(tag); }
+    ReplaceLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m):
+      ReliableB2BEvent(ReplaceLeg, NULL, new B2BEvent(B2BTerminateLeg))
+    { ev = new ReconnectLegEvent(tag, relayed_invite); ev->setMedia(m); setSender(tag); }
+
+    ReplaceLegEvent(const string &tag, ReconnectLegEvent *e):
+      ReliableB2BEvent(ReplaceLeg, NULL, new B2BEvent(B2BTerminateLeg)),
+      ev(e)
+    { setSender(tag); }
+
     ReconnectLegEvent *getReconnectEvent() { ReconnectLegEvent *e = ev; ev = NULL; return e; }
     virtual ~ReplaceLegEvent() { if (ev) delete ev; }
 };
@@ -233,6 +255,8 @@ class CallLeg: public AmB2BSession
     /** add newly created callee with prepared ConnectLegEvent */
     void addNewCallee(CallLeg *callee, ConnectLegEvent *e);
 
+    void addExistingCallee(const string &session_tag, ReconnectLegEvent *e);
+
   protected:
 
     // functions offered to successors
@@ -242,6 +266,8 @@ class CallLeg: public AmB2BSession
 
     /** add given already existing session as our B leg */
     void addCallee(const string &session_tag, const AmSipRequest &relayed_invite);
+    void addCallee(const string &session_tag, const string &hdrs)
+      { addExistingCallee(session_tag, new ReconnectLegEvent(a_leg ? ReconnectLegEvent::B : ReconnectLegEvent::A, getLocalTag(), hdrs, established_body)); }
 
     /** add given call leg as our B leg (only stored SDP is used, we don't need
      * to have INVITE request.
@@ -253,6 +279,7 @@ class CallLeg: public AmB2BSession
     /** Replace given already existing session in a B2B call. We become new
      * A leg there regardless if we are replacing original A or B leg. */
     void replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite);
+    void replaceExistingLeg(const string &session_tag, const string &hdrs);
 
     CallStatus getCallStatus() { return call_status; }
 

@@ -487,6 +487,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
     ERROR("BUG: invalid argument given\n");
     return;
   }
+  TRACE("handling ReconnectLegEvent, other: %s, connect to %s\n", other_id.c_str(), ev->session_tag.c_str());
 
   ev->markAsProcessed();
 
@@ -544,13 +545,16 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   }
 
   // always relayed INVITE - store it
-  relayed_req[dlg.cseq - 1] = AmSipTransaction(SIP_METH_INVITE, ev->r_cseq, trans_ticket());
+  if (ev->relayed_invite) {
+    relayed_req[dlg.cseq - 1] = AmSipTransaction(SIP_METH_INVITE, ev->r_cseq, trans_ticket());
+    est_invite_other_cseq = ev->r_cseq;
+  }
+  else est_invite_other_cseq = 0;
 
   if (refresh_method != REFRESH_UPDATE) saveSessionDescription(ev->body);
 
   // save CSeq of establising INVITE
   est_invite_cseq = dlg.cseq - 1;
-  est_invite_other_cseq = ev->r_cseq;
 }
 
 void CallLeg::onB2BReplace(ReplaceLegEvent *e)
@@ -559,7 +563,6 @@ void CallLeg::onB2BReplace(ReplaceLegEvent *e)
     ERROR("BUG: invalid argument given\n");
     return;
   }
-
   e->markAsProcessed();
 
   ReconnectLegEvent *reconnect = e->getReconnectEvent();
@@ -567,6 +570,8 @@ void CallLeg::onB2BReplace(ReplaceLegEvent *e)
     ERROR("BUG: invalid ReconnectLegEvent\n");
     return;
   }
+
+  TRACE("handling ReplaceLegEvent, other: %s, connect to %s\n", other_id.c_str(), reconnect->session_tag.c_str());
 
   string id(other_id);
   if (id.empty()) {
@@ -837,16 +842,25 @@ void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e)
 
 void CallLeg::updateCallStatus(CallStatus new_status)
 {
-  TRACE("%s leg changing status from %s to %s\n", 
-      a_leg ? "A" : "B",
-      callStatus2str(call_status),
-      callStatus2str(new_status));
+  if (new_status == Connected)
+    TRACE("%s leg %s changing status from %s to %s with %s\n",
+        a_leg ? "A" : "B",
+        getLocalTag().c_str(),
+        callStatus2str(call_status),
+        callStatus2str(new_status),
+        other_id.c_str());
+  else
+    TRACE("%s leg %s changing status from %s to %s\n",
+        a_leg ? "A" : "B",
+        getLocalTag().c_str(),
+        callStatus2str(call_status),
+        callStatus2str(new_status));
 
   call_status = new_status;
   onCallStatusChange();
 }
 
-void CallLeg::addCallee(const string &session_tag, const AmSipRequest &relayed_invite)
+void CallLeg::addExistingCallee(const string &session_tag, ReconnectLegEvent *ev)
 {
   // add existing session as our B leg
 
@@ -862,7 +876,7 @@ void CallLeg::addCallee(const string &session_tag, const AmSipRequest &relayed_i
 
   // generate connect event to the newly added leg
   TRACE("relaying re-connect leg event to the B leg\n");
-  ReconnectLegEvent *ev = new ReconnectLegEvent(getLocalTag(), relayed_invite, b.media_session);
+  ev->setMedia(b.media_session);
   // TODO: what about the RTP relay and other settings? send them as well?
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
@@ -873,6 +887,11 @@ void CallLeg::addCallee(const string &session_tag, const AmSipRequest &relayed_i
 
   other_legs.push_back(b);
   if (call_status == Disconnected) updateCallStatus(NoReply);
+}
+
+void CallLeg::addCallee(const string &session_tag, const AmSipRequest &relayed_invite)
+{
+  addExistingCallee(session_tag, new ReconnectLegEvent(getLocalTag(), relayed_invite));
 }
 
 void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite)
@@ -889,6 +908,34 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &
   else b.media_session = NULL;
 
   ReplaceLegEvent *ev = new ReplaceLegEvent(getLocalTag(), relayed_invite, b.media_session);
+  // TODO: what about the RTP relay and other settings? send them as well?
+  if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
+    // session doesn't exist - can't connect
+    INFO("the call leg to be replaced (%s) doesn't exist\n", session_tag.c_str());
+    if (b.media_session) delete b.media_session;
+    return;
+  }
+
+  other_legs.push_back(b);
+  if (call_status == Disconnected) updateCallStatus(NoReply); // we are something like connected to another leg
+}
+
+void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
+{
+  // add existing session as our B leg
+
+  OtherLegInfo b;
+  b.id.clear(); // this is an invalid local tag (temporarily)
+  if ((rtp_relay_mode == RTP_Relay)) {
+    // let the other leg to set its part, we will set our once connected
+    b.media_session = new AmB2BMedia(NULL, NULL);
+    b.media_session->addReference(); // new reference for me
+  }
+  else b.media_session = NULL;
+
+  ReconnectLegEvent *rev = new ReconnectLegEvent(a_leg ? ReconnectLegEvent::B : ReconnectLegEvent::A, getLocalTag(), hdrs, established_body);
+  rev->setMedia(b.media_session);
+  ReplaceLegEvent *ev = new ReplaceLegEvent(getLocalTag(), rev);
   // TODO: what about the RTP relay and other settings? send them as well?
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
