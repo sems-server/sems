@@ -536,6 +536,7 @@ EXEC_ACTION_START(SCMyGetFileFromDBAction) {
   if (NULL == conn) 
     return false;
   string qstr = replaceQueryParams(par1, sc_sess, event_params);
+  string fname = resolveVars(par2, sess, sc_sess, event_params);
 
   try {
     mysqlpp::Query query = conn->query(qstr.c_str());
@@ -547,10 +548,10 @@ EXEC_ACTION_START(SCMyGetFileFromDBAction) {
 	sc_sess->SET_STRERROR("result does not have row"); 
 	return false;
       }
-      FILE *t_file = fopen(par2.c_str(), "wb");
+      FILE *t_file = fopen(fname.c_str(), "wb");
       if (NULL == t_file) {
 	sc_sess->SET_ERRNO(DSM_ERRNO_FILE);
-	sc_sess->SET_STRERROR("fopen() failed: "+string(strerror(errno)));
+	sc_sess->SET_STRERROR("fopen() failed for file '"+fname+"': "+string(strerror(errno)));
 	return false;
       }
 
