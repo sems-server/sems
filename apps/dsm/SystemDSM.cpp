@@ -175,12 +175,12 @@ void SystemDSM::releaseOwnership(DSMDisposable* d) {
 
 #define NOT_IMPLEMENTED(_func)					\
 void SystemDSM::_func {						\
-  throw DSMException("core", "cause", "not implemented");	\
+  throw DSMException("core", "cause", "not implemented in SystemDSM");	\
 }
 
 #define NOT_IMPLEMENTED_UINT(_func)					\
   unsigned int SystemDSM::_func {					\
-    throw DSMException("core", "cause", "not implemented");		\
+    throw DSMException("core", "cause", "not implemented in SystemDSM"); \
   }
 
 NOT_IMPLEMENTED(playPrompt(const string& name, bool loop, bool front));
