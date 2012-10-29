@@ -91,8 +91,10 @@ static string payload2str(const SdpPayload &p);
       if (!what.empty()) {				\
 	if (what == "default") iface = 0;		\
 	else {								\
-	  map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(what); \
-	  if (name_it != AmConfig::If_names.end()) iface = name_it->second; \
+	  map<string,unsigned short>::iterator name_it =		\
+	    AmConfig::RTP_If_names.find(what);				\
+	  if (name_it != AmConfig::RTP_If_names.end()) \
+	    iface = name_it->second;					\
 	  else {							\
 	    ERROR("selected " #what " '%s' does not exist as an interface. " \
 		  "Please check the 'additional_interfaces' "		\
@@ -763,8 +765,8 @@ static int apply_outbound_interface(const string& oi, AmBasicSipDialog& dlg)
   if (oi == "default")
     dlg.setOutboundInterface(0);
   else {
-    map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(oi);
-    if (name_it != AmConfig::If_names.end()) {
+    map<string,unsigned short>::iterator name_it = AmConfig::SIP_If_names.find(oi);
+    if (name_it != AmConfig::SIP_If_names.end()) {
       dlg.setOutboundInterface(name_it->second);
     } else {
       ERROR("selected [aleg_]outbound_interface '%s' "

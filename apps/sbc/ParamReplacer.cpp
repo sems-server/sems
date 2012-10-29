@@ -196,12 +196,12 @@ string replaceParameters(const string& s,
 	  } else if (s[p+1] == 'f') { // $Rf received interface id
 	    res += int2str(req.local_if);
 	  } else if (s[p+1] == 'n') { // $Rn received interface name
-	    if (req.local_if < AmConfig::Ifs.size()) {
-	      res += AmConfig::Ifs[req.local_if].name;
+	    if (req.local_if < AmConfig::SIP_Ifs.size()) {
+	      res += AmConfig::SIP_Ifs[req.local_if].name;
 	    }
 	  } else if (s[p+1] == 'I') { // $RI received interface public IP
-	    if (req.local_if < AmConfig::Ifs.size()) {
-	      res += AmConfig::Ifs[req.local_if].PublicIP;
+	    if (req.local_if < AmConfig::SIP_Ifs.size()) {
+	      res += AmConfig::SIP_Ifs[req.local_if].PublicIP;
 	    }
 	  }
 	  WARN("unknown replacement $R%c\n", s[p+1]);

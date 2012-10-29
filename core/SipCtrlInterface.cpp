@@ -232,26 +232,26 @@ int SipCtrlInterface::run()
 {
     DBG("Starting SIP control interface\n");
 
-    udp_sockets = new udp_trsp_socket*[AmConfig::Ifs.size()];
-    udp_servers = new udp_trsp*[AmConfig::SIPServerThreads * AmConfig::Ifs.size()];
+    udp_sockets = new udp_trsp_socket*[AmConfig::SIP_Ifs.size()];
+    udp_servers = new udp_trsp*[AmConfig::SIPServerThreads * AmConfig::SIP_Ifs.size()];
 
     wheeltimer::instance()->start();
 
     // Init transport instances
-    for(unsigned int i=0; i<AmConfig::Ifs.size();i++) {
+    for(unsigned int i=0; i<AmConfig::SIP_Ifs.size();i++) {
 
 	udp_trsp_socket* udp_socket = 
-	    new udp_trsp_socket(i,AmConfig::Ifs[i].SigSockOpts
+	    new udp_trsp_socket(i,AmConfig::SIP_Ifs[i].SigSockOpts
 				| (AmConfig::ForceOutboundIf ? 
 				   trsp_socket::force_outbound_if : 0),
-				AmConfig::Ifs[i].SipIfIdx);
-
-	if(udp_socket->bind(AmConfig::Ifs[i].LocalSIPIP,
-			    AmConfig::Ifs[i].LocalSIPPort) < 0){
+				AmConfig::SIP_Ifs[i].NetIfIdx);
+	
+	if(udp_socket->bind(AmConfig::SIP_Ifs[i].LocalIP,
+			    AmConfig::SIP_Ifs[i].LocalPort) < 0){
 
 	    ERROR("Could not bind SIP/UDP socket to %s:%i",
-		  AmConfig::Ifs[i].LocalSIPIP.c_str(),
-		  AmConfig::Ifs[i].LocalSIPPort);
+		  AmConfig::SIP_Ifs[i].LocalIP.c_str(),
+		  AmConfig::SIP_Ifs[i].LocalPort);
 
 	    delete udp_socket;
 	    return -1;
@@ -272,7 +272,7 @@ int SipCtrlInterface::run()
         stopped.wait_for();
     }
 
-    DBG("SIP control interface ending\n");    
+    DBG("SIP control interface ending\n");
     return 0;
 }
 

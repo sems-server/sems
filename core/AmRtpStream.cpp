@@ -156,7 +156,7 @@ void AmRtpStream::setLocalPort()
     if (!getLocalSocket())
       return;
 
-    port = AmConfig::Ifs[l_if].getNextRtpPort();
+    port = AmConfig::RTP_Ifs[l_if].getNextRtpPort();
 
     am_set_port(&l_saddr,port+1);
     if(bind(l_rtcp_sd,(const struct sockaddr*)&l_saddr,SA_len(&l_saddr))) {
@@ -224,7 +224,7 @@ int AmRtpStream::ping()
   rp.compile((unsigned char*)ping_chr,2);
 
   rp.setAddr(&r_saddr);
-  if(rp.send(l_sd, AmConfig::Ifs[l_if].MediaIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
     ERROR("while sending RTP packet.\n");
     return -1;
   }
@@ -273,7 +273,7 @@ int AmRtpStream::compile_and_send(const int payload, bool marker, unsigned int t
   }
 #endif
 
-  if(rp.send(l_sd, AmConfig::Ifs[l_if].MediaIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
     ERROR("while sending RTP packet.\n");
     return -1;
   }
@@ -310,7 +310,7 @@ int AmRtpStream::send_raw( char* packet, unsigned int length )
   rp.compile_raw((unsigned char*)packet, length);
   rp.setAddr(&r_saddr);
 
-  if(rp.send(l_sd, AmConfig::Ifs[l_if].MediaIfIdx) < 0){
+  if(rp.send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
     ERROR("while sending raw RTP packet.\n");
     return -1;
   }
@@ -983,7 +983,7 @@ void AmRtpStream::relay(AmRtpPacket* p) {
     hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
 
-  if(p->send(l_sd, AmConfig::Ifs[l_if].MediaIfIdx) < 0){
+  if(p->send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
     ERROR("while sending RTP packet to '%s':%i\n",
 	  get_addr_str(&r_saddr).c_str(),am_get_port(&r_saddr));
   }

@@ -135,6 +135,36 @@ static bool parse_args(int argc, char* argv[], std::map<char,string>& args)
     }
 }
 
+static void set_default_interface(const string& iface_name)
+{
+  unsigned int idx=0;
+  map<string,unsigned short>::iterator if_it = AmConfig::SIP_If_names.find("default");
+  if(if_it == AmConfig::SIP_If_names.end()) {
+    AmConfig::SIP_interface intf;
+    intf.name = "default";
+    AmConfig::SIP_Ifs.push_back(intf);
+    AmConfig::SIP_If_names["default"] = AmConfig::SIP_Ifs.size()-1;
+    idx = AmConfig::SIP_Ifs.size()-1;
+  }
+  else {
+    idx = if_it->second;
+  }
+  AmConfig::SIP_Ifs[if_it->second].LocalIP = iface_name;
+
+  if_it = AmConfig::RTP_If_names.find("default");
+  if(if_it == AmConfig::RTP_If_names.end()) {
+    AmConfig::RTP_interface intf;
+    intf.name = "default";
+    AmConfig::RTP_Ifs.push_back(intf);
+    AmConfig::RTP_If_names["default"] = AmConfig::RTP_Ifs.size()-1;
+    idx = AmConfig::RTP_Ifs.size()-1;
+  }
+  else {
+    idx = if_it->second;
+  }
+  AmConfig::RTP_Ifs[if_it->second].LocalIP = iface_name;
+}
+
 /* Note: The function should not use logging because it is called before
    the logging is initialized. */
 static bool apply_args(std::map<char,string>& args)
@@ -144,7 +174,7 @@ static bool apply_args(std::map<char,string>& args)
 
     switch( it->first ){
     case 'd':
-      AmConfig::Ifs[0].LocalIP = it->second;
+      set_default_interface(it->second);
       break;
 
     case 'D':
@@ -310,7 +340,7 @@ int main(int argc, char* argv[])
   }
 
   // Init default interface
-  AmConfig::Ifs.push_back(AmConfig::IP_interface());
+  //AmConfig::Ifs.push_back(AmConfig::IP_interface());
 
   /* apply command-line options */
   if(!apply_args(args)){

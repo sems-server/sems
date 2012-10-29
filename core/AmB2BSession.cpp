@@ -393,10 +393,10 @@ bool AmB2BSession::updateLocalSdp(AmSdp &sdp)
     // SEMS life.
 
     string relay_address;
-    if (rtp_interface >= 0 && (unsigned)rtp_interface < AmConfig::Ifs.size()) {
-      relay_address = AmConfig::Ifs[rtp_interface].PublicIP.empty() ?
-        AmConfig::Ifs[rtp_interface].LocalIP :
-        AmConfig::Ifs[rtp_interface].PublicIP;
+    if (rtp_interface >= 0 && (unsigned)rtp_interface < AmConfig::RTP_Ifs.size()) {
+      relay_address = AmConfig::RTP_Ifs[rtp_interface].PublicIP.empty() ?
+        AmConfig::RTP_Ifs[rtp_interface].LocalIP :
+        AmConfig::RTP_Ifs[rtp_interface].PublicIP;
     } else {
       relay_address = advertisedIP();
     }

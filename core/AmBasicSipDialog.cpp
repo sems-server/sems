@@ -117,11 +117,12 @@ string AmBasicSipDialog::getContactHdr()
     
   int oif = getOutboundIf();
   assert(oif >= 0);
-  assert(oif < (int)AmConfig::Ifs.size());
+  assert(oif < (int)AmConfig::SIP_Ifs.size());
   
-  contact_uri += AmConfig::Ifs[oif].PublicIP.empty() ? 
-    AmConfig::Ifs[oif].LocalSIPIP : AmConfig::Ifs[oif].PublicIP;
-  contact_uri += ":" + int2str(AmConfig::Ifs[oif].LocalSIPPort);
+  contact_uri += (AmConfig::SIP_Ifs[oif].PublicIP.empty() ?
+		  AmConfig::SIP_Ifs[oif].LocalIP :
+		  AmConfig::SIP_Ifs[oif].PublicIP);
+  contact_uri += ":" + int2str(AmConfig::SIP_Ifs[oif].LocalPort);
   contact_uri += ">" CRLF;
 
   return contact_uri;
@@ -162,7 +163,7 @@ int AmBasicSipDialog::getOutboundIf()
   if (outbound_interface >= 0)
     return outbound_interface;
 
-  if(AmConfig::Ifs.size() == 1){
+  if(AmConfig::SIP_Ifs.size() == 1){
     return (outbound_interface = 0);
   }
 

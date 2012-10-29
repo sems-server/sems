@@ -1224,15 +1224,21 @@ void AmSession::onFailure()
 string AmSession::advertisedIP()
 {
   if(rtp_interface < 0){
-    rtp_interface = dlg.getOutboundIf();
+    // TODO: get default media interface for signaling IF instead
+    rtp_interface = AmConfig::SIP_Ifs[dlg.getOutboundIf()].RtpInterface;
+    if(rtp_interface < 0) {
+      DBG("No media interface for signaling interface:\n");
+      DBG("Using default media interface instead.\n");
+      rtp_interface = 0;
+    }
   }
   
   assert(rtp_interface >= 0);
-  assert((unsigned int)rtp_interface < AmConfig::Ifs.size());
+  assert((unsigned int)rtp_interface < AmConfig::RTP_Ifs.size());
 
-  string set_ip = AmConfig::Ifs[rtp_interface].PublicIP; // "public_ip" parameter. 
+  string set_ip = AmConfig::RTP_Ifs[rtp_interface].PublicIP;
   if (set_ip.empty())
-    return AmConfig::Ifs[rtp_interface].LocalIP;  // "media_ip" parameter.
+    return AmConfig::RTP_Ifs[rtp_interface].LocalIP; // "media_ip" parameter.
 
   return set_ip;
 }  

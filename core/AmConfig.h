@@ -83,35 +83,43 @@ struct AmConfig
 
     string name;
 
-    /** local IP for SDP media advertising */
-    string LocalIP;
-    
-    /** public IP for SDP media advertising; we actually
-     *  bind to local IP, but advertise public IP. */ 
+    /** Used for binding socket */
+    string       LocalIP;
+        
+    /** Used in Contact-HF */
     string PublicIP;
-    
+
+    /** Network interface name and index */
+    string       NetIf;
+    unsigned int NetIfIdx;
+
+    IP_interface();
+  };
+
+  struct SIP_interface : public IP_interface {
+
+    /** Used for binding SIP socket */
+    unsigned int LocalPort;
+        
+    /** options for the signaling socket 
+     * (@see trsp_socket::socket_options) 
+     */
+    unsigned int SigSockOpts;
+
+    /** RTP interface index */
+    int RtpInterface;
+
+    SIP_interface();
+  };
+
+  struct RTP_interface : public IP_interface {
+
     /** Lowest local RTP port */
     int RtpLowPort;
     /** Highest local RTP port */
     int RtpHighPort;
-    
-    /** the interface SIP requests are sent from - needed for registrar_client */
-    string LocalSIPIP;
-    /** the port SIP requests are sent from - optional (default 5060) */
-    int LocalSIPPort;
 
-    /** Network interface name and index for media */
-    string       MediaIf;
-    unsigned int MediaIfIdx;
-
-    /** Network interface name and index for signaling */
-    string       SipIf;
-    unsigned int SipIfIdx;
-
-    /** options for the signaling socket (@see trsp_socket::socket_options) */
-    unsigned int SigSockOpts;
-
-    IP_interface();
+    RTP_interface();
 
     int getNextRtpPort();
 
@@ -120,8 +128,11 @@ struct AmConfig
     AmMutex next_rtp_port_mut;
   };
 
-  static vector<IP_interface>       Ifs;
-  static map<string,unsigned short> If_names;
+  static vector<SIP_interface>      SIP_Ifs;
+  static vector<RTP_interface>      RTP_Ifs;
+  static map<string,unsigned short> SIP_If_names;
+  static map<string,unsigned short> RTP_If_names;
+  static map<string,unsigned short> LocalSIPIP2If;
 
   struct IPAddr {
     string addr;
@@ -142,8 +153,9 @@ struct AmConfig
   };
 
   static list<SysIntf> SysIfs;
-  static multimap<string,unsigned short> LocalSIPIP2If;
 
+  static int insert_SIP_interface(const SIP_interface& intf);
+  static int insert_RTP_interface(const RTP_interface& intf);
   static int finalizeIPConfig();
 
   static void dump_Ifs();

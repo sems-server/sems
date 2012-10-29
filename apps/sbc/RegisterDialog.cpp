@@ -112,7 +112,7 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
   ParamReplacerCtx ctx;
   int oif = getOutboundIf();
   assert(oif >= 0);
-  assert((size_t)outbound_interface < AmConfig::Ifs.size());
+  assert((size_t)outbound_interface < AmConfig::SIP_Ifs.size());
 
   for(unsigned int i=0; i < uac_contacts.size(); i++) {
 
@@ -121,12 +121,12 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
     uac_contacts[i].uri_user = encodeUsername(orig_contacts[i],
 					      req,cp,ctx);
 
-    uac_contacts[i].uri_host = AmConfig::Ifs[oif].LocalSIPIP;
+    uac_contacts[i].uri_host = AmConfig::SIP_Ifs[oif].LocalIP;
 
-    if(AmConfig::Ifs[oif].LocalSIPPort == 5060)
+    if(AmConfig::SIP_Ifs[oif].LocalPort == 5060)
       uac_contacts[i].uri_port.clear();
     else
-      uac_contacts[i].uri_port = int2str(AmConfig::Ifs[oif].LocalSIPPort);
+      uac_contacts[i].uri_port = int2str(AmConfig::SIP_Ifs[oif].LocalPort);
       
     DBG("Patching host and port for Contact-HF: host='%s';port='%s'",
 	uac_contacts[i].uri_host.c_str(),uac_contacts[i].uri_port.c_str());
