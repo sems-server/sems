@@ -212,6 +212,7 @@ NOT_IMPLEMENTED(B2BaddReceivedRequest(const AmSipRequest& req));
 NOT_IMPLEMENTED(B2BsetHeaders(const string& hdr, bool replaceCRLF));
 NOT_IMPLEMENTED(B2BclearHeaders());
 NOT_IMPLEMENTED(B2BaddHeader(const string& hdr));
+NOT_IMPLEMENTED(B2BremoveHeader(const string& hdr));
 
 #undef NOT_IMPLEMENTED
 #undef NOT_IMPLEMENTED_UINT

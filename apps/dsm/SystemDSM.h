@@ -93,6 +93,9 @@ class SystemDSM
   /** add a header to the headers of outgoing INVITE */
    void B2BaddHeader(const string& hdr);
 
+  /** remove a header to the headers of outgoing INVITE */
+   void B2BremoveHeader(const string& hdr);
+
   /** transfer ownership of object to this session instance */
    void transferOwnership(DSMDisposable* d);
 

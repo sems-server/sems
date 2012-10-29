@@ -128,6 +128,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("B2B.terminateOtherLeg", SCB2BTerminateOtherLegAction);
   DEF_CMD("B2B.sendReinvite", SCB2BReinviteAction);
   DEF_CMD("B2B.addHeader", SCB2BAddHeaderAction);
+  DEF_CMD("B2B.removeHeader", SCB2BRemoveHeaderAction);
   DEF_CMD("B2B.clearHeaders", SCB2BClearHeadersAction);
   DEF_CMD("B2B.setHeaders", SCB2BSetHeadersAction);
 
@@ -1294,6 +1295,12 @@ EXEC_ACTION_START(SCB2BAddHeaderAction) {
   string val = resolveVars(arg, sess, sc_sess, event_params);
   DBG("adding B2B header '%s'\n", val.c_str());
   sc_sess->B2BaddHeader(val);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCB2BRemoveHeaderAction) {
+  string val = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("removing B2B header '%s'\n", val.c_str());
+  sc_sess->B2BremoveHeader(val);
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCB2BSetHeadersAction,',', true);

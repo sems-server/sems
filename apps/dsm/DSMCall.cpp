@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 iptego GmbH
+ * Copyright (C) 2012 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -798,6 +799,19 @@ void DSMCall::B2BconnectCallee(const string& remote_party,
   connectCallee(remote_party, remote_uri, relayed_invite);
 }
 
+AmB2BCalleeSession* DSMCall::newCalleeSession() {
+ AmB2BCalleeSession* s = new AmB2BCalleeSession(this);
+ map<string, string>::iterator it = var.find(DSM_B2B_LOCAL_PARTY);
+ if (it != var.end())
+   s->dlg->setLocalParty(it->second);
+
+ it = var.find(DSM_B2B_LOCAL_URI);
+ if (it != var.end())
+   s->dlg->setLocalUri(it->second);
+
+ return s;
+}
+
 void DSMCall::B2BaddReceivedRequest(const AmSipRequest& req) {
   DBG("inserting request '%s' with CSeq %d in list of received requests\n", 
       req.method.c_str(), req.cseq);
@@ -836,5 +850,9 @@ void DSMCall::B2BaddHeader(const string& hdr) {
 
 void DSMCall::B2BclearHeaders() {
   invite_req.hdrs.clear();
+}
+
+void DSMCall::B2BremoveHeader(const string& hdr) {
+  removeHeader(invite_req.hdrs, hdr);
 }
 

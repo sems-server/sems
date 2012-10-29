@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2008 iptego GmbH
+ * Copyright (C) 2012 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -133,6 +134,8 @@ protected:
   void onOtherBye(const AmSipRequest& req);
   bool onOtherReply(const AmSipReply& reply);
 public:
+  AmB2BCalleeSession* newCalleeSession();
+
   void B2BterminateOtherLeg();
   void B2BconnectCallee(const string& remote_party,
 			const string& remote_uri,
@@ -142,6 +145,7 @@ public:
   void B2BsetHeaders(const string& hdr, bool replaceCRLF);
   void B2BclearHeaders();
   void B2BaddHeader(const string& hdr);
+  void B2BremoveHeader(const string& hdr);
 };
 
 #endif

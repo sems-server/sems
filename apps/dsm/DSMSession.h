@@ -58,6 +58,10 @@ using std::map;
 #define DSM_ENABLE_REQUEST_EVENTS  "enable_request_events"
 #define DSM_ENABLE_REPLY_EVENTS    "enable_reply_events"
 
+#define DSM_B2B_LOCAL_PARTY  "b2b_local_party" // From in outgoing call
+#define DSM_B2B_LOCAL_URI    "b2b_local_uri"
+#define DSM_B2B_AUTH_USER    "b2b_auth_user"
+#define DSM_B2B_AUTH_PWD     "b2b_auth_pwd"
 
 #define DSM_AVAR_REQUEST "request"
 #define DSM_AVAR_REPLY   "reply"
@@ -137,8 +141,11 @@ class DSMSession {
   /** set headers of outgoing INVITE */
   virtual void B2BclearHeaders() = 0;
 
-  /** add a header to the headers of outgoing INVITE */
+  /** add a header to the headers of the outgoing INVITE */
   virtual void B2BaddHeader(const string& hdr) = 0;
+
+  /** remove a header to the headers of the outgoing INVITE */
+  virtual void B2BremoveHeader(const string& hdr) = 0;
 
   /** transfer ownership of object to this session instance */
   virtual void transferOwnership(DSMDisposable* d) = 0;

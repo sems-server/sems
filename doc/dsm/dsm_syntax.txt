@@ -184,7 +184,11 @@ B2B call control
 ----------------
  B2B.connectCallee(remote_party, remote_uri)
    connect second leg of B2B session (see AmB2BSession)
-
+    R-URI = remote_uri
+    To = remote_party 
+    From = $b2b_local_party
+    auth = ($b2b_auth_user, $b2b_auth_pwd)
+   
  B2B.terminateOtherLeg
    disconnect second leg of B2B session (see AmB2BSession),
    e.g. to connect to a new destination
@@ -202,6 +206,9 @@ B2B call control
 
  B2B.addHeader(string header)
   add a header for outgoing INVITE on B leg
+ 
+ B2B.removeHeader(string header_name)
+  remove a header for outgoing INVITE on B leg
  
  B2B.setHeaders(string headers [, replace_crlf=true|false])
   set headers for outgoing INVITE on B leg
@@ -499,6 +506,11 @@ special variables:
    enable_request_events  "true"  - run events on receiving a request
                           "false" - don't run events on receiveing request 
 
+
+   b2b_local_party                - From in outgoing B2B call
+   b2b_local_uri                  - URI of From for B2B call, for application internal use
+   b2b_auth_user                  - SIP auth user for 2nd leg of B2B call  
+   b2b_auth_pwd                   - SIP auth pwd for 2nd leg of B2B call
     
 =============================
 errors:
