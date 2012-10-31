@@ -473,6 +473,7 @@ int parse_headers(sip_msg* msg, char** c, char* end)
 	    case sip_header::H_VIA:
 		if(!msg->via1)
 		    msg->via1 = hdr;
+		msg->vias.push_back(h);
 		break;
 
 	    // case sip_header::H_RSEQ:

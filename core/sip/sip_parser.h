@@ -115,6 +115,7 @@ struct sip_msg
     sip_header*        cseq;
     sip_header*        rack;
 
+    list<sip_header*>  vias;
     sip_header*        via1;
     sip_via_parm*      via_p1;
 
