@@ -449,6 +449,11 @@ void AmB2BSession::updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cs
     relayed_req.erase(t);
     DBG("updated relayed_req (UAC trans): CSeq %u -> %u\n", old_cseq, new_cseq);
   }
+
+  if (est_invite_cseq == old_cseq) {
+    est_invite_cseq = new_cseq;
+    DBG("updated est_invite_cseq: CSeq %u -> %u\n", old_cseq, new_cseq);
+  }
 }
 
 
