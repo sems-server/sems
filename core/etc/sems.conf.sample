@@ -73,15 +73,14 @@ sip_port=5080
 
 # optional parameter: outbound_proxy=uri
 #
-# - this sets an outbound proxy for calls and registrations initiated 
-#   by SEMS. This does not apply to requests in a dialog that 
-#   is initiated by someone else and incoming to SEMS.
-#   If this is not set (default setting), then for dialogs 
-#   initiated by SEMS the r-uri is resolved and the request 
-#   is sent there directly.
-#   This is resolved by the SIP stack with DNS if a name is given.
-#   Warning: If the value set here can not be resolved, no 
-#            requests will be sent out at all!
+# - this sets an outbound proxy for dialogs and registrations initiated 
+#   by SEMS.  A preloaded Route header containing the uri is added to
+#   each initial request.  The request is then sent to destination obtained
+#   by resolving the uri. If outbound_proxy is not set (default setting),
+#   no preloaded Route header is added and request is sent to destination
+#   obtained by resolving r-uri.  Resolving is done by SIP stack with DNS
+#   if uri contains domain name. Warning: If uri can not be resolved, no  
+#   requests will be sent out at all!
 #  
 #   default: empty
 #
@@ -90,10 +89,10 @@ sip_port=5080
 
 # optional parameter: force_outbound_proxy={yes|no}
 #
-# - forces SEMS to send any request to the outbound proxy in any
-#   situation, by adding an extra first Route to the outbound_proxy.
-#   This option will only have an effect if the outbound_proxy
-#   option has been set, and it will break 3261 compatibility
+# - forces SEMS to set outbound_proxy for any requests (not just for
+#   registrations and dialog initiating requests). See above what setting
+#   of outbound_proxy means.  This option will only have an effect if the
+#   outbound_proxy option has been set, and it will break 3261 compatibility
 #   in some cases; better use next_hop_ip/next_hop_port.
 #
 #   default: no
@@ -101,11 +100,23 @@ sip_port=5080
 # Example:
 #   force_outbound_proxy=yes
 
-# optional parameter: next_hop=ip[:port]
+# optional parameter: next_hop=address[:port]
 # - if this is set, all outgoing requests will be sent to
-#   this IP, regardless of R-URI etc.
-# next_hop=192.168.5.1
-# next_hop=192.168.5.1:5080
+#   this address (IP address or domain name), regardless of R-URI etc.
+#
+# Examples:
+#   next_hop=192.168.5.1
+#   next_hop=foo.example.com:5080
+
+# optional parameter: next_hop_1st_req={yes|no}
+# - if set to yes, next_hop behavior (routing without pre-loaded route set)
+#   applies only to initial request.  Subsequent requests are routed
+#   normally based on route set learned from reply to initial request.
+#
+#   default: no
+#
+# Example:
+#   next_hop_1st_req=yes
 
 # optional parameter:next_hop_for_replies
 # - use next_hop for replies, too?
