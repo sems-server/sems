@@ -26,7 +26,8 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     next_hop(AmConfig::NextHop),
     next_hop_1st_req(AmConfig::NextHop1stReq),
-    outbound_interface(-1)
+    outbound_interface(-1),
+    nat_handling(false)
 {
   assert(h);
 }
@@ -324,7 +325,13 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
 	req.method == SIP_METH_NOTIFY))) {
     
     // refresh the target
-    remote_uri = req.from_uri;
+    if (remote_uri != req.from_uri) {
+      remote_uri = req.from_uri;
+      if(nat_handling && req.first_hop) {
+	next_hop = req.remote_ip + ":" + req.remote_port;
+	next_hop_1st_req = false;
+      }
+    }
   }
   
   // Dlg not yet initialized?
