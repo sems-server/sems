@@ -456,6 +456,7 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	
     for (list<sip_header *>::const_iterator it = msg->hdrs.begin(); 
 	 it != msg->hdrs.end(); ++it) {
+
 	if((*it)->type == sip_header::H_OTHER || 
                 (*it)->type == sip_header::H_REQUIRE){
 	    req.hdrs += c2stlstr((*it)->name) + ": " 
@@ -471,6 +472,15 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
 
     req.local_if = msg->local_socket->get_if();
+
+    if(msg->vias.size() > 1) {
+	req.first_hop = false;
+    } 
+    else {
+	sip_via* via1 = (sip_via*)msg->via1->p;
+	assert(via1); // gets parsed in parse_sip_msg()
+	req.first_hop = (via1->parms.size() == 1);
+    }
 }
 
 inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
