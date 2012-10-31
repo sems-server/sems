@@ -102,6 +102,7 @@ struct SBCCallProfile
   string callid;
 
   bool transparent_dlg_id;
+  bool dlg_nat_handling;
 
   string outbound_proxy;
   bool force_outbound_proxy;
@@ -241,6 +242,7 @@ struct SBCCallProfile
   SBCCallProfile()
   : auth_enabled(false),
     transparent_dlg_id(false),
+    dlg_nat_handling(false),
     sst_enabled_value(false),
     rtprelay_enabled(false),
     force_symmetric_rtp_value(false),

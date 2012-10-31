@@ -126,6 +126,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   callid = cfg.getParameter("Call-ID");
 
   transparent_dlg_id = cfg.getParameter("transparent_dlg_id") == "yes";
+  dlg_nat_handling = cfg.getParameter("dlg_nat_handling") == "yes";
 
   force_outbound_proxy = cfg.getParameter("force_outbound_proxy") == "yes";
   outbound_proxy = cfg.getParameter("outbound_proxy");
@@ -795,6 +796,8 @@ int SBCCallProfile::apply_a_routing(ParamReplacerCtx& ctx,
     dlg.outbound_proxy = aleg_op;
     dlg.force_outbound_proxy = aleg_force_outbound_proxy;
   }
+
+  dlg.nat_handling = dlg_nat_handling;
 
   return 0;
 }
