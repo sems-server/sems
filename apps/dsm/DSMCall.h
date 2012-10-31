@@ -63,6 +63,8 @@ class DSMCall : public AmB2BCallerSession,
   std::set<DSMDisposable*> gc_trash;
   
   bool checkVar(const string& var_name, const string& var_val);
+  string getVar(const string& var_name);
+
 public:
   DSMCall(const DSMScriptConfig& config,
 	  AmPromptCollection* prompts,
@@ -146,6 +148,29 @@ public:
   void B2BclearHeaders();
   void B2BaddHeader(const string& hdr);
   void B2BremoveHeader(const string& hdr);
+};
+
+class DSMCallCalleeSession : public AmB2BCalleeSession,
+			     public CredentialHolder
+{
+  std::auto_ptr<UACAuthCred> cred;
+  std::auto_ptr<AmSessionEventHandler> auth;
+
+
+protected:
+
+  void onSendRequest(AmSipRequest& req, int& flags);
+  void onSipReply(const AmSipRequest& req, const AmSipReply& reply,
+		  AmBasicSipDialog::Status old_dlg_status);
+
+public:
+  DSMCallCalleeSession(const string& other_local_tag);
+  DSMCallCalleeSession(const AmB2BCallerSession* caller);
+
+  void setCredentials(const string& realm, const string& user, const string& pwd);
+  UACAuthCred* getCredentials();
+  void setAuthHandler(AmSessionEventHandler* h);
+
 };
 
 #endif

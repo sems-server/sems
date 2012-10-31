@@ -74,6 +74,13 @@ bool DSMCall::checkVar(const string& var_name, const string& var_val) {
   return (it != var.end()) && (it->second == var_val);
 }
 
+string DSMCall::getVar(const string& var_name) {
+  map<string, string>::iterator it = var.find(var_name);
+  if (it != var.end())
+    return it->second;
+  return "";
+}
+
 /** returns whether params, param exists && param==value*/
 bool checkParam(const string& par_name, const string& par_val, map<string, string>* params) {
   if (NULL == params)
@@ -800,14 +807,29 @@ void DSMCall::B2BconnectCallee(const string& remote_party,
 }
 
 AmB2BCalleeSession* DSMCall::newCalleeSession() {
- AmB2BCalleeSession* s = new AmB2BCalleeSession(this);
- map<string, string>::iterator it = var.find(DSM_B2B_LOCAL_PARTY);
- if (it != var.end())
-   s->dlg->setLocalParty(it->second);
+ DSMCallCalleeSession* s = new DSMCallCalleeSession(this);
+ s->dlg->setLocalParty(getVar(DSM_B2B_LOCAL_PARTY));
+ s->dlg->setLocalUri(getVar(DSM_B2B_LOCAL_URI));
 
- it = var.find(DSM_B2B_LOCAL_URI);
- if (it != var.end())
-   s->dlg->setLocalUri(it->second);
+ string user = getVar(DSM_B2B_AUTH_USER);
+ string pwd = getVar(DSM_B2B_AUTH_PWD);
+ if (!user.empty() && !pwd.empty()) {
+   s->setCredentials("", user, pwd);
+
+    // adding auth handler
+    AmSessionEventHandlerFactory* uac_auth_f = 
+      AmPlugIn::instance()->getFactory4Seh("uac_auth");
+    if (NULL == uac_auth_f)  {
+      INFO("uac_auth module not loaded. uac auth NOT enabled for B2B b leg in DSM.\n");
+    } else {
+      AmSessionEventHandler* h = uac_auth_f->getHandler(s);
+      
+      // we cannot use the generic AmSessionEventHandler hooks, 
+      // because the hooks don't work in AmB2BSession
+      s->setAuthHandler(h);
+      DBG("uac auth enabled for DSM callee session.\n");
+    }
+ }
 
  return s;
 }
@@ -856,3 +878,66 @@ void DSMCall::B2BremoveHeader(const string& hdr) {
   removeHeader(invite_req.hdrs, hdr);
 }
 
+/* --- B2B second leg -------------------------------------------------- */
+
+DSMCallCalleeSession::DSMCallCalleeSession(const string& other_local_tag)
+  : AmB2BCalleeSession(other_local_tag) {
+}
+
+DSMCallCalleeSession::DSMCallCalleeSession(const AmB2BCallerSession* caller)
+  : AmB2BCalleeSession(caller) {
+}
+
+void DSMCallCalleeSession::setCredentials(const string& realm,
+					   const string& user,
+					  const string& pwd) {
+  cred.reset(new UACAuthCred(realm, user, pwd));
+}
+
+UACAuthCred* DSMCallCalleeSession::getCredentials() {
+  return cred.get();
+}
+
+void DSMCallCalleeSession::setAuthHandler(AmSessionEventHandler* h) {
+  auth.reset(h);
+}
+
+void DSMCallCalleeSession::onSendRequest(AmSipRequest& req, int& flags)
+{
+  if (NULL != auth.get()) {
+    DBG("auth->onSendRequest cseq = %d\n", req.cseq);
+    auth->onSendRequest(req, flags);
+  }
+  
+  AmB2BCalleeSession::onSendRequest(req, flags);
+}
+
+void DSMCallCalleeSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
+				      AmBasicSipDialog::Status old_dlg_status)
+{
+  // call event handlers where it is not done 
+  TransMap::iterator t = relayed_req.find(reply.cseq);
+  bool fwd = t != relayed_req.end();
+  DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
+  DBG("onSipReply: content-type = %s\n",reply.body.getCTStr().c_str());
+  if(fwd) {
+    CALL_EVENT_H(onSipReply, req, reply, old_dlg_status);
+  }
+
+
+  if (NULL == auth.get()) {
+    AmB2BCalleeSession::onSipReply(req, reply, old_dlg_status);
+    return;
+  }
+  
+  unsigned int cseq_before = dlg->cseq;
+  if (!auth->onSipReply(req, reply, old_dlg_status)) {
+    AmB2BCalleeSession::onSipReply(req, reply, old_dlg_status);
+  } else {
+    if (cseq_before != dlg->cseq) {
+      DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
+          "updating relayed_req map\n", reply.cseq, cseq_before);
+      updateUACTransCSeq(reply.cseq, cseq_before);
+    }
+  }
+}
