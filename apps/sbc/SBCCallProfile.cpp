@@ -798,7 +798,11 @@ int SBCCallProfile::apply_a_routing(ParamReplacerCtx& ctx,
   }
 
   dlg.nat_handling = dlg_nat_handling;
-
+  if(dlg_nat_handling) {
+    dlg.next_hop_ip = req.remote_ip;
+    dlg.next_hop_port = req.remote_port;
+    dlg.next_hop_1st_req = false;
+  }
   return 0;
 }
 
