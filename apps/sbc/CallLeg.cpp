@@ -6,7 +6,7 @@
 #include "AmUtils.h"
 #include "AmRtpReceiver.h"
 
-#define TRACE DBG
+#define TRACE INFO
 
 // helper functions
 
@@ -60,19 +60,12 @@ CallLeg::CallLeg(const string& other_local_tag):
 // callee
 CallLeg::CallLeg(const CallLeg* caller):
   AmB2BSession(caller->getLocalTag()),
-  call_status(NoReply), // we already have the other leg
+  call_status(Disconnected),
   hold_request_cseq(0)
 {
   a_leg = !caller->a_leg; // we have to be the complement
 
-  // This leg is marked as 'relay only' since the beginning because it might
-  // need not to know on time that it is connected and thus should relay.
-  //
-  // For example: B leg received 2xx reply, relayed it to A leg and is
-  // immediatelly processing in-dialog request which should be relayed, but
-  // A leg didn't have chance to process the relayed reply so the B leg is not
-  // connected to the A leg yet when handling the in-dialog request.
-  set_sip_relay_only(true);
+  set_sip_relay_only(false); // will be changed later on
 
   // code below taken from createCalleeSession
 
@@ -276,6 +269,11 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 
   AmSipReply& reply = ev->reply;
 
+  TRACE("%s: B2B SIP reply %d/%d %s received in %s state\n",
+      getLocalTag().c_str(),
+      reply.code, reply.cseq, reply.cseq_method.c_str(),
+      callStatus2str(call_status));
+
   // FIXME: do we wat to have the check below? multiple other legs are
   // possible so the check can stay as it is for Connected state but for other
   // should check other_legs instead of other_id
@@ -296,19 +294,16 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
   }
 #endif
 
-  DBG("%u %s reply (CSeq: %u) received from other leg\n", reply.code, reply.reason.c_str(), reply.cseq);
-
   // handle relayed initial replies specific way
+  // FIXME: testing est_invite_cseq is wrong! (checking in what direction would
+  // be needed)
   if (reply.cseq_method == SIP_METH_INVITE &&
-     (((reply.cseq == est_invite_cseq && ev->forward)) ||
-      ((call_status == NoReply || call_status == Ringing) && !ev->forward))) { // connect not related to initial INVITE
+      (call_status == NoReply || call_status == Ringing) &&
+      ((reply.cseq == est_invite_cseq && ev->forward) ||
+       (!ev->forward))) { // connect not related to initial INVITE
     // handle only replies to the original INVITE (CSeq is really the same?)
 
-    // do not handle replies to initial request in states where it has no effect
-    if ((call_status == Connected) || (call_status == Disconnected)) {
-      DBG("ignoring reply in %s state\n", callStatus2str(call_status));
-      return;
-    }
+    TRACE("established CSeq: %d, forward: %s\n", est_invite_cseq, ev->forward ? "yes": "no");
 
     // TODO: stop processing of 100 reply here or add Trying state to handle it
     // without remembering other_id
@@ -418,6 +413,12 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
     return; // relayed reply to initial request is processed
   }
 
+  // reply not from our peer (might be one of the discarded ones)
+  if (other_id != reply.from_tag) {
+    TRACE("ignoring reply from %s in %s state\n", reply.from_tag.c_str(), callStatus2str(call_status));
+    return;
+  }
+
   // TODO: handle call transfers (i.e. the other leg is reINVITing and we should
   // reINVITE as well according to its result)
 
@@ -434,12 +435,26 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
     return;
   }
 
+  if (call_status != Disconnected) {
+    ERROR("BUG: ConnectLegEvent received in %s state\n", callStatus2str(call_status));
+    return;
+  }
+
   MONITORING_LOG3(getLocalTag().c_str(), 
       "b2b_leg", other_id.c_str(),
       "to", dlg.remote_party.c_str(),
       "ruri", dlg.remote_uri.c_str());
 
+  // This leg is marked as 'relay only' since the beginning because it might
+  // need not to know on time that it is connected and thus should relay.
+  //
+  // For example: B leg received 2xx reply, relayed it to A leg and is
+  // immediatelly processing in-dialog request which should be relayed, but
+  // A leg didn't have chance to process the relayed reply so the B leg is not
+  // connected to the A leg yet when handling the in-dialog request.
   set_sip_relay_only(true); // we should relay everything to the other leg from now
+
+  updateCallStatus(NoReply);
 
   AmMimeBody r_body(co_ev->body);
   const AmMimeBody* body = &co_ev->body;
@@ -503,6 +518,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   // leg A before.
 
   set_sip_relay_only(true); // we should relay everything to the other leg from now
+  updateCallStatus(NoReply);
 
   // use new media session if given
   if (ev->media) {
@@ -678,7 +694,16 @@ void CallLeg::onInvite(const AmSipRequest& req)
 
 void CallLeg::onSipRequest(const AmSipRequest& req)
 {
+  TRACE("%s: SIP request %d %s received in %s state\n",
+      getLocalTag().c_str(),
+      req.cseq, req.method.c_str(), callStatus2str(call_status));
+
+  TRACE("established CSeq: %d\n", est_invite_cseq);
+
   // we need to handle cases if there is no other leg (for example call parking)
+  // Note that setting sip_relay_only to false in this case doesn't solve the
+  // problem because AmB2BSession always tries to relay the request into the
+  // other leg.
   if (getCallStatus() == Disconnected) {
     TRACE("handling request %s in disconnected state", req.method.c_str());
     // this is not correct but what is?
@@ -693,11 +718,18 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool relayed_request = (t != relayed_req.end());
 
+  TRACE("%s: SIP reply %d/%d %s (%s) received in %s state\n",
+      getLocalTag().c_str(),
+      reply.code, reply.cseq, reply.cseq_method.c_str(),
+      (relayed_request ? "to relayed request" : "to locally generated request"),
+      callStatus2str(call_status));
+
   AmB2BSession::onSipReply(reply, old_dlg_status);
 
   // update internal state and call related callbacks based on received reply
   // (i.e. B leg in case of initial INVITE)
-  if ((reply.cseq == est_invite_cseq) && (reply.cseq_method == SIP_METH_INVITE)) {
+  if (reply.cseq == est_invite_cseq && reply.cseq_method == SIP_METH_INVITE &&
+    (call_status == NoReply || call_status == Ringing)) {
     // reply to the initial request
     if ((reply.code > 100) && (reply.code < 200)) {
       if (((call_status == Disconnected) || (call_status == NoReply)) && (!reply.to_tag.empty()))
@@ -721,10 +753,10 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 
   // we are created on the fly (not based on initial INIVITE), we have to
   // ACK the reply by ourselves
-  if (!relayed_request && reply.cseq_method == SIP_METH_INVITE && SIP_IS_200_CLASS(reply.code)) {
+/*  if (!relayed_request && reply.cseq_method == SIP_METH_INVITE && SIP_IS_200_CLASS(reply.code)) {
     DBG("generating ACK for non-relayed INVITE\n");
     dlg.send_200_ack(reply.cseq);
-  }
+  }*/
 
   if ((reply.cseq == hold_request_cseq) && (reply.cseq_method == SIP_METH_INVITE)) {
     if (reply.code < 200) { return; /* wait for final reply */ }
@@ -748,7 +780,7 @@ void CallLeg::onInvite2xx(const AmSipReply& reply)
   // we don't want to handle the 2xx using AmSession so the following may be
   // unwanted for us:
   // 
-  // AmB2BSession::onInvite2xx(reply);
+  AmB2BSession::onInvite2xx(reply);
 }
 
 void CallLeg::onCancel(const AmSipRequest& req)

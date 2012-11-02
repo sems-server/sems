@@ -170,9 +170,10 @@ class CallLeg: public AmB2BSession
   public:
     enum CallStatus {
       Disconnected, //< there is no other call leg we are connected to
-      NoReply,      //< there is at least one call leg we are connected to but without any response 
+      NoReply,      //< there is at least one call leg we are connected to but without any response
       Ringing,      //< this leg or one of legs we are connected to rings
       Connected     //< there is exactly one call leg we are connected to, in this case AmB2BSession::other_id holds the other leg id
+      //Disconnecting //< we were connected and now going to be disconnected (waiting for reINVITE reply for example)
     };
 
   private:
