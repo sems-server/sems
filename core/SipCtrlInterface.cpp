@@ -389,13 +389,33 @@ inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.r_uri    = c2stlstr(msg->u.request->ruri_str);
     req.tt       = tt;
 
-    if(get_contact(msg)){
+    if(get_contact(msg) && get_contact(msg)->value.len){
+
+	cstring contact = get_contact(msg)->value;
+	list<cstring> contact_list;
+	if(parse_nameaddr_list(contact_list,contact.s,contact.len) < 0) {
+	    WARN("Contact parsing failed\n");
+	    WARN("\tcontact = '%.*s'\n",contact.len,contact.s);
+	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
+
+	    trans_layer::instance()->send_sf_error_reply(&tt, msg, 400, 
+							 "Bad Contact");
+	    return false;
+	}
+
+	for(list<cstring>::iterator it = contact_list.begin();
+	    it != contact_list.end(); it++) {
+	    
+	    DBG("single contact = '%.*s'\n", it->len,it->s);
+	}
+
+	cstring contact_na = *contact_list.begin();
 
 	sip_nameaddr na;
-	const char* c = get_contact(msg)->value.s;
-	if(parse_nameaddr(&na,&c,get_contact(msg)->value.len) < 0){
+	const char* c = contact_na.s;
+	if(parse_nameaddr(&na,&c,contact_na.len) < 0){
 	    WARN("Contact parsing failed\n");
-	    WARN("\tcontact = '%.*s'\n",get_contact(msg)->value.len,get_contact(msg)->value.s);
+	    WARN("\tcontact = '%.*s'\n",contact_na.len,contact_na.s);
 	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
 
 	    trans_layer::instance()->send_sf_error_reply(&tt, msg, 400, "Bad Contact");
@@ -413,7 +433,14 @@ inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	    }
 
 	    req.from_uri = c2stlstr(na.addr);
-	    req.contact  = c2stlstr(get_contact(msg)->value);
+
+	    list<sip_header*>::const_iterator c_it = msg->contacts.begin();
+	    req.contact = c2stlstr((*c_it)->value);
+	    ++c_it;
+	    
+	    for(;c_it!=msg->contacts.end(); ++c_it){
+		req.contact += ", " + c2stlstr((*c_it)->value);
+	    }
 	}
     }
     else {
