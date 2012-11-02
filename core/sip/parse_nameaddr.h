@@ -1,7 +1,6 @@
 /*
- * $Id: parse_from_to.h 850 2008-04-04 21:29:36Z sayer $
- *
- * Copyright (C) 2007 Raphael Coeffic
+ * Copyright (C) 2011 Raphael Coeffic
+ *               2012 Frafos GmbH
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -26,40 +25,27 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#ifndef _parse_nameaddr_h_
+#define _parse_nameaddr_h_
 
-#ifndef _parse_from_to_h
-#define _parse_from_to_h
+#include "parse_uri.h"
 
-#include "sip_parser.h"
-#include "parse_header.h"
-#include "parse_nameaddr.h"
-
-struct sip_from_to: public sip_parsed_hdr
+struct sip_nameaddr
 {
-    sip_nameaddr  nameaddr;
-    cstring       tag;
+    cstring body;
 
-    sip_from_to(): sip_parsed_hdr() {}
-    ~sip_from_to() {}
+    cstring name;
+    cstring addr;
+
+    sip_uri uri;
+
+    list<sip_avp*> params;
+
+    sip_nameaddr() {}
+    ~sip_nameaddr();
 };
 
-int parse_from_to(sip_from_to* ft, const char* beg, int len);
-
-inline sip_from_to* get_from(const sip_msg* msg)
-{
-    return dynamic_cast<sip_from_to*>(msg->from->p);
-}
-
-inline sip_from_to* get_to(const sip_msg* msg)
-{
-    return dynamic_cast<sip_from_to*>(msg->to->p);
-}
+int parse_nameaddr(sip_nameaddr* na, const char** c, int len);
+int parse_nameaddr_list(list<cstring>& nas, const char* c, int len);
 
 #endif
-
-/** EMACS **
- * Local variables:
- * mode: c++
- * c-basic-offset: 4
- * End:
- */
