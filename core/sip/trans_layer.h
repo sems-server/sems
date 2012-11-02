@@ -88,7 +88,7 @@ public:
      * include a well-formed 'Content-Type', but no
      * 'Content-Length' header.
      */
-    int send_reply(trans_ticket* tt,
+    int send_reply(const trans_ticket* tt,
 		   int reply_code, const cstring& reason,
 		   const cstring& to_tag, const cstring& hdrs, 
 		   const cstring& body,
@@ -162,6 +162,18 @@ public:
 		      const cstring& reason, 
 		      const cstring& hdrs, const cstring& body);
     
+    /**
+     * Sends a stateful error reply.
+     * If a body is included, the hdrs parameter should
+     * include a well-formed 'Content-Type', but no
+     * 'Content-Length' header.
+     */
+    int send_sf_error_reply(const trans_ticket* tt, const sip_msg* req,
+			    int reply_code, const cstring& reason, 
+			    const cstring& hdrs = cstring(),
+			    const cstring& body = cstring());
+    
+
     /**
      * Transaction timeout
      */

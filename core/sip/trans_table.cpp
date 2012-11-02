@@ -459,7 +459,7 @@ inline void compute_tag(char* tag, unsigned int hl, unsigned int hh)
     tag[7] = _tag_lookup[(hh >> 10)&0x3F];
 }
 
-void compute_sl_to_tag(char* to_tag/*[8]*/, sip_msg* msg)
+void compute_sl_to_tag(char* to_tag/*[8]*/, const sip_msg* msg)
 {
     unsigned int hl=0;
     unsigned int hh=0;
