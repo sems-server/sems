@@ -51,7 +51,7 @@ class udp_trsp;
 class SipCtrlInterface:
     public sip_ua
 {
-    void sip_msg2am_request(const sip_msg *msg, AmSipRequest &request);
+    bool sip_msg2am_request(const sip_msg *msg, const trans_ticket& tt, AmSipRequest &request);
     bool sip_msg2am_reply(sip_msg *msg, AmSipReply &reply);
     
     void prepare_routes_uac(const list<sip_header*>& routes, string& route_field);

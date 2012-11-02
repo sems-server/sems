@@ -375,8 +375,9 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 }
 
 
-inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg, 
-    AmSipRequest &req)
+inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg, 
+						 const trans_ticket& tt,
+						 AmSipRequest &req)
 {
     assert(msg);
     assert(msg->from && msg->from->p);
@@ -386,6 +387,7 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.user     = c2stlstr(msg->u.request->ruri.user);
     req.domain   = c2stlstr(msg->u.request->ruri.host);
     req.r_uri    = c2stlstr(msg->u.request->ruri_str);
+    req.tt       = tt;
 
     if(get_contact(msg)){
 
@@ -395,6 +397,9 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	    WARN("Contact parsing failed\n");
 	    WARN("\tcontact = '%.*s'\n",get_contact(msg)->value.len,get_contact(msg)->value.s);
 	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
+
+	    trans_layer::instance()->send_sf_error_reply(&tt, msg, 400, "Bad Contact");
+	    return false;
 	}
 	else {
 	    sip_uri u;
@@ -402,6 +407,9 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 		WARN("'Contact' in new request contains a malformed URI\n");
 		WARN("\tcontact uri = '%.*s'\n",na.addr.len,na.addr.s);
 		WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
+
+		trans_layer::instance()->send_sf_error_reply(&tt, msg, 400, "Malformed Contact URI");
+		return false;
 	    }
 
 	    req.from_uri = c2stlstr(na.addr);
@@ -481,6 +489,8 @@ inline void SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	assert(via1); // gets parsed in parse_sip_msg()
 	req.first_hop = (via1->parms.size() == 1);
     }
+
+    return true;
 }
 
 inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
@@ -575,9 +585,8 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
     
     AmSipRequest req;
 
-    sip_msg2am_request(msg, req);
-
-    req.tt = tt;
+    if(!sip_msg2am_request(msg, tt, req))
+	return;
 
     DBG("Received new request from <%s:%i> on intf #%i\n",
 	req.remote_ip.c_str(),req.remote_port,req.local_if);
@@ -669,8 +678,7 @@ void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
       }
 
       AmSipRequest request;
-      sip_msg2am_request(tr->msg, request);
-      request.tt = trans_ticket(tr, buk);
+      sip_msg2am_request(tr->msg, trans_ticket(tr, buk), request);
 
       DBG("Reply timed out: %i %s\n",reply.code,reply.reason.c_str());
       DBG_PARAM(reply.callid);
