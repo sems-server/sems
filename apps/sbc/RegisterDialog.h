@@ -7,11 +7,12 @@
 class RegisterDialog
   : public SimpleRelayDialog
 {
-  // copy of original contact we received
-  AmUriParser original_contact;
+  // Normalized original contacts
+  vector<AmUriParser> orig_contacts;
+  map<string,AmUriParser*> oc_map;
 
-  // contact we are sending
-  AmUriParser uac_contact;
+  // Contacts as sent
+  vector<AmUriParser> uac_contacts;
 
   // AmBasicSipDialog interface
   int onTxReply(const AmSipRequest& req, AmSipReply& reply, int& flags);
@@ -19,6 +20,9 @@ class RegisterDialog
 
   //void onB2BRequest(const AmSipRequest& req);
   void onB2BReply(const AmSipReply& reply);
+
+  // helper methods
+  int parseContacts(const string& contacts, vector<AmUriParser>& cv);
 
 public:
   RegisterDialog();
@@ -29,10 +33,17 @@ public:
   int initUAS(const AmSipRequest& req, const SBCCallProfile& cp);
 
   // AmBasicSipEventHandler interface
-  void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipRequest& req,
 		  const AmSipReply& reply, 
 		  AmBasicSipDialog::Status old_dlg_status);
+
+  // Utility static methods
+  static string encodeUsername(const AmUriParser& original_contact,
+  			       const AmSipRequest& req,
+  			       const SBCCallProfile& cp,
+  			       ParamReplacerCtx& ctx);
+
+  static bool decodeUsername(const string& encoded_user, AmSipRequest& req);
 };
 
 #endif
