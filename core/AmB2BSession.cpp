@@ -124,6 +124,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward,
     AmSipReply n_reply;
     errCode2RelayedReply(n_reply, err_code, 500);
     n_reply.cseq = cseq;
+    n_reply.cseq_method = method;
     n_reply.from_tag = dlg.local_tag;
     DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
     relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
@@ -137,6 +138,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward,
     n_reply.code = sip_code;
     n_reply.reason = reason;
     n_reply.cseq = cseq;
+    n_reply.cseq_method = method;
     n_reply.from_tag = dlg.local_tag;
     DBG("relaying B2B SIP reply %d %s\n", sip_code, reason);
     relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
