@@ -130,8 +130,6 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
       
     DBG("Patching host and port for Contact-HF: host='%s';port='%s'",
 	uac_contacts[i].uri_host.c_str(),uac_contacts[i].uri_port.c_str());
-    
-    oc_map[uac_contacts[i].uri_user] = &orig_contacts[i];
   }
 
   return 0;
@@ -162,29 +160,14 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
 
   DBG("Got %zd server contacts\n", uas_contacts.size());
 
-  // find contact we tried to register
+  // decode contacts
   if(contact_hiding) {
     for (vector<AmUriParser>::iterator it =
 	   uas_contacts.begin(); it != uas_contacts.end(); it++) {
-      map<string,AmUriParser*>::iterator orig_it = oc_map.find(it->uri_user);
-      if (orig_it != oc_map.end()) {
-	// the other leg changed host:port, so compare 
-	// username instead of it->isEqual(uac_contact)
-	// replace with client contact
-	const AmUriParser& original_contact = *orig_it->second;
-	DBG("found contact we registered - replacing with original %s@%s:%s\n",
-	    original_contact.uri_user.c_str(), original_contact.uri_host.c_str(),
-	    original_contact.uri_port.c_str());
-	
-	it->display_name = original_contact.display_name;
-	it->uri_user = original_contact.uri_user;
-	it->uri_host = original_contact.uri_host;
-	it->uri_port = original_contact.uri_port;
-	it->uri_headers = original_contact.uri_headers;
-      }
+      decodeUsername(it->uri_user,*it);
     }
   }
-      
+  
   if (uas_contacts.size()) {
     vector<AmUriParser>::iterator it = uas_contacts.begin();
     contacts = it->print();
@@ -272,7 +255,7 @@ string RegisterDialog::encodeUsername(const AmUriParser& original_contact,
   return contact_hiding_prefix + encoded;
 }
 
-bool RegisterDialog::decodeUsername(const string& encoded_user, AmSipRequest& req)
+bool RegisterDialog::decodeUsername(const string& encoded_user, AmUriParser& uri)
 {
   DBG("trying to decode hidden contact variables from '%s'\n", 
       encoded_user.c_str());
@@ -292,18 +275,9 @@ bool RegisterDialog::decodeUsername(const string& encoded_user, AmSipRequest& re
     return false;
   }
   
-  AmUriParser ruri_parser;
-  ruri_parser.uri = req.r_uri;
-  if (!ruri_parser.parse_uri()) {
-    DBG("Error parsing R-URI '%s'\n", ruri_parser.uri.c_str());
-    return false;
-  }
-  else {
-    ruri_parser.uri_user = vars["u"].asCStr();
-    ruri_parser.uri_host = vars["h"].asCStr();
-    ruri_parser.uri_port = vars["p"].asCStr();
-    req.r_uri = ruri_parser.uri_str();
-  }
+  uri.uri_user = vars["u"].asCStr();
+  uri.uri_host = vars["h"].asCStr();
+  uri.uri_port = vars["p"].asCStr();
 
   return true;
 }

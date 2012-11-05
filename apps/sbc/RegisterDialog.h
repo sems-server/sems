@@ -9,7 +9,6 @@ class RegisterDialog
 {
   // Normalized original contacts
   vector<AmUriParser> orig_contacts;
-  map<string,AmUriParser*> oc_map;
   bool star_contact;
 
   // Contacts as sent
@@ -46,7 +45,7 @@ public:
   			       const SBCCallProfile& cp,
   			       ParamReplacerCtx& ctx);
 
-  static bool decodeUsername(const string& encoded_user, AmSipRequest& req);
+  static bool decodeUsername(const string& encoded_user, AmUriParser& uri);
 };
 
 #endif

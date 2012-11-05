@@ -1105,7 +1105,20 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  ruri = call_profile.ruri.empty() ? req.r_uri : call_profile.ruri;
+  AmSipRequest uac_req(req);
+
+  AmUriParser uac_ruri;
+  uac_ruri.uri = uac_req.r_uri;
+  if(!uac_ruri.parse_uri()) {
+    DBG("Error parsing R-URI '%s'\n",uac_ruri.uri.c_str());
+    throw AmSession::Exception(400,"Failed to parse R-URI");
+  }
+
+  if(RegisterDialog::decodeUsername(req.user,uac_ruri)) {
+    uac_req.r_uri = uac_ruri.uri_str();
+  }
+
+  ruri = call_profile.ruri.empty() ? uac_req.r_uri : call_profile.ruri;
   if(!call_profile.ruri_host.empty()){
     ctx.ruri_parser.uri = ruri;
     if(!ctx.ruri_parser.parse_uri()) {

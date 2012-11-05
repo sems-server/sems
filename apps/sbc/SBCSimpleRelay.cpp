@@ -225,16 +225,32 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
   if(!ev_disp->addEventQueue(local_tag,this)) {
     ERROR("addEventQueue(%s,%p) failed.\n",
 	  local_tag.c_str(),this);
+    reply_error(req,500,SIP_REPLY_SERVER_INTERNAL_ERROR);
     return -1;
   }
 
   AmSipRequest n_req(req);
   n_req.from_tag = local_tag;
 
+  if(req.method != SIP_METH_REGISTER) {
+    AmUriParser ruri;
+    ruri.uri = req.r_uri;
+    if(!ruri.parse_uri()) {
+      DBG("Error parsing R-URI '%s'\n",ruri.uri.c_str());
+      reply_error(req,400,"Failed to parse R-URI");
+    }
+
+    if(RegisterDialog::decodeUsername(req.user,ruri)) {
+      n_req.r_uri = ruri.uri_str();
+    }
+  }
+
   ParamReplacerCtx ctx;
   if((cp.apply_b_routing(ctx,n_req,*this) < 0) ||
-     (cp.apply_common_fields(ctx,n_req) < 0) )
+     (cp.apply_common_fields(n_req,ctx) < 0) ) {
+    reply_error(req,500,SIP_REPLY_SERVER_INTERNAL_ERROR);
     return -1;
+  }
 
   if(cp.transparent_dlg_id){
     ext_local_tag = req.from_tag;
