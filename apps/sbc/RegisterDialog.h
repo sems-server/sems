@@ -10,9 +10,12 @@ class RegisterDialog
   // Normalized original contacts
   vector<AmUriParser> orig_contacts;
   map<string,AmUriParser*> oc_map;
+  bool star_contact;
 
   // Contacts as sent
   vector<AmUriParser> uac_contacts;
+
+  bool contact_hiding;
 
   // AmBasicSipDialog interface
   int onTxReply(const AmSipRequest& req, AmSipReply& reply, int& flags);

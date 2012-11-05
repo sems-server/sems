@@ -413,12 +413,21 @@ inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 
 	sip_nameaddr na;
 	const char* c = contact_na.s;
-	if(parse_nameaddr(&na,&c,contact_na.len) < 0){
+	if((contact_na.len == 1) || (*c == '*')) {
+	    if(contact_list.size() != 1) {
+		trans_layer::instance()->
+		    send_sf_error_reply(&tt, msg, 400, "Bad Contact");
+		return false;
+	    }
+	    req.contact = "*";
+	}
+	else if(parse_nameaddr(&na,&c,contact_na.len) < 0){
 	    WARN("Contact parsing failed\n");
 	    WARN("\tcontact = '%.*s'\n",contact_na.len,contact_na.s);
 	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
 
-	    trans_layer::instance()->send_sf_error_reply(&tt, msg, 400, "Bad Contact");
+	    trans_layer::instance()->
+		send_sf_error_reply(&tt, msg, 400, "Bad Contact");
 	    return false;
 	}
 	else {
@@ -428,7 +437,8 @@ inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 		WARN("\tcontact uri = '%.*s'\n",na.addr.len,na.addr.s);
 		WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
 
-		trans_layer::instance()->send_sf_error_reply(&tt, msg, 400, "Malformed Contact URI");
+		trans_layer::instance()->
+		    send_sf_error_reply(&tt, msg, 400, "Malformed Contact URI");
 		return false;
 	    }
 

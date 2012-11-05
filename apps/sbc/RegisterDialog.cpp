@@ -6,6 +6,8 @@
 #include "AmConfig.h"
 
 RegisterDialog::RegisterDialog()
+  : contact_hiding(false),
+    star_contact(false)
 {
 }
 
@@ -18,7 +20,7 @@ int RegisterDialog::parseContacts(const string& contacts,
 {
   list<cstring> contact_list;
   
-  if(parse_nameaddr_list(contact_list, contacts.c_str(), 
+  if(parse_nameaddr_list(contact_list, contacts.c_str(),
 			 contacts.length()) < 0) {
     DBG("Could not parse contact list\n");
     return -1;
@@ -55,9 +57,19 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
   }
 
   DBG("parsing contacts: '%s'\n",req.contact.c_str());
-  if (!parseContacts(req.contact, uac_contacts) < 0) {
-    reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
-    return -1;
+  if (req.contact == "*") {
+    star_contact = true;
+  }
+  else if(!req.contact.empty()) {
+    if (parseContacts(req.contact, uac_contacts) < 0) {
+      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
+      return -1;
+    }
+
+    if (uac_contacts.size() == 0) {
+      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
+      return -1;
+    }
   }
 
   // move Expires as separate header to contact parameter
@@ -71,30 +83,40 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
       return -1;
     }
 
-    for(vector<AmUriParser>::iterator contact_it = uac_contacts.begin();
-	contact_it != uac_contacts.end(); contact_it++) {
-
-      if(contact_it->params.find("expires") == contact_it->params.end())
-	contact_it->params["expires"] = expires;
+    if(!star_contact) {
+      for(vector<AmUriParser>::iterator contact_it = uac_contacts.begin();
+	  contact_it != uac_contacts.end(); contact_it++) {
+	
+	if(contact_it->params.find("expires") == contact_it->params.end())
+	  contact_it->params["expires"] = expires;
+      }
+    }
+    else if(requested_expires != 0) {
+      reply_error(req, 400, "Bad Request",
+		  "Warning: Expires not equal 0\r\n");
+      return -1;
     }
   }
 
   // todo: limit / extend expires: UAS side
 
   orig_contacts = uac_contacts;
-  contact_hiding = cp.contact_hiding;
+  contact_hiding = cp.contact.hiding;
 
   if(SimpleRelayDialog::initUAC(req,cp) < 0)
     return -1;
+
+  if(star_contact)
+    return 0;
   
-  ParamReplacerCtx ctx(&cp);
+  ParamReplacerCtx ctx;
   int oif = getOutboundIf();
   assert(oif >= 0);
   assert((size_t)outbound_interface < AmConfig::Ifs.size());
 
   for(unsigned int i=0; i < uac_contacts.size(); i++) {
 
-    cp.fix_reg_contact(req,ctx,uac_contacts[i]);
+    cp.fix_reg_contact(ctx,req,uac_contacts[i]);
 
     uac_contacts[i].uri_user = encodeUsername(orig_contacts[i],
 					      req,cp,ctx);
@@ -121,8 +143,9 @@ int RegisterDialog::initUAS(const AmSipRequest& req, const SBCCallProfile& cp)
 }
 
 // AmBasicSipEventHandler interface
-void RegisterDialog::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
-				int old_dlg_status)
+void RegisterDialog::onSipReply(const AmSipRequest& req,
+				const AmSipReply& reply, 
+				AmBasicSipDialog::Status old_dlg_status)
 {
   string contacts;
 
@@ -140,7 +163,7 @@ void RegisterDialog::onSipReply(const AmSipRequest& req, const AmSipReply& reply
   DBG("Got %zd server contacts\n", uas_contacts.size());
 
   // find contact we tried to register
-  if(contact_hiding)
+  if(contact_hiding) {
     for (vector<AmUriParser>::iterator it =
 	   uas_contacts.begin(); it != uas_contacts.end(); it++) {
       map<string,AmUriParser*>::iterator orig_it = oc_map.find(it->uri_user);
@@ -204,10 +227,16 @@ int RegisterDialog::onTxRequest(AmSipRequest& req, int& flags)
       contact += ", " + it->print();
       it++;
     }
+
+    DBG("generated new contact: '%s'\n", contact.c_str());
+    removeHeader(req.hdrs, SIP_HDR_EXPIRES);
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_CONTACT) + contact + CRLF;
+  }
+  else if(star_contact) {
+    DBG("generated new contact: '*'\n");
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_CONTACT) "*" CRLF;
   }
 
-  DBG("generated new contact: '%s'\n", contact.c_str());
-  req.hdrs += SIP_HDR_COLSP(SIP_HDR_CONTACT) + contact + CRLF;
   flags |= SIP_FLAGS_NOCONTACT;
 
   return AmBasicSipDialog::onTxRequest(req,flags);
@@ -224,10 +253,10 @@ string RegisterDialog::encodeUsername(const AmUriParser& original_contact,
   ch_dict["p"] = original_contact.uri_port;
   
   string contact_hiding_prefix =
-    ctx.replaceParameters(cp.contact_hiding_prefix, "CH prefix", req);
+    ctx.replaceParameters(cp.contact.hiding_prefix, "CH prefix", req);
   
   string contact_hiding_vars =
-    ctx.replaceParameters(cp.contact_hiding_vars, "CH vars", req);
+    ctx.replaceParameters(cp.contact.hiding_vars, "CH vars", req);
   
   // ex contact_hiding_vars si=10.0.0.1;st=tcp
   if (!contact_hiding_vars.empty()) {
