@@ -6,13 +6,14 @@
 #include "AmUtils.h"
 #include "AmRtpReceiver.h"
 
-#define TRACE INFO
+#define TRACE DBG
 
 // helper functions
 
 static const char *callStatus2str(const CallLeg::CallStatus state)
 {
   static const char *disconnected = "Disconnected";
+  static const char *disconnecting = "Disconnecting";
   static const char *noreply = "NoReply";
   static const char *ringing = "Ringing";
   static const char *connected = "Connected";
@@ -20,6 +21,7 @@ static const char *callStatus2str(const CallLeg::CallStatus state)
 
   switch (state) {
     case CallLeg::Disconnected: return disconnected;
+    case CallLeg::Disconnecting: return disconnecting;
     case CallLeg::NoReply: return noreply;
     case CallLeg::Ringing: return ringing;
     case CallLeg::Connected: return connected;
@@ -46,17 +48,6 @@ ReliableB2BEvent::~ReliableB2BEvent()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#if 0
-// callee
-CallLeg::CallLeg(const string& other_local_tag): 
-  AmB2BSession(other_local_tag),
-  call_status(Disconnected)
-{
-  a_leg = false;
-  // TODO: copy RTP settings
-}
-#endif
-
 // callee
 CallLeg::CallLeg(const CallLeg* caller):
   AmB2BSession(caller->getLocalTag()),
@@ -65,7 +56,7 @@ CallLeg::CallLeg(const CallLeg* caller):
 {
   a_leg = !caller->a_leg; // we have to be the complement
 
-  set_sip_relay_only(false); // will be changed later on
+  set_sip_relay_only(false); // will be changed later on (for now we have no peer so we can't relay)
 
   // code below taken from createCalleeSession
 
@@ -127,21 +118,8 @@ void CallLeg::terminateOtherLeg()
   
   AmB2BSession::terminateOtherLeg();
 
+  // FIXME: call disconnect if connected (to put remote on hold)?
   updateCallStatus(Disconnected); // no B legs should be remaining
-}
-
-void CallLeg::terminateOtherLeg(const string &id)
-{
-  // remove the call leg from list of B legs
-  for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
-    if (i->id == id) {
-      i->releaseMediaSession();
-      other_legs.erase(i);
-      AmSessionContainer::instance()->postEvent(id, new B2BEvent(B2BTerminateLeg));
-      return;
-    }
-  }
-  DBG("trying to terminate other leg which is not in the list of legs, might be terminated already\n");
 }
 
 void CallLeg::terminateNotConnectedLegs()
@@ -174,9 +152,11 @@ void CallLeg::removeOtherLeg(const string &id)
     if (i->id == id) {
       i->releaseMediaSession();
       other_legs.erase(i);
-      return;
+      break;
     }
   }
+
+  /*if (terminate) AmSessionContainer::instance()->postEvent(id, new B2BEvent(B2BTerminateLeg));*/
 }
 
 // composed for caller and callee already
@@ -205,7 +185,7 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
       break;
 
     case DisconnectLeg:
-      onB2BDisconnect(dynamic_cast<DisconnectLegEvent *>(ev));
+      if (dynamic_cast<DisconnectLegEvent*>(ev)) disconnect(true);
       break;
 
     case B2BSipRequest:
@@ -252,13 +232,6 @@ int CallLeg::relaySipReply(AmSipReply &reply)
   return res;
 }
 
-void CallLeg::terminateCall()
-{
-  terminateNotConnectedLegs();
-  terminateOtherLeg();
-  terminateLeg();
-}
-
 // was for caller only
 void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 {
@@ -295,8 +268,8 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 #endif
 
   // handle relayed initial replies specific way
-  // FIXME: testing est_invite_cseq is wrong! (checking in what direction would
-  // be needed)
+  // testing est_invite_cseq is wrong! (checking in what direction or what role
+  // would be needed)
   if (reply.cseq_method == SIP_METH_INVITE &&
       (call_status == NoReply || call_status == Ringing) &&
       ((reply.cseq == est_invite_cseq && ev->forward) ||
@@ -311,14 +284,14 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
     if (reply.code < 200) { // 1xx replies
       if (call_status == NoReply) {
         if (ev->forward && relaySipReply(reply) != 0) {
-          terminateCall();
+          stopCall();
           return;
         }
         if (!reply.to_tag.empty()) {
           other_id = reply.from_tag;
           TRACE("1xx reply with to-tag received in NoReply state, changing status to Ringing and remembering the other leg ID (%s)\n", other_id.c_str());
           if (ev->forward && relaySipReply(reply) != 0) {
-            terminateCall();
+            stopCall();
             return;
           }
           updateCallStatus(Ringing);
@@ -344,7 +317,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
           reply.body = empty_body;
         }
         if (ev->forward && relaySipReply(reply) != 0) {
-          terminateCall();
+          stopCall();
           return;
         }
       }
@@ -357,7 +330,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 
       if (other_legs.empty()) {
         ERROR("BUG: connected but there is no B leg remaining\n");
-        setStopped();
+        stopCall();
         return;
       }
 
@@ -376,38 +349,28 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       set_sip_relay_only(true); // relay only from now on
 
       if (!ev->forward) {
-        // TODO: we need to generate re-INVITE based on received SDP
+        // we need to generate re-INVITE based on received SDP
         saveSessionDescription(reply.body);
         sendEstablishedReInvite();
       }
       else if (relaySipReply(reply) != 0) {
-        terminateCall();
+        stopCall();
         return;
       }
       updateCallStatus(Connected);
     } else { // 3xx-6xx replies
-      if (other_id == reply.from_tag) other_id.clear();
+      removeOtherLeg(reply.from_tag); // we don't care about this leg any more
+      onBLegRefused(reply); // possible serial fork here
 
-      // clean up the other leg; 
-      // eventually do serial fork, handle redirect or whatever else
-      terminateOtherLeg(reply.from_tag);
-
-      onBLegRefused(reply);
-
-      if (!other_legs.empty()) {
-        // there are other B legs for us, wait for their responses and do not
-        // relay current response
-        return;
-      }
-
-      // FIXME: call this from ternimateLeg or let the successors override terminateLeg instead?
-      onCallStopped();
-
-      // no other B legs, terminate
-      setStopped(); // would be called in onOtherReply
+      // there are other B legs for us => wait for their responses and do not
+      // relay current response
+      if (!other_legs.empty()) return;
 
       if (ev->forward) relaySipReply(reply);
+
+      // no other B legs, terminate
       updateCallStatus(Disconnected);
+      stopCall();
     }
 
     return; // relayed reply to initial request is processed
@@ -418,9 +381,6 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
     TRACE("ignoring reply from %s in %s state\n", reply.from_tag.c_str(), callStatus2str(call_status));
     return;
   }
-
-  // TODO: handle call transfers (i.e. the other leg is reINVITing and we should
-  // reINVITE as well according to its result)
 
   // handle replies to other requests than the initial one
   DBG("handling reply via AmB2BSession\n");
@@ -479,7 +439,7 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
     DBG("sending INVITE failed, relaying back error reply\n");
     relayError(SIP_METH_INVITE, co_ev->r_cseq, true, res);
 
-    setStopped();
+    stopCall();
     return;
   }
 
@@ -556,11 +516,10 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
     DBG("sending re-INVITE failed, relaying back error reply\n");
     relayError(SIP_METH_INVITE, ev->r_cseq, true, res);
 
-    setStopped();
+    stopCall();
     return;
   }
 
-  // always relayed INVITE - store it
   if (ev->relayed_invite) {
     relayed_req[dlg.cseq - 1] = AmSipTransaction(SIP_METH_INVITE, ev->r_cseq, trans_ticket());
     est_invite_other_cseq = ev->r_cseq;
@@ -609,7 +568,7 @@ void CallLeg::onB2BReplace(ReplaceLegEvent *e)
   removeOtherLeg(id);
 
   // commit suicide if our last B leg is stolen
-  if (other_legs.empty() && other_id.empty()) terminateLeg();
+  if (other_legs.empty() && other_id.empty()) stopCall();
 }
 
 void CallLeg::onB2BReplaceInProgress(ReplaceInProgressEvent *e)
@@ -623,23 +582,45 @@ void CallLeg::onB2BReplaceInProgress(ReplaceInProgressEvent *e)
   }
 }
 
-void CallLeg::onB2BDisconnect(DisconnectLegEvent* ev)
+void CallLeg::disconnect(bool hold_remote)
 {
-  if (!ev) {
-    ERROR("BUG: invalid argument given\n");
-    return;
+  TRACE("disconnecting call leg %s from the other\n", getLocalTag().c_str());
+
+  switch (call_status) {
+    case Disconnecting:
+    case Disconnected:
+      DBG("trying to disconnect already disconnected (or disconnecting) call leg\n");
+      return;
+
+    case NoReply:
+    case Ringing:
+      WARN("trying to disconnect in not connected state, terminating not connected legs in advance (was it intended?)\n");
+      terminateNotConnectedLegs();
+      break;
+
+    case Connected:
+      clearRtpReceiverRelay(); // we can't stay connected (at media level) with the other leg
+      break; // this is OK
   }
 
-  TRACE("disconnecting call %s leg from the other\n", getLocalTag().c_str());
   clear_other();
-
   set_sip_relay_only(false); // we can't relay once disconnected
 
   // put the remote on hold (we have no 'other leg', we can do what we want)
+  if (!hold_remote) {
+    updateCallStatus(Disconnected);
+    return;
+  }
 
-  if (media_session && media_session->isOnHold(a_leg)) return; // already on hold
+  // FIXME: throw this out?
+  if (media_session && media_session->isOnHold(a_leg)) {
+    updateCallStatus(Disconnected);
+    return; // already on hold
+  }
 
-  TRACE("putting %s on hold\n", getLocalTag().c_str());
+  TRACE("putting remote on hold\n");
+
+  updateCallStatus(Disconnecting);
 
   if (getRtpRelayMode() != AmB2BSession::RTP_Relay)
     setRtpRelayMode(RTP_Relay);
@@ -661,7 +642,7 @@ void CallLeg::onB2BDisconnect(DisconnectLegEvent* ev)
   if (dlg.reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
   }
-  hold_request_cseq = dlg.cseq - 1;
+  else hold_request_cseq = dlg.cseq - 1;
 }
 
 // was for caller only
@@ -698,8 +679,6 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
       getLocalTag().c_str(),
       req.cseq, req.method.c_str(), callStatus2str(call_status));
 
-  TRACE("established CSeq: %d\n", est_invite_cseq);
-
   // we need to handle cases if there is no other leg (for example call parking)
   // Note that setting sip_relay_only to false in this case doesn't solve the
   // problem because AmB2BSession always tries to relay the request into the
@@ -708,7 +687,7 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
     TRACE("handling request %s in disconnected state", req.method.c_str());
     // this is not correct but what is?
     AmSession::onSipRequest(req);
-    if (req.method == SIP_METH_BYE) terminateLeg(); // is this needed?
+    if (req.method == SIP_METH_BYE) stopCall(); // is this needed?
   }
   else AmB2BSession::onSipRequest(req);
 }
@@ -732,36 +711,27 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
     (call_status == NoReply || call_status == Ringing)) {
     // reply to the initial request
     if ((reply.code > 100) && (reply.code < 200)) {
-      if (((call_status == Disconnected) || (call_status == NoReply)) && (!reply.to_tag.empty()))
+      if (((call_status == NoReply)) && (!reply.to_tag.empty()))
         updateCallStatus(Ringing);
     }
     else if ((reply.code >= 200) && (reply.code < 300)) {
-      if (call_status != Connected) {
-        onCallConnected(reply);
-        updateCallStatus(Connected);
-      }
+      onCallConnected(reply);
+      updateCallStatus(Connected);
     }
     else if (reply.code >= 300) {
-      if ((call_status != Disconnected) || (dlg.getStatus() != old_dlg_status)) {
-        // in case of canceling it happens that B leg is already in Disconnected
-        // status (terminateLeg called) but later comes the 487 reply and
-        // updates dlg, we need to call callbacks on that change!
-        updateCallStatus(Disconnected);
-      }
+      terminateLeg(); // commit suicide (don't let the master to kill us)
     }
   }
 
-  // we are created on the fly (not based on initial INIVITE), we have to
-  // ACK the reply by ourselves
-/*  if (!relayed_request && reply.cseq_method == SIP_METH_INVITE && SIP_IS_200_CLASS(reply.code)) {
-    DBG("generating ACK for non-relayed INVITE\n");
-    dlg.send_200_ack(reply.cseq);
-  }*/
-
   if ((reply.cseq == hold_request_cseq) && (reply.cseq_method == SIP_METH_INVITE)) {
+    // hold request replied
     if (reply.code < 200) { return; /* wait for final reply */ }
-    if (reply.code < 300) { hold_request_cseq = 0; }
-    else { hold_request_cseq = 0; }
+    else {
+      // ignore the result (if hold request is not accepted that's a pitty but
+      // we are Disconnected anyway)
+      if (call_status == Disconnecting) updateCallStatus(Disconnected);
+      hold_request_cseq = 0;
+    }
   }
 }
 
@@ -789,9 +759,7 @@ void CallLeg::onCancel(const AmSipRequest& req)
   if ((call_status == Ringing) || (call_status == NoReply)) {
     if (a_leg) {
       // terminate whole B2B call if the caller receives CANCEL
-      terminateNotConnectedLegs();
-      terminateOtherLeg();
-      terminateLeg();
+      stopCall();
     }
     // else { } ... ignore for B leg
   }
@@ -802,7 +770,7 @@ void CallLeg::onCancel(const AmSipRequest& req)
 void CallLeg::terminateLeg()
 {
   AmB2BSession::terminateLeg();
-  if (call_status != Disconnected) updateCallStatus(Disconnected);
+  onCallStopped();
 }
 
 // was for caller only
@@ -823,7 +791,6 @@ void CallLeg::onBye(const AmSipRequest& req)
 {
   clearRtpReceiverRelay(); // FIXME: shouldn't be cleared in AmB2BSession as well?
   AmB2BSession::onBye(req);
-  updateCallStatus(Disconnected); // shouldn't we wait for BYE response?
 }
 
 void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e)
@@ -984,11 +951,10 @@ void CallLeg::clear_other()
 {
   removeOtherLeg(other_id);
   AmB2BSession::clear_other();
-  // we need to set correct call status
-  if (other_legs.empty()) {
-    updateCallStatus(Disconnected);
-    set_sip_relay_only(false); // we have no other leg
-  }
-  else updateCallStatus(NoReply);
 }
 
+void CallLeg::stopCall() {
+  terminateNotConnectedLegs();
+  terminateOtherLeg();
+  terminateLeg();
+}

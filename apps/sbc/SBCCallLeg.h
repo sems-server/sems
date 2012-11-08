@@ -115,6 +115,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onSystemEvent(AmSystemEvent* ev);
 
   virtual void onStart();
+  virtual void onBeforeDestroy();
 
   UACAuthCred* getCredentials();
 
@@ -143,7 +144,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   SBCCallProfile &getCallProfile() { return call_profile; }
   CallStatus getCallStatus() { return CallLeg::getCallStatus(); }
   const string &getOtherId() { return other_id; }
-  void clearOther() { clear_other(); }
 
   // media interface must be accessible from CC modules
   AmB2BMedia *getMediaSession() { return media_session; }
@@ -152,9 +152,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void changeRtpMode(RTPRelayMode new_mode);
 
   bool reinvite(const AmSdp &sdp, unsigned &request_cseq);
-
-  virtual void terminateLeg();
-  void stopCall(); /** stop call (both legs, CC) */
 
   int relayEvent(AmEvent* ev);
   void onSipRequest(const AmSipRequest& req);

@@ -38,8 +38,6 @@ class ExtendedCCInterface
 
     virtual void onStateChange(SBCCallLeg *call) { };
 
-    virtual void onTerminateLeg(SBCCallLeg *call) { }
-
     /** called when the call leg is being destroyed, useful to cleanup used resources */
     virtual void onDestroyLeg(SBCCallLeg *call) { }
 

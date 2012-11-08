@@ -168,12 +168,17 @@ struct DisconnectLegEvent: public B2BEvent
 class CallLeg: public AmB2BSession
 {
   public:
+    /** B2B call status.
+     *
+     * This status need not to be related directly to SIP dialog status in
+     * appropriate call legs - for example the B2B call status can be
+     * "Connected" though the legs have received BYE replies. */
     enum CallStatus {
       Disconnected, //< there is no other call leg we are connected to
       NoReply,      //< there is at least one call leg we are connected to but without any response
       Ringing,      //< this leg or one of legs we are connected to rings
-      Connected     //< there is exactly one call leg we are connected to, in this case AmB2BSession::other_id holds the other leg id
-      //Disconnecting //< we were connected and now going to be disconnected (waiting for reINVITE reply for example)
+      Connected,    //< there is exactly one call leg we are connected to, in this case AmB2BSession::other_id holds the other leg id
+      Disconnecting //< we were connected and now going to be disconnected (waiting for reINVITE reply for example)
     };
 
   private:
@@ -215,7 +220,6 @@ class CallLeg: public AmB2BSession
     void onB2BReconnect(ReconnectLegEvent *e);
     void onB2BReplace(ReplaceLegEvent *e);
     void onB2BReplaceInProgress(ReplaceInProgressEvent *e);
-    void onB2BDisconnect(DisconnectLegEvent* ev);
 
     int relaySipReply(AmSipReply &reply);
 
@@ -223,14 +227,8 @@ class CallLeg: public AmB2BSession
      * directly by successors, right?) */
     void terminateNotConnectedLegs();
 
-    /** terminate given leg and remove it from list of other legs  (should not
-     * be used directly by successors, right?) */
-    void terminateOtherLeg(const string &id);
-
     /** remove given leg from the list of other legs */
     void removeOtherLeg(const string &id);
-
-    void terminateCall();
 
     void updateCallStatus(CallStatus new_status);
 
@@ -241,10 +239,12 @@ class CallLeg: public AmB2BSession
     /* handler called when call status changes */
     virtual void onCallStatusChange() { }
 
-    /** handler called when the second leg is connected */
+    /** handler called when the second leg is connected (FIXME: this is a hack,
+     * use this method in SBCCallLeg only) */
     virtual void onCallConnected(const AmSipReply& reply) { }
 
-    /** handler called when call is stopped */
+    /** handler called when call is stopped (FIXME: this is a hack, use this
+     * method in SBCCallLeg only)  */
     virtual void onCallStopped() { }
 
     /** Method called if given B leg couldn't establish the call (refused with
@@ -257,6 +257,12 @@ class CallLeg: public AmB2BSession
     void addNewCallee(CallLeg *callee, ConnectLegEvent *e);
 
     void addExistingCallee(const string &session_tag, ReconnectLegEvent *e);
+
+    /** Clears other leg, eventually removes it from the list of other legs if
+     * it is there. It neither updates call state nor sip_relay_only flag! */
+    virtual void clear_other();
+    virtual void terminateLeg();
+    virtual void terminateOtherLeg();
 
   protected:
 
@@ -284,14 +290,6 @@ class CallLeg: public AmB2BSession
 
     CallStatus getCallStatus() { return call_status; }
 
-    virtual void clear_other();
-
-  public:
-    // @see AmB2BSession
-    virtual void terminateLeg();
-    virtual void terminateOtherLeg();
-    virtual void onB2BEvent(B2BEvent* ev);
-
     // @see AmSession
     virtual void onInvite(const AmSipRequest& req);
     virtual void onInvite2xx(const AmSipReply& reply);
@@ -302,7 +300,20 @@ class CallLeg: public AmB2BSession
     virtual void onSipRequest(const AmSipRequest& req);
     virtual void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 
-    //int reinviteCaller(const AmSipReply& callee_reply);
+  public:
+    virtual void onB2BEvent(B2BEvent* ev);
+
+    /** does all the job around disconnecting from the other leg (updates call
+     * status, disconnects RTP from the other, puts remote on hold (if
+     * requested)
+     *
+     * The other leg is not affected by disconnect - it is neither terminated
+     * nor informed about the peer disconnection. */
+    virtual void disconnect(bool hold_remote);
+
+    /** Terminate the whole B2B call (if there is no other leg only this one is
+     * stopped). */
+    virtual void stopCall();
 
   public:
     /** creates A leg */
@@ -310,7 +321,6 @@ class CallLeg: public AmB2BSession
 
     /** creates B leg using given session as A leg */
     CallLeg(const CallLeg* caller);
-
 };
 
 

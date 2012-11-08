@@ -359,7 +359,10 @@ SBCCallLeg::~SBCCallLeg()
 {
   if (auth)
     delete auth;
+}
 
+void SBCCallLeg::onBeforeDestroy()
+{
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     (*i)->onDestroyLeg(this);
   }
@@ -914,12 +917,6 @@ void SBCCallLeg::onSystemEvent(AmSystemEvent* ev) {
   CallLeg::onSystemEvent(ev);
 }
 
-void SBCCallLeg::stopCall() {
-  terminateOtherLeg();
-  terminateLeg();
-  onCallStopped();
-}
-
 void SBCCallLeg::saveCallTimer(int timer, double timeout) {
   call_timers[timer] = timeout;
 }
@@ -1383,15 +1380,6 @@ void SBCCallLeg::savePayloadIDs(AmSdp &sdp)
     }
 
     stream_idx++; // count chosen media type only
-  }
-}
-
-void SBCCallLeg::terminateLeg()
-{
-  CallLeg::terminateLeg();
-
-  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    (*i)->onTerminateLeg(this);
   }
 }
 
