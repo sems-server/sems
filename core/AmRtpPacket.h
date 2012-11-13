@@ -43,6 +43,9 @@ class AmRtpPacket {
   unsigned int   data_offset;
   unsigned int   d_size;
 
+  int sendto(int sd);
+  int sendmsg(int sd, unsigned int sys_if_idx);
+
 public:
   unsigned char  payload;
   bool           marker;
@@ -64,7 +67,7 @@ public:
   // returns -1 if error, else 0
   int compile_raw(unsigned char* data_buf, unsigned int size);
 
-  int send(int sd);
+  int send(int sd, unsigned int sys_if_idx=0);
   int recv(int sd);
 
   int parse();

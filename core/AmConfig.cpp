@@ -83,6 +83,7 @@ bool         AmConfig::ForceOutboundProxy      = false;
 string       AmConfig::NextHop                 = "";
 bool         AmConfig::NextHop1stReq           = false;
 bool         AmConfig::ProxyStickyAuth         = false;
+bool         AmConfig::ForceOutboundIf         = false;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
@@ -332,6 +333,10 @@ int AmConfig::readConfiguration()
 
   if(cfg.hasParameter("proxy_sticky_auth")) {
     ProxyStickyAuth = (cfg.getParameter("proxy_sticky_auth") == "yes");
+  }
+
+  if(cfg.hasParameter("force_outbound_if")) {
+    ForceOutboundIf = (cfg.getParameter("force_outbound_if") == "yes");
   }
 
   if(cfg.hasParameter("ignore_notify_lower_cseq")) {
@@ -880,6 +885,45 @@ int AmConfig::finalizeIPConfig()
 	}
       }
     }
+
+    for(list<SysIntf>::iterator it=SysIfs.begin();
+	it != SysIfs.end(); it++) {
+
+      if(Ifs[i].MediaIf.empty()) {
+	list<IPAddr>::iterator addr_it = it->addrs.begin();
+	while(addr_it != it->addrs.end()) {
+	  if(Ifs[i].LocalIP == addr_it->addr)
+	    break;
+	}
+	if(addr_it != it->addrs.end()) {
+	  Ifs[i].MediaIf = it->name;
+	  Ifs[i].MediaIfIdx = if_nametoindex(it->name.c_str());
+	}
+      }
+
+      if(Ifs[i].SipIf.empty()) {
+	list<IPAddr>::iterator addr_it = it->addrs.begin();
+	while(addr_it != it->addrs.end()) {
+	  if(Ifs[i].LocalSIPIP == addr_it->addr)
+	    break;
+	}
+	if(addr_it != it->addrs.end()) {
+	  Ifs[i].SipIf = it->name;
+	  Ifs[i].SipIfIdx = if_nametoindex(it->name.c_str());
+	}
+      }
+    }
+
+    if(Ifs[i].SipIf.empty() || Ifs[i].MediaIf.empty()||
+       !Ifs[i].SipIfIdx || !Ifs[i].MediaIfIdx) {
+
+      ERROR("Could not find coresponding proper network interface for '%s'\n",
+	    Ifs[i].name.c_str());
+      ERROR("\tSIP interface: '%s'\n", Ifs[i].SipIf.c_str());
+      ERROR("\tSIP interface idx: '%i'\n", Ifs[i].SipIfIdx);
+      ERROR("\tRTP interface: '%s'\n", Ifs[i].MediaIf.c_str());
+      ERROR("\tSIP interface idx: '%i'\n", Ifs[i].MediaIfIdx);
+    }
   }
 
   return 0;
@@ -892,12 +936,12 @@ void AmConfig::dump_Ifs()
     IP_interface& it_ref = Ifs[i];
 
     INFO("Interface: '%s' (%i)",it_ref.name.c_str(),i);
-    INFO("\tLocalIP='%s'",it_ref.LocalIP.c_str());
+    INFO("\tmedia IP = '%s'/[%u;%u]",it_ref.LocalIP.c_str(),
+	 it_ref.RtpLowPort,it_ref.RtpHighPort);
+    INFO("\tmedia If = '%s'/%u",it_ref.MediaIf.c_str(),it_ref.MediaIfIdx);
+    INFO("\tSIP IP = '%s'/%u",it_ref.LocalSIPIP.c_str(),it_ref.LocalSIPPort);
+    INFO("\tSIP If='%s'/%u",it_ref.SipIf.c_str(),it_ref.SipIfIdx);
     INFO("\tPublicIP='%s'",it_ref.PublicIP.c_str());
-    INFO("\tLocalSIPIP='%s'",it_ref.LocalSIPIP.c_str());
-    INFO("\tLocalSIPPort=%u",it_ref.LocalSIPPort);
-    INFO("\tRtpLowPort=%u",it_ref.RtpLowPort);
-    INFO("\tRtpHighPort=%u",it_ref.RtpHighPort);
   }
   
   INFO("Signaling address map:");

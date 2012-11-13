@@ -241,7 +241,10 @@ int SipCtrlInterface::run()
     for(unsigned int i=0; i<AmConfig::Ifs.size();i++) {
 
 	udp_trsp_socket* udp_socket = 
-	    new udp_trsp_socket(i,AmConfig::Ifs[i].SigSockOpts);
+	    new udp_trsp_socket(i,AmConfig::Ifs[i].SigSockOpts
+				| (AmConfig::ForceOutboundIf ? 
+				   trsp_socket::force_outbound_if : 0),
+				AmConfig::Ifs[i].SipIfIdx);
 
 	if(udp_socket->bind(AmConfig::Ifs[i].LocalSIPIP,
 			    AmConfig::Ifs[i].LocalSIPPort) < 0){

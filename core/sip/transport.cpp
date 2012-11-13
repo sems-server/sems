@@ -35,8 +35,11 @@
 
 int trsp_socket::log_level_raw_msgs = L_DBG;
 
-trsp_socket::trsp_socket(unsigned short if_num, unsigned int opts)
-    : sd(0), ip(), port(0), if_num(if_num), socket_options(opts)
+trsp_socket::trsp_socket(unsigned short if_num, unsigned int opts,
+			 unsigned int sys_if_idx)
+    : sd(0), ip(), port(0), 
+      if_num(if_num), sys_if_idx(sys_if_idx),
+      socket_options(opts)
 {
     memset(&addr,0,sizeof(sockaddr_storage));
 }
@@ -100,30 +103,6 @@ int trsp_socket::get_sd()
 unsigned short trsp_socket::get_if()
 {
     return if_num;
-}
-
-int trsp_socket::send(const sockaddr_storage* sa, const char* msg, 
-		      const int msg_len)
-{
-    if (log_level_raw_msgs >= 0) {
-	_LOG(log_level_raw_msgs, 
-	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
-    }
-
-  int err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, 
-		   sa->ss_family == AF_INET ? 
-		   sizeof(sockaddr_in) : sizeof(sockaddr_in6));
-
-  if (err < 0) {
-    ERROR("sendto: %s\n",strerror(errno));
-    return err;
-  }
-  else if (err != msg_len) {
-    ERROR("sendto: sent %i instead of %i bytes\n", err, msg_len);
-    return -1;
-  }
-
-  return 0;
 }
 
 transport::~transport()

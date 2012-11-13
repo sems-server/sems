@@ -100,6 +100,14 @@ struct AmConfig
     /** the port SIP requests are sent from - optional (default 5060) */
     int LocalSIPPort;
 
+    /** Network interface name and index for media */
+    string       MediaIf;
+    unsigned int MediaIfIdx;
+
+    /** Network interface name and index for signaling */
+    string       SipIf;
+    unsigned int SipIfIdx;
+
     /** options for the signaling socket (@see trsp_socket::socket_options) */
     unsigned int SigSockOpts;
 
@@ -158,6 +166,8 @@ struct AmConfig
   static bool NextHop1stReq;
   /** update ruri-host to previously resolved IP:port on SIP auth */
   static bool ProxyStickyAuth;
+  /** force the outbound network interface / short-circuit the routing table */
+  static bool ForceOutboundIf;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */
   static bool IgnoreNotifyLowerCSeq;
   /** skip DNS SRV lookup for resolving destination address*/
@@ -169,7 +179,7 @@ struct AmConfig
   /** If 200 OK reply should be limited to preferred codec only */
   static bool SingleCodecInOK;
   static vector <string> CodecOrder;
-  
+
   enum ApplicationSelector {
     App_RURIUSER,
     App_RURIPARAM,

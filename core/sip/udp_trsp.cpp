@@ -38,10 +38,11 @@
 
 #include "SipCtrlInterface.h"
 
-#include <netdb.h>
-
 #include <sys/param.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <netdb.h>
 
 #include <errno.h>
 #include <string.h>
@@ -158,6 +159,98 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 
     return 0;
 }
+
+int udp_trsp_socket::sendto(const sockaddr_storage* sa, 
+			    const char* msg, 
+			    const int msg_len)
+{
+  int err = ::sendto(sd, msg, msg_len, 0, 
+		     (const struct sockaddr*)sa, 
+		     SA_len(sa));
+
+  if (err < 0) {
+    ERROR("sendto: %s\n",strerror(errno));
+    return err;
+  }
+  else if (err != msg_len) {
+    ERROR("sendto: sent %i instead of %i bytes\n", err, msg_len);
+    return -1;
+  }
+
+  return 0;
+}
+
+int udp_trsp_socket::sendmsg(const sockaddr_storage* sa, 
+			     const char* msg, 
+			     const int msg_len)
+{
+    struct msghdr hdr;
+    struct cmsghdr* cmsg;
+
+  union {
+    char cmsg4_buf[CMSG_SPACE(sizeof(struct in_pktinfo))];
+    char cmsg6_buf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
+  } cmsg_buf;
+
+  struct iovec msg_iov[1];
+  msg_iov[0].iov_base = (void*)msg;
+  msg_iov[0].iov_len  = msg_len;
+
+  bzero(&hdr,sizeof(hdr));
+  hdr.msg_name = (void*)sa;
+  hdr.msg_namelen = SA_len(sa);
+  hdr.msg_iov = msg_iov;
+  hdr.msg_iovlen = 1;
+
+  bzero(&cmsg_buf,sizeof(cmsg_buf));
+  hdr.msg_control = &cmsg_buf;
+  hdr.msg_controllen = sizeof(cmsg_buf);
+
+  cmsg = CMSG_FIRSTHDR(&hdr);
+  if(sa->ss_family == AF_INET) {
+
+    cmsg->cmsg_level = IPPROTO_IP;
+    cmsg->cmsg_type = IP_PKTINFO;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+
+    struct in_pktinfo* pktinfo = (struct in_pktinfo*) CMSG_DATA(cmsg);
+    pktinfo->ipi_ifindex = sys_if_idx;
+  }
+  else if(sa->ss_family == AF_INET6) {
+    cmsg->cmsg_level = IPPROTO_IPV6;
+    cmsg->cmsg_type = IPV6_PKTINFO;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
+    
+    struct in6_pktinfo* pktinfo = (struct in6_pktinfo*) CMSG_DATA(cmsg);
+    pktinfo->ipi6_ifindex = sys_if_idx;
+  }
+
+  hdr.msg_controllen = cmsg->cmsg_len;
+  
+  // bytes_sent = ;
+  if(::sendmsg(sd, &hdr, 0) < 0) {
+      ERROR("sendto: %s\n",strerror(errno));
+      return -1;
+  }
+
+  return 0;
+}
+
+int udp_trsp_socket::send(const sockaddr_storage* sa, 
+			  const char* msg, 
+			  const int msg_len)
+{
+    if (log_level_raw_msgs >= 0) {
+	_LOG(log_level_raw_msgs, 
+	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
+    }
+
+    if(socket_options & force_outbound_if)
+	return sendmsg(sa,msg,msg_len);
+    
+    return sendto(sa,msg,msg_len);
+}
+
 
 /** @see trsp_socket */
 

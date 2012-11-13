@@ -25,6 +25,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define __APPLE_USE_RFC_3542
+#include <netinet/in.h>
+
 #include "AmRtpPacket.h"
 #include "rtp/rtp.h"
 #include "log.h"
@@ -37,7 +40,6 @@
 #include <errno.h>
 
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 
 AmRtpPacket::AmRtpPacket()
@@ -180,11 +182,11 @@ int AmRtpPacket::compile_raw(unsigned char* data_buf, unsigned int size)
   return size;
 }
 
-int AmRtpPacket::send(int sd)
+int AmRtpPacket::sendto(int sd)
 {
-  int err = sendto(sd,buffer,b_size,0,
-		   (const struct sockaddr *)&addr,
-		   SA_len(&addr));
+  int err = ::sendto(sd,buffer,b_size,0,
+		     (const struct sockaddr *)&addr,
+		     SA_len(&addr));
 
   if(err == -1){
     ERROR("while sending RTP packet: %s\n",strerror(errno));
@@ -192,6 +194,68 @@ int AmRtpPacket::send(int sd)
   }
 
   return 0;
+}
+
+int AmRtpPacket::sendmsg(int sd, unsigned int sys_if_idx)
+{
+  struct msghdr hdr;
+  struct cmsghdr* cmsg;
+    
+  union {
+    char cmsg4_buf[CMSG_SPACE(sizeof(struct in_pktinfo))];
+    char cmsg6_buf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
+  } cmsg_buf;
+
+  struct iovec msg_iov[1];
+  msg_iov[0].iov_base = (void*)buffer;
+  msg_iov[0].iov_len  = b_size;
+
+  bzero(&hdr,sizeof(hdr));
+  hdr.msg_name = (void*)&addr;
+  hdr.msg_namelen = SA_len(&addr);
+  hdr.msg_iov = msg_iov;
+  hdr.msg_iovlen = 1;
+
+  bzero(&cmsg_buf,sizeof(cmsg_buf));
+  hdr.msg_control = &cmsg_buf;
+  hdr.msg_controllen = sizeof(cmsg_buf);
+
+  cmsg = CMSG_FIRSTHDR(&hdr);
+  if(addr.ss_family == AF_INET) {
+    cmsg->cmsg_level = IPPROTO_IP;
+    cmsg->cmsg_type = IP_PKTINFO;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+
+    struct in_pktinfo* pktinfo = (struct in_pktinfo*) CMSG_DATA(cmsg);
+    pktinfo->ipi_ifindex = sys_if_idx;
+  }
+  else if(addr.ss_family == AF_INET6) {
+    cmsg->cmsg_level = IPPROTO_IPV6;
+    cmsg->cmsg_type = IPV6_PKTINFO;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
+    
+    struct in6_pktinfo* pktinfo = (struct in6_pktinfo*) CMSG_DATA(cmsg);
+    pktinfo->ipi6_ifindex = sys_if_idx;
+  }
+
+  hdr.msg_controllen = cmsg->cmsg_len;
+  
+  // bytes_sent = ;
+  if(::sendmsg(sd, &hdr, 0) < 0) {
+      ERROR("sendto: %s\n",strerror(errno));
+      return -1;
+  }
+
+  return 0;
+}
+
+int AmRtpPacket::send(int sd, unsigned int sys_if_idx)
+{
+  if(sys_if_idx && AmConfig::ForceOutboundIf) {
+    return sendmsg(sd,sys_if_idx);
+  }
+  
+  return sendto(sd);
 }
 
 int AmRtpPacket::recv(int sd)

@@ -39,7 +39,8 @@ class trsp_socket
 {
 public:
     enum socket_options {
-	force_via_address = (1 << 0)
+	force_via_address = (1 << 0),
+	force_outbound_if = (1 << 1)
     };
 
     static int log_level_raw_msgs;
@@ -57,14 +58,18 @@ protected:
     // bound port number
     unsigned short   port;
 
-    // interface number
+    // internal interface number
     unsigned short   if_num;
+
+    // network interface index
+    unsigned int sys_if_idx;
 
     // ORed field of socket_option
     unsigned int socket_options;
 
 public:
-    trsp_socket(unsigned short if_num, unsigned int opts);
+    trsp_socket(unsigned short if_num, unsigned int opts,
+		unsigned int sys_if_idx = 0);
     virtual ~trsp_socket();
 
     /**
@@ -113,7 +118,7 @@ public:
      * Sends a message.
      * @return -1 if error(s) occured.
      */
-    virtual int send(const sockaddr_storage* sa, const char* msg, const int msg_len);
+    virtual int send(const sockaddr_storage* sa, const char* msg, const int msg_len)=0;
 };
 
 class transport: public AmThread
