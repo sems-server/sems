@@ -52,7 +52,7 @@ ReliableB2BEvent::~ReliableB2BEvent()
 CallLeg::CallLeg(const CallLeg* caller):
   AmB2BSession(caller->getLocalTag()),
   call_status(Disconnected),
-  hold_request_cseq(0)
+  hold_request_cseq(0), on_hold(false)
 {
   a_leg = !caller->a_leg; // we have to be the complement
 
@@ -95,7 +95,7 @@ CallLeg::CallLeg(const CallLeg* caller):
 CallLeg::CallLeg(): 
   AmB2BSession(),
   call_status(Disconnected),
-  hold_request_cseq(0)
+  hold_request_cseq(0), on_hold(false)
 {
   a_leg = true;
 
@@ -468,6 +468,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
 
   // release old signaling and media session
   terminateOtherLeg();
+  resumeHeld(false);
   clearRtpReceiverRelay();
 
   other_id = ev->session_tag;
@@ -606,32 +607,56 @@ void CallLeg::disconnect(bool hold_remote)
   clear_other();
   set_sip_relay_only(false); // we can't relay once disconnected
 
-  // put the remote on hold (we have no 'other leg', we can do what we want)
-  if (!hold_remote) {
-    updateCallStatus(Disconnected);
+  if (!hold_remote || isOnHold()) updateCallStatus(Disconnected);
+  else {
+    updateCallStatus(Disconnecting);
+    putOnHold();
+  }
+}
+
+void CallLeg::createHoldRequest(AmSdp &sdp)
+{
+  if (media_session) {
+    media_session->mute(a_leg);
+    media_session->createHoldRequest(sdp, a_leg, false /*mark_zero_connection*/, true /*mark_sendonly*/);
+  }
+  else {
+    sdp.clear();
+
+    // FIXME: versioning
+    sdp.version = 0;
+    sdp.origin.user = "sems";
+    //offer.origin.sessId = 1;
+    //offer.origin.sessV = 1;
+    sdp.sessionName = "sems";
+    sdp.conn.network = NT_IN;
+    sdp.conn.addrType = AT_V4;
+    sdp.conn.address = "0.0.0.0";
+
+    // FIXME: use media line from stored body?
+    sdp.media.push_back(SdpMedia());
+    SdpMedia &m = sdp.media.back();
+    m.type = MT_AUDIO;
+    m.transport = TP_RTPAVP;
+    m.send = false;
+    m.recv = false;
+    m.payloads.push_back(SdpPayload(0));
+  }
+}
+
+void CallLeg::putOnHold()
+{
+  if (isOnHold()) {
+    handleHoldReply(true); // really?
     return;
   }
 
-  // FIXME: throw this out?
-  if (media_session && media_session->isOnHold(a_leg)) {
-    updateCallStatus(Disconnected);
-    return; // already on hold
-  }
-
-  TRACE("putting remote on hold\n");
-
-  updateCallStatus(Disconnecting);
-
-  if (getRtpRelayMode() != AmB2BSession::RTP_Relay)
-    setRtpRelayMode(RTP_Relay);
-
-  if (!media_session)
-    setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
+  TRACE("putting remote on hold (%s)\n",
+      rtp_relay_mode == RTP_Direct ? "direct RTP" : "RTP relay");
 
   AmSdp sdp;
-  // FIXME: mark the media line as inactive rather than sendonly?
-  media_session->createHoldRequest(sdp, a_leg, false /*mark_zero_connection*/, true /*mark_sendonly*/);
-  updateLocalSdp(sdp);
+  createHoldRequest(sdp);
+  if (media_session) updateLocalSdp(sdp);
 
   // generate re-INVITE with hold request
   //reinvite(sdp, hold_request_cseq);
@@ -641,8 +666,55 @@ void CallLeg::disconnect(bool hold_remote)
   body.parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
   if (dlg.reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
+    handleHoldReply(false);
   }
   else hold_request_cseq = dlg.cseq - 1;
+}
+
+void CallLeg::resumeHeld(bool send_reinvite)
+{
+  if (!isOnHold()) {
+    handleHoldReply(true); // really?
+    return;
+  }
+
+  TRACE("resume held remote (%s)\n",
+      rtp_relay_mode == RTP_Direct ? "direct RTP" : "RTP relay");
+
+  if (!send_reinvite) {
+    // probably another SDP in progress
+    handleHoldReply(true);
+    return;
+  }
+
+  if (media_session) {
+    AmSdp sdp;
+    if (sdp.parse((const char *)established_body.getPayload()) == 0)
+      updateLocalSdp(sdp);
+  }
+
+  if (dlg.reinvite("", &established_body, SIP_FLAGS_VERBATIM) != 0) {
+    ERROR("re-INVITE failed\n");
+    handleHoldReply(false);
+  }
+  else hold_request_cseq = dlg.cseq - 1;
+}
+
+void CallLeg::handleHoldReply(bool succeeded)
+{
+  if (!on_hold) { // hold requested
+    // ignore the result (if hold request is not accepted that's a pitty but
+    // we are Disconnected anyway)
+    if (call_status == Disconnecting) updateCallStatus(Disconnected);
+
+    if (succeeded) on_hold = true; // remote put on hold successfully
+  }
+  else { // resume requested
+    if (succeeded) {
+      on_hold = false; // call resumed successfully
+      if (media_session) media_session->unmute(a_leg);
+    }
+  }
 }
 
 // was for caller only
@@ -703,6 +775,26 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
       (relayed_request ? "to relayed request" : "to locally generated request"),
       callStatus2str(call_status));
 
+  if ((reply.cseq == hold_request_cseq) && (reply.cseq_method == SIP_METH_INVITE)) {
+    // hold request replied - handle it
+    if (reply.code >= 200) { // handle final replies only
+      hold_request_cseq = 0;
+      handleHoldReply(reply.code < 300);
+    }
+
+    // we don't want to relay this reply to the other leg! => do the necessary
+    // stuff here (copy & paste from AmB2BSession::onSipReply)
+    if (rtp_relay_mode == RTP_Relay && reply.code < 300) {
+      const AmMimeBody *sdp_part = reply.body.hasContentType(SIP_APPLICATION_SDP);
+      if (sdp_part) {
+        AmSdp sdp;
+        if (sdp.parse((const char *)sdp_part->getPayload()) == 0) updateRemoteSdp(sdp);
+      }
+    }
+    AmSession::onSipReply(reply, old_dlg_status);
+    return;
+  }
+
   AmB2BSession::onSipReply(reply, old_dlg_status);
 
   // update internal state and call related callbacks based on received reply
@@ -720,17 +812,6 @@ void CallLeg::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
     }
     else if (reply.code >= 300) {
       terminateLeg(); // commit suicide (don't let the master to kill us)
-    }
-  }
-
-  if ((reply.cseq == hold_request_cseq) && (reply.cseq_method == SIP_METH_INVITE)) {
-    // hold request replied
-    if (reply.code < 200) { return; /* wait for final reply */ }
-    else {
-      // ignore the result (if hold request is not accepted that's a pitty but
-      // we are Disconnected anyway)
-      if (call_status == Disconnecting) updateCallStatus(Disconnected);
-      hold_request_cseq = 0;
     }
   }
 }
