@@ -157,6 +157,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onSipRequest(const AmSipRequest& req);
   bool isALeg() { return a_leg; }
 
+  virtual void putOnHold();
+  virtual void resumeHeld(bool send_reinvite);
+
  protected:
 
   void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
@@ -167,6 +170,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onControlCmd(string& cmd, AmArg& params);
 
   void createCalleeSession();
+
+  virtual void handleHoldReply(bool succeeded);
+  virtual void createHoldRequest(AmSdp &sdp);
 };
 
 #endif

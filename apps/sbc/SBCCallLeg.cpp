@@ -1404,8 +1404,10 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
 {
   if (new_mode == rtp_relay_mode) return; // requested mode is set already
 
-  if (!((getCallStatus() == CallLeg::Connected) || (getCallStatus() == CallLeg::Disconnected))) {
-    ERROR("BUG: changeRtpMode supported for established/disconnected calls only\n");
+  if (!((getCallStatus() == CallLeg::Connected) ||
+        (getCallStatus() == CallLeg::Disconnecting) ||
+        (getCallStatus() == CallLeg::Disconnected))) {
+    ERROR("BUG: changeRtpMode supported for established/disconnecting/disconnected calls only\n");
     return;
   }
 
@@ -1485,4 +1487,36 @@ void SBCCallLeg::onB2BEvent(B2BEvent* ev)
   }
 
   CallLeg::onB2BEvent(ev);
+}
+
+void SBCCallLeg::putOnHold()
+{
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->putOnHold(this) == StopProcessing) return;
+  }
+  CallLeg::putOnHold();
+}
+
+void SBCCallLeg::resumeHeld(bool send_reinvite)
+{
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->resumeHeld(this, send_reinvite) == StopProcessing) return;
+  }
+  CallLeg::resumeHeld(send_reinvite);
+}
+
+void SBCCallLeg::handleHoldReply(bool succeeded)
+{
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->handleHoldReply(this, succeeded) == StopProcessing) return;
+  }
+  CallLeg::handleHoldReply(succeeded);
+}
+
+void SBCCallLeg::createHoldRequest(AmSdp &sdp)
+{
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    if ((*i)->createHoldRequest(this, sdp) == StopProcessing) return;
+  }
+  CallLeg::createHoldRequest(sdp);
 }

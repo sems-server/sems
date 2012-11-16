@@ -62,6 +62,16 @@ class ExtendedCCInterface
 
     /** called before any other processing for the event is done */
     virtual CCChainProcessing onEvent(SBCCallLeg *call, AmEvent *e) { return ContinueProcessing; }
+
+
+    // hold related functionality (seems to work best being explicitly supported
+    // with API than hacking based on another callbacks)
+
+    virtual CCChainProcessing putOnHold(SBCCallLeg *call) { return ContinueProcessing; }
+    virtual CCChainProcessing resumeHeld(SBCCallLeg *call, bool send_reinvite) { return ContinueProcessing; }
+    virtual CCChainProcessing createHoldRequest(SBCCallLeg *call, AmSdp &sdp) { return ContinueProcessing; }
+    virtual CCChainProcessing handleHoldReply(SBCCallLeg *call, bool succeeded) { return ContinueProcessing; }
+
 };
 
 #endif
