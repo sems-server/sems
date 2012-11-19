@@ -189,12 +189,7 @@ string file_extension(const string& path);
 string add2path(const string& path, int n_suffix, ...);
 
 string get_addr_str(const sockaddr_storage* addr);
-
-#ifdef SUPPORT_IPV6
-int inet_aton_v6(const char* name, struct sockaddr_storage* ss);
-void set_port_v6(struct sockaddr_storage* ss, short port);
-short get_port_v6(struct sockaddr_storage* ss);
-#endif
+string get_addr_str_sip(const sockaddr_storage* addr);
 
 /** \brief microseconds sleep using select */
 #define sleep_us(nusecs) \
@@ -212,11 +207,6 @@ short get_port_v6(struct sockaddr_storage* ss);
  */
 int get_local_addr_for_dest(sockaddr_storage* remote_ip, sockaddr_storage* local);
 int get_local_addr_for_dest(const string& remote_ip, string& local);
-
-/**
- * Converts an IP address contained in a sockaddr_storage into a string.
- */
-int ip_addr_to_str(sockaddr_storage* ss, string& addr);
 
 string extract_tag(const string& addr);
 

@@ -51,24 +51,13 @@ public:
   unsigned int   ssrc;
 
   struct timeval recv_time;
-
-#ifdef SUPPORT_IPV6
   struct sockaddr_storage addr;
-#else
-  struct sockaddr_in addr;
-#endif
-    
 
   AmRtpPacket();
   ~AmRtpPacket();
 
-#ifdef SUPPORT_IPV6
   void setAddr(struct sockaddr_storage* a);
   void getAddr(struct sockaddr_storage* a);
-#else
-  void setAddr(struct sockaddr_in* a);
-  void getAddr(struct sockaddr_in* a);
-#endif
 
   // returns -1 if error, else 0
   int compile(unsigned char* data_buf, unsigned int size);

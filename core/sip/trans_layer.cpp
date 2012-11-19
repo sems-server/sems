@@ -40,6 +40,7 @@
 #include "msg_fline.h"
 #include "msg_hdrs.h"
 #include "udp_trsp.h"
+#include "ip_util.h"
 #include "resolver.h"
 #include "sip_ua.h"
 
@@ -52,6 +53,7 @@
 #include "AmConfig.h"
 #include "AmSipEvent.h"
 
+#include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -425,8 +427,7 @@ int _trans_layer::send_reply(trans_ticket* tt,
     if(local_socket->is_opt_set(trsp_socket::force_via_address)) {
 	DBG("force_via_address\n");
 	string via_host = c2stlstr(req->via_p1->host);
-	if (str2ip(via_host.c_str(), &remote_ip,
-			     (address_type)(IPv4 | IPv6)) != 1) {
+	if (am_inet_pton(via_host.c_str(), &remote_ip) != 1) {
 	    ERROR("Invalid via_host '%s'\n", via_host.c_str());
 	    delete [] reply_buf;
 	    goto end;
@@ -715,7 +716,7 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
     string nh = c2stlstr(*next_hop);
 
     DBG("checking whether '%s' is IP address...\n", nh.c_str());
-    if (str2ip(nh.c_str(), &(msg->remote_ip), IPv4) != 1) {
+    if (am_inet_pton(nh.c_str(), &(msg->remote_ip)) != 1) {
 
 	// nh does NOT contain a valid IP address
     
@@ -1906,8 +1907,6 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
   }
 
   sockaddr_storage from;
-  string local_ip;
-
   socklen_t    len=sizeof(from);
   trsp_socket* tsock=NULL;
 
@@ -1941,12 +1940,13 @@ trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
       return tsock;
 
   // try with alternative address
-  if(ip_addr_to_str(&from,local_ip) == 0) {
+  char local_ip[NI_MAXHOST];
+  if(am_inet_ntop(&from,local_ip,NI_MAXHOST) != NULL) {
       map<string,unsigned short>::iterator if_it = AmConfig::LocalSIPIP2If.find(local_ip);
       if(if_it == AmConfig::LocalSIPIP2If.end()){
 	  ERROR("Could not find a local interface for "
 		"resolved local IP (local_ip='%s')",
-		local_ip.c_str());
+		local_ip);
       }
       else {
 	  tsock = transports[if_it->second];

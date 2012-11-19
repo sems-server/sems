@@ -43,6 +43,7 @@
 #include "AmSession.h"
 #include "Am100rel.h"
 #include "sip/transport.h"
+#include "sip/ip_util.h"
 #include "sip/sip_timers.h"
 
 #include <cctype>
@@ -759,20 +760,16 @@ static bool fillSysIntfList()
     if(p_if->ifa_addr == NULL)
       continue;
     
-    if( (p_if->ifa_addr->sa_family != AF_INET) //&&
-        //(p_if->ifa_addr->sa_family != AF_INET6) 
-	)
+    if( (p_if->ifa_addr->sa_family != AF_INET) &&
+        (p_if->ifa_addr->sa_family != AF_INET6) )
       continue;
 
     if( !(p_if->ifa_flags & IFF_UP) || !(p_if->ifa_flags & IFF_RUNNING) )
       continue;
 
-    int s = getnameinfo(p_if->ifa_addr,
-			(p_if->ifa_addr->sa_family == AF_INET) ? 
-			sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
-			host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-    if (s != 0) {
-      ERROR("getnameinfo() failed: %s\n", gai_strerror(s));
+    if (am_inet_ntop((const sockaddr_storage*)p_if->ifa_addr,
+		     host, NI_MAXHOST) == NULL) {
+      ERROR("am_inet_ntop() failed\n");
       freeifaddrs(ifap);
       return false;
     }
@@ -794,7 +791,7 @@ static bool fillSysIntfList()
     }
 
     DBG("iface='%s';ip='%s';flags=0x%x\n",p_if->ifa_name,host,p_if->ifa_flags);
-    intf_it->addrs.push_back(host);
+    intf_it->addrs.push_back(AmConfig::IPAddr(host,p_if->ifa_addr->sa_family));
   }
 
   freeifaddrs(ifap);
@@ -802,21 +799,18 @@ static bool fillSysIntfList()
   return true;
 }
 
-/** Get the PF_INET address associated with the network interface */
-string fixIface2IP(const string& dev_name)
+/** Get the AF_INET[6] address associated with the network interface */
+string fixIface2IP(const string& dev_name, bool v6_for_sip)
 {
   string local_ip;
 
-#ifdef SUPPORT_IPV6
   struct sockaddr_storage ss;
-  if(inet_aton_v6(dev_name.c_str(), &ss))
-#else
-    struct in_addr inp;
-  if(inet_aton(dev_name.c_str(), &inp))
-#endif
-    {
+  if(am_inet_pton(dev_name.c_str(), &ss)) {
+    if(v6_for_sip && (ss.ss_family == AF_INET6) && (dev_name[0] != '['))
+      return "[" + dev_name + "]";
+    else
       return dev_name;
-    }
+  }
 
   for(list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
       intf_it != AmConfig::SysIfs.end(); ++intf_it) {
@@ -829,8 +823,12 @@ string fixIface2IP(const string& dev_name)
 	return "";
       }
       
-      DBG("dev_name = '%s'\n",dev_name.c_str());
-      local_ip = intf_it->addrs.front();
+      DBG("dev_name = '%s'\n", dev_name.c_str());
+      const AmConfig::IPAddr& ip = intf_it->addrs.front();
+      if(v6_for_sip && (ip.family == AF_INET6))
+	local_ip = "[" + ip.addr + "]";
+      else
+	local_ip = ip.addr;
       break;
     }
   }    
@@ -844,7 +842,7 @@ int AmConfig::finalizeIPConfig()
 
   for(int i=0; i < (int)AmConfig::Ifs.size(); i++) {
 
-    AmConfig::Ifs[i].LocalIP = fixIface2IP(AmConfig::Ifs[i].LocalIP);
+    AmConfig::Ifs[i].LocalIP = fixIface2IP(AmConfig::Ifs[i].LocalIP,false);
     if (AmConfig::Ifs[i].LocalIP.empty()) {
       ERROR("Cannot determine proper local address for media advertising!\n"
 	    "Try using 'ifconfig -a' to find a proper interface and configure SEMS to use it.\n");
@@ -852,18 +850,22 @@ int AmConfig::finalizeIPConfig()
     }
     
     if (AmConfig::Ifs[i].LocalSIPIP.empty()) {
-      AmConfig::Ifs[i].LocalSIPIP = AmConfig::Ifs[i].LocalIP;
+      AmConfig::Ifs[i].LocalSIPIP = fixIface2IP(AmConfig::Ifs[i].LocalIP,true);
     }
     else {
-      AmConfig::Ifs[i].LocalSIPIP = fixIface2IP(AmConfig::Ifs[i].LocalSIPIP);
+      AmConfig::Ifs[i].LocalSIPIP = fixIface2IP(AmConfig::Ifs[i].LocalSIPIP,true);
     }
 
     list<AmConfig::SysIntf>::iterator intf_it = AmConfig::SysIfs.begin();
     for(;intf_it != AmConfig::SysIfs.end(); ++intf_it) {
 
-      list<string>::iterator addr_it = std::find(intf_it->addrs.begin(),
-						 intf_it->addrs.end(),
-						 AmConfig::Ifs[i].LocalSIPIP);
+      list<AmConfig::IPAddr>::iterator addr_it = intf_it->addrs.begin();
+      for(;addr_it != intf_it->addrs.end(); addr_it++) {
+
+	if(AmConfig::Ifs[i].LocalSIPIP == addr_it->addr)
+	  break;
+      }
+
       // address not in this interface
       if(addr_it == intf_it->addrs.end())
 	continue;
@@ -871,10 +873,10 @@ int AmConfig::finalizeIPConfig()
       for(addr_it = intf_it->addrs.begin(); 
 	  addr_it != intf_it->addrs.end(); ++addr_it) {
 
-	if(AmConfig::LocalSIPIP2If.find(*addr_it)
+	if(AmConfig::LocalSIPIP2If.find(addr_it->addr)
 	   == AmConfig::LocalSIPIP2If.end()) {
 	
-	  AmConfig::LocalSIPIP2If.insert(make_pair(*addr_it,i));
+	  AmConfig::LocalSIPIP2If.insert(make_pair(addr_it->addr,i));
 	}
       }
     }

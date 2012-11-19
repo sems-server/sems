@@ -40,6 +40,7 @@
 #include "AmJitterBuffer.h"
 
 #include "sip/resolver.h"
+#include "sip/ip_util.h"
 
 #include "log.h"
 
@@ -81,15 +82,10 @@ PayloadMask::PayloadMask(const PayloadMask &src)
  */
 void AmRtpStream::setLocalIP(const string& ip)
 {
-#ifdef SUPPORT_IPV6
-  if (!inet_aton_v6(ip.c_str(), &l_saddr)) {
-    throw string ("Invalid IPv6 address: ") + ip;
+  if (!am_inet_pton(ip.c_str(), &l_saddr)) {
+    throw string ("AmRtpStream::setLocalIP: Invalid IP address: ") + ip;
   }
-#else
-  if (!inet_aton(ip.c_str(), (in_addr*)&l_saddr.sin_addr.s_addr)) {
-    throw string ("Invalid IPv4 address: ") + ip;
-  }
-#endif
+  DBG("ip = %s\n",ip.c_str());
 }
 
 int AmRtpStream::hasLocalSocket() {
@@ -102,25 +98,15 @@ int AmRtpStream::getLocalSocket()
     return l_sd;
 
   int sd=0, rtcp_sd=0;
-#ifdef SUPPORT_IPV6
-  if((sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1)
-#else
-    if((sd = socket(PF_INET,SOCK_DGRAM,0)) == -1)
-#endif
-      {
-	ERROR("%s\n",strerror(errno));
-	throw string ("while creating new socket.");
-      } 
+  if((sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1) {
+    ERROR("%s\n",strerror(errno));
+    throw string ("while creating new socket.");
+  } 
 
-#ifdef SUPPORT_IPV6
-  if((rtcp_sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1)
-#else
-    if((rtcp_sd = socket(PF_INET,SOCK_DGRAM,0)) == -1)
-#endif
-      {
-	ERROR("%s\n",strerror(errno));
-	throw string ("while creating new RTCP socket.");
-      } 
+  if((rtcp_sd = socket(l_saddr.ss_family,SOCK_DGRAM,0)) == -1) {
+    ERROR("%s\n",strerror(errno));
+    throw string ("while creating new socket.");
+  } 
 
   int true_opt = 1;
   if(ioctl(sd, FIONBIO , &true_opt) == -1){
@@ -158,30 +144,15 @@ void AmRtpStream::setLocalPort()
       return;
 
     port = AmConfig::Ifs[l_if].getNextRtpPort();
-#ifdef SUPPORT_IPV6
-    set_port_v6(&l_saddr,port+1);
-    if(bind(l_rtcp_sd,(const struct sockaddr*)&l_saddr,
-	     sizeof(struct sockaddr_storage)))
-#else	
-    l_saddr.sin_port = htons(port+1);
-    if(bind(l_rtcp_sd,(const struct sockaddr*)&l_saddr,
-	     sizeof(struct sockaddr_in)))
-#endif
-    {
-      DBG("RTCP bind: %s\n",strerror(errno));
+
+    am_set_port(&l_saddr,port+1);
+    if(bind(l_rtcp_sd,(const struct sockaddr*)&l_saddr,SA_len(&l_saddr))) {
+      DBG("bind: %s\n",strerror(errno));		
       goto try_another_port;
     }
 
-#ifdef SUPPORT_IPV6
-    set_port_v6(&l_saddr,port);
-    if(bind(l_sd,(const struct sockaddr*)&l_saddr,
-	     sizeof(struct sockaddr_storage)))
-#else	
-    l_saddr.sin_port = htons(port);
-    if(bind(l_sd,(const struct sockaddr*)&l_saddr,
-	     sizeof(struct sockaddr_in)))
-#endif
-    {
+    am_set_port(&l_saddr,port);
+    if(bind(l_sd,(const struct sockaddr*)&l_saddr,SA_len(&l_saddr))) {
       DBG("bind: %s\n",strerror(errno));		
       goto try_another_port;
     }
@@ -410,19 +381,8 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     relay_transparent_seqno(true)
 {
 
-#ifdef SUPPORT_IPV6
   memset(&r_saddr,0,sizeof(struct sockaddr_storage));
   memset(&l_saddr,0,sizeof(struct sockaddr_storage));
-#else
-  memset(&r_saddr,0,sizeof(struct sockaddr_in));
-  memset(&l_saddr,0,sizeof(struct sockaddr_in));
-#endif
-
-#ifndef SUPPORT_IPV6
-  /* By default we listen on all interfaces */
-  l_saddr.sin_family = AF_INET;
-  l_saddr.sin_addr.s_addr = INADDR_ANY;
-#endif
 
   l_ssrc = get_random();
   sequence = get_random();
@@ -481,48 +441,43 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
     throw string("invalid address") + addr;
   }
 
-#ifdef SUPPORT_IPV6
-
   memcpy(&r_saddr,&ss,sizeof(struct sockaddr_storage));
-  set_port_v6(&r_saddr,port);
-
-#else
-
-  struct sockaddr_in sa;
-  memset (&sa, 0, sizeof(sa));
-
-#ifdef BSD44SOCKETS
-  sa.sin_len = sizeof(sockaddr_in);
-#endif
-  sa.sin_family = AF_INET;
-  sa.sin_port = htons(port);
-
-  memcpy(&r_saddr,&sa,sizeof(struct sockaddr_in));
-  memcpy(&r_saddr.sin_addr,&((sockaddr_in*)&ss)->sin_addr,sizeof(in_addr));
-#endif
+  am_set_port(&r_saddr,port);
 
   r_host = addr;
   r_port = port;
 
-#ifndef SUPPORT_IPV6
-  mute = (r_saddr.sin_addr.s_addr == 0);
-#endif
+  mute = ((r_saddr.ss_family == AF_INET) && 
+	  (SAv4(&r_saddr)->sin_addr.s_addr == INADDR_ANY)) ||
+    ((r_saddr.ss_family == AF_INET6) && 
+     IN6_IS_ADDR_UNSPECIFIED(&SAv6(&r_saddr)->sin6_addr));
 }
 
 void AmRtpStream::handleSymmetricRtp(AmRtpPacket* rp) {
-#ifndef SUPPORT_IPV6
+
   if(passive) {
-    // #ifdef SUPPORT_IPV6
-    //     struct sockaddr_storage recv_addr;
-    // #else
-    struct sockaddr_in recv_addr;
+    struct sockaddr_storage recv_addr;
     rp->getAddr(&recv_addr);
 
+    struct sockaddr_in* in_recv = (struct sockaddr_in*)&recv_addr;
+    struct sockaddr_in6* in6_recv = (struct sockaddr_in6*)&recv_addr;
+
+    struct sockaddr_in* in_addr = (struct sockaddr_in*)&r_saddr;
+    struct sockaddr_in6* in6_addr = (struct sockaddr_in6*)&r_saddr;
+
     // symmetric RTP
-    if ((recv_addr.sin_port != r_saddr.sin_port)
-	|| (recv_addr.sin_addr.s_addr != r_saddr.sin_addr.s_addr)) {
-      string addr_str = get_addr_str((sockaddr_storage*)&recv_addr);
-      int port = ntohs(recv_addr.sin_port);
+    if ( ((recv_addr.ss_family == AF_INET) &&
+	  ((in_addr->sin_port != in_recv->sin_port)
+	   || (in_addr->sin_addr.s_addr != in_recv->sin_addr.s_addr))) ||
+	 ((recv_addr.ss_family == AF_INET6) &&
+	  ((in6_addr->sin6_port != in6_recv->sin6_port)
+	   || (memcmp(&in6_addr->sin6_addr,
+		      &in6_recv->sin6_addr,
+		      sizeof(struct in6_addr)))))
+	 ) {
+
+      string addr_str = get_addr_str(&recv_addr);
+      int port = am_get_port(&recv_addr);
       setRAddr(addr_str,port);
       DBG("Symmetric RTP: setting new remote address: %s:%i\n",
 	  addr_str.c_str(),port);
@@ -533,7 +488,6 @@ void AmRtpStream::handleSymmetricRtp(AmRtpPacket* rp) {
     // avoid comparing each time sender address
     passive = false;
   }
-#endif
 }
 
 void AmRtpStream::setPassiveMode(bool p)
@@ -720,9 +674,10 @@ int AmRtpStream::init(const AmSdp& local,
 
   if(local_media.send && !hold
      && (remote_media.port != 0)
-#ifndef SUPPORT_IPV6
-     && (r_saddr.sin_addr.s_addr != 0)
-#endif
+     && (((r_saddr.ss_family == AF_INET) 
+	  && (SAv4(&r_saddr)->sin_addr.s_addr != 0)) ||
+	 ((r_saddr.ss_family == AF_INET6) 
+	  && (!IN6_IS_ADDR_UNSPECIFIED(&SAv6(&r_saddr)->sin6_addr))))
      ) {
     mute = false;
   }
@@ -986,13 +941,13 @@ void AmRtpStream::recvRtcpPacket()
     return;
   }
 
-  struct sockaddr_in rtcp_raddr;
-  memcpy(&rtcp_raddr,&relay_stream->r_saddr,sizeof(struct sockaddr_in));
-  rtcp_raddr.sin_port = htons(relay_stream->l_rtcp_port);
+  struct sockaddr_storage rtcp_raddr;
+  memcpy(&rtcp_raddr,&relay_stream->r_saddr,sizeof(rtcp_raddr));
+  am_set_port(&rtcp_raddr, relay_stream->r_port+1);
 
-  int err = sendto(relay_stream->l_sd,buffer,recved_bytes,0,
-	       (const struct sockaddr *)&rtcp_raddr,
-	       sizeof(struct sockaddr_in));
+  int err = sendto(relay_stream->l_rtcp_sd,buffer,recved_bytes,0,
+		   (const struct sockaddr *)&rtcp_raddr,
+		   SA_len(&rtcp_raddr));
   
   if(err == -1){
     ERROR("could not relay RTCP packet: %s\n",strerror(errno));

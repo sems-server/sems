@@ -191,13 +191,8 @@ protected:
   /**
    * Local and remote host addresses
    */
-#ifdef SUPPORT_IPV6
   struct sockaddr_storage r_saddr;
   struct sockaddr_storage l_saddr;
-#else
-  struct sockaddr_in r_saddr;
-  struct sockaddr_in l_saddr;
-#endif
 
   /** Local port */
   unsigned short     l_port;

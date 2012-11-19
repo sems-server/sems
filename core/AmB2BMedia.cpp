@@ -538,8 +538,14 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
         DBG("new stream connection address: %s",it->conn.address.c_str());
       }
       try {
-        if (a_leg) it->port = streams->a.getLocalPort();
-        else it->port = streams->b.getLocalPort();
+        if (a_leg) {
+	  streams->a.setLocalIP(relay_address);
+	  it->port = streams->a.getLocalPort();
+	}
+        else {
+	  streams->b.setLocalIP(relay_address);
+	  it->port = streams->b.getLocalPort();
+	}
         replaced_ports += (streams != audio.begin()) ? int2str(it->port) : "/"+int2str(it->port);
       } catch (const string& s) {
         mutex.unlock();

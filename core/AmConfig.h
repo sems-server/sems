@@ -115,9 +115,20 @@ struct AmConfig
   static vector<IP_interface>       Ifs;
   static map<string,unsigned short> If_names;
 
+  struct IPAddr {
+    string addr;
+    short  family;
+    
+    IPAddr(const string& addr, const short family)
+      : addr(addr), family(family) {}
+
+    IPAddr(const IPAddr& ip)
+      : addr(ip.addr), family(ip.family) {}
+  };
+
   struct SysIntf {
     string       name;
-    list<string> addrs;
+    list<IPAddr> addrs;
     // identical to those returned by SIOCGIFFLAGS
     unsigned int flags;
   };
@@ -262,7 +273,7 @@ struct AmConfig
 };
 
 /** Get the PF_INET address associated with the network interface */
-string fixIface2IP(const string& dev_name);
+string fixIface2IP(const string& dev_name, bool v6_for_sip);
 
 #endif
 

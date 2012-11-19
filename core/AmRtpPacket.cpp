@@ -30,6 +30,8 @@
 #include "log.h"
 #include "AmConfig.h"
 
+#include "sip/ip_util.h"
+
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -50,8 +52,6 @@ AmRtpPacket::~AmRtpPacket()
 {
 }
 
-#ifdef SUPPORT_IPV6
-
 void AmRtpPacket::setAddr(struct sockaddr_storage* a)
 {
   memcpy(&addr,a,sizeof(sockaddr_storage));
@@ -61,20 +61,6 @@ void AmRtpPacket::getAddr(struct sockaddr_storage* a)
 {
   memcpy(a,&addr,sizeof(sockaddr_storage));
 }
-
-#else
-
-void AmRtpPacket::setAddr(struct sockaddr_in* a)
-{
-  memcpy(&addr,a,sizeof(sockaddr_in));
-}
-
-void AmRtpPacket::getAddr(struct sockaddr_in* a)
-{
-  memcpy(a,&addr,sizeof(sockaddr_in));
-}
-
-#endif
 
 int AmRtpPacket::parse()
 {
@@ -196,17 +182,9 @@ int AmRtpPacket::compile_raw(unsigned char* data_buf, unsigned int size)
 
 int AmRtpPacket::send(int sd)
 {
-  int err;
-#ifdef SUPPORT_IPV6
-  if(addr.ss_family != PF_INET)
-    err = sendto(sd,buffer,b_size,0,
-		 (const struct sockaddr *)&addr,
-		 sizeof(struct sockaddr_in6));
-  else 
-#endif
-    err = sendto(sd,buffer,b_size,0,
-		 (const struct sockaddr *)&addr,
-		 sizeof(struct sockaddr_in));
+  int err = sendto(sd,buffer,b_size,0,
+		   (const struct sockaddr *)&addr,
+		   SA_len(&addr));
 
   if(err == -1){
     ERROR("while sending RTP packet: %s\n",strerror(errno));
@@ -218,12 +196,7 @@ int AmRtpPacket::send(int sd)
 
 int AmRtpPacket::recv(int sd)
 {
-#ifdef SUPPORT_IPV6
   socklen_t recv_addr_len = sizeof(struct sockaddr_storage);
-#else
-  socklen_t recv_addr_len = sizeof(struct sockaddr_in);
-#endif
-
   int ret = recvfrom(sd,buffer,sizeof(buffer),0,
 		     (struct sockaddr*)&addr,
 		     &recv_addr_len);

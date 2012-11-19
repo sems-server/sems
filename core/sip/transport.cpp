@@ -102,24 +102,17 @@ unsigned short trsp_socket::get_if()
     return if_num;
 }
 
-int trsp_socket::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
+int trsp_socket::send(const sockaddr_storage* sa, const char* msg, 
+		      const int msg_len)
 {
     if (log_level_raw_msgs >= 0) {
 	_LOG(log_level_raw_msgs, 
 	     "send  msg\n--++--\n%.*s--++--\n", msg_len, msg);
     }
 
-  int err;
-#ifdef SUPPORT_IPV6
-  if (sa->ss_family == AF_INET6) {
-    err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, sizeof(sockaddr_in6));
-  }
-  else {
-#endif
-    err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, sizeof(sockaddr_in));
-#ifdef SUPPORT_IPV6
-  }
-#endif
+  int err = sendto(sd, msg, msg_len, 0, (const struct sockaddr*)sa, 
+		   sa->ss_family == AF_INET ? 
+		   sizeof(sockaddr_in) : sizeof(sockaddr_in6));
 
   if (err < 0) {
     ERROR("sendto: %s\n",strerror(errno));

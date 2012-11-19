@@ -146,9 +146,23 @@ class AudioStreamData {
 
     // --- helper methods propagating our private member to outside world ---
 
-    void clearRTPTimeout() { if (stream) stream->clearRTPTimeout(); }
-    int getLocalPort() { if (stream) return stream->getLocalPort(); else return 0; }
-    AmRtpAudio *getStream() { return stream; }
+    void clearRTPTimeout() { 
+      if (stream) stream->clearRTPTimeout(); 
+    }
+
+    int getLocalPort() { 
+      if (stream) return stream->getLocalPort(); 
+      else return 0; 
+    }
+
+    void setLocalIP(const string& ip) { 
+      if (stream) stream->setLocalIP(ip);
+    }
+
+    AmRtpAudio *getStream() { 
+      return stream; 
+    }
+
     bool isInitialized() { return initialized; }
 };
 

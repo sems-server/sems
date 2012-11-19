@@ -193,11 +193,6 @@ private:
 
 typedef singleton<_resolver> resolver;
 
-/** Converts a string into an IP structure*/
-int str2ip(const char* name,
-	   sockaddr_storage* sa,
-	   const address_type types);
-
 #endif
 
 /** EMACS **

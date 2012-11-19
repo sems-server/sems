@@ -27,21 +27,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define __APPLE_USE_RFC_3542
+#include <netinet/in.h>
+
 #include "udp_trsp.h"
+#include "ip_util.h"
 #include "sip_parser.h"
 #include "trans_layer.h"
 #include "log.h"
 
 #include "SipCtrlInterface.h"
 
-#include <netinet/in.h>
+#include <netdb.h>
+
 #include <sys/param.h>
 #include <arpa/inet.h>
 
 #include <errno.h>
 #include <string.h>
-
-// FIXME: support IPv6
 
 #if defined IP_RECVDSTADDR
 # define DSTADDR_SOCKOPT IP_RECVDSTADDR
@@ -52,13 +55,19 @@
 # define DSTADDR_DATASIZE (CMSG_SPACE(sizeof(struct in_pktinfo)))
 # define dstaddr(x) (&(((struct in_pktinfo *)(CMSG_DATA(x)))->ipi_addr))
 #else
-# error "can't determine socket option (IP_RECVDSTADDR or IP_PKTINFO)"
+# error "can't determine v4 socket option (IP_RECVDSTADDR or IP_PKTINFO)"
 #endif
 
-// union control_data {
-//     struct cmsghdr  cmsg;
-//     u_char          data[DSTADDR_DATASIZE];
-// };
+#if !defined IPV6_RECVPKTINFO
+# define DSTADDR6_SOCKOPT IPV6_PKTINFO
+# define dstaddr6(x) (&(((struct in6_pktinfo *)(CMSG_DATA(x)))->ipi6_addr))
+#elif defined IPV6_PKTINFO
+# define DSTADDR6_SOCKOPT IPV6_RECVPKTINFO
+# define dstaddr6(x) (&(((struct in6_pktinfo *)(CMSG_DATA(x)))->ipi6_addr))
+#else
+# error "cant't determine v6 socket option (IPV6_RECVPKTINFO or IPV6_PKTINFO)"
+#endif
+
 
 /** @see trsp_socket */
 int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
@@ -68,33 +77,29 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 	close(sd);
     }
     
-    memset(&addr,0,sizeof(addr));
-
-    addr.ss_family = AF_INET;
-#if defined(BSD44SOCKETS)
-    addr.ss_len = sizeof(struct sockaddr_in);
-#endif
-    SAv4(&addr)->sin_port = htons(bind_port);
-
-    if(inet_aton(bind_ip.c_str(),&SAv4(&addr)->sin_addr)<0){
+    if(am_inet_pton(bind_ip.c_str(),&addr) == 0){
 	
-	ERROR("inet_aton: %s\n",strerror(errno));
+	ERROR("am_inet_pton(%s): %s\n",bind_ip.c_str(),strerror(errno));
 	return -1;
     }
+    
+    if( ((addr.ss_family == AF_INET) && 
+     	 (SAv4(&addr)->sin_addr.s_addr == INADDR_ANY)) ||
+     	((addr.ss_family == AF_INET6) && 
+     	 IN6_IS_ADDR_UNSPECIFIED(&SAv6(&addr)->sin6_addr)) ){
 
-    if(SAv4(&addr)->sin_addr.s_addr == INADDR_ANY){
-	ERROR("Sorry, we cannot bind 'ANY' address\n");
-	return -1;
+     	ERROR("Sorry, we cannot bind to 'ANY' address\n");
+     	return -1;
     }
 
-    if((sd = socket(PF_INET,SOCK_DGRAM,0)) == -1){
+    am_set_port(&addr,bind_port);
+
+    if((sd = socket(addr.ss_family,SOCK_DGRAM,0)) == -1){
 	ERROR("socket: %s\n",strerror(errno));
 	return -1;
     } 
     
-
-    if(::bind(sd,(const struct sockaddr*)&addr,
-	     sizeof(struct sockaddr_in))) {
+    if(::bind(sd,(const struct sockaddr*)&addr,SA_len(&addr))) {
 
 	ERROR("bind: %s\n",strerror(errno));
 	close(sd);
@@ -103,13 +108,24 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
     
     int true_opt = 1;
 
-    if(setsockopt(sd, IPPROTO_IP, DSTADDR_SOCKOPT,
-		  (void*)&true_opt, sizeof (true_opt)) == -1) {
-	
-	ERROR("%s\n",strerror(errno));
-	close(sd);
-	return -1;
+    if(addr.ss_family == AF_INET) {
+	if(setsockopt(sd, IPPROTO_IP, DSTADDR_SOCKOPT,
+		      (void*)&true_opt, sizeof (true_opt)) == -1) {
+	    
+	    ERROR("%s\n",strerror(errno));
+	    close(sd);
+	    return -1;
+	}
+    } else {
+	if(setsockopt(sd, IPPROTO_IPV6, DSTADDR6_SOCKOPT,
+		      (void*)&true_opt, sizeof (true_opt)) == -1) {
+	    
+	    ERROR("%s\n",strerror(errno));
+	    close(sd);
+	    return -1;
+	}
     }
+
 
     if (SipCtrlInterface::udp_rcvbuf > 0) {
 	DBG("trying to set SIP UDP socket buffer to %d\n",
@@ -138,7 +154,7 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
     port = bind_port;
     ip   = bind_ip;
 
-    DBG("UDP transport bound to %s:%i\n",ip.c_str(),port);
+    DBG("UDP transport bound to %s/%i\n",ip.c_str(),port);
 
     return 0;
 }
@@ -223,10 +239,19 @@ void udp_trsp::run()
                 cmsgptr->cmsg_type == DSTADDR_SOCKOPT) {
 		
 		s_msg->local_ip.ss_family = AF_INET;
-		((sockaddr_in*)(&s_msg->local_ip))->sin_port   = htons(sock->get_port());
-                memcpy(&((sockaddr_in*)(&s_msg->local_ip))->sin_addr,dstaddr(cmsgptr),sizeof(in_addr));
+	        am_set_port(&s_msg->local_ip,sock->get_port());
+                memcpy(&((sockaddr_in*)(&s_msg->local_ip))->sin_addr,
+		       dstaddr(cmsgptr),sizeof(in_addr));
             }
-        } 
+	    else if(cmsgptr->cmsg_level == IPPROTO_IPV6 &&
+		    cmsgptr->cmsg_type == IPV6_PKTINFO) {
+
+		s_msg->local_ip.ss_family = AF_INET6;
+	        am_set_port(&s_msg->local_ip,sock->get_port());
+                memcpy(&((sockaddr_in6*)(&s_msg->local_ip))->sin6_addr,
+		       dstaddr6(cmsgptr),sizeof(in6_addr));
+	    }
+        }
 
 	// pass message to the parser / transaction layer
 	trans_layer::instance()->received_msg(s_msg);

@@ -35,12 +35,6 @@
 #include <string>
 using std::string;
 
-#define SAv4(addr) \
-            ((struct sockaddr_in*)addr)
-
-#define SAv6(addr) \
-            ((struct sockaddr_in6*)addr)
-
 class trsp_socket
 {
 public:

@@ -67,7 +67,7 @@ int RtmpFactory::onLoad()
   else {
 
     if(cfg_file.hasParameter("listen_address")){
-      cfg.ListenAddress = fixIface2IP(cfg_file.getParameter("listen_address"));
+      cfg.ListenAddress = fixIface2IP(cfg_file.getParameter("listen_address"),false);
     }
 
     if(cfg_file.hasParameter("listen_port")){

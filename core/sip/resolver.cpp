@@ -31,6 +31,7 @@
 #include "hash.h"
 
 #include "parse_dns.h"
+#include "ip_util.h"
 
 #include <sys/socket.h> 
 #include <netdb.h>
@@ -263,7 +264,7 @@ public:
 	((sockaddr_in*)sa)->sin_port = h->port;
 
 	// check if name is an IP address
-	if(str2ip(e->target.c_str(),sa,IPv4) == 1) {
+	if(am_inet_pton(e->target.c_str(),sa) == 1) {
 	    h->ip_n = -1; // flag end of IP list
 	    return 0;
 	}
@@ -635,7 +636,7 @@ int _resolver::resolve_name(const char* name,
     }
 
     // first try to detect if 'name' is already an IP address
-    ret = str2ip(name,sa,types);
+    ret = am_inet_pton(name,sa);
     if(ret == 1) {
 	h->ip_n = -1; // flag end of IP list
 	h->srv_n = -1;
@@ -674,37 +675,6 @@ int _resolver::resolve_name(const char* name,
 
     // should not happen...
     return -1;
-}
-
-int str2ip(const char* name,
-	   sockaddr_storage* sa,
-	   const address_type types)
-{
-    if(types & IPv4){
-	int ret = inet_pton(AF_INET,name,&((sockaddr_in*)sa)->sin_addr);
-	if(ret==1) {
-	    ((sockaddr_in*)sa)->sin_family = AF_INET;
-	    return 1;
-	}
-	else if(ret < 0) {
-	    ERROR("while trying to detect an IPv4 address '%s': %s",name,strerror(errno));
-	    return ret;
-	}
-    }
-    
-    if(types & IPv6){
-	int ret = inet_pton(AF_INET6,name,&((sockaddr_in6*)sa)->sin6_addr);
-	if(ret==1) {
-	    ((sockaddr_in6*)sa)->sin6_family = AF_INET6;
-	    return 1;
-	}
-	else if(ret < 0) {
-	    ERROR("while trying to detect an IPv6 address '%s': %s",name,strerror(errno));
-	    return ret;
-	}
-    }
-
-    return 0;
 }
 
 void _resolver::run()

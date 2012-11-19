@@ -987,7 +987,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
         && audio_1st_stream 
         && (m_it->port != 0) ) {
 
-      RTPStream()->setLocalIP(advertisedIP());
+      RTPStream()->setLocalIP(answer.conn.address);
       RTPStream()->getSdpAnswer(media_index,*m_it,answer_media);
       if(answer_media.payloads.empty() ||
 	 ((answer_media.payloads.size() == 1) &&

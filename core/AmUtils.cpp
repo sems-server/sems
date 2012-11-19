@@ -31,9 +31,9 @@
 #include "AmThread.h"
 #include "AmConfig.h"
 #include "log.h"
-//#include "AmServer.h"
 #include "AmSipMsg.h"
 #include "sip/resolver.h"
+#include "sip/ip_util.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -438,79 +438,15 @@ string filename_from_fullpath(const string& path)
 
 string get_addr_str(const sockaddr_storage* addr)
 {
-  char host[NI_MAXHOST];
-
-  int s = getnameinfo((sockaddr*)addr, (addr->ss_family == AF_INET) ? 
-		      sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
-		      host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-  if (s != 0) {
-    ERROR("getnameinfo() failed: %s\n", gai_strerror(s));
-    return "";
-  }
-  
-  return host;
+  char host[NI_MAXHOST] = "";
+  return am_inet_ntop(addr,host,NI_MAXHOST);
 }
 
-
-#ifdef SUPPORT_IPV6
-#include <netdb.h>
-
-int inet_aton_v6(const char* name, struct sockaddr_storage* ss)
+string get_addr_str_sip(const sockaddr_storage* addr)
 {
-  int error;
-  //struct sockaddr *sa;
-  struct addrinfo hints;
-  struct addrinfo *res;
-
-  memset(&hints, 0, sizeof(hints));
-  /* set-up hints structure */
-  hints.ai_family = PF_UNSPEC;
-  error = getaddrinfo(name, NULL, &hints, &res);
-  if (error)
-    ERROR("%s\n",gai_strerror(error));
-  else if (res) {
-    assert( (res->ai_family == PF_INET) || 
-	    (res->ai_family == PF_INET6) );
-    memset(ss,0,sizeof(struct sockaddr_storage));
-    memcpy(ss,res->ai_addr,res->ai_addrlen);
-    freeaddrinfo(res);
-    return 1;
-  }
-
-  return 0;
+  char host[NI_MAXHOST] = "";
+  return am_inet_ntop_sip(addr,host,NI_MAXHOST);
 }
-
-void set_port_v6(struct sockaddr_storage* ss, short port)
-{
-  switch(ss->ss_family){
-  case PF_INET:
-    ((struct sockaddr_in*)ss)->sin_port = htons(port);
-    break;
-  case PF_INET6:
-    ((struct sockaddr_in6*)ss)->sin6_port = htons(port);
-    break;
-  default:
-    ERROR("unknown address family\n");
-    assert(0);
-    break;
-  }
-}
-
-short get_port_v6(struct sockaddr_storage* ss)
-{
-  switch(ss->ss_family){
-  case PF_INET:
-    return ntohs(((struct sockaddr_in*)ss)->sin_port);
-  case PF_INET6:
-    return ntohs(((struct sockaddr_in6*)ss)->sin6_port);
-  default:
-    ERROR("unknown address family\n");
-    assert(0);
-    break;
-  }
-}
-
-#endif
 
 string file_extension(const string& path)
 {
@@ -626,30 +562,13 @@ int get_local_addr_for_dest(const string& remote_ip, string& local)
     return -1;
   }
 
-  return ip_addr_to_str(&local_ss,local);
-}
-
-int ip_addr_to_str(sockaddr_storage* ss, string& addr)
-{
-  char ntop_buffer[INET6_ADDRSTRLEN];
-
-  if(ss->ss_family == AF_INET) {
-    if(!inet_ntop(AF_INET, &((sockaddr_in*)ss)->sin_addr,
-		  ntop_buffer,INET6_ADDRSTRLEN)) {
-      ERROR("Could not convert IPv4 address to string: %s",strerror(errno));
-      return -1;
-    }
+  char tmp_addr[NI_MAXHOST];
+  if(am_inet_ntop(&local_ss,tmp_addr,NI_MAXHOST) != NULL){
+    local = tmp_addr;
+    return 0;
   }
-  else {
-    if(!inet_ntop(AF_INET6, &((sockaddr_in6*)ss)->sin6_addr,
-		  ntop_buffer,INET6_ADDRSTRLEN)) {
-      ERROR("Could not convert IPv4 address to string: %s",strerror(errno));
-      return -1;
-    }
-  }
-
-  addr = string(ntop_buffer);
-  return 0;
+  
+  return -1;
 }
 
 string extract_tag(const string& addr)
