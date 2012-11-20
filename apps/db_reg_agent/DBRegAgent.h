@@ -157,6 +157,11 @@ class DBRegAgent
 
   int onLoad();
 
+  // atomic_ref_cnt interface
+  void on_destroy() {
+    onUnload();
+  }
+
   void onUnload();
 
   RegistrationTimer registration_scheduler;

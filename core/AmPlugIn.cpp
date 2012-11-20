@@ -110,21 +110,12 @@ AmPlugIn::AmPlugIn()
 {
 }
 
-static std::set<AmPluginFactory*> deleted_factories;
-static std::set<string> deleted_factories_names;
 
 static void delete_plugin_factory(std::pair<string, AmPluginFactory*> pf)
 {
-  if ((deleted_factories.find(pf.second) == deleted_factories.end()) &&
-      (deleted_factories_names.find(pf.first) == deleted_factories_names.end())) {
-    DBG("onUnload of plugin '%s'\n", pf.first.c_str());
-    pf.second->onUnload();
+  DBG("decreasing reference to plug-in factory: %s\n", pf.first.c_str());
+  dec_ref(pf.second);
 
-    DBG("deleting plug-in factory: %s\n", pf.first.c_str());
-    deleted_factories.insert(pf.second);
-    deleted_factories_names.insert(pf.first);
-    delete pf.second;
-  }
 }
 
 AmPlugIn::~AmPlugIn()
@@ -570,7 +561,11 @@ int AmPlugIn::loadAppPlugIn(AmPluginFactory* f)
   name2app.insert(std::make_pair(sf->getName(),sf));
   DBG("application '%s' loaded.\n",sf->getName().c_str());
 
-  module_objects.insert(std::make_pair(sf->getName(),sf));
+  inc_ref(sf);
+  if(!module_objects.insert(std::make_pair(sf->getName(),sf)).second){
+    // insertion failed
+    dec_ref(sf);
+  }
   name2app_mut.unlock();
 
   return 0;
@@ -589,7 +584,8 @@ int AmPlugIn::loadSehPlugIn(AmPluginFactory* f)
     ERROR("session component '%s' already loaded !\n",sf->getName().c_str());
     goto error;
   }
-      
+
+  inc_ref(sf);
   name2seh.insert(std::make_pair(sf->getName(),sf));
   DBG("session component '%s' loaded.\n",sf->getName().c_str());
 
@@ -601,7 +597,11 @@ int AmPlugIn::loadSehPlugIn(AmPluginFactory* f)
 
 int AmPlugIn::loadBasePlugIn(AmPluginFactory* f)
 {
-  name2base.insert(std::make_pair(f->getName(),f));
+  inc_ref(f);
+  if(!name2base.insert(std::make_pair(f->getName(),f)).second){
+    // insertion failed
+    dec_ref(f);
+  }
   return 0;
 }
 
@@ -813,7 +813,7 @@ AmSessionFactory* AmPlugIn::findSessionFactory(const AmSipRequest& req, string& 
   ERROR(comp_name "'%s' already registered !\n", param_name.c_str());	\
   return false;								\
   }									\
-									\
+  inc_ref(f);								\
   instance()->map_name.insert(std::make_pair(param_name,f));		\
   DBG(comp_name " '%s' registered.\n",param_name.c_str());		\
   return true;

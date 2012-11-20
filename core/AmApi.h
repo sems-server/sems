@@ -35,6 +35,7 @@
 #include "AmConfigReader.h"
 #include "AmArg.h"
 #include "AmEventQueue.h"
+#include "atomic_types.h"
 
 #include <stdarg.h>
 
@@ -63,6 +64,7 @@ class AmDynInvoke
  * \brief Base interface for plugin factories
  */
 class AmPluginFactory
+  : public virtual atomic_ref_cnt
 {
   string plugin_name;
 
@@ -81,12 +83,6 @@ class AmPluginFactory
    * @return 1 on error.
    */
   virtual int onLoad()=0;
-
-
-  /**
-   * Enables the plug-in to deinitialize once the server is stopped.
-   */
-  virtual void onUnload() { };
 };
 
 /**

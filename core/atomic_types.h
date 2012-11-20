@@ -198,6 +198,7 @@ protected:
     : atomic_int() {}
 
   virtual ~atomic_ref_cnt() {}
+  virtual void on_destroy() {}
 
   friend void inc_ref(atomic_ref_cnt* rc);
   friend void dec_ref(atomic_ref_cnt* rc);
@@ -212,8 +213,10 @@ inline void inc_ref(atomic_ref_cnt* rc)
 inline void dec_ref(atomic_ref_cnt* rc)
 {
   assert(rc);
-  if(rc->dec_and_test())
+  if(rc->dec_and_test()){
+    rc->on_destroy();
     delete rc;
+  }
 }
 
 
