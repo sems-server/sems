@@ -41,7 +41,9 @@
 #include <dirent.h>
 
 #include <set>
+#include <string>
 using std::set;
+using std::string;
 
 
 #define PYFILE_REGEX "(.+)\\.(py|pyc|pyo)$"
@@ -439,7 +441,7 @@ int IvrFactory::onLoad()
 
   DBG("directory '%s' opened\n",script_path.c_str());
 
-  set<string> unique_entries;
+  std::set<string> unique_entries;
   regmatch_t  pmatch[2];
 
   struct dirent* entry=0;
@@ -457,7 +459,7 @@ int IvrFactory::onLoad()
   regfree(&reg);
 
   AmPlugIn* plugin = AmPlugIn::instance();
-  for(set<string>::iterator it = unique_entries.begin();
+  for(std::set<string>::iterator it = unique_entries.begin();
       it != unique_entries.end(); it++) {
 
     if(loadScript(*it)){
