@@ -27,7 +27,6 @@
 
 #include "SessionTimer.h"
 #include "AmUtils.h"
-#include "UserTimer.h"
 #include "AmSipHeaders.h"
 
 EXPORT_SESSION_EVENT_HANDLER_FACTORY(SessionTimerFactory, MOD_NAME);
