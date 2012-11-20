@@ -54,6 +54,14 @@
 #define ILBC30  30 
 #define ILBC20  20
 
+#ifndef MIN_SAMPLE
+#define MIN_SAMPLE -32768
+#endif
+
+#ifndef MAX_SAMPLE
+#define MAX_SAMPLE 32767
+#endif
+
 static int iLBC_2_Pcm16_Ext( unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 			     unsigned int channels, unsigned int rate, long h_codec, int mode );
 
