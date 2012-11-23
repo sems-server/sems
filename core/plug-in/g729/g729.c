@@ -54,6 +54,7 @@ static unsigned int g729_samples2bytes(long, unsigned int);
 #define G729_PAYLOAD_ID          18
 #define G729_BYTES_PER_FRAME     10
 #define G729_SAMPLES_PER_FRAME   10
+#define PCM_BYTES_PER_FRAME      160
 
 BEGIN_EXPORTS( "g729", AMCI_NO_MODULEINIT, AMCI_NO_MODULEDESTROY)
 
@@ -111,25 +112,25 @@ static int pcm16_2_g729(unsigned char* out_buf, unsigned char* in_buf, unsigned 
 			unsigned int channels, unsigned int rate, long h_codec )
 {
     struct G729_codec *codec = (struct G729_codec *) h_codec;
-    int out_size = 0;
+    unsigned int out_size = 0;
 
     if (!h_codec)
       return -1;
 
-    if (size % 160 != 0){
-       ERROR("pcm16_2_g729: number of blocks should be integral (block size = 160)\n");
+    if (size % PCM_BYTES_PER_FRAME != 0){
+       ERROR("pcm16_2_g729: number of blocks should be integral (block size = %u)\n", PCM_BYTES_PER_FRAME);
        return -1;
     }
 
-    while(size >= 160){
+    while(size >= PCM_BYTES_PER_FRAME){
         /* Encode a frame  */
         bcg729Encoder(codec->enc, in_buf, out_buf);
 
-	size -= 160;
-	in_buf += 160;
+	size -= PCM_BYTES_PER_FRAME;
+	in_buf += PCM_BYTES_PER_FRAME;
 
-	out_buf += 10;
-	out_size += 10;
+	out_buf += G729_BYTES_PER_FRAME;
+	out_size += G729_BYTES_PER_FRAME;
     }
 
     return out_size;
@@ -138,26 +139,26 @@ static int pcm16_2_g729(unsigned char* out_buf, unsigned char* in_buf, unsigned 
 static int g729_2_pcm16(unsigned char* out_buf, unsigned char* in_buf, unsigned int size,
 		       unsigned int channels, unsigned int rate, long h_codec )
 {
-    unsigned int out_size = 0;
     struct G729_codec *codec = (struct G729_codec *) h_codec;
+    unsigned int out_size = 0;
 
     if (!h_codec)
       return -1;
 
-    if (size % 10 != 0){
-       ERROR("g729_2_pcm16: number of blocks should be integral (block size = 10)\n");
+    if (size % G729_BYTES_PER_FRAME != 0){
+       ERROR("g729_2_pcm16: number of blocks should be integral (block size = %u)\n", G729_BYTES_PER_FRAME);
        return -1;
     }
 
-    while(size >= 10){
-        /* Encode a frame  */
+    while(size >= G729_BYTES_PER_FRAME){
+        /* Decode a frame  */
         bcg729Decoder(codec->dec, in_buf, 0, out_buf);
 
-	in_buf += 10;
-	size -= 10;
+	size -= G729_BYTES_PER_FRAME;
+	in_buf += G729_BYTES_PER_FRAME;
 
-	out_buf += 160;
-	out_size += 160;
+	out_buf += PCM_BYTES_PER_FRAME;
+	out_size += PCM_BYTES_PER_FRAME;
       }
 
     return out_size;
