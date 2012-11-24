@@ -1278,7 +1278,13 @@ CONST_ACTION_2P(SCB2BConnectCalleeAction,',', false);
 EXEC_ACTION_START(SCB2BConnectCalleeAction) {  
   string remote_party = resolveVars(par1, sess, sc_sess, event_params);
   string remote_uri = resolveVars(par2, sess, sc_sess, event_params);
-  sc_sess->B2BconnectCallee(remote_party, remote_uri);
+  bool relayed_invite = false;
+  VarMapT::iterator it = sc_sess->var.find(DSM_B2B_RELAYED_INVITE);
+  if (it != sc_sess->var.end() && it->second == "true")
+    relayed_invite = true;
+  DBG("B2B connecting callee '%s', URI '%s', relayed: %s\n",
+      remote_party.c_str(), remote_uri.c_str(), relayed_invite?"yes":"no");
+  sc_sess->B2BconnectCallee(remote_party, remote_uri, relayed_invite);
 } EXEC_ACTION_END;
  
 EXEC_ACTION_START(SCB2BTerminateOtherLegAction) {

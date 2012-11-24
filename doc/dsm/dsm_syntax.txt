@@ -188,7 +188,8 @@ B2B call control
     To = remote_party 
     From = $b2b_local_party
     auth = ($b2b_auth_user, $b2b_auth_pwd)
-   
+    $b2b_relayed_invite=[true|false] : use relayed INVITE mode
+
  B2B.terminateOtherLeg
    disconnect second leg of B2B session (see AmB2BSession),
    e.g. to connect to a new destination
