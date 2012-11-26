@@ -232,7 +232,9 @@ void AudioStreamData::resumeStreamProcessing()
   }
 }
 
-void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other, RelayController &rc)
+void AudioStreamData::setStreamRelay(const string& connection_address, 
+				     const SdpMedia &m, AmRtpStream *other, 
+				     RelayController &rc)
 {
   // We are in locked section, so the stream can not change under our hands
   // remove the stream from processing to avoid changing relay params under the
@@ -246,7 +248,10 @@ void AudioStreamData::setStreamRelay(const SdpMedia &m, AmRtpStream *other, Rela
     bool enabled;
 
     rc.computeRelayMask(m, enabled, mask);
-    if (enabled) stream->enableRtpRelay(mask, other);
+    if (enabled) {
+      stream->enableRtpRelay(mask, other);
+      stream->setRAddr(connection_address,m.port);
+    }
     else stream->disableRtpRelay();
 
   }
@@ -433,6 +438,11 @@ int AudioStreamData::writeStream(unsigned long long ts, unsigned char *buffer, A
 
 //////////////////////////////////////////////////////////////////////////////////
 
+AmB2BMedia::RelayStreamPair::RelayStreamPair(AmB2BSession *_a, AmB2BSession *_b)
+: a(_a, _a->getRtpRelayInterface()),
+  b(_b, _b->getRtpRelayInterface())
+{ }
+
 AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b): 
   ref_cnt(0), // everybody who wants to use must add one reference itselves
   a(_a), b(_b),
@@ -530,49 +540,99 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
 
   string replaced_ports;
 
-  AudioStreamIterator streams = audio.begin();
+  AudioStreamIterator audio_stream_it = audio.begin();
+  RelayStreamIterator relay_stream_it = relay_streams.begin();
 
   std::vector<SdpMedia>::iterator it = parser_sdp.media.begin();
-  for (; (it != parser_sdp.media.end()) && (streams != audio.end()) ; ++it) {
+  for (; it != parser_sdp.media.end() ; ++it) {
   
-    // FIXME: only audio streams are handled for now
-    if (it->type != MT_AUDIO) {
-      // quick workaround to allow direct connection of non-audio streams (i.e.
+    // FIXME: only UDP streams are handled for now
+    if (it->type == MT_AUDIO) {
+
+      if( audio_stream_it == audio.end() ){
+	// strange... we should actually have a stream for this media line...
+	DBG("audio media line does not have coresponding audio stream...\n");
+	continue;
+      }
+
+      if(it->port) { // if stream active
+	if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
+	  it->conn.address = relay_address;
+	  DBG("new stream connection address: %s",it->conn.address.c_str());
+	}
+	try {
+	  if (a_leg) {
+	    audio_stream_it->a.setLocalIP(relay_address);
+	    it->port = audio_stream_it->a.getLocalPort();
+	  }
+	  else {
+	    audio_stream_it->b.setLocalIP(relay_address);
+	    it->port = audio_stream_it->b.getLocalPort();
+	  }
+	  if(!replaced_ports.empty()) replaced_ports += "/";
+	  replaced_ports += int2str(it->port);
+	} catch (const string& s) {
+	  mutex.unlock();
+	  ERROR("setting port: '%s'\n", s.c_str());
+	  throw string("error setting RTP port\n");
+	}
+      }
+      ++audio_stream_it;
+    }
+    else if((it->transport == TP_RTPAVP) ||
+	    (it->transport == TP_RTPSAVP) ||
+	    (it->transport == TP_UDP) ||
+	    (it->transport == TP_UDPTL)) {
+
+      if( relay_stream_it == relay_streams.end() ){
+	// strange... we should actually have a stream for this media line...
+	DBG("media line does not have a coresponding relay stream...\n");
+	continue;
+      }
+
+      if(it->port) { // if stream active
+	if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
+	  it->conn.address = relay_address;
+	  DBG("new stream connection address: %s",it->conn.address.c_str());
+	}
+	try {
+	  if (a_leg) {
+	    if(!(*relay_stream_it)->a.hasLocalSocket()){
+	      (*relay_stream_it)->a.setLocalIP(relay_address);
+	    }
+	    it->port = (*relay_stream_it)->a.getLocalPort();
+	  }
+	  else {
+	    if(!(*relay_stream_it)->b.hasLocalSocket()){
+	      (*relay_stream_it)->b.setLocalIP(relay_address);
+	    }
+	    it->port = (*relay_stream_it)->b.getLocalPort();
+	  }
+	  if(!replaced_ports.empty()) replaced_ports += "/";
+	  replaced_ports += int2str(it->port);
+	} catch (const string& s) {
+	  mutex.unlock();
+	  ERROR("setting port: '%s'\n", s.c_str());
+	  throw string("error setting RTP port\n");
+	}
+      }
+      ++relay_stream_it;
+    }
+    else {
+      // quick workaround to allow direct connection of non-supported streams (i.e.
       // those which are not relayed or transcoded): propagate connection
       // address - might work but need not (to be tested with real clients
       // instead of simulators)
       if (it->conn.address.empty()) it->conn = orig_conn;
       continue;
     }
-
-    if(it->port) { // if stream active
-      if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
-        it->conn.address = relay_address;
-        DBG("new stream connection address: %s",it->conn.address.c_str());
-      }
-      try {
-        if (a_leg) {
-	  streams->a.setLocalIP(relay_address);
-	  it->port = streams->a.getLocalPort();
-	}
-        else {
-	  streams->b.setLocalIP(relay_address);
-	  it->port = streams->b.getLocalPort();
-	}
-        replaced_ports += (streams != audio.begin()) ? int2str(it->port) : "/"+int2str(it->port);
-      } catch (const string& s) {
-        mutex.unlock();
-        ERROR("setting port: '%s'\n", s.c_str());
-        throw string("error setting RTP port\n");
-      }
-    }
-    ++streams;
   }
 
   if (it != parser_sdp.media.end()) {
     // FIXME: create new streams here?
     WARN("trying to relay SDP with more media lines than "
-        "relay streams initialized (%lu)\n", audio.size());
+	 "relay streams initialized (%lu)\n", 
+	 audio.size()+relay_streams.size());
   }
 
   DBG("replaced connection address in SDP with %s:%s.\n",
@@ -591,9 +651,25 @@ bool AmB2BMedia::resetInitializedStreams(bool a_leg)
   return res;
 }
 
+static const char* 
+_rtp_relay_mode_str(const AmB2BSession::RTPRelayMode& relay_mode)
+{
+  switch(relay_mode){
+  case AmB2BSession::RTP_Direct:
+    return "RTP_Direct";
+  case AmB2BSession::RTP_Relay:
+    return "RTP_Relay";
+  case AmB2BSession::RTP_Transcoding:
+    return "RTP_Transcoding";
+  }
+
+  return "";
+}
+
 bool AmB2BMedia::updateStreams(bool a_leg, bool init_relay, bool init_transcoding, RelayController &rc)
 {
-  unsigned stream_idx = 0;
+  unsigned audio_stream_idx = 0;
+  unsigned relay_stream_idx = 0;
   unsigned media_idx = 0;
   bool ok = true;
 
@@ -605,41 +681,82 @@ bool AmB2BMedia::updateStreams(bool a_leg, bool init_relay, bool init_transcodin
   if (a_leg) sdp = &a_leg_remote_sdp;
   else sdp = &b_leg_remote_sdp;
 
-  for (SdpMediaIterator m = sdp->media.begin(); m != sdp->media.end(); ++m, ++media_idx) {
-    if (m->type != MT_AUDIO) continue;
+  for (SdpMediaIterator m = sdp->media.begin(); 
+       m != sdp->media.end(); ++m, ++media_idx) {
 
-    // create pair of Rtp streams if it doesn't exist yet
-    if (stream_idx >= audio.size()) {
-      AudioStreamPair pair(a, b);
-      audio.push_back(pair);
-      stream_idx = audio.size() - 1;
+    const string& connection_address = 
+      (m->conn.address.empty() ? sdp->conn.address : m->conn.address);
+
+    if (m->type == MT_AUDIO) {
+
+      // create pair of Rtp streams if it doesn't exist yet
+      if (audio_stream_idx >= audio.size()) {
+	AudioStreamPair pair(a, b);
+	audio.push_back(pair);
+	audio_stream_idx = audio.size() - 1;
+      }
+      AudioStreamPair &pair = audio[audio_stream_idx];
+      
+      if (init_relay) {
+	// initialize RTP relay stream and payloads in the other leg (!)
+	// Payloads present in this SDP can be relayed directly by the AmRtpStream
+	// of the other leg to the AmRtpStream of this leg.
+	if (a_leg) pair.b.setStreamRelay(connection_address,
+					 *m, pair.a.getStream(), rc);
+	else pair.a.setStreamRelay(connection_address,
+				   *m, pair.b.getStream(), rc);
+      }
+      
+      // initialize the stream for current leg if asked to do so
+      if (init_transcoding) {
+	if (a_leg) {
+	  ok = ok && pair.a.initStream(b, playout_type, 
+				       a_leg_local_sdp, 
+				       a_leg_remote_sdp, 
+				       media_idx);
+	} else {
+	  ok = ok && pair.b.initStream(a, playout_type, 
+				       b_leg_local_sdp, 
+				       b_leg_remote_sdp, 
+				       media_idx);
+	}
+      }
+
+      audio_stream_idx++;
     }
-    AudioStreamPair &pair = audio[stream_idx];
+    else if(init_relay &&
+	    ((m->transport == TP_RTPAVP) ||
+	     (m->transport == TP_RTPSAVP) ||
+	     (m->transport == TP_UDP) ||
+	     (m->transport == TP_UDPTL))) {
+      
+      if(relay_stream_idx >= relay_streams.size()) {
+	relay_streams.push_back(new RelayStreamPair(a, b));
+	relay_stream_idx = relay_streams.size() - 1;
+      }
 
-    if (init_relay) {
-      // initialize RTP relay stream and payloads in the other leg (!)
-      // Payloads present in this SDP can be relayed directly by the AmRtpStream
-      // of the other leg to the AmRtpStream of this leg.
-      if (a_leg) pair.b.setStreamRelay(*m, pair.a.getStream(), rc);
-      else pair.a.setStreamRelay(*m, pair.b.getStream(), rc);
-    }
+      RelayStreamPair& relay_stream = *(relay_streams[relay_stream_idx]);
 
-    // initialize the stream for current leg if asked to do so
-    if (init_transcoding) {
-      if (a_leg) {
-        ok = ok && pair.a.initStream(b, playout_type, 
-				     a_leg_local_sdp, 
-				     a_leg_remote_sdp, 
-				     media_idx);
-      } else {
-        ok = ok && pair.b.initStream(a, playout_type, 
-				     b_leg_local_sdp, 
-				     b_leg_remote_sdp, 
-				     media_idx);
+      PayloadMask true_mask;
+      true_mask.set_all();
+
+      if(a_leg) {
+	relay_stream.a.stopReceiving();
+	relay_stream.a.enableRtpRelay(true_mask,&relay_stream.b);
+	relay_stream.a.setRAddr(connection_address,m->port);
+	if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
+	  relay_stream.a.enableRawRelay();
+	relay_stream.a.resumeReceiving();
+      }
+      else {
+	relay_stream.b.stopReceiving();
+	relay_stream.b.enableRtpRelay(true_mask,&relay_stream.a);
+	relay_stream.b.setRAddr(connection_address,m->port);
+	if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
+	  relay_stream.b.enableRawRelay();
+	relay_stream.b.resumeReceiving();
       }
     }
-
-    stream_idx++;
   }
 
   return ok;
@@ -666,12 +783,26 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
   else {
     // streams were not initialized, we should initialize them if we have
     // local SDP already
-    if (a_leg) initialize_streams = a_leg_local_sdp.media.size() > 0;
-    else initialize_streams = b_leg_local_sdp.media.size() > 0;
+    if (a_leg) {
+
+      DBG("RTP a-leg relay mode: %s", 
+	  _rtp_relay_mode_str(a->getRtpRelayMode()));
+
+      initialize_streams = (a_leg_local_sdp.media.size() > 0) && 
+	(a->getRtpRelayMode() == AmB2BSession::RTP_Transcoding);
+    }
+    else {
+
+      DBG("RTP b-leg relay mode: %s", 
+	  _rtp_relay_mode_str(b->getRtpRelayMode()));
+
+      initialize_streams = (b_leg_local_sdp.media.size() > 0) && 
+	(b->getRtpRelayMode() == AmB2BSession::RTP_Transcoding);
+    }
   }
 
   ok = ok && updateStreams(a_leg, 
-      true /* needed to initialize relay stuff on every remote SDP change */, 
+      true /* needed to initialize relay stuff on every remote SDP change */,
       initialize_streams, *ctrl);
 
   if (ok) updateProcessingState(); // start media processing if possible
@@ -700,13 +831,30 @@ bool AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
   else {
     // streams were not initialized, we should initialize them if we have
     // remote SDP already
-    if (a_leg) initialize_streams = a_leg_remote_sdp.media.size() > 0;
-    else initialize_streams = b_leg_remote_sdp.media.size() > 0;
+    if (a_leg) {
+
+      DBG("RTP a-leg relay mode: %s", 
+	  _rtp_relay_mode_str(a->getRtpRelayMode()));
+
+      initialize_streams = a_leg_local_sdp.media.size() > 0;
+      initialize_streams = initialize_streams && 
+	(a->getRtpRelayMode() == AmB2BSession::RTP_Transcoding);
+    }
+    else {
+
+      DBG("RTP b-leg relay mode: %s", 
+	  _rtp_relay_mode_str(b->getRtpRelayMode()));
+
+      initialize_streams = b_leg_local_sdp.media.size() > 0;
+      initialize_streams = initialize_streams && 
+	(b->getRtpRelayMode() == AmB2BSession::RTP_Transcoding);
+    }
   }
 
   ok = ok && updateStreams(a_leg, 
       false /* local SDP change has no effect on relay */, 
-      initialize_streams, simple_relay_ctrl);
+      initialize_streams, 
+      simple_relay_ctrl /*Fake RC: init_relay==false*/);
 
   if (ok) updateProcessingState(); // start media processing if possible
 

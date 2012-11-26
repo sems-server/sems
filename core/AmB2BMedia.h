@@ -115,7 +115,9 @@ class AudioStreamData {
      *
      * Removes the stream from AmRtpReceiver before updating and returns it back
      * once done. */
-    void setStreamRelay(const SdpMedia &m, AmRtpStream *other, RelayController &rc);
+    void setStreamRelay(const string& connection_address,
+			const SdpMedia &m, AmRtpStream *other, 
+			RelayController &rc);
 
     /** Initializes RTP stream with local and remote media (needed for
      * transcoding). 
@@ -248,7 +250,13 @@ class AmB2BMedia: public AmMediaSession
       AudioStreamPair(AmB2BSession *_a, AmB2BSession *_b): a(_a), b(_b) { }
     };
 
+    struct RelayStreamPair {
+      AmRtpStream a, b;
+      RelayStreamPair(AmB2BSession *_a, AmB2BSession *_b);
+    };
+
     typedef std::vector<AudioStreamPair>::iterator AudioStreamIterator;
+    typedef std::vector<RelayStreamPair*>::iterator RelayStreamIterator;
     typedef std::vector<SdpMedia>::iterator SdpMediaIterator;
 
     /** Callgroup reqired by AmMediaProcessor to distinguish
@@ -274,7 +282,8 @@ class AmB2BMedia: public AmMediaSession
      */
     PlayoutType playout_type;
 
-    std::vector<AudioStreamPair> audio;
+    std::vector<AudioStreamPair>  audio;
+    std::vector<RelayStreamPair*> relay_streams;
 
     /** Starts media processing if have all required information. */
     void updateProcessingState();
