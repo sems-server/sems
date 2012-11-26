@@ -1129,9 +1129,8 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
     setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
-    setRtpRelayMode(RTP_Relay);
-
     if(call_profile.transcoder.isActive()) {
+      setRtpRelayMode(RTP_Transcoding);
       switch(call_profile.transcoder.dtmf_mode) {
       case SBCCallProfile::TranscoderSettings::DTMFAlways:
 	enable_dtmf_transcoding = true; break;
@@ -1142,6 +1141,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
 	lowfi_payloads = call_profile.transcoder.lowfi_codecs;
 	break;
       };
+    }
+    else {
+      setRtpRelayMode(RTP_Relay);
     }
   }
 
