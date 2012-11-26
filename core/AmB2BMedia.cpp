@@ -25,19 +25,32 @@ static SimpleRelayController simple_relay_ctrl;
 
 void SimpleRelayController::computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask)
 {
+  int te_pl = -1;
   enable = false;
 
-  // walk through the media line and add all payload IDs to the bit mask
+  // walk through the media lines and find the telephone-event payload
   for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin();
       i != m.payloads.end(); ++i)
   {
     // do not mark telephone-event payload for relay
-    if(strcasecmp("telephone-event",i->encoding_name.c_str()) != 0){
-      mask.set(i->payload_type);
+    if(!strcasecmp("telephone-event",i->encoding_name.c_str())){
+      te_pl = i->payload_type;
+    }
+    else {
       enable = true;
-      TRACE("marking payload %d for relay\n", i->payload_type);
     }
   }
+
+  if(!enable)
+    return;
+
+  if(te_pl > 0) { 
+    TRACE("unmarking telephone-event payload %d for relay\n", te_pl);
+    mask.set(te_pl);
+  }
+
+  TRACE("marking all other payloads for relay\n");
+  mask.invert();
 }
 
 //////////////////////////////////////////////////////////////////////////////////
