@@ -920,9 +920,13 @@ void AmRtpStream::recvPacket(int fd)
   }
   
   if(p->recv(l_sd) > 0){
-    int parse_res = p->parse();
+    int parse_res = 0;
+
     gettimeofday(&p->recv_time,NULL);
     
+    if(!relay_raw)
+      parse_res = p->parse();
+ 
     if (parse_res == -1) {
       DBG("error while parsing RTP packet.\n");
       clearRTPTimeout(&p->recv_time);
@@ -973,14 +977,15 @@ void AmRtpStream::relay(AmRtpPacket* p) {
     return;
 
   rtp_hdr_t* hdr = (rtp_hdr_t*)p->getBuffer();
-  if (!relay_transparent_seqno)
+  if (!relay_raw && !relay_transparent_seqno)
     hdr->seq = htons(sequence++);
-  if (!relay_transparent_ssrc)
+  if (!relay_raw && !relay_transparent_ssrc)
     hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
 
   if(p->send(l_sd) < 0){
-    ERROR("while sending RTP packet.\n");
+    ERROR("while sending RTP packet to '%s':%i\n",
+	  get_addr_str(&r_saddr).c_str(),am_get_port(&r_saddr));
   }
 }
 
@@ -1030,6 +1035,18 @@ void AmRtpStream::enableRtpRelay(const PayloadMask &_relay_payloads, AmRtpStream
   relay_enabled = true;
 }
 
+void AmRtpStream::enableRawRelay()
+{
+  DBG("enabled RAW relay for RTP stream instance [%p]\n", this);
+  relay_raw = true;
+}
+
+void AmRtpStream::disableRawRelay()
+{
+  DBG("disabled RAW relay for RTP stream instance [%p]\n", this);
+  relay_raw = false;
+}
+ 
 void AmRtpStream::setRtpRelayTransparentSeqno(bool transparent) {
   DBG("%sabled RTP relay transparent seqno for RTP stream instance [%p]\n",
       transparent ? "en":"dis", this);
@@ -1040,6 +1057,22 @@ void AmRtpStream::setRtpRelayTransparentSSRC(bool transparent) {
   DBG("%sabled RTP relay transparent SSRC for RTP stream instance [%p]\n",
       transparent ? "en":"dis", this);
   relay_transparent_ssrc = transparent;
+}
+
+void AmRtpStream::stopReceiving()
+{
+  if (hasLocalSocket()){
+    DBG("remove stream [%p] from RTP receiver\n", this);
+    AmRtpReceiver::instance()->removeStream(getLocalSocket());
+  }
+}
+
+void AmRtpStream::resumeReceiving()
+{
+  if (hasLocalSocket()){
+    DBG("resume stream [%p] into RTP receiver\n",this);
+    AmRtpReceiver::instance()->addStream(getLocalSocket(), this);
+  }
 }
 
 string AmRtpStream::getPayloadName(int payload_type)

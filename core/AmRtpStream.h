@@ -249,6 +249,8 @@ protected:
 
   /** if relay_stream is initialized, received RTP is relayed there */
   bool            relay_enabled;
+  /** if true, packets are note parsed or checked */
+  bool            relay_raw;
   /** pointer to relay stream.
       NOTE: This may only be accessed in initialization
       or by the AmRtpReceiver thread while relaying!  */
@@ -452,11 +454,23 @@ public:
   /** disable RTP relaying through relay stream */
   void disableRtpRelay();
 
+  /** enable raw UDP relaying through relay stream */
+  void enableRawRelay();
+
+  /** disable raw UDP relaying through relay stream */
+  void disableRawRelay();
+
   /** enable or disable transparent RTP seqno for relay */
   void setRtpRelayTransparentSeqno(bool transparent);
 
   /** enable or disable transparent SSRC seqno for relay */
   void setRtpRelayTransparentSSRC(bool transparent);
+
+  /** remove from RTP receiver */
+  void stopReceiving();
+
+  /** (re-)insert into RTP receiver */
+  void resumeReceiving();
 };
 
 #endif
