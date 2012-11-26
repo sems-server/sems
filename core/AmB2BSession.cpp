@@ -320,7 +320,9 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 
     // FIXME: update media session only in case of forwarding like when handling
     // replies, right?
-    if ((rtp_relay_mode == RTP_Relay) && media_session) {
+    if (((rtp_relay_mode == RTP_Relay) || 
+	 (rtp_relay_mode == RTP_Transcoding)) 
+	&& media_session) {
       // We have to update media session before filtering because we may want to
       // use the codec later filtered out for transcoding.
       if (parseSdp(sdp, req)) {
@@ -475,7 +477,8 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
 
     AmSdp sdp;
   
-    if ((rtp_relay_mode == RTP_Relay) &&
+    if (((rtp_relay_mode == RTP_Relay) ||
+	 (rtp_relay_mode == RTP_Transcoding)) &&
         (reply.code >= 180  && reply.code < 300)) 
     {
       // We have to update media session before filtering because we may want to
@@ -734,7 +737,7 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
 
     AmMimeBody r_body(req.body);
     const AmMimeBody* body = &r_body;
-    if (rtp_relay_mode == RTP_Relay &&
+    if (((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) &&
         (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
          req.method == SIP_METH_ACK || req.method == SIP_METH_PRACK)) {
       body = req.body.hasContentType(SIP_APPLICATION_SDP);
@@ -808,7 +811,7 @@ int AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 
   AmMimeBody r_body(reply.body);
   const AmMimeBody* body = &r_body;
-  if (rtp_relay_mode == RTP_Relay &&
+  if (((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) &&
       (orig.method == SIP_METH_INVITE || orig.method == SIP_METH_UPDATE ||
        orig.method == SIP_METH_ACK || orig.method == SIP_METH_PRACK)) {
     body = reply.body.hasContentType(SIP_APPLICATION_SDP);
@@ -877,6 +880,7 @@ void AmB2BSession::clearRtpReceiverRelay() {
   switch (rtp_relay_mode) {
 
     case RTP_Relay:
+    case RTP_Transcoding:
       if (media_session) { 
         AmMediaProcessor::instance()->removeSession(media_session);
 
@@ -1180,7 +1184,7 @@ void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) 
   callee_session->setEnableDtmfTranscoding(enable_dtmf_transcoding);
   callee_session->setLowFiPLs(lowfi_payloads);
 
-  if (rtp_relay_mode == RTP_Relay) {
+  if ((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) {
     setMediaSession(new AmB2BMedia(this, callee_session)); // we need to add our reference
     callee_session->setMediaSession(media_session);
     
@@ -1232,7 +1236,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 
     AmMimeBody r_body(co_ev->body);
     const AmMimeBody* body = &co_ev->body;
-    if (rtp_relay_mode == RTP_Relay) {
+    if ((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) {
       try {
 	body = co_ev->body.hasContentType(SIP_APPLICATION_SDP);
 	if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {

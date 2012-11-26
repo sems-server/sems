@@ -122,11 +122,16 @@ class AmB2BSession: public AmSession
     RTP_Direct,
 
     /* audio will be realyed through us
-     * SDP bodies of relayed requests are filtered and connection addresses are
-     * replaced by us,
-     * additionally transcoding might be used depending on payload IDs */  
-    RTP_Relay
+     * SDP bodies of relayed requests are filtered 
+     * and connection addresses are replaced by us
+     */
+    RTP_Relay,
 
+    /*
+     * similar to RTP_Relay, but additionally transcoding 
+     * might be used depending on payload IDs 
+     */
+    RTP_Transcoding
   };
 
  protected:
