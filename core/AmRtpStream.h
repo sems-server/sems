@@ -111,6 +111,12 @@ class PayloadMask
     // set given flag (TODO: once it shows to be working, change / and % to >> and &)
     void set(unsigned char payload_id) { if (payload_id < 128) bits[payload_id / 8] |= 1 << (payload_id % 8); }
 
+    // set all flags to 'true'
+    void set_all();
+
+    // invert all flags
+    void invert();
+
     // get given flag
     bool get(unsigned char payload_id) { if (payload_id > 127) return false; return (bits[payload_id / 8] & (1 << (payload_id % 8))); }
     

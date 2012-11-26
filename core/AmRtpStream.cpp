@@ -68,6 +68,19 @@ void PayloadMask::clear()
   memset(bits, 0, sizeof(bits));
 }
 
+void PayloadMask::set_all()
+{
+  memset(bits, 0xFF, sizeof(bits));
+}
+
+void PayloadMask::invert()
+{
+  // assumes that bits[] contains 128 bits
+  unsigned long long* ull = (unsigned long long*)bits;
+  ull[0] = ~ull[0];
+  ull[1] = ~ull[1];
+}
+
 PayloadMask::PayloadMask(const PayloadMask &src)
 {
   memcpy(bits, src.bits, sizeof(bits));
