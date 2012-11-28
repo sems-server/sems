@@ -56,7 +56,7 @@ def_IvrSipDialog_GETTER(IvrSipDialog_getuser,         user)
 def_IvrSipDialog_GETTER(IvrSipDialog_getdomain,       domain)
 def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_uri,    local_uri)
 def_IvrSipDialog_GETTER(IvrSipDialog_getremote_uri,   remote_uri)
-def_IvrSipDialog_GETTER(IvrSipDialog_getcontact_uri,  contact_uri)
+//def_IvrSipDialog_GETTER(IvrSipDialog_getcontact_uri,  contact_uri)
 def_IvrSipDialog_GETTER(IvrSipDialog_getcallid,       callid)
 def_IvrSipDialog_GETTER(IvrSipDialog_getremote_tag,   remote_tag)
 def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_tag,    local_tag)
@@ -102,7 +102,7 @@ static PyGetSetDef IvrSipDialog_getset[] = {
   {(char*)"domain",      (getter)IvrSipDialog_getdomain, NULL, (char*)"local domain", NULL},
   {(char*)"local_uri",   (getter)IvrSipDialog_getlocal_uri, NULL, (char*)"local uri", NULL},
   {(char*)"remote_uri",  (getter)IvrSipDialog_getremote_uri, (setter)IvrSipDialog_setremote_uri, (char*)"remote uri", NULL},
-  {(char*)"contact_uri", (getter)IvrSipDialog_getcontact_uri, NULL, (char*)"pre-calculated contact uri", NULL},
+  //{(char*)"contact_uri", (getter)IvrSipDialog_getcontact_uri, NULL, (char*)"pre-calculated contact uri", NULL},
   {(char*)"callid",      (getter)IvrSipDialog_getcallid, NULL, (char*)"call id", NULL},
   {(char*)"remote_tag",  (getter)IvrSipDialog_getremote_tag, NULL, (char*)"remote tag", NULL},
   {(char*)"local_tag",   (getter)IvrSipDialog_getlocal_tag, NULL, (char*)"local tag", NULL},

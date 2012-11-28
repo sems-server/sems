@@ -40,7 +40,10 @@ int  Am100rel::onRequestIn(const AmSipRequest& req)
               SIP_EXT_100REL))) {
           ERROR("'" SIP_EXT_100REL "' extension required, but not advertised"
             " by peer.\n");
-          if (hdl) hdl->onFailure(FAIL_REL100_421, &req, 0);
+	  AmBasicSipDialog::reply_error(req, 421, SIP_REPLY_EXTENSION_REQUIRED,
+					SIP_HDR_COLSP(SIP_HDR_REQUIRE) 
+					SIP_EXT_100REL CRLF);
+          if (hdl) hdl->onFailure();
           return 0; // has been replied
         }
         break; // 100rel required
@@ -48,7 +51,10 @@ int  Am100rel::onRequestIn(const AmSipRequest& req)
       case REL100_DISABLED:
         // TODO: shouldn't this be part of a more general check in SEMS?
         if (key_in_list(getHeader(req.hdrs,SIP_HDR_REQUIRE),SIP_EXT_100REL)) {
-          if (hdl) hdl->onFailure(FAIL_REL100_420, &req, 0);
+          AmBasicSipDialog::reply_error(req, 420, SIP_REPLY_BAD_EXTENSION,
+					SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) 
+					SIP_EXT_100REL CRLF);
+          if (hdl) hdl->onFailure();
           return 0; // has been replied
         }
         break;
@@ -102,10 +108,11 @@ int  Am100rel::onReplyIn(const AmSipReply& reply)
           !reply.rseq) {
         ERROR(SIP_EXT_100REL " not supported or no positive RSeq value in "
             "(reliable) 1xx.\n");
-        if (hdl) hdl->onFailure(FAIL_REL100_421, 0, &reply);
+	dlg->bye();
+        if (hdl) hdl->onFailure();
       } else {
         DBG(SIP_EXT_100REL " now active.\n");
-        if (hdl) hdl->onInvite1xxRel(reply);
+        if (hdl) ((AmSipDialogEventHandler*)hdl)->onInvite1xxRel(reply);
       }
       break;
 
@@ -122,9 +129,11 @@ int  Am100rel::onReplyIn(const AmSipReply& reply)
   } else if (reliable_1xx && reply.cseq_method==SIP_METH_PRACK) {
     if (300 <= reply.code) {
       // if PRACK fails, tear down session
-      if (hdl) hdl->onFailure(FAIL_REL100_421, 0, &reply);
+      dlg->bye();
+      if (hdl) hdl->onFailure();
     } else if (200 <= reply.code) {
-      if (hdl) hdl->onPrack2xx(reply);
+      if (hdl) 
+	((AmSipDialogEventHandler*)hdl)->onPrack2xx(reply);
     } else {
       WARN("received '%d' for " SIP_METH_PRACK " method.\n", reply.code);
     }

@@ -148,13 +148,13 @@ void RtmpSession::process(AmEvent* ev)
       setStopped();
       return;
     case RtmpSessionEvent::Accept:
-      AmSipTransaction* inv_trans = dlg.getPendingUASInv();
-      if(!inv_trans){
+      AmSipRequest* inv_req = dlg.getUASPendingInv();
+      if(!inv_req){
 	//Error: no pending INVITE
 	sendCallState();
 	return;
       }
-      dlg.reply(*inv_trans,200,"OK");
+      dlg.reply(*inv_req,200,"OK");
       sendCallState();
       return;
     }

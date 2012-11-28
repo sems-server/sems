@@ -156,7 +156,7 @@ int AmOfferAnswer::onRequestIn(const AmSipRequest& req)
     clearTransitionalState();
   }
 
-  return 0;
+  return err_code ? -1 : 0;
 }
 
 int AmOfferAnswer::onReplyIn(const AmSipReply& reply)

@@ -213,13 +213,11 @@ void WebConferenceDialog::onEarlySessionStart() {
 void WebConferenceDialog::onSipReply(const AmSipReply& reply,
 				     AmSipDialog::Status old_dlg_status)
 {
-  //int status = dlg.getStatus();
-
   AmSession::onSipReply(reply,old_dlg_status);
 
   DBG("reply: %u %s, old_dlg_status = %s, status = %s\n",
       reply.code, reply.reason.c_str(),
-      dlgStatusStr(old_dlg_status),
+      AmBasicSipDialog::getStatusStr(old_dlg_status),
       dlg.getStatusStr());
 
   if ((old_dlg_status < AmSipDialog::Connected) && 

@@ -1898,9 +1898,10 @@ SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
 {
   dlg.setRel100State(Am100rel::REL100_IGNORED);
 
-  if (!call_profile.contact.empty()) {
-    dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
-  }
+  // TODO: fix this!!!
+  // if (!call_profile.contact.empty()) {
+  //   dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
+  // }
 }
 
 SBCCalleeSession::~SBCCalleeSession() {

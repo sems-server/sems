@@ -60,10 +60,6 @@ AmSIPRegistration::AmSIPRegistration(const string& handle,
   // clear dlg.callid? ->reregister?
   dlg.initFromLocalRequest(req);
   dlg.cseq = 50;
-  if(!info.contact.empty()) {
-    dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<sip:";
-    dlg.contact_uri += info.contact + ">" + CRLF;
-  }
 }
 
 AmSIPRegistration::~AmSIPRegistration() {
@@ -88,14 +84,8 @@ void AmSIPRegistration::setRegistrationInfo(const SIPRegistrationInfo& _info) {
 
   // to trigger setting dlg identifiers
   dlg.callid.clear();
-  dlg.contact_uri.clear();
 
   dlg.initFromLocalRequest(req);
-
-  if(!info.contact.empty()) {
-    dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<sip:";
-    dlg.contact_uri += info.contact + ">" + CRLF;
-  }
 }
 
 void AmSIPRegistration::setSessionEventHandler(AmSessionEventHandler* new_seh) {
@@ -127,14 +117,17 @@ bool AmSIPRegistration::doRegistration()
     dlg.outbound_proxy = AmConfig::OutboundProxy;
   }
 
+  string hdrs = SIP_HDR_COLSP(SIP_HDR_EXPIRES) +
+    int2str(expires_interval) + CRLF;
+
+  int flags=0;
   if(!info.contact.empty()) {
-    dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<"
+    hdrs += SIP_HDR_COLSP(SIP_HDR_CONTACT) "<"
       + info.contact + ">" + CRLF;
+    flags = SIP_FLAGS_NOCONTACT;
   }
     
-  if (dlg.sendRequest(req.method, NULL,
-		      SIP_HDR_COLSP(SIP_HDR_EXPIRES)+
-		      int2str(expires_interval)+CRLF) < 0) {
+  if (dlg.sendRequest(req.method, NULL, hdrs, flags) < 0) {
     ERROR("failed to send registration.\n");
     res = false;
     waiting_result = false;
@@ -162,15 +155,16 @@ bool AmSIPRegistration::doUnregister()
     dlg.outbound_proxy = info.proxy;
   } else if (!AmConfig::OutboundProxy.empty()) 
     dlg.outbound_proxy = AmConfig::OutboundProxy;
-  //else 
-  //    dlg.outbound_proxy = "";
+
+  int flags=0;
+  string hdrs = SIP_HDR_COLSP(SIP_HDR_EXPIRES) "0" CRLF;
   if(!info.contact.empty()) {
-    dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<";
-    dlg.contact_uri += info.contact + ">" + CRLF;
+    hdrs = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<";
+    hdrs += info.contact + ">" + CRLF;
+    flags = SIP_FLAGS_NOCONTACT;
   }
     
-  if (dlg.sendRequest(req.method, NULL,
-		      SIP_HDR_COLSP(SIP_HDR_EXPIRES) "0" CRLF) < 0) {
+  if (dlg.sendRequest(req.method, NULL, hdrs, flags) < 0) {
     ERROR("failed to send deregistration.\n");
     res = false;
     waiting_result = false;
@@ -181,7 +175,7 @@ bool AmSIPRegistration::doUnregister()
   return res;
 }
 
-void AmSIPRegistration::onSendRequest(AmSipRequest& req, int flags) 
+void AmSIPRegistration::onSendRequest(AmSipRequest& req, int flags)
 {
   if (seh)
     seh->onSendRequest(req,flags);

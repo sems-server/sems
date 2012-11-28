@@ -97,18 +97,19 @@ AmSessionEventHandler* UACAuthFactory::getHandler(AmSession* s)
   return NULL;
 }
 
-AmSessionEventHandler* UACAuthFactory::getHandler(AmSipDialog* dlg, CredentialHolder* c) {
+AmSessionEventHandler* UACAuthFactory::getHandler(AmBasicSipDialog* dlg, 
+						  CredentialHolder* c) {
   return new UACAuth(dlg, c->getCredentials());
 }
 
-UACAuth::UACAuth(AmSipDialog* dlg, 
+UACAuth::UACAuth(AmBasicSipDialog* dlg,
 		 UACAuthCred* cred)
   : dlg(dlg),
     credential(cred),
     AmSessionEventHandler(),
     nonce_count(0),
     nonce_reuse(false)
-{ 	  
+{
 }
 
 bool UACAuth::process(AmEvent* ev)
@@ -194,7 +195,8 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
 	    }
 
 	    // reset OA state to what is was before sending the failed request
-	    dlg->setOAState(ri->second.oa_state);
+	    // TODO: fix this!
+	    //dlg->setOAState(ri->second.oa_state);
 
 	    // resend request 
 	    if (dlg->sendRequest(ri->second.method,
@@ -241,8 +243,9 @@ bool UACAuth::onSendRequest(AmSipRequest& req, int flags)
   DBG("adding %d to list of sent requests.\n", req.cseq);
   sent_requests[req.cseq] = SIPRequestInfo(req.method, 
 					   &req.body,
-					   req.hdrs,
-					   dlg->getOAState());
+					   req.hdrs//,
+					   // TODO: fix this!!!
+					   /*dlg->getOAState()*/);
   return false;
 }
 

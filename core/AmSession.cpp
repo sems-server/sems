@@ -363,7 +363,7 @@ bool AmSession::processingCycle() {
 
   DBG("vv S [%s|%s] %s, %s, %i UACTransPending vv\n",
       dlg.callid.c_str(),getLocalTag().c_str(),
-      dlgStatusStr(dlg.getStatus()),
+      dlg.getStatusStr(),
       sess_stopped.get()?"stopped":"running",
       dlg.getUACTransPending());
 
@@ -381,7 +381,7 @@ bool AmSession::processingCycle() {
       
       DBG("^^ S [%s|%s] %s, %s, %i UACTransPending ^^\n",
 	  dlg.callid.c_str(),getLocalTag().c_str(),
-	  dlgStatusStr(dlg_status),
+	  AmBasicSipDialog::getStatusStr(dlg_status),
 	  s_stopped?"stopped":"running",
 	  dlg.getUACTransPending());
       
@@ -429,7 +429,7 @@ bool AmSession::processingCycle() {
 
     DBG("^^ S [%s|%s] %s, %s, %i UACTransPending ^^\n",
 	dlg.callid.c_str(),getLocalTag().c_str(),
-	dlgStatusStr(dlg.getStatus()),
+	dlg.getStatusStr(),
 	sess_stopped.get()?"stopped":"running",
 	dlg.getUACTransPending());
 
@@ -814,7 +814,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 }
 
 void AmSession::onSipReply(const AmSipReply& reply,
-			   AmSipDialog::Status old_dlg_status)
+			   AmBasicSipDialog::Status old_dlg_status)
 {
   CALL_EVENT_H(onSipReply, reply, old_dlg_status);
 
@@ -827,12 +827,12 @@ void AmSession::onSipReply(const AmSipReply& reply,
 
   if (old_dlg_status != dlg.getStatus()) {
     DBG("Dialog status changed %s -> %s (stopped=%s) \n", 
-	dlgStatusStr(old_dlg_status), 
-	dlgStatusStr(dlg.getStatus()),
+	AmBasicSipDialog::getStatusStr(old_dlg_status), 
+	dlg.getStatusStr(),
 	sess_stopped.get() ? "true" : "false");
   } else {
     DBG("Dialog status stays %s (stopped=%s)\n", 
-	dlgStatusStr(old_dlg_status), 
+	AmBasicSipDialog::getStatusStr(old_dlg_status), 
 	sess_stopped.get() ? "true" : "false");
   }
 }
@@ -841,8 +841,7 @@ void AmSession::onSipReply(const AmSipReply& reply,
 
 void AmSession::onInvite2xx(const AmSipReply& reply)
 {
-  if(dlg.getUACTrans(reply.cseq))
-    dlg.send_200_ack(reply.cseq);
+  dlg.send_200_ack(reply.cseq);
 }
 
 void AmSession::onRemoteDisappeared(const AmSipReply&) {
@@ -1193,32 +1192,31 @@ void AmSession::setOnHold(bool hold)
   unlockAudio();
 }
 
-void AmSession::onFailure(AmSipDialogEventHandler::FailureCause cause, 
-    const AmSipRequest *req, const AmSipReply *rpl)
+void AmSession::onFailure()
 {
-  switch (cause) {
-    case FAIL_REL100_421:
-    case FAIL_REL100_420:
-      if (rpl) {
-        dlg.cancel();
-        if (dlg.getStatus() < AmSipDialog::Connected)
-          setStopped();
-      } else if (req) {
-        if (cause == FAIL_REL100_421) {
-          dlg.reply(*req, 421, SIP_REPLY_EXTENSION_REQUIRED, NULL,
-              SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF);
-        } else {
-          dlg.reply(*req, 420, SIP_REPLY_BAD_EXTENSION, NULL,
-              SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
-        }
-        /* finally, stop session if running */
-        if (dlg.getStatus() < AmSipDialog::Connected)
-          setStopped();
-      }
-      break;
-    default:
-      break;
-  }
+  // switch (cause) {
+  //   case FAIL_REL100_421:
+  //   case FAIL_REL100_420:
+  //     if (rpl) {
+  //       dlg.cancel();
+  //       if (dlg.getStatus() < AmSipDialog::Connected)
+  //         setStopped();
+  //     } else if (req) {
+  //       if (cause == FAIL_REL100_421) {
+  //         dlg.reply(*req, 421, SIP_REPLY_EXTENSION_REQUIRED, NULL,
+  //             SIP_HDR_COLSP(SIP_HDR_REQUIRE) SIP_EXT_100REL CRLF);
+  //       } else {
+  //         dlg.reply(*req, 420, SIP_REPLY_BAD_EXTENSION, NULL,
+  //             SIP_HDR_COLSP(SIP_HDR_UNSUPPORTED) SIP_EXT_100REL CRLF);
+  //       }
+  //       /* finally, stop session if running */
+  //       if (dlg.getStatus() < AmSipDialog::Connected)
+  //         setStopped();
+  //     }
+  //     break;
+  //   default:
+  //     break;
+  // }
 }
 
 // Utility for basic NAT handling: allow the config file to specify the IP

@@ -56,7 +56,7 @@ class UACAuthFactory
   public AmDynInvoke
 {
   static UACAuthFactory* _instance;
-  AmSessionEventHandler* getHandler(AmSipDialog* dlg, 
+  AmSessionEventHandler* getHandler(AmBasicSipDialog* dlg, 
 				    CredentialHolder* s);
  public:
   UACAuthFactory(const string& name)
@@ -80,14 +80,14 @@ struct SIPRequestInfo {
   string method;
   AmMimeBody body;
   string hdrs;
-  AmOfferAnswer::OAState oa_state;
+  //AmOfferAnswer::OAState oa_state;
 
   SIPRequestInfo(const string& method, 
 		 const AmMimeBody* body,
-		 const string& hdrs,
-		 AmOfferAnswer::OAState oa_state)
-    : method(method), hdrs(hdrs), 
-      oa_state(oa_state) 
+		 const string& hdrs//,AmOfferAnswer::OAState oa_state
+		 )
+    : method(method), hdrs(hdrs)//, 
+      //oa_state(oa_state) 
   {
     if(body) this->body = *body;
   }
@@ -102,7 +102,7 @@ class UACAuth : public AmSessionEventHandler
   std::map<unsigned int, SIPRequestInfo> sent_requests;
 
   UACAuthCred* credential;
-  AmSipDialog* dlg;
+  AmBasicSipDialog* dlg;
 
   UACAuthDigestChallenge challenge;
   unsigned int challenge_code;
@@ -150,15 +150,14 @@ class UACAuth : public AmSessionEventHandler
 	
  public:
 	
-  UACAuth(AmSipDialog* dlg, UACAuthCred* cred);
+  UACAuth(AmBasicSipDialog* dlg, UACAuthCred* cred);
   virtual ~UACAuth(){ }
   
   /* SEH Hooks @see AmSessionEventHandler */
   virtual bool process(AmEvent*);
   virtual bool onSipEvent(AmSipEvent*);
   virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&, AmSipDialog::Status old_dlg_status);
-	
+  virtual bool onSipReply(const AmSipReply&, AmBasicSipDialog::Status old_status);
   virtual bool onSendRequest(AmSipRequest& req, int flags);
   virtual bool onSendReply(AmSipReply& reply, int flags);
 };

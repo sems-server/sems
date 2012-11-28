@@ -712,7 +712,7 @@ bool AmB2BSession::refresh(int flags) {
 int AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
-    relayed_req[dlg.cseq] = AmSipTransaction(req.method,req.cseq,req.tt);
+    relayed_req[dlg.cseq] = req;
 
     const string* hdrs = &req.hdrs;
     string m_hdrs;
@@ -1230,8 +1230,10 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
     dlg.remote_uri   = co_ev->remote_uri;
 
     if (co_ev->relayed_invite) {
-      relayed_req[dlg.cseq] =
-	AmSipTransaction(SIP_METH_INVITE, co_ev->r_cseq, trans_ticket());
+      AmSipRequest fake_req;
+      fake_req.method = SIP_METH_INVITE;
+      fake_req.cseq = co_ev->r_cseq;
+      relayed_req[dlg.cseq] = fake_req;
     }
 
     AmMimeBody r_body(co_ev->body);

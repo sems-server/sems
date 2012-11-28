@@ -37,7 +37,7 @@ class DialogControl
 : public AmObject 
 {
  public:
-  virtual AmSipDialog* getDlg()=0;
+  virtual AmBasicSipDialog* getDlg()=0;
 };
 
 class UACAuthCred 
