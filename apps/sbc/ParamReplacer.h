@@ -41,18 +41,14 @@ string replaceParameters(const string& s,
 			 AmUriParser& from_parser,
 			 AmUriParser& to_parser);
 
-class SBCCallProfile;
-
 struct ParamReplacerCtx
 {
-  const SBCCallProfile* call_profile;
   string app_param;
   AmUriParser ruri_parser;
   AmUriParser from_parser;
   AmUriParser to_parser;
 
-  ParamReplacerCtx(const SBCCallProfile* call_profile)
-    : call_profile(call_profile)
+  ParamReplacerCtx()
   {}
 
   string replaceParameters(const string& s,
@@ -60,7 +56,6 @@ struct ParamReplacerCtx
 			   const AmSipRequest& req) {
     
     return ::replaceParameters(s,r_type,req,
-			       call_profile,
 			       app_param,
 			       ruri_parser,
 			       from_parser,
