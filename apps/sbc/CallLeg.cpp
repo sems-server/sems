@@ -52,7 +52,7 @@ ReliableB2BEvent::~ReliableB2BEvent()
 CallLeg::CallLeg(const CallLeg* caller):
   AmB2BSession(caller->getLocalTag()),
   call_status(Disconnected),
-  hold_request_cseq(0), on_hold(false)
+  hold_request_cseq(0), hold_status(NotHeld)
 {
   a_leg = !caller->a_leg; // we have to be the complement
 
@@ -95,7 +95,7 @@ CallLeg::CallLeg(const CallLeg* caller):
 CallLeg::CallLeg(): 
   AmB2BSession(),
   call_status(Disconnected),
-  hold_request_cseq(0), on_hold(false)
+  hold_request_cseq(0), hold_status(NotHeld)
 {
   a_leg = true;
 
@@ -325,6 +325,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
         }
       }
     } else if (reply.code < 300) { // 2xx replies
+      resumeHeld(false);
       other_id = reply.from_tag;
       TRACE("setting call status to connected with leg %s\n", other_id.c_str());
 
@@ -604,6 +605,7 @@ void CallLeg::disconnect(bool hold_remote)
       break;
 
     case Connected:
+      resumeHeld(false); // TODO: do this as part of clearRtpReceiverRelay
       clearRtpReceiverRelay(); // we can't stay connected (at media level) with the other leg
       break; // this is OK
   }
@@ -650,6 +652,8 @@ void CallLeg::createHoldRequest(AmSdp &sdp)
 
 void CallLeg::putOnHold()
 {
+  hold_status = HoldRequested;
+
   if (isOnHold()) {
     handleHoldReply(true); // really?
     return;
@@ -677,6 +681,8 @@ void CallLeg::putOnHold()
 
 void CallLeg::resumeHeld(bool send_reinvite)
 {
+  hold_status = ResumeRequested;
+
   if (!isOnHold()) {
     handleHoldReply(true); // really?
     return;
@@ -706,18 +712,26 @@ void CallLeg::resumeHeld(bool send_reinvite)
 
 void CallLeg::handleHoldReply(bool succeeded)
 {
-  if (!on_hold) { // hold requested
-    // ignore the result (if hold request is not accepted that's a pitty but
-    // we are Disconnected anyway)
-    if (call_status == Disconnecting) updateCallStatus(Disconnected);
+  switch (hold_status) {
+    case HoldRequested:
+      // ignore the result (if hold request is not accepted that's a pitty but
+      // we are Disconnected anyway)
+      if (call_status == Disconnecting) updateCallStatus(Disconnected);
 
-    if (succeeded) on_hold = true; // remote put on hold successfully
-  }
-  else { // resume requested
-    if (succeeded) {
-      on_hold = false; // call resumed successfully
-      if (media_session) media_session->unmute(a_leg);
-    }
+      if (succeeded) hold_status = OnHold; // remote put on hold successfully
+      break;
+
+    case ResumeRequested:
+      if (succeeded) {
+        hold_status = NotHeld; // call resumed successfully
+        if (media_session) media_session->unmute(a_leg);
+      }
+      break;
+
+    case NotHeld:
+    case OnHold:
+      //DBG("handling hold reply but hold was not requested\n");
+      break;
   }
 }
 
