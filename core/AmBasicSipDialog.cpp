@@ -602,7 +602,7 @@ int AmBasicSipDialog::sendRequest(const string& method,
       int2str(AmConfig::MaxForwards) + CRLF;
   }
 
-  int res = SipCtrlInterface::send(req, 
+  int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ?
 				   next_hop : "",
 				   outbound_interface);

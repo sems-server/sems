@@ -42,7 +42,7 @@ AmSipDispatcher* AmSipDispatcher::instance()
 
 void AmSipDispatcher::handleSipMsg(const string& dialog_id, AmSipReply &reply)
 {
-  const string& id = dialog_id.empty() ? reply.local_tag : dialog_id;
+  const string& id = dialog_id.empty() ? reply.from_tag : dialog_id;
   AmSipReplyEvent* ev = new AmSipReplyEvent(reply);
 
   if(!AmEventDispatcher::instance()->post(id,ev)){
