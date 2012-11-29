@@ -732,8 +732,7 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
       return err;
     }
 
-    if ((refresh_method != REFRESH_UPDATE) &&
-	(req.method == SIP_METH_INVITE ||
+    if ((req.method == SIP_METH_INVITE ||
 	 req.method == SIP_METH_UPDATE) &&
 	!req.body.empty()) {
       saveSessionDescription(req.body);
@@ -761,8 +760,7 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
       return err;
     }
 
-    if ((refresh_method != REFRESH_UPDATE) &&
-	!req.body.empty() &&
+    if (!req.body.empty() &&
 	(t->second.method == SIP_METH_INVITE)) {
     // delayed SDP negotiation - save SDP
       saveSessionDescription(req.body);
@@ -808,8 +806,7 @@ int AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
     return err;
   }
 
-  if ((refresh_method != REFRESH_UPDATE) &&
-      (orig.method == SIP_METH_INVITE ||
+  if ((orig.method == SIP_METH_INVITE ||
        orig.method == SIP_METH_UPDATE) &&
       !reply.body.empty()) {
     saveSessionDescription(reply.body);
@@ -1219,8 +1216,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
       return;
     }
 
-    if (refresh_method != REFRESH_UPDATE)
-      saveSessionDescription(co_ev->body);
+    saveSessionDescription(co_ev->body);
 
     // save CSeq of establising INVITE
     est_invite_cseq = dlg.cseq - 1;

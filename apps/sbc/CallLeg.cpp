@@ -449,8 +449,9 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
   }
   else est_invite_other_cseq = 0;
 
-  if (refresh_method != REFRESH_UPDATE)
+  if (!co_ev->body.empty()) {
     saveSessionDescription(co_ev->body);
+  }
 
   // save CSeq of establising INVITE
   est_invite_cseq = dlg.cseq - 1;
@@ -527,7 +528,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   }
   else est_invite_other_cseq = 0;
 
-  if (refresh_method != REFRESH_UPDATE) saveSessionDescription(ev->body);
+  saveSessionDescription(ev->body);
 
   // save CSeq of establising INVITE
   est_invite_cseq = dlg.cseq - 1;
