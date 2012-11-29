@@ -742,37 +742,31 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
   req.callid = callid;
   req.contact = getContactHdr();
     
-  if (!(flags&SIP_FLAGS_VERBATIM)) {
-    // add Signature
-    if (AmConfig::Signature.length())
-      req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
-    
-    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) + int2str(AmConfig::MaxForwards) + CRLF;
-  }
-
   req.route = getRoute();
 
   if(body != NULL)
     req.body = *body;
 
-  if (offeranswer_enabled && oa.onRequestOut(req))
+  if(onTxRequest(req,flags) < 0)
     return -1;
 
-  if(hdl)
-    hdl->onSendRequest(req,flags);
+  if (!(flags&SIP_FLAGS_VERBATIM)) {
+    // add Signature
+    if (AmConfig::Signature.length())
+      req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
+    
+    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) 
+      + int2str(AmConfig::MaxForwards) + CRLF;
+  }
 
-  //onTxRequest(req); // not needed right now in the ACK case
   int res = SipCtrlInterface::send(req, 
-				   remote_tag.empty() ? next_hop : "",
+				   remote_tag.empty() || !next_hop_1st_req ? 
+				   next_hop : "",
 				   outbound_interface);
   if (res)
     return res;
 
-  uac_trans.erase(inv_cseq);
-  if (offeranswer_enabled) {
-    return oa.onRequestSent(req);
-  }
-
+  onRequestTxed(req);
   return 0;
 }
 

@@ -456,8 +456,6 @@ void AmBasicSipDialog::onRequestTxed(const AmSipRequest& req)
     cseq++;
   }
   else {
-    // probably never executed, as send_200_ack is used instead of sendRequest
-    // note: non-200 ACKs are sent from the transaction layer
     uac_trans.erase(req.cseq);
   }
 }
@@ -585,7 +583,8 @@ int AmBasicSipDialog::sendRequest(const string& method,
     req.body = *body;
   }
 
-  onTxRequest(req,flags);
+  if(onTxRequest(req,flags) < 0)
+    return -1;
 
   if (!(flags & SIP_FLAGS_NOCONTACT)) {
     req.contact = getContactHdr();
@@ -600,16 +599,16 @@ int AmBasicSipDialog::sendRequest(const string& method,
       int2str(AmConfig::MaxForwards) + CRLF;
   }
 
-  int res = SipCtrlInterface::send(req, remote_tag.empty() ? next_hop : "",
+  int res = SipCtrlInterface::send(req, 
+				   remote_tag.empty() || !next_hop_1st_req ?
+				   next_hop : "",
 				   outbound_interface);
   if(res) {
     ERROR("Could not send request: method=%s; call-id=%s; cseq=%i\n",
 	  req.method.c_str(),req.callid.c_str(),req.cseq);
     return res;
   }
-  else {
-    onRequestTxed(req);
-  }
- 
-  return res;
+
+  onRequestTxed(req);
+  return 0;
 }
