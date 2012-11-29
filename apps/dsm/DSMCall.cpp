@@ -328,8 +328,8 @@ void DSMCall::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
     params["hdrs"] = reply.hdrs;
     params["cseq"] = int2str(reply.cseq);
 
-    params["dlg_status"] = dlgStatusStr(dlg.getStatus());
-    params["old_dlg_status"] = dlgStatusStr(old_dlg_status);
+    params["dlg_status"] = dlg.getStatusStr();
+    params["old_dlg_status"] = AmBasicSipDialog::getStatusStr(old_dlg_status);
 
     // pass AmSipReply for use by mod_dlg (? sending ACK?)
     DSMSipReply* dsm_reply = new DSMSipReply(&reply);
@@ -368,7 +368,7 @@ void DSMCall::onRemoteDisappeared(const AmSipReply& reply) {
   params["hdrs"] = reply.hdrs;
   params["cseq"] = int2str(reply.cseq);
 
-  params["dlg_status"] = dlgStatusStr(dlg.getStatus());
+  params["dlg_status"] = dlg.getStatusStr();
 
   // pass AmSipReply for use by modules
   DSMSipReply* dsm_reply = new DSMSipReply(&reply);
