@@ -185,7 +185,10 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
       break;
 
     case DisconnectLeg:
-      if (dynamic_cast<DisconnectLegEvent*>(ev)) disconnect(true);
+      {
+        DisconnectLegEvent *dle = dynamic_cast<DisconnectLegEvent*>(ev);
+        if (dle) disconnect(dle->put_remote_on_hold);
+      }
       break;
 
     case B2BSipRequest:
