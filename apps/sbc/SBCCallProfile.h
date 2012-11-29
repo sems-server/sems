@@ -95,7 +95,6 @@ struct SBCCallProfile
   bool force_outbound_proxy;
 
   string next_hop;
-  string next_hop_for_replies;
   bool next_hop_1st_req;
 
   FilterType headerfilter;
