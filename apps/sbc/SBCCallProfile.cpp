@@ -130,8 +130,13 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   force_outbound_proxy = cfg.getParameter("force_outbound_proxy") == "yes";
   outbound_proxy = cfg.getParameter("outbound_proxy");
 
+  aleg_force_outbound_proxy = cfg.getParameter("aleg_force_outbound_proxy") == "yes";
+  aleg_outbound_proxy = cfg.getParameter("aleg_outbound_proxy");
+
   next_hop = cfg.getParameter("next_hop");
   next_hop_1st_req = cfg.getParameter("next_hop_1st_req") == "yes";
+
+  aleg_next_hop = cfg.getParameter("aleg_next_hop");
 
   if (!readFilter(cfg, "header_filter", "header_list", headerfilter, false))
     return false;
@@ -311,6 +316,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     cfg.getParameter("rtprelay_transparent_ssrc", "yes") == "yes";
 
   outbound_interface = cfg.getParameter("outbound_interface");
+  aleg_outbound_interface = cfg.getParameter("aleg_outbound_interface");
 
   if (!codec_prefs.readConfig(cfg)) return false;
   if (!transcoder.readConfig(cfg)) return false;
@@ -338,9 +344,25 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
     INFO("SBC:      force outbound proxy: %s\n", force_outbound_proxy?"yes":"no");
     INFO("SBC:      outbound proxy = '%s'\n", outbound_proxy.c_str());
+
+    if (!outbound_interface.empty()) {
+      INFO("SBC:      outbound interface = '%s'\n", outbound_interface.c_str());
+    }
+    
+    if (!aleg_outbound_interface.empty()) {
+      INFO("SBC:      A leg outbound interface = '%s'\n", aleg_outbound_interface.c_str());
+    }
+
+    INFO("SBC:      A leg force outbound proxy: %s\n", aleg_force_outbound_proxy?"yes":"no");
+    INFO("SBC:      A leg outbound proxy = '%s'\n", aleg_outbound_proxy.c_str());
+
     if (!next_hop.empty()) {
       INFO("SBC:      next hop = %s (%s)\n", next_hop.c_str(),
 	   next_hop_1st_req ? "1st req" : "all reqs");
+    }
+
+    if (!aleg_next_hop.empty()) {
+      INFO("SBC:      A leg next hop = %s\n", aleg_next_hop.c_str());
     }
 
     string filter_type; size_t filter_elems;
@@ -477,8 +499,11 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     callid == rhs.callid &&
     outbound_proxy == rhs.outbound_proxy &&
     force_outbound_proxy == rhs.force_outbound_proxy &&
+    aleg_outbound_proxy == rhs.aleg_outbound_proxy &&
+    aleg_force_outbound_proxy == rhs.aleg_force_outbound_proxy &&
     next_hop == rhs.next_hop &&
     next_hop_1st_req == rhs.next_hop_1st_req &&
+    aleg_next_hop == rhs.aleg_next_hop &&
     headerfilter == rhs.headerfilter &&
     //headerfilter_list == rhs.headerfilter_list &&
     messagefilter == rhs.messagefilter &&
@@ -529,8 +554,11 @@ string SBCCallProfile::print() const {
   res += "callid:               " + callid + "\n";
   res += "outbound_proxy:       " + outbound_proxy + "\n";
   res += "force_outbound_proxy: " + string(force_outbound_proxy?"true":"false") + "\n";
+  res += "aleg_outbound_proxy:       " + aleg_outbound_proxy + "\n";
+  res += "aleg_force_outbound_proxy: " + string(aleg_force_outbound_proxy?"true":"false") + "\n";
   res += "next_hop:             " + next_hop + "\n";
   res += "next_hop_1st_req:     " + string(next_hop_1st_req ? "true":"false") + "\n";
+  res += "aleg_next_hop:        " + aleg_next_hop + "\n";
   // res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
   // res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
   // res += "messagefilter:        " + string(FilterType2String(messagefilter)) + "\n";
@@ -703,6 +731,91 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
   }*/
 
   return true;
+}
+
+static int apply_outbound_interface(const string& oi, AmBasicSipDialog& dlg)
+{
+  if (oi == "default")
+    dlg.setOutboundInterface(0);
+  else {
+    map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(oi);
+    if (name_it != AmConfig::If_names.end()) {
+      dlg.setOutboundInterface(name_it->second);
+    } else {
+      ERROR("selected [aleg_]outbound_interface '%s' "
+	    "does not exist as an interface. "
+	    "Please check the 'additional_interfaces' "
+	    "parameter in the main configuration file.",
+	    oi.c_str());
+      
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+int SBCCallProfile::apply_a_routing(ParamReplacerCtx& ctx,
+				    const AmSipRequest& req,
+				    AmBasicSipDialog& dlg) const
+{
+  if (!aleg_outbound_interface.empty()) {
+    string aleg_oi =
+      ctx.replaceParameters(aleg_outbound_interface, 
+			    "aleg_outbound_interface", req);
+
+    if(apply_outbound_interface(aleg_oi,dlg) < 0)
+      return -1;
+  }
+
+  if (!aleg_next_hop.empty()) {
+
+    string aleg_nh = ctx.replaceParameters(aleg_next_hop, 
+					   "aleg_next_hop", req);
+
+    DBG("set next hop ip to '%s'\n", aleg_nh.c_str());
+    dlg.next_hop = aleg_nh;
+  }
+
+  if (!aleg_outbound_proxy.empty()) {
+    string aleg_op = 
+      ctx.replaceParameters(aleg_outbound_proxy, "aleg_outbound_proxy", req);
+    dlg.outbound_proxy = aleg_op;
+    dlg.force_outbound_proxy = aleg_force_outbound_proxy;
+  }
+
+  return 0;
+}
+
+int SBCCallProfile::apply_b_routing(ParamReplacerCtx& ctx,
+				    const AmSipRequest& req,
+				    AmBasicSipDialog& dlg) const
+{
+  if (!outbound_interface.empty()) {
+    string oi = 
+      ctx.replaceParameters(outbound_interface, "outbound_interface", req);
+
+    if(apply_outbound_interface(oi,dlg) < 0)
+      return -1;
+  }
+
+  if (!next_hop.empty()) {
+
+    string nh = ctx.replaceParameters(next_hop, "next_hop", req);
+
+    DBG("set next hop ip to '%s'\n", nh.c_str());
+    dlg.next_hop = nh;
+
+    dlg.next_hop_1st_req = next_hop_1st_req;
+  }
+
+  if (!outbound_proxy.empty()) {
+    string op = ctx.replaceParameters(outbound_proxy, "outbound_proxy", req);
+    dlg.outbound_proxy = op;
+    dlg.force_outbound_proxy = force_outbound_proxy;
+  }
+
+  return 0;
 }
 
 

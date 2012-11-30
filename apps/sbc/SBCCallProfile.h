@@ -146,6 +146,9 @@ struct SBCCallProfile
   string outbound_interface;
   int outbound_interface_value;
 
+  string aleg_outbound_interface;
+  int aleg_outbound_interface_value;
+
   struct TranscoderSettings {
     // non-replaced parameters
     string callee_codec_capabilities_str, audio_codecs_str, 
@@ -252,6 +255,17 @@ struct SBCCallProfile
       const string& app_param,
       AmUriParser& ruri_parser, AmUriParser& from_parser,
       AmUriParser& to_parser);
+
+  int apply_a_routing(ParamReplacerCtx& ctx,
+		      const AmSipRequest& req,
+		      AmBasicSipDialog& dlg) const;
+  
+  int apply_b_routing(ParamReplacerCtx& ctx,
+		      const AmSipRequest& req,
+		      AmBasicSipDialog& dlg) const;
+
+  int apply_common_fields(AmSipRequest& req,
+			  ParamReplacerCtx& ctx) const;
 };
 
 #endif // _SBCCallProfile_h
