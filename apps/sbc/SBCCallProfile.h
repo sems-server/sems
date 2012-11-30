@@ -127,6 +127,8 @@ struct SBCCallProfile
   map<unsigned int, std::pair<unsigned int, string> > reply_translations;
 
   string append_headers;
+  string append_headers_req;
+  string aleg_append_headers_req;
 
   string refuse_with;
 

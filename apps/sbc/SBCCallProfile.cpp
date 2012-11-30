@@ -300,6 +300,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   // append_headers=P-Received-IP: $si\r\nP-Received-Port:$sp\r\n
   append_headers = cfg.getParameter("append_headers");
+  append_headers_req = cfg.getParameter("append_headers_req");
+  aleg_append_headers_req = cfg.getParameter("aleg_append_headers_req");
 
   refuse_with = cfg.getParameter("refuse_with");
 
