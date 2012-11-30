@@ -1,6 +1,7 @@
 #include "RegisterDialog.h"
 #include "AmSipHeaders.h"
 #include "arg_conversion.h"
+#include "AmUtils.h"
 
 RegisterDialog::RegisterDialog()
 {
@@ -27,7 +28,7 @@ int RegisterDialog::initUAS(const AmSipRequest& req, const SBCCallProfile& cp)
 
   size_t end;
   if (!uac_contact.parse_contact(req.contact, 0, end)) {
-    reply(req, 400, "Bad Request", "", "", "Warning: Malformed contact\r\n");
+    reply(req, 400, "Bad Request", NULL, "Warning: Malformed contact\r\n");
     //status = Failed;
     return -1;
   }
@@ -40,7 +41,7 @@ int RegisterDialog::initUAS(const AmSipRequest& req, const SBCCallProfile& cp)
 
   unsigned int requested_expires=0;
   if (str2i(uac_contact.params["expires"], requested_expires)) {
-    reply(req, 400, "Bad Request", "", "", "Warning: Malformed expires\r\n");
+    reply(req, 400, "Bad Request", NULL, "Warning: Malformed expires\r\n");
     //status = Failed;
     return -1;
   }
@@ -49,26 +50,26 @@ int RegisterDialog::initUAS(const AmSipRequest& req, const SBCCallProfile& cp)
 
   original_contact = uac_contact;
   
-  ParamReplacerCtx ctx(&cp);
+  ParamReplacerCtx ctx;
 
-  if (!cp.contact_displayname.empty()) {
+  if (!cp.contact.displayname.empty()) {
     uac_contact.display_name = 
-      ctx.replaceParameters(cp.contact_displayname, "Contact DN", req);
+      ctx.replaceParameters(cp.contact.displayname, "Contact DN", req);
   }
-  if (!cp.contact_user.empty()) {
+  if (!cp.contact.user.empty()) {
     uac_contact.uri_user = 
-      ctx.replaceParameters(cp.contact_user, "Contact User", req);
+      ctx.replaceParameters(cp.contact.user, "Contact User", req);
   }
-  if (!cp.contact_host.empty()) {
+  if (!cp.contact.host.empty()) {
     uac_contact.uri_host = 
-      ctx.replaceParameters(cp.contact_host, "Contact host", req);
+      ctx.replaceParameters(cp.contact.host, "Contact host", req);
   }
-  if (!cp.contact_port.empty()) {
+  if (!cp.contact.port.empty()) {
     uac_contact.uri_port =
-      ctx.replaceParameters(cp.contact_port, "Contact port", req);
+      ctx.replaceParameters(cp.contact.port, "Contact port", req);
   }
 
-  if (cp.contact_hiding) {
+  if (cp.contact.hiding) {
     // todo: optimize!
     AmArg ch_dict;
     ch_dict["u"] = original_contact.uri_user;
@@ -76,10 +77,10 @@ int RegisterDialog::initUAS(const AmSipRequest& req, const SBCCallProfile& cp)
     ch_dict["p"] = original_contact.uri_port;
 
     string contact_hiding_prefix =
-      ctx.replaceParameters(cp.contact_hiding_prefix, "CH prefix", req);
+      ctx.replaceParameters(cp.contact.hiding_prefix, "CH prefix", req);
 
     string contact_hiding_vars =
-      ctx.replaceParameters(cp.contact_hiding_vars, "CH vars", req);
+      ctx.replaceParameters(cp.contact.hiding_vars, "CH vars", req);
 
     //    ex contact_hiding_vars si=10.0.0.1;sp=5060;st=tcp
     if (!contact_hiding_vars.empty()) {
@@ -186,26 +187,24 @@ void RegisterDialog::onB2BReply(const AmSipReply& reply)
   return;
 }
 
-void RegisterDialog::onSendReply(const AmSipRequest& req, unsigned int  code,
-				 const string& reason, const string& content_type,
-				 const string& body, string& hdrs, int& flags)
+int RegisterDialog::onTxReply(const AmSipRequest& req, AmSipReply& reply, 
+			      int& flags)
 {
-  DBG("code = %i; hdrs = '%s'\n", code, hdrs.c_str());
+  DBG("code = %i; hdrs = '%s'\n", reply.code, reply.hdrs.c_str());
 
-  if(code >= 200 && code < 300)
+  if(reply.code >= 200 && reply.code < 300)
     flags |= SIP_FLAGS_NOCONTACT;
 
-  AmBasicSipDialog::onSendReply(req,code,hdrs,flags);
+  return AmBasicSipDialog::onTxReply(req,reply,flags);
 }
 
-void RegisterDialog::onSendRequest(const string& method, 
-				   const string& content_type,
-				   const string& body, string& hdrs, 
-				   int& flags, unsigned int cseq)
+int RegisterDialog::onTxRequest(AmSipRequest& req, int& flags)
 {
-  DBG("method = %s; hdrs = '%s'\n",method.c_str(),hdrs.c_str());
+  DBG("method = %s; hdrs = '%s'\n",req.method.c_str(),req.hdrs.c_str());
 
-  if(method == SIP_METH_REGISTER) {
+  if(req.method == SIP_METH_REGISTER) {
     flags |= SIP_FLAGS_NOCONTACT;
   }
+
+  return AmBasicSipDialog::onTxRequest(req,flags);
 }

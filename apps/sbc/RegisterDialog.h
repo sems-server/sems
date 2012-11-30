@@ -14,12 +14,8 @@ class RegisterDialog
   AmUriParser uac_contact;
 
   // AmBasicSipDialog interface
-  void onSendReply(const AmSipRequest& req, unsigned int  code,
-		   const string& reason, const string& content_type,
-		   const string& body, string& hdrs, int& flags);
-  void onSendRequest(const string& method, const string& content_type,
-		     const string& body, string& hdrs, int& flags,
-		     unsigned int cseq);
+  int onTxReply(const AmSipRequest& req, AmSipReply& reply, int& flags);
+  int onTxRequest(AmSipRequest& req, int& flags);
 
   //void onB2BRequest(const AmSipRequest& req);
   void onB2BReply(const AmSipReply& reply);
