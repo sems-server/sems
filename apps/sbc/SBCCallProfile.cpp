@@ -320,6 +320,15 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   outbound_interface = cfg.getParameter("outbound_interface");
   aleg_outbound_interface = cfg.getParameter("aleg_outbound_interface");
 
+  contact.displayname = cfg.getParameter("contact_displayname");
+  contact.user = cfg.getParameter("contact_user");
+  contact.host = cfg.getParameter("contact_host");
+  contact.port = cfg.getParameter("contact_port");
+
+  contact.hiding = cfg.getParameter("enable_contact_hiding", "no") == "yes";
+  contact.hiding_prefix = cfg.getParameter("contact_hiding_prefix");
+  contact.hiding_vars = cfg.getParameter("contact_hiding_vars");
+
   if (!codec_prefs.readConfig(cfg)) return false;
   if (!transcoder.readConfig(cfg)) return false;
 

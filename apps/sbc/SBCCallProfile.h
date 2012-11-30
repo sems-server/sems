@@ -86,6 +86,19 @@ struct SBCCallProfile
   string from;       /* updated if set */
   string to;         /* updated if set */
 
+  struct Contact {
+    string displayname;
+    string user;
+    string host;
+    string port;
+
+    bool   hiding;
+    string hiding_prefix;
+    string hiding_vars;
+  };
+  
+  Contact contact;
+
   string callid;
 
   bool transparent_dlg_id;
