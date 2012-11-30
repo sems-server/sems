@@ -224,18 +224,15 @@ static bool doFiltering(AmSdp &sdp, SBCCallProfile &call_profile, bool a_leg, Pa
   // => So we wouldn't try to avoid filtering out transcoder codecs what would
   // just complicate things.
 
-  if (call_profile.sdpfilter_enabled) {
+  if (call_profile.sdpfilter.size()) {
     if (!changed) // otherwise already normalized
       normalizeSDP(sdp, call_profile.anonymize_sdp);
-    if (isActiveFilter(call_profile.sdpfilter)) {
-      filterSDP(sdp, call_profile.sdpfilter, call_profile.sdpfilter_list);
-    }
+    filterSDP(sdp, call_profile.sdpfilter);
     changed = true;
   }
-  if (call_profile.sdpalinesfilter_enabled &&
-      isActiveFilter(call_profile.sdpalinesfilter)) {
+  if (call_profile.sdpalinesfilter.size()) {
     // filter SDP "a=lines"
-    filterSDPalines(sdp, call_profile.sdpalinesfilter, call_profile.sdpalinesfilter_list);
+    filterSDPalines(sdp, call_profile.sdpalinesfilter);
     changed = true;
   }
 
@@ -1163,8 +1160,7 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     removeHeader(invite_req.hdrs,SIP_HDR_MIN_SE);
   }
 
-  inplaceHeaderFilter(invite_req.hdrs,
-		      call_profile.headerfilter_list, call_profile.headerfilter);
+  inplaceHeaderFilter(invite_req.hdrs, call_profile.headerfilter);
 
   if (call_profile.append_headers.size() > 2) {
     string append_headers = call_profile.append_headers;
@@ -1283,15 +1279,13 @@ void SBCDialog::onControlCmd(string& cmd, AmArg& params) {
 
 int SBCDialog::relayEvent(AmEvent* ev) 
 {
-  if (isActiveFilter(call_profile.headerfilter) && 
+  if (call_profile.headerfilter.size() && 
       (ev->event_id == B2BSipRequest)) {
 
     // header filter
     B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
     assert(req_ev);
-    inplaceHeaderFilter(req_ev->req.hdrs,
-			call_profile.headerfilter_list, 
-			call_profile.headerfilter);
+    inplaceHeaderFilter(req_ev->req.hdrs, call_profile.headerfilter);
   } else {
 
     if (ev->event_id == B2BSipReply) {
@@ -1303,14 +1297,12 @@ int SBCDialog::relayEvent(AmEvent* ev)
 	 (reply_ev->reply.to_tag == dlg.ext_local_tag))
 	reply_ev->reply.to_tag = dlg.local_tag;
       
-      if (isActiveFilter(call_profile.headerfilter) ||
+      if (call_profile.headerfilter.size() ||
 	  call_profile.reply_translations.size()) {
 
 	// header filter
-	if (isActiveFilter(call_profile.headerfilter)) {
-	  inplaceHeaderFilter(reply_ev->reply.hdrs,
-			      call_profile.headerfilter_list,
-			      call_profile.headerfilter);
+	if (call_profile.headerfilter.size()) {
+	  inplaceHeaderFilter(reply_ev->reply.hdrs, call_profile.headerfilter);
 	}
 
 	// reply translations
@@ -1354,14 +1346,20 @@ void SBCDialog::onSipRequest(const AmSipRequest& req) {
       CALL_EVENT_H(onSipRequest,req);
   }
 
-  if (fwd && isActiveFilter(call_profile.messagefilter)) {
-    bool is_filtered = (call_profile.messagefilter == Whitelist) ^ 
-      (call_profile.messagefilter_list.find(req.method) != 
-       call_profile.messagefilter_list.end());
-    if (is_filtered) {
-      DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
-      dlg.reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
-      return;
+  if (fwd && call_profile.messagefilter.size()) {
+    for (vector<FilterEntry>::iterator it=
+	   call_profile.messagefilter.begin(); 
+	 it != call_profile.messagefilter.end(); it++) {
+
+      if (isActiveFilter(it->filter_type)) {
+	bool is_filtered = (it->filter_type == Whitelist) ^ 
+	  (it->filter_list.find(req.method) != it->filter_list.end());
+	if (is_filtered) {
+	  DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
+	  dlg.reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
+	  return;
+	}
+      }
     }
   }
 
@@ -1948,15 +1946,14 @@ inline UACAuthCred* SBCCalleeSession::getCredentials() {
 
 int SBCCalleeSession::relayEvent(AmEvent* ev) 
 {
-  if (isActiveFilter(call_profile.headerfilter) && ev->event_id == B2BSipRequest) {
+  if (call_profile.headerfilter.size() && (ev->event_id == B2BSipRequest)) {
 
     // header filter
     B2BSipRequestEvent* req_ev = dynamic_cast<B2BSipRequestEvent*>(ev);
     assert(req_ev);
-    inplaceHeaderFilter(req_ev->req.hdrs,
-			call_profile.headerfilter_list, 
-			call_profile.headerfilter);
-  } else {
+    inplaceHeaderFilter(req_ev->req.hdrs, call_profile.headerfilter);
+  } 
+  else {
 
     if (ev->event_id == B2BSipReply) {
 
@@ -1967,14 +1964,12 @@ int SBCCalleeSession::relayEvent(AmEvent* ev)
 	 (reply_ev->reply.to_tag == dlg.ext_local_tag))
 	reply_ev->reply.to_tag = dlg.local_tag;
 
-      if (isActiveFilter(call_profile.headerfilter) ||
+      if (call_profile.headerfilter.size() ||
 	  (call_profile.reply_translations.size())) {
 
 	// header filter
-	if (isActiveFilter(call_profile.headerfilter)) {
-	  inplaceHeaderFilter(reply_ev->reply.hdrs,
-			      call_profile.headerfilter_list,
-			      call_profile.headerfilter);
+	if (call_profile.headerfilter.size()) {
+	  inplaceHeaderFilter(reply_ev->reply.hdrs, call_profile.headerfilter);
 	}
 
 	// reply translations
@@ -2012,20 +2007,26 @@ void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
   // todo: this is a hack, replace this by calling proper session 
   // event handler in AmB2BSession
   bool fwd = sip_relay_only &&
-    //(req.method != "BYE") &&
-    (req.method != "CANCEL");
+    //(req.method != SIP_METH_BYE) &&
+    (req.method != SIP_METH_CANCEL);
   if (fwd) {
       CALL_EVENT_H(onSipRequest,req);
   }
 
-  if (fwd && isActiveFilter(call_profile.messagefilter)) {
-    bool is_filtered = (call_profile.messagefilter == Whitelist) ^ 
-      (call_profile.messagefilter_list.find(req.method) != 
-       call_profile.messagefilter_list.end());
-    if (is_filtered) {
-      DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
-      dlg.reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
-      return;
+  if (fwd && call_profile.messagefilter.size()) {
+    for (vector<FilterEntry>::iterator it=
+	   call_profile.messagefilter.begin(); 
+	 it != call_profile.messagefilter.end(); it++) {
+
+      if (isActiveFilter(it->filter_type)) {
+	bool is_filtered = (it->filter_type == Whitelist) ^ 
+	  (it->filter_list.find(req.method) != it->filter_list.end());
+	if (is_filtered) {
+	  DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
+	  dlg.reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
+	  return;
+	}
+      }
     }
   }
 

@@ -35,8 +35,8 @@ using std::string;
 #include <set>
 
 
-int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilter_list);
-int filterSDPalines(AmSdp& sdp, FilterType sdpalinesfilter, const std::set<string>& sdpalinesfilter_list);
+int filterSDP(AmSdp& sdp, const vector<FilterEntry>& filter_list);
+int filterSDPalines(AmSdp& sdp, const vector<FilterEntry>& filter_list);
 
 /** normalize SDP, fixing some common issues */
 int normalizeSDP(AmSdp& sdp, bool anonymize_sdp);

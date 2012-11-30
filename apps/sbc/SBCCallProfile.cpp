@@ -133,61 +133,21 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   next_hop = cfg.getParameter("next_hop");
   next_hop_1st_req = cfg.getParameter("next_hop_1st_req") == "yes";
 
-  if (cfg.hasParameter("header_filter")) {
-    string hf_type = cfg.getParameter("header_filter");
-    headerfilter = String2FilterType(hf_type.c_str());
-    if (Undefined == headerfilter) {
-      ERROR("invalid header_filter mode '%s'\n", hf_type.c_str());
-      return false;
-    }
-  }
+  if (!readFilter(cfg, "header_filter", "header_list", headerfilter, false))
+    return false;
   
-  vector<string> elems = explode(cfg.getParameter("header_list"), ",");
-  for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++) {
-    transform(it->begin(), it->end(), it->begin(), ::tolower);
-    headerfilter_list.insert(*it);
-  }
+  if (!readFilter(cfg, "message_filter", "message_list", messagefilter, false))
+    return false;
 
-  if (cfg.hasParameter("message_filter")) {
-    string mf_type = cfg.getParameter("message_filter");
-    messagefilter = String2FilterType(mf_type.c_str());
-    if (messagefilter == Undefined) {
-      ERROR("invalid message_filter mode '%s'\n", mf_type.c_str());
-      return false;
-    }
-  }
+  if (!readFilter(cfg, "sdp_filter", "sdpfilter_list", sdpfilter, true))
+    return false;
 
-  elems = explode(cfg.getParameter("message_list"), ",");
-  for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++)
-    messagefilter_list.insert(*it);
+  anonymize_sdp = cfg.getParameter("sdp_anonymize", "no") == "yes";
 
-  string sdp_filter = cfg.getParameter("sdp_filter");
-  sdpfilter = String2FilterType(sdp_filter.c_str());
-  sdpfilter_enabled = sdpfilter != Undefined;
-
-  if (sdpfilter_enabled) {
-    vector<string> c_elems = explode(cfg.getParameter("sdpfilter_list"), ",");
-    for (vector<string>::iterator it=c_elems.begin(); it != c_elems.end(); it++) {
-      string c = *it;
-      std::transform(c.begin(), c.end(), c.begin(), ::tolower);
-      sdpfilter_list.insert(c);
-    }
-    anonymize_sdp = cfg.getParameter("sdp_anonymize", "no") == "yes";
-  }
-
-  string cfg_sdp_alines_filter = cfg.getParameter("sdp_alines_filter", "transparent");
-  sdpalinesfilter = String2FilterType(cfg_sdp_alines_filter.c_str());
-  sdpalinesfilter_enabled =
-    (sdpalinesfilter!=Undefined) && (sdpalinesfilter!=Transparent);
-
-  if (sdpalinesfilter_enabled) {
-    vector<string> c_elems = explode(cfg.getParameter("sdp_alinesfilter_list"), ",");
-    for (vector<string>::iterator it=c_elems.begin(); it != c_elems.end(); it++) {
-      string c = *it;
-      std::transform(c.begin(), c.end(), c.begin(), ::tolower);
-      sdpalinesfilter_list.insert(c);
-    }
-  }
+  // SDP alines filter
+  if (!readFilter(cfg, "sdp_alines_filter", "sdp_alinesfilter_list", 
+		  sdpalinesfilter, false))
+    return false;
 
   sst_enabled = cfg.getParameter("enable_session_timer");
   if (cfg.hasParameter("enable_aleg_session_timer")) {
@@ -383,20 +343,31 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 	   next_hop_1st_req ? "1st req" : "all reqs");
     }
 
+    string filter_type; size_t filter_elems;
+    filter_type = headerfilter.size() ?
+      FilterType2String(headerfilter.back().filter_type) : "disabled";
+    filter_elems = headerfilter.size() ? headerfilter.back().filter_list.size() : 0;
     INFO("SBC:      header filter  is %s, %zd items in list\n",
-	 isActiveFilter(headerfilter) ? FilterType2String(headerfilter) : "disabled",
-	 headerfilter_list.size());
+	 filter_type.c_str(), filter_elems);
+
+    filter_type = messagefilter.size() ?
+      FilterType2String(messagefilter.back().filter_type) : "disabled";
+    filter_elems = messagefilter.size() ? messagefilter.back().filter_list.size() : 0;
     INFO("SBC:      message filter is %s, %zd items in list\n",
-	 isActiveFilter(messagefilter) ? FilterType2String(messagefilter) : "disabled",
-	 messagefilter_list.size());
+	 filter_type.c_str(), filter_elems);
+
+    filter_type = sdpfilter.size() ?
+      FilterType2String(sdpfilter.back().filter_type) : "disabled";
+    filter_elems = sdpfilter.size() ? sdpfilter.back().filter_list.size() : 0;
     INFO("SBC:      SDP filter is %sabled, %s, %zd items in list, %sanonymizing SDP\n",
-	 sdpfilter_enabled?"en":"dis",
-	 isActiveFilter(sdpfilter) ? FilterType2String(sdpfilter) : "inactive",
-	 sdpfilter_list.size(), anonymize_sdp?"":"not ");
+	 sdpfilter.size()?"en":"dis", filter_type.c_str(), filter_elems,
+	 anonymize_sdp?"":"not ");
+
+    filter_type = sdpalinesfilter.size() ?
+      FilterType2String(sdpalinesfilter.back().filter_type) : "disabled";
+    filter_elems = sdpalinesfilter.size() ? sdpalinesfilter.back().filter_list.size() : 0;
     INFO("SBC:      SDP alines-filter is %sabled, %s, %zd items in list\n",
-	 sdpalinesfilter_enabled?"en":"dis",
-	 isActiveFilter(sdpalinesfilter) ? FilterType2String(sdpalinesfilter) : "inactive",
-	 sdpalinesfilter_list.size());
+	 sdpalinesfilter.size()?"en":"dis", filter_type.c_str(), filter_elems);
 
     INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
     if (rtprelay_enabled) {
@@ -509,10 +480,11 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     next_hop == rhs.next_hop &&
     next_hop_1st_req == rhs.next_hop_1st_req &&
     headerfilter == rhs.headerfilter &&
-    headerfilter_list == rhs.headerfilter_list &&
+    //headerfilter_list == rhs.headerfilter_list &&
     messagefilter == rhs.messagefilter &&
-    messagefilter_list == rhs.messagefilter_list &&
-    sdpfilter_enabled == rhs.sdpfilter_enabled &&
+    //messagefilter_list == rhs.messagefilter_list &&
+    //sdpfilter_enabled == rhs.sdpfilter_enabled &&
+    sdpfilter == rhs.sdpfilter &&
     sst_enabled == rhs.sst_enabled &&
     sst_aleg_enabled == rhs.sst_aleg_enabled &&
     auth_enabled == rhs.auth_enabled &&
@@ -524,11 +496,6 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     force_symmetric_rtp == rhs.force_symmetric_rtp &&
     msgflags_symmetric_rtp == rhs.msgflags_symmetric_rtp;
 
-  if (sdpfilter_enabled) {
-    res = res &&
-      sdpfilter == rhs.sdpfilter &&
-      sdpfilter_list == rhs.sdpfilter_list;
-  }
   if (auth_enabled) {
     res = res &&
       auth_credentials.user == rhs.auth_credentials.user &&
@@ -563,16 +530,16 @@ string SBCCallProfile::print() const {
   res += "outbound_proxy:       " + outbound_proxy + "\n";
   res += "force_outbound_proxy: " + string(force_outbound_proxy?"true":"false") + "\n";
   res += "next_hop:             " + next_hop + "\n";
-  res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
-  res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
-  res += "messagefilter:        " + string(FilterType2String(messagefilter)) + "\n";
-  res += "messagefilter_list:   " + stringset_print(messagefilter_list) + "\n";
-  res += "sdpfilter_enabled:    " + string(sdpfilter_enabled?"true":"false") + "\n";
-  res += "sdpfilter:            " + string(FilterType2String(sdpfilter)) + "\n";
-  res += "sdpfilter_list:       " + stringset_print(sdpfilter_list) + "\n";
-  res += "sdpalinesfilter:      " + string(FilterType2String(sdpalinesfilter)) + "\n";
-  res += "sdpalinesfilter_list: " + stringset_print(sdpalinesfilter_list) + "\n";
   res += "next_hop_1st_req:     " + string(next_hop_1st_req ? "true":"false") + "\n";
+  // res += "headerfilter:         " + string(FilterType2String(headerfilter)) + "\n";
+  // res += "headerfilter_list:    " + stringset_print(headerfilter_list) + "\n";
+  // res += "messagefilter:        " + string(FilterType2String(messagefilter)) + "\n";
+  // res += "messagefilter_list:   " + stringset_print(messagefilter_list) + "\n";
+  // res += "sdpfilter_enabled:    " + string(sdpfilter_enabled?"true":"false") + "\n";
+  // res += "sdpfilter:            " + string(FilterType2String(sdpfilter)) + "\n";
+  // res += "sdpfilter_list:       " + stringset_print(sdpfilter_list) + "\n";
+  // res += "sdpalinesfilter:      " + string(FilterType2String(sdpalinesfilter)) + "\n";
+  // res += "sdpalinesfilter_list: " + stringset_print(sdpalinesfilter_list) + "\n";
   res += "sst_enabled:          " + sst_enabled + "\n";
   res += "sst_aleg_enabled:     " + sst_aleg_enabled + "\n";
   res += "auth_enabled:         " + string(auth_enabled?"true":"false") + "\n";

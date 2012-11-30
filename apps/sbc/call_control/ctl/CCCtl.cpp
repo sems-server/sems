@@ -174,15 +174,10 @@ void CCCtl::start(const string& cc_name, const string& ltag,
     string hf = values["headerfilter"].asCStr();
     FilterType t = String2FilterType(hf.c_str());
     if (Undefined != t) {
-      if (call_profile->headerfilter != Undefined) {
-	ERROR("call control instance '%s' changing headerfilter from %s to %s!\n",
-	      cc_name.c_str(),
-	      FilterType2String(call_profile->headerfilter),
-	      FilterType2String(t));
-	// stop call here???
-      }
-      call_profile->headerfilter = t;
-      call_profile->headerfilter_list.clear();
+
+      call_profile->headerfilter.push_back(FilterEntry());
+      call_profile->headerfilter.back().filter_type = t;
+
       string hl;
       if (values.hasMember("header_list"))
 	hl = values["header_list"].asCStr();
@@ -190,7 +185,7 @@ void CCCtl::start(const string& cc_name, const string& ltag,
       vector<string> elems = explode(hl, "|");
       for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++) {
 	transform(it->begin(), it->end(), it->begin(), ::tolower);
-	call_profile->headerfilter_list.insert(*it);
+	call_profile->headerfilter.back().filter_list.insert(*it);
       }
 
       DBG("call control '%s': set header filter '%s', list '%s'\n",
@@ -202,22 +197,17 @@ void CCCtl::start(const string& cc_name, const string& ltag,
     string hf = values["messagefilter"].asCStr();
     FilterType t = String2FilterType(hf.c_str());
     if (Undefined != t) {
-      if (call_profile->messagefilter != Undefined) {
-	ERROR("call control instance '%s' changing messagefilter from %s to %s!\n",
-	      cc_name.c_str(),
-	      FilterType2String(call_profile->messagefilter),
-	      FilterType2String(t));
-	// stop call here???
-      }
-      call_profile->messagefilter = t;
-      call_profile->messagefilter_list.clear();
+
+      call_profile->messagefilter.push_back(FilterEntry());
+      call_profile->messagefilter.back().filter_type = t;
+
       string hl;
       if (values.hasMember("message_list"))
 	hl = values["message_list"].asCStr();
 
       vector<string> elems = explode(hl, "|");
       for (vector<string>::iterator it=elems.begin(); it != elems.end(); it++) {
-	call_profile->messagefilter_list.insert(*it);
+	call_profile->messagefilter.back().filter_list.insert(*it);
       }
 
       DBG("call control '%s': set message filter '%s', list '%s'\n",

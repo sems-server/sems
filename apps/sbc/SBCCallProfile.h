@@ -94,23 +94,20 @@ struct SBCCallProfile
   string outbound_proxy;
   bool force_outbound_proxy;
 
+  string aleg_outbound_proxy;
+  bool aleg_force_outbound_proxy;
+
   string next_hop;
   bool next_hop_1st_req;
 
-  FilterType headerfilter;
-  set<string> headerfilter_list;
+  string aleg_next_hop;
 
-  FilterType messagefilter;
-  set<string> messagefilter_list;
+  vector<FilterEntry> headerfilter;
+  vector<FilterEntry> messagefilter;
 
-  bool sdpfilter_enabled;
-  FilterType sdpfilter;
-  set<string> sdpfilter_list;
   bool anonymize_sdp;
-
-  bool sdpalinesfilter_enabled;
-  FilterType sdpalinesfilter;
-  set<string> sdpalinesfilter_list;
+  vector<FilterEntry> sdpfilter;
+  vector<FilterEntry> sdpalinesfilter;
 
   string sst_enabled;
   bool sst_enabled_value;

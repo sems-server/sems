@@ -29,40 +29,45 @@
 #include "AmUtils.h"
 #include "RTPParameters.h"
 
-int filterSDP(AmSdp& sdp, FilterType sdpfilter, const std::set<string>& sdpfilter_list) {
+int filterSDP(AmSdp& sdp, const vector<FilterEntry>& filter_list) {
+  
+  for (vector<FilterEntry>::const_iterator it=
+	 filter_list.begin(); it!=filter_list.end(); it++){
 
-  if (!isActiveFilter(sdpfilter))
-    return 0;
+    const FilterType& sdpfilter = it->filter_type;
+    const std::set<string>& sdpfilter_list = it->filter_list;
 
-  for (std::vector<SdpMedia>::iterator m_it =
-	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
-    SdpMedia& media = *m_it;
-    if (media.transport == TP_RTPAVP || media.transport == TP_RTPSAVP) {
+    if (!isActiveFilter(sdpfilter))
+      continue;
+
+    for (std::vector<SdpMedia>::iterator m_it =
+	   sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
+      SdpMedia& media = *m_it;
+
       std::vector<SdpPayload> new_pl;
       for (std::vector<SdpPayload>::iterator p_it =
 	     media.payloads.begin(); p_it != media.payloads.end(); p_it++) {
       
-        string c = p_it->encoding_name;
-        std::transform(c.begin(), c.end(), c.begin(), ::tolower);
+	string c = p_it->encoding_name;
+	std::transform(c.begin(), c.end(), c.begin(), ::tolower);
       
-        bool is_filtered =  (sdpfilter == Whitelist) ^
+	bool is_filtered =  (sdpfilter == Whitelist) ^
 	  (sdpfilter_list.find(c) != sdpfilter_list.end());
 
-        // DBG("%s (%s) is_filtered: %s\n", p_it->encoding_name.c_str(), c.c_str(), 
-        // 	  is_filtered?"true":"false");
+	// DBG("%s (%s) is_filtered: %s\n", p_it->encoding_name.c_str(), c.c_str(), 
+	// 	  is_filtered?"true":"false");
 
-        if (!is_filtered)
-  	  new_pl.push_back(*p_it);
+	if (!is_filtered)
+	  new_pl.push_back(*p_it);
       }
-      if (new_pl.empty()) {
-        // in case of SDP offer we could remove media line but in case of answer
-        // we should just reject the stream by setting port to 0 (at least one
-        // format must be given; see RFC 3264, sect. 6)
-        media.port = 0;
-        if (media.payloads.size() > 1) 
-          media.payloads.erase(media.payloads.begin() + 1, media.payloads.end());
+      // if no payload supported any more: leave at least one, and set port to 0
+      // RFC 3264 section 6.1
+      if(!new_pl.size() && media.payloads.size()) {
+	std::vector<SdpPayload>::iterator p_it = media.payloads.begin();
+	new_pl.push_back(*p_it);
+	media.port = 0;
       }
-      else media.payloads = new_pl;    
+      media.payloads = new_pl;
     }
   }
 
@@ -109,12 +114,12 @@ void fix_incomplete_silencesupp(SdpMedia& m) {
   }
 }
 
-std::vector<SdpAttribute> filterAlinesInternal(std::vector<SdpAttribute> list, 
+std::vector<SdpAttribute> filterSDPAttributes(std::vector<SdpAttribute> attributes,
   FilterType sdpalinesfilter, const std::set<string>& sdpalinesfilter_list) {
 
-  std::vector<SdpAttribute> new_alines;
+  std::vector<SdpAttribute> res;
   for (std::vector<SdpAttribute>::iterator a_it =
-    list.begin(); a_it != list.end(); a_it++) {
+    attributes.begin(); a_it != attributes.end(); a_it++) {
     
     // Case insensitive search:
     string c = a_it->attribute;
@@ -129,27 +134,33 @@ std::vector<SdpAttribute> filterAlinesInternal(std::vector<SdpAttribute> list,
  
     // If it is not filtered, just add it to the list:
     if (!is_filtered)
-	new_alines.push_back(*a_it);
+	res.push_back(*a_it);
   }
-  return new_alines;
+  return res;
 }
 
-int filterSDPalines(AmSdp& sdp, FilterType sdpalinesfilter,
-		    const std::set<string>& sdpalinesfilter_list) {
-  // If not Black- or Whitelist, simply return
-  if (!isActiveFilter(sdpalinesfilter))
-    return 0;
-  
-  // We start with per Session-alines
-  sdp.attributes =
-    filterAlinesInternal(sdp.attributes, sdpalinesfilter, sdpalinesfilter_list);
+int filterSDPalines(AmSdp& sdp, const vector<FilterEntry>& filter_list) {
+  for (vector<FilterEntry>::const_iterator it=
+	 filter_list.begin(); it!=filter_list.end(); it++){
 
-  for (std::vector<SdpMedia>::iterator m_it =
-	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
-    SdpMedia& media = *m_it;
-    // todo: what if no payload supported any more?
-    media.attributes =
-      filterAlinesInternal(media.attributes, sdpalinesfilter, sdpalinesfilter_list);
+    const FilterType& sdpalinesfilter = it->filter_type;
+    const std::set<string>& sdpalinesfilter_list = it->filter_list;
+
+    // If not Black- or Whitelist, simply return
+    if (!isActiveFilter(sdpalinesfilter))
+      continue;
+  
+    // We start with per Session-alines
+    sdp.attributes =
+      filterSDPAttributes(sdp.attributes, sdpalinesfilter, sdpalinesfilter_list);
+
+    for (std::vector<SdpMedia>::iterator m_it =
+	   sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
+      SdpMedia& media = *m_it;
+      // todo: what if no payload supported any more?
+      media.attributes =
+	filterSDPAttributes(media.attributes, sdpalinesfilter, sdpalinesfilter_list);
+    }
   }
 
   return 0;
@@ -170,14 +181,15 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
   }
 
   if (anonymize_sdp) {
-    // Clear s-Line with call:
-    sdp.sessionName = "call";
+    // Clear s-Line in SDP:
+    sdp.sessionName.clear();
     // Clear u-Line in SDP:
     sdp.uri.clear();
     // Clear origin user
     sdp.origin.user = "-";
   }
 
-
   return 0;
 }
+
+

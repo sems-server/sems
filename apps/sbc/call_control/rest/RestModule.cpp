@@ -198,12 +198,14 @@ static RestParams::Format getFormat(const AmArg &values, RestParams::Format _def
 static void setHeaderFilter(SBCCallProfile* call_profile,
     const string &type, const string &list) 
 {
+  call_profile->headerfilter.push_back(FilterEntry());
+
   if (type=="transparent")
-    call_profile->headerfilter = Transparent;
+    call_profile->headerfilter.back().filter_type = Transparent;
   else if (type=="whitelist")
-    call_profile->headerfilter = Whitelist;
+    call_profile->headerfilter.back().filter_type = Whitelist;
   else if (type=="blacklist")
-    call_profile->headerfilter = Blacklist;
+    call_profile->headerfilter.back().filter_type = Blacklist;
   else {
     ERROR("invalid header_filter mode '%s'\n", type.c_str());
     throw string("invalid header filter");
@@ -212,7 +214,7 @@ static void setHeaderFilter(SBCCallProfile* call_profile,
   vector<string> v = explode(list, ",");
   for (vector<string>::iterator i = v.begin(); i != v.end(); ++i) {
     transform(i->begin(), i->end(), i->begin(), ::tolower);
-    call_profile->headerfilter_list.insert(*i);
+    call_profile->headerfilter.back().filter_list.insert(*i);
   }
 }
 
@@ -251,7 +253,8 @@ void RestModule::start(const string& cc_name, const string& ltag,
       string hf_type, hf_list;
       params.getIfSet("header_filter", hf_type);
       params.getIfSet("header_list", hf_list);
-      if ( (!hf_type.empty()) || (!hf_list.empty())) setHeaderFilter(call_profile, hf_type, hf_list);
+      if ( (!hf_type.empty()) || (!hf_list.empty())) 
+	setHeaderFilter(call_profile, hf_type, hf_list);
       
       //messagefilter
 
