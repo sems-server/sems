@@ -820,6 +820,42 @@ int SBCCallProfile::apply_b_routing(ParamReplacerCtx& ctx,
   return 0;
 }
 
+int SBCCallProfile::apply_common_fields(AmSipRequest& req,
+					ParamReplacerCtx& ctx) const
+{
+  if(!ruri.empty()) {
+    req.r_uri = ctx.replaceParameters(ruri, "RURI", req);
+  }
+
+  if (!ruri_host.empty()) {
+    string ruri_h = ctx.replaceParameters(ruri_host, "RURI-host", req);
+
+    ctx.ruri_parser.uri = req.r_uri;
+    if (!ctx.ruri_parser.parse_uri()) {
+      WARN("Error parsing R-URI '%s'\n", ctx.ruri_parser.uri.c_str());
+      return -1;
+    }
+    else {
+      ctx.ruri_parser.uri_port.clear();
+      ctx.ruri_parser.uri_host = ruri_host;
+      req.r_uri = ctx.ruri_parser.uri_str();
+    }
+  }
+
+  if(!from.empty()) {
+    req.from = ctx.replaceParameters(from, "From", req);
+  }
+
+  if(!to.empty()) {
+    req.to = ctx.replaceParameters(to, "To", req);
+  }
+
+  if(!callid.empty()){
+    req.callid = ctx.replaceParameters(callid, "Call-ID", req);
+  }
+
+  return 0;
+}
 
 static bool readPayloadList(std::vector<PayloadDesc> &dst, const std::string &src)
 {
