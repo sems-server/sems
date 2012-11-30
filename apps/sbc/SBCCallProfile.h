@@ -226,14 +226,8 @@ struct SBCCallProfile
   // todo: RTP transcoding mode
 
   SBCCallProfile()
-  : transparent_dlg_id(false),
-    headerfilter(Undefined),
-    messagefilter(Undefined),
-    sdpfilter_enabled(false),
-    sdpfilter(Undefined),
-    sdpalinesfilter_enabled(false),
-    sdpalinesfilter(Undefined),
-    auth_enabled(false),
+  : auth_enabled(false),
+    transparent_dlg_id(false),
     sst_enabled_value(false),
     rtprelay_enabled(false),
     force_symmetric_rtp_value(false),
