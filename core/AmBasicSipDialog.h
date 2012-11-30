@@ -216,6 +216,11 @@ public:
    */
   string getRoute();
 
+  /**
+   * Set outbound_interface to specific value (-1 = default).
+   */
+  void setOutboundInterface(int interface_id);
+
   /** 
    * Compute, set and return the outbound interface
    * based on remote_uri, next_hop_ip, outbound_proxy, route.

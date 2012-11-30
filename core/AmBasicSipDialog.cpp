@@ -147,6 +147,11 @@ string AmBasicSipDialog::getRoute()
   return res;
 }
 
+void AmBasicSipDialog::setOutboundInterface(int interface_id) {
+  DBG("setting outbound interface to %i\n",  interface_id);
+  outbound_interface = interface_id;
+}
+
 /** 
  * Computes, set and return the outbound interface
  * based on remote_uri, next_hop_ip, outbound_proxy, route.
