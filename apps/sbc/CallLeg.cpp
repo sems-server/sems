@@ -325,7 +325,6 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
         }
       }
     } else if (reply.code < 300) { // 2xx replies
-      resumeHeld(false);
       other_id = reply.from_tag;
       TRACE("setting call status to connected with leg %s\n", other_id.c_str());
 
@@ -348,6 +347,14 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
         media_session->changeSession(a_leg, this);
         if (initial_sdp_stored && ev->forward) updateRemoteSdp(initial_sdp);
       }
+      else {
+        // media session not set, set direct mode if not set already
+        if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
+      }
+
+      // FIXME: hack here - it should be part of clearRtpReceiverRelay but we
+      // need to do after RTP mode change above
+      resumeHeld(false);
 
       onCallConnected(reply);
       set_sip_relay_only(true); // relay only from now on
@@ -892,12 +899,13 @@ void CallLeg::onBye(const AmSipRequest& req)
   AmB2BSession::onBye(req);
 }
 
-void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e)
+void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e, AmB2BSession::RTPRelayMode mode)
 {
   OtherLegInfo b;
   b.id = callee->getLocalTag();
 
-  if ((rtp_relay_mode == RTP_Relay)) {
+  callee->setRtpRelayMode(mode);
+  if ((mode == RTP_Relay)) {
     // do not initialise the media session with A leg to avoid unnecessary A leg
     // RTP stream creation in every B leg's media session
     if (a_leg) b.media_session = new AmB2BMedia(NULL, callee);
