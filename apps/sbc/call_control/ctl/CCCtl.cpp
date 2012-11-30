@@ -149,7 +149,7 @@ void CCCtl::start(const string& cc_name, const string& ltag,
   SET_TO_CALL_PROFILE("RURI", ruri);
   SET_TO_CALL_PROFILE("From", from);
   SET_TO_CALL_PROFILE("To", to);
-  SET_TO_CALL_PROFILE("Contact", contact);
+  //TODO: SET_TO_CALL_PROFILE("Contact", contact);
   SET_TO_CALL_PROFILE("Call-ID", callid);
   SET_TO_CALL_PROFILE("outbound_proxy", outbound_proxy);
   ENABLE_IN_CALL_PROFILE("force_outbound_proxy", force_outbound_proxy);

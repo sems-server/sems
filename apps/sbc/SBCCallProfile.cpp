@@ -121,7 +121,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   ruri_host = cfg.getParameter("RURI_host");
   from = cfg.getParameter("From");
   to = cfg.getParameter("To");
-  contact = cfg.getParameter("Contact");
+  //contact = cfg.getParameter("Contact");
 
   callid = cfg.getParameter("Call-ID");
 
@@ -335,9 +335,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     INFO("SBC:      RURI-host = '%s'\n", ruri_host.c_str());
     INFO("SBC:      From = '%s'\n", from.c_str());
     INFO("SBC:      To   = '%s'\n", to.c_str());
-    if (!contact.empty()) {
-      INFO("SBC:      Contact   = '%s'\n", contact.c_str());
-    }
+    // if (!contact.empty()) {
+    //   INFO("SBC:      Contact   = '%s'\n", contact.c_str());
+    // }
     if (!callid.empty()) {
       INFO("SBC:      Call-ID   = '%s'\n", callid.c_str());
     }
@@ -495,7 +495,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     ruri_host == rhs.ruri_host &&
     from == rhs.from &&
     to == rhs.to &&
-    contact == rhs.contact &&
+    //contact == rhs.contact &&
     callid == rhs.callid &&
     outbound_proxy == rhs.outbound_proxy &&
     force_outbound_proxy == rhs.force_outbound_proxy &&
@@ -550,7 +550,7 @@ string SBCCallProfile::print() const {
   res += "ruri_host:            " + ruri_host + "\n";
   res += "from:                 " + from + "\n";
   res += "to:                   " + to + "\n";
-  res += "contact:              " + contact + "\n";
+  // res += "contact:              " + contact + "\n";
   res += "callid:               " + callid + "\n";
   res += "outbound_proxy:       " + outbound_proxy + "\n";
   res += "force_outbound_proxy: " + string(force_outbound_proxy?"true":"false") + "\n";
@@ -650,7 +650,7 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
   REPLACE_NONEMPTY_STR(ruri_host);
   REPLACE_NONEMPTY_STR(from);
   REPLACE_NONEMPTY_STR(to);
-  REPLACE_NONEMPTY_STR(contact);
+  //REPLACE_NONEMPTY_STR(contact);
   REPLACE_NONEMPTY_STR(callid);
 
   REPLACE_NONEMPTY_STR(outbound_proxy);

@@ -244,7 +244,7 @@ void RestModule::start(const string& cc_name, const string& ltag,
       params.getIfSet("ruri", call_profile->ruri);
       params.getIfSet("from", call_profile->from);
       params.getIfSet("to", call_profile->to);
-      params.getIfSet("contact", call_profile->contact);
+      //TODO: params.getIfSet("contact", call_profile->contact);
       params.getIfSet("call-id", call_profile->callid);
       params.getIfSet("outbound_proxy", call_profile->outbound_proxy);
       params.getIfSet("force_outbound_proxy", call_profile->force_outbound_proxy);
