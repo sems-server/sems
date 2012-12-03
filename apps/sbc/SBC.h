@@ -33,6 +33,7 @@
 #include "HeaderFilter.h"
 #include "SBCCallProfile.h"
 #include "RegexMapper.h"
+#include "AmEventQueueProcessor.h"
 
 #include <map>
 
@@ -80,6 +81,8 @@ class SBCFactory: public AmSessionFactory,
   static AmSessionEventHandlerFactory* session_timer_fact;
 
   static RegexMapper regex_mappings;
+
+  static AmEventQueueProcessor subnot_processor;
 
   // DI
   // DI factory

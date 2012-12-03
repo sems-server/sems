@@ -624,7 +624,8 @@ static bool str2bool(const string &s, bool &dst)
   return false;
 }
 
-static bool isTranscoderNeeded(const AmSipRequest& req, vector<PayloadDesc> &caps, bool default_value)
+static bool isTranscoderNeeded(const AmSipRequest& req, vector<PayloadDesc> &caps,
+			       bool default_value)
 {
   const AmMimeBody* body = req.body.hasContentType(SIP_APPLICATION_SDP);
   if (!body) return default_value;
