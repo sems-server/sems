@@ -98,7 +98,7 @@ public:
   void onSipRequest(const AmSipRequest& req);
   void onSipReply(const AmSipRequest& req,
 		  const AmSipReply& reply, 
-		  int old_dlg_status);
+		  AmBasicSipDialog::Status old_dlg_status);
   void onRequestSent(const AmSipRequest& req);
   void onReplySent(const AmSipRequest& req, const AmSipReply& reply);
 

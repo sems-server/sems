@@ -191,7 +191,8 @@ class AmB2BSession: public AmSession
   virtual void updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cseq);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
+  void onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
+		  AmBasicSipDialog::Status old_dlg_status);
 
   void onInvite2xx(const AmSipReply& reply);
 

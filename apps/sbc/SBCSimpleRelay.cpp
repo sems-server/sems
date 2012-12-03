@@ -174,8 +174,8 @@ void SimpleRelayDialog::onSipRequest(const AmSipRequest& req)
 }
 
 void SimpleRelayDialog::onSipReply(const AmSipRequest& req,
-				    const AmSipReply& reply, 
-				    int old_dlg_status)
+				   const AmSipReply& reply, 
+				   AmBasicSipDialog::Status old_dlg_status)
 {
   if(reply.code >= 200)
     finished = true;

@@ -514,7 +514,8 @@ public:
   virtual void onSipRequest(const AmSipRequest& req);
 
   /** Entry point for SIP Replies   */
-  virtual void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
+  virtual void onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
+			  AmBasicSipDialog::Status old_dlg_status);
 
   /** 2xx reply has been received for an INVITE transaction */
   virtual void onInvite2xx(const AmSipReply& reply);
@@ -554,10 +555,10 @@ public:
   virtual void onSessionTimeout();
 
   /* Called by AmSipDialog when a request is sent */
-  virtual void onSendRequest(AmSipRequest& req, int flags);
+  virtual void onSendRequest(AmSipRequest& req, int& flags);
 
   /** Called by AmSipDialog when a reply is sent */
-  virtual void onSendReply(AmSipReply& reply, int flags);
+  virtual void onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags);
 
   /** Hook called when an SDP offer is required */
   virtual bool getSdpOffer(AmSdp& offer);

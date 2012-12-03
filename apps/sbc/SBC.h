@@ -210,8 +210,10 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   int relayEvent(AmEvent* ev);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
-  void onSendRequest(AmSipRequest& req, int flags);
+  void onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
+		  AmBasicSipDialog::Status old_dlg_status);
+
+  void onSendRequest(AmSipRequest& req, int& flags);
 
   bool onOtherReply(const AmSipReply& reply);
   void onOtherBye(const AmSipRequest& req);
@@ -237,8 +239,10 @@ class SBCCalleeSession
   int relayEvent(AmEvent* ev);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
-  void onSendRequest(AmSipRequest& req, int flags);
+  void onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
+		  AmBasicSipDialog::Status old_dlg_status);
+
+  void onSendRequest(AmSipRequest& req, int& flags);
 
   /* bool onOtherReply(const AmSipReply& reply); */
 

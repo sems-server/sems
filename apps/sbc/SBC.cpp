@@ -1366,7 +1366,8 @@ void SBCDialog::onSipRequest(const AmSipRequest& req) {
   AmB2BCallerSession::onSipRequest(req);
 }
 
-void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
+void SBCDialog::onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
+			   AmBasicSipDialog::Status old_dlg_status)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = t != relayed_req.end();
@@ -1378,14 +1379,14 @@ void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
   }
 
   if (NULL == auth) {
-    AmB2BCallerSession::onSipReply(reply, old_dlg_status);
+    AmB2BCallerSession::onSipReply(req, reply, old_dlg_status);
     return;
   }
 
   // only for SIP authenticated
   unsigned int cseq_before = dlg.cseq;
   if (!auth->onSipReply(reply, old_dlg_status)) {
-      AmB2BCallerSession::onSipReply(reply, old_dlg_status);
+    AmB2BCallerSession::onSipReply(req, reply, old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
@@ -1395,7 +1396,7 @@ void SBCDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_
   }
 }
 
-void SBCDialog::onSendRequest(AmSipRequest& req, int flags) {
+void SBCDialog::onSendRequest(AmSipRequest& req, int& flags) {
   if (NULL != auth) {
     DBG("auth->onSendRequest cseq = %d\n", req.cseq);
     auth->onSendRequest(req, flags);
@@ -2033,7 +2034,8 @@ void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
   AmB2BCalleeSession::onSipRequest(req);
 }
 
-void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
+void SBCCalleeSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
+				  AmSipDialog::Status old_dlg_status)
 {
   // call event handlers where it is not done 
   TransMap::iterator t = relayed_req.find(reply.cseq);
@@ -2046,13 +2048,13 @@ void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status o
 
 
   if (NULL == auth) {
-    AmB2BCalleeSession::onSipReply(reply, old_dlg_status);
+    AmB2BCalleeSession::onSipReply(req, reply, old_dlg_status);
     return;
   }
   
   unsigned int cseq_before = dlg.cseq;
   if (!auth->onSipReply(reply, old_dlg_status)) {
-      AmB2BCalleeSession::onSipReply(reply, old_dlg_status);
+    AmB2BCalleeSession::onSipReply(req, reply, old_dlg_status);
   } else {
     if (cseq_before != dlg.cseq) {
       DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
@@ -2062,7 +2064,7 @@ void SBCCalleeSession::onSipReply(const AmSipReply& reply, AmSipDialog::Status o
   }
 }
 
-void SBCCalleeSession::onSendRequest(AmSipRequest& req, int flags)
+void SBCCalleeSession::onSendRequest(AmSipRequest& req, int& flags)
 {
   if (NULL != auth) {
     DBG("auth->onSendRequest cseq = %d\n", req.cseq);

@@ -62,7 +62,7 @@ void SubscriptionDialog::onSipRequest(const AmSipRequest& req)
 
 void SubscriptionDialog::onSipReply(const AmSipRequest& req,
 				    const AmSipReply& reply, 
-				    int old_dlg_status)
+				    AmBasicSipDialog::Status old_dlg_status)
 {
   if(!subs.onReplyIn(req,reply))
     return;

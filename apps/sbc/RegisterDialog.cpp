@@ -115,7 +115,7 @@ void RegisterDialog::onSipRequest(const AmSipRequest& req)
 }
 
 void RegisterDialog::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
-				int old_dlg_status)
+				AmBasicSipDialog::Status old_dlg_status)
 {
   SimpleRelayDialog::onSipReply(req,reply,old_dlg_status);
 }
