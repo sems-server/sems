@@ -47,63 +47,63 @@ static string payload2str(const SdpPayload &p);
 
 // FIXME: r_type in replaceParameters is just for debug output?
 
-#define REPLACE_STR(what) do { \
-  what = replaceParameters(what, #what, REPLACE_VALS); \
-  DBG(#what " = '%s'\n", what.c_str()); \
-} while(0)
+#define REPLACE_STR(what) do {			  \
+    what = ctx.replaceParameters(what, #what, req);	\
+    DBG(#what " = '%s'\n", what.c_str());		\
+  } while(0)
 
-#define REPLACE_NONEMPTY_STR(what) do { \
-  if (!what.empty()) { \
-    REPLACE_STR(what); \
-  } \
-} while(0)
+#define REPLACE_NONEMPTY_STR(what) do {		\
+    if (!what.empty()) {			\
+      REPLACE_STR(what);			\
+    }						\
+  } while(0)
 
-#define REPLACE_NUM(what, dst_num) do { \
-  if (!what.empty()) { \
-    what = replaceParameters(what, #what, REPLACE_VALS); \
-    unsigned int num; \
-    if (str2i(what, num)) { \
-      ERROR(#what " '%s' not understood\n", what.c_str()); \
-      return false; \
-    } \
-    DBG(#what " = '%s'\n", what.c_str()); \
-    dst_num = num; \
-  } \
-} while(0)
+#define REPLACE_NUM(what, dst_num) do {		\
+    if (!what.empty()) {			    \
+      what = ctx.replaceParameters(what, #what, req);	\
+      unsigned int num;					\
+      if (str2i(what, num)) {				   \
+	ERROR(#what " '%s' not understood\n", what.c_str());	\
+	return false;						\
+      }								\
+      DBG(#what " = '%s'\n", what.c_str());			\
+      dst_num = num;						\
+    }								\
+  } while(0)
 
-#define REPLACE_BOOL(what, dst_value) do { \
-  if (!what.empty()) { \
-    what = replaceParameters(what, #what, REPLACE_VALS); \
-    if (!what.empty()) { \
-      if (!str2bool(what, dst_value)) { \
-      ERROR(#what " '%s' not understood\n", what.c_str()); \
-        return false; \
-      } \
-    } \
-    DBG(#what " = '%s'\n", dst_value ? "yes" : "no"); \
-  } \
-} while(0)
+#define REPLACE_BOOL(what, dst_value) do {	\
+    if (!what.empty()) {			    \
+      what = ctx.replaceParameters(what, #what, req);	\
+      if (!what.empty()) {				\
+	if (!str2bool(what, dst_value)) {			\
+	  ERROR(#what " '%s' not understood\n", what.c_str());	\
+	  return false;						\
+	}							\
+      }								\
+      DBG(#what " = '%s'\n", dst_value ? "yes" : "no");		\
+    }								\
+  } while(0)
 
-#define REPLACE_IFACE(what, iface) do { \
-  if (!what.empty()) { \
-    what = replaceParameters(what, #what, REPLACE_VALS); \
-    DBG("set " #what " to '%s'\n", what.c_str()); \
-    if (!what.empty()) { \
-      if (what == "default") iface = 0; \
-      else { \
-        map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(what); \
-        if (name_it != AmConfig::If_names.end()) iface = name_it->second; \
-        else { \
-          ERROR("selected " #what " '%s' does not exist as an interface. " \
-              "Please check the 'additional_interfaces' " \
-              "parameter in the main configuration file.", \
-              what.c_str()); \
-          return false; \
-        } \
-      } \
-    } \
-  } \
-} while(0)
+#define REPLACE_IFACE(what, iface) do {		\
+    if (!what.empty()) {			    \
+      what = ctx.replaceParameters(what, #what, req);	\
+      DBG("set " #what " to '%s'\n", what.c_str());	\
+      if (!what.empty()) {				\
+	if (what == "default") iface = 0;		\
+	else {								\
+	  map<string,unsigned short>::iterator name_it = AmConfig::If_names.find(what); \
+	  if (name_it != AmConfig::If_names.end()) iface = name_it->second; \
+	  else {							\
+	    ERROR("selected " #what " '%s' does not exist as an interface. " \
+		  "Please check the 'additional_interfaces' "		\
+		  "parameter in the main configuration file.",		\
+		  what.c_str());					\
+	    return false;						\
+	  }								\
+	}								\
+      }									\
+    }									\
+  } while(0)
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -654,10 +654,34 @@ static bool isTranscoderNeeded(const AmSipRequest& req, vector<PayloadDesc> &cap
   return true; // no compatible codec found, transcoding needed
 }
 
-bool SBCCallProfile::evaluate(const AmSipRequest& req,
-    const string& app_param,
-    AmUriParser& ruri_parser, AmUriParser& from_parser,
-    AmUriParser& to_parser)
+void SBCCallProfile::eval_sst_config(ParamReplacerCtx& ctx,
+				     const AmSipRequest& req,
+				     AmConfigReader& sst_cfg)
+{
+  static const char* _sst_cfg_params[] = {
+    "session_expires",
+    "minimum_timer",
+    "maximum_timer",
+    "session_refresh_method",
+    "accept_501_reply",
+  };
+
+  for(unsigned int i=0; i<sizeof(_sst_cfg_params); i++) {
+    if (sst_cfg.hasParameter(_sst_cfg_params[i])) {
+      string newval = 
+	ctx.replaceParameters(sst_cfg.getParameter(_sst_cfg_params[i]),
+			      _sst_cfg_params[i],req);
+      if (newval.empty()) {
+	sst_cfg.eraseParameter(_sst_cfg_params[i]);
+      } else{
+	sst_cfg.setParameter(_sst_cfg_params[i],newval);
+      }
+    }
+  }
+}
+
+bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
+			      const AmSipRequest& req)
 {
   REPLACE_NONEMPTY_STR(ruri);
   REPLACE_NONEMPTY_STR(ruri_host);
@@ -672,7 +696,7 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
     REPLACE_STR(next_hop);
   }
 
-  if (!transcoder.evaluate(REPLACE_VALS)) return false;
+  if (!transcoder.evaluate(ctx,req)) return false;
 
   if (rtprelay_enabled || transcoder.isActive()) {
     // evaluate other RTP relay related params only if enabled
@@ -702,40 +726,28 @@ bool SBCCallProfile::evaluate(const AmSipRequest& req,
   REPLACE_BOOL(sst_enabled, sst_enabled_value);
   if (sst_enabled_value) {
     AmConfigReader& sst_cfg = sst_b_cfg;
-#define SST_CFG_REPLACE_PARAMS(cfgkey)					\
-    if (sst_cfg.hasParameter(cfgkey)) {					\
-      string newval = replaceParameters(sst_cfg.getParameter(cfgkey),	\
-					cfgkey, REPLACE_VALS);		\
-      if (newval.empty()) {						\
-	sst_cfg.eraseParameter(cfgkey);					\
-      } else{								\
-	sst_cfg.setParameter(cfgkey,newval);				\
-      }									\
-    }
-
-    SST_CFG_REPLACE_PARAMS("session_expires");
-    SST_CFG_REPLACE_PARAMS("minimum_timer");
-    SST_CFG_REPLACE_PARAMS("maximum_timer");
-    SST_CFG_REPLACE_PARAMS("session_refresh_method");
-    SST_CFG_REPLACE_PARAMS("accept_501_reply");
-#undef SST_CFG_REPLACE_PARAMS
+    eval_sst_config(ctx,req,sst_cfg);
   }
 
   REPLACE_NONEMPTY_STR(append_headers);
 
   if (auth_enabled) {
-    auth_credentials.user = replaceParameters(auth_credentials.user, "auth_user", REPLACE_VALS);
-    auth_credentials.pwd = replaceParameters(auth_credentials.pwd, "auth_pwd", REPLACE_VALS);
+    auth_credentials.user = ctx.replaceParameters(auth_credentials.user, 
+						  "auth_user", req);
+    auth_credentials.pwd = ctx.replaceParameters(auth_credentials.pwd, 
+						 "auth_pwd", req);
   }
   
   if (auth_aleg_enabled) {
-    auth_aleg_credentials.user = replaceParameters(auth_aleg_credentials.user, "auth_aleg_user", REPLACE_VALS);
-    auth_aleg_credentials.pwd = replaceParameters(auth_aleg_credentials.pwd, "auth_aleg_pwd", REPLACE_VALS);
+    auth_aleg_credentials.user = ctx.replaceParameters(auth_aleg_credentials.user,
+						       "auth_aleg_user", req);
+    auth_aleg_credentials.pwd = ctx.replaceParameters(auth_aleg_credentials.pwd, 
+						      "auth_aleg_pwd", req);
   }
 
   REPLACE_IFACE(outbound_interface, outbound_interface_value);
 
-  if (!codec_prefs.evaluate(REPLACE_VALS)) return false;
+  if (!codec_prefs.evaluate(ctx,req)) return false;
 
   // TODO: activate filter if transcoder or codec_prefs is set?
 /*  if ((!aleg_payload_order.empty() || !bleg_payload_order.empty()) && (!sdpfilter_enabled)) {
@@ -799,8 +811,8 @@ int SBCCallProfile::apply_a_routing(ParamReplacerCtx& ctx,
 
   dlg.nat_handling = dlg_nat_handling;
   if(dlg_nat_handling) {
-    dlg.next_hop_ip = req.remote_ip;
-    dlg.next_hop_port = req.remote_port;
+    dlg.next_hop = req.remote_ip;
+    dlg.next_hop += ":" + req.remote_port;
     dlg.next_hop_1st_req = false;
   }
   return 0;
@@ -837,8 +849,8 @@ int SBCCallProfile::apply_b_routing(ParamReplacerCtx& ctx,
   return 0;
 }
 
-int SBCCallProfile::apply_common_fields(AmSipRequest& req,
-					ParamReplacerCtx& ctx) const
+int SBCCallProfile::apply_common_fields(ParamReplacerCtx& ctx,
+					AmSipRequest& req) const
 {
   if(!ruri.empty()) {
     req.r_uri = ctx.replaceParameters(ruri, "RURI", req);
@@ -872,6 +884,248 @@ int SBCCallProfile::apply_common_fields(AmSipRequest& req,
   }
 
   return 0;
+}
+
+void SBCCallProfile::replace_cc_values(ParamReplacerCtx& ctx,
+				       const AmSipRequest& req,
+				       AmArg* values)
+{
+  for (CCInterfaceListIteratorT cc_it = cc_interfaces.begin();
+       cc_it != cc_interfaces.end(); cc_it++) {
+
+    CCInterface& cc_if = *cc_it;
+    
+    DBG("processing replacements for call control interface '%s'\n", 
+	cc_if.cc_name.c_str());
+
+    for (map<string, string>::iterator it = cc_if.cc_values.begin(); 
+	 it != cc_if.cc_values.end(); it++) {
+
+      it->second = ctx.replaceParameters(it->second, it->first.c_str(), req);
+      if(values) (*values)[it->first] = it->second;
+    }
+  }
+}
+
+int SBCCallProfile::refuse(ParamReplacerCtx& ctx, const AmSipRequest& req) const
+{
+  string m_refuse_with = ctx.replaceParameters(refuse_with, "refuse_with", req);
+  if (m_refuse_with.empty()) {
+    ERROR("refuse_with empty after replacing (was '%s' in profile %s)\n",
+	  refuse_with.c_str(), profile_file.c_str());
+    return -1;
+  }
+
+  size_t spos = m_refuse_with.find(' ');
+  unsigned int refuse_with_code;
+  if (spos == string::npos || spos == m_refuse_with.size() ||
+      str2i(m_refuse_with.substr(0, spos), refuse_with_code)) {
+    ERROR("invalid refuse_with '%s'->'%s' in  %s. Expected <code> <reason>\n",
+	  refuse_with.c_str(), m_refuse_with.c_str(), profile_file.c_str());
+    return -1;
+  }
+
+  string refuse_with_reason = m_refuse_with.substr(spos+1);
+  string hdrs = ctx.replaceParameters(append_headers, "append_headers", req);
+  //TODO: hdrs = remove_empty_headers(hdrs);
+  if (hdrs.size()>2) assertEndCRLF(hdrs);
+
+  DBG("refusing call with %u %s\n", refuse_with_code, refuse_with_reason.c_str());
+  AmSipDialog::reply_error(req, refuse_with_code, refuse_with_reason, hdrs);
+
+  return 0;
+}
+
+static void fixupCCInterface(const string& val, CCInterface& cc_if)
+{
+  DBG("instantiating CC interface from '%s'\n", val.c_str());
+  size_t spos, last = val.length() - 1;
+  if (val.length() == 0) {
+    spos = string::npos;
+    cc_if.cc_module = "";
+  } else {
+    spos = val.find(";", 0);
+    cc_if.cc_module = val.substr(0, spos);
+  }
+  DBG("    module='%s'\n", cc_if.cc_module.c_str());
+  while (spos < last) {
+    size_t epos = val.find("=", spos + 1);
+    if (epos == string::npos) {
+      cc_if.cc_values.insert(make_pair(val.substr(spos + 1), ""));
+      DBG("    '%s'='%s'\n", val.substr(spos + 1).c_str(), "");
+      return;
+    }
+    if (epos == last) {
+      cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), ""));
+      DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), "");
+      return;
+    }
+    // if value starts with " char, it continues until another " is found
+    if (val[epos + 1] == '"') {
+      if (epos + 1 == last) {
+	cc_if.cc_values.insert(make_pair(val.substr(spos+1, epos-spos-1), ""));
+
+	DBG("    '%s'='%s'\n", 
+	    val.substr(spos+1, epos-spos-1).c_str(), "");
+	return;
+      }
+      size_t qpos = val.find('"', epos + 2);
+      if (qpos == string::npos) {
+	cc_if.cc_values.insert(make_pair(val.substr(spos+1, epos-spos-1), 
+					 val.substr(epos + 2)));
+	DBG("    '%s'='%s'\n", 
+	    val.substr(spos+1, epos-spos-1).c_str(), 
+	    val.substr(epos + 2).c_str());
+
+	return;
+      }
+      cc_if.cc_values.insert(make_pair(val.substr(spos+1, epos-spos-1), 
+				       val.substr(epos+2, qpos-epos-2)));
+      DBG("    '%s'='%s'\n", 
+	  val.substr(spos+1, epos-spos-1).c_str(), 
+	  val.substr(epos+2, qpos-epos-2).c_str());
+
+      if (qpos < last) {
+	spos = val.find(";", qpos + 1);
+      } else {
+	return;
+      }
+    } else {
+      size_t new_spos = val.find(";", epos + 1);
+      if (new_spos == string::npos) {
+	cc_if.cc_values.insert(make_pair(val.substr(spos+1, epos-spos-1), 
+					 val.substr(epos+1)));
+
+	DBG("    '%s'='%s'\n", 
+	    val.substr(spos+1, epos-spos-1).c_str(), 
+	    val.substr(epos+1).c_str());
+
+	return;
+      }
+
+      cc_if.cc_values.insert(make_pair(val.substr(spos+1, epos-spos-1), 
+				       val.substr(epos+1, new_spos-epos-1)));
+
+      DBG("    '%s'='%s'\n", 
+	  val.substr(spos+1, epos-spos-1).c_str(), 
+	  val.substr(epos+1, new_spos-epos-1).c_str());
+
+      spos = new_spos;
+    }
+  }
+}
+
+void SBCCallProfile::eval_cc_list(ParamReplacerCtx& ctx, const AmSipRequest& req)
+{
+  unsigned int cc_dynif_count = 0;
+
+  // fix up replacements in cc list
+  CCInterfaceListIteratorT cc_rit = cc_interfaces.begin();
+  while (cc_rit != cc_interfaces.end()) {
+    CCInterfaceListIteratorT curr_if = cc_rit;
+    cc_rit++;
+    //      CCInterfaceListIteratorT next_cc = cc_rit+1;
+    if (curr_if->cc_name.find('$') != string::npos) {
+      curr_if->cc_name = ctx.replaceParameters(curr_if->cc_name, 
+					       "cc_interfaces", req);
+      vector<string> dyn_ccinterfaces = explode(curr_if->cc_name, ",");
+      if (!dyn_ccinterfaces.size()) {
+	DBG("call_control '%s' did not produce any call control instances\n",
+	    curr_if->cc_name.c_str());
+	cc_interfaces.erase(curr_if);
+      } else {
+	// fill first CC interface (replacement item)
+	vector<string>::iterator it = dyn_ccinterfaces.begin();
+	curr_if->cc_name = "cc_dyn_"+int2str(cc_dynif_count++);
+	fixupCCInterface(trim(*it, " \t"), *curr_if);
+	it++;
+
+	// insert other CC interfaces (in order!)
+	while (it != dyn_ccinterfaces.end()) {
+	  CCInterfaceListIteratorT new_cc =
+	    cc_interfaces.insert(cc_rit, CCInterface());
+	  fixupCCInterface(trim(*it, " \t"), *new_cc);
+	  new_cc->cc_name = "cc_dyn_"+int2str(cc_dynif_count++);
+	  it++;
+	}
+      }
+    }
+  }
+}
+
+/** removes headers with empty values from headers list separated by "\r\n" */
+static string remove_empty_headers(const string& s)
+{
+  string res(s), hdr;
+  size_t start = 0, end = 0, len = 0, col = 0;
+  DBG("SBCCallProfile::remove_empty_headers '%s'", s.c_str());
+
+  if (res.empty())
+    return res;
+
+  do {
+    end = res.find_first_of("\n", start);
+    len = (end == string::npos ? res.size() - start : end - start + 1);
+    hdr = res.substr(start, len);
+    col = hdr.find_first_of(':');
+
+    if (col && hdr.find_first_not_of(": \r\n", col) == string::npos) {
+      // remove empty header
+      WARN("Ignored empty header: %s\n", res.substr(start, len).c_str());
+      res.erase(start, len);
+      // start remains the same
+    }
+    else {
+      if (string::npos == col)
+        WARN("Malformed append header: %s\n", hdr.c_str());
+      start = end + 1;
+    }
+  } while (end != string::npos && start < res.size());
+
+  return res;
+}
+
+static void fix_append_hdr_list(const AmSipRequest& req, ParamReplacerCtx& ctx,
+				string& append_hdr, const char* field_name)
+{
+  append_hdr = ctx.replaceParameters(append_hdr, field_name, req);
+  append_hdr = remove_empty_headers(append_hdr);
+  if (append_hdr.size()>2) assertEndCRLF(append_hdr);
+}
+
+void SBCCallProfile::fix_append_hdrs(ParamReplacerCtx& ctx,
+				     const AmSipRequest& req)
+{
+  fix_append_hdr_list(req, ctx, append_headers, "append_headers");
+  fix_append_hdr_list(req, ctx, append_headers_req,"append_headers_req");
+  fix_append_hdr_list(req, ctx, aleg_append_headers_req,"aleg_append_headers_req");
+}
+
+
+void SBCCallProfile::fix_reg_contact(ParamReplacerCtx& ctx,
+				     const AmSipRequest& req,
+				     AmUriParser& contact) const
+{
+  string user = contact.uri_user;
+  string host = contact.uri_host;
+  string port = contact.uri_port;
+
+  if (!this->contact.displayname.empty()) {
+    contact.display_name = 
+      ctx.replaceParameters(this->contact.displayname, "Contact DN", req);
+  }
+  if (!this->contact.user.empty()) {
+    contact.uri_user = 
+      ctx.replaceParameters(this->contact.user, "Contact User", req);
+  }
+  if (!this->contact.host.empty()) {
+    contact.uri_host = 
+      ctx.replaceParameters(this->contact.host, "Contact host", req);
+  }
+  if (!this->contact.port.empty()) {
+    contact.uri_port =
+      ctx.replaceParameters(this->contact.port, "Contact port", req);
+  }
 }
 
 static bool readPayloadList(std::vector<PayloadDesc> &dst, const std::string &src)
@@ -1057,10 +1311,8 @@ string SBCCallProfile::CodecPreferences::print() const
   return res;
 }
 
-bool SBCCallProfile::CodecPreferences::evaluate(const AmSipRequest& req,
-    const string& app_param,
-    AmUriParser& ruri_parser, AmUriParser& from_parser,
-    AmUriParser& to_parser)
+bool SBCCallProfile::CodecPreferences::evaluate(ParamReplacerCtx& ctx,
+						const AmSipRequest& req)
 {
   REPLACE_BOOL(aleg_prefer_existing_payloads_str, aleg_prefer_existing_payloads);
   REPLACE_BOOL(bleg_prefer_existing_payloads_str, bleg_prefer_existing_payloads);
@@ -1169,10 +1421,8 @@ string SBCCallProfile::TranscoderSettings::print() const
   return res;
 }
   
-bool SBCCallProfile::TranscoderSettings::evaluate(const AmSipRequest& req,
-    const string& app_param,
-    AmUriParser& ruri_parser, AmUriParser& from_parser,
-    AmUriParser& to_parser)
+bool SBCCallProfile::TranscoderSettings::evaluate(ParamReplacerCtx& ctx,
+						  const AmSipRequest& req)
 {
   REPLACE_NONEMPTY_STR(transcoder_mode_str);
   REPLACE_NONEMPTY_STR(audio_codecs_str);

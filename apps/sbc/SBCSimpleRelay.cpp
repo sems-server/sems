@@ -233,7 +233,7 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
 
   ParamReplacerCtx ctx;
   if((cp.apply_b_routing(ctx,n_req,*this) < 0) ||
-     (cp.apply_common_fields(n_req,ctx) < 0) )
+     (cp.apply_common_fields(ctx,n_req) < 0) )
     return -1;
 
   if(cp.transparent_dlg_id){

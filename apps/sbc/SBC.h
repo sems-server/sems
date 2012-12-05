@@ -63,9 +63,12 @@ class SBCFactory: public AmSessionFactory,
   void loadCallcontrolModules(const AmArg& args, AmArg& ret);
   void postControlCmd(const AmArg& args, AmArg& ret);
 
-  string getActiveProfileMatch(string& profile_rule, const AmSipRequest& req,
-			       const string& app_param, AmUriParser& ruri_parser,
-			       AmUriParser& from_parser, AmUriParser& to_parser);
+  SBCCallProfile* getActiveProfileMatch(const AmSipRequest& req, 
+					ParamReplacerCtx& ctx);
+  
+  bool CCRoute(const AmSipRequest& req,
+	       vector<AmDynInvoke*>& cc_modules,
+	       SBCCallProfile& call_profile);
 
  public:
   DECLARE_MODULE_INSTANCE(SBCFactory);
@@ -77,8 +80,13 @@ class SBCFactory: public AmSessionFactory,
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      const map<string,string>& app_params);
 
+  void onOoDRequest(const AmSipRequest& req);
+
   static AmConfigReader cfg;
   static AmSessionEventHandlerFactory* session_timer_fact;
+
+  // hack for routing of OoD (e.g. REGISTER) messages
+  static AmDynInvokeFactory* gui_fact;
 
   static RegexMapper regex_mappings;
 
@@ -226,6 +234,8 @@ class SBCDialog : public AmB2BCallerSession, public CredentialHolder
   void onControlCmd(string& cmd, AmArg& params);
 
   void createCalleeSession();
+
+  int applySSTCfg(AmConfigReader& sst_cfg, const AmSipRequest* p_req);
 };
 
 class SBCCalleeSession 

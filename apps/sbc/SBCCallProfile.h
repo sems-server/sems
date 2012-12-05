@@ -42,6 +42,7 @@ using std::set;
 
 typedef map<string, AmArg>   SBCVarMapT;
 typedef SBCVarMapT::iterator SBCVarMapIteratorT;
+typedef SBCVarMapT::const_iterator SBCVarMapConstIteratorT;
 
 struct CCInterface {
   string cc_name;
@@ -182,11 +183,7 @@ struct SBCCallProfile
   
     bool enabled;
     
-    bool evaluate(const AmSipRequest& req, 
-                  const string& app_param, 
-                  AmUriParser& ruri_parser, 
-                  AmUriParser& from_parser, 
-                  AmUriParser& to_parser);
+    bool evaluate(ParamReplacerCtx& ctx, const AmSipRequest& req);
 
     bool readConfig(AmConfigReader &cfg);
     void infoPrint() const;
@@ -227,11 +224,7 @@ struct SBCCallProfile
       return a_leg ? bleg_prefer_existing_payloads : aleg_prefer_existing_payloads;
     }
 
-    bool evaluate(const AmSipRequest& req, 
-                  const string& app_param, 
-                  AmUriParser& ruri_parser, 
-                  AmUriParser& from_parser, 
-                  AmUriParser& to_parser);
+    bool evaluate(ParamReplacerCtx& ctx, const AmSipRequest& req);
 
     // default settings
     CodecPreferences(): aleg_prefer_existing_payloads(false) ,bleg_prefer_existing_payloads(false) { }
@@ -261,10 +254,7 @@ struct SBCCallProfile
   bool operator==(const SBCCallProfile& rhs) const;
   string print() const;
 
-  bool evaluate(const AmSipRequest& req,
-      const string& app_param,
-      AmUriParser& ruri_parser, AmUriParser& from_parser,
-      AmUriParser& to_parser);
+  int refuse(ParamReplacerCtx& ctx, const AmSipRequest& req) const;
 
   int apply_a_routing(ParamReplacerCtx& ctx,
 		      const AmSipRequest& req,
@@ -274,8 +264,26 @@ struct SBCCallProfile
 		      const AmSipRequest& req,
 		      AmBasicSipDialog& dlg) const;
 
-  int apply_common_fields(AmSipRequest& req,
-			  ParamReplacerCtx& ctx) const;
+  int apply_common_fields(ParamReplacerCtx& ctx,
+			  AmSipRequest& req) const;
+
+  bool evaluate(ParamReplacerCtx& ctx,
+		const AmSipRequest& req);
+
+  void eval_sst_config(ParamReplacerCtx& ctx,
+		       const AmSipRequest& req,
+		       AmConfigReader& sst_cfg);
+
+  void replace_cc_values(ParamReplacerCtx& ctx,
+			 const AmSipRequest& req,
+			 AmArg* values);
+
+  void eval_cc_list(ParamReplacerCtx& ctx, const AmSipRequest& req);
+  
+  void fix_append_hdrs(ParamReplacerCtx& ctx, const AmSipRequest& req);
+
+  void fix_reg_contact(ParamReplacerCtx& ctx, const AmSipRequest& req,
+		       AmUriParser& contact) const;
 };
 
 #endif // _SBCCallProfile_h

@@ -43,6 +43,9 @@ SBC - feature-wishlist
 #include "AmConfigReader.h"
 #include "AmSessionContainer.h"
 #include "AmSipHeaders.h"
+#include "SBCSimpleRelay.h"
+#include "RegisterDialog.h"
+#include "SubscriptionDialog.h"
 
 #include "HeaderFilter.h"
 #include "ParamReplacer.h"
@@ -286,6 +289,34 @@ static void filterBody(AmSipReply &reply, AmSdp &sdp, SBCCallProfile &call_profi
   }
 }
 
+static bool getCCInterfaces(CCInterfaceListT& cc_interfaces,
+			    vector<AmDynInvoke*>& cc_modules)
+{
+  for (CCInterfaceListIteratorT cc_it = cc_interfaces.begin();
+       cc_it != cc_interfaces.end(); cc_it++) {
+    string& cc_module = cc_it->cc_module;
+    if (cc_module.empty()) {
+      ERROR("using call control but empty cc_module for '%s'!\n", 
+	    cc_it->cc_name.c_str());
+      return false;
+    }
+
+    AmDynInvokeFactory* cc_fact = AmPlugIn::instance()->getFactory4Di(cc_module);
+    if (NULL == cc_fact) {
+      ERROR("cc_module '%s' not loaded\n", cc_module.c_str());
+      return false;
+    }
+
+    AmDynInvoke* cc_di = cc_fact->getInstance();
+    if(NULL == cc_di) {
+      ERROR("could not get a DI reference\n");
+      return false;
+    }
+    cc_modules.push_back(cc_di);
+  }
+  return true;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 class SBCRelayController: public RelayController {
@@ -470,145 +501,69 @@ int SBCFactory::onLoad()
   return 0;
 }
 
-#define REPLACE_VALS req, app_param, ruri_parser, from_parser, to_parser
-
 /** get the first matching profile name from active profiles */
-string SBCFactory::getActiveProfileMatch(string& profile_rule, const AmSipRequest& req,
-					 const string& app_param, AmUriParser& ruri_parser,
-					 AmUriParser& from_parser, AmUriParser& to_parser) {
-  string res;
-  for (vector<string>::iterator it=
-	 active_profile.begin(); it != active_profile.end(); it++) {
+SBCCallProfile* SBCFactory::getActiveProfileMatch(const AmSipRequest& req,
+						  ParamReplacerCtx& ctx) 
+{
+  string profile, profile_rule;
+  vector<string>::const_iterator it = active_profile.begin();
+  for (; it != active_profile.end(); it++) {
+
     if (it->empty())
       continue;
 
     if (*it == "$(paramhdr)")
-      res = get_header_keyvalue(app_param,"profile");
+      profile = get_header_keyvalue(ctx.app_param,"profile");
     else if (*it == "$(ruri.user)")
-      res = req.user;
+      profile = req.user;
     else
-      res = replaceParameters(*it, "active_profile", REPLACE_VALS);
+      profile = ctx.replaceParameters(*it, "active_profile", req);
 
-    if (!res.empty()) {
-      profile_rule = *it;    
+    if (!profile.empty()) {
+      profile_rule = *it;
       break;
     }
   }
-  return res;
-}
 
-AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
-				const map<string,string>& app_params)
-{
-  AmUriParser ruri_parser, from_parser, to_parser;
+  DBG("active profile = %s\n", profile.c_str());
 
-  profiles_mut.lock();
-
-  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
-  
-  string profile_rule;
-  string profile = getActiveProfileMatch(profile_rule, REPLACE_VALS);
-
-  map<string, SBCCallProfile>::iterator it=
-    call_profiles.find(profile);
-  if (it==call_profiles.end()) {
-    profiles_mut.unlock();
-    ERROR("could not find call profile '%s' (matching active_profile rule: '%s')\n",
+  map<string, SBCCallProfile>::iterator prof_it = call_profiles.find(profile);
+  if (prof_it==call_profiles.end()) {
+    ERROR("could not find call profile '%s'"
+	  " (matching active_profile rule: '%s')\n",
 	  profile.c_str(), profile_rule.c_str());
-    throw AmSession::Exception(500,SIP_REPLY_SERVER_INTERNAL_ERROR);
-  }
-
-  DBG("using call profile '%s' (from matching active_profile rule '%s')\n",
-      profile.c_str(), profile_rule.c_str());
-  const SBCCallProfile& call_profile = it->second;
-
-  if (!call_profile.refuse_with.empty()) {
-    string refuse_with = replaceParameters(call_profile.refuse_with,
-					   "refuse_with", REPLACE_VALS);
-
-    if (refuse_with.empty()) {
-      ERROR("refuse_with empty after replacing (was '%s' in profile %s)\n",
-	    call_profile.refuse_with.c_str(), call_profile.profile_file.c_str());
-      profiles_mut.unlock();
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    size_t spos = refuse_with.find(' ');
-    unsigned int refuse_with_code;
-    if (spos == string::npos || spos == refuse_with.size() ||
-	str2i(refuse_with.substr(0, spos), refuse_with_code)) {
-      ERROR("invalid refuse_with '%s'->'%s' in  %s. Expected <code> <reason>\n",
-	    call_profile.refuse_with.c_str(), refuse_with.c_str(),
-	    call_profile.profile_file.c_str());
-      profiles_mut.unlock();
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-    string refuse_with_reason = refuse_with.substr(spos+1);
-
-    string hdrs = replaceParameters(call_profile.append_headers,
-				    "append_headers", REPLACE_VALS);
-    profiles_mut.unlock();
-
-    if (hdrs.size()>2)
-      assertEndCRLF(hdrs);
-
-    DBG("refusing call with %u %s\n", refuse_with_code, refuse_with_reason.c_str());
-    AmSipDialog::reply_error(req, refuse_with_code, refuse_with_reason, hdrs);
 
     return NULL;
   }
 
-  // copy so call profile's object does not get modified
-  AmConfigReader sst_a_cfg = call_profile.sst_a_cfg;
+  DBG("using call profile '%s' (from matching active_profile rule '%s')\n",
+      profile.c_str(), profile_rule.c_str());
 
-  bool sst_a_enabled;
+  return &prof_it->second;
+}
 
-  string enable_aleg_session_timer =
-    replaceParameters(call_profile.sst_aleg_enabled, "enable_aleg_session_timer", REPLACE_VALS);
 
-  if (enable_aleg_session_timer.empty()) {
-    string sst_enabled =
-      replaceParameters(call_profile.sst_enabled, "enable_session_timer", REPLACE_VALS);
-    sst_a_enabled = sst_enabled == "yes";
-  } else {
-    sst_a_enabled = enable_aleg_session_timer == "yes";
+AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
+				const map<string,string>& app_params)
+{
+  ParamReplacerCtx ctx;
+  ctx.app_param = getHeader(req.hdrs, PARAM_HDR, true);
+
+  profiles_mut.lock();
+  const SBCCallProfile* p_call_profile = getActiveProfileMatch(req, ctx);
+  if(!p_call_profile) {
+    profiles_mut.unlock();
+    throw AmSession::Exception(500,SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  if (sst_a_enabled) {
-    DBG("Enabling SIP Session Timers (A leg)\n");
-
-#define SST_CFG_REPLACE_PARAMS(cfgkey)					\
-    if (sst_a_cfg.hasParameter(cfgkey)) {					\
-      string newval = replaceParameters(sst_a_cfg.getParameter(cfgkey),	\
-					cfgkey, REPLACE_VALS);		\
-      if (newval.empty()) {						\
-	sst_a_cfg.eraseParameter(cfgkey);					\
-      } else{								\
-	sst_a_cfg.setParameter(cfgkey,newval);				\
-      }									\
-    }
-
-    SST_CFG_REPLACE_PARAMS("session_expires");
-    SST_CFG_REPLACE_PARAMS("minimum_timer");
-    SST_CFG_REPLACE_PARAMS("maximum_timer");
-    SST_CFG_REPLACE_PARAMS("session_refresh_method");
-    SST_CFG_REPLACE_PARAMS("accept_501_reply");
-#undef SST_CFG_REPLACE_PARAMS
-
-    try {
-      if (NULL == session_timer_fact) {
-	ERROR("session_timer module not loaded - unable to create call with SST\n");
-	throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-      }
-
-      if (!session_timer_fact->onInvite(req, sst_a_cfg)) {
-	profiles_mut.unlock();
-	throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-      }
-    } catch (const AmSession::Exception& e) {
+  const SBCCallProfile& call_profile = *p_call_profile;
+  if(!call_profile.refuse_with.empty()) {
+    if(call_profile.refuse(ctx, req) < 0) {
       profiles_mut.unlock();
-      throw;
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
+    profiles_mut.unlock();
+    return NULL;
   }
 
   SBCDialog* b2b_dlg = new SBCDialog(call_profile);
@@ -628,31 +583,71 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
       DBG("uac auth enabled for caller session.\n");
     }
   }
-
-  if (sst_a_enabled) {
-    if (NULL == session_timer_fact) {
-      ERROR("session_timer module not loaded - unable to create call with SST\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    AmSessionEventHandler* h = session_timer_fact->getHandler(b2b_dlg);
-    if(!h) {
-      profiles_mut.unlock();
-      delete b2b_dlg;
-      ERROR("could not get a session timer event handler\n");
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    if (h->configure(sst_a_cfg)){
-      ERROR("Could not configure the session timer: disabling session timers.\n");
-      delete h;
-    } else {
-      b2b_dlg->addHandler(h);
-    }
-  }
   profiles_mut.unlock();
 
   return b2b_dlg;
+}
+
+void SBCFactory::onOoDRequest(const AmSipRequest& req)
+{
+  DBG("processing message %s %s\n", req.method.c_str(), req.r_uri.c_str());  
+  profiles_mut.lock();
+
+  ParamReplacerCtx ctx;
+  ctx.app_param = getHeader(req.hdrs, PARAM_HDR, true);
+
+  string profile_rule;
+  const SBCCallProfile* p_call_profile = getActiveProfileMatch(req, ctx);
+  if(!p_call_profile) {
+    profiles_mut.unlock();
+    throw AmSession::Exception(500,SIP_REPLY_SERVER_INTERNAL_ERROR);
+  }
+  
+  SBCCallProfile call_profile(*p_call_profile);
+  profiles_mut.unlock();
+
+  call_profile.eval_cc_list(ctx,req);
+
+  vector<AmDynInvoke*> cc_modules;
+  if(!getCCInterfaces(call_profile.cc_interfaces,cc_modules)) {
+    ERROR("could not get CC interfaces\n");
+    return;
+  }
+
+  if(!SBCFactory::CCRoute(req,cc_modules,call_profile)) {
+    ERROR("routing failed\n");
+    return;
+  }
+
+  if (!call_profile.refuse_with.empty()) {
+    if(call_profile.refuse(ctx, req) < 0) {
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    }
+    return;
+  }
+  
+  call_profile.fix_append_hdrs(ctx, req);
+
+  SBCSimpleRelay* relay=NULL;
+  if(req.method == SIP_METH_REGISTER) {
+    relay = new SBCSimpleRelay(new RegisterDialog(),
+			       new RegisterDialog());
+  }
+  else if((req.method == SIP_METH_SUBSCRIBE) ||
+	  (req.method == SIP_METH_REFER)){
+
+    relay = new SBCSimpleRelay(new SubscriptionDialog(),
+			       new SubscriptionDialog());
+  }
+  else {
+    relay = new SBCSimpleRelay(new SimpleRelayDialog(),
+			       new SimpleRelayDialog());
+  }
+
+  if(relay->start(req,call_profile)) {
+    delete relay;
+    AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+  }
 }
 
 void SBCFactory::invoke(const string& method, const AmArg& args, 
@@ -915,6 +910,115 @@ void SBCFactory::postControlCmd(const AmArg& args, AmArg& ret) {
   }
 }
 
+bool SBCFactory::CCRoute(const AmSipRequest& req,
+			 vector<AmDynInvoke*>& cc_modules,
+			 SBCCallProfile& call_profile)
+{
+  vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
+
+  for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
+       cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+    CCInterface& cc_if = *cc_it;
+
+    AmArg di_args,ret;
+    di_args.push(cc_if.cc_name);
+    di_args.push(""); //getLocalTag()
+    di_args.push((AmObject*)&call_profile);
+    di_args.push(AmArg());
+    di_args.back().push((int) 0);
+    di_args.back().push((int) 0);
+
+    di_args.push(AmArg());
+    AmArg& vals = di_args.back();
+    vals.assertStruct();
+    for (map<string, string>::iterator it = cc_if.cc_values.begin();
+	 it != cc_if.cc_values.end(); it++) {
+      vals[it->first] = it->second;
+    }
+
+    di_args.push(0); // current timer ID
+
+    try {
+      (*cc_mod)->invoke("route", di_args, ret);
+    } catch (const AmArg::OutOfBoundsException& e) {
+      ERROR("OutOfBoundsException executing call control interface route "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+      AmBasicSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      return false;
+    } catch (const AmArg::TypeMismatchException& e) {
+      ERROR("TypeMismatchException executing call control interface route "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+      AmBasicSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      return false;
+    }
+
+    // evaluate ret
+    if (isArgArray(ret)) {
+      for (size_t i=0;i<ret.size();i++) {
+	if (!isArgArray(ret[i]) || !ret[i].size())
+	  continue;
+	if (!isArgInt(ret[i][SBC_CC_ACTION])) {
+	  ERROR("in call control module '%s' - action type not int\n",
+		cc_if.cc_name.c_str());
+	  continue;
+	}
+	switch (ret[i][SBC_CC_ACTION].asInt()) {
+	case SBC_CC_DROP_ACTION: {
+	  DBG("dropping call on call control action DROP from '%s'\n",
+	      cc_if.cc_name.c_str());
+	  return false;
+	}
+
+	case SBC_CC_REFUSE_ACTION: {
+	  if (ret[i].size() < 3 ||
+	      !isArgInt(ret[i][SBC_CC_REFUSE_CODE]) ||
+	      !isArgCStr(ret[i][SBC_CC_REFUSE_REASON])) {
+	    ERROR("in call control module '%s' - REFUSE"
+		  " action parameters missing/wrong: '%s'\n",
+		  cc_if.cc_name.c_str(), AmArg::print(ret[i]).c_str());
+	    continue;
+	  }
+	  string headers;
+	  if (ret[i].size() > SBC_CC_REFUSE_HEADERS) {
+	    for (size_t h=0;h<ret[i][SBC_CC_REFUSE_HEADERS].size();h++)
+	      headers += string(ret[i][SBC_CC_REFUSE_HEADERS][h].asCStr()) + CRLF;
+	  }
+
+	  DBG("replying with %d %s on call control action "
+	      "REFUSE from '%s' headers='%s'\n",
+	      ret[i][SBC_CC_REFUSE_CODE].asInt(), 
+	      ret[i][SBC_CC_REFUSE_REASON].asCStr(),
+	      cc_if.cc_name.c_str(), headers.c_str());
+
+	  AmBasicSipDialog::reply_error(req,
+	        ret[i][SBC_CC_REFUSE_CODE].asInt(), 
+		ret[i][SBC_CC_REFUSE_REASON].asCStr(),
+		headers);
+
+	  return false;
+	}
+
+	default: {
+	  ERROR("unknown call control action: '%s'\n", 
+		AmArg::print(ret[i]).c_str());
+	  continue;
+	}
+
+	}
+
+      }
+    }
+
+    cc_mod++;
+  }
+
+  return true;
+}
+
 SBCDialog::SBCDialog(const SBCCallProfile& call_profile)
   : m_state(BB_Init),
     auth(NULL),
@@ -941,118 +1045,27 @@ UACAuthCred* SBCDialog::getCredentials() {
   return &call_profile.auth_aleg_credentials;
 }
 
-void SBCDialog::fixupCCInterface(const string& val, CCInterface& cc_if) {
-  DBG("instantiating CC interface from '%s'\n", val.c_str());
-  size_t spos, last = val.length() - 1;
-  if (last < 0) {
-      spos = string::npos;
-      cc_if.cc_module = "";
-  } else {
-      spos = val.find(";", 0);
-      cc_if.cc_module = val.substr(0, spos);
-  }
-  DBG("    module='%s'\n", cc_if.cc_module.c_str());
-  while (spos < last) {
-      size_t epos = val.find("=", spos + 1);
-      if (epos == string::npos) {
-	  cc_if.cc_values.insert(make_pair(val.substr(spos + 1), ""));
-	  DBG("    '%s'='%s'\n", val.substr(spos + 1).c_str(), "");
-	  return;
-      }
-      if (epos == last) {
-	  cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), ""));
-	  DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), "");
-	  return;
-      }
-      // if value starts with " char, it continues until another " is found
-      if (val[epos + 1] == '"') {
-	  if (epos + 1 == last) {
-	      cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), ""));
-	      DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), "");
-	      return;
-	  }
-	  size_t qpos = val.find('"', epos + 2);
-	  if (qpos == string::npos) {
-	      cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos -1), val.substr(epos + 2)));
-	      DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 2).c_str());
-	      return;
-	  }
-	  cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), val.substr(epos + 2, qpos - epos - 2)));
-	  DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 2, qpos - epos - 2).c_str());
-	  if (qpos < last) {
-	      spos = val.find(";", qpos + 1);
-	  } else {
-	      return;
-	  }
-      } else {
-	  size_t new_spos = val.find(";", epos + 1);
-	  if (new_spos == string::npos) {
-	      cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), val.substr(epos + 1)));
-	      DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 1).c_str());
-	      return;
-	  }
-	  cc_if.cc_values.insert(make_pair(val.substr(spos + 1, epos - spos - 1), val.substr(epos + 1, new_spos - epos - 1)));
-	  DBG("    '%s'='%s'\n", val.substr(spos + 1, epos - spos - 1).c_str(), val.substr(epos + 1, new_spos - epos - 1).c_str());
-	  spos = new_spos;
-      }
-  }
-  return;
-}
-
 void SBCDialog::onInvite(const AmSipRequest& req)
 {
-  AmUriParser ruri_parser, from_parser, to_parser;
-
   DBG("processing initial INVITE %s\n", req.r_uri.c_str());
 
-  string app_param = getHeader(req.hdrs, PARAM_HDR, true);
-
-  // get start time for call control
-  if (call_profile.cc_interfaces.size()) {
-    gettimeofday(&call_start_ts, NULL);
-  }
+  ParamReplacerCtx ctx;
+  ctx.app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
   // process call control
   if (call_profile.cc_interfaces.size()) {
-    unsigned int cc_dynif_count = 0;
 
-    // fix up replacements in cc list
-    CCInterfaceListIteratorT cc_rit = call_profile.cc_interfaces.begin();
-    while (cc_rit != call_profile.cc_interfaces.end()) {
-      CCInterfaceListIteratorT curr_if = cc_rit;
-      cc_rit++;
-      //      CCInterfaceListIteratorT next_cc = cc_rit+1;
-      if (curr_if->cc_name.find('$') != string::npos) {
-	vector<string> dyn_ccinterfaces =
-	  explode(replaceParameters(curr_if->cc_name, "cc_interfaces", REPLACE_VALS), ",");
-	if (!dyn_ccinterfaces.size()) {
-	  DBG("call_control '%s' did not produce any call control instances\n",
-	      curr_if->cc_name.c_str());
-	  call_profile.cc_interfaces.erase(curr_if);
-	} else {
-	  // fill first CC interface (replacement item)
-	  vector<string>::iterator it=dyn_ccinterfaces.begin();
-	  curr_if->cc_name = "cc_dyn_"+int2str(cc_dynif_count++);
-	  fixupCCInterface(trim(*it, " \t"), *curr_if);
-	  it++;
+    // get start time for call control
+    gettimeofday(&call_start_ts, NULL);
 
-	  // insert other CC interfaces (in order!)
-	  while (it != dyn_ccinterfaces.end()) {
-	    CCInterfaceListIteratorT new_cc =
-	      call_profile.cc_interfaces.insert(cc_rit, CCInterface());
-	    fixupCCInterface(trim(*it, " \t"), *new_cc);
-	    new_cc->cc_name = "cc_dyn_"+int2str(cc_dynif_count++);
-	    it++;
-	  }
-	}
-      }
-    }
+    call_profile.eval_cc_list(ctx,req);
 
     // fix up module names
     for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
 	 cc_it != call_profile.cc_interfaces.end(); cc_it++) {
+
       cc_it->cc_module =
-	replaceParameters(cc_it->cc_module, "cc_module", REPLACE_VALS);
+	ctx.replaceParameters(cc_it->cc_module, "cc_module", req);
     }
 
     if (!getCCInterfaces()) {
@@ -1060,23 +1073,26 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     }
 
     // fix up variables
-    for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
-	 cc_it != call_profile.cc_interfaces.end(); cc_it++) {
-      CCInterface& cc_if = *cc_it;
-
-      DBG("processing replacements for call control interface '%s'\n",
-	  cc_if.cc_name.c_str());
-
-      for (map<string, string>::iterator it = cc_if.cc_values.begin();
-	   it != cc_if.cc_values.end(); it++) {
-	it->second =
-	  replaceParameters(it->second, it->first.c_str(), REPLACE_VALS);
-      }
-    }
-
+    call_profile.replace_cc_values(ctx,req,NULL);
     if (!CCStart(req)) {
       setStopped();
       return;
+    }
+  }
+
+  call_profile.sst_aleg_enabled = 
+    ctx.replaceParameters(call_profile.sst_aleg_enabled,
+			  "enable_aleg_session_timer", req);
+
+  call_profile.sst_enabled = ctx.replaceParameters(call_profile.sst_enabled, 
+						   "enable_session_timer", req);
+
+  if ((call_profile.sst_aleg_enabled == "yes") ||
+      (call_profile.sst_enabled == "yes")) {
+
+    call_profile.eval_sst_config(ctx,req,call_profile.sst_a_cfg);
+    if(applySSTCfg(call_profile.sst_a_cfg,&req) < 0) {
+      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
   }
 
@@ -1084,21 +1100,21 @@ void SBCDialog::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500,"Failed to reply 100");
   }
 
-  if (!call_profile.evaluate(REPLACE_VALS)) {
+  if (!call_profile.evaluate(ctx,req)) {
     ERROR("call profile evaluation failed\n");
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
   ruri = call_profile.ruri.empty() ? req.r_uri : call_profile.ruri;
   if(!call_profile.ruri_host.empty()){
-    ruri_parser.uri = ruri;
-    if(!ruri_parser.parse_uri()) {
+    ctx.ruri_parser.uri = ruri;
+    if(!ctx.ruri_parser.parse_uri()) {
       WARN("Error parsing R-URI '%s'\n", ruri.c_str());
     }
     else {
-      ruri_parser.uri_port.clear();
-      ruri_parser.uri_host = call_profile.ruri_host;
-      ruri = ruri_parser.uri_str();
+      ctx.ruri_parser.uri_port.clear();
+      ctx.ruri_parser.uri_host = call_profile.ruri_host;
+      ruri = ctx.ruri_parser.uri_str();
     }
   }
   from = call_profile.from.empty() ? req.from : call_profile.from;
@@ -1181,29 +1197,9 @@ void SBCDialog::onInvite(const AmSipRequest& req)
   connectCallee(to, ruri, true);
 }
 
-bool SBCDialog::getCCInterfaces() {
-  for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
-       cc_it != call_profile.cc_interfaces.end(); cc_it++) {
-    string& cc_module = cc_it->cc_module;
-    if (cc_module.empty()) {
-      ERROR("using call control but empty cc_module for '%s'!\n", cc_it->cc_name.c_str());
-      return false;
-    }
-
-    AmDynInvokeFactory* cc_fact = AmPlugIn::instance()->getFactory4Di(cc_module);
-    if (NULL == cc_fact) {
-      ERROR("cc_module '%s' not loaded\n", cc_module.c_str());
-      return false;
-    }
-
-    AmDynInvoke* cc_di = cc_fact->getInstance();
-    if(NULL == cc_di) {
-      ERROR("could not get a DI reference\n");
-      return false;
-    }
-    cc_modules.push_back(cc_di);
-  }
-  return true;
+bool SBCDialog::getCCInterfaces() 
+{
+  return ::getCCInterfaces(call_profile.cc_interfaces, cc_modules);
 }
 
 void SBCDialog::process(AmEvent* ev)
@@ -1807,23 +1803,8 @@ void SBCDialog::createCalleeSession()
   }
 
   if (call_profile.sst_enabled_value) {
-    if (NULL == SBCFactory::session_timer_fact) {
-      ERROR("session_timer module not loaded - unable to create call with SST\n");
+    if(applySSTCfg(call_profile.sst_b_cfg,NULL) < 0) {
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    AmSessionEventHandler* h = SBCFactory::session_timer_fact->getHandler(callee_session);
-    if(!h) {
-      ERROR("could not get a session timer event handler\n");
-      delete callee_session;
-      throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-    }
-
-    if(h->configure(call_profile.sst_b_cfg)){
-      ERROR("Could not configure the session timer: disabling session timers.\n");
-      delete h;
-    } else {
-      callee_session->addHandler(h);
     }
   }
 
@@ -1912,6 +1893,42 @@ bool SBCDialog::updateRemoteSdp(AmSdp &sdp)
   // call original implementation because our special conditions above are not met
   return AmB2BCallerSession::updateRemoteSdp(sdp);
 }
+
+int SBCDialog::applySSTCfg(AmConfigReader& sst_cfg, 
+			   const AmSipRequest* p_req)
+{
+  DBG("Enabling SIP Session Timers\n");  
+  if (NULL == SBCFactory::session_timer_fact) {
+    ERROR("session_timer module not loaded - "
+	  "unable to create call with SST\n");
+    return -1;
+  }
+    
+  if (p_req && !SBCFactory::session_timer_fact->onInvite(*p_req, sst_cfg)) {
+    return -1;
+  }
+
+  AmSessionEventHandler* h = SBCFactory::session_timer_fact->getHandler(this);
+  if (!h) {
+    ERROR("could not get a session timer event handler\n");
+    return -1;
+  }
+
+  if (h->configure(sst_cfg)) {
+    ERROR("Could not configure the session timer: "
+	  "disabling session timers.\n");
+    delete h;
+  }
+  else {
+    addHandler(h);
+    // hack: repeat calling the handler again to start timers because
+    // it was called before SST was applied
+    if(p_req) h->onSipRequest(*p_req);
+  }
+
+  return 0;
+}
+
 
 SBCCalleeSession::SBCCalleeSession(const AmB2BCallerSession* caller,
 				   const SBCCallProfile& call_profile) 
@@ -2002,16 +2019,15 @@ void SBCCalleeSession::process(AmEvent* ev) {
   AmB2BCalleeSession::process(ev);
 }
 
-void SBCCalleeSession::onSipRequest(const AmSipRequest& req) {
+void SBCCalleeSession::onSipRequest(const AmSipRequest& req) 
+{
   // AmB2BSession does not call AmSession::onSipRequest for 
   // forwarded requests - so lets call event handlers here
   // todo: this is a hack, replace this by calling proper session 
   // event handler in AmB2BSession
-  bool fwd = sip_relay_only &&
-    //(req.method != SIP_METH_BYE) &&
-    (req.method != SIP_METH_CANCEL);
+  bool fwd = sip_relay_only && (req.method != SIP_METH_CANCEL);
   if (fwd) {
-      CALL_EVENT_H(onSipRequest,req);
+    CALL_EVENT_H(onSipRequest,req);
   }
 
   if (fwd && call_profile.messagefilter.size()) {
@@ -2102,7 +2118,7 @@ void assertEndCRLF(string& s) {
     s += "\r\n";
   }
 }
-  
+
 bool SBCCalleeSession::updateLocalSdp(AmSdp &sdp)
 {
   // remember transcodable payload IDs

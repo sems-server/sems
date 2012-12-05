@@ -48,7 +48,14 @@ struct ParamReplacerCtx
   AmUriParser from_parser;
   AmUriParser to_parser;
 
+  bool ruri_modified;
+  bool from_modified;
+  bool to_modified;
+
   ParamReplacerCtx()
+    : ruri_modified(false), 
+      from_modified(false), 
+      to_modified(false)
   {}
 
   string replaceParameters(const string& s,
