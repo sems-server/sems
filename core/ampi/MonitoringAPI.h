@@ -84,6 +84,103 @@
     AmSessionContainer::monitoring_di->invoke("logAdd", di_args, ret);	\
   }									\
 
+#define MONITORING_INC(type, name)     \
+  if (NULL != AmSessionContainer::monitoring_di) {      \
+    AmArg di_args, ret;              \
+    di_args.push(AmArg(type));          \
+    di_args.push(AmArg(name));          \
+    AmSessionContainer::monitoring_di->invoke("inc", di_args, ret);  \
+  }                 \
+
+#define MONITORING_DEC(type, name)     \
+  if (NULL != AmSessionContainer::monitoring_di) {      \
+    AmArg di_args, ret;              \
+    di_args.push(AmArg(type));          \
+    di_args.push(AmArg(name));          \
+    AmSessionContainer::monitoring_di->invoke("dec", di_args, ret);  \
+  }                 \
+
+#define MONITORING_ADD(type, name, val)			\
+  if (NULL != AmSessionContainer::monitoring_di) {      \
+    AmArg di_args, ret;              \
+    di_args.push(AmArg(type));          \
+    di_args.push(AmArg(name));          \
+    di_args.push(AmArg(val));          \
+    AmSessionContainer::monitoring_di->invoke("addCount", di_args, ret);  \
+  }                 \
+
+#define MONITORING_GET(type, ret)     \
+  if (NULL != AmSessionContainer::monitoring_di) {      \
+    AmArg di_args;                     \
+    di_args.push(AmArg(type));          \
+    AmSessionContainer::monitoring_di->invoke("get", di_args, ret);  \
+  }                 \
+
+#define MONITORING_GET_SINGLE(type, name, ret)		\
+  if (NULL != AmSessionContainer::monitoring_di) {      \
+    AmArg di_args;                     \
+    di_args.push(AmArg(type));          \
+    di_args.push(AmArg(name));          \
+    AmSessionContainer::monitoring_di->invoke("getSingle", di_args, ret);  \
+  }                 \
+
+#define MONITORING_ADD_SAMPLE_VALUE(type, name, value)  \
+  if (NULL != AmSessionContainer::monitoring_di) {  \
+    AmArg di_args, ret;                       \
+    di_args.push(AmArg(type));                \
+    di_args.push(AmArg(name));                \
+    di_args.push(AmArg(value));               \
+    MONITORING_GLOBAL_INTERFACE->invoke("addSample", di_args, ret); \
+  }                 \
+
+#define MONITORING_ADD_SAMPLE_VALUE_NOW(type, name, value, _now)  \
+  if (NULL != AmSessionContainer::monitoring_di) {  \
+    AmArg di_args, ret;                       \
+    di_args.push(AmArg(type));                \
+    di_args.push(AmArg(name));                \
+    di_args.push(AmArg(value));               \
+    di_args.push(AmArg(ArgBlob((const char*)&_now, sizeof(_now)))); \
+    MONITORING_GLOBAL_INTERFACE->invoke("addSample", di_args, ret); \
+  }                 \
+
+#define MONITORING_ADD_SAMPLE_NOW(type, name, _now)   \
+          MONITORING_ADD_SAMPLE_VALUE_NOW(type, name, 1, _now)
+
+#define MONITORING_ADD_SAMPLE(type, name)   \
+          MONITORING_ADD_SAMPLE_VALUE(type, name, 1)
+
+#define MONITORING_GET_COUNT_SEC(type, name, secs, _ret)	\
+  if (NULL != MONITORING_GLOBAL_INTERFACE) {      \
+    AmArg di_args;                            \
+    di_args.push(AmArg(type));                \
+    di_args.push(AmArg(name));                \
+    di_args.push(AmArg(secs));                \
+    MONITORING_GLOBAL_INTERFACE->invoke("getCount", di_args, _ret);  \
+  }                 \
+
+#define MONITORING_GET_COUNT(type, name, _ret)					\
+	MONITORING_GET_COUNT_SEC(type, name, 1, _ret)
+
+#define MONITORING_GET_ALL_COUNTS_SEC_NOW(type, secs, _now, _ret)				\
+  if (NULL != MONITORING_GLOBAL_INTERFACE) {														\
+    AmArg di_args;																											\
+    di_args.push(AmArg(type));																					\
+    di_args.push(AmArg(secs));																					\
+    di_args.push(AmArg(ArgBlob((const char*)&_now, sizeof(_now))));			\
+    MONITORING_GLOBAL_INTERFACE->invoke("getAllCounts", di_args, _ret);	\
+  }
+
+#define MONITORING_GET_ALL_COUNTS_SEC(type, secs, _ret)  \
+  if (NULL != MONITORING_GLOBAL_INTERFACE) {      \
+    AmArg di_args;                            \
+    di_args.push(AmArg(type));                \
+    di_args.push(AmArg(secs));                \
+    MONITORING_GLOBAL_INTERFACE->invoke("getAllCounts", di_args, _ret);  \
+  }                 \
+
+#define MONITORING_GET_ALL_COUNTS(type, _ret)					\
+          MONITORING_GET_ALL_COUNTS_SEC(type, 1, _ret)
+
 #define MONITORING_MARK_FINISHED(callid)				\
   if (NULL != AmSessionContainer::monitoring_di) {			\
     AmArg di_args,ret;							\

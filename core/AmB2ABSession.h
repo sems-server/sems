@@ -245,7 +245,8 @@ class AmB2ABCalleeSession: public AmB2ABSession
 
   void onEarlySessionStart();
   void onSessionStart();
-  void onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status);
+  void onSipReply(const AmSipRequest& req, const AmSipReply& rep, 
+		  AmSipDialog::Status old_dlg_status);
 
  protected:
   void onB2ABEvent(B2ABEvent* ev);

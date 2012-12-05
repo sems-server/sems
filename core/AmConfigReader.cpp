@@ -187,6 +187,152 @@ int  AmConfigReader::loadPluginConf(const string& mod_name)
 			   string(mod_name + CONFIG_FILE_SUFFIX).c_str()));
 }
 
+static int str_get_line(const char** c, const char* end, char* line_buf, size_t line_buf_len)
+{
+  enum {
+    SGL_LINE=0,
+    SGL_COMMENT,
+    SGL_CR,
+    SGL_LF
+  };
+
+  char* out = line_buf;
+  int st = SGL_LINE;
+
+  while((*c < end)  && line_buf_len && (st == SGL_LINE)){
+
+    switch(**c) {
+    case '\r': st = SGL_CR; break;
+    case '\n': st = SGL_LF; break;
+    case '#':  st = SGL_COMMENT; break;
+      
+    default:
+      *out = **c;
+      out++;
+      line_buf_len--;
+      break;
+    }
+
+    (*c)++;
+  }
+
+  if(st == SGL_COMMENT) {
+    while((*c < end) && (st == SGL_COMMENT)){
+      
+      switch(*((*c)++)) {
+      case '\r': st = SGL_CR; break;
+      case '\n': st = SGL_LF; break;
+      default: break;
+      }
+      
+      (*c)++;
+    }
+  }
+
+  if(st == SGL_CR) {
+    if(**c == '\n') {
+      st = SGL_LF;
+      (*c)++;
+    }
+    else {
+      DBG("strange line ending with CR only\n");
+    }
+  }
+
+  if(line_buf_len > 0){
+    // We need one more character
+    // for trailing '\0'.
+    *out='\0';
+
+    return int(out-line_buf);
+  }
+
+  // buffer overran.
+  return -1;
+}
+
+int AmConfigReader::loadString(const char* cfg_lines, size_t cfg_len)
+{
+  int  lc = 0;
+  int  ls = 0;
+  char lb[MAX_CONFIG_LINE] = {'\0'};
+
+  char *c,*key_beg,*key_end,*val_beg,*val_end,*inc_beg,*inc_end;
+
+  const char* cursor = cfg_lines;
+  const char* cfg_end = cursor + cfg_len;
+
+  c=key_beg=key_end=val_beg=val_end=inc_beg=inc_end=0;
+  while((cursor < cfg_end) && 
+	((ls = str_get_line(&cursor, cfg_end, lb, MAX_CONFIG_LINE)) != -1)){
+	
+    c=key_beg=key_end=val_beg=val_end=0;
+    lc++;
+
+    c = lb;
+    TRIM(c);
+
+    if(IS_EOL(*c)) continue;
+
+    key_beg = c;
+    while( (*c != '=') && !IS_SPACE(*c) ) c++;
+    
+    key_end = c;
+    if(IS_SPACE(*c))
+      TRIM(c);
+    else if( !(c - key_beg) )
+      goto syntax_error;
+
+    if(*c != '=')
+      goto syntax_error;
+
+    c++;
+    TRIM(c);
+
+    if(*c == '"'){
+      char last_c = ' ';
+      val_beg = ++c;
+
+      while( ((*c != '"') || (last_c == '\\')) && (*c != '\0') ) {
+	last_c = *c;
+	c++;
+      }
+
+      if(*c == '\0')
+	goto syntax_error;
+
+      val_end = c;
+    }
+    else {
+      val_beg = c;
+
+      while( !IS_EOL(*c) && !IS_SPACE(*c) ) c++;
+
+      val_end = c;
+    }
+
+    if((key_beg < key_end) && (val_beg <= val_end)) {
+      string keyname = string(key_beg,key_end-key_beg);
+      string val = string(val_beg,val_end-val_beg);
+      if (hasParameter(keyname)) {
+	WARN("while loading string: overwriting configuration "
+	     "'%s' value '%s' with  '%s'\n",
+	     keyname.c_str(), getParameter(keyname).c_str(), 
+	     val.c_str());
+      }
+
+      keys[keyname] = val;
+    } else
+      goto syntax_error;
+  }
+
+  return 0;
+
+ syntax_error:
+  ERROR("syntax error line %i\n",lc);
+  return -1;
+}
+
 bool AmConfigReader::getMD5(const string& path, string& md5hash, bool lowercase) {
     std::ifstream data_file(path.c_str(), std::ios::in | std::ios::binary);
     if (!data_file) {
@@ -250,4 +396,13 @@ unsigned int AmConfigReader::getParameterInt(const string& param, unsigned int d
     return defval;
   else
     return result;
+}
+
+void AmConfigReader::dump()
+{
+  for(map<string,string>::iterator it = keys.begin();
+      it != keys.end(); it++) {
+    
+    DBG("\t%s = %s",it->first.c_str(),it->second.c_str());
+  }
 }

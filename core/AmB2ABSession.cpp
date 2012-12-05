@@ -351,9 +351,9 @@ void AmB2ABCalleeSession::onSessionStart() {
   relayEvent(new B2ABConnectAudioEvent());
 }
 
-void AmB2ABCalleeSession::onSipReply(const AmSipReply& rep,
-				     AmSipDialog::Status old_dlg_status) {
-  AmB2ABSession::onSipReply(rep, old_dlg_status);
+void AmB2ABCalleeSession::onSipReply(const AmSipRequest& req, const AmSipReply& rep,
+				     AmBasicSipDialog::Status old_dlg_status) {
+  AmB2ABSession::onSipReply(req, rep, old_dlg_status);
   AmSipDialog::Status status = dlg.getStatus();
  
   if ((old_dlg_status == AmSipDialog::Trying) ||

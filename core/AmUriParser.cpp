@@ -372,7 +372,7 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
 bool AmUriParser::parse_contact(const string& line, size_t pos, size_t& end) {
   int p0 = skip_name(line, pos);
   if (p0 < 0) { return false; }
-  if (p0 > pos) {
+  if ((size_t)p0 > pos) {
     // save display name
     size_t dn_b = pos; size_t dn_e = p0;
     while (dn_b < line.size() && line[dn_b] == ' ') { dn_b++; } // skip leading WS

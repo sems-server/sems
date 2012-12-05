@@ -72,7 +72,7 @@ class AmSipTimeoutEvent: public AmSipEvent
     : AmSipEvent(), req(_req), rpl(_rpl)
     {}
 
-  virtual void operator() (AmSipDialog* dlg);
+  virtual void operator() (AmBasicSipDialog* dlg);
 };
 
 /** \brief SIP request event */
@@ -85,7 +85,7 @@ class AmSipRequestEvent: public AmSipEvent
     : AmSipEvent(), req(r)
     {}
 
-  virtual void operator() (AmSipDialog* dlg);
+  virtual void operator() (AmBasicSipDialog* dlg);
 };
 
 /** \brief SIP reply event */
@@ -97,7 +97,7 @@ class AmSipReplyEvent: public AmSipEvent
   AmSipReplyEvent(const AmSipReply& r) 
     : AmSipEvent(),reply(r) {}
 
-  virtual void operator() (AmSipDialog* dlg);
+  virtual void operator() (AmBasicSipDialog* dlg);
 };
 
 

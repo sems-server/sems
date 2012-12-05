@@ -51,6 +51,7 @@ class AmConfigReader
  public:
   int  loadFile(const string& path);
   int  loadPluginConf(const string& mod_name);
+  int  loadString(const char* cfg_lines, size_t cfg_len);
 
   /** get md5 hash of file contents */
   bool getMD5(const string& path, string& md5hash, bool lowercase = true);
@@ -67,6 +68,8 @@ class AmConfigReader
 
   std::map<string,string>::const_iterator end() const
     { return keys.end(); }
+
+  void dump();
 };
 
 #endif

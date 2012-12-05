@@ -328,7 +328,8 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
     if (remote_uri != req.from_uri) {
       remote_uri = req.from_uri;
       if(nat_handling && req.first_hop) {
-	next_hop = req.remote_ip + ":" + req.remote_port;
+	next_hop = req.remote_ip + ":";
+	next_hop += req.remote_port;
 	next_hop_1st_req = false;
       }
     }

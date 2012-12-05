@@ -48,7 +48,7 @@ core: $(OBJS) ../Makefile.defs
 
 include ../Makefile.defs
 
-CPPFLAGS += -I$(COREPATH)
+CPPFLAGS += -I$(COREPATH) -fno-strict-aliasing
 
 ifneq ($(OS), freebsd)
 	EXTRA_LDFLAGS += -lresolv

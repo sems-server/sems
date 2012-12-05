@@ -813,7 +813,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
   }
 }
 
-void AmSession::onSipReply(const AmSipReply& reply,
+void AmSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 			   AmBasicSipDialog::Status old_dlg_status)
 {
   CALL_EVENT_H(onSipReply, reply, old_dlg_status);
@@ -896,12 +896,12 @@ void AmSession::onSystemEvent(AmSystemEvent* ev) {
   }
 }
 
-void AmSession::onSendRequest(AmSipRequest& req, int flags)
+void AmSession::onSendRequest(AmSipRequest& req, int& flags)
 {
   CALL_EVENT_H(onSendRequest,req,flags);
 }
 
-void AmSession::onSendReply(AmSipReply& reply, int flags)
+void AmSession::onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags)
 {
   CALL_EVENT_H(onSendReply,reply,flags);
 }

@@ -459,8 +459,8 @@ void AmB2BSession::updateUACTransCSeq(unsigned int old_cseq, unsigned int new_cs
 }
 
 
-void AmB2BSession::onSipReply(const AmSipReply& reply,
-			      AmSipDialog::Status old_dlg_status)
+void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
+			      AmBasicSipDialog::Status old_dlg_status)
 {
   TransMap::iterator t = relayed_req.find(reply.cseq);
   bool fwd = (t != relayed_req.end()) && (reply.code != 100);
@@ -499,7 +499,7 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
 	relayed_req.erase(t);
     }
   } else {
-    AmSession::onSipReply(reply, old_dlg_status);
+    AmSession::onSipReply(req, reply, old_dlg_status);
 
     AmSipReply n_reply = reply;
     if(est_invite_cseq == reply.cseq){

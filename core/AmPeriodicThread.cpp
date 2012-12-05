@@ -60,8 +60,8 @@ void AmPeriodicThread::infinite_loop(struct timeval* tick, unsigned int max_tick
 	sdiff.tv_sec  = tick->tv_sec;
 	sdiff.tv_nsec = tick->tv_usec * 1000;
 
-	WARN("clock drift backwards detected (%ul ticks ahead), resetting sw clock\n",
-	     ms_diff / ms_tick - 1);
+	WARN("clock drift backwards detected (%lu ticks ahead), "
+	     "resetting sw clock\n", ms_diff / ms_tick - 1);
       }
       else {
 	// everything ok
