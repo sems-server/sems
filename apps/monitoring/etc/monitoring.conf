@@ -12,3 +12,9 @@ run_garbage_collector = yes
 # Default: 10
 #
 #garbage_collector_interval = 20
+
+# retain_samples_s=10
+# 
+# retain "sample" type values for n seconds
+#
+#retain_samples_s=20

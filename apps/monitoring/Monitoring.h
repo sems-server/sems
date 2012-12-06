@@ -46,9 +46,23 @@ LogInfo()
   AmArg info;
 };
 
+// empty sample lists are not erased!
+struct SampleInfo {
+  time_t finished; // for garbage collection
+  struct time_cnt {
+    struct timeval time;
+    unsigned int counter;
+
+    time_cnt(struct timeval t, unsigned int c) : time(t), counter(c) {}
+  };
+  SampleInfo() : finished(0) { }
+  std::map<string, list<time_cnt> > sample;
+};
+
 struct LogBucket {
   AmMutex log_lock;
   std::map<string, LogInfo> log;
+  std::map<string, SampleInfo> samples;
 };
 class MonitorGarbageCollector;
 
@@ -63,24 +77,37 @@ class Monitor
 
   LogBucket& getLogBucket(const string& call_id);
 
+  static unsigned int retain_samples_s;
+  void truncate_samples(list<SampleInfo::time_cnt>& v, struct timeval now);
+
   void clearFinished();
 
   void log(const AmArg& args, AmArg& ret);
   void logAdd(const AmArg& args, AmArg& ret);
+  void inc(const AmArg& args, AmArg& ret);
+  void dec(const AmArg& args, AmArg& ret);
+  void addCount(const AmArg& args, AmArg& ret);
+  void addSample(const AmArg& args, AmArg& ret);
+
   void markFinished(const AmArg& args, AmArg& ret);
   void setExpiration(const AmArg& args, AmArg& ret);
   void clear(const AmArg& args, AmArg& ret);
   void clearFinished(const AmArg& args, AmArg& ret);
   void erase(const AmArg& args, AmArg& ret);
   void get(const AmArg& args, AmArg& ret);
+  void getSingle(const AmArg& args, AmArg& ret);
   void getAttribute(const AmArg& args, AmArg& ret);
   void getAttributeActive(const AmArg& args, AmArg& ret);
   void getAttributeFinished(const AmArg& args, AmArg& ret);
+  void getCount(const AmArg& args, AmArg& ret);
+  void getAllCounts(const AmArg& args, AmArg& ret);
   void listAll(const AmArg& args, AmArg& ret);
   void listByFilter(const AmArg& args, AmArg& ret, bool erase);
   void listByRegex(const AmArg& args, AmArg& ret);
   void listFinished(const AmArg& args, AmArg& ret);
   void listActive(const AmArg& args, AmArg& ret);
+
+  void add(const AmArg& args, AmArg& ret, int a);
 
  public:
 

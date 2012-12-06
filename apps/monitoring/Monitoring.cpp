@@ -47,6 +47,7 @@ extern "C" void* plugin_class_create()
 
 Monitor* Monitor::_instance=0;
 unsigned int Monitor::gcInterval = 10;
+unsigned int Monitor::retain_samples_s = 10;
 
 Monitor* Monitor::instance()
 {
@@ -81,6 +82,8 @@ int Monitor::onLoad() {
 //     AmThreadWatcher::instance()->add(gc_thread);
   }
 
+  retain_samples_s = cfg.getParameterInt("retain_samples_s", 10);
+
   return 0;
 }
 
@@ -96,6 +99,20 @@ void Monitor::invoke(const string& method,
     setExpiration(args,ret);
   } else if(method == "get"){
     get(args,ret);
+  } else if(method == "getSingle"){
+    getSingle(args,ret);
+  } else if(method == "inc"){
+    inc(args,ret);
+  } else if(method == "dec"){
+    dec(args,ret);
+  } else if(method == "addCount"){
+    addCount(args,ret);
+  } else if(method == "addSample"){
+    addSample(args,ret);
+  } else if(method == "getCount"){
+    getCount(args,ret);
+  } else if(method == "getAllCounts"){
+      getAllCounts(args,ret);
   } else if(method == "getAttribute"){
     getAttribute(args,ret);
   } else if(method == "getAttributeFinished"){
@@ -125,6 +142,9 @@ void Monitor::invoke(const string& method,
     ret.push(AmArg("set"));
     ret.push(AmArg("logAdd"));
     ret.push(AmArg("add"));
+    ret.push(AmArg("inc"));
+    ret.push(AmArg("dec"));
+    ret.push(AmArg("addSample"));
     ret.push(AmArg("markFinished"));
     ret.push(AmArg("setExpiration"));
     ret.push(AmArg("erase"));
@@ -135,6 +155,7 @@ void Monitor::invoke(const string& method,
     ret.push(AmArg("getAttribute"));
     ret.push(AmArg("getAttributeActive"));
     ret.push(AmArg("getAttributeFinished"));
+    ret.push(AmArg("getCount"));
     ret.push(AmArg("list"));
     ret.push(AmArg("listByFilter"));
     ret.push(AmArg("listByRegex"));
@@ -163,6 +184,44 @@ void Monitor::log(const AmArg& args, AmArg& ret) {
   ret.push("OK");
 }
 
+void Monitor::add(const AmArg& args, AmArg& ret, int a) {
+  assertArgCStr(args[0]);
+
+  LogBucket& bucket = getLogBucket(args[0].asCStr());
+  bucket.log_lock.lock();
+  try {
+    //for (size_t i=1;i<args.size();i++) {
+    int val = 0;
+    AmArg& v = bucket.log[args[0].asCStr()].info[args[1].asCStr()];
+    if (isArgInt(v))
+      val = v.asInt();
+    val+=a;
+    v = val;
+    //}
+  } catch (...) {
+    bucket.log_lock.unlock();
+    ret.push(-1);
+    ret.push("ERROR while converting value");
+    throw;
+  }
+  bucket.log_lock.unlock();
+  ret.push(0);
+  ret.push("OK");
+}
+
+void Monitor::inc(const AmArg& args, AmArg& ret) {
+  add(args, ret, 1);
+}
+
+void Monitor::dec(const AmArg& args, AmArg& ret) {
+  add(args, ret, -1);
+}
+
+void Monitor::addCount(const AmArg& args, AmArg& ret) {
+  assertArgInt(args[2]);
+  add(args, ret, args[2].asInt());
+}
+
 void Monitor::logAdd(const AmArg& args, AmArg& ret) {
   assertArgCStr(args[0]);
   assertArgCStr(args[1]);
@@ -185,6 +244,206 @@ void Monitor::logAdd(const AmArg& args, AmArg& ret) {
   ret.push("OK");
   bucket.log_lock.unlock();
 }
+
+
+// Expected args:
+// name, key, [counter=1], [timestamp=now]
+void Monitor::addSample(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args[0]);
+  assertArgCStr(args[1]);
+
+  struct timeval now;
+  int cnt = 1;
+
+  if (args.size() > 2 && isArgInt(args[2])) {
+    cnt = args[2].asInt();
+
+    if (args.size() > 3 && isArgBlob(args[3])) {
+      now = *((struct timeval*) args[3].asBlob()->data);
+    }
+    else {
+      gettimeofday(&now, NULL);
+    }
+  }
+  else if (args.size() > 2 && isArgBlob(args[2])) {
+    now = *((struct timeval*)args[2].asBlob()->data);
+  } else {
+    gettimeofday(&now, NULL);
+  }
+
+  LogBucket& bucket = getLogBucket(args[0].asCStr());
+  bucket.log_lock.lock();
+  list<SampleInfo::time_cnt>& sample_list
+    = bucket.samples[args[0].asCStr()].sample[args[1].asCStr()];
+  if (sample_list.size() && timercmp(&sample_list.front().time, &now, >=)) {
+    // sample list time stamps needs to be monotonically increasing - clear if resyncing
+    // WARN("clock drift backwards - clearing %zd items\n", sample_list.size());
+    sample_list.clear();
+  }
+  sample_list.push_front(SampleInfo::time_cnt(now, cnt));
+  bucket.log_lock.unlock();
+
+  ret.push(0);
+  ret.push("OK");
+}
+
+void Monitor::truncate_samples(
+            list<SampleInfo::time_cnt>& v, struct timeval now) {
+  struct timeval cliff = now;
+  cliff.tv_sec -= retain_samples_s;
+  while (v.size() && timercmp(&cliff, &(v.back().time), >=))
+    v.pop_back();
+}
+
+
+// Expected args:
+// name, key, [now [from [to]]]   (blob type)
+//  or:
+// name, key, interval in sec     (int type)
+void Monitor::getCount(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args[0]);
+  assertArgCStr(args[1]);
+
+  struct timeval now;
+  if (args.size()>2 && isArgBlob(args[2])) {
+    now = *(struct timeval*)args[2].asBlob()->data;
+  } else {
+    gettimeofday(&now, NULL);
+  }
+
+  struct timeval from;
+  struct timeval to;
+  if (args.size()>3 && isArgBlob(args[3])) {
+    from = *(struct timeval*)args[3].asBlob()->data;
+
+    if (args.size()>4 && isArgBlob(args[4]))
+      to = *(struct timeval*)args[4].asBlob()->data;
+    else
+      to = now;
+
+  } else {
+    from = to = now;
+    if (args.size()>2 && isArgInt(args[2])) {
+      from.tv_sec -= args[2].asInt();
+    } else {
+      from.tv_sec -=1; // default: last second
+    }
+  }
+
+  if (!now.tv_sec) {
+    gettimeofday(&to, NULL);
+  }
+
+  unsigned int res = 0;
+
+  LogBucket& bucket = getLogBucket(args[0].asCStr());
+  bucket.log_lock.lock();
+
+  map<string, SampleInfo>::iterator it =
+        bucket.samples.find(args[0].asCStr());
+  if (it != bucket.samples.end()) {
+
+    map<string, list<SampleInfo::time_cnt> >::iterator s_it =
+          it->second.sample.find(args[1].asCStr());
+    if (s_it != it->second.sample.end()) {
+
+      list<SampleInfo::time_cnt>& v = s_it->second;
+      truncate_samples(v, now);
+      // todo (?): erase empty sample list
+      // if (v.empty()) {
+      // 	// sample vector is empty
+      // 	it->second.sample.erase(s_it);
+      // } else {
+      list<SampleInfo::time_cnt>::iterator v_it = v.begin();
+
+      while (v_it != v.end() && timercmp(&(v_it->time), &to, >))
+	v_it++;
+      if (v_it != v.end()) {
+	while (timercmp(&(v_it->time), &from, >=) && v_it != v.end()) {
+	  res += v_it->counter;
+	  v_it++;
+	}
+      }
+
+    }
+  }
+  bucket.log_lock.unlock();
+
+  ret.push((int)res);
+}
+
+// Expected args:
+// name, [now [from [to]]]   (blob type)
+//  or:
+// name, interval in sec [now]  (int type)
+void Monitor::getAllCounts(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args[0]);
+	ret.assertStruct();
+
+  struct timeval now;
+  if (args.size()>1 && isArgBlob(args[1])) {
+    now = *(struct timeval*)args[1].asBlob()->data;
+  } else if (args.size()>2 && isArgInt(args[1]) && isArgBlob(args[2])) {
+    now = *(struct timeval*)args[2].asBlob()->data;
+	} else {
+    gettimeofday(&now, NULL);
+  }
+
+  struct timeval from;
+  struct timeval to;
+  if (args.size()>2 && isArgBlob(args[1]) && isArgBlob(args[2])) {
+    from = *(struct timeval*)args[2].asBlob()->data;
+
+    if (args.size()>3 && isArgBlob(args[3]))
+      to = *(struct timeval*)args[3].asBlob()->data;
+    else
+      to = now;
+
+  } else {
+    from = to = now;
+    if (args.size()>1 && isArgInt(args[1])) {
+      from.tv_sec -= args[1].asInt();
+    } else {
+      from.tv_sec -=1; // default: last second
+    }
+  }
+
+  if (!now.tv_sec) {
+    gettimeofday(&to, NULL);
+  }
+
+  LogBucket& bucket = getLogBucket(args[0].asCStr());
+  bucket.log_lock.lock();
+
+  map<string, SampleInfo>::iterator it =
+        bucket.samples.find(args[0].asCStr());
+  if (it != bucket.samples.end()) {
+
+    for (map<string, list<SampleInfo::time_cnt> >::iterator s_it =
+          it->second.sample.begin(); s_it != it->second.sample.end() ; s_it++) {
+
+      list<SampleInfo::time_cnt>& v = s_it->second;
+      truncate_samples(v, now);
+      list<SampleInfo::time_cnt>::iterator v_it = v.begin();
+
+      unsigned int res = 0;
+
+      while (timercmp(&(v_it->time), &to, >) && v_it != v.end())
+        v_it++;
+      if (v_it != v.end()) {
+        while (timercmp(&(v_it->time), &from, >=) && v_it != v.end()) {
+          res += v_it->counter;
+          v_it++;
+        }
+      }
+
+      ret[s_it->first] = (int)res;
+    }
+
+  }
+  bucket.log_lock.unlock();
+}
+
 
 void Monitor::markFinished(const AmArg& args, AmArg& ret) {
   assertArgCStr(args[0]);
@@ -215,6 +474,7 @@ void Monitor::erase(const AmArg& args, AmArg& ret) {
   LogBucket& bucket = getLogBucket(args[0].asCStr());
   bucket.log_lock.lock();
   bucket.log.erase(args[0].asCStr());
+  bucket.samples.erase(args[0].asCStr());
   bucket.log_lock.unlock();
   ret.push(0);
   ret.push("OK");
@@ -224,6 +484,7 @@ void Monitor::clear(const AmArg& args, AmArg& ret) {
   for (int i=0;i<NUM_LOG_BUCKETS;i++) {
     logs[i].log_lock.lock();
     logs[i].log.clear();
+    logs[i].samples.clear();
     logs[i].log_lock.unlock();
   }
   ret.push(0);
@@ -248,6 +509,7 @@ void Monitor::clearFinished() {
 	  it->second.finished <= now) {
 	std::map<string, LogInfo>::iterator d_it = it;
 	it++;
+	logs[i].samples.erase(d_it->first);
 	logs[i].log.erase(d_it);
       } else {
 	it++;
@@ -266,6 +528,29 @@ void Monitor::get(const AmArg& args, AmArg& ret) {
   if (it!=bucket.log.end())
     ret.push(it->second.info);
   bucket.log_lock.unlock();
+}
+
+void Monitor::getSingle(const AmArg& args, AmArg& ret) {
+  assertArgCStr(args[0]);
+  assertArgCStr(args[1]);
+  ret.assertArray();
+
+  DBG("getSingle(%s,%s)",
+      args[0].asCStr(),
+      args[1].asCStr());
+
+  LogBucket& bucket = getLogBucket(args[0].asCStr());
+  bucket.log_lock.lock();
+  std::map<string, LogInfo>::iterator it=bucket.log.find(args[0].asCStr());
+  if (it!=bucket.log.end()){
+    AmArg& _v = it->second.info;
+    DBG("found log: %s",AmArg::print(_v).c_str());
+    if(isArgStruct(_v) && _v.hasMember(args[1].asCStr())) {
+      ret.push(_v[args[1].asCStr()]);
+    }
+  }
+  bucket.log_lock.unlock();
+  DBG("ret = %s",AmArg::print(ret).c_str());
 }
 
 void Monitor::getAttribute(const AmArg& args, AmArg& ret) {
