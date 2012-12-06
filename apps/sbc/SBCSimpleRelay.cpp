@@ -6,6 +6,7 @@
 #include "AmEventDispatcher.h"
 #include "AmEventQueueProcessor.h"
 #include "SBC.h"
+#include "RegisterDialog.h"
 
 /**
  * SimpleRelayDialog
@@ -247,7 +248,7 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
 
   ParamReplacerCtx ctx;
   if((cp.apply_b_routing(ctx,n_req,*this) < 0) ||
-     (cp.apply_common_fields(n_req,ctx) < 0) ) {
+     (cp.apply_common_fields(ctx,n_req) < 0) ) {
     reply_error(req,500,SIP_REPLY_SERVER_INTERNAL_ERROR);
     return -1;
   }
