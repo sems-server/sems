@@ -20,9 +20,6 @@ class RegisterDialog
   int onTxReply(const AmSipRequest& req, AmSipReply& reply, int& flags);
   int onTxRequest(AmSipRequest& req, int& flags);
 
-  //void onB2BRequest(const AmSipRequest& req);
-  void onB2BReply(const AmSipReply& reply);
-
   // helper methods
   int parseContacts(const string& contacts, vector<AmUriParser>& cv);
 
