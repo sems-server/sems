@@ -930,6 +930,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
     di_args.push(cc_if.cc_name);
     di_args.push(""); //getLocalTag()
     di_args.push((AmObject*)&call_profile);
+    di_args.push((AmObject*)&req);
     di_args.push(AmArg());
     di_args.back().push((int) 0);
     di_args.back().push((int) 0);
