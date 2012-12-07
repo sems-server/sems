@@ -894,6 +894,7 @@ int AmConfig::finalizeIPConfig()
 	while(addr_it != it->addrs.end()) {
 	  if(Ifs[i].LocalIP == addr_it->addr)
 	    break;
+	  addr_it++;
 	}
 	if(addr_it != it->addrs.end()) {
 	  Ifs[i].MediaIf = it->name;
@@ -906,6 +907,7 @@ int AmConfig::finalizeIPConfig()
 	while(addr_it != it->addrs.end()) {
 	  if(Ifs[i].LocalSIPIP == addr_it->addr)
 	    break;
+	  addr_it++;
 	}
 	if(addr_it != it->addrs.end()) {
 	  Ifs[i].SipIf = it->name;
