@@ -84,7 +84,7 @@ static string payload2str(const SdpPayload &p);
     }								\
   } while(0)
 
-#define REPLACE_IFACE(what, iface) do {		\
+#define REPLACE_IFACE_RTP(what, iface) do {		\
     if (!what.empty()) {			    \
       what = ctx.replaceParameters(what, #what, req);	\
       DBG("set " #what " to '%s'\n", what.c_str());	\
@@ -96,7 +96,31 @@ static string payload2str(const SdpPayload &p);
 	  if (name_it != AmConfig::RTP_If_names.end()) \
 	    iface = name_it->second;					\
 	  else {							\
-	    ERROR("selected " #what " '%s' does not exist as an interface. " \
+	    ERROR("selected " #what " '%s' does not exist as a media interface. " \
+		  "Please check the 'additional_interfaces' "		\
+		  "parameter in the main configuration file.",		\
+		  what.c_str());					\
+	    return false;						\
+	  }								\
+	}								\
+      }									\
+    }									\
+  } while(0)
+
+#define REPLACE_IFACE_SIP(what, iface) do {		\
+    if (!what.empty()) {			    \
+      what = ctx.replaceParameters(what, #what, req);	\
+      DBG("set " #what " to '%s'\n", what.c_str());	\
+      if (!what.empty()) {				\
+	if (what == "default") iface = 0;		\
+	else {								\
+	  map<string,unsigned short>::iterator name_it =		\
+	    AmConfig::SIP_If_names.find(what);				\
+	  if (name_it != AmConfig::RTP_If_names.end()) \
+	    iface = name_it->second;					\
+	  else {							\
+	    ERROR("selected " #what " '%s' does not exist as a signaling" \
+		  " interface. "					\
 		  "Please check the 'additional_interfaces' "		\
 		  "parameter in the main configuration file.",		\
 		  what.c_str());					\
@@ -703,7 +727,6 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
   if (rtprelay_enabled || transcoder.isActive()) {
     // evaluate other RTP relay related params only if enabled
     // FIXME: really not evaluate rtprelay_enabled itself?
-    REPLACE_NONEMPTY_STR(force_symmetric_rtp);
     REPLACE_BOOL(force_symmetric_rtp, force_symmetric_rtp_value);
 
     // enable symmetric RTP by P-MsgFlags?
@@ -721,8 +744,8 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
       }
     }
 
-    REPLACE_IFACE(rtprelay_interface, rtprelay_interface_value);
-    REPLACE_IFACE(aleg_rtprelay_interface, aleg_rtprelay_interface_value);
+    REPLACE_IFACE_RTP(rtprelay_interface, rtprelay_interface_value);
+    REPLACE_IFACE_RTP(aleg_rtprelay_interface, aleg_rtprelay_interface_value);
   }
 
   REPLACE_BOOL(sst_enabled, sst_enabled_value);
@@ -747,7 +770,7 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
 						      "auth_aleg_pwd", req);
   }
 
-  REPLACE_IFACE(outbound_interface, outbound_interface_value);
+  REPLACE_IFACE_SIP(outbound_interface, outbound_interface_value);
 
   if (!codec_prefs.evaluate(ctx,req)) return false;
 
