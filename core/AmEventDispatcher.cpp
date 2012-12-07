@@ -240,6 +240,10 @@ void AmEventDispatcher::dump()
       queues_mut[i].lock();
       if(!queues[i].empty()) {
 	DBG("queues[%lu].size() = %lu",i,queues[i].size());
+	for(EvQueueMapIter it = queues[i].begin();
+	    it != queues[i].end(); it++){
+	  DBG("\t%s -> %p\n",it->first.c_str(),it->second.q);
+	}
       }
       queues_mut[i].unlock();
 
