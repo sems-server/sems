@@ -27,7 +27,8 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
     next_hop(AmConfig::NextHop),
     next_hop_1st_req(AmConfig::NextHop1stReq),
     outbound_interface(-1),
-    nat_handling(false)
+    nat_handling(false),
+    usages(0)
 {
   assert(h);
 }
