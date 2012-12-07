@@ -112,8 +112,8 @@ string AmBasicSipDialog::getContactHdr()
 {
   string contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) "<sip:";
 
-  if(!user.empty()) {
-    contact_uri += user + "@";
+  if(!ext_local_tag.empty()) {
+    contact_uri += local_tag + "@";
   }
     
   int oif = getOutboundIf();
