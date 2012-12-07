@@ -499,6 +499,9 @@ int SBCFactory::onLoad()
     return -1;
   }
 
+  // TODO: add config param for the number of threads
+  subnot_processor.addThreads(1);
+
   return 0;
 }
 
@@ -615,6 +618,8 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
     return;
   }
 
+  // fix up variables
+  call_profile.replace_cc_values(ctx,req,NULL);
   if(!SBCFactory::CCRoute(req,cc_modules,call_profile)) {
     ERROR("routing failed\n");
     return;
