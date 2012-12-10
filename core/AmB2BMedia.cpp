@@ -720,8 +720,8 @@ void AmB2BMedia::onSdpUpdate()
 
   if (!(
       (have_a && have_b) ||
-      (have_a && audio[0].a.getInput()) ||
-      (have_b && audio[0].b.getInput())
+      (have_a && audio[0].a.getInput() && (!b)) ||
+      (have_b && audio[0].b.getInput() && (!a))
       )) return;
 
   // clear all the stored flags (re-INVITEs or UPDATEs will negotiate new remote
