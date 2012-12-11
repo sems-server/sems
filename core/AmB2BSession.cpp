@@ -482,7 +482,17 @@ void AmB2BSession::onSipReply(const AmSipReply& reply,
       n_reply.cseq = est_invite_other_cseq;
     }
     else {
-      // the reply here will not have the proper cseq for the other side.
+      // correct CSeq for 100 on relayed request (FIXME: why not relayed above?)
+      if (t != relayed_req.end()) n_reply.cseq = t->second.cseq;
+      else {
+        // the reply here will not have the proper cseq for the other side.
+        // We should avoid collisions of CSeqs - painful in comparsions with
+        // est_invite_cseq where are compared CSeq numbers in different
+        // directions. Under presumption that 0 is not used we can use it
+        // as 'unspecified cseq' (according to RFC 3261 this seems to be valid
+        // value so it need not to work always)
+        n_reply.cseq = 0;
+      }
     }
     DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
     relayEvent(new B2BSipReplyEvent(n_reply, false, reply.cseq_method));
