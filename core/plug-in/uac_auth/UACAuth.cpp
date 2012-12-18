@@ -127,7 +127,8 @@ bool UACAuth::onSipRequest(const AmSipRequest& req)
   return false;
 }
 
-bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
+bool UACAuth::onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
+			 AmBasicSipDialog::Status old_dlg_status)
 {
   bool processed = false;
   if (reply.code==407 || reply.code==401) {
@@ -221,7 +222,7 @@ bool UACAuth::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
   return processed;
 }
 
-bool UACAuth::onSendRequest(AmSipRequest& req, int flags)
+bool UACAuth::onSendRequest(AmSipRequest& req, int& flags)
 {
   // add authentication header if nonce is already there
   string result;
@@ -250,7 +251,7 @@ bool UACAuth::onSendRequest(AmSipRequest& req, int flags)
 }
 
 
-bool UACAuth::onSendReply(AmSipReply& reply, int flags)
+bool UACAuth::onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags)
 {
   return false;
 }

@@ -190,10 +190,12 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
   }
 }
 
-void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status) {
-  AmSipRequest* req = dlg.getUACTrans(rep.cseq);
+void AnnounceTransferDialog::onSipReply(const AmSipRequest& req, 
+					const AmSipReply& rep, 
+					AmBasicSipDialog::Status old_dlg_status)
+{
   if ((status==Transfering ||status==Hangup)  && 
-      req && req->method == "REFER") {
+      req.method == SIP_METH_REFER) {
     if (rep.code >= 300) {
       DBG("refer not accepted, stop session.\n");
       dlg.bye();
@@ -201,7 +203,7 @@ void AnnounceTransferDialog::onSipReply(const AmSipReply& rep, AmSipDialog::Stat
     }
   }
 
-  AmSession::onSipReply(rep, old_dlg_status);
+  AmSession::onSipReply(req, rep, old_dlg_status);
 }
 
 void AnnounceTransferDialog::onBye(const AmSipRequest& req)

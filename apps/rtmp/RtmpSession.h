@@ -71,8 +71,9 @@ public:
   void onSessionStart();
   void onBye(const AmSipRequest& req);
   void onBeforeDestroy();
-  void onSipReply(const AmSipReply& reply,
-		  AmSipDialog::Status old_dlg_status);
+  void onSipReply(const AmSipRequest& req,
+		  const AmSipReply& reply, 
+		  AmBasicSipDialog::Status old_dlg_status);
 
   void onInvite(const AmSipRequest& req);
 

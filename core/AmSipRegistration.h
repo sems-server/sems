@@ -109,15 +109,17 @@ class AmSIPRegistration
 
   bool registerSendTimeout(time_t now_sec);
 
-  void onSendRequest(AmSipRequest& req, int flags);
-  void onSendReply(AmSipReply& req, int flags);
+  void onSendRequest(AmSipRequest& req, int& flags);
+  void onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags);
 
   // DialogControl if
   AmBasicSipDialog* getDlg() { return &dlg; }
   // CredentialHolder	
   UACAuthCred* getCredentials() { return &cred; }
 
-  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
+  void onSipReply(const AmSipRequest& req,
+		  const AmSipReply& reply, 
+		  AmBasicSipDialog::Status old_dlg_status);
 
   /** is this registration registered? */
   bool active; 

@@ -319,7 +319,10 @@ void DSMCall::onSipRequest(const AmSipRequest& req) {
   AmB2BCallerSession::onSipRequest(req);  
 }
 
-void DSMCall::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status) {
+void DSMCall::onSipReply(const AmSipRequest& req,
+			 const AmSipReply& reply, 
+			 AmBasicSipDialog::Status old_dlg_status) 
+{
 
   if (checkVar(DSM_ENABLE_REPLY_EVENTS, DSM_TRUE)) {
     map<string, string> params;

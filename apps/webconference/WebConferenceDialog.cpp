@@ -210,10 +210,11 @@ void WebConferenceDialog::onEarlySessionStart() {
   AmSession::onEarlySessionStart();
 }
 
-void WebConferenceDialog::onSipReply(const AmSipReply& reply,
-				     AmSipDialog::Status old_dlg_status)
+void WebConferenceDialog::onSipReply(const AmSipRequest& req,
+				     const AmSipReply& reply, 
+				     AmBasicSipDialog::Status old_dlg_status)
 {
-  AmSession::onSipReply(reply,old_dlg_status);
+  AmSession::onSipReply(req,reply,old_dlg_status);
 
   DBG("reply: %u %s, old_dlg_status = %s, status = %s\n",
       reply.code, reply.reason.c_str(),

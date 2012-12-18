@@ -911,7 +911,7 @@ void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e, AmB2BSession::RT
   b.id = callee->getLocalTag();
 
   callee->setRtpRelayMode(mode);
-  if ((mode == RTP_Relay)) {
+  if (mode == RTP_Relay) {
     // do not initialise the media session with A leg to avoid unnecessary A leg
     // RTP stream creation in every B leg's media session
     if (a_leg) b.media_session = new AmB2BMedia(NULL, callee);
@@ -978,7 +978,7 @@ void CallLeg::addExistingCallee(const string &session_tag, ReconnectLegEvent *ev
 
   OtherLegInfo b;
   b.id = session_tag;
-  if ((rtp_relay_mode == RTP_Relay)) {
+  if (rtp_relay_mode == RTP_Relay) {
     // do not initialise the media session with A leg to avoid unnecessary A leg
     // RTP stream creation in every B leg's media session
     b.media_session = new AmB2BMedia(NULL, NULL);
@@ -1012,7 +1012,7 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &
 
   OtherLegInfo b;
   b.id.clear(); // this is an invalid local tag (temporarily)
-  if ((rtp_relay_mode == RTP_Relay)) {
+  if (rtp_relay_mode == RTP_Relay) {
     // let the other leg to set its part, we will set our once connected
     b.media_session = new AmB2BMedia(NULL, NULL);
     b.media_session->addReference(); // new reference for me
@@ -1038,7 +1038,7 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
 
   OtherLegInfo b;
   b.id.clear(); // this is an invalid local tag (temporarily)
-  if ((rtp_relay_mode == RTP_Relay)) {
+  if (rtp_relay_mode == RTP_Relay) {
     // let the other leg to set its part, we will set our once connected
     b.media_session = new AmB2BMedia(NULL, NULL);
     b.media_session->addReference(); // new reference for me

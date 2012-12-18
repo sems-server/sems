@@ -80,61 +80,57 @@ bool SessionTimer::onSipRequest(const AmSipRequest& req)
   return false;
 }
 
-bool SessionTimer::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
+bool SessionTimer::onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
+			      AmBasicSipDialog::Status old_dlg_status)
 {
   if (session_timer_conf.getEnableSessionTimer() &&
       (reply.code == 422) &&
       ((reply.cseq_method == SIP_METH_INVITE) || 
        (reply.cseq_method == SIP_METH_UPDATE))) {
-    std::map<unsigned int, SIPRequestInfo >::iterator ri =
-      sent_requests.find(reply.cseq);
-    if (ri != sent_requests.end()) {
-      SIPRequestInfo& orig_req = ri->second;
 
-      // get Min-SE
-      unsigned int i_minse;
-      string min_se_hdr = getHeader(reply.hdrs, SIP_HDR_MIN_SE, true);
-      if (!min_se_hdr.empty()) {
-	if (str2i(strip_header_params(min_se_hdr), i_minse)) {
-	  WARN("error while parsing " SIP_HDR_MIN_SE " header value '%s'\n",
-	       strip_header_params(min_se_hdr).c_str());
-	} else {
+    // get Min-SE
+    unsigned int i_minse;
+    string min_se_hdr = getHeader(reply.hdrs, SIP_HDR_MIN_SE, true);
+    if (!min_se_hdr.empty()) {
+      if (str2i(strip_header_params(min_se_hdr), i_minse)) {
+	WARN("error while parsing " SIP_HDR_MIN_SE " header value '%s'\n",
+	     strip_header_params(min_se_hdr).c_str());
+      } else {
+	
+	if (i_minse <= session_timer_conf.getMaximumTimer()) {
+	  session_interval = i_minse;
+	  unsigned int new_cseq = s->dlg.cseq;
+	  // resend request with interval i_minse
+	  if (s->dlg.sendRequest(req.method, &req.body,req.hdrs) == 0) {
+	    DBG("request with new Session Interval %u successfully sent.\n", i_minse);
+	    // undo SIP dialog status change
+	    if (s->dlg.getStatus() != old_dlg_status)
+	      s->dlg.setStatus(old_dlg_status);
 
-	  if (i_minse <= session_timer_conf.getMaximumTimer()) {
-	    session_interval = i_minse;
-	    unsigned int new_cseq = s->dlg.cseq;
-	    // resend request with interval i_minse
-	    if (s->dlg.sendRequest(orig_req.method, &orig_req.body,
-				   orig_req.hdrs) == 0) {
-              DBG("request with new Session Interval %u successfully sent.\n", i_minse);
-	      // undo SIP dialog status change
-	      if (s->dlg.getStatus() != old_dlg_status)
-	        s->dlg.setStatus(old_dlg_status);
-
-	      s->updateUACTransCSeq(reply.cseq, new_cseq);
-	      // processed
-	      return true;
-            } else {
-              ERROR("failed to send request with new Session Interval.\n");
-            }
+	    s->updateUACTransCSeq(reply.cseq, new_cseq);
+	    // processed
+	    return true;
 	  } else {
-	    DBG("other side requests too high Min-SE: %u (our limit %u)\n",
-		i_minse, session_timer_conf.getMaximumTimer());
+	    ERROR("failed to send request with new Session Interval.\n");
 	  }
+	} else {
+	  DBG("other side requests too high Min-SE: %u (our limit %u)\n",
+	      i_minse, session_timer_conf.getMaximumTimer());
 	}
       }
-    } else {
-      WARN("request CSeq %u not found in sent requests; unable to retry after 422\n",
-	   reply.cseq);
     }
+  } 
+
+  if ((reply.cseq_method == SIP_METH_INVITE) || 
+      (reply.cseq_method == SIP_METH_UPDATE)) {
+
+    updateTimer(s,reply);
   }
-  if ((reply.cseq_method == SIP_METH_INVITE) || (reply.cseq_method == SIP_METH_UPDATE)) {
-      updateTimer(s,reply);
-  }
+
   return false;
 }
 
-bool SessionTimer::onSendRequest(AmSipRequest& req, int flags)
+bool SessionTimer::onSendRequest(AmSipRequest& req, int& flags)
 {
   if (req.method == "BYE") {
     removeTimers(s);
@@ -163,7 +159,8 @@ bool SessionTimer::onSendRequest(AmSipRequest& req, int flags)
 }
 
 
-bool SessionTimer::onSendReply(AmSipReply& reply, int flags)
+bool SessionTimer::onSendReply(const AmSipRequest& req,
+			       AmSipReply& reply, int& flags)
 {
   // only in 2xx responses to INV/UPD
   if  (((reply.cseq_method != SIP_METH_INVITE) && 

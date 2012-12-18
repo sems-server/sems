@@ -175,16 +175,16 @@ bool AmSIPRegistration::doUnregister()
   return res;
 }
 
-void AmSIPRegistration::onSendRequest(AmSipRequest& req, int flags)
+void AmSIPRegistration::onSendRequest(AmSipRequest& req, int& flags)
 {
   if (seh)
     seh->onSendRequest(req,flags);
 }
 	
-void AmSIPRegistration::onSendReply(AmSipReply& reply,
-				    int flags) {
+void AmSIPRegistration::onSendReply(const AmSipRequest& req, AmSipReply& reply,
+				    int& flags) {
   if (seh)
-    seh->onSendReply(reply,flags);
+    seh->onSendReply(req,reply,flags);
 }
 
 AmSIPRegistration::RegistrationState AmSIPRegistration::getState() {
@@ -250,10 +250,11 @@ bool AmSIPRegistration::registerExpired(time_t now_sec) {
   return ((reg_begin+reg_expires) < (unsigned int)now_sec);	
 }
 
-void AmSIPRegistration::onSipReply(const AmSipReply& reply, 
-				   AmSipDialog::Status old_dlg_status)
+void AmSIPRegistration::onSipReply(const AmSipRequest& req,
+				   const AmSipReply& reply, 
+				   AmBasicSipDialog::Status old_dlg_status)
 {
-  if ((seh!=NULL) && seh->onSipReply(reply, old_dlg_status))
+  if ((seh!=NULL) && seh->onSipReply(req,reply, old_dlg_status))
     return;
 
   if (reply.code>=200)

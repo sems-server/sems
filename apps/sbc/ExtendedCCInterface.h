@@ -5,7 +5,7 @@
 #include "sbc_events.h"
 
 class SBCCallLeg;
-class SBCCallProfile;
+struct SBCCallProfile;
 
 struct InitialInviteHandlerParams
 {

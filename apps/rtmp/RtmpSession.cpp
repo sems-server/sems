@@ -109,10 +109,11 @@ void RtmpSession::onBye(const AmSipRequest& req)
   AmSession::onBye(req);
 }
 
-void RtmpSession::onSipReply(const AmSipReply& reply,
-			     AmSipDialog::Status old_dlg_status)
+void RtmpSession::onSipReply(const AmSipRequest& req,
+			     const AmSipReply& reply, 
+			     AmBasicSipDialog::Status old_dlg_status)
 {
-  AmSession::onSipReply(reply,old_dlg_status);
+  AmSession::onSipReply(req,reply,old_dlg_status);
 
   sendCallState();
 

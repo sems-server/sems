@@ -912,9 +912,11 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
   return;
 }
 
-void ConferenceDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
+void ConferenceDialog::onSipReply(const AmSipRequest& req,
+				  const AmSipReply& reply, 
+				  AmBasicSipDialog::Status old_dlg_status)
 {
-  AmSession::onSipReply(reply, old_dlg_status);
+  AmSession::onSipReply(req, reply, old_dlg_status);
 
   DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i\n",
       reply.code,reply.reason.c_str(),dlg.getStatus());

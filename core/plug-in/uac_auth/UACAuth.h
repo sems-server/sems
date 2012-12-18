@@ -157,9 +157,10 @@ class UACAuth : public AmSessionEventHandler
   virtual bool process(AmEvent*);
   virtual bool onSipEvent(AmSipEvent*);
   virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&, AmBasicSipDialog::Status old_status);
-  virtual bool onSendRequest(AmSipRequest& req, int flags);
-  virtual bool onSendReply(AmSipReply& reply, int flags);
+  virtual bool onSipReply(const AmSipRequest&, const AmSipReply&, 
+			  AmBasicSipDialog::Status old_status);
+  virtual bool onSendRequest(AmSipRequest& req, int& flags);
+  virtual bool onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags);
 };
 
 

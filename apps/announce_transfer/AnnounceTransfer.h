@@ -72,7 +72,8 @@ public:
   void startSession();
   void onBye(const AmSipRequest& req);
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& rep, AmSipDialog::Status old_dlg_status);
+  void onSipReply(const AmSipRequest& req, const AmSipReply& rep, 
+		  AmBasicSipDialog::Status old_dlg_status);
   void onDtmf(int event, int duration_msec) {}
 
   void process(AmEvent* event);

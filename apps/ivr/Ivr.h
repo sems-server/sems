@@ -153,7 +153,9 @@ class IvrDialog : public AmB2BCallerSession
   void onOtherBye(const AmSipRequest& req);
   bool onOtherReply(const AmSipReply& r);
 
-  void onSipReply(const AmSipReply& r,AmSipDialog::Status old_dlg_status);
+  void onSipReply(const AmSipRequest& req,
+		  const AmSipReply& reply, 
+		  AmBasicSipDialog::Status old_dlg_status);
   void onSipRequest(const AmSipRequest& r);
 
   void onRtpTimeout();

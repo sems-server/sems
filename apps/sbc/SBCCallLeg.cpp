@@ -453,13 +453,13 @@ void SBCCallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
   DBG("onSipReply: %i %s (fwd=%i)\n",reply.code,reply.reason.c_str(),fwd);
   DBG("onSipReply: content-type = %s\n",reply.body.getCTStr().c_str());
   if (fwd) {
-      CALL_EVENT_H(onSipReply,reply, old_dlg_status);
+    CALL_EVENT_H(onSipReply, req, reply, old_dlg_status);
   }
 
   if (NULL != auth) {
     // only for SIP authenticated
     unsigned int cseq_before = dlg.cseq;
-    if (auth->onSipReply(reply, old_dlg_status)) {
+    if (auth->onSipReply(req, reply, old_dlg_status)) {
       if (cseq_before != dlg.cseq) {
         DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
             "updating relayed_req map\n", reply.cseq, cseq_before);
@@ -1357,11 +1357,12 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
   // be lossy because already existing media object would be destroyed.
   // FIXME: use AmB2BMedia in all RTP relay modes to avoid these problems?
   switch (rtp_relay_mode) {
-    case RTP_Relay:
+  case RTP_Relay:
+  case RTP_Transcoding:
       clearRtpReceiverRelay();
       break;
 
-    case RTP_Direct:
+  case RTP_Direct:
       // create new blablabla
       setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
       break;
@@ -1412,11 +1413,12 @@ void SBCCallLeg::onB2BEvent(B2BEvent* ev)
       if (e->new_mode == rtp_relay_mode) return; // requested mode is set already
 
       switch (rtp_relay_mode) {
-        case RTP_Relay:
+      case RTP_Relay:
+      case RTP_Transcoding:
           clearRtpReceiverRelay();
           break;
 
-        case RTP_Direct:
+      case RTP_Direct:
           // create new blablabla
           setMediaSession(e->media);
           media_session->changeSession(a_leg, this);

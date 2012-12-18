@@ -816,7 +816,7 @@ void AmSession::onSipRequest(const AmSipRequest& req)
 void AmSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 			   AmBasicSipDialog::Status old_dlg_status)
 {
-  CALL_EVENT_H(onSipReply, reply, old_dlg_status);
+  CALL_EVENT_H(onSipReply, req, reply, old_dlg_status);
 
   updateRefreshMethod(reply.hdrs);
 
@@ -903,7 +903,7 @@ void AmSession::onSendRequest(AmSipRequest& req, int& flags)
 
 void AmSession::onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags)
 {
-  CALL_EVENT_H(onSendReply,reply,flags);
+  CALL_EVENT_H(onSendReply,req,reply,flags);
 }
 
 /** Hook called when an SDP offer is required */

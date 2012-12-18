@@ -58,21 +58,29 @@ public:
   virtual ~AmSessionEventHandler() {}
 
   /** Returns -1 on error, 0 else. */
-  virtual int configure(AmConfigReader& conf);
+  virtual int configure(AmConfigReader& conf)
+  { return 0; }
 
   /* 
    * All the methods return true if the event processing 
    * shall be stopped after them.
    */
-  virtual bool process(AmEvent*);
+  virtual bool process(AmEvent*)
+  { return false; }
 
-  virtual bool onSipRequest(const AmSipRequest&);
-  virtual bool onSipReply(const AmSipReply&, AmSipDialog::Status old_dlg_status);
-  virtual bool onSipReqTimeout(const AmSipRequest &);
-  virtual bool onSipRplTimeout(const AmSipRequest &, const AmSipReply &);
+  virtual bool onSipRequest(const AmSipRequest& req)
+  { return false; }
 
-  virtual bool onSendRequest(AmSipRequest& req, int flags);
-  virtual bool onSendReply(AmSipReply& reply, int flags);
+  virtual bool onSipReply(const AmSipRequest& req, 
+  			  const AmSipReply& reply, 
+  			  AmBasicSipDialog::Status old_dlg_status)
+  { return false; }
+
+  virtual bool onSendRequest(AmSipRequest& req, int& flags)
+  { return false; }
+
+  virtual bool onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags)
+  { return false; }
 };
 
 
