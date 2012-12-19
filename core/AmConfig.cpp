@@ -886,6 +886,19 @@ static bool fillSysIntfList()
     if( !(p_if->ifa_flags & IFF_UP) || !(p_if->ifa_flags & IFF_RUNNING) )
       continue;
 
+    if(p_if->ifa_addr->sa_family == AF_INET6) {
+      
+      struct sockaddr_in6 *addr = (struct sockaddr_in6 *)p_if->ifa_addr;
+      if(IN6_IS_ADDR_LINKLOCAL(&addr->sin6_addr)){
+	// sorry, we don't support link-local addresses...
+	continue;
+
+	// convert address from kernel-style to userland
+	// addr->sin6_scope_id = ntohs(*(uint16_t *)&addr->sin6_addr.s6_addr[2]);
+	// addr->sin6_addr.s6_addr[2] = addr->sin6_addr.s6_addr[3] = 0;
+      }
+    }
+
     if (am_inet_ntop((const sockaddr_storage*)p_if->ifa_addr,
 		     host, NI_MAXHOST) == NULL) {
       ERROR("am_inet_ntop() failed\n");
