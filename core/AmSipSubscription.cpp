@@ -26,16 +26,20 @@
  */
 
 #include "AmSipSubscription.h"
-#include "AmBasicSipDialog.h"
 #include "AmEventQueue.h"
 #include "AmSipHeaders.h"
 #include "AmAppTimer.h"
 #include "AmUtils.h"
 
+#include "AmSession.h" // getNewId()
+#include "AmSessionContainer.h"
+
 #include "sip/sip_timers.h"
 #include "log.h"
 
 #include <assert.h>
+
+#define DEFAULT_SUB_EXPIRES 600
 
 #define RFC6665_TIMER_N_DURATION (64*T1_TIMER)/1000.0
 
@@ -96,6 +100,7 @@ private:
   unsigned int sub_state;
   AmMutex  sub_state_mut;
   int  pending_subscribe;
+  unsigned int   expires;
 
   // timers
   SubscriptionTimer timer_n;
@@ -106,7 +111,7 @@ private:
   SingleSubscription(AmSipSubscription* subs, Role role,
 		     const string& event, const string& id)
     : subs(subs), role(role), event(event), id(id),
-      sub_state(SubState_init), pending_subscribe(0),
+      sub_state(SubState_init), pending_subscribe(0), expires(0),
       timer_n(this,RFC6665_TIMER_N),timer_expires(this,SUBSCRIPTION_EXPIRE)
   { 
     assert(subs); 
@@ -152,6 +157,8 @@ public:
   void lockState() { sub_state_mut.lock(); }
   void unlockState() { sub_state_mut.unlock(); }
 
+  unsigned int getExpires() { return expires; }
+
   void terminate();
   bool terminated();
 };
@@ -159,18 +166,19 @@ public:
 void SingleSubscription::onTimer(int timer_id)
 {
   DBG("[%p] tag=%s;role=%s timer_id = %s\n",this,
-      role ? "Notifier" : "Subscriber",
       dlg()->local_tag.c_str(),
+      role ? "Notifier" : "Subscriber",
       __timer_id_str[timer_id]);
 
   switch(timer_id){
   case RFC6665_TIMER_N:
   case SUBSCRIPTION_EXPIRE:
     lockState();
-    terminate();
+    if(!terminated()) {
+      terminate();
+      subs->onTimeout(timer_id,this);
+    }
     unlockState();
-    if(subs->ev_q)
-      subs->ev_q->postEvent(NULL);
     return;
   }  
 }
@@ -237,6 +245,9 @@ void SingleSubscription::requestFSM(const AmSipRequest& req)
     DBG("setTimer(%s,RFC6665_TIMER_N)\n",dlg()->local_tag.c_str());
     AmAppTimer::instance()->setTimer(&timer_n,RFC6665_TIMER_N_DURATION);
   }
+  else if(req.method == SIP_METH_NOTIFY) {
+    subs->onNotify(req,this);
+  }
 }
 
 bool SingleSubscription::onRequestIn(const AmSipRequest& req)
@@ -281,6 +292,7 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
       if(getState() == SubState_notify_wait) {
 	// initial SUBSCRIBE failed
 	terminate();
+	subs->onFailureReply(reply,this);
       }
       else {
 	// subscription refresh failed
@@ -291,6 +303,7 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
 	case 481:
 	case 501:
 	  terminate();
+	  subs->onFailureReply(reply,this);
 	  break;
 	}
       }
@@ -314,6 +327,7 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
 	if(sub_expires){
 	  DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->local_tag.c_str());
 	  AmAppTimer::instance()->setTimer(&timer_expires,(double)sub_expires);
+	  expires = sub_expires;
 	}
 	else {
 	  // we do not care too much, as timer N is set
@@ -331,6 +345,7 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
 	DBG("replies to SUBSCRIBE MUST contain a Expires-HF\n");
 	lockState();
 	terminate();
+	subs->onFailureReply(reply,this);
 	unlockState();
       }
     }
@@ -349,6 +364,7 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
       case 501:
 	lockState();
 	terminate();
+	subs->onFailureReply(reply,this);
 	unlockState();
 	break;
 	
@@ -369,6 +385,10 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
     if(!expires_txt.empty())
       str2int(expires_txt,notify_expire);
 
+    // Kill timer N
+    DBG("removeTimer(%s,RFC6665_TIMER_N)\n",dlg()->local_tag.c_str());
+    AmAppTimer::instance()->removeTimer(&timer_n);
+
     sub_state_txt = strip_header_params(sub_state_txt);
     if(notify_expire && (sub_state_txt == "active")) {
       lockState();
@@ -383,18 +403,15 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
     else {
       lockState();
       terminate();
+      //subs->onFailureReply(reply,this);
       unlockState();
-      // there is probably more to do than
-      // just ignoring the request... but what?
       return;
     }
     
-    // Kill timer N
-    DBG("removeTimer(%s,RFC6665_TIMER_N)\n",dlg()->local_tag.c_str());
-    AmAppTimer::instance()->removeTimer(&timer_n);
     // reset expire timer
     DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->local_tag.c_str());
     AmAppTimer::instance()->setTimer(&timer_expires,(double)notify_expire);
+    expires = notify_expire;
   }
 
   return;
@@ -594,3 +611,139 @@ void AmSipSubscription::onReplySent(const AmSipRequest& req,
   }
 }
 
+void AmSipSubscription::onTimeout(int timer_id, SingleSubscription* sub)
+{
+  if(ev_q) {
+    // wake up related queue with NULL event
+    ev_q->postEvent(NULL);
+  }
+}
+
+
+SIPSubscriptionEvent::SIPSubscriptionEvent(SubscriptionStatus status, 
+					   const string& handle,
+					   unsigned int expires,
+					   unsigned int code, 
+					   const string& reason)
+  : AmEvent(E_SIP_SUBSCRIPTION), status(status), 
+    handle(handle), expires(expires), code(code), 
+    reason(reason), notify_body(0) 
+{}
+  
+const char* SIPSubscriptionEvent::getStatusText() 
+{
+  switch (status) {
+  case SubscribeActive: return "active";
+  case SubscribeFailed: return "failed";
+  case SubscribeTerminated: return "terminated";
+  case SubscribePending: return "pending";
+  case SubscriptionTimeout: return "timeout";
+  }
+  return "unknown";
+}
+
+AmSipSubscriptionDialog::AmSipSubscriptionDialog(const AmSipSubscriptionInfo& info,
+						 const string& sess_link,
+						 AmEventQueue* ev_q)
+  : AmBasicSipDialog(this),
+    AmSipSubscription(this,ev_q),
+    sess_link(sess_link)
+{
+  user   = info.user;
+  domain = info.domain;
+
+  local_uri    = "sip:"+info.from_user+"@"+info.domain;
+  local_party  = "<"+local_uri+">";
+
+  remote_uri   = "sip:"+info.user+"@"+info.domain;
+  remote_party = "<"+remote_uri+">";
+
+  callid    = AmSession::getNewId();
+  local_tag = AmSession::getNewId();
+
+  event    = info.event;
+  event_id = info.id;
+  accept   = info.accept;
+}
+
+int AmSipSubscriptionDialog::subscribe(int expires)
+{
+  string hdrs;
+
+  if(!event.empty()){
+    hdrs += SIP_HDR_COLSP(SIP_HDR_EVENT) + event;
+    if(!event_id.empty())
+      hdrs += ";id=" + event_id;
+    hdrs += CRLF;
+  }
+
+  if (!accept.empty()) {
+    hdrs += SIP_HDR_COLSP(SIP_HDR_ACCEPT) + accept + CRLF;
+  }
+  if (expires >= 0) {
+    hdrs += SIP_HDR_COLSP(SIP_HDR_EXPIRES) + int2str(expires)  + CRLF;
+  }
+
+  return sendRequest(SIP_METH_SUBSCRIBE,NULL,hdrs);
+}
+
+string AmSipSubscriptionDialog::getDescription()
+{
+  return "'"+user+"@"+domain+", Event: "+event+"/"+event_id+"'";
+}
+
+void AmSipSubscriptionDialog::onNotify(const AmSipRequest& req,
+				       SingleSubscription* sub)
+{
+  assert(sub);
+
+  // subscription state is update after the reply has been sent
+  reply(req, 200, "OK");
+
+  SIPSubscriptionEvent* sub_ev = 
+    new SIPSubscriptionEvent(SIPSubscriptionEvent::SubscribeFailed, local_tag);
+  
+  switch(sub->getState()){
+  case SingleSubscription::SubState_pending:
+    sub_ev->status = SIPSubscriptionEvent::SubscribePending;
+    sub_ev->expires = sub->getExpires();
+    break;
+  case SingleSubscription::SubState_active:
+    sub_ev->status = SIPSubscriptionEvent::SubscribeActive;
+    sub_ev->expires = sub->getExpires();
+    break;
+  case SingleSubscription::SubState_terminated:
+    sub_ev->status = SIPSubscriptionEvent::SubscribeTerminated;
+    break;
+  default:
+    break;
+  }
+
+  if(!req.body.empty())
+    sub_ev->notify_body.reset(new AmMimeBody(req.body));
+
+  DBG("posting event to '%s'\n", sess_link.c_str());
+  AmSessionContainer::instance()->postEvent(sess_link, sub_ev);
+}
+
+void AmSipSubscriptionDialog::onFailureReply(const AmSipReply& reply,
+					     SingleSubscription* sub)
+{
+  assert(sub);
+  SIPSubscriptionEvent* sub_ev =
+    new SIPSubscriptionEvent(SIPSubscriptionEvent::SubscribeFailed, 
+			     local_tag, 0, reply.code, reply.reason);
+
+  DBG("posting event to '%s'\n", sess_link.c_str());
+  AmSessionContainer::instance()->postEvent(sess_link, sub_ev);
+}
+
+void AmSipSubscriptionDialog::onTimeout(int timer_id, SingleSubscription* sub)
+{
+  assert(sub);
+  SIPSubscriptionEvent* sub_ev =
+    new SIPSubscriptionEvent(SIPSubscriptionEvent::SubscriptionTimeout, local_tag);
+
+  DBG("posting event to '%s'\n", sess_link.c_str());
+  AmSessionContainer::instance()->postEvent(sess_link, sub_ev);
+}

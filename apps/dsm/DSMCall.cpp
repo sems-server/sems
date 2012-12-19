@@ -532,23 +532,23 @@ void DSMCall::process(AmEvent* event)
 
   }
 
-  // if (event->event_id == E_SIP_SUBSCRIPTION) {
-  //   SIPSubscriptionEvent* sub_ev = dynamic_cast<SIPSubscriptionEvent*>(event);
-  //   if (sub_ev) {
-  //     DBG("DSM Call received SIP Subscription Event\n");
-  //     map<string, string> params;
-  //     params["status"] = sub_ev->getStatusText();
-  //     params["code"] = int2str(sub_ev->code);
-  //     params["reason"] = sub_ev->reason;
-  //     params["expires"] = int2str(sub_ev->expires);
-  //     params["has_body"] = sub_ev->notify_body.get()?"true":"false";
-  //     if (sub_ev->notify_body.get()) {
-  // 	avar[DSM_AVAR_SIPSUBSCRIPTION_BODY] = AmArg(sub_ev->notify_body.get());
-  //     }
-  //     engine.runEvent(this, this, DSMCondition::SIPSubscription, &params);
-  //     avar.erase(DSM_AVAR_SIPSUBSCRIPTION_BODY);
-  //   }
-  // }
+  if (event->event_id == E_SIP_SUBSCRIPTION) {
+    SIPSubscriptionEvent* sub_ev = dynamic_cast<SIPSubscriptionEvent*>(event);
+    if (sub_ev) {
+      DBG("DSM Call received SIP Subscription Event\n");
+      map<string, string> params;
+      params["status"] = sub_ev->getStatusText();
+      params["code"] = int2str(sub_ev->code);
+      params["reason"] = sub_ev->reason;
+      params["expires"] = int2str(sub_ev->expires);
+      params["has_body"] = sub_ev->notify_body.get()?"true":"false";
+      if (sub_ev->notify_body.get()) {
+  	avar[DSM_AVAR_SIPSUBSCRIPTION_BODY] = AmArg(sub_ev->notify_body.get());
+      }
+      engine.runEvent(this, this, DSMCondition::SIPSubscription, &params);
+      avar.erase(DSM_AVAR_SIPSUBSCRIPTION_BODY);
+    }
+  }
 
   AmRtpTimeoutEvent* timeout_ev = dynamic_cast<AmRtpTimeoutEvent*>(event);
   if (timeout_ev) {

@@ -28,6 +28,9 @@
 #define _AmSipSubscription_h_
 
 #include "AmSipMsg.h"
+#include "AmBasicSipDialog.h"
+#include "AmEvent.h"
+#include "AmEventQueue.h"
 
 #include <map>
 #include <list>
@@ -70,7 +73,98 @@ public:
   void onRequestSent(const AmSipRequest& req);
   bool onReplyIn(const AmSipRequest& req, const AmSipReply& reply);
   void onReplySent(const AmSipRequest& req, const AmSipReply& reply);
+
+  virtual void onNotify(const AmSipRequest& req, SingleSubscription* sub) {}
+  virtual void onFailureReply(const AmSipReply& reply, SingleSubscription* sub) {}
+  virtual void onTimeout(int timer_id, SingleSubscription* sub);
 };
 
+struct SIPSubscriptionEvent
+  : public AmEvent
+{
+
+  enum SubscriptionStatus {
+    SubscribeActive=0,
+    SubscribeFailed,
+    SubscribeTerminated,
+    SubscribePending,
+    SubscriptionTimeout
+  };
+
+  string handle;
+  unsigned int code;
+  string reason;
+  SubscriptionStatus status;
+  unsigned int expires;
+  std::auto_ptr<AmMimeBody> notify_body;
+
+  SIPSubscriptionEvent(SubscriptionStatus status, const string& handle,
+		       unsigned int expires = 0,
+		       unsigned int code=0, const string& reason="");
+  
+  const char* getStatusText();
+};
+
+struct AmSipSubscriptionInfo
+{
+  string domain;
+  string user;
+  string from_user;
+  string pwd;
+  string proxy;
+  string event;
+  string accept;
+  string id;
+
+  AmSipSubscriptionInfo(const string& domain,
+			const string& user,
+			const string& from_user,
+			const string& pwd,
+			const string& proxy,
+			const string& event)
+  : domain(domain),user(user),
+    from_user(from_user),pwd(pwd),proxy(proxy),
+    event(event)
+  { }
+};
+
+class AmSipSubscriptionDialog
+  : public AmBasicSipDialog,
+    public AmBasicSipEventHandler,
+    public AmSipSubscription
+{
+  string event;
+  string event_id;
+  string accept;
+  string sess_link;
+
+public:
+  AmSipSubscriptionDialog(const AmSipSubscriptionInfo& info,
+			  const string& sess_link,
+			  AmEventQueue* ev_q = NULL);
+
+  int subscribe(int expires);
+
+  string getDescription();
+
+  /** AmSipSubscription interface */
+  void onNotify(const AmSipRequest& req, SingleSubscription* sub);
+  void onFailureReply(const AmSipReply& reply, SingleSubscription* sub);
+  void onTimeout(int timer_id, SingleSubscription* sub);
+
+  /** AmBasicDialogEventHandler interface */
+  void onSipRequest(const AmSipRequest& req)
+  { AmSipSubscription::onRequestIn(req); }
+
+  void onRequestSent(const AmSipRequest& req)
+  { AmSipSubscription::onRequestSent(req); }
+
+  void onSipReply(const AmSipRequest& req, const AmSipReply& reply,
+		  AmBasicSipDialog::Status old_status)
+  { AmSipSubscription::onReplyIn(req,reply); }
+
+  void onReplySent(const AmSipRequest& req, const AmSipReply& reply)
+  { AmSipSubscription::onReplySent(req,reply); }
+};
 
 #endif
