@@ -687,9 +687,10 @@ RtmpSession* RtmpConnection::startSession(const char* uri)
   }
   else {
     int out_if = dialout_dlg.getOutboundIf();
-    dialout_dlg.local_party += AmConfig::Ifs[out_if].LocalSIPIP;
-    if(AmConfig::Ifs[out_if].LocalSIPPort != 5060)
-      dialout_dlg.local_party += ":" + int2str(AmConfig::Ifs[out_if].LocalSIPPort);
+    dialout_dlg.local_party += AmConfig::SIP_Ifs[out_if].LocalIP;
+    if(AmConfig::SIP_Ifs[out_if].LocalPort != 5060)
+      dialout_dlg.local_party += 
+	":" + int2str(AmConfig::SIP_Ifs[out_if].LocalPort);
   }
 
   dialout_dlg.local_party += ">";
