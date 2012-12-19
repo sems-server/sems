@@ -602,7 +602,6 @@ void SBCFactory::postControlCmd(const AmArg& args, AmArg& ret) {
 }
 
 
-
 void assertEndCRLF(string& s) {
   if (s[s.size()-2] != '\r' ||
       s[s.size()-1] != '\n') {
@@ -612,4 +611,3 @@ void assertEndCRLF(string& s) {
     s += "\r\n";
   }
 }
-  

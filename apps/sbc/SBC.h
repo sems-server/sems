@@ -75,6 +75,7 @@ class SBCFactory: public AmSessionFactory,
   ~SBCFactory();
 
   int onLoad();
+
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      const map<string,string>& app_params);
 
@@ -94,4 +95,4 @@ class SBCFactory: public AmSessionFactory,
 
 extern void assertEndCRLF(string& s);
 
-#endif                           
+#endif
