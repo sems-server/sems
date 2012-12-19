@@ -176,7 +176,7 @@ private:
   /** @return a pending UAS INVITE transaction or NULL */
   AmSipTransaction* getPendingUASInv();
 
-  Status getStatus() { return status; }
+  Status getStatus() const { return status; }
   const char* getStatusStr();
 
   void   setStatus(Status new_status);
