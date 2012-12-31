@@ -14,6 +14,7 @@
 #define SIP_METH_NOTIFY         "NOTIFY"
 #define SIP_METH_REFER          "REFER"
 #define SIP_METH_REGISTER       "REGISTER"
+#define SIP_METH_PUBLISH        "PUBLISH"
 
 #define SIP_HDR_FROM            "From"
 #define SIP_HDR_TO              "To"

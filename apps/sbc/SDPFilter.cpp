@@ -37,6 +37,9 @@ int filterSDP(AmSdp& sdp, const vector<FilterEntry>& filter_list) {
     const FilterType& sdpfilter = it->filter_type;
     const std::set<string>& sdpfilter_list = it->filter_list;
 
+    bool media_line_filtered_out = false;
+    bool media_line_left = false;
+
     if (!isActiveFilter(sdpfilter))
       continue;
 
@@ -66,8 +69,15 @@ int filterSDP(AmSdp& sdp, const vector<FilterEntry>& filter_list) {
 	std::vector<SdpPayload>::iterator p_it = media.payloads.begin();
 	new_pl.push_back(*p_it);
 	media.port = 0;
+        media_line_filtered_out = true;
       }
+      else media_line_left = true;
       media.payloads = new_pl;
+    }
+    if ((!media_line_left) && media_line_filtered_out) {
+      // no filter adds new payloads, we can safely return error
+      DBG("all streams were marked as inactive\n");
+      return -488;
     }
   }
 

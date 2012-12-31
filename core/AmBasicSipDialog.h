@@ -196,7 +196,7 @@ public:
   /**
    * Getter/Setter basic dialog status
    */
-  Status       getStatus() { return status; }
+  Status       getStatus() const { return status; }
   virtual void setStatus(Status new_status);
 
   virtual const char* getStatusStr();

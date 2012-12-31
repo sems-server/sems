@@ -80,6 +80,13 @@ class AudioStreamData {
      * to be done independently for each stream. */
     AmDtmfEventQueue *dtmf_queue;
 
+    PayloadMask relay_mask;
+    bool relay_enabled;
+    std::string relay_address;
+    int relay_port;
+
+    bool muted;
+
     // for performance monitoring
     int outgoing_payload;
     int incoming_payload;
@@ -89,9 +96,21 @@ class AudioStreamData {
     void updateRecvStats(AmRtpStream *s);
     void resetStats();
 
+    /** create the stream and take settings from the session */
+    void initialize(AmB2BSession *session);
+
+    void clearDtmfSink();
+
   public:
     /** Creates data based on associated signaling leg data. */
     AudioStreamData(AmB2BSession *session);
+
+    /** we want to preserve existing streams (relay streams already set, ports
+     * already used in outgoing SDP */
+    void changeSession(AmB2BSession *session);
+
+    /** release old and store new DTMF sink */
+    void setDtmfSink(AmDtmfSink *dtmf_sink);
 
     /** Frees all allocated data. 
      *
@@ -115,23 +134,21 @@ class AudioStreamData {
      *
      * Removes the stream from AmRtpReceiver before updating and returns it back
      * once done. */
-    void setStreamRelay(const string& connection_address,
-			const SdpMedia &m, AmRtpStream *other, 
-			RelayController &rc);
+    void setRelayStream(AmRtpStream *other);
 
-    /** Initializes RTP stream with local and remote media (needed for
-     * transcoding). 
+    /** computes and stores payloads that can be relayed based on the
+     * corresponding 'peer session' remote media line (i.e. what accepts the
+     * other remote end directly) */
+    void setRelayPayloads(const SdpMedia &m, RelayController *ctrl) { ctrl->computeRelayMask(m, relay_enabled, relay_mask); }
+
+    void setRelayDestination(const string& connection_address, int port) { relay_address = connection_address; relay_port = port; }
+
+    /** initialize given stream for transcoding & regular audio processing
      *
-     * Returns false if the initialization failed. */
-    bool initStream(AmDtmfSink* dtmf_sink, PlayoutType playout_type, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
-
-    /** Discards initialization flag and DTMF related members if the stream was
-     * already initialized. In such case true is returned. If the stream wasn't
-     * initialized yet this method returns false.
-     * 
-     * Each time SDP is changed the stream has to be reinitialized with new one
-     * (needed to have SDP of both sides to that). */
-    bool resetInitializedStream();
+     * Returns false if the initialization failed (might happen for example if
+     * we are not able to handle the remote payloads by ourselves; anyway
+     * relaying could be still available in this case). */
+    bool initStream(PlayoutType playout_type, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
 
     /** Processes raw DTMF events in own queue. */
     void processDtmfEvents() { if (dtmf_queue) dtmf_queue->processEvents(); }
@@ -166,6 +183,11 @@ class AudioStreamData {
     }
 
     bool isInitialized() { return initialized; }
+    void getSdpOffer(int media_idx, SdpMedia &m) { if (stream) stream->getSdpOffer(media_idx, m); }
+    void getSdpAnswer(int media_idx, const SdpMedia &offer, SdpMedia &answer) { if (stream) stream->getSdpAnswer(media_idx, offer, answer); }
+    void mute(bool set_mute);
+    void setInput(AmAudio *_in) { in = _in; }
+    AmAudio *getInput() { return in; }
 };
 
 /** \brief Class for control over media relaying and transcoding in a B2B session.
@@ -191,6 +213,8 @@ class AudioStreamData {
  * relaying RTP packets.
  *
  * TODO:
+ *  - handle offer/answer correctly (refused new offer means old offer/answer is
+ *    still valid)
  *  - handle "on hold" streams - probably should be controlled by signaling
  *    (AmB2BSession) - either we should not send audio or we should send hold
  *    music
@@ -205,8 +229,6 @@ class AudioStreamData {
  *  - reference counting using atomic variables instead of locking
  *
  *  - RTCP
- *
- *  - independent clear of one call leg (to be able to connect another callleg)
  *
  *  - correct sampling periods when relaying/transcoding according to values
  *    advertised in local SDP (i.e. the relayed one)
@@ -247,7 +269,8 @@ class AmB2BMedia: public AmMediaSession
      * instead of the other stream. */
     struct AudioStreamPair {
       AudioStreamData a, b;
-      AudioStreamPair(AmB2BSession *_a, AmB2BSession *_b): a(_a), b(_b) { }
+      int media_idx;
+      AudioStreamPair(AmB2BSession *_a, AmB2BSession *_b, int _media_idx): a(_a), b(_b), media_idx(_media_idx) { }
     };
 
     struct RelayStreamPair {
@@ -270,6 +293,13 @@ class AmB2BMedia: public AmMediaSession
     // needed for updating relayed payloads
     AmSdp a_leg_local_sdp, a_leg_remote_sdp;
     AmSdp b_leg_local_sdp, b_leg_remote_sdp;
+    bool have_a_leg_local_sdp, have_a_leg_remote_sdp;
+    bool have_b_leg_local_sdp, have_b_leg_remote_sdp;
+
+    /** RTP streams were activated (i.e. are processed by AmRtpReceiver)
+     * Note that they need NOT to be processed by MediaProcessor
+     * (isProcessingMedia). */
+    bool processing_started;
 
     AmMutex mutex;
     int ref_cnt;
@@ -285,33 +315,19 @@ class AmB2BMedia: public AmMediaSession
     std::vector<AudioStreamPair>  audio;
     std::vector<RelayStreamPair*> relay_streams;
 
-    /** Starts media processing if have all required information. */
-    void updateProcessingState();
+    bool a_leg_muted, b_leg_muted;
+    bool a_leg_on_hold, b_leg_on_hold;
 
-    /** Clears a_initialized/b_initialized flag if already initialized. Returns
-     * true if something was really cleared. */
-    bool resetInitializedStreams(bool a_leg);
-    bool resetInitializedStream(AudioStreamData &data);
+    void createStreams(const AmSdp &sdp);
+    void onSdpUpdate();
 
-    /** Mark streams in given leg as uninitialized (needed for in-dialog media
-     * updates) */
-    void clearStreamInitialization(bool a_leg);
-
-    /** Updates streams in given leg. 
-     *
-     * Creates them if they don't exist and initializes if they need to be
-     * initialized. 
-     *
-     * Method initializes relay & transcoding settings if told to do so. 
-     *
-     * Returns false if update failed. */
-    bool updateStreams(bool a_leg, bool init_relay, bool init_transcoding, RelayController &rc);
-
-    /** initialize given stream (prepares for transcoding) */
-    void initStream(AudioStreamData &data, AmSession *session, AmSdp &local_sdp, AmSdp &remote_sdp, int media_idx);
+    void setMuteFlag(bool a_leg, bool set);
+    void changeSessionUnsafe(bool a_leg, AmB2BSession *new_session);
 
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
+
+    void changeSession(bool a_leg, AmB2BSession *new_session);
 
     //void updateRelayPayloads(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp);
 
@@ -343,11 +359,11 @@ class AmB2BMedia: public AmMediaSession
      * Returns false if update failed. */
     bool updateLocalSdp(bool a_leg, const AmSdp &local_sdp);
 
-    /** Clear audio and stop processing. 
+    /** Clear audio for given leg and stop processing if both legs stopped. 
      *
      * Releases all RTP streams and removes itself from media processor if still
      * there. */
-    void stop();
+    void stop(bool a_leg);
 
     // ---- AmMediaSession interface for processing audio in a standard way ----
 
@@ -374,7 +390,10 @@ class AmB2BMedia: public AmMediaSession
      * Though readStreams(), writeStreams() or processDtmfEvents() can be called
      * after call to clearAudio, they will do nothing because all relevant
      * information will be rlready eleased. */
-    virtual void clearAudio();
+    virtual void clearAudio() { clearAudio(true); clearAudio(false); }
+
+    /** release RTP streams for one leg */
+    void clearAudio(bool a_leg);
 
     /** Clear RTP timeout of all streams in both call legs. */
     virtual void clearRTPTimeout();
@@ -387,6 +406,16 @@ class AmB2BMedia: public AmMediaSession
      * processor would be better? */
     virtual void onMediaProcessingTerminated();
 
+    bool isOnHold(bool a_leg) { if (a_leg) return a_leg_on_hold; else return b_leg_on_hold; }
+    void setHoldFlag(bool a_leg, bool hold) { if (a_leg) a_leg_on_hold = hold; else b_leg_on_hold = hold; }
+    bool createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly);
+
+    void mute(bool a_leg) { setMuteFlag(a_leg, true); }
+    void unmute(bool a_leg) { setMuteFlag(a_leg, false); }
+    bool isMuted(bool a_leg) { if (a_leg) return a_leg_muted; else return b_leg_muted; }
+
+    void setFirstStreamInput(bool a_leg, AmAudio *in);
+    void createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con);
 };
 
 #endif

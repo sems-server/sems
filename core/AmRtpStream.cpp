@@ -983,6 +983,8 @@ void AmRtpStream::relay(AmRtpPacket* p) {
     hdr->ssrc = htonl(l_ssrc);
   p->setAddr(&r_saddr);
 
+  if ((mute) || (hold)) return;
+
   if(p->send(l_sd, AmConfig::RTP_Ifs[l_if].NetIfIdx) < 0){
     ERROR("while sending RTP packet to '%s':%i\n",
 	  get_addr_str(&r_saddr).c_str(),am_get_port(&r_saddr));

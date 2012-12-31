@@ -471,6 +471,11 @@ public:
 
   /** (re-)insert into RTP receiver */
   void resumeReceiving();
+
+  /** Quick hack to assign existing stream to another session. The stream should
+   * not be reinitialised implicitly (it might be used for media traffic
+   * already). */
+  void changeSession(AmSession *_s) { session = _s; }
 };
 
 #endif
