@@ -289,8 +289,10 @@ int AmSipDialog::onTxReply(const AmSipRequest& req, AmSipReply& reply, int& flag
   // add transcoder statistics into reply headers
   addTranscoderStats(reply.hdrs);
 
-  if(reply.cseq_method != SIP_METH_CANCEL && 
-     reply.cseq_method != SIP_METH_BYE) {
+  // target-refresh requests and their replies need to contain Contact (1xx
+  // replies only those establishing dialog, take care about them?)
+  if(reply.cseq_method != SIP_METH_INVITE && 
+     reply.cseq_method != SIP_METH_UPDATE) {
     
     flags |= SIP_FLAGS_NOCONTACT;
   }
