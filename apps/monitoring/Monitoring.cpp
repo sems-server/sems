@@ -275,7 +275,7 @@ void Monitor::addSample(const AmArg& args, AmArg& ret) {
   bucket.log_lock.lock();
   list<SampleInfo::time_cnt>& sample_list
     = bucket.samples[args[0].asCStr()].sample[args[1].asCStr()];
-  if (sample_list.size() && timercmp(&sample_list.front().time, &now, >=)) {
+  if ((!sample_list.empty()) && timercmp(&sample_list.front().time, &now, >=)) {
     // sample list time stamps needs to be monotonically increasing - clear if resyncing
     // WARN("clock drift backwards - clearing %zd items\n", sample_list.size());
     sample_list.clear();
@@ -291,7 +291,7 @@ void Monitor::truncate_samples(
             list<SampleInfo::time_cnt>& v, struct timeval now) {
   struct timeval cliff = now;
   cliff.tv_sec -= retain_samples_s;
-  while (v.size() && timercmp(&cliff, &(v.back().time), >=))
+  while ((!v.empty()) && timercmp(&cliff, &(v.back().time), >=))
     v.pop_back();
 }
 
