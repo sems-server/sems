@@ -190,6 +190,7 @@ void AudioStreamData::initialize(AmB2BSession *session)
   force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
   enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
   session->getLowFiPLs(lowfi_payloads);
+  stream->setLocalIP(session->advertisedIP());
 }
 
 AudioStreamData::AudioStreamData(AmB2BSession *session):
@@ -224,6 +225,7 @@ void AudioStreamData::changeSession(AmB2BSession *session)
       force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
       enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
       session->getLowFiPLs(lowfi_payloads);
+      stream->setLocalIP(session->advertisedIP());
       ...
       }*/
     }

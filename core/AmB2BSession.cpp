@@ -367,22 +367,7 @@ bool AmB2BSession::updateLocalSdp(AmSdp &sdp)
   // rtp_relay_mode == RTP_Relay
 
   if (media_session) {
-
-    // determine address which should be used in SDP
-    // FIXME: do this elsewhere? Can be done just once in a method for setting
-    // rtp_interface under assumption that the interfaces do not change during
-    // SEMS life.
-
-    string relay_address;
-    if (rtp_interface >= 0 && (unsigned)rtp_interface < AmConfig::RTP_Ifs.size()) {
-      relay_address = AmConfig::RTP_Ifs[rtp_interface].PublicIP.empty() ?
-        AmConfig::RTP_Ifs[rtp_interface].LocalIP :
-        AmConfig::RTP_Ifs[rtp_interface].PublicIP;
-    } else {
-      relay_address = advertisedIP();
-    }
-
-    media_session->replaceConnectionAddress(sdp, a_leg, relay_address);
+    media_session->replaceConnectionAddress(sdp, a_leg, advertisedIP());
 
     // We are handling relayed request or reply.  The SDP in request/reply being
     // relayed describes local side of current leg (doesn't matter if it was offer
