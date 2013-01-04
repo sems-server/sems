@@ -1025,27 +1025,33 @@ bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection,
   // create hold request based on current streams
   mutex.lock();
 
-  if (audio.empty()) {
-    // create one dummy stream to create valid SDP
-    AudioStreamPair pair(a, b, 0);
-    audio.push_back(pair);
+  try {
+    if (audio.empty()) {
+      // create one dummy stream to create valid SDP
+      AudioStreamPair pair(a, b, 0);
+      audio.push_back(pair);
+    }
+
+    for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
+      // TODO: put disabled media stream for non-audio media? (we would need to
+      // remember what type of media was it etc.)
+
+      TRACE("generating SDP offer from stream %d\n", i->media_idx);
+      sdp.media.push_back(SdpMedia());
+      SdpMedia &m = sdp.media.back();
+      m.type = MT_AUDIO;
+      if (a_leg) i->a.getSdpOffer(i->media_idx, m);
+      else i->b.getSdpOffer(i->media_idx, m);
+
+      m.send = true; // always? (what if there is no 'hold music' to play?
+      if (sendonly) m.recv = false;
+    }
   }
-
-  for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
-    // TODO: put disabled media stream for non-audio media? (we would need to
-    // remember what type of media was it etc.)
-
-    TRACE("generating SDP offer from stream %d\n", i->media_idx);
-    sdp.media.push_back(SdpMedia());
-    SdpMedia &m = sdp.media.back();
-    m.type = MT_AUDIO;
-    if (a_leg) i->a.getSdpOffer(i->media_idx, m);
-    else i->b.getSdpOffer(i->media_idx, m);
-
-    m.send = true; // always? (what if there is no 'hold music' to play?
-    if (sendonly) m.recv = false;
+  catch (...) {
+    mutex.unlock();
+    TRACE("hold SDP offer creation failed\n");
+    return true;
   }
-
   mutex.unlock();
 
   TRACE("hold SDP offer generated\n");
