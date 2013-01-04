@@ -606,15 +606,11 @@ void AmB2BMedia::clearAudio(bool a_leg)
   mutex.lock();
 
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
-    // remove streams from AmRtpReceiver first!
-    if (a_leg) {
-      i->a.stopStreamProcessing();
-      i->a.clear();
-    }
-    else {
-      i->b.stopStreamProcessing();
-      i->b.clear();
-    }
+    // remove streams from AmRtpReceiver first! (always both?)
+    i->a.stopStreamProcessing();
+    i->b.stopStreamProcessing();
+    if (a_leg) i->a.clear();
+    else i->b.clear();
   }
 
   // forget sessions to avoid using them once clearAudio is called
