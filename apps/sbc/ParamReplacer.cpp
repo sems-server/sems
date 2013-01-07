@@ -128,6 +128,11 @@ string replaceParameters(const string& s,
 	    break;
 	  }
 
+	  if (s[p+1]=='t') { // $tt - to tag
+	    res += req.to_tag;
+	    break;
+	  }
+
 	  if (to_parser.uri.empty()) {
 	    size_t end;
 	    if (!to_parser.parse_contact(req.to, 0, end)) {
