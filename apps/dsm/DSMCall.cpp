@@ -319,7 +319,7 @@ void DSMCall::onSipRequest(const AmSipRequest& req) {
   AmB2BCallerSession::onSipRequest(req);  
 }
 
-void DSMCall::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status) {
+void DSMCall::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status) {
 
   if (checkVar(DSM_ENABLE_REPLY_EVENTS, DSM_TRUE)) {
     map<string, string> params;
@@ -347,7 +347,7 @@ void DSMCall::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_st
     }
   }
 
-  AmB2BCallerSession::onSipReply(reply,old_dlg_status);
+  AmB2BCallerSession::onSipReply(req, reply, old_dlg_status);
 
   if ((old_dlg_status < AmSipDialog::Connected) && 
       (dlg.getStatus() == AmSipDialog::Disconnected)) {

@@ -88,7 +88,7 @@ public:
   void onRemoteDisappeared(const AmSipReply& reply);
 
   void onSipRequest(const AmSipRequest& req);
-  void onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
+  void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 
   bool getSdpOffer(AmSdp& offer);
   bool getSdpAnswer(const AmSdp& offer, AmSdp& answer);
