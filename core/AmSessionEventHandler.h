@@ -81,6 +81,16 @@ public:
 
   virtual bool onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags)
   { return false; }
+
+  virtual void onRequestSent(const AmSipRequest& req) {}
+
+  virtual void onReplySent(const AmSipRequest& req, const AmSipReply& reply) {}
+
+  virtual void onRemoteDisappeared(const AmSipReply& reply) {}
+
+  virtual void onLocalTerminate(const AmSipReply& reply) {}
+
+  virtual void onFailure() {}
 };
 
 
