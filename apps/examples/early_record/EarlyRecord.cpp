@@ -99,7 +99,7 @@ void EarlyRecordDialog::process(AmEvent* event)
 
   AmAudioEvent* audio_event = dynamic_cast<AmAudioEvent*>(event);
   if(audio_event && (audio_event->event_id == AmAudioEvent::cleared)){
-    dlg.bye();
+    dlg->bye();
     setStopped();
     return;
   }

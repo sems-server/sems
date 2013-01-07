@@ -146,7 +146,7 @@ void AmRtpStream::setLocalPort()
     return;
   
   if(l_if < 0) {
-    l_if = session->dlg.getOutboundIf();
+    l_if = session->dlg->getOutboundIf();
   }
   
   int retry = 10;

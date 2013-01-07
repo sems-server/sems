@@ -271,7 +271,7 @@ void EarlyAnnounceDialog::onInvite(const AmSipRequest& req)
   AmMimeBody sdp_body;
   sdp_body.addPart(SIP_APPLICATION_SDP);
 
-  if(dlg.reply(req,183,"Session Progress",
+  if(dlg->reply(req,183,"Session Progress",
 	       &sdp_body) != 0){
     throw AmSession::Exception(500,"could not reply");
   } else {
@@ -358,7 +358,7 @@ void EarlyAnnounceDialog::onBye(const AmSipRequest& req)
 
 void EarlyAnnounceDialog::onCancel(const AmSipRequest& req)
 {
-  dlg.reply(invite_req,487,"Call terminated");
+  dlg->reply(invite_req,487,"Call terminated");
   setStopped();
 }
 
@@ -413,7 +413,7 @@ void EarlyAnnounceDialog::process(AmEvent* event)
 	}
 
 	DBG("Replying with code %d %s\n", code_i, reason.c_str());
-	dlg.reply(invite_req, code_i, reason);
+	dlg->reply(invite_req, code_i, reason);
 	
 	setStopped();
       } else {

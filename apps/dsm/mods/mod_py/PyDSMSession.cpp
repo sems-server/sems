@@ -95,17 +95,17 @@ extern "C" {
     if (!strcmp("local_tag", varname))
       res = sc_sess->getLocalTag();	
     else if (!strcmp("user", varname))
-      res = sc_sess->dlg.user;
+      res = sc_sess->dlg->user;
     else if (!strcmp("domain", varname))
-      res = sc_sess->dlg.domain;
+      res = sc_sess->dlg->domain;
     else if (!strcmp("remote_tag", varname))
       res = sc_sess->getRemoteTag();
     else if (!strcmp("callid", varname))
       res = sc_sess->getCallID();
     else if (!strcmp("local_uri", varname))
-      res = sc_sess->dlg.local_uri;
+      res = sc_sess->dlg->local_uri;
     else if (!strcmp("remote_uri", varname))
-      res = sc_sess->dlg.remote_uri;
+      res = sc_sess->dlg->remote_uri;
 
     DBG("returning '%s'\n", res.c_str());
 

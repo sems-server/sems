@@ -209,7 +209,7 @@ string AmSessionContainer::startSessionUAC(const AmSipRequest& req, string& app_
   try {
     session.reset(createSession(req, app_name, session_params));
     if(session.get() != 0) {
-      session->dlg.initFromLocalRequest(req);
+      session->dlg->initFromLocalRequest(req);
       session->setCallgroup(req.from_tag);
       
       switch(addSession(req.from_tag,session.get())) {

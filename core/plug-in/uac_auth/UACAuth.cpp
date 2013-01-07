@@ -89,7 +89,7 @@ AmSessionEventHandler* UACAuthFactory::getHandler(AmSession* s)
 {
   CredentialHolder* c = dynamic_cast<CredentialHolder*>(s);
   if (c != NULL) {
-    return getHandler(&s->dlg, c);
+    return getHandler(s->dlg, c);
   } else {
     DBG("no credentials for new session. not enabling auth session handler.\n");
   }

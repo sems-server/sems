@@ -502,16 +502,16 @@ void IvrFactory::start_deferred_threads() {
 
 int IvrDialog::transfer(const string& target)
 {
-  return dlg.transfer(target);
+  return dlg->transfer(target);
 }
 
 int IvrDialog::refer(const string& target, int expires) {
-  return dlg.refer(target, expires);
+  return dlg->refer(target, expires);
 }
 
 int IvrDialog::drop()
 {
-  int res = dlg.drop();
+  int res = dlg->drop();
   if (res) 
     setStopped();
 	
@@ -795,29 +795,29 @@ void IvrDialog::connectCallee(const string& remote_party, const string& remote_u
 void IvrDialog::createCalleeSession()
 {
   AmB2BCalleeSession* callee_session = new AmB2BCalleeSession(this);
-  AmSipDialog& callee_dlg = callee_session->dlg;
+  AmSipDialog* callee_dlg = callee_session->dlg;
   
   other_id = AmSession::getNewId();
   
-  callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = AmSession::getNewId();
+  callee_dlg->local_tag    = other_id;
+  callee_dlg->callid       = AmSession::getNewId();
   
   // this will be overwritten by ConnectLeg event 
-  callee_dlg.remote_party = dlg.local_party;
-  callee_dlg.remote_uri   = dlg.local_uri;
+  callee_dlg->remote_party = dlg->local_party;
+  callee_dlg->remote_uri   = dlg->local_uri;
 
   if (b2b_callee_from_party.empty() && b2b_callee_from_uri.empty()) {
     // default: use the original To as From in the callee leg
-    callee_dlg.local_party  = dlg.remote_party;
-    callee_dlg.local_uri  = dlg.remote_uri;
+    callee_dlg->local_party  = dlg->remote_party;
+    callee_dlg->local_uri  = dlg->remote_uri;
   } else {
     // if given as parameters, use these
-    callee_dlg.local_party  = b2b_callee_from_party;
-    callee_dlg.local_uri  = b2b_callee_from_uri;
+    callee_dlg->local_party  = b2b_callee_from_party;
+    callee_dlg->local_uri  = b2b_callee_from_uri;
   }
   
   DBG("Created B2BUA callee leg, From: %s\n",
-      callee_dlg.local_party.c_str());
+      callee_dlg->local_party.c_str());
 
   callee_session->start();
   

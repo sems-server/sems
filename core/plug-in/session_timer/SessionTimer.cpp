@@ -99,13 +99,13 @@ bool SessionTimer::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 	
 	if (i_minse <= session_timer_conf.getMaximumTimer()) {
 	  session_interval = i_minse;
-	  unsigned int new_cseq = s->dlg.cseq;
+	  unsigned int new_cseq = s->dlg->cseq;
 	  // resend request with interval i_minse
-	  if (s->dlg.sendRequest(req.method, &req.body,req.hdrs) == 0) {
+	  if (s->dlg->sendRequest(req.method, &req.body,req.hdrs) == 0) {
 	    DBG("request with new Session Interval %u successfully sent.\n", i_minse);
 	    // undo SIP dialog status change
-	    if (s->dlg.getStatus() != old_dlg_status)
-	      s->dlg.setStatus(old_dlg_status);
+	    if (s->dlg->getStatus() != old_dlg_status)
+	      s->dlg->setStatus(old_dlg_status);
 
 	    s->updateUACTransCSeq(reply.cseq, new_cseq);
 	    // processed
@@ -408,8 +408,8 @@ void SessionTimer::onTimeoutEvent(AmTimeoutEvent* timeout_ev)
 
   int timer_id = timeout_ev->data.get(0).asInt();
 
-  if (s->dlg.getStatus() == AmSipDialog::Disconnecting ||
-      s->dlg.getStatus() == AmSipDialog::Disconnected) {
+  if (s->dlg->getStatus() == AmSipDialog::Disconnecting ||
+      s->dlg->getStatus() == AmSipDialog::Disconnected) {
     DBG("ignoring SST timeout event %i in Disconnecting/-ed session\n",
 	timer_id);
     return;

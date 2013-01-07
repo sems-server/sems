@@ -106,7 +106,7 @@ void replyRequest(DSMSession* sc_sess, AmSession* sess,
 
   DBG("replying with %i %s, hdrs='%s'\n", code_i, reason.c_str(), hdrs.c_str());
 
-  if (sess->dlg.reply(req, code_i, reason, NULL, hdrs)) {
+  if (sess->dlg->reply(req, code_i, reason, NULL, hdrs)) {
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
     sc_sess->SET_STRERROR("error sending reply");
   } else
@@ -171,7 +171,7 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
 
   try {
     AmMimeBody sdp_body;
-    if(sess->dlg.reply(*sc_sess->last_req.get(),code_i, reason,
+    if(sess->dlg->reply(*sc_sess->last_req.get(),code_i, reason,
 		       sdp_body.addPart(SIP_APPLICATION_SDP), hdrs) != 0)
       throw AmSession::Exception(500,"could not send response");
 
@@ -179,7 +179,7 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
 
     ERROR("%i %s\n",e.code,e.reason.c_str());
     sess->setStopped();
-    sess->dlg.reply(*sc_sess->last_req.get(),e.code,e.reason);
+    sess->dlg->reply(*sc_sess->last_req.get(),e.code,e.reason);
 
     sc_sess->SET_ERRNO(DSM_ERRNO_DLG);
     sc_sess->SET_STRERROR("Error accepting call: "+ int2str(e.code) + " "+ e.reason);
@@ -189,7 +189,7 @@ EXEC_ACTION_START(DLGAcceptInviteAction) {
 EXEC_ACTION_START(DLGByeAction) {
   string hdrs = resolveVars(arg, sess, sc_sess, event_params);
 
-  if (sess->dlg.bye(hdrs)) {
+  if (sess->dlg->bye(hdrs)) {
     sc_sess->SET_ERRNO(DSM_ERRNO_GENERAL);
     sc_sess->SET_STRERROR("Error sending bye");
   } else {

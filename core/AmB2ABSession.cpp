@@ -112,7 +112,7 @@ void AmB2ABSession::onBye(const AmSipRequest& req) {
 
 void AmB2ABSession::terminateLeg()
 {
-  dlg.bye();
+  dlg->bye();
   disconnectSession();
   setStopped();
 }
@@ -245,9 +245,9 @@ void AmB2ABCallerSession::setupCalleeSession(AmB2ABCalleeSession* callee_session
   //  return;
   assert(callee_session);
 
-  AmSipDialog& callee_dlg = callee_session->dlg;
-  callee_dlg.callid       = AmSession::getNewId();
-  callee_dlg.local_tag    = other_id;
+  AmSipDialog* callee_dlg = callee_session->dlg;
+  callee_dlg->callid       = AmSession::getNewId();
+  callee_dlg->local_tag    = other_id;
 
 
   MONITORING_LOG(other_id.c_str(), 
@@ -298,11 +298,11 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
 		      "to",      co_ev->remote_party.c_str(),
 		      "ruri",    co_ev->remote_uri.c_str());
 
-      dlg.local_party  = co_ev->local_party;
-      dlg.local_uri    = co_ev->local_uri;
+      dlg->local_party  = co_ev->local_party;
+      dlg->local_uri    = co_ev->local_uri;
 			
-      dlg.remote_party = co_ev->remote_party;
-      dlg.remote_uri   = co_ev->remote_uri;
+      dlg->remote_party = co_ev->remote_party;
+      dlg->remote_uri   = co_ev->remote_uri;
 
       setCallgroup(co_ev->callgroup);
 			
@@ -354,7 +354,7 @@ void AmB2ABCalleeSession::onSessionStart() {
 void AmB2ABCalleeSession::onSipReply(const AmSipRequest& req, const AmSipReply& rep,
 				     AmBasicSipDialog::Status old_dlg_status) {
   AmB2ABSession::onSipReply(req, rep, old_dlg_status);
-  AmSipDialog::Status status = dlg.getStatus();
+  AmSipDialog::Status status = dlg->getStatus();
  
   if ((old_dlg_status == AmSipDialog::Trying) ||
       (old_dlg_status == AmSipDialog::Proceeding) ||

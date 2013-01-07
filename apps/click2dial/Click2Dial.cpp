@@ -184,7 +184,7 @@ AmB2BCallerSession()
 void C2DCallerDialog::onInvite(const AmSipRequest& req)
 {
   ERROR("incoming calls not supported in click2dial app!\n");
-  dlg.reply(req,606,"Not Acceptable");
+  dlg->reply(req,606,"Not Acceptable");
   setStopped();
 }
 
@@ -245,15 +245,15 @@ void C2DCallerDialog::createCalleeSession()
   }
 
   AmB2BCalleeSession* callee_session = new C2DCalleeDialog(this, c);
-  AmSipDialog& callee_dlg = callee_session->dlg;
+  AmSipDialog* callee_dlg = callee_session->dlg;
 
   other_id = AmSession::getNewId();
 
-  callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = AmSession::getNewId();
-  callee_dlg.local_party  = dlg.local_party;
-  callee_dlg.remote_party = dlg.remote_party;
-  callee_dlg.remote_uri   = dlg.remote_uri;
+  callee_dlg->local_tag    = other_id;
+  callee_dlg->callid       = AmSession::getNewId();
+  callee_dlg->local_party  = dlg->local_party;
+  callee_dlg->remote_party = dlg->remote_party;
+  callee_dlg->remote_uri   = dlg->remote_uri;
 
   callee_session->start();
 

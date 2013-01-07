@@ -45,7 +45,7 @@ static PyObject* IvrDialogBase_new(PyTypeObject *type, PyObject *args, PyObject 
     self->p_dlg = (IvrDialog*)PyCObject_AsVoidPtr(o_dlg);
 	
     // initialize self.dialog
-    self->dialog = IvrSipDialog_FromPtr(&self->p_dlg->dlg);
+    self->dialog = IvrSipDialog_FromPtr(self->p_dlg->dlg);
     if(!self->dialog){
       PyErr_Print();
       ERROR("IvrDialogBase: while creating IvrSipDialog instance\n");
@@ -124,7 +124,7 @@ static PyObject* IvrDialogBase_bye(IvrDialogBase* self, PyObject* args)
   if(!PyArg_ParseTuple(args,"|s", &hdrs))
     return NULL;
 
-  self->p_dlg->dlg.bye(hdrs);
+  self->p_dlg->dlg->bye(hdrs);
   Py_INCREF(Py_None);
   return Py_None;
 }

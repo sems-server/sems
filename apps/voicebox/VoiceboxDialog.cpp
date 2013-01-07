@@ -95,7 +95,7 @@ void VoiceboxDialog::onSessionStart() {
 
 void VoiceboxDialog::onBye(const AmSipRequest& req)
 {
-  dlg.reply(req,200,"OK");
+  dlg->reply(req,200,"OK");
 
   closeMailbox();
   setStopped();
@@ -111,7 +111,7 @@ void VoiceboxDialog::process(AmEvent* ev)
 
     if (Bye == state) {
       closeMailbox();
-      dlg.bye();
+      dlg->bye();
       setStopped();
     }
 

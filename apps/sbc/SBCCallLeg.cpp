@@ -146,11 +146,11 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile)
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
 {
   set_sip_relay_only(false);
-  dlg.setRel100State(Am100rel::REL100_IGNORED);
+  dlg->setRel100State(Am100rel::REL100_IGNORED);
 
   // better here than in onInvite
   // or do we really want to start with OA when handling initial INVITE?
-  dlg.setOAEnabled(false);
+  dlg->setOAEnabled(false);
 
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
@@ -168,15 +168,15 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller)
   // something, so just take care when using stored objects...
   // call_profile.cc_vars.clear();
 
-  dlg.setRel100State(Am100rel::REL100_IGNORED);
-  dlg.setOAEnabled(false);
+  dlg->setRel100State(Am100rel::REL100_IGNORED);
+  dlg->setOAEnabled(false);
 
   // we need to apply it here instead of in applyBProfile because we have caller
   // here (FIXME: do it on better place and better way than accessing internals
   // of caller->dlg directly)
   if (call_profile.transparent_dlg_id && caller) {
-    dlg.callid = caller->dlg.callid;
-    dlg.ext_local_tag = caller->dlg.remote_tag;
+    dlg->callid = caller->dlg->callid;
+    dlg->ext_local_tag = caller->dlg->remote_tag;
   }
 
   // CC interfaces and variables should be already "evaluated" by A leg, we just
@@ -275,7 +275,7 @@ void SBCCallLeg::applyBProfile()
 {
   // TODO: fix this!!! (see d85ed5c7e6b8d4c24e7e5b61c732c2e1ddd31784)
   // if (!call_profile.contact.empty()) {
-  //   dlg.contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
+  //   dlg->contact_uri = SIP_HDR_COLSP(SIP_HDR_CONTACT) + call_profile.contact + CRLF;
   // }
 
   if (call_profile.auth_enabled) {
@@ -301,18 +301,18 @@ void SBCCallLeg::applyBProfile()
   }
 
   if (!call_profile.outbound_proxy.empty()) {
-    dlg.outbound_proxy = call_profile.outbound_proxy;
-    dlg.force_outbound_proxy = call_profile.force_outbound_proxy;
+    dlg->outbound_proxy = call_profile.outbound_proxy;
+    dlg->force_outbound_proxy = call_profile.force_outbound_proxy;
   }
 
   if (!call_profile.next_hop.empty()) {
-    dlg.next_hop = call_profile.next_hop;
-    dlg.next_hop_1st_req = call_profile.next_hop_1st_req;
+    dlg->next_hop = call_profile.next_hop;
+    dlg->next_hop_1st_req = call_profile.next_hop_1st_req;
   }
 
   // was read from caller but reading directly from profile now
   if (call_profile.outbound_interface_value >= 0)
-    dlg.outbound_interface = call_profile.outbound_interface_value;
+    dlg->outbound_interface = call_profile.outbound_interface_value;
 
   // was read from caller but reading directly from profile now
   if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
@@ -324,7 +324,7 @@ void SBCCallLeg::applyBProfile()
   setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
   // was read from caller but reading directly from profile now
-  if (!call_profile.callid.empty()) dlg.callid = call_profile.callid;
+  if (!call_profile.callid.empty()) dlg->callid = call_profile.callid;
 }
 
 int SBCCallLeg::relayEvent(AmEvent* ev)
@@ -356,8 +356,8 @@ int SBCCallLeg::relayEvent(AmEvent* ev)
           assert(reply_ev);
 
           if(call_profile.transparent_dlg_id &&
-              (reply_ev->reply.to_tag == dlg.ext_local_tag))
-            reply_ev->reply.to_tag = dlg.local_tag;
+              (reply_ev->reply.to_tag == dlg->ext_local_tag))
+            reply_ev->reply.to_tag = dlg->local_tag;
 
           if (call_profile.headerfilter.size() ||
               call_profile.reply_translations.size()) {
@@ -429,7 +429,7 @@ void SBCCallLeg::onSipRequest(const AmSipRequest& req) {
 	  (it->filter_list.find(req.method) != it->filter_list.end());
 	if (is_filtered) {
 	  DBG("replying 405 to filtered message '%s'\n", req.method.c_str());
-	  dlg.reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
+	  dlg->reply(req, 405, "Method Not Allowed", NULL, "", SIP_FLAGS_VERBATIM);
 	  return;
 	}
       }
@@ -458,9 +458,9 @@ void SBCCallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 
   if (NULL != auth) {
     // only for SIP authenticated
-    unsigned int cseq_before = dlg.cseq;
+    unsigned int cseq_before = dlg->cseq;
     if (auth->onSipReply(req, reply, old_dlg_status)) {
-      if (cseq_before != dlg.cseq) {
+      if (cseq_before != dlg->cseq) {
         DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
             "updating relayed_req map\n", reply.cseq, cseq_before);
         updateUACTransCSeq(reply.cseq, cseq_before);
@@ -662,7 +662,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     }
   }
 
-  if(dlg.reply(req, 100, "Connecting") != 0) {
+  if(dlg->reply(req, 100, "Connecting") != 0) {
     throw AmSession::Exception(500,"Failed to reply 100");
   }
 
@@ -847,7 +847,7 @@ void SBCCallLeg::onBye(const AmSipRequest& req)
 
 void SBCCallLeg::onCancel(const AmSipRequest& cancel)
 {
-  dlg.bye();
+  dlg->bye();
   stopCall();
 }
 
@@ -927,7 +927,7 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	    "module '%s' named '%s', parameters '%s'\n",
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
-      dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
       // call 'end' of call control modules up to here
       call_end_ts.tv_sec = call_start_ts.tv_sec;
@@ -940,7 +940,7 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	    "module '%s' named '%s', parameters '%s'\n",
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
-      dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
       // call 'end' of call control modules up to here
       call_end_ts.tv_sec = call_start_ts.tv_sec;
@@ -964,7 +964,7 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	case SBC_CC_DROP_ACTION: {
 	  DBG("dropping call on call control action DROP from '%s'\n",
 	      cc_if.cc_name.c_str());
-	  dlg.setStatus(AmSipDialog::Disconnected);
+	  dlg->setStatus(AmSipDialog::Disconnected);
 
 	  // call 'end' of call control modules up to here
 	  call_end_ts.tv_sec = call_start_ts.tv_sec;
@@ -992,7 +992,7 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	      ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
 	      cc_if.cc_name.c_str(), headers.c_str());
 
-	  dlg.reply(req,
+	  dlg->reply(req,
 		    ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
 		    NULL, headers);
 
@@ -1335,8 +1335,8 @@ bool SBCCallLeg::reinvite(const AmSdp &sdp, unsigned &request_cseq)
   sdp.print(body_str);
   sdp_body->parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
 
-  if (dlg.reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) return false;
-  request_cseq = dlg.cseq - 1;
+  if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) return false;
+  request_cseq = dlg->cseq - 1;
   return true;
 }
 

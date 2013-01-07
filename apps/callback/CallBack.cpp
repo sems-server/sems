@@ -248,7 +248,7 @@ void CallBackDialog::onInvite(const AmSipRequest& req)
 
   ERROR("incoming calls not supported!\n");
   setStopped();
-  dlg.bye();
+  dlg->bye();
 }
 
 void CallBackDialog::onSessionStart() 

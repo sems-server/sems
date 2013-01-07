@@ -172,6 +172,8 @@ protected:
 
   AmAudio *input, *output;
 
+  virtual AmSipDialog* createSipDialog();
+
 public:
 
   enum SessionRefreshMethod {
@@ -195,7 +197,7 @@ public:
   bool enable_zrtp;
 #endif
 
-  AmSipDialog         dlg;
+  AmSipDialog* dlg;
 
   /** 
    * \brief Exception occured in a Session

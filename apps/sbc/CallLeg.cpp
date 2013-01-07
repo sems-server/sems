@@ -60,15 +60,15 @@ CallLeg::CallLeg(const CallLeg* caller):
 
   // code below taken from createCalleeSession
 
-  const AmSipDialog& caller_dlg = caller->dlg;
+  const AmSipDialog* caller_dlg = caller->dlg;
 
-  dlg.local_tag    = AmSession::getNewId();
-  dlg.callid       = AmSession::getNewId();
+  dlg->local_tag    = AmSession::getNewId();
+  dlg->callid       = AmSession::getNewId();
 
   // take important data from A leg
-  dlg.local_party  = caller_dlg.remote_party;
-  dlg.remote_party = caller_dlg.local_party;
-  dlg.remote_uri   = caller_dlg.local_uri;
+  dlg->local_party  = caller_dlg->remote_party;
+  dlg->remote_party = caller_dlg->local_party;
+  dlg->remote_uri   = caller_dlg->local_uri;
 
 /*  if (AmConfig::LogSessions) {
     INFO("Starting B2B callee session %s\n",
@@ -77,9 +77,9 @@ CallLeg::CallLeg(const CallLeg* caller):
 
   MONITORING_LOG4(other_id.c_str(), 
 		  "dir",  "out",
-		  "from", dlg.local_party.c_str(),
-		  "to",   dlg.remote_party.c_str(),
-		  "ruri", dlg.remote_uri.c_str());
+		  "from", dlg->local_party.c_str(),
+		  "to",   dlg->remote_party.c_str(),
+		  "ruri", dlg->remote_uri.c_str());
 */
 
   // copy common RTP relay settings from A leg
@@ -343,7 +343,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
       other_legs.clear(); // no need to remember the connected leg here
       if (media_session) {
-        TRACE("connecting media session: %s to %s\n", dlg.local_tag.c_str(), other_id.c_str());
+        TRACE("connecting media session: %s to %s\n", dlg->local_tag.c_str(), other_id.c_str());
         media_session->changeSession(a_leg, this);
         if (initial_sdp_stored && ev->forward) updateRemoteSdp(initial_sdp);
       }
@@ -413,8 +413,8 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
 
   MONITORING_LOG3(getLocalTag().c_str(), 
       "b2b_leg", other_id.c_str(),
-      "to", dlg.remote_party.c_str(),
-      "ruri", dlg.remote_uri.c_str());
+      "to", dlg->remote_party.c_str(),
+      "ruri", dlg->remote_uri.c_str());
 
   // This leg is marked as 'relay only' since the beginning because it might
   // need not to know on time that it is connected and thus should relay.
@@ -444,7 +444,7 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
     }
   }
 
-  int res = dlg.sendRequest(SIP_METH_INVITE, body,
+  int res = dlg->sendRequest(SIP_METH_INVITE, body,
       co_ev->hdrs, SIP_FLAGS_VERBATIM);
   if (res < 0) {
     DBG("sending INVITE failed, relaying back error reply\n");
@@ -458,7 +458,7 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
     AmSipRequest fake_req;
     fake_req.method = SIP_METH_INVITE;
     fake_req.cseq = co_ev->r_cseq;
-    relayed_req[dlg.cseq - 1] = fake_req;
+    relayed_req[dlg->cseq - 1] = fake_req;
     est_invite_other_cseq = co_ev->r_cseq;
   }
   else est_invite_other_cseq = 0;
@@ -468,7 +468,7 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
   }
 
   // save CSeq of establising INVITE
-  est_invite_cseq = dlg.cseq - 1;
+  est_invite_cseq = dlg->cseq - 1;
 }
 
 void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
@@ -506,8 +506,8 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
 
   MONITORING_LOG3(getLocalTag().c_str(),
       "b2b_leg", other_id.c_str(),
-      "to", dlg.remote_party.c_str(),
-      "ruri", dlg.remote_uri.c_str());
+      "to", dlg->remote_party.c_str(),
+      "ruri", dlg->remote_uri.c_str());
 
   AmMimeBody r_body(ev->body);
   const AmMimeBody* body = &ev->body;
@@ -527,7 +527,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   }
 
   // generate re-INVITE
-  int res = dlg.sendRequest(SIP_METH_INVITE, body, ev->hdrs, SIP_FLAGS_VERBATIM);
+  int res = dlg->sendRequest(SIP_METH_INVITE, body, ev->hdrs, SIP_FLAGS_VERBATIM);
   if (res < 0) {
     DBG("sending re-INVITE failed, relaying back error reply\n");
     relayError(SIP_METH_INVITE, ev->r_cseq, true, res);
@@ -540,7 +540,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
     AmSipRequest fake_req;
     fake_req.method = SIP_METH_INVITE;
     fake_req.cseq = ev->r_cseq;
-    relayed_req[dlg.cseq - 1] = fake_req;
+    relayed_req[dlg->cseq - 1] = fake_req;
     est_invite_other_cseq = ev->r_cseq;
   }
   else est_invite_other_cseq = 0;
@@ -548,7 +548,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   saveSessionDescription(ev->body);
 
   // save CSeq of establising INVITE
-  est_invite_cseq = dlg.cseq - 1;
+  est_invite_cseq = dlg->cseq - 1;
 }
 
 void CallLeg::onB2BReplace(ReplaceLegEvent *e)
@@ -685,11 +685,11 @@ void CallLeg::putOnHold()
   string body_str;
   sdp.print(body_str);
   body.parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
-  if (dlg.reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+  if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
     handleHoldReply(false);
   }
-  else hold_request_cseq = dlg.cseq - 1;
+  else hold_request_cseq = dlg->cseq - 1;
 }
 
 void CallLeg::resumeHeld(bool send_reinvite)
@@ -716,11 +716,11 @@ void CallLeg::resumeHeld(bool send_reinvite)
       updateLocalSdp(sdp);
   }
 
-  if (dlg.reinvite("", &established_body, SIP_FLAGS_VERBATIM) != 0) {
+  if (dlg->reinvite("", &established_body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
     handleHoldReply(false);
   }
-  else hold_request_cseq = dlg.cseq - 1;
+  else hold_request_cseq = dlg->cseq - 1;
 }
 
 void CallLeg::handleHoldReply(bool succeeded)
@@ -927,12 +927,12 @@ void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e, AmB2BSession::RT
 	 callee->getLocalTag().c_str()/*, invite_req.cmd.c_str()*/);
   }
 
-  AmSipDialog& callee_dlg = callee->dlg;
+  AmSipDialog* callee_dlg = callee->dlg;
   MONITORING_LOG4(b.id.c_str(),
 		  "dir",  "out",
-		  "from", callee_dlg.local_party.c_str(),
-		  "to",   callee_dlg.remote_party.c_str(),
-		  "ruri", callee_dlg.remote_uri.c_str());
+		  "from", callee_dlg->local_party.c_str(),
+		  "to",   callee_dlg->remote_party.c_str(),
+		  "ruri", callee_dlg->remote_uri.c_str());
 
   callee->start();
 

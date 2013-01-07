@@ -78,7 +78,7 @@ void PrecodedDialog::onSessionStart()
   }
   if (!file || file->open()) { 
     ERROR("PrecodedDialog::onSessionStart: Cannot open file\n");
-    dlg.bye();
+    dlg->bye();
     setStopped();
     return;
   }

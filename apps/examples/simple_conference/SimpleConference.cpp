@@ -72,7 +72,7 @@ SimpleConferenceDialog::~SimpleConferenceDialog()
 void SimpleConferenceDialog::onSessionStart()
 {
   // set the conference id ('conference room') to user part of ruri
-  conf_id = dlg.user;
+  conf_id = dlg->user;
 
   // open the beep file
   BeepSound.reset(new AmAudioFile());

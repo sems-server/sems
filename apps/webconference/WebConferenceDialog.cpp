@@ -71,7 +71,7 @@ WebConferenceDialog::~WebConferenceDialog()
   prompts.cleanup((long)this);
   play_list.flush();
   if (is_dialout || (InConference == state)) {
-    factory->updateStatus(is_dialout?dlg.user:conf_id, 
+    factory->updateStatus(is_dialout?dlg->user:conf_id, 
 			  getLocalTag(), 
 			  ConferenceRoomParticipant::Finished,
 			  "");
@@ -148,7 +148,7 @@ void WebConferenceDialog::onSessionStart() {
 	prompts.addToPlaylist(ENTER_PIN,  (long)this, play_list);
       } else {
 	DBG("########## direct connect conference '%s'  #########\n", conf_id.c_str());
-	if (!factory->newParticipant(conf_id, getLocalTag(), dlg.remote_party,
+	if (!factory->newParticipant(conf_id, getLocalTag(), dlg->remote_party,
 				     participant_id)) {
 	  DBG("inexisting conference room '%s\n", conf_id.c_str());
 	  state = PlayErrorFinish;
@@ -164,11 +164,11 @@ void WebConferenceDialog::onSessionStart() {
       }
     } else {
       setMute(false);
-      DBG("########## dialout: connect to conference '%s' #########\n", dlg.user.c_str()); 
+      DBG("########## dialout: connect to conference '%s' #########\n", dlg->user.c_str()); 
       state = InConference;
       setLocalInput(NULL);
       time(&connect_ts);
-      connectConference(dlg.user);
+      connectConference(dlg->user);
     }
   }
 
@@ -178,7 +178,7 @@ void WebConferenceDialog::onSessionStart() {
 void WebConferenceDialog::onRinging(const AmSipReply& rep) { 
   if (None == state || InConferenceEarly == state) {
     DBG("########## dialout: connect ringing session to conference '%s'  #########\n", 
-	dlg.user.c_str()); 
+	dlg->user.c_str()); 
 
     if(!RingTone.get())
       RingTone.reset(new AmRingTone(0,2000,4000,440,480)); // US
@@ -186,7 +186,7 @@ void WebConferenceDialog::onRinging(const AmSipReply& rep) {
     setLocalInput(RingTone.get());
 
     if (None == state) {
-      connectConference(dlg.user);
+      connectConference(dlg->user);
     }
     state = InConferenceRinging;
   }
@@ -197,10 +197,10 @@ void WebConferenceDialog::onEarlySessionStart() {
   if (None == state || InConferenceRinging == state) {
 
     DBG("########## dialout: connect early session to conference '%s'  #########\n", 
-	dlg.user.c_str());
+	dlg->user.c_str());
     setLocalInput(NULL);
     if (None == state) {
-      connectConference(dlg.user);
+      connectConference(dlg->user);
     }
     //    setMute(true);
 
@@ -219,10 +219,10 @@ void WebConferenceDialog::onSipReply(const AmSipRequest& req,
   DBG("reply: %u %s, old_dlg_status = %s, status = %s\n",
       reply.code, reply.reason.c_str(),
       AmBasicSipDialog::getStatusStr(old_dlg_status),
-      dlg.getStatusStr());
+      dlg->getStatusStr());
 
   if ((old_dlg_status < AmSipDialog::Connected) && 
-      (dlg.getStatus() == AmSipDialog::Disconnected)) {
+      (dlg->getStatus() == AmSipDialog::Disconnected)) {
     DBG("Call failed.\n");
     setStopped();
   }
@@ -232,7 +232,7 @@ void WebConferenceDialog::onSipReply(const AmSipRequest& req,
     // map AmSipDialog state to WebConferenceState
     ConferenceRoomParticipant::ParticipantStatus rep_st = 
       ConferenceRoomParticipant::Connecting;
-    switch (dlg.getStatus()) {
+    switch (dlg->getStatus()) {
     case AmSipDialog::Trying:
     case AmSipDialog::Proceeding:
     case AmSipDialog::Early:
@@ -251,7 +251,7 @@ void WebConferenceDialog::onSipReply(const AmSipRequest& req,
     default:break;
     }
     DBG("is dialout: updateing status\n");
-    factory->updateStatus(dlg.user, getLocalTag(), 
+    factory->updateStatus(dlg->user, getLocalTag(), 
 			  rep_st, int2str(reply.code) + " " + reply.reason);
   }
 }
@@ -323,7 +323,7 @@ void WebConferenceDialog::process(AmEvent* ev)
       state = InConference;
       DBG("########## connectConference after pin entry #########\n");
 
-      if (!factory->newParticipant(pin_str, getLocalTag(), dlg.remote_party,
+      if (!factory->newParticipant(pin_str, getLocalTag(), dlg->remote_party,
 				   participant_id)) {
 	DBG("inexisting conference room '%s'\n", pin_str.c_str());
 	state = PlayErrorFinish;
@@ -346,7 +346,7 @@ void WebConferenceDialog::process(AmEvent* ev)
     DBG("########## noAudio event #########\n");
     if (PlayErrorFinish == state) {
       DBG("Finished playing bye message, ending call.\n");
-      dlg.bye();
+      dlg->bye();
       setStopped();
       return;
     }
@@ -406,7 +406,7 @@ void WebConferenceDialog::onDtmf(int event, int duration) {
 
 void WebConferenceDialog::onKicked() {
   DBG("########## WebConference::onKick #########\n");
-  dlg.bye(); 
+  dlg->bye(); 
   disconnectConference();
   factory->updateStatus(conf_id, getLocalTag(), ConferenceRoomParticipant::Disconnecting,
 			"disconnect");

@@ -285,7 +285,7 @@ class AmB2BSession: public AmSession
   void setEnableDtmfTranscoding(bool enable);
   void setLowFiPLs(const vector<SdpPayload>& lowfi_payloads);
   
-  int getRtpRelayInterface() { return rtp_interface<0 ? dlg.getOutboundIf() : rtp_interface; }
+  int getRtpRelayInterface() { return rtp_interface<0 ? dlg->getOutboundIf() : rtp_interface; }
   bool getRtpRelayTransparentSeqno() { return rtp_relay_transparent_seqno; }
   bool getRtpRelayTransparentSSRC() { return rtp_relay_transparent_ssrc; }
 

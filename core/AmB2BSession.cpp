@@ -125,7 +125,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward,
     errCode2RelayedReply(n_reply, err_code, 500);
     n_reply.cseq = cseq;
     n_reply.cseq_method = method;
-    n_reply.from_tag = dlg.local_tag;
+    n_reply.from_tag = dlg->local_tag;
     DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
     relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
   }
@@ -139,7 +139,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward,
     n_reply.reason = reason;
     n_reply.cseq = cseq;
     n_reply.cseq_method = method;
-    n_reply.from_tag = dlg.local_tag;
+    n_reply.from_tag = dlg->local_tag;
     DBG("relaying B2B SIP reply %d %s\n", sip_code, reason);
     relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
   }
@@ -162,7 +162,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
       if(req_ev->forward){
 
 	if (req_ev->req.method == SIP_METH_INVITE &&
-	    dlg.getUACInvTransPending()) {
+	    dlg->getUACInvTransPending()) {
 	  // don't relay INVITE if INV trans pending
           relayError(req_ev->req.method, req_ev->req.cseq, true, 491, SIP_REPLY_PENDING);
 	  return;
@@ -241,7 +241,7 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	     reply_ev->reply.cseq_method == SIP_METH_UPDATE)) {
 	  if (updateSessionDescription(reply_ev->reply.body)) {
 	    if (reply_ev->reply.cseq != est_invite_cseq) {
-	      if (dlg.getUACInvTransPending()) {
+	      if (dlg->getUACInvTransPending()) {
 		DBG("changed session, but UAC INVITE trans pending\n");
 		// todo(?): save until trans is finished?
 		return;
@@ -314,7 +314,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
     if (parseSdp(sdp, req)) {
       if (!updateRemoteSdp(sdp)) {
         ERROR("media update failed, reply internal error\n");
-        dlg.reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+        dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
         return;
       }
@@ -345,7 +345,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
       ERROR("relay failed, replying error\n");
       AmSipReply n_reply;
       errCode2RelayedReply(n_reply, res, 500);
-      dlg.reply(req, n_reply.code, n_reply.reason);
+      dlg->reply(req, n_reply.code, n_reply.reason);
     }
 
     return;
@@ -546,7 +546,7 @@ void AmB2BSession::terminateLeg()
 
   clearRtpReceiverRelay();
 
-  dlg.bye("", SIP_FLAGS_VERBATIM);
+  dlg->bye("", SIP_FLAGS_VERBATIM);
 }
 
 void AmB2BSession::terminateOtherLeg()
@@ -656,7 +656,7 @@ int AmB2BSession::sendEstablishedReInvite() {
       body = &r_body; // should we keep the old one intact???
     }
 
-    return dlg.reinvite("", body,
+    return dlg->reinvite("", body,
 			SIP_FLAGS_VERBATIM);
   } catch (const string& s) {
     ERROR("sending established SDP reinvite: %s\n", s.c_str());
@@ -666,7 +666,7 @@ int AmB2BSession::sendEstablishedReInvite() {
 
 bool AmB2BSession::refresh(int flags) {
   // no session refresh if not connected
-  if (dlg.getStatus() != AmSipDialog::Connected)
+  if (dlg->getStatus() != AmSipDialog::Connected)
     return false;
 
   DBG(" AmB2BSession::refresh: refreshing session\n");
@@ -678,7 +678,7 @@ bool AmB2BSession::refresh(int flags) {
   }
 
   // refresh with re-INVITE
-  if (dlg.getUACInvTransPending()) {
+  if (dlg->getUACInvTransPending()) {
     DBG("INVITE transaction pending - not refreshing now\n");
     return false;
   }
@@ -688,7 +688,7 @@ bool AmB2BSession::refresh(int flags) {
 int AmB2BSession::relaySip(const AmSipRequest& req)
 {
   if (req.method != "ACK") {
-    relayed_req[dlg.cseq] = req;
+    relayed_req[dlg->cseq] = req;
 
     const string* hdrs = &req.hdrs;
     string m_hdrs;
@@ -726,9 +726,9 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
     }
 
     DBG("relaying SIP request %s %s\n", req.method.c_str(), req.r_uri.c_str());
-    int err = dlg.sendRequest(req.method, body, *hdrs, SIP_FLAGS_VERBATIM);
+    int err = dlg->sendRequest(req.method, body, *hdrs, SIP_FLAGS_VERBATIM);
     if(err < 0){
-      ERROR("dlg.sendRequest() failed\n");
+      ERROR("dlg->sendRequest() failed\n");
       return err;
     }
 
@@ -753,10 +753,10 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
     }
 
     DBG("sending relayed 200 ACK\n");
-    int err = dlg.send_200_ack(t->first, &req.body, 
+    int err = dlg->send_200_ack(t->first, &req.body, 
 			       req.hdrs, SIP_FLAGS_VERBATIM);
     if(err < 0) {
-      ERROR("dlg.send_200_ack() failed\n");
+      ERROR("dlg->send_200_ack() failed\n");
       return err;
     }
 
@@ -798,11 +798,11 @@ int AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
   }
 
   DBG("relaying SIP reply %u %s\n", reply.code, reply.reason.c_str());
-  int err = dlg.reply(orig,reply.code,reply.reason,
+  int err = dlg->reply(orig,reply.code,reply.reason,
                     body, *hdrs, SIP_FLAGS_VERBATIM);
 
   if(err < 0){
-    ERROR("dlg.reply() failed\n");
+    ERROR("dlg->reply() failed\n");
     return err;
   }
 
@@ -1073,7 +1073,7 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
 
 int AmB2BCallerSession::reinviteCaller(const AmSipReply& callee_reply)
 {
-  return dlg.sendRequest(SIP_METH_INVITE,
+  return dlg->sendRequest(SIP_METH_INVITE,
 			 &callee_reply.body,
 			 "" /* hdrs */, SIP_FLAGS_VERBATIM);
 }
@@ -1083,16 +1083,16 @@ void AmB2BCallerSession::createCalleeSession() {
   if (NULL == callee_session) 
     return;
 
-  AmSipDialog& callee_dlg = callee_session->dlg;
+  AmSipDialog* callee_dlg = callee_session->dlg;
 
   other_id = AmSession::getNewId();
   
-  callee_dlg.local_tag    = other_id;
-  callee_dlg.callid       = AmSession::getNewId();
+  callee_dlg->local_tag    = other_id;
+  callee_dlg->callid       = AmSession::getNewId();
 
-  callee_dlg.local_party  = dlg.remote_party;
-  callee_dlg.remote_party = dlg.local_party;
-  callee_dlg.remote_uri   = dlg.local_uri;
+  callee_dlg->local_party  = dlg->remote_party;
+  callee_dlg->remote_party = dlg->local_party;
+  callee_dlg->remote_uri   = dlg->local_uri;
 
   if (AmConfig::LogSessions) {
     INFO("Starting B2B callee session %s\n",
@@ -1101,9 +1101,9 @@ void AmB2BCallerSession::createCalleeSession() {
 
   MONITORING_LOG4(other_id.c_str(), 
 		  "dir",  "out",
-		  "from", callee_dlg.local_party.c_str(),
-		  "to",   callee_dlg.remote_party.c_str(),
-		  "ruri", callee_dlg.remote_uri.c_str());
+		  "from", callee_dlg->local_party.c_str(),
+		  "to",   callee_dlg->remote_party.c_str(),
+		  "ruri", callee_dlg->remote_uri.c_str());
 
   try {
     initializeRTPRelay(callee_session);
@@ -1179,14 +1179,14 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 		    "ruri", co_ev->remote_uri.c_str());
 
 
-    dlg.remote_party = co_ev->remote_party;
-    dlg.remote_uri   = co_ev->remote_uri;
+    dlg->remote_party = co_ev->remote_party;
+    dlg->remote_uri   = co_ev->remote_uri;
 
     if (co_ev->relayed_invite) {
       AmSipRequest fake_req;
       fake_req.method = SIP_METH_INVITE;
       fake_req.cseq = co_ev->r_cseq;
-      relayed_req[dlg.cseq] = fake_req;
+      relayed_req[dlg->cseq] = fake_req;
     }
 
     AmMimeBody r_body(co_ev->body);
@@ -1201,19 +1201,20 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 	  body = &co_ev->body;
 	}
       } catch (const string& s) {
-        relayError(SIP_METH_INVITE, co_ev->r_cseq, co_ev->relayed_invite, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+        relayError(SIP_METH_INVITE, co_ev->r_cseq, co_ev->relayed_invite, 500, 
+		   SIP_REPLY_SERVER_INTERNAL_ERROR);
         throw;
       }
     }
 
-    int res = dlg.sendRequest(SIP_METH_INVITE, body,
+    int res = dlg->sendRequest(SIP_METH_INVITE, body,
 			co_ev->hdrs, SIP_FLAGS_VERBATIM);
     if (res < 0) {
       DBG("sending INVITE failed, relaying back error reply\n");
       relayError(SIP_METH_INVITE, co_ev->r_cseq, co_ev->relayed_invite, res);
 
       if (co_ev->relayed_invite)
-	relayed_req.erase(dlg.cseq);
+	relayed_req.erase(dlg->cseq);
 
       setStopped();
       return;
@@ -1222,7 +1223,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
     saveSessionDescription(co_ev->body);
 
     // save CSeq of establising INVITE
-    est_invite_cseq = dlg.cseq - 1;
+    est_invite_cseq = dlg->cseq - 1;
     est_invite_other_cseq = co_ev->r_cseq;
 
     return;

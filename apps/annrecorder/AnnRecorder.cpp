@@ -299,7 +299,7 @@ void AnnRecorderDialog::onDtmf(int event, int duration_msec) {
     if(wav_file.open(msg_filename,AmAudioFile::Write,false)) {
      ERROR("AnnRecorder: couldn't open %s for writing\n", 
 	   msg_filename.c_str());
-     dlg.bye();
+     dlg->bye();
      setStopped();
     }
     wav_file.setRecordTime(MAX_MESSAGE_TIME*1000);
@@ -382,7 +382,7 @@ void AnnRecorderDialog::process(AmEvent* event)
   if(audio_event && (audio_event->event_id == AmAudioEvent::noAudio)){
 
     if (S_BYE == state) {
-      dlg.bye();
+      dlg->bye();
       setStopped();
       return;
     }

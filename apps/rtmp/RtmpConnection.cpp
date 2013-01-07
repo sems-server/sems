@@ -670,30 +670,30 @@ void RtmpConnection::rxAudio(RTMPPacket *packet)
 RtmpSession* RtmpConnection::startSession(const char* uri)
 {
   auto_ptr<RtmpSession> n_session(new RtmpSession(this));
-  AmSipDialog& dialout_dlg = n_session->dlg;
+  AmSipDialog* dialout_dlg = n_session->dlg;
 
   string dialout_id = AmSession::getNewId();
-  dialout_dlg.local_tag    = dialout_id;
-  dialout_dlg.callid       = AmSession::getNewId();
+  dialout_dlg->local_tag    = dialout_id;
+  dialout_dlg->callid       = AmSession::getNewId();
 
-  dialout_dlg.remote_party = "<" + string(uri) + ">";
-  dialout_dlg.remote_uri   = uri;
+  dialout_dlg->remote_party = "<" + string(uri) + ">";
+  dialout_dlg->remote_uri   = uri;
 
-  dialout_dlg.local_party  = "\"" + rtmp_cfg->FromName + "\" "
+  dialout_dlg->local_party  = "\"" + rtmp_cfg->FromName + "\" "
     "<sip:" + ident + "@";
 
   if(!rtmp_cfg->FromDomain.empty()){
-    dialout_dlg.local_party += rtmp_cfg->FromDomain;
+    dialout_dlg->local_party += rtmp_cfg->FromDomain;
   }
   else {
-    int out_if = dialout_dlg.getOutboundIf();
-    dialout_dlg.local_party += AmConfig::SIP_Ifs[out_if].LocalIP;
+    int out_if = dialout_dlg->getOutboundIf();
+    dialout_dlg->local_party += AmConfig::SIP_Ifs[out_if].LocalIP;
     if(AmConfig::SIP_Ifs[out_if].LocalPort != 5060)
-      dialout_dlg.local_party += 
+      dialout_dlg->local_party += 
 	":" + int2str(AmConfig::SIP_Ifs[out_if].LocalPort);
   }
 
-  dialout_dlg.local_party += ">";
+  dialout_dlg->local_party += ">";
   
   n_session->setCallgroup(dialout_id);
   switch(AmSessionContainer::instance()->addSession(dialout_id,
@@ -714,8 +714,8 @@ RtmpSession* RtmpConnection::startSession(const char* uri)
   sdp_body.addPart(SIP_APPLICATION_SDP);
 
   RtmpSession* pn_session = n_session.release();
-  if(dialout_dlg.sendRequest(SIP_METH_INVITE,&sdp_body) < 0) {
-    ERROR("dialout_dlg.sendRequest() returned an error\n");
+  if(dialout_dlg->sendRequest(SIP_METH_INVITE,&sdp_body) < 0) {
+    ERROR("dialout_dlg->sendRequest() returned an error\n");
     AmSessionContainer::instance()->destroySession(pn_session);
     return NULL;
   }

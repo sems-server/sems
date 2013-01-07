@@ -84,7 +84,7 @@ void JukecallSession::onSessionStart()
   DBG("playing file\n");
 
   if(initial_announcement.open(INITIAL_ANNOUNCEMENT,AmAudioFile::Read)) {
-    dlg.bye();
+    dlg->bye();
     throw string("CTConfDDialog::onSessionStart: Cannot open file '%s'\n", INITIAL_ANNOUNCEMENT);
   }
 
@@ -128,10 +128,10 @@ void JukecallSession::process(AmEvent* event)
     switch(state) {
     case JC_initial_announcement: {
       state = JC_connect;
-      string callee = "sip:" + dlg.user.substr(3) + "@" + dlg.domain;
+      string callee = "sip:" + dlg->user.substr(3) + "@" + dlg->domain;
       DBG("-------------------------- connecting %s ------------------------\n", callee.c_str());
       connectCallee(callee, callee, 
-		    dlg.remote_party, dlg.remote_uri);
+		    dlg->remote_party, dlg->remote_uri);
 
       return;
 

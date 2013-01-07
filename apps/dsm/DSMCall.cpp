@@ -103,11 +103,11 @@ void DSMCall::onInvite(const AmSipRequest& req) {
   avar[DSM_AVAR_REQUEST] = AmArg(&req);
 
   DBG("before runEvent(this, this, DSMCondition::Invite);\n");
-  AmSipDialog::Status old_st = dlg.getStatus();
+  AmSipDialog::Status old_st = dlg->getStatus();
   engine.runEvent(this, this, DSMCondition::Invite, NULL);
   avar.erase(DSM_AVAR_REQUEST);
 
-  if ( old_st != dlg.getStatus()
+  if ( old_st != dlg->getStatus()
        //checkVar(DSM_CONNECT_SESSION, DSM_CONNECT_SESSION_FALSE)
       ) {
     DBG("session choose to not connect media\n");
@@ -277,7 +277,7 @@ void DSMCall::onBye(const AmSipRequest& req)
 
 void DSMCall::onCancel(const AmSipRequest& cancel) {
   DBG("onCancel\n");
-  if (dlg.getStatus() < AmSipDialog::Connected) {
+  if (dlg->getStatus() < AmSipDialog::Connected) {
     //TODO: pass the cancel request as a parameter?
     DBG("hangup event!!!\n");
     map<string, string> params;
@@ -331,7 +331,7 @@ void DSMCall::onSipReply(const AmSipRequest& req,
     params["hdrs"] = reply.hdrs;
     params["cseq"] = int2str(reply.cseq);
 
-    params["dlg_status"] = dlg.getStatusStr();
+    params["dlg_status"] = dlg->getStatusStr();
     params["old_dlg_status"] = AmBasicSipDialog::getStatusStr(old_dlg_status);
 
     // pass AmSipReply for use by mod_dlg (? sending ACK?)
@@ -353,7 +353,7 @@ void DSMCall::onSipReply(const AmSipRequest& req,
   AmB2BCallerSession::onSipReply(req, reply, old_dlg_status);
 
   if ((old_dlg_status < AmSipDialog::Connected) && 
-      (dlg.getStatus() == AmSipDialog::Disconnected)) {
+      (dlg->getStatus() == AmSipDialog::Disconnected)) {
     DBG("Outbound call failed with reply %d %s.\n", 
 	reply.code, reply.reason.c_str());
     map<string, string> params;
@@ -371,7 +371,7 @@ void DSMCall::onRemoteDisappeared(const AmSipReply& reply) {
   params["hdrs"] = reply.hdrs;
   params["cseq"] = int2str(reply.cseq);
 
-  params["dlg_status"] = dlg.getStatusStr();
+  params["dlg_status"] = dlg->getStatusStr();
 
   // pass AmSipReply for use by modules
   DSMSipReply* dsm_reply = new DSMSipReply(&reply);

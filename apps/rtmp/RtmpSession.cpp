@@ -56,8 +56,8 @@ void RtmpSession::sendCallState()
 {
   m_rtmp_conn.lock();
   if(rtmp_connection){
-    DBG("Dialog status: %s\n",dlg.getStatusStr());
-    unsigned int rtmp_call_status = __dlg_status2rtmp_call[dlg.getStatus()];
+    DBG("Dialog status: %s\n",dlg->getStatusStr());
+    unsigned int rtmp_call_status = __dlg_status2rtmp_call[dlg->getStatus()];
     rtmp_connection->SendCallStatus(rtmp_call_status);
   }
   m_rtmp_conn.unlock();
@@ -117,16 +117,16 @@ void RtmpSession::onSipReply(const AmSipRequest& req,
 
   sendCallState();
 
-  if(dlg.getStatus() == AmSipDialog::Disconnected) {
+  if(dlg->getStatus() == AmSipDialog::Disconnected) {
     setStopped();
   }
 }
 
 void RtmpSession::onInvite(const AmSipRequest& req)
 {
-  DBG("status str: %s\n",dlg.getStatusStr());
+  DBG("status str: %s\n",dlg->getStatusStr());
 
-  if(dlg.getStatus() != AmSipDialog::Trying){
+  if(dlg->getStatus() != AmSipDialog::Trying){
     AmSession::onInvite(req);
     return;
   }
@@ -136,7 +136,7 @@ void RtmpSession::onInvite(const AmSipRequest& req)
   rtmp_connection->NotifyIncomingCall(req.user);
   m_rtmp_conn.unlock();
 
-  dlg.reply(req,180,"Ringing");
+  dlg->reply(req,180,"Ringing");
 }
 
 void RtmpSession::process(AmEvent* ev)
@@ -145,17 +145,17 @@ void RtmpSession::process(AmEvent* ev)
   if(rtmp_ev){
     switch(rtmp_ev->getEvType()){
     case RtmpSessionEvent::Disconnect:
-      dlg.bye();
+      dlg->bye();
       setStopped();
       return;
     case RtmpSessionEvent::Accept:
-      AmSipRequest* inv_req = dlg.getUASPendingInv();
+      AmSipRequest* inv_req = dlg->getUASPendingInv();
       if(!inv_req){
 	//Error: no pending INVITE
 	sendCallState();
 	return;
       }
-      dlg.reply(*inv_req,200,"OK");
+      dlg->reply(*inv_req,200,"OK");
       sendCallState();
       return;
     }

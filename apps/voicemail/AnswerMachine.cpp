@@ -796,7 +796,7 @@ void AnswerMachineDialog::onNoAudio()
   case 0: {
     // announcement mode - no recording
     if (MODE_ANN == vm_mode) {
-      dlg.bye();
+      dlg->bye();
       setStopped();
       return;
     }
@@ -815,7 +815,7 @@ void AnswerMachineDialog::onNoAudio()
     break;
     
   case 2:
-    dlg.bye();
+    dlg->bye();
     saveMessage();
     setStopped();
     break;
@@ -894,7 +894,7 @@ void AnswerMachineDialog::onSessionStart()
 
 void AnswerMachineDialog::onBye(const AmSipRequest& req)
 {
-  dlg.reply(req,200,"OK");
+  dlg->reply(req,200,"OK");
 
   setInOut(NULL, NULL);
   saveMessage();

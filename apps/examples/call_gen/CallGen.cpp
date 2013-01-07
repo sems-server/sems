@@ -465,7 +465,7 @@ void CallGenDialog::process(AmEvent* event)
     play_list.flush();
     setInOut(NULL,NULL);
     setStopped();
-    dlg.bye();
+    dlg->bye();
   }
   else
     AmSession::process(event);
@@ -484,7 +484,7 @@ void CallGenDialog::onBye(const AmSipRequest& req) {
 void CallGenDialog::onSipReply(const AmSipReply& reply, AmSipDialog::Status old_dlg_status) {
   AmSession::onSipReply(reply, old_dlg_status);
   if ((old_dlg_status < AmSipDialog::Connected) &&
-      dlg.getStatus() == AmSipDialog::Disconnected) {
+      dlg->getStatus() == AmSipDialog::Disconnected) {
     DBG("SIP dialog status change: < Connected -> Disconnected, stopping call\n");
     setStopped();
   }

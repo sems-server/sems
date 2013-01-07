@@ -85,7 +85,7 @@ b2b_connectDialog::~b2b_connectDialog()
 
 void b2b_connectDialog::onInvite(const AmSipRequest& req)
 {
-  if (dlg.getStatus() == AmSipDialog::Connected) {
+  if (dlg->getStatus() == AmSipDialog::Connected) {
     // reinvites
     AmB2ABCallerSession::onInvite(req);
     return;
@@ -109,7 +109,7 @@ void b2b_connectDialog::onInvite(const AmSipRequest& req)
       remote_uri = to = "sip:"+req.user+"@"+domain;
       remote_party = "<" + to + ">";
   }
-  if(dlg.reply(req, 100, "Connecting") != 0) {
+  if(dlg->reply(req, 100, "Connecting") != 0) {
     throw AmSession::Exception(500,"Failed to reply 100");
   }
 
@@ -141,10 +141,10 @@ void b2b_connectDialog::onB2ABEvent(B2ABEvent* ev)
   if (ev->event_id == B2ABConnectOtherLegException) {
     B2ABConnectOtherLegExceptionEvent* ex_ev = 
       dynamic_cast<B2ABConnectOtherLegExceptionEvent*>(ev);
-    if (ex_ev && dlg.getStatus() < AmSipDialog::Connected) {
+    if (ex_ev && dlg->getStatus() < AmSipDialog::Connected) {
       DBG("callee leg creation failed with exception '%d %s'\n",
 	  ex_ev->code, ex_ev->reason.c_str());
-      dlg.reply(invite_req, ex_ev->code, ex_ev->reason);
+      dlg->reply(invite_req, ex_ev->code, ex_ev->reason);
       setStopped();
       return;
     }
@@ -153,10 +153,10 @@ void b2b_connectDialog::onB2ABEvent(B2ABEvent* ev)
   if (ev->event_id == B2ABConnectOtherLegFailed) {
     B2ABConnectOtherLegFailedEvent* f_ev = 
       dynamic_cast<B2ABConnectOtherLegFailedEvent*>(ev);
-    if (f_ev && dlg.getStatus() < AmSipDialog::Connected) {
+    if (f_ev && dlg->getStatus() < AmSipDialog::Connected) {
       DBG("callee leg creation failed with reply '%d %s'\n",
 	  f_ev->code, f_ev->reason.c_str());
-      dlg.reply(invite_req, f_ev->code, f_ev->reason);
+      dlg->reply(invite_req, f_ev->code, f_ev->reason);
       setStopped();
       return;
     }
@@ -212,12 +212,12 @@ void b2b_connectDialog::onBye(const AmSipRequest& req)
 
 void b2b_connectDialog::onCancel(const AmSipRequest& req)
 {
-  if(dlg.getStatus() < AmSipDialog::Connected) {
+  if(dlg->getStatus() < AmSipDialog::Connected) {
     DBG("Wait for leg B to terminate");
   }
   else {
     DBG("Canceling leg A on CANCEL since dialog is not pending");
-    dlg.reply(invite_req, 487, "Request terminated");
+    dlg->reply(invite_req, 487, "Request terminated");
     setStopped();
   }
 }
@@ -257,7 +257,7 @@ void b2b_connectCalleeSession::onSipReply(const AmSipReply& reply,
   AmB2ABCalleeSession::onSipReply(reply, old_dlg_status);
  
   if ((old_dlg_status < AmSipDialog::Connected) &&
-      (dlg.getStatus() == AmSipDialog::Disconnected)) {
+      (dlg->getStatus() == AmSipDialog::Disconnected)) {
     DBG("status change Pending -> Disconnected. Stopping session.\n");
     setStopped();
   }

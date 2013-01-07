@@ -361,11 +361,11 @@ AmSession* ConferenceFactory::onRefer(const AmSipRequest& req, const string& app
     throw AmSession::Exception(488,"Not accepted here");
 
   AmSession* s = new ConferenceDialog(req.user);
-  s->dlg.local_tag  = req.from_tag;
+  s->dlg->local_tag  = req.from_tag;
   
   setupSessionTimer(s);
 
-  DBG("ConferenceFactory::onRefer: local_tag = %s\n",s->dlg.local_tag.c_str());
+  DBG("ConferenceFactory::onRefer: local_tag = %s\n",s->dlg->local_tag.c_str());
 
   return s;
 }
@@ -407,7 +407,7 @@ void ConferenceDialog::onStart() {
 
 void ConferenceDialog::onInvite(const AmSipRequest& req)
 {
-  if(dlg.getStatus() == AmSipDialog::Connected){
+  if(dlg->getStatus() == AmSipDialog::Connected){
     AmSession::onInvite(req);  
     return;
   }
@@ -637,7 +637,7 @@ void ConferenceDialog::process(AmEvent* ev)
 	
       case DoConfDisconnect:
 		
-	dlg.bye();
+	dlg->bye();
 	closeChannels();
 	setStopped();
 	break;
@@ -716,7 +716,7 @@ void ConferenceDialog::onDtmf(int event, int duration)
   DBG("ConferenceDialog::onDtmf\n");
   if (dialedout || !allow_dialout ||
       ((ConferenceFactory::MaxParticipants > 0) &&
-       (AmConferenceStatus::getConferenceSize(dlg.user) >= 
+       (AmConferenceStatus::getConferenceSize(dlg->user) >= 
 	ConferenceFactory::MaxParticipants)))
     return;
 
@@ -809,20 +809,20 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
 
   ConferenceFactory::setupSessionTimer(dialout_session);
 
-  AmSipDialog& dialout_dlg = dialout_session->dlg;
+  AmSipDialog* dialout_dlg = dialout_session->dlg;
 
-  dialout_dlg.local_tag    = dialout_id;
-  dialout_dlg.callid       = AmSession::getNewId();
+  dialout_dlg->local_tag    = dialout_id;
+  dialout_dlg->callid       = AmSession::getNewId();
 
   if (from_header.length() > 0) {
-    dialout_dlg.local_party  = from_header;
+    dialout_dlg->local_party  = from_header;
   } else {
-    dialout_dlg.local_party  = dlg.local_party;
+    dialout_dlg->local_party  = dlg->local_party;
   }
-  dialout_dlg.remote_party = uri;
-  dialout_dlg.remote_uri   = uri;
+  dialout_dlg->remote_party = uri;
+  dialout_dlg->remote_uri   = uri;
 
-  dialout_dlg.sendRequest(SIP_METH_INVITE,NULL,
+  dialout_dlg->sendRequest(SIP_METH_INVITE,NULL,
 			  extra_headers);
 
   dialout_session->start();
@@ -882,30 +882,30 @@ void ConferenceDialog::closeChannels()
 void ConferenceDialog::onSipRequest(const AmSipRequest& req)
 {
   AmSession::onSipRequest(req);
-  if((dlg.getStatus() >= AmSipDialog::Connected) ||
+  if((dlg->getStatus() >= AmSipDialog::Connected) ||
      (req.method != "REFER"))
     return;
 
-  std::swap(dlg.local_party,dlg.remote_party);
-  dlg.remote_tag = "";
+  std::swap(dlg->local_party,dlg->remote_party);
+  dlg->remote_tag = "";
 
   // get route set and next hop
   string iptel_app_param = getHeader(req.hdrs, PARAM_HDR, true);
   if (iptel_app_param.length()) {
-    dlg.route = get_header_keyvalue(iptel_app_param,"Transfer-RR");
+    dlg->route = get_header_keyvalue(iptel_app_param,"Transfer-RR");
   } else {
     INFO("Use of P-Transfer-RR/P-Transfer-NH is deprecated. "
 	 "Use '%s: Transfer-RR=<rr>;Transfer-NH=<nh>' instead.\n",PARAM_HDR);
 
-    dlg.route = getHeader(req.hdrs,"P-Transfer-RR", true);
+    dlg->route = getHeader(req.hdrs,"P-Transfer-RR", true);
   }
 
-  DBG("ConferenceDialog::onSipRequest: local_party = %s\n",dlg.local_party.c_str());
-  DBG("ConferenceDialog::onSipRequest: local_tag = %s\n",dlg.local_tag.c_str());
-  DBG("ConferenceDialog::onSipRequest: remote_party = %s\n",dlg.remote_party.c_str());
-  DBG("ConferenceDialog::onSipRequest: remote_tag = %s\n",dlg.remote_tag.c_str());
+  DBG("ConferenceDialog::onSipRequest: local_party = %s\n",dlg->local_party.c_str());
+  DBG("ConferenceDialog::onSipRequest: local_tag = %s\n",dlg->local_tag.c_str());
+  DBG("ConferenceDialog::onSipRequest: remote_party = %s\n",dlg->remote_party.c_str());
+  DBG("ConferenceDialog::onSipRequest: remote_tag = %s\n",dlg->remote_tag.c_str());
 
-  dlg.sendRequest(SIP_METH_INVITE);
+  dlg->sendRequest(SIP_METH_INVITE);
 
   transfer_req.reset(new AmSipRequest(req));
 
@@ -919,7 +919,7 @@ void ConferenceDialog::onSipReply(const AmSipRequest& req,
   AmSession::onSipReply(req, reply, old_dlg_status);
 
   DBG("ConferenceDialog::onSipReply: code = %i, reason = %s\n, status = %i\n",
-      reply.code,reply.reason.c_str(),dlg.getStatus());
+      reply.code,reply.reason.c_str(),dlg->getStatus());
     
   if(!dialedout /*&& !transfer_req.get()*/)
     return;
@@ -927,7 +927,7 @@ void ConferenceDialog::onSipReply(const AmSipRequest& req,
   if((old_dlg_status < AmSipDialog::Connected) &&
      (reply.cseq_method == SIP_METH_INVITE)){
 
-    switch(dlg.getStatus()){
+    switch(dlg->getStatus()){
 
     case AmSipDialog::Proceeding:
     case AmSipDialog::Early:
@@ -964,7 +964,7 @@ void ConferenceDialog::onSipReply(const AmSipRequest& req,
 
       // }
       // else {
-      // 	dlg.reply(*(transfer_req.get()),reply.code,reply.reason);
+      // 	dlg->reply(*(transfer_req.get()),reply.code,reply.reason);
       // 	transfer_req.reset(0);
       // 	setStopped();
       // }

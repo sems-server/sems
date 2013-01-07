@@ -171,19 +171,19 @@ void AnnounceTransferDialog::onSipRequest(const AmSipRequest& req)
       if ((code >= 200)&&(code < 300)) {
 	if (status != Hangup) {
 	  status = Hangup;
-	  dlg.bye();
+	  dlg->bye();
 	}
 	DBG("refer succeeded... stop session\n");
 	setStopped();
       } else if (code > 300) {
 	DBG("refer failed...\n");
 	if (status != Hangup) 
-	  dlg.bye();
+	  dlg->bye();
 	setStopped();
       }
-      dlg.reply(req, 200, "OK", NULL);
+      dlg->reply(req, 200, "OK", NULL);
     } catch (const AmSession::Exception& e) {
-      dlg.reply(req, e.code, e.reason, NULL);
+      dlg->reply(req, e.code, e.reason, NULL);
     }
   } else {
     AmSession::onSipRequest(req);
@@ -198,7 +198,7 @@ void AnnounceTransferDialog::onSipReply(const AmSipRequest& req,
       req.method == SIP_METH_REFER) {
     if (rep.code >= 300) {
       DBG("refer not accepted, stop session.\n");
-      dlg.bye();
+      dlg->bye();
       setStopped();
     }
   }
@@ -225,7 +225,7 @@ void AnnounceTransferDialog::process(AmEvent* event)
 	
   if(audio_event && (audio_event->event_id == AmAudioEvent::cleared) 
      && (status == Announcing)){
-    dlg.refer(callee_uri);
+    dlg->refer(callee_uri);
     status = Transfering;
     return;
   }

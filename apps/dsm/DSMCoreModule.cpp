@@ -458,7 +458,7 @@ EXEC_ACTION_START(SCThrowOnErrorAction) {
 EXEC_ACTION_START(SCStopAction) {
   if (resolveVars(arg, sess, sc_sess, event_params) == "true") {
     DBG("sending bye\n");
-    sess->dlg.bye();
+    sess->dlg->bye();
   }
   sess->setStopped();
 } EXEC_ACTION_END;
