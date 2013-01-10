@@ -8,6 +8,8 @@
 #include "sip/parse_route.h"
 #include "sip/parse_uri.h"
 #include "sip/parse_next_hop.h"
+#include "sip/msg_logger.h"
+#include "sip/sip_parser.h"
 
 const char* AmBasicSipDialog::status2str[AmBasicSipDialog::__max_Status] = {
   "Disconnected",
@@ -22,6 +24,7 @@ const char* AmBasicSipDialog::status2str[AmBasicSipDialog::__max_Status] = {
 AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
   : status(Disconnected),
     cseq(10),r_cseq_i(false),hdl(h),
+    logger(0),
     outbound_proxy(AmConfig::OutboundProxy),
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     next_hop(AmConfig::NextHop),
@@ -35,6 +38,8 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
 
 AmBasicSipDialog::~AmBasicSipDialog()
 {
+  if (logger) dec_ref(logger);
+
   DBG("callid = %s\n",callid.c_str());
   DBG("local_tag = %s\n",local_tag.c_str());
   DBG("uac_trans.size() = %u\n",(unsigned int)uac_trans.size());
@@ -308,6 +313,15 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
 {
   DBG("AmBasicSipDialog::onRxRequest(req = %s)\n", req.method.c_str());
 
+  if(logger && (req.method != SIP_METH_ACK)) {
+    req.tt.lock_bucket();
+    const sip_trans* t = req.tt.get_trans();
+    sip_msg* msg = t->msg;
+    logger->log(msg->buf,msg->len,&msg->remote_ip,
+		&msg->local_ip,msg->u.request->method_str);
+    req.tt.unlock_bucket();
+  }
+
   if(!onRxReqSanity(req))
     return;
     
@@ -537,7 +551,7 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
     reply.contact = getContactHdr();
   }
 
-  int ret = SipCtrlInterface::send(reply);
+  int ret = SipCtrlInterface::send(reply,logger);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s;"
 	  " call-id=%s; cseq=%i\n",
@@ -556,7 +570,8 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
 
 /* static */
 int AmBasicSipDialog::reply_error(const AmSipRequest& req, unsigned int code, 
-				  const string& reason, const string& hdrs)
+				  const string& reason, const string& hdrs,
+				  msg_logger* logger)
 {
   AmSipReply reply;
 
@@ -572,7 +587,7 @@ int AmBasicSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   // add transcoder statistics into reply headers
   //addTranscoderStats(reply.hdrs);
 
-  int ret = SipCtrlInterface::send(reply);
+  int ret = SipCtrlInterface::send(reply,logger);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s';"
 	  " method=%s; call-id=%s; cseq=%i\n",
@@ -633,7 +648,7 @@ int AmBasicSipDialog::sendRequest(const string& method,
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ?
 				   next_hop : "",
-				   outbound_interface);
+				   outbound_interface, logger);
   if(res) {
     ERROR("Could not send request: method=%s; call-id=%s; cseq=%i\n",
 	  req.method.c_str(),req.callid.c_str(),req.cseq);
@@ -642,4 +657,17 @@ int AmBasicSipDialog::sendRequest(const string& method,
 
   onRequestTxed(req);
   return 0;
+}
+
+void AmBasicSipDialog::setMsgLogger(msg_logger* logger)
+{
+  if(this->logger) {
+    dec_ref(this->logger);
+  }
+
+  if(logger){
+    inc_ref(logger);
+  }
+
+  this->logger = logger;
 }

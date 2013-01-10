@@ -766,7 +766,7 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ? 
 				   next_hop : "",
-				   outbound_interface);
+				   outbound_interface, logger);
   if (res)
     return res;
 

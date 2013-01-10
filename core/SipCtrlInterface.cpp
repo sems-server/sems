@@ -128,7 +128,8 @@ int SipCtrlInterface::cancel(trans_ticket* tt)
 }
 
 int SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
-			   const string& next_hop, int out_interface)
+			   const string& next_hop, int out_interface,
+			   msg_logger* logger)
 {
     if(req.method == "CANCEL")
 	return cancel(&req.tt);
@@ -222,7 +223,7 @@ int SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
     int res = trans_layer::instance()->send_request(msg,&req.tt,
 						    stl2cstr(dialog_id),
 						    stl2cstr(next_hop),
-						    out_interface);
+						    out_interface,logger);
     delete msg;
 
     return res;
@@ -310,7 +311,7 @@ void SipCtrlInterface::cleanup()
     }
 }
 
-int SipCtrlInterface::send(const AmSipReply &rep)
+int SipCtrlInterface::send(const AmSipReply &rep, msg_logger* logger)
 {
     sip_msg msg;
 
@@ -367,7 +368,7 @@ int SipCtrlInterface::send(const AmSipReply &rep)
 					    rep.code,stl2cstr(rep.reason),
 					    stl2cstr(rep.to_tag),
 					    cstring(hdrs_buf,hdrs_len), 
-					    stl2cstr(body));
+					    stl2cstr(body),logger);
 
     delete [] hdrs_buf;
 

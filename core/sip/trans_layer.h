@@ -50,6 +50,9 @@ class trans_timer;
 class trsp_socket;
 class sip_ua;
 
+//draft msg logging
+class msg_logger;
+
 /** 
  * The transaction layer object.
  * Uses the singleton pattern.
@@ -92,7 +95,7 @@ public:
 		   int reply_code, const cstring& reason,
 		   const cstring& to_tag, const cstring& hdrs, 
 		   const cstring& body,
-		   int out_interface = -1);
+		   msg_logger* logger=NULL);
 
     /**
      * Sends a UAC request.
@@ -102,7 +105,8 @@ public:
      * @param [out] tt transaction ticket (needed for replies & CANCEL)
      */
     int send_request(sip_msg* msg, trans_ticket* tt, const cstring& dialog_id,
-		     const cstring& _next_hop, int out_interface = -1);
+		     const cstring& _next_hop, int out_interface = -1,
+		     msg_logger* logger=NULL);
 
     /**
      * Cancels a request. 
@@ -225,6 +229,22 @@ public:
 
     trans_ticket(const trans_ticket& ticket)
 	: _t(ticket._t), _bucket(ticket._bucket) {}
+
+    /**
+     * Locks the transaction bucket before accessing the transaction pointer.
+     */
+    void lock_bucket() const;
+
+    /**
+     * Unlocks the transaction bucket after accessing the transaction pointer.
+     */
+    void unlock_bucket() const;
+
+    /**
+     * Get the transaction pointer
+     * Note: the transaction bucket must be locked before
+     */
+    const sip_trans* get_trans() const;
 };
 
 #endif // _trans_layer_h_

@@ -14,6 +14,10 @@
 #include "RegisterDialog.h"
 #include "SubscriptionDialog.h"
 
+#include "sip/msg_logger.h"
+#include "sip/sip_parser.h"
+#include "sip/sip_trans.h"
+
 #include "HeaderFilter.h"
 #include "ParamReplacer.h"
 #include "SDPFilter.h"
@@ -953,6 +957,25 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
       return false;
     }
 
+    if (!dlg->getMsgLogger() && !call_profile.msg_logger_path.empty()) {
+      ParamReplacerCtx ctx;
+      string log_path = ctx.replaceParameters(call_profile.msg_logger_path,
+					      "msg_logger_path",req);
+      file_msg_logger* logger = new file_msg_logger();
+      if(!logger->open(log_path.c_str())) {
+        req.tt.lock_bucket();
+        const sip_trans* t = req.tt.get_trans();
+        if (t) {
+          sip_msg* msg = t->msg;
+          logger->log(msg->buf,msg->len,&msg->remote_ip,
+              &msg->local_ip,msg->u.request->method_str);
+        }
+        req.tt.unlock_bucket();
+        dlg->setMsgLogger(logger);
+      }
+      else delete logger;
+    }
+
     // evaluate ret
     if (isArgArray(ret)) {
       for (size_t i=0;i<ret.size();i++) {
@@ -996,8 +1019,9 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	      cc_if.cc_name.c_str(), headers.c_str());
 
 	  dlg->reply(req,
-		    ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-		    NULL, headers);
+		     ret[i][SBC_CC_REFUSE_CODE].asInt(), 
+		     ret[i][SBC_CC_REFUSE_REASON].asCStr(),
+		     NULL, headers);
 
 	  // call 'end' of call control modules up to here
 	  call_end_ts.tv_sec = call_start_ts.tv_sec;

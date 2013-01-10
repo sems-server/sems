@@ -62,6 +62,8 @@ typedef std::map<int,AmSipRequest> TransMap;
 
 class AmBasicSipEventHandler;
 
+class msg_logger;
+
 class AmBasicSipDialog
   : public AmObject
 {
@@ -90,6 +92,11 @@ protected:
   unsigned int usages;
 
   AmBasicSipEventHandler* hdl;
+
+  /**
+   * Message logger
+   */
+  msg_logger* logger;
 
   /**
    * Executed for replies sent by a local UA,
@@ -290,10 +297,21 @@ public:
   static int reply_error(const AmSipRequest& req,
 			 unsigned int  code,
 			 const string& reason,
-			 const string& hdrs = "");
+			 const string& hdrs = "",
+			 msg_logger* logger = NULL);
 
   /* dump transaction information (DBG) */
   void dump();
+
+  /**
+   * Enable or disable message logger
+   */
+  void setMsgLogger(msg_logger* logger);
+
+  /**
+   * Get message logger
+   */
+  msg_logger* getMsgLogger() { return logger; }
 };
 
 /**

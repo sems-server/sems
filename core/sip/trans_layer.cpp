@@ -43,6 +43,7 @@
 #include "ip_util.h"
 #include "resolver.h"
 #include "sip_ua.h"
+#include "msg_logger.h"
 
 #include "wheeltimer.h"
 #include "sip_timers.h"
@@ -94,7 +95,7 @@ int _trans_layer::send_reply(const trans_ticket* tt,
 			     int reply_code, const cstring& reason,
 			     const cstring& to_tag, const cstring& hdrs,
 			     const cstring& body,
-			     int out_interface)
+			     msg_logger* logger)
 {
     // Ref.: RFC 3261 8.2.6, 12.1.1
     //
@@ -393,16 +394,7 @@ int _trans_layer::send_reply(const trans_ticket* tt,
     // refs: RFC3261 18.2.2; RFC3581
 
     sockaddr_storage remote_ip;
-    trsp_socket* local_socket = NULL;
-
-    // rco: should we overwrite the socket from the request in all cases???
-    if((out_interface >= 0) && ((unsigned int)out_interface < transports.size())){
-	local_socket = transports[out_interface];
-    }
-    else {
-	local_socket = req->local_socket;
-    }
-
+    trsp_socket* local_socket = req->local_socket;
     memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
 
     if(req->via_p1->has_rport){
@@ -462,6 +454,18 @@ int _trans_layer::send_reply(const trans_ticket* tt,
     t->retr_socket = local_socket;
 
     update_uas_reply(bucket,t,reply_code);
+
+    if(logger) {
+	sockaddr_storage src_ip;
+	local_socket->copy_addr_to(&src_ip);
+	logger->log(reply_buf,reply_len,&src_ip,&remote_ip,
+		    req->u.request->method_str,reply_code);
+
+	if(!t->logger){
+	    t->logger = logger;
+	    inc_ref(logger);
+	}
+    }
     
  end:
     bucket->unlock();
@@ -835,7 +839,8 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt, 
 			       const cstring& dialog_id,
 			       const cstring& _next_hop, 
-			       int out_interface)
+			       int out_interface,
+			       msg_logger* logger)
 {
     // Request-URI
     // To
@@ -1006,13 +1011,46 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	delete p_msg;
     }
     else {
+	// save parsed method, as update_uac_request
+	// might delete p_msg, and msg->u.request->method is not set
+	int method = p_msg->u.request->method;
+
 	DBG("update_uac_request tt->_t =%p\n", tt->_t);
 	send_err = update_uac_request(tt->_bucket,tt->_t,p_msg);
 	if(send_err < 0){
 	    DBG("Could not update UAC state for request\n");
 	    delete p_msg;
+	    tt->_bucket->unlock();
+	    return send_err;
 	}
-	else if(dialog_id.len && !(tt->_t->dialog_id.len)) {
+
+	DBG("logger = %p\n",logger);
+
+	if(logger) {
+	    sockaddr_storage src_ip;
+	    msg->local_socket->copy_addr_to(&src_ip);
+
+	    cstring method_str = msg->u.request->method_str;
+	    char* msg_buffer=NULL;
+	    if(method == sip_request::ACK) {
+		// in case of ACK, p_msg gets deleted in update_uac_request
+		msg_buffer = tt->_t->retr_buf;
+	    }
+	    else {
+		msg_buffer = p_msg->buf;
+	    }
+
+	    logger->log(msg_buffer,request_len,
+			&src_ip,&msg->remote_ip,
+			method_str);
+
+	    if(!tt->_t->logger) {
+		tt->_t->logger = logger;
+		inc_ref(logger);
+	    }
+	}
+
+	if(dialog_id.len && !(tt->_t->dialog_id.len)) {
 	    tt->_t->dialog_id.s = new char[dialog_id.len];
 	    tt->_t->dialog_id.len = dialog_id.len;
 	    memcpy((void*)tt->_t->dialog_id.s,dialog_id.s,dialog_id.len);
@@ -1142,11 +1180,22 @@ int _trans_layer::cancel(trans_ticket* tt)
     }
     else {
 
-	sip_trans* t=NULL;
-	send_err = update_uac_request(bucket,t,p_msg);
+	sip_trans* cancel_t=NULL;
+	send_err = update_uac_request(bucket,cancel_t,p_msg);
 	if(send_err<0){
 	    DBG("Could not update state for UAC transaction\n");
 	    delete p_msg;
+	}
+	else if(t->logger) {
+	    sockaddr_storage src_ip;
+	    p_msg->local_socket->copy_addr_to(&src_ip);
+	    t->logger->log(p_msg->buf,p_msg->len,&src_ip,
+			   &p_msg->remote_ip,cancel_str);
+
+	    if(!cancel_t->logger) {
+		cancel_t->logger = t->logger;
+		inc_ref(t->logger);
+	    }
 	}
     }
 
@@ -1212,6 +1261,12 @@ void _trans_layer::received_msg(sip_msg* msg)
     case SIP_REQUEST: 
 	
 	if((t = bucket->match_request(msg,TT_UAS)) != NULL){
+
+	    if(t->logger) {
+		t->logger->log(msg->buf,msg->len,&msg->remote_ip,
+			       &msg->local_ip,msg->u.request->method_str);
+	    }
+
 	    if(msg->u.request->method != t->msg->u.request->method){
 		
 		// ACK matched INVITE transaction
@@ -1308,6 +1363,13 @@ void _trans_layer::received_msg(sip_msg* msg)
 	    // Reply matched UAC transaction
 	    
 	    DBG("Reply matched an existing transaction\n");
+
+	    if(t->logger) {
+		t->logger->log(msg->buf,msg->len,&msg->remote_ip,
+			       &msg->local_ip,get_cseq(msg)->method_str,
+			       msg->u.reply->code);
+	    }
+
 	    int res = update_uac_reply(bucket,t,msg);
 	    if(res < 0){
 		ERROR("update_uac_trans() failed, so what happens now???\n");
@@ -1747,6 +1809,13 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }
+    
+    if(t->logger) {
+	sockaddr_storage src_ip;
+	inv->local_socket->copy_addr_to(&src_ip);
+	t->logger->log(ack_buf,ack_len,&src_ip,&inv->remote_ip,method);
+    }
+
     delete[] ack_buf;
 
 }
@@ -1763,6 +1832,14 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 
 	n++;
 	tr->msg->send();
+	
+	if(tr->logger) {
+	    sockaddr_storage src_ip;
+	    tr->msg->local_socket->copy_addr_to(&src_ip);
+	    tr->logger->log(tr->msg->buf,tr->msg->len,&src_ip,&tr->msg->remote_ip,
+			    tr->msg->u.request->method_str);
+	}
+
 	tr->reset_timer((n<<16) | type, A_TIMER<<n, bucket->get_id());
 	break;
 	
@@ -1884,6 +1961,14 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 
 	    // re-transmit request
 	    tr->msg->send();
+
+	    if(tr->logger) {
+		sockaddr_storage src_ip;
+		tr->msg->local_socket->copy_addr_to(&src_ip);
+		tr->logger->log(tr->msg->buf,tr->msg->len,
+				&src_ip,&tr->msg->remote_ip,
+				tr->msg->u.request->method_str);
+	    }
 	}
 
 	unsigned int retr_timer = (type == STIMER_E) ?
@@ -2010,6 +2095,14 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
     // and re-send
     tr->msg->send();
     
+    if(tr->logger) {
+	sockaddr_storage src_ip;
+	tr->msg->local_socket->copy_addr_to(&src_ip);
+	tr->logger->log(tr->msg->buf,tr->msg->len,
+			&src_ip,&tr->msg->remote_ip,
+			tr->msg->u.request->method_str);
+    }
+
     // reset counter for timer A & E
     trans_timer* A_E_timer = tr->get_timer(STIMER_A);
     tr->reset_timer(A_E_timer->type & 0xFFFF,A_TIMER,bucket->get_id());
@@ -2020,6 +2113,24 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
 	tr->clear_timer(STIMER_M);
 
     return 0;
+}
+
+void trans_ticket::lock_bucket() const
+{
+    _bucket->lock();
+}
+
+void trans_ticket::unlock_bucket() const
+{
+    _bucket->unlock();
+}
+
+const sip_trans* trans_ticket::get_trans() const
+{
+    if(_bucket->exist(_t))
+	return _t; 
+    else 
+	return NULL; 
 }
 
 /** EMACS **

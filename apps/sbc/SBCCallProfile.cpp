@@ -360,6 +360,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   if (!codec_prefs.readConfig(cfg)) return false;
   if (!transcoder.readConfig(cfg)) return false;
 
+  msg_logger_path = cfg.getParameter("msg_logger_path");
+
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
     ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());

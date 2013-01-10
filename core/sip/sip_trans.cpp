@@ -33,6 +33,7 @@
 #include "trans_table.h"
 #include "trans_layer.h"
 #include "transport.h"
+#include "msg_logger.h"
 
 #include "log.h"
 
@@ -68,7 +69,8 @@ sip_trans::sip_trans()
       retr_buf(NULL),
       retr_socket(NULL),
       retr_len(0),
-      last_rseq(0)
+      last_rseq(0),
+      logger(NULL)
 {
     memset(timers,0,SIP_TRANS_TIMERS*sizeof(void*));
 }
@@ -83,6 +85,9 @@ sip_trans::~sip_trans()
     }
     if(dialog_id.s) {
 	delete [] dialog_id.s;
+    }
+    if(logger) {
+	dec_ref(logger);
     }
 }
 
@@ -101,6 +106,16 @@ void sip_trans::retransmit()
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }
+
+    if(logger) {
+	sockaddr_storage src_ip;
+	retr_socket->copy_addr_to(&src_ip);
+	logger->log(retr_buf,retr_len,
+		    &src_ip,&retr_addr,
+		    msg->u.request->method_str,
+		    reply_status);
+    }
+
 }
 
 /**

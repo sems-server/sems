@@ -37,6 +37,7 @@
 
 struct sip_msg;
 class trsp_socket;
+class msg_logger;
 
 /**
  * Transaction types
@@ -140,6 +141,9 @@ class sip_trans
     /** Destination for retransmissions */
     sockaddr_storage retr_addr;
     trsp_socket*     retr_socket;
+
+    /** message logging */
+    msg_logger* logger;
 
     /**
      * Tells if a specific timer is set

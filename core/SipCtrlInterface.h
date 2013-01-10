@@ -90,7 +90,8 @@ public:
      *            its ticket is written into req.tt.
      */
     static int send(AmSipRequest &req, const string& dialog_id,
-		    const string& next_hop = "", int outbound_interface = -1);
+		    const string& next_hop = "", int outbound_interface = -1,
+		    msg_logger* logger = NULL);
 
     /**
      * Sends a SIP reply. 
@@ -98,7 +99,7 @@ public:
      * @param rep The reply to be sent. 'rep.tt' should be set to transaction 
      *            ticket included in the SIP request.
      */
-    static int send(const AmSipReply &rep);
+    static int send(const AmSipReply &rep, msg_logger* logger = NULL);
 
     /**
      * CANCELs an INVITE transaction.

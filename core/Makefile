@@ -7,9 +7,9 @@ PLUGIN_DIR=plug-in
 SIP_STACK_DIR=sip
 RESAMPLE_DIR=resample
 
-SRCS=$(filter-out $(NAME).cpp, $(wildcard *.cpp))
+SRCS=$(wildcard *.cpp)
 HDRS=$(SRCS:.cpp=.h)
-OBJS=$(SRCS:.cpp=.o) $(NAME).o sip/sip_stack.a
+OBJS=$(SRCS:.cpp=.o)
 DEPS=$(SRCS:.cpp=.d) $(NAME).d
 AUDIO_FILES=$(notdir $(wildcard wav/*.wav))
 TEST_DIR=tests
@@ -58,6 +58,11 @@ ifdef USE_LIBSAMPLERATE
 CPPFLAGS += -DUSE_LIBSAMPLERATE
 LDFLAGS +=-lsamplerate
 endif
+
+# This allows symbols defined in the SIP stack but not used
+# by the core itself to be included in the executable and
+# thus be available for modules
+EXTRA_LDFLAGS += -Wl,--whole-archive $(SIP_STACK_DIR)/sip_stack.a -Wl,--no-whole-archive
 
 ifdef USE_INTERNAL_RESAMPLER
 

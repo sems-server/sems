@@ -232,6 +232,9 @@ struct SBCCallProfile
 
   // todo: RTP transcoding mode
 
+  // message logging feature
+  string msg_logger_path;
+
   SBCCallProfile()
   : auth_enabled(false),
     transparent_dlg_id(false),

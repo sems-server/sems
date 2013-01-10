@@ -46,6 +46,9 @@ SBC - feature-wishlist
 #include "SBCSimpleRelay.h"
 #include "RegisterDialog.h"
 #include "SubscriptionDialog.h"
+#include "sip/msg_logger.h"
+#include "sip/sip_parser.h"
+#include "sip/sip_trans.h"
 
 #include "HeaderFilter.h"
 #include "ParamReplacer.h"
@@ -620,6 +623,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 			 SBCCallProfile& call_profile)
 {
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
+  auto_ptr<file_msg_logger> logger;
 
   for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
        cc_it != call_profile.cc_interfaces.end(); cc_it++) {
@@ -660,6 +664,34 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 	    AmArg::print(di_args).c_str());
       AmBasicSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       return false;
+    }
+
+    if (!logger.get() && !call_profile.msg_logger_path.empty()) {
+
+      ParamReplacerCtx ctx;
+      call_profile.msg_logger_path = 
+	ctx.replaceParameters(call_profile.msg_logger_path,
+			      "msg_logger_path",req);
+
+      if(!call_profile.msg_logger_path.empty()) {
+	logger.reset(new file_msg_logger());
+	if(logger->open(call_profile.msg_logger_path.c_str())) {
+	  ERROR("could not open message logger\n");
+	  logger.reset();
+	  call_profile.msg_logger_path.clear();
+	}
+      }
+    }
+
+    if(logger.get()) {
+      req.tt.lock_bucket();
+      const sip_trans* t = req.tt.get_trans();
+      if (t) {
+	sip_msg* msg = t->msg;
+	logger->log(msg->buf,msg->len,&msg->remote_ip,
+		    &msg->local_ip,msg->u.request->method_str);
+      }
+      req.tt.unlock_bucket();
     }
 
     // evaluate ret
@@ -703,7 +735,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 	  AmBasicSipDialog::reply_error(req,
 	        ret[i][SBC_CC_REFUSE_CODE].asInt(), 
 		ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-		headers);
+		headers,logger.get());
 
 	  return false;
 	}
