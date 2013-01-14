@@ -369,11 +369,12 @@ bool AmSession::processEventsCatchExceptions() {
     this should be called until it returns false. */
 bool AmSession::processingCycle() {
 
-  DBG("vv S [%s|%s] %s, %s, %i UACTransPending vv\n",
+  DBG("vv S [%s|%s] %s, %s, %i UACTransPending, %i usages vv\n",
       dlg->callid.c_str(),getLocalTag().c_str(),
       dlg->getStatusStr(),
       sess_stopped.get()?"stopped":"running",
-      dlg->getUACTransPending());
+      dlg->getUACTransPending(),
+      dlg->getUsages());
 
   switch (processing_status) {
   case SESSION_PROCESSING_EVENTS: 
@@ -387,14 +388,16 @@ bool AmSession::processingCycle() {
       AmSipDialog::Status dlg_status = dlg->getStatus();
       bool s_stopped = sess_stopped.get();
       
-      DBG("^^ S [%s|%s] %s, %s, %i UACTransPending ^^\n",
+      DBG("^^ S [%s|%s] %s, %s, %i UACTransPending, %i usages ^^\n",
 	  dlg->callid.c_str(),getLocalTag().c_str(),
 	  AmBasicSipDialog::getStatusStr(dlg_status),
 	  s_stopped?"stopped":"running",
-	  dlg->getUACTransPending());
+	  dlg->getUACTransPending(),
+	  dlg->getUsages());
       
       // session running?
-      if (!s_stopped || (dlg_status == AmSipDialog::Disconnecting))
+      if (!s_stopped || (dlg_status == AmSipDialog::Disconnecting)
+	  || dlg->getUsages())
 	return true;
       
       // session stopped?
@@ -435,11 +438,12 @@ bool AmSession::processingCycle() {
     if (!res)
       processing_status = SESSION_ENDED_DISCONNECTED;
 
-    DBG("^^ S [%s|%s] %s, %s, %i UACTransPending ^^\n",
+    DBG("^^ S [%s|%s] %s, %s, %i UACTransPending, %i usages ^^\n",
 	dlg->callid.c_str(),getLocalTag().c_str(),
 	dlg->getStatusStr(),
 	sess_stopped.get()?"stopped":"running",
-	dlg->getUACTransPending());
+	dlg->getUACTransPending(),
+	dlg->getUsages());
 
     return res;
   }; break;
