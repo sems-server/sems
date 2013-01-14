@@ -339,7 +339,7 @@ string replaceParameters(const string& s,
 	  string mapping_name = map_str.substr(spos+2);
 
 	  string map_res; 
-	  if (SBCFactory::regex_mappings.
+	  if (SBCFactory::instance()->regex_mappings.
 	      mapRegex(mapping_name, map_val_replaced.c_str(), map_res)) {
 	    DBG("matched regex mapping '%s' (orig '%s) in '%s'\n",
 		map_val_replaced.c_str(), map_val.c_str(), mapping_name.c_str());

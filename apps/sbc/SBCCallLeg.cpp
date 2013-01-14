@@ -240,17 +240,20 @@ int SBCCallLeg::applySSTCfg(AmConfigReader& sst_cfg,
 			   const AmSipRequest* p_req)
 {
   DBG("Enabling SIP Session Timers\n");  
-  if (NULL == SBCFactory::session_timer_fact) {
+  if (NULL == SBCFactory::instance()->session_timer_fact) {
     ERROR("session_timer module not loaded - "
 	  "unable to create call with SST\n");
     return -1;
   }
     
-  if (p_req && !SBCFactory::session_timer_fact->onInvite(*p_req, sst_cfg)) {
+  if (p_req && !SBCFactory::instance()->session_timer_fact->
+      onInvite(*p_req, sst_cfg)) {
     return -1;
   }
 
-  AmSessionEventHandler* h = SBCFactory::session_timer_fact->getHandler(this);
+  AmSessionEventHandler* h = SBCFactory::instance()->session_timer_fact->
+    getHandler(this);
+
   if (!h) {
     ERROR("could not get a session timer event handler\n");
     return -1;

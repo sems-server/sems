@@ -85,19 +85,19 @@ class SBCFactory: public AmSessionFactory,
 
   void onOoDRequest(const AmSipRequest& req);
 
-  static AmConfigReader cfg;
-  static AmSessionEventHandlerFactory* session_timer_fact;
+  AmConfigReader cfg;
+  AmSessionEventHandlerFactory* session_timer_fact;
 
   // hack for routing of OoD (e.g. REGISTER) messages
-  static AmDynInvokeFactory* gui_fact;
+  AmDynInvokeFactory* gui_fact;
 
-  static RegexMapper regex_mappings;
+  RegexMapper regex_mappings;
 
-  static AmEventQueueProcessor subnot_processor;
+  AmEventQueueProcessor subnot_processor;
 
   // DI
   // DI factory
-  AmDynInvoke* getInstance() { return instance(); }
+  AmDynInvoke* getInstance() { return this; }
   // DI API
   void invoke(const string& method, 
 	      const AmArg& args, AmArg& ret);

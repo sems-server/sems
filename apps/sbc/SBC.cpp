@@ -57,10 +57,6 @@ using std::map;
 
 #define MOD_NAME "sbc"
 
-AmConfigReader SBCFactory::cfg;
-AmSessionEventHandlerFactory* SBCFactory::session_timer_fact = NULL;
-RegexMapper SBCFactory::regex_mappings;
-AmEventQueueProcessor SBCFactory::subnot_processor;
 
 EXPORT_MODULE_FACTORY(SBCFactory);
 DEFINE_MODULE_INSTANCE(SBCFactory, MOD_NAME);

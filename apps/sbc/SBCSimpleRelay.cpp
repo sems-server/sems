@@ -337,7 +337,7 @@ int SBCSimpleRelay::start(const AmSipRequest& req, const SBCCallProfile& cp)
   }
 
   // must be added to the same worker thread
-  EventQueueWorker* worker = SBCFactory::subnot_processor.getWorker();
+  EventQueueWorker* worker = SBCFactory::instance()->subnot_processor.getWorker();
   if(!worker) return -1;
 
   worker->startEventQueue(a_leg);

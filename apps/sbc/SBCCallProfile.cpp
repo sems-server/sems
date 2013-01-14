@@ -193,12 +193,13 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       dstcfg.setParameter(cfgkey, cfg.getParameter(cfgprefix cfgkey));	\
     } else if (cfg.hasParameter(cfgkey)) {				\
       dstcfg.setParameter(cfgkey, cfg.getParameter(cfgkey));		\
-    } else if (SBCFactory::cfg.hasParameter(cfgkey)) {			\
-      dstcfg.setParameter(cfgkey, SBCFactory::cfg.getParameter(cfgkey)); \
+    } else if (SBCFactory::instance()->cfg.hasParameter(cfgkey)) {	\
+      dstcfg.setParameter(cfgkey, SBCFactory::instance()->		\
+			  cfg.getParameter(cfgkey));			\
     }
 
   if (sst_enabled.size() && sst_enabled != "no") {
-    if (NULL == SBCFactory::session_timer_fact) {
+    if (NULL == SBCFactory::instance()->session_timer_fact) {
       ERROR("session_timer module not loaded thus SST not supported, but "
 	    "required for profile '%s' (%s)\n", name.c_str(), profile_file_name.c_str());
       return false;
