@@ -36,6 +36,7 @@
 #include "AmEventQueueProcessor.h"
 
 #include "CallLeg.h"
+class SBCCallLeg;
 
 #include <map>
 
@@ -53,6 +54,8 @@ class SBCFactory: public AmSessionFactory,
   
   vector<string> active_profile;
   AmMutex profiles_mut;
+
+  SBCCallLeg* (*createCallLeg)(const SBCCallProfile& call_profile);
 
   void listProfiles(const AmArg& args, AmArg& ret);
   void reloadProfiles(const AmArg& args, AmArg& ret);
