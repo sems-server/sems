@@ -42,7 +42,7 @@ class AmSipDialogEventHandler;
 class AmSipDialog
   : public AmBasicSipDialog
 {
-
+protected:
   // Number of open UAS INVITE transactions
   unsigned int pending_invites;
 

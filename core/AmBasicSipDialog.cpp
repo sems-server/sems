@@ -235,18 +235,18 @@ int AmBasicSipDialog::getOutboundIf()
     goto error;
   }
 
-  outbound_interface = if_it->second;
-  return outbound_interface;
+  setOutboundInterface(if_it->second);
+  return if_it->second;
 
  error:
   WARN("Error while computing outbound interface: default interface will be used instead.");
-  outbound_interface = 0;
-  return outbound_interface;
+  setOutboundInterface(0);
+  return 0;
 }
 
 void AmBasicSipDialog::resetOutboundIf()
 {
-  outbound_interface = -1;
+  setOutboundInterface(-1);
 }
 
 /**
@@ -254,20 +254,15 @@ void AmBasicSipDialog::resetOutboundIf()
  */
 void AmBasicSipDialog::initFromLocalRequest(const AmSipRequest& req)
 {
-  if (req.r_uri.length())
-    remote_uri = req.r_uri;
+  updateRemoteUri(req.r_uri);
 
-  if(callid.empty()){
-    DBG("dialog callid is empty, updating from UACRequest\n");
-    callid       = req.callid;
-    local_tag    = req.from_tag;
-    DBG("local_tag = %s\n",local_tag.c_str());
-    user         = req.user;
-    domain       = req.domain;
-    local_uri    = req.from_uri;
-    remote_party = req.to;
-    local_party  = req.from;
-  }
+  callid       = req.callid;
+  local_tag    = req.from_tag;
+  user         = req.user;
+  domain       = req.domain;
+  local_uri    = req.from_uri;
+  remote_party = req.to;
+  local_party  = req.from;
 }
 
 bool AmBasicSipDialog::onRxReqSanity(const AmSipRequest& req)
@@ -328,11 +323,11 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
     
     // refresh the target
     if (remote_uri != req.from_uri) {
-      remote_uri = req.from_uri;
+      updateRemoteUri(req.from_uri);
       if(nat_handling && req.first_hop) {
-	next_hop = req.remote_ip + ":";
-	next_hop += int2str(req.remote_port);
-	next_hop_1st_req = false;
+	updateNextHop(req.remote_ip + ":"
+		      + int2str(req.remote_port));
+	updateNextHop1stReq(false);
       }
     }
   }
@@ -419,8 +414,13 @@ void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
 	 (reply.cseq_method == SIP_METH_NOTIFY))) ||
        (reply.cseq_method == SIP_METH_SUBSCRIBE)) ) {
     
-    remote_uri = reply.to_uri;
+    updateRemoteUri(reply.to_uri);
   }
+}
+
+void AmBasicSipDialog::updateRemoteUri(const string& new_remote_uri)
+{
+  remote_uri = new_remote_uri;
 }
 
 void AmBasicSipDialog::updateRouteSet(const string& new_rs)
@@ -433,6 +433,16 @@ void AmBasicSipDialog::updateRemoteTag(const string& new_rt)
   if(!new_rt.empty() && remote_tag.empty()){
     remote_tag = new_rt;
   }
+}
+
+void AmBasicSipDialog::updateNextHop(const string& new_nh)
+{
+  next_hop = new_nh;
+}
+
+void AmBasicSipDialog::updateNextHop1stReq(bool nh_1st_req)
+{
+  next_hop_1st_req = nh_1st_req;
 }
 
 int AmBasicSipDialog::onTxRequest(AmSipRequest& req, int& flags)

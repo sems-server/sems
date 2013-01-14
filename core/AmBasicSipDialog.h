@@ -238,17 +238,17 @@ public:
   //void setOutboundInterface(int interface_id);
 
   /** Initialize dialog from locally originated UAC request */
-  void initFromLocalRequest(const AmSipRequest& req);
+  virtual void initFromLocalRequest(const AmSipRequest& req);
 
   /**
    * Executed for requests received by the local UA.
    */
-  void onRxRequest(const AmSipRequest& req);
+  virtual void onRxRequest(const AmSipRequest& req);
 
   /**
    * Executed for replies received by the local UA.
    */
-  void onRxReply(const AmSipReply& reply);
+  virtual void onRxReply(const AmSipReply& reply);
 
   /**
    * Updates remote_uri if necessary.
@@ -259,9 +259,11 @@ public:
    */
   void updateDialogTarget(const AmSipReply& reply);
 
-  void updateRouteSet(const string& new_rs);
-  void updateRemoteTag(const string& new_rt);
-
+  virtual void updateRemoteUri(const string& new_remote_uri);
+  virtual void updateRouteSet(const string& new_rs);
+  virtual void updateRemoteTag(const string& new_rt);
+  virtual void updateNextHop(const string& new_nh);
+  virtual void updateNextHop1stReq(bool nh_1st_req);
 
   /** @return 0 on success */
   virtual int reply(const AmSipRequest& req,

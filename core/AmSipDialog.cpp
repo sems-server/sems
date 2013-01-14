@@ -118,20 +118,20 @@ bool AmSipDialog::onRxReqStatus(const AmSipRequest& req)
   switch(status){
   case Disconnected:
     if(req.method == SIP_METH_INVITE)
-      status = Trying;
+      setStatus(Trying);
     break;
   case Connected:
     if(req.method == SIP_METH_BYE)
-      status = Disconnecting;
+      setStatus(Disconnecting);
     break;
 
   case Trying:
   case Proceeding:
   case Early:
     if(req.method == SIP_METH_BYE)
-      status = Disconnecting;
+      setStatus(Disconnecting);
     else if(req.method == SIP_METH_CANCEL){
-      status = Cancelling;
+      setStatus(Cancelling);
       reply(req,200,"OK");
     }
     break;
@@ -216,10 +216,10 @@ int AmSipDialog::onTxRequest(AmSipRequest& req, int& flags)
   addTranscoderStats(req.hdrs);
 
   if((req.method == SIP_METH_INVITE) && (status == Disconnected)){
-    status = Trying;
+    setStatus(Trying);
   }
   else if((req.method == SIP_METH_BYE) && (status != Disconnecting)){
-    status = Disconnecting;
+    setStatus(Disconnecting);
   }
 
   if ((req.method == SIP_METH_BYE) || (req.method == SIP_METH_CANCEL)) {
@@ -261,12 +261,12 @@ int AmSipDialog::onTxReply(const AmSipRequest& req, AmSipReply& reply, int& flag
   case Early:
     if(reply.cseq_method == SIP_METH_INVITE){
       if(reply.code < 200) {
-	status = Early;
+	setStatus(Early);
       }
       else if(reply.code < 300)
-	status = Connected;
+	setStatus(Connected);
       else
-	status = Disconnected;
+	setStatus(Disconnected);
     }
     break;
 
@@ -277,7 +277,7 @@ int AmSipDialog::onTxReply(const AmSipRequest& req, AmSipReply& reply, int& flag
       //  authentication (NYI at this place)
       // Also: we should not send provisionnal replies to a BYE
       if(reply.code >= 200)
-	status = Disconnected;
+	setStatus(Disconnected);
     }
     break;
 
@@ -338,15 +338,15 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
     case Proceeding:
       if(reply.code < 200){
 	if(reply.to_tag.empty())
-	  status = Proceeding;
+	  setStatus(Proceeding);
 	else {
-	  status = Early;
+	  setStatus(Early);
 	  updateRemoteTag(reply.to_tag);
 	  updateRouteSet(reply.route);
 	}
       }
       else if(reply.code < 300){
-	status = Connected;
+	setStatus(Connected);
 	updateRouteSet(reply.route);
 	if(reply.to_tag.empty()){
 	  DBG("received 2xx reply without to-tag "
@@ -360,7 +360,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
       }
 
       if(reply.code >= 300) {// error reply
-	status = Disconnected;
+	setStatus(Disconnected);
       }
       else if(cancel_pending){
 	cancel_pending = false;
@@ -372,7 +372,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
       if(reply.code < 200){
       }
       else if(reply.code < 300){
-	status = Connected;
+	setStatus(Connected);
 	updateRouteSet(reply.route);
 	if(reply.to_tag.empty()){
 	  DBG("received 2xx reply without to-tag "
@@ -385,7 +385,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
 	}
       }
       else { // error reply
-	status = Disconnected;
+	setStatus(Disconnected);
       }
       break;
 
@@ -393,7 +393,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
       if(reply.code >= 300){
 	// CANCEL accepted
 	DBG("CANCEL accepted, status -> Disconnected\n");
-	status = Disconnected;
+	setStatus(Disconnected);
       }
       else if(reply.code < 300){
 	// CANCEL rejected
@@ -416,7 +416,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
 
     if((reply.cseq_method == SIP_METH_BYE) && (reply.code >= 200)){
       //TODO: support the auth case here (401/403)
-      status = Disconnected;
+      setStatus(Disconnected);
     }
   }
 
@@ -492,7 +492,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
       // collect INVITE UAC transactions
       vector<unsigned int> ack_trans;
       for (TransMap::iterator it=uac_trans.begin(); it != uac_trans.end(); it++) {
-	if (it->second.method == "INVITE"){
+	if (it->second.method == SIP_METH_INVITE){
 	  ack_trans.push_back(it->second.cseq);
 	}
       }
@@ -503,7 +503,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
       }
 
       if (status != Disconnecting) {
-	status = Disconnected;
+	setStatus(Disconnected);
 	return sendRequest(SIP_METH_BYE, NULL, hdrs, flags);
       } else {
 	return 0;
@@ -531,7 +531,7 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	    ERROR("ignoring bye() in %s state: "
 		  "no UAC transaction to cancel.\n",
 		  getStatusStr());
-	    status = Disconnected;
+	    setStatus(Disconnected);
 	}
 	return 0;
 
@@ -546,7 +546,7 @@ int AmSipDialog::reinvite(const string& hdrs,
 			  const AmMimeBody* body,
 			  int flags)
 {
-  if(status == Connected) {
+  if(getStatus() == Connected) {
     return sendRequest(SIP_METH_INVITE, body, hdrs, flags);
   }
   else {
@@ -560,7 +560,7 @@ int AmSipDialog::reinvite(const string& hdrs,
 int AmSipDialog::invite(const string& hdrs,  
 			const AmMimeBody* body)
 {
-  if(status == Disconnected) {
+  if(getStatus() == Disconnected) {
     int res = sendRequest(SIP_METH_INVITE, body, hdrs);
     DBG("TODO: is status already 'trying'? status=%s\n",getStatusStr());
     //status = Trying;
@@ -577,7 +577,7 @@ int AmSipDialog::invite(const string& hdrs,
 int AmSipDialog::update(const AmMimeBody* body, 
                         const string &hdrs)
 {
-  switch(status){
+  switch(getStatus()){
   case Connected://if Connected, we should send a re-INVITE instead...
     DBG("re-INVITE should be used instead (see RFC3311, section 5.1)\n");
   case Trying:
@@ -599,7 +599,7 @@ int AmSipDialog::update(const AmMimeBody* body,
 int AmSipDialog::refer(const string& refer_to,
 		       int expires)
 {
-  if(status == Connected) {
+  if(getStatus() == Connected) {
     string hdrs = SIP_HDR_COLSP(SIP_HDR_REFER_TO) + refer_to + CRLF;
     if (expires>=0) 
       hdrs+= SIP_HDR_COLSP(SIP_HDR_EXPIRES) + int2str(expires) + CRLF;
@@ -616,9 +616,9 @@ int AmSipDialog::refer(const string& refer_to,
 // proprietary
 int AmSipDialog::transfer(const string& target)
 {
-  if(status == Connected){
+  if(getStatus() == Connected){
 
-    status = Disconnecting;
+    setStatus(Disconnecting);
 		
     string      hdrs = "";
     AmSipDialog tmp_d(*this);
@@ -655,7 +655,7 @@ int AmSipDialog::prack(const AmSipReply &reply1xx,
                        const AmMimeBody* body, 
                        const string &hdrs)
 {
-  switch(status) {
+  switch(getStatus()) {
   case Trying:
   case Proceeding:
   case Cancelling:
@@ -685,12 +685,12 @@ int AmSipDialog::cancel()
 	
 	if(t->second.method == SIP_METH_INVITE){
 	  
-	  if(status == Trying){
+	  if(getStatus() == Trying){
 	    cancel_pending=true;
 	    return 0;
 	  }
-	  else if(status != Cancelling){
-	    status = Cancelling;
+	  else if(getStatus() != Cancelling){
+	    setStatus(Cancelling);
 	    return SipCtrlInterface::cancel(&t->second.tt);
 	  }
 	  else {
@@ -706,7 +706,7 @@ int AmSipDialog::cancel()
 
 int AmSipDialog::drop()
 {	
-  status = Disconnected;
+  setStatus(Disconnected);
   return 1;
 }
 
