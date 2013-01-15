@@ -180,6 +180,7 @@ void trans_timer::fire()
 		// 1. it is not yet deleted in the wheeltimer
 		// 2. we have already set a new one
 		// -> anyway, don't fire the old one !!!
+                bucket->unlock();
 		return;
 	    }
 

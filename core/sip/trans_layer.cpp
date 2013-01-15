@@ -1179,6 +1179,7 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
 	ERROR("Parser failed on generated request\n");
 	ERROR("Message was: <%.*s>\n",p_msg->len,p_msg->buf);
 	delete p_msg;
+	bucket->unlock();
 	return MALFORMED_SIP_MSG;
     }
 
