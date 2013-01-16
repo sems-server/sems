@@ -34,6 +34,7 @@
 
 #include <map>
 #include <list>
+#include <memory>
 using std::map;
 using std::list;
 
