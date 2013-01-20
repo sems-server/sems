@@ -61,6 +61,10 @@ void replaceParsedParam(const string& s, size_t p,
   };
 }
 
+/* Returns a url-decoded version of str */
+/* IMPORTANT: be sure to free() the returned string after use */
+char *url_encode(const char *str);
+
 string replaceParameters(const string& s,
 			 const char* r_type,
 			 const AmSipRequest& req,
@@ -409,6 +413,41 @@ string replaceParameters(const string& s,
 	  skip_chars = skip_p-p;
 	} break;
 
+	case 'm': // Request method
+	  res += req.method;
+	  break;
+
+	case '#': { // URL encoding
+	  if (s[p+1] != '(') {
+	    WARN("Error parsing $# URL encoding (missing '(')\n");
+	    break;
+	  }
+	  if (s.length()<p+3) {
+	    WARN("Error parsing $# URL encoding (short string)\n");
+	    break;
+	  }
+
+	  size_t skip_p = p+2;
+	  skip_p = skip_to_end_of_brackets(s, skip_p);
+
+	  if (skip_p==s.length()) {
+	    WARN("Error parsing $# URL encoding (unclosed brackets)\n");
+	    skip_chars = skip_p-p;
+	    break;
+	  }
+
+	  string expr_str = s.substr(p+2, skip_p-p-2);
+	  string expr_replaced =
+	    replaceParameters(expr_str, r_type, req, call_profile, app_param,
+			      ruri_parser, from_parser, to_parser);
+
+	  char* val_escaped = url_encode(expr_replaced.c_str());
+	  res += string(val_escaped);
+	  free(val_escaped);
+
+	  skip_chars = skip_p-p;
+	} break;
+
 	default: {
 	  WARN("unknown replace pattern $%c%c\n",
 	       s[p], s[p+1]);
@@ -428,4 +467,65 @@ string replaceParameters(const string& s,
     DBG("%s pattern replace: '%s' -> '%s'\n", r_type, s.c_str(), res.c_str());
   }
   return res;
+}
+
+
+//
+// URL encoding functions
+//
+// source code from http://www.geekhideout.com/urlcode.shtml
+//
+
+/* Converts a hex character to its integer value */
+char from_hex(char ch) {
+  return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
+}
+
+/* Converts an integer value to its hex character*/
+char to_hex(char code) {
+  static char hex[] = "0123456789abcdef";
+  return hex[code & 15];
+}
+
+/* Returns a url-encoded version of str */
+/* IMPORTANT: be sure to free() the returned string after use */
+char *url_encode(const char *str) {
+
+  const char* pstr = str;
+  char* buf = (char*)malloc(strlen(str) * 3 + 1);
+  char* pbuf = buf;
+
+  while (*pstr) {
+    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || 
+	*pstr == '.' || *pstr == '~') 
+      *pbuf++ = *pstr;
+    else if (*pstr == ' ') 
+      *pbuf++ = '+';
+    else 
+      *pbuf++ = '%', *pbuf++ = to_hex(*pstr >> 4), *pbuf++ = to_hex(*pstr & 15);
+    pstr++;
+  }
+  *pbuf = '\0';
+  return buf;
+}
+
+/* Returns a url-decoded version of str */
+/* IMPORTANT: be sure to free() the returned string after use */
+char *url_decode(char *str) {
+  char *pstr = str, *buf = (char*)malloc(strlen(str) + 1), *pbuf = buf;
+  while (*pstr) {
+    if (*pstr == '%') {
+      if (pstr[1] && pstr[2]) {
+        *pbuf++ = from_hex(pstr[1]) << 4 | from_hex(pstr[2]);
+        pstr += 2;
+      }
+    } else if (*pstr == '+') { 
+      *pbuf++ = ' ';
+    } else {
+      *pbuf++ = *pstr;
+    }
+    pstr++;
+  }
+  *pbuf = '\0';
+  return buf;
 }
