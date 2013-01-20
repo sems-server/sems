@@ -67,7 +67,7 @@ int SimpleRelayDialog::relayReply(const AmSipReply& reply)
 
   string hdrs = reply.hdrs;
   if(headerfilter.size()) inplaceHeaderFilter(hdrs, headerfilter);
-  if(!append_headers.empty()) hdrs += append_headers;
+  //if(!append_headers.empty()) hdrs += append_headers;
 
   // reply translations
   int code = reply.code;
