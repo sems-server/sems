@@ -132,6 +132,9 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
 	uac_contacts[i].uri_host.c_str(),uac_contacts[i].uri_port.c_str());
   }
 
+  // patch initial CSeq to fix re-REGISTER with transparent-id enabled
+  cseq = req.cseq;
+
   return 0;
 }
 
