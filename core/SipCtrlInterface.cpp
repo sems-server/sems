@@ -122,9 +122,9 @@ SipCtrlInterface::SipCtrlInterface()
     trans_layer::instance()->register_ua(this);
 }
 
-int SipCtrlInterface::cancel(trans_ticket* tt)
+int SipCtrlInterface::cancel(trans_ticket* tt, const string& hdrs)
 {
-    return trans_layer::instance()->cancel(tt);
+    return trans_layer::instance()->cancel(tt,stl2cstr(hdrs));
 }
 
 int SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
@@ -132,7 +132,7 @@ int SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
 			   msg_logger* logger)
 {
     if(req.method == "CANCEL")
-	return cancel(&req.tt);
+	return cancel(&req.tt, req.hdrs);
 
     sip_msg* msg = new sip_msg();
     

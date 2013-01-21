@@ -107,7 +107,7 @@ public:
      *
      * @param tt transaction ticket of the request to cancel.
      */
-    static int cancel(trans_ticket* tt);
+    static int cancel(trans_ticket* tt, const string& hdrs);
 
     /**
      * From sip_ua

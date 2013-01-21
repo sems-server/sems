@@ -113,7 +113,7 @@ public:
      * A CANCEL request is sent if necessary.
      * @param tt transaction ticket from the original INVITE.
      */
-    int cancel(trans_ticket* tt);
+    int cancel(trans_ticket* tt, const cstring& hdrs);
     
     /**
      * Called by the transport layer

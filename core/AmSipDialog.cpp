@@ -691,7 +691,7 @@ int AmSipDialog::cancel()
 	  }
 	  else if(getStatus() != Cancelling){
 	    setStatus(Cancelling);
-	    return SipCtrlInterface::cancel(&t->second.tt);
+	    return SipCtrlInterface::cancel(&t->second.tt,t->second.hdrs);
 	  }
 	  else {
 	    ERROR("INVITE transaction has already been cancelled\n");

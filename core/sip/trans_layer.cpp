@@ -1068,7 +1068,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     return send_err;
 }
 
-int _trans_layer::cancel(trans_ticket* tt)
+int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
 {
     assert(tt);
     assert(tt->_bucket && tt->_t);
@@ -1138,6 +1138,7 @@ int _trans_layer::cancel(trans_ticket* tt)
 	+ copy_hdrs_len(req->route)
 	+ copy_hdrs_len(req->contacts);
 
+    request_len += hdrs.len;
     request_len += 2/* CRLF end-of-headers*/;
 
     // Allocate new message
@@ -1157,6 +1158,11 @@ int _trans_layer::cancel(trans_ticket* tt)
     cseq_wr(&c,get_cseq(req)->num_str,cancel_str);
     copy_hdrs_wr(&c,req->route);
     copy_hdrs_wr(&c,req->contacts);
+
+    if (hdrs.len) {
+      memcpy(c,hdrs.s,hdrs.len);
+      c += hdrs.len;
+    }
 
     *c++ = CR;
     *c++ = LF;
@@ -1876,7 +1882,7 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	{
 	    // send CANCEL
 	    trans_ticket tt(tr,bucket);
-	    cancel(&tt);
+	    cancel(&tt,cstring());
 	    
 	    // Now remove the transaction
 	    bucket->lock();
