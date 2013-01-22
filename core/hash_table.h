@@ -146,7 +146,14 @@ public:
     bool exist(const Key& k) {
 	return find(k) != elmts.end();
     }
-    
+
+    /**
+     * Insert the value into this bucket.
+     */
+    void insert(const Key& k, Value* v) {
+	elmts.insert(typename value_map::value_type(k,v));
+    }
+
     /**
      * Remove the value from this bucket,
      * if it was still present.
@@ -177,11 +184,13 @@ public:
 	
 	DBG("*** Bucket ID: %i ***\n",(int)get_id());
 	
-	for(typename value_map::const_iterator it = elmts.begin(); it != elmts.end(); ++it) {
-	    
-	    it->second->dump();
+	for(typename value_map::const_iterator it = elmts.begin(); 
+	    it != elmts.end(); ++it) {
+	    dump_elmt(it->first,it->second);
 	}
     }
+
+    virtual void dump_elmt(const Key& k, const Value* v) const {}
 
 protected:
     typename value_map::iterator find(const Key& k)

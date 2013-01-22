@@ -54,6 +54,13 @@ SBC - feature-wishlist
 #include "ParamReplacer.h"
 #include "SDPFilter.h"
 #include "SBCCallLeg.h"
+
+#include "AmEventQueueProcessor.h"
+
+#include "SubscriptionDialog.h"
+#include "RegisterDialog.h"
+#include "RegisterCache.h"
+
 #include <algorithm>
 
 using std::map;
@@ -117,6 +124,7 @@ SBCFactory::SBCFactory(const string& _app_name)
 }
 
 SBCFactory::~SBCFactory() {
+  RegisterCache::dispose();
 }
 
 int SBCFactory::onLoad()
@@ -203,6 +211,7 @@ int SBCFactory::onLoad()
 
   // TODO: add config param for the number of threads
   subnot_processor.addThreads(1);
+  RegisterCache::instance()->start();
 
   return 0;
 }

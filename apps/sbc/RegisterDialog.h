@@ -7,14 +7,19 @@
 class RegisterDialog
   : public SimpleRelayDialog
 {
-  // Normalized original contacts
-  vector<AmUriParser> orig_contacts;
-  bool star_contact;
-
   // Contacts as sent
   vector<AmUriParser> uac_contacts;
+  bool star_contact;
+
 
   bool contact_hiding;
+
+  bool reg_caching;
+  map<string,AmUriParser> alias_map;
+  string aor; // From-URI
+  string         source_ip;
+  unsigned short source_port;
+  unsigned short local_if;
 
   // AmBasicSipDialog interface
   int onTxReply(const AmSipRequest& req, AmSipReply& reply, int& flags);
@@ -29,7 +34,6 @@ public:
 
   // SimpleRelayDialog interface
   int initUAC(const AmSipRequest& req, const SBCCallProfile& cp);
-  int initUAS(const AmSipRequest& req, const SBCCallProfile& cp);
 
   // AmBasicSipEventHandler interface
   void onSipReply(const AmSipRequest& req,

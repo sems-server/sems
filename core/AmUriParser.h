@@ -58,9 +58,9 @@ struct AmUriParser {
 	    const string& param_value, const string& param_list);
   void add_user_param(const string& param_name, const string& param_value);
 
-  void dump();
-  string uri_str();
-  string nameaddr_str();
+  void dump() const;
+  string uri_str() const;
+  string nameaddr_str() const;
   
   AmUriParser() { }
 

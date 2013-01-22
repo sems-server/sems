@@ -230,6 +230,14 @@ struct SBCCallProfile
     CodecPreferences(): aleg_prefer_existing_payloads(false) ,bleg_prefer_existing_payloads(false) { }
   } codec_prefs;
 
+  bool contact_hiding;
+  string contact_hiding_prefix;
+  string contact_hiding_vars;
+
+  bool reg_caching;
+  // bool reg_caching_fix_nat;
+  // bool reg_caching_iface;
+
   // todo: RTP transcoding mode
 
   // message logging feature

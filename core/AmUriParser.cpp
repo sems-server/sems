@@ -370,7 +370,7 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
 
 
 bool AmUriParser::parse_contact(const string& line, size_t pos, size_t& end) {
-  int p0 = skip_name(line, pos);
+  size_t p0 = skip_name(line, pos);
   if (p0 < 0) { return false; }
   if ((size_t)p0 > pos) {
     // save display name
@@ -463,7 +463,7 @@ void AmUriParser::add_user_param(const string& param_name, const string& param_v
 }
 
 
-void AmUriParser::dump() {
+void AmUriParser::dump() const {
   DBG("--- Uri Info --- \n");
   DBG(" uri           '%s'\n", uri.c_str());
   DBG(" display_name  '%s'\n", display_name.c_str());
@@ -472,8 +472,9 @@ void AmUriParser::dump() {
   DBG(" uri_port      '%s'\n", uri_port.c_str());
   DBG(" uri_hdr       '%s'\n", uri_headers.c_str());
   DBG(" uri_param     '%s'\n", uri_param.c_str());
-  for (map<string, string>::iterator it = params.begin(); 
+  for (map<string, string>::const_iterator it = params.begin(); 
        it != params.end(); it++) {
+
     if (it->second.empty())
       DBG(" param     '%s'\n", it->first.c_str());
     else
@@ -482,7 +483,7 @@ void AmUriParser::dump() {
   DBG("-------------------- \n");
 }
 
-string AmUriParser::uri_str()
+string AmUriParser::uri_str() const
 {
   string res = uri_host;
 
@@ -503,14 +504,16 @@ string AmUriParser::uri_str()
   return res;
 }
 
-string AmUriParser::nameaddr_str()
+string AmUriParser::nameaddr_str() const
 {
   string res = "<" + uri_str() + ">";
 
   if(!display_name.empty())
     res = "\"" + display_name + "\" " + res;
 
-  for (map<string, string>::iterator it = params.begin(); it != params.end(); it++) {
+  for (map<string, string>::const_iterator it = params.begin(); 
+       it != params.end(); it++) {
+
     res += ";"+it->first;
     if (!it->second.empty())
       res += "="+it->second;

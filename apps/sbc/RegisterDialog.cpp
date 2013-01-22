@@ -2,11 +2,15 @@
 #include "AmSipHeaders.h"
 #include "arg_conversion.h"
 #include "sip/parse_nameaddr.h"
-
+#include "RegisterCache.h"
+#include "AmSession.h"
 #include "AmConfig.h"
+
+#include <algorithm>
 
 RegisterDialog::RegisterDialog()
   : contact_hiding(false),
+    reg_caching(false),
     star_contact(false)
 {
 }
@@ -56,6 +60,26 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
     return -1;
   }
 
+  contact_hiding = cp.contact_hiding;
+
+  reg_caching = cp.reg_caching;
+  if(reg_caching) {
+    source_ip = req.remote_ip;
+    source_port = req.remote_port;
+    local_if = req.local_if;
+  }
+
+  AmUriParser from_parser;
+  size_t end_from = 0;
+  if(!from_parser.parse_contact(req.from,0,end_from)) {
+    DBG("error parsing AOR: '%s'\n",req.from.c_str());
+    reply_error(req,400,"Bad request - bad From HF");
+    return -1;
+  }
+
+  aor = RegisterCache::canonicalize_aor(from_parser.uri_str());
+  DBG("parsed AOR: '%s'",aor.c_str());
+
   DBG("parsing contacts: '%s'\n",req.contact.c_str());
   if (req.contact == "*") {
     star_contact = true;
@@ -100,14 +124,25 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
 
   // todo: limit / extend expires: UAS side
 
-  orig_contacts = uac_contacts;
-  contact_hiding = cp.contact.hiding;
-
   if(SimpleRelayDialog::initUAC(req,cp) < 0)
     return -1;
 
-  if(star_contact)
+  if(star_contact) {
+
+    // prepare bindings to be deleted on reply
+    if(reg_caching) {
+      map<string,string> aor_alias_map =
+	RegisterCache::instance()->getAorAliasMap(aor);
+
+      for(map<string,string>::iterator it = aor_alias_map.begin();
+	  it != aor_alias_map.end(); ++it) {
+	AmUriParser& uri = alias_map[it->first];
+	uri.uri = it->second;
+	uri.parse_uri();
+      }
+    }
     return 0;
+  }
   
   ParamReplacerCtx ctx;
   int oif = getOutboundIf();
@@ -116,11 +151,46 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
 
   for(unsigned int i=0; i < uac_contacts.size(); i++) {
 
-    cp.fix_reg_contact(ctx,req,uac_contacts[i]);
+    if(contact_hiding) {
+      uac_contacts[i].uri_user = encodeUsername(uac_contacts[i],
+						req,cp,ctx);
+      
+      // hack to suppress transport=tcp (just hack, params like
+      // "xtransport" or values like "tcpip" will be partly removed as well)
+      // string params(uac_contacts[i].uri_param);
+      // std::transform(params.begin(), params.end(), params.begin(), ::tolower);
+      // DBG("params: %s",params.c_str());
+      // size_t t_pos = params.find("transport=tcp");
+      // if (t_pos != string::npos) {
+      // 	uac_contacts[i].uri_param.erase(t_pos, sizeof("transport=tcp")-1);
+      // 	if((t_pos < uac_contacts[i].uri_param.length()) && 
+      // 	   (uac_contacts[i].uri_param[t_pos] == ';')) {
+      // 	  uac_contacts[i].uri_param.erase(t_pos, 1);
+      // 	}
+      // }
+    }
+    else if(reg_caching) {
+      const string& uri = uac_contacts[i].uri_str();
 
-    uac_contacts[i].uri_user = encodeUsername(orig_contacts[i],
-					      req,cp,ctx);
+      RegisterCache* reg_cache = RegisterCache::instance();
+      string alias = reg_cache->getAlias(aor,uri);
+      if(alias.empty()) {
+	alias = AmSession::getNewId();
+	DBG("no alias in cache, created one");
+      }
 
+      alias_map[alias] = uac_contacts[i];
+      uac_contacts[i].uri_user = alias;
+      uac_contacts[i].uri_param.clear();
+      DBG("using alias = '%s' for aor = '%s' and uri = '%s'",
+	  alias.c_str(),aor.c_str(),uri.c_str());
+    }
+    else {
+      cp.fix_reg_contact(ctx,req,uac_contacts[i]);
+      continue;
+    }
+
+    // patch host & port
     uac_contacts[i].uri_host = AmConfig::SIP_Ifs[oif].LocalIP;
 
     if(AmConfig::SIP_Ifs[oif].LocalPort == 5060)
@@ -138,11 +208,6 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
   return 0;
 }
 
-int RegisterDialog::initUAS(const AmSipRequest& req, const SBCCallProfile& cp)
-{
-  return SimpleRelayDialog::initUAS(req,cp);
-}
-
 // AmBasicSipEventHandler interface
 void RegisterDialog::onSipReply(const AmSipRequest& req,
 				const AmSipReply& reply, 
@@ -151,10 +216,16 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
   string contacts;
 
   if((reply.code < 200) || (reply.code >= 300) ||
-     reply.contact.empty()) {
-       
+     (uac_contacts.empty() && !reg_caching)) {
+
     SimpleRelayDialog::onSipReply(req,reply,old_dlg_status);
     return;
+  }
+
+  unsigned int req_expires = 0;
+  string expires_str = getHeader(req.hdrs, "Expires");
+  if (!expires_str.empty()) {
+    str2i(expires_str, req_expires);
   }
 
   DBG("parsing server contact set '%s'\n", reply.contact.c_str());
@@ -164,10 +235,75 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
   DBG("Got %zd server contacts\n", uas_contacts.size());
 
   // decode contacts
-  if(contact_hiding) {
+  if(contact_hiding || reg_caching) {
+
+    struct timeval now;
+    gettimeofday(&now,NULL);
+
     for (vector<AmUriParser>::iterator it =
 	   uas_contacts.begin(); it != uas_contacts.end(); it++) {
-      decodeUsername(it->uri_user,*it);
+
+      if(contact_hiding) {
+	decodeUsername(it->uri_user,*it);
+      }
+      else if(reg_caching) {
+	map<string,AmUriParser>::iterator alias_it = alias_map.find(it->uri_user);
+	if(alias_it == alias_map.end()) {
+	  DBG("no alias found for '%s'",it->uri_user.c_str());
+	  continue;
+	}
+
+	unsigned int expires=0;
+	if(it->params.find("expires") == it->params.end()) {
+	  expires = req_expires;
+	}
+	else {
+	  expires_str = alias_it->second.params["expires"];
+	  if (!expires_str.empty()) {
+	    str2i(expires_str, expires);
+	  }
+	}
+
+	const AmUriParser& orig_contact = alias_it->second;
+	it->uri_user  = orig_contact.uri_user;
+	it->uri_host  = orig_contact.uri_host;
+	it->uri_port  = orig_contact.uri_port;
+	it->uri_param = orig_contact.uri_param;
+
+	// Update global reg cache & alias map
+	// with new 'expire' value and new entries
+
+	AliasEntry alias_entry;
+	alias_entry.contact_uri = orig_contact.uri_str();
+	alias_entry.source_ip   = source_ip;
+	alias_entry.source_port = source_port;
+	alias_entry.local_if    = local_if;
+
+	RegisterCache* reg_cache = RegisterCache::instance();
+	reg_cache->update(aor, alias_it->first, 
+			  expires + now.tv_sec, 
+			  alias_entry);
+
+	alias_map.erase(alias_it);
+      }
+    }
+
+    DBG("reg_caching=%i; alias_map.empty()=%i",
+	reg_caching, alias_map.empty());
+
+    if(reg_caching && !alias_map.empty()) {
+      for(map<string,AmUriParser>::iterator alias_it = alias_map.begin();
+	  alias_it != alias_map.end(); ++alias_it) {
+	
+	// search for missing Contact-URI
+	// and remove the binding
+	RegisterCache* reg_cache = RegisterCache::instance();
+	string contact_uri = alias_it->second.uri_str();
+	DBG("removing '%s' -> '%s'",
+	    contact_uri.c_str(),alias_it->first.c_str());
+
+	reg_cache->remove(aor,contact_uri,alias_it->first);
+      }
     }
   }
   
@@ -180,10 +316,12 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
       it++;
     }
   }
-  DBG("generated new contacts: '%s'\n", contacts.c_str());
-
+  
   AmSipReply relay_reply(reply);
-  relay_reply.hdrs += SIP_HDR_COLSP(SIP_HDR_CONTACT) + contacts + CRLF;
+  if(!contacts.empty()) {
+    DBG("generated new contacts: '%s'\n", contacts.c_str());
+    relay_reply.hdrs += SIP_HDR_COLSP(SIP_HDR_CONTACT) + contacts + CRLF;
+  }
       
   SimpleRelayDialog::onSipReply(req,relay_reply,old_dlg_status);
   return;
