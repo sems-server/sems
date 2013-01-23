@@ -23,6 +23,8 @@ REL_VERSION := $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
 RELEASE := $(REL_VERSION)$(EXTRAVERSION)
 endif
 
+APP_NAME=sems
+
 CPPFLAGS += -D_DEBUG \
 	  -D_THREAD_SAFE -D_REENTRANT \
 	  -DSEMS_VERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
@@ -261,30 +263,30 @@ audio-prefix = $(basedir)$(prefix)
 lib-prefix = $(basedir)$(prefix)
 
 # dirs
-cfg-dir = etc/sems/
+cfg-dir = etc/$(APP_NAME)/
 
 bin-dir = sbin/
-modules-dir = lib/sems/plug-in/
-audio-dir = lib/sems/audio/
-lib-dir = lib/sems/
+modules-dir = lib/$(APP_NAME)/plug-in/
+audio-dir = lib/$(APP_NAME)/audio/
+lib-dir = lib/$(APP_NAME)/
 
 ifeq ($(OS), linux)
-	doc-dir = share/doc/sems/
+	doc-dir = share/doc/$(APP_NAME)/
 	man-dir = share/man/
 else
 ifeq ($(OS), freebsd)
-	doc-dir = share/doc/sems/
+	doc-dir = share/doc/$(APP_NAME)/
 	man-dir = man/
 else
 ifeq ($(OS), openbsd)
-	doc-dir = share/doc/sems/
+	doc-dir = share/doc/$(APP_NAME)/
 	man-dir = man/
 else
 ifeq ($(OS), netbsd)
-	doc-dir = share/doc/sems
+	doc-dir = share/doc/$(APP_NAME)
 	man-dir = man/
 else
-	doc-dir = doc/sems/
+	doc-dir = doc/$(APP_NAME)/
 	man-dir = man/
 endif
 endif
@@ -326,6 +328,7 @@ export cfg-prefix bin-prefix modules-prefix doc-prefix audio-prefix lib-prefix
 export cfg-dir bin-dir modules-dir audio-dir lib-dir doc-dir man-dir
 export bin-target cfg-target app-cfg-target modules-target audio-target lib-target
 export INSTALL TAR INSTALL-TOUCH INSTALL-CFG INSTALL-BIN INSTALL-MODULES INSTALL-DOC INSTALL-AUDIO
+export APP_NAME
 
 export USE_SPANDSP LIBSPANDSP_STATIC LIBSPANDSP_LDIR 
 export USE_LIBSAMPLERATE USE_INTERNAL_RESAMPLER

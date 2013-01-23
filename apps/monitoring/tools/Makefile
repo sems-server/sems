@@ -8,8 +8,10 @@ install: install_tools
 
 install_tools: $(DESTDIR)$(bin-prefix)/$(bin-dir)
 	-@for r in $(monitoring_scripts)  ; do \
-		$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)/$$r ; \
-		$(INSTALL-BIN) $$r $(DESTDIR)$(bin-prefix)/$(bin-dir) ; \
+		x=`echo $$r | sed s/sems-/$(APP_NAME)-/g` ; \
+		echo "installing $$r -> $$x" ; \
+		$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)/$$x ; \
+		$(INSTALL-BIN) $$r $(DESTDIR)$(bin-prefix)/$(bin-dir)/$$x ; \
 	done
 
 

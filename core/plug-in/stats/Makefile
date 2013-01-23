@@ -2,6 +2,7 @@ COREPATH =../..
 
 plug_in_name = stats
 QUERY_STATS_NAME = sems-stats
+QUERY_STATS_DEST_NAME = $(APP_NAME)-stats
 
 module_ldflags = 
 module_cflags  = 
@@ -19,8 +20,8 @@ $(QUERY_STATS_NAME): query_stats.o Makefile
 	$(LD) -o $(QUERY_STATS_NAME) query_stats.o $(LDFLAGS) $(EXTRA_LDFLAGS) 
 
 install_query_stats: $(QUERY_STATS_NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)
-	$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(QUERY_STATS_NAME)
-	$(INSTALL-BIN) $(QUERY_STATS_NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)
+	$(INSTALL-TOUCH) $(DESTDIR)$(bin-prefix)/$(bin-dir)$(QUERY_STATS_DEST_NAME)
+	$(INSTALL-BIN) $(QUERY_STATS_NAME) $(DESTDIR)$(bin-prefix)/$(bin-dir)/$(QUERY_STATS_DEST_NAME)
 
 clean_query_stats: 
 	rm -f $(QUERY_STATS_NAME) query_stats.o query_stats.d

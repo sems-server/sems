@@ -1,5 +1,5 @@
-NAME=sems
-LIBNAME=sems.so
+NAME=$(APP_NAME)
+LIBNAME=$(APP_NAME).so
 
 COREPATH=.
 

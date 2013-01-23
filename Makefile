@@ -1,5 +1,3 @@
-NAME=sems
-
 .DEFAULT_GOAL:=all
 
 .PHONY: all
@@ -7,6 +5,8 @@ all: modules
 
 COREPATH=core
 include Makefile.defs
+
+NAME=$(APP_NAME)
 
 subdirs = core apps tools
 
@@ -43,7 +43,7 @@ install:
 	@echo ""
 	@echo "*** install complete. Run SEMS with "
 	@echo "*** "
-	@echo "***   $(bin-target)sems -f $(cfg-target)sems.conf"
+	@echo "***   $(bin-target)$(NAME) -f $(cfg-target)sems.conf"
 
 
 .PHONY: dist

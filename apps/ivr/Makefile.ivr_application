@@ -10,7 +10,7 @@ include $(COREPATH)/../Makefile.defs
 include $(IVRPATH)/Makefile.defs
 
 # 
-ivr-modules-dir?=lib/sems/ivr
+ivr-modules-dir?=lib/$(APP_NAME)/ivr
 
 LIB_INSTALLDIR?=$(modules-prefix)/$(ivr-modules-dir)
 TARBALL_PREFIX=sems-app-${NAME}
