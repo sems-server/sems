@@ -149,7 +149,10 @@ struct SBCCallProfile
 
   bool rtprelay_enabled;
   string force_symmetric_rtp;
+  string aleg_force_symmetric_rtp;
   bool force_symmetric_rtp_value;
+  bool aleg_force_symmetric_rtp_value;
+
   bool msgflags_symmetric_rtp;
   bool rtprelay_transparent_seqno;
   bool rtprelay_transparent_ssrc;

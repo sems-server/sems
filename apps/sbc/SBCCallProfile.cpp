@@ -334,7 +334,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   refuse_with = cfg.getParameter("refuse_with");
 
   rtprelay_enabled = cfg.getParameter("enable_rtprelay") == "yes";
-  force_symmetric_rtp = cfg.getParameter("rtprelay_force_symmetric_rtp");
+  aleg_force_symmetric_rtp = cfg.getParameter("rtprelay_force_symmetric_rtp");
+  force_symmetric_rtp = aleg_force_symmetric_rtp;
   msgflags_symmetric_rtp = cfg.getParameter("rtprelay_msgflags_symmetric_rtp") == "yes";
 
   rtprelay_interface = cfg.getParameter("rtprelay_interface");
@@ -731,6 +732,7 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
     // evaluate other RTP relay related params only if enabled
     // FIXME: really not evaluate rtprelay_enabled itself?
     REPLACE_BOOL(force_symmetric_rtp, force_symmetric_rtp_value);
+    REPLACE_BOOL(aleg_force_symmetric_rtp, aleg_force_symmetric_rtp_value);
 
     // enable symmetric RTP by P-MsgFlags?
     // SBC need not to know if it is from P-MsgFlags or from profile parameter
@@ -744,6 +746,7 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
       if (msg_flags & FL_FORCE_ACTIVE) {
         DBG("P-MsgFlags indicates forced symmetric RTP (passive mode)");
         force_symmetric_rtp_value = true;
+	aleg_force_symmetric_rtp_value = true;
       }
     }
 
