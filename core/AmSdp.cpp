@@ -237,7 +237,7 @@ void AmSdp::print(string& body) const
 {
   string out_buf = "v="+int2str(version)+"\r\n"
     "o="+origin.user+" "+int2str(origin.sessId)+" "+
-    int2str(origin.sessV)+" IN IP4 ";
+	  int2str(origin.sessV)+" IN " + addr_t_2_str(conn.addrType) + " ";
   if (!origin.conn.address.empty())
     out_buf += origin.conn.address+"\r\n";
   else if (!conn.address.empty())
@@ -250,7 +250,8 @@ void AmSdp::print(string& body) const
   out_buf +=
     "s="+sessionName+"\r\n";
   if (!conn.address.empty())
-    out_buf += "c=IN IP4 "+conn.address+"\r\n";
+    out_buf += "c=IN " + addr_t_2_str(conn.addrType) + " " +
+	    conn.address + "\r\n";
 
   out_buf += "t=0 0\r\n";
 
@@ -300,7 +301,8 @@ void AmSdp::print(string& body) const
       }
 
       if (!media_it->conn.address.empty())
-        out_buf += "\r\nc=IN IP4 "+media_it->conn.address;
+        out_buf += "\r\nc=IN " + addr_t_2_str(media_it->conn.addrType) + 
+		" " + media_it->conn.address;
 
       out_buf += "\r\n" + options;
 

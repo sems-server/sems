@@ -584,7 +584,7 @@ public:
   virtual void onBeforeDestroy() { }
 
   // The IP address to put as c= in SDP bodies
-  string advertisedIP();
+  string advertisedIP(int addrType = AT_NONE);
 
   /** format session id for debugging */
   string sid4dbg();
