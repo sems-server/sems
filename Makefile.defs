@@ -182,6 +182,7 @@ endif
 
 ifeq ($(OS), linux)
 	LDFLAGS +=  -ldl $(LDFLAG_DYN) $(LDFLAG_PTHREAD)
+	CPPFLAGS += -DPROPAGATE_COREDUMP_SETTINGS
 else
 ifeq ($(OS), freebsd)
 	LDFLAGS += $(LDFLAG_DYN) $(LDFLAG_PTHREAD)

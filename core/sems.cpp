@@ -59,6 +59,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#ifdef PROPAGATE_COREDUMP_SETTINGS
+#include <sys/resource.h>
+#include <sys/prctl.h>
+#endif
+
 #include <string>
 using std::string;
 
@@ -399,6 +404,13 @@ int main(int argc, char* argv[])
 #ifndef DISABLE_DAEMON_MODE
 
   if(AmConfig::DaemonMode){
+#ifdef PROPAGATE_COREDUMP_SETTINGS
+    struct rlimit lim;
+    bool have_limit = false;
+    if (getrlimit(RLIMIT_CORE, &lim) == 0) have_limit = true;
+    int dumpable = prctl(PR_GET_DUMPABLE, 0, 0, 0, 0);
+#endif
+
     if(!AmConfig::DaemonGid.empty()){
       unsigned int gid;
       if(str2i(AmConfig::DaemonGid, gid)){
@@ -474,6 +486,13 @@ int main(int argc, char* argv[])
     if(write_pid_file()<0) {
       goto error;
     }
+
+#ifdef PROPAGATE_COREDUMP_SETTINGS
+    if (have_limit) {
+      if (setrlimit(RLIMIT_CORE, &lim) < 0) ERROR("failed to set RLIMIT_CORE\n");
+      if (prctl(PR_SET_DUMPABLE, dumpable, 0, 0, 0)<0) ERROR("cannot re-set core dumping to %d!\n", dumpable);
+    }
+#endif
 
     /* try to replace stdin, stdout & stderr with /dev/null */
     if (freopen("/dev/null", "r", stdin)==0){
