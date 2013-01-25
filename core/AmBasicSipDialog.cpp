@@ -397,8 +397,11 @@ void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
   if(onRxReplyStatus(reply,t_it) && hdl)
     hdl->onSipReply(t_it->second,reply,saved_status);
 
-  if((reply.code >= 200) && (reply.cseq_method != SIP_METH_INVITE)){
-    // final reply
+  if((reply.code >= 200) && // final reply
+     // but not for 2xx INV reply (wait for 200 ACK)
+     ((reply.cseq_method != SIP_METH_INVITE) ||
+      (reply.code >= 300))) {
+       
     uac_trans.erase(t_it);
   }
 }
