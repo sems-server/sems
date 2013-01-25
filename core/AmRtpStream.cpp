@@ -335,7 +335,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
   if (!rp)
     return 0;
 
-  handleSymmetricRtp(rp);
+  handleSymmetricRtp(&rp->addr,false);
 
   /* do we have a new talk spurt? */
   begin_talk = ((last_payload == 13) || rp->marker);
@@ -381,6 +381,7 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     r_ssrc_i(false),
     session(_s),
     passive(false),
+    passive_rtcp(false),
     offer_answer_used(true),
     active(false), // do not return any data unless something really received
     mute(false),
@@ -438,9 +439,11 @@ string AmRtpStream::getRHost()
   return r_host;
 }
 
-void AmRtpStream::setRAddr(const string& addr, unsigned short port)
+void AmRtpStream::setRAddr(const string& addr, unsigned short port,
+			   unsigned short rtcp_port)
 {
-  DBG("RTP remote address set to %s:%u\n",addr.c_str(),port);
+  DBG("RTP remote address set to %s:(%u/%u)\n",
+      addr.c_str(),port,rtcp_port);
 
   struct sockaddr_storage ss;
   memset (&ss, 0, sizeof (ss));
@@ -454,11 +457,12 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
     throw string("invalid address") + addr;
   }
 
-  memcpy(&r_saddr,&ss,sizeof(struct sockaddr_storage));
-  am_set_port(&r_saddr,port);
-
   r_host = addr;
-  r_port = port;
+  if(port)      r_port      = port;
+  if(rtcp_port) r_rtcp_port = rtcp_port;
+
+  memcpy(&r_saddr,&ss,sizeof(struct sockaddr_storage));
+  am_set_port(&r_saddr,r_port);
 
   mute = ((r_saddr.ss_family == AF_INET) && 
 	  (SAv4(&r_saddr)->sin_addr.s_addr == INADDR_ANY)) ||
@@ -466,46 +470,50 @@ void AmRtpStream::setRAddr(const string& addr, unsigned short port)
      IN6_IS_ADDR_UNSPECIFIED(&SAv6(&r_saddr)->sin6_addr));
 }
 
-void AmRtpStream::handleSymmetricRtp(AmRtpPacket* rp) {
+void AmRtpStream::handleSymmetricRtp(struct sockaddr_storage* recv_addr, bool rtcp) {
 
-  if(passive) {
-    struct sockaddr_storage recv_addr;
-    rp->getAddr(&recv_addr);
+  if((!rtcp && passive) || (rtcp && passive_rtcp)) {
 
-    struct sockaddr_in* in_recv = (struct sockaddr_in*)&recv_addr;
-    struct sockaddr_in6* in6_recv = (struct sockaddr_in6*)&recv_addr;
+    struct sockaddr_in* in_recv = (struct sockaddr_in*)recv_addr;
+    struct sockaddr_in6* in6_recv = (struct sockaddr_in6*)recv_addr;
 
     struct sockaddr_in* in_addr = (struct sockaddr_in*)&r_saddr;
     struct sockaddr_in6* in6_addr = (struct sockaddr_in6*)&r_saddr;
 
+    unsigned short port = am_get_port(recv_addr);
+
     // symmetric RTP
-    if ( ((recv_addr.ss_family == AF_INET) &&
-	  ((in_addr->sin_port != in_recv->sin_port)
-	   || (in_addr->sin_addr.s_addr != in_recv->sin_addr.s_addr))) ||
-	 ((recv_addr.ss_family == AF_INET6) &&
-	  ((in6_addr->sin6_port != in6_recv->sin6_port)
-	   || (memcmp(&in6_addr->sin6_addr,
+    if ( (!rtcp && (port != r_port)) || (rtcp && (port != r_rtcp_port)) ||
+	 ((recv_addr->ss_family == AF_INET) &&
+	  (in_addr->sin_addr.s_addr != in_recv->sin_addr.s_addr)) ||
+	 ((recv_addr->ss_family == AF_INET6) &&
+	  (memcmp(&in6_addr->sin6_addr,
 		      &in6_recv->sin6_addr,
-		      sizeof(struct in6_addr)))))
+		      sizeof(struct in6_addr))))
 	 ) {
 
-      string addr_str = get_addr_str(&recv_addr);
-      int port = am_get_port(&recv_addr);
-      setRAddr(addr_str,port);
-      DBG("Symmetric RTP: setting new remote address: %s:%i\n",
-	  addr_str.c_str(),port);
+      string addr_str = get_addr_str(recv_addr);
+      setRAddr(addr_str, !rtcp ? port : 0, rtcp ? port : 0);
+      DBG("Symmetric %s: setting new remote address: %s:%i\n",
+	  !rtcp ? "RTP" : "RTCP", addr_str.c_str(),port);
+
     } else {
-      DBG("Symmetric RTP: remote end sends RTP from advertised address."
-	  " Leaving passive mode.\n");
+      const char* prot = rtcp ? "RTCP" : "RTP";
+      DBG("Symmetric %s: remote end sends %s from advertised address."
+	  " Leaving passive mode.\n",prot,prot);
     }
+
     // avoid comparing each time sender address
-    passive = false;
+    if(!rtcp)
+      passive = false;
+    else
+      passive_rtcp = false;
   }
 }
 
 void AmRtpStream::setPassiveMode(bool p)
 {
-  passive = p;
+  passive_rtcp = passive = p;
   DBG("The other UA is NATed: switched to passive mode.\n");
 }
 
@@ -759,7 +767,7 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
 	    p->timestamp,this);
 	active = false;
       }
-      handleSymmetricRtp(p);
+      handleSymmetricRtp(&p->addr,false);
 
       if (NULL != relay_stream) {
         relay_stream->relay(p);
@@ -941,13 +949,21 @@ void AmRtpStream::recvPacket(int fd)
 
 void AmRtpStream::recvRtcpPacket()
 {
+  struct sockaddr_storage recv_addr;
+  socklen_t recv_addr_len = sizeof(recv_addr);
   unsigned char buffer[4096];
 
-  int recved_bytes = recv(l_rtcp_sd,buffer,sizeof(buffer),0);
+  int recved_bytes = recvfrom(l_rtcp_sd,buffer,sizeof(buffer),0,
+			      (struct sockaddr*)&recv_addr,
+			      &recv_addr_len);
+
   if(recved_bytes < 0) {
     ERROR("rtcp recv(%d): %s",l_rtcp_sd,strerror(errno));
     return;
   }
+
+  // clear RTP timer
+  clearRTPTimeout();
 
   if(!relay_enabled || !relay_stream ||
      !relay_stream->l_sd)
@@ -958,9 +974,11 @@ void AmRtpStream::recvRtcpPacket()
     return;
   }
 
+  handleSymmetricRtp(&recv_addr,true);
+
   struct sockaddr_storage rtcp_raddr;
   memcpy(&rtcp_raddr,&relay_stream->r_saddr,sizeof(rtcp_raddr));
-  am_set_port(&rtcp_raddr, relay_stream->r_port+1);
+  am_set_port(&rtcp_raddr, relay_stream->r_rtcp_port);
 
   int err = sendto(relay_stream->l_rtcp_sd,buffer,recved_bytes,0,
 		   (const struct sockaddr *)&rtcp_raddr,

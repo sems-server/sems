@@ -281,7 +281,7 @@ void AudioStreamData::setRelayStream(AmRtpStream *other)
 
   if (relay_enabled && other) {
     stream->enableRtpRelay(relay_mask, other);
-    stream->setRAddr(relay_address, relay_port);
+    stream->setRAddr(relay_address, relay_port, relay_port+1);
   }
   else {
     // nothing to relay or other stream not set

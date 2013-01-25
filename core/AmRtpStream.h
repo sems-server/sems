@@ -187,6 +187,7 @@ protected:
   /** Remote host information */
   string             r_host;
   unsigned short     r_port;
+  unsigned short     r_rtcp_port;
 
   /** 
    * Local interface used for this stream
@@ -220,8 +221,9 @@ protected:
   unsigned int   r_ssrc;
   bool           r_ssrc_i;
 
-  /** symmetric RTP */
-  bool           passive;      // passive mode ?
+  /** symmetric RTP & RTCP */
+  bool           passive;
+  bool           passive_rtcp;
 
   /** mute && port == 0 */
   bool           hold;
@@ -271,8 +273,8 @@ protected:
   /* Get next packet from the buffer queue */
   int nextPacket(AmRtpPacket*& p);
   
-  /** handle symmetric RTP - if in passive mode, update raddr from rp */
-  void handleSymmetricRtp(AmRtpPacket* rp);
+  /** handle symmetric RTP/RTCP - if in passive mode, update raddr from rp */
+  void handleSymmetricRtp(struct sockaddr_storage* recv_addr, bool rtcp);
 
   void relay(AmRtpPacket* p);
 
@@ -368,11 +370,12 @@ public:
   /**
    * Set remote IP & port.
    */
-  void setRAddr(const string& addr, unsigned short port);
+  void setRAddr(const string& addr, unsigned short port,
+		unsigned short rtcp_port = 0);
 
-  /** Symmetric RTP: passive mode ? */
+  /** Symmetric RTP & RTCP: passive mode ? */
   void setPassiveMode(bool p);
-  bool getPassiveMode() { return passive; }
+  bool getPassiveMode() { return passive || passive_rtcp; }
 
   unsigned int get_ssrc() { return l_ssrc; }
 
