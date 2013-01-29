@@ -91,7 +91,7 @@ void _trans_layer::clear_transports()
 }
 
 
-int _trans_layer::send_reply(const trans_ticket* tt,
+int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 			     int reply_code, const cstring& reason,
 			     const cstring& to_tag, const cstring& hdrs,
 			     const cstring& body,
@@ -466,6 +466,12 @@ int _trans_layer::send_reply(const trans_ticket* tt,
 	    inc_ref(logger);
 	}
     }
+
+    if(dialog_id.len && !(t->dialog_id.len)) {
+	t->dialog_id.s = new char[dialog_id.len];
+	t->dialog_id.len = dialog_id.len;
+	memcpy((void*)t->dialog_id.s,dialog_id.s,dialog_id.len);
+    }
     
  end:
     bucket->unlock();
@@ -480,7 +486,7 @@ int _trans_layer::send_sf_error_reply(const trans_ticket* tt, const sip_msg* req
     cstring to_tag(to_tag_buf,SL_TOTAG_LEN);
     compute_sl_to_tag(to_tag_buf,req);
     
-    return send_reply(tt,reply_code,reason,to_tag,hdrs,body);
+    return send_reply(tt,cstring(),reply_code,reason,to_tag,hdrs,body);
 }
 
 int _trans_layer::send_sl_reply(sip_msg* req, int reply_code, 

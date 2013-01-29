@@ -533,7 +533,7 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
     reply.contact = getContactHdr();
   }
 
-  int ret = SipCtrlInterface::send(reply,logger);
+  int ret = SipCtrlInterface::send(reply,local_tag,logger);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s;"
 	  " call-id=%s; cseq=%i\n",
@@ -569,7 +569,7 @@ int AmBasicSipDialog::reply_error(const AmSipRequest& req, unsigned int code,
   // add transcoder statistics into reply headers
   //addTranscoderStats(reply.hdrs);
 
-  int ret = SipCtrlInterface::send(reply,logger);
+  int ret = SipCtrlInterface::send(reply,string(""),logger);
   if(ret){
     ERROR("Could not send reply: code=%i; reason='%s';"
 	  " method=%s; call-id=%s; cseq=%i\n",

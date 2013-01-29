@@ -311,7 +311,8 @@ void SipCtrlInterface::cleanup()
     }
 }
 
-int SipCtrlInterface::send(const AmSipReply &rep, msg_logger* logger)
+int SipCtrlInterface::send(const AmSipReply &rep, const string& dialog_id,
+			   msg_logger* logger)
 {
     sip_msg msg;
 
@@ -365,6 +366,7 @@ int SipCtrlInterface::send(const AmSipReply &rep, msg_logger* logger)
 
     int ret =
 	trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
+					    stl2cstr(dialog_id),
 					    rep.code,stl2cstr(rep.reason),
 					    stl2cstr(rep.to_tag),
 					    cstring(hdrs_buf,hdrs_len), 
@@ -733,8 +735,13 @@ void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
     return;
   }
 
-  if(!AmEventDispatcher::instance()->post(c2stlstr(tr->to_tag), tmo_evt)){
-      DBG("Could not post timeout event (sess. id: %.*s)\n",tr->to_tag.len,tr->to_tag.s);
+  cstring dlg_id = tr->to_tag;
+  if(tr->dialog_id.len) {
+      dlg_id = tr->dialog_id;
+  }
+
+  if(!AmEventDispatcher::instance()->post(c2stlstr(dlg_id), tmo_evt)){
+      DBG("Could not post timeout event (sess. id: %.*s)\n",dlg_id.len,dlg_id.s);
       delete tmo_evt;
   }
 }

@@ -91,7 +91,7 @@ public:
      * include a well-formed 'Content-Type', but no
      * 'Content-Length' header.
      */
-    int send_reply(const trans_ticket* tt,
+    int send_reply(const trans_ticket* tt, const cstring& dialog_id,
 		   int reply_code, const cstring& reason,
 		   const cstring& to_tag, const cstring& hdrs, 
 		   const cstring& body,
