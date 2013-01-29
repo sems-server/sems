@@ -70,12 +70,8 @@ int AmRtpPacket::parse()
   assert(b_size);
 
   rtp_hdr_t* hdr = (rtp_hdr_t*)buffer;
-  if 
-#ifndef WITH_ZRTP
-    (hdr->version != RTP_VERSION)
-#else 
-    ((hdr->version != RTP_VERSION) && (hdr->version != 0))
-#endif
+  // ZRTP "Hello" packet has version == 0
+  if ((hdr->version != RTP_VERSION) && (hdr->version != 0))
       {
 	DBG("received RTP packet with unsupported version (%i).\n",
 	    hdr->version);
@@ -84,21 +80,21 @@ int AmRtpPacket::parse()
 
   data_offset = sizeof(rtp_hdr_t) + (hdr->cc*4);
 
-  if(hdr->x != 0){
-#ifndef WITH_ZRTP 
-    if (AmConfig::IgnoreRTPXHdrs) {
-      // skip the extension header
-#endif
-      if (b_size >= data_offset + 4) {
-	data_offset +=
-	  ntohs(((rtp_xhdr_t*) (buffer + data_offset))->len)*4;
-      }
-#ifndef WITH_ZRTP
-    } else {
-      DBG("RTP extension headers not supported.\n");
-      return -1;
+  if(hdr->x != 0) {
+    //#ifndef WITH_ZRTP 
+    //if (AmConfig::IgnoreRTPXHdrs) {
+    //  skip the extension header
+    //#endif
+    if (b_size >= data_offset + 4) {
+      data_offset +=
+	ntohs(((rtp_xhdr_t*) (buffer + data_offset))->len)*4;
     }
-#endif
+    // #ifndef WITH_ZRTP
+    //   } else {
+    //     DBG("RTP extension headers not supported.\n");
+    //     return -1;
+    //   }
+    // #endif
   }
 
   payload = hdr->pt;
