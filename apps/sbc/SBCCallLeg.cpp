@@ -483,6 +483,22 @@ void SBCCallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 }
 
 void SBCCallLeg::onSendRequest(AmSipRequest& req, int &flags) {
+
+  if(a_leg) {
+    if (!call_profile.aleg_append_headers_req.empty()) {
+      DBG("appending '%s' to outbound request (A leg)\n",
+	  call_profile.aleg_append_headers_req.c_str());
+      req.hdrs+=call_profile.aleg_append_headers_req;
+    }
+  }
+  else {
+    if (!call_profile.append_headers_req.empty()) {
+      DBG("appending '%s' to outbound request (B leg)\n", 
+	  call_profile.append_headers_req.c_str());
+      req.hdrs+=call_profile.append_headers_req;
+    }
+  }
+
   if (NULL != auth) {
     DBG("auth->onSendRequest cseq = %d\n", req.cseq);
     auth->onSendRequest(req, flags);
