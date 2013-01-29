@@ -39,25 +39,7 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
 AmBasicSipDialog::~AmBasicSipDialog()
 {
   if (logger) dec_ref(logger);
-
-  DBG("callid = %s\n",callid.c_str());
-  DBG("local_tag = %s\n",local_tag.c_str());
-  DBG("uac_trans.size() = %u\n",(unsigned int)uac_trans.size());
-  if(uac_trans.size()){
-    for(TransMap::iterator it = uac_trans.begin();
-	it != uac_trans.end(); it++){
-	    
-      DBG("    cseq = %i; method = %s\n",it->first,it->second.method.c_str());
-    }
-  }
-  DBG("uas_trans.size() = %u\n",(unsigned int)uas_trans.size());
-  if(uas_trans.size()){
-    for(TransMap::iterator it = uas_trans.begin();
-	it != uas_trans.end(); it++){
-	    
-      DBG("    cseq = %i; method = %s\n",it->first,it->second.method.c_str());
-    }
-  }
+  dump();
 }
 
 AmSipRequest* AmBasicSipDialog::getUACTrans(unsigned int t_cseq)
@@ -657,6 +639,28 @@ int AmBasicSipDialog::sendRequest(const string& method,
 
   onRequestTxed(req);
   return 0;
+}
+
+void AmBasicSipDialog::dump()
+{
+  DBG("callid = %s\n",callid.c_str());
+  DBG("local_tag = %s\n",local_tag.c_str());
+  DBG("uac_trans.size() = %u\n",(unsigned int)uac_trans.size());
+  if(uac_trans.size()){
+    for(TransMap::iterator it = uac_trans.begin();
+	it != uac_trans.end(); it++){
+	    
+      DBG("    cseq = %i; method = %s\n",it->first,it->second.method.c_str());
+    }
+  }
+  DBG("uas_trans.size() = %u\n",(unsigned int)uas_trans.size());
+  if(uas_trans.size()){
+    for(TransMap::iterator it = uas_trans.begin();
+	it != uas_trans.end(); it++){
+	    
+      DBG("    cseq = %i; method = %s\n",it->first,it->second.method.c_str());
+    }
+  }
 }
 
 void AmBasicSipDialog::setMsgLogger(msg_logger* logger)
