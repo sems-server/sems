@@ -437,10 +437,9 @@ string replaceParameters(const string& s,
 	  }
 
 	  string expr_str = s.substr(p+2, skip_p-p-2);
-	  string expr_replaced =
-	    replaceParameters(expr_str, r_type, req, call_profile, app_param,
-			      ruri_parser, from_parser, to_parser);
-
+	  string expr_replaced = replaceParameters(expr_str, r_type, req,
+						   app_param, ruri_parser, 
+						   from_parser, to_parser);
 	  char* val_escaped = url_encode(expr_replaced.c_str());
 	  res += string(val_escaped);
 	  free(val_escaped);
