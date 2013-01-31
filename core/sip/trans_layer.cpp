@@ -397,34 +397,39 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
     trsp_socket* local_socket = req->local_socket;
     memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
 
-    if(req->via_p1->has_rport){
-	
-	if(req->via_p1->rport_i){
-	    // use 'rport'
-	    ((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->rport_i);
-	}
-	// else: use the source port from the replied request (from IP hdr)
-	//       (already set).
-    }
-    else {
-	
-	if(req->via_p1->port_i){
-	    // use port from 'sent-by' via address
-	    ((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
-	}
-	else {
-	    // use 5060
-	    ((sockaddr_in*)&remote_ip)->sin_port = htons(5060);
-	}
-    }
-    
+    // force_via_address option? send to 1st via
     if(local_socket->is_opt_set(trsp_socket::force_via_address)) {
-	DBG("force_via_address\n");
 	string via_host = c2stlstr(req->via_p1->host);
-	if (am_inet_pton(via_host.c_str(), &remote_ip) != 1) {
+	DBG("force_via_address: setting remote IP to via '%s'\n", via_host.c_str());
+	if (resolver::instance()->str2ip(via_host.c_str(), &remote_ip,
+					 (address_type)(IPv4 | IPv6)) != 1) {
 	    ERROR("Invalid via_host '%s'\n", via_host.c_str());
 	    delete [] reply_buf;
 	    goto end;
+	}
+    }
+
+    if(local_socket->is_opt_set(trsp_socket::force_via_address)) {
+
+	if(req->via_p1->has_rport){
+	
+	    if(req->via_p1->rport_i){
+		// use 'rport'
+		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->rport_i);
+	    }
+	    // else: use the source port from the replied request (from IP hdr)
+	    //       (already set).
+	}
+	else {
+	
+	    if(req->via_p1->port_i){
+		// use port from 'sent-by' via address
+		((sockaddr_in*)&remote_ip)->sin_port = htons(req->via_p1->port_i);
+	    }
+	    else {
+		// use 5060
+		((sockaddr_in*)&remote_ip)->sin_port = htons(5060);
+	    }
 	}
     }
 

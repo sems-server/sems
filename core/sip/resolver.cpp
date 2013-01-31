@@ -677,6 +677,37 @@ int _resolver::resolve_name(const char* name,
     return -1;
 }
 
+int _resolver::str2ip(const char* name,
+		      sockaddr_storage* sa,
+		      const address_type types)
+{
+    if(types & IPv4){
+	int ret = inet_pton(AF_INET,name,&((sockaddr_in*)sa)->sin_addr);
+	if(ret==1) {
+	    ((sockaddr_in*)sa)->sin_family = AF_INET;
+	    return 1;
+	}
+	else if(ret < 0) {
+	    ERROR("while trying to detect an IPv4 address '%s': %s",name,strerror(errno));
+	    return ret;
+	}
+    }
+    
+    if(types & IPv6){
+	int ret = inet_pton(AF_INET6,name,&((sockaddr_in6*)sa)->sin6_addr);
+	if(ret==1) {
+	    ((sockaddr_in6*)sa)->sin6_family = AF_INET6;
+	    return 1;
+	}
+	else if(ret < 0) {
+	    ERROR("while trying to detect an IPv6 address '%s': %s",name,strerror(errno));
+	    return ret;
+	}
+    }
+
+    return 0;
+}
+
 void _resolver::run()
 {
     for(;;) {
