@@ -55,7 +55,8 @@ class SBCFactory: public AmSessionFactory,
   vector<string> active_profile;
   AmMutex profiles_mut;
 
-  SBCCallLeg* (*createCallLeg)(const SBCCallProfile& call_profile);
+  typedef SBCCallLeg* (*CallLegCreator)(const SBCCallProfile& call_profile);
+  CallLegCreator createCallLeg;
 
   void listProfiles(const AmArg& args, AmArg& ret);
   void reloadProfiles(const AmArg& args, AmArg& ret);
@@ -82,6 +83,8 @@ class SBCFactory: public AmSessionFactory,
   ~SBCFactory();
 
   int onLoad();
+
+  void setCallLegCreator(CallLegCreator fp) { createCallLeg = fp; }
 
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      const map<string,string>& app_params);

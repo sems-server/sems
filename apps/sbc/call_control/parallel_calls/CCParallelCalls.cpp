@@ -29,7 +29,7 @@
 #include "AmSipHeaders.h"
 
 #include "CCParallelCalls.h"
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 
 #include <string.h>
 

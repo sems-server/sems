@@ -30,7 +30,7 @@
 
 #include "Prepaid.h"
 
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 
 #include <string.h>
 

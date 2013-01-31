@@ -30,7 +30,7 @@
 
 #include "CCCtl.h"
 
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 
 #include <string.h>
 #include <algorithm>

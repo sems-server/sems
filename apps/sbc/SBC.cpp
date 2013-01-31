@@ -33,7 +33,7 @@ SBC - feature-wishlist
  */
 #include "SBC.h"
 
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 
 #include "log.h"
 #include "AmUtils.h"

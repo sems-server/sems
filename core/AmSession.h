@@ -123,13 +123,6 @@ private:
   /** clean up session */
   void finalize();
 
-  /** process pending events,  
-      @return whether everything went smoothly */
-  bool processEventsCatchExceptions();
-
-
-  AmCondition<bool> sess_stopped;
-
   static void session_started();
   static void session_stopped();
 
@@ -157,6 +150,8 @@ private:
 
 protected:
 
+  AmCondition<bool> sess_stopped;
+
   /** this is the group the media is processed with 
       - by default local tag */
   string callgroup;
@@ -173,6 +168,10 @@ protected:
   AmAudio *input, *output;
 
   virtual AmSipDialog* createSipDialog();
+
+  /** process pending events,  
+      @return whether everything went smoothly */
+  virtual bool processEventsCatchExceptions();
 
 public:
 

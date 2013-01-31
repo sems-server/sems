@@ -30,7 +30,7 @@
 
 #include "PrepaidXMLRPC.h"
 
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 
 #include "XmlRpc.h"
 #include "XmlRpcClient.h"
