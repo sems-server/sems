@@ -41,6 +41,8 @@ using std::string;
 #define SIP_FLAGS_NOAUTH       1<<1 // don't add authentication header
 #define SIP_FLAGS_NOCONTACT    1<<2 // don't add contact
 
+#define SIP_FLAGS_NOTAG        1<<3 // don't add to-tag in reply
+
 /** \brief SIP transaction representation */
 struct AmSipTransaction
 {

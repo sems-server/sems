@@ -508,7 +508,7 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
   reply.code = code;
   reply.reason = reason;
   reply.tt = req.tt;
-  if(code > 100)
+  if((code > 100) && !(flags & SIP_FLAGS_NOTAG))
     reply.to_tag = ext_local_tag.empty() ? local_tag : ext_local_tag;
   reply.hdrs = m_hdrs;
   reply.cseq = req.cseq;
