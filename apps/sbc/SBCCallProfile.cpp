@@ -720,14 +720,10 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
   REPLACE_NONEMPTY_STR(ruri_host);
   REPLACE_NONEMPTY_STR(from);
   REPLACE_NONEMPTY_STR(to);
-  //REPLACE_NONEMPTY_STR(contact);
   REPLACE_NONEMPTY_STR(callid);
 
   REPLACE_NONEMPTY_STR(outbound_proxy);
-
-  if (!next_hop.empty()) {
-    REPLACE_STR(next_hop);
-  }
+  REPLACE_NONEMPTY_STR(next_hop);
 
   if (!transcoder.evaluate(ctx,req)) return false;
 
