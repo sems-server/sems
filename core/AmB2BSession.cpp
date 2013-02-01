@@ -798,8 +798,13 @@ int AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
   }
 
   DBG("relaying SIP reply %u %s\n", reply.code, reply.reason.c_str());
+
+  int flags = SIP_FLAGS_VERBATIM;
+  if(reply.to_tag.empty())
+    flags |= SIP_FLAGS_NOTAG;
+
   int err = dlg->reply(orig,reply.code,reply.reason,
-                    body, *hdrs, SIP_FLAGS_VERBATIM);
+		       body, *hdrs, flags);
 
   if(err < 0){
     ERROR("dlg->reply() failed\n");
