@@ -257,7 +257,9 @@ struct SBCCallProfile
     rtprelay_transparent_ssrc(true),
     rtprelay_interface_value(-1),
     aleg_rtprelay_interface_value(-1),
-    outbound_interface_value(-1)
+    outbound_interface_value(-1),
+    contact_hiding(false), 
+    reg_caching(false)
   { }
 
   ~SBCCallProfile()

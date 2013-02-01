@@ -2,6 +2,7 @@
 #include "AmSipHeaders.h"
 #include "arg_conversion.h"
 #include "sip/parse_nameaddr.h"
+#include "sip/parse_common.h"
 #include "RegisterCache.h"
 #include "AmSession.h"
 #include "AmConfig.h"
@@ -59,6 +60,9 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
     reply_error(req,501,"Unsupported Method");
     return -1;
   }
+
+  DBG("contact_hiding=%i, reg_caching=%i\n",
+      cp.contact_hiding, cp.reg_caching);
 
   contact_hiding = cp.contact_hiding;
 

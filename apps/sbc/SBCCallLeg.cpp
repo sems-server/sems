@@ -1,6 +1,6 @@
 #include "SBCCallLeg.h"
 
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 
 #include "log.h"
 #include "AmUtils.h"
@@ -369,8 +369,8 @@ int SBCCallLeg::relayEvent(AmEvent* ev)
           assert(reply_ev);
 
           if(call_profile.transparent_dlg_id &&
-              (reply_ev->reply.to_tag == dlg->ext_local_tag))
-            reply_ev->reply.to_tag = dlg->local_tag;
+              (reply_ev->reply.from_tag == dlg->ext_local_tag))
+            reply_ev->reply.from_tag = dlg->local_tag;
 
           if (call_profile.headerfilter.size() ||
               call_profile.reply_translations.size()) {

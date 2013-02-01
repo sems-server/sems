@@ -292,11 +292,13 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
         }
         if (!reply.to_tag.empty()) {
           other_id = reply.from_tag;
-          TRACE("1xx reply with to-tag received in NoReply state, changing status to Ringing and remembering the other leg ID (%s)\n", other_id.c_str());
-          if (ev->forward && relaySipReply(reply) != 0) {
-            stopCall();
-            return;
-          }
+          TRACE("1xx reply with to-tag received in NoReply state,"
+		" changing status to Ringing and remembering the"
+		" other leg ID (%s)\n", other_id.c_str());
+          // if (ev->forward && relaySipReply(reply) != 0) {
+          //   stopCall();
+          //   return;
+          // }
           updateCallStatus(Ringing);
         }
       }

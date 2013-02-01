@@ -32,7 +32,7 @@
 #include "AmPlugIn.h"
 #include "AmConfig.h"
 
-#include "ampi/SBCCallControlAPI.h"
+#include "SBCCallControlAPI.h"
 #include "RTPParameters.h"
 #include "SDPFilter.h"
 
