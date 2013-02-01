@@ -920,22 +920,34 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
 
     else {
       RelayStreamPair& relay_stream = **rstream;
-
+      
       if(a_leg) {
+	DBG("updating A-leg relay_stream");
 	relay_stream.a.stopReceiving();
-	relay_stream.a.enableRtpRelay(true_mask,&relay_stream.b);
-	relay_stream.a.setRAddr(connection_address,m->port);
-	if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
-	  relay_stream.a.enableRawRelay();
-	relay_stream.a.resumeReceiving();
+	if(m->port) {
+	  relay_stream.a.enableRtpRelay(true_mask,&relay_stream.b);
+	  relay_stream.a.setRAddr(connection_address,m->port);
+	  if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
+	    relay_stream.a.enableRawRelay();
+	  relay_stream.a.resumeReceiving();
+	}
+	else {
+	  DBG("disabled stream");
+	}
       }
       else {
+	DBG("updating B-leg relay_stream");
 	relay_stream.b.stopReceiving();
-	relay_stream.b.enableRtpRelay(true_mask,&relay_stream.a);
-	relay_stream.b.setRAddr(connection_address,m->port);
-	if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
-	  relay_stream.b.enableRawRelay();
-	relay_stream.b.resumeReceiving();
+	if(m->port) {
+	  relay_stream.b.enableRtpRelay(true_mask,&relay_stream.a);
+	  relay_stream.b.setRAddr(connection_address,m->port);
+	  if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
+	    relay_stream.b.enableRawRelay();
+	  relay_stream.b.resumeReceiving();
+	}
+	else {
+	  DBG("disabled stream");
+	}
       }
       ++rstream;
     }
