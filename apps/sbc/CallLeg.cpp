@@ -286,20 +286,16 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 
     if (reply.code < 200) { // 1xx replies
       if (call_status == NoReply) {
-        if (ev->forward && relaySipReply(reply) != 0) {
-          stopCall();
-          return;
-        }
         if (!reply.to_tag.empty()) {
-          other_id = reply.from_tag;
+          setOtherId(reply);
           TRACE("1xx reply with to-tag received in NoReply state,"
 		" changing status to Ringing and remembering the"
 		" other leg ID (%s)\n", other_id.c_str());
-          // if (ev->forward && relaySipReply(reply) != 0) {
-          //   stopCall();
-          //   return;
-          // }
           updateCallStatus(Ringing);
+        }
+        if (ev->forward && relaySipReply(reply) != 0) {
+          stopCall();
+          return;
         }
       }
       else {
@@ -327,7 +323,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
         }
       }
     } else if (reply.code < 300) { // 2xx replies
-      other_id = reply.from_tag;
+      setOtherId(reply);
       TRACE("setting call status to connected with leg %s\n", other_id.c_str());
 
       // terminate all other legs than the connected one (determined by other_id)

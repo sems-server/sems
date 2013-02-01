@@ -277,6 +277,7 @@ class CallLeg: public AmB2BSession
     // functions offered to successors
 
     CallStatus getCallStatus() { return call_status; }
+    virtual void setOtherId(const AmSipReply& reply) { other_id = reply.from_tag; }
 
     // @see AmSession
     virtual void onInvite(const AmSipRequest& req);

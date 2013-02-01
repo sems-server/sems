@@ -456,6 +456,14 @@ void SBCCallLeg::onSipRequest(const AmSipRequest& req) {
   CallLeg::onSipRequest(req);
 }
 
+void SBCCallLeg::setOtherId(const AmSipReply& reply)
+{
+  DBG("setting other_id to '%s'",reply.from_tag.c_str());
+  CallLeg::setOtherId(reply);
+  if(call_profile.transparent_dlg_id && !reply.to_tag.empty()) {
+    dlg->ext_local_tag = reply.to_tag;
+  }
+}
 
 void SBCCallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 			   AmBasicSipDialog::Status old_dlg_status)

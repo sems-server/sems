@@ -160,6 +160,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
  protected:
 
+  void setOtherId(const AmSipReply& reply);
+
   void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(AmSipRequest& req, int &flags);
 
