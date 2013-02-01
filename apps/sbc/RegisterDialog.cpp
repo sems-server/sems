@@ -158,7 +158,37 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
     if(contact_hiding) {
       uac_contacts[i].uri_user = encodeUsername(uac_contacts[i],
 						req,cp,ctx);
-      
+
+      list<sip_avp*> uri_params;
+      string old_params = ";" + uac_contacts[i].uri_param;
+      const char* c = old_params.c_str();
+
+      if(parse_gen_params(&uri_params,&c,old_params.length(),0) < 0) {
+
+	DBG("could not parse Contact URI parameters: '%s'",
+	    uac_contacts[i].uri_param.c_str());
+	continue;
+      }
+
+      string new_params;
+      for(list<sip_avp*>::iterator p_it = uri_params.begin();
+	  p_it != uri_params.end(); p_it++) {
+
+	DBG("parsed");
+	if( ((*p_it)->name.len == (sizeof("transport")-1)) &&
+	    !memcmp((*p_it)->name.s,"transport",sizeof("transport")-1) ) {
+	  continue;
+	}
+
+	if(!new_params.empty()) new_params += ";";
+	new_params += c2stlstr((*p_it)->name);
+	if((*p_it)->value.len) {
+	  new_params += "=" + c2stlstr((*p_it)->value);
+	}
+      }
+
+      uac_contacts[i].uri_param = new_params;
+
       // hack to suppress transport=tcp (just hack, params like
       // "xtransport" or values like "tcpip" will be partly removed as well)
       // string params(uac_contacts[i].uri_param);
