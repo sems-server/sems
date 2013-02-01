@@ -739,6 +739,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   to = call_profile.to.empty() ? req.to : call_profile.to;
 
   applyAProfile();
+  call_profile.apply_a_routing(ctx,req,*dlg);
 
   m_state = BB_Dialing;
 
