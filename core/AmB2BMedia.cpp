@@ -477,8 +477,8 @@ void AudioStreamData::mute(bool set_mute)
 //////////////////////////////////////////////////////////////////////////////////
 
 AmB2BMedia::RelayStreamPair::RelayStreamPair(AmB2BSession *_a, AmB2BSession *_b)
-: a(_a, _a->getRtpRelayInterface()),
-  b(_b, _b->getRtpRelayInterface())
+: a(_a, _a ? _a->getRtpRelayInterface() : -1),
+  b(_b, _b ? _b->getRtpRelayInterface() : -1)
 { }
 
 AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b): 
@@ -822,8 +822,8 @@ void AmB2BMedia::onSdpUpdate()
 
   if (!(
       (have_a && have_b) ||
-      (have_a && audio[0].a.getInput() && (!b)) ||
-      (have_b && audio[0].b.getInput() && (!a))
+      (have_a && !audio.empty() && audio[0].a.getInput() && (!b)) ||
+      (have_b && !audio.empty() && audio[0].b.getInput() && (!a))
       )) return;
 
   // clear all the stored flags (re-INVITEs or UPDATEs will negotiate new remote
