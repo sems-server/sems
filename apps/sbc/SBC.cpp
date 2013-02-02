@@ -112,15 +112,21 @@ void assertEndCRLF(string& s) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-static SBCCallLeg* _default_createCallLeg(const SBCCallProfile& call_profile)
+SBCCallLeg* CallLegCreator::create(const SBCCallProfile& call_profile)
 {
-  return new SBCCallLeg(call_profile);
+  return new SBCCallLeg(call_profile, new AmSipDialog());
+}
+
+SBCCallLeg* CallLegCreator::create(SBCCallLeg* caller)
+{
+  return new SBCCallLeg(caller);
 }
 
 SBCFactory::SBCFactory(const string& _app_name)
-  : AmSessionFactory(_app_name), AmDynInvokeFactory(_app_name)
+  : AmSessionFactory(_app_name), 
+    AmDynInvokeFactory(_app_name),
+    callLegCreator(new CallLegCreator)
 {
-  createCallLeg = &_default_createCallLeg;
 }
 
 SBCFactory::~SBCFactory() {
@@ -281,7 +287,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
     return NULL;
   }
 
-  SBCCallLeg* b2b_dlg = (*createCallLeg)(call_profile);
+  SBCCallLeg* b2b_dlg = callLegCreator->create(call_profile);
 
   if (call_profile.auth_aleg_enabled) {
     // adding auth handler

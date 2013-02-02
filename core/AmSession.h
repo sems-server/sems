@@ -213,7 +213,7 @@ public:
   /** 
    * Session constructor.
    */
-  AmSession();
+  AmSession(AmSipDialog* dlg=NULL);
 
   virtual ~AmSession();
 

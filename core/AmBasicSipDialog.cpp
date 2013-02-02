@@ -33,7 +33,7 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
     nat_handling(false),
     usages(0)
 {
-  assert(h);
+  //assert(h);
 }
 
 AmBasicSipDialog::~AmBasicSipDialog()
@@ -368,7 +368,7 @@ bool AmBasicSipDialog::onRxReplyStatus(const AmSipReply& reply,
   case 485:
   case 502:
   case 604:
-    hdl->onRemoteDisappeared(reply);
+    if(hdl) hdl->onRemoteDisappeared(reply);
     break;
   }
   

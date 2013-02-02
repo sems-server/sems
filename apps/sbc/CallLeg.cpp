@@ -49,8 +49,8 @@ ReliableB2BEvent::~ReliableB2BEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 // callee
-CallLeg::CallLeg(const CallLeg* caller):
-  AmB2BSession(caller->getLocalTag()),
+CallLeg::CallLeg(const CallLeg* caller, AmSipDialog* p_dlg):
+  AmB2BSession(caller->getLocalTag(),p_dlg),
   call_status(Disconnected),
   hold_request_cseq(0), hold_status(NotHeld)
 {
@@ -92,8 +92,8 @@ CallLeg::CallLeg(const CallLeg* caller):
 }
 
 // caller
-CallLeg::CallLeg(): 
-  AmB2BSession(),
+CallLeg::CallLeg(AmSipDialog* p_dlg): 
+  AmB2BSession("",p_dlg),
   call_status(Disconnected),
   hold_request_cseq(0), hold_status(NotHeld)
 {

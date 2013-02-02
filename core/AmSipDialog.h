@@ -77,7 +77,7 @@ protected:
 
  public:
 
-  AmSipDialog(AmSipDialogEventHandler* h);
+  AmSipDialog(AmSipDialogEventHandler* h=NULL);
   ~AmSipDialog();
 
   /** @return whether UAC INVITE transaction is pending */

@@ -187,8 +187,10 @@ public:
   bool r_cseq_i;
   unsigned int r_cseq; // last remote CSeq  
 
-  AmBasicSipDialog(AmBasicSipEventHandler* h=0);
+  AmBasicSipDialog(AmBasicSipEventHandler* h=NULL);
   virtual ~AmBasicSipDialog();
+
+  void setEventhandler(AmBasicSipEventHandler* h) { hdl = h; }
   
   /** @return UAC request coresponding to cseq or NULL */
   AmSipRequest* getUACTrans(unsigned int t_cseq);

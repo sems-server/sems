@@ -149,6 +149,8 @@ bool AmSipDialog::onRxReqStatus(const AmSipRequest& req)
 
 int AmSipDialog::onSdpCompleted()
 {
+  if(!hdl) return 0;
+
   int ret = ((AmSipDialogEventHandler*)hdl)->
     onSdpCompleted(oa.getLocalSdp(), oa.getRemoteSdp());
 
@@ -175,11 +177,13 @@ int AmSipDialog::onSdpCompleted()
 
 bool AmSipDialog::getSdpOffer(AmSdp& offer)
 {
+  if(!hdl) return false;
   return ((AmSipDialogEventHandler*)hdl)->getSdpOffer(offer);
 }
 
 bool AmSipDialog::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
 {
+  if(!hdl) return false;
   return ((AmSipDialogEventHandler*)hdl)->getSdpAnswer(offer,answer);
 }
 
@@ -428,8 +432,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
   if( (reply.code >= 200) && (reply.code < 300) &&
       (reply.cseq_method == SIP_METH_INVITE) ) {
 
-    if(hdl)
-      ((AmSipDialogEventHandler*)hdl)->onInvite2xx(reply);
+    if(hdl) ((AmSipDialogEventHandler*)hdl)->onInvite2xx(reply);
 
   } else {
     cont = AmBasicSipDialog::onRxReplyStatus(reply,t_uac_it);

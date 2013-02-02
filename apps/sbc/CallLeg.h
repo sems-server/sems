@@ -350,10 +350,10 @@ class CallLeg: public AmB2BSession
 
   public:
     /** creates A leg */
-    CallLeg();
+    CallLeg(AmSipDialog* dlg=NULL);
 
     /** creates B leg using given session as A leg */
-    CallLeg(const CallLeg* caller);
+    CallLeg(const CallLeg* caller, AmSipDialog* dlg=NULL);
 };
 
 

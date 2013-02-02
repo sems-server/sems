@@ -143,8 +143,9 @@ void PayloadIdMapping::reset()
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 // A leg constructor (from SBCDialog)
-SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile)
-  : m_state(BB_Init),
+SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg)
+  : CallLeg(p_dlg),
+    m_state(BB_Init),
     auth(NULL),
     call_profile(call_profile),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
@@ -161,10 +162,10 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile)
 }
 
 // B leg constructor (from SBCCalleeSession)
-SBCCallLeg::SBCCallLeg(SBCCallLeg* caller)
+SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
   : auth(NULL),
     call_profile(caller->getCallProfile()),
-    CallLeg(caller)
+    CallLeg(caller,p_dlg)
 {
   // FIXME: do we want to inherit cc_vars from caller?
   // Can be pretty dangerous when caller stored pointer to object - we should
@@ -794,12 +795,17 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   }
 }
 
-void SBCCallLeg::connectCallee(const string& remote_party, const string& remote_uri,
-    const string &from, const AmSipRequest &original_invite, const AmSipRequest &invite)
+void SBCCallLeg::connectCallee(const string& remote_party, 
+			       const string& remote_uri,
+			       const string &from, 
+			       const AmSipRequest &original_invite, 
+			       const AmSipRequest &invite)
 {
   // FIXME: no fork for now
 
-  SBCCallLeg* callee_session = new SBCCallLeg(this);
+  SBCCallLeg* callee_session = SBCFactory::instance()->
+    getCallLegCreator()->create(this);
+
   callee_session->setLocalParty(from, from);
   callee_session->setRemoteParty(remote_party, remote_uri);
 

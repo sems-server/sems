@@ -230,7 +230,7 @@ class AmB2BSession: public AmSession
    */
   virtual bool onOtherReply(const AmSipReply& reply);
 
-  AmB2BSession(const string& other_local_tag = "");
+  AmB2BSession(const string& other_local_tag = "", AmSipDialog* dlg=NULL);
 
   virtual ~AmB2BSession();
 

@@ -70,9 +70,8 @@ struct timeval cps_max_timestamp = avg_last_timestamp;
 
 // AmSession methods
 
-AmSession::AmSession()
-  : AmEventQueue(this),
-    //dlg(this),
+AmSession::AmSession(AmSipDialog* p_dlg)
+  : AmEventQueue(this), dlg(p_dlg),
     input(NULL), output(NULL),
     sess_stopped(false),
     m_dtmfDetector(this), m_dtmfEventQueue(&m_dtmfDetector),
@@ -89,7 +88,9 @@ AmSession::AmSession()
   , _pid(this)
 #endif
 {
-  dlg = createSipDialog();
+  DBG("dlg = %p",dlg);
+  if(!dlg) dlg = new AmSipDialog(this);
+  else dlg->setEventhandler(this);
 }
 
 AmSession::~AmSession()

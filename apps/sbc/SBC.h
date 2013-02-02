@@ -45,6 +45,11 @@ using std::string;
 #define SBC_TIMER_ID_CALL_TIMERS_START   10
 #define SBC_TIMER_ID_CALL_TIMERS_END     99
 
+struct CallLegCreator {
+  virtual SBCCallLeg* create(const SBCCallProfile& call_profile);
+  virtual SBCCallLeg* create(SBCCallLeg* caller);
+};
+
 class SBCFactory: public AmSessionFactory,
     public AmDynInvoke,
     public AmDynInvokeFactory
@@ -55,8 +60,7 @@ class SBCFactory: public AmSessionFactory,
   vector<string> active_profile;
   AmMutex profiles_mut;
 
-  typedef SBCCallLeg* (*CallLegCreator)(const SBCCallProfile& call_profile);
-  CallLegCreator createCallLeg;
+  auto_ptr<CallLegCreator> callLegCreator;
 
   void listProfiles(const AmArg& args, AmArg& ret);
   void reloadProfiles(const AmArg& args, AmArg& ret);
@@ -84,7 +88,8 @@ class SBCFactory: public AmSessionFactory,
 
   int onLoad();
 
-  void setCallLegCreator(CallLegCreator fp) { createCallLeg = fp; }
+  void setCallLegCreator(CallLegCreator* clc) { callLegCreator.reset(clc); }
+  CallLegCreator* getCallLegCreator() { return callLegCreator.get(); }
 
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      const map<string,string>& app_params);

@@ -64,8 +64,9 @@ static void errCode2RelayedReply(AmSipReply &reply, int err_code, unsigned defau
 // AmB2BSession methods
 //
 
-AmB2BSession::AmB2BSession(const string& other_local_tag)
-  : other_id(other_local_tag),
+AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* dlg)
+  : AmSession(dlg),
+    other_id(other_local_tag),
     sip_relay_only(true),
     rtp_relay_mode(RTP_Direct),
     rtp_relay_force_symmetric_rtp(false),
