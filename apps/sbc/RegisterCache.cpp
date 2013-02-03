@@ -46,7 +46,8 @@ void ContactCacheBucket::dump_elmt(const string& aor,
   }
 }
 
-void ContactCacheBucket::gbc(long int now, list<string>& alias_list)
+void ContactCacheBucket::gbc(RegCacheStorageHandler* h, long int now, 
+			     list<string>& alias_list)
 {
   for(value_map::iterator it = elmts.begin(); it != elmts.end();) {
 
@@ -67,6 +68,7 @@ void ContactCacheBucket::gbc(long int now, list<string>& alias_list)
 	      del_it->first.c_str(),binding->alias.c_str(),
 	      binding->expire,now);
 
+	  if(h) h->onDelete(it->first,del_it->first,binding->alias);
 	  delete binding;
 	  aor_e->erase(del_it);
 	  continue;
@@ -99,10 +101,29 @@ void AliasBucket::dump_elmt(const string& alias, const string* p_uri) const
       p_uri ? p_uri->c_str() : "NULL");
 }
 
+
+struct RegCacheLogHandler
+  : RegCacheStorageHandler
+{
+  void onDelete(const string& aor, const string& uri, const string& alias) {
+    DBG("delete: aor='%s';uri='%s';alias='%s'",
+	aor.c_str(),uri.c_str(),alias.c_str());
+  }
+
+  void onUpdate(const string& canon_aor, const string& alias, 
+		long int expires, const AliasEntry& alias_update) {
+    DBG("update: aor='%s';alias='%s';expires=%li",
+	canon_aor.c_str(),alias.c_str(),expires);
+  }
+};
+
+
 _RegisterCache::_RegisterCache()
   : reg_cache_ht(REG_CACHE_TABLE_ENTRIES),
     id_idx(REG_CACHE_TABLE_ENTRIES)
 {
+  // debug register cache WRITE operations
+  setStorageHandler(new RegCacheLogHandler());
 }
 
 _RegisterCache::~_RegisterCache()
@@ -126,7 +147,7 @@ void _RegisterCache::gbc(unsigned int bucket_id)
   ContactCacheBucket* bucket = reg_cache_ht.get_bucket(bucket_id);
   bucket->lock();
   list<string> alias_list;
-  bucket->gbc(now.tv_sec,alias_list);
+  bucket->gbc(storage_handler.get(),now.tv_sec,alias_list);
   for(list<string>::iterator it = alias_list.begin();
       it != alias_list.end(); it++){
     AliasBucket* alias_bucket = getAliasBucket(*it);
@@ -233,12 +254,6 @@ void _RegisterCache::update(const string& canon_aor, const string& alias,
 			    long int expires, const AliasEntry& alias_update)
 {
   string uri = alias_update.contact_uri;
-  //string canon_aor = canonicalize_aor(aor);
-  if(canon_aor.empty()) {
-    DBG("Canonical AOR is empty");
-    return;
-  }
-
   ContactCacheBucket* bucket = getContactBucket(canon_aor);
   AliasBucket* alias_bucket = getAliasBucket(alias);
 
@@ -291,6 +306,9 @@ void _RegisterCache::update(const string& canon_aor, const string& alias,
     *alias_e = alias_update;
   }
   
+  if(storage_handler.get())
+    storage_handler->onUpdate(canon_aor,alias,expires,alias_update);
+
   alias_bucket->unlock();
   bucket->unlock();
 }
@@ -317,6 +335,7 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
   if(aor_e) {
     AorEntry::iterator binding_it = aor_e->find(uri);
     if(binding_it != aor_e->end()) {
+      storage_handler->onDelete(canon_aor,uri,alias);
       delete binding_it->second;
       aor_e->erase(binding_it);
     }
@@ -324,6 +343,7 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
       bucket->remove(canon_aor);
     }
   }
+
   alias_bucket->remove(alias);
   
   alias_bucket->unlock();

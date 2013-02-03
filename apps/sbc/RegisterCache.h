@@ -6,19 +6,26 @@
 
 #include <string>
 #include <map>
+#include <memory>
 using std::string;
 using std::map;
+using std::auto_ptr;
 
 #define REG_CACHE_TABLE_POWER   10
 #define REG_CACHE_TABLE_ENTRIES (1<<REG_CACHE_TABLE_POWER)
+
+/*
+ * Register cache:
+ * ---------------
+ * Data model:
+ *  - canonical AoR <--1-to-n--> contacts
+ *  - alias         <--1-to-1--> contact
+ */
 
 struct RegBinding
 {
   // absolute timestamp
   long int expire;
-
-  // string callid;
-  // int    cseq;
 
   // unique-id used as contact user toward the registrar
   string alias;
@@ -27,9 +34,30 @@ struct RegBinding
 // Contact-URI -> RegBinding
 typedef map<string,RegBinding*> AorEntry;
 
+struct AliasEntry
+{
+  string contact_uri;
+
+  // saved state for NAT handling
+  string         source_ip;
+  unsigned short source_port;
+
+  // sticky interface
+  unsigned short local_if;
+};
+
+struct RegCacheStorageHandler 
+{
+  virtual void onDelete(const string& aor, const string& uri, 
+			const string& alias) {}
+
+  virtual void onUpdate(const string& canon_aor, const string& alias, 
+			long int expires, const AliasEntry& alias_update) {}
+};
+
 /**
  * Hash-table bucket:
- *   
+ *   AoR -> AorEntry
  */
 class ContactCacheBucket
   : public ht_map_bucket<string,AorEntry>
@@ -46,21 +74,9 @@ public:
   AorEntry* get(const string& aor);
 
   /* Maintenance stuff */
-  void gbc(long int now, list<string>& alias_list);
+
+  void gbc(RegCacheStorageHandler* h, long int now, list<string>& alias_list);
   void dump_elmt(const string& aor, const AorEntry* p_aor_entry) const;
-};
-
-
-struct AliasEntry
-{
-  string contact_uri;
-
-  // saved state for NAT handling
-  string         source_ip;
-  unsigned short source_port;
-
-  // sticky interface
-  unsigned short local_if;
 };
 
 /**
@@ -85,6 +101,8 @@ class _RegisterCache
 {
   hash_table<ContactCacheBucket> reg_cache_ht;
   hash_table<AliasBucket>        id_idx;
+
+  auto_ptr<RegCacheStorageHandler> storage_handler;
 
   unsigned int gbc_bucket_id;
 
@@ -116,6 +134,8 @@ protected:
 
 public:
   static string canonicalize_aor(const string& aor);
+
+  void setStorageHandler(RegCacheStorageHandler* h) { storage_handler.reset(h); }
 
   /**
    * Match, retrieve the contact cache entry associated with the URI passed,

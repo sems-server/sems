@@ -150,22 +150,24 @@ public:
     /**
      * Insert the value into this bucket.
      */
-    void insert(const Key& k, Value* v) {
-	elmts.insert(typename value_map::value_type(k,v));
+    virtual bool insert(const Key& k, Value* v) {
+	return elmts.insert(typename value_map::value_type(k,v)).second;
     }
 
     /**
      * Remove the value from this bucket,
      * if it was still present.
      */
-    void remove(const Key& k) {
+    virtual bool remove(const Key& k) {
 	typename value_map::iterator it = find(k);
 
 	if(it != elmts.end()){
 	    Value* v = it->second;
 	    elmts.erase(it);
 	    delete v;
+	    return true;
 	}
+	return false;
     }
 
     /**
