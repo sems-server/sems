@@ -158,7 +158,7 @@ bool UACAuth::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 	  string result; 
 
 	  string auth_uri; 
-	  auth_uri = dlg->remote_uri;
+	  auth_uri = dlg->getRemoteUri();
 
 	  if (do_auth(reply.code, auth_hdr,  
 		      ri->second.method,
@@ -181,15 +181,16 @@ bool UACAuth::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 		ri->second.method != SIP_METH_BYE) {
 	      // reset remote tag so remote party 
 	      // thinks its new dlg
-	      dlg->remote_tag = "";
+	      dlg->setRemoteTag(string());
 
 	      if (AmConfig::ProxyStickyAuth) {
 		// update remote URI to resolved IP
-		size_t hpos = dlg->remote_uri.find("@");
+		size_t hpos = dlg->getRemoteUri().find("@");
 		if (hpos != string::npos && reply.remote_ip.length()) {
-		  dlg->remote_uri = dlg->remote_uri.substr(0, hpos+1) +
-		    reply.remote_ip + ":"+int2str(reply.remote_port);
-		  DBG("updated remote URI to '%s'\n", dlg->remote_uri.c_str());
+		  string remote_uri = dlg->getRemoteUri().substr(0, hpos+1) 
+		    + reply.remote_ip + ":"+int2str(reply.remote_port);
+		  dlg->setRemoteUri(remote_uri);
+		  DBG("updated remote URI to '%s'\n", remote_uri.c_str());
 		}
 	      }
 
@@ -229,7 +230,7 @@ bool UACAuth::onSendRequest(AmSipRequest& req, int& flags)
   if (!(flags & SIP_FLAGS_NOAUTH) &&
       !challenge.nonce.empty() &&
       do_auth(challenge, challenge_code,
-	      req.method, dlg->remote_uri, &req.body, result)) {
+	      req.method, dlg->getRemoteUri(), &req.body, result)) {
     // add headers
     if (req.hdrs == "\r\n" || req.hdrs == "\r" || req.hdrs == "\n")
       req.hdrs = result;

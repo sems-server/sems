@@ -322,8 +322,8 @@ int SBCSimpleRelay::start(const AmSipRequest& req, const SBCCallProfile& cp)
   a_leg->initUAS(n_req,cp);
   b_leg->initUAC(n_req,cp);
 
-  a_leg->setOtherDlg(b_leg->local_tag);
-  b_leg->setOtherDlg(a_leg->local_tag);
+  a_leg->setOtherDlg(b_leg->getLocalTag());
+  b_leg->setOtherDlg(a_leg->getLocalTag());
 
   a_leg->onRxRequest(n_req);
   if(a_leg->terminated()) {

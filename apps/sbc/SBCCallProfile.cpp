@@ -829,14 +829,15 @@ int SBCCallProfile::apply_a_routing(ParamReplacerCtx& ctx,
 					   "aleg_next_hop", req);
 
     DBG("set next hop ip to '%s'\n", aleg_nh.c_str());
-    dlg.next_hop = aleg_nh;
+    dlg.setNextHop(aleg_nh);
   }
   else {
     dlg.nat_handling = dlg_nat_handling;
     if(dlg_nat_handling) {
-      dlg.next_hop = req.remote_ip;
-      dlg.next_hop += ":" + req.remote_port;
-      dlg.next_hop_1st_req = false;
+      string nh = req.remote_ip;
+      nh += ":" + req.remote_port;
+      dlg.setNextHop(nh);
+      dlg.setNextHop1stReq(false);
     }
   }
 
@@ -867,9 +868,8 @@ int SBCCallProfile::apply_b_routing(ParamReplacerCtx& ctx,
     string nh = ctx.replaceParameters(next_hop, "next_hop", req);
 
     DBG("set next hop ip to '%s'\n", nh.c_str());
-    dlg.next_hop = nh;
-
-    dlg.next_hop_1st_req = next_hop_1st_req;
+    dlg.setNextHop(nh);
+    dlg.setNextHop1stReq(next_hop_1st_req);
   }
 
   if (!outbound_proxy.empty()) {

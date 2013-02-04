@@ -62,13 +62,13 @@ CallLeg::CallLeg(const CallLeg* caller, AmSipDialog* p_dlg):
 
   const AmSipDialog* caller_dlg = caller->dlg;
 
-  dlg->local_tag    = AmSession::getNewId();
-  dlg->callid       = AmSession::getNewId();
+  dlg->setLocalTag(AmSession::getNewId());
+  dlg->setCallid(AmSession::getNewId());
 
   // take important data from A leg
-  dlg->local_party  = caller_dlg->remote_party;
-  dlg->remote_party = caller_dlg->local_party;
-  dlg->remote_uri   = caller_dlg->local_uri;
+  dlg->setLocalParty(caller_dlg->getRemoteParty());
+  dlg->setRemoteParty(caller_dlg->getLocalParty());
+  dlg->setRemoteUri(caller_dlg->getLocalUri());
 
 /*  if (AmConfig::LogSessions) {
     INFO("Starting B2B callee session %s\n",
@@ -341,7 +341,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
       other_legs.clear(); // no need to remember the connected leg here
       if (media_session) {
-        TRACE("connecting media session: %s to %s\n", dlg->local_tag.c_str(), other_id.c_str());
+        TRACE("connecting media session: %s to %s\n", dlg->getLocalTag().c_str(), other_id.c_str());
         media_session->changeSession(a_leg, this);
         if (initial_sdp_stored && ev->forward) updateRemoteSdp(initial_sdp);
       }
@@ -410,9 +410,9 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
   }
 
   MONITORING_LOG3(getLocalTag().c_str(), 
-      "b2b_leg", other_id.c_str(),
-      "to", dlg->remote_party.c_str(),
-      "ruri", dlg->remote_uri.c_str());
+		  "b2b_leg", other_id.c_str(),
+		  "to", dlg->getRemoteParty().c_str(),
+		  "ruri", dlg->getRemoteUri().c_str());
 
   // This leg is marked as 'relay only' since the beginning because it might
   // need not to know on time that it is connected and thus should relay.
@@ -503,9 +503,9 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   else rtp_relay_mode = RTP_Direct;
 
   MONITORING_LOG3(getLocalTag().c_str(),
-      "b2b_leg", other_id.c_str(),
-      "to", dlg->remote_party.c_str(),
-      "ruri", dlg->remote_uri.c_str());
+		  "b2b_leg", other_id.c_str(),
+		  "to", dlg->getRemoteParty().c_str(),
+		  "ruri", dlg->getRemoteUri().c_str());
 
   AmMimeBody r_body(ev->body);
   const AmMimeBody* body = &ev->body;
@@ -928,9 +928,9 @@ void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e, AmB2BSession::RT
   AmSipDialog* callee_dlg = callee->dlg;
   MONITORING_LOG4(b.id.c_str(),
 		  "dir",  "out",
-		  "from", callee_dlg->local_party.c_str(),
-		  "to",   callee_dlg->remote_party.c_str(),
-		  "ruri", callee_dlg->remote_uri.c_str());
+		  "from", callee_dlg->getLocalParty().c_str(),
+		  "to",   callee_dlg->getRemoteParty().c_str(),
+		  "ruri", callee_dlg->getRemoteUri().c_str());
 
   callee->start();
 

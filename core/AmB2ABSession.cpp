@@ -246,8 +246,9 @@ void AmB2ABCallerSession::setupCalleeSession(AmB2ABCalleeSession* callee_session
   assert(callee_session);
 
   AmSipDialog* callee_dlg = callee_session->dlg;
-  callee_dlg->callid       = AmSession::getNewId();
-  callee_dlg->local_tag    = other_id;
+
+  callee_dlg->setCallid(AmSession::getNewId());
+  callee_dlg->setLocalTag(other_id);
 
 
   MONITORING_LOG(other_id.c_str(), 
@@ -298,11 +299,11 @@ void AmB2ABCalleeSession::onB2ABEvent(B2ABEvent* ev)
 		      "to",      co_ev->remote_party.c_str(),
 		      "ruri",    co_ev->remote_uri.c_str());
 
-      dlg->local_party  = co_ev->local_party;
-      dlg->local_uri    = co_ev->local_uri;
+      dlg->setLocalParty(co_ev->local_party);
+      dlg->setLocalUri(co_ev->local_uri);
 			
-      dlg->remote_party = co_ev->remote_party;
-      dlg->remote_uri   = co_ev->remote_uri;
+      dlg->setRemoteParty(co_ev->remote_party);
+      dlg->setRemoteUri(co_ev->remote_uri);
 
       setCallgroup(co_ev->callgroup);
 			

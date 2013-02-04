@@ -59,7 +59,7 @@ createSubscription(const AmSipSubscriptionInfo& info,
   AmSipSubscriptionDialog* new_sub = new AmSipSubscriptionDialog(info,sess_link,
 								 this);
 
-  string handle = new_sub->local_tag;
+  string handle = new_sub->getLocalTag();
 
   subscriptions_mut.lock();
   subscriptions[handle] = new_sub;

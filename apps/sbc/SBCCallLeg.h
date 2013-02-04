@@ -132,11 +132,11 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   // SBC interface usable from CC modules
 
   void setLocalParty(const string &party, const string &uri) { 
-    dlg->local_party = party; dlg->local_uri = uri; 
+    dlg->setLocalParty(party); dlg->setLocalUri(uri);
   }
 
   void setRemoteParty(const string &party, const string &uri) { 
-    dlg->remote_party = party; dlg->remote_uri = uri; 
+    dlg->setRemoteParty(party); dlg->setRemoteUri(uri);
   }
 
   SBCCallProfile &getCallProfile() { return call_profile; }

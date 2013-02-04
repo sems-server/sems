@@ -83,7 +83,7 @@ void AmSIPRegistration::setRegistrationInfo(const SIPRegistrationInfo& _info) {
   req.to_tag   = "";
 
   // to trigger setting dlg identifiers
-  dlg.callid.clear();
+  dlg.setCallid(string());
 
   dlg.initFromLocalRequest(req);
 }
@@ -106,9 +106,10 @@ bool AmSIPRegistration::doRegistration()
   unregistering = false;
 
   req.to_tag     = "";
-  dlg.remote_tag = "";
   req.r_uri    = "sip:"+info.domain;
-  dlg.remote_uri = req.r_uri;
+
+  dlg.setRemoteTag(string());
+  dlg.setRemoteUri(req.r_uri);
     
   // set outbound proxy as next hop 
   if (!info.proxy.empty()) {
@@ -146,9 +147,9 @@ bool AmSIPRegistration::doUnregister()
   unregistering = true;
 
   req.to_tag     = "";
-  dlg.remote_tag = "";
   req.r_uri      = "sip:"+info.domain;
-  dlg.remote_uri = req.r_uri;
+  dlg.setRemoteTag(string());
+  dlg.setRemoteUri(req.r_uri);
     
   // set outbound proxy as next hop 
   if (!info.proxy.empty()) {

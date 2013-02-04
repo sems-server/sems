@@ -199,22 +199,22 @@ void AmSession::unlockAudio()
 
 const string& AmSession::getCallID() const
 { 
-  return dlg->callid;
+  return dlg->getCallid();
 }
 
 const string& AmSession::getRemoteTag() const
 { 
-  return dlg->remote_tag;
+  return dlg->getRemoteTag();
 }
 
 const string& AmSession::getLocalTag() const
 {
-  return dlg->local_tag;
+  return dlg->getLocalTag();
 }
 
 const string& AmSession::getFirstBranch() const
 {
-  return dlg->first_branch;
+  return dlg->get1stBranch();
 }
 
 void AmSession::setUri(const string& uri)
@@ -225,17 +225,17 @@ void AmSession::setUri(const string& uri)
 
 void AmSession::setLocalTag()
 {
-  if (dlg->local_tag.empty()) {
-    dlg->local_tag = getNewId();
-    DBG("AmSession::setLocalTag() - session id set to %s\n", 
-	dlg->local_tag.c_str());
+  if (dlg->getLocalTag().empty()) {
+    string new_id = getNewId();
+    dlg->setLocalTag(new_id);
+    DBG("AmSession::setLocalTag() - session id set to %s\n", new_id.c_str());
   }
 }
 
 void AmSession::setLocalTag(const string& tag)
 {
   DBG("AmSession::setLocalTag(%s)\n",tag.c_str());
-  dlg->local_tag = tag;
+  dlg->setLocalTag(tag);
 }
 
 const vector<SdpPayload*>& AmSession::getPayloads()
@@ -371,7 +371,7 @@ bool AmSession::processEventsCatchExceptions() {
 bool AmSession::processingCycle() {
 
   DBG("vv S [%s|%s] %s, %s, %i UACTransPending, %i usages vv\n",
-      dlg->callid.c_str(),getLocalTag().c_str(),
+      dlg->getCallid().c_str(),getLocalTag().c_str(),
       dlg->getStatusStr(),
       sess_stopped.get()?"stopped":"running",
       dlg->getUACTransPending(),
@@ -390,7 +390,7 @@ bool AmSession::processingCycle() {
       bool s_stopped = sess_stopped.get();
       
       DBG("^^ S [%s|%s] %s, %s, %i UACTransPending, %i usages ^^\n",
-	  dlg->callid.c_str(),getLocalTag().c_str(),
+	  dlg->getCallid().c_str(),getLocalTag().c_str(),
 	  AmBasicSipDialog::getStatusStr(dlg_status),
 	  s_stopped?"stopped":"running",
 	  dlg->getUACTransPending(),
@@ -440,7 +440,7 @@ bool AmSession::processingCycle() {
       processing_status = SESSION_ENDED_DISCONNECTED;
 
     DBG("^^ S [%s|%s] %s, %s, %i UACTransPending, %i usages ^^\n",
-	dlg->callid.c_str(),getLocalTag().c_str(),
+	dlg->getCallid().c_str(),getLocalTag().c_str(),
 	dlg->getStatusStr(),
 	sess_stopped.get()?"stopped":"running",
 	dlg->getUACTransPending(),
@@ -1166,9 +1166,10 @@ void AmSession::onPrack2xx(const AmSipReply &reply)
 string AmSession::sid4dbg()
 {
   string dbg;
-  dbg = dlg->callid + "/" + dlg->local_tag + "/" + dlg->remote_tag + "/" + 
-      int2str(RTPStream()->getLocalPort()) + "/" + 
-      RTPStream()->getRHost() + ":" + int2str(RTPStream()->getRPort());
+  dbg = dlg->getCallid() + "/" + dlg->getLocalTag() + "/" 
+    + dlg->getRemoteTag() + "/" 
+    + int2str(RTPStream()->getLocalPort()) + "/" 
+    + RTPStream()->getRHost() + ":" + int2str(RTPStream()->getRPort());
   return dbg;
 }
 

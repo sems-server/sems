@@ -241,15 +241,16 @@ void AmBasicSipDialog::resetOutboundIf()
  */
 void AmBasicSipDialog::initFromLocalRequest(const AmSipRequest& req)
 {
-  updateRemoteUri(req.r_uri);
+  setRemoteUri(req.r_uri);
 
-  callid       = req.callid;
-  local_tag    = req.from_tag;
   user         = req.user;
   domain       = req.domain;
-  local_uri    = req.from_uri;
-  remote_party = req.to;
-  local_party  = req.from;
+
+  setCallid(      req.callid   );
+  setLocalTag(    req.from_tag );
+  setLocalUri(    req.from_uri );
+  setRemoteParty( req.to       );
+  setLocalParty(  req.from     );
 }
 
 bool AmBasicSipDialog::onRxReqSanity(const AmSipRequest& req)
@@ -319,26 +320,29 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
     
     // refresh the target
     if (remote_uri != req.from_uri) {
-      updateRemoteUri(req.from_uri);
+      setRemoteUri(req.from_uri);
       if(nat_handling && req.first_hop) {
-	updateNextHop(req.remote_ip + ":"
-		      + int2str(req.remote_port));
-	updateNextHop1stReq(false);
+	setNextHop(req.remote_ip + ":"
+		   + int2str(req.remote_port));
+	setNextHop1stReq(false);
       }
     }
   }
   
   // Dlg not yet initialized?
   if(callid.empty()){
-    callid       = req.callid;
-    remote_tag   = req.from_tag;
+
     user         = req.user;
     domain       = req.domain;
-    local_uri    = req.r_uri;
-    remote_party = req.from;
-    local_party  = req.to;
-    route        = req.route;
-    first_branch = req.via_branch;
+
+    setCallid(      req.callid   );
+    setRemoteTag(   req.from_tag );
+    setLocalUri(    req.r_uri    );
+    setRemoteParty( req.from     );
+    setLocalParty(  req.to       );
+    setRouteSet(    req.route    );
+    set1stBranch(   req.via_branch );
+
     outbound_interface = req.local_if;
   }
 
@@ -413,35 +417,15 @@ void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
 	 (reply.cseq_method == SIP_METH_NOTIFY))) ||
        (reply.cseq_method == SIP_METH_SUBSCRIBE)) ) {
     
-    updateRemoteUri(reply.to_uri);
+    setRemoteUri(reply.to_uri);
   }
 }
 
-void AmBasicSipDialog::updateRemoteUri(const string& new_remote_uri)
-{
-  remote_uri = new_remote_uri;
-}
-
-void AmBasicSipDialog::updateRouteSet(const string& new_rs)
-{
-  route = new_rs;
-}
-
-void AmBasicSipDialog::updateRemoteTag(const string& new_rt)
+void AmBasicSipDialog::setRemoteTag(const string& new_rt)
 {
   if(!new_rt.empty() && remote_tag.empty()){
     remote_tag = new_rt;
   }
-}
-
-void AmBasicSipDialog::updateNextHop(const string& new_nh)
-{
-  next_hop = new_nh;
-}
-
-void AmBasicSipDialog::updateNextHop1stReq(bool nh_1st_req)
-{
-  next_hop_1st_req = nh_1st_req;
 }
 
 int AmBasicSipDialog::onTxRequest(AmSipRequest& req, int& flags)

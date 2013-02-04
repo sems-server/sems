@@ -166,7 +166,7 @@ public:
 void SingleSubscription::onTimer(int timer_id)
 {
   DBG("[%p] tag=%s;role=%s timer_id = %s\n",this,
-      dlg()->local_tag.c_str(),
+      dlg()->getLocalTag().c_str(),
       role ? "Notifier" : "Subscriber",
       __timer_id_str[timer_id]);
 
@@ -242,7 +242,7 @@ void SingleSubscription::requestFSM(const AmSipRequest& req)
     unlockState();
 
     // start Timer N (RFC6665/4.1.2)
-    DBG("setTimer(%s,RFC6665_TIMER_N)\n",dlg()->local_tag.c_str());
+    DBG("setTimer(%s,RFC6665_TIMER_N)\n",dlg()->getLocalTag().c_str());
     AmAppTimer::instance()->setTimer(&timer_n,RFC6665_TIMER_N_DURATION);
   }
   else if(req.method == SIP_METH_NOTIFY) {
@@ -313,9 +313,9 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
       // success
       
       // set dialog identifier if not yet set
-      if(dlg()->remote_tag.empty()) {
-	dlg()->updateRemoteTag(reply.to_tag);
-	dlg()->updateRouteSet(reply.route);
+      if(dlg()->getRemoteTag().empty()) {
+	dlg()->setRemoteTag(reply.to_tag);
+	dlg()->setRouteSet(reply.route);
       }
 
       // check Expires-HF
@@ -325,7 +325,7 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
       int sub_expires=0;
       if(!expires_txt.empty() && str2int(expires_txt,sub_expires)){
 	if(sub_expires){
-	  DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->local_tag.c_str());
+	  DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->getLocalTag().c_str());
 	  AmAppTimer::instance()->setTimer(&timer_expires,(double)sub_expires);
 	  expires = sub_expires;
 	}
@@ -386,7 +386,7 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
       str2int(expires_txt,notify_expire);
 
     // Kill timer N
-    DBG("removeTimer(%s,RFC6665_TIMER_N)\n",dlg()->local_tag.c_str());
+    DBG("removeTimer(%s,RFC6665_TIMER_N)\n",dlg()->getLocalTag().c_str());
     AmAppTimer::instance()->removeTimer(&timer_n);
 
     sub_state_txt = strip_header_params(sub_state_txt);
@@ -409,7 +409,7 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
     }
     
     // reset expire timer
-    DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->local_tag.c_str());
+    DBG("setTimer(%s,SUBSCRIPTION_EXPIRE)\n",dlg()->getLocalTag().c_str());
     AmAppTimer::instance()->setTimer(&timer_expires,(double)notify_expire);
     expires = notify_expire;
   }
@@ -481,7 +481,9 @@ AmSipSubscription::createSubscription(const AmSipRequest& req, bool uac)
 AmSipSubscription::Subscriptions::iterator
 AmSipSubscription::matchSubscription(const AmSipRequest& req, bool uac)
 {
-  if(dlg->remote_tag.empty() || (req.method == SIP_METH_REFER) || subs.empty()) {
+  if(dlg->getRemoteTag().empty() 
+     || (req.method == SIP_METH_REFER) || subs.empty()) {
+
     DBG("no to-tag, REFER or subs empty: create new subscription\n");
     return createSubscription(req,uac);
   }

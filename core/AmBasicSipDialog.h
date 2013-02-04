@@ -87,6 +87,25 @@ private:
 protected:
   Status status;
 
+  string callid;
+
+  string local_tag;
+  string ext_local_tag;
+  
+  string remote_tag;
+  string first_branch;
+
+  string local_uri;    // local uri
+  string remote_uri;   // remote uri
+
+  string remote_party; // To/From
+  string local_party;  // To/From
+
+  string route;
+
+  string next_hop;
+  bool next_hop_1st_req;
+
   TransMap uas_trans;
   TransMap uac_trans;
 
@@ -159,26 +178,8 @@ public:
   string user;         // local user
   string domain;       // local domain
 
-  string local_uri;    // local uri
-  string remote_uri;   // remote uri
-
-
-  string callid;
-  string remote_tag;
-  string local_tag;
-  string ext_local_tag;
-
-  string first_branch;
-
-  string remote_party; // To/From
-  string local_party;  // To/From
-
-  string route;
   string outbound_proxy;
   bool   force_outbound_proxy;
-
-  string next_hop;
-  bool next_hop_1st_req;
 
   int  outbound_interface;
   bool nat_handling;
@@ -216,6 +217,51 @@ public:
   unsigned int getUsages() { return usages; }
   void incUsages() { usages++; }
   void decUsages() { usages--; }
+
+  const string& getCallid() const { return callid; }
+  virtual void setCallid(const string& n_callid) { callid = n_callid; }
+
+  const string& getLocalTag() const { return local_tag; }
+  virtual void setLocalTag(const string& n_tag) { local_tag = n_tag; }
+
+  const string& getRemoteTag() const { return remote_tag; }
+  virtual void setRemoteTag(const string& n_tag);
+
+  const string& get1stBranch() const { return first_branch; }
+  virtual void set1stBranch(const string& n_branch)
+  { first_branch = n_branch; }
+
+  const string& getExtLocalTag() const { return ext_local_tag; }
+  virtual void setExtLocalTag(const string& new_ext_tag)
+  { ext_local_tag = new_ext_tag; }
+
+  const string& getLocalUri() const { return local_uri; }
+  virtual void setLocalUri(const string& new_local_uri)
+  { local_uri = new_local_uri; }
+
+  const string& getRemoteUri() const { return remote_uri; }
+  virtual void setRemoteUri(const string& new_remote_uri)
+  { remote_uri = new_remote_uri; }
+
+  const string& getLocalParty() const { return local_party; }
+  virtual void setLocalParty(const string& new_local_party)
+  { local_party = new_local_party; }
+
+  const string& getRemoteParty() const { return remote_party; }
+  virtual void setRemoteParty(const string& new_remote_party)
+  { remote_party = new_remote_party; }
+
+  const string& getRouteSet() const { return route; }
+  virtual void setRouteSet(const string& new_rs)
+  { route = new_rs; }
+
+  const string& getNextHop() const { return next_hop; }
+  virtual void setNextHop(const string& new_nh)
+  { next_hop = new_nh; }
+
+  bool getNextHop1stReq() const { return next_hop_1st_req; }
+  virtual void setNextHop1stReq(bool nh_1st_req)
+  { next_hop_1st_req = nh_1st_req; }
 
   /**
    * Compute the Contact-HF for the next request
@@ -269,12 +315,6 @@ public:
    *       not used by the basic class.
    */
   void updateDialogTarget(const AmSipReply& reply);
-
-  virtual void updateRemoteUri(const string& new_remote_uri);
-  virtual void updateRouteSet(const string& new_rs);
-  virtual void updateRemoteTag(const string& new_rt);
-  virtual void updateNextHop(const string& new_nh);
-  virtual void updateNextHop1stReq(bool nh_1st_req);
 
   /** @return 0 on success */
   virtual int reply(const AmSipRequest& req,

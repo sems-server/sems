@@ -345,13 +345,13 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
 	  setStatus(Proceeding);
 	else {
 	  setStatus(Early);
-	  updateRemoteTag(reply.to_tag);
-	  updateRouteSet(reply.route);
+	  setRemoteTag(reply.to_tag);
+	  setRouteSet(reply.route);
 	}
       }
       else if(reply.code < 300){
 	setStatus(Connected);
-	updateRouteSet(reply.route);
+	setRouteSet(reply.route);
 	if(reply.to_tag.empty()){
 	  DBG("received 2xx reply without to-tag "
 	      "(callid=%s): sending BYE\n",reply.callid.c_str());
@@ -359,7 +359,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
 	  sendRequest(SIP_METH_BYE);
 	}
 	else {
-	  updateRemoteTag(reply.to_tag);
+	  setRemoteTag(reply.to_tag);
 	}
       }
 
@@ -377,7 +377,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
       }
       else if(reply.code < 300){
 	setStatus(Connected);
-	updateRouteSet(reply.route);
+	setRouteSet(reply.route);
 	if(reply.to_tag.empty()){
 	  DBG("received 2xx reply without to-tag "
 	      "(callid=%s): sending BYE\n",reply.callid.c_str());
@@ -385,7 +385,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
 	  sendRequest(SIP_METH_BYE);
 	}
 	else {
-	  updateRemoteTag(reply.to_tag);
+	  setRemoteTag(reply.to_tag);
 	}
       }
       else { // error reply

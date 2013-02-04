@@ -180,8 +180,8 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
   // here (FIXME: do it on better place and better way than accessing internals
   // of caller->dlg directly)
   if (call_profile.transparent_dlg_id && caller) {
-    dlg->callid = caller->dlg->callid;
-    dlg->ext_local_tag = caller->dlg->remote_tag;
+    dlg->setCallid(caller->dlg->getCallid());
+    dlg->setExtLocalTag(caller->dlg->getRemoteTag());
   }
 
   // CC interfaces and variables should be already "evaluated" by A leg, we just
@@ -314,8 +314,8 @@ void SBCCallLeg::applyBProfile()
   }
 
   if (!call_profile.next_hop.empty()) {
-    dlg->next_hop = call_profile.next_hop;
-    dlg->next_hop_1st_req = call_profile.next_hop_1st_req;
+    dlg->setNextHop(call_profile.next_hop);
+    dlg->setNextHop1stReq(call_profile.next_hop_1st_req);
   }
 
   // was read from caller but reading directly from profile now
@@ -338,7 +338,8 @@ void SBCCallLeg::applyBProfile()
   setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
 
   // was read from caller but reading directly from profile now
-  if (!call_profile.callid.empty()) dlg->callid = call_profile.callid;
+  if (!call_profile.callid.empty()) 
+    dlg->setCallid(call_profile.callid);
 }
 
 int SBCCallLeg::relayEvent(AmEvent* ev)
@@ -370,8 +371,8 @@ int SBCCallLeg::relayEvent(AmEvent* ev)
           assert(reply_ev);
 
           if(call_profile.transparent_dlg_id &&
-              (reply_ev->reply.from_tag == dlg->ext_local_tag))
-            reply_ev->reply.from_tag = dlg->local_tag;
+	     (reply_ev->reply.from_tag == dlg->getExtLocalTag()))
+            reply_ev->reply.from_tag = dlg->getLocalTag();
 
           if (call_profile.headerfilter.size() ||
               call_profile.reply_translations.size()) {
@@ -462,7 +463,7 @@ void SBCCallLeg::setOtherId(const AmSipReply& reply)
   DBG("setting other_id to '%s'",reply.from_tag.c_str());
   CallLeg::setOtherId(reply);
   if(call_profile.transparent_dlg_id && !reply.to_tag.empty()) {
-    dlg->ext_local_tag = reply.to_tag;
+    dlg->setExtLocalTag(reply.to_tag);
   }
 }
 

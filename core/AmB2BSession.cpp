@@ -126,7 +126,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward,
     errCode2RelayedReply(n_reply, err_code, 500);
     n_reply.cseq = cseq;
     n_reply.cseq_method = method;
-    n_reply.from_tag = dlg->local_tag;
+    n_reply.from_tag = dlg->getLocalTag();
     DBG("relaying B2B SIP error reply %u %s\n", n_reply.code, n_reply.reason.c_str());
     relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
   }
@@ -140,7 +140,7 @@ void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward,
     n_reply.reason = reason;
     n_reply.cseq = cseq;
     n_reply.cseq_method = method;
-    n_reply.from_tag = dlg->local_tag;
+    n_reply.from_tag = dlg->getLocalTag();
     DBG("relaying B2B SIP reply %d %s\n", sip_code, reason);
     relayEvent(new B2BSipReplyEvent(n_reply, forward, method));
   }
@@ -1093,12 +1093,12 @@ void AmB2BCallerSession::createCalleeSession() {
 
   other_id = AmSession::getNewId();
   
-  callee_dlg->local_tag    = other_id;
-  callee_dlg->callid       = AmSession::getNewId();
+  callee_dlg->setLocalTag(other_id);
+  callee_dlg->setCallid(AmSession::getNewId());
 
-  callee_dlg->local_party  = dlg->remote_party;
-  callee_dlg->remote_party = dlg->local_party;
-  callee_dlg->remote_uri   = dlg->local_uri;
+  callee_dlg->setLocalParty(dlg->getRemoteParty());
+  callee_dlg->setRemoteParty(dlg->getLocalParty());
+  callee_dlg->setRemoteUri(dlg->getLocalUri());
 
   if (AmConfig::LogSessions) {
     INFO("Starting B2B callee session %s\n",
@@ -1107,9 +1107,9 @@ void AmB2BCallerSession::createCalleeSession() {
 
   MONITORING_LOG4(other_id.c_str(), 
 		  "dir",  "out",
-		  "from", callee_dlg->local_party.c_str(),
-		  "to",   callee_dlg->remote_party.c_str(),
-		  "ruri", callee_dlg->remote_uri.c_str());
+		  "from", callee_dlg->getLocalParty().c_str(),
+		  "to",   callee_dlg->getRemoteParty().c_str(),
+		  "ruri", callee_dlg->getRemoteUri().c_str());
 
   try {
     initializeRTPRelay(callee_session);
@@ -1185,8 +1185,8 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
 		    "ruri", co_ev->remote_uri.c_str());
 
 
-    dlg->remote_party = co_ev->remote_party;
-    dlg->remote_uri   = co_ev->remote_uri;
+    dlg->setRemoteParty(co_ev->remote_party);
+    dlg->setRemoteUri(co_ev->remote_uri);
 
     if (co_ev->relayed_invite) {
       AmSipRequest fake_req;
