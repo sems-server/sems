@@ -95,6 +95,9 @@ protected:
   string remote_tag;
   string first_branch;
 
+  string user;         // local user
+  string domain;       // local domain
+
   string local_uri;    // local uri
   string remote_uri;   // remote uri
 
@@ -175,9 +178,6 @@ protected:
 
 public:
 
-  string user;         // local user
-  string domain;       // local domain
-
   string outbound_proxy;
   bool   force_outbound_proxy;
 
@@ -234,6 +234,14 @@ public:
   const string& getExtLocalTag() const { return ext_local_tag; }
   virtual void setExtLocalTag(const string& new_ext_tag)
   { ext_local_tag = new_ext_tag; }
+
+  const string& getUser() const { return user; }
+  virtual void setUser(const string& new_user)
+  { user = new_user; }
+
+  const string& getDomain() const { return domain; }
+  virtual void setDomain(const string& new_domain)
+  { domain = new_domain; }
 
   const string& getLocalUri() const { return local_uri; }
   virtual void setLocalUri(const string& new_local_uri)
