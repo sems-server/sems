@@ -338,7 +338,7 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
   // fix up variables
   call_profile.replace_cc_values(ctx,req,NULL);
   if(!SBCFactory::CCRoute(req,cc_modules,call_profile)) {
-    ERROR("routing failed\n");
+    //ERROR("routing failed\n");
     return;
   }
 

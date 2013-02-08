@@ -9,10 +9,14 @@
 
 #include <algorithm>
 
+#define DEFAULT_REG_EXPIRES 3600
+
 RegisterDialog::RegisterDialog()
   : contact_hiding(false),
     reg_caching(false),
-    star_contact(false)
+    star_contact(false),
+    max_ua_expire(0),
+    min_reg_expire(0)
 {
 }
 
@@ -20,11 +24,12 @@ RegisterDialog::~RegisterDialog()
 {
 }
 
-int RegisterDialog::parseContacts(const string& contacts,
-				  vector<AmUriParser>& cv)
+int RegisterDialog::parseContacts(const string& contacts, vector<AmUriParser>& cv)
 {
   list<cstring> contact_list;
   
+  DBG("parsing contacts: '%s'\n",contacts.c_str());
+
   if(parse_nameaddr_list(contact_list, contacts.c_str(),
 			 contacts.length()) < 0) {
     DBG("Could not parse contact list\n");
@@ -50,104 +55,182 @@ int RegisterDialog::parseContacts(const string& contacts,
   return 0;
 }
 
-
-// SimpleRelayDialog interface
-int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
+int RegisterDialog::replyFromCache(const AmSipRequest& req)
 {
-  // SIP request received
-  if (req.method != SIP_METH_REGISTER) {
-    ERROR("unsupported method '%s'\n", req.method.c_str());
-    reply_error(req,501,"Unsupported Method");
-    return -1;
-  }
+  // for each contact, set 'expires' correctly:
+  // - either original expires, if <= max_ua_expire
+  //   or max_ua_expire
+  string contact_hdr = SIP_HDR_COLSP(SIP_HDR_CONTACT);
+  for(map<string,AmUriParser>::iterator contact_it = alias_map.begin();
+      contact_it != alias_map.end(); contact_it++) {
 
-  DBG("contact_hiding=%i, reg_caching=%i\n",
-      cp.contact_hiding, cp.reg_caching);
+    unsigned int expires;
+    AmUriParser& contact = contact_it->second;
 
-  contact_hiding = cp.contact_hiding;
-
-  reg_caching = cp.reg_caching;
-  if(reg_caching) {
-    source_ip = req.remote_ip;
-    source_port = req.remote_port;
-    local_if = req.local_if;
-  }
-
-  AmUriParser from_parser;
-  size_t end_from = 0;
-  if(!from_parser.parse_contact(req.from,0,end_from)) {
-    DBG("error parsing AOR: '%s'\n",req.from.c_str());
-    reply_error(req,400,"Bad request - bad From HF");
-    return -1;
-  }
-
-  aor = RegisterCache::canonicalize_aor(from_parser.uri_str());
-  DBG("parsed AOR: '%s'",aor.c_str());
-
-  DBG("parsing contacts: '%s'\n",req.contact.c_str());
-  if (req.contact == "*") {
-    star_contact = true;
-  }
-  else if(!req.contact.empty()) {
-    if (parseContacts(req.contact, uac_contacts) < 0) {
-      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
+    if(str2i(contact.params["expires"], expires)) {
+      ERROR("failed to parse contact-expires for the second time\n");
+      reply_error(req, 500, "Server internal error");
       return -1;
     }
 
-    if (uac_contacts.size() == 0) {
-      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
-      return -1;
+    if(max_ua_expire && (expires > max_ua_expire)) {
+      contact.params["expires"] = int2str(max_ua_expire);
     }
-  }
 
+    if(contact_it != alias_map.begin())
+      contact_hdr += ", ";
+    contact_hdr += contact.print();
+  }
+  contact_hdr += CRLF;
+
+  // send 200 reply
+  return reply_error(req, 200, "OK", contact_hdr);
+}
+
+void RegisterDialog::fillAliasMap()
+{
+  map<string,string> aor_alias_map;
+  RegisterCache::instance()->getAorAliasMap(aor,aor_alias_map);
+  
+  for(map<string,string>::iterator it = aor_alias_map.begin();
+      it != aor_alias_map.end(); ++it) {
+    AmUriParser& uri = alias_map[it->first];
+    uri.uri = it->second;
+    uri.parse_uri();
+  }
+}
+
+int RegisterDialog::fixUacContacts(const AmSipRequest& req)
+{
   // move Expires as separate header to contact parameter
   string expires = getHeader(req.hdrs, "Expires");
+  unsigned int requested_expires=0;
   if (!expires.empty()) {
 
-    unsigned int requested_expires=0;
     if (str2i(expires, requested_expires)) {
       reply_error(req, 400, "Bad Request",
 		  "Warning: Malformed expires\r\n");
       return -1;
     }
 
-    if(!star_contact) {
-      for(vector<AmUriParser>::iterator contact_it = uac_contacts.begin();
-	  contact_it != uac_contacts.end(); contact_it++) {
-	
-	if(contact_it->params.find("expires") == contact_it->params.end())
-	  contact_it->params["expires"] = expires;
-      }
-    }
-    else if(requested_expires != 0) {
+    if(star_contact && (requested_expires != 0)) {
       reply_error(req, 400, "Bad Request",
 		  "Warning: Expires not equal 0\r\n");
       return -1;
     }
   }
 
-  // todo: limit / extend expires: UAS side
-
-  if(SimpleRelayDialog::initUAC(req,cp) < 0)
-    return -1;
-
-  if(star_contact) {
-
-    // prepare bindings to be deleted on reply
-    if(reg_caching) {
-      map<string,string> aor_alias_map =
-	RegisterCache::instance()->getAorAliasMap(aor);
-
-      for(map<string,string>::iterator it = aor_alias_map.begin();
-	  it != aor_alias_map.end(); ++it) {
-	AmUriParser& uri = alias_map[it->first];
-	uri.uri = it->second;
-	uri.parse_uri();
+  if(!star_contact) {
+    if(!expires.empty()) {
+      // adjust 'expires' from header field according to min value
+      if(requested_expires && (requested_expires < min_reg_expire)) {
+	requested_expires = min_reg_expire;
       }
     }
-    return 0;
+    else {
+      if(min_reg_expire)
+	requested_expires = min_reg_expire;
+      else
+	requested_expires = DEFAULT_REG_EXPIRES;
+    }
+
+    bool is_a_dereg = false;
+    bool reg_cache_reply = true;
+    for(vector<AmUriParser>::iterator contact_it = uac_contacts.begin();
+	contact_it != uac_contacts.end(); contact_it++) {
+
+      unsigned int contact_expires=0;
+      map<string, string>::iterator expires_it = 
+	contact_it->params.find("expires");
+
+      if(expires_it == contact_it->params.end()) {
+	// no 'expires=xxx' param, use header field or min value
+	if(!is_a_dereg) is_a_dereg = !requested_expires;
+	contact_it->params["expires"] = int2str(requested_expires);
+	contact_expires = requested_expires;
+      }
+
+      // the rest of this loop is 
+      // only for register-cache support
+      if(!reg_caching)
+	continue;
+
+      RegBinding reg_binding;
+      const string& uri = contact_it->uri_str();
+
+      RegisterCache* reg_cache = RegisterCache::instance();
+      if(!reg_cache->getAlias(aor,uri,reg_binding)) {
+	reg_binding.alias = AmSession::getNewId();
+	DBG("no alias in cache, created one");
+      }
+
+      alias_map[reg_binding.alias] = *contact_it;
+      contact_it->uri_user = reg_binding.alias;
+      contact_it->uri_param.clear();
+      DBG("using alias = '%s' for aor = '%s' and uri = '%s'",
+	  reg_binding.alias.c_str(),aor.c_str(),uri.c_str());
+
+      if(expires_it != contact_it->params.end()) {
+	// 'expires=xxx' present:
+	if(str2i(expires_it->second,contact_expires)) {
+	  reply_error(req, 400, "Bad Request",
+		      "Warning: Malformed expires\r\n");
+	  return -1;
+	}
+      }
+
+      // use existing 'expires' param if == 0 or greater than min value
+      if(contact_expires && (contact_expires < min_reg_expire)) {
+	// else use min value
+	contact_it->params["expires"] = int2str(min_reg_expire);
+      }
+      else if(!contact_expires && !is_a_dereg){
+	DBG("is_a_dereg = true;");
+	is_a_dereg = true;
+      }
+
+      if(!is_a_dereg && reg_binding.reg_expire) { // no contact with expires=0
+
+	// Find out whether we should send the REGISTER 
+	// to the registrar or not:
+
+	struct timeval now;
+	gettimeofday(&now,NULL);
+
+	if(max_ua_expire && (contact_expires > max_ua_expire))
+	  contact_expires = max_ua_expire;
+
+	DBG("contact_expires = %u", contact_expires);
+	DBG("reg_expires = %li", reg_binding.reg_expire - now.tv_sec);
+	if(contact_expires + 2 /* 2 seconds buffer */ 
+	   < reg_binding.reg_expire - now.tv_sec) {
+	  
+	  reg_cache_reply = reg_cache_reply && true;
+	}
+	else {
+	  reg_cache_reply = false;
+	}
+      }
+      else {
+	reg_cache_reply = false;
+      }
+    }
+
+    if(!uac_contacts.empty() && reg_caching && reg_cache_reply) {
+      replyFromCache(req);
+      // not really an error but 
+      // SBCSimpleRelay::start() would
+      // else not destroy the dialog
+      return -1;
+    }
   }
-  
+
+  return 0;
+}
+
+void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
+					const SBCCallProfile& cp)
+{
   ParamReplacerCtx ctx;
   int oif = getOutboundIf();
   assert(oif >= 0);
@@ -170,6 +253,8 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
 	continue;
       }
 
+      // Suppress transport parameter
+      // hack to suppress transport=tcp
       string new_params;
       for(list<sip_avp*>::iterator p_it = uri_params.begin();
 	  p_it != uri_params.end(); p_it++) {
@@ -188,36 +273,6 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
       }
 
       uac_contacts[i].uri_param = new_params;
-
-      // hack to suppress transport=tcp (just hack, params like
-      // "xtransport" or values like "tcpip" will be partly removed as well)
-      // string params(uac_contacts[i].uri_param);
-      // std::transform(params.begin(), params.end(), params.begin(), ::tolower);
-      // DBG("params: %s",params.c_str());
-      // size_t t_pos = params.find("transport=tcp");
-      // if (t_pos != string::npos) {
-      // 	uac_contacts[i].uri_param.erase(t_pos, sizeof("transport=tcp")-1);
-      // 	if((t_pos < uac_contacts[i].uri_param.length()) && 
-      // 	   (uac_contacts[i].uri_param[t_pos] == ';')) {
-      // 	  uac_contacts[i].uri_param.erase(t_pos, 1);
-      // 	}
-      // }
-    }
-    else if(reg_caching) {
-      const string& uri = uac_contacts[i].uri_str();
-
-      RegisterCache* reg_cache = RegisterCache::instance();
-      string alias = reg_cache->getAlias(aor,uri);
-      if(alias.empty()) {
-	alias = AmSession::getNewId();
-	DBG("no alias in cache, created one");
-      }
-
-      alias_map[alias] = uac_contacts[i];
-      uac_contacts[i].uri_user = alias;
-      uac_contacts[i].uri_param.clear();
-      DBG("using alias = '%s' for aor = '%s' and uri = '%s'",
-	  alias.c_str(),aor.c_str(),uri.c_str());
     }
     else {
       cp.fix_reg_contact(ctx,req,uac_contacts[i]);
@@ -235,6 +290,81 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
     DBG("Patching host and port for Contact-HF: host='%s';port='%s'",
 	uac_contacts[i].uri_host.c_str(),uac_contacts[i].uri_port.c_str());
   }
+}
+
+int RegisterDialog::initAor(const AmSipRequest& req)
+{
+  AmUriParser from_parser;
+  size_t end_from = 0;
+  if(!from_parser.parse_contact(req.from,0,end_from)) {
+    DBG("error parsing AOR: '%s'\n",req.from.c_str());
+    reply_error(req,400,"Bad request - bad From HF");
+    return -1;
+  }
+
+  aor = RegisterCache::canonicalize_aor(from_parser.uri_str());
+  DBG("parsed AOR: '%s'",aor.c_str());
+
+  return 0;
+}
+
+// SimpleRelayDialog interface
+int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
+{
+  // SIP request received
+  if (req.method != SIP_METH_REGISTER) {
+    ERROR("unsupported method '%s'\n", req.method.c_str());
+    reply_error(req,501,"Unsupported Method");
+    return -1;
+  }
+
+  DBG("contact_hiding=%i, reg_caching=%i\n",
+      cp.contact_hiding, cp.reg_caching);
+
+  contact_hiding = cp.contact_hiding;
+
+  reg_caching = cp.reg_caching;
+  if(reg_caching) {
+
+    source_ip = req.remote_ip;
+    source_port = req.remote_port;
+    local_if = req.local_if;
+
+    if(initAor(req) < 0)
+      return -1;
+  }
+
+  DBG("parsing contacts: '%s'\n",req.contact.c_str());
+  if (req.contact == "*") {
+    star_contact = true;
+  }
+  else if(!req.contact.empty()) {
+    if (parseContacts(req.contact, uac_contacts) < 0) {
+      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
+      return -1;
+    }
+
+    if (uac_contacts.size() == 0) {
+      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
+      return -1;
+    }
+  }
+
+  if(fixUacContacts(req) < 0)
+    return -1;
+
+  if(SimpleRelayDialog::initUAC(req,cp) < 0)
+    return -1;
+
+  if(star_contact) {
+    // prepare bindings to be deleted on reply
+    if(reg_caching) {
+      fillAliasMap();
+    }
+    return 0;
+  }
+  
+  fixUacContactHosts(req,cp);
 
   // patch initial CSeq to fix re-REGISTER with transparent-id enabled
   cseq = req.cseq;
@@ -256,11 +386,11 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
     return;
   }
 
-  unsigned int req_expires = 0;
-  string expires_str = getHeader(req.hdrs, "Expires");
-  if (!expires_str.empty()) {
-    str2i(expires_str, req_expires);
-  }
+  // unsigned int req_expires = 0;
+  // string expires_str = getHeader(req.hdrs, "Expires");
+  // if (!expires_str.empty()) {
+  //   str2i(expires_str, req_expires);
+  // }
 
   DBG("parsing server contact set '%s'\n", reply.contact.c_str());
   vector<AmUriParser> uas_contacts;
@@ -288,21 +418,35 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
 	}
 
 	unsigned int expires=0;
-	if(it->params.find("expires") == it->params.end()) {
-	  expires = req_expires;
-	}
-	else {
-	  expires_str = alias_it->second.params["expires"];
-	  if (!expires_str.empty()) {
-	    str2i(expires_str, expires);
-	  }
+	// the registrar MUST add a 'expires' 
+	// parameter to each contact
+	string expires_str = it->params["expires"];
+	if (!expires_str.empty()) {
+	  str2i(expires_str, expires);
 	}
 
-	const AmUriParser& orig_contact = alias_it->second;
+	AmUriParser& orig_contact = alias_it->second;
 	it->uri_user  = orig_contact.uri_user;
 	it->uri_host  = orig_contact.uri_host;
 	it->uri_port  = orig_contact.uri_port;
 	it->uri_param = orig_contact.uri_param;
+
+	// check orig expires
+	string orig_expires_str = orig_contact.params["expires"];
+	unsigned int orig_expires=0;
+	str2i(orig_expires_str,orig_expires);
+
+	if(!orig_expires || (max_ua_expire && (orig_expires > max_ua_expire))) {
+	  orig_expires = max_ua_expire;
+	  orig_expires_str = int2str(orig_expires);
+	}
+	// else {
+	  // (max_ua_expire >= orig_expires > 0)
+	  // or (max_ua_expire == 0)
+	  // -> use the original
+	// }
+
+	it->params["expires"] = orig_expires_str;
 
 	// Update global reg cache & alias map
 	// with new 'expire' value and new entries
@@ -312,10 +456,11 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
 	alias_entry.source_ip   = source_ip;
 	alias_entry.source_port = source_port;
 	alias_entry.local_if    = local_if;
+	alias_entry.ua_expire   = orig_expires + now.tv_sec;
 
 	RegisterCache* reg_cache = RegisterCache::instance();
-	reg_cache->update(aor, alias_it->first, 
-			  expires + now.tv_sec, 
+	reg_cache->update(aor, alias_it->first,
+			  expires + now.tv_sec,
 			  alias_entry);
 
 	alias_map.erase(alias_it);

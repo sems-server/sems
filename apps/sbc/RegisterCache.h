@@ -4,6 +4,9 @@
 #include "singleton.h"
 #include "hash_table.h"
 
+#include "AmSipMsg.h"
+#include "AmUriParser.h"
+
 #include <string>
 #include <map>
 #include <memory>
@@ -13,6 +16,8 @@ using std::auto_ptr;
 
 #define REG_CACHE_TABLE_POWER   10
 #define REG_CACHE_TABLE_ENTRIES (1<<REG_CACHE_TABLE_POWER)
+
+#define DEFAULT_REG_EXPIRES 3600
 
 /*
  * Register cache:
@@ -24,11 +29,17 @@ using std::auto_ptr;
 
 struct RegBinding
 {
-  // absolute timestamp
-  long int expire;
+  // Absolute timestamp representing
+  // the expiration timer at the 
+  // registrar side
+  long int reg_expire;
 
   // unique-id used as contact user toward the registrar
   string alias;
+
+  RegBinding()
+    : reg_expire(0)
+  {}
 };
 
 // Contact-URI -> RegBinding
@@ -44,6 +55,15 @@ struct AliasEntry
 
   // sticky interface
   unsigned short local_if;
+
+  // Absolute timestamp representing
+  // the expiration timer at the 
+  // registered UA side
+  long int ua_expire;
+
+  AliasEntry()
+    : source_port(0), local_if(0), ua_expire(0)
+  {}
 };
 
 struct RegCacheStorageHandler 
@@ -53,6 +73,8 @@ struct RegCacheStorageHandler
 
   virtual void onUpdate(const string& canon_aor, const string& alias, 
 			long int expires, const AliasEntry& alias_update) {}
+
+  virtual void onUpdate(const string& alias, long int ua_expires) {}
 };
 
 /**
@@ -96,6 +118,35 @@ public:
   void dump_elmt(const string& alias, const string* p_uri) const;
 };
 
+/** 
+ * Registrar/Reg-Caching 
+ * parsing/processing context 
+ */
+struct RegisterCacheCtx
+  : public AmObject
+{
+  string              from_aor;
+  bool               aor_parsed;
+
+  vector<AmUriParser> contacts;
+  bool         contacts_parsed;
+
+  unsigned int requested_expires;
+  bool            expires_parsed;
+
+  unsigned int min_reg_expires;
+  unsigned int max_ua_expires;
+
+  RegisterCacheCtx()
+    : aor_parsed(false),
+      contacts_parsed(false),
+      requested_expires(DEFAULT_REG_EXPIRES),
+      expires_parsed(false),
+      min_reg_expires(0),
+      max_ua_expires(0)
+  {}
+};
+
 class _RegisterCache
   : public AmThread
 {
@@ -132,6 +183,10 @@ protected:
    */
   AliasBucket* getAliasBucket(const string& alias);
 
+  int parseAoR(RegisterCacheCtx& ctx, const AmSipRequest& req);
+  int parseContacts(RegisterCacheCtx& ctx, const AmSipRequest& req);
+  int parseExpires(RegisterCacheCtx& ctx, const AmSipRequest& req);
+
 public:
   static string canonicalize_aor(const string& aor);
 
@@ -146,7 +201,8 @@ public:
    * aor: canonical Address-of-Record
    * uri: Contact-URI
    */
-  string getAlias(const string& aor, const string& uri);
+  bool getAlias(const string& aor, const string& uri,
+		RegBinding& out_binding);
 
   /**
    * Update contact cache entry and alias map entries.
@@ -160,7 +216,12 @@ public:
    * alias: 
    */
   void update(const string& canon_aor, const string& alias, 
-	      long int expires, const AliasEntry& alias_update);
+	      long int reg_expires, const AliasEntry& alias_update);
+
+  void update(const string& canon_aor, long int reg_expires,
+	      const AliasEntry& alias_update);
+
+  void updateAliasExpires(const string& alias, long int ua_expires);
 
   /**
    * Remove contact cache entry and alias map entries.
@@ -175,6 +236,7 @@ public:
    */
   void remove(const string& aor, const string& uri, const string& alias);
 
+  void remove(const string& aor);
 
   /**
    * Retrieve an alias map containing all entries related
@@ -186,12 +248,34 @@ public:
    *
    * aor: canonical Address-of-Record
    */
-  map<string,string> getAorAliasMap(const string& aor);
+  bool getAorAliasMap(const string& aor, map<string,string>& alias_map);
 
   /**
    * Retrieve the alias entry related to the given alias
    */
   bool findAliasEntry(const string& alias, AliasEntry& alias_entry);
+
+  /**
+   * Throttle REGISTER requests
+   *
+   * Returns false if REGISTER should be forwarded:
+   * - if registrar binding should be renewed.
+   * - if source IP or port do not match the saved IP & port.
+   * - if the request unregisters any contact.
+   * - if request is not a REGISTER
+   */
+  bool throttleRegister(RegisterCacheCtx& ctx,
+			const AmSipRequest& req);
+
+  /**
+   * Throttle REGISTER requests
+   *
+   * Returns false if failed:
+   * - if request is not a REGISTER.
+   * - more than one contact should be (un)registered.
+   */
+  bool saveSingleContact(RegisterCacheCtx& ctx,
+			const AmSipRequest& req);
 };
 
 typedef singleton<_RegisterCache> RegisterCache;

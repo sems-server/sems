@@ -1,6 +1,8 @@
 #ifndef _SBCCallControlAPI_h_
 #define _SBCCallControlAPI_h_
 
+#include "AmEvent.h"
+
 #define CC_INTERFACE_MAND_VALUES_METHOD "getMandatoryValues"
 
 

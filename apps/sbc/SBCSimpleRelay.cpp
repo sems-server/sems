@@ -319,8 +319,13 @@ int SBCSimpleRelay::start(const AmSipRequest& req, const SBCCallProfile& cp)
     n_req.hdrs += cp.append_headers;
   }
 
-  a_leg->initUAS(n_req,cp);
-  b_leg->initUAC(n_req,cp);
+  if(a_leg->initUAS(n_req,cp)
+     || b_leg->initUAC(n_req,cp)) {
+
+    a_leg->finalize();
+    b_leg->finalize();
+    return 0;
+  }
 
   a_leg->setOtherDlg(b_leg->getLocalTag());
   b_leg->setOtherDlg(a_leg->getLocalTag());
