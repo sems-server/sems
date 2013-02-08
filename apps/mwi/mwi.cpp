@@ -107,12 +107,12 @@ void MWI::publish(const string& user, const string& domain)
   sms_body.setPayload((const unsigned char*)body.c_str(),body.length());
 
   AmSipDialog tmp_d(NULL);
-  tmp_d.local_party = string("<sip:mwi-publisher@") + presence_server + ">";
-  tmp_d.remote_party = domain.c_str();
-  tmp_d.route = "sip:" + presence_server;
-  tmp_d.remote_uri = "sip:" + user + "@" + domain;
-  tmp_d.callid = AmSession::getNewId() + "@" + presence_server;
-  tmp_d.local_tag = AmSession::getNewId();
+  tmp_d.setLocalParty(string("<sip:mwi-publisher@") + presence_server + ">");
+  tmp_d.setRemoteParty(domain.c_str());
+  tmp_d.setRouteSet("sip:" + presence_server);
+  tmp_d.setRemoteUri("sip:" + user + "@" + domain);
+  tmp_d.setCallid(AmSession::getNewId() + "@" + presence_server);
+  tmp_d.setLocalTag(AmSession::getNewId());
   tmp_d.sendRequest(SIP_METH_NOTIFY, &sms_body, headers);     
 };
 

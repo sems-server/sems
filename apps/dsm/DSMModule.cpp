@@ -118,17 +118,17 @@ string resolveVars(const string ts, AmSession* sess,
       if (s1 == "local_tag")
 	return sess->getLocalTag();	
       else if (s1 == "user")
-	return sess->dlg->user;
+	return sess->dlg->getUser();
       else if (s1 == "domain")
-	return sess->dlg->domain;
+	return sess->dlg->getDomain();
       else if (s1 == "remote_tag")
 	return sess->getRemoteTag();
       else if (s1 == "callid")
 	return sess->getCallID();
       else if (s1 == "local_uri")
-	return sess->dlg->local_uri;
+	return sess->dlg->getLocalUri();
       else if (s1 == "remote_uri")
-	return sess->dlg->remote_uri;
+	return sess->dlg->getRemoteUri();
       else
 	return string();
     } 

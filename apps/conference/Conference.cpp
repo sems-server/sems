@@ -361,11 +361,11 @@ AmSession* ConferenceFactory::onRefer(const AmSipRequest& req, const string& app
     throw AmSession::Exception(488,"Not accepted here");
 
   AmSession* s = new ConferenceDialog(req.user);
-  s->dlg->local_tag  = req.from_tag;
+  s->dlg->setLocalTag(req.from_tag);
   
   setupSessionTimer(s);
 
-  DBG("ConferenceFactory::onRefer: local_tag = %s\n",s->dlg->local_tag.c_str());
+  DBG("ConferenceFactory::onRefer: local_tag = %s\n",s->dlg->getLocalTag().c_str());
 
   return s;
 }
@@ -716,7 +716,7 @@ void ConferenceDialog::onDtmf(int event, int duration)
   DBG("ConferenceDialog::onDtmf\n");
   if (dialedout || !allow_dialout ||
       ((ConferenceFactory::MaxParticipants > 0) &&
-       (AmConferenceStatus::getConferenceSize(dlg->user) >= 
+       (AmConferenceStatus::getConferenceSize(dlg->getUser()) >= 
 	ConferenceFactory::MaxParticipants)))
     return;
 
@@ -811,16 +811,16 @@ void ConferenceDialog::createDialoutParticipant(const string& uri_user)
 
   AmSipDialog* dialout_dlg = dialout_session->dlg;
 
-  dialout_dlg->local_tag    = dialout_id;
-  dialout_dlg->callid       = AmSession::getNewId();
+  dialout_dlg->setLocalTag(dialout_id);
+  dialout_dlg->setCallid(AmSession::getNewId());
 
   if (from_header.length() > 0) {
-    dialout_dlg->local_party  = from_header;
+    dialout_dlg->setLocalParty(from_header);
   } else {
-    dialout_dlg->local_party  = dlg->local_party;
+    dialout_dlg->setLocalParty(dlg->getLocalParty());
   }
-  dialout_dlg->remote_party = uri;
-  dialout_dlg->remote_uri   = uri;
+  dialout_dlg->setRemoteParty(uri);
+  dialout_dlg->setRemoteUri(uri);
 
   dialout_dlg->sendRequest(SIP_METH_INVITE,NULL,
 			  extra_headers);
@@ -900,10 +900,10 @@ void ConferenceDialog::onSipRequest(const AmSipRequest& req)
     dlg->route = getHeader(req.hdrs,"P-Transfer-RR", true);
   }
 
-  DBG("ConferenceDialog::onSipRequest: local_party = %s\n",dlg->local_party.c_str());
-  DBG("ConferenceDialog::onSipRequest: local_tag = %s\n",dlg->local_tag.c_str());
-  DBG("ConferenceDialog::onSipRequest: remote_party = %s\n",dlg->remote_party.c_str());
-  DBG("ConferenceDialog::onSipRequest: remote_tag = %s\n",dlg->remote_tag.c_str());
+  DBG("ConferenceDialog::onSipRequest: local_party = %s\n",dlg->getLocalParty().c_str());
+  DBG("ConferenceDialog::onSipRequest: local_tag = %s\n",dlg->getLocalTag().c_str());
+  DBG("ConferenceDialog::onSipRequest: remote_party = %s\n",dlg->getRemoteParty().c_str());
+  DBG("ConferenceDialog::onSipRequest: remote_tag = %s\n",dlg->getRemoteTag().c_str());
 
   dlg->sendRequest(SIP_METH_INVITE);
 

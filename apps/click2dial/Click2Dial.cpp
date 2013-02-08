@@ -249,11 +249,11 @@ void C2DCallerDialog::createCalleeSession()
 
   other_id = AmSession::getNewId();
 
-  callee_dlg->local_tag    = other_id;
-  callee_dlg->callid       = AmSession::getNewId();
-  callee_dlg->local_party  = dlg->local_party;
-  callee_dlg->remote_party = dlg->remote_party;
-  callee_dlg->remote_uri   = dlg->remote_uri;
+  callee_dlg->setLocalTag(other_id);
+  callee_dlg->setCallid(AmSession::getNewId());
+  callee_dlg->setLocalParty(dlg->getLocalParty());
+  callee_dlg->setRemoteParty(dlg->getRemoteParty());
+  callee_dlg->setRemoteUri(dlg->getRemoteUri());
 
   callee_session->start();
 
