@@ -688,6 +688,9 @@ void SBCCallProfile::eval_sst_config(ParamReplacerCtx& ctx,
 				     const AmSipRequest& req,
 				     AmConfigReader& sst_cfg)
 {
+
+#define SST_CFG_PARAM_COUNT 5  // Change if you add/remove params in below
+  
   static const char* _sst_cfg_params[] = {
     "session_expires",
     "minimum_timer",
@@ -696,7 +699,7 @@ void SBCCallProfile::eval_sst_config(ParamReplacerCtx& ctx,
     "accept_501_reply",
   };
 
-  for(unsigned int i=0; i<sizeof(_sst_cfg_params); i++) {
+  for(unsigned int i=0; i<SST_CFG_PARAM_COUNT; i++) {
     if (sst_cfg.hasParameter(_sst_cfg_params[i])) {
       string newval = 
 	ctx.replaceParameters(sst_cfg.getParameter(_sst_cfg_params[i]),
