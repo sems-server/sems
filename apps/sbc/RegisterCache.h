@@ -268,11 +268,17 @@ public:
 			const AmSipRequest& req);
 
   /**
-   * Throttle REGISTER requests
+   * Save a single REGISTER contact into cache
    *
    * Returns false if failed:
    * - if request is not a REGISTER.
    * - more than one contact should be (un)registered.
+   *
+   * If true has been returned, the request has already 
+   * been replied with either an error or 200 (w/ contact).
+   *
+   * Note: this function also handles binding query.
+   *       (REGISTER w/o contacts)
    */
   bool saveSingleContact(RegisterCacheCtx& ctx,
 			const AmSipRequest& req);
