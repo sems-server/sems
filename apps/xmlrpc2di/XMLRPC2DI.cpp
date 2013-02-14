@@ -34,6 +34,8 @@
 #include "AmEventDispatcher.h"
 #include "TOXmlRpcClient.h"
 
+#include <exception>
+
 #define MOD_NAME "xmlrpc2di"
 
 #define XMLRPC_PORT   "8090" // default port
@@ -579,6 +581,8 @@ void XMLRPC2DIServerDIMethod::execute(XmlRpcValue& params, XmlRpcValue& result) 
     throw XmlRpcException("Exception: Type mismatch in arguments.", 300);
   } catch (const string& e) {
     throw XmlRpcException("Exception: "+e, 500);
+  } catch (const std::exception& e) {
+    throw XmlRpcException("Exception: " + string(e.what()), 500);
   } catch (...) {
     throw XmlRpcException("Exception occured.", 500);
   }
@@ -733,6 +737,8 @@ void DIMethodProxy::execute(XmlRpcValue& params,
     throw XmlRpcException("Exception: Type mismatch in arguments.", 300);
   } catch (const string& e) {
     throw XmlRpcException("Exception: "+e, 500);
+  } catch (const std::exception& e) {
+    throw XmlRpcException("Exception: " + string(e.what()), 500);
   } catch (...) {
     throw XmlRpcException("Exception occured.", 500);
   }
