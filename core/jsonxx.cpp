@@ -76,6 +76,9 @@ bool parse_string(std::istream& input, std::string* value) {
     char ch;
     while(!input.eof() && input.good()) {
         input.get(ch);
+        if (ch == '"' ) {
+            break;
+        }
 	if (ch == '\\') {
 	  if (input.eof())
 	    return false;
@@ -97,11 +100,7 @@ bool parse_string(std::istream& input, std::string* value) {
 	  default: return false;
 	  }
 	}
-
-        if (ch == '"' ) {
-            break;
-        }
-        value->push_back(ch);
+        else value->push_back(ch);
     }
     if (input && ch == '"') {
         return true;
