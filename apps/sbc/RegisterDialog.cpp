@@ -274,7 +274,7 @@ void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
 
       uac_contacts[i].uri_param = new_params;
     }
-    else {
+    else if(!reg_caching) {
       cp.fix_reg_contact(ctx,req,uac_contacts[i]);
       continue;
     }
