@@ -89,8 +89,10 @@ $(plug_in_name)_lib:
 %.o: %.c $(COREPATH)/../Makefile.defs
 	$(CC) -MMD $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
+ifneq ($(lib_full_name),$(lib_name))
 $(lib_full_name): $(lib_name)
 	cp $(lib_name) $(lib_full_name)
+endif
 
 $(lib_name): $(objs) $(module_extra_objs) Makefile
 	$(LD) -o $(lib_name) $(objs) $(module_extra_objs) $(LIB_LDFLAGS)
