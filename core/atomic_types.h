@@ -191,11 +191,14 @@ void inc_ref(atomic_ref_cnt* rc);
 void dec_ref(atomic_ref_cnt* rc);
 
 class atomic_ref_cnt
-  : protected atomic_int
 {
+  atomic_int ref_cnt;
+
 protected:
-  atomic_ref_cnt()
-    : atomic_int() {}
+  atomic_ref_cnt() {}
+
+  void _inc_ref() { ref_cnt.inc(); }
+  bool _dec_ref() { return ref_cnt.dec_and_test(); }
 
   virtual ~atomic_ref_cnt() {}
   virtual void on_destroy() {}
@@ -207,13 +210,13 @@ protected:
 inline void inc_ref(atomic_ref_cnt* rc)
 {
   assert(rc);
-  rc->inc();
+  rc->_inc_ref();
 }
 
 inline void dec_ref(atomic_ref_cnt* rc)
 {
   assert(rc);
-  if(rc->dec_and_test()){
+  if(rc->_dec_ref()){
     rc->on_destroy();
     delete rc;
   }
