@@ -51,22 +51,17 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   SBCCallProfile call_profile;
 
+  /** set to true once CCStart passed to call CCEnd implicitly (from onStop)
+   * only when CCStart was called */
+  bool cc_started;
+
   void fixupCCInterface(const string& val, CCInterface& cc_if);
 
   /** handler called when the second leg is connected */
   virtual void onCallConnected(const AmSipReply& reply);
 
-  /** handler called when call is stopped */
-  virtual void onCallStopped();
-
-  /** handler called when SST timeout occured */
-  void onSessionTimeout();
-
-  /** handler called when no ACK received */
-  void onNoAck(unsigned int cseq);
-
-  /** handler called when we receive 408/481 */
-  void onRemoteDisappeared(const AmSipReply& reply);
+  /** handler called when call is stopped (see AmSession) */
+  virtual void onStop();
 
   /* set call timer (if enabled) */
   bool startCallTimers();
@@ -106,13 +101,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   void process(AmEvent* ev);
   void onB2BEvent(B2BEvent* ev);
-  void onBye(const AmSipRequest& req);
   void onInvite(const AmSipRequest& req);
-  void onCancel(const AmSipRequest& cancel);
 
   void onDtmf(int event, int duration);
-
-  void onSystemEvent(AmSystemEvent* ev);
 
   virtual void onStart();
   virtual void onBeforeDestroy();
@@ -164,8 +155,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(AmSipRequest& req, int &flags);
-
-  void onOtherBye(const AmSipRequest& req);
 
   void onControlCmd(string& cmd, AmArg& params);
 

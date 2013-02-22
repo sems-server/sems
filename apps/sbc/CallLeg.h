@@ -244,10 +244,6 @@ class CallLeg: public AmB2BSession
      * use this method in SBCCallLeg only) */
     virtual void onCallConnected(const AmSipReply& reply) { }
 
-    /** handler called when call is stopped (FIXME: this is a hack, use this
-     * method in SBCCallLeg only)  */
-    virtual void onCallStopped() { }
-
     /** Method called if given B leg couldn't establish the call (refused with
      * failure response)
      *

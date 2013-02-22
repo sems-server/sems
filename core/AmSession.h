@@ -472,6 +472,12 @@ public:
   virtual void onStart() {}
 
   /**
+   * onStop will be called once session is marked to be stopped (called only
+   * once).
+   */
+  virtual void onStop() {}
+
+  /**
    * onInvite will be called if an INVITE or re-INVITE
    * has been received for the session.
    */

@@ -148,7 +148,8 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg)
     m_state(BB_Init),
     auth(NULL),
     call_profile(call_profile),
-    cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START)
+    cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START),
+    cc_started(false)
 {
   set_sip_relay_only(false);
   dlg->setRel100State(Am100rel::REL100_IGNORED);
@@ -165,7 +166,8 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg)
 SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
   : auth(NULL),
     call_profile(caller->getCallProfile()),
-    CallLeg(caller,p_dlg)
+    CallLeg(caller,p_dlg),
+    cc_started(false)
 {
   // FIXME: do we want to inherit cc_vars from caller?
   // Can be pretty dangerous when caller stored pointer to object - we should
@@ -841,7 +843,7 @@ void SBCCallLeg::onCallConnected(const AmSipReply& reply) {
   }
 }
 
-void SBCCallLeg::onCallStopped() {
+void SBCCallLeg::onStop() {
   if (call_profile.cc_interfaces.size()) {
     gettimeofday(&call_end_ts, NULL);
   }
@@ -852,56 +854,10 @@ void SBCCallLeg::onCallStopped() {
 
   m_state = BB_Teardown;
 
-  CCEnd();
-}
-
-void SBCCallLeg::onOtherBye(const AmSipRequest& req)
-{
-  onCallStopped();
-
-  CallLeg::onOtherBye(req);
-}
-
-void SBCCallLeg::onSessionTimeout() {
-  onCallStopped();
-
-  CallLeg::onSessionTimeout();
-}
-
-void SBCCallLeg::onNoAck(unsigned int cseq) {
-  onCallStopped();
-
-  CallLeg::onNoAck(cseq);
-}
-
-void SBCCallLeg::onRemoteDisappeared(const AmSipReply& reply)  {
-  DBG("Remote unreachable - ending SBC call\n");
-  onCallStopped();
-
-  CallLeg::onRemoteDisappeared(reply);
-}
-
-void SBCCallLeg::onBye(const AmSipRequest& req)
-{
-  DBG("onBye()\n");
-
-  onCallStopped();
-
-  CallLeg::onBye(req);
-}
-
-void SBCCallLeg::onCancel(const AmSipRequest& cancel)
-{
-  dlg->bye();
-  stopCall();
-}
-
-void SBCCallLeg::onSystemEvent(AmSystemEvent* ev) {
-  if (ev->sys_event == AmSystemEvent::ServerShutdown) {
-    onCallStopped();
-  }
-
-  CallLeg::onSystemEvent(ev);
+  // call only if really started (on CCStart failure CCEnd will be called
+  // explicitly)
+  // Note that role may change, so testing for a_leg need not to be correct.
+  if (cc_started) CCEnd();
 }
 
 void SBCCallLeg::saveCallTimer(int timer, double timeout) {
@@ -1104,11 +1060,12 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 
     cc_mod++;
   }
+  cc_started = true;
   return true;
 }
 
 void SBCCallLeg::CCConnect(const AmSipReply& reply) {
-  if (!a_leg) return; // preserve original behavior of the CC interface
+  if (!cc_started) return; // preserve original behavior of the CC interface
 
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
@@ -1158,8 +1115,6 @@ void SBCCallLeg::CCEnd() {
 }
 
 void SBCCallLeg::CCEnd(const CCInterfaceListIteratorT& end_interface) {
-  if (!a_leg) return; // preserve original behavior of the CC interface
-
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
 
   for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();

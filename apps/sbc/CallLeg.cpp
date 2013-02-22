@@ -880,7 +880,6 @@ void CallLeg::onCancel(const AmSipRequest& req)
 void CallLeg::terminateLeg()
 {
   AmB2BSession::terminateLeg();
-  onCallStopped();
 }
 
 // was for caller only

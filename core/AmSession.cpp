@@ -480,6 +480,7 @@ void AmSession::finalize() {
 }
 
 void AmSession::setStopped(bool wakeup) {
+  if (!sess_stopped.get()) onStop();
   sess_stopped.set(true); 
   if (wakeup) 
     AmSessionContainer::instance()->postEvent(getLocalTag(), 
