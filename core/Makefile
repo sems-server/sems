@@ -1,3 +1,4 @@
+APP_NAME ?= sems
 NAME=$(APP_NAME)
 LIBNAME=$(APP_NAME).so
 
@@ -50,10 +51,6 @@ include ../Makefile.defs
 
 CPPFLAGS += -I$(COREPATH) -fno-strict-aliasing
 
-ifneq ($(OS), freebsd)
-	EXTRA_LDFLAGS += -lresolv
-endif
-
 ifdef USE_LIBSAMPLERATE
 CPPFLAGS += -DUSE_LIBSAMPLERATE
 LDFLAGS +=-lsamplerate
@@ -63,6 +60,11 @@ endif
 # by the core itself to be included in the executable and
 # thus be available for modules
 EXTRA_LDFLAGS += -Wl,--whole-archive $(SIP_STACK_DIR)/sip_stack.a -Wl,--no-whole-archive
+
+ifneq ($(OS), freebsd)
+	EXTRA_LDFLAGS += -lresolv
+endif
+
 
 ifdef USE_INTERNAL_RESAMPLER
 
