@@ -188,11 +188,8 @@ int AmOfferAnswer::onReplyIn(const AmSipReply& reply)
   }
 
   if( (reply.code >= 300) &&
-      (reply.cseq_method != SIP_METH_INVITE) &&
       (reply.cseq == cseq) ) {
-
-    // final error reply to non-INVITE transaction:
-    //  -> cleanup OA state
+    // final error reply -> cleanup OA state
     DBG("after %u reply to %s: resetting OA state\n",
 	reply.code, reply.cseq_method.c_str());
     clearTransitionalState();
