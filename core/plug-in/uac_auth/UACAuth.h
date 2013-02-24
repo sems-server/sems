@@ -84,10 +84,9 @@ struct SIPRequestInfo {
 
   SIPRequestInfo(const string& method, 
 		 const AmMimeBody* body,
-		 const string& hdrs//,AmOfferAnswer::OAState oa_state
+		 const string& hdrs
 		 )
-    : method(method), hdrs(hdrs)//, 
-      //oa_state(oa_state) 
+    : method(method), hdrs(hdrs)
   {
     if(body) this->body = *body;
   }

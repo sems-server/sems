@@ -196,10 +196,6 @@ bool UACAuth::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 
 	    }
 
-	    // reset OA state to what is was before sending the failed request
-	    // TODO: fix this!
-	    //dlg->setOAState(ri->second.oa_state);
-
 	    // resend request 
 	    if (dlg->sendRequest(ri->second.method,
 				 &(ri->second.body),
