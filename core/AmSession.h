@@ -114,15 +114,6 @@ private:
   void* _pid;
 #endif
 
-  /** @return whether startup was successful */
-  bool startup();
-
-  /** @return whether session continues running */
-  bool processingCycle();
-
-  /** clean up session */
-  void finalize();
-
   static void session_started();
   static void session_stopped();
 
@@ -172,6 +163,15 @@ protected:
   /** process pending events,  
       @return whether everything went smoothly */
   virtual bool processEventsCatchExceptions();
+
+  /** @return whether startup was successful */
+  bool startup();
+
+  /** @return whether session continues running */
+  bool processingCycle();
+
+  /** clean up session */
+  void finalize();
 
 public:
 
