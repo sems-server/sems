@@ -4,6 +4,8 @@
 #include "SBC.h"
 #include "ExtendedCCInterface.h"
 #include "sbc_events.h"
+#include "RateLimit.h"
+#include "MeasCounter.h"
 
 class PayloadIdMapping
 {
@@ -54,6 +56,12 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** set to true once CCStart passed to call CCEnd implicitly (from onStop)
    * only when CCStart was called */
   bool cc_started;
+
+  // Rate limiting
+  auto_ptr<RateLimit> rtp_relay_rate_limit;
+  
+  // Measurements
+  list<atomic_int*> rtp_pegs;
 
   void fixupCCInterface(const string& val, CCInterface& cc_if);
 

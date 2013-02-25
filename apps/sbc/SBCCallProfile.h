@@ -30,6 +30,7 @@
 #include "HeaderFilter.h"
 #include "ampi/UACAuthAPI.h"
 #include "ParamReplacer.h"
+#include "atomic_types.h"
 
 #include <set>
 #include <string>
@@ -162,6 +163,12 @@ struct SBCCallProfile
   string aleg_rtprelay_interface;
   int aleg_rtprelay_interface_value;
 
+  int rtprelay_bw_limit_rate;
+  int rtprelay_bw_limit_peak;
+
+  list<atomic_int*> aleg_rtp_counters;
+  list<atomic_int*> bleg_rtp_counters;
+
   string outbound_interface;
   int outbound_interface_value;
 
@@ -255,6 +262,8 @@ struct SBCCallProfile
     rtprelay_transparent_ssrc(true),
     rtprelay_interface_value(-1),
     aleg_rtprelay_interface_value(-1),
+    rtprelay_bw_limit_rate(-1),
+    rtprelay_bw_limit_peak(-1),
     outbound_interface_value(-1),
     contact_hiding(false), 
     reg_caching(false)

@@ -160,6 +160,14 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg)
 
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
+
+  if(call_profile.rtprelay_bw_limit_rate > 0 &&
+     call_profile.rtprelay_bw_limit_peak > 0) {
+
+    RateLimit* limit = new RateLimit(call_profile.rtprelay_bw_limit_rate,
+				     call_profile.rtprelay_bw_limit_peak, 1);
+    rtp_relay_rate_limit.reset(limit);
+  }
 }
 
 // B leg constructor (from SBCCalleeSession)
@@ -184,6 +192,10 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
   if (call_profile.transparent_dlg_id && caller) {
     dlg->setCallid(caller->dlg->getCallid());
     dlg->setExtLocalTag(caller->dlg->getRemoteTag());
+  }
+
+  if(rtp_relay_rate_limit.get()) {
+    rtp_relay_rate_limit.reset(new RateLimit(*rtp_relay_rate_limit.get()));
   }
 
   // CC interfaces and variables should be already "evaluated" by A leg, we just
@@ -240,6 +252,9 @@ void SBCCallLeg::applyAProfile()
     else {
       setRtpRelayMode(RTP_Relay);
     }
+
+    // copy stats counters
+    rtp_pegs = call_profile.aleg_rtp_counters;
   }
 }
 
@@ -334,10 +349,13 @@ void SBCCallLeg::applyBProfile()
     DBG("%s\n",rtp_relay_force_symmetric_rtp ?
 	"forcing symmetric RTP (passive mode)":
 	"disabled symmetric RTP (normal mode)");
-  }
 
-  setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
-  setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+    setRtpRelayTransparentSeqno(call_profile.rtprelay_transparent_seqno);
+    setRtpRelayTransparentSSRC(call_profile.rtprelay_transparent_ssrc);
+
+    // copy stats counters
+    rtp_pegs = call_profile.bleg_rtp_counters;
+  }
 
   // was read from caller but reading directly from profile now
   if (!call_profile.callid.empty()) 
@@ -1163,6 +1181,24 @@ void SBCCallLeg::onBLegRefused(const AmSipReply& reply)
 {
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     if ((*i)->onBLegRefused(this, reply) == StopProcessing) return;
+  }
+}
+
+
+bool SBCCallLeg::onBeforeRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
+{
+  if(rtp_relay_rate_limit.get() &&
+     rtp_relay_rate_limit->limit(p->getBufferSize()))
+    return false; // drop
+
+  return true; // relay
+}
+
+void SBCCallLeg::onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
+{
+  for(list<atomic_int*>::iterator it = rtp_pegs.begin();
+      it != rtp_pegs.end(); ++it) {
+    (*it)->inc(p->getBufferSize());
   }
 }
 
