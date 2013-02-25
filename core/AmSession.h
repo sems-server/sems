@@ -601,12 +601,21 @@ public:
 
   /* ----------------- media processing interface ------------------- */
 
-  public: 
-    virtual int readStreams(unsigned long long ts, unsigned char *buffer);
-    virtual int writeStreams(unsigned long long ts, unsigned char *buffer);
-    virtual void clearRTPTimeout() { RTPStream()->clearRTPTimeout(); }
-    virtual void processDtmfEvents();
+public: 
+  virtual int readStreams(unsigned long long ts, unsigned char *buffer);
+  virtual int writeStreams(unsigned long long ts, unsigned char *buffer);
+  virtual void clearRTPTimeout() { RTPStream()->clearRTPTimeout(); }
+  virtual void processDtmfEvents();
 
+  /**
+   * Call-backs used by RTP stream(s)
+   * 
+   * Note: these methods will be called from the RTP receiver thread.
+   */
+  virtual bool onBeforeRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
+  { return true; }
+
+  virtual void onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr) {}
 };
 
 inline AmRtpAudio* AmSession::RTPStream() {
