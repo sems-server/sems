@@ -1,6 +1,6 @@
 Summary:	SIP Express Media Server, an extensible SIP media server
 Name:		sems
-Version:	1.1.0
+Version:	1001bf1
 Release:	1
 URL:		http://www.iptel.org/sems
 # svn -r 1095 export http://svn.berlios.de/svnroot/repos/sems/branches/1.0.0 sems-1.0.0
@@ -148,15 +148,15 @@ fi
 %defattr(-,root,root)
 %dir %{_sysconfdir}/sems
 %dir %{_sysconfdir}/sems/etc
-%config(noreplace) %{_sysconfdir}/sems/default.template
+##%config(noreplace) %{_sysconfdir}/sems/default.template
 %config(noreplace) %{_sysconfdir}/sems/sems.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/ann_b2b.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/announce_transfer.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/announcement.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/annrecorder.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/app_mapping.conf
-%config(noreplace) %{_sysconfdir}/sems/etc/binrpcctrl.conf
-%config(noreplace) %{_sysconfdir}/sems/etc/call_timer.conf
+##%config(noreplace) %{_sysconfdir}/sems/etc/binrpcctrl.conf
+##%config(noreplace) %{_sysconfdir}/sems/etc/call_timer.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/callback.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/click2dial.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/conference.conf
@@ -164,59 +164,95 @@ fi
 %config(noreplace) %{_sysconfdir}/sems/etc/dsm.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/dsm_in_prompts.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/dsm_out_prompts.conf
-%config(noreplace) %{_sysconfdir}/sems/etc/gateway.conf
+##%config(noreplace) %{_sysconfdir}/sems/etc/gateway.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/ivr.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/msg_storage.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/precoded_announce.conf
-%config(noreplace) %{_sysconfdir}/sems/etc/py_sems.conf
+##%config(noreplace) %{_sysconfdir}/sems/etc/py_sems.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/reg_agent.conf
-%config(noreplace) %{_sysconfdir}/sems/etc/sipctrl.conf
+##%config(noreplace) %{_sysconfdir}/sems/etc/sipctrl.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/stats.conf
-%config(noreplace) %{_sysconfdir}/sems/etc/sw_prepaid_sip.conf
-%config(noreplace) %{_sysconfdir}/sems/etc/unixsockctrl.conf
+##%config(noreplace) %{_sysconfdir}/sems/etc/sw_prepaid_sip.conf
+##%config(noreplace) %{_sysconfdir}/sems/etc/unixsockctrl.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/voicebox.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/voicemail.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/webconference.conf
-%config(noreplace) %{_sysconfdir}/sems/etc/xmlrpc2di.conf
+##%config(noreplace) %{_sysconfdir}/sems/etc/xmlrpc2di.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/auth_b2b.sbcprofile.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/call_timer.sbcprofile.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/codecfilter.sbcprofile.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/default.template
+%config(noreplace) %{_sysconfdir}/sems/etc/default.template.sample
+%config(noreplace) %{_sysconfdir}/sems/etc/echo.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/mod_regex.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/monitoring.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/mwi.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/prepaid.sbcprofile.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/refuse.sbcprofile.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/replytranslate.sbcprofile.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/rtmp.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/sbc.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/src_ipmap.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/sst_b2b.sbcprofile.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/symmetricrtp.sbcprofile.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/transparent.sbcprofile.conf
+
+
 
 %doc README
 %doc apps/examples/tutorial/cc_acc/Readme.cc_acc
 %doc doc/figures
 %doc doc/CHANGELOG
 %doc doc/COPYING
-%doc doc/Configure-Sems-OpenSER-HOWTO
-%doc doc/Configure-Sems-Ser-HOWTO
-%doc doc/Readme.ann_b2b
-%doc doc/Readme.announce_transfer
-%doc doc/Readme.announcement
-%doc doc/Readme.annrecorder
-%doc doc/Readme.auth_b2b
-%doc doc/Readme.call_timer
-%doc doc/Readme.callback
-%doc doc/Readme.click2dial
-%doc doc/Readme.conf_auth
-%doc doc/Readme.conference
-%doc doc/Readme.diameter_client
-%doc doc/Readme.early_announce
-%doc doc/Readme.echo
+#%doc doc/Configure-Sems-OpenSER-HOWTO
+#%doc doc/Configure-Sems-Ser-HOWTO
+%doc doc/Readme.ann_b2b.txt
+%doc doc/Readme.announce_transfer.txt
+%doc doc/Readme.announcement.txt
+%doc doc/Readme.annrecorder.txt
+%doc doc/Readme.auth_b2b.txt
+%doc doc/Readme.call_timer.txt
+%doc doc/Readme.callback.txt
+%doc doc/Readme.click2dial.txt
+%doc doc/Readme.conf_auth.txt
+%doc doc/Readme.conference.txt
+%doc doc/Readme.diameter_client.txt
+%doc doc/Readme.early_announce.txt
+%doc doc/Readme.echo.txt
 %if 0%{?with_ilbc}
-%doc doc/Readme.iLBC
+%doc doc/Readme.iLBC.txt
 %endif
 #%doc doc/Readme.mp3plugin
-%doc doc/Readme.msg_storage
-%doc doc/Readme.reg_agent
-%doc doc/Readme.registrar_client
-%doc doc/Readme.sw_prepaid_sip
-%doc doc/Readme.uac_auth
-%doc doc/Readme.voicebox
-%doc doc/Readme.voicemail
-%doc doc/Readme.webconference
-%doc doc/WHATSNEW
+%doc doc/Readme.msg_storage.txt
+%doc doc/Readme.reg_agent.txt
+%doc doc/Readme.registrar_client.txt
+%doc doc/Readme.sw_prepaid_sip.txt
+%doc doc/Readme.uac_auth.txt
+%doc doc/Readme.voicebox.txt
+%doc doc/Readme.voicemail.txt
+%doc doc/Readme.webconference.txt
+#%doc doc/WHATSNEW
 
 %{_sysconfdir}/init.d/sems
 
 %{_sbindir}/sems
 %{_sbindir}/sems-stats
+%{_sbindir}/sems-get-callproperties
+%{_sbindir}/sems-list-active-calls
+%{_sbindir}/sems-list-calls
+%{_sbindir}/sems-list-finished-calls
+%{_sbindir}/sems-logfile-callextract
+%{_sbindir}/sems-sbc-get-activeprofile
+%{_sbindir}/sems-sbc-get-regex-map-names
+%{_sbindir}/sems-sbc-list-profiles
+%{_sbindir}/sems-sbc-load-callcontrol-modules
+%{_sbindir}/sems-sbc-load-profile
+%{_sbindir}/sems-sbc-reload-profile
+%{_sbindir}/sems-sbc-reload-profiles
+%{_sbindir}/sems-sbc-set-activeprofile
+%{_sbindir}/sems-sbc-set-regex-map
+%{_sbindir}/sems-sbc-teardown-call
+
 
 %dir %{_libdir}/sems
 %dir %{_libdir}/sems/audio
@@ -252,9 +288,9 @@ fi
 %{_libdir}/sems/plug-in/announce_transfer.so
 %{_libdir}/sems/plug-in/announcement.so
 %{_libdir}/sems/plug-in/annrecorder.so
-%{_libdir}/sems/plug-in/auth_b2b.so
-%{_libdir}/sems/plug-in/binrpcctrl.so
-%{_libdir}/sems/plug-in/call_timer.so
+#%{_libdir}/sems/plug-in/auth_b2b.so
+#%{_libdir}/sems/plug-in/binrpcctrl.so
+#%{_libdir}/sems/plug-in/call_timer.so
 %{_libdir}/sems/plug-in/callback.so
 %{_libdir}/sems/plug-in/cc_acc.so
 %{_libdir}/sems/plug-in/click2dial.so
@@ -271,27 +307,53 @@ fi
 %{_libdir}/sems/plug-in/precoded_announce.so
 %{_libdir}/sems/plug-in/reg_agent.so
 %{_libdir}/sems/plug-in/registrar_client.so
-%{_libdir}/sems/plug-in/sipctrl.so
+#%{_libdir}/sems/plug-in/sipctrl.so
 %{_libdir}/sems/plug-in/session_timer.so
 %{_libdir}/sems/plug-in/stats.so
-%{_libdir}/sems/plug-in/sw_prepaid_sip.so
+#%{_libdir}/sems/plug-in/sw_prepaid_sip.so
 %{_libdir}/sems/plug-in/uac_auth.so
-%{_libdir}/sems/plug-in/unixsockctrl.so
+#%{_libdir}/sems/plug-in/unixsockctrl.so
 %{_libdir}/sems/plug-in/voicebox.so
 %{_libdir}/sems/plug-in/voicemail.so
 %{_libdir}/sems/plug-in/wav.so
 %{_libdir}/sems/plug-in/webconference.so
+%{_libdir}/sems/plug-in/cc_call_timer.so
+%{_libdir}/sems/plug-in/cc_ctl.so
+%{_libdir}/sems/plug-in/cc_pcalls.so
+%{_libdir}/sems/plug-in/cc_prepaid.so
+%{_libdir}/sems/plug-in/cc_prepaid_xmlrpc.so
+%{_libdir}/sems/plug-in/cc_rest.so
+%{_libdir}/sems/plug-in/cc_syslog_cdr.so
+%{_libdir}/sems/plug-in/ilbc.so
+%{_libdir}/sems/plug-in/isac.so
+%{_libdir}/sems/plug-in/monitoring.so
+%{_libdir}/sems/plug-in/mwi.so
+%{_libdir}/sems/plug-in/sbc.so
 
-%{_libdir}/sems/dsm/mod_dlg.so
-%{_libdir}/sems/dsm/mod_sys.so
-%{_libdir}/sems/dsm/mod_uri.so
-%{_libdir}/sems/dsm/inbound_call.dsm
-%{_libdir}/sems/dsm/outbound_call.dsm
+
+##%{_libdir}/sems/dsm/mod_dlg.so
+##%{_libdir}/sems/dsm/mod_sys.so
+##%{_libdir}/sems/dsm/mod_uri.so
+##%{_libdir}/sems/dsm/inbound_call.dsm
+##%{_libdir}/sems/dsm/outbound_call.dsm
+/usr/lib/sems/dsm/inbound_call.dsm
+/usr/lib/sems/dsm/mod_conference.so
+/usr/lib/sems/dsm/mod_dlg.so
+/usr/lib/sems/dsm/mod_groups.so
+/usr/lib/sems/dsm/mod_monitoring.so
+/usr/lib/sems/dsm/mod_py.so
+/usr/lib/sems/dsm/mod_regex.so
+/usr/lib/sems/dsm/mod_subscription.so
+/usr/lib/sems/dsm/mod_sys.so
+/usr/lib/sems/dsm/mod_uri.so
+/usr/lib/sems/dsm/mod_utils.so
+/usr/lib/sems/dsm/outbound_call.dsm
+
 
 %files conf_auth
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/sems/etc/conf_auth.conf
-%doc doc/Readme.conf_auth
+%doc doc/Readme.conf_auth.txt
 %{_libdir}/sems/ivr/conf_auth.pyc
 
 %files gsm
@@ -301,16 +363,16 @@ fi
 %files ivr
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/sems/etc/ivr.conf
-%doc doc/Readme.ivr
+%doc doc/Readme.ivr.txt
 %dir %{_libdir}/sems/ivr
-%{_libdir}/sems/plug-in/ivr.so
-%{_libdir}/sems/plug-in/log.pyc
+##%{_libdir}/sems/plug-in/ivr.so
+##%{_libdir}/sems/plug-in/log.pyc
 
 %files mailbox
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/sems/etc/mailbox.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/mailbox_query.conf
-%doc doc/Readme.mailbox
+%doc doc/Readme.mailbox.txt
 %dir %{_libdir}/sems/audio/mailbox
 %dir %{_libdir}/sems/ivr/imap_mailbox
 %{_libdir}/sems/audio/mailbox/and.wav
@@ -333,7 +395,7 @@ fi
 %files pin_collect
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/sems/etc/pin_collect.conf
-%doc doc/Readme.pin_collect
+%doc doc/Readme.pin_collect.txt
 %dir %{_libdir}/sems/audio/pincollect
 %{_libdir}/sems/audio/pincollect/enter_pin.wav
 %{_libdir}/sems/audio/pincollect/welcome.wav
@@ -341,10 +403,10 @@ fi
 
 %files python
 %defattr(-,root,root)
-%config(noreplace) %{_sysconfdir}/sems/etc/py_sems.conf
-%doc doc/Readme.py_sems
-%{_libdir}/sems/plug-in/py_sems.so
-%{_libdir}/sems/plug-in/py_sems_log.pyc
+##%config(noreplace) %{_sysconfdir}/sems/etc/py_sems.conf
+%doc doc/Readme.py_sems.txt
+##%{_libdir}/sems/plug-in/py_sems.so
+##%{_libdir}/sems/plug-in/py_sems_log.pyc
 
 %files speex
 %defattr(-,root,root)
