@@ -104,7 +104,7 @@ rpm:
                                             -zcf ../../"$(NAME)-$${RPM_VERSION}".tar.gz \
                                                        "$(NAME)-$${RPM_VERSION}" ) ; \
                             rm -rf tmp; \
-		mkdir p ~/rpmbuild/SOURCES; \
+		mkdir -p ~/rpmbuild/SOURCES; \
 		cp "$(NAME)-$${RPM_VERSION}".tar.gz ~/rpmbuild/SOURCES
 		rpmbuild -ba pkg/rpm/sems.spec
   
