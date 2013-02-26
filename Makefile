@@ -76,8 +76,8 @@ tar:
 			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp
 
-.PHONY: rpm
-rpm: 
+.PHONY: rpmtar
+rpmtar: 
 	RPM_VERSION=`cat pkg/rpm/sems.spec|grep -e "^Version:"|awk '{print $$2}'`; \
 	echo "RPM_VERSION=$${RPM_VERSION}"; \
 	        $(TAR) -C .. \
@@ -103,10 +103,7 @@ rpm:
                             (cd tmp/_tar2 && $(TAR) \
                                             -zcf ../../"$(NAME)-$${RPM_VERSION}".tar.gz \
                                                        "$(NAME)-$${RPM_VERSION}" ) ; \
-                            rm -rf tmp; \
-		mkdir -p ~/rpmbuild/SOURCES; \
-		cp "$(NAME)-$${RPM_VERSION}".tar.gz ~/rpmbuild/SOURCES
-		rpmbuild -ba pkg/rpm/sems.spec
+                            rm -rf tmp;
   
 .PHONY: doc
 doc:

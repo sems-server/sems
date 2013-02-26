@@ -108,21 +108,23 @@ make %{?_smp_mflags} EXTRA_CXXFLAGS="$RPM_OPT_FLAGS" TTS="y" exclude_modules="ex
 %install
 rm -rf $RPM_BUILD_ROOT
 export CFLAGS="$RPM_OPT_FLAGS"
+#make install TTS="y" exclude_modules="examples %{!?with_ilbc:ilbc} mp3" \
+#	DESTDIR=$RPM_BUILD_ROOT \
+#	basedir= \
+#	prefix=/usr \
+#	modules-prefix= \
+#       modules-dir=%{_libdir}/sems/plug-in \
+#        modules-target=%{_libdir}/sems/plug-in \
+#	ivr-modules-dir=%{_libdir}/sems/ivr \
+#	cfg-prefix=/ \
+#	cfg-target=%{_sysconfdir}/sems/ \
+#	doc-prefix= \
+#	doc-dir=%{_docdir}/sems/ \
+#	audio-prefix= \
+#	audio-dir=%{_libdir}/sems/audio/
 make install TTS="y" exclude_modules="examples %{!?with_ilbc:ilbc} mp3" \
 	DESTDIR=$RPM_BUILD_ROOT \
-	basedir= \
-	prefix=%{_prefix} \
-	modules-prefix= \
-        modules-dir=%{_libdir}/sems/plug-in \
-        modules-target=%{_libdir}/sems/plug-in \
-	ivr-modules-dir=%{_libdir}/sems/ivr \
-	cfg-prefix= \
-	cfg-target=%{_sysconfdir}/sems/ \
-	doc-prefix= \
-	doc-dir=%{_docdir}/sems/ \
-	audio-prefix= \
-	audio-dir=%{_libdir}/sems/audio/
-
+	prefix=/usr cfg-prefix=/ cfg-target=/etc/sems/
 install -D -p -m755 pkg/rpm/sems.init $RPM_BUILD_ROOT/%{_sysconfdir}/init.d/sems
 
 # Remove installed README
