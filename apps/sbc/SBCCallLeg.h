@@ -5,7 +5,6 @@
 #include "ExtendedCCInterface.h"
 #include "sbc_events.h"
 #include "RateLimit.h"
-#include "MeasCounter.h"
 
 class PayloadIdMapping
 {
