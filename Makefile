@@ -76,6 +76,38 @@ tar:
 			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp
 
+.PHONY: rpm
+rpm: 
+	RPM_VERSION=`cat pkg/rpm/sems.spec|grep -e "^Version:"|awk '{print $$2}'`; \
+	echo "RPM_VERSION=$${RPM_VERSION}"; \
+	        $(TAR) -C .. \
+                --exclude=$(notdir $(CURDIR))/tmp \
+                --exclude=core/$(notdir $(CURDIR))/tmp \
+                --exclude=.svn* \
+                --exclude=.git* \
+                --exclude=.\#* \
+                --exclude=*.[do] \
+                --exclude=*.la \
+                --exclude=*.lo \
+                --exclude=*.so \
+                --exclude=*.il \
+                --exclude=*.gz \
+                --exclude=*.bz2 \
+                --exclude=*.tar \
+                --exclude=*~ \
+                -cf - $(notdir $(CURDIR)) | \
+                        (mkdir -p tmp/_tar1; mkdir -p tmp/_tar2 ; \
+                            cd tmp/_tar1; $(TAR) -xf - ) && \
+                            mv tmp/_tar1/$(notdir $(CURDIR)) \
+                               tmp/_tar2/"$(NAME)-$${RPM_VERSION}" && \
+                            (cd tmp/_tar2 && $(TAR) \
+                                            -zcf ../../"$(NAME)-$${RPM_VERSION}".tar.gz \
+                                                       "$(NAME)-$${RPM_VERSION}" ) ; \
+                            rm -rf tmp; \
+		mkdir p ~/rpmbuild/SOURCES; \
+		cp "$(NAME)-$${RPM_VERSION}".tar.gz ~/rpmbuild/SOURCES
+		rpmbuild -ba pkg/rpm/sems.spec
+  
 .PHONY: doc
 doc:
 	make -C doc/ doc

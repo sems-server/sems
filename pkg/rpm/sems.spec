@@ -1,6 +1,6 @@
 Summary:	SIP Express Media Server, an extensible SIP media server
 Name:		sems
-Version:	1001bf1
+Version:	1.6.0
 Release:	1
 URL:		http://www.iptel.org/sems
 # svn -r 1095 export http://svn.berlios.de/svnroot/repos/sems/branches/1.0.0 sems-1.0.0
