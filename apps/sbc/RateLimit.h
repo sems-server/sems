@@ -30,19 +30,4 @@ public:
   bool limit(unsigned int size);
 };
 
-class RateLimitRefCnt
-  : public RateLimit,
-    public atomic_ref_cnt
-{
-public:
-  // rate: units/time_base
-  // peak: units/time_base
-  // time_base: seconds
-  RateLimitRefCnt(unsigned int rate, unsigned int peak, int time_base)
-    : RateLimit(rate,peak,time_base)
-  {}
-};
-
-typedef shared_ref_cnt<RateLimitRefCnt> SharedRateLimit;
-
 #endif
