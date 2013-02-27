@@ -221,7 +221,7 @@ public:
   void update(const string& canon_aor, long int reg_expires,
 	      const AliasEntry& alias_update);
 
-  void updateAliasExpires(const string& alias, long int ua_expires);
+  bool updateAliasExpires(const string& alias, long int ua_expires);
 
   /**
    * Remove contact cache entry and alias map entries.
@@ -247,6 +247,7 @@ public:
    *       the contact cache bucket.
    *
    * aor: canonical Address-of-Record
+   * alias_map: alias -> contact
    */
   bool getAorAliasMap(const string& aor, map<string,string>& alias_map);
 

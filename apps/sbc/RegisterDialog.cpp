@@ -57,6 +57,10 @@ int RegisterDialog::parseContacts(const string& contacts, vector<AmUriParser>& c
 
 int RegisterDialog::replyFromCache(const AmSipRequest& req)
 {
+  struct timeval now;
+  gettimeofday(&now,NULL);
+  RegisterCache* reg_cache = RegisterCache::instance();
+
   // for each contact, set 'expires' correctly:
   // - either original expires, if <= max_ua_expire
   //   or max_ua_expire
@@ -64,22 +68,29 @@ int RegisterDialog::replyFromCache(const AmSipRequest& req)
   for(map<string,AmUriParser>::iterator contact_it = alias_map.begin();
       contact_it != alias_map.end(); contact_it++) {
 
-    unsigned int expires;
+    long int expires;
     AmUriParser& contact = contact_it->second;
 
-    if(str2i(contact.params["expires"], expires)) {
+    if(!str2long(contact.params["expires"], expires)) {
       ERROR("failed to parse contact-expires for the second time\n");
       reply_error(req, 500, "Server internal error");
       return -1;
     }
 
-    if(max_ua_expire && (expires > max_ua_expire)) {
+    if(max_ua_expire && (expires > (long int)max_ua_expire)) {
       contact.params["expires"] = int2str(max_ua_expire);
+      expires = max_ua_expire;
     }
 
     if(contact_it != alias_map.begin())
       contact_hdr += ", ";
     contact_hdr += contact.print();
+
+    expires += now.tv_sec;
+    if(!reg_cache->updateAliasExpires(contact_it->first,expires)) {
+      ERROR("could not update alias UA-expiration ('%s'/%li)",
+	    contact_it->first.c_str(),expires);
+    }
   }
   contact_hdr += CRLF;
 
@@ -200,9 +211,11 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 	if(max_ua_expire && (contact_expires > max_ua_expire))
 	  contact_expires = max_ua_expire;
 
+	DBG("min_reg_expire = %u", min_reg_expire);
+	DBG("max_ua_expire = %u", max_ua_expire);
 	DBG("contact_expires = %u", contact_expires);
 	DBG("reg_expires = %li", reg_binding.reg_expire - now.tv_sec);
-	if(contact_expires + 2 /* 2 seconds buffer */ 
+	if(contact_expires + 4 /* 2 seconds buffer */ 
 	   < reg_binding.reg_expire - now.tv_sec) {
 	  
 	  reg_cache_reply = reg_cache_reply && true;
@@ -329,6 +342,9 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
     source_ip = req.remote_ip;
     source_port = req.remote_port;
     local_if = req.local_if;
+
+    min_reg_expire = cp.min_reg_expires;
+    max_ua_expire = cp.max_ua_expires;
 
     if(initAor(req) < 0)
       return -1;

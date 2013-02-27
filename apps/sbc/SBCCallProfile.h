@@ -245,6 +245,8 @@ struct SBCCallProfile
   string contact_hiding_vars;
 
   bool reg_caching;
+  unsigned int min_reg_expires;
+  unsigned int max_ua_expires;
 
   // todo: RTP transcoding mode
 

@@ -363,6 +363,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   msg_logger_path = cfg.getParameter("msg_logger_path");
 
+  reg_caching = cfg.getParameter("enable_reg_caching","no") == "yes";
+  min_reg_expires = cfg.getParameterInt("min_reg_expires",0);
+  max_ua_expires = cfg.getParameterInt("max_ua_expires",0);
+
   md5hash = "<unknown>";
   if (!cfg.getMD5(profile_file_name, md5hash)){
     ERROR("calculating MD5 of file %s\n", profile_file_name.c_str());
@@ -510,6 +514,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   if (append_headers.size()) {
     INFO("SBC:      append headers '%s'\n", append_headers.c_str());
   }
+
+  INFO("SBC:      reg-caching: '%s'\n", reg_caching ? "yes" : "no");
+  INFO("SBC:      min_reg_expires: %i\n", min_reg_expires);
+  INFO("SBC:      max_ua_expires: %i\n", max_ua_expires);
 
   codec_prefs.infoPrint();
   transcoder.infoPrint();
