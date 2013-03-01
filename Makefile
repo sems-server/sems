@@ -76,10 +76,14 @@ tar:
 			                               "$(NAME)-$(RELEASE)" ) ; \
 			    rm -rf tmp
 
+# the rpmtar target creates source tar.gz file, with versions taken from rpm spec file
+# the tarball can be used for rpm building 
 .PHONY: rpmtar
 rpmtar: 
 	RPM_VERSION=`cat pkg/rpm/sems.spec|grep -e "^Version:"|awk '{print $$2}'`; \
+	RPM_RELEASE=`cat pkg/rpm/sems.spec|grep -e "^Release:"|awk '{print $$2}'`; \
 	echo "RPM_VERSION=$${RPM_VERSION}"; \
+	echo "RPM_RELEASE=$${RPM_RELEASE}"; \
 	        $(TAR) -C .. \
                 --exclude=$(notdir $(CURDIR))/tmp \
                 --exclude=core/$(notdir $(CURDIR))/tmp \
@@ -101,7 +105,7 @@ rpmtar:
                             mv tmp/_tar1/$(notdir $(CURDIR)) \
                                tmp/_tar2/"$(NAME)-$${RPM_VERSION}" && \
                             (cd tmp/_tar2 && $(TAR) \
-                                            -zcf ../../"$(NAME)-$${RPM_VERSION}".tar.gz \
+                                            -zcf ../../"$(NAME)-$${RPM_VERSION}-$${RPM_RELEASE}".tar.gz \
                                                        "$(NAME)-$${RPM_VERSION}" ) ; \
                             rm -rf tmp;
   

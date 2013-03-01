@@ -5,7 +5,7 @@ Release:	1
 URL:		http://www.iptel.org/sems
 # svn -r 1095 export http://svn.berlios.de/svnroot/repos/sems/branches/1.0.0 sems-1.0.0
 # tar cjvf sems-1.0.0.tar.bz2 sems-1.0.0
-Source:		%{name}-%{version}.tar.gz
+Source:		%{name}-%{version}-%{release}.tar.gz
 License:	GPLv2+
 Group:		Applications/Communications
 # Enable OpenSER
@@ -415,6 +415,9 @@ fi
 /usr/lib/sems/plug-in/speex.so
 
 %changelog
+* Fri Mar 1 2013 Pavel Kasparek <pavel@iptel.org> 1.6.0-1
+- Updating for v1.6.0, build attempt on CentOS 6
+
 * Tue Dec 09 2008 Alfred E. Heggestad <aeh@db.org> 1.1.0-1
 - Update for v1.1.0
 
