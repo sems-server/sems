@@ -370,7 +370,7 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
 
 
 bool AmUriParser::parse_contact(const string& line, size_t pos, size_t& end) {
-  size_t p0 = skip_name(line, pos);
+  int p0 = skip_name(line, pos);
   if (p0 < 0) { return false; }
   if ((size_t)p0 > pos) {
     // save display name
