@@ -799,25 +799,25 @@ void IvrDialog::createCalleeSession()
   
   other_id = AmSession::getNewId();
   
-  callee_dlg->local_tag    = other_id;
-  callee_dlg->callid       = AmSession::getNewId();
+  callee_dlg->setLocalTag(other_id);
+  callee_dlg->setCallid(AmSession::getNewId());
   
   // this will be overwritten by ConnectLeg event 
-  callee_dlg->remote_party = dlg->local_party;
-  callee_dlg->remote_uri   = dlg->local_uri;
+  callee_dlg->setRemoteParty(dlg->getLocalParty());
+  callee_dlg->setRemoteUri(dlg->getLocalUri());
 
   if (b2b_callee_from_party.empty() && b2b_callee_from_uri.empty()) {
     // default: use the original To as From in the callee leg
-    callee_dlg->local_party  = dlg->remote_party;
-    callee_dlg->local_uri  = dlg->remote_uri;
+    callee_dlg->setLocalParty(dlg->getRemoteParty());
+    callee_dlg->setLocalUri(dlg->getRemoteUri());
   } else {
     // if given as parameters, use these
-    callee_dlg->local_party  = b2b_callee_from_party;
-    callee_dlg->local_uri  = b2b_callee_from_uri;
+    callee_dlg->setLocalParty(b2b_callee_from_party);
+    callee_dlg->setLocalUri(b2b_callee_from_uri);
   }
   
   DBG("Created B2BUA callee leg, From: %s\n",
-      callee_dlg->local_party.c_str());
+      callee_dlg->getLocalParty().c_str());
 
   callee_session->start();
   

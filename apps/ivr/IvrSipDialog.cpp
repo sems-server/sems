@@ -52,17 +52,17 @@ static PyObject* IvrSipDialog_new(PyTypeObject *type, PyObject *args, PyObject *
     return PyString_FromString(self->p_dlg->attr.c_str());	\
   }								\
 								
-def_IvrSipDialog_GETTER(IvrSipDialog_getuser,         user)
-def_IvrSipDialog_GETTER(IvrSipDialog_getdomain,       domain)
-def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_uri,    local_uri)
-def_IvrSipDialog_GETTER(IvrSipDialog_getremote_uri,   remote_uri)
+def_IvrSipDialog_GETTER(IvrSipDialog_getuser,         getUser())
+def_IvrSipDialog_GETTER(IvrSipDialog_getdomain,       getDomain())
+def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_uri,    getLocalUri())
+def_IvrSipDialog_GETTER(IvrSipDialog_getremote_uri,   getRemoteUri())
 //def_IvrSipDialog_GETTER(IvrSipDialog_getcontact_uri,  contact_uri)
-def_IvrSipDialog_GETTER(IvrSipDialog_getcallid,       callid)
-def_IvrSipDialog_GETTER(IvrSipDialog_getremote_tag,   remote_tag)
-def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_tag,    local_tag)
-def_IvrSipDialog_GETTER(IvrSipDialog_getremote_party, remote_party)
-def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_party,  local_party)
-def_IvrSipDialog_GETTER(IvrSipDialog_getroute,        route)
+def_IvrSipDialog_GETTER(IvrSipDialog_getcallid,       getCallid())
+def_IvrSipDialog_GETTER(IvrSipDialog_getremote_tag,   getRemoteTag())
+def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_tag,    getLocalTag())
+def_IvrSipDialog_GETTER(IvrSipDialog_getremote_party, getRemoteParty())
+def_IvrSipDialog_GETTER(IvrSipDialog_getlocal_party,  getLocalParty())
+def_IvrSipDialog_GETTER(IvrSipDialog_getroute,        getRoute())
 def_IvrSipDialog_GETTER(IvrSipDialog_getoutbound_proxy, outbound_proxy)
 
 #define def_IvrSipDialog_SETTER(setter_name, attr)			\
@@ -73,11 +73,11 @@ def_IvrSipDialog_GETTER(IvrSipDialog_getoutbound_proxy, outbound_proxy)
     if(!PyArg_Parse(value,"s",&text))					\
       return -1;							\
 									\
-    self->p_dlg->attr = text;						\
+    self->p_dlg->attr(text);						\
     return 0;								\
   } 
 
-def_IvrSipDialog_SETTER(IvrSipDialog_setremote_uri,   remote_uri)
+def_IvrSipDialog_SETTER(IvrSipDialog_setremote_uri,   setRemoteUri)
 
 static PyObject*
 IvrSipDialog_getcseq(IvrSipDialog *self, void *closure)

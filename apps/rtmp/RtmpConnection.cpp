@@ -673,27 +673,28 @@ RtmpSession* RtmpConnection::startSession(const char* uri)
   AmSipDialog* dialout_dlg = n_session->dlg;
 
   string dialout_id = AmSession::getNewId();
-  dialout_dlg->local_tag    = dialout_id;
-  dialout_dlg->callid       = AmSession::getNewId();
+  dialout_dlg->setLocalTag(dialout_id);
+  dialout_dlg->setCallid(AmSession::getNewId());
 
-  dialout_dlg->remote_party = "<" + string(uri) + ">";
-  dialout_dlg->remote_uri   = uri;
+  dialout_dlg->setRemoteParty("<" + string(uri) + ">");
+  dialout_dlg->setRemoteUri(uri);
 
-  dialout_dlg->local_party  = "\"" + rtmp_cfg->FromName + "\" "
-    "<sip:" + ident + "@";
+  string local_party = 
+    "\"" + rtmp_cfg->FromName + "\" <sip:" + ident + "@";
 
   if(!rtmp_cfg->FromDomain.empty()){
-    dialout_dlg->local_party += rtmp_cfg->FromDomain;
+    local_party += rtmp_cfg->FromDomain;
   }
   else {
     int out_if = dialout_dlg->getOutboundIf();
-    dialout_dlg->local_party += AmConfig::SIP_Ifs[out_if].LocalIP;
+    local_party += AmConfig::SIP_Ifs[out_if].LocalIP;
     if(AmConfig::SIP_Ifs[out_if].LocalPort != 5060)
-      dialout_dlg->local_party += 
+      local_party += 
 	":" + int2str(AmConfig::SIP_Ifs[out_if].LocalPort);
   }
 
-  dialout_dlg->local_party += ">";
+  local_party += ">";
+  dialout_dlg->setLocalParty(local_party);
   
   n_session->setCallgroup(dialout_id);
   switch(AmSessionContainer::instance()->addSession(dialout_id,
