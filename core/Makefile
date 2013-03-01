@@ -59,7 +59,11 @@ endif
 # This allows symbols defined in the SIP stack but not used
 # by the core itself to be included in the executable and
 # thus be available for modules
+ifneq ($(LD), clang)
 EXTRA_LDFLAGS += -Wl,--whole-archive $(SIP_STACK_DIR)/sip_stack.a -Wl,--no-whole-archive
+else
+EXTRA_LDFLAGS += -force_load $(SIP_STACK_DIR)/sip_stack.a
+endif
 
 ifneq ($(OS), freebsd)
 	EXTRA_LDFLAGS += -lresolv
