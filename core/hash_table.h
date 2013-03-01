@@ -47,7 +47,7 @@ public:
     typedef list<Value*> value_list;
 
     ht_bucket(unsigned long id) : id(id) {}
-    ~ht_bucket() {}
+    virtual ~ht_bucket() {}
     
     /**
      * Caution: The bucket MUST be locked before you can 
@@ -129,7 +129,7 @@ public:
     typedef map<Key,Value*> value_map;
 
     ht_map_bucket(unsigned long id) : id(id) {}
-    ~ht_map_bucket() {}
+    virtual ~ht_map_bucket() {}
     
     /**
      * Caution: The bucket MUST be locked before you can 
