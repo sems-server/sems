@@ -244,17 +244,16 @@ fi
 %{_sbindir}/sems-list-calls
 %{_sbindir}/sems-list-finished-calls
 %{_sbindir}/sems-logfile-callextract
-#%{_sbindir}/sems-sbc-get-activeprofile
-#%{_sbindir}/sems-sbc-get-regex-map-names
-#%{_sbindir}/sems-sbc-list-profiles
-#%{_sbindir}/sems-sbc-load-callcontrol-modules
-#%{_sbindir}/sems-sbc-load-profile
-#%{_sbindir}/sems-sbc-reload-profile
-#%{_sbindir}/sems-sbc-reload-profiles
-#%{_sbindir}/sems-sbc-set-activeprofile
-#%{_sbindir}/sems-sbc-set-regex-map
-#%{_sbindir}/sems-sbc-teardown-call
-
+%{_sbindir}/sems-sbc-get-activeprofile
+%{_sbindir}/sems-sbc-get-regex-map-names
+%{_sbindir}/sems-sbc-list-profiles
+%{_sbindir}/sems-sbc-load-callcontrol-modules
+%{_sbindir}/sems-sbc-load-profile
+%{_sbindir}/sems-sbc-reload-profile
+%{_sbindir}/sems-sbc-reload-profiles
+%{_sbindir}/sems-sbc-set-activeprofile
+%{_sbindir}/sems-sbc-set-regex-map
+%{_sbindir}/sems-sbc-teardown-call
 
 %dir /usr/lib/sems
 %dir /usr/lib/sems/audio
@@ -319,18 +318,18 @@ fi
 /usr/lib/sems/plug-in/voicemail.so
 /usr/lib/sems/plug-in/wav.so
 /usr/lib/sems/plug-in/webconference.so
-##/usr/lib/sems/plug-in/cc_call_timer.so
-##/usr/lib/sems/plug-in/cc_ctl.so
-##/usr/lib/sems/plug-in/cc_pcalls.so
-##/usr/lib/sems/plug-in/cc_prepaid.so
-##/usr/lib/sems/plug-in/cc_prepaid_xmlrpc.so
-##/usr/lib/sems/plug-in/cc_rest.so
-##/usr/lib/sems/plug-in/cc_syslog_cdr.so
+/usr/lib/sems/plug-in/cc_call_timer.so
+/usr/lib/sems/plug-in/cc_ctl.so
+/usr/lib/sems/plug-in/cc_pcalls.so
+/usr/lib/sems/plug-in/cc_prepaid.so
+/usr/lib/sems/plug-in/cc_prepaid_xmlrpc.so
+/usr/lib/sems/plug-in/cc_rest.so
+/usr/lib/sems/plug-in/cc_syslog_cdr.so
 /usr/lib/sems/plug-in/ilbc.so
 /usr/lib/sems/plug-in/isac.so
 /usr/lib/sems/plug-in/monitoring.so
 /usr/lib/sems/plug-in/mwi.so
-##/usr/lib/sems/plug-in/sbc.so
+/usr/lib/sems/plug-in/sbc.so
 
 
 ##/usr/lib/sems/dsm/mod_dlg.so
