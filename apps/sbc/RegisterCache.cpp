@@ -640,7 +640,7 @@ bool _RegisterCache::throttleRegister(RegisterCacheCtx& ctx,
       }
 
       if(contact_expires && ctx.max_ua_expires &&
-	 (contact_expires > ctx.max_ua_expires)) {
+	 (contact_expires > (long int)ctx.max_ua_expires)) {
 
 	contact_expires = ctx.max_ua_expires;
 	contact_it->params["expires"] = long2str(contact_expires);

@@ -215,7 +215,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 	DBG("max_ua_expire = %u", max_ua_expire);
 	DBG("contact_expires = %u", contact_expires);
 	DBG("reg_expires = %li", reg_binding.reg_expire - now.tv_sec);
-	if(contact_expires + 4 /* 2 seconds buffer */ 
+	if((long int)contact_expires + 4 /* 2 seconds buffer */ 
 	   < reg_binding.reg_expire - now.tv_sec) {
 	  
 	  reg_cache_reply = reg_cache_reply && true;

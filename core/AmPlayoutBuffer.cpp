@@ -490,7 +490,7 @@ u_int32_t AmAdaptivePlayout::time_scale(u_int32_t ts, float factor,
 	ts, s, act_fact, factor, (long)wsola_off);
 #endif
     // break condition: coming to the end of the frame (with safety margin)
-    if(p_buf_end - tmpl < TEMPLATE_SEG + DELTA)
+    if((unsigned int)(p_buf_end - tmpl) < TEMPLATE_SEG + DELTA)
       break;
 
     // streched enough?
