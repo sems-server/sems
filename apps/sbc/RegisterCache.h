@@ -115,7 +115,7 @@ public:
 
   AliasEntry* getContact(const string& alias);
 
-  void dump_elmt(const string& alias, const string* p_uri) const;
+  void dump_elmt(const string& alias, const AliasEntry* p_uri) const;
 };
 
 /** 

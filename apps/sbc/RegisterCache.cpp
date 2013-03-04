@@ -106,10 +106,10 @@ AliasEntry* AliasBucket::getContact(const string& alias)
   return it->second;
 }
 
-void AliasBucket::dump_elmt(const string& alias, const string* p_uri) const
+void AliasBucket::dump_elmt(const string& alias, const AliasEntry* p_ae) const
 {
   DBG("'%s' -> '%s'", alias.c_str(), 
-      p_uri ? p_uri->c_str() : "NULL");
+      p_ae ? p_ae->contact_uri.c_str() : "NULL");
 }
 
 
