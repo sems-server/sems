@@ -780,7 +780,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
     // FIXME: create new streams here?
     WARN("trying to relay SDP with more media lines than "
 	 "relay streams initialized (%lu)\n", 
-	 audio.size()+relay_streams.size());
+	 (unsigned long)(audio.size()+relay_streams.size()));
   }
 
   DBG("replaced connection address in SDP with %s:%s.\n",

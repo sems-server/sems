@@ -239,7 +239,8 @@ void AmEventDispatcher::dump()
     for (size_t i=0;i<EVENT_DISPATCHER_BUCKETS;i++) {
       queues_mut[i].lock();
       if(!queues[i].empty()) {
-	DBG("queues[%lu].size() = %lu",i,queues[i].size());
+	DBG("queues[%lu].size() = %lu",
+	    (unsigned long)i,(unsigned long)queues[i].size());
 	for(EvQueueMapIter it = queues[i].begin();
 	    it != queues[i].end(); it++){
 	  DBG("\t%s -> %p\n",it->first.c_str(),it->second.q);
@@ -249,7 +250,8 @@ void AmEventDispatcher::dump()
 
       id_lookup_mut[i].lock();
       if(!id_lookup[i].empty()) {
-	DBG("id_lookup[%lu].size() = %lu",i,id_lookup[i].size());
+	DBG("id_lookup[%lu].size() = %lu",
+	    (unsigned long)i,(unsigned long)id_lookup[i].size());
       }
       id_lookup_mut[i].unlock();
     }
