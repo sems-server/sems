@@ -76,7 +76,9 @@ AmSipDialog::~AmSipDialog()
 bool AmSipDialog::onRxReqSanity(const AmSipRequest& req)
 {
   if (req.method == SIP_METH_ACK) {
-    return true;
+    if(onRxReqStatus(req) && hdl)
+      hdl->onSipRequest(req);
+    return false;
   }
 
   if (req.method == SIP_METH_CANCEL) {
