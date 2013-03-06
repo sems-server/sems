@@ -34,6 +34,8 @@
 #include <sys/types.h>
 #include <deque>
 
+#include "atomic_types.h"
+
 #define BITS_PER_WHEEL 8
 #define ELMTS_PER_WHEEL (1 << BITS_PER_WHEEL)
 
@@ -117,6 +119,7 @@ protected:
 public:
     //clock reference
     volatile u_int32_t wall_clock; // 32 bits
+    atomic_int64 unix_clock; // 64 bits
 
     void insert_timer(timer* t);
     void remove_timer(timer* t);

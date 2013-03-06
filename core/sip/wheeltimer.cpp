@@ -100,6 +100,9 @@ void _wheeltimer::run()
     //printf("missed one tick\n");
     //}
 
+    gettimeofday(&now,NULL);
+    unix_clock.set(now.tv_sec);
+
     turn_wheel();
     timeradd(&tick,&next_tick,&next_tick);
   }
