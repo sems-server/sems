@@ -675,7 +675,7 @@ bool _RegisterCache::throttleRegister(RegisterCacheCtx& ctx,
       contact_it->params["expires"] = long2str(contact_expires);
     }
     else {
-      if(str2long(expires_it->second,contact_expires)) {
+      if(!str2long(expires_it->second,contact_expires)) {
 	AmBasicSipDialog::reply_error(req, 400, "Bad Request",
 				      "Warning: Malformed expires\r\n");
 	return true; // error reply sent
