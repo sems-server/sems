@@ -468,7 +468,9 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
 	// with new 'expire' value and new entries
 
 	AliasEntry alias_entry;
+	alias_entry.aor         = aor;
 	alias_entry.contact_uri = orig_contact.uri_str();
+	alias_entry.alias       = alias_it->first;
 	alias_entry.source_ip   = source_ip;
 	alias_entry.source_port = source_port;
 	alias_entry.local_if    = local_if;

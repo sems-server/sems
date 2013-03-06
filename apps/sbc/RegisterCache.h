@@ -6,6 +6,7 @@
 
 #include "AmSipMsg.h"
 #include "AmUriParser.h"
+#include "AmAppTimer.h"
 
 #include <string>
 #include <map>
@@ -46,8 +47,11 @@ struct RegBinding
 typedef map<string,RegBinding*> AorEntry;
 
 struct AliasEntry
+  : public DirectAppTimer
 {
+  string aor;
   string contact_uri;
+  string alias;
 
   // saved state for NAT handling
   string         source_ip;
@@ -64,6 +68,9 @@ struct AliasEntry
   AliasEntry()
     : source_port(0), local_if(0), ua_expire(0)
   {}
+
+  // from DirectAppTimer
+  void fire();
 };
 
 struct RegCacheStorageHandler 
@@ -186,6 +193,9 @@ protected:
   int parseAoR(RegisterCacheCtx& ctx, const AmSipRequest& req);
   int parseContacts(RegisterCacheCtx& ctx, const AmSipRequest& req);
   int parseExpires(RegisterCacheCtx& ctx, const AmSipRequest& req);
+
+  void setAliasUATimer(AliasEntry* alias_e);
+  void removeAliasUATimer(AliasEntry* alias_e);
 
 public:
   static string canonicalize_aor(const string& aor);

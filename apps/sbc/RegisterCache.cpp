@@ -112,6 +112,10 @@ void AliasBucket::dump_elmt(const string& alias, const AliasEntry* p_ae) const
       p_ae ? p_ae->contact_uri.c_str() : "NULL");
 }
 
+void AliasEntry::fire()
+{
+  DBG("Alias expired (UA): '%s' -> '%s'\n",alias.c_str(),aor.c_str());
+}
 
 struct RegCacheLogHandler
   : RegCacheStorageHandler
@@ -168,6 +172,10 @@ void _RegisterCache::gbc(unsigned int bucket_id)
       it != alias_list.end(); it++){
     AliasBucket* alias_bucket = getAliasBucket(*it);
     alias_bucket->lock();
+    AliasEntry* alias_e = alias_bucket->getContact(*it);
+    if(alias_e && alias_e->ua_expire) {
+      removeAliasUATimer(alias_e);
+    }
     alias_bucket->remove(*it);
     alias_bucket->unlock();
   }
@@ -269,6 +277,20 @@ AliasBucket* _RegisterCache::getAliasBucket(const string& alias)
   return id_idx.get_bucket(hash_1str(alias));
 }
 
+void _RegisterCache::setAliasUATimer(AliasEntry* alias_e)
+{
+  AmAppTimer* app_timer = AmAppTimer::instance();
+  double timeout = alias_e->ua_expire - app_timer->unix_clock.get();
+  if(timeout > 0.0) {
+    app_timer->setTimer(alias_e,timeout);
+  }
+}
+
+void _RegisterCache::removeAliasUATimer(AliasEntry* alias_e)
+{
+  AmAppTimer::instance()->removeTimer(alias_e);
+}
+
 void _RegisterCache::update(const string& canon_aor, const string& alias, 
 			    long int reg_expires, const AliasEntry& alias_update)
 {
@@ -319,14 +341,19 @@ void _RegisterCache::update(const string& canon_aor, const string& alias,
   if(!alias_e) {
     DBG("inserting alias map entry: '%s' -> '%s'",
 	alias.c_str(), uri.c_str());
-    alias_bucket->insert(alias,new AliasEntry(alias_update));
+    alias_e = new AliasEntry(alias_update);
+    alias_bucket->insert(alias,alias_e);
   }
   else {
     *alias_e = alias_update;
   }
+
+  if(alias_e->ua_expire) {
+    setAliasUATimer(alias_e);
+  }
   
   if(storage_handler.get())
-    storage_handler->onUpdate(canon_aor,alias,reg_expires,alias_update);
+    storage_handler->onUpdate(canon_aor,alias,reg_expires,*alias_e);
 
   alias_bucket->unlock();
   bucket->unlock();
@@ -378,15 +405,22 @@ void _RegisterCache::update(const string& canon_aor, long int reg_expires,
   if(!alias_e) {
     DBG("inserting alias map entry: '%s' -> '%s'",
 	binding->alias.c_str(), uri.c_str());
-    alias_bucket->insert(binding->alias,new AliasEntry(alias_update));
+    alias_e = new AliasEntry(alias_update);
+    alias_e->alias = binding->alias;
+    alias_bucket->insert(binding->alias,alias_e);
   }
   else {
     *alias_e = alias_update;
+    alias_e->alias = binding->alias;
+  }
+
+  if(alias_e->ua_expire) {
+    setAliasUATimer(alias_e);
   }
   
   if(storage_handler.get())
     storage_handler->onUpdate(canon_aor,binding->alias,
-			      reg_expires,alias_update);
+			      reg_expires,*alias_e);
 
   alias_bucket->unlock();
   bucket->unlock();
@@ -401,6 +435,9 @@ bool _RegisterCache::updateAliasExpires(const string& alias, long int ua_expires
   AliasEntry* alias_e = alias_bucket->getContact(alias);
   if(alias_e) {
     alias_e->ua_expire = ua_expires;
+    if(alias_e->ua_expire) {
+      setAliasUATimer(alias_e);
+    }
     if(storage_handler.get()) {
       storage_handler->onUpdate(alias,ua_expires);
     }
@@ -442,6 +479,10 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
     }
   }
 
+  AliasEntry* alias_e = alias_bucket->getContact(alias);
+  if(alias_e && alias_e->ua_expire) {
+    removeAliasUATimer(alias_e);
+  }
   alias_bucket->remove(alias);
   
   alias_bucket->unlock();
@@ -470,6 +511,12 @@ void _RegisterCache::remove(const string& aor)
 
       AliasBucket* alias_bucket = getAliasBucket(binding->alias);
       alias_bucket->lock();
+
+      AliasEntry* alias_e = alias_bucket->getContact(binding->alias);
+      if(alias_e && alias_e->ua_expire) {
+	removeAliasUATimer(alias_e);
+      }
+
       alias_bucket->remove(binding->alias);
       alias_bucket->unlock();
       
@@ -821,6 +868,7 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
   // - send 200 reply
 
   AliasEntry alias_update;
+  alias_update.aor = ctx.from_aor;
   alias_update.contact_uri = contact->uri_str();
   alias_update.source_ip = req.remote_ip;
   alias_update.source_port = req.remote_port;
