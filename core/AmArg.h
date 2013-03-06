@@ -116,7 +116,7 @@ class AmArg
     
   // value
   union {
-    int            v_int;
+    long int       v_int;
     bool           v_bool;
     double         v_double;
     const char*    v_cstr;
@@ -138,6 +138,11 @@ class AmArg
   AmArg(const AmArg& v);
   
  AmArg(const int& v)
+   : type(Int),
+    v_int(v)
+    { }
+
+ AmArg(const long int& v)
    : type(Int),
     v_int(v)
     { }
@@ -250,7 +255,8 @@ class AmArg
     v_obj = v;
   }
 
-  int         asInt()    const { return v_int; }
+  int         asInt()    const { return (int)v_int; }
+  long int    asLong()   const { return v_int; }
   int         asBool()   const { return v_bool; }
   double      asDouble() const { return v_double; }
   const char* asCStr()   const { return v_cstr; }
