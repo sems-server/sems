@@ -8,6 +8,7 @@
 #include "RegisterDialog.h"
 #include "AmSession.h" //getNewId
 #include "AmUtils.h"
+#include "SBCEventLog.h"
 
 #include <utility>
 using std::pair;
@@ -114,7 +115,11 @@ void AliasBucket::dump_elmt(const string& alias, const AliasEntry* p_ae) const
 
 void AliasEntry::fire()
 {
+  AmArg ev;
+  ev["aor"]     = aor;
+  ev["contact"] = contact_uri;
   DBG("Alias expired (UA): '%s' -> '%s'\n",alias.c_str(),aor.c_str());
+  SBCEventLog::instance()->logEvent(alias,ev);
 }
 
 struct RegCacheLogHandler
