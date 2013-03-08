@@ -98,6 +98,8 @@ public:
   bool getSdpOffer(AmSdp& offer);
   bool getSdpAnswer(const AmSdp& offer, AmSdp& answer);
 
+  virtual void onNoAck(unsigned int cseq);
+
   void onSystemEvent(AmSystemEvent* ev);
 
   void process(AmEvent* event);

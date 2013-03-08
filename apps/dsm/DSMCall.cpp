@@ -425,6 +425,17 @@ void DSMCall::onRtpTimeout() {
   AmB2BCallerSession::onRtpTimeout();
 }
 
+void DSMCall::onNoAck(unsigned int cseq)
+{
+  DBG("onNoAck\n");
+  map<string, string> params;
+  params["headers"] = "";
+  params["reason"] = "onNoAck";
+
+  engine.runEvent(this, this, DSMCondition::Hangup, &params);
+  AmB2BCallerSession::onNoAck(cseq);
+}
+
 void DSMCall::onSystemEvent(AmSystemEvent* ev) {
   map<string, string> params;
   params["type"] = AmSystemEvent::getDescription(ev->sys_event);
