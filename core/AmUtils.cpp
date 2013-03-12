@@ -72,15 +72,16 @@ string int2str(unsigned int val)
   return string((char*)(buffer+i+1));
 }
 
-string int2str(int val)
+template<class T, class DT>
+string signed2str(T val, T (*abs_func) (T), DT (*div_func) (T, T))
 {
   char buffer[64] = {0,0};
   int i=62;
-  div_t d;
+  DT d;
 
-  d.quot = abs(val);
+  d.quot = abs_func(val);
   do{
-    d = div(d.quot,10);
+    d = div_func(d.quot,10);
     buffer[i] = _int2str_lookup[d.rem];
   }while(--i && d.quot);
 
@@ -92,25 +93,9 @@ string int2str(int val)
   return string((char*)(buffer+i+1));
 }
 
-string long2str(long int val)
-{
-  char buffer[64] = {0,0};
-  int i=62;
-  ldiv_t d;
-
-  d.quot = abs(val);
-  do{
-    d = ldiv(d.quot,10);
-    buffer[i] = _int2str_lookup[d.rem];
-  }while(--i && d.quot);
-
-  if (i && (val<0)) {
-    buffer[i]='-';
-    i--;
-  }
-
-  return string((char*)(buffer+i+1));
-}
+string int2str(int val) { return signed2str<int, div_t>(val, abs, div); }
+string long2str(long int val) { return signed2str<long, ldiv_t>(val, labs, ldiv); }
+string longlong2str(long long int val) { return signed2str<long long, lldiv_t>(val, llabs, lldiv); }
 
 static char _int2hex_lookup[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', '9','A','B','C','D','E','F' };
 static char _int2hex_lookup_l[] = { '0', '1', '2', '3', '4', '5', '6' , '7', '8', '9','a','b','c','d','e','f' };

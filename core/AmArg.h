@@ -88,6 +88,7 @@ class AmArg
     Undef=0,
 
     Int,
+    LongLong,
     Bool,
     Double,
     CStr,
@@ -117,6 +118,7 @@ class AmArg
   // value
   union {
     long int       v_int;
+    long long int  v_long;
     bool           v_bool;
     double         v_double;
     const char*    v_cstr;
@@ -145,6 +147,11 @@ class AmArg
  AmArg(const long int& v)
    : type(Int),
     v_int(v)
+    { }
+
+ AmArg(const long long int& v)
+   : type(LongLong),
+    v_long(v)
     { }
 
  AmArg(const bool& v)
@@ -209,6 +216,7 @@ class AmArg
 #define isArgStruct(a)(AmArg::Struct == a.getType())
 #define isArgDouble(a) (AmArg::Double == a.getType())
 #define isArgInt(a) (AmArg::Int == a.getType())
+#define isArgLongLong(a) (AmArg::LongLong == a.getType())
 #define isArgBool(a) (AmArg::Bool == a.getType())
 #define isArgCStr(a) (AmArg::CStr == a.getType())
 #define isArgAObject(a) (AmArg::AObject == a.getType())
@@ -230,6 +238,9 @@ class AmArg
 #define assertArgInt(a)				\
   if (!isArgInt(a))				\
 	_THROW_TYPE_MISMATCH(Int,a);
+#define assertArgLongLong(a)				\
+  if (!isArgLongLong(a))				\
+	_THROW_TYPE_MISMATCH(LongLong,a);
 #define assertArgBool(a)				\
   if (!isArgBool(a))				\
 	_THROW_TYPE_MISMATCH(Bool,a);
@@ -257,6 +268,7 @@ class AmArg
 
   int         asInt()    const { return (int)v_int; }
   long int    asLong()   const { return v_int; }
+  long long   asLongLong() const { return v_long; }
   int         asBool()   const { return v_bool; }
   double      asDouble() const { return v_double; }
   const char* asCStr()   const { return v_cstr; }
@@ -328,6 +340,7 @@ class AmArg
   /** 
    * throws exception if arg array does not conform to spec 
    *   i  - int 
+   *   l  - long long
    *   t  - bool
    *   f  - double
    *   s  - cstr

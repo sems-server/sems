@@ -73,6 +73,11 @@ string int2str(unsigned int val);
 string long2str(long int val);
 
 /** 
+ * Convert a long long to a string. 
+ */
+string longlong2str(long long int val);
+
+/** 
  * Convert a a byte to a string using hexdecimal representation.
  */
 string char2hex(unsigned char val, bool lowercase = false);

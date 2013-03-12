@@ -115,6 +115,9 @@ string arg2json(const AmArg &a) {
   case AmArg::Int:
     return a.asInt()<0?"-"+int2str(abs(a.asInt())):int2str(abs(a.asInt()));
 
+  case AmArg::LongLong:
+    return longlong2str(a.asLongLong());
+
   case AmArg::Bool:
     return a.asBool()?"true":"false";
 
