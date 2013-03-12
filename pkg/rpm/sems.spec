@@ -179,7 +179,7 @@ fi
 %config(noreplace) %{_sysconfdir}/sems/etc/voicebox.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/voicemail.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/webconference.conf
-##%config(noreplace) %{_sysconfdir}/sems/etc/xmlrpc2di.conf
+%config(noreplace) %{_sysconfdir}/sems/etc/xmlrpc2di.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/auth_b2b.sbcprofile.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/call_timer.sbcprofile.conf
 %config(noreplace) %{_sysconfdir}/sems/etc/codecfilter.sbcprofile.conf
@@ -325,6 +325,7 @@ fi
 /usr/lib/sems/plug-in/cc_prepaid_xmlrpc.so
 /usr/lib/sems/plug-in/cc_rest.so
 /usr/lib/sems/plug-in/cc_syslog_cdr.so
+/usr/lib/sems/plug-in/xmlrpc2di.so
 /usr/lib/sems/plug-in/ilbc.so
 /usr/lib/sems/plug-in/isac.so
 /usr/lib/sems/plug-in/monitoring.so
