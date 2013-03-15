@@ -35,6 +35,8 @@ using std::string;
 #include <map>
 #include <set>
 
+#define TICKS_PER_SEC (1000000 / TIMER_RESOLUTION)
+
 class app_timer;
 class direct_app_timer;
 
