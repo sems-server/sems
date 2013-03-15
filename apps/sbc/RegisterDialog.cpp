@@ -529,8 +529,11 @@ int RegisterDialog::onTxReply(const AmSipRequest& req, AmSipReply& reply,
 {
   DBG("code = %i; hdrs = '%s'\n", reply.code, reply.hdrs.c_str());
 
-  if(reply.code >= 200 && reply.code < 300)
+  if(reply.code >= 200 && reply.code < 300) {
     flags |= SIP_FLAGS_NOCONTACT;
+    removeHeader(hdrs, SIP_HDR_EXPIRES);
+    removeHeader(hdrs, SIP_HDR_MIN_EXPIRES);
+  }
 
   return AmBasicSipDialog::onTxReply(req,reply,flags);
 }
