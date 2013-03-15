@@ -24,6 +24,8 @@ public:
   RateLimit(unsigned int rate, unsigned int peak, 
 	    unsigned int time_base);
 
+  virtual ~RateLimit() {}
+
   /**
    * returns true if 'size' should be dropped
    */
