@@ -28,6 +28,9 @@ public:
    * returns true if 'size' should be dropped
    */
   bool limit(unsigned int size);
+
+  /** Get last update timestamp (wheeltimer::wallclock ticks) */
+  u_int32_t getLastUpdate() { return last_update; }
 };
 
 #endif

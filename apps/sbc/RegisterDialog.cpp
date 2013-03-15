@@ -531,8 +531,8 @@ int RegisterDialog::onTxReply(const AmSipRequest& req, AmSipReply& reply,
 
   if(reply.code >= 200 && reply.code < 300) {
     flags |= SIP_FLAGS_NOCONTACT;
-    removeHeader(hdrs, SIP_HDR_EXPIRES);
-    removeHeader(hdrs, SIP_HDR_MIN_EXPIRES);
+    removeHeader(reply.hdrs, SIP_HDR_EXPIRES);
+    removeHeader(reply.hdrs, SIP_HDR_MIN_EXPIRES);
   }
 
   return AmBasicSipDialog::onTxReply(req,reply,flags);
