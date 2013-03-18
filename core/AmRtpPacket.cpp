@@ -102,6 +102,7 @@ int AmRtpPacket::parse()
   sequence = ntohs(hdr->seq);
   timestamp = ntohl(hdr->ts);
   ssrc = ntohl(hdr->ssrc);
+  version = hdr->version;
 
   if (data_offset >= b_size) {
     ERROR("bad rtp packet (header size too big) !\n");

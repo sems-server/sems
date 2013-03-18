@@ -777,6 +777,14 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
     }
   }
 
+#ifndef WITH_ZRTP
+  // throw away ZRTP packets 
+  if(p->version != RTP_VERSION) {
+      mem.freePacket(p);
+      return;
+  }
+#endif
+
   receive_mut.lock();
   // NOTE: useless, as DTMF events are pushed into 'rtp_ev_qu'
   // free packet on double packet for TS received

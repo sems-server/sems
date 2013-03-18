@@ -52,6 +52,7 @@ public:
   unsigned short sequence;    
   unsigned int   timestamp;   
   unsigned int   ssrc;
+  unsigned char  version;
 
   struct timeval recv_time;
   struct sockaddr_storage addr;
