@@ -597,8 +597,12 @@ PyObject_VaCallMethod(PyObject *o, char *name, char *format, va_list va)
 
   func = PyObject_GetAttrString(o, name);
   if (func == NULL) {
-    PyErr_SetString(PyExc_AttributeError, name);
-    return 0;
+
+    DBG("method %s is not implemented, "
+	"trying default one (params: '%s')\n",
+	name,format);
+
+    Py_RETURN_TRUE;
   }
 
   if (!PyCallable_Check(func))
@@ -644,18 +648,10 @@ bool IvrDialog::callPyEventHandler(const char* name, const char* fmt, ...)
   va_end(va);
 
   if(!o) {
-
-    if(PyErr_ExceptionMatches(PyExc_AttributeError)){
-
-      DBG("method %s is not implemented, trying default one\n",name);
-      return true;
-    }
-
-    PyErr_Print();
+    if(PyErr_Occurred()) PyErr_Print();
   }
   else {
     if(o && PyBool_Check(o) && (o == Py_True)) {
-
       ret = true;
     }
 
