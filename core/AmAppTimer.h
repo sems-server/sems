@@ -43,6 +43,7 @@ class direct_app_timer;
 class DirectAppTimer
 {
 public:
+  virtual ~DirectAppTimer() {}
   virtual void fire()=0;
 };
 
