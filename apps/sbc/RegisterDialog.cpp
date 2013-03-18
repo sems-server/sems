@@ -372,7 +372,7 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
   if(SimpleRelayDialog::initUAC(req,cp) < 0)
     return -1;
 
-  if(star_contact) {
+  if(star_contact || uac_contacts.empty()) {
     // prepare bindings to be deleted on reply
     if(reg_caching) {
       fillAliasMap();
