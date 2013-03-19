@@ -481,7 +481,7 @@ void SBCCallLeg::onSipRequest(const AmSipRequest& req) {
 void SBCCallLeg::setOtherId(const AmSipReply& reply)
 {
   DBG("setting other_id to '%s'",reply.from_tag.c_str());
-  CallLeg::setOtherId(reply);
+  setOtherId(reply.from_tag);
   if(call_profile.transparent_dlg_id && !reply.to_tag.empty()) {
     dlg->setExtLocalTag(reply.to_tag);
   }
@@ -1103,7 +1103,7 @@ void SBCCallLeg::CCConnect(const AmSipReply& reply) {
     di_args.back().push((int)call_connect_ts.tv_usec);
     for (int i=0;i<2;i++)
       di_args.back().push((int)0);
-    di_args.push(other_id);                      // other leg ltag
+    di_args.push(getOtherId());                      // other leg ltag
 
 
     try {
@@ -1426,7 +1426,7 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
       break;
   }
 
-  if (!other_id.empty())
+  if (!getOtherId().empty())
     relayEvent(new ChangeRtpModeEvent(new_mode, getMediaSession()));
   setRtpRelayMode(new_mode);
 }

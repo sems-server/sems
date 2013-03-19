@@ -147,7 +147,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   SBCCallProfile &getCallProfile() { return call_profile; }
   CallStatus getCallStatus() { return CallLeg::getCallStatus(); }
-  const string &getOtherId() { return other_id; }
 
   // media interface must be accessible from CC modules
   AmB2BMedia *getMediaSession() { return media_session; }
@@ -167,6 +166,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
  protected:
 
   void setOtherId(const AmSipReply& reply);
+  void setOtherId(const string& n_other_id) { CallLeg::setOtherId(n_other_id); }
 
   void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(AmSipRequest& req, int &flags);

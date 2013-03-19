@@ -134,10 +134,11 @@ class AmB2BSession: public AmSession
     RTP_Transcoding
   };
 
- protected:
+private:
   /** local tag of the other leg */
   string other_id;
 
+ protected:
   /** Tell if the session should
    *  process SIP request itself
    * or only relay them (B2B mode).
@@ -267,6 +268,12 @@ class AmB2BSession: public AmSession
   virtual bool updateRemoteSdp(AmSdp &sdp);
 
  public:
+
+  virtual void setOtherId(const string& n_other_id) {
+    other_id = n_other_id;
+  }
+  virtual const string& getOtherId() const { return other_id; }
+
   void set_sip_relay_only(bool r);
 
   /** set RTP relay mode (possibly initiaze by given INVITE) */

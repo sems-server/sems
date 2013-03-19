@@ -99,12 +99,7 @@ void AmB2BSession::set_sip_relay_only(bool r) {
 
 void AmB2BSession::clear_other()
 {
-#if __GNUC__ < 3
-  string cleared ("");
-  other_id.assign (cleared, 0, 0);
-#else
-  other_id.clear();
-#endif
+  setOtherId("");
 }
 
 void AmB2BSession::process(AmEvent* event)
@@ -912,7 +907,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 
     AmSipReply& reply = ((B2BSipReplyEvent*)ev)->reply;
 
-    if(other_id.empty()){
+    if(getOtherId().empty()){
       //DBG("Discarding B2BSipReply from other leg (other_id empty)\n");
       DBG("B2BSipReply: other_id empty ("
 	  "reply code=%i; method=%s; callid=%s; from_tag=%s; "
@@ -921,9 +916,9 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	  reply.to_tag.c_str(),reply.cseq);
       //return;
     }
-    else if(other_id != reply.from_tag){// was: local_tag
+    else if(getOtherId() != reply.from_tag){// was: local_tag
       DBG("Dialog mismatch! (oi=%s;ft=%s)\n",
-	  other_id.c_str(),reply.from_tag.c_str());
+	  getOtherId().c_str(),reply.from_tag.c_str());
       return;
     }
 
@@ -985,7 +980,7 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 
 int AmB2BCallerSession::relayEvent(AmEvent* ev)
 {
-  if(other_id.empty() && !getStopped()){
+  if(getOtherId().empty() && !getStopped()){
 
     bool create_callee = false;
     B2BSipEvent* sip_ev = dynamic_cast<B2BSipEvent*>(ev);
@@ -996,8 +991,8 @@ int AmB2BCallerSession::relayEvent(AmEvent* ev)
 
     if (create_callee) {
       createCalleeSession();
-      if (other_id.length()) {
-	MONITORING_LOG(getLocalTag().c_str(), "b2b_leg", other_id.c_str());
+      if (getOtherId().length()) {
+	MONITORING_LOG(getLocalTag().c_str(), "b2b_leg", getOtherId().c_str());
       }
     }
 
@@ -1091,9 +1086,9 @@ void AmB2BCallerSession::createCalleeSession() {
 
   AmSipDialog* callee_dlg = callee_session->dlg;
 
-  other_id = AmSession::getNewId();
+  setOtherId(AmSession::getNewId());
   
-  callee_dlg->setLocalTag(other_id);
+  callee_dlg->setLocalTag(getOtherId());
   callee_dlg->setCallid(AmSession::getNewId());
 
   callee_dlg->setLocalParty(dlg->getRemoteParty());
@@ -1105,7 +1100,7 @@ void AmB2BCallerSession::createCalleeSession() {
 	 callee_session->getLocalTag().c_str());
   }
 
-  MONITORING_LOG4(other_id.c_str(), 
+  MONITORING_LOG4(getOtherId().c_str(), 
 		  "dir",  "out",
 		  "from", callee_dlg->getLocalParty().c_str(),
 		  "to",   callee_dlg->getRemoteParty().c_str(),
@@ -1119,7 +1114,7 @@ void AmB2BCallerSession::createCalleeSession() {
   }
 
   AmSessionContainer* sess_cont = AmSessionContainer::instance();
-  sess_cont->addSession(other_id,callee_session);
+  sess_cont->addSession(getOtherId(),callee_session);
 
   callee_session->start();
 }
@@ -1180,7 +1175,7 @@ void AmB2BCalleeSession::onB2BEvent(B2BEvent* ev)
       return;
 
     MONITORING_LOG3(getLocalTag().c_str(), 
-		    "b2b_leg", other_id.c_str(),
+		    "b2b_leg", getOtherId().c_str(),
 		    "to", co_ev->remote_party.c_str(),
 		    "ruri", co_ev->remote_uri.c_str());
 

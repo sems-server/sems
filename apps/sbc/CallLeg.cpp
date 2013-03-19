@@ -128,7 +128,7 @@ void CallLeg::terminateNotConnectedLegs()
   OtherLegInfo b;
 
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
-    if (i->id != other_id) {
+    if (i->id != getOtherId()) {
       i->releaseMediaSession();
       AmSessionContainer::instance()->postEvent(i->id, new B2BEvent(B2BTerminateLeg));
     }
@@ -145,7 +145,7 @@ void CallLeg::terminateNotConnectedLegs()
 
 void CallLeg::removeOtherLeg(const string &id)
 {
-  if (other_id == id) other_id.clear();
+  if (getOtherId() == id) AmB2BSession::clear_other();
 
   // remove the call leg from list of B legs
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
@@ -254,7 +254,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
   // possible so the check can stay as it is for Connected state but for other
   // should check other_legs instead of other_id
 #if 0
-  if(other_id.empty()){
+  if(getOtherId().empty()){
     //DBG("Discarding B2BSipReply from other leg (other_id empty)\n");
     DBG("B2BSipReply: other_id empty ("
         "reply code=%i; method=%s; callid=%s; from_tag=%s; "
@@ -263,9 +263,9 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
         reply.to_tag.c_str(),reply.cseq);
     //return;
   }
-  else if(other_id != reply.from_tag){// was: local_tag
+  else if(getOtherId() != reply.from_tag){// was: local_tag
     DBG("Dialog mismatch! (oi=%s;ft=%s)\n",
-        other_id.c_str(),reply.from_tag.c_str());
+        getOtherId().c_str(),reply.from_tag.c_str());
     return;
   }
 #endif
@@ -290,7 +290,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
           setOtherId(reply);
           TRACE("1xx reply with to-tag received in NoReply state,"
 		" changing status to Ringing and remembering the"
-		" other leg ID (%s)\n", other_id.c_str());
+		" other leg ID (%s)\n", getOtherId().c_str());
           updateCallStatus(Ringing);
         }
         if (ev->forward && relaySipReply(reply) != 0) {
@@ -299,7 +299,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
         }
       }
       else {
-        if (other_id != reply.from_tag) {
+        if (getOtherId() != reply.from_tag) {
            // in Ringing state but the reply comes from another B leg than
            // previous 1xx reply => do not relay or process other way
           DBG("1xx reply received in %s state from another B leg, ignoring\n", callStatus2str(call_status));
@@ -324,7 +324,8 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       }
     } else if (reply.code < 300) { // 2xx replies
       setOtherId(reply);
-      TRACE("setting call status to connected with leg %s\n", other_id.c_str());
+      TRACE("setting call status to connected with leg %s\n", 
+	    getOtherId().c_str());
 
       // terminate all other legs than the connected one (determined by other_id)
       terminateNotConnectedLegs();
@@ -341,7 +342,8 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
       other_legs.clear(); // no need to remember the connected leg here
       if (media_session) {
-        TRACE("connecting media session: %s to %s\n", dlg->getLocalTag().c_str(), other_id.c_str());
+        TRACE("connecting media session: %s to %s\n", 
+	      dlg->getLocalTag().c_str(), getOtherId().c_str());
         media_session->changeSession(a_leg, this);
         if (initial_sdp_stored && ev->forward) updateRemoteSdp(initial_sdp);
       }
@@ -386,7 +388,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
   }
 
   // reply not from our peer (might be one of the discarded ones)
-  if (other_id != reply.from_tag) {
+  if (getOtherId() != reply.from_tag) {
     TRACE("ignoring reply from %s in %s state\n", reply.from_tag.c_str(), callStatus2str(call_status));
     return;
   }
@@ -410,7 +412,7 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
   }
 
   MONITORING_LOG3(getLocalTag().c_str(), 
-		  "b2b_leg", other_id.c_str(),
+		  "b2b_leg", getOtherId().c_str(),
 		  "to", dlg->getRemoteParty().c_str(),
 		  "ruri", dlg->getRemoteUri().c_str());
 
@@ -475,7 +477,8 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
     ERROR("BUG: invalid argument given\n");
     return;
   }
-  TRACE("handling ReconnectLegEvent, other: %s, connect to %s\n", other_id.c_str(), ev->session_tag.c_str());
+  TRACE("handling ReconnectLegEvent, other: %s, connect to %s\n", 
+	getOtherId().c_str(), ev->session_tag.c_str());
 
   ev->markAsProcessed();
 
@@ -484,7 +487,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   resumeHeld(false);
   clearRtpReceiverRelay();
 
-  other_id = ev->session_tag;
+  setOtherId(ev->session_tag);
   if (ev->role == ReconnectLegEvent::A) a_leg = true;
   else a_leg = false;
   // FIXME: What about calling SBC CC modules in this case? Original CC
@@ -503,7 +506,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   else rtp_relay_mode = RTP_Direct;
 
   MONITORING_LOG3(getLocalTag().c_str(),
-		  "b2b_leg", other_id.c_str(),
+		  "b2b_leg", getOtherId().c_str(),
 		  "to", dlg->getRemoteParty().c_str(),
 		  "ruri", dlg->getRemoteUri().c_str());
 
@@ -563,9 +566,10 @@ void CallLeg::onB2BReplace(ReplaceLegEvent *e)
     return;
   }
 
-  TRACE("handling ReplaceLegEvent, other: %s, connect to %s\n", other_id.c_str(), reconnect->session_tag.c_str());
+  TRACE("handling ReplaceLegEvent, other: %s, connect to %s\n", 
+	getOtherId().c_str(), reconnect->session_tag.c_str());
 
-  string id(other_id);
+  string id(getOtherId());
   if (id.empty()) {
     // try it with the first B leg?
     if (other_legs.empty()) {
@@ -585,7 +589,7 @@ void CallLeg::onB2BReplace(ReplaceLegEvent *e)
   removeOtherLeg(id);
 
   // commit suicide if our last B leg is stolen
-  if (other_legs.empty() && other_id.empty()) stopCall();
+  if (other_legs.empty() && getOtherId().empty()) stopCall();
 }
 
 void CallLeg::onB2BReplaceInProgress(ReplaceInProgressEvent *e)
@@ -957,7 +961,7 @@ void CallLeg::updateCallStatus(CallStatus new_status)
         getLocalTag().c_str(),
         callStatus2str(call_status),
         callStatus2str(new_status),
-        other_id.c_str());
+        getOtherId().c_str());
   else
     TRACE("%s leg %s changing status from %s to %s\n",
         a_leg ? "A" : "B",
@@ -1059,7 +1063,7 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
 
 void CallLeg::clear_other()
 {
-  removeOtherLeg(other_id);
+  removeOtherLeg(getOtherId());
   AmB2BSession::clear_other();
 }
 
