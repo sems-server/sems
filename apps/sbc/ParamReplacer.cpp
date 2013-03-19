@@ -212,8 +212,9 @@ string replaceParameters(const string& s,
 	    if (req.local_if < AmConfig::SIP_Ifs.size()) {
 	      res += AmConfig::SIP_Ifs[req.local_if].PublicIP;
 	    }
-	  }
-	  WARN("unknown replacement $R%c\n", s[p+1]);
+	  } 
+	  else
+	    WARN("unknown replacement $R%c\n", s[p+1]);
 	}; break;
 
 

@@ -199,7 +199,13 @@ class CallLeg: public AmB2BSession
        * of B legs */
       AmB2BMedia *media_session;
 
-      void releaseMediaSession() { if (media_session) { if (media_session->releaseReference()) delete media_session; media_session = NULL; } }
+      void releaseMediaSession() {
+	if (media_session) {
+	  if (media_session->releaseReference())
+	    delete media_session;
+	  media_session = NULL;
+	}
+      }
     };
 
     /** List of legs which can be connected to this leg, it is valid for A leg until first

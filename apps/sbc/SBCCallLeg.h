@@ -85,8 +85,10 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void CCEnd();
   void CCEnd(const CCInterfaceListIteratorT& end_interface);
 
-  void connectCallee(const string& remote_party, const string& remote_uri, const string &from,
-      const AmSipRequest &original_invite, const AmSipRequest &invite_req);
+  void connectCallee(const string& remote_party, const string& remote_uri, 
+		     const string &from, const AmSipRequest &original_invite, 
+		     const AmSipRequest &invite_req);
+
   int filterSdp(AmMimeBody &body, const string &method);
   void appendTranscoderCodecs(AmSdp &sdp);
   void savePayloadIDs(AmSdp &sdp);
