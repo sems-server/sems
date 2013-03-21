@@ -435,6 +435,12 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
       reply.cseq_method.c_str(), reply.code,reply.reason.c_str(),
       fwd?"true":"false",reply.body.getCTStr().c_str());
 
+  if(!dlg->getRemoteTag().empty() && dlg->getRemoteTag() != reply.to_tag) {    
+    DBG("sess %p received %i reply with != to-tag: %s (remote-tag:%s)",
+	this, reply.code, reply.to_tag.c_str(),dlg->getRemoteTag().c_str());
+    return; // drop packet
+  }
+
   AmSdp sdp;
 
   if ((rtp_relay_mode == RTP_Relay) &&
