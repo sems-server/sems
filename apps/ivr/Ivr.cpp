@@ -793,9 +793,9 @@ void IvrDialog::createCalleeSession()
   AmB2BCalleeSession* callee_session = new AmB2BCalleeSession(this);
   AmSipDialog* callee_dlg = callee_session->dlg;
   
-  other_id = AmSession::getNewId();
+  setOtherId(AmSession::getNewId());
   
-  callee_dlg->setLocalTag(other_id);
+  callee_dlg->setLocalTag(getOtherId());
   callee_dlg->setCallid(AmSession::getNewId());
   
   // this will be overwritten by ConnectLeg event 
@@ -818,5 +818,5 @@ void IvrDialog::createCalleeSession()
   callee_session->start();
   
   AmSessionContainer* sess_cont = AmSessionContainer::instance();
-  sess_cont->addSession(other_id,callee_session);
+  sess_cont->addSession(getOtherId(),callee_session);
 }
