@@ -829,9 +829,11 @@ AmB2BCalleeSession* DSMCall::newCalleeSession() {
       s->setAuthHandler(h);
       DBG("uac auth enabled for DSM callee session.\n");
     }
- }
+  }
 
- return s;
+  s->dlg->setCallid(getVar(DSM_B2B_CALLID));
+
+  return s;
 }
 
 void DSMCall::B2BaddReceivedRequest(const AmSipRequest& req) {

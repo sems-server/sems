@@ -64,6 +64,8 @@ using std::map;
 #define DSM_B2B_AUTH_USER    "b2b_auth_user"
 #define DSM_B2B_AUTH_PWD     "b2b_auth_pwd"
 
+#define DSM_B2B_CALLID       "b2b_callid"
+
 #define DSM_AVAR_REQUEST "request"
 #define DSM_AVAR_REPLY   "reply"
 
