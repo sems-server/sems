@@ -306,16 +306,6 @@ void AmSdp::print(string& body) const
 
       out_buf += "\r\n" + options;
 
-      switch(media_it->dir){
-      case SdpMedia::DirActive:
-	  out_buf += "a=direction:active\r\n";
-	  break;
-      case SdpMedia::DirPassive:
-	  out_buf += "a=direction:passive\r\n";
-	  break;
-      default: break;
-      }
-
       if(media_it->send){
 	if(media_it->recv){
 	  out_buf += "a=sendrecv\r\n";
