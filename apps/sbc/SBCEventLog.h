@@ -14,7 +14,7 @@ using std::map;
 struct SBCEventLogHandler
 {
   virtual void logEvent(long int timestamp, const string& id, 
-			const AmArg& ev)=0;
+			const string& type, const AmArg& ev)=0;
 };
 
 class _SBCEventLog
@@ -28,7 +28,7 @@ protected:
 public:
   void useMonitoringLog();
   void setEventLogHandler(SBCEventLogHandler* lh);
-  void logEvent(const string& id, const AmArg& event);
+  void logEvent(const string& id, const string& type, const AmArg& event);
 };
 
 typedef singleton<_SBCEventLog> SBCEventLog;

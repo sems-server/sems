@@ -119,7 +119,7 @@ void AliasEntry::fire()
   ev["aor"]     = aor;
   ev["contact"] = contact_uri;
   DBG("Alias expired (UA): '%s' -> '%s'\n",alias.c_str(),aor.c_str());
-  SBCEventLog::instance()->logEvent(alias,ev);
+  SBCEventLog::instance()->logEvent(alias,"ua-reg-expired",ev);
 }
 
 struct RegCacheLogHandler

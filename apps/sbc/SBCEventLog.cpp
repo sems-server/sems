@@ -8,12 +8,16 @@
 struct MonitoringEventLogHandler
   : public SBCEventLogHandler
 {
-  void logEvent(long int timestamp, const string& id, const AmArg& event) {
+  void logEvent(long int timestamp, const string& id, 
+		const string& type, const AmArg& event) {
+
     if(NULL != MONITORING_GLOBAL_INTERFACE) {
       AmArg di_args,ret;
       di_args.push(id);
       di_args.push("ts");
       di_args.push(timestamp);
+      di_args.push("type");
+      di_args.push(type);
       di_args.push("attrs");
       di_args.push(event);
 
@@ -40,10 +44,11 @@ void _SBCEventLog::setEventLogHandler(SBCEventLogHandler* lh)
   log_handler.reset(lh);
 }
 
-void _SBCEventLog::logEvent(const string& id, const AmArg& event)
+void _SBCEventLog::logEvent(const string& id, const string& type,
+			    const AmArg& event)
 {
   if(log_handler.get()) {
     log_handler->logEvent(AmAppTimer::instance()->unix_clock.get(),
-			  id, event);
+			  id, type, event);
   }
 }
