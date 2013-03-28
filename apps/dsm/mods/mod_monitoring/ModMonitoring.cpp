@@ -70,6 +70,9 @@ DSMAction* MonitoringModule::getAction(const string& from_str) {
   DEF_CMD("monitoring.setGlobal", MonLogGlobalAction);
   DEF_CMD("monitoring.addGlobal", MonLogAddGlobalAction);
 
+  DEF_CMD("monitoring.inc", MonLogIncAction);
+  DEF_CMD("monitoring.dec", MonLogDecAction);
+
   return NULL;
 }
 
@@ -157,3 +160,22 @@ EXEC_ACTION_START(MonLogAddGlobalAction) {
 
 } EXEC_ACTION_END;
 
+CONST_ACTION_2P(MonLogIncAction, ',', true);
+bool MonLogIncAction::execute(AmSession* sess,  DSMSession* sc_sess,
+			   DSMCondition::EventType event,
+			   map<string,string>* event_params) {
+  string type = resolveVars(par1, sess, sc_sess, event_params);
+  string name  = resolveVars(par2, sess, sc_sess, event_params);
+  MONITORING_INC(type.c_str(), name.c_str());
+  return false;
+}
+
+CONST_ACTION_2P(MonLogDecAction, ',', true);
+bool MonLogDecAction::execute(AmSession* sess,  DSMSession* sc_sess,
+			   DSMCondition::EventType event,
+			   map<string,string>* event_params) {
+  string type = resolveVars(par1, sess, sc_sess, event_params);
+  string name  = resolveVars(par2, sess, sc_sess, event_params);
+  MONITORING_DEC(type.c_str(), name.c_str());
+  return false;
+}
