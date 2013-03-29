@@ -51,7 +51,7 @@ public:
     i = val;
   }
 
-  unsigned int get() {
+  unsigned int get() const {
     return i;
   }
 

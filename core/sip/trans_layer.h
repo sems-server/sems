@@ -31,6 +31,7 @@
 
 #include "cstring.h"
 #include "singleton.h"
+#include "atomic_types.h"
 
 #include <list>
 using std::list;
@@ -56,12 +57,58 @@ class msg_logger;
 // replace the RURI-host with next-hop IP / port
 #define SEND_REQUEST_FLAG_NEXT_HOP_RURI 1
 
+/* Each counter has a method for incrementing to allow changing implementation
+ * of the stats class later without touching the code using it. (One possible
+ * solution is to make all the numbers guarded by one mutex to have whole set of
+ * transaction statistics being atomic) */
+class trans_stats
+{
+  private:
+    atomic_int sent_requests;
+    atomic_int sent_replies;
+    atomic_int received_requests;
+    atomic_int received_replies;
+    atomic_int sent_reply_retrans;
+    atomic_int sent_request_retrans;
+
+  public:
+
+    /** increment number of sent requests */
+    void inc_sent_requests() { sent_requests.inc(); }
+
+    /** increment number of sent replies */
+    void inc_sent_replies() { sent_replies.inc(); }
+
+    /** increment number of received requests */
+    void inc_received_requests() { received_requests.inc(); }
+
+    /** increment number of received replies */
+    void inc_received_replies() { received_replies.inc(); }
+
+    /** increment number of sent request retransmissions */
+    void inc_sent_request_retrans() { sent_request_retrans.inc(); }
+
+    /** increment number of sent reply retransmissions */
+    void inc_sent_reply_retrans() { sent_reply_retrans.inc(); }
+
+
+    unsigned get_sent_requests() const { return sent_requests.get(); }
+    unsigned get_sent_replies() const { return sent_replies.get(); }
+    unsigned get_received_requests() const { return received_requests.get(); }
+    unsigned get_received_replies() const { return received_replies.get(); }
+    unsigned get_sent_request_retrans() const { return sent_request_retrans.get(); }
+    unsigned get_sent_reply_retrans() const { return sent_reply_retrans.get(); }
+};
+
 /** 
  * The transaction layer object.
  * Uses the singleton pattern.
  */
 class _trans_layer
 {
+private:
+    trans_stats stats;
+
 public:
 
     /**
@@ -171,6 +218,8 @@ public:
      * Transaction timeout
      */
     void timeout(trans_bucket* bucket, sip_trans* t);
+
+    const trans_stats &get_stats() { return stats; }
 
 protected:
 

@@ -461,6 +461,8 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 	goto end;
     }
 
+    stats.inc_sent_replies();
+
     if (t->retr_buf) {
 	// delete old retry-buffer 
 	// before overwriting it
@@ -648,6 +650,8 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
 
     int err = req->local_socket->send(&req->remote_ip,reply_buf,reply_len);
     delete [] reply_buf;
+
+    stats.inc_sent_replies();
 
     return err;
 }
@@ -1122,6 +1126,8 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	delete p_msg;
     }
     else {
+        stats.inc_sent_requests();
+
 	// save parsed method, as update_uac_request
 	// might delete p_msg, and msg->u.request->method is not set
 	int method = p_msg->u.request->method;
@@ -1303,6 +1309,7 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
 	delete p_msg;
     }
     else {
+        stats.inc_sent_requests(); // ?
 
 	sip_trans* cancel_t=NULL;
 	send_err = update_uac_request(bucket,cancel_t,p_msg);
@@ -1383,6 +1390,7 @@ void _trans_layer::received_msg(sip_msg* msg)
 
     switch(msg->type){
     case SIP_REQUEST: 
+        stats.inc_received_requests();
 	
 	if((t = bucket->match_request(msg,TT_UAS)) != NULL){
 
@@ -1481,6 +1489,7 @@ void _trans_layer::received_msg(sip_msg* msg)
 	break;
     
     case SIP_REPLY:
+        stats.inc_received_replies();
 
 	if((t = bucket->match_reply(msg)) != NULL){
 
@@ -1946,6 +1955,7 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }
+    else stats.inc_sent_requests();
     
     if(t->logger) {
 	sockaddr_storage src_ip;
@@ -1969,6 +1979,7 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 
 	n++;
 	tr->msg->send();
+        stats.inc_sent_request_retrans();
 	
 	if(tr->logger) {
 	    sockaddr_storage src_ip;
@@ -2093,11 +2104,13 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	    
 	    // re-transmit reply to INV
 	    tr->retransmit();
+            stats.inc_sent_reply_retrans();
 	}
 	else {
 
 	    // re-transmit request
 	    tr->msg->send();
+            stats.inc_sent_request_retrans();
 
 	    if(tr->logger) {
 		sockaddr_storage src_ip;
@@ -2239,6 +2252,8 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
 	    tr->msg = p_msg;
 	}		
     }
+   
+    stats.inc_sent_requests();
 
     // and re-send
     tr->msg->send();
