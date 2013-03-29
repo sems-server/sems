@@ -986,8 +986,9 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
   //answer.origin.sessV = 1;
   answer.sessionName = "sems";
   answer.conn.network = NT_IN;
-  answer.conn.addrType = offer.conn.addrType;
-  answer.conn.address = advertisedIP(offer.conn.addrType);
+  if (offer.conn.address.empty()) answer.conn.addrType = AT_V4; // or use first stream connection?
+  else answer.conn.addrType = offer.conn.addrType;
+  answer.conn.address = advertisedIP(answer.conn.addrType);
   answer.media.clear();
   
   bool audio_1st_stream = true;
