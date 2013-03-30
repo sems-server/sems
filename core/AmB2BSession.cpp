@@ -1095,7 +1095,8 @@ void AmB2BCallerSession::createCalleeSession() {
   setOtherId(AmSession::getNewId());
   
   callee_dlg->setLocalTag(getOtherId());
-  callee_dlg->setCallid(AmSession::getNewId());
+  if (callee_dlg->getCallid().empty())
+    callee_dlg->setCallid(AmSession::getNewId());
 
   callee_dlg->setLocalParty(dlg->getRemoteParty());
   callee_dlg->setRemoteParty(dlg->getLocalParty());
