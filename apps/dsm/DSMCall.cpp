@@ -807,14 +807,14 @@ void DSMCall::B2BconnectCallee(const string& remote_party,
 }
 
 AmB2BCalleeSession* DSMCall::newCalleeSession() {
- DSMCallCalleeSession* s = new DSMCallCalleeSession(this);
- s->dlg->setLocalParty(getVar(DSM_B2B_LOCAL_PARTY));
- s->dlg->setLocalUri(getVar(DSM_B2B_LOCAL_URI));
+  DSMCallCalleeSession* s = new DSMCallCalleeSession(this);
+  s->dlg->setLocalParty(getVar(DSM_B2B_LOCAL_PARTY));
+  s->dlg->setLocalUri(getVar(DSM_B2B_LOCAL_URI));
 
- string user = getVar(DSM_B2B_AUTH_USER);
- string pwd = getVar(DSM_B2B_AUTH_PWD);
- if (!user.empty() && !pwd.empty()) {
-   s->setCredentials("", user, pwd);
+  string user = getVar(DSM_B2B_AUTH_USER);
+  string pwd = getVar(DSM_B2B_AUTH_PWD);
+  if (!user.empty() && !pwd.empty()) {
+    s->setCredentials("", user, pwd);
 
     // adding auth handler
     AmSessionEventHandlerFactory* uac_auth_f = 
