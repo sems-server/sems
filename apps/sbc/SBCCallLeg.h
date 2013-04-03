@@ -101,12 +101,17 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   virtual void onCallStatusChange();
   virtual void onBLegRefused(const AmSipReply& reply);
+  virtual void onCallFailed(const AmSipReply& reply);
 
   /** Call-backs used by RTP stream(s)
    *  Note: these methods will be called from the RTP receiver thread.
    */
   virtual bool onBeforeRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr);
   virtual void onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr);
+
+  void logCallStart(const AmSipReply& reply);
+  void logCallStart(const AmSipRequest& req, int code, const string& reason);
+  void logCallEnd(const string& reason, const AmSipRequest* request);
 
  public:
 
@@ -170,6 +175,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(AmSipRequest& req, int &flags);
+
+  void onRemoteDisappeared(const AmSipReply& reply);
+  void onBye(const AmSipRequest& req);
 
   void onControlCmd(string& cmd, AmArg& params);
 

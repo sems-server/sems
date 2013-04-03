@@ -380,6 +380,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       if (ev->forward) relaySipReply(reply);
 
       // no other B legs, terminate
+      onCallFailed(reply);
       updateCallStatus(Disconnected);
       stopCall();
     }
@@ -792,7 +793,9 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
     TRACE("handling request %s in disconnected state", req.method.c_str());
     // this is not correct but what is?
     AmSession::onSipRequest(req);
-    if (req.method == SIP_METH_BYE) stopCall(); // is this needed?
+    if (req.method == SIP_METH_BYE) {
+      stopCall(); // is this needed?
+    }
   }
   else AmB2BSession::onSipRequest(req);
 }
@@ -877,8 +880,6 @@ void CallLeg::onCancel(const AmSipRequest& req)
     }
     // else { } ... ignore for B leg
   }
-  // FIXME: was it really expected to terminate the call for CANCELed re-INVITEs
-  // (in both directions) as well?
 }
 
 void CallLeg::terminateLeg()
@@ -890,10 +891,12 @@ void CallLeg::terminateLeg()
 void CallLeg::onRemoteDisappeared(const AmSipReply& reply) 
 {
   if (call_status == Connected) {
-    // only in case we are really connected (called on timeout or 481 from the remote)
+    // only in case we are really connected
+    // (called on timeout or 481 from the remote)
 
     DBG("remote unreachable, ending B2BUA call\n");
-    clearRtpReceiverRelay(); // FIXME: shouldn't be cleared in AmB2BSession as well?
+    // FIXME: shouldn't be cleared in AmB2BSession as well?
+    clearRtpReceiverRelay(); 
     AmB2BSession::onRemoteDisappeared(reply); // terminates the other leg
     updateCallStatus(Disconnected);
   }
@@ -906,7 +909,8 @@ void CallLeg::onBye(const AmSipRequest& req)
   AmB2BSession::onBye(req);
 }
 
-void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e, AmB2BSession::RTPRelayMode mode)
+void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e,
+			   AmB2BSession::RTPRelayMode mode)
 {
   OtherLegInfo b;
   b.id = callee->getLocalTag();

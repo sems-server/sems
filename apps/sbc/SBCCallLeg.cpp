@@ -21,6 +21,8 @@
 #include "HeaderFilter.h"
 #include "ParamReplacer.h"
 #include "SDPFilter.h"
+#include "SBCEventLog.h"
+
 #include <algorithm>
 
 using namespace std;
@@ -543,6 +545,20 @@ void SBCCallLeg::onSendRequest(AmSipRequest& req, int &flags) {
   CallLeg::onSendRequest(req, flags);
 }
 
+void SBCCallLeg::onRemoteDisappeared(const AmSipReply& reply)
+{
+  CallLeg::onRemoteDisappeared(reply);
+  if(a_leg)
+    logCallEnd("reply",NULL);
+}
+
+void SBCCallLeg::onBye(const AmSipRequest& req)
+{
+  CallLeg::onBye(req);
+  if(a_leg)
+    logCallEnd("bye",&req);
+}
+
 void SBCCallLeg::onDtmf(int event, int duration)
 {
   if(media_session) {
@@ -577,6 +593,7 @@ void SBCCallLeg::onControlCmd(string& cmd, AmArg& params) {
       // was for caller:
       DBG("teardown requested from control cmd\n");
       stopCall();
+      logCallEnd("ctrl-cmd",NULL);
       // FIXME: don't we want to relay the controll event as well?
     }
     else {
@@ -605,6 +622,7 @@ void SBCCallLeg::process(AmEvent* ev) {
           timer_id <= SBC_TIMER_ID_CALL_TIMERS_END) {
         DBG("timer %d timeout, stopping call\n", timer_id);
         stopCall();
+	logCallEnd("timeout",NULL);
         ev->processed = true;
       }
     }
@@ -857,6 +875,7 @@ void SBCCallLeg::onCallConnected(const AmSipReply& reply) {
       gettimeofday(&call_connect_ts, NULL);
     }
 
+    logCallStart(reply);
     CCConnect(reply);
   }
 }
@@ -946,6 +965,8 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	    "module '%s' named '%s', parameters '%s'\n",
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
+
+      logCallStart(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
       // call 'end' of call control modules up to here
@@ -959,6 +980,8 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	    "module '%s' named '%s', parameters '%s'\n",
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
+
+      logCallStart(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
       // call 'end' of call control modules up to here
@@ -1030,8 +1053,12 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	      ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
 	      cc_if.cc_name.c_str(), headers.c_str());
 
+	  logCallStart(req,
+		       ret[i][SBC_CC_REFUSE_CODE].asInt(),
+		       ret[i][SBC_CC_REFUSE_REASON].asCStr());
+
 	  dlg->reply(req,
-		     ret[i][SBC_CC_REFUSE_CODE].asInt(), 
+		     ret[i][SBC_CC_REFUSE_CODE].asInt(),
 		     ret[i][SBC_CC_REFUSE_REASON].asCStr(),
 		     NULL, headers);
 
@@ -1184,6 +1211,10 @@ void SBCCallLeg::onBLegRefused(const AmSipReply& reply)
   }
 }
 
+void SBCCallLeg::onCallFailed(const AmSipReply& reply)
+{
+  logCallStart(reply);
+}
 
 bool SBCCallLeg::onBeforeRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
 {
@@ -1200,6 +1231,64 @@ void SBCCallLeg::onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
       it != rtp_pegs.end(); ++it) {
     (*it)->inc(p->getBufferSize());
   }
+}
+
+void SBCCallLeg::logCallStart(const AmSipRequest& req, 
+			      int code, const string& reason)
+{
+  AmSipReply error_reply;
+  error_reply.cseq = req.cseq;
+  error_reply.code = code;
+  error_reply.reason = reason;
+  logCallStart(error_reply);
+}
+
+void SBCCallLeg::logCallStart(const AmSipReply& reply)
+{
+  std::map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply.cseq);
+  AmArg start_event;
+
+  if (t_req != recvd_req.end()) {
+    AmSipRequest& orig_req = t_req->second;    
+    start_event["source"]   = orig_req.remote_ip + ":" 
+      + int2str(orig_req.remote_port);
+    start_event["r-uri"]    = orig_req.r_uri;
+    start_event["from"]     = orig_req.from;
+    start_event["to"]       = orig_req.to;
+  }
+  else {
+    start_event["r-uri"]    = dlg->getLocalUri();
+    start_event["from"]     = dlg->getLocalParty();
+    start_event["to"]       = dlg->getRemoteParty();
+  }
+
+  start_event["call-id"]  = dlg->getCallid();
+  start_event["res-code"] = (int)reply.code;
+  start_event["reason"]   = reply.reason;
+
+  SBCEventLog::instance()->logEvent(dlg->getLocalTag(),"call-start",start_event);
+}
+
+void SBCCallLeg::logCallEnd(const string& reason, const AmSipRequest* req)
+{
+  AmArg end_event;
+
+  end_event["call-id"]  = dlg->getCallid();
+  end_event["reason"]  = reason;
+  
+  if (req) {
+    end_event["source"]   = req->remote_ip + ":" + int2str(req->remote_port);
+    end_event["r-uri"]    = req->r_uri;
+    end_event["from"]     = req->from;
+    end_event["to"]       = req->to;
+  }
+  else {
+    end_event["r-uri"]    = dlg->getLocalUri();
+    end_event["from"]     = dlg->getRemoteParty();
+    end_event["to"]       = dlg->getLocalParty();
+  }
+
+  SBCEventLog::instance()->logEvent(dlg->getLocalTag(),"call-end",end_event);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

@@ -256,6 +256,10 @@ class CallLeg: public AmB2BSession
      * Redefine to implement serial fork or handle redirect. */
     virtual void onBLegRefused(const AmSipReply& reply) { }
 
+    /** handler called when all B-legs failed. 
+	The reply passed is the last final reply. */
+    virtual void onCallFailed(const AmSipReply& reply) { }
+
     /** add newly created callee with prepared ConnectLegEvent */
     void addNewCallee(CallLeg *callee, ConnectLegEvent *e) { addNewCallee(callee, e, rtp_relay_mode); }
 
