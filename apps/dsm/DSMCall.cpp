@@ -842,6 +842,10 @@ void DSMCall::B2BaddReceivedRequest(const AmSipRequest& req) {
   recvd_req.insert(std::make_pair(req.cseq, req));
 }
 
+void DSMCall::B2BsetRelayEarlyMediaSDP(bool enabled) {
+  set_sip_relay_early_media_sdp(enabled);
+}
+
 void DSMCall::B2BsetHeaders(const string& hdr, bool replaceCRLF) {
   if (!replaceCRLF)  {
     invite_req.hdrs = hdr;

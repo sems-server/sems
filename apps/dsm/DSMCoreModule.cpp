@@ -127,6 +127,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("B2B.connectCallee", SCB2BConnectCalleeAction);
   DEF_CMD("B2B.terminateOtherLeg", SCB2BTerminateOtherLegAction);
   DEF_CMD("B2B.sendReinvite", SCB2BReinviteAction);
+  DEF_CMD("B2B.enableEarlyMediaRelay", SCB2BEnableEarlyMediaRelayAction);
   DEF_CMD("B2B.addHeader", SCB2BAddHeaderAction);
   DEF_CMD("B2B.removeHeader", SCB2BRemoveHeaderAction);
   DEF_CMD("B2B.clearHeaders", SCB2BClearHeadersAction);
@@ -1295,6 +1296,12 @@ CONST_ACTION_2P(SCB2BReinviteAction,',', true);
 EXEC_ACTION_START(SCB2BReinviteAction) {
   bool updateSDP = par1=="true";
   sess->sendReinvite(updateSDP, par2);
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCB2BEnableEarlyMediaRelayAction) {
+  string val = resolveVars(arg, sess, sc_sess, event_params);
+  DBG("B2B: %sabling early media SDP relay as re-Invite\n", (val=="true")?"En":"Dis");
+  sc_sess->B2BsetRelayEarlyMediaSDP(val=="true");
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCB2BAddHeaderAction) {

@@ -112,6 +112,7 @@ DEF_ACTION_2P(SCB2BConnectCalleeAction);
 DEF_ACTION_1P(SCB2BTerminateOtherLegAction);
 DEF_ACTION_2P(SCB2BReinviteAction);
 
+DEF_ACTION_1P(SCB2BEnableEarlyMediaRelayAction);
 DEF_ACTION_1P(SCB2BAddHeaderAction);
 DEF_ACTION_1P(SCB2BClearHeadersAction);
 DEF_ACTION_2P(SCB2BSetHeadersAction);

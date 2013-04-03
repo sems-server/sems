@@ -138,6 +138,9 @@ class DSMSession {
   /** insert request in list of received ones */
   virtual void B2BaddReceivedRequest(const AmSipRequest& req) = 0;
 
+  /** enable early media relay as reinvite */
+  virtual void B2BsetRelayEarlyMediaSDP(bool enabled) = 0;
+
   /** set headers of outgoing INVITE */
   virtual void B2BsetHeaders(const string& hdr, bool replaceCRLF) = 0;
 

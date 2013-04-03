@@ -84,6 +84,8 @@ class SystemDSM
   /** insert request in list of received ones */
    void B2BaddReceivedRequest(const AmSipRequest& req);
 
+   void B2BsetRelayEarlyMediaSDP(bool enabled);
+
   /** set headers of outgoing INVITE */
    void B2BsetHeaders(const string& hdr, bool replaceCRLF);
 

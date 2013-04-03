@@ -206,6 +206,9 @@ B2B call control
  B2B.clearHeaders()
    clear the headers used for outgoing INVITE on B leg
 
+ B2B.enableEarlyMediaRelay(enable=[true|false])
+   enable or disable relaying of early media SDP (180-183) as re-Invite in the first leg
+
  B2B.addHeader(string header)
   add a header for outgoing INVITE on B leg
  

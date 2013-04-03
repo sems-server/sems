@@ -209,6 +209,7 @@ NOT_IMPLEMENTED(B2BconnectCallee(const string& remote_party,
 				 bool relayed_invite));
 NOT_IMPLEMENTED(B2BterminateOtherLeg());
 NOT_IMPLEMENTED(B2BaddReceivedRequest(const AmSipRequest& req));
+NOT_IMPLEMENTED(B2BsetRelayEarlyMediaSDP(bool enabled));
 NOT_IMPLEMENTED(B2BsetHeaders(const string& hdr, bool replaceCRLF));
 NOT_IMPLEMENTED(B2BclearHeaders());
 NOT_IMPLEMENTED(B2BaddHeader(const string& hdr));
