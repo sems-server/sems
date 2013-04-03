@@ -120,7 +120,10 @@ void AliasEntry::fire()
   ev["contact"] = contact_uri;
   ev["source"]  = source_ip + ":" + int2str(source_port);
 
-  DBG("Alias expired (UA): '%s' -> '%s'\n",alias.c_str(),aor.c_str());
+  DBG("Alias expired (UA/%li): '%s' -> '%s'\n",
+      (long)(AmAppTimer::instance()->unix_clock - ua_expire),
+      alias.c_str(),aor.c_str());
+
   SBCEventLog::instance()->logEvent(alias,"ua-reg-expired",ev);
 }
 
