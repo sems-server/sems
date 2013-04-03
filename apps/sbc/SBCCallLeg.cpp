@@ -1248,18 +1248,32 @@ void SBCCallLeg::logCallStart(const AmSipReply& reply)
   std::map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply.cseq);
   AmArg start_event;
 
+  size_t end;
+  AmUriParser uri_parser;
   if (t_req != recvd_req.end()) {
-    AmSipRequest& orig_req = t_req->second;    
-    start_event["source"]   = orig_req.remote_ip + ":" 
+    AmSipRequest& orig_req = t_req->second;
+    start_event["source"]   = orig_req.remote_ip + ":"
       + int2str(orig_req.remote_port);
     start_event["r-uri"]    = orig_req.r_uri;
-    start_event["from"]     = orig_req.from;
-    start_event["to"]       = orig_req.to;
+
+    if(uri_parser.parse_contact(orig_req.from,0,end))
+      start_event["from"] = uri_parser.uri_str();
+    else start_event["from"] = orig_req.from;
+
+    if(uri_parser.parse_contact(orig_req.to,0,end))
+      start_event["to"] = uri_parser.uri_str();
+    else start_event["to"] = orig_req.to;
   }
   else {
     start_event["r-uri"]    = dlg->getLocalUri();
-    start_event["from"]     = dlg->getLocalParty();
-    start_event["to"]       = dlg->getRemoteParty();
+
+    if(uri_parser.parse_contact(dlg->getLocalParty(),0,end))
+      start_event["from"] = uri_parser.uri_str();
+    else start_event["from"] = dlg->getLocalParty();
+
+    if(uri_parser.parse_contact(dlg->getRemoteParty(),0,end))
+      start_event["from"] = uri_parser.uri_str();
+    else start_event["from"] = dlg->getRemoteParty();
   }
 
   start_event["call-id"]  = dlg->getCallid();
@@ -1276,16 +1290,30 @@ void SBCCallLeg::logCallEnd(const string& reason, const AmSipRequest* req)
   end_event["call-id"]  = dlg->getCallid();
   end_event["reason"]  = reason;
   
+  size_t end;
+  AmUriParser uri_parser;
   if (req) {
     end_event["source"]   = req->remote_ip + ":" + int2str(req->remote_port);
     end_event["r-uri"]    = req->r_uri;
-    end_event["from"]     = req->from;
-    end_event["to"]       = req->to;
+
+    if(uri_parser.parse_contact(req->from,0,end))
+      end_event["from"] = uri_parser.uri_str();
+    else end_event["from"] = req->from;
+
+    if(uri_parser.parse_contact(req->to,0,end))
+      end_event["to"] = uri_parser.uri_str();
+    else end_event["to"] = req->to;
   }
   else {
-    end_event["r-uri"]    = dlg->getLocalUri();
-    end_event["from"]     = dlg->getRemoteParty();
-    end_event["to"]       = dlg->getLocalParty();
+    end_event["r-uri"] = dlg->getLocalUri();
+
+    if(uri_parser.parse_contact(dlg->getLocalParty(),0,end))
+      end_event["from"] = uri_parser.uri_str();
+    else end_event["from"] = dlg->getLocalParty();
+
+    if(uri_parser.parse_contact(dlg->getRemoteParty(),0,end))
+      end_event["from"] = uri_parser.uri_str();
+    else end_event["from"] = dlg->getRemoteParty();
   }
 
   SBCEventLog::instance()->logEvent(dlg->getLocalTag(),"call-end",end_event);
