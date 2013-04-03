@@ -45,6 +45,9 @@ timer::~timer()
 _wheeltimer::_wheeltimer()
     : wall_clock(0)
 {
+    struct timeval now;
+    gettimeofday(&now,NULL);
+    unix_clock.set(now.tv_sec);
 }
 
 _wheeltimer::~_wheeltimer()
