@@ -289,10 +289,17 @@ AliasBucket* _RegisterCache::getAliasBucket(const string& alias)
 
 void _RegisterCache::setAliasUATimer(AliasEntry* alias_e)
 {
+  if(!alias_e->ua_expire)
+    return;
+
   AmAppTimer* app_timer = AmAppTimer::instance();
-  double timeout = alias_e->ua_expire - app_timer->unix_clock.get();
-  if(timeout > 0.0) {
+  time_t timeout = alias_e->ua_expire - app_timer->unix_clock.get();
+  if(timeout > 0) {
     app_timer->setTimer(alias_e,timeout);
+  }
+  else {
+    // already expired at the UA side, just fire the timer handler
+    alias_e->fire();
   }
 }
 
