@@ -297,7 +297,7 @@ void AmAudioFile::on_close()
 
     if(f_fmt){
       amci_file_desc_t fmt_desc = { f_fmt->getSubtypeId(), 
-				    f_fmt->getRate(), 
+				    (int)f_fmt->getRate(),
 				    f_fmt->channels, 
 				    data_size };
 	    
