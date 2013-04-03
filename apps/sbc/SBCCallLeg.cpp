@@ -559,6 +559,13 @@ void SBCCallLeg::onBye(const AmSipRequest& req)
     logCallEnd("bye",&req);
 }
 
+void SBCCallLeg::onOtherBye(const AmSipRequest& req)
+{
+  CallLeg::onOtherBye(req);
+  if(a_leg)
+    logCallEnd("bye",&req);
+}
+
 void SBCCallLeg::onDtmf(int event, int duration)
 {
   if(media_session) {
