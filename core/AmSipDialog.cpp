@@ -88,7 +88,10 @@ bool AmSipDialog::onRxReqSanity(const AmSipRequest& req)
       return false;
     }
 
-    return true;
+    if(onRxReqStatus(req) && hdl)
+      hdl->onSipRequest(req);
+
+    return false;
   }
 
   if(!AmBasicSipDialog::onRxReqSanity(req))
