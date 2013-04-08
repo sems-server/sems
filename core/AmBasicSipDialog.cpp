@@ -423,7 +423,7 @@ void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
 
 void AmBasicSipDialog::setRemoteTag(const string& new_rt)
 {
-  if(!new_rt.empty() && remote_tag.empty()){
+  if(new_rt != remote_tag){
     remote_tag = new_rt;
   }
 }

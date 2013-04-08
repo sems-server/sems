@@ -343,7 +343,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
     case Trying:
     case Proceeding:
       if(reply.code < 200){
-	if(reply.to_tag.empty())
+	if(reply.code == 100 || reply.to_tag.empty())
 	  setStatus(Proceeding);
 	else {
 	  setStatus(Early);
@@ -367,6 +367,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
 
       if(reply.code >= 300) {// error reply
 	setStatus(Disconnected);
+	setRemoteTag(reply.to_tag);
       }
       else if(cancel_pending){
 	cancel_pending = false;
@@ -392,6 +393,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
       }
       else { // error reply
 	setStatus(Disconnected);
+	setRemoteTag(reply.to_tag);
       }
       break;
 
@@ -404,6 +406,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
       else if(reply.code < 300){
 	// CANCEL rejected
 	DBG("CANCEL rejected/too late - bye()\n");
+	setRemoteTag(reply.to_tag);
 	bye();
 	// if BYE could not be sent,
 	// there is nothing we can do anymore...
