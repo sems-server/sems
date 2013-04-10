@@ -151,6 +151,7 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg)
     auth(NULL),
     call_profile(call_profile),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START),
+    ext_cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_END + 1),
     cc_started(false)
 {
   set_sip_relay_only(false);

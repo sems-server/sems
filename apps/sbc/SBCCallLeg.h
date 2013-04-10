@@ -36,6 +36,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   // current timer ID - cc module setting timer will use this
   int cc_timer_id;
+  int ext_cc_timer_id; // for assigning IDs to timers through "extended CC interface"
 
   struct timeval call_start_ts;
   struct timeval call_connect_ts;
@@ -167,6 +168,9 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   virtual void putOnHold();
   virtual void resumeHeld(bool send_reinvite);
+
+  // timers accessible from CC modules
+  int startTimer(double timeout) { setTimer(ext_cc_timer_id, timeout); return ext_cc_timer_id++; }
 
  protected:
 
