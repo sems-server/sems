@@ -522,13 +522,6 @@ int main(int argc, char* argv[])
   if(set_sighandler(signal_handler))
     goto error;
     
-  INFO("Loading plug-ins\n");
-  AmPlugIn::instance()->init();
-  if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
-    goto error;
-
-  AmPlugIn::instance()->registerLoggingPlugins();
-
 #ifdef WITH_ZRTP
   if (AmZRTP::init()) {
     ERROR("Cannot initialize ZRTP\n");
@@ -552,6 +545,13 @@ int main(int argc, char* argv[])
 
   INFO("Starting RTP receiver\n");
   AmRtpReceiver::instance()->start();
+
+  INFO("Loading plug-ins\n");
+  AmPlugIn::instance()->init();
+  if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
+    goto error;
+
+  AmPlugIn::instance()->registerLoggingPlugins();
 
   INFO("Starting SIP stack (control interface)\n");
   sip_ctrl.load();
