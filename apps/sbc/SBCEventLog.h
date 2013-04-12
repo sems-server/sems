@@ -3,6 +3,8 @@
 
 #include "singleton.h"
 #include "AmArg.h"
+#include "AmSipMsg.h"
+#include "AmBasicSipDialog.h"
 
 #include <memory>
 #include <string>
@@ -29,6 +31,19 @@ public:
   void useMonitoringLog();
   void setEventLogHandler(SBCEventLogHandler* lh);
   void logEvent(const string& id, const string& type, const AmArg& event);
+
+  void logCallStart(const AmSipRequest& req, const string& local_tag,
+		    int code, const string& reason);
+
+  void logCallStart(const AmBasicSipDialog* dlg, int code, 
+		    const string& reason);
+
+  void logCallEnd(const AmSipRequest& req,
+		  const string& local_tag,
+		  const string& reason);
+
+  void logCallEnd(const AmBasicSipDialog* dlg,
+		  const string& reason);
 };
 
 typedef singleton<_SBCEventLog> SBCEventLog;

@@ -555,21 +555,21 @@ void SBCCallLeg::onRemoteDisappeared(const AmSipReply& reply)
 {
   CallLeg::onRemoteDisappeared(reply);
   if(a_leg)
-    logCallEnd("reply",NULL);
+    SBCEventLog::instance()->logCallEnd(dlg,"reply");
 }
 
 void SBCCallLeg::onBye(const AmSipRequest& req)
 {
   CallLeg::onBye(req);
   if(a_leg)
-    logCallEnd("bye",&req);
+    SBCEventLog::instance()->logCallEnd(req,getLocalTag(),"bye");
 }
 
 void SBCCallLeg::onOtherBye(const AmSipRequest& req)
 {
   CallLeg::onOtherBye(req);
   if(a_leg)
-    logCallEnd("bye",&req);
+    SBCEventLog::instance()->logCallEnd(req,getLocalTag(),"bye");
 }
 
 void SBCCallLeg::onDtmf(int event, int duration)
@@ -608,7 +608,7 @@ void SBCCallLeg::onControlCmd(string& cmd, AmArg& params) {
       // was for caller:
       DBG("teardown requested from control cmd\n");
       stopCall();
-      logCallEnd("ctrl-cmd",NULL);
+      SBCEventLog::instance()->logCallEnd(dlg,"ctrl-cmd");
       // FIXME: don't we want to relay the controll event as well?
     }
     else {
@@ -637,7 +637,7 @@ void SBCCallLeg::process(AmEvent* ev) {
           timer_id <= SBC_TIMER_ID_CALL_TIMERS_END) {
         DBG("timer %d timeout, stopping call\n", timer_id);
         stopCall();
-	logCallEnd("timeout",NULL);
+	SBCEventLog::instance()->logCallEnd(dlg,"timeout");
         ev->processed = true;
       }
     }
@@ -973,6 +973,7 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 
     di_args.push(cc_timer_id); // current timer ID
 
+    bool exception_occured = false;
     try {
       (*cc_mod)->invoke("start", di_args, ret);
     } catch (const AmArg::OutOfBoundsException& e) {
@@ -980,24 +981,19 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	    "module '%s' named '%s', parameters '%s'\n",
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
-
-      logCallStart(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-      dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-
-      // call 'end' of call control modules up to here
-      call_end_ts.tv_sec = call_start_ts.tv_sec;
-      call_end_ts.tv_usec = call_start_ts.tv_usec;
-      CCEnd(cc_it);
-
-      return false;
+      exception_occured = true;
     } catch (const AmArg::TypeMismatchException& e) {
       ERROR("TypeMismatchException executing call control interface start "
 	    "module '%s' named '%s', parameters '%s'\n",
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
+      exception_occured = true;
+    }
 
-      logCallStart(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-      dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    if(exception_occured) {
+      SBCEventLog::instance()->
+	logCallStart(dlg, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      AmBasicSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
       // call 'end' of call control modules up to here
       call_end_ts.tv_sec = call_start_ts.tv_sec;
@@ -1057,9 +1053,10 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	      ret[i][SBC_CC_REFUSE_CODE].asInt(), ret[i][SBC_CC_REFUSE_REASON].asCStr(),
 	      cc_if.cc_name.c_str(), headers.c_str());
 
-	  logCallStart(req,
-		       ret[i][SBC_CC_REFUSE_CODE].asInt(),
-		       ret[i][SBC_CC_REFUSE_REASON].asCStr());
+	  SBCEventLog::instance()->
+	    logCallStart(dlg,
+			 ret[i][SBC_CC_REFUSE_CODE].asInt(),
+			 ret[i][SBC_CC_REFUSE_REASON].asCStr());
 
 	  dlg->reply(req,
 		     ret[i][SBC_CC_REFUSE_CODE].asInt(),
@@ -1237,90 +1234,16 @@ void SBCCallLeg::onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
   }
 }
 
-void SBCCallLeg::logCallStart(const AmSipRequest& req, 
-			      int code, const string& reason)
-{
-  AmSipReply error_reply;
-  error_reply.cseq = req.cseq;
-  error_reply.code = code;
-  error_reply.reason = reason;
-  logCallStart(error_reply);
-}
-
 void SBCCallLeg::logCallStart(const AmSipReply& reply)
 {
   std::map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply.cseq);
-  AmArg start_event;
-
-  size_t end;
-  AmUriParser uri_parser;
   if (t_req != recvd_req.end()) {
-    AmSipRequest& orig_req = t_req->second;
-    start_event["source"]   = orig_req.remote_ip + ":"
-      + int2str(orig_req.remote_port);
-    start_event["r-uri"]    = orig_req.r_uri;
-
-    if(uri_parser.parse_contact(orig_req.from,0,end))
-      start_event["from"] = uri_parser.uri_str();
-    else start_event["from"] = orig_req.from;
-
-    if(uri_parser.parse_contact(orig_req.to,0,end))
-      start_event["to"] = uri_parser.uri_str();
-    else start_event["to"] = orig_req.to;
+    SBCEventLog::instance()->logCallStart(t_req->second,getLocalTag(),
+					  (int)reply.code,reply.reason);
   }
   else {
-    start_event["r-uri"]    = dlg->getLocalUri();
-
-    if(uri_parser.parse_contact(dlg->getLocalParty(),0,end))
-      start_event["from"] = uri_parser.uri_str();
-    else start_event["from"] = dlg->getLocalParty();
-
-    if(uri_parser.parse_contact(dlg->getRemoteParty(),0,end))
-      start_event["from"] = uri_parser.uri_str();
-    else start_event["from"] = dlg->getRemoteParty();
+    SBCEventLog::instance()->logCallStart(dlg,(int)reply.code,reply.reason);
   }
-
-  start_event["call-id"]  = dlg->getCallid();
-  start_event["res-code"] = (int)reply.code;
-  start_event["reason"]   = reply.reason;
-
-  SBCEventLog::instance()->logEvent(dlg->getLocalTag(),"call-start",start_event);
-}
-
-void SBCCallLeg::logCallEnd(const string& reason, const AmSipRequest* req)
-{
-  AmArg end_event;
-
-  end_event["call-id"]  = dlg->getCallid();
-  end_event["reason"]  = reason;
-  
-  size_t end;
-  AmUriParser uri_parser;
-  if (req) {
-    end_event["source"]   = req->remote_ip + ":" + int2str(req->remote_port);
-    end_event["r-uri"]    = req->r_uri;
-
-    if(uri_parser.parse_contact(req->from,0,end))
-      end_event["from"] = uri_parser.uri_str();
-    else end_event["from"] = req->from;
-
-    if(uri_parser.parse_contact(req->to,0,end))
-      end_event["to"] = uri_parser.uri_str();
-    else end_event["to"] = req->to;
-  }
-  else {
-    end_event["r-uri"] = dlg->getLocalUri();
-
-    if(uri_parser.parse_contact(dlg->getLocalParty(),0,end))
-      end_event["from"] = uri_parser.uri_str();
-    else end_event["from"] = dlg->getLocalParty();
-
-    if(uri_parser.parse_contact(dlg->getRemoteParty(),0,end))
-      end_event["from"] = uri_parser.uri_str();
-    else end_event["from"] = dlg->getRemoteParty();
-  }
-
-  SBCEventLog::instance()->logEvent(dlg->getLocalTag(),"call-end",end_event);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

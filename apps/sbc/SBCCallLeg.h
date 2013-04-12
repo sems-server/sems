@@ -118,8 +118,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   virtual void onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr);
 
   void logCallStart(const AmSipReply& reply);
-  void logCallStart(const AmSipRequest& req, int code, const string& reason);
-  void logCallEnd(const string& reason, const AmSipRequest* request);
 
  public:
 
