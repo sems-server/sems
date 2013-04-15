@@ -46,7 +46,7 @@ SBC - feature-wishlist
 #include "SBCSimpleRelay.h"
 #include "RegisterDialog.h"
 #include "SubscriptionDialog.h"
-#include "sip/msg_logger.h"
+#include "sip/pcap_logger.h"
 #include "sip/sip_parser.h"
 #include "sip/sip_trans.h"
 
@@ -689,7 +689,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 			      "msg_logger_path",req);
 
       if(!call_profile.msg_logger_path.empty()) {
-	logger.reset(new file_msg_logger());
+	logger.reset(new pcap_logger());
 	if(logger->open(call_profile.msg_logger_path.c_str())) {
 	  ERROR("could not open message logger\n");
 	  logger.reset();

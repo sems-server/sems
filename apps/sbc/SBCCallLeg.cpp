@@ -14,7 +14,7 @@
 #include "RegisterDialog.h"
 #include "SubscriptionDialog.h"
 
-#include "sip/msg_logger.h"
+#include "sip/pcap_logger.h"
 #include "sip/sip_parser.h"
 #include "sip/sip_trans.h"
 
@@ -1004,7 +1004,7 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
       ParamReplacerCtx ctx;
       string log_path = ctx.replaceParameters(call_profile.msg_logger_path,
 					      "msg_logger_path",req);
-      file_msg_logger* logger = new file_msg_logger();
+      file_msg_logger* logger = new pcap_logger();
       if(!logger->open(log_path.c_str())) {
         req.tt.lock_bucket();
         const sip_trans* t = req.tt.get_trans();
