@@ -29,17 +29,35 @@ class file_msg_logger
   : public msg_logger
 {
   int      fd;
+
+protected:
   AmMutex  fd_mut;
 
-  std::set<string> known_destinations;
-
-  int write_src_dst(const string& obj);
+  int write(const void *buf, int len);
+  virtual int write_file_header() = 0;
 
 public:
   file_msg_logger() : fd(-1) {}
   ~file_msg_logger();
 
   int  open(const char* filename);
+  int log(const char* buf, int len,
+	  sockaddr_storage* src_ip,
+	  sockaddr_storage* dst_ip,
+	  cstring method, int reply_code=0)=0;
+};
+
+class cf_msg_logger
+  : public file_msg_logger
+{
+  std::set<string> known_destinations;
+
+  int write_src_dst(const string& obj);
+
+protected:
+  int write_file_header() { return 0; }
+
+public:
   int log(const char* buf, int len,
 	  sockaddr_storage* src_ip,
 	  sockaddr_storage* dst_ip,

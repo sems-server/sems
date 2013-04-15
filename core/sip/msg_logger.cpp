@@ -31,9 +31,25 @@ int file_msg_logger::open(const char* filename)
     return -1;
   }
 
+  // need not to work for 100% (the access will not to be locked if opened from
+  // another logger instance)
+  off_t pos = lseek(fd, 0, SEEK_END);
+  if (pos == 0) write_file_header();
+
   fd_mut.unlock();
   return 0;
 }
+
+int file_msg_logger::write(const void *buf, int len)
+{
+  int res = ::write(fd, buf, len);
+  if (res != len) {
+    ERROR("while writing to message log: %s\n",strerror(errno));
+  }
+  return res;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 static string addr2str(sockaddr_storage* addr)
 {
@@ -60,34 +76,32 @@ static string addr2str(sockaddr_storage* addr)
   return string(ntop_buffer) + ":" + int2str(ntohs(sin6->sin6_port));
 }
 
-#define WRITE_CSTSTR(fd,str)						\
-  if(write(fd,str,sizeof(str)-1) != sizeof(str)-1) {			\
-    ERROR("while writing to message log: %s\n",strerror(errno));	\
-    return -1;								\
+#define WRITE_CSTSTR(str)                                           \
+  if(write(str,sizeof(str)-1) != sizeof(str)-1) {                   \
+    return -1;                                                      \
   }
 
-#define WRITE_STLSTR(fd,str)						\
-  if(write(fd,str.c_str(),str.length()) != (ssize_t)str.length())  {	\
-    ERROR("while writing to message log: %s\n",strerror(errno));	\
-    return -1;								\
+#define WRITE_STLSTR(str)                                           \
+  if(write(str.c_str(),str.length()) != (ssize_t)str.length())  {   \
+    return -1;                                                      \
   }
 
 
-int file_msg_logger::write_src_dst(const string& obj)
+int cf_msg_logger::write_src_dst(const string& obj)
 {
   if (known_destinations.find(obj) == known_destinations.end()) {
     known_destinations.insert(obj);
-    WRITE_CSTSTR(fd,"<object name='");
-    WRITE_STLSTR(fd,obj);
-    WRITE_CSTSTR(fd,"' desc='");
-    WRITE_STLSTR(fd,obj);
-    WRITE_CSTSTR(fd,"'/>\n");
+    WRITE_CSTSTR("<object name='");
+    WRITE_STLSTR(obj);
+    WRITE_CSTSTR("' desc='");
+    WRITE_STLSTR(obj);
+    WRITE_CSTSTR("'/>\n");
   }
 
   return 0;
 }
 
-int file_msg_logger::log(const char* buf, int len,
+int cf_msg_logger::log(const char* buf, int len,
 			 sockaddr_storage* src_ip,
 			 sockaddr_storage* dst_ip,
 			 cstring method, int reply_code)
@@ -105,20 +119,17 @@ int file_msg_logger::log(const char* buf, int len,
     what = int2str(reply_code) + " / " + what;
   }
 
-  WRITE_CSTSTR(fd,"<call src='");
-  WRITE_STLSTR(fd,src);
-  WRITE_CSTSTR(fd,"' dst='");
-  WRITE_STLSTR(fd,dst);
-  WRITE_CSTSTR(fd,"' desc='");
-  WRITE_STLSTR(fd,what);
-  WRITE_CSTSTR(fd,"'>\n");
+  WRITE_CSTSTR("<call src='");
+  WRITE_STLSTR(src);
+  WRITE_CSTSTR("' dst='");
+  WRITE_STLSTR(dst);
+  WRITE_CSTSTR("' desc='");
+  WRITE_STLSTR(what);
+  WRITE_CSTSTR("'>\n");
 
-  if(write(fd,buf,len) != len) {
-    ERROR("while writing to message log: %s\n",strerror(errno));
-    return -1;
-  }
+  if(write(buf,len) != len) return -1;
 
-  WRITE_CSTSTR(fd,"</call>\n");
+  WRITE_CSTSTR("</call>\n");
  
   return 0;
 }
