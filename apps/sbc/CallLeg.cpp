@@ -235,6 +235,31 @@ int CallLeg::relaySipReply(AmSipReply &reply)
   return res;
 }
 
+bool CallLeg::setOther(const string &id, bool use_initial_sdp)
+{
+  for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
+    if (i->id == id) {
+      setOtherId(id);
+      clearRtpReceiverRelay(); // release old media session if set
+      setMediaSession(i->media_session);
+      if (media_session) {
+        TRACE("connecting media session: %s to %s\n", 
+            dlg->getLocalTag().c_str(), getOtherId().c_str());
+        media_session->changeSession(a_leg, this);
+        if (use_initial_sdp) updateRemoteSdp(initial_sdp);
+      }
+      else {
+        // media session not set, set direct mode if not set already
+        if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
+      }
+      set_sip_relay_only(true); // relay only from now on
+      return true;
+    }
+  }
+  ERROR("%s is not in the list of other leg IDs!\n", id.c_str());
+  return false; // something wrong?
+}
+
 void CallLeg::b2bInitial1xx(AmSipReply& reply, bool forward)
 {
   // stop processing of 100 reply here or add Trying state to handle it without
@@ -242,75 +267,50 @@ void CallLeg::b2bInitial1xx(AmSipReply& reply, bool forward)
   if (reply.to_tag.empty()) return;
 
   if (call_status == NoReply) {
-    setOtherId(reply);
-    INFO("1xx reply with to-tag received in NoReply state,"
+    DBG("1xx reply with to-tag received in NoReply state,"
         " changing status to Ringing and remembering the"
         " other leg ID (%s)\n", getOtherId().c_str());
-    updateCallStatus(Ringing);
-    clearRtpReceiverRelay(); // release old media session if set
-    setMediaSession(other_legs.begin()->media_session); // FIXME: search!!!
-    if (media_session) {
-      TRACE("connecting media session: %s to %s\n", 
-          dlg->getLocalTag().c_str(), getOtherId().c_str());
-      media_session->changeSession(a_leg, this);
-      if (initial_sdp_stored && forward) updateRemoteSdp(initial_sdp);
+    if (setOther(reply.from_tag, initial_sdp_stored && forward)) {
+      updateCallStatus(Ringing);
+      if (forward && relaySipReply(reply) != 0) stopCall();
     }
-    else {
-      // media session not set, set direct mode if not set already
-      if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
-    }
-    set_sip_relay_only(true); // relay only from now on
-    if (forward && relaySipReply(reply) != 0) stopCall();
   }
   else {
-    if (getOtherId() != reply.from_tag) {
+    if (getOtherId() == reply.from_tag) {
+      // we can relay this reply because it is from the same B leg from which
+      // we already relayed something
+      if (forward && relaySipReply(reply) != 0) stopCall();
+    }
+    else {
       // in Ringing state but the reply comes from another B leg than
       // previous 1xx reply => do not relay or process other way
-      ERROR("1xx reply received in %s state from another B leg, ignoring\n", callStatus2str(call_status));
-      return;
+      DBG("1xx reply received in %s state from another B leg, ignoring\n", callStatus2str(call_status));
     }
-    // we can relay this reply because it is from the same B leg from which
-    // we already relayed something
-    if (forward && relaySipReply(reply) != 0) stopCall();
   }
 }
 
 void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
 {
-  setOtherId(reply);
-  INFO("setting call status to connected with leg %s\n", getOtherId().c_str());
+  if (!setOther(reply.from_tag, initial_sdp_stored && forward)) {
+    // ignore reply which comes from non-our-peer leg?
+    DBG("2xx reply received from unknown B leg, ignoring\n");
+    return;
+  }
+
+  DBG("setting call status to connected with leg %s\n", getOtherId().c_str());
 
   // terminate all other legs than the connected one (determined by other_id)
   terminateNotConnectedLegs();
 
-  if (other_legs.empty()) {
-    ERROR("BUG: connected but there is no B leg remaining\n");
-    stopCall();
-    return;
-  }
-
   // connect media with the other leg if RTP relay is enabled
-  clearRtpReceiverRelay(); // release old media session if set
-  setMediaSession(other_legs.begin()->media_session);
   other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
   other_legs.clear(); // no need to remember the connected leg here
-  if (media_session) {
-    TRACE("connecting media session: %s to %s\n", 
-        dlg->getLocalTag().c_str(), getOtherId().c_str());
-    media_session->changeSession(a_leg, this);
-    if (initial_sdp_stored && forward) updateRemoteSdp(initial_sdp);
-  }
-  else {
-    // media session not set, set direct mode if not set already
-    if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
-  }
 
   // FIXME: hack here - it should be part of clearRtpReceiverRelay but we
   // need to do after RTP mode change above
   resumeHeld(false);
 
   onCallConnected(reply);
-  set_sip_relay_only(true); // relay only from now on
 
   if (!forward) {
     // we need to generate re-INVITE based on received SDP
@@ -318,11 +318,9 @@ void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
     sendEstablishedReInvite();
   }
   else if (relaySipReply(reply) != 0) {
-    INFO("reply relay failed\n");
     stopCall();
     return;
   }
-  INFO("reply relayed\n");
   updateCallStatus(Connected);
 }
 
@@ -331,11 +329,11 @@ void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
   if (getCallStatus() == Ringing && getOtherId() != reply.from_tag) {
     removeOtherLeg(reply.from_tag); // we don't care about this leg any more
     onBLegRefused(reply); // new B leg(s) may be added
-    INFO("dropping non-ok reply, it is not from current peer\n");
+    DBG("dropping non-ok reply, it is not from current peer\n");
     return;
   }
 
-  INFO("clean-up after non-ok reply (reply: %d, status %s, other: %s)\n", 
+  DBG("clean-up after non-ok reply (reply: %d, status %s, other: %s)\n", 
       reply.code, callStatus2str(getCallStatus()),
       getOtherId().c_str());
   clearRtpReceiverRelay();

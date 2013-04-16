@@ -237,6 +237,9 @@ class CallLeg: public AmB2BSession
      * directly by successors, right?) */
     void terminateNotConnectedLegs();
 
+    /** choose given B leg from the list of other B legs */
+    bool setOther(const string &id, bool use_initial_sdp);
+
     /** remove given leg from the list of other legs */
     void removeOtherLeg(const string &id);
 
