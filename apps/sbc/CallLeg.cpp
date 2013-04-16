@@ -235,6 +235,127 @@ int CallLeg::relaySipReply(AmSipReply &reply)
   return res;
 }
 
+void CallLeg::b2bInitial1xx(AmSipReply& reply, bool forward)
+{
+  // stop processing of 100 reply here or add Trying state to handle it without
+  // remembering other_id (for now, the 100 won't get here, but to be sure...)
+  if (reply.to_tag.empty()) return;
+
+  if (call_status == NoReply) {
+    setOtherId(reply);
+    INFO("1xx reply with to-tag received in NoReply state,"
+        " changing status to Ringing and remembering the"
+        " other leg ID (%s)\n", getOtherId().c_str());
+    updateCallStatus(Ringing);
+    clearRtpReceiverRelay(); // release old media session if set
+    setMediaSession(other_legs.begin()->media_session); // FIXME: search!!!
+    if (media_session) {
+      TRACE("connecting media session: %s to %s\n", 
+          dlg->getLocalTag().c_str(), getOtherId().c_str());
+      media_session->changeSession(a_leg, this);
+      if (initial_sdp_stored && forward) updateRemoteSdp(initial_sdp);
+    }
+    else {
+      // media session not set, set direct mode if not set already
+      if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
+    }
+    set_sip_relay_only(true); // relay only from now on
+    if (forward && relaySipReply(reply) != 0) stopCall();
+  }
+  else {
+    if (getOtherId() != reply.from_tag) {
+      // in Ringing state but the reply comes from another B leg than
+      // previous 1xx reply => do not relay or process other way
+      ERROR("1xx reply received in %s state from another B leg, ignoring\n", callStatus2str(call_status));
+      return;
+    }
+    // we can relay this reply because it is from the same B leg from which
+    // we already relayed something
+    if (forward && relaySipReply(reply) != 0) stopCall();
+  }
+}
+
+void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
+{
+  setOtherId(reply);
+  INFO("setting call status to connected with leg %s\n", getOtherId().c_str());
+
+  // terminate all other legs than the connected one (determined by other_id)
+  terminateNotConnectedLegs();
+
+  if (other_legs.empty()) {
+    ERROR("BUG: connected but there is no B leg remaining\n");
+    stopCall();
+    return;
+  }
+
+  // connect media with the other leg if RTP relay is enabled
+  clearRtpReceiverRelay(); // release old media session if set
+  setMediaSession(other_legs.begin()->media_session);
+  other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
+  other_legs.clear(); // no need to remember the connected leg here
+  if (media_session) {
+    TRACE("connecting media session: %s to %s\n", 
+        dlg->getLocalTag().c_str(), getOtherId().c_str());
+    media_session->changeSession(a_leg, this);
+    if (initial_sdp_stored && forward) updateRemoteSdp(initial_sdp);
+  }
+  else {
+    // media session not set, set direct mode if not set already
+    if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
+  }
+
+  // FIXME: hack here - it should be part of clearRtpReceiverRelay but we
+  // need to do after RTP mode change above
+  resumeHeld(false);
+
+  onCallConnected(reply);
+  set_sip_relay_only(true); // relay only from now on
+
+  if (!forward) {
+    // we need to generate re-INVITE based on received SDP
+    saveSessionDescription(reply.body);
+    sendEstablishedReInvite();
+  }
+  else if (relaySipReply(reply) != 0) {
+    INFO("reply relay failed\n");
+    stopCall();
+    return;
+  }
+  INFO("reply relayed\n");
+  updateCallStatus(Connected);
+}
+
+void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
+{
+  if (getCallStatus() == Ringing && getOtherId() != reply.from_tag) {
+    removeOtherLeg(reply.from_tag); // we don't care about this leg any more
+    onBLegRefused(reply); // new B leg(s) may be added
+    INFO("dropping non-ok reply, it is not from current peer\n");
+    return;
+  }
+
+  INFO("clean-up after non-ok reply (reply: %d, status %s, other: %s)\n", 
+      reply.code, callStatus2str(getCallStatus()),
+      getOtherId().c_str());
+  clearRtpReceiverRelay();
+  removeOtherLeg(reply.from_tag); // we don't care about this leg any more
+  updateCallStatus(NoReply);
+  onBLegRefused(reply); // possible serial fork here
+  set_sip_relay_only(false);
+
+  // there are other B legs for us => wait for their responses and do not
+  // relay current response
+  if (!other_legs.empty()) return;
+
+  if (forward) relaySipReply(reply);
+
+  // no other B legs, terminate
+  onCallFailed(reply);
+  updateCallStatus(Disconnected);
+  stopCall();
+}
+
 // was for caller only
 void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 {
@@ -250,153 +371,36 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
       reply.code, reply.cseq, reply.cseq_method.c_str(),
       callStatus2str(call_status));
 
-  // FIXME: do we wat to have the check below? multiple other legs are
-  // possible so the check can stay as it is for Connected state but for other
-  // should check other_legs instead of other_id
-#if 0
-  if(getOtherId().empty()){
-    //DBG("Discarding B2BSipReply from other leg (other_id empty)\n");
-    DBG("B2BSipReply: other_id empty ("
-        "reply code=%i; method=%s; callid=%s; from_tag=%s; "
-        "to_tag=%s; cseq=%i)\n",
-        reply.code,reply.cseq_method.c_str(),reply.callid.c_str(),reply.from_tag.c_str(),
-        reply.to_tag.c_str(),reply.cseq);
-    //return;
-  }
-  else if(getOtherId() != reply.from_tag){// was: local_tag
-    DBG("Dialog mismatch! (oi=%s;ft=%s)\n",
-        getOtherId().c_str(),reply.from_tag.c_str());
-    return;
-  }
-#endif
-
-  // handle relayed initial replies specific way
-  // testing est_invite_cseq is wrong! (checking in what direction or what role
-  // would be needed)
-  if (reply.cseq_method == SIP_METH_INVITE &&
+  // FIXME: testing est_invite_cseq is wrong! (checking in what direction or
+  // what role would be needed)
+  bool initial_reply = (reply.cseq_method == SIP_METH_INVITE &&
       (call_status == NoReply || call_status == Ringing) &&
-      ((reply.cseq == est_invite_cseq && ev->forward) ||
-       (!ev->forward))) { // connect not related to initial INVITE
-    // handle only replies to the original INVITE (CSeq is really the same?)
+      ((reply.cseq == est_invite_cseq && ev->forward) || // related to initial INVITE at our side
+       (!ev->forward))); // connect not related to initial INVITE at our side
+
+  if (initial_reply) {
+    // handle relayed initial replies (replies to initiating INVITE at the other
+    // side, note that this need not to be initiating INVITE at our side)
 
     TRACE("established CSeq: %d, forward: %s\n", est_invite_cseq, ev->forward ? "yes": "no");
 
-    // TODO: stop processing of 100 reply here or add Trying state to handle it
-    // without remembering other_id
+    if (reply.code < 200) b2bInitial1xx(reply, ev->forward);
+    else if (reply.code < 300) b2bInitial2xx(reply, ev->forward);
+    else b2bInitialErr(reply, ev->forward);
+  }
+  else {
+    // handle non-initial replies
 
-    if (reply.code < 200) { // 1xx replies
-      if (call_status == NoReply) {
-        if (!reply.to_tag.empty()) {
-          setOtherId(reply);
-          TRACE("1xx reply with to-tag received in NoReply state,"
-		" changing status to Ringing and remembering the"
-		" other leg ID (%s)\n", getOtherId().c_str());
-          updateCallStatus(Ringing);
-        }
-        if (ev->forward && relaySipReply(reply) != 0) {
-          stopCall();
-          return;
-        }
-      }
-      else {
-        if (getOtherId() != reply.from_tag) {
-           // in Ringing state but the reply comes from another B leg than
-           // previous 1xx reply => do not relay or process other way
-          DBG("1xx reply received in %s state from another B leg, ignoring\n", callStatus2str(call_status));
-          return;
-        }
-        // we can relay this reply because it is from the same B leg from which
-        // we already relayed something
-        // FIXME: but we shouldn't relay the body until we are connected because
-        // fork still can happen, right? (so no early media support? or we would
-        // just destroy the before-fork-media-session and use the
-        // after-fork-one? but problem could be with two B legs trying to do
-        // early media)
-        if (!sip_relay_only && !reply.body.empty()) {
-          DBG("not going to relay 1xx body\n");
-          static const AmMimeBody empty_body;
-          reply.body = empty_body;
-        }
-        if (ev->forward && relaySipReply(reply) != 0) {
-          stopCall();
-          return;
-        }
-      }
-    } else if (reply.code < 300) { // 2xx replies
-      setOtherId(reply);
-      TRACE("setting call status to connected with leg %s\n", 
-	    getOtherId().c_str());
-
-      // terminate all other legs than the connected one (determined by other_id)
-      terminateNotConnectedLegs();
-
-      if (other_legs.empty()) {
-        ERROR("BUG: connected but there is no B leg remaining\n");
-        stopCall();
-        return;
-      }
-
-      // connect media with the other leg if RTP relay is enabled
-      clearRtpReceiverRelay(); // release old media session if set
-      setMediaSession(other_legs.begin()->media_session);
-      other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
-      other_legs.clear(); // no need to remember the connected leg here
-      if (media_session) {
-        TRACE("connecting media session: %s to %s\n", 
-	      dlg->getLocalTag().c_str(), getOtherId().c_str());
-        media_session->changeSession(a_leg, this);
-        if (initial_sdp_stored && ev->forward) updateRemoteSdp(initial_sdp);
-      }
-      else {
-        // media session not set, set direct mode if not set already
-        if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
-      }
-
-      // FIXME: hack here - it should be part of clearRtpReceiverRelay but we
-      // need to do after RTP mode change above
-      resumeHeld(false);
-
-      onCallConnected(reply);
-      set_sip_relay_only(true); // relay only from now on
-
-      if (!ev->forward) {
-        // we need to generate re-INVITE based on received SDP
-        saveSessionDescription(reply.body);
-        sendEstablishedReInvite();
-      }
-      else if (relaySipReply(reply) != 0) {
-        stopCall();
-        return;
-      }
-      updateCallStatus(Connected);
-    } else { // 3xx-6xx replies
-      removeOtherLeg(reply.from_tag); // we don't care about this leg any more
-      onBLegRefused(reply); // possible serial fork here
-
-      // there are other B legs for us => wait for their responses and do not
-      // relay current response
-      if (!other_legs.empty()) return;
-
-      if (ev->forward) relaySipReply(reply);
-
-      // no other B legs, terminate
-      onCallFailed(reply);
-      updateCallStatus(Disconnected);
-      stopCall();
+    // reply not from our peer (might be one of the discarded ones)
+    if (getOtherId() != reply.from_tag) {
+      TRACE("ignoring reply from %s in %s state\n", reply.from_tag.c_str(), callStatus2str(call_status));
+      return;
     }
 
-    return; // relayed reply to initial request is processed
+    // handle replies to other requests than the initial one
+    DBG("handling reply via AmB2BSession\n");
+    AmB2BSession::onB2BEvent(ev);
   }
-
-  // reply not from our peer (might be one of the discarded ones)
-  if (getOtherId() != reply.from_tag) {
-    TRACE("ignoring reply from %s in %s state\n", reply.from_tag.c_str(), callStatus2str(call_status));
-    return;
-  }
-
-  // handle replies to other requests than the initial one
-  DBG("handling reply via AmB2BSession\n");
-  AmB2BSession::onB2BEvent(ev);
 }
 
 // TODO: original callee's version, update
