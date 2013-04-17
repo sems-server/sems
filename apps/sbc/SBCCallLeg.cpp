@@ -1534,20 +1534,21 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
     return;
   }
 
+  clearRtpReceiverRelay();
+
   // we don't need to send reINVITE from here, expecting caller knows what is he
   // doing (it is probably processing or generating its own reINVITE)
   // Switch from RTP_Direct to RTP_Relay is safe (no audio loss), the other can
   // be lossy because already existing media object would be destroyed.
   // FIXME: use AmB2BMedia in all RTP relay modes to avoid these problems?
-  switch (rtp_relay_mode) {
+
+  switch (new_mode) {
   case RTP_Relay:
   case RTP_Transcoding:
-      clearRtpReceiverRelay();
+      setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
       break;
 
   case RTP_Direct:
-      // create new blablabla
-      setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
       break;
   }
 
@@ -1595,16 +1596,16 @@ void SBCCallLeg::onB2BEvent(B2BEvent* ev)
     if (e) {
       if (e->new_mode == rtp_relay_mode) return; // requested mode is set already
 
-      switch (rtp_relay_mode) {
+      clearRtpReceiverRelay();
+
+      switch (e->new_mode) {
       case RTP_Relay:
       case RTP_Transcoding:
-          clearRtpReceiverRelay();
+          setMediaSession(e->media);
+          media_session->changeSession(a_leg, this);
           break;
 
       case RTP_Direct:
-          // create new blablabla
-          setMediaSession(e->media);
-          media_session->changeSession(a_leg, this);
           break;
       }
       setRtpRelayMode(e->new_mode);

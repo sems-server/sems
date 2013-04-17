@@ -443,7 +443,7 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 
   AmSdp sdp;
 
-  if ((rtp_relay_mode == RTP_Relay) &&
+  if ((rtp_relay_mode == RTP_Relay || rtp_relay_mode == RTP_Transcoding) &&
       (reply.code >= 180  && reply.code < 300)) 
   {
     // We have to update media session before filtering because we may want to

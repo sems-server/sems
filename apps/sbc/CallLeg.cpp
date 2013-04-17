@@ -432,7 +432,7 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
 
   AmMimeBody r_body(co_ev->body);
   const AmMimeBody* body = &co_ev->body;
-  if (rtp_relay_mode == RTP_Relay) {
+  if (rtp_relay_mode != RTP_Direct) {
     try {
       body = co_ev->body.hasContentType(SIP_APPLICATION_SDP);
       if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
@@ -501,12 +501,11 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   updateCallStatus(NoReply);
 
   // use new media session if given
+  setRtpRelayMode(ev->rtp_mode);
   if (ev->media) {
-    rtp_relay_mode = RTP_Relay;
     setMediaSession(ev->media);
     media_session->changeSession(a_leg, this);
   }
-  else rtp_relay_mode = RTP_Direct;
 
   MONITORING_LOG3(getLocalTag().c_str(),
 		  "b2b_leg", getOtherId().c_str(),
@@ -515,7 +514,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
 
   AmMimeBody r_body(ev->body);
   const AmMimeBody* body = &ev->body;
-  if (rtp_relay_mode == RTP_Relay) {
+  if (rtp_relay_mode != RTP_Direct) {
     try {
       body = ev->body.hasContentType(SIP_APPLICATION_SDP);
       if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
@@ -677,8 +676,7 @@ void CallLeg::putOnHold()
     return;
   }
 
-  TRACE("putting remote on hold (%s)\n",
-      rtp_relay_mode == RTP_Direct ? "direct RTP" : "RTP relay");
+  TRACE("putting remote on hold\n");
 
   AmSdp sdp;
   createHoldRequest(sdp);
@@ -706,8 +704,7 @@ void CallLeg::resumeHeld(bool send_reinvite)
     return;
   }
 
-  TRACE("resume held remote (%s)\n",
-      rtp_relay_mode == RTP_Direct ? "direct RTP" : "RTP relay");
+  TRACE("resume held remote\n");
 
   if (!send_reinvite) {
     // probably another SDP in progress
@@ -770,7 +767,7 @@ void CallLeg::onInvite(const AmSipRequest& req)
     recvd_req.insert(std::make_pair(req.cseq, req));
 
     initial_sdp_stored = false;
-    if (rtp_relay_mode == RTP_Relay) {
+    if (rtp_relay_mode != RTP_Direct) {
       const AmMimeBody* sdp_body = req.body.hasContentType(SIP_APPLICATION_SDP);
       DBG("SDP %sfound in initial INVITE\n", sdp_body ? "": "not ");
       if (sdp_body && (initial_sdp.parse((const char *)sdp_body->getPayload()) == 0)) {
@@ -822,7 +819,7 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
 
     // we don't want to relay this reply to the other leg! => do the necessary
     // stuff here (copy & paste from AmB2BSession::onSipReply)
-    if (rtp_relay_mode == RTP_Relay && reply.code < 300) {
+    if (rtp_relay_mode != RTP_Direct && reply.code < 300) {
       const AmMimeBody *sdp_part = reply.body.hasContentType(SIP_APPLICATION_SDP);
       if (sdp_part) {
         AmSdp sdp;
@@ -918,7 +915,7 @@ void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e,
   b.id = callee->getLocalTag();
 
   callee->setRtpRelayMode(mode);
-  if (mode == RTP_Relay) {
+  if (mode != RTP_Direct) {
     // do not initialise the media session with A leg to avoid unnecessary A leg
     // RTP stream creation in every B leg's media session
     if (a_leg) b.media_session = new AmB2BMedia(NULL, callee);
@@ -985,7 +982,7 @@ void CallLeg::addExistingCallee(const string &session_tag, ReconnectLegEvent *ev
 
   OtherLegInfo b;
   b.id = session_tag;
-  if (rtp_relay_mode == RTP_Relay) {
+  if (rtp_relay_mode != RTP_Direct) {
     // do not initialise the media session with A leg to avoid unnecessary A leg
     // RTP stream creation in every B leg's media session
     b.media_session = new AmB2BMedia(NULL, NULL);
@@ -995,7 +992,7 @@ void CallLeg::addExistingCallee(const string &session_tag, ReconnectLegEvent *ev
 
   // generate connect event to the newly added leg
   TRACE("relaying re-connect leg event to the B leg\n");
-  ev->setMedia(b.media_session);
+  ev->setMedia(b.media_session, rtp_relay_mode);
   // TODO: what about the RTP relay and other settings? send them as well?
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
@@ -1019,14 +1016,14 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &
 
   OtherLegInfo b;
   b.id.clear(); // this is an invalid local tag (temporarily)
-  if (rtp_relay_mode == RTP_Relay) {
+  if (rtp_relay_mode != RTP_Direct) {
     // let the other leg to set its part, we will set our once connected
     b.media_session = new AmB2BMedia(NULL, NULL);
     b.media_session->addReference(); // new reference for me
   }
   else b.media_session = NULL;
 
-  ReplaceLegEvent *ev = new ReplaceLegEvent(getLocalTag(), relayed_invite, b.media_session);
+  ReplaceLegEvent *ev = new ReplaceLegEvent(getLocalTag(), relayed_invite, b.media_session, rtp_relay_mode);
   // TODO: what about the RTP relay and other settings? send them as well?
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
@@ -1045,7 +1042,7 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
 
   OtherLegInfo b;
   b.id.clear(); // this is an invalid local tag (temporarily)
-  if (rtp_relay_mode == RTP_Relay) {
+  if (rtp_relay_mode != RTP_Direct) {
     // let the other leg to set its part, we will set our once connected
     b.media_session = new AmB2BMedia(NULL, NULL);
     b.media_session->addReference(); // new reference for me
@@ -1053,7 +1050,7 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
   else b.media_session = NULL;
 
   ReconnectLegEvent *rev = new ReconnectLegEvent(a_leg ? ReconnectLegEvent::B : ReconnectLegEvent::A, getLocalTag(), hdrs, established_body);
-  rev->setMedia(b.media_session);
+  rev->setMedia(b.media_session, rtp_relay_mode);
   ReplaceLegEvent *ev = new ReplaceLegEvent(getLocalTag(), rev);
   // TODO: what about the RTP relay and other settings? send them as well?
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {

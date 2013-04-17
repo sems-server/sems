@@ -73,10 +73,11 @@ struct ReconnectLegEvent: public ReliableB2BEvent
   bool relayed_invite;
 
   AmB2BMedia *media; // avoid direct access to this
+  AmB2BSession::RTPRelayMode rtp_mode;
   string session_tag;
   enum Role { A, B } role; // reconnect as A or B leg
 
-  void setMedia(AmB2BMedia *m) { media = m; if (media) media->addReference(); }
+  void setMedia(AmB2BMedia *m, AmB2BSession::RTPRelayMode _mode) { media = m; if (media) media->addReference(); rtp_mode = _mode; }
 
   ReconnectLegEvent(const string &tag, const AmSipRequest &relayed_invite):
     ReliableB2BEvent(ReconnectLeg, NULL, new B2BEvent(B2BTerminateLeg) /* TODO: choose a better one */),
@@ -85,6 +86,7 @@ struct ReconnectLegEvent: public ReliableB2BEvent
     r_cseq(relayed_invite.cseq),
     relayed_invite(true),
     media(NULL),
+    rtp_mode(AmB2BSession::RTP_Direct),
     session_tag(tag),
     role(B) // we have relayed_invite (only in A leg) thus reconnect as regular B leg
   { setSender(tag); }
@@ -96,6 +98,7 @@ struct ReconnectLegEvent: public ReliableB2BEvent
     r_cseq(0),
     relayed_invite(false),
     media(NULL),
+    rtp_mode(AmB2BSession::RTP_Direct),
     session_tag(tag),
     role(_role)
   { setSender(tag); }
@@ -113,9 +116,9 @@ struct ReplaceLegEvent: public ReliableB2BEvent
     ReconnectLegEvent *ev;
 
   public:
-    ReplaceLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m):
+    ReplaceLegEvent(const string &tag, const AmSipRequest &relayed_invite, AmB2BMedia *m, AmB2BSession::RTPRelayMode mode):
       ReliableB2BEvent(ReplaceLeg, NULL, new B2BEvent(B2BTerminateLeg))
-    { ev = new ReconnectLegEvent(tag, relayed_invite); ev->setMedia(m); setSender(tag); }
+    { ev = new ReconnectLegEvent(tag, relayed_invite); ev->setMedia(m, mode); setSender(tag); }
 
     ReplaceLegEvent(const string &tag, ReconnectLegEvent *e):
       ReliableB2BEvent(ReplaceLeg, NULL, new B2BEvent(B2BTerminateLeg)),
