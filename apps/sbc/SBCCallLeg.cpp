@@ -215,6 +215,15 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
   setLogger(caller->getLogger());
 }
 
+SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg)
+  : CallLeg(p_dlg),
+    m_state(BB_Init),
+    auth(NULL),
+    cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START),
+    cc_started(false)
+{
+}
+
 void SBCCallLeg::onStart()
 {
   // this should be the first thing called in session's thread
