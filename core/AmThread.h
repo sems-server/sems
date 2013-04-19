@@ -112,13 +112,14 @@ class AmCondition
   pthread_mutex_t m;
   pthread_cond_t  cond;
 
-public:
-  AmCondition(const T& _t) 
-    : t(_t)
-  {
+  void init_cond() {
     pthread_mutex_init(&m,NULL);
     pthread_cond_init(&cond,NULL);
   }
+
+public:
+  AmCondition() : t() { init_cond(); }
+  AmCondition(const T& _t) : t(_t) { init_cond(); }
     
   ~AmCondition()
   {
