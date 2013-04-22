@@ -20,10 +20,19 @@ using std::make_pair;
 #define REG_CACHE_SINGLE_CYCLE \
   ((REG_CACHE_CYCLE*1000000L)/REG_CACHE_TABLE_ENTRIES)
 
-static unsigned int hash_1str(const string& aor)
+static unsigned int hash_1str(const string& str)
 {
   unsigned int h=0;
-  h = hashlittle(aor.c_str(),aor.length(),h);
+  h = hashlittle(str.c_str(),str.length(),h);
+  return h & (REG_CACHE_TABLE_ENTRIES-1);
+}
+
+static unsigned int hash_2str_1int(const string& str1, const string& str2,
+				   unsigned int i)
+{
+  unsigned int h=i;
+  h = hashlittle(str1.c_str(),str1.length(),h);
+  h = hashlittle(str2.c_str(),str2.length(),h);
   return h & (REG_CACHE_TABLE_ENTRIES-1);
 }
 
@@ -33,7 +42,7 @@ static string unescape_sip(const string& str)
   return str;
 }
 
-AorEntry* ContactCacheBucket::get(const string& aor)
+AorEntry* AorBucket::get(const string& aor)
 {
   value_map::iterator it = find(aor);
   if(it == elmts.end())
@@ -42,8 +51,8 @@ AorEntry* ContactCacheBucket::get(const string& aor)
   return it->second;
 }
 
-void ContactCacheBucket::dump_elmt(const string& aor, 
-				   const AorEntry* p_aor_entry) const
+void AorBucket::dump_elmt(const string& aor, 
+			  const AorEntry* p_aor_entry) const
 {
   DBG("'%s' ->", aor.c_str());
   if(!p_aor_entry) return;
@@ -58,8 +67,8 @@ void ContactCacheBucket::dump_elmt(const string& aor,
   }
 }
 
-void ContactCacheBucket::gbc(RegCacheStorageHandler* h, long int now, 
-			     list<string>& alias_list)
+void AorBucket::gbc(RegCacheStorageHandler* h, long int now, 
+		    list<string>& alias_list)
 {
   for(value_map::iterator it = elmts.begin(); it != elmts.end();) {
 
@@ -107,12 +116,6 @@ AliasEntry* AliasBucket::getContact(const string& alias)
   return it->second;
 }
 
-void AliasBucket::dump_elmt(const string& alias, const AliasEntry* p_ae) const
-{
-  DBG("'%s' -> '%s'", alias.c_str(), 
-      p_ae ? p_ae->contact_uri.c_str() : "NULL");
-}
-
 void AliasEntry::fire()
 {
   AmArg ev;
@@ -125,6 +128,37 @@ void AliasEntry::fire()
       alias.c_str(),aor.c_str());
 
   SBCEventLog::instance()->logEvent(alias,"ua-reg-expired",ev);
+}
+
+void AliasBucket::dump_elmt(const string& alias, const AliasEntry* p_ae) const
+{
+  DBG("'%s' -> '%s'", alias.c_str(),
+      p_ae ? p_ae->contact_uri.c_str() : "NULL");
+}
+
+string ContactBucket::getAlias(const string& contact_uri,
+			       const string& remote_ip,
+			       unsigned short remote_port)
+{
+  string key = contact_uri + "/" + remote_ip + ":" + int2str(remote_port);
+
+  value_map::iterator it = find(key);
+  if(it == elmts.end())
+    return string();
+
+  return *it->second;
+}
+
+void ContactBucket::remove(const string& contact_uri, const string& remote_ip,
+			   unsigned short remote_port)
+{
+  string k = contact_uri + "/" + remote_ip + ":" + int2str(remote_port);
+  elmts.erase(k);
+}
+
+void ContactBucket::dump_elmt(const string& key, const string* alias) const
+{
+  DBG("'%s' -> %s", key.c_str(), alias? alias->c_str() : "NULL");
 }
 
 struct RegCacheLogHandler
@@ -150,7 +184,8 @@ struct RegCacheLogHandler
 
 _RegisterCache::_RegisterCache()
   : reg_cache_ht(REG_CACHE_TABLE_ENTRIES),
-    id_idx(REG_CACHE_TABLE_ENTRIES)
+    id_idx(REG_CACHE_TABLE_ENTRIES),
+    contact_idx(REG_CACHE_TABLE_ENTRIES)
 {
   // debug register cache WRITE operations
   setStorageHandler(new RegCacheLogHandler());
@@ -162,6 +197,8 @@ _RegisterCache::~_RegisterCache()
   reg_cache_ht.dump();
   DBG("##### ID IDX DUMP #####");
   id_idx.dump();
+  DBG("##### CONTACT IDX DUMP #####");
+  contact_idx.dump();
   DBG("##### DUMP END #####");
 }
 
@@ -174,7 +211,7 @@ void _RegisterCache::gbc(unsigned int bucket_id)
   struct timeval now;
   gettimeofday(&now,NULL);
 
-  ContactCacheBucket* bucket = reg_cache_ht.get_bucket(bucket_id);
+  AorBucket* bucket = reg_cache_ht.get_bucket(bucket_id);
   bucket->lock();
   list<string> alias_list;
   bucket->gbc(storage_handler.get(),now.tv_sec,alias_list);
@@ -182,9 +219,17 @@ void _RegisterCache::gbc(unsigned int bucket_id)
       it != alias_list.end(); it++){
     AliasBucket* alias_bucket = getAliasBucket(*it);
     alias_bucket->lock();
-    AliasEntry* alias_e = alias_bucket->getContact(*it);
-    if(alias_e && alias_e->ua_expire) {
-      removeAliasUATimer(alias_e);
+    AliasEntry* ae = alias_bucket->getContact(*it);
+    if(ae) {
+      if(ae->ua_expire)
+	removeAliasUATimer(ae);
+
+      ContactBucket* ct_bucket = getContactBucket(ae->contact_uri,
+						  ae->source_ip,
+						  ae->source_port);
+      ct_bucket->lock();
+      ct_bucket->remove(ae->contact_uri,ae->source_ip,ae->source_port);
+      ct_bucket->unlock();
     }
     alias_bucket->remove(*it);
     alias_bucket->unlock();
@@ -250,22 +295,28 @@ string _RegisterCache::canonicalize_aor(const string& uri)
   return canon_uri;
 }
 
-ContactCacheBucket* _RegisterCache::getContactBucket(const string& aor)
+AorBucket* _RegisterCache::getAorBucket(const string& aor)
 {
   return reg_cache_ht.get_bucket(hash_1str(aor));
+}
+
+void ContactBucket::insert(const string& contact_uri, const string& remote_ip,
+			   unsigned short remote_port, const string& alias)
+{
+  string k = contact_uri + "/" + remote_ip + ":" + int2str(remote_port);
+  elmts.insert(value_map::value_type(k,new string(alias)));
 }
 
 bool _RegisterCache::getAlias(const string& canon_aor, const string& uri,
 			      RegBinding& out_binding)
 {
-  //string canon_aor = canonicalize_aor(aor);
   if(canon_aor.empty()) {
     DBG("Canonical AOR is empty");
     return false;
   }
 
   bool alias_found = false;
-  ContactCacheBucket* bucket = getContactBucket(canon_aor);
+  AorBucket* bucket = getAorBucket(canon_aor);
   bucket->lock();
 
   AorEntry* aor_e = bucket->get(canon_aor);
@@ -285,6 +336,14 @@ bool _RegisterCache::getAlias(const string& canon_aor, const string& uri,
 AliasBucket* _RegisterCache::getAliasBucket(const string& alias)
 {
   return id_idx.get_bucket(hash_1str(alias));
+}
+
+ContactBucket* _RegisterCache::getContactBucket(const string& contact_uri,
+						const string& remote_ip,
+						unsigned short remote_port)
+{
+  unsigned int h = hash_2str_1int(contact_uri,remote_ip,remote_port);
+  return contact_idx.get_bucket(h);
 }
 
 void _RegisterCache::setAliasUATimer(AliasEntry* alias_e)
@@ -308,11 +367,16 @@ void _RegisterCache::removeAliasUATimer(AliasEntry* alias_e)
   AmAppTimer::instance()->removeTimer(alias_e);
 }
 
-void _RegisterCache::update(const string& canon_aor, const string& alias, 
-			    long int reg_expires, const AliasEntry& alias_update)
+void _RegisterCache::update(const string& alias, long int reg_expires,
+			    const AliasEntry& alias_update)
 {
   string uri = alias_update.contact_uri;
-  ContactCacheBucket* bucket = getContactBucket(canon_aor);
+  string canon_aor = alias_update.aor;
+  if(canon_aor.empty()) {
+    DBG("Canonical AOR is empty");
+  }
+
+  AorBucket* bucket = getAorBucket(canon_aor);
   AliasBucket* alias_bucket = getAliasBucket(alias);
 
   bucket->lock();
@@ -321,7 +385,7 @@ void _RegisterCache::update(const string& canon_aor, const string& alias,
   // Try to get the existing binding
   RegBinding* binding = NULL;
   AorEntry* aor_e = bucket->get(canon_aor);
-  if(!aor_e){
+  if(!aor_e) {
     // insert AorEntry if none
     aor_e = new AorEntry();
     bucket->insert(canon_aor,aor_e);
@@ -341,6 +405,13 @@ void _RegisterCache::update(const string& canon_aor, const string& alias,
     aor_e->insert(AorEntry::value_type(uri,binding));
     DBG("inserted new binding: '%s' -> '%s'",
 	uri.c_str(), alias.c_str());
+
+    ContactBucket* ct_bucket = getContactBucket(uri,alias_update.source_ip,
+						alias_update.source_port);
+    ct_bucket->lock();
+    ct_bucket->insert(uri,alias_update.source_ip,
+		      alias_update.source_port,alias);
+    ct_bucket->unlock();
   }
   else {
     DBG("updating existing binding: '%s' -> '%s'",
@@ -376,17 +447,18 @@ void _RegisterCache::update(const string& canon_aor, const string& alias,
   bucket->unlock();
 }
 
-void _RegisterCache::update(const string& canon_aor, long int reg_expires,
-			    const AliasEntry& alias_update)
+void _RegisterCache::update(long int reg_expires, const AliasEntry& alias_update)
 {
   string uri = alias_update.contact_uri;
-  ContactCacheBucket* bucket = getContactBucket(canon_aor);
+  string canon_aor = alias_update.aor;
+
+  AorBucket* bucket = getAorBucket(canon_aor);
   bucket->lock();
 
   // Try to get the existing binding
   RegBinding* binding = NULL;
   AorEntry* aor_e = bucket->get(canon_aor);
-  if(!aor_e){
+  if(!aor_e) {
     // insert AorEntry if none
     aor_e = new AorEntry();
     bucket->insert(canon_aor,aor_e);
@@ -406,6 +478,13 @@ void _RegisterCache::update(const string& canon_aor, long int reg_expires,
     aor_e->insert(AorEntry::value_type(uri,binding));
     DBG("inserted new binding: '%s' -> '%s'",
 	uri.c_str(), binding->alias.c_str());
+
+    ContactBucket* ct_bucket = getContactBucket(uri,alias_update.source_ip,
+						alias_update.source_port);
+    ct_bucket->lock();
+    ct_bucket->insert(uri,alias_update.source_ip,
+		      alias_update.source_port,binding->alias);
+    ct_bucket->unlock();
   }
   else {
     DBG("updating existing binding: '%s' -> '%s'",
@@ -452,9 +531,9 @@ bool _RegisterCache::updateAliasExpires(const string& alias, long int ua_expires
   AliasEntry* alias_e = alias_bucket->getContact(alias);
   if(alias_e) {
     alias_e->ua_expire = ua_expires;
-    if(alias_e->ua_expire) {
+    if(alias_e->ua_expire)
       setAliasUATimer(alias_e);
-    }
+
     if(storage_handler.get()) {
       storage_handler->onUpdate(alias,ua_expires);
     }
@@ -468,13 +547,12 @@ bool _RegisterCache::updateAliasExpires(const string& alias, long int ua_expires
 void _RegisterCache::remove(const string& canon_aor, const string& uri, 
 			    const string& alias)
 {
-  //string canon_aor = canonicalize_aor(aor);
   if(canon_aor.empty()) {
     DBG("Canonical AOR is empty");
     return;
   }
 
-  ContactCacheBucket* bucket = getContactBucket(canon_aor);
+  AorBucket* bucket = getAorBucket(canon_aor);
   AliasBucket* alias_bucket = getAliasBucket(alias);
   
   bucket->lock();
@@ -496,12 +574,19 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
     }
   }
 
-  AliasEntry* alias_e = alias_bucket->getContact(alias);
-  if(alias_e && alias_e->ua_expire) {
-    removeAliasUATimer(alias_e);
+  AliasEntry* ae = alias_bucket->getContact(alias);
+  if(ae) {
+    if(ae->ua_expire)
+      removeAliasUATimer(ae);
+
+    ContactBucket* ct_bucket = getContactBucket(uri,ae->source_ip,
+						ae->source_port);
+    ct_bucket->lock();
+    ct_bucket->remove(uri,ae->source_ip,ae->source_port);
+    ct_bucket->unlock();
   }
+
   alias_bucket->remove(alias);
-  
   alias_bucket->unlock();
   bucket->unlock();
 }
@@ -513,7 +598,7 @@ void _RegisterCache::remove(const string& aor)
     return;
   }
 
-  ContactCacheBucket* bucket = getContactBucket(aor);
+  AorBucket* bucket = getAorBucket(aor);
   bucket->lock();
 
   DBG("removing entries for aor = '%s'", aor.c_str());
@@ -529,9 +614,17 @@ void _RegisterCache::remove(const string& aor)
       AliasBucket* alias_bucket = getAliasBucket(binding->alias);
       alias_bucket->lock();
 
-      AliasEntry* alias_e = alias_bucket->getContact(binding->alias);
-      if(alias_e && alias_e->ua_expire) {
-	removeAliasUATimer(alias_e);
+      AliasEntry* ae = alias_bucket->getContact(binding->alias);
+      if(ae) {
+	if(ae->ua_expire)
+	  removeAliasUATimer(ae);
+
+	ContactBucket* ct_bucket = getContactBucket(ae->contact_uri,
+						    ae->source_ip,
+						    ae->source_port);
+	ct_bucket->lock();
+	ct_bucket->remove(ae->contact_uri,ae->source_ip,ae->source_port);
+	ct_bucket->unlock();
       }
 
       alias_bucket->remove(binding->alias);
@@ -554,7 +647,7 @@ bool _RegisterCache::getAorAliasMap(const string& canon_aor,
     return false;
   }
 
-  ContactCacheBucket* bucket = getContactBucket(canon_aor);
+  AorBucket* bucket = getAorBucket(canon_aor);
   bucket->lock();
   AorEntry* aor_e = bucket->get(canon_aor);
   if(aor_e) {
@@ -587,6 +680,28 @@ bool _RegisterCache::findAliasEntry(const string& alias, AliasEntry& alias_entry
   bucket->unlock();
   return res;
 }
+
+bool _RegisterCache::findAEByContact(const string& contact_uri,
+				     const string& remote_ip,
+				     unsigned short remote_port,
+				     AliasEntry& ae)
+{
+  bool res = false;
+
+  ContactBucket* ct_bucket = getContactBucket(contact_uri,remote_ip,
+					      remote_port);
+  ct_bucket->lock();
+  string alias = ct_bucket->getAlias(contact_uri,remote_ip,remote_port);
+  ct_bucket->unlock();
+
+  if(alias.empty())
+    return false;
+
+  res = findAliasEntry(alias,ae);
+
+  return res;
+}
+
 
 int _RegisterCache::parseAoR(RegisterCacheCtx& ctx,
 			     const AmSipRequest& req)
@@ -892,7 +1007,7 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
   alias_update.local_if = req.local_if;
   alias_update.ua_expire = ua_expires + now.tv_sec;
 
-  update(ctx.from_aor,reg_expires,alias_update);
+  update(reg_expires,alias_update);
 
   contact->params["expires"] = int2str(ua_expires);
   string contact_hdr = SIP_HDR_COLSP(SIP_HDR_CONTACT)

@@ -477,9 +477,7 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
 	alias_entry.ua_expire   = orig_expires + now.tv_sec;
 
 	RegisterCache* reg_cache = RegisterCache::instance();
-	reg_cache->update(aor, alias_it->first,
-			  expires + now.tv_sec,
-			  alias_entry);
+	reg_cache->update(alias_it->first, expires + now.tv_sec, alias_entry);
 
 	alias_map.erase(alias_it);
       }

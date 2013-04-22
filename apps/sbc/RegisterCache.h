@@ -88,11 +88,11 @@ struct RegCacheStorageHandler
  * Hash-table bucket:
  *   AoR -> AorEntry
  */
-class ContactCacheBucket
+class AorBucket
   : public ht_map_bucket<string,AorEntry>
 {
 public:
-  ContactCacheBucket(unsigned long id)
+  AorBucket(unsigned long id)
   : ht_map_bucket<string,AorEntry>(id) 
   {}
 
@@ -122,7 +122,27 @@ public:
 
   AliasEntry* getContact(const string& alias);
 
-  void dump_elmt(const string& alias, const AliasEntry* p_uri) const;
+  void dump_elmt(const string& alias, const AliasEntry* ae) const;
+};
+
+class ContactBucket
+  : public ht_map_bucket<string,string>
+{
+public:
+  ContactBucket(unsigned long int id)
+  : ht_map_bucket<string,string>(id)
+  {}
+
+  void insert(const string& contact_uri, const string& remote_ip,
+	      unsigned short remote_port, const string& alias);
+
+  string getAlias(const string& contact_uri, const string& remote_ip,
+		  unsigned short remote_port);
+
+  void remove(const string& contact_uri, const string& remote_ip,
+	      unsigned short remote_port);
+
+  void dump_elmt(const string& key, const string* alias) const;
 };
 
 /** 
@@ -157,8 +177,9 @@ struct RegisterCacheCtx
 class _RegisterCache
   : public AmThread
 {
-  hash_table<ContactCacheBucket> reg_cache_ht;
+  hash_table<AorBucket> reg_cache_ht;
   hash_table<AliasBucket>        id_idx;
+  hash_table<ContactBucket>      contact_idx;
 
   auto_ptr<RegCacheStorageHandler> storage_handler;
 
@@ -182,13 +203,20 @@ protected:
    * Returns the bucket associated with the passed contact-uri
    * aor: canonicalized AOR
    */
-  ContactCacheBucket* getContactBucket(const string& aor);
+  AorBucket* getAorBucket(const string& aor);
 
   /**
    * Returns the bucket associated with the alias given
    * alias: Contact-user
    */
   AliasBucket* getAliasBucket(const string& alias);
+
+  /**
+   * Returns the bucket associated with the contact-URI given
+   */
+  ContactBucket* getContactBucket(const string& contact_uri,
+				  const string& remote_ip,
+				  unsigned short remote_port);
 
   int parseAoR(RegisterCacheCtx& ctx, const AmSipRequest& req);
   int parseContacts(RegisterCacheCtx& ctx, const AmSipRequest& req);
@@ -225,11 +253,10 @@ public:
    * uri: Contact-URI
    * alias: 
    */
-  void update(const string& canon_aor, const string& alias, 
-	      long int reg_expires, const AliasEntry& alias_update);
-
-  void update(const string& canon_aor, long int reg_expires,
+  void update(const string& alias, long int reg_expires,
 	      const AliasEntry& alias_update);
+
+  void update(long int reg_expires, const AliasEntry& alias_update);
 
   bool updateAliasExpires(const string& alias, long int ua_expires);
 
@@ -265,6 +292,12 @@ public:
    * Retrieve the alias entry related to the given alias
    */
   bool findAliasEntry(const string& alias, AliasEntry& alias_entry);
+
+  /**
+   * Retrieve the alias entry related to the given contact-URI, remote-IP & port
+   */
+  bool findAEByContact(const string& contact_uri, const string& remote_ip,
+		       unsigned short remote_port, AliasEntry& ae);
 
   /**
    * Throttle REGISTER requests
