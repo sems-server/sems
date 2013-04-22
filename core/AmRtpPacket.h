@@ -33,6 +33,7 @@
 #include <netinet/in.h>
 
 class AmRtpPacketTracer;
+class msg_logger;
 
 /** \brief RTP packet implementation */
 class AmRtpPacket {
@@ -80,6 +81,8 @@ public:
   unsigned char* getBuffer();
   void setBufferSize(unsigned int b) { b_size = b; }
 
+  void logReceived(msg_logger *logger, struct sockaddr_storage *laddr);
+  void logSent(msg_logger *logger, struct sockaddr_storage *laddr);
 };
 
 #endif

@@ -5,6 +5,7 @@
 #include <strings.h>
 #include "AmB2BSession.h"
 #include "AmRtpReceiver.h"
+#include "sip/msg_logger.h"
 
 #include <algorithm>
 
@@ -495,6 +496,11 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
 { 
 }
 
+AmB2BMedia::~AmB2BMedia()
+{
+  if (logger) dec_ref(logger);
+}
+
 void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
 {
   mutex.lock();
@@ -551,6 +557,9 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
         }
       }
     }
+
+    // reset logger (needed if a stream changes)
+    i->setLogger(logger);
 
     // return back for processing if needed
     if (processing_started) {
@@ -618,7 +627,10 @@ void AmB2BMedia::clearAudio(bool a_leg)
   // forget sessions to avoid using them once clearAudio is called
   changeSessionUnsafe(a_leg, NULL);
 
-  if (!a && !b) audio.clear(); // both legs cleared
+  if (!a && !b) {
+    audio.clear(); // both legs cleared
+    // FIXME: release relay_streams!
+  }
 
   mutex.unlock();
 }
@@ -651,6 +663,7 @@ void AmB2BMedia::createStreams(const AmSdp &sdp)
       if (create_audio) {
         AudioStreamPair pair(a, b, idx);
         audio.push_back(pair);
+        audio.back().setLogger(logger);
       }
       else if (++astreams == audio.end()) create_audio = true; // we went through the last audio stream
     }
@@ -663,6 +676,7 @@ void AmB2BMedia::createStreams(const AmSdp &sdp)
     {
       if (create_relay) {
 	relay_streams.push_back(new RelayStreamPair(a, b));
+        relay_streams.back()->setLogger(logger);
       }
       else if (++rstreams == relay_streams.end()) create_relay = true; // we went through the last relay stream
     }
@@ -1146,4 +1160,15 @@ void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer,
   }
 
   mutex.unlock();
+}
+
+void AmB2BMedia::setRtpLogger(msg_logger* _logger)
+{
+  if (logger) dec_ref(logger);
+  logger = _logger;
+  if (logger) inc_ref(logger);
+
+  // walk through all the streams and use logger for them
+  for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) i->setLogger(logger);
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) (*j)->setLogger(logger);
 }

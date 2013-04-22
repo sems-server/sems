@@ -42,6 +42,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include "sip/msg_logger.h"
+
 AmRtpPacket::AmRtpPacket()
   : data_offset(0)
 {
@@ -272,3 +274,16 @@ int AmRtpPacket::recv(int sd)
     
   return ret;
 }
+
+void AmRtpPacket::logReceived(msg_logger *logger, struct sockaddr_storage *laddr)
+{
+  static const cstring empty;
+  logger->log((const char *)buffer, b_size, &addr, laddr, empty);
+}
+
+void AmRtpPacket::logSent(msg_logger *logger, struct sockaddr_storage *laddr)
+{
+  static const cstring empty;
+  logger->log((const char *)buffer, b_size, laddr, &addr, empty);
+}
+

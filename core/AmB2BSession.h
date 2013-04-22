@@ -302,7 +302,7 @@ private:
     AmB2BMedia *media_session;
 
   public:
-    void setMediaSession(AmB2BMedia *new_session);
+    virtual void setMediaSession(AmB2BMedia *new_session);
     AmB2BMedia *getMediaSession() { return media_session; }
 };
 

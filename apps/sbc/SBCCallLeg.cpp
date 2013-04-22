@@ -152,7 +152,8 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg)
     call_profile(call_profile),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START),
     ext_cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_END + 1),
-    cc_started(false)
+    cc_started(false),
+    logger(NULL)
 {
   set_sip_relay_only(false);
   dlg->setRel100State(Am100rel::REL100_IGNORED);
@@ -178,7 +179,8 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
   : auth(NULL),
     call_profile(caller->getCallProfile()),
     CallLeg(caller,p_dlg),
-    cc_started(false)
+    cc_started(false),
+    logger(NULL)
 {
   // FIXME: do we want to inherit cc_vars from caller?
   // Can be pretty dangerous when caller stored pointer to object - we should
@@ -209,6 +211,8 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
   }
 
   initCCModules();
+
+  setLogger(caller->getLogger());
 }
 
 void SBCCallLeg::onStart()
@@ -433,6 +437,7 @@ SBCCallLeg::~SBCCallLeg()
 {
   if (auth)
     delete auth;
+  if (logger) dec_ref(logger);
 }
 
 void SBCCallLeg::onBeforeDestroy()
@@ -1002,23 +1007,12 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
       return false;
     }
 
-    if (!dlg->getMsgLogger() && !call_profile.msg_logger_path.empty()) {
+    if (!logger && !call_profile.msg_logger_path.empty()) {
+      // open the logger if not already opened
       ParamReplacerCtx ctx;
       string log_path = ctx.replaceParameters(call_profile.msg_logger_path,
 					      "msg_logger_path",req);
-      file_msg_logger* logger = new pcap_logger();
-      if(!logger->open(log_path.c_str())) {
-        req.tt.lock_bucket();
-        const sip_trans* t = req.tt.get_trans();
-        if (t) {
-          sip_msg* msg = t->msg;
-          logger->log(msg->buf,msg->len,&msg->remote_ip,
-              &msg->local_ip,msg->u.request->method_str);
-        }
-        req.tt.unlock_bucket();
-        dlg->setMsgLogger(logger);
-      }
-      else delete logger;
+      if (openLogger(log_path)) logRequest(req);
     }
 
     // evaluate ret
@@ -1647,4 +1641,51 @@ void SBCCallLeg::createHoldRequest(AmSdp &sdp)
     if ((*i)->createHoldRequest(this, sdp) == StopProcessing) return;
   }
   CallLeg::createHoldRequest(sdp);
+}
+
+void SBCCallLeg::setMediaSession(AmB2BMedia *new_session)
+{
+  if (new_session && call_profile.log_rtp) new_session->setRtpLogger(logger);
+  CallLeg::setMediaSession(new_session);
+}
+
+bool SBCCallLeg::openLogger(const std::string &path)
+{
+  file_msg_logger *log = new pcap_logger();
+
+  if(log->open(path.c_str()) != 0) {
+    // open error
+    delete log;
+    return false;
+  }
+
+  // opened successfully
+  setLogger(log);
+  return true;
+}
+
+void SBCCallLeg::setLogger(msg_logger *_logger)
+{
+  if (logger) dec_ref(logger); // release the old one
+
+  logger = _logger;
+  inc_ref(logger);
+  if (call_profile.log_sip) dlg->setMsgLogger(logger);
+
+  AmB2BMedia *m = getMediaSession();
+  if (m && call_profile.log_rtp) m->setRtpLogger(logger);
+}
+
+void SBCCallLeg::logRequest(const AmSipRequest &req)
+{
+  if (!call_profile.log_sip) return;
+
+  req.tt.lock_bucket();
+  const sip_trans* t = req.tt.get_trans();
+  if (t) {
+    sip_msg* msg = t->msg;
+    logger->log(msg->buf,msg->len,&msg->remote_ip,
+        &msg->local_ip,msg->u.request->method_str);
+  }
+  req.tt.unlock_bucket();
 }

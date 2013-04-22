@@ -188,6 +188,8 @@ class AudioStreamData {
     void mute(bool set_mute);
     void setInput(AmAudio *_in) { in = _in; }
     AmAudio *getInput() { return in; }
+
+    void setLogger(msg_logger *logger) { if (stream) stream->setLogger(logger); }
 };
 
 /** \brief Class for control over media relaying and transcoding in a B2B session.
@@ -271,11 +273,13 @@ class AmB2BMedia: public AmMediaSession
       AudioStreamData a, b;
       int media_idx;
       AudioStreamPair(AmB2BSession *_a, AmB2BSession *_b, int _media_idx): a(_a), b(_b), media_idx(_media_idx) { }
+      void setLogger(msg_logger *logger) { a.setLogger(logger); b.setLogger(logger); }
     };
 
     struct RelayStreamPair {
       AmRtpStream a, b;
       RelayStreamPair(AmB2BSession *_a, AmB2BSession *_b);
+      void setLogger(msg_logger *logger) { a.setLogger(logger); b.setLogger(logger); }
     };
 
     typedef std::vector<AudioStreamPair>::iterator AudioStreamIterator;
@@ -324,8 +328,11 @@ class AmB2BMedia: public AmMediaSession
     void setMuteFlag(bool a_leg, bool set);
     void changeSessionUnsafe(bool a_leg, AmB2BSession *new_session);
 
+    msg_logger* logger; // log RTP traffic
+
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
+    virtual ~AmB2BMedia();
 
     void changeSession(bool a_leg, AmB2BSession *new_session);
 
@@ -416,6 +423,8 @@ class AmB2BMedia: public AmMediaSession
 
     void setFirstStreamInput(bool a_leg, AmAudio *in);
     void createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con);
+
+    void setRtpLogger(msg_logger* _logger);
 };
 
 #endif

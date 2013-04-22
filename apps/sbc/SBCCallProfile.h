@@ -252,6 +252,8 @@ struct SBCCallProfile
 
   // message logging feature
   string msg_logger_path;
+  bool log_rtp;
+  bool log_sip;
 
   SBCCallProfile()
   : auth_enabled(false),
@@ -268,7 +270,9 @@ struct SBCCallProfile
     rtprelay_bw_limit_peak(-1),
     outbound_interface_value(-1),
     contact_hiding(false), 
-    reg_caching(false)
+    reg_caching(false),
+    log_rtp(false),
+    log_sip(false)
   { }
 
   ~SBCCallProfile()

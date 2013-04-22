@@ -63,6 +63,13 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   // Measurements
   list<atomic_int*> rtp_pegs;
 
+  /** common logger for RTP/RTCP and SIP packets */
+  msg_logger *logger;
+
+  bool openLogger(const std::string &path);
+  void logRequest(const AmSipRequest &req);
+  void setLogger(msg_logger *_logger);
+
   void fixupCCInterface(const string& val, CCInterface& cc_if);
 
   /** handler called when the second leg is connected */
@@ -172,6 +179,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   // timers accessible from CC modules
   int startTimer(double timeout) { setTimer(ext_cc_timer_id, timeout); return ext_cc_timer_id++; }
 
+  virtual void setMediaSession(AmB2BMedia *new_session);
+
  protected:
 
   void setOtherId(const AmSipReply& reply);
@@ -192,6 +201,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   virtual void createHoldRequest(AmSdp &sdp);
 
   int applySSTCfg(AmConfigReader& sst_cfg, const AmSipRequest* p_req);
+
+  msg_logger *getLogger() { return logger; }
 };
 
 #endif

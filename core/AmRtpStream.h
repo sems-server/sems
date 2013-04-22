@@ -63,6 +63,7 @@ class  AmAudio;
 class  AmSession;
 struct SdpPayload;
 struct amci_payload_t;
+class msg_logger;
 
 /**
  * This provides the memory for the receive buffer.
@@ -200,6 +201,7 @@ protected:
    */
   struct sockaddr_storage r_saddr;
   struct sockaddr_storage l_saddr;
+  struct sockaddr_storage l_rtcp_saddr;
 
   /** Local port */
   unsigned short     l_port;
@@ -264,6 +266,8 @@ protected:
 
   /** Session owning this stream */
   AmSession*         session;
+
+  msg_logger *logger;
 
   /** Payload provider */
   AmPayloadProvider* payload_provider;
@@ -479,6 +483,9 @@ public:
    * not be reinitialised implicitly (it might be used for media traffic
    * already). */
   void changeSession(AmSession *_s) { session = _s; }
+
+  /** set destination for logging all received/sent RTP and RTCP packets */
+  void setLogger(msg_logger *_logger);
 };
 
 #endif

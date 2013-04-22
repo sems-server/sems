@@ -362,6 +362,8 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   if (!transcoder.readConfig(cfg)) return false;
 
   msg_logger_path = cfg.getParameter("msg_logger_path");
+  log_rtp = cfg.getParameter("log_rtp","no") == "yes";
+  log_sip = cfg.getParameter("log_sip","yes") == "yes";
 
   reg_caching = cfg.getParameter("enable_reg_caching","no") == "yes";
   min_reg_expires = cfg.getParameterInt("min_reg_expires",0);

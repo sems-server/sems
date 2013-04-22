@@ -41,6 +41,7 @@
 
 #include "sip/resolver.h"
 #include "sip/ip_util.h"
+#include "sip/msg_logger.h"
 
 #include "log.h"
 
@@ -202,6 +203,9 @@ void AmRtpStream::setLocalPort()
   AmRtpReceiver::instance()->addStream(l_rtcp_sd, this);
   DBG("added stream [%p] to RTP receiver (%s:%i/%i)\n", this,
       get_addr_str((sockaddr_storage*)&l_saddr).c_str(),l_port,l_rtcp_port);
+
+  memcpy(&l_rtcp_saddr, &l_saddr, sizeof(l_saddr));
+  am_set_port(&l_rtcp_saddr, l_rtcp_port);
 }
 
 int AmRtpStream::ping()
@@ -278,6 +282,8 @@ int AmRtpStream::compile_and_send(const int payload, bool marker, unsigned int t
     return -1;
   }
  
+  if (logger) rp.logSent(logger, &l_saddr);
+ 
   return size;
 }
 
@@ -314,7 +320,9 @@ int AmRtpStream::send_raw( char* packet, unsigned int length )
     ERROR("while sending raw RTP packet.\n");
     return -1;
   }
- 
+
+  if (logger) rp.logSent(logger, &l_saddr);
+
   return length;
 }
 
@@ -380,6 +388,7 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     l_sd(0), 
     r_ssrc_i(false),
     session(_s),
+    logger(NULL),
     passive(false),
     passive_rtcp(false),
     offer_answer_used(true),
@@ -416,6 +425,7 @@ AmRtpStream::~AmRtpStream()
     close(l_sd);
     close(l_rtcp_sd);
   }
+  if (logger) dec_ref(logger);
 }
 
 int AmRtpStream::getLocalPort()
@@ -938,6 +948,8 @@ void AmRtpStream::recvPacket(int fd)
   if(p->recv(l_sd) > 0){
     int parse_res = 0;
 
+    if (logger) p->logReceived(logger, &l_saddr);
+
     gettimeofday(&p->recv_time,NULL);
     
     if(!relay_raw)
@@ -970,6 +982,10 @@ void AmRtpStream::recvRtcpPacket()
     return;
   }
 
+  static const cstring empty;
+  if (logger)
+    logger->log((const char *)buffer, recved_bytes, &recv_addr, &l_rtcp_saddr, empty);
+
   // clear RTP timer
   clearRTPTimeout();
 
@@ -996,6 +1012,10 @@ void AmRtpStream::recvRtcpPacket()
     ERROR("could not relay RTCP packet: %s\n",strerror(errno));
     return;
   }
+
+  if (logger)
+    logger->log((const char *)buffer, recved_bytes, &relay_stream->l_rtcp_saddr, &rtcp_raddr, empty);
+
 }
 
 void AmRtpStream::relay(AmRtpPacket* p)
@@ -1020,6 +1040,7 @@ void AmRtpStream::relay(AmRtpPacket* p)
 	  get_addr_str(&r_saddr).c_str(),am_get_port(&r_saddr));
   }
   else {
+    if (logger) p->logSent(logger, &l_saddr);
     if(session) session->onAfterRTPRelay(p,&r_saddr);
   }
 }
@@ -1166,4 +1187,10 @@ inline void PacketMem::clear()
   memset(used, 0, sizeof(used));
   n_used = cur_idx = 0;
 }
- 
+
+void AmRtpStream::setLogger(msg_logger* _logger)
+{
+  if (logger) dec_ref(logger);
+  logger = _logger;
+  if (logger) inc_ref(logger);
+}
