@@ -155,7 +155,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   CallStatus getCallStatus() { return CallLeg::getCallStatus(); }
 
   // media interface must be accessible from CC modules
-  AmB2BMedia *getMediaSession() { return media_session; }
+  AmB2BMedia *getMediaSession() { return AmB2BSession::getMediaSession(); }
   virtual bool updateLocalSdp(AmSdp &sdp);
   virtual bool updateRemoteSdp(AmSdp &sdp);
   void changeRtpMode(RTPRelayMode new_mode);

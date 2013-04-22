@@ -569,10 +569,11 @@ void SBCCallLeg::onOtherBye(const AmSipRequest& req)
 
 void SBCCallLeg::onDtmf(int event, int duration)
 {
-  if(media_session) {
+  AmB2BMedia *ms = getMediaSession();
+  if(ms) {
     DBG("received DTMF on %c-leg (%i;%i)\n",
 	a_leg ? 'A': 'B', event, duration);
-    media_session->sendDtmf(!a_leg,event,duration);
+    ms->sendDtmf(!a_leg,event,duration);
   }
 }
 
@@ -588,7 +589,8 @@ bool SBCCallLeg::updateRemoteSdp(AmSdp &sdp)
 {
   SBCRelayController rc(&call_profile.transcoder, a_leg);
   if (call_profile.transcoder.isActive()) {
-    if (media_session) return media_session->updateRemoteSdp(a_leg, sdp, &rc);
+    AmB2BMedia *ms = getMediaSession();
+    if (ms) return ms->updateRemoteSdp(a_leg, sdp, &rc);
   }
 
   // call original implementation because our special conditions above are not met
@@ -1602,7 +1604,7 @@ void SBCCallLeg::onB2BEvent(B2BEvent* ev)
       case RTP_Relay:
       case RTP_Transcoding:
           setMediaSession(e->media);
-          media_session->changeSession(a_leg, this);
+          if (e->media) getMediaSession()->changeSession(a_leg, this);
           break;
 
       case RTP_Direct:

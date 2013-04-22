@@ -242,10 +242,10 @@ bool CallLeg::setOther(const string &id, bool use_initial_sdp)
       setOtherId(id);
       clearRtpReceiverRelay(); // release old media session if set
       setMediaSession(i->media_session);
-      if (media_session) {
+      if (i->media_session) {
         TRACE("connecting media session: %s to %s\n", 
             dlg->getLocalTag().c_str(), getOtherId().c_str());
-        media_session->changeSession(a_leg, this);
+        i->media_session->changeSession(a_leg, this);
         if (use_initial_sdp) updateRemoteSdp(initial_sdp);
       }
       else {
@@ -504,7 +504,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   setRtpRelayMode(ev->rtp_mode);
   if (ev->media) {
     setMediaSession(ev->media);
-    media_session->changeSession(a_leg, this);
+    getMediaSession()->changeSession(a_leg, this);
   }
 
   MONITORING_LOG3(getLocalTag().c_str(),
@@ -639,9 +639,10 @@ void CallLeg::disconnect(bool hold_remote)
 
 void CallLeg::createHoldRequest(AmSdp &sdp)
 {
-  if (media_session) {
-    media_session->mute(a_leg);
-    media_session->createHoldRequest(sdp, a_leg, false /*mark_zero_connection*/, true /*mark_sendonly*/);
+  AmB2BMedia *ms = getMediaSession();
+  if (ms) {
+    ms->mute(a_leg);
+    ms->createHoldRequest(sdp, a_leg, false /*mark_zero_connection*/, true /*mark_sendonly*/);
   }
   else {
     sdp.clear();
@@ -680,7 +681,7 @@ void CallLeg::putOnHold()
 
   AmSdp sdp;
   createHoldRequest(sdp);
-  if (media_session) updateLocalSdp(sdp);
+  updateLocalSdp(sdp);
 
   // generate re-INVITE with hold request
   //reinvite(sdp, hold_request_cseq);
@@ -712,11 +713,9 @@ void CallLeg::resumeHeld(bool send_reinvite)
     return;
   }
 
-  if (media_session) {
-    AmSdp sdp;
-    if (sdp.parse((const char *)established_body.getPayload()) == 0)
-      updateLocalSdp(sdp);
-  }
+  AmSdp sdp;
+  if (sdp.parse((const char *)established_body.getPayload()) == 0)
+    updateLocalSdp(sdp);
 
   if (dlg->reinvite("", &established_body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
@@ -739,7 +738,8 @@ void CallLeg::handleHoldReply(bool succeeded)
     case ResumeRequested:
       if (succeeded) {
         hold_status = NotHeld; // call resumed successfully
-        if (media_session) media_session->unmute(a_leg);
+        AmB2BMedia *ms = getMediaSession();
+        if (ms) ms->unmute(a_leg);
       }
       break;
 

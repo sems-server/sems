@@ -1147,7 +1147,7 @@ void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) 
 
   if ((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) {
     setMediaSession(new AmB2BMedia(this, callee_session)); // we need to add our reference
-    callee_session->setMediaSession(media_session);
+    callee_session->setMediaSession(getMediaSession());
     
     // Misusing invite_req here, but seems to be better than misusing
     // invite_sdp. The best way would be to propagate SDP as parameter of
