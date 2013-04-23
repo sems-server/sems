@@ -624,12 +624,22 @@ void AmB2BMedia::clearAudio(bool a_leg)
     else i->b.clear();
   }
 
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) {
+    if ((*j)->a.hasLocalSocket())
+      AmRtpReceiver::instance()->removeStream((*j)->a.getLocalSocket());
+    if ((*j)->b.hasLocalSocket())
+      AmRtpReceiver::instance()->removeStream((*j)->b.getLocalSocket());
+  }
+
   // forget sessions to avoid using them once clearAudio is called
   changeSessionUnsafe(a_leg, NULL);
 
   if (!a && !b) {
     audio.clear(); // both legs cleared
-    // FIXME: release relay_streams!
+    for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) {
+      delete *j;
+    }
+    relay_streams.clear();
   }
 
   mutex.unlock();
