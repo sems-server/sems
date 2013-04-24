@@ -876,7 +876,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	list<host_port> dest_list;
 	res = parse_next_hop(_next_hop,dest_list);
 	if(res) {
-	    DBG("parse_next_hop failed (%i)\n",res);
+	    DBG("parse_next_hop %.*s failed (%i)\n",_next_hop.len, _next_hop.s, res);
 	    return res;
 	}
 
