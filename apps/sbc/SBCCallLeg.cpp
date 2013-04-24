@@ -900,7 +900,7 @@ void SBCCallLeg::onStop() {
     gettimeofday(&call_end_ts, NULL);
   }
 
-  if (m_state == BB_Connected) {
+  if (a_leg && m_state == BB_Connected) { // m_state might be valid for A leg only
     stopCallTimers();
   }
 
