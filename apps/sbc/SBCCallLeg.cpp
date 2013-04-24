@@ -1669,7 +1669,7 @@ void SBCCallLeg::setLogger(msg_logger *_logger)
   if (logger) dec_ref(logger); // release the old one
 
   logger = _logger;
-  inc_ref(logger);
+  if (logger) inc_ref(logger);
   if (call_profile.log_sip) dlg->setMsgLogger(logger);
 
   AmB2BMedia *m = getMediaSession();
