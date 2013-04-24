@@ -1678,7 +1678,7 @@ void SBCCallLeg::setLogger(msg_logger *_logger)
 
 void SBCCallLeg::logRequest(const AmSipRequest &req)
 {
-  if (!call_profile.log_sip) return;
+  if (!call_profile.log_sip || !logger) return;
 
   req.tt.lock_bucket();
   const sip_trans* t = req.tt.get_trans();
