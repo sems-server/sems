@@ -399,6 +399,7 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
     monitor_rtp_timeout(true),
     relay_stream(NULL),
     relay_enabled(false),
+    relay_raw(false),
     sdp_media_index(-1),
     relay_transparent_ssrc(true),
     relay_transparent_seqno(true)
