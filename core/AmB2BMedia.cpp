@@ -569,6 +569,25 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
       i->b.resumeStreamProcessing();
     }
   }
+
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) {
+    AmRtpStream &a = (*j)->a;
+    AmRtpStream &b = (*j)->a;
+
+    /*if (a.hasLocalSocket())
+      AmRtpReceiver::instance()->removeStream(a.getLocalSocket());
+    if (b.hasLocalSocket())
+      AmRtpReceiver::instance()->removeStream(b.getLocalSocket());*/
+
+    a.changeSession(new_session);
+    b.changeSession(new_session);
+
+    /*if (a.hasLocalSocket())
+      AmRtpReceiver::instance()->addStream(a.getLocalSocket(), &a);
+    if (b.hasLocalSocket())
+      AmRtpReceiver::instance()->addStream(b.getLocalSocket(), &b);*/
+  }
+
   TRACE("session changed\n");
 }
 
