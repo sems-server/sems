@@ -147,7 +147,8 @@ void AmRtpStream::setLocalPort()
     return;
   
   if(l_if < 0) {
-    l_if = session->dlg->getOutboundIf();
+    if (session) l_if = session->getRtpRelayInterface();
+    else ERROR("BUG: no session when initializing RTP stream, invalid interface can be used\n");
   }
   
   int retry = 10;
@@ -249,7 +250,7 @@ int AmRtpStream::compile_and_send(const int payload, bool marker, unsigned int t
   rp.setAddr(&r_saddr);
 
 #ifdef WITH_ZRTP
-  if (session->zrtp_audio) {
+  if (session && session->zrtp_audio) {
     zrtp_status_t status = zrtp_status_fail;
     unsigned int size = rp.getBufferSize();
     status = zrtp_process_rtp(session->zrtp_audio, (char*)rp.getBuffer(), &size);
@@ -360,7 +361,7 @@ int AmRtpStream::receive( unsigned char* buffer, unsigned int size,
 
       DBG("DTMF: event=%i; e=%i; r=%i; volume=%i; duration=%i; ts=%u\n",
 	  dpl->event,dpl->e,dpl->r,dpl->volume,ntohs(dpl->duration),rp->timestamp);
-      session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), rp->timestamp));
+      if (session) session->postDtmfEvent(new AmRtpDtmfEvent(dpl, getLocalTelephoneEventRate(), rp->timestamp));
       mem.freePacket(rp);
       return RTP_DTMF;
     }
