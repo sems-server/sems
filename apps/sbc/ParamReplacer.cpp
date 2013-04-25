@@ -24,6 +24,7 @@
  */
 
 #include "ParamReplacer.h"
+#include "RegisterCache.h"
 
 #include "log.h"
 #include "AmSipHeaders.h"
@@ -217,6 +218,26 @@ string replaceParameters(const string& s,
 	    WARN("unknown replacement $R%c\n", s[p+1]);
 	}; break;
 
+	//case 'u': // Reg-cached destination user
+	case 'U': { // Reg-cached originating user
+	  if (s.length() < p+1) {
+	    WARN("unknown replacement $U\n");
+	    break;
+	  }
+	  if (s[p+1] == 'a') { // $Ua originating AoR
+	    AliasEntry ae;
+	    RegisterCache* reg_cache = RegisterCache::instance();
+	    if(reg_cache->findAEByContact(req.from_uri,req.remote_ip,
+					   req.remote_port,ae)) {
+	      res += ae.aor;
+	    }
+	    break;
+	  }
+	  // else if(s[p+1] == 'a') {
+	  //   break;
+	  // }
+	  WARN("unknown replacement $U%c\n", s[p+1]);
+	} break;
 
 #define case_HDR(pv_char, pv_name, hdr_name)				\
 	  case pv_char: {						\
