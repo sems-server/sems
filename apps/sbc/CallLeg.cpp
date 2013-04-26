@@ -237,6 +237,7 @@ int CallLeg::relaySipReply(AmSipReply &reply)
 
 bool CallLeg::setOther(const string &id, bool use_initial_sdp)
 {
+  if (getOtherId() == id) return true; // already set (needed when processing 2xx after 1xx)
   for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
     if (i->id == id) {
       setOtherId(id);
