@@ -31,6 +31,8 @@ void SimpleRelayController::computeRelayMask(const SdpMedia &m, bool &enable, Pa
   int te_pl = -1;
   enable = false;
 
+  mask.clear();
+
   // walk through the media lines and find the telephone-event payload
   for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin();
       i != m.payloads.end(); ++i)
