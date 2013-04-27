@@ -237,21 +237,35 @@ void AmSdp::print(string& body) const
 {
   string out_buf = "v="+int2str(version)+"\r\n"
     "o="+origin.user+" "+int2str(origin.sessId)+" "+
-	  int2str(origin.sessV)+" IN " + addr_t_2_str(conn.addrType) + " ";
+    int2str(origin.sessV)+" IN ";
+
   if (!origin.conn.address.empty())
-    out_buf += origin.conn.address+"\r\n";
+    if (origin.conn.address.find(".") != std::string::npos)
+      out_buf += "IP4 " + origin.conn.address + "\r\n";
+    else
+      out_buf += "IP6 " + origin.conn.address + "\r\n";
   else if (!conn.address.empty())
-    out_buf += conn.address+"\r\n";
+    if (conn.address.find(".") != std::string::npos)
+      out_buf += "IP4 " + conn.address + "\r\n";
+    else
+      out_buf += "IP6 " + conn.address + "\r\n";
   else if (media.size() && !media[0].conn.address.empty())
-    out_buf += media[0].conn.address+"\r\n";
+    if (media[0].conn.address.find(".") != std::string::npos)
+      out_buf += "IP4 " + media[0].conn.address + "\r\n";
+    else
+      out_buf += "IP6 " + media[0].conn.address + "\r\n";
   else
-    out_buf += "0.0.0.0\r\n";
+    out_buf += "IP4 0.0.0.0\r\n";
 
   out_buf +=
     "s="+sessionName+"\r\n";
-  if (!conn.address.empty())
-    out_buf += "c=IN " + addr_t_2_str(conn.addrType) + " " +
-	    conn.address + "\r\n";
+  if (!conn.address.empty()) {
+    if (conn.address.find(".") != std::string::npos)
+      out_buf += "c=IN IP4 ";
+    else
+      out_buf += "c=IN IP6 ";
+    out_buf += conn.address + "\r\n";
+  }
 
   out_buf += "t=0 0\r\n";
 
