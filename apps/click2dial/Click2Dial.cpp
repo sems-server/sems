@@ -247,9 +247,9 @@ void C2DCallerDialog::createCalleeSession()
   AmB2BCalleeSession* callee_session = new C2DCalleeDialog(this, c);
   AmSipDialog* callee_dlg = callee_session->dlg;
 
-  other_id = AmSession::getNewId();
+  AmB2BSession::setOtherId(AmSession::getNewId());
 
-  callee_dlg->setLocalTag(other_id);
+  callee_dlg->setLocalTag(AmB2BSession::getOtherId());
   callee_dlg->setCallid(AmSession::getNewId());
   callee_dlg->setLocalParty(dlg->getLocalParty());
   callee_dlg->setRemoteParty(dlg->getRemoteParty());
@@ -258,7 +258,7 @@ void C2DCallerDialog::createCalleeSession()
   callee_session->start();
 
   AmSessionContainer* sess_cont = AmSessionContainer::instance();
-  sess_cont->addSession(other_id,callee_session);
+  sess_cont->addSession(AmB2BSession::getOtherId(),callee_session);
 }
 
 
