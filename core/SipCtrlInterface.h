@@ -48,7 +48,7 @@ class trans_ticket;
 class udp_trsp_socket;
 class udp_trsp;
 
-class SipCtrlInterface:
+class _SipCtrlInterface:
     public sip_ua
 {
     bool sip_msg2am_request(const sip_msg *msg, const trans_ticket& tt, AmSipRequest &request);
@@ -74,8 +74,8 @@ public:
     static bool log_parsed_messages;
     static int udp_rcvbuf;
 
-    SipCtrlInterface();
-    ~SipCtrlInterface(){}
+    _SipCtrlInterface();
+    ~_SipCtrlInterface(){}
 
     int load();
 
@@ -118,6 +118,7 @@ public:
         sip_trans *tr, trans_bucket *buk=0);
 };
 
+typedef singleton<_SipCtrlInterface> SipCtrlInterface;
 
 #endif
 

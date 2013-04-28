@@ -75,7 +75,7 @@ const char* progname = NULL;    /**< Program name (actually argv[0])*/
 int main_pid = 0;               /**< Main process PID */
 
 /** SIP stack (controller interface) */
-static SipCtrlInterface sip_ctrl;
+#define sip_ctrl (*SipCtrlInterface::instance())
 
 
 static void print_usage(bool short_=false)

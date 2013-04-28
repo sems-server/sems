@@ -56,10 +56,10 @@
 #include "AmEventDispatcher.h"
 #include "AmSipEvent.h"
 
-bool SipCtrlInterface::log_parsed_messages = true;
-int SipCtrlInterface::udp_rcvbuf = -1;
+bool _SipCtrlInterface::log_parsed_messages = true;
+int _SipCtrlInterface::udp_rcvbuf = -1;
 
-int SipCtrlInterface::load()
+int _SipCtrlInterface::load()
 {
     if (!AmConfig::OutboundProxy.empty()) {
 	sip_uri parsed_uri;
@@ -115,19 +115,19 @@ int SipCtrlInterface::load()
     
 }
 
-SipCtrlInterface::SipCtrlInterface()
+_SipCtrlInterface::_SipCtrlInterface()
     : stopped(false), udp_servers(NULL), udp_sockets(NULL),
       nr_udp_sockets(0), nr_udp_servers(0)
 {
     trans_layer::instance()->register_ua(this);
 }
 
-int SipCtrlInterface::cancel(trans_ticket* tt, const string& hdrs)
+int _SipCtrlInterface::cancel(trans_ticket* tt, const string& hdrs)
 {
     return trans_layer::instance()->cancel(tt,stl2cstr(hdrs));
 }
 
-int SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
+int _SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
 			   const string& next_hop, int out_interface,
 			   msg_logger* logger)
 {
@@ -229,7 +229,7 @@ int SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
     return res;
 }
 
-int SipCtrlInterface::run()
+int _SipCtrlInterface::run()
 {
     DBG("Starting SIP control interface\n");
 
@@ -277,12 +277,12 @@ int SipCtrlInterface::run()
     return 0;
 }
 
-void SipCtrlInterface::stop()
+void _SipCtrlInterface::stop()
 {
     stopped.set(true);
 }
 
-void SipCtrlInterface::cleanup()
+void _SipCtrlInterface::cleanup()
 {
     DBG("Stopping SIP control interface threads\n");
 
@@ -311,7 +311,7 @@ void SipCtrlInterface::cleanup()
     }
 }
 
-int SipCtrlInterface::send(const AmSipReply &rep, const string& dialog_id,
+int _SipCtrlInterface::send(const AmSipReply &rep, const string& dialog_id,
 			   msg_logger* logger)
 {
     sip_msg msg;
@@ -378,7 +378,7 @@ int SipCtrlInterface::send(const AmSipReply &rep, const string& dialog_id,
 }
 
 
-inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg, 
+inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg, 
 						 const trans_ticket& tt,
 						 AmSipRequest &req)
 {
@@ -535,7 +535,7 @@ inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     return true;
 }
 
-inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
+inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
 {
     if (msg->content_type) {
 
@@ -619,7 +619,7 @@ inline bool SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
 #define DBG_PARAM(p)\
     DBG("%s = <%s>\n",#p,p.c_str());
 
-void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
+void _SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 {
     assert(msg);
     assert(msg->from && msg->from->p);
@@ -633,7 +633,7 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
     DBG("Received new request from <%s:%i> on intf #%i\n",
 	req.remote_ip.c_str(),req.remote_port,req.local_if);
 
-    if (SipCtrlInterface::log_parsed_messages) {
+    if (_SipCtrlInterface::log_parsed_messages) {
 	//     DBG_PARAM(req.cmd);
 	DBG_PARAM(req.method);
 	//     DBG_PARAM(req.user);
@@ -657,7 +657,7 @@ void SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
 	req.callid.c_str(), req.to_tag.c_str(), req.method.c_str());
 }
 
-void SipCtrlInterface::handle_sip_reply(const string& dialog_id, sip_msg* msg)
+void _SipCtrlInterface::handle_sip_reply(const string& dialog_id, sip_msg* msg)
 {
     assert(msg->from && msg->from->p);
     assert(msg->to && msg->to->p);
@@ -685,7 +685,7 @@ void SipCtrlInterface::handle_sip_reply(const string& dialog_id, sip_msg* msg)
 	reply.code, reply.reason.c_str());
 }
 
-void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
+void _SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
     sip_trans *tr, trans_bucket *buk)
 {
   AmSipTimeoutEvent *tmo_evt;
@@ -750,7 +750,7 @@ void SipCtrlInterface::handle_reply_timeout(AmSipTimeoutEvent::EvType evt,
 
 #undef DBG_PARAM
 
-void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
+void _SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, string& route_field)
 {
     if(routes.empty())
 	return;
@@ -790,7 +790,7 @@ void SipCtrlInterface::prepare_routes_uac(const list<sip_header*>& routes, strin
 
 }
 
-void SipCtrlInterface::prepare_routes_uas(const list<sip_header*>& routes, string& route_field)
+void _SipCtrlInterface::prepare_routes_uas(const list<sip_header*>& routes, string& route_field)
 {
     if(!routes.empty()){
 	
