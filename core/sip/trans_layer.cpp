@@ -793,14 +793,13 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned s
 	}
     }
 
-    if(!((sockaddr_in*)&(msg->remote_ip))->sin_port) {
-	if(!next_port)
-	    next_port = 5060;
-	((sockaddr_in*)&(msg->remote_ip))->sin_port = htons(next_port);
+    if(!am_get_port(&msg->remote_ip)) {
+	if(!next_port) next_port = 5060;
+	am_set_port(&msg->remote_ip,next_port);
     }
 
-    DBG("set destination to %s:%u\n", nh.c_str(),
-	ntohs(((sockaddr_in*)&(msg->remote_ip))->sin_port));
+    DBG("set destination to %s:%u\n",
+	nh.c_str(), am_get_port(&msg->remote_ip));
     
     return 0;
 }
