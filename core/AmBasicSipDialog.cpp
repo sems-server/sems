@@ -166,7 +166,7 @@ int AmBasicSipDialog::getOutboundIf()
   string local_ip;
   multimap<string,unsigned short>::iterator if_it;
 
-  list<host_port> ip_list;
+  list<sip_destination> ip_list;
   if(!next_hop.empty() && 
      !parse_next_hop(stl2cstr(next_hop),ip_list) &&
      !ip_list.empty()) {

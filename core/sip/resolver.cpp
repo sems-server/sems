@@ -108,13 +108,13 @@ int dns_ip_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
     return 0;
 }
 
-int dns_ip_entry::fill_ip_list(const list<host_port>& ip_list)
+int dns_ip_entry::fill_ip_list(const list<sip_destination>& ip_list)
 {
     int res;
     string ip;
     ip_port_entry e;
 
-    for(list<host_port>::const_iterator it = ip_list.begin();
+    for(list<sip_destination>::const_iterator it = ip_list.begin();
 	it != ip_list.end(); ++it) {
 
 	e.port = it->port;

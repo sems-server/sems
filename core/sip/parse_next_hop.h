@@ -6,13 +6,14 @@
 #include <list>
 using std::list;
 
-struct host_port
+struct sip_destination
 {
   cstring        host;
   unsigned short port;
+  cstring        trsp;
 };
 
 int parse_next_hop(const cstring& next_hop,
-		   list<host_port>& dest_list);
+		   list<sip_destination>& dest_list);
 
 #endif

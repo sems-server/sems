@@ -888,7 +888,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     int res=0;
     if (_next_hop.len) {
 
-	list<host_port> dest_list;
+	list<sip_destination> dest_list;
 	res = parse_next_hop(_next_hop,dest_list);
 	if(res) {
 	    DBG("parse_next_hop %.*s failed (%i)\n",_next_hop.len, _next_hop.s, res);
