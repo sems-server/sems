@@ -575,15 +575,15 @@ int main(int argc, char* argv[])
   INFO("Starting RTP receiver\n");
   AmRtpReceiver::instance()->start();
 
+  INFO("Starting SIP stack (control interface)\n");
+  sip_ctrl.load();
+  
   INFO("Loading plug-ins\n");
   AmPlugIn::instance()->init();
   if(AmPlugIn::instance()->load(AmConfig::PlugInPath, AmConfig::LoadPlugins))
     goto error;
 
   AmPlugIn::instance()->registerLoggingPlugins();
-
-  INFO("Starting SIP stack (control interface)\n");
-  sip_ctrl.load();
 
   #ifndef DISABLE_DAEMON_MODE
   if(fd[1]) {
@@ -593,6 +593,7 @@ int main(int argc, char* argv[])
   }
   #endif
 
+  // running the server
   if(sip_ctrl.run() != -1)
     success = true;
 
