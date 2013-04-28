@@ -80,6 +80,9 @@ sip_trans::~sip_trans()
     reset_all_timers();
     delete msg;
     delete [] retr_buf;
+    if(retr_socket){
+	dec_ref(retr_socket);
+    }
     if((type == TT_UAC) && to_tag.s){
 	delete [] to_tag.s;
     }

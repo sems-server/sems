@@ -341,6 +341,8 @@ void udp_trsp::run()
 	}
 
 	s_msg->local_socket = sock;
+	inc_ref(sock);
+
 	for (cmsgptr = CMSG_FIRSTHDR(&msg);
              cmsgptr != NULL;
              cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {

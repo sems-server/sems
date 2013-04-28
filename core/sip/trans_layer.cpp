@@ -401,6 +401,13 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 
     sockaddr_storage remote_ip;
     trsp_socket* local_socket = req->local_socket;
+    if(!local_socket) {
+	
+	ERROR("request to be replied has no transport socket set\n");
+	delete [] reply_buf;
+	goto end;
+    }
+
     memcpy(&remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
 
     // force_via_address option? send to 1st via
@@ -462,6 +469,8 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
     t->retr_buf = reply_buf;
     t->retr_len = reply_len;
     memcpy(&t->retr_addr,&remote_ip,sizeof(sockaddr_storage));
+    inc_ref(local_socket);
+    if(t->retr_socket) dec_ref(t->retr_socket);
     t->retr_socket = local_socket;
 
     update_uas_reply(bucket,t,reply_code);
@@ -922,7 +931,9 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 
     // rco: should we overwrite the socket from the request in all cases???
     if((out_interface >= 0) && ((unsigned int)out_interface < transports.size())){
+	if(msg->local_socket) dec_ref(msg->local_socket);
 	msg->local_socket = transports[out_interface];
+	inc_ref(msg->local_socket);
     }
     // no socket yet, find one
     else if(!msg->local_socket) {
@@ -934,6 +945,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	}
 
 	msg->local_socket = s;
+	inc_ref(msg->local_socket);
     }
 
     tt->_bucket = 0;
@@ -1012,6 +1024,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     // copy msg->remote_ip
     memcpy(&p_msg->remote_ip,&msg->remote_ip,sizeof(sockaddr_storage));
     p_msg->local_socket = msg->local_socket;
+    inc_ref(p_msg->local_socket);
 
     DBG("Sending to %s:%i <%.*s...>\n",
 	get_addr_str(&p_msg->remote_ip).c_str(),
@@ -1188,6 +1201,7 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
 
     memcpy(&p_msg->remote_ip,&req->remote_ip,sizeof(sockaddr_storage));
     p_msg->local_socket = req->local_socket;
+    inc_ref(p_msg->local_socket);
 
     DBG("Sending to %s:%i:\n<%.*s>\n",
 	get_addr_str(&p_msg->remote_ip).c_str(),
@@ -1656,6 +1670,8 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	
 	// copy destination address
 	memcpy(&t->retr_addr,&msg->remote_ip,sizeof(sockaddr_storage));
+	inc_ref(msg->local_socket);
+	if(t->retr_socket) dec_ref(t->retr_socket);
 	t->retr_socket = msg->local_socket;
 
 	// remove the message;

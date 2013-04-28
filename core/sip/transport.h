@@ -30,12 +30,14 @@
 #define _transport_h_
 
 #include "../AmThread.h"
+#include "../atomic_types.h"
 #include <sys/socket.h>
 
 #include <string>
 using std::string;
 
 class trsp_socket
+    : public atomic_ref_cnt
 {
 public:
     enum socket_options {

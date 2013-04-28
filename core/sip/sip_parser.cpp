@@ -116,6 +116,9 @@ sip_msg::~sip_msg()
 	    delete u.reply;
 	}
     }
+    
+    if(local_socket)
+	dec_ref(local_socket);
 }
 
 int sip_msg::send()
