@@ -36,7 +36,6 @@
 #include "trans_layer.h"
 #include "log.h"
 
-#include "SipCtrlInterface.h"
 
 #include <sys/param.h>
 #include <arpa/inet.h>
@@ -127,13 +126,21 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 	}
     }
 
+    port = bind_port;
+    ip   = bind_ip;
 
-    if (SipCtrlInterface::udp_rcvbuf > 0) {
-	DBG("trying to set SIP UDP socket buffer to %d\n",
-	    SipCtrlInterface::udp_rcvbuf);
+    DBG("UDP transport bound to %s/%i\n",ip.c_str(),port);
+
+    return 0;
+}
+
+
+int udp_trsp_socket::set_recvbuf_size(int rcvbuf_size)
+{
+    if (rcvbuf_size > 0) {
+	DBG("trying to set SIP UDP socket buffer to %d\n", rcvbuf_size);
 	if(setsockopt(sd, SOL_SOCKET, SO_RCVBUF,
-		      (void*)&SipCtrlInterface::udp_rcvbuf,
-		      sizeof (SipCtrlInterface::udp_rcvbuf)) == -1) {
+		      (void*)&rcvbuf_size, sizeof (int)) == -1) {
 	    WARN("could not set SIP UDP socket buffer: '%s'\n",
 		 strerror(errno));
 	} else {
@@ -144,19 +151,15 @@ int udp_trsp_socket::bind(const string& bind_ip, unsigned short bind_port)
 		WARN("could not read back SIP UDP socket buffer length: '%s'\n",
 		     strerror(errno));
 	    } else {
-		if (set_rcvbuf_size != SipCtrlInterface::udp_rcvbuf) {
-		    WARN("failed to set SIP UDP RCVBUF size (wanted %d, got %d)\n",
-			 SipCtrlInterface::udp_rcvbuf, set_rcvbuf_size);
+		if (set_rcvbuf_size != rcvbuf_size) {
+		    WARN("failed to set SIP UDP RCVBUF size"
+			 " (wanted %d, got %d)\n",
+			 rcvbuf_size, set_rcvbuf_size);
 		}
 	    }
 	}
     }
-
-    port = bind_port;
-    ip   = bind_ip;
-
-    DBG("UDP transport bound to %s/%i\n",ip.c_str(),port);
-
+    
     return 0;
 }
 

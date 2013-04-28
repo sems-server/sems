@@ -60,6 +60,8 @@ public:
      */
     virtual int bind(const string& address, unsigned short port);
 
+    int set_recvbuf_size(int rcvbuf_size);
+
     /**
      * Sends a message.
      * @return -1 if error(s) occured.
