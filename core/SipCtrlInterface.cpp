@@ -111,8 +111,46 @@ int _SipCtrlInterface::load()
 	DBG("assuming SIP default settings.\n");
     }
 
-    return 0;
-    
+    udp_sockets = new udp_trsp_socket*[AmConfig::SIP_Ifs.size()];
+    udp_servers = new udp_trsp*[AmConfig::SIPServerThreads * AmConfig::SIP_Ifs.size()];
+
+    // Init transport instances
+    for(unsigned int i=0; i<AmConfig::SIP_Ifs.size();i++) {
+
+	udp_trsp_socket* udp_socket = 
+	    new udp_trsp_socket(i,AmConfig::SIP_Ifs[i].SigSockOpts
+				| (AmConfig::ForceOutboundIf ? 
+				   trsp_socket::force_outbound_if : 0),
+				AmConfig::SIP_Ifs[i].NetIfIdx);
+	
+	if(udp_socket->bind(AmConfig::SIP_Ifs[i].LocalIP,
+			    AmConfig::SIP_Ifs[i].LocalPort) < 0){
+
+	    ERROR("Could not bind SIP/UDP socket to %s:%i",
+		  AmConfig::SIP_Ifs[i].LocalIP.c_str(),
+		  AmConfig::SIP_Ifs[i].LocalPort);
+
+	    delete udp_socket;
+	    return -1;
+	}
+
+	if(udp_rcvbuf > 0) {
+	    udp_socket->set_recvbuf_size(udp_rcvbuf);
+	}
+
+	trans_layer::instance()->register_transport(udp_socket);
+	udp_sockets[i] = udp_socket;
+	inc_ref(udp_socket);
+	nr_udp_sockets++;
+
+	for(int j=0; j<AmConfig::SIPServerThreads;j++){
+	    udp_servers[i*AmConfig::SIPServerThreads + j] = 
+		new udp_trsp(udp_socket);
+	    nr_udp_servers++;
+	}
+    }
+
+    return 0;    
 }
 
 _SipCtrlInterface::_SipCtrlInterface()
@@ -232,40 +270,11 @@ int _SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
 int _SipCtrlInterface::run()
 {
     DBG("Starting SIP control interface\n");
-
-    udp_sockets = new udp_trsp_socket*[AmConfig::SIP_Ifs.size()];
-    udp_servers = new udp_trsp*[AmConfig::SIPServerThreads * AmConfig::SIP_Ifs.size()];
-
     wheeltimer::instance()->start();
 
-    // Init transport instances
-    for(unsigned int i=0; i<AmConfig::SIP_Ifs.size();i++) {
-
-	udp_trsp_socket* udp_socket = 
-	    new udp_trsp_socket(i,AmConfig::SIP_Ifs[i].SigSockOpts
-				| (AmConfig::ForceOutboundIf ? 
-				   trsp_socket::force_outbound_if : 0),
-				AmConfig::SIP_Ifs[i].NetIfIdx);
-	
-	if(udp_socket->bind(AmConfig::SIP_Ifs[i].LocalIP,
-			    AmConfig::SIP_Ifs[i].LocalPort) < 0){
-
-	    ERROR("Could not bind SIP/UDP socket to %s:%i",
-		  AmConfig::SIP_Ifs[i].LocalIP.c_str(),
-		  AmConfig::SIP_Ifs[i].LocalPort);
-
-	    delete udp_socket;
-	    return -1;
-	}
-
-	trans_layer::instance()->register_transport(udp_socket);
-	udp_sockets[i] = udp_socket;
-	nr_udp_sockets++;
-
-	for(int j=0; j<AmConfig::SIPServerThreads;j++){
-	    udp_servers[i*AmConfig::SIPServerThreads + j] = new udp_trsp(udp_socket);
-	    udp_servers[i*AmConfig::SIPServerThreads + j]->start();
-	    nr_udp_servers++;
+    if (NULL != udp_servers) {
+	for(int i=0; i<nr_udp_servers;i++){
+	    udp_servers[i]->start();
 	}
     }
 
@@ -302,7 +311,9 @@ void _SipCtrlInterface::cleanup()
 
     if (NULL != udp_sockets) {
 	for(int i=0; i<nr_udp_sockets;i++){
-	    delete udp_sockets[i];
+	    //delete udp_sockets[i];
+	    DBG("dec_ref(%p)",udp_sockets[i]);
+	    dec_ref(udp_sockets[i]);
 	}
 
 	delete [] udp_sockets;
