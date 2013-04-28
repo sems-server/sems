@@ -55,7 +55,9 @@ struct sip_uri
 
     list<sip_avp*> params;
     list<sip_avp*> hdrs;
+    sip_avp*       trsp;
 
+    sip_uri();
     ~sip_uri();
 };
 

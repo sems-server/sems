@@ -32,6 +32,12 @@
 #include "parse_uri.h"
 #include "log.h"
 
+sip_uri::sip_uri()
+    : scheme(UNKNOWN),
+      trsp(NULL)
+{   
+}
+
 sip_uri::~sip_uri()
 {
     list<sip_avp*>::iterator it;
@@ -172,6 +178,11 @@ static int parse_sip_uri(sip_uri* uri, const char* beg, int len)
 		//DBG("uri param: \"%.*s\"=\"%.*s\"\n",
 		//    tmp1.len, tmp1.s,
 		//    tmp2.len, tmp2.s);
+
+		if(!lower_cmp_n(tmp1.s,tmp1.len,
+				"transport",9)) {
+		    uri->trsp = uri->params.back();
+		}
 
 		tmp1.s = c+1;
 		st = URI_PNAME;
