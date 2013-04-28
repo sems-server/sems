@@ -50,7 +50,7 @@ class udp_trsp_socket: public trsp_socket
 public:
     udp_trsp_socket(unsigned short if_num, unsigned int opts,
 		    unsigned int sys_if_idx = 0)
-	: trsp_socket(if_num,opts) {}
+	: trsp_socket(if_num,opts,sys_if_idx) {}
 
     ~udp_trsp_socket() {}
 
