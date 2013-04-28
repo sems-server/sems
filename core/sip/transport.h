@@ -83,38 +83,43 @@ public:
     /**
      * Getter for IP address
      */
-    const char* get_ip();
+    const char* get_ip() const;
     
     /**
      * Getter for the port number
      */
-    unsigned short get_port();
+    unsigned short get_port() const;
 
     /**
      *  Getter for the socket descriptor
      */
-    int get_sd();
+    int get_sd() const;
 
     /**
      * Getter for the interface number
      */
-    unsigned short get_if();
+    unsigned short get_if() const;
+
+    /**
+     * Is the transport reliable?
+     */
+    virtual bool is_reliable() const { return false; }
 
     /**
      * Checks for socket options
      */
-    bool is_opt_set(unsigned int mask);
+    bool is_opt_set(unsigned int mask) const;
 
     /**
      * Copy the internal address into the given one (sa).
      */
-    void copy_addr_to(sockaddr_storage* sa);
+    void copy_addr_to(sockaddr_storage* sa) const;
 
     /**
      * Match with the given address
      * @return true if address matches
      */
-    bool match_addr(sockaddr_storage* other_addr);
+    bool match_addr(sockaddr_storage* other_addr) const;
 
     /**
      * Sends a message.

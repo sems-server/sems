@@ -48,23 +48,23 @@ trsp_socket::~trsp_socket()
 {
 }
 
-const char* trsp_socket::get_ip()
+const char* trsp_socket::get_ip() const
 {
     return ip.c_str();
 }
 
-unsigned short trsp_socket::get_port()
+unsigned short trsp_socket::get_port() const
 {
     return port;
 }
 
-bool trsp_socket::is_opt_set(unsigned int mask)
+bool trsp_socket::is_opt_set(unsigned int mask) const
 {
     DBG("trsp_socket::socket_options = 0x%x\n",socket_options);
     return (socket_options & mask) == mask;
 }
 
-void trsp_socket::copy_addr_to(sockaddr_storage* sa)
+void trsp_socket::copy_addr_to(sockaddr_storage* sa) const
 {
     memcpy(sa,&addr,sizeof(sockaddr_storage));
 }
@@ -73,7 +73,7 @@ void trsp_socket::copy_addr_to(sockaddr_storage* sa)
  * Match with the given address
  * @return true if address matches
  */
-bool trsp_socket::match_addr(sockaddr_storage* other_addr)
+bool trsp_socket::match_addr(sockaddr_storage* other_addr) const
 {
     
     if(addr.ss_family != other_addr->ss_family)
@@ -95,12 +95,12 @@ bool trsp_socket::match_addr(sockaddr_storage* other_addr)
     return false;
 }
 
-int trsp_socket::get_sd()
+int trsp_socket::get_sd() const
 {
     return sd;
 }
 
-unsigned short trsp_socket::get_if()
+unsigned short trsp_socket::get_if() const
 {
     return if_num;
 }
