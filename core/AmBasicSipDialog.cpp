@@ -384,6 +384,21 @@ bool AmBasicSipDialog::onRxReplyStatus(const AmSipReply& reply,
 
 void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
 {
+  if(ext_local_tag.empty()) {
+    if(reply.from_tag != local_tag) {
+      ERROR("received reply with wrong From-tag ('%s' vs. '%s')",
+	    reply.from_tag.c_str(), local_tag.c_str());
+      throw string("reply has wrong from-tag");
+      //return;
+    }
+  }
+  else if(reply.from_tag != ext_local_tag) {
+    ERROR("received reply with wrong From-tag ('%s' vs. '%s')",
+	  reply.from_tag.c_str(), ext_local_tag.c_str());
+    throw string("reply has wrong from-tag");
+    //return;
+  }
+
   TransMap::iterator t_it = uac_trans.find(reply.cseq);
   if(t_it == uac_trans.end()){
     ERROR("could not find any transaction matching reply: %s\n", 
