@@ -114,7 +114,7 @@ void am_set_port(struct sockaddr_storage* addr, short port)
   }
 }
 
-short am_get_port(const sockaddr_storage* addr)
+unsigned short am_get_port(const sockaddr_storage* addr)
 {
   struct sockaddr_in *sin = (struct sockaddr_in *)addr;
   struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)addr;

@@ -70,6 +70,6 @@ const char* am_inet_ntop(const sockaddr_storage* addr, char* str, size_t size);
 const char* am_inet_ntop_sip(const sockaddr_storage* addr, char* str, size_t size);
 
 void  am_set_port(struct sockaddr_storage* addr, short port);
-short am_get_port(const sockaddr_storage* addr);
+unsigned short am_get_port(const sockaddr_storage* addr);
 
 #endif
