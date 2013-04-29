@@ -146,6 +146,10 @@ int parse_next_hop(const cstring& next_hop,
 	dest_list.push_back(dest);
 	break;
       default:
+	if( (*c >= 'a' && *c <= 'z') ||
+	    (*c >= 'A' && *c <= 'Z') ) {
+	  continue;
+	}
 	// syntax error
 	DBG("error: unexpected character '%c' in IPL_TRSP state.\n",*c);
 	return -1;
@@ -161,9 +165,15 @@ int parse_next_hop(const cstring& next_hop,
     break;
   case IPL_HOST:
     dest.host.set(beg,c-beg);
+    dest_list.push_back(dest);
+    break;
   case IPL_V6:
   case IPL_HOST_SEP:
   case IPL_PORT:
+    dest_list.push_back(dest);
+    break;
+  case IPL_TRSP:
+    dest.trsp.set(beg,c-beg);
     dest_list.push_back(dest);
     break;
   }

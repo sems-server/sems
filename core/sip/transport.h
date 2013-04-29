@@ -81,6 +81,11 @@ public:
     virtual int bind(const string& address, unsigned short port)=0;
 
     /**
+     * Getter for the transport name
+     */
+    virtual const char* get_transport() const = 0;
+
+    /**
      * Getter for IP address
      */
     const char* get_ip() const;

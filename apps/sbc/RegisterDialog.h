@@ -18,6 +18,7 @@ class RegisterDialog
   string         aor; // From-URI
   string         source_ip;
   unsigned short source_port;
+  string         transport;
   unsigned short local_if;
   string         from_ua;
 

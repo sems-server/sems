@@ -1089,6 +1089,7 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
   alias_update.source_ip = req.remote_ip;
   alias_update.source_port = req.remote_port;
   alias_update.remote_ua = getHeader(req.hdrs,"User-Agent");
+  alias_update.trsp = req.trsp;
   alias_update.local_if = req.local_if;
   alias_update.ua_expire = ua_expires + now.tv_sec;
 

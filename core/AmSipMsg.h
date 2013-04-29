@@ -41,6 +41,7 @@ class _AmSipMsgInDlg
   unsigned short remote_port;
   string         local_ip;
   unsigned short local_port;
+  string         trsp;
 
   _AmSipMsgInDlg() : cseq(0), rseq(0) { }
   virtual ~_AmSipMsgInDlg() { };

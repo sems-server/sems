@@ -709,8 +709,10 @@ static void prepare_strict_routing(sip_msg* msg, string& ext_uri_buffer)
 //
 int _trans_layer::set_next_hop(sip_msg* msg, 
 			       cstring* next_hop,
-			       unsigned short* next_port)
+			       unsigned short* next_port,
+			       cstring* next_trsp)
 {
+    static const cstring default_trsp("udp");
     assert(msg);
 
     list<sip_header*>& route_hdrs = msg->route; 
@@ -730,6 +732,8 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 	    *next_hop  = route_uri->host;
 	    if(route_uri->port_str.len)
 		*next_port = route_uri->port;
+	    if(route_uri->trsp->value.len)
+		*next_trsp = route_uri->trsp->value;
 	}
     }
     else {
@@ -742,12 +746,21 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 	    ERROR("Invalid Request URI\n");
 	    return -1;
 	}
+	DBG("setting next-hop based on request-URI\n");
 	*next_hop  = parsed_r_uri.host;
 	if(parsed_r_uri.port_str.len)
 	    *next_port = parsed_r_uri.port;
+	if(parsed_r_uri.trsp)
+	    *next_trsp = parsed_r_uri.trsp->value;
     }
 
-    DBG("next_hop:next_port is <%.*s:%u>\n", next_hop->len, next_hop->s, *next_port);
+    if(!next_trsp->len)
+	*next_trsp = default_trsp;
+
+    DBG("next_hop:next_port is <%.*s:%u/%.*s>\n",
+	next_hop->len, next_hop->s, *next_port,
+	next_trsp ? next_trsp->len : 0,
+	next_trsp ? next_trsp->s : 0);
     
     return 0;
 }
@@ -883,6 +896,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 
     cstring next_hop;
     unsigned short next_port=0;
+    cstring next_trsp;
 
     int res=0;
     if (_next_hop.len) {
@@ -895,8 +909,13 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	}
 
 	if(dest_list.size() == 1) {
-	    next_hop = dest_list.front().host;
-	    next_port = dest_list.front().port ? dest_list.front().port : 5060;
+	    const sip_destination& dest = dest_list.front();
+	    next_hop = dest.host;
+	    next_port = dest.port ? dest.port : 5060;
+	    next_trsp = dest.trsp;
+	    DBG("single next-hop: <%.*s:%u/%.*s>",
+		next_hop.len,next_hop.s,next_port,
+		next_trsp.len,next_trsp.s);
 	}
 	else if(dest_list.size() > 1) {
 	    dns_ip_entry* e = new dns_ip_entry();
@@ -906,12 +925,13 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    }
 
 	    inc_ref(e);
+	    //TODO: avoid to loose the transport from the next-hop-list
 	    e->next_ip(&msg->h_dns,&msg->remote_ip);
 	    DBG("destination set to <%s>\n",get_addr_str(&msg->remote_ip).c_str());
 	}
     }
     else {
-	if(set_next_hop(msg,&next_hop,&next_port) < 0){
+	if(set_next_hop(msg,&next_hop,&next_port,&next_trsp) < 0){
 	    DBG("set_next_hop failed\n");
 	    return -1;
 	}
@@ -1679,24 +1699,36 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	return 0;
     }
 
+    DBG("transport = '%s'; is_reliable = %i",
+	msg->local_socket->get_transport(),
+	msg->local_socket->is_reliable());
+
     switch(msg->u.request->method){
 
     case sip_request::INVITE:
-	// if transport == UDP
-	t->reset_timer(STIMER_A,A_TIMER,bucket->get_id());
-	// for any transport type
-	t->reset_timer(STIMER_B,B_TIMER,bucket->get_id());
+	if(!msg->local_socket->is_reliable()) {
+	    // if transport == UDP
+	    t->reset_timer(STIMER_A,A_TIMER,bucket->get_id());
+	}
+	else {
+	    // for any transport type
+	    t->reset_timer(STIMER_B,B_TIMER,bucket->get_id());
+	}
 	break;
     
     default:
-	// if transport == UDP
-	t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
-	// for any transport type
-	t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
+	if(!msg->local_socket->is_reliable()) {
+	    // if transport == UDP
+	    t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
+	}
+	else {
+	    // for any transport type
+	    t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
+	}
 	break;
     }
 
-    if(!msg->h_dns.eoip()){ // if transport == UDP
+    if(!msg->h_dns.eoip()){
 	t->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
     }
 
@@ -2140,9 +2172,11 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
 			tr->msg->u.request->method_str);
     }
 
-    // reset counter for timer A & E
-    trans_timer* A_E_timer = tr->get_timer(STIMER_A);
-    tr->reset_timer(A_E_timer->type & 0xFFFF,A_TIMER,bucket->get_id());
+    if(!tr->msg->local_socket->is_reliable()) {
+	// reset counter for timer A & E
+	trans_timer* A_E_timer = tr->get_timer(STIMER_A);
+	tr->reset_timer(A_E_timer->type & 0xFFFF,A_TIMER,bucket->get_id());
+    }
     
     if(!tr->msg->h_dns.eoip())
 	tr->reset_timer(STIMER_M,M_TIMER,bucket->get_id());

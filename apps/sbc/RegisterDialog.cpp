@@ -366,6 +366,7 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
     source_port = req.remote_port;
     local_if = req.local_if;
     from_ua = getHeader(req.hdrs,"User-Agent");
+    transport = req.trsp;
 
     min_reg_expire = cp.min_reg_expires;
     max_ua_expire = cp.max_ua_expires;
@@ -498,6 +499,7 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
 	alias_entry.source_ip   = source_ip;
 	alias_entry.source_port = source_port;
 	alias_entry.remote_ua   = from_ua;
+	alias_entry.trsp        = transport;
 	alias_entry.local_if    = local_if;
 	alias_entry.ua_expire   = orig_expires + now.tv_sec;
 

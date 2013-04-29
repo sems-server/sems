@@ -532,6 +532,7 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.local_ip = get_addr_str(&msg->local_ip).c_str();
     req.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
 
+    req.trsp = msg->local_socket->get_transport();
     req.local_if = msg->local_socket->get_if();
 
     if(msg->vias.size() > 1) {
@@ -641,8 +642,8 @@ void _SipCtrlInterface::handle_sip_request(const trans_ticket& tt, sip_msg* msg)
     if(!sip_msg2am_request(msg, tt, req))
 	return;
 
-    DBG("Received new request from <%s:%i> on intf #%i\n",
-	req.remote_ip.c_str(),req.remote_port,req.local_if);
+    DBG("Received new request from <%s:%i/%s> on intf #%i\n",
+	req.remote_ip.c_str(),req.remote_port,req.trsp.c_str(),req.local_if);
 
     if (_SipCtrlInterface::log_parsed_messages) {
 	//     DBG_PARAM(req.cmd);

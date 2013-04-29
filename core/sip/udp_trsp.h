@@ -60,6 +60,9 @@ public:
      */
     virtual int bind(const string& address, unsigned short port);
 
+    const char* get_transport() const
+    { return "udp"; }
+
     int set_recvbuf_size(int rcvbuf_size);
 
     /**

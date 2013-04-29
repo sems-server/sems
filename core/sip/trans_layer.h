@@ -175,8 +175,10 @@ protected:
      * Fills the address structure passed and modifies 
      * R-URI and Route headers as needed.
      */
-    int set_next_hop(sip_msg* msg, cstring* next_hop,
-		     unsigned short* next_port);
+    int set_next_hop(sip_msg* msg,
+		     cstring* next_hop,
+		     unsigned short* next_port,
+		     cstring* next_trsp);
 
     /**
      * Fills msg->remote_ip according to next_hop and next_port.

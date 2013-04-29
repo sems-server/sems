@@ -56,6 +56,7 @@ struct AliasEntry
   // saved state for NAT handling
   string         source_ip;
   unsigned short source_port;
+  string         trsp;
 
   // sticky interface
   unsigned short local_if;
