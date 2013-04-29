@@ -196,6 +196,13 @@ public:
 	return false;
     }
 
+    Value* get(const Key& k) {
+	typename value_map::iterator it = find(k);
+	if(it != elmts.end())
+	    return it->second;
+	return NULL;
+    }
+
     /**
      * Returns the bucket id, which should be an index
      * into the corresponding hash table.
