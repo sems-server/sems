@@ -34,7 +34,16 @@ OPTIONS=""
 # should go there:
 [ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
 
+# try to source Debian-like default settings
+[ -e /etc/default/$prog ] && . /etc/default/$prog
+
 RETVAL=0
+
+if test "$SEMS_CREATE_CORE" = "yes" ; then
+        ulimit -c unlimited
+        DAEMON_COREFILE_LIMIT="unlimited"
+fi
+
 
 start() {
         echo -n $"Starting $prog: "
