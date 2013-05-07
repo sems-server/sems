@@ -13,8 +13,9 @@ using namespace std;
 
 // see http://wiki.wireshark.org/Development/LibpcapFileFormat
 
-#define LINKTYPE_ETHERNET 1 // http://www.tcpdump.org/linktypes.html
-#define LINKTYPE_IPV4   228
+#define LINKTYPE_ETHERNET   1 // http://www.tcpdump.org/linktypes.html
+#define LINKTYPE_IPV4     228
+#define LINKTYPE_RAW      101
 
 typedef uint32_t guint32;
 typedef int32_t gint32;
@@ -84,7 +85,7 @@ int pcap_logger::write_file_header()
   hdr.thiszone = 0;
   hdr.sigfigs = 0;
   hdr.snaplen = 65535; // FIXME
-  hdr.network = LINKTYPE_IPV4;
+  hdr.network = LINKTYPE_RAW;
 
   return write(&hdr, sizeof(hdr));
 }
