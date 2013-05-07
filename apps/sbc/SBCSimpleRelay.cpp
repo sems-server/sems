@@ -350,3 +350,9 @@ int SBCSimpleRelay::start(const AmSipRequest& req, const SBCCallProfile& cp)
   
   return 0;
 }
+
+void SBCSimpleRelay::setMsgLogger(msg_logger* logger)
+{
+  if (a_leg) a_leg->setMsgLogger(logger);
+  if (b_leg) b_leg->setMsgLogger(logger);
+}

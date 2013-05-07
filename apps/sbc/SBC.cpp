@@ -335,14 +335,18 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
     return;
   }
 
+  msg_logger *logger = NULL;
+
   // fix up variables
   call_profile.replace_cc_values(ctx,req,NULL);
-  if(!SBCFactory::CCRoute(req,cc_modules,call_profile)) {
+  if(!SBCFactory::CCRoute(req,cc_modules,call_profile, logger)) {
     //ERROR("routing failed\n");
+    if (logger) delete logger;
     return;
   }
 
   if (!call_profile.refuse_with.empty()) {
+    if (logger) delete logger;
     if(call_profile.refuse(ctx, req) < 0) {
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
     }
@@ -366,10 +370,11 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
     relay = new SBCSimpleRelay(new SimpleRelayDialog(),
 			       new SimpleRelayDialog());
   }
+  relay->setMsgLogger(logger);
 
   if(relay->start(req,call_profile)) {
+    AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "", logger);
     delete relay;
-    AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 }
 
@@ -635,10 +640,10 @@ void SBCFactory::postControlCmd(const AmArg& args, AmArg& ret) {
 
 bool SBCFactory::CCRoute(const AmSipRequest& req,
 			 vector<AmDynInvoke*>& cc_modules,
-			 SBCCallProfile& call_profile)
+			 SBCCallProfile& call_profile,
+                         msg_logger* &logger)
 {
   vector<AmDynInvoke*>::iterator cc_mod=cc_modules.begin();
-  auto_ptr<file_msg_logger> logger;
 
   for (CCInterfaceListIteratorT cc_it=call_profile.cc_interfaces.begin();
        cc_it != call_profile.cc_interfaces.end(); cc_it++) {
@@ -681,7 +686,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
       return false;
     }
 
-    if (!logger.get() && !call_profile.msg_logger_path.empty()) {
+    if (!logger && !call_profile.msg_logger_path.empty()) {
 
       ParamReplacerCtx ctx;
       call_profile.msg_logger_path = 
@@ -689,24 +694,25 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 			      "msg_logger_path",req);
 
       if(!call_profile.msg_logger_path.empty()) {
-	logger.reset(new pcap_logger());
-	if(logger->open(call_profile.msg_logger_path.c_str())) {
+	pcap_logger *log = new pcap_logger();
+	if(log->open(call_profile.msg_logger_path.c_str())) {
 	  ERROR("could not open message logger\n");
-	  logger.reset();
+          delete log;
 	  call_profile.msg_logger_path.clear();
 	}
+        else logger = log;
       }
-    }
 
-    if(logger.get()) {
-      req.tt.lock_bucket();
-      const sip_trans* t = req.tt.get_trans();
-      if (t) {
-	sip_msg* msg = t->msg;
-	logger->log(msg->buf,msg->len,&msg->remote_ip,
-		    &msg->local_ip,msg->u.request->method_str);
+      if(logger && call_profile.log_sip) {
+        req.tt.lock_bucket();
+        const sip_trans* t = req.tt.get_trans();
+        if (t) {
+          sip_msg* msg = t->msg;
+          logger->log(msg->buf,msg->len,&msg->remote_ip,
+              &msg->local_ip,msg->u.request->method_str);
+        }
+        req.tt.unlock_bucket();
       }
-      req.tt.unlock_bucket();
     }
 
     // evaluate ret
@@ -750,7 +756,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 	  AmBasicSipDialog::reply_error(req,
 	        ret[i][SBC_CC_REFUSE_CODE].asInt(), 
 		ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-		headers,logger.get());
+		headers,logger);
 
 	  return false;
 	}

@@ -73,7 +73,7 @@ int RegisterDialog::replyFromCache(const AmSipRequest& req)
 
     if(!str2long(contact.params["expires"], expires)) {
       ERROR("failed to parse contact-expires for the second time\n");
-      reply_error(req, 500, "Server internal error");
+      reply_error(req, 500, "Server internal error", "", logger);
       return -1;
     }
 
@@ -95,7 +95,7 @@ int RegisterDialog::replyFromCache(const AmSipRequest& req)
   contact_hdr += CRLF;
 
   // send 200 reply
-  return reply_error(req, 200, "OK", contact_hdr);
+  return reply_error(req, 200, "OK", contact_hdr, logger);
 }
 
 void RegisterDialog::fillAliasMap()
@@ -120,13 +120,15 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 
     if (str2i(expires, requested_expires)) {
       reply_error(req, 400, "Bad Request",
-		  "Warning: Malformed expires\r\n");
+		  "Warning: Malformed expires\r\n",
+                  logger);
       return -1;
     }
 
     if(star_contact && (requested_expires != 0)) {
       reply_error(req, 400, "Bad Request",
-		  "Warning: Expires not equal 0\r\n");
+		  "Warning: Expires not equal 0\r\n",
+                  logger);
       return -1;
     }
   }
@@ -185,7 +187,8 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 	// 'expires=xxx' present:
 	if(str2i(expires_it->second,contact_expires)) {
 	  reply_error(req, 400, "Bad Request",
-		      "Warning: Malformed expires\r\n");
+		      "Warning: Malformed expires\r\n",
+                      logger);
 	  return -1;
 	}
       }
@@ -311,7 +314,7 @@ int RegisterDialog::initAor(const AmSipRequest& req)
   size_t end_from = 0;
   if(!from_parser.parse_contact(req.from,0,end_from)) {
     DBG("error parsing AOR: '%s'\n",req.from.c_str());
-    reply_error(req,400,"Bad request - bad From HF");
+    reply_error(req,400,"Bad request - bad From HF", "", logger);
     return -1;
   }
 
@@ -327,7 +330,7 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
   // SIP request received
   if (req.method != SIP_METH_REGISTER) {
     ERROR("unsupported method '%s'\n", req.method.c_str());
-    reply_error(req,501,"Unsupported Method");
+    reply_error(req,501,"Unsupported Method", "", logger);
     return -1;
   }
 
@@ -356,12 +359,12 @@ int RegisterDialog::initUAC(const AmSipRequest& req, const SBCCallProfile& cp)
   }
   else if(!req.contact.empty()) {
     if (parseContacts(req.contact, uac_contacts) < 0) {
-      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
+      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n", logger);
       return -1;
     }
 
     if (uac_contacts.size() == 0) {
-      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n");
+      reply_error(req, 400, "Bad Request", "Warning: Malformed contact\r\n", logger);
       return -1;
     }
   }

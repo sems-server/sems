@@ -120,6 +120,7 @@ public:
   ~SBCSimpleRelay();
 
   int start(const AmSipRequest& req, const SBCCallProfile& cp);
+  void setMsgLogger(msg_logger* logger);
 };
 
 #endif
