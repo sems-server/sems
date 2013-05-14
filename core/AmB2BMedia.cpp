@@ -680,6 +680,14 @@ void AmB2BMedia::clearRTPTimeout()
   mutex.unlock();
 }
 
+static bool canRelay(const SdpMedia &m)
+{
+  return (m.transport == TP_RTPAVP) ||
+    (m.transport == TP_RTPSAVP) ||
+    (m.transport == TP_UDP) ||
+    (m.transport == TP_UDPTL);
+}
+
 void AmB2BMedia::createStreams(const AmSdp &sdp)
 {
   AudioStreamIterator astreams = audio.begin();
@@ -702,10 +710,7 @@ void AmB2BMedia::createStreams(const AmSdp &sdp)
     }
 
     // non-audio streams that we can relay
-    else if((m->transport == TP_RTPAVP) ||
-	    (m->transport == TP_RTPSAVP) ||
-	    (m->transport == TP_UDP) ||
-	    (m->transport == TP_UDPTL))
+    else if(canRelay(*m))
     {
       if (create_relay) {
 	relay_streams.push_back(new RelayStreamPair(a, b));
@@ -774,10 +779,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
       }
       ++audio_stream_it;
     }
-    else if((it->transport == TP_RTPAVP) ||
-	    (it->transport == TP_RTPSAVP) ||
-	    (it->transport == TP_UDP) ||
-	    (it->transport == TP_UDPTL)) {
+    else if(canRelay(*it)) {
 
       if( relay_stream_it == relay_streams.end() ){
 	// strange... we should actually have a stream for this media line...
@@ -966,6 +968,9 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
     }
 
     else {
+      if (!canRelay(*m)) continue;
+      if (rstream == relay_streams.end()) continue;
+
       RelayStreamPair& relay_stream = **rstream;
       
       if(a_leg) {
