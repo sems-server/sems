@@ -1,4 +1,4 @@
-DSMPATH = ../
+DSMPATH = ..
 COREPATH = $(DSMPATH)/../../core
 .DEFAULT_GOAL := all
 
