@@ -368,28 +368,28 @@ void AmConfigReader::eraseParameter(const string& param) {
   keys.erase(param);
 }
 
-bool AmConfigReader::hasParameter(const string& param)
+bool AmConfigReader::hasParameter(const string& param) const
 {
   return (keys.find(param) != keys.end());
 }
 
 string __empty_string("");
 
-const string& AmConfigReader::getParameter(const string& param)
+const string& AmConfigReader::getParameter(const string& param) const
 {
   return getParameter(param,__empty_string);
 }
 
-const string& AmConfigReader::getParameter(const string& param, const string& defval)
+const string& AmConfigReader::getParameter(const string& param, const string& defval) const
 {
-  std::map<std::string,std::string>::iterator it = keys.find(param);
+  map<string,string>::const_iterator it = keys.find(param);
   if(it == keys.end())
     return defval;
   else
     return it->second;
 }
 
-unsigned int AmConfigReader::getParameterInt(const string& param, unsigned int defval)
+unsigned int AmConfigReader::getParameterInt(const string& param, unsigned int defval) const
 {
   unsigned int result=0;
   if(!hasParameter(param) || str2i(getParameter(param),result))

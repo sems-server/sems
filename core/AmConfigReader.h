@@ -57,11 +57,11 @@ class AmConfigReader
   bool getMD5(const string& path, string& md5hash, bool lowercase = true);
   void setParameter(const string& param, const string& val);
   void eraseParameter(const string& param);
-  bool hasParameter(const string& param);
+  bool hasParameter(const string& param) const;
 
-  const string& getParameter(const string& param);
-  const string& getParameter(const string& param, const string& defval);
-  unsigned int getParameterInt(const string& param, unsigned int defval = 0);
+  const string& getParameter(const string& param) const;
+  const string& getParameter(const string& param, const string& defval) const;
+  unsigned int getParameterInt(const string& param, unsigned int defval = 0) const;
 
   std::map<string,string>::const_iterator begin() const
     { return keys.begin(); }
