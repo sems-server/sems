@@ -291,6 +291,7 @@ class CallLeg: public AmB2BSession
 
     // functions offered to successors
 
+    virtual void setCallStatus(CallStatus new_status);
     CallStatus getCallStatus() { return call_status; }
 
     // @see AmSession

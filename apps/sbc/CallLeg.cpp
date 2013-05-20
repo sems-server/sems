@@ -957,6 +957,11 @@ void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e,
   if (call_status == Disconnected) updateCallStatus(NoReply);
 }
 
+void CallLeg::setCallStatus(CallStatus new_status)
+{
+  call_status = new_status;
+}
+
 void CallLeg::updateCallStatus(CallStatus new_status)
 {
   if (new_status == Connected)
@@ -973,7 +978,7 @@ void CallLeg::updateCallStatus(CallStatus new_status)
         callStatus2str(call_status),
         callStatus2str(new_status));
 
-  call_status = new_status;
+  setCallStatus(new_status);
   onCallStatusChange();
 }
 
