@@ -239,8 +239,8 @@ void SBCCallLeg::applyAProfile()
   if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
     DBG("Enabling RTP relay mode for SBC call\n");
 
-    rtp_relay_force_symmetric_rtp = call_profile.aleg_force_symmetric_rtp_value;
-    DBG("%s\n",rtp_relay_force_symmetric_rtp ?
+    setRtpRelayForceSymmetricRtp(call_profile.aleg_force_symmetric_rtp_value);
+    DBG("%s\n",getRtpRelayForceSymmetricRtp() ?
 	"forcing symmetric RTP (passive mode)":
 	"disabled symmetric RTP (normal mode)");
 
@@ -361,8 +361,8 @@ void SBCCallLeg::applyBProfile()
     if (call_profile.rtprelay_interface_value >= 0)
       setRtpRelayInterface(call_profile.rtprelay_interface_value);
 
-    rtp_relay_force_symmetric_rtp = call_profile.force_symmetric_rtp_value;
-    DBG("%s\n",rtp_relay_force_symmetric_rtp ?
+    setRtpRelayForceSymmetricRtp(call_profile.force_symmetric_rtp_value);
+    DBG("%s\n",getRtpRelayForceSymmetricRtp() ?
 	"forcing symmetric RTP (passive mode)":
 	"disabled symmetric RTP (normal mode)");
 
