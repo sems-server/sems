@@ -350,8 +350,11 @@ public:
    */
   void setLocalIP(const string& ip);
 	    
-  /** Initializes a new random local port, and sets own attributes properly. */
-  void setLocalPort();
+  /** 
+   * Initializes with a new random local port if 'p' is 0,
+   * else binds the given port, and sets own attributes properly. 
+   */
+  void setLocalPort(unsigned short p = 0);
 
   /** 
    * Gets RTP port number. If no RTP port in assigned, assigns a new one.

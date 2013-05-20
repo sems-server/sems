@@ -141,14 +141,17 @@ int AmRtpStream::getLocalSocket()
   return l_sd;
 }
 
-void AmRtpStream::setLocalPort()
+void AmRtpStream::setLocalPort(unsigned short p)
 {
   if(l_port)
     return;
   
   if(l_if < 0) {
     if (session) l_if = session->getRtpRelayInterface();
-    else ERROR("BUG: no session when initializing RTP stream, invalid interface can be used\n");
+    else {
+      ERROR("BUG: no session when initializing RTP stream, invalid interface can be used\n");
+      l_if = 0;
+    }
   }
   
   int retry = 10;
@@ -158,7 +161,10 @@ void AmRtpStream::setLocalPort()
     if (!getLocalSocket())
       return;
 
-    port = AmConfig::RTP_Ifs[l_if].getNextRtpPort();
+    if(!p)
+      port = AmConfig::RTP_Ifs[l_if].getNextRtpPort();
+    else
+      port = p;
 
     am_set_port(&l_saddr,port+1);
     if(bind(l_rtcp_sd,(const struct sockaddr*)&l_saddr,SA_len(&l_saddr))) {
@@ -661,6 +667,9 @@ int AmRtpStream::init(const AmSdp& local,
       setLocalIP(local.conn.address);
     else
       setLocalIP(local_media.conn.address);
+
+    DBG("setting local port to %i",local_media.port);
+    setLocalPort(local_media.port);
   }
 
   setPassiveMode(remote_media.dir == SdpMedia::DirActive || force_passive_mode);
