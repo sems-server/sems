@@ -1473,15 +1473,16 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
     }
     
     to_tag = ((sip_from_to*)msg->to->p)->tag;
-    if((t->msg->u.request->method != sip_request::CANCEL) && 
-       (reply_code < 300) &&
-       !to_tag.len){
-	if (!trans_layer::accept_fr_without_totag) {
-	    DBG("To-tag missing in final reply (see "
-		"sems.conf: accept_fr_without_totag?)\n");
-	    return -1;
-	}
-    }
+    // if((t->msg->u.request->method == sip_request::INVITE) &&
+    //    (reply_code < 300) &&
+    //    !to_tag.len){
+    // 	//if (!trans_layer::accept_fr_without_totag) {
+    // 	ERROR("To-tag missing in final reply to INVITE"
+    // 	      //" (see sems.conf: accept_fr_without_totag?)"
+    // 	      );
+    // 	return -1;
+    // 	//}
+    // }
     
     if(t->msg->u.request->method == sip_request::INVITE){
     
@@ -1551,7 +1552,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 
 		t->reset_timer(STIMER_L, L_TIMER, bucket->get_id());
 
-		if (t->to_tag.len==0) {
+		if (t->to_tag.len==0 && to_tag.len!=0) {
 			t->to_tag.s = new char[to_tag.len];
 			t->to_tag.len = to_tag.len;
 			memcpy((void*)t->to_tag.s,to_tag.s,to_tag.len);
