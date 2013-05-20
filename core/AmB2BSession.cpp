@@ -578,11 +578,11 @@ void AmB2BSession::onNoAck(unsigned int cseq)
   AmSession::onNoAck(cseq);
 }
 
-void AmB2BSession::saveSessionDescription(const AmMimeBody& body) {
+bool AmB2BSession::saveSessionDescription(const AmMimeBody& body) {
 
   const AmMimeBody* sdp_body = body.hasContentType(SIP_APPLICATION_SDP);
   if(!sdp_body)
-    return;
+    return false;
 
   DBG("saving session description (%s, %.*s...)\n",
       sdp_body->getCTStr().c_str(), 50, sdp_body->getPayload());
@@ -610,6 +610,7 @@ void AmB2BSession::saveSessionDescription(const AmMimeBody& body) {
   }
 
   body_hash = hashlittle(cmp_body_begin, cmp_body_length, 0);
+  return true;
 }
 
 bool AmB2BSession::updateSessionDescription(const AmMimeBody& body) {
@@ -834,6 +835,10 @@ void AmB2BSession::setRtpRelayInterface(int relay_interface) {
   DBG("setting RTP relay interface for session '%s' to %i\n",
       getLocalTag().c_str(), relay_interface);
   rtp_interface = relay_interface;
+}
+
+void AmB2BSession::setRtpRelayForceSymmetricRtp(bool force_symmetric) {
+  rtp_relay_force_symmetric_rtp = force_symmetric;
 }
 
 void AmB2BSession::setRtpRelayTransparentSeqno(bool transparent) {

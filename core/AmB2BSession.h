@@ -165,7 +165,7 @@ private:
   /** hash of body (from o-line) */
   uint32_t body_hash;
   /** save current session description (SDP) */
-  virtual void saveSessionDescription(const AmMimeBody& body);
+  virtual bool saveSessionDescription(const AmMimeBody& body);
   /** @return whether session description (SDP) has changed */
   virtual bool updateSessionDescription(const AmMimeBody& body);
 
@@ -277,7 +277,7 @@ private:
   void set_sip_relay_only(bool r);
 
   /** set RTP relay mode (possibly initiaze by given INVITE) */
-  void setRtpRelayMode(RTPRelayMode mode);
+  virtual void setRtpRelayMode(RTPRelayMode mode);
 
   /** link RTP streams of other_session to our streams */
   RTPRelayMode getRtpRelayMode() const { return rtp_relay_mode; }
@@ -285,7 +285,8 @@ private:
   bool getEnableDtmfTranscoding() const { return enable_dtmf_transcoding; }
   void getLowFiPLs(vector<SdpPayload>& lowfi_payloads) const;
 
-  void setRtpRelayInterface(int relay_interface);
+  virtual void setRtpRelayInterface(int relay_interface);
+  virtual void setRtpRelayForceSymmetricRtp(bool force_symmetric);
   void setRtpRelayTransparentSeqno(bool transparent);
   void setRtpRelayTransparentSSRC(bool transparent);
 
