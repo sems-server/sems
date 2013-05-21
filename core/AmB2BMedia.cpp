@@ -344,8 +344,6 @@ bool AudioStreamData::initStream(PlayoutType playout_type,
     return false; // it is bug with current AmB2BMedia implementation
   }
 
-  bool ok = true;
-
   // TODO: try to init only in case there are some payloads which can't be relayed
   stream->forceSdpMediaIndex(media_idx);
   if (stream->init(local_sdp, remote_sdp, force_symmetric_rtp) == 0) {
@@ -353,14 +351,13 @@ bool AudioStreamData::initStream(PlayoutType playout_type,
     initialized = true;
   } else {
     initialized = false;
-    ERROR("stream initialization failed\n");
+    DBG("stream initialization failed\n");
     // there still can be payloads to be relayed (if all possible payloads are
     // to be relayed this needs not to be an error)
-    ok = false;
   }
   stream->setOnHold(muted);
 
-  return ok;
+  return initialized;
 }
 
 void AudioStreamData::sendDtmf(int event, unsigned int duration_ms)

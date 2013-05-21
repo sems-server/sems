@@ -327,7 +327,7 @@ int AmRtpAudio::init(const AmSdp& local,
 
   PayloadMappingTable::iterator pl_it = pl_map.find(payload);
   if ((pl_it == pl_map.end()) || (pl_it->second.remote_pt < 0)) {
-    ERROR("no default payload has been set\n");
+    DBG("no default payload has been set\n");
     return -1;
   }
   fmt_p->setCurrentPayload(payloads[pl_it->second.index]);

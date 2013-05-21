@@ -685,13 +685,13 @@ int AmRtpStream::init(const AmSdp& local,
     setRAddr(remote_media.conn.address, remote_media.port);
 
   if(local_media.payloads.empty()) {
-    ERROR("local_media.payloads.empty()\n");
+    DBG("local_media.payloads.empty()\n");
     return -1;
   }
 
   payload = getDefaultPT();
   if(payload < 0) {
-    ERROR("could not set a default payload\n");
+    DBG("could not set a default payload\n");
     return -1;
   }
   DBG("default payload selected = %i\n",payload);
