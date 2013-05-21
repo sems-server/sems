@@ -107,7 +107,8 @@ int AmRtpPacket::parse()
   version = hdr->version;
 
   if (data_offset >= b_size) {
-    ERROR("bad rtp packet (header size too big) !\n");
+    ERROR("bad rtp packet (hdr-size=%u;pkt-size=%u) !\n",
+	  data_offset,b_size);
     return -1;
   }
   d_size = b_size - data_offset;
