@@ -1,6 +1,5 @@
 #include "SBCSimpleRelay.h"
 
-#include "SBCSimpleRelay.h"
 #include "AmSession.h"
 #include "AmB2BSession.h"
 #include "AmEventDispatcher.h"
@@ -12,7 +11,28 @@
  * SimpleRelayDialog
  */
 
-SimpleRelayDialog::SimpleRelayDialog(atomic_ref_cnt* parent_obj)
+void SimpleRelayDialog::initCCModules(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules)
+{
+  // init extended call control modules
+  for (vector<AmDynInvoke*>::iterator cc_mod = cc_modules.begin(); cc_mod != cc_modules.end(); ++cc_mod)
+  {
+    // get extended CC interface
+    try {
+      AmArg args, ret;
+      (*cc_mod)->invoke("getExtendedInterfaceHandler", args, ret);
+      ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
+      if (iface) {
+        CCModuleInfo mod_info;
+        iface->init(profile, this, mod_info.user_data);
+        mod_info.module = iface;
+        cc_ext.push_back(mod_info);
+      }
+    }
+    catch (...) { /* ignore errors */ }
+  }
+}
+
+SimpleRelayDialog::SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules, atomic_ref_cnt* parent_obj)
   : AmBasicSipDialog(this),
     AmEventQueue(this),
     parent_obj(parent_obj),
@@ -21,6 +41,7 @@ SimpleRelayDialog::SimpleRelayDialog(atomic_ref_cnt* parent_obj)
   if(parent_obj) {
     inc_ref(parent_obj);
   }
+  initCCModules(profile, cc_modules);
 }
 
 SimpleRelayDialog::~SimpleRelayDialog()
@@ -143,6 +164,10 @@ bool SimpleRelayDialog::processingCycle()
 
 void SimpleRelayDialog::finalize()
 {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    i->module->finalize(i->user_data);
+  }
+
   DBG("finalize(): tag=%s\n",local_tag.c_str());
   if(parent_obj) {
     // this might delete us!!!
@@ -152,11 +177,17 @@ void SimpleRelayDialog::finalize()
 
 void SimpleRelayDialog::onB2BRequest(const AmSipRequest& req)
 {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    i->module->onB2BRequest(req, i->user_data);
+  }
   relayRequest(req);
 }
 
 void SimpleRelayDialog::onB2BReply(const AmSipReply& reply)
 {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    i->module->onB2BReply(reply, i->user_data);
+  }
   if(reply.code >= 200)
     finished = true;
 
@@ -165,6 +196,9 @@ void SimpleRelayDialog::onB2BReply(const AmSipReply& reply)
 
 void SimpleRelayDialog::onSipRequest(const AmSipRequest& req)
 {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    i->module->onSipRequest(req, i->user_data);
+  }
   if(other_dlg.empty()) 
     return;
 
@@ -178,6 +212,9 @@ void SimpleRelayDialog::onSipReply(const AmSipRequest& req,
 				   const AmSipReply& reply, 
 				   AmBasicSipDialog::Status old_dlg_status)
 {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    i->module->onSipReply(req, reply, old_dlg_status, i->user_data);
+  }
   if(reply.code >= 200)
     finished = true;
 
@@ -220,6 +257,9 @@ void SimpleRelayDialog::onLocalTerminate(const AmSipReply& reply)
 int SimpleRelayDialog::initUAC(const AmSipRequest& req, 
 				const SBCCallProfile& cp)
 {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    i->module->initUAC(req, i->user_data);
+  }
   local_tag = AmSession::getNewId();
 
   AmEventDispatcher* ev_disp = AmEventDispatcher::instance();
@@ -271,6 +311,9 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
 int SimpleRelayDialog::initUAS(const AmSipRequest& req, 
 			       const SBCCallProfile& cp)
 {
+  for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    i->module->initUAS(req, i->user_data);
+  }
   local_tag = AmSession::getNewId();
 
   AmEventDispatcher* ev_disp = AmEventDispatcher::instance();

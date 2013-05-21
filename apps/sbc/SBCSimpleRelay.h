@@ -33,8 +33,10 @@
 #include "AmEventQueue.h"
 #include "SBCCallProfile.h"
 #include "HeaderFilter.h"
+#include "ExtendedCCInterface.h"
 
 #include <map>
+#include <list>
 using std::map;
 
 class SimpleRelayDialog
@@ -57,6 +59,12 @@ class SimpleRelayDialog
 
   bool finished;
 
+  struct CCModuleInfo {
+    ExtendedCCInterface* module;
+    void *user_data;
+  };
+  std::list<CCModuleInfo> cc_ext;
+
   // relay methods
   int relayRequest(const AmSipRequest& req);
   int relayReply(const AmSipReply& reply);
@@ -67,12 +75,14 @@ class SimpleRelayDialog
   // AmEventQueue
   bool processingCycle();
 
+  void initCCModules(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules);
+
 protected:
   virtual void onB2BRequest(const AmSipRequest& req);
   virtual void onB2BReply(const AmSipReply& reply);
 
 public:
-  SimpleRelayDialog(atomic_ref_cnt* parent_obj=NULL);
+  SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules, atomic_ref_cnt* parent_obj=NULL);
   ~SimpleRelayDialog();
 
   void setParent(atomic_ref_cnt* p_obj) {

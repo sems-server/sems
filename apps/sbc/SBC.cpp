@@ -357,23 +357,23 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
 
   SBCSimpleRelay* relay=NULL;
   if(req.method == SIP_METH_REGISTER) {
-    relay = new SBCSimpleRelay(new RegisterDialog(),
-			       new RegisterDialog());
+    relay = new SBCSimpleRelay(new RegisterDialog(call_profile, cc_modules),
+			       new RegisterDialog(call_profile, cc_modules));
   }
   else if((req.method == SIP_METH_SUBSCRIBE) ||
 	  (req.method == SIP_METH_REFER)){
 
-    relay = new SBCSimpleRelay(new SubscriptionDialog(),
-			       new SubscriptionDialog());
+    relay = new SBCSimpleRelay(new SubscriptionDialog(call_profile, cc_modules),
+			       new SubscriptionDialog(call_profile, cc_modules));
   }
   else {
-    relay = new SBCSimpleRelay(new SimpleRelayDialog(),
-			       new SimpleRelayDialog());
+    relay = new SBCSimpleRelay(new SimpleRelayDialog(call_profile, cc_modules),
+			       new SimpleRelayDialog(call_profile, cc_modules));
   }
-  relay->setMsgLogger(logger);
+  if (call_profile.log_sip) relay->setMsgLogger(logger);
 
   if(relay->start(req,call_profile)) {
-    AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "", logger);
+    AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "", call_profile.log_sip ? logger: NULL);
     delete relay;
   }
 }
@@ -756,7 +756,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 	  AmBasicSipDialog::reply_error(req,
 	        ret[i][SBC_CC_REFUSE_CODE].asInt(), 
 		ret[i][SBC_CC_REFUSE_REASON].asCStr(),
-		headers,logger);
+		headers, call_profile.log_sip ? logger: NULL);
 
 	  return false;
 	}

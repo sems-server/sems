@@ -6,6 +6,7 @@
 
 class SBCCallLeg;
 struct SBCCallProfile;
+class SimpleRelayDialog;
 
 struct InitialInviteHandlerParams
 {
@@ -71,6 +72,22 @@ class ExtendedCCInterface
     virtual CCChainProcessing resumeHeld(SBCCallLeg *call, bool send_reinvite) { return ContinueProcessing; }
     virtual CCChainProcessing createHoldRequest(SBCCallLeg *call, AmSdp &sdp) { return ContinueProcessing; }
     virtual CCChainProcessing handleHoldReply(SBCCallLeg *call, bool succeeded) { return ContinueProcessing; }
+
+
+    // using extended CC modules with simple relay
+
+    virtual void init(SBCCallProfile &profile, SimpleRelayDialog *relay, void *&user_data) { }
+    virtual void initUAC(const AmSipRequest &req, void *user_data) { }
+    virtual void initUAS(const AmSipRequest &req, void *user_data) { }
+    virtual void finalize(void *user_data) { }
+    virtual void onSipRequest(const AmSipRequest& req, void *user_data) { }
+    virtual void onSipReply(const AmSipRequest& req,
+		  const AmSipReply& reply,
+		  AmBasicSipDialog::Status old_dlg_status,
+                  void *user_data) { }
+    virtual void onB2BRequest(const AmSipRequest& req, void *user_data) { }
+    virtual void onB2BReply(const AmSipReply& reply, void *user_data) { }
+
 
 };
 

@@ -36,8 +36,8 @@
  * SubscriptionDialog
  */
 
-SubscriptionDialog::SubscriptionDialog(atomic_ref_cnt* parent_obj)
-  : SimpleRelayDialog(parent_obj),
+SubscriptionDialog::SubscriptionDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules, atomic_ref_cnt* parent_obj)
+  : SimpleRelayDialog(profile, cc_modules, parent_obj),
     subs(this,this)
 {
 }

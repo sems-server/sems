@@ -11,8 +11,9 @@
 
 #define DEFAULT_REG_EXPIRES 3600
 
-RegisterDialog::RegisterDialog()
-  : contact_hiding(false),
+RegisterDialog::RegisterDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules)
+  : SimpleRelayDialog(profile, cc_modules),
+    contact_hiding(false),
     reg_caching(false),
     star_contact(false),
     max_ua_expire(0),

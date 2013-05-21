@@ -54,7 +54,7 @@ class RegisterDialog
   void fixUacContactHosts(const AmSipRequest& req, const SBCCallProfile& cp);
 
 public:
-  RegisterDialog();
+  RegisterDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules);
   ~RegisterDialog();
 
   // SimpleRelayDialog interface
