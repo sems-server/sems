@@ -107,7 +107,7 @@ case "$1" in
 	stop
 	;;
   status)
-        status -p $pidfile $prog
+        status $prog
 	RETVAL=$?
 	;;
   restart|force-reload)
