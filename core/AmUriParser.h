@@ -60,6 +60,7 @@ struct AmUriParser {
 
   void dump() const;
   string uri_str() const;
+  string canon_uri_str() const;
   string nameaddr_str() const;
   
   AmUriParser() { }

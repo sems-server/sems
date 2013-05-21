@@ -485,21 +485,26 @@ void AmUriParser::dump() const {
 
 string AmUriParser::uri_str() const
 {
-  string res = uri_host;
-
-  if(!uri_user.empty()) {
-    res = uri_user + "@" + res;
-  }
-
-  if(!uri_port.empty()) {
-    res += ":" + uri_port;
-  }
+  string res = canon_uri_str();
 
   if(!uri_param.empty()) {
     res += ";" + uri_param;
   }
 
-  res = "sip:" + res;
+  return res;
+}
+
+string AmUriParser::canon_uri_str() const
+{
+  string res = "sip:";
+  if(!uri_user.empty()) {
+    res += uri_user + "@";
+  }
+  res += uri_host;
+
+  if(!uri_port.empty()) {
+    res += ":" + uri_port;
+  }
 
   return res;
 }
