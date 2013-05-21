@@ -975,7 +975,7 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
 	relay_stream.a.stopReceiving();
 	if(m->port) {
 	  relay_stream.a.enableRtpRelay(true_mask,&relay_stream.b);
-	  relay_stream.a.setRAddr(connection_address,m->port);
+	  relay_stream.a.setRAddr(connection_address,m->port,m->port+1);
 	  if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
 	    relay_stream.a.enableRawRelay();
 	  relay_stream.a.resumeReceiving();
@@ -989,7 +989,7 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
 	relay_stream.b.stopReceiving();
 	if(m->port) {
 	  relay_stream.b.enableRtpRelay(true_mask,&relay_stream.a);
-	  relay_stream.b.setRAddr(connection_address,m->port);
+	  relay_stream.b.setRAddr(connection_address,m->port,m->port+1);
 	  if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
 	    relay_stream.b.enableRawRelay();
 	  relay_stream.b.resumeReceiving();

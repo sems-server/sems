@@ -680,9 +680,9 @@ int AmRtpStream::init(const AmSdp& local,
     return -1;
   }
   if (remote_media.conn.address.empty())
-    setRAddr(remote.conn.address, remote_media.port);
+    setRAddr(remote.conn.address, remote_media.port, remote_media.port+1);
   else
-    setRAddr(remote_media.conn.address, remote_media.port);
+    setRAddr(remote_media.conn.address, remote_media.port, remote_media.port+1);
 
   if(local_media.payloads.empty()) {
     DBG("local_media.payloads.empty()\n");
