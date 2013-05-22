@@ -8,6 +8,7 @@
 #include "AmConfig.h"
 
 #include <algorithm>
+using std::make_pair;
 
 #define DEFAULT_REG_EXPIRES 3600
 
@@ -150,10 +151,13 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 
     bool is_a_dereg = false;
     bool reg_cache_reply = true;
+    RegisterCache* reg_cache = RegisterCache::instance();
+
+    vector<pair<string, long int> > alias_updates;
     for(vector<AmUriParser>::iterator contact_it = uac_contacts.begin();
 	contact_it != uac_contacts.end(); contact_it++) {
 
-      unsigned int contact_expires=0;
+      long int contact_expires=0;
       map<string, string>::iterator expires_it = 
 	contact_it->params.find("expires");
 
@@ -172,7 +176,6 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
       RegBinding reg_binding;
       const string& uri = contact_it->uri_str();
 
-      RegisterCache* reg_cache = RegisterCache::instance();
       if(!reg_cache->getAlias(aor,uri,reg_binding)) {
 	reg_binding.alias = AmSession::getNewId();
 	DBG("no alias in cache, created one");
@@ -186,7 +189,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 
       if(expires_it != contact_it->params.end()) {
 	// 'expires=xxx' present:
-	if(str2i(expires_it->second,contact_expires)) {
+	if(str2long(expires_it->second,contact_expires)) {
 	  reply_error(req, 400, "Bad Request",
 		      "Warning: Malformed expires\r\n",
                       logger);
@@ -204,36 +207,55 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 	is_a_dereg = true;
       }
 
-      if(!is_a_dereg && reg_binding.reg_expire) { // no contact with expires=0
+      if(!reg_cache_reply || is_a_dereg)
+	continue;
 
-	// Find out whether we should send the REGISTER 
-	// to the registrar or not:
-
-	struct timeval now;
-	gettimeofday(&now,NULL);
-
-	if(max_ua_expire && (contact_expires > max_ua_expire))
-	  contact_expires = max_ua_expire;
-
-	DBG("min_reg_expire = %u", min_reg_expire);
-	DBG("max_ua_expire = %u", max_ua_expire);
-	DBG("contact_expires = %u", contact_expires);
-	DBG("reg_expires = %li", reg_binding.reg_expire - now.tv_sec);
-	if((long int)contact_expires + 4 /* 2 seconds buffer */ 
-	   < reg_binding.reg_expire - now.tv_sec) {
-	  
-	  reg_cache_reply = reg_cache_reply && true;
-	}
-	else {
-	  reg_cache_reply = false;
-	}
-      }
-      else {
+      if(!reg_binding.reg_expire) { // no contact with expires=0
 	reg_cache_reply = false;
       }
+
+      // Find out whether we should send the REGISTER 
+      // to the registrar or not:
+
+      struct timeval now;
+      gettimeofday(&now,NULL);
+
+      if(max_ua_expire && (contact_expires > max_ua_expire))
+	contact_expires = max_ua_expire;
+
+      DBG("min_reg_expire = %u", min_reg_expire);
+      DBG("max_ua_expire = %u", max_ua_expire);
+      DBG("contact_expires = %lu", contact_expires);
+      DBG("reg_expires = %li", reg_binding.reg_expire - now.tv_sec);
+      if(contact_expires + 4 /* 4 seconds buffer */ 
+	 + now.tv_sec >= reg_binding.reg_expire) {
+	reg_cache_reply = false;
+	continue;
+      }
+
+      AliasEntry alias_entry;
+      if(!reg_cache->findAliasEntry(reg_binding.alias, alias_entry) ||
+	 (alias_entry.source_ip != req.remote_ip) ||
+	 (alias_entry.source_port != req.remote_port)) {
+	DBG("no alias entry or IP/port mismatch");
+	reg_cache_reply = false;
+	continue;
+      }
+
+      alias_updates.push_back(make_pair<string,long int>(reg_binding.alias,
+							 contact_expires));      
     }
 
     if(!uac_contacts.empty() && reg_caching && reg_cache_reply) {
+
+      for(vector<pair<string, long int> >::iterator it = alias_updates.begin();
+	  it != alias_updates.end(); it++) {
+	if(!reg_cache->updateAliasExpires(it->first, it->second)) {
+	  // alias not found ???
+	  return 0; // fwd REGISTER
+	}
+      }
+
       replyFromCache(req);
       // not really an error but 
       // SBCSimpleRelay::start() would
