@@ -309,6 +309,19 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
   return b2b_dlg;
 }
 
+/** out-of-dialog request handling terminated */
+static void oodHandlingTerminated(const AmSipRequest &req, vector<AmDynInvoke*>& cc_modules, SBCCallProfile& call_profile)
+{
+  for (vector<AmDynInvoke*>::iterator m = cc_modules.begin(); m != cc_modules.end(); ++m) {
+    AmArg args,ret;
+    args.push((AmObject*)&call_profile);
+    args.push((AmObject*)&req);
+    try {
+      (*m)->invoke("ood_handling_terminated", args, ret);
+    } catch (...) { /* ignore */ }
+  }
+}
+
 void SBCFactory::onOoDRequest(const AmSipRequest& req)
 {
   DBG("processing message %s %s\n", req.method.c_str(), req.r_uri.c_str());  
@@ -340,12 +353,14 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
   // fix up variables
   call_profile.replace_cc_values(ctx,req,NULL);
   if(!SBCFactory::CCRoute(req,cc_modules,call_profile, logger)) {
+    oodHandlingTerminated(req, cc_modules, call_profile);
     //ERROR("routing failed\n");
     if (logger) delete logger;
     return;
   }
 
   if (!call_profile.refuse_with.empty()) {
+    oodHandlingTerminated(req, cc_modules, call_profile);
     if (logger) delete logger;
     if(call_profile.refuse(ctx, req) < 0) {
       throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
