@@ -15,10 +15,10 @@ getos
 sems
 sems-stats
 sems-logfile-callextract
-
 cscope.out
 cscope.files
 semantic.cache
 apps/rtmp/flash_phone/*.swf
 core/plug-in/silk/SILK_SDK_*
 core.*
+*.patch
