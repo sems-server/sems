@@ -1124,9 +1124,6 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
     int request_len = request_line_len(cancel_str,
 				       req->u.request->ruri_str);
 
-    char branch_buf[BRANCH_BUF_LEN];
-    compute_branch(branch_buf,req->callid->value,get_cseq(req)->num_str);
-    cstring branch(branch_buf,BRANCH_BUF_LEN);
     
     string via(req->local_socket->get_ip());
     if(req->local_socket->get_port() != 5060)
