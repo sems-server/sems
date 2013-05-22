@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <unistd.h>	/* getpid() */
 #include <pthread.h>	/* pthread_self() */
+#include <execinfo.h>   /* backtrace_symbols() */
 
 
 #ifdef __cplusplus
@@ -172,6 +173,8 @@ void run_log_hooks(int, pid_t, pthread_t, const char*, const char*, int, char*);
 #ifndef DISABLE_SYSLOG_LOG
 int set_syslog_facility(const char*);
 #endif
+
+void log_stacktrace(int ll);
 
 #ifdef __cplusplus
 }

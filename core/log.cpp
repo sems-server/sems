@@ -199,3 +199,17 @@ void register_log_hook(AmLoggingFacility* fac)
   AmLock lock(log_hooks_mutex);
   log_hooks.push_back(fac);
 }
+
+/**
+ * Print stack-trace through logging function
+ */
+void log_stacktrace(int ll)
+{
+   void* callstack[128];
+   int i, frames = backtrace(callstack, 128);
+   char** strs = backtrace_symbols(callstack, frames);
+   for (i = 0; i < frames; ++i) {
+     _LOG(ll,"stack-trace(%i): %s", i, strs[i]);
+   }
+   free(strs);
+}
