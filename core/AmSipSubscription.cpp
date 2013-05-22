@@ -41,7 +41,9 @@
 
 #define DEFAULT_SUB_EXPIRES 600
 
-#define RFC6665_TIMER_N_DURATION (64*T1_TIMER)/1000.0
+// TIMER N should first expire once transaction timer has hit
+// in case we receive no reply to SUBSCRIBE.
+#define RFC6665_TIMER_N_DURATION ((64 + 4)*T1_TIMER)/1000.0
 
 #define SIP_HDR_SUBSCRIPTION_STATE "Subscription-State"
 #define SIP_HDR_EVENT              "Event"
@@ -180,7 +182,7 @@ void SingleSubscription::onTimer(int timer_id)
     }
     unlockState();
     return;
-  }  
+  }
 }
 
 void SingleSubscription::terminate()
