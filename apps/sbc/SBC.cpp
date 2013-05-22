@@ -310,7 +310,7 @@ AmSession* SBCFactory::onInvite(const AmSipRequest& req, const string& app_name,
 }
 
 /** out-of-dialog request handling terminated */
-static void oodHandlingTerminated(const AmSipRequest &req, vector<AmDynInvoke*>& cc_modules, SBCCallProfile& call_profile)
+void oodHandlingTerminated(const AmSipRequest &req, vector<AmDynInvoke*>& cc_modules, SBCCallProfile& call_profile)
 {
   for (vector<AmDynInvoke*>::iterator m = cc_modules.begin(); m != cc_modules.end(); ++m) {
     AmArg args,ret;

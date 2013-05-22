@@ -743,6 +743,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
 
     if (!CCStart(req)) {
       setStopped();
+      oodHandlingTerminated(req, cc_modules, call_profile);
       return;
     }
   }

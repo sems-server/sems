@@ -118,5 +118,6 @@ class SBCFactory: public AmSessionFactory,
 
 extern void assertEndCRLF(string& s);
 extern bool getCCInterfaces(CCInterfaceListT& cc_interfaces, vector<AmDynInvoke*>& cc_modules);
+extern void oodHandlingTerminated(const AmSipRequest &req, vector<AmDynInvoke*>& cc_modules, SBCCallProfile& call_profile);
 
 #endif
