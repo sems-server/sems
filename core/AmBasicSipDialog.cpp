@@ -482,6 +482,7 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
 	  "remote_tag=%s\n",
 	  req.cseq,code,callid.c_str(),
 	  local_tag.c_str(),remote_tag.c_str());
+    log_stacktrace(L_ERR);
     return -1;
   }
   DBG("reply: transaction found!\n");
