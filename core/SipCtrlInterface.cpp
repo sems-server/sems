@@ -425,9 +425,9 @@ inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	    req.contact = "*";
 	}
 	else if(parse_nameaddr(&na,&c,contact_na.len) < 0){
-	    WARN("Contact parsing failed\n");
-	    WARN("\tcontact = '%.*s'\n",contact_na.len,contact_na.s);
-	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
+	    DBG("Contact parsing failed\n");
+	    DBG("\tcontact = '%.*s'\n",contact_na.len,contact_na.s);
+	    DBG("\trequest = '%.*s'\n",msg->len,msg->buf);
 
 	    trans_layer::instance()->
 		send_sf_error_reply(&tt, msg, 400, "Bad Contact");
@@ -436,9 +436,9 @@ inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	else {
 	    sip_uri u;
 	    if(parse_uri(&u,na.addr.s,na.addr.len)){
-		WARN("'Contact' in new request contains a malformed URI\n");
-		WARN("\tcontact uri = '%.*s'\n",na.addr.len,na.addr.s);
-		WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
+		DBG("'Contact' in new request contains a malformed URI\n");
+		DBG("\tcontact uri = '%.*s'\n",na.addr.len,na.addr.s);
+		DBG("\trequest = '%.*s'\n",msg->len,msg->buf);
 
 		trans_layer::instance()->
 		    send_sf_error_reply(&tt, msg, 400, "Malformed Contact URI");
@@ -458,8 +458,10 @@ inline bool SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     }
     else {
 	if (req.method == SIP_METH_INVITE) {
-	    WARN("Request has no contact header\n");
-	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
+	    DBG("Request has no contact header\n");
+	    DBG("\trequest = '%.*s'\n",msg->len,msg->buf);
+	    trans_layer::instance()->
+		send_sf_error_reply(&tt, msg, 400, "Missing Contact-HF");
 	}
     }
     
