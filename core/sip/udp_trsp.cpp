@@ -320,6 +320,13 @@ void udp_trsp::run()
 	    ERROR("Message was too big (>%d)\n",MAX_UDP_MSGLEN);
 	    continue;
 	}
+
+	sockaddr_storage* sa = (sockaddr_storage*)msg.msg_name;
+	if(!am_get_port(sa)) {
+	    DBG("Source port is 0: dropping");
+	    continue;
+	}
+
 	sip_msg* s_msg = new sip_msg(buf,buf_len);
 	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
 
