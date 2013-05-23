@@ -81,18 +81,11 @@ int RegisterDialog::replyFromCache(const AmSipRequest& req)
 
     if(max_ua_expire && (expires > (long int)max_ua_expire)) {
       contact.params["expires"] = int2str(max_ua_expire);
-      expires = max_ua_expire;
     }
 
     if(contact_it != alias_map.begin())
       contact_hdr += ", ";
     contact_hdr += contact.print();
-
-    expires += now.tv_sec;
-    if(!reg_cache->updateAliasExpires(contact_it->first,expires)) {
-      ERROR("could not update alias UA-expiration ('%s'/%li)",
-	    contact_it->first.c_str(),expires);
-    }
   }
   contact_hdr += CRLF;
 
@@ -227,8 +220,11 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
       DBG("max_ua_expire = %u", max_ua_expire);
       DBG("contact_expires = %lu", contact_expires);
       DBG("reg_expires = %li", reg_binding.reg_expire - now.tv_sec);
+
+      contact_expires += now.tv_sec;
+
       if(contact_expires + 4 /* 4 seconds buffer */ 
-	 + now.tv_sec >= reg_binding.reg_expire) {
+	 >= reg_binding.reg_expire) {
 	reg_cache_reply = false;
 	continue;
       }
@@ -243,7 +239,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
       }
 
       alias_updates.push_back(make_pair<string,long int>(reg_binding.alias,
-							 contact_expires));      
+							 contact_expires));
     }
 
     if(!uac_contacts.empty() && reg_caching && reg_cache_reply) {
