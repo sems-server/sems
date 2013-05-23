@@ -1186,6 +1186,7 @@ inline void PacketMem::freePacket(AmRtpPacket* p)
 
   if(!used[idx]) {
     ERROR("freePacket() double free: n_used = %d, idx = %d",n_used,idx);
+    log_stacktrace(L_ERR);
     return;
   }
 
