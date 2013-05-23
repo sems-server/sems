@@ -325,6 +325,9 @@ int main(int argc, char* argv[])
 {
   int success = false;
   std::map<char,string> args;
+  #ifndef DISABLE_DAEMON_MODE
+  int fd[2] = {0,0};
+  #endif
 
   progname = strrchr(argv[0], '/');
   progname = (progname == NULL ? argv[0] : progname + 1);
@@ -462,13 +465,36 @@ int main(int argc, char* argv[])
 #endif
 
     /* fork to become!= group leader*/
+    if (pipe(fd) == -1) { /* Create a pipe */
+        ERROR("Cannot create pipe.\n");
+        goto error;
+    }
     int pid;
     if ((pid=fork())<0){
       ERROR("Cannot fork: %s.\n", strerror(errno));
       goto error;
     }else if (pid!=0){
-      /* parent process => exit*/
+      close(fd[1]);
+      /* parent process => wait for result from child*/
+      for(int i=0;i<2;i++){
+        INFO("waiting for child[%d] response\n", i);
+        read(fd[0], &pid, sizeof(int));
+        if(pid<0){
+          ERROR("Child [%d] return an error: %d\n", i, pid);
+          close(fd[0]);
+          goto error;
+        }
+        INFO("child [%d] pid:%d\n", i, pid);
+      }
+      INFO("all childs return OK. bye world!\n");
+      close(fd[0]);
       return 0;
+    }else {
+      /* child */
+      close(fd[0]);
+      main_pid = getpid();
+      INFO("hi world! I'm child [%d]\n", main_pid);
+      write(fd[1], &main_pid, sizeof(int));
     }
     /* become session leader to drop the ctrl. terminal */
     if (setsid()<0){
@@ -480,6 +506,9 @@ int main(int argc, char* argv[])
       goto error;
     }else if (pid!=0){
       /*parent process => exit */
+      close(fd[1]);
+      main_pid = getpid();
+      INFO("I'm out. pid: %d", main_pid);
       return 0;
     }
 	
@@ -555,7 +584,13 @@ int main(int argc, char* argv[])
 
   INFO("Starting SIP stack (control interface)\n");
   sip_ctrl.load();
-  
+
+  #ifndef DISABLE_DAEMON_MODE
+  INFO("hi world! I'm main child [%d]\n", main_pid);
+  write(fd[1], &main_pid, sizeof(int));
+  close(fd[1]);
+  #endif
+
   if(sip_ctrl.run() != -1)
     success = true;
 
@@ -583,6 +618,12 @@ int main(int argc, char* argv[])
 #ifndef DISABLE_DAEMON_MODE
   if (AmConfig::DaemonMode) {
     unlink(AmConfig::DaemonPidFile.c_str());
+  }
+  if (!(fcntl(fd[1], F_GETFL) == -1 && errno == EBADF)){
+    main_pid = -1;
+    ERROR("send -1 to parent\n");
+    write(fd[1], &main_pid, sizeof(int));
+    close(fd[1]);
   }
 #endif
 
