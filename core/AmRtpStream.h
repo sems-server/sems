@@ -300,6 +300,16 @@ protected:
    */
   int getDefaultPT();
 
+  /**
+   * Stops RTP stream.
+   */
+  void pause();
+
+  /**
+   * Resume a paused RTP stream.
+   */
+  void resume();
+
 public:
 
   /** Mute */
@@ -427,16 +437,6 @@ public:
    * @warning so that the internal SDP media line index is set properly.
    */
   virtual int init(const AmSdp& local, const AmSdp& remote, bool force_passive_mode = false);
-
-  /**
-   * Stops RTP stream.
-   */
-  void pause();
-
-  /**
-   * Resume a paused RTP stream.
-   */
-  void resume();
 
   /** set the RTP stream on hold (mute && port = 0) */
   void setOnHold(bool on_hold);

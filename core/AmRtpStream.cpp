@@ -747,6 +747,7 @@ void AmRtpStream::resume()
 {
   gettimeofday(&last_recv_time,NULL);
   mem.clear();
+  receive_buf.clear();
   receiving = true;
 }
 
@@ -863,7 +864,10 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
     if(p->payload == getLocalTelephoneEventPT()) {
       rtp_ev_qu.push(p);
     } else {
-      receive_buf[p->timestamp] = p;
+      if(!receive_buf.insert(ReceiveBuffer::value_type(p->timestamp,p)).second) {
+	// insert failed
+	mem.freePacket(p);
+      }
     }
 
 #ifdef WITH_ZRTP
@@ -1161,7 +1165,7 @@ PacketMem::PacketMem()
 
 inline AmRtpPacket* PacketMem::newPacket() 
 {
-  if(n_used == MAX_PACKETS)
+  if(n_used >= MAX_PACKETS)
     return NULL; // full
 
   while(used[cur_idx])
@@ -1186,7 +1190,6 @@ inline void PacketMem::freePacket(AmRtpPacket* p)
 
   if(!used[idx]) {
     ERROR("freePacket() double free: n_used = %d, idx = %d",n_used,idx);
-    log_stacktrace(L_ERR);
     return;
   }
 
