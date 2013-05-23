@@ -468,7 +468,6 @@ AmSipSubscription::createSubscription(const AmSipRequest& req, bool uac)
 {
   SingleSubscription* sub = SingleSubscription::makeSubscription(this,req,uac);
   if(!sub){
-    dlg->reply(req, 501, "NOTIFY cannot create a subscription");
     return subs.end();
   }
 
