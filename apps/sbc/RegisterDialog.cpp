@@ -189,7 +189,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 
       if(expires_it != contact_it->params.end()) {
 	// 'expires=xxx' present:
-	if(str2long(expires_it->second,contact_expires)) {
+	if(!str2long(expires_it->second,contact_expires)) {
 	  reply_error(req, 400, "Bad Request",
 		      "Warning: Malformed expires\r\n",
                       logger);
