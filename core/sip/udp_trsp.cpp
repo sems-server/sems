@@ -169,9 +169,10 @@ int udp_trsp_socket::sendto(const sockaddr_storage* sa,
 		     SA_len(sa));
 
   if (err < 0) {
-    ERROR("sendto(%i;%s:%i): %s\n",
-	  get_addr_str_sip(sa).c_str(),am_get_port(sa),
-	  strerror(errno));
+    char host[NI_MAXHOST] = "";
+    ERROR("sendto(%i;%s:%i): %s\n", sd,
+	  am_inet_ntop_sip(sa,host,NI_MAXHOST),
+	  am_get_port(sa),strerror(errno));
     return err;
   }
   else if (err != msg_len) {
@@ -231,9 +232,10 @@ int udp_trsp_socket::sendmsg(const sockaddr_storage* sa,
   
   // bytes_sent = ;
   if(::sendmsg(sd, &hdr, 0) < 0) {
-      ERROR("sendto(%i;%s:%i): %s\n",
-	    get_addr_str_sip(sa).c_str(),am_get_port(sa),
-	    strerror(errno));
+      char host[NI_MAXHOST] = "";
+      ERROR("sendto(%i;%s:%i): %s\n", sd,
+	    am_inet_ntop_sip(sa,host,NI_MAXHOST),
+	    am_get_port(sa),strerror(errno));
       return -1;
   }
 
