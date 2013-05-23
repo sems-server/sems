@@ -321,15 +321,19 @@ void udp_trsp::run()
 	    continue;
 	}
 	sip_msg* s_msg = new sip_msg(buf,buf_len);
+	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
 
 	if (trsp_socket::log_level_raw_msgs >= 0) {
+	    char host[NI_MAXHOST] = "";
 	    _LOG(trsp_socket::log_level_raw_msgs, 
-		 "vv M [|] u recvd msg via UDP vv\n--++--\n%.*s--++--\n",
+		 "vv M [|] u recvd msg via UDP from %s:%i vv\n"
+		 "--++--\n%.*s--++--\n",
+		 am_inet_ntop_sip(&s_msg->remote_ip,host,NI_MAXHOST),
+		 am_get_port(&s_msg->remote_ip),
 		 s_msg->len, s_msg->buf);
 	}
-	memcpy(&s_msg->remote_ip,msg.msg_name,msg.msg_namelen);
-	s_msg->local_socket = sock;
 
+	s_msg->local_socket = sock;
 	for (cmsgptr = CMSG_FIRSTHDR(&msg);
              cmsgptr != NULL;
              cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
