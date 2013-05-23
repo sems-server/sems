@@ -577,16 +577,15 @@ int parse_sip_msg(sip_msg* msg, char*& err_msg)
     }
 
     auto_ptr<sip_from_to> from(new sip_from_to());
-    if(!parse_from_to(from.get(),
-		      msg->from->value.s,
-		      msg->from->value.len)) {
-
-	msg->from->p = from.release();
-    }
-    else {
+    if(parse_from_to(from.get(), msg->from->value.s, msg->from->value.len) != 0) {
 	err_msg = (char*)"could not parse From hf";
 	return MALFORMED_SIP_MSG;
     }
+    if(!from->tag.len) {
+	err_msg = (char*)"missing From-tag";
+	return MALFORMED_SIP_MSG;
+    }
+    msg->from->p = from.release();
 
     auto_ptr<sip_from_to> to(new sip_from_to());
     if(!parse_from_to(to.get(),
