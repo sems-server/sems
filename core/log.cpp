@@ -122,6 +122,11 @@ void SyslogLogFac::log(int level, pid_t pid, pthread_t tid, const char* func, co
   static const int log2syslog_level[] = { LOG_ERR, LOG_WARNING, LOG_INFO, LOG_DEBUG };
 #ifdef _DEBUG
 
+  // replace \r\n through a dot
+  for(char* c=msg; (*c); c++)
+    if(*c == '\r' || *c == '\n')
+      *c = '.';
+
 # ifndef NO_THREADID_LOG
 #  ifdef LOG_LOC_DATA_ATEND
   syslog(log2syslog_level[level], "%s: %s [#%lx] [%s %s:%d]",
