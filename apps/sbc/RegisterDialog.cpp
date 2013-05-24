@@ -200,10 +200,10 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 	is_a_dereg = true;
       }
 
-      if(!reg_cache_reply || is_a_dereg)
+      if(!reg_cache_reply)
 	continue;
 
-      if(!reg_binding.reg_expire) { // no contact with expires=0
+      if(is_a_dereg || !reg_binding.reg_expire) { // no contact with expires=0
 	reg_cache_reply = false;
       }
 
