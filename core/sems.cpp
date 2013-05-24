@@ -477,23 +477,23 @@ int main(int argc, char* argv[])
       close(fd[1]);
       /* parent process => wait for result from child*/
       for(int i=0;i<2;i++){
-        INFO("waiting for child[%d] response\n", i);
+        DBG("waiting for child[%d] response\n", i);
         read(fd[0], &pid, sizeof(int));
         if(pid<0){
           ERROR("Child [%d] return an error: %d\n", i, pid);
           close(fd[0]);
           goto error;
         }
-        INFO("child [%d] pid:%d\n", i, pid);
+        DBG("child [%d] pid:%d\n", i, pid);
       }
-      INFO("all childs return OK. bye world!\n");
+      DBG("all childs return OK. bye world!\n");
       close(fd[0]);
       return 0;
     }else {
       /* child */
       close(fd[0]);
       main_pid = getpid();
-      INFO("hi world! I'm child [%d]\n", main_pid);
+      DBG("hi world! I'm child [%d]\n", main_pid);
       write(fd[1], &main_pid, sizeof(int));
     }
     /* become session leader to drop the ctrl. terminal */
@@ -508,7 +508,7 @@ int main(int argc, char* argv[])
       /*parent process => exit */
       close(fd[1]);
       main_pid = getpid();
-      INFO("I'm out. pid: %d", main_pid);
+      DBG("I'm out. pid: %d", main_pid);
       return 0;
     }
 	
@@ -586,9 +586,11 @@ int main(int argc, char* argv[])
   sip_ctrl.load();
 
   #ifndef DISABLE_DAEMON_MODE
-  INFO("hi world! I'm main child [%d]\n", main_pid);
-  write(fd[1], &main_pid, sizeof(int));
-  close(fd[1]);
+  if(fd[1]) {
+    DBG("hi world! I'm main child [%d]\n", main_pid);
+    write(fd[1], &main_pid, sizeof(int));
+    close(fd[1]); fd[1] = 0;
+  }
   #endif
 
   if(sip_ctrl.run() != -1)
@@ -619,11 +621,11 @@ int main(int argc, char* argv[])
   if (AmConfig::DaemonMode) {
     unlink(AmConfig::DaemonPidFile.c_str());
   }
-  if (!(fcntl(fd[1], F_GETFL) == -1 && errno == EBADF)){
-    main_pid = -1;
-    ERROR("send -1 to parent\n");
-    write(fd[1], &main_pid, sizeof(int));
-    close(fd[1]);
+  if(fd[1]){
+     main_pid = -1;
+     DBG("send -1 to parent\n");
+     write(fd[1], &main_pid, sizeof(int));
+     close(fd[1]);
   }
 #endif
 
