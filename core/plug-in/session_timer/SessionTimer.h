@@ -112,7 +112,7 @@ class SessionTimer: public AmSessionEventHandler
   AmSession* s;
 
   // map to save sent requests, so we can resent in case of 422
-  std::map<unsigned int, SIPRequestInfo> sent_requests;
+  //std::map<unsigned int, SIPRequestInfo> sent_requests;
 
   enum SessionRefresher {
     refresh_local,

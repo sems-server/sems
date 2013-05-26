@@ -137,14 +137,14 @@ bool SessionTimer::onSendRequest(AmSipRequest& req, int& flags)
     return false;
   }
 
-  if (session_timer_conf.getEnableSessionTimer() &&
-      ((req.method == SIP_METH_INVITE) || (req.method == SIP_METH_UPDATE))) {
+  // if (session_timer_conf.getEnableSessionTimer() &&
+  //     ((req.method == SIP_METH_INVITE) || (req.method == SIP_METH_UPDATE))) {
     // save INVITE and UPDATE so we can resend on 422 reply
-    DBG("adding %d to list of sent requests.\n", req.cseq);
-    sent_requests[req.cseq] = SIPRequestInfo(req.method,
-					     &req.body,
-					     req.hdrs);
-  }
+    // DBG("adding %d to list of sent requests.\n", req.cseq);
+    // sent_requests[req.cseq] = SIPRequestInfo(req.method,
+    // 					     &req.body,
+    // 					     req.hdrs);
+  // }
 
   addOptionTag(req.hdrs, SIP_HDR_SUPPORTED, TIMER_OPTION_TAG);
   if  ((req.method != SIP_METH_INVITE) && (req.method != SIP_METH_UPDATE))
