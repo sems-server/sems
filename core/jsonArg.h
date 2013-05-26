@@ -33,6 +33,10 @@
 #include <iostream>
 #include "AmArg.h"
 
+std::string str2json(const char* str);
+std::string str2json(const std::string& str);
+std::string str2json(const char* str, size_t len);
+
 string arg2json(const AmArg &a);
 
 /** @return true on success */

@@ -30,45 +30,42 @@
 #include "AmArg.h"
 #include "AmUtils.h"
 #include "log.h"
+
+#include "jsonArg.h"
+using std::string;
+
 #include "jsonxx.h"
 using namespace jsonxx;
 
-#include <iostream>
 #include <sstream>
-#include <string>
 
 const char *hex_chars = "0123456789abcdef";
 
-string arg2json(const AmArg &a) {
-  // TODO: optimize to avoid lots of mallocs
-  // TODO: how to get a bool? 
-  string s;
-  switch (a.getType()) {
-  case AmArg::Undef:
-    return "null";
+string str2json(const char* str)
+{
+  return str2json(str,strlen(str));
+}
 
-  case AmArg::Int:
-    return a.asInt()<0?"-"+int2str(abs(a.asInt())):int2str(abs(a.asInt()));
+string str2json(const string& str)
+{
+  return str2json(str.c_str(),str.length());
+}
 
-  case AmArg::Bool:
-    return a.asBool()?"true":"false";
-
-  case AmArg::Double: 
-    return double2str(a.asDouble());
-
-  case AmArg::CStr: {
+string str2json(const char* str, size_t len)
+{
     // borrowed from jsoncpp
     // Not sure how to handle unicode...
-    if (strpbrk(a.asCStr(), "\"\\\b\f\n\r\t") == NULL)
-      return std::string("\"") + a.asCStr() + "\"";
+    if (strpbrk(str, "\"\\\b\f\n\r\t") == NULL)
+      return string("\"") + str + "\"";
     // We have to walk value and escape any special characters.
     // Appending to std::string is not efficient, but this should be rare.
     // (Note: forward slashes are *not* rare, but I am not escaping them.)
-    unsigned maxsize = strlen(a.asCStr())*2 + 3; // allescaped+quotes+NULL
+    unsigned maxsize = len*2 + 3; // allescaped+quotes+NULL
     std::string result;
     result.reserve(maxsize); // to avoid lots of mallocs
     result += "\"";
-    for (const char* c=a.asCStr(); *c != 0; ++c){
+    const char* end = str + len;
+    for (const char* c = str; (c != end) && (*c != 0); ++c){
       switch(*c){
       case '\"':
 	result += "\\\"";
@@ -105,8 +102,28 @@ string arg2json(const AmArg &a) {
     }
     result += "\"";
     return result;
-  }
-    
+}
+
+string arg2json(const AmArg &a) {
+  // TODO: optimize to avoid lots of mallocs
+  // TODO: how to get a bool? 
+  string s;
+  switch (a.getType()) {
+  case AmArg::Undef:
+    return "null";
+
+  case AmArg::Int:
+    return a.asInt()<0?"-"+int2str(abs(a.asInt())):int2str(abs(a.asInt()));
+
+  case AmArg::Bool:
+    return a.asBool()?"true":"false";
+
+  case AmArg::Double: 
+    return double2str(a.asDouble());
+
+  case AmArg::CStr:
+    return str2json(a.asCStr());
+
   case AmArg::Array:
     s = "[";
     for (size_t i = 0; i < a.size(); i ++)
