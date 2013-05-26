@@ -62,7 +62,8 @@ void AorBucket::dump_elmt(const string& aor,
 
     if(it->second) {
       const RegBinding* b = it->second;
-      DBG("\t'%s'", b ? b->alias.c_str() : "NULL");
+      DBG("\t'%s' -> '%s'", it->first.c_str(),
+	  b ? b->alias.c_str() : "NULL");
     }
   }
 }
@@ -298,6 +299,18 @@ string _RegisterCache::canonicalize_aor(const string& uri)
   return canon_uri;
 }
 
+string 
+_RegisterCache::compute_alias_hash(const string& aor, const string& contact_uri,
+				   const string& public_ip)
+{
+  unsigned int h1=0,h2=0;
+  h1 = hashlittle(aor.c_str(),aor.length(),h1);
+  h1 = hashlittle(contact_uri.c_str(),contact_uri.length(),h1);
+  h2 = hashlittle(public_ip.c_str(),public_ip.length(),h1);
+
+  return int2hex(h1,true) + int2hex(h2,true);
+}
+
 AorBucket* _RegisterCache::getAorBucket(const string& aor)
 {
   return reg_cache_ht.get_bucket(hash_1str(aor));
@@ -311,7 +324,7 @@ void ContactBucket::insert(const string& contact_uri, const string& remote_ip,
 }
 
 bool _RegisterCache::getAlias(const string& canon_aor, const string& uri,
-			      RegBinding& out_binding)
+			      const string& public_ip, RegBinding& out_binding)
 {
   if(canon_aor.empty()) {
     DBG("Canonical AOR is empty");
@@ -324,7 +337,7 @@ bool _RegisterCache::getAlias(const string& canon_aor, const string& uri,
 
   AorEntry* aor_e = bucket->get(canon_aor);
   if(aor_e){
-    AorEntry::iterator binding_it = aor_e->find(uri);
+    AorEntry::iterator binding_it = aor_e->find(uri + "/" + public_ip);
     if((binding_it != aor_e->end()) && binding_it->second) {
       alias_found = true;
       out_binding = *binding_it->second;
@@ -375,8 +388,18 @@ void _RegisterCache::update(const string& alias, long int reg_expires,
 {
   string uri = alias_update.contact_uri;
   string canon_aor = alias_update.aor;
+  string public_ip = alias_update.source_ip;
   if(canon_aor.empty()) {
-    DBG("Canonical AOR is empty");
+    ERROR("Canonical AOR is empty: could not update register cache");
+    return;
+  }
+  if(uri.empty()) {
+    ERROR("Contact-URI is empty: could not update register cache");
+    return;
+  }
+  if(public_ip.empty()) {
+    ERROR("Source-IP is empty: could not update register cache");
+    return;
   }
 
   AorBucket* bucket = getAorBucket(canon_aor);
@@ -395,7 +418,7 @@ void _RegisterCache::update(const string& alias, long int reg_expires,
     DBG("inserted new AOR '%s'",canon_aor.c_str());
   }
   else {
-    AorEntry::iterator binding_it = aor_e->find(uri);
+    AorEntry::iterator binding_it = aor_e->find(uri + "/" + public_ip);
     if(binding_it != aor_e->end()) {
       binding = binding_it->second;
     }
@@ -405,7 +428,7 @@ void _RegisterCache::update(const string& alias, long int reg_expires,
     // insert one if none exist
     binding = new RegBinding();
     binding->alias = alias;
-    aor_e->insert(AorEntry::value_type(uri,binding));
+    aor_e->insert(AorEntry::value_type(uri + "/" + public_ip,binding));
     DBG("inserted new binding: '%s' -> '%s'",
 	uri.c_str(), alias.c_str());
 
@@ -454,6 +477,19 @@ void _RegisterCache::update(long int reg_expires, const AliasEntry& alias_update
 {
   string uri = alias_update.contact_uri;
   string canon_aor = alias_update.aor;
+  string public_ip = alias_update.source_ip;
+  if(canon_aor.empty()) {
+    ERROR("Canonical AOR is empty: could not update register cache");
+    return;
+  }
+  if(uri.empty()) {
+    ERROR("Contact-URI is empty: could not update register cache");
+    return;
+  }
+  if(public_ip.empty()) {
+    ERROR("Source-IP is empty: could not update register cache");
+    return;
+  }
 
   AorBucket* bucket = getAorBucket(canon_aor);
   bucket->lock();
@@ -478,7 +514,7 @@ void _RegisterCache::update(long int reg_expires, const AliasEntry& alias_update
     // insert one if none exist
     binding = new RegBinding();
     binding->alias = AmSession::getNewId();
-    aor_e->insert(AorEntry::value_type(uri,binding));
+    aor_e->insert(AorEntry::value_type(uri + "/" + public_ip, binding));
     DBG("inserted new binding: '%s' -> '%s'",
 	uri.c_str(), binding->alias.c_str());
 
@@ -547,7 +583,7 @@ bool _RegisterCache::updateAliasExpires(const string& alias, long int ua_expires
   return res;
 }
 
-void _RegisterCache::remove(const string& canon_aor, const string& uri, 
+void _RegisterCache::remove(const string& canon_aor, const string& uri,
 			    const string& alias)
 {
   if(canon_aor.empty()) {
@@ -566,11 +602,22 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
 
   AorEntry* aor_e = bucket->get(canon_aor);
   if(aor_e) {
-    AorEntry::iterator binding_it = aor_e->find(uri);
-    if(binding_it != aor_e->end()) {
-      storage_handler->onDelete(canon_aor,uri,alias);
-      delete binding_it->second;
-      aor_e->erase(binding_it);
+    // remove all bindings for which the alias matches
+    for(AorEntry::iterator binding_it = aor_e->begin();
+	binding_it != aor_e->end();) {
+
+      RegBinding* binding = binding_it->second;
+      if(!binding || (binding->alias == alias)) {
+
+	storage_handler->onDelete(canon_aor,uri,alias);
+	delete binding;
+
+	AorEntry::iterator del_it = binding_it++;
+	aor_e->erase(del_it);
+	continue;
+      }
+
+      binding_it++;
     }
     if(aor_e->empty()) {
       bucket->remove(canon_aor);
@@ -611,7 +658,7 @@ void _RegisterCache::remove(const string& aor)
     for(AorEntry::iterator binding_it = aor_e->begin();
 	binding_it != aor_e->end(); binding_it++) {
 
-      const string& uri = binding_it->first;
+      const string& uri = binding_it->first; // Contact-URI/Public-IP
       RegBinding* binding = binding_it->second;
 
       AliasBucket* alias_bucket = getAliasBucket(binding->alias);
@@ -633,7 +680,9 @@ void _RegisterCache::remove(const string& aor)
       alias_bucket->remove(binding->alias);
       alias_bucket->unlock();
       
-      storage_handler->onDelete(aor,uri,binding->alias);
+      storage_handler->onDelete(aor,
+				uri,// Contact-URI/Public-IP
+				binding->alias);
       delete binding;
     }
     bucket->remove(aor);
@@ -657,9 +706,14 @@ bool _RegisterCache::getAorAliasMap(const string& canon_aor,
     for(AorEntry::iterator it = aor_e->begin();
 	it != aor_e->end(); ++it) {
 
-      if(it->second) {
-	alias_map[it->second->alias] = it->first;
-      }
+      if(!it->second)
+	continue;
+
+      AliasEntry ae;
+      if(!findAliasEntry(it->second->alias,ae))
+	continue;
+
+      alias_map[ae.alias] = ae.contact_uri;
     }
   }
   bucket->unlock();
@@ -832,7 +886,7 @@ bool _RegisterCache::throttleRegister(RegisterCacheCtx& ctx,
     RegBinding reg_binding;
     const string& uri = contact_it->uri_str();
 
-    if(!getAlias(ctx.from_aor,uri,reg_binding) ||
+    if(!getAlias(ctx.from_aor,uri,req.remote_ip,reg_binding) ||
        !reg_binding.reg_expire) {
       DBG("!getAlias(%s,%s,...) || !reg_binding.reg_expire",
 	  ctx.from_aor.c_str(),uri.c_str());

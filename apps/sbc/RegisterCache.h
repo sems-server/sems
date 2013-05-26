@@ -43,7 +43,7 @@ struct RegBinding
   {}
 };
 
-// Contact-URI -> RegBinding
+// Contact-URI/Public-IP -> RegBinding
 typedef map<string,RegBinding*> AorEntry;
 
 struct AliasEntry
@@ -230,6 +230,8 @@ protected:
 
 public:
   static string canonicalize_aor(const string& aor);
+  static string compute_alias_hash(const string& aor, const string& contact_uri,
+				   const string& public_ip);
 
   void setStorageHandler(RegCacheStorageHandler* h) { storage_handler.reset(h); }
 
@@ -243,7 +245,7 @@ public:
    * uri: Contact-URI
    */
   bool getAlias(const string& aor, const string& uri,
-		RegBinding& out_binding);
+		const string& public_ip, RegBinding& out_binding);
 
   /**
    * Update contact cache entry and alias map entries.
@@ -274,7 +276,8 @@ public:
    * uri: Contact-URI
    * alias:
    */
-  void remove(const string& aor, const string& uri, const string& alias);
+  void remove(const string& aor, const string& uri,
+	      const string& alias);
 
   void remove(const string& aor);
 

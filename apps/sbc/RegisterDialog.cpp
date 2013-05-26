@@ -169,9 +169,10 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
       RegBinding reg_binding;
       const string& uri = contact_it->uri_str();
 
-      if(!reg_cache->getAlias(aor,uri,reg_binding)) {
-	reg_binding.alias = AmSession::getNewId();
+      if(!reg_cache->getAlias(aor,uri,req.remote_ip,reg_binding)) {
 	DBG("no alias in cache, created one");
+	reg_binding.alias = _RegisterCache::compute_alias_hash(aor,uri,
+							       req.remote_ip);
       }
 
       alias_map[reg_binding.alias] = *contact_it;
