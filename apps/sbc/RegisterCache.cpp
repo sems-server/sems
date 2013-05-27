@@ -119,9 +119,11 @@ AliasEntry* AliasBucket::getContact(const string& alias)
 void AliasEntry::fire()
 {
   AmArg ev;
-  ev["aor"]     = aor;
-  ev["contact"] = contact_uri;
-  ev["source"]  = source_ip + ":" + int2str(source_port);
+  ev["aor"]      = aor;
+  ev["to"]       = aor;
+  ev["contact"]  = contact_uri;
+  ev["source"]   = source_ip;
+  ev["src_port"] = source_port;
 
   DBG("Alias expired (UA/%li): '%s' -> '%s'\n",
       (long)(AmAppTimer::instance()->unix_clock.get() - ua_expire),

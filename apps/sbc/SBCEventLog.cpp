@@ -63,7 +63,8 @@ void _SBCEventLog::logCallStart(const AmSipRequest& req,
   AmArg start_event;
   AmUriParser uri_parser;
 
-  start_event["source"] = req.remote_ip + ":" + int2str(req.remote_port);
+  start_event["source"] = req.remote_ip;
+  start_event["src_port"] = req.remote_port;
   start_event["r-uri"]  = req.r_uri;
 
   if(uri_parser.parse_contact(req.from,0,end))
@@ -80,7 +81,9 @@ void _SBCEventLog::logCallStart(const AmSipRequest& req,
   start_event["res-code"] = code;
   start_event["reason"]   = reason;
 
-  logEvent(local_tag,"call-start",start_event);
+  logEvent(local_tag,
+	   code >= 200 && code < 300 ? "call-start" : "call-attempt",
+	   start_event);
 }
 
 void _SBCEventLog::logCallStart(const AmBasicSipDialog* dlg, int code, 
@@ -95,15 +98,17 @@ void _SBCEventLog::logCallStart(const AmBasicSipDialog* dlg, int code,
   else start_event["from"] = dlg->getLocalParty();
   
   if(uri_parser.parse_contact(dlg->getRemoteParty(),0,end))
-    start_event["from"] = uri_parser.uri_str();
-  else start_event["from"] = dlg->getRemoteParty();
+    start_event["to"] = uri_parser.uri_str();
+  else start_event["to"] = dlg->getRemoteParty();
 
   start_event["r-uri"]    = dlg->getLocalUri();
   start_event["call-id"]  = dlg->getCallid();
   start_event["res-code"] = (int)code;
   start_event["reason"]   = reason;
 
-  logEvent(dlg->getLocalTag(),"call-start",start_event);
+  logEvent(dlg->getLocalTag(),
+	   code >= 200 && code < 300 ? "call-start" : "call-attempt",
+	   start_event);
 }
 
 void _SBCEventLog::logCallEnd(const AmSipRequest& req,
@@ -112,10 +117,11 @@ void _SBCEventLog::logCallEnd(const AmSipRequest& req,
 {
   AmArg end_event;
 
-  end_event["call-id"] = req.callid;
-  end_event["reason"]  = reason;
-  end_event["source"]  = req.remote_ip + ":" + int2str(req.remote_port);
-  end_event["r-uri"]   = req.r_uri;
+  end_event["call-id"]  = req.callid;
+  end_event["reason"]   = reason;
+  end_event["source"]   = req.remote_ip;
+  end_event["src_port"] = req.remote_port;
+  end_event["r-uri"]    = req.r_uri;
   
   size_t end;
   AmUriParser uri_parser;
