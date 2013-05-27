@@ -64,7 +64,7 @@ void _SBCEventLog::logCallStart(const AmSipRequest& req,
   AmUriParser uri_parser;
 
   start_event["source"] = req.remote_ip;
-  start_event["src_port"] = req.remote_port;
+  start_event["src-port"] = req.remote_port;
   start_event["r-uri"]  = req.r_uri;
 
   if(uri_parser.parse_contact(req.from,0,end))
@@ -121,7 +121,7 @@ void _SBCEventLog::logCallEnd(const AmSipRequest& req,
   end_event["call-id"]  = req.callid;
   end_event["reason"]   = reason;
   end_event["source"]   = req.remote_ip;
-  end_event["src_port"] = req.remote_port;
+  end_event["src-port"] = req.remote_port;
   end_event["r-uri"]    = req.r_uri;
   
   size_t end;
