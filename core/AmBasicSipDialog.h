@@ -104,6 +104,8 @@ protected:
   string remote_party; // To/From
   string local_party;  // To/From
 
+  string remote_ua; // User-Agent/Server
+
   string route;
 
   string next_hop;
@@ -258,6 +260,10 @@ public:
   const string& getRemoteParty() const { return remote_party; }
   virtual void setRemoteParty(const string& new_remote_party)
   { remote_party = new_remote_party; }
+
+  const string& getRemoteUA() const { return remote_ua; }
+  virtual void setRemoteUA(const string& new_remote_ua)
+  { remote_ua = new_remote_ua; }
 
   const string& getRouteSet() const { return route; }
   virtual void setRouteSet(const string& new_rs)

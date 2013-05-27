@@ -60,6 +60,9 @@ struct AliasEntry
   // sticky interface
   unsigned short local_if;
 
+  // User-Agent
+  string remote_ua;
+
   // Absolute timestamp representing
   // the expiration timer at the 
   // registered UA side

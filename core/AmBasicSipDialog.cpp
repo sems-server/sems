@@ -327,6 +327,9 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
 	setNextHop1stReq(false);
       }
     }
+
+    string ua = getHeader(req.hdrs,"User-Agent");
+    setRemoteUA(ua);
   }
   
   // Dlg not yet initialized?
@@ -418,6 +421,9 @@ void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
        (reply.cseq_method == SIP_METH_SUBSCRIBE)) ) {
     
     setRemoteUri(reply.to_uri);
+
+    string ua = getHeader(reply.hdrs,"Server");
+    setRemoteUA(ua);
   }
 }
 

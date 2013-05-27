@@ -19,6 +19,7 @@ class RegisterDialog
   string         source_ip;
   unsigned short source_port;
   unsigned short local_if;
+  string         from_ua;
 
   // Max 'Expire' value returned to 
   // registering UAC.

@@ -124,6 +124,7 @@ void AliasEntry::fire()
   ev["contact"]  = contact_uri;
   ev["source"]   = source_ip;
   ev["src_port"] = source_port;
+  ev["from-ua"]  = remote_ua;
 
   DBG("Alias expired (UA/%li): '%s' -> '%s'\n",
       (long)(AmAppTimer::instance()->unix_clock.get() - ua_expire),
@@ -1006,6 +1007,7 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
   alias_update.contact_uri = contact->uri_str();
   alias_update.source_ip = req.remote_ip;
   alias_update.source_port = req.remote_port;
+  alias_update.remote_ua = getHeader(req.hdrs,"User-Agent");
   alias_update.local_if = req.local_if;
   alias_update.ua_expire = ua_expires + now.tv_sec;
 

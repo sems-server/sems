@@ -57,6 +57,8 @@ void _SBCEventLog::logEvent(const string& id, const string& type,
 
 void _SBCEventLog::logCallStart(const AmSipRequest& req,
 				const string& local_tag,
+				const string& from_remote_ua,
+				const string& to_remote_ua,
 				int code, const string& reason)
 {
   size_t end;
@@ -72,10 +74,16 @@ void _SBCEventLog::logCallStart(const AmSipRequest& req,
   else 
     start_event["from"] = req.from;
 
+  start_event["from-ua"] = from_remote_ua;
+  DBG("from-ua: '%s'",from_remote_ua.c_str());
+
   if(uri_parser.parse_contact(req.to,0,end))
     start_event["to"] = uri_parser.uri_str();
   else 
     start_event["to"] = req.to;
+
+  start_event["to-ua"] = to_remote_ua;
+  DBG("to-ua: '%s'",to_remote_ua.c_str());
 
   start_event["call-id"]  = req.callid;
   start_event["res-code"] = code;
@@ -96,6 +104,8 @@ void _SBCEventLog::logCallStart(const AmBasicSipDialog* dlg, int code,
   if(uri_parser.parse_contact(dlg->getLocalParty(),0,end))
     start_event["from"] = uri_parser.uri_str();
   else start_event["from"] = dlg->getLocalParty();
+
+  start_event["from-ua"] = dlg->getRemoteUA();
   
   if(uri_parser.parse_contact(dlg->getRemoteParty(),0,end))
     start_event["to"] = uri_parser.uri_str();
@@ -105,6 +115,7 @@ void _SBCEventLog::logCallStart(const AmBasicSipDialog* dlg, int code,
   start_event["call-id"]  = dlg->getCallid();
   start_event["res-code"] = (int)code;
   start_event["reason"]   = reason;
+  DBG("from-ua: '%s'",dlg->getRemoteUA().c_str());
 
   logEvent(dlg->getLocalTag(),
 	   code >= 200 && code < 300 ? "call-start" : "call-attempt",

@@ -1248,7 +1248,9 @@ void SBCCallLeg::logCallStart(const AmSipReply& reply)
 {
   std::map<int,AmSipRequest>::iterator t_req = recvd_req.find(reply.cseq);
   if (t_req != recvd_req.end()) {
+    string b_leg_ua = getHeader(reply.hdrs,"Server");
     SBCEventLog::instance()->logCallStart(t_req->second,getLocalTag(),
+					  dlg->getRemoteUA(),b_leg_ua,
 					  (int)reply.code,reply.reason);
   }
   else {
