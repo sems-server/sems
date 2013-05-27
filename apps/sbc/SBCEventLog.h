@@ -40,10 +40,12 @@ public:
 
   void logCallEnd(const AmSipRequest& req,
 		  const string& local_tag,
-		  const string& reason);
+		  const string& reason,
+		  struct timeval* tv);
 
   void logCallEnd(const AmBasicSipDialog* dlg,
-		  const string& reason);
+		  const string& reason,
+		  struct timeval* tv);
 };
 
 typedef singleton<_SBCEventLog> SBCEventLog;

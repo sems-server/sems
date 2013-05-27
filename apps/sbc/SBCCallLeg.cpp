@@ -564,21 +564,21 @@ void SBCCallLeg::onRemoteDisappeared(const AmSipReply& reply)
 {
   CallLeg::onRemoteDisappeared(reply);
   if(a_leg)
-    SBCEventLog::instance()->logCallEnd(dlg,"reply");
+    SBCEventLog::instance()->logCallEnd(dlg,"reply",&call_connect_ts);
 }
 
 void SBCCallLeg::onBye(const AmSipRequest& req)
 {
   CallLeg::onBye(req);
   if(a_leg)
-    SBCEventLog::instance()->logCallEnd(req,getLocalTag(),"bye");
+    SBCEventLog::instance()->logCallEnd(req,getLocalTag(),"bye",&call_connect_ts);
 }
 
 void SBCCallLeg::onOtherBye(const AmSipRequest& req)
 {
   CallLeg::onOtherBye(req);
   if(a_leg)
-    SBCEventLog::instance()->logCallEnd(req,getLocalTag(),"bye");
+    SBCEventLog::instance()->logCallEnd(req,getLocalTag(),"bye",&call_connect_ts);
 }
 
 void SBCCallLeg::onDtmf(int event, int duration)
@@ -617,7 +617,7 @@ void SBCCallLeg::onControlCmd(string& cmd, AmArg& params) {
       // was for caller:
       DBG("teardown requested from control cmd\n");
       stopCall();
-      SBCEventLog::instance()->logCallEnd(dlg,"ctrl-cmd");
+      SBCEventLog::instance()->logCallEnd(dlg,"ctrl-cmd",&call_connect_ts);
       // FIXME: don't we want to relay the controll event as well?
     }
     else {
@@ -646,7 +646,7 @@ void SBCCallLeg::process(AmEvent* ev) {
           timer_id <= SBC_TIMER_ID_CALL_TIMERS_END) {
         DBG("timer %d timeout, stopping call\n", timer_id);
         stopCall();
-	SBCEventLog::instance()->logCallEnd(dlg,"timeout");
+	SBCEventLog::instance()->logCallEnd(dlg,"timeout",&call_connect_ts);
         ev->processed = true;
       }
     }

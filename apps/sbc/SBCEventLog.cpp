@@ -113,7 +113,8 @@ void _SBCEventLog::logCallStart(const AmBasicSipDialog* dlg, int code,
 
 void _SBCEventLog::logCallEnd(const AmSipRequest& req,
 			      const string& local_tag,
-			      const string& reason)
+			      const string& reason,
+			      struct timeval* tv)
 {
   AmArg end_event;
 
@@ -135,11 +136,21 @@ void _SBCEventLog::logCallEnd(const AmSipRequest& req,
   else
     end_event["to"] = req.to;
 
+  if(tv && tv->tv_sec) {
+    struct timeval call_len;
+    gettimeofday(&call_len,NULL);
+    timersub(&call_len,tv,&call_len);
+    double dlen = call_len.tv_sec;
+    dlen += (double)call_len.tv_usec / (double)1000000.0;
+    end_event["duration"] = dlen;
+  }
+
   logEvent(local_tag,"call-end",end_event);
 }
 
 void _SBCEventLog::logCallEnd(const AmBasicSipDialog* dlg,
-			      const string& reason)
+			      const string& reason,
+			      struct timeval* tv)
 {
   AmArg end_event;
 
@@ -159,6 +170,15 @@ void _SBCEventLog::logCallEnd(const AmBasicSipDialog* dlg,
     end_event["from"] = uri_parser.uri_str();
   else
     end_event["from"] = dlg->getRemoteParty();
+
+  if(tv && tv->tv_sec) {
+    struct timeval call_len;
+    gettimeofday(&call_len,NULL);
+    timersub(&call_len,tv,&call_len);
+    double dlen = call_len.tv_sec;
+    dlen += (double)call_len.tv_usec / (double)1000000.0;
+    end_event["duration"] = dlen;
+  }
 
   logEvent(dlg->getLocalTag(),"call-end",end_event);
 }
