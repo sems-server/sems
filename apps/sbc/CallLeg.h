@@ -369,6 +369,8 @@ class CallLeg: public AmB2BSession
 
     /** creates B leg using given session as A leg */
     CallLeg(const CallLeg* caller, AmSipDialog* dlg=NULL);
+
+    virtual ~CallLeg();
 };
 
 

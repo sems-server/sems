@@ -1580,7 +1580,10 @@ void SBCCallLeg::createHoldRequest(AmSdp &sdp)
 
 void SBCCallLeg::setMediaSession(AmB2BMedia *new_session)
 {
-  if (new_session && call_profile.log_rtp) new_session->setRtpLogger(logger);
+  if (new_session) {
+    if (call_profile.log_rtp) new_session->setRtpLogger(logger);
+    else new_session->setRtpLogger(NULL);
+  }
   CallLeg::setMediaSession(new_session);
 }
 
@@ -1606,9 +1609,13 @@ void SBCCallLeg::setLogger(msg_logger *_logger)
   logger = _logger;
   if (logger) inc_ref(logger);
   if (call_profile.log_sip) dlg->setMsgLogger(logger);
+  else dlg->setMsgLogger(NULL);
 
   AmB2BMedia *m = getMediaSession();
-  if (m && call_profile.log_rtp) m->setRtpLogger(logger);
+  if (m) {
+    if (call_profile.log_rtp) m->setRtpLogger(logger);
+    else m->setRtpLogger(NULL);
+  }
 }
 
 void SBCCallLeg::logRequest(const AmSipRequest &req)

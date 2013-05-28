@@ -107,6 +107,15 @@ CallLeg::CallLeg(AmSipDialog* p_dlg):
   set_sip_relay_only(false);
 }
     
+CallLeg::~CallLeg()
+{
+  // do necessary cleanup (might be needed if the call leg is destroyed other
+  // way then expected)
+  for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
+    i->releaseMediaSession();
+  }
+}
+
 void CallLeg::terminateOtherLeg()
 {
   if (call_status != Connected) {
@@ -117,6 +126,15 @@ void CallLeg::terminateOtherLeg()
   }
   
   AmB2BSession::terminateOtherLeg();
+
+  // remove this one from the list of other legs
+  for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
+    if (i->id == getOtherId()) {
+      i->releaseMediaSession();
+      other_legs.erase(i);
+      break;
+    }
+  }
 
   // FIXME: call disconnect if connected (to put remote on hold)?
   updateCallStatus(Disconnected); // no B legs should be remaining

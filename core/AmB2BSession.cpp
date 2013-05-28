@@ -1139,6 +1139,7 @@ AmB2BCalleeSession* AmB2BCallerSession::newCalleeSession()
 void AmB2BSession::setMediaSession(AmB2BMedia *new_session) 
 { 
   // FIXME: ignore old media_session? can it be already set here?
+  if (media_session) ERROR("BUG: non-empty media session overwritten\n");
   media_session = new_session; 
   if (media_session) media_session->addReference(); // new reference for me
 }
