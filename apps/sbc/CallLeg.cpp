@@ -365,10 +365,10 @@ void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
   // relay current response
   if (!other_legs.empty()) return;
 
+  onCallFailed(reply);
   if (forward) relaySipReply(reply);
 
   // no other B legs, terminate
-  onCallFailed(reply);
   updateCallStatus(Disconnected);
   stopCall();
 }
