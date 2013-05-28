@@ -385,12 +385,14 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
     relay = new SBCSimpleRelay(new SimpleRelayDialog(call_profile, cc_modules),
 			       new SimpleRelayDialog(call_profile, cc_modules));
   }
+  if (logger) inc_ref(logger);
   if (call_profile.log_sip) relay->setMsgLogger(logger);
 
   if(relay->start(req,call_profile)) {
     AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "", call_profile.log_sip ? logger: NULL);
     delete relay;
   }
+  if (logger) dec_ref(logger);
 }
 
 void SBCFactory::invoke(const string& method, const AmArg& args, 
