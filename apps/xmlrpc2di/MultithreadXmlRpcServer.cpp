@@ -14,6 +14,9 @@
 #include "AmEventDispatcher.h"
 #include "log.h"
  
+#include "unistd.h"
+#include <errno.h>
+
 using namespace XmlRpc; 
 WorkerThread::WorkerThread(MultithreadXmlRpcServer* chief) 
   : running(true), runcond(false), chief(chief) {
@@ -97,9 +100,14 @@ void MultithreadXmlRpcServer::acceptConnection()
   int s = XmlRpcSocket::accept(this->getfd()); 
   if (s < 0) 
     { 
-      if (s != EAGAIN && s != EWOULDBLOCK) {
+      if (errno != EAGAIN && errno != EWOULDBLOCK) {
 	ERROR("MultithreadXmlRpcServer::acceptConnection: Could not accept connection (%s).",
 			XmlRpcSocket::getErrorMsg().c_str()); 
+
+	if ((errno == EMFILE) || (errno == ENFILE)) {
+	  // would cause fast loop because we don't get the connection from the listening socket
+	  usleep(100000);
+	}
       }
       
     }
