@@ -102,14 +102,14 @@ void _SBCEventLog::logCallStart(const AmBasicSipDialog* dlg, int code,
   AmUriParser uri_parser;
 
   if(uri_parser.parse_contact(dlg->getLocalParty(),0,end))
-    start_event["from"] = uri_parser.uri_str();
-  else start_event["from"] = dlg->getLocalParty();
+    start_event["to"] = uri_parser.uri_str();
+  else start_event["to"] = dlg->getLocalParty();
 
   start_event["from-ua"] = dlg->getRemoteUA();
   
   if(uri_parser.parse_contact(dlg->getRemoteParty(),0,end))
-    start_event["to"] = uri_parser.uri_str();
-  else start_event["to"] = dlg->getRemoteParty();
+    start_event["from"] = uri_parser.uri_str();
+  else start_event["from"] = dlg->getRemoteParty();
 
   start_event["r-uri"]    = dlg->getLocalUri();
   start_event["call-id"]  = dlg->getCallid();
