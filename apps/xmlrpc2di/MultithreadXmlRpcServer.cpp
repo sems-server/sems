@@ -106,7 +106,7 @@ void MultithreadXmlRpcServer::acceptConnection()
 
 	if ((errno == EMFILE) || (errno == ENFILE)) {
 	  // would cause fast loop because we don't get the connection from the listening socket
-	  usleep(100000);
+	  usleep(500000);
 	}
       }
       
