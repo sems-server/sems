@@ -230,6 +230,20 @@ void _RegisterCache::gbc(unsigned int bucket_id)
 	removeAliasUATimer(ae);
 #endif
 
+      AmArg ev;
+      ev["aor"]      = ae->aor;
+      ev["to"]       = ae->aor;
+      ev["contact"]  = ae->contact_uri;
+      ev["source"]   = ae->source_ip;
+      ev["src_port"] = ae->source_port;
+      ev["from-ua"]  = ae->remote_ua;
+      
+      DBG("Alias expired @registrar (UA/%li): '%s' -> '%s'\n",
+	  (long)(AmAppTimer::instance()->unix_clock.get() - ae->ua_expire),
+	  ae->alias.c_str(),ae->aor.c_str());
+
+      SBCEventLog::instance()->logEvent(ae->alias,"reg-expired",ev);
+
       ContactBucket* ct_bucket = getContactBucket(ae->contact_uri,
 						  ae->source_ip,
 						  ae->source_port);
