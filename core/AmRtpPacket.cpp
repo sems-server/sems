@@ -106,7 +106,7 @@ int AmRtpPacket::parse()
   ssrc = ntohl(hdr->ssrc);
   version = hdr->version;
 
-  if (data_offset >= b_size) {
+  if (data_offset > b_size) {
     ERROR("bad rtp packet (hdr-size=%u;pkt-size=%u) !\n",
 	  data_offset,b_size);
     return -1;
