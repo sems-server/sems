@@ -225,8 +225,10 @@ void _RegisterCache::gbc(unsigned int bucket_id)
     alias_bucket->lock();
     AliasEntry* ae = alias_bucket->getContact(*it);
     if(ae) {
+#if 0 // disabled UA-timer
       if(ae->ua_expire)
 	removeAliasUATimer(ae);
+#endif
 
       ContactBucket* ct_bucket = getContactBucket(ae->contact_uri,
 						  ae->source_ip,
@@ -462,9 +464,11 @@ void _RegisterCache::update(const string& alias, long int reg_expires,
     *alias_e = alias_update;
   }
 
+#if 0 // disabled UA-timer
   if(alias_e->ua_expire) {
     setAliasUATimer(alias_e);
   }
+#endif
   
   if(storage_handler.get())
     storage_handler->onUpdate(canon_aor,alias,reg_expires,*alias_e);
@@ -549,9 +553,11 @@ void _RegisterCache::update(long int reg_expires, const AliasEntry& alias_update
     alias_e->alias = binding->alias;
   }
 
+#if 0 // disabled UA-timer
   if(alias_e->ua_expire) {
     setAliasUATimer(alias_e);
   }
+#endif
   
   if(storage_handler.get())
     storage_handler->onUpdate(canon_aor,binding->alias,
@@ -570,8 +576,10 @@ bool _RegisterCache::updateAliasExpires(const string& alias, long int ua_expires
   AliasEntry* alias_e = alias_bucket->getContact(alias);
   if(alias_e) {
     alias_e->ua_expire = ua_expires;
+#if 0 // disabled UA-timer
     if(alias_e->ua_expire)
       setAliasUATimer(alias_e);
+#endif
 
     if(storage_handler.get()) {
       storage_handler->onUpdate(alias,ua_expires);
@@ -626,8 +634,10 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
 
   AliasEntry* ae = alias_bucket->getContact(alias);
   if(ae) {
+#if 0 // disabled UA-timer
     if(ae->ua_expire)
       removeAliasUATimer(ae);
+#endif
 
     ContactBucket* ct_bucket = getContactBucket(uri,ae->source_ip,
 						ae->source_port);
@@ -666,8 +676,10 @@ void _RegisterCache::remove(const string& aor)
 
       AliasEntry* ae = alias_bucket->getContact(binding->alias);
       if(ae) {
+#if 0 // disabled UA-timer
 	if(ae->ua_expire)
 	  removeAliasUATimer(ae);
+#endif
 
 	ContactBucket* ct_bucket = getContactBucket(ae->contact_uri,
 						    ae->source_ip,
