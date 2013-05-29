@@ -221,38 +221,7 @@ void _RegisterCache::gbc(unsigned int bucket_id)
   bucket->gbc(storage_handler.get(),now.tv_sec,alias_list);
   for(list<string>::iterator it = alias_list.begin();
       it != alias_list.end(); it++){
-    AliasBucket* alias_bucket = getAliasBucket(*it);
-    alias_bucket->lock();
-    AliasEntry* ae = alias_bucket->getContact(*it);
-    if(ae) {
-#if 0 // disabled UA-timer
-      if(ae->ua_expire)
-	removeAliasUATimer(ae);
-#endif
-
-      AmArg ev;
-      ev["aor"]      = ae->aor;
-      ev["to"]       = ae->aor;
-      ev["contact"]  = ae->contact_uri;
-      ev["source"]   = ae->source_ip;
-      ev["src_port"] = ae->source_port;
-      ev["from-ua"]  = ae->remote_ua;
-      
-      DBG("Alias expired @registrar (UA/%li): '%s' -> '%s'\n",
-	  (long)(AmAppTimer::instance()->unix_clock.get() - ae->ua_expire),
-	  ae->alias.c_str(),ae->aor.c_str());
-
-      SBCEventLog::instance()->logEvent(ae->alias,"reg-expired",ev);
-
-      ContactBucket* ct_bucket = getContactBucket(ae->contact_uri,
-						  ae->source_ip,
-						  ae->source_port);
-      ct_bucket->lock();
-      ct_bucket->remove(ae->contact_uri,ae->source_ip,ae->source_port);
-      ct_bucket->unlock();
-    }
-    alias_bucket->remove(*it);
-    alias_bucket->unlock();
+    removeAlias(*it,true);
   }
   bucket->unlock();
 }
@@ -434,7 +403,8 @@ void _RegisterCache::update(const string& alias, long int reg_expires,
     DBG("inserted new AOR '%s'",canon_aor.c_str());
   }
   else {
-    AorEntry::iterator binding_it = aor_e->find(uri + "/" + public_ip);
+    string idx = uri + "/" + public_ip;
+    AorEntry::iterator binding_it = aor_e->find(idx);
     if(binding_it != aor_e->end()) {
       binding = binding_it->second;
     }
@@ -509,32 +479,68 @@ void _RegisterCache::update(long int reg_expires, const AliasEntry& alias_update
     return;
   }
 
+  string idx = uri + "/" + public_ip;
   AorBucket* bucket = getAorBucket(canon_aor);
   bucket->lock();
 
   // Try to get the existing binding
   RegBinding* binding = NULL;
   AorEntry* aor_e = bucket->get(canon_aor);
-  if(!aor_e) {
+  if(aor_e) {
+    // take the first, as we do not expect others to be here
+    AorEntry::iterator binding_it = aor_e->begin();
+
+    if(binding_it != aor_e->end()) {
+
+      binding = binding_it->second;
+      if(binding && (binding_it->first != idx)) {
+
+	// contact-uri and/or public IP has changed...
+	string alias = binding->alias;
+
+	AliasEntry ae;
+	if(findAliasEntry(alias,ae)) {
+
+	  // change contact index
+	  ContactBucket* ct_bucket = 
+	    getContactBucket(ae.contact_uri,ae.source_ip,ae.source_port);
+	  ct_bucket->lock();
+	  ct_bucket->remove(ae.contact_uri,ae.source_ip,ae.source_port);
+	  ct_bucket->unlock();
+
+	  ct_bucket = getContactBucket(uri,public_ip,alias_update.source_port);
+	  ct_bucket->lock();
+	  ct_bucket->insert(uri,public_ip,alias_update.source_port,alias);
+	  ct_bucket->unlock();
+	}
+
+	// relink binding with the new index
+      	aor_e->erase(binding_it);
+	aor_e->insert(AorEntry::value_type(idx, binding));
+      }
+      else if(!binding) {
+	// probably never happens, but who knows?
+	aor_e->erase(binding_it);
+      }
+    }
+  } 
+  else {
     // insert AorEntry if none
     aor_e = new AorEntry();
     bucket->insert(canon_aor,aor_e);
     DBG("inserted new AOR '%s'",canon_aor.c_str());
   }
-  else {
-    AorEntry::iterator binding_it = aor_e->begin();
-    if(binding_it != aor_e->end()) {
-      binding = binding_it->second;
-    }
-  }
   
   if(!binding) {
     // insert one if none exist
     binding = new RegBinding();
-    binding->alias = AmSession::getNewId();
-    aor_e->insert(AorEntry::value_type(uri + "/" + public_ip, binding));
+    binding->alias = _RegisterCache::
+      compute_alias_hash(canon_aor,uri,public_ip);
+
+    string idx = uri + "/" + public_ip;
+    aor_e->insert(AorEntry::value_type(idx, binding));
     DBG("inserted new binding: '%s' -> '%s'",
-	uri.c_str(), binding->alias.c_str());
+	idx.c_str(), binding->alias.c_str());
 
     ContactBucket* ct_bucket = getContactBucket(uri,alias_update.source_ip,
 						alias_update.source_port);
@@ -614,10 +620,7 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
   }
 
   AorBucket* bucket = getAorBucket(canon_aor);
-  AliasBucket* alias_bucket = getAliasBucket(alias);
-  
   bucket->lock();
-  alias_bucket->lock();
 
   DBG("removing entries for aor = '%s', uri = '%s' and alias = '%s'",
       canon_aor.c_str(), uri.c_str(), alias.c_str());
@@ -631,9 +634,7 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
       RegBinding* binding = binding_it->second;
       if(!binding || (binding->alias == alias)) {
 
-	storage_handler->onDelete(canon_aor,uri,alias);
 	delete binding;
-
 	AorEntry::iterator del_it = binding_it++;
 	aor_e->erase(del_it);
 	continue;
@@ -646,22 +647,7 @@ void _RegisterCache::remove(const string& canon_aor, const string& uri,
     }
   }
 
-  AliasEntry* ae = alias_bucket->getContact(alias);
-  if(ae) {
-#if 0 // disabled UA-timer
-    if(ae->ua_expire)
-      removeAliasUATimer(ae);
-#endif
-
-    ContactBucket* ct_bucket = getContactBucket(uri,ae->source_ip,
-						ae->source_port);
-    ct_bucket->lock();
-    ct_bucket->remove(uri,ae->source_ip,ae->source_port);
-    ct_bucket->unlock();
-  }
-
-  alias_bucket->remove(alias);
-  alias_bucket->unlock();
+  removeAlias(alias,false);
   bucket->unlock();
 }
 
@@ -682,39 +668,59 @@ void _RegisterCache::remove(const string& aor)
     for(AorEntry::iterator binding_it = aor_e->begin();
 	binding_it != aor_e->end(); binding_it++) {
 
-      const string& uri = binding_it->first; // Contact-URI/Public-IP
       RegBinding* binding = binding_it->second;
-
-      AliasBucket* alias_bucket = getAliasBucket(binding->alias);
-      alias_bucket->lock();
-
-      AliasEntry* ae = alias_bucket->getContact(binding->alias);
-      if(ae) {
-#if 0 // disabled UA-timer
-	if(ae->ua_expire)
-	  removeAliasUATimer(ae);
-#endif
-
-	ContactBucket* ct_bucket = getContactBucket(ae->contact_uri,
-						    ae->source_ip,
-						    ae->source_port);
-	ct_bucket->lock();
-	ct_bucket->remove(ae->contact_uri,ae->source_ip,ae->source_port);
-	ct_bucket->unlock();
+      if(binding) {
+	removeAlias(binding->alias,false);
+	delete binding;
       }
-
-      alias_bucket->remove(binding->alias);
-      alias_bucket->unlock();
-      
-      storage_handler->onDelete(aor,
-				uri,// Contact-URI/Public-IP
-				binding->alias);
-      delete binding;
     }
     bucket->remove(aor);
   }
 
   bucket->unlock();
+}
+
+void _RegisterCache::removeAlias(const string& alias, bool generate_event)
+{
+  AliasBucket* alias_bucket = getAliasBucket(alias);
+  alias_bucket->lock();
+
+  AliasEntry* ae = alias_bucket->getContact(alias);
+  if(ae) {
+#if 0 // disabled UA-timer
+    if(ae->ua_expire)
+      removeAliasUATimer(ae);
+#endif
+    
+    if(generate_event) {
+      AmArg ev;
+      ev["aor"]      = ae->aor;
+      ev["to"]       = ae->aor;
+      ev["contact"]  = ae->contact_uri;
+      ev["source"]   = ae->source_ip;
+      ev["src_port"] = ae->source_port;
+      ev["from-ua"]  = ae->remote_ua;
+    
+      DBG("Alias expired @registrar (UA/%li): '%s' -> '%s'\n",
+	  (long)(AmAppTimer::instance()->unix_clock.get() - ae->ua_expire),
+	  ae->alias.c_str(),ae->aor.c_str());
+
+      SBCEventLog::instance()->logEvent(ae->alias,"reg-expired",ev);
+    }
+
+    ContactBucket* ct_bucket = getContactBucket(ae->contact_uri,
+						ae->source_ip,
+						ae->source_port);
+    ct_bucket->lock();
+    ct_bucket->remove(ae->contact_uri,ae->source_ip,ae->source_port);
+    ct_bucket->unlock();
+
+    storage_handler->onDelete(ae->aor,
+			      ae->contact_uri,
+			      ae->alias);
+  }
+  alias_bucket->remove(alias);
+  alias_bucket->unlock();
 }
 
 bool _RegisterCache::getAorAliasMap(const string& canon_aor, 

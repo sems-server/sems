@@ -191,6 +191,7 @@ class _RegisterCache
   AmSharedVar<bool> running;
 
   void gbc(unsigned int bucket_id);
+  void removeAlias(const string& alias, bool generate_event);
 
 protected:
   _RegisterCache();
