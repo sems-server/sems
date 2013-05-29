@@ -64,46 +64,42 @@ void B2BMediaStatistics::incCodecWriteUsage(const string &codec_name)
 {
   if (codec_name.empty()) return;
 
-  mutex.lock();
+  AmLock lock(mutex);
   map<string, int>::iterator i = codec_write_usage.find(codec_name);
   if (i != codec_write_usage.end()) i->second++;
   else codec_write_usage[codec_name] = 1;
-  mutex.unlock();
 }
 
 void B2BMediaStatistics::decCodecWriteUsage(const string &codec_name)
 {
   if (codec_name.empty()) return;
 
-  mutex.lock();
+  AmLock lock(mutex);
   map<string, int>::iterator i = codec_write_usage.find(codec_name);
   if (i != codec_write_usage.end()) {
     if (i->second > 0) i->second--;
   }
-  mutex.unlock();
 }
 
 void B2BMediaStatistics::incCodecReadUsage(const string &codec_name)
 {
   if (codec_name.empty()) return;
 
-  mutex.lock();
+  AmLock lock(mutex);
   map<string, int>::iterator i = codec_read_usage.find(codec_name);
   if (i != codec_read_usage.end()) i->second++;
   else codec_read_usage[codec_name] = 1;
-  mutex.unlock();
 }
 
 void B2BMediaStatistics::decCodecReadUsage(const string &codec_name)
 {
   if (codec_name.empty()) return;
 
-  mutex.lock();
+  AmLock lock(mutex);
   map<string, int>::iterator i = codec_read_usage.find(codec_name);
   if (i != codec_read_usage.end()) {
     if (i->second > 0) i->second--;
   }
-  mutex.unlock();
 }
 
 B2BMediaStatistics *B2BMediaStatistics::instance()
@@ -120,7 +116,7 @@ void B2BMediaStatistics::reportCodecWriteUsage(string &dst)
 
   bool first = true;
   dst.clear();
-  mutex.lock();
+  AmLock lock(mutex);
   for (map<string, int>::iterator i = codec_write_usage.begin();
       i != codec_write_usage.end(); ++i) 
   {
@@ -130,7 +126,6 @@ void B2BMediaStatistics::reportCodecWriteUsage(string &dst)
     dst += "=";
     dst += int2str(i->second);
   }
-  mutex.unlock();
 }
 
 void B2BMediaStatistics::reportCodecReadUsage(string &dst)
@@ -142,7 +137,7 @@ void B2BMediaStatistics::reportCodecReadUsage(string &dst)
 
   bool first = true;
   dst.clear();
-  mutex.lock();
+  AmLock lock(mutex);
   for (map<string, int>::iterator i = codec_read_usage.begin();
       i != codec_read_usage.end(); ++i) 
   {
@@ -152,32 +147,34 @@ void B2BMediaStatistics::reportCodecReadUsage(string &dst)
     dst += "=";
     dst += int2str(i->second);
   }
-  mutex.unlock();
 }
     
 void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
 {
   AmArg write_usage;
-  mutex.lock();
-  for (map<string, int>::iterator i = codec_write_usage.begin();
-      i != codec_write_usage.end(); ++i) 
-  {
-    AmArg avp;
-    avp["codec"] = i->first;
-    avp["count"] = i->second;
-    write_usage.push(avp);
-  }
-  
   AmArg read_usage;
-  for (map<string, int>::iterator i = codec_read_usage.begin();
-      i != codec_read_usage.end(); ++i) 
-  {
-    AmArg avp;
-    avp["codec"] = i->first;
-    avp["count"] = i->second;
-    read_usage.push(avp);
+
+  { // locked area
+    AmLock lock(mutex);
+
+    for (map<string, int>::iterator i = codec_write_usage.begin();
+        i != codec_write_usage.end(); ++i) 
+    {
+      AmArg avp;
+      avp["codec"] = i->first;
+      avp["count"] = i->second;
+      write_usage.push(avp);
+    }
+
+    for (map<string, int>::iterator i = codec_read_usage.begin();
+        i != codec_read_usage.end(); ++i) 
+    {
+      AmArg avp;
+      avp["codec"] = i->first;
+      avp["count"] = i->second;
+      read_usage.push(avp);
+    }
   }
-  mutex.unlock();
 
   ret["write"] = write_usage;
   ret["read"] = read_usage;
@@ -504,9 +501,8 @@ AmB2BMedia::~AmB2BMedia()
 
 void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
 {
-  mutex.lock();
+  AmLock lock(mutex);
   changeSessionUnsafe(a_leg, new_session);
-  mutex.unlock();
 }
 
 void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
@@ -593,18 +589,17 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
 int AmB2BMedia::writeStreams(unsigned long long ts, unsigned char *buffer)
 {
   int res = 0;
-  mutex.lock();
+  AmLock lock(mutex);
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     if (i->a.writeStream(ts, buffer, i->b) < 0) { res = -1; break; }
     if (i->b.writeStream(ts, buffer, i->a) < 0) { res = -1; break; }
   }
-  mutex.unlock();
   return res;
 }
 
 void AmB2BMedia::processDtmfEvents()
 {
-  mutex.lock();
+  AmLock lock(mutex);
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     i->a.processDtmfEvents();
     i->b.processDtmfEvents();
@@ -612,12 +607,11 @@ void AmB2BMedia::processDtmfEvents()
 
   if (a) a->processDtmfEvents();
   if (b) b->processDtmfEvents();
-  mutex.unlock();
 }
 
 void AmB2BMedia::sendDtmf(bool a_leg, int event, unsigned int duration_ms)
 {
-  mutex.lock();
+  AmLock lock(mutex);
   if(!audio.size())
     return;
 
@@ -628,13 +622,12 @@ void AmB2BMedia::sendDtmf(bool a_leg, int event, unsigned int duration_ms)
   else {
     audio[0].b.sendDtmf(event,duration_ms);
   }
-  mutex.unlock();
 }
 
 void AmB2BMedia::clearAudio(bool a_leg)
 {
   TRACE("clear %s leg audio\n", a_leg ? "A" : "B");
-  mutex.lock();
+  AmLock lock(mutex);
 
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     // remove streams from AmRtpReceiver first! (always both?)
@@ -661,20 +654,16 @@ void AmB2BMedia::clearAudio(bool a_leg)
     }
     relay_streams.clear();
   }
-
-  mutex.unlock();
 }
 
 void AmB2BMedia::clearRTPTimeout()
 {
-  mutex.lock();
+  AmLock lock(mutex);
 
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     i->a.clearRTPTimeout();
     i->b.clearRTPTimeout();
   }
-  
-  mutex.unlock();
 }
 
 static bool canRelay(const SdpMedia &m)
@@ -722,7 +711,7 @@ void AmB2BMedia::createStreams(const AmSdp &sdp)
 void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const string &relay_address) 
 {
   static const string void_addr("0.0.0.0");
-  mutex.lock();
+  AmLock lock(mutex);
 
   SdpConnection orig_conn = parser_sdp.conn; // needed for the 'quick workaround' for non-audio media
 
@@ -769,7 +758,6 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
 	  if(!replaced_ports.empty()) replaced_ports += "/";
 	  replaced_ports += int2str(it->port);
 	} catch (const string& s) {
-	  mutex.unlock();
 	  ERROR("setting port: '%s'\n", s.c_str());
 	  throw string("error setting RTP port\n");
 	}
@@ -805,7 +793,6 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
 	  if(!replaced_ports.empty()) replaced_ports += "/";
 	  replaced_ports += int2str(it->port);
 	} catch (const string& s) {
-	  mutex.unlock();
 	  ERROR("setting port: '%s'\n", s.c_str());
 	  throw string("error setting RTP port\n");
 	}
@@ -831,8 +818,6 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
 
   DBG("replaced connection address in SDP with %s:%s.\n",
       relay_address.c_str(), replaced_ports.c_str());
-        
-  mutex.unlock();
 }
       
 static const char* 
@@ -922,7 +907,7 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
   bool ok = true;
   if (!ctrl) ctrl = &simple_relay_ctrl; // use default controller if none given
 
-  mutex.lock();
+  AmLock lock(mutex);
 
   // save SDP
   if (a_leg) {
@@ -1004,14 +989,13 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
 
   onSdpUpdate();
 
-  mutex.unlock();
   return ok;
 }
     
 bool AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
 {
   bool ok = true;
-  mutex.lock();
+  AmLock lock(mutex);
   // streams should be created already (replaceConnectionAddress called
   // before updateLocalSdp uses/assignes their port numbers)
 
@@ -1030,7 +1014,6 @@ bool AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
 
   onSdpUpdate();
 
-  mutex.unlock();
   return ok;
 }
 
@@ -1082,7 +1065,7 @@ bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection,
   // possible params:
   //  - use 0.0.0.0 connection address or sendonly stream
   // create hold request based on current streams
-  mutex.lock();
+  AmLock lock(mutex);
 
   try {
     if (audio.empty()) {
@@ -1107,11 +1090,9 @@ bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection,
     }
   }
   catch (...) {
-    mutex.unlock();
     TRACE("hold SDP offer creation failed\n");
     return true;
   }
-  mutex.unlock();
 
   TRACE("hold SDP offer generated\n");
 
@@ -1120,19 +1101,18 @@ bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection,
 
 void AmB2BMedia::setMuteFlag(bool a_leg, bool set)
 {
-  mutex.lock();
+  AmLock lock(mutex);
   if (a_leg) a_leg_muted = set;
   else b_leg_muted = set;
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     if (a_leg) i->a.mute(set);
     else i->b.mute(set);
   }
-  mutex.unlock();
 }
 
 void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
 {
-  mutex.lock();
+  AmLock lock(mutex);
   //for ( i != audio.end(); ++i) {
   if (!audio.empty()) {
     AudioStreamIterator i = audio.begin();
@@ -1145,7 +1125,6 @@ void AmB2BMedia::setFirstStreamInput(bool a_leg, AmAudio *in)
   }
   else ERROR("BUG: can't set %s leg's first stream input, no streams\n", a_leg ? "A": "B");
   // FIXME: start processing if not started and streams in this leg are fully initialized ?
-  mutex.unlock();
 }
 
 void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con)
@@ -1158,7 +1137,7 @@ void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer,
   // non-disabled stream in the response so we can not set all ports to 0 to
   // signalize that we don't want to receive anything)
 
-  mutex.lock();
+  AmLock lock(mutex);
 
   answer = offer;
   answer.media.clear();
@@ -1193,8 +1172,6 @@ void AmB2BMedia::createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer,
     }
     break;
   }
-
-  mutex.unlock();
 }
 
 void AmB2BMedia::setRtpLogger(msg_logger* _logger)
