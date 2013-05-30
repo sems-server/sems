@@ -286,7 +286,7 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
     }
   }
 
-  ParamReplacerCtx ctx;
+  ParamReplacerCtx ctx(&cp);
   if((cp.apply_b_routing(ctx,n_req,*this) < 0) ||
      (cp.apply_common_fields(ctx,n_req) < 0) ) {
     reply_error(req,500,SIP_REPLY_SERVER_INTERNAL_ERROR);
@@ -323,7 +323,7 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
     return -1;
   }
 
-  ParamReplacerCtx ctx;
+  ParamReplacerCtx ctx(&cp);
   if(cp.apply_a_routing(ctx,req,*this) < 0)
     return -1;
 

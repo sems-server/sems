@@ -69,6 +69,7 @@ char *url_encode(const char *str);
 string replaceParameters(const string& s,
 			 const char* r_type,
 			 const AmSipRequest& req,
+			 const SBCCallProfile* call_profile,
 			 const string& app_param,
 			 AmUriParser& ruri_parser, 
 			 AmUriParser& from_parser,
@@ -286,6 +287,63 @@ string replaceParameters(const string& s,
 	  skip_chars = skip_p-p;
 	} break;
 
+	case 'V': { // variable
+	  if (s[p+1] != '(') {
+	    WARN("Error parsing V variable replacement (missing '(')\n");
+	    break;
+	  }
+	  if (s.length()<p+3) {
+	    WARN("Error parsing V param replacement (short string)\n");
+	    break;
+	  }
+
+	  size_t skip_p = p+2;
+	  for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
+	  if (skip_p==s.length()) {
+	    WARN("Error parsing V param replacement (unclosed brackets)\n");
+	    break;
+	  }
+	  string var_name = s.substr(p+2, skip_p-p-2);
+	  // DBG("param_name = '%s' (skip-p - p = %d)\n", param_name.c_str(), skip_p-p);
+	  if (!call_profile) {
+	    WARN("no call_profile object when replacing variable '%s'\n", var_name.c_str());
+	  } else {
+	    const AmArg* val = NULL;
+	    size_t dotpos = var_name.find('.');
+	    string vn;
+	    if (dotpos != string::npos) {
+	      vn = var_name.substr(dotpos+1);
+	      var_name = var_name.substr(0, dotpos);
+	    }
+	    SBCVarMapConstIteratorT it = call_profile->cc_vars.find(var_name);
+	    if (it != call_profile->cc_vars.end()) {
+	      if (vn.empty()) {
+		val = &it->second;
+	      } else {
+		if (isArgStruct(it->second)) {
+		  // recursive replacement for call variable name (defined via GUI)
+		  if (vn.find('$') != string::npos)
+		    vn = replaceParameters(vn, "CallVar Subname", req, call_profile, app_param, ruri_parser, from_parser, to_parser);
+		  val = &it->second[vn];
+		} else {
+		  DBG("CC variable '%s' has wrong type: '%s'\n",
+		      vn.c_str(), AmArg::print(it->second).c_str());
+		}
+	      }
+	      if (val != NULL) {
+		if (val->getType() == AmArg::CStr)
+		  res += val->asCStr();
+		else
+		  res += AmArg::print(*val);
+	      }
+	    } else {
+	      DBG("CC variable '%s' does not exist\n", var_name.c_str());
+	    }
+	  }
+
+	  skip_chars = skip_p-p;
+	} break;
+
 	case 'H': { // header
 	  size_t name_offset = 2;
 	  if (s[p+1] != '(') {
@@ -360,8 +418,10 @@ string replaceParameters(const string& s,
 	  }
 
 	  string map_val = map_str.substr(0, spos);
-	  string map_val_replaced = replaceParameters(map_val, r_type, req, app_param,
-						      ruri_parser, from_parser, to_parser);
+	  string map_val_replaced = replaceParameters(map_val, r_type, req, 
+						      call_profile, app_param,
+						      ruri_parser, from_parser, 
+						      to_parser);
 	  string mapping_name = map_str.substr(spos+2);
 
 	  string map_res; 
@@ -407,8 +467,9 @@ string replaceParameters(const string& s,
 
 	  string br_str = s.substr(p+3, skip_p-p-3);
 	  string br_str_replaced = replaceParameters(br_str, "$_*(...)",
-						     req, app_param,
-						     ruri_parser, from_parser, to_parser);
+						     req, call_profile, app_param,
+						     ruri_parser, from_parser, 
+						     to_parser);
 	  br_str = br_str_replaced;
 	  switch(operation) {
 	  case 'u': // uppercase
@@ -460,8 +521,9 @@ string replaceParameters(const string& s,
 
 	  string expr_str = s.substr(p+2, skip_p-p-2);
 	  string expr_replaced = replaceParameters(expr_str, r_type, req,
-						   app_param, ruri_parser, 
-						   from_parser, to_parser);
+						   call_profile, app_param, 
+						   ruri_parser, from_parser,
+						   to_parser);
 	  char* val_escaped = url_encode(expr_replaced.c_str());
 	  res += string(val_escaped);
 	  free(val_escaped);

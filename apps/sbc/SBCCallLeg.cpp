@@ -717,7 +717,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
 {
   DBG("processing initial INVITE %s\n", req.r_uri.c_str());
 
-  ParamReplacerCtx ctx;
+  ParamReplacerCtx ctx(&call_profile);
   ctx.app_param = getHeader(req.hdrs, PARAM_HDR, true);
 
   // process call control
@@ -1015,7 +1015,7 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 
     if (!logger && !call_profile.msg_logger_path.empty()) {
       // open the logger if not already opened
-      ParamReplacerCtx ctx;
+      ParamReplacerCtx ctx(&call_profile);
       string log_path = ctx.replaceParameters(call_profile.msg_logger_path,
 					      "msg_logger_path",req);
       if (openLogger(log_path)) logRequest(req);

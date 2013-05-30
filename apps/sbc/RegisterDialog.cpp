@@ -267,7 +267,7 @@ int RegisterDialog::fixUacContacts(const AmSipRequest& req)
 void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
 					const SBCCallProfile& cp)
 {
-  ParamReplacerCtx ctx;
+  ParamReplacerCtx ctx(&cp);
   int oif = getOutboundIf();
   assert(oif >= 0);
   assert((size_t)outbound_interface < AmConfig::SIP_Ifs.size());

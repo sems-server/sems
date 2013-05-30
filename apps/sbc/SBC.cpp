@@ -340,6 +340,7 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
   SBCCallProfile call_profile(*p_call_profile);
   profiles_mut.unlock();
 
+  ctx.call_profile = &call_profile;
   call_profile.eval_cc_list(ctx,req);
 
   vector<AmDynInvoke*> cc_modules;
@@ -705,7 +706,7 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 
     if (!logger && !call_profile.msg_logger_path.empty()) {
 
-      ParamReplacerCtx ctx;
+      ParamReplacerCtx ctx(&call_profile);
       call_profile.msg_logger_path = 
 	ctx.replaceParameters(call_profile.msg_logger_path,
 			      "msg_logger_path",req);

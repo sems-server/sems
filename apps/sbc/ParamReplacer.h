@@ -32,10 +32,13 @@ using std::string;
 #include "AmSipMsg.h"
 #include "AmUriParser.h"
 
+struct SBCCallProfile;
+
 // $xy parameters replacement
 string replaceParameters(const string& s,
 			 const char* r_type,
 			 const AmSipRequest& req,
+			 const SBCCallProfile* call_profile,
 			 const string& app_param,
 			 AmUriParser& ruri_parser,
 			 AmUriParser& from_parser,
@@ -52,10 +55,13 @@ struct ParamReplacerCtx
   bool from_modified;
   bool to_modified;
 
-  ParamReplacerCtx()
+  const SBCCallProfile* call_profile;
+
+  ParamReplacerCtx(const SBCCallProfile* call_profile=NULL)
     : ruri_modified(false), 
       from_modified(false), 
-      to_modified(false)
+      to_modified(false),
+      call_profile(call_profile)
   {}
 
   string replaceParameters(const string& s,
@@ -63,6 +69,7 @@ struct ParamReplacerCtx
 			   const AmSipRequest& req) {
     
     return ::replaceParameters(s,r_type,req,
+			       call_profile,
 			       app_param,
 			       ruri_parser,
 			       from_parser,

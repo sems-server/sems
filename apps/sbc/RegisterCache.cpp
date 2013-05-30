@@ -1083,11 +1083,6 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
 
   reg_expires += now.tv_sec;
 
-  //TODO:
-  // - query/save binding according to reg_expires / ua_expires
-  // - ?check call-id, cseq?
-  // - send 200 reply
-
   AliasEntry alias_update;
   alias_update.aor = ctx.from_aor;
   alias_update.contact_uri = contact->uri_str();
