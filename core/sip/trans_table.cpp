@@ -57,6 +57,37 @@ trans_bucket::~trans_bucket()
 {
 }
 
+// return true if equal
+static inline bool compare_branch(sip_trans* t, sip_msg* msg,
+				  const char* branch, unsigned int branch_len)
+{
+    if(t->msg->via_p1->branch.len != branch_len + MAGIC_BRANCH_LEN)
+	return false;
+
+    if(t->msg->via_p1->host.len != 
+       msg->via_p1->host.len)
+	return false;
+
+    if(t->msg->via_p1->port.len != 
+       msg->via_p1->port.len)
+	return false;
+
+    if(memcmp(branch,
+	      t->msg->via_p1->branch.s+MAGIC_BRANCH_LEN,branch_len))
+	return false;
+
+    if(memcmp(t->msg->via_p1->host.s,
+	      msg->via_p1->host.s,msg->via_p1->host.len))
+	return false;
+
+    if(memcmp(t->msg->via_p1->port.s,
+	      msg->via_p1->port.s,msg->via_p1->port.len))
+	return false;
+
+    return true;
+}
+
+
 sip_trans* trans_bucket::match_request(sip_msg* msg, unsigned int ttype)
 {
     // assert(msg && msg->cseq && msg->callid);
@@ -102,37 +133,25 @@ sip_trans* trans_bucket::match_request(sip_msg* msg, unsigned int ttype)
 
 		// ACK is the only request that should match an existing
 		// transaction without being a re-transmission
-                if( ((*it)->msg->u.request->method == sip_request::INVITE)
-		    && (msg->u.request->method == sip_request::ACK) 
-		    && (t = match_200_ack(*it,msg)) ){
-
-		    break;
-                }
+		if( ((*it)->msg->u.request->method == sip_request::INVITE)
+		    && (msg->u.request->method == sip_request::ACK)) {
 		
+		    // match non-200 ACK first
+		    if(compare_branch(*it,msg,branch,(unsigned int)len)) {
+			t = *it;
+			break;
+		    }
+
+		    // branches do not match,
+		    // try to match a 200-ACK
+		    if((t = match_200_ack(*it,msg)) != NULL)
+			break;
+		}
+
 		continue;
 	    }
-	    
-	    if((*it)->msg->via_p1->branch.len != (unsigned int)len + MAGIC_BRANCH_LEN)
-		continue;
 
-	    if((*it)->msg->via_p1->host.len != 
-	       msg->via_p1->host.len)
-		continue;
-
-	    if((*it)->msg->via_p1->port.len != 
-	       msg->via_p1->port.len)
-		continue;
-
-	    if(memcmp(branch,
-		      (*it)->msg->via_p1->branch.s+MAGIC_BRANCH_LEN,len))
-		continue;
-
-	    if(memcmp((*it)->msg->via_p1->host.s,
-		      msg->via_p1->host.s,msg->via_p1->host.len))
-		continue;
-
-	    if(memcmp((*it)->msg->via_p1->port.s,
-		      msg->via_p1->port.s,msg->via_p1->port.len))
+	    if(!compare_branch(*it,msg,branch,(unsigned int)len))
 		continue;
 
 	    // found matching transaction
