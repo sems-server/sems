@@ -262,6 +262,7 @@ struct SBCCallProfile
     sst_enabled_value(false),
     rtprelay_enabled(false),
     force_symmetric_rtp_value(false),
+    aleg_force_symmetric_rtp_value(false),
     rtprelay_transparent_seqno(true),
     rtprelay_transparent_ssrc(true),
     rtprelay_interface_value(-1),
