@@ -42,7 +42,10 @@ string replaceParameters(const string& s,
 			 const string& app_param,
 			 AmUriParser& ruri_parser,
 			 AmUriParser& from_parser,
-			 AmUriParser& to_parser);
+			 AmUriParser& to_parser,
+			 bool rebuild_ruri,
+			 bool rebuild_from,
+			 bool rebuild_to);
 
 struct ParamReplacerCtx
 {
@@ -73,7 +76,10 @@ struct ParamReplacerCtx
 			       app_param,
 			       ruri_parser,
 			       from_parser,
-			       to_parser);
+			       to_parser,
+			       ruri_modified,
+			       from_modified,
+			       to_modified);
   }
 };
 

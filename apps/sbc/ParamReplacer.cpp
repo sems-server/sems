@@ -31,6 +31,7 @@
 #include "AmUtils.h"
 #include "SBC.h" // for RegexMapper SBCFactory::regex_mappings
 #include <algorithm>
+#include <stdlib.h>
 
 void replaceParsedParam(const string& s, size_t p,
 			const AmUriParser& parsed, string& res) {
@@ -73,11 +74,15 @@ string replaceParameters(const string& s,
 			 const string& app_param,
 			 AmUriParser& ruri_parser, 
 			 AmUriParser& from_parser,
-			 AmUriParser& to_parser) {
+			 AmUriParser& to_parser,
+			 bool rebuild_ruri,
+			 bool rebuild_from,
+			 bool rebuild_to) {
   string res;
   bool is_replaced = false;
   size_t p = 0;
   bool is_escaped = false;
+  const string& used_hdrs = req.hdrs; //(hdrs == NULL) ? req.hdrs : *hdrs;
 
   // char last_char=' ';
   
@@ -106,7 +111,12 @@ string replaceParameters(const string& s,
 	switch (s[p]) {
 	case 'f': { // from
 	  if ((s.length() == p+1) || (s[p+1] == '.')) {
-	    res += req.from;
+	    if (rebuild_from) {
+	      res += from_parser.nameaddr_str();
+	    } else {
+	      res += req.from;
+	    }
+
 	    break;
 	  }
 
@@ -116,12 +126,11 @@ string replaceParameters(const string& s,
 	  }
 
 	  if (from_parser.uri.empty()) {
-	    size_t end;
-	    if (!from_parser.parse_contact(req.from, 0, end)) {
+	    from_parser.uri = req.from;
+	    if (!from_parser.parse_uri()) {
 	      WARN("Error parsing From URI '%s'\n", req.from.c_str());
 	      break;
 	    }
-	    from_parser.dump();
 	  }
 
 	  replaceParsedParam(s, p, from_parser, res);
@@ -130,7 +139,11 @@ string replaceParameters(const string& s,
 
 	case 't': { // to
 	  if ((s.length() == p+1) || (s[p+1] == '.')) {
-	    res += req.to;
+	    if (rebuild_to) {
+	      res += to_parser.nameaddr_str();
+	    } else {
+	      res += req.to;
+	    }
 	    break;
 	  }
 
@@ -140,8 +153,8 @@ string replaceParameters(const string& s,
 	  }
 
 	  if (to_parser.uri.empty()) {
-	    size_t end;
-	    if (!to_parser.parse_contact(req.to, 0, end)) {
+	    to_parser.uri = req.to;
+	    if (!to_parser.parse_uri()) {
 	      WARN("Error parsing To URI '%s'\n", req.to.c_str());
 	      break;
 	    }
@@ -153,7 +166,11 @@ string replaceParameters(const string& s,
 
 	case 'r': { // r-uri
 	  if ((s.length() == p+1) || (s[p+1] == '.')) {
-	    res += req.r_uri;
+	    if (rebuild_ruri) {
+	      res += ruri_parser.uri_str();
+	    } else {
+	      res += req.r_uri;
+	    }
 	    break;
 	  }
 
@@ -214,9 +231,9 @@ string replaceParameters(const string& s,
 	    if (req.local_if < AmConfig::SIP_Ifs.size()) {
 	      res += AmConfig::SIP_Ifs[req.local_if].PublicIP;
 	    }
-	  } 
-	  else
-	    WARN("unknown replacement $R%c\n", s[p+1]);
+	    break;
+	  }
+	  WARN("unknown replacement $R%c\n", s[p+1]);
 	}; break;
 
 	//case 'u': // Reg-cached destination user
@@ -243,14 +260,14 @@ string replaceParameters(const string& s,
 #define case_HDR(pv_char, pv_name, hdr_name)				\
 	  case pv_char: {						\
 	    AmUriParser uri_parser;					\
-	    string m_uri = getHeader(req.hdrs, hdr_name);		\
+	    uri_parser.uri = getHeader(used_hdrs, hdr_name);		\
 	    if ((s.length() == p+1) || (s[p+1] == '.')) {		\
-	      res += m_uri;						\
+	      res += uri_parser.uri;					\
 	      break;							\
 	    }								\
-	    size_t end;							\
-	    if (!uri_parser.parse_contact(m_uri, 0, end)) {		\
-	      WARN("Error parsing " pv_name " URI '%s'\n", m_uri.c_str()); \
+									\
+	    if (!uri_parser.parse_uri()) {				\
+	      WARN("Error parsing " pv_name " URI '%s'\n", uri_parser.uri.c_str()); \
 	      break;							\
 	    }								\
 	    if (s[p+1] == 'i') {					\
@@ -323,7 +340,10 @@ string replaceParameters(const string& s,
 		if (isArgStruct(it->second)) {
 		  // recursive replacement for call variable name (defined via GUI)
 		  if (vn.find('$') != string::npos)
-		    vn = replaceParameters(vn, "CallVar Subname", req, call_profile, app_param, ruri_parser, from_parser, to_parser);
+		    vn = replaceParameters(vn, "CallVar Subname", req, 
+					   call_profile, app_param, 
+					   ruri_parser, from_parser, to_parser,
+					   rebuild_ruri, rebuild_from, rebuild_to);
 		  val = &it->second[vn];
 		} else {
 		  DBG("CC variable '%s' has wrong type: '%s'\n",
@@ -368,20 +388,19 @@ string replaceParameters(const string& s,
 	  // DBG("param_name = '%s' (skip-p - p = %d)\n", param_name.c_str(), skip_p-p);
 	  if (name_offset == 2) {
 	    // full header
-	    res += getHeader(req.hdrs, hdr_name);
+	    res += getHeader(used_hdrs, hdr_name);
 	  } else {
 	    // parse URI and use component
 	    AmUriParser uri_parser;
-	    string m_uri = getHeader(req.hdrs, hdr_name);
+	    uri_parser.uri = getHeader(used_hdrs, hdr_name);
 	    if ((s[p+1] == '.')) {
-	      res += m_uri;
+	      res += uri_parser.uri;
 	      break;
 	    }
 
-	    size_t end;
-	    if (!uri_parser.parse_contact(m_uri, 0, end)) {
+	    if (!uri_parser.parse_uri()) {
 	      WARN("Error parsing header %s URI '%s'\n",
-		   hdr_name.c_str(), m_uri.c_str());
+		   hdr_name.c_str(), uri_parser.uri.c_str());
 	      break;
 	    }
 	    replaceParsedParam(s, p, uri_parser, res);
@@ -418,10 +437,12 @@ string replaceParameters(const string& s,
 	  }
 
 	  string map_val = map_str.substr(0, spos);
-	  string map_val_replaced = replaceParameters(map_val, r_type, req, 
-						      call_profile, app_param,
-						      ruri_parser, from_parser, 
-						      to_parser);
+	  string map_val_replaced = 
+	    replaceParameters(map_val, r_type, req, 
+			      call_profile, app_param,
+			      ruri_parser, from_parser, to_parser,
+			      rebuild_ruri, rebuild_from, rebuild_to);
+
 	  string mapping_name = map_str.substr(spos+2);
 
 	  string map_res; 
@@ -466,10 +487,12 @@ string replaceParameters(const string& s,
 	  }
 
 	  string br_str = s.substr(p+3, skip_p-p-3);
-	  string br_str_replaced = replaceParameters(br_str, "$_*(...)",
-						     req, call_profile, app_param,
-						     ruri_parser, from_parser, 
-						     to_parser);
+	  string br_str_replaced = 
+	    replaceParameters(br_str, "$_*(...)",
+			      req, call_profile, app_param,
+			      ruri_parser, from_parser, to_parser,
+			      rebuild_ruri, rebuild_from, rebuild_to);
+
 	  br_str = br_str_replaced;
 	  switch(operation) {
 	  case 'u': // uppercase
@@ -487,7 +510,28 @@ string replaceParameters(const string& s,
 	    br_str_replaced = calculateMD5(br_str);
 	    break;
 
-	  default: break;
+	  case 't': // extract 'transport' (last 3 characters)
+	    if (br_str.length() >= 4) {
+	      br_str_replaced = br_str.substr(br_str.length()-3);
+	    }
+	    break;
+
+	  case 'r': // random
+	    {
+	      int r_max;
+	      if (!str2int(br_str, r_max)){
+		WARN("Error parsing $_r(%s) for random value, returning 0\n", br_str.c_str());
+		br_str_replaced = "0";
+	      } else {
+		br_str_replaced = int2str(rand()%r_max);
+	      }
+	    }
+	    break;
+
+	  default:
+	    WARN("Error parsing $_%c string modifier: unknown operator '%c'\n",
+		 operation, operation);
+	    break;
 	  }
 	  DBG("applied operator '%c': '%s' => '%s'\n", operation,
 	      br_str.c_str(), br_str_replaced.c_str());
@@ -520,10 +564,12 @@ string replaceParameters(const string& s,
 	  }
 
 	  string expr_str = s.substr(p+2, skip_p-p-2);
-	  string expr_replaced = replaceParameters(expr_str, r_type, req,
-						   call_profile, app_param, 
-						   ruri_parser, from_parser,
-						   to_parser);
+	  string expr_replaced = 
+	    replaceParameters(expr_str, r_type, req,
+			      call_profile, app_param, 
+			      ruri_parser, from_parser, to_parser,
+			      rebuild_ruri, rebuild_from, rebuild_to);
+
 	  char* val_escaped = url_encode(expr_replaced.c_str());
 	  res += string(val_escaped);
 	  free(val_escaped);
