@@ -36,8 +36,6 @@ public:
 		    const string& from_remote_ua, const string& to_remote_ua,
 		    int code, const string& reason);
 
-  void logCallStart(const AmBasicSipDialog* dlg, int code, 
-		    const string& reason);
 
   void logCallEnd(const AmSipRequest& req,
 		  const string& local_tag,

@@ -1002,7 +1002,8 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 
     if(exception_occured) {
       SBCEventLog::instance()->
-	logCallStart(dlg, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+	logCallStart(req, getLocalTag(), dlg->getRemoteUA(), "",
+		     500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       AmBasicSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
 
       // call 'end' of call control modules up to here
@@ -1064,7 +1065,7 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
 	      cc_if.cc_name.c_str(), headers.c_str());
 
 	  SBCEventLog::instance()->
-	    logCallStart(dlg,
+	    logCallStart(req, getLocalTag(), dlg->getRemoteUA(), "",
 			 ret[i][SBC_CC_REFUSE_CODE].asInt(),
 			 ret[i][SBC_CC_REFUSE_REASON].asCStr());
 
@@ -1254,7 +1255,8 @@ void SBCCallLeg::logCallStart(const AmSipReply& reply)
 					  (int)reply.code,reply.reason);
   }
   else {
-    SBCEventLog::instance()->logCallStart(dlg,(int)reply.code,reply.reason);
+    ERROR("could not log call-start/call-attempt (ci='%s';lt='%s')",
+	  getCallID().c_str(),getLocalTag().c_str());
   }
 }
 
