@@ -196,11 +196,17 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 			+ to_tag.len; 
 		}
 		else {
-		    // To-tag present in request
+		    // To-tag present in request...
 		    have_to_tag = true;
-		    
+		    // ... save it:
 		    t->to_tag = ((sip_from_to*)(*it)->p)->tag;
 		}
+	    }
+	    else if(reply_code >= 300) {
+		// Let final error replies clear 
+		// the to-tag if not present:
+		// (necessary to match pre-RFC3261 non-200 ACKs)
+		t->to_tag.clear();
 	    }
 	    reply_len += copy_hdr_len(*it);
 	    break;
