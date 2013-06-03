@@ -38,10 +38,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   int cc_timer_id;
   int ext_cc_timer_id; // for assigning IDs to timers through "extended CC interface"
 
-  struct timeval call_start_ts;
-  struct timeval call_connect_ts;
-  struct timeval call_end_ts;
-
   // auth
   AmSessionEventHandler* auth;
 
@@ -83,8 +79,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /* clear call timer */
   void stopCallTimers();
 
-  /** initialize call control module interfaces @return sucess or not*/
-  bool getCCInterfaces();
   /** call is started */
   bool CCStart(const AmSipRequest& req);
   /** connection of second leg */
@@ -181,6 +175,10 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   virtual void setMediaSession(AmB2BMedia *new_session);
 
  protected:
+  // Call duration measurements
+  struct timeval call_start_ts;
+  struct timeval call_connect_ts;
+  struct timeval call_end_ts;
 
   void setOtherId(const AmSipReply& reply);
   void setOtherId(const string& n_other_id) { CallLeg::setOtherId(n_other_id); }
@@ -195,6 +193,10 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onControlCmd(string& cmd, AmArg& params);
 
   void createCalleeSession();
+
+  /** initialize call control module interfaces @return sucess or not*/
+  bool getCCInterfaces();
+  vector<AmDynInvoke*>& getCCModules() { return cc_modules; }
 
   virtual void handleHoldReply(bool succeeded);
   virtual void createHoldRequest(AmSdp &sdp);
