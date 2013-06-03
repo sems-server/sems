@@ -220,7 +220,8 @@ SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg)
     m_state(BB_Init),
     auth(NULL),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START),
-    cc_started(false)
+    cc_started(false),
+    logger(NULL)
 {
 }
 
