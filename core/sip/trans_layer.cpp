@@ -732,7 +732,7 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 	    *next_hop  = route_uri->host;
 	    if(route_uri->port_str.len)
 		*next_port = route_uri->port;
-	    if(route_uri->trsp->value.len)
+	    if(route_uri->trsp && route_uri->trsp->value.len)
 		*next_trsp = route_uri->trsp->value;
 	}
     }
