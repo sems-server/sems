@@ -690,6 +690,20 @@ bool AmB2BSession::refresh(int flags) {
 
 int AmB2BSession::relaySip(const AmSipRequest& req)
 {
+  AmMimeBody r_body(req.body);
+  const AmMimeBody* body = &r_body;
+  if (((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) &&
+      (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
+       req.method == SIP_METH_ACK || req.method == SIP_METH_PRACK)) {
+    body = req.body.hasContentType(SIP_APPLICATION_SDP);
+    if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
+      body = &r_body;
+    }
+    else {
+      body = &req.body;
+    }
+  }
+
   if (req.method != "ACK") {
     relayed_req[dlg->cseq] = req;
 
@@ -711,20 +725,6 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
       if (t==relayed_req.end()) {
 	WARN("Transaction with CSeq %d not found for translating RAck cseq\n",
 	     req.rack_cseq);
-      }
-    }
-
-    AmMimeBody r_body(req.body);
-    const AmMimeBody* body = &r_body;
-    if (((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) &&
-        (req.method == SIP_METH_INVITE || req.method == SIP_METH_UPDATE ||
-         req.method == SIP_METH_ACK || req.method == SIP_METH_PRACK)) {
-      body = req.body.hasContentType(SIP_APPLICATION_SDP);
-      if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
-        body = &r_body;
-      }
-      else {
-        body = &req.body;
       }
     }
 
@@ -752,11 +752,12 @@ int AmB2BSession::relaySip(const AmSipRequest& req)
     } 
     if (t == relayed_req.end()) {
       ERROR("transaction for ACK not found in relayed requests\n");
+      // FIXME: local body (if updated) should be discarded here
       return -1;
     }
 
     DBG("sending relayed 200 ACK\n");
-    int err = dlg->send_200_ack(t->first, &req.body, 
+    int err = dlg->send_200_ack(t->first, body, 
 			       req.hdrs, SIP_FLAGS_VERBATIM);
     if(err < 0) {
       ERROR("dlg->send_200_ack() failed\n");
