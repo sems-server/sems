@@ -49,10 +49,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   SBCCallProfile call_profile;
 
-  /** set to true once CCStart passed to call CCEnd implicitly (from onStop)
-   * only when CCStart was called */
-  bool cc_started;
-
   // Rate limiting
   auto_ptr<RateLimit> rtp_relay_rate_limit;
   
@@ -154,6 +150,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   SBCCallProfile &getCallProfile() { return call_profile; }
   CallStatus getCallStatus() { return CallLeg::getCallStatus(); }
 
+  void setRTPMeasurements(const list<atomic_int*>& rtp_meas) { rtp_pegs = rtp_meas; }
+
   // media interface must be accessible from CC modules
   AmB2BMedia *getMediaSession() { return AmB2BSession::getMediaSession(); }
   virtual bool updateLocalSdp(AmSdp &sdp);
@@ -175,6 +173,10 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   virtual void setMediaSession(AmB2BMedia *new_session);
 
  protected:
+  /** set to true once CCStart passed to call CCEnd implicitly (from onStop)
+   * only when CCStart was called */
+  bool cc_started;
+
   // Call duration measurements
   struct timeval call_start_ts;
   struct timeval call_connect_ts;
