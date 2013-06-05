@@ -190,6 +190,8 @@ class AudioStreamData {
     AmAudio *getInput() { return in; }
 
     void setLogger(msg_logger *logger) { if (stream) stream->setLogger(logger); }
+
+    void debug();
 };
 
 /** \brief Class for control over media relaying and transcoding in a B2B session.
@@ -425,6 +427,9 @@ class AmB2BMedia: public AmMediaSession
     void createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con);
 
     void setRtpLogger(msg_logger* _logger);
+
+    // print debug info
+    void debug();
 };
 
 #endif
