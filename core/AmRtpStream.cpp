@@ -206,10 +206,13 @@ void AmRtpStream::setLocalPort(unsigned short p)
 
   l_port = port;
   l_rtcp_port = port+1;
-  AmRtpReceiver::instance()->addStream(l_sd, this);
-  AmRtpReceiver::instance()->addStream(l_rtcp_sd, this);
-  DBG("added stream [%p] to RTP receiver (%s:%i/%i)\n", this,
-      get_addr_str((sockaddr_storage*)&l_saddr).c_str(),l_port,l_rtcp_port);
+
+  if(!p) {
+    AmRtpReceiver::instance()->addStream(l_sd, this);
+    AmRtpReceiver::instance()->addStream(l_rtcp_sd, this);
+    DBG("added stream [%p] to RTP receiver (%s:%i/%i)\n", this,
+	get_addr_str((sockaddr_storage*)&l_saddr).c_str(),l_port,l_rtcp_port);
+  }
 
   memcpy(&l_rtcp_saddr, &l_saddr, sizeof(l_saddr));
   am_set_port(&l_rtcp_saddr, l_rtcp_port);
