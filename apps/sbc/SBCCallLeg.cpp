@@ -199,8 +199,9 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
     dlg->setExtLocalTag(caller->dlg->getRemoteTag());
   }
 
-  if(rtp_relay_rate_limit.get()) {
-    rtp_relay_rate_limit.reset(new RateLimit(*rtp_relay_rate_limit.get()));
+  // copy RTP rate limit from caller leg
+  if(caller->rtp_relay_rate_limit.get()) {
+    rtp_relay_rate_limit.reset(new RateLimit(*caller->rtp_relay_rate_limit.get()));
   }
 
   // CC interfaces and variables should be already "evaluated" by A leg, we just
