@@ -58,7 +58,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** common logger for RTP/RTCP and SIP packets */
   msg_logger *logger;
 
-  bool openLogger(const std::string &path);
   void logRequest(const AmSipRequest &req);
   void setLogger(msg_logger *_logger);
 
@@ -207,6 +206,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   int applySSTCfg(AmConfigReader& sst_cfg, const AmSipRequest* p_req);
 
+  bool openLogger(const std::string &path);
   msg_logger *getLogger() { return logger; }
 };
 
