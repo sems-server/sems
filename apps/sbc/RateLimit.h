@@ -26,6 +26,10 @@ public:
 
   virtual ~RateLimit() {}
 
+  int getRate() const { return rate; }
+  int getPeak() const { return peak; }
+  unsigned int getTimeBase() const { return time_base; }
+
   /**
    * returns true if 'size' should be dropped
    */
