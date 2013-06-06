@@ -211,7 +211,7 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCModules();
+  initCCExtModules();
 
   setLogger(caller->getLogger());
 }
@@ -775,7 +775,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCModules();
+  initCCExtModules();
 
   string ruri, to, from;
   AmSipRequest uac_req(req);
@@ -1492,7 +1492,7 @@ void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
   setRtpRelayMode(new_mode);
 }
 
-void SBCCallLeg::initCCModules()
+void SBCCallLeg::initCCExtModules()
 {
   // init extended call control modules
   vector<AmDynInvoke*>::iterator cc_mod = cc_modules.begin();
