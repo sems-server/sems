@@ -151,6 +151,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   CallStatus getCallStatus() { return CallLeg::getCallStatus(); }
 
   void setRTPMeasurements(const list<atomic_int*>& rtp_meas) { rtp_pegs = rtp_meas; }
+  const RateLimit* getRTPRateLimit() { return rtp_relay_rate_limit.get(); }
+  void setRTPRateLimit(RateLimit* rl) { rtp_relay_rate_limit.reset(rl); }
 
   // media interface must be accessible from CC modules
   AmB2BMedia *getMediaSession() { return AmB2BSession::getMediaSession(); }
