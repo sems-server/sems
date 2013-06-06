@@ -12,7 +12,7 @@ state sess_started;
 state ADDKEY;
 state FIN;
 
-transition "start pin entry" sess_started - / set($pin = "") -> ADDKEY;
+transition "start pin entry" sess_started - / { set($pin = ""); } -> ADDKEY;
 
 transition "play from timer" ADDKEY - timerTest(#id == 1) /  {
 	   playPrompt(hello); 
