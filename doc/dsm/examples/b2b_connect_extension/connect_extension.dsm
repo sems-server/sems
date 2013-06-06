@@ -33,7 +33,7 @@ state COLLECTING
 -- digit key pressed
 transition "key press" COLLECTING - key(#key<10) / {
     -- break any possibly playing prompt
-    closePlaylist();
+    flushPlaylist();
     -- add key to extension
     append($extension, #key);
 } -> COLLECTING;
@@ -60,7 +60,7 @@ transition "connect key, but empty extension" COLLECTING - key(#key>9); test(len
 -- connect (# or *) pressed
 transition "connect key press" COLLECTING - key(#key>9) / {
     -- break any possibly playing prompt
-    closePlaylist();
+    flushPlaylist();
 
     -- 'now connecting'
     sets($prompt_name=$(prompts_dir)connecting.wav);

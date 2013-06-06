@@ -11,7 +11,7 @@ transition "start pin entry" START - / set($pin = "") -> ADDKEY;
 
 transition "add a key" ADDKEY - keyTest(#key < 10) / 
 	   { 
- 	     closePlaylist();
+ 	     flushPlaylist();
 	     append($pin, #key);
 	     playPrompt(#key);
 	     callFSM(callsub)

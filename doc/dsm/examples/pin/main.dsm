@@ -33,7 +33,7 @@ transition "start pin entry" START - / set($pin = "") -> ADDKEY;
 
 transition "add a key" ADDKEY - keyTest(#key < 10) / 
 	   { 
- 	     closePlaylist();
+ 	     flushPlaylist();
 	     append($pin, #key);
 	     playPrompt(#key);
 	   } -> ADDKEY;
@@ -42,8 +42,8 @@ transition bye_recvd ADDKEY - hangup() -> FIN;
 transition bye_recvd PLAY_FIN - hangup() -> FIN;
 
 transition check_pin_server ADDKEY - keyTest(#key > 9) /  {
-	    closePlaylist();
-            playPrompt(entering);
+	    flushPlaylist();
+        playPrompt(entering);
  	    DIgetResult(xmlrpc2di, sendRequestList, vbs, checkPIN, @user, $pin);
 	    set($status=      $DI_res0);
 	    set($description= $DI_res1);

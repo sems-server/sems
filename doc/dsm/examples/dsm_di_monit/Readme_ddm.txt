@@ -104,7 +104,7 @@ If we receive an event with the action 'take'
 we first close the playlist to stop the welcome message from playing
 if it still is:
 
-|     closePlaylist()
+|     flushPlaylist()
 
 As playout type we set adaptive playout buffering; this is just for 
 conference to sound smoothly in the presence of packet loss and jitter
@@ -132,7 +132,7 @@ If we are in the room, and get moved to another room, we do similar things,
 we just use a different prompt to play to the user:
 
 |    transition "room change" room - eventTest(#action==take) /  {   
-|       closePlaylist()
+|       flushPlaylist()
 |       playFile(wav/change.wav) 
 |       conference.join(#roomname)
 |       connectMedia()

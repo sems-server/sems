@@ -11,7 +11,7 @@ initial state lobby
 state room;
 
 transition "lobby to room" lobby - eventTest(#action==take) /  {   
-   closePlaylist()
+   flushPlaylist()
    conference.setPlayoutType(adaptive)
    playFile(wav/taken.wav) 
    conference.join(#roomname)
@@ -20,7 +20,7 @@ transition "lobby to room" lobby - eventTest(#action==take) /  {
 } -> room;
 
 transition "room change" room - eventTest(#action==take) /  {   
-   closePlaylist()
+   flushPlaylist()
    playFile(wav/change.wav) 
    conference.join(#roomname)
    connectMedia()

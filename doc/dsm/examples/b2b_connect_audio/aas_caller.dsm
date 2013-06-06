@@ -44,7 +44,7 @@ transition "cancel" (START, RUN_INVITE) - hangup / {
 } -> END;
 
 transition "Callee Answered" (START, RUN_INVITE) - test(#b_status==CONNECTED) / {
-  closePlaylist(false);
+  flushPlaylist();
   dlg.acceptInvite(200, OK);
   log(1, @local_tag);
   conference.join(@local_tag);

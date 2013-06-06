@@ -18,25 +18,25 @@ transition "lobby to room" lobby - noAudioTest /  {
 
 transition "key 1 pressed" room - keyPress(1); test($is_spkonly == "") / {
  set($is_spkonly=1);  
- closePlaylist(false);
+ flushPlaylist(false);
  conference.join(myroom, speakonly); 
 } -> room;
 
 transition "key 1 pressed" room - keyPress(1); test($is_spkonly == "1") / {
  set($is_spkonly=""); 
- closePlaylist(false); 
+ flushPlaylist(false); 
  conference.join(myroom); 
 } -> room;
 
 transition "key 2 pressed" room - keyPress(2); test($is_listenonly == "") / {
  set($is_listenonly=1);
- closePlaylist(false);  
+ flushPlaylist(false);  
  conference.join(myroom, listenonly); 
 } -> room;
 
 transition "key 2 pressed" room - keyPress(2); test($is_listenonly == "1") / {
  set($is_listenonly="");  
- closePlaylist(false);
+ flushPlaylist(false);
  conference.join(myroom); 
 } -> room;
 
