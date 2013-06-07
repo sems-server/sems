@@ -555,8 +555,6 @@ void AmB2BSession::terminateOtherLeg()
 {
   if (!other_id.empty())
     relayEvent(new B2BEvent(B2BTerminateLeg));
-
-  clear_other();
 }
 
 void AmB2BSession::onSessionTimeout() {
