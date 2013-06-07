@@ -141,7 +141,7 @@ protected:
   void updateTimer(AmSession* s,const AmSipRequest& req);
   void updateTimer(AmSession* s,const AmSipReply& reply);
     
-  void setTimers(AmSession* s);
+  virtual void setTimers(AmSession* s);
   void retryRefreshTimer(AmSession* s);
   void removeTimers(AmSession* s);
 
