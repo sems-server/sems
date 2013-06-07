@@ -31,7 +31,9 @@
 #include "AmApi.h"
 #include "AmSession.h"
 
+#ifndef MOD_NAME
 #define MOD_NAME "session_timer"
+#endif
 
 #define TIMER_OPTION_TAG  "timer"
 
@@ -95,10 +97,15 @@ public:
       returns 0 on invalid value */
   int setMinimumTimer(const string& minse);
 
-  bool getEnableSessionTimer() { return EnableSessionTimer; }
-  unsigned int getSessionExpires() { return SessionExpires; }
-  unsigned int getMinimumTimer() { return MinimumTimer; }
-  unsigned int getMaximumTimer() { return MaximumTimer; }
+  void setEnableSessionTimer(bool enable)  { EnableSessionTimer = enable; }
+  void setSessionExpires(unsigned int se)  { SessionExpires = se; }
+  void setMinimumTimer(unsigned int minse) { MinimumTimer = minse; }
+  void setMaximumTimer(unsigned int maxse) { MaximumTimer = maxse; }
+
+  bool getEnableSessionTimer() const { return EnableSessionTimer; }
+  unsigned int getSessionExpires() const { return SessionExpires; }
+  unsigned int getMinimumTimer() const { return MinimumTimer; }
+  unsigned int getMaximumTimer() const { return MaximumTimer; }
 
   int readFromConfig(AmConfigReader& cfg);
 };
@@ -108,6 +115,7 @@ struct SIPRequestInfo;
 /** \brief SessionEventHandler for implementing session timer logic for a session */
 class SessionTimer: public AmSessionEventHandler
 {
+protected:
   AmSessionTimerConfig session_timer_conf;
   AmSession* s;
 
