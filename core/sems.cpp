@@ -486,7 +486,7 @@ int main(int argc, char* argv[])
         }
         DBG("child [%d] pid:%d\n", i, pid);
       }
-      DBG("all childs return OK. bye world!\n");
+      DBG("all children return OK. bye world!\n");
       close(fd[0]);
       return 0;
     }else {
