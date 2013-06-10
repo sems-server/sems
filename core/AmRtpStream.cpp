@@ -589,9 +589,13 @@ int AmRtpStream::init(const AmSdp& local,
   // first pass on local SDP - fill pl_map with intersection of codecs
   while(sdp_it != local_media.payloads.end()) {
 
-    int int_pt = payload_provider->getDynPayload(sdp_it->encoding_name,
-						 sdp_it->clock_rate,
-						 sdp_it->encoding_param);
+    int int_pt;
+
+    if (local_media.transport == TP_RTPAVP && sdp_it->payload_type < 20) int_pt = sdp_it->payload_type;
+    else int_pt = payload_provider->getDynPayload(sdp_it->encoding_name,
+        sdp_it->clock_rate,
+        sdp_it->encoding_param);
+
     amci_payload_t* a_pl = NULL;
     if(int_pt >= 0) 
       a_pl = payload_provider->payload(int_pt);
@@ -638,8 +642,8 @@ int AmRtpStream::init(const AmSdp& local,
     //       Some codecs define multiple payloads
     //       with different encoding parameters
     PayloadMappingTable::iterator pmt_it = pl_map.end();
-    if(sdp_it->encoding_name.empty()){ // must be a static payload
-
+    if(sdp_it->encoding_name.empty() || (local_media.transport == TP_RTPAVP && sdp_it->payload_type < 20)){
+      // must be a static payload
       pmt_it = pl_map.find(sdp_it->payload_type);
     }
     else {

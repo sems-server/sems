@@ -31,15 +31,22 @@ using namespace std;
 
 // helper functions
 
-static const SdpPayload *findPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload)
+static const SdpPayload *findPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload, int transport)
 {
   string pname = payload.encoding_name;
   transform(pname.begin(), pname.end(), pname.begin(), ::tolower);
 
   for (vector<SdpPayload>::const_iterator p = payloads.begin(); p != payloads.end(); ++p) {
-    string s = p->encoding_name;
-    transform(s.begin(), s.end(), s.begin(), ::tolower);
-    if (s != pname) continue;
+    // fix for clients using non-standard names for static payload type (SPA504g: G729a)
+    if (transport == TP_RTPAVP && payload.payload_type < 20) {
+      if (payload.payload_type != p->payload_type) continue;
+    }
+    else {
+      string s = p->encoding_name;
+      transform(s.begin(), s.end(), s.begin(), ::tolower);
+      if (s != pname) continue;
+    }
+
     if (p->clock_rate != payload.clock_rate) continue;
     if ((p->encoding_param >= 0) && (payload.encoding_param >= 0) && 
         (p->encoding_param != payload.encoding_param)) continue;
@@ -48,9 +55,9 @@ static const SdpPayload *findPayload(const std::vector<SdpPayload>& payloads, co
   return NULL;
 }
 
-static bool containsPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload)
+static bool containsPayload(const std::vector<SdpPayload>& payloads, const SdpPayload &payload, int transport)
 {
-  return findPayload(payloads, payload) != NULL;
+  return findPayload(payloads, payload, transport) != NULL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -96,13 +103,13 @@ void SBCRelayController::computeRelayMask(const SdpMedia &m, bool &enable, Paylo
     TRACE("m2: marking payload %d for relay\n", p->payload_type);
     m2.set(p->payload_type);
 
-    if (!containsPayload(norelay_payloads, *p)) {
+    if (!containsPayload(norelay_payloads, *p, m.transport)) {
       // this payload can be relayed
 
       TRACE("m1: marking payload %d for relay\n", p->payload_type);
       m1.set(p->payload_type);
 
-      if (!use_m1 && containsPayload(transcoder_settings->audio_codecs, *p)) {
+      if (!use_m1 && containsPayload(transcoder_settings->audio_codecs, *p, m.transport)) {
         // the remote SDP contains transcodable codec which can be relayed (i.e.
         // the one with higher "priority" so we want to disable relaying of the
         // payloads which should not be ralyed if possible)
@@ -1376,7 +1383,7 @@ void SBCCallLeg::appendTranscoderCodecs(AmSdp &sdp)
       PayloadMask used_payloads;
       for (p = m->payloads.begin(); p != m->payloads.end(); ++p) {
         if (p->payload_type >= id) id = p->payload_type + 1;
-        if (containsPayload(transcoder_codecs, *p)) transcodable = true;
+        if (containsPayload(transcoder_codecs, *p, m->transport)) transcodable = true;
         used_payloads.set(p->payload_type);
       }
 
@@ -1386,7 +1393,7 @@ void SBCCallLeg::appendTranscoderCodecs(AmSdp &sdp)
         unsigned idx = 0;
         for (p = transcoder_codecs.begin(); p != transcoder_codecs.end(); ++p, ++idx) {
           // add all payloads which are not already there
-          if (!containsPayload(m->payloads, *p)) {
+          if (!containsPayload(m->payloads, *p, m->transport)) {
             m->payloads.push_back(*p);
             int &pid = m->payloads.back().payload_type;
             if (pid < 0) {
@@ -1431,7 +1438,7 @@ void SBCCallLeg::savePayloadIDs(AmSdp &sdp)
         p != transcoder_codecs.end(); ++p, ++idx)
     {
       if (p->payload_type < 0) {
-        const SdpPayload *pp = findPayload(m->payloads, *p);
+        const SdpPayload *pp = findPayload(m->payloads, *p, m->transport);
         if (pp && (pp->payload_type >= 0))
           transcoder_payload_mapping.map(stream_idx, idx, pp->payload_type);
       }
