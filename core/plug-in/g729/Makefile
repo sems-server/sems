@@ -11,7 +11,7 @@ IPP_SAMPLES_ARCH?=linux32_gcc4
 IPP_LIB_PATH=$(IPPROOT)sharedlib/
 
 IPP_INC = -I$(IPP_SAMPLES_PATH)speech-codecs/core/usc/include 
-IPP_LIB = -L$(IPP_SAMPLES_PATH)speech-codecs/_bin/$(IPP_SAMPLES_ARCH)/lib -lspeech -lcore \
+IPP_LIB ?= -L$(IPP_SAMPLES_PATH)speech-codecs/_bin/$(IPP_SAMPLES_ARCH)/lib -lspeech -lcore \
 	  -L$(IPP_LIB_PATH) -lippsc -lipps
 
 module_ldflags = $(IPP_LIB)
