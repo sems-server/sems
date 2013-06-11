@@ -31,6 +31,7 @@
 #include "AmBasicSipDialog.h"
 #include "AmEvent.h"
 #include "AmEventQueue.h"
+#include "AmAppTimer.h"
 
 #include <map>
 #include <list>
@@ -38,9 +39,101 @@
 using std::map;
 using std::list;
 
-class SingleSubscription;
 class AmBasicSipDialog;
 class AmEventQueue;
+class AmSipSubscription;
+
+/**
+ * \brief Single SIP Subscription
+ *
+ * This class contain only one SIP suscription,
+ * identified by its event package name, id and role.
+ */
+class SingleSubscription 
+{
+public:
+  enum Role {
+    Subscriber=0,
+    Notifier
+  };
+
+private:
+  class SubscriptionTimer
+    : public DirectAppTimer
+  {
+    SingleSubscription* sub;
+    int timer_id;
+    
+  public:
+    SubscriptionTimer(SingleSubscription* sub, int timer_id)
+      : sub(sub), timer_id(timer_id)
+    {}
+    
+    void fire(){
+      sub->onTimer(timer_id);
+    }
+  };
+
+  enum SubscriptionTimerId {
+    RFC6665_TIMER_N=0,
+    SUBSCRIPTION_EXPIRE
+  };
+
+  // state
+  unsigned int sub_state;
+  AmMutex  sub_state_mut;
+  int  pending_subscribe;
+  unsigned int   expires;
+
+  // timers
+  SubscriptionTimer timer_n;
+  SubscriptionTimer timer_expires;
+
+  AmSipSubscription* subs;
+
+  void onTimer(int timer_id);
+
+  AmBasicSipDialog* dlg();
+
+  void requestFSM(const AmSipRequest& req);
+  
+  friend class SubscriptionTimer;
+
+public:  
+  enum SubscriptionState {
+    SubState_init=0,
+    SubState_notify_wait,
+    SubState_pending,
+    SubState_active,
+    SubState_terminated
+  };
+  
+  // identifiers
+  string event;
+  string    id;
+  Role    role;
+
+  SingleSubscription(AmSipSubscription* subs, Role role,
+		     const string& event, const string& id);
+
+  ~SingleSubscription();
+
+  bool onRequestIn(const AmSipRequest& req);
+  void onRequestSent(const AmSipRequest& req);
+  void replyFSM(const AmSipRequest& req, const AmSipReply& reply);
+
+  unsigned int getState() { return sub_state; }
+  void setState(unsigned int st);
+  void lockState() { sub_state_mut.lock(); }
+  void unlockState() { sub_state_mut.unlock(); }
+
+  unsigned int getExpires() { return expires; }
+
+  void terminate();
+  bool terminated();
+
+  string to_str();
+};
 
 /**
  * \brief SIP Subscription collection
@@ -59,10 +152,16 @@ class AmSipSubscription
   CSeqMap  uas_cseq_map;
   CSeqMap  uac_cseq_map;
 
+  SingleSubscription* makeSubscription(const AmSipRequest& req, bool uac);
   Subscriptions::iterator createSubscription(const AmSipRequest& req, bool uac);
   Subscriptions::iterator matchSubscription(const AmSipRequest& req, bool uac);
 
   friend class SingleSubscription;
+
+protected:
+  virtual SingleSubscription* newSingleSubscription(SingleSubscription::Role role,
+						    const string& event,
+						    const string& id);
 
 public:
   AmSipSubscription(AmBasicSipDialog* dlg, AmEventQueue* ev_q);

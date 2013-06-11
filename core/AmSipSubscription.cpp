@@ -62,111 +62,19 @@ const char* __sub_state_str[] = {
   "terminated"
 };
 
-
-/**
- * \brief Single SIP Subscription
- *
- * This class contain only one SIP suscription,
- * identified by its event package name, id and role.
- */
-class SingleSubscription 
-{
-public:
-  enum Role {
-    Subscriber=0,
-    Notifier
-  };
-
-private:
-  class SubscriptionTimer
-    : public DirectAppTimer
-  {
-    SingleSubscription* sub;
-    int timer_id;
-    
-  public:
-    SubscriptionTimer(SingleSubscription* sub, int timer_id)
-      : sub(sub), timer_id(timer_id)
-    {}
-    
-    void fire(){
-      sub->onTimer(timer_id);
-    }
-  };
-
-  enum SubscriptionTimerId {
-    RFC6665_TIMER_N=0,
-    SUBSCRIPTION_EXPIRE
-  };
-
-  // state
-  unsigned int sub_state;
-  AmMutex  sub_state_mut;
-  int  pending_subscribe;
-  unsigned int   expires;
-
-  // timers
-  SubscriptionTimer timer_n;
-  SubscriptionTimer timer_expires;
-
-  AmSipSubscription* subs;
-
-  SingleSubscription(AmSipSubscription* subs, Role role,
-		     const string& event, const string& id)
+SingleSubscription::SingleSubscription(AmSipSubscription* subs, Role role,
+				       const string& event, const string& id)
     : subs(subs), role(role), event(event), id(id),
       sub_state(SubState_init), pending_subscribe(0), expires(0),
       timer_n(this,RFC6665_TIMER_N),timer_expires(this,SUBSCRIPTION_EXPIRE)
-  { 
-    assert(subs); 
-  }
+{
+  assert(subs); 
+}
 
-  void onTimer(int timer_id);
-
-  AmBasicSipDialog* dlg() 
-  {
-    return subs->dlg;
-  }
-
-  void requestFSM(const AmSipRequest& req);
-  
-  friend class SubscriptionTimer;
-
-public:  
-  enum SubscriptionState {
-    SubState_init=0,
-    SubState_notify_wait,
-    SubState_pending,
-    SubState_active,
-    SubState_terminated
-  };
-  
-  // identifiers
-  string event;
-  string    id;
-  Role    role;
-
-  static SingleSubscription* makeSubscription(AmSipSubscription* subs,
-					      const AmSipRequest& req,
-					      bool uac);
-
-  ~SingleSubscription();
-
-  bool onRequestIn(const AmSipRequest& req);
-  void onRequestSent(const AmSipRequest& req);
-  void replyFSM(const AmSipRequest& req, const AmSipReply& reply);
-
-  unsigned int getState() { return sub_state; }
-  void setState(unsigned int st);
-  void lockState() { sub_state_mut.lock(); }
-  void unlockState() { sub_state_mut.unlock(); }
-
-  unsigned int getExpires() { return expires; }
-
-  void terminate();
-  bool terminated();
-
-  string to_str();
-};
+AmBasicSipDialog* SingleSubscription::dlg()
+{
+  return subs->dlg;
+}
 
 void SingleSubscription::onTimer(int timer_id)
 {
@@ -198,11 +106,21 @@ bool SingleSubscription::terminated()
   return getState() == SubState_terminated;
 }
 
-SingleSubscription* SingleSubscription::makeSubscription(AmSipSubscription* subs,
-							 const AmSipRequest& req,
-							 bool uac)
+SingleSubscription* 
+AmSipSubscription::newSingleSubscription(SingleSubscription::Role role,
+					 const string& event, const string& id)
 {
-  Role role = uac ? Subscriber : Notifier;
+  return new SingleSubscription(this,role,event,id);
+}
+
+SingleSubscription* AmSipSubscription::makeSubscription(const AmSipRequest& req,
+							bool uac)
+{
+  SingleSubscription::Role role = 
+    uac ? 
+    SingleSubscription::Subscriber : 
+    SingleSubscription::Notifier;
+
   string event;
   string id;
 
@@ -224,7 +142,7 @@ SingleSubscription* SingleSubscription::makeSubscription(AmSipSubscription* subs
     return NULL;
   }
 
-  return new SingleSubscription(subs,role,event,id);
+  return newSingleSubscription(role,event,id);
 }
 
 SingleSubscription::~SingleSubscription()
@@ -478,7 +396,7 @@ void AmSipSubscription::terminate()
 AmSipSubscription::Subscriptions::iterator
 AmSipSubscription::createSubscription(const AmSipRequest& req, bool uac)
 {
-  SingleSubscription* sub = SingleSubscription::makeSubscription(this,req,uac);
+  SingleSubscription* sub = makeSubscription(req,uac);
   if(!sub){
     return subs.end();
   }
