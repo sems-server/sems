@@ -132,6 +132,16 @@ public:
 class ContactBucket
   : public ht_map_bucket<string,string>
 {
+  typedef ht_map_bucket<string,string> Bucket;
+
+  bool insert(const string& k, string* v) {
+    return Bucket::insert(k,v);
+  }
+
+  bool remove(const string& k) {
+    return Bucket::remove(k);
+  }
+
 public:
   ContactBucket(unsigned long int id)
   : ht_map_bucket<string,string>(id)
