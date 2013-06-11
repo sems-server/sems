@@ -111,6 +111,8 @@ protected:
   string next_hop;
   bool next_hop_1st_req;
 
+  int outbound_interface;
+
   TransMap uas_trans;
   TransMap uac_trans;
 
@@ -183,7 +185,6 @@ public:
   string outbound_proxy;
   bool   force_outbound_proxy;
 
-  int  outbound_interface;
   bool nat_handling;
 
   unsigned int cseq; // Local CSeq for next request
@@ -290,7 +291,7 @@ public:
   /**
    * Set outbound_interface to specific value (-1 = default).
    */
-  void setOutboundInterface(int interface_id);
+  virtual void setOutboundInterface(int interface_id);
 
   /** 
    * Compute, set and return the outbound interface

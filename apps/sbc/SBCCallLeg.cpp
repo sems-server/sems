@@ -362,7 +362,7 @@ void SBCCallLeg::applyBProfile()
 
   // was read from caller but reading directly from profile now
   if (call_profile.outbound_interface_value >= 0)
-    dlg->outbound_interface = call_profile.outbound_interface_value;
+    dlg->setOutboundInterface(call_profile.outbound_interface_value);
 
   // was read from caller but reading directly from profile now
   if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {

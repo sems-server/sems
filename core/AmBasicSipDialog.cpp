@@ -345,8 +345,7 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
     setLocalParty(  req.to       );
     setRouteSet(    req.route    );
     set1stBranch(   req.via_branch );
-
-    outbound_interface = req.local_if;
+    setOutboundInterface( req.local_if );
   }
 
   if(onRxReqStatus(req) && hdl)
