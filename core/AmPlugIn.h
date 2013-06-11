@@ -93,7 +93,7 @@ class AmPlugIn : public AmPayloadProvider
 
   std::map<int,amci_codec_t*>       codecs;
   std::map<int,amci_payload_t*>     payloads;
-  std::map<int,int>                 payload_order;
+  std::multimap<int,int>            payload_order;
   std::map<string,amci_inoutfmt_t*> file_formats;
 
   std::map<string,AmSessionFactory*>             name2app;
@@ -165,10 +165,8 @@ class AmPlugIn : public AmPayloadProvider
   void getPayloads(vector<SdpPayload>& pl_vec) const;
 
   /** @return the suported payloads. */
-  const std::map<int,amci_payload_t*>& getPayloads() { return payloads; }
 
   /** @return the order of payloads. */
-  const std::map<int,int>& getPayloadOrder() { return payload_order; }
 
   /** 
    * File format lookup according to the 
