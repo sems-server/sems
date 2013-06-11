@@ -478,7 +478,7 @@ int main(int argc, char* argv[])
       /* parent process => wait for result from child*/
       for(int i=0;i<2;i++){
         DBG("waiting for child[%d] response\n", i);
-        read(fd[0], &pid, sizeof(int));
+        (void)read(fd[0], &pid, sizeof(int));
         if(pid<0){
           ERROR("Child [%d] return an error: %d\n", i, pid);
           close(fd[0]);
@@ -494,7 +494,7 @@ int main(int argc, char* argv[])
       close(fd[0]);
       main_pid = getpid();
       DBG("hi world! I'm child [%d]\n", main_pid);
-      write(fd[1], &main_pid, sizeof(int));
+      (void)write(fd[1], &main_pid, sizeof(int));
     }
     /* become session leader to drop the ctrl. terminal */
     if (setsid()<0){
@@ -588,7 +588,7 @@ int main(int argc, char* argv[])
   #ifndef DISABLE_DAEMON_MODE
   if(fd[1]) {
     DBG("hi world! I'm main child [%d]\n", main_pid);
-    write(fd[1], &main_pid, sizeof(int));
+    (void)write(fd[1], &main_pid, sizeof(int));
     close(fd[1]); fd[1] = 0;
   }
   #endif
@@ -625,7 +625,7 @@ int main(int argc, char* argv[])
   if(fd[1]){
      main_pid = -1;
      DBG("send -1 to parent\n");
-     write(fd[1], &main_pid, sizeof(int));
+     (void)write(fd[1], &main_pid, sizeof(int));
      close(fd[1]);
   }
 #endif
