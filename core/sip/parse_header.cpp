@@ -358,6 +358,8 @@ int parse_headers(list<sip_header*>& hdrs, char** c, char* end)
 		    DBG("Malformed header: <%.*s>\n",(int)(*c-begin),begin);
 		    begin = *c;
 		    saved_st = H_NAME;
+		    //re-parse cur char w. new state
+		    (*c)--;
 		}
 		break;
 
