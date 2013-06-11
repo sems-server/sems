@@ -30,6 +30,7 @@
 #include "AmSipHeaders.h"
 #include "AmAppTimer.h"
 #include "AmUtils.h"
+#include "jsonArg.h"
 
 #include "AmSession.h" // getNewId()
 #include "AmSessionContainer.h"
@@ -163,6 +164,8 @@ public:
 
   void terminate();
   bool terminated();
+
+  string to_str();
 };
 
 void SingleSubscription::onTimer(int timer_id)
@@ -435,6 +438,15 @@ void SingleSubscription::setState(unsigned int st)
   }
 }
 
+string SingleSubscription::to_str()
+{
+  return "[" 
+    + str2json(event) + ","
+    + str2json(id) + ","
+    + (role == Subscriber ? str2json("SUB") : str2json("NOT")) + ","
+    + str2json(__sub_state_str[sub_state]) + "]";
+}
+
 /**
  * AmSipSubscription
  */
@@ -472,6 +484,7 @@ AmSipSubscription::createSubscription(const AmSipRequest& req, bool uac)
   }
 
   dlg->incUsages();
+  DBG("new subscription: %s",sub->to_str().c_str());
   return subs.insert(subs.end(),sub);
 }
 
