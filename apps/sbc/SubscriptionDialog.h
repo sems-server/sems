@@ -39,10 +39,12 @@
 class SubscriptionDialog
   : public SimpleRelayDialog
 {
-  AmSipSubscription   subs;
+  AmSipSubscription* subs;
 
 public:
-  SubscriptionDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules, atomic_ref_cnt* parent_obj=NULL);
+  SubscriptionDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules,
+		     AmSipSubscription* subscription=NULL,
+		     atomic_ref_cnt* parent_obj=NULL);
   ~SubscriptionDialog();
 
   // SimpleRelayDialog interface

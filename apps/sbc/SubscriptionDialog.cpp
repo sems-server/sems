@@ -36,15 +36,21 @@
  * SubscriptionDialog
  */
 
-SubscriptionDialog::SubscriptionDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules, atomic_ref_cnt* parent_obj)
+SubscriptionDialog::SubscriptionDialog(SBCCallProfile &profile,
+				       vector<AmDynInvoke*> &cc_modules,
+				       AmSipSubscription* subscription,
+				       atomic_ref_cnt* parent_obj)
   : SimpleRelayDialog(profile, cc_modules, parent_obj),
-    subs(this,this)
+    subs(subscription)
 {
+  if(!subs)
+    subs = new AmSipSubscription(this,this);
 }
 
 SubscriptionDialog::~SubscriptionDialog()
 {
   DBG("~SubscriptionDialog: local_tag = %s\n",local_tag.c_str());
+  if(subs) delete subs;
 }
 
 bool SubscriptionDialog::terminated()
@@ -54,7 +60,7 @@ bool SubscriptionDialog::terminated()
 
 void SubscriptionDialog::onSipRequest(const AmSipRequest& req)
 {
-  if(!subs.onRequestIn(req))
+  if(!subs->onRequestIn(req))
     return;
 
   SimpleRelayDialog::onSipRequest(req);
@@ -64,7 +70,7 @@ void SubscriptionDialog::onSipReply(const AmSipRequest& req,
 				    const AmSipReply& reply, 
 				    AmBasicSipDialog::Status old_dlg_status)
 {
-  if(!subs.onReplyIn(req,reply))
+  if(!subs->onReplyIn(req,reply))
     return;
 
   SimpleRelayDialog::onSipReply(req,reply,old_dlg_status);
@@ -72,27 +78,27 @@ void SubscriptionDialog::onSipReply(const AmSipRequest& req,
 
 void SubscriptionDialog::onRequestSent(const AmSipRequest& req)
 {
-  subs.onRequestSent(req);
+  subs->onRequestSent(req);
   SimpleRelayDialog::onRequestSent(req);
 }
 
 void SubscriptionDialog::onReplySent(const AmSipRequest& req,
 				     const AmSipReply& reply)
 {
-  subs.onReplySent(req,reply);
+  subs->onReplySent(req,reply);
   SimpleRelayDialog::onReplySent(req,reply);
 }
 
 void SubscriptionDialog::onRemoteDisappeared(const AmSipReply& reply)
 {
   DBG("### reply.code = %i ###\n",reply.code);
-  subs.terminate();
+  subs->terminate();
   SimpleRelayDialog::onRemoteDisappeared(reply);
 }
 
 void SubscriptionDialog::onLocalTerminate(const AmSipReply& reply)
 {
   DBG("### reply.code = %i ###\n",reply.code);
-  subs.terminate();
+  subs->terminate();
   SimpleRelayDialog::onLocalTerminate(reply);
 }
