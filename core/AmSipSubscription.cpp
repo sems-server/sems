@@ -495,7 +495,7 @@ AmSipSubscription::createSubscription(const AmSipRequest& req, bool uac)
 AmSipSubscription::Subscriptions::iterator
 AmSipSubscription::matchSubscription(const AmSipRequest& req, bool uac)
 {
-  if(req.to_tag.empty() 
+  if((!uac && req.to_tag.empty()) || (uac && dlg->getRemoteTag().empty())
      || (req.method == SIP_METH_REFER) || subs.empty()) {
 
     DBG("no to-tag, REFER or subs empty: create new subscription\n");
