@@ -241,10 +241,10 @@ void _RegisterCache::run()
 
   gbc_bucket_id = 0;
   while(running.get()) {
-    nanosleep(&tick,&rem);
     gbc(gbc_bucket_id);
     gbc_bucket_id = (gbc_bucket_id+1);
     gbc_bucket_id &= (REG_CACHE_TABLE_ENTRIES-1);
+    nanosleep(&tick,&rem);
   }  
 }
 
