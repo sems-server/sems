@@ -50,6 +50,17 @@ struct CallLegCreator {
   virtual SBCCallLeg* create(SBCCallLeg* caller);
 };
 
+class SBCSimpleRelay;
+
+struct SimpleRelayCreator {
+  virtual SBCSimpleRelay* createRegisterRelay(SBCCallProfile& call_profile,
+					      vector<AmDynInvoke*> &cc_modules);
+  virtual SBCSimpleRelay* createSubscriptionRelay(SBCCallProfile& call_profile,
+					       vector<AmDynInvoke*> &cc_modules);
+  virtual SBCSimpleRelay* createGenericRelay(SBCCallProfile& call_profile,
+					     vector<AmDynInvoke*> &cc_modules);
+};
+
 class SBCFactory: public AmSessionFactory,
     public AmDynInvoke,
     public AmDynInvokeFactory
@@ -61,6 +72,7 @@ class SBCFactory: public AmSessionFactory,
   AmMutex profiles_mut;
 
   auto_ptr<CallLegCreator> callLegCreator;
+  auto_ptr<SimpleRelayCreator> simpleRelayCreator;
 
   void listProfiles(const AmArg& args, AmArg& ret);
   void reloadProfiles(const AmArg& args, AmArg& ret);
@@ -91,6 +103,11 @@ class SBCFactory: public AmSessionFactory,
 
   void setCallLegCreator(CallLegCreator* clc) { callLegCreator.reset(clc); }
   CallLegCreator* getCallLegCreator() { return callLegCreator.get(); }
+
+  void setSimpleRelayCreator(SimpleRelayCreator* src) { 
+    simpleRelayCreator.reset(src); 
+  }
+  SimpleRelayCreator* getSimpleRelayCreator() { return simpleRelayCreator.get(); }
 
   AmSession* onInvite(const AmSipRequest& req, const string& app_name,
 		      const map<string,string>& app_params);

@@ -122,10 +122,35 @@ SBCCallLeg* CallLegCreator::create(SBCCallLeg* caller)
   return new SBCCallLeg(caller);
 }
 
+SBCSimpleRelay* 
+SimpleRelayCreator::createRegisterRelay(SBCCallProfile& call_profile,
+					vector<AmDynInvoke*> &cc_modules)
+{
+  return new SBCSimpleRelay(new RegisterDialog(call_profile, cc_modules),
+			    new RegisterDialog(call_profile, cc_modules));
+}
+
+SBCSimpleRelay*
+SimpleRelayCreator::createSubscriptionRelay(SBCCallProfile& call_profile,
+					    vector<AmDynInvoke*> &cc_modules)
+{
+  return new SBCSimpleRelay(new SubscriptionDialog(call_profile, cc_modules),
+			    new SubscriptionDialog(call_profile, cc_modules));
+}
+
+SBCSimpleRelay*
+SimpleRelayCreator::createGenericRelay(SBCCallProfile& call_profile,
+				       vector<AmDynInvoke*> &cc_modules)
+{
+  return new SBCSimpleRelay(new SimpleRelayDialog(call_profile, cc_modules),
+			    new SimpleRelayDialog(call_profile, cc_modules));
+}
+
 SBCFactory::SBCFactory(const string& _app_name)
   : AmSessionFactory(_app_name), 
     AmDynInvokeFactory(_app_name),
-    callLegCreator(new CallLegCreator)
+    callLegCreator(new CallLegCreator()),
+    simpleRelayCreator(new SimpleRelayCreator())
 {
 }
 
@@ -373,18 +398,15 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
 
   SBCSimpleRelay* relay=NULL;
   if(req.method == SIP_METH_REGISTER) {
-    relay = new SBCSimpleRelay(new RegisterDialog(call_profile, cc_modules),
-			       new RegisterDialog(call_profile, cc_modules));
+    relay = simpleRelayCreator->createRegisterRelay(call_profile, cc_modules);
   }
   else if((req.method == SIP_METH_SUBSCRIBE) ||
 	  (req.method == SIP_METH_REFER)){
 
-    relay = new SBCSimpleRelay(new SubscriptionDialog(call_profile, cc_modules),
-			       new SubscriptionDialog(call_profile, cc_modules));
+    relay = simpleRelayCreator->createSubscriptionRelay(call_profile, cc_modules);
   }
   else {
-    relay = new SBCSimpleRelay(new SimpleRelayDialog(call_profile, cc_modules),
-			       new SimpleRelayDialog(call_profile, cc_modules));
+    relay = simpleRelayCreator->createGenericRelay(call_profile, cc_modules);
   }
   if (logger) inc_ref(logger);
   if (call_profile.log_sip) relay->setMsgLogger(logger);
