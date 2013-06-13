@@ -153,6 +153,7 @@ public:
  */
 class AmSipSubscription
 {
+protected:
   typedef list<SingleSubscription*> Subscriptions;
   typedef map<unsigned int,Subscriptions::iterator> CSeqMap;
 
@@ -169,7 +170,6 @@ class AmSipSubscription
 
   friend class SingleSubscription;
 
-protected:
   virtual SingleSubscription* newSingleSubscription(SingleSubscription::Role role,
 						    const string& event,
 						    const string& id);
