@@ -32,6 +32,7 @@
 #include "AmSipDialog.h"
 #include "sip/hash.h"
 #include "AmB2BMedia.h"
+#include "AmSipSubscription.h"
 
 #define MAX_RELAY_STREAMS 3 // voice, video, rtt
 
@@ -160,6 +161,9 @@ private:
   unsigned int est_invite_cseq;
   unsigned int est_invite_other_cseq;
 
+  /** SUBSCRIBE/NOTIFY handling */
+  AmSipSubscription* subs;
+
   /** body of established session */
   AmMimeBody established_body;
   /** hash of body (from o-line) */
@@ -198,6 +202,9 @@ private:
   void onSipReply(const AmSipRequest& req, const AmSipReply& reply, 
 		  AmBasicSipDialog::Status old_dlg_status);
 
+  void onRequestSent(const AmSipRequest& req);
+  void onReplySent(const AmSipRequest& req, const AmSipReply& reply);
+
   void onInvite2xx(const AmSipReply& reply);
 
   int onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp);
@@ -231,7 +238,8 @@ private:
    */
   virtual bool onOtherReply(const AmSipReply& reply);
 
-  AmB2BSession(const string& other_local_tag = "", AmSipDialog* dlg=NULL);
+  AmB2BSession(const string& other_local_tag = "", AmSipDialog* p_dlg=NULL,
+	       AmSipSubscription* p_subs=NULL);
 
   virtual ~AmB2BSession();
 

@@ -64,10 +64,12 @@ static void errCode2RelayedReply(AmSipReply &reply, int err_code, unsigned defau
 // AmB2BSession methods
 //
 
-AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* dlg)
-  : AmSession(dlg),
+AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* p_dlg,
+			   AmSipSubscription* p_subs)
+  : AmSession(p_dlg),
     other_id(other_local_tag),
     sip_relay_only(true),
+    subs(p_subs),
     rtp_relay_mode(RTP_Direct),
     rtp_relay_force_symmetric_rtp(false),
     enable_dtmf_transcoding(false),
@@ -75,6 +77,7 @@ AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* dlg)
     est_invite_cseq(0),est_invite_other_cseq(0),
     media_session(NULL)
 {
+  if(!subs) subs = new AmSipSubscription(dlg,this);
 }
 
 AmB2BSession::~AmB2BSession()
@@ -88,6 +91,9 @@ AmB2BSession::~AmB2BSession()
   for(;it != recvd_req.end(); ++it){
     DBG("  <%i,%s>\n",it->first,it->second.method.c_str());
   }
+
+  if(subs)
+    delete subs;
 }
 
 void AmB2BSession::set_sip_relay_only(bool r) { 
@@ -303,6 +309,13 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
   bool fwd = sip_relay_only &&
     (req.method != SIP_METH_CANCEL);
 
+  if( ((req.method == SIP_METH_SUBSCRIBE) ||
+       (req.method == SIP_METH_NOTIFY) ||
+       (req.method == SIP_METH_REFER))
+      && !subs->onRequestIn(req) ) {
+    return;
+  }
+
   AmSdp sdp;
   if ((rtp_relay_mode == RTP_Relay || rtp_relay_mode == RTP_Transcoding) && media_session) {
     // We have to update media session before filtering because we may want to
@@ -349,6 +362,17 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 
   DBG("relaying B2B SIP request %s %s\n", r_ev->req.method.c_str(), r_ev->req.r_uri.c_str());
   relayEvent(r_ev);
+}
+
+void AmB2BSession::onRequestSent(const AmSipRequest& req)
+{
+  if( ((req.method == SIP_METH_SUBSCRIBE) ||
+       (req.method == SIP_METH_NOTIFY) ||
+       (req.method == SIP_METH_REFER)) ) {
+    subs->onRequestSent(req);
+  }
+
+  AmSession::onRequestSent(req);
 }
 
 bool AmB2BSession::updateRemoteSdp(AmSdp &sdp)
@@ -441,6 +465,14 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
     return; // drop packet
   }
 
+  if( ((reply.cseq_method == SIP_METH_SUBSCRIBE) ||
+       (reply.cseq_method == SIP_METH_NOTIFY) ||
+       (reply.cseq_method == SIP_METH_REFER))
+      && !subs->onReplyIn(req,reply) ) {
+    DBG("subs.onReplyIn returned false\n");
+    return;
+  }
+
   AmSdp sdp;
 
   if ((rtp_relay_mode == RTP_Relay || rtp_relay_mode == RTP_Transcoding) &&
@@ -489,6 +521,17 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
     DBG("relaying B2B SIP reply %u %s\n", n_reply.code, n_reply.reason.c_str());
     relayEvent(new B2BSipReplyEvent(n_reply, false, reply.cseq_method));
   }
+}
+
+void AmB2BSession::onReplySent(const AmSipRequest& req, const AmSipReply& reply)
+{
+  if( ((reply.cseq_method == SIP_METH_SUBSCRIBE) ||
+       (reply.cseq_method == SIP_METH_NOTIFY) ||
+       (reply.cseq_method == SIP_METH_REFER)) ) {
+    subs->onReplySent(req,reply);
+  }
+
+  AmSession::onReplySent(req,reply);
 }
 
 void AmB2BSession::onInvite2xx(const AmSipReply& reply)
