@@ -1232,9 +1232,17 @@ void SBCCallLeg::onBLegRefused(const AmSipReply& reply)
   }
 }
 
-void SBCCallLeg::onCallFailed(const AmSipReply& reply)
+void SBCCallLeg::onCallFailed(CallFailureReason reason, const AmSipReply *reply)
 {
-  logCallStart(reply);
+  switch (reason) {
+    case CallRefused:
+      if (reply) logCallStart(*reply);
+      break;
+
+    case CallCanceled:
+      logCanceledCall();
+      break;
+  }
 }
 
 bool SBCCallLeg::onBeforeRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr)
@@ -1265,6 +1273,20 @@ void SBCCallLeg::logCallStart(const AmSipReply& reply)
   }
   else {
     ERROR("could not log call-start/call-attempt (ci='%s';lt='%s')",
+	  getCallID().c_str(),getLocalTag().c_str());
+  }
+}
+
+void SBCCallLeg::logCanceledCall()
+{
+  std::map<int,AmSipRequest>::iterator t_req = recvd_req.find(est_invite_cseq);
+  if (t_req != recvd_req.end()) {
+    SBCEventLog::instance()->logCallStart(t_req->second,getLocalTag(),
+					  "","",
+					  0,"canceled");
+  }
+  else {
+    ERROR("could not log call-attempt (canceled, ci='%s';lt='%s')",
 	  getCallID().c_str(),getLocalTag().c_str());
   }
 }

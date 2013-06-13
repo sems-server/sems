@@ -185,6 +185,12 @@ class CallLeg: public AmB2BSession
       Disconnecting //< we were connected and now going to be disconnected (waiting for reINVITE reply for example)
     };
 
+    /** reason reported in onCallFailed method */
+    enum CallFailureReason {
+      CallRefused, //< non-ok reply received and no more B-legs exit
+      CallCanceled //< call canceled
+    };
+
   private:
 
     CallStatus call_status; //< status of the call (replaces callee's status)
@@ -265,9 +271,9 @@ class CallLeg: public AmB2BSession
      * Redefine to implement serial fork or handle redirect. */
     virtual void onBLegRefused(const AmSipReply& reply) { }
 
-    /** handler called when all B-legs failed. 
+    /** handler called when all B-legs failed or the call has been canceled. 
 	The reply passed is the last final reply. */
-    virtual void onCallFailed(const AmSipReply& reply) { }
+    virtual void onCallFailed(CallFailureReason reason, const AmSipReply *reply) { }
 
     /** add newly created callee with prepared ConnectLegEvent */
     void addNewCallee(CallLeg *callee, ConnectLegEvent *e) { addNewCallee(callee, e, rtp_relay_mode); }

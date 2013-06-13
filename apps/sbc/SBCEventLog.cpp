@@ -86,7 +86,7 @@ void _SBCEventLog::logCallStart(const AmSipRequest& req,
   DBG("to-ua: '%s'",to_remote_ua.c_str());
 
   start_event["call-id"]  = req.callid;
-  start_event["res-code"] = code;
+  if (code) start_event["res-code"] = code;
   start_event["reason"]   = reason;
 
   logEvent(local_tag,

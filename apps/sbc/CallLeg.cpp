@@ -365,7 +365,7 @@ void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
   // relay current response
   if (!other_legs.empty()) return;
 
-  onCallFailed(reply);
+  onCallFailed(CallRefused, &reply);
   if (forward) relaySipReply(reply);
 
   // no other B legs, terminate
@@ -894,6 +894,7 @@ void CallLeg::onCancel(const AmSipRequest& req)
   if ((call_status == Ringing) || (call_status == NoReply)) {
     if (a_leg) {
       // terminate whole B2B call if the caller receives CANCEL
+      onCallFailed(CallCanceled, NULL);
       stopCall();
     }
     // else { } ... ignore for B leg

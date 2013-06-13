@@ -63,9 +63,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   void fixupCCInterface(const string& val, CCInterface& cc_if);
 
-  /** handler called when the second leg is connected */
-  virtual void onCallConnected(const AmSipReply& reply);
-
   /** handler called when call is stopped (see AmSession) */
   virtual void onStop();
 
@@ -98,7 +95,12 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   virtual void onCallStatusChange();
   virtual void onBLegRefused(const AmSipReply& reply);
-  virtual void onCallFailed(const AmSipReply& reply);
+
+  /** handler called when the call is refused with a non-ok reply or canceled */
+  virtual void onCallFailed(CallFailureReason reason, const AmSipReply *reply);
+
+  /** handler called when the second leg is connected */
+  virtual void onCallConnected(const AmSipReply& reply);
 
   /** Call-backs used by RTP stream(s)
    *  Note: these methods will be called from the RTP receiver thread.
@@ -107,6 +109,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   virtual void onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr);
 
   void logCallStart(const AmSipReply& reply);
+  void logCanceledCall();
+
 
  public:
 
