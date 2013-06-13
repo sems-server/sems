@@ -95,7 +95,7 @@ private:
   // state
   unsigned int sub_state;
   int  pending_subscribe;
-  unsigned int   expires;
+  unsigned long  expires;
 
   // timers
   SubscriptionTimer timer_n;
@@ -137,7 +137,7 @@ public:
   unsigned int getState() { return sub_state; }
   void setState(unsigned int st);
 
-  unsigned int getExpires() { return expires; }
+  unsigned long getExpires() { return expires; }
 
   void terminate();
   bool terminated();
