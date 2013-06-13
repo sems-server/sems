@@ -53,6 +53,19 @@ SubscriptionDialog::~SubscriptionDialog()
   if(subs) delete subs;
 }
 
+void SubscriptionDialog::process(AmEvent* ev)
+{
+  if(ev->event_id == E_SIP_SUBSCRIPTION) {
+    SingleSubTimeoutEvent* to_ev = dynamic_cast<SingleSubTimeoutEvent*>(ev);
+    if(to_ev) {
+      subs->onTimeout(to_ev->timer_id,to_ev->sub);
+      return;
+    }
+  }
+
+  SimpleRelayDialog::process(ev);
+}
+
 bool SubscriptionDialog::terminated()
 {
   return !(getUsages() > 0);

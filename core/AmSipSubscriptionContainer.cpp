@@ -159,6 +159,33 @@ void _AmSipSubscriptionContainer::onEvent(AmEvent* event)
     subscriptions_mut.unlock();
     return;
   }
+
+  SingleSubTimeoutEvent* to_ev = dynamic_cast<SingleSubTimeoutEvent*>(event);
+  if(to_ev) {
+    DBG("got timeout event: %s/%i/%p\n",
+	to_ev->ltag.c_str(), to_ev->timer_id, to_ev->sub);
+
+    string ltag = to_ev->ltag;
+
+    subscriptions_mut.lock();
+    AmSipSubscriptionMapIter it = subscriptions.find(ltag);
+    if (it == subscriptions.end()) {
+      subscriptions_mut.unlock();
+      WARN("got timeout event '%i/%p' for unknown subscription '%s'\n",
+	   to_ev->timer_id, to_ev->sub, ltag.c_str());
+
+      return;
+    }
+    it->second->onTimeout(to_ev->timer_id, to_ev->sub);
+    if (!(it->second->getUsages() > 0)) {
+      DBG("subscription '%s' terminated - removing\n", it->second->getDescription().c_str());
+      delete it->second;
+      subscriptions.erase(it);
+      AmEventDispatcher::instance()->delEventQueue(ltag);
+    }
+    subscriptions_mut.unlock();
+    return;
+  }
 }
 
 

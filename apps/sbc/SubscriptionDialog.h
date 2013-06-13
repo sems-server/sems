@@ -41,6 +41,9 @@ class SubscriptionDialog
 {
   AmSipSubscription* subs;
 
+  // AmEventHandler
+  void process(AmEvent* ev);
+
 public:
   SubscriptionDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules,
 		     AmSipSubscription* subscription=NULL,

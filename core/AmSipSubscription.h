@@ -42,6 +42,19 @@ using std::list;
 class AmBasicSipDialog;
 class AmEventQueue;
 class AmSipSubscription;
+class SingleSubscription;
+
+struct SingleSubTimeoutEvent
+  : public AmEvent
+{
+  string ltag;
+  int timer_id;
+  SingleSubscription* sub;
+
+  SingleSubTimeoutEvent(const string& ltag, int timer_id, SingleSubscription* sub)
+    : AmEvent(E_SIP_SUBSCRIPTION), ltag(ltag), timer_id(timer_id), sub(sub)
+  {}
+};
 
 /**
  * \brief Single SIP Subscription
@@ -81,7 +94,6 @@ private:
 
   // state
   unsigned int sub_state;
-  AmMutex  sub_state_mut;
   int  pending_subscribe;
   unsigned int   expires;
 
@@ -124,8 +136,6 @@ public:
 
   unsigned int getState() { return sub_state; }
   void setState(unsigned int st);
-  void lockState() { sub_state_mut.lock(); }
-  void unlockState() { sub_state_mut.unlock(); }
 
   unsigned int getExpires() { return expires; }
 
@@ -155,6 +165,7 @@ class AmSipSubscription
   SingleSubscription* makeSubscription(const AmSipRequest& req, bool uac);
   Subscriptions::iterator createSubscription(const AmSipRequest& req, bool uac);
   Subscriptions::iterator matchSubscription(const AmSipRequest& req, bool uac);
+  virtual void removeSubscription(Subscriptions::iterator sub);
 
   friend class SingleSubscription;
 

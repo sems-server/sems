@@ -69,6 +69,7 @@ class SimpleRelayDialog
   int relayRequest(const AmSipRequest& req);
   int relayReply(const AmSipReply& reply);
 
+protected:
   // AmEventHandler
   void process(AmEvent* ev);
 
@@ -77,7 +78,6 @@ class SimpleRelayDialog
 
   void initCCModules(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules);
 
-protected:
   virtual void onB2BRequest(const AmSipRequest& req);
   virtual void onB2BReply(const AmSipReply& reply);
 

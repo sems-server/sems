@@ -86,12 +86,11 @@ void SingleSubscription::onTimer(int timer_id)
   switch(timer_id){
   case RFC6665_TIMER_N:
   case SUBSCRIPTION_EXPIRE:
-    lockState();
-    if(!terminated()) {
-      terminate();
-      subs->onTimeout(timer_id,this);
+    if(subs->ev_q) {
+      AmEvent* ev = new SingleSubTimeoutEvent(subs->dlg->getLocalTag(),
+					      timer_id,this);
+      subs->ev_q->postEvent(ev);
     }
-    unlockState();
     return;
   }
 }
@@ -158,11 +157,9 @@ void SingleSubscription::requestFSM(const AmSipRequest& req)
   if((req.method == SIP_METH_SUBSCRIBE) ||
      (req.method == SIP_METH_REFER)) {
 
-    lockState();
     if(getState() == SubState_init) {
       setState(SubState_notify_wait);
     }
-    unlockState();
 
     // start Timer N (RFC6665/4.1.2)
     DBG("setTimer(%s,RFC6665_TIMER_N)\n",dlg()->getLocalTag().c_str());
@@ -211,7 +208,6 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
     // final reply
 
     if(reply.code >= 300) {
-      lockState();
       if(getState() == SubState_notify_wait) {
 	// initial SUBSCRIBE failed
 	terminate();
@@ -230,7 +226,6 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
 	  break;
 	}
       }
-      unlockState();
     }
     else {
       // success
@@ -266,10 +261,8 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
 	// if not, or if not readable, we should probably 
 	// quit the subscription
 	DBG("replies to SUBSCRIBE MUST contain a Expires-HF\n");
-	lockState();
 	terminate();
 	subs->onFailureReply(reply,this);
-	unlockState();
       }
     }
 
@@ -285,10 +278,8 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
       case 481:
       case 489:
       case 501:
-	lockState();
 	terminate();
 	subs->onFailureReply(reply,this);
-	unlockState();
 	break;
 	
       default:
@@ -314,20 +305,14 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
 
     sub_state_txt = strip_header_params(sub_state_txt);
     if(notify_expire && (sub_state_txt == "active")) {
-      lockState();
       setState(SubState_active);
-      unlockState();
     }
     else if(notify_expire && (sub_state_txt == "pending")){
-      lockState();
       setState(SubState_pending);
-      unlockState();
     }
     else {
-      lockState();
       terminate();
       //subs->onFailureReply(reply,this);
-      unlockState();
       return;
     }
     
@@ -377,9 +362,9 @@ AmSipSubscription::AmSipSubscription(AmBasicSipDialog* dlg, AmEventQueue* ev_q)
 
 AmSipSubscription::~AmSipSubscription()
 {
-  for(Subscriptions::iterator it=subs.begin();
-      it != subs.end(); it++) {
-    delete *it;
+  while(!subs.empty()) {
+    DBG("removing single subscription");
+    removeSubscription(subs.begin());
   }
 }
 
@@ -387,9 +372,7 @@ void AmSipSubscription::terminate()
 {
   for(Subscriptions::iterator it=subs.begin();
       it != subs.end(); it++) {
-    (*it)->lockState();
     (*it)->terminate();
-    (*it)->unlockState();
   }
 }
 
@@ -404,6 +387,12 @@ AmSipSubscription::createSubscription(const AmSipRequest& req, bool uac)
   dlg->incUsages();
   DBG("new subscription: %s",sub->to_str().c_str());
   return subs.insert(subs.end(),sub);
+}
+
+void AmSipSubscription::removeSubscription(Subscriptions::iterator sub)
+{
+  delete *sub;
+  subs.erase(sub);
 }
 
 /**
@@ -458,8 +447,7 @@ AmSipSubscription::matchSubscription(const AmSipRequest& req, bool uac)
 
   if((match != subs.end()) && (*match)->terminated()) {
     DBG("matched terminated subscription: deleting it first\n");
-    delete *match;
-    subs.erase(match);
+    removeSubscription(match);
     match = subs.end();
   }
 
@@ -519,8 +507,7 @@ bool AmSipSubscription::onReplyIn(const AmSipRequest& req,
 
   sub->replyFSM(req,reply);
   if(sub->terminated()){
-    subs.erase(sub_it);
-    delete sub;
+    removeSubscription(sub_it);
   }
 
   return true;
@@ -540,17 +527,21 @@ void AmSipSubscription::onReplySent(const AmSipRequest& req,
 
   sub->replyFSM(req,reply);
   if(sub->terminated()){
-    subs.erase(sub_it);
-    delete sub;
+    removeSubscription(sub_it);
   }
 }
 
 void AmSipSubscription::onTimeout(int timer_id, SingleSubscription* sub)
 {
-  if(ev_q) {
-    // wake up related queue with NULL event
-    ev_q->postEvent(NULL);
+  Subscriptions::iterator it = subs.begin();
+  for(; it != subs.end(); it++) {
+    if(*it == sub) break;
   }
+  if(it == subs.end())
+    return; // no match...
+
+  sub->terminate();
+  removeSubscription(it);
 }
 
 
@@ -674,7 +665,12 @@ void AmSipSubscriptionDialog::onFailureReply(const AmSipReply& reply,
 
 void AmSipSubscriptionDialog::onTimeout(int timer_id, SingleSubscription* sub)
 {
-  assert(sub);
+  AmSipSubscription::onTimeout(timer_id,sub);
+
+  // possibly we've got a timeout for an already destroyed subscription.
+  // however, it only happens if the subscription has been destroyed right
+  // before this event (same processEvents() call).
+
   SIPSubscriptionEvent* sub_ev =
     new SIPSubscriptionEvent(SIPSubscriptionEvent::SubscriptionTimeout, local_tag);
 
