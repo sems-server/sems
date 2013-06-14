@@ -81,6 +81,10 @@ protected:
   virtual void onB2BRequest(const AmSipRequest& req);
   virtual void onB2BReply(const AmSipReply& reply);
 
+  /** correctly terminate the dialog; MUST be redefined if "terminated" method
+   * is redefined */
+  virtual void terminate() { finished = true; }
+
 public:
   SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules, atomic_ref_cnt* parent_obj=NULL);
   ~SimpleRelayDialog();

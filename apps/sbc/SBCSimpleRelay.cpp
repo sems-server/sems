@@ -143,7 +143,13 @@ void SimpleRelayDialog::process(AmEvent* ev)
       return;
     }
   }
-    
+
+  B2BEvent* b2b = dynamic_cast<B2BEvent*>(ev);
+  if(b2b && b2b->event_id == B2BTerminateLeg){
+    terminate();
+    return;
+  }
+
   ERROR("received unknown event\n");
 }
 
@@ -153,7 +159,18 @@ bool SimpleRelayDialog::processingCycle()
       callid.c_str(),local_tag.c_str(),
       getUsages(), terminated() ? "term" : "active");
 
-  processEvents();
+  try {
+    processEvents();
+  }
+  catch (...) {
+    ERROR("unhandled exception when processing events, terminating dialog");
+    if (!other_dlg.empty()) {
+      B2BEvent *e = new B2BEvent(B2BTerminateLeg);
+      if (!AmEventDispatcher::instance()->post(other_dlg, e)) delete e;
+    }
+    terminate();
+    return false;
+  }
 
   DBG("^^ [%s|%s] %i usages (%s) ^^\n",
       callid.c_str(),local_tag.c_str(),

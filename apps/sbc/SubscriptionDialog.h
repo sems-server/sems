@@ -51,6 +51,7 @@ public:
   ~SubscriptionDialog();
 
   // SimpleRelayDialog interface
+  void terminate() { subs->terminate(); }
   bool terminated();
 
   // AmBasicSipEventHandler interface
