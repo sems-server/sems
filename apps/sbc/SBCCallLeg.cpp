@@ -152,8 +152,9 @@ void PayloadIdMapping::reset()
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 // A leg constructor (from SBCDialog)
-SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg)
-  : CallLeg(p_dlg),
+SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
+		       AmSipSubscription* p_subs)
+  : CallLeg(p_dlg,p_subs),
     m_state(BB_Init),
     auth(NULL),
     call_profile(call_profile),
@@ -182,10 +183,11 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg)
 }
 
 // B leg constructor (from SBCCalleeSession)
-SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
+SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
+		       AmSipSubscription* p_subs)
   : auth(NULL),
     call_profile(caller->getCallProfile()),
-    CallLeg(caller,p_dlg),
+    CallLeg(caller,p_dlg,p_subs),
     cc_started(false),
     logger(NULL)
 {
@@ -223,8 +225,8 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg)
   setLogger(caller->getLogger());
 }
 
-SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg)
-  : CallLeg(p_dlg),
+SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg, AmSipSubscription* p_subs)
+  : CallLeg(p_dlg,p_subs),
     m_state(BB_Init),
     auth(NULL),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START),

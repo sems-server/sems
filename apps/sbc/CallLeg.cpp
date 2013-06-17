@@ -49,10 +49,11 @@ ReliableB2BEvent::~ReliableB2BEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 // callee
-CallLeg::CallLeg(const CallLeg* caller, AmSipDialog* p_dlg):
-  AmB2BSession(caller->getLocalTag(),p_dlg),
-  call_status(Disconnected),
-  hold_request_cseq(0), hold_status(NotHeld)
+CallLeg::CallLeg(const CallLeg* caller, AmSipDialog* p_dlg, AmSipSubscription* p_subs)
+  : AmB2BSession(caller->getLocalTag(),p_dlg,p_subs),
+    call_status(Disconnected),
+    hold_request_cseq(0), 
+    hold_status(NotHeld)
 {
   a_leg = !caller->a_leg; // we have to be the complement
 
@@ -92,10 +93,11 @@ CallLeg::CallLeg(const CallLeg* caller, AmSipDialog* p_dlg):
 }
 
 // caller
-CallLeg::CallLeg(AmSipDialog* p_dlg): 
-  AmB2BSession("",p_dlg),
-  call_status(Disconnected),
-  hold_request_cseq(0), hold_status(NotHeld)
+CallLeg::CallLeg(AmSipDialog* p_dlg, AmSipSubscription* p_subs)
+  : AmB2BSession("",p_dlg,p_subs),
+    call_status(Disconnected),
+    hold_request_cseq(0),
+    hold_status(NotHeld)
 {
   a_leg = true;
 

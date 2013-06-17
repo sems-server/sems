@@ -114,9 +114,11 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
  public:
 
-  SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* dlg=NULL);
-  SBCCallLeg(SBCCallLeg* caller, AmSipDialog* dlg=NULL);
-  SBCCallLeg(AmSipDialog* dlg=NULL);
+  SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* dlg=NULL,
+	     AmSipSubscription* p_subs=NULL);
+  SBCCallLeg(SBCCallLeg* caller, AmSipDialog* dlg=NULL,
+	     AmSipSubscription* p_subs=NULL);
+  SBCCallLeg(AmSipDialog* dlg=NULL,AmSipSubscription* p_subs=NULL);
   ~SBCCallLeg();
 
   void process(AmEvent* ev);
