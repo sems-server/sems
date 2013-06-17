@@ -117,6 +117,12 @@ void AmB2BSession::process(AmEvent* event)
     return;
   }
 
+  SingleSubTimeoutEvent* to_ev = dynamic_cast<SingleSubTimeoutEvent*>(event);
+  if(to_ev) {
+    subs->onTimeout(to_ev->timer_id,to_ev->sub);
+    return;
+  }
+
   AmSession::process(event);
 }
 
