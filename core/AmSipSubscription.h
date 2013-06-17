@@ -132,10 +132,10 @@ public:
 
   bool onRequestIn(const AmSipRequest& req);
   void onRequestSent(const AmSipRequest& req);
-  void replyFSM(const AmSipRequest& req, const AmSipReply& reply);
+  virtual void replyFSM(const AmSipRequest& req, const AmSipReply& reply);
 
   unsigned int getState() { return sub_state; }
-  void setState(unsigned int st);
+  virtual void setState(unsigned int st);
 
   unsigned long getExpires() { return expires; }
 
@@ -164,19 +164,20 @@ protected:
   CSeqMap  uac_cseq_map;
 
   SingleSubscription* makeSubscription(const AmSipRequest& req, bool uac);
-  Subscriptions::iterator createSubscription(const AmSipRequest& req, bool uac);
+  virtual Subscriptions::iterator createSubscription(const AmSipRequest& req, 
+						     bool uac);
   Subscriptions::iterator matchSubscription(const AmSipRequest& req, bool uac);
   virtual void removeSubscription(Subscriptions::iterator sub);
-
-  friend class SingleSubscription;
 
   virtual SingleSubscription* newSingleSubscription(SingleSubscription::Role role,
 						    const string& event,
 						    const string& id);
 
+  friend class SingleSubscription;
+
 public:
   AmSipSubscription(AmBasicSipDialog* dlg, AmEventQueue* ev_q);
-  ~AmSipSubscription();
+  virtual ~AmSipSubscription();
 
   /**
    * Is there at least one active subscription?
