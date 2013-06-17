@@ -178,6 +178,14 @@ public:
   AmSipSubscription(AmBasicSipDialog* dlg, AmEventQueue* ev_q);
   ~AmSipSubscription();
 
+  /**
+   * Is there at least one active subscription?
+   */
+  bool isActive();
+
+  /**
+   * Terminate all subscriptions
+   */
   void terminate();
   
   bool onRequestIn(const AmSipRequest& req);

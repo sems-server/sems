@@ -368,6 +368,17 @@ AmSipSubscription::~AmSipSubscription()
   }
 }
 
+bool AmSipSubscription::isActive()
+{
+  for(Subscriptions::iterator it=subs.begin();
+      it != subs.end(); it++) {
+    if((*it)->getState() == SingleSubscription::SubState_active)
+      return true;
+  }
+
+  return false;
+}
+
 void AmSipSubscription::terminate()
 {
   for(Subscriptions::iterator it=subs.begin();
