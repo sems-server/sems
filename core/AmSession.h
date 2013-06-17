@@ -168,7 +168,7 @@ protected:
   bool startup();
 
   /** @return whether session continues running */
-  bool processingCycle();
+  virtual bool processingCycle();
 
   /** clean up session */
   void finalize();
@@ -384,7 +384,7 @@ public:
    * If wakeup is set, a bogus event will 
    * be sent to wake up the session.
    */
-  void setStopped(bool wakeup = false);
+  virtual void setStopped(bool wakeup = false);
 
   /**
    * Has the session already been stopped ?
