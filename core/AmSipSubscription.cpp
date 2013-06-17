@@ -325,6 +325,19 @@ void SingleSubscription::replyFSM(const AmSipRequest& req, const AmSipReply& rep
   return;
 }
 
+void SingleSubscription::setExpires(unsigned long exp)
+{
+  double notify_expire = exp - AmAppTimer::instance()->unix_clock.get();
+  if(notify_expire > 0.0) {
+    AmAppTimer::instance()->setTimer(&timer_expires,notify_expire);
+    expires = exp;
+  }
+  else {
+    DBG("new 'expires' is already expired: sending event");
+    onTimer(SUBSCRIPTION_EXPIRE);
+  }
+}
+
 void SingleSubscription::setState(unsigned int st)
 {
   DBG("st = %s\n",__sub_state_str[st]);

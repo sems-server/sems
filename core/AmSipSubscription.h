@@ -138,6 +138,7 @@ public:
   virtual void setState(unsigned int st);
 
   unsigned long getExpires() { return expires; }
+  void setExpires(unsigned long exp);
 
   void terminate();
   bool terminated();
