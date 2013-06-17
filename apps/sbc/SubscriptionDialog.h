@@ -39,6 +39,7 @@
 class SubscriptionDialog
   : public SimpleRelayDialog
 {
+protected:
   AmSipSubscription* subs;
 
   // AmEventHandler
