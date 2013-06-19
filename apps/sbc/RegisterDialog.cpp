@@ -477,7 +477,12 @@ void RegisterDialog::onSipReply(const AmSipRequest& req,
 	unsigned int orig_expires=0;
 	str2i(orig_expires_str,orig_expires);
 
-	if(!orig_expires || (max_ua_expire && (orig_expires > max_ua_expire))) {
+	if(!orig_expires || (expires < orig_expires)) {
+	  orig_expires = expires;
+	  orig_expires_str = expires_str;
+	}
+
+	if(max_ua_expire && (orig_expires > max_ua_expire)) {
 	  orig_expires = max_ua_expire;
 	  orig_expires_str = int2str(orig_expires);
 	}
