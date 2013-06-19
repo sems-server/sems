@@ -689,6 +689,8 @@ void AmB2BMedia::createStreams(const AmSdp &sdp)
     if (m->type == MT_AUDIO) {
       if (create_audio) {
         AudioStreamPair pair(a, b, idx);
+        pair.a.mute(a_leg_muted);
+        pair.b.mute(b_leg_muted);
         audio.push_back(pair);
         audio.back().setLogger(logger);
       }
