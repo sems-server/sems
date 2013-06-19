@@ -110,6 +110,7 @@ protected:
 
   string next_hop;
   bool next_hop_1st_req;
+  bool patch_ruri_next_hop;
 
   int outbound_interface;
 
@@ -277,6 +278,10 @@ public:
   bool getNextHop1stReq() const { return next_hop_1st_req; }
   virtual void setNextHop1stReq(bool nh_1st_req)
   { next_hop_1st_req = nh_1st_req; }
+
+  bool getPatchRURINextHop() const { return patch_ruri_next_hop; }
+  virtual void setPatchRURINextHop(bool patch_nh)
+  { patch_ruri_next_hop = patch_nh; }
 
   /**
    * Compute the Contact-HF for the next request

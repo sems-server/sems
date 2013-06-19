@@ -91,7 +91,7 @@ public:
      */
     static int send(AmSipRequest &req, const string& dialog_id,
 		    const string& next_hop = "", int outbound_interface = -1,
-		    msg_logger* logger = NULL);
+		    unsigned int flags = 0, msg_logger* logger = NULL);
 
     /**
      * Sends a SIP reply. 

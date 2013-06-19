@@ -555,6 +555,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     aleg_force_outbound_proxy == rhs.aleg_force_outbound_proxy &&
     next_hop == rhs.next_hop &&
     next_hop_1st_req == rhs.next_hop_1st_req &&
+    patch_ruri_next_hop == rhs.patch_ruri_next_hop &&
     aleg_next_hop == rhs.aleg_next_hop &&
     headerfilter == rhs.headerfilter &&
     //headerfilter_list == rhs.headerfilter_list &&
@@ -881,6 +882,9 @@ int SBCCallProfile::apply_b_routing(ParamReplacerCtx& ctx,
     dlg.setNextHop(nh);
     dlg.setNextHop1stReq(next_hop_1st_req);
   }
+
+  DBG("patch_ruri_next_hop = %i",patch_ruri_next_hop);
+  dlg.setPatchRURINextHop(patch_ruri_next_hop);
 
   if (!outbound_proxy.empty()) {
     string op = ctx.replaceParameters(outbound_proxy, "outbound_proxy", req);

@@ -29,6 +29,7 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     next_hop(AmConfig::NextHop),
     next_hop_1st_req(AmConfig::NextHop1stReq),
+    patch_ruri_next_hop(),
     outbound_interface(-1),
     nat_handling(false),
     usages(0)
@@ -635,7 +636,10 @@ int AmBasicSipDialog::sendRequest(const string& method,
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ?
 				   next_hop : "",
-				   outbound_interface, logger);
+				   outbound_interface,
+				   !patch_ruri_next_hop || !remote_tag.empty() ? 0
+				   : SEND_REQUEST_FLAG_NEXT_HOP_RURI,
+				   logger);
   if(res) {
     ERROR("Could not send request: method=%s; call-id=%s; cseq=%i\n",
 	  req.method.c_str(),req.callid.c_str(),req.cseq);

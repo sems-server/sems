@@ -53,6 +53,9 @@ class sip_ua;
 //draft msg logging
 class msg_logger;
 
+// replace the RURI-host with next-hop IP / port
+#define SEND_REQUEST_FLAG_NEXT_HOP_RURI 1
+
 /** 
  * The transaction layer object.
  * Uses the singleton pattern.
@@ -106,7 +109,7 @@ public:
      */
     int send_request(sip_msg* msg, trans_ticket* tt, const cstring& dialog_id,
 		     const cstring& _next_hop, int out_interface = -1,
-		     msg_logger* logger=NULL);
+		     unsigned int flags=0, msg_logger* logger=NULL);
 
     /**
      * Cancels a request. 

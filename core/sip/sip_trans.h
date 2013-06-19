@@ -142,6 +142,9 @@ class sip_trans
     sockaddr_storage retr_addr;
     trsp_socket*     retr_socket;
 
+    /** flags used by send_request() */
+    unsigned int flags;
+
     /** message logging */
     msg_logger* logger;
 

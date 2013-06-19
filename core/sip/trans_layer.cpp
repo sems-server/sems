@@ -874,10 +874,124 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
     ua->handle_sip_reply(dialog_id,&msg);
 }
 
+static int patch_ruri_with_remote_ip(string& n_uri, sip_msg* msg)
+{
+    // TODO:
+    // - parse R-URI
+    // - replace host/port
+    // - generate new R-URI
+    cstring old_ruri = msg->u.request->ruri_str;
+    struct sip_uri parsed_uri;
+    if(parse_uri(&parsed_uri, old_ruri.s, old_ruri.len) < 0) {
+ 	ERROR("could not parse local R-URI ('%.*s')",old_ruri.len,old_ruri.s);
+ 	return -1;
+    }
+ 	
+    // copy from the beginning until URI-host
+    n_uri = string(old_ruri.s, parsed_uri.host.s - old_ruri.s);
+ 
+    // append new host and port
+    n_uri += get_addr_str(&msg->remote_ip);
+    unsigned short new_port = am_get_port(&msg->remote_ip);
+    if(new_port != 5060) {
+ 	n_uri += ":" + int2str(new_port);
+    }
+ 	
+    if(parsed_uri.port_str.len) {
+ 	// copy from end of port-string until the end of old R-URI
+ 	n_uri += string(parsed_uri.port_str.s + parsed_uri.port_str.len,
+ 			old_ruri.s + old_ruri.len
+ 			- (parsed_uri.port_str.s 
+ 			   + parsed_uri.port_str.len));
+    }
+    else {
+ 	// copy from end of host-string until the end of old R-URI
+ 	n_uri += string(parsed_uri.host.s + parsed_uri.host.len,
+ 			old_ruri.s + old_ruri.len
+ 			- (parsed_uri.host.s 
+ 			   + parsed_uri.host.len));
+    }
+ 
+    msg->u.request->ruri_str = stl2cstr(n_uri);
+ 
+    return 0;
+}
+ 
+static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
+{
+    int request_len = request_line_len(msg->u.request->method_str,
+ 				       msg->u.request->ruri_str);
+ 
+    char branch_buf[BRANCH_BUF_LEN];
+    compute_branch(branch_buf,msg->callid->value,msg->cseq->value);
+    cstring branch(branch_buf,BRANCH_BUF_LEN);
+     
+    string via(msg->local_socket->get_ip());
+    if(msg->local_socket->get_port() != 5060)
+ 	via += ":" + int2str(msg->local_socket->get_port());
+ 
+    // add 'rport' parameter defaultwise? yes, for now
+    request_len += via_len(stl2cstr(via),branch,true);
+ 
+    request_len += copy_hdrs_len(msg->hdrs);
+     
+    string content_len = int2str(msg->body.len);
+     
+    request_len += content_length_len(stl2cstr(content_len));
+    request_len += 2/* CRLF end-of-headers*/;
+     
+    if(msg->body.len){
+ 	request_len += msg->body.len;
+    }
+     
+    // Allocate new message
+    p_msg = new sip_msg();
+    p_msg->buf = new char[request_len+1];
+    p_msg->len = request_len;
+    p_msg->h_dns = msg->h_dns;
+ 
+    // generate it
+    char* c = p_msg->buf;
+    request_line_wr(&c,msg->u.request->method_str,
+ 		    msg->u.request->ruri_str);
+ 
+    via_wr(&c,stl2cstr(via),branch,true);
+    copy_hdrs_wr(&c,msg->hdrs);
+ 
+    content_length_wr(&c,stl2cstr(content_len));
+ 
+    *c++ = CR;
+    *c++ = LF;
+ 
+    if(msg->body.len){
+ 	memcpy(c,msg->body.s,msg->body.len);
+ 
+ 	c += msg->body.len;
+    }
+    *c++ = '\0';
+ 
+    // and parse it
+    char* err_msg=0;
+    if(parse_sip_msg(p_msg,err_msg)){
+ 	ERROR("Parser failed on generated request\n");
+ 	ERROR("Message was: <%.*s>\n",p_msg->len,p_msg->buf);
+ 	delete p_msg;
+ 	p_msg = NULL;
+ 	return MALFORMED_SIP_MSG;
+    }
+ 
+    // copy msg->remote_ip
+    memcpy(&p_msg->remote_ip,&msg->remote_ip,sizeof(sockaddr_storage));
+    p_msg->local_socket = msg->local_socket;
+    inc_ref(p_msg->local_socket);
+ 
+    return 0;
+}
+ 
 int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt, 
 			       const cstring& dialog_id,
 			       const cstring& _next_hop, 
-			       int out_interface,
+			       int out_interface, unsigned int flags,
 			       msg_logger* logger)
 {
     // Request-URI
@@ -980,70 +1094,16 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	DBG("send_request to R-URI <%.*s>",msg->u.request->ruri_str.len,msg->u.request->ruri_str.s);
     }
 
-    int request_len = request_line_len(msg->u.request->method_str,
-				       msg->u.request->ruri_str);
-
-    char branch_buf[BRANCH_BUF_LEN];
-    compute_branch(branch_buf,msg->callid->value,msg->cseq->value);
-    cstring branch(branch_buf,BRANCH_BUF_LEN);
-    
-    string via(msg->local_socket->get_ip());
-    if(msg->local_socket->get_port() != 5060)
-	via += ":" + int2str(msg->local_socket->get_port());
-
-    // add 'rport' parameter defaultwise? yes, for now
-    request_len += via_len(stl2cstr(via),branch,true);
-
-    request_len += copy_hdrs_len(msg->hdrs);
-
-    string content_len = int2str(msg->body.len);
-
-    request_len += content_length_len(stl2cstr(content_len));
-    request_len += 2/* CRLF end-of-headers*/;
-
-    if(msg->body.len){
-	request_len += msg->body.len;
+    string ruri; // buffer needs to be @ function scope
+    if((flags & SEND_REQUEST_FLAG_NEXT_HOP_RURI) &&
+       (patch_ruri_with_remote_ip(ruri,msg) < 0)) {
+ 	return -1;
     }
 
-    // Allocate new message
-    sip_msg* p_msg = new sip_msg();
-    p_msg->buf = new char[request_len+1];
-    p_msg->len = request_len;
-    p_msg->h_dns = msg->h_dns;
-
-    // generate it
-    char* c = p_msg->buf;
-    request_line_wr(&c,msg->u.request->method_str,
-		    msg->u.request->ruri_str);
-
-    via_wr(&c,stl2cstr(via),branch,true);
-    copy_hdrs_wr(&c,msg->hdrs);
-
-    content_length_wr(&c,stl2cstr(content_len));
-
-    *c++ = CR;
-    *c++ = LF;
-
-    if(msg->body.len){
-	memcpy(c,msg->body.s,msg->body.len);
-
-	c += msg->body.len;
-    }
-    *c++ = '\0';
-
-    // and parse it
-    char* err_msg=0;
-    if(parse_sip_msg(p_msg,err_msg)){
-	ERROR("Parser failed on generated request\n");
-	ERROR("Message was: <%.*s>\n",p_msg->len,p_msg->buf);
-	delete p_msg;
-	return MALFORMED_SIP_MSG;
-    }
-
-    // copy msg->remote_ip
-    memcpy(&p_msg->remote_ip,&msg->remote_ip,sizeof(sockaddr_storage));
-    p_msg->local_socket = msg->local_socket;
-    inc_ref(p_msg->local_socket);
+    // generate new msg and parse it
+    sip_msg* p_msg=NULL;
+    int err = generate_and_parse_new_msg(msg,p_msg);
+    if(err != 0) { return err; }
 
     DBG("Sending to %s:%i <%.*s...>\n",
 	get_addr_str(&p_msg->remote_ip).c_str(),
@@ -1073,6 +1133,10 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    return send_err;
 	}
 
+	// TODO:
+	// - save flags in transaction
+	tt->_t->flags = flags;
+
 	DBG("logger = %p\n",logger);
 
 	if(logger) {
@@ -1081,15 +1145,19 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 
 	    cstring method_str = msg->u.request->method_str;
 	    char* msg_buffer=NULL;
+	    unsigned int msg_len=0;
+
 	    if(method == sip_request::ACK) {
 		// in case of ACK, p_msg gets deleted in update_uac_request
 		msg_buffer = tt->_t->retr_buf;
+		msg_len = tt->_t->retr_len;
 	    }
 	    else {
 		msg_buffer = p_msg->buf;
+		msg_len = p_msg->len;
 	    }
 
-	    logger->log(msg_buffer,request_len,
+	    logger->log(msg_buffer,msg_len,
 			&src_ip,&msg->remote_ip,
 			method_str);
 
@@ -2160,7 +2228,18 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr)
     // create new branch tag
     compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
 		   tr->msg->callid->value,tr->msg->cseq->value);
-    
+
+    if(tr->flags & SEND_REQUEST_FLAG_NEXT_HOP_RURI) {
+	string   n_uri;
+	sip_msg* p_msg=NULL;
+	if(!patch_ruri_with_remote_ip(n_uri, tr->msg) &&
+	   !generate_and_parse_new_msg(tr->msg,p_msg)) {
+
+	    delete tr->msg;
+	    tr->msg = p_msg;
+	}		
+    }
+
     // and re-send
     tr->msg->send();
     

@@ -114,6 +114,7 @@ struct SBCCallProfile
 
   string next_hop;
   bool next_hop_1st_req;
+  bool patch_ruri_next_hop;
 
   string aleg_next_hop;
 
