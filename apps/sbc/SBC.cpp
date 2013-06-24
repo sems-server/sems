@@ -122,28 +122,28 @@ SBCCallLeg* CallLegCreator::create(SBCCallLeg* caller)
   return new SBCCallLeg(caller);
 }
 
-SBCSimpleRelay* 
+SimpleRelayCreator::Relay 
 SimpleRelayCreator::createRegisterRelay(SBCCallProfile& call_profile,
 					vector<AmDynInvoke*> &cc_modules)
 {
-  return new SBCSimpleRelay(new RegisterDialog(call_profile, cc_modules),
-			    new RegisterDialog(call_profile, cc_modules));
+  return SimpleRelayCreator::Relay(new RegisterDialog(call_profile, cc_modules),
+				   new RegisterDialog(call_profile, cc_modules));
 }
 
-SBCSimpleRelay*
+SimpleRelayCreator::Relay
 SimpleRelayCreator::createSubscriptionRelay(SBCCallProfile& call_profile,
 					    vector<AmDynInvoke*> &cc_modules)
 {
-  return new SBCSimpleRelay(new SubscriptionDialog(call_profile, cc_modules),
-			    new SubscriptionDialog(call_profile, cc_modules));
+  return SimpleRelayCreator::Relay(new SubscriptionDialog(call_profile, cc_modules),
+				   new SubscriptionDialog(call_profile, cc_modules));
 }
 
-SBCSimpleRelay*
+SimpleRelayCreator::Relay
 SimpleRelayCreator::createGenericRelay(SBCCallProfile& call_profile,
 				       vector<AmDynInvoke*> &cc_modules)
 {
-  return new SBCSimpleRelay(new SimpleRelayDialog(call_profile, cc_modules),
-			    new SimpleRelayDialog(call_profile, cc_modules));
+  return SimpleRelayCreator::Relay(new SimpleRelayDialog(call_profile, cc_modules),
+				   new SimpleRelayDialog(call_profile, cc_modules));
 }
 
 SBCFactory::SBCFactory(const string& _app_name)
@@ -396,7 +396,7 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
   
   call_profile.fix_append_hdrs(ctx, req);
 
-  SBCSimpleRelay* relay=NULL;
+  SimpleRelayCreator::Relay relay(NULL,NULL);
   if(req.method == SIP_METH_REGISTER) {
     relay = simpleRelayCreator->createRegisterRelay(call_profile, cc_modules);
   }
@@ -409,11 +409,16 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
     relay = simpleRelayCreator->createGenericRelay(call_profile, cc_modules);
   }
   if (logger) inc_ref(logger);
-  if (call_profile.log_sip) relay->setMsgLogger(logger);
+  if (call_profile.log_sip) {
+    relay.first->setMsgLogger(logger);
+    relay.second->setMsgLogger(logger);
+  }
 
-  if(relay->start(req,call_profile)) {
-    AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, "", call_profile.log_sip ? logger: NULL);
-    delete relay;
+  if(SBCSimpleRelay::start(relay,req,call_profile)) {
+    AmSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, 
+			     "", call_profile.log_sip ? logger: NULL);
+    delete relay.first;
+    delete relay.second;
   }
   if (logger) dec_ref(logger);
 }

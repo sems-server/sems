@@ -50,15 +50,16 @@ struct CallLegCreator {
   virtual SBCCallLeg* create(SBCCallLeg* caller);
 };
 
-class SBCSimpleRelay;
+class SimpleRelayDialog;
 
 struct SimpleRelayCreator {
-  virtual SBCSimpleRelay* createRegisterRelay(SBCCallProfile& call_profile,
-					      vector<AmDynInvoke*> &cc_modules);
-  virtual SBCSimpleRelay* createSubscriptionRelay(SBCCallProfile& call_profile,
-					       vector<AmDynInvoke*> &cc_modules);
-  virtual SBCSimpleRelay* createGenericRelay(SBCCallProfile& call_profile,
-					     vector<AmDynInvoke*> &cc_modules);
+  typedef pair<SimpleRelayDialog*,SimpleRelayDialog*> Relay;
+  virtual Relay createRegisterRelay(SBCCallProfile& call_profile,
+				    vector<AmDynInvoke*> &cc_modules);
+  virtual Relay createSubscriptionRelay(SBCCallProfile& call_profile,
+					vector<AmDynInvoke*> &cc_modules);
+  virtual Relay createGenericRelay(SBCCallProfile& call_profile,
+				   vector<AmDynInvoke*> &cc_modules);
 };
 
 class SBCFactory: public AmSessionFactory,

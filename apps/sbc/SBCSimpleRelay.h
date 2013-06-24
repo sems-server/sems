@@ -31,8 +31,8 @@
 #include "AmBasicSipDialog.h"
 #include "AmSipSubscription.h"
 #include "AmEventQueue.h"
-#include "SBCCallProfile.h"
-#include "HeaderFilter.h"
+
+#include "SBC.h"
 #include "ExtendedCCInterface.h"
 
 #include <map>
@@ -43,7 +43,8 @@ class SimpleRelayDialog
   : public AmBasicSipDialog,
     public AmBasicSipEventHandler,
     public AmEventQueue,
-    public AmEventHandler
+    public AmEventHandler,
+    public atomic_ref_cnt
 {
   atomic_ref_cnt*     parent_obj;
   string              other_dlg;
@@ -86,7 +87,9 @@ protected:
   virtual void terminate() { finished = true; }
 
 public:
-  SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules, atomic_ref_cnt* parent_obj=NULL);
+  SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules,
+		    atomic_ref_cnt* parent_obj=NULL);
+  SimpleRelayDialog(atomic_ref_cnt* parent_obj=NULL);
   ~SimpleRelayDialog();
 
   void setParent(atomic_ref_cnt* p_obj) {
@@ -124,17 +127,11 @@ public:
 };
 
 class SBCSimpleRelay
-  : public atomic_ref_cnt
 {
-  SimpleRelayDialog* a_leg; // A-leg
-  SimpleRelayDialog* b_leg; // B-leg
-
 public:
-  SBCSimpleRelay(SimpleRelayDialog* a, SimpleRelayDialog* b);
-  ~SBCSimpleRelay();
-
-  int start(const AmSipRequest& req, const SBCCallProfile& cp);
-  void setMsgLogger(msg_logger* logger);
+  static int start(const SimpleRelayCreator::Relay& relay,
+		   const AmSipRequest& req,
+		   const SBCCallProfile& cp);
 };
 
 #endif

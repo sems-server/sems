@@ -11,16 +11,19 @@
  * SimpleRelayDialog
  */
 
-void SimpleRelayDialog::initCCModules(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules)
+void SimpleRelayDialog::initCCModules(SBCCallProfile &profile,
+				      vector<AmDynInvoke*> &cc_modules)
 {
   // init extended call control modules
-  for (vector<AmDynInvoke*>::iterator cc_mod = cc_modules.begin(); cc_mod != cc_modules.end(); ++cc_mod)
+  for (vector<AmDynInvoke*>::iterator cc_mod = cc_modules.begin();
+       cc_mod != cc_modules.end(); ++cc_mod)
   {
     // get extended CC interface
     try {
       AmArg args, ret;
       (*cc_mod)->invoke("getExtendedInterfaceHandler", args, ret);
-      ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
+      ExtendedCCInterface *iface =
+	dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
       if (iface) {
         CCModuleInfo mod_info;
         iface->init(profile, this, mod_info.user_data);
@@ -32,7 +35,9 @@ void SimpleRelayDialog::initCCModules(SBCCallProfile &profile, vector<AmDynInvok
   }
 }
 
-SimpleRelayDialog::SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules, atomic_ref_cnt* parent_obj)
+SimpleRelayDialog::SimpleRelayDialog(SBCCallProfile &profile, 
+				     vector<AmDynInvoke*> &cc_modules, 
+				     atomic_ref_cnt* parent_obj)
   : AmBasicSipDialog(this),
     AmEventQueue(this),
     parent_obj(parent_obj),
@@ -42,6 +47,17 @@ SimpleRelayDialog::SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke
     inc_ref(parent_obj);
   }
   initCCModules(profile, cc_modules);
+}
+
+SimpleRelayDialog::SimpleRelayDialog(atomic_ref_cnt* parent_obj)
+  : AmBasicSipDialog(this),
+    AmEventQueue(this),
+    parent_obj(parent_obj),
+    finished(false)
+{
+  if(parent_obj) {
+    inc_ref(parent_obj);
+  }
 }
 
 SimpleRelayDialog::~SimpleRelayDialog()
@@ -109,7 +125,7 @@ int SimpleRelayDialog::relayReply(const AmSipReply& reply)
      ext_local_tag.empty() &&
      !reply.to_tag.empty()) {
 
-    ext_local_tag = reply.to_tag;
+    setExtLocalTag(reply.to_tag);
   }
 
   if(this->reply(*uas_req,code,reason,&reply.body,
@@ -277,7 +293,7 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
   for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     i->module->initUAC(req, i->user_data);
   }
-  local_tag = AmSession::getNewId();
+  setLocalTag(AmSession::getNewId());
 
   AmEventDispatcher* ev_disp = AmEventDispatcher::instance();
   if(!ev_disp->addEventQueue(local_tag,this)) {
@@ -311,7 +327,7 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
   }
 
   if(cp.transparent_dlg_id){
-    ext_local_tag = req.from_tag;
+    setExtLocalTag(req.from_tag);
   }
   else if(n_req.callid == req.callid)
     n_req.callid = AmSession::getNewId();
@@ -331,7 +347,7 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
   for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     i->module->initUAS(req, i->user_data);
   }
-  local_tag = AmSession::getNewId();
+  setLocalTag(AmSession::getNewId());
 
   AmEventDispatcher* ev_disp = AmEventDispatcher::instance();
   if(!ev_disp->addEventQueue(local_tag,this)) {
@@ -356,45 +372,38 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
  * SBCSimpleRelay
  */
 
-SBCSimpleRelay::SBCSimpleRelay(SimpleRelayDialog* a, SimpleRelayDialog* b)
-  : a_leg(a), b_leg(b)
+int SBCSimpleRelay::start(const SimpleRelayCreator::Relay& relay,
+			  const AmSipRequest& req, const SBCCallProfile& cp)
 {
-  assert(a_leg);
-  assert(b_leg);
-  a_leg->setParent(this);
-  b_leg->setParent(this);
-}
+  assert(relay.first);
+  assert(relay.second);
 
-SBCSimpleRelay::~SBCSimpleRelay()
-{
-  delete a_leg;
-  delete b_leg;
-}
+  // set auto-destruction on finalize()
+  relay.first->setParent(relay.first);
+  relay.second->setParent(relay.second);
 
-int SBCSimpleRelay::start(const AmSipRequest& req, const SBCCallProfile& cp)
-{
   AmSipRequest n_req(req);
 
   if (!cp.append_headers.empty()) {
     n_req.hdrs += cp.append_headers;
   }
 
-  if(a_leg->initUAS(n_req,cp)
-     || b_leg->initUAC(n_req,cp)) {
+  if(relay.first->initUAS(n_req,cp)
+     || relay.second->initUAC(n_req,cp)) {
 
-    a_leg->finalize();
-    b_leg->finalize();
+    relay.first->finalize();
+    relay.first->finalize();
     return 0;
   }
 
-  a_leg->setOtherDlg(b_leg->getLocalTag());
-  b_leg->setOtherDlg(a_leg->getLocalTag());
+  relay.first->setOtherDlg(relay.second->getLocalTag());
+  relay.second->setOtherDlg(relay.first->getLocalTag());
 
-  a_leg->onRxRequest(n_req);
-  if(a_leg->terminated()) {
+  relay.first->onRxRequest(n_req);
+  if(relay.first->terminated()) {
     // free memory
-    a_leg->finalize();
-    b_leg->finalize();
+    relay.first->finalize();
+    relay.second->finalize();
     // avoid the caller to reply with 500
     // as the request should have been replied
     // already from within updateStatus(req)
@@ -405,14 +414,8 @@ int SBCSimpleRelay::start(const AmSipRequest& req, const SBCCallProfile& cp)
   EventQueueWorker* worker = SBCFactory::instance()->subnot_processor.getWorker();
   if(!worker) return -1;
 
-  worker->startEventQueue(a_leg);
-  worker->startEventQueue(b_leg);
+  worker->startEventQueue(relay.first);
+  worker->startEventQueue(relay.second);
   
   return 0;
-}
-
-void SBCSimpleRelay::setMsgLogger(msg_logger* logger)
-{
-  if (a_leg) a_leg->setMsgLogger(logger);
-  if (b_leg) b_leg->setMsgLogger(logger);
 }
