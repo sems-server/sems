@@ -232,11 +232,15 @@ void SimpleRelayDialog::onSipRequest(const AmSipRequest& req)
   for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     i->module->onSipRequest(req, i->user_data);
   }
-  if(other_dlg.empty()) 
+  if(other_dlg.empty()) {
+    reply(req,481,SIP_REPLY_NOT_EXIST);
     return;
+  }
 
   B2BSipRequestEvent* b2b_ev = new B2BSipRequestEvent(req,true);
   if(!AmEventDispatcher::instance()->post(other_dlg,b2b_ev)) {
+    DBG("other dialog has already been deleted: reply 481");
+    reply(req,481,SIP_REPLY_NOT_EXIST);
     delete b2b_ev;
   }
 }
@@ -251,8 +255,10 @@ void SimpleRelayDialog::onSipReply(const AmSipRequest& req,
   if(reply.code >= 200)
     finished = true;
 
-  if(other_dlg.empty())
+  if(other_dlg.empty()) {
+    DBG("other dialog has already been deleted: what can we do now???");
     return;
+  }
 
   RelayMap::iterator t_req_it = relayed_reqs.find(reply.cseq);
   if(t_req_it == relayed_reqs.end()) {
@@ -266,6 +272,7 @@ void SimpleRelayDialog::onSipReply(const AmSipRequest& req,
     relayed_reqs.erase(t_req_it);
 
   if(!AmEventDispatcher::instance()->post(other_dlg,b2b_ev)) {
+    DBG("other dialog has already been deleted: what can we do now???");
     delete b2b_ev;
   }
 }
