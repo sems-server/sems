@@ -49,6 +49,8 @@ public:
   SubscriptionDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules,
 		     AmSipSubscription* subscription=NULL,
 		     atomic_ref_cnt* parent_obj=NULL);
+  SubscriptionDialog(AmSipSubscription* subscription=NULL,
+		     atomic_ref_cnt* parent_obj=NULL);
   virtual ~SubscriptionDialog();
 
   // SimpleRelayDialog interface

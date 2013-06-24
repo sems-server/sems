@@ -47,6 +47,15 @@ SubscriptionDialog::SubscriptionDialog(SBCCallProfile &profile,
     subs = new AmSipSubscription(this,this);
 }
 
+SubscriptionDialog::SubscriptionDialog(AmSipSubscription* subscription,
+				       atomic_ref_cnt* parent_obj)
+  : SimpleRelayDialog(parent_obj),
+    subs(subscription)
+{
+  if(!subs)
+    subs = new AmSipSubscription(this,this);
+}
+
 SubscriptionDialog::~SubscriptionDialog()
 {
   DBG("~SubscriptionDialog: local_tag = %s\n",local_tag.c_str());
