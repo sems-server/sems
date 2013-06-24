@@ -198,6 +198,8 @@ public:
   virtual void onNotify(const AmSipRequest& req, SingleSubscription* sub) {}
   virtual void onFailureReply(const AmSipReply& reply, SingleSubscription* sub) {}
   virtual void onTimeout(int timer_id, SingleSubscription* sub);
+
+  virtual void debug();
 };
 
 struct SIPSubscriptionEvent

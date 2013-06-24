@@ -568,6 +568,14 @@ void AmSipSubscription::onTimeout(int timer_id, SingleSubscription* sub)
   removeSubscription(it);
 }
 
+void AmSipSubscription::debug()
+{
+  DBG("subscriptions with lt=%s:",dlg->getLocalTag().c_str());
+  for(Subscriptions::iterator it = subs.begin(); it != subs.end(); it++) {
+    DBG("\t%s",(*it)->to_str().c_str());
+  }
+}
+
 
 SIPSubscriptionEvent::SIPSubscriptionEvent(SubscriptionStatus status, 
 					   const string& handle,
