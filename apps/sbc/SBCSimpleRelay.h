@@ -55,7 +55,7 @@ class SimpleRelayDialog
   // mediation stuff
   vector<FilterEntry>  headerfilter;
   string               append_headers;
-  map<unsigned int, std::pair<unsigned int, string> > reply_translations;
+  ReplyTranslationMap  reply_translations;
   bool                 transparent_dlg_id;
 
   bool finished;
@@ -104,6 +104,17 @@ public:
 
   const string& getOtherDlg() {
     return other_dlg;
+  }
+
+  vector<FilterEntry>&  getHeaderFilter() { return headerfilter; }
+  const vector<FilterEntry>&  getHeaderFilter() const { return headerfilter; }
+
+  string& getAppendHeaders() { return append_headers; }
+  const string& getAppendHeaders() const { return append_headers; }
+
+  ReplyTranslationMap&  getReplyTranslations() { return reply_translations; }
+  const ReplyTranslationMap&  getReplyTranslations() const {
+    return reply_translations;
   }
 
   virtual int initUAC(const AmSipRequest& req, const SBCCallProfile& cp);
