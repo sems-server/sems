@@ -40,6 +40,7 @@
 using std::string;
 using std::map;
 using std::set;
+using std::pair;
 
 typedef map<string, AmArg>   SBCVarMapT;
 typedef SBCVarMapT::iterator SBCVarMapIteratorT;
@@ -77,6 +78,9 @@ class PayloadDesc {
      * */
     bool read(const std::string &s);
 };
+
+typedef pair<unsigned int, std::string> ReplyCodeReasonPair;
+typedef map<unsigned int, ReplyCodeReasonPair> ReplyTranslationMap;
 
 struct SBCCallProfile
   : public AmObject {
@@ -141,7 +145,7 @@ struct SBCCallProfile
 
   SBCVarMapT cc_vars;
 
-  map<unsigned int, std::pair<unsigned int, string> > reply_translations;
+  ReplyTranslationMap reply_translations;
 
   string append_headers;
   string append_headers_req;
