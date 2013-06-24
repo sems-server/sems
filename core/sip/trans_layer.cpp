@@ -1778,10 +1778,9 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	    // if transport == UDP
 	    t->reset_timer(STIMER_A,A_TIMER,bucket->get_id());
 	}
-	else {
-	    // for any transport type
-	    t->reset_timer(STIMER_B,B_TIMER,bucket->get_id());
-	}
+
+	// for any transport type
+	t->reset_timer(STIMER_B,B_TIMER,bucket->get_id());
 	break;
     
     default:
@@ -1789,10 +1788,9 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	    // if transport == UDP
 	    t->reset_timer(STIMER_E,E_TIMER,bucket->get_id());
 	}
-	else {
-	    // for any transport type
-	    t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
-	}
+
+	// for any transport type
+	t->reset_timer(STIMER_F,F_TIMER,bucket->get_id());
 	break;
     }
 
