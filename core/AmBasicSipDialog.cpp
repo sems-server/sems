@@ -469,6 +469,29 @@ void AmBasicSipDialog::onReplyTxed(const AmSipRequest& req,
 {
   if(hdl) hdl->onReplySent(req, reply);
 
+  /**
+   * Error code list from RFC 5057:
+   * those error codes terminate the dialog
+   *
+   * Note: 408, 480 should only terminate
+   *       the usage according to RFC 5057.
+   */
+  switch(reply.code){
+  case 404:
+  case 408:
+  case 410:
+  case 416:
+  case 480:
+  case 482:
+  case 483:
+  case 484:
+  case 485:
+  case 502:
+  case 604:
+    if(hdl) hdl->onLocalTerminate(reply);
+    break;
+  }
+
   if ((reply.code >= 200) && 
       (reply.cseq_method != SIP_METH_CANCEL)) {
     
