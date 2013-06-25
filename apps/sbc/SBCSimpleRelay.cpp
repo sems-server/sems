@@ -288,10 +288,14 @@ void SimpleRelayDialog::onReplySent(const AmSipRequest& req,
 
 void SimpleRelayDialog::onRemoteDisappeared(const AmSipReply& reply)
 {
+  DBG("### reply.code = %i ###\n",reply.code);
+  terminate();
 }
 
 void SimpleRelayDialog::onLocalTerminate(const AmSipReply& reply)
 {
+  DBG("### reply.code = %i ###\n",reply.code);
+  terminate();
 }
 
 int SimpleRelayDialog::initUAC(const AmSipRequest& req, 

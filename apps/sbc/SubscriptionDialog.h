@@ -65,9 +65,6 @@ public:
 
   void onRequestSent(const AmSipRequest& req);
   void onReplySent(const AmSipRequest& req, const AmSipReply& reply);
-
-  void onRemoteDisappeared(const AmSipReply& reply);
-  void onLocalTerminate(const AmSipReply& reply);
 };
 
 #endif

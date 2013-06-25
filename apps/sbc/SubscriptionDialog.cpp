@@ -110,17 +110,3 @@ void SubscriptionDialog::onReplySent(const AmSipRequest& req,
   subs->onReplySent(req,reply);
   SimpleRelayDialog::onReplySent(req,reply);
 }
-
-void SubscriptionDialog::onRemoteDisappeared(const AmSipReply& reply)
-{
-  DBG("### reply.code = %i ###\n",reply.code);
-  subs->terminate();
-  SimpleRelayDialog::onRemoteDisappeared(reply);
-}
-
-void SubscriptionDialog::onLocalTerminate(const AmSipReply& reply)
-{
-  DBG("### reply.code = %i ###\n",reply.code);
-  subs->terminate();
-  SimpleRelayDialog::onLocalTerminate(reply);
-}
