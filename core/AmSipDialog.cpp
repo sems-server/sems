@@ -524,7 +524,6 @@ int AmSipDialog::bye(const string& hdrs, int flags)
     case Trying:
     case Proceeding:
     case Early:
-    case Cancelling:
 	if(getUACInvTransPending())
 	    return cancel();
 	else {  
@@ -540,11 +539,26 @@ int AmSipDialog::bye(const string& hdrs, int flags)
 	    // missing AmSipRequest to be able
 	    // to send the reply on behalf of the app.
 	    ERROR("ignoring bye() in %s state: "
-		  "no UAC transaction to cancel.\n",
+		  "no UAC transaction to cancel or UAS transaction to reply.\n",
 		  getStatusStr());
 	    setStatus(Disconnected);
 	}
 	return 0;
+
+    case Cancelling:
+      for (TransMap::iterator it=uas_trans.begin();
+	   it != uas_trans.end(); it++) {
+	if (it->second.method == SIP_METH_INVITE){
+	  // let's quit this call by sending final reply
+	  return reply(it->second, 487,"Request terminated");
+	}
+      }
+
+      // missing AmSipRequest to be able
+      // to send the reply on behalf of the app.
+      ERROR("ignoring bye() in %s state: no UAS transaction to reply",getStatusStr());
+      setStatus(Disconnected);
+      return 0;
 
     default:
         DBG("bye(): we are not connected "
