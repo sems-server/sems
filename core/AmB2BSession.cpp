@@ -184,8 +184,11 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	}
       }
       
-      if( (req_ev->req.method == SIP_METH_BYE) ||
-	  (req_ev->req.method == SIP_METH_CANCEL) ) {
+      if( (req_ev->req.method == SIP_METH_BYE)
+	  // CANCEL is handled differently: other side has already 
+	  // sent a terminate event.
+	  //|| (req_ev->req.method == SIP_METH_CANCEL)
+	  ) {
 	
 	onOtherBye(req_ev->req);
       }
