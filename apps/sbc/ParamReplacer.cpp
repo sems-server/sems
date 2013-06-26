@@ -223,10 +223,12 @@ string replaceParameters(const string& s,
 	    break;
 	  } else if (s[p+1] == 'f') { // $Rf received interface id
 	    res += int2str(req.local_if);
+	    break;
 	  } else if (s[p+1] == 'n') { // $Rn received interface name
 	    if (req.local_if < AmConfig::SIP_Ifs.size()) {
 	      res += AmConfig::SIP_Ifs[req.local_if].name;
 	    }
+	    break;
 	  } else if (s[p+1] == 'I') { // $RI received interface public IP
 	    if (req.local_if < AmConfig::SIP_Ifs.size()) {
 	      res += AmConfig::SIP_Ifs[req.local_if].PublicIP;
