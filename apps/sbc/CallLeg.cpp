@@ -248,10 +248,10 @@ int CallLeg::relaySipReply(AmSipReply &reply)
   }
   else res = relaySip(t_req->second, reply) < 0; // relay response directly
 
-  if (reply.code >= 200){
-    DBG("recvd_req.erase(<%u,%s>)\n", t_req->first, t_req->second.method.c_str());
-    recvd_req.erase(t_req);
-  }
+  // if (reply.code >= 200){
+  //   DBG("recvd_req.erase(<%u,%s>)\n", t_req->first, t_req->second.method.c_str());
+  //   recvd_req.erase(t_req);
+  // }
   return res;
 }
 

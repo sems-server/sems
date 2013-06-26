@@ -230,18 +230,11 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 	    }
 	  }
 		
-	  if(reply_ev->reply.code >= 200){
-
-	    if( (t_req->second.method == SIP_METH_INVITE) &&
-		(reply_ev->reply.code >= 300)){
-	      DBG("relayed INVITE failed with %u %s\n",
-		  reply_ev->reply.code, reply_ev->reply.reason.c_str());
-	    }
-	    DBG("recvd_req.erase(<%u,%s>)\n", t_req->first, t_req->second.method.c_str());
-	    recvd_req.erase(t_req);
-	  } 
 	} else {
-	  ERROR("Request with CSeq %u not found in recvd_req.\n", reply_ev->reply.cseq);
+	  DBG("Cannot relay reply: request already replied"
+	      " (code=%u;cseq=%u;call-id=%s)",
+	      reply_ev->reply.code, reply_ev->reply.cseq,
+	      reply_ev->reply.callid.c_str());
 	}
       } else {
 	// check whether not-forwarded (locally initiated)
@@ -539,6 +532,14 @@ void AmB2BSession::onReplySent(const AmSipRequest& req, const AmSipReply& reply)
        (reply.cseq_method == SIP_METH_REFER)) ) {
     subs->onReplySent(req,reply);
   }
+  
+  if(reply.code >= 200 && reply.cseq_method != SIP_METH_CANCEL){
+    if((req.method == SIP_METH_INVITE) && (reply.code >= 300)) {
+      DBG("relayed INVITE failed with %u %s\n", reply.code, reply.reason.c_str());
+    }
+    DBG("recvd_req.erase(<%u,%s>)\n", req.cseq, req.method.c_str());
+    recvd_req.erase(reply.cseq);
+  } 
 
   AmSession::onReplySent(req,reply);
 }
