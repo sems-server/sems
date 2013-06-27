@@ -285,7 +285,10 @@ void CallLeg::b2bInitial1xx(AmSipReply& reply, bool forward)
 {
   // stop processing of 100 reply here or add Trying state to handle it without
   // remembering other_id (for now, the 100 won't get here, but to be sure...)
-  if (reply.to_tag.empty()) return;
+  // Warning: 100 reply may have to tag but forward is explicitly set to false,
+  // so it can't be used to check whether it is related to a forwarded request
+  // or not!
+  if (reply.to_tag.empty() || reply.code == 100) return;
 
   if (call_status == NoReply) {
     DBG("1xx reply with to-tag received in NoReply state,"
