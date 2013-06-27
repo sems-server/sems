@@ -426,7 +426,7 @@ string AmArg::print(const AmArg &a) {
   string s;
   switch (a.getType()) {
     case Undef:
-      return "<UNDEFINED>";
+      return "";
     case Int:
       return a.asInt()<0?"-"+int2str(abs(a.asInt())):int2str(abs(a.asInt()));
     case Bool:
