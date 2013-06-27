@@ -175,7 +175,8 @@ class AudioStreamData {
     }
 
     void setLocalIP(const string& ip) { 
-      if (stream) stream->setLocalIP(ip);
+      // set the address only if it is not used already
+      if (stream && !stream->hasLocalSocket()) stream->setLocalIP(ip);
     }
 
     AmRtpAudio *getStream() { 
