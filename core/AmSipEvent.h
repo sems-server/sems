@@ -69,7 +69,7 @@ class AmSipTimeoutEvent: public AmSipEvent
     : AmSipEvent(), type(t)
    {}
   AmSipTimeoutEvent(EvType t, AmSipRequest &_req, AmSipReply &_rpl)
-    : AmSipEvent(), req(_req), rpl(_rpl)
+    : AmSipEvent(), type(t), req(_req), rpl(_rpl)
     {}
 
   virtual void operator() (AmBasicSipDialog* dlg);
