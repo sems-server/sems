@@ -952,6 +952,19 @@ int AmRtpStream::nextPacket(AmRtpPacket*& p)
   return 1;
 }
 
+AmRtpPacket *AmRtpStream::reuseBufferedPacket()
+{
+  AmRtpPacket *p = NULL;
+
+  receive_mut.lock();
+  if(!receive_buf.empty()) {
+    p = receive_buf.begin()->second;
+    receive_buf.erase(receive_buf.begin());
+  }
+  receive_mut.unlock();
+  return p;
+}
+
 void AmRtpStream::recvPacket(int fd)
 {
   if(fd == l_rtcp_sd){
@@ -960,7 +973,9 @@ void AmRtpStream::recvPacket(int fd)
   }
 
   AmRtpPacket* p = mem.newPacket();
+  if (!p) p = reuseBufferedPacket();
   if (!p) {
+    DBG("out of buffers for RTP packets, dropping\n");
     // drop received data
     AmRtpPacket dummy;
     dummy.recv(l_sd);

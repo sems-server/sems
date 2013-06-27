@@ -277,6 +277,9 @@ protected:
   /* Get next packet from the buffer queue */
   int nextPacket(AmRtpPacket*& p);
   
+  /** Try to reuse oldest buffered packet for newly coming packet */
+  AmRtpPacket *reuseBufferedPacket();
+
   /** handle symmetric RTP/RTCP - if in passive mode, update raddr from rp */
   void handleSymmetricRtp(struct sockaddr_storage* recv_addr, bool rtcp);
 
