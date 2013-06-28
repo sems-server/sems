@@ -1157,6 +1157,7 @@ void AmRtpStream::stopReceiving()
   if (hasLocalSocket()){
     DBG("remove stream [%p] from RTP receiver\n", this);
     AmRtpReceiver::instance()->removeStream(getLocalSocket());
+    if (l_rtcp_sd > 0) AmRtpReceiver::instance()->removeStream(l_rtcp_sd);
   }
 }
 
@@ -1165,6 +1166,7 @@ void AmRtpStream::resumeReceiving()
   if (hasLocalSocket()){
     DBG("resume stream [%p] into RTP receiver\n",this);
     AmRtpReceiver::instance()->addStream(getLocalSocket(), this);
+    if (l_rtcp_sd > 0) AmRtpReceiver::instance()->addStream(l_rtcp_sd, this);
   }
 }
 
