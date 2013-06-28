@@ -253,18 +253,12 @@ void AudioStreamData::clear()
 
 void AudioStreamData::stopStreamProcessing()
 {
-  if (stream && stream->hasLocalSocket()){
-    DBG("remove stream [%p] from RTP receiver\n", stream);
-    AmRtpReceiver::instance()->removeStream(stream->getLocalSocket());
-  }
+  if (stream) stream->stopReceiving();
 }
 
 void AudioStreamData::resumeStreamProcessing()
 {
-  if (stream && stream->hasLocalSocket()){
-    DBG("resume stream [%p] into RTP receiver\n",stream);
-    AmRtpReceiver::instance()->addStream(stream->getLocalSocket(), stream);
-  }
+  if (stream) stream->resumeReceiving();
 }
 
 void AudioStreamData::setRelayStream(AmRtpStream *other)
@@ -904,6 +898,33 @@ void AmB2BMedia::onSdpUpdate()
   }
 }
 
+static void updateRelayStream(AmRtpStream *stream,
+    AmB2BSession *session,
+    const string& connection_address,
+    const SdpMedia &m, AmRtpStream *relay_to)
+{
+  static const PayloadMask true_mask(true);
+
+  stream->stopReceiving();
+  if(m.port) {
+    if (session) {
+      // propagate session settings
+      stream->setPassiveMode(session->getRtpRelayForceSymmetricRtp());
+      stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
+      stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
+      // if (!stream->hasLocalSocket()) stream->setLocalIP(session->advertisedIP());
+    }
+    stream->enableRtpRelay(true_mask,relay_to);
+    stream->setRAddr(connection_address,m.port,m.port+1);
+    if((m.transport != TP_RTPAVP) && (m.transport != TP_RTPSAVP))
+      stream->enableRawRelay();
+    stream->resumeReceiving();
+  }
+  else {
+    DBG("disabled stream");
+  }
+}
+
 bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl)
 {
   bool ok = true;
@@ -929,9 +950,6 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
   // we can safely apply the changes once we have local & remote SDP (i.e. the
   // negotiation is finished) otherwise we might handle the RTP in a wrong way
 
-  PayloadMask true_mask;
-  true_mask.set_all();
-
   AudioStreamIterator astream = audio.begin();
   RelayStreamIterator rstream = relay_streams.begin();
   for (vector<SdpMedia>::const_iterator m = remote_sdp.media.begin(); m != remote_sdp.media.end(); ++m) {
@@ -956,34 +974,14 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
       if (rstream == relay_streams.end()) continue;
 
       RelayStreamPair& relay_stream = **rstream;
-      
+
       if(a_leg) {
 	DBG("updating A-leg relay_stream");
-	relay_stream.a.stopReceiving();
-	if(m->port) {
-	  relay_stream.a.enableRtpRelay(true_mask,&relay_stream.b);
-	  relay_stream.a.setRAddr(connection_address,m->port,m->port+1);
-	  if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
-	    relay_stream.a.enableRawRelay();
-	  relay_stream.a.resumeReceiving();
-	}
-	else {
-	  DBG("disabled stream");
-	}
+        updateRelayStream(&relay_stream.a, a, connection_address, *m, &relay_stream.b);
       }
       else {
 	DBG("updating B-leg relay_stream");
-	relay_stream.b.stopReceiving();
-	if(m->port) {
-	  relay_stream.b.enableRtpRelay(true_mask,&relay_stream.a);
-	  relay_stream.b.setRAddr(connection_address,m->port,m->port+1);
-	  if((m->transport != TP_RTPAVP) || (m->transport != TP_RTPSAVP))
-	    relay_stream.b.enableRawRelay();
-	  relay_stream.b.resumeReceiving();
-	}
-	else {
-	  DBG("disabled stream");
-	}
+        updateRelayStream(&relay_stream.b, b, connection_address, *m, &relay_stream.a);
       }
       ++rstream;
     }
