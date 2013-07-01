@@ -188,7 +188,7 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 	    break;
 
 	case sip_header::H_TO:
-	    assert((*it)->p);
+	    if (!(*it)->p) break; // ignore if not parsed
 	    if(to_tag.len) {
 		if(! ((sip_from_to*)(*it)->p)->tag.len ) {
 		    
@@ -343,6 +343,7 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 	    break;
 
 	case sip_header::H_TO:
+	    if (!(*it)->p) break; // ignore if not parsed
 	    if(!to_tag.len || have_to_tag){
 		copy_hdr_wr(&c,*it);
 	    }
