@@ -215,7 +215,7 @@ int AmSdp::parse(const char* _sdp_msg)
 {
   char* s = (char*)_sdp_msg;
   clear();
-  
+
   bool ret = parse_sdp_line_ex(this,s);
   
   if(!ret && conn.address.empty()){
@@ -482,6 +482,7 @@ void SdpMedia::calcAnswer(const AmPayloadProvider* payload_prov,
 //parser
 static bool parse_sdp_line_ex(AmSdp* sdp_msg, char*& s)
 {
+  if (!s) return true; // SDP can't be empty, return error (true really used for failure?)
 
   char* next=0;
   register parse_st state;
