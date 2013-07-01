@@ -696,14 +696,6 @@ int AmRtpStream::init(const AmSdp& local,
     return -1;
   }
 
-  payload = getDefaultPT();
-  if(payload < 0) {
-    DBG("could not set a default payload\n");
-    return -1;
-  }
-  DBG("default payload selected = %i\n",payload);
-  last_payload = payload;
-
   remote_telephone_event_pt.reset(remote.telephoneEventPayload());
   if (remote_telephone_event_pt.get()) {
       DBG("remote party supports telephone events (pt=%i)\n",
@@ -713,6 +705,15 @@ int AmRtpStream::init(const AmSdp& local,
   }
 
   local_telephone_event_pt.reset(local.telephoneEventPayload());
+
+  payload = getDefaultPT();
+  if(payload < 0) {
+    DBG("could not set a default payload\n");
+    return -1;
+  }
+  DBG("default payload selected = %i\n",payload);
+  last_payload = payload;
+
 
   if(local_media.recv) {
     resume();
