@@ -256,7 +256,7 @@ void SBCCallLeg::applyAProfile()
 	"disabled symmetric RTP (normal mode)");
 
     if (call_profile.aleg_rtprelay_interface_value >= 0) {
-      setRtpRelayInterface(call_profile.aleg_rtprelay_interface_value);
+      setRtpInterface(call_profile.aleg_rtprelay_interface_value);
       DBG("using RTP interface %i for A leg\n", rtp_interface);
     }
 
@@ -370,7 +370,7 @@ void SBCCallLeg::applyBProfile()
   if (call_profile.rtprelay_enabled || call_profile.transcoder.isActive()) {
 
     if (call_profile.rtprelay_interface_value >= 0)
-      setRtpRelayInterface(call_profile.rtprelay_interface_value);
+      setRtpInterface(call_profile.rtprelay_interface_value);
 
     setRtpRelayForceSymmetricRtp(call_profile.force_symmetric_rtp_value);
     DBG("%s\n",getRtpRelayForceSymmetricRtp() ?

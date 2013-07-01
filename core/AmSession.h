@@ -617,7 +617,7 @@ public:
 
   virtual void onAfterRTPRelay(AmRtpPacket* p, sockaddr_storage* remote_addr) {}
 
-  int getRtpRelayInterface() { return rtp_interface<0 ? dlg->getOutboundIf() : rtp_interface; }
+  int getRtpInterface();
 };
 
 inline AmRtpAudio* AmSession::RTPStream() {

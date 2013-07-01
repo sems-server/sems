@@ -1237,9 +1237,8 @@ void AmSession::onFailure()
   // }
 }
 
-// Utility for basic NAT handling: allow the config file to specify the IP
-// address to use in SDP bodies 
-string AmSession::advertisedIP(int addrType)
+
+int AmSession::getRtpInterface()
 {
   if(rtp_interface < 0){
     // TODO: get default media interface for signaling IF instead
@@ -1250,6 +1249,16 @@ string AmSession::advertisedIP(int addrType)
       rtp_interface = 0;
     }
   }
+  return rtp_interface;
+}
+
+
+// Utility for basic NAT handling: allow the config file to specify the IP
+// address to use in SDP bodies 
+string AmSession::advertisedIP(int addrType)
+{
+  // sets rtp_interface if not initialized
+  getRtpInterface();
   
   assert(rtp_interface >= 0);
   assert((unsigned int)rtp_interface < AmConfig::RTP_Ifs.size());

@@ -147,7 +147,7 @@ void AmRtpStream::setLocalPort(unsigned short p)
     return;
   
   if(l_if < 0) {
-    if (session) l_if = session->getRtpRelayInterface();
+    if (session) l_if = session->getRtpInterface();
     else {
       ERROR("BUG: no session when initializing RTP stream, invalid interface can be used\n");
       l_if = 0;

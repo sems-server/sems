@@ -293,7 +293,7 @@ private:
   bool getEnableDtmfTranscoding() const { return enable_dtmf_transcoding; }
   void getLowFiPLs(vector<SdpPayload>& lowfi_payloads) const;
 
-  virtual void setRtpRelayInterface(int relay_interface);
+  virtual void setRtpInterface(int relay_interface);
   virtual void setRtpRelayForceSymmetricRtp(bool force_symmetric);
   void setRtpRelayTransparentSeqno(bool transparent);
   void setRtpRelayTransparentSSRC(bool transparent);

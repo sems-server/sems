@@ -883,8 +883,8 @@ void AmB2BSession::setRtpRelayMode(RTPRelayMode mode)
   rtp_relay_mode = mode;
 }
 
-void AmB2BSession::setRtpRelayInterface(int relay_interface) {
-  DBG("setting RTP relay interface for session '%s' to %i\n",
+void AmB2BSession::setRtpInterface(int relay_interface) {
+  DBG("setting RTP interface for session '%s' to %i\n",
       getLocalTag().c_str(), relay_interface);
   rtp_interface = relay_interface;
 }

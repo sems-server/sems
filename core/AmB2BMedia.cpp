@@ -184,7 +184,7 @@ void B2BMediaStatistics::getReport(const AmArg &args, AmArg &ret)
 
 void AudioStreamData::initialize(AmB2BSession *session)
 {
-  stream = new AmRtpAudio(session, session->getRtpRelayInterface());
+  stream = new AmRtpAudio(session, session->getRtpInterface());
   stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
   stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
   force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
@@ -226,7 +226,7 @@ void AudioStreamData::changeSession(AmB2BSession *session)
       force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
       enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
       session->getLowFiPLs(lowfi_payloads);
-      stream->setLocalIP(session->advertisedIP());
+      stream->setLocalIP(session->localMediaIP());
       ...
       }*/
     }
@@ -469,8 +469,8 @@ void AudioStreamData::mute(bool set_mute)
 //////////////////////////////////////////////////////////////////////////////////
 
 AmB2BMedia::RelayStreamPair::RelayStreamPair(AmB2BSession *_a, AmB2BSession *_b)
-: a(_a, _a ? _a->getRtpRelayInterface() : -1),
-  b(_b, _b ? _b->getRtpRelayInterface() : -1)
+: a(_a, _a ? _a->getRtpInterface() : -1),
+  b(_b, _b ? _b->getRtpInterface() : -1)
 { }
 
 AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b): 
