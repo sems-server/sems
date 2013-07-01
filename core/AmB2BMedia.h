@@ -359,7 +359,9 @@ class AmB2BMedia: public AmMediaSession
     /** Replace connection address and ports within SDP.
      *
      * Throws an exception (string) in case of error. (FIXME?) */
-    void replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const string &relay_address);
+    void replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, 
+				  const string& relay_address,
+				  const string& relay_public_address);
 
     /** Store remote SDP for given leg and update media session appropriately. 
      * Returns false if update failed. */

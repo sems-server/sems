@@ -389,7 +389,8 @@ bool AmB2BSession::updateLocalSdp(AmSdp &sdp)
   // rtp_relay_mode == RTP_Relay
 
   if (media_session) {
-    media_session->replaceConnectionAddress(sdp, a_leg, advertisedIP());
+    media_session->replaceConnectionAddress(sdp, a_leg, localMediaIP(), 
+					    advertisedIP());
 
     // We are handling relayed request or reply.  The SDP in request/reply being
     // relayed describes local side of current leg (doesn't matter if it was offer

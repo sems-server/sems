@@ -951,7 +951,7 @@ bool AmSession::getSdpOffer(AmSdp& offer)
     media_idx = RTPStream()->getSdpMediaIndex();
   }
 
-  RTPStream()->setLocalIP(advertisedIP());
+  RTPStream()->setLocalIP(localMediaIP());
   RTPStream()->getSdpOffer(media_idx,offer.media.back());
   
   return true;
@@ -1003,7 +1003,7 @@ bool AmSession::getSdpAnswer(const AmSdp& offer, AmSdp& answer)
         && audio_1st_stream 
         && (m_it->port != 0) ) {
 
-      RTPStream()->setLocalIP(answer.conn.address);
+      RTPStream()->setLocalIP(localMediaIP(answer.conn.addrType));
       RTPStream()->getSdpAnswer(media_index,*m_it,answer_media);
       if(answer_media.payloads.empty() ||
 	 ((answer_media.payloads.size() == 1) &&
@@ -1252,6 +1252,24 @@ int AmSession::getRtpInterface()
   return rtp_interface;
 }
 
+string AmSession::localMediaIP(int addrType)
+{
+  // sets rtp_interface if not initialized
+  getRtpInterface();
+  
+  assert(rtp_interface >= 0);
+  assert((unsigned int)rtp_interface < AmConfig::RTP_Ifs.size());
+
+  string set_ip = "";
+  for (size_t i = rtp_interface; i < AmConfig::RTP_Ifs.size(); i++) {
+    set_ip = AmConfig::RTP_Ifs[i].LocalIP; // "media_ip" parameter.
+    if ((addrType == AT_NONE) ||
+	((addrType == AT_V4) && (set_ip.find(".") != std::string::npos)) ||
+	((addrType == AT_V6) && (set_ip.find(":") != std::string::npos)))
+      return set_ip;
+  }
+  return set_ip;
+}
 
 // Utility for basic NAT handling: allow the config file to specify the IP
 // address to use in SDP bodies 

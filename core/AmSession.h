@@ -591,6 +591,9 @@ public:
   // The IP address to put as c= in SDP bodies
   string advertisedIP(int addrType = AT_NONE);
 
+  // IP address used to bind the RTP socket
+  string localMediaIP(int addrType = AT_NONE);
+
   /** format session id for debugging */
   string sid4dbg();
 

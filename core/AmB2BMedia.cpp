@@ -190,7 +190,7 @@ void AudioStreamData::initialize(AmB2BSession *session)
   force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
   enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
   session->getLowFiPLs(lowfi_payloads);
-  stream->setLocalIP(session->advertisedIP());
+  stream->setLocalIP(session->localMediaIP());
 }
 
 AudioStreamData::AudioStreamData(AmB2BSession *session):
@@ -704,7 +704,9 @@ void AmB2BMedia::createStreams(const AmSdp &sdp)
 }
 
 
-void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const string &relay_address) 
+void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, 
+					  const string& relay_address,
+					  const string& relay_public_address)
 {
   static const string void_addr("0.0.0.0");
   AmLock lock(mutex);
@@ -713,7 +715,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
 
   // place relay_address in connection address
   if (!parser_sdp.conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
-    parser_sdp.conn.address = relay_address;
+    parser_sdp.conn.address = relay_public_address;
     DBG("new connection address: %s",parser_sdp.conn.address.c_str());
   }
 
@@ -739,7 +741,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
 
       if(it->port) { // if stream active
 	if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
-	  it->conn.address = relay_address;
+	  it->conn.address = relay_public_address;
 	  DBG("new stream connection address: %s",it->conn.address.c_str());
 	}
 	try {
@@ -770,7 +772,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
 
       if(it->port) { // if stream active
 	if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
-	  it->conn.address = relay_address;
+	  it->conn.address = relay_public_address;
 	  DBG("new stream connection address: %s",it->conn.address.c_str());
 	}
 	try {
@@ -813,7 +815,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg, const s
   }
 
   DBG("replaced connection address in SDP with %s:%s.\n",
-      relay_address.c_str(), replaced_ports.c_str());
+      relay_public_address.c_str(), replaced_ports.c_str());
 }
       
 static const char* 

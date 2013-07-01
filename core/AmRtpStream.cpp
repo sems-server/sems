@@ -669,11 +669,16 @@ int AmRtpStream::init(const AmSdp& local,
 
   if(!l_port){
     // only if socket not yet bound:
-    // set local address - media c-line having precedence over session c-line
-    if (local_media.conn.address.empty())
-      setLocalIP(local.conn.address);
-    else
-      setLocalIP(local_media.conn.address);
+    if(session) {
+      setLocalIP(session->localMediaIP());
+    }
+    else {
+      // set local address - media c-line having precedence over session c-line
+      if (local_media.conn.address.empty())
+	setLocalIP(local.conn.address);
+      else
+	setLocalIP(local_media.conn.address);
+    }
 
     DBG("setting local port to %i",local_media.port);
     setLocalPort(local_media.port);
