@@ -66,11 +66,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** handler called when call is stopped (see AmSession) */
   virtual void onStop();
 
-  /* set call timer (if enabled) */
-  bool startCallTimers();
-  /* clear call timer */
-  void stopCallTimers();
-
   /** call is started */
   bool CCStart(const AmSipRequest& req);
   /** connection of second leg */
@@ -200,6 +195,13 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onOtherBye(const AmSipRequest& req);
 
   void onControlCmd(string& cmd, AmArg& params);
+
+  /* set call timer (if enabled) */
+  virtual bool startCallTimers();
+  /* clear call timer */
+  virtual void stopCallTimers();
+
+  const map<int, double> getCallTimers() { return call_timers; }
 
   void createCalleeSession();
 
