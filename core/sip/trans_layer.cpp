@@ -1026,7 +1026,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	if(dest_list.size() == 1) {
 	    const sip_destination& dest = dest_list.front();
 	    next_hop = dest.host;
-	    next_port = dest.port ? dest.port : 5060;
+	    next_port = dest.port;
 	    next_trsp = dest.trsp;
 	    DBG("single next-hop: <%.*s:%u/%.*s>",
 		next_hop.len,next_hop.s,next_port,
