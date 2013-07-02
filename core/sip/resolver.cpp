@@ -185,7 +185,14 @@ public:
 	    h->srv_used = 0;
 	}
 	else if(h->ip_n != -1){
-	    ((sockaddr_in*)sa)->sin_port = h->port;
+	    if(h->port) {
+		DBG("setting port to %i",ntohs(h->port));
+		((sockaddr_in*)sa)->sin_port = h->port;
+	    }
+	    else {
+		DBG("setting port to 5060");
+		((sockaddr_in*)sa)->sin_port = htons(5060);
+	    }
 	    return h->ip_e->next_ip(h,sa);
 	}
 	
@@ -261,14 +268,25 @@ public:
 	
 	//TODO: find a solution for IPv6
 	h->port = htons(e->port);
-	((sockaddr_in*)sa)->sin_port = h->port;
+	if(h->port) {
+	    DBG("setting port to %i",e->port);
+	    ((sockaddr_in*)sa)->sin_port = h->port;
+	}
+	else {
+	    DBG("setting port to 5060");
+	    ((sockaddr_in*)sa)->sin_port = htons(5060);
+	}
 
 	// check if name is an IP address
 	if(am_inet_pton(e->target.c_str(),sa) == 1) {
+	    DBG("target is an IP address !!! (%i)",
+		ntohs(((sockaddr_in*)sa)->sin_port));
 	    h->ip_n = -1; // flag end of IP list
 	    return 0;
 	}
 
+	DBG("target must be resolved first !!! (%i)",
+	    ntohs(((sockaddr_in*)sa)->sin_port));
 	return resolver::instance()->resolve_name(e->target.c_str(),h,sa,IPv4);
     }
 };
@@ -399,6 +417,7 @@ static void dns_error(int error, const char* domain)
 
 void ip_entry::to_sa(sockaddr_storage* sa)
 {
+    DBG("copying ip_entry...");
     switch(type){
     case IPv4:
 	{
@@ -419,13 +438,19 @@ void ip_entry::to_sa(sockaddr_storage* sa)
 
 void ip_port_entry::to_sa(sockaddr_storage* sa)
 {
+    DBG("copying ip_port_entry...");
     switch(type){
     case IPv4:
 	{
 	    sockaddr_in* sa_in = (sockaddr_in*)sa;
 	    sa_in->sin_family = AF_INET;
 	    memcpy(&(sa_in->sin_addr),&addr,sizeof(in_addr));
-	    sa_in->sin_port = htons(port);
+	    if(port) {
+		sa_in->sin_port = htons(port);
+	    }
+	    else {
+		sa_in->sin_port = htons(5060);
+	    }
 	} break;
     case IPv6:
 	{
