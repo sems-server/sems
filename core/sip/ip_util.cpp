@@ -36,7 +36,6 @@ int am_inet_pton(const char* src, struct sockaddr_storage* dst)
     memcpy(src_addr,src,src_len+1);
   }
 
-  memset((void*)dst, 0, sizeof(struct sockaddr_storage));
   sin = (struct sockaddr_in *)dst;
   sin6 = (struct sockaddr_in6 *)dst;
     
