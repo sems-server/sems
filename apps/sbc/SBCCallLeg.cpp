@@ -604,6 +604,10 @@ void SBCCallLeg::onDtmf(int event, int duration)
 
 bool SBCCallLeg::updateLocalSdp(AmSdp &sdp)
 {
+  // anonymize SDP if configured to do so (we need to have our local media IP,
+  // not the media IP of our peer leg there)
+  if (call_profile.anonymize_sdp) normalizeSDP(sdp, call_profile.anonymize_sdp, advertisedIP());
+
   // remember transcodable payload IDs
   if (call_profile.transcoder.isActive()) savePayloadIDs(sdp);
   return CallLeg::updateLocalSdp(sdp);
@@ -1319,12 +1323,21 @@ int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
   bool changed = false;
   bool prefer_existing_codecs = call_profile.codec_prefs.preferExistingCodecs(a_leg);
 
+  bool needs_normalization =
+          call_profile.codec_prefs.shouldOrderPayloads(a_leg) ||
+          call_profile.transcoder.isActive() ||
+          !call_profile.sdpfilter.empty();
+
+  if (needs_normalization) {
+    normalizeSDP(sdp, false, ""); // anonymization is done in the other leg to use correct IP address
+    changed = true;
+  }
+
   if (prefer_existing_codecs) {
     // We have to order payloads before adding transcoder codecs to leave
     // transcoding as the last chance (existing codecs are preferred thus
     // relaying will be used if possible).
     if (call_profile.codec_prefs.shouldOrderPayloads(a_leg)) {
-      normalizeSDP(sdp, call_profile.anonymize_sdp);
       call_profile.codec_prefs.orderSDP(sdp, a_leg);
       changed = true;
     }
@@ -1334,8 +1347,6 @@ int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
   // inactivate some media lines which shouldn't be inactivated.
 
   if (call_profile.transcoder.isActive()) {
-    if (!changed) // otherwise already normalized
-      normalizeSDP(sdp, call_profile.anonymize_sdp);
     appendTranscoderCodecs(sdp);
     changed = true;
   }
@@ -1345,7 +1356,6 @@ int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
     // codecs so it might happen that transcoding will be forced though relaying
     // would be possible
     if (call_profile.codec_prefs.shouldOrderPayloads(a_leg)) {
-      if (!changed) normalizeSDP(sdp, call_profile.anonymize_sdp);
       call_profile.codec_prefs.orderSDP(sdp, a_leg);
       changed = true;
     }
@@ -1358,8 +1368,6 @@ int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
   // just complicate things.
 
   if (call_profile.sdpfilter.size()) {
-    if (!changed) // otherwise already normalized
-      normalizeSDP(sdp, call_profile.anonymize_sdp);
     res = filterSDP(sdp, call_profile.sdpfilter);
     changed = true;
   }

@@ -176,7 +176,7 @@ int filterSDPalines(AmSdp& sdp, const vector<FilterEntry>& filter_list) {
   return 0;
 }
 
-int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
+int normalizeSDP(AmSdp& sdp, bool anonymize_sdp, const string &advertised_ip) {
   for (std::vector<SdpMedia>::iterator m_it=
 	 sdp.media.begin(); m_it != sdp.media.end(); m_it++) {
     if (m_it->type != MT_AUDIO && m_it->type != MT_VIDEO)
@@ -192,11 +192,16 @@ int normalizeSDP(AmSdp& sdp, bool anonymize_sdp) {
 
   if (anonymize_sdp) {
     // Clear s-Line in SDP:
-    sdp.sessionName.clear();
+    sdp.sessionName = "-";
     // Clear u-Line in SDP:
     sdp.uri.clear();
     // Clear origin user
     sdp.origin.user = "-";
+    if (!advertised_ip.empty()) {
+      sdp.origin.conn.address = advertised_ip;
+      // SdpConnection::ipv4/ipv6 seems not to be used so we won't replace it there
+      // TODO: replace in attributes
+    }
   }
 
   return 0;

@@ -38,7 +38,8 @@ using std::string;
 int filterSDP(AmSdp& sdp, const vector<FilterEntry>& filter_list);
 int filterSDPalines(AmSdp& sdp, const vector<FilterEntry>& filter_list);
 
-/** normalize SDP, fixing some common issues */
-int normalizeSDP(AmSdp& sdp, bool anonymize_sdp);
+/** normalize SDP, fixing some common issues and anonymize (IP addresses
+ * replaced in such case by advertised_ip) */
+int normalizeSDP(AmSdp& sdp, bool anonymize_sdp, const string &advertised_ip);
 
 #endif

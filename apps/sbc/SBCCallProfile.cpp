@@ -681,7 +681,7 @@ static bool isTranscoderNeeded(const AmSipRequest& req, vector<PayloadDesc> &cap
   
   // not nice, but we need to compare codec names and thus normalized SDP is
   // required
-  normalizeSDP(sdp, false);
+  normalizeSDP(sdp, false, "");
 
   // go through payloads and try find one of the supported ones
   for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) { 
