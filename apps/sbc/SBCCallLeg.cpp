@@ -362,6 +362,9 @@ void SBCCallLeg::applyBProfile()
     dlg->setNextHop1stReq(call_profile.next_hop_1st_req);
   }
 
+  DBG("patch_ruri_next_hop = %i",call_profile.patch_ruri_next_hop);
+  dlg->setPatchRURINextHop(call_profile.patch_ruri_next_hop);
+
   // was read from caller but reading directly from profile now
   if (call_profile.outbound_interface_value >= 0)
     dlg->setOutboundInterface(call_profile.outbound_interface_value);
