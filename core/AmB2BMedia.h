@@ -174,6 +174,11 @@ class AudioStreamData {
       else return 0; 
     }
 
+    int getLocalRtcpPort() {
+      if (stream) return stream->getLocalRtcpPort();
+      else return 0;
+    }
+
     void setLocalIP(const string& ip) { 
       // set the address only if it is not used already
       if (stream && !stream->hasLocalSocket()) stream->setLocalIP(ip);

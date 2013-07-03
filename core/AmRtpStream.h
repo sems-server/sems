@@ -377,6 +377,12 @@ public:
   int getLocalPort();
 
   /** 
+   * Gets RTCP port number. If no RTP/RTCP port in assigned, assigns a new one.
+   * @return local RTCP port. 
+   */
+  int getLocalRtcpPort();
+
+  /** 
    * Gets remote RTP port.
    * @return remote RTP port.
    */

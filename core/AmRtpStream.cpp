@@ -450,6 +450,14 @@ int AmRtpStream::getLocalPort()
   return l_port;
 }
 
+int AmRtpStream::getLocalRtcpPort()
+{
+  if(!l_rtcp_port)
+    setLocalPort();
+
+  return l_rtcp_port;
+}
+
 int AmRtpStream::getRPort()
 {
   return r_port;
