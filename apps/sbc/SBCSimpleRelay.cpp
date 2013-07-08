@@ -403,7 +403,7 @@ int SBCSimpleRelay::start(const SimpleRelayCreator::Relay& relay,
      || relay.second->initUAC(n_req,cp)) {
 
     relay.first->finalize();
-    relay.first->finalize();
+    relay.second->finalize();
     return 0;
   }
 
