@@ -25,6 +25,7 @@
 
 #include "ParamReplacer.h"
 #include "RegisterCache.h"
+#include "sip/parse_next_hop.h"
 
 #include "log.h"
 #include "AmSipHeaders.h"
@@ -199,7 +200,7 @@ string replaceParameters(const string& s,
 	  }
 
 	  if (s[p+1] == 'i') { // $si source IP address
-	    res += req.remote_ip.c_str();
+	    res += req.remote_ip;
 	    break;
 	  } else if (s[p+1] == 'p') { // $sp source port
 	    res += int2str(req.remote_port);
@@ -207,6 +208,57 @@ string replaceParameters(const string& s,
 	  }
 
 	  WARN("unknown replacement $s%c\n", s[p+1]);
+	}; break;
+
+	case 'd': { // destination (remote UAS)
+	  if (s.length() < p+1) {
+	    WARN("unknown replacement $s\n");
+	    break;
+	  }
+
+	  if(!call_profile->next_hop.empty()) {
+	    cstring _next_hop = stl2cstr(call_profile->next_hop);
+	    list<sip_destination> dest_list;
+	    if(parse_next_hop(_next_hop,dest_list)) {
+	      WARN("parse_next_hop %.*s failed\n",
+		   _next_hop.len, _next_hop.s);
+	      break;
+	    }
+
+	    if(dest_list.size() == 0) {
+	      WARN("next-hop is not empty, but the resulting destination list is\n");
+	      break;
+	    }
+
+	    const sip_destination& dest = dest_list.front();
+	    if (s[p+1] == 'i') { // $di remote UAS IP address
+	      res += c2stlstr(dest.host);
+	      break;
+	    } else if (s[p+1] == 'p') { // $dp remote UAS port
+	      res += int2str(dest.port);
+	      break;
+	    }
+	    WARN("unknown replacement $d%c\n", s[p+1]);
+	    break;
+	  }
+
+	  if (ruri_parser.uri.empty()) {
+	    ruri_parser.uri = req.r_uri;
+	    if (!ruri_parser.parse_uri()) {
+	      WARN("Error parsing R-URI '%s'\n", req.r_uri.c_str());
+	      break;
+	    }
+	  }
+
+	  if (s[p+1] == 'i') { // $di remote UAS IP address
+	    res += ruri_parser.uri_host;
+	    break;
+	  } else if (s[p+1] == 'p') { // $dp remote UAS port
+	    res += ruri_parser.uri_port;
+	    break;
+	  }
+
+	  WARN("unknown replacement $d%c\n", s[p+1]);
 	}; break;
 
 	case 'R': { // received (local)
