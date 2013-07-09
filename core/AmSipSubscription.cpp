@@ -413,8 +413,53 @@ AmSipSubscription::createSubscription(const AmSipRequest& req, bool uac)
   return subs.insert(subs.end(),sub);
 }
 
+void AmSipSubscription::removeSubFromUACCSeqMap(Subscriptions::iterator sub)
+{
+  for (CSeqMap::iterator i = uac_cseq_map.begin(); i != uac_cseq_map.end();) {
+    if (i->second == sub) {
+      DBG("removing UAC subnot transaction with cseq=%i",i->first);
+      CSeqMap::iterator del_i = i; ++i;
+      uac_cseq_map.erase(del_i);
+      continue;
+    }
+    ++i;
+  }
+}
+
+void AmSipSubscription::removeSubFromUASCSeqMap(Subscriptions::iterator sub)
+{
+  for (CSeqMap::iterator i = uas_cseq_map.begin(); i != uas_cseq_map.end();) {
+    if (i->second == sub) {
+
+      unsigned int cseq = i->first;
+      CSeqMap::iterator del_i = i; ++i;
+      uas_cseq_map.erase(del_i);
+
+      DBG("removed UAS subnot transaction with cseq=%i",cseq);
+
+      // reply pending UAS transaction
+      AmSipRequest* req = dlg->getUASTrans(cseq);
+      if(req) {
+	DBG("found request(cseq=%i): replying 481 to pending UAS transaction",
+	    req->cseq);
+	dlg->reply(*req,481,SIP_REPLY_NOT_EXIST);
+      }
+      else {
+	DBG("request not found: could not reply 481 to pending UAS transaction");
+      }
+
+      continue;
+    }
+
+    ++i;
+  }
+}
+
 void AmSipSubscription::removeSubscription(Subscriptions::iterator sub)
 {
+  removeSubFromUACCSeqMap(sub);
+  removeSubFromUASCSeqMap(sub);
+
   delete *sub;
   subs.erase(sub);
 }

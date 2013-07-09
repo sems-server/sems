@@ -168,6 +168,9 @@ protected:
   virtual Subscriptions::iterator createSubscription(const AmSipRequest& req, 
 						     bool uac);
   Subscriptions::iterator matchSubscription(const AmSipRequest& req, bool uac);
+  void removeSubFromUACCSeqMap(Subscriptions::iterator sub);
+  void removeSubFromUASCSeqMap(Subscriptions::iterator sub);
+
   virtual void removeSubscription(Subscriptions::iterator sub);
 
   virtual SingleSubscription* newSingleSubscription(SingleSubscription::Role role,
