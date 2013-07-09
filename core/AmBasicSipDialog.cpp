@@ -567,7 +567,7 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
     ERROR("Could not send reply: code=%i; reason='%s'; method=%s;"
 	  " call-id=%s; cseq=%i\n",
 	  reply.code,reply.reason.c_str(),reply.cseq_method.c_str(),
-	  reply.callid.c_str(),reply.cseq);
+	  callid.c_str(),reply.cseq);
 
     return ret;
   }
