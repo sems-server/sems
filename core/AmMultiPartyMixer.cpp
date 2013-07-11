@@ -274,7 +274,7 @@ std::deque<MixerBufferState>::iterator AmMultiPartyMixer::findOrCreateBufferStat
   //DBG("XXDebugMixerXX: Creating buffer state (from PutChannelPacket)");
   buffer_state.push_back(MixerBufferState(sample_rate, channelids));
   std::deque<MixerBufferState>::reverse_iterator rit = buffer_state.rbegin();
-  DEBUG_MIXER_BUFFER_STATE(*((rit + 1).base()), "returned to PutChannelPacket");
+  //DEBUG_MIXER_BUFFER_STATE(*((rit + 1).base()), "returned to PutChannelPacket");
   return (rit + 1).base();
 }
 
@@ -296,7 +296,7 @@ AmMultiPartyMixer::findBufferStateForReading(unsigned int sample_rate,
   //DBG("XXDebugMixerXX: Creating buffer state (from GetChannelPacket)");
   buffer_state.push_back(MixerBufferState(sample_rate, channelids));
   std::deque<MixerBufferState>::reverse_iterator rit = buffer_state.rbegin();
-  DEBUG_MIXER_BUFFER_STATE(*((rit + 1).base()), "returned to PutChannelPacket");
+  //DEBUG_MIXER_BUFFER_STATE(*((rit + 1).base()), "returned to PutChannelPacket");
   return (rit + 1).base();
 }
 
@@ -306,7 +306,7 @@ void AmMultiPartyMixer::cleanupBufferStates(unsigned int last_ts)
 	 && (buffer_state.front().last_ts != 0 && buffer_state.front().last_ts < last_ts) 
 	 && (unsigned int)GetCurrentSampleRate() != buffer_state.front().sample_rate) {
 
-    DEBUG_MIXER_BUFFER_STATE(buffer_state.front(), "freed in cleanupBufferStates");
+    //DEBUG_MIXER_BUFFER_STATE(buffer_state.front(), "freed in cleanupBufferStates");
     buffer_state.front().free_channels();
     buffer_state.pop_front();
   }
