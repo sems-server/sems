@@ -204,7 +204,8 @@ plugin_path=/usr/local/lib/sems/plug-in/
 # o precoded_announce: no precoded sample files present
 # o py_sems: conflicts with ivr (in some cases)
 # o db_reg_agent: needs DB tables
-exclude_plugins=precoded_announce;py_sems;db_reg_agent
+# o cc_* : sbc call control modules (loaded from sbc.conf)
+exclude_plugins=precoded_announce;py_sems;db_reg_agent;cc_call_timer;cc_ctl;cc_pcalls;cc_prepaid;cc_prepaid_xmlrpc;cc_rest;cc_syslog_cdr
 
 # optional: load_plugins_rtld_global=<modules list>
 #
