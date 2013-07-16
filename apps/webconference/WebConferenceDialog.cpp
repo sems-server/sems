@@ -49,8 +49,9 @@ WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
 					 WebConferenceFactory* my_f,
 					 const string& room)
   : play_list(this), separator(this, 0), prompts(prompts), state(None),
-    factory(my_f), muted(false), 
-    connect_ts(-1), disconnect_ts(-1)
+    factory(my_f), muted(false),
+    connect_ts(-1), disconnect_ts(-1),
+    local_input(NULL), cred(NULL)
 {
   conf_id = room;
   DBG("set conf_id to %s\n", conf_id.c_str());
