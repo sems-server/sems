@@ -211,6 +211,7 @@ private:
 
   void onRemoteDisappeared(const AmSipReply& reply);
 
+  void onRtpTimeout();
   void onSessionTimeout();
   void onNoAck(unsigned int cseq);
 

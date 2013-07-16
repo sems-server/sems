@@ -611,6 +611,12 @@ void AmB2BSession::terminateOtherLeg()
     relayEvent(new B2BEvent(B2BTerminateLeg));
 }
 
+void AmB2BSession::onRtpTimeout() {
+  DBG("RTP Timeout, ending other leg\n");
+  terminateOtherLeg();
+  AmSession::onRtpTimeout();
+}
+
 void AmB2BSession::onSessionTimeout() {
   DBG("Session Timer: Timeout, ending other leg\n");
   terminateOtherLeg();
