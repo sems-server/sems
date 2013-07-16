@@ -88,7 +88,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** apply B leg configuration from call profile */
   void applyBProfile();
 
-  virtual void onCallStatusChange();
+  virtual void onCallStatusChange(const StatusChangeCause &cause);
   virtual void onBLegRefused(const AmSipReply& reply);
 
   /** handler called when the call is refused with a non-ok reply or canceled */

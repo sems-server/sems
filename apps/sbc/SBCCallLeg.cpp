@@ -1238,10 +1238,10 @@ void SBCCallLeg::CCEnd(const CCInterfaceListIteratorT& end_interface) {
   }
 }
 
-void SBCCallLeg::onCallStatusChange()
+void SBCCallLeg::onCallStatusChange(const StatusChangeCause &cause)
 {
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    (*i)->onStateChange(this);
+    (*i)->onStateChange(this, cause);
   }
 }
 

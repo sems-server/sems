@@ -37,7 +37,7 @@ class ExtendedCCInterface
      * be used for evaluating CC module parameters). */
     virtual void init(SBCCallLeg *call, const map<string, string> &values) { }
 
-    virtual void onStateChange(SBCCallLeg *call) { };
+    virtual void onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause) { };
 
     /** called when the call leg is being destroyed, useful to cleanup used resources */
     virtual void onDestroyLeg(SBCCallLeg *call) { }

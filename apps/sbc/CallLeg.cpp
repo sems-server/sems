@@ -139,7 +139,7 @@ void CallLeg::terminateOtherLeg()
   }
 
   // FIXME: call disconnect if connected (to put remote on hold)?
-  updateCallStatus(Disconnected); // no B legs should be remaining
+  if (getCallStatus() != Disconnected) updateCallStatus(Disconnected); // no B legs should be remaining
 }
 
 void CallLeg::terminateNotConnectedLegs()
@@ -295,7 +295,7 @@ void CallLeg::b2bInitial1xx(AmSipReply& reply, bool forward)
         " changing status to Ringing and remembering the"
         " other leg ID (%s)\n", getOtherId().c_str());
     if (setOther(reply.from_tag, initial_sdp_stored && forward)) {
-      updateCallStatus(Ringing);
+      updateCallStatus(Ringing, &reply);
       if (forward && relaySipReply(reply) != 0) stopCall();
     }
   }
@@ -345,7 +345,7 @@ void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
     stopCall();
     return;
   }
-  updateCallStatus(Connected);
+  updateCallStatus(Connected, &reply);
 }
 
 void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
@@ -362,7 +362,7 @@ void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
       getOtherId().c_str());
   clearRtpReceiverRelay();
   removeOtherLeg(reply.from_tag); // we don't care about this leg any more
-  updateCallStatus(NoReply);
+  updateCallStatus(NoReply, &reply);
   onBLegRefused(reply); // possible serial fork here
   set_sip_relay_only(false);
 
@@ -374,7 +374,7 @@ void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
   if (forward) relaySipReply(reply);
 
   // no other B legs, terminate
-  updateCallStatus(Disconnected);
+  updateCallStatus(Disconnected, &reply);
   stopCall();
 }
 
@@ -863,11 +863,11 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
     // reply to the initial request
     if ((reply.code > 100) && (reply.code < 200)) {
       if (((call_status == NoReply)) && (!reply.to_tag.empty()))
-        updateCallStatus(Ringing);
+        updateCallStatus(Ringing, &reply);
     }
     else if ((reply.code >= 200) && (reply.code < 300)) {
       onCallConnected(reply);
-      updateCallStatus(Connected);
+      updateCallStatus(Connected, &reply);
     }
     else if (reply.code >= 300) {
       terminateLeg(); // commit suicide (don't let the master to kill us)
@@ -900,6 +900,7 @@ void CallLeg::onCancel(const AmSipRequest& req)
     if (a_leg) {
       // terminate whole B2B call if the caller receives CANCEL
       onCallFailed(CallCanceled, NULL);
+      updateCallStatus(Disconnected, StatusChangeCause::Canceled);
       stopCall();
     }
     // else { } ... ignore for B leg
@@ -922,15 +923,46 @@ void CallLeg::onRemoteDisappeared(const AmSipReply& reply)
     // FIXME: shouldn't be cleared in AmB2BSession as well?
     clearRtpReceiverRelay(); 
     AmB2BSession::onRemoteDisappeared(reply); // terminates the other leg
-    updateCallStatus(Disconnected);
+    updateCallStatus(Disconnected, &reply);
   }
 }
 
 // was for caller only
 void CallLeg::onBye(const AmSipRequest& req)
 {
+  updateCallStatus(Disconnected, &req);
   clearRtpReceiverRelay(); // FIXME: shouldn't be cleared in AmB2BSession as well?
   AmB2BSession::onBye(req);
+}
+
+void CallLeg::onOtherBye(const AmSipRequest& req)
+{
+  updateCallStatus(Disconnected, &req);
+  AmB2BSession::onOtherBye(req);
+}
+
+void CallLeg::onNoAck(unsigned int cseq)
+{
+  updateCallStatus(Disconnected, StatusChangeCause::NoAck);
+  AmB2BSession::onNoAck(cseq);
+}
+
+void CallLeg::onNoPrack(const AmSipRequest &req, const AmSipReply &rpl)
+{
+  updateCallStatus(Disconnected, StatusChangeCause::NoPrack);
+  AmB2BSession::onNoPrack(req, rpl);
+}
+
+void CallLeg::onRtpTimeout()
+{
+  updateCallStatus(Disconnected, StatusChangeCause::RtpTimeout);
+  AmB2BSession::onRtpTimeout();
+}
+
+void CallLeg::onSessionTimeout()
+{
+  updateCallStatus(Disconnected, StatusChangeCause::SessionTimeout);
+  AmB2BSession::onSessionTimeout();
 }
 
 void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e,
@@ -986,7 +1018,7 @@ void CallLeg::setCallStatus(CallStatus new_status)
   call_status = new_status;
 }
 
-void CallLeg::updateCallStatus(CallStatus new_status)
+void CallLeg::updateCallStatus(CallStatus new_status, const StatusChangeCause &cause)
 {
   if (new_status == Connected)
     TRACE("%s leg %s changing status from %s to %s with %s\n",
@@ -1003,7 +1035,7 @@ void CallLeg::updateCallStatus(CallStatus new_status)
         callStatus2str(new_status));
 
   setCallStatus(new_status);
-  onCallStatusChange();
+  onCallStatusChange(cause);
 }
 
 void CallLeg::addExistingCallee(const string &session_tag, ReconnectLegEvent *ev)
