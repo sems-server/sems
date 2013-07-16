@@ -34,6 +34,8 @@
 #include <string.h>
 #include <syslog.h>
 
+#define CDR_VARS "cdr::v"
+
 class SyslogCDRFactory : public AmDynInvokeFactory
 {
 public:
@@ -132,6 +134,8 @@ void SyslogCDR::invoke(const string& method, const AmArg& args, AmArg& ret)
     } else if(method == CC_INTERFACE_MAND_VALUES_METHOD){
       // ret.push("Call-ID");
       // ret.push("From-tag");
+    } else if (method == "getExtendedInterfaceHandler") {
+      ret.push((AmObject*)this);
     } else if(method == "_list"){
       ret.push("start");
       ret.push("connect");
@@ -155,7 +159,7 @@ void SyslogCDR::start(const string& ltag, SBCCallProfile* call_profile,
 		      const AmArg& values) {
   if (!call_profile) return;
 
-  call_profile->cc_vars["cdr::v"] = values;
+  call_profile->cc_vars[CDR_VARS] = values;
 }
 
 string getTimeDiffString(int from_ts_sec, int from_ts_usec,
@@ -235,7 +239,7 @@ void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
   AmArg d;
   AmArg& values = d;
   
-  SBCVarMapIteratorT vars_it = call_profile->cc_vars.find("cdr::v");
+  SBCVarMapIteratorT vars_it = call_profile->cc_vars.find(CDR_VARS);
   if (vars_it != call_profile->cc_vars.end())
     values = vars_it->second;
 
@@ -303,7 +307,7 @@ void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
 	      }	catch(...) { }
 	    }
 	    if (isArgCStr((*v))) {
-	      cdr+=string(v->asCStr())+",";
+	      cdr+=csv_quote(string(v->asCStr()))+",";
 	    } else {
 	      cdr+=AmArg::print(*v)+",";
 	    }
@@ -341,4 +345,117 @@ void SyslogCDR::end(const string& ltag, SBCCallProfile* call_profile,
 
   syslog(log2syslog_level[level], "%s%s", syslog_prefix.c_str(), cdr.c_str());
   DBG("written CDR '%s' to syslog\n", ltag.c_str());
+}
+
+void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause)
+{
+  SBCCallProfile &prof = call->getCallProfile();
+
+  SBCVarMapIteratorT i = prof.cc_vars.find(CDR_VARS);
+  if (i == prof.cc_vars.end()) {
+    prof.cc_vars[CDR_VARS] = AmArg();
+    i = prof.cc_vars.find(CDR_VARS);
+  }
+  if (i == prof.cc_vars.end()) {
+    ERROR("can't update CDR\n");
+    return;
+  }
+
+  AmArg &cdr = i->second;
+
+  CallLeg::CallStatus s = call->getCallStatus();
+
+  bool answered = false;
+  bool have_disposition = cdr.hasMember("disposition");
+  if (have_disposition) answered = cdr["disposition"] == "answered";
+
+
+  // call establishment data (disposition, invite_code, invite_reason)
+
+  if ((s == CallLeg::Connected || s == CallLeg::Disconnected) && !have_disposition) {
+    switch (cause.reason) {
+      case CallLeg::StatusChangeCause::SipReply:
+        // rember reply code/reason if given
+        if (!cause.param.reply) {
+          ERROR("bug: reply not set when writing to CDR\n");
+          return;
+        }
+        cdr["invite_code"] = (int) cause.param.reply->code;
+        cdr["invite_reason"] = cause.param.reply->reason;
+        if (cause.param.reply->code < 300)
+          cdr["disposition"] = "answered";
+        else
+          cdr["disposition"] = "failed";
+        break;
+
+      case CallLeg::StatusChangeCause::Canceled:
+        cdr["disposition"] = "canceled";
+        break;
+
+      case CallLeg::StatusChangeCause::NoPrack:
+        cdr["disposition"] = "no PRACK";
+        break;
+
+      case CallLeg::StatusChangeCause::Unspecified:
+          cdr["disposition"] = "unknown";
+          break;
+
+      case CallLeg::StatusChangeCause::NoAck:
+      case CallLeg::StatusChangeCause::SipRequest:
+      case CallLeg::StatusChangeCause::RtpTimeout:
+      case CallLeg::StatusChangeCause::SessionTimeout:
+          ERROR("bug: unexpected call state change cause: %d\n", cause.reason);
+          cdr["disposition"] = "unknown";
+          break;
+
+    }
+  }
+
+
+  // hangup related data (hangup_cause, hangup_initiator), answered calls only!
+
+  if (s == CallLeg::Disconnected && answered) {
+    switch (cause.reason) {
+      case CallLeg::StatusChangeCause::SipRequest:
+        if (cause.param.request) {
+          // terminated because of request
+          cdr["hangup_cause"] = cause.param.request->method;
+          bool our_peer = cause.param.request->from_tag == call->getRemoteTag();
+          if ((call->isALeg() && our_peer) || (!call->isALeg() && !our_peer))
+            cdr["hangup_initiator"] = "caller";
+          else
+            cdr["hangup_initiator"] = "callee";
+        }
+        break;
+
+      case CallLeg::StatusChangeCause::SipReply:
+        cdr["hangup_cause"] = "reply";
+        break;
+
+      case CallLeg::StatusChangeCause::Canceled:
+        // should not get here, the call was not established
+        break;
+
+      case CallLeg::StatusChangeCause::NoAck:
+        cdr["hangup_cause"] = "no ACK";
+        break;
+
+      case CallLeg::StatusChangeCause::NoPrack:
+        cdr["hangup_cause"] = "no PRACK";
+        break;
+
+      case CallLeg::StatusChangeCause::RtpTimeout:
+        cdr["hangup_cause"] = "RTP timeout";
+        break;
+
+      case CallLeg::StatusChangeCause::SessionTimeout:
+        cdr["hangup_cause"] = "session timeout";
+        break;
+
+      case CallLeg::StatusChangeCause::Unspecified:
+          cdr["hangup_cause"] = "unknown";
+          break;
+    }
+
+  }
 }

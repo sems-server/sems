@@ -31,6 +31,7 @@
 #include "AmEventProcessingThread.h"
 
 #include "SBCCallProfile.h"
+#include "SBCCallLeg.h"
 
 #include <sys/time.h>
 #include <stdio.h>
@@ -41,7 +42,7 @@
 /**
  * accounting for generating CDR lines in CSV format in syslog
  */
-class SyslogCDR : public AmDynInvoke
+class SyslogCDR : public AmDynInvoke, public ExtendedCCInterface, public AmObject
 {
   static SyslogCDR* _instance;
 
@@ -67,6 +68,8 @@ class SyslogCDR : public AmDynInvoke
   static SyslogCDR* instance();
   void invoke(const string& method, const AmArg& args, AmArg& ret);
   int onLoad();
+
+  virtual void onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause);
 };
 
 #endif 
