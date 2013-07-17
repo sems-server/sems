@@ -128,7 +128,7 @@ public:
   SingleSubscription(AmSipSubscription* subs, Role role,
 		     const string& event, const string& id);
 
-  ~SingleSubscription();
+  virtual ~SingleSubscription();
 
   bool onRequestIn(const AmSipRequest& req);
   void onRequestSent(const AmSipRequest& req);
