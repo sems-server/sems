@@ -506,6 +506,11 @@ void SBCCallLeg::onSipRequest(const AmSipRequest& req) {
     if ((*i)->onInDialogRequest(this, req) == StopProcessing) return;
   }
 
+  if (fwd && req.method == SIP_METH_INVITE) {
+    DBG("replying 100 Trying to INVITE to be fwd'ed\n");
+    dlg->reply(req, 100, SIP_REPLY_TRYING);
+  }
+
   CallLeg::onSipRequest(req);
 }
 

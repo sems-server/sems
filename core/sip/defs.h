@@ -75,5 +75,6 @@
 #define SIP_REPLY_NOT_EXIST             "Call Leg/Transaction Does Not Exist"
 #define SIP_REPLY_PENDING               "Request Pending"
 #define SIP_REPLY_NOT_ACCEPTABLE_HERE   "Not Acceptable Here"
+#define SIP_REPLY_TRYING                "Trying"
 
 #endif
