@@ -290,7 +290,39 @@ string replaceParameters(const string& s,
 	  WARN("unknown replacement $R%c\n", s[p+1]);
 	}; break;
 
-	//case 'u': // Reg-cached destination user
+	case 'u': {// Reg-cached destination user
+	  if (s.length() < p+1) {
+	    WARN("unknown replacement $u\n");
+	    break;
+	  }
+
+	  // REG-Cache lookup
+	  AliasEntry alias_entry;
+	  const string& alias = req.user;
+
+	  if(!RegisterCache::instance()->findAliasEntry(alias, alias_entry)) {
+	    WARN("reg-cache: User '%s' not found",alias.c_str());
+	    break;
+	  }
+	  
+	  if(s[p+1] == 'c') {
+	    res += alias_entry.contact_uri;
+	    break;
+	  }
+	  else if(s[p+1] == 's') {
+	    res += alias_entry.source_ip;
+	    if(alias_entry.source_port != 5060)
+	      res += ":" + int2str(alias_entry.source_port);
+	    break;
+	  }
+	  else if(s[p+1] == 'i') {
+	    res += AmConfig::SIP_Ifs[alias_entry.local_if].name;
+	    break;
+	  }
+	  
+	  WARN("unknown replacement $u%c\n", s[p+1]);
+	} break;
+
 	case 'U': { // Reg-cached originating user
 	  if (s.length() < p+1) {
 	    WARN("unknown replacement $U\n");
@@ -305,9 +337,6 @@ string replaceParameters(const string& s,
 	    }
 	    break;
 	  }
-	  // else if(s[p+1] == 'a') {
-	  //   break;
-	  // }
 	  WARN("unknown replacement $U%c\n", s[p+1]);
 	} break;
 
