@@ -319,6 +319,14 @@ struct SBCCallProfile
 
   void fix_reg_contact(ParamReplacerCtx& ctx, const AmSipRequest& req,
 		       AmUriParser& contact) const;
+
+  /**
+   * Reg-cache lookup:
+   * - searches for alias in the reg-cache.
+   * - sets next-hop & outbound_interface
+   * @return retargeted R-URI
+   */
+  string retarget(const string& alias, AmBasicSipDialog& dlg) const;
 };
 
 #endif // _SBCCallProfile_h

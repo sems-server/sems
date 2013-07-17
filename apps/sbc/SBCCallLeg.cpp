@@ -807,8 +807,14 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(400,"Failed to parse R-URI");
   }
 
-  if(RegisterDialog::decodeUsername(req.user,uac_ruri)) {
-    uac_req.r_uri = uac_ruri.uri_str();
+  if(call_profile.contact_hiding) { 
+    if(RegisterDialog::decodeUsername(req.user,uac_ruri)) {
+      uac_req.r_uri = uac_ruri.uri_str();
+    }
+  }
+  else if(call_profile.reg_caching) {
+    // REG-Cache lookup
+    uac_req.r_uri = call_profile.retarget(req.user,*dlg);
   }
 
   ruri = call_profile.ruri.empty() ? uac_req.r_uri : call_profile.ruri;

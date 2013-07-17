@@ -325,8 +325,19 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
       reply_error(req,400,"Failed to parse R-URI");
     }
 
-    if(RegisterDialog::decodeUsername(req.user,ruri)) {
-      n_req.r_uri = ruri.uri_str();
+    if(cp.contact_hiding) {
+      if(RegisterDialog::decodeUsername(req.user,ruri)) {
+	n_req.r_uri = ruri.uri_str();
+      }
+    }
+    else if(cp.reg_caching) {
+      try {
+	n_req.r_uri = cp.retarget(req.user,*this);
+      }
+      catch(AmSession::Exception& e) {
+	reply_error(req,e.code,e.reason);
+	return -1;
+      }
     }
   }
 
