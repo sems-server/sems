@@ -123,6 +123,10 @@ int _SipCtrlInterface::load()
 				   trsp_socket::force_outbound_if : 0),
 				AmConfig::SIP_Ifs[i].NetIfIdx);
 	
+	if(!AmConfig::SIP_Ifs[i].PublicIP.empty()) {
+	    udp_socket->set_public_ip(AmConfig::SIP_Ifs[i].PublicIP);
+	}
+
 	if(udp_socket->bind(AmConfig::SIP_Ifs[i].LocalIP,
 			    AmConfig::SIP_Ifs[i].LocalPort) < 0){
 

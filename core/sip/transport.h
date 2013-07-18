@@ -60,6 +60,9 @@ protected:
     // bound port number
     unsigned short   port;
 
+    // public IP (Via-HF)
+    string      public_ip;
+
     // internal interface number
     unsigned short   if_num;
 
@@ -94,6 +97,17 @@ public:
      * Getter for the port number
      */
     unsigned short get_port() const;
+
+    /**
+     * Setter for public IP address
+     */
+    void set_public_ip(const string& ip);
+    
+    /**
+     * Getter for advertised IP address
+     * @return either bound IP or public IP
+     */
+    const char* get_advertised_ip() const;
 
     /**
      *  Getter for the socket descriptor

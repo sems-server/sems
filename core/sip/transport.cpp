@@ -58,6 +58,19 @@ unsigned short trsp_socket::get_port() const
     return port;
 }
 
+void trsp_socket::set_public_ip(const string& ip)
+{
+    public_ip = ip;
+}
+    
+const char* trsp_socket::get_advertised_ip() const
+{
+    if(!public_ip.empty())
+	return public_ip.c_str();
+
+    return get_ip();
+}
+
 bool trsp_socket::is_opt_set(unsigned int mask) const
 {
     DBG("trsp_socket::socket_options = 0x%x\n",socket_options);

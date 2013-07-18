@@ -927,7 +927,7 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     compute_branch(branch_buf,msg->callid->value,msg->cseq->value);
     cstring branch(branch_buf,BRANCH_BUF_LEN);
      
-    string via(msg->local_socket->get_ip());
+    string via(msg->local_socket->get_advertised_ip());
     if(msg->local_socket->get_port() != 5060)
  	via += ":" + int2str(msg->local_socket->get_port());
  
