@@ -70,6 +70,7 @@ class SyslogCDR : public AmDynInvoke, public ExtendedCCInterface, public AmObjec
   int onLoad();
 
   virtual void onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause);
+  virtual CCChainProcessing onEvent(SBCCallLeg *call, AmEvent *e);
 };
 
 #endif 
