@@ -397,7 +397,10 @@ void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause
         break;
 
       case CallLeg::StatusChangeCause::Unspecified:
-          cdr["disposition"] = "unknown";
+          if (s == CallLeg::Connected)
+            cdr["disposition"] = "answered";
+          else
+            cdr["disposition"] = "failed";
           break;
 
       case CallLeg::StatusChangeCause::NoAck:
@@ -405,7 +408,7 @@ void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause
       case CallLeg::StatusChangeCause::RtpTimeout:
       case CallLeg::StatusChangeCause::SessionTimeout:
           ERROR("bug: unexpected call state change cause: %d\n", cause.reason);
-          cdr["disposition"] = "unknown";
+          cdr["disposition"] = "failed";
           break;
 
     }
@@ -453,7 +456,7 @@ void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause
         break;
 
       case CallLeg::StatusChangeCause::Unspecified:
-          cdr["hangup_cause"] = "unknown";
+          cdr["hangup_cause"] = "other";
           break;
     }
 
