@@ -202,16 +202,19 @@ class CallLeg: public AmB2BSession
         NoPrack,
         RtpTimeout,
         SessionTimeout,
-        Unspecified
+        InternalError,
+        Other
       } reason;
 
       union {
         const AmSipReply *reply;
         const AmSipRequest *request;
+        const char *desc;
       } param;
       StatusChangeCause(const AmSipReply *r): reason(SipReply) { param.reply = r; }
       StatusChangeCause(const AmSipRequest *r): reason(SipRequest) { param.request = r; }
-      StatusChangeCause(): reason(Unspecified) { param.reply = NULL; }
+      StatusChangeCause(): reason(Other) { param.desc = NULL; }
+      StatusChangeCause(const char *desc): reason(Other) { param.desc = desc; }
       StatusChangeCause(const Reason r): reason(r) { param.reply = NULL; }
     };
 
@@ -361,7 +364,7 @@ class CallLeg: public AmB2BSession
 
     /** Terminate the whole B2B call (if there is no other leg only this one is
      * stopped). */
-    virtual void stopCall();
+    virtual void stopCall(const StatusChangeCause &cause);
 
 
     /** Put remote party on hold (may change RTP relay mode!). Note that this

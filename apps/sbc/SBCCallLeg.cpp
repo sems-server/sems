@@ -639,7 +639,7 @@ void SBCCallLeg::onControlCmd(string& cmd, AmArg& params) {
     if (a_leg) {
       // was for caller:
       DBG("teardown requested from control cmd\n");
-      stopCall();
+      stopCall("ctrl-cmd");
       SBCEventLog::instance()->logCallEnd(dlg,"ctrl-cmd",&call_connect_ts);
       // FIXME: don't we want to relay the controll event as well?
     }
@@ -668,7 +668,7 @@ void SBCCallLeg::process(AmEvent* ev) {
       if (timer_id >= SBC_TIMER_ID_CALL_TIMERS_START &&
           timer_id <= SBC_TIMER_ID_CALL_TIMERS_END) {
         DBG("timer %d timeout, stopping call\n", timer_id);
-        stopCall();
+        stopCall("timer");
 	SBCEventLog::instance()->logCallEnd(dlg,"timeout",&call_connect_ts);
         ev->processed = true;
       }
@@ -1181,14 +1181,14 @@ void SBCCallLeg::CCConnect(const AmSipReply& reply) {
 	    "module '%s' named '%s', parameters '%s'\n",
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
-      stopCall();
+      stopCall(StatusChangeCause::InternalError);
       return;
     } catch (const AmArg::TypeMismatchException& e) {
       ERROR("TypeMismatchException executing call control interface connect "
 	    "module '%s' named '%s', parameters '%s'\n",
 	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
 	    AmArg::print(di_args).c_str());
-      stopCall();
+      stopCall(StatusChangeCause::InternalError);
       return;
     }
 

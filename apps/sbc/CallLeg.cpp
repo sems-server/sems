@@ -296,14 +296,14 @@ void CallLeg::b2bInitial1xx(AmSipReply& reply, bool forward)
         " other leg ID (%s)\n", getOtherId().c_str());
     if (setOther(reply.from_tag, initial_sdp_stored && forward)) {
       updateCallStatus(Ringing, &reply);
-      if (forward && relaySipReply(reply) != 0) stopCall();
+      if (forward && relaySipReply(reply) != 0) stopCall(StatusChangeCause::InternalError);
     }
   }
   else {
     if (getOtherId() == reply.from_tag) {
       // we can relay this reply because it is from the same B leg from which
       // we already relayed something
-      if (forward && relaySipReply(reply) != 0) stopCall();
+      if (forward && relaySipReply(reply) != 0) stopCall(StatusChangeCause::InternalError);
     }
     else {
       // in Ringing state but the reply comes from another B leg than
@@ -342,7 +342,7 @@ void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
     sendEstablishedReInvite();
   }
   else if (relaySipReply(reply) != 0) {
-    stopCall();
+    stopCall(StatusChangeCause::InternalError);
     return;
   }
   updateCallStatus(Connected, &reply);
@@ -375,7 +375,7 @@ void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
 
   // no other B legs, terminate
   updateCallStatus(Disconnected, &reply);
-  stopCall();
+  stopCall(&reply);
 }
 
 // was for caller only
@@ -477,7 +477,7 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
     DBG("sending INVITE failed, relaying back error reply\n");
     relayError(SIP_METH_INVITE, co_ev->r_cseq, true, res);
 
-    stopCall();
+    stopCall(StatusChangeCause::InternalError);
     return;
   }
 
@@ -559,7 +559,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
     DBG("sending re-INVITE failed, relaying back error reply\n");
     relayError(SIP_METH_INVITE, ev->r_cseq, true, res);
 
-    stopCall();
+    stopCall(StatusChangeCause::InternalError);
     return;
   }
 
@@ -615,7 +615,7 @@ void CallLeg::onB2BReplace(ReplaceLegEvent *e)
   removeOtherLeg(id);
 
   // commit suicide if our last B leg is stolen
-  if (other_legs.empty() && getOtherId().empty()) stopCall();
+  if (other_legs.empty() && getOtherId().empty()) stopCall(StatusChangeCause::Other /* FIXME? */);
 }
 
 void CallLeg::onB2BReplaceInProgress(ReplaceInProgressEvent *e)
@@ -817,7 +817,7 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
     // this is not correct but what is?
     AmSession::onSipRequest(req);
     if (req.method == SIP_METH_BYE) {
-      stopCall(); // is this needed?
+      stopCall(&req); // is this needed?
     }
   }
   else AmB2BSession::onSipRequest(req);
@@ -870,6 +870,7 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
       updateCallStatus(Connected, &reply);
     }
     else if (reply.code >= 300) {
+      updateCallStatus(Disconnected, &reply);
       terminateLeg(); // commit suicide (don't let the master to kill us)
     }
   }
@@ -901,7 +902,7 @@ void CallLeg::onCancel(const AmSipRequest& req)
       // terminate whole B2B call if the caller receives CANCEL
       onCallFailed(CallCanceled, NULL);
       updateCallStatus(Disconnected, StatusChangeCause::Canceled);
-      stopCall();
+      stopCall(StatusChangeCause::Canceled);
     }
     // else { } ... ignore for B leg
   }
@@ -1132,7 +1133,8 @@ void CallLeg::clear_other()
   AmB2BSession::clear_other();
 }
 
-void CallLeg::stopCall() {
+void CallLeg::stopCall(const StatusChangeCause &cause) {
+  if (getCallStatus() != Disconnected) updateCallStatus(Disconnected, cause);
   terminateNotConnectedLegs();
   terminateOtherLeg();
   terminateLeg();

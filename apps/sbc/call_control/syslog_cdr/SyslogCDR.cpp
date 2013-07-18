@@ -146,6 +146,9 @@ void SyslogCDR::invoke(const string& method, const AmArg& args, AmArg& ret)
 }
 
 string timeString(time_t tv_sec) {
+  static const string empty;
+  if (tv_sec == 0) return empty; // better empty than invalid time
+
   char outstr[200];
   struct tm tmp;
   if (!localtime_r(&tv_sec, &tmp) || strftime(outstr, sizeof(outstr), "%F %T", &tmp) == 0) {
@@ -396,7 +399,7 @@ void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause
         cdr["disposition"] = "no PRACK";
         break;
 
-      case CallLeg::StatusChangeCause::Unspecified:
+      case CallLeg::StatusChangeCause::Other:
           if (s == CallLeg::Connected)
             cdr["disposition"] = "answered";
           else
@@ -408,6 +411,10 @@ void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause
       case CallLeg::StatusChangeCause::RtpTimeout:
       case CallLeg::StatusChangeCause::SessionTimeout:
           ERROR("bug: unexpected call state change cause: %d\n", cause.reason);
+          cdr["disposition"] = "failed";
+          break;
+
+      case CallLeg::StatusChangeCause::InternalError:
           cdr["disposition"] = "failed";
           break;
 
@@ -455,8 +462,14 @@ void SyslogCDR::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause
         cdr["hangup_cause"] = "session timeout";
         break;
 
-      case CallLeg::StatusChangeCause::Unspecified:
-          cdr["hangup_cause"] = "other";
+      case CallLeg::StatusChangeCause::Other:
+        if (cause.param.desc) cdr["hangup_cause"] = cause.param.desc;
+        else cdr["hangup_cause"] = "other";
+        break;
+
+      case CallLeg::StatusChangeCause::InternalError:
+          cdr["hangup cause"] = "error";
+          cdr["hangup_initiator"] = "local";
           break;
     }
 
