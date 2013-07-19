@@ -170,6 +170,7 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
   // or do we really want to start with OA when handling initial INVITE?
   dlg->setOAEnabled(false);
 
+  memset(&call_start_ts, 0, sizeof(struct timeval));
   memset(&call_connect_ts, 0, sizeof(struct timeval));
   memset(&call_end_ts, 0, sizeof(struct timeval));
 
@@ -233,6 +234,9 @@ SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg, AmSipSubscription* p_subs)
     cc_started(false),
     logger(NULL)
 {
+  memset(&call_start_ts, 0, sizeof(struct timeval));
+  memset(&call_connect_ts, 0, sizeof(struct timeval));
+  memset(&call_end_ts, 0, sizeof(struct timeval));
 }
 
 void SBCCallLeg::onStart()
