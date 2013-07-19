@@ -806,6 +806,10 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 	  return false;
 	}
 
+	case SBC_CC_SET_CALL_TIMER_ACTION:
+          // just ignore
+          continue;
+
 	default: {
 	  ERROR("unknown call control action: '%s'\n", 
 		AmArg::print(ret[i]).c_str());
