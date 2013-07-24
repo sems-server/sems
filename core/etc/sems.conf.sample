@@ -537,6 +537,12 @@ use_default_signature=yes
 #
 #ignore_notify_lower_cseq=yes
 
+# Force comedia style "symmetric RTP" NAT handling, i.e.
+# learn remote RTP address from where RTP packets come from
+# (This options does not apply to the sbc module's RTP relay)
+#
+#force_symmetric_rtp=[yes|no]
+
 #
 # Accept final replies without To-tag? [yes|no]
 #

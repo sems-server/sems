@@ -1078,8 +1078,9 @@ int AmSession::onSdpCompleted(const AmSdp& local_sdp, const AmSdp& remote_sdp)
   //     should be created or updated   
   //
   int ret = 0;
+
   try {
-    ret = RTPStream()->init(local_sdp,remote_sdp);
+    ret = RTPStream()->init(local_sdp, remote_sdp, AmConfig::ForceSymmetricRtp);
   } catch (const string& s) {
     ERROR("Error while initializing RTP stream: '%s'\n", s.c_str());
     ret = -1;

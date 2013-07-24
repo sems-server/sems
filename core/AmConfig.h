@@ -180,6 +180,8 @@ struct AmConfig
   static bool ProxyStickyAuth;
   /** force the outbound network interface / short-circuit the routing table */
   static bool ForceOutboundIf;
+  /** force comedia style remote address learning */
+  static bool ForceSymmetricRtp;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */
   static bool IgnoreNotifyLowerCSeq;
   /** skip DNS SRV lookup for resolving destination address*/

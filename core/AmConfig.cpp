@@ -86,6 +86,7 @@ string       AmConfig::NextHop                 = "";
 bool         AmConfig::NextHop1stReq           = false;
 bool         AmConfig::ProxyStickyAuth         = false;
 bool         AmConfig::ForceOutboundIf         = false;
+bool         AmConfig::ForceSymmetricRtp       = false;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
@@ -353,6 +354,10 @@ int AmConfig::readConfiguration()
 
   if(cfg.hasParameter("ignore_notify_lower_cseq")) {
     IgnoreNotifyLowerCSeq = (cfg.getParameter("ignore_notify_lower_cseq") == "yes");
+  }
+
+  if(cfg.hasParameter("force_symmetric_rtp")) {
+    ForceSymmetricRtp = (cfg.getParameter("force_symmetric_rtp") == "yes");
   }
 
   if(cfg.hasParameter("disable_dns_srv")) {
