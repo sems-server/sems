@@ -136,7 +136,8 @@ public:
   static bool ignore_pin;
 
   static bool PrivateRoomsMode;
-  
+  static bool LoopFirstParticipantPrompt;
+
   // P-App-Param parameter to get participant ID from 
   static string participant_id_paramname;
   // if participant_id_paramname not configured:

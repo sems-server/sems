@@ -72,6 +72,8 @@ bool WebConferenceFactory::ignore_pin = false;
 
 bool WebConferenceFactory::PrivateRoomsMode = false;
 
+bool WebConferenceFactory::LoopFirstParticipantPrompt = false;
+
 string WebConferenceFactory::participant_id_paramname; // default: param not used
 string WebConferenceFactory::participant_id_hdr = "X-ParticipantID"; // default header
 
@@ -221,6 +223,11 @@ int WebConferenceFactory::load()
   if (cfg.getParameter("private_rooms") == "yes") 
     PrivateRoomsMode = true;
   DBG("Private rooms mode %sabled.\n", PrivateRoomsMode ? "en":"dis");
+
+  LoopFirstParticipantPrompt =
+    cfg.getParameter("loop_first_participant_prompt") == "yes";
+
+  DBG("Looping first participant prompt: %s\n", LoopFirstParticipantPrompt ? "yes":"no");
 
   if (cfg.getParameter("support_rooms_timeout") == "yes") {
     cleaner = new WebConferenceCleaner(this);

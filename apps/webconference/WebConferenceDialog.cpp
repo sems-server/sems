@@ -299,8 +299,23 @@ void WebConferenceDialog::process(AmEvent* ev)
     case ConfNewParticipant: {
       DBG("########## new participant (%d) #########\n", ce->participants);
       if(ce->participants == 1){
-	prompts.addToPlaylist(FIRST_PARTICIPANT, (long)this, play_list, true);
+	prompts.addToPlaylist(FIRST_PARTICIPANT, (long)this, play_list, true,
+			      WebConferenceFactory::LoopFirstParticipantPrompt);
       } else {
+
+	if (WebConferenceFactory::LoopFirstParticipantPrompt) {
+	  // -- reset the channel (flush playlist)
+	  // get a channel from the status 
+	  if (channel.get() == NULL) 
+	    channel.reset(AmConferenceStatus::getChannel(conf_id,getLocalTag(),RTPStream()->getSampleRate()));
+
+	  // clear the playlist
+	  play_list.flush();
+
+	  // add the channel to our playlist
+	  play_list.addToPlaylist(new AmPlaylistItem(channel.get(), channel.get()));
+	}
+
 	prompts.addToPlaylist(JOIN_SOUND, (long)this, play_list, true);
       }
     } break;
