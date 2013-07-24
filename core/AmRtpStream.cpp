@@ -543,7 +543,11 @@ void AmRtpStream::handleSymmetricRtp(struct sockaddr_storage* recv_addr, bool rt
 void AmRtpStream::setPassiveMode(bool p)
 {
   passive_rtcp = passive = p;
-  DBG("The other UA is NATed: switched to passive mode.\n");
+  if (p) {
+    DBG("The other UA is NATed or passive mode forced: switched to passive mode.\n");
+  } else {
+    DBG("Passive mode not activated.\n");
+  }
 }
 
 void AmRtpStream::getSdp(SdpMedia& m)
