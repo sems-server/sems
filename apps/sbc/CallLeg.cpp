@@ -238,20 +238,17 @@ int CallLeg::relaySipReply(AmSipReply &reply)
   }
 
   int res;
+  AmSipRequest req(t_req->second);
 
   if ((reply.code >= 300) && (reply.code <= 305) && !reply.contact.empty()) {
     // relay with Contact in 300 - 305 redirect messages
     AmSipReply n_reply(reply);
     n_reply.hdrs += SIP_HDR_COLSP(SIP_HDR_CONTACT) + reply.contact + CRLF;
 
-    res = relaySip(t_req->second, n_reply);
+    res = relaySip(req, n_reply);
   }
-  else res = relaySip(t_req->second, reply) < 0; // relay response directly
+  else res = relaySip(req, reply); // relay response directly
 
-  // if (reply.code >= 200){
-  //   DBG("recvd_req.erase(<%u,%s>)\n", t_req->first, t_req->second.method.c_str());
-  //   recvd_req.erase(t_req);
-  // }
   return res;
 }
 
