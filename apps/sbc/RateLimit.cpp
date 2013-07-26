@@ -3,25 +3,22 @@
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
-RateLimit::RateLimit(unsigned int rate, unsigned int peak, 
-		     unsigned int time_base_seconds)
-  : rate(rate),
-    peak(peak),
-    counter(peak)
+DynRateLimit::DynRateLimit(unsigned int time_base_ms)
+  : last_update(0), counter(0)
 {
   // wall_clock has a resolution of 20ms
-  time_base = (1000 * time_base_seconds) / 20;
-  last_update = AmAppTimer::instance()->wall_clock;
+  time_base = time_base_ms / 20;
 }
 
-bool RateLimit::limit(unsigned int size)
+bool DynRateLimit::limit(unsigned int rate, unsigned int peak, 
+			 unsigned int size)
 {
   lock();
 
   if(AmAppTimer::instance()->wall_clock - last_update 
      > time_base) {
 
-    update_limit();
+    update_limit(rate,peak);
   }
 
   if(counter <= 0) {
@@ -35,7 +32,7 @@ bool RateLimit::limit(unsigned int size)
   return false; // do not limit
 }
 
-void RateLimit::update_limit()
+void DynRateLimit::update_limit(int rate, int peak)
 {
   counter = min(peak, counter+rate);
   last_update = AmAppTimer::instance()->wall_clock;

@@ -178,7 +178,8 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
      call_profile.rtprelay_bw_limit_peak > 0) {
 
     RateLimit* limit = new RateLimit(call_profile.rtprelay_bw_limit_rate,
-				     call_profile.rtprelay_bw_limit_peak, 1);
+				     call_profile.rtprelay_bw_limit_peak,
+				     1000);
     rtp_relay_rate_limit.reset(limit);
   }
 }
