@@ -2,7 +2,7 @@
  *  directory, and from the readme files in the apps/examples dir.
  */
 
-/*! \page index SEMS Documentation 
+/*! \page index SEMS Documentation
  *  \section news News & Changes
  *  \arg \ref changelog 
  *
@@ -21,6 +21,7 @@
  *  \arg \ref AppDoc
  *  \arg \ref ModuleDoc_dsm
  *  \arg \ref ModuleDoc_sbc
+ *  \arg \ref NAThandling
  *  \arg \ref ZRTP
  *  \arg \ref signalsdoc
  *  \arg \ref Tuning
@@ -28,7 +29,7 @@
  *
  *  \section developerdoc Developer's documentation
  *   \arg <a href="http://www.iptel.org/files/semsng-designoverview.pdf">
- *         SEMS Design Overview</a>
+ *         SEMS Design Overview (outdated)</a>
  *   \arg <a href="http://www.iptel.org/files/semsng-app_module_tutorial.pdf">
  *     Application development tutorial</a> - find the sources in apps/examples/tutorial
  *   \arg \ref AppDocExample
@@ -141,5 +142,40 @@ On top of that, you save lots of memory (mostly the stack memory), also, because
    \verbinclude munin-sems-stats-monitoring.pl
  */
 
+/*! \page NAThandling NAT handling
+
+ <p> There is several issues to consider if NAT is involved, depending on the usage scenario
+     and whether SEMS itself and/or the UAs that SEMS communicates with are behind NAT.</p>
+
+   \section natserver SEMS server behind NAT
+    <p> In some deployment scenarios, SEMS itself is behind NAT, e.g. when deploying on
+    AWS/EC2. If SEMS acts as a server accepting calls, and no other NAT handling is in place,
+     this works only if it's a static NAT:
+     In sems.conf (@ref sems.conf.sample) set the public_ip interface option to the public 
+     IP address, which is mapped by the NAT to the private IP address assigned to the server.
+    </p>
+
+   \section natsbc SEMS server on public IP, acting as SBC
+     <p> If SEMS is used as SBC to separate the public network with UAs from the core SIP network,
+     a few SBC profile options enable options that help to send SIP and RTP to the proper address:
+
+     \arg dlg_nat_handling 
+     \arg enable_rtprelay
+     \arg rtprelay_force_symmetric_rtp
+
+     See the sbc module documentation (\ref ModuleDoc_sbc), especially the \ref Readme_sbc for
+     more details.
+ 
+     </p>
+
+   \section nathdling SEMS server on public IP, acting as media server, clients behind NAT
+
+    <p> In order to properly reach clients behind NAT, a few options in sems.conf 
+        (@ref sems.conf.sample) are important:
+
+     \arg sip_nat_handling 
+     \arg force_symmetric_rtp
+     </p>
+ */
 
 
