@@ -159,7 +159,7 @@ rtp_high_port=60000
 #   registrations and dialog initiating requests). See above what setting
 #   of outbound_proxy means.  This option will only have an effect if the
 #   outbound_proxy option has been set, and it will break 3261 compatibility
-#   in some cases; better use next_hop_ip/next_hop_port.
+#   in some cases; better use next_hop.
 #
 #   default: no
 #
