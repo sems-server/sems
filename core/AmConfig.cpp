@@ -87,6 +87,7 @@ bool         AmConfig::NextHop1stReq           = false;
 bool         AmConfig::ProxyStickyAuth         = false;
 bool         AmConfig::ForceOutboundIf         = false;
 bool         AmConfig::ForceSymmetricRtp       = false;
+bool         AmConfig::SipNATHandling          = false;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
@@ -358,6 +359,10 @@ int AmConfig::readConfiguration()
 
   if(cfg.hasParameter("force_symmetric_rtp")) {
     ForceSymmetricRtp = (cfg.getParameter("force_symmetric_rtp") == "yes");
+  }
+
+  if(cfg.hasParameter("sip_nat_handling")) {
+    SipNATHandling = (cfg.getParameter("sip_nat_handling") == "yes");
   }
 
   if(cfg.hasParameter("disable_dns_srv")) {

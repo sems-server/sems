@@ -130,12 +130,25 @@ rtp_high_port=60000
 
 ############# other network configuration ############################## 
 
-# NAT handling for RTP:
+# NAT handling for SIP:sip_nat_handling={yes|no}
+#
+# Learn remote next hop address from the source of the address where
+# requests are received from.
+# This option does not apply to the sbc module.
+#
+# default: no
+#
+#sip_nat_handling=yes
+
+# NAT handling for RTP: force_symmetric_rtp={yes|no}
+#
 # Force comedia style "symmetric RTP" NAT handling, i.e.
 # learn remote RTP address from where RTP packets come from
-# (This options does not apply to the sbc module's RTP relay)
+# (This option does not apply to the sbc module's RTP relay)
 #
-#force_symmetric_rtp=[yes|no]
+# default: no
+#
+#force_symmetric_rtp=yes
 
 # optional parameter: outbound_proxy=uri
 #
