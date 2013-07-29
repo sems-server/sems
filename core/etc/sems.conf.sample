@@ -18,18 +18,14 @@
 ############################################################
 # Network configuration
 
-# optional parameter: media_ip=<ip_address>|<device>
-# 
-# - this informs SEMS about the IP address or interface that 
-#   SEMS uses to send and receive media.  
-# - If neither 'media_ip' nor 'sip_ip' are set, defaults 
-#   to first non-loopback interface. If 'sip_ip' is set,
-#   'media_ip' defaults to 'sip_ip.
-#
-# Examples: 
-#  media_ip=10.0.0.34
-#  media_ip=eth0
+# If only one signaling (SIP) and media (RTP) interface is
+# to be used, configure the options
+#    sip_ip / sip_port / media_ip/ rtp_low_port /
+#    rtp_high_port / public_ip / sig_sock_opts
+# If more than one interface is to be used, configure the option
+# 'interfaces' and those options for each interface.
 
+############# configuration for single interface ############
 # optional parameter: sip_ip=<ip_address>|<device>
 #
 # - this informs SEMS about the SIP IP where its SIP stack is 
@@ -43,7 +39,36 @@
 # Example:
 #  sip_ip=10.0.0.34
 #  sip_ip=en0
+
+# optional parameter: sip_port=<port_number>
 #
+# - this informs SEMS about the port where its SIP stack should
+#   be bound to.
+#   default: 5060
+#
+sip_port=5080
+
+# optional parameter: media_ip=<ip_address>|<device>
+#
+# - this informs SEMS about the IP address or interface that
+#   SEMS uses to send and receive media.
+# - If neither 'media_ip' nor 'sip_ip' are set, defaults
+#   to first non-loopback interface. If 'sip_ip' is set,
+#   'media_ip' defaults to 'sip_ip.
+#
+# Examples:
+#  media_ip=10.0.0.34
+#  media_ip=eth0
+
+# optional parameter: rtp_low_port=<port>
+#
+# - sets lowest for RTP used port (Default: 1024)
+rtp_low_port=10000
+
+# optional parameter: rtp_high_port=<port>
+#
+# - sets highest for RTP used port (Default: 0xffff)
+rtp_high_port=60000
 
 # optional parameter: public_ip=<ip_address>
 # 
@@ -58,18 +83,59 @@
 # Example:
 #  public_ip=75.101.219.48
 #  
-  
-# optional parameter: sip_port=<port_number>
+
+# optional parameter: sig_sock_opts=option,option,option,...
 #
-# - this informs SEMS about the port where its SIP stack is 
-#   bound to or should be bound to. SEMS needs this information
-#   to correctly set the contact header in outgoing calls 
-#   and registrations. Should be set to equal the 'port' 
-#   configuration option in ser_sems.cfg.
+# - signaling socket options
+#      o force_via_address   - force sending replies to 1st Via
+# Example:
+#  sig_sock_opts=force_via_address
+
+############# configuration for multiple interfaces ############
+#   interfaces = <list of interface names>
+#
+# 'interfaces' must be set if more than one
+# interface is to be used for the same purpose (e.g.
+# more than one interface for SIP). Configure additional
+# interfaces if networks should be bridged or separate
+# networks should be served.
+#
+# For each interface, a set of parameters suffixed with the
+# interface name should be configured.
+#
+# Please note that for each additional interface,
+# 'sip_ip_[if_name]' is mandatory (but can be the interface
+# name, then the first assigned IP is used). The other
+# parameters are optional. 'media_ip_[if_name]'
+# is derived from 'sip_ip_[if_name]' if not set.
+# 'public_ip_[ip_name]' is also based on 'sip_ip_[if_name]'
+# if not set explicitly.
+# 
+# Example:
+#  interfaces=intern,extern
 #  
-#   default: 5060
+#  sip_ip_intern=eth0
+#  sip_port_intern=5060
+#  media_ip_intern=eth0
+#  rtp_low_port_intern=2000
+#  rtp_high_port_intern=5000
 #
-sip_port=5080
+#  sip_ip_extern=213.192.59.73
+#  sip_port_extern=5060
+#  media_ip_extern=213.192.59.73
+#  rtp_low_port_extern=2000
+#  rtp_high_port_extern=5000
+#  public_ip_extern=213.192.35.73
+#  sig_sock_opts_extern=force_via_address
+
+############# other network configuration ############################## 
+
+# NAT handling for RTP:
+# Force comedia style "symmetric RTP" NAT handling, i.e.
+# learn remote RTP address from where RTP packets come from
+# (This options does not apply to the sbc module's RTP relay)
+#
+#force_symmetric_rtp=[yes|no]
 
 # optional parameter: outbound_proxy=uri
 #
@@ -123,54 +189,6 @@ sip_port=5080
 #
 #next_hop_for_replies=yes
 
-# optional parameter: rtp_low_port=<port>
-#
-# - sets lowest for RTP used port
-rtp_low_port=10000
-
-# optional parameter: rtp_high_port=<port>
-#
-# - sets highest for RTP used port 
-rtp_high_port=60000
-
-# Additional IFs (optional): 
-#   additional_interfaces = <list of interfaces>
-#
-# additional_interfaces must be set if more than one
-# interface is to be used for the same purpose (e.g.
-# more than one interface for SIP). Configure additional
-# interfaces if networks should be bridged or separate
-# networks should be served.
-#
-# For each additional interface, a set of parameters
-# suffixed with the interface name should be listed
-# with the 'additional_interfaces' parameter.
-#
-# Please note that for each additional interface,
-# 'sip_ip_[if_name]' is mandatory (but can be the interface
-# name, then the first assigned IP is used). The other
-# parameters are optional. 'media_ip_[if_name]'
-# is derived from 'sip_ip_[if_name]' if not set.
-# 'public_ip_[ip_name]' is also based on 'sip_ip_[if_name]'
-# if not set explicitly.
-# 
-# Example:
-#  additional_interfaces=intern,extern
-#  
-#  sip_ip_intern=192.168.0.5
-#  sip_port_intern=5060
-#  media_ip_intern=192.168.10.5
-#  rtp_low_port_intern=2000
-#  rtp_high_port_intern=5000
-#
-#  sip_ip_extern=213.192.59.73
-#  sip_port_extern=5060
-#  media_ip_extern=213.192.59.73
-#  rtp_low_port_extern=2000
-#  rtp_high_port_extern=5000
-#  public_ip_extern=213.192.35.73 
-#
-
 ############################################################
 # modules and application configuration
 #
@@ -211,12 +229,13 @@ exclude_plugins=precoded_announce;py_sems;db_reg_agent;cc_call_timer;cc_ctl;cc_p
 #
 # load these plugins with RTLD_GLOBAL (by default py_sems,
 # dsm, ivr, sbc, diameter_client, registrar_client, uac_auth)
+#
+#load_plugins_rtld_global=myapp
 
 # optional parameter: application
 # 
-# This controls which application is to be executed if there 
-# is no explicit application requested from the SIP stack 
-# (i.e. unixsockctrl and second parameter of t_write_unix).
+# This controls which application is to be executed for incoming calls
+# is no explicit application requested (outgoing calls)
 #
 # This can be one of 
 #    $(ruri.user)       - user part of ruri is taken as application,
@@ -367,7 +386,6 @@ loglevel=2
 # Example:
 #  options_session_limit="900;503;Warning, server soon overloaded"
 
-
 # optional parameter: dead_rtp_time=<unsigned int>
 #
 # - if != 0, after this time (in seconds) of no RTP
@@ -386,8 +404,6 @@ loglevel=2
 #
 # - use a Server/User-Agent header with the SEMS server 
 #   signature and version.
-#   Set server_signature=0 in ser_sems.cfg if you use SER 
-#   as SIP stack.
 #
 #   default=no
 #
@@ -396,11 +412,8 @@ use_default_signature=yes
 # optional parameter: signature=<signature string>
 #
 # - use a Server/User-Agent header with a custom user agent
-#   signature.
-#   Overridden by default signature if 
+#   signature. Overridden by default signature if
 #   use_default_signature is set.
-#   Set server_signature=0 in ser_sems.cfg if you use it.   
-#
 #
 # signature="SEMS media server 1.0"
 
@@ -536,12 +549,6 @@ use_default_signature=yes
 # implementations.
 #
 #ignore_notify_lower_cseq=yes
-
-# Force comedia style "symmetric RTP" NAT handling, i.e.
-# learn remote RTP address from where RTP packets come from
-# (This options does not apply to the sbc module's RTP relay)
-#
-#force_symmetric_rtp=[yes|no]
 
 #
 # Accept final replies without To-tag? [yes|no]
