@@ -2,13 +2,14 @@
  *  directory, and from the readme files in the apps/examples dir.
  */
 
-/*! \page index SEMS Documentation
+/*! \mainpage SEMS Documentation
  *  \section news News & Changes
  *  \arg \ref changelog 
  *
  *  \section general General
  *  \arg \ref Readme
  *  \arg <a href="http://ftp.iptel.org/pub/sems/sayer_sems_mar10.pdf">VoIP services with SEMS - presentation slides</a>
+ *  \arg <a href="http://ftp.iptel.org/pub/sems/fosdem2012-sayer-sems-sbc.pdf">SBC as SBC - presentation slides</a>
  * 
  *  \section howtostart How to get started
  *  \arg \ref howtostart_noproxy
