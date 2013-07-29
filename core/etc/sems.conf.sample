@@ -474,6 +474,15 @@ use_default_signature=yes
 #   default settings (i.e. leave out) for these should be OK
 #   for most applications
 
+# Force use of the selected interface? (Default: no)
+#
+# Use IP_PKTINFO to force use of the selected interface for sending
+# packets. Useful in situations with overlapping IP address spaces, when
+# the kernel routing table should not be used to determine the sending
+# interface.
+#
+# force_outbound_if=yes
+
 # SIP timers configuration (in milliseconds)
 #
 # sip_timer_a=<n millisec>
