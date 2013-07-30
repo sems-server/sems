@@ -310,6 +310,30 @@ bool AmUriParser::parse_uri() {
   return true;
 }
 
+static bool nocase_equals(const string &a, const string &b)
+{
+  if (a.length() != b.length()) return false;
+  return strcasecmp(a.c_str(), b.c_str()) == 0;
+}
+
+static void add_param(map<string, string> &params, const string &name, const string &value)
+{
+  // convert known parameter names to lower
+  // (we can not use case insensitive map because parameters can be defined as
+  // case sensitive (RFC 3261: "Unless otherwise stated in the definition of
+  // a particular header field, field values, parameter names, and parameter
+  // values are case-insensitive.)"
+
+  static const string expires("expires");
+
+  if (nocase_equals(name, expires)) {
+    params[expires] = value;
+    return;
+  }
+
+  params[name] = value;
+}
+
 #define pS0 0 // start
 #define pS1 1 // name
 #define pS2 2 // val
@@ -336,12 +360,11 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
 	p2 = pos; st = pS2;
       } else if (c == ';') {
 	if (st == pS1) {
-	  params[line.substr(p1, pos-p1)] = "";
+	  add_param(params, line.substr(p1, pos-p1), "");
 	  st = pS0;
 	  p1 = pos;
 	} else if (st == pS2) {
-	  params[line.substr(p1, p2-p1)] 
-	    = line.substr(p2+1, pos-p2-1);
+	  add_param(params, line.substr(p1, p2-p1), line.substr(p2+1, pos-p2-1));
 	  st = pS0;
 	  p1 = pos;
 	}
@@ -361,9 +384,9 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
 	
   if (st == pS2) {
     if (hit_comma)
-      params[line.substr(p1, p2-p1)] = line.substr(p2+1, pos-p2 -1);	
+      add_param(params, line.substr(p1, p2-p1), line.substr(p2+1, pos-p2 -1));
     else 
-      params[line.substr(p1, p2-p1)] = line.substr(p2+1, pos-p2);	
+      add_param(params, line.substr(p1, p2-p1), line.substr(p2+1, pos-p2));
   }
   return true;
 }
