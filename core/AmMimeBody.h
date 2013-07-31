@@ -168,6 +168,10 @@ public:
    * within the body of a SIP message.
    */
   void print(string& buf) const;
+
+  const AmContentType &getContentType() { return ct; }
+  void setContentType(const AmContentType &_ct) { ct = _ct; }
+  void addPart(const AmMimeBody &part) { parts.push_back(new AmMimeBody(part)); }
 };
 
 #endif
