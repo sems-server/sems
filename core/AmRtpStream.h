@@ -119,7 +119,7 @@ class PayloadMask
     void invert();
 
     // get given flag
-    bool get(unsigned char payload_id) { if (payload_id > 127) return false; return (bits[payload_id / 8] & (1 << (payload_id % 8))); }
+    bool get(unsigned char payload_id) { if (payload_id > 127) { ERROR("BUG: payload_id out of range\n"); return false; } return (bits[payload_id / 8] & (1 << (payload_id % 8))); }
     
     PayloadMask() { clear(); }
     PayloadMask(bool _set_all) { if (_set_all) set_all(); else clear(); }

@@ -806,8 +806,9 @@ void AmRtpStream::bufferPacket(AmRtpPacket* p)
     // Relay DTMF packets if current audio payload
     // is also relayed.
     // Else, check whether or not we should relay this payload
-    if ((p->payload == getLocalTelephoneEventPT() &&
-	 !active) || relay_payloads.get(p->payload)) {
+    if (relay_raw ||
+        (p->payload == getLocalTelephoneEventPT() && !active) ||
+        relay_payloads.get(p->payload)) {
 
       if(active){
 	DBG("switching to relay-mode\t(ts=%u;stream=%p)\n",
