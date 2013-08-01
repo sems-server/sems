@@ -172,6 +172,8 @@ struct SBCCallProfile
 
   bool auth_aleg_enabled;
   UACAuthCred auth_aleg_credentials;
+  bool uas_auth_bleg_enabled;
+  UACAuthCred uas_auth_bleg_credentials;
 
   CCInterfaceListT cc_interfaces;
 

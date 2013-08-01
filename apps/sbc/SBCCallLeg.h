@@ -69,6 +69,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
 
   // auth
   AmSessionEventHandler* auth;
+  AmDynInvoke* auth_di;
 
   /** Storage for remembered payload IDs from SDP offer to be put correctly into
    * SDP answer (we avoid with this parsing SDP offer again when processing the
@@ -156,6 +157,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   UACAuthCred* getCredentials();
 
   void setAuthHandler(AmSessionEventHandler* h) { auth = h; }
+  void setAuthDI(AmDynInvoke* di_inst) { auth_di = di_inst; }
+
   bool initCCExtModules(const CCInterfaceListT& cc_module_list, const vector<AmDynInvoke*>& cc_module_di);
   bool initPendingCCExtModules();
   void addPendingCCExtModule(const string& cc_name, const string& cc_module, const map<string, string>& cc_values);

@@ -250,6 +250,11 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   auth_aleg_credentials.user = cfg.getParameter("auth_aleg_user");
   auth_aleg_credentials.pwd = cfg.getParameter("auth_aleg_pwd");
 
+  uas_auth_bleg_enabled = cfg.getParameter("enable_bleg_uas_auth", "no") == "yes";
+  uas_auth_bleg_credentials.realm = cfg.getParameter("uas_auth_bleg_realm");
+  uas_auth_bleg_credentials.user = cfg.getParameter("uas_auth_bleg_user");
+  uas_auth_bleg_credentials.pwd = cfg.getParameter("uas_auth_bleg_pwd");
+
   if (!cfg.getParameter("call_control").empty()) {
     vector<string> cc_sections = explode(cfg.getParameter("call_control"), ",");
     for (vector<string>::iterator it =
@@ -257,7 +262,6 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
       DBG("reading call control '%s'\n", it->c_str());
       cc_interfaces.push_back(CCInterface(*it));
       CCInterface& cc_if = cc_interfaces.back();
-
       cc_if.cc_module = cfg.getParameter(*it + "_module");
 
       AmArg mandatory_values;
@@ -529,6 +533,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
     INFO("SBC:      SIP auth %sabled\n", auth_enabled?"en":"dis");
     INFO("SBC:      SIP auth for A leg %sabled\n", auth_aleg_enabled?"en":"dis");
+    INFO("SBC:      SIP UAS auth for B leg %sabled\n", uas_auth_bleg_enabled?"en":"dis");
 
     if (cc_interfaces.size()) {
       string cc_if_names;
@@ -812,6 +817,15 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
 						       "auth_aleg_user", req);
     auth_aleg_credentials.pwd = ctx.replaceParameters(auth_aleg_credentials.pwd, 
 						      "auth_aleg_pwd", req);
+  }
+
+  if (uas_auth_bleg_enabled) {
+    uas_auth_bleg_credentials.realm =
+      ctx.replaceParameters(uas_auth_bleg_credentials.realm, "uas_auth_bleg_realm", req);
+    uas_auth_bleg_credentials.user =
+      ctx.replaceParameters(uas_auth_bleg_credentials.user, "uas_auth_bleg_user", req);
+    uas_auth_bleg_credentials.pwd =
+      ctx.replaceParameters(uas_auth_bleg_credentials.pwd, "uas_auth_bleg_pwd", req);
   }
 
   fix_replaces_inv = ctx.replaceParameters(fix_replaces_inv, "fix_replaces_inv", req);

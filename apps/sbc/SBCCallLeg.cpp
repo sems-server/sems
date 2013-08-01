@@ -121,7 +121,7 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
 		       AmSipSubscription* p_subs)
   : CallLeg(p_dlg,p_subs),
     m_state(BB_Init),
-    auth(NULL),
+    auth(NULL), auth_di(NULL),
     call_profile(call_profile),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START),
     ext_cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_END + 1),
@@ -148,7 +148,7 @@ SBCCallLeg::SBCCallLeg(const SBCCallProfile& call_profile, AmSipDialog* p_dlg,
 // B leg constructor (from SBCCalleeSession)
 SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
 		       AmSipSubscription* p_subs)
-  : auth(NULL),
+  : auth(NULL), auth_di(NULL),
     call_profile(caller->getCallProfile()),
     CallLeg(caller,p_dlg,p_subs),
     ext_cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_END + 1),
@@ -197,7 +197,7 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
 SBCCallLeg::SBCCallLeg(AmSipDialog* p_dlg, AmSipSubscription* p_subs)
   : CallLeg(p_dlg,p_subs),
     m_state(BB_Init),
-    auth(NULL),
+    auth(NULL),  auth_di(NULL),
     cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_START),
     cc_started(false),
     logger(NULL)
@@ -328,6 +328,18 @@ void SBCCallLeg::applyBProfile()
       // because the hooks don't work in AmB2BSession
       setAuthHandler(h);
       DBG("uac auth enabled for callee session.\n");
+    }
+  }
+
+  if (call_profile.uas_auth_bleg_enabled) {
+    AmDynInvokeFactory* fact = AmPlugIn::instance()->getFactory4Di("uac_auth");
+    if (NULL != fact) {
+      AmDynInvoke* di_inst = fact->getInstance();
+      if(NULL != di_inst) {
+	setAuthDI(di_inst);
+      }
+    } else {
+      ERROR("B-leg UAS auth enabled (uas_auth_bleg_enabled), but uac_auth module not loaded!\n");
     }
   }
 
@@ -517,6 +529,48 @@ void SBCCallLeg::onSipRequest(const AmSipRequest& req) {
 
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     if ((*i)->onInDialogRequest(this, req) == StopProcessing) return;
+  }
+
+  if (call_profile.uas_auth_bleg_enabled && NULL != auth_di) {
+    AmArg di_args, di_ret;
+    try {
+      DBG("Auth: checking authentication\n");
+      di_args.push((AmObject*)&req);
+      di_args.push(call_profile.uas_auth_bleg_credentials.realm);
+      di_args.push(call_profile.uas_auth_bleg_credentials.user);
+      di_args.push(call_profile.uas_auth_bleg_credentials.pwd);
+      auth_di->invoke("checkAuth", di_args, di_ret);
+
+      if (di_ret.size() >= 3) {
+	if (di_ret[0].asInt() != 200) {
+	  DBG("Auth: replying %u %s - hdrs: '%s'\n",
+	      di_ret[0].asInt(), di_ret[1].asCStr(), di_ret[2].asCStr());
+	  dlg->reply(req, di_ret[0].asInt(), di_ret[1].asCStr(), NULL, di_ret[2].asCStr());
+	  return;
+	} else {
+	  DBG("Successfully authenticated request.\n");
+	}
+      } else {
+	ERROR("internal: no proper result from checkAuth: '%s'\n", AmArg::print(di_ret).c_str());
+      }
+
+    } catch (const AmDynInvoke::NotImplemented& ni) {
+      ERROR("not implemented DI function 'checkAuth'\n");
+      dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, NULL, "", SIP_FLAGS_VERBATIM);
+      return;
+    } catch (const AmArg::OutOfBoundsException& oob) {
+      ERROR("out of bounds in  DI call 'checkAuth'\n");
+      dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, NULL, "", SIP_FLAGS_VERBATIM);
+      return;
+    } catch (const AmArg::TypeMismatchException& oob) {
+      ERROR("type mismatch  in  DI call checkAuth\n");
+      dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, NULL, "", SIP_FLAGS_VERBATIM);
+      return;
+    } catch (...) {
+      ERROR("unexpected Exception  in  DI call checkAuth\n");
+      dlg->reply(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR, NULL, "", SIP_FLAGS_VERBATIM);
+      return;
+    }
   }
 
   if (fwd && req.method == SIP_METH_INVITE) {
