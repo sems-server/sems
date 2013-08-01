@@ -98,6 +98,8 @@ struct SIPRequestInfo {
 /** \brief SessionEventHandler for implementing uac authentication */
 class UACAuth : public AmSessionEventHandler
 {
+  static string server_nonce_secret;
+
   std::map<unsigned int, SIPRequestInfo> sent_requests;
 
   UACAuthCred* credential;
@@ -111,24 +113,26 @@ class UACAuth : public AmSessionEventHandler
 
   bool nonce_reuse; // reused nonce?
 
-  std::string find_attribute(const std::string& name, const std::string& header);
-  bool parse_header(const std::string& auth_hdr, UACAuthDigestChallenge& challenge);
+  static std::string find_attribute(const std::string& name, const std::string& header);
+  static bool parse_header(const std::string& auth_hdr, UACAuthDigestChallenge& challenge);
 
-  void uac_calc_HA1(const UACAuthDigestChallenge& challenge,
-		    std::string cnonce,
-		    HASHHEX sess_key);
+  static void uac_calc_HA1(const UACAuthDigestChallenge& challenge,
+			   const UACAuthCred* _credential,
+			   std::string cnonce,
+			   HASHHEX sess_key);
 
-  void uac_calc_HA2( const std::string& method, const std::string& uri,
-		     const UACAuthDigestChallenge& challenge,
-		     HASHHEX hentity,
-		     HASHHEX HA2Hex );
+  static void uac_calc_HA2( const std::string& method, const std::string& uri,
+			    const UACAuthDigestChallenge& challenge,
+			    HASHHEX hentity,
+			    HASHHEX HA2Hex );
 
-  void uac_calc_hentity( const std::string& body, HASHHEX hentity );
+  static void uac_calc_hentity( const std::string& body, HASHHEX hentity );
 	
-  void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
-			  const UACAuthDigestChallenge& challenge,
-			  const std::string& cnonce, const string& qop_value, 
-			  HASHHEX response);
+  static void uac_calc_response( HASHHEX ha1, HASHHEX ha2,
+				 const UACAuthDigestChallenge& challenge,
+				 const std::string& cnonce, const string& qop_value,
+				 unsigned int nonce_count, 
+				 HASHHEX response);
 	
   /**
    *  do auth on cmd with nonce in auth_hdr if possible
@@ -160,6 +164,13 @@ class UACAuth : public AmSessionEventHandler
 			  AmBasicSipDialog::Status old_status);
   virtual bool onSendRequest(AmSipRequest& req, int& flags);
   virtual bool onSendReply(const AmSipRequest& req, AmSipReply& reply, int& flags);
+
+  static string calcNonce();
+  static bool checkNonce(const string& nonce);
+  static void checkAuthentication(const AmSipRequest* req, const string& realm,
+				  const string& user, const string& pwd, AmArg& ret);
+
+  static void setServerSecret(const string& secret);
 };
 
 

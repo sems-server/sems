@@ -21,6 +21,8 @@ FCT_BGN() {
   init_logging();
   log_stderr=true;
   log_level=3;
+
+  FCTMF_SUITE_CALL(test_auth);
   FCTMF_SUITE_CALL(test_headers);
   FCTMF_SUITE_CALL(test_uriparser);
   FCTMF_SUITE_CALL(test_jsonarg);

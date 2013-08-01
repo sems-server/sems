@@ -9,6 +9,9 @@ CORE_HDRS=$(CORE_SRCS:.cpp=.h)
 CORE_OBJS=$(CORE_SRCS:.cpp=.o)
 CORE_DEPS=$(subst ../,,$(CORE_SRCS:.cpp=.d))
 
+AUTH_DIR=../plug-in/uac_auth
+AUTH_OBJS=$(AUTH_DIR)/UACAuth.o
+
 SRCS=$(wildcard *.cpp)
 HDRS=$(SRCS:.cpp=.h)
 OBJS=$(SRCS:.cpp=.o)
@@ -48,6 +51,9 @@ deps: $(DEPS)
 .PHONY: core_deps
 core_deps: $(CORE_DEPS)
 
+AUTH_OBJS: $(AUTH_DIR)/UACAuth.cpp $(AUTH_DIR)/UACAuth.h
+	cd $(AUTH_DIR) ; $(MAKE) AUTH_OBJS
+
 COREPATH=..
 include ../../Makefile.defs
 
@@ -64,7 +70,7 @@ include ../../Makefile.defs
 $(NAME): $(OBJS) $(CORE_OBJS) $(SIP_STACK) $(LIBRESAMPLE) ../../Makefile.defs
 	-@echo ""
 	-@echo "making $(NAME)"
-	$(LD) -o $(NAME) $(OBJS) $(CORE_OBJS) $(SIP_STACK) $(LIBRESAMPLE) $(LDFLAGS) $(EXTRA_LDFLAGS)
+	$(LD) -o $(NAME) $(OBJS) $(CORE_OBJS) $(SIP_STACK) $(LIBRESAMPLE) $(LDFLAGS) $(EXTRA_LDFLAGS) $(AUTH_OBJS)
 
 
 ifeq '$(NAME)' '$(MAKECMDGOALS)'
