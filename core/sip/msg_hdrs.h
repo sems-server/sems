@@ -40,7 +40,7 @@ inline int copy_hdr_len(sip_header* hdr)
 	+ 4/* ': ' + CRLF */;
 }
 
-inline void copy_hdr_wr(char** c, sip_header* hdr)
+inline void copy_hdr_wr(char** c, const sip_header* hdr)
 {
     memcpy(*c,hdr->name.s,hdr->name.len);
     *c += hdr->name.len;
@@ -170,6 +170,7 @@ using std::list;
 
 int  copy_hdrs_len(const list<sip_header*>& hdrs);
 void copy_hdrs_wr(char** c, const list<sip_header*>& hdrs);
+void copy_hdrs_wr_no_via(char** c, const list<sip_header*>& hdrs);
 
 
 #endif

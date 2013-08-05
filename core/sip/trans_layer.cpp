@@ -957,7 +957,8 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
  		    msg->u.request->ruri_str);
  
     via_wr(&c,stl2cstr(via),branch,true);
-    copy_hdrs_wr(&c,msg->hdrs);
+    copy_hdrs_wr(&c,msg->vias);
+    copy_hdrs_wr_no_via(&c,msg->hdrs);
  
     content_length_wr(&c,stl2cstr(content_len));
  
