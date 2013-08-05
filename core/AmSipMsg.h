@@ -20,7 +20,7 @@ class _AmSipMsgInDlg
   string to_tag;
 
   string callid;
-  string via1;
+  string vias;
 
   unsigned int cseq;
   string cseq_method;

@@ -523,14 +523,18 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     for (list<sip_header *>::const_iterator it = msg->hdrs.begin(); 
 	 it != msg->hdrs.end(); ++it) {
 
-	if((*it)->type == sip_header::H_OTHER || 
-                (*it)->type == sip_header::H_REQUIRE){
+	switch((*it)->type) {
+	case sip_header::H_OTHER:
+	case sip_header::H_REQUIRE:
 	    req.hdrs += c2stlstr((*it)->name) + ": " 
 		+ c2stlstr((*it)->value) + CRLF;
+	    break;
+	case sip_header::H_VIA:
+	    req.vias += c2stlstr((*it)->name) + ": " 
+		+ c2stlstr((*it)->value) + CRLF;
+	    break;
 	}
     }
-
-    req.via1 = c2stlstr(msg->via1->value);
 
     req.remote_ip = get_addr_str(&msg->remote_ip).c_str();
     req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
