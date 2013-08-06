@@ -128,6 +128,7 @@ struct SBCCallProfile
   bool anonymize_sdp;
   vector<FilterEntry> sdpfilter;
   vector<FilterEntry> sdpalinesfilter;
+  vector<FilterEntry> mediafilter;
 
   string sst_enabled;
   bool sst_enabled_value;

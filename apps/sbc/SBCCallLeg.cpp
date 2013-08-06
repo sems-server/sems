@@ -416,7 +416,10 @@ int SBCCallLeg::relayEvent(AmEvent* ev)
           // todo: handle filtering errors
 
           int res = filterSdp(req_ev->req.body, req_ev->req.method);
-          if (res < 0) return res;
+          if (res < 0) {
+            delete ev; // failed relayEvent should destroy the event
+            return res;
+          }
         }
         break;
 
@@ -1356,6 +1359,18 @@ int SBCCallLeg::filterSdp(AmMimeBody &body, const string &method)
 
   if (needs_normalization) {
     normalizeSDP(sdp, false, ""); // anonymization is done in the other leg to use correct IP address
+    changed = true;
+  }
+
+  if (!call_profile.mediafilter.empty()) {
+    res = filterMedia(sdp, call_profile.mediafilter);
+    if (res < 0) {
+      // result may be ignored, we need to set the SDP
+      string n_body;
+      sdp.print(n_body);
+      sdp_body->setPayload((const unsigned char*)n_body.c_str(), n_body.length());
+      return res;
+    }
     changed = true;
   }
 

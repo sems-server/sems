@@ -133,6 +133,11 @@ string SdpMedia::debugPrint() const {
   return "port "+int2str(port) + ", payloads: "+payload_list;
 }
 
+string SdpMedia::type2str(int type)
+{
+  return media_t_2_str(type);
+}
+
 bool SdpPayload::operator == (int r)
 {
   DBG("pl == r: payload_type = %i; r = %i\n", payload_type, r);

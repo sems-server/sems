@@ -37,6 +37,7 @@ using std::string;
 
 int filterSDP(AmSdp& sdp, const vector<FilterEntry>& filter_list);
 int filterSDPalines(AmSdp& sdp, const vector<FilterEntry>& filter_list);
+int filterMedia(AmSdp& sdp, const vector<FilterEntry>& filter_list);
 
 /** normalize SDP, fixing some common issues and anonymize (IP addresses
  * replaced in such case by advertised_ip) */

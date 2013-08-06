@@ -53,7 +53,7 @@ int filterSDP(AmSdp& sdp, const vector<FilterEntry>& filter_list) {
       
 	string c = p_it->encoding_name;
 	std::transform(c.begin(), c.end(), c.begin(), ::tolower);
-      
+
 	bool is_filtered =  (sdpfilter == Whitelist) ^
 	  (sdpfilter_list.find(c) != sdpfilter_list.end());
 
@@ -79,6 +79,42 @@ int filterSDP(AmSdp& sdp, const vector<FilterEntry>& filter_list) {
       DBG("all streams were marked as inactive\n");
       return -488;
     }
+  }
+
+  return 0;
+}
+
+int filterMedia(AmSdp& sdp, const vector<FilterEntry>& filter_list)
+{
+  unsigned filtered_out = 0;
+
+  DBG("filtering media types\n");
+  for (vector<FilterEntry>::const_iterator i = filter_list.begin(); i !=filter_list.end(); ++i) {
+
+    const FilterType& filter = i->filter_type;
+    const std::set<string>& media_list = i->filter_list;
+
+    if (!isActiveFilter(filter)) continue;
+
+    for (std::vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+      if (m->port == 0) continue; // already inactive
+
+      string type(SdpMedia::type2str(m->type));
+      DBG("checking whether to filter out '%s'\n", type.c_str());
+
+      bool is_filtered = (filter == Whitelist) ^ (media_list.find(type) != media_list.end());
+      if (is_filtered) {
+        m->port = 0;
+        filtered_out++;
+      }
+    }
+  }
+
+  if (filtered_out > 0 && filtered_out == sdp.media.size()) {
+    // we filtered out all media lines (if there was an inactive stream before
+    // it was probably intendend)
+    DBG("all streams were marked as inactive\n");
+    return -488;
   }
 
   return 0;

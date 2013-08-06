@@ -194,6 +194,8 @@ struct SdpMedia
   /** pretty print */
   string debugPrint() const;
 
+  static string type2str(int type);
+
   /**
    * Checks which payloads are compatible with the payload provider,
    * inserts them into the answer, compute send/recv attributes

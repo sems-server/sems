@@ -176,6 +176,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
   if (!readFilter(cfg, "sdp_filter", "sdpfilter_list", sdpfilter, true))
     return false;
 
+  if (!readFilter(cfg, "media_filter", "mediafilter_list", mediafilter, true))
+    return false;
+
   anonymize_sdp = cfg.getParameter("sdp_anonymize", "no") == "yes";
 
   // SDP alines filter
@@ -440,6 +443,12 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     filter_elems = sdpalinesfilter.size() ? sdpalinesfilter.back().filter_list.size() : 0;
     INFO("SBC:      SDP alines-filter is %sabled, %s, %zd items in list\n",
 	 sdpalinesfilter.size()?"en":"dis", filter_type.c_str(), filter_elems);
+    
+    filter_type = mediafilter.size() ?
+      FilterType2String(mediafilter.back().filter_type) : "disabled";
+    filter_elems = mediafilter.size() ? mediafilter.back().filter_list.size() : 0;
+    INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
+	 mediafilter.size()?"en":"dis", filter_type.c_str(), filter_elems);
 
     INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
     if (rtprelay_enabled) {
@@ -565,6 +574,7 @@ bool SBCCallProfile::operator==(const SBCCallProfile& rhs) const {
     //messagefilter_list == rhs.messagefilter_list &&
     //sdpfilter_enabled == rhs.sdpfilter_enabled &&
     sdpfilter == rhs.sdpfilter &&
+    mediafilter == rhs.mediafilter &&
     sst_enabled == rhs.sst_enabled &&
     sst_aleg_enabled == rhs.sst_aleg_enabled &&
     auth_enabled == rhs.auth_enabled &&

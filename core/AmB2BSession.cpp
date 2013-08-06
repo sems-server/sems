@@ -353,7 +353,7 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
     }
     else {
       // relay failed, generate error reply
-      ERROR("relay failed, replying error\n");
+      DBG("relay failed, replying error\n");
       AmSipReply n_reply;
       errCode2RelayedReply(n_reply, res, 500);
       dlg->reply(req, n_reply.code, n_reply.reason);
