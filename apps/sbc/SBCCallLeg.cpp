@@ -420,6 +420,10 @@ int SBCCallLeg::relayEvent(AmEvent* ev)
             delete ev; // failed relayEvent should destroy the event
             return res;
           }
+
+	  if(call_profile.keep_vias) {
+	    req_ev->req.hdrs = req_ev->req.vias + req_ev->req.hdrs;
+	  }
         }
         break;
 
@@ -890,6 +894,9 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   // we have to use original request (not the altered one) because for example
   // codecs filtered out might be used in direction to caller
   CallLeg::onInvite(req);
+
+  if(call_profile.keep_vias)
+    invite_req.hdrs = invite_req.vias + invite_req.hdrs;
 
   // call extend call controls
   InitialInviteHandlerParams params(to, ruri, from, &req, &invite_req);

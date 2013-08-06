@@ -76,6 +76,9 @@ int SimpleRelayDialog::relayRequest(const AmSipRequest& req)
   if(headerfilter.size()) inplaceHeaderFilter(hdrs, headerfilter);
   if(!append_headers.empty()) hdrs += append_headers;
 
+  if(keep_vias)
+    hdrs = req.vias + hdrs;
+
   if(sendRequest(req.method,&req.body,hdrs,SIP_FLAGS_VERBATIM)) {
 
     AmSipReply error;
@@ -359,6 +362,7 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
   headerfilter = cp.headerfilter;
   reply_translations = cp.reply_translations;
   append_headers = cp.append_headers_req;
+  keep_vias = cp.keep_vias;
 
   return 0;
 }
@@ -386,6 +390,7 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
   reply_translations = cp.reply_translations;
   append_headers = cp.aleg_append_headers_req;
   transparent_dlg_id = cp.transparent_dlg_id;
+  keep_vias = cp.keep_vias;
 
   return 0;
 }

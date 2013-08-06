@@ -57,6 +57,7 @@ class SimpleRelayDialog
   string               append_headers;
   ReplyTranslationMap  reply_translations;
   bool                 transparent_dlg_id;
+  bool                 keep_vias;
 
   bool finished;
 
