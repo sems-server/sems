@@ -324,7 +324,8 @@ void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
   terminateNotConnectedLegs();
 
   // connect media with the other leg if RTP relay is enabled
-  other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
+  if (!other_legs.empty())
+    other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
   other_legs.clear(); // no need to remember the connected leg here
 
   // FIXME: hack here - it should be part of clearRtpReceiverRelay but we
