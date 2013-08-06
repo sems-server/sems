@@ -107,6 +107,14 @@ public:
     return other_dlg;
   }
 
+  void setKeepVias(bool kv) {
+    keep_vias = kv;
+  }
+
+  bool getKeepVias() {
+    return keep_vias;
+  }
+
   vector<FilterEntry>&  getHeaderFilter() { return headerfilter; }
   const vector<FilterEntry>&  getHeaderFilter() const { return headerfilter; }
 
