@@ -838,6 +838,7 @@ int AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
 {
   const string* hdrs = &reply.hdrs;
   string m_hdrs;
+  const string method(orig.method);
 
   if (reply.rseq != 0) {
     m_hdrs = reply.hdrs +
@@ -873,8 +874,8 @@ int AmB2BSession::relaySip(const AmSipRequest& orig, const AmSipReply& reply)
     return err;
   }
 
-  if ((orig.method == SIP_METH_INVITE ||
-       orig.method == SIP_METH_UPDATE) &&
+  if ((method == SIP_METH_INVITE ||
+       method == SIP_METH_UPDATE) &&
       !reply.body.empty()) {
     saveSessionDescription(reply.body);
   }
