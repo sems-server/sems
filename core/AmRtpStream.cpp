@@ -723,15 +723,6 @@ int AmRtpStream::init(const AmSdp& local,
 
   local_telephone_event_pt.reset(local.telephoneEventPayload());
 
-  payload = getDefaultPT();
-  if(payload < 0) {
-    DBG("could not set a default payload\n");
-    return -1;
-  }
-  DBG("default payload selected = %i\n",payload);
-  last_payload = payload;
-
-
   if(local_media.recv) {
     resume();
   }
@@ -751,6 +742,14 @@ int AmRtpStream::init(const AmSdp& local,
   else {
     mute = true;
   }
+
+  payload = getDefaultPT();
+  if(payload < 0) {
+    DBG("could not set a default payload\n");
+    return -1;
+  }
+  DBG("default payload selected = %i\n",payload);
+  last_payload = payload;
 
 #ifdef WITH_ZRTP  
   if( session->zrtp_audio  ) {
