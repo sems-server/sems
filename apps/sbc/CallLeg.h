@@ -344,6 +344,8 @@ class CallLeg: public AmB2BSession
     virtual void onSipRequest(const AmSipRequest& req);
     virtual void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
 
+    virtual void onInitialReply(B2BSipReplyEvent *e);
+
     /* callback method called when hold/resume request is replied */
     virtual void handleHoldReply(bool succeeded);
 

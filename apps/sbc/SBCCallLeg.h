@@ -190,6 +190,8 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status);
   void onSendRequest(AmSipRequest& req, int &flags);
 
+  virtual void onInitialReply(B2BSipReplyEvent *e);
+
   void onRemoteDisappeared(const AmSipReply& reply);
   void onBye(const AmSipRequest& req);
   void onOtherBye(const AmSipRequest& req);

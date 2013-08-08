@@ -346,6 +346,13 @@ void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
   updateCallStatus(Connected, &reply);
 }
 
+void CallLeg::onInitialReply(B2BSipReplyEvent *e)
+{
+    if (e->reply.code < 200) b2bInitial1xx(e->reply, e->forward);
+    else if (e->reply.code < 300) b2bInitial2xx(e->reply, e->forward);
+    else b2bInitialErr(e->reply, e->forward);
+}
+
 void CallLeg::b2bInitialErr(AmSipReply& reply, bool forward)
 {
   if (getCallStatus() == Ringing && getOtherId() != reply.from_tag) {
@@ -404,9 +411,7 @@ void CallLeg::onB2BReply(B2BSipReplyEvent *ev)
 
     TRACE("established CSeq: %d, forward: %s\n", est_invite_cseq, ev->forward ? "yes": "no");
 
-    if (reply.code < 200) b2bInitial1xx(reply, ev->forward);
-    else if (reply.code < 300) b2bInitial2xx(reply, ev->forward);
-    else b2bInitialErr(reply, ev->forward);
+    onInitialReply(ev);
   }
   else {
     // handle non-initial replies
