@@ -20,7 +20,6 @@ class _AmSipMsgInDlg
   string to_tag;
 
   string callid;
-  string vias;
 
   unsigned int cseq;
   string cseq_method;
@@ -76,6 +75,9 @@ class AmSipRequest : public _AmSipMsgInDlg
 
   string rack_method;
   unsigned int rack_cseq;
+
+  string vias;
+  string via1;
   string via_branch;
   bool   first_hop;
 

@@ -544,6 +544,7 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     req.trsp = msg->local_socket->get_transport();
     req.local_if = msg->local_socket->get_if();
 
+    req.via1 = c2stlstr(msg->via1->value);
     if(msg->vias.size() > 1) {
 	req.first_hop = false;
     } 
