@@ -399,6 +399,12 @@ void SBCCallLeg::applyBProfile()
 
 int SBCCallLeg::relayEvent(AmEvent* ev)
 {
+  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+    int res = (*i)->relayEvent(this, ev);
+    if (res > 0) return 0;
+    if (res < 0) return res;
+  }
+
     switch (ev->event_id) {
       case B2BSipRequest:
         {

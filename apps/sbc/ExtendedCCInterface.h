@@ -73,6 +73,13 @@ class ExtendedCCInterface
     virtual CCChainProcessing createHoldRequest(SBCCallLeg *call, AmSdp &sdp) { return ContinueProcessing; }
     virtual CCChainProcessing handleHoldReply(SBCCallLeg *call, bool succeeded) { return ContinueProcessing; }
 
+    /** Possibility to influence messages relayed to the B2B peer leg.
+      return value:
+      - lower than 0 means error (returned upstream, the one
+      returning error is responsible for destrying the event instance)
+      - greater than 0 means "stop processing and return 0 upstream"
+      - equal to 0 means "continue processing" */
+    virtual int relayEvent(SBCCallLeg *call, AmEvent *e) { return 0; }
 
     // using extended CC modules with simple relay
 
