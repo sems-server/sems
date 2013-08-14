@@ -1720,17 +1720,3 @@ void SBCCallLeg::setLogger(msg_logger *_logger)
     else m->setRtpLogger(NULL);
   }
 }
-
-void SBCCallLeg::logRequest(const AmSipRequest &req)
-{
-  if (!call_profile.log_sip || !logger) return;
-
-  req.tt.lock_bucket();
-  const sip_trans* t = req.tt.get_trans();
-  if (t) {
-    sip_msg* msg = t->msg;
-    logger->log(msg->buf,msg->len,&msg->remote_ip,
-        &msg->local_ip,msg->u.request->method_str);
-  }
-  req.tt.unlock_bucket();
-}

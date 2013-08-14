@@ -58,7 +58,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   /** common logger for RTP/RTCP and SIP packets */
   msg_logger *logger;
 
-  void logRequest(const AmSipRequest &req);
   void setLogger(msg_logger *_logger);
 
   void fixupCCInterface(const string& val, CCInterface& cc_if);
