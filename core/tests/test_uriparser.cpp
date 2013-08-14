@@ -101,5 +101,28 @@ FCTMF_SUITE_BGN(test_uriparser) {
       fct_chk( p.uri_host=="bell-telephone.com");
     } FCT_TEST_END();
 
+    FCT_TEST_BGN(uriparser_headers) {
+      AmUriParser p;
+      size_t end;
+      fct_chk(p.parse_contact("\"Mr. Watson\" <mailto:watson@bell-telephone.com?Replaces:%20lkancskjd%3Bto-tag=3123141ab%3Bfrom-tag=kjhkjcsd> ;q=0.1", 0, end));
+      fct_chk( p.display_name=="Mr. Watson");
+      fct_chk( p.uri_user=="watson");
+      fct_chk( p.uri_host=="bell-telephone.com");
+      fct_chk( p.uri_headers=="Replaces:\%20lkancskjd%3Bto-tag=3123141ab%3Bfrom-tag=kjhkjcsd");
+    } FCT_TEST_END();
+
+    FCT_TEST_BGN(uriparser_headers_str) {
+      AmUriParser p;
+      string orig_str = "\"Mr. Watson\" <sip:watson@bell-telephone.com?Replaces:%20lkancskjd%3Bto-tag=3123141ab%3Bfrom-tag=kjhkjcsd>;q=0.1";
+      fct_chk(p.parse_nameaddr(orig_str));
+      fct_chk( p.display_name=="Mr. Watson");
+      fct_chk( p.uri_user=="watson");
+      fct_chk( p.uri_host=="bell-telephone.com");
+      fct_chk( p.uri_headers=="Replaces:\%20lkancskjd%3Bto-tag=3123141ab%3Bfrom-tag=kjhkjcsd");
+      string a_str = p.nameaddr_str();
+      // DBG(" >>%s<< => >>%s<<\n", orig_str.c_str(), a_str.c_str());
+      fct_chk(orig_str == a_str);
+    } FCT_TEST_END();
+
 
 } FCTMF_SUITE_END();
