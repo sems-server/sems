@@ -37,6 +37,8 @@
 #include "SDPFilter.h"
 #include "RegisterCache.h"
 
+#include "sip/pcap_logger.h"
+
 typedef vector<SdpPayload>::iterator PayloadIterator;
 static string payload2str(const SdpPayload &p);
 
@@ -1546,6 +1548,32 @@ bool SBCCallProfile::TranscoderSettings::evaluate(ParamReplacerCtx& ctx,
   }
 
   return true;
+}
+
+void SBCCallProfile::create_logger(const AmSipRequest& req)
+{
+  if (msg_logger_path.empty()) return;
+
+  ParamReplacerCtx ctx(this);
+  string log_path = ctx.replaceParameters(msg_logger_path, "msg_logger_path", req);
+  if (log_path.empty()) return;
+
+  file_msg_logger *log = new pcap_logger();
+
+  if(log->open(log_path.c_str()) != 0) {
+    // open error
+    delete log;
+    return;
+  }
+
+  // opened successfully
+  logger.reset(log);
+}
+
+msg_logger* SBCCallProfile::get_logger(const AmSipRequest& req)
+{
+  if (!logger.get() && !msg_logger_path.empty()) create_logger(req);
+  return logger.get();
 }
 
 //////////////////////////////////////////////////////////////////////////////////

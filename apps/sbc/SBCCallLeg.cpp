@@ -1079,12 +1079,10 @@ bool SBCCallLeg::CCStart(const AmSipRequest& req) {
       return false;
     }
 
-    if (!logger && !call_profile.msg_logger_path.empty()) {
+    if (!logger) {
       // open the logger if not already opened
-      ParamReplacerCtx ctx(&call_profile);
-      string log_path = ctx.replaceParameters(call_profile.msg_logger_path,
-					      "msg_logger_path",req);
-      if (openLogger(log_path)) logRequest(req);
+      msg_logger *l = call_profile.get_logger(req);
+      if (l) setLogger(l);
     }
 
     // evaluate ret

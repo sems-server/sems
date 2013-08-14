@@ -793,7 +793,8 @@ bool _RegisterCache::findAEByContact(const string& contact_uri,
 
 
 int _RegisterCache::parseAoR(RegisterCacheCtx& ctx,
-			     const AmSipRequest& req)
+			     const AmSipRequest& req,
+                             msg_logger *logger)
 {
   if(ctx.aor_parsed)
     return 0;
@@ -802,7 +803,7 @@ int _RegisterCache::parseAoR(RegisterCacheCtx& ctx,
   size_t end_from = 0;
   if(!from_parser.parse_contact(req.from,0,end_from)) {
     DBG("error parsing AoR: '%s'\n",req.from.c_str());
-    AmBasicSipDialog::reply_error(req,400,"Bad request - bad From HF");
+    AmBasicSipDialog::reply_error(req,400,"Bad request - bad From HF", "", logger);
     return -1;
   }
 
@@ -810,7 +811,7 @@ int _RegisterCache::parseAoR(RegisterCacheCtx& ctx,
   DBG("parsed AOR: '%s'",ctx.from_aor.c_str());
 
   if(ctx.from_aor.empty()) {
-    AmBasicSipDialog::reply_error(req,400,"Bad request - bad From HF");
+    AmBasicSipDialog::reply_error(req,400,"Bad request - bad From HF", "", logger);
     return -1;
   }
   ctx.aor_parsed = true;
@@ -819,7 +820,8 @@ int _RegisterCache::parseAoR(RegisterCacheCtx& ctx,
 }
 
 int _RegisterCache::parseContacts(RegisterCacheCtx& ctx,
-				  const AmSipRequest& req)
+				  const AmSipRequest& req,
+                                  msg_logger *logger)
 {
   if(ctx.contacts_parsed)
     return 0;
@@ -827,7 +829,7 @@ int _RegisterCache::parseContacts(RegisterCacheCtx& ctx,
   if ((RegisterDialog::parseContacts(req.contact, ctx.contacts) < 0) ||
       (ctx.contacts.size() == 0)) {
     AmBasicSipDialog::reply_error(req, 400, "Bad Request", 
-				  "Warning: Malformed contact\r\n");
+				  "Warning: Malformed contact\r\n", logger);
     return -1;
   }
   ctx.contacts_parsed = true;
@@ -835,7 +837,8 @@ int _RegisterCache::parseContacts(RegisterCacheCtx& ctx,
 }
 
 int _RegisterCache::parseExpires(RegisterCacheCtx& ctx,
-				 const AmSipRequest& req)
+				 const AmSipRequest& req,
+                                 msg_logger *logger)
 {
   if(ctx.expires_parsed)
     return 0;
@@ -844,7 +847,7 @@ int _RegisterCache::parseExpires(RegisterCacheCtx& ctx,
   string expires_str = getHeader(req.hdrs, "Expires");
   if (!expires_str.empty() && str2i(expires_str, ctx.requested_expires)) {
     AmBasicSipDialog::reply_error(req, 400, "Bad Request", 
-				  "Warning: Malformed expires\r\n");
+				  "Warning: Malformed expires\r\n", logger);
     return true; // error reply sent
   }
   ctx.expires_parsed = true;
@@ -852,7 +855,8 @@ int _RegisterCache::parseExpires(RegisterCacheCtx& ctx,
 }
 
 bool _RegisterCache::throttleRegister(RegisterCacheCtx& ctx,
-				      const AmSipRequest& req)
+				      const AmSipRequest& req,
+                                      msg_logger *logger)
 {
   if (req.method != SIP_METH_REGISTER) {
     ERROR("unsupported method '%s'\n", req.method.c_str());
@@ -865,9 +869,9 @@ bool _RegisterCache::throttleRegister(RegisterCacheCtx& ctx,
     return false; // fwd
   }
 
-  if ((parseAoR(ctx,req) < 0) ||
-      (parseContacts(ctx,req) < 0) ||
-      (parseExpires(ctx,req) < 0)) {
+  if ((parseAoR(ctx,req, logger) < 0) ||
+      (parseContacts(ctx,req, logger) < 0) ||
+      (parseExpires(ctx,req, logger) < 0)) {
     DBG("could not parse AoR, Contact or Expires\n");
     return true; // error reply sent
   }
@@ -898,7 +902,7 @@ bool _RegisterCache::throttleRegister(RegisterCacheCtx& ctx,
     else {
       if(!str2long(expires_it->second,contact_expires)) {
 	AmBasicSipDialog::reply_error(req, 400, "Bad Request",
-				      "Warning: Malformed expires\r\n");
+				      "Warning: Malformed expires\r\n", logger);
 	return true; // error reply sent
       }
 
@@ -976,19 +980,20 @@ bool _RegisterCache::throttleRegister(RegisterCacheCtx& ctx,
   contact_hdr += CRLF;
 
   // send 200 reply
-  AmBasicSipDialog::reply_error(req, 200, "OK", contact_hdr);
+  AmBasicSipDialog::reply_error(req, 200, "OK", contact_hdr, logger);
   return true;
 }
 
 bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
-				       const AmSipRequest& req)
+				       const AmSipRequest& req,
+                                       msg_logger *logger)
 {
   if (req.method != SIP_METH_REGISTER) {
     ERROR("unsupported method '%s'\n", req.method.c_str());
     return false;
   }
 
-  if(parseAoR(ctx,req) < 0) {
+  if(parseAoR(ctx,req, logger) < 0) {
     return true;
   }
 
@@ -1023,7 +1028,7 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
     // unregister everything
     star_contact = true;
 
-    if(parseExpires(ctx,req) < 0) {
+    if(parseExpires(ctx,req, logger) < 0) {
       return true;
     }
 
@@ -1033,13 +1038,13 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
       return true;
     }
   }
-  else if ((parseContacts(ctx,req) < 0) ||
-	   (parseExpires(ctx,req) < 0)) {
+  else if ((parseContacts(ctx,req, logger) < 0) ||
+	   (parseExpires(ctx,req, logger) < 0)) {
     return true; // error reply sent
   }
   else if (ctx.contacts.size() != 1) {
     AmBasicSipDialog::reply_error(req, 403, "Forbidden",
-				  "Warning: only one contact allowed\r\n");
+				  "Warning: only one contact allowed\r\n", logger);
     return true; // error reply sent
   }
   else {
@@ -1050,7 +1055,7 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
 	  contact->params["expires"].c_str());
       if(str2i(contact->params["expires"],contact_expires)) {
 	AmBasicSipDialog::reply_error(req, 400, "Bad Request",
-				      "Warning: Malformed expires\r\n");
+				      "Warning: Malformed expires\r\n", logger);
 	return true; // error reply sent
       }
       DBG("contact_expires = %u",contact_expires);
@@ -1063,7 +1068,7 @@ bool _RegisterCache::saveSingleContact(RegisterCacheCtx& ctx,
   if(!contact_expires) {
     // unregister AoR
     remove(ctx.from_aor);
-    AmBasicSipDialog::reply_error(req, 200, "OK");
+    AmBasicSipDialog::reply_error(req, 200, "OK", "", logger);
     return true;
   }
   assert(contact);  

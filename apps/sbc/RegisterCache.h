@@ -233,9 +233,9 @@ protected:
 				  const string& remote_ip,
 				  unsigned short remote_port);
 
-  int parseAoR(RegisterCacheCtx& ctx, const AmSipRequest& req);
-  int parseContacts(RegisterCacheCtx& ctx, const AmSipRequest& req);
-  int parseExpires(RegisterCacheCtx& ctx, const AmSipRequest& req);
+  int parseAoR(RegisterCacheCtx& ctx, const AmSipRequest& req, msg_logger *logger);
+  int parseContacts(RegisterCacheCtx& ctx, const AmSipRequest& req, msg_logger *logger);
+  int parseExpires(RegisterCacheCtx& ctx, const AmSipRequest& req, msg_logger *logger);
 
   void setAliasUATimer(AliasEntry* alias_e);
   void removeAliasUATimer(AliasEntry* alias_e);
@@ -327,7 +327,8 @@ public:
    * - if request is not a REGISTER
    */
   bool throttleRegister(RegisterCacheCtx& ctx,
-			const AmSipRequest& req);
+			const AmSipRequest& req,
+                        msg_logger *logger);
 
   /**
    * Save a single REGISTER contact into cache
@@ -343,7 +344,8 @@ public:
    *       (REGISTER w/o contacts)
    */
   bool saveSingleContact(RegisterCacheCtx& ctx,
-			const AmSipRequest& req);
+			const AmSipRequest& req,
+                        msg_logger *logger);
 };
 
 typedef singleton<_RegisterCache> RegisterCache;

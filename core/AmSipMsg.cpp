@@ -3,6 +3,9 @@
 #include "AmUtils.h"
 #include "AmSipMsg.h"
 #include "AmSipHeaders.h"
+#include "sip/sip_trans.h"
+#include "sip/sip_parser.h"
+#include "sip/msg_logger.h"
 
 string getHeader(const string& hdrs,const string& hdr_name, bool single)
 {
@@ -231,6 +234,20 @@ string AmSipRequest::print() const
   buf = method + " [" + buf + "]";
   return buf;
 }
+
+
+void AmSipRequest::log(msg_logger *logger) const
+{
+  tt.lock_bucket();
+  const sip_trans* t = tt.get_trans();
+  if (t) {
+    sip_msg* msg = t->msg;
+    logger->log(msg->buf,msg->len,&msg->remote_ip,
+        &msg->local_ip,msg->u.request->method_str);
+  }
+  tt.unlock_bucket();
+}
+
 
 string AmSipReply::print() const
 {

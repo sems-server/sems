@@ -31,6 +31,7 @@
 #include "ampi/UACAuthAPI.h"
 #include "ParamReplacer.h"
 #include "atomic_types.h"
+#include "sip/msg_logger.h"
 
 #include <set>
 #include <string>
@@ -58,6 +59,24 @@ struct CCInterface {
 
 typedef std::list<CCInterface> CCInterfaceListT;
 typedef CCInterfaceListT::iterator CCInterfaceListIteratorT;
+
+template <class T>
+class ref_counted_ptr
+{
+  private:
+    T *ptr;
+
+  public:
+    void reset(T *p) { if (ptr) dec_ref(ptr); ptr = p; if (ptr) inc_ref(ptr); }
+    T *get() const { return ptr; }
+
+    ref_counted_ptr(): ptr(0) { }
+    ~ref_counted_ptr() { if (ptr) dec_ref(ptr); }
+
+    ref_counted_ptr(const ref_counted_ptr &other): ptr(other.ptr) { if (ptr) inc_ref(ptr); }
+    ref_counted_ptr &operator=(const ref_counted_ptr &other) { reset(other.ptr); return *this; }
+
+};
 
 class PayloadDesc {
   protected:
@@ -257,10 +276,20 @@ struct SBCCallProfile
 
   // todo: RTP transcoding mode
 
+ private:
   // message logging feature
   string msg_logger_path;
+  ref_counted_ptr<msg_logger> logger;
+
+  void create_logger(const AmSipRequest& req);
+
+ public:
   bool log_rtp;
   bool log_sip;
+  bool has_logger() { return logger.get() != NULL; }
+  msg_logger* get_logger(const AmSipRequest& req);
+  void set_logger_path(const std::string path) { msg_logger_path = path; }
+  const string &get_logger_path() { return msg_logger_path; }
 
   SBCCallProfile()
   : auth_enabled(false),

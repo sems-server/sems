@@ -87,6 +87,7 @@ class AmSipRequest : public _AmSipMsgInDlg
   ~AmSipRequest() { }
   
   string print() const;
+  void log(msg_logger *logger) const;
 };
 
 string getHeader(const string& hdrs,const string& hdr_name, bool single = false);

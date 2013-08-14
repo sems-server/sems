@@ -298,12 +298,9 @@ void AmBasicSipDialog::onRxRequest(const AmSipRequest& req)
   DBG("AmBasicSipDialog::onRxRequest(req = %s)\n", req.method.c_str());
 
   if(logger && (req.method != SIP_METH_ACK)) {
-    req.tt.lock_bucket();
-    const sip_trans* t = req.tt.get_trans();
-    sip_msg* msg = t->msg;
-    logger->log(msg->buf,msg->len,&msg->remote_ip,
-		&msg->local_ip,msg->u.request->method_str);
-    req.tt.unlock_bucket();
+    // log only non-initial received requests, the initial one is already logged
+    // or will be logged at application level (problem with SBCSimpleRelay)
+    if (!callid.empty()) req.log(logger);
   }
 
   if(!onRxReqSanity(req))
