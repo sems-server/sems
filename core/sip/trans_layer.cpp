@@ -397,7 +397,7 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 
     int err = -1;
 
-    // TODO: Inspect topmost 'Via' and select proper addr (+resolve DNS names)
+    // Inspect topmost 'Via' and select proper addr (TODO: resolve DNS names)
     // refs: RFC3261 18.2.2; RFC3581
 
     sockaddr_storage remote_ip;
