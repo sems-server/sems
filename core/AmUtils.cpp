@@ -367,6 +367,97 @@ bool str2long(char*& str, long& result, char sep)
   return false;
 }
 
+std::string URL_decode(const std::string& s) {
+  enum {
+    uSNormal=       0, // start
+    uSH1,
+    uSH2
+  };
+
+  int st = uSNormal;
+  string res;
+  for (size_t pos = 0; pos < s.length(); pos++) {
+    switch (st) {
+    case uSNormal: {
+      if (s[pos] == '%')
+	st = uSH1;
+      else
+	res+=s[pos];
+
+    }; break;
+
+    case uSH1: {
+      if (s[pos] == '%') {
+	res+='%';
+	st = uSNormal;
+      } else {
+      st = uSH2;
+      }
+    }; break;
+
+    case uSH2: {
+      char c = 0;
+
+      if ( s[pos] >='0' && s[pos] <='9')
+	c += s[pos] -'0';
+      else if (s[pos] >='a' && s[pos] <='f')
+	c += s[pos] -'a'+10;
+      else if (s[pos]  >='A' && s[pos] <='F')
+	c += s[pos] -'A'+10;
+      else {
+	st = uSNormal;
+	DBG("error in escaped string: %%%c%c\n", s[pos-1], s[pos]);
+	continue;
+      }
+
+      if ( s[pos-1] >='0' && s[pos-1] <='9')
+	c += (s[pos-1] -'0') << 4;
+      else if (s[pos-1] >='a' && s[pos-1] <='f')
+	c += (s[pos-1] -'a'+10) << 4;
+      else if (s[pos-1]  >='A' && s[pos-1] <='F')
+	c += (s[pos-1] -'A'+10 ) << 4;
+      else {
+	st = uSNormal;
+	DBG("error in escaped string: %%%c%c\n", s[pos-1], s[pos]);
+	continue;
+      }
+      res +=c;
+      st = uSNormal;
+    } break;
+    }
+  }
+
+  return res;
+}
+
+
+std::string URL_encode(const std::string &s)
+{
+    const std::string unreserved = "-_.~";
+
+    std::string escaped="";
+    for(size_t i=0; i<s.length(); i++)
+    {
+
+      //RFC 3986 section 2.3 Unreserved Characters (January 2005)
+      if ((s[i] >= 'A' && s[i] <= 'Z')
+	  || (s[i] >= 'a' && s[i] <= 'z')
+	  || (s[i] >= '0' && s[i] <= '9')
+	  || (s[i] == '-') || (s[i] == '_') || (s[i] == '.') || (s[i] == '~') )
+        {
+            escaped.push_back(s[i]);
+        }
+        else
+        {
+            escaped.append("%");
+            char buf[3];
+            sprintf(buf, "%.2X", s[i]);
+            escaped.append(buf);
+        }
+    }
+    return escaped;
+}
+
 int parse_return_code(const char* lbuf, unsigned int& res_code, string& res_msg )
 {
   char res_code_str[4] = {'\0'};
