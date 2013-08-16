@@ -164,6 +164,9 @@ struct SBCCallProfile
   AmConfigReader sst_a_cfg;    // SST config (A leg)
   AmConfigReader sst_b_cfg;    // SST config (B leg)
 
+  string fix_replaces_inv;
+  string fix_replaces_ref;
+
   bool auth_enabled;
   UACAuthCred auth_credentials;
 

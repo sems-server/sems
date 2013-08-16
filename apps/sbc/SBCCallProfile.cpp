@@ -238,6 +238,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     CP_SST_CFGVAR("aleg_", "accept_501_reply", sst_a_cfg);
   }
 #undef CP_SST_CFGVAR
+
+  fix_replaces_inv = cfg.getParameter("fix_replaces_inv");
+  fix_replaces_ref = cfg.getParameter("fix_replaces_ref");;
   
   auth_enabled = cfg.getParameter("enable_auth", "no") == "yes";
   auth_credentials.user = cfg.getParameter("auth_user");
@@ -465,6 +468,9 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     filter_elems = mediafilter.size() ? mediafilter.back().filter_list.size() : 0;
     INFO("SBC:      SDP filter is %sabled, %s, %zd items in list\n",
 	 mediafilter.size()?"en":"dis", filter_type.c_str(), filter_elems);
+
+    INFO("SBC:      fixing Replaces in INVITE: '%s'\n", fix_replaces_inv.c_str());
+    INFO("SBC:      fixing Replaces in REFER: '%s'\n", fix_replaces_ref.c_str());
 
     INFO("SBC:      RTP relay %sabled\n", rtprelay_enabled?"en":"dis");
     if (rtprelay_enabled) {
@@ -807,6 +813,9 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
     auth_aleg_credentials.pwd = ctx.replaceParameters(auth_aleg_credentials.pwd, 
 						      "auth_aleg_pwd", req);
   }
+
+  fix_replaces_inv = ctx.replaceParameters(fix_replaces_inv, "fix_replaces_inv", req);
+  fix_replaces_ref = ctx.replaceParameters(fix_replaces_ref, "fix_replaces_ref", req);
 
   REPLACE_IFACE_SIP(outbound_interface, outbound_interface_value);
 

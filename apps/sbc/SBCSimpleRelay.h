@@ -54,6 +54,7 @@ class SimpleRelayDialog
   ReplyTranslationMap  reply_translations;
   bool                 transparent_dlg_id;
   bool                 keep_vias;
+  bool                 fix_replaces_ref;
 
   bool finished;
 

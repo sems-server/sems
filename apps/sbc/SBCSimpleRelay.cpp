@@ -6,6 +6,7 @@
 #include "AmEventQueueProcessor.h"
 #include "SBC.h"
 #include "RegisterDialog.h"
+#include "ReplacesMapper.h"
 
 /**
  * SimpleRelayDialog
@@ -41,7 +42,10 @@ SimpleRelayDialog::SimpleRelayDialog(SBCCallProfile &profile,
   : AmBasicSipDialog(this),
     AmEventQueue(this),
     parent_obj(parent_obj),
-    finished(false)
+    finished(false),
+    transparent_dlg_id(false),
+    keep_vias(false),
+    fix_replaces_ref(false)
 {
   if(parent_obj) {
     inc_ref(parent_obj);
@@ -53,7 +57,10 @@ SimpleRelayDialog::SimpleRelayDialog(atomic_ref_cnt* parent_obj)
   : AmBasicSipDialog(this),
     AmEventQueue(this),
     parent_obj(parent_obj),
-    finished(false)
+    finished(false),
+    transparent_dlg_id(false),
+    keep_vias(false),
+    fix_replaces_ref(false)
 {
   if(parent_obj) {
     inc_ref(parent_obj);
@@ -74,6 +81,11 @@ int SimpleRelayDialog::relayRequest(const AmSipRequest& req)
 
   string hdrs = req.hdrs;
   if(headerfilter.size()) inplaceHeaderFilter(hdrs, headerfilter);
+
+  if (fix_replaces_ref && req.method == SIP_METH_REFER) {
+    fixReplaces(hdrs, false);
+  }
+
   if(!append_headers.empty()) hdrs += append_headers;
 
   if(keep_vias)
@@ -405,6 +417,7 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
   append_headers = cp.aleg_append_headers_req;
   transparent_dlg_id = cp.transparent_dlg_id;
   keep_vias = cp.bleg_keep_vias;
+  fix_replaces_ref = cp.fix_replaces_ref=="yes";
 
   if(!cp.dlg_contact_params.empty())
     setContactParams(cp.dlg_contact_params);

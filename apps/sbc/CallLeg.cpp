@@ -31,6 +31,7 @@
 #include "AmSipHeaders.h"
 #include "AmUtils.h"
 #include "AmRtpReceiver.h"
+#include "SBCCallRegistry.h"
 
 #define TRACE DBG
 
@@ -230,6 +231,15 @@ CallLeg::CallLeg(const CallLeg* caller, AmSipDialog* p_dlg, AmSipSubscription* p
   setEnableDtmfTranscoding(caller->getEnableDtmfTranscoding());
   caller->getLowFiPLs(lowfi_payloads);
   setLowFiPLs(lowfi_payloads);
+
+ 
+  // A->B
+  SBCCallRegistry::addCall(caller_dlg->getLocalTag(),
+			   SBCCallRegistryEntry(dlg->getCallid(), dlg->getLocalTag(), ""));
+  // B->A
+  SBCCallRegistry::addCall(dlg->getLocalTag(),
+			   SBCCallRegistryEntry(caller_dlg->getCallid(), caller_dlg->getLocalTag(), caller_dlg->getRemoteTag()));
+
 }
 
 // caller
@@ -266,6 +276,8 @@ CallLeg::~CallLeg()
     pending_updates.pop_front();
     delete u;
   }
+
+  SBCCallRegistry::removeCall(getLocalTag());
 }
 
 void CallLeg::terminateOtherLeg()
@@ -1017,6 +1029,13 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
       terminateLeg(); // commit suicide (don't let the master to kill us)
     }
   }
+
+  // update call registry (unfortunately has to be done always -
+  // not possible to determine if learned in this reply (?))
+  if (!dlg->getRemoteTag().empty()) {
+    SBCCallRegistry::updateCall(getOtherId(), dlg->getRemoteTag());
+  }
+
 }
 
 // was for caller only

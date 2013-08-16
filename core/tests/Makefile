@@ -9,6 +9,12 @@ CORE_HDRS=$(CORE_SRCS:.cpp=.h)
 CORE_OBJS=$(CORE_SRCS:.cpp=.o)
 CORE_DEPS=$(subst ../,,$(CORE_SRCS:.cpp=.d))
 
+SBC_DIR=../../apps/sbc/
+SBC_SRCS=$(wildcard $(SBC_DIR)*.cpp)
+SBC_HDRS=$(SBC_SRCS:.cpp=.h)
+SBC_OBJS=$(SBC_SRCS:.cpp=.o)
+SBC_DEPS=$(subst $(SBC_DIR),,$(SBC_SRCS:.cpp=.d))
+
 AUTH_DIR=../plug-in/uac_auth
 AUTH_OBJS=$(AUTH_DIR)/UACAuth.o
 
@@ -23,7 +29,7 @@ EXTRA_LDFLAGS += -lresolv -levent -levent_pthreads
 
 .PHONY: all
 all: ../../Makefile.defs sip_stack libresample
-	-@$(MAKE) core_deps  && $(MAKE) deps    && \
+	-@$(MAKE) core_deps   && $(MAKE) sbc_deps  && $(MAKE) deps    && \
 	  $(MAKE) $(NAME) && \
 	./$(NAME)
 
@@ -51,6 +57,9 @@ deps: $(DEPS)
 .PHONY: core_deps
 core_deps: $(CORE_DEPS)
 
+.PHONY: sbc_deps
+sbc_deps: $(SBC_DEPS)
+
 AUTH_OBJS: $(AUTH_DIR)/UACAuth.cpp $(AUTH_DIR)/UACAuth.h
 	cd $(AUTH_DIR) ; $(MAKE) AUTH_OBJS
 
@@ -64,17 +73,19 @@ include ../../Makefile.defs
 %.d : %.cpp %.h ../../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
+%.d : $(SBC_DIR)%.cpp $(SBC_DIR)%.h ../../Makefile.defs
+	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
+
 %.d : ../%.cpp ../%.h ../../Makefile.defs
 	$(CXX) -MM $< $(CPPFLAGS) $(CXXFLAGS) > $@
 
-$(NAME): $(OBJS) $(CORE_OBJS) $(SIP_STACK) $(LIBRESAMPLE) ../../Makefile.defs
+$(NAME): $(OBJS) $(CORE_OBJS) $(SBC_OBJS) $(SIP_STACK) $(LIBRESAMPLE) ../../Makefile.defs
 	-@echo ""
 	-@echo "making $(NAME)"
-	$(LD) -o $(NAME) $(OBJS) $(CORE_OBJS) $(SIP_STACK) $(LIBRESAMPLE) $(LDFLAGS) $(EXTRA_LDFLAGS) $(AUTH_OBJS)
-
+	$(LD) -o $(NAME) $(OBJS) $(CORE_OBJS) $(SBC_OBJS) $(SIP_STACK) $(LIBRESAMPLE) $(LDFLAGS) $(EXTRA_LDFLAGS) $(AUTH_OBJS)
 
 ifeq '$(NAME)' '$(MAKECMDGOALS)'
-include $(DEPS) $(CORE_DEPS)
+include $(DEPS) $(CORE_DEPS) $(SBC_DEPS)
 endif
 
 

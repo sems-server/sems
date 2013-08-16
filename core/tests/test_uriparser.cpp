@@ -124,5 +124,13 @@ FCTMF_SUITE_BGN(test_uriparser) {
       fct_chk(orig_str == a_str);
     } FCT_TEST_END();
 
+    FCT_TEST_BGN(uriparser_url_escape) {
+      string src = "Replaces: CSADFSD;from-tag=31241231abc;to-tag=235123";
+      string dst = "Replaces%3A%20CSADFSD%3Bfrom-tag%3D31241231abc%3Bto-tag%3D235123";
+      fct_chk ( URL_decode(dst)==src  );
+      fct_chk ( URL_encode(src)==dst  );
+      fct_chk ( URL_decode(URL_encode(src))==src  );
+
+    } FCT_TEST_END();
 
 } FCTMF_SUITE_END();

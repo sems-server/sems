@@ -717,7 +717,6 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
     di_args.push(AmArg());
     di_args.back().push((int) 0);
     di_args.back().push((int) 0);
-
     di_args.push(AmArg());
     AmArg& vals = di_args.back();
     vals.assertStruct();
@@ -810,7 +809,6 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 	}
 
 	}
-
       }
     }
 

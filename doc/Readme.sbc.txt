@@ -24,6 +24,7 @@ Features
  o reply code translation
  o SIP authentication
  o SIP Session Timers
+ o Fixing Call Transfers (Replaces in REFER target and INVITE)
  o call timer
  o prepaid accounting
  o CDR generation
@@ -589,6 +590,20 @@ Example:
 Warning: Changing response codes, especially between different response
          code classes, can seriously mess up everything. Use with caution
          and only if you know what you are doing!
+
+Fixing Call Transfers (Replaces in REFER target and INVITE)
+-----------------------------------------------------------
+Using the profile options fix_replaces_inv and fix_replaces_ref Replaces
+can be fixed for call transfers going through the SBC.
+
+  fix_replaces_inv=yes
+  fix_replaces_ref=yes
+
+For situations where the call transfer is handled by the UAs (phone handles
+the REFER), the Replaces should be fixed in the INVITE message (fix_replaces_inv=yes).
+
+For situations where a PBX handles the call transfer (handles the REFER),
+the Replaces should be fixed in the REFER message (fix_replaces_ref=yes).
 
 Reliable 1xx (PRACK)
 --------------------
