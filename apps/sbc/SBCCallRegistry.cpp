@@ -34,7 +34,7 @@ void SBCCallRegistry::addCall(const string& ltag, const SBCCallRegistryEntry& ot
   registry[ltag] = other_dlg;
   registry_mutex.unlock();
 
-  DBG("SBCCallRegistry: Added call '%s' - mapped to: '%s'\n", ltag.c_str(), other_dlg.ltag.c_str());
+  DBG("SBCCallRegistry: Added call '%s' - mapped to: '%s'/'%s'/'%s'\n", ltag.c_str(), other_dlg.ltag.c_str(), other_dlg.rtag.c_str(), other_dlg.callid.c_str());
 }
 
 void SBCCallRegistry::updateCall(const string& ltag, const string& other_rtag) {
