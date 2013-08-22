@@ -277,45 +277,14 @@ void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
     if(contact_hiding) {
       uac_contacts[i].uri_user = encodeUsername(uac_contacts[i],
 						req,cp,ctx);
-
-      list<sip_avp*> uri_params;
-      const string& old_params = uac_contacts[i].uri_param;
-      const char* c = old_params.c_str();
-
-      if(parse_gen_params(&uri_params,&c,old_params.length(),0) < 0) {
-
-	DBG("could not parse Contact URI parameters: '%s'",
-	    uac_contacts[i].uri_param.c_str());
-	free_gen_params(&uri_params);
-	continue;
-      }
-
-      // Suppress transport parameter
-      // hack to suppress transport=tcp
-      string new_params;
-      for(list<sip_avp*>::iterator p_it = uri_params.begin();
-	  p_it != uri_params.end(); p_it++) {
-
-	DBG("parsed");
-	if( ((*p_it)->name.len == (sizeof("transport")-1)) &&
-	    !memcmp((*p_it)->name.s,"transport",sizeof("transport")-1) ) {
-	  continue;
-	}
-
-	if(!new_params.empty()) new_params += ";";
-	new_params += c2stlstr((*p_it)->name);
-	if((*p_it)->value.len) {
-	  new_params += "=" + c2stlstr((*p_it)->value);
-	}
-      }
-
-      free_gen_params(&uri_params);
-      uac_contacts[i].uri_param = new_params;
     }
     else if(!reg_caching) {
       cp.fix_reg_contact(ctx,req,uac_contacts[i]);
       continue;
     }
+
+    // remove 'transport' param from Contact
+    removeTransport(uac_contacts[i]);
 
     // patch host & port
     uac_contacts[i].uri_host = AmConfig::SIP_Ifs[oif].getIP();
@@ -325,9 +294,47 @@ void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
     else
       uac_contacts[i].uri_port = int2str(AmConfig::SIP_Ifs[oif].LocalPort);
       
-    DBG("Patching host and port for Contact-HF: host='%s';port='%s'",
+    DBG("Patching host, port and transport for Contact-HF: host='%s';port='%s'",
 	uac_contacts[i].uri_host.c_str(),uac_contacts[i].uri_port.c_str());
   }
+}
+
+int RegisterDialog::removeTransport(AmUriParser& uri)
+{
+  list<sip_avp*> uri_params;
+  string old_params = uri.uri_param;
+  const char* c = old_params.c_str();
+
+  if(parse_gen_params(&uri_params,&c,old_params.length(),0) < 0) {
+
+    DBG("could not parse Contact URI parameters: '%s'",
+	uri.uri_param.c_str());
+    free_gen_params(&uri_params);
+    return -1;
+  }
+
+  // Suppress transport parameter
+  // hack to suppress transport=tcp
+  string new_params;
+  for(list<sip_avp*>::iterator p_it = uri_params.begin();
+      p_it != uri_params.end(); p_it++) {
+
+    DBG("parsed");
+    if( ((*p_it)->name.len == (sizeof("transport")-1)) &&
+	!memcmp((*p_it)->name.s,"transport",sizeof("transport")-1) ) {
+      continue;
+    }
+
+    if(!new_params.empty()) new_params += ";";
+    new_params += c2stlstr((*p_it)->name);
+    if((*p_it)->value.len) {
+      new_params += "=" + c2stlstr((*p_it)->value);
+    }
+  }
+
+  free_gen_params(&uri_params);
+  uri.uri_param = new_params;
+  return 0;
 }
 
 int RegisterDialog::initAor(const AmSipRequest& req)

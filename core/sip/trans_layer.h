@@ -39,6 +39,12 @@ using std::list;
 #include <vector>
 using std::vector;
 
+#include <string>
+using std::string;
+
+#include <map>
+using std::map;
+
 struct sip_msg;
 struct sip_uri;
 class sip_trans;
@@ -110,6 +116,10 @@ class _trans_layer
 {
 private:
     trans_stats stats;
+    sip_ua*     ua;
+
+    typedef map<string,trsp_socket*> prot_collection;
+    vector<prot_collection> transports;
 
 public:
 
@@ -135,7 +145,7 @@ public:
      * Register a transport instance.
      * This method MUST be called at least once.
      */
-    void register_transport(trsp_socket* trsp);
+    int register_transport(trsp_socket* trsp);
 
     /**
      * Clears all registered transport instances.
@@ -186,14 +196,11 @@ public:
      */
     void timer_expired(trans_timer* t, trans_bucket* bucket, sip_trans* tr);
 
-    sip_ua*              ua;
-    vector<trsp_socket*> transports;
-
     /**
-     * Tries to find a registered transport socket
-     * suitable for sending to the destination supplied.
+     * Tries to find an interface suitable for
+     * sending to the destination supplied.
      */
-    trsp_socket* find_transport(sockaddr_storage* remote_ip);
+    int find_outbound_if(sockaddr_storage* remote_ip);
 
     /**
      * Send ACK coresponding to error replies

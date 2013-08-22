@@ -75,7 +75,7 @@ protected:
 
 public:
     trsp_socket(unsigned short if_num, unsigned int opts,
-		unsigned int sys_if_idx = 0);
+		unsigned int sys_if_idx = 0, int sd = 0);
     virtual ~trsp_socket();
 
     /**

@@ -84,9 +84,20 @@ void _trans_layer::register_ua(sip_ua* ua)
     this->ua = ua;
 }
 
-void _trans_layer::register_transport(trsp_socket* trsp)
+int _trans_layer::register_transport(trsp_socket* trsp)
 {
-    transports.push_back(trsp);
+    int if_num = trsp->get_if();
+    if(transports.size() <= (size_t)if_num)
+	transports.resize(if_num+1);
+
+    if(transports[if_num].find(trsp->get_transport())
+       != transports[if_num].end()) {
+	WARN("transport already registered for this interface");
+	return -1;
+    }
+
+    transports[if_num][trsp->get_transport()] = trsp;
+    return 0;
 }
 
 void _trans_layer::clear_transports()
@@ -1010,7 +1021,7 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
  	p_msg = NULL;
  	return MALFORMED_SIP_MSG;
     }
- 
+
     // copy msg->remote_ip
     memcpy(&p_msg->remote_ip,&msg->remote_ip,sizeof(sockaddr_storage));
     p_msg->local_socket = msg->local_socket;
@@ -1143,24 +1154,36 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	memcpy(&msg->remote_ip,&sa,sizeof(sockaddr_storage));
     }
 
-    // rco: should we overwrite the socket from the request in all cases???
-    if((out_interface >= 0) && ((unsigned int)out_interface < transports.size())){
-	if(msg->local_socket) dec_ref(msg->local_socket);
-	msg->local_socket = transports[out_interface];
-	inc_ref(msg->local_socket);
-    }
-    // no socket yet, find one
-    else if(!msg->local_socket) {
-	trsp_socket* s = find_transport(&msg->remote_ip);
-	if(!s){
-	    ERROR("could not find a transport socket (dest: '%.*s')\n",
-		  next_hop.len,next_hop.s);
+    if((out_interface < 0) 
+       || ((unsigned int)out_interface >= transports.size())) {
+
+	out_interface = find_outbound_if(&msg->remote_ip);
+	if(out_interface < 0) {
+	    DBG("could not find any suitable outbound interface");
 	    return -1;
 	}
-
-	msg->local_socket = s;
-	inc_ref(msg->local_socket);
     }
+
+    if(transports[out_interface].empty()) {
+	ERROR("no transport for this interface");
+	return -1;
+    }
+
+    // set default transport to UDP
+    if(!next_trsp.len)
+	next_trsp = cstring("udp");
+
+    prot_collection::iterator prot_sock_it =
+	transports[out_interface].find(c2stlstr(next_trsp));
+
+    // if we couldn't find anything, take whatever is there...
+    if(prot_sock_it == transports[out_interface].end()) {
+	prot_sock_it = transports[out_interface].begin();
+    }
+
+    if(msg->local_socket) dec_ref(msg->local_socket);
+    msg->local_socket = prot_sock_it->second;
+    inc_ref(msg->local_socket);
 
     tt->_bucket = 0;
     tt->_t = 0;
@@ -1172,7 +1195,9 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	return -1;
     }
     else {
-	DBG("send_request to R-URI <%.*s>",msg->u.request->ruri_str.len,msg->u.request->ruri_str.s);
+	DBG("send_request to R-URI <%.*s>",
+	    msg->u.request->ruri_str.len,
+	    msg->u.request->ruri_str.s);
     }
 
     string ruri; // buffer needs to be @ function scope
@@ -2312,79 +2337,79 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 }
 
 /**
- * Tries to find a registered transport socket
- * suitable for sending to the destination supplied.
+ * Tries to find an interface suitable for
+ * sending to the destination supplied.
  */
-trsp_socket* _trans_layer::find_transport(sockaddr_storage* remote_ip)
+int _trans_layer::find_outbound_if(sockaddr_storage* remote_ip)
 {
     if(transports.size() == 0)
 	return NULL;
 
     if(transports.size() == 1)
-	return transports[0];
+	return 0;
     
-  int temp_sock = socket(remote_ip->ss_family, SOCK_DGRAM, 0 );
-  if (temp_sock == -1) {
-    ERROR( "ERROR: socket() failed: %s\n",
-	strerror(errno));
-    return NULL;
-  }
+    int temp_sock = socket(remote_ip->ss_family, SOCK_DGRAM, 0 );
+    if (temp_sock == -1) {
+	ERROR( "ERROR: socket() failed: %s\n",
+	       strerror(errno));
+	return NULL;
+    }
+    
+    sockaddr_storage from;
+    socklen_t    len=sizeof(from);
+    trsp_socket* tsock=NULL;
+    
+    if (connect(temp_sock, (sockaddr*)remote_ip, 
+		remote_ip->ss_family == AF_INET ? 
+		sizeof(sockaddr_in) : sizeof(sockaddr_in6))==-1) {
+	
+	ERROR("connect failed: %s\n",
+	      strerror(errno));
+	goto error;
+    }
+    
+    if (getsockname(temp_sock, (sockaddr*)&from, &len)==-1) {
+	ERROR("getsockname failed: %s\n",
+	      strerror(errno));
+	goto error;
+    }
+    close(temp_sock);
+    
+    // disabled: does not work with TCP...
+    //
+    // try exact match
+    // for(vector<trsp_socket*>::iterator it = transports.begin();
+    //     it != transports.end(); ++it) {
+    //     if((*it)->match_addr(&from)){
+    // 	  tsock = *it;
+    // 	  break;
+    //     }
+    // }
+    // if(tsock != NULL)
+    //     return tsock;
 
-  sockaddr_storage from;
-  socklen_t    len=sizeof(from);
-  trsp_socket* tsock=NULL;
+    // try with alternative address
+    char local_ip[NI_MAXHOST];
+    if(am_inet_ntop(&from,local_ip,NI_MAXHOST) != NULL) {
+	map<string,unsigned short>::iterator if_it =
+	    AmConfig::LocalSIPIP2If.find(local_ip);
+	if(if_it == AmConfig::LocalSIPIP2If.end()){
+	    ERROR("Could not find a local interface for "
+		  "resolved local IP (local_ip='%s')",
+		  local_ip);
+	}
+	else {
+	    //tsock = transports[if_it->second];
+	    return if_it->second;
+	}
+    }
 
-  if (connect(temp_sock, (sockaddr*)remote_ip, 
-	      remote_ip->ss_family == AF_INET ? 
-	      sizeof(sockaddr_in) : sizeof(sockaddr_in6))==-1) {
-
-      ERROR("connect failed: %s\n",
-	    strerror(errno));
-      goto error;
-  }
-
-  if (getsockname(temp_sock, (sockaddr*)&from, &len)==-1) {
-      ERROR("getsockname failed: %s\n",
-	    strerror(errno));
-      goto error;
-  }
-  close(temp_sock);
-
-  // try exact match
-  for(vector<trsp_socket*>::iterator it = transports.begin();
-      it != transports.end(); ++it) {
-
-      if((*it)->match_addr(&from)){
-	  tsock = *it;
-	  break;
-      }
-  }
-
-  if(tsock != NULL)
-      return tsock;
-
-  {
-  // try with alternative address
-  string local_ip = am_inet_ntop(&from);
-  if(!local_ip.empty()) {
-      map<string,unsigned short>::iterator if_it =
-	  AmConfig::LocalSIPIP2If.find(local_ip);
-      if(if_it == AmConfig::LocalSIPIP2If.end()){
-	  ERROR("Could not find a local interface for "
-		"resolved local IP (local_ip='%s')",
-		local_ip.c_str());
-      }
-      else {
-	  tsock = transports[if_it->second];
-      }
-  }
-  }
-
-  return tsock;
+    // no matching interface
+    return -1;
 
  error:
-  close(temp_sock);
-  return NULL;
+    close(temp_sock);
+    return NULL;
 }
 
 sip_trans* _trans_layer::copy_uac_trans(sip_trans* tr)

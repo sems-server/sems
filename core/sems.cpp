@@ -583,7 +583,9 @@ int main(int argc, char* argv[])
   AmRtpReceiver::instance()->start();
 
   INFO("Starting SIP stack (control interface)\n");
-  sip_ctrl.load();
+  if(sip_ctrl.load()) {
+    goto error;
+  }
   
   INFO("Loading plug-ins\n");
   AmPlugIn::instance()->init();
