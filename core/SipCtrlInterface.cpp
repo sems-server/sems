@@ -613,7 +613,9 @@ inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
     unsigned rseq;
     for (list<sip_header*>::iterator it = msg->hdrs.begin(); 
 	 it != msg->hdrs.end(); ++it) {
+#ifdef PROPAGATE_UNPARSED_REPLY_HEADERS
         reply.unparsed_headers.push_back(AmSipHeader((*it)->name, (*it)->value));
+#endif
         switch ((*it)->type) {
           case sip_header::H_OTHER:
           case sip_header::H_REQUIRE:

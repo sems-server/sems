@@ -93,6 +93,11 @@ LONG_DEBUG_MESSAGE=yes
 # Is this a debug build or not?
 debug=no
 
+# Propagate all unparsed SIP headers into AmSipReply. Disabled by default
+# because only special applications might need this and it brings higher memory
+# demands and affects performance.
+#PROPAGATE_UNPARSED_REPLY_HEADERS=no
+
 
 ################### end of configuration section #######################
 
@@ -121,6 +126,9 @@ ifndef LONG_DEBUG_MESSAGE
 CPPFLAGS += -DLOG_BUFFER_LEN=2048
 endif
 
+ifeq ($(PROPAGATE_UNPARSED_REPLY_HEADERS),yes)
+CPPFLAGS += -DPROPAGATE_UNPARSED_REPLY_HEADERS
+endif
 
 # Additions for Solaris support.
 ifeq ($(OS),solaris)

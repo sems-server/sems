@@ -48,6 +48,8 @@ class _AmSipMsgInDlg
   virtual string print() const = 0;
 };
 
+#ifdef PROPAGATE_UNPARSED_REPLY_HEADERS
+
 struct AmSipHeader
 {
   string name, value;
@@ -56,6 +58,8 @@ struct AmSipHeader
   AmSipHeader(const cstring &_name, const cstring &_value): name(_name.s, _name.len), value(_value.s, _value.len) { }
 };
 
+#endif
+
 /** \brief represents a SIP reply */
 class AmSipReply : public _AmSipMsgInDlg
 {
@@ -63,7 +67,9 @@ class AmSipReply : public _AmSipMsgInDlg
   unsigned int code;
   string       reason;
   string       to_uri;
+#ifdef PROPAGATE_UNPARSED_REPLY_HEADERS
   list<AmSipHeader> unparsed_headers;
+#endif
 
  AmSipReply() : code(0), _AmSipMsgInDlg() { }
   ~AmSipReply() { }
