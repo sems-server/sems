@@ -113,8 +113,7 @@ using std::list;
 enum {
     ST_CR=100,
     ST_LF,
-    ST_CRLF,
-    ST_EoL_WSP // [CR] LF WSP
+    ST_CRLF
 };
 
 #define case_CR_LF \

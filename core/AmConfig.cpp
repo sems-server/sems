@@ -713,6 +713,7 @@ int AmConfig::insert_SIP_interface(const SIP_interface& intf)
 
 	return -1;
       }
+      //FIXME: what happens now? shouldn't we insert the interface????
     }
   }
 

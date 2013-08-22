@@ -80,6 +80,8 @@ struct sip_header
     ~sip_header();
 };
 
+int parse_header_type(sip_header* h);
+
 int parse_headers(list<sip_header*>& hdrs, char** c, char* end);
 void free_headers(list<sip_header*>& hdrs);
 

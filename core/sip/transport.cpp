@@ -36,8 +36,8 @@
 int trsp_socket::log_level_raw_msgs = L_DBG;
 
 trsp_socket::trsp_socket(unsigned short if_num, unsigned int opts,
-			 unsigned int sys_if_idx)
-    : sd(0), ip(), port(0), 
+			 unsigned int sys_if_idx, int sd)
+    : sd(sd), ip(), port(0), 
       if_num(if_num), sys_if_idx(sys_if_idx),
       socket_options(opts)
 {

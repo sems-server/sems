@@ -55,6 +55,9 @@ class RegisterDialog
   // so that getOutboundIf() can be called
   void fixUacContactHosts(const AmSipRequest& req, const SBCCallProfile& cp);
 
+  // remove the transport parameter from a URI
+  int removeTransport(AmUriParser& uri);
+
 public:
   RegisterDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules);
   ~RegisterDialog();
