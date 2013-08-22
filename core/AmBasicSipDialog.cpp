@@ -108,9 +108,7 @@ string AmBasicSipDialog::getContactHdr()
   assert(oif >= 0);
   assert(oif < (int)AmConfig::SIP_Ifs.size());
   
-  contact_uri += (AmConfig::SIP_Ifs[oif].PublicIP.empty() ?
-		  AmConfig::SIP_Ifs[oif].LocalIP :
-		  AmConfig::SIP_Ifs[oif].PublicIP);
+  contact_uri += AmConfig::SIP_Ifs[oif].getIP();
   contact_uri += ":" + int2str(AmConfig::SIP_Ifs[oif].LocalPort);
   contact_uri += ">" CRLF;
 

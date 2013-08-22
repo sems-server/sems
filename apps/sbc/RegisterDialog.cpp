@@ -316,7 +316,7 @@ void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
     }
 
     // patch host & port
-    uac_contacts[i].uri_host = AmConfig::SIP_Ifs[oif].LocalIP;
+    uac_contacts[i].uri_host = AmConfig::SIP_Ifs[oif].getIP();
 
     if(AmConfig::SIP_Ifs[oif].LocalPort == 5060)
       uac_contacts[i].uri_port.clear();

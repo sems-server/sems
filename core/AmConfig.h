@@ -94,6 +94,10 @@ struct AmConfig
     unsigned int NetIfIdx;
 
     IP_interface();
+
+    string getIP() {
+      return PublicIP.empty() ?	LocalIP : PublicIP;
+    }
   };
 
   struct SIP_interface : public IP_interface {

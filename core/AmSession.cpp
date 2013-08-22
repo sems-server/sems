@@ -1284,9 +1284,7 @@ string AmSession::advertisedIP(int addrType)
 
   string set_ip = "";
   for (size_t i = rtp_interface; i < AmConfig::RTP_Ifs.size(); i++) {
-    set_ip = AmConfig::RTP_Ifs[i].PublicIP;
-    if (set_ip.empty())
-      set_ip = AmConfig::RTP_Ifs[i].LocalIP; // "media_ip" parameter.
+    set_ip = AmConfig::RTP_Ifs[i].getIP(); // "media_ip" parameter.
     if ((addrType == AT_NONE) ||
 	((addrType == AT_V4) && (set_ip.find(".") != std::string::npos)) ||
 	((addrType == AT_V6) && (set_ip.find(":") != std::string::npos)))
