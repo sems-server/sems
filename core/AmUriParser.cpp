@@ -477,21 +477,6 @@ string AmUriParser::add_param_to_param_list(const string& param_name,
   return list_of_params;
 }
 
-void AmUriParser::add_user_param(const string& param_name, const string& param_value)
-{
-  size_t begin = uri_user.find_first_of(';');
-
-  if (begin == string::npos) {
-    uri_user += ";" + param_name;
-    if (!param_value.empty()) uri_user += "=" + param_value;
-  }
-  else {
-    uri_user = uri_user.substr(0, begin) + ";" +
-        add_param_to_param_list(param_name, param_value, uri_user.substr(begin + 1));
-  }
-}
-
-
 void AmUriParser::dump() const {
   DBG("--- Uri Info --- \n");
   DBG(" uri           '%s'\n", uri.c_str());

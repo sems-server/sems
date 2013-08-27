@@ -60,7 +60,6 @@ struct AmUriParser {
    * method can be used to add/replace param for uri and user parameters */
   static string add_param_to_param_list(const string& param_name,
 	    const string& param_value, const string& param_list);
-  void add_user_param(const string& param_name, const string& param_value);
 
   void dump() const;
   string uri_str() const;
