@@ -448,7 +448,7 @@ bool DSMStateEngine::runactions(vector<DSMElement*>::iterator from,
       continue;
     }
 
-    ERROR("DSMElement typenot understood\n");
+    ERROR("DSMElement type not understood\n");
   }
   return false;
 } 

@@ -143,7 +143,7 @@ DSMFunction* DSMChartReader::functionFromToken(const string& str) {
 
   for (vector<DSMFunction*>::iterator it=funcs.begin(); it!= funcs.end(); it++) {
     if((*it)->name == cmd) {
-        DBG("found function '%s' in fuction list\n", cmd.c_str());
+        DBG("found function '%s' in function list\n", cmd.c_str());
         return *it;
     }
   }
