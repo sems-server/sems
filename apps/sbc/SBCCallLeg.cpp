@@ -1557,40 +1557,6 @@ bool SBCCallLeg::reinvite(const AmSdp &sdp, unsigned &request_cseq)
   return true;
 }
 
-void SBCCallLeg::changeRtpMode(RTPRelayMode new_mode)
-{
-  if (new_mode == rtp_relay_mode) return; // requested mode is set already
-
-  if (!((getCallStatus() == CallLeg::Connected) ||
-        (getCallStatus() == CallLeg::Disconnecting) ||
-        (getCallStatus() == CallLeg::Disconnected))) {
-    ERROR("BUG: changeRtpMode supported for established/disconnecting/disconnected calls only\n");
-    return;
-  }
-
-  clearRtpReceiverRelay();
-
-  // we don't need to send reINVITE from here, expecting caller knows what is he
-  // doing (it is probably processing or generating its own reINVITE)
-  // Switch from RTP_Direct to RTP_Relay is safe (no audio loss), the other can
-  // be lossy because already existing media object would be destroyed.
-  // FIXME: use AmB2BMedia in all RTP relay modes to avoid these problems?
-
-  switch (new_mode) {
-  case RTP_Relay:
-  case RTP_Transcoding:
-      setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
-      break;
-
-  case RTP_Direct:
-      break;
-  }
-
-  if (!getOtherId().empty())
-    relayEvent(new ChangeRtpModeEvent(new_mode, getMediaSession()));
-  setRtpRelayMode(new_mode);
-}
-
 void SBCCallLeg::initCCExtModules()
 {
   // init extended call control modules
@@ -1621,32 +1587,6 @@ void SBCCallLeg::initCCExtModules()
 
     ++cc_mod;
   }
-}
-
-void SBCCallLeg::onB2BEvent(B2BEvent* ev)
-{
-  if (ev->event_id == ChangeRtpModeEventId) {
-    ChangeRtpModeEvent *e = dynamic_cast<ChangeRtpModeEvent*>(ev);
-    if (e) {
-      if (e->new_mode == rtp_relay_mode) return; // requested mode is set already
-
-      clearRtpReceiverRelay();
-
-      switch (e->new_mode) {
-      case RTP_Relay:
-      case RTP_Transcoding:
-          setMediaSession(e->media);
-          if (e->media) getMediaSession()->changeSession(a_leg, this);
-          break;
-
-      case RTP_Direct:
-          break;
-      }
-      setRtpRelayMode(e->new_mode);
-    }
-  }
-
-  CallLeg::onB2BEvent(ev);
 }
 
 void SBCCallLeg::putOnHold()

@@ -116,7 +116,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   ~SBCCallLeg();
 
   void process(AmEvent* ev);
-  void onB2BEvent(B2BEvent* ev);
   void onInvite(const AmSipRequest& req);
 
   void onDtmf(int event, int duration);
@@ -157,7 +156,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   AmB2BMedia *getMediaSession() { return AmB2BSession::getMediaSession(); }
   virtual bool updateLocalSdp(AmSdp &sdp);
   virtual bool updateRemoteSdp(AmSdp &sdp);
-  void changeRtpMode(RTPRelayMode new_mode);
+  void changeRtpMode(RTPRelayMode new_mode) { CallLeg::changeRtpMode(new_mode); }
 
   bool reinvite(const AmSdp &sdp, unsigned &request_cseq);
 

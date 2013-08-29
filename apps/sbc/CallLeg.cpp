@@ -211,6 +211,13 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
       }
       break;
 
+    case ChangeRtpModeEventId:
+      {
+        ChangeRtpModeEvent *e = dynamic_cast<ChangeRtpModeEvent*>(ev);
+        if (e) changeRtpMode(e->new_mode, e->media);
+      }
+      break;
+
     case B2BSipRequest:
       if (!sip_relay_only) {
         // disable forwarding of relayed request if we are not connected [yet]
@@ -1142,3 +1149,104 @@ void CallLeg::stopCall(const StatusChangeCause &cause) {
   terminateOtherLeg();
   terminateLeg();
 }
+
+void CallLeg::changeRtpMode(RTPRelayMode new_mode)
+{
+  if (new_mode == rtp_relay_mode) return; // requested mode is set already
+
+  // we don't need to send reINVITE from here, expecting caller knows what is he
+  // doing (it is probably processing or generating its own reINVITE)
+  // Switch from RTP_Direct to RTP_Relay is safe (no audio loss), the other can
+  // be lossy because already existing media object would be destroyed.
+  // FIXME: use AmB2BMedia in all RTP relay modes to avoid these problems?
+
+  clearRtpReceiverRelay();
+  setRtpRelayMode(new_mode);
+
+  switch (getCallStatus()) {
+    case CallLeg::Connected:
+    case CallLeg::Disconnecting:
+    case CallLeg::Disconnected:
+      if (new_mode == RTP_Relay || new_mode == RTP_Transcoding)
+        setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
+      if (!getOtherId().empty())
+        relayEvent(new ChangeRtpModeEvent(new_mode, getMediaSession()));
+      break;
+
+    case CallLeg::NoReply:
+    case CallLeg::Ringing:
+      if (other_legs.empty()) {
+        // we will receive our media session from the peer later on
+        // WARNING: this means that getMediaSession called before we receive one
+        // will give unusable instance (NULL for now)
+        if (!getOtherId().empty())
+          relayEvent(new ChangeRtpModeEvent(new_mode, getMediaSession()));
+      }
+      else {
+        // we have to release or generate new media sessions for all our B legs
+        changeOtherLegsRtpMode(new_mode);
+      }
+      break;
+  }
+}
+
+void CallLeg::changeRtpMode(RTPRelayMode new_mode, AmB2BMedia *new_media)
+{
+  // we need to process regardless old RTP mode (at least new B2B media session
+  // has to be used)
+
+  bool mode_changed = (getRtpRelayMode() != new_mode);
+
+  clearRtpReceiverRelay();
+  setRtpRelayMode(new_mode);
+
+  switch (getCallStatus()) {
+    case CallLeg::Connected:
+    case CallLeg::Disconnecting:
+    case CallLeg::Disconnected:
+      setMediaSession(new_media);
+      break;
+
+    case CallLeg::NoReply:
+    case CallLeg::Ringing:
+      if (other_legs.empty()) {
+        // we are not the "A leg", we can use supplied media session
+        setMediaSession(new_media);
+      }
+      else {
+        // we have to release or generate new media sessions for all our B legs
+        // (ignoring supplied media)
+        // WARNING: we will use the same RTP relay mode for all peer legs!
+        if (mode_changed) changeOtherLegsRtpMode(new_mode);
+      }
+      break;
+  }
+
+  AmB2BMedia *m = getMediaSession();
+  if (m) m->changeSession(a_leg, this);
+}
+
+void CallLeg::changeOtherLegsRtpMode(RTPRelayMode new_mode)
+{
+  // change RTP relay mode and media session for all in other_legs
+  const string &other = getOtherId();
+  for (vector<OtherLegInfo>::iterator i = other_legs.begin(); i != other_legs.end(); ++i) {
+    i->releaseMediaSession();
+
+    if (new_mode != RTP_Direct) {
+      i->media_session = new AmB2BMedia(NULL, NULL);
+      i->media_session->addReference(); // new reference for storage
+
+      if (other == i->id && i->media_session) {
+        // if connected already with one of the legs we have to use the same
+        // media session for us
+        setMediaSession(i->media_session);
+        if (i->media_session) i->media_session->changeSession(a_leg, this);
+      }
+    }
+
+    AmSessionContainer::instance()->postEvent(i->id, new ChangeRtpModeEvent(new_mode, i->media_session));
+  }
+}
+
+
