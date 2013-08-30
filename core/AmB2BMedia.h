@@ -361,6 +361,8 @@ class AmB2BMedia: public AmMediaSession
 
     // ----------------- SDP manipulation & updates -------------------
 
+    static bool canRelay(const SdpMedia &m);
+
     /** Replace connection address and ports within SDP.
      *
      * Throws an exception (string) in case of error. (FIXME?) */

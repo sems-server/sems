@@ -755,7 +755,7 @@ void AmB2BMedia::clearRTPTimeout()
   }
 }
 
-static bool canRelay(const SdpMedia &m)
+bool AmB2BMedia::canRelay(const SdpMedia &m)
 {
   return (m.transport == TP_RTPAVP) ||
     (m.transport == TP_RTPSAVP) ||
