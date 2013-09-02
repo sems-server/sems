@@ -317,8 +317,6 @@ class CallLeg: public AmB2BSession
     /** Clears other leg, eventually removes it from the list of other legs if
      * it is there. It neither updates call state nor sip_relay_only flag! */
     virtual void clear_other();
-    virtual void terminateLeg();
-    virtual void terminateOtherLeg();
 
   protected:
 
@@ -352,6 +350,9 @@ class CallLeg: public AmB2BSession
     /* called to create SDP of hold request
      * (note that resume request always uses established_body stored before) */
     virtual void createHoldRequest(AmSdp &sdp);
+
+    virtual void terminateOtherLeg();
+    virtual void terminateLeg();
 
   public:
     virtual void onB2BEvent(B2BEvent* ev);
