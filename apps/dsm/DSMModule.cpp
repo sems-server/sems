@@ -129,6 +129,8 @@ string resolveVars(const string ts, AmSession* sess,
 	return sess->dlg->getLocalUri();
       else if (s1 == "remote_uri")
 	return sess->dlg->getRemoteUri();
+      else if (s1 == "remote_party")
+	return sess->dlg->getRemoteParty();
       else
 	return string();
     } 
