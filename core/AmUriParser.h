@@ -47,6 +47,10 @@ struct AmUriParser {
 
   bool isEqual(const AmUriParser& c) const;
   /** @return true on success */
+  bool parse_nameaddr(const string& line);
+  /** parse nameaddr from pos
+       @return true on success
+       @return end of current nameaddr */
   bool parse_contact(const string& line, size_t pos, size_t& end);
   /** @return true on success */
   bool parse_uri();

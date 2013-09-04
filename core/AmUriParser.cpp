@@ -391,6 +391,10 @@ bool AmUriParser::parse_params(const string& line, int& pos) {
   return true;
 }
 
+bool AmUriParser::parse_nameaddr(const string& line) {
+  size_t end;
+  return parse_contact(line, 0, end);
+}
 
 bool AmUriParser::parse_contact(const string& line, size_t pos, size_t& end) {
   int p0 = skip_name(line, pos);
