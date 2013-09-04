@@ -35,6 +35,7 @@ bool onInvite(const AmSipRequest& req, DSMSession* sess);
 DECLARE_MODULE_END;
 
 DEF_ACTION_2P(URIParseAction);
+DEF_ACTION_2P(URIParseNameaddrAction);
 DEF_ACTION_2P(URIGetHeaderAction);
 
 #endif
