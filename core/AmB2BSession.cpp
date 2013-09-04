@@ -1121,6 +1121,8 @@ void AmB2BCallerSession::connectCallee(const string& remote_party,
   if(callee_status != None)
     terminateOtherLeg();
 
+  clear_other();
+
   if (relayed_invite) {
     // relayed INVITE - we need to add the original INVITE to
     // list of received (relayed) requests
