@@ -77,5 +77,6 @@
 #define SIP_REPLY_PENDING               "Request Pending"
 #define SIP_REPLY_NOT_ACCEPTABLE_HERE   "Not Acceptable Here"
 #define SIP_REPLY_TRYING                "Trying"
+#define SIP_REPLY_TOO_MANY_HOPS         "Too Many Hops"
 
 #endif

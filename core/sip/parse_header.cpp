@@ -57,6 +57,7 @@ using std::auto_ptr;
 #define CONTENT_TYPE_len   SIP_HDR_LEN(SIP_HDR_CONTENT_TYPE) // 12
 #define RECORD_ROUTE_len   SIP_HDR_LEN(SIP_HDR_RECORD_ROUTE) // 12
 #define CONTENT_LENGTH_len SIP_HDR_LEN(SIP_HDR_CONTENT_LENGTH) // 14
+#define	MAX_FORWARDS_len   SIP_HDR_LEN(SIP_HDR_MAX_FORWARDS) // 12
 
 
 sip_header::sip_header()
@@ -224,6 +225,7 @@ int parse_header_type(sip_header* h)
 
     //case RECORD_ROUTE_len:
     case CONTENT_TYPE_len:
+    //case MAX_FORWARDS_len:
 	switch(h->name.s[0]){
 	case 'c':
 	case 'C':
@@ -235,6 +237,12 @@ int parse_header_type(sip_header* h)
 	case 'R':
 	    if(!lower_cmp(h->name.s,SIP_HDR_RECORD_ROUTE,RECORD_ROUTE_len)){
 		h->type = sip_header::H_RECORD_ROUTE;
+	    }
+	    break;
+	case 'm':
+	case 'M':
+	    if(!lower_cmp(h->name.s,SIP_HDR_MAX_FORWARDS,MAX_FORWARDS_len)){
+		h->type = sip_header::H_MAX_FORWARDS;
 	    }
 	    break;
 	}

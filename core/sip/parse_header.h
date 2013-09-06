@@ -63,6 +63,7 @@ struct sip_header
 	H_RECORD_ROUTE,
 	H_CONTENT_TYPE,
 	H_CONTENT_LENGTH,
+	H_MAX_FORWARDS,
 	
 	H_OTHER
     };
