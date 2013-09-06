@@ -206,10 +206,10 @@ int _SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
     string cseq = int2str(req.cseq)
 	+ " " + req.method;
 
-    msg->cseq = new sip_header(0,"CSeq",stl2cstr(cseq));
+    msg->cseq = new sip_header(0,SIP_HDR_CSEQ,stl2cstr(cseq));
     msg->hdrs.push_back(msg->cseq);
 
-    msg->callid = new sip_header(0,"Call-ID",stl2cstr(req.callid));
+    msg->callid = new sip_header(0,SIP_HDR_CALL_ID,stl2cstr(req.callid));
     msg->hdrs.push_back(msg->callid);
 
     if(!req.contact.empty()){
@@ -478,6 +478,7 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	    DBG("\trequest = '%.*s'\n",msg->len,msg->buf);
 	    trans_layer::instance()->
 		send_sf_error_reply(&tt, msg, 400, "Missing Contact-HF");
+	    return false;
 	}
     }
     
