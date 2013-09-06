@@ -305,7 +305,7 @@ void ContactBucket::insert(const string& contact_uri, const string& remote_ip,
 			   unsigned short remote_port, const string& alias)
 {
   string k = contact_uri + "/" + remote_ip + ":" + int2str(remote_port);
-  elmts.insert(value_map::value_type(k,new string(alias)));
+  insert(k,new string(alias));
 }
 
 bool _RegisterCache::getAlias(const string& canon_aor, const string& uri,
