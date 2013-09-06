@@ -177,7 +177,9 @@ public:
      */
     virtual bool insert(const Key& k, Value* v) {
 	v = ElmtAlloc().new_elmt(v);
-	return elmts.insert(typename value_map::value_type(k,v)).second;
+	bool res = elmts.insert(typename value_map::value_type(k,v)).second;
+	if(!res) ElmtAlloc().dispose(v);
+	return res;
     }
 
     /**
