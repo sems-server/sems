@@ -7,6 +7,12 @@
 #include "sip/sip_parser.h"
 #include "sip/msg_logger.h"
 
+AmSipRequest::AmSipRequest() 
+  : _AmSipMsgInDlg(), 
+    max_forwards(-1) 
+{
+}
+
 string getHeader(const string& hdrs,const string& hdr_name, bool single)
 {
   size_t pos1; 

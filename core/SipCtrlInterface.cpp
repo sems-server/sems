@@ -236,6 +236,13 @@ int _SipCtrlInterface::send(AmSipRequest &req, const string& dialog_id,
 	}
     }
 
+    if(req.max_forwards < 0) {
+	req.max_forwards = AmConfig::MaxForwards;
+    }
+
+    string mf = int2str(req.max_forwards);
+    msg->hdrs.push_back(new sip_header(0,SIP_HDR_MAX_FORWARDS,stl2cstr(mf)));
+
     if(!req.hdrs.empty()) {
 	
  	c = (char*)req.hdrs.c_str();
@@ -533,6 +540,15 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	case sip_header::H_VIA:
 	    req.vias += c2stlstr((*it)->name) + ": " 
 		+ c2stlstr((*it)->value) + CRLF;
+	    break;
+	case sip_header::H_MAX_FORWARDS:
+	    if(!str2int(c2stlstr((*it)->value),req.max_forwards) ||
+	       (req.max_forwards < 0) ||
+	       (req.max_forwards > 255)) {
+		trans_layer::instance()->
+		    send_sf_error_reply(&tt, msg, 400, "Incorrect Max-Forwards");
+		return false;
+	    }
 	    break;
 	}
     }

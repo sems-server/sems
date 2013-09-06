@@ -646,9 +646,6 @@ int AmBasicSipDialog::sendRequest(const string& method,
     // add Signature
     if (AmConfig::Signature.length())
       req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
-    
-    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) + 
-      int2str(AmConfig::MaxForwards) + CRLF;
   }
 
   int res = SipCtrlInterface::send(req, local_tag,

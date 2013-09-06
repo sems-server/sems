@@ -169,10 +169,18 @@ void AmB2BSession::onB2BEvent(B2BEvent* ev)
 
       if(req_ev->forward){
 
+	// Check Max-Forwards first
+	if(req_ev->req.max_forwards == 0) {
+	  relayError(req_ev->req.method,req_ev->req.cseq,
+		     true,483,SIP_REPLY_TOO_MANY_HOPS);
+	  return;
+	}
+
 	if (req_ev->req.method == SIP_METH_INVITE &&
 	    dlg->getUACInvTransPending()) {
 	  // don't relay INVITE if INV trans pending
-          relayError(req_ev->req.method, req_ev->req.cseq, true, 491, SIP_REPLY_PENDING);
+          relayError(req_ev->req.method, req_ev->req.cseq,
+		     true, 491, SIP_REPLY_PENDING);
 	  return;
 	}
 

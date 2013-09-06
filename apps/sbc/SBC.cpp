@@ -395,6 +395,11 @@ void SBCFactory::onOoDRequest(const AmSipRequest& req)
     }
     return;
   }
+
+  if(req.max_forwards == 0) {
+    AmSipDialog::reply_error(req, 483, SIP_REPLY_TOO_MANY_HOPS);
+    return;
+  }
   
   call_profile.fix_append_hdrs(ctx, req);
 

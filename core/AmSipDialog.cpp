@@ -747,8 +747,10 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
   // acceptable, the UAC core MUST generate a valid answer in the ACK and
   // then send a BYE immediately."
 
-  if (uac_trans.find(inv_cseq) == uac_trans.end()) {
-    ERROR("trying to ACK a non-existing transaction (cseq=%i;local_tag=%s)\n",inv_cseq,local_tag.c_str());
+  TransMap::iterator inv_it = uac_trans.find(inv_cseq);
+  if (inv_it == uac_trans.end()) {
+    ERROR("trying to ACK a non-existing transaction (cseq=%i;local_tag=%s)\n",
+	  inv_cseq,local_tag.c_str());
     return -1;
   }
 
@@ -773,6 +775,8 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
     
   req.route = getRoute();
 
+  req.max_forwards = inv_it->second.max_forwards;
+
   if(body != NULL)
     req.body = *body;
 
@@ -783,9 +787,6 @@ int AmSipDialog::send_200_ack(unsigned int inv_cseq,
     // add Signature
     if (AmConfig::Signature.length())
       req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
-    
-    req.hdrs += SIP_HDR_COLSP(SIP_HDR_MAX_FORWARDS) 
-      + int2str(AmConfig::MaxForwards) + CRLF;
   }
 
   int res = SipCtrlInterface::send(req, local_tag,

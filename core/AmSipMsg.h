@@ -96,9 +96,11 @@ class AmSipRequest : public _AmSipMsgInDlg
   string via_branch;
   bool   first_hop;
 
+  int max_forwards;
+
   unsigned short local_if;
 
-  AmSipRequest() : _AmSipMsgInDlg() { }
+  AmSipRequest();
   ~AmSipRequest() { }
   
   string print() const;
