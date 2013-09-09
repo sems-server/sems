@@ -283,6 +283,8 @@ bool AmUriParser::parse_uri() {
       switch (c) {
       case '>': { uri_param = uri.substr(p1+1, pos-p1-1);
       st = uS6; p1 = pos; } break;
+      case '?': { uri_param = uri.substr(p1+1, pos-p1-1);
+      st = uSHDR; p1 = pos; } break;
       case '\t':
       case ' ': { uri_param = uri.substr(p1+1, pos-p1-1);
       st = uSPARAMWSP; p1 = pos; } break;      
