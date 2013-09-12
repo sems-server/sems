@@ -13,8 +13,7 @@
 # force outbound proxy (in-dialog requests)?
 #force_outbound_proxy=yes
 # destination IP[:port] for outgoing requests
-#next_hop_ip=192.168.5.106
-#next_hop_port=5060
+#next_hop=192.168.5.106
 
 ## filters: 
 #header_filter=blacklist

@@ -163,6 +163,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   next_hop = cfg.getParameter("next_hop");
   next_hop_1st_req = cfg.getParameter("next_hop_1st_req") == "yes";
+  patch_ruri_next_hop = cfg.getParameter("patch_ruri_next_hop") == "yes";
 
   aleg_next_hop = cfg.getParameter("aleg_next_hop");
 

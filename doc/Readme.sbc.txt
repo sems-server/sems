@@ -178,9 +178,9 @@ The patterns which can be used are the following:
        and
       prepaid_caller_uuid=$H(P-Caller-Uuid)
 
-    o P-NextHop-IP: 10.0.2.15
+    o P-NextHop: 10.0.2.15
        and
-      next_hop_ip=$H(P-NextHop-IP)
+      next_hop=$H(P-NextHop)
 
   $HU(headername) - header <headername> (as URI) User
   $Hd(headername) - header <headername> (as URI) domain (host:port)
@@ -189,8 +189,7 @@ The patterns which can be used are the following:
    Example:
     o P-SomeNH-URI: sip:user@10.0.2.15:5092
        and
-      next_hop_ip=$Hh(P-SomeNH-URI)
-      next_hop_port=$Hp(P-SomeNH-URI)
+      next_hop=$Hh(P-SomeNH-URI):
 
 
   $M(value=>regexmap) - map a value (any pattern) to a regexmap (see below)
@@ -269,12 +268,15 @@ also for in-dialog requests. Note that this is NOT RFC3261 compliant (section
 2.2 Requests within a Dialog, 12.2.1 UAC Behavior).
 
 The next hop (destination IP[:port] of outgoing requests) can be set with
-the next_hop_ip and next_hop_port options. next_hop_port defaults to 5060
+the next_hop option. next_hop port defaults to 5060
 if not set or empty. Usually, replies are sent back to where the request came
 from (honoring rport), but if next_hop should be used nevertheless,
 next_hop_for_replies profile option can be set to "yes".
 
-These two settings apply only for the UAC side, i.e. the outgoing side of
+patch_ruri_next_hop=yes sets the option to overwrite RURI in the outgoing request
+with the selected next hop (whether set through next_hop or determined otherwise).
+
+These settings apply only for the UAC side, i.e. the outgoing side of
 the initial INVITE.
 
 Filters
