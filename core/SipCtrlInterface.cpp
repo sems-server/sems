@@ -587,7 +587,8 @@ inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
 	int err = parse_nameaddr(&na,&c,get_contact(msg)->value.len);
 	if(err < 0) {
 	    
-	    ERROR("Contact nameaddr parsing failed\n");
+	    ERROR("Contact nameaddr parsing failed ('%.*s')\n",
+		  get_contact(msg)->value.len,get_contact(msg)->value.s);
 	    return false;
 	}
 	
