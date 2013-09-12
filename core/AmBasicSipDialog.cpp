@@ -29,7 +29,7 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
     force_outbound_proxy(AmConfig::ForceOutboundProxy),
     next_hop(AmConfig::NextHop),
     next_hop_1st_req(AmConfig::NextHop1stReq),
-    patch_ruri_next_hop(),
+    patch_ruri_next_hop(false),
     outbound_interface(-1),
     nat_handling(AmConfig::SipNATHandling),
     usages(0)
