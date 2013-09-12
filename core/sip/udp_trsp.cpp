@@ -144,8 +144,8 @@ int udp_trsp_socket::set_recvbuf_size(int rcvbuf_size)
 	    WARN("could not set SIP UDP socket buffer: '%s'\n",
 		 strerror(errno));
 	} else {
-	    socklen_t optlen;
 	    int set_rcvbuf_size=0;
+	    socklen_t optlen = sizeof(int);
 	    if (getsockopt(sd, SOL_SOCKET, SO_RCVBUF,
 			   &set_rcvbuf_size, &optlen) == -1) {
 		WARN("could not read back SIP UDP socket buffer length: '%s'\n",
