@@ -67,6 +67,7 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
   AmEventDispatcher* ev_disp = AmEventDispatcher::instance();
 
   if(!local_tag.empty()) {
+    // in-dlg request
     AmSipRequestEvent* ev = new AmSipRequestEvent(req);
 
     // Contact-user may contain internal dialog ID (must be tried before using
@@ -115,14 +116,19 @@ void AmSipDispatcher::handleSipMsg(AmSipRequest &req)
 
   } else {
 
-      string app_name;
-      AmSessionFactory* sess_fact = AmPlugIn::instance()->findSessionFactory(req,app_name);
-      if(!sess_fact){
-
-	  AmSipDialog::reply_error(req,404,"Not found");
-	  return;
-      }
-
+    string app_name;
+    AmSessionFactory* sess_fact = AmPlugIn::instance()->findSessionFactory(req,app_name);
+    if (sess_fact) {
       sess_fact->onOoDRequest(req);
+      return;
+    }
+	
+    if (req.method == SIP_METH_OPTIONS) {
+      AmSessionFactory::replyOptions(req);
+      return;
+    }
+      
+    AmSipDialog::reply_error(req,404,"Not found");
   }
+
 }

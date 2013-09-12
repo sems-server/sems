@@ -130,6 +130,9 @@ class AmSessionFactory: public AmPluginFactory
   int configureModule(AmConfigReader& cfg);
 
  public:
+
+  static void replyOptions(const AmSipRequest& req);
+
   /**
    * This function applys the module configuration 
    */

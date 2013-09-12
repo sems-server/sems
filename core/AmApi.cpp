@@ -79,25 +79,38 @@ void AmSessionFactory::configureSession(AmSession* sess) {
 
 void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
 {
-  string hdrs;
-  if (!AmConfig::OptionsTranscoderInStatsHdr.empty()) {
-    string usage;
-    B2BMediaStatistics::instance()->reportCodecReadUsage(usage);
 
-    hdrs += AmConfig::OptionsTranscoderInStatsHdr + ": ";
-    hdrs += usage;
-    hdrs += CRLF;
-  }
-  if (!AmConfig::OptionsTranscoderOutStatsHdr.empty()) {
-    string usage;
-    B2BMediaStatistics::instance()->reportCodecWriteUsage(usage);
-
-    hdrs += AmConfig::OptionsTranscoderOutStatsHdr + ": ";
-    hdrs += usage;
-    hdrs += CRLF;
+  if (req.method == SIP_METH_OPTIONS) {
+    replyOptions(req);
+    return;
   }
 
-  if (req.method == "OPTIONS") {
+  INFO("sorry, we don't support beginning a new session with "
+       "a '%s' message\n", req.method.c_str());
+
+  AmSipDialog::reply_error(req,501,"Not Implemented");
+  return;
+}
+
+void AmSessionFactory::replyOptions(const AmSipRequest& req) {
+    string hdrs;
+    if (!AmConfig::OptionsTranscoderInStatsHdr.empty()) {
+      string usage;
+      B2BMediaStatistics::instance()->reportCodecReadUsage(usage);
+
+      hdrs += AmConfig::OptionsTranscoderInStatsHdr + ": ";
+      hdrs += usage;
+      hdrs += CRLF;
+    }
+    if (!AmConfig::OptionsTranscoderOutStatsHdr.empty()) {
+      string usage;
+      B2BMediaStatistics::instance()->reportCodecWriteUsage(usage);
+
+      hdrs += AmConfig::OptionsTranscoderOutStatsHdr + ": ";
+      hdrs += usage;
+      hdrs += CRLF;
+    }
+
     // Basic OPTIONS support
     if (AmConfig::OptionsSessionLimit &&
 	(AmSession::getSessionNum() >= AmConfig::OptionsSessionLimit)) {
@@ -119,14 +132,7 @@ void AmSessionFactory::onOoDRequest(const AmSipRequest& req)
     }
 
     AmSipDialog::reply_error(req, 200, "OK", hdrs);
-    return;
-  }
 
-  INFO("sorry, we don't support beginning a new session with "
-       "a '%s' message\n", req.method.c_str());
-    
-  AmSipDialog::reply_error(req,501,"Not Implemented");
-  return;
 }
 
 // void AmSessionFactory::postEvent(AmEvent* ev) {
