@@ -43,6 +43,22 @@ int copy_hdrs_len(const list<sip_header*>& hdrs)
     return ret;
 }
 
+int  copy_hdrs_len_no_via(const list<sip_header*>& hdrs)
+{
+    int ret = 0;
+
+    list<sip_header*>::const_iterator it = hdrs.begin();
+    for(;it != hdrs.end(); ++it){
+
+        if((*it)->type == sip_header::H_VIA)
+	  continue;
+
+	ret += copy_hdr_len(*it);
+    }
+    
+    return ret;
+}
+
 void copy_hdrs_wr(char** c, const list<sip_header*>& hdrs)
 {
     list<sip_header*>::const_iterator it = hdrs.begin();

@@ -938,7 +938,8 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     // add 'rport' parameter defaultwise? yes, for now
     request_len += via_len(stl2cstr(via),branch,true);
  
-    request_len += copy_hdrs_len(msg->hdrs);
+    request_len += copy_hdrs_len(msg->vias);
+    request_len += copy_hdrs_len_no_via(msg->hdrs);
      
     string content_len = int2str(msg->body.len);
      

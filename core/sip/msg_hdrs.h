@@ -169,6 +169,8 @@ using std::list;
 
 
 int  copy_hdrs_len(const list<sip_header*>& hdrs);
+int  copy_hdrs_len_no_via(const list<sip_header*>& hdrs);
+
 void copy_hdrs_wr(char** c, const list<sip_header*>& hdrs);
 void copy_hdrs_wr_no_via(char** c, const list<sip_header*>& hdrs);
 
