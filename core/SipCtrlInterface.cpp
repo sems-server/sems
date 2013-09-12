@@ -45,6 +45,7 @@
 #include "sip/wheeltimer.h"
 #include "sip/msg_hdrs.h"
 #include "sip/udp_trsp.h"
+#include "sip/ip_util.h"
 
 #include "log.h"
 
@@ -532,10 +533,11 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
     if(req.max_forwards < 0)
 	req.max_forwards = AmConfig::MaxForwards;
 
-    req.remote_ip = get_addr_str(&msg->remote_ip).c_str();
-    req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
-    req.local_ip = get_addr_str(&msg->local_ip).c_str();
-    req.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
+    req.remote_ip = get_addr_str(&msg->remote_ip);
+    req.remote_port = am_get_port(&msg->remote_ip);
+
+    req.local_ip = get_addr_str(&msg->local_ip);
+    req.local_port = am_get_port(&msg->local_ip);
 
     req.trsp = msg->local_socket->get_transport();
     req.local_if = msg->local_socket->get_if();
@@ -627,10 +629,11 @@ inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
         }
     }
 
-    reply.remote_ip = get_addr_str(&msg->remote_ip).c_str();
-    reply.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
-    reply.local_ip = get_addr_str(&msg->local_ip).c_str();
-    reply.local_port = htons(((sockaddr_in*)&msg->local_ip)->sin_port);
+    reply.remote_ip = get_addr_str(&msg->remote_ip);
+    reply.remote_port = am_get_port(&msg->remote_ip);
+
+    reply.local_ip = get_addr_str(&msg->local_ip);
+    reply.local_port = am_get_port(&msg->local_ip);
 
     return true;
 }
