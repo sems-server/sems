@@ -417,9 +417,9 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 
     if(get_contact(msg) && get_contact(msg)->value.len){
 
+	sip_nameaddr na;
 	cstring contact = get_contact(msg)->value;
-	list<cstring> contact_list;
-	if(parse_nameaddr_list(contact_list,contact.s,contact.len) < 0) {
+	if(parse_first_nameaddr(&na,contact.s,contact.len) < 0) {
 	    WARN("Contact parsing failed\n");
 	    WARN("\tcontact = '%.*s'\n",contact.len,contact.s);
 	    WARN("\trequest = '%.*s'\n",msg->len,msg->buf);
@@ -429,34 +429,8 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	    return false;
 	}
 
-	for(list<cstring>::iterator it = contact_list.begin();
-	    it != contact_list.end(); it++) {
-	    
-	    DBG("single contact = '%.*s'\n", it->len,it->s);
-	}
-
-	cstring contact_na = *contact_list.begin();
-
-	sip_nameaddr na;
-	const char* c = contact_na.s;
-	if((contact_na.len == 1) || (*c == '*')) {
-	    if(contact_list.size() != 1) {
-		trans_layer::instance()->
-		    send_sf_error_reply(&tt, msg, 400, "Bad Contact");
-		return false;
-	    }
-	    req.contact = "*";
-	}
-	else if(parse_nameaddr(&na,&c,contact_na.len) < 0){
-	    DBG("Contact parsing failed\n");
-	    DBG("\tcontact = '%.*s'\n",contact_na.len,contact_na.s);
-	    DBG("\trequest = '%.*s'\n",msg->len,msg->buf);
-
-	    trans_layer::instance()->
-		send_sf_error_reply(&tt, msg, 400, "Bad Contact");
-	    return false;
-	}
-	else {
+	const char* c = na.addr.s;
+	if((na.addr.len != 1) || (*c != '*')) {
 	    sip_uri u;
 	    if(parse_uri(&u,na.addr.s,na.addr.len)){
 		DBG("'Contact' in new request contains a malformed URI\n");
@@ -469,14 +443,14 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	    }
 
 	    req.from_uri = c2stlstr(na.addr);
+	}
 
-	    list<sip_header*>::const_iterator c_it = msg->contacts.begin();
-	    req.contact = c2stlstr((*c_it)->value);
-	    ++c_it;
-	    
-	    for(;c_it!=msg->contacts.end(); ++c_it){
-		req.contact += ", " + c2stlstr((*c_it)->value);
-	    }
+	list<sip_header*>::const_iterator c_it = msg->contacts.begin();
+	req.contact = c2stlstr((*c_it)->value);
+	++c_it;
+
+	for(;c_it!=msg->contacts.end(); ++c_it){
+	    req.contact += ", " + c2stlstr((*c_it)->value);
 	}
     }
     else {
@@ -595,17 +569,15 @@ inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
     reply.code   = msg->u.reply->code;
     reply.reason = c2stlstr(msg->u.reply->reason);
 
-    if(get_contact(msg)){
+    if(get_contact(msg) && get_contact(msg)->value.len){
 
 	// parse the first contact
-	const char* c = get_contact(msg)->value.s;
 	sip_nameaddr na;
-	
-	int err = parse_nameaddr(&na,&c,get_contact(msg)->value.len);
-	if(err < 0) {
+	cstring contact = get_contact(msg)->value;
+	if(parse_first_nameaddr(&na,contact.s,contact.len) < 0) {
 	    
 	    ERROR("Contact nameaddr parsing failed ('%.*s')\n",
-		  get_contact(msg)->value.len,get_contact(msg)->value.s);
+		  contact.len,contact.s);
 	    return false;
 	}
 	
