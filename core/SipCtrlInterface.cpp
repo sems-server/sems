@@ -81,6 +81,13 @@ int _SipCtrlInterface::load()
 	DBG("accept_fr_without_totag = %s\n", 
 	    trans_layer::accept_fr_without_totag?"yes":"no");
 
+	if (cfg.hasParameter("default_bl_ttl")) {
+	    trans_layer::default_bl_ttl = 
+		cfg.getParameterInt("default_bl_ttl",
+				    trans_layer::default_bl_ttl);
+	}
+	DBG("default_bl_ttl = %u\n",trans_layer::default_bl_ttl);
+
 	if (cfg.hasParameter("log_raw_messages")) {
 	    string msglog = cfg.getParameter("log_raw_messages");
 	    if (msglog == "no") trsp_socket::log_level_raw_msgs = -1;

@@ -162,6 +162,7 @@ const char* _state_name_lookup[] = {
     "CONFIRMED",
     "TERMINATED_200",
     "TERMINATED",
+    "ABANDONED",
     "REMOVED"
 };
 

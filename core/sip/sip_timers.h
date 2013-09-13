@@ -132,7 +132,7 @@ enum sip_timer_type {
 // Blacklist grace timer (client transaction only)
 // - set after locally generated 408
 //   to wait for downstream 408
-#define DEFAULT_BL_TIMER T4_TIMER
+#define DEFAULT_BL_TIMER DEFAULT_B_TIMER
 
 #define A_TIMER sip_timers[STIMER_A]
 #define B_TIMER sip_timers[STIMER_B]
@@ -154,7 +154,6 @@ enum sip_timer_type {
 
 #define BL_TIMER sip_timers[STIMER_BL]
 
-//#define n_sip_timers 'M'-'A'+1
 extern unsigned int sip_timers[__STIMER_MAX];
 
 #define T2_TIMER sip_timer_t2

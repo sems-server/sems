@@ -690,13 +690,20 @@ int AmBasicSipDialog::sendRequest(const string& method,
       req.hdrs += SIP_HDR_COLSP(SIP_HDR_USER_AGENT) + AmConfig::Signature + CRLF;
   }
 
+  int send_flags = 0;
+  if(patch_ruri_next_hop && remote_tag.empty()) {
+    send_flags |= TR_FLAG_NEXT_HOP_RURI;
+  }
+
+  if(flags & SIP_FLAGS_NOBL) {
+    send_flags |= TR_FLAG_DISABLE_BL;
+  }
+
   int res = SipCtrlInterface::send(req, local_tag,
 				   remote_tag.empty() || !next_hop_1st_req ?
 				   next_hop : "",
 				   outbound_interface,
-				   !patch_ruri_next_hop || !remote_tag.empty() ? 0
-				   : SEND_REQUEST_FLAG_NEXT_HOP_RURI,
-				   logger);
+				   send_flags,logger);
   if(res) {
     ERROR("Could not send request: method=%s; call-id=%s; cseq=%i\n",
 	  req.method.c_str(),req.callid.c_str(),req.cseq);
