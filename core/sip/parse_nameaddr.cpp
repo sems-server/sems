@@ -344,7 +344,7 @@ int parse_nameaddr_list(list<cstring>& nas, const char* c, int len)
       const char* na_begin = c;
       int err = skip_2_next_nameaddr(c,na_end,end);
       if(err < 0){
-	ERROR("While parsing route header\n");
+	ERROR("While parsing nameaddr list ('%.*s')\n",len,na_begin);
 	return -1;
       }
 
@@ -357,4 +357,21 @@ int parse_nameaddr_list(list<cstring>& nas, const char* c, int len)
     }
 
     return 0;
+}
+
+int parse_first_nameaddr(sip_nameaddr* na, const char* c, int len)
+{
+  const char* tmp_c = c;
+  const char* end = c + len;
+  const char* na_end = NULL;
+  const char* na_begin = c;
+
+  int err = skip_2_next_nameaddr(tmp_c,na_end,end);
+  if(err < 0){
+    ERROR("While parsing first nameaddr ('%.*s')\n",len,c);
+    return -1;
+  }
+
+  tmp_c = c;
+  return parse_nameaddr(na,&tmp_c,na_end-tmp_c);
 }

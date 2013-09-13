@@ -32,7 +32,6 @@
 
 struct sip_nameaddr
 {
-    cstring body;
 
     cstring name;
     cstring addr;
@@ -46,6 +45,7 @@ struct sip_nameaddr
 };
 
 int parse_nameaddr(sip_nameaddr* na, const char** c, int len);
+int parse_first_nameaddr(sip_nameaddr* na, const char* c, int len);
 int parse_nameaddr_list(list<cstring>& nas, const char* c, int len);
 
 #endif
