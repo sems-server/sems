@@ -26,20 +26,49 @@
  */
 #include "sip_timers.h"
 
-unsigned int sip_timers[n_sip_timers] = {
+unsigned int sip_timers[__STIMER_MAX] = {
+
+  // INVITE client transaction
   DEFAULT_A_TIMER,
   DEFAULT_B_TIMER,
-  DEFAULT_C_TIMER,
   DEFAULT_D_TIMER,
+
+  // non-INVITE client transaction
   DEFAULT_E_TIMER,
   DEFAULT_F_TIMER,
+  DEFAULT_K_TIMER,
+
+  // INVITE server transaction
   DEFAULT_G_TIMER,
   DEFAULT_H_TIMER,
   DEFAULT_I_TIMER,
+
+  // non-INVITE server transaction
   DEFAULT_J_TIMER,
-  DEFAULT_K_TIMER,
+
+  // Used to handle 200 ACKs automatically
+  // in INVITE client transactions.
   DEFAULT_L_TIMER,
-  DEFAULT_M_TIMER
+
+  // Transport address failover timer
+  DEFAULT_M_TIMER,
+
+  // INVITE client transaction
+  DEFAULT_C_TIMER,
+
+  // Blacklist grace timer (client transaction only)
+  DEFAULT_BL_TIMER
 };
 
 unsigned int sip_timer_t2 = DEFAULT_T2_TIMER;
+
+const char* _timer_name_lookup[] = {"A","B","D",
+				    "E","F","K",
+				    "G","H","I",
+				    "J","L","M",
+				    "C","BL"};
+
+const char* timer_name(unsigned int type)
+{
+  return _timer_name_lookup[(type) & 0xFFFF];
+}

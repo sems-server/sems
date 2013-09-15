@@ -34,8 +34,6 @@
  */
 enum sip_timer_type {
 
-    STIMER_INVALID=0,
-
     // INVITE client transaction
     STIMER_A,  // Calling: (re-)send INV
     STIMER_B,  // Calling -> Terminated
@@ -67,7 +65,12 @@ enum sip_timer_type {
     STIMER_M,
 
     // INVITE client transaction
-    STIMER_C   // Proceeding -> Terminated
+    STIMER_C,  // Proceeding -> Terminated
+
+    // Blacklist grace timer
+    STIMER_BL,
+
+    __STIMER_MAX
 };
 
 
@@ -126,26 +129,40 @@ enum sip_timer_type {
 //type 0x0c
 #define DEFAULT_M_TIMER  (DEFAULT_B_TIMER/4)
 
-#define A_TIMER sip_timers['A'-'A']
-#define B_TIMER sip_timers['B'-'A']
-#define C_TIMER sip_timers['C'-'A']
-#define D_TIMER sip_timers['D'-'A']
-#define E_TIMER sip_timers['E'-'A']
-#define F_TIMER sip_timers['F'-'A']
-#define G_TIMER sip_timers['G'-'A']
-#define H_TIMER sip_timers['H'-'A']
-#define I_TIMER sip_timers['I'-'A']
-#define J_TIMER sip_timers['J'-'A']
-#define K_TIMER sip_timers['K'-'A']
-#define L_TIMER sip_timers['L'-'A']
-#define M_TIMER sip_timers['M'-'A']
+// Blacklist grace timer (client transaction only)
+// - set after locally generated 408
+//   to wait for downstream 408
+#define DEFAULT_BL_TIMER T4_TIMER
 
-#define n_sip_timers 'M'-'A'+1
-extern unsigned int sip_timers[n_sip_timers];
-#endif
+#define A_TIMER sip_timers[STIMER_A]
+#define B_TIMER sip_timers[STIMER_B]
+#define D_TIMER sip_timers[STIMER_D]
+
+#define E_TIMER sip_timers[STIMER_E]
+#define F_TIMER sip_timers[STIMER_F]
+#define K_TIMER sip_timers[STIMER_K]
+
+#define G_TIMER sip_timers[STIMER_G]
+#define H_TIMER sip_timers[STIMER_H]
+#define I_TIMER sip_timers[STIMER_I]
+
+#define J_TIMER sip_timers[STIMER_J]
+
+#define L_TIMER sip_timers[STIMER_L]
+#define M_TIMER sip_timers[STIMER_M]
+#define C_TIMER sip_timers[STIMER_C]
+
+#define BL_TIMER sip_timers[STIMER_BL]
+
+//#define n_sip_timers 'M'-'A'+1
+extern unsigned int sip_timers[__STIMER_MAX];
 
 #define T2_TIMER sip_timer_t2
 extern unsigned int sip_timer_t2;
+
+const char* timer_name(unsigned int type);
+
+#endif
 
 /** EMACS **
  * Local variables:

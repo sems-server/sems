@@ -194,6 +194,9 @@ class sip_trans
     sip_trans();
     ~sip_trans();
 
+    const char* type_str() const;
+    const char* state_str() const;
+
     void dump() const;
 };
 

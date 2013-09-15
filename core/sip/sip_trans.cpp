@@ -28,6 +28,7 @@
  */
 
 #include "sip_trans.h"
+#include "sip_timers.h"
 #include "sip_parser.h"
 #include "wheeltimer.h"
 #include "trans_table.h"
@@ -40,14 +41,14 @@
 #include <assert.h>
 
 int _timer_type_lookup[] = { 
-    -1,    // STIMER_INVALID
     0,1,2, // STIMER_A, STIMER_B, STIMER_D
     0,1,2, // STIMER_E, STIMER_F, STIMER_K
     0,1,2, // STIMER_G, STIMER_H, STIMER_I
     0,     // STIMER_J
     2,     // STIMER_L; shares the same slot as STIMER_D
     2,     // STIMER_M; shares the same slot as STIMER_D/STIMER_K
-    1,     // STIMER_C; shares the same slot at STIMER_B (INV trans only)
+    2,     // STIMER_C; shares the same slot at STIMER_D (INV trans only)
+    2,     // STIMER_BL; share the same slot as STIMER_D/STIMER_K
 };
 
 inline trans_timer** fetch_timer(unsigned int timer_type, trans_timer** base)
@@ -142,9 +143,30 @@ trans_timer* sip_trans::get_timer(unsigned int timer_type)
 }
 
 
-char _timer_name_lookup[] = {'0','A','B','D','E','F','K','G','H','I','J','L','M','C'};
-#define timer_name(type) \
-    (_timer_name_lookup[(type) & 0xFFFF])
+const char* _trans_type_lookup[] = {
+    "0",
+    "UAS",
+    "UAC"
+};
+
+#define trans_type(type) \
+    (_trans_type_lookup[type])
+
+const char* _state_name_lookup[] = {
+    "0",
+    "TRYING",
+    "CALLING",
+    "PROCEEDING",
+    "PROCEEDING_REL",
+    "COMPLETED",
+    "CONFIRMED",
+    "TERMINATED_200",
+    "TERMINATED",
+    "REMOVED"
+};
+
+#define state_name(state) \
+    (_state_name_lookup[state])
 
 /**
  * Resets a specific timer
@@ -158,7 +180,8 @@ void sip_trans::reset_timer(trans_timer* t, unsigned int timer_type)
     
     if(*tp != NULL){
 
-	DBG("Clearing old timer of type %c (this=%p)\n",timer_name((*tp)->type),*tp);
+	DBG("Clearing old timer of type %s (this=%p)\n",
+	    timer_name((*tp)->type),*tp);
 	wheeltimer::instance()->remove_timer((timer*)*tp);
     }
 
@@ -174,7 +197,7 @@ void trans_timer::fire()
     if(bucket){
 	bucket->lock();
 	if(bucket->exist(t)){
-	    DBG("Transaction timer expired: type=%c, trans=%p, eta=%i, t=%i\n",
+	    DBG("Transaction timer expired: type=%s, trans=%p, eta=%i, t=%i\n",
 		timer_name(type),t,expires,wheeltimer::instance()->wall_clock);
 
 	    trans_timer* tt = t->get_timer(this->type & 0xFFFF);
@@ -215,7 +238,7 @@ void sip_trans::reset_timer(unsigned int timer_type, unsigned int expire_delay /
     unsigned int expires = expire_delay / (TIMER_RESOLUTION/1000);
     expires += wt->wall_clock;
     
-    DBG("New timer of type %c at time=%i (repeated=%i)\n",
+    DBG("New timer of type %s at time=%i (repeated=%i)\n",
 	timer_name(timer_type),expires,timer_type>>16);
 
     trans_timer* t = new trans_timer(timer_type,expires,
@@ -240,10 +263,22 @@ void sip_trans::reset_all_timers()
     }
 }
 
+const char* sip_trans::type_str() const
+{
+    return trans_type(type);
+}
+
+const char* sip_trans::state_str() const
+{
+    return state_name(state);
+}
+
 void sip_trans::dump() const
 {
-    DBG("type=0x%x; msg=%p; to_tag=%.*s; reply_status=%i; state=%i; retr_buf=%p\n",
-	type,msg,to_tag.len,to_tag.s,reply_status,state,retr_buf);
+    DBG("type=%s (0x%x); msg=%p; to_tag=%.*s;"
+	" reply_status=%i; state=%s (%i); retr_buf=%p\n",
+	type_str(),type,msg,to_tag.len,to_tag.s,
+	reply_status,state_str(),state,retr_buf);
 }
 
 /** EMACS **

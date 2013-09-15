@@ -370,10 +370,13 @@ int AmConfig::readConfiguration()
   }
   
 
-  for (char c = 'a'; c <= 'm'; c++) {
-    if(cfg.hasParameter(string("sip_timer_")+c)) {
-      sip_timers[c-'a']=cfg.getParameterInt(string("sip_timer_")+c, sip_timers[c-'a']);
-      DBG("Set SIP Timer '%c' to %u ms\n", 'A'+c-'a', sip_timers[c-'a']);
+  for (int t = STIMER_A; t < __STIMER_MAX; t++) {
+
+    string timer_cfg = string("sip_timer_") + timer_name(t);
+    if(cfg.hasParameter(timer_cfg)) {
+
+      sip_timers[t] = cfg.getParameterInt(timer_cfg, sip_timers[t]);
+      DBG("Set SIP Timer '%s' to %u ms\n", timer_name(t), sip_timers[t]);
     }
   }
 
