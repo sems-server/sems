@@ -88,6 +88,10 @@ resample_lib:
 
 endif
 
+ifeq ($(USE_GPERFTOOLS),yes)
+LDFLAGS += -ltcmalloc
+endif
+
 ifdef USE_SPANDSP
 CPPFLAGS += -DUSE_SPANDSP -D__STDC_LIMIT_MACROS
 
