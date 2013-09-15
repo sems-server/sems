@@ -165,6 +165,7 @@ void SimpleRelayDialog::process(AmEvent* ev)
 
   B2BEvent* b2b = dynamic_cast<B2BEvent*>(ev);
   if(b2b && b2b->event_id == B2BTerminateLeg){
+    DBG("received terminate event from other leg");
     terminate();
     return;
   }
@@ -228,6 +229,16 @@ void SimpleRelayDialog::onB2BReply(const AmSipReply& reply)
     finished = true;
 
   relayReply(reply);
+}
+
+void SimpleRelayDialog::termUasTrans()
+{
+  while(!uas_trans.empty()) {
+
+    const AmSipRequest& req = uas_trans.begin()->second;
+    DBG("terminating UAS transaction (%u %s)",req.cseq,req.cseq_method.c_str());
+    reply(req,500,"Internal Server Error");
+  }
 }
 
 void SimpleRelayDialog::onSipRequest(const AmSipRequest& req)

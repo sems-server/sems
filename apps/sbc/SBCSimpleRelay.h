@@ -85,7 +85,8 @@ protected:
 
   /** correctly terminate the dialog; MUST be redefined if "terminated" method
    * is redefined */
-  virtual void terminate() { finished = true; }
+  virtual void terminate() { finished = true; termUasTrans(); }
+  virtual void termUasTrans();
 
 public:
   SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules,
