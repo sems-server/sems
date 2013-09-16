@@ -578,11 +578,11 @@ inline bool _SipCtrlInterface::sip_msg2am_reply(sip_msg *msg, AmSipReply &reply)
 	    
 	    ERROR("Contact nameaddr parsing failed ('%.*s')\n",
 		  contact.len,contact.s);
-	    return false;
 	}
-	
-	reply.to_uri = c2stlstr(na.addr);
-	
+	else {
+	    reply.to_uri = c2stlstr(na.addr);
+	}
+
 	list<sip_header*>::iterator c_it = msg->contacts.begin();
 	reply.contact = c2stlstr((*c_it)->value);
 	++c_it;
@@ -679,8 +679,20 @@ void _SipCtrlInterface::handle_sip_reply(const string& dialog_id, sip_msg* msg)
     
     AmSipReply   reply;
 
-    if (! sip_msg2am_reply(msg, reply))
+
+    if (! sip_msg2am_reply(msg, reply)) {
+      ERROR("failed to convert sip_msg to AmSipReply\n");
+      // trans_bucket::match_reply only uses via_branch & cseq
+      reply.cseq = get_cseq(msg)->num;
+      reply.cseq_method = c2stlstr(get_cseq(msg)->method_str);
+      reply.code = 500;
+      reply.reason = "Internal Server Error";
+      reply.callid = c2stlstr(msg->callid->value);
+      reply.to_tag = c2stlstr(((sip_from_to*)msg->to->p)->tag);
+      reply.from_tag  = c2stlstr(((sip_from_to*)msg->from->p)->tag);
+      AmSipDispatcher::instance()->handleSipMsg(dialog_id, reply);
       return;
+    }
     
     DBG("Received reply: %i %s\n",reply.code,reply.reason.c_str());
     DBG_PARAM(reply.callid);
