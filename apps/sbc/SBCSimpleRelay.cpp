@@ -201,6 +201,8 @@ bool SimpleRelayDialog::processingCycle()
 
 void SimpleRelayDialog::finalize()
 {
+  termUasTrans();
+
   for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     i->module->finalize(i->user_data);
   }
