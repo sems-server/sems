@@ -235,9 +235,16 @@ void SimpleRelayDialog::termUasTrans()
 {
   while(!uas_trans.empty()) {
 
-    const AmSipRequest& req = uas_trans.begin()->second;
+    TransMap::iterator it = uas_trans.begin();
+    int req_cseq = it->first;
+    const AmSipRequest& req = it->second;
     DBG("terminating UAS transaction (%u %s)",req.cseq,req.cseq_method.c_str());
+
     reply(req,500,"Internal Server Error");
+
+    it = uas_trans.find(req_cseq);
+    if(it != uas_trans.end())
+      uas_trans.erase(it);
   }
 }
 
