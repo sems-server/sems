@@ -206,6 +206,26 @@ struct SdpMedia
 };
 
 /**
+ * \brief handling SDP attribute "rtcp"
+ */
+class RtcpAddress
+{
+  private:
+    string nettype, addrtype, address;
+    bool parse(const string &src);
+    int port;
+
+  public:
+    RtcpAddress(const string &attr_value);
+    bool hasAddress() { return !address.empty(); }
+    void setAddress(const string &addr) { address = addr; }
+    const string& getAddress() { return address; }
+    void setPort(int _port) { port = _port; }
+    int getPort() { return port; }
+    string print();
+};
+
+/**
  * \brief The SDP parser class.
  */
 class AmSdp

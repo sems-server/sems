@@ -18,6 +18,8 @@
 #include "amci/amci.h"
 #include "log.h"
 
+#include <stdexcept>
+
 #include <string>
 #include <map>
 using std::string;
@@ -190,6 +192,69 @@ bool SdpMedia::operator == (const SdpMedia& other) const
     && transport == other.transport && conn == other.conn && dir == other.dir
     && send == other.send && recv == other.recv;
 }
+
+//
+// class RtcpAddress: Methods
+//
+bool RtcpAddress::parse(const string &src)
+{
+  port = 0;
+  nettype.clear();
+  addrtype.clear();
+  address.clear();
+
+  int len = src.size();
+  if (len < 1) return false;
+
+  enum { PORT, NET_TYPE, ADDR_TYPE, ADDR } s = PORT;
+
+  // parsing (somehow) according to RFC 3605
+  //    rtcp-attribute =  "a=rtcp:" port  [nettype space addrtype space
+  //                             connection-address] CRLF
+  // nettype, addrtype is ignored
+  for (int i = 0; i < len; ++i) {
+    switch (s) {
+
+      case (PORT):
+        if (src[i] >= '0' && src[i] <= '9') port = port * 10 + (src[i] - '0');
+        else if (src[i] == ' ') s = NET_TYPE;
+        else return false; // error
+        break;
+
+      case NET_TYPE:
+          if (src[i] == ' ') s = ADDR_TYPE;
+          else nettype += src[i];
+          break;
+
+      case ADDR_TYPE:
+          if (src[i] == ' ') s = ADDR;
+          else addrtype += src[i];
+          break;
+
+      case ADDR:
+          address += src[i];
+          break;
+    }
+  }
+  return s == PORT ||
+    (s == ADDR && !address.empty()); 
+  // FIXME: nettype, addrtype and addr should be verified
+}
+
+string RtcpAddress::print()
+{
+  string s(int2str(port));
+  if (!address.empty())
+    s += " IN " + addrtype + " " + address;
+  return s;
+}
+
+RtcpAddress::RtcpAddress(const string &attr_value): port(0)
+{
+  if (!parse(attr_value)) 
+    throw std::runtime_error("can't parse rtcp attribute value");
+}
+
 
 //
 // class AmSdp: Methods
