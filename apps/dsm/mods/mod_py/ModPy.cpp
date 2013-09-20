@@ -98,7 +98,7 @@ int SCPyModule::preload() {
 MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   if (NULL==dsm_module) {
-    ERROR("mod_py must be preloaded! add preload=mod_py to dsm.conf\n");
+    ERROR("mod_py must be preloaded! add preload_mods=mod_py to dsm.conf\n");
     return NULL;
   }
 
