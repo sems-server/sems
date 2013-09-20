@@ -830,7 +830,17 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
       stopCall(&req); // is this needed?
     }
   }
-  else AmB2BSession::onSipRequest(req);
+  else {
+    if(getCallStatus() == Disconnected &&
+       req.method == SIP_METH_BYE) {
+      // seems that we have already sent/received a BYE
+      // -> we'd better terminate this ASAP
+      //    to avoid other confusions...
+      dlg->reply(req,200,"OK");
+    }
+    else
+      AmB2BSession::onSipRequest(req);
+  }
 }
 
 void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSipDialog::Status old_dlg_status)
