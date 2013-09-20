@@ -226,6 +226,9 @@ private:
   /** @see AmEventQueue */
   void process(AmEvent* event);
 
+  /** @see AmEventQueue */
+  void finalize();
+
   /** B2BEvent handler */
   virtual void onB2BEvent(B2BEvent* ev);
 

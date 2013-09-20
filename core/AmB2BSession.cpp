@@ -126,7 +126,23 @@ void AmB2BSession::process(AmEvent* event)
   AmSession::process(event);
 }
 
-void AmB2BSession::relayError(const string &method, unsigned cseq, bool forward, int err_code)
+void AmB2BSession::finalize()
+{
+  // clean up relayed_req
+  if(!other_id.empty()) {
+    while(!relayed_req.empty()) {
+      TransMap::iterator it = relayed_req.begin();
+      const AmSipRequest& req = it->second;
+      relayError(req.method,req.cseq,true,481,SIP_REPLY_NOT_EXIST);
+      relayed_req.erase(it);
+    }
+  }
+
+  AmSession::finalize();
+}
+
+void AmB2BSession::relayError(const string &method, unsigned cseq,
+			      bool forward, int err_code)
 {
   if (method != "ACK") {
     AmSipReply n_reply;
