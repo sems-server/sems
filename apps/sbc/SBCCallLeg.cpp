@@ -548,12 +548,19 @@ void SBCCallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
         DBG("uac_auth consumed reply with cseq %d and resent with cseq %d; "
             "updating relayed_req map\n", reply.cseq, cseq_before);
         updateUACTransCSeq(reply.cseq, cseq_before);
+
+	// don't relay to other leg, process in AmSession
+	AmSession::onSipReply(req, reply, old_dlg_status);
+	// skip presenting reply to ext_cc modules, too
+	return;
       }
     }
   }
 
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    if ((*i)->onInDialogReply(this, reply) == StopProcessing) return;
+    if ((*i)->onInDialogReply(this, reply) == StopProcessing) {
+      return;
+    }
   }
 
   CallLeg::onSipReply(req, reply, old_dlg_status);
