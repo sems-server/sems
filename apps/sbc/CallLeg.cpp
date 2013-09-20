@@ -822,7 +822,7 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
   // Note that setting sip_relay_only to false in this case doesn't solve the
   // problem because AmB2BSession always tries to relay the request into the
   // other leg.
-  if (getCallStatus() == Disconnected) {
+  if (getCallStatus() == Disconnected && getOtherId().empty()) {
     TRACE("handling request %s in disconnected state", req.method.c_str());
     // this is not correct but what is?
     AmSession::onSipRequest(req);
