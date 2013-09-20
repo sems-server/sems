@@ -201,7 +201,7 @@ bool SimpleRelayDialog::processingCycle()
 
 void SimpleRelayDialog::finalize()
 {
-  termUasTrans();
+  AmBasicSipDialog::finalize();
 
   for (list<CCModuleInfo>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
     i->module->finalize(i->user_data);
@@ -231,23 +231,6 @@ void SimpleRelayDialog::onB2BReply(const AmSipReply& reply)
     finished = true;
 
   relayReply(reply);
-}
-
-void SimpleRelayDialog::termUasTrans()
-{
-  while(!uas_trans.empty()) {
-
-    TransMap::iterator it = uas_trans.begin();
-    int req_cseq = it->first;
-    const AmSipRequest& req = it->second;
-    DBG("terminating UAS transaction (%u %s)",req.cseq,req.cseq_method.c_str());
-
-    reply(req,500,"Internal Server Error");
-
-    it = uas_trans.find(req_cseq);
-    if(it != uas_trans.end())
-      uas_trans.erase(it);
-  }
 }
 
 void SimpleRelayDialog::onSipRequest(const AmSipRequest& req)

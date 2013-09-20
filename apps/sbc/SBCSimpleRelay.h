@@ -87,8 +87,6 @@ protected:
    * is redefined */
   virtual void terminate() { finished = true; }
 
-  virtual void termUasTrans();
-
 public:
   SimpleRelayDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules,
 		    atomic_ref_cnt* parent_obj=NULL);
