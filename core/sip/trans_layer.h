@@ -299,6 +299,12 @@ public:
      * Note: the transaction bucket must be locked before
      */
     const sip_trans* get_trans() const;
+
+    /**
+     * Remove the transaction
+     * Note: the transaction bucket must be locked before
+     */
+    void remove_trans();
 };
 
 #endif // _trans_layer_h_

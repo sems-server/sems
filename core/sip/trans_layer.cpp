@@ -2315,6 +2315,11 @@ const sip_trans* trans_ticket::get_trans() const
 	return NULL; 
 }
 
+void trans_ticket::remove_trans()
+{
+    _bucket->remove(_t);
+}
+
 /** EMACS **
  * Local variables:
  * mode: c++
