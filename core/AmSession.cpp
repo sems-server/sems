@@ -456,8 +456,11 @@ bool AmSession::processingCycle() {
   }
 }
 
-void AmSession::finalize() {
+void AmSession::finalize()
+{
   DBG("running finalize sequence...\n");
+  dlg->finalize();
+  
   onBeforeDestroy();
   destroy();
   
