@@ -181,6 +181,16 @@ protected:
   virtual bool onRxReplyStatus(const AmSipReply& reply, 
 			       TransMap::iterator t_uac_it);
 
+  /**
+   * Terminate pending UAS transactions
+   */
+  virtual void termUasTrans();
+
+  /**
+   * Terminate pending UAC transactions
+   */
+  virtual void termUacTrans();
+
 public:
 
   string outbound_proxy;
@@ -349,6 +359,14 @@ public:
 			  const AmMimeBody* body = NULL,
 			  const string& hdrs = "",
 			  int flags = 0);
+
+  /**
+   * Terminates pending UAS/UAC transactions
+   */
+  virtual void finalize() {
+    termUasTrans();
+    termUacTrans();
+  }
 
   /**
    * This method should only be used to send responses

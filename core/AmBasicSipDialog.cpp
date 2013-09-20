@@ -39,6 +39,8 @@ AmBasicSipDialog::AmBasicSipDialog(AmBasicSipEventHandler* h)
 
 AmBasicSipDialog::~AmBasicSipDialog()
 {
+  termUasTrans();
+  termUacTrans();
   if (logger) dec_ref(logger);
   dump();
 }
@@ -375,6 +377,37 @@ bool AmBasicSipDialog::onRxReplyStatus(const AmSipReply& reply,
   }
   
   return true;
+}
+
+void AmBasicSipDialog::termUasTrans()
+{
+  while(!uas_trans.empty()) {
+
+    TransMap::iterator it = uas_trans.begin();
+    int req_cseq = it->first;
+    const AmSipRequest& req = it->second;
+    DBG("terminating UAS transaction (%u %s)",req.cseq,req.cseq_method.c_str());
+
+    reply(req,481,SIP_REPLY_NOT_EXIST);
+
+    it = uas_trans.find(req_cseq);
+    if(it != uas_trans.end())
+      uas_trans.erase(it);
+  }
+}
+
+void AmBasicSipDialog::termUacTrans()
+{
+  while(!uac_trans.empty()) {
+    TransMap::iterator it = uac_trans.begin();
+    trans_ticket& tt = it->second.tt;
+
+    tt.lock_bucket();
+    tt.remove_trans();
+    tt.unlock_bucket();
+
+    uac_trans.erase(it);
+  }
 }
 
 void AmBasicSipDialog::onRxReply(const AmSipReply& reply)
