@@ -1039,19 +1039,28 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
     case NoReply:
     case Ringing:
       if (reply.cseq == invite_req.cseq) {
-	if(reply.code < 200){
-	  if ((!sip_relay_only) && sip_relay_early_media_sdp &&
-	      reply.code>=180 && reply.code<=183 && (!reply.body.empty())) {
-	    DBG("sending re-INVITE to caller with early media SDP\n");
-	    if (reinviteCaller(reply)) {
-	      ERROR("re-INVITEing caller for early session failed - "
-		    "stopping this and other leg\n");
-	      terminateOtherLeg();
-	      terminateLeg();
+
+	if (reply.code < 200) {
+
+	  if ((!sip_relay_only) &&
+	      (reply.code>=180 && reply.code<=183 && (!reply.body.empty()))) {
+	    // save early media SDP
+	    updateSessionDescription(reply.body);
+
+	    if (sip_relay_early_media_sdp) {
+	      if (reinviteCaller(reply)) {
+		ERROR("re-INVITEing caller for early session failed - "
+		      "stopping this and other leg\n");
+		terminateOtherLeg();
+		terminateLeg();
+		break;
+	      }
 	    }
+
 	  }
-	  
+
 	  callee_status = Ringing;
+
 	} else if(reply.code < 300){
 	  
 	  callee_status  = Connected;
@@ -1060,7 +1069,14 @@ void AmB2BCallerSession::onB2BEvent(B2BEvent* ev)
 	    DBG("received 200 class reply to establishing INVITE: "
 		"switching to SIP relay only mode, sending re-INVITE to caller\n");
 	    sip_relay_only = true;
-	    if (reinviteCaller(reply)) {
+	    AmSipReply n_reply = reply;
+
+	    if (n_reply.body.empty() && !established_body.empty()) {
+	      DBG("callee FR without SDP, using provisional response's (18x) one\n");
+	      n_reply.body = established_body;
+	    }
+
+	    if (reinviteCaller(n_reply)) {
 	      ERROR("re-INVITEing caller failed - stopping this and other leg\n");
 	      terminateOtherLeg();
 	      terminateLeg();
