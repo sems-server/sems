@@ -733,6 +733,13 @@ bool SBCFactory::CCRoute(const AmSipRequest& req,
 	    AmArg::print(di_args).c_str());
       AmBasicSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
       return false;
+    } catch (...) {
+      ERROR("Exception occured when executing call control interface route "
+	    "module '%s' named '%s', parameters '%s'\n",
+	    cc_if.cc_module.c_str(), cc_if.cc_name.c_str(),
+	    AmArg::print(di_args).c_str());
+      AmBasicSipDialog::reply_error(req, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+      return false;
     }
 
     // evaluate ret
