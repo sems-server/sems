@@ -585,7 +585,7 @@ int AmBasicSipDialog::reply(const AmSipRequest& req,
       reply.hdrs += SIP_HDR_COLSP(SIP_HDR_SERVER) + AmConfig::Signature + CRLF;
   }
 
-  if ((code < 300) && !(flags & SIP_FLAGS_NOCONTACT)) {
+  if ((code > 100 && code < 300) && !(flags & SIP_FLAGS_NOCONTACT)) {
     /* if 300<=code<400, explicit contact setting should be done */
     reply.contact = getContactHdr();
   }
