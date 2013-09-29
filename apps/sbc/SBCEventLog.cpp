@@ -152,9 +152,9 @@ void _SBCEventLog::logCallEnd(const AmBasicSipDialog* dlg,
     end_event["from"] = dlg->getLocalParty();
 
   if(uri_parser.parse_contact(dlg->getRemoteParty(),0,end))
-    end_event["from"] = uri_parser.uri_str();
+    end_event["to"] = uri_parser.uri_str();
   else
-    end_event["from"] = dlg->getRemoteParty();
+    end_event["to"] = dlg->getRemoteParty();
 
   if(tv && tv->tv_sec) {
     struct timeval call_len;
