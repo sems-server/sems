@@ -122,7 +122,7 @@ void AmRtpReceiverThread::run()
     streams_mut.unlock();
 
     int ret = poll(tmp_fds,tmp_nfds,RTP_POLL_TIMEOUT);
-    if(ret < 0)
+    if(ret < 0 && errno != EINTR)
       ERROR("AmRtpReceiver: poll: %s\n",strerror(errno));
 
     if(ret < 1)
