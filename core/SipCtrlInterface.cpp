@@ -527,6 +527,9 @@ inline bool _SipCtrlInterface::sip_msg2am_request(const sip_msg *msg,
 	}
     }
 
+    if(req.max_forwards < 0)
+	req.max_forwards = AmConfig::MaxForwards;
+
     req.remote_ip = get_addr_str(&msg->remote_ip).c_str();
     req.remote_port = htons(((sockaddr_in*)&msg->remote_ip)->sin_port);
     req.local_ip = get_addr_str(&msg->local_ip).c_str();
