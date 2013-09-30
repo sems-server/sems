@@ -35,7 +35,7 @@
 #include <stdlib.h>
 
 void replaceParsedParam(const string& s, size_t p,
-			const AmUriParser& parsed, string& res) {
+			const AmUriParser& parsed, string& res, size_t &skip) {
   switch (s[p+1]) {
   case 'u': { // URI
     res+=parsed.uri_user+"@"+parsed.uri_host;
@@ -51,7 +51,22 @@ void replaceParsedParam(const string& s, size_t p,
   case 'h': res+=parsed.uri_host; break; // host
   case 'p': res+=parsed.uri_port; break; // port
   case 'H': res+=parsed.uri_headers; break; // Headers
-  case 'P': res+=parsed.uri_param; break; // Params
+  case 'P': { // Params
+    if ((s.length() < p+4) || (s[p+2] != '(')) {
+      res+=parsed.uri_param;
+      break;
+    }
+    size_t skip_p = p+3;
+    for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
+    if (skip_p==s.length()) {
+      WARN("Error parsing P param replacement (unclosed brackets)\n");
+      break;
+    }
+    string param_name = s.substr(p+3, skip_p-p-3);
+    DBG("param_name = '%s' (skip_p - p = %d)\n", param_name.c_str(), (int)(skip_p-p));
+    res += get_header_keyvalue(parsed.uri_param, param_name);
+    skip = size_t(skip_p - p);
+  }; break;
   case 'n': res+=parsed.display_name; break; // Params
 
   // case 't': { // tag
@@ -134,7 +149,7 @@ string replaceParameters(const string& s,
 	    }
 	  }
 
-	  replaceParsedParam(s, p, from_parser, res);
+	  replaceParsedParam(s, p, from_parser, res, skip_chars);
 
 	}; break;
 
@@ -161,7 +176,7 @@ string replaceParameters(const string& s,
 	    }
 	  }
 
-	  replaceParsedParam(s, p, to_parser, res);
+	  replaceParsedParam(s, p, to_parser, res, skip_chars);
 
 	}; break;
 
@@ -182,7 +197,7 @@ string replaceParameters(const string& s,
 	      break;
 	    }
 	  }
-	  replaceParsedParam(s, p, ruri_parser, res);
+	  replaceParsedParam(s, p, ruri_parser, res, skip_chars);
 	}; break;
 
 	case 'c': { // call-id
@@ -358,7 +373,7 @@ string replaceParameters(const string& s,
 	      if (!uri_parser.uri_port.empty())				\
 		res+=":"+uri_parser.uri_port;				\
 	    } else {							\
-	      replaceParsedParam(s, p, uri_parser, res);		\
+	      replaceParsedParam(s, p, uri_parser, res, skip_chars);	\
 	    }								\
 	  }; break;
 
@@ -486,7 +501,7 @@ string replaceParameters(const string& s,
 		   hdr_name.c_str(), uri_parser.uri.c_str());
 	      break;
 	    }
-	    replaceParsedParam(s, p, uri_parser, res);
+	    replaceParsedParam(s, p, uri_parser, res, skip_chars);
 	  }
 	  skip_chars = skip_p-p;
 	} break;

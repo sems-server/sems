@@ -131,6 +131,7 @@ The patterns which can be used are the following:
   $fp  - From port
   $fH  - From headers
   $fP  - From Params
+  $fP(param) - From Param 'param'
   $ft  - From tag
   $fn  - From display name
 
