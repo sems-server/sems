@@ -1,5 +1,12 @@
 Changelog for SEMS 
 
+Version 1.6.0
+- IVR
+    - Calling stopSession() is now all that needs to be done when BYE
+      is received from caller or callee leg.
+    - It is not anymore possible to prevent callee leg from being
+      disconnected when caller leg is disconnected.
+
 Version 1.5.0
  - Core
     - configurable SIP timers (global)
