@@ -80,6 +80,25 @@ bool SubscriptionDialog::terminated()
   return !(getUsages() > 0);
 }
 
+bool SubscriptionDialog::getMappedReferID(unsigned int refer_id, 
+					  unsigned int& mapped_id) const
+{
+  map<unsigned int, unsigned int>::const_iterator id_it =
+    refer_id_map.find(refer_id);
+  if(id_it != refer_id_map.end()) {
+    mapped_id = id_it->second;
+    return true;
+  }
+
+  return false;
+}
+
+void SubscriptionDialog::insertMappedReferID(unsigned int refer_id,
+					     unsigned int mapped_id)
+{
+  refer_id_map[refer_id] = mapped_id;
+}
+
 void SubscriptionDialog::onSipRequest(const AmSipRequest& req)
 {
   if(!subs->onRequestIn(req))
@@ -96,13 +115,13 @@ void SubscriptionDialog::onSipRequest(const AmSipRequest& req)
       int id_int=0;
       if(str2int(id,id_int)) {
 
-	RelayMap::iterator id_it = refer_id_map.find(id_int);
-	if(id_it != refer_id_map.end()) {
+	unsigned int mapped_id=0;
+	if(getMappedReferID(id_int,mapped_id)) {
 
 	  AmSipRequest n_req(req);
 	  removeHeader(n_req.hdrs,SIP_HDR_EVENT);
 	  n_req.hdrs += SIP_HDR_COLSP(SIP_HDR_EVENT) "refer;id=" 
-	    + int2str(id_it->second) + CRLF;
+	    + int2str(mapped_id) + CRLF;
 
 	  SimpleRelayDialog::onSipRequest(n_req);
 	  return;
@@ -130,7 +149,7 @@ void SubscriptionDialog::onSipReply(const AmSipRequest& req,
       // remember mapping for refer event package event-id
       RelayMap::iterator t_req_it = relayed_reqs.find(reply.cseq);
       if(t_req_it != relayed_reqs.end())
-	refer_id_map[reply.cseq] = t_req_it->second;
+	insertMappedReferID(reply.cseq,t_req_it->second);
     }
   }
 

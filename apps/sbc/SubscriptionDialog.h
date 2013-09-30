@@ -46,6 +46,13 @@ protected:
   // AmEventHandler
   void process(AmEvent* ev);
 
+  /**
+   * Returns true and sets mapped_id if refer_id corresponds to an existing
+   * refer event subscription which has been relayed.
+   */
+  bool getMappedReferID(unsigned int refer_id, unsigned int& mapped_id) const;
+  virtual void insertMappedReferID(unsigned int refer_id, unsigned int mapped_id);
+
 public:
   SubscriptionDialog(SBCCallProfile &profile, vector<AmDynInvoke*> &cc_modules,
 		     AmSipSubscription* subscription=NULL,
