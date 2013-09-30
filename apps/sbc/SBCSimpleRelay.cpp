@@ -393,7 +393,7 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
   reply_translations = cp.reply_translations;
   append_headers = cp.aleg_append_headers_req;
   transparent_dlg_id = cp.transparent_dlg_id;
-  keep_vias = cp.keep_vias;
+  keep_vias = cp.bleg_keep_vias;
 
   return 0;
 }

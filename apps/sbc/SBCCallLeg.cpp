@@ -427,7 +427,8 @@ int SBCCallLeg::relayEvent(AmEvent* ev)
             return res;
           }
 
-	  if(call_profile.keep_vias) {
+	  if((a_leg && call_profile.keep_vias)
+	     || (!a_leg && call_profile.bleg_keep_vias)) {
 	    req_ev->req.hdrs = req_ev->req.vias + req_ev->req.hdrs;
 	  }
         }
@@ -909,7 +910,7 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
   // codecs filtered out might be used in direction to caller
   CallLeg::onInvite(req);
 
-  if(call_profile.keep_vias)
+  if(a_leg && call_profile.keep_vias)
     invite_req.hdrs = invite_req.vias + invite_req.hdrs;
 
   // call extend call controls
