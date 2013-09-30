@@ -369,6 +369,29 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 
   if (fwd) {
     DBG("relaying B2B SIP request (fwd) %s %s\n", r_ev->req.method.c_str(), r_ev->req.r_uri.c_str());
+
+    if(r_ev->req.method == SIP_METH_NOTIFY) {
+
+      string event = getHeader(r_ev->req.hdrs,SIP_HDR_EVENT,true);
+      string id = get_header_param(event,"id");
+      event = strip_header_params(event);
+
+      if(event == "refer" && !id.empty()) {
+
+	int id_int=0;
+	if(str2int(id,id_int)) {
+
+	  map<int,int>::iterator id_it = refer_id_map.find(id_int);
+	  if(id_it != refer_id_map.end()) {
+
+	    removeHeader(r_ev->req.hdrs,SIP_HDR_EVENT);
+	    r_ev->req.hdrs += SIP_HDR_COLSP(SIP_HDR_EVENT) "refer;id=" 
+	      + int2str(id_it->second) + CRLF;
+	  }
+	}
+      }
+    }
+
     int res = relayEvent(r_ev);
     if (res == 0) {
       // successfuly relayed, store the request
@@ -522,8 +545,17 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
     if(reply.code >= 200) {
       if ((reply.code < 300) && (t->second.method == SIP_METH_INVITE)) {
 	DBG("not removing relayed INVITE transaction yet...\n");
-      } else 
+      } else {
+	//grab cseq-mqpping in case of REFER
+	if((reply.code < 300) && (reply.cseq_method == SIP_METH_REFER)) {
+	  if(subs->subscriptionExists(SingleSubscription::Subscriber,
+				      "refer",int2str(reply.cseq))) {
+	    // remember mapping for refer event package event-id
+	    refer_id_map[reply.cseq] = t->second.cseq;
+	  }
+	}
 	relayed_req.erase(t);
+      }
     }
   } else {
     AmSession::onSipReply(req, reply, old_dlg_status);

@@ -155,7 +155,10 @@ private:
   TransMap relayed_req;
 
   /** Requests received for relaying */
-  std::map<int,AmSipRequest> recvd_req;
+  TransMap recvd_req;
+
+  /** CSeq map for REFER subscriptions */
+  map<int,int> refer_id_map;
 
   /** CSeq of the INVITE that established this call */
   unsigned int est_invite_cseq;
