@@ -41,6 +41,7 @@ class SubscriptionDialog
 {
 protected:
   AmSipSubscription* subs;
+  RelayMap refer_id_map;
 
   // AmEventHandler
   void process(AmEvent* ev);
