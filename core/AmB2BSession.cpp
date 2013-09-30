@@ -330,6 +330,25 @@ static bool parseSdp(AmSdp &dst, const AmSipReply &reply)
   return false;
 }
 
+bool AmB2BSession::getMappedReferID(unsigned int refer_id, 
+				    unsigned int& mapped_id) const
+{
+  map<unsigned int, unsigned int>::const_iterator id_it =
+    refer_id_map.find(refer_id);
+  if(id_it != refer_id_map.end()) {
+    mapped_id = id_it->second;
+    return true;
+  }
+
+  return false;
+}
+
+void AmB2BSession::insertMappedReferID(unsigned int refer_id,
+				       unsigned int mapped_id)
+{
+  refer_id_map[refer_id] = mapped_id;
+}
+
 void AmB2BSession::onSipRequest(const AmSipRequest& req)
 {
   bool fwd = sip_relay_only &&
@@ -381,12 +400,12 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
 	int id_int=0;
 	if(str2int(id,id_int)) {
 
-	  map<int,int>::iterator id_it = refer_id_map.find(id_int);
-	  if(id_it != refer_id_map.end()) {
+	  unsigned int mapped_id=0;
+	  if(getMappedReferID(id_int,mapped_id)) {
 
 	    removeHeader(r_ev->req.hdrs,SIP_HDR_EVENT);
 	    r_ev->req.hdrs += SIP_HDR_COLSP(SIP_HDR_EVENT) "refer;id=" 
-	      + int2str(id_it->second) + CRLF;
+	      + int2str(mapped_id) + CRLF;
 	  }
 	}
       }
@@ -551,7 +570,7 @@ void AmB2BSession::onSipReply(const AmSipRequest& req, const AmSipReply& reply,
 	  if(subs->subscriptionExists(SingleSubscription::Subscriber,
 				      "refer",int2str(reply.cseq))) {
 	    // remember mapping for refer event package event-id
-	    refer_id_map[reply.cseq] = t->second.cseq;
+	    insertMappedReferID(reply.cseq,t->second.cseq);
 	  }
 	}
 	relayed_req.erase(t);
