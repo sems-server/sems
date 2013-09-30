@@ -49,9 +49,6 @@ class SimpleRelayDialog
   atomic_ref_cnt*     parent_obj;
   string              other_dlg;
 
-  typedef map<unsigned int,unsigned int> RelayMap;
-  RelayMap relayed_reqs;
-
   // mediation stuff
   vector<FilterEntry>  headerfilter;
   string               append_headers;
@@ -72,6 +69,9 @@ class SimpleRelayDialog
   int relayReply(const AmSipReply& reply);
 
 protected:
+  typedef map<unsigned int,unsigned int> RelayMap;
+  RelayMap relayed_reqs;
+
   // AmEventHandler
   void process(AmEvent* ev);
 
