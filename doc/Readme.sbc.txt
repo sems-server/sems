@@ -43,6 +43,8 @@ In this list a profile may be selected
 
  o depending on "profile" option in P-App-Param header (active_profile=$(paramhdr))
 
+ o depending on "profile" parameter of Request URI
+
  o using any replacement pattern (see below), especially regex maps $M(val=>map)
 
 By using the latter options, the SBC profile for the call can also be selected in
@@ -50,7 +52,7 @@ the proxy.
 
 Examples:
  active_profile=auth_b2b
- active_profile=$(paramhdr),refuse
+ active_profile=$(paramhdr),$rP(profile),refuse
  active_profile=$M($si=>ipmap),$(P-SBCProfile),refuse
 
 Example: 
