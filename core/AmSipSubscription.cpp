@@ -400,6 +400,50 @@ void AmSipSubscription::terminate()
   }
 }
 
+bool AmSipSubscription::subscriptionExists(SingleSubscription::Role role,
+					   const string& event, const string& id)
+{
+  return findSubscription(role,event,id) != subs.end();
+}
+
+AmSipSubscription::Subscriptions::iterator 
+AmSipSubscription::findSubscription(SingleSubscription::Role role,
+				    const string& event, const string& id)
+{
+  Subscriptions::iterator match = subs.end();
+  bool no_id = id.empty() && (event == "refer");
+
+  DBG("searching for event='%s'; id='%s'; no_id=%i",
+      event.c_str(),id.c_str(),no_id);
+
+  for(Subscriptions::iterator it = subs.begin();
+      it != subs.end(); it++) {
+
+    SingleSubscription* sub = *it;
+
+    DBG("role='%s';event='%s';id='%s'",
+	sub->role ? "Notifier" : "Subscriber",
+	sub->event.c_str(), sub->id.c_str());
+
+    if( (sub->role == role) &&
+	(sub->event == event) &&
+	(no_id || (sub->id == id)) ){
+
+      match = it;
+      DBG("\tmatched!");
+      break;
+    }
+  }
+
+  if((match != subs.end()) && (*match)->terminated()) {
+    DBG("matched terminated subscription: deleting it first\n");
+    removeSubscription(match);
+    match = subs.end();
+  }
+
+  return match;
+}
+
 AmSipSubscription::Subscriptions::iterator
 AmSipSubscription::createSubscription(const AmSipRequest& req, bool uac)
 {
@@ -498,28 +542,7 @@ AmSipSubscription::matchSubscription(const AmSipRequest& req, bool uac)
   id = get_header_param(event,"id");
   event = strip_header_params(event);
 
-  Subscriptions::iterator match = subs.end();
-  bool no_id = id.empty() && (event == "refer");
-
-  for(Subscriptions::iterator it = subs.begin();
-      it != subs.end(); it++) {
-
-    SingleSubscription* sub = *it;
-    if( (sub->role == role) &&
-	(sub->event == event) &&
-	(no_id || (sub->id == id)) ){
-
-      match = it;
-      break;
-    }
-  }
-
-  if((match != subs.end()) && (*match)->terminated()) {
-    DBG("matched terminated subscription: deleting it first\n");
-    removeSubscription(match);
-    match = subs.end();
-  }
-
+  Subscriptions::iterator match = findSubscription(role,event,id);
   if(match == subs.end()){
     if(req.method == SIP_METH_SUBSCRIBE) {
       // no match... new subscription?

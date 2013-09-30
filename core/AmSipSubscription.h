@@ -165,9 +165,10 @@ protected:
   CSeqMap  uac_cseq_map;
 
   SingleSubscription* makeSubscription(const AmSipRequest& req, bool uac);
-  virtual Subscriptions::iterator createSubscription(const AmSipRequest& req, 
-						     bool uac);
+  Subscriptions::iterator createSubscription(const AmSipRequest& req, bool uac);
   Subscriptions::iterator matchSubscription(const AmSipRequest& req, bool uac);
+  Subscriptions::iterator findSubscription(SingleSubscription::Role role,
+					   const string& event, const string& id);
   void removeSubFromUACCSeqMap(Subscriptions::iterator sub);
   void removeSubFromUASCSeqMap(Subscriptions::iterator sub);
 
@@ -192,6 +193,12 @@ public:
    * Terminate all subscriptions
    */
   void terminate();
+
+  /**
+   * Check if a subscription exists
+   */
+  bool subscriptionExists(SingleSubscription::Role role,
+			  const string& event, const string& id);
   
   bool onRequestIn(const AmSipRequest& req);
   void onRequestSent(const AmSipRequest& req);
