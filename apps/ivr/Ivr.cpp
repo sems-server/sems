@@ -694,26 +694,26 @@ int IvrDialog::onSdpCompleted(const AmSdp& offer, const AmSdp& answer)
 void IvrDialog::onBye(const AmSipRequest& req)
 {
   if(callPyEventHandler("onBye",NULL))
-    AmB2BSession::onBye(req);
+    AmB2BCallerSession::onBye(req);
 }
 
 void IvrDialog::onDtmf(int event, int duration_msec)
 {
   if(callPyEventHandler("onDtmf","(ii)",event,duration_msec))
-    AmB2BSession::onDtmf(event,duration_msec);
+    AmB2BCallerSession::onDtmf(event,duration_msec);
 }
 
 void IvrDialog::onOtherBye(const AmSipRequest& req)
 {
   if(callPyEventHandler("onOtherBye",NULL))
-    AmB2BSession::onOtherBye(req);
+    AmB2BCallerSession::onOtherBye(req);
 }
 
 bool IvrDialog::onOtherReply(const AmSipReply& r)
 {
   if(callPyEventHandler("onOtherReply","(is)",
 			r.code,r.reason.c_str()))
-    AmB2BSession::onOtherReply(r);
+    AmB2BCallerSession::onOtherReply(r);
   return false;
 }
 
@@ -741,14 +741,14 @@ void IvrDialog::onSipReply(const AmSipRequest& req,
   PyObject* pyo = getPySipReply(reply);
   callPyEventHandler("onSipReply","(O)", pyo);
   safe_Py_DECREF(pyo);
-  AmB2BSession::onSipReply(req,reply,old_dlg_status);
+  AmB2BCallerSession::onSipReply(req,reply,old_dlg_status);
 }
 
 void IvrDialog::onSipRequest(const AmSipRequest& r){
   PyObject* pyo = getPySipRequest(r);
   callPyEventHandler("onSipRequest","(O)", pyo);
   safe_Py_DECREF(pyo);
-  AmB2BSession::onSipRequest(r);
+  AmB2BCallerSession::onSipRequest(r);
 }
 
 void IvrDialog::onRtpTimeout() {
