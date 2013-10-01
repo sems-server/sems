@@ -26,6 +26,7 @@
 #include "ParamReplacer.h"
 #include "RegisterCache.h"
 #include "sip/parse_next_hop.h"
+#include "sip/parse_common.h"
 
 #include "log.h"
 #include "AmSipHeaders.h"
@@ -34,8 +35,9 @@
 #include <algorithm>
 #include <stdlib.h>
 
-void replaceParsedParam(const string& s, size_t p,
-			const AmUriParser& parsed, string& res, size_t &skip) {
+int replaceParsedParam(const string& s, size_t p,
+			const AmUriParser& parsed, string& res) {
+  int skip_chars=1;
   switch (s[p+1]) {
   case 'u': { // URI
     res+=parsed.uri_user+"@"+parsed.uri_host;
@@ -52,21 +54,46 @@ void replaceParsedParam(const string& s, size_t p,
   case 'p': res+=parsed.uri_port; break; // port
   case 'H': res+=parsed.uri_headers; break; // Headers
   case 'P': { // Params
-    if ((s.length() < p+4) || (s[p+2] != '(')) {
-      res+=parsed.uri_param;
-      break;
+    if((s.length() > p+3) && (s[p+2] == '(')) {
+      size_t skip_p = p+3;
+      for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
+      if (skip_p==s.length()) {
+	WARN("Error parsing $%cP() param replacement (unclosed brackets)\n",s[p]);
+	break;
+      }
+      string param_name = s.substr(p+3,skip_p-p-3);
+      if(param_name.empty()) {
+	res+=parsed.uri_param;
+	break;
+      }
+      
+      string uri_params = ";" + parsed.uri_param;
+      const char* c = uri_params.c_str();
+      list<sip_avp*> params;
+      if(parse_gen_params(&params,&c,uri_params.length(),0) < 0) {
+	DBG("could not parse URI parameters");
+	free_gen_params(&params);
+	break;
+      }
+
+      string param;
+      for(list<sip_avp*>::iterator it = params.begin(); 
+	  it != params.end(); it++) {
+
+	if(lower_cmp_n((*it)->name.s,(*it)->name.len,
+		       param_name.c_str(),param_name.length()))
+	  continue;
+
+	param = c2stlstr((*it)->value);
+      }
+      free_gen_params(&params);
+      res+=param;
+      skip_chars = skip_p-p;
     }
-    size_t skip_p = p+3;
-    for (;skip_p<s.length() && s[skip_p] != ')';skip_p++) { }
-    if (skip_p==s.length()) {
-      WARN("Error parsing P param replacement (unclosed brackets)\n");
-      break;
+    else {
+      res+=parsed.uri_param; 
     }
-    string param_name = s.substr(p+3, skip_p-p-3);
-    DBG("param_name = '%s' (skip_p - p = %d)\n", param_name.c_str(), (int)(skip_p-p));
-    res += get_header_keyvalue(parsed.uri_param, param_name);
-    skip = size_t(skip_p - p);
-  }; break;
+  } break;
   case 'n': res+=parsed.display_name; break; // Params
 
   // case 't': { // tag
@@ -77,6 +104,8 @@ void replaceParsedParam(const string& s, size_t p,
   default: WARN("unknown replace pattern $%c%c\n",
 		s[p], s[p+1]); break;
   };
+
+  return skip_chars;
 }
 
 /* Returns a url-decoded version of str */
@@ -149,7 +178,7 @@ string replaceParameters(const string& s,
 	    }
 	  }
 
-	  replaceParsedParam(s, p, from_parser, res, skip_chars);
+	  skip_chars=replaceParsedParam(s, p, from_parser, res);
 
 	}; break;
 
@@ -176,7 +205,7 @@ string replaceParameters(const string& s,
 	    }
 	  }
 
-	  replaceParsedParam(s, p, to_parser, res, skip_chars);
+	  skip_chars=replaceParsedParam(s, p, to_parser, res);
 
 	}; break;
 
@@ -197,7 +226,7 @@ string replaceParameters(const string& s,
 	      break;
 	    }
 	  }
-	  replaceParsedParam(s, p, ruri_parser, res, skip_chars);
+	  skip_chars=replaceParsedParam(s, p, ruri_parser, res);
 	}; break;
 
 	case 'c': { // call-id
@@ -373,7 +402,7 @@ string replaceParameters(const string& s,
 	      if (!uri_parser.uri_port.empty())				\
 		res+=":"+uri_parser.uri_port;				\
 	    } else {							\
-	      replaceParsedParam(s, p, uri_parser, res, skip_chars);	\
+	      skip_chars=replaceParsedParam(s, p, uri_parser, res);	\
 	    }								\
 	  }; break;
 
@@ -501,7 +530,8 @@ string replaceParameters(const string& s,
 		   hdr_name.c_str(), uri_parser.uri.c_str());
 	      break;
 	    }
-	    replaceParsedParam(s, p, uri_parser, res, skip_chars);
+	    //TODO: find out how to correct skip_chars correctly
+	    replaceParsedParam(s, p, uri_parser, res);
 	  }
 	  skip_chars = skip_p-p;
 	} break;
