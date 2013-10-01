@@ -286,6 +286,7 @@ void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
 
 	DBG("could not parse Contact URI parameters: '%s'",
 	    uac_contacts[i].uri_param.c_str());
+	free_gen_params(&uri_params);
 	continue;
       }
 
@@ -308,6 +309,7 @@ void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
 	}
       }
 
+      free_gen_params(&uri_params);
       uac_contacts[i].uri_param = new_params;
     }
     else if(!reg_caching) {
