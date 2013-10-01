@@ -288,6 +288,9 @@ void SBCCallLeg::applyAProfile()
     // copy stats counters
     rtp_pegs = call_profile.aleg_rtp_counters;
   }
+
+  if(!call_profile.dlg_contact_params.empty())
+    dlg->setContactParams(call_profile.dlg_contact_params);
 }
 
 int SBCCallLeg::applySSTCfg(AmConfigReader& sst_cfg, 
@@ -395,6 +398,9 @@ void SBCCallLeg::applyBProfile()
   // was read from caller but reading directly from profile now
   if (!call_profile.callid.empty()) 
     dlg->setCallid(call_profile.callid);
+
+  if(!call_profile.bleg_dlg_contact_params.empty())
+    dlg->setContactParams(call_profile.bleg_dlg_contact_params);
 }
 
 int SBCCallLeg::relayEvent(AmEvent* ev)

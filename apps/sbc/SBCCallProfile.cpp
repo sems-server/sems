@@ -747,6 +747,9 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
   REPLACE_NONEMPTY_STR(to);
   REPLACE_NONEMPTY_STR(callid);
 
+  REPLACE_NONEMPTY_STR(dlg_contact_params);
+  REPLACE_NONEMPTY_STR(bleg_dlg_contact_params);
+
   REPLACE_NONEMPTY_STR(outbound_proxy);
   REPLACE_NONEMPTY_STR(next_hop);
 

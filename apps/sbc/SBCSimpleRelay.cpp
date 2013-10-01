@@ -367,6 +367,9 @@ int SimpleRelayDialog::initUAC(const AmSipRequest& req,
   append_headers = cp.append_headers_req;
   keep_vias = cp.keep_vias;
 
+  if(!cp.bleg_dlg_contact_params.empty())
+    setContactParams(cp.bleg_dlg_contact_params);
+
   return 0;
 }
 
@@ -394,6 +397,9 @@ int SimpleRelayDialog::initUAS(const AmSipRequest& req,
   append_headers = cp.aleg_append_headers_req;
   transparent_dlg_id = cp.transparent_dlg_id;
   keep_vias = cp.bleg_keep_vias;
+
+  if(!cp.dlg_contact_params.empty())
+    setContactParams(cp.dlg_contact_params);
 
   return 0;
 }

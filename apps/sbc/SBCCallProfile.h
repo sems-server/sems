@@ -126,6 +126,9 @@ struct SBCCallProfile
 
   string callid;
 
+  string dlg_contact_params;
+  string bleg_dlg_contact_params;
+
   bool transparent_dlg_id;
   bool dlg_nat_handling;
   bool keep_vias;
