@@ -266,7 +266,7 @@ int AmContentType::parse(const string& ct)
 int  AmContentType::parseParams(const char* c, const char* end)
 {
   list<sip_avp*> avp_params;
-  if(parse_gen_params(&avp_params, &c, end-c, '\0') < 0) {
+  if(parse_gen_params_sc(&avp_params, &c, end-c, '\0') < 0) {
     if(!avp_params.empty()) free_gen_params(&avp_params);
     return -1;
   }

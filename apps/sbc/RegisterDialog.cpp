@@ -279,7 +279,7 @@ void RegisterDialog::fixUacContactHosts(const AmSipRequest& req,
 						req,cp,ctx);
 
       list<sip_avp*> uri_params;
-      string old_params = ";" + uac_contacts[i].uri_param;
+      const string& old_params = uac_contacts[i].uri_param;
       const char* c = old_params.c_str();
 
       if(parse_gen_params(&uri_params,&c,old_params.length(),0) < 0) {

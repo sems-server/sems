@@ -64,8 +64,8 @@ int parse_sip_version(const char* beg, int len)
     return 0;
 }
 
-
-int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_char)
+static int _parse_gen_params(list<sip_avp*>* params, const char** c, 
+			     int len, char stop_char, bool beg_w_sc)
 {
     enum {
 	VP_PARAM_SEP=0,
@@ -79,7 +79,9 @@ int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_
 
     const char* beg = *c;
     const char* end = beg+len;
-    int saved_st=0,st=VP_PARAM_SEP;
+    int saved_st=0;
+
+    int st = beg_w_sc ? VP_PARAM_SEP : VP_PARAM_SEP_SWS;
 
     auto_ptr<sip_avp> avp(new sip_avp());
 
@@ -299,6 +301,18 @@ int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_
     }
 
     return 0;
+}
+
+int parse_gen_params_sc(list<sip_avp*>* params, const char** c, 
+			int len, char stop_char)
+{
+    return _parse_gen_params(params,c,len,stop_char,true);
+}
+
+int parse_gen_params(list<sip_avp*>* params, const char** c,
+		     int len, char stop_char)
+{
+    return _parse_gen_params(params,c,len,stop_char,false);
 }
 
 void free_gen_params(list<sip_avp*>* params)

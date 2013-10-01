@@ -187,8 +187,17 @@ inline int lower_cmp_n(const char* l, int llen, const char* r, int rlen)
 int parse_sip_version(const char* beg, int len);
 
 /** 
- * Parse a list of Attribute-Value pairs separated by semi-colons 
- * until stop_char or the end of the string is reached.
+ * Parse a list of Attribute-Value pairs beginning with 
+ * and separated by semi-colons until stop_char or the 
+ * end of the string is reached.
+ */
+int parse_gen_params_sc(list<sip_avp*>* params, const char** c, 
+			int len, char stop_char);
+
+/** 
+ * Parse a list of Attribute-Value pairs separated 
+ * by semi-colons until stop_char or the end of 
+ * the string is reached.
  */
 int parse_gen_params(list<sip_avp*>* params, const char** c, int len, char stop_char);
 

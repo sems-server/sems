@@ -111,7 +111,7 @@ int parse_nameaddr(sip_nameaddr* na, const char** c, int len)
 
 	    case ';':
 		na->addr.set(beg, *c - beg);
-		return parse_gen_params(&na->params,c, end-*c, 0);
+		return parse_gen_params_sc(&na->params,c, end-*c, 0);
 	    }
 	    break;
 
@@ -122,7 +122,7 @@ int parse_nameaddr(sip_nameaddr* na, const char** c, int len)
 
 	    case ';':
 		na->addr.set(beg, uri_end - beg);
-		return parse_gen_params(&na->params,c, end-*c, 0);
+		return parse_gen_params_sc(&na->params,c, end-*c, 0);
 
 	    case '<':
 		st = NA_URI;
@@ -198,7 +198,7 @@ int parse_nameaddr(sip_nameaddr* na, const char** c, int len)
 
 		na->addr.set(beg, *c - beg);
 		(*c)++;
-		return parse_gen_params(&na->params,c, end-*c, 0);
+		return parse_gen_params_sc(&na->params,c, end-*c, 0);
 	    }
 	    break;
 
@@ -230,7 +230,7 @@ int parse_nameaddr(sip_nameaddr* na, const char** c, int len)
 	return MALFORMED_SIP_MSG;
     }
     
-    return parse_gen_params(&na->params,c, end-*c, 0);
+    return parse_gen_params_sc(&na->params,c, end-*c, 0);
 }
 
 static int skip_2_next_nameaddr(const char*& c, 

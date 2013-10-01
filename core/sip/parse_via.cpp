@@ -431,7 +431,7 @@ inline int parse_via_params(sip_via_parm* parm, const char** c, int len)
 	VP_OTHER
     };
 
-    int ret = parse_gen_params(&parm->params,c,len,',');
+    int ret = parse_gen_params_sc(&parm->params,c,len,',');
     if(ret) return ret;
 
     list<sip_avp*>::iterator it = parm->params.begin();

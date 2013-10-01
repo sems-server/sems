@@ -67,7 +67,7 @@ int replaceParsedParam(const string& s, size_t p,
 	break;
       }
       
-      string uri_params = ";" + parsed.uri_param;
+      const string& uri_params = parsed.uri_param;
       const char* c = uri_params.c_str();
       list<sip_avp*> params;
       if(parse_gen_params(&params,&c,uri_params.length(),0) < 0) {
