@@ -95,6 +95,8 @@ protected:
   string remote_tag;
   string first_branch;
 
+  string contact_params; // params in Contact-HF
+
   string user;         // local user
   string domain;       // local domain
 
@@ -248,6 +250,10 @@ public:
   const string& getExtLocalTag() const { return ext_local_tag; }
   virtual void setExtLocalTag(const string& new_ext_tag)
   { ext_local_tag = new_ext_tag; }
+
+  const string& getContactParams() const { return contact_params; }
+  virtual void setContactParams(const string& new_contact_params)
+  { contact_params = new_contact_params; }
 
   const string& getUser() const { return user; }
   virtual void setUser(const string& new_user)

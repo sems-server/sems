@@ -105,13 +105,18 @@ string AmBasicSipDialog::getContactHdr()
   if(!ext_local_tag.empty()) {
     contact_uri += local_tag + "@";
   }
-    
+
   int oif = getOutboundIf();
   assert(oif >= 0);
   assert(oif < (int)AmConfig::SIP_Ifs.size());
   
   contact_uri += AmConfig::SIP_Ifs[oif].getIP();
   contact_uri += ":" + int2str(AmConfig::SIP_Ifs[oif].LocalPort);
+
+  if(!contact_params.empty()) {
+    contact_uri += ";" + contact_params;
+  }
+
   contact_uri += ">" CRLF;
 
   return contact_uri;
