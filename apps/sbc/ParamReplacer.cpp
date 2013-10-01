@@ -64,6 +64,7 @@ int replaceParsedParam(const string& s, size_t p,
       string param_name = s.substr(p+3,skip_p-p-3);
       if(param_name.empty()) {
 	res+=parsed.uri_param;
+	skip_chars = skip_p-p;
 	break;
       }
       
