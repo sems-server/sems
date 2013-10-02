@@ -204,6 +204,12 @@ static int _parse_gen_params(list<sip_avp*>* params, const char** c,
 		beg = *c;
 		break;
 
+	    case ';':
+		st = VP_PARAM_SEP_SWS;
+		params->push_back(avp.release());
+		avp.reset(new sip_avp());
+		break;
+
 	    default:
 		st = VP_PVALUE;
 		beg = *c;
@@ -293,6 +299,12 @@ static int _parse_gen_params(list<sip_avp*>* params, const char** c,
 	break;
 
     case VP_PARAM_SEP:
+    case VP_PARAM_SEP_SWS:
+	break;
+
+    case VP_PNAME_EQU:
+    case VP_PNAME_EQU_SWS:
+	params->push_back(avp.release());
 	break;
 
     default:
