@@ -33,11 +33,7 @@
 
 sip_nameaddr::~sip_nameaddr()
 {
-    list<sip_avp*>::iterator it = params.begin();
-    for(;it != params.end(); ++it){
-	
-	delete *it;
-    }
+  free_gen_params(&params);
 }
 
 int parse_nameaddr(sip_nameaddr* na, const char** c, int len)

@@ -66,11 +66,7 @@ sip_via_parm::sip_via_parm(const sip_via_parm& p)
 
 sip_via_parm::~sip_via_parm()
 {
-    list<sip_avp*>::iterator it = params.begin();
-    for(;it != params.end(); ++it) {
-
-	delete *it;
-    }
+    free_gen_params(&params);
 }
 
 sip_via::~sip_via()
