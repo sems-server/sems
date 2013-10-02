@@ -28,12 +28,13 @@ Features
  o call teardown from external control through RPC
 
 SBC Profiles
-------------
-All features are set in an SBC profile, which is configured in a separate
-configuration file with the extension .sbcprofile.conf. Several SBC profiles
-may be loaded at startup (load_profiles), and can be selected with the 
-active_profile configuration option. The active_profile option is a comma-separated
-list, the first profile that matches, i.e. is non-empty, will be used.
+------------ 
+All features are set in an SBC profile, which is configured in a
+separate configuration file with the extension .sbcprofile.conf. Several
+SBC profiles may be loaded at startup (load_profiles), and can be
+selected with the active_profile configuration option. The
+active_profile option is a comma-separated list, the first profile that
+matches, i.e. is non-empty, will be used.
 
 In this list a profile may be selected
 
@@ -41,14 +42,15 @@ In this list a profile may be selected
 
  o depending on user part of INVITE Request URI (active_profile=$(ruri.user))
 
- o depending on "profile" option in P-App-Param header (active_profile=$(paramhdr))
+ o depending on "profile" option in P-App-Param header
+ (active_profile=$(paramhdr))
 
- o depending on "profile" parameter of Request URI
+ o depending on a Request URI parameter (active_profile=$rP(param_name))
 
  o using any replacement pattern (see below), especially regex maps $M(val=>map)
 
-By using the latter options, the SBC profile for the call can also be selected in
-the proxy.
+By using the latter options, the SBC profile for the call can also be
+selected in the proxy.
 
 Examples:
  active_profile=auth_b2b
@@ -57,9 +59,12 @@ Examples:
 
 Example: 
   In order to have all calls coming from source IP 10.0.* going to
-  'internal1' profile, all calls coming from source IP 10.1.* going to 'internal2'
+  'internal1' profile, all calls coming from source IP 10.1.* going to
+  'internal2'
   profile, then for calls coming from other IP addresses those to RURI-domain
-  iptel.org go to 'iptel' profile, and all other calls being refused, we could set
+  iptel.org go to 'iptel' profile, and all other calls being refused, we
+  could set
+
   ~~~~~~~~~ sbc.conf ~~~~~~~~~
   profiles=internal1,internal2,iptel,refuse
   regex_maps=src_ipmap,rurimap
@@ -77,29 +82,36 @@ Example:
 
 SBC profile reload
 ------------------
-The SBC profiles may be reloaded while the server is running. A set of (python) scripts
-is provided and installed to trigger the reload (through XMLRPC):
+The SBC profiles may be reloaded while the server is running. A set of
+(python) scripts is provided and installed to trigger the reload
+(through XMLRPC): 
 
   sems-sbc-list-profiles                        list loaded profiles
-  sems-sbc-reload-profile  <name>               reload a profile (from its .conf file)
-  sems-sbc-reload-profiles                      reload all profiles (from .conf files)
-  sems-sbc-load-profile <name> <conf_file>      load a profile from a file (e.g. new
-                                                profile or file path changed)
+  sems-sbc-reload-profile  <name>               reload a profile (from its
+                                                .conf file) 
+  sems-sbc-reload-profiles                      reload all profiles (from
+                                                .conf files)
+  sems-sbc-load-profile <name> <conf_file>      load a profile from a file
+                                                (e.g. new profile or file
+                                                path changed)
   sems-sbc-get-activeprofile                    get active_profile
   sems-sbc-set-activeprofile <active_profile>   set active_profile
+  sems-sbc-teardown-call <call_ltag>            tear down call (use e.g.
+                                                monitoring's
+                                                sems-list-active-calls to
+                                                get the ltag)
 
-  sems-sbc-teardown-call <call_ltag>            tear down call (use e.g. monitoring's
-                                                sems-list-active-calls to get the ltag)
+The xmlrpc2di module must be loaded and the XMLRPC control server bound
+to port 8090 for the scripts to work.
 
-The xmlrpc2di module must be loaded and the XMLRPC control server bound to port 8090 for
-the scripts to work.
+For tracking file revisions and changes, the MD5 hash sum is printed on
+profile load and reload, and returned as information by the scripts and
+the DI management commands. An MD5 hash to compare checksums of profile
+files can also be generated with the md5sum(1) tool. 
 
-For tracking file revisions and changes, the MD5 hash sum is printed on profile load and
-reload, and returned as information by the scripts and the DI management commands. An MD5
-hash to compare checksums of profile files can also be generated with the md5sum(1) tool.
-
-Alternatively, the reload functions can be accessed by json-rpc v2 if the jsonrpc module
-is loaded. The expected parameters to all functions are in a dictionary with 
+Alternatively, the reload functions can be accessed by json-rpc v2 if
+the jsonrpc module is loaded. The expected parameters to all functions
+are in a dictionary with 
    'name' :          profile name
    'path' :          profile conf file path
    'active_profile': active profile (string)
@@ -164,7 +176,8 @@ The patterns which can be used are the following:
   $Ri  - destination (local/received) IP address
   $Rp  - destination (local/received) port
   $Rf  - local/received interface id (0=default)
-  $Rn  - local/received interface name ('default', 'intern', ... as set in sems.conf)
+  $Rn  - local/received interface name
+         ('default', 'intern', ... as set in sems.conf)
   $RI  - local/received interface public IP (as set in sems.conf)
 
   $P(paramname) - paramname from P-App-Param
@@ -223,17 +236,18 @@ If a space is contained, use quotation at the beginning and end.
 Regex mappings ($M(key=>map))
 -----------------------------
 
-A regex mapping is a (sorted) list of "regular expression" => "string value" pairs.
-The regex mapping is executed with a key - any string, replacement pattern or
-combination - and the first regular expression that matches returns the "string value".
+A regex mapping is a (sorted) list of "regular expression" => "string
+value" pairs. The regex mapping is executed with a key - any string,
+replacement pattern or combination - and the first regular expression
+that matches returns the "string value". 
 
 Regex mappings are read from a text file, where each line corresponds to one
 regex=>value pair. The mappings to load on startup are set with the regex_maps
-config option, the file name from where it is loaded is "<mapping name>.conf" in
-the plugin config path.
+config option, the file name from where it is loaded is "<mapping
+name>.conf" in the plugin config path.
 
-Mappings can also loaded into the running server by using the setRegexMap DI function
-or the included sems-sbc-*-regex-* scripts:
+Mappings can also loaded into the running server by using the
+setRegexMap DI function or the included sems-sbc-*-regex-* scripts:
 
   sems-sbc-set-regex-map <name> <file>      load a regex map from a file
   sems-sbc-get-regex-map-names              list regex map names
@@ -253,8 +267,8 @@ the call-id the first leg, by setting the Call-ID parameter.
 Example:
   Call-ID=$ci_leg2
 
-  If the incoming call leg had "Call-ID: 3c2d4b9a6b6f-hb22s7k9n0iv", the outgoing
-  leg will have "Call-ID: 3c2d4b9a6b6f-hb22s7k9n0iv_leg2".
+  If the incoming call leg had "Call-ID: 3c2d4b9a6b6f-hb22s7k9n0iv", the
+  outgoing leg will have "Call-ID: 3c2d4b9a6b6f-hb22s7k9n0iv_leg2".
 
 If Call-ID is not set, a standard unique ID is generated by SEMS, of the form
 UUID@host-ip.
@@ -270,14 +284,15 @@ force_outbound_proxy forces the outbound proxy as first route and request URI
 also for in-dialog requests. Note that this is NOT RFC3261 compliant (section
 2.2 Requests within a Dialog, 12.2.1 UAC Behavior).
 
-The next hop (destination IP[:port] of outgoing requests) can be set with
-the next_hop option. next_hop port defaults to 5060
-if not set or empty. Usually, replies are sent back to where the request came
-from (honoring rport), but if next_hop should be used nevertheless,
+The next hop (destination IP[:port] of outgoing requests) can be set
+with the next_hop option. next_hop port defaults to 5060 if not set or
+empty. Usually, replies are sent back to where the request came from
+(honoring rport), but if next_hop should be used nevertheless,
 next_hop_for_replies profile option can be set to "yes".
 
-patch_ruri_next_hop=yes sets the option to overwrite RURI in the outgoing request
-with the selected next hop (whether set through next_hop or determined otherwise).
+patch_ruri_next_hop=yes sets the option to overwrite RURI in the
+outgoing request with the selected next hop (whether set through
+next_hop or determined otherwise).
 
 These settings apply only for the UAC side, i.e. the outgoing side of
 the initial INVITE.
@@ -300,7 +315,8 @@ set to transparent, the SDP is parsed and reconstructed (SDP sanity check).
 Codecs may be filtered out by their payload names in whitelist or blacklist
 modes. The payload names in the list are case-insensitive (PCMU==pcmu).
 
-The s, u and o-lines of the SDP can be anonymized with the setting sdp_anonymize=yes.
+The s, u and o-lines of the SDP can be anonymized with the setting
+sdp_anonymize=yes.
 
 Codec preference
 ----------------
@@ -370,28 +386,30 @@ send RTP media to SEMS. SEMS then relays the RTP packets between the two sides.
 RTP relay can be enabled by setting
   enable_rtprelay=yes
 
-The SBC detects if UAs indicate that they are behind NAT by setting a=direction:active
-in SDP, and goes into passive mode until it receives the first packet from the NATed
-client, from which it learns the remote address. This mechanism is called "symmetric
-RTP".
+The SBC detects if UAs indicate that they are behind NAT by setting
+a=direction:active in SDP, and goes into passive mode until it receives
+the first packet from the NATed client, from which it learns the remote
+address. This mechanism is called "symmetric RTP".
 
-Symmetric RTP (starting in passive mode) can also be forced by setting the
- rtprelay_force_symmetric_rtp=yes
-sbc profile option. Symmetric RTP is enabled if rtprelay_force_symmetric_rtp
-evaluates to anything other than "" (empty string), "0" or "no".
+Symmetric RTP (starting in passive mode) can also be forced by setting
+the rtprelay_force_symmetric_rtp=yes sbc profile option. Symmetric RTP
+is enabled if rtprelay_force_symmetric_rtp evaluates to anything other
+than "" (empty string), "0" or "no".
 
-Some ser/sip-router/kamailio/*ser configurations add flag 2 in a header P-MsgFlags
-header to the INVITE to indicate forcing of symmetric RTP. With the sbc profile
-option
- rtprelay_msgflags_symmetric_rtp=yes
+Some ser/sip-router/kamailio/*ser configurations add flag 2 in a header
+P-MsgFlags header to the INVITE to indicate forcing of symmetric
+RTP. With the sbc profileoption
+
+rtprelay_msgflags_symmetric_rtp=yes
+
 the SBC honors this and sets symmetric RTP accordingly.
 
 
 The SBC is able to do transcoding together with relaying. 
 
-To trigger transcoding you have to configure transcoder_codecs to a set of codecs
-which are understand by SEMS and enable transcoder via enable_transcoder
-call profile option. 
+To trigger transcoding you have to configure transcoder_codecs to a set
+of codecs which are understand by SEMS and enable transcoder via
+enable_transcoder call profile option.
 
 Transcoder codecs are appended to the end of outgoing SDP (advertising that
 their priority is lower than priority of original codecs) and allow to the other
@@ -446,8 +464,9 @@ Transcoding related call profile options:
     If this parameter is set to "yes" transcoder codecs are added at the end of
     codec lists in SDP body AFTER ordering using codec_preference is done.
 
-    If this parameter is set to something else, transcoder codecs are added BEFORE
-    ordering using codec_preference is done and thus may become preferred ones.
+    If this parameter is set to something else, transcoder codecs are
+    added BEFORE ordering using codec_preference is done and thus may
+    become preferred ones. 
 
   prefer_existing_codecs_aleg
     
@@ -457,8 +476,9 @@ Transcoding related call profile options:
     If this parameter is set to "yes" transcoder codecs are added at the end of
     codec lists in SDP body AFTER ordering using codec_preference_aleg is done.
 
-    If this parameter is set to something else, transcoder codecs are added BEFORE
-    ordering using codec_preference_aleg is done and thus may become preferred ones.
+    If this parameter is set to something else, transcoder codecs are
+    added BEFORE ordering using codec_preference_aleg is done and thus
+    may become preferred ones. 
 
 Transcoder statistics can be checked via "printCallStats" SBC DI method or can
 be put into additional headers within reply generated to OPTIONS request. To
@@ -507,8 +527,8 @@ Examples:
 
 Response code translations
 -----------------------
-Response codes and reasons may be translated, e.g. if some 6xx class replies need
-to be changed to 4xx class replies.
+Response codes and reasons may be translated, e.g. if some 6xx class
+replies need to be changed to 4xx class replies.
 
 Example:
  reply_translations="603=>488 Not acceptable here"
@@ -569,25 +589,27 @@ If SIP Session Timers are enabled for a profile, the session timers values
 or in the profile configuration, which overrides the sbc.conf configuration.
 
 SIP Session Timers may be configured for each leg individually.
-enable_session_timer overrides enable_aleg_session_timer if that one is not set:
-SST may be disabled on the A (caller) leg by setting enable_aleg_session_timer=no.
-If enable_session_timer=yes and enable_aleg_session_timer not set, SST is enabled for
-both legs. Likewise, if aleg_session_expires etc. is not set, the SST configuration of
-the B leg is used (session_expires, minimum_timer etc).
+enable_session_timer overrides enable_aleg_session_timer if that one is
+not set: SST may be disabled on the A (caller) leg by setting
+enable_aleg_session_timer=no.  If enable_session_timer=yes and
+enable_aleg_session_timer not set, SST is enabled for both
+legs. Likewise, if aleg_session_expires etc. is not set, the SST
+configuration of the B leg is used (session_expires, minimum_timer etc).
 
 Call control modules
 --------------------
-Call control (CC) modules for the sbc application implement business logic which controls
-how the SBC operates. For example, a CC module can implement concurrent call limits, call
-limits per user, enforce other policies, or implement routing logic.
+Call control (CC) modules for the sbc application implement business
+logic which controls how the SBC operates. For example, a CC module can
+implement concurrent call limits, call limits per user, enforce other
+policies, or implement routing logic. 
 
-Call control (CC) modules should be loaded using the load_cc_plugins option in sbc.conf,
-or loaded later into the server by the sems-sbc-loadcallcontrol-modules script
-(loadCallcontrolModules DI function).
+Call control (CC) modules should be loaded using the load_cc_plugins
+option in sbc.conf, or loaded later into the server by the
+sems-sbc-loadcallcontrol-modules script (loadCallcontrolModules DI function).
 
-Multiple CC modules may be applied for one call. The data that the CC modules get from the
-call may be freely configured. Call control modules may also be applied through message parts
-(replacement patterns).
+Multiple CC modules may be applied for one call. The data that the CC
+modules get from the call may be freely configured. Call control modules
+may also be applied through message parts (replacement patterns).
 
 Example: 
   Limiting From-User to 5 parallel calls, and 90 seconds maximum call duration:
@@ -599,7 +621,8 @@ Example:
     call_timer_timer=90
 
 Example:
-  Applying 90 seconds maximum call duration and other call control from a header:
+  Applying 90 seconds maximum call duration and other call control from
+  a header:
     call_control=call_timer,$H(P-CallControl)
     call_timer_module=cc_call_timer
     call_timer_timer=90
@@ -637,12 +660,13 @@ are presented in unix timestamp value (seconds since epoch). start_ts is
 the initial INVITE timestamp, connect_ts the connect (200 OK) timestamp,
 end_ts the BYE timestamp.
 
-The cc_prepaid and cc_prepaid_xmlrpc modules may be used for accounting modules, or
-as starting points for integration into custom billing systems.
+The cc_prepaid and cc_prepaid_xmlrpc modules may be used for accounting
+modules, or as starting points for integration into custom billing systems.
 
 Call control: Parallel calls limit
 ----------------------------------
-Parallel call limits can be enforced by using the parallel calls call control module.
+Parallel call limits can be enforced by using the parallel calls call
+control module.
 
  Example (limit From-User to max 5 calls):
     call_control=pcalls
@@ -652,7 +676,8 @@ Parallel call limits can be enforced by using the parallel calls call control mo
 
 Call control: Call Timer
 ------------------------
-A maximum call duration timer can be set with the call timer call control module.
+A maximum call duration timer can be set with the call timer call
+control module. 
 
  Example (timer taken from P-Timer header):
     call_control=call_timer
@@ -683,9 +708,10 @@ See also cc_syslog_cdr module documentation.
 Refusing calls
 --------------
 
-In some configurations, if may be necessary to refuse calls with a certain error response
-code and reason. If the refuse_with call profile option is set, the call is refused with
-the code and reason specified. In this case, all other call profile options are ignored,
+In some configurations, if may be necessary to refuse calls with a
+certain error response code and reason. If the refuse_with call profile
+option is set, the call is refused with the code and reason
+specified. In this case, all other call profile options are ignored,
 only the append_headers option has effect.
 
 Examples:
