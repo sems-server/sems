@@ -1033,7 +1033,10 @@ void AmRtpStream::recvRtcpPacket()
 			      &recv_addr_len);
 
   if(recved_bytes < 0) {
-    ERROR("rtcp recv(%d): %s",l_rtcp_sd,strerror(errno));
+    if((errno != EINTR) && 
+       (errno != EAGAIN)) {
+      ERROR("rtcp recv(%d): %s",l_rtcp_sd,strerror(errno));
+    }
     return;
   }
 
