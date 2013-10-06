@@ -1005,7 +1005,7 @@ bool read_regex_mapping(const string& fname, const char* sep,
 	return false;
       }
       regex_t app_re;
-      if (regcomp(&app_re, re_v[0].c_str(), REG_EXTENDED | REG_NOSUB)) {
+      if (regcomp(&app_re, re_v[0].c_str(), REG_EXTENDED)) {
 	ERROR("compiling regex '%s' in %s.\n", 
 	      re_v[0].c_str(), fname.c_str());
 	return false;
@@ -1018,13 +1018,37 @@ bool read_regex_mapping(const string& fname, const char* sep,
   return true;
 }
 
+void ReplaceStringInPlace(std::string& subject, const std::string& search,
+                          const std::string& replace) {
+  size_t pos = 0;
+  while ((pos = subject.find(search, pos)) != std::string::npos) {
+    subject.replace(pos, search.length(), replace);
+    pos += replace.length();
+  }
+}
+
+#define MAX_GROUPS 9
+
 bool run_regex_mapping(const RegexMappingVector& mapping, const char* test_s,
-		       string& result) {
+                       string& result) {
+  regmatch_t groups[MAX_GROUPS];
   for (RegexMappingVector::const_iterator it = mapping.begin();
        it != mapping.end(); it++) {
-    if (!regexec(&it->first, test_s, 0, NULL, 0)) {
-      DBG("match of '%s' to %s\n", test_s, it->second.c_str());
+    if (!regexec(&it->first, test_s, MAX_GROUPS, groups, 0)) {
       result = it->second;
+      string soh(1, char(1));
+      ReplaceStringInPlace(result, "\\\\", soh);
+      unsigned int g = 0;
+      for (g = 1; g < MAX_GROUPS; g++) {
+        if (groups[g].rm_so == (int)(size_t)-1) break;
+        DBG("group %u: [%2u-%2u]: %.*s\n",
+            g, groups[g].rm_so, groups[g].rm_eo,
+            groups[g].rm_eo - groups[g].rm_so, test_s + groups[g].rm_so);
+	std::string match(test_s + groups[g].rm_so,
+			  groups[g].rm_eo - groups[g].rm_so);
+        ReplaceStringInPlace(result, "\\" + int2str(g), match);
+      }
+      ReplaceStringInPlace(result, soh, "\\");
       return true;
     }
   }
