@@ -525,6 +525,8 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
   if (a_leg) a = new_session;
   else b = new_session;
 
+  bool needs_processing = a && b && a->getRtpRelayMode() == AmB2BSession::RTP_Transcoding;
+
   // update all streams
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     // stop processing first to avoid unexpected results
@@ -569,6 +571,8 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
       }
     }
 
+    if (i->requiresProcessing()) needs_processing = true;
+
     // reset logger (needed if a stream changes)
     i->setLogger(logger);
 
@@ -596,6 +600,14 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
     if (b.hasLocalSocket())
       AmRtpReceiver::instance()->addStream(b.getLocalSocket(), &b);*/
   }
+
+  if (needs_processing) {
+    if (!isProcessingMedia()) {
+      ref_cnt++; // add reference (hold by AmMediaProcessor)
+      AmMediaProcessor::instance()->addSession(this, callgroup);
+    }
+  }
+  else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
 
   TRACE("session changed\n");
 }
@@ -889,6 +901,8 @@ void AmB2BMedia::onSdpUpdate()
 
   TRACE("starting media processing\n");
 
+  bool needs_processing = a && b && a->getRtpRelayMode() == AmB2BSession::RTP_Transcoding;
+
   // initialize streams to be able to relay & transcode (or use local audio)
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
     i->a.stopStreamProcessing();
@@ -908,19 +922,24 @@ void AmB2BMedia::onSdpUpdate()
       i->b.initStream(playout_type, b_leg_local_sdp, b_leg_remote_sdp, i->media_idx);
     }
 
+    if (i->requiresProcessing()) needs_processing = true;
+
     i->a.resumeStreamProcessing();
     i->b.resumeStreamProcessing();
   }
 
-  // start media processing (FIXME: only if transcoding or regular audio
-  // processing required?)
+  // start media processing (only if transcoding or regular audio processing
+  // required)
   // Note: once we send local SDP to the other party we have to expect RTP but
   // we need to be fully initialised (both legs) before we can correctly handle
   // the media, right?
-  if (!isProcessingMedia()) {
-    ref_cnt++; // add reference (hold by AmMediaProcessor)
-    AmMediaProcessor::instance()->addSession(this, callgroup);
+  if (needs_processing) {
+    if (!isProcessingMedia()) {
+      ref_cnt++; // add reference (hold by AmMediaProcessor)
+      AmMediaProcessor::instance()->addSession(this, callgroup);
+    }
   }
+  else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
 }
 
 static void updateRelayStream(AmRtpStream *stream,
