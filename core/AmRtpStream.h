@@ -344,9 +344,11 @@ public:
   int receive( unsigned char* buffer, unsigned int size,
 	       unsigned int& ts, int& payload );
 
-  void recvPacket(int fd);
+  /** receive packet; returns false if there was no data to be received */
+  bool recvPacket(int fd);
 
-  void recvRtcpPacket();
+  /** receive RTCP packet; returns false if there was no data to be received */
+  bool recvRtcpPacket();
 
   /** ping the remote side, to open NATs and enable symmetric RTP */
   int ping();
