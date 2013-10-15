@@ -983,10 +983,11 @@ AmRtpPacket *AmRtpStream::reuseBufferedPacket()
   return p;
 }
 
-bool AmRtpStream::recvPacket(int fd)
+void AmRtpStream::recvPacket(int fd)
 {
   if(fd == l_rtcp_sd){
-    return recvRtcpPacket();
+    recvRtcpPacket();
+    return;
   }
 
   AmRtpPacket* p = mem.newPacket();
@@ -995,7 +996,8 @@ bool AmRtpStream::recvPacket(int fd)
     DBG("out of buffers for RTP packets, dropping\n");
     // drop received data
     AmRtpPacket dummy;
-    return dummy.recv(l_sd) > 0;
+    dummy.recv(l_sd);
+    return;
   }
   
   if(p->recv(l_sd) > 0){
@@ -1017,12 +1019,10 @@ bool AmRtpStream::recvPacket(int fd)
     }
   } else {
     mem.freePacket(p);
-    return false;
   }
-  return true;
 }
 
-bool AmRtpStream::recvRtcpPacket()
+void AmRtpStream::recvRtcpPacket()
 {
   struct sockaddr_storage recv_addr;
   socklen_t recv_addr_len = sizeof(recv_addr);
@@ -1037,7 +1037,7 @@ bool AmRtpStream::recvRtcpPacket()
        (errno != EAGAIN)) {
       ERROR("rtcp recv(%d): %s",l_rtcp_sd,strerror(errno));
     }
-    return false;
+    return;
   }
 
   static const cstring empty;
@@ -1049,11 +1049,11 @@ bool AmRtpStream::recvRtcpPacket()
 
   if(!relay_enabled || !relay_stream ||
      !relay_stream->l_sd)
-    return true;
+    return;
 
   if((size_t)recved_bytes > sizeof(buffer)) {
     ERROR("recved huge RTCP packet (%d)",recved_bytes);
-    return true;
+    return;
   }
 
   handleSymmetricRtp(&recv_addr,true);
@@ -1068,13 +1068,12 @@ bool AmRtpStream::recvRtcpPacket()
   
   if(err == -1){
     ERROR("could not relay RTCP packet: %s\n",strerror(errno));
-    return true;
+    return;
   }
 
   if (logger)
     logger->log((const char *)buffer, recved_bytes, &relay_stream->l_rtcp_saddr, &rtcp_raddr, empty);
 
-  return true;
 }
 
 void AmRtpStream::relay(AmRtpPacket* p)

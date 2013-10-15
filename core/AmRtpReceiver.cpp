@@ -45,11 +45,6 @@
 #define MAX_RTP_SESSIONS 2048
 #endif 
 
-// maximum number of RTP packets received at once
-#ifndef MAX_RECV_PACKETS_AT_ONCE
-#define MAX_RECV_PACKETS_AT_ONCE  8
-#endif
-
 #define RTP_POLL_TIMEOUT 50 /*50 ms*/
 
 
@@ -141,12 +136,7 @@ void AmRtpReceiverThread::run()
       streams_mut.lock();
       Streams::iterator it = streams.find(tmp_fds[i].fd);
       if(it != streams.end()) {
-        // try to receive at most MAX_RECV_PACKETS_AT_ONCE RTP packets
-        AmRtpStream *s = it->second.stream;
-        int fd = tmp_fds[i].fd;
-	for (int i = 0; i < MAX_RECV_PACKETS_AT_ONCE; ++i) {
-          if (!s->recvPacket(fd)) break;
-        }
+	it->second.stream->recvPacket(tmp_fds[i].fd);
       }
       streams_mut.unlock();      
     }
