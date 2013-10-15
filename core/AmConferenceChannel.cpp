@@ -31,10 +31,13 @@ int AmConferenceChannel::put(unsigned long long system_ts, unsigned char* buffer
 int AmConferenceChannel::get(unsigned long long system_ts, unsigned char* buffer,
 			     int output_sample_rate, unsigned int nb_samples)
 {
+  if (!nb_samples || !output_sample_rate)
+    return 0;
+
   AmMultiPartyMixer* mixer = status->getMixer();
   mixer->lock();
-  unsigned int size = PCM16_S2B(nb_samples * mixer->GetCurrentSampleRate() 
-				/ output_sample_rate);
+  unsigned int size = output_sample_rate ?
+    PCM16_S2B(nb_samples * mixer->GetCurrentSampleRate() / output_sample_rate) : 0;
   unsigned int mixer_sample_rate = 0;
   mixer->GetChannelPacket(channel_id,system_ts,buffer,size,mixer_sample_rate);
   size = resampleOutput(buffer,size,mixer_sample_rate,output_sample_rate);
