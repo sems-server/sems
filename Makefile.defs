@@ -29,7 +29,8 @@ CPPFLAGS += -D_DEBUG \
 	  -D_THREAD_SAFE -D_REENTRANT \
 	  -DSEMS_VERSION='"$(RELEASE)"' -DARCH='"$(ARCH)"'\
 	  -DOS='"$(OS)"' 	\
-	  -DSYSTEM_SAMPLECLOCK_RATE=32000LL
+	  -DSYSTEM_SAMPLECLOCK_RATE=32000LL \
+          -DSEMS_APP_NAME='"$(APP_NAME)"'
 #         -DMAX_RTP_SESSIONS=8192 \
 #	  -DSUPPORT_IPV6 \
 #	  -DNO_THREADID_LOG \
@@ -159,7 +160,7 @@ CXX = g++
 CC = gcc
 LD = $(CC)
 
-CXXFLAGS += -Wall -Wno-reorder -Wno-unused -fPIC -g $(EXTRA_CXXFLAGS)
+CXXFLAGS += -Wall -Wno-reorder -Wno-unused -fPIC -g $(EXTRA_CXXFLAGS) 
 CFLAGS   += -Wall -fPIC -g $(EXTRA_CFLAGS)
 
 # only optimize if releasing, as it slows down the build process

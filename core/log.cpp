@@ -60,7 +60,7 @@ class SyslogLogFac : public AmLoggingFacility {
   int facility;		/**< syslog facility */
 
   void init() {
-    openlog("sems", LOG_PID | LOG_CONS, facility);
+    openlog(SEMS_APP_NAME, LOG_PID | LOG_CONS, facility);
     setlogmask(-1);
   }
 
