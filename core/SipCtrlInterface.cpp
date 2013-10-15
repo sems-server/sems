@@ -120,7 +120,9 @@ int _SipCtrlInterface::load()
 	udp_trsp_socket* udp_socket = 
 	    new udp_trsp_socket(i,AmConfig::SIP_Ifs[i].SigSockOpts
 				| (AmConfig::ForceOutboundIf ? 
-				   trsp_socket::force_outbound_if : 0),
+				   trsp_socket::force_outbound_if : 0)
+				| (AmConfig::UseRawSockets ?
+				   trsp_socket::use_raw_sockets : 0),
 				AmConfig::SIP_Ifs[i].NetIfIdx);
 	
 	if(!AmConfig::SIP_Ifs[i].PublicIP.empty()) {

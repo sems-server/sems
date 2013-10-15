@@ -45,6 +45,7 @@
 #include "sip/transport.h"
 #include "sip/ip_util.h"
 #include "sip/sip_timers.h"
+#include "sip/raw_sender.h"
 
 #include <cctype>
 #include <algorithm>
@@ -88,6 +89,7 @@ bool         AmConfig::ProxyStickyAuth         = false;
 bool         AmConfig::ForceOutboundIf         = false;
 bool         AmConfig::ForceSymmetricRtp       = false;
 bool         AmConfig::SipNATHandling          = false;
+bool         AmConfig::UseRawSockets           = false;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
 bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
@@ -351,6 +353,13 @@ int AmConfig::readConfiguration()
 
   if(cfg.hasParameter("force_outbound_if")) {
     ForceOutboundIf = (cfg.getParameter("force_outbound_if") == "yes");
+  }
+
+  if(cfg.hasParameter("use_raw_sockets")) {
+    UseRawSockets = (cfg.getParameter("use_raw_sockets") == "yes");
+    if(UseRawSockets && (raw_sender::init() < 0)) {
+      UseRawSockets = false;
+    }
   }
 
   if(cfg.hasParameter("ignore_notify_lower_cseq")) {

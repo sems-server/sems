@@ -188,6 +188,8 @@ struct AmConfig
   static bool ForceSymmetricRtp;
   /** turn on SIP NAT handling (remote signaling address learning) */
   static bool SipNATHandling;
+  /** use raw socket to send UDP packets (root permission required) */
+  static bool UseRawSockets;
   /** Ignore Low CSeq on NOTIFY  - for RFC 3265 instead of 5057 */
   static bool IgnoreNotifyLowerCSeq;
   /** skip DNS SRV lookup for resolving destination address*/
