@@ -48,20 +48,6 @@
 #define RTP_POLL_TIMEOUT 50 /*50 ms*/
 
 
-// AmRtpReceiver* AmRtpReceiver::_instance=0;
-
-// AmRtpReceiver* AmRtpReceiver::instance()
-// {
-//   if(!_instance)
-//     _instance = new AmRtpReceiver();
-
-//   return _instance;
-// }
-
-// bool AmRtpReceiver::haveInstance() {
-//   return NULL != _instance;
-// }
-
 _AmRtpReceiver::_AmRtpReceiver()
 {
   n_receivers = AmConfig::RTPReceiverThreads;
