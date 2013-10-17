@@ -154,9 +154,10 @@ struct AmConfig
     list<IPAddr> addrs;
     // identical to those returned by SIOCGIFFLAGS
     unsigned int flags;
+    unsigned int mtu;
   };
 
-  static list<SysIntf> SysIfs;
+  static vector<SysIntf> SysIfs;
 
   static int insert_SIP_interface(const SIP_interface& intf);
   static int insert_RTP_interface(const RTP_interface& intf);

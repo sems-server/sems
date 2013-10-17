@@ -1064,9 +1064,9 @@ void AmRtpStream::recvRtcpPacket()
   am_set_port(&rtcp_raddr, relay_stream->r_rtcp_port);
 
   int err;
-
   if(AmConfig::UseRawSockets) {
     err = raw_sender::send((char*)buffer,recved_bytes,
+			   AmConfig::RTP_Ifs[l_if].NetIfIdx,
 			   &relay_stream->l_saddr,
 			   &rtcp_raddr);
   }

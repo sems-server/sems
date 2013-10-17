@@ -253,8 +253,8 @@ int AmRtpPacket::sendmsg(int sd, unsigned int sys_if_idx)
 int AmRtpPacket::send(int sd, unsigned int sys_if_idx,
 		      sockaddr_storage* l_saddr)
 {
-  if(AmConfig::UseRawSockets) {
-    return raw_sender::send((char*)buffer,b_size,l_saddr,&addr);
+  if(sys_if_idx && AmConfig::UseRawSockets) {
+    return raw_sender::send((char*)buffer,b_size,sys_if_idx,l_saddr,&addr);
   }
 
   if(sys_if_idx && AmConfig::ForceOutboundIf) {

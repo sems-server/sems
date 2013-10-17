@@ -12,7 +12,7 @@ class raw_sender
 
 public:
   static int init();
-  static int send(const char* buf, unsigned int len,
+  static int send(const char* buf, unsigned int len, int sys_if_idx,
 		  const sockaddr_storage* from, const sockaddr_storage* to);
 };
 

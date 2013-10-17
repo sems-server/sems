@@ -1,5 +1,6 @@
 #include "raw_sender.h"
 #include "raw_sock.h"
+#include "AmConfig.h"
 
 #include "log.h"
 
@@ -31,11 +32,12 @@ int raw_sender::init()
   return 0;
 }
 
-int raw_sender::send(const char* buf, unsigned int len,
+int raw_sender::send(const char* buf, unsigned int len, int sys_if_idx,
 		     const sockaddr_storage* from, const sockaddr_storage* to)
 {
   //TODO: grab the MTU from the interface def
-  int ret = raw_iphdr_udp4_send(rsock,buf,len,from,to,1500/*mtu*/);
+  int ret = raw_iphdr_udp4_send(rsock,buf,len,from,to,
+				AmConfig::SysIfs[sys_if_idx].mtu);
   if(ret < 0) {
     ERROR("send(): %s",strerror(errno));
     return ret;
