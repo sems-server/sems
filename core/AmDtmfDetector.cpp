@@ -384,7 +384,7 @@ void AmDtmfDetector::reportEvent()
 
 void AmDtmfDetector::putDtmfAudio(const unsigned char *buf, int size, unsigned long long system_ts)
 {
-  if (m_inbandDetector->get()) {
+  if (m_inbandDetector.get()) {
     m_inbandDetector->streamPut(buf, size, system_ts);
   } else {
     DBG("warning: trying to put DTMF into non-initialized DTMF detector\n");
