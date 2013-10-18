@@ -245,6 +245,14 @@ void SBCCallLeg::onStart()
   // this should be the first thing called in session's thread
   CallLeg::onStart();
   if (!a_leg) applyBProfile(); // A leg needs to evaluate profile first
+  else if (!getOtherId().empty()) {
+    // A leg but we already have a peer, what means that this call leg was
+    // created as an A leg for already existing B leg (for example call
+    // transfer)
+    // we need to apply a profile, we use B profile and understand it as an
+    // "outbound" profile though we are in A leg
+    applyBProfile();
+  }
 }
 
 void SBCCallLeg::applyAProfile()
