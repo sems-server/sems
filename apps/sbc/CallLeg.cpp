@@ -462,8 +462,6 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
   // connected to the A leg yet when handling the in-dialog request.
   set_sip_relay_only(true); // we should relay everything to the other leg from now
 
-  updateCallStatus(NoReply);
-
   AmMimeBody r_body(co_ev->body);
   const AmMimeBody* body = &co_ev->body;
   if (rtp_relay_mode != RTP_Direct) {
@@ -490,6 +488,8 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
     stopCall(StatusChangeCause::InternalError);
     return;
   }
+
+  updateCallStatus(NoReply);
 
   if (co_ev->relayed_invite) {
     AmSipRequest fake_req;
