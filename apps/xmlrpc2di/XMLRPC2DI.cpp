@@ -129,6 +129,8 @@ int XMLRPC2DI::load() {
   string bind_ip = cfg.getParameter("server_ip");
   if (bind_ip.empty()) {
     DBG("binding on ANY interface\n");
+  } else {
+    bind_ip = fixIface2IP(bind_ip, false);
   }
 
   string conf_xmlrpc_port = cfg.getParameter("xmlrpc_port",XMLRPC_PORT);
