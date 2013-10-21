@@ -84,10 +84,10 @@ AmB2BSession::~AmB2BSession()
 {
   clearRtpReceiverRelay();
 
-  DBG("relayed_req.size() = %u\n",(unsigned int)relayed_req.size());
+  DBG("relayed_req.size() = %zu\n",relayed_req.size());
 
   map<int,AmSipRequest>::iterator it = recvd_req.begin();
-  DBG("recvd_req.size() = %u\n",(unsigned int)recvd_req.size());
+  DBG("recvd_req.size() = %zu\n",recvd_req.size());
   for(;it != recvd_req.end(); ++it){
     DBG("  <%i,%s>\n",it->first,it->second.method.c_str());
   }
