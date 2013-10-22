@@ -115,7 +115,7 @@ class AmPlugIn : public AmPayloadProvider
   virtual ~AmPlugIn();
 
   /** @return -1 if failed, else 0. */
-  int loadPlugIn(const string& file, const string& plugin_name, AmPluginFactory*& plugin);
+  int loadPlugIn(const string& file, const string& plugin_name, vector<AmPluginFactory*>& plugins);
 
   int loadAudioPlugIn(amci_exports_t* exports);
   int loadAppPlugIn(AmPluginFactory* cb);
