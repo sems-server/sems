@@ -327,6 +327,9 @@ Generic conditions (regardless of the type of the event):
 Other conditions only match on the type of event and when the expression expr in the
 brackets match.
 
+ start
+   start of a session (onStart). This event is processed before any other.
+
  hangup
    bye/cancel received
    parameters:

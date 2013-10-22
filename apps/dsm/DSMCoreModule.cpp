@@ -225,6 +225,9 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "startup")
     return new TestDSMCondition(params, DSMCondition::Startup);
 
+  if (cmd == "start")
+    return new TestDSMCondition(params, DSMCondition::Start);
+
   if (cmd == "reload")
     return new TestDSMCondition(params, DSMCondition::Reload);
 
