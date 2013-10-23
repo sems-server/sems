@@ -35,7 +35,7 @@
 enum sip_timer_type {
 
     // INVITE client transaction
-    STIMER_A,  // Calling: (re-)send INV
+    STIMER_A=0,// Calling: (re-)send INV
     STIMER_B,  // Calling -> Terminated
     STIMER_D,  // Completed -> Terminated
 
