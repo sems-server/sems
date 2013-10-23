@@ -306,6 +306,14 @@ int AmConfig::readConfiguration()
   // take values from global configuration file
   // they will be overwritten by command line args
 
+  // log_level
+  if(cfg.hasParameter("loglevel")){
+    if(!setLogLevel(cfg.getParameter("loglevel"))){
+      ERROR("invalid log level specified\n");
+      ret = -1;
+    }
+  }
+
   // stderr 
   if(cfg.hasParameter("stderr")){
     if(!setLogStderr(cfg.getParameter("stderr"), true)){
@@ -434,14 +442,6 @@ int AmConfig::readConfiguration()
       else {
 	  MaxForwards = mf;
       }
-  }
-
-  // log_level
-  if(cfg.hasParameter("loglevel")){
-    if(!setLogLevel(cfg.getParameter("loglevel"))){
-      ERROR("invalid log level specified\n");
-      ret = -1;
-    }
   }
 
   if(cfg.hasParameter("log_sessions"))
