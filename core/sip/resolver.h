@@ -144,6 +144,7 @@ class dns_srv_entry;
 struct dns_handle
 {
     dns_handle();
+    dns_handle(const dns_handle& h);
     ~dns_handle();
 
     bool valid();
