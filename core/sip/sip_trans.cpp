@@ -214,8 +214,8 @@ void trans_timer::fire()
 	    trans_layer::instance()->timer_expired(this,bucket,t);
 	}
 	else {
-	    WARN("Ignoring expired timer (%p): transaction"
-		 " %p does not exist anymore\n",this,t);
+	    WARN("Ignoring expired timer (%p/%s): transaction"
+		 " %p does not exist anymore\n",this,timer_name(type),t);
 	    bucket->unlock();
 	}
     }
