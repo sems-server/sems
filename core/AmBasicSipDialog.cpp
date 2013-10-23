@@ -469,6 +469,10 @@ void AmBasicSipDialog::updateDialogTarget(const AmSipReply& reply)
        (reply.cseq_method == SIP_METH_SUBSCRIBE)) ) {
     
     setRemoteUri(reply.to_uri);
+    if(!getNextHop().empty()) {
+      setNextHop(reply.remote_ip + ":"
+		 + int2str(reply.remote_port));
+    }
 
     string ua = getHeader(reply.hdrs,"Server");
     setRemoteUA(ua);
