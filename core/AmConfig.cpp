@@ -393,13 +393,13 @@ int AmConfig::readConfiguration()
     if(cfg.hasParameter(timer_cfg)) {
 
       sip_timers[t] = cfg.getParameterInt(timer_cfg, sip_timers[t]);
-      DBG("Set SIP Timer '%s' to %u ms\n", timer_name(t), sip_timers[t]);
+      INFO("Set SIP Timer '%s' to %u ms\n", timer_name(t), sip_timers[t]);
     }
   }
 
   if (cfg.hasParameter("sip_timer_t2")) {
     sip_timer_t2 = cfg.getParameterInt("sip_timer_t2", DEFAULT_T2_TIMER);
-    DBG("Set SIP Timer T2 to %u ms\n", sip_timer_t2);
+    INFO("Set SIP Timer T2 to %u ms\n", sip_timer_t2);
   }
 
   // plugin_path
