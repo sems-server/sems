@@ -313,6 +313,7 @@ void udp_trsp::run()
 
 	buf_len = recvmsg(sock->get_sd(),&msg,0);
 	if(buf_len <= 0){
+	    if(!buf_len) continue;
 	    ERROR("recvfrom returned %d: %s\n",buf_len,strerror(errno));
 	    switch(errno){
 	    case EBADF:

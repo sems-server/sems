@@ -1040,6 +1040,8 @@ void AmRtpStream::recvRtcpPacket()
     }
     return;
   }
+  else
+    if(!recved_bytes) return;
 
   static const cstring empty;
   if (logger)
