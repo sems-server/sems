@@ -1982,7 +1982,9 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	    return;
 	}
 	else {
-	    DBG("Transaction timeout timer hit while state=0x%x",tr->state);
+	    DBG("Transaction timeout timer hit while state=%s (0x%x)",
+		tr->state_str(), tr->state);
+	    bucket->remove(tr);
 	}
 	break;
 
