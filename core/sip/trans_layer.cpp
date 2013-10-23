@@ -1368,22 +1368,8 @@ void _trans_layer::received_msg(sip_msg* msg)
     }
     
     assert(msg->callid && get_cseq(msg));
-#if 0
-    unsigned int  h;
-    if (msg->rack) { /* it's a PRACK */
-        h = hash(msg->callid->value, get_rack(msg)->cseq_str);
-        DBG("### RACK: <%.*s> <%.*s>\n", 
-            msg->callid->value.len, msg->callid->value.s,
-            get_rack(msg)->cseq_str.len, get_rack(msg)->cseq_str.s);
-    } else {
-        h = hash(msg->callid->value, get_cseq(msg)->num_str);
-        DBG("### XXXX: <%.*s> <%.*s>\n", 
-            msg->callid->value.len, msg->callid->value.s,
-            get_cseq(msg)->num_str.len, get_cseq(msg)->num_str.s);
-    }
-#else
     unsigned int h = hash(msg->callid->value, get_cseq(msg)->num_str);
-#endif
+
     trans_bucket* bucket = get_trans_bucket(h);
     sip_trans* t = NULL;
 
@@ -1563,9 +1549,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	switch(t->state){
 
 	case TS_CALLING:
-	    t->clear_timer(STIMER_A);
-	    t->clear_timer(STIMER_M);
-	    t->clear_timer(STIMER_B);
+	    t->reset_all_timers();
 	    // fall through trap
 
 	case TS_TRYING:
@@ -1614,9 +1598,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		
 	    case TS_CALLING:
 
-		t->clear_timer(STIMER_A);
-		t->clear_timer(STIMER_M);
-		t->clear_timer(STIMER_B);
+		t->reset_all_timers();
 
 	    case TS_PROCEEDING:
 	
@@ -1657,13 +1639,11 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 		//        - re-transmit ACK.
 
 		t->state  = TS_TERMINATED_200;
-		t->clear_timer(STIMER_A);
-		t->clear_timer(STIMER_M);
-		t->clear_timer(STIMER_B);
+		t->reset_all_timers();
 
 		// Timer B & C share the same slot,
 		// so it would pretty useless to clear
-		// the same timer slote another time ;-)
+		// the same timer slot another time ;-)
 		//t->clear_timer(STIMER_C);
 
 		t->reset_timer(STIMER_L, L_TIMER, bucket->get_id());
