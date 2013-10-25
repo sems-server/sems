@@ -524,6 +524,10 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   resumeHeld(false);
   clearRtpReceiverRelay();
 
+  // check if we aren't processing INVITE now (BLF ringing call pickup)
+  AmSipRequest *invite = dlg->getUASPendingInv();
+  if (invite) acceptPendingInvite(invite);
+
   setOtherId(ev->session_tag);
   if (ev->role == ReconnectLegEvent::A) a_leg = true;
   else a_leg = false;
@@ -546,46 +550,18 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
 		  "to", dlg->getRemoteParty().c_str(),
 		  "ruri", dlg->getRemoteUri().c_str());
 
-  AmMimeBody r_body(ev->body);
-  const AmMimeBody* body = &ev->body;
-  if (rtp_relay_mode != RTP_Direct) {
-    try {
-      body = ev->body.hasContentType(SIP_APPLICATION_SDP);
-      if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
-        body = &r_body;
-      }
-      else {
-        body = &ev->body;
-      }
-    } catch (const string& s) {
-      relayError(SIP_METH_INVITE, ev->r_cseq, true, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-      throw;
-    }
+  if (invite) {
+    // there is pending INVITE, replied just above but we need to wait for ACK
+    // before sending re-INVITE with real body
+    PendingReinvite p;
+    p.hdrs = ev->hdrs;
+    p.body = ev->body;
+    p.relayed_invite = ev->relayed_invite;
+    p.r_cseq = ev->r_cseq;
+    p.establishing = true;
+    pending_reinvites.push(p);
   }
-
-  // generate re-INVITE
-  int res = dlg->sendRequest(SIP_METH_INVITE, body, ev->hdrs, SIP_FLAGS_VERBATIM);
-  if (res < 0) {
-    DBG("sending re-INVITE failed, relaying back error reply\n");
-    relayError(SIP_METH_INVITE, ev->r_cseq, true, res);
-
-    stopCall(StatusChangeCause::InternalError);
-    return;
-  }
-
-  if (ev->relayed_invite) {
-    AmSipRequest fake_req;
-    fake_req.method = SIP_METH_INVITE;
-    fake_req.cseq = ev->r_cseq;
-    relayed_req[dlg->cseq - 1] = fake_req;
-    est_invite_other_cseq = ev->r_cseq;
-  }
-  else est_invite_other_cseq = 0;
-
-  saveSessionDescription(ev->body);
-
-  // save CSeq of establising INVITE
-  est_invite_cseq = dlg->cseq - 1;
+  else reinvite(ev->hdrs, ev->body, ev->relayed_invite, ev->r_cseq, true);
 }
 
 void CallLeg::onB2BReplace(ReplaceLegEvent *e)
@@ -840,6 +816,13 @@ void CallLeg::onSipRequest(const AmSipRequest& req)
     }
     else
       AmB2BSession::onSipRequest(req);
+  }
+
+  if (req.method == SIP_METH_ACK && !pending_reinvites.empty()) {
+    TRACE("ACK received, we can send a queued re-INVITE\n");
+    PendingReinvite p = pending_reinvites.front();
+    pending_reinvites.pop();
+    reinvite(p.hdrs, p.body, p.relayed_invite, p.r_cseq, p.establishing);
   }
 }
 
@@ -1259,4 +1242,94 @@ void CallLeg::changeOtherLegsRtpMode(RTPRelayMode new_mode)
   }
 }
 
+void CallLeg::acceptPendingInvite(AmSipRequest *invite)
+{
+  // reply the INVITE with fake 200 reply
+
+  AmMimeBody *sdp = invite->body.hasContentType(SIP_APPLICATION_SDP);
+  AmSdp s;
+  if (!sdp || s.parse((const char*)sdp->getPayload())) {
+    // no offer in the INVITE (or can't be parsed), we have to append fake offer
+    // into the reply
+    s.version = 0;
+    s.origin.user = "sems";
+    s.sessionName = "sems";
+    s.conn.network = NT_IN;
+    s.conn.addrType = AT_V4;
+    s.conn.address = "0.0.0.0";
+
+    s.media.push_back(SdpMedia());
+    SdpMedia &m = s.media.back();
+    m.type = MT_AUDIO;
+    m.transport = TP_RTPAVP;
+    m.send = false;
+    m.recv = false;
+    m.payloads.push_back(SdpPayload(0));
+  }
+
+  if (!s.conn.address.empty()) s.conn.address = "0.0.0.0";
+  for (vector<SdpMedia>::iterator i = s.media.begin(); i != s.media.end(); ++i) {
+    //i->port = 0;
+    if (!i->conn.address.empty()) i->conn.address = "0.0.0.0";
+  }
+
+  AmMimeBody body;
+  string body_str;
+  s.print(body_str);
+  body.parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
+  if (rtp_relay_mode != RTP_Direct) {
+    try {
+      if (!updateLocalBody(body, body)) ERROR("failed to update local body with fake SDP\n");
+    } catch (...) { /* throw ? */  }
+  }
+
+  TRACE("replying pending INVITE with body: %s\n", body_str.c_str());
+  dlg->reply(*invite, 200, "OK", &body);
+
+  if (getCallStatus() != Connected) updateCallStatus(Connected);
+}
+
+void CallLeg::reinvite(const string &hdrs, const AmMimeBody &body, bool relayed, unsigned r_cseq, bool establishing)
+{
+  int res;
+  if (rtp_relay_mode != RTP_Direct && body.hasContentType(SIP_APPLICATION_SDP)) {
+    try {
+      AmMimeBody r_body(body);
+      AmMimeBody *sdp = r_body.hasContentType(SIP_APPLICATION_SDP);
+      if (!updateLocalBody(*sdp, *sdp)) {
+        ERROR("can't update local body\n");
+        res = -500;
+      }
+      else res = dlg->sendRequest(SIP_METH_INVITE, &r_body, hdrs, SIP_FLAGS_VERBATIM);
+    } catch (const string& s) { res = -500; }
+  }
+  else res = dlg->sendRequest(SIP_METH_INVITE, &body, hdrs, SIP_FLAGS_VERBATIM);
+
+  if (res < 0) {
+    if (relayed) {
+      DBG("sending re-INVITE failed, relaying back error reply\n");
+      relayError(SIP_METH_INVITE, r_cseq, true, res);
+    }
+
+    DBG("sending re-INVITE failed, terminating the call\n");
+    stopCall(StatusChangeCause::InternalError);
+    return;
+  }
+
+  if (relayed) {
+    AmSipRequest fake_req;
+    fake_req.method = SIP_METH_INVITE;
+    fake_req.cseq = r_cseq;
+    relayed_req[dlg->cseq - 1] = fake_req;
+    est_invite_other_cseq = r_cseq;
+  }
+  else est_invite_other_cseq = 0;
+
+  saveSessionDescription(body);
+
+  if (establishing) {
+    // save CSeq of establishing INVITE
+    est_invite_cseq = dlg->cseq - 1;
+  }
+}
 
