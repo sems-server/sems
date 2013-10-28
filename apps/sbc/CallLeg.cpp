@@ -934,6 +934,7 @@ void CallLeg::onRemoteDisappeared(const AmSipReply& reply)
 // was for caller only
 void CallLeg::onBye(const AmSipRequest& req)
 {
+  terminateNotConnectedLegs();
   updateCallStatus(Disconnected, &req);
   clearRtpReceiverRelay(); // FIXME: shouldn't be cleared in AmB2BSession as well?
   AmB2BSession::onBye(req);
