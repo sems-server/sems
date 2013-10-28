@@ -520,7 +520,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   ev->markAsProcessed();
 
   // release old signaling and media session
-  terminateOtherLeg();
+  clear_other();
   resumeHeld(false);
   clearRtpReceiverRelay();
 
