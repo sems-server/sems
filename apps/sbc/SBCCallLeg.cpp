@@ -1342,7 +1342,7 @@ void SBCCallLeg::logCallStart(const AmSipReply& reply)
 					  (int)reply.code,reply.reason);
   }
   else {
-    ERROR("could not log call-start/call-attempt (ci='%s';lt='%s')",
+    DBG("could not log call-start/call-attempt (ci='%s';lt='%s')",
 	  getCallID().c_str(),getLocalTag().c_str());
   }
 }
