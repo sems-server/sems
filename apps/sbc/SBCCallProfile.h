@@ -343,6 +343,9 @@ struct SBCCallProfile
   bool evaluate(ParamReplacerCtx& ctx,
 		const AmSipRequest& req);
 
+  bool evaluateRTPRelayInterface();
+  bool evaluateRTPRelayAlegInterface();
+
   void eval_sst_config(ParamReplacerCtx& ctx,
 		       const AmSipRequest& req,
 		       AmConfigReader& sst_cfg);
