@@ -87,25 +87,29 @@ static string payload2str(const SdpPayload &p);
     }								\
   } while(0)
 
-#define REPLACE_IFACE_RTP(what, iface) do {		\
-    if (!what.empty()) {			    \
-      what = ctx.replaceParameters(what, #what, req);	\
-      DBG("set " #what " to '%s'\n", what.c_str());	\
-      if (!what.empty()) {				\
-	if (what == "default") iface = 0;		\
-	else {								\
-	  map<string,unsigned short>::iterator name_it =		\
-	    AmConfig::RTP_If_names.find(what);				\
-	  if (name_it != AmConfig::RTP_If_names.end()) \
-	    iface = name_it->second;					\
-	  else {							\
-	    ERROR("selected " #what " '%s' does not exist as a media interface. " \
-		  "Please check the 'additional_interfaces' "		\
-		  "parameter in the main configuration file.",		\
-		  what.c_str());					\
-	    return false;						\
-	  }								\
-	}								\
+#define REPLACE_IFACE_RTP(what, iface) do {				\
+    if (!what.empty()) {						\
+      what = ctx.replaceParameters(what, #what, req);			\
+      DBG("set " #what " to '%s'\n", what.c_str());			\
+      if (!what.empty()) {						\
+	EVALUATE_IFACE_RTP(what, iface);				\
+      }									\
+    }									\
+  } while(0)
+
+#define EVALUATE_IFACE_RTP(what, iface) do {				\
+    if (what == "default") iface = 0;					\
+    else {								\
+      map<string,unsigned short>::iterator name_it =			\
+	AmConfig::RTP_If_names.find(what);				\
+      if (name_it != AmConfig::RTP_If_names.end())			\
+	iface = name_it->second;					\
+      else {								\
+	ERROR("selected " #what " '%s' does not exist as a media interface. " \
+	      "Please check the 'additional_interfaces' "		\
+	      "parameter in the main configuration file.",		\
+	      what.c_str());						\
+	return false;							\
       }									\
     }									\
   } while(0)
@@ -813,6 +817,16 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
     sdpfilter = Transparent;
   }*/
 
+  return true;
+}
+
+bool SBCCallProfile::evaluateRTPRelayInterface() {
+  EVALUATE_IFACE_RTP(rtprelay_interface, rtprelay_interface_value);
+  return true;
+}
+
+bool SBCCallProfile::evaluateRTPRelayAlegInterface() {
+  EVALUATE_IFACE_RTP(aleg_rtprelay_interface, aleg_rtprelay_interface_value);
   return true;
 }
 
