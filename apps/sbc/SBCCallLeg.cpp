@@ -659,7 +659,7 @@ void SBCCallLeg::onDtmf(int event, int duration)
   }
 }
 
-bool SBCCallLeg::updateLocalSdp(AmSdp &sdp)
+void SBCCallLeg::updateLocalSdp(AmSdp &sdp)
 {
   // anonymize SDP if configured to do so (we need to have our local media IP,
   // not the media IP of our peer leg there)
@@ -667,20 +667,23 @@ bool SBCCallLeg::updateLocalSdp(AmSdp &sdp)
 
   // remember transcodable payload IDs
   if (call_profile.transcoder.isActive()) savePayloadIDs(sdp);
-  return CallLeg::updateLocalSdp(sdp);
+  CallLeg::updateLocalSdp(sdp);
 }
 
 
-bool SBCCallLeg::updateRemoteSdp(AmSdp &sdp)
+void SBCCallLeg::updateRemoteSdp(AmSdp &sdp)
 {
   SBCRelayController rc(&call_profile.transcoder, a_leg);
   if (call_profile.transcoder.isActive()) {
     AmB2BMedia *ms = getMediaSession();
-    if (ms) return ms->updateRemoteSdp(a_leg, sdp, &rc);
+    if (ms) {
+      ms->updateRemoteSdp(a_leg, sdp, &rc);
+      return;
+    }
   }
 
   // call original implementation because our special conditions above are not met
-  return CallLeg::updateRemoteSdp(sdp);
+  CallLeg::updateRemoteSdp(sdp);
 }
 
 void SBCCallLeg::onControlCmd(string& cmd, AmArg& params) {

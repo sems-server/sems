@@ -371,13 +371,11 @@ class AmB2BMedia: public AmMediaSession
 				  const string& relay_address,
 				  const string& relay_public_address);
 
-    /** Store remote SDP for given leg and update media session appropriately. 
-     * Returns false if update failed. */
-    bool updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl = NULL);
+    /** Store remote SDP for given leg and update media session appropriately. */
+    void updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl = NULL);
     
-    /** Store local SDP for given leg and update media session appropriately. 
-     * Returns false if update failed. */
-    bool updateLocalSdp(bool a_leg, const AmSdp &local_sdp);
+    /** Store local SDP for given leg and update media session appropriately. */
+    void updateLocalSdp(bool a_leg, const AmSdp &local_sdp);
 
     /** Clear audio for given leg and stop processing if both legs stopped. 
      *

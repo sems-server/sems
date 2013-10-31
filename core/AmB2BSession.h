@@ -272,15 +272,15 @@ private:
 			  AmSdp& parser_sdp);
 
   /** replace connection with our address */
-  bool updateLocalBody(const AmMimeBody& body, AmMimeBody& r_body);
+  void updateLocalBody(AmMimeBody& body);
 
   /** Called when SDP relayed from other leg should be sent to the remote party.
    * Default implementation updates connection address and ports. */
-  virtual bool updateLocalSdp(AmSdp &sdp);
+  virtual void updateLocalSdp(AmSdp &sdp);
 
   /** Passes remote SDP to AmB2BMediaSession, might be redefined to provide
    * another functionality than just simply passing SDP */
-  virtual bool updateRemoteSdp(AmSdp &sdp);
+  virtual void updateRemoteSdp(AmSdp &sdp);
 
   /**
    * Returns true and sets mapped_id if refer_id corresponds to an existing

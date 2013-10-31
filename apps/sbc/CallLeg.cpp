@@ -271,12 +271,12 @@ bool CallLeg::setOther(const string &id, bool use_initial_sdp)
         TRACE("connecting media session: %s to %s\n", 
             dlg->getLocalTag().c_str(), getOtherId().c_str());
         i->media_session->changeSession(a_leg, this);
-        if (use_initial_sdp) updateRemoteSdp(initial_sdp);
       }
       else {
         // media session not set, set direct mode if not set already
         if (rtp_relay_mode != AmB2BSession::RTP_Direct) setRtpRelayMode(AmB2BSession::RTP_Direct);
       }
+      if (use_initial_sdp) updateRemoteSdp(initial_sdp);
       set_sip_relay_only(true); // relay only from now on
       return true;
     }
@@ -462,24 +462,15 @@ void CallLeg::onB2BConnect(ConnectLegEvent* co_ev)
   // connected to the A leg yet when handling the in-dialog request.
   set_sip_relay_only(true); // we should relay everything to the other leg from now
 
-  AmMimeBody r_body(co_ev->body);
-  const AmMimeBody* body = &co_ev->body;
-  if (rtp_relay_mode != RTP_Direct) {
-    try {
-      body = co_ev->body.hasContentType(SIP_APPLICATION_SDP);
-      if (body && updateLocalBody(*body, *r_body.hasContentType(SIP_APPLICATION_SDP))) {
-        body = &r_body;
-      }
-      else {
-        body = &co_ev->body;
-      }
-    } catch (const string& s) {
-      relayError(SIP_METH_INVITE, co_ev->r_cseq, true, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
-      throw;
-    }
+  AmMimeBody body(co_ev->body);
+  try {
+    updateLocalBody(body);
+  } catch (const string& s) {
+    relayError(SIP_METH_INVITE, co_ev->r_cseq, true, 500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+    throw;
   }
 
-  int res = dlg->sendRequest(SIP_METH_INVITE, body,
+  int res = dlg->sendRequest(SIP_METH_INVITE, &body,
       co_ev->hdrs, SIP_FLAGS_VERBATIM);
   if (res < 0) {
     DBG("sending INVITE failed, relaying back error reply\n");
@@ -846,7 +837,7 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
 
     // we don't want to relay this reply to the other leg! => do the necessary
     // stuff here (copy & paste from AmB2BSession::onSipReply)
-    if (rtp_relay_mode != RTP_Direct && reply.code < 300) {
+    if (reply.code < 300) {
       const AmMimeBody *sdp_part = reply.body.hasContentType(SIP_APPLICATION_SDP);
       if (sdp_part) {
         AmSdp sdp;
@@ -1278,11 +1269,9 @@ void CallLeg::acceptPendingInvite(AmSipRequest *invite)
   string body_str;
   s.print(body_str);
   body.parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
-  if (rtp_relay_mode != RTP_Direct) {
-    try {
-      if (!updateLocalBody(body, body)) ERROR("failed to update local body with fake SDP\n");
-    } catch (...) { /* throw ? */  }
-  }
+  try {
+    updateLocalBody(body);
+  } catch (...) { /* throw ? */  }
 
   TRACE("replying pending INVITE with body: %s\n", body_str.c_str());
   dlg->reply(*invite, 200, "OK", &body);
@@ -1293,18 +1282,11 @@ void CallLeg::acceptPendingInvite(AmSipRequest *invite)
 void CallLeg::reinvite(const string &hdrs, const AmMimeBody &body, bool relayed, unsigned r_cseq, bool establishing)
 {
   int res;
-  if (rtp_relay_mode != RTP_Direct && body.hasContentType(SIP_APPLICATION_SDP)) {
-    try {
-      AmMimeBody r_body(body);
-      AmMimeBody *sdp = r_body.hasContentType(SIP_APPLICATION_SDP);
-      if (!updateLocalBody(*sdp, *sdp)) {
-        ERROR("can't update local body\n");
-        res = -500;
-      }
-      else res = dlg->sendRequest(SIP_METH_INVITE, &r_body, hdrs, SIP_FLAGS_VERBATIM);
-    } catch (const string& s) { res = -500; }
-  }
-  else res = dlg->sendRequest(SIP_METH_INVITE, &body, hdrs, SIP_FLAGS_VERBATIM);
+  try {
+    AmMimeBody r_body(body);
+    updateLocalBody(r_body);
+    res = dlg->sendRequest(SIP_METH_INVITE, &r_body, hdrs, SIP_FLAGS_VERBATIM);
+  } catch (const string& s) { res = -500; }
 
   if (res < 0) {
     if (relayed) {

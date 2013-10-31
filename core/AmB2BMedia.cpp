@@ -968,9 +968,8 @@ static void updateRelayStream(AmRtpStream *stream,
   }
 }
 
-bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl)
+void AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl)
 {
-  bool ok = true;
   if (!ctrl) ctrl = &simple_relay_ctrl; // use default controller if none given
 
   AmLock lock(mutex);
@@ -1031,13 +1030,10 @@ bool AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayContr
   }
 
   onSdpUpdate();
-
-  return ok;
 }
     
-bool AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
+void AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
 {
-  bool ok = true;
   AmLock lock(mutex);
   // streams should be created already (replaceConnectionAddress called
   // before updateLocalSdp uses/assignes their port numbers)
@@ -1056,8 +1052,6 @@ bool AmB2BMedia::updateLocalSdp(bool a_leg, const AmSdp &local_sdp)
   createStreams(local_sdp);
 
   onSdpUpdate();
-
-  return ok;
 }
 
 void AmB2BMedia::stop(bool a_leg)
