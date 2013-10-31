@@ -171,6 +171,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   int startTimer(double timeout) { setTimer(ext_cc_timer_id, timeout); return ext_cc_timer_id++; }
 
   virtual void setMediaSession(AmB2BMedia *new_session);
+  virtual void computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask);
 
  protected:
   /** set to true once CCStart passed to call CCEnd implicitly (from onStop)

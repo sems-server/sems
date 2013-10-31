@@ -447,7 +447,7 @@ void AmB2BSession::updateRemoteSdp(AmSdp &sdp)
     ERROR("BUG: media session is missing, can't update remote SDP\n");
     return; // FIXME: throw an exception here?
   }
-  media_session->updateRemoteSdp(a_leg, sdp);
+  media_session->updateRemoteSdp(a_leg, sdp, this);
 }
 
 void AmB2BSession::updateLocalSdp(AmSdp &sdp)
@@ -984,7 +984,40 @@ void AmB2BSession::clearRtpReceiverRelay() {
       break;
   }
 }
-  
+
+void AmB2BSession::computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask)
+{
+  int te_pl = -1;
+  enable = false;
+
+  mask.clear();
+
+  // walk through the media lines and find the telephone-event payload
+  for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin();
+      i != m.payloads.end(); ++i)
+  {
+    // do not mark telephone-event payload for relay
+    if(!strcasecmp("telephone-event",i->encoding_name.c_str())){
+      te_pl = i->payload_type;
+    }
+    else {
+      enable = true;
+    }
+  }
+
+  if(!enable)
+    return;
+
+  if(te_pl > 0) {
+    DBG("unmarking telephone-event payload %d for relay\n", te_pl);
+    mask.set(te_pl);
+  }
+
+  DBG("marking all other payloads for relay\n");
+  mask.invert();
+}
+
+
 // 
 // AmB2BCallerSession methods
 //

@@ -62,69 +62,6 @@ static bool containsPayload(const std::vector<SdpPayload>& payloads, const SdpPa
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-class SBCRelayController: public RelayController {
-  private:
-    SBCCallProfile::TranscoderSettings *transcoder_settings;
-    bool aleg;
-
-  public:
-    SBCRelayController(SBCCallProfile::TranscoderSettings *t, bool _aleg): transcoder_settings(t), aleg(_aleg) { }
-
-    virtual void computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask);
-};
-
-void SBCRelayController::computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask)
-{
-  TRACE("entering SBCRelayController::computeRelayMask(%s)\n", aleg ? "A leg" : "B leg");
-
-  PayloadMask m1, m2;
-  bool use_m1 = false;
-
-  /* if "m" contains only "norelay" codecs, relay is enabled for them (main idea
-   * of these codecs is to limit network bandwidth and it makes not much sense
-   * to transcode between codecs 'which are better to avoid', right?)
-   *
-   * if "m" contains other codecs, relay is enabled as well
-   *
-   * => if m contains at least some codecs, relay is enabled */
-  enable = !m.payloads.empty();
-
-  vector<SdpPayload> &norelay_payloads =
-    aleg ? transcoder_settings->audio_codecs_norelay_aleg : transcoder_settings->audio_codecs_norelay;
-
-  vector<SdpPayload>::const_iterator p;
-  for (p = m.payloads.begin(); p != m.payloads.end(); ++p) {
-
-    // do not mark telephone-event payload for relay (and do not use it for
-    // transcoding as well)
-    if(strcasecmp("telephone-event",p->encoding_name.c_str()) == 0) continue;
-
-    // mark every codec for relay in m2
-    TRACE("m2: marking payload %d for relay\n", p->payload_type);
-    m2.set(p->payload_type);
-
-    if (!containsPayload(norelay_payloads, *p, m.transport)) {
-      // this payload can be relayed
-
-      TRACE("m1: marking payload %d for relay\n", p->payload_type);
-      m1.set(p->payload_type);
-
-      if (!use_m1 && containsPayload(transcoder_settings->audio_codecs, *p, m.transport)) {
-        // the remote SDP contains transcodable codec which can be relayed (i.e.
-        // the one with higher "priority" so we want to disable relaying of the
-        // payloads which should not be ralyed if possible)
-        use_m1 = true;
-      }
-    }
-  }
-
-  TRACE("using %s\n", use_m1 ? "m1" : "m2");
-  if (use_m1) mask = m1;
-  else mask = m2;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-
 // map stream index and transcoder payload index (two dimensions) into one under
 // presumption that there will be less than 128 payloads for transcoding
 // (might be handy to remember mapping only for dynamic ones (96-127)
@@ -670,19 +607,8 @@ void SBCCallLeg::updateLocalSdp(AmSdp &sdp)
   CallLeg::updateLocalSdp(sdp);
 }
 
-
 void SBCCallLeg::updateRemoteSdp(AmSdp &sdp)
 {
-  SBCRelayController rc(&call_profile.transcoder, a_leg);
-  if (call_profile.transcoder.isActive()) {
-    AmB2BMedia *ms = getMediaSession();
-    if (ms) {
-      ms->updateRemoteSdp(a_leg, sdp, &rc);
-      return;
-    }
-  }
-
-  // call original implementation because our special conditions above are not met
   CallLeg::updateRemoteSdp(sdp);
 }
 
@@ -1677,5 +1603,62 @@ void SBCCallLeg::setLogger(msg_logger *_logger)
   if (m) {
     if (call_profile.log_rtp) m->setRtpLogger(logger);
     else m->setRtpLogger(NULL);
+  }
+}
+
+void SBCCallLeg::computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask)
+{
+  if (call_profile.transcoder.isActive()) {
+    TRACE("entering transcoder's computeRelayMask(%s)\n", a_leg ? "A leg" : "B leg");
+
+    SBCCallProfile::TranscoderSettings &transcoder_settings = call_profile.transcoder;
+    PayloadMask m1, m2;
+    bool use_m1 = false;
+
+    /* if "m" contains only "norelay" codecs, relay is enabled for them (main idea
+     * of these codecs is to limit network bandwidth and it makes not much sense
+     * to transcode between codecs 'which are better to avoid', right?)
+     *
+     * if "m" contains other codecs, relay is enabled as well
+     *
+     * => if m contains at least some codecs, relay is enabled */
+    enable = !m.payloads.empty();
+
+    vector<SdpPayload> &norelay_payloads =
+      a_leg ? transcoder_settings.audio_codecs_norelay_aleg : transcoder_settings.audio_codecs_norelay;
+
+    vector<SdpPayload>::const_iterator p;
+    for (p = m.payloads.begin(); p != m.payloads.end(); ++p) {
+
+      // do not mark telephone-event payload for relay (and do not use it for
+      // transcoding as well)
+      if(strcasecmp("telephone-event",p->encoding_name.c_str()) == 0) continue;
+
+      // mark every codec for relay in m2
+      TRACE("m2: marking payload %d for relay\n", p->payload_type);
+      m2.set(p->payload_type);
+
+      if (!containsPayload(norelay_payloads, *p, m.transport)) {
+        // this payload can be relayed
+
+        TRACE("m1: marking payload %d for relay\n", p->payload_type);
+        m1.set(p->payload_type);
+
+        if (!use_m1 && containsPayload(transcoder_settings.audio_codecs, *p, m.transport)) {
+          // the remote SDP contains transcodable codec which can be relayed (i.e.
+          // the one with higher "priority" so we want to disable relaying of the
+          // payloads which should not be ralyed if possible)
+          use_m1 = true;
+        }
+      }
+    }
+
+    TRACE("using %s\n", use_m1 ? "m1" : "m2");
+    if (use_m1) mask = m1;
+    else mask = m2;
+  }
+  else {
+    // for non-transcoding modes use default
+    CallLeg::computeRelayMask(m, enable, mask);
   }
 }

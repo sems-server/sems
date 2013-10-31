@@ -17,13 +17,7 @@ using namespace std;
 
 /** class for computing payloads for relay the simpliest way - allow relaying of
  * all payloads supported by remote party */
-class SimpleRelayController: public RelayController {
-  public:
-    virtual void computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask);
-};
-
 static B2BMediaStatistics b2b_stats;
-static SimpleRelayController simple_relay_ctrl;
 
 static const string zero_ip("0.0.0.0");
 
@@ -42,40 +36,6 @@ static void replaceRtcpAttr(SdpMedia &m, const string& relay_address, int rtcp_p
       DBG("can't replace RTCP address: %s\n", e.what());
     }
   }
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-
-void SimpleRelayController::computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask)
-{
-  int te_pl = -1;
-  enable = false;
-
-  mask.clear();
-
-  // walk through the media lines and find the telephone-event payload
-  for (std::vector<SdpPayload>::const_iterator i = m.payloads.begin();
-      i != m.payloads.end(); ++i)
-  {
-    // do not mark telephone-event payload for relay
-    if(!strcasecmp("telephone-event",i->encoding_name.c_str())){
-      te_pl = i->payload_type;
-    }
-    else {
-      enable = true;
-    }
-  }
-
-  if(!enable)
-    return;
-
-  if(te_pl > 0) { 
-    TRACE("unmarking telephone-event payload %d for relay\n", te_pl);
-    mask.set(te_pl);
-  }
-
-  TRACE("marking all other payloads for relay\n");
-  mask.invert();
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -970,8 +930,6 @@ static void updateRelayStream(AmRtpStream *stream,
 
 void AmB2BMedia::updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl)
 {
-  if (!ctrl) ctrl = &simple_relay_ctrl; // use default controller if none given
-
   AmLock lock(mutex);
 
   // save SDP

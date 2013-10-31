@@ -372,7 +372,7 @@ class AmB2BMedia: public AmMediaSession
 				  const string& relay_public_address);
 
     /** Store remote SDP for given leg and update media session appropriately. */
-    void updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl = NULL);
+    void updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl);
     
     /** Store local SDP for given leg and update media session appropriately. */
     void updateLocalSdp(bool a_leg, const AmSdp &local_sdp);

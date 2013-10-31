@@ -113,7 +113,7 @@ struct B2BConnectEvent: public B2BEvent
  * It has two legs as independent sessions:
  * Callee- and caller-leg.
  */
-class AmB2BSession: public AmSession
+class AmB2BSession: public AmSession, private RelayController
 {
  public:
 
@@ -326,6 +326,9 @@ private:
   public:
     virtual void setMediaSession(AmB2BMedia *new_session);
     AmB2BMedia *getMediaSession() { return media_session; }
+
+    // see RelayController
+    virtual void computeRelayMask(const SdpMedia &m, bool &enable, PayloadMask &mask);
 };
 
 class AmB2BCalleeSession;
