@@ -684,8 +684,6 @@ void CallLeg::putOnHold()
   createHoldRequest(sdp);
   updateLocalSdp(sdp);
 
-  // generate re-INVITE with hold request
-  //reinvite(sdp, hold_request_cseq);
   AmMimeBody body;
   string body_str;
   sdp.print(body_str);
@@ -714,11 +712,9 @@ void CallLeg::resumeHeld(bool send_reinvite)
     return;
   }
 
-  AmSdp sdp;
-  if (sdp.parse((const char *)established_body.getPayload()) == 0)
-    updateLocalSdp(sdp);
-
-  if (dlg->reinvite("", &established_body, SIP_FLAGS_VERBATIM) != 0) {
+  AmMimeBody body(established_body);
+  updateLocalBody(body);
+  if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
     handleHoldReply(false);
   }
