@@ -100,7 +100,25 @@ class DSMCondition
 
     SIPSubscription,
 
-    RTPTimeout
+    RTPTimeout,
+
+    // SBC related
+    LegStateChange,
+    BLegRefused,
+
+    PutOnHold,
+    ResumeHeld,
+    CreateHoldRequest,
+    HandleHoldReply,
+
+    RelayInit,
+    RelayInitUAC,
+    RelayInitUAS,
+    RelayFinalize,
+    RelayOnSipRequest,
+    RelayOnSipReply,
+    RelayOnB2BRequest,
+    RelayOnB2BReply
   };
 
   bool invert; 
