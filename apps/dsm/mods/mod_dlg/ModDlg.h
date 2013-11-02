@@ -49,4 +49,5 @@ DEF_ACTION_2P(DLGGetRequestBodyAction);
 DEF_ACTION_2P(DLGGetReplyBodyAction);
 
 DEF_ACTION_1P(DLGGetOtherIdAction);
+DEF_ACTION_1P(DLGGetRtpRelayModeAction);
 #endif

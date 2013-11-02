@@ -68,9 +68,16 @@ dlg.dialout(string arrayname)
                        arrayname_var.somevar will be set as $somevar
 
   returns $arrayname_ltag (if successful) and sets ERRNO.
-   
-Request/Reply Body handling in sipRequest/sipReply events:
 
+   
+dlg.getOtherId(varname)
+   get other related dlg id in $varname
+
+dlg.getRtpRelayMode(varname)
+   get RTP relay mode (RTP_Direct, RTP_Relay, RTP_Transcoding) in $varname
+
+Request/Reply Body handling in sipRequest/sipReply events:
+----------------------------------------------------------
 actions (applicable only in sipRequest/sipReply event handling blocks):
 dlg.getRequestBody(content_type, dstvar)  - get body of content_type in $dstvar
 dlg.getReplyBody(content_type, dstvar)    - get body of content_type in $dstvar

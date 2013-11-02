@@ -53,6 +53,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("dlg.getReplyBody", DLGGetReplyBodyAction)
 
   DEF_CMD("dlg.getOtherId", DLGGetOtherIdAction)
+  DEF_CMD("dlg.getRtpRelayMode", DLGGetRtpRelayModeAction)
 } MOD_ACTIONEXPORT_END;
 
 //MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
@@ -433,4 +434,24 @@ EXEC_ACTION_START(DLGGetOtherIdAction) {
   if (varname.size() && varname[0] == '$')
     varname.erase(0, 1);
   sc_sess->var[varname] = b2b_sess->getOtherId();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(DLGGetRtpRelayModeAction) {
+  string varname = arg;
+  AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);
+  if (NULL == b2b_sess) {
+    DBG("script writer error: dlg.getOtherId used without B2B session object.\n");
+    EXEC_ACTION_STOP;
+  }
+
+  if (varname.size() && varname[0] == '$')
+    varname.erase(0, 1);
+  switch (b2b_sess->getRtpRelayMode()) {
+  case AmB2BSession::RTP_Direct: sc_sess->var[varname] = "RTP_Direct"; break;
+  case AmB2BSession::RTP_Relay: sc_sess->var[varname] = "RTP_Relay"; break;
+  case AmB2BSession::RTP_Transcoding: sc_sess->var[varname] = "RTP_Transcoding"; break;
+  default: sc_sess->var[varname] = "Unknown"; break;
+  }
+
+  DBG("get RTP relay mode: %s='%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
 } EXEC_ACTION_END;
