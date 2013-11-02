@@ -311,7 +311,9 @@ EXEC_ACTION_START(MODSBCActionResumeHeld) {
 
 EXEC_ACTION_START(MODSBCActionGetCallStatus) {
   GET_CALL_LEG(GetCallStatus);
-  string varname = resolveVars(arg, sess, sc_sess, event_params);
+  string varname = arg;
+  if (varname.size() && varname[0] == '$')
+    varname.erase(0, 1);
   sc_sess->var[varname] = call_leg->getCallStatusStr();
   DBG("set $%s='%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
 } EXEC_ACTION_END;
