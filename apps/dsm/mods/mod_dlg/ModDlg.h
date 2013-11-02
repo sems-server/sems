@@ -47,4 +47,6 @@ DEF_SCCondition(DLGReplyHasContentTypeCondition);
 DEF_SCCondition(DLGRequestHasContentTypeCondition);
 DEF_ACTION_2P(DLGGetRequestBodyAction);
 DEF_ACTION_2P(DLGGetReplyBodyAction);
+
+DEF_ACTION_1P(DLGGetOtherIdAction);
 #endif

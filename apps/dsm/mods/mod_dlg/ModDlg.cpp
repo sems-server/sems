@@ -51,6 +51,8 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("dlg.getRequestBody", DLGGetRequestBodyAction)
   DEF_CMD("dlg.getReplyBody", DLGGetReplyBodyAction)
+
+  DEF_CMD("dlg.getOtherId", DLGGetOtherIdAction)
 } MOD_ACTIONEXPORT_END;
 
 //MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
@@ -418,4 +420,17 @@ EXEC_ACTION_START(DLGGetReplyBodyAction) {
     sc_sess->var[dstvar] = string((const char*)msg_body->getPayload());
     DBG("set $%s='%s'\n", dstvar.c_str(), sc_sess->var[dstvar].c_str());
   }
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(DLGGetOtherIdAction) {
+  string varname = arg;
+  AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);
+  if (NULL == b2b_sess) {
+    DBG("script writer error: dlg.getOtherId used without B2B session object.\n");
+    EXEC_ACTION_STOP;
+  }
+
+  if (varname.size() && varname[0] == '$')
+    varname.erase(0, 1);
+  sc_sess->var[varname] = b2b_sess->getOtherId();
 } EXEC_ACTION_END;
