@@ -190,6 +190,7 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
   : auth(NULL),
     call_profile(caller->getCallProfile()),
     CallLeg(caller,p_dlg,p_subs),
+    ext_cc_timer_id(SBC_TIMER_ID_CALL_TIMERS_END + 1),
     cc_started(false),
     logger(NULL)
 {
