@@ -708,12 +708,12 @@ void CallLeg::putOnHold()
 
 void CallLeg::resumeHeld(bool send_reinvite)
 {
-  hold_status = ResumeRequested;
-
   if (!isOnHold()) {
     handleHoldReply(true); // really?
     return;
   }
+
+  hold_status = ResumeRequested;
 
   TRACE("resume held remote\n");
 
