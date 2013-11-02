@@ -303,6 +303,7 @@ class CallLeg: public AmB2BSession
     void replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite);
     void replaceExistingLeg(const string &session_tag, const string &hdrs);
 
+    const char* getCallStatusStr();
 
   public:
     /** creates A leg */

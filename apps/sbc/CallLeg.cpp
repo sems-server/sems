@@ -1023,6 +1023,17 @@ void CallLeg::setCallStatus(CallStatus new_status)
   call_status = new_status;
 }
 
+const char* CallLeg::getCallStatusStr() {
+  switch(getCallStatus()) {
+  case Disconnected : return "Disconnected";
+  case NoReply : return "NoReply";
+  case Ringing : return "Ringing";
+  case Connected : return "Connected";
+  case Disconnecting : return "Disconnecting";
+  default: return "Unknown";
+  };
+}
+
 void CallLeg::updateCallStatus(CallStatus new_status, const StatusChangeCause &cause)
 {
   if (new_status == Connected)
