@@ -34,6 +34,8 @@ sipReply         - in dialog reply
     Reply parameters (#sip_reason, #sip_code, ...)
  
 LegStateChange
+   #SBCCallStatus  - sbc call status (Disconnected, NoReply, Ringing, Connected, Disconnecting, Unknown)
+ 
    #reason == "SipRequest"
           + Request parameters (#method, #r_uri, ...)
    #reason == "SipReply"
@@ -116,14 +118,12 @@ sbc.profileSet(profile_variable, value)    - set SBC profile options
       rtprelay_transparent_seqno = "yes" | "no, rtprelay_transparent_ssrc = "yes" | "no, 
       rtprelay_interface, aleg_rtprelay_interface,
 
-sbc.stopCall(string cause)
-   stop both call legs
+sbc.stopCall(string cause)         - stop both call legs
 
-sbc.disconnect(bool hold_remote)
-   disconnect this call leg
+sbc.disconnect(bool hold_remote)   - disconnect this call leg
 
-sbc.putOnHold
-   put this call leg on hold
+sbc.putOnHold                      - put this call leg on hold
 
-sbc.resumeHeld(bool send_reinvite)
-   resume from hold
+sbc.resumeHeld(bool send_reinvite) - resume from hold
+
+sbc.getSBCCallStatus(varname)      - get sbc call status into $varname

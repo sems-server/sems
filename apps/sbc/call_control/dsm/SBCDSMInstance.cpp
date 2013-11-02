@@ -27,7 +27,6 @@
 
 #include "SBCDSMInstance.h"
 #include "SBCCallLeg.h"
-#include "events.h"
 #include "SBCSimpleRelay.h"
 
 #include "DSM.h"
@@ -141,6 +140,8 @@ void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChange
   DBG("SBCDSMInstance::onStateChange()\n");
   VarMapT event_params;
 
+  event_params["SBCCallStatus"] = call->getCallStatusStr();
+  
   switch (cause.reason) {
   case CallLeg::StatusChangeCause::SipReply:
     event_params["reason"] = "SipReply";

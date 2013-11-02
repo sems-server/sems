@@ -26,7 +26,6 @@
  */
 
 #include "log.h"
-#include "events.h"
 #include "CCDSM.h"
 
 static const string data_var_name(MOD_NAME "::data");

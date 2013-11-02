@@ -49,6 +49,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("sbc.putOnHold", MODSBCActionPutOnHold);
   DEF_CMD("sbc.resumeHeld", MODSBCActionResumeHeld);
 
+  DEF_CMD("sbc.getCallStatus", MODSBCActionGetCallStatus);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -308,5 +309,9 @@ EXEC_ACTION_START(MODSBCActionResumeHeld) {
   call_leg->resumeHeld(send_reinvite == DSM_TRUE);
 } EXEC_ACTION_END;
 
-
-
+EXEC_ACTION_START(MODSBCActionGetCallStatus) {
+  GET_CALL_LEG(GetCallStatus);
+  string varname = resolveVars(arg, sess, sc_sess, event_params);
+  sc_sess->var[varname] = call_leg->getCallStatusStr();
+  DBG("set $%s='%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
+} EXEC_ACTION_END;

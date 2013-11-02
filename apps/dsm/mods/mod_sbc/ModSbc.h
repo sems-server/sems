@@ -41,8 +41,10 @@ DEF_ACTION_1P(MODSBCActionDisconnect);
 
 DEF_ACTION_1P(MODSBCActionPutOnHold);
 DEF_ACTION_1P(MODSBCActionResumeHeld);
+DEF_ACTION_1P(MODSBCActionGetCallStatus);
 
 DEF_SCCondition(SBCIsALegCondition);
 DEF_SCCondition(SBCIsOnHoldCondition);
+
 
 #endif
