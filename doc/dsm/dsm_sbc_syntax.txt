@@ -1,0 +1,129 @@
+
+
+Variables
+---------
+ $config.*    config set variables
+
+Parameters
+----------
+ #StopProcessing  = "true" -> stop call processing
+   in events: invite, 
+
+Events (Conditions)
+-------------------
+
+general: 
+   Request parameters: #method, #r_uri, #from, #to and #hdrs
+   Reply parameters:   #sip_reason, #sip_code, #from, #to and #hdrs
+
+start            - on startup of call control DSM
+  
+invite           - initial invite (onInitialInvite)
+   #remote_party
+   #remote_uri
+   #from
+
+   avars
+      DSM_AVAR_REQUEST              - original invite
+      DSM_SBC_AVAR_MODIFIED_INVITE  - modified invite (outgoing)
+
+sipRequest       - in dialog request
+    Request parameters (#method, #r_uri, ...)
+
+sipReply         - in dialog reply
+    Reply parameters (#sip_reason, #sip_code, ...)
+ 
+LegStateChange
+   #reason == "SipRequest"
+          + Request parameters (#method, #r_uri, ...)
+   #reason == "SipReply"
+          + Reply parameters (#sip_reason, #sip_code, ...)
+
+   #reason == "other"
+       #desc            - description
+   #reason == "Canceled"
+   #reason == "NoAck"
+   #reason == "NoPrack"
+   #reason == "RtpTimeout"
+   #reason == "SessionTimeout"
+   #reason == "InternalError"
+
+BLegRefused
+    Reply parameters (#sip_reason, #sip_code, ...)
+
+-- ----- hold related -------- 
+PutOnHold
+
+ResumeHeld
+   #send_reinvite ("true" or "false")
+
+CreateHoldRequest,
+
+HandleHoldReply,
+   #succeeded ("true" or "false")
+
+
+-- ----- simple relay related - non-INVITE messages -------- 
+   avars
+      DSM_SBC_AVAR_PROFILE              - call profile
+
+RelayInit
+   #relay_event == "init"
+
+RelayInitUAC
+   #relay_event == "initUAC"
+
+RelayInitUAS,
+   #relay_event == "initUAS"
+
+RelayFinalize,
+   #relay_event == "finalize"
+
+RelayOnSipRequest,
+   #relay_event == "onSipRequest"
+
+RelayOnSipReply,
+   #relay_event == "onSipReply"
+
+RelayOnB2BRequest,
+   #relay_event == "onB2BRequest"
+
+RelayOnB2BReply
+   #relay_event == "onB2BReply"
+
+
+Conditions
+----------
+call leg events (don't work in non-call SBC DSMs)
+
+sbc.isALeg
+
+sbc.isOnHold
+
+Actions
+-------
+sbc.profileSet(profile_variable, value)    - set SBC profile options
+    *** only meaningful in 'start' event (later, most profile options are not used any more) *** 
+    profile_variables: To, RURI, FROM, Call-ID, next_hop, RURI_host, refuse_with,
+    outbound_proxy, force_outbound_proxy = "yes" | "no,
+    aleg_outbound_proxy, aleg_force_outbound_proxy = "yes" | "no,
+    next_hop_1st_req = "yes" | "no,  patch_ruri_next_hop = "yes" | "no,
+    aleg_next_hop,
+    append_headers, append_headers_req, 
+    rtprelay_enabled  = "yes" | "no,
+      force_symmetric_rtp  = "yes" | "no, aleg_force_symmetric_rtp  = "yes" | "no,
+      msgflags_symmetric_rtp = "yes" | "no,
+      rtprelay_transparent_seqno = "yes" | "no, rtprelay_transparent_ssrc = "yes" | "no, 
+      rtprelay_interface, aleg_rtprelay_interface,
+
+sbc.stopCall(string cause)
+   stop both call legs
+
+sbc.disconnect(bool hold_remote)
+   disconnect this call leg
+
+sbc.putOnHold
+   put this call leg on hold
+
+sbc.resumeHeld(bool send_reinvite)
+   resume from hold

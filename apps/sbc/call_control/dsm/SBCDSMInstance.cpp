@@ -1,0 +1,442 @@
+/*
+ * Copyright (C) 2013 Stefan Sayer
+ *
+ * This file is part of SEMS, a free SIP media server.
+ *
+ * SEMS is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version. This program is released under
+ * the GPL with the additional exemption that compiling, linking,
+ * and/or using OpenSSL is allowed.
+ *
+ * For a license to use the SEMS software under conditions
+ * other than those described here, or to purchase support for this
+ * software, please contact iptel.org by e-mail at the following addresses:
+ *    info@iptel.org
+ *
+ * SEMS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include "SBCDSMInstance.h"
+#include "SBCCallLeg.h"
+#include "events.h"
+#include "SBCSimpleRelay.h"
+
+#include "DSM.h"
+#include "SBCDSMParams.h"
+
+#include <algorithm>
+
+using namespace std;
+
+SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const map<string, string> &values)
+{
+  DBG("SBCDSMInstance::SBCDSMInstance()\n");
+  var = values;
+
+  startDiagName = "test_sbc"; // TODO
+  
+  map<string,string> config_vars;
+  bool SetParamVariables;
+
+  if (!DSMFactory::instance()->
+      addScriptDiagsToEngine("sbc", // TODO
+			     &engine,
+			     config_vars,
+			     SetParamVariables)) {
+    ERROR("initializing call with script diags set 'sbc'\n");
+    // TODO: mark this as not running!
+    return;
+  }
+
+ for (map<string, string>::const_iterator it = 
+	 config_vars.begin(); it != config_vars.end(); it++) 
+    var["config."+it->first] = it->second;
+
+  DBG("Running init of SBCDSMInstance...\n");
+  if (!engine.init(call, this, startDiagName, DSMCondition::Start)) {
+    WARN("Initialization failed for SBCDSMInstance\n");
+    // TODO: mark this as not running!
+    return;
+  }
+}
+
+SBCDSMInstance::~SBCDSMInstance()
+{
+  DBG("SBCDSMInstance::~SBCDSMInstance()\n");
+  for (std::set<DSMDisposable*>::iterator it=
+	 gc_trash.begin(); it != gc_trash.end(); it++)
+    delete *it;
+}
+
+#define RETURN_CONTINUE_OR_STOP_PROCESSING			     \
+  if (event_params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)	     \
+    return StopProcessing;					     \
+  return ContinueProcessing;
+
+/** @return whether to continue processing */
+    /** called from A/B leg when in-dialog request comes in */
+CCChainProcessing SBCDSMInstance::onInitialInvite(SBCCallLeg *call, InitialInviteHandlerParams &params)
+{
+  DBG("SBCDSMInstance::onInitialInvite()\n");
+
+  VarMapT event_params;
+  event_params["remote_party"] = params.remote_party;
+  event_params["remote_uri"] = params.remote_party;
+  event_params["from"] = params.remote_party;
+
+  avar[DSM_AVAR_REQUEST] = AmArg(params.original_invite);
+  avar[DSM_SBC_AVAR_MODIFIED_INVITE] = AmArg(params.modified_invite);
+
+  engine.runEvent(call, this, DSMCondition::Invite, &event_params);
+
+  avar.erase(DSM_SBC_AVAR_MODIFIED_INVITE);
+
+  RETURN_CONTINUE_OR_STOP_PROCESSING;
+}
+
+void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, const AmSipRequest* request) {
+  if (NULL == request)
+    return;
+
+  if (NULL != request) {
+    event_params["method"] = request->method;
+    event_params["r_uri"] = request->r_uri;
+    event_params["from"] = request->from;
+    event_params["to"] = request->to;
+    event_params["hdrs"] = request->hdrs;
+    avar[DSM_AVAR_REQUEST] = AmArg(const_cast<AmSipRequest*>(request));
+  }
+}
+
+void clearRequestParameters(AVarMapT& avar) {
+  avar.erase(DSM_AVAR_REQUEST);
+}
+
+void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, const AmSipReply* reply) {
+  if (NULL == reply)
+    return;
+
+  event_params["sip_reason"] = reply->reason;
+  event_params["sip_code"] = int2str(reply->code);
+  event_params["from"] = reply->from;
+  event_params["to"] = reply->to;
+  event_params["hdrs"] = reply->hdrs;
+  avar[DSM_AVAR_REPLY] = AmArg(const_cast<AmSipReply*>(reply));
+}
+
+void clearReplyParameters(AVarMapT& avar) {
+  avar.erase(DSM_AVAR_REPLY);
+}
+
+void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause) {
+  DBG("SBCDSMInstance::onStateChange()\n");
+  VarMapT event_params;
+
+  switch (cause.reason) {
+  case CallLeg::StatusChangeCause::SipReply:
+    event_params["reason"] = "SipReply";
+    extractReplyParameters(event_params, avar, cause.param.reply);
+    break;
+  case CallLeg::StatusChangeCause::SipRequest:
+    event_params["reason"] = "SipRequest";
+    extractRequestParameters(event_params, avar, cause.param.request);
+    break;
+  case CallLeg::StatusChangeCause::Other:
+    event_params["reason"] = "other";
+    if (NULL != cause.param.desc) 
+      event_params["desc"] = string(cause.param.desc);
+    break;
+  case CallLeg::StatusChangeCause::Canceled: event_params["reason"] = "Canceled"; break;
+  case CallLeg::StatusChangeCause::NoAck: event_params["reason"] = "NoAck"; break;
+  case CallLeg::StatusChangeCause::NoPrack: event_params["reason"] = "NoPrack"; break;
+  case CallLeg::StatusChangeCause::RtpTimeout: event_params["reason"] = "RtpTimeout"; break;
+  case CallLeg::StatusChangeCause::SessionTimeout: event_params["reason"] = "SessionTimeout"; break;
+  case CallLeg::StatusChangeCause::InternalError: event_params["reason"] = "InternalError"; break;
+  defaut: break;
+  };
+
+  engine.runEvent(call, this, DSMCondition::LegStateChange, &event_params);
+
+  switch (cause.reason) {
+  case CallLeg::StatusChangeCause::SipReply: clearReplyParameters(avar); break;
+  case CallLeg::StatusChangeCause::SipRequest: clearRequestParameters(avar); break;
+  default: break;
+  }
+}
+
+/** called from A/B leg when in-dialog request comes in */
+CCChainProcessing SBCDSMInstance::onInDialogRequest(SBCCallLeg* call, const AmSipRequest& req) {
+  DBG("SBCDSMInstance::onInDialogRequest()\n");
+  VarMapT event_params;
+  extractRequestParameters(event_params, avar, &req);
+
+  engine.runEvent(call, this, DSMCondition::SipRequest, &event_params);
+
+  clearRequestParameters(avar);
+  RETURN_CONTINUE_OR_STOP_PROCESSING;
+}
+
+CCChainProcessing SBCDSMInstance::onInDialogReply(SBCCallLeg* call, const AmSipReply& reply) {
+  DBG("SBCDSMInstance::onInDialogReply()\n");
+  VarMapT event_params;
+  extractReplyParameters(event_params, avar, &reply);
+
+  engine.runEvent(call, this, DSMCondition::SipReply, &event_params);
+
+  clearReplyParameters(avar);
+  RETURN_CONTINUE_OR_STOP_PROCESSING;
+}
+
+CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
+  DBG("SBCDSMInstance::onEvent()\n");
+
+  if (event->event_id == DSM_EVENT_ID) {
+    DSMEvent* dsm_event = dynamic_cast<DSMEvent*>(event);
+    if (dsm_event) {
+      DBG("SBCDSMInstance processing DSM event\n");
+
+      engine.runEvent(call, this, DSMCondition::DSMEvent, &dsm_event->params);
+
+      if (dsm_event->params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+	return StopProcessing;
+    }
+  }
+
+  AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
+  if(plugin_event && plugin_event->name == "timer_timeout") {
+    int timer_id = plugin_event->data.get(0).asInt();
+    map<string, string> params;
+    params["id"] = int2str(timer_id);
+    engine.runEvent(call, this, DSMCondition::Timer, &params);
+  }
+
+  // todo: process JsonRPCEvents (? see DSMCall::process)
+
+  return ContinueProcessing;
+}
+
+/** @return whether to continue processing */
+CCChainProcessing SBCDSMInstance::onBLegRefused(SBCCallLeg* call, const AmSipReply& reply)
+{
+  DBG("SBCDSMInstance::onBLegRefused()\n");
+  VarMapT event_params;
+  extractReplyParameters(event_params, avar, &reply);
+
+  engine.runEvent(call, this, DSMCondition::BLegRefused, &event_params);
+
+  clearRequestParameters(avar);
+  RETURN_CONTINUE_OR_STOP_PROCESSING;
+}
+
+// --- hold related ------------------------
+
+CCChainProcessing SBCDSMInstance::putOnHold(SBCCallLeg* call) {
+  DBG("SBCDSMInstance::putOnHold()\n");
+  VarMapT event_params;
+  engine.runEvent(call, this, DSMCondition::PutOnHold, &event_params);
+  RETURN_CONTINUE_OR_STOP_PROCESSING;
+}
+
+CCChainProcessing SBCDSMInstance::resumeHeld(SBCCallLeg* call, bool send_reinvite) {
+  DBG("SBCDSMInstance::resumeHeld()\n");
+  VarMapT event_params;
+  event_params["send_reinvite"] = send_reinvite?"true":"false";
+  engine.runEvent(call, this, DSMCondition::ResumeHeld, &event_params);
+  RETURN_CONTINUE_OR_STOP_PROCESSING;
+}
+
+CCChainProcessing SBCDSMInstance::createHoldRequest(SBCCallLeg* call, AmSdp& sdp) {
+  DBG("SBCDSMInstance::createHoldRequest()\n");
+  VarMapT event_params;
+  // TODO: encapsulate SDP so actions can manipulate Hold request (?)
+  engine.runEvent(call, this, DSMCondition::CreateHoldRequest, &event_params);
+  RETURN_CONTINUE_OR_STOP_PROCESSING;
+}
+
+CCChainProcessing SBCDSMInstance::handleHoldReply(SBCCallLeg* call, bool succeeded) {
+  DBG("SBCDSMInstance::handleHoldReply()\n");
+  VarMapT event_params;
+  event_params["succeeded"] = succeeded?"true":"false";
+  engine.runEvent(call, this, DSMCondition::HandleHoldReply, &event_params);
+  RETURN_CONTINUE_OR_STOP_PROCESSING;
+}
+
+// pretty much nonsense, but necessary because DSM is passing around AmSession
+// everywhere; so we need this for non-call relays
+void SBCDSMInstance::resetDummySession(SimpleRelayDialog *relay) {
+  if (NULL == dummy_session.get())  {
+    dummy_session.reset(new AmSession());
+    // copy the most important things
+    // TODO: initialize stuff from relay dialog in dummy session to be visible in DSM 
+    dummy_session->dlg->setCallid(relay->getCallid());
+    dummy_session->dlg->setLocalTag(relay->getLocalTag());
+    dummy_session->dlg->setRemoteTag(relay->getRemoteTag());
+    dummy_session->dlg->setLocalUri(relay->getLocalUri());
+    dummy_session->dlg->setRemoteUri(relay->getRemoteUri());
+  }
+}
+// ------------ simple relay interface --------------------------------------- */
+void SBCDSMInstance::init(SBCCallProfile &profile, SimpleRelayDialog *relay) {
+  DBG("SBCDSMInstance::init() - simple relay\n");
+  resetDummySession(relay);
+
+  VarMapT event_params;
+  event_params["relay_event"] = "init";
+  avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
+  engine.runEvent(dummy_session.get(), this, DSMCondition::RelayInit, &event_params);
+  avar.erase(DSM_SBC_AVAR_PROFILE);
+}
+
+void SBCDSMInstance::initUAC(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest &req) {
+  DBG("SBCDSMInstance::initUAC() - simple relay\n");
+  resetDummySession(relay);
+
+  VarMapT event_params;
+  event_params["relay_event"] = "initUAC";
+  avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
+  extractRequestParameters(event_params, avar, &req);
+  engine.runEvent(dummy_session.get(), this, DSMCondition::RelayInitUAC, &event_params);
+  clearRequestParameters(avar);
+  avar.erase(DSM_SBC_AVAR_PROFILE);
+}
+
+void SBCDSMInstance::initUAS(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest &req) {
+  DBG("SBCDSMInstance::initUAS() - simple relay\n");
+  resetDummySession(relay);
+  VarMapT event_params;
+  event_params["relay_event"] = "initUAS";
+  avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
+  extractRequestParameters(event_params, avar, &req);
+  engine.runEvent(dummy_session.get(), this, DSMCondition::RelayInitUAS, &event_params);
+  clearRequestParameters(avar);
+  avar.erase(DSM_SBC_AVAR_PROFILE);
+}
+
+void SBCDSMInstance::finalize(SBCCallProfile &profile, SimpleRelayDialog *relay) {
+  DBG("SBCDSMInstance::finalize() - relay\n");
+  resetDummySession(relay);
+  VarMapT event_params;
+  event_params["relay_event"] = "finalize";
+  avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
+  engine.runEvent(dummy_session.get(), this, DSMCondition::RelayFinalize, &event_params);
+  avar.erase(DSM_SBC_AVAR_PROFILE);
+}
+
+void SBCDSMInstance::onSipRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req) {
+  DBG("SBCDSMInstance::onSipRequest() - simple relay\n");
+  resetDummySession(relay);
+  VarMapT event_params;
+  event_params["relay_event"] = "onSipRequest";
+  avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
+  extractRequestParameters(event_params, avar, &req);
+  engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnSipRequest, &event_params);
+  clearRequestParameters(avar);
+  avar.erase(DSM_SBC_AVAR_PROFILE);
+}
+
+void SBCDSMInstance::onSipReply(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req,
+				const AmSipReply& reply,
+				AmBasicSipDialog::Status old_dlg_status) {
+  DBG("SBCDSMInstance::onSipReply() - simple relay\n");
+  resetDummySession(relay);
+  VarMapT event_params;
+  event_params["relay_event"] = "onSipReply";
+  avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
+  extractRequestParameters(event_params, avar, &req);
+  extractReplyParameters(event_params, avar, &reply); // TODO: shadows request
+  event_params["old_dlg_status"] = AmBasicSipDialog::getStatusStr(old_dlg_status);
+  engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnSipReply, &event_params);
+  clearReplyParameters(avar);
+  clearRequestParameters(avar);
+  avar.erase(DSM_SBC_AVAR_PROFILE);
+}
+
+void SBCDSMInstance::onB2BRequest(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest& req) {
+  DBG("SBCDSMInstance::onB2BRequest() - relay\n");
+  resetDummySession(relay);
+  VarMapT event_params;
+  event_params["relay_event"] = "onB2BRequest";
+  avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
+  extractRequestParameters(event_params, avar, &req);
+  engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnB2BRequest, &event_params);
+  clearRequestParameters(avar);
+  avar.erase(DSM_SBC_AVAR_PROFILE);
+}
+
+void SBCDSMInstance::onB2BReply(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipReply& reply) {
+  DBG("SBCDSMInstance::onB2BReply() - relay\n");
+  resetDummySession(relay);
+  VarMapT event_params;
+  event_params["relay_event"] = "onB2BReply";
+  avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
+  extractReplyParameters(event_params, avar, &reply);
+  engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnB2BReply, &event_params);
+  clearReplyParameters(avar);
+  avar.erase(DSM_SBC_AVAR_PROFILE);
+}
+
+// --- garbage collector related ------------------------
+
+void SBCDSMInstance::transferOwnership(DSMDisposable* d) {
+  gc_trash.insert(d);
+}
+
+void SBCDSMInstance::releaseOwnership(DSMDisposable* d) {
+  gc_trash.erase(d);
+}
+
+// --- DSM sessino API  -------------------------------------------
+
+#define NOT_IMPLEMENTED_UINT(_func)					\
+  unsigned int SBCDSMInstance::_func {					\
+    throw DSMException("core", "cause", "not implemented in DSM SBC"); \
+  }
+
+#define NOT_IMPLEMENTED(_func)						\
+  void SBCDSMInstance::_func {						\
+    throw DSMException("core", "cause", "not implemented in DSM SBC"); \
+  }
+
+NOT_IMPLEMENTED(playPrompt(const string& name, bool loop, bool front));
+NOT_IMPLEMENTED(playFile(const string& name, bool loop, bool front));
+NOT_IMPLEMENTED(playSilence(unsigned int length, bool front));
+NOT_IMPLEMENTED(recordFile(const string& name));
+NOT_IMPLEMENTED_UINT(getRecordLength());
+NOT_IMPLEMENTED_UINT(getRecordDataSize());
+NOT_IMPLEMENTED(stopRecord());
+NOT_IMPLEMENTED(setInOutPlaylist());
+NOT_IMPLEMENTED(setInputPlaylist());
+NOT_IMPLEMENTED(setOutputPlaylist());
+
+NOT_IMPLEMENTED(addToPlaylist(AmPlaylistItem* item, bool front));
+NOT_IMPLEMENTED(flushPlaylist());
+NOT_IMPLEMENTED(setPromptSet(const string& name));
+NOT_IMPLEMENTED(addSeparator(const string& name, bool front));
+NOT_IMPLEMENTED(connectMedia());
+NOT_IMPLEMENTED(disconnectMedia());
+NOT_IMPLEMENTED(mute());
+NOT_IMPLEMENTED(unmute());
+
+/** B2BUA functions */
+NOT_IMPLEMENTED(B2BconnectCallee(const string& remote_party,
+				 const string& remote_uri,
+				 bool relayed_invite));
+NOT_IMPLEMENTED(B2BterminateOtherLeg());
+NOT_IMPLEMENTED(B2BaddReceivedRequest(const AmSipRequest& req));
+NOT_IMPLEMENTED(B2BsetRelayEarlyMediaSDP(bool enabled));
+NOT_IMPLEMENTED(B2BsetHeaders(const string& hdr, bool replaceCRLF));
+NOT_IMPLEMENTED(B2BclearHeaders());
+NOT_IMPLEMENTED(B2BaddHeader(const string& hdr));
+NOT_IMPLEMENTED(B2BremoveHeader(const string& hdr));
+
+#undef NOT_IMPLEMENTED
+#undef NOT_IMPLEMENTED_UINT
