@@ -33,6 +33,7 @@
 #include "AmUtils.h"
 #include "AmEventDispatcher.h"
 #include "DSM.h"
+#include "AmB2BSession.h"
 
 #include "jsonArg.h"
 
@@ -132,6 +133,7 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("B2B.removeHeader", SCB2BRemoveHeaderAction);
   DEF_CMD("B2B.clearHeaders", SCB2BClearHeadersAction);
   DEF_CMD("B2B.setHeaders", SCB2BSetHeadersAction);
+  DEF_CMD("B2B.relayEvent", SCRelayB2BEventAction);
 
   DEF_CMD("trackObject", SCTrackObjectAction);
   DEF_CMD("releaseObject", SCReleaseObjectAction);
@@ -173,6 +175,9 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
 
   if ((cmd == "eventTest") || (cmd == "event"))
     return new TestDSMCondition(params, DSMCondition::DSMEvent);  
+
+  if (cmd == "B2Bevent")
+    return new TestDSMCondition(params, DSMCondition::B2BEvent);
 
   if (cmd == "invite") 
     return new TestDSMCondition(params, DSMCondition::Invite);  
@@ -262,39 +267,46 @@ EXEC_ACTION_START(SCPlayPromptLoopedAction){
   sc_sess->playPrompt(resolveVars(arg, sess, sc_sess, event_params), true);
 } EXEC_ACTION_END;
 
+void setEventParameters(const DSMSession* sc_sess, const string& var, VarMapT& params) {
+  if (var.empty())
+    return;
+
+  if (var == "var") {
+    params = sc_sess->var;
+  } else {
+    vector<string> vars = explode(var, ";");
+    for (vector<string>::iterator it = vars.begin(); it != vars.end(); it++) {
+      string varname = *it;
+
+      if (varname.length() && varname[varname.length()-1]=='.') {
+	DBG("adding postEvent param %s (struct)\n", varname.c_str());
+	
+	map<string, string>::const_iterator lb = sc_sess->var.lower_bound(varname);
+	while (lb != sc_sess->var.end()) {
+	  if ((lb->first.length() < varname.length()) ||
+	      strncmp(lb->first.c_str(), varname.c_str(), varname.length()))
+	    break;
+	  params[lb->first] = lb->second;
+	  lb++;
+	}
+      } else {
+	VarMapT::const_iterator v_it = sc_sess->var.find(varname);
+	if (v_it != sc_sess->var.end()) {
+	  DBG("adding postEvent param %s=%s\n",
+	      it->c_str(), v_it->second.c_str());
+	  params[varname] = v_it->second;
+	}
+      }
+    }
+  }
+}
+
 CONST_ACTION_2P(SCPostEventAction, ',', true);
 EXEC_ACTION_START(SCPostEventAction){
   string sess_id = resolveVars(par1, sess, sc_sess, event_params);
   string var = resolveVars(par2, sess, sc_sess, event_params);
   DSMEvent* ev = new DSMEvent();
-  if (!var.empty()) {
-    if (var == "var")
-      ev->params = sc_sess->var;
-    else {
-      vector<string> vars = explode(var, ";");
-      for (vector<string>::iterator it =
-	     vars.begin(); it != vars.end(); it++) {
-	string varname = *it;
-
-	if (varname.length() && varname[varname.length()-1]=='.') {
-	  DBG("adding postEvent param %s (struct)\n", varname.c_str());
-	
-	  map<string, string>::iterator lb = sc_sess->var.lower_bound(varname);
-	  while (lb != sc_sess->var.end()) {
-	    if ((lb->first.length() < varname.length()) ||
-		strncmp(lb->first.c_str(), varname.c_str(), varname.length()))
-	      break;
-	    ev->params[lb->first] = lb->second;
-	    lb++;
-	  }
-	} else {
-	  DBG("adding postEvent param %s=%s\n",
-	      it->c_str(), sc_sess->var[*it].c_str());
-	  ev->params[*it] = sc_sess->var[*it];
-	}
-      }
-    }
-  }
+  setEventParameters(sc_sess, var, ev->params);
 
   DBG("posting event to session '%s'\n", sess_id.c_str());
   if (!AmSessionContainer::instance()->postEvent(sess_id, ev)) {
@@ -303,6 +315,20 @@ EXEC_ACTION_START(SCPostEventAction){
   } else {
     sc_sess->CLR_ERRNO;
   }
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCRelayB2BEventAction) {
+  AmB2BSession* b2b_sess = dynamic_cast<AmB2BSession*>(sess);
+  if (NULL == b2b_sess) {
+    throw DSMException("script", "cause", "relayEvent used without B2B call");
+  }
+
+  string var = resolveVars(arg, sess, sc_sess, event_params);
+  B2BEvent* ev = new B2BEvent(E_B2B_APP, B2BEvent::B2BApplication);
+  setEventParameters(sc_sess, var, ev->params);
+
+  b2b_sess->relayEvent(ev);
+
 } EXEC_ACTION_END;
 
 CONST_ACTION_2P(SCPlayFileAction, ',', true);

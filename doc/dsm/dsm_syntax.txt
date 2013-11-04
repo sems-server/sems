@@ -221,6 +221,13 @@ B2B call control
   e.g. 
   B2B.setHeaders("P-One: value\r\nP-Two: anothervalue", true)
 
+ B2B.relayEvent(variable_name;variable_name;...)
+   relay B2Bevent to related B2B session; variables copied as event parameters
+   e.g. B2B.relayEvent(var1;var2;var3)     relay event with var1, var2, var3
+
+ B2B.relayEvent("var")
+   relay B2Bevent to related B2B session with all variables of current DSM session
+
  Logging
  -------
 
@@ -356,6 +363,10 @@ brackets match.
  event(expr) or eventTest(expr)
   generic event, e.g. passed from DI or another call with postEvent
   parameters depend on the DI call/the ones passed with postEvent
+
+B2Bevent(expr)
+  generic event from B2B related call leg
+  parameters depend on the ones passed with B2B.relayEvent
 
  keyPress(key)
   alias to key(#key==key)

@@ -87,6 +87,7 @@ class DSMCondition
     PlaylistSeparator,
 
     DSMEvent,    
+    B2BEvent,
     DSMException,
 
     XmlrpcResponse,

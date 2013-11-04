@@ -107,6 +107,7 @@ DEF_ACTION_2P(SCPlayFileFrontAction);
 DEF_ACTION_1P(SCPlaySilenceAction);
 DEF_ACTION_1P(SCPlaySilenceFrontAction);
 DEF_ACTION_2P(SCPostEventAction);
+DEF_ACTION_1P(SCRelayB2BEventAction);
 
 DEF_ACTION_2P(SCB2BConnectCalleeAction);
 DEF_ACTION_1P(SCB2BTerminateOtherLegAction);

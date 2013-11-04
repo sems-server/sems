@@ -45,9 +45,24 @@ enum { B2BTerminateLeg,
 /** \brief base class for event in B2B session */
 struct B2BEvent: public AmEvent
 {
-  B2BEvent(int ev_id) 
-    : AmEvent(ev_id)
+  enum B2BEventType {
+    B2BCore,
+    B2BApplication,
+  } ev_type;
+
+  map<string, string> params;
+
+ B2BEvent(int ev_id)
+   : AmEvent(ev_id), ev_type(B2BCore)
   {}
+
+ B2BEvent(int ev_id, B2BEventType ev_type)
+   : AmEvent(ev_id), ev_type(ev_type)
+  { }
+
+ B2BEvent(int ev_id, B2BEventType ev_type, map<string, string> params)
+   : AmEvent(ev_id), ev_type(ev_type), params(params)
+  { }
 };
 
 /** \brief base class for SIP event in B2B session */
@@ -179,9 +194,6 @@ private:
   /** reset relation with other leg */
   virtual void clear_other();
 
-  /** Relay one event to the other side. @return 0 on success */
-  virtual int relayEvent(AmEvent* ev);
-
   /** send a relayed SIP Request */
   int relaySip(const AmSipRequest& req);
 
@@ -295,6 +307,9 @@ private:
     other_id = n_other_id;
   }
   virtual const string& getOtherId() const { return other_id; }
+
+  /** Relay one event to the other side. @return 0 on success */
+  virtual int relayEvent(AmEvent* ev);
 
   void set_sip_relay_only(bool r);
 
