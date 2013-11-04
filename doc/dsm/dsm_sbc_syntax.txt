@@ -127,3 +127,22 @@ sbc.putOnHold                      - put this call leg on hold
 sbc.resumeHeld(bool send_reinvite) - resume from hold
 
 sbc.getSBCCallStatus(varname)      - get sbc call status into $varname
+
+sbc.relayReliableEvent(paramlist, processed_paramlist, unprocessed_paramlist) - relay reliable Event
+  if processed (#processed=true in other leg), event is sent back with processed_paramlist parameters,
+  if unprocessed, event is sent back with unprocessed_paramlist parameters
+  Example:
+   set($fwd_param1="this parameter goes fwd");
+   set($fwd_param2="this parameter goes fwd, too");
+   set($bck_param1="this parameter goes back if processed");
+   set($bck_param2="this parameter goes back if processed, too");
+   set($bck_unp_param1="this parameter goes back if not processed");
+   set($bck_unp_param2="this parameter goes back if not processed, too");
+   sbc.relayReliableEvent(fwd_param1;fwd_param2, bck_param1;bck_param2, bck_unp_param1;bck_unp_param2);
+
+   ...
+
+   transition "B2B event" RUN - B2Bevent / {
+     logParams(3);
+     set(#processed="true");
+   } -> RUN;

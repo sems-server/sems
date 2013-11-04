@@ -50,6 +50,7 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("sbc.resumeHeld", MODSBCActionResumeHeld);
 
   DEF_CMD("sbc.getCallStatus", MODSBCActionGetCallStatus);
+  DEF_CMD("sbc.relayReliableEvent", MODSBCActionB2BRelayReliable);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -316,4 +317,53 @@ EXEC_ACTION_START(MODSBCActionGetCallStatus) {
     varname.erase(0, 1);
   sc_sess->var[varname] = call_leg->getCallStatusStr();
   DBG("set $%s='%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
+} EXEC_ACTION_END;
+
+void setReliableEventParameters(const DSMSession* sc_sess, const string& var, VarMapT& params) {
+  vector<string> vars = explode(var, ";");
+  for (vector<string>::iterator it = vars.begin(); it != vars.end(); it++) {
+    string varname = *it;
+
+    if (varname.length() && varname[varname.length()-1]=='.') {
+      DBG("adding postEvent param %s (struct)\n", varname.c_str());
+
+      map<string, string>::const_iterator lb = sc_sess->var.lower_bound(varname);
+      while (lb != sc_sess->var.end()) {
+	if ((lb->first.length() < varname.length()) ||
+	    strncmp(lb->first.c_str(), varname.c_str(), varname.length()))
+	  break;
+	params[lb->first] = lb->second;
+	lb++;
+      }
+    } else {
+      VarMapT::const_iterator v_it = sc_sess->var.find(varname);
+      if (v_it != sc_sess->var.end()) {
+	DBG("adding reliableEvent param %s=%s\n",
+	    it->c_str(), v_it->second.c_str());
+	params[varname] = v_it->second;
+      }
+    }
+  }
+}
+
+CONST_ACTION_2P(MODSBCActionB2BRelayReliable, ',', false);
+EXEC_ACTION_START(MODSBCActionB2BRelayReliable) {
+  GET_CALL_LEG(B2BRelayReliable);
+  string ev_params = par1;
+  vector<string> success_params = explode(par2, ","); // q&d...
+  B2BEvent* processed = new B2BEvent(E_B2B_APP, B2BEvent::B2BApplication);
+  if (success_params.size()) {
+    setReliableEventParameters(sc_sess, trim(success_params[0], " "), processed->params);
+  }
+  B2BEvent* unprocessed = new B2BEvent(E_B2B_APP, B2BEvent::B2BApplication);
+  if (success_params.size() > 1) {
+    DBG("p='%s'\n", success_params[1].c_str());
+    setReliableEventParameters(sc_sess, trim(success_params[1], " "), unprocessed->params);
+  }
+
+  ReliableB2BEvent* rel_b2b_ev = new ReliableB2BEvent(E_B2B_APP, B2BEvent::B2BApplication, processed, unprocessed);
+  setReliableEventParameters(sc_sess, ev_params, rel_b2b_ev->params);
+
+  rel_b2b_ev->setSender(call_leg->getLocalTag());
+  call_leg->relayEvent(rel_b2b_ev);
 } EXEC_ACTION_END;

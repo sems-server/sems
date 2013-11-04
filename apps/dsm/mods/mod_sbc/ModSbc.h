@@ -46,5 +46,6 @@ DEF_ACTION_1P(MODSBCActionGetCallStatus);
 DEF_SCCondition(SBCIsALegCondition);
 DEF_SCCondition(SBCIsOnHoldCondition);
 
+DEF_ACTION_2P(MODSBCActionB2BRelayReliable);
 
 #endif

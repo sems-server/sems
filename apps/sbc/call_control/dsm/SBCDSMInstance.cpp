@@ -209,6 +209,27 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
 
       if (dsm_event->params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
 	return StopProcessing;
+      return ContinueProcessing;
+    }
+  }
+
+  if (event->event_id ==  E_B2B_APP) {
+    B2BEvent* b2b_ev = dynamic_cast<B2BEvent*>(event);
+    if(b2b_ev && b2b_ev->ev_type == B2BEvent::B2BApplication) {
+      engine.runEvent(call, this, DSMCondition::B2BEvent, &b2b_ev->params);
+
+      if (b2b_ev->params[DSM_SBC_PARAM_PROCESSED] == DSM_TRUE) {
+	ReliableB2BEvent* rel_b2b_ev = dynamic_cast<ReliableB2BEvent*>(b2b_ev);
+	if (NULL != rel_b2b_ev) {
+	  rel_b2b_ev->markAsProcessed();
+	} else {
+	  DBG("possible script writer error: marked #processed on non-reliable B2BEvent");
+	}
+      }
+
+      if (b2b_ev->params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+	return StopProcessing;
+      return ContinueProcessing;
     }
   }
 
@@ -218,6 +239,10 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
     map<string, string> params;
     params["id"] = int2str(timer_id);
     engine.runEvent(call, this, DSMCondition::Timer, &params);
+
+    if (params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+      return StopProcessing;
+    return ContinueProcessing;
   }
 
   // todo: process JsonRPCEvents (? see DSMCall::process)
