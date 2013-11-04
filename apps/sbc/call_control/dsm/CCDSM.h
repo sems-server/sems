@@ -58,7 +58,7 @@ class CCDSMModule: public AmObject /* passing through DI */, public AmDynInvoke,
     virtual void onUnload() { TRACE(MOD_NAME " unloading...\n"); }
 
     // CC interface
-    void init(SBCCallLeg *call, const map<string, string> &values);
+    bool init(SBCCallLeg *call, const map<string, string> &values);
     CCChainProcessing onInitialInvite(SBCCallLeg *call, InitialInviteHandlerParams &params);
     CCChainProcessing onBLegRefused(SBCCallLeg *call, const AmSipReply& reply);
     void onDestroyLeg(SBCCallLeg *call);
@@ -73,7 +73,7 @@ class CCDSMModule: public AmObject /* passing through DI */, public AmDynInvoke,
     int relayEvent(SBCCallLeg *call, AmEvent *e);
 
     // simple relay
-    void init(SBCCallProfile &profile, SimpleRelayDialog *relay, void *&user_data);
+    bool init(SBCCallProfile &profile, SimpleRelayDialog *relay, void *&user_data);
     void initUAC(const AmSipRequest &req, void *user_data);
     void initUAS(const AmSipRequest &req, void *user_data);
     void finalize(void *user_data);

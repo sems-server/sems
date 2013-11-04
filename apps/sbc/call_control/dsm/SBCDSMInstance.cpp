@@ -36,24 +36,28 @@
 
 using namespace std;
 
-SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const map<string, string> &values)
+SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const VarMapT& values)
 {
   DBG("SBCDSMInstance::SBCDSMInstance()\n");
   var = values;
 
-  startDiagName = "test_sbc"; // TODO
+  startDiagName = var[DSM_SBC_CCVAR_START_DIAG];
+  appBundle = var[DSM_SBC_CCVAR_APP_BUNDLE];
+
+  if (startDiagName.empty()) {
+    throw string("DSM SBC call control "DSM_SBC_CCVAR_START_DIAG" parameter not set (see call profile)'");
+  }
   
   map<string,string> config_vars;
-  bool SetParamVariables;
+  bool SetParamVariables; // unused
 
   if (!DSMFactory::instance()->
-      addScriptDiagsToEngine("sbc", // TODO
+      addScriptDiagsToEngine(appBundle,
 			     &engine,
 			     config_vars,
 			     SetParamVariables)) {
-    ERROR("initializing call with script diags set 'sbc'\n");
-    // TODO: mark this as not running!
-    return;
+    ERROR("initializing call with DSM app bundle '"DSM_SBC_CCVAR_APP_BUNDLE "'\n");
+    throw string("initializing call with DSM app bundle '" DSM_SBC_CCVAR_APP_BUNDLE);
   }
 
  for (map<string, string>::const_iterator it = 
@@ -311,7 +315,7 @@ void SBCDSMInstance::resetDummySession(SimpleRelayDialog *relay) {
   }
 }
 // ------------ simple relay interface --------------------------------------- */
-void SBCDSMInstance::init(SBCCallProfile &profile, SimpleRelayDialog *relay) {
+bool SBCDSMInstance::init(SBCCallProfile &profile, SimpleRelayDialog *relay) {
   DBG("SBCDSMInstance::init() - simple relay\n");
   resetDummySession(relay);
 
@@ -320,6 +324,8 @@ void SBCDSMInstance::init(SBCCallProfile &profile, SimpleRelayDialog *relay) {
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayInit, &event_params);
   avar.erase(DSM_SBC_AVAR_PROFILE);
+
+  return true;
 }
 
 void SBCDSMInstance::initUAC(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest &req) {

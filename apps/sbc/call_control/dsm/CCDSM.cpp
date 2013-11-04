@@ -86,18 +86,27 @@ void CCDSMModule::resetDSMInstance(SBCCallProfile &profile)
   }
 }
 
-void CCDSMModule::init(SBCCallLeg *call, const map<string, string> &values)
+bool CCDSMModule::init(SBCCallLeg *call, const map<string, string> &values)
 {
   DBG("ExtCC: init - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
 
   SBCCallProfile &profile = call->getCallProfile();
-  resetDSMInstance(profile); // just forget the handler if already set (FIXME????? when is init called?)
+  resetDSMInstance(profile); // just forget the handler if already set
 
   // if (!call->isALeg()) return;
 
   // create DSM handler if necessary (with evaluated configuration)
-  SBCDSMInstance* h = new SBCDSMInstance(call, values);
-  profile.cc_vars[data_var_name] = (AmObject*)h;
+  try {
+    SBCDSMInstance* h = new SBCDSMInstance(call, values);
+    profile.cc_vars[data_var_name] = (AmObject*)h;
+  } catch (const string& e) {
+    ERROR("initializing DSM Call control module: '%s'\n", e.c_str());
+    return false;
+  } catch (...) {
+    ERROR("initializing DSM Call control module\n");
+    return false;
+  }
+  return true;
 }
 
 #define GET_DSM_INSTANCE				      \
@@ -203,16 +212,19 @@ struct RelayUserData {
 };
 
 
-void CCDSMModule::init(SBCCallProfile& profile, SimpleRelayDialog *relay, void *&user_data) {
+bool CCDSMModule::init(SBCCallProfile& profile, SimpleRelayDialog *relay, void *&user_data) {
   SBCDSMInstance* h = getDSMInstance(profile);
   if (NULL == h) {
     user_data = NULL;
-    return;
+    return false;
   }
 
-  h->init(profile, relay);
+  if (!h->init(profile, relay)) {
+    return false;
+  }
 
   user_data = new RelayUserData(relay, profile);
+  return true;
 }
 
 #define GET_USER_DATA				\

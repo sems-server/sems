@@ -1,4 +1,44 @@
 
+DSM applications for SBC
+------------------------
+The "dsm" call control module implements together with mod_sbc an DSM
+layer on top of the SBC, so that custom SBC call flows can be implemented
+using DSM script.
+
+Most of the call related DSM actions (handling audio with playFile, recordFile etc)
+do not work in SBC DSMs.
+
+DSM scripts for SBC are configured in a separate application bundle
+(a .conf file in dsm.conf conf_dir=...), set in the call control variable
+"app_bundle" and started up with the DSM set in the call control variable
+"start_diag".
+
+Configuration Example:
+  sbc.conf:
+   profiles=cc_dsm
+   load_cc_plugins=cc_dsm
+   active_profile=cc_dsm
+  cc_dsm.sbcprofile.conf:
+    RURI=sip:test@192.168.5.110:5088
+    call_control=cc_dsm
+    cc_dsm_module=cc_dsm
+    cc_dsm_app_bundle=sbc
+    cc_dsm_start_diag=test_sbc
+  dsm.conf
+    conf_dir=etc/sbc_dsm
+  etc/sbc_dsm/sbc.conf
+    diag_path=./etc/sbc_dsm
+    load_diags=test_sbc
+    mod_path=../apps/dsm/mods/lib/
+  etc/sbc_dsm/test_sbc.dsm
+     import(mod_sbc);
+     initial state START;
+     transition "init event" START - start / {
+       log(3, "initializing");
+       logAll(3);
+       sbc.profileSet(RURI, sip:set_from_DSM@192.168.5.110:5088);
+      ...
+
 
 Variables
 ---------

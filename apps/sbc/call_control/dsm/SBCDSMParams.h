@@ -8,5 +8,8 @@
 #define DSM_SBC_AVAR_MODIFIED_INVITE  "__modified_invite"
 #define DSM_SBC_AVAR_PROFILE          "__call_profile"
 
+#define DSM_SBC_CCVAR_APP_BUNDLE      "app_bundle"
+#define DSM_SBC_CCVAR_START_DIAG      "start_diag"
+
 #endif
 

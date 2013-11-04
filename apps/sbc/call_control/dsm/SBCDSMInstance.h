@@ -41,6 +41,7 @@ class SBCDSMInstance
 {
   private:
   DSMStateEngine engine;
+  string appBundle;
   string startDiagName;
 
   // owned by this instance
@@ -51,7 +52,7 @@ class SBCDSMInstance
   void resetDummySession(SimpleRelayDialog *relay);
 
   public:
-    SBCDSMInstance(SBCCallLeg *call, const map<string, string> &values);
+    SBCDSMInstance(SBCCallLeg *call, const VarMapT& values);
     ~SBCDSMInstance();
     CCChainProcessing onInitialInvite(SBCCallLeg* call, InitialInviteHandlerParams& params);
     void onStateChange(SBCCallLeg* call, const CallLeg::StatusChangeCause& cause);
@@ -68,7 +69,7 @@ class SBCDSMInstance
     CCChainProcessing handleHoldReply(SBCCallLeg* call, bool succeeded);
 
     // ------------ simple relay interface --------------------------------------- */
-    void init(SBCCallProfile &profile, SimpleRelayDialog *relay);
+    bool init(SBCCallProfile &profile, SimpleRelayDialog *relay);
     void initUAC(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest &req);
     void initUAS(SBCCallProfile &profile, SimpleRelayDialog *relay, const AmSipRequest &req);
     void finalize(SBCCallProfile &profile, SimpleRelayDialog *relay);
