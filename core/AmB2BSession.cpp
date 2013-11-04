@@ -362,13 +362,9 @@ void AmB2BSession::onSipRequest(const AmSipRequest& req)
   }
 
   AmSdp sdp;
-  if ((rtp_relay_mode == RTP_Relay || rtp_relay_mode == RTP_Transcoding) && media_session) {
-    // We have to update media session before filtering because we may want to
-    // use the codec later filtered out for transcoding.
-    if (parseSdp(sdp, req)) {
-      updateRemoteSdp(sdp);
-    }
-  }
+  // We have to update media session before filtering because we may want to
+  // use the codec later filtered out for transcoding.
+  if (parseSdp(sdp, req)) updateRemoteSdp(sdp);
 
   if(!fwd)
     AmSession::onSipRequest(req);
@@ -1295,13 +1291,13 @@ void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) 
   if ((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) {
     setMediaSession(new AmB2BMedia(this, callee_session)); // we need to add our reference
     callee_session->setMediaSession(getMediaSession());
-    
-    // Misusing invite_req here, but seems to be better than misusing
-    // invite_sdp. The best way would be to propagate SDP as parameter of
-    // initializeRTPRelay method.
-    AmSdp sdp;
-    if (parseSdp(sdp, invite_req)) updateRemoteSdp(sdp);
   }
+
+  // Misusing invite_req here, but seems to be better than misusing
+  // invite_sdp. The best way would be to propagate SDP as parameter of
+  // initializeRTPRelay method.
+  AmSdp sdp;
+  if (parseSdp(sdp, invite_req)) updateRemoteSdp(sdp);
 }
 
 AmB2BCalleeSession::AmB2BCalleeSession(const string& other_local_tag)
