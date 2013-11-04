@@ -35,7 +35,7 @@ class ExtendedCCInterface
     /** First method called from extended CC module interface.
      * It should initialize CC module internals (values from sbcprofile.conf can
      * be used for evaluating CC module parameters). */
-    virtual void init(SBCCallLeg *call, const map<string, string> &values) { }
+    virtual bool init(SBCCallLeg *call, const map<string, string> &values) { return true; }
 
     virtual void onStateChange(SBCCallLeg *call, const CallLeg::StatusChangeCause &cause) { };
 
@@ -83,7 +83,7 @@ class ExtendedCCInterface
 
     // using extended CC modules with simple relay
 
-    virtual void init(SBCCallProfile &profile, SimpleRelayDialog *relay, void *&user_data) { }
+    virtual bool init(SBCCallProfile &profile, SimpleRelayDialog *relay, void *&user_data) { return true; }
     virtual void initUAC(const AmSipRequest &req, void *user_data) { }
     virtual void initUAS(const AmSipRequest &req, void *user_data) { }
     virtual void finalize(void *user_data) { }

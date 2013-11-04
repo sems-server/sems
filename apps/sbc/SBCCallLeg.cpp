@@ -223,7 +223,10 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCExtModules();
+  if (!initCCExtModules()) {
+    ERROR("initializing extended call control modules\n");
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
+  }
 
   setLogger(caller->getLogger());
 }
@@ -845,7 +848,10 @@ void SBCCallLeg::onInvite(const AmSipRequest& req)
     throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);
   }
 
-  initCCExtModules();
+  if (!initCCExtModules()) {
+    ERROR("initializing extended call control modules\n");
+    throw AmSession::Exception(500, SIP_REPLY_SERVER_INTERNAL_ERROR);    
+  }
 
   string ruri, to, from;
   AmSipRequest uac_req(req);
@@ -1573,7 +1579,7 @@ bool SBCCallLeg::reinvite(const AmSdp &sdp, unsigned &request_cseq)
   return true;
 }
 
-void SBCCallLeg::initCCExtModules()
+bool SBCCallLeg::initCCExtModules()
 {
   // init extended call control modules
   vector<AmDynInvoke*>::iterator cc_mod = cc_modules.begin();
@@ -1590,19 +1596,32 @@ void SBCCallLeg::initCCExtModules()
       ExtendedCCInterface *iface = dynamic_cast<ExtendedCCInterface*>(ret[0].asObject());
       if (iface) {
         DBG("extended CC interface offered by cc_module '%s'\n", cc_module.c_str());
-        cc_ext.push_back(iface);
-
         // module initialization
-        iface->init(this, cc_if.cc_values);
+        if (!iface->init(this, cc_if.cc_values)) {
+	  ERROR("initializing extended call control interface\n");
+	  // call onDestroyLeg to clean up on call not going forward
+	  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
+	    (*i)->onDestroyLeg(this);
+	  }
+	  return false;
+	}
+
+        cc_ext.push_back(iface);
       }
       else WARN("BUG: returned invalid extended CC interface by cc_module '%s'\n", cc_module.c_str());
     }
+    catch (const string& s) {
+      DBG("initialization error '%s' or extended CC interface "
+	  "not supported by cc_module '%s'\n", s.c_str(), cc_module.c_str());
+    }
     catch (...) {
-      DBG("extended CC interface not supported by cc_module '%s'\n", cc_module.c_str());
+      DBG("initialization error or extended CC interface not "
+	  "supported by cc_module '%s'\n", cc_module.c_str());
     }
 
     ++cc_mod;
   }
+  return true; // success
 }
 
 void SBCCallLeg::putOnHold()
