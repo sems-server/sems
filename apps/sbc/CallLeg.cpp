@@ -47,13 +47,122 @@ ReliableB2BEvent::~ReliableB2BEvent()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// helper functions
+
+enum HoldMethod { SendonlyStream, InactiveStream, ZeroedConnection };
+
+static const string sendonly("sendonly");
+static const string recvonly("recvonly");
+static const string sendrecv("sendrecv");
+static const string inactive("inactive");
+
+static const string zero_connection("0.0.0.0");
+
+/** returns true if connection is avtive.
+ * Returns given default_value if the connection address is empty to cope with
+ * connection address set globaly and not per media stream */
+static bool connectionActive(const SdpConnection &connection, bool default_value)
+{
+  if (connection.address.empty()) return default_value;
+  if (connection.address == zero_connection) return false;
+  return true;
+}
+
+enum MediaActivity { Inactive, Sendonly, Recvonly, Sendrecv };
+
+/** Returns true if there is no direction=inactione or sendonly attribute in
+ * given media stream. It doesn't check the connection address! */
+static MediaActivity getMediaActivity(const vector<SdpAttribute> &attrs, MediaActivity default_value)
+{
+  // go through attributes and try to find sendonly/recvonly/sendrecv/inactive
+  for (std::vector<SdpAttribute>::const_iterator a = attrs.begin(); 
+      a != attrs.end(); ++a)
+  {
+    if (a->attribute == sendonly) return Sendonly;
+    if (a->attribute == inactive) return Inactive;
+    if (a->attribute == recvonly) return Recvonly;
+    if (a->attribute == sendrecv) return Sendrecv;
+  }
+
+  return default_value; // none of the attributes given, return (session) default
+}
+
+static MediaActivity getMediaActivity(const SdpMedia &m, MediaActivity default_value)
+{
+  if (m.send) {
+    if (m.recv) return Sendrecv;
+    else return Sendonly;
+  }
+  else {
+    if (m.recv) return Recvonly;
+  }
+  return Inactive;
+}
+
+static bool isHoldRequest(AmSdp &sdp, HoldMethod &method)
+{
+  // set defaults from session parameters and attributes
+  // inactive/sendonly/sendrecv/recvonly may be given as session attributes,
+  // connection can be given for session as well
+  bool connection_active = connectionActive(sdp.conn, false /* empty connection like inactive? */);
+  MediaActivity session_activity = getMediaActivity(sdp.attributes, Sendrecv);
+
+  for (std::vector<SdpMedia>::iterator m = sdp.media.begin(); 
+      m != sdp.media.end(); ++m) 
+  {
+    if (m->port == 0) continue; // this stream is disabled, handle like inactive (?)
+    if (!connectionActive(m->conn, connection_active)) {
+      method = ZeroedConnection;
+      continue;
+    }
+    switch (getMediaActivity(*m, session_activity)) {
+      case Sendonly:
+        method = SendonlyStream;
+        continue;
+
+      case Inactive:
+        method = InactiveStream;
+        continue;
+
+      case Recvonly: // ?
+      case Sendrecv:
+        return false; // media stream is active
+    }
+  }
+
+  if (sdp.media.empty()) {
+    // no streams in the SDP, needed to set method somehow
+    if (!connection_active) method = ZeroedConnection;
+    else {
+      switch (session_activity) {
+        case Sendonly:
+          method = SendonlyStream;
+          break;
+
+        case Inactive:
+          method = InactiveStream;
+          break;
+
+        case Recvonly:
+        case Sendrecv:
+          method = InactiveStream; // well, no stream is something like InactiveStream, isn't it?
+          break;
+
+      }
+    }
+  }
+
+  return true; // no active stream was found
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 // callee
 CallLeg::CallLeg(const CallLeg* caller, AmSipDialog* p_dlg, AmSipSubscription* p_subs)
   : AmB2BSession(caller->getLocalTag(),p_dlg,p_subs),
     call_status(Disconnected),
-    hold_request_cseq(0), 
-    hold_status(NotHeld)
+    on_hold(false)
 {
   a_leg = !caller->a_leg; // we have to be the complement
 
@@ -96,8 +205,7 @@ CallLeg::CallLeg(const CallLeg* caller, AmSipDialog* p_dlg, AmSipSubscription* p
 CallLeg::CallLeg(AmSipDialog* p_dlg, AmSipSubscription* p_subs)
   : AmB2BSession("",p_dlg,p_subs),
     call_status(Disconnected),
-    hold_request_cseq(0),
-    hold_status(NotHeld)
+    on_hold(false)
 {
   a_leg = true;
 
@@ -337,7 +445,7 @@ void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
 
   // FIXME: hack here - it should be part of clearRtpReceiverRelay but we
   // need to do after RTP mode change above
-  resumeHeld(false);
+  // FIXME: resumeHeld(false);
 
   onCallConnected(reply);
 
@@ -512,7 +620,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
 
   // release old signaling and media session
   clear_other();
-  resumeHeld(false);
+  // FIXME: resumeHeld(false);
   clearRtpReceiverRelay();
 
   // check if we aren't processing INVITE now (BLF ringing call pickup)
@@ -620,13 +728,18 @@ void CallLeg::disconnect(bool hold_remote)
     case Ringing:
       WARN("trying to disconnect in not connected state, terminating not connected legs in advance (was it intended?)\n");
       terminateNotConnectedLegs();
+      clearRtpReceiverRelay(); // we can't stay connected (at media level) with the other leg
       break;
 
     case Connected:
-      resumeHeld(false); // TODO: do this as part of clearRtpReceiverRelay
+      //FIXME: resumeHeld(false); // TODO: do this as part of clearRtpReceiverRelay
       clearRtpReceiverRelay(); // we can't stay connected (at media level) with the other leg
       break; // this is OK
   }
+
+  // create new media session for us if needed
+  if (getRtpRelayMode() != RTP_Direct)
+    setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
 
   clear_other();
   set_sip_relay_only(false); // we can't relay once disconnected
@@ -638,113 +751,84 @@ void CallLeg::disconnect(bool hold_remote)
   }
 }
 
-void CallLeg::createHoldRequest(AmSdp &sdp)
+static void sdp2body(const AmSdp &sdp, AmMimeBody &body)
 {
-  AmB2BMedia *ms = getMediaSession();
-  if (ms) {
-    ms->mute(a_leg);
-    ms->createHoldRequest(sdp, a_leg, false /*mark_zero_connection*/, true /*mark_sendonly*/);
-  }
-  else {
-    sdp.clear();
+  string body_str;
+  sdp.print(body_str);
 
-    // FIXME: versioning
-    sdp.version = 0;
-    sdp.origin.user = "sems";
-    //offer.origin.sessId = 1;
-    //offer.origin.sessV = 1;
-    sdp.sessionName = "sems";
-    sdp.conn.network = NT_IN;
-    sdp.conn.addrType = AT_V4;
-    sdp.conn.address = "0.0.0.0";
-
-    // FIXME: use media line from stored body?
-    sdp.media.push_back(SdpMedia());
-    SdpMedia &m = sdp.media.back();
-    m.type = MT_AUDIO;
-    m.transport = TP_RTPAVP;
-    m.send = false;
-    m.recv = false;
-    m.payloads.push_back(SdpPayload(0));
-  }
+  AmMimeBody *s = body.hasContentType(SIP_APPLICATION_SDP);
+  if (s) s->parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
+  else body.parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
 }
 
 void CallLeg::putOnHold()
 {
-  hold_status = HoldRequested;
-
-  if (isOnHold()) {
-    handleHoldReply(true); // really?
-    return;
-  }
+  if (on_hold) return;
 
   TRACE("putting remote on hold\n");
+  oa.hold = OA::HoldRequested;
 
   AmSdp sdp;
   createHoldRequest(sdp);
   updateLocalSdp(sdp);
 
   AmMimeBody body;
-  string body_str;
-  sdp.print(body_str);
-  body.parse(SIP_APPLICATION_SDP, (const unsigned char*)body_str.c_str(), body_str.length());
+  sdp2body(sdp, body);
   if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
-    handleHoldReply(false);
+    offerRejected();
   }
-  else hold_request_cseq = dlg->cseq - 1;
+  //else hold_request_cseq = dlg->cseq - 1;
 }
 
-void CallLeg::resumeHeld(bool send_reinvite)
+void CallLeg::resumeHeld(/*bool send_reinvite*/)
 {
-  hold_status = ResumeRequested;
+  if (!on_hold) return;
 
-  if (!isOnHold()) {
-    handleHoldReply(true); // really?
-    return;
+  try {
+    TRACE("resume held remote\n");
+    oa.hold = OA::ResumeRequested;
+
+    AmSdp sdp;
+    createResumeRequest(sdp);
+    if (sdp.media.empty()) {
+      ERROR("invalid un-hold SDP, can't unhold\n");
+      offerRejected();
+      return;
+    }
+    updateLocalSdp(sdp);
+
+    AmMimeBody body(established_body);
+    sdp2body(sdp, body);
+    if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+      ERROR("re-INVITE failed\n");
+      offerRejected();
+    }
+    //else hold_request_cseq = dlg->cseq - 1;
   }
-
-  TRACE("resume held remote\n");
-
-  if (!send_reinvite) {
-    // probably another SDP in progress
-    handleHoldReply(true);
-    return;
+  catch (...) {
+    offerRejected();
   }
-
-  AmMimeBody body(established_body);
-  updateLocalBody(body);
-  if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
-    ERROR("re-INVITE failed\n");
-    handleHoldReply(false);
-  }
-  else hold_request_cseq = dlg->cseq - 1;
 }
 
-void CallLeg::handleHoldReply(bool succeeded)
+void CallLeg::holdAccepted()
 {
-  switch (hold_status) {
-    case HoldRequested:
-      // ignore the result (if hold request is not accepted that's a pitty but
-      // we are Disconnected anyway)
-      if (call_status == Disconnecting) updateCallStatus(Disconnected);
+  if (call_status == Disconnecting) updateCallStatus(Disconnected);
+  on_hold = true;
+  AmB2BMedia *ms = getMediaSession();
+  if (ms) ms->mute(!a_leg); // mute the stream in other (!) leg
+}
 
-      if (succeeded) hold_status = OnHold; // remote put on hold successfully
-      break;
+void CallLeg::holdRejected()
+{
+  if (call_status == Disconnecting) updateCallStatus(Disconnected);
+}
 
-    case ResumeRequested:
-      if (succeeded) {
-        hold_status = NotHeld; // call resumed successfully
-        AmB2BMedia *ms = getMediaSession();
-        if (ms) ms->unmute(a_leg);
-      }
-      break;
-
-    case NotHeld:
-    case OnHold:
-      //DBG("handling hold reply but hold was not requested\n");
-      break;
-  }
+void CallLeg::resumeAccepted()
+{
+  on_hold = false;
+  AmB2BMedia *ms = getMediaSession();
+  if (ms) ms->unmute(!a_leg); // unmute the stream in other (!) leg
 }
 
 // was for caller only
@@ -764,13 +848,11 @@ void CallLeg::onInvite(const AmSipRequest& req)
     recvd_req.insert(std::make_pair(req.cseq, req));
 
     initial_sdp_stored = false;
-    if (rtp_relay_mode != RTP_Direct) {
-      const AmMimeBody* sdp_body = req.body.hasContentType(SIP_APPLICATION_SDP);
-      DBG("SDP %sfound in initial INVITE\n", sdp_body ? "": "not ");
-      if (sdp_body && (initial_sdp.parse((const char *)sdp_body->getPayload()) == 0)) {
-        DBG("storing remote SDP for later\n");
-        initial_sdp_stored = true;
-      }
+    const AmMimeBody* sdp_body = req.body.hasContentType(SIP_APPLICATION_SDP);
+    DBG("SDP %sfound in initial INVITE\n", sdp_body ? "": "not ");
+    if (sdp_body && (initial_sdp.parse((const char *)sdp_body->getPayload()) == 0)) {
+      DBG("storing remote SDP for later\n");
+      initial_sdp_stored = true;
     }
   }
 }
@@ -824,15 +906,11 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
       (relayed_request ? "to relayed request" : "to locally generated request"),
       callStatus2str(call_status));
 
-  if ((reply.cseq == hold_request_cseq) && (reply.cseq_method == SIP_METH_INVITE)) {
-    // hold request replied - handle it
-    if (reply.code >= 200) { // handle final replies only
-      hold_request_cseq = 0;
-      handleHoldReply(reply.code < 300);
-    }
-
-    // we don't want to relay this reply to the other leg! => do the necessary
-    // stuff here (copy & paste from AmB2BSession::onSipReply)
+#if 0
+  if ((oa.hold != OA::PreserveHoldStatus) && (!relayed_request)) {
+    INFO("locally generated hold/resume request replied, not handling by B2B\n");
+    // local hold/resume request replied, we don't want to relay this reply to the other leg!
+    // => do the necessary stuff here (copy & paste from AmB2BSession::onSipReply)
     if (reply.code < 300) {
       const AmMimeBody *sdp_part = reply.body.hasContentType(SIP_APPLICATION_SDP);
       if (sdp_part) {
@@ -840,9 +918,11 @@ void CallLeg::onSipReply(const AmSipRequest& req, const AmSipReply& reply, AmSip
         if (sdp.parse((const char *)sdp_part->getPayload()) == 0) updateRemoteSdp(sdp);
       }
     }
+    else if (reply.code >= 300) offerRejected();
     AmSession::onSipReply(req, reply, old_dlg_status);
     return;
   }
+#endif
 
   AmB2BSession::onSipReply(req, reply, old_dlg_status);
 
@@ -1310,5 +1390,128 @@ void CallLeg::reinvite(const string &hdrs, const AmMimeBody &body, bool relayed,
     // save CSeq of establishing INVITE
     est_invite_cseq = dlg->cseq - 1;
   }
+}
+
+void CallLeg::adjustOffer(AmSdp &sdp)
+{
+  if (oa.hold != OA::PreserveHoldStatus) {
+    // locally generated hold/unhold requests that already contain correct
+    // hold/resume bodies and need not to be altered via createHoldRequest
+
+    if (oa.hold == OA::HoldRequested) holdRequested();
+    else resumeRequested();
+  }
+  else {
+    // handling B2B SDP, check for hold/unhold
+
+    HoldMethod hm;
+    // if hold request, transform to requested kind of hold and remember that hold
+    // was requested with this offer
+    if (isHoldRequest(sdp, hm)) {
+      holdRequested();
+      alterHoldRequest(sdp);
+      oa.hold = OA::HoldRequested;
+    }
+    else {
+      if (on_hold) {
+        resumeRequested();
+        alterResumeRequest(sdp);
+        oa.hold = OA::ResumeRequested;
+      }
+    }
+  }
+}
+
+void CallLeg::updateLocalSdp(AmSdp &sdp)
+{
+  //INFO("%s: updateLocalSdp\n", getLocalTag().c_str());
+  // handle the body based on current offer-answer status
+  // (possibly update the body before sending to remote)
+
+  switch (oa.status) {
+    case OA::None:
+      adjustOffer(sdp);
+      oa.status = OA::OfferSent;
+      //FIXME: oa.offer_cseq = dlg->cseq;
+      break;
+
+    case OA::OfferSent:
+      ERROR("BUG: another SDP offer to be sent before answer/reject");
+      oa.clear(); // or call offerRejected?
+      break;
+
+    case OA::OfferReceived:
+      // sending the answer
+      oaCompleted();
+      break;
+  }
+
+  if (oa.hold == OA::PreserveHoldStatus && !on_hold) {
+    // store non-hold SDP to be able to resumeHeld
+    non_hold_sdp = sdp;
+  }
+
+  AmB2BSession::updateLocalSdp(sdp);
+}
+
+void CallLeg::updateRemoteSdp(AmSdp &sdp)
+{
+  //INFO("%s: updateRemoteSdp\n", getLocalTag().c_str());
+  switch (oa.status) {
+    case OA::None:
+      oa.status = OA::OfferReceived;
+      break;
+
+    case OA::OfferSent:
+      oaCompleted();
+      break;
+
+    case OA::OfferReceived:
+      ERROR("BUG: another SDP offer received before answer/reject");
+      oa.clear(); // or call offerRejected?
+      break;
+  }
+
+  AmB2BSession::updateRemoteSdp(sdp);
+}
+
+void CallLeg::oaCompleted()
+{
+  switch (oa.hold) {
+    case OA::HoldRequested: holdAccepted(); break;
+    case OA::ResumeRequested: resumeAccepted(); break;
+    case OA::PreserveHoldStatus: break;
+  }
+
+  // call a callback here?
+  oa.clear();
+}
+
+void CallLeg::offerRejected()
+{
+  switch (oa.hold) {
+    case OA::HoldRequested: holdRejected(); break;
+    case OA::ResumeRequested: resumeRejected(); break;
+    case OA::PreserveHoldStatus: break;
+  }
+
+  oa.clear();
+}
+
+void CallLeg::createResumeRequest(AmSdp &sdp)
+{
+  // use stored non-hold SDP
+  // Note: this SDP doesn't need to be correct, but established_body need not to
+  // be good enough for unholding (might be held already with zero conncetions)
+  if (!non_hold_sdp.media.empty()) sdp = non_hold_sdp;
+  else {
+    // no stored non-hold SDP
+    ERROR("no stored non-hold SDP, but local resume requested\n");
+    // TODO: try to use established_body here and mark properly
+
+    // if no established body exist
+    throw string("not implemented");
+  }
+  // do not touch the sdp otherwise (use directly B2B SDP)
 }
 

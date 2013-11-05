@@ -164,9 +164,6 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void onSipRequest(const AmSipRequest& req);
   bool isALeg() { return a_leg; }
 
-  virtual void putOnHold();
-  virtual void resumeHeld(bool send_reinvite);
-
   // timers accessible from CC modules
   int startTimer(double timeout) { setTimer(ext_cc_timer_id, timeout); return ext_cc_timer_id++; }
 
@@ -210,8 +207,14 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   bool getCCInterfaces();
   vector<AmDynInvoke*>& getCCModules() { return cc_modules; }
 
-  virtual void handleHoldReply(bool succeeded);
   virtual void createHoldRequest(AmSdp &sdp);
+  virtual void alterHoldRequest(AmSdp &sdp);
+  virtual void holdRequested();
+  virtual void holdAccepted();
+  virtual void holdRejected();
+  virtual void resumeRequested();
+  virtual void resumeAccepted();
+  virtual void resumeRejected();
 
   int applySSTCfg(AmConfigReader& sst_cfg, const AmSipRequest* p_req);
 

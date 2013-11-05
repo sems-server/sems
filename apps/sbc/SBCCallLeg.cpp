@@ -1534,36 +1534,121 @@ void SBCCallLeg::initCCExtModules()
   }
 }
 
-void SBCCallLeg::putOnHold()
+#define CALL_EXT_CC_MODULES(method) \
+  do { \
+    for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) { \
+      (*i)->method(this); \
+    } \
+  } while (0)
+
+void SBCCallLeg::holdRequested()
 {
-  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    if ((*i)->putOnHold(this) == StopProcessing) return;
-  }
-  CallLeg::putOnHold();
+  TRACE("%s: hold requested\n", getLocalTag().c_str());
+  CALL_EXT_CC_MODULES(holdRequested);
+  CallLeg::holdRequested();
 }
 
-void SBCCallLeg::resumeHeld(bool send_reinvite)
+void SBCCallLeg::holdAccepted()
 {
-  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    if ((*i)->resumeHeld(this, send_reinvite) == StopProcessing) return;
-  }
-  CallLeg::resumeHeld(send_reinvite);
+  TRACE("%s: hold accepted\n", getLocalTag().c_str());
+  CALL_EXT_CC_MODULES(holdAccepted);
+  CallLeg::holdAccepted();
 }
 
-void SBCCallLeg::handleHoldReply(bool succeeded)
+void SBCCallLeg::holdRejected()
 {
-  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    if ((*i)->handleHoldReply(this, succeeded) == StopProcessing) return;
+  TRACE("%s: hold rejected\n", getLocalTag().c_str());
+  CALL_EXT_CC_MODULES(holdRejected);
+  CallLeg::holdRejected();
+}
+
+void SBCCallLeg::resumeRequested()
+{
+  TRACE("%s: resume requested\n", getLocalTag().c_str());
+  CALL_EXT_CC_MODULES(resumeRequested);
+  CallLeg::resumeRequested();
+}
+
+void SBCCallLeg::resumeAccepted()
+{
+  TRACE("%s: resume accepted\n", getLocalTag().c_str());
+  CALL_EXT_CC_MODULES(resumeAccepted);
+  CallLeg::resumeAccepted();
+}
+
+void SBCCallLeg::resumeRejected()
+{
+  TRACE("%s: resume rejected\n", getLocalTag().c_str());
+  CALL_EXT_CC_MODULES(resumeRejected);
+  CallLeg::resumeRejected();
+}
+
+static void zero_connection(SdpConnection &c)
+{
+  if (!c.address.empty()) {
+    if (c.network == NT_IN) {
+      if (c.addrType == AT_V4) {
+        c.address = "0.0.0.0";
+        return;
+      }
+      // TODO: IPv6?
+    }
   }
-  CallLeg::handleHoldReply(succeeded);
+
+  DBG("unsupported connection type for marking with 0.0.0.0");
+}
+
+void SBCCallLeg::alterHoldRequest(AmSdp &sdp)
+{
+  TRACE("altering B2B hold request\n");
+
+  if (!call_profile.hold_settings.alter_b2b(a_leg)) return;
+
+  bool zero = call_profile.hold_settings.mark_zero_connection(a_leg);
+  bool recv = call_profile.hold_settings.recv(a_leg);
+
+  if (zero) zero_connection(sdp.conn);
+  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+    if (zero) zero_connection(m->conn);
+    m->recv = recv;
+  }
 }
 
 void SBCCallLeg::createHoldRequest(AmSdp &sdp)
 {
-  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    if ((*i)->createHoldRequest(this, sdp) == StopProcessing) return;
+  // FIXME: hold SDP must be based on sdp if possible (updates existing session)
+  // hack: we need to have other side SDP (if the stream is hold already
+  // it should be marked as inactive)
+
+  AmB2BMedia *ms = getMediaSession();
+  if (ms) {
+    ms->mute(a_leg);
+    ms->createHoldRequest(sdp, a_leg,
+        call_profile.hold_settings.mark_zero_connection(a_leg),
+        !call_profile.hold_settings.recv(a_leg));
   }
-  CallLeg::createHoldRequest(sdp);
+  else {
+    sdp.clear();
+
+    // FIXME: versioning
+    sdp.version = 0;
+    sdp.origin.user = "sems";
+    //offer.origin.sessId = 1;
+    //offer.origin.sessV = 1;
+    sdp.sessionName = "sems";
+    sdp.conn.network = NT_IN;
+    sdp.conn.addrType = AT_V4;
+    sdp.conn.address = "0.0.0.0"; // we have no socket for RTP/RTCP on our side so we must do this
+
+    // FIXME: use media line from stored body?
+    sdp.media.push_back(SdpMedia());
+    SdpMedia &m = sdp.media.back();
+    m.type = MT_AUDIO;
+    m.transport = TP_RTPAVP;
+    m.send = false;
+    m.recv = false;
+    m.payloads.push_back(SdpPayload(0));
+  }
 }
 
 void SBCCallLeg::setMediaSession(AmB2BMedia *new_session)
