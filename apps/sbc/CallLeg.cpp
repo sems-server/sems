@@ -969,6 +969,22 @@ void CallLeg::onSessionTimeout()
   updateCallStatus(Disconnected, StatusChangeCause::SessionTimeout);
   AmB2BSession::onSessionTimeout();
 }
+// AmMediaSession interface from AmMediaProcessor
+int CallLeg::readStreams(unsigned long long ts, unsigned char *buffer) {
+  // skip RTP processing if in Relay mode
+  // (but we want to process DTMF thus we may be in media processor)
+  if (getRtpRelayMode()==RTP_Relay)
+    return 0;
+  return AmB2BSession::readStreams(ts, buffer);
+}
+
+int CallLeg::writeStreams(unsigned long long ts, unsigned char *buffer) {
+  // skip RTP processing if in Relay mode
+  // (but we want to process DTMF thus we may be in media processor)
+  if (getRtpRelayMode()==RTP_Relay)
+    return 0;
+  return AmB2BSession::writeStreams(ts, buffer);
+}
 
 void CallLeg::addNewCallee(CallLeg *callee, ConnectLegEvent *e,
 			   AmB2BSession::RTPRelayMode mode)

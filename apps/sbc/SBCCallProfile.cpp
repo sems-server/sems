@@ -356,6 +356,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     cfg.getParameter("rtprelay_transparent_seqno", "yes") == "yes";
   rtprelay_transparent_ssrc =
     cfg.getParameter("rtprelay_transparent_ssrc", "yes") == "yes";
+  rtprelay_dtmf_filtering =
+    cfg.getParameter("rtprelay_dtmf_filtering", "no") == "yes";
+  rtprelay_dtmf_detection =
+    cfg.getParameter("rtprelay_dtmf_detection", "no") == "yes";
 
   outbound_interface = cfg.getParameter("outbound_interface");
   aleg_outbound_interface = cfg.getParameter("aleg_outbound_interface");
@@ -476,6 +480,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 	   rtprelay_transparent_seqno?"transparent":"opaque");
       INFO("SBC:      RTP Relay %s SSRC\n",
 	   rtprelay_transparent_ssrc?"transparent":"opaque");
+      INFO("SBC:      RTP Relay RTP DTMF filtering %sabled\n",
+	   rtprelay_dtmf_filtering?"en":"dis");
+      INFO("SBC:      RTP Relay RTP DTMF detection %sabled\n",
+	   rtprelay_dtmf_detection?"en":"dis");
     }
 
     INFO("SBC:      SST on A leg enabled: '%s'\n", sst_aleg_enabled.empty() ?

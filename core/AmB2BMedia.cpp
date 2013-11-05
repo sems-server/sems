@@ -207,6 +207,9 @@ void AudioStreamData::initialize(AmB2BSession *session)
   stream = new AmRtpAudio(session, session->getRtpInterface());
   stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
   stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
+  stream->setRtpRelayFilterRtpDtmf(session->getEnableDtmfRtpFiltering());
+  if (session->getEnableDtmfRtpDetection())
+    stream->force_receive_dtmf = true;
   force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
   enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
   session->getLowFiPLs(lowfi_payloads);
@@ -1226,6 +1229,26 @@ void AmB2BMedia::setRtpLogger(msg_logger* _logger)
   // walk through all the streams and use logger for them
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) i->setLogger(logger);
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) (*j)->setLogger(logger);
+}
+
+void AmB2BMedia::setRelayDTMFReceiving(bool enabled) {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", &(*j)->a);
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", &(*j)->b);
+    (*j)->a.force_receive_dtmf = enabled;
+    (*j)->b.force_receive_dtmf = enabled;
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", j->a.getStream());
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", j->b.getStream());
+    if (NULL != j->a.getStream())
+      j->a.getStream()->force_receive_dtmf = enabled;
+    
+    if (NULL != j->b.getStream())
+      j->b.getStream()->force_receive_dtmf = enabled;
+  }
 }
 
 void AudioStreamData::debug()

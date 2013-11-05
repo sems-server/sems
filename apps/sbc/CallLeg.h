@@ -305,6 +305,10 @@ class CallLeg: public AmB2BSession
 
     const char* getCallStatusStr();
 
+    // AmMediaSession interface from AmMediaProcessor
+    int readStreams(unsigned long long ts, unsigned char *buffer);
+    int writeStreams(unsigned long long ts, unsigned char *buffer);
+
   public:
     /** creates A leg */
     CallLeg(AmSipDialog* p_dlg=NULL, AmSipSubscription* p_subs=NULL);

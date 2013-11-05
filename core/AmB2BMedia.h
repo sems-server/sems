@@ -67,6 +67,12 @@ class AudioStreamData {
     /** Enables inband dtmf detection */
     bool enable_dtmf_transcoding;
 
+    /** Enables RTP DTMF (2833/4733) filtering */
+    bool enable_dtmf_rtp_filtering;
+
+    /** Enables DTMF detection with RTP DTMF (2833/4733) */
+    bool enable_dtmf_rtp_detection;
+
     /** Low fidelity payloads for which inband DTMF transcoding should be used */
     vector<SdpPayload> lowfi_payloads;
   
@@ -438,6 +444,9 @@ class AmB2BMedia: public AmMediaSession
     void createHoldAnswer(bool a_leg, const AmSdp &offer, AmSdp &answer, bool use_zero_con);
 
     void setRtpLogger(msg_logger* _logger);
+
+    /** enable or disable DTMF receiving on relay streams */
+    void setRelayDTMFReceiving(bool enabled);
 
     // print debug info
     void debug();

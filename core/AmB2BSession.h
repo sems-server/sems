@@ -273,6 +273,11 @@ private:
   /** If true, transcoded audio is injected into 
       the inband DTMF detector */
   bool enable_dtmf_transcoding;
+  /** filter RTP DTMF (2833 / 4733) packets */
+  bool enable_dtmf_rtp_filtering;
+  /** detect DTMF through RTP DTMF (2833 / 4733) packets */
+  bool enable_dtmf_rtp_detection;
+
   /** Low fidelity payloads for which inband DTMF 
       transcoding should be used */
   vector<SdpPayload> lowfi_payloads;
@@ -320,6 +325,8 @@ private:
   RTPRelayMode getRtpRelayMode() const { return rtp_relay_mode; }
   bool getRtpRelayForceSymmetricRtp() const { return rtp_relay_force_symmetric_rtp; }
   bool getEnableDtmfTranscoding() const { return enable_dtmf_transcoding; }
+  bool getEnableDtmfRtpFiltering() const { return enable_dtmf_rtp_filtering; }
+  bool getEnableDtmfRtpDetection() const { return enable_dtmf_rtp_detection; }
   void getLowFiPLs(vector<SdpPayload>& lowfi_payloads) const;
 
   virtual void setRtpInterface(int relay_interface);
@@ -328,6 +335,8 @@ private:
   void setRtpRelayTransparentSSRC(bool transparent);
 
   void setEnableDtmfTranscoding(bool enable);
+  void setEnableDtmfRtpFiltering(bool enable);
+  void setEnableDtmfRtpDetection(bool enable);
   void setLowFiPLs(const vector<SdpPayload>& lowfi_payloads);
   
   bool getRtpRelayTransparentSeqno() { return rtp_relay_transparent_seqno; }

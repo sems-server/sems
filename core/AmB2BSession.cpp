@@ -73,6 +73,8 @@ AmB2BSession::AmB2BSession(const string& other_local_tag, AmSipDialog* p_dlg,
     rtp_relay_mode(RTP_Direct),
     rtp_relay_force_symmetric_rtp(false),
     enable_dtmf_transcoding(false),
+    enable_dtmf_rtp_filtering(false),
+    enable_dtmf_rtp_detection(false),
     rtp_relay_transparent_seqno(true), rtp_relay_transparent_ssrc(true),
     est_invite_cseq(0),est_invite_other_cseq(0),
     media_session(NULL)
@@ -988,6 +990,14 @@ void AmB2BSession::setEnableDtmfTranscoding(bool enable) {
   enable_dtmf_transcoding = enable;
 }
 
+void AmB2BSession::setEnableDtmfRtpFiltering(bool enable) {
+  enable_dtmf_rtp_filtering = enable;
+}
+
+void AmB2BSession::setEnableDtmfRtpDetection(bool enable) {
+  enable_dtmf_rtp_detection = enable;
+}
+
 void AmB2BSession::getLowFiPLs(vector<SdpPayload>& lowfi_payloads) const {
   lowfi_payloads = this->lowfi_payloads;
 }
@@ -1286,6 +1296,8 @@ void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) 
   
   callee_session->setRtpRelayMode(rtp_relay_mode);
   callee_session->setEnableDtmfTranscoding(enable_dtmf_transcoding);
+  callee_session->setEnableDtmfRtpFiltering(enable_dtmf_rtp_filtering);
+  callee_session->setEnableDtmfRtpDetection(enable_dtmf_rtp_detection);
   callee_session->setLowFiPLs(lowfi_payloads);
 
   if ((rtp_relay_mode == RTP_Relay) || (rtp_relay_mode == RTP_Transcoding)) {
