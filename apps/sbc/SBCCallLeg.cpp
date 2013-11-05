@@ -1599,10 +1599,6 @@ bool SBCCallLeg::initCCExtModules()
         // module initialization
         if (!iface->init(this, cc_if.cc_values)) {
 	  ERROR("initializing extended call control interface\n");
-	  // call onDestroyLeg to clean up on call not going forward
-	  for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-	    (*i)->onDestroyLeg(this);
-	  }
 	  return false;
 	}
 
