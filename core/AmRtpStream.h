@@ -264,6 +264,8 @@ protected:
   bool            relay_transparent_seqno;
   /** control transparency for RTP ssrc in RTP relay mode */
   bool            relay_transparent_ssrc;
+  /** filter RTP DTMF (2833 / 4733) in relaying */
+  bool            relay_filter_dtmf;
 
   /** Session owning this stream */
   AmSession*         session;
@@ -272,6 +274,9 @@ protected:
 
   /** Payload provider */
   AmPayloadProvider* payload_provider;
+
+  /** insert packet in DTMF queue if correct payload */
+  void recvDtmfPacket(AmRtpPacket* p);
 
   /** Insert an RTP packet to the buffer queue */
   void bufferPacket(AmRtpPacket* p);
@@ -485,6 +490,9 @@ public:
 
   /** enable or disable transparent SSRC seqno for relay */
   void setRtpRelayTransparentSSRC(bool transparent);
+
+  /** enable or disable filtering of RTP DTMF for relay */
+  void setRtpRelayFilterRtpDtmf(bool filter);
 
   /** remove from RTP receiver */
   void stopReceiving();
