@@ -38,6 +38,7 @@ DECLARE_MODULE_END;
 DEF_ACTION_2P(MODSBCActionProfileSet);
 DEF_ACTION_1P(MODSBCActionStopCall);
 DEF_ACTION_1P(MODSBCActionDisconnect);
+DEF_ACTION_1P(MODSBCActionSendDisconnectEvent);
 
 DEF_ACTION_1P(MODSBCActionPutOnHold);
 DEF_ACTION_1P(MODSBCActionResumeHeld);
@@ -47,5 +48,6 @@ DEF_SCCondition(SBCIsALegCondition);
 DEF_SCCondition(SBCIsOnHoldCondition);
 
 DEF_ACTION_2P(MODSBCActionB2BRelayReliable);
+DEF_ACTION_2P(MODSBCActionAddCallee);
 
 #endif

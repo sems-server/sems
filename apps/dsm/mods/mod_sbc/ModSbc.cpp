@@ -48,9 +48,12 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("sbc.disconnect", MODSBCActionDisconnect);
   DEF_CMD("sbc.putOnHold", MODSBCActionPutOnHold);
   DEF_CMD("sbc.resumeHeld", MODSBCActionResumeHeld);
+  DEF_CMD("sbc.sendDisconnectEvent", MODSBCActionSendDisconnectEvent);
 
   DEF_CMD("sbc.getCallStatus", MODSBCActionGetCallStatus);
   DEF_CMD("sbc.relayReliableEvent", MODSBCActionB2BRelayReliable);
+
+  DEF_CMD("sbc.addCallee", MODSBCActionAddCallee);
 
 } MOD_ACTIONEXPORT_END;
 
@@ -298,6 +301,15 @@ EXEC_ACTION_START(MODSBCActionDisconnect) {
   call_leg->disconnect(hold_remote == DSM_TRUE);
 } EXEC_ACTION_END;
 
+EXEC_ACTION_START(MODSBCActionSendDisconnectEvent) {
+  GET_CALL_LEG(SendDisconnectEvent);
+  string hold_remote = resolveVars(arg, sess, sc_sess, event_params);
+  if (!AmSessionContainer::instance()->postEvent(call_leg->getLocalTag(),
+						 new DisconnectLegEvent(hold_remote == DSM_TRUE))) {
+    ERROR("couldn't self-post event\n");
+  }
+} EXEC_ACTION_END;
+
 
 EXEC_ACTION_START(MODSBCActionPutOnHold) {
   GET_CALL_LEG(PutOnHold);
@@ -366,4 +378,61 @@ EXEC_ACTION_START(MODSBCActionB2BRelayReliable) {
 
   rel_b2b_ev->setSender(call_leg->getLocalTag());
   call_leg->relayEvent(rel_b2b_ev);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(MODSBCActionAddCallee, ',', false);
+EXEC_ACTION_START(MODSBCActionAddCallee) {
+  GET_CALL_LEG(AddCallee);
+
+  SBCCallLeg* sbc_call_leg = dynamic_cast<SBCCallLeg*>(call_leg);
+  if (NULL == sbc_call_leg) {
+    DBG("script writer error: DSM action sbc.addCallee "
+	" used without sbc call leg\n");
+    throw DSMException("sbc", "type", "param", "cause",
+		       "script writer error: DSM action sbc.addCallee "
+		       " used without call leg");
+    EXEC_ACTION_STOP;
+  }
+
+  string mode = resolveVars(par1, sess, sc_sess, event_params);
+
+  if (mode == DSM_SBC_PARAM_ADDCALLEE_MODE_STR) {
+    string varname = par2;
+    string hdrs;
+    SBCCallLeg* peer = new SBCCallLeg(sbc_call_leg);
+    SBCCallProfile &p = peer->getCallProfile();
+    AmB2BSession::RTPRelayMode rtp_mode = call_leg->getRtpRelayMode();
+
+    VarMapT::iterator it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_LOCAL_PARTY);
+    if (it != sc_sess->var.end())
+      peer->setLocalParty(it->second, it->second);
+
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_REMOTE_PARTY);
+    if (it != sc_sess->var.end())
+      peer->setRemoteParty(it->second, it->second);
+
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_HDRS);
+    if (it != sc_sess->var.end())
+      hdrs = it->second;
+
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_OUTBOUND_PROXY);
+    if (it != sc_sess->var.end())
+      p.outbound_proxy = it->second;
+
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_RTP_MODE);
+    if (it != sc_sess->var.end()) {
+      if (it->second == "RTP_Direct") {
+	rtp_mode = AmB2BSession::RTP_Direct;
+      } else if (it->second == "RTP_Relay") {
+	rtp_mode = AmB2BSession::RTP_Relay;
+      } else if (it->second == "RTP_Transcoding") {
+	rtp_mode = AmB2BSession::RTP_Transcoding;
+      } else {
+	WARN("Unknown rtp_mode '%s', using this leg's mode\n", it->second.c_str());
+      }
+    }
+
+    sbc_call_leg->addCallee(peer, hdrs, rtp_mode);
+  }
+
 } EXEC_ACTION_END;
