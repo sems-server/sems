@@ -56,8 +56,8 @@ SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const VarMapT& values)
 			     &engine,
 			     config_vars,
 			     SetParamVariables)) {
-    ERROR("initializing call with DSM app bundle '"DSM_SBC_CCVAR_APP_BUNDLE "'\n");
-    throw string("initializing call with DSM app bundle '" DSM_SBC_CCVAR_APP_BUNDLE);
+    ERROR("initializing call with DSM app bundle '%s'\n", appBundle.c_str());
+    throw string("initializing call with DSM app bundle '" +appBundle);
   }
 
  for (map<string, string>::const_iterator it = 
