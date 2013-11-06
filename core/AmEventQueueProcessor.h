@@ -80,6 +80,7 @@ class AmEventQueueProcessor {
 
  public:
   AmEventQueueProcessor();
+  ~AmEventQueueProcessor();
 
   void addThreads(unsigned int num_threads);
 

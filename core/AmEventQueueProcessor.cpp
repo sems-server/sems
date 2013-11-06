@@ -36,6 +36,19 @@ AmEventQueueProcessor::AmEventQueueProcessor()
   threads_it = threads.begin();
 }
 
+AmEventQueueProcessor::~AmEventQueueProcessor()
+{
+  threads_mut.lock();
+  threads_it = threads.begin();
+  while(threads_it != threads.end()) {
+    (*threads_it)->stop();
+    (*threads_it)->join();
+    delete (*threads_it);
+    threads_it++;
+  }
+  threads_mut.unlock();
+}
+
 EventQueueWorker* AmEventQueueProcessor::getWorker()
 {
   threads_mut.lock();
@@ -130,6 +143,7 @@ void EventQueueWorker::on_stop()
 {
   INFO("requesting worker to stop.\n");
   stop_requested.set(true);
+  runcond.set(true);
 }
 
 void EventQueueWorker::startEventQueue(AmEventQueue* q) 
