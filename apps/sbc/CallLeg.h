@@ -136,7 +136,11 @@ class CallLeg: public AmB2BSession
       enum { None, OfferSent, OfferReceived } status;
       enum { HoldRequested, ResumeRequested, PreserveHoldStatus } hold;
       OA(): status(None), hold(PreserveHoldStatus) { }
-      void clear() { status = None; hold = PreserveHoldStatus; }
+      void clear() { status = None; hold = PreserveHoldStatus; remote_sdp.clear(); }
+
+      /* SDP of remote end. Needed because of the possibility of RTP relay mode
+       * change during offer-answer exchange. */
+      AmSdp remote_sdp;
     } oa;
 
     // generate re-INVITE with given parameters (establishing means that the

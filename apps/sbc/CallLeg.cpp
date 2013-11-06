@@ -1249,6 +1249,24 @@ void CallLeg::changeRtpMode(RTPRelayMode new_mode)
       }
       break;
   }
+
+  switch (oa.status) {
+    case OA::None:
+      // must be followed by OA exchange because we can't updateLocalSdp
+      // (reINVITE would be needed)
+      break;
+
+    case OA::OfferSent:
+      TRACE("changing RTP mode after offer was sent: reINVITE needed\n");
+      // TODO: plan a reINVITE
+      ERROR("not implemented\n");
+      break;
+
+    case OA::OfferReceived:
+      TRACE("changing RTP mode after offer was received, needed to updateRemoteSdp again\n");
+      AmB2BSession::updateRemoteSdp(oa.remote_sdp); // hack
+      break;
+  }
 }
 
 void CallLeg::changeRtpMode(RTPRelayMode new_mode, AmB2BMedia *new_media)
@@ -1285,6 +1303,25 @@ void CallLeg::changeRtpMode(RTPRelayMode new_mode, AmB2BMedia *new_media)
 
   AmB2BMedia *m = getMediaSession();
   if (m) m->changeSession(a_leg, this);
+
+  switch (oa.status) {
+    case OA::None:
+      // must be followed by OA exchange because we can't updateLocalSdp
+      // (reINVITE would be needed)
+      break;
+
+    case OA::OfferSent:
+      TRACE("changing RTP mode/media session after offer was sent: reINVITE needed\n");
+      // TODO: plan a reINVITE
+      ERROR("not implemented\n");
+      break;
+
+    case OA::OfferReceived:
+      TRACE("changing RTP mode/media session after offer was received, needed to updateRemoteSdp again\n");
+      AmB2BSession::updateRemoteSdp(oa.remote_sdp); // hack
+      break;
+  }
+
 }
 
 void CallLeg::changeOtherLegsRtpMode(RTPRelayMode new_mode)
@@ -1460,6 +1497,7 @@ void CallLeg::updateRemoteSdp(AmSdp &sdp)
   switch (oa.status) {
     case OA::None:
       oa.status = OA::OfferReceived;
+      oa.remote_sdp = sdp;
       break;
 
     case OA::OfferSent:
