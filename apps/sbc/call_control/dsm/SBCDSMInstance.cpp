@@ -254,6 +254,21 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
   return ContinueProcessing;
 }
 
+CCChainProcessing SBCDSMInstance::onDtmf(SBCCallLeg *call, int event, int duration) {
+  DBG("* Got DTMF key %d duration %d\n",
+      event, duration);
+
+  map<string, string> params;
+  params["key"] = int2str(event);
+  params["duration"] = int2str(duration);
+
+  engine.runEvent(call, this, DSMCondition::Key, &params);
+
+  if (params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+    return StopProcessing;
+  return ContinueProcessing;
+}
+
 /** @return whether to continue processing */
 CCChainProcessing SBCDSMInstance::onBLegRefused(SBCCallLeg* call, const AmSipReply& reply)
 {

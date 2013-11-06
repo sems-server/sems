@@ -55,6 +55,9 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("sbc.addCallee", MODSBCActionAddCallee);
 
+  DEF_CMD("sbc.enableRelayDTMFReceiving", MODSBCEnableRelayDTMFReceiving);
+  DEF_CMD("sbc.addToMediaProcessor", MODSBCAddToMediaProcessor);
+  DEF_CMD("sbc.removeFromMediaProcessor", MODSBCRemoveFromMediaProcessor);
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
@@ -242,6 +245,9 @@ EXEC_ACTION_START(MODSBCActionProfileSet) {
   SET_TO_CALL_PROFILE_OPTION("msgflags_symmetric_rtp", msgflags_symmetric_rtp);
   SET_TO_CALL_PROFILE_OPTION("rtprelay_transparent_seqno", rtprelay_transparent_seqno);
   SET_TO_CALL_PROFILE_OPTION("rtprelay_transparent_ssrc", rtprelay_transparent_ssrc);
+
+  SET_TO_CALL_PROFILE_OPTION("rtprelay_dtmf_filtering", rtprelay_dtmf_filtering);
+  SET_TO_CALL_PROFILE_OPTION("rtprelay_dtmf_detection", rtprelay_dtmf_detection);
 
   if (profile_param == "rtprelay_interface") {
     profile->rtprelay_interface=value;
@@ -436,3 +442,39 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
   }
 
 } EXEC_ACTION_END;
+
+EXEC_ACTION_START(MODSBCEnableRelayDTMFReceiving) {
+  GET_CALL_LEG(AddCallee);
+
+  bool enable = (resolveVars(arg, sess, sc_sess, event_params)==DSM_TRUE);
+
+  SBCCallLeg* sbc_call_leg = dynamic_cast<SBCCallLeg*>(call_leg);
+  if (NULL == sbc_call_leg) {
+    DBG("script writer error: DSM action sbc.addCallee "
+	" used without sbc call leg\n");
+    throw DSMException("sbc", "type", "param", "cause",
+		       "script writer error: DSM action sbc.addCallee "
+		       " used without call leg");
+    EXEC_ACTION_STOP;
+  }
+
+  AmB2BMedia* b2b_media = sbc_call_leg->getMediaSession();
+  DBG("session: %p, media: %p\n", sbc_call_leg, b2b_media);
+  if (NULL != b2b_media) {
+    b2b_media->setRelayDTMFReceiving(enable);
+  } else {
+    DBG("No B2BMedia in current SBC call leg, sorry\n");
+  }
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(MODSBCAddToMediaProcessor) {
+  GET_CALL_LEG(AddToMediaProcessor);
+  AmMediaProcessor::instance()->addSession(call_leg, call_leg->getCallgroup());
+
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(MODSBCRemoveFromMediaProcessor) {
+  GET_CALL_LEG(RemoveFromMediaProcessor);
+  AmMediaProcessor::instance()->removeSession(call_leg);
+} EXEC_ACTION_END;
+  

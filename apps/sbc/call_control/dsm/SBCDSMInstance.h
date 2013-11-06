@@ -62,6 +62,7 @@ class SBCDSMInstance
     CCChainProcessing onInDialogReply(SBCCallLeg* call, const AmSipReply& reply);
 
     CCChainProcessing onEvent(SBCCallLeg* call, AmEvent* event);
+    CCChainProcessing onDtmf(SBCCallLeg *call, int event, int duration);
 
     CCChainProcessing putOnHold(SBCCallLeg* call);
     CCChainProcessing resumeHeld(SBCCallLeg* call, bool send_reinvite);

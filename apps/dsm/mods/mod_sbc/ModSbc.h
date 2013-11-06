@@ -50,4 +50,8 @@ DEF_SCCondition(SBCIsOnHoldCondition);
 DEF_ACTION_2P(MODSBCActionB2BRelayReliable);
 DEF_ACTION_2P(MODSBCActionAddCallee);
 
+DEF_ACTION_1P(MODSBCEnableRelayDTMFReceiving);
+DEF_ACTION_1P(MODSBCAddToMediaProcessor);
+DEF_ACTION_1P(MODSBCRemoveFromMediaProcessor);
+
 #endif

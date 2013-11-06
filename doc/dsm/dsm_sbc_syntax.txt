@@ -157,6 +157,7 @@ sbc.profileSet(profile_variable, value)    - set SBC profile options
       msgflags_symmetric_rtp = "yes" | "no,
       rtprelay_transparent_seqno = "yes" | "no, rtprelay_transparent_ssrc = "yes" | "no, 
       rtprelay_interface, aleg_rtprelay_interface,
+      rtprelay_dtmf_detection = "yes" | "no, rtprelay_dtmf_filtering = "yes" | "no
 
 sbc.stopCall(string cause)         - stop both call legs
 
@@ -203,3 +204,11 @@ sbc.addCallee(string mode, string varname)
      e.g.  set($b.local_party="sip:ftb@192.168.5.110:5080");
            set($b.remote_party="sip:neu@192.168.5.110:5088");
            sbc.addCallee(var, b);
+
+sbc.enableRelayDTMFReceiving(bool rcv_dtmf)  - enable receiving of RTP DTMF in relayed stream (RTP_Relay mode)
+     note: session needs to be processed by media processor as well (sbc.addToMediaProcessor())
+           so that DTMF is processed and passed up to the application (key event).
+
+sbc.addToMediaProcessor   - add sbc session to media processor (no playlist set etc)
+
+sbc.removeFromMediaProcessor - remove sbc session from media processor

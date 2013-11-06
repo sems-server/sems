@@ -166,6 +166,13 @@ CCChainProcessing CCDSMModule::onEvent(SBCCallLeg *call, AmEvent *e) {
   return h->onEvent(call, e);
 }
 
+CCChainProcessing CCDSMModule::onDtmf(SBCCallLeg *call, int event, int duration) { 
+  DBG("ExtCC: onDtmf(%i;%i) - call instance: '%p' isAleg==%s\n",
+      event, duration, call, call->isALeg()?"true":"false");
+  GET_DSM_INSTANCE;
+  return h->onDtmf(call, event, duration);
+}
+
 // hold related functionality
 CCChainProcessing CCDSMModule::putOnHold(SBCCallLeg *call) {
   DBG("ExtCC: putOnHold - call instance: '%p' isAleg==%s\n", call, call->isALeg()?"true":"false");
