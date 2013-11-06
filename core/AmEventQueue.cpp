@@ -33,7 +33,8 @@
 AmEventQueue::AmEventQueue(AmEventHandler* handler)
   : handler(handler),
     wakeup_handler(NULL),
-    ev_pending(false)
+    ev_pending(false),
+    finalized(false)
 {
 }
 

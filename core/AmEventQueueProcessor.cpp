@@ -91,11 +91,12 @@ void EventQueueWorker::notify(AmEventQueue* sender)
 {
   process_queues_mut.lock();
   process_queues.push_back(sender);
+  inc_ref(sender);
   runcond.set(true);
   process_queues_mut.unlock();
 }
 
-void EventQueueWorker::run() 
+void EventQueueWorker::run()
 {
   stop_requested = false;
   while(!stop_requested.get()){
@@ -112,8 +113,10 @@ void EventQueueWorker::run()
 
       if(!ev_q->processingCycle()) {
 	ev_q->setEventNotificationSink(NULL);
-	ev_q->finalize();
+	if(!ev_q->is_finalized())
+	  ev_q->finalize();
       }
+      dec_ref(ev_q);
 
       process_queues_mut.lock();
     }
