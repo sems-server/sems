@@ -1023,11 +1023,10 @@ void AmB2BMedia::stop(bool a_leg)
   }
 }
 
-void AmB2BMedia::onMediaProcessingTerminated() 
-{ 
+void AmB2BMedia::onMediaProcessingTerminated()
+{
   AmMediaSession::onMediaProcessingTerminated();
   processing_started = false;
-  clearAudio();
 
   // release reference held by AmMediaProcessor
   if (releaseReference()) { 
