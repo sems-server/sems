@@ -53,11 +53,11 @@
 #include <grp.h>
 #include <pwd.h>
 
-//#include <sys/wait.h>
-//#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#include <event2/thread.h>
 
 #ifdef PROPAGATE_COREDUMP_SETTINGS
 #include <sys/resource.h>
@@ -571,6 +571,13 @@ int main(int argc, char* argv[])
 
   INFO("Starting media processor\n");
   AmMediaProcessor::instance()->init();
+
+  // init thread usage with libevent
+  // before it's too late
+  if(evthread_use_pthreads() != 0) {
+    ERROR("cannot init thread usage with libevent");
+    goto error;
+  }
 
   INFO("Starting RTP receiver\n");
   AmRtpReceiver::instance()->start();

@@ -38,16 +38,6 @@
 #include <strings.h>
 #endif
 
-#include <sys/time.h>
-#include <sys/poll.h>
-
-#ifndef MAX_RTP_SESSIONS
-#define MAX_RTP_SESSIONS 2048
-#endif 
-
-#define RTP_POLL_TIMEOUT 50 /*50 ms*/
-
-
 _AmRtpReceiver::_AmRtpReceiver()
 {
   n_receivers = AmConfig::RTPReceiverThreads;
@@ -62,20 +52,20 @@ _AmRtpReceiver::~_AmRtpReceiver()
 AmRtpReceiverThread::AmRtpReceiverThread()
   : stop_requested(false)
 {
-  fds  = new struct pollfd[MAX_RTP_SESSIONS];
-  nfds = 0;
+  // libevent event base
+  ev_base = event_base_new();
 }
 
 AmRtpReceiverThread::~AmRtpReceiverThread()
 {
-  delete [] (fds);
+  event_base_free(ev_base);
   INFO("RTP receiver has been recycled.\n");
 }
 
 void AmRtpReceiverThread::on_stop()
 {
   INFO("requesting RTP receiver to stop.\n");
-  stop_requested.set(true);
+  event_base_loopbreak(ev_base);
 }
 
 void AmRtpReceiverThread::stop_and_wait()
@@ -97,38 +87,33 @@ void _AmRtpReceiver::dispose()
 
 void AmRtpReceiverThread::run()
 {
-  unsigned int   tmp_nfds = 0;
-  struct pollfd* tmp_fds  = new struct pollfd[MAX_RTP_SESSIONS];
+  // fake event to prevent the event loop from exiting
+  int fake_fds[2];
+  pipe(fake_fds);
+  struct event* ev_default =
+    event_new(ev_base,fake_fds[0],
+	      EV_READ|EV_PERSIST,
+	      NULL,NULL);
+  event_add(ev_default,NULL);
 
-  while(!stop_requested.get()){
-	
-    streams_mut.lock();
-    tmp_nfds = nfds;
-    memcpy(tmp_fds,fds,nfds*sizeof(struct pollfd));
-    streams_mut.unlock();
+  // run the event loop
+  event_base_loop(ev_base,0);
 
-    int ret = poll(tmp_fds,tmp_nfds,RTP_POLL_TIMEOUT);
-    if(ret < 0 && errno != EINTR)
-      ERROR("AmRtpReceiver: poll: %s\n",strerror(errno));
+  // clean-up fake fds/event
+  event_free(ev_default);
+  close(fake_fds[0]);
+  close(fake_fds[1]);
+}
 
-    if(ret < 1)
-      continue;
+void AmRtpReceiverThread::_rtp_receiver_read_cb(evutil_socket_t sd, 
+						short what, void* arg)
+{
+  AmRtpReceiverThread::StreamInfo* p_si =
+    static_cast<AmRtpReceiverThread::StreamInfo*>(arg);
 
-    for(unsigned int i=0; i<tmp_nfds; i++) {
-
-      if(!(tmp_fds[i].revents & POLLIN))
-	continue;
-
-      streams_mut.lock();
-      Streams::iterator it = streams.find(tmp_fds[i].fd);
-      if(it != streams.end()) {
-	it->second.stream->recvPacket(tmp_fds[i].fd);
-      }
-      streams_mut.unlock();      
-    }
-  }
-
-  delete[] (tmp_fds);
+  p_si->thread->streams_mut.lock();
+  p_si->stream->recvPacket(sd);
+  p_si->thread->streams_mut.unlock();
 }
 
 void AmRtpReceiverThread::addStream(int sd, AmRtpStream* stream)
@@ -142,19 +127,12 @@ void AmRtpReceiverThread::addStream(int sd, AmRtpStream* stream)
     return;
   }
 
-  if(nfds >= MAX_RTP_SESSIONS){
-    streams_mut.unlock();
-    ERROR("maximum number of sessions reached (%i)\n",
-	  MAX_RTP_SESSIONS);
-    throw string("maximum number of sessions reached");
-  }
-
-  fds[nfds].fd      = sd;
-  fds[nfds].events  = POLLIN;
-  fds[nfds].revents = 0;
-
-  streams.insert(std::make_pair(sd,StreamInfo(nfds,stream)));
-  nfds++;
+  StreamInfo& si = streams[sd];
+  si.stream = stream;
+  si.ev_read = event_new(ev_base,sd,EV_READ|EV_PERSIST,
+			 AmRtpReceiverThread::_rtp_receiver_read_cb,&si);
+  si.thread = this;
+  event_add(si.ev_read,NULL);
 
   streams_mut.unlock();
 }
@@ -169,15 +147,10 @@ void AmRtpReceiverThread::removeStream(int sd)
     return;
   }
 
-  unsigned int i = sit->second.index;
-  if(--nfds && (i < nfds)) {
-    fds[i] = fds[nfds];
-    sit = streams.find(fds[nfds].fd);
-    if(sit != streams.end()) {
-      sit->second.index = i;
-    }
-  }
-  streams.erase(sd);
+  StreamInfo& si = sit->second;
+  event_free(si.ev_read);
+  si.stream = NULL;
+  streams.erase(sit);
 
   streams_mut.unlock();
 }
