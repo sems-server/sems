@@ -89,6 +89,9 @@ private:
   AmAudio *local_input;
   void setLocalInput(AmAudio* in);
 
+  /** flag to indicate whether user was joined by anyone in the room */
+  bool lonely_user;
+
 public:
   WebConferenceDialog(AmPromptCollection& prompts,
 		      WebConferenceFactory* my_f, 
