@@ -317,6 +317,7 @@ bool AudioStreamData::initStream(PlayoutType playout_type,
 
   // TODO: try to init only in case there are some payloads which can't be relayed
   stream->forceSdpMediaIndex(media_idx);
+
   if (stream->init(local_sdp, remote_sdp, force_symmetric_rtp) == 0) {
     stream->setPlayoutType(playout_type);
     initialized = true;
@@ -326,7 +327,7 @@ bool AudioStreamData::initStream(PlayoutType playout_type,
     // there still can be payloads to be relayed (if all possible payloads are
     // to be relayed this needs not to be an error)
   }
-  stream->setOnHold(muted);
+  stream->setOnHold(muted); // FIXME: do not unmute if muted because of 0.0.0.0 remote IP
 
   return initialized;
 }
@@ -699,13 +700,12 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
 					  const string& relay_address,
 					  const string& relay_public_address)
 {
-  static const string void_addr("0.0.0.0");
   AmLock lock(mutex);
 
   SdpConnection orig_conn = parser_sdp.conn; // needed for the 'quick workaround' for non-audio media
 
   // place relay_address in connection address
-  if (!parser_sdp.conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
+  if (!parser_sdp.conn.address.empty() && (parser_sdp.conn.address != zero_ip)) {
     parser_sdp.conn.address = relay_public_address;
     DBG("new connection address: %s",parser_sdp.conn.address.c_str());
   }
@@ -731,7 +731,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
       }
 
       if(it->port) { // if stream active
-	if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
+	if (!it->conn.address.empty() && (parser_sdp.conn.address != zero_ip)) {
 	  it->conn.address = relay_public_address;
 	  DBG("new stream connection address: %s",it->conn.address.c_str());
 	}
@@ -764,7 +764,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
       }
 
       if(it->port) { // if stream active
-	if (!it->conn.address.empty() && (parser_sdp.conn.address != void_addr)) {
+	if (!it->conn.address.empty() && (parser_sdp.conn.address != zero_ip)) {
 	  it->conn.address = relay_public_address;
 	  DBG("new stream connection address: %s",it->conn.address.c_str());
 	}
@@ -1034,54 +1034,31 @@ void AmB2BMedia::onMediaProcessingTerminated()
   }
 }
 
-bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly)
+bool AmB2BMedia::replaceOffer(AmSdp &sdp, bool a_leg)
 {
-  AmB2BSession *session = (a_leg ? a : b);
+  TRACE("replacing offer with a local one\n");
+  createStreams(sdp); // create missing streams
 
-  // session is needed to fill all the stuff and to have the streams initialised correctly
-  if (!session) return false;
-
-  sdp.clear();
-
-  // FIXME: use original origin and continue in versioning? (the one used in
-  // previous SDPs if any)
-  // stolen from AmSession
-  sdp.version = 0;
-  sdp.origin.user = "sems";
-  //offer.origin.sessId = 1;
-  //offer.origin.sessV = 1;
-  sdp.sessionName = "sems";
-  sdp.conn.network = NT_IN;
-  sdp.conn.addrType = AT_V4;
-  if (zero_connection) sdp.conn.address = zero_ip;
-  else sdp.conn.address = session->advertisedIP();
-
-  // possible params:
-  //  - use 0.0.0.0 connection address or sendonly stream
-  // create hold request based on current streams
   AmLock lock(mutex);
 
   try {
-    if (audio.empty()) {
-      // create one dummy stream to create valid SDP
-      AudioStreamPair pair(a, b, 0);
-      audio.push_back(pair);
+
+    AudioStreamIterator as = audio.begin();
+    for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+      if (m->type == MT_AUDIO && as != audio.end()) {
+        // generate our local offer
+        TRACE("... making audio stream offer\n");
+        if (a_leg) as->a.getSdpOffer(as->media_idx, *m);
+        else as->b.getSdpOffer(as->media_idx, *m);
+        ++as;
+      }
+      else {
+        TRACE("... making non-audio/uninitialised stream inactive\n");
+        m->send = false;
+        m->recv = false;
+      }
     }
 
-    for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) {
-      // TODO: put disabled media stream for non-audio media? (we would need to
-      // remember what type of media was it etc.)
-
-      TRACE("generating SDP offer from stream %d\n", i->media_idx);
-      sdp.media.push_back(SdpMedia());
-      SdpMedia &m = sdp.media.back();
-      m.type = MT_AUDIO;
-      if (a_leg) i->a.getSdpOffer(i->media_idx, m);
-      else i->b.getSdpOffer(i->media_idx, m);
-
-      m.send = true; // always? (what if there is no 'hold music' to play?
-      if (sendonly) m.recv = false;
-    }
   }
   catch (...) {
     TRACE("hold SDP offer creation failed\n");

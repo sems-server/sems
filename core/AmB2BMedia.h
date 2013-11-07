@@ -371,6 +371,10 @@ class AmB2BMedia: public AmMediaSession
 				  const string& relay_address,
 				  const string& relay_public_address);
 
+    /** replace offer inside given SDP with locally generated one (media streams
+     * etc must be initialised like in case replaceConnectionAddress) */
+    bool replaceOffer(AmSdp &sdp, bool a_leg);
+
     /** Store remote SDP for given leg and update media session appropriately. */
     void updateRemoteSdp(bool a_leg, const AmSdp &remote_sdp, RelayController *ctrl);
     
@@ -426,7 +430,6 @@ class AmB2BMedia: public AmMediaSession
 
     bool isOnHold(bool a_leg) { if (a_leg) return a_leg_on_hold; else return b_leg_on_hold; }
     void setHoldFlag(bool a_leg, bool hold) { if (a_leg) a_leg_on_hold = hold; else b_leg_on_hold = hold; }
-    bool createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly);
 
     void mute(bool a_leg) { setMuteFlag(a_leg, true); }
     void unmute(bool a_leg) { setMuteFlag(a_leg, false); }

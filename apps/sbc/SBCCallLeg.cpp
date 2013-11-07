@@ -1598,49 +1598,44 @@ static void zero_connection(SdpConnection &c)
   DBG("unsupported connection type for marking with 0.0.0.0");
 }
 
+static void alterHoldRequest(AmSdp &sdp, bool mark_zero_con, bool enable_recv)
+{
+  if (mark_zero_con) zero_connection(sdp.conn);
+  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
+    if (mark_zero_con) zero_connection(m->conn);
+    m->recv = enable_recv;
+  }
+}
+
 void SBCCallLeg::alterHoldRequest(AmSdp &sdp)
 {
   TRACE("altering B2B hold request\n");
 
   if (!call_profile.hold_settings.alter_b2b(a_leg)) return;
 
-  bool zero = call_profile.hold_settings.mark_zero_connection(a_leg);
-  bool recv = call_profile.hold_settings.recv(a_leg);
-
-  if (zero) zero_connection(sdp.conn);
-  for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
-    if (zero) zero_connection(m->conn);
-    m->recv = recv;
-  }
+  ::alterHoldRequest(sdp,
+      call_profile.hold_settings.mark_zero_connection(a_leg),
+      call_profile.hold_settings.recv(a_leg));
 }
 
 void SBCCallLeg::createHoldRequest(AmSdp &sdp)
 {
-  // FIXME: hold SDP must be based on sdp if possible (updates existing session)
   // hack: we need to have other side SDP (if the stream is hold already
   // it should be marked as inactive)
+  // FIXME: fix SDP versioning! (remember generated versions and increase the
+  // version number in every SDP passing through?)
 
-  AmB2BMedia *ms = getMediaSession();
-  if (ms) {
-    ms->mute(a_leg);
-    ms->createHoldRequest(sdp, a_leg,
-        call_profile.hold_settings.mark_zero_connection(a_leg),
-        !call_profile.hold_settings.recv(a_leg));
-  }
-  else {
-    sdp.clear();
-
-    // FIXME: versioning
+  AmMimeBody *s = established_body.hasContentType(SIP_APPLICATION_SDP);
+  if (s) sdp.parse((const char*)s->getPayload());
+  if (sdp.media.empty()) {
+    // established SDP is not valid! generate complete fake
     sdp.version = 0;
     sdp.origin.user = "sems";
-    //offer.origin.sessId = 1;
-    //offer.origin.sessV = 1;
     sdp.sessionName = "sems";
     sdp.conn.network = NT_IN;
     sdp.conn.addrType = AT_V4;
-    sdp.conn.address = "0.0.0.0"; // we have no socket for RTP/RTCP on our side so we must do this
+    sdp.conn.address = "0.0.0.0";
 
-    // FIXME: use media line from stored body?
     sdp.media.push_back(SdpMedia());
     SdpMedia &m = sdp.media.back();
     m.type = MT_AUDIO;
@@ -1649,6 +1644,13 @@ void SBCCallLeg::createHoldRequest(AmSdp &sdp)
     m.recv = false;
     m.payloads.push_back(SdpPayload(0));
   }
+
+  ::alterHoldRequest(sdp,
+      call_profile.hold_settings.mark_zero_connection(a_leg),
+      call_profile.hold_settings.recv(a_leg));
+
+  AmB2BMedia *ms = getMediaSession();
+  if (ms) ms->replaceOffer(sdp, a_leg);
 }
 
 void SBCCallLeg::setMediaSession(AmB2BMedia *new_session)
