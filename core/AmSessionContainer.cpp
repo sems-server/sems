@@ -44,8 +44,8 @@ AmSessionContainer* AmSessionContainer::_instance=NULL;
 _MONITORING_DECLARE_INTERFACE(AmSessionContainer);
 
 AmSessionContainer::AmSessionContainer()
-  : _run_cond(false), _container_closed(false), enable_unclean_shutdown(false)
-      
+  : _run_cond(false), _container_closed(false), enable_unclean_shutdown(false),
+  CPSLimit(0), CPSHardLimit(0)
 {
 }
 
@@ -377,6 +377,102 @@ bool AmSessionContainer::postEvent(const string& local_tag,
 
 }
 
+void AmSessionContainer::setCPSLimit(unsigned int limit)
+{
+  AmLock lock(cps_mut);
+  CPSLimit = CPSHardLimit = limit;
+}
+
+void AmSessionContainer::setCPSSoftLimit(unsigned int percent)
+{
+  if(!percent) {
+    CPSLimit = CPSHardLimit;
+    return;
+  }
+
+  struct timeval tv, res;
+  gettimeofday(&tv,0);
+
+  AmLock lock(cps_mut);
+
+  while (cps_queue.size()) {
+    timersub(&tv, &cps_queue.front(), &res);
+    if (res.tv_sec >= CPS_SAMPLERATE) {
+      cps_queue.pop();
+    }   
+    else {
+      break;
+    }
+  }
+  CPSLimit = (percent / 100) * ((float)cps_queue.size() / CPS_SAMPLERATE);
+}
+
+pair<unsigned int, unsigned int> AmSessionContainer::getCPSLimit()
+{
+  AmLock lock(cps_mut);
+  return pair<unsigned int, unsigned int>(CPSHardLimit, CPSLimit);
+}
+
+unsigned int AmSessionContainer::getAvgCPS()
+{
+  struct timeval tv, res;
+  gettimeofday(&tv,0);
+
+  AmLock lock(cps_mut);
+
+  while (cps_queue.size()) {
+    timersub(&tv, &cps_queue.front(), &res);
+    if (res.tv_sec >= CPS_SAMPLERATE) {
+      cps_queue.pop();
+    }   
+    else {
+      break;
+    }
+  }
+
+  return (float)cps_queue.size() / CPS_SAMPLERATE;
+}
+
+unsigned int AmSessionContainer::getMaxCPS()
+{
+  AmLock lock(cps_mut);
+  unsigned int res = max_cps;
+  max_cps = 0;
+  return res;
+}
+
+bool AmSessionContainer::check_and_add_cps()
+{
+  struct timeval tv, res;
+  gettimeofday(&tv,0);
+
+  AmLock lock(cps_mut);
+
+  while (cps_queue.size()) {
+    timersub(&tv, &cps_queue.front(), &res);
+    if (res.tv_sec >= CPS_SAMPLERATE) {
+      cps_queue.pop();
+    }   
+    else {
+      break;
+    }
+  }
+
+  unsigned int cps = (float)cps_queue.size() / CPS_SAMPLERATE;
+  if (cps > max_cps) {
+    max_cps = cps;
+  }
+
+  if( CPSLimit && cps > CPSLimit ){
+    DBG("cps_limit %d reached. Not creating session.\n", CPSLimit);
+    return true;
+  }
+  else {
+    cps_queue.push(tv);
+    return false;
+  }
+}
+
 AmSession* AmSessionContainer::createSession(const AmSipRequest& req,
 					     string& app_name,
 					     AmArg* session_params)
@@ -398,6 +494,12 @@ AmSession* AmSessionContainer::createSession(const AmSipRequest& req,
 
       AmSipDialog::reply_error(req,AmConfig::SessionLimitErrCode, 
 			       AmConfig::SessionLimitErrReason);
+      return NULL;
+  }
+
+  if (check_and_add_cps()) {
+      AmSipDialog::reply_error(req,AmConfig::CPSLimitErrCode, 
+			       AmConfig::CPSLimitErrReason);
       return NULL;
   }
 

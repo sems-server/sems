@@ -312,6 +312,16 @@ loglevel=2
 # Example:
 #  options_session_limit="900;503;Warning, server soon overloaded"
 
+# optional parameter: cps_limit=<limit>;<err code>;<err reason>
+# 
+# - this sets a maximum calls per sec limit. If that limit is 
+#   reached, no further calls are accepted, but the error reply 
+#   with err code/err reason is sent out.
+# 
+# Default: 0 (None)
+#
+# Example:
+#  cps_limit="100;503;Server overload"
 
 # optional parameter: dead_rtp_time=<unsigned int>
 #

@@ -40,7 +40,7 @@
 #include "log.h"
 #include "AmConfigReader.h"
 #include "AmUtils.h"
-#include "AmSession.h"
+#include "AmSessionContainer.h"
 #include "Am100rel.h"
 #include "sip/transport.h"
 #include "sip/ip_util.h"
@@ -109,6 +109,9 @@ string       AmConfig::SessionLimitErrReason   = "Server overload";
 unsigned int AmConfig::OptionsSessionLimit            = 0;
 unsigned int AmConfig::OptionsSessionLimitErrCode     = 503;
 string       AmConfig::OptionsSessionLimitErrReason   = "Server overload";
+
+unsigned int AmConfig::CPSLimitErrCode     = 503;
+string       AmConfig::CPSLimitErrReason   = "Server overload";
 
 bool         AmConfig::AcceptForkedDialogs     = true;
 
@@ -598,6 +601,20 @@ int AmConfig::readConfiguration()
       }
       OptionsSessionLimitErrReason = limit[2];
     }
+  }
+
+  if(cfg.hasParameter("cps_limit")){ 
+    unsigned int CPSLimit;
+    vector<string> limit = explode(cfg.getParameter("cps_limit"), ";");
+    if (limit.size() != 3) {
+      ERROR("invalid cps_limit specified.\n");
+    } else {
+      if (str2i(limit[0], CPSLimit) || str2i(limit[1], CPSLimitErrCode)) {
+	ERROR("invalid cps_limit specified.\n");
+      }
+      CPSLimitErrReason = limit[2];
+    }
+    AmSessionContainer::instance()->setCPSLimit(CPSLimit);
   }
 
   if(cfg.hasParameter("accept_forked_dialogs"))
