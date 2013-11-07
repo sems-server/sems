@@ -319,6 +319,13 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
       }
       break;
 
+    case ResumeHeld:
+      {
+        ResumeHeldEvent *e = dynamic_cast<ResumeHeldEvent*>(ev);
+        if (e) resumeHeld();
+      }
+      break;
+
     case ChangeRtpModeEventId:
       {
         ChangeRtpModeEvent *e = dynamic_cast<ChangeRtpModeEvent*>(ev);

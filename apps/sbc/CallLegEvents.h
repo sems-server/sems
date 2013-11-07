@@ -8,10 +8,11 @@ enum {
   ReplaceLeg,
   ReplaceInProgress,
   DisconnectLeg,
-  ChangeRtpModeEventId
+  ChangeRtpModeEventId,
+  ResumeHeld
 };
 
-#define LAST_B2B_CALL_LEG_EVENT_ID ChangeRtpModeEventId
+#define LAST_B2B_CALL_LEG_EVENT_ID ResumeHeld
 
 struct ConnectLegEvent: public B2BEvent
 {
@@ -155,5 +156,9 @@ struct ChangeRtpModeEvent: public B2BEvent
   virtual ~ChangeRtpModeEvent() { if (media && media->releaseReference()) delete media; }
 };
 
+struct ResumeHeldEvent: public B2BEvent
+{
+  ResumeHeldEvent(): B2BEvent(ResumeHeld) { }
+};
 
 #endif
