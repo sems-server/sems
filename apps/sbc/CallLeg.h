@@ -335,8 +335,8 @@ class CallLeg: public AmB2BSession
      * Can be used in A leg and B leg as well.
      * Additional headers may be specified - these are used in outgoing INVITE
      * to the callee's destination. */
-    void addCallee(CallLeg *callee, const string &hdrs) { addNewCallee(callee, new ConnectLegEvent(hdrs, established_body)); }
-    void addCallee(CallLeg *callee, const string &hdrs, AmB2BSession::RTPRelayMode mode) { addNewCallee(callee, new ConnectLegEvent(hdrs, established_body), mode); }
+    void addCallee(CallLeg *callee, const string &hdrs);
+//    void addCallee(CallLeg *callee, const string &hdrs, AmB2BSession::RTPRelayMode mode) { addNewCallee(callee, new ConnectLegEvent(hdrs, established_body), mode); }
 
 
     /** Replace given already existing session in a B2B call. We become new

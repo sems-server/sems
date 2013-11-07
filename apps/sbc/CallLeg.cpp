@@ -1155,6 +1155,22 @@ void CallLeg::addCallee(const string &session_tag, const AmSipRequest &relayed_i
   addExistingCallee(session_tag, new ReconnectLegEvent(getLocalTag(), relayed_invite));
 }
 
+void CallLeg::addCallee(CallLeg *callee, const string &hdrs)
+{
+  if (!non_hold_sdp.media.empty()) {
+    // use non-hold SDP if possible
+    AmMimeBody body(established_body);
+    sdp2body(non_hold_sdp, body);
+    addNewCallee(callee, new ConnectLegEvent(hdrs, body));
+  }
+  else addNewCallee(callee, new ConnectLegEvent(hdrs, established_body));
+}
+
+/*void CallLeg::addCallee(CallLeg *callee, const string &hdrs, AmB2BSession::RTPRelayMode mode)
+{
+  addNewCallee(callee, new ConnectLegEvent(hdrs, established_body), mode);
+}*/
+
 void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &relayed_invite)
 {
   // add existing session as our B leg
