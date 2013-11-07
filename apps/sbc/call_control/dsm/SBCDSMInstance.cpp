@@ -604,7 +604,8 @@ void SBCDSMInstance::disconnectMedia() {
     DBG("media session not set, not disconnecting\n");
     return;
   }
-  AmMediaProcessor::instance()->removeSession(media);
+  AmMediaProcessor::instance()->softRemoveSession(media);
+  media->restartRelay();
 }
 
 NOT_IMPLEMENTED(mute());
