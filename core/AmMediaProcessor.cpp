@@ -127,6 +127,10 @@ void AmMediaProcessor::removeSession(AmMediaSession* s) {
   removeFromProcessor(s, RemoveSession);
 }
 
+void AmMediaProcessor::softRemoveSession(AmMediaSession* s) {
+  removeFromProcessor(s, SoftRemoveSession);
+}
+
 /* FIXME: implement Call Group ts offsets for soft changing of 
 	call groups 
 */
