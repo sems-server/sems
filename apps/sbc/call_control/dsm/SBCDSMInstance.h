@@ -34,6 +34,7 @@
 #include "ExtendedCCInterface.h"
 #include "DSMSession.h"
 #include "DSMStateEngine.h"
+#include "AmPlaylist.h"
 
 /** DSM interpreter instance for one call leg */
 class SBCDSMInstance 
@@ -46,10 +47,15 @@ class SBCDSMInstance
 
   // owned by this instance
   std::set<DSMDisposable*> gc_trash;
+  vector<AmAudio*> audiofiles;
 
   auto_ptr<AmSession> dummy_session;  
 
+  auto_ptr<AmPlaylist> playlist;
+
   void resetDummySession(SimpleRelayDialog *relay);
+
+  SBCCallLeg *call;
 
   public:
     SBCDSMInstance(SBCCallLeg *call, const VarMapT& values);
@@ -68,6 +74,8 @@ class SBCDSMInstance
     CCChainProcessing resumeHeld(SBCCallLeg* call, bool send_reinvite);
     CCChainProcessing createHoldRequest(SBCCallLeg* call, AmSdp& sdp);
     CCChainProcessing handleHoldReply(SBCCallLeg* call, bool succeeded);
+
+    AmPlaylist* getPlaylist();
 
     // ------------ simple relay interface --------------------------------------- */
     bool init(SBCCallProfile &profile, SimpleRelayDialog *relay);

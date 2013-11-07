@@ -37,6 +37,7 @@
 using namespace std;
 
 SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const VarMapT& values)
+  : call(call)
 {
   DBG("SBCDSMInstance::SBCDSMInstance()\n");
   var = values;
@@ -78,6 +79,15 @@ SBCDSMInstance::~SBCDSMInstance()
   for (std::set<DSMDisposable*>::iterator it=
 	 gc_trash.begin(); it != gc_trash.end(); it++)
     delete *it;
+
+  for (vector<AmAudio*>::iterator it=
+	 audiofiles.begin();it!=audiofiles.end();it++) 
+    delete *it;
+
+  AmB2BMedia *media = call->getMediaSession();
+  if (media) {
+    AmMediaProcessor::instance()->removeSession(media);
+  }
 }
 
 #define RETURN_CONTINUE_OR_STOP_PROCESSING			     \
@@ -329,6 +339,14 @@ void SBCDSMInstance::resetDummySession(SimpleRelayDialog *relay) {
     dummy_session->dlg->setRemoteUri(relay->getRemoteUri());
   }
 }
+
+AmPlaylist* SBCDSMInstance::getPlaylist() {
+  if (NULL == playlist.get())
+    playlist.reset(new AmPlaylist(call));
+
+  return playlist.get();
+}
+
 // ------------ simple relay interface --------------------------------------- */
 bool SBCDSMInstance::init(SBCCallProfile &profile, SimpleRelayDialog *relay) {
   DBG("SBCDSMInstance::init() - simple relay\n");
@@ -454,22 +472,94 @@ void SBCDSMInstance::releaseOwnership(DSMDisposable* d) {
   }
 
 NOT_IMPLEMENTED(playPrompt(const string& name, bool loop, bool front));
-NOT_IMPLEMENTED(playFile(const string& name, bool loop, bool front));
+//NOT_IMPLEMENTED(playFile(const string& name, bool loop, bool front));
+void SBCDSMInstance::playFile(const string& name, bool loop, bool front) {
+  AmAudioFile* af = new AmAudioFile();
+  if(af->open(name,AmAudioFile::Read)) {
+    ERROR("audio file '%s' could not be opened for reading.\n",
+	  name.c_str());
+    delete af;
+
+    throw DSMException("file", "path", name);
+
+    return;
+  }
+  if (loop)
+    af->loop.set(true);
+
+  if (front)
+    getPlaylist()->addToPlayListFront(new AmPlaylistItem(af, NULL));
+  else
+    getPlaylist()->addToPlaylist(new AmPlaylistItem(af, NULL));
+
+  audiofiles.push_back(af);
+  CLR_ERRNO;
+}
+
+
 NOT_IMPLEMENTED(playSilence(unsigned int length, bool front));
 NOT_IMPLEMENTED(recordFile(const string& name));
 NOT_IMPLEMENTED_UINT(getRecordLength());
 NOT_IMPLEMENTED_UINT(getRecordDataSize());
 NOT_IMPLEMENTED(stopRecord());
+
 NOT_IMPLEMENTED(setInOutPlaylist());
-NOT_IMPLEMENTED(setInputPlaylist());
+
+// void SBCDSMInstance::setInOutPlaylist() {
+//   AmB2BMedia *media = call->getMediaSession();
+//   if (NULL == media) {
+//     ERROR("could not set InOutPlaylist - no media session!\n");
+//     return;
+//   }
+//   media->setFirstStreamInOut(call->isALeg(), getPlaylist(), getPlaylist());
+// }
+
+void SBCDSMInstance::setInputPlaylist() {
+  AmB2BMedia *media = call->getMediaSession();
+  if (NULL == media) {
+    ERROR("could not setInputPlaylist - no media session!\n");
+    return;
+  }
+
+  media->setFirstStreamInput(call->isALeg(), getPlaylist());
+}
+
 NOT_IMPLEMENTED(setOutputPlaylist());
+// void SBCDSMInstance::setOutputPlaylist() {
+//   AmB2BMedia *media = call->getMediaSession();
+//   if (NULL == media) {
+//     ERROR("could not setOutputPlaylist - no media session!\n");
+//     return;
+//   }  media->setFirstStreamOutput(call->isALeg(), getPlaylist());
+// }
 
 NOT_IMPLEMENTED(addToPlaylist(AmPlaylistItem* item, bool front));
 NOT_IMPLEMENTED(flushPlaylist());
 NOT_IMPLEMENTED(setPromptSet(const string& name));
 NOT_IMPLEMENTED(addSeparator(const string& name, bool front));
-NOT_IMPLEMENTED(connectMedia());
-NOT_IMPLEMENTED(disconnectMedia());
+
+void SBCDSMInstance::connectMedia() {
+  AmB2BMedia *media = call->getMediaSession();
+  if (NULL == media) {
+    DBG("media session was not set, creating new one\n");
+    media = new AmB2BMedia(call->isALeg() ? call : NULL , call->isALeg() ? NULL : call);
+    call->setMediaSession(media);
+    // TODO: media stream initialization here (does changeRtpMode help?)
+  } else {
+    media->stopRelay();
+  }
+  AmMediaProcessor::instance()->addSession(media, call->getCallgroup());
+}
+
+void SBCDSMInstance::disconnectMedia() {
+  AmB2BMedia *media = call->getMediaSession();
+  if (NULL == media) {
+    DBG("media session not set, not disconnecting\n");
+    return;
+  }
+  AmMediaProcessor::instance()->removeSession(media);
+}
+
 NOT_IMPLEMENTED(mute());
 NOT_IMPLEMENTED(unmute());
 
