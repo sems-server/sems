@@ -68,6 +68,8 @@ DSMAction* DSMCoreModule::getAction(const string& from_str) {
   DEF_CMD("getRecordDataSize", SCGetRecordDataSizeAction);
   DEF_CMD("flushPlaylist", SCFlushPlaylistAction);
   DEF_CMD("setInOutPlaylist", SCSetInOutPlaylistAction);
+  DEF_CMD("setInputPlaylist", SCSetInputPlaylistAction);
+  DEF_CMD("setOutputPlaylist", SCSetOutputPlaylistAction);
   DEF_CMD("addSeparator", SCAddSeparatorAction);
   DEF_CMD("connectMedia", SCConnectMediaAction);
   DEF_CMD("disconnectMedia", SCDisconnectMediaAction);
@@ -396,6 +398,14 @@ EXEC_ACTION_START(SCFlushPlaylistAction) {
 
 EXEC_ACTION_START(SCSetInOutPlaylistAction) {
   sc_sess->setInOutPlaylist();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCSetInputPlaylistAction) {
+  sc_sess->setInputPlaylist();
+} EXEC_ACTION_END;
+
+EXEC_ACTION_START(SCSetOutputPlaylistAction) {
+  sc_sess->setOutputPlaylist();
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(SCConnectMediaAction) {

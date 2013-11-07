@@ -146,6 +146,10 @@ Playing prompts and file I/O
    if notify=true, send an event
  setInOutPlaylist() 
    set playlist as input and output
+ setInputPlaylist() 
+   set playlist as input (output untouched)
+ setOutputPlaylist() 
+   set playlist as output (input untouched)
  addSeparator(id [, bool front])
    fires event when playlist hits it ; front=[true|false]
  connectMedia()     - set playlist as input and output of session,
