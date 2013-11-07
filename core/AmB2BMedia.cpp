@@ -1251,6 +1251,21 @@ void AmB2BMedia::setRelayDTMFReceiving(bool enabled) {
   }
 }
 
+void AmB2BMedia::stopRelay() {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    (*j)->a.disableRawRelay();
+    (*j)->b.disableRawRelay();
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    if (NULL != j->a.getStream())
+      j->a.getStream()->disableRtpRelay();
+    if (NULL != j->b.getStream())
+      j->b.getStream()->disableRtpRelay();
+  }
+}
+
 void AudioStreamData::debug()
 {
   if(stream) {

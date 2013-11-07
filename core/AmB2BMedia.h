@@ -448,6 +448,8 @@ class AmB2BMedia: public AmMediaSession
     /** enable or disable DTMF receiving on relay streams */
     void setRelayDTMFReceiving(bool enabled);
 
+    void stopRelay();
+
     // print debug info
     void debug();
 };
