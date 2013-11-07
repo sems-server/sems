@@ -32,6 +32,8 @@
 #include "DSM.h"
 #include "SBCDSMParams.h"
 
+#include "AmAdvancedAudio.h"
+
 #include <algorithm>
 
 using namespace std;
@@ -259,6 +261,13 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
     return ContinueProcessing;
   }
 
+  AmPlaylistSeparatorEvent* sep_ev = dynamic_cast<AmPlaylistSeparatorEvent*>(event);
+  if (sep_ev) {
+    map<string, string> params;
+    params["id"] = int2str(sep_ev->event_id);
+    engine.runEvent(call, this, DSMCondition::PlaylistSeparator, &params);
+  }
+
   // todo: process JsonRPCEvents (? see DSMCall::process)
 
   return ContinueProcessing;
@@ -459,7 +468,7 @@ void SBCDSMInstance::releaseOwnership(DSMDisposable* d) {
   gc_trash.erase(d);
 }
 
-// --- DSM sessino API  -------------------------------------------
+// --- DSM session API  -------------------------------------------
 
 #define NOT_IMPLEMENTED_UINT(_func)					\
   unsigned int SBCDSMInstance::_func {					\
@@ -472,7 +481,8 @@ void SBCDSMInstance::releaseOwnership(DSMDisposable* d) {
   }
 
 NOT_IMPLEMENTED(playPrompt(const string& name, bool loop, bool front));
-//NOT_IMPLEMENTED(playFile(const string& name, bool loop, bool front));
+NOT_IMPLEMENTED(setPromptSet(const string& name));
+
 void SBCDSMInstance::playFile(const string& name, bool loop, bool front) {
   AmAudioFile* af = new AmAudioFile();
   if(af->open(name,AmAudioFile::Read)) {
@@ -496,8 +506,18 @@ void SBCDSMInstance::playFile(const string& name, bool loop, bool front) {
   CLR_ERRNO;
 }
 
+void SBCDSMInstance::playSilence(unsigned int length, bool front) {
+  AmNullAudio* af = new AmNullAudio();
+  af->setReadLength(length);
+  if (front)
+    getPlaylist()->addToPlayListFront(new AmPlaylistItem(af, NULL));
+  else
+    getPlaylist()->addToPlaylist(new AmPlaylistItem(af, NULL));
 
-NOT_IMPLEMENTED(playSilence(unsigned int length, bool front));
+  audiofiles.push_back(af);
+  CLR_ERRNO;
+}
+
 NOT_IMPLEMENTED(recordFile(const string& name));
 NOT_IMPLEMENTED_UINT(getRecordLength());
 NOT_IMPLEMENTED_UINT(getRecordDataSize());
@@ -533,10 +553,37 @@ NOT_IMPLEMENTED(setOutputPlaylist());
 //   }  media->setFirstStreamOutput(call->isALeg(), getPlaylist());
 // }
 
-NOT_IMPLEMENTED(addToPlaylist(AmPlaylistItem* item, bool front));
-NOT_IMPLEMENTED(flushPlaylist());
-NOT_IMPLEMENTED(setPromptSet(const string& name));
-NOT_IMPLEMENTED(addSeparator(const string& name, bool front));
+void SBCDSMInstance::addToPlaylist(AmPlaylistItem* item, bool front) {
+  DBG("add item to playlist\n");
+  if (front)
+    getPlaylist()->addToPlayListFront(item);
+  else
+    getPlaylist()->addToPlaylist(item);
+}
+
+
+void SBCDSMInstance::flushPlaylist() {
+  DBG("flush playlist\n");
+  getPlaylist()->flush(); 
+}
+
+void SBCDSMInstance::addSeparator(const string& name, bool front) {
+  unsigned int id = 0;
+  if (str2i(name, id)) {
+    SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);
+    SET_STRERROR("separator id '"+name+"' not a number");
+    return;
+  }
+
+  AmPlaylistSeparator* sep = new AmPlaylistSeparator(call, id);
+  if (front)
+    getPlaylist()->addToPlayListFront(new AmPlaylistItem(sep, sep));
+  else
+    getPlaylist()->addToPlaylist(new AmPlaylistItem(sep, sep));
+  // for garbage collector
+  audiofiles.push_back(sep);
+  CLR_ERRNO;
+}
 
 void SBCDSMInstance::connectMedia() {
   AmB2BMedia *media = call->getMediaSession();
