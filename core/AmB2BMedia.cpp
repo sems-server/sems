@@ -1266,6 +1266,21 @@ void AmB2BMedia::stopRelay() {
   }
 }
 
+void AmB2BMedia::restartRelay() {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    (*j)->a.enableRawRelay();
+    (*j)->b.enableRawRelay();
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    if (NULL != j->a.getStream())
+      j->a.getStream()->enableRtpRelay();
+    if (NULL != j->b.getStream())
+      j->b.getStream()->enableRtpRelay();
+  }
+}
+
 void AudioStreamData::debug()
 {
   if(stream) {
