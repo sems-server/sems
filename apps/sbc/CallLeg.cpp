@@ -768,6 +768,8 @@ void CallLeg::putOnHold()
   TRACE("putting remote on hold\n");
   oa.hold = OA::HoldRequested;
 
+  holdRequested();
+
   AmSdp sdp;
   createHoldRequest(sdp);
   updateLocalSdp(sdp);
@@ -788,6 +790,8 @@ void CallLeg::resumeHeld(/*bool send_reinvite*/)
   try {
     TRACE("resume held remote\n");
     oa.hold = OA::ResumeRequested;
+
+    resumeRequested();
 
     AmSdp sdp;
     createResumeRequest(sdp);
@@ -1434,9 +1438,7 @@ void CallLeg::adjustOffer(AmSdp &sdp)
   if (oa.hold != OA::PreserveHoldStatus) {
     // locally generated hold/unhold requests that already contain correct
     // hold/resume bodies and need not to be altered via createHoldRequest
-
-    if (oa.hold == OA::HoldRequested) holdRequested();
-    else resumeRequested();
+    // hold/resumeRequested is already called
   }
   else {
     // handling B2B SDP, check for hold/unhold
@@ -1461,7 +1463,7 @@ void CallLeg::adjustOffer(AmSdp &sdp)
 
 void CallLeg::updateLocalSdp(AmSdp &sdp)
 {
-  //INFO("%s: updateLocalSdp\n", getLocalTag().c_str());
+  TRACE("%s: updateLocalSdp\n", getLocalTag().c_str());
   // handle the body based on current offer-answer status
   // (possibly update the body before sending to remote)
 
@@ -1493,7 +1495,7 @@ void CallLeg::updateLocalSdp(AmSdp &sdp)
 
 void CallLeg::updateRemoteSdp(AmSdp &sdp)
 {
-  //INFO("%s: updateRemoteSdp\n", getLocalTag().c_str());
+  TRACE("%s: updateRemoteSdp\n", getLocalTag().c_str());
   switch (oa.status) {
     case OA::None:
       oa.status = OA::OfferReceived;
@@ -1515,6 +1517,7 @@ void CallLeg::updateRemoteSdp(AmSdp &sdp)
 
 void CallLeg::oaCompleted()
 {
+  TRACE("%s: oaCompleted\n", getLocalTag().c_str());
   switch (oa.hold) {
     case OA::HoldRequested: holdAccepted(); break;
     case OA::ResumeRequested: resumeAccepted(); break;
