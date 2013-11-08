@@ -39,7 +39,7 @@
 using namespace std;
 
 SBCDSMInstance::SBCDSMInstance(SBCCallLeg *call, const VarMapT& values)
-  : call(call)
+  : call(call), local_media_connected(false)
 {
   DBG("SBCDSMInstance::SBCDSMInstance()\n");
   var = values;
@@ -86,10 +86,7 @@ SBCDSMInstance::~SBCDSMInstance()
 	 audiofiles.begin();it!=audiofiles.end();it++) 
     delete *it;
 
-  AmB2BMedia *media = call->getMediaSession();
-  if (media) {
-    AmMediaProcessor::instance()->removeSession(media);
-  }
+  AmMediaProcessor::instance()->removeSession(call);
 }
 
 #define RETURN_CONTINUE_OR_STOP_PROCESSING			     \
@@ -188,6 +185,7 @@ void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChange
   case CallLeg::StatusChangeCause::SipRequest: clearRequestParameters(avar); break;
   default: break;
   }
+
 }
 
 /** called from A/B leg when in-dialog request comes in */
@@ -595,16 +593,26 @@ void SBCDSMInstance::connectMedia() {
   } else {
     media->stopRelay();
   }
-  AmMediaProcessor::instance()->addSession(media, call->getCallgroup());
+
+  media->addToMediaProcessor();
+
+  local_media_connected = true;
 }
 
 void SBCDSMInstance::disconnectMedia() {
+  if (!local_media_connected) {
+    DBG("local media not connected, not disconnecting\n");
+    return;
+  }
+  DBG("disconnecting from local media processing, enabling Relay...\n");
+  local_media_connected = false;
+
   AmB2BMedia *media = call->getMediaSession();
   if (NULL == media) {
     DBG("media session not set, not disconnecting\n");
     return;
   }
-  AmMediaProcessor::instance()->softRemoveSession(media);
+  AmMediaProcessor::instance()->removeSession(media);
   media->restartRelay();
 }
 

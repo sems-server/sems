@@ -57,6 +57,8 @@ class SBCDSMInstance
 
   SBCCallLeg *call;
 
+  bool local_media_connected;
+
   public:
     SBCDSMInstance(SBCCallLeg *call, const VarMapT& values);
     ~SBCDSMInstance();
