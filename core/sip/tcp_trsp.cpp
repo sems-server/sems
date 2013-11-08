@@ -15,14 +15,14 @@
 
 void tcp_trsp_socket::on_sock_read(int fd, short ev, void* arg)
 {
-  if(ev & EV_READ){
+  if(ev & (EV_READ|EV_TIMEOUT)){
     ((tcp_trsp_socket*)arg)->on_read(ev);
   }
 }
 
 void tcp_trsp_socket::on_sock_write(int fd, short ev, void* arg)
 {
-  if(ev & EV_WRITE){
+  if(ev & (EV_WRITE|EV_TIMEOUT)){
     ((tcp_trsp_socket*)arg)->on_write(ev);
   }
 }
@@ -121,6 +121,7 @@ int tcp_trsp_socket::on_connect(short ev)
   int error = 0;
   if(getsockopt(sd, SOL_SOCKET, SO_ERROR, &error, &len) < 0) {
     ERROR("getsockopt: %s",strerror(errno));
+    close();
     return -1;
   }
 
@@ -207,10 +208,6 @@ int tcp_trsp_socket::send(const sockaddr_storage* sa, const char* msg,
 
 void tcp_trsp_socket::close()
 {
-  // TODO:
-  // - remove the socket object from 
-  //   server mapping and from memory.
-
   closed = true;
   DBG("********* closing connection ***********");
 
@@ -227,7 +224,26 @@ void tcp_trsp_socket::close()
   ::close(sd);
   sd = -1;
 
+  generate_transport_errors();
   server_sock->remove_connection(this);
+}
+
+void tcp_trsp_socket::generate_transport_errors()
+{
+  while(!send_q.empty()) {
+
+    msg_buf* msg = send_q.front();
+    send_q.pop_front();
+
+    sip_msg s_msg(msg->msg,msg->msg_len);
+    delete msg;
+
+    copy_peer_addr(&s_msg.remote_ip);
+    copy_addr_to(&s_msg.local_ip);
+    //s_msg->local_socket = this;
+
+    trans_layer::instance()->transport_error(&s_msg);
+  }
 }
 
 void tcp_trsp_socket::on_read(short ev)
@@ -378,7 +394,7 @@ void tcp_trsp_socket::on_write(short ev)
 
 tcp_server_socket::tcp_server_socket(unsigned short if_num)
   : trsp_socket(if_num,0),
-    evbase(NULL)
+    evbase(NULL), ev_accept(NULL)
 {
 }
 
@@ -584,7 +600,10 @@ void tcp_trsp::run()
        sock->get_ip(),sock->get_port());
 
   /* Start the event loop. */
-  event_base_dispatch(evbase);
+  int ret = event_base_dispatch(evbase);
+
+  INFO("TCP SIP server on %s:%i finished (%i)",
+       sock->get_ip(),sock->get_port(),ret);
 }
 
 /** @see AmThread */

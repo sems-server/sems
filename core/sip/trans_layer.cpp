@@ -843,6 +843,72 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop,
     return 0;
 }
 
+static void set_err_reply_from_req(sip_msg* err, sip_msg* req,
+				   int code, const char* reason)
+{
+    err->type = SIP_REPLY;
+    err->u.reply = new sip_reply();
+    err->u.reply->code = code;
+    err->u.reply->reason = cstring(reason);
+
+    // pre-parse message
+    if(!req->from->p) {
+	DBG("parsing From-HF...");
+	req->from->p = new sip_from_to();
+	parse_from_to((sip_from_to*)req->from->p,
+		      req->from->value.s,req->from->value.len);
+    }
+    err->from = req->from;
+
+    if(!req->to->p) {
+	DBG("parsing To-HF...");
+	req->to->p = new sip_from_to();
+	parse_from_to((sip_from_to*)req->to->p,
+		      req->to->value.s,req->to->value.len);
+    }
+    err->to = req->to;
+
+    if(!req->cseq->p) {
+	DBG("parsing CSeq-HF...");
+	req->cseq->p = new sip_cseq();
+	parse_cseq((sip_cseq*)req->cseq->p,
+		   req->cseq->value.s,req->cseq->value.len);
+    }
+    err->cseq = req->cseq;
+    err->callid = req->callid;
+    err->via_p1 = req->via_p1;
+}
+
+void _trans_layer::transport_error(sip_msg* msg)
+{
+    char* err_msg=0;
+    int ret = parse_sip_msg(msg,err_msg);
+    if(ret){
+	DBG("parse_sip_msg returned %i\n",ret);
+
+	if(!err_msg){
+	    err_msg = (char*)"unknown parsing error";
+	}
+	DBG("parsing error: %s\n",err_msg);
+
+	DBG("Message was: \"%.*s\"\n",msg->len,msg->buf);
+	return;
+    }
+
+    // transport errors for replies and ACK requests
+    // should be silently dropped
+    if((msg->type != SIP_REQUEST) ||
+       (msg->u.request->method == sip_request::ACK))
+	return;
+
+    // generate error reply
+    sip_msg* err = new sip_msg();
+    set_err_reply_from_req(err,msg,503,"Transport Error");
+
+    // err will be deleted there, as any received message
+    process_rcvd_msg(err);
+}
+
 static void translate_string(sip_msg* dst_msg, cstring& dst,
 			     sip_msg* src_msg, cstring& src)
 {
@@ -1109,29 +1175,8 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    if(msg->h_dns.next_ip(&sa) < 0){
 		DBG("next_ip(): no more destinations! reply 500");
 		sip_msg err;
-		err.type = SIP_REPLY;
-		err.u.reply = new sip_reply();
-		err.u.reply->code = 500;
-		err.u.reply->reason = cstring("All destinations blacklisted");
-
-		// pre-parse error message
-		err.from = msg->from;
-		err.from->p = new sip_from_to();
-		parse_from_to((sip_from_to*)err.from->p,
-			      err.from->value.s,err.from->value.len);
-
-		err.to = msg->to;
-		err.to->p = new sip_from_to();
-		parse_from_to((sip_from_to*)err.to->p,
-			      err.to->value.s,err.to->value.len);
-
-		err.cseq = msg->cseq;
-		err.cseq->p = new sip_cseq();
-		parse_cseq((sip_cseq*)err.cseq->p,
-			   err.cseq->value.s,err.cseq->value.len);
-
-		err.callid = msg->callid;
-
+		set_err_reply_from_req(&err,msg,500,
+				       "All destinations blacklisted");
 		ua->handle_sip_reply(c2stlstr(dialog_id),&err);
 		return 0;
 	    }
@@ -1429,12 +1474,12 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
 }
 
 
-void _trans_layer::received_msg(sip_msg* msg)
-{
 #define DROP_MSG \
           delete msg;\
           return
 
+void _trans_layer::received_msg(sip_msg* msg)
+{
     char* err_msg=0;
     int err = parse_sip_msg(msg,err_msg);
 
@@ -1459,7 +1504,12 @@ void _trans_layer::received_msg(sip_msg* msg)
 
 	DROP_MSG;
     }
-    
+
+    process_rcvd_msg(msg);
+}
+
+void _trans_layer::process_rcvd_msg(sip_msg* msg)
+{    
     assert(msg->callid && get_cseq(msg));
     unsigned int h = hash(msg->callid->value, get_cseq(msg)->num_str);
 
@@ -1468,6 +1518,7 @@ void _trans_layer::received_msg(sip_msg* msg)
 
     bucket->lock();
 
+    int err=0;
     switch(msg->type){
     case SIP_REQUEST: 
         stats.inc_received_requests();
