@@ -110,8 +110,7 @@ class CallLeg: public AmB2BSession
 
       void releaseMediaSession() {
 	if (media_session) {
-	  if (media_session->releaseReference())
-	    delete media_session;
+	  media_session->releaseReference();
 	  media_session = NULL;
 	}
       }

@@ -1091,7 +1091,10 @@ void CallLeg::addExistingCallee(const string &session_tag, ReconnectLegEvent *ev
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
     INFO("the B leg to connect to (%s) doesn't exist\n", session_tag.c_str());
-    if (b.media_session) delete b.media_session;
+    if (b.media_session) {
+      b.media_session->releaseReference();
+      b.media_session = NULL; // ptr may not be valid any more
+    }
     return;
   }
 
@@ -1122,7 +1125,10 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const AmSipRequest &
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
     INFO("the call leg to be replaced (%s) doesn't exist\n", session_tag.c_str());
-    if (b.media_session) delete b.media_session;
+    if (b.media_session) {
+      b.media_session->releaseReference();
+      b.media_session = NULL;
+    }
     return;
   }
 
@@ -1150,7 +1156,10 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
   if (!AmSessionContainer::instance()->postEvent(session_tag, ev)) {
     // session doesn't exist - can't connect
     INFO("the call leg to be replaced (%s) doesn't exist\n", session_tag.c_str());
-    if (b.media_session) delete b.media_session;
+    if (b.media_session) {
+      b.media_session->releaseReference();
+      b.media_session = NULL;
+    }
     return;
   }
 

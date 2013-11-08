@@ -516,6 +516,33 @@ AmB2BMedia::~AmB2BMedia()
   if (logger) dec_ref(logger);
 }
 
+void AmB2BMedia::addToMediaProcessor() {
+  addReference(); // AmMediaProcessor's reference
+  AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void AmB2BMedia::addToMediaProcessorUnsafe() {
+  ref_cnt++; // AmMediaProcessor's reference
+  AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void AmB2BMedia::addReference() {
+  mutex.lock();
+  ref_cnt++;
+  mutex.unlock();
+}
+
+bool AmB2BMedia::releaseReference() {
+  mutex.lock();
+  int r = --ref_cnt;
+  mutex.unlock();
+  if (r==0) {
+    DBG("last reference to AmB2BMedia [%p] cleared, destroying\n", this);
+    delete this;
+  }
+  return (r == 0); 
+}
+
 void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
 {
   AmLock lock(mutex);
@@ -606,8 +633,7 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
 
   if (needs_processing) {
     if (!isProcessingMedia()) {
-      ref_cnt++; // add reference (hold by AmMediaProcessor)
-      AmMediaProcessor::instance()->addSession(this, callgroup);
+      addToMediaProcessorUnsafe();
     }
   }
   else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
@@ -937,8 +963,7 @@ void AmB2BMedia::onSdpUpdate()
   // the media, right?
   if (needs_processing) {
     if (!isProcessingMedia()) {
-      ref_cnt++; // add reference (hold by AmMediaProcessor)
-      AmMediaProcessor::instance()->addSession(this, callgroup);
+      addToMediaProcessorUnsafe();
     }
   }
   else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
@@ -1081,9 +1106,7 @@ void AmB2BMedia::onMediaProcessingTerminated()
   clearAudio();
 
   // release reference held by AmMediaProcessor
-  if (releaseReference()) { 
-    delete this; // this should really work :-D
-  }
+  releaseReference();
 }
 
 bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly)

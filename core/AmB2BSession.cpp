@@ -1013,7 +1013,7 @@ void AmB2BSession::clearRtpReceiverRelay() {
     case RTP_Transcoding:
       if (media_session) { 
         media_session->stop(a_leg);
-        if (media_session->releaseReference()) delete media_session;
+        media_session->releaseReference();
         media_session = NULL;
       }
       break;
@@ -1288,7 +1288,8 @@ void AmB2BSession::setMediaSession(AmB2BMedia *new_session)
   // FIXME: ignore old media_session? can it be already set here?
   if (media_session) ERROR("BUG: non-empty media session overwritten\n");
   media_session = new_session; 
-  if (media_session) media_session->addReference(); // new reference for me
+  if (media_session)
+    media_session->addReference(); // new reference for me
 }
 
 void AmB2BCallerSession::initializeRTPRelay(AmB2BCalleeSession* callee_session) {

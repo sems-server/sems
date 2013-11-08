@@ -345,26 +345,47 @@ class AmB2BMedia: public AmMediaSession
 
     msg_logger* logger; // log RTP traffic
 
+    virtual ~AmB2BMedia();
+
   public:
     AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b);
-    virtual ~AmB2BMedia();
+
+    /**
+     * To add a AmB2BMedia session to the media processor, *this method
+     * MUST be used* as it increases the refcnt.
+     */
+    void addToMediaProcessor();
+    /**
+     * unsafe version (no locking of mutex)
+     *
+     * To add a AmB2BMedia session to the media processor, *this method
+     * MUST be used* as it increases the refcnt.
+     */
+    void addToMediaProcessorUnsafe();
 
     void changeSession(bool a_leg, AmB2BSession *new_session);
 
     //void updateRelayPayloads(bool a_leg, const AmSdp &local_sdp, const AmSdp &remote_sdp);
 
-    /** Adds a reference.
+    /**
+     * Adds a reference.
+     *
+     * Both AmB2BSessions and AmMediaProcessor uses refcnt to this class; B2BSession
+     * in case of RTP relay, AmMediaProcessor in case of local media processing.
      *
      * Instance of this object is created with reference counter set to zero.
      * Thus if somebody wants to hold a reference it must call addReference()
-     * explicitly after construction! */
-    void addReference() { mutex.lock(); ref_cnt++; mutex.unlock(); }
+     * explicitly after construction!
+     */
+    void addReference();
 
     /** Releases reference.
      *
-     * Returns true if this was the last reference and the object should be
-     * destroyed (call "delete this" here?) */
-    bool releaseReference() { mutex.lock(); int r = --ref_cnt; mutex.unlock(); return (r == 0); }
+     * Returns true if this was the last reference, in that case the pointer
+     * to that object is now *invalid*
+     * Must be last operation in member method!
+     */
+    bool releaseReference();
 
     // ----------------- SDP manipulation & updates -------------------
 
@@ -431,6 +452,8 @@ class AmB2BMedia: public AmMediaSession
      * returning something like "release me" and calling delete from media
      * processor would be better? */
     virtual void onMediaProcessingTerminated();
+
+    void forceStop();
 
     bool isOnHold(bool a_leg) { if (a_leg) return a_leg_on_hold; else return b_leg_on_hold; }
     void setHoldFlag(bool a_leg, bool hold) { if (a_leg) a_leg_on_hold = hold; else b_leg_on_hold = hold; }

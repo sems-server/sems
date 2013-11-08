@@ -103,7 +103,7 @@ struct ReconnectLegEvent: public ReliableB2BEvent
     role(_role)
   { setSender(tag); }
 
-  virtual ~ReconnectLegEvent() { if (media && media->releaseReference()) delete media; }
+    virtual ~ReconnectLegEvent() { if (media) media->releaseReference(); }
 };
 
 
@@ -154,7 +154,7 @@ struct ChangeRtpModeEvent: public B2BEvent
     B2BEvent(ChangeRtpModeEventId), new_mode(_new_mode), media(_media)
     { if (media) media->addReference(); }
 
-  virtual ~ChangeRtpModeEvent() { if (media && media->releaseReference()) delete media; }
+    virtual ~ChangeRtpModeEvent() { if (media) media->releaseReference(); }
 };
 
 
