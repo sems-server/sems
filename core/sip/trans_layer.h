@@ -227,7 +227,13 @@ public:
 			    int reply_code, const cstring& reason, 
 			    const cstring& hdrs = cstring(),
 			    const cstring& body = cstring());
-    
+
+    /**
+     * Allows the transport layer to signal 
+     * an asynchronous error while sending out
+     * a SIP message.
+     */
+    void transport_error(sip_msg* msg);
 
     /**
      * Transaction timeout
@@ -279,7 +285,11 @@ protected:
     /** Avoid external instantiation. @see singleton. */
     _trans_layer();
     ~_trans_layer();
-    
+
+    /**
+     * Processes a parsed SIP message
+     */
+    void process_rcvd_msg(sip_msg* msg);
 };
 
 typedef singleton<_trans_layer> trans_layer;

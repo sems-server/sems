@@ -90,6 +90,8 @@ class tcp_trsp_socket: public trsp_socket
    */
   void close();
 
+  void generate_transport_errors();
+
   void add_read_event();
   void add_write_event(struct timeval* timeout=NULL);
 
