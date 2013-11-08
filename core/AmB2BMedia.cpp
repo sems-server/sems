@@ -254,6 +254,12 @@ void AudioStreamData::setRelayStream(AmRtpStream *other)
     return;
   }*/
 
+  if (relay_address.empty()) {
+    DBG("not setting relay for empty relay address\n");
+    stream->disableRtpRelay();
+    return;
+  }
+
   if (relay_enabled && other) {
     stream->enableRtpRelay(relay_mask, other);
     stream->setRAddr(relay_address, relay_port, relay_port+1);
@@ -321,13 +327,17 @@ bool AudioStreamData::initStream(PlayoutType playout_type,
   if (stream->init(local_sdp, remote_sdp, force_symmetric_rtp) == 0) {
     stream->setPlayoutType(playout_type);
     initialized = true;
+
+//    // do not unmute if muted because of 0.0.0.0 remote IP (the mute flag is set during init)
+//    if (!stream->muted()) stream->setOnHold(muted);
+
   } else {
     initialized = false;
     DBG("stream initialization failed\n");
     // there still can be payloads to be relayed (if all possible payloads are
     // to be relayed this needs not to be an error)
   }
-  stream->setOnHold(muted); // FIXME: do not unmute if muted because of 0.0.0.0 remote IP
+  stream->setOnHold(muted);
 
   return initialized;
 }
