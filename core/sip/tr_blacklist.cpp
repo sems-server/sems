@@ -107,6 +107,9 @@ bool _tr_blacklist::exist(const sockaddr_storage* addr)
 void _tr_blacklist::insert(const sockaddr_storage* addr, unsigned int duration,
 			   const char* reason)
 {
+  if(!duration)
+    return;
+
   blacklist_bucket* bucket = get_bucket(hashlittle(addr, SA_len(addr), 0)
 					& BLACKLIST_HT_MASK);
   bucket->lock();
