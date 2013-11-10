@@ -199,6 +199,9 @@ DSMCondition* DSMCoreModule::getCondition(const string& from_str) {
   if (cmd == "failed") 
     return new TestDSMCondition(params, DSMCondition::FailedCall);  
 
+  if (cmd == "B2B.otherRequest")
+    return new TestDSMCondition(params, DSMCondition::B2BOtherRequest);
+
   if (cmd == "B2B.otherReply") 
     return new TestDSMCondition(params, DSMCondition::B2BOtherReply);  
 

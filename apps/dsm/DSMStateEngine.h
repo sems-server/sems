@@ -73,6 +73,7 @@ class DSMCondition
     Hold,
     UnHold,
 
+    B2BOtherRequest,
     B2BOtherReply,
     B2BOtherBye,
 

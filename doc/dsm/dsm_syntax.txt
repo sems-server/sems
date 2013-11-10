@@ -432,12 +432,18 @@ B2Bevent(expr)
    parameters:
       #type     - system event type, e.g. ServerShutdown, User1, User2
 
+ B2B.otherRequest (only sbc)
+   Request on other B2B leg received
+   parameters:
+    #method, #r_uri, #from, #to, #hdrs  - from request
+
  B2B.otherReply
    Reply on other B2B leg received
    parameters:
     #code    - reply code
     #reason  - reply reason
     #hdrs    - headers
+    #trans_method - transaction method (only sbc)
      
  B2B.otherBye
    BYE on other leg received
