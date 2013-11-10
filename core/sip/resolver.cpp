@@ -87,7 +87,8 @@ int dns_ip_entry::next_ip(dns_handle* h, sockaddr_storage* sa)
     }
     
     int& index = h->ip_n;
-    if(index >= (int)ip_vec.size()) return -1;
+    if((index < 0) || (index >= (int)ip_vec.size()))
+	return -1;
     
     //copy address
     ((ip_entry*)ip_vec[index++])->to_sa(sa);
@@ -168,8 +169,6 @@ public:
     int next_ip(dns_handle* h, sockaddr_storage* sa)
     {
 	int& index = h->srv_n;
-	if(index >= (int)ip_vec.size()) return -1;
-	
 	if(h->srv_e != this){
 	    if(h->srv_e) dec_ref(h->srv_e);
 	    h->srv_e = this;
@@ -188,6 +187,10 @@ public:
 	    }
 	    return h->ip_e->next_ip(h,sa);
 	}
+
+	if((index < 0) ||
+	   (index >= (int)ip_vec.size()))
+	    return -1;
 	
 	// reset IP record
 	if(h->ip_e){
