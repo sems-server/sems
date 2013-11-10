@@ -200,9 +200,12 @@ private:
   /** send a relayed SIP Reply */
   int relaySip(const AmSipRequest& orig, const AmSipReply& reply);
 
+ public:
+
   void relayError(const string &method, unsigned cseq, bool forward, int sip_code, const char *reason);
   void relayError(const string &method, unsigned cseq, bool forward, int err_code);
 
+ protected:
   /** Terminate our leg and forget the other. */
   virtual void terminateLeg();
 
