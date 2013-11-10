@@ -76,6 +76,9 @@ dlg.getOtherId(varname)
 dlg.getRtpRelayMode(varname)
    get RTP relay mode (RTP_Direct, RTP_Relay, RTP_Transcoding) in $varname
 
+dlg.refer(string refer_to [, int expires=0])
+   refer to refer_to, optionally with expires
+
 Request/Reply Body handling in sipRequest/sipReply events:
 ----------------------------------------------------------
 actions (applicable only in sipRequest/sipReply event handling blocks):

@@ -54,6 +54,9 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
 
   DEF_CMD("dlg.getOtherId", DLGGetOtherIdAction)
   DEF_CMD("dlg.getRtpRelayMode", DLGGetRtpRelayModeAction)
+
+  DEF_CMD("dlg.refer", DLGReferAction);
+
 } MOD_ACTIONEXPORT_END;
 
 //MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
@@ -454,4 +457,38 @@ EXEC_ACTION_START(DLGGetRtpRelayModeAction) {
   }
 
   DBG("get RTP relay mode: %s='%s'\n", varname.c_str(), sc_sess->var[varname].c_str());
+} EXEC_ACTION_END;
+
+
+CONST_ACTION_2P(DLGReferAction, ',', true);
+EXEC_ACTION_START(DLGReferAction) {
+
+  AmSession* b2b_sess = dynamic_cast<AmSession*>(sess);
+  if (NULL == b2b_sess) {
+    throw DSMException("sbc", "type", "param", "cause",
+		       "dlg.refer used on non-session");
+  }
+
+  string refer_to = resolveVars(par1, sess, sc_sess, event_params);
+  string expires_s = resolveVars(par2, sess, sc_sess, event_params);
+
+  int expires = -1;
+  if (!expires_s.empty()) {
+    if (!str2int(expires_s, expires)) {
+      throw DSMException("sbc", "type", "param", "cause",
+			 "expires "+expires_s+" not valid");
+    }
+  }
+
+  if (NULL == b2b_sess->dlg) {
+      throw DSMException("sbc", "type", "param", "cause",
+			 "call doesn't have SIP dialog (OOPS!)");
+  }
+
+  if (b2b_sess->dlg->refer(refer_to, expires)) {
+    sc_sess->SET_ERRNO(DSM_ERRNO_DLG);
+    sc_sess->SET_STRERROR("sending REFER failed");
+  } else {
+    sc_sess->CLR_ERRNO;
+  }
 } EXEC_ACTION_END;
