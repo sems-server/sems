@@ -12,7 +12,6 @@ int parse_next_hop(const cstring& next_hop,
     IPL_V6,
     IPL_HOST_SEP,
     IPL_PORT,
-    IPL_TRSP_SEP,
     IPL_TRSP
   };
 
@@ -54,6 +53,7 @@ int parse_next_hop(const cstring& next_hop,
       case '/':
 	st = IPL_TRSP;
 	dest.host.set(beg,c-beg);
+	beg = c+1;
 	break;
       case ',':
 	st = IPL_BEG;
@@ -91,7 +91,8 @@ int parse_next_hop(const cstring& next_hop,
 	dest_list.push_back(dest);
 	break;
       case '/':
-	st = IPL_TRSP_SEP;
+	st = IPL_TRSP;
+	beg = c+1;
 	break;
       default:
 	// syntax error
@@ -103,7 +104,8 @@ int parse_next_hop(const cstring& next_hop,
     case IPL_PORT:
       switch(*c){
       case '/':
-	st = IPL_TRSP_SEP;
+	st = IPL_TRSP;
+	beg = c+1;
 	break;
       case ',':
 	st = IPL_BEG;
@@ -122,21 +124,6 @@ int parse_next_hop(const cstring& next_hop,
       }
       break;
 
-    case IPL_TRSP_SEP:
-      switch(*c){
-      case ',':
-	st = IPL_BEG;
-	dest_list.push_back(dest);
-	break;
-      case SP:
-      case HTAB:
-	break;
-      default:
-	beg = c;
-	st = IPL_TRSP;
-	break;
-      }
-      break;
 
     case IPL_TRSP:
       switch(*c){
