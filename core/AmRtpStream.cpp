@@ -1005,7 +1005,8 @@ void AmRtpStream::recvPacket(int fd)
   AmRtpPacket* p = mem.newPacket();
   if (!p) p = reuseBufferedPacket();
   if (!p) {
-    DBG("out of buffers for RTP packets, dropping\n");
+    DBG("out of buffers for RTP packets, dropping (stream [%p])\n",
+	this);
     // drop received data
     AmRtpPacket dummy;
     dummy.recv(l_sd);
