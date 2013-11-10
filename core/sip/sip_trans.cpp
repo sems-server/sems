@@ -35,6 +35,7 @@
 #include "trans_layer.h"
 #include "transport.h"
 #include "msg_logger.h"
+#include "ip_util.h"
 
 #include "log.h"
 
@@ -65,8 +66,22 @@ inline trans_timer** fetch_timer(unsigned int timer_type, trans_timer** base)
     return NULL;
 }
 
+void sip_target_set::debug()
+{
+    DBG("target list:");
+
+    for(list<sip_target>::iterator it = dest_list.begin();
+	it != dest_list.end(); it++) {
+
+	DBG("\t%s:%u/%s to target list",
+	    am_inet_ntop(&it->ss).c_str(),
+	    am_get_port(&it->ss),it->trsp);
+    }
+}
+
 sip_trans::sip_trans()
     : msg(NULL),
+      targets(NULL),
       retr_buf(NULL),
       retr_socket(NULL),
       retr_len(0),
@@ -80,6 +95,7 @@ sip_trans::~sip_trans()
 {
     reset_all_timers();
     delete msg;
+    delete targets;
     delete [] retr_buf;
     if(retr_socket){
 	dec_ref(retr_socket);

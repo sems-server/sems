@@ -33,6 +33,8 @@
 #include "singleton.h"
 #include "atomic_types.h"
 
+#include "parse_next_hop.h"
+
 #include <list>
 using std::list;
 
@@ -47,9 +49,11 @@ using std::map;
 
 struct sip_msg;
 struct sip_uri;
-class sip_trans;
+class  sip_trans;
 struct sip_header;
 struct sockaddr_storage;
+struct dns_handle;
+struct sip_target_set;
 
 class trans_ticket;
 class trans_bucket;
@@ -247,15 +251,22 @@ protected:
      * Fills the address structure passed and modifies 
      * R-URI and Route headers as needed.
      */
-    int set_next_hop(sip_msg* msg,
-		     cstring* next_hop,
-		     unsigned short* next_port,
-		     cstring* next_trsp);
+    int set_next_hop(sip_msg* msg, cstring* next_hop,
+		     unsigned short* next_port, cstring* next_trsp);
+
+    /**
+     * Transforms all elements of a destination list into
+     * a target set, thus resolving all DNS names and
+     * converting IPs into a sockaddr_storage.
+     */
+    int resolve_targets(const list<sip_destination>& dest_list,
+			sip_target_set* targets);
 
     /**
      * Fills msg->remote_ip according to next_hop and next_port.
      */
-    int set_destination_ip(sip_msg* msg, cstring* next_hop, unsigned short next_port);    
+    int set_destination_ip(const cstring* next_hop, unsigned short next_port,
+			   sockaddr_storage* remote_ip, dns_handle* h_dns);
 
     sip_trans* copy_uac_trans(sip_trans* tr);
 

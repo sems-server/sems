@@ -132,8 +132,7 @@ struct sip_msg
     trsp_socket*       local_socket;
 
     sockaddr_storage   remote_ip;
-    dns_handle         h_dns;
-    
+
     sip_msg();
     sip_msg(const char* msg_buf, int msg_len);
     ~sip_msg();

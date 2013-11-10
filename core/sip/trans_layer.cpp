@@ -791,14 +791,16 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 }
 
 
-int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop,
-				     unsigned short next_port)
+int _trans_layer::set_destination_ip(const cstring* next_hop,
+				     unsigned short next_port,
+				     sockaddr_storage* remote_ip,
+				     dns_handle* h_dns)
 {
 
     string nh = c2stlstr(*next_hop);
 
     DBG("checking whether '%s' is IP address...\n", nh.c_str());
-    if (am_inet_pton(nh.c_str(), &(msg->remote_ip)) != 1) {
+    if (am_inet_pton(nh.c_str(), remote_ip) != 1) {
 
 	// nh does NOT contain a valid IP address
     
@@ -810,11 +812,12 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop,
 	    } else {
 		string srv_name = "_sip._udp." + nh;
 
-		DBG("no port specified, looking up SRV '%s'...\n", srv_name.c_str());
+		DBG("no port specified, looking up SRV '%s'...\n",
+		    srv_name.c_str());
 
 		if(!resolver::instance()->resolve_name(srv_name.c_str(),
-						       &(msg->h_dns),
-						       &(msg->remote_ip),IPv4)){
+						       h_dns,remote_ip,
+						       IPv4)){
 		    return 0;
 		}
 
@@ -822,24 +825,59 @@ int _trans_layer::set_destination_ip(sip_msg* msg, cstring* next_hop,
 	    }
 	}
 
-	memset(&(msg->remote_ip),0,sizeof(sockaddr_storage));
+	memset(remote_ip,0,sizeof(sockaddr_storage));
 	int err = resolver::instance()->resolve_name(nh.c_str(),
-						     &(msg->h_dns),
-						     &(msg->remote_ip),IPv4);
+						     h_dns,remote_ip,
+						     IPv4);
 	if(err < 0){
 	    ERROR("Unresolvable Request URI domain\n");
 	    return -478;
 	}
     }
 
-    if(!am_get_port(&msg->remote_ip)) {
+    if(!am_get_port(remote_ip)) {
 	if(!next_port) next_port = 5060;
-	am_set_port(&msg->remote_ip,next_port);
+	am_set_port(remote_ip,next_port);
     }
 
     DBG("set destination to %s:%u\n",
-	nh.c_str(), am_get_port(&msg->remote_ip));
+	nh.c_str(), am_get_port(remote_ip));
     
+    return 0;
+}
+
+int _trans_layer::resolve_targets(const list<sip_destination>& dest_list,
+				  sip_target_set* targets)
+{
+    for(list<sip_destination>::const_iterator it = dest_list.begin();
+	it != dest_list.end(); it++) {
+	
+	sip_target t;
+	dns_handle h_dns;
+
+	DBG("sip_destination: %.*s:%u/%.*s",
+	    it->host.len,it->host.s,
+	    it->port,
+	    it->trsp.len,it->trsp.s);
+
+	if(set_destination_ip(&it->host,it->port,&t.ss,&h_dns) != 0) {
+	    ERROR("Unresolvable destination");
+	    return -478;
+	}
+	if(it->trsp.len && (it->trsp.len <= SIP_TRSP_SIZE_MAX)) {
+	    memcpy(t.trsp,it->trsp.s,it->trsp.len);
+	    t.trsp[it->trsp.len] = '\0';
+	}
+	else {
+	    t.trsp[0] = '\0';
+	}
+
+	do {
+	    targets->dest_list.push_back(t);
+
+	} while(h_dns.next_ip(&t.ss) == 0);
+    }
+
     return 0;
 }
 
@@ -1048,7 +1086,7 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     p_msg = new sip_msg();
     p_msg->buf = new char[request_len+1];
     p_msg->len = request_len;
-    p_msg->h_dns = msg->h_dns;
+    //p_msg->h_dns = msg->h_dns;
  
     // generate it
     char* c = p_msg->buf;
@@ -1109,88 +1147,89 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     assert(msg);
     assert(tt);
 
-    cstring next_hop;
-    unsigned short next_port=0;
-    cstring next_trsp;
+    // cstring next_hop;
+    // unsigned short next_port=0;
+    // cstring next_trsp;
 
     int res=0;
+    list<sip_destination> dest_list;
     if (_next_hop.len) {
 
-	list<sip_destination> dest_list;
 	res = parse_next_hop(_next_hop,dest_list);
-	if(res) {
+	if(res || dest_list.empty()) {
 	    DBG("parse_next_hop %.*s failed (%i)\n",_next_hop.len, _next_hop.s, res);
 	    return res;
 	}
 
-	if(dest_list.size() == 1) {
-	    const sip_destination& dest = dest_list.front();
-	    next_hop = dest.host;
-	    next_port = dest.port;
-	    next_trsp = dest.trsp;
-	    DBG("single next-hop: <%.*s:%u/%.*s>",
-		next_hop.len,next_hop.s,next_port,
-		next_trsp.len,next_trsp.s);
-	}
-	else if(dest_list.size() > 1) {
-	    dns_ip_entry* e = new dns_ip_entry();
-	    if(e->fill_ip_list(dest_list) < 0) {
-		delete e;
-		return -1;
-	    }
-
-	    inc_ref(e);
-	    //TODO: avoid to loose the transport from the next-hop-list
-	    e->next_ip(&msg->h_dns,&msg->remote_ip);
-	    DBG("destination set to <%s>\n",
-		get_addr_str(&msg->remote_ip).c_str());
-	}
+	// if(dest_list.size() == 1) {
+	//     const sip_destination& dest = dest_list.front();
+	//     next_hop = dest.host;
+	//     next_port = dest.port;
+	//     next_trsp = dest.trsp;
+	//     DBG("single next-hop: <%.*s:%u/%.*s>",
+	// 	next_hop.len,next_hop.s,next_port,
+	// 	next_trsp.len,next_trsp.s);
+	// }
+	// else if(dest_list.size() > 1) {
+	//     dns_ip_entry* e = new dns_ip_entry();
+	//     if(e->fill_ip_list(dest_list) < 0) {
+	// 	delete e;
+	// 	return -1;
+	//     }
+	//     inc_ref(e);
+	//     //TODO: avoid to loose the transport from the next-hop-list
+	//     e->next_ip(&msg->h_dns,&msg->remote_ip);
+	//     DBG("destination set to <%s>\n",
+	// 	get_addr_str(&msg->remote_ip).c_str());
+	// }
     }
     else {
-	if(set_next_hop(msg,&next_hop,&next_port,&next_trsp) < 0){
+	sip_destination dest;
+	if(set_next_hop(msg,&dest.host,&dest.port,&dest.trsp) < 0){
 	    DBG("set_next_hop failed\n");
 	    return -1;
 	}
+	dest_list.push_back(dest);
     }
 
     string uri_buffer; // must have the same scope as 'msg'
     prepare_strict_routing(msg,uri_buffer);
 
-    if(next_hop.len) {
-	res = set_destination_ip(msg,&next_hop,next_port);
-	if(res < 0){
-	    DBG("set_destination_ip failed\n");
-	    return res;
+    auto_ptr<sip_target_set> targets(new sip_target_set());
+    res = resolve_targets(dest_list,targets.get());
+    if(res < 0){
+	DBG("resolve_targets failed\n");
+	return res;
+    }
+
+    targets->debug();
+
+    cstring next_trsp;
+    targets->reset_iterator();
+    do {
+	if(!targets->has_next()) {
+	    DBG("next_ip(): no more destinations! reply 500");
+	    sip_msg err;
+	    set_err_reply_from_req(&err,msg,500,
+				   "No destination available");
+	    ua->handle_sip_reply(c2stlstr(dialog_id),&err);
+	    return 0;
 	}
-    }
 
-    if(!(flags & TR_FLAG_DISABLE_BL) &&
-       tr_blacklist::instance()->exist(&msg->remote_ip)) {
+	targets->copy_next(&msg->remote_ip,&next_trsp);
+	targets->next();
 
-	sockaddr_storage sa;
-	do {
-	    memset(&sa,0,sizeof(sockaddr_storage));
-
-	    // get the next ip
-	    if(msg->h_dns.next_ip(&sa) < 0){
-		DBG("next_ip(): no more destinations! reply 500");
-		sip_msg err;
-		set_err_reply_from_req(&err,msg,500,
-				       "All destinations blacklisted");
-		ua->handle_sip_reply(c2stlstr(dialog_id),&err);
-		return 0;
-	    }
-    
-	    //If a SRV record is involved, the port number
-	    // should have been set by h_dns.next_ip(...).
-	    if(!am_get_port(&sa)){
-		//Else, we copy the old port number
-		am_set_port(&sa,am_get_port(&msg->remote_ip));
-	    }
-	} while(tr_blacklist::instance()->exist(&sa));
-	
-	memcpy(&msg->remote_ip,&sa,sizeof(sockaddr_storage));
-    }
+	//TODO: take care of port manipulation in SRV case
+	//      and the likes
+	//
+	// //If a SRV record is involved, the port number
+	// // should have been set by h_dns.next_ip(...).
+	// if(!am_get_port(&sa)){
+	//     //Else, we copy the old port number
+	//     am_set_port(&sa,am_get_port(&msg->remote_ip));
+	// }
+    } while(!(flags & TR_FLAG_DISABLE_BL) &&
+	    tr_blacklist::instance()->exist(&msg->remote_ip));
 
     if((out_interface < 0) 
        || ((unsigned int)out_interface >= transports.size())) {
@@ -1279,9 +1318,14 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    return send_err;
 	}
 
-	// TODO:
-	// - save flags in transaction
+	// save flags & target set in transaction
 	tt->_t->flags = flags;
+	tt->_t->targets = targets.release();
+
+	if(tt->_t->targets->has_next()){
+	    tt->_t->reset_timer(STIMER_M,M_TIMER,
+				tt->_bucket->get_id());
+	}
 
 	DBG("logger = %p\n",logger);
 
@@ -1987,10 +2031,6 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
 	break;
     }
 
-    if(!msg->h_dns.eoip()){
-	t->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
-    }
-
     return 0;
 }
 
@@ -2463,25 +2503,38 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 			      bool use_new_trans)
 {
     tr->clear_timer(STIMER_M);
+
+    cstring next_trsp;
     sockaddr_storage sa;
+
     do {
 	memset(&sa,0,sizeof(sockaddr_storage));
     
 	// get the next ip
-	if(tr->msg->h_dns.next_ip(&sa) < 0){
+	if(!tr->targets->has_next()){
 	    DBG("no more destinations!");
 	    return -1;
 	}
-    
-	//If a SRV record is involved, the port number
-	// should have been set by h_dns.next_ip(...).
-	if(!am_get_port(&sa)){
-	    //Else, we copy the old port number
-	    am_set_port(&sa,am_get_port(&tr->msg->remote_ip));
-	}
+
+	tr->targets->copy_next(&sa,&next_trsp);
+	tr->targets->next();
+
+	//TODO: take care of port manipulation in SRV case
+	//      and the likes
+	//
+	// //If a SRV record is involved, the port number
+	// // should have been set by h_dns.next_ip(...).
+	// if(!am_get_port(&sa)){
+	//     //Else, we copy the old port number
+	//     am_set_port(&sa,am_get_port(&tr->msg->remote_ip));
+	// }
     } while(!(tr->flags & TR_FLAG_DISABLE_BL) &&
 	    tr_blacklist::instance()->exist(&sa));
 
+    //TODO: support transport changes
+    // -> potentially find another socket
+    //    if next_trsp is different from the 
+    //    current socket's transport
 
     if(use_new_trans) {
 	string   n_uri;
@@ -2526,6 +2579,10 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 	tr->clear_timer(STIMER_A);
 	tr->state = TS_ABANDONED;
 
+	// take over target set
+	n_tr->targets = tr->targets;
+	tr->targets = NULL;
+
 	// restore old R-URI
 	tr->msg->u.request->ruri_str = old_uri;
 
@@ -2538,8 +2595,7 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 	    tr->reset_timer(t_bf,t_bf->type);
 	}
 
-	bucket->append(tr);
-	
+	bucket->append(tr);	
     }
     else {
 	// copy the new address back
@@ -2598,7 +2654,7 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 	}
     }
     
-    if(!tr->msg->h_dns.eoip())
+    if(tr->targets->has_next())
 	tr->reset_timer(STIMER_M,M_TIMER,bucket->get_id());
 
     return 0;

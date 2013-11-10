@@ -35,6 +35,9 @@
 
 #include <sys/socket.h>
 
+#include <list>
+using std::list;
+
 struct sip_msg;
 class trsp_socket;
 class msg_logger;
@@ -114,7 +117,7 @@ struct sip_target
 
     const sip_target& operator = (const sip_target& target) {
 	memcpy(&ss,&target.ss,sizeof(sockaddr_storage));
-	memcpy(trsp,target.trsp,SIP_TRSP_SIZE_MAX);
+	memcpy(trsp,target.trsp,SIP_TRSP_SIZE_MAX+1);
 	return target;
     }
 
@@ -153,6 +156,8 @@ struct sip_target_set
 	return has_next();
     }
 
+    void debug();
+
 private:
     sip_target_set(const sip_target_set&) {}
 };
@@ -186,6 +191,9 @@ class sip_trans
     /** Dialog-ID used for UAC transactions */
     cstring dialog_id;
 
+    /** Destination list for requests */
+    sip_target_set* targets;
+    
     /**
      * Retransmission buffer
      *  - UAC transaction: ACK
