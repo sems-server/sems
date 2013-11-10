@@ -695,7 +695,8 @@ int AmBasicSipDialog::sendRequest(const string& method,
     send_flags |= TR_FLAG_NEXT_HOP_RURI;
   }
 
-  if(flags & SIP_FLAGS_NOBL) {
+  if((flags & SIP_FLAGS_NOBL) ||
+     !remote_tag.empty()) {
     send_flags |= TR_FLAG_DISABLE_BL;
   }
 
