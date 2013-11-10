@@ -309,6 +309,8 @@ protected:
    */
   int getDefaultPT();
 
+public:
+
   /**
    * Stops RTP stream.
    */
@@ -318,8 +320,6 @@ protected:
    * Resume a paused RTP stream.
    */
   void resume();
-
-public:
 
   /** Mute */
   bool mute;
