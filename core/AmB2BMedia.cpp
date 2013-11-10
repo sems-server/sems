@@ -1274,6 +1274,37 @@ void AmB2BMedia::setRelayDTMFReceiving(bool enabled) {
   }
 }
 
+#define ALL_STREAMS_OP(op_name, op_action)				\
+  void AmB2BMedia::op_name(bool pause_a, bool pause_b) {		\
+    DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size()); \
+    for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) { \
+      if (pause_a) {							\
+	DBG(#op_name " A relay stream [%p]\n", &(*j)->a);		\
+	(*j)->a.op_action;						\
+      }									\
+      if (pause_b) {							\
+	DBG(#op_name " B relay stream [%p]\n", &(*j)->b);		\
+	(*j)->b.op_action;						\
+      }									\
+    }									\
+									\
+    for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) { \
+      if (pause_a && NULL != j->a.getStream()) {			\
+	DBG(#op_name " A audio stream [%p]\n", j->a.getStream());	\
+	j->a.getStream()->op_action;					\
+      }									\
+      if (pause_b && NULL != j->b.getStream()) {			\
+	DBG(#op_name " B audio stream [%p]\n", j->b.getStream());	\
+	j->b.getStream()->op_action;					\
+      }									\
+    }									\
+  }
+
+ALL_STREAMS_OP(pauseStreams, pause());
+ALL_STREAMS_OP(resumeStreams, resume());
+ALL_STREAMS_OP(muteStreams, mute=true);
+ALL_STREAMS_OP(unmuteStreams, mute=false);
+
 void AmB2BMedia::stopRelay() {
   DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {

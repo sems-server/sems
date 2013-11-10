@@ -477,6 +477,18 @@ class AmB2BMedia: public AmMediaSession
     /** restart relaying on streams */
     void restartRelay();
 
+    /** set RTP/relay streams to 'paused' (= not receiving, drop incoming packets) */
+    void pauseStreams(bool pause_a, bool pause_b);
+
+    /** resume RTP/relay streams from 'paused' (= receiving) */
+    void resumeStreams(bool resume_a, bool resume_b);
+
+    /** set RTP/relay streams to muted (don't send RTP packets) */
+    void muteStreams(bool mute_a, bool mute_b);
+
+    /** set RTP/relay streams to unmuted (do send RTP packets) */
+    void unmuteStreams(bool unmute_a, bool unmute_b);
+
     // print debug info
     void debug();
 };
