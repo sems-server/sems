@@ -209,6 +209,12 @@ sbc.enableRelayDTMFReceiving(bool rcv_dtmf)  - enable receiving of RTP DTMF in r
      note: session needs to be processed by media processor as well (sbc.addToMediaProcessor())
            so that DTMF is processed and passed up to the application (key event).
 
-sbc.addToMediaProcessor   - add sbc session to media processor (no playlist set etc)
+sbc.addToMediaProcessor      - add sbc session to media processor (no playlist set etc)
 
 sbc.removeFromMediaProcessor - remove sbc session from media processor
+
+sbc.pauseRtpStreams(bool pause_a, bool pause_b)     - pause A/B streams: drop received packets 
+sbc.resumeRtpStreams(bool resume_a, bool resume_b)  - resume A/B streams: process received packets 
+
+sbc.muteRtpStreams(bool mute_a, bool mute_b)        - mute A/B streams: don't send packets
+sbc.unmuteRtpStreams(bool unmute_a, bool unmute_b)  - unmute A/B streams: do send packets

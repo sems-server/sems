@@ -58,6 +58,13 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("sbc.enableRelayDTMFReceiving", MODSBCEnableRelayDTMFReceiving);
   DEF_CMD("sbc.addToMediaProcessor", MODSBCAddToMediaProcessor);
   DEF_CMD("sbc.removeFromMediaProcessor", MODSBCRemoveFromMediaProcessor);
+
+  DEF_CMD("sbc.pauseRtpStreams", MODSBCPauseRtpStreams);
+  DEF_CMD("sbc.resumeRtpStreams", MODSBCResumeRtpStreams);
+
+  DEF_CMD("sbc.muteRtpStreams", MODSBCMuteRtpStreams);
+  DEF_CMD("sbc.unmuteRtpStreams", MODSBCUnmuteRtpStreams);
+
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_BEGIN(MOD_CLS_NAME) {
@@ -295,6 +302,26 @@ EXEC_ACTION_START(MODSBCActionProfileSet) {
 		       " used without call leg");			\
   }
 
+#define GET_SBC_CALL_LEG(action)					\
+  SBCCallLeg* sbc_call_leg = dynamic_cast<SBCCallLeg*>(sess);		\
+  if (NULL == sbc_call_leg) {						\
+    DBG("script writer error: DSM action " #action			\
+	" used without sbc call leg\n");				\
+    throw DSMException("sbc", "type", "param", "cause",			\
+		       "script writer error: DSM action " #action	\
+		       " used without sbc call leg");			\
+  }
+
+#define GET_B2B_MEDIA							\
+  AmB2BMedia* b2b_media = sbc_call_leg->getMediaSession();		\
+  DBG("session: %p, media: %p\n", sbc_call_leg, b2b_media);		\
+  if (NULL == b2b_media) {						\
+    DBG("No B2BMedia in current SBC call leg, sorry\n");		\
+    sc_sess->SET_ERRNO(DSM_ERRNO_UNKNOWN_ARG);				\
+    sc_sess->SET_STRERROR("No B2BMedia in current SBC call leg, sorry"); \
+    EXEC_ACTION_STOP;							\
+  }
+
 EXEC_ACTION_START(MODSBCActionStopCall) {
   GET_CALL_LEG(StopCall);
   string cause = resolveVars(arg, sess, sc_sess, event_params);
@@ -388,17 +415,7 @@ EXEC_ACTION_START(MODSBCActionB2BRelayReliable) {
 
 CONST_ACTION_2P(MODSBCActionAddCallee, ',', false);
 EXEC_ACTION_START(MODSBCActionAddCallee) {
-  GET_CALL_LEG(AddCallee);
-
-  SBCCallLeg* sbc_call_leg = dynamic_cast<SBCCallLeg*>(call_leg);
-  if (NULL == sbc_call_leg) {
-    DBG("script writer error: DSM action sbc.addCallee "
-	" used without sbc call leg\n");
-    throw DSMException("sbc", "type", "param", "cause",
-		       "script writer error: DSM action sbc.addCallee "
-		       " used without call leg");
-    EXEC_ACTION_STOP;
-  }
+  GET_SBC_CALL_LEG(sbc.addCallee);
 
   string mode = resolveVars(par1, sess, sc_sess, event_params);
 
@@ -407,7 +424,7 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
     string hdrs;
     SBCCallLeg* peer = new SBCCallLeg(sbc_call_leg);
     SBCCallProfile &p = peer->getCallProfile();
-    AmB2BSession::RTPRelayMode rtp_mode = call_leg->getRtpRelayMode();
+    AmB2BSession::RTPRelayMode rtp_mode = sbc_call_leg->getRtpRelayMode();
 
     VarMapT::iterator it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_LOCAL_PARTY);
     if (it != sc_sess->var.end())
@@ -444,27 +461,12 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(MODSBCEnableRelayDTMFReceiving) {
-  GET_CALL_LEG(AddCallee);
-
   bool enable = (resolveVars(arg, sess, sc_sess, event_params)==DSM_TRUE);
 
-  SBCCallLeg* sbc_call_leg = dynamic_cast<SBCCallLeg*>(call_leg);
-  if (NULL == sbc_call_leg) {
-    DBG("script writer error: DSM action sbc.addCallee "
-	" used without sbc call leg\n");
-    throw DSMException("sbc", "type", "param", "cause",
-		       "script writer error: DSM action sbc.addCallee "
-		       " used without call leg");
-    EXEC_ACTION_STOP;
-  }
+  GET_SBC_CALL_LEG(AddCallee);
+  GET_B2B_MEDIA;
 
-  AmB2BMedia* b2b_media = sbc_call_leg->getMediaSession();
-  DBG("session: %p, media: %p\n", sbc_call_leg, b2b_media);
-  if (NULL != b2b_media) {
-    b2b_media->setRelayDTMFReceiving(enable);
-  } else {
-    DBG("No B2BMedia in current SBC call leg, sorry\n");
-  }
+  b2b_media->setRelayDTMFReceiving(enable);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(MODSBCAddToMediaProcessor) {
@@ -477,4 +479,47 @@ EXEC_ACTION_START(MODSBCRemoveFromMediaProcessor) {
   GET_CALL_LEG(RemoveFromMediaProcessor);
   AmMediaProcessor::instance()->removeSession(call_leg);
 } EXEC_ACTION_END;
-  
+
+CONST_ACTION_2P(MODSBCPauseRtpStreams, ',', false);
+EXEC_ACTION_START(MODSBCPauseRtpStreams) {
+  bool p_a = (resolveVars(par1, sess, sc_sess, event_params)==DSM_TRUE);
+  bool p_b = (resolveVars(par2, sess, sc_sess, event_params)==DSM_TRUE);
+
+  GET_SBC_CALL_LEG(PauseRtpStream);
+  GET_B2B_MEDIA;
+
+  b2b_media->pauseStreams(p_a, p_b);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(MODSBCResumeRtpStreams, ',', false);
+EXEC_ACTION_START(MODSBCResumeRtpStreams) {
+  bool p_a = (resolveVars(par1, sess, sc_sess, event_params)==DSM_TRUE);
+  bool p_b = (resolveVars(par2, sess, sc_sess, event_params)==DSM_TRUE);
+
+  GET_SBC_CALL_LEG(ResumeRtpStream);
+
+  GET_B2B_MEDIA;
+  b2b_media->resumeStreams(p_a, p_b);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(MODSBCMuteRtpStreams, ',', false);
+EXEC_ACTION_START(MODSBCMuteRtpStreams) {
+  bool p_a = (resolveVars(par1, sess, sc_sess, event_params)==DSM_TRUE);
+  bool p_b = (resolveVars(par2, sess, sc_sess, event_params)==DSM_TRUE);
+
+  GET_SBC_CALL_LEG(muteRtpStreams);
+  GET_B2B_MEDIA;
+
+  b2b_media->muteStreams(p_a, p_b);
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(MODSBCUnmuteRtpStreams, ',', false);
+EXEC_ACTION_START(MODSBCUnmuteRtpStreams) {
+  bool p_a = (resolveVars(par1, sess, sc_sess, event_params)==DSM_TRUE);
+  bool p_b = (resolveVars(par2, sess, sc_sess, event_params)==DSM_TRUE);
+
+  GET_SBC_CALL_LEG(unmuteRtpStreams);
+  GET_B2B_MEDIA;
+
+  b2b_media->unmuteStreams(p_a, p_b);
+} EXEC_ACTION_END;
