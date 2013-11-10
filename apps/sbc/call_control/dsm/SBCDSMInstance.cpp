@@ -125,6 +125,20 @@ void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, const AmSip
     event_params["from"] = request->from;
     event_params["to"] = request->to;
     event_params["hdrs"] = request->hdrs;
+
+    vector<string> hdrs = explode(request->hdrs, CRLF);
+    for (vector<string>::iterator it=hdrs.begin(); it!=hdrs.end();it++) {
+      size_t p = it->find(":");
+      if (p==string::npos)
+	continue;
+      size_t p1=p;
+      if (++p>=it->size())
+	continue;
+      while (p<it->size() && ((*it)[p] == ' ' || (*it)[p] == '\t'))
+	p++;
+      event_params["hdr."+it->substr(0,p1)]=it->substr(p);
+    }
+
     avar[DSM_AVAR_REQUEST] = AmArg(const_cast<AmSipRequest*>(request));
   }
 }
@@ -142,6 +156,25 @@ void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, const AmSipRe
   event_params["from"] = reply->from;
   event_params["to"] = reply->to;
   event_params["hdrs"] = reply->hdrs;
+#ifdef PROPAGATE_UNPARSED_REPLY_HEADERS
+  for (list<AmSipHeader>::const_iterator it = reply->unparsed_headers.begin();
+       it != reply->unparsed_headers.end(); it++) {
+    event_params["hdr."+it->name] = it->value;
+  }
+#else
+  vector<string> hdrs = explode(reply->hdrs, CRLF);
+  for (vector<string>::iterator it=hdrs.begin(); it!=hdrs.end();it++) {
+    size_t p = it->find(":");
+    if (p==string::npos)
+      continue;
+    size_t p1=p;
+    if (++p>=it->size())
+      continue;
+    while (p<it->size() && ((*it)[p] == ' ' || (*it)[p] == '\t'))
+      p++;
+    event_params["hdr."+it->substr(0,p1)]=it->substr(p);
+  }
+#endif
   avar[DSM_AVAR_REPLY] = AmArg(const_cast<AmSipReply*>(reply));
 }
 
