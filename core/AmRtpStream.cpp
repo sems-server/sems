@@ -1204,7 +1204,7 @@ void AmRtpStream::stopReceiving()
 void AmRtpStream::resumeReceiving()
 {
   if (hasLocalSocket()){
-    DBG("resume stream [%p] into RTP receiver\n",this);
+    DBG("add/resume stream [%p] into RTP receiver\n",this);
     AmRtpReceiver::instance()->addStream(getLocalSocket(), this);
     if (l_rtcp_sd > 0) AmRtpReceiver::instance()->addStream(l_rtcp_sd, this);
   }

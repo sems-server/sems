@@ -312,12 +312,12 @@ protected:
 public:
 
   /**
-   * Stops RTP stream.
+   * Stops RTP stream receiving RTP packets internally (received packets will be dropped).
    */
   void pause();
 
   /**
-   * Resume a paused RTP stream.
+   * Resume a paused RTP stream internally (received packets will be processed).
    */
   void resume();
 
