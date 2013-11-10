@@ -227,24 +227,49 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
     }
   }
 
-  if (event->event_id ==  E_B2B_APP) {
-    B2BEvent* b2b_ev = dynamic_cast<B2BEvent*>(event);
-    if(b2b_ev && b2b_ev->ev_type == B2BEvent::B2BApplication) {
-      engine.runEvent(call, this, DSMCondition::B2BEvent, &b2b_ev->params);
+  B2BEvent* b2b_ev = dynamic_cast<B2BEvent*>(event);
+  if(b2b_ev && b2b_ev->ev_type == B2BEvent::B2BApplication) {
+    engine.runEvent(call, this, DSMCondition::B2BEvent, &b2b_ev->params);
 
-      if (b2b_ev->params[DSM_SBC_PARAM_PROCESSED] == DSM_TRUE) {
-	ReliableB2BEvent* rel_b2b_ev = dynamic_cast<ReliableB2BEvent*>(b2b_ev);
-	if (NULL != rel_b2b_ev) {
-	  rel_b2b_ev->markAsProcessed();
-	} else {
-	  DBG("possible script writer error: marked #processed on non-reliable B2BEvent");
-	}
+    if (b2b_ev->params[DSM_SBC_PARAM_PROCESSED] == DSM_TRUE) {
+      ReliableB2BEvent* rel_b2b_ev = dynamic_cast<ReliableB2BEvent*>(b2b_ev);
+      if (NULL != rel_b2b_ev) {
+	rel_b2b_ev->markAsProcessed();
+      } else {
+	DBG("possible script writer error: marked #processed on non-reliable B2BEvent");
       }
-
-      if (b2b_ev->params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
-	return StopProcessing;
-      return ContinueProcessing;
     }
+
+    if (b2b_ev->params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+      return StopProcessing;
+    return ContinueProcessing;
+  }
+
+  if(b2b_ev && b2b_ev->ev_type == B2BEvent::B2BCore) {
+    B2BSipRequestEvent* b2b_req_ev = dynamic_cast<B2BSipRequestEvent*>(b2b_ev);
+    if (b2b_req_ev) {
+      VarMapT event_params;
+      extractRequestParameters(event_params, avar, &b2b_req_ev->req);
+      event_params["forward"] = b2b_req_ev->forward?"true":"false";
+      DSMSipRequest sip_req(&b2b_req_ev->req);
+      avar[DSM_AVAR_REQUEST] = AmArg(&sip_req);
+      engine.runEvent(call, this, DSMCondition::B2BOtherRequest, &event_params);
+      avar.erase(DSM_AVAR_REQUEST);
+      if (event_params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+	return StopProcessing;
+    } else {
+      B2BSipReplyEvent* b2b_reply_ev = dynamic_cast<B2BSipReplyEvent*>(b2b_ev);
+      if (b2b_reply_ev) {
+	VarMapT event_params;
+	extractReplyParameters(event_params, avar, &b2b_reply_ev->reply);
+	event_params["forward"] = b2b_reply_ev->forward?"true":"false";
+	event_params["trans_method"] = b2b_reply_ev->trans_method;
+	engine.runEvent(call, this, DSMCondition::B2BOtherReply, &event_params);
+	if (event_params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
+	  return StopProcessing;
+      }
+    }
+
   }
 
   AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(event);
