@@ -112,6 +112,11 @@ void AmRtpReceiverThread::_rtp_receiver_read_cb(evutil_socket_t sd,
     static_cast<AmRtpReceiverThread::StreamInfo*>(arg);
 
   p_si->thread->streams_mut.lock();
+  if(!p_si->stream) {
+    // we are about to get removed...
+    p_si->thread->streams_mut.unlock();
+    return;
+  }
   p_si->stream->recvPacket(sd);
   p_si->thread->streams_mut.unlock();
 }
@@ -119,7 +124,6 @@ void AmRtpReceiverThread::_rtp_receiver_read_cb(evutil_socket_t sd,
 void AmRtpReceiverThread::addStream(int sd, AmRtpStream* stream)
 {
   streams_mut.lock();
-
   if(streams.find(sd) != streams.end()) {
     ERROR("trying to insert existing stream [%p] with sd=%i\n",
 	  stream,sd);
@@ -129,18 +133,20 @@ void AmRtpReceiverThread::addStream(int sd, AmRtpStream* stream)
 
   StreamInfo& si = streams[sd];
   si.stream = stream;
-  si.ev_read = event_new(ev_base,sd,EV_READ|EV_PERSIST,
-			 AmRtpReceiverThread::_rtp_receiver_read_cb,&si);
+  event* ev_read = event_new(ev_base,sd,EV_READ|EV_PERSIST,
+			     AmRtpReceiverThread::_rtp_receiver_read_cb,&si);
+  si.ev_read = ev_read;
   si.thread = this;
-  event_add(si.ev_read,NULL);
-
   streams_mut.unlock();
+
+  // This must be done when 
+  // streams_mut is NOT locked
+  event_add(ev_read,NULL);
 }
 
 void AmRtpReceiverThread::removeStream(int sd)
 {
   streams_mut.lock();
-
   Streams::iterator sit = streams.find(sd);
   if(sit == streams.end()) {
     streams_mut.unlock();
@@ -148,10 +154,27 @@ void AmRtpReceiverThread::removeStream(int sd)
   }
 
   StreamInfo& si = sit->second;
-  event_free(si.ev_read);
-  si.stream = NULL;
-  streams.erase(sit);
+  if(!si.stream || !si.ev_read){
+    streams_mut.unlock();
+    return;
+  }
 
+  si.stream = NULL;
+  event* ev_read = si.ev_read;
+  si.ev_read = NULL;
+
+  streams_mut.unlock();
+
+  // This must be done while
+  // streams_mut is NOT locked
+  event_free(ev_read);
+
+  streams_mut.lock();
+  // this must be done AFTER event_free()
+  // so that the StreamInfo does not get
+  // deleted while in recvPaket()
+  // (see recv callback)
+  streams.erase(sd);
   streams_mut.unlock();
 }
 
