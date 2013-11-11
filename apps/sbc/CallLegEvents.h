@@ -139,7 +139,11 @@ struct ReplaceInProgressEvent: public B2BEvent
 struct DisconnectLegEvent: public B2BEvent
 {
   bool put_remote_on_hold;
-  DisconnectLegEvent(bool _put_remote_on_hold): B2BEvent(DisconnectLeg), put_remote_on_hold(_put_remote_on_hold) { }
+  bool preserve_media_session;
+  DisconnectLegEvent(bool _put_remote_on_hold, bool _preserve_media_session = false):
+    B2BEvent(DisconnectLeg),
+    put_remote_on_hold(_put_remote_on_hold),
+    preserve_media_session(_preserve_media_session) { }
 };
 
 /* we don't need to have 'reliable event' for this because we are always

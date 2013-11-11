@@ -315,7 +315,7 @@ void CallLeg::onB2BEvent(B2BEvent* ev)
     case DisconnectLeg:
       {
         DisconnectLegEvent *dle = dynamic_cast<DisconnectLegEvent*>(ev);
-        if (dle) disconnect(dle->put_remote_on_hold);
+        if (dle) disconnect(dle->put_remote_on_hold, dle->preserve_media_session);
       }
       break;
 
@@ -449,10 +449,6 @@ void CallLeg::b2bInitial2xx(AmSipReply& reply, bool forward)
   if (!other_legs.empty())
     other_legs.begin()->releaseMediaSession(); // remove reference hold by OtherLegInfo
   other_legs.clear(); // no need to remember the connected leg here
-
-  // FIXME: hack here - it should be part of clearRtpReceiverRelay but we
-  // need to do after RTP mode change above
-  // FIXME: resumeHeld(false);
 
   onCallConnected(reply);
 
@@ -627,7 +623,6 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
 
   // release old signaling and media session
   clear_other();
-  // FIXME: resumeHeld(false);
   clearRtpReceiverRelay();
 
   // check if we aren't processing INVITE now (BLF ringing call pickup)
@@ -721,7 +716,7 @@ void CallLeg::onB2BReplaceInProgress(ReplaceInProgressEvent *e)
   }
 }
 
-void CallLeg::disconnect(bool hold_remote)
+void CallLeg::disconnect(bool hold_remote, bool preserve_media_session)
 {
   TRACE("disconnecting call leg %s from the other\n", getLocalTag().c_str());
 
@@ -735,17 +730,18 @@ void CallLeg::disconnect(bool hold_remote)
     case Ringing:
       WARN("trying to disconnect in not connected state, terminating not connected legs in advance (was it intended?)\n");
       terminateNotConnectedLegs();
-      clearRtpReceiverRelay(); // we can't stay connected (at media level) with the other leg
-      break;
+      // do not break, continue with following state handling!
 
     case Connected:
-      //FIXME: resumeHeld(false); // TODO: do this as part of clearRtpReceiverRelay
-      clearRtpReceiverRelay(); // we can't stay connected (at media level) with the other leg
+      if (!preserve_media_session) {
+        // we can't stay connected (at media level) with the other leg
+        clearRtpReceiverRelay();
+      }
       break; // this is OK
   }
 
   // create new media session for us if needed
-  if (getRtpRelayMode() != RTP_Direct)
+  if (getRtpRelayMode() != RTP_Direct && !preserve_media_session)
     setMediaSession(new AmB2BMedia(a_leg ? this: NULL, a_leg ? NULL : this));
 
   clear_other();
@@ -1340,7 +1336,7 @@ void CallLeg::changeRtpMode(RTPRelayMode new_mode, AmB2BMedia *new_media)
     case OA::OfferSent:
       TRACE("changing RTP mode/media session after offer was sent: reINVITE needed\n");
       // TODO: plan a reINVITE
-      ERROR("not implemented\n");
+      ERROR("%s: not implemented\n", getLocalTag().c_str());
       break;
 
     case OA::OfferReceived:

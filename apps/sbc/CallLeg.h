@@ -302,7 +302,7 @@ class CallLeg: public AmB2BSession
      *
      * The other leg is not affected by disconnect - it is neither terminated
      * nor informed about the peer disconnection. */
-    virtual void disconnect(bool hold_remote);
+    virtual void disconnect(bool hold_remote, bool preserve_media_session = false);
 
     /** Terminate the whole B2B call (if there is no other leg only this one is
      * stopped). */
