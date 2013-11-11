@@ -53,8 +53,8 @@ Events (Conditions)
 -------------------
 
 general: 
-   Request parameters: #method, #r_uri, #from, #to and #hdrs
-   Reply parameters:   #sip_reason, #sip_code, #from, #to and #hdrs
+   Request parameters: #method, #r_uri, #from, #to, #from_tag, #to_tag, #callid and #hdrs
+   Reply parameters:   #sip_reason, #sip_code, #from, #to, #from_tag, #to_tag, #callid and #hdrs
 
 start            - on startup of call control DSM
   

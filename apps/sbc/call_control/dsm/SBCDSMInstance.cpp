@@ -125,6 +125,9 @@ void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, const AmSip
     event_params["from"] = request->from;
     event_params["to"] = request->to;
     event_params["hdrs"] = request->hdrs;
+    event_params["from_tag"] = request->from_tag;
+    event_params["to_tag"] = request->to_tag;
+    event_params["callid"] = request->callid;
 
     vector<string> hdrs = explode(request->hdrs, CRLF);
     for (vector<string>::iterator it=hdrs.begin(); it!=hdrs.end();it++) {
@@ -154,7 +157,10 @@ void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, const AmSipRe
   event_params["sip_reason"] = reply->reason;
   event_params["sip_code"] = int2str(reply->code);
   event_params["from"] = reply->from;
+  event_params["from_tag"] = reply->from_tag;
   event_params["to"] = reply->to;
+  event_params["to_tag"] = reply->to_tag;
+  event_params["callid"] = reply->callid;
   event_params["hdrs"] = reply->hdrs;
 #ifdef PROPAGATE_UNPARSED_REPLY_HEADERS
   for (list<AmSipHeader>::const_iterator it = reply->unparsed_headers.begin();
