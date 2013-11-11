@@ -207,6 +207,9 @@ void AudioStreamData::initialize(AmB2BSession *session)
   stream = new AmRtpAudio(session, session->getRtpInterface());
   stream->setRtpRelayTransparentSeqno(session->getRtpRelayTransparentSeqno());
   stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
+  stream->setRtpRelayFilterRtpDtmf(session->getEnableDtmfRtpFiltering());
+  if (session->getEnableDtmfRtpDetection())
+    stream->force_receive_dtmf = true;
   force_symmetric_rtp = session->getRtpRelayForceSymmetricRtp();
   enable_dtmf_transcoding = session->getEnableDtmfTranscoding();
   session->getLowFiPLs(lowfi_payloads);
@@ -513,6 +516,33 @@ AmB2BMedia::~AmB2BMedia()
   if (logger) dec_ref(logger);
 }
 
+void AmB2BMedia::addToMediaProcessor() {
+  addReference(); // AmMediaProcessor's reference
+  AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void AmB2BMedia::addToMediaProcessorUnsafe() {
+  ref_cnt++; // AmMediaProcessor's reference
+  AmMediaProcessor::instance()->addSession(this, callgroup);
+}
+
+void AmB2BMedia::addReference() {
+  mutex.lock();
+  ref_cnt++;
+  mutex.unlock();
+}
+
+bool AmB2BMedia::releaseReference() {
+  mutex.lock();
+  int r = --ref_cnt;
+  mutex.unlock();
+  if (r==0) {
+    DBG("last reference to AmB2BMedia [%p] cleared, destroying\n", this);
+    delete this;
+  }
+  return (r == 0); 
+}
+
 void AmB2BMedia::changeSession(bool a_leg, AmB2BSession *new_session)
 {
   AmLock lock(mutex);
@@ -603,8 +633,7 @@ void AmB2BMedia::changeSessionUnsafe(bool a_leg, AmB2BSession *new_session)
 
   if (needs_processing) {
     if (!isProcessingMedia()) {
-      ref_cnt++; // add reference (hold by AmMediaProcessor)
-      AmMediaProcessor::instance()->addSession(this, callgroup);
+      addToMediaProcessorUnsafe();
     }
   }
   else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
@@ -845,8 +874,7 @@ void AmB2BMedia::replaceConnectionAddress(AmSdp &parser_sdp, bool a_leg,
   if (it != parser_sdp.media.end()) {
     // FIXME: create new streams here?
     WARN("trying to relay SDP with more media lines than "
-	 "relay streams initialized (%lu)\n", 
-	 (unsigned long)(audio.size()+relay_streams.size()));
+	 "relay streams initialized (%zu)\n",audio.size()+relay_streams.size());
   }
 
   DBG("replaced connection address in SDP with %s:%s.\n",
@@ -935,8 +963,7 @@ void AmB2BMedia::onSdpUpdate()
   // the media, right?
   if (needs_processing) {
     if (!isProcessingMedia()) {
-      ref_cnt++; // add reference (hold by AmMediaProcessor)
-      AmMediaProcessor::instance()->addSession(this, callgroup);
+      addToMediaProcessorUnsafe();
     }
   }
   else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
@@ -1079,9 +1106,7 @@ void AmB2BMedia::onMediaProcessingTerminated()
   clearAudio();
 
   // release reference held by AmMediaProcessor
-  if (releaseReference()) { 
-    delete this; // this should really work :-D
-  }
+  releaseReference();
 }
 
 bool AmB2BMedia::createHoldRequest(AmSdp &sdp, bool a_leg, bool zero_connection, bool sendonly)
@@ -1227,6 +1252,87 @@ void AmB2BMedia::setRtpLogger(msg_logger* _logger)
   // walk through all the streams and use logger for them
   for (AudioStreamIterator i = audio.begin(); i != audio.end(); ++i) i->setLogger(logger);
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); ++j) (*j)->setLogger(logger);
+}
+
+void AmB2BMedia::setRelayDTMFReceiving(bool enabled) {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", &(*j)->a);
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", &(*j)->b);
+    (*j)->a.force_receive_dtmf = enabled;
+    (*j)->b.force_receive_dtmf = enabled;
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", j->a.getStream());
+    DBG("force_receive_dtmf %sabled for [%p]\n", enabled?"en":"dis", j->b.getStream());
+    if (NULL != j->a.getStream())
+      j->a.getStream()->force_receive_dtmf = enabled;
+    
+    if (NULL != j->b.getStream())
+      j->b.getStream()->force_receive_dtmf = enabled;
+  }
+}
+
+#define ALL_STREAMS_OP(op_name, op_action)				\
+  void AmB2BMedia::op_name(bool pause_a, bool pause_b) {		\
+    DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size()); \
+    for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) { \
+      if (pause_a) {							\
+	DBG(#op_name " A relay stream [%p]\n", &(*j)->a);		\
+	(*j)->a.op_action;						\
+      }									\
+      if (pause_b) {							\
+	DBG(#op_name " B relay stream [%p]\n", &(*j)->b);		\
+	(*j)->b.op_action;						\
+      }									\
+    }									\
+									\
+    for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) { \
+      if (pause_a && NULL != j->a.getStream()) {			\
+	DBG(#op_name " A audio stream [%p]\n", j->a.getStream());	\
+	j->a.getStream()->op_action;					\
+      }									\
+      if (pause_b && NULL != j->b.getStream()) {			\
+	DBG(#op_name " B audio stream [%p]\n", j->b.getStream());	\
+	j->b.getStream()->op_action;					\
+      }									\
+    }									\
+  }
+
+ALL_STREAMS_OP(pauseStreams, pause());
+ALL_STREAMS_OP(resumeStreams, resume());
+ALL_STREAMS_OP(muteStreams, mute=true);
+ALL_STREAMS_OP(unmuteStreams, mute=false);
+
+void AmB2BMedia::stopRelay() {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    (*j)->a.disableRawRelay();
+    (*j)->b.disableRawRelay();
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    if (NULL != j->a.getStream())
+      j->a.getStream()->disableRtpRelay();
+    if (NULL != j->b.getStream())
+      j->b.getStream()->disableRtpRelay();
+  }
+}
+
+void AmB2BMedia::restartRelay() {
+  DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
+    (*j)->a.enableRawRelay();
+    (*j)->b.enableRawRelay();
+  }
+
+  for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
+    if (NULL != j->a.getStream())
+      j->a.getStream()->enableRtpRelay();
+    if (NULL != j->b.getStream())
+      j->b.getStream()->enableRtpRelay();
+  }
 }
 
 void AudioStreamData::debug()

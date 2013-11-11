@@ -87,25 +87,29 @@ static string payload2str(const SdpPayload &p);
     }								\
   } while(0)
 
-#define REPLACE_IFACE_RTP(what, iface) do {		\
-    if (!what.empty()) {			    \
-      what = ctx.replaceParameters(what, #what, req);	\
-      DBG("set " #what " to '%s'\n", what.c_str());	\
-      if (!what.empty()) {				\
-	if (what == "default") iface = 0;		\
-	else {								\
-	  map<string,unsigned short>::iterator name_it =		\
-	    AmConfig::RTP_If_names.find(what);				\
-	  if (name_it != AmConfig::RTP_If_names.end()) \
-	    iface = name_it->second;					\
-	  else {							\
-	    ERROR("selected " #what " '%s' does not exist as a media interface. " \
-		  "Please check the 'additional_interfaces' "		\
-		  "parameter in the main configuration file.",		\
-		  what.c_str());					\
-	    return false;						\
-	  }								\
-	}								\
+#define REPLACE_IFACE_RTP(what, iface) do {				\
+    if (!what.empty()) {						\
+      what = ctx.replaceParameters(what, #what, req);			\
+      DBG("set " #what " to '%s'\n", what.c_str());			\
+      if (!what.empty()) {						\
+	EVALUATE_IFACE_RTP(what, iface);				\
+      }									\
+    }									\
+  } while(0)
+
+#define EVALUATE_IFACE_RTP(what, iface) do {				\
+    if (what == "default") iface = 0;					\
+    else {								\
+      map<string,unsigned short>::iterator name_it =			\
+	AmConfig::RTP_If_names.find(what);				\
+      if (name_it != AmConfig::RTP_If_names.end())			\
+	iface = name_it->second;					\
+      else {								\
+	ERROR("selected " #what " '%s' does not exist as a media interface. " \
+	      "Please check the 'additional_interfaces' "		\
+	      "parameter in the main configuration file.",		\
+	      what.c_str());						\
+	return false;							\
       }									\
     }									\
   } while(0)
@@ -352,6 +356,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
     cfg.getParameter("rtprelay_transparent_seqno", "yes") == "yes";
   rtprelay_transparent_ssrc =
     cfg.getParameter("rtprelay_transparent_ssrc", "yes") == "yes";
+  rtprelay_dtmf_filtering =
+    cfg.getParameter("rtprelay_dtmf_filtering", "no") == "yes";
+  rtprelay_dtmf_detection =
+    cfg.getParameter("rtprelay_dtmf_detection", "no") == "yes";
 
   outbound_interface = cfg.getParameter("outbound_interface");
   aleg_outbound_interface = cfg.getParameter("aleg_outbound_interface");
@@ -472,6 +480,10 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 	   rtprelay_transparent_seqno?"transparent":"opaque");
       INFO("SBC:      RTP Relay %s SSRC\n",
 	   rtprelay_transparent_ssrc?"transparent":"opaque");
+      INFO("SBC:      RTP Relay RTP DTMF filtering %sabled\n",
+	   rtprelay_dtmf_filtering?"en":"dis");
+      INFO("SBC:      RTP Relay RTP DTMF detection %sabled\n",
+	   rtprelay_dtmf_detection?"en":"dis");
     }
 
     INFO("SBC:      SST on A leg enabled: '%s'\n", sst_aleg_enabled.empty() ?
@@ -813,6 +825,16 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
     sdpfilter = Transparent;
   }*/
 
+  return true;
+}
+
+bool SBCCallProfile::evaluateRTPRelayInterface() {
+  EVALUATE_IFACE_RTP(rtprelay_interface, rtprelay_interface_value);
+  return true;
+}
+
+bool SBCCallProfile::evaluateRTPRelayAlegInterface() {
+  EVALUATE_IFACE_RTP(aleg_rtprelay_interface, aleg_rtprelay_interface_value);
   return true;
 }
 

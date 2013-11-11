@@ -146,6 +146,10 @@ Playing prompts and file I/O
    if notify=true, send an event
  setInOutPlaylist() 
    set playlist as input and output
+ setInputPlaylist() 
+   set playlist as input (output untouched)
+ setOutputPlaylist() 
+   set playlist as output (input untouched)
  addSeparator(id [, bool front])
    fires event when playlist hits it ; front=[true|false]
  connectMedia()     - set playlist as input and output of session,
@@ -220,6 +224,13 @@ B2B call control
   replace_crlf=true for replacing \r\n with CRLF
   e.g. 
   B2B.setHeaders("P-One: value\r\nP-Two: anothervalue", true)
+
+ B2B.relayEvent(variable_name;variable_name;...)
+   relay B2Bevent to related B2B session; variables copied as event parameters
+   e.g. B2B.relayEvent(var1;var2;var3)     relay event with var1, var2, var3
+
+ B2B.relayEvent("var")
+   relay B2Bevent to related B2B session with all variables of current DSM session
 
  Logging
  -------
@@ -327,6 +338,9 @@ Generic conditions (regardless of the type of the event):
 Other conditions only match on the type of event and when the expression expr in the
 brackets match.
 
+ start
+   start of a session (onStart). This event is processed before any other.
+
  hangup
    bye/cancel received
    parameters:
@@ -353,6 +367,10 @@ brackets match.
  event(expr) or eventTest(expr)
   generic event, e.g. passed from DI or another call with postEvent
   parameters depend on the DI call/the ones passed with postEvent
+
+B2Bevent(expr)
+  generic event from B2B related call leg
+  parameters depend on the ones passed with B2B.relayEvent
 
  keyPress(key)
   alias to key(#key==key)
@@ -414,12 +432,18 @@ brackets match.
    parameters:
       #type     - system event type, e.g. ServerShutdown, User1, User2
 
+ B2B.otherRequest (only sbc)
+   Request on other B2B leg received
+   parameters:
+    #method, #r_uri, #from, #to, #hdrs  - from request
+
  B2B.otherReply
    Reply on other B2B leg received
    parameters:
     #code    - reply code
     #reason  - reply reason
     #hdrs    - headers
+    #trans_method - transaction method (only sbc)
      
  B2B.otherBye
    BYE on other leg received
@@ -487,6 +511,7 @@ selects :
  @domain
  @remote_tag
  @callid
+ @local_party
  @local_uri
  @remote_uri
  @remote_party

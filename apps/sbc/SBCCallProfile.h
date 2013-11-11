@@ -187,6 +187,8 @@ struct SBCCallProfile
   bool msgflags_symmetric_rtp;
   bool rtprelay_transparent_seqno;
   bool rtprelay_transparent_ssrc;
+  bool rtprelay_dtmf_filtering;
+  bool rtprelay_dtmf_detection;
 
   string rtprelay_interface;
   int rtprelay_interface_value;
@@ -342,6 +344,9 @@ struct SBCCallProfile
 
   bool evaluate(ParamReplacerCtx& ctx,
 		const AmSipRequest& req);
+
+  bool evaluateRTPRelayInterface();
+  bool evaluateRTPRelayAlegInterface();
 
   void eval_sst_config(ParamReplacerCtx& ctx,
 		       const AmSipRequest& req,

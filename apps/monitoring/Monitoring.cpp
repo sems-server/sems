@@ -230,7 +230,7 @@ void Monitor::logAdd(const AmArg& args, AmArg& ret) {
   bucket.log_lock.lock();
   try {
     AmArg& val = bucket.log[args[0].asCStr()].info[args[1].asCStr()];
-    if (!isArgArray(val)) {
+    if (!isArgArray(val) && !isArgUndef(val)) {
       AmArg v1 = val;
       val = AmArg();
       val.push(v1);

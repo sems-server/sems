@@ -202,13 +202,10 @@ int AmPlugIn::load(const string& directory, const string& plugins)
       string plugin_file = directory + "/" + plugin_name;
 
       DBG("loading %s ...\n",plugin_file.c_str());
-      AmPluginFactory* plugin = NULL;
-      if( (err = loadPlugIn(plugin_file, plugin_name, plugin)) < 0 ) {
+      if( (err = loadPlugIn(plugin_file, plugin_name, loaded_plugins)) < 0 ) {
         ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
         return -1;
       }
-      if (NULL != plugin)
-	loaded_plugins.push_back(plugin);
     }
     
     closedir(dir);
@@ -232,14 +229,11 @@ int AmPlugIn::load(const string& directory, const string& plugins)
 
       plugin_file = directory + "/"  + plugin_file;
       DBG("loading %s...\n",plugin_file.c_str());
-      AmPluginFactory* plugin = NULL;
-      if( (err = loadPlugIn(plugin_file, plugin_file, plugin)) < 0 ) {
+      if( (err = loadPlugIn(plugin_file, plugin_file, loaded_plugins)) < 0 ) {
         ERROR("while loading plug-in '%s'\n",plugin_file.c_str());
         // be strict here: if plugin not loaded, stop!
         return err; 
       }
-      if (NULL != plugin)
-	loaded_plugins.push_back(plugin);
     }
   }
 
@@ -269,10 +263,9 @@ void AmPlugIn::set_load_rtld_global(const string& plugin_name) {
 }
 
 int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name,
-			 AmPluginFactory*& plugin)
+			 vector<AmPluginFactory*>& plugins)
 {
-
-  plugin = NULL; // default: not loaded
+  AmPluginFactory* plugin = NULL; // default: not loaded
   int dlopen_flags = RTLD_NOW;
 
   char* pname = strdup(plugin_name.c_str());
@@ -321,24 +314,28 @@ int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name,
     if(loadAppPlugIn(plugin))
       goto error;
     has_sym=true;
+    if (NULL != plugin) plugins.push_back(plugin);
   }
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_SESSION_EVENT_HANDLER_EXPORT_STR)) != NULL){
     plugin = (AmPluginFactory*)fc();
     if(loadSehPlugIn(plugin))
       goto error;
     has_sym=true;
+    if (NULL != plugin) plugins.push_back(plugin);
   }
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_PLUGIN_EXPORT_STR)) != NULL){
     plugin = (AmPluginFactory*)fc();
     if(loadBasePlugIn(plugin))
       goto error;
     has_sym=true;
+    if (NULL != plugin) plugins.push_back(plugin);
   }
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_PLUGIN_CLASS_EXPORT_STR)) != NULL){
     plugin = (AmPluginFactory*)fc();
     if(loadDiPlugIn(plugin))
       goto error;
     has_sym=true;
+    if (NULL != plugin) plugins.push_back(plugin);
   }
 
   if((fc = (FactoryCreate)dlsym(h_dl,FACTORY_LOG_FACILITY_EXPORT_STR)) != NULL){
@@ -346,6 +343,7 @@ int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name,
     if(loadLogFacPlugIn(plugin))
       goto error;
     has_sym=true;
+    if (NULL != plugin) plugins.push_back(plugin);
   }
 
   if(!has_sym){
@@ -359,7 +357,6 @@ int AmPlugIn::loadPlugIn(const string& file, const string& plugin_name,
 
  error:
   dlclose(h_dl);
-  plugin = NULL;
   return -1;
 }
 

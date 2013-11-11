@@ -44,6 +44,9 @@ MOD_ACTIONEXPORT_BEGIN(MOD_CLS_NAME) {
   DEF_CMD("uri.parseNameaddr", URIParseNameaddrAction);
   DEF_CMD("uri.getHeader", URIGetHeaderAction);
 
+  DEF_CMD("uri.encode", URIEncodeAction);
+  DEF_CMD("uri.decode", URIDecodeAction);
+
 } MOD_ACTIONEXPORT_END;
 
 MOD_CONDITIONEXPORT_NONE(MOD_CLS_NAME);
@@ -116,4 +119,29 @@ EXEC_ACTION_START(URIGetHeaderAction) {
   DBG("got header '%s' value '%s' as $%s\n", 
       hname.c_str(), sc_sess->var[dstname].c_str(), dstname.c_str());
 
+} EXEC_ACTION_END;
+
+
+CONST_ACTION_2P(URIEncodeAction, '=', false);
+EXEC_ACTION_START(URIEncodeAction) {
+
+  string varname  = par1;
+  if (varname.size() && varname[0]=='$')
+    varname.erase(0,1);
+  string str = resolveVars(par2, sess, sc_sess, event_params);
+
+  sc_sess->var[varname] = URL_encode(str);
+  DBG("URL-encoded: $%s=\"%s\"\n", varname.c_str(), sc_sess->var[varname].c_str());
+} EXEC_ACTION_END;
+
+CONST_ACTION_2P(URIDecodeAction, '=', false);
+EXEC_ACTION_START(URIDecodeAction) {
+
+  string varname  = par1;
+  if (varname.size() && varname[0]=='$')
+    varname.erase(0,1);
+  string str = resolveVars(par2, sess, sc_sess, event_params);
+
+  sc_sess->var[varname] = URL_decode(str);
+  DBG("URL-decoded: $%s=\"%s\"\n", varname.c_str(), sc_sess->var[varname].c_str());
 } EXEC_ACTION_END;

@@ -151,6 +151,15 @@ public:
 
   bool createSystemDSM(const string& config_name, const string& start_diag, bool reload, string& status);
 
+  /**
+     add script diags from config set to DSM engine
+     @return true on success (config set found) 
+  */
+  bool addScriptDiagsToEngine(const string& config_set,
+			      DSMStateEngine* engine,
+			      map<string,string>& config_vars,
+			      bool& SetParamVariables);
+
 };
 
 #endif

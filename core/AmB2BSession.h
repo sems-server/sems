@@ -45,9 +45,24 @@ enum { B2BTerminateLeg,
 /** \brief base class for event in B2B session */
 struct B2BEvent: public AmEvent
 {
-  B2BEvent(int ev_id) 
-    : AmEvent(ev_id)
+  enum B2BEventType {
+    B2BCore,
+    B2BApplication,
+  } ev_type;
+
+  map<string, string> params;
+
+ B2BEvent(int ev_id)
+   : AmEvent(ev_id), ev_type(B2BCore)
   {}
+
+ B2BEvent(int ev_id, B2BEventType ev_type)
+   : AmEvent(ev_id), ev_type(ev_type)
+  { }
+
+ B2BEvent(int ev_id, B2BEventType ev_type, map<string, string> params)
+   : AmEvent(ev_id), ev_type(ev_type), params(params)
+  { }
 };
 
 /** \brief base class for SIP event in B2B session */
@@ -179,18 +194,18 @@ private:
   /** reset relation with other leg */
   virtual void clear_other();
 
-  /** Relay one event to the other side. @return 0 on success */
-  virtual int relayEvent(AmEvent* ev);
-
   /** send a relayed SIP Request */
   int relaySip(const AmSipRequest& req);
 
   /** send a relayed SIP Reply */
   int relaySip(const AmSipRequest& orig, const AmSipReply& reply);
 
+ public:
+
   void relayError(const string &method, unsigned cseq, bool forward, int sip_code, const char *reason);
   void relayError(const string &method, unsigned cseq, bool forward, int err_code);
 
+ protected:
   /** Terminate our leg and forget the other. */
   virtual void terminateLeg();
 
@@ -261,6 +276,11 @@ private:
   /** If true, transcoded audio is injected into 
       the inband DTMF detector */
   bool enable_dtmf_transcoding;
+  /** filter RTP DTMF (2833 / 4733) packets */
+  bool enable_dtmf_rtp_filtering;
+  /** detect DTMF through RTP DTMF (2833 / 4733) packets */
+  bool enable_dtmf_rtp_detection;
+
   /** Low fidelity payloads for which inband DTMF 
       transcoding should be used */
   vector<SdpPayload> lowfi_payloads;
@@ -296,6 +316,9 @@ private:
   }
   virtual const string& getOtherId() const { return other_id; }
 
+  /** Relay one event to the other side. @return 0 on success */
+  virtual int relayEvent(AmEvent* ev);
+
   void set_sip_relay_only(bool r);
 
   /** set RTP relay mode (possibly initiaze by given INVITE) */
@@ -305,6 +328,8 @@ private:
   RTPRelayMode getRtpRelayMode() const { return rtp_relay_mode; }
   bool getRtpRelayForceSymmetricRtp() const { return rtp_relay_force_symmetric_rtp; }
   bool getEnableDtmfTranscoding() const { return enable_dtmf_transcoding; }
+  bool getEnableDtmfRtpFiltering() const { return enable_dtmf_rtp_filtering; }
+  bool getEnableDtmfRtpDetection() const { return enable_dtmf_rtp_detection; }
   void getLowFiPLs(vector<SdpPayload>& lowfi_payloads) const;
 
   virtual void setRtpInterface(int relay_interface);
@@ -313,6 +338,8 @@ private:
   void setRtpRelayTransparentSSRC(bool transparent);
 
   void setEnableDtmfTranscoding(bool enable);
+  void setEnableDtmfRtpFiltering(bool enable);
+  void setEnableDtmfRtpDetection(bool enable);
   void setLowFiPLs(const vector<SdpPayload>& lowfi_payloads);
   
   bool getRtpRelayTransparentSeqno() { return rtp_relay_transparent_seqno; }

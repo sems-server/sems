@@ -578,6 +578,14 @@ void DSMCall::process(AmEvent* event)
     return;
   }
 
+  if (event->event_id ==  E_B2B_APP) {
+    B2BEvent* b2b_ev = dynamic_cast<B2BEvent*>(event);
+    if(b2b_ev && b2b_ev->ev_type == B2BEvent::B2BApplication) {
+      engine.runEvent(this, this, DSMCondition::B2BEvent, &b2b_ev->params);
+      return;
+    }
+  }
+
   AmB2BCallerSession::process(event);
 }
 

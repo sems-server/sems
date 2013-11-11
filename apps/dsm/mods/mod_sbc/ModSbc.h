@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 iptego GmbH
+ * Copyright (C) 2013 Stefan Sayer
  *
  * This file is part of SEMS, a free SIP media server.
  *
@@ -24,21 +24,40 @@
  * along with this program; if not, write to the Free Software 
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#ifndef _MOD_SYS_H
-#define _MOD_SYS_H
+#ifndef _MOD_SBC_H
+#define _MOD_SBC_H
 #include "DSMModule.h"
+#include "DSMSession.h"
 
-#define MOD_CLS_NAME URIModule
+#define MOD_CLS_NAME SCSBCModule
 
 DECLARE_MODULE_BEGIN(MOD_CLS_NAME);
-bool onInvite(const AmSipRequest& req, DSMSession* sess);
+int preload();
 DECLARE_MODULE_END;
 
-DEF_ACTION_2P(URIParseAction);
-DEF_ACTION_2P(URIParseNameaddrAction);
-DEF_ACTION_2P(URIGetHeaderAction);
+DEF_ACTION_2P(MODSBCActionProfileSet);
+DEF_ACTION_1P(MODSBCActionStopCall);
+DEF_ACTION_1P(MODSBCActionDisconnect);
+DEF_ACTION_1P(MODSBCActionSendDisconnectEvent);
 
-DEF_ACTION_2P(URIEncodeAction);
-DEF_ACTION_2P(URIDecodeAction);
+DEF_ACTION_1P(MODSBCActionPutOnHold);
+DEF_ACTION_1P(MODSBCActionResumeHeld);
+DEF_ACTION_1P(MODSBCActionGetCallStatus);
+
+DEF_SCCondition(SBCIsALegCondition);
+DEF_SCCondition(SBCIsOnHoldCondition);
+
+DEF_ACTION_2P(MODSBCActionB2BRelayReliable);
+DEF_ACTION_2P(MODSBCActionAddCallee);
+
+DEF_ACTION_1P(MODSBCEnableRelayDTMFReceiving);
+DEF_ACTION_1P(MODSBCAddToMediaProcessor);
+DEF_ACTION_1P(MODSBCRemoveFromMediaProcessor);
+
+DEF_ACTION_2P(MODSBCPauseRtpStreams);
+DEF_ACTION_2P(MODSBCResumeRtpStreams);
+
+DEF_ACTION_2P(MODSBCMuteRtpStreams);
+DEF_ACTION_2P(MODSBCUnmuteRtpStreams);
 
 #endif
