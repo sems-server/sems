@@ -511,6 +511,7 @@ selects :
  @domain
  @remote_tag
  @callid
+ @local_party
  @local_uri
  @remote_uri
  @remote_party

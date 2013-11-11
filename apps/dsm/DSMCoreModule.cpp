@@ -629,6 +629,7 @@ void log_selects(const string& l_arg, AmSession* sess,
   SELECT_LOG("remote_tag");
   SELECT_LOG("callid");
   SELECT_LOG("local_uri");
+  SELECT_LOG("local_party");
   SELECT_LOG("remote_uri");
   SELECT_LOG("remote_party");
 #undef SELECT_LOG
