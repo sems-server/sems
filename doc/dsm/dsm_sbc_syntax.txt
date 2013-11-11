@@ -205,6 +205,10 @@ sbc.addCallee(string mode, string varname)
            set($b.remote_party="sip:neu@192.168.5.110:5088");
            sbc.addCallee(var, b);
 
+  mode=="ltag"  - existing call referenced by ltag
+         $varname.ltag           - ltag of call to reconnect
+         $varname.hdrs           - headers in outgoing INVITE (optional)
+
 sbc.enableRelayDTMFReceiving(bool rcv_dtmf)  - enable receiving of RTP DTMF in relayed stream (RTP_Relay mode)
      note: session needs to be processed by media processor as well (sbc.addToMediaProcessor())
            so that DTMF is processed and passed up to the application (key event).

@@ -12,11 +12,16 @@
 #define DSM_SBC_CCVAR_START_DIAG      "start_diag"
 
 #define DSM_SBC_PARAM_ADDCALLEE_MODE_STR "var"
+#define DSM_SBC_PARAM_ADDCALLEE_MODE_LTAG "ltag"
+
 #define DSM_SBC_PARAM_ADDCALLEE_LOCAL_PARTY  "local_party"
 #define DSM_SBC_PARAM_ADDCALLEE_REMOTE_PARTY "remote_party"
 #define DSM_SBC_PARAM_ADDCALLEE_HDRS           "hdrs"
 #define DSM_SBC_PARAM_ADDCALLEE_OUTBOUND_PROXY "outbound_proxy"
 #define DSM_SBC_PARAM_ADDCALLEE_RTP_MODE       "rtp_mode"
+
+#define DSM_SBC_PARAM_ADDCALLEE_LTAG           "ltag"
+
 
 #endif
 

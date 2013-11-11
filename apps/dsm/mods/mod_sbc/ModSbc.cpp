@@ -418,9 +418,9 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
   GET_SBC_CALL_LEG(sbc.addCallee);
 
   string mode = resolveVars(par1, sess, sc_sess, event_params);
+  string varname = par2;
 
   if (mode == DSM_SBC_PARAM_ADDCALLEE_MODE_STR) {
-    string varname = par2;
     string hdrs;
     SBCCallLeg* peer = new SBCCallLeg(sbc_call_leg);
     SBCCallProfile &p = peer->getCallProfile();
@@ -456,6 +456,19 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
     }
 
     sbc_call_leg->addCallee(peer, hdrs, rtp_mode);
+  } else if (mode == DSM_SBC_PARAM_ADDCALLEE_MODE_LTAG) {
+    string ltag;
+    string hdrs;
+
+    VarMapT::iterator it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_LTAG);
+    if (it != sc_sess->var.end())
+      ltag = it->second;
+
+    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_HDRS);
+    if (it != sc_sess->var.end())
+      hdrs = it->second;
+
+    sbc_call_leg->addCallee(ltag, hdrs);
   }
 
 } EXEC_ACTION_END;
