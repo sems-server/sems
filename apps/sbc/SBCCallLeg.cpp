@@ -146,6 +146,7 @@ SBCCallLeg::SBCCallLeg(SBCCallLeg* caller, AmSipDialog* p_dlg,
   if (call_profile.transparent_dlg_id && caller) {
     dlg->setCallid(caller->dlg->getCallid());
     dlg->setExtLocalTag(caller->dlg->getRemoteTag());
+    dlg->cseq = caller->dlg->r_cseq;
   }
 
   // copy RTP rate limit from caller leg
