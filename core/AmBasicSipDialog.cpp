@@ -719,7 +719,7 @@ void AmBasicSipDialog::dump()
 {
   DBG("callid = %s\n",callid.c_str());
   DBG("local_tag = %s\n",local_tag.c_str());
-  DBG("uac_trans.size() = %u\n",(unsigned int)uac_trans.size());
+  DBG("uac_trans.size() = %zu\n",uac_trans.size());
   if(uac_trans.size()){
     for(TransMap::iterator it = uac_trans.begin();
 	it != uac_trans.end(); it++){
@@ -727,7 +727,7 @@ void AmBasicSipDialog::dump()
       DBG("    cseq = %i; method = %s\n",it->first,it->second.method.c_str());
     }
   }
-  DBG("uas_trans.size() = %u\n",(unsigned int)uas_trans.size());
+  DBG("uas_trans.size() = %zu\n",uas_trans.size());
   if(uas_trans.size()){
     for(TransMap::iterator it = uas_trans.begin();
 	it != uas_trans.end(); it++){

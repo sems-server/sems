@@ -28,6 +28,8 @@
 #include "AmUtils.h"
 #include "AmMediaProcessor.h"
 
+#define LONELY_USER_TIMER_ID 50
+
 // room name unknown
 WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
 					 WebConferenceFactory* my_f,
@@ -51,7 +53,8 @@ WebConferenceDialog::WebConferenceDialog(AmPromptCollection& prompts,
   : play_list(this), separator(this, 0), prompts(prompts), state(None),
     factory(my_f), muted(false),
     connect_ts(-1), disconnect_ts(-1),
-    local_input(NULL), cred(NULL)
+    local_input(NULL), cred(NULL),
+    lonely_user(true)
 {
   conf_id = room;
   DBG("set conf_id to %s\n", conf_id.c_str());
@@ -109,7 +112,6 @@ void WebConferenceDialog::connectConference(const string& room) {
     setInOut(NULL, &play_list);
   else
     setInOut(&play_list, &play_list);
-
 }
 
 void WebConferenceDialog::onInvite(const AmSipRequest& req) { 
@@ -301,7 +303,17 @@ void WebConferenceDialog::process(AmEvent* ev)
       if(ce->participants == 1){
 	prompts.addToPlaylist(FIRST_PARTICIPANT, (long)this, play_list, true,
 			      WebConferenceFactory::LoopFirstParticipantPrompt);
+
+	if (WebConferenceFactory::LonelyUserTimer) {
+	  DBG("only person in the room - setting LonelyUserTimer %u sec\n",
+	      WebConferenceFactory::LonelyUserTimer);
+	  setTimer(LONELY_USER_TIMER_ID, WebConferenceFactory::LonelyUserTimer);
+	  lonely_user = true;
+	}
+
       } else {
+	// someone else joined
+	lonely_user = false;
 
 	if (WebConferenceFactory::LoopFirstParticipantPrompt) {
 	  // -- reset the channel (flush playlist)
@@ -323,6 +335,16 @@ void WebConferenceDialog::process(AmEvent* ev)
     case ConfParticipantLeft: {
       DBG("########## participant left ########\n");
       prompts.addToPlaylist(DROP_SOUND, (long)this, play_list, true);
+
+      if(ce->participants == 1) {
+	if (WebConferenceFactory::LonelyUserTimer) {
+	  DBG("only person in the room - setting LonelyUserTimer %u sec\n",
+	      WebConferenceFactory::LonelyUserTimer);
+	  setTimer(LONELY_USER_TIMER_ID, WebConferenceFactory::LonelyUserTimer);
+	  lonely_user = true;
+	}
+      }
+
     } break;
 
     default:
@@ -378,6 +400,18 @@ void WebConferenceDialog::process(AmEvent* ev)
     case WebConferenceEvent::Unmute: onMuted(false); break;
     default: { WARN("ignoring unknown webconference event %d\n", webconf_ev->event_id); 
     } break;	
+    }
+  }
+
+
+  AmPluginEvent* plugin_event = dynamic_cast<AmPluginEvent*>(ev);
+  if(plugin_event && plugin_event->name == "timer_timeout") {
+    int timer_id = plugin_event->data.get(0).asInt();
+    if (timer_id == LONELY_USER_TIMER_ID && lonely_user) {
+      DBG("LonelyUserTimer of %u sec expired - kicking lonely user\n",
+	  WebConferenceFactory::LonelyUserTimer);
+      onKicked();
+      return;
     }
   }
   

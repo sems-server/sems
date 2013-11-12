@@ -291,11 +291,13 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       "which                              -  print available commands\n"
       "set_loglevel <loglevel>            -  set log level\n"
       "get_loglevel                       -  get log level\n"
+      "set_cpslimit <limit>               -  set maximum allowed CPS\n"
+      "get_cpslimit                       -  get maximum allowed CPS\n"
       "set_shutdownmode <1 or 0>          -  turns on and off shutdown mode\n"
       "get_shutdownmode                   -  returns the shutdown mode's current state\n"
       "get_callsavg                       -  get number of active calls (average since the last query)\n"
       "get_callsmax                       -  get maximum of active calls since the last query\n"
-      "get_cpsavg                         -  get calls per second (average since the last query)\n"
+      "get_cpsavg                         -  get calls per second (5 sec average)\n"
       "get_cpsmax                         -  get maximum of CPS since the last query\n"
 
       "DI <factory> <function> (<args>)*  -  invoke DI command\n"
@@ -311,6 +313,16 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
 	reply= "invalid loglevel value.\n";
       else 
 	reply= "loglevel set to "+int2str(log_level)+".\n";
+    }
+
+    else if (cmd_str.substr(4, 8) == "cpslimit") {
+      int tmp;
+      if(sscanf(&cmd_str.c_str()[13],"%u",&tmp) != 1)
+        reply= "invalid CPS limit\n";
+      else {
+        sc->setCPSLimit(tmp);
+        reply= "CPS limit set to "+int2str(sc->getCPSLimit().first)+".\n";
+      }
     }
 
     else if (cmd_str.substr(4, 12) == "shutdownmode") {
@@ -344,10 +356,13 @@ int StatsUDPServer::execute(char* msg_buf, string& reply,
       reply = "Average active calls: " + int2str(AmSession::getAvgSessionNum()) + "\n";
     else if(cmd_str.substr(4, 8) == "callsmax")
       reply = "Maximum active calls: " + int2str(AmSession::getMaxSessionNum()) + "\n";
-    else if(cmd_str.substr(4, 8) == "cpsavg")
-      reply = "Average calls per second: " + int2str(AmSession::getAvgCPS()) + "\n";
-    else if(cmd_str.substr(4, 8) == "cpsmax")
-      reply = "Maximum calls per second: " + int2str(AmSession::getMaxCPS()) + "\n";
+    else if(cmd_str.substr(4, 6) == "cpsavg")
+      reply = "Average calls per second: " + int2str(sc->getAvgCPS()) + "\n";
+    else if(cmd_str.substr(4, 6) == "cpsmax")
+      reply = "Maximum calls per second: " + int2str(sc->getMaxCPS()) + "\n";
+    else if(cmd_str.substr(4, 8) == "cpslimit")
+      reply = "CPS hard limit: " + int2str(sc->getCPSLimit().first) + ", CPS limit: " +
+        int2str(sc->getCPSLimit().second) + "\n";
 
     else if (cmd_str.substr(4, 12) == "shutdownmode") {
       if(AmConfig::ShutdownMode)
