@@ -129,10 +129,10 @@ void sip_msg::release()
     local_socket = NULL;
 }
 
-int sip_msg::send()
+int sip_msg::send(unsigned int flags)
 {
     assert(local_socket);
-    return local_socket->send(&remote_ip,buf,len);
+    return local_socket->send(&remote_ip,buf,len,flags);
 }
 
 

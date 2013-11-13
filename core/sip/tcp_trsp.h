@@ -166,7 +166,8 @@ public:
    * Sends a message (push it to send-queue).
    * @return -1 if error(s) occured.
    */
-  int send(const sockaddr_storage* sa, const char* msg, const int msg_len);
+  int send(const sockaddr_storage* sa, const char* msg,
+	   const int msg_len, unsigned int flags);
 };
 
 class tcp_server_socket: public trsp_socket
@@ -204,7 +205,8 @@ public:
   void on_accept(int sd, short ev);
 
   int bind(const string& address, unsigned short port);
-  int send(const sockaddr_storage* sa, const char* msg, const int msg_len);
+  int send(const sockaddr_storage* sa, const char* msg,
+	   const int msg_len, unsigned int flags);
 
   void add_connection(tcp_trsp_socket* client_sock);
   void remove_connection(tcp_trsp_socket* client_sock);

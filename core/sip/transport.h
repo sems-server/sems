@@ -148,7 +148,8 @@ public:
      * Sends a message.
      * @return -1 if error(s) occured.
      */
-    virtual int send(const sockaddr_storage* sa, const char* msg, const int msg_len)=0;
+    virtual int send(const sockaddr_storage* sa, const char* msg, 
+		     const int msg_len, unsigned int flags)=0;
 };
 
 class transport: public AmThread

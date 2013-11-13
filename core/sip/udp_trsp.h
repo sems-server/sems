@@ -69,7 +69,8 @@ public:
      * Sends a message.
      * @return -1 if error(s) occured.
      */
-    int send(const sockaddr_storage* sa, const char* msg, const int msg_len);
+    int send(const sockaddr_storage* sa, const char* msg,
+	     const int msg_len, unsigned int flags);
 };
 
 class udp_trsp: public transport
