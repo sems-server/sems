@@ -82,6 +82,12 @@ class tcp_trsp_socket: public trsp_socket
   int connect();
 
   /**
+   * Checks whether or not the socket is already connected.
+   * If not, a new connection will be tried.
+   */
+  int check_connection();
+
+  /**
    * Closes the connection/socket
    *
    * Warning: never do anything with the object
@@ -90,10 +96,33 @@ class tcp_trsp_socket: public trsp_socket
    */
   void close();
 
+  /**
+   * Generates a transport error for each request
+   * left in send queue.
+   */
   void generate_transport_errors();
 
+  /**
+   * Adds persistent read-event to event base.
+   */
   void add_read_event();
+
+  /**
+   * Adds one-shot write-event to event base.
+   */
   void add_write_event(struct timeval* timeout=NULL);
+
+  /**
+   * Same as add_read_event() but unlock before
+   * calling event_add().
+   */
+  void add_read_event_ul();
+
+  /**
+   * Same as add_write_event() but unlock before
+   * calling event_add().
+   */
+  void add_write_event_ul(struct timeval* timeout=NULL);
 
   int  on_connect(short ev);
   void on_write(short ev);
@@ -101,11 +130,19 @@ class tcp_trsp_socket: public trsp_socket
 
   static void on_sock_read(int fd, short ev, void* arg);
   static void on_sock_write(int fd, short ev, void* arg);
-  
-public:
-  tcp_trsp_socket(tcp_server_socket* server_sock, 
+
+  tcp_trsp_socket(tcp_server_socket* server_sock,
 		  int sd, const sockaddr_storage* sa,
 		  struct event_base* evbase);
+
+public:
+  static void create_connected(tcp_server_socket* server_sock,
+			       int sd, const sockaddr_storage* sa,
+			       struct event_base* evbase);
+
+  static tcp_trsp_socket* new_connection(tcp_server_socket* server_sock,
+					 const sockaddr_storage* sa,
+					 struct event_base* evbase);
   ~tcp_trsp_socket();
 
   const char* get_transport() const { return "tcp"; }
@@ -119,6 +156,10 @@ public:
 
   unsigned short get_peer_port() { 
     return peer_port;
+  }
+
+  bool is_connected() {
+    return connected;
   }
 
   /**
@@ -139,8 +180,6 @@ class tcp_server_socket: public trsp_socket
   AmMutex                 send_q_mut;
   deque<tcp_trsp_socket*> send_q;
 
-  void add_connection(tcp_trsp_socket* client_sock);
-
 public:
   tcp_server_socket(unsigned short if_num);
   ~tcp_server_socket() {}
@@ -157,6 +196,7 @@ public:
   int bind(const string& address, unsigned short port);
   int send(const sockaddr_storage* sa, const char* msg, const int msg_len);
 
+  void add_connection(tcp_trsp_socket* client_sock);
   void remove_connection(tcp_trsp_socket* client_sock);
 };
 

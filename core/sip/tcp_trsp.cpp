@@ -50,42 +50,74 @@ tcp_trsp_socket::tcp_trsp_socket(tcp_server_socket* server_sock,
   // async parser state
   pst.reset((char*)input_buf);
 
-  if(sd > 0) {
-    connected = true;
-    add_read_event();
-  }
+  read_ev = event_new(evbase, sd, EV_READ|EV_PERSIST,
+		      tcp_trsp_socket::on_sock_read,
+		      (void *)this);
+
+  write_ev = event_new(evbase, sd, EV_WRITE,
+		       tcp_trsp_socket::on_sock_write,
+		       (void *)this);
 }
 
-void tcp_trsp_socket::add_read_event()
+void tcp_trsp_socket::create_connected(tcp_server_socket* server_sock,
+				       int sd, const sockaddr_storage* sa,
+				       struct event_base* evbase)
 {
-  if(!read_ev) {
-    read_ev = event_new(evbase, sd, EV_READ|EV_PERSIST,
-			tcp_trsp_socket::on_sock_read,
-			(void *)this);
+  if(sd < 0)
+    return;
 
-    // TODO: add connection idle-timeout here
-    struct timeval idle_timer;
-    idle_timer.tv_sec = 10;
-    idle_timer.tv_usec = 0;
+  tcp_trsp_socket* sock = new tcp_trsp_socket(server_sock,sd,sa,evbase);
 
-    event_add(read_ev, &idle_timer);
-  }
+  inc_ref(sock);
+  server_sock->add_connection(sock);
+
+  sock->connected = true;
+  sock->add_read_event();
+  dec_ref(sock);
 }
 
-void tcp_trsp_socket::add_write_event(struct timeval* timeout)
+tcp_trsp_socket* tcp_trsp_socket::new_connection(tcp_server_socket* server_sock,
+						 const sockaddr_storage* sa,
+						 struct event_base* evbase)
 {
-  if(!write_ev) {
-    write_ev = event_new(evbase, sd, EV_WRITE,
-			 tcp_trsp_socket::on_sock_write,
-			 (void *)this);
-  }
-
-  event_add(write_ev, timeout);
+  return new tcp_trsp_socket(server_sock,-1,sa,evbase);
 }
+
 
 tcp_trsp_socket::~tcp_trsp_socket()
 {
   DBG("********* connection destructor ***********");
+  event_free(read_ev);
+  event_free(write_ev);
+}
+
+void tcp_trsp_socket::add_read_event_ul()
+{
+  sock_mut.unlock();
+  add_read_event();
+  sock_mut.lock();  
+}
+
+void tcp_trsp_socket::add_read_event()
+{
+  // TODO: add connection idle-timeout here
+  struct timeval idle_timer;
+  idle_timer.tv_sec = 10;
+  idle_timer.tv_usec = 0;
+
+  event_add(read_ev, &idle_timer);
+}
+
+void tcp_trsp_socket::add_write_event_ul(struct timeval* timeout)
+{
+  sock_mut.unlock();
+  add_write_event(timeout);
+  sock_mut.lock();
+}
+
+void tcp_trsp_socket::add_write_event(struct timeval* timeout)
+{
+  event_add(write_ev, timeout);
 }
 
 void tcp_trsp_socket::copy_peer_addr(sockaddr_storage* sa)
@@ -154,6 +186,7 @@ int tcp_trsp_socket::connect()
   if(ioctl(sd, FIONBIO , &true_opt) == -1) {
     ERROR("could not make new connection non-blocking: %s\n",strerror(errno));
     ::close(sd);
+    sd = -1;
     return -1;
   }
 
@@ -161,27 +194,35 @@ int tcp_trsp_socket::connect()
       am_inet_ntop(&peer_addr).c_str(),
       am_get_port(&peer_addr));
 
-  int ret = ::connect(sd, (const struct sockaddr*)&peer_addr, 
-		      SA_len(&peer_addr));
-  if(ret < 0) {
-    if(errno != EINPROGRESS && errno != EALREADY) {
-      ERROR("could not connect: %s",strerror(errno));
-      ::close(sd);
-      return -1;
-    }
+  return ::connect(sd, (const struct sockaddr*)&peer_addr, 
+		   SA_len(&peer_addr));
+}
 
-    struct timeval connect_timeout;
-    connect_timeout.tv_sec = 0;
-    connect_timeout.tv_usec = 200000; /* 200ms */
-    add_write_event(&connect_timeout);
-    DBG("connect event added...");
+int tcp_trsp_socket::check_connection()
+{
+  if(sd < 0){
+    int ret = connect();
+    if(ret < 0) {
+      if(errno != EINPROGRESS && errno != EALREADY) {
+	ERROR("could not connect: %s",strerror(errno));
+	::close(sd);
+	sd = -1;
+	return -1;
+      }
+
+      struct timeval connect_timeout;
+      connect_timeout.tv_sec = 0;
+      connect_timeout.tv_usec = 200000; /* 200ms */
+      add_write_event_ul(&connect_timeout);
+      DBG("connect event added...");
+    }
+    else {
+      // connect succeeded immediatly
+      connected = true;
+      add_read_event_ul();
+    }
   }
-  else {
-    // connect succeeded immediatly
-    connected = true;
-    add_read_event();
-  }
-  
+
   return 0;
 }
 
@@ -190,42 +231,35 @@ int tcp_trsp_socket::send(const sockaddr_storage* sa, const char* msg,
 {
   AmLock _l(sock_mut);
 
-  if((sd < 0) && (connect() < 0)){
+  if(closed || (check_connection() < 0))
     return -1;
-  }
 
-  // async send
-  // TODO: do we need a sync-send as well???
-  //   (for ex., when sending errors from recv-thread?)
-  DBG("stacking message on send-queue");
   send_q.push_back(new msg_buf(sa,msg,msg_len));
 
   DBG("add write event");
-  add_write_event();
+  add_write_event_ul();
     
   return 0;
 }
 
 void tcp_trsp_socket::close()
 {
+  inc_ref(this);
+  server_sock->remove_connection(this);
+
   closed = true;
   DBG("********* closing connection ***********");
 
-  if(read_ev) {
-    event_free(read_ev);
-    read_ev = NULL;
-  }
+  event_del(read_ev);
+  event_del(write_ev);
 
-  if(write_ev) {
-    event_free(write_ev);
-    write_ev = NULL;
+  if(sd > 0) {
+    ::close(sd);
+    sd = -1;
   }
-
-  ::close(sd);
-  sd = -1;
 
   generate_transport_errors();
-  server_sock->remove_connection(this);
+  dec_ref(this);
 }
 
 void tcp_trsp_socket::generate_transport_errors()
@@ -240,7 +274,6 @@ void tcp_trsp_socket::generate_transport_errors()
 
     copy_peer_addr(&s_msg.remote_ip);
     copy_addr_to(&s_msg.local_ip);
-    //s_msg->local_socket = this;
 
     trans_layer::instance()->transport_error(&s_msg);
   }
@@ -346,10 +379,12 @@ int tcp_trsp_socket::parse_input()
 void tcp_trsp_socket::on_write(short ev)
 {
   AmLock _l(sock_mut);
-  DBG("on_write (connected = %i)",connected);
 
-  if(!connected && (on_connect(ev) != 0)) {
-    return;
+  DBG("on_write (connected = %i)",connected);
+  if(!connected) {
+    if(on_connect(ev) != 0) {
+      return;
+    }
   }
 
   while(!send_q.empty()) {
@@ -368,6 +403,7 @@ void tcp_trsp_socket::on_write(short ev)
       switch(errno){
       case EINTR:
       case EAGAIN: // would block
+	add_write_event();
 	break;
 
       default: // unforseen error: close connection
@@ -376,7 +412,6 @@ void tcp_trsp_socket::on_write(short ev)
 	close();
 	break;
       }
-
       return;
     }
 
@@ -384,6 +419,7 @@ void tcp_trsp_socket::on_write(short ev)
 
     if(bytes < msg->bytes_left()) {
       msg->cursor += bytes;
+      add_write_event();
       return;
     }
 
@@ -490,7 +526,6 @@ void tcp_server_socket::add_connection(tcp_trsp_socket* client_sock)
       client_sock->get_peer_port());
 
   connections_mut.lock();
-
   map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
   if(sock_it != connections.end()) {
     dec_ref(sock_it->second);
@@ -500,7 +535,6 @@ void tcp_server_socket::add_connection(tcp_trsp_socket* client_sock)
     connections[conn_id] = client_sock;
   }
   inc_ref(client_sock);
-
   connections_mut.unlock();
 }
 
@@ -509,17 +543,15 @@ void tcp_server_socket::remove_connection(tcp_trsp_socket* client_sock)
   string conn_id = client_sock->get_peer_ip()
     + ":" + int2str(client_sock->get_peer_port());
 
-  DBG("removing TCP connection from %s:%u",
-      client_sock->get_peer_ip().c_str(), client_sock->get_peer_port());
+  DBG("removing TCP connection from %s",conn_id.c_str());
 
   connections_mut.lock();
-
   map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
   if(sock_it != connections.end()) {
     dec_ref(sock_it->second);
     connections.erase(sock_it);
+    DBG("TCP connection from %s removed",conn_id.c_str());
   }
-
   connections_mut.unlock();
 }
 
@@ -542,31 +574,44 @@ void tcp_server_socket::on_accept(int sd, short ev)
   }
 
   // in case of thread pooling, do following in worker thread
-  tcp_trsp_socket* client_sock =
-    new tcp_trsp_socket(this,connection_sd,&src_addr,evbase); 
-  add_connection(client_sock);
+  tcp_trsp_socket::create_connected(this,connection_sd,&src_addr,evbase);
 }
 
-int tcp_server_socket::send(const sockaddr_storage* sa, const char* msg, const int msg_len)
+int tcp_server_socket::send(const sockaddr_storage* sa, const char* msg,
+			    const int msg_len)
 {
   char host_buf[NI_MAXHOST];
   string dest = am_inet_ntop(sa,host_buf,NI_MAXHOST);
   dest += ":" + int2str(am_get_port(sa));
 
-  int ret=0;
+  tcp_trsp_socket* sock = NULL;
+
+  bool new_conn=false;
   connections_mut.lock();
   map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(dest);
   if(sock_it != connections.end()) {
-    ret = sock_it->second->send(sa,msg,msg_len);
+    sock = sock_it->second;
+    inc_ref(sock);
   }
   else {
-    tcp_trsp_socket* new_sock = new tcp_trsp_socket(this,-1,sa,evbase);
+    //TODO: add flags to avoid new connections (ex: UAs behind NAT)
+    tcp_trsp_socket* new_sock = tcp_trsp_socket::new_connection(this,sa,evbase);
     connections[dest] = new_sock;
     inc_ref(new_sock);
-    ret = new_sock->send(sa,msg,msg_len);
+
+    sock = new_sock;
+    inc_ref(sock);
+    new_conn = true;
   }
-  
   connections_mut.unlock();
+
+  // must be done outside from connections_mut
+  // to avoid dead-lock with the event base
+  int ret = sock->send(sa,msg,msg_len);
+  if((ret < 0) && new_conn) {
+    remove_connection(sock);
+  }
+  dec_ref(sock);
 
   return ret;
 }
@@ -609,5 +654,6 @@ void tcp_trsp::run()
 /** @see AmThread */
 void tcp_trsp::on_stop()
 {
+  // TODO: stop event loop
 }
 
