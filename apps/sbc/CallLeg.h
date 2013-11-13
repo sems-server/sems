@@ -230,6 +230,9 @@ class CallLeg: public AmB2BSession
     virtual void setCallStatus(CallStatus new_status);
     CallStatus getCallStatus() { return call_status; }
 
+    void queueReinvite(const string& hdrs, const AmMimeBody& body, bool establishing = false,
+		       bool relayed_invite=false, unsigned int r_cseq = 0);
+
     // @see AmSession
     virtual void onInvite(const AmSipRequest& req);
     virtual void onInvite2xx(const AmSipReply& reply);

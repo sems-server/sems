@@ -654,13 +654,7 @@ void CallLeg::onB2BReconnect(ReconnectLegEvent* ev)
   if (invite) {
     // there is pending INVITE, replied just above but we need to wait for ACK
     // before sending re-INVITE with real body
-    PendingReinvite p;
-    p.hdrs = ev->hdrs;
-    p.body = ev->body;
-    p.relayed_invite = ev->relayed_invite;
-    p.r_cseq = ev->r_cseq;
-    p.establishing = true;
-    pending_reinvites.push(p);
+    queueReinvite(ev->hdrs, ev->body, /* establishing = */ true, ev->relayed_invite, ev->r_cseq);  
   }
   else reinvite(ev->hdrs, ev->body, ev->relayed_invite, ev->r_cseq, true);
 }
@@ -779,7 +773,11 @@ void CallLeg::putOnHold()
 
   AmMimeBody body;
   sdp2body(sdp, body);
-  if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+  if (dlg->getUACInvTransPending()) {
+    // there is pending INVITE, add reinvite to waiting requests
+    DBG("INVITE pending, queueing hold Re-Invite\n");
+    queueReinvite("", body);
+  } else if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
     ERROR("re-INVITE failed\n");
     offerRejected();
   }
@@ -807,7 +805,11 @@ void CallLeg::resumeHeld(/*bool send_reinvite*/)
 
     AmMimeBody body(established_body);
     sdp2body(sdp, body);
-    if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
+    if (dlg->getUACInvTransPending()) {
+      // there is a pending INVITE, add reinvite to waiting requests
+      DBG("INVITE pending, queueing un-hold Re-Invite\n");
+      queueReinvite("", body);
+    } else if (dlg->reinvite("", &body, SIP_FLAGS_VERBATIM) != 0) {
       ERROR("re-INVITE failed\n");
       offerRejected();
     }
@@ -1255,6 +1257,17 @@ void CallLeg::replaceExistingLeg(const string &session_tag, const string &hdrs)
 
   other_legs.push_back(b);
   if (call_status == Disconnected) updateCallStatus(NoReply); // we are something like connected to another leg
+}
+
+void CallLeg::queueReinvite(const string& hdrs, const AmMimeBody& body, bool establishing,
+			    bool relayed_invite, unsigned int r_cseq) {
+  PendingReinvite p;
+  p.hdrs = hdrs;
+  p.body = body;
+  p.relayed_invite = relayed_invite;
+  p.r_cseq = r_cseq;
+  p.establishing = establishing;
+  pending_reinvites.push(p);
 }
 
 void CallLeg::clear_other()
