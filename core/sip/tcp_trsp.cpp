@@ -274,46 +274,50 @@ void tcp_trsp_socket::generate_transport_errors()
 
 void tcp_trsp_socket::on_read(short ev)
 {
-  if(ev & EV_TIMEOUT) {
-    DBG("************ idle timeout: closing connection **********");
-    close();
-    return;
-  }
-
-  AmLock _l(sock_mut);
-  DBG("on_read (connected = %i)",connected);
-
+  int bytes = 0;
   char* old_cursor = (char*)get_input();
 
-  int bytes = ::read(sd,get_input(),get_input_free_space());
-  if(bytes < 0) {
-    switch(errno) {
-    case EAGAIN:
-      return; // nothing to read
+  {// locked section
 
-    case ECONNRESET:
-    case ENOTCONN:
-      DBG("connection has been closed (sd=%i)",sd);
-      close();
-      return;
-
-    case ETIMEDOUT:
-      DBG("transmission timeout (sd=%i)",sd);
-      close();
-      return;
-
-    default:
-      DBG("unknown error (%i): %s",errno,strerror(errno));
+    if(ev & EV_TIMEOUT) {
+      DBG("************ idle timeout: closing connection **********");
       close();
       return;
     }
-  }
-  else if(bytes == 0) {
-    // connection closed
-    DBG("connection has been closed (sd=%i)",sd);
-    close();
-    return;
-  }
+
+    AmLock _l(sock_mut);
+    DBG("on_read (connected = %i)",connected);
+
+    bytes = ::read(sd,get_input(),get_input_free_space());
+    if(bytes < 0) {
+      switch(errno) {
+      case EAGAIN:
+	return; // nothing to read
+
+      case ECONNRESET:
+      case ENOTCONN:
+	DBG("connection has been closed (sd=%i)",sd);
+	close();
+	return;
+
+      case ETIMEDOUT:
+	DBG("transmission timeout (sd=%i)",sd);
+	close();
+	return;
+
+      default:
+	DBG("unknown error (%i): %s",errno,strerror(errno));
+	close();
+	return;
+      }
+    }
+    else if(bytes == 0) {
+      // connection closed
+      DBG("connection has been closed (sd=%i)",sd);
+      close();
+      return;
+    }
+  }// end of - locked section
 
   input_len += bytes;
 
@@ -322,7 +326,9 @@ void tcp_trsp_socket::on_read(short ev)
   // ... and parse it
   if(parse_input() < 0) {
     DBG("Error while parsing input: closing connection!");
+    sock_mut.lock();
     close();
+    sock_mut.unlock();
   }
 }
 
