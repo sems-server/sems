@@ -723,8 +723,7 @@ int AmRtpStream::init(const AmSdp& local,
 
   if(local_media.recv) {
     resume();
-  }
-  else {
+  } else {
     pause();
   }
 
@@ -736,8 +735,7 @@ int AmRtpStream::init(const AmSdp& local,
 	  && (!IN6_IS_ADDR_UNSPECIFIED(&SAv6(&r_saddr)->sin6_addr))))
      ) {
     mute = false;
-  }
-  else {
+  } else {
     mute = true;
   }
 
@@ -768,8 +766,10 @@ void AmRtpStream::pause()
 void AmRtpStream::resume()
 {
   gettimeofday(&last_recv_time,NULL);
+  receive_mut.lock();
   mem.clear();
   receive_buf.clear();
+  receive_mut.unlock();
   receiving = true;
 }
 
