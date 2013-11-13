@@ -1973,7 +1973,8 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 
 	    {
 		int t_method = t->msg->u.request->method;
-		if(!msg->local_socket->is_reliable())
+		if(msg->local_socket &&
+		   !msg->local_socket->is_reliable())
 		    t->reset_timer(STIMER_K, K_TIMER, bucket->get_id());
 		else {
 		    bucket->remove(t);
