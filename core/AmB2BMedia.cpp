@@ -184,7 +184,7 @@ AudioStreamData::AudioStreamData(AmB2BSession *session):
   incoming_payload(UNDEFINED_PAYLOAD),
   force_symmetric_rtp(false),
   enable_dtmf_transcoding(false),
-  muted(false)
+  muted(false), relay_paused(false)
 {
   if (session) initialize(session);
   else stream = NULL; // not initialized yet
@@ -266,13 +266,39 @@ void AudioStreamData::setRelayStream(AmRtpStream *other)
   if (relay_enabled && other) {
     stream->setRelayStream(other);
     stream->setRelayPayloads(relay_mask);
-    stream->enableRtpRelay();
+    if (!relay_paused)
+      stream->enableRtpRelay();
 
     stream->setRAddr(relay_address, relay_port, relay_port+1);
   }
   else {
     // nothing to relay or other stream not set
     stream->disableRtpRelay();
+  }
+}
+
+void AudioStreamData::setRelayPayloads(const SdpMedia &m, RelayController *ctrl) {
+  ctrl->computeRelayMask(m, relay_enabled, relay_mask);
+}
+
+void AudioStreamData::setRelayDestination(const string& connection_address, int port) {
+  relay_address = connection_address; relay_port = port;
+}
+
+void AudioStreamData::setRelayPaused(bool paused) {
+  if (paused == relay_paused) {
+    DBG("relay already paused for stream [%p], ignoring\n", stream);
+    return;
+  }
+
+  relay_paused = paused;
+  DBG("relay %spaused, stream [%p]\n", relay_paused?"":"not ", stream);
+
+  if (NULL != stream) {
+    if (relay_paused)
+      stream->disableRtpRelay();
+    else 
+      stream->enableRtpRelay();
   }
 }
 
@@ -481,6 +507,7 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
   //playout_type(SIMPLE_PLAYOUT),
   a_leg_muted(false), b_leg_muted(false),
   a_leg_on_hold(false), b_leg_on_hold(false),
+  relay_paused(false),
   logger(NULL)
 { 
 }
@@ -942,10 +969,9 @@ void AmB2BMedia::onSdpUpdate()
   else if (isProcessingMedia()) AmMediaProcessor::instance()->removeSession(this);
 }
 
-static void updateRelayStream(AmRtpStream *stream,
-    AmB2BSession *session,
-    const string& connection_address,
-    const SdpMedia &m, AmRtpStream *relay_to)
+void AmB2BMedia::updateRelayStream(AmRtpStream *stream, AmB2BSession *session,
+				   const string& connection_address,
+				   const SdpMedia &m, AmRtpStream *relay_to)
 {
   static const PayloadMask true_mask(true);
 
@@ -960,7 +986,8 @@ static void updateRelayStream(AmRtpStream *stream,
     }
     stream->setRelayStream(relay_to);
     stream->setRelayPayloads(true_mask);
-    stream->enableRtpRelay();
+    if (!relay_paused)
+      stream->enableRtpRelay();
     stream->setRAddr(connection_address,m.port,m.port+1);
     if((m.transport != TP_RTPAVP) && (m.transport != TP_RTPSAVP))
       stream->enableRawRelay();
@@ -1248,33 +1275,31 @@ ALL_STREAMS_OP(resumeStreams, resume());
 ALL_STREAMS_OP(muteStreams, mute=true);
 ALL_STREAMS_OP(unmuteStreams, mute=false);
 
-void AmB2BMedia::stopRelay() {
+void AmB2BMedia::pauseRelay() {
   DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  relay_paused = true;
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
     (*j)->a.disableRawRelay();
     (*j)->b.disableRawRelay();
   }
 
   for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
-    if (NULL != j->a.getStream())
-      j->a.getStream()->disableRtpRelay();
-    if (NULL != j->b.getStream())
-      j->b.getStream()->disableRtpRelay();
+    j->a.setRelayPaused(true);
+    j->b.setRelayPaused(true);
   }
 }
 
 void AmB2BMedia::restartRelay() {
   DBG("relay_streams.size() = %zd, audio_streams.size() = %zd\n", relay_streams.size(), audio.size());
+  relay_paused = false;
   for (RelayStreamIterator j = relay_streams.begin(); j != relay_streams.end(); j++) {
     (*j)->a.enableRawRelay();
     (*j)->b.enableRawRelay();
   }
 
   for (AudioStreamIterator j = audio.begin(); j != audio.end(); j++) {
-    if (NULL != j->a.getStream())
-      j->a.getStream()->enableRtpRelay();
-    if (NULL != j->b.getStream())
-      j->b.getStream()->enableRtpRelay();
+    j->a.setRelayPaused(false);
+    j->b.setRelayPaused(false);
   }
 }
 

@@ -91,6 +91,10 @@ class AudioStreamData {
     std::string relay_address;
     int relay_port;
 
+    /** RTP relay (temporarily) paused?
+     * relay stream may still be set up and updated */
+    bool relay_paused;
+
     bool muted;
 
     // for performance monitoring
@@ -145,9 +149,12 @@ class AudioStreamData {
     /** computes and stores payloads that can be relayed based on the
      * corresponding 'peer session' remote media line (i.e. what accepts the
      * other remote end directly) */
-    void setRelayPayloads(const SdpMedia &m, RelayController *ctrl) { ctrl->computeRelayMask(m, relay_enabled, relay_mask); }
+    void setRelayPayloads(const SdpMedia &m, RelayController *ctrl);
 
-    void setRelayDestination(const string& connection_address, int port) { relay_address = connection_address; relay_port = port; }
+    void setRelayDestination(const string& connection_address, int port);
+
+    /** set relay temporarily to paused (stream relation may still be up) */
+    void setRelayPaused(bool paused);
 
     /** initialize given stream for transcoding & regular audio processing
      *
@@ -331,14 +338,21 @@ class AmB2BMedia: public AmMediaSession
      */
     PlayoutType playout_type;
 
+    /** audio relay/processing streams */
     std::vector<AudioStreamPair>  audio;
+    /** raw relay streams */
     std::vector<RelayStreamPair*> relay_streams;
 
     bool a_leg_muted, b_leg_muted;
     bool a_leg_on_hold, b_leg_on_hold;
 
+    bool relay_paused;
+
     void createStreams(const AmSdp &sdp);
     void onSdpUpdate();
+    void updateRelayStream(AmRtpStream *stream, AmB2BSession *session,
+			   const string& connection_address,
+			   const SdpMedia &m, AmRtpStream *relay_to);
 
     void setMuteFlag(bool a_leg, bool set);
     void changeSessionUnsafe(bool a_leg, AmB2BSession *new_session);
@@ -467,8 +481,8 @@ class AmB2BMedia: public AmMediaSession
     /** enable or disable DTMF receiving on relay streams */
     void setRelayDTMFReceiving(bool enabled);
 
-    /** stop relaying on streams */
-    void stopRelay();
+    /** pause relaying on streams */
+    void pauseRelay();
 
     /** restart relaying on streams */
     void restartRelay();
