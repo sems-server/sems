@@ -655,7 +655,7 @@ void SBCDSMInstance::connectMedia() {
     call->setMediaSession(media);
     // TODO: media stream initialization here (does changeRtpMode help?)
   } else {
-    media->stopRelay();
+    media->pauseRelay();
   }
 
   media->addToMediaProcessor();
