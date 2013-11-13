@@ -290,7 +290,7 @@ protected:
      * Implements the state changes for the UAS state machine
      */
     int update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg);
-    void update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
+    int update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code);
 
     /** Avoid external instantiation. @see singleton. */
     _trans_layer();

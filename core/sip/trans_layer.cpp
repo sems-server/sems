@@ -475,9 +475,16 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 	      50 /* preview - instead of p_msg->len */,reply_buf);
 
 	delete [] reply_buf;
-	// set timer to capture retransmissions
-	// and delete transaction afterwards
-	t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
+
+	if(!local_socket->is_reliable()) {
+	    // set timer to capture retransmissions
+	    // and delete transaction afterwards
+	    t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
+	}
+	else {
+	    // reliable transport
+	    bucket->remove(t);
+	}
 	goto end;
     }
 
@@ -496,8 +503,6 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
     if(t->retr_socket) dec_ref(t->retr_socket);
     t->retr_socket = local_socket;
 
-    update_uas_reply(bucket,t,reply_code);
-
     if(logger) {
 	sockaddr_storage src_ip;
 	local_socket->copy_addr_to(&src_ip);
@@ -509,6 +514,9 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 	    inc_ref(logger);
 	}
     }
+
+    if(update_uas_reply(bucket,t,reply_code) == TS_REMOVED)
+	goto end;
 
     if(dialog_id.len && !(t->dialog_id.len)) {
 	t->dialog_id.s = new char[dialog_id.len];
@@ -2034,11 +2042,12 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
     return 0;
 }
 
-void _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
+int _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int reply_code)
 {
     DBG("update_uas_reply(t=%p)\n", t);
 
     t->reply_status = reply_code;
+    bool reliable_trsp = t->retr_socket->is_reliable();
 
     if(t->reply_status >= 300){
 
@@ -2046,12 +2055,19 @@ void _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int repl
 	t->state = TS_COMPLETED;
 	    
 	if(t->msg->u.request->method == sip_request::INVITE){
-	    t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
+
+	    if(!reliable_trsp)
+		t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
+
 	    t->reset_timer(STIMER_H,H_TIMER,bucket->get_id());
 	}
-	else {
+	else if(!reliable_trsp) {
 	    // 64*T1_TIMER if UDP / 0 if !UDP
 	    t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
+	}
+	else {
+	    bucket->remove(t);
+	    return TS_REMOVED;
 	}
     }
     else if(t->reply_status >= 200) {
@@ -2067,14 +2083,21 @@ void _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int repl
 	    // required by the RFC.
 	    //
 	    t->state = TS_TERMINATED_200;
-	    t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
-	    t->reset_timer(STIMER_H,H_TIMER,bucket->get_id());
+	    
+	    if(!reliable_trsp)
+		t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
 
+	    t->reset_timer(STIMER_H,H_TIMER,bucket->get_id());
+	}
+	else if(!reliable_trsp) {
+	    // Only for unreliable transports.
+	    t->state = TS_COMPLETED;
+	    t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
 	}
 	else {
-	    t->state = TS_COMPLETED;
-	    // Only for unreliable transports.
-	    t->reset_timer(STIMER_J,J_TIMER,bucket->get_id()); 
+	    // reliable transports
+	    bucket->remove(t);
+	    return TS_REMOVED;
 	}
     }
     else {
@@ -2083,12 +2106,17 @@ void _trans_layer::update_uas_reply(trans_bucket* bucket, sip_trans* t, int repl
             t->state = TS_PROCEEDING_REL;
             // see above notes, for 2xx replies; the same applies for
             // 1xx/PRACK
-	    t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
+
+	    if(!reliable_trsp)
+		t->reset_timer(STIMER_G,G_TIMER,bucket->get_id());
+
 	    t->reset_timer(STIMER_H,H_TIMER,bucket->get_id());
         } else {
 	    t->state = TS_PROCEEDING;
         }
     }
+
+    return t->state;
 }
 
 int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg* msg)
