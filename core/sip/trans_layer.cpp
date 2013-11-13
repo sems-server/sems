@@ -1712,21 +1712,20 @@ void _trans_layer::process_rcvd_msg(sip_msg* msg)
 			       msg->u.reply->code);
 	    }
 
+	    string dialog_id(t->dialog_id.s, t->dialog_id.len);
 	    int res = update_uac_reply(bucket,t,msg);
 	    if(res < 0){
 		ERROR("update_uac_trans() failed, so what happens now???\n");
 		break;
 	    }
+	    // do not touch the transaction anymore:
+	    // it could have been deleted !!!
 	    if (res) {
-		string dialog_id(t->dialog_id.s, t->dialog_id.len);
 		bucket->unlock();
 		ua->handle_sip_reply(dialog_id, msg);
 		DROP_MSG;
 		//return; - part of DROP_MSG
 	    }
-
-	    // do not touch the transaction anymore:
-	    // it could have been deleted !!!
 	}
 	else {
 	    DBG("Reply did NOT match any existing transaction...\n");
@@ -1971,12 +1970,21 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    t->clear_timer(STIMER_E);
 	    t->clear_timer(STIMER_M);
 	    t->clear_timer(STIMER_F);
-	    t->reset_timer(STIMER_K, K_TIMER, bucket->get_id());
-	    
-	    if(t->msg->u.request->method != sip_request::CANCEL)
-		goto pass_reply;
-	    else
-		goto end;
+
+	    {
+		int t_method = t->msg->u.request->method;
+		if(!msg->local_socket->is_reliable())
+		    t->reset_timer(STIMER_K, K_TIMER, bucket->get_id());
+		else {
+		    bucket->remove(t);
+		}
+
+		// ??? we don't pass CANCEL replies to UA layer ???
+		if(t_method != sip_request::CANCEL)
+		    goto pass_reply;
+		else
+		    goto end;
+	    }
 
 	case TS_COMPLETED:
 	    // Absorb reply retransmission (only if UDP)
