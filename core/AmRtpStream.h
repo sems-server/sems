@@ -453,10 +453,10 @@ public:
    */
   virtual int init(const AmSdp& local, const AmSdp& remote, bool force_passive_mode = false);
 
-  /** set the RTP stream on hold (mute && port = 0) */
+  /** set the RTP stream on hold */
   void setOnHold(bool on_hold);
   
-  /** get the RTP stream on hold  */
+  /** get whether RTP stream is on hold  */
   bool getOnHold();
 
   /** setter for monitor_rtp_timeout */
