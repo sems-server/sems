@@ -418,7 +418,7 @@ AmRtpStream::AmRtpStream(AmSession* _s, int _if)
 
   l_ssrc = get_random();
   sequence = get_random();
-  gettimeofday(&last_recv_time,NULL);
+  clearRTPTimeout();
 
   // by default the system codecs
   payload_provider = AmPlugIn::instance();
@@ -765,7 +765,7 @@ void AmRtpStream::pause()
 
 void AmRtpStream::resume()
 {
-  gettimeofday(&last_recv_time,NULL);
+  clearRTPTimeout();
   receive_mut.lock();
   mem.clear();
   receive_buf.clear();
@@ -794,7 +794,7 @@ void AmRtpStream::recvDtmfPacket(AmRtpPacket* p) {
 
 void AmRtpStream::bufferPacket(AmRtpPacket* p)
 {
-  memcpy(&last_recv_time, &p->recv_time, sizeof(struct timeval));
+  clearRTPTimeout(&p->recv_time);
 
   if (!receiving && !passive) {
 
