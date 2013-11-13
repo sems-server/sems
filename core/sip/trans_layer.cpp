@@ -1082,7 +1082,8 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	}
     }
 
-    if(tr_blacklist::instance()->exist(&msg->remote_ip)) {
+    if(!(flags & TR_FLAG_DISABLE_BL) &&
+       tr_blacklist::instance()->exist(&msg->remote_ip)) {
 
 	sockaddr_storage sa;
 	do {
@@ -1628,7 +1629,7 @@ int _trans_layer::update_uac_reply(trans_bucket* bucket, sip_trans* t, sip_msg* 
 	    else
 		goto end;
 
-	case TS_ABANDONED: // debug code
+	case TS_ABANDONED:
 	    // disable blacklisting: remote UA did reply
 	    INFO("disable blacklisting: remote UA (%s/%i) did reply",
 		 am_inet_ntop(&msg->remote_ip).c_str(),
@@ -2259,7 +2260,7 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
     case STIMER_M: {
 	try_next_ip(bucket,tr,true);
     } break;
-	
+
     case STIMER_BL:
 	tr->clear_timer(STIMER_BL);
 	if(!(tr->flags & TR_FLAG_DISABLE_BL)) {
@@ -2397,7 +2398,8 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 	    //Else, we copy the old port number
 	    am_set_port(&sa,am_get_port(&tr->msg->remote_ip));
 	}
-    } while(tr_blacklist::instance()->exist(&sa));
+    } while(!(tr->flags & TR_FLAG_DISABLE_BL) &&
+	    tr_blacklist::instance()->exist(&sa));
 
 
     if(use_new_trans) {

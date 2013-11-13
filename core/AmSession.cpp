@@ -54,9 +54,6 @@ volatile unsigned int AmSession::session_num = 0;
 AmMutex AmSession::session_num_mut;
 volatile unsigned int AmSession::max_session_num = 0;
 volatile unsigned long long AmSession::avg_session_num = 0;
-volatile unsigned long AmSession::max_cps = 0;
-volatile unsigned long AmSession::max_cps_counter = 0;
-volatile unsigned long AmSession::avg_cps = 0;
 
 struct timeval get_now() {
   struct timeval res;
@@ -65,8 +62,6 @@ struct timeval get_now() {
 }
 struct timeval avg_last_timestamp = get_now();
 struct timeval avg_first_timestamp = avg_last_timestamp;
-struct timeval cps_first_timestamp = avg_last_timestamp;
-struct timeval cps_max_timestamp = avg_last_timestamp;
 
 // AmSession methods
 
@@ -536,23 +531,6 @@ void AmSession::session_started() {
   //maximum session number
   if(session_num > max_session_num) max_session_num = session_num;
 
-  //cps average
-  ++avg_cps;
-
-  //cps maximum
-  ++max_cps_counter;
-  timersub(&now, &cps_max_timestamp, &delta);
-  unsigned long long d_usec = delta.tv_sec * 1000000ULL + delta.tv_usec;
-  if (delta.tv_sec > 0) {
-    //more than 1 sec has passed
-   unsigned long long secavg = ((max_cps_counter * 1000000ULL) + d_usec - 1) / d_usec;
-    if (max_cps < secavg) {
-      max_cps = secavg;
-    }
-    cps_max_timestamp = now;
-    max_cps_counter = 0;
-  }
-
   session_num_mut.unlock();
 }
 
@@ -606,57 +584,6 @@ unsigned int AmSession::getAvgSessionNum() {
   avg_last_timestamp = now;
   avg_first_timestamp = now;
   session_num_mut.unlock();
-  return res;
-}
-
-unsigned int AmSession::getMaxCPS()
-{
-  unsigned int res = 0;
-  struct timeval now, delta;
-  session_num_mut.lock();
-  gettimeofday(&now, NULL);
-  timersub(&now, &cps_max_timestamp, &delta);
-  unsigned long long d_usec = delta.tv_sec * 1000000ULL + delta.tv_usec;
-  if(delta.tv_sec > 0) {
-    //more than 1 sec has passed
-    //Round up
-    unsigned long long secavg = ((max_cps_counter * 1000000ULL) + d_usec - 1) / d_usec;
-    if (max_cps < secavg) {
-      max_cps = secavg;
-    }
-    cps_max_timestamp = now;
-    max_cps_counter = 0;
-  }
-
-  res = max_cps;
-  max_cps = 0;
-  session_num_mut.unlock();
-  return res;
-}
-
-unsigned int AmSession::getAvgCPS()
-{
-  unsigned int res = 0;
-  struct timeval now, delta;
-  unsigned long n_avg_cps;
-
-  session_num_mut.lock();
-  gettimeofday(&now, NULL);
-  timersub(&now, &cps_first_timestamp, &delta);
-  cps_first_timestamp = now;
-  n_avg_cps = avg_cps;
-  avg_cps = 0;
-  session_num_mut.unlock();
-
-  unsigned long long d_usec = delta.tv_sec * 1000000ULL + delta.tv_usec;
-  if(!d_usec) {
-    res = 0;
-    WARN("zero delta!\n");
-  } else {
-    //Round up
-    res  = (unsigned int)(((n_avg_cps * 1000000ULL) +  d_usec - 1) / d_usec);
-  }
-  
   return res;
 }
 

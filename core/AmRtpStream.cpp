@@ -774,7 +774,7 @@ void AmRtpStream::resume()
 }
 
 void AmRtpStream::setOnHold(bool on_hold) {
-  mute = hold = on_hold;
+  hold = on_hold;
 }
 
 bool AmRtpStream::getOnHold() {

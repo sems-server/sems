@@ -67,6 +67,9 @@ DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCallsmaxMethod, "get_callsmax");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCpsavgMethod,   "get_cpsavg");
 DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCpsmaxMethod,   "get_cpsmax");
 
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerSetCPSLimitMethod, "set_cpslimit");
+DEF_XMLRPCSERVERMETHOD(XMLRPC2DIServerGetCPSLimitMethod, "get_cpslimit");
+
 
 class XMLRPC2DIServerDIMethod 
 :  public XmlRpcServerMethod { 
@@ -114,6 +117,9 @@ class XMLRPC2DIServer
   XMLRPC2DIServerGetCallsmaxMethod  getcallsmax_method;
   XMLRPC2DIServerGetCpsavgMethod    getcpsavg_method;
   XMLRPC2DIServerGetCpsmaxMethod    getcpsmax_method;
+
+  XMLRPC2DIServerSetCPSLimitMethod setcpslimit_method;
+  XMLRPC2DIServerGetCPSLimitMethod getcpslimit_method;
 
   XMLRPC2DIServerDIMethod*         di_method;
   void registerMethods(const std::string& iface);

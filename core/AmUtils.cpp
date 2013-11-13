@@ -816,7 +816,7 @@ string get_header_keyvalue_single(const string& param_hdr, const string& name) {
       case ';': // semicolons before the key
 	break;
       default:
-	if (curr==name[0]) {
+	if (curr==tolower(name[0]) || curr==toupper(name[0])) {
 	  if (name.length() == 1)
 	    st = ST_FINDEQ;
 	  else
@@ -830,7 +830,7 @@ string get_header_keyvalue_single(const string& param_hdr, const string& name) {
     } break;
 
     case ST_CMPKEY: {
-	if (curr==name[corr]) {
+	if (curr==tolower(name[corr]) || curr==toupper(name[corr])) {
 	  corr++;
 	  if (corr == name.length()) {
 	    st = ST_FINDEQ;

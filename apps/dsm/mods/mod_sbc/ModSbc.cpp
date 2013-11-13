@@ -328,10 +328,12 @@ EXEC_ACTION_START(MODSBCActionStopCall) {
   call_leg->stopCall(cause.c_str());
 } EXEC_ACTION_END;
 
+CONST_ACTION_2P(MODSBCActionDisconnect, ',', true);
 EXEC_ACTION_START(MODSBCActionDisconnect) {
   GET_CALL_LEG(Disconnect);
-  string hold_remote = resolveVars(arg, sess, sc_sess, event_params);
-  call_leg->disconnect(hold_remote == DSM_TRUE);
+  string hold_remote = resolveVars(par1, sess, sc_sess, event_params);
+  string preserve_media_session = resolveVars(par2, sess, sc_sess, event_params);
+  call_leg->disconnect(hold_remote == DSM_TRUE, preserve_media_session == DSM_TRUE);
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(MODSBCActionSendDisconnectEvent) {
@@ -351,8 +353,7 @@ EXEC_ACTION_START(MODSBCActionPutOnHold) {
 
 EXEC_ACTION_START(MODSBCActionResumeHeld) {
   GET_CALL_LEG(ResumeHeld);
-  string send_reinvite = resolveVars(arg, sess, sc_sess, event_params);
-  call_leg->resumeHeld(send_reinvite == DSM_TRUE);
+  call_leg->resumeHeld();
 } EXEC_ACTION_END;
 
 EXEC_ACTION_START(MODSBCActionGetCallStatus) {
@@ -442,20 +443,7 @@ EXEC_ACTION_START(MODSBCActionAddCallee) {
     if (it != sc_sess->var.end())
       p.outbound_proxy = it->second;
 
-    it = sc_sess->var.find(varname+"." DSM_SBC_PARAM_ADDCALLEE_RTP_MODE);
-    if (it != sc_sess->var.end()) {
-      if (it->second == "RTP_Direct") {
-	rtp_mode = AmB2BSession::RTP_Direct;
-      } else if (it->second == "RTP_Relay") {
-	rtp_mode = AmB2BSession::RTP_Relay;
-      } else if (it->second == "RTP_Transcoding") {
-	rtp_mode = AmB2BSession::RTP_Transcoding;
-      } else {
-	WARN("Unknown rtp_mode '%s', using this leg's mode\n", it->second.c_str());
-      }
-    }
-
-    sbc_call_leg->addCallee(peer, hdrs, rtp_mode);
+    sbc_call_leg->addCallee(peer, hdrs);
   } else if (mode == DSM_SBC_PARAM_ADDCALLEE_MODE_LTAG) {
     string ltag;
     string hdrs;

@@ -282,6 +282,29 @@ struct SBCCallProfile
 
   // todo: RTP transcoding mode
 
+  // hold settings
+  class HoldSettings {
+    private:
+      struct HoldParams {
+        // non-replaced params
+        string mark_zero_connection_str, recv_str, alter_b2b_str;
+
+        bool mark_zero_connection;
+        bool recv; // sendrecv/recvonly (if set) X sendonly/inactive (if unset)
+        bool alter_b2b; // transform B2B hold requests (not locally generated ones)
+
+        HoldParams(): mark_zero_connection(false), recv(false), alter_b2b(false) { }
+      } aleg, bleg;
+
+    public:
+      bool mark_zero_connection(bool a_leg) { return a_leg ? aleg.mark_zero_connection : bleg.mark_zero_connection; }
+      bool recv(bool a_leg) { return a_leg ? aleg.recv : bleg.recv; }
+      bool alter_b2b(bool a_leg) { return a_leg ? aleg.alter_b2b : bleg.alter_b2b; }
+
+      void readConfig(AmConfigReader &cfg);
+      bool evaluate(ParamReplacerCtx& ctx, const AmSipRequest& req);
+  } hold_settings;
+
  private:
   // message logging feature
   string msg_logger_path;

@@ -74,6 +74,8 @@ bool WebConferenceFactory::PrivateRoomsMode = false;
 
 bool WebConferenceFactory::LoopFirstParticipantPrompt = false;
 
+unsigned int WebConferenceFactory::LonelyUserTimer = 0;
+
 string WebConferenceFactory::participant_id_paramname; // default: param not used
 string WebConferenceFactory::participant_id_hdr = "X-ParticipantID"; // default header
 
@@ -226,6 +228,13 @@ int WebConferenceFactory::load()
 
   LoopFirstParticipantPrompt =
     cfg.getParameter("loop_first_participant_prompt") == "yes";
+
+  LonelyUserTimer = cfg.getParameterInt("lonely_user_timer", 0);
+  if (!LonelyUserTimer) {
+    DBG("'lonely user' timer not used\n");
+  } else {
+    DBG("Timer for 'lonely user' used: %u seconds\n", LonelyUserTimer);
+  }
 
   DBG("Looping first participant prompt: %s\n", LoopFirstParticipantPrompt ? "yes":"no");
 

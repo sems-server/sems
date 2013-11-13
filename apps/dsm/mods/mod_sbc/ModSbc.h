@@ -37,7 +37,7 @@ DECLARE_MODULE_END;
 
 DEF_ACTION_2P(MODSBCActionProfileSet);
 DEF_ACTION_1P(MODSBCActionStopCall);
-DEF_ACTION_1P(MODSBCActionDisconnect);
+DEF_ACTION_2P(MODSBCActionDisconnect);
 DEF_ACTION_1P(MODSBCActionSendDisconnectEvent);
 
 DEF_ACTION_1P(MODSBCActionPutOnHold);

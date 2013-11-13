@@ -375,6 +375,7 @@ bool SBCCallProfile::readFromConfiguration(const string& name,
 
   if (!codec_prefs.readConfig(cfg)) return false;
   if (!transcoder.readConfig(cfg)) return false;
+  hold_settings.readConfig(cfg);
 
   msg_logger_path = cfg.getParameter("msg_logger_path");
   log_rtp = cfg.getParameter("log_rtp","no") == "yes";
@@ -818,6 +819,7 @@ bool SBCCallProfile::evaluate(ParamReplacerCtx& ctx,
   REPLACE_IFACE_SIP(outbound_interface, outbound_interface_value);
 
   if (!codec_prefs.evaluate(ctx,req)) return false;
+  if (!hold_settings.evaluate(ctx,req)) return false;
 
   // TODO: activate filter if transcoder or codec_prefs is set?
 /*  if ((!aleg_payload_order.empty() || !bleg_payload_order.empty()) && (!sdpfilter_enabled)) {
@@ -1641,5 +1643,32 @@ bool PayloadDesc::operator==(const PayloadDesc &other) const
 {
   if (name != other.name) return false;
   if (clock_rate != other.clock_rate) return false;
+  return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+void SBCCallProfile::HoldSettings::readConfig(AmConfigReader &cfg)
+{
+  // store string values for later evaluation
+  aleg.mark_zero_connection_str = cfg.getParameter("hold_zero_connection_aleg");
+  aleg.recv_str = cfg.getParameter("hold_enable_recv_aleg");
+  aleg.alter_b2b_str = cfg.getParameter("hold_alter_b2b_aleg");
+
+  bleg.mark_zero_connection_str = cfg.getParameter("hold_zero_connection_bleg");
+  bleg.recv_str = cfg.getParameter("hold_enable_recv_bleg");
+  bleg.alter_b2b_str = cfg.getParameter("hold_alter_b2b_bleg");
+}
+
+bool SBCCallProfile::HoldSettings::evaluate(ParamReplacerCtx& ctx, const AmSipRequest& req)
+{
+  REPLACE_BOOL(aleg.mark_zero_connection_str, aleg.mark_zero_connection);
+  REPLACE_BOOL(aleg.recv_str, aleg.recv);
+  REPLACE_BOOL(aleg.alter_b2b_str, aleg.alter_b2b);
+
+  REPLACE_BOOL(bleg.mark_zero_connection_str, bleg.mark_zero_connection);
+  REPLACE_BOOL(bleg.recv_str, bleg.recv);
+  REPLACE_BOOL(bleg.alter_b2b_str, bleg.alter_b2b);
+
   return true;
 }

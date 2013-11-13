@@ -8,10 +8,11 @@ enum {
   ReplaceLeg,
   ReplaceInProgress,
   DisconnectLeg,
-  ChangeRtpModeEventId
+  ChangeRtpModeEventId,
+  ResumeHeld
 };
 
-#define LAST_B2B_CALL_LEG_EVENT_ID ChangeRtpModeEventId
+#define LAST_B2B_CALL_LEG_EVENT_ID ResumeHeld
 
 struct ConnectLegEvent: public B2BEvent
 {
@@ -140,7 +141,11 @@ struct ReplaceInProgressEvent: public B2BEvent
 struct DisconnectLegEvent: public B2BEvent
 {
   bool put_remote_on_hold;
-  DisconnectLegEvent(bool _put_remote_on_hold): B2BEvent(DisconnectLeg), put_remote_on_hold(_put_remote_on_hold) { }
+  bool preserve_media_session;
+  DisconnectLegEvent(bool _put_remote_on_hold, bool _preserve_media_session = false):
+    B2BEvent(DisconnectLeg),
+    put_remote_on_hold(_put_remote_on_hold),
+    preserve_media_session(_preserve_media_session) { }
 };
 
 /* we don't need to have 'reliable event' for this because we are always
@@ -157,5 +162,9 @@ struct ChangeRtpModeEvent: public B2BEvent
     virtual ~ChangeRtpModeEvent() { if (media) media->releaseReference(); }
 };
 
+struct ResumeHeldEvent: public B2BEvent
+{
+  ResumeHeldEvent(): B2BEvent(ResumeHeld) { }
+};
 
 #endif

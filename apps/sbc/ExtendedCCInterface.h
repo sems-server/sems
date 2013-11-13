@@ -69,10 +69,12 @@ class ExtendedCCInterface
     // hold related functionality (seems to work best being explicitly supported
     // with API than hacking based on another callbacks)
 
-    virtual CCChainProcessing putOnHold(SBCCallLeg *call) { return ContinueProcessing; }
-    virtual CCChainProcessing resumeHeld(SBCCallLeg *call, bool send_reinvite) { return ContinueProcessing; }
-    virtual CCChainProcessing createHoldRequest(SBCCallLeg *call, AmSdp &sdp) { return ContinueProcessing; }
-    virtual CCChainProcessing handleHoldReply(SBCCallLeg *call, bool succeeded) { return ContinueProcessing; }
+    virtual void holdRequested(SBCCallLeg *call) { }
+    virtual void holdAccepted(SBCCallLeg *call) { }
+    virtual void holdRejected(SBCCallLeg *call) { }
+    virtual void resumeRequested(SBCCallLeg *call) { }
+    virtual void resumeAccepted(SBCCallLeg *call) { }
+    virtual void resumeRejected(SBCCallLeg *call) { }
 
     /** Possibility to influence messages relayed to the B2B peer leg.
       return value:
