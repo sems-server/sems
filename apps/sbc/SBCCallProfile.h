@@ -293,7 +293,7 @@ struct SBCCallProfile
         bool recv; // sendrecv/recvonly (if set) X sendonly/inactive (if unset)
         bool alter_b2b; // transform B2B hold requests (not locally generated ones)
 
-        HoldParams(): mark_zero_connection(false), recv(false), alter_b2b(false) { }
+        HoldParams(): mark_zero_connection(false), recv(true), alter_b2b(false) { }
       } aleg, bleg;
 
     public:
