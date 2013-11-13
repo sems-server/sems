@@ -2144,6 +2144,11 @@ int _trans_layer::update_uas_request(trans_bucket* bucket, sip_trans* t, sip_msg
 	t->clear_timer(STIMER_G);
 	t->clear_timer(STIMER_H);
 
+	if(msg->local_socket->is_reliable()){
+	    bucket->remove(t);
+	    return TS_REMOVED;
+	}
+
 	t->reset_timer(STIMER_I,I_TIMER,bucket->get_id());
 	
 	// drop through
