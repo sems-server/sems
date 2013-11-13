@@ -50,13 +50,9 @@ tcp_trsp_socket::tcp_trsp_socket(tcp_server_socket* server_sock,
   // async parser state
   pst.reset((char*)input_buf);
 
-  read_ev = event_new(evbase, sd, EV_READ|EV_PERSIST,
-		      tcp_trsp_socket::on_sock_read,
-		      (void *)this);
-
-  write_ev = event_new(evbase, sd, EV_WRITE,
-		       tcp_trsp_socket::on_sock_write,
-		       (void *)this);
+  if(sd > 0) {
+    create_events();
+  }
 }
 
 void tcp_trsp_socket::create_connected(tcp_server_socket* server_sock,
@@ -89,6 +85,17 @@ tcp_trsp_socket::~tcp_trsp_socket()
   DBG("********* connection destructor ***********");
   event_free(read_ev);
   event_free(write_ev);
+}
+
+void tcp_trsp_socket::create_events()
+{
+  read_ev = event_new(evbase, sd, EV_READ|EV_PERSIST,
+		      tcp_trsp_socket::on_sock_read,
+		      (void *)this);
+
+  write_ev = event_new(evbase, sd, EV_WRITE,
+		       tcp_trsp_socket::on_sock_write,
+		       (void *)this);
 }
 
 void tcp_trsp_socket::add_read_event_ul()
@@ -204,9 +211,13 @@ int tcp_trsp_socket::check_connection()
 	sd = -1;
 	return -1;
       }
+    }
 
+    // it's time to create the events...
+    create_events();
+
+    if(ret < 0) {
       add_write_event_ul(server_sock->get_connect_timeout());
-
       DBG("connect event added...");
     }
     else {
@@ -229,8 +240,8 @@ int tcp_trsp_socket::send(const sockaddr_storage* sa, const char* msg,
 
   send_q.push_back(new msg_buf(sa,msg,msg_len));
 
-  DBG("add write event");
   add_write_event_ul();
+  DBG("write event added...");
     
   return 0;
 }
