@@ -75,6 +75,12 @@ class tcp_trsp_socket: public trsp_socket
     return 0;
   }
 
+  /**
+   * Instantiates read_ev & write_ev
+   * Warning: call only ONCE!!!
+   */
+  void create_events();
+
   /* 
    * Connects the socket to the destination
    * given in constructor.
