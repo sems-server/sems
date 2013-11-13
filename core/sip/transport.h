@@ -36,6 +36,9 @@
 #include <string>
 using std::string;
 
+#define DEFAULT_TCP_CONNECT_TIMEOUT 2000 /* 2 seconds */
+#define DEFAULT_TCP_IDLE_TIMEOUT 3600000 /* 1 hour */
+
 class trsp_socket
     : public atomic_ref_cnt
 {

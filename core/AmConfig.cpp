@@ -770,6 +770,13 @@ static int readSIPInterface(AmConfigReader& cfg, const string& i_name)
     intf.SigSockOpts = opts;
   }
 
+  intf.tcp_connect_timeout =
+    cfg.getParameterInt("tcp_connect_timeout" + suffix,
+			DEFAULT_TCP_CONNECT_TIMEOUT);
+
+  intf.tcp_idle_timeout =
+    cfg.getParameterInt("tcp_idle_timeout" + suffix, DEFAULT_TCP_IDLE_TIMEOUT);
+
   if(!i_name.empty())
     intf.name = i_name;
   else
@@ -1172,9 +1179,11 @@ void AmConfig::dump_Ifs()
     SIP_interface& it_ref = SIP_Ifs[i];
 
     INFO("\t(%i) name='%s'" ";LocalIP='%s'" 
-	 ";LocalPort='%u'" ";PublicIP='%s'",
+	 ";LocalPort='%u'" ";PublicIP='%s';TCP=%u/%u",
 	 i,it_ref.name.c_str(),it_ref.LocalIP.c_str(),
-	 it_ref.LocalPort,it_ref.PublicIP.c_str());
+	 it_ref.LocalPort,it_ref.PublicIP.c_str(),
+	 it_ref.tcp_connect_timeout,
+	 it_ref.tcp_idle_timeout);
   }
   
   INFO("Signaling address map:");
