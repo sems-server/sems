@@ -100,12 +100,7 @@ void tcp_trsp_socket::add_read_event_ul()
 
 void tcp_trsp_socket::add_read_event()
 {
-  // TODO: add connection idle-timeout here
-  struct timeval idle_timer;
-  idle_timer.tv_sec = 10;
-  idle_timer.tv_usec = 0;
-
-  event_add(read_ev, &idle_timer);
+  event_add(read_ev, server_sock->get_idle_timeout());
 }
 
 void tcp_trsp_socket::add_write_event_ul(struct timeval* timeout)
@@ -210,10 +205,8 @@ int tcp_trsp_socket::check_connection()
 	return -1;
       }
 
-      struct timeval connect_timeout;
-      connect_timeout.tv_sec = 0;
-      connect_timeout.tv_usec = 200000; /* 200ms */
-      add_write_event_ul(&connect_timeout);
+      add_write_event_ul(server_sock->get_connect_timeout());
+
       DBG("connect event added...");
     }
     else {
@@ -282,7 +275,8 @@ void tcp_trsp_socket::generate_transport_errors()
 void tcp_trsp_socket::on_read(short ev)
 {
   if(ev & EV_TIMEOUT) {
-    DBG("************ idle timeout **********");
+    DBG("************ idle timeout: closing connection **********");
+    close();
     return;
   }
 
@@ -614,6 +608,38 @@ int tcp_server_socket::send(const sockaddr_storage* sa, const char* msg,
   dec_ref(sock);
 
   return ret;
+}
+
+void tcp_server_socket::set_connect_timeout(unsigned int ms)
+{
+  connections_mut.lock();
+  connect_timeout.tv_sec = ms / 1000;
+  connect_timeout.tv_usec = (ms % 1000) * 1000;
+  connections_mut.unlock();
+}
+
+void tcp_server_socket::set_idle_timeout(unsigned int ms)
+{
+  connections_mut.lock();
+  idle_timeout.tv_sec = ms / 1000;
+  idle_timeout.tv_usec = (ms % 1000) * 1000;
+  connections_mut.unlock();
+}
+
+struct timeval* tcp_server_socket::get_connect_timeout()
+{
+  if(connect_timeout.tv_sec || connect_timeout.tv_usec)
+    return &connect_timeout;
+
+  return NULL;
+}
+
+struct timeval* tcp_server_socket::get_idle_timeout()
+{
+  if(idle_timeout.tv_sec || idle_timeout.tv_usec)
+    return &idle_timeout;
+
+  return NULL;
 }
 
 /** @see trsp_socket */

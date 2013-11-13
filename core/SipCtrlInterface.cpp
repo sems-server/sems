@@ -130,9 +130,13 @@ int _SipCtrlInterface::alloc_tcp_structs()
 int _SipCtrlInterface::init_tcp_servers(int if_num)
 {
     tcp_server_socket* tcp_socket = new tcp_server_socket(if_num);
-    // if(!AmConfig::SIP_Ifs[if_num].PublicIP.empty()) {
-    // 	tcp_socket->set_public_ip(AmConfig::SIP_Ifs[if_num].PublicIP);
-    // }
+
+    if(!AmConfig::SIP_Ifs[if_num].PublicIP.empty()) {
+     	tcp_socket->set_public_ip(AmConfig::SIP_Ifs[if_num].PublicIP);
+    }
+
+    tcp_socket->set_connect_timeout(AmConfig::SIP_Ifs[if_num].tcp_connect_timeout);
+    tcp_socket->set_idle_timeout(AmConfig::SIP_Ifs[if_num].tcp_idle_timeout);
 
     if(tcp_socket->bind(AmConfig::SIP_Ifs[if_num].LocalIP,
 			AmConfig::SIP_Ifs[if_num].LocalPort) < 0){

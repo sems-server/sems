@@ -110,6 +110,9 @@ struct AmConfig
      */
     unsigned int SigSockOpts;
 
+    unsigned int tcp_connect_timeout;
+    unsigned int tcp_idle_timeout;
+
     /** RTP interface index */
     int RtpInterface;
 

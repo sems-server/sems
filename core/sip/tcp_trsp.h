@@ -180,6 +180,16 @@ class tcp_server_socket: public trsp_socket
   AmMutex                 send_q_mut;
   deque<tcp_trsp_socket*> send_q;
 
+  /**
+   * Timeout while connecting to a remote peer.
+   */
+  struct timeval connect_timeout;
+
+  /**
+   * Idle Timeout before closing a connection.
+   */
+  struct timeval idle_timeout;
+
 public:
   tcp_server_socket(unsigned short if_num);
   ~tcp_server_socket() {}
@@ -198,6 +208,22 @@ public:
 
   void add_connection(tcp_trsp_socket* client_sock);
   void remove_connection(tcp_trsp_socket* client_sock);
+
+  /**
+   * Set timeout in milliseconds for the connection
+   * establishement handshake.
+   */
+  void set_connect_timeout(unsigned int ms);
+
+  /**
+   * Set idle timeout in milliseconds for news connections.
+   * If during this period of time no packet is received,
+   * the connection will be closed.
+   */
+  void set_idle_timeout(unsigned int ms);
+
+  struct timeval* get_connect_timeout();
+  struct timeval* get_idle_timeout();
 };
 
 class tcp_trsp: public transport
