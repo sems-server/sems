@@ -1583,39 +1583,60 @@ void SBCCallLeg::resumeRejected()
   CallLeg::resumeRejected();
 }
 
-static void zero_connection(SdpConnection &c)
+static void replace_address(SdpConnection &c, const string &ip)
 {
   if (!c.address.empty()) {
-    if (c.network == NT_IN) {
-      if (c.addrType == AT_V4) {
-        c.address = "0.0.0.0";
-        return;
-      }
-      // TODO: IPv6?
+    if (c.addrType == AT_V4) {
+      c.address = ip;
+      return;
     }
+    // TODO: IPv6?
+    DBG("unsupported address type for replacing IP");
   }
-
-  DBG("unsupported connection type for marking with 0.0.0.0");
 }
 
-static void alterHoldRequest(AmSdp &sdp, bool mark_zero_con, bool enable_recv)
+static void alterHoldRequest(AmSdp &sdp, SBCCallProfile::HoldSettings::Activity a, const string &ip)
 {
-  if (mark_zero_con) zero_connection(sdp.conn);
+  if (!ip.empty()) replace_address(sdp.conn, ip);
   for (vector<SdpMedia>::iterator m = sdp.media.begin(); m != sdp.media.end(); ++m) {
-    if (mark_zero_con) zero_connection(m->conn);
-    m->recv = enable_recv;
+    if (!ip.empty()) replace_address(m->conn, ip);
+    m->recv = (a == SBCCallProfile::HoldSettings::sendrecv || a == SBCCallProfile::HoldSettings::recvonly);
+    m->send = (a == SBCCallProfile::HoldSettings::sendrecv || a == SBCCallProfile::HoldSettings::sendonly);
+  }
+}
+
+void SBCCallLeg::alterHoldRequestImpl(AmSdp &sdp)
+{
+  if (call_profile.hold_settings.mark_zero_connection(a_leg)) {
+    static const string zero("0.0.0.0");
+    ::alterHoldRequest(sdp, call_profile.hold_settings.activity(a_leg), zero);
+  }
+  else {
+    if (getRtpRelayMode() == RTP_Direct) {
+      // we can not put our IP there if not relaying, using empty not to
+      // overwrite existing addresses
+      static const string empty;
+      ::alterHoldRequest(sdp, call_profile.hold_settings.activity(a_leg), empty);
+    }
+    else {
+      // use public IP to be put into connection addresses (overwrite 0.0.0.0
+      // there)
+      ::alterHoldRequest(sdp, call_profile.hold_settings.activity(a_leg), advertisedIP());
+    }
   }
 }
 
 void SBCCallLeg::alterHoldRequest(AmSdp &sdp)
 {
-  TRACE("altering B2B hold request\n");
+  TRACE("altering B2B hold request(%s, %s, %s)\n",
+      call_profile.hold_settings.alter_b2b(a_leg) ? "alter B2B" : "do not alter B2B",
+      call_profile.hold_settings.mark_zero_connection(a_leg) ? "0.0.0.0" : "own IP",
+      call_profile.hold_settings.activity_str(a_leg).c_str()
+      );
 
   if (!call_profile.hold_settings.alter_b2b(a_leg)) return;
 
-  ::alterHoldRequest(sdp,
-      call_profile.hold_settings.mark_zero_connection(a_leg),
-      call_profile.hold_settings.recv(a_leg));
+  alterHoldRequestImpl(sdp);
 }
 
 void SBCCallLeg::createHoldRequest(AmSdp &sdp)
@@ -1645,9 +1666,7 @@ void SBCCallLeg::createHoldRequest(AmSdp &sdp)
     m.payloads.push_back(SdpPayload(0));
   }
 
-  ::alterHoldRequest(sdp,
-      call_profile.hold_settings.mark_zero_connection(a_leg),
-      call_profile.hold_settings.recv(a_leg));
+  alterHoldRequestImpl(sdp);
 
   AmB2BMedia *ms = getMediaSession();
   if (ms) ms->replaceOffer(sdp, a_leg);

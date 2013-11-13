@@ -1644,23 +1644,40 @@ void SBCCallProfile::HoldSettings::readConfig(AmConfigReader &cfg)
 {
   // store string values for later evaluation
   aleg.mark_zero_connection_str = cfg.getParameter("hold_zero_connection_aleg");
-  aleg.recv_str = cfg.getParameter("hold_enable_recv_aleg");
+  aleg.activity_str = cfg.getParameter("hold_activity_aleg");
   aleg.alter_b2b_str = cfg.getParameter("hold_alter_b2b_aleg");
 
   bleg.mark_zero_connection_str = cfg.getParameter("hold_zero_connection_bleg");
-  bleg.recv_str = cfg.getParameter("hold_enable_recv_bleg");
+  bleg.activity_str = cfg.getParameter("hold_activity_bleg");
   bleg.alter_b2b_str = cfg.getParameter("hold_alter_b2b_bleg");
+}
+
+bool SBCCallProfile::HoldSettings::HoldParams::setActivity(const string &s)
+{
+  if (s == "sendrecv") activity = sendrecv;
+  else if (s == "sendonly") activity = sendonly;
+  else if (s == "recvonly") activity = recvonly;
+  else if (s == "inactive") activity = inactive;
+  else {
+    ERROR("unsupported hold stream activity: %s\n", s.c_str());
+    return false;
+  }
+
+  return true;
 }
 
 bool SBCCallProfile::HoldSettings::evaluate(ParamReplacerCtx& ctx, const AmSipRequest& req)
 {
   REPLACE_BOOL(aleg.mark_zero_connection_str, aleg.mark_zero_connection);
-  REPLACE_BOOL(aleg.recv_str, aleg.recv);
+  REPLACE_STR(aleg.activity_str);
   REPLACE_BOOL(aleg.alter_b2b_str, aleg.alter_b2b);
 
   REPLACE_BOOL(bleg.mark_zero_connection_str, bleg.mark_zero_connection);
-  REPLACE_BOOL(bleg.recv_str, bleg.recv);
+  REPLACE_STR(bleg.activity_str);
   REPLACE_BOOL(bleg.alter_b2b_str, bleg.alter_b2b);
+
+  if (!aleg.activity_str.empty() && !aleg.setActivity(aleg.activity_str)) return false;
+  if (!bleg.activity_str.empty() && !bleg.setActivity(bleg.activity_str)) return false;
 
   return true;
 }

@@ -282,21 +282,26 @@ struct SBCCallProfile
 
   // hold settings
   class HoldSettings {
+    public:
+        enum Activity { sendrecv, sendonly, recvonly, inactive };
+
     private:
       struct HoldParams {
         // non-replaced params
-        string mark_zero_connection_str, recv_str, alter_b2b_str;
+        string mark_zero_connection_str, activity_str, alter_b2b_str;
 
         bool mark_zero_connection;
-        bool recv; // sendrecv/recvonly (if set) X sendonly/inactive (if unset)
+        Activity activity;
         bool alter_b2b; // transform B2B hold requests (not locally generated ones)
 
-        HoldParams(): mark_zero_connection(false), recv(false), alter_b2b(false) { }
+        bool setActivity(const string &s);
+        HoldParams(): mark_zero_connection(false), activity(sendonly), alter_b2b(false) { }
       } aleg, bleg;
 
     public:
       bool mark_zero_connection(bool a_leg) { return a_leg ? aleg.mark_zero_connection : bleg.mark_zero_connection; }
-      bool recv(bool a_leg) { return a_leg ? aleg.recv : bleg.recv; }
+      Activity activity(bool a_leg) { return a_leg ? aleg.activity : bleg.activity; }
+      const string &activity_str(bool a_leg) { return a_leg ? aleg.activity_str : bleg.activity_str; }
       bool alter_b2b(bool a_leg) { return a_leg ? aleg.alter_b2b : bleg.alter_b2b; }
 
       void readConfig(AmConfigReader &cfg);

@@ -105,6 +105,7 @@ class SBCCallLeg : public CallLeg, public CredentialHolder
   void logCallStart(const AmSipReply& reply);
   void logCanceledCall();
 
+  void alterHoldRequestImpl(AmSdp &sdp); // do the SDP update (called by alterHoldRequest)
 
  public:
 
