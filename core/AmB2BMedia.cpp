@@ -264,7 +264,10 @@ void AudioStreamData::setRelayStream(AmRtpStream *other)
   }
 
   if (relay_enabled && other) {
-    stream->enableRtpRelay(relay_mask, other);
+    stream->setRelayStream(other);
+    stream->setRelayPayloads(relay_mask);
+    stream->enableRtpRelay();
+
     stream->setRAddr(relay_address, relay_port, relay_port+1);
   }
   else {
@@ -955,7 +958,9 @@ static void updateRelayStream(AmRtpStream *stream,
       stream->setRtpRelayTransparentSSRC(session->getRtpRelayTransparentSSRC());
       // if (!stream->hasLocalSocket()) stream->setLocalIP(session->advertisedIP());
     }
-    stream->enableRtpRelay(true_mask,relay_to);
+    stream->setRelayStream(relay_to);
+    stream->setRelayPayloads(true_mask);
+    stream->enableRtpRelay();
     stream->setRAddr(connection_address,m.port,m.port+1);
     if((m.transport != TP_RTPAVP) && (m.transport != TP_RTPSAVP))
       stream->enableRawRelay();

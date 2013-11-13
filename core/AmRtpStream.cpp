@@ -1157,6 +1157,11 @@ void AmRtpStream::setRelayStream(AmRtpStream* stream) {
       stream, this);
 }
 
+void AmRtpStream::setRelayPayloads(const PayloadMask &_relay_payloads)
+{
+  relay_payloads = _relay_payloads;
+}
+
 void AmRtpStream::enableRtpRelay() {
   DBG("enabled RTP relay for RTP stream instance [%p]\n", this);
   relay_enabled = true;
@@ -1165,13 +1170,6 @@ void AmRtpStream::enableRtpRelay() {
 void AmRtpStream::disableRtpRelay() {
   DBG("disabled RTP relay for RTP stream instance [%p]\n", this);
   relay_enabled = false;
-}
-  
-void AmRtpStream::enableRtpRelay(const PayloadMask &_relay_payloads, AmRtpStream *_relay_stream)
-{
-  relay_payloads = _relay_payloads;
-  relay_stream = _relay_stream;
-  relay_enabled = true;
 }
 
 void AmRtpStream::enableRawRelay()

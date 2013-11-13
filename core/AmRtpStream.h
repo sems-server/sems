@@ -472,9 +472,11 @@ public:
   /** set relay stream for  RTP relaying */
   void setRelayStream(AmRtpStream* stream);
 
+  /** set relay payloads for  RTP relaying */
+  void setRelayPayloads(const PayloadMask &_relay_payloads);
+
   /** ensable RTP relaying through relay stream */
   void enableRtpRelay();
-  void enableRtpRelay(const PayloadMask &_relay_payloads, AmRtpStream *_relay_stream);
 
   /** disable RTP relaying through relay stream */
   void disableRtpRelay();
