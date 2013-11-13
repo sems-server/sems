@@ -248,7 +248,8 @@ int udp_trsp_socket::sendmsg(const sockaddr_storage* sa,
 
 int udp_trsp_socket::send(const sockaddr_storage* sa, 
 			  const char* msg, 
-			  const int msg_len)
+			  const int msg_len,
+			  unsigned int flags)
 {
     if (log_level_raw_msgs >= 0) {
 	_LOG(log_level_raw_msgs, 

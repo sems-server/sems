@@ -122,7 +122,7 @@ void sip_trans::retransmit()
     }
     assert(retr_socket);
 
-    int send_err = retr_socket->send(&retr_addr,retr_buf,retr_len);
+    int send_err = retr_socket->send(&retr_addr,retr_buf,retr_len,flags);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }

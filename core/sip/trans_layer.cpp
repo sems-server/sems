@@ -467,7 +467,8 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 	ntohs(((sockaddr_in*)&remote_ip)->sin_port),
 	50 /* preview - instead of p_msg->len */,reply_buf);
 
-    err = local_socket->send(&remote_ip,reply_buf,reply_len);
+    //TODO: pass send-flags down to here
+    err = local_socket->send(&remote_ip,reply_buf,reply_len,0);
     if(err < 0){
 	ERROR("could not send to %s:%i <%.*s...>\n",
 	      get_addr_str(&remote_ip).c_str(),
@@ -676,7 +677,7 @@ int _trans_layer::send_sl_reply(sip_msg* req, int reply_code,
 
     assert(req->local_socket);
 
-    int err = req->local_socket->send(&req->remote_ip,reply_buf,reply_len);
+    int err = req->local_socket->send(&req->remote_ip,reply_buf,reply_len,0);
     delete [] reply_buf;
 
     stats.inc_sent_replies();
@@ -1311,7 +1312,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 				   get_cseq(p_msg)->num_str);
     tt->_bucket->lock();
     
-    int send_err = p_msg->send();
+    int send_err = p_msg->send(flags);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
@@ -1519,7 +1520,7 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
 	p_msg->len,p_msg->buf);
 
-    int send_err = p_msg->send();
+    int send_err = p_msg->send(t->flags);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
@@ -2227,7 +2228,8 @@ void _trans_layer::send_non_200_ack(sip_msg* reply, sip_trans* t)
     DBG("About to send ACK\n");
 
     assert(inv->local_socket);
-    int send_err = inv->local_socket->send(&inv->remote_ip,ack_buf,ack_len);
+    int send_err = inv->local_socket->send(&inv->remote_ip,ack_buf,
+					   ack_len,t->flags);
     if(send_err < 0){
 	ERROR("Error from transport layer\n");
     }
@@ -2254,7 +2256,7 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
     case STIMER_A:  // Calling: (re-)send INV
 
 	n++;
-	tr->msg->send();
+	tr->msg->send(tr->flags);
         stats.inc_sent_request_retrans();
 	
 	if(tr->logger) {
@@ -2408,7 +2410,7 @@ void _trans_layer::timer_expired(trans_timer* t, trans_bucket* bucket,
 	else {
 
 	    // re-transmit request
-	    tr->msg->send();
+	    tr->msg->send(tr->flags);
             stats.inc_sent_request_retrans();
 
 	    if(tr->logger) {
@@ -2678,7 +2680,7 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
     stats.inc_sent_requests();
 
     // and re-send
-    tr->msg->send();
+    tr->msg->send(tr->flags);
     
     if(tr->logger) {
 	sockaddr_storage src_ip;

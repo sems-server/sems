@@ -139,7 +139,7 @@ struct sip_msg
 
     void copy_msg_buf(const char* msg_buf, int msg_len);
 
-    int send();
+    int send(unsigned flags);
 
     /**
      * Releases pointers otherwise deleted by the destructor

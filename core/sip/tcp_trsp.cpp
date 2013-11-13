@@ -220,7 +220,7 @@ int tcp_trsp_socket::check_connection()
 }
 
 int tcp_trsp_socket::send(const sockaddr_storage* sa, const char* msg, 
-			  const int msg_len)
+			  const int msg_len, unsigned int flags)
 {
   AmLock _l(sock_mut);
 
@@ -567,12 +567,13 @@ void tcp_server_socket::on_accept(int sd, short ev)
     return;
   }
 
+  DBG("tcp_trsp_socket::create_connected");
   // in case of thread pooling, do following in worker thread
   tcp_trsp_socket::create_connected(this,connection_sd,&src_addr,evbase);
 }
 
 int tcp_server_socket::send(const sockaddr_storage* sa, const char* msg,
-			    const int msg_len)
+			    const int msg_len, unsigned int flags)
 {
   char host_buf[NI_MAXHOST];
   string dest = am_inet_ntop(sa,host_buf,NI_MAXHOST);
@@ -601,7 +602,7 @@ int tcp_server_socket::send(const sockaddr_storage* sa, const char* msg,
 
   // must be done outside from connections_mut
   // to avoid dead-lock with the event base
-  int ret = sock->send(sa,msg,msg_len);
+  int ret = sock->send(sa,msg,msg_len,flags);
   if((ret < 0) && new_conn) {
     remove_connection(sock);
   }
