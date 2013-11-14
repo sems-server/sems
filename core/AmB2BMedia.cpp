@@ -506,7 +506,6 @@ AmB2BMedia::AmB2BMedia(AmB2BSession *_a, AmB2BSession *_b):
   playout_type(ADAPTIVE_PLAYOUT),
   //playout_type(SIMPLE_PLAYOUT),
   a_leg_muted(false), b_leg_muted(false),
-  a_leg_on_hold(false), b_leg_on_hold(false),
   relay_paused(false),
   logger(NULL)
 { 
