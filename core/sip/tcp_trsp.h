@@ -184,8 +184,6 @@ class tcp_server_socket: public trsp_socket
   AmMutex                      connections_mut;
   map<string,tcp_trsp_socket*> connections;
 
-  AmMutex                 send_q_mut;
-  deque<tcp_trsp_socket*> send_q;
 
   /**
    * Timeout while connecting to a remote peer.
