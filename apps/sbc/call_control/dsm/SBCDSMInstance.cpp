@@ -115,21 +115,21 @@ CCChainProcessing SBCDSMInstance::onInitialInvite(SBCCallLeg *call, InitialInvit
   RETURN_CONTINUE_OR_STOP_PROCESSING;
 }
 
-void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, const AmSipRequest* request) {
+void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, DSMSipRequest* request) {
   if (NULL == request)
     return;
 
   if (NULL != request) {
-    event_params["method"] = request->method;
-    event_params["r_uri"] = request->r_uri;
-    event_params["from"] = request->from;
-    event_params["to"] = request->to;
-    event_params["hdrs"] = request->hdrs;
-    event_params["from_tag"] = request->from_tag;
-    event_params["to_tag"] = request->to_tag;
-    event_params["callid"] = request->callid;
+    event_params["method"] = request->req->method;
+    event_params["r_uri"] = request->req->r_uri;
+    event_params["from"] = request->req->from;
+    event_params["to"] = request->req->to;
+    event_params["hdrs"] = request->req->hdrs;
+    event_params["from_tag"] = request->req->from_tag;
+    event_params["to_tag"] = request->req->to_tag;
+    event_params["callid"] = request->req->callid;
 
-    vector<string> hdrs = explode(request->hdrs, CRLF);
+    vector<string> hdrs = explode(request->req->hdrs, CRLF);
     for (vector<string>::iterator it=hdrs.begin(); it!=hdrs.end();it++) {
       size_t p = it->find(":");
       if (p==string::npos)
@@ -142,7 +142,8 @@ void extractRequestParameters(VarMapT& event_params, AVarMapT& avar, const AmSip
       event_params["hdr."+it->substr(0,p1)]=it->substr(p);
     }
 
-    avar[DSM_AVAR_REQUEST] = AmArg(const_cast<AmSipRequest*>(request));
+    // avar[DSM_AVAR_REQUEST] = AmArg(const_cast<AmSipRequest*>(request));
+    avar[DSM_AVAR_REQUEST] = AmArg(request);
   }
 }
 
@@ -150,25 +151,25 @@ void clearRequestParameters(AVarMapT& avar) {
   avar.erase(DSM_AVAR_REQUEST);
 }
 
-void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, const AmSipReply* reply) {
+void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, DSMSipReply* reply) {
   if (NULL == reply)
     return;
 
-  event_params["sip_reason"] = reply->reason;
-  event_params["sip_code"] = int2str(reply->code);
-  event_params["from"] = reply->from;
-  event_params["from_tag"] = reply->from_tag;
-  event_params["to"] = reply->to;
-  event_params["to_tag"] = reply->to_tag;
-  event_params["callid"] = reply->callid;
-  event_params["hdrs"] = reply->hdrs;
+  event_params["sip_reason"] = reply->reply->reason;
+  event_params["sip_code"] = int2str(reply->reply->code);
+  event_params["from"] = reply->reply->from;
+  event_params["from_tag"] = reply->reply->from_tag;
+  event_params["to"] = reply->reply->to;
+  event_params["to_tag"] = reply->reply->to_tag;
+  event_params["callid"] = reply->reply->callid;
+  event_params["hdrs"] = reply->reply->hdrs;
 #ifdef PROPAGATE_UNPARSED_REPLY_HEADERS
-  for (list<AmSipHeader>::const_iterator it = reply->unparsed_headers.begin();
-       it != reply->unparsed_headers.end(); it++) {
+  for (list<AmSipHeader>::const_iterator it = reply->reply->unparsed_headers.begin();
+       it != reply->reply->unparsed_headers.end(); it++) {
     event_params["hdr."+it->name] = it->value;
   }
 #else
-  vector<string> hdrs = explode(reply->hdrs, CRLF);
+  vector<string> hdrs = explode(reply->reply->hdrs, CRLF);
   for (vector<string>::iterator it=hdrs.begin(); it!=hdrs.end();it++) {
     size_t p = it->find(":");
     if (p==string::npos)
@@ -181,7 +182,7 @@ void extractReplyParameters(VarMapT& event_params, AVarMapT& avar, const AmSipRe
     event_params["hdr."+it->substr(0,p1)]=it->substr(p);
   }
 #endif
-  avar[DSM_AVAR_REPLY] = AmArg(const_cast<AmSipReply*>(reply));
+  avar[DSM_AVAR_REPLY] = AmArg(reply);
 }
 
 void clearReplyParameters(AVarMapT& avar) {
@@ -193,15 +194,19 @@ void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChange
   VarMapT event_params;
 
   event_params["SBCCallStatus"] = call->getCallStatusStr();
-  
+  auto_ptr<DSMSipRequest> dsm_request;
+  auto_ptr<DSMSipReply> dsm_reply;
+
   switch (cause.reason) {
   case CallLeg::StatusChangeCause::SipReply:
     event_params["reason"] = "SipReply";
-    extractReplyParameters(event_params, avar, cause.param.reply);
+    dsm_reply.reset(new DSMSipReply(cause.param.reply));
+    extractReplyParameters(event_params, avar, dsm_reply.get());
     break;
   case CallLeg::StatusChangeCause::SipRequest:
     event_params["reason"] = "SipRequest";
-    extractRequestParameters(event_params, avar, cause.param.request);
+    dsm_request.reset(new DSMSipRequest(cause.param.request));
+    extractRequestParameters(event_params, avar, dsm_request.get());
     break;
   case CallLeg::StatusChangeCause::Other:
     event_params["reason"] = "other";
@@ -231,7 +236,9 @@ void SBCDSMInstance::onStateChange(SBCCallLeg *call, const CallLeg::StatusChange
 CCChainProcessing SBCDSMInstance::onInDialogRequest(SBCCallLeg* call, const AmSipRequest& req) {
   DBG("SBCDSMInstance::onInDialogRequest()\n");
   VarMapT event_params;
-  extractRequestParameters(event_params, avar, &req);
+  DSMSipRequest dsm_request(&req);
+
+  extractRequestParameters(event_params, avar, &dsm_request);
 
   engine.runEvent(call, this, DSMCondition::SipRequest, &event_params);
 
@@ -242,7 +249,8 @@ CCChainProcessing SBCDSMInstance::onInDialogRequest(SBCCallLeg* call, const AmSi
 CCChainProcessing SBCDSMInstance::onInDialogReply(SBCCallLeg* call, const AmSipReply& reply) {
   DBG("SBCDSMInstance::onInDialogReply()\n");
   VarMapT event_params;
-  extractReplyParameters(event_params, avar, &reply);
+  DSMSipReply dsm_reply(&reply);
+  extractReplyParameters(event_params, avar, &dsm_reply);
 
   engine.runEvent(call, this, DSMCondition::SipReply, &event_params);
 
@@ -288,10 +296,9 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
     B2BSipRequestEvent* b2b_req_ev = dynamic_cast<B2BSipRequestEvent*>(b2b_ev);
     if (b2b_req_ev) {
       VarMapT event_params;
-      extractRequestParameters(event_params, avar, &b2b_req_ev->req);
-      event_params["forward"] = b2b_req_ev->forward?"true":"false";
       DSMSipRequest sip_req(&b2b_req_ev->req);
-      avar[DSM_AVAR_REQUEST] = AmArg(&sip_req);
+      extractRequestParameters(event_params, avar, &sip_req);
+      event_params["forward"] = b2b_req_ev->forward?"true":"false";
       engine.runEvent(call, this, DSMCondition::B2BOtherRequest, &event_params);
       avar.erase(DSM_AVAR_REQUEST);
       if (event_params[DSM_SBC_PARAM_STOP_PROCESSING]==DSM_TRUE)
@@ -300,7 +307,8 @@ CCChainProcessing SBCDSMInstance::onEvent(SBCCallLeg* call, AmEvent* event) {
       B2BSipReplyEvent* b2b_reply_ev = dynamic_cast<B2BSipReplyEvent*>(b2b_ev);
       if (b2b_reply_ev) {
 	VarMapT event_params;
-	extractReplyParameters(event_params, avar, &b2b_reply_ev->reply);
+	DSMSipReply dsm_reply(&b2b_reply_ev->reply);
+	extractReplyParameters(event_params, avar, &dsm_reply);
 	event_params["forward"] = b2b_reply_ev->forward?"true":"false";
 	event_params["trans_method"] = b2b_reply_ev->trans_method;
 	engine.runEvent(call, this, DSMCondition::B2BOtherReply, &event_params);
@@ -355,7 +363,8 @@ CCChainProcessing SBCDSMInstance::onBLegRefused(SBCCallLeg* call, const AmSipRep
 {
   DBG("SBCDSMInstance::onBLegRefused()\n");
   VarMapT event_params;
-  extractReplyParameters(event_params, avar, &reply);
+  DSMSipReply dsm_reply(&reply);
+  extractReplyParameters(event_params, avar, &dsm_reply);
 
   engine.runEvent(call, this, DSMCondition::BLegRefused, &event_params);
 
@@ -439,7 +448,8 @@ void SBCDSMInstance::initUAC(SBCCallProfile &profile, SimpleRelayDialog *relay, 
   VarMapT event_params;
   event_params["relay_event"] = "initUAC";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
-  extractRequestParameters(event_params, avar, &req);
+  DSMSipRequest sip_req(&req);
+  extractRequestParameters(event_params, avar, &sip_req);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayInitUAC, &event_params);
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
@@ -451,7 +461,8 @@ void SBCDSMInstance::initUAS(SBCCallProfile &profile, SimpleRelayDialog *relay, 
   VarMapT event_params;
   event_params["relay_event"] = "initUAS";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
-  extractRequestParameters(event_params, avar, &req);
+  DSMSipRequest sip_req(&req);
+  extractRequestParameters(event_params, avar, &sip_req);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayInitUAS, &event_params);
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
@@ -473,7 +484,8 @@ void SBCDSMInstance::onSipRequest(SBCCallProfile &profile, SimpleRelayDialog *re
   VarMapT event_params;
   event_params["relay_event"] = "onSipRequest";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
-  extractRequestParameters(event_params, avar, &req);
+  DSMSipRequest sip_req(&req);
+  extractRequestParameters(event_params, avar, &sip_req);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnSipRequest, &event_params);
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
@@ -487,8 +499,10 @@ void SBCDSMInstance::onSipReply(SBCCallProfile &profile, SimpleRelayDialog *rela
   VarMapT event_params;
   event_params["relay_event"] = "onSipReply";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
-  extractRequestParameters(event_params, avar, &req);
-  extractReplyParameters(event_params, avar, &reply); // TODO: shadows request
+  DSMSipRequest sip_req(&req);
+  extractRequestParameters(event_params, avar, &sip_req);
+  DSMSipReply dsm_reply(&reply);
+  extractReplyParameters(event_params, avar, &dsm_reply); // TODO: shadows request
   event_params["old_dlg_status"] = AmBasicSipDialog::getStatusStr(old_dlg_status);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnSipReply, &event_params);
   clearReplyParameters(avar);
@@ -502,7 +516,8 @@ void SBCDSMInstance::onB2BRequest(SBCCallProfile &profile, SimpleRelayDialog *re
   VarMapT event_params;
   event_params["relay_event"] = "onB2BRequest";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
-  extractRequestParameters(event_params, avar, &req);
+  DSMSipRequest sip_req(&req);
+  extractRequestParameters(event_params, avar, &sip_req);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnB2BRequest, &event_params);
   clearRequestParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
@@ -514,7 +529,8 @@ void SBCDSMInstance::onB2BReply(SBCCallProfile &profile, SimpleRelayDialog *rela
   VarMapT event_params;
   event_params["relay_event"] = "onB2BReply";
   avar[DSM_SBC_AVAR_PROFILE] = AmArg(&profile);
-  extractReplyParameters(event_params, avar, &reply);
+  DSMSipReply dsm_reply(&reply);
+  extractReplyParameters(event_params, avar, &dsm_reply);
   engine.runEvent(dummy_session.get(), this, DSMCondition::RelayOnB2BReply, &event_params);
   clearReplyParameters(avar);
   avar.erase(DSM_SBC_AVAR_PROFILE);
