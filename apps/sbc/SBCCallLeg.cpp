@@ -1666,10 +1666,10 @@ void SBCCallLeg::createHoldRequest(AmSdp &sdp)
     m.payloads.push_back(SdpPayload(0));
   }
 
-  alterHoldRequestImpl(sdp);
-
   AmB2BMedia *ms = getMediaSession();
   if (ms) ms->replaceOffer(sdp, a_leg);
+
+  alterHoldRequestImpl(sdp);
 }
 
 void SBCCallLeg::setMediaSession(AmB2BMedia *new_session)
