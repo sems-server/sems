@@ -329,7 +329,6 @@ class AmB2BMedia: public AmMediaSession
     std::vector<RelayStreamPair*> relay_streams;
 
     bool a_leg_muted, b_leg_muted;
-    bool a_leg_on_hold, b_leg_on_hold;
 
     void createStreams(const AmSdp &sdp);
     void onSdpUpdate();
