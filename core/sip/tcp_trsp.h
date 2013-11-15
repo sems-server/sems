@@ -4,6 +4,9 @@
 #include "transport.h"
 #include "sip_parser_async.h"
 
+#include <vector>
+using std::vector;
+
 /**
  * Maximum message length for TCP
  * not including terminating '\0'
@@ -20,11 +23,13 @@ using std::map;
 using std::deque;
 using std::string;
 
+class tcp_server_worker;
 class tcp_server_socket;
 
 class tcp_trsp_socket: public trsp_socket
 {
   tcp_server_socket* server_sock;
+  tcp_server_worker* server_worker;
   
   bool             closed;
   bool             connected;
@@ -138,15 +143,18 @@ class tcp_trsp_socket: public trsp_socket
   static void on_sock_write(int fd, short ev, void* arg);
 
   tcp_trsp_socket(tcp_server_socket* server_sock,
+		  tcp_server_worker* server_worker,
 		  int sd, const sockaddr_storage* sa,
 		  struct event_base* evbase);
 
 public:
   static void create_connected(tcp_server_socket* server_sock,
+			       tcp_server_worker* server_worker,
 			       int sd, const sockaddr_storage* sa,
 			       struct event_base* evbase);
 
   static tcp_trsp_socket* new_connection(tcp_server_socket* server_sock,
+					 tcp_server_worker* server_worker,
 					 const sockaddr_storage* sa,
 					 struct event_base* evbase);
   ~tcp_trsp_socket();
@@ -176,14 +184,36 @@ public:
 	   const int msg_len, unsigned int flags);
 };
 
+class tcp_server_worker
+  : public AmThread
+{
+  struct event_base* evbase;
+  tcp_server_socket* server_sock;
+
+  AmMutex                      connections_mut;
+  map<string,tcp_trsp_socket*> connections;
+
+protected:
+  void run();
+  void on_stop();
+
+public:
+  tcp_server_worker(tcp_server_socket* server_sock);
+  ~tcp_server_worker();
+
+  int send(const sockaddr_storage* sa, const char* msg,
+	   const int msg_len, unsigned int flags);
+
+  void add_connection(tcp_trsp_socket* client_sock);
+  void remove_connection(tcp_trsp_socket* client_sock);
+};
+
 class tcp_server_socket: public trsp_socket
 {
   struct event_base* evbase;
   struct event*      ev_accept;
 
-  AmMutex                      connections_mut;
-  map<string,tcp_trsp_socket*> connections;
-
+  vector<tcp_server_worker*> workers;
 
   /**
    * Timeout while connecting to a remote peer.
@@ -195,9 +225,19 @@ class tcp_server_socket: public trsp_socket
    */
   struct timeval idle_timeout;
 
+  /* callback on new connection */
+  void on_accept(int sd, short ev);
+
+  /* libevent callback on new connection */
+  static void on_accept(int sd, short ev, void* arg);
+
 public:
   tcp_server_socket(unsigned short if_num);
   ~tcp_server_socket() {}
+
+  void add_threads(unsigned int n);
+  void start_threads();
+  void stop_threads();
 
   const char* get_transport() const { return "tcp"; }
   bool        is_reliable() const   { return true; }
@@ -205,15 +245,9 @@ public:
   /* activates libevent on_accept callback */
   void add_event(struct event_base *evbase);
 
-  /* libevent callback on new connection */
-  void on_accept(int sd, short ev);
-
   int bind(const string& address, unsigned short port);
   int send(const sockaddr_storage* sa, const char* msg,
 	   const int msg_len, unsigned int flags);
-
-  void add_connection(tcp_trsp_socket* client_sock);
-  void remove_connection(tcp_trsp_socket* client_sock);
 
   /**
    * Set timeout in milliseconds for the connection

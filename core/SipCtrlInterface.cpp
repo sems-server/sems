@@ -149,9 +149,8 @@ int _SipCtrlInterface::init_tcp_servers(int if_num)
 	return -1;
     }
 
-    // if(udp_rcvbuf > 0) {
-    // 	udp_socket->set_recvbuf_size(udp_rcvbuf);
-    // }
+    //TODO: add some more threads
+    tcp_socket->add_threads(AmConfig::SIPServerThreads);
 
     trans_layer::instance()->register_transport(tcp_socket);
     tcp_sockets[if_num] = tcp_socket;
