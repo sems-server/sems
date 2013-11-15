@@ -1081,9 +1081,11 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     string via(msg->local_socket->get_advertised_ip());
     if(msg->local_socket->get_port() != 5060)
  	via += ":" + int2str(msg->local_socket->get_port());
+
+    cstring trsp(msg->local_socket->get_transport());
  
     // add 'rport' parameter defaultwise? yes, for now
-    request_len += via_len(stl2cstr(via),branch,true);
+    request_len += via_len(trsp,stl2cstr(via),branch,true);
  
     request_len += copy_hdrs_len(msg->vias);
     request_len += copy_hdrs_len_no_via(msg->hdrs);
@@ -1108,7 +1110,7 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     request_line_wr(&c,msg->u.request->method_str,
  		    msg->u.request->ruri_str);
  
-    via_wr(&c,stl2cstr(via),branch,true);
+    via_wr(&c,trsp,stl2cstr(via),branch,true);
     copy_hdrs_wr(&c,msg->vias);
     copy_hdrs_wr_no_via(&c,msg->hdrs);
  
@@ -1454,13 +1456,6 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 
     int request_len = request_line_len(cancel_str,
 				       req->u.request->ruri_str);
-
-    
-    string via(req->local_socket->get_ip());
-    if(req->local_socket->get_port() != 5060)
-	via += ":" + int2str(req->local_socket->get_port());
-
-    //TODO: add 'rport' parameter by default?
 
     request_len += copy_hdr_len(req->via1);
 
