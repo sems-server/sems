@@ -3,6 +3,7 @@
 #include "parse_common.h"
 #include "sip_parser.h"
 #include "trans_layer.h"
+#include "hash.h"
 
 #include "AmUtils.h"
 
@@ -28,10 +29,12 @@ void tcp_trsp_socket::on_sock_write(int fd, short ev, void* arg)
 }
 
 tcp_trsp_socket::tcp_trsp_socket(tcp_server_socket* server_sock,
+				 tcp_server_worker* server_worker,
 				 int sd, const sockaddr_storage* sa,
 				 struct event_base* evbase)
   : trsp_socket(server_sock->get_if(),0,0,sd),
-    server_sock(server_sock), closed(false), connected(false),
+    server_sock(server_sock), server_worker(server_worker),
+    closed(false), connected(false),
     input_len(0), evbase(evbase),
     read_ev(NULL), write_ev(NULL)
 {
@@ -56,16 +59,18 @@ tcp_trsp_socket::tcp_trsp_socket(tcp_server_socket* server_sock,
 }
 
 void tcp_trsp_socket::create_connected(tcp_server_socket* server_sock,
+				       tcp_server_worker* server_worker,
 				       int sd, const sockaddr_storage* sa,
 				       struct event_base* evbase)
 {
   if(sd < 0)
     return;
 
-  tcp_trsp_socket* sock = new tcp_trsp_socket(server_sock,sd,sa,evbase);
+  tcp_trsp_socket* sock = new tcp_trsp_socket(server_sock,server_worker,
+					      sd,sa,evbase);
 
   inc_ref(sock);
-  server_sock->add_connection(sock);
+  server_worker->add_connection(sock);
 
   sock->connected = true;
   sock->add_read_event();
@@ -73,10 +78,11 @@ void tcp_trsp_socket::create_connected(tcp_server_socket* server_sock,
 }
 
 tcp_trsp_socket* tcp_trsp_socket::new_connection(tcp_server_socket* server_sock,
+						 tcp_server_worker* server_worker,
 						 const sockaddr_storage* sa,
 						 struct event_base* evbase)
 {
-  return new tcp_trsp_socket(server_sock,-1,sa,evbase);
+  return new tcp_trsp_socket(server_sock,server_worker,-1,sa,evbase);
 }
 
 
@@ -249,7 +255,7 @@ int tcp_trsp_socket::send(const sockaddr_storage* sa, const char* msg,
 void tcp_trsp_socket::close()
 {
   inc_ref(this);
-  server_sock->remove_connection(this);
+  server_worker->remove_connection(this);
 
   closed = true;
   DBG("********* closing connection ***********");
@@ -439,6 +445,121 @@ void tcp_trsp_socket::on_write(short ev)
   }
 }
 
+tcp_server_worker::tcp_server_worker(tcp_server_socket* server_sock)
+  : server_sock(server_sock)
+{
+  evbase = event_base_new();
+}
+
+tcp_server_worker::~tcp_server_worker()
+{
+  event_base_free(evbase);
+}
+
+void tcp_server_worker::add_connection(tcp_trsp_socket* client_sock)
+{
+  string conn_id = client_sock->get_peer_ip()
+    + ":" + int2str(client_sock->get_peer_port());
+
+  DBG("new TCP connection from %s:%u",
+      client_sock->get_peer_ip().c_str(),
+      client_sock->get_peer_port());
+
+  connections_mut.lock();
+  map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
+  if(sock_it != connections.end()) {
+    dec_ref(sock_it->second);
+    sock_it->second = client_sock;
+  }
+  else {
+    connections[conn_id] = client_sock;
+  }
+  inc_ref(client_sock);
+  connections_mut.unlock();
+}
+
+void tcp_server_worker::remove_connection(tcp_trsp_socket* client_sock)
+{
+  string conn_id = client_sock->get_peer_ip()
+    + ":" + int2str(client_sock->get_peer_port());
+
+  DBG("removing TCP connection from %s",conn_id.c_str());
+
+  connections_mut.lock();
+  map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
+  if(sock_it != connections.end()) {
+    dec_ref(sock_it->second);
+    connections.erase(sock_it);
+    DBG("TCP connection from %s removed",conn_id.c_str());
+  }
+  connections_mut.unlock();
+}
+
+int tcp_server_worker::send(const sockaddr_storage* sa, const char* msg,
+			    const int msg_len, unsigned int flags)
+{
+  char host_buf[NI_MAXHOST];
+  string dest = am_inet_ntop(sa,host_buf,NI_MAXHOST);
+  dest += ":" + int2str(am_get_port(sa));
+
+  tcp_trsp_socket* sock = NULL;
+
+  bool new_conn=false;
+  connections_mut.lock();
+  map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(dest);
+  if(sock_it != connections.end()) {
+    sock = sock_it->second;
+    inc_ref(sock);
+  }
+  else {
+    //TODO: add flags to avoid new connections (ex: UAs behind NAT)
+    tcp_trsp_socket* new_sock = tcp_trsp_socket::new_connection(server_sock,this,
+								sa,evbase);
+    connections[dest] = new_sock;
+    inc_ref(new_sock);
+
+    sock = new_sock;
+    inc_ref(sock);
+    new_conn = true;
+  }
+  connections_mut.unlock();
+
+  // must be done outside from connections_mut
+  // to avoid dead-lock with the event base
+  int ret = sock->send(sa,msg,msg_len,flags);
+  if((ret < 0) && new_conn) {
+    remove_connection(sock);
+  }
+  dec_ref(sock);
+
+  return ret;
+}
+
+void tcp_server_worker::run()
+{
+  // fake event to prevent the event loop from exiting
+  int fake_fds[2];
+  pipe(fake_fds);
+  struct event* ev_default =
+    event_new(evbase,fake_fds[0],
+	      EV_READ|EV_PERSIST,
+	      NULL,NULL);
+  event_add(ev_default,NULL);
+
+  /* Start the event loop. */
+  int ret = event_base_dispatch(evbase);
+
+  // clean-up fake fds/event
+  event_free(ev_default);
+  close(fake_fds[0]);
+  close(fake_fds[1]);
+}
+
+void tcp_server_worker::on_stop()
+{
+  event_base_loopbreak(evbase);
+}
+
 tcp_server_socket::tcp_server_socket(unsigned short if_num)
   : trsp_socket(if_num,0),
     evbase(NULL), ev_accept(NULL)
@@ -510,7 +631,7 @@ int tcp_server_socket::bind(const string& bind_ip, unsigned short bind_port)
   return 0;
 }
 
-static void on_accept(int fd, short ev, void* arg)
+void tcp_server_socket::on_accept(int fd, short ev, void* arg)
 {
   tcp_server_socket* trsp = (tcp_server_socket*)arg;
   trsp->on_accept(fd,ev);
@@ -522,48 +643,30 @@ void tcp_server_socket::add_event(struct event_base *evbase)
 
   if(!ev_accept) {
     ev_accept = event_new(evbase, sd, EV_READ|EV_PERSIST,
-			  ::on_accept, (void *)this);
+			  tcp_server_socket::on_accept, (void *)this);
     event_add(ev_accept, NULL); // no timeout
   }
 }
 
-void tcp_server_socket::add_connection(tcp_trsp_socket* client_sock)
+void tcp_server_socket::add_threads(unsigned int n)
 {
-  string conn_id = client_sock->get_peer_ip()
-    + ":" + int2str(client_sock->get_peer_port());
-
-  DBG("new TCP connection from %s:%u",
-      client_sock->get_peer_ip().c_str(),
-      client_sock->get_peer_port());
-
-  connections_mut.lock();
-  map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
-  if(sock_it != connections.end()) {
-    dec_ref(sock_it->second);
-    sock_it->second = client_sock;
+  for(unsigned int i=0; i<n; i++) {
+    workers.push_back(new tcp_server_worker(this));
   }
-  else {
-    connections[conn_id] = client_sock;
-  }
-  inc_ref(client_sock);
-  connections_mut.unlock();
 }
 
-void tcp_server_socket::remove_connection(tcp_trsp_socket* client_sock)
+void tcp_server_socket::start_threads()
 {
-  string conn_id = client_sock->get_peer_ip()
-    + ":" + int2str(client_sock->get_peer_port());
-
-  DBG("removing TCP connection from %s",conn_id.c_str());
-
-  connections_mut.lock();
-  map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(conn_id);
-  if(sock_it != connections.end()) {
-    dec_ref(sock_it->second);
-    connections.erase(sock_it);
-    DBG("TCP connection from %s removed",conn_id.c_str());
+  for(unsigned int i=0; i<workers.size(); i++) {
+    workers[i]->start();
   }
-  connections_mut.unlock();
+}
+
+void tcp_server_socket::stop_threads()
+{
+  for(unsigned int i=0; i<workers.size(); i++) {
+    workers[i]->stop();
+  }
 }
 
 void tcp_server_socket::on_accept(int sd, short ev)
@@ -584,64 +687,33 @@ void tcp_server_socket::on_accept(int sd, short ev)
     return;
   }
 
-  DBG("tcp_trsp_socket::create_connected");
+  uint32_t h = hashlittle(&src_addr,sizeof(sockaddr_storage),0);
+  unsigned int idx = h % workers.size();
+  
   // in case of thread pooling, do following in worker thread
-  tcp_trsp_socket::create_connected(this,connection_sd,&src_addr,evbase);
+  DBG("tcp_trsp_socket::create_connected");
+  tcp_trsp_socket::create_connected(this,workers[idx],connection_sd,
+				    &src_addr,evbase);
 }
 
 int tcp_server_socket::send(const sockaddr_storage* sa, const char* msg,
 			    const int msg_len, unsigned int flags)
 {
-  char host_buf[NI_MAXHOST];
-  string dest = am_inet_ntop(sa,host_buf,NI_MAXHOST);
-  dest += ":" + int2str(am_get_port(sa));
-
-  tcp_trsp_socket* sock = NULL;
-
-  bool new_conn=false;
-  connections_mut.lock();
-  map<string,tcp_trsp_socket*>::iterator sock_it = connections.find(dest);
-  if(sock_it != connections.end()) {
-    sock = sock_it->second;
-    inc_ref(sock);
-  }
-  else {
-    //TODO: add flags to avoid new connections (ex: UAs behind NAT)
-    tcp_trsp_socket* new_sock = tcp_trsp_socket::new_connection(this,sa,evbase);
-    connections[dest] = new_sock;
-    inc_ref(new_sock);
-
-    sock = new_sock;
-    inc_ref(sock);
-    new_conn = true;
-  }
-  connections_mut.unlock();
-
-  // must be done outside from connections_mut
-  // to avoid dead-lock with the event base
-  int ret = sock->send(sa,msg,msg_len,flags);
-  if((ret < 0) && new_conn) {
-    remove_connection(sock);
-  }
-  dec_ref(sock);
-
-  return ret;
+  uint32_t h = hashlittle(sa,sizeof(sockaddr_storage),0);
+  unsigned int idx = h % workers.size();
+  return workers[idx]->send(sa,msg,msg_len,flags);
 }
 
 void tcp_server_socket::set_connect_timeout(unsigned int ms)
 {
-  connections_mut.lock();
   connect_timeout.tv_sec = ms / 1000;
   connect_timeout.tv_usec = (ms % 1000) * 1000;
-  connections_mut.unlock();
 }
 
 void tcp_server_socket::set_idle_timeout(unsigned int ms)
 {
-  connections_mut.lock();
   idle_timeout.tv_sec = ms / 1000;
   idle_timeout.tv_usec = (ms % 1000) * 1000;
-  connections_mut.unlock();
 }
 
 struct timeval* tcp_server_socket::get_connect_timeout()
@@ -659,8 +731,6 @@ struct timeval* tcp_server_socket::get_idle_timeout()
 
   return NULL;
 }
-
-/** @see trsp_socket */
 
 tcp_trsp::tcp_trsp(tcp_server_socket* sock)
     : transport(sock)
@@ -685,6 +755,9 @@ void tcp_trsp::run()
     return;
   }
 
+  tcp_server_socket* tcp_sock = static_cast<tcp_server_socket*>(sock);
+  tcp_sock->start_threads();
+
   INFO("Started SIP server TCP transport on %s:%i\n",
        sock->get_ip(),sock->get_port());
 
@@ -698,6 +771,8 @@ void tcp_trsp::run()
 /** @see AmThread */
 void tcp_trsp::on_stop()
 {
-  // TODO: stop event loop
+  event_base_loopbreak(evbase);
+  tcp_server_socket* tcp_sock = static_cast<tcp_server_socket*>(sock);
+  tcp_sock->stop_threads();
 }
 
