@@ -1329,13 +1329,15 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    return send_err;
 	}
 
-	// save flags & target set in transaction
-	tt->_t->flags = flags;
-	tt->_t->targets = targets.release();
+	if(tt->_t) {
+	    // save flags & target set in transaction
+	    tt->_t->flags = flags;
+	    tt->_t->targets = targets.release();
 
-	if(tt->_t->targets->has_next()){
-	    tt->_t->reset_timer(STIMER_M,M_TIMER,
-				tt->_bucket->get_id());
+	    if(tt->_t->targets->has_next()){
+		tt->_t->reset_timer(STIMER_M,M_TIMER,
+				    tt->_bucket->get_id());
+	    }
 	}
 
 	DBG("logger = %p\n",logger);
@@ -1348,7 +1350,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    char* msg_buffer=NULL;
 	    unsigned int msg_len=0;
 
-	    if(method == sip_request::ACK) {
+	    if(tt->_t && (method == sip_request::ACK)) {
 		// in case of ACK, p_msg gets deleted in update_uac_request
 		msg_buffer = tt->_t->retr_buf;
 		msg_len = tt->_t->retr_len;
@@ -1362,13 +1364,13 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 			&src_ip,&msg->remote_ip,
 			method_str);
 
-	    if(!tt->_t->logger) {
+	    if(tt->_t && !tt->_t->logger) {
 		tt->_t->logger = logger;
 		inc_ref(logger);
 	    }
 	}
 
-	if(dialog_id.len && !(tt->_t->dialog_id.len)) {
+	if(dialog_id.len && tt->_t && !(tt->_t->dialog_id.len)) {
 	    tt->_t->dialog_id.s = new char[dialog_id.len];
 	    tt->_t->dialog_id.len = dialog_id.len;
 	    memcpy((void*)tt->_t->dialog_id.s,dialog_id.s,dialog_id.len);
@@ -1989,30 +1991,32 @@ int _trans_layer::update_uac_request(trans_bucket* bucket, sip_trans*& t, sip_ms
     }
     else {
 	// 200 ACK
-	t = bucket->match_request(msg,TT_UAC);
-	if(t == NULL){
-	    WARN("While sending 200 ACK: no matching transaction\n");
-	    return -1;
-	}
-	DBG("update_uac_request(200 ACK, t=%p)\n", t);
-	// clear old retransmission buffer
-	delete [] t->retr_buf;
+	if(!msg->local_socket->is_reliable()) {
+	    t = bucket->match_request(msg,TT_UAC);
+	    if(t == NULL){
+		WARN("While sending 200 ACK: no matching transaction\n");
+		return -1;
+	    }
+	    DBG("update_uac_request(200 ACK, t=%p)\n", t);
+	    // clear old retransmission buffer
+	    delete [] t->retr_buf;
 	
-	// transfer the message buffer 
-	// to the transaction (incl. ownership)
-	t->retr_buf = msg->buf;
-	t->retr_len = msg->len;
-	msg->buf = NULL;
-	msg->len = 0;
+	    // transfer the message buffer 
+	    // to the transaction (incl. ownership)
+	    t->retr_buf = msg->buf;
+	    t->retr_len = msg->len;
+	    msg->buf = NULL;
+	    msg->len = 0;
 	
-	// copy destination address
-	memcpy(&t->retr_addr,&msg->remote_ip,sizeof(sockaddr_storage));
-	inc_ref(msg->local_socket);
-	if(t->retr_socket) dec_ref(t->retr_socket);
-	t->retr_socket = msg->local_socket;
+	    // copy destination address
+	    memcpy(&t->retr_addr,&msg->remote_ip,sizeof(sockaddr_storage));
+	    inc_ref(msg->local_socket);
+	    if(t->retr_socket) dec_ref(t->retr_socket);
+	    t->retr_socket = msg->local_socket;
 
-	// remove the message;
-	delete msg;
+	    // remove the message;
+	    delete msg;
+	}
 
 	return 0;
     }
