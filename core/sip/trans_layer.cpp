@@ -1458,6 +1458,7 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
     }
 
     cstring cancel_str("CANCEL");
+    cstring zero("0");
 
     int request_len = request_line_len(cancel_str,
 				       req->u.request->ruri_str);
@@ -1472,6 +1473,7 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
 	+ copy_hdrs_len(req->contacts);
 
     request_len += hdrs.len;
+    request_len += content_length_len(zero);
     request_len += 2/* CRLF end-of-headers*/;
 
     // Allocate new message
@@ -1496,6 +1498,8 @@ int _trans_layer::cancel(trans_ticket* tt, const cstring& dialog_id,
       memcpy(c,hdrs.s,hdrs.len);
       c += hdrs.len;
     }
+
+    content_length_wr(&c,zero);
 
     *c++ = CR;
     *c++ = LF;
