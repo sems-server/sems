@@ -788,8 +788,11 @@ int _trans_layer::set_next_hop(sip_msg* msg,
 	    *next_trsp = parsed_r_uri.trsp->value;
     }
 
-    if(!next_trsp->len)
+    if(!next_trsp->len) {
+	DBG("no transport specified, setting default one (%.*s)",
+	    default_trsp.len,default_trsp.s);
 	*next_trsp = default_trsp;
+    }
 
     DBG("next_hop:next_port is <%.*s:%u/%.*s>\n",
 	next_hop->len, next_hop->s, *next_port,
@@ -1167,10 +1170,6 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
     assert(msg);
     assert(tt);
 
-    // cstring next_hop;
-    // unsigned short next_port=0;
-    // cstring next_trsp;
-
     int res=0;
     list<sip_destination> dest_list;
     if (_next_hop.len) {
@@ -1180,28 +1179,6 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    DBG("parse_next_hop %.*s failed (%i)\n",_next_hop.len, _next_hop.s, res);
 	    return res;
 	}
-
-	// if(dest_list.size() == 1) {
-	//     const sip_destination& dest = dest_list.front();
-	//     next_hop = dest.host;
-	//     next_port = dest.port;
-	//     next_trsp = dest.trsp;
-	//     DBG("single next-hop: <%.*s:%u/%.*s>",
-	// 	next_hop.len,next_hop.s,next_port,
-	// 	next_trsp.len,next_trsp.s);
-	// }
-	// else if(dest_list.size() > 1) {
-	//     dns_ip_entry* e = new dns_ip_entry();
-	//     if(e->fill_ip_list(dest_list) < 0) {
-	// 	delete e;
-	// 	return -1;
-	//     }
-	//     inc_ref(e);
-	//     //TODO: avoid to loose the transport from the next-hop-list
-	//     e->next_ip(&msg->h_dns,&msg->remote_ip);
-	//     DBG("destination set to <%s>\n",
-	// 	get_addr_str(&msg->remote_ip).c_str());
-	// }
     }
     else {
 	sip_destination dest;
