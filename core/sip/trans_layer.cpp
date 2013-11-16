@@ -843,6 +843,9 @@ int _trans_layer::set_destination_ip(const cstring* next_hop,
 	    return -478;
 	}
     }
+    else {
+	am_set_port(remote_ip,next_port);
+    }
 
     if(!am_get_port(remote_ip)) {
 	if(!next_port) next_port = 5060;
