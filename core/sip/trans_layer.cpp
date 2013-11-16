@@ -1616,7 +1616,7 @@ void _trans_layer::process_rcvd_msg(sip_msg* msg)
 		
 		// ACK matched INVITE transaction
 		DBG("ACK matched INVITE transaction %p\n", t);
-		
+		int t_state = t->state;
 		err = update_uas_request(bucket,t,msg);
 		DBG("update_uas_request(bucket,t=%p,msg) = %i\n",t, err);
 		if(err<0){
@@ -1631,7 +1631,7 @@ void _trans_layer::process_rcvd_msg(sip_msg* msg)
 		    // should we forward the ACK to SEMS-App upstream? Yes
 		    bucket->unlock();
 		    
-		    if(err == TS_REMOVED) {
+		    if(t_state == TS_TERMINATED_200) {
 			//  let's pass the request to
 			//  the UA, iff it was a 200-ACK
 			assert(ua);
