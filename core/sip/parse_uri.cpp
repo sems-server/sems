@@ -179,11 +179,6 @@ static int parse_sip_uri(sip_uri* uri, const char* beg, int len)
 		//    tmp1.len, tmp1.s,
 		//    tmp2.len, tmp2.s);
 
-		if(!lower_cmp_n(tmp1.s,tmp1.len,
-				"transport",9)) {
-		    uri->trsp = uri->params.back();
-		}
-
 		tmp1.s = c+1;
 		st = URI_PNAME;
 		break;
@@ -341,6 +336,15 @@ static int parse_sip_uri(sip_uri* uri, const char* beg, int len)
 
     DBG("Converted URI port (%.*s) to int (%i)\n",
 	uri->port_str.len,uri->port_str.s,uri->port);
+
+    for(list<sip_avp*>::iterator it = uri->params.begin();
+	it != uri->params.end(); it++) {
+
+	if(!lower_cmp_n((*it)->name.s,(*it)->name.len,
+			"transport",9)) {
+	    uri->trsp = *it;
+	}
+    }
 
     return 0;
 }
