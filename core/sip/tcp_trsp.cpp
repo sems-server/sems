@@ -351,46 +351,70 @@ void tcp_trsp_socket::on_read(short ev)
 
 int tcp_trsp_socket::parse_input()
 {
-  int err = skip_sip_msg_async(&pst, (char*)(input_buf+input_len));
-  if(err) {
+  for(;;) {
+    int err = skip_sip_msg_async(&pst, (char*)(input_buf+input_len));
+    if(err) {
 
-    if((err == UNEXPECTED_EOT) &&
-       get_input_free_space()) {
+      if(err == UNEXPECTED_EOT) {
 
+	if(pst.orig_buf > (char*)input_buf) {
+
+	  int addr_shift = pst.orig_buf - (char*)input_buf;
+	  memmove(input_buf, pst.orig_buf, input_len - addr_shift);
+
+	  pst.orig_buf = (char*)input_buf;
+	  pst.c -= addr_shift;
+	  if(pst.beg)
+	    pst.beg -= addr_shift;
+	  input_len -= addr_shift;
+
+	  return 0;
+	}
+	else if(get_input_free_space()){
+	  return 0;
+	}
+
+	ERROR("message way too big! drop connection...");
+      }
+      else {
+	ERROR("parsing error %i",err);
+      }
+
+      pst.reset((char*)input_buf);
+      reset_input();
+
+      return -1;
+    }
+
+    int msg_len = pst.get_msg_len();
+    DBG("received msg:\n%.*s",msg_len,pst.orig_buf);
+
+    sip_msg* s_msg = new sip_msg((const char*)pst.orig_buf,msg_len);
+
+    copy_peer_addr(&s_msg->remote_ip);
+    copy_addr_to(&s_msg->local_ip);
+
+    s_msg->local_socket = this;
+    inc_ref(this);
+
+    // pass message to the parser / transaction layer
+    trans_layer::instance()->received_msg(s_msg);
+
+    char* msg_end = pst.orig_buf + msg_len;
+    char* input_end = (char*)input_buf + input_len;
+
+    if(msg_end < input_end) {
+      pst.reset(msg_end);
+    }
+    else {
+      pst.reset((char*)input_buf);
+      reset_input();
       return 0;
     }
-
-    if(!get_input_free_space()) {
-      DBG("message way too big! should drop connection...");
-    }
-
-    //TODO: drop connection
-    // close connection? let's see...
-    ERROR("parsing error %i",err);
-
-    pst.reset((char*)input_buf);
-    reset_input();
-
-    return -1;
   }
 
-  int msg_len = pst.c - (char*)input_buf + pst.content_len;
-  DBG("received msg:\n%.*s",msg_len,input_buf);
-
-  sip_msg* s_msg = new sip_msg((const char*)input_buf,msg_len);
-  pst.reset((char*)input_buf);
-  reset_input();
-
-  copy_peer_addr(&s_msg->remote_ip);
-  copy_addr_to(&s_msg->local_ip);
-
-  s_msg->local_socket = this;
-  inc_ref(this);
-
-  // pass message to the parser / transaction layer
-  trans_layer::instance()->received_msg(s_msg);
-
-  return 0;
+  // fake:
+  //return 0;
 }
 
 void tcp_trsp_socket::on_write(short ev)
