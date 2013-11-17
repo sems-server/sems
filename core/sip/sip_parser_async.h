@@ -33,6 +33,10 @@ struct parser_state
     st = saved_st = 0;
     beg = c;
   }
+
+  int get_msg_len() {
+    return c - orig_buf + content_len;
+  }
 };
 
 int skip_sip_msg_async(parser_state* pst, char* end);
