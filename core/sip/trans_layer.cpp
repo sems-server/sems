@@ -105,11 +105,69 @@ void _trans_layer::clear_transports()
     transports.clear();
 }
 
+static int patch_contact_transport(sip_header* contact, const cstring& trsp,
+				   string& n_contact)
+{
+    list<cstring> contact_list;
+    if(parse_nameaddr_list(contact_list, contact->value.s,
+			   contact->value.len) < 0) {
+	DBG("Could not parse contact list\n");
+	return -1;
+    }
 
-int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
-			     int reply_code, const cstring& reason,
-			     const cstring& to_tag, const cstring& hdrs,
-			     const cstring& body,
+    const char* marker = contact->value.s;
+    const char* hf_end = marker + contact->value.len;
+
+    for(list<cstring>::iterator ct_it = contact_list.begin();
+	ct_it != contact_list.end(); ct_it++) {
+
+	sip_nameaddr na;
+	const char* c = ct_it->s;
+	if(parse_nameaddr_uri(&na,&c,ct_it->len) < 0) {
+	    DBG("Could not parse nameaddr & URI\n");
+	    return -1;
+	}
+
+	bool found_trsp = false;
+	for(list<sip_avp*>::iterator p_it = na.uri.params.begin();
+	    p_it != na.uri.params.end(); p_it++) {
+
+	    if(!lower_cmp_n((*p_it)->name.s,(*p_it)->name.len,"transport",9)) {
+		found_trsp = true;
+		if(lower_cmp_n((*p_it)->value.s,(*p_it)->value.len,
+			     trsp.s,trsp.len)) {
+		    // copy everything from last marker until param value
+		    n_contact.append(marker, (*p_it)->value.s - marker);
+		    // copy param value
+		    n_contact.append(trsp.s, trsp.len);
+		    // set marker after transport value
+		    marker = (*p_it)->value.s + (*p_it)->value.len;
+		}
+	    }
+	}
+
+	if(!found_trsp){
+	    // copy everything from last marker until end of addr
+	    n_contact.append(marker, na.addr.s + na.addr.len - marker);
+	    // copy new param + value
+	    n_contact.append(";transport=");
+	    n_contact.append(trsp.s, trsp.len);
+	    // set marker after transport value
+	    marker = na.addr.s + na.addr.len;
+	}
+    }
+
+    if(!n_contact.empty()) {
+	// finish copy
+	n_contact.append(marker, hf_end - marker);
+	contact->value = stl2cstr(n_contact);
+    }
+
+    return 0;
+}
+
+int _trans_layer::send_reply(sip_msg* msg, const trans_ticket* tt,
+			     const cstring& dialog_id, const cstring& to_tag,
 			     msg_logger* logger)
 {
     // Ref.: RFC 3261 8.2.6, 12.1.1
@@ -158,8 +216,21 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
     sip_msg* req = t->msg;
     assert(req);
 
+    trsp_socket* local_socket = req->local_socket;
+    cstring trsp(local_socket->get_transport());
+
+    // patch Contact-HF
+    vector<string> contact_buf(msg->contacts.size());
+    vector<string>::iterator contact_buf_it = contact_buf.begin();
+
+    for(list<sip_header*>::iterator contact_it = msg->contacts.begin();
+	contact_it != msg->contacts.end(); contact_it++, contact_buf_it++) {
+	
+	patch_contact_transport(*contact_it,trsp,*contact_buf_it);
+    }
+    
     bool have_to_tag = false;
-    int  reply_len   = status_line_len(reason);
+    int  reply_len   = status_line_len(msg->u.reply->reason);
 
     // add 'received' should be added
     // check if first Via has rport parameter
@@ -186,6 +257,7 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 
     unsigned int rel100_ext = 0;
     unsigned int rseq = 0;
+    int reply_code = msg->u.reply->code;
     
     // copy necessary headers
     for(list<sip_header*>::iterator it = req->hdrs.begin();
@@ -267,14 +339,14 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 	}
     }
 
-    reply_len += hdrs.len;
+    reply_len += copy_hdrs_len(msg->hdrs);
 
-    string c_len = int2str(body.len);
+    string c_len = int2str(msg->body.len);
     reply_len += content_length_len((char*)c_len.c_str());
 
-    if(body.len){
+    if(msg->body.len){
 	
-	reply_len += body.len;
+	reply_len += msg->body.len;
     }
 
     reply_len += 2/*CRLF*/;
@@ -286,7 +358,7 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 
     DBG("reply_len = %i\n",reply_len);
 
-    status_line_wr(&c,reply_code,reason);
+    status_line_wr(&c,reply_code,msg->u.reply->reason);
 
     for(list<sip_header*>::iterator it = req->hdrs.begin();
 	it != req->hdrs.end(); ++it) {
@@ -395,19 +467,14 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
 	}
     }
 
-    if (hdrs.len) {
-      memcpy(c,hdrs.s,hdrs.len);
-      c += hdrs.len;
-    }
-
+    copy_hdrs_wr(&c,msg->hdrs);
     content_length_wr(&c,(char*)c_len.c_str());
 
     *c++ = CR;
     *c++ = LF;
 
-    if(body.len){
-	
-	memcpy(c,body.s,body.len);
+    if(msg->body.len){
+	memcpy(c,msg->body.s,msg->body.len);
     }
 
     int err = -1;
@@ -416,7 +483,6 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
     // refs: RFC3261 18.2.2; RFC3581
 
     sockaddr_storage remote_ip;
-    trsp_socket* local_socket = req->local_socket;
     if(!local_socket) {
 	
 	ERROR("request to be replied has no transport socket set\n");
@@ -530,15 +596,26 @@ int _trans_layer::send_reply(const trans_ticket* tt, const cstring& dialog_id,
     return err;
 }
 
-int _trans_layer::send_sf_error_reply(const trans_ticket* tt, const sip_msg* req, int reply_code,
-				      const cstring& reason, const cstring& hdrs,
-				      const cstring& body)
+int _trans_layer::send_sf_error_reply(const trans_ticket* tt, const sip_msg* req,
+				      int reply_code, const cstring& reason,
+				      const cstring& hdrs, const cstring& body)
 {
     char to_tag_buf[SL_TOTAG_LEN];
     cstring to_tag(to_tag_buf,SL_TOTAG_LEN);
     compute_sl_to_tag(to_tag_buf,req);
-    
-    return send_reply(tt,cstring(),reply_code,reason,to_tag,hdrs,body);
+
+    sip_msg reply;
+    reply.u.reply = new sip_reply(reply_code,reason);
+
+    char* c = (char*)hdrs.s;
+    int err = parse_headers(&reply,&c,c+hdrs.len);
+    if(err){
+	ERROR("Malformed additional header\n");
+	return -1;
+    }
+    reply.body = body;
+
+    return send_reply(&reply,tt,cstring(),to_tag);
 }
 
 int _trans_layer::send_sl_reply(sip_msg* req, int reply_code, 
@@ -1028,7 +1105,6 @@ void _trans_layer::timeout(trans_bucket* bucket, sip_trans* t)
 
 static int patch_ruri_with_remote_ip(string& n_uri, sip_msg* msg)
 {
-    // TODO:
     // - parse R-URI
     // - replace host/port
     // - generate new R-URI
@@ -1068,7 +1144,7 @@ static int patch_ruri_with_remote_ip(string& n_uri, sip_msg* msg)
  
     return 0;
 }
- 
+
 static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
 {
     int request_len = request_line_len(msg->u.request->method_str,
@@ -1083,7 +1159,17 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
  	via += ":" + int2str(msg->local_socket->get_port());
 
     cstring trsp(msg->local_socket->get_transport());
- 
+
+    // patch Contact-HF transport parameter
+    vector<string> contact_buffers(msg->contacts.size());
+    vector<string>::iterator contact_buf_it = contact_buffers.begin();
+
+    for(list<sip_header*>::iterator contact_it = msg->contacts.begin();
+	contact_it != msg->contacts.end(); contact_it++, contact_buf_it++) {
+	
+	patch_contact_transport(*contact_it,trsp,*contact_buf_it);
+    }
+
     // add 'rport' parameter defaultwise? yes, for now
     request_len += via_len(trsp,stl2cstr(via),branch,true);
  
@@ -1103,7 +1189,6 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     p_msg = new sip_msg();
     p_msg->buf = new char[request_len+1];
     p_msg->len = request_len;
-    //p_msg->h_dns = msg->h_dns;
  
     // generate it
     char* c = p_msg->buf;
@@ -1113,7 +1198,7 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     via_wr(&c,trsp,stl2cstr(via),branch,true);
     copy_hdrs_wr(&c,msg->vias);
     copy_hdrs_wr_no_via(&c,msg->hdrs);
- 
+
     content_length_wr(&c,stl2cstr(content_len));
  
     *c++ = CR;
