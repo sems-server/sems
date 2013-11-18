@@ -162,11 +162,8 @@ public:
      * include a well-formed 'Content-Type', but no
      * 'Content-Length' header.
      */
-    int send_reply(const trans_ticket* tt, const cstring& dialog_id,
-		   int reply_code, const cstring& reason,
-		   const cstring& to_tag, const cstring& hdrs, 
-		   const cstring& body,
-		   msg_logger* logger=NULL);
+    int send_reply(sip_msg* msg, const trans_ticket* tt, const cstring& dialog_id,
+		   const cstring& to_tag, msg_logger* logger=NULL);
 
     /**
      * Sends a UAC request.

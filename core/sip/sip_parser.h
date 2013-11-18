@@ -91,6 +91,10 @@ struct sip_reply
     sip_reply()
 	: code(0)
     {}
+
+    sip_reply(int code, const cstring& reason)
+	: code(code), reason(reason)
+    {}
 };
 
 

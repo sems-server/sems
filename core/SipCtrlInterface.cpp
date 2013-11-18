@@ -484,8 +484,6 @@ int _SipCtrlInterface::send(const AmSipReply &rep, const string& dialog_id,
 	}
     }
 
-    unsigned int hdrs_len = copy_hdrs_len(msg.hdrs);
-
     string body;
     string content_type;
     if(!rep.body.empty()) {
@@ -495,34 +493,18 @@ int _SipCtrlInterface::send(const AmSipReply &rep, const string& dialog_id,
     	    ERROR("Reply does not contain a Content-Type whereby body is not empty\n");
     	    return -1;
     	}
-	hdrs_len += content_type_len(stl2cstr(content_type));
+	msg.body = stl2cstr(body);
+	msg.hdrs.push_back(new sip_header(sip_header::H_CONTENT_TYPE,
+					  SIP_HDR_CONTENT_TYPE,
+					  stl2cstr(content_type)));
     }
 
-    char* hdrs_buf = NULL;
-    char* c = hdrs_buf;
+    msg.u.reply = new sip_reply(rep.code,stl2cstr(rep.reason));
 
-    if (hdrs_len) {
-	
-	c = hdrs_buf = new char[hdrs_len];
-	
-	copy_hdrs_wr(&c,msg.hdrs);
-		
-	if(!rep.body.empty()) {
-	    content_type_wr(&c,stl2cstr(content_type));
-	}
-    }
-
-    int ret =
-	trans_layer::instance()->send_reply((trans_ticket*)&rep.tt,
+    return
+	trans_layer::instance()->send_reply(&msg,(trans_ticket*)&rep.tt,
 					    stl2cstr(dialog_id),
-					    rep.code,stl2cstr(rep.reason),
-					    stl2cstr(rep.to_tag),
-					    cstring(hdrs_buf,hdrs_len), 
-					    stl2cstr(body),logger);
-
-    delete [] hdrs_buf;
-
-    return ret;
+					    stl2cstr(rep.to_tag),logger);
 }
 
 
