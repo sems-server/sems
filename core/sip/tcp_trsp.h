@@ -231,6 +231,8 @@ class tcp_server_socket: public trsp_socket
   /* libevent callback on new connection */
   static void on_accept(int sd, short ev, void* arg);
 
+  static uint32_t hash_addr(const sockaddr_storage* addr);
+
 public:
   tcp_server_socket(unsigned short if_num);
   ~tcp_server_socket() {}

@@ -661,6 +661,19 @@ void tcp_server_socket::on_accept(int fd, short ev, void* arg)
   trsp->on_accept(fd,ev);
 }
 
+uint32_t tcp_server_socket::hash_addr(const sockaddr_storage* addr)
+{
+  unsigned int port = am_get_port(addr);
+  uint32_t h=0;
+  if(addr->ss_family == AF_INET) {
+    h = hashlittle(&SAv4(addr)->sin_addr,sizeof(in_addr),port);
+  }
+  else {
+    h = hashlittle(&SAv6(addr)->sin6_addr,sizeof(in6_addr),port);
+  }
+  return h;
+}
+
 void tcp_server_socket::add_event(struct event_base *evbase)
 {
   this->evbase = evbase;
@@ -711,11 +724,11 @@ void tcp_server_socket::on_accept(int sd, short ev)
     return;
   }
 
-  uint32_t h = hashlittle(&src_addr,sizeof(sockaddr_storage),0);
+  uint32_t h = hash_addr(&src_addr);
   unsigned int idx = h % workers.size();
   
   // in case of thread pooling, do following in worker thread
-  DBG("tcp_trsp_socket::create_connected");
+  DBG("tcp_trsp_socket::create_connected (idx = %u)",idx);
   tcp_trsp_socket::create_connected(this,workers[idx],connection_sd,
 				    &src_addr,evbase);
 }
@@ -723,8 +736,9 @@ void tcp_server_socket::on_accept(int sd, short ev)
 int tcp_server_socket::send(const sockaddr_storage* sa, const char* msg,
 			    const int msg_len, unsigned int flags)
 {
-  uint32_t h = hashlittle(sa,sizeof(sockaddr_storage),0);
+  uint32_t h = hash_addr(sa);
   unsigned int idx = h % workers.size();
+  DBG("tcp_server_socket::send: idx = %u",idx);
   return workers[idx]->send(sa,msg,msg_len,flags);
 }
 
