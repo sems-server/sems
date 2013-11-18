@@ -225,6 +225,11 @@ int tcp_trsp_socket::check_connection()
     if(ret < 0) {
       add_write_event_ul(server_sock->get_connect_timeout());
       DBG("connect event added...");
+
+      // because of unlock in ad_write_event_ul,
+      // on_connect() might already have been scheduled
+      if(closed)
+	return -1;
     }
     else {
       // connect succeeded immediatly
@@ -246,9 +251,11 @@ int tcp_trsp_socket::send(const sockaddr_storage* sa, const char* msg,
 
   send_q.push_back(new msg_buf(sa,msg,msg_len));
 
-  add_write_event_ul();
-  DBG("write event added...");
-    
+  if(connected) {
+    add_write_event_ul();
+    DBG("write event added...");
+  }
+
   return 0;
 }
 
