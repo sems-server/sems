@@ -361,6 +361,7 @@ bool AmSipDialog::onRxReplyStatus(const AmSipReply& reply,
 	  DBG("received 2xx reply without to-tag "
 	      "(callid=%s): sending BYE\n",reply.callid.c_str());
 
+	  send_200_ack(reply.cseq);
 	  sendRequest(SIP_METH_BYE);
 	}
 	else {
