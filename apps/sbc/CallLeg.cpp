@@ -822,10 +822,14 @@ void CallLeg::resumeHeld(/*bool send_reinvite*/)
 
 void CallLeg::holdAccepted()
 {
+  DBG("hold accepted on %c leg\n", a_leg?'B':'A');
   if (call_status == Disconnecting) updateCallStatus(Disconnected);
   on_hold = true;
   AmB2BMedia *ms = getMediaSession();
-  if (ms) ms->mute(!a_leg); // mute the stream in other (!) leg
+  if (ms) {
+    DBG("holdAccepted - mute %c leg\n", a_leg?'B':'A');
+    ms->mute(!a_leg); // mute the stream in other (!) leg
+  }
 }
 
 void CallLeg::holdRejected()
