@@ -591,6 +591,82 @@ const dns_handle& dns_handle::operator = (const dns_handle& rh)
     return *this;
 }
 
+sip_target::sip_target() {}
+
+sip_target::sip_target(const sip_target& target)
+{
+    *this = target;
+}
+
+const sip_target& sip_target::operator = (const sip_target& target)
+{
+    memcpy(&ss,&target.ss,sizeof(sockaddr_storage));
+    memcpy(trsp,target.trsp,SIP_TRSP_SIZE_MAX+1);
+    return target;
+}
+
+void sip_target::clear()
+{
+    memset(&ss,0,sizeof(sockaddr_storage));
+    memset(trsp,'\0',SIP_TRSP_SIZE_MAX+1);
+}
+
+sip_target_set::sip_target_set()
+    : dest_list(),
+      dest_list_it(dest_list.begin())
+{}
+
+void sip_target_set::reset_iterator()
+{
+    dest_list_it = dest_list.begin();
+}
+
+bool sip_target_set::has_next()
+{
+    return dest_list_it != dest_list.end();
+}
+
+int sip_target_set::get_next(sockaddr_storage* ss, cstring& next_trsp,
+			     unsigned int flags)
+{
+    do {
+	if(!has_next())
+	    return -1;
+
+	sip_target& t = *dest_list_it;
+	memcpy(ss,&t.ss,sizeof(sockaddr_storage));
+	next_trsp = cstring(t.trsp);
+
+	next();
+
+	// set default transport to UDP
+	if(!next_trsp.len)
+	    next_trsp = cstring("udp");
+
+    } while(!(flags & TR_FLAG_DISABLE_BL) &&
+	    tr_blacklist::instance()->exist(ss));
+
+    return 0;
+}
+
+bool sip_target_set::next()
+{
+    dest_list_it++;
+    return has_next();
+}
+
+void sip_target_set::debug()
+{
+    DBG("target list:");
+
+    for(list<sip_target>::iterator it = dest_list.begin();
+	it != dest_list.end(); it++) {
+
+	DBG("\t%s:%u/%s to target list",
+	    am_inet_ntop(&it->ss).c_str(),
+	    am_get_port(&it->ss),it->trsp);
+    }
+}
 
 _resolver::_resolver()
     : cache(DNS_CACHE_SIZE)
