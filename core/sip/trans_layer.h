@@ -253,7 +253,12 @@ protected:
 		     unsigned short* next_port, cstring* next_trsp);
 
     /**
+     * Fills the local_socket attribute using the given
+     * transport and interface. If out_interface == -1,
+     * we will try hard to find an interface based on msg->remote_ip.
      */
+    int set_trsp_socket(sip_msg* msg, const cstring& next_trsp,
+			int out_interface);
 
     sip_trans* copy_uac_trans(sip_trans* tr);
 
