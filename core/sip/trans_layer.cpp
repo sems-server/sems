@@ -105,9 +105,44 @@ void _trans_layer::clear_transports()
     transports.clear();
 }
 
+int _trans_layer::set_trsp_socket(sip_msg* msg, const cstring& next_trsp,
+				  int out_interface)
+{
+    if((out_interface < 0)
+       || ((unsigned int)out_interface >= transports.size())) {
+
+	out_interface = find_outbound_if(&msg->remote_ip);
+	if(out_interface < 0) {
+	    DBG("could not find any suitable outbound interface");
+	    return -1;
+	}
+    }
+
+    if(transports[out_interface].empty()) {
+	ERROR("no transport for this interface");
+	return -1;
+    }
+
+    prot_collection::iterator prot_sock_it =
+	transports[out_interface].find(c2stlstr(next_trsp));
+
+    // if we couldn't find anything, take whatever is there...
+    if(prot_sock_it == transports[out_interface].end()) {
+	prot_sock_it = transports[out_interface].begin();
+    }
+
+    if(msg->local_socket) dec_ref(msg->local_socket);
+    msg->local_socket = prot_sock_it->second;
+    inc_ref(msg->local_socket);
+
+    return 0;
+}
+
 static int patch_contact_transport(sip_header* contact, const cstring& trsp,
 				   string& n_contact)
 {
+    DBG("contact: <%.*s>", contact->value.len, contact->value.s);
+
     list<cstring> contact_list;
     if(parse_nameaddr_list(contact_list, contact->value.s,
 			   contact->value.len) < 0) {
@@ -124,7 +159,7 @@ static int patch_contact_transport(sip_header* contact, const cstring& trsp,
 	sip_nameaddr na;
 	const char* c = ct_it->s;
 	if(parse_nameaddr_uri(&na,&c,ct_it->len) < 0) {
-	    DBG("Could not parse nameaddr & URI\n");
+	    DBG("Could not parse nameaddr & URI (%.*s)\n",ct_it->len,ct_it->s);
 	    return -1;
 	}
 
@@ -1069,8 +1104,9 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     // patch Contact-HF transport parameter
     vector<string> contact_buffers(msg->contacts.size());
     vector<string>::iterator contact_buf_it = contact_buffers.begin();
-
     list<sip_header*> n_contacts;
+    
+    //TODO: patch copies of the Contact-HF instead of the original HFs
     for(list<sip_header*>::iterator contact_it = msg->contacts.begin();
 	contact_it != msg->contacts.end(); contact_it++, contact_buf_it++) {
 	
@@ -1122,7 +1158,7 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
  	c += msg->body.len;
     }
     *c++ = '\0';
- 
+
     // and parse it
     char* err_msg=0;
     if(parse_sip_msg(p_msg,err_msg)){
@@ -1141,7 +1177,7 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     return 0;
 }
  
-int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt, 
+int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 			       const cstring& dialog_id,
 			       const cstring& _next_hop, 
 			       int out_interface, unsigned int flags,
@@ -1167,7 +1203,8 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 
 	res = parse_next_hop(_next_hop,dest_list);
 	if(res || dest_list.empty()) {
-	    DBG("parse_next_hop %.*s failed (%i)\n",_next_hop.len, _next_hop.s, res);
+	    DBG("parse_next_hop %.*s failed (%i)\n",
+		_next_hop.len, _next_hop.s, res);
 	    return res;
 	}
     }
@@ -1180,78 +1217,18 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	dest_list.push_back(dest);
     }
 
-    string uri_buffer; // must have the same scope as 'msg'
-    prepare_strict_routing(msg,uri_buffer);
-
     auto_ptr<sip_target_set> targets(new sip_target_set());
-    res = resolve_targets(dest_list,targets.get());
+    res = resolver::instance()->resolve_targets(dest_list,targets.get());
     if(res < 0){
 	DBG("resolve_targets failed\n");
 	return res;
     }
 
     targets->debug();
-
-    cstring next_trsp;
     targets->reset_iterator();
-    do {
-	if(!targets->has_next()) {
-	    DBG("next_ip(): no more destinations! reply 500");
-	    sip_msg err;
-	    set_err_reply_from_req(&err,msg,500,
-				   "No destination available");
-	    ua->handle_sip_reply(c2stlstr(dialog_id),&err);
-	    return 0;
-	}
 
-	targets->copy_next(&msg->remote_ip,&next_trsp);
-	targets->next();
-
-	//TODO: take care of port manipulation in SRV case
-	//      and the likes
-	//
-	// //If a SRV record is involved, the port number
-	// // should have been set by h_dns.next_ip(...).
-	// if(!am_get_port(&sa)){
-	//     //Else, we copy the old port number
-	//     am_set_port(&sa,am_get_port(&msg->remote_ip));
-	// }
-    } while(!(flags & TR_FLAG_DISABLE_BL) &&
-	    tr_blacklist::instance()->exist(&msg->remote_ip));
-
-    if((out_interface < 0) 
-       || ((unsigned int)out_interface >= transports.size())) {
-
-	out_interface = find_outbound_if(&msg->remote_ip);
-	if(out_interface < 0) {
-	    DBG("could not find any suitable outbound interface");
-	    return -1;
-	}
-    }
-
-    if(transports[out_interface].empty()) {
-	ERROR("no transport for this interface");
-	return -1;
-    }
-
-    // set default transport to UDP
-    if(!next_trsp.len)
-	next_trsp = cstring("udp");
-
-    prot_collection::iterator prot_sock_it =
-	transports[out_interface].find(c2stlstr(next_trsp));
-
-    // if we couldn't find anything, take whatever is there...
-    if(prot_sock_it == transports[out_interface].end()) {
-	prot_sock_it = transports[out_interface].begin();
-    }
-
-    if(msg->local_socket) dec_ref(msg->local_socket);
-    msg->local_socket = prot_sock_it->second;
-    inc_ref(msg->local_socket);
-
-    tt->_bucket = 0;
-    tt->_t = 0;
+    string uri_buffer; // must have the same scope as 'msg'
+    prepare_strict_routing(msg,uri_buffer);
 
     if(!msg->u.request->ruri_str.len ||
        !msg->u.request->method_str.len) {
@@ -1265,30 +1242,52 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	    msg->u.request->ruri_str.s);
     }
 
+    int err = 0;
     string ruri; // buffer needs to be @ function scope
+    cstring next_trsp;
+    sip_msg* p_msg=NULL;
+
+    tt->_bucket = 0;
+    tt->_t = 0;
+
+ try_next_dest:
+    if(targets->get_next(&msg->remote_ip,next_trsp,flags) < 0) {
+	DBG("next_ip(): no more destinations! reply 500");
+	sip_msg err;
+	set_err_reply_from_req(&err,msg,500,
+			       "No destination available");
+	ua->handle_sip_reply(c2stlstr(dialog_id),&err);
+	return 0;
+    }
+
+    if(set_trsp_socket(msg,next_trsp,out_interface) < 0)
+	return -1;
+
     if((flags & TR_FLAG_NEXT_HOP_RURI) &&
        (patch_ruri_with_remote_ip(ruri,msg) < 0)) {
  	return -1;
     }
 
     // generate new msg and parse it
-    sip_msg* p_msg=NULL;
-    int err = generate_and_parse_new_msg(msg,p_msg);
+    err = generate_and_parse_new_msg(msg,p_msg);
     if(err != 0) { return err; }
 
     DBG("Sending to %s:%i <%.*s...>\n",
 	get_addr_str(&p_msg->remote_ip).c_str(),
 	ntohs(((sockaddr_in*)&p_msg->remote_ip)->sin_port),
-	50 /* preview - instead of p_msg->len */,p_msg->buf);
+	p_msg->len,p_msg->buf);
 
     tt->_bucket = get_trans_bucket(p_msg->callid->value,
 				   get_cseq(p_msg)->num_str);
     tt->_bucket->lock();
     
-    int send_err = p_msg->send(flags);
-    if(send_err < 0){
+    err = p_msg->send(flags);
+    if(err < 0){
 	ERROR("Error from transport layer\n");
 	delete p_msg;
+	p_msg = NULL;
+	tt->_bucket->unlock();
+	goto try_next_dest;
     }
     else {
         stats.inc_sent_requests();
@@ -1298,12 +1297,12 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 	int method = p_msg->u.request->method;
 
 	DBG("update_uac_request tt->_t =%p\n", tt->_t);
-	send_err = update_uac_request(tt->_bucket,tt->_t,p_msg);
-	if(send_err < 0){
+	err = update_uac_request(tt->_bucket,tt->_t,p_msg);
+	if(err < 0){
 	    DBG("Could not update UAC state for request\n");
 	    delete p_msg;
 	    tt->_bucket->unlock();
-	    return send_err;
+	    return err;
 	}
 
 	if(tt->_t) {
@@ -1356,7 +1355,7 @@ int _trans_layer::send_request(sip_msg* msg, trans_ticket* tt,
 
     tt->_bucket->unlock();
     
-    return send_err;
+    return err;
 }
 
 int _trans_layer::cancel(trans_ticket* tt, const cstring& hdrs)
@@ -2531,34 +2530,12 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
     cstring next_trsp;
     sockaddr_storage sa;
 
-    do {
-	memset(&sa,0,sizeof(sockaddr_storage));
-    
-	// get the next ip
-	if(!tr->targets->has_next()){
-	    DBG("no more destinations!");
-	    return -1;
-	}
-
-	tr->targets->copy_next(&sa,&next_trsp);
-	tr->targets->next();
-
-	//TODO: take care of port manipulation in SRV case
-	//      and the likes
-	//
-	// //If a SRV record is involved, the port number
-	// // should have been set by h_dns.next_ip(...).
-	// if(!am_get_port(&sa)){
-	//     //Else, we copy the old port number
-	//     am_set_port(&sa,am_get_port(&tr->msg->remote_ip));
-	// }
-    } while(!(tr->flags & TR_FLAG_DISABLE_BL) &&
-	    tr_blacklist::instance()->exist(&sa));
-
-    //TODO: support transport changes
-    // -> potentially find another socket
-    //    if next_trsp is different from the 
-    //    current socket's transport
+ try_next_dest:
+    // get the next ip
+    if(tr->targets->get_next(&sa,next_trsp,tr->flags) < 0){
+	DBG("no more destinations!");
+	return -1;
+    }
 
     if(use_new_trans) {
 	string   n_uri;
@@ -2578,10 +2555,14 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 	// backup R-URI before possible update
 	old_uri = tr->msg->u.request->ruri_str;
 
+	int out_interface = tmp_msg.local_socket->get_if();
+	tmp_msg.local_socket = NULL;
+	if(set_trsp_socket(&tmp_msg,next_trsp,out_interface) < 0)
+	    return -1;
+
 	if(n_tr->flags & TR_FLAG_NEXT_HOP_RURI) {
 	    // patch R-URI, generate& parse new message
 	    if(patch_ruri_with_remote_ip(n_uri, &tmp_msg)) {
-		// TODO: error handling!
 		ERROR("could not patch R-URI with new destination");
 		tmp_msg.release();
 		return -1;
@@ -2590,7 +2571,6 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 
 	sip_msg* p_msg=NULL;
 	if(generate_and_parse_new_msg(&tmp_msg,p_msg)) {
-	    // TODO: error handling!
 	    ERROR("could not generate&parse new message");
 	    tmp_msg.release();
 	    return -1;
@@ -2625,6 +2605,11 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 	// copy the new address back
 	memcpy(&tr->msg->remote_ip,&sa,sizeof(sockaddr_storage));
 
+	trsp_socket* old_sock = tr->msg->local_socket;
+	int out_interface = old_sock->get_if();
+	if(set_trsp_socket(tr->msg,next_trsp,out_interface) < 0)
+	    return -1;
+
 	if(tr->flags & TR_FLAG_NEXT_HOP_RURI) {
 	    string   n_uri;
 	    sip_msg* p_msg=NULL;
@@ -2639,17 +2624,35 @@ int _trans_layer::try_next_ip(trans_bucket* bucket, sip_trans* tr,
 	    delete tr->msg;
 	    tr->msg = p_msg;
 	}
+	else if(old_sock != tr->msg->local_socket) {
+	    string   n_uri;
+	    sip_msg* p_msg=NULL;
+
+	    // patch R-URI, generate & parse new message
+	    if(generate_and_parse_new_msg(tr->msg,p_msg)) {
+		return -1;
+	    }
+
+	    delete tr->msg;
+	    tr->msg = p_msg;
+	}
 	else {
 	    // only create new branch tag
+	    // -> patched directly in the msg's buffer
 	    compute_branch((char*)(tr->msg->via_p1->branch.s+MAGIC_BRANCH_LEN),
 			   tr->msg->callid->value,tr->msg->cseq->value);
 	}
     }
    
-    stats.inc_sent_requests();
 
     // and re-send
-    tr->msg->send(tr->flags);
+    if(tr->msg->send(tr->flags) < 0) {
+	ERROR("Error from transport layer\n");
+	use_new_trans = false;
+	goto try_next_dest;
+    }
+
+    stats.inc_sent_requests();
     
     if(tr->logger) {
 	sockaddr_storage src_ip;
