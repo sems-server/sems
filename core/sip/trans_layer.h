@@ -253,18 +253,7 @@ protected:
 		     unsigned short* next_port, cstring* next_trsp);
 
     /**
-     * Transforms all elements of a destination list into
-     * a target set, thus resolving all DNS names and
-     * converting IPs into a sockaddr_storage.
      */
-    int resolve_targets(const list<sip_destination>& dest_list,
-			sip_target_set* targets);
-
-    /**
-     * Fills msg->remote_ip according to next_hop and next_port.
-     */
-    int set_destination_ip(const cstring* next_hop, unsigned short next_port,
-			   sockaddr_storage* remote_ip, dns_handle* h_dns);
 
     sip_trans* copy_uac_trans(sip_trans* tr);
 
