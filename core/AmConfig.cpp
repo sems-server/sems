@@ -43,6 +43,7 @@
 #include "AmSessionContainer.h"
 #include "Am100rel.h"
 #include "sip/transport.h"
+#include "sip/resolver.h"
 #include "sip/ip_util.h"
 #include "sip/sip_timers.h"
 #include "sip/raw_sender.h"
@@ -91,7 +92,6 @@ bool         AmConfig::ForceSymmetricRtp       = false;
 bool         AmConfig::SipNATHandling          = false;
 bool         AmConfig::UseRawSockets           = false;
 bool         AmConfig::IgnoreNotifyLowerCSeq   = false;
-bool         AmConfig::DisableDNSSRV           = false;
 string       AmConfig::Signature               = "";
 unsigned int AmConfig::MaxForwards             = MAX_FORWARDS;
 bool	     AmConfig::SingleCodecInOK	       = false;
@@ -386,7 +386,7 @@ int AmConfig::readConfiguration()
   }
 
   if(cfg.hasParameter("disable_dns_srv")) {
-    DisableDNSSRV = (cfg.getParameter("disable_dns_srv") == "yes");
+    _resolver::disable_srv = (cfg.getParameter("disable_dns_srv") == "yes");
   }
   
 

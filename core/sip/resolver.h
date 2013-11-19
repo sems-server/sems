@@ -205,6 +205,9 @@ class _resolver
     : AmThread
 {
 public:
+    // disable SRV lookups
+    static bool disable_srv;
+
     int resolve_name(const char* name, 
 		     dns_handle* h,
 		     sockaddr_storage* sa,
@@ -214,6 +217,14 @@ public:
 	       sockaddr_storage* sa,
 	       const address_type types);
 
+    /**
+     * Transforms all elements of a destination list into
+     * a target set, thus resolving all DNS names and
+     * converting IPs into a sockaddr_storage.
+     */
+    int resolve_targets(const list<sip_destination>& dest_list,
+			sip_target_set* targets);
+
 protected:
     _resolver();
     ~_resolver();
@@ -221,6 +232,12 @@ protected:
     int query_dns(const char* name,
 		  dns_entry** e,
 		  long now);
+
+    int set_destination_ip(const cstring& next_hop,
+			   unsigned short next_port,
+			   const cstring& next_trsp,
+			   sockaddr_storage* remote_ip,
+			   dns_handle* h_dns);
 
     void run();
     void on_stop() {}

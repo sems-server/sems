@@ -183,6 +183,11 @@ inline int lower_cmp_n(const char* l, int llen, const char* r, int rlen)
     return lower_cmp(l,r,rlen);
 }
 
+inline int lower_cmp_n(const cstring& l, const cstring& r)
+{
+    return lower_cmp_n(l.s,l.len,r.s,r.len);
+}
+
 int parse_sip_version(const char* beg, int len);
 
 /** 

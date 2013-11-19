@@ -31,7 +31,10 @@
 #include "hash.h"
 
 #include "parse_dns.h"
+#include "parse_common.h"
 #include "ip_util.h"
+#include "trans_layer.h"
+#include "tr_blacklist.h"
 
 #include <sys/socket.h> 
 #include <netdb.h>
@@ -668,6 +671,8 @@ void sip_target_set::debug()
     }
 }
 
+bool _resolver::disable_srv = false;
+
 _resolver::_resolver()
     : cache(DNS_CACHE_SIZE)
 {
@@ -790,7 +795,8 @@ int _resolver::str2ip(const char* name,
 	    return 1;
 	}
 	else if(ret < 0) {
-	    ERROR("while trying to detect an IPv4 address '%s': %s",name,strerror(errno));
+	    ERROR("while trying to detect an IPv4 address '%s': %s",
+		  name,strerror(errno));
 	    return ret;
 	}
     }
@@ -802,9 +808,117 @@ int _resolver::str2ip(const char* name,
 	    return 1;
 	}
 	else if(ret < 0) {
-	    ERROR("while trying to detect an IPv6 address '%s': %s",name,strerror(errno));
+	    ERROR("while trying to detect an IPv6 address '%s': %s",
+		  name,strerror(errno));
 	    return ret;
 	}
+    }
+
+    return 0;
+}
+
+int _resolver::set_destination_ip(const cstring& next_hop,
+				  unsigned short next_port,
+				  const cstring& next_trsp,
+				  sockaddr_storage* remote_ip,
+				  dns_handle* h_dns)
+{
+
+    string nh = c2stlstr(next_hop);
+
+    DBG("checking whether '%s' is IP address...\n", nh.c_str());
+    if (am_inet_pton(nh.c_str(), remote_ip) != 1) {
+
+	// nh does NOT contain a valid IP address
+    
+	if(!next_port) {
+	    // no explicit port specified,
+	    // try SRV first
+	    if (disable_srv) {
+		DBG("no port specified, but DNS SRV disabled (skipping).\n");
+	    } else {
+		string srv_name = "_sip._";
+		if(!next_trsp.len || !lower_cmp_n(next_trsp,"udp")){
+		    srv_name += "udp";
+		}
+		else if(!lower_cmp_n(next_trsp,"tcp")) {
+		    srv_name += "tcp";
+		}
+		else {
+		    DBG("unsupported transport: skip SRV lookup");
+		    goto no_SRV;
+		}
+
+		srv_name += "." + nh;
+
+		DBG("no port specified, looking up SRV '%s'...\n",
+		    srv_name.c_str());
+
+		if(!resolver::instance()->resolve_name(srv_name.c_str(),
+						       h_dns,remote_ip,
+						       IPv4)){
+		    return 0;
+		}
+
+		DBG("no SRV record for %s",srv_name.c_str());
+	    }
+	}
+
+    no_SRV:
+	memset(remote_ip,0,sizeof(sockaddr_storage));
+	int err = resolver::instance()->resolve_name(nh.c_str(),
+						     h_dns,remote_ip,
+						     IPv4);
+	if(err < 0){
+	    ERROR("Unresolvable Request URI domain\n");
+	    return -478;
+	}
+    }
+    else {
+	am_set_port(remote_ip,next_port);
+    }
+
+    if(!am_get_port(remote_ip)) {
+	if(!next_port) next_port = 5060;
+	am_set_port(remote_ip,next_port);
+    }
+
+    DBG("set destination to %s:%u\n",
+	nh.c_str(), am_get_port(remote_ip));
+    
+    return 0;
+}
+
+int _resolver::resolve_targets(const list<sip_destination>& dest_list,
+			       sip_target_set* targets)
+{
+    for(list<sip_destination>::const_iterator it = dest_list.begin();
+	it != dest_list.end(); it++) {
+	
+	sip_target t;
+	dns_handle h_dns;
+
+	DBG("sip_destination: %.*s:%u/%.*s",
+	    it->host.len,it->host.s,
+	    it->port,
+	    it->trsp.len,it->trsp.s);
+
+	if(set_destination_ip(it->host,it->port,it->trsp,&t.ss,&h_dns) != 0) {
+	    ERROR("Unresolvable destination");
+	    return -478;
+	}
+	if(it->trsp.len && (it->trsp.len <= SIP_TRSP_SIZE_MAX)) {
+	    memcpy(t.trsp,it->trsp.s,it->trsp.len);
+	    t.trsp[it->trsp.len] = '\0';
+	}
+	else {
+	    t.trsp[0] = '\0';
+	}
+
+	do {
+	    targets->dest_list.push_back(t);
+
+	} while(h_dns.next_ip(&t.ss) == 0);
     }
 
     return 0;
