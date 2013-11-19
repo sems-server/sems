@@ -1164,17 +1164,20 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
     vector<string> contact_buffers(msg->contacts.size());
     vector<string>::iterator contact_buf_it = contact_buffers.begin();
 
+    list<sip_header*> n_contacts;
     for(list<sip_header*>::iterator contact_it = msg->contacts.begin();
 	contact_it != msg->contacts.end(); contact_it++, contact_buf_it++) {
 	
-	patch_contact_transport(*contact_it,trsp,*contact_buf_it);
+	n_contacts.push_back(new sip_header(**contact_it));
+	patch_contact_transport(n_contacts.back(),trsp,*contact_buf_it);
     }
 
     // add 'rport' parameter defaultwise? yes, for now
     request_len += via_len(trsp,stl2cstr(via),branch,true);
  
     request_len += copy_hdrs_len(msg->vias);
-    request_len += copy_hdrs_len_no_via(msg->hdrs);
+    request_len += copy_hdrs_len_no_via_contact(msg->hdrs);
+    request_len += copy_hdrs_len(n_contacts);
      
     string content_len = int2str(msg->body.len);
      
@@ -1197,7 +1200,10 @@ static int generate_and_parse_new_msg(sip_msg* msg, sip_msg*& p_msg)
  
     via_wr(&c,trsp,stl2cstr(via),branch,true);
     copy_hdrs_wr(&c,msg->vias);
-    copy_hdrs_wr_no_via(&c,msg->hdrs);
+    copy_hdrs_wr_no_via_contact(&c,msg->hdrs);
+
+    copy_hdrs_wr(&c,n_contacts);
+    free_headers(n_contacts);
 
     content_length_wr(&c,stl2cstr(content_len));
  
