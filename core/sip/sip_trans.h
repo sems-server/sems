@@ -39,6 +39,8 @@
 using std::list;
 
 struct sip_msg;
+struct sip_target_set;
+
 class trsp_socket;
 class msg_logger;
 
@@ -100,66 +102,6 @@ public:
     {}
 
     void fire();
-};
-
-#define SIP_TRSP_SIZE_MAX 4
-
-struct sip_target
-{
-    sockaddr_storage ss;
-    char             trsp[SIP_TRSP_SIZE_MAX+1];
-
-    sip_target() {}
-
-    sip_target(const sip_target& target) {
-	*this = target;
-    }
-
-    const sip_target& operator = (const sip_target& target) {
-	memcpy(&ss,&target.ss,sizeof(sockaddr_storage));
-	memcpy(trsp,target.trsp,SIP_TRSP_SIZE_MAX+1);
-	return target;
-    }
-
-    void clear() {
-	memset(&ss,0,sizeof(sockaddr_storage));
-	memset(trsp,'\0',SIP_TRSP_SIZE_MAX+1);
-    }
-};
-
-struct sip_target_set
-{
-    list<sip_target>           dest_list;
-    list<sip_target>::iterator dest_list_it;
-
-    sip_target_set()
-	: dest_list(),
-	  dest_list_it(dest_list.begin())
-    {}
-
-    void reset_iterator() {
-	dest_list_it = dest_list.begin();
-    }
-
-    bool has_next() {
-	return dest_list_it != dest_list.end();
-    }
-
-    void copy_next(sockaddr_storage* ss, cstring* next_trsp) {
-	sip_target& t = *dest_list_it;
-	memcpy(ss,&t.ss,sizeof(sockaddr_storage));
-	*next_trsp = cstring(t.trsp);
-    }
-
-    bool next() {
-	dest_list_it++;
-	return has_next();
-    }
-
-    void debug();
-
-private:
-    sip_target_set(const sip_target_set&) {}
 };
 
 class sip_trans

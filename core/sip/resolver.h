@@ -203,6 +203,39 @@ public:
     int next_ip(dns_handle* h, sockaddr_storage* sa) { return -1; }
 };
 
+#define SIP_TRSP_SIZE_MAX 4
+
+struct sip_target
+{
+    sockaddr_storage ss;
+    char             trsp[SIP_TRSP_SIZE_MAX+1];
+
+    sip_target();
+    sip_target(const sip_target& target);
+
+    void clear();
+    const sip_target& operator = (const sip_target& target);
+};
+
+struct sip_target_set
+{
+    list<sip_target>           dest_list;
+    list<sip_target>::iterator dest_list_it;
+
+    sip_target_set();
+
+    void reset_iterator();
+    bool has_next();
+    int  get_next(sockaddr_storage* ss, cstring& next_trsp,
+		  unsigned int flags);
+    bool next();
+
+    void debug();
+
+private:
+    sip_target_set(const sip_target_set&) {}
+};
+
 typedef map<string,dns_entry*> dns_entry_map;
 
 class _resolver
