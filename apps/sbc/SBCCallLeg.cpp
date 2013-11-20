@@ -597,8 +597,8 @@ void SBCCallLeg::onDtmf(int event, int duration)
   DBG("received DTMF on %c-leg (%i;%i)\n", a_leg ? 'A': 'B', event, duration);
 
   for (vector<ExtendedCCInterface*>::iterator i = cc_ext.begin(); i != cc_ext.end(); ++i) {
-    if ((*i)->onDtmf(this, event, duration)  == StopProcessing);
-    return;
+    if ((*i)->onDtmf(this, event, duration)  == StopProcessing)
+      return;
   }
 
   AmB2BMedia *ms = getMediaSession();
